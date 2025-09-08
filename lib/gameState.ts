@@ -10,7 +10,7 @@ export const createInitialGameState = (): GameState => {
   if (typeof window !== 'undefined') {
     if (window.innerWidth <= 768) {
       screenWidth = window.innerWidth
-      screenHeight = window.visualViewport?.height || window.innerHeight
+      screenHeight = window.innerHeight
     } else {
       screenWidth = 480
       screenHeight = 853
