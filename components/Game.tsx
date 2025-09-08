@@ -40,6 +40,7 @@ export default function Game() {
         canvas.height = actualHeight
         canvas.style.width = '100vw'
         canvas.style.height = '100dvh'
+        canvas.style.minHeight = '-webkit-fill-available'
       } else {
         // PC: 480px 너비, 9:16 비율
         canvas.width = 480
