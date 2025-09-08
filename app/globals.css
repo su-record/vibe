@@ -75,8 +75,8 @@ html, body {
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
   pointer-events: auto;
-  max-width: 90vw;
-  max-height: 85vh;
+  max-width: 90%;
+  max-height: 85%;
   overflow-y: auto;
   box-sizing: border-box;
 }
