@@ -1,5 +1,5 @@
 import Game from '@/components/Game'
 
-export default function Home() {
+export default function Page() {
   return <Game />
 }
