@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(c:\\Users\\endba\\Pictures\\Screenshots/**)",
+      "Read(c:\\Users\\endba\\Pictures\\Screenshots/**)",
+      "Read(c:\\Users\\endba\\Pictures\\Screenshots/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

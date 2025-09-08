@@ -31,13 +31,31 @@ export default function Game() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    canvas.width = GAME_CONFIG.CANVAS_WIDTH
-    canvas.height = GAME_CONFIG.CANVAS_HEIGHT
+    // 화면 크기에 맞게 캔버스 크기 설정
+    const resizeCanvas = () => {
+      if (window.innerWidth <= 768) {
+        // 모바일: 전체 화면
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+        canvas.style.width = '100vw'
+        canvas.style.height = '100vh'
+      } else {
+        // PC: 480px 너비, 9:16 비율
+        canvas.width = 480
+        canvas.height = 853 // 480 * 16/9
+        canvas.style.width = '480px'
+        canvas.style.height = '853px'
+      }
+    }
+    
+    resizeCanvas()
+    window.addEventListener('resize', resizeCanvas)
 
     rendererRef.current = new GameRenderer(ctx)
     inputHandlerRef.current.init(canvas)
 
     return () => {
+      window.removeEventListener('resize', resizeCanvas)
       inputHandlerRef.current.cleanup()
       if (gameLoopRef.current) {
         gameLoopRef.current.stop()
@@ -71,8 +89,10 @@ export default function Game() {
         // 터치/드래그로 직접 위치 설정
         const previousX = newState.player.position.x + newState.player.size.width / 2
         const playerCenterX = touchPosition - newState.player.size.width / 2
+        const canvas = canvasRef.current
+        const canvasWidth = canvas ? canvas.width : (window.innerWidth <= 768 ? window.innerWidth : 480)
         const newX = Math.max(0, Math.min(
-          GAME_CONFIG.CANVAS_WIDTH - newState.player.size.width,
+          canvasWidth - newState.player.size.width,
           playerCenterX
         ))
         
@@ -96,8 +116,10 @@ export default function Game() {
             newState.player.position.x = Math.max(0, newState.player.position.x - speed)
             newState.player.direction = 'left'
           } else {
+            const canvas = canvasRef.current
+        const canvasWidth = canvas ? canvas.width : (window.innerWidth <= 768 ? window.innerWidth : 480)
             newState.player.position.x = Math.min(
-              GAME_CONFIG.CANVAS_WIDTH - newState.player.size.width,
+              canvasWidth - newState.player.size.width,
               newState.player.position.x + speed
             )
             newState.player.direction = 'right'
@@ -169,8 +191,10 @@ export default function Game() {
           // 터치/드래그로 직접 위치 설정
           const previousX = newState.player.position.x + newState.player.size.width / 2
           const playerCenterX = touchPosition - newState.player.size.width / 2
-          const newX = Math.max(0, Math.min(
-            GAME_CONFIG.CANVAS_WIDTH - newState.player.size.width,
+          const canvas = canvasRef.current
+        const canvasWidth = canvas ? canvas.width : (window.innerWidth <= 768 ? window.innerWidth : 480)
+        const newX = Math.max(0, Math.min(
+            canvasWidth - newState.player.size.width,
             playerCenterX
           ))
           
@@ -194,8 +218,10 @@ export default function Game() {
               newState.player.position.x = Math.max(0, newState.player.position.x - speed)
               newState.player.direction = 'left'
             } else {
+              const canvas = canvasRef.current
+        const canvasWidth = canvas ? canvas.width : (window.innerWidth <= 768 ? window.innerWidth : 480)
               newState.player.position.x = Math.min(
-                GAME_CONFIG.CANVAS_WIDTH - newState.player.size.width,
+                canvasWidth - newState.player.size.width,
                 newState.player.position.x + speed
               )
               newState.player.direction = 'right'
@@ -283,19 +309,20 @@ export default function Game() {
   }
 
   return (
-    <div className="flex justify-center items-center h-screen overflow-hidden">
-      <div className="relative w-[360px] h-[640px]">
+    <div className="game-container">
+      <div className="relative w-full h-full flex items-center justify-center">
         <canvas
           ref={canvasRef}
+          className="game-canvas"
         />
         
         {!gameState.isPlaying && !gameState.isGameOver && (
           <div className="game-overlay">
-            <div className="game-modal text-xl">
-              <div className="mb-5">루피의 아카이누 주먹 피하기</div>
+            <div className="game-modal">
+              <div className="text-2xl mb-6">루피의 아카이누 주먹 피하기</div>
               <button
                 onClick={startGame}
-                className="game-button game-button-primary shadow-2xl"
+                className="game-button game-button-primary"
               >
                 게임 시작
               </button>
@@ -305,7 +332,7 @@ export default function Game() {
 
         {gameState.isGameOver && !showInitials && (
           <div className="game-overlay">
-            <div className="game-modal text-lg max-w-md w-full mx-4">
+            <div className="game-modal">
               <div className="mb-5 text-2xl font-bold">🏆 TOP 10 랭킹 🏆</div>
               <div className="max-h-80 overflow-y-auto mb-6">
                 {ScoreManager.getTopScores().length === 0 ? (
@@ -370,8 +397,8 @@ export default function Game() {
 
         {showInitials && (
           <div className="game-overlay">
-            <div className="game-modal text-lg">
-              <div className="mb-5 text-2xl">
+            <div className="game-modal">
+              <div className="mb-6 text-2xl">
                 🎉 TOP 10 진입! 🎉
               </div>
             <form onSubmit={handleInitialsSubmit}>
@@ -380,22 +407,20 @@ export default function Game() {
                 value={initials}
                 onChange={(e) => setInitials(e.target.value.slice(0, 3))}
                 placeholder="이니셜 입력"
-                className="p-3 text-base text-center uppercase bg-gray-700 text-white border-2 border-gray-500 rounded-lg focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/50"
+                className="w-full p-3 mb-4 text-center uppercase bg-gray-800 text-white border-2 border-gray-600 rounded-lg focus:outline-none focus:border-teal-400"
                 autoFocus
               />
-              <div className="mt-4">
-                <button
-                  type="submit"
-                  disabled={initials.length < 2}
-                  className={`px-5 py-2 text-base rounded-lg transition-all ${
-                    initials.length >= 2 
-                      ? 'bg-teal-400 hover:bg-teal-300 cursor-pointer' 
-                      : 'bg-gray-600 cursor-not-allowed'
-                  } text-white`}
-                >
-                  저장
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={initials.length < 2}
+                className={`game-button ${
+                  initials.length >= 2 
+                    ? 'game-button-primary' 
+                    : 'bg-gray-600 cursor-not-allowed'
+                }`}
+              >
+                저장
+              </button>
             </form>
             </div>
           </div>

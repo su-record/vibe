@@ -4,8 +4,21 @@ const CANVAS_WIDTH = 360
 const CANVAS_HEIGHT = 640
 
 export const createInitialGameState = (): GameState => {
+  let screenWidth = CANVAS_WIDTH
+  let screenHeight = CANVAS_HEIGHT
+  
+  if (typeof window !== 'undefined') {
+    if (window.innerWidth <= 768) {
+      screenWidth = window.innerWidth
+      screenHeight = window.innerHeight
+    } else {
+      screenWidth = 480
+      screenHeight = 853
+    }
+  }
+  
   const player: Player = {
-    position: { x: CANVAS_WIDTH / 2 - 25, y: CANVAS_HEIGHT - 80 },
+    position: { x: screenWidth / 2 - 25, y: screenHeight - 80 },
     size: { width: 50, height: 60 },
     direction: 'left',
     speed: 5

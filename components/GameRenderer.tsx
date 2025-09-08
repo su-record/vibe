@@ -51,8 +51,9 @@ export default class GameRenderer {
   }
 
   private clearCanvas() {
-    this.ctx.fillStyle = '#001122'
-    this.ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT)
+    this.ctx.fillStyle = '#1e3a8a'
+    const canvas = this.ctx.canvas
+    this.ctx.fillRect(0, 0, canvas.width, canvas.height)
   }
 
   private renderUI(gameState: GameState) {
@@ -131,10 +132,6 @@ export default class GameRenderer {
     this.ctx.fillStyle = '#666'
     this.ctx.font = '16px Arial'
     this.ctx.textAlign = 'center'
-    this.ctx.fillText(
-      'Loading images...',
-      GAME_CONFIG.CANVAS_WIDTH / 2,
-      GAME_CONFIG.CANVAS_HEIGHT - 50
-    )
+    const canvas = this.ctx.canvas
   }
 }

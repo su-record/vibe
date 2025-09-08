@@ -29,9 +29,14 @@ export class EnemyManager {
     const currentSpeed = this.getCurrentSpeed()
     const speed = currentSpeed * (2 - scale) // Smaller enemies fall faster
     
+    let screenWidth = GAME_CONFIG.CANVAS_WIDTH
+    if (typeof window !== 'undefined') {
+      screenWidth = window.innerWidth <= 768 ? window.innerWidth : 480
+    }
+    
     return {
       position: {
-        x: Math.random() * (GAME_CONFIG.CANVAS_WIDTH - size),
+        x: Math.random() * (screenWidth - size),
         y: -size
       },
       size: {
@@ -44,6 +49,11 @@ export class EnemyManager {
   }
 
   updateEnemies(enemies: Enemy[], deltaTime: number): Enemy[] {
+    let screenHeight = GAME_CONFIG.CANVAS_HEIGHT
+    if (typeof window !== 'undefined') {
+      screenHeight = window.innerWidth <= 768 ? window.innerHeight : 853
+    }
+    
     return enemies
       .map(enemy => ({
         ...enemy,
@@ -52,7 +62,7 @@ export class EnemyManager {
           y: enemy.position.y + enemy.speed * (deltaTime / 16)
         }
       }))
-      .filter(enemy => enemy.position.y < GAME_CONFIG.CANVAS_HEIGHT + 50)
+      .filter(enemy => enemy.position.y < screenHeight + 50)
   }
 
   private getCurrentSpeed(): number {
