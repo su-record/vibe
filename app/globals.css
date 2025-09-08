@@ -9,7 +9,7 @@
 }
 
 html, body {
-  height: 100vh;
+  height: 100%;
   width: 100%;
   overflow: hidden;
   position: fixed;
@@ -23,20 +23,16 @@ html, body {
 }
 
 #__next {
-  height: 100vh;
+  height: 100%;
   width: 100%;
 }
 
 .game-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: auto;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1e3a8a;
 }
 
 .game-canvas {
@@ -126,7 +122,7 @@ html, body {
   .game-modal {
     padding: 16px;
     font-size: 14px;
-    max-height: 90vh;
+    max-height: 100%;
     margin: 10px;
   }
   

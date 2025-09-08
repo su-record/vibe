@@ -1,5 +1,4 @@
 import { GameState } from '../types/game'
-import { GAME_CONFIG } from '../lib/gameState'
 
 export default class GameRenderer {
   private ctx: CanvasRenderingContext2D
