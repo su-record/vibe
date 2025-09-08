@@ -51,7 +51,7 @@ export class EnemyManager {
   updateEnemies(enemies: Enemy[], deltaTime: number): Enemy[] {
     let screenHeight = GAME_CONFIG.CANVAS_HEIGHT
     if (typeof window !== 'undefined') {
-      screenHeight = window.innerWidth <= 768 ? window.innerHeight : 853
+      screenHeight = window.innerWidth <= 768 ? (window.visualViewport?.height || window.innerHeight) : 853
     }
     
     return enemies

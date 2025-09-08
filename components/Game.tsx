@@ -34,11 +34,13 @@ export default function Game() {
     // 화면 크기에 맞게 캔버스 크기 설정
     const resizeCanvas = () => {
       if (window.innerWidth <= 768) {
-        // 모바일: 전체 화면
+        // 모바일: 전체 화면 (실제 보이는 영역)
+        const actualHeight = window.visualViewport?.height || window.innerHeight
         canvas.width = window.innerWidth
-        canvas.height = window.innerHeight
+        canvas.height = actualHeight
         canvas.style.width = '100vw'
-        canvas.style.height = '100vh'
+        canvas.style.height = '100dvh'
+        canvas.style.minHeight = '-webkit-fill-available'
       } else {
         // PC: 480px 너비, 9:16 비율
         canvas.width = 480
@@ -50,12 +52,20 @@ export default function Game() {
     
     resizeCanvas()
     window.addEventListener('resize', resizeCanvas)
+    
+    // Visual Viewport API 지원 브라우저에서 높이 변화 감지
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', resizeCanvas)
+    }
 
     rendererRef.current = new GameRenderer(ctx)
     inputHandlerRef.current.init(canvas)
 
     return () => {
       window.removeEventListener('resize', resizeCanvas)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', resizeCanvas)
+      }
       inputHandlerRef.current.cleanup()
       if (gameLoopRef.current) {
         gameLoopRef.current.stop()
