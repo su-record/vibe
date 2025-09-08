@@ -1,2 +1,0 @@
-# vibe
-AI Vibe study

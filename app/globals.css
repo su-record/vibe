@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  
+  body {
+    @apply bg-black text-white overflow-hidden;
+  }
+}
+
+@layer components {
+  .game-button {
+    @apply px-6 py-3 text-lg font-semibold rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95;
+  }
+  
+  .game-button-primary {
+    @apply bg-teal-400 text-white shadow-lg hover:bg-teal-300;
+  }
+  
+  .game-button-secondary {
+    @apply bg-red-500 text-white shadow-lg hover:bg-red-400;
+  }
+  
+  .game-overlay {
+    @apply absolute inset-0 flex items-center justify-center;
+  }
+  
+  .game-modal {
+    @apply bg-black/80 text-white p-8 rounded-2xl text-center backdrop-blur-sm border border-gray-700;
+  }
+  
+  .game-canvas {
+    @apply border-2 border-gray-600 bg-blue-900 max-w-full max-h-screen;
+    aspect-ratio: 9/16;
+  }
+}
