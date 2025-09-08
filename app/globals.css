@@ -85,6 +85,9 @@ html, body {
   justify-content: center;
   z-index: 10;
   pointer-events: none;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  zoom: 1;
 }
 
 .game-modal {
@@ -100,8 +103,10 @@ html, body {
   max-height: 85%;
   overflow-y: auto;
   box-sizing: border-box;
-  transform: scale(1);
-  zoom: 1;
+  transform: scale(1) !important;
+  zoom: 1 !important;
+  -webkit-transform: scale(1) !important;
+  -webkit-text-size-adjust: none !important;
 }
 
 .game-button {
@@ -148,10 +153,16 @@ html, body {
     max-width: 80%;
     max-height: 100%;
     margin: 10px;
+    transform: scale(1) !important;
+    zoom: 1 !important;
+    -webkit-transform: scale(1) !important;
+    -webkit-text-size-adjust: none !important;
   }
   
   .game-button {
     padding: 10px 20px;
     font-size: 14px;
+    transform: scale(1) !important;
+    zoom: 1 !important;
   }
 }
