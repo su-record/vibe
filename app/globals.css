@@ -5,16 +5,23 @@
 @layer base {
   html {
     @apply antialiased;
+    height: 100%;
+    overflow: hidden;
   }
   
   body {
-    @apply bg-black text-white overflow-hidden;
+    @apply text-white;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    touch-action: manipulation;
   }
 }
 
 @layer components {
   .game-button {
-    @apply px-6 py-3 text-lg font-semibold rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95;
+    @apply px-4 py-3 text-base font-semibold rounded-lg cursor-pointer;
   }
   
   .game-button-primary {
@@ -30,11 +37,24 @@
   }
   
   .game-modal {
-    @apply bg-black/80 text-white p-8 rounded-2xl text-center backdrop-blur-sm border border-gray-700;
+    @apply bg-black/80 text-white p-4 rounded-2xl text-center backdrop-blur-sm border border-gray-700;
   }
   
   .game-canvas {
-    @apply border-2 border-gray-600 bg-blue-900 max-w-full max-h-screen;
+    @apply border-2 border-gray-600 bg-blue-900;
     aspect-ratio: 9/16;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    object-fit: contain;
+  }
+  
+  @media (max-width: 768px) {
+    .game-canvas {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+    }
   }
 }

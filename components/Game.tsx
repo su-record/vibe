@@ -283,16 +283,15 @@ export default function Game() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-black">
-      <div className="relative">
+    <div className="flex justify-center items-center h-screen overflow-hidden">
+      <div className="relative w-[360px] h-[640px]">
         <canvas
           ref={canvasRef}
-          className="game-canvas"
         />
         
         {!gameState.isPlaying && !gameState.isGameOver && (
           <div className="game-overlay">
-            <div className="game-modal text-2xl">
+            <div className="game-modal text-xl">
               <div className="mb-5">루피의 아카이누 주먹 피하기</div>
               <button
                 onClick={startGame}
@@ -360,7 +359,7 @@ export default function Game() {
                 </div>
                 <button
                   onClick={resetGame}
-                  className="game-button game-button-secondary ml-4"
+                  className="game-button game-button-secondary"
                 >
                   다시 시작
                 </button>
