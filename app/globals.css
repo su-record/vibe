@@ -75,13 +75,14 @@ html, body {
   background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(10px);
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
   pointer-events: auto;
   max-width: 90vw;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .game-button {
@@ -123,8 +124,10 @@ html, body {
 
 @media (max-width: 480px) {
   .game-modal {
-    padding: 20px;
+    padding: 16px;
     font-size: 14px;
+    max-height: 90vh;
+    margin: 10px;
   }
   
   .game-button {

@@ -333,8 +333,8 @@ export default function Game() {
         {gameState.isGameOver && !showInitials && (
           <div className="game-overlay">
             <div className="game-modal">
-              <div className="mb-5 text-2xl font-bold">🏆 TOP 10 랭킹 🏆</div>
-              <div className="max-h-80 overflow-y-auto mb-6">
+              <div className="mb-4 text-xl font-bold">🏆 TOP 10 랭킹 🏆</div>
+              <div className="max-h-60 overflow-y-auto mb-4">
                 {ScoreManager.getTopScores().length === 0 ? (
                   <div className="text-gray-400 py-8">아직 기록이 없습니다.</div>
                 ) : (
@@ -342,14 +342,14 @@ export default function Game() {
                     {ScoreManager.getTopScores().map((record, index) => (
                       <div
                         key={index}
-                        className={`flex justify-between items-center p-3 rounded-lg ${
+                        className={`flex justify-between items-center p-2 rounded-lg text-sm ${
                           index < 3 
                             ? 'bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30' 
                             : 'bg-gray-800/50'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className={`text-lg font-bold ${
+                        <div className="flex items-center gap-2">
+                          <span className={`text-base font-bold ${
                             index === 0 ? 'text-yellow-400' :
                             index === 1 ? 'text-gray-300' :
                             index === 2 ? 'text-orange-400' :
@@ -360,7 +360,7 @@ export default function Game() {
                           <span className="font-semibold text-white">{record.initials}</span>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-teal-400">
+                          <div className="text-base font-bold text-teal-400">
                             {record.score.toLocaleString()}점
                           </div>
                           <div className="text-xs text-gray-400">
@@ -373,11 +373,11 @@ export default function Game() {
                 )}
               </div>
               
-              {/* 내 점수와 다시 시작 버튼을 가로로 배치 */}
-              <div className="flex justify-between items-center bg-gray-800/70 p-4 rounded-lg border border-gray-600">
-                <div className="text-left">
+              {/* 내 점수와 다시 시작 버튼 */}
+              <div className="bg-gray-800/70 p-3 rounded-lg border border-gray-600">
+                <div className="text-center mb-3">
                   <div className="text-sm text-gray-400">내 점수</div>
-                  <div className="text-xl font-bold text-teal-400">
+                  <div className="text-lg font-bold text-teal-400">
                     {ScoreManager.calculateFinalScore(gameState.runtime, gameState.score).toLocaleString()}점
                   </div>
                   <div className="text-xs text-gray-400">
@@ -386,7 +386,7 @@ export default function Game() {
                 </div>
                 <button
                   onClick={resetGame}
-                  className="game-button game-button-secondary"
+                  className="game-button game-button-secondary w-full"
                 >
                   다시 시작
                 </button>
