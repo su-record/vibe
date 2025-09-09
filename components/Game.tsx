@@ -25,6 +25,9 @@ export default function Game() {
   const lastUpdateTimeRef = useRef<number>(0)
 
   useEffect(() => {
+    // 게임 페이지 스타일 적용
+    document.body.classList.add('game-page')
+    
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -62,6 +65,7 @@ export default function Game() {
     inputHandlerRef.current.init(canvas)
 
     return () => {
+      document.body.classList.remove('game-page')
       window.removeEventListener('resize', resizeCanvas)
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', resizeCanvas)

@@ -9,21 +9,25 @@
 }
 
 html, body {
-  height: 100vh;
-  height: 100dvh; /* Dynamic viewport height */
   width: 100%;
-  overflow: hidden;
-  position: fixed;
   font-family: system-ui, -apple-system, sans-serif;
-  color: white;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
   margin: 0;
   padding: 0;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
   zoom: 1;
+  overflow: auto;
+}
+
+/* 게임 페이지 전용 스타일 */
+.game-page {
+  height: 100vh;
+  height: 100dvh;
+  position: fixed;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
 }
 
 #__next {
