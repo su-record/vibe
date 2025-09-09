@@ -10,11 +10,15 @@ import CartSummary from './CartSummary'
 export default function CartContainer() {
   const [items, setItems] = useState<CartItemType[]>([])
   const [summary, setSummary] = useState<CartSummaryType>({ subtotal: 0, shipping: 0, total: 0 })
-
+  const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
-    const loadedItems = CartStorage.getItems()
-    setItems(loadedItems)
+    // 클라이언트에서만 실행
+    if (typeof window !== 'undefined') {
+      const loadedItems = CartStorage.getItems()
+      setItems(loadedItems)
+      setIsLoaded(true)
+    }
   }, [])
 
   useEffect(() => {
@@ -62,7 +66,11 @@ export default function CartContainer() {
             </div>
 
             {/* 상품 아이템들 */}
-            {items.length === 0 ? (
+            {!isLoaded ? (
+              <div className="text-center py-12 bg-white rounded-lg">
+                <p className="text-gray-500">로딩 중...</p>
+              </div>
+            ) : items.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg">
                 <p className="text-gray-500">장바구니가 비어있습니다.</p>
               </div>
