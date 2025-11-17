@@ -11,10 +11,11 @@ Transform natural language requirements into production-ready code through struc
 
 ## Features
 
+- **Claude Code Optimized**: Built specifically for Claude Code with native slash commands and MCP integration
 - **SPEC-driven Development**: Structured Q&A process using EARS (Easy Approach to Requirements Syntax)
 - **Automated Planning**: Generate technical implementation plans with architecture, cost analysis, and timeline
 - **Task Decomposition**: Break down features into phase-based, dependency-aware tasks
-- **MCP Integration**: 38 built-in tools for code analysis, quality validation, and project insights
+- **Powered by @su-record/hi-ai**: 38 MCP tools combining skills and hi-ai for code analysis, quality validation, and insights
 - **Multi-language Support**: English and Korean interface
 - **AI Agent System**: 7 specialized agents for different tech stacks
 
@@ -427,4 +428,4 @@ For questions and support:
 
 ---
 
-**Built with ❤️ by grove & Claude**
+**Built with ❤️ by Su & Claude**
