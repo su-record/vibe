@@ -6,6 +6,8 @@ Transform natural language requirements into production-ready code through struc
 
 [![npm version](https://img.shields.io/npm/v/@su-record/vibe.svg)](https://www.npmjs.com/package/@su-record/vibe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Smithery Badge](https://smithery.ai/badge/@su-record/hi-ai)](https://smithery.ai/protocol/@su-record/hi-ai)
+[![MCP Tools](https://img.shields.io/badge/MCP_Tools-38-blue.svg)](https://github.com/su-record/hi-ai)
 
 ---
 
