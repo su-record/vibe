@@ -427,4 +427,4 @@ For questions and support:
 
 ---
 
-**Built with ❤️ by the Vibe team**
+**Built with ❤️ by grove & Claude**
