@@ -12,13 +12,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
+    "vibe",
     "ai",
     "coding",
     "spec-driven",
     "claude",
     "mcp",
     "framework",
-    "spec-kit",
     "requirements",
     "user-story"
   ],
