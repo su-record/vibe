@@ -1,291 +1,385 @@
-# 📖 sutory
+# vide
 
-> **Your story becomes code**
-> SPEC-driven AI coding framework powered by Claude Code
+> **Vi**be **De**velopment - SPEC-driven AI coding framework with MCP integration
 
-당신의 이야기(요구사항)가 자동으로 코드가 됩니다.
-
----
-
-## ✨ 특징
-
-- 🗣️ **자연어 대화**로 요구사항 수집
-- 📋 **SPEC 문서** 자동 생성 (EARS 형식)
-- 🤖 **전문가 에이전트** 7개 (Python, Flutter, React, PostgreSQL, Quality Reviewer 등)
-- 🛠️ **38개 MCP 도구** 통합 (코드 분석, 품질 검증, 메모리 관리)
-- 📚 **17개 스킬** (언어별 코딩 표준, 품질 기준)
-- ⚡ **SPEC → PLAN → TASKS → CODE** 자동 워크플로우
+자연어 요구사항을 SPEC → PLAN → TASKS → CODE로 변환합니다.
 
 ---
 
-## 🚀 빠른 시작
-
-### 설치
+## Installation
 
 ```bash
-npm install -g sutory
+npm install -g @su-record/vide
 ```
 
-### 사용법
+설치 시 자동으로:
+- ✅ vide CLI 설치
+- ✅ MCP 서버 자동 등록 (38개 도구)
+- ✅ 슬래시 명령어 사용 가능
+
+---
+
+## Quick Start
 
 ```bash
 # 1. 프로젝트 초기화
-cd my-project
-sutory init
+cd your-project
+vide init
 
-# 2. 새 기능 스토리 작성 (AI가 질문합니다)
-sutory story create "사용자 인증 시스템"
+# 2. SPEC 작성 (6개 질문 Q&A)
+vide spec "기능명"
 
-# 3. 기술 계획 수립
-sutory plan "사용자 인증 시스템"
+# 3. PLAN 생성 (기술 스택, 아키텍처, 비용)
+vide plan "기능명"
 
-# 4. 작업 분해
-sutory tasks "사용자 인증 시스템"
+# 4. TASKS 분해 (Phase별 작업 목록)
+vide tasks "기능명"
 
-# 5. 구현
-sutory implement "사용자 인증 시스템"
+# 5. 구현 (Task별 가이드 + 코드 작성)
+vide run "Task 1-1"
 
-# 6. 검증
-sutory verify "사용자 인증 시스템"
+# 6. 검증 (SPEC 요구사항 충족 확인)
+vide verify "기능명"
 ```
 
 ---
 
-## 📁 프로젝트 구조
-
-sutory를 초기화하면 프로젝트에 `.sutory/` 폴더가 생성됩니다:
+## Workflow
 
 ```
-my-project/
-├── .sutory/
-│   ├── constitution.md           # 프로젝트 원칙
-│   ├── specs/                    # SPEC 문서들
-│   │   └── auth-system.md
-│   ├── plans/                    # 기술 계획들
-│   │   └── auth-implementation-plan.md
-│   └── tasks/                    # 작업 목록들
-│       └── auth-tasks.md
-└── [기존 코드...]
+자연어 요구사항
+  ↓ vide spec
+SPEC 문서 (EARS 형식)
+  ↓ vide plan
+PLAN 문서 (15 섹션)
+  ↓ vide tasks
+TASKS 문서 (Phase별)
+  ↓ vide run
+코드 구현
+  ↓ vide verify
+검증 완료
 ```
 
 ---
 
-## 🎯 워크플로우
+## Commands
 
-### 1. Story (요구사항 수집)
+### CLI
 
 ```bash
-$ sutory story create "OCR 영수증 인증"
+# SPEC-driven 워크플로우
+vide init                # .vide/ 폴더 생성
+vide spec <name>         # SPEC 작성
+vide plan <name>         # PLAN 생성
+vide tasks <name>        # TASKS 생성
+vide run <task>          # Task 구현
+vide run --phase <N>     # Phase N 전체 실행
+vide run --all           # 전체 실행
+vide verify <name>       # SPEC 검증
 
-🤖 AI: 요구사항을 파악하기 위해 몇 가지 질문드릴게요.
+# 분석 & 도구
+vide analyze             # 프로젝트 분석 (전체)
+vide analyze --code      # 코드 품질 분석
+vide analyze --deps      # 의존성 분석
+vide ui <description>    # UI ASCII 미리보기
+vide diagram             # 아키텍처 다이어그램
+vide diagram --er        # ERD 다이어그램
 
-Q1. 이 기능의 주요 목적은?
-  1) 피드 신뢰도 향상
-  2) 포인트 추가 지급
-  3) 사기 방지
-
-당신: 1, 2
-
-Q2. 대상 사용자는?
-  1) 모든 사용자
-  2) Tier 3 이상
-
-당신: 1
-
-... (5-10개 질문)
-
-✅ SPEC 문서 생성 완료!
-→ .sutory/specs/ocr-receipt-verification.md
+# 정보
+vide agents              # Agent 목록
+vide skills              # Skill 목록
 ```
 
-### 2. Plan (기술 계획)
+### Slash Commands (Claude Code)
+
+```
+# SPEC-driven
+/vide.spec "기능명"
+/vide.plan "기능명"
+/vide.tasks "기능명"
+/vide.run "Task 1-1"
+/vide.run --phase 1
+/vide.verify "기능명"
+
+# 분석 & 도구
+/vide.analyze
+/vide.ui "로그인 페이지"
+/vide.diagram --er
+```
+
+---
+
+## Project Structure
+
+```
+your-project/
+├── .vide/
+│   ├── config.json          # 언어 설정 (ko/en)
+│   ├── constitution.md      # 프로젝트 원칙
+│   ├── specs/               # SPEC 문서
+│   ├── plans/               # PLAN 문서
+│   ├── tasks/               # TASKS 문서
+│   ├── guides/              # 구현 가이드 (자동 생성)
+│   ├── reports/             # 분석 리포트
+│   └── diagrams/            # 다이어그램
+└── CLAUDE.md                # 기술 스택 문서 (권장)
+```
+
+---
+
+## MCP Integration
+
+vide는 설치 시 MCP 서버를 자동으로 등록합니다.
+
+### 사용 가능한 도구 (38개)
+
+- **코드 분석**: `analyze_complexity`, `validate_code_quality`, `check_coupling_cohesion`
+- **프로젝트 분석**: `find_symbol`, `find_references`
+- **사고 과정**: `create_thinking_chain`, `step_by_step_analysis`
+- **품질 검증**: `apply_quality_rules`, `suggest_improvements`
+- **UI 미리보기**: `preview_ui_ascii`
+- **메모리 관리**: `save_memory`, `recall_memory`
+- **기타**: 현재 시간, 컨텍스트 저장 등
+
+### MCP 서버 확인
 
 ```bash
-$ sutory plan "OCR 영수증 인증"
-
-🤖 AI: SPEC 분석 중...
-
-기술 스택 제안:
-- OCR: Google Document AI (정확도 95%+)
-- 저장소: GCS
-- 처리: Async (3초 목표)
-- 비용: 월 $1.50
-
-✅ PLAN 문서 생성 완료!
-→ .sutory/plans/ocr-implementation-plan.md
-```
-
-### 3. Tasks (작업 분해)
-
-```bash
-$ sutory tasks "OCR 영수증 인증"
-
-🤖 AI: 작업 목록 생성 중...
-
-✅ 7개 작업 생성 (예상 13.5시간)
-→ .sutory/tasks/ocr-tasks.md
-```
-
-### 4. Implement (구현)
-
-```bash
-$ sutory implement "OCR 영수증 인증"
-
-🤖 AI (Backend Python Expert):
-
-Task 1/7: Document AI 클라이언트 설정
-
-📍 MCP 도구 활용:
-  ✓ find_symbol - 기존 패턴 확인
-  ✓ validate_code_quality - 품질 자동 검증
-
-✅ app/external/document_ai_client.py 생성
-
-다음 작업을 계속하시겠습니까? [Y/n]
+claude mcp list
+# vide: node /path/to/vide/mcp/dist/index.js - ✓ Connected
 ```
 
 ---
 
-## 🤖 포함된 에이전트
+## Configuration
 
-- **Specification Agent** - 요구사항 질의응답 및 SPEC 작성
-- **Backend Python Expert** - Python/FastAPI 개발
-- **Frontend Flutter Expert** - Flutter/Dart 개발
-- **Frontend React Expert** - React/Next.js 개발
-- **Database PostgreSQL Expert** - PostgreSQL/PostGIS 설계
-- **Task Agent** - SPEC → Tasks 자동 변환
-- **Quality Reviewer** - 코드 품질 검증
+### .vide/config.json
 
----
-
-## 📚 스킬셋
-
-### 언어별 코딩 표준
-- Python/FastAPI
-- Dart/Flutter
-- TypeScript/React
-- TypeScript/Next.js
-- TypeScript/React Native
-
-### 품질 기준
-- TRUST 5 원칙
-- Testing Strategy (Contract-First)
-- Complexity Metrics
-
-### MCP 도구 가이드
-- 38개 도구 사용법
-- 워크플로우 패턴
-
----
-
-## 🛠️ MCP 서버 통합
-
-sutory는 다음 MCP 서버와 함께 작동합니다:
-
-- **su-record/hi-ai** - 코드 분석, 품질 검증, 메모리 관리
-- **upstash/context-7** - 최신 라이브러리 문서 검색
-
----
-
-## 📖 CLI 명령어
-
-```bash
-# 초기화
-sutory init                        # .sutory/ 폴더 생성
-
-# Story (SPEC)
-sutory story create <name>         # 질의응답 → SPEC
-sutory story list                  # SPEC 목록
-sutory story show <name>           # SPEC 보기
-
-# Plan
-sutory plan <name>                 # SPEC → PLAN 생성
-
-# Tasks
-sutory tasks <name>                # SPEC + PLAN → TASKS
-
-# Implement
-sutory implement <name>            # 구현 시작
-sutory implement --agent flutter   # 특정 에이전트 사용
-
-# Verify
-sutory verify <name>               # SPEC 기준 검증
-
-# Utilities
-sutory agents                      # 에이전트 목록
-sutory skills                      # 스킬 목록
-sutory update                      # 프레임워크 업데이트
+```json
+{
+  "language": "ko",
+  "agents": {
+    "default": "backend-python-expert"
+  },
+  "mcp": {
+    "enabled": true,
+    "servers": ["vide"]
+  }
+}
 ```
 
----
+### CLAUDE.md (권장)
 
-## 🎨 SPEC 문서 예시
+프로젝트 루트에 생성하면 vide가 기술 스택을 자동 분석합니다.
 
 ```markdown
-# SPEC: OCR 영수증 인증 시스템
+# CLAUDE.md
+
+## Tech Stack
+
+### Backend
+- Framework: FastAPI 0.104+
+- Database: PostgreSQL 17
+- Cache: Redis 7.2
+
+### Frontend
+- Framework: Flutter 3.24+
+- State: Provider
+```
+
+---
+
+## SPEC Format (EARS)
+
+```markdown
+# SPEC: 기능명
 
 ## Metadata
 - 작성일: 2025-01-17
-- 상태: APPROVED
 - 우선순위: HIGH
+- 언어: ko
 
-## 1. 기능 개요
-사용자가 레스토랑 영수증을 업로드하여 피드 신뢰도를 높인다.
+## Requirements
 
-## 2. Requirements (EARS 형식)
-
-### REQ-001: 영수증 업로드
-**WHEN** 사용자가 피드 작성 시 영수증 이미지를 업로드하면
-**THEN** 시스템은 Document AI로 텍스트를 추출해야 한다 (SHALL)
+### REQ-001: 요구사항 제목
+**WHEN** 사용자가 X를 하면
+**THEN** 시스템은 Y를 해야 한다 (SHALL)
 
 #### Acceptance Criteria
-- [ ] JPG, PNG 형식 지원
-- [ ] 최대 10MB
-- [ ] 3초 이내 처리
-
-### REQ-002: 영수증 검증
-**WHERE** 영수증 날짜가 24시간 이내이고
-**AND** 레스토랑 이름이 일치하면
-**THEN** 시스템은 인증 성공으로 처리해야 한다 (SHALL)
+- [ ] 검증 기준 1
+- [ ] 검증 기준 2
 ```
 
 ---
 
-## 🌟 철학
+## Agents
 
-### "Your story becomes code"
-
-1. **대화로 시작** - AI와 자연어 대화로 요구사항 수집
-2. **문서로 명확화** - SPEC으로 모호함 제거
-3. **계획으로 구체화** - 기술 스택과 아키텍처 결정
-4. **작업으로 분해** - 실행 가능한 단위로 쪼개기
-5. **코드로 구현** - 당신의 스타일로 자동 생성
-
----
-
-## 🤝 기여하기
-
-sutory는 오픈소스 프로젝트입니다.
-
-- 이슈 제보: [GitHub Issues](https://github.com/your-username/sutory/issues)
-- PR 환영: [Contributing Guide](CONTRIBUTING.md)
+| Agent | 역할 |
+|-------|------|
+| Specification Agent | SPEC 작성 (6개 질문 Q&A) |
+| Planning Agent | PLAN 생성 (15개 섹션) |
+| Task Agent | TASKS 분해 (Phase별) |
+| Backend Python Expert | Python/FastAPI 구현 |
+| Frontend Flutter Expert | Flutter/Dart 구현 |
+| Database PostgreSQL Expert | PostgreSQL/PostGIS 설계 |
+| Quality Reviewer | 코드 품질 검증 |
 
 ---
 
-## 📄 라이선스
+## Example
 
-MIT License
+### 1. SPEC 작성
+
+```bash
+$ vide spec "푸시 알림 설정"
+
+Q1. Why: 불필요한 알림으로 인한 앱 이탈 방지
+Q2. Who: 전체 사용자
+Q3. What: 6개 카테고리별 ON/OFF 토글
+Q4. How: P95 < 500ms, Redis 캐싱
+Q5. When: 3일 소요
+Q6. With What: FastAPI + Flutter + PostgreSQL + FCM
+
+✅ .vide/specs/push-notification-settings.md
+```
+
+### 2. PLAN 생성
+
+```bash
+$ vide plan "푸시 알림 설정"
+
+✅ .vide/plans/push-notification-settings.md
+
+- 3 Phases (Backend → Frontend → FCM)
+- 24시간 (3일)
+- $0.50/월 추가 비용
+- 기존 스택 100% 재사용
+```
+
+### 3. TASKS 생성
+
+```bash
+$ vide tasks "푸시 알림 설정"
+
+✅ .vide/tasks/push-notification-settings.md
+
+- 19개 Task
+- Phase 1: Backend (8개)
+- Phase 2: Frontend (8개)
+- Phase 3: FCM 연동 (3개)
+- 의존성 그래프 포함
+```
+
+### 4. 구현
+
+```bash
+$ vide run "Task 1-1"
+
+1. TASKS 문서 읽기
+2. 구현 가이드 생성: .vide/guides/task-1-1.md
+3. 코드 작성: backend/alembic/versions/xxxx_add_notification_settings.py
+4. 검증: alembic upgrade head
+5. Task 상태 업데이트: ⬜ → ✅
+```
+
+### 5. 분석
+
+```bash
+$ vide analyze --code
+
+📊 코드 품질 점수: 85/100 (B+)
+
+주요 발견사항:
+- 높은 복잡도: src/service.py (CC: 15)
+- 낮은 응집도: src/utils.py
+
+개선 제안:
+1. src/service.py를 3개 모듈로 분리
+2. Dependency Injection 패턴 도입
+
+리포트: .vide/reports/analysis-2025-11-17.md
+```
+
+### 6. UI 미리보기
+
+```bash
+$ vide ui "로그인 페이지"
+
+┌─────────────────────────────────────────┐
+│               Welcome                    │
+├─────────────────────────────────────────┤
+│         ┌─────────────────────┐          │
+│  Email: │                     │          │
+│         └─────────────────────┘          │
+│         ┌─────────────────────┐          │
+│  Pass:  │                     │          │
+│         └─────────────────────┘          │
+│         ┌─────────────────────┐          │
+│         │       Login         │          │
+│         └─────────────────────┘          │
+└─────────────────────────────────────────┘
+
+필요한 컴포넌트:
+- Header.tsx
+- LoginForm.tsx
+- Input.tsx
+- Button.tsx
+```
 
 ---
 
-## 🙏 영감을 받은 프로젝트
+## Best Practices
 
-- [GitHub spec-kit](https://github.com/github/spec-kit)
-- [Fission-AI OpenSpec](https://github.com/Fission-AI/OpenSpec)
-- [MoAI ADK](https://github.com/modu-ai/moai-adk)
+### 1. CLAUDE.md 작성
+
+프로젝트 루트에 기술 스택 문서를 작성하면 vide가 기존 기술을 재사용합니다.
+
+### 2. Phase별 실행
+
+전체 실행(`--all`) 대신 Phase별로 실행하고 검증하는 것을 권장합니다.
+
+```bash
+vide run --phase 1  # Backend
+# 검증 후
+vide run --phase 2  # Frontend
+# 검증 후
+vide run --phase 3  # 통합
+```
+
+### 3. Acceptance Criteria 확인
+
+각 Task의 Acceptance Criteria를 반드시 확인하고 모두 통과해야 완료입니다.
 
 ---
 
-**Made with ❤️ by grove**
+## Framework Structure
 
-"당신의 이야기가 코드가 됩니다"
+```
+vide/
+├── bin/vide                # CLI
+├── agents/                 # 7개 Agent
+├── templates/              # 4개 템플릿
+├── mcp/dist/               # MCP 서버 (38개 도구)
+└── .claude/commands/       # 슬래시 명령어 (8개)
+```
+
+---
+
+## Requirements
+
+- Node.js 18+
+- npm 7+
+- Claude Code (슬래시 명령어 사용 시)
+
+---
+
+## License
+
+MIT
+
+---
+
+## Links
+
+- Repository: [GitHub](https://github.com/su-record/vide)
+- Issues: [GitHub Issues](https://github.com/su-record/vide/issues)
+- MCP Server: [@su-record/hi-ai](https://github.com/su-record/hi-ai)

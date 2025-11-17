@@ -1,14 +1,15 @@
 {
-  "name": "sutory",
+  "name": "@su-record/vide",
   "version": "0.1.0",
-  "description": "Your story becomes code - SPEC-driven AI coding framework",
+  "description": "Vibe Development - SPEC-driven AI coding framework with MCP integration",
   "main": "cli/index.js",
   "bin": {
-    "sutory": "./bin/sutory"
+    "vide": "./bin/vide"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "./scripts/install.sh"
+    "build": "cd mcp && npm install && npm run build",
+    "postinstall": "node scripts/install-mcp.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "ai",
@@ -25,9 +26,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/sutory.git"
+    "url": "https://github.com/su-record/vide.git"
   },
-  "homepage": "https://github.com/your-username/sutory#readme",
+  "homepage": "https://github.com/su-record/vide#readme",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -40,6 +41,8 @@
     "skills/",
     "templates/",
     "scripts/",
+    "mcp/dist/",
+    "mcp/package.json",
     "README.md",
     "LICENSE"
   ]

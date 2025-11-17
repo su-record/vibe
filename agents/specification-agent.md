@@ -67,7 +67,7 @@ created: 2025-01-17
 
 ---
 
-### 2단계: 5개 핵심 질문 (5W1H)
+### 2단계: 6개 핵심 질문 (5W1H + Tech Stack)
 
 #### Q1. Why (목적)
 ```markdown
@@ -148,6 +148,40 @@ Q5. 언제까지 필요한가요?
   - [ ] 높음
   - [ ] 보통
   - [ ] 낮음
+```
+
+#### Q6. With What (기술 스택)
+```markdown
+Q6. 어떤 기술 스택을 사용하나요?
+
+**🔍 프로젝트 컨텍스트 확인 (최우선):**
+  1) CLAUDE.md 파일이 있나요? → 읽어서 기술 스택 파악
+  2) package.json / pyproject.toml / pubspec.yaml 확인
+  3) 프로젝트 루트의 README.md 확인
+
+**기존 기술 스택:**
+  - 백엔드: [ ] FastAPI  [ ] Django  [ ] Express  [ ] Spring  [ ] 기타: ______
+  - 프론트엔드: [ ] React  [ ] Vue  [ ] Flutter  [ ] Next.js  [ ] 기타: ______
+  - 데이터베이스: [ ] PostgreSQL  [ ] MySQL  [ ] MongoDB  [ ] Redis  [ ] 기타: ______
+  - 인프라: [ ] AWS  [ ] GCP  [ ] Azure  [ ] Vercel  [ ] 기타: ______
+
+**새로운 기술 도입:**
+  - 이 기능을 위해 새 라이브러리/서비스가 필요한가요?
+    예시: [ ] FCM (푸시 알림)  [ ] Redis (캐싱)  [ ] WebSocket (실시간)
+
+  - 기존 기술로 구현 가능한가요?
+    → 가능하면 새 기술 도입 지양 (복잡도 증가)
+
+**외부 API/서비스 연동:**
+  - [ ] 결제 (Stripe, Toss)
+  - [ ] 지도 (Google Maps, Naver Maps)
+  - [ ] AI (OpenAI, Google Gemini)
+  - [ ] 기타: __________
+
+**제약사항:**
+  - 비용 한도: ____________
+  - 특정 기술 금지: ____________
+  - 성능 요구사항: ____________
 ```
 
 ---
