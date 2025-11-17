@@ -25,7 +25,7 @@ try {
   console.log('📝 실행:', command);
   console.log('');
 
-  execSync(command, { stdio: 'inherit' });
+  execSync(command, { stdio: 'pipe' });
 
   console.log('\n✅ vibe MCP 서버 등록 완료!');
   console.log('');
@@ -38,11 +38,27 @@ try {
   console.log('');
 
 } catch (error) {
+  // stderr 출력 확인
+  const stderrOutput = error.stderr ? error.stderr.toString() : '';
+  const stdoutOutput = error.stdout ? error.stdout.toString() : '';
+  const fullOutput = error.message + stderrOutput + stdoutOutput;
+
+  // "already exists" 에러는 성공으로 간주
+  if (fullOutput.includes('already exists')) {
+    console.log('ℹ️  vibe MCP 서버가 이미 등록되어 있습니다.');
+    console.log('');
+    console.log('다음 명령어로 확인:');
+    console.log('  claude mcp list');
+    console.log('');
+    process.exit(0);
+  }
+
   console.error('❌ MCP 서버 등록 실패');
   console.error('');
   console.error('수동 등록 방법:');
   console.error(`  claude mcp add vibe node "${mcpIndexPath}"`);
   console.error('');
   console.error('에러:', error.message);
+  if (stderrOutput) console.error('stderr:', stderrOutput);
   process.exit(1);
 }
