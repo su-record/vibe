@@ -112,24 +112,6 @@ Use these commands directly in Claude Code:
 
 ---
 
-## Project Structure
-
-```
-your-project/
-├── .vibe/
-│   ├── config.json          # Configuration (language, agents, MCP)
-│   ├── constitution.md      # Project development principles
-│   ├── specs/               # SPEC documents (EARS format)
-│   ├── plans/               # Technical implementation plans
-│   ├── tasks/               # Phase-based task breakdowns
-│   ├── guides/              # Auto-generated implementation guides
-│   ├── reports/             # Analysis and verification reports
-│   └── diagrams/            # Generated diagrams (Mermaid)
-└── CLAUDE.md                # Tech stack documentation (recommended)
-```
-
----
-
 ## MCP Integration
 
 Vibe includes 38 MCP tools across multiple categories:
