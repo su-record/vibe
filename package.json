@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Vibe - SPEC-driven AI coding framework with MCP integration",
   "main": "cli/index.js",
   "bin": {
