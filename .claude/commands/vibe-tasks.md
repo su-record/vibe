@@ -1,11 +1,11 @@
-# /vide.tasks
+# /vibe.tasks
 
 TASKS 문서를 작성합니다 (Task Agent).
 
 ## Usage
 
 ```
-/vide.tasks "기능명"
+/vibe.tasks "기능명"
 ```
 
 ## Description
@@ -14,10 +14,10 @@ PLAN 문서를 분석하여 Phase별 구체적인 작업 목록(TASKS)을 생성
 
 ## Process
 
-1. **PLAN 문서 읽기**: `.vide/plans/{기능명}.md` 분석
+1. **PLAN 문서 읽기**: `.vibe/plans/{기능명}.md` 분석
 2. **Phase별 Task 분해**:
    - Phase 1: Backend 개발 (DB, API, Service, Repository, Tests)
-   - Phase 2: Frontend 개발 (Model, Service, Provider, UI, Tests)
+   - Phase 2: Frontend 개발 (Model, Service, Proviber, UI, Tests)
    - Phase 3: 통합 및 테스트 (FCM, E2E)
 3. **각 Task마다 정의**:
    - 상태 (⬜ 대기 / 🟡 진행 중 / ✅ 완료)
@@ -33,16 +33,16 @@ PLAN 문서를 분석하여 Phase별 구체적인 작업 목록(TASKS)을 생성
 
 ## Agent
 
-`~/.vide/agents/task-agent.md`
+`~/.vibe/agents/task-agent.md`
 
 ## Input
 
-- `.vide/plans/{기능명}.md` (PLAN 문서)
-- `.vide/specs/{기능명}.md` (SPEC 문서)
+- `.vibe/plans/{기능명}.md` (PLAN 문서)
+- `.vibe/specs/{기능명}.md` (SPEC 문서)
 
 ## Output
 
-- `.vide/tasks/{기능명}.md` - TASKS 문서
+- `.vibe/tasks/{기능명}.md` - TASKS 문서
 - 총 Task 수
 - 의존성 그래프
 - Phase별 체크리스트
@@ -50,7 +50,7 @@ PLAN 문서를 분석하여 Phase별 구체적인 작업 목록(TASKS)을 생성
 ## Example
 
 ```
-/vide.tasks "푸시 알림 설정 기능"
+/vibe.tasks "푸시 알림 설정 기능"
 ```
 
 **결과:**
@@ -61,12 +61,12 @@ PLAN 문서를 분석하여 Phase별 구체적인 작업 목록(TASKS)을 생성
 ## Next Step
 
 ```
-/vide.run "Task 1-1"
+/vibe.run "Task 1-1"
 ```
 
 또는:
 
 ```
-/vide.run --phase 1  # Phase 1 전체 실행
-/vide.run --all      # 모든 Task 실행
+/vibe.run --phase 1  # Phase 1 전체 실행
+/vibe.run --all      # 모든 Task 실행
 ```

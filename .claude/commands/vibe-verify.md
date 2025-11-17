@@ -1,11 +1,11 @@
-# /vide.verify
+# /vibe.verify
 
 구현된 코드를 SPEC 요구사항에 대해 검증합니다.
 
 ## Usage
 
 ```
-/vide.verify "기능명"
+/vibe.verify "기능명"
 ```
 
 ## Description
@@ -14,7 +14,7 @@ SPEC 문서의 모든 요구사항(REQ-001~N)과 비기능 요구사항(NFR)을 
 
 ## Process
 
-1. **SPEC 문서 읽기**: `.vide/specs/{기능명}.md`
+1. **SPEC 문서 읽기**: `.vibe/specs/{기능명}.md`
 2. **TASKS 문서 확인**: 모든 Task가 ✅ 완료 상태인지 확인
 3. **요구사항별 검증**:
    - REQ-001: 6개 알림 카테고리 정의 → DB 스키마 확인
@@ -27,7 +27,7 @@ SPEC 문서의 모든 요구사항(REQ-001~N)과 비기능 요구사항(NFR)을 
    - 성능 (Performance): Locust로 부하 테스트
    - 보안 (Security): JWT 인증 확인
    - 접근성 (Accessibility): WCAG AA 기준
-5. **검증 리포트 생성**: `.vide/reports/{기능명}-verification.md`
+5. **검증 리포트 생성**: `.vibe/reports/{기능명}-verification.md`
 
 ## Agent
 
@@ -35,13 +35,13 @@ Quality Reviewer Agent
 
 ## Input
 
-- `.vide/specs/{기능명}.md` (SPEC 문서)
-- `.vide/tasks/{기능명}.md` (TASKS 문서)
+- `.vibe/specs/{기능명}.md` (SPEC 문서)
+- `.vibe/tasks/{기능명}.md` (TASKS 문서)
 - 구현된 코드 (backend/, frontend/)
 
 ## Output
 
-- `.vide/reports/{기능명}-verification.md` - 검증 리포트
+- `.vibe/reports/{기능명}-verification.md` - 검증 리포트
 - 통과/실패 요구사항 목록
 - 성능 테스트 결과
 - 개선 제안 사항
@@ -79,7 +79,7 @@ Quality Reviewer Agent
 ## Example
 
 ```
-/vide.verify "푸시 알림 설정 기능"
+/vibe.verify "푸시 알림 설정 기능"
 ```
 
 **결과:**
@@ -114,10 +114,10 @@ Quality Reviewer Agent
 
 검증 통과 시:
 ```
-vide deploy "푸시 알림 설정 기능"  # Staging 배포
+vibe deploy "푸시 알림 설정 기능"  # Staging 배포
 ```
 
 검증 실패 시:
 ```
-/vide.run "Task X-Y"  # 실패한 Task 재구현
+/vibe.run "Task X-Y"  # 실패한 Task 재구현
 ```

@@ -1,13 +1,13 @@
-# /vide.run
+# /vibe.run
 
 Task를 구현합니다 (Implementation Agent).
 
 ## Usage
 
 ```
-/vide.run "Task 1-1"           # 특정 Task 실행
-/vide.run --phase 1            # Phase 1 전체 실행
-/vide.run --all                # 모든 Task 실행
+/vibe.run "Task 1-1"           # 특정 Task 실행
+/vibe.run --phase 1            # Phase 1 전체 실행
+/vibe.run --all                # 모든 Task 실행
 ```
 
 ## Description
@@ -17,7 +17,7 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 ## Process
 
 ### 1️⃣ Task 정보 읽기
-- `.vide/tasks/{기능명}.md`에서 Task 찾기
+- `.vibe/tasks/{기능명}.md`에서 Task 찾기
 - Task 메타데이터 확인:
   - 담당 Agent (Backend Python Expert / Frontend Flutter Expert)
   - 예상 시간
@@ -26,7 +26,7 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
   - Acceptance Criteria
 
 ### 2️⃣ 구현 가이드 생성
-- `.vide/guides/task-{N}-{M}.md` 생성
+- `.vibe/guides/task-{N}-{M}.md` 생성
 - 포함 내용:
   - 목표 (Goal)
   - 파일 경로 (Files to Create/Modify)
@@ -38,8 +38,8 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 ### 3️⃣ 코드 구현
 - 구현 가이드에 따라 실제 파일 생성/수정
 - 담당 Agent의 스킬 적용:
-  - Backend Python Expert: `~/.vide/agents/backend-python-expert.md`
-  - Frontend Flutter Expert: `~/.vide/agents/frontend-flutter-expert.md`
+  - Backend Python Expert: `~/.vibe/agents/backend-python-expert.md`
+  - Frontend Flutter Expert: `~/.vibe/agents/frontend-flutter-expert.md`
 - TRUST 5 원칙 준수:
   - Test-first (Contract Testing)
   - Readable (명확한 코드)
@@ -68,13 +68,13 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 
 ## Input
 
-- `.vide/tasks/{기능명}.md` (TASKS 문서)
-- `.vide/plans/{기능명}.md` (PLAN 참고)
-- `.vide/specs/{기능명}.md` (SPEC 참고)
+- `.vibe/tasks/{기능명}.md` (TASKS 문서)
+- `.vibe/plans/{기능명}.md` (PLAN 참고)
+- `.vibe/specs/{기능명}.md` (SPEC 참고)
 
 ## Output
 
-- `.vide/guides/task-{N}-{M}.md` - 구현 가이드
+- `.vibe/guides/task-{N}-{M}.md` - 구현 가이드
 - 실제 코드 파일 (생성/수정)
 - TASKS 문서 업데이트 (상태: ✅ 완료)
 
@@ -83,7 +83,7 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 ### 개별 Task 실행
 
 ```
-/vide.run "Task 1-1"
+/vibe.run "Task 1-1"
 ```
 
 **동작:**
@@ -92,7 +92,7 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
    - 담당: Backend Python Expert
    - 내용: DB 마이그레이션 파일 작성
    - 예상 시간: 30분
-3. 구현 가이드 생성: `.vide/guides/task-1-1.md`
+3. 구현 가이드 생성: `.vibe/guides/task-1-1.md`
 4. 코드 작성: `backend/alembic/versions/xxxx_add_notification_settings.py`
 5. 검증: `alembic upgrade head` 실행
 6. Task 상태 업데이트: ⬜ → ✅
@@ -100,7 +100,7 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 ### Phase 실행
 
 ```
-/vide.run --phase 1
+/vibe.run --phase 1
 ```
 
 **동작:**
@@ -111,7 +111,7 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 ### 전체 실행
 
 ```
-/vide.run --all
+/vibe.run --all
 ```
 
 **동작:**
@@ -142,5 +142,5 @@ Task 완료 후:
 - 다음 Task 실행 또는 Phase 완료 확인
 - 모든 Task 완료 시:
   ```
-  /vide.verify "푸시 알림 설정 기능"
+  /vibe.verify "푸시 알림 설정 기능"
   ```

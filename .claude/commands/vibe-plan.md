@@ -1,11 +1,11 @@
-# /vide.plan
+# /vibe.plan
 
 PLAN 문서를 작성합니다 (Planning Agent).
 
 ## Usage
 
 ```
-/vide.plan "기능명"
+/vibe.plan "기능명"
 ```
 
 ## Description
@@ -14,7 +14,7 @@ SPEC 문서를 분석하여 기술 구현 계획(PLAN)을 작성합니다.
 
 ## Process
 
-1. **SPEC 문서 읽기**: `.vide/specs/{기능명}.md` 분석
+1. **SPEC 문서 읽기**: `.vibe/specs/{기능명}.md` 분석
 2. **프로젝트 컨텍스트 파악**:
    - `CLAUDE.md` 읽기 (기술 스택 확인)
    - `package.json` / `pyproject.toml` / `pubspec.yaml` 확인
@@ -38,16 +38,16 @@ SPEC 문서를 분석하여 기술 구현 계획(PLAN)을 작성합니다.
 
 ## Agent
 
-`~/.vide/agents/planning-agent.md`
+`~/.vibe/agents/planning-agent.md`
 
 ## Input
 
-- `.vide/specs/{기능명}.md` (SPEC 문서)
+- `.vibe/specs/{기능명}.md` (SPEC 문서)
 - `CLAUDE.md` (프로젝트 기술 스택)
 
 ## Output
 
-- `.vide/plans/{기능명}.md` - PLAN 문서
+- `.vibe/plans/{기능명}.md` - PLAN 문서
 - 예상 공수 (시간/일)
 - 예상 비용 ($)
 - Phase별 마일스톤
@@ -55,7 +55,7 @@ SPEC 문서를 분석하여 기술 구현 계획(PLAN)을 작성합니다.
 ## Example
 
 ```
-/vide.plan "푸시 알림 설정 기능"
+/vibe.plan "푸시 알림 설정 기능"
 ```
 
 **결과:**
@@ -66,5 +66,5 @@ SPEC 문서를 분석하여 기술 구현 계획(PLAN)을 작성합니다.
 ## Next Step
 
 ```
-/vide.tasks "푸시 알림 설정 기능"
+/vibe.tasks "푸시 알림 설정 기능"
 ```

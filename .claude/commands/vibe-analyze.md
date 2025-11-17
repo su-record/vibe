@@ -1,14 +1,14 @@
-# /vide.analyze
+# /vibe.analyze
 
 프로젝트를 분석합니다 (코드 품질, 아키텍처, 의존성).
 
 ## Usage
 
 ```
-/vide.analyze
-/vide.analyze --code
-/vide.analyze --deps
-/vide.analyze --arch
+/vibe.analyze
+/vibe.analyze --code
+/vibe.analyze --deps
+/vibe.analyze --arch
 ```
 
 ## Process
@@ -17,7 +17,7 @@
 
 사용자가 지정한 옵션에 따라 분석 범위를 결정합니다:
 
-- **기본** (`/vide.analyze`): 전체 분석 (코드 + 의존성 + 아키텍처)
+- **기본** (`/vibe.analyze`): 전체 분석 (코드 + 의존성 + 아키텍처)
 - **--code**: 코드 품질 분석만
 - **--deps**: 의존성 분석만
 - **--arch**: 아키텍처 분석만
@@ -42,7 +42,7 @@
 
 ### 3. 분석 리포트 생성
 
-`.vide/reports/analysis-{date}.md` 파일에 분석 결과 저장:
+`.vibe/reports/analysis-{date}.md` 파일에 분석 결과 저장:
 
 ```markdown
 # 프로젝트 분석 리포트
@@ -85,7 +85,7 @@
 ## Example
 
 ```
-User: /vide.analyze --code
+User: /vibe.analyze --code
 
 Claude: 코드 품질 분석을 시작합니다...
 
@@ -108,11 +108,11 @@ Claude: 코드 품질 분석을 시작합니다...
 2. src/utils.py의 관련 없는 함수 분리
 3. Dependency Injection 패턴 도입
 
-상세 리포트: .vide/reports/analysis-2025-11-17.md
+상세 리포트: .vibe/reports/analysis-2025-11-17.md
 ```
 
 ## Notes
 
 - MCP 서버(`@su-record/hi-ai`)가 설치되어 있어야 합니다
 - 대규모 프로젝트는 분석에 시간이 걸릴 수 있습니다 (1-5분)
-- 분석 결과는 `.vide/reports/` 폴더에 저장됩니다
+- 분석 결과는 `.vibe/reports/` 폴더에 저장됩니다

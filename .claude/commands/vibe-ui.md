@@ -1,12 +1,12 @@
-# /vide.ui
+# /vibe.ui
 
 UI를 ASCII 아트로 미리보기합니다.
 
 ## Usage
 
 ```
-/vide.ui "로그인 페이지"
-/vide.ui "대시보드" --layout grid
+/vibe.ui "로그인 페이지"
+/vibe.ui "대시보드" --layout grid
 ```
 
 ## Process
@@ -86,7 +86,7 @@ src/
 ## Example
 
 ```
-User: /vide.ui "대시보드 페이지 - 헤더, 사이드바, 메인 콘텐츠 (3개 카드), 푸터"
+User: /vibe.ui "대시보드 페이지 - 헤더, 사이드바, 메인 콘텐츠 (3개 카드), 푸터"
 
 Claude: 대시보드 UI 미리보기를 생성합니다...
 
@@ -118,7 +118,7 @@ Claude: 대시보드 UI 미리보기를 생성합니다...
 - Responsive: 모바일에서는 1열로 변경
 
 다음 단계:
-  vide spec "대시보드 페이지"
+  vibe spec "대시보드 페이지"
 ```
 
 ## Notes

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * vide CLI
+ * vibe CLI
  * Vibe Development - SPEC-driven AI coding framework
  */
 
@@ -10,7 +10,7 @@ const fs = require('fs');
 
 // 명령어 목록
 const commands = {
-  init: 'Initialize vide in current project',
+  init: 'Initialize vibe in current project',
   spec: 'Create/manage SPEC documents',
   plan: 'Create technical implementation plan',
   tasks: 'Break down SPEC into actionable tasks',
@@ -30,13 +30,13 @@ const command = args[0];
 // 도움말 출력
 function showHelp() {
   console.log(`
-📖 vide - Your story becomes code
+📖 vibe - Your story becomes code
 
 Usage:
-  vide <command> [options]
+  vibe <command> [options]
 
 Commands:
-  init                           Initialize vide in current project
+  init                           Initialize vibe in current project
   spec <name>                    Create SPEC through 6-question Q&A
   plan <name>                    Create implementation plan from SPEC
   tasks <name>                   Generate tasks from SPEC + PLAN
@@ -57,57 +57,57 @@ Commands:
   help                           Show this message
 
 Workflow:
-  1. vide spec "기능명"              → SPEC 작성 (Q&A)
-  2. vide plan "기능명"              → PLAN 작성 (기술 계획)
-  3. vide tasks "기능명"             → TASKS 생성 (19개 Task)
-  4. vide run "Task 1-1"             → Task 구현 (가이드 생성 + 코드 작성)
-  5. vide verify "기능명"            → SPEC 검증
+  1. vibe spec "기능명"              → SPEC 작성 (Q&A)
+  2. vibe plan "기능명"              → PLAN 작성 (기술 계획)
+  3. vibe tasks "기능명"             → TASKS 생성 (19개 Task)
+  4. vibe run "Task 1-1"             → Task 구현 (가이드 생성 + 코드 작성)
+  5. vibe verify "기능명"            → SPEC 검증
 
 Examples:
-  $ vide init
-  $ vide story create "푸시 알림 설정"
-  $ vide plan "푸시 알림 설정"
-  $ vide tasks "푸시 알림 설정"
-  $ vide run "Task 1-1"              # 개별 Task 실행
-  $ vide run --phase 1               # Phase 1 전체 실행
-  $ vide run --all                   # 전체 실행
+  $ vibe init
+  $ vibe story create "푸시 알림 설정"
+  $ vibe plan "푸시 알림 설정"
+  $ vibe tasks "푸시 알림 설정"
+  $ vibe run "Task 1-1"              # 개별 Task 실행
+  $ vibe run --phase 1               # Phase 1 전체 실행
+  $ vibe run --all                   # 전체 실행
 
 More info:
-  https://github.com/your-username/vide
+  https://github.com/your-username/vibe
   `);
 }
 
 // 버전 정보
 function showVersion() {
   const packageJson = require('../package.json');
-  console.log(`vide v${packageJson.version}`);
+  console.log(`vibe v${packageJson.version}`);
 }
 
 // 프로젝트 초기화
 function init() {
-  const videDir = path.join(process.cwd(), '.vide');
+  const vibeDir = path.join(process.cwd(), '.vibe');
 
-  if (fs.existsSync(videDir)) {
-    console.log('❌ .vide/ 폴더가 이미 존재합니다.');
+  if (fs.existsSync(vibeDir)) {
+    console.log('❌ .vibe/ 폴더가 이미 존재합니다.');
     return;
   }
 
   // 폴더 생성
-  fs.mkdirSync(videDir);
-  fs.mkdirSync(path.join(videDir, 'specs'));
-  fs.mkdirSync(path.join(videDir, 'plans'));
-  fs.mkdirSync(path.join(videDir, 'tasks'));
+  fs.mkdirSync(vibeDir);
+  fs.mkdirSync(path.join(vibeDir, 'specs'));
+  fs.mkdirSync(path.join(vibeDir, 'plans'));
+  fs.mkdirSync(path.join(vibeDir, 'tasks'));
 
   // constitution.md 템플릿 복사
   const templatePath = path.join(__dirname, '../templates/constitution-template.md');
-  const constitutionPath = path.join(videDir, 'constitution.md');
+  const constitutionPath = path.join(vibeDir, 'constitution.md');
 
   if (fs.existsSync(templatePath)) {
     fs.copyFileSync(templatePath, constitutionPath);
   }
 
   // config.json 생성 (언어 설정 포함)
-  const configPath = path.join(videDir, 'config.json');
+  const configPath = path.join(vibeDir, 'config.json');
   const config = {
     language: 'ko',  // 기본 한국어
     agents: {
@@ -125,10 +125,10 @@ function init() {
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
   console.log(`
-✅ vide 초기화 완료!
+✅ vibe 초기화 완료!
 
 생성된 구조:
-  .vide/
+  .vibe/
   ├── config.json       # 프로젝트 설정 (언어: 한국어)
   ├── constitution.md    # 프로젝트 원칙
   ├── specs/            # SPEC 문서들
@@ -136,10 +136,10 @@ function init() {
   └── tasks/            # 작업 목록들
 
 언어 변경:
-  .vide/config.json에서 "language"를 "en" 또는 "ko"로 변경
+  .vibe/config.json에서 "language"를 "en" 또는 "ko"로 변경
 
 다음 단계:
-  vide story create "기능명"  - 새 기능 스토리 작성
+  vibe story create "기능명"  - 새 기능 스토리 작성
   `);
 }
 
@@ -215,7 +215,7 @@ switch (command) {
     showHelp();
     break;
 
-  // vide run 명령어 (새로운 구현 워크플로우)
+  // vibe run 명령어 (새로운 구현 워크플로우)
   case 'run':
     handleRunCommand(args.slice(1));
     break;
@@ -233,22 +233,22 @@ switch (command) {
 
   default:
     console.log(`❌ 알 수 없는 명령어: ${command}`);
-    console.log('사용법을 보려면: vide help');
+    console.log('사용법을 보려면: vibe help');
     process.exit(1);
 }
 
-// vide run 명령어 핸들러
+// vibe run 명령어 핸들러
 function handleRunCommand(args) {
   const option = args[0];
 
   if (!option) {
     console.log(`
-❌ 사용법: vide run <task-id> | --phase <N> | --all
+❌ 사용법: vibe run <task-id> | --phase <N> | --all
 
 예시:
-  vide run "Task 1-1"        # 특정 Task 실행
-  vide run --phase 1         # Phase 1 전체 실행
-  vide run --all             # 모든 Task 실행
+  vibe run "Task 1-1"        # 특정 Task 실행
+  vibe run --phase 1         # Phase 1 전체 실행
+  vibe run --all             # 모든 Task 실행
     `);
     return;
   }
@@ -260,7 +260,7 @@ function handleRunCommand(args) {
 
 Claude Code에 다음과 같이 요청하세요:
 
-  "vide run --all 실행해줘. TASKS 문서의 의존성 순서대로 19개 Task를 모두 구현해줘."
+  "vibe run --all 실행해줘. TASKS 문서의 의존성 순서대로 19개 Task를 모두 구현해줘."
 
 작업 순서:
   Phase 1 (Backend) → Task 1-1 ~ 1-8
@@ -276,7 +276,7 @@ Claude Code에 다음과 같이 요청하세요:
   if (option === '--phase') {
     const phaseNumber = args[1];
     if (!phaseNumber) {
-      console.log(`❌ Phase 번호를 지정하세요: vide run --phase <1|2|3>`);
+      console.log(`❌ Phase 번호를 지정하세요: vibe run --phase <1|2|3>`);
       return;
     }
 
@@ -285,7 +285,7 @@ Claude Code에 다음과 같이 요청하세요:
 
 Claude Code에 다음과 같이 요청하세요:
 
-  "vide run --phase ${phaseNumber} 실행해줘. TASKS 문서의 Phase ${phaseNumber} Task들을 순차적으로 구현해줘."
+  "vibe run --phase ${phaseNumber} 실행해줘. TASKS 문서의 Phase ${phaseNumber} Task들을 순차적으로 구현해줘."
 
 Phase ${phaseNumber} 작업 목록:
   ${getPhaseTaskList(phaseNumber)}
@@ -302,16 +302,16 @@ Phase ${phaseNumber} 작업 목록:
 
 Claude Code에 다음과 같이 요청하세요:
 
-  "vide run '${taskId}' 실행해줘. 다음 순서로 진행해줘:
+  "vibe run '${taskId}' 실행해줘. 다음 순서로 진행해줘:
 
   1. TASKS 문서에서 '${taskId}' 찾기
-  2. 구현 가이드 생성 (.vide/guides/${taskId}.md)
+  2. 구현 가이드 생성 (.vibe/guides/${taskId}.md)
   3. 가이드에 따라 코드 구현
   4. Acceptance Criteria 검증
   5. Task 상태를 ✅ 완료로 업데이트"
 
 구현 가이드 생성 위치:
-  .vide/guides/${taskId.replace(/\s+/g, '-').toLowerCase()}.md
+  .vibe/guides/${taskId.replace(/\s+/g, '-').toLowerCase()}.md
 
 검증 명령어는 TASKS 문서 참고
   `);
