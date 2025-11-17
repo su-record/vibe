@@ -1,0 +1,212 @@
+#!/usr/bin/env node
+
+/**
+ * sutory CLI
+ * Your story becomes code
+ */
+
+const path = require('path');
+const fs = require('fs');
+
+// 명령어 목록
+const commands = {
+  init: 'Initialize sutory in current project',
+  story: 'Create/manage SPEC documents',
+  plan: 'Create technical implementation plan',
+  tasks: 'Break down SPEC into actionable tasks',
+  implement: 'Start implementation with AI agents',
+  verify: 'Verify implementation against SPEC',
+  agents: 'List available agents',
+  skills: 'List installed skills',
+  update: 'Update sutory framework',
+  help: 'Show help message'
+};
+
+const args = process.argv.slice(2);
+const command = args[0];
+
+// 도움말 출력
+function showHelp() {
+  console.log(`
+📖 sutory - Your story becomes code
+
+Usage:
+  sutory <command> [options]
+
+Commands:
+  init                           Initialize sutory in current project
+  story create <name>            Create new SPEC through Q&A
+  story list                     List all SPECs
+  story show <name>              Show SPEC content
+  plan <name>                    Create implementation plan from SPEC
+  tasks <name>                   Generate tasks from SPEC + PLAN
+  implement <name> [--agent]     Start implementation
+  verify <name>                  Verify against SPEC requirements
+  agents                         List available agents
+  skills                         List installed skills
+  update                         Update sutory framework
+  help                           Show this message
+
+Examples:
+  $ sutory init
+  $ sutory story create "User Authentication"
+  $ sutory plan "User Authentication"
+  $ sutory implement "User Authentication" --agent python
+
+More info:
+  https://github.com/your-username/sutory
+  `);
+}
+
+// 버전 정보
+function showVersion() {
+  const packageJson = require('../package.json');
+  console.log(`sutory v${packageJson.version}`);
+}
+
+// 프로젝트 초기화
+function init() {
+  const sutoryDir = path.join(process.cwd(), '.sutory');
+
+  if (fs.existsSync(sutoryDir)) {
+    console.log('❌ .sutory/ 폴더가 이미 존재합니다.');
+    return;
+  }
+
+  // 폴더 생성
+  fs.mkdirSync(sutoryDir);
+  fs.mkdirSync(path.join(sutoryDir, 'specs'));
+  fs.mkdirSync(path.join(sutoryDir, 'plans'));
+  fs.mkdirSync(path.join(sutoryDir, 'tasks'));
+
+  // constitution.md 템플릿 복사
+  const templatePath = path.join(__dirname, '../templates/constitution-template.md');
+  const constitutionPath = path.join(sutoryDir, 'constitution.md');
+
+  if (fs.existsSync(templatePath)) {
+    fs.copyFileSync(templatePath, constitutionPath);
+  }
+
+  // config.json 생성 (언어 설정 포함)
+  const configPath = path.join(sutoryDir, 'config.json');
+  const config = {
+    language: 'ko',  // 기본 한국어
+    agents: {
+      default: 'backend-python-expert'
+    },
+    mcp: {
+      enabled: true,
+      servers: ['hi-ai', 'context-7']
+    },
+    quality: {
+      strict: true,
+      autoVerify: true
+    }
+  };
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+  console.log(`
+✅ sutory 초기화 완료!
+
+생성된 구조:
+  .sutory/
+  ├── config.json       # 프로젝트 설정 (언어: 한국어)
+  ├── constitution.md    # 프로젝트 원칙
+  ├── specs/            # SPEC 문서들
+  ├── plans/            # 기술 계획들
+  └── tasks/            # 작업 목록들
+
+언어 변경:
+  .sutory/config.json에서 "language"를 "en" 또는 "ko"로 변경
+
+다음 단계:
+  sutory story create "기능명"  - 새 기능 스토리 작성
+  `);
+}
+
+// 에이전트 목록
+function listAgents() {
+  const agentsDir = path.join(__dirname, '../agents');
+  const agents = fs.readdirSync(agentsDir).filter(f => f.endsWith('.md'));
+
+  console.log('\n🤖 사용 가능한 에이전트:\n');
+  agents.forEach((agent, i) => {
+    const name = agent.replace('.md', '');
+    console.log(`  ${i + 1}. ${name}`);
+  });
+  console.log('');
+}
+
+// 스킬 목록
+function listSkills() {
+  const skillsDir = path.join(__dirname, '../skills');
+  const categories = fs.readdirSync(skillsDir).filter(f => {
+    return fs.statSync(path.join(skillsDir, f)).isDirectory();
+  });
+
+  console.log('\n📚 설치된 스킬:\n');
+  categories.forEach(category => {
+    const skills = fs.readdirSync(path.join(skillsDir, category))
+      .filter(f => f.endsWith('.md'));
+    console.log(`  ${category}/`);
+    skills.forEach(skill => {
+      console.log(`    - ${skill.replace('.md', '')}`);
+    });
+  });
+  console.log('');
+}
+
+// Claude Code와 통합 (추후 구현)
+function delegateToClaudeCode(command, args) {
+  console.log(`
+⚠️  이 명령어는 Claude Code와 통합이 필요합니다.
+
+지금은 수동으로 Claude Code를 열고 다음과 같이 요청하세요:
+
+  "${command} ${args.join(' ')}"
+
+향후 업데이트에서 자동화될 예정입니다.
+  `);
+}
+
+// 메인 라우터
+switch (command) {
+  case 'init':
+    init();
+    break;
+
+  case 'agents':
+    listAgents();
+    break;
+
+  case 'skills':
+    listSkills();
+    break;
+
+  case 'version':
+  case '-v':
+  case '--version':
+    showVersion();
+    break;
+
+  case 'help':
+  case '-h':
+  case '--help':
+  case undefined:
+    showHelp();
+    break;
+
+  // Claude Code 위임이 필요한 명령어들
+  case 'story':
+  case 'plan':
+  case 'tasks':
+  case 'implement':
+  case 'verify':
+    delegateToClaudeCode(command, args.slice(1));
+    break;
+
+  default:
+    console.log(`❌ 알 수 없는 명령어: ${command}`);
+    console.log('사용법을 보려면: sutory help');
+    process.exit(1);
+}

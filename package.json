@@ -1,0 +1,46 @@
+{
+  "name": "sutory",
+  "version": "0.1.0",
+  "description": "Your story becomes code - SPEC-driven AI coding framework",
+  "main": "cli/index.js",
+  "bin": {
+    "sutory": "./bin/sutory"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "./scripts/install.sh"
+  },
+  "keywords": [
+    "ai",
+    "coding",
+    "spec-driven",
+    "claude",
+    "mcp",
+    "framework",
+    "spec-kit",
+    "requirements",
+    "user-story"
+  ],
+  "author": "grove",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/sutory.git"
+  },
+  "homepage": "https://github.com/your-username/sutory#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "files": [
+    "bin/",
+    "cli/",
+    "agents/",
+    "skills/",
+    "templates/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ]
+}
