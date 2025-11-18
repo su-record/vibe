@@ -8,19 +8,9 @@
 const path = require('path');
 const fs = require('fs');
 
-// 명령어 목록
+// 명령어 목록 (Claude Code 전용)
 const commands = {
-  init: 'Initialize vibe in current project',
-  spec: 'Create/manage SPEC documents',
-  plan: 'Create technical implementation plan',
-  tasks: 'Break down SPEC into actionable tasks',
-  run: 'Run task implementation (with auto guide generation)',
-  verify: 'Verify implementation against SPEC',
-  analyze: 'Analyze project (code quality, architecture, dependencies)',
-  ui: 'Preview UI with ASCII art',
-  diagram: 'Generate diagrams (architecture, ERD, flow)',
-  agents: 'List available agents',
-  skills: 'List installed skills',
+  init: 'Initialize vibe in current project (MCP registration)',
   help: 'Show help message'
 };
 
@@ -30,50 +20,40 @@ const command = args[0];
 // 도움말 출력
 function showHelp() {
   console.log(`
-📖 vibe - Your story becomes code
+📖 Vibe - SPEC-driven AI coding framework for Claude Code
 
-Usage:
-  vibe <command> [options]
+⚠️  Vibe는 Claude Code 전용 프레임워크입니다.
+   터미널에서는 초기화만 가능합니다.
 
-Commands:
-  init                           Initialize vibe in current project
-  spec <name>                    Create SPEC through 6-question Q&A
-  plan <name>                    Create implementation plan from SPEC
-  tasks <name>                   Generate tasks from SPEC + PLAN
-  run <task-id>                  Run task (auto-guide + implement)
-  run --phase <N>                Run all tasks in Phase N
-  run --all                      Run all tasks sequentially
-  verify <name>                  Verify against SPEC requirements
+터미널 명령어:
+  vibe init                  Initialize vibe in current project
+  vibe init <project-name>   Create new project with vibe
+  vibe help                  Show this message
 
-  analyze                        Analyze project (code/deps/arch)
-  analyze --code                 Code quality analysis
-  analyze --deps                 Dependency analysis
-  ui <description>               Preview UI with ASCII art
-  diagram                        Generate architecture diagram
-  diagram --er                   Generate ERD diagram
-
-  agents                         List available agents
-  skills                         List installed skills
-  help                           Show this message
+Claude Code 슬래시 커맨드 (프로젝트 내에서 사용):
+  /vibe.spec "기능명"       SPEC 작성 (대화형 Q&A)
+  /vibe.plan "기능명"       기술 계획 작성
+  /vibe.tasks "기능명"      Task 목록 생성
+  /vibe.run "Task 1-1"      Task 구현
+  /vibe.verify "기능명"     검증
+  /vibe.analyze             프로젝트 분석
+  /vibe.ui "설명"           UI 미리보기
+  /vibe.diagram --er        다이어그램 생성
 
 Workflow:
-  1. vibe spec "기능명"              → SPEC 작성 (Q&A)
-  2. vibe plan "기능명"              → PLAN 작성 (기술 계획)
-  3. vibe tasks "기능명"             → TASKS 생성 (19개 Task)
-  4. vibe run "Task 1-1"             → Task 구현 (가이드 생성 + 코드 작성)
-  5. vibe verify "기능명"            → SPEC 검증
+  1. 터미널에서 vibe init 실행 (MCP 서버 등록)
+  2. Claude Code에서 슬래시 커맨드 사용
+     /vibe.spec "푸시 알림 설정"
+     /vibe.plan "푸시 알림 설정"
+     /vibe.tasks "푸시 알림 설정"
+     /vibe.run "Task 1-1"
+     /vibe.verify "푸시 알림 설정"
 
-Examples:
-  $ vibe init
-  $ vibe story create "푸시 알림 설정"
-  $ vibe plan "푸시 알림 설정"
-  $ vibe tasks "푸시 알림 설정"
-  $ vibe run "Task 1-1"              # 개별 Task 실행
-  $ vibe run --phase 1               # Phase 1 전체 실행
-  $ vibe run --all                   # 전체 실행
+설치:
+  npm install -g @su-record/vibe
 
-More info:
-  https://github.com/your-username/vibe
+문서:
+  https://github.com/su-record/vibe/wiki
   `);
 }
 
@@ -84,12 +64,43 @@ function showVersion() {
 }
 
 // 프로젝트 초기화
-function init() {
-  const vibeDir = path.join(process.cwd(), '.vibe');
+function init(projectName) {
+  let projectRoot = process.cwd();
+  let isNewProject = false;
+
+  // 새 프로젝트 생성 케이스
+  if (projectName) {
+    projectRoot = path.join(process.cwd(), projectName);
+
+    if (fs.existsSync(projectRoot)) {
+      console.log(`❌ 폴더가 이미 존재합니다: ${projectName}/`);
+      return;
+    }
+
+    console.log(`📁 새 프로젝트 생성: ${projectName}/\n`);
+    fs.mkdirSync(projectRoot, { recursive: true });
+    isNewProject = true;
+  }
+
+  const vibeDir = path.join(projectRoot, '.vibe');
 
   if (fs.existsSync(vibeDir)) {
     console.log('❌ .vibe/ 폴더가 이미 존재합니다.');
     return;
+  }
+
+  // MCP 서버 등록 먼저 체크 및 실행
+  console.log('🔧 MCP 서버 확인 중...\n');
+  try {
+    const { execSync } = require('child_process');
+
+    // MCP 서버 등록 스크립트 실행
+    const installScriptPath = path.join(__dirname, '../scripts/install-mcp.js');
+    execSync(`node "${installScriptPath}"`, { stdio: 'inherit' });
+
+  } catch (error) {
+    console.log('\n⚠️  MCP 서버 등록 중 오류가 발생했습니다.');
+    console.log('   계속 진행합니다...\n');
   }
 
   // 폴더 생성
@@ -97,6 +108,28 @@ function init() {
   fs.mkdirSync(path.join(vibeDir, 'specs'));
   fs.mkdirSync(path.join(vibeDir, 'plans'));
   fs.mkdirSync(path.join(vibeDir, 'tasks'));
+
+  // .claude/commands 폴더 생성 및 슬래시 커맨드 복사
+  const claudeDir = path.join(projectRoot, '.claude');
+  const commandsDir = path.join(claudeDir, 'commands');
+
+  if (!fs.existsSync(claudeDir)) {
+    fs.mkdirSync(claudeDir);
+  }
+  if (!fs.existsSync(commandsDir)) {
+    fs.mkdirSync(commandsDir);
+  }
+
+  // 슬래시 커맨드 파일들 복사
+  const sourceCommandsDir = path.join(__dirname, '../.claude/commands');
+  if (fs.existsSync(sourceCommandsDir)) {
+    const commandFiles = fs.readdirSync(sourceCommandsDir);
+    commandFiles.forEach(file => {
+      const sourcePath = path.join(sourceCommandsDir, file);
+      const destPath = path.join(commandsDir, file);
+      fs.copyFileSync(sourcePath, destPath);
+    });
+  }
 
   // constitution.md 템플릿 복사
   const templatePath = path.join(__dirname, '../templates/constitution-template.md');
@@ -115,7 +148,7 @@ function init() {
     },
     mcp: {
       enabled: true,
-      servers: ['hi-ai', 'context-7']
+      servers: ['vibe']
     },
     quality: {
       strict: true,
@@ -127,7 +160,11 @@ function init() {
   console.log(`
 ✅ vibe 초기화 완료!
 
-생성된 구조:
+${isNewProject ? `프로젝트 위치:
+  ${projectRoot}/
+
+` : ''}생성된 구조:
+  .claude/commands/     # 슬래시 커맨드 (8개)
   .vibe/
   ├── config.json       # 프로젝트 설정 (언어: 한국어)
   ├── constitution.md    # 프로젝트 원칙
@@ -135,71 +172,25 @@ function init() {
   ├── plans/            # 기술 계획들
   └── tasks/            # 작업 목록들
 
+MCP 서버:
+  ✓ vibe MCP 서버 등록 완료 (38개 도구)
+  확인: claude mcp list
+
 언어 변경:
   .vibe/config.json에서 "language"를 "en" 또는 "ko"로 변경
 
 다음 단계:
-  vibe story create "기능명"  - 새 기능 스토리 작성
+  ${isNewProject ? `1. cd ${projectName}\n  2. ` : ''}Claude Code에서 슬래시 커맨드 사용:
+     /vibe.spec "기능명"
+     /vibe.plan "기능명"
   `);
 }
 
-// 에이전트 목록
-function listAgents() {
-  const agentsDir = path.join(__dirname, '../agents');
-  const agents = fs.readdirSync(agentsDir).filter(f => f.endsWith('.md'));
-
-  console.log('\n🤖 사용 가능한 에이전트:\n');
-  agents.forEach((agent, i) => {
-    const name = agent.replace('.md', '');
-    console.log(`  ${i + 1}. ${name}`);
-  });
-  console.log('');
-}
-
-// 스킬 목록
-function listSkills() {
-  const skillsDir = path.join(__dirname, '../skills');
-  const categories = fs.readdirSync(skillsDir).filter(f => {
-    return fs.statSync(path.join(skillsDir, f)).isDirectory();
-  });
-
-  console.log('\n📚 설치된 스킬:\n');
-  categories.forEach(category => {
-    const skills = fs.readdirSync(path.join(skillsDir, category))
-      .filter(f => f.endsWith('.md'));
-    console.log(`  ${category}/`);
-    skills.forEach(skill => {
-      console.log(`    - ${skill.replace('.md', '')}`);
-    });
-  });
-  console.log('');
-}
-
-// Claude Code와 통합 (추후 구현)
-function delegateToClaudeCode(command, args) {
-  console.log(`
-⚠️  이 명령어는 Claude Code와 통합이 필요합니다.
-
-지금은 수동으로 Claude Code를 열고 다음과 같이 요청하세요:
-
-  "${command} ${args.join(' ')}"
-
-향후 업데이트에서 자동화될 예정입니다.
-  `);
-}
 
 // 메인 라우터
 switch (command) {
   case 'init':
-    init();
-    break;
-
-  case 'agents':
-    listAgents();
-    break;
-
-  case 'skills':
-    listSkills();
+    init(args[1]);
     break;
 
   case 'version':
@@ -215,124 +206,20 @@ switch (command) {
     showHelp();
     break;
 
-  // vibe run 명령어 (새로운 구현 워크플로우)
-  case 'run':
-    handleRunCommand(args.slice(1));
-    break;
-
-  // Claude Code 위임이 필요한 명령어들
-  case 'spec':
-  case 'plan':
-  case 'tasks':
-  case 'verify':
-  case 'analyze':
-  case 'ui':
-  case 'diagram':
-    delegateToClaudeCode(command, args.slice(1));
-    break;
-
   default:
-    console.log(`❌ 알 수 없는 명령어: ${command}`);
-    console.log('사용법을 보려면: vibe help');
+    console.log(`
+❌ 알 수 없는 명령어: ${command}
+
+⚠️  Vibe는 Claude Code 전용 프레임워크입니다.
+   터미널에서는 'init'만 사용 가능합니다.
+
+Claude Code에서 슬래시 커맨드를 사용하세요:
+  /vibe.spec "기능명"
+  /vibe.plan "기능명"
+  /vibe.tasks "기능명"
+  /vibe.run "Task 1-1"
+
+사용법: vibe help
+    `);
     process.exit(1);
-}
-
-// vibe run 명령어 핸들러
-function handleRunCommand(args) {
-  const option = args[0];
-
-  if (!option) {
-    console.log(`
-❌ 사용법: vibe run <task-id> | --phase <N> | --all
-
-예시:
-  vibe run "Task 1-1"        # 특정 Task 실행
-  vibe run --phase 1         # Phase 1 전체 실행
-  vibe run --all             # 모든 Task 실행
-    `);
-    return;
-  }
-
-  // --all 플래그 처리
-  if (option === '--all') {
-    console.log(`
-🚀 전체 Task 실행 시작...
-
-Claude Code에 다음과 같이 요청하세요:
-
-  "vibe run --all 실행해줘. TASKS 문서의 의존성 순서대로 19개 Task를 모두 구현해줘."
-
-작업 순서:
-  Phase 1 (Backend) → Task 1-1 ~ 1-8
-  Phase 2 (Frontend) → Task 2-1 ~ 2-8
-  Phase 3 (FCM) → Task 3-1 ~ 3-3
-
-⚠️  주의: 전체 실행은 약 24시간 소요됩니다.
-    `);
-    return;
-  }
-
-  // --phase 플래그 처리
-  if (option === '--phase') {
-    const phaseNumber = args[1];
-    if (!phaseNumber) {
-      console.log(`❌ Phase 번호를 지정하세요: vibe run --phase <1|2|3>`);
-      return;
-    }
-
-    console.log(`
-🚀 Phase ${phaseNumber} 실행 시작...
-
-Claude Code에 다음과 같이 요청하세요:
-
-  "vibe run --phase ${phaseNumber} 실행해줘. TASKS 문서의 Phase ${phaseNumber} Task들을 순차적으로 구현해줘."
-
-Phase ${phaseNumber} 작업 목록:
-  ${getPhaseTaskList(phaseNumber)}
-
-예상 시간: ${getPhaseEstimatedTime(phaseNumber)}
-    `);
-    return;
-  }
-
-  // 특정 Task 실행
-  const taskId = option;
-  console.log(`
-🚀 Task 실행: "${taskId}"
-
-Claude Code에 다음과 같이 요청하세요:
-
-  "vibe run '${taskId}' 실행해줘. 다음 순서로 진행해줘:
-
-  1. TASKS 문서에서 '${taskId}' 찾기
-  2. 구현 가이드 생성 (.vibe/guides/${taskId}.md)
-  3. 가이드에 따라 코드 구현
-  4. Acceptance Criteria 검증
-  5. Task 상태를 ✅ 완료로 업데이트"
-
-구현 가이드 생성 위치:
-  .vibe/guides/${taskId.replace(/\s+/g, '-').toLowerCase()}.md
-
-검증 명령어는 TASKS 문서 참고
-  `);
-}
-
-// Phase별 Task 목록 (하드코딩 - 추후 TASKS 파일에서 파싱)
-function getPhaseTaskList(phase) {
-  const phases = {
-    '1': 'Task 1-1 ~ 1-8 (Backend 개발)',
-    '2': 'Task 2-1 ~ 2-8 (Frontend 개발)',
-    '3': 'Task 3-1 ~ 3-3 (FCM 연동 및 테스트)'
-  };
-  return phases[phase] || '알 수 없는 Phase';
-}
-
-// Phase별 예상 시간
-function getPhaseEstimatedTime(phase) {
-  const times = {
-    '1': '8시간 (1일)',
-    '2': '12시간 (1.5일)',
-    '3': '4시간 (0.5일)'
-  };
-  return times[phase] || '알 수 없음';
 }

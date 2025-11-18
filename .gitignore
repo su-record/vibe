@@ -1,2 +1,19 @@
-mcp/node_modules/
+# Dependencies
+node_modules/
+
+# Build outputs
+mcp/dist/
+*.tgz
+
+# Lock files (npm package - ignore for libraries)
+package-lock.json
+
+# Docs
 wiki/
+
+# OS files
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

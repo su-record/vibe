@@ -15,6 +15,7 @@ Transform natural language requirements into production-ready code through struc
 
 - **Claude Code Optimized**: Built specifically for Claude Code with native slash commands and MCP integration
 - **SPEC-driven Development**: Structured Q&A process using EARS (Easy Approach to Requirements Syntax)
+- **BDD + Contract Testing**: AI-optimized testing with Gherkin features and API contract validation (🚧 v0.2.0)
 - **Automated Planning**: Generate technical implementation plans with architecture, cost analysis, and timeline
 - **Task Decomposition**: Break down features into phase-based, dependency-aware tasks
 - **Powered by @su-record/hi-ai**: 38 MCP tools combining skills and hi-ai for code analysis, quality validation, and insights
@@ -29,89 +30,76 @@ Transform natural language requirements into production-ready code through struc
 npm install -g @su-record/vibe
 ```
 
-This automatically:
-- Installs the Vibe CLI
-- Registers the MCP server with 38 development tools
-- Enables slash commands for Claude Code
+This installs:
+- Vibe CLI (for initialization only)
+- @su-record/hi-ai MCP server (38 development tools)
+- Agents, Skills, Templates for Claude Code
+
+⚠️ **Important**: Vibe is a **Claude Code-exclusive** framework. Terminal commands are limited to `init` only. All development commands are available as **slash commands** within Claude Code.
 
 ---
 
 ## Quick Start
 
+### 1. Initialize Project (Terminal)
+
 ```bash
-# Initialize project
+# Option 1: Initialize in existing project
 vibe init
 
-# Create specification through guided Q&A
-vibe spec "push notification settings"
+# Option 2: Create new project
+vibe init my-new-project
+cd my-new-project
+```
 
-# Generate technical plan
-vibe plan "push notification settings"
+This will:
+- Register MCP server for the project directory
+- Create `.vibe/` folder structure
+- Install agents, skills, and templates
 
-# Decompose into tasks
-vibe tasks "push notification settings"
+### 2. Use Slash Commands (Claude Code)
 
-# Implement tasks
-vibe run "Task 1-1"
+Open Claude Code in your project directory and use slash commands:
 
-# Verify implementation
-vibe verify "push notification settings"
+```
+/vibe.spec "push notification settings"
+/vibe.plan "push notification settings"
+/vibe.tasks "push notification settings"
+/vibe.run "Task 1-1"
+/vibe.verify "push notification settings"
 ```
 
 ---
 
 ## Command Reference
 
-### Core Workflow Commands
+### Terminal Commands (Initialization Only)
 
 | Command | Description | Example |
 |---------|-------------|---------|
 | `vibe init` | Initialize Vibe in current project | `vibe init` |
-| `vibe spec <name>` | Create SPEC through 6-question Q&A | `vibe spec "user authentication"` |
-| `vibe plan <name>` | Generate technical implementation plan | `vibe plan "user authentication"` |
-| `vibe tasks <name>` | Break down into executable tasks | `vibe tasks "user authentication"` |
-| `vibe run <task>` | Execute specific task with auto-generated guide | `vibe run "Task 1-1"` |
-| `vibe run --phase <N>` | Execute all tasks in phase N | `vibe run --phase 1` |
-| `vibe run --all` | Execute all tasks sequentially | `vibe run --all` |
-| `vibe verify <name>` | Verify implementation against SPEC | `vibe verify "user authentication"` |
+| `vibe init <name>` | Create new project with Vibe | `vibe init my-app` |
+| `vibe help` | Show help message | `vibe help` |
 
-### Analysis & Tools
+### Claude Code Slash Commands (Development)
+
+#### Core Workflow
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `vibe analyze` | Comprehensive project analysis | `vibe analyze` |
-| `vibe analyze --code` | Code quality and complexity analysis | `vibe analyze --code` |
-| `vibe analyze --deps` | Dependency and security audit | `vibe analyze --deps` |
-| `vibe analyze --arch` | Architecture and coupling analysis | `vibe analyze --arch` |
-| `vibe ui <description>` | Generate ASCII UI mockup | `vibe ui "login form"` |
-| `vibe diagram` | Generate architecture diagram (Mermaid) | `vibe diagram` |
-| `vibe diagram --er` | Generate ERD diagram | `vibe diagram --er` |
-| `vibe diagram --flow` | Generate flowchart | `vibe diagram --flow` |
+| `/vibe.spec <name>` | Create SPEC through natural conversation (auto-detects project type, suggests tech stack & design) | `/vibe.spec "user authentication"` |
+| `/vibe.plan <name>` | Generate technical implementation plan | `/vibe.plan "user authentication"` |
+| `/vibe.tasks <name>` | Break down into executable tasks | `/vibe.tasks "user authentication"` |
+| `/vibe.run <task>` | Execute specific task with auto-generated guide | `/vibe.run "Task 1-1"` |
+| `/vibe.verify <name>` | Verify implementation against SPEC | `/vibe.verify "user authentication"` |
 
-### Utility Commands
+#### Analysis & Tools
 
-| Command | Description |
-|---------|-------------|
-| `vibe agents` | List available AI agents |
-| `vibe skills` | List installed skill modules |
-| `vibe help` | Show command help |
-
----
-
-## Slash Commands (Claude Code)
-
-Use these commands directly in Claude Code:
-
-| Command | Description |
-|---------|-------------|
-| `/vibe.spec "feature"` | Create specification |
-| `/vibe.plan "feature"` | Generate plan |
-| `/vibe.tasks "feature"` | Generate tasks |
-| `/vibe.run "Task 1-1"` | Execute task |
-| `/vibe.verify "feature"` | Verify implementation |
-| `/vibe.analyze` | Analyze project |
-| `/vibe.ui "description"` | Preview UI |
-| `/vibe.diagram --er` | Generate diagram |
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/vibe.analyze` | Comprehensive project analysis | `/vibe.analyze` |
+| `/vibe.ui <description>` | Generate ASCII UI mockup | `/vibe.ui "login form"` |
+| `/vibe.diagram --er` | Generate diagrams (architecture, ERD, flow) | `/vibe.diagram --er` |
 
 ---
 
@@ -145,11 +133,19 @@ Vibe includes 38 MCP tools across multiple categories:
 - `recall_memory` - Retrieve stored information
 - `auto_save_context` - Automatic context checkpointing
 
+**MCP Server Registration:**
+
+The MCP server is automatically registered when you run `vibe init` in your project. This registers the server **locally for your project only**, not globally.
+
 **Verify MCP server:**
 ```bash
+# Run this in your project directory
 claude mcp list
-# vibe: node /path/to/vibe/mcp/dist/index.js - ✓ Connected
+# Expected output:
+# vibe: node /path/to/@su-record/vibe/node_modules/@su-record/hi-ai/dist/index.js - ✓ Connected
 ```
+
+**Important:** Each project that uses Vibe must run `vibe init` to register the MCP server for that specific project.
 
 ---
 
@@ -239,71 +235,142 @@ Vibe uses EARS (Easy Approach to Requirements Syntax):
 
 ## Workflow Example
 
-### 1. Create Specification
+### 1. Initialize Project (Terminal)
 
 ```bash
-$ vibe spec "push notification settings"
+$ vibe init
+🔧 MCP 서버 확인 중...
+✅ vibe MCP 서버 등록 완료
+✅ vibe 초기화 완료!
 
-Q1. Why: Reduce app churn from excessive notifications
-Q2. Who: All users (100k+ DAU)
-Q3. What: 6-category notification toggle system
-Q4. How: P95 < 500ms, Redis caching, rate limiting
-Q5. When: 3 days (24 hours development time)
-Q6. With What: FastAPI + Flutter + PostgreSQL + FCM
-
-✅ Created: .vibe/specs/push-notification-settings.md
+생성된 구조:
+  .vibe/
+  ├── config.json
+  ├── constitution.md
+  ├── specs/
+  ├── plans/
+  └── tasks/
 ```
 
-### 2. Generate Plan
+### 2. Create Specification (Claude Code)
 
-```bash
-$ vibe plan "push notification settings"
+**Note**: Examples shown in English. Claude responds in the language set in `.vibe/config.json` (default: Korean).
 
-✅ Created: .vibe/plans/push-notification-settings.md
+```
+User: /vibe.spec "push notification settings"
+
+Claude (Specification Agent):
+[Analyzing source code]
+- Backend: Python (FastAPI)
+- Frontend: Flutter 3.24+
+- Database: PostgreSQL 17
+
+Existing project detected! Is this tech stack correct?
+
+User: Yes
+
+Claude:
+What types of notifications do you want to manage?
+
+User: Comments, likes, follows, announcements, events, marketing
+
+Claude:
+Do you need just ON/OFF toggle for each category, or detailed settings too?
+
+1. ON/OFF only
+2. Detailed settings (time, frequency, etc.)
+3. Both
+
+Or you can describe directly.
+
+User: 1
+
+Claude:
+Which push notification service would you like to use?
+
+1. Firebase Cloud Messaging (FCM) - Free, easy Flutter integration
+2. OneSignal - Multi-platform, dashboard
+3. Custom implementation
+
+Or you can describe directly.
+
+User: We're already using FCM
+
+Claude:
+Great! Which design reference would you like to follow?
+
+1. iOS Settings > Notifications (toggle + grouping)
+2. Slack notification settings (category-based)
+3. Twitter notification settings (simple list)
+
+Or you can describe directly.
+
+User: 1
+
+...
+
+✅ SPEC document created!
+📄 .vibe/specs/push-notification-settings.md
+```
+
+### 3. Generate Plan (Claude Code)
+
+```
+User: /vibe.plan "push notification settings"
+
+Claude (Planning Agent):
+SPEC을 분석하여 기술 계획을 작성하겠습니다.
+
+✅ PLAN 문서 작성 완료!
+📄 .vibe/plans/push-notification-settings.md
 
 Summary:
 - 3 Phases: Backend → Frontend → FCM Integration
 - Timeline: 24 hours (3 days)
 - Cost: +$0.50/month (Redis + FCM)
-- Stack Reuse: 100% existing infrastructure
 ```
 
-### 3. Decompose Tasks
+### 4. Decompose Tasks (Claude Code)
 
-```bash
-$ vibe tasks "push notification settings"
+```
+User: /vibe.tasks "push notification settings"
 
-✅ Created: .vibe/tasks/push-notification-settings.md
+Claude (Task Agent):
+PLAN을 기반으로 Task를 생성하겠습니다.
+
+✅ TASKS 문서 작성 완료!
+📄 .vibe/tasks/push-notification-settings.md
 
 Task Breakdown:
 - Total: 19 tasks
 - Phase 1 (Backend): 8 tasks
 - Phase 2 (Frontend): 8 tasks
 - Phase 3 (FCM): 3 tasks
-- Dependency graph included
 ```
 
-### 4. Execute Tasks
+### 5. Execute Tasks (Claude Code)
 
-```bash
-$ vibe run "Task 1-1"
+```
+User: /vibe.run "Task 1-1"
 
-Executing: Task 1-1 - Database Migration
+Claude:
+Task 1-1 - Database Migration을 실행하겠습니다.
 
-Steps:
-1. Read task details from .vibe/tasks/push-notification-settings.md
-2. Generate implementation guide: .vibe/guides/task-1-1.md
-3. Execute: Create migration file with 6 columns
-4. Verify: Run `alembic upgrade head`
-5. Update status: ⬜ → ✅
+1. 구현 가이드 생성 (.vibe/guides/task-1-1.md)
+2. Migration 파일 생성
+3. Acceptance Criteria 검증
+4. Task 상태 업데이트
 
 ✅ Task 1-1 completed
 ```
 
-### 5. Code Analysis
+### 6. Code Analysis (Claude Code)
 
-```bash
-$ vibe analyze --code
+```
+User: /vibe.analyze
+
+Claude:
+프로젝트 전체를 분석하겠습니다.
 
 📊 Code Quality Report
 
@@ -318,15 +385,14 @@ Recommendations:
 1. Refactor src/service.py into 3 modules
 2. Apply Dependency Injection pattern
 3. Extract unrelated utilities from src/utils.py
-
-Report saved: .vibe/reports/analysis-2025-11-17.md
 ```
 
-### 6. UI Mockup
+### 7. UI Mockup (Claude Code)
 
-```bash
-$ vibe ui "login form with email, password, and submit button"
+```
+User: /vibe.ui "login form"
 
+Claude:
 ┌─────────────────────────────────────────┐
 │            Welcome Back                  │
 ├─────────────────────────────────────────┤
@@ -346,11 +412,7 @@ $ vibe ui "login form with email, password, and submit button"
 └─────────────────────────────────────────┘
 
 Required Components:
-- Header.tsx (Welcome message)
-- EmailInput.tsx (Email field)
-- PasswordInput.tsx (Password field with masking)
-- Button.tsx (Submit button)
-- LoginForm.tsx (Form container)
+- EmailInput.tsx, PasswordInput.tsx, Button.tsx
 ```
 
 ---
@@ -363,16 +425,16 @@ Create `CLAUDE.md` in your project root to enable automatic tech stack detection
 
 ### 2. Execute Phase by Phase
 
-Instead of `--all`, execute and verify each phase independently:
+Execute and verify each phase independently in Claude Code:
 
-```bash
-vibe run --phase 1  # Backend development
+```
+/vibe.run --phase 1  # Backend development
 # Verify, test, commit
 
-vibe run --phase 2  # Frontend development
+/vibe.run --phase 2  # Frontend development
 # Verify, test, commit
 
-vibe run --phase 3  # Integration
+/vibe.run --phase 3  # Integration
 # Verify, test, commit
 ```
 
@@ -382,12 +444,12 @@ Each task includes acceptance criteria. Ensure all criteria pass before marking 
 
 ### 4. Leverage MCP Tools
 
-Use analysis commands before refactoring:
+Use analysis commands in Claude Code before refactoring:
 
-```bash
-vibe analyze --code      # Identify complexity hotspots
-vibe analyze --deps      # Check for outdated/vulnerable packages
-vibe analyze --arch      # Detect circular dependencies
+```
+/vibe.analyze --code      # Identify complexity hotspots
+/vibe.analyze --deps      # Check for outdated/vulnerable packages
+/vibe.analyze --arch      # Detect circular dependencies
 ```
 
 ---

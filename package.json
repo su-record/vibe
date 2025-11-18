@@ -1,14 +1,13 @@
 {
   "name": "@su-record/vibe",
-  "version": "0.1.3",
-  "description": "Vibe - SPEC-driven AI coding framework with MCP integration",
+  "version": "0.1.7",
+  "description": "Vibe - Claude Code exclusive SPEC-driven AI coding framework",
   "main": "cli/index.js",
   "bin": {
     "vibe": "./bin/vibe"
   },
   "scripts": {
-    "build": "cd mcp && npm install && npm run build",
-    "postinstall": "node scripts/install-mcp.js",
+    "build": "echo \"No build needed - using @su-record/hi-ai\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -32,17 +31,18 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@su-record/hi-ai": "latest"
+  },
   "devDependencies": {},
   "files": [
     "bin/",
     "cli/",
+    ".claude/",
     "agents/",
     "skills/",
     "templates/",
     "scripts/",
-    "mcp/dist/",
-    "mcp/package.json",
     "README.md",
     "LICENSE"
   ]

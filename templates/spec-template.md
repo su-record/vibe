@@ -117,26 +117,83 @@ Response: {...}
 
 ---
 
-## 7. Out of Scope
+## 7. 테스트 전략
+
+### BDD 시나리오 (Gherkin)
+
+**생성 명령어**: `vibe feature "{기능명}"`
+
+```gherkin
+Scenario: {시나리오 제목}
+  Given {전제 조건}
+  When {사용자 행동}
+  Then {예상 결과}
+```
+
+**매핑**:
+- REQ-001 → Scenario 1, 2
+- REQ-002 → Scenario 3
+
+### Contract Tests (API 스키마)
+
+**생성 명령어**: `vibe contract "{기능명}"`
+
+**Backend Contract**:
+```json
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/{resource}",
+    "schema": {JSON Schema}
+  },
+  "response": {
+    "status": 201,
+    "schema": {JSON Schema}
+  }
+}
+```
+
+**Frontend Contract**:
+- Mock 서버로 독립 테스트
+- 응답 스키마 검증 (Zod, JSON Schema)
+
+### 테스트 커버리지 목표
+
+- [ ] BDD: 모든 Acceptance Criteria 커버
+- [ ] Contract: 모든 API 엔드포인트 커버
+- [ ] Unit: 70%+ 커버리지
+- [ ] Integration: 핵심 경로 커버
+
+---
+
+## 8. Out of Scope
 
 - ❌ {제외 항목 1}
 - ❌ {제외 항목 2}
 
 ---
 
-## 8. 검증 체크리스트
+## 9. 검증 체크리스트
 
+### 요구사항
 - [ ] 모든 요구사항이 테스트 가능한가?
 - [ ] SHALL/SHOULD/MAY가 명확한가?
 - [ ] Acceptance Criteria가 구체적인가?
 - [ ] 성능 목표가 측정 가능한가?
 
+### 테스팅
+- [ ] BDD Feature 파일 생성 완료?
+- [ ] Contract 테스트 정의 완료?
+- [ ] Step Definitions 작성 완료?
+- [ ] 테스트 커버리지 목표 달성?
+
 ---
 
-## 9. 승인
+## 10. 승인
 
 - [ ] 사용자 승인
 - [ ] 기술 리뷰 완료
+- [ ] 테스트 계획 승인
 
 승인일: ____________
 승인자: ____________
