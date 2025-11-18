@@ -70,7 +70,13 @@ SPEC 문서를 작성합니다 (Specification Agent).
 
 3. **SPEC 문서 작성**: `.vibe/specs/{기능명}.md` 생성 (EARS 형식)
 
-4. **품질 검증**: TRUST 5 기준 자체 평가
+4. **Gherkin Feature 파일 생성** (BDD):
+   - `.vibe/features/{기능명}.feature` 생성
+   - SPEC의 각 요구사항(REQ-XXX)을 Scenario로 변환
+   - Given-When-Then 형식으로 작성
+   - Acceptance Criteria를 테스트 케이스로 변환
+
+5. **품질 검증**: TRUST 5 기준 자체 평가
 
 ## Agent
 
@@ -79,6 +85,7 @@ SPEC 문서를 작성합니다 (Specification Agent).
 ## Output
 
 - `.vibe/specs/{기능명}.md` - SPEC 문서 (EARS 형식)
+- `.vibe/features/{기능명}.feature` - Gherkin Feature 파일 (BDD)
 - 품질 점수 (0-100점)
 - 개선 제안 사항
 

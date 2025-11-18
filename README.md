@@ -247,9 +247,10 @@ $ vibe init
   .vibe/
   ├── config.json
   ├── constitution.md
-  ├── specs/
-  ├── plans/
-  └── tasks/
+  ├── specs/          # SPEC documents (EARS format)
+  ├── features/       # BDD Feature files (Gherkin)
+  ├── plans/          # Technical plans
+  └── tasks/          # Task breakdowns
 ```
 
 ### 2. Create Specification (Claude Code)
@@ -311,6 +312,7 @@ User: 1
 
 ✅ SPEC document created!
 📄 .vibe/specs/push-notification-settings.md
+📄 .vibe/features/push-notification-settings.feature (BDD scenarios)
 ```
 
 ### 3. Generate Plan (Claude Code)
@@ -326,8 +328,9 @@ SPEC을 분석하여 기술 계획을 작성하겠습니다.
 
 Summary:
 - 3 Phases: Backend → Frontend → FCM Integration
-- Timeline: 24 hours (3 days)
+- Timeline: 28 hours (3.5 days)
 - Cost: +$0.50/month (Redis + FCM)
+- Testing: BDD (pytest-bdd) + Contract Testing (Pact)
 ```
 
 ### 4. Decompose Tasks (Claude Code)
@@ -342,10 +345,10 @@ PLAN을 기반으로 Task를 생성하겠습니다.
 📄 .vibe/tasks/push-notification-settings.md
 
 Task Breakdown:
-- Total: 19 tasks
-- Phase 1 (Backend): 8 tasks
-- Phase 2 (Frontend): 8 tasks
-- Phase 3 (FCM): 3 tasks
+- Total: 23 tasks
+- Phase 1 (Backend): 9 tasks (includes Contract Provider)
+- Phase 2 (Frontend): 9 tasks (includes Contract Consumer)
+- Phase 3 (Integration): 5 tasks (includes BDD Steps + Contract Verification)
 ```
 
 ### 5. Execute Tasks (Claude Code)
@@ -413,6 +416,60 @@ Claude:
 
 Required Components:
 - EmailInput.tsx, PasswordInput.tsx, Button.tsx
+```
+
+---
+
+## BDD & Contract Testing Workflow
+
+Vibe integrates BDD (Behavior-Driven Development) and Contract Testing throughout the development lifecycle:
+
+### Workflow Overview
+
+```
+/vibe.spec "feature"
+  ↓ Generates SPEC (EARS) + Feature file (Gherkin)
+
+/vibe.plan "feature"
+  ↓ Analyzes Feature file, selects BDD tools (pytest-bdd, Pact, etc.)
+
+/vibe.tasks "feature"
+  ↓ Creates Contract Testing tasks (Provider, Consumer, Verification)
+
+/vibe.run "Task X-Y"
+  ↓ Implements test-first (Contract → Step Definitions → Code)
+
+/vibe.verify "feature"
+  ↓ Validates BDD Scenarios + Contract Tests
+```
+
+### Generated Files
+
+- **`.vibe/features/{feature}.feature`** - Gherkin scenarios (Given-When-Then)
+- **`tests/steps/`** - BDD step definitions
+- **`pacts/` or `contracts/`** - Contract test files (Provider/Consumer)
+
+### Testing Tools by Language
+
+| Language | BDD Tool | Contract Testing |
+|----------|----------|------------------|
+| Python | pytest-bdd, behave | Pact Python |
+| JavaScript/TS | cucumber, jest-cucumber | Pact JS |
+| Java/Kotlin | Cucumber JVM | Pact JVM, Spring Cloud Contract |
+| Dart/Flutter | gherkin, flutter_gherkin | Pact Dart |
+
+### Example Feature File
+
+```gherkin
+Feature: Push Notification Settings
+
+  Scenario: User enables comment notifications
+    Given the user is logged in
+    And the notification settings page is displayed
+    When the user toggles "Comments" notification to ON
+    Then the setting should be saved successfully
+    And the API should return status 200
+    And the response time should be less than 500ms
 ```
 
 ---

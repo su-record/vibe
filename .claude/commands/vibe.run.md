@@ -46,7 +46,10 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
   - Backend Python Expert: `~/.vibe/agents/backend-python-expert.md`
   - Frontend Flutter Expert: `~/.vibe/agents/frontend-flutter-expert.md`
 - TRUST 5 원칙 준수:
-  - Test-first (Contract Testing)
+  - **Test-first (BDD/Contract Testing 우선)**
+    - Contract 파일 먼저 작성 (Provider/Consumer)
+    - BDD Step Definitions 작성
+    - Unit Tests 작성
   - Readable (명확한 코드)
   - Unified (일관된 스타일)
   - Secured (보안 고려)
@@ -66,16 +69,19 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 
 | Task | Agent |
 |------|-------|
-| Task 1-1 ~ 1-8 (Backend) | Backend Python Expert |
-| Task 2-1 ~ 2-8 (Frontend) | Frontend Flutter Expert |
+| Task 1-1 ~ 1-9 (Backend + Contract Provider) | Backend Python Expert |
+| Task 2-1 ~ 2-9 (Frontend + Contract Consumer) | Frontend Flutter Expert |
 | Task 3-1 ~ 3-2 (FCM Backend) | Backend Python Expert |
-| Task 3-3 (E2E Test) | QA / Frontend Flutter Expert |
+| Task 3-3 (BDD Step Definitions) | QA / Backend/Frontend Expert |
+| Task 3-4 (Contract Verification) | QA |
+| Task 3-5 (E2E Test) | QA / Frontend Flutter Expert |
 
 ## Input
 
 - `.vibe/tasks/{기능명}.md` (TASKS 문서)
 - `.vibe/plans/{기능명}.md` (PLAN 참고)
 - `.vibe/specs/{기능명}.md` (SPEC 참고)
+- `.vibe/features/{기능명}.feature` (BDD Feature 파일 - Contract Test 매핑용)
 
 ## Output
 
@@ -109,8 +115,8 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 ```
 
 **동작:**
-- Phase 1의 8개 Task 순차 실행
-- Task 1-1 → 1-2 → ... → 1-8
+- Phase 1의 9개 Task 순차 실행
+- Task 1-1 → 1-2 → ... → 1-9 (Contract Provider 포함)
 - 각 Task마다 의존성 확인 후 실행
 
 ### 전체 실행
@@ -120,9 +126,10 @@ TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 
 ```
 
 **동작:**
-- 의존성 그래프에 따라 19개 Task 순차 실행
-- Phase 1 (8개) → Phase 2 (8개) → Phase 3 (3개)
-- 예상 시간: 24시간
+- 의존성 그래프에 따라 23개 Task 순차 실행
+- Phase 1 (9개) → Phase 2 (9개) → Phase 3 (5개)
+- BDD/Contract Testing 포함
+- 예상 시간: 28시간
 
 ## Verification
 

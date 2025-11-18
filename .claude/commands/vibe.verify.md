@@ -20,19 +20,28 @@ SPEC 문서의 모든 요구사항(REQ-001~N)과 비기능 요구사항(NFR)을 
 ## Process
 
 1. **SPEC 문서 읽기**: `.vibe/specs/{기능명}.md`
-2. **TASKS 문서 확인**: 모든 Task가 ✅ 완료 상태인지 확인
-3. **요구사항별 검증**:
+2. **Feature 파일 읽기**: `.vibe/features/{기능명}.feature` (BDD Scenarios)
+3. **TASKS 문서 확인**: 모든 Task가 ✅ 완료 상태인지 확인
+4. **BDD Scenarios 검증**:
+   - Feature 파일의 모든 Scenario 실행
+   - Given-When-Then 각 단계 검증
+   - Step Definitions 실행 결과 확인
+5. **Contract Testing 검증**:
+   - Provider Contract 검증 (Backend)
+   - Consumer Contract 검증 (Frontend)
+   - Contract 일치 여부 확인 (Pact Broker)
+6. **요구사항별 검증**:
    - REQ-001: 6개 알림 카테고리 정의 → DB 스키마 확인
    - REQ-002: 설정 저장 (P95 < 500ms) → 성능 테스트
    - REQ-003: 설정 조회 (P95 < 300ms) → 성능 테스트
    - REQ-004: 알림 필터링 동작 → 통합 테스트
    - REQ-005: 기본 설정 생성 → 유닛 테스트
    - REQ-006: UI 피드백 → 위젯 테스트
-4. **비기능 요구사항 검증**:
+7. **비기능 요구사항 검증**:
    - 성능 (Performance): Locust로 부하 테스트
    - 보안 (Security): JWT 인증 확인
    - 접근성 (Accessibility): WCAG AA 기준
-5. **검증 리포트 생성**: `.vibe/reports/{기능명}-verification.md`
+8. **검증 리포트 생성**: `.vibe/reports/{기능명}-verification.md`
 
 ## Agent
 
@@ -41,8 +50,11 @@ Quality Reviewer Agent
 ## Input
 
 - `.vibe/specs/{기능명}.md` (SPEC 문서)
+- `.vibe/features/{기능명}.feature` (BDD Feature 파일)
 - `.vibe/tasks/{기능명}.md` (TASKS 문서)
 - 구현된 코드 (backend/, frontend/)
+- BDD Step Definitions (tests/steps/, test/bdd/)
+- Contract 파일 (pacts/, contracts/)
 
 ## Output
 
@@ -76,6 +88,8 @@ Quality Reviewer Agent
 - [ ] Trackable: Logging, Monitoring
 
 ### Tests
+- [ ] **BDD Scenarios 모두 통과** (pytest-bdd, behave, cucumber)
+- [ ] **Contract Tests 모두 통과** (Pact, Spring Cloud Contract)
 - [ ] 유닛 테스트 커버리지 > 80%
 - [ ] 통합 테스트 통과
 - [ ] E2E 테스트 통과 (실제 푸시 수신)
@@ -96,6 +110,17 @@ Quality Reviewer Agent
 - **통과**: 12개 ✅
 - **실패**: 0개
 - **품질 점수**: 95/100 (A+)
+
+## BDD Scenarios (5/5 통과)
+✅ Scenario 1: 알림 설정 조회
+✅ Scenario 2: 알림 카테고리 활성화
+✅ Scenario 3: 알림 카테고리 비활성화
+✅ Scenario 4: 기본 설정 생성
+✅ Scenario 5: 설정 저장 응답 시간 검증
+
+## Contract Tests (2/2 통과)
+✅ Provider Contract: Backend API 스키마 검증
+✅ Consumer Contract: Frontend 호출 규약 검증
 
 ## Functional Requirements (6/6 통과)
 ✅ REQ-001: 6개 알림 카테고리 정의

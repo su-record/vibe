@@ -106,6 +106,7 @@ function init(projectName) {
   // 폴더 생성
   fs.mkdirSync(vibeDir);
   fs.mkdirSync(path.join(vibeDir, 'specs'));
+  fs.mkdirSync(path.join(vibeDir, 'features'));
   fs.mkdirSync(path.join(vibeDir, 'plans'));
   fs.mkdirSync(path.join(vibeDir, 'tasks'));
 
@@ -169,6 +170,7 @@ ${isNewProject ? `프로젝트 위치:
   ├── config.json       # 프로젝트 설정 (언어: 한국어)
   ├── constitution.md    # 프로젝트 원칙
   ├── specs/            # SPEC 문서들
+  ├── features/         # BDD Feature 파일들 (Gherkin)
   ├── plans/            # 기술 계획들
   └── tasks/            # 작업 목록들
 

@@ -20,11 +20,12 @@ PLAN 문서를 분석하여 Phase별 구체적인 작업 목록(TASKS)을 생성
 ## Process
 
 1. **PLAN 문서 읽기**: `.vibe/plans/{기능명}.md` 분석
-2. **Phase별 Task 분해**:
-   - Phase 1: Backend 개발 (DB, API, Service, Repository, Tests)
-   - Phase 2: Frontend 개발 (Model, Service, Proviber, UI, Tests)
-   - Phase 3: 통합 및 테스트 (FCM, E2E)
-3. **각 Task마다 정의**:
+2. **Feature 파일 읽기**: `.vibe/features/{기능명}.feature` 확인 (BDD Scenarios)
+3. **Phase별 Task 분해**:
+   - Phase 1: Backend 개발 (DB, API, Service, Repository, Unit Tests, **Contract Provider**)
+   - Phase 2: Frontend 개발 (Model, Service, Provider, UI, Unit Tests, **Contract Consumer**)
+   - Phase 3: 통합 및 테스트 (FCM, E2E, **BDD Step Definitions**, **Contract Verification**)
+4. **각 Task마다 정의**:
    - 상태 (⬜ 대기 / 🟡 진행 중 / ✅ 완료)
    - 담당 Agent
    - 예상 시간
@@ -44,6 +45,7 @@ PLAN 문서를 분석하여 Phase별 구체적인 작업 목록(TASKS)을 생성
 
 - `.vibe/plans/{기능명}.md` (PLAN 문서)
 - `.vibe/specs/{기능명}.md` (SPEC 문서)
+- `.vibe/features/{기능명}.feature` (BDD Feature 파일)
 
 ## Output
 
@@ -59,9 +61,13 @@ PLAN 문서를 분석하여 Phase별 구체적인 작업 목록(TASKS)을 생성
 ```
 
 **결과:**
-- 19개 Task (Phase 1: 8개, Phase 2: 8개, Phase 3: 3개)
+- 23개 Task (Phase 1: 9개, Phase 2: 9개, Phase 3: 5개)
+  - **Phase 1:** DB, API, Service, Repository, Unit Tests, **Contract Provider 정의**
+  - **Phase 2:** Model, Service, Provider, UI, Unit Tests, **Contract Consumer 정의**
+  - **Phase 3:** FCM, E2E, **BDD Step Definitions**, **Contract Verification**
 - 의존성 그래프 포함
 - 각 Task별 Acceptance Criteria
+- BDD Scenarios와 매핑된 Contract Test Tasks
 
 ## Next Step
 
