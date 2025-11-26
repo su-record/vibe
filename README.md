@@ -7,7 +7,7 @@ Transform natural language requirements into production-ready code through struc
 [![npm version](https://img.shields.io/npm/v/@su-record/vibe.svg)](https://www.npmjs.com/package/@su-record/vibe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Smithery Badge](https://smithery.ai/badge/@su-record/hi-ai)](https://smithery.ai/protocol/@su-record/hi-ai)
-[![MCP Tools](https://img.shields.io/badge/MCP_Tools-38-blue.svg)](https://github.com/su-record/hi-ai)
+[![MCP Tools](https://img.shields.io/badge/MCP_Tools-36-blue.svg)](https://github.com/su-record/hi-ai)
 
 ---
 
@@ -18,7 +18,7 @@ Transform natural language requirements into production-ready code through struc
 - **BDD + Contract Testing**: AI-optimized testing with Gherkin features and API contract validation (🚧 v0.2.0)
 - **Automated Planning**: Generate technical implementation plans with architecture, cost analysis, and timeline
 - **Task Decomposition**: Break down features into phase-based, dependency-aware tasks
-- **Powered by @su-record/hi-ai**: 38 MCP tools combining skills and hi-ai for code analysis, quality validation, and insights
+- **Powered by @su-record/hi-ai**: 36 MCP tools combining skills and hi-ai for code analysis, quality validation, and insights
 - **Multi-language Support**: English and Korean interface
 - **AI Agent System**: 7 specialized agents for different tech stacks
 
@@ -32,7 +32,7 @@ npm install -g @su-record/vibe
 
 This installs:
 - Vibe CLI (for initialization only)
-- @su-record/hi-ai MCP server (38 development tools)
+- @su-record/hi-ai MCP server (36 development tools)
 - Agents, Skills, Templates for Claude Code
 
 ⚠️ **Important**: Vibe is a **Claude Code-exclusive** framework. Terminal commands are limited to `init` only. All development commands are available as **slash commands** within Claude Code.
@@ -106,7 +106,7 @@ Open Claude Code in your project directory and use slash commands:
 
 ## MCP Integration
 
-Vibe includes 40 MCP tools across multiple categories (2 new tools added):
+Vibe includes 36 MCP tools across multiple categories (2 new tools added in v1.4.0):
 
 ### Code Analysis
 - `analyze_complexity` - Cyclomatic and cognitive complexity metrics
