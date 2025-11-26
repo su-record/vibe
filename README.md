@@ -98,6 +98,7 @@ Open Claude Code in your project directory and use slash commands:
 | Command | Description | Example |
 |---------|-------------|---------|
 | `/vibe.analyze` | Comprehensive project analysis | `/vibe.analyze` |
+| **`/vibe.reason`** 🆕 | **Apply 9-step reasoning framework to complex problems** | **`/vibe.reason "debug issue"`** |
 | `/vibe.ui <description>` | Generate ASCII UI mockup | `/vibe.ui "login form"` |
 | `/vibe.diagram --er` | Generate diagrams (architecture, ERD, flow) | `/vibe.diagram --er` |
 
@@ -105,7 +106,7 @@ Open Claude Code in your project directory and use slash commands:
 
 ## MCP Integration
 
-Vibe includes 38 MCP tools across multiple categories:
+Vibe includes 40 MCP tools across multiple categories (2 new tools added):
 
 ### Code Analysis
 - `analyze_complexity` - Cyclomatic and cognitive complexity metrics
@@ -120,10 +121,12 @@ Vibe includes 38 MCP tools across multiple categories:
 - `create_thinking_chain` - Generate step-by-step reasoning
 - `step_by_step_analysis` - Detailed problem breakdown
 - `analyze_problem` - Structured problem analysis
+- **`apply_reasoning_framework`** 🆕 - **9-step reasoning framework for complex problems**
 
 ### Quality & Standards
 - `apply_quality_rules` - Apply coding standards
 - `suggest_improvements` - Code improvement recommendations
+- **`enhance_prompt_gemini`** 🆕 - **Enhance prompts using Gemini API strategies (Few-Shot, Output Format, etc.)**
 
 ### UI & Design
 - `preview_ui_ascii` - Generate ASCII UI mockups
@@ -222,9 +225,10 @@ Vibe uses EARS (Easy Approach to Requirements Syntax):
 
 | Agent | Specialization | Tech Stack |
 |-------|----------------|------------|
-| Specification Agent | Requirements gathering through 6-question framework | Language-agnostic |
+| Specification Agent | Requirements gathering (Gemini prompting strategies) | Language-agnostic |
 | Planning Agent | Technical architecture and cost analysis | Cross-stack |
 | Task Agent | Phase-based task decomposition | Cross-stack |
+| **Reasoning Agent** 🆕 | **9-step reasoning framework for complex problems** | **Cross-stack** |
 | Backend Python Expert | Python/FastAPI implementation | Python 3.11+, FastAPI, SQLAlchemy |
 | Frontend Flutter Expert | Flutter/Dart implementation | Flutter 3.24+, Dart 3.5+ |
 | Frontend React Expert | React/Next.js implementation | React 18+, Next.js 14+ |
