@@ -3,7 +3,6 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 
 console.log('🔧 vibe MCP 서버 설치 중...\n');
 
@@ -25,142 +24,112 @@ console.log('📍 MCP 서버 경로:', mcpIndexPath);
 console.log('');
 
 // ============================================
-// 1. Claude Code MCP 등록
+// 에이전트 설정
 // ============================================
-console.log('1️⃣  Claude Code MCP 등록...');
-
-try {
-  const command = `claude mcp add vibe node "${mcpIndexPath}"`;
-  execSync(command, { stdio: 'inherit' });
-  console.log('   ✅ Claude Code 등록 완료\n');
-} catch (error) {
-  const fullOutput = error.message + (error.stderr?.toString() || '') + (error.stdout?.toString() || '');
-
-  if (fullOutput.includes('already exists')) {
-    console.log('   ℹ️  이미 등록되어 있습니다\n');
-  } else {
-    console.log('   ⚠️  Claude Code 등록 실패 (수동 등록 필요)\n');
-  }
-}
-
-// ============================================
-// 2. Cursor MCP 등록
-// ============================================
-console.log('2️⃣  Cursor MCP 등록...');
 
 const projectRoot = process.cwd();
-const cursorDir = path.join(projectRoot, '.cursor');
-const cursorMcpPath = path.join(cursorDir, 'mcp.json');
 
-try {
-  if (!fs.existsSync(cursorDir)) {
-    fs.mkdirSync(cursorDir, { recursive: true });
-  }
-
-  let cursorConfig = { mcpServers: {} };
-  if (fs.existsSync(cursorMcpPath)) {
-    try {
-      cursorConfig = JSON.parse(fs.readFileSync(cursorMcpPath, 'utf-8'));
-      if (!cursorConfig.mcpServers) {
-        cursorConfig.mcpServers = {};
+const AGENTS = [
+  {
+    name: 'Claude Code',
+    emoji: '1️⃣',
+    setup: () => {
+      try {
+        execSync(`claude mcp add vibe node "${mcpIndexPath}"`, { stdio: 'inherit' });
+        return { success: true };
+      } catch (error) {
+        const msg = error.message + (error.stderr?.toString() || '') + (error.stdout?.toString() || '');
+        if (msg.includes('already exists')) {
+          return { success: true, message: '이미 등록되어 있습니다' };
+        }
+        return { success: false, message: '수동 등록 필요' };
       }
-    } catch (e) {}
+    }
+  },
+  {
+    name: 'Cursor',
+    emoji: '2️⃣',
+    configPath: '.cursor/mcp.json',
+    setup: function() {
+      return writeJsonConfig(path.join(projectRoot, this.configPath));
+    }
+  },
+  {
+    name: 'Gemini CLI',
+    emoji: '3️⃣',
+    configPath: '.gemini/settings.json',
+    setup: function() {
+      return writeJsonConfig(path.join(projectRoot, this.configPath));
+    }
+  },
+  {
+    name: 'Antigravity',
+    emoji: '4️⃣',
+    configPath: '.idx/mcp.json',
+    setup: function() {
+      return writeJsonConfig(path.join(projectRoot, this.configPath));
+    }
   }
+];
 
-  cursorConfig.mcpServers.vibe = {
-    command: 'node',
-    args: [mcpIndexPath]
-  };
+// JSON 설정 파일 작성 유틸리티
+function writeJsonConfig(configPath) {
+  try {
+    const dir = path.dirname(configPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
 
-  fs.writeFileSync(cursorMcpPath, JSON.stringify(cursorConfig, null, 2));
-  console.log('   ✅ Cursor 등록 완료');
-  console.log(`   📁 ${cursorMcpPath}\n`);
+    let config = { mcpServers: {} };
+    if (fs.existsSync(configPath)) {
+      try {
+        config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        if (!config.mcpServers) config.mcpServers = {};
+      } catch (e) {}
+    }
 
-} catch (error) {
-  console.log('   ⚠️  Cursor 등록 실패:', error.message, '\n');
+    config.mcpServers.vibe = {
+      command: 'node',
+      args: [mcpIndexPath]
+    };
+
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    return { success: true, path: configPath };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
 }
 
 // ============================================
-// 3. Gemini CLI MCP 등록
+// 등록 실행
 // ============================================
-console.log('3️⃣  Gemini CLI MCP 등록...');
 
-const geminiDir = path.join(projectRoot, '.gemini');
-const geminiSettingsPath = path.join(geminiDir, 'settings.json');
+AGENTS.forEach(agent => {
+  console.log(`${agent.emoji}  ${agent.name} MCP 등록...`);
 
-try {
-  if (!fs.existsSync(geminiDir)) {
-    fs.mkdirSync(geminiDir, { recursive: true });
+  const result = agent.setup();
+
+  if (result.success) {
+    if (result.message) {
+      console.log(`   ℹ️  ${result.message}\n`);
+    } else if (result.path) {
+      console.log(`   ✅ 완료`);
+      console.log(`   📁 ${result.path}\n`);
+    } else {
+      console.log(`   ✅ 완료\n`);
+    }
+  } else {
+    console.log(`   ⚠️  실패: ${result.message}\n`);
   }
-
-  let geminiConfig = { mcpServers: {} };
-  if (fs.existsSync(geminiSettingsPath)) {
-    try {
-      geminiConfig = JSON.parse(fs.readFileSync(geminiSettingsPath, 'utf-8'));
-      if (!geminiConfig.mcpServers) {
-        geminiConfig.mcpServers = {};
-      }
-    } catch (e) {}
-  }
-
-  geminiConfig.mcpServers.vibe = {
-    command: 'node',
-    args: [mcpIndexPath]
-  };
-
-  fs.writeFileSync(geminiSettingsPath, JSON.stringify(geminiConfig, null, 2));
-  console.log('   ✅ Gemini CLI 등록 완료');
-  console.log(`   📁 ${geminiSettingsPath}\n`);
-
-} catch (error) {
-  console.log('   ⚠️  Gemini CLI 등록 실패:', error.message, '\n');
-}
-
-// ============================================
-// 4. Antigravity MCP 등록
-// ============================================
-console.log('4️⃣  Antigravity MCP 등록...');
-
-const antigravityDir = path.join(projectRoot, '.idx');
-const antigravityMcpPath = path.join(antigravityDir, 'mcp.json');
-
-try {
-  if (!fs.existsSync(antigravityDir)) {
-    fs.mkdirSync(antigravityDir, { recursive: true });
-  }
-
-  let antigravityConfig = { mcpServers: {} };
-  if (fs.existsSync(antigravityMcpPath)) {
-    try {
-      antigravityConfig = JSON.parse(fs.readFileSync(antigravityMcpPath, 'utf-8'));
-      if (!antigravityConfig.mcpServers) {
-        antigravityConfig.mcpServers = {};
-      }
-    } catch (e) {}
-  }
-
-  antigravityConfig.mcpServers.vibe = {
-    command: 'node',
-    args: [mcpIndexPath]
-  };
-
-  fs.writeFileSync(antigravityMcpPath, JSON.stringify(antigravityConfig, null, 2));
-  console.log('   ✅ Antigravity 등록 완료');
-  console.log(`   📁 ${antigravityMcpPath}\n`);
-
-} catch (error) {
-  console.log('   ⚠️  Antigravity 등록 실패:', error.message, '\n');
-}
+});
 
 // ============================================
 // 완료 메시지
 // ============================================
-console.log('✅ vibe MCP 서버 등록 완료!');
-console.log('');
+console.log('✅ vibe MCP 서버 등록 완료!\n');
 console.log('사용 가능한 도구:');
 console.log('  - 38개 MCP 도구 (@su-record/hi-ai 기반)');
-console.log('  - 코드 분석, 품질 검증, UI 미리보기 등');
-console.log('');
+console.log('  - 코드 분석, 품질 검증, UI 미리보기 등\n');
 console.log('확인 방법:');
 console.log('  Claude Code:  claude mcp list');
 console.log('  Cursor:       .cursor/mcp.json');

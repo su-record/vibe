@@ -267,6 +267,124 @@ function showVersion() {
   console.log(`vibe v${packageJson.version}`);
 }
 
+// ============================================
+// 에이전트 설정 (테이블 기반)
+// ============================================
+
+const AGENT_CONFIGS = {
+  claude: {
+    label: 'Claude Code',
+    emoji: '1️⃣',
+    setupMcp: (projectRoot, mcpPath) => {
+      const { execSync } = require('child_process');
+      try {
+        execSync(`claude mcp add vibe node "${mcpPath}"`, { stdio: 'pipe' });
+        return { success: true };
+      } catch (e) {
+        if (e.message.includes('already exists')) {
+          return { success: true, message: '이미 등록됨' };
+        }
+        return { success: false, message: '수동 등록 필요' };
+      }
+    },
+    copyCommands: (projectRoot, templatesDir) => {
+      const claudeDir = path.join(projectRoot, '.claude');
+      const commandsDir = path.join(claudeDir, 'commands');
+      ensureDir(claudeDir);
+      ensureDir(commandsDir);
+
+      const sourceDir = path.join(templatesDir, '../.claude/commands');
+      copyDirContents(sourceDir, commandsDir);
+      return 9;
+    },
+    getDirInfo: () => '  .claude/commands/            # Claude Code 슬래시 커맨드 (9개)',
+    getCommandInfo: () => '  /vibe.spec "기능명"          (Claude Code)'
+  },
+
+  cursor: {
+    label: 'Cursor',
+    emoji: '2️⃣',
+    setupMcp: (projectRoot, mcpPath) => {
+      const cursorDir = path.join(projectRoot, '.cursor');
+      ensureDir(cursorDir);
+      const config = { mcpServers: { vibe: { command: 'node', args: [mcpPath] } } };
+      fs.writeFileSync(path.join(cursorDir, 'mcp.json'), JSON.stringify(config, null, 2));
+      return { success: true };
+    },
+    copyCommands: (projectRoot, templatesDir) => {
+      const commandsDir = path.join(projectRoot, '.cursor', 'commands');
+      ensureDir(commandsDir);
+
+      const sourceDir = path.join(templatesDir, 'cursor/commands');
+      copyDirContents(sourceDir, commandsDir);
+      return 9;
+    },
+    getDirInfo: () => '  .cursor/commands/            # Cursor 슬래시 커맨드 (9개)',
+    getCommandInfo: () => '  /vibe.spec "기능명"          (Cursor)'
+  },
+
+  gemini: {
+    label: 'Gemini CLI',
+    emoji: '3️⃣',
+    setupMcp: (projectRoot, mcpPath) => {
+      const geminiDir = path.join(projectRoot, '.gemini');
+      ensureDir(geminiDir);
+      const config = { mcpServers: { vibe: { command: 'node', args: [mcpPath] } } };
+      fs.writeFileSync(path.join(geminiDir, 'settings.json'), JSON.stringify(config, null, 2));
+      return { success: true };
+    },
+    copyCommands: (projectRoot, templatesDir) => {
+      const commandsDir = path.join(projectRoot, '.gemini', 'commands', 'vibe');
+      ensureDir(commandsDir);
+
+      const sourceDir = path.join(templatesDir, 'gemini/commands/vibe');
+      copyDirContents(sourceDir, commandsDir);
+      return 9;
+    },
+    getDirInfo: () => '  .gemini/commands/vibe/       # Gemini CLI 커맨드 (9개)',
+    getCommandInfo: () => '  /vibe:spec "기능명"          (Gemini CLI)'
+  },
+
+  antigravity: {
+    label: 'Antigravity',
+    emoji: '4️⃣',
+    setupMcp: (projectRoot, mcpPath) => {
+      const idxDir = path.join(projectRoot, '.idx');
+      ensureDir(idxDir);
+      const config = { mcpServers: { vibe: { command: 'node', args: [mcpPath] } } };
+      fs.writeFileSync(path.join(idxDir, 'mcp.json'), JSON.stringify(config, null, 2));
+      return { success: true };
+    },
+    copyCommands: (projectRoot, templatesDir) => {
+      const idxDir = path.join(projectRoot, '.idx');
+      ensureDir(idxDir);
+
+      const sourceFile = path.join(templatesDir, 'antigravity/workflows.json');
+      if (fs.existsSync(sourceFile)) {
+        fs.copyFileSync(sourceFile, path.join(idxDir, 'workflows.json'));
+      }
+      return 9;
+    },
+    getDirInfo: () => '  .idx/workflows.json          # Antigravity 워크플로우 (9개)',
+    getCommandInfo: () => '  /vibe.spec (워크플로우)       (Antigravity)'
+  }
+};
+
+// 유틸리티 함수들
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+function copyDirContents(sourceDir, targetDir) {
+  if (fs.existsSync(sourceDir)) {
+    fs.readdirSync(sourceDir).forEach(file => {
+      fs.copyFileSync(path.join(sourceDir, file), path.join(targetDir, file));
+    });
+  }
+}
+
 // 에이전트 선택 프롬프트
 function promptAgentSelection() {
   const readline = require('readline');
@@ -304,16 +422,58 @@ function promptAgentSelection() {
 
 // 프로젝트 초기화
 async function init(projectName) {
+  try {
+    const { projectRoot, isNewProject } = setupProjectRoot(projectName);
+    if (!projectRoot) return;
+
+    const vibeDir = path.join(projectRoot, '.vibe');
+    if (fs.existsSync(vibeDir)) {
+      console.log('❌ .vibe/ 폴더가 이미 존재합니다.');
+      return;
+    }
+
+    // 에이전트 선택
+    const selectedAgents = await promptAgentSelection();
+    console.log(`\n선택된 에이전트: ${selectedAgents.join(', ')}\n`);
+
+    // MCP 서버 등록
+    const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
+    const templatesDir = path.join(__dirname, '../templates');
+
+    console.log('🔧 MCP 서버 설정 중...\n');
+    setupAgentsMcp(selectedAgents, projectRoot, mcpPath);
+
+    // .vibe 폴더 구조 생성
+    createVibeStructure(vibeDir);
+
+    // 커맨드 복사
+    console.log('📦 커맨드 설치 중...\n');
+    copyAgentCommands(selectedAgents, projectRoot, templatesDir);
+    console.log('');
+
+    // 설정 파일 생성
+    createConfigFiles(vibeDir, projectRoot);
+
+    // 완료 메시지 출력
+    printCompletionMessage(selectedAgents, projectRoot, isNewProject, projectName);
+
+  } catch (error) {
+    console.error('❌ 초기화 실패:', error.message);
+    process.exit(1);
+  }
+}
+
+// 프로젝트 루트 설정
+function setupProjectRoot(projectName) {
   let projectRoot = process.cwd();
   let isNewProject = false;
 
-  // 새 프로젝트 생성 케이스
   if (projectName) {
     projectRoot = path.join(process.cwd(), projectName);
 
     if (fs.existsSync(projectRoot)) {
       console.log(`❌ 폴더가 이미 존재합니다: ${projectName}/`);
-      return;
+      return { projectRoot: null };
     }
 
     console.log(`📁 새 프로젝트 생성: ${projectName}/\n`);
@@ -321,207 +481,74 @@ async function init(projectName) {
     isNewProject = true;
   }
 
-  const vibeDir = path.join(projectRoot, '.vibe');
+  return { projectRoot, isNewProject };
+}
 
-  if (fs.existsSync(vibeDir)) {
-    console.log('❌ .vibe/ 폴더가 이미 존재합니다.');
-    return;
-  }
+// 에이전트별 MCP 설정
+function setupAgentsMcp(agents, projectRoot, mcpPath) {
+  agents.forEach(agentName => {
+    const config = AGENT_CONFIGS[agentName];
+    if (!config) return;
 
-  // 에이전트 선택
-  const selectedAgents = await promptAgentSelection();
-  console.log(`\n선택된 에이전트: ${selectedAgents.join(', ')}\n`);
+    console.log(`${config.emoji}  ${config.label} MCP 등록...`);
+    const result = config.setupMcp(projectRoot, mcpPath);
 
-  // MCP 서버 등록
-  console.log('🔧 MCP 서버 설정 중...\n');
-
-  const { execSync } = require('child_process');
-  const mcpIndexPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
-
-  // 선택된 에이전트별 MCP 등록
-  selectedAgents.forEach(agent => {
-    try {
-      switch (agent) {
-        case 'claude':
-          console.log('1️⃣  Claude Code MCP 등록...');
-          try {
-            execSync(`claude mcp add vibe node "${mcpIndexPath}"`, { stdio: 'pipe' });
-            console.log('   ✅ 완료\n');
-          } catch (e) {
-            if (e.message.includes('already exists')) {
-              console.log('   ℹ️  이미 등록됨\n');
-            } else {
-              console.log('   ⚠️  실패 (수동 등록 필요)\n');
-            }
-          }
-          break;
-
-        case 'cursor':
-          console.log('2️⃣  Cursor MCP 등록...');
-          const cursorDir = path.join(projectRoot, '.cursor');
-          if (!fs.existsSync(cursorDir)) fs.mkdirSync(cursorDir, { recursive: true });
-          const cursorConfig = { mcpServers: { vibe: { command: 'node', args: [mcpIndexPath] } } };
-          fs.writeFileSync(path.join(cursorDir, 'mcp.json'), JSON.stringify(cursorConfig, null, 2));
-          console.log('   ✅ 완료\n');
-          break;
-
-        case 'gemini':
-          console.log('3️⃣  Gemini CLI MCP 등록...');
-          const geminiDir = path.join(projectRoot, '.gemini');
-          if (!fs.existsSync(geminiDir)) fs.mkdirSync(geminiDir, { recursive: true });
-          const geminiConfig = { mcpServers: { vibe: { command: 'node', args: [mcpIndexPath] } } };
-          fs.writeFileSync(path.join(geminiDir, 'settings.json'), JSON.stringify(geminiConfig, null, 2));
-          console.log('   ✅ 완료\n');
-          break;
-
-        case 'antigravity':
-          console.log('4️⃣  Antigravity MCP 등록...');
-          const idxDir = path.join(projectRoot, '.idx');
-          if (!fs.existsSync(idxDir)) fs.mkdirSync(idxDir, { recursive: true });
-          const idxConfig = { mcpServers: { vibe: { command: 'node', args: [mcpIndexPath] } } };
-          fs.writeFileSync(path.join(idxDir, 'mcp.json'), JSON.stringify(idxConfig, null, 2));
-          console.log('   ✅ 완료\n');
-          break;
-      }
-    } catch (error) {
-      console.log(`   ⚠️  ${agent} 설정 실패\n`);
+    if (result.success) {
+      console.log(result.message ? `   ℹ️  ${result.message}\n` : '   ✅ 완료\n');
+    } else {
+      console.log(`   ⚠️  ${result.message || '실패'}\n`);
     }
   });
+}
 
-  // 폴더 생성
-  fs.mkdirSync(vibeDir);
-  fs.mkdirSync(path.join(vibeDir, 'specs'));
-  fs.mkdirSync(path.join(vibeDir, 'features'));
-  fs.mkdirSync(path.join(vibeDir, 'plans'));
-  fs.mkdirSync(path.join(vibeDir, 'tasks'));
-  fs.mkdirSync(path.join(vibeDir, 'skills')); // 프로젝트별 커스텀 skills
-
-  // 선택된 에이전트별 커맨드 복사
-  console.log('📦 커맨드 설치 중...\n');
-
-  selectedAgents.forEach(agent => {
-    switch (agent) {
-      case 'claude':
-        // Claude Code 슬래시 커맨드 복사
-        const claudeDir = path.join(projectRoot, '.claude');
-        const claudeCommandsDir = path.join(claudeDir, 'commands');
-        if (!fs.existsSync(claudeDir)) fs.mkdirSync(claudeDir);
-        if (!fs.existsSync(claudeCommandsDir)) fs.mkdirSync(claudeCommandsDir);
-
-        const claudeSourceDir = path.join(__dirname, '../.claude/commands');
-        if (fs.existsSync(claudeSourceDir)) {
-          fs.readdirSync(claudeSourceDir).forEach(file => {
-            fs.copyFileSync(
-              path.join(claudeSourceDir, file),
-              path.join(claudeCommandsDir, file)
-            );
-          });
-        }
-        console.log('   ✅ Claude Code 커맨드 (9개)');
-        break;
-
-      case 'cursor':
-        // Cursor 슬래시 커맨드 복사
-        const cursorCommandsDir = path.join(projectRoot, '.cursor', 'commands');
-        if (!fs.existsSync(cursorCommandsDir)) {
-          fs.mkdirSync(cursorCommandsDir, { recursive: true });
-        }
-        const cursorSourceDir = path.join(__dirname, '../templates/cursor/commands');
-        if (fs.existsSync(cursorSourceDir)) {
-          fs.readdirSync(cursorSourceDir).forEach(file => {
-            fs.copyFileSync(
-              path.join(cursorSourceDir, file),
-              path.join(cursorCommandsDir, file)
-            );
-          });
-        }
-        console.log('   ✅ Cursor 커맨드 (9개)');
-        break;
-
-      case 'gemini':
-        // Gemini CLI 커맨드 복사
-        const geminiCommandsDir = path.join(projectRoot, '.gemini', 'commands', 'vibe');
-        if (!fs.existsSync(geminiCommandsDir)) {
-          fs.mkdirSync(geminiCommandsDir, { recursive: true });
-        }
-        const geminiSourceDir = path.join(__dirname, '../templates/gemini/commands/vibe');
-        if (fs.existsSync(geminiSourceDir)) {
-          fs.readdirSync(geminiSourceDir).forEach(file => {
-            fs.copyFileSync(
-              path.join(geminiSourceDir, file),
-              path.join(geminiCommandsDir, file)
-            );
-          });
-        }
-        console.log('   ✅ Gemini CLI 커맨드 (9개)');
-        break;
-
-      case 'antigravity':
-        // Antigravity 워크플로우 복사
-        const idxDir = path.join(projectRoot, '.idx');
-        if (!fs.existsSync(idxDir)) {
-          fs.mkdirSync(idxDir, { recursive: true });
-        }
-        const antigravitySource = path.join(__dirname, '../templates/antigravity/workflows.json');
-        if (fs.existsSync(antigravitySource)) {
-          fs.copyFileSync(antigravitySource, path.join(idxDir, 'workflows.json'));
-        }
-        console.log('   ✅ Antigravity 워크플로우 (9개)');
-        break;
-    }
+// .vibe 폴더 구조 생성
+function createVibeStructure(vibeDir) {
+  const dirs = ['', 'specs', 'features', 'plans', 'tasks', 'skills'];
+  dirs.forEach(dir => {
+    ensureDir(path.join(vibeDir, dir));
   });
+}
 
-  console.log('');
+// 에이전트별 커맨드 복사
+function copyAgentCommands(agents, projectRoot, templatesDir) {
+  agents.forEach(agentName => {
+    const config = AGENT_CONFIGS[agentName];
+    if (!config) return;
 
+    config.copyCommands(projectRoot, templatesDir);
+    console.log(`   ✅ ${config.label} 커맨드 (9개)`);
+  });
+}
+
+// 설정 파일 생성
+function createConfigFiles(vibeDir, projectRoot) {
   // constitution.md 템플릿 복사
   const templatePath = path.join(__dirname, '../templates/constitution-template.md');
   const constitutionPath = path.join(vibeDir, 'constitution.md');
-
   if (fs.existsSync(templatePath)) {
     fs.copyFileSync(templatePath, constitutionPath);
   }
 
-  // config.json 생성 (언어 설정 포함)
-  const configPath = path.join(vibeDir, 'config.json');
+  // config.json 생성
   const config = {
     language: 'ko',
-    agents: {
-      default: 'backend-python-expert'
-    },
-    mcp: {
-      enabled: true,
-      servers: ['vibe']
-    },
-    quality: {
-      strict: true,
-      autoVerify: true
-    }
+    agents: { default: 'backend-python-expert' },
+    mcp: { enabled: true, servers: ['vibe'] },
+    quality: { strict: true, autoVerify: true }
   };
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  fs.writeFileSync(path.join(vibeDir, 'config.json'), JSON.stringify(config, null, 2));
 
   // AGENTS.md 생성
   const originalCwd = process.cwd();
   process.chdir(projectRoot);
   syncSkills();
   process.chdir(originalCwd);
+}
 
-  // 선택된 에이전트에 맞는 구조 표시
-  const agentDirs = {
-    claude: '  .claude/commands/            # Claude Code 슬래시 커맨드 (9개)',
-    cursor: '  .cursor/commands/            # Cursor 슬래시 커맨드 (9개)',
-    gemini: '  .gemini/commands/vibe/       # Gemini CLI 커맨드 (9개)',
-    antigravity: '  .idx/workflows.json          # Antigravity 워크플로우 (9개)'
-  };
-
-  const agentCommands = {
-    claude: '  /vibe.spec "기능명"          (Claude Code)',
-    cursor: '  /vibe.spec "기능명"          (Cursor)',
-    gemini: '  /vibe:spec "기능명"          (Gemini CLI)',
-    antigravity: '  /vibe.spec (워크플로우)       (Antigravity)'
-  };
-
-  const selectedDirs = selectedAgents.map(a => agentDirs[a]).join('\n');
-  const selectedCommands = selectedAgents.map(a => agentCommands[a]).join('\n');
+// 완료 메시지 출력
+function printCompletionMessage(selectedAgents, projectRoot, isNewProject, projectName) {
+  const selectedDirs = selectedAgents.map(a => AGENT_CONFIGS[a]?.getDirInfo()).filter(Boolean).join('\n');
+  const selectedCommands = selectedAgents.map(a => AGENT_CONFIGS[a]?.getCommandInfo()).filter(Boolean).join('\n');
 
   console.log(`
 ✅ vibe 초기화 완료!
