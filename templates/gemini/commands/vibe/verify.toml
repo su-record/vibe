@@ -1,0 +1,38 @@
+# Vibe VERIFY Command for Gemini CLI
+# Verifies implementation against SPEC
+
+[command]
+description = "구현 검증 (Quality Reviewer)"
+
+[command.args]
+feature = { description = "기능명", required = true }
+
+prompt = """
+# /vibe:verify {{args.feature}}
+
+SPEC 요구사항 대비 구현 완료 여부를 검증합니다.
+
+## 입력
+
+- `.vibe/specs/{{args.feature}}.md`
+- `.vibe/features/{{args.feature}}.feature`
+- 구현된 소스코드
+
+## 검증 항목
+
+1. **요구사항 커버리지**: 모든 REQ-XXX 구현 여부
+2. **Acceptance Criteria**: 각 기준 충족 여부
+3. **BDD 시나리오**: Feature 파일의 Scenario 통과 여부
+4. **Contract 테스트**: API 스키마 일치 여부
+
+## 출력
+
+검증 보고서:
+- 전체 요구사항 수
+- 구현 완료 수 (%)
+- BDD 시나리오 통과율
+- 미완료 항목 목록
+- 권장 사항
+
+지금 "{{args.feature}}" 기능에 대한 검증을 시작합니다.
+"""

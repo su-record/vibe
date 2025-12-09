@@ -1,0 +1,36 @@
+# Vibe RUN Command for Gemini CLI
+# Executes tasks with Implementation Agent
+
+[command]
+description = "Task 실행 (Implementation Agent)"
+
+[command.args]
+task = { description = "Task ID (예: Task 1-1) 또는 --phase N 또는 --all", required = true }
+
+prompt = """
+# /vibe:run {{args.task}}
+
+특정 Task 또는 Phase를 실행합니다.
+
+## 사용법
+
+- `/vibe:run Task 1-1` - 단일 Task 실행
+- `/vibe:run --phase 1` - Phase 1 전체 실행
+- `/vibe:run --all` - 모든 Task 실행
+
+## 프로세스
+
+1. TASKS 문서에서 해당 Task 찾기
+2. 의존성 확인 (선행 Task 완료 여부)
+3. 담당 Agent로 구현
+4. 테스트 작성 및 실행
+5. Task 상태 업데이트 (✅ 완료)
+
+## 검증 항목
+
+- [ ] 코드 컴파일/린트 통과
+- [ ] 단위 테스트 통과
+- [ ] Acceptance Criteria 충족
+
+지금 "{{args.task}}"를 실행합니다.
+"""

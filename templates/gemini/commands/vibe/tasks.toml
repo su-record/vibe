@@ -1,0 +1,33 @@
+# Vibe TASKS Command for Gemini CLI
+# Creates TASKS document with Task Agent
+
+[command]
+description = "작업 목록 생성 (Task Agent)"
+
+[command.args]
+feature = { description = "기능명", required = true }
+
+prompt = """
+# /vibe:tasks {{args.feature}}
+
+PLAN 문서를 분석하여 Phase별 구체적인 작업 목록(TASKS)을 생성합니다.
+
+## 입력
+
+- `.vibe/specs/{{args.feature}}.md`
+- `.vibe/plans/{{args.feature}}.md`
+
+## 프로세스
+
+1. PLAN 문서 분석
+2. Phase 분류 (Setup, Core, Integration, Testing)
+3. Task 분해 (Task 1-1, 1-2, ...)
+4. 의존성 정의
+5. 담당 Agent 배정
+
+## 출력
+
+- `.vibe/tasks/{{args.feature}}.md`
+
+지금 "{{args.feature}}" 기능에 대한 TASKS 문서 작성을 시작합니다.
+"""

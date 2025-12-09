@@ -8,52 +8,256 @@
 const path = require('path');
 const fs = require('fs');
 
-// 명령어 목록 (Claude Code 전용)
-const commands = {
-  init: 'Initialize vibe in current project (MCP registration)',
-  help: 'Show help message'
-};
-
 const args = process.argv.slice(2);
 const command = args[0];
+
+// skills 폴더 경로들
+function getSkillsPaths() {
+  const cwd = process.cwd();
+  return [
+    path.join(__dirname, '..', 'skills'), // vibe 패키지 내장 skills
+    path.join(cwd, '.vibe', 'skills'),     // 프로젝트별 커스텀 skills
+  ];
+}
+
+// skill 파일 파싱 (frontmatter 추출)
+function parseSkill(filePath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+
+  if (!frontmatterMatch) {
+    return null;
+  }
+
+  const frontmatter = frontmatterMatch[1];
+
+  // 간단한 YAML 파싱
+  const meta = {};
+  frontmatter.split('\n').forEach(line => {
+    const [key, ...valueParts] = line.split(':');
+    if (key && valueParts.length) {
+      meta[key.trim()] = valueParts.join(':').trim();
+    }
+  });
+
+  return { ...meta, path: filePath };
+}
+
+// 모든 skills 수집
+function collectSkills() {
+  const skills = [];
+  const seen = new Set();
+
+  getSkillsPaths().forEach(skillsPath => {
+    if (!fs.existsSync(skillsPath)) return;
+
+    const isProject = skillsPath.includes('.vibe');
+
+    // 재귀적으로 .md 파일 찾기
+    function walkDir(dir, category = '') {
+      const items = fs.readdirSync(dir);
+      items.forEach(item => {
+        const itemPath = path.join(dir, item);
+        const stat = fs.statSync(itemPath);
+
+        if (stat.isDirectory()) {
+          walkDir(itemPath, item);
+        } else if (item.endsWith('.md')) {
+          const skill = parseSkill(itemPath);
+          if (skill && skill.name && !seen.has(skill.name)) {
+            seen.add(skill.name);
+            skills.push({
+              ...skill,
+              category,
+              location: isProject ? 'project' : 'package'
+            });
+          }
+        }
+      });
+    }
+
+    walkDir(skillsPath);
+  });
+
+  return skills;
+}
+
+// list 명령어
+function listSkills() {
+  const skills = collectSkills();
+
+  if (skills.length === 0) {
+    console.log('No skills found.');
+    return;
+  }
+
+  console.log('\nAvailable Skills:\n');
+
+  // 카테고리별로 그룹화
+  const grouped = {};
+  skills.forEach(skill => {
+    const cat = skill.category || 'general';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(skill);
+  });
+
+  Object.keys(grouped).sort().forEach(category => {
+    console.log(`  [${category}]`);
+    grouped[category].forEach(skill => {
+      const loc = skill.location === 'project' ? '(project)' : '(package)';
+      console.log(`    ${skill.name.padEnd(20)} ${loc}`);
+      if (skill.description) {
+        console.log(`      ${skill.description.slice(0, 60)}${skill.description.length > 60 ? '...' : ''}`);
+      }
+    });
+    console.log('');
+  });
+
+  const projectCount = skills.filter(s => s.location === 'project').length;
+  const packageCount = skills.filter(s => s.location === 'package').length;
+  console.log(`Summary: ${packageCount} package, ${projectCount} project (${skills.length} total)`);
+}
+
+// read 명령어
+function readSkill(skillName) {
+  if (!skillName) {
+    console.error('Usage: vibe read <skill-name>');
+    process.exit(1);
+  }
+
+  const skills = collectSkills();
+  const skill = skills.find(s => s.name === skillName);
+
+  if (!skill) {
+    console.error(`Skill not found: ${skillName}`);
+    console.error('\nAvailable skills:');
+    skills.forEach(s => console.error(`  - ${s.name}`));
+    process.exit(1);
+  }
+
+  console.log(`Reading: ${skillName}`);
+  console.log(`Base directory: ${path.dirname(skill.path)}`);
+  console.log('');
+
+  // 전체 파일 내용 출력
+  const content = fs.readFileSync(skill.path, 'utf-8');
+  console.log(content);
+
+  console.log(`\nSkill read: ${skillName}`);
+}
+
+// sync 명령어 - AGENTS.md 생성/업데이트
+function syncSkills() {
+  const cwd = process.cwd();
+  const agentsPath = path.join(cwd, 'AGENTS.md');
+  const skills = collectSkills();
+
+  if (skills.length === 0) {
+    console.log('No skills to sync.');
+    return;
+  }
+
+  // AGENTS.md 내용 생성
+  const skillsXml = skills.map(skill => `
+<skill>
+<name>${skill.name}</name>
+<description>${skill.description || ''}</description>
+<location>${skill.location}</location>
+</skill>`).join('\n');
+
+  const agentsContent = `# AI Agents Configuration
+
+This file configures AI coding agents for this project.
+
+## Workflow
+
+\`\`\`
+vibe read spec → vibe read reason → vibe read plan → vibe read tasks → vibe read run → vibe read verify
+     ↓                ↓                  ↓                 ↓                 ↓                ↓
+  요구사항         체계적 추론         기술 계획         작업 분해           실행            검증
+\`\`\`
+
+## Skill Usage
+
+AI 에이전트에게 skill을 사용하도록 요청하세요:
+
+- "vibe read spec으로 로그인 기능 명세를 작성해줘"
+- "vibe read reason으로 이 문제를 분석해줘"
+- "vibe read plan으로 구현 계획을 세워줘"
+
+## Compatibility
+
+| Agent | Supported |
+|-------|-----------|
+| Claude Code | ✅ Native |
+| Cursor | ✅ via AGENTS.md |
+| Windsurf | ✅ via AGENTS.md |
+| Aider | ✅ via AGENTS.md |
+
+<skills_system priority="1">
+
+## Available Skills
+
+<!-- SKILLS_TABLE_START -->
+<usage>
+When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively. Skills provide specialized capabilities and domain knowledge.
+
+How to use skills:
+- Invoke: Bash("vibe read <skill-name>")
+- The skill content will load with detailed instructions on how to complete the task
+- Base directory provided in output for resolving bundled resources
+
+Usage notes:
+- Only use skills listed in <available_skills> below
+- Do not invoke a skill that is already loaded in your context
+- Each skill invocation is stateless
+</usage>
+
+<available_skills>
+${skillsXml}
+</available_skills>
+<!-- SKILLS_TABLE_END -->
+
+</skills_system>
+`;
+
+  fs.writeFileSync(agentsPath, agentsContent);
+  console.log(`✅ Synced ${skills.length} skill(s) to AGENTS.md`);
+}
 
 // 도움말 출력
 function showHelp() {
   console.log(`
-📖 Vibe - SPEC-driven AI coding framework for Claude Code
+📖 Vibe - SPEC-driven AI coding framework
 
-⚠️  Vibe는 Claude Code 전용 프레임워크입니다.
-   터미널에서는 초기화만 가능합니다.
-
-터미널 명령어:
-  vibe init                  Initialize vibe in current project
-  vibe init <project-name>   Create new project with vibe
-  vibe help                  Show this message
+Commands:
+  vibe init [project]     Initialize vibe in current/new project
+  vibe list               List all available skills
+  vibe read <skill>       Read skill content (for AI agents)
+  vibe sync               Sync skills to AGENTS.md
+  vibe help               Show this message
 
 Claude Code 슬래시 커맨드 (프로젝트 내에서 사용):
-  /vibe.spec "기능명"       SPEC 작성 (대화형 Q&A)
-  /vibe.plan "기능명"       기술 계획 작성
-  /vibe.tasks "기능명"      Task 목록 생성
-  /vibe.run "Task 1-1"      Task 구현
-  /vibe.verify "기능명"     검증
-  /vibe.analyze             프로젝트 분석
-  /vibe.ui "설명"           UI 미리보기
-  /vibe.diagram --er        다이어그램 생성
+  /vibe.spec "기능명"     SPEC 작성 (대화형 Q&A)
+  /vibe.plan "기능명"     기술 계획 작성
+  /vibe.tasks "기능명"    Task 목록 생성
+  /vibe.run "Task 1-1"    Task 구현
+  /vibe.verify "기능명"   검증
+  /vibe.reason "문제"     체계적 추론
+  /vibe.analyze           프로젝트 분석
+  /vibe.ui "설명"         UI 미리보기
+  /vibe.diagram --er      다이어그램 생성
 
 Workflow:
-  1. 터미널에서 vibe init 실행 (MCP 서버 등록)
-  2. Claude Code에서 슬래시 커맨드 사용
-     /vibe.spec "푸시 알림 설정"
-     /vibe.plan "푸시 알림 설정"
-     /vibe.tasks "푸시 알림 설정"
-     /vibe.run "Task 1-1"
-     /vibe.verify "푸시 알림 설정"
+  1. vibe init (MCP 서버 등록 + skills 설치)
+  2. vibe sync (AGENTS.md 생성)
+  3. Claude Code/Cursor/Windsurf에서 skills 사용
 
 설치:
   npm install -g @su-record/vibe
 
 문서:
-  https://github.com/su-record/vibe/wiki
+  https://github.com/su-record/vibe
   `);
 }
 
@@ -63,8 +267,43 @@ function showVersion() {
   console.log(`vibe v${packageJson.version}`);
 }
 
+// 에이전트 선택 프롬프트
+function promptAgentSelection() {
+  const readline = require('readline');
+
+  return new Promise((resolve) => {
+    console.log('\n🤖 사용할 AI 에이전트를 선택하세요:\n');
+    console.log('  1. Claude Code');
+    console.log('  2. Cursor');
+    console.log('  3. Gemini CLI');
+    console.log('  4. Antigravity');
+    console.log('  5. 모두 설치');
+    console.log('');
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    rl.question('선택 (1-5, 기본값: 1): ', (answer) => {
+      rl.close();
+      const choice = answer.trim() || '1';
+
+      const agents = {
+        '1': ['claude'],
+        '2': ['cursor'],
+        '3': ['gemini'],
+        '4': ['antigravity'],
+        '5': ['claude', 'cursor', 'gemini', 'antigravity']
+      };
+
+      resolve(agents[choice] || ['claude']);
+    });
+  });
+}
+
 // 프로젝트 초기화
-function init(projectName) {
+async function init(projectName) {
   let projectRoot = process.cwd();
   let isNewProject = false;
 
@@ -89,19 +328,65 @@ function init(projectName) {
     return;
   }
 
-  // MCP 서버 등록 먼저 체크 및 실행
-  console.log('🔧 MCP 서버 확인 중...\n');
-  try {
-    const { execSync } = require('child_process');
+  // 에이전트 선택
+  const selectedAgents = await promptAgentSelection();
+  console.log(`\n선택된 에이전트: ${selectedAgents.join(', ')}\n`);
 
-    // MCP 서버 등록 스크립트 실행
-    const installScriptPath = path.join(__dirname, '../scripts/install-mcp.js');
-    execSync(`node "${installScriptPath}"`, { stdio: 'inherit' });
+  // MCP 서버 등록
+  console.log('🔧 MCP 서버 설정 중...\n');
 
-  } catch (error) {
-    console.log('\n⚠️  MCP 서버 등록 중 오류가 발생했습니다.');
-    console.log('   계속 진행합니다...\n');
-  }
+  const { execSync } = require('child_process');
+  const mcpIndexPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
+
+  // 선택된 에이전트별 MCP 등록
+  selectedAgents.forEach(agent => {
+    try {
+      switch (agent) {
+        case 'claude':
+          console.log('1️⃣  Claude Code MCP 등록...');
+          try {
+            execSync(`claude mcp add vibe node "${mcpIndexPath}"`, { stdio: 'pipe' });
+            console.log('   ✅ 완료\n');
+          } catch (e) {
+            if (e.message.includes('already exists')) {
+              console.log('   ℹ️  이미 등록됨\n');
+            } else {
+              console.log('   ⚠️  실패 (수동 등록 필요)\n');
+            }
+          }
+          break;
+
+        case 'cursor':
+          console.log('2️⃣  Cursor MCP 등록...');
+          const cursorDir = path.join(projectRoot, '.cursor');
+          if (!fs.existsSync(cursorDir)) fs.mkdirSync(cursorDir, { recursive: true });
+          const cursorConfig = { mcpServers: { vibe: { command: 'node', args: [mcpIndexPath] } } };
+          fs.writeFileSync(path.join(cursorDir, 'mcp.json'), JSON.stringify(cursorConfig, null, 2));
+          console.log('   ✅ 완료\n');
+          break;
+
+        case 'gemini':
+          console.log('3️⃣  Gemini CLI MCP 등록...');
+          const geminiDir = path.join(projectRoot, '.gemini');
+          if (!fs.existsSync(geminiDir)) fs.mkdirSync(geminiDir, { recursive: true });
+          const geminiConfig = { mcpServers: { vibe: { command: 'node', args: [mcpIndexPath] } } };
+          fs.writeFileSync(path.join(geminiDir, 'settings.json'), JSON.stringify(geminiConfig, null, 2));
+          console.log('   ✅ 완료\n');
+          break;
+
+        case 'antigravity':
+          console.log('4️⃣  Antigravity MCP 등록...');
+          const idxDir = path.join(projectRoot, '.idx');
+          if (!fs.existsSync(idxDir)) fs.mkdirSync(idxDir, { recursive: true });
+          const idxConfig = { mcpServers: { vibe: { command: 'node', args: [mcpIndexPath] } } };
+          fs.writeFileSync(path.join(idxDir, 'mcp.json'), JSON.stringify(idxConfig, null, 2));
+          console.log('   ✅ 완료\n');
+          break;
+      }
+    } catch (error) {
+      console.log(`   ⚠️  ${agent} 설정 실패\n`);
+    }
+  });
 
   // 폴더 생성
   fs.mkdirSync(vibeDir);
@@ -109,28 +394,84 @@ function init(projectName) {
   fs.mkdirSync(path.join(vibeDir, 'features'));
   fs.mkdirSync(path.join(vibeDir, 'plans'));
   fs.mkdirSync(path.join(vibeDir, 'tasks'));
+  fs.mkdirSync(path.join(vibeDir, 'skills')); // 프로젝트별 커스텀 skills
 
-  // .claude/commands 폴더 생성 및 슬래시 커맨드 복사
-  const claudeDir = path.join(projectRoot, '.claude');
-  const commandsDir = path.join(claudeDir, 'commands');
+  // 선택된 에이전트별 커맨드 복사
+  console.log('📦 커맨드 설치 중...\n');
 
-  if (!fs.existsSync(claudeDir)) {
-    fs.mkdirSync(claudeDir);
-  }
-  if (!fs.existsSync(commandsDir)) {
-    fs.mkdirSync(commandsDir);
-  }
+  selectedAgents.forEach(agent => {
+    switch (agent) {
+      case 'claude':
+        // Claude Code 슬래시 커맨드 복사
+        const claudeDir = path.join(projectRoot, '.claude');
+        const claudeCommandsDir = path.join(claudeDir, 'commands');
+        if (!fs.existsSync(claudeDir)) fs.mkdirSync(claudeDir);
+        if (!fs.existsSync(claudeCommandsDir)) fs.mkdirSync(claudeCommandsDir);
 
-  // 슬래시 커맨드 파일들 복사
-  const sourceCommandsDir = path.join(__dirname, '../.claude/commands');
-  if (fs.existsSync(sourceCommandsDir)) {
-    const commandFiles = fs.readdirSync(sourceCommandsDir);
-    commandFiles.forEach(file => {
-      const sourcePath = path.join(sourceCommandsDir, file);
-      const destPath = path.join(commandsDir, file);
-      fs.copyFileSync(sourcePath, destPath);
-    });
-  }
+        const claudeSourceDir = path.join(__dirname, '../.claude/commands');
+        if (fs.existsSync(claudeSourceDir)) {
+          fs.readdirSync(claudeSourceDir).forEach(file => {
+            fs.copyFileSync(
+              path.join(claudeSourceDir, file),
+              path.join(claudeCommandsDir, file)
+            );
+          });
+        }
+        console.log('   ✅ Claude Code 커맨드 (9개)');
+        break;
+
+      case 'cursor':
+        // Cursor 슬래시 커맨드 복사
+        const cursorCommandsDir = path.join(projectRoot, '.cursor', 'commands');
+        if (!fs.existsSync(cursorCommandsDir)) {
+          fs.mkdirSync(cursorCommandsDir, { recursive: true });
+        }
+        const cursorSourceDir = path.join(__dirname, '../templates/cursor/commands');
+        if (fs.existsSync(cursorSourceDir)) {
+          fs.readdirSync(cursorSourceDir).forEach(file => {
+            fs.copyFileSync(
+              path.join(cursorSourceDir, file),
+              path.join(cursorCommandsDir, file)
+            );
+          });
+        }
+        console.log('   ✅ Cursor 커맨드 (9개)');
+        break;
+
+      case 'gemini':
+        // Gemini CLI 커맨드 복사
+        const geminiCommandsDir = path.join(projectRoot, '.gemini', 'commands', 'vibe');
+        if (!fs.existsSync(geminiCommandsDir)) {
+          fs.mkdirSync(geminiCommandsDir, { recursive: true });
+        }
+        const geminiSourceDir = path.join(__dirname, '../templates/gemini/commands/vibe');
+        if (fs.existsSync(geminiSourceDir)) {
+          fs.readdirSync(geminiSourceDir).forEach(file => {
+            fs.copyFileSync(
+              path.join(geminiSourceDir, file),
+              path.join(geminiCommandsDir, file)
+            );
+          });
+        }
+        console.log('   ✅ Gemini CLI 커맨드 (9개)');
+        break;
+
+      case 'antigravity':
+        // Antigravity 워크플로우 복사
+        const idxDir = path.join(projectRoot, '.idx');
+        if (!fs.existsSync(idxDir)) {
+          fs.mkdirSync(idxDir, { recursive: true });
+        }
+        const antigravitySource = path.join(__dirname, '../templates/antigravity/workflows.json');
+        if (fs.existsSync(antigravitySource)) {
+          fs.copyFileSync(antigravitySource, path.join(idxDir, 'workflows.json'));
+        }
+        console.log('   ✅ Antigravity 워크플로우 (9개)');
+        break;
+    }
+  });
+
+  console.log('');
 
   // constitution.md 템플릿 복사
   const templatePath = path.join(__dirname, '../templates/constitution-template.md');
@@ -143,7 +484,7 @@ function init(projectName) {
   // config.json 생성 (언어 설정 포함)
   const configPath = path.join(vibeDir, 'config.json');
   const config = {
-    language: 'ko',  // 기본 한국어
+    language: 'ko',
     agents: {
       default: 'backend-python-expert'
     },
@@ -158,6 +499,30 @@ function init(projectName) {
   };
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
+  // AGENTS.md 생성
+  const originalCwd = process.cwd();
+  process.chdir(projectRoot);
+  syncSkills();
+  process.chdir(originalCwd);
+
+  // 선택된 에이전트에 맞는 구조 표시
+  const agentDirs = {
+    claude: '  .claude/commands/            # Claude Code 슬래시 커맨드 (9개)',
+    cursor: '  .cursor/commands/            # Cursor 슬래시 커맨드 (9개)',
+    gemini: '  .gemini/commands/vibe/       # Gemini CLI 커맨드 (9개)',
+    antigravity: '  .idx/workflows.json          # Antigravity 워크플로우 (9개)'
+  };
+
+  const agentCommands = {
+    claude: '  /vibe.spec "기능명"          (Claude Code)',
+    cursor: '  /vibe.spec "기능명"          (Cursor)',
+    gemini: '  /vibe:spec "기능명"          (Gemini CLI)',
+    antigravity: '  /vibe.spec (워크플로우)       (Antigravity)'
+  };
+
+  const selectedDirs = selectedAgents.map(a => agentDirs[a]).join('\n');
+  const selectedCommands = selectedAgents.map(a => agentCommands[a]).join('\n');
+
   console.log(`
 ✅ vibe 초기화 완료!
 
@@ -165,26 +530,24 @@ ${isNewProject ? `프로젝트 위치:
   ${projectRoot}/
 
 ` : ''}생성된 구조:
-  .claude/commands/     # 슬래시 커맨드 (8개)
+  AGENTS.md                    # AI 에이전트 설정 (범용)
+${selectedDirs}
   .vibe/
-  ├── config.json       # 프로젝트 설정 (언어: 한국어)
-  ├── constitution.md    # 프로젝트 원칙
-  ├── specs/            # SPEC 문서들
-  ├── features/         # BDD Feature 파일들 (Gherkin)
-  ├── plans/            # 기술 계획들
-  └── tasks/            # 작업 목록들
+  ├── config.json              # 프로젝트 설정
+  ├── constitution.md          # 프로젝트 원칙
+  ├── specs/                   # SPEC 문서들
+  ├── features/                # BDD Feature 파일들
+  ├── plans/                   # 기술 계획들
+  ├── tasks/                   # 작업 목록들
+  └── skills/                  # 커스텀 skills
 
-MCP 서버:
-  ✓ vibe MCP 서버 등록 완료 (38개 도구)
-  확인: claude mcp list
+MCP 서버 (38개 도구): ✓
 
-언어 변경:
-  .vibe/config.json에서 "language"를 "en" 또는 "ko"로 변경
+사용법:
+${selectedCommands}
 
 다음 단계:
-  ${isNewProject ? `1. cd ${projectName}\n  2. ` : ''}Claude Code에서 슬래시 커맨드 사용:
-     /vibe.spec "기능명"
-     /vibe.plan "기능명"
+  ${isNewProject ? `cd ${projectName}\n  ` : ''}/vibe.spec "기능명" 으로 시작하세요!
   `);
 }
 
@@ -193,6 +556,18 @@ MCP 서버:
 switch (command) {
   case 'init':
     init(args[1]);
+    break;
+
+  case 'list':
+    listSkills();
+    break;
+
+  case 'read':
+    readSkill(args[1]);
+    break;
+
+  case 'sync':
+    syncSkills();
     break;
 
   case 'version':
@@ -212,14 +587,12 @@ switch (command) {
     console.log(`
 ❌ 알 수 없는 명령어: ${command}
 
-⚠️  Vibe는 Claude Code 전용 프레임워크입니다.
-   터미널에서는 'init'만 사용 가능합니다.
-
-Claude Code에서 슬래시 커맨드를 사용하세요:
-  /vibe.spec "기능명"
-  /vibe.plan "기능명"
-  /vibe.tasks "기능명"
-  /vibe.run "Task 1-1"
+사용 가능한 명령어:
+  vibe init       프로젝트 초기화
+  vibe list       skills 목록
+  vibe read       skill 읽기
+  vibe sync       AGENTS.md 동기화
+  vibe help       도움말
 
 사용법: vibe help
     `);

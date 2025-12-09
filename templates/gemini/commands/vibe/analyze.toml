@@ -1,0 +1,40 @@
+# Vibe ANALYZE Command for Gemini CLI
+# Analyzes project code quality, architecture, dependencies
+
+[command]
+description = "프로젝트 분석"
+
+[command.args]
+type = { description = "--code, --deps, --arch (선택)", required = false }
+
+prompt = """
+# /vibe:analyze {{args.type}}
+
+프로젝트 코드 품질, 아키텍처, 의존성을 분석합니다.
+
+## 분석 유형
+
+- `--code`: 코드 품질 분석 (복잡도, 중복, 린트)
+- `--deps`: 의존성 분석 (outdated, vulnerabilities)
+- `--arch`: 아키텍처 분석 (구조, 패턴)
+- (없음): 전체 분석
+
+## 출력
+
+### 코드 품질
+- Cyclomatic Complexity
+- 코드 중복률
+- 린트 오류
+
+### 의존성
+- 오래된 패키지
+- 보안 취약점
+- 라이선스 이슈
+
+### 아키텍처
+- 폴더 구조
+- 레이어 분리
+- 디자인 패턴
+
+지금 프로젝트 분석을 시작합니다.
+"""
