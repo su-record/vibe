@@ -1,158 +1,170 @@
 ---
-description: Execute task with Implementation Agent
-argument-hint: "Task 1-1" or --phase N or --all
+description: Execute implementation from SPEC
+argument-hint: "feature name" or --phase N
 ---
 
 # /vibe.run
 
-Task를 구현합니다 (Implementation Agent).
+SPEC을 기반으로 구현합니다 (Implementation Agent).
 
 ## Usage
 
 ```
-/vibe.run "Task 1-1"           # 특정 Task 실행
-/vibe.run --phase 1            # Phase 1 전체 실행
-/vibe.run --all                # 모든 Task 실행
+/vibe.run "기능명"              # 전체 구현
+/vibe.run "기능명" --phase 1    # 특정 Phase만
 ```
 
 ## Description
 
-TASKS 문서의 특정 Task를 읽고 구현 가이드를 생성한 후, 실제 코드를 작성합니다.
+PTCF 구조의 SPEC 문서를 읽고 바로 구현을 실행합니다.
+
+> **PLAN, TASKS 문서 불필요** - SPEC이 곧 실행 가능한 프롬프트
 
 ## Process
 
-### 1️⃣ Task 정보 읽기
-- `.vibe/tasks/{기능명}.md`에서 Task 찾기
-- Task 메타데이터 확인:
-  - 담당 Agent (Backend Python Expert / Frontend Flutter Expert)
-  - 예상 시간
-  - 우선순위
-  - 의존성 (선행 Task 완료 여부 확인)
-  - Acceptance Criteria
+### 1. SPEC 읽기
 
-### 2️⃣ 구현 가이드 생성
-- `.vibe/guides/task-{N}-{M}.md` 생성
-- 포함 내용:
-  - 목표 (Goal)
-  - 파일 경로 (Files to Create/Modify)
-  - 코드 템플릿 (Code Template)
-  - 구현 순서 (Implementation Steps)
-  - 검증 방법 (Verification)
-  - 다음 Task
+`.vibe/specs/{기능명}.md` 파싱:
 
-### 3️⃣ 코드 구현
-- 구현 가이드에 따라 실제 파일 생성/수정
-- 담당 Agent의 스킬 적용:
-  - Backend Python Expert: `~/.vibe/agents/backend-python-expert.md`
-  - Frontend Flutter Expert: `~/.vibe/agents/frontend-flutter-expert.md`
-- TRUST 5 원칙 준수:
-  - **Test-first (BDD/Contract Testing 우선)**
-    - Contract 파일 먼저 작성 (Provider/Consumer)
-    - BDD Step Definitions 작성
-    - Unit Tests 작성
-  - Readable (명확한 코드)
-  - Unified (일관된 스타일)
-  - Secured (보안 고려)
-  - Trackable (로깅, 모니터링)
+| 섹션 | 용도 |
+|------|------|
+| `<role>` | AI 역할 정의 |
+| `<context>` | 배경, 기술 스택, 관련 코드 |
+| `<task>` | Phase별 작업 목록 |
+| `<constraints>` | 제약 조건 |
+| `<output_format>` | 생성/수정할 파일 |
+| `<acceptance>` | 검증 기준 |
 
-### 4️⃣ Acceptance Criteria 검증
-- TASKS 문서의 체크리스트 확인
-- 검증 명령어 실행 (pytest, flutter test 등)
-- 모든 기준 통과 확인
+### 2. Feature 파일 확인
 
-### 5️⃣ Task 상태 업데이트
-- TASKS 문서에서 Task 상태를 ✅ 완료로 변경
-- 완료 일시 기록
-- 진행률 업데이트
+`.vibe/features/{기능명}.feature`:
+- BDD Scenarios 확인
+- 테스트 케이스로 활용
 
-## Agent Selection
+### 3. Phase별 구현
 
-| Task | Agent |
-|------|-------|
-| Task 1-1 ~ 1-9 (Backend + Contract Provider) | Backend Python Expert |
-| Task 2-1 ~ 2-9 (Frontend + Contract Consumer) | Frontend Flutter Expert |
-| Task 3-1 ~ 3-2 (FCM Backend) | Backend Python Expert |
-| Task 3-3 (BDD Step Definitions) | QA / Backend/Frontend Expert |
-| Task 3-4 (Contract Verification) | QA |
-| Task 3-5 (E2E Test) | QA / Frontend Flutter Expert |
+`<task>` 섹션의 Phase 순서대로:
+
+1. **관련 코드 분석**: `<context>`의 관련 코드 읽기
+2. **파일 생성/수정**: `<output_format>` 기준
+3. **제약 조건 준수**: `<constraints>` 확인
+4. **검증 실행**: 검증 명령어 실행
+
+### 4. Acceptance Criteria 검증
+
+`<acceptance>` 체크리스트 확인:
+- [ ] 각 기준 통과 여부
+- [ ] 테스트 통과
+- [ ] 빌드 성공
+
+### 5. SPEC 업데이트
+
+완료된 Task 체크:
+```markdown
+## Task
+<task>
+### Phase 1: Backend
+1. [x] DB 스키마 작성 ✅
+2. [x] API 엔드포인트 ✅
+...
+</task>
+```
+
+## TRUST 5 원칙
+
+구현 시 준수:
+
+| 원칙 | 설명 |
+|------|------|
+| **T**est-first | 테스트 먼저 작성 |
+| **R**eadable | 명확한 코드 |
+| **U**nified | 일관된 스타일 |
+| **S**ecured | 보안 고려 |
+| **T**rackable | 로깅, 모니터링 |
 
 ## Input
 
-- `.vibe/tasks/{기능명}.md` (TASKS 문서)
-- `.vibe/plans/{기능명}.md` (PLAN 참고)
-- `.vibe/specs/{기능명}.md` (SPEC 참고)
-- `.vibe/features/{기능명}.feature` (BDD Feature 파일 - Contract Test 매핑용)
+- `.vibe/specs/{기능명}.md` (PTCF SPEC)
+- `.vibe/features/{기능명}.feature` (BDD)
+- `CLAUDE.md` (프로젝트 컨텍스트)
 
 ## Output
 
-- `.vibe/guides/task-{N}-{M}.md` - 구현 가이드
-- 실제 코드 파일 (생성/수정)
-- TASKS 문서 업데이트 (상태: ✅ 완료)
+- 구현된 코드 파일
+- 테스트 파일
+- SPEC 문서 업데이트 (체크표시)
 
 ## Example
 
-### 개별 Task 실행
+```
+User: /vibe.run "벽돌게임"
+
+Claude:
+📄 SPEC 읽는 중: .vibe/specs/brick-game.md
+
+<role> 분석:
+- 웹 게임 시니어 개발자
+- Phaser.js 전문가
+
+<context> 분석:
+- 기술 스택: Phaser.js, TypeScript
+- 신규 프로젝트
+
+<task> 분석:
+- Phase 1: 프로젝트 셋업 (3개 작업)
+- Phase 2: 게임 로직 (5개 작업)
+- Phase 3: UI/UX (3개 작업)
+- Phase 4: 테스트 (2개 작업)
+
+🚀 Phase 1 시작...
+
+✅ Phase 1 완료
+  - package.json 생성
+  - TypeScript 설정
+  - Phaser.js 설치
+
+🚀 Phase 2 시작...
+[구현 계속...]
+
+✅ 모든 Phase 완료!
+📊 Acceptance Criteria 검증 중...
+  ✅ 게임 시작/종료 동작
+  ✅ 공-패들 충돌 처리
+  ✅ 점수 표시
+  ✅ npm run build 성공
+
+🎉 구현 완료!
+```
+
+### Phase 지정 실행
 
 ```
-/vibe.run "Task 1-1"
+User: /vibe.run "벽돌게임" --phase 2
+
+Claude:
+📄 SPEC 읽는 중: .vibe/specs/brick-game.md
+🎯 Phase 2만 실행합니다.
+
+Phase 2: 게임 로직
+1. [ ] 패들 이동 구현
+2. [ ] 공 물리엔진
+3. [ ] 벽돌 충돌 처리
+4. [ ] 점수 시스템
+5. [ ] 게임 오버 조건
+
+🚀 구현 시작...
 ```
-
-**동작:**
-1. TASKS 문서 읽기
-2. Task 1-1 정보 파싱:
-   - 담당: Backend Python Expert
-   - 내용: DB 마이그레이션 파일 작성
-   - 예상 시간: 30분
-3. 구현 가이드 생성: `.vibe/guides/task-1-1.md`
-4. 코드 작성: `backend/alembic/versions/xxxx_add_notification_settings.py`
-5. 검증: `alembic upgrade head` 실행
-6. Task 상태 업데이트: ⬜ → ✅
-
-### Phase 실행
-
-```
-/vibe.run --phase 1
-```
-
-**동작:**
-- Phase 1의 9개 Task 순차 실행
-- Task 1-1 → 1-2 → ... → 1-9 (Contract Provider 포함)
-- 각 Task마다 의존성 확인 후 실행
-
-### 전체 실행
-
-```
-/vibe.run --all
-```
-
-**동작:**
-- 의존성 그래프에 따라 23개 Task 순차 실행
-- Phase 1 (9개) → Phase 2 (9개) → Phase 3 (5개)
-- BDD/Contract Testing 포함
-- 예상 시간: 28시간
-
-## Verification
-
-각 Task 완료 후:
-- [ ] Acceptance Criteria 모두 통과
-- [ ] 검증 명령어 실행 성공
-- [ ] 코드 품질 기준 충족 (TRUST 5)
-- [ ] TASKS 문서 상태 업데이트
 
 ## Error Handling
 
-Task 실행 실패 시:
+실패 시:
 1. 에러 메시지 확인
-2. 구현 가이드 재검토
+2. `<constraints>` 재검토
 3. 코드 수정 후 재시도
-4. 여전히 실패 시 사용자에게 보고
+4. 계속 실패 시 사용자에게 보고
 
 ## Next Step
 
-Task 완료 후:
-- 의존성 그래프 확인
-- 다음 Task 실행 또는 Phase 완료 확인
-- 모든 Task 완료 시:
-  ```
-  /vibe.verify "푸시 알림 설정 기능"
-  ```
+```
+/vibe.verify "벽돌게임"
+```
