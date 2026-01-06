@@ -1,26 +1,23 @@
 # Vibe
 
-**SPEC-driven AI coding framework with integrated MCP tooling**
+**SPEC-driven AI coding framework (Claude Code 전용)**
 
-Transform natural language requirements into production-ready code through structured specification, planning, and task decomposition.
+SPEC 문서 하나로 AI가 바로 구현하는 2-step 워크플로우.
 
 [![npm version](https://img.shields.io/npm/v/@su-record/vibe.svg)](https://www.npmjs.com/package/@su-record/vibe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Smithery Badge](https://smithery.ai/badge/@su-record/hi-ai)](https://smithery.ai/protocol/@su-record/hi-ai)
 [![MCP Tools](https://img.shields.io/badge/MCP_Tools-36-blue.svg)](https://github.com/su-record/hi-ai)
 
 ---
 
 ## Features
 
-- **Claude Code Optimized**: Built specifically for Claude Code with native slash commands and MCP integration
-- **SPEC-driven Development**: Structured Q&A process using EARS (Easy Approach to Requirements Syntax)
-- **BDD + Contract Testing**: AI-optimized testing with Gherkin features and API contract validation (🚧 v0.2.0)
-- **Automated Planning**: Generate technical implementation plans with architecture, cost analysis, and timeline
-- **Task Decomposition**: Break down features into phase-based, dependency-aware tasks
-- **Powered by @su-record/hi-ai**: 36 MCP tools combining skills and hi-ai for code analysis, quality validation, and insights
-- **Multi-language Support**: English and Korean interface
-- **AI Agent System**: 7 specialized agents for different tech stacks
+- **Claude Code 전용**: 네이티브 슬래시 커맨드 + MCP 통합
+- **2-Step 워크플로우**: SPEC → RUN → VERIFY (PLAN/TASKS 불필요)
+- **PTCF 구조**: Persona, Task, Context, Format - Gemini 프롬프트 최적화
+- **코딩 규칙 내장**: `.agent/rules/` - 품질 기준, 복잡도 제한, 안티패턴
+- **자동 품질 검증**: code-simplifier 서브에이전트
+- **36개 MCP 도구**: @su-record/hi-ai 통합
 
 ---
 
@@ -30,526 +27,267 @@ Transform natural language requirements into production-ready code through struc
 npm install -g @su-record/vibe
 ```
 
-This installs:
-- Vibe CLI (for initialization only)
-- @su-record/hi-ai MCP server (36 development tools)
-- Agents, Skills, Templates for Claude Code
-
-⚠️ **Important**: Vibe is a **Claude Code-exclusive** framework. Terminal commands are limited to `init` only. All development commands are available as **slash commands** within Claude Code.
-
 ---
 
 ## Quick Start
 
-### 1. Initialize Project (Terminal)
+### 1. 프로젝트 초기화 (터미널)
 
 ```bash
-# Option 1: Initialize in existing project
+# 기존 프로젝트에서
 vibe init
 
-# Option 2: Create new project
-vibe init my-new-project
-cd my-new-project
+# 새 프로젝트 생성
+vibe init my-project
+cd my-project
 ```
 
-This will:
-- Register MCP server for the project directory
-- Create `.vibe/` folder structure
-- Install agents, skills, and templates
-
-### 2. Use Slash Commands (Claude Code)
-
-Open Claude Code in your project directory and use slash commands:
+### 2. 슬래시 커맨드 사용 (Claude Code)
 
 ```
-/vibe.spec "push notification settings"
-/vibe.plan "push notification settings"
-/vibe.tasks "push notification settings"
-/vibe.run "Task 1-1"
-/vibe.verify "push notification settings"
+/vibe.spec "로그인 기능"    # SPEC 작성 (대화형)
+/vibe.run "로그인 기능"     # 구현 실행
+/vibe.verify "로그인 기능"  # 검증
 ```
 
 ---
 
-## Command Reference
+## Workflow
 
-### Terminal Commands (Initialization Only)
+```
+┌─────────────────────────────────────────────────────┐
+│  /vibe.spec "기능명"                                │
+│  ↓ 대화형 요구사항 수집                              │
+│  ↓ .vibe/specs/{기능명}.md (PTCF 구조)              │
+│  ↓ .vibe/features/{기능명}.feature (BDD)            │
+├─────────────────────────────────────────────────────┤
+│  /vibe.run "기능명"                                 │
+│  ↓ SPEC 읽고 바로 구현                              │
+│  ↓ Phase별 순차 실행                                │
+│  ↓ .agent/rules/ 규칙 준수                          │
+├─────────────────────────────────────────────────────┤
+│  /vibe.verify "기능명"                              │
+│  ↓ Acceptance Criteria 검증                        │
+│  ↓ 품질 점수 (A+ ~ F)                              │
+└─────────────────────────────────────────────────────┘
+```
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `vibe init` | Initialize Vibe in current project | `vibe init` |
-| `vibe init <name>` | Create new project with Vibe | `vibe init my-app` |
-| `vibe help` | Show help message | `vibe help` |
+---
 
-### Claude Code Slash Commands (Development)
+## Commands
 
-#### Core Workflow
+### 터미널 (초기화만)
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/vibe.spec <name>` | Create SPEC through natural conversation (auto-detects project type, suggests tech stack & design) | `/vibe.spec "user authentication"` |
-| `/vibe.plan <name>` | Generate technical implementation plan | `/vibe.plan "user authentication"` |
-| `/vibe.tasks <name>` | Break down into executable tasks | `/vibe.tasks "user authentication"` |
-| `/vibe.run <task>` | Execute specific task with auto-generated guide | `/vibe.run "Task 1-1"` |
-| `/vibe.verify <name>` | Verify implementation against SPEC | `/vibe.verify "user authentication"` |
+| 명령어 | 설명 |
+|--------|------|
+| `vibe init` | 현재 폴더에 vibe 초기화 |
+| `vibe init <name>` | 새 프로젝트 생성 |
+| `vibe help` | 도움말 |
+| `vibe version` | 버전 정보 |
 
-#### Analysis & Tools
+### Claude Code 슬래시 커맨드
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/vibe.analyze` | Comprehensive project analysis | `/vibe.analyze` |
-| **`/vibe.reason`** 🆕 | **Apply 9-step reasoning framework to complex problems** | **`/vibe.reason "debug issue"`** |
-| `/vibe.ui <description>` | Generate ASCII UI mockup | `/vibe.ui "login form"` |
-| `/vibe.diagram --er` | Generate diagrams (architecture, ERD, flow) | `/vibe.diagram --er` |
+#### 핵심 워크플로우
+
+| 명령어 | 설명 |
+|--------|------|
+| `/vibe.spec "기능명"` | SPEC 작성 (PTCF 구조) |
+| `/vibe.run "기능명"` | 구현 실행 |
+| `/vibe.run "기능명" --phase N` | 특정 Phase만 실행 |
+| `/vibe.verify "기능명"` | 검증 |
+
+#### 분석 & 도구
+
+| 명령어 | 설명 |
+|--------|------|
+| `/vibe.analyze` | 프로젝트 분석 |
+| `/vibe.reason "문제"` | 체계적 추론 (9단계) |
+| `/vibe.ui "설명"` | ASCII UI 미리보기 |
+| `/vibe.diagram` | 다이어그램 생성 |
+
+---
+
+## Project Structure
+
+`vibe init` 실행 후 생성되는 구조:
+
+```
+project/
+├── CLAUDE.md                 # 프로젝트 컨텍스트
+├── .claude/
+│   ├── commands/             # 슬래시 커맨드 (7개)
+│   └── agents/               # 서브에이전트 (simplifier)
+├── .agent/rules/             # 코딩 규칙
+│   ├── core/                 # 핵심 원칙 (수술적 정밀도, DRY, SRP)
+│   ├── quality/              # 품질 체크리스트
+│   ├── standards/            # 복잡도, 네이밍, 안티패턴
+│   ├── languages/            # 언어별 규칙
+│   └── tools/                # MCP 가이드
+└── .vibe/
+    ├── config.json           # 프로젝트 설정
+    ├── constitution.md       # 프로젝트 원칙
+    ├── specs/                # SPEC 문서들
+    └── features/             # BDD Feature 파일들
+```
+
+---
+
+## SPEC Document (PTCF Structure)
+
+```markdown
+# SPEC: {기능명}
+
+## Persona
+<role>
+AI의 역할과 전문성 정의
+</role>
+
+## Context
+<context>
+- 배경, 목적
+- 기술 스택
+- 관련 코드
+- 디자인 레퍼런스
+</context>
+
+## Task
+<task>
+### Phase 1: {단계명}
+1. [ ] 작업 1
+2. [ ] 작업 2
+
+### Phase 2: {단계명}
+...
+</task>
+
+## Constraints
+<constraints>
+- 기존 코드 패턴 준수
+- 에러 메시지 한글화
+</constraints>
+
+## Output Format
+<output_format>
+- 생성할 파일
+- 수정할 파일
+- 검증 명령어
+</output_format>
+
+## Acceptance Criteria
+<acceptance>
+- [ ] 검증 기준 1
+- [ ] 검증 기준 2
+</acceptance>
+```
+
+---
+
+## Coding Rules (.agent/rules/)
+
+### 핵심 원칙
+
+- **수술적 정밀도**: 요청받지 않은 코드는 절대 수정하지 않음
+- **한국어 우선**: 모든 커뮤니케이션은 한국어로
+- **DRY**: 반복하지 말고 재사용
+- **SRP**: 하나의 함수는 하나의 목적만
+- **YAGNI**: 필요하지 않으면 만들지 않음
+
+### 복잡도 기준
+
+| 메트릭 | 기준 |
+|--------|------|
+| 순환 복잡도 | ≤ 10 |
+| 함수 길이 | ≤ 20줄 |
+| 중첩 깊이 | ≤ 3단계 |
+| 매개변수 | ≤ 5개 |
+| 컴포넌트 JSX | ≤ 50줄 |
+
+### 품질 등급
+
+| 등급 | 점수 | 설명 |
+|------|------|------|
+| A+ | 95-100 | 완벽 |
+| A | 90-94 | 우수 |
+| B+ | 85-89 | 양호 |
+| B | 80-84 | 개선 권장 |
+| C | 70-79 | 개선 필요 |
+| F | < 70 | 리팩토링 필요 |
 
 ---
 
 ## MCP Integration
 
-Vibe includes 36 MCP tools across multiple categories (2 new tools added in v1.4.0):
+36개 MCP 도구 포함 (@su-record/hi-ai):
 
-### Code Analysis
-- `analyze_complexity` - Cyclomatic and cognitive complexity metrics
-- `validate_code_quality` - Code quality scoring and recommendations
-- `check_coupling_cohesion` - Module coupling and cohesion analysis
-
-### Project Intelligence
-- `find_symbol` - Locate function/class definitions
-- `find_references` - Find all usages of symbols
-
-### Thinking & Planning
-- `create_thinking_chain` - Generate step-by-step reasoning
-- `step_by_step_analysis` - Detailed problem breakdown
-- `analyze_problem` - Structured problem analysis
-- **`apply_reasoning_framework`** 🆕 - **9-step reasoning framework for complex problems**
-
-### Quality & Standards
-- `apply_quality_rules` - Apply coding standards
-- `suggest_improvements` - Code improvement recommendations
-- **`enhance_prompt_gemini`** 🆕 - **Enhance prompts using Gemini API strategies (Few-Shot, Output Format, etc.)**
-
-### UI & Design
-- `preview_ui_ascii` - Generate ASCII UI mockups
-
-### Memory & Context
-- `save_memory` - Store project context
-- `recall_memory` - Retrieve stored information
-- `auto_save_context` - Automatic context checkpointing
-
-**MCP Server Registration:**
-
-The MCP server is automatically registered when you run `vibe init` in your project. This registers the server **locally for your project only**, not globally.
-
-**Verify MCP server:**
-```bash
-# Run this in your project directory
-claude mcp list
-# Expected output:
-# vibe: node /path/to/@su-record/vibe/node_modules/@su-record/hi-ai/dist/index.js - ✓ Connected
-```
-
-**Important:** Each project that uses Vibe must run `vibe init` to register the MCP server for that specific project.
+- **코드 분석**: `analyze_complexity`, `validate_code_quality`
+- **추론**: `apply_reasoning_framework`, `create_thinking_chain`
+- **품질**: `apply_quality_rules`, `suggest_improvements`
+- **UI**: `preview_ui_ascii`
+- **메모리**: `save_memory`, `recall_memory`
 
 ---
 
-## Configuration
-
-### .vibe/config.json
-
-```json
-{
-  "language": "ko",
-  "agents": {
-    "default": "backend-python-expert"
-  },
-  "mcp": {
-    "enabled": true,
-    "servers": ["vibe"]
-  }
-}
-```
-
-### CLAUDE.md (Recommended)
-
-Place this file in your project root to enable automatic tech stack detection:
-
-```markdown
-# CLAUDE.md
-
-## Tech Stack
-
-### Backend
-- Framework: FastAPI 0.104+
-- Database: PostgreSQL 17
-- Cache: Redis 7.2
-
-### Frontend
-- Framework: Flutter 3.24+
-- State Management: Provider
-```
-
----
-
-## Specification Format
-
-Vibe uses EARS (Easy Approach to Requirements Syntax):
-
-```markdown
-# SPEC: Feature Name
-
-## Metadata
-- Created: 2025-01-17
-- Priority: HIGH
-- Language: en
-
-## Requirements
-
-### REQ-001: Requirement Title
-**WHEN** user performs action X
-**THEN** system SHALL perform Y
-
-#### Acceptance Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
-### REQ-002: Another Requirement
-**WHERE** condition A exists
-**AND** condition B is true
-**THEN** system SHALL perform Z
-```
-
----
-
-## AI Agents
-
-| Agent | Specialization | Tech Stack |
-|-------|----------------|------------|
-| Specification Agent | Requirements gathering (Gemini prompting strategies) | Language-agnostic |
-| Planning Agent | Technical architecture and cost analysis | Cross-stack |
-| Task Agent | Phase-based task decomposition | Cross-stack |
-| **Reasoning Agent** 🆕 | **9-step reasoning framework for complex problems** | **Cross-stack** |
-| Backend Python Expert | Python/FastAPI implementation | Python 3.11+, FastAPI, SQLAlchemy |
-| Frontend Flutter Expert | Flutter/Dart implementation | Flutter 3.24+, Dart 3.5+ |
-| Frontend React Expert | React/Next.js implementation | React 18+, Next.js 14+ |
-| Database PostgreSQL Expert | PostgreSQL/PostGIS design | PostgreSQL 17, PostGIS 3.4+ |
-| Quality Reviewer | Code review and quality validation | Multi-language |
-
----
-
-## Workflow Example
-
-### 1. Initialize Project (Terminal)
-
-```bash
-$ vibe init
-🔧 MCP 서버 확인 중...
-✅ vibe MCP 서버 등록 완료
-✅ vibe 초기화 완료!
-
-생성된 구조:
-  .vibe/
-  ├── config.json
-  ├── constitution.md
-  ├── specs/          # SPEC documents (EARS format)
-  ├── features/       # BDD Feature files (Gherkin)
-  ├── plans/          # Technical plans
-  └── tasks/          # Task breakdowns
-```
-
-### 2. Create Specification (Claude Code)
-
-**Note**: Examples shown in English. Claude responds in the language set in `.vibe/config.json` (default: Korean).
+## Example
 
 ```
-User: /vibe.spec "push notification settings"
-
-Claude (Specification Agent):
-[Analyzing source code]
-- Backend: Python (FastAPI)
-- Frontend: Flutter 3.24+
-- Database: PostgreSQL 17
-
-Existing project detected! Is this tech stack correct?
-
-User: Yes
+User: /vibe.spec "벽돌게임"
 
 Claude:
-What types of notifications do you want to manage?
+벽돌게임을 만드시는군요! 어떤 스타일을 생각하고 계신가요?
 
-User: Comments, likes, follows, announcements, events, marketing
+1. 클래식 벽돌깨기 (Breakout)
+2. 아르카노이드 (파워업 포함)
+3. 커스텀 스타일
 
-Claude:
-Do you need just ON/OFF toggle for each category, or detailed settings too?
-
-1. ON/OFF only
-2. Detailed settings (time, frequency, etc.)
-3. Both
-
-Or you can describe directly.
+또는 직접 설명해주셔도 됩니다.
 
 User: 1
 
-Claude:
-Which push notification service would you like to use?
+Claude: 어떤 플랫폼에서 실행하시겠어요?
 
-1. Firebase Cloud Messaging (FCM) - Free, easy Flutter integration
-2. OneSignal - Multi-platform, dashboard
-3. Custom implementation
-
-Or you can describe directly.
-
-User: We're already using FCM
-
-Claude:
-Great! Which design reference would you like to follow?
-
-1. iOS Settings > Notifications (toggle + grouping)
-2. Slack notification settings (category-based)
-3. Twitter notification settings (simple list)
-
-Or you can describe directly.
+1. 웹 (브라우저)
+2. 모바일
+3. 데스크톱
 
 User: 1
 
-...
+Claude: 기술 스택을 제안드립니다:
 
-✅ SPEC document created!
-📄 .vibe/specs/push-notification-settings.md
-📄 .vibe/features/push-notification-settings.feature (BDD scenarios)
-```
+1. Phaser.js (추천) - 게임 프레임워크
+2. Canvas + JavaScript
+3. PixiJS + Matter.js
 
-### 3. Generate Plan (Claude Code)
+User: 1
 
-```
-User: /vibe.plan "push notification settings"
+[대화 계속...]
 
-Claude (Planning Agent):
-SPEC을 분석하여 기술 계획을 작성하겠습니다.
+✅ SPEC 문서 작성 완료!
+📄 .vibe/specs/brick-game.md
+📄 .vibe/features/brick-game.feature
 
-✅ PLAN 문서 작성 완료!
-📄 .vibe/plans/push-notification-settings.md
-
-Summary:
-- 3 Phases: Backend → Frontend → FCM Integration
-- Timeline: 28 hours (3.5 days)
-- Cost: +$0.50/month (Redis + FCM)
-- Testing: BDD (pytest-bdd) + Contract Testing (Pact)
-```
-
-### 4. Decompose Tasks (Claude Code)
-
-```
-User: /vibe.tasks "push notification settings"
-
-Claude (Task Agent):
-PLAN을 기반으로 Task를 생성하겠습니다.
-
-✅ TASKS 문서 작성 완료!
-📄 .vibe/tasks/push-notification-settings.md
-
-Task Breakdown:
-- Total: 23 tasks
-- Phase 1 (Backend): 9 tasks (includes Contract Provider)
-- Phase 2 (Frontend): 9 tasks (includes Contract Consumer)
-- Phase 3 (Integration): 5 tasks (includes BDD Steps + Contract Verification)
-```
-
-### 5. Execute Tasks (Claude Code)
-
-```
-User: /vibe.run "Task 1-1"
-
-Claude:
-Task 1-1 - Database Migration을 실행하겠습니다.
-
-1. 구현 가이드 생성 (.vibe/guides/task-1-1.md)
-2. Migration 파일 생성
-3. Acceptance Criteria 검증
-4. Task 상태 업데이트
-
-✅ Task 1-1 completed
-```
-
-### 6. Code Analysis (Claude Code)
-
-```
-User: /vibe.analyze
-
-Claude:
-프로젝트 전체를 분석하겠습니다.
-
-📊 Code Quality Report
-
-Overall Score: 85/100 (B+)
-
-Findings:
-- High complexity: src/service.py (CC: 15)
-- Low cohesion: src/utils.py (0.3)
-- Strong coupling: Controller ↔ Service (0.8)
-
-Recommendations:
-1. Refactor src/service.py into 3 modules
-2. Apply Dependency Injection pattern
-3. Extract unrelated utilities from src/utils.py
-```
-
-### 7. UI Mockup (Claude Code)
-
-```
-User: /vibe.ui "login form"
-
-Claude:
-┌─────────────────────────────────────────┐
-│            Welcome Back                  │
-├─────────────────────────────────────────┤
-│                                          │
-│         ┌─────────────────────┐          │
-│  Email: │                     │          │
-│         └─────────────────────┘          │
-│                                          │
-│         ┌─────────────────────┐          │
-│  Pass:  │ ••••••••••••        │          │
-│         └─────────────────────┘          │
-│                                          │
-│         ┌─────────────────────┐          │
-│         │      Sign In        │          │
-│         └─────────────────────┘          │
-│                                          │
-└─────────────────────────────────────────┘
-
-Required Components:
-- EmailInput.tsx, PasswordInput.tsx, Button.tsx
-```
-
----
-
-## BDD & Contract Testing Workflow
-
-Vibe integrates BDD (Behavior-Driven Development) and Contract Testing throughout the development lifecycle:
-
-### Workflow Overview
-
-```
-/vibe.spec "feature"
-  ↓ Generates SPEC (EARS) + Feature file (Gherkin)
-
-/vibe.plan "feature"
-  ↓ Analyzes Feature file, selects BDD tools (pytest-bdd, Pact, etc.)
-
-/vibe.tasks "feature"
-  ↓ Creates Contract Testing tasks (Provider, Consumer, Verification)
-
-/vibe.run "Task X-Y"
-  ↓ Implements test-first (Contract → Step Definitions → Code)
-
-/vibe.verify "feature"
-  ↓ Validates BDD Scenarios + Contract Tests
-```
-
-### Generated Files
-
-- **`.vibe/features/{feature}.feature`** - Gherkin scenarios (Given-When-Then)
-- **`tests/steps/`** - BDD step definitions
-- **`pacts/` or `contracts/`** - Contract test files (Provider/Consumer)
-
-### Testing Tools by Language
-
-| Language | BDD Tool | Contract Testing |
-|----------|----------|------------------|
-| Python | pytest-bdd, behave | Pact Python |
-| JavaScript/TS | cucumber, jest-cucumber | Pact JS |
-| Java/Kotlin | Cucumber JVM | Pact JVM, Spring Cloud Contract |
-| Dart/Flutter | gherkin, flutter_gherkin | Pact Dart |
-
-### Example Feature File
-
-```gherkin
-Feature: Push Notification Settings
-
-  Scenario: User enables comment notifications
-    Given the user is logged in
-    And the notification settings page is displayed
-    When the user toggles "Comments" notification to ON
-    Then the setting should be saved successfully
-    And the API should return status 200
-    And the response time should be less than 500ms
-```
-
----
-
-## Best Practices
-
-### 1. Document Your Tech Stack
-
-Create `CLAUDE.md` in your project root to enable automatic tech stack detection and prevent technology drift.
-
-### 2. Execute Phase by Phase
-
-Execute and verify each phase independently in Claude Code:
-
-```
-/vibe.run --phase 1  # Backend development
-# Verify, test, commit
-
-/vibe.run --phase 2  # Frontend development
-# Verify, test, commit
-
-/vibe.run --phase 3  # Integration
-# Verify, test, commit
-```
-
-### 3. Validate Acceptance Criteria
-
-Each task includes acceptance criteria. Ensure all criteria pass before marking tasks complete.
-
-### 4. Leverage MCP Tools
-
-Use analysis commands in Claude Code before refactoring:
-
-```
-/vibe.analyze --code      # Identify complexity hotspots
-/vibe.analyze --deps      # Check for outdated/vulnerable packages
-/vibe.analyze --arch      # Detect circular dependencies
+다음 단계: /vibe.run "벽돌게임"
 ```
 
 ---
 
 ## Requirements
 
-- **Node.js**: 18.0.0 or higher
-- **npm**: 7.0.0 or higher
-- **Claude Code**: Required for slash commands
-
----
-
-## Contributing
-
-Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
-
----
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details
+- **Node.js**: 18.0.0+
+- **Claude Code**: 필수
 
 ---
 
 ## Links
 
 - **Repository**: [github.com/su-record/vibe](https://github.com/su-record/vibe)
-- **Issues**: [GitHub Issues](https://github.com/su-record/vibe/issues)
 - **MCP Server**: [@su-record/hi-ai](https://github.com/su-record/hi-ai)
-- **Documentation**: [Full Documentation](https://github.com/su-record/vibe/wiki)
+- **Issues**: [GitHub Issues](https://github.com/su-record/vibe/issues)
 
 ---
 
-## Support
+## License
 
-For questions and support:
-- Open an issue on GitHub
-- Check the documentation wiki
-- Review existing discussions
+MIT License
 
 ---
 
