@@ -149,6 +149,18 @@ async function init(projectName) {
     copyDirContents(agentsSourceDir, agentsDir);
     console.log('   ✅ 서브에이전트 설치 완료 (.claude/agents/)\n');
 
+    // .claude/settings.local.json 생성 (Hooks 설정)
+    const settingsPath = path.join(claudeDir, 'settings.local.json');
+    if (!fs.existsSync(settingsPath)) {
+      const hooksTemplate = path.join(__dirname, '../templates/hooks-template.json');
+      if (fs.existsSync(hooksTemplate)) {
+        fs.copyFileSync(hooksTemplate, settingsPath);
+        console.log('   ✅ Hooks 설정 설치 완료 (.claude/settings.local.json)\n');
+      }
+    } else {
+      console.log('   ℹ️  Hooks 설정 이미 존재\n');
+    }
+
     // 완료 메시지
     console.log(`
 ✅ vibe 초기화 완료!
@@ -160,7 +172,8 @@ ${isNewProject ? `프로젝트 위치:
   CLAUDE.md                      # 프로젝트 컨텍스트
   .claude/
   ├── commands/                  # 슬래시 커맨드 (7개)
-  └── agents/                    # 서브에이전트 (simplifier)
+  ├── agents/                    # 서브에이전트 (simplifier)
+  └── settings.local.json        # Hooks 설정 (자동 품질 검증)
   .agent/rules/                  # 코딩 규칙
   ├── core/                      # 핵심 원칙
   ├── quality/                   # 품질 체크리스트
