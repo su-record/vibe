@@ -76,12 +76,13 @@ cd my-project
 
 ## Commands
 
-### 터미널 (초기화만)
+### 터미널 명령어
 
 | 명령어 | 설명 |
 |--------|------|
 | `vibe init` | 현재 폴더에 vibe 초기화 |
 | `vibe init <name>` | 새 프로젝트 생성 |
+| `vibe update` | 설정 업데이트 (커맨드, 규칙, Hooks) |
 | `vibe help` | 도움말 |
 | `vibe version` | 버전 정보 |
 
