@@ -76,12 +76,13 @@ cd my-project
 
 ## Commands
 
-### 터미널 (초기화만)
+### 터미널 명령어
 
 | 명령어 | 설명 |
 |--------|------|
 | `vibe init` | 현재 폴더에 vibe 초기화 |
 | `vibe init <name>` | 새 프로젝트 생성 |
+| `vibe update` | 설정 업데이트 (커맨드, 규칙, Hooks) |
 | `vibe help` | 도움말 |
 | `vibe version` | 버전 정보 |
 
@@ -100,10 +101,16 @@ cd my-project
 
 | 명령어 | 설명 |
 |--------|------|
-| `/vibe.analyze` | 프로젝트 분석 |
+| `/vibe.analyze` | 프로젝트 전체 분석 |
+| `/vibe.analyze "기능명"` | 특정 기능/모듈 분석 |
+| `/vibe.analyze --code` | 코드 품질 분석만 |
+| `/vibe.analyze --deps` | 의존성 분석만 |
+| `/vibe.analyze --arch` | 아키텍처 분석만 |
 | `/vibe.reason "문제"` | 체계적 추론 (9단계) |
 | `/vibe.ui "설명"` | ASCII UI 미리보기 |
-| `/vibe.diagram` | 다이어그램 생성 |
+| `/vibe.diagram` | 아키텍처 다이어그램 |
+| `/vibe.diagram --er` | ERD 다이어그램 |
+| `/vibe.diagram --flow` | 플로우차트 |
 
 ---
 
