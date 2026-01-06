@@ -13,6 +13,13 @@ argument-hint: "feature name"
 /vibe.verify "기능명"
 ```
 
+## Rules Reference
+
+**반드시 `.agent/rules/` 규칙을 따릅니다:**
+- `quality/checklist.md` - 코드 품질 체크리스트 (필수)
+- `standards/complexity-metrics.md` - 복잡도 기준
+- `standards/anti-patterns.md` - 안티패턴 검출
+
 ## Description
 
 SPEC 문서의 모든 요구사항(REQ-001~N)과 비기능 요구사항(NFR)을 구현된 코드가 만족하는지 검증합니다.

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://claude.ai/schemas/hooks.json",
+  "description": "VIBE 프레임워크 자동 품질 검증 훅",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "tools": ["Write", "Edit"],
+        "description": "코드 작성/수정 후 품질 검증",
+        "command": "echo '📋 품질 검증 중...' && claude --agent simplifier --file $CHANGED_FILE",
+        "enabled": true
+      }
+    ],
+    "PreCommit": [
+      {
+        "description": "커밋 전 전체 품질 체크",
+        "command": "npm run lint && npm run type-check",
+        "enabled": true
+      }
+    ]
+  },
+  "settings": {
+    "autoFix": true,
+    "minGrade": "B",
+    "reportPath": ".vibe/reports/"
+  }
+}

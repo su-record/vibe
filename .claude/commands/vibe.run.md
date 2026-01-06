@@ -14,6 +14,14 @@ SPEC을 기반으로 구현합니다 (Implementation Agent).
 /vibe.run "기능명" --phase 1    # 특정 Phase만
 ```
 
+## Rules Reference
+
+**반드시 `.agent/rules/` 규칙을 따릅니다:**
+- `core/development-philosophy.md` - 수술적 정밀도, 요청 범위만 수정
+- `core/quick-start.md` - 한국어, DRY, SRP, YAGNI
+- `standards/complexity-metrics.md` - 함수 ≤20줄, 중첩 ≤3단계
+- `quality/checklist.md` - 코드 품질 체크리스트
+
 ## Description
 
 PTCF 구조의 SPEC 문서를 읽고 바로 구현을 실행합니다.

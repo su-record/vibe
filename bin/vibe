@@ -26,6 +26,23 @@ function copyDirContents(sourceDir, targetDir) {
   }
 }
 
+function copyDirRecursive(sourceDir, targetDir) {
+  if (!fs.existsSync(sourceDir)) return;
+
+  ensureDir(targetDir);
+
+  fs.readdirSync(sourceDir).forEach(item => {
+    const sourcePath = path.join(sourceDir, item);
+    const targetPath = path.join(targetDir, item);
+
+    if (fs.statSync(sourcePath).isDirectory()) {
+      copyDirRecursive(sourcePath, targetPath);
+    } else {
+      fs.copyFileSync(sourcePath, targetPath);
+    }
+  });
+}
+
 // 프로젝트 초기화
 async function init(projectName) {
   try {
@@ -103,6 +120,19 @@ async function init(projectName) {
       fs.copyFileSync(agentsSource, agentsDest);
     }
 
+    // .agent/rules/ 복사 (코딩 규칙)
+    const rulesSource = path.join(__dirname, '../.agent/rules');
+    const rulesTarget = path.join(projectRoot, '.agent/rules');
+    copyDirRecursive(rulesSource, rulesTarget);
+    console.log('   ✅ 코딩 규칙 설치 완료 (.agent/rules/)\n');
+
+    // .claude/agents/ 복사 (서브에이전트)
+    const agentsDir = path.join(claudeDir, 'agents');
+    ensureDir(agentsDir);
+    const agentsSourceDir = path.join(__dirname, '../.claude/agents');
+    copyDirContents(agentsSourceDir, agentsDir);
+    console.log('   ✅ 서브에이전트 설치 완료 (.claude/agents/)\n');
+
     // 완료 메시지
     console.log(`
 ✅ vibe 초기화 완료!
@@ -112,7 +142,13 @@ ${isNewProject ? `프로젝트 위치:
 
 ` : ''}생성된 구조:
   CLAUDE.md                      # 프로젝트 컨텍스트
-  .claude/commands/              # Claude Code 슬래시 커맨드 (7개)
+  .claude/
+  ├── commands/                  # 슬래시 커맨드 (7개)
+  └── agents/                    # 서브에이전트 (simplifier)
+  .agent/rules/                  # 코딩 규칙
+  ├── core/                      # 핵심 원칙
+  ├── quality/                   # 품질 체크리스트
+  └── standards/                 # 코딩 표준
   .vibe/
   ├── config.json                # 프로젝트 설정
   ├── constitution.md            # 프로젝트 원칙

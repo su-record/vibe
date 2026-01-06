@@ -13,6 +13,13 @@ SPEC 문서를 작성합니다 (Specification Agent).
 /vibe.spec "기능명"
 ```
 
+## Rules Reference
+
+**반드시 `.agent/rules/` 규칙을 따릅니다:**
+- `core/development-philosophy.md` - 수술적 정밀도, 단순함
+- `core/quick-start.md` - 한국어 우선, DRY, SRP
+- `core/communication-guide.md` - 커뮤니케이션 원칙
+
 ## Description
 
 사용자와 대화를 통해 요구사항을 수집하고, AI가 바로 실행 가능한 **PTCF 구조의 SPEC 문서**를 작성합니다.
@@ -135,7 +142,7 @@ SPEC 문서를 작성합니다 (Specification Agent).
 
 ### 5. 품질 검증
 
-TRUST 5 기준 자체 평가 (0-100점)
+`.agent/rules/quality/checklist.md` 기준 자체 평가 (0-100점)
 
 ## Output
 
