@@ -96,9 +96,9 @@ async function init(projectName) {
     };
     fs.writeFileSync(path.join(vibeDir, 'config.json'), JSON.stringify(config, null, 2));
 
-    // AGENTS.md 복사
-    const agentsSource = path.join(__dirname, '../AGENTS.md');
-    const agentsDest = path.join(projectRoot, 'AGENTS.md');
+    // CLAUDE.md 복사
+    const agentsSource = path.join(__dirname, '../CLAUDE.md');
+    const agentsDest = path.join(projectRoot, 'CLAUDE.md');
     if (fs.existsSync(agentsSource)) {
       fs.copyFileSync(agentsSource, agentsDest);
     }
@@ -111,7 +111,7 @@ ${isNewProject ? `프로젝트 위치:
   ${projectRoot}/
 
 ` : ''}생성된 구조:
-  AGENTS.md                      # 프로젝트 설명
+  CLAUDE.md                      # 프로젝트 컨텍스트
   .claude/commands/              # Claude Code 슬래시 커맨드 (7개)
   .vibe/
   ├── config.json                # 프로젝트 설정

@@ -1,4 +1,4 @@
-# VIBE - Claude Code Framework
+# VIBE
 
 SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 
@@ -6,8 +6,6 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 
 ```
 /vibe.spec → /vibe.run → /vibe.verify
-     ↓           ↓            ↓
-  요구사항      구현         검증
 ```
 
 ## Commands
@@ -21,6 +19,19 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 | `/vibe.analyze` | 프로젝트 분석 |
 | `/vibe.diagram` | 다이어그램 생성 |
 | `/vibe.ui "설명"` | UI 미리보기 |
+
+## PTCF Structure
+
+SPEC 문서는 AI가 바로 실행 가능한 프롬프트 형태:
+
+```
+<role>      AI 역할 정의
+<context>   배경, 기술 스택, 관련 코드
+<task>      Phase별 작업 목록
+<constraints> 제약 조건
+<output_format> 생성/수정할 파일
+<acceptance> 검증 기준
+```
 
 ## Getting Started
 
