@@ -100,10 +100,16 @@ cd my-project
 
 | 명령어 | 설명 |
 |--------|------|
-| `/vibe.analyze` | 프로젝트 분석 |
+| `/vibe.analyze` | 프로젝트 전체 분석 |
+| `/vibe.analyze "기능명"` | 특정 기능/모듈 분석 |
+| `/vibe.analyze --code` | 코드 품질 분석만 |
+| `/vibe.analyze --deps` | 의존성 분석만 |
+| `/vibe.analyze --arch` | 아키텍처 분석만 |
 | `/vibe.reason "문제"` | 체계적 추론 (9단계) |
 | `/vibe.ui "설명"` | ASCII UI 미리보기 |
-| `/vibe.diagram` | 다이어그램 생성 |
+| `/vibe.diagram` | 아키텍처 다이어그램 |
+| `/vibe.diagram --er` | ERD 다이어그램 |
+| `/vibe.diagram --flow` | 플로우차트 |
 
 ---
 
