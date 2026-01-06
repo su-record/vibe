@@ -5,7 +5,7 @@ argument-hint: "feature name"
 
 # /vibe.verify
 
-구현된 코드를 SPEC 요구사항에 대해 검증합니다.
+Feature 시나리오 기반으로 구현을 검증합니다.
 
 ## Usage
 
@@ -16,145 +16,133 @@ argument-hint: "feature name"
 ## Rules Reference
 
 **반드시 `.vibe/rules/` 규칙을 따릅니다:**
-- `quality/checklist.md` - 코드 품질 체크리스트 (필수)
+- `quality/checklist.md` - 코드 품질 체크리스트
 - `standards/complexity-metrics.md` - 복잡도 기준
-- `standards/anti-patterns.md` - 안티패턴 검출
-
-## Description
-
-SPEC 문서의 모든 요구사항(REQ-001~N)과 비기능 요구사항(NFR)을 구현된 코드가 만족하는지 검증합니다.
 
 ## Process
 
-1. **SPEC 문서 읽기**: `.vibe/specs/{기능명}.md`
-2. **Feature 파일 읽기**: `.vibe/features/{기능명}.feature` (BDD Scenarios)
-3. **TASKS 문서 확인**: 모든 Task가 ✅ 완료 상태인지 확인
-4. **BDD Scenarios 검증**:
-   - Feature 파일의 모든 Scenario 실행
-   - Given-When-Then 각 단계 검증
-   - Step Definitions 실행 결과 확인
-5. **Contract Testing 검증**:
-   - Provider Contract 검증 (Backend)
-   - Consumer Contract 검증 (Frontend)
-   - Contract 일치 여부 확인 (Pact Broker)
-6. **요구사항별 검증**:
-   - REQ-001: 6개 알림 카테고리 정의 → DB 스키마 확인
-   - REQ-002: 설정 저장 (P95 < 500ms) → 성능 테스트
-   - REQ-003: 설정 조회 (P95 < 300ms) → 성능 테스트
-   - REQ-004: 알림 필터링 동작 → 통합 테스트
-   - REQ-005: 기본 설정 생성 → 유닛 테스트
-   - REQ-006: UI 피드백 → 위젯 테스트
-7. **비기능 요구사항 검증**:
-   - 성능 (Performance): Locust로 부하 테스트
-   - 보안 (Security): JWT 인증 확인
-   - 접근성 (Accessibility): WCAG AA 기준
-8. **검증 리포트 생성**: `.vibe/reports/{기능명}-verification.md`
+### 1. Feature 파일 로드
 
-## Agent
+`.vibe/features/{기능명}.feature` 읽기
 
-Quality Reviewer Agent
+### 2. 시나리오별 검증
+
+각 Scenario에 대해:
+
+1. **Given** (전제 조건) - 상태 확인
+2. **When** (행동) - 기능 실행
+3. **Then** (결과) - 예상 결과 검증
+
+### 3. 검증 방법
+
+**코드 검증:**
+- 해당 기능이 구현되어 있는지 확인
+- Given/When/Then 각 단계가 동작하는지 확인
+
+**테스트 실행 (있는 경우):**
+- `npm test`, `pytest`, `flutter test` 등 실행
+- BDD 테스트 프레임워크 결과 확인
+
+**수동 검증:**
+- 테스트 코드가 없으면 코드 리뷰로 검증
+- 각 시나리오의 로직이 구현되었는지 확인
+
+### 4. 결과 리포트
+
+```markdown
+# Verification Report: {기능명}
+
+## Summary
+- **총 시나리오**: N개
+- **통과**: N개 ✅
+- **실패**: N개 ❌
+- **품질 점수**: XX/100
+
+## Scenario Results
+
+### ✅ Scenario 1: {제목}
+- Given: 확인됨
+- When: 구현됨
+- Then: 동작함
+- **검증**: AC-1 충족
+
+### ❌ Scenario 2: {제목}
+- Given: 확인됨
+- When: 구현됨
+- Then: **실패** - {이유}
+- **수정 필요**: {구체적 내용}
+
+## Code Quality
+- 복잡도: ✅ 적정
+- 테스트 커버리지: XX%
+- 에러 처리: ✅
+
+## Next Steps
+- {실패한 시나리오 수정 방법}
+```
 
 ## Input
 
-- `.vibe/specs/{기능명}.md` (SPEC 문서)
-- `.vibe/features/{기능명}.feature` (BDD Feature 파일)
-- `.vibe/tasks/{기능명}.md` (TASKS 문서)
-- 구현된 코드 (backend/, frontend/)
-- BDD Step Definitions (tests/steps/, test/bdd/)
-- Contract 파일 (pacts/, contracts/)
+- `.vibe/features/{기능명}.feature` - BDD 시나리오
+- `.vibe/specs/{기능명}.md` - SPEC 문서 (참조)
+- 구현된 소스 코드
 
 ## Output
 
-- `.vibe/reports/{기능명}-verification.md` - 검증 리포트
-- 통과/실패 요구사항 목록
-- 성능 테스트 결과
-- 개선 제안 사항
-
-## Verification Checklist
-
-### Functional Requirements
-- [ ] REQ-001: 6개 알림 카테고리 정의
-- [ ] REQ-002: 설정 저장 (P95 < 500ms)
-- [ ] REQ-003: 설정 조회 (P95 < 300ms)
-- [ ] REQ-004: 알림 필터링 동작
-- [ ] REQ-005: 기본 설정 생성
-- [ ] REQ-006: UI 피드백
-
-### Non-Functional Requirements
-- [ ] 성능: P95 응답 시간 목표 달성
-- [ ] 보안: JWT 인증, 권한 검증
-- [ ] 접근성: WCAG AA 기준 (4.5:1 대비, 48x48dp 터치)
-- [ ] 확장성: 새 카테고리 추가 용이
-- [ ] 가용성: 99.9% uptime
-
-### Code Quality (TRUST 5)
-- [ ] Test-first: Contract tests 작성
-- [ ] Readable: Docstring, Type hints
-- [ ] Unified: 일관된 스타일
-- [ ] Secured: 보안 고려
-- [ ] Trackable: Logging, Monitoring
-
-### Tests
-- [ ] **BDD Scenarios 모두 통과** (pytest-bdd, behave, cucumber)
-- [ ] **Contract Tests 모두 통과** (Pact, Spring Cloud Contract)
-- [ ] 유닛 테스트 커버리지 > 80%
-- [ ] 통합 테스트 통과
-- [ ] E2E 테스트 통과 (실제 푸시 수신)
-- [ ] 성능 테스트 통과 (Locust)
+- 검증 결과 리포트 (터미널 출력)
+- 통과/실패 시나리오 목록
+- 수정이 필요한 항목
 
 ## Example
 
 ```
-/vibe.verify "푸시 알림 설정 기능"
-```
+User: /vibe.verify "로그인"
 
-**결과:**
-```markdown
-# Verification Report: 푸시 알림 설정 기능
+Claude:
+# Verification Report: 로그인
 
 ## Summary
-- **전체 요구사항**: 12개
-- **통과**: 12개 ✅
-- **실패**: 0개
-- **품질 점수**: 95/100 (A+)
+- **총 시나리오**: 4개
+- **통과**: 3개 ✅
+- **실패**: 1개 ❌
+- **품질 점수**: 85/100
 
-## BDD Scenarios (5/5 통과)
-✅ Scenario 1: 알림 설정 조회
-✅ Scenario 2: 알림 카테고리 활성화
-✅ Scenario 3: 알림 카테고리 비활성화
-✅ Scenario 4: 기본 설정 생성
-✅ Scenario 5: 설정 저장 응답 시간 검증
+## Scenario Results
 
-## Contract Tests (2/2 통과)
-✅ Provider Contract: Backend API 스키마 검증
-✅ Consumer Contract: Frontend 호출 규약 검증
+### ✅ Scenario 1: 유효한 자격증명으로 로그인
+- Given: 사용자가 로그인 페이지에 있다 → ✅ LoginPage 컴포넌트 존재
+- When: 유효한 이메일/비밀번호 입력 → ✅ handleSubmit 구현됨
+- Then: 대시보드로 이동 → ✅ router.push('/dashboard')
 
-## Functional Requirements (6/6 통과)
-✅ REQ-001: 6개 알림 카테고리 정의
-✅ REQ-002: 설정 저장 (P95: 420ms < 500ms)
-✅ REQ-003: 설정 조회 (P95: 280ms < 300ms)
-✅ REQ-004: 알림 필터링 동작
-✅ REQ-005: 기본 설정 생성
-✅ REQ-006: UI 피드백
+### ✅ Scenario 2: 잘못된 비밀번호로 로그인 시도
+- Given: 로그인 페이지 → ✅
+- When: 잘못된 비밀번호 → ✅
+- Then: 에러 메시지 표시 → ✅ "비밀번호가 일치하지 않습니다"
 
-## Non-Functional Requirements (4/4 통과)
-✅ 성능: P95 < 500ms
-✅ 보안: JWT 인증 적용
-✅ 접근성: WCAG AA 준수
-✅ 테스트 커버리지: 85%
+### ✅ Scenario 3: 이메일 형식 검증
+- Given: 로그인 페이지 → ✅
+- When: 잘못된 이메일 형식 → ✅
+- Then: 유효성 에러 → ✅ zod validation
 
-## 개선 제안
-- 캐시 히트율 80% 달성 (현재 75%)
+### ❌ Scenario 4: 비밀번호 찾기 링크
+- Given: 로그인 페이지 → ✅
+- When: "비밀번호 찾기" 클릭 → ❌ 링크 없음
+- Then: 비밀번호 찾기 페이지로 이동 → ❌
+
+## Next Steps
+Scenario 4 수정 필요:
+- LoginPage에 "비밀번호 찾기" 링크 추가
+- /forgot-password 라우트 구현
 ```
 
 ## Next Step
 
 검증 통과 시:
 ```
-vibe deploy "푸시 알림 설정 기능"  # Staging 배포
+완료! 다음 기능을 진행하세요.
 ```
 
 검증 실패 시:
 ```
-/vibe.run "Task X-Y"  # 실패한 Task 재구현
+/vibe.run "기능명" --fix  # 실패한 시나리오 수정
 ```

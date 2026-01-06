@@ -352,6 +352,46 @@ function removeDirRecursive(dirPath) {
   fs.rmdirSync(dirPath);
 }
 
+// 최신 버전 확인 및 자동 업그레이드
+async function checkAndUpgradeVibe() {
+  const { execSync } = require('child_process');
+  const currentVersion = require('../package.json').version;
+
+  try {
+    // npm에서 최신 버전 확인
+    const latestVersion = execSync('npm view @su-record/vibe version', {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe']
+    }).trim();
+
+    if (latestVersion !== currentVersion) {
+      log(`   📦 새 버전 발견: v${currentVersion} → v${latestVersion}\n`);
+      log('   ⬆️  vibe 업그레이드 중...\n');
+
+      execSync('npm install -g @su-record/vibe@latest', {
+        stdio: options.silent ? 'pipe' : 'inherit'
+      });
+
+      log('   ✅ vibe 업그레이드 완료!\n');
+
+      // 업그레이드 후 새 버전으로 update 재실행
+      log('   🔄 새 버전으로 업데이트 재실행...\n\n');
+      execSync(`vibe update${options.silent ? ' --silent' : ''}`, {
+        stdio: 'inherit',
+        cwd: process.cwd()
+      });
+      return true; // 재실행됨
+    } else {
+      log(`   ✅ 최신 버전 사용 중 (v${currentVersion})\n`);
+      return false; // 계속 진행
+    }
+  } catch (e) {
+    // 네트워크 오류 등은 무시하고 계속 진행
+    log(`   ℹ️  버전 확인 스킵 (오프라인 또는 네트워크 오류)\n`);
+    return false;
+  }
+}
+
 // 프로젝트 업데이트
 async function update() {
   try {
@@ -365,6 +405,12 @@ async function update() {
     }
 
     log('🔄 vibe 업데이트 중...\n');
+
+    // 최신 버전 확인 및 자동 업그레이드
+    const wasUpgraded = await checkAndUpgradeVibe();
+    if (wasUpgraded) {
+      return; // 새 버전에서 재실행됨
+    }
 
     // 마이그레이션: .agent/rules/ → .vibe/rules/
     const oldRulesDir = path.join(projectRoot, '.agent/rules');

@@ -134,11 +134,45 @@ SPEC 문서를 작성합니다 (Specification Agent).
 </acceptance>
 ```
 
-### 4. Feature 파일 생성 (BDD)
+### 4. Feature 파일 생성 (BDD) - 필수
 
-`.vibe/features/{기능명}.feature` 생성:
-- SPEC의 Acceptance Criteria를 Scenario로 변환
-- Given-When-Then 형식
+**반드시** `.vibe/features/{기능명}.feature` 파일을 생성합니다.
+
+**생성 규칙:**
+1. SPEC의 각 Acceptance Criteria → 하나의 Scenario로 변환
+2. Happy Path (정상 케이스) + Edge Case (예외 케이스) 포함
+3. Given-When-Then 형식 준수
+
+**Feature 구조:**
+```markdown
+# Feature: {기능명}
+
+**SPEC**: `.vibe/specs/{기능명}.md`
+
+## User Story
+**As a** {사용자}
+**I want** {기능}
+**So that** {가치}
+
+## Scenarios
+
+### Scenario 1: {Happy Path}
+\`\`\`gherkin
+Scenario: {제목}
+  Given {전제}
+  When {행동}
+  Then {결과}
+\`\`\`
+**검증 기준**: SPEC AC #1
+
+### Scenario 2: {Edge Case}
+...
+
+## Coverage
+| Scenario | SPEC AC | Status |
+|----------|---------|--------|
+| 1 | AC-1 | ⬜ |
+```
 
 ### 5. 품질 검증
 
