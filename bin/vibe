@@ -113,11 +113,27 @@ async function init(projectName) {
     };
     fs.writeFileSync(path.join(vibeDir, 'config.json'), JSON.stringify(config, null, 2));
 
-    // CLAUDE.md 복사
-    const agentsSource = path.join(__dirname, '../CLAUDE.md');
-    const agentsDest = path.join(projectRoot, 'CLAUDE.md');
-    if (fs.existsSync(agentsSource)) {
-      fs.copyFileSync(agentsSource, agentsDest);
+    // CLAUDE.md 병합 (기존 내용 보존)
+    const vibeClaudeMd = path.join(__dirname, '../CLAUDE.md');
+    const projectClaudeMd = path.join(projectRoot, 'CLAUDE.md');
+
+    if (fs.existsSync(projectClaudeMd)) {
+      // 기존 CLAUDE.md가 있으면 vibe 섹션 추가
+      const existingContent = fs.readFileSync(projectClaudeMd, 'utf-8');
+      const vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
+
+      if (!existingContent.includes('/vibe.spec')) {
+        // vibe 섹션이 없으면 끝에 추가
+        const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
+        fs.writeFileSync(projectClaudeMd, mergedContent);
+        console.log('   ✅ CLAUDE.md에 vibe 섹션 추가\n');
+      } else {
+        console.log('   ℹ️  CLAUDE.md에 vibe 섹션 이미 존재\n');
+      }
+    } else {
+      // 없으면 새로 생성
+      fs.copyFileSync(vibeClaudeMd, projectClaudeMd);
+      console.log('   ✅ CLAUDE.md 생성\n');
     }
 
     // .agent/rules/ 복사 (코딩 규칙)
