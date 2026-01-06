@@ -11,6 +11,18 @@ const fs = require('fs');
 const args = process.argv.slice(2);
 const command = args[0];
 
+// 옵션 파싱
+const options = {
+  silent: args.includes('--silent') || args.includes('-s')
+};
+
+// 로그 함수 (silent 모드 지원)
+function log(message) {
+  if (!options.silent) {
+    console.log(message);
+  }
+}
+
 // 유틸리티 함수
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
@@ -43,6 +55,94 @@ function copyDirRecursive(sourceDir, targetDir) {
   });
 }
 
+// 협업자 자동 설치 설정
+function setupCollaboratorAutoInstall(projectRoot) {
+  const packageJsonPath = path.join(projectRoot, 'package.json');
+  const vibeDir = path.join(projectRoot, '.vibe');
+  const packageJson = require('../package.json');
+  const vibeVersion = packageJson.version;
+
+  // 1. Node.js 프로젝트: package.json에 devDependency + postinstall 추가
+  if (fs.existsSync(packageJsonPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+
+      let modified = false;
+
+      // devDependencies에 vibe 추가
+      if (!pkg.devDependencies) {
+        pkg.devDependencies = {};
+      }
+      if (!pkg.devDependencies['@su-record/vibe']) {
+        pkg.devDependencies['@su-record/vibe'] = `^${vibeVersion}`;
+        modified = true;
+      }
+
+      // scripts에 postinstall 추가
+      if (!pkg.scripts) {
+        pkg.scripts = {};
+      }
+      if (!pkg.scripts.postinstall) {
+        pkg.scripts.postinstall = 'vibe update --silent';
+        modified = true;
+      } else if (!pkg.scripts.postinstall.includes('vibe update')) {
+        // 기존 postinstall이 있으면 vibe update 추가
+        pkg.scripts.postinstall = `${pkg.scripts.postinstall} && vibe update --silent`;
+        modified = true;
+      }
+
+      if (modified) {
+        fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+        log('   ✅ package.json에 협업자 자동 설치 설정 추가\n');
+      } else {
+        log('   ℹ️  package.json 협업 설정 이미 존재\n');
+      }
+    } catch (e) {
+      log('   ⚠️  package.json 수정 실패: ' + e.message + '\n');
+    }
+  }
+
+  // 2. 범용: .vibe/setup.sh 생성 (비-Node 프로젝트 또는 추가 지원)
+  const setupShPath = path.join(vibeDir, 'setup.sh');
+  if (!fs.existsSync(setupShPath)) {
+    const setupScript = `#!/bin/bash
+# Vibe 협업자 자동 설치 스크립트
+# 사용법: ./.vibe/setup.sh
+
+set -e
+
+echo "🔧 Vibe 설치 확인 중..."
+
+# npm/npx 확인
+if ! command -v npx &> /dev/null; then
+    echo "❌ Node.js/npm이 설치되어 있지 않습니다."
+    echo "   https://nodejs.org 에서 설치해주세요."
+    exit 1
+fi
+
+# vibe 설치 확인 및 업데이트
+if command -v vibe &> /dev/null; then
+    echo "✅ Vibe가 이미 설치되어 있습니다."
+    vibe update --silent
+    echo "✅ Vibe 업데이트 완료!"
+else
+    echo "📦 Vibe 설치 중..."
+    npm install -g @su-record/vibe
+    vibe update --silent
+    echo "✅ Vibe 설치 및 설정 완료!"
+fi
+
+echo ""
+echo "다음 명령어로 시작하세요:"
+echo "  /vibe.spec \\"기능명\\"    SPEC 작성"
+echo "  /vibe.run \\"기능명\\"     구현 실행"
+`;
+    fs.writeFileSync(setupShPath, setupScript);
+    fs.chmodSync(setupShPath, '755');
+    log('   ✅ 협업자 설치 스크립트 생성 (.vibe/setup.sh)\n');
+  }
+}
+
 // 프로젝트 초기화
 async function init(projectName) {
   try {
@@ -53,34 +153,34 @@ async function init(projectName) {
       projectRoot = path.join(process.cwd(), projectName);
 
       if (fs.existsSync(projectRoot)) {
-        console.log(`❌ 폴더가 이미 존재합니다: ${projectName}/`);
+        log(`❌ 폴더가 이미 존재합니다: ${projectName}/`);
         return;
       }
 
-      console.log(`📁 새 프로젝트 생성: ${projectName}/\n`);
+      log(`📁 새 프로젝트 생성: ${projectName}/\n`);
       fs.mkdirSync(projectRoot, { recursive: true });
       isNewProject = true;
     }
 
     const vibeDir = path.join(projectRoot, '.vibe');
     if (fs.existsSync(vibeDir)) {
-      console.log('❌ .vibe/ 폴더가 이미 존재합니다.');
+      log('❌ .vibe/ 폴더가 이미 존재합니다.');
       return;
     }
 
     // MCP 서버 등록 (Claude Code)
     const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
 
-    console.log('🔧 Claude Code MCP 서버 등록 중...\n');
+    log('🔧 Claude Code MCP 서버 등록 중...\n');
     const { execSync } = require('child_process');
     try {
       execSync(`claude mcp add vibe node "${mcpPath}"`, { stdio: 'pipe' });
-      console.log('   ✅ MCP 서버 등록 완료\n');
+      log('   ✅ MCP 서버 등록 완료\n');
     } catch (e) {
       if (e.message.includes('already exists')) {
-        console.log('   ℹ️  MCP 서버 이미 등록됨\n');
+        log('   ℹ️  MCP 서버 이미 등록됨\n');
       } else {
-        console.log('   ⚠️  MCP 수동 등록 필요\n');
+        log('   ⚠️  MCP 수동 등록 필요\n');
       }
     }
 
@@ -98,7 +198,7 @@ async function init(projectName) {
 
     const sourceDir = path.join(__dirname, '../.claude/commands');
     copyDirContents(sourceDir, commandsDir);
-    console.log('   ✅ 슬래시 커맨드 설치 완료 (7개)\n');
+    log('   ✅ 슬래시 커맨드 설치 완료 (7개)\n');
 
     // 설정 파일 생성
     const templatePath = path.join(__dirname, '../templates/constitution-template.md');
@@ -126,28 +226,28 @@ async function init(projectName) {
         // vibe 섹션이 없으면 끝에 추가
         const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
         fs.writeFileSync(projectClaudeMd, mergedContent);
-        console.log('   ✅ CLAUDE.md에 vibe 섹션 추가\n');
+        log('   ✅ CLAUDE.md에 vibe 섹션 추가\n');
       } else {
-        console.log('   ℹ️  CLAUDE.md에 vibe 섹션 이미 존재\n');
+        log('   ℹ️  CLAUDE.md에 vibe 섹션 이미 존재\n');
       }
     } else {
       // 없으면 새로 생성
       fs.copyFileSync(vibeClaudeMd, projectClaudeMd);
-      console.log('   ✅ CLAUDE.md 생성\n');
+      log('   ✅ CLAUDE.md 생성\n');
     }
 
     // .agent/rules/ 복사 (코딩 규칙)
     const rulesSource = path.join(__dirname, '../.agent/rules');
     const rulesTarget = path.join(projectRoot, '.agent/rules');
     copyDirRecursive(rulesSource, rulesTarget);
-    console.log('   ✅ 코딩 규칙 설치 완료 (.agent/rules/)\n');
+    log('   ✅ 코딩 규칙 설치 완료 (.agent/rules/)\n');
 
     // .claude/agents/ 복사 (서브에이전트)
     const agentsDir = path.join(claudeDir, 'agents');
     ensureDir(agentsDir);
     const agentsSourceDir = path.join(__dirname, '../.claude/agents');
     copyDirContents(agentsSourceDir, agentsDir);
-    console.log('   ✅ 서브에이전트 설치 완료 (.claude/agents/)\n');
+    log('   ✅ 서브에이전트 설치 완료 (.claude/agents/)\n');
 
     // .claude/settings.local.json 생성 (Hooks 설정)
     const settingsPath = path.join(claudeDir, 'settings.local.json');
@@ -155,14 +255,17 @@ async function init(projectName) {
       const hooksTemplate = path.join(__dirname, '../templates/hooks-template.json');
       if (fs.existsSync(hooksTemplate)) {
         fs.copyFileSync(hooksTemplate, settingsPath);
-        console.log('   ✅ Hooks 설정 설치 완료 (.claude/settings.local.json)\n');
+        log('   ✅ Hooks 설정 설치 완료 (.claude/settings.local.json)\n');
       }
     } else {
-      console.log('   ℹ️  Hooks 설정 이미 존재\n');
+      log('   ℹ️  Hooks 설정 이미 존재\n');
     }
 
+    // 협업자 자동 설치 설정
+    setupCollaboratorAutoInstall(projectRoot);
+
     // 완료 메시지
-    console.log(`
+    log(`
 ✅ vibe 초기화 완료!
 
 ${isNewProject ? `프로젝트 위치:
@@ -181,10 +284,12 @@ ${isNewProject ? `프로젝트 위치:
   .vibe/
   ├── config.json                # 프로젝트 설정
   ├── constitution.md            # 프로젝트 원칙
+  ├── setup.sh                   # 협업자 설치 스크립트
   ├── specs/                     # SPEC 문서들
   └── features/                  # BDD Feature 파일들
 
 MCP 서버 (hi-ai): ✓
+협업자 자동 설치: ✓
 
 사용법:
   /vibe.spec "기능명"            SPEC 작성 (대화형)
@@ -244,27 +349,27 @@ async function update() {
       return;
     }
 
-    console.log('🔄 vibe 업데이트 중...\n');
+    log('🔄 vibe 업데이트 중...\n');
 
     // .claude/commands 업데이트
     const commandsDir = path.join(claudeDir, 'commands');
     ensureDir(commandsDir);
     const sourceDir = path.join(__dirname, '../.claude/commands');
     copyDirContents(sourceDir, commandsDir);
-    console.log('   ✅ 슬래시 커맨드 업데이트 완료 (7개)\n');
+    log('   ✅ 슬래시 커맨드 업데이트 완료 (7개)\n');
 
     // .agent/rules/ 업데이트
     const rulesSource = path.join(__dirname, '../.agent/rules');
     const rulesTarget = path.join(projectRoot, '.agent/rules');
     copyDirRecursive(rulesSource, rulesTarget);
-    console.log('   ✅ 코딩 규칙 업데이트 완료 (.agent/rules/)\n');
+    log('   ✅ 코딩 규칙 업데이트 완료 (.agent/rules/)\n');
 
     // .claude/agents/ 업데이트
     const agentsDir = path.join(claudeDir, 'agents');
     ensureDir(agentsDir);
     const agentsSourceDir = path.join(__dirname, '../.claude/agents');
     copyDirContents(agentsSourceDir, agentsDir);
-    console.log('   ✅ 서브에이전트 업데이트 완료 (.claude/agents/)\n');
+    log('   ✅ 서브에이전트 업데이트 완료 (.claude/agents/)\n');
 
     // settings.local.json에 hooks 병합
     const settingsPath = path.join(claudeDir, 'settings.local.json');
@@ -280,19 +385,29 @@ async function update() {
         if (!existingSettings.hooks) {
           existingSettings.hooks = vibeHooks.hooks;
           fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
-          console.log('   ✅ Hooks 설정 추가 완료\n');
+          log('   ✅ Hooks 설정 추가 완료\n');
         } else {
-          console.log('   ℹ️  Hooks 설정 이미 존재\n');
+          log('   ℹ️  Hooks 설정 이미 존재\n');
         }
       } else {
         // 새로 생성
         fs.copyFileSync(hooksTemplate, settingsPath);
-        console.log('   ✅ Hooks 설정 생성 완료\n');
+        log('   ✅ Hooks 설정 생성 완료\n');
       }
     }
 
+    // MCP 서버 등록 확인
+    const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
+    const { execSync } = require('child_process');
+    try {
+      execSync(`claude mcp add vibe node "${mcpPath}"`, { stdio: 'pipe' });
+      log('   ✅ MCP 서버 등록 완료\n');
+    } catch (e) {
+      // 이미 등록됨 - silent
+    }
+
     const packageJson = require('../package.json');
-    console.log(`
+    log(`
 ✅ vibe 업데이트 완료! (v${packageJson.version})
 
 업데이트된 항목:
@@ -300,6 +415,7 @@ async function update() {
   - 코딩 규칙 (.agent/rules/)
   - 서브에이전트 (.claude/agents/)
   - Hooks 설정
+  - MCP 서버
     `);
 
   } catch (error) {
