@@ -117,7 +117,7 @@ argument-hint: "기능명" or --code or --deps or --arch (optional)
 
 #### 6. 개발 규칙 확인
 
-`.agent/rules/`에서 관련 규칙 로드:
+`.vibe/rules/`에서 관련 규칙 로드:
 - `core/quick-start.md` - 5가지 핵심 원칙
 - `standards/complexity-metrics.md` - 복잡도 기준
 - `quality/checklist.md` - 품질 체크리스트

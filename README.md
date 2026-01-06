@@ -15,7 +15,7 @@ SPEC 문서 하나로 AI가 바로 구현하는 2-step 워크플로우.
 - **Claude Code 전용**: 네이티브 슬래시 커맨드 + MCP 통합
 - **2-Step 워크플로우**: SPEC → RUN → VERIFY (PLAN/TASKS 불필요)
 - **PTCF 구조**: Persona, Task, Context, Format - Gemini 프롬프트 최적화
-- **코딩 규칙 내장**: `.agent/rules/` - 품질 기준, 복잡도 제한, 안티패턴
+- **코딩 규칙 내장**: `.vibe/rules/` - 품질 기준, 복잡도 제한, 안티패턴
 - **자동 품질 검증**: code-simplifier 서브에이전트
 - **36개 MCP 도구**: @su-record/hi-ai 통합
 
@@ -64,7 +64,7 @@ cd my-project
 │  /vibe.run "기능명"                                 │
 │  ↓ SPEC 읽고 바로 구현                              │
 │  ↓ Phase별 순차 실행                                │
-│  ↓ .agent/rules/ 규칙 준수                          │
+│  ↓ .vibe/rules/ 규칙 준수                          │
 ├─────────────────────────────────────────────────────┤
 │  /vibe.verify "기능명"                              │
 │  ↓ Acceptance Criteria 검증                        │
@@ -117,7 +117,7 @@ project/
 ├── .claude/
 │   ├── commands/             # 슬래시 커맨드 (7개)
 │   └── agents/               # 서브에이전트 (simplifier)
-├── .agent/rules/             # 코딩 규칙
+├── .vibe/rules/             # 코딩 규칙
 │   ├── core/                 # 핵심 원칙 (수술적 정밀도, DRY, SRP)
 │   ├── quality/              # 품질 체크리스트
 │   ├── standards/            # 복잡도, 네이밍, 안티패턴
@@ -182,7 +182,7 @@ AI의 역할과 전문성 정의
 
 ---
 
-## Coding Rules (.agent/rules/)
+## Coding Rules (.vibe/rules/)
 
 ### 핵심 원칙
 

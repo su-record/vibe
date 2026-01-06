@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": ".agent/rules/quality/checklist.md 기준으로 방금 수정한 코드를 검토해주세요. 문제가 있으면 간단히 알려주세요."
+            "prompt": ".vibe/rules/quality/checklist.md 기준으로 방금 수정한 코드를 검토해주세요. 문제가 있으면 간단히 알려주세요."
           }
         ]
       }

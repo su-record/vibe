@@ -8,7 +8,7 @@ PostToolUse Hook에서 `Write`, `Edit` 작업 후 자동 실행됩니다.
 
 ## Rules Reference
 
-**검증 기준 (`.agent/rules/`):**
+**검증 기준 (`.vibe/rules/`):**
 
 ### 필수 규칙
 - `core/development-philosophy.md` - 수술적 정밀도

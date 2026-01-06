@@ -16,7 +16,7 @@ SPEC을 기반으로 구현합니다 (Implementation Agent).
 
 ## Rules Reference
 
-**반드시 `.agent/rules/` 규칙을 따릅니다:**
+**반드시 `.vibe/rules/` 규칙을 따릅니다:**
 - `core/development-philosophy.md` - 수술적 정밀도, 요청 범위만 수정
 - `core/quick-start.md` - 한국어, DRY, SRP, YAGNI
 - `standards/complexity-metrics.md` - 함수 ≤20줄, 중첩 ≤3단계

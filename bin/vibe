@@ -236,11 +236,11 @@ async function init(projectName) {
       log('   ✅ CLAUDE.md 생성\n');
     }
 
-    // .agent/rules/ 복사 (코딩 규칙)
-    const rulesSource = path.join(__dirname, '../.agent/rules');
-    const rulesTarget = path.join(projectRoot, '.agent/rules');
+    // .vibe/rules/ 복사 (코딩 규칙)
+    const rulesSource = path.join(__dirname, '../.vibe/rules');
+    const rulesTarget = path.join(vibeDir, 'rules');
     copyDirRecursive(rulesSource, rulesTarget);
-    log('   ✅ 코딩 규칙 설치 완료 (.agent/rules/)\n');
+    log('   ✅ 코딩 규칙 설치 완료 (.vibe/rules/)\n');
 
     // .claude/agents/ 복사 (서브에이전트)
     const agentsDir = path.join(claudeDir, 'agents');
@@ -277,14 +277,14 @@ ${isNewProject ? `프로젝트 위치:
   ├── commands/                  # 슬래시 커맨드 (7개)
   ├── agents/                    # 서브에이전트 (simplifier)
   └── settings.local.json        # Hooks 설정 (자동 품질 검증)
-  .agent/rules/                  # 코딩 규칙
-  ├── core/                      # 핵심 원칙
-  ├── quality/                   # 품질 체크리스트
-  └── standards/                 # 코딩 표준
   .vibe/
   ├── config.json                # 프로젝트 설정
   ├── constitution.md            # 프로젝트 원칙
   ├── setup.sh                   # 협업자 설치 스크립트
+  ├── rules/                     # 코딩 규칙
+  │   ├── core/                  # 핵심 원칙
+  │   ├── quality/               # 품질 체크리스트
+  │   └── languages/             # 언어별 규칙
   ├── specs/                     # SPEC 문서들
   └── features/                  # BDD Feature 파일들
 
@@ -337,6 +337,21 @@ Workflow:
   `);
 }
 
+// 디렉토리 삭제 (재귀)
+function removeDirRecursive(dirPath) {
+  if (!fs.existsSync(dirPath)) return;
+
+  fs.readdirSync(dirPath).forEach(item => {
+    const itemPath = path.join(dirPath, item);
+    if (fs.statSync(itemPath).isDirectory()) {
+      removeDirRecursive(itemPath);
+    } else {
+      fs.unlinkSync(itemPath);
+    }
+  });
+  fs.rmdirSync(dirPath);
+}
+
 // 프로젝트 업데이트
 async function update() {
   try {
@@ -351,6 +366,19 @@ async function update() {
 
     log('🔄 vibe 업데이트 중...\n');
 
+    // 마이그레이션: .agent/rules/ → .vibe/rules/
+    const oldRulesDir = path.join(projectRoot, '.agent/rules');
+    const oldAgentDir = path.join(projectRoot, '.agent');
+    if (fs.existsSync(oldRulesDir)) {
+      log('   🔄 마이그레이션: .agent/rules/ → .vibe/rules/\n');
+      removeDirRecursive(oldRulesDir);
+      // .agent 폴더가 비어있으면 삭제
+      if (fs.existsSync(oldAgentDir) && fs.readdirSync(oldAgentDir).length === 0) {
+        fs.rmdirSync(oldAgentDir);
+      }
+      log('   ✅ 기존 .agent/rules/ 폴더 정리 완료\n');
+    }
+
     // .claude/commands 업데이트
     const commandsDir = path.join(claudeDir, 'commands');
     ensureDir(commandsDir);
@@ -358,11 +386,11 @@ async function update() {
     copyDirContents(sourceDir, commandsDir);
     log('   ✅ 슬래시 커맨드 업데이트 완료 (7개)\n');
 
-    // .agent/rules/ 업데이트
-    const rulesSource = path.join(__dirname, '../.agent/rules');
-    const rulesTarget = path.join(projectRoot, '.agent/rules');
+    // .vibe/rules/ 업데이트
+    const rulesSource = path.join(__dirname, '../.vibe/rules');
+    const rulesTarget = path.join(vibeDir, 'rules');
     copyDirRecursive(rulesSource, rulesTarget);
-    log('   ✅ 코딩 규칙 업데이트 완료 (.agent/rules/)\n');
+    log('   ✅ 코딩 규칙 업데이트 완료 (.vibe/rules/)\n');
 
     // .claude/agents/ 업데이트
     const agentsDir = path.join(claudeDir, 'agents');
@@ -412,7 +440,7 @@ async function update() {
 
 업데이트된 항목:
   - 슬래시 커맨드 (7개)
-  - 코딩 규칙 (.agent/rules/)
+  - 코딩 규칙 (.vibe/rules/)
   - 서브에이전트 (.claude/agents/)
   - Hooks 설정
   - MCP 서버

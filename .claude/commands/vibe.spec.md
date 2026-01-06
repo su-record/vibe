@@ -15,7 +15,7 @@ SPEC 문서를 작성합니다 (Specification Agent).
 
 ## Rules Reference
 
-**반드시 `.agent/rules/` 규칙을 따릅니다:**
+**반드시 `.vibe/rules/` 규칙을 따릅니다:**
 - `core/development-philosophy.md` - 수술적 정밀도, 단순함
 - `core/quick-start.md` - 한국어 우선, DRY, SRP
 - `core/communication-guide.md` - 커뮤니케이션 원칙
@@ -142,7 +142,7 @@ SPEC 문서를 작성합니다 (Specification Agent).
 
 ### 5. 품질 검증
 
-`.agent/rules/quality/checklist.md` 기준 자체 평가 (0-100점)
+`.vibe/rules/quality/checklist.md` 기준 자체 평가 (0-100점)
 
 ## Output
 

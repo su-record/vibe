@@ -15,7 +15,7 @@ argument-hint: "feature name"
 
 ## Rules Reference
 
-**반드시 `.agent/rules/` 규칙을 따릅니다:**
+**반드시 `.vibe/rules/` 규칙을 따릅니다:**
 - `quality/checklist.md` - 코드 품질 체크리스트 (필수)
 - `standards/complexity-metrics.md` - 복잡도 기준
 - `standards/anti-patterns.md` - 안티패턴 검출
