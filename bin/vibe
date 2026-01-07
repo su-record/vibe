@@ -315,16 +315,29 @@ function setupCollaboratorAutoInstall(projectRoot) {
         modified = true;
       }
 
-      // scripts에 postinstall 추가
+      // scripts에 prepare 추가 (postinstall 대신 - CI에서는 실행 안됨)
       if (!pkg.scripts) {
         pkg.scripts = {};
       }
-      if (!pkg.scripts.postinstall) {
-        pkg.scripts.postinstall = 'npx @su-record/vibe update --silent';
+      // postinstall에서 prepare로 변경 (npm install --production에서 스킵됨)
+      if (pkg.scripts.postinstall && pkg.scripts.postinstall.includes('vibe update')) {
+        // 기존 postinstall에서 vibe update 제거
+        pkg.scripts.postinstall = pkg.scripts.postinstall
+          .replace(/\s*&&\s*npx @su-record\/vibe update --silent/g, '')
+          .replace(/npx @su-record\/vibe update --silent\s*&&\s*/g, '')
+          .replace(/npx @su-record\/vibe update --silent/g, '')
+          .trim();
+        if (!pkg.scripts.postinstall) {
+          delete pkg.scripts.postinstall;
+        }
         modified = true;
-      } else if (!pkg.scripts.postinstall.includes('vibe update')) {
-        // 기존 postinstall이 있으면 vibe update 추가
-        pkg.scripts.postinstall = `${pkg.scripts.postinstall} && npx @su-record/vibe update --silent`;
+      }
+      // prepare에 vibe update 추가 (devDependency 설치 시에만 실행)
+      if (!pkg.scripts.prepare) {
+        pkg.scripts.prepare = 'npx @su-record/vibe update --silent 2>/dev/null || true';
+        modified = true;
+      } else if (!pkg.scripts.prepare.includes('vibe update')) {
+        pkg.scripts.prepare = `${pkg.scripts.prepare} && npx @su-record/vibe update --silent 2>/dev/null || true`;
         modified = true;
       }
 
@@ -823,17 +836,27 @@ async function update() {
     const vibeDir = path.join(projectRoot, '.vibe');
     const claudeDir = path.join(projectRoot, '.claude');
 
+    // CI/프로덕션 환경에서는 스킵 (NODE_ENV=production 또는 CI=true)
+    if (process.env.NODE_ENV === 'production' || process.env.CI === 'true') {
+      return;
+    }
+
     if (!fs.existsSync(vibeDir)) {
-      console.log('❌ vibe 프로젝트가 아닙니다. 먼저 vibe init을 실행하세요.');
+      // silent 모드에서는 에러 출력하지 않음
+      if (!options.silent) {
+        console.log('❌ vibe 프로젝트가 아닙니다. 먼저 vibe init을 실행하세요.');
+      }
       return;
     }
 
     log('🔄 vibe 업데이트 중...\n');
 
-    // 최신 버전 확인 및 자동 업그레이드
-    const wasUpgraded = await checkAndUpgradeVibe();
-    if (wasUpgraded) {
-      return; // 새 버전에서 재실행됨
+    // 최신 버전 확인 및 자동 업그레이드 (silent 모드에서는 스킵)
+    if (!options.silent) {
+      const wasUpgraded = await checkAndUpgradeVibe();
+      if (wasUpgraded) {
+        return; // 새 버전에서 재실행됨
+      }
     }
 
     // 마이그레이션: .agent/rules/ → .vibe/rules/
