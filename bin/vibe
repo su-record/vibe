@@ -78,9 +78,10 @@ function copyDirRecursive(sourceDir, targetDir) {
   });
 }
 
-// 기술 스택 감지 (루트 + 1레벨 하위 폴더)
+// 기술 스택 감지 (루트 + 1레벨 하위 폴더) - 실제 의존성 기반
 function detectTechStacks(projectRoot) {
   const stacks = [];
+  const details = { databases: [], stateManagement: [], hosting: [], cicd: [] };
 
   const detectInDir = (dir, prefix = '') => {
     const detected = [];
@@ -91,12 +92,35 @@ function detectTechStacks(projectRoot) {
         const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8'));
         const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
+        // 프레임워크 감지
         if (deps['next']) detected.push({ type: 'typescript-nextjs', path: prefix });
         else if (deps['react-native']) detected.push({ type: 'typescript-react-native', path: prefix });
         else if (deps['react']) detected.push({ type: 'typescript-react', path: prefix });
         else if (deps['vue']) detected.push({ type: 'typescript-vue', path: prefix });
         else if (deps['express'] || deps['fastify'] || deps['koa']) detected.push({ type: 'typescript-node', path: prefix });
         else if (pkg.name) detected.push({ type: 'typescript-node', path: prefix });
+
+        // DB 감지
+        if (deps['pg'] || deps['postgres'] || deps['@prisma/client']) details.databases.push('PostgreSQL');
+        if (deps['mysql'] || deps['mysql2']) details.databases.push('MySQL');
+        if (deps['mongodb'] || deps['mongoose']) details.databases.push('MongoDB');
+        if (deps['redis'] || deps['ioredis']) details.databases.push('Redis');
+        if (deps['sqlite3'] || deps['better-sqlite3']) details.databases.push('SQLite');
+        if (deps['typeorm']) details.databases.push('TypeORM');
+        if (deps['prisma'] || deps['@prisma/client']) details.databases.push('Prisma');
+        if (deps['drizzle-orm']) details.databases.push('Drizzle');
+        if (deps['sequelize']) details.databases.push('Sequelize');
+
+        // 상태관리 감지
+        if (deps['redux'] || deps['@reduxjs/toolkit']) details.stateManagement.push('Redux');
+        if (deps['zustand']) details.stateManagement.push('Zustand');
+        if (deps['jotai']) details.stateManagement.push('Jotai');
+        if (deps['recoil']) details.stateManagement.push('Recoil');
+        if (deps['mobx']) details.stateManagement.push('MobX');
+        if (deps['@tanstack/react-query'] || deps['react-query']) details.stateManagement.push('React Query');
+        if (deps['swr']) details.stateManagement.push('SWR');
+        if (deps['pinia']) details.stateManagement.push('Pinia');
+        if (deps['vuex']) details.stateManagement.push('Vuex');
       } catch (e) {}
     }
 
@@ -107,6 +131,12 @@ function detectTechStacks(projectRoot) {
         if (content.includes('fastapi')) detected.push({ type: 'python-fastapi', path: prefix });
         else if (content.includes('django')) detected.push({ type: 'python-django', path: prefix });
         else detected.push({ type: 'python', path: prefix });
+
+        // Python DB
+        if (content.includes('psycopg') || content.includes('asyncpg')) details.databases.push('PostgreSQL');
+        if (content.includes('pymongo')) details.databases.push('MongoDB');
+        if (content.includes('sqlalchemy')) details.databases.push('SQLAlchemy');
+        if (content.includes('prisma')) details.databases.push('Prisma');
       } catch (e) {}
     } else if (fs.existsSync(path.join(dir, 'requirements.txt'))) {
       try {
@@ -114,22 +144,44 @@ function detectTechStacks(projectRoot) {
         if (content.includes('fastapi')) detected.push({ type: 'python-fastapi', path: prefix });
         else if (content.includes('django')) detected.push({ type: 'python-django', path: prefix });
         else detected.push({ type: 'python', path: prefix });
+
+        if (content.includes('psycopg') || content.includes('asyncpg')) details.databases.push('PostgreSQL');
+        if (content.includes('pymongo')) details.databases.push('MongoDB');
+        if (content.includes('sqlalchemy')) details.databases.push('SQLAlchemy');
       } catch (e) {}
     }
 
     // Flutter / Dart
     if (fs.existsSync(path.join(dir, 'pubspec.yaml'))) {
       detected.push({ type: 'dart-flutter', path: prefix });
+      try {
+        const content = fs.readFileSync(path.join(dir, 'pubspec.yaml'), 'utf-8');
+        if (content.includes('flutter_riverpod') || content.includes('riverpod')) details.stateManagement.push('Riverpod');
+        else if (content.includes('provider')) details.stateManagement.push('Provider');
+        if (content.includes('bloc')) details.stateManagement.push('BLoC');
+        if (content.includes('getx') || content.includes('get:')) details.stateManagement.push('GetX');
+      } catch (e) {}
     }
 
     // Go
     if (fs.existsSync(path.join(dir, 'go.mod'))) {
       detected.push({ type: 'go', path: prefix });
+      try {
+        const content = fs.readFileSync(path.join(dir, 'go.mod'), 'utf-8');
+        if (content.includes('pgx') || content.includes('pq')) details.databases.push('PostgreSQL');
+        if (content.includes('go-redis')) details.databases.push('Redis');
+        if (content.includes('mongo-driver')) details.databases.push('MongoDB');
+      } catch (e) {}
     }
 
     // Rust
     if (fs.existsSync(path.join(dir, 'Cargo.toml'))) {
       detected.push({ type: 'rust', path: prefix });
+      try {
+        const content = fs.readFileSync(path.join(dir, 'Cargo.toml'), 'utf-8');
+        if (content.includes('sqlx') || content.includes('diesel')) details.databases.push('PostgreSQL');
+        if (content.includes('mongodb')) details.databases.push('MongoDB');
+      } catch (e) {}
     }
 
     // Java / Kotlin
@@ -143,12 +195,19 @@ function detectTechStacks(projectRoot) {
         else if (content.includes('kotlin')) detected.push({ type: 'kotlin', path: prefix });
         else if (content.includes('spring')) detected.push({ type: 'java-spring', path: prefix });
         else detected.push({ type: 'java', path: prefix });
+
+        if (content.includes('postgresql')) details.databases.push('PostgreSQL');
+        if (content.includes('mysql')) details.databases.push('MySQL');
+        if (content.includes('jpa') || content.includes('hibernate')) details.databases.push('JPA/Hibernate');
       } catch (e) {}
     } else if (fs.existsSync(path.join(dir, 'pom.xml'))) {
       try {
         const content = fs.readFileSync(path.join(dir, 'pom.xml'), 'utf-8');
         if (content.includes('spring')) detected.push({ type: 'java-spring', path: prefix });
         else detected.push({ type: 'java', path: prefix });
+
+        if (content.includes('postgresql')) details.databases.push('PostgreSQL');
+        if (content.includes('mysql')) details.databases.push('MySQL');
       } catch (e) {}
     }
 
@@ -160,6 +219,43 @@ function detectTechStacks(projectRoot) {
 
     return detected;
   };
+
+  // CI/CD 감지
+  if (fs.existsSync(path.join(projectRoot, '.github', 'workflows'))) {
+    details.cicd.push('GitHub Actions');
+  }
+  if (fs.existsSync(path.join(projectRoot, '.gitlab-ci.yml'))) {
+    details.cicd.push('GitLab CI');
+  }
+  if (fs.existsSync(path.join(projectRoot, 'Jenkinsfile'))) {
+    details.cicd.push('Jenkins');
+  }
+  if (fs.existsSync(path.join(projectRoot, '.circleci'))) {
+    details.cicd.push('CircleCI');
+  }
+
+  // Hosting 감지 (설정 파일 기반)
+  if (fs.existsSync(path.join(projectRoot, 'vercel.json')) ||
+      fs.existsSync(path.join(projectRoot, '.vercel'))) {
+    details.hosting.push('Vercel');
+  }
+  if (fs.existsSync(path.join(projectRoot, 'netlify.toml'))) {
+    details.hosting.push('Netlify');
+  }
+  if (fs.existsSync(path.join(projectRoot, 'app.yaml')) ||
+      fs.existsSync(path.join(projectRoot, 'cloudbuild.yaml'))) {
+    details.hosting.push('Google Cloud');
+  }
+  if (fs.existsSync(path.join(projectRoot, 'Dockerfile')) ||
+      fs.existsSync(path.join(projectRoot, 'docker-compose.yml'))) {
+    details.hosting.push('Docker');
+  }
+  if (fs.existsSync(path.join(projectRoot, 'fly.toml'))) {
+    details.hosting.push('Fly.io');
+  }
+  if (fs.existsSync(path.join(projectRoot, 'railway.json'))) {
+    details.hosting.push('Railway');
+  }
 
   // 루트 디렉토리 검사
   stacks.push(...detectInDir(projectRoot));
@@ -187,7 +283,13 @@ function detectTechStacks(projectRoot) {
     }
   }
 
-  return stacks;
+  // 중복 제거
+  details.databases = [...new Set(details.databases)];
+  details.stateManagement = [...new Set(details.stateManagement)];
+  details.hosting = [...new Set(details.hosting)];
+  details.cicd = [...new Set(details.cicd)];
+
+  return { stacks, details };
 }
 
 // 협업자 자동 설치 설정
@@ -352,16 +454,22 @@ async function init(projectName) {
     copyDirContents(sourceDir, commandsDir);
     log('   ✅ 슬래시 커맨드 설치 완료 (7개)\n');
 
-    // 기술 스택 감지
-    const detectedStacks = detectTechStacks(projectRoot);
+    // 기술 스택 감지 (실제 의존성 기반)
+    const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
     if (detectedStacks.length > 0) {
       log(`   🔍 감지된 기술 스택:\n`);
       detectedStacks.forEach(s => {
         log(`      - ${s.type}${s.path ? ` (${s.path}/)` : ''}\n`);
       });
+      if (stackDetails.databases.length > 0) {
+        log(`      - DB: ${stackDetails.databases.join(', ')}\n`);
+      }
+      if (stackDetails.stateManagement.length > 0) {
+        log(`      - State: ${stackDetails.stateManagement.join(', ')}\n`);
+      }
     }
 
-    // constitution.md 생성 (감지된 스택으로 플레이스홀더 업데이트)
+    // constitution.md 생성 (실제 감지된 스택으로 플레이스홀더 업데이트)
     const templatePath = path.join(__dirname, '../templates/constitution-template.md');
     const constitutionPath = path.join(vibeDir, 'constitution.md');
     if (fs.existsSync(templatePath)) {
@@ -377,7 +485,7 @@ async function init(projectName) {
         s.type.includes('flutter') || s.type.includes('swift') || s.type.includes('android')
       );
 
-      // 스택 이름 매핑
+      // 스택 이름 매핑 (기본값)
       const stackNames = {
         'python-fastapi': { lang: 'Python 3.11+', framework: 'FastAPI' },
         'python-django': { lang: 'Python 3.11+', framework: 'Django' },
@@ -395,7 +503,7 @@ async function init(projectName) {
         'swift-ios': { lang: 'Swift', framework: 'iOS/SwiftUI' }
       };
 
-      // 플레이스홀더 업데이트
+      // 플레이스홀더 업데이트 - Backend
       if (backendStack && stackNames[backendStack.type]) {
         const info = stackNames[backendStack.type];
         constitution = constitution.replace(
@@ -408,11 +516,64 @@ async function init(projectName) {
         );
       }
 
+      // 플레이스홀더 업데이트 - Frontend
       if (frontendStack && stackNames[frontendStack.type]) {
         const info = stackNames[frontendStack.type];
         constitution = constitution.replace(
           '- Framework: {Flutter / React / etc.}',
           `- Framework: ${info.framework}`
+        );
+      }
+
+      // 실제 감지된 DB로 플레이스홀더 업데이트
+      if (stackDetails.databases.length > 0) {
+        constitution = constitution.replace(
+          '- Database: {PostgreSQL / MongoDB / etc.}',
+          `- Database: ${stackDetails.databases.join(', ')}`
+        );
+      } else {
+        constitution = constitution.replace(
+          '- Database: {PostgreSQL / MongoDB / etc.}',
+          '- Database: (프로젝트에 맞게 설정)'
+        );
+      }
+
+      // 실제 감지된 상태관리로 플레이스홀더 업데이트
+      if (stackDetails.stateManagement.length > 0) {
+        constitution = constitution.replace(
+          '- State Management: {Provider / Redux / etc.}',
+          `- State Management: ${stackDetails.stateManagement.join(', ')}`
+        );
+      } else {
+        constitution = constitution.replace(
+          '- State Management: {Provider / Redux / etc.}',
+          '- State Management: (프로젝트에 맞게 설정)'
+        );
+      }
+
+      // 실제 감지된 Hosting으로 플레이스홀더 업데이트
+      if (stackDetails.hosting.length > 0) {
+        constitution = constitution.replace(
+          '- Hosting: {Cloud Run / Vercel / etc.}',
+          `- Hosting: ${stackDetails.hosting.join(', ')}`
+        );
+      } else {
+        constitution = constitution.replace(
+          '- Hosting: {Cloud Run / Vercel / etc.}',
+          '- Hosting: (프로젝트에 맞게 설정)'
+        );
+      }
+
+      // 실제 감지된 CI/CD로 플레이스홀더 업데이트
+      if (stackDetails.cicd.length > 0) {
+        constitution = constitution.replace(
+          '- CI/CD: {GitHub Actions / etc.}',
+          `- CI/CD: ${stackDetails.cicd.join(', ')}`
+        );
+      } else {
+        constitution = constitution.replace(
+          '- CI/CD: {GitHub Actions / etc.}',
+          '- CI/CD: (프로젝트에 맞게 설정)'
         );
       }
 
@@ -428,7 +589,8 @@ async function init(projectName) {
     const config = {
       language: 'ko',
       quality: { strict: true, autoVerify: true },
-      stacks: detectedStacks
+      stacks: detectedStacks,
+      details: stackDetails
     };
     fs.writeFileSync(path.join(vibeDir, 'config.json'), JSON.stringify(config, null, 2));
 
@@ -704,17 +866,88 @@ async function update() {
     copyDirContents(sourceDir, commandsDir);
     log('   ✅ 슬래시 커맨드 업데이트 완료 (7개)\n');
 
-    // 기술 스택 감지 (update에서도)
-    const detectedStacks = detectTechStacks(projectRoot);
+    // 기술 스택 감지 (update에서도 실제 의존성 기반)
+    const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
 
-    // config.json 업데이트 (stacks 정보 추가)
+    // config.json 업데이트 (stacks + details 정보 추가)
     const configPath = path.join(vibeDir, 'config.json');
     if (fs.existsSync(configPath)) {
       try {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         config.stacks = detectedStacks;
+        config.details = stackDetails;
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
       } catch (e) {}
+    }
+
+    // constitution.md 업데이트 (실제 감지된 스택으로)
+    const templatePath = path.join(__dirname, '../templates/constitution-template.md');
+    const constitutionPath = path.join(vibeDir, 'constitution.md');
+    if (fs.existsSync(templatePath)) {
+      let constitution = fs.readFileSync(templatePath, 'utf-8');
+
+      const backendStack = detectedStacks.find(s =>
+        s.type.includes('python') || s.type.includes('node') ||
+        s.type.includes('go') || s.type.includes('java') || s.type.includes('rust')
+      );
+      const frontendStack = detectedStacks.find(s =>
+        s.type.includes('react') || s.type.includes('vue') ||
+        s.type.includes('flutter') || s.type.includes('swift') || s.type.includes('android')
+      );
+
+      const stackNames = {
+        'python-fastapi': { lang: 'Python 3.11+', framework: 'FastAPI' },
+        'python-django': { lang: 'Python 3.11+', framework: 'Django' },
+        'python': { lang: 'Python 3.11+', framework: '-' },
+        'typescript-node': { lang: 'TypeScript/Node.js', framework: 'Express/Fastify' },
+        'typescript-nextjs': { lang: 'TypeScript', framework: 'Next.js' },
+        'typescript-react': { lang: 'TypeScript', framework: 'React' },
+        'typescript-vue': { lang: 'TypeScript', framework: 'Vue.js' },
+        'typescript-react-native': { lang: 'TypeScript', framework: 'React Native' },
+        'dart-flutter': { lang: 'Dart', framework: 'Flutter' },
+        'go': { lang: 'Go', framework: '-' },
+        'rust': { lang: 'Rust', framework: '-' },
+        'java-spring': { lang: 'Java 17+', framework: 'Spring Boot' },
+        'kotlin-android': { lang: 'Kotlin', framework: 'Android' },
+        'swift-ios': { lang: 'Swift', framework: 'iOS/SwiftUI' }
+      };
+
+      if (backendStack && stackNames[backendStack.type]) {
+        const info = stackNames[backendStack.type];
+        constitution = constitution.replace('- Language: {Python 3.11+ / Node.js / etc.}', `- Language: ${info.lang}`);
+        constitution = constitution.replace('- Framework: {FastAPI / Express / etc.}', `- Framework: ${info.framework}`);
+      }
+
+      if (frontendStack && stackNames[frontendStack.type]) {
+        const info = stackNames[frontendStack.type];
+        constitution = constitution.replace('- Framework: {Flutter / React / etc.}', `- Framework: ${info.framework}`);
+      }
+
+      // 실제 감지된 값으로 업데이트
+      constitution = constitution.replace(
+        '- Database: {PostgreSQL / MongoDB / etc.}',
+        stackDetails.databases.length > 0 ? `- Database: ${stackDetails.databases.join(', ')}` : '- Database: (프로젝트에 맞게 설정)'
+      );
+      constitution = constitution.replace(
+        '- State Management: {Provider / Redux / etc.}',
+        stackDetails.stateManagement.length > 0 ? `- State Management: ${stackDetails.stateManagement.join(', ')}` : '- State Management: (프로젝트에 맞게 설정)'
+      );
+      constitution = constitution.replace(
+        '- Hosting: {Cloud Run / Vercel / etc.}',
+        stackDetails.hosting.length > 0 ? `- Hosting: ${stackDetails.hosting.join(', ')}` : '- Hosting: (프로젝트에 맞게 설정)'
+      );
+      constitution = constitution.replace(
+        '- CI/CD: {GitHub Actions / etc.}',
+        stackDetails.cicd.length > 0 ? `- CI/CD: ${stackDetails.cicd.join(', ')}` : '- CI/CD: (프로젝트에 맞게 설정)'
+      );
+
+      const today = new Date().toISOString().split('T')[0];
+      constitution = constitution.replace('{날짜}', today);
+      constitution = constitution.replace('{이름}', 'vibe update');
+      constitution = constitution.replace('토큰 유효 기간: {기간}', '토큰 유효 기간: 1시간');
+
+      fs.writeFileSync(constitutionPath, constitution);
+      log('   ✅ constitution.md 업데이트 완료\n');
     }
 
     // .vibe/rules/ 업데이트 (감지된 스택에 해당하는 언어 규칙만)
