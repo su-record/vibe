@@ -1022,25 +1022,8 @@ async function update() {
     // 협업자 자동 설치 설정 (update에서도 실행)
     setupCollaboratorAutoInstall(projectRoot);
 
-    // MCP 서버 등록 확인
-    const { execSync } = require('child_process');
-
-    // 1. hi-ai MCP
-    const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
-    try {
-      execSync(`claude mcp add vibe node "${mcpPath}"`, { stdio: 'pipe' });
-      log('   ✅ vibe MCP 등록 완료\n');
-    } catch (e) {
-      // 이미 등록됨 - silent
-    }
-
-    // 2. Context7 MCP
-    try {
-      execSync('claude mcp add context7 -- npx -y @upstash/context7-mcp@latest', { stdio: 'pipe' });
-      log('   ✅ Context7 MCP 등록 완료\n');
-    } catch (e) {
-      // 이미 등록됨 - silent
-    }
+    // MCP 서버 등록 확인 (update에서는 스킵 - init에서만 등록)
+    // update는 파일만 업데이트하고, MCP는 이미 등록되어 있다고 가정
 
     const packageJson = require('../package.json');
     log(`
@@ -1051,7 +1034,6 @@ async function update() {
   - 코딩 규칙 (.vibe/rules/)
   - 서브에이전트 (.claude/agents/)
   - Hooks 설정
-  - MCP 서버
 
 외부 LLM (선택적):
   vibe gpt <api-key>      GPT 활성화 (아키텍처/디버깅)
