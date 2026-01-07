@@ -315,29 +315,30 @@ function setupCollaboratorAutoInstall(projectRoot) {
         modified = true;
       }
 
-      // scripts에 prepare 추가 (postinstall 대신 - CI에서는 실행 안됨)
+      // 기존 postinstall/prepare에서 vibe update 제거 (CI/prd에서 멈춤 문제)
       if (!pkg.scripts) {
         pkg.scripts = {};
       }
-      // postinstall에서 prepare로 변경 (npm install --production에서 스킵됨)
       if (pkg.scripts.postinstall && pkg.scripts.postinstall.includes('vibe update')) {
-        // 기존 postinstall에서 vibe update 제거
         pkg.scripts.postinstall = pkg.scripts.postinstall
-          .replace(/\s*&&\s*npx @su-record\/vibe update --silent/g, '')
-          .replace(/npx @su-record\/vibe update --silent\s*&&\s*/g, '')
-          .replace(/npx @su-record\/vibe update --silent/g, '')
+          .replace(/\s*&&\s*npx @su-record\/vibe update --silent[^&]*/g, '')
+          .replace(/npx @su-record\/vibe update --silent[^&]*\s*&&\s*/g, '')
+          .replace(/npx @su-record\/vibe update[^&]*/g, '')
           .trim();
         if (!pkg.scripts.postinstall) {
           delete pkg.scripts.postinstall;
         }
         modified = true;
       }
-      // prepare에 vibe update 추가 (devDependency 설치 시에만 실행)
-      if (!pkg.scripts.prepare) {
-        pkg.scripts.prepare = 'npx @su-record/vibe update --silent 2>/dev/null || true';
-        modified = true;
-      } else if (!pkg.scripts.prepare.includes('vibe update')) {
-        pkg.scripts.prepare = `${pkg.scripts.prepare} && npx @su-record/vibe update --silent 2>/dev/null || true`;
+      if (pkg.scripts.prepare && pkg.scripts.prepare.includes('vibe update')) {
+        pkg.scripts.prepare = pkg.scripts.prepare
+          .replace(/\s*&&\s*npx @su-record\/vibe update --silent[^&]*/g, '')
+          .replace(/npx @su-record\/vibe update --silent[^&]*\s*&&\s*/g, '')
+          .replace(/npx @su-record\/vibe update[^&]*/g, '')
+          .trim();
+        if (!pkg.scripts.prepare) {
+          delete pkg.scripts.prepare;
+        }
         modified = true;
       }
 
