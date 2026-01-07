@@ -78,6 +78,118 @@ function copyDirRecursive(sourceDir, targetDir) {
   });
 }
 
+// 기술 스택 감지 (루트 + 1레벨 하위 폴더)
+function detectTechStacks(projectRoot) {
+  const stacks = [];
+
+  const detectInDir = (dir, prefix = '') => {
+    const detected = [];
+
+    // Node.js / TypeScript
+    if (fs.existsSync(path.join(dir, 'package.json'))) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8'));
+        const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+        if (deps['next']) detected.push({ type: 'typescript-nextjs', path: prefix });
+        else if (deps['react-native']) detected.push({ type: 'typescript-react-native', path: prefix });
+        else if (deps['react']) detected.push({ type: 'typescript-react', path: prefix });
+        else if (deps['vue']) detected.push({ type: 'typescript-vue', path: prefix });
+        else if (deps['express'] || deps['fastify'] || deps['koa']) detected.push({ type: 'typescript-node', path: prefix });
+        else if (pkg.name) detected.push({ type: 'typescript-node', path: prefix });
+      } catch (e) {}
+    }
+
+    // Python
+    if (fs.existsSync(path.join(dir, 'pyproject.toml'))) {
+      try {
+        const content = fs.readFileSync(path.join(dir, 'pyproject.toml'), 'utf-8');
+        if (content.includes('fastapi')) detected.push({ type: 'python-fastapi', path: prefix });
+        else if (content.includes('django')) detected.push({ type: 'python-django', path: prefix });
+        else detected.push({ type: 'python', path: prefix });
+      } catch (e) {}
+    } else if (fs.existsSync(path.join(dir, 'requirements.txt'))) {
+      try {
+        const content = fs.readFileSync(path.join(dir, 'requirements.txt'), 'utf-8');
+        if (content.includes('fastapi')) detected.push({ type: 'python-fastapi', path: prefix });
+        else if (content.includes('django')) detected.push({ type: 'python-django', path: prefix });
+        else detected.push({ type: 'python', path: prefix });
+      } catch (e) {}
+    }
+
+    // Flutter / Dart
+    if (fs.existsSync(path.join(dir, 'pubspec.yaml'))) {
+      detected.push({ type: 'dart-flutter', path: prefix });
+    }
+
+    // Go
+    if (fs.existsSync(path.join(dir, 'go.mod'))) {
+      detected.push({ type: 'go', path: prefix });
+    }
+
+    // Rust
+    if (fs.existsSync(path.join(dir, 'Cargo.toml'))) {
+      detected.push({ type: 'rust', path: prefix });
+    }
+
+    // Java / Kotlin
+    if (fs.existsSync(path.join(dir, 'build.gradle')) || fs.existsSync(path.join(dir, 'build.gradle.kts'))) {
+      try {
+        const gradleFile = fs.existsSync(path.join(dir, 'build.gradle.kts'))
+          ? path.join(dir, 'build.gradle.kts')
+          : path.join(dir, 'build.gradle');
+        const content = fs.readFileSync(gradleFile, 'utf-8');
+        if (content.includes('com.android')) detected.push({ type: 'kotlin-android', path: prefix });
+        else if (content.includes('kotlin')) detected.push({ type: 'kotlin', path: prefix });
+        else if (content.includes('spring')) detected.push({ type: 'java-spring', path: prefix });
+        else detected.push({ type: 'java', path: prefix });
+      } catch (e) {}
+    } else if (fs.existsSync(path.join(dir, 'pom.xml'))) {
+      try {
+        const content = fs.readFileSync(path.join(dir, 'pom.xml'), 'utf-8');
+        if (content.includes('spring')) detected.push({ type: 'java-spring', path: prefix });
+        else detected.push({ type: 'java', path: prefix });
+      } catch (e) {}
+    }
+
+    // Swift / iOS
+    if (fs.existsSync(path.join(dir, 'Package.swift')) ||
+        fs.readdirSync(dir).some(f => f.endsWith('.xcodeproj') || f.endsWith('.xcworkspace'))) {
+      detected.push({ type: 'swift-ios', path: prefix });
+    }
+
+    return detected;
+  };
+
+  // 루트 디렉토리 검사
+  stacks.push(...detectInDir(projectRoot));
+
+  // 1레벨 하위 폴더 검사 (일반적인 모노레포 구조)
+  const subDirs = ['backend', 'frontend', 'server', 'client', 'api', 'web', 'mobile', 'app', 'packages', 'apps'];
+  for (const subDir of subDirs) {
+    const subPath = path.join(projectRoot, subDir);
+    if (fs.existsSync(subPath) && fs.statSync(subPath).isDirectory()) {
+      stacks.push(...detectInDir(subPath, subDir));
+    }
+  }
+
+  // packages/* 또는 apps/* 내부 검사 (monorepo)
+  for (const monoDir of ['packages', 'apps']) {
+    const monoPath = path.join(projectRoot, monoDir);
+    if (fs.existsSync(monoPath) && fs.statSync(monoPath).isDirectory()) {
+      const subPackages = fs.readdirSync(monoPath).filter(f => {
+        const fullPath = path.join(monoPath, f);
+        return fs.statSync(fullPath).isDirectory() && !f.startsWith('.');
+      });
+      for (const pkg of subPackages) {
+        stacks.push(...detectInDir(path.join(monoPath, pkg), `${monoDir}/${pkg}`));
+      }
+    }
+  }
+
+  return stacks;
+}
+
 // 협업자 자동 설치 설정
 function setupCollaboratorAutoInstall(projectRoot) {
   const packageJsonPath = path.join(projectRoot, 'package.json');
@@ -247,9 +359,19 @@ async function init(projectName) {
       fs.copyFileSync(templatePath, constitutionPath);
     }
 
+    // 기술 스택 감지
+    const detectedStacks = detectTechStacks(projectRoot);
+    if (detectedStacks.length > 0) {
+      log(`   🔍 감지된 기술 스택:\n`);
+      detectedStacks.forEach(s => {
+        log(`      - ${s.type}${s.path ? ` (${s.path}/)` : ''}\n`);
+      });
+    }
+
     const config = {
       language: 'ko',
-      quality: { strict: true, autoVerify: true }
+      quality: { strict: true, autoVerify: true },
+      stacks: detectedStacks
     };
     fs.writeFileSync(path.join(vibeDir, 'config.json'), JSON.stringify(config, null, 2));
 
