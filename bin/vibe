@@ -315,31 +315,31 @@ function setupCollaboratorAutoInstall(projectRoot) {
         modified = true;
       }
 
-      // 기존 postinstall/prepare에서 vibe update 제거 (CI/prd에서 멈춤 문제)
-      if (!pkg.scripts) {
-        pkg.scripts = {};
-      }
-      if (pkg.scripts.postinstall && pkg.scripts.postinstall.includes('vibe update')) {
-        pkg.scripts.postinstall = pkg.scripts.postinstall
-          .replace(/\s*&&\s*npx @su-record\/vibe update --silent[^&]*/g, '')
-          .replace(/npx @su-record\/vibe update --silent[^&]*\s*&&\s*/g, '')
-          .replace(/npx @su-record\/vibe update[^&]*/g, '')
-          .trim();
-        if (!pkg.scripts.postinstall) {
-          delete pkg.scripts.postinstall;
-        }
-        modified = true;
-      }
-      if (pkg.scripts.prepare && pkg.scripts.prepare.includes('vibe update')) {
-        pkg.scripts.prepare = pkg.scripts.prepare
-          .replace(/\s*&&\s*npx @su-record\/vibe update --silent[^&]*/g, '')
-          .replace(/npx @su-record\/vibe update --silent[^&]*\s*&&\s*/g, '')
-          .replace(/npx @su-record\/vibe update[^&]*/g, '')
-          .trim();
-        if (!pkg.scripts.prepare) {
-          delete pkg.scripts.prepare;
-        }
-        modified = true;
+      // 기존 postinstall/prepare에서 vibe update 제거 (CI/prd 블로킹 문제)
+      // vibe update는 개발자가 직접 실행해야 함
+      if (pkg.scripts) {
+        const oldPatterns = [
+          /\s*&&\s*npx @su-record\/vibe update[^&|;]*/g,
+          /npx @su-record\/vibe update[^&|;]*\s*&&\s*/g,
+          /npx @su-record\/vibe update[^&|;]*/g,
+          /\s*&&\s*node_modules\/\.bin\/vibe update[^&|;]*/g,
+          /node_modules\/\.bin\/vibe update[^&|;]*\s*&&\s*/g,
+          /node_modules\/\.bin\/vibe update[^&|;]*/g
+        ];
+
+        ['postinstall', 'prepare'].forEach(script => {
+          if (pkg.scripts[script] && pkg.scripts[script].includes('vibe update')) {
+            let cleaned = pkg.scripts[script];
+            oldPatterns.forEach(p => { cleaned = cleaned.replace(p, ''); });
+            cleaned = cleaned.trim();
+            if (cleaned) {
+              pkg.scripts[script] = cleaned;
+            } else {
+              delete pkg.scripts[script];
+            }
+            modified = true;
+          }
+        });
       }
 
       if (modified) {
