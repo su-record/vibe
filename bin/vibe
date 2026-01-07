@@ -352,13 +352,6 @@ async function init(projectName) {
     copyDirContents(sourceDir, commandsDir);
     log('   ✅ 슬래시 커맨드 설치 완료 (7개)\n');
 
-    // 설정 파일 생성
-    const templatePath = path.join(__dirname, '../templates/constitution-template.md');
-    const constitutionPath = path.join(vibeDir, 'constitution.md');
-    if (fs.existsSync(templatePath)) {
-      fs.copyFileSync(templatePath, constitutionPath);
-    }
-
     // 기술 스택 감지
     const detectedStacks = detectTechStacks(projectRoot);
     if (detectedStacks.length > 0) {
@@ -366,6 +359,70 @@ async function init(projectName) {
       detectedStacks.forEach(s => {
         log(`      - ${s.type}${s.path ? ` (${s.path}/)` : ''}\n`);
       });
+    }
+
+    // constitution.md 생성 (감지된 스택으로 플레이스홀더 업데이트)
+    const templatePath = path.join(__dirname, '../templates/constitution-template.md');
+    const constitutionPath = path.join(vibeDir, 'constitution.md');
+    if (fs.existsSync(templatePath)) {
+      let constitution = fs.readFileSync(templatePath, 'utf-8');
+
+      // 기술 스택 정보 생성
+      const backendStack = detectedStacks.find(s =>
+        s.type.includes('python') || s.type.includes('node') ||
+        s.type.includes('go') || s.type.includes('java') || s.type.includes('rust')
+      );
+      const frontendStack = detectedStacks.find(s =>
+        s.type.includes('react') || s.type.includes('vue') ||
+        s.type.includes('flutter') || s.type.includes('swift') || s.type.includes('android')
+      );
+
+      // 스택 이름 매핑
+      const stackNames = {
+        'python-fastapi': { lang: 'Python 3.11+', framework: 'FastAPI' },
+        'python-django': { lang: 'Python 3.11+', framework: 'Django' },
+        'python': { lang: 'Python 3.11+', framework: '-' },
+        'typescript-node': { lang: 'TypeScript/Node.js', framework: 'Express/Fastify' },
+        'typescript-nextjs': { lang: 'TypeScript', framework: 'Next.js' },
+        'typescript-react': { lang: 'TypeScript', framework: 'React' },
+        'typescript-vue': { lang: 'TypeScript', framework: 'Vue.js' },
+        'typescript-react-native': { lang: 'TypeScript', framework: 'React Native' },
+        'dart-flutter': { lang: 'Dart', framework: 'Flutter' },
+        'go': { lang: 'Go', framework: '-' },
+        'rust': { lang: 'Rust', framework: '-' },
+        'java-spring': { lang: 'Java 17+', framework: 'Spring Boot' },
+        'kotlin-android': { lang: 'Kotlin', framework: 'Android' },
+        'swift-ios': { lang: 'Swift', framework: 'iOS/SwiftUI' }
+      };
+
+      // 플레이스홀더 업데이트
+      if (backendStack && stackNames[backendStack.type]) {
+        const info = stackNames[backendStack.type];
+        constitution = constitution.replace(
+          '- Language: {Python 3.11+ / Node.js / etc.}',
+          `- Language: ${info.lang}`
+        );
+        constitution = constitution.replace(
+          '- Framework: {FastAPI / Express / etc.}',
+          `- Framework: ${info.framework}`
+        );
+      }
+
+      if (frontendStack && stackNames[frontendStack.type]) {
+        const info = stackNames[frontendStack.type];
+        constitution = constitution.replace(
+          '- Framework: {Flutter / React / etc.}',
+          `- Framework: ${info.framework}`
+        );
+      }
+
+      // 날짜 업데이트
+      const today = new Date().toISOString().split('T')[0];
+      constitution = constitution.replace('{날짜}', today);
+      constitution = constitution.replace('{이름}', 'vibe init');
+      constitution = constitution.replace('토큰 유효 기간: {기간}', '토큰 유효 기간: 1시간');
+
+      fs.writeFileSync(constitutionPath, constitution);
     }
 
     const config = {
@@ -398,10 +455,40 @@ async function init(projectName) {
       log('   ✅ CLAUDE.md 생성\n');
     }
 
-    // .vibe/rules/ 복사 (코딩 규칙)
+    // .vibe/rules/ 복사 (감지된 스택에 해당하는 언어 규칙만)
     const rulesSource = path.join(__dirname, '../.vibe/rules');
     const rulesTarget = path.join(vibeDir, 'rules');
-    copyDirRecursive(rulesSource, rulesTarget);
+
+    // core, quality, standards, tools는 전체 복사
+    const coreDirs = ['core', 'quality', 'standards', 'tools'];
+    coreDirs.forEach(dir => {
+      const src = path.join(rulesSource, dir);
+      const dst = path.join(rulesTarget, dir);
+      if (fs.existsSync(src)) {
+        copyDirRecursive(src, dst);
+      }
+    });
+
+    // languages는 감지된 스택만 복사
+    const langSource = path.join(rulesSource, 'languages');
+    const langTarget = path.join(rulesTarget, 'languages');
+    ensureDir(langTarget);
+
+    const detectedTypes = detectedStacks.map(s => s.type);
+    if (fs.existsSync(langSource)) {
+      const langFiles = fs.readdirSync(langSource);
+      langFiles.forEach(file => {
+        const langType = file.replace('.md', '');
+        // 감지된 스택에 해당하는 파일만 복사
+        if (detectedTypes.includes(langType)) {
+          fs.copyFileSync(path.join(langSource, file), path.join(langTarget, file));
+        }
+      });
+    }
+
+    const copiedLangs = detectedTypes.filter(t =>
+      fs.existsSync(path.join(langTarget, `${t}.md`))
+    );
     log('   ✅ 코딩 규칙 설치 완료 (.vibe/rules/)\n');
 
     // .claude/agents/ 복사 (서브에이전트)
