@@ -83,8 +83,18 @@ cd my-project
 | `vibe init` | 현재 폴더에 vibe 초기화 |
 | `vibe init <name>` | 새 프로젝트 생성 |
 | `vibe update` | 설정 업데이트 (커맨드, 규칙, Hooks) |
+| `vibe status` | 현재 설정 상태 |
 | `vibe help` | 도움말 |
 | `vibe version` | 버전 정보 |
+
+### 외부 서비스 연동 (선택적)
+
+| 명령어 | 설명 |
+|--------|------|
+| `vibe gpt <api-key>` | GPT 활성화 (아키텍처/디버깅) |
+| `vibe gemini <api-key>` | Gemini 활성화 (UI/UX) |
+| `vibe exa <api-key>` | Exa 활성화 (AI 웹 검색) |
+| `vibe <name> --remove` | 비활성화 |
 
 ### Claude Code 슬래시 커맨드
 
@@ -224,13 +234,28 @@ AI의 역할과 전문성 정의
 
 ## MCP Integration
 
-36개 MCP 도구 포함 (@su-record/hi-ai):
+### 자동 설치 (vibe init)
+
+| MCP 서버 | 설명 |
+|----------|------|
+| `vibe` (hi-ai) | 코드 분석, 품질 검증, 세션 메모리 |
+| `context7` | 라이브러리 문서 실시간 검색 |
+
+### 선택적 연동
+
+| MCP 서버 | 명령어 | 설명 |
+|----------|--------|------|
+| GPT 5.2 | `vibe gpt <key>` | 아키텍처/디버깅 |
+| Gemini 3 | `vibe gemini <key>` | UI/UX 설계 |
+| Exa | `vibe exa <key>` | AI 웹 검색 |
+
+### hi-ai 주요 도구
 
 - **코드 분석**: `analyze_complexity`, `validate_code_quality`
+- **시맨틱 검색**: `find_symbol`, `find_references`
 - **추론**: `apply_reasoning_framework`, `create_thinking_chain`
-- **품질**: `apply_quality_rules`, `suggest_improvements`
+- **메모리**: `save_memory`, `recall_memory`, `auto_save_context`
 - **UI**: `preview_ui_ascii`
-- **메모리**: `save_memory`, `recall_memory`
 
 ---
 

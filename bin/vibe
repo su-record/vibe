@@ -36,6 +36,13 @@ const EXTERNAL_LLMS = {
     description: 'UI/UX 설계 (Gemini 3)',
     package: '@anthropics/gemini-mcp',
     envKey: 'GOOGLE_API_KEY'
+  },
+  exa: {
+    name: 'exa',
+    role: 'search',
+    description: 'AI 웹 검색 (Exa)',
+    package: 'exa-mcp-server',
+    envKey: 'EXA_API_KEY'
   }
 };
 
@@ -435,8 +442,7 @@ async function init(projectName) {
     }
 
     // 3. Exa MCP (AI 웹 검색) - API 키 필요
-    log('   ℹ️  Exa MCP (AI 웹 검색): EXA_API_KEY 환경변수 설정 후 아래 명령어로 등록\n');
-    log('      claude mcp add exa -e EXA_API_KEY=$EXA_API_KEY -- npx -y exa-mcp-server\n');
+    log('   ℹ️  Exa MCP (AI 웹 검색): vibe exa <api-key> 로 활성화\n');
 
     // .vibe 폴더 구조 생성
     const dirs = ['', 'specs', 'features'];
@@ -735,11 +741,13 @@ function showHelp() {
   vibe help               도움말
   vibe version            버전 정보
 
-외부 LLM (선택적):
+외부 서비스 (선택적):
   vibe gpt <api-key>      GPT 활성화 (아키텍처/디버깅)
   vibe gemini <api-key>   Gemini 활성화 (UI/UX)
+  vibe exa <api-key>      Exa 활성화 (AI 웹 검색)
   vibe gpt --remove       GPT 비활성화
   vibe gemini --remove    Gemini 비활성화
+  vibe exa --remove       Exa 비활성화
 
 Claude Code 슬래시 커맨드:
   /vibe.spec "기능명"     SPEC 작성 (PTCF 구조)
@@ -1057,8 +1065,10 @@ async function update() {
   - Hooks 설정
   - MCP 서버
 
-추가 MCP (선택적):
-  Exa (AI 웹 검색): claude mcp add exa -e EXA_API_KEY=$EXA_API_KEY -- npx -y exa-mcp-server
+추가 서비스 (선택적):
+  vibe exa <api-key>      Exa 활성화 (AI 웹 검색)
+  vibe gpt <api-key>      GPT 활성화 (아키텍처/디버깅)
+  vibe gemini <api-key>   Gemini 활성화 (UI/UX)
     `);
 
   } catch (error) {
@@ -1214,11 +1224,11 @@ MCP 서버:
   vibe (hi-ai)      기본 도구
   context7          라이브러리 문서 검색
 
-외부 LLM 설정:
+외부 서비스 설정:
   vibe gpt <key>      GPT 활성화 (아키텍처/디버깅)
   vibe gemini <key>   Gemini 활성화 (UI/UX)
-  vibe gpt --remove   GPT 비활성화
-  vibe gemini --remove Gemini 비활성화
+  vibe exa <key>      Exa 활성화 (AI 웹 검색)
+  vibe <name> --remove  비활성화
   `);
 }
 
@@ -1254,6 +1264,14 @@ switch (command) {
     }
     break;
 
+  case 'exa':
+    if (args[1] === '--remove') {
+      removeExternalLLM('exa');
+    } else {
+      setupExternalLLM('exa', args[1]);
+    }
+    break;
+
   case 'status':
     showStatus();
     break;
@@ -1280,6 +1298,7 @@ switch (command) {
   vibe update     설정 업데이트
   vibe gpt        GPT 활성화/비활성화
   vibe gemini     Gemini 활성화/비활성화
+  vibe exa        Exa 활성화/비활성화
   vibe status     현재 설정 상태
   vibe help       도움말
   vibe version    버전 정보
