@@ -704,10 +704,57 @@ async function update() {
     copyDirContents(sourceDir, commandsDir);
     log('   ✅ 슬래시 커맨드 업데이트 완료 (7개)\n');
 
-    // .vibe/rules/ 업데이트
+    // 기술 스택 감지 (update에서도)
+    const detectedStacks = detectTechStacks(projectRoot);
+
+    // config.json 업데이트 (stacks 정보 추가)
+    const configPath = path.join(vibeDir, 'config.json');
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        config.stacks = detectedStacks;
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      } catch (e) {}
+    }
+
+    // .vibe/rules/ 업데이트 (감지된 스택에 해당하는 언어 규칙만)
     const rulesSource = path.join(__dirname, '../.vibe/rules');
     const rulesTarget = path.join(vibeDir, 'rules');
-    copyDirRecursive(rulesSource, rulesTarget);
+
+    // core, quality, standards, tools는 전체 복사
+    const coreDirs = ['core', 'quality', 'standards', 'tools'];
+    coreDirs.forEach(dir => {
+      const src = path.join(rulesSource, dir);
+      const dst = path.join(rulesTarget, dir);
+      if (fs.existsSync(src)) {
+        copyDirRecursive(src, dst);
+      }
+    });
+
+    // languages는 감지된 스택만 복사 (기존 불필요 파일 제거)
+    const langSource = path.join(rulesSource, 'languages');
+    const langTarget = path.join(rulesTarget, 'languages');
+
+    // 기존 languages 폴더 정리 후 필요한 것만 복사
+    if (fs.existsSync(langTarget)) {
+      removeDirRecursive(langTarget);
+    }
+    ensureDir(langTarget);
+
+    const detectedTypes = detectedStacks.map(s => s.type);
+    if (fs.existsSync(langSource)) {
+      const langFiles = fs.readdirSync(langSource);
+      langFiles.forEach(file => {
+        const langType = file.replace('.md', '');
+        if (detectedTypes.includes(langType)) {
+          fs.copyFileSync(path.join(langSource, file), path.join(langTarget, file));
+        }
+      });
+    }
+
+    if (detectedStacks.length > 0) {
+      log(`   🔍 감지된 기술 스택: ${detectedTypes.join(', ')}\n`);
+    }
     log('   ✅ 코딩 규칙 업데이트 완료 (.vibe/rules/)\n');
 
     // .claude/agents/ 업데이트
