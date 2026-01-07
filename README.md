@@ -87,13 +87,12 @@ cd my-project
 | `vibe help` | 도움말 |
 | `vibe version` | 버전 정보 |
 
-### 외부 서비스 연동 (선택적)
+### 외부 LLM 연동 (선택적)
 
 | 명령어 | 설명 |
 |--------|------|
 | `vibe gpt <api-key>` | GPT 활성화 (아키텍처/디버깅) |
 | `vibe gemini <api-key>` | Gemini 활성화 (UI/UX) |
-| `vibe exa <api-key>` | Exa 활성화 (AI 웹 검색) |
 | `vibe <name> --remove` | 비활성화 |
 
 ### Claude Code 슬래시 커맨드
@@ -241,13 +240,12 @@ AI의 역할과 전문성 정의
 | `vibe` (hi-ai) | 코드 분석, 품질 검증, 세션 메모리 |
 | `context7` | 라이브러리 문서 실시간 검색 |
 
-### 선택적 연동
+### 선택적 연동 (외부 LLM)
 
 | MCP 서버 | 명령어 | 설명 |
 |----------|--------|------|
 | GPT 5.2 | `vibe gpt <key>` | 아키텍처/디버깅 |
 | Gemini 3 | `vibe gemini <key>` | UI/UX 설계 |
-| Exa | `vibe exa <key>` | AI 웹 검색 |
 
 ### hi-ai 주요 도구
 
