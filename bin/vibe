@@ -106,11 +106,11 @@ function setupCollaboratorAutoInstall(projectRoot) {
         pkg.scripts = {};
       }
       if (!pkg.scripts.postinstall) {
-        pkg.scripts.postinstall = 'vibe update --silent';
+        pkg.scripts.postinstall = 'npx @su-record/vibe update --silent';
         modified = true;
       } else if (!pkg.scripts.postinstall.includes('vibe update')) {
         // 기존 postinstall이 있으면 vibe update 추가
-        pkg.scripts.postinstall = `${pkg.scripts.postinstall} && vibe update --silent`;
+        pkg.scripts.postinstall = `${pkg.scripts.postinstall} && npx @su-record/vibe update --silent`;
         modified = true;
       }
 
