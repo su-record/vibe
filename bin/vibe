@@ -577,12 +577,6 @@ async function init(projectName) {
         );
       }
 
-      // 날짜 업데이트
-      const today = new Date().toISOString().split('T')[0];
-      constitution = constitution.replace('{날짜}', today);
-      constitution = constitution.replace('{이름}', 'vibe init');
-      constitution = constitution.replace('토큰 유효 기간: {기간}', '토큰 유효 기간: 1시간');
-
       fs.writeFileSync(constitutionPath, constitution);
     }
 
@@ -940,11 +934,6 @@ async function update() {
         '- CI/CD: {GitHub Actions / etc.}',
         stackDetails.cicd.length > 0 ? `- CI/CD: ${stackDetails.cicd.join(', ')}` : '- CI/CD: (프로젝트에 맞게 설정)'
       );
-
-      const today = new Date().toISOString().split('T')[0];
-      constitution = constitution.replace('{날짜}', today);
-      constitution = constitution.replace('{이름}', 'vibe update');
-      constitution = constitution.replace('토큰 유효 기간: {기간}', '토큰 유효 기간: 1시간');
 
       fs.writeFileSync(constitutionPath, constitution);
       log('   ✅ constitution.md 업데이트 완료\n');
