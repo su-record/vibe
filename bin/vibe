@@ -545,6 +545,9 @@ async function update() {
       }
     }
 
+    // 협업자 자동 설치 설정 (update에서도 실행)
+    setupCollaboratorAutoInstall(projectRoot);
+
     // MCP 서버 등록 확인
     const { execSync } = require('child_process');
 
