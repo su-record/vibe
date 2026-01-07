@@ -16,6 +16,29 @@ const options = {
   silent: args.includes('--silent') || args.includes('-s')
 };
 
+// MCP 설정
+const DEFAULT_MCPS = [
+  { name: 'vibe', type: 'node', local: true },
+  { name: 'context7', type: 'npx', package: '@upstash/context7-mcp@latest' }
+];
+
+const EXTERNAL_LLMS = {
+  gpt: {
+    name: 'vibe-gpt',
+    role: 'architecture',
+    description: '아키텍처/디버깅 (GPT 5.2)',
+    package: '@anthropics/openai-mcp',
+    envKey: 'OPENAI_API_KEY'
+  },
+  gemini: {
+    name: 'vibe-gemini',
+    role: 'ui-ux',
+    description: 'UI/UX 설계 (Gemini 3)',
+    package: '@anthropics/gemini-mcp',
+    envKey: 'GOOGLE_API_KEY'
+  }
+};
+
 // 로그 함수 (silent 모드 지원)
 function log(message) {
   if (!options.silent) {
@@ -169,20 +192,37 @@ async function init(projectName) {
     }
 
     // MCP 서버 등록 (Claude Code)
-    const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
-
     log('🔧 Claude Code MCP 서버 등록 중...\n');
     const { execSync } = require('child_process');
+
+    // 1. hi-ai MCP (기존)
+    const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
     try {
       execSync(`claude mcp add vibe node "${mcpPath}"`, { stdio: 'pipe' });
-      log('   ✅ MCP 서버 등록 완료\n');
+      log('   ✅ vibe MCP 등록 완료\n');
     } catch (e) {
       if (e.message.includes('already exists')) {
-        log('   ℹ️  MCP 서버 이미 등록됨\n');
+        log('   ℹ️  vibe MCP 이미 등록됨\n');
       } else {
-        log('   ⚠️  MCP 수동 등록 필요\n');
+        log('   ⚠️  vibe MCP 수동 등록 필요\n');
       }
     }
+
+    // 2. Context7 MCP (라이브러리 문서 검색)
+    try {
+      execSync('claude mcp add context7 -- npx -y @upstash/context7-mcp@latest', { stdio: 'pipe' });
+      log('   ✅ Context7 MCP 등록 완료 (라이브러리 문서 검색)\n');
+    } catch (e) {
+      if (e.message.includes('already exists')) {
+        log('   ℹ️  Context7 MCP 이미 등록됨\n');
+      } else {
+        log('   ⚠️  Context7 MCP 수동 등록 필요: claude mcp add context7 -- npx -y @upstash/context7-mcp@latest\n');
+      }
+    }
+
+    // 3. Exa MCP (AI 웹 검색) - API 키 필요
+    log('   ℹ️  Exa MCP (AI 웹 검색): EXA_API_KEY 환경변수 설정 후 아래 명령어로 등록\n');
+    log('      claude mcp add exa -e EXA_API_KEY=$EXA_API_KEY -- npx -y exa-mcp-server\n');
 
     // .vibe 폴더 구조 생성
     const dirs = ['', 'specs', 'features'];
@@ -249,16 +289,28 @@ async function init(projectName) {
     copyDirContents(agentsSourceDir, agentsDir);
     log('   ✅ 서브에이전트 설치 완료 (.claude/agents/)\n');
 
-    // .claude/settings.local.json 생성 (Hooks 설정)
-    const settingsPath = path.join(claudeDir, 'settings.local.json');
+    // .claude/settings.json 생성 (Hooks 설정 - 저장소 공유용)
+    const settingsPath = path.join(claudeDir, 'settings.json');
     if (!fs.existsSync(settingsPath)) {
       const hooksTemplate = path.join(__dirname, '../templates/hooks-template.json');
       if (fs.existsSync(hooksTemplate)) {
         fs.copyFileSync(hooksTemplate, settingsPath);
-        log('   ✅ Hooks 설정 설치 완료 (.claude/settings.local.json)\n');
+        log('   ✅ Hooks 설정 설치 완료 (.claude/settings.json)\n');
       }
     } else {
       log('   ℹ️  Hooks 설정 이미 존재\n');
+    }
+
+    // .gitignore에서 settings.local.json 제거 (저장소 공유 필요)
+    const gitignorePath = path.join(projectRoot, '.gitignore');
+    if (fs.existsSync(gitignorePath)) {
+      let gitignore = fs.readFileSync(gitignorePath, 'utf-8');
+      if (gitignore.includes('settings.local.json')) {
+        gitignore = gitignore.replace(/\.claude\/settings\.local\.json\n?/g, '');
+        gitignore = gitignore.replace(/settings\.local\.json\n?/g, '');
+        fs.writeFileSync(gitignorePath, gitignore);
+        log('   ✅ .gitignore에서 settings.local.json 제거 (저장소 공유)\n');
+      }
     }
 
     // 협업자 자동 설치 설정
@@ -276,7 +328,7 @@ ${isNewProject ? `프로젝트 위치:
   .claude/
   ├── commands/                  # 슬래시 커맨드 (7개)
   ├── agents/                    # 서브에이전트 (simplifier)
-  └── settings.local.json        # Hooks 설정 (자동 품질 검증)
+  └── settings.json              # Hooks 설정 (저장소 공유)
   .vibe/
   ├── config.json                # 프로젝트 설정
   ├── constitution.md            # 프로젝트 원칙
@@ -311,11 +363,18 @@ function showHelp() {
   console.log(`
 📖 Vibe - SPEC-driven AI coding framework (Claude Code 전용)
 
-Commands:
-  vibe init [project]     Initialize vibe in current/new project
-  vibe update             Update vibe settings (commands, rules, hooks)
-  vibe help               Show this message
-  vibe version            Show version
+기본 명령어:
+  vibe init [project]     프로젝트 초기화
+  vibe update             설정 업데이트
+  vibe status             현재 설정 상태
+  vibe help               도움말
+  vibe version            버전 정보
+
+외부 LLM (선택적):
+  vibe gpt <api-key>      GPT 활성화 (아키텍처/디버깅)
+  vibe gemini <api-key>   Gemini 활성화 (UI/UX)
+  vibe gpt --remove       GPT 비활성화
+  vibe gemini --remove    Gemini 비활성화
 
 Claude Code 슬래시 커맨드:
   /vibe.spec "기능명"     SPEC 작성 (PTCF 구조)
@@ -326,11 +385,15 @@ Claude Code 슬래시 커맨드:
   /vibe.ui "설명"         UI 미리보기
   /vibe.diagram           다이어그램 생성
 
+모델 오케스트레이션:
+  Opus 4.5    오케스트레이터 (메인)
+  Sonnet 4    구현
+  Haiku 4.5   코드 탐색
+  GPT 5.2     아키텍처/디버깅 (선택적)
+  Gemini 3    UI/UX 설계 (선택적)
+
 Workflow:
   /vibe.spec → /vibe.run → /vibe.verify
-
-설치:
-  npm install -g @su-record/vibe
 
 문서:
   https://github.com/su-record/vibe
@@ -445,8 +508,8 @@ async function update() {
     copyDirContents(agentsSourceDir, agentsDir);
     log('   ✅ 서브에이전트 업데이트 완료 (.claude/agents/)\n');
 
-    // settings.local.json에 hooks 병합
-    const settingsPath = path.join(claudeDir, 'settings.local.json');
+    // settings.json에 hooks 병합 (저장소 공유용)
+    const settingsPath = path.join(claudeDir, 'settings.json');
     const hooksTemplate = path.join(__dirname, '../templates/hooks-template.json');
 
     if (fs.existsSync(hooksTemplate)) {
@@ -470,12 +533,34 @@ async function update() {
       }
     }
 
+    // .gitignore에서 settings.local.json 제거 (저장소 공유 필요)
+    const gitignorePath = path.join(projectRoot, '.gitignore');
+    if (fs.existsSync(gitignorePath)) {
+      let gitignore = fs.readFileSync(gitignorePath, 'utf-8');
+      if (gitignore.includes('settings.local.json')) {
+        gitignore = gitignore.replace(/\.claude\/settings\.local\.json\n?/g, '');
+        gitignore = gitignore.replace(/settings\.local\.json\n?/g, '');
+        fs.writeFileSync(gitignorePath, gitignore);
+        log('   ✅ .gitignore에서 settings.local.json 제거 (저장소 공유)\n');
+      }
+    }
+
     // MCP 서버 등록 확인
-    const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
     const { execSync } = require('child_process');
+
+    // 1. hi-ai MCP
+    const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
     try {
       execSync(`claude mcp add vibe node "${mcpPath}"`, { stdio: 'pipe' });
-      log('   ✅ MCP 서버 등록 완료\n');
+      log('   ✅ vibe MCP 등록 완료\n');
+    } catch (e) {
+      // 이미 등록됨 - silent
+    }
+
+    // 2. Context7 MCP
+    try {
+      execSync('claude mcp add context7 -- npx -y @upstash/context7-mcp@latest', { stdio: 'pipe' });
+      log('   ✅ Context7 MCP 등록 완료\n');
     } catch (e) {
       // 이미 등록됨 - silent
     }
@@ -490,12 +575,170 @@ async function update() {
   - 서브에이전트 (.claude/agents/)
   - Hooks 설정
   - MCP 서버
+
+추가 MCP (선택적):
+  Exa (AI 웹 검색): claude mcp add exa -e EXA_API_KEY=$EXA_API_KEY -- npx -y exa-mcp-server
     `);
 
   } catch (error) {
     console.error('❌ 업데이트 실패:', error.message);
     process.exit(1);
   }
+}
+
+// 외부 LLM 설정 (GPT, Gemini)
+function setupExternalLLM(llmType, apiKey) {
+  if (!apiKey) {
+    console.log(`
+❌ API 키가 필요합니다.
+
+사용법:
+  vibe ${llmType} <api-key>
+
+${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : 'Google API 키: https://aistudio.google.com/apikey'}
+    `);
+    return;
+  }
+
+  const projectRoot = process.cwd();
+  const vibeDir = path.join(projectRoot, '.vibe');
+  const configPath = path.join(vibeDir, 'config.json');
+
+  if (!fs.existsSync(vibeDir)) {
+    console.log('❌ vibe 프로젝트가 아닙니다. 먼저 vibe init을 실행하세요.');
+    return;
+  }
+
+  // config.json 업데이트
+  let config = {};
+  if (fs.existsSync(configPath)) {
+    config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  }
+
+  if (!config.models) {
+    config.models = {};
+  }
+
+  const llmConfig = EXTERNAL_LLMS[llmType];
+  config.models[llmType] = {
+    enabled: true,
+    role: llmConfig.role,
+    description: llmConfig.description
+  };
+
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+  // MCP 서버 등록 (환경변수와 함께)
+  const { execSync } = require('child_process');
+  const envKey = llmConfig.envKey;
+
+  try {
+    // 기존 MCP 제거 후 재등록
+    try {
+      execSync(`claude mcp remove ${llmConfig.name}`, { stdio: 'pipe' });
+    } catch (e) {
+      // 없으면 무시
+    }
+
+    // 환경변수와 함께 MCP 등록
+    execSync(`claude mcp add ${llmConfig.name} -e ${envKey}=${apiKey} -- npx -y ${llmConfig.package}`, { stdio: 'pipe' });
+
+    console.log(`
+✅ ${llmType.toUpperCase()} 활성화 완료!
+
+역할: ${llmConfig.description}
+MCP: ${llmConfig.name}
+
+/vibe.run 실행 시 자동으로 활용됩니다.
+
+비활성화: vibe ${llmType} --remove
+    `);
+  } catch (e) {
+    console.log(`
+⚠️  MCP 등록 실패. 수동으로 등록하세요:
+
+claude mcp add ${llmConfig.name} -e ${envKey}=<your-key> -- npx -y ${llmConfig.package}
+    `);
+  }
+}
+
+function removeExternalLLM(llmType) {
+  const projectRoot = process.cwd();
+  const vibeDir = path.join(projectRoot, '.vibe');
+  const configPath = path.join(vibeDir, 'config.json');
+
+  if (!fs.existsSync(vibeDir)) {
+    console.log('❌ vibe 프로젝트가 아닙니다.');
+    return;
+  }
+
+  // config.json 업데이트
+  if (fs.existsSync(configPath)) {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    if (config.models && config.models[llmType]) {
+      config.models[llmType].enabled = false;
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    }
+  }
+
+  // MCP 서버 제거
+  const { execSync } = require('child_process');
+  const llmConfig = EXTERNAL_LLMS[llmType];
+
+  try {
+    execSync(`claude mcp remove ${llmConfig.name}`, { stdio: 'pipe' });
+    console.log(`✅ ${llmType.toUpperCase()} 비활성화 완료`);
+  } catch (e) {
+    console.log(`ℹ️  ${llmType.toUpperCase()} MCP가 등록되어 있지 않습니다.`);
+  }
+}
+
+function showStatus() {
+  const projectRoot = process.cwd();
+  const vibeDir = path.join(projectRoot, '.vibe');
+  const configPath = path.join(vibeDir, 'config.json');
+
+  if (!fs.existsSync(vibeDir)) {
+    console.log('❌ vibe 프로젝트가 아닙니다. 먼저 vibe init을 실행하세요.');
+    return;
+  }
+
+  const packageJson = require('../package.json');
+  let config = { language: 'ko', models: {} };
+  if (fs.existsSync(configPath)) {
+    config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  }
+
+  const gptStatus = config.models?.gpt?.enabled ? '✅ 활성' : '⬚ 비활성';
+  const geminiStatus = config.models?.gemini?.enabled ? '✅ 활성' : '⬚ 비활성';
+
+  console.log(`
+📊 Vibe 상태 (v${packageJson.version})
+
+프로젝트: ${projectRoot}
+언어: ${config.language || 'ko'}
+
+모델 오케스트레이션:
+┌─────────────────────────────────────────┐
+│ Opus 4.5          오케스트레이터        │
+├─────────────────────────────────────────┤
+│ Sonnet 4          구현                  │
+│ Haiku 4.5         코드 탐색             │
+├─────────────────────────────────────────┤
+│ GPT 5.2           ${gptStatus}  아키텍처/디버깅    │
+│ Gemini 3          ${geminiStatus}  UI/UX 설계        │
+└─────────────────────────────────────────┘
+
+MCP 서버:
+  vibe (hi-ai)      기본 도구
+  context7          라이브러리 문서 검색
+
+외부 LLM 설정:
+  vibe gpt <key>      GPT 활성화 (아키텍처/디버깅)
+  vibe gemini <key>   Gemini 활성화 (UI/UX)
+  vibe gpt --remove   GPT 비활성화
+  vibe gemini --remove Gemini 비활성화
+  `);
 }
 
 // 버전 정보
@@ -512,6 +755,26 @@ switch (command) {
 
   case 'update':
     update();
+    break;
+
+  case 'gpt':
+    if (args[1] === '--remove') {
+      removeExternalLLM('gpt');
+    } else {
+      setupExternalLLM('gpt', args[1]);
+    }
+    break;
+
+  case 'gemini':
+    if (args[1] === '--remove') {
+      removeExternalLLM('gemini');
+    } else {
+      setupExternalLLM('gemini', args[1]);
+    }
+    break;
+
+  case 'status':
+    showStatus();
     break;
 
   case 'version':
@@ -534,6 +797,9 @@ switch (command) {
 사용 가능한 명령어:
   vibe init       프로젝트 초기화
   vibe update     설정 업데이트
+  vibe gpt        GPT 활성화/비활성화
+  vibe gemini     Gemini 활성화/비활성화
+  vibe status     현재 설정 상태
   vibe help       도움말
   vibe version    버전 정보
 

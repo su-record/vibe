@@ -26,6 +26,34 @@ SPEC 문서를 작성합니다 (Specification Agent).
 
 > **PTCF**: Persona, Task, Context, Format - Google Gemini 프롬프트 최적화 프레임워크
 
+## 외부 LLM 연동 (선택적)
+
+`.vibe/config.json`에서 외부 LLM이 활성화된 경우 SPEC 작성 시 자동 활용:
+
+```
+/vibe.spec "복잡한 기능"
+      ↓
+[Claude Opus] SPEC 초안 작성
+      ↓
+[GPT 활성화?] → MCP(vibe-gpt)로 설계 교차 검토
+      ↓
+[Gemini 활성화?] → MCP(vibe-gemini)로 UI/UX 자문
+      ↓
+[Claude] 최종 SPEC 확정
+```
+
+| 외부 LLM | 역할 | 활용 시점 |
+|----------|------|----------|
+| GPT 5.2 | 아키텍처/설계 검토 | SPEC 초안 완성 후 |
+| Gemini 3 | UI/UX 자문 | 디자인 레퍼런스 논의 시 |
+
+**활성화 방법:**
+```bash
+vibe gpt <api-key>      # GPT 활성화
+vibe gemini <api-key>   # Gemini 활성화
+vibe status             # 현재 설정 확인
+```
+
 ## Process
 
 ### 1. 프로젝트 분석

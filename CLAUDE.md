@@ -33,6 +33,23 @@ SPEC 문서는 AI가 바로 실행 가능한 프롬프트 형태:
 <acceptance> 검증 기준
 ```
 
+## MCP 도구 (hi-ai)
+
+### 시맨틱 코드 분석
+| 도구 | 용도 |
+|------|------|
+| `mcp__vibe__find_symbol` | 심볼 정의 찾기 |
+| `mcp__vibe__find_references` | 참조 찾기 |
+| `mcp__vibe__analyze_complexity` | 복잡도 분석 |
+| `mcp__vibe__validate_code_quality` | 품질 검증 |
+
+### 컨텍스트 관리
+| 도구 | 용도 |
+|------|------|
+| `mcp__vibe__start_session` | 세션 시작 (이전 컨텍스트 복원) |
+| `mcp__vibe__auto_save_context` | 현재 상태 저장 |
+| `mcp__vibe__save_memory` | 중요 결정사항 저장 |
+
 ## Getting Started
 
 ```bash
