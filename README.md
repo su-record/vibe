@@ -138,8 +138,7 @@ project/
 └── .vibe/
     ├── config.json           # 프로젝트 설정
     ├── constitution.md       # 프로젝트 원칙
-    ├── mcp/                   # hi-ai MCP (로컬 설치)
-    │   └── node_modules/      # .gitignore에 포함
+    ├── mcp/                   # hi-ai MCP (로컬 설치, .gitignore)
     ├── rules/                 # 코딩 규칙
     │   ├── core/              # 핵심 원칙
     │   ├── quality/           # 품질 체크리스트
