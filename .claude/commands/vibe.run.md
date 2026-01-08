@@ -301,3 +301,7 @@ Phase 2: 게임 로직
 ```
 /vibe.verify "벽돌게임"
 ```
+
+---
+
+ARGUMENTS: $ARGUMENTS

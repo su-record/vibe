@@ -306,17 +306,13 @@ function setupCollaboratorAutoInstall(projectRoot) {
 
       let modified = false;
 
-      // devDependencies에 vibe 추가
-      if (!pkg.devDependencies) {
-        pkg.devDependencies = {};
-      }
-      if (!pkg.devDependencies['@su-record/vibe']) {
-        pkg.devDependencies['@su-record/vibe'] = `^${vibeVersion}`;
+      // 기존 devDependencies에서 @su-record/vibe 제거 (npm install 블로킹 원인)
+      if (pkg.devDependencies && pkg.devDependencies['@su-record/vibe']) {
+        delete pkg.devDependencies['@su-record/vibe'];
         modified = true;
       }
 
-      // 기존 postinstall/prepare에서 vibe update 제거 (CI/prd 블로킹 문제)
-      // vibe update는 개발자가 직접 실행해야 함
+      // 기존 postinstall/prepare에서 vibe update 제거 (레거시 정리)
       if (pkg.scripts) {
         const oldPatterns = [
           /\s*&&\s*npx @su-record\/vibe update[^&|;]*/g,
@@ -344,9 +340,7 @@ function setupCollaboratorAutoInstall(projectRoot) {
 
       if (modified) {
         fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
-        log('   ✅ package.json에 협업자 자동 설치 설정 추가\n');
-      } else {
-        log('   ℹ️  package.json 협업 설정 이미 존재\n');
+        log('   ✅ package.json 정리 완료 (레거시 vibe 설정 제거)\n');
       }
     } catch (e) {
       log('   ⚠️  package.json 수정 실패: ' + e.message + '\n');
@@ -391,6 +385,43 @@ echo "  /vibe.run \\"기능명\\"     구현 실행"
     fs.writeFileSync(setupShPath, setupScript);
     fs.chmodSync(setupShPath, '755');
     log('   ✅ 협업자 설치 스크립트 생성 (.vibe/setup.sh)\n');
+  }
+
+  // 3. README.md에 협업자 안내 추가
+  const readmePath = path.join(projectRoot, 'README.md');
+  const vibeSetupSection = `
+## Vibe Setup (AI Coding)
+
+이 프로젝트는 [Vibe](https://github.com/su-record/vibe) AI 코딩 프레임워크를 사용합니다.
+
+### 협업자 설치
+
+\`\`\`bash
+# 전역 설치 (권장)
+npm install -g @su-record/vibe
+vibe update
+
+# 또는 setup 스크립트 실행
+./.vibe/setup.sh
+\`\`\`
+
+### 사용법
+
+Claude Code에서 슬래시 커맨드 사용:
+- \`/vibe.spec "기능명"\` - SPEC 문서 작성
+- \`/vibe.run "기능명"\` - 구현 실행
+`;
+
+  if (fs.existsSync(readmePath)) {
+    const readme = fs.readFileSync(readmePath, 'utf-8');
+    if (!readme.includes('## Vibe Setup')) {
+      fs.appendFileSync(readmePath, vibeSetupSection);
+      log('   ✅ README.md에 협업자 안내 추가\n');
+    }
+  } else {
+    // README가 없으면 새로 생성
+    fs.writeFileSync(readmePath, `# Project\n${vibeSetupSection}`);
+    log('   ✅ README.md 생성 (협업자 안내 포함)\n');
   }
 }
 

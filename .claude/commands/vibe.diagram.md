@@ -172,3 +172,7 @@ erDiagram
 - Mermaid는 GitHub, GitLab, VSCode 등에서 지원됩니다
 - 복잡한 다이어그램은 수동 조정이 필요할 수 있습니다
 - 생성된 다이어그램은 `.vibe/diagrams/` 폴더에 저장됩니다
+
+---
+
+ARGUMENTS: $ARGUMENTS

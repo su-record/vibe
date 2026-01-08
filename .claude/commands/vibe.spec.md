@@ -265,3 +265,7 @@ User: 2
 ```
 /vibe.run "벽돌게임"
 ```
+
+---
+
+ARGUMENTS: $ARGUMENTS

@@ -146,3 +146,7 @@ Scenario 4 수정 필요:
 ```
 /vibe.run "기능명" --fix  # 실패한 시나리오 수정
 ```
+
+---
+
+ARGUMENTS: $ARGUMENTS

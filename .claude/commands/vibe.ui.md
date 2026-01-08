@@ -131,3 +131,7 @@ Claude: 대시보드 UI 미리보기를 생성합니다...
 - 복잡한 UI는 여러 번 나누어서 요청하세요
 - 레이아웃 옵션: `sidebar`, `header-footer`, `grid`, `centered`, `split`
 - ASCII 아트는 실제 구현 전 빠른 시각화 목적입니다
+
+---
+
+ARGUMENTS: $ARGUMENTS

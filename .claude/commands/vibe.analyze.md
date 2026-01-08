@@ -233,3 +233,7 @@ Claude: 코드 품질 분석을 시작합니다...
 **개선 제안:**
 1. src/service.py를 3개 모듈로 분리
 ```
+
+---
+
+ARGUMENTS: $ARGUMENTS

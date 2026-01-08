@@ -300,3 +300,7 @@ AI: [9단계 프레임워크를 통해 각 옵션의 제약 조건, 위험, 장�
 - [/vibe.analyze](vibe.analyze.md)
 - [/vibe.spec](vibe.spec.md)
 - [/vibe.plan](vibe.plan.md)
+
+---
+
+ARGUMENTS: $ARGUMENTS
