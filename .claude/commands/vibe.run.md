@@ -12,7 +12,125 @@ Execute implementation based on SPEC (Implementation Agent with Multi-Model Orch
 ```
 /vibe.run "feature-name"              # Full implementation
 /vibe.run "feature-name" --phase 1    # Specific Phase only
+/vibe.run "feature-name" ultrawork    # ULTRAWORK mode (recommended)
+/vibe.run "feature-name" ulw          # Short alias for ultrawork
 ```
+
+---
+
+## **ULTRAWORK Mode** (ulw)
+
+> Include `ultrawork` or `ulw` in your command to activate **maximum performance mode**.
+
+### What ULTRAWORK Enables
+
+When you include `ultrawork` (or `ulw`), ALL of these activate automatically:
+
+| Feature | Description |
+|---------|-------------|
+| **Parallel Exploration** | 3+ Task(haiku) agents run simultaneously |
+| **Boulder Loop** | Auto-continues until ALL phases complete |
+| **Context Compression** | Aggressive auto-save at 70%+ context |
+| **No Pause** | Doesn't wait for confirmation between phases |
+| **External LLMs** | Auto-consults GPT/Gemini if enabled |
+| **Error Recovery** | Auto-retries on failure (up to 3 times) |
+
+### Boulder Loop (Inspired by Sisyphus)
+
+Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    BOULDER LOOP (ultrawork)                      │
+│                                                                  │
+│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐  │
+│   │ Phase 1  │───→│ Phase 2  │───→│ Phase 3  │───→│ Phase N  │  │
+│   └──────────┘    └──────────┘    └──────────┘    └──────────┘  │
+│        │               │               │               │         │
+│        ↓               ↓               ↓               ↓         │
+│   [Parallel]      [Parallel]      [Parallel]      [Parallel]    │
+│   [Implement]     [Implement]     [Implement]     [Implement]   │
+│   [Test]          [Test]          [Test]          [Test]        │
+│        │               │               │               │         │
+│        └───────────────┴───────────────┴───────────────┘         │
+│                              │                                   │
+│                              ↓                                   │
+│                     ┌──────────────┐                             │
+│                     │  ALL DONE?   │                             │
+│                     └──────────────┘                             │
+│                       │         │                                │
+│                      NO        YES                               │
+│                       │         │                                │
+│                       ↓         ↓                                │
+│                   [Continue]  [🎉 Complete!]                     │
+│                                                                  │
+│   NO STOPPING until acceptance criteria met or error limit hit   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### ULTRAWORK Example
+
+```
+User: /vibe.run "brick-game" ultrawork
+
+Claude:
+🚀 ULTRAWORK MODE ACTIVATED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📄 SPEC: .vibe/specs/brick-game.md
+🎯 4 Phases detected
+⚡ Boulder Loop: ENABLED (will continue until all phases complete)
+🔄 Auto-retry: ON (max 3 per phase)
+💾 Context compression: AGGRESSIVE
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏔️ BOULDER ROLLING... Phase 1/4
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚡ [PARALLEL] Launching 3 exploration agents...
+✅ Exploration complete (7.2s)
+🔨 Implementing...
+✅ Phase 1 complete
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏔️ BOULDER ROLLING... Phase 2/4
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚡ [PARALLEL] Launching 3 exploration agents...
+✅ Exploration complete (6.8s)
+🔨 Implementing...
+❌ Test failed: collision detection
+🔄 Auto-retry 1/3...
+🔨 Fixing...
+✅ Phase 2 complete
+
+[...continues automatically...]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎉 BOULDER REACHED THE TOP!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ All 4 phases complete
+✅ All acceptance criteria passed
+✅ Build succeeded
+✅ Tests passed
+
+⏱️ Total: 8m 24s
+📊 Retries: 2
+💾 Context saved: 3 checkpoints
+```
+
+### Normal vs ULTRAWORK Comparison
+
+| Aspect | Normal | ULTRAWORK |
+|--------|--------|-----------|
+| Phase transition | May pause | Auto-continues |
+| On error | Reports and stops | Auto-retries (3x) |
+| Context 70%+ | Warning only | Auto-compress + save |
+| Exploration | Sequential possible | FORCED parallel |
+| Completion | Phase-by-phase | Until ALL done |
+
+---
 
 ## Rules Reference
 
@@ -135,48 +253,110 @@ Check `.vibe/config.json`:
 - Check BDD Scenarios
 - Use as test cases
 
-### 3. Phase-by-Phase Implementation (Parallel Task Calls)
+### 3. Phase-by-Phase Implementation
 
-Follow `<task>` section Phase order:
+Follow `<task>` section Phase order.
+
+---
+
+## **CRITICAL: Parallel Sub-Agent Execution**
+
+> **MUST USE PARALLEL TASK CALLS** - This is REQUIRED, not optional.
+> Sequential execution when parallel is possible = VIOLATION of this workflow.
+
+### Mandatory Parallel Exploration (Phase Start)
+
+**BEFORE any implementation, you MUST launch these Task calls IN PARALLEL (single message, multiple tool calls):**
 
 ```
-Phase Start
-    │
-    ├─→ Task(haiku): Codebase analysis
-    │       "Analyze related files and patterns"
-    │
-    ├─→ [GPT enabled] MCP(vibe-gpt): Architecture review
-    │       "Review if this design is appropriate"
-    │
-    ├─→ [Gemini enabled] MCP(vibe-gemini): UI/UX consultation
-    │       "Suggest UI implementation direction"
-    │
-    ↓
-Opus: Synthesize analysis results, decide implementation direction
-    │
-    ↓
-Task(sonnet): Core implementation
-    "Implement code according to SPEC"
-    │
-    ↓
-Task(haiku): Write tests
-    "Write tests for implemented code"
-    │
-    ↓
-Opus: Final review and next Phase
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 1: PARALLEL EXPLORATION (REQUIRED)                        │
+│                                                                 │
+│  Launch ALL of these in ONE message:                            │
+│                                                                 │
+│  Task(haiku) ─┬─→ "Analyze related files in <context>"          │
+│               │                                                 │
+│  Task(haiku) ─┼─→ "Check dependencies and imports"              │
+│               │                                                 │
+│  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
+│                                                                 │
+│  [If GPT enabled] + MCP(vibe-gpt): Architecture review          │
+│  [If Gemini enabled] + MCP(vibe-gemini): UI/UX consultation     │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ↓ (wait for all to complete)
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 2: SYNTHESIZE (Opus)                                      │
+│  - Review all exploration results                               │
+│  - Decide implementation approach                               │
+│  - Identify files to modify/create                              │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 3: IMPLEMENT (Task sonnet)                                │
+│  - Execute implementation with full context                     │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 4: TEST (Task haiku)                                      │
+│  - Write tests for implemented code                             │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Parallel execution example:**
-```javascript
-// Independent tasks run in parallel
-Task(haiku) - Code analysis
-Task(haiku) - Dependency check
-// → Run simultaneously
+### Parallel Task Call Pattern (MUST FOLLOW)
 
-// Sequential tasks
-Task(sonnet) - Implementation (after analysis complete)
-Task(haiku) - Tests (after implementation complete)
+**Correct - Single message with multiple parallel Tasks:**
 ```
+<message>
+  Task(haiku, "Analyze src/components/ for existing patterns")
+  Task(haiku, "Check package.json dependencies")
+  Task(haiku, "Find usage of similar features in codebase")
+</message>
+→ All 3 run simultaneously, ~3x faster
+```
+
+**WRONG - Sequential calls (DO NOT DO THIS):**
+```
+<message>Task(haiku, "Analyze...")</message>
+<message>Task(haiku, "Check...")</message>
+<message>Task(haiku, "Find...")</message>
+→ 3x slower, wastes time
+```
+
+### Why Parallel Matters
+
+| Approach | Time | Cache Benefit |
+|----------|------|---------------|
+| Sequential (3 Tasks) | ~30s | Cache cold on each |
+| **Parallel (3 Tasks)** | **~10s** | **Cache warmed once, shared** |
+
+hi-ai ProjectCache (LRU) caches ts-morph parsing results. Parallel calls share the warmed cache.
+
+### Phase Execution Flow
+
+```
+Phase N Start
+    │
+    ├─→ [PARALLEL] Task(haiku) × 2-3: Exploration
+    │       - Related code analysis
+    │       - Dependency check
+    │       - Pattern discovery
+    │
+    ↓ (all complete)
+    │
+    ├─→ Opus: Synthesize and decide
+    │
+    ├─→ Task(sonnet): Implementation
+    │
+    ├─→ Task(haiku): Tests
+    │
+    ↓
+Phase N Complete → Next Phase
+```
+
+---
 
 1. **Related code analysis**: Task(haiku) explores `<context>` related code
 2. **File creation/modification**: Task(sonnet) implements per `<output_format>`
@@ -251,12 +431,36 @@ Claude:
 
 🚀 Starting Phase 1...
 
+⚡ Launching parallel exploration...
+[Task(haiku) × 3 launched in parallel]
+  - Analyzing Phaser.js project patterns
+  - Checking TypeScript configuration standards
+  - Finding game loop conventions
+
+✅ Exploration complete (3 tasks, 8.2s)
+📋 Synthesizing results...
+
+🔨 Implementing Phase 1...
+[Task(sonnet) - Project setup]
+
 ✅ Phase 1 complete
   - package.json created
   - TypeScript configured
   - Phaser.js installed
 
 🚀 Starting Phase 2...
+
+⚡ Launching parallel exploration...
+[Task(haiku) × 3 launched in parallel]
+  - Analyzing game scene structure
+  - Checking physics engine patterns
+  - Finding collision detection approaches
+
+✅ Exploration complete (3 tasks, 7.5s)
+
+🔨 Implementing Phase 2...
+[Task(sonnet) - Game logic]
+
 [Implementation continues...]
 
 ✅ All Phases complete!
@@ -267,6 +471,8 @@ Claude:
   ✅ npm run build succeeds
 
 🎉 Implementation complete!
+
+⏱️ Total time: 4m 32s (vs ~12m sequential)
 ```
 
 ### Phase-specific Execution
@@ -284,6 +490,9 @@ Phase 2: Game Logic
 3. [ ] Brick collision handling
 4. [ ] Score system
 5. [ ] Game over conditions
+
+⚡ Launching parallel exploration...
+[Task(haiku) × 3 launched in parallel]
 
 🚀 Starting implementation...
 ```

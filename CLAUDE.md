@@ -8,12 +8,29 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 /vibe.spec → /vibe.run → /vibe.verify
 ```
 
+## ULTRAWORK Mode (권장)
+
+`ultrawork` 또는 `ulw` 키워드를 포함하면 최대 성능 모드 활성화:
+
+```bash
+/vibe.run "기능명" ultrawork   # 모든 최적화 자동 활성화
+/vibe.run "기능명" ulw         # 동일 (단축어)
+```
+
+**활성화 기능:**
+- 병렬 서브에이전트 탐색 (3+ 동시)
+- Boulder Loop (모든 Phase 완료까지 자동 진행)
+- 에러 자동 재시도 (최대 3회)
+- 컨텍스트 70%+ 시 자동 압축/저장
+- Phase 간 확인 없이 연속 실행
+
 ## Commands
 
 | 명령어 | 설명 |
 |--------|------|
 | `/vibe.spec "기능명"` | SPEC 작성 (PTCF 구조) |
 | `/vibe.run "기능명"` | 구현 실행 |
+| `/vibe.run "기능명" ultrawork` | **최대 성능 모드** |
 | `/vibe.verify "기능명"` | 검증 |
 | `/vibe.reason "문제"` | 체계적 추론 |
 | `/vibe.analyze` | 프로젝트 분석 |

@@ -13,10 +13,12 @@ SPEC 문서 하나로 AI가 바로 구현하는 2-step 워크플로우.
 ## Features
 
 - **Claude Code 전용**: 네이티브 슬래시 커맨드 + MCP 통합
-- **2-Step 워크플로우**: SPEC → RUN → VERIFY (PLAN/TASKS 불필요)
+- **ULTRAWORK Mode**: `ulw` 한 단어로 모든 최적화 자동 활성화
+- **Boulder Loop**: 모든 Phase 완료까지 자동 진행 (시지푸스처럼)
+- **병렬 서브에이전트**: Haiku 3+ 동시 탐색으로 ~3배 속도 향상
 - **PTCF 구조**: Persona, Task, Context, Format - Gemini 프롬프트 최적화
 - **코딩 규칙 내장**: `.vibe/rules/` - 품질 기준, 복잡도 제한, 안티패턴
-- **자동 품질 검증**: code-simplifier 서브에이전트
+- **자동 컨텍스트 관리**: 70%+ 시 자동 압축/저장
 - **36개 MCP 도구**: @su-record/hi-ai 통합
 
 ---
@@ -46,9 +48,10 @@ cd my-project
 ### 2. 슬래시 커맨드 사용 (Claude Code)
 
 ```
-/vibe.spec "로그인 기능"    # SPEC 작성 (대화형)
-/vibe.run "로그인 기능"     # 구현 실행
-/vibe.verify "로그인 기능"  # 검증
+/vibe.spec "로그인 기능"              # SPEC 작성 (대화형)
+/vibe.run "로그인 기능"               # 구현 실행
+/vibe.run "로그인 기능" ultrawork     # 🚀 최대 성능 모드 (권장)
+/vibe.verify "로그인 기능"            # 검증
 ```
 
 ---
@@ -62,10 +65,10 @@ cd my-project
 │  ↓ .vibe/specs/{기능명}.md (PTCF 구조)              │
 │  ↓ .vibe/features/{기능명}.feature (BDD)            │
 ├─────────────────────────────────────────────────────┤
-│  /vibe.run "기능명"                                 │
-│  ↓ SPEC 읽고 바로 구현                              │
-│  ↓ Phase별 순차 실행                                │
-│  ↓ .vibe/rules/ 규칙 준수                          │
+│  /vibe.run "기능명" ultrawork                       │
+│  ↓ 🚀 ULTRAWORK: 병렬 탐색 + 자동 진행              │
+│  ↓ Boulder Loop: 모든 Phase 완료까지 자동 실행      │
+│  ↓ 에러 자동 재시도 (3회)                           │
 ├─────────────────────────────────────────────────────┤
 │  /vibe.verify "기능명"                              │
 │  ↓ Acceptance Criteria 검증                        │
@@ -105,6 +108,8 @@ cd my-project
 |--------|------|
 | `/vibe.spec "기능명"` | SPEC 작성 (PTCF 구조) |
 | `/vibe.run "기능명"` | 구현 실행 |
+| `/vibe.run "기능명" ultrawork` | 🚀 **최대 성능 모드** (권장) |
+| `/vibe.run "기능명" ulw` | ultrawork 단축어 |
 | `/vibe.run "기능명" --phase N` | 특정 Phase만 실행 |
 | `/vibe.verify "기능명"` | 검증 |
 
@@ -122,6 +127,52 @@ cd my-project
 | `/vibe.diagram` | 아키텍처 다이어그램 |
 | `/vibe.diagram --er` | ERD 다이어그램 |
 | `/vibe.diagram --flow` | 플로우차트 |
+
+---
+
+## ULTRAWORK Mode
+
+> `ultrawork` 또는 `ulw` 키워드 하나로 **모든 최적화가 자동 활성화**됩니다.
+
+```bash
+/vibe.run "기능명" ultrawork    # 최대 성능 모드
+/vibe.run "기능명" ulw          # 동일 (단축어)
+```
+
+### 활성화 기능
+
+| 기능 | 설명 |
+|------|------|
+| **병렬 탐색** | 3+ Task(haiku) 에이전트 동시 실행 |
+| **Boulder Loop** | 모든 Phase 완료까지 자동 진행 (멈추지 않음) |
+| **자동 재시도** | 에러 발생 시 최대 3회 자동 재시도 |
+| **컨텍스트 관리** | 70%+ 시 자동 압축 및 저장 |
+| **무중단 실행** | Phase 간 확인 없이 연속 진행 |
+| **외부 LLM** | GPT/Gemini 활성화 시 자동 참조 |
+
+### Boulder Loop
+
+시지푸스처럼 바위를 굴리듯, **모든 작업이 완료될 때까지** 자동으로 진행:
+
+```
+Phase 1 → Phase 2 → Phase 3 → ... → Phase N
+    ↓         ↓         ↓              ↓
+[병렬탐색] [병렬탐색] [병렬탐색]    [병렬탐색]
+[구현]     [구현]     [구현]        [구현]
+[테스트]   [테스트]   [테스트]      [테스트]
+                                      ↓
+                               🎉 완료까지 자동!
+```
+
+### 일반 모드 vs ULTRAWORK
+
+| 항목 | 일반 모드 | ULTRAWORK |
+|------|----------|-----------|
+| Phase 전환 | 일시정지 가능 | 자동 진행 |
+| 에러 발생 | 보고 후 중단 | 자동 재시도 (3회) |
+| 컨텍스트 70%+ | 경고만 | 자동 압축/저장 |
+| 탐색 방식 | 순차 가능 | **강제 병렬** |
+| 완료 조건 | Phase별 | 전체 완료까지 |
 
 ---
 
@@ -251,8 +302,11 @@ AI의 역할과 전문성 정의
 | Hook | 트리거 | 동작 |
 |------|--------|------|
 | `SessionStart` | 세션 시작 | 이전 컨텍스트 자동 복원 |
+| `UserPromptSubmit` | `ultrawork`/`ulw` 감지 | 🚀 ULTRAWORK 모드 활성화 |
 | `PostToolUse` | Write/Edit 후 | 품질 체크리스트 검토 |
-| `Notification` | 컨텍스트 70/85/95% | 저장 알림 |
+| `Notification` | 컨텍스트 70% | 경고 (ULTRAWORK: 자동 저장) |
+| `Notification` | 컨텍스트 85% | 즉시 저장 + 압축 |
+| `Notification` | 컨텍스트 95% | 긴급 저장 + 세션 전환 준비 |
 
 ### 선택적 연동 (외부 LLM)
 

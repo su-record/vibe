@@ -10,6 +10,17 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "ultrawork|ulw|울트라워크",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "🚀 ULTRAWORK MODE DETECTED. You MUST: (1) Use PARALLEL Task calls for ALL exploration, (2) Enable Boulder Loop - auto-continue through ALL phases without pausing, (3) Auto-retry on errors up to 3 times, (4) Run mcp__vibe__auto_save_context at 70%+ context, (5) Do NOT ask for confirmation between phases. Keep rolling until ALL acceptance criteria pass."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
@@ -27,7 +38,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Context at 70%. Avoid reading entire files unnecessarily."
+            "prompt": "Context at 70%. You still have headroom - don't rush or produce sloppy work. But start being selective about file reads. If ULTRAWORK mode: run mcp__vibe__auto_save_context now."
           }
         ]
       },
@@ -36,7 +47,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Context at 85%. Save current state using mcp__vibe__auto_save_context."
+            "prompt": "Context at 85%. IMMEDIATELY run mcp__vibe__auto_save_context with urgency='high'. Summarize current progress and next steps. Compress verbose outputs."
           }
         ]
       },
@@ -45,7 +56,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Context at 95%. Immediately run mcp__vibe__auto_save_context and prepare for session transition."
+            "prompt": "Context at 95% - CRITICAL. Run mcp__vibe__auto_save_context with urgency='critical' NOW. Save all progress, blockers, and next steps. Prepare for session transition. If in ULTRAWORK mode, the next session will auto-restore and continue."
           }
         ]
       }
