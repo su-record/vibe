@@ -31,9 +31,9 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@su-record/hi-ai": "latest"
+    "@su-record/hi-ai": "latest",
+    "typescript": "^5.9.3"
   },
-  "devDependencies": {},
   "files": [
     "bin/",
     ".claude/",

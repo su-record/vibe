@@ -16,6 +16,9 @@ const options = {
   silent: args.includes('--silent') || args.includes('-s')
 };
 
+// 옵션이 아닌 인자들만 필터링 (프로젝트 이름 등)
+const positionalArgs = args.filter(arg => !arg.startsWith('-'));
+
 // MCP 설정
 const DEFAULT_MCPS = [
   { name: 'vibe', type: 'node', local: true },
@@ -1264,7 +1267,7 @@ function showVersion() {
 // 메인 라우터
 switch (command) {
   case 'init':
-    init(args[1]);
+    init(positionalArgs[1]); // 옵션 제외한 인자 사용
     break;
 
   case 'update':
