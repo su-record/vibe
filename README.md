@@ -83,6 +83,7 @@ cd my-project
 | `vibe init` | 현재 폴더에 vibe 초기화 |
 | `vibe init <name>` | 새 프로젝트 생성 |
 | `vibe update` | 설정 업데이트 (커맨드, 규칙, Hooks) |
+| `vibe remove` | vibe 완전 제거 |
 | `vibe status` | 현재 설정 상태 |
 | `vibe help` | 도움말 |
 | `vibe version` | 버전 정보 |
@@ -132,18 +133,21 @@ project/
 ├── CLAUDE.md                 # 프로젝트 컨텍스트
 ├── .claude/
 │   ├── commands/             # 슬래시 커맨드 (7개)
-│   └── agents/               # 서브에이전트 (simplifier)
-├── .vibe/rules/             # 코딩 규칙
-│   ├── core/                 # 핵심 원칙 (수술적 정밀도, DRY, SRP)
-│   ├── quality/              # 품질 체크리스트
-│   ├── standards/            # 복잡도, 네이밍, 안티패턴
-│   ├── languages/            # 언어별 규칙
-│   └── tools/                # MCP 가이드
+│   ├── agents/               # 서브에이전트 (simplifier)
+│   └── settings.json         # Hooks 설정
 └── .vibe/
     ├── config.json           # 프로젝트 설정
     ├── constitution.md       # 프로젝트 원칙
-    ├── specs/                # SPEC 문서들
-    └── features/             # BDD Feature 파일들
+    ├── mcp/                   # hi-ai MCP (로컬 설치)
+    │   └── node_modules/      # .gitignore에 포함
+    ├── rules/                 # 코딩 규칙
+    │   ├── core/              # 핵심 원칙
+    │   ├── quality/           # 품질 체크리스트
+    │   ├── standards/         # 복잡도, 네이밍
+    │   ├── languages/         # 언어별 규칙
+    │   └── tools/             # MCP 가이드
+    ├── specs/                 # SPEC 문서들
+    └── features/              # BDD Feature 파일들
 ```
 
 ---
@@ -235,10 +239,12 @@ AI의 역할과 전문성 정의
 
 ### 자동 설치 (vibe init)
 
-| MCP 서버 | 설명 |
-|----------|------|
-| `vibe` (hi-ai) | 코드 분석, 품질 검증, 세션 메모리 |
-| `context7` | 라이브러리 문서 실시간 검색 |
+| MCP 서버 | 설명 | 설치 위치 |
+|----------|------|----------|
+| `vibe` (hi-ai) | 코드 분석, 품질 검증, 세션 메모리 | `.vibe/mcp/` (로컬) |
+| `context7` | 라이브러리 문서 실시간 검색 | Smithery (온라인) |
+
+> **Note**: hi-ai MCP는 프로젝트별 `.vibe/mcp/` 폴더에 로컬 설치되어 안정적으로 작동합니다.
 
 ### 선택적 연동 (외부 LLM)
 
