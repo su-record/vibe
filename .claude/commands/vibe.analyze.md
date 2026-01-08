@@ -1,237 +1,237 @@
 ---
 description: Analyze project or specific feature/module
-argument-hint: "기능명" or --code or --deps or --arch (optional)
+argument-hint: "feature-name" or --code or --deps or --arch (optional)
 ---
 
 # /vibe.analyze
 
-프로젝트 또는 특정 기능/모듈을 분석합니다.
+Analyze project or specific feature/module.
 
 ## Usage
 
 ```
-/vibe.analyze                  # 프로젝트 전체 품질 분석
-/vibe.analyze "로그인"          # 로그인 관련 코드 탐색 + 컨텍스트 수집
-/vibe.analyze --code           # 코드 품질 분석만
-/vibe.analyze --deps           # 의존성 분석만
-/vibe.analyze --arch           # 아키텍처 분석만
+/vibe.analyze                  # Full project quality analysis
+/vibe.analyze "login"          # Login related code exploration + context collection
+/vibe.analyze --code           # Code quality analysis only
+/vibe.analyze --deps           # Dependency analysis only
+/vibe.analyze --arch           # Architecture analysis only
 ```
 
-## ⚠️ 컨텍스트 리셋
+## ⚠️ Context Reset
 
-**이 명령어가 실행되면 이전 대화 내용은 무시합니다.**
-- 새 세션처럼 처음부터 코드를 탐색하고 분석
-- 오직 이 분석에서 새로 수집한 정보만 기반으로 대화
+**When this command runs, previous conversation is ignored.**
+- Explore and analyze code from scratch like new session
+- Base conversation only on newly collected information from this analysis
 
 ---
 
-## Mode 1: 기능/모듈 분석 (`/vibe.analyze "기능명"`)
+## Mode 1: Feature/Module Analysis (`/vibe.analyze "feature-name"`)
 
-### 목표
+### Goal
 
-사용자가 요청한 기능/모듈과 관련된 **모든 소스코드를 탐색**하고 **플로우를 분석**하여:
-1. 현재 구현 상태 파악
-2. 코드 구조와 의존성 이해
-3. 이후 개발/수정 요청에 즉시 대응 가능한 컨텍스트 확보
+**Explore all source code** related to user's requested feature/module and **analyze flow** to:
+1. Understand current implementation status
+2. Understand code structure and dependencies
+3. Build context for immediate response to future development/modification requests
 
 ### Process
 
-#### 1. 요청 분석
+#### 1. Request Analysis
 
-사용자 요청에서 핵심 키워드 추출:
-- 기능명 (예: 로그인, 피드, 결제)
-- 동작 (예: 작성, 조회, 수정, 삭제)
-- 범위 (예: 백엔드만, 프론트엔드만, 전체)
+Extract key keywords from user request:
+- Feature name (e.g., login, feed, payment)
+- Action (e.g., create, read, update, delete)
+- Scope (e.g., backend only, frontend only, full)
 
-#### 2. 프로젝트 구조 파악
+#### 2. Understand Project Structure
 
-`CLAUDE.md`, `package.json`, `pyproject.toml` 등을 읽어 기술 스택 확인:
+Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
 
-**백엔드:**
+**Backend:**
 - FastAPI/Django: `app/api/`, `app/services/`, `app/models/`
 - Express/NestJS: `src/controllers/`, `src/services/`, `src/models/`
 
-**프론트엔드:**
+**Frontend:**
 - React/Next.js: `src/components/`, `src/pages/`, `src/hooks/`
 - Flutter: `lib/screens/`, `lib/services/`, `lib/providers/`
 
-#### 3. 관련 코드 탐색
+#### 3. Explore Related Code
 
-**탐색 전략:**
-1. **Glob**으로 관련 파일 목록 수집
-2. **Grep**으로 키워드 기반 코드 위치 파악
-3. **Read**로 핵심 파일 상세 분석
-4. 필요시 **Task (Explore)** 에이전트로 병렬 탐색
+**Exploration strategy:**
+1. **Glob** to collect related file list
+2. **Grep** to locate code by keyword
+3. **Read** to analyze key files in detail
+4. If needed, **Task (Explore)** agent for parallel exploration
 
-#### 4. 플로우 분석
+#### 4. Flow Analysis
 
-**API 플로우:**
-- 엔드포인트 URL 및 HTTP 메서드
-- 요청/응답 스키마
-- 인증/권한 요구사항
+**API Flow:**
+- Endpoint URL and HTTP method
+- Request/response schema
+- Authentication/authorization requirements
 
-**비즈니스 로직:**
-- 핵심 메서드와 역할
-- 유효성 검증 규칙
-- 외부 서비스 연동
+**Business Logic:**
+- Core methods and roles
+- Validation rules
+- External service integrations
 
-**데이터 플로우:**
-- 관련 테이블/모델
-- 관계 (1:N, N:M)
-- 주요 쿼리 패턴
+**Data Flow:**
+- Related tables/models
+- Relationships (1:N, N:M)
+- Key query patterns
 
-#### 5. 분석 결과 출력
+#### 5. Output Analysis Results
 
 ```markdown
-## 📊 [기능명] 분석 결과
+## 📊 [feature-name] Analysis Results
 
-### 개요
-- **기능 설명**: [한 줄 요약]
-- **구현 상태**: [완료/진행중/미구현]
-- **관련 파일 수**: N개
+### Overview
+- **Feature description**: [one-line summary]
+- **Implementation status**: [Complete/In progress/Not implemented]
+- **Related files**: N files
 
-### 구조
+### Structure
 
-#### API 엔드포인트
-| 메서드 | 경로 | 설명 | 인증 |
-|--------|------|------|------|
-| POST | /api/v1/auth/login | 로그인 | - |
+#### API Endpoints
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| POST | /api/v1/auth/login | Login | - |
 
-#### 핵심 서비스
-- `auth_service.py`: 인증 로직
-  - `login()`: 로그인 처리
-  - `verify_token()`: 토큰 검증
+#### Core Services
+- `auth_service.py`: Authentication logic
+  - `login()`: Login processing
+  - `verify_token()`: Token verification
 
-#### 데이터 모델
-- `User`: 사용자 테이블
-  - 주요 필드: id, email, password_hash
-  - 관계: Session (1:N)
+#### Data Models
+- `User`: User table
+  - Key fields: id, email, password_hash
+  - Relationships: Session (1:N)
 
-### 플로우 다이어그램
-[텍스트 기반 플로우 설명]
+### Flow Diagram
+[Text-based flow description]
 
-### 참고 파일 목록
+### Reference File List
 - src/api/auth/router.py:L10-50
 - src/services/auth_service.py:L1-100
 ```
 
-#### 6. 개발 규칙 확인
+#### 6. Check Development Rules
 
-`.vibe/rules/`에서 관련 규칙 로드:
-- `core/quick-start.md` - 5가지 핵심 원칙
-- `standards/complexity-metrics.md` - 복잡도 기준
-- `quality/checklist.md` - 품질 체크리스트
+Load related rules from `.vibe/rules/`:
+- `core/quick-start.md` - 5 core principles
+- `standards/complexity-metrics.md` - Complexity standards
+- `quality/checklist.md` - Quality checklist
 
-규칙 위반 사항이 있으면 함께 출력.
+Output any rule violations found.
 
-#### 7. 완료
+#### 7. Complete
 
-분석 완료 후:
-1. 분석 결과 요약 출력
-2. "이제 어떤 작업을 도와드릴까요?" 질문
-3. 이후 개발/수정 요청에 수집된 컨텍스트 활용
+After analysis:
+1. Output analysis summary
+2. Ask "What would you like me to help with?"
+3. Use collected context for subsequent development/modification requests
 
 ---
 
-## Mode 2: 프로젝트 품질 분석 (옵션 없음 또는 --code/--deps/--arch)
+## Mode 2: Project Quality Analysis (no option or --code/--deps/--arch)
 
-### 분석 범위
+### Analysis Scope
 
-- **기본** (`/vibe.analyze`): 전체 분석 (코드 + 의존성 + 아키텍처)
-- **--code**: 코드 품질 분석만
-- **--deps**: 의존성 분석만
-- **--arch**: 아키텍처 분석만
+- **Default** (`/vibe.analyze`): Full analysis (code + dependencies + architecture)
+- **--code**: Code quality analysis only
+- **--deps**: Dependency analysis only
+- **--arch**: Architecture analysis only
 
-### MCP 도구 사용
+### MCP Tool Usage
 
-`@su-record/hi-ai` 기반:
+Based on `@su-record/hi-ai`:
 
-#### 코드 품질 분석 (--code)
-- `analyze_complexity`: 복잡도 분석
-- `validate_code_quality`: 코드 품질 검증
-- `check_coupling_cohesion`: 결합도/응집도 체크
+#### Code Quality Analysis (--code)
+- `analyze_complexity`: Complexity analysis
+- `validate_code_quality`: Code quality validation
+- `check_coupling_cohesion`: Coupling/cohesion check
 
-#### 의존성 분석 (--deps)
-- `package.json` / `pyproject.toml` / `pubspec.yaml` 읽기
-- 버전 충돌, 보안 취약점, 업데이트 필요 패키지 분석
+#### Dependency Analysis (--deps)
+- Read `package.json` / `pyproject.toml` / `pubspec.yaml`
+- Analyze version conflicts, security vulnerabilities, packages needing updates
 
-#### 아키텍처 분석 (--arch)
-- `find_symbol`: 핵심 모듈 찾기
-- `find_references`: 모듈 간 의존성 파악
-- 순환 의존성, 레이어 위반 검출
+#### Architecture Analysis (--arch)
+- `find_symbol`: Find core modules
+- `find_references`: Identify module dependencies
+- Detect circular dependencies, layer violations
 
-### 분석 리포트
+### Analysis Report
 
 `.vibe/reports/analysis-{date}.md`:
 
 ```markdown
-# 프로젝트 분석 리포트
+# Project Analysis Report
 
-## 개요
-- 분석 일시: 2025-01-06 12:00
-- 분석 범위: 전체
+## Overview
+- Analysis date: 2025-01-06 12:00
+- Analysis scope: Full
 
-## 코드 품질 (85/100)
-- 평균 복잡도: 8.2 (양호)
-- 높은 복잡도 파일: 3개
+## Code Quality (85/100)
+- Average complexity: 8.2 (good)
+- High complexity files: 3
 
-## 의존성 (92/100)
-- 총 패키지: 42개
-- 업데이트 필요: 3개
+## Dependencies (92/100)
+- Total packages: 42
+- Updates needed: 3
 
-## 아키텍처 (78/100)
-- 순환 의존성: 2개 발견
-- 레이어 위반: 1개
+## Architecture (78/100)
+- Circular dependencies: 2 found
+- Layer violations: 1
 
-## 개선 제안
-1. service.py 리팩토링
-2. lodash 보안 패치 적용
+## Improvement Suggestions
+1. Refactor service.py
+2. Apply lodash security patch
 ```
 
 ---
 
 ## Example
 
-### 기능 분석
+### Feature Analysis
 ```
-User: /vibe.analyze "로그인"
+User: /vibe.analyze "login"
 
-Claude: 로그인 관련 코드를 분석합니다...
+Claude: Analyzing login related code...
 
-[Glob, Grep, Read 도구로 코드 탐색]
+[Exploring code with Glob, Grep, Read tools]
 
-📊 로그인 분석 결과
+📊 Login Analysis Results
 
-### 개요
-- 기능 설명: JWT 기반 사용자 인증
-- 구현 상태: 완료
-- 관련 파일: 8개
+### Overview
+- Feature description: JWT-based user authentication
+- Implementation status: Complete
+- Related files: 8
 
-### API 엔드포인트
-| POST | /api/v1/auth/login | 로그인 | - |
-| POST | /api/v1/auth/refresh | 토큰 갱신 | Required |
+### API Endpoints
+| POST | /api/v1/auth/login | Login | - |
+| POST | /api/v1/auth/refresh | Token refresh | Required |
 
-[분석 계속...]
+[Analysis continues...]
 
-이제 어떤 작업을 도와드릴까요?
-- 리팩토링
-- 신규 기능 추가
-- 버그 수정
+What would you like me to help with?
+- Refactoring
+- Add new feature
+- Bug fix
 ```
 
-### 품질 분석
+### Quality Analysis
 ```
 User: /vibe.analyze --code
 
-Claude: 코드 품질 분석을 시작합니다...
+Claude: Starting code quality analysis...
 
-📊 코드 품질 점수: 85/100 (B+)
+📊 Code Quality Score: 85/100 (B+)
 
-**주요 발견사항:**
-- 높은 복잡도: src/service.py (CC: 15)
+**Key findings:**
+- High complexity: src/service.py (CC: 15)
 
-**개선 제안:**
-1. src/service.py를 3개 모듈로 분리
+**Improvement suggestions:**
+1. Split src/service.py into 3 modules
 ```
 
 ---

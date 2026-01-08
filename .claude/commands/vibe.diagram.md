@@ -5,7 +5,7 @@ argument-hint: --er or --flow (optional)
 
 # /vibe.diagram
 
-다이어그램을 생성합니다 (아키텍처, ERD, 플로우차트).
+Generate diagrams (architecture, ERD, flowchart).
 
 ## Usage
 
@@ -17,35 +17,35 @@ argument-hint: --er or --flow (optional)
 
 ## Process
 
-### 1. 다이어그램 타입 결정
+### 1. Determine Diagram Type
 
-- **기본** (`/vibe.diagram`): 아키텍처 다이어그램
+- **Default** (`/vibe.diagram`): Architecture diagram
 - **--er**: ERD (Entity-Relationship Diagram)
-- **--flow**: 플로우차트 (주요 프로세스)
+- **--flow**: Flowchart (main processes)
 
-### 2. 프로젝트 분석
+### 2. Project Analysis
 
-#### 아키텍처 다이어그램
-- 프로젝트 구조 파악 (폴더 구조)
-- 주요 모듈 및 레이어 식별
-- 의존성 관계 분석
+#### Architecture Diagram
+- Understand project structure (folder structure)
+- Identify major modules and layers
+- Analyze dependency relationships
 
 #### ERD
-- 데이터베이스 스키마 파일 찾기
+- Find database schema files
   - `backend/models/`
   - `migrations/`
   - `schema.sql`
-- 테이블 간 관계 파악
+- Identify table relationships
 
-#### 플로우차트
-- 주요 비즈니스 로직 흐름
-- 사용자 액션 → 시스템 응답
+#### Flowchart
+- Main business logic flows
+- User action → System response
 
-### 3. Mermaid 코드 생성
+### 3. Generate Mermaid Code
 
-ASCII 아트 또는 Mermaid 코드로 다이어그램 생성:
+Generate diagram as ASCII art or Mermaid code:
 
-#### 아키텍처 다이어그램 (Mermaid)
+#### Architecture Diagram (Mermaid)
 
 ```mermaid
 graph TB
@@ -80,46 +80,46 @@ erDiagram
     }
 ```
 
-#### 플로우차트 (Mermaid)
+#### Flowchart (Mermaid)
 
 ```mermaid
 flowchart TD
-    Start([사용자가 피드 작성])
-    GPS{GPS 인증}
-    Vision{Vision API 검증}
-    OCR{OCR 인증}
-    Save[피드 저장]
+    Start([User writes feed])
+    GPS{GPS Auth}
+    Vision{Vision API Verify}
+    OCR{OCR Auth}
+    Save[Save Feed]
 
     Start --> GPS
-    GPS -->|50m 이내| Vision
-    GPS -->|범위 밖| Fail
-    Vision -->|음식 감지| OCR
-    Vision -->|실패| Fail
-    OCR -->|선택| Save
-    Save --> End([완료])
+    GPS -->|Within 50m| Vision
+    GPS -->|Out of range| Fail
+    Vision -->|Food detected| OCR
+    Vision -->|Failed| Fail
+    OCR -->|Optional| Save
+    Save --> End([Complete])
 ```
 
-### 4. 렌더링 안내
+### 4. Rendering Guide
 
-생성된 Mermaid 코드를 렌더링하는 방법 안내:
+Guide on how to render generated Mermaid code:
 
-- **GitHub**: `.md` 파일에 붙여넣기 (자동 렌더링)
-- **VSCode**: Mermaid 확장 프로그램 설치
-- **온라인**: https://mermaid.live/
+- **GitHub**: Paste in `.md` file (auto-renders)
+- **VSCode**: Install Mermaid extension
+- **Online**: https://mermaid.live/
 
 ## Example
 
 ```
 User: /vibe.diagram --er
 
-Claude: ERD를 생성합니다...
+Claude: Generating ERD...
 
-프로젝트 분석 중...
-- 데이터베이스 스키마 발견: backend/models/
-- 테이블 수: 15개
-- 주요 관계: USER, FEED, RESTAURANT
+Analyzing project...
+- Database schema found: backend/models/
+- Tables: 15
+- Key relationships: USER, FEED, RESTAURANT
 
-✅ ERD 생성 완료!
+✅ ERD generation complete!
 
 ```mermaid
 erDiagram
@@ -158,20 +158,20 @@ erDiagram
     }
 ```
 
-**다이어그램 저장 위치:**
+**Diagram save location:**
   .vibe/diagrams/erd-2025-11-17.md
 
-**렌더링 방법:**
-  1. GitHub에 푸시 (자동 렌더링)
-  2. VSCode에서 Mermaid 확장 프로그램 사용
-  3. https://mermaid.live/ 에서 확인
+**Rendering options:**
+  1. Push to GitHub (auto-renders)
+  2. Use Mermaid extension in VSCode
+  3. View at https://mermaid.live/
 ```
 
 ## Notes
 
-- Mermaid는 GitHub, GitLab, VSCode 등에서 지원됩니다
-- 복잡한 다이어그램은 수동 조정이 필요할 수 있습니다
-- 생성된 다이어그램은 `.vibe/diagrams/` 폴더에 저장됩니다
+- Mermaid is supported in GitHub, GitLab, VSCode, etc.
+- Complex diagrams may need manual adjustments
+- Generated diagrams are saved in `.vibe/diagrams/` folder
 
 ---
 

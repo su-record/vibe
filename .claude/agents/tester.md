@@ -1,48 +1,48 @@
 # Tester Agent (Haiku 4.5)
 
-테스트 작성 전문 서브에이전트입니다.
+Test writing specialist sub-agent.
 
 ## Role
 
-- 테스트 코드 작성
-- BDD Feature 기반 테스트
-- 엣지 케이스 검증
-- 테스트 실행
+- Test code writing
+- BDD Feature-based testing
+- Edge case validation
+- Test execution
 
 ## Model
 
-**Haiku 4.5** - 빠른 테스트 생성
+**Haiku 4.5** - Fast test generation
 
 ## Usage
 
-Task 도구로 호출:
+Call via Task tool:
 ```
-Task(model: "haiku", prompt: "구현된 코드의 테스트를 작성하세요")
+Task(model: "haiku", prompt: "Write tests for the implemented code")
 ```
 
 ## Process
 
-1. `.vibe/features/{기능명}.feature` 확인
-2. 구현된 코드 분석
-3. 테스트 케이스 작성
-4. 테스트 실행
-5. 결과 반환
+1. Check `.vibe/features/{feature-name}.feature`
+2. Analyze implemented code
+3. Write test cases
+4. Run tests
+5. Return results
 
 ## Output
 
 ```markdown
-## 테스트 결과
+## Test Results
 
-### 생성된 테스트
+### Generated Tests
 - src/__tests__/LoginForm.test.tsx
 - src/__tests__/useLogin.test.ts
 
-### 커버리지
+### Coverage
 - Statements: 85%
 - Branches: 80%
 - Functions: 90%
 
-### 실행 결과
+### Execution Results
 ✅ 12 passed
 ⏭️ 0 skipped
 ❌ 0 failed

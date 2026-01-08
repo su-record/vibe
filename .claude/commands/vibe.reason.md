@@ -5,293 +5,293 @@ argument-hint: "problem description"
 
 # /vibe.reason
 
-복잡한 문제에 9단계 추론 프레임워크를 적용합니다 (Reasoning Agent).
+Apply 9-step reasoning framework to complex problems (Reasoning Agent).
 
 ## Usage
 
 ```
-/vibe.reason "문제 설명"
+/vibe.reason "problem description"
 ```
 
 ## Description
 
-체계적인 9단계 추론 프레임워크를 사용하여 복잡한 문제를 논리적으로 분석하고 최적의 해결책을 도출합니다.
+Use systematic 9-step reasoning framework to logically analyze complex problems and derive optimal solutions.
 
 ## When to Use
 
-다음과 같은 상황에서 사용하세요:
+Use in situations like:
 
-1. **복잡한 버그 디버깅**
-   - 근본 원인이 불명확한 경우
-   - 여러 가설을 체계적으로 검증해야 할 때
+1. **Complex bug debugging**
+   - Root cause unclear
+   - Need to systematically verify multiple hypotheses
 
-2. **아키텍처 설계 결정**
-   - 여러 옵션 중 최적의 선택이 필요할 때
-   - 제약 조건과 위험을 종합적으로 평가해야 할 때
+2. **Architecture design decisions**
+   - Need to choose optimal option among several
+   - Need to comprehensively evaluate constraints and risks
 
-3. **성능 최적화 문제**
-   - 병목 지점이 여러 곳일 수 있을 때
-   - 단계별 최적화 전략이 필요할 때
+3. **Performance optimization**
+   - Bottleneck may be in multiple places
+   - Need step-by-step optimization strategy
 
-4. **리팩토링 계획**
-   - 레거시 코드의 복잡도를 체계적으로 분석해야 할 때
-   - 점진적 리팩토링 전략이 필요할 때
+4. **Refactoring planning**
+   - Need to systematically analyze legacy code complexity
+   - Need gradual refactoring strategy
 
-5. **요구사항 분석**
-   - 상충하는 요구사항을 조율해야 할 때
-   - 누락된 요구사항을 발견해야 할 때
+5. **Requirements analysis**
+   - Need to reconcile conflicting requirements
+   - Need to discover missing requirements
 
 ## Process
 
-### 1. 논리적 종속성 및 제약 조건
-- 정책, 규칙, 필수 전제 조건 확인
-- 작업 순서 최적화 (선행 작업 식별)
-- 사용자 제약 조건 우선 적용
+### 1. Logical Dependencies and Constraints
+- Check policies, rules, prerequisites
+- Optimize task order (identify dependencies)
+- Apply user constraints first
 
-### 2. 위험 평가
-- 행동의 결과 분석
-- 롤백 가능성 확인
-- 호환성, 보안, 성능 위험 검토
+### 2. Risk Assessment
+- Analyze action consequences
+- Check rollback possibility
+- Review compatibility, security, performance risks
 
-### 3. 귀납적 추론 및 가설 탐색
-- 근본 원인에 대한 가설 생성
-- 가능성 기반 우선순위 지정
-- 각 가설의 검증 방법 제시
+### 3. Inductive Reasoning and Hypothesis Exploration
+- Generate hypotheses about root cause
+- Prioritize by likelihood
+- Present verification method for each hypothesis
 
-### 4. 결과 평가 및 적응성
-- 관찰 결과에 따른 계획 수정
-- 가설 반증 시 새 가설 생성
-- 백트래킹 필요성 판단
+### 4. Result Evaluation and Adaptability
+- Modify plan based on observations
+- Generate new hypothesis when disproved
+- Determine backtracking need
 
-### 5. 정보 가용성
-- 사용 가능한 모든 도구 식별
-- 관련 정책/규칙 문서 참조
-- 이전 컨텍스트 복원
-- 사용자 확인 필요 사항 구분
+### 5. Information Availability
+- Identify all available tools
+- Reference relevant policy/rule documents
+- Restore previous context
+- Distinguish items needing user confirmation
 
-### 6. 정밀성 및 근거
-- 정책 인용 시 정확한 출처 명시
-- 코드 참조 시 파일명:라인 포함
-- 메트릭의 정확한 수치 제공
+### 6. Precision and Evidence
+- Cite exact source when referencing policies
+- Include filename:line when referencing code
+- Provide exact metric numbers
 
-### 7. 완전성
-- 모든 요구사항, 옵션, 선호도 통합
-- 조기 결론 지양
-- 여러 대안 탐색
+### 7. Completeness
+- Integrate all requirements, options, preferences
+- Avoid premature conclusions
+- Explore multiple alternatives
 
-### 8. 끈기와 인내
-- 일시적 오류는 지능적으로 재시도
-- 전략 변경을 통한 문제 해결
-- 모든 추론 단계 완료까지 진행
+### 8. Persistence and Patience
+- Intelligently retry temporary errors
+- Solve problems through strategy changes
+- Continue until all reasoning steps complete
 
-### 9. 응답 억제
-- 추론 완료 후에만 행동
-- 복잡한 결정은 추론 과정 문서화
-- 단계별 실행으로 안전성 확보
+### 9. Response Suppression
+- Act only after reasoning complete
+- Document reasoning process for complex decisions
+- Ensure safety through step-by-step execution
 
 ## MCP Tools Integration
 
-이 명령은 다음 MCP 도구를 자동으로 활용합니다:
+This command automatically uses these MCP tools:
 
-- **apply_reasoning_framework**: 9단계 추론 프레임워크 적용
-- **create_thinking_chain**: 순차적 사고 체인 생성
-- **analyze_problem**: 문제의 근본 원인 분석
-- **step_by_step_analysis**: 세부적인 단계별 분석
-- **recall_memory**: 이전 컨텍스트 복원
-- **find_symbol / find_references**: 코드 의존성 파악
+- **apply_reasoning_framework**: Apply 9-step reasoning framework
+- **create_thinking_chain**: Create sequential thinking chain
+- **analyze_problem**: Analyze problem root cause
+- **step_by_step_analysis**: Detailed step-by-step analysis
+- **recall_memory**: Restore previous context
+- **find_symbol / find_references**: Identify code dependencies
 
 ## Output Format
 
 ```markdown
-# 추론 프레임워크 분석
+# Reasoning Framework Analysis
 
-**문제**: [문제 설명]
-**컨텍스트**: [관련 정보]
-**적용 단계**: 9/9
-
----
-
-## 1. 논리적 종속성 및 제약 조건
-
-**핵심 질문**:
-- 어떤 정책이나 필수 규칙이 적용되는가?
-- 작업 순서를 재정렬해야 하는가?
-- 필요한 전제 조건이나 정보는?
-- 명시적 사용자 제약 조건이 있는가?
-
-**제약 조건 분석**:
-[분석 내용]
+**Problem**: [problem description]
+**Context**: [relevant information]
+**Steps Applied**: 9/9
 
 ---
 
-## 2. 위험 평가
+## 1. Logical Dependencies and Constraints
+
+**Key Questions**:
+- What policies or required rules apply?
+- Should task order be rearranged?
+- Required prerequisites or information?
+- Explicit user constraints?
+
+**Constraint Analysis**:
+[analysis content]
+
+---
+
+## 2. Risk Assessment
 
 ...
 
 ---
 
-## 요약
+## Summary
 
-[전체 추론 결과 요약 및 권장 사항]
+[Overall reasoning results summary and recommendations]
 ```
 
 ## Examples
 
-### Example 1: 복잡한 버그 디버깅
+### Example 1: Complex Bug Debugging
 
 ```
-사용자: /vibe.reason "사용자 로그인 후 프로필 페이지에서 간헐적으로 500 에러가 발생합니다. 로그에는 'TypeError: Cannot read property id of undefined'만 찍힙니다."
+User: /vibe.reason "After user login, profile page intermittently returns 500 error. Log shows 'TypeError: Cannot read property id of undefined'"
 
-AI: 이 문제를 9단계 추론 프레임워크로 분석하겠습니다.
+AI: Analyzing this problem with 9-step reasoning framework.
 
-# 추론 프레임워크 분석
+# Reasoning Framework Analysis
 
-**문제**: 로그인 후 프로필 페이지 간헐적 500 에러 (TypeError: Cannot read property 'id' of undefined)
-**컨텍스트**: 간헐적 발생, 로그인 성공 후 발생
-**적용 단계**: 9/9
-
----
-
-## 1. 논리적 종속성 및 제약 조건
-
-**제약 조건 분석**:
-- 정책/규칙: 인증/인가 시스템 정책 확인 필요
-- 작업 순서: 로그인 → 세션 생성 → 프로필 조회 순서 확인
-- 전제 조건: 에러 재현을 위한 조건 파악 필요
-- 사용자 제약: 프로덕션 환경이므로 디버깅 도구 사용 제한
+**Problem**: Intermittent 500 error on profile page after login (TypeError: Cannot read property 'id' of undefined)
+**Context**: Intermittent occurrence, happens after successful login
+**Steps Applied**: 9/9
 
 ---
 
-## 2. 위험 평가
+## 1. Logical Dependencies and Constraints
 
-**위험 평가**:
-- 작업 유형: 디버깅 (중간 위험 - 로깅 추가는 낮은 위험, DB 변경은 높은 위험)
-- 롤백 가능성: 로깅 추가는 롤백 쉬움
-- 호환성 위험: 세션 구조 변경 시 기존 사용자 영향
-- 보안 위험: 과도한 로깅으로 민감 정보 노출 가능성
-- 성능 위험: 추가 로깅으로 인한 성능 저하 미미
-
----
-
-## 3. 귀납적 추론 및 가설 탐색
-
-**가설 생성**:
-1. **가설 1: 세션 데이터 불완전** (가능성: 높음)
-   - 근거: 간헐적 발생 = 타이밍 이슈 또는 데이터 일관성 문제
-   - 검증: 세션 저장 로직에 로깅 추가, Redis 연결 상태 확인
-
-2. **가설 2: 비동기 처리 순서 문제** (가능성: 중간)
-   - 근거: undefined = 데이터 로딩 전에 접근
-   - 검증: 프로필 조회 API의 Promise 체인 확인, await 누락 검사
-
-3. **가설 3: DB 쿼리 결과 null** (가능성: 낮음)
-   - 근거: 특정 조건에서만 사용자 정보 조회 실패
-   - 검증: 프로필 조회 쿼리 로그 확인, 외래 키 제약 조건 검토
-
-**우선순위**: 가능성 높은 순으로 검증하되, 낮은 가능성도 완전히 배제하지 않음
+**Constraint Analysis**:
+- Policy/Rules: Need to check auth/authz system policies
+- Task Order: Verify login → session creation → profile fetch order
+- Prerequisites: Need to identify error reproduction conditions
+- User Constraints: Production environment limits debugging tools
 
 ---
 
-[추가 단계 4-9 분석...]
+## 2. Risk Assessment
+
+**Risk Assessment**:
+- Task type: Debugging (medium risk - logging low risk, DB changes high risk)
+- Rollback possibility: Adding logs easy to rollback
+- Compatibility risk: Session structure changes affect existing users
+- Security risk: Excessive logging may expose sensitive info
+- Performance risk: Additional logging minimal impact
 
 ---
 
-## 요약
+## 3. Inductive Reasoning and Hypothesis Exploration
 
-9단계 추론 프레임워크를 통해 로그인 후 프로필 페이지 500 에러를 분석했습니다.
+**Hypothesis Generation**:
+1. **Hypothesis 1: Incomplete session data** (Likelihood: High)
+   - Evidence: Intermittent = timing issue or data consistency problem
+   - Verification: Add logging to session save logic, check Redis connection
 
-**주요 발견**:
-- 가장 가능성 높은 원인: 세션 데이터 불완전 (Redis 연결 문제 또는 세션 저장 타이밍)
-- 검증 우선순위: 1) 세션 저장 로직 로깅 추가 → 2) 비동기 처리 검토 → 3) DB 쿼리 확인
+2. **Hypothesis 2: Async processing order issue** (Likelihood: Medium)
+   - Evidence: undefined = accessing data before load
+   - Verification: Check Promise chain in profile API, check for missing await
 
-**권장 조치**:
-1. 즉시: 세션 저장/조회 시점에 상세 로깅 추가 (낮은 위험)
-2. 단기: 비동기 처리 코드 리뷰 (Promise, await 누락 확인)
-3. 중기: 세션 저장소 모니터링 강화 (Redis 연결 상태, 메모리)
+3. **Hypothesis 3: DB query returns null** (Likelihood: Low)
+   - Evidence: User info fetch fails only under certain conditions
+   - Verification: Check profile query logs, review foreign key constraints
 
-**다음 단계**:
-서버 코드에서 `profile_controller.ts` 확인 → 세션 처리 로직에 try-catch 및 로깅 추가 → 재현 조건 파악
+**Priority**: Verify in order of likelihood, don't completely rule out low probability
+
+---
+
+[Additional steps 4-9 analysis...]
+
+---
+
+## Summary
+
+Analyzed profile page 500 error after login through 9-step reasoning framework.
+
+**Key Findings**:
+- Most likely cause: Incomplete session data (Redis connection issue or session save timing)
+- Verification priority: 1) Add session save logic logging → 2) Review async processing → 3) Check DB queries
+
+**Recommended Actions**:
+1. Immediate: Add detailed logging to session save/fetch (low risk)
+2. Short-term: Code review async processing (Promise, await check)
+3. Medium-term: Strengthen session store monitoring (Redis connection, memory)
+
+**Next Steps**:
+Check `profile_controller.ts` → Add try-catch and logging to session processing logic → Identify reproduction conditions
 ```
 
-### Example 2: 아키텍처 설계 결정
+### Example 2: Architecture Design Decision
 
 ```
-사용자: /vibe.reason "실시간 알림 기능을 추가하려고 합니다. WebSocket, SSE, Long Polling 중 어떤 걸 써야 할까요?"
+User: /vibe.reason "Want to add real-time notification feature. Should I use WebSocket, SSE, or Long Polling?"
 
-AI: [9단계 프레임워크를 통해 각 옵션의 제약 조건, 위험, 장단점을 체계적으로 분석하고, 프로젝트 상황에 맞는 최적의 선택을 권장]
+AI: [Systematically analyze constraints, risks, pros/cons of each option through 9-step framework, recommend optimal choice for project situation]
 ```
 
 ## Integration with Other Commands
 
-### /vibe.spec과 함께 사용
+### With /vibe.spec
 
 ```
-# 1. 요구사항 수집
-/vibe.spec "실시간 알림"
+# 1. Collect requirements
+/vibe.spec "real-time notifications"
 
-# 2. 기술적 결정이 필요한 경우
-/vibe.reason "실시간 알림 구현 시 WebSocket vs SSE vs Long Polling 선택"
+# 2. When technical decision needed
+/vibe.reason "Choosing WebSocket vs SSE vs Long Polling for real-time notifications"
 
-# 3. SPEC 문서 업데이트 및 계획 수립
-/vibe.plan "실시간 알림"
+# 3. Update SPEC document and create plan
+/vibe.plan "real-time notifications"
 ```
 
-### /vibe.analyze와 함께 사용
+### With /vibe.analyze
 
 ```
-# 1. 코드 분석으로 문제 발견
+# 1. Discover issue through code analysis
 /vibe.analyze --code
 
-# 2. 발견된 문제를 추론 프레임워크로 분석
-/vibe.reason "users_service.py의 Cyclomatic Complexity 15를 10 이하로 낮추는 리팩토링 전략"
+# 2. Analyze discovered issue with reasoning framework
+/vibe.reason "Refactoring strategy to reduce users_service.py Cyclomatic Complexity from 15 to under 10"
 
-# 3. 리팩토링 실행
+# 3. Execute refactoring
 /vibe.run "Task: Refactor users_service.py"
 ```
 
 ## Agent Configuration
 
-이 명령은 `~/.claude/agents/reasoning-agent.md`를 사용합니다.
+This command uses `~/.claude/agents/reasoning-agent.md`.
 
-**에이전트 역할**:
-- 체계적 추론 및 문제 해결 전문가
-- 복잡한 문제를 논리적으로 분석
-- 모든 관련 요소를 고려하여 최적의 해결책 도출
+**Agent Role**:
+- Systematic reasoning and problem-solving expert
+- Logically analyze complex problems
+- Derive optimal solutions considering all relevant factors
 
-**에이전트 특징**:
-- 9단계 추론 프레임워크 적용
-- 가설 기반 접근
-- 위험 평가 및 완화 전략 제시
-- 정밀한 근거와 출처 명시
+**Agent Features**:
+- Apply 9-step reasoning framework
+- Hypothesis-based approach
+- Risk assessment and mitigation strategies
+- Precise evidence and source citation
 
 ## Best Practices
 
-1. **문제를 구체적으로 설명하세요**
-   - ❌ "버그가 있어요"
-   - ✅ "로그인 후 프로필 페이지에서 간헐적으로 500 에러가 발생합니다. 에러 로그: TypeError: Cannot read property 'id' of undefined"
+1. **Describe problem specifically**
+   - ❌ "There's a bug"
+   - ✅ "After login, profile page intermittently returns 500 error. Error log: TypeError: Cannot read property 'id' of undefined"
 
-2. **컨텍스트를 포함하세요**
-   - 발생 조건 (항상? 간헐적? 특정 조건에서만?)
-   - 관련 기술 스택
-   - 이미 시도한 해결 방법
+2. **Include context**
+   - Occurrence conditions (always? intermittent? specific conditions only?)
+   - Relevant tech stack
+   - Solutions already tried
 
-3. **추론 결과를 메모리에 저장하세요**
-   - 복잡한 문제의 경우 추론 결과를 `save_memory`로 저장
-   - 나중에 `recall_memory`로 참조 가능
+3. **Save reasoning results to memory**
+   - For complex problems, save reasoning results with `save_memory`
+   - Reference later with `recall_memory`
 
-4. **단계별로 검증하세요**
-   - 추론 프레임워크가 제안한 가설을 순서대로 검증
-   - 각 검증 결과를 에이전트에게 피드백
+4. **Verify step by step**
+   - Verify hypotheses suggested by reasoning framework in order
+   - Feedback each verification result to agent
 
-5. **다른 명령과 조합하세요**
-   - `/vibe.analyze`로 현황 파악 → `/vibe.reason`으로 해결책 분석 → `/vibe.run`으로 실행
+5. **Combine with other commands**
+   - `/vibe.analyze` to understand situation → `/vibe.reason` to analyze solution → `/vibe.run` to execute
 
 ## Notes
 
-- 이 명령은 복잡한 문제에 특화되어 있습니다. 단순한 작업은 직접 요청하는 것이 더 효율적입니다.
-- 추론 과정이 길어질 수 있으므로 충분한 시간을 확보하세요.
-- 추론 결과는 권장 사항이며, 최종 결정은 사용자가 내립니다.
-- MCP 도구를 자동으로 활용하므로 hi-ai 서버가 연결되어 있어야 합니다.
+- This command is specialized for complex problems. For simple tasks, direct requests are more efficient.
+- Reasoning process may take time; allow sufficient time.
+- Reasoning results are recommendations; final decision is user's.
+- Automatically uses MCP tools, so hi-ai server must be connected.
 
 ## Related
 

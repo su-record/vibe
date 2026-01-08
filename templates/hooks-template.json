@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "mcp__vibe__start_session을 호출하여 이전 세션 컨텍스트를 복원하세요."
+            "prompt": "Call mcp__vibe__start_session to restore previous session context."
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": ".vibe/rules/quality/checklist.md 기준으로 방금 수정한 코드를 검토하세요. 문제가 있으면 간단히 알려주세요."
+            "prompt": "Review the code you just modified against .vibe/rules/quality/checklist.md. Briefly report any issues found."
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "컨텍스트 70% 도달. 불필요한 파일 전체 읽기를 피하세요."
+            "prompt": "Context at 70%. Avoid reading entire files unnecessarily."
           }
         ]
       },
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "컨텍스트 85% 도달. mcp__vibe__auto_save_context로 현재 상태를 저장하세요."
+            "prompt": "Context at 85%. Save current state using mcp__vibe__auto_save_context."
           }
         ]
       },
@@ -45,7 +45,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "컨텍스트 95% 도달. 즉시 mcp__vibe__auto_save_context 실행하고 세션 전환을 준비하세요."
+            "prompt": "Context at 95%. Immediately run mcp__vibe__auto_save_context and prepare for session transition."
           }
         ]
       }

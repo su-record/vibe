@@ -5,193 +5,193 @@ argument-hint: "feature name"
 
 # /vibe.spec
 
-SPEC 문서를 작성합니다 (Specification Agent).
+Create a SPEC document (Specification Agent).
 
 ## Usage
 
 ```
-/vibe.spec "기능명"
+/vibe.spec "feature-name"
 ```
 
 ## Rules Reference
 
-**반드시 `.vibe/rules/` 규칙을 따릅니다:**
-- `core/development-philosophy.md` - 수술적 정밀도, 단순함
-- `core/quick-start.md` - 한국어 우선, DRY, SRP
-- `core/communication-guide.md` - 커뮤니케이션 원칙
+**Must follow `.vibe/rules/`:**
+- `core/development-philosophy.md` - Surgical precision, simplicity
+- `core/quick-start.md` - Korean first, DRY, SRP
+- `core/communication-guide.md` - Communication principles
 
 ## Description
 
-사용자와 대화를 통해 요구사항을 수집하고, AI가 바로 실행 가능한 **PTCF 구조의 SPEC 문서**를 작성합니다.
+Collect requirements through conversation with the user and create an **AI-executable PTCF structured SPEC document**.
 
-> **PTCF**: Persona, Task, Context, Format - Google Gemini 프롬프트 최적화 프레임워크
+> **PTCF**: Persona, Task, Context, Format - Google Gemini prompt optimization framework
 
-## 외부 LLM 연동 (선택적)
+## External LLM Integration (Optional)
 
-`.vibe/config.json`에서 외부 LLM이 활성화된 경우 SPEC 작성 시 자동 활용:
+When external LLMs are enabled in `.vibe/config.json`, automatically utilize during SPEC creation:
 
 ```
-/vibe.spec "복잡한 기능"
+/vibe.spec "complex feature"
       ↓
-[Claude Opus] SPEC 초안 작성
+[Claude Opus] Create SPEC draft
       ↓
-[GPT 활성화?] → MCP(vibe-gpt)로 설계 교차 검토
+[GPT enabled?] → Cross-review design via MCP(vibe-gpt)
       ↓
-[Gemini 활성화?] → MCP(vibe-gemini)로 UI/UX 자문
+[Gemini enabled?] → UI/UX consultation via MCP(vibe-gemini)
       ↓
-[Claude] 최종 SPEC 확정
+[Claude] Finalize SPEC
 ```
 
-| 외부 LLM | 역할 | 활용 시점 |
-|----------|------|----------|
-| GPT 5.2 | 아키텍처/설계 검토 | SPEC 초안 완성 후 |
-| Gemini 3 | UI/UX 자문 | 디자인 레퍼런스 논의 시 |
+| External LLM | Role | When Used |
+|--------------|------|-----------|
+| GPT 5.2 | Architecture/design review | After SPEC draft completion |
+| Gemini 3 | UI/UX consultation | During design reference discussion |
 
-**활성화 방법:**
+**Activation:**
 ```bash
-vibe gpt <api-key>      # GPT 활성화
-vibe gemini <api-key>   # Gemini 활성화
-vibe status             # 현재 설정 확인
+vibe gpt <api-key>      # Enable GPT
+vibe gemini <api-key>   # Enable Gemini
+vibe status             # Check current settings
 ```
 
 ## Process
 
-### 1. 프로젝트 분석
+### 1. Project Analysis
 
-**기존 프로젝트** (`vibe init`):
-- 소스코드 분석: `package.json`, `pyproject.toml`, `pubspec.yaml`, `go.mod` 등
-- `CLAUDE.md` 파일 참조 (기술 스택)
-- 파일 구조로 프레임워크 추정
+**Existing project** (`vibe init`):
+- Source code analysis: `package.json`, `pyproject.toml`, `pubspec.yaml`, `go.mod`, etc.
+- Reference `CLAUDE.md` file (tech stack)
+- Infer framework from file structure
 
-**신규 프로젝트** (`vibe init <프로젝트명>`):
-- 기술 스택 제안 (2-3가지 옵션)
+**New project** (`vibe init <project-name>`):
+- Suggest tech stack (2-3 options)
 
-### 2. 대화로 요구사항 수집
+### 2. Collect Requirements via Conversation
 
-**원칙:**
-- 질문은 **한 번에 하나씩**
-- 선택지는 **번호로 제시** + "직접 설명해주셔도 됩니다"
-- 고정된 순서 없이 **자연스러운 대화**
+**Principles:**
+- Ask **one question at a time**
+- Present options **with numbers** + "Feel free to describe in your own words"
+- **Natural conversation** without fixed order
 
-**필수 확인 사항:**
-- 목적 (Why): 왜 필요한가?
-- 사용자 (Who): 누가 사용하는가?
-- 기능 범위 (What): 어떤 기능들이 필요한가?
-- 기술 스택: 기존 스택 확인 또는 새로 제안
-- 디자인 레퍼런스: 참고할 UI/UX
+**Required confirmations:**
+- Purpose (Why): Why is it needed?
+- User (Who): Who will use it?
+- Feature scope (What): What features are needed?
+- Tech stack: Confirm existing stack or suggest new
+- Design reference: UI/UX to reference
 
-### 3. SPEC 문서 작성 (PTCF 구조)
+### 3. Write SPEC Document (PTCF Structure)
 
-`.vibe/specs/{기능명}.md` 생성:
+Create `.vibe/specs/{feature-name}.md`:
 
 ```markdown
-# SPEC: {기능명}
+# SPEC: {feature-name}
 
 ## Persona
 <role>
-구현을 담당할 AI의 역할과 전문성 정의
-- 프로젝트의 시니어 개발자
-- 기존 코드 패턴 준수
-- 테스트 가능한 코드 작성
+Define AI role and expertise for implementation
+- Senior developer on the project
+- Follow existing code patterns
+- Write testable code
 </role>
 
 ## Context
 <context>
-### 배경
-- 왜 이 기능이 필요한가
-- 누가 사용하는가
+### Background
+- Why this feature is needed
+- Who will use it
 
-### 기술 스택
-- Backend: {기술}
-- Frontend: {기술}
-- Database: {기술}
+### Tech Stack
+- Backend: {technology}
+- Frontend: {technology}
+- Database: {technology}
 
-### 관련 코드
-- `src/xxx/`: 참조할 기존 구현
-- `src/yyy/`: 수정할 파일들
+### Related Code
+- `src/xxx/`: Existing implementation to reference
+- `src/yyy/`: Files to modify
 
-### 디자인 레퍼런스
-- {참고 앱/서비스}
+### Design Reference
+- {Reference app/service}
 </context>
 
 ## Task
 <task>
-### Phase 1: {단계명}
-1. [ ] {구체적 작업}
-   - 파일: `path/to/file`
-   - 검증: `command`
-2. [ ] {구체적 작업}
+### Phase 1: {phase-name}
+1. [ ] {specific task}
+   - File: `path/to/file`
+   - Verify: `command`
+2. [ ] {specific task}
 
-### Phase 2: {단계명}
-1. [ ] {구체적 작업}
-2. [ ] {구체적 작업}
+### Phase 2: {phase-name}
+1. [ ] {specific task}
+2. [ ] {specific task}
 
-### Phase 3: 테스트 및 검증
+### Phase 3: Testing and Verification
 1. [ ] Unit Tests
 2. [ ] Integration Tests
 </task>
 
 ## Constraints
 <constraints>
-- 기존 코드 패턴 준수
-- 에러 메시지 한글화
-- 환경변수로 설정 분리
-- {기타 제약 조건}
+- Follow existing code patterns
+- Localize error messages
+- Separate configuration via environment variables
+- {other constraints}
 </constraints>
 
 ## Output Format
 <output_format>
-### 생성할 파일
+### Files to Create
 - `path/to/new/file.ts`
 - `path/to/new/file.test.ts`
 
-### 수정할 파일
+### Files to Modify
 - `path/to/existing/file.ts`
 
-### 검증 명령어
+### Verification Commands
 - `npm test`
 - `npm run build`
 </output_format>
 
 ## Acceptance Criteria
 <acceptance>
-- [ ] {검증 가능한 기준 1}
-- [ ] {검증 가능한 기준 2}
-- [ ] 모든 테스트 통과
-- [ ] 빌드 성공
+- [ ] {verifiable criterion 1}
+- [ ] {verifiable criterion 2}
+- [ ] All tests pass
+- [ ] Build succeeds
 </acceptance>
 ```
 
-### 4. Feature 파일 생성 (BDD) - 필수
+### 4. Create Feature File (BDD) - Required
 
-**반드시** `.vibe/features/{기능명}.feature` 파일을 생성합니다.
+**Must** create `.vibe/features/{feature-name}.feature` file.
 
-**생성 규칙:**
-1. SPEC의 각 Acceptance Criteria → 하나의 Scenario로 변환
-2. Happy Path (정상 케이스) + Edge Case (예외 케이스) 포함
-3. Given-When-Then 형식 준수
+**Creation rules:**
+1. Convert each SPEC Acceptance Criteria → one Scenario
+2. Include Happy Path (normal case) + Edge Case (exception case)
+3. Follow Given-When-Then format
 
-**Feature 구조:**
+**Feature structure:**
 ```markdown
-# Feature: {기능명}
+# Feature: {feature-name}
 
-**SPEC**: `.vibe/specs/{기능명}.md`
+**SPEC**: `.vibe/specs/{feature-name}.md`
 
 ## User Story
-**As a** {사용자}
-**I want** {기능}
-**So that** {가치}
+**As a** {user}
+**I want** {feature}
+**So that** {value}
 
 ## Scenarios
 
 ### Scenario 1: {Happy Path}
 \`\`\`gherkin
-Scenario: {제목}
-  Given {전제}
-  When {행동}
-  Then {결과}
+Scenario: {title}
+  Given {precondition}
+  When {action}
+  Then {result}
 \`\`\`
-**검증 기준**: SPEC AC #1
+**Verification**: SPEC AC #1
 
 ### Scenario 2: {Edge Case}
 ...
@@ -202,136 +202,136 @@ Scenario: {제목}
 | 1 | AC-1 | ⬜ |
 ```
 
-### 5. 모호성 스캔 (Ambiguity Scan) - 필수
+### 5. Ambiguity Scan - Required
 
-SPEC 초안 작성 후, **반드시 체계적인 모호성 검사**를 수행합니다.
+After creating SPEC draft, **must perform systematic ambiguity check**.
 
-**검사 카테고리:**
+**Check categories:**
 
-| 카테고리 | 검사 항목 |
-|----------|-----------|
-| **Functional Scope** | 누락된 기능, 불명확한 동작 정의 |
-| **Data Model** | 정의되지 않은 엔티티, 불명확한 관계 |
-| **Non-Functional** | 성능 요구사항, 보안 고려사항 누락 |
-| **Edge Cases** | 경계 조건, 에러 처리 시나리오 |
-| **Integration Points** | 외부 시스템 연동, API 계약 |
+| Category | Check Items |
+|----------|-------------|
+| **Functional Scope** | Missing features, unclear behavior definitions |
+| **Data Model** | Undefined entities, unclear relationships |
+| **Non-Functional** | Missing performance requirements, security considerations |
+| **Edge Cases** | Boundary conditions, error handling scenarios |
+| **Integration Points** | External system integration, API contracts |
 
-**검사 프로세스:**
+**Check process:**
 
 ```
-1. SPEC 초안 작성
+1. Create SPEC draft
       ↓
-2. 카테고리별 모호성 스캔
+2. Scan by category for ambiguity
       ↓
-3. 발견된 모호성 목록 제시
+3. Present list of found ambiguities
       ↓
-4. 사용자 확인/명확화 요청
+4. Request user clarification
       ↓
-5. SPEC 보완
+5. Refine SPEC
       ↓
-6. 재검사 (모호성 0이 될 때까지)
+6. Re-check (until 0 ambiguities)
 ```
 
-**모호성 발견 시 출력 형식:**
+**Ambiguity output format:**
 
 ```markdown
-## 🔍 모호성 스캔 결과
+## 🔍 Ambiguity Scan Results
 
 ### Functional Scope
-- ⚠️ "로그인 실패 시 동작"이 정의되지 않음
-- ⚠️ "세션 만료 처리"가 불명확
+- ⚠️ "Login failure behavior" not defined
+- ⚠️ "Session expiration handling" unclear
 
 ### Edge Cases
-- ⚠️ 동시 로그인 허용 여부 미정의
-- ⚠️ 비밀번호 재시도 횟수 제한 없음
+- ⚠️ Concurrent login permission undefined
+- ⚠️ No password retry limit specified
 
-위 항목들을 명확히 해주세요.
+Please clarify the above items.
 ```
 
-### 6. 품질 검증
+### 6. Quality Validation
 
-`.vibe/rules/quality/checklist.md` 기준 자체 평가 (0-100점)
+Self-evaluate against `.vibe/rules/quality/checklist.md` (0-100 score)
 
 ## Output
 
-- `.vibe/specs/{기능명}.md` - PTCF 구조 SPEC
-- `.vibe/features/{기능명}.feature` - BDD Feature 파일
-- 모호성 스캔 결과 (모호성 0 확인)
-- 품질 점수 및 개선 제안
+- `.vibe/specs/{feature-name}.md` - PTCF structured SPEC
+- `.vibe/features/{feature-name}.feature` - BDD Feature file
+- Ambiguity scan results (0 ambiguities confirmed)
+- Quality score and improvement suggestions
 
 ## Example
 
 ```
-User: /vibe.spec "벽돌게임"
+User: /vibe.spec "brick-game"
 
 Claude:
-벽돌게임을 만드시는군요! 어떤 스타일의 게임을 생각하고 계신가요?
+You're making a brick game! What style are you thinking of?
 
-1. 클래식 벽돌깨기 (Breakout 스타일)
-2. 아르카노이드 (파워업 아이템 포함)
-3. 특별한 게임플레이가 있는 커스텀 스타일
+1. Classic Breakout style
+2. Arkanoid (with power-up items)
+3. Custom style with special gameplay
 
-또는 직접 설명해주셔도 됩니다.
+Feel free to describe in your own words.
 
 User: 1
 
-Claude: 어떤 플랫폼에서 실행하시겠어요?
+Claude: What platform will it run on?
 
-1. 웹 (브라우저)
-2. 모바일 (iOS/Android)
-3. 데스크톱
+1. Web (browser)
+2. Mobile (iOS/Android)
+3. Desktop
 
 User: 1
 
 Claude:
-웹 게임 개발에 적합한 기술 스택을 제안드립니다:
+Here are tech stack suggestions for web game development:
 
-1. **Phaser.js** (추천) - 게임 프레임워크, 물리엔진 내장
-2. **Canvas + JavaScript** - 가볍고 세밀한 제어
-3. **PixiJS + Matter.js** - 고성능 렌더링
+1. **Phaser.js** (Recommended) - Game framework with built-in physics engine
+2. **Canvas + JavaScript** - Lightweight with fine control
+3. **PixiJS + Matter.js** - High-performance rendering
 
 User: 1
 
-Claude: 디자인 스타일은요?
+Claude: What design style?
 
-1. 레트로 픽셀 (Atari Breakout)
-2. 네온 그래픽 (Arkanoid)
-3. 모던 3D 효과
+1. Retro pixel (Atari Breakout)
+2. Neon graphics (Arkanoid)
+3. Modern 3D effects
 
 User: 2
 
-[대화 계속...]
+[Conversation continues...]
 
-Claude: SPEC 초안을 작성했습니다. 모호성 스캔을 수행합니다.
+Claude: SPEC draft created. Running ambiguity scan.
 
-## 🔍 모호성 스캔 결과
+## 🔍 Ambiguity Scan Results
 
 ### Functional Scope
-- ⚠️ 게임 오버 조건이 정의되지 않음 (공 낙하 vs 목숨 시스템)
-- ⚠️ 스테이지 클리어 조건 불명확
+- ⚠️ Game over condition not defined (ball drop vs lives system)
+- ⚠️ Stage clear condition unclear
 
 ### Edge Cases
-- ⚠️ 공이 패들 모서리에 맞을 때 반사각 처리
-- ⚠️ 동시에 여러 벽돌 충돌 시 처리
+- ⚠️ Ball reflection angle when hitting paddle edge
+- ⚠️ Multiple brick collision handling
 
-위 항목들을 명확히 해주세요.
+Please clarify the above items.
 
-User: 목숨 3개, 모든 벽돌 파괴시 클리어, 모서리는 45도 반사
+User: 3 lives, clear when all bricks destroyed, edge reflects at 45 degrees
 
-Claude: 감사합니다. SPEC을 보완했습니다.
+Claude: Thank you. SPEC has been refined.
 
-🔍 재검사 결과: 모호성 0개
+🔍 Re-check result: 0 ambiguities
 
-✅ SPEC 문서 작성 완료!
-📄 .vibe/specs/brick-game.md (PTCF 구조)
+✅ SPEC document complete!
+📄 .vibe/specs/brick-game.md (PTCF structure)
 📄 .vibe/features/brick-game.feature
-📊 품질 점수: 92/100 (A)
+📊 Quality score: 92/100 (A)
 ```
 
 ## Next Step
 
 ```
-/vibe.run "벽돌게임"
+/vibe.run "brick-game"
 ```
 
 ---
