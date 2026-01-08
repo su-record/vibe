@@ -514,9 +514,9 @@ async function init(projectName) {
       ensureDir(path.join(vibeDir, dir));
     });
 
-    // .vibe/mcp/node_modules를 gitignore에 추가
+    // .vibe/mcp/를 gitignore에 추가
     const mcpGitignorePath = path.join(projectRoot, '.gitignore');
-    const mcpIgnore = '.vibe/mcp/node_modules';
+    const mcpIgnore = '.vibe/mcp/';
     if (fs.existsSync(mcpGitignorePath)) {
       let mcpGitignore = fs.readFileSync(mcpGitignorePath, 'utf-8');
       if (!mcpGitignore.includes(mcpIgnore)) {
@@ -1159,7 +1159,7 @@ async function update() {
 
         // .gitignore에 추가
         const gitignorePath2 = path.join(projectRoot, '.gitignore');
-        const mcpIgnore = '.vibe/mcp/node_modules';
+        const mcpIgnore = '.vibe/mcp/';
         if (fs.existsSync(gitignorePath2)) {
           let gitignore = fs.readFileSync(gitignorePath2, 'utf-8');
           if (!gitignore.includes(mcpIgnore)) {
