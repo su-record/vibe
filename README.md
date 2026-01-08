@@ -36,6 +36,7 @@ npm install -g @su-record/vibe
 ```bash
 # 기존 프로젝트에서
 vibe init
+# → hi-ai MCP가 .vibe/mcp/에 로컬 설치됨
 
 # 새 프로젝트 생성
 vibe init my-project
@@ -244,6 +245,14 @@ AI의 역할과 전문성 정의
 | `context7` | 라이브러리 문서 실시간 검색 | Smithery (온라인) |
 
 > **Note**: hi-ai MCP는 프로젝트별 `.vibe/mcp/` 폴더에 로컬 설치되어 안정적으로 작동합니다.
+
+### Hooks (자동 설정)
+
+| Hook | 트리거 | 동작 |
+|------|--------|------|
+| `SessionStart` | 세션 시작 | 이전 컨텍스트 자동 복원 |
+| `PostToolUse` | Write/Edit 후 | 품질 체크리스트 검토 |
+| `Notification` | 컨텍스트 70/85/95% | 저장 알림 |
 
 ### 선택적 연동 (외부 LLM)
 

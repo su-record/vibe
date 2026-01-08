@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "Vibe - Claude Code exclusive SPEC-driven AI coding framework",
   "bin": {
     "vibe": "./bin/vibe"
