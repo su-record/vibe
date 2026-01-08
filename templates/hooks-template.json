@@ -1,6 +1,5 @@
 {
-  "_comment": "Hooks temporarily disabled due to Claude freezing issues",
-  "_original_hooks": {
+  "hooks": {
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
@@ -37,17 +36,6 @@
           {
             "type": "prompt",
             "prompt": "컨텍스트 95% 도달. 즉시 mcp__vibe__auto_save_context 실행하고 세션 전환을 준비하세요."
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "^(hi-ai|하이아이|안녕|시작)",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "mcp__vibe__start_session을 호출하여 이전 세션 컨텍스트를 복원하세요."
           }
         ]
       }
