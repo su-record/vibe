@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "1.1.10",
+  "version": "1.2.0",
   "description": "Vibe - Claude Code exclusive SPEC-driven AI coding framework",
   "bin": {
     "vibe": "./bin/vibe"
@@ -18,7 +18,9 @@
     "mcp",
     "framework",
     "requirements",
-    "user-story"
+    "user-story",
+    "ultrawork",
+    "parallel-agents"
   ],
   "author": "Su",
   "license": "MIT",
