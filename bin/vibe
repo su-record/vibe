@@ -453,12 +453,38 @@ async function init(projectName) {
       return;
     }
 
+    // .vibe 폴더 먼저 생성
+    ensureDir(vibeDir);
+
     // MCP 서버 등록 (Claude Code)
     log('🔧 Claude Code MCP 서버 등록 중...\n');
     const { execSync } = require('child_process');
 
-    // 1. hi-ai MCP (기존)
-    const mcpPath = path.join(__dirname, '..', 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
+    // 1. hi-ai MCP (.vibe/mcp 폴더 내 설치)
+    const vibeMcpDir = path.join(vibeDir, 'mcp');
+    ensureDir(vibeMcpDir);
+
+    // .vibe/mcp/package.json 생성
+    const mcpPackageJson = {
+      name: 'vibe-mcp',
+      version: '1.0.0',
+      private: true,
+      dependencies: {
+        '@su-record/hi-ai': 'latest'
+      }
+    };
+    fs.writeFileSync(path.join(vibeMcpDir, 'package.json'), JSON.stringify(mcpPackageJson, null, 2));
+
+    log('   📦 hi-ai MCP 패키지 설치 중 (.vibe/mcp/)...\n');
+    try {
+      execSync('npm install', { stdio: 'pipe', cwd: vibeMcpDir });
+      log('   ✅ hi-ai 패키지 설치 완료\n');
+    } catch (e) {
+      log('   ⚠️  hi-ai 패키지 설치 실패\n');
+    }
+
+    // .vibe/mcp 경로로 MCP 등록
+    const mcpPath = path.join(vibeMcpDir, 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
     try {
       execSync(`claude mcp add vibe node "${mcpPath}"`, { stdio: 'pipe' });
       log('   ✅ vibe MCP 등록 완료\n');
@@ -482,11 +508,24 @@ async function init(projectName) {
       }
     }
 
-    // .vibe 폴더 구조 생성
-    const dirs = ['', 'specs', 'features'];
+    // .vibe 폴더 구조 생성 (mcp는 이미 생성됨)
+    const dirs = ['specs', 'features'];
     dirs.forEach(dir => {
       ensureDir(path.join(vibeDir, dir));
     });
+
+    // .vibe/mcp/node_modules를 gitignore에 추가
+    const mcpGitignorePath = path.join(projectRoot, '.gitignore');
+    const mcpIgnore = '.vibe/mcp/node_modules';
+    if (fs.existsSync(mcpGitignorePath)) {
+      let mcpGitignore = fs.readFileSync(mcpGitignorePath, 'utf-8');
+      if (!mcpGitignore.includes(mcpIgnore)) {
+        mcpGitignore += `\n# vibe MCP\n${mcpIgnore}\n`;
+        fs.writeFileSync(mcpGitignorePath, mcpGitignore);
+      }
+    } else {
+      fs.writeFileSync(mcpGitignorePath, `# vibe MCP\n${mcpIgnore}\n`);
+    }
 
     // .claude/commands 복사
     const claudeDir = path.join(projectRoot, '.claude');
@@ -775,6 +814,7 @@ function showHelp() {
 기본 명령어:
   vibe init [project]     프로젝트 초기화
   vibe update             설정 업데이트
+  vibe remove             vibe 제거 (MCP, 설정, 패키지)
   vibe status             현재 설정 상태
   vibe help               도움말
   vibe version            버전 정보
@@ -1080,8 +1120,57 @@ async function update() {
     // 협업자 자동 설치 설정 (update에서도 실행)
     setupCollaboratorAutoInstall(projectRoot);
 
-    // MCP 서버 등록 확인 (update에서는 스킵 - init에서만 등록)
-    // update는 파일만 업데이트하고, MCP는 이미 등록되어 있다고 가정
+    // MCP 서버: .vibe/mcp 폴더에 hi-ai 설치 확인 및 경로 업데이트
+    const vibeMcpDir = path.join(vibeDir, 'mcp');
+    const vibeMcpHiAiPath = path.join(vibeMcpDir, 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
+
+    if (!fs.existsSync(vibeMcpHiAiPath)) {
+      log('   📦 hi-ai MCP 패키지 설치 중 (.vibe/mcp/)...\n');
+      try {
+        const { execSync } = require('child_process');
+        ensureDir(vibeMcpDir);
+
+        // .vibe/mcp/package.json 생성
+        const mcpPackageJson = {
+          name: 'vibe-mcp',
+          version: '1.0.0',
+          private: true,
+          dependencies: {
+            '@su-record/hi-ai': 'latest'
+          }
+        };
+        fs.writeFileSync(path.join(vibeMcpDir, 'package.json'), JSON.stringify(mcpPackageJson, null, 2));
+
+        execSync('npm install', { stdio: 'pipe', cwd: vibeMcpDir });
+        log('   ✅ hi-ai 패키지 설치 완료\n');
+
+        // MCP 경로 업데이트
+        try {
+          execSync(`claude mcp remove vibe`, { stdio: 'pipe' });
+        } catch (e) {}
+        try {
+          execSync(`claude mcp add vibe node "${vibeMcpHiAiPath}"`, { stdio: 'pipe' });
+          log('   ✅ vibe MCP 경로 업데이트 완료\n');
+        } catch (e) {
+          if (!e.message.includes('already exists')) {
+            log('   ⚠️  MCP 경로 업데이트 실패\n');
+          }
+        }
+
+        // .gitignore에 추가
+        const gitignorePath2 = path.join(projectRoot, '.gitignore');
+        const mcpIgnore = '.vibe/mcp/node_modules';
+        if (fs.existsSync(gitignorePath2)) {
+          let gitignore = fs.readFileSync(gitignorePath2, 'utf-8');
+          if (!gitignore.includes(mcpIgnore)) {
+            gitignore += `\n# vibe MCP\n${mcpIgnore}\n`;
+            fs.writeFileSync(gitignorePath2, gitignore);
+          }
+        }
+      } catch (e) {
+        log('   ⚠️  hi-ai 패키지 설치 실패\n');
+      }
+    }
 
     const packageJson = require('../package.json');
     log(`
@@ -1264,6 +1353,97 @@ function showVersion() {
   console.log(`vibe v${packageJson.version}`);
 }
 
+// vibe 제거
+function remove() {
+  const projectRoot = process.cwd();
+  const vibeDir = path.join(projectRoot, '.vibe');
+  const claudeDir = path.join(projectRoot, '.claude');
+
+  if (!fs.existsSync(vibeDir)) {
+    console.log('❌ vibe 프로젝트가 아닙니다.');
+    return;
+  }
+
+  console.log('🗑️  vibe 제거 중...\n');
+  const { execSync } = require('child_process');
+
+  // 1. MCP 서버 제거
+  try {
+    execSync('claude mcp remove vibe', { stdio: 'pipe' });
+    console.log('   ✅ vibe MCP 제거 완료\n');
+  } catch (e) {
+    console.log('   ℹ️  vibe MCP 이미 제거됨 또는 없음\n');
+  }
+
+  try {
+    execSync('claude mcp remove context7', { stdio: 'pipe' });
+    console.log('   ✅ context7 MCP 제거 완료\n');
+  } catch (e) {
+    console.log('   ℹ️  context7 MCP 이미 제거됨 또는 없음\n');
+  }
+
+  // 2. .vibe 폴더 제거
+  if (fs.existsSync(vibeDir)) {
+    removeDirRecursive(vibeDir);
+    console.log('   ✅ .vibe/ 폴더 제거 완료\n');
+  }
+
+  // 3. .claude/commands 제거 (vibe 관련만)
+  const commandsDir = path.join(claudeDir, 'commands');
+  if (fs.existsSync(commandsDir)) {
+    const vibeCommands = ['vibe.spec.md', 'vibe.run.md', 'vibe.verify.md', 'vibe.reason.md', 'vibe.analyze.md', 'vibe.ui.md', 'vibe.diagram.md'];
+    vibeCommands.forEach(cmd => {
+      const cmdPath = path.join(commandsDir, cmd);
+      if (fs.existsSync(cmdPath)) {
+        fs.unlinkSync(cmdPath);
+      }
+    });
+    console.log('   ✅ 슬래시 커맨드 제거 완료\n');
+  }
+
+  // 4. .claude/agents 제거 (vibe 관련만)
+  const agentsDir = path.join(claudeDir, 'agents');
+  if (fs.existsSync(agentsDir)) {
+    const vibeAgents = ['simplifier.md', 'explorer.md', 'implementer.md', 'tester.md', 'searcher.md'];
+    vibeAgents.forEach(agent => {
+      const agentPath = path.join(agentsDir, agent);
+      if (fs.existsSync(agentPath)) {
+        fs.unlinkSync(agentPath);
+      }
+    });
+    console.log('   ✅ 서브에이전트 제거 완료\n');
+  }
+
+  // 5. .claude/settings.json에서 hooks 제거
+  const settingsPath = path.join(claudeDir, 'settings.json');
+  if (fs.existsSync(settingsPath)) {
+    try {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      if (settings.hooks) {
+        delete settings.hooks;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        console.log('   ✅ Hooks 설정 제거 완료\n');
+      }
+    } catch (e) {}
+  }
+
+  // 6. hi-ai 패키지는 .vibe/mcp/에 설치되어 있으므로
+  // .vibe/ 폴더 제거 시 함께 삭제됨 (별도 작업 불필요)
+
+  console.log(`
+✅ vibe 제거 완료!
+
+제거된 항목:
+  - MCP 서버 (vibe, context7)
+  - .vibe/ 폴더 (hi-ai MCP 포함)
+  - 슬래시 커맨드 (7개)
+  - 서브에이전트 (5개)
+  - Hooks 설정
+
+다시 설치하려면: vibe init
+  `);
+}
+
 // 메인 라우터
 switch (command) {
   case 'init':
@@ -1272,6 +1452,11 @@ switch (command) {
 
   case 'update':
     update();
+    break;
+
+  case 'remove':
+  case 'uninstall':
+    remove();
     break;
 
   case 'gpt':

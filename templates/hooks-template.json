@@ -1,50 +1,12 @@
 {
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "파일 읽기 전: 1) 전체 파일이 필요한가? offset/limit 파라미터로 필요한 부분만 읽기 2) 이미 읽은 파일인가? 중복 읽기 방지 3) Grep으로 특정 부분만 검색 가능한가?"
-          }
-        ]
-      },
-      {
-        "matcher": "Grep|Glob",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "검색 전: head_limit 파라미터를 활용하여 결과 수를 제한하세요. 너무 많은 결과는 컨텍스트를 낭비합니다."
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": ".vibe/rules/quality/checklist.md 기준으로 방금 수정한 코드를 검토하세요. 과도한 주석이 있으면 제거하세요. 문제가 있으면 간단히 알려주세요."
-          }
-        ]
-      },
-      {
-        "matcher": "Task",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Task 완료 후: 핵심 결과만 요약하여 mcp__vibe__save_memory로 저장하세요. 전체 출력이 아닌 중요한 결정사항/발견 패턴/다음 단계만 기록하세요."
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "파일 읽기 후: 전체 내용을 기억하지 마세요. 필요한 정보만 추출하고 나머지는 필요시 다시 읽으세요. 중복 읽기 감지: 같은 파일을 다시 읽었다면 이전 내용은 무시하세요."
+            "prompt": ".vibe/rules/quality/checklist.md 기준으로 방금 수정한 코드를 검토하세요. 문제가 있으면 간단히 알려주세요."
           }
         ]
       }
@@ -55,7 +17,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "📊 컨텍스트 70% 도달. 아직 충분한 여유가 있습니다. 작업을 서두르지 말고 품질에 집중하세요. 불필요한 파일 전체 읽기를 피하고 필요한 부분만 참조하세요."
+            "prompt": "컨텍스트 70% 도달. 불필요한 파일 전체 읽기를 피하세요."
           }
         ]
       },
@@ -64,7 +26,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "⚠️ 컨텍스트 85% 도달 (선제적 압축 권고). 1) mcp__vibe__auto_save_context로 현재 상태 저장 2) 오래된 도구 출력은 요약으로 대체 3) 중복 읽은 파일 내용 정리 4) 핵심 정보만 유지하면서 작업 계속"
+            "prompt": "컨텍스트 85% 도달. mcp__vibe__auto_save_context로 현재 상태를 저장하세요."
           }
         ]
       },
@@ -73,29 +35,18 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "🚨 컨텍스트 95% 도달! 즉시: 1) mcp__vibe__auto_save_context 실행 2) TodoWrite로 현재 진행 상황과 다음 단계 기록 3) CLAUDE.md, .vibe/specs/ 등 핵심 컨텍스트만 유지 4) 세션 전환 준비"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "세션 종료 전 체크리스트: 1) TodoWrite로 미완료 작업 기록 (구체적인 다음 단계 포함) 2) mcp__vibe__auto_save_context로 현재 상태 저장 3) 다음 세션 시작 시 mcp__vibe__start_session으로 복원 안내"
+            "prompt": "컨텍스트 95% 도달. 즉시 mcp__vibe__auto_save_context 실행하고 세션 전환을 준비하세요."
           }
         ]
       }
     ],
     "UserPromptSubmit": [
       {
-        "matcher": ".*",
+        "matcher": "^(hi-ai|하이아이|안녕|시작)",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "세션 시작 시: mcp__vibe__start_session을 호출하여 이전 세션 컨텍스트를 복원하세요. 저장된 메모리와 미완료 작업을 확인하세요."
+            "prompt": "mcp__vibe__start_session을 호출하여 이전 세션 컨텍스트를 복원하세요."
           }
         ]
       }
