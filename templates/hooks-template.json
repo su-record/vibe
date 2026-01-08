@@ -1,5 +1,6 @@
 {
-  "hooks": {
+  "_comment": "Hooks temporarily disabled due to Claude freezing issues",
+  "_original_hooks": {
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
