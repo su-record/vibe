@@ -279,6 +279,24 @@ When external LLM enabled, automatically called via MCP:
 - `mcp__vibe-gemini__gemini_review_ui` - UI/UX 리뷰
 - `mcp__vibe-gemini__gemini_quick_ask` - 빠른 질문 (탐색용)
 
+### External LLM Fallback
+
+**IMPORTANT**: When Gemini/GPT MCP returns `"status": "fallback"`, Claude MUST handle the task directly:
+
+```json
+{
+  "status": "fallback",
+  "reason": "rate_limit",  // or "auth_error"
+  "message": "Gemini API 할당량 초과. Claude가 직접 처리해주세요."
+}
+```
+
+**Fallback behavior**:
+- Do NOT retry the external LLM call
+- Claude handles the task using its own capabilities
+- Continue with the implementation without interruption
+- Log the fallback but don't block progress
+
 ## Semantic Code Analysis (hi-ai MCP)
 
 Use hi-ai MCP semantic tools to accurately understand codebase before implementation:
