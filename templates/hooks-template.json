@@ -11,17 +11,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Continue your current task. If the code you just wrote has obvious syntax errors or security issues, fix them inline without stopping."
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "matcher": "context_window_70",
