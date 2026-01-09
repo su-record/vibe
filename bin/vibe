@@ -1141,6 +1141,54 @@ async function update() {
     const hiAiPath = path.join(vibePath, 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
     const geminiMcpPath = path.join(vibePath, 'lib', 'gemini-mcp.js');
 
+    // ~/.claude.json에서 프로젝트별 로컬 MCP 설정 직접 제거
+    const claudeConfigPath = path.join(require('os').homedir(), '.claude.json');
+    if (fs.existsSync(claudeConfigPath)) {
+      try {
+        const claudeConfig = JSON.parse(fs.readFileSync(claudeConfigPath, 'utf-8'));
+        let configModified = false;
+
+        // 모든 프로젝트에서 vibe, vibe-gemini, context7 로컬 MCP 제거
+        if (claudeConfig.projects) {
+          for (const [projectPath, projectConfig] of Object.entries(claudeConfig.projects)) {
+            if (projectConfig.mcpServers) {
+              // vibe MCP가 로컬 경로(.vibe/mcp/)를 사용하면 제거
+              if (projectConfig.mcpServers.vibe) {
+                const vibeArgs = projectConfig.mcpServers.vibe.args || [];
+                const isLocalPath = vibeArgs.some(arg => arg.includes('.vibe/mcp/'));
+                if (isLocalPath) {
+                  delete projectConfig.mcpServers.vibe;
+                  configModified = true;
+                  log(`   🧹 ${projectPath}: 로컬 vibe MCP 제거\n`);
+                }
+              }
+              // vibe-gemini 로컬 제거
+              if (projectConfig.mcpServers['vibe-gemini']) {
+                const geminiArgs = projectConfig.mcpServers['vibe-gemini'].args || [];
+                const isLocalPath = geminiArgs.some(arg => arg.includes('.vibe/'));
+                if (isLocalPath) {
+                  delete projectConfig.mcpServers['vibe-gemini'];
+                  configModified = true;
+                }
+              }
+              // context7 로컬 제거 (전역으로 통합)
+              if (projectConfig.mcpServers.context7) {
+                delete projectConfig.mcpServers.context7;
+                configModified = true;
+              }
+            }
+          }
+        }
+
+        if (configModified) {
+          fs.writeFileSync(claudeConfigPath, JSON.stringify(claudeConfig, null, 2));
+          log('   ✅ ~/.claude.json 로컬 MCP 설정 정리 완료\n');
+        }
+      } catch (e) {
+        log('   ⚠️  ~/.claude.json 정리 실패: ' + e.message + '\n');
+      }
+    }
+
     if (fs.existsSync(hiAiPath)) {
       try {
         const { execSync } = require('child_process');
