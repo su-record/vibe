@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Call mcp__vibe__start_session to restore previous session context."
+            "prompt": "If mcp__vibe__start_session is available, call it to restore context. Otherwise, proceed normally with the user's request."
           }
         ]
       }
