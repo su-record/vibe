@@ -1091,13 +1091,10 @@ async function update() {
         // 기존 설정에 hooks 병합
         const existingSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
 
-        if (!existingSettings.hooks) {
-          existingSettings.hooks = vibeHooks.hooks;
-          fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
-          log('   ✅ Hooks 설정 추가 완료\n');
-        } else {
-          log('   ℹ️  Hooks 설정 이미 존재\n');
-        }
+        // 항상 최신 hooks로 업데이트 (기존 hooks 덮어쓰기)
+        existingSettings.hooks = vibeHooks.hooks;
+        fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
+        log('   ✅ Hooks 설정 업데이트 완료\n');
       } else {
         // 새로 생성
         fs.copyFileSync(hooksTemplate, settingsPath);
