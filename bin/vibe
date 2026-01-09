@@ -827,9 +827,12 @@ function showHelp() {
 
 외부 LLM (선택적):
   vibe gpt <api-key>      GPT 활성화 (아키텍처/디버깅)
-  vibe gemini <api-key>   Gemini 활성화 (UI/UX)
+  vibe gemini --auth      Gemini 구독 인증 (추가 비용 없음, 권장)
+  vibe gemini <api-key>   Gemini API 키 설정 (사용량 과금)
+  vibe gemini --status    Gemini 인증 상태 확인
+  vibe gemini --logout    Gemini 로그아웃
   vibe gpt --remove       GPT 비활성화
-  vibe gemini --remove    Gemini 비활성화
+  vibe gemini --remove    Gemini API 키 제거
 
 Claude Code 슬래시 커맨드:
   /vibe.spec "기능명"     SPEC 작성 (PTCF 구조)
@@ -1373,6 +1376,200 @@ function showVersion() {
   console.log(`vibe v${packageJson.version}`);
 }
 
+// Gemini OAuth 인증
+async function geminiAuth() {
+  console.log(`
+🔐 Gemini 구독 인증 (OAuth)
+
+Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니다.
+브라우저에서 Google 계정으로 로그인하세요.
+  `);
+
+  try {
+    const { startOAuthFlow } = require('../lib/gemini-oauth');
+    const storage = require('../lib/gemini-storage');
+
+    const tokens = await startOAuthFlow();
+
+    // 계정 저장
+    storage.addAccount({
+      email: tokens.email,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expires: tokens.expires,
+      projectId: tokens.projectId,
+    });
+
+    console.log(`
+✅ Gemini 인증 완료!
+
+계정: ${tokens.email}
+프로젝트: ${tokens.projectId || '(자동 감지)'}
+
+사용 가능한 모델:
+  - Gemini 3 Flash (빠른 응답, 탐색/검색)
+  - Gemini 3 Pro (높은 정확도)
+
+/vibe.run 실행 시 자동으로 Gemini가 보조 모델로 활용됩니다.
+
+상태 확인: vibe gemini --status
+로그아웃: vibe gemini --logout
+    `);
+
+    // config.json 업데이트 (gemini oauth 활성화)
+    const projectRoot = process.cwd();
+    const vibeDir = path.join(projectRoot, '.vibe');
+    const configPath = path.join(vibeDir, 'config.json');
+
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        if (!config.models) config.models = {};
+        config.models.gemini = {
+          enabled: true,
+          authType: 'oauth',
+          email: tokens.email,
+          role: 'exploration',
+          description: 'Gemini 3 Flash/Pro (탐색, UI/UX)',
+        };
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      } catch (e) {}
+    }
+
+    // 인증 완료 후 프로세스 종료
+    process.exit(0);
+
+  } catch (error) {
+    console.error(`
+❌ Gemini 인증 실패
+
+오류: ${error.message}
+
+다시 시도하려면: vibe gemini --auth
+    `);
+    process.exit(1);
+  }
+}
+
+// Gemini 인증 상태 확인
+function geminiStatus() {
+  try {
+    const storage = require('../lib/gemini-storage');
+    const { GEMINI_MODELS } = require('../lib/gemini-api');
+
+    const accounts = storage.getAllAccounts();
+
+    if (accounts.length === 0) {
+      console.log(`
+📊 Gemini 인증 상태
+
+인증된 계정 없음
+
+로그인: vibe gemini --auth
+      `);
+      return;
+    }
+
+    const activeAccount = storage.getActiveAccount();
+    const isExpired = storage.isTokenExpired(activeAccount);
+
+    console.log(`
+📊 Gemini 인증 상태
+
+활성 계정: ${activeAccount.email}
+프로젝트: ${activeAccount.projectId || '(자동)'}
+토큰 상태: ${isExpired ? '⚠️  만료됨 (자동 갱신됨)' : '✅ 유효'}
+마지막 사용: ${new Date(activeAccount.lastUsed).toLocaleString()}
+
+등록된 계정 (${accounts.length}개):
+${accounts.map((acc, i) => `  ${i === storage.loadAccounts()?.activeIndex ? '→' : ' '} ${acc.email}`).join('\n')}
+
+사용 가능한 모델:
+${Object.entries(GEMINI_MODELS).map(([id, info]) => `  - ${id}: ${info.description}`).join('\n')}
+
+로그아웃: vibe gemini --logout
+    `);
+
+  } catch (error) {
+    console.error('상태 확인 실패:', error.message);
+  }
+}
+
+// Gemini 로그아웃
+function geminiLogout() {
+  try {
+    const storage = require('../lib/gemini-storage');
+    const activeAccount = storage.getActiveAccount();
+
+    if (!activeAccount) {
+      console.log('로그인된 계정이 없습니다.');
+      return;
+    }
+
+    storage.clearAccounts();
+
+    console.log(`
+✅ Gemini 로그아웃 완료
+
+${activeAccount.email} 계정이 제거되었습니다.
+
+다시 로그인: vibe gemini --auth
+    `);
+
+    // config.json 업데이트
+    const projectRoot = process.cwd();
+    const vibeDir = path.join(projectRoot, '.vibe');
+    const configPath = path.join(vibeDir, 'config.json');
+
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        if (config.models?.gemini) {
+          config.models.gemini.enabled = false;
+          config.models.gemini.authType = null;
+          config.models.gemini.email = null;
+          fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+        }
+      } catch (e) {}
+    }
+
+  } catch (error) {
+    console.error('로그아웃 실패:', error.message);
+  }
+}
+
+// Gemini 도움말
+function showGeminiHelp() {
+  console.log(`
+🤖 Gemini 설정
+
+Gemini Advanced 구독이 있으면 추가 비용 없이 AI 보조 모델로 활용할 수 있습니다.
+
+사용 방법:
+
+  1. 구독 인증 (권장):
+     vibe gemini --auth       Google 계정으로 로그인 (추가 비용 없음)
+
+  2. API 키 방식:
+     vibe gemini <api-key>    API 키로 설정 (사용량 과금)
+
+관리 명령어:
+  vibe gemini --status      인증 상태 확인
+  vibe gemini --logout      로그아웃
+  vibe gemini --remove      API 키 제거
+
+사용 가능한 모델:
+  - Gemini 3 Flash: 빠른 응답 (탐색/검색)
+  - Gemini 3 Pro: 높은 정확도 (복잡한 작업)
+
+활용 방식:
+  /vibe.run 실행 시 자동으로 다음 용도로 활용됩니다:
+  - 코드 탐색/검색 (Gemini 3 Flash)
+  - UI/UX 분석 (Gemini 3 Pro)
+  - 병렬 작업 처리
+  `);
+}
+
 // vibe 제거
 function remove() {
   const projectRoot = process.cwd();
@@ -1490,8 +1687,16 @@ switch (command) {
   case 'gemini':
     if (args[1] === '--remove') {
       removeExternalLLM('gemini');
-    } else {
+    } else if (args[1] === '--auth') {
+      geminiAuth();
+    } else if (args[1] === '--status') {
+      geminiStatus();
+    } else if (args[1] === '--logout') {
+      geminiLogout();
+    } else if (args[1]) {
       setupExternalLLM('gemini', args[1]);
+    } else {
+      showGeminiHelp();
     }
     break;
 
