@@ -67,6 +67,25 @@ SPEC 문서는 AI가 바로 실행 가능한 프롬프트 형태:
 | `mcp__vibe__auto_save_context` | 현재 상태 저장 |
 | `mcp__vibe__save_memory` | 중요 결정사항 저장 |
 
+## 컨텍스트 관리 전략
+
+### 모델 선택
+- **탐색/검색**: Haiku (서브에이전트 기본값)
+- **구현/디버깅**: Sonnet
+- **아키텍처/복잡한 로직**: Opus
+
+### 문제 발생 시
+- `/compact` - 컨텍스트 압축
+- `/rewind` - 이전 시점으로 되돌리기
+- `/new` - 새 세션 시작
+- `/context` - 현재 사용량 확인
+
+### context7 활용
+최신 라이브러리 문서가 필요할 때 context7 MCP 사용:
+```
+"React 19 use() 훅을 context7으로 검색해줘"
+```
+
 ## Git Commit 규칙
 
 **반드시 포함:**
