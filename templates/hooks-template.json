@@ -4,8 +4,19 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Session started. Proceed with the user's request immediately."
+            "type": "command",
+            "command": "echo '[SESSION START] If mcp__vibe__start_session is available, call it to restore previous context.'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[BASH CHECK] Be cautious with destructive commands (rm -rf, git push --force, drop table). Verify paths before deletion.'"
           }
         ]
       }
@@ -15,8 +26,35 @@
         "matcher": "ultrawork|ulw|울트라워크",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "🚀 ULTRAWORK MODE DETECTED. You MUST: (1) Use PARALLEL Task calls for ALL exploration, (2) Enable Boulder Loop - auto-continue through ALL phases without pausing, (3) Auto-retry on errors up to 3 times, (4) Run mcp__vibe__auto_save_context at 70%+ context, (5) Do NOT ask for confirmation between phases. Keep rolling until ALL acceptance criteria pass."
+            "type": "command",
+            "command": "echo '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Run mcp__vibe__auto_save_context at 70%+ context. Do NOT ask for confirmation between phases.'"
+          }
+        ]
+      },
+      {
+        "matcher": "analyze|분석|analysis",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[ANALYZE MODE] Thoroughly examine the codebase. Use mcp__vibe__analyze_complexity and mcp__vibe__find_references for deep analysis.'"
+          }
+        ]
+      },
+      {
+        "matcher": "debug|디버그|debugging",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[DEBUG MODE] Focus on finding root cause. Check logs, trace execution flow, verify assumptions step by step.'"
+          }
+        ]
+      },
+      {
+        "matcher": "test|테스트|testing",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[TEST MODE] Write comprehensive tests. Cover edge cases, error scenarios, and happy paths.'"
           }
         ]
       }
@@ -26,8 +64,8 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Code written. Continue with your task."
+            "type": "command",
+            "command": "echo '[CODE CHECK] Continue your task. Quick inline check: no syntax errors, no any types, no security issues, preserves existing code style.'"
           }
         ]
       }
@@ -37,8 +75,8 @@
         "matcher": "context_window_70",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Context at 70%. You still have headroom - don't rush or produce sloppy work. But start being selective about file reads. If ULTRAWORK mode: run mcp__vibe__auto_save_context now."
+            "type": "command",
+            "command": "echo '[CONTEXT 70%] Start being selective about file reads. If ULTRAWORK mode: run mcp__vibe__auto_save_context now.'"
           }
         ]
       },
@@ -46,8 +84,8 @@
         "matcher": "context_window_85",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Context at 85%. IMMEDIATELY run mcp__vibe__auto_save_context with urgency='high'. Summarize current progress and next steps. Compress verbose outputs."
+            "type": "command",
+            "command": "echo '[CONTEXT 85%] IMMEDIATELY run mcp__vibe__auto_save_context with urgency=high.'"
           }
         ]
       },
@@ -55,8 +93,8 @@
         "matcher": "context_window_95",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Context at 95% - CRITICAL. Run mcp__vibe__auto_save_context with urgency='critical' NOW. Save all progress, blockers, and next steps. Prepare for session transition. If in ULTRAWORK mode, the next session will auto-restore and continue."
+            "type": "command",
+            "command": "echo '[CONTEXT 95% CRITICAL] Run mcp__vibe__auto_save_context with urgency=critical NOW. Prepare for session transition.'"
           }
         ]
       }
