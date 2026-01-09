@@ -1,5 +1,15 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If mcp__vibe__start_session is available, call it to restore context. Otherwise, proceed normally with the user's request."
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "matcher": "ultrawork|ulw|울트라워크",
@@ -7,6 +17,17 @@
           {
             "type": "prompt",
             "prompt": "🚀 ULTRAWORK MODE DETECTED. You MUST: (1) Use PARALLEL Task calls for ALL exploration, (2) Enable Boulder Loop - auto-continue through ALL phases without pausing, (3) Auto-retry on errors up to 3 times, (4) Run mcp__vibe__auto_save_context at 70%+ context, (5) Do NOT ask for confirmation between phases. Keep rolling until ALL acceptance criteria pass."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Continue your current task. Quick inline check (do NOT stop): (1) No syntax errors, (2) No any types, (3) No security issues (XSS, injection), (4) Preserves existing code style. Fix silently if needed."
           }
         ]
       }
