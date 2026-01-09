@@ -59,17 +59,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '{\"continue\":true,\"suppressOutput\":true,\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[AUTO-CONTINUE] 작업 계속\"}}'"
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "matcher": "context_window_70",
