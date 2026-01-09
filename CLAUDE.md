@@ -67,6 +67,17 @@ SPEC 문서는 AI가 바로 실행 가능한 프롬프트 형태:
 | `mcp__vibe__auto_save_context` | 현재 상태 저장 |
 | `mcp__vibe__save_memory` | 중요 결정사항 저장 |
 
+## Git Commit 규칙
+
+**반드시 포함:**
+- `.claude/` 폴더 전체 (commands, agents, settings.json)
+- `.vibe/rules/`, `.vibe/specs/`, `.vibe/features/`
+- `CLAUDE.md`
+
+**제외:**
+- `.claude/settings.local.json` (개인 설정, 자동 제외)
+- `.vibe/mcp/` (node_modules, 자동 제외)
+
 ## Getting Started
 
 ```bash

@@ -182,24 +182,23 @@ Phase 1 → Phase 2 → Phase 3 → ... → Phase N
 
 ```
 project/
-├── CLAUDE.md                 # 프로젝트 컨텍스트
-├── .claude/
+├── CLAUDE.md                 # 프로젝트 컨텍스트        ← git 공유
+├── .claude/                  # ⚠️ 반드시 git에 커밋    ← git 공유
 │   ├── commands/             # 슬래시 커맨드 (7개)
-│   ├── agents/               # 서브에이전트 (simplifier)
-│   └── settings.json         # Hooks 설정
+│   ├── agents/               # 서브에이전트
+│   ├── settings.json         # Hooks 설정
+│   └── settings.local.json   # 개인 설정               ← git 제외 (자동)
 └── .vibe/
-    ├── config.json           # 프로젝트 설정
-    ├── constitution.md       # 프로젝트 원칙
-    ├── mcp/                   # hi-ai MCP (로컬 설치, .gitignore)
-    ├── rules/                 # 코딩 규칙
-    │   ├── core/              # 핵심 원칙
-    │   ├── quality/           # 품질 체크리스트
-    │   ├── standards/         # 복잡도, 네이밍
-    │   ├── languages/         # 언어별 규칙
-    │   └── tools/             # MCP 가이드
-    ├── specs/                 # SPEC 문서들
-    └── features/              # BDD Feature 파일들
+    ├── config.json           # 프로젝트 설정           ← git 공유
+    ├── constitution.md       # 프로젝트 원칙           ← git 공유
+    ├── mcp/                   # hi-ai MCP              ← git 제외 (node_modules)
+    ├── rules/                 # 코딩 규칙              ← git 공유
+    ├── specs/                 # SPEC 문서들            ← git 공유
+    └── features/              # BDD Feature 파일들     ← git 공유
 ```
+
+> **⚠️ 중요**: `.claude/` 폴더는 팀과 공유해야 합니다. 커밋 시 제외하지 마세요.
+> `settings.local.json`만 개인 설정이므로 자동으로 git에서 제외됩니다.
 
 ---
 
