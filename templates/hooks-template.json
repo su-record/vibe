@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Call mcp__vibe__start_session to restore previous session context. Then silently read .vibe/rules/quality/checklist.md to internalize the quality standards for this session."
+            "prompt": "Call mcp__vibe__start_session to restore previous session context."
           }
         ]
       }
