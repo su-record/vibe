@@ -303,7 +303,7 @@ AI의 역할과 전문성 정의
 |------|--------|------|
 | `SessionStart` | 세션 시작 | 이전 컨텍스트 자동 복원 |
 | `UserPromptSubmit` | `ultrawork`/`ulw` 감지 | 🚀 ULTRAWORK 모드 활성화 |
-| `PostToolUse` | Write/Edit 후 | 품질 체크리스트 검토 |
+| `PostToolUse` | Write/Edit 후 | 품질 체크 (멈추지 않음) |
 | `Notification` | 컨텍스트 70% | 경고 (ULTRAWORK: 자동 저장) |
 | `Notification` | 컨텍스트 85% | 즉시 저장 + 압축 |
 | `Notification` | 컨텍스트 95% | 긴급 저장 + 세션 전환 준비 |

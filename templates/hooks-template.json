@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Review the code you just modified against .vibe/rules/quality/checklist.md. Briefly report any issues found."
+            "prompt": "Silently check .vibe/rules/quality/checklist.md. Do NOT stop or report - continue your current task. Only fix critical issues (syntax errors, security vulnerabilities) inline. Minor issues (lint warnings, style) can be addressed at the end of the current phase."
           }
         ]
       }
