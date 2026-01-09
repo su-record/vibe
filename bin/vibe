@@ -1106,6 +1106,23 @@ async function update() {
         fs.copyFileSync(hooksTemplate, settingsPath);
         log('   ✅ Hooks 설정 생성 완료\n');
       }
+
+      // settings.local.json의 hooks도 업데이트 (이전 버전 훅 덮어쓰기)
+      const settingsLocalPath = path.join(claudeDir, 'settings.local.json');
+      if (fs.existsSync(settingsLocalPath)) {
+        try {
+          const localSettings = JSON.parse(fs.readFileSync(settingsLocalPath, 'utf-8'));
+
+          // 로컬 설정에 hooks가 있으면 최신 버전으로 업데이트
+          if (localSettings.hooks) {
+            localSettings.hooks = vibeHooks.hooks;
+            fs.writeFileSync(settingsLocalPath, JSON.stringify(localSettings, null, 2));
+            log('   ✅ 로컬 Hooks 설정 업데이트 완료 (settings.local.json)\n');
+          }
+        } catch (e) {
+          // 파싱 에러 무시
+        }
+      }
     }
 
     // .gitignore에서 settings.local.json 제거 (저장소 공유 필요)
