@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[CODE CHECK] Continue your task. Quick inline check: no syntax errors, no any types, no security issues, preserves existing code style.'"
+            "command": "echo '[CODE CHECK] Review for issues: unused imports, syntax errors, incomplete implementation. If any found, fix immediately in next edit. Continue with task until complete.'"
           }
         ]
       }

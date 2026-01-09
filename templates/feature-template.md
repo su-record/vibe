@@ -1,6 +1,12 @@
 # Feature: {기능명}
 
+> 이 파일은 **품질 보장의 핵심**입니다. 모든 시나리오 통과 = 기능 완성.
+
 **SPEC**: `.vibe/specs/{기능명}.md`
+**Last verified**: -
+**Quality score**: -
+
+---
 
 ## User Story
 
@@ -12,59 +18,79 @@
 
 ## Scenarios
 
+> 각 시나리오가 구현 단위이자 검증 단위입니다.
+
 ### Scenario 1: {Happy Path - 정상 케이스}
 
 ```gherkin
 Scenario: {시나리오 제목}
   Given {전제 조건}
+    # 검증: {무엇을 확인하는가}
   When {사용자 행동}
+    # 검증: {어떤 기능이 실행되는가}
   Then {예상 결과}
+    # 검증: {무엇이 보이거나 반환되는가}
 ```
 
-**검증 기준**: SPEC Acceptance Criteria #1
+**SPEC AC**: #1
+**Status**: ⬜
 
 ---
 
-### Scenario 2: {Edge Case - 예외 케이스}
+### Scenario 2: {Edge Case - 에러 케이스}
 
 ```gherkin
 Scenario: {에러 시나리오 제목}
   Given {전제 조건}
-  When {잘못된 입력}
-  Then {에러 처리}
+  When {잘못된 입력 또는 예외 상황}
+  Then {에러 메시지 또는 적절한 처리}
 ```
 
-**검증 기준**: SPEC Acceptance Criteria #2
+**SPEC AC**: #2
+**Status**: ⬜
 
 ---
 
-### Scenario Outline: {파라미터화 테스트}
+### Scenario 3: {Boundary Case - 경계 케이스}
 
 ```gherkin
-Scenario Outline: {시나리오 제목}
+Scenario: {경계값 테스트}
   Given {전제 조건}
-  When I input "<input>"
-  Then I should see "<output>"
-
-Examples:
-  | input  | output  |
-  | value1 | result1 |
-  | value2 | result2 |
+  When {경계값 입력}
+  Then {적절한 처리}
 ```
 
----
-
-## Coverage
-
-| Scenario | SPEC Acceptance | Status |
-|----------|-----------------|--------|
-| Scenario 1 | AC-1 | ⬜ |
-| Scenario 2 | AC-2 | ⬜ |
+**SPEC AC**: #3
+**Status**: ⬜
 
 ---
 
-## Verification
+## Coverage Summary
+
+| # | Scenario | SPEC AC | Status | Retries |
+|---|----------|---------|--------|---------|
+| 1 | {Happy Path} | AC-1 | ⬜ | - |
+| 2 | {Edge Case} | AC-2 | ⬜ | - |
+| 3 | {Boundary Case} | AC-3 | ⬜ | - |
+
+**Total**: 0/3 통과 (0%)
+
+---
+
+## Verification Commands
 
 ```bash
+# 전체 검증
 /vibe.verify "{기능명}"
+
+# 실패 시 자동 수정
+/vibe.run "{기능명}" --fix
 ```
+
+---
+
+## Notes
+
+- 시나리오 추가/수정 시 Coverage Summary도 함께 업데이트
+- Given/When/Then 각각에 검증 포인트 명시
+- 모든 시나리오 통과 시 품질 보장됨

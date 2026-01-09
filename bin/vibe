@@ -737,16 +737,22 @@ async function init(projectName) {
     copyDirContents(agentsSourceDir, agentsDir);
     log('   ✅ 서브에이전트 설치 완료 (.claude/agents/)\n');
 
-    // .claude/settings.json 생성 (Hooks 설정 - 저장소 공유용)
+    // .claude/settings.json 생성/업데이트 (Hooks 설정 - 저장소 공유용)
     const settingsPath = path.join(claudeDir, 'settings.json');
-    if (!fs.existsSync(settingsPath)) {
-      const hooksTemplate = path.join(__dirname, '../templates/hooks-template.json');
-      if (fs.existsSync(hooksTemplate)) {
+    const hooksTemplate = path.join(__dirname, '../templates/hooks-template.json');
+    if (fs.existsSync(hooksTemplate)) {
+      const vibeHooks = JSON.parse(fs.readFileSync(hooksTemplate, 'utf-8'));
+      if (fs.existsSync(settingsPath)) {
+        // 기존 설정에 hooks 병합
+        const existingSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+        existingSettings.hooks = vibeHooks.hooks;
+        fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
+        log('   ✅ Hooks 설정 업데이트 완료 (.claude/settings.json)\n');
+      } else {
+        // 새로 생성
         fs.copyFileSync(hooksTemplate, settingsPath);
         log('   ✅ Hooks 설정 설치 완료 (.claude/settings.json)\n');
       }
-    } else {
-      log('   ℹ️  Hooks 설정 이미 존재\n');
     }
 
     // .gitignore에서 settings.local.json 제거 (저장소 공유 필요)
