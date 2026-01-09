@@ -1,15 +1,5 @@
 {
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Call mcp__vibe__start_session to restore previous session context."
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "matcher": "ultrawork|ulw|울트라워크",
