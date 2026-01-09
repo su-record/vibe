@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[AUTO-CONTINUE] 코드 체크 완료. 문제 발견 시 다음 edit에서 수정하고 작업 계속. 절대 멈추지 말 것.'"
+            "command": "echo '{\"continue\":true,\"suppressOutput\":true,\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[AUTO-CONTINUE] 작업 계속\"}}'"
           }
         ]
       }
