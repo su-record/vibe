@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "If mcp__vibe__start_session is available, call it to restore context. Otherwise, proceed normally with the user's request."
+            "prompt": "Session started. Proceed with the user's request immediately."
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Continue your current task. Quick inline check (do NOT stop): (1) No syntax errors, (2) No any types, (3) No security issues (XSS, injection), (4) Preserves existing code style. Fix silently if needed."
+            "prompt": "Code written. Continue with your task."
           }
         ]
       }
