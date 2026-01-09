@@ -270,11 +270,14 @@ When external LLMs are enabled in `.vibe/config.json`:
 | Role | Model | Condition |
 |------|-------|-----------|
 | Architecture/Debugging | GPT 5.2 | When `vibe gpt <key>` executed |
-| UI/UX Design | Gemini 3 | When `vibe gemini <key>` executed |
+| UI/UX Design, Exploration | Gemini 2.5/3 | When `vibe gemini --auth` executed |
 
 When external LLM enabled, automatically called via MCP:
 - `mcp__vibe-gpt__chat` - GPT 5.2 architecture consultation
-- `mcp__vibe-gemini__chat` - Gemini 3 UI/UX consultation
+- `mcp__vibe-gemini__gemini_chat` - Gemini 질문/상담
+- `mcp__vibe-gemini__gemini_analyze_code` - 코드 분석
+- `mcp__vibe-gemini__gemini_review_ui` - UI/UX 리뷰
+- `mcp__vibe-gemini__gemini_quick_ask` - 빠른 질문 (탐색용)
 
 ## Semantic Code Analysis (hi-ai MCP)
 

@@ -33,11 +33,13 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "@su-record/hi-ai": "latest",
     "typescript": "^5.9.3"
   },
   "files": [
     "bin/",
+    "lib/",
     ".claude/",
     ".vibe/",
     "templates/",

@@ -457,64 +457,57 @@ async function init(projectName) {
     ensureDir(vibeDir);
 
     // MCP 서버 등록 (Claude Code)
-    log('🔧 Claude Code MCP 서버 등록 중...\n');
+    log('🔧 Claude Code MCP 서버 등록 중 (전역)...\n');
     const { execSync } = require('child_process');
 
-    // 1. hi-ai MCP (.vibe/mcp 폴더 내 설치)
-    const vibeMcpDir = path.join(vibeDir, 'mcp');
-    ensureDir(vibeMcpDir);
+    // 전역 vibe 경로에서 hi-ai MCP 등록
+    const vibePath = path.dirname(__dirname);
+    const hiAiPath = path.join(vibePath, 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
+    const geminiMcpPath = path.join(vibePath, 'lib', 'gemini-mcp.js');
 
-    // .vibe/mcp/package.json 생성
-    const mcpPackageJson = {
-      name: 'vibe-mcp',
-      version: '1.0.0',
-      private: true,
-      dependencies: {
-        '@su-record/hi-ai': 'latest'
-      }
-    };
-    fs.writeFileSync(path.join(vibeMcpDir, 'package.json'), JSON.stringify(mcpPackageJson, null, 2));
-
-    log('   📦 hi-ai MCP 패키지 설치 중 (.vibe/mcp/)...\n');
+    // 1. hi-ai MCP (전역 등록)
     try {
-      execSync('npm install', { stdio: 'pipe', cwd: vibeMcpDir });
-      log('   ✅ hi-ai 패키지 설치 완료\n');
-    } catch (e) {
-      log('   ⚠️  hi-ai 패키지 설치 실패\n');
-    }
-
-    // .vibe/mcp 경로로 MCP 등록
-    const mcpPath = path.join(vibeMcpDir, 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
-    try {
-      execSync(`claude mcp add vibe node "${mcpPath}"`, { stdio: 'pipe' });
-      log('   ✅ vibe MCP 등록 완료\n');
+      execSync(`claude mcp add vibe -s user node "${hiAiPath}"`, { stdio: 'pipe' });
+      log('   ✅ vibe MCP 등록 완료 (전역)\n');
     } catch (e) {
       if (e.message.includes('already exists')) {
         log('   ℹ️  vibe MCP 이미 등록됨\n');
       } else {
-        log('   ⚠️  vibe MCP 수동 등록 필요\n');
+        log('   ⚠️  vibe MCP 수동 등록 필요: claude mcp add vibe -s user node "' + hiAiPath + '"\n');
       }
     }
 
-    // 2. Context7 MCP (라이브러리 문서 검색)
+    // 2. Context7 MCP (라이브러리 문서 검색, 전역)
     try {
-      execSync('claude mcp add context7 -- npx -y @upstash/context7-mcp@latest', { stdio: 'pipe' });
+      execSync('claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest', { stdio: 'pipe' });
       log('   ✅ Context7 MCP 등록 완료 (라이브러리 문서 검색)\n');
     } catch (e) {
       if (e.message.includes('already exists')) {
         log('   ℹ️  Context7 MCP 이미 등록됨\n');
       } else {
-        log('   ⚠️  Context7 MCP 수동 등록 필요: claude mcp add context7 -- npx -y @upstash/context7-mcp@latest\n');
+        log('   ⚠️  Context7 MCP 수동 등록 필요: claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest\n');
       }
     }
 
-    // .vibe 폴더 구조 생성 (mcp는 이미 생성됨)
+    // .vibe 폴더 구조 생성
     const dirs = ['specs', 'features'];
     dirs.forEach(dir => {
       ensureDir(path.join(vibeDir, dir));
     });
 
-    // .vibe/mcp/를 gitignore에 추가
+    // 기존 .vibe/mcp/ 폴더 정리 (마이그레이션)
+    const oldMcpDir = path.join(vibeDir, 'mcp');
+    if (fs.existsSync(oldMcpDir)) {
+      log('   🧹 기존 .vibe/mcp/ 폴더 정리 중...\n');
+      try {
+        removeDirRecursive(oldMcpDir);
+        log('   ✅ .vibe/mcp/ 폴더 삭제 완료 (전역 MCP로 마이그레이션)\n');
+      } catch (e) {
+        log('   ⚠️  .vibe/mcp/ 폴더 수동 삭제 필요\n');
+      }
+    }
+
+    // .gitignore 업데이트 (mcp 제거)
     const mcpGitignorePath = path.join(projectRoot, '.gitignore');
     const mcpIgnore = '.vibe/mcp/';
     if (fs.existsSync(mcpGitignorePath)) {
@@ -1143,55 +1136,77 @@ async function update() {
     // 협업자 자동 설치 설정 (update에서도 실행)
     setupCollaboratorAutoInstall(projectRoot);
 
-    // MCP 서버: .vibe/mcp 폴더에 hi-ai 설치 확인 및 경로 업데이트
-    const vibeMcpDir = path.join(vibeDir, 'mcp');
-    const vibeMcpHiAiPath = path.join(vibeMcpDir, 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
+    // MCP 서버: 전역 vibe에서 hi-ai/gemini 경로 확인 및 등록
+    const vibePath = path.dirname(__dirname);
+    const hiAiPath = path.join(vibePath, 'node_modules', '@su-record', 'hi-ai', 'dist', 'index.js');
+    const geminiMcpPath = path.join(vibePath, 'lib', 'gemini-mcp.js');
 
-    if (!fs.existsSync(vibeMcpHiAiPath)) {
-      log('   📦 hi-ai MCP 패키지 설치 중 (.vibe/mcp/)...\n');
+    if (fs.existsSync(hiAiPath)) {
       try {
         const { execSync } = require('child_process');
-        ensureDir(vibeMcpDir);
 
-        // .vibe/mcp/package.json 생성
-        const mcpPackageJson = {
-          name: 'vibe-mcp',
-          version: '1.0.0',
-          private: true,
-          dependencies: {
-            '@su-record/hi-ai': 'latest'
-          }
-        };
-        fs.writeFileSync(path.join(vibeMcpDir, 'package.json'), JSON.stringify(mcpPackageJson, null, 2));
-
-        execSync('npm install', { stdio: 'pipe', cwd: vibeMcpDir });
-        log('   ✅ hi-ai 패키지 설치 완료\n');
-
-        // MCP 경로 업데이트
+        // 1. 기존 로컬 vibe MCP 제거 후 전역 등록
         try {
           execSync(`claude mcp remove vibe`, { stdio: 'pipe' });
         } catch (e) {}
         try {
-          execSync(`claude mcp add vibe node "${vibeMcpHiAiPath}"`, { stdio: 'pipe' });
-          log('   ✅ vibe MCP 경로 업데이트 완료\n');
+          execSync(`claude mcp remove vibe -s user`, { stdio: 'pipe' });
+        } catch (e) {}
+        try {
+          execSync(`claude mcp add vibe -s user node "${hiAiPath}"`, { stdio: 'pipe' });
+          log('   ✅ vibe MCP 전역 등록 완료 (hi-ai)\n');
         } catch (e) {
-          if (!e.message.includes('already exists')) {
-            log('   ⚠️  MCP 경로 업데이트 실패\n');
+          if (e.message.includes('already exists')) {
+            log('   ℹ️  vibe MCP 이미 등록됨\n');
+          } else {
+            log('   ⚠️  vibe MCP 등록 실패\n');
           }
         }
 
-        // .gitignore에 추가
-        const gitignorePath2 = path.join(projectRoot, '.gitignore');
-        const mcpIgnore = '.vibe/mcp/';
-        if (fs.existsSync(gitignorePath2)) {
-          let gitignore = fs.readFileSync(gitignorePath2, 'utf-8');
-          if (!gitignore.includes(mcpIgnore)) {
-            gitignore += `\n# vibe MCP\n${mcpIgnore}\n`;
-            fs.writeFileSync(gitignorePath2, gitignore);
+        // 2. 기존 로컬 vibe-gemini MCP 제거 후 전역 등록 (gemini-mcp.js 존재 시)
+        if (fs.existsSync(geminiMcpPath)) {
+          try {
+            execSync(`claude mcp remove vibe-gemini`, { stdio: 'pipe' });
+          } catch (e) {}
+          try {
+            execSync(`claude mcp remove vibe-gemini -s user`, { stdio: 'pipe' });
+          } catch (e) {}
+          try {
+            execSync(`claude mcp add vibe-gemini -s user node "${geminiMcpPath}"`, { stdio: 'pipe' });
+            log('   ✅ vibe-gemini MCP 전역 등록 완료\n');
+          } catch (e) {
+            if (e.message.includes('already exists')) {
+              log('   ℹ️  vibe-gemini MCP 이미 등록됨\n');
+            }
+          }
+        }
+
+        // 3. context7 MCP 전역 등록 확인
+        try {
+          execSync(`claude mcp remove context7`, { stdio: 'pipe' });
+        } catch (e) {}
+        try {
+          execSync('claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest', { stdio: 'pipe' });
+          log('   ✅ context7 MCP 전역 등록 완료\n');
+        } catch (e) {
+          if (e.message.includes('already exists')) {
+            log('   ℹ️  context7 MCP 이미 등록됨\n');
           }
         }
       } catch (e) {
-        log('   ⚠️  hi-ai 패키지 설치 실패\n');
+        log('   ⚠️  MCP 등록 실패\n');
+      }
+    }
+
+    // 기존 .vibe/mcp/ 폴더 정리 (마이그레이션)
+    const oldMcpDir = path.join(vibeDir, 'mcp');
+    if (fs.existsSync(oldMcpDir)) {
+      log('   🧹 기존 .vibe/mcp/ 폴더 정리 중...\n');
+      try {
+        removeDirRecursive(oldMcpDir);
+        log('   ✅ .vibe/mcp/ 폴더 삭제 완료 (전역 MCP로 마이그레이션)\n');
+      } catch (e) {
+        log('   ⚠️  .vibe/mcp/ 폴더 수동 삭제 필요\n');
       }
     }
 
@@ -1265,21 +1280,21 @@ ${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : '
   try {
     // 기존 MCP 제거 후 재등록
     try {
-      execSync(`claude mcp remove ${llmConfig.name}`, { stdio: 'pipe' });
+      execSync(`claude mcp remove ${llmConfig.name} -s user`, { stdio: 'pipe' });
     } catch (e) {
       // 없으면 무시
     }
 
-    // 환경변수와 함께 MCP 등록
-    execSync(`claude mcp add ${llmConfig.name} -e ${envKey}=${apiKey} -- npx -y ${llmConfig.package}`, { stdio: 'pipe' });
+    // 환경변수와 함께 MCP 전역 등록
+    execSync(`claude mcp add ${llmConfig.name} -s user -e ${envKey}=${apiKey} -- npx -y ${llmConfig.package}`, { stdio: 'pipe' });
 
     console.log(`
-✅ ${llmType.toUpperCase()} 활성화 완료!
+✅ ${llmType.toUpperCase()} 활성화 완료! (전역)
 
 역할: ${llmConfig.description}
 MCP: ${llmConfig.name}
 
-/vibe.run 실행 시 자동으로 활용됩니다.
+모든 프로젝트에서 /vibe.run 실행 시 자동으로 활용됩니다.
 
 비활성화: vibe ${llmType} --remove
     `);
@@ -1287,7 +1302,7 @@ MCP: ${llmConfig.name}
     console.log(`
 ⚠️  MCP 등록 실패. 수동으로 등록하세요:
 
-claude mcp add ${llmConfig.name} -e ${envKey}=<your-key> -- npx -y ${llmConfig.package}
+claude mcp add ${llmConfig.name} -s user -e ${envKey}=<your-key> -- npx -y ${llmConfig.package}
     `);
   }
 }
@@ -1311,12 +1326,19 @@ function removeExternalLLM(llmType) {
     }
   }
 
-  // MCP 서버 제거
+  // MCP 서버 제거 (로컬 + 전역 모두)
   const { execSync } = require('child_process');
   const llmConfig = EXTERNAL_LLMS[llmType];
 
   try {
-    execSync(`claude mcp remove ${llmConfig.name}`, { stdio: 'pipe' });
+    // 로컬 제거
+    try {
+      execSync(`claude mcp remove ${llmConfig.name}`, { stdio: 'pipe' });
+    } catch (e) {}
+    // 전역 제거
+    try {
+      execSync(`claude mcp remove ${llmConfig.name} -s user`, { stdio: 'pipe' });
+    } catch (e) {}
     console.log(`✅ ${llmType.toUpperCase()} 비활성화 완료`);
   } catch (e) {
     console.log(`ℹ️  ${llmType.toUpperCase()} MCP가 등록되어 있지 않습니다.`);
@@ -1434,6 +1456,31 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
         };
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
       } catch (e) {}
+    }
+
+    // MCP 서버 등록 (vibe-gemini) - 전역 등록
+    try {
+      const vibePath = path.dirname(__dirname);
+      const mcpPath = path.join(vibePath, 'lib', 'gemini-mcp.js');
+
+      // 전역 등록 (-s user)
+      execSync('claude mcp remove vibe-gemini -s user 2>/dev/null || true', { stdio: 'ignore' });
+      execSync(`claude mcp add vibe-gemini -s user node "${mcpPath}"`, { stdio: 'inherit' });
+
+      console.log(`
+✅ vibe-gemini MCP 서버 등록 완료! (전역)
+
+이제 모든 프로젝트에서 다음 도구를 사용할 수 있습니다:
+  - mcp__vibe-gemini__gemini_chat: Gemini에 질문
+  - mcp__vibe-gemini__gemini_analyze_code: 코드 분석
+  - mcp__vibe-gemini__gemini_review_ui: UI/UX 리뷰
+  - mcp__vibe-gemini__gemini_quick_ask: 빠른 질문
+      `);
+    } catch (mcpError) {
+      console.log(`
+⚠️  MCP 서버 등록 실패 (수동 등록 필요):
+  claude mcp add vibe-gemini -s user node "${path.join(path.dirname(__dirname), 'lib', 'gemini-mcp.js')}"
+      `);
     }
 
     // 인증 완료 후 프로세스 종료
@@ -1559,8 +1606,10 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 AI 보조 모델로 활
   vibe gemini --remove      API 키 제거
 
 사용 가능한 모델:
-  - Gemini 3 Flash: 빠른 응답 (탐색/검색)
-  - Gemini 3 Pro: 높은 정확도 (복잡한 작업)
+  - gemini-2.5-flash: 안정적, Thinking 기능 (기본)
+  - gemini-2.5-flash-lite: 경량 버전
+  - gemini-3-flash: 최신 프리뷰, 빠름
+  - gemini-3-pro: 최신 프리뷰, 정확
 
 활용 방식:
   /vibe.run 실행 시 자동으로 다음 용도로 활용됩니다:
