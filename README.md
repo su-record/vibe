@@ -8,20 +8,21 @@ SPEC 문서 하나로 AI가 바로 구현하고, **시나리오별 자동 검증
 
 [![npm version](https://img.shields.io/npm/v/@su-record/vibe.svg)](https://www.npmjs.com/package/@su-record/vibe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![MCP Tools](https://img.shields.io/badge/MCP_Tools-36-blue.svg)](https://github.com/su-record/hi-ai)
+[![Built-in Tools](https://img.shields.io/badge/Built--in_Tools-36-blue.svg)](https://github.com/su-record/vibe)
 
 ---
 
 ## Features
 
+- **🤖 멀티모델 AI 오케스트레이션**: Claude + GPT + Gemini를 서브에이전트로 통합 (OAuth 인증)
 - **시나리오 주도 개발 (SDD)**: 각 시나리오 = 구현 단위 = 검증 단위
 - **BDD 자동 검증**: Given/When/Then 단계별 자동 품질 검증
 - **품질 보장 시스템**: 비개발자도 품질을 신뢰할 수 있는 자동화
 - **ULTRAWORK Mode**: `ulw` 한 단어로 모든 최적화 자동 활성화
 - **Boulder Loop**: 모든 시나리오 완료까지 자동 진행
 - **병렬 서브에이전트**: Haiku 3+ 동시 탐색으로 ~3배 속도 향상
-- **자동 컨텍스트 관리**: 70%+ 시 자동 압축/저장
-- **36개 MCP 도구**: @su-record/hi-ai 통합
+- **자동 컨텍스트 관리**: 80%+ 시 자동 저장, 세션 자동 복원
+- **36개 내장 도구**: 코드 분석, 품질 검증, 세션 메모리 (MCP 오버헤드 제거)
 
 ---
 
@@ -40,7 +41,7 @@ npm install -g @su-record/vibe
 ```bash
 # 기존 프로젝트에서
 vibe init
-# → hi-ai MCP가 .vibe/mcp/에 로컬 설치됨
+# → 내장 도구 활성화 + MCP 서버 등록 (vibe-gemini, vibe-gpt, context7)
 
 # 새 프로젝트 생성
 vibe init my-project
@@ -112,9 +113,15 @@ Feature 로드 → Scenario 1 [구현→검증] → Scenario 2 [구현→검증]
 
 | 명령어 | 설명 |
 |--------|------|
-| `vibe gpt <api-key>` | GPT 활성화 (아키텍처/디버깅) |
-| `vibe gemini <api-key>` | Gemini 활성화 (UI/UX) |
+| `vibe gpt --auth` | GPT OAuth 인증 (ChatGPT Plus/Pro 구독자용, 권장) |
+| `vibe gpt <api-key>` | GPT API 키 방식 |
+| `vibe gemini --auth` | Gemini OAuth 인증 (구독자용, 권장) |
+| `vibe gemini <api-key>` | Gemini API 키 방식 |
+| `vibe <name> --status` | 인증 상태 확인 |
+| `vibe <name> --logout` | 로그아웃 |
 | `vibe <name> --remove` | 비활성화 |
+
+> **OAuth 인증** 또는 API 키를 등록해서 사용할 수 있습니다.
 
 ### Claude Code 슬래시 커맨드
 
@@ -162,7 +169,7 @@ Feature 로드 → Scenario 1 [구현→검증] → Scenario 2 [구현→검증]
 | **병렬 탐색** | 3+ Task(haiku) 에이전트 동시 실행 |
 | **Boulder Loop** | 모든 Phase 완료까지 자동 진행 (멈추지 않음) |
 | **자동 재시도** | 에러 발생 시 최대 3회 자동 재시도 |
-| **컨텍스트 관리** | 70%+ 시 자동 압축 및 저장 |
+| **컨텍스트 관리** | 80%+ 시 자동 저장 |
 | **무중단 실행** | Phase 간 확인 없이 연속 진행 |
 | **외부 LLM** | GPT/Gemini 활성화 시 자동 참조 |
 
@@ -186,7 +193,7 @@ Scenario 1 → Scenario 2 → Scenario 3 → ... → Scenario N
 |------|----------|-----------|
 | 시나리오 전환 | 일시정지 가능 | 자동 진행 |
 | 검증 실패 | 보고 후 중단 | 자동 재시도 (3회) |
-| 컨텍스트 70%+ | 경고만 | 자동 압축/저장 |
+| 컨텍스트 80%+ | 경고만 | 자동 저장 |
 | 탐색 방식 | 순차 가능 | **강제 병렬** |
 | 완료 조건 | 시나리오별 | 전체 시나리오 통과까지 |
 
@@ -251,7 +258,6 @@ project/
 └── .vibe/
     ├── config.json           # 프로젝트 설정           ← git 공유
     ├── constitution.md       # 프로젝트 원칙           ← git 공유
-    ├── mcp/                   # hi-ai MCP              ← git 제외 (node_modules)
     ├── rules/                 # 코딩 규칙              ← git 공유
     ├── specs/                 # SPEC 문서들            ← git 공유
     └── features/              # BDD Feature 파일들     ← git 공유
@@ -363,42 +369,62 @@ Then: {예상 결과}
 
 ---
 
-## MCP Integration
+## 내장 도구 & MCP
 
-### 자동 설치 (vibe init)
+### 내장 도구 (v2.0+)
 
-| MCP 서버 | 설명 | 설치 위치 |
+vibe는 36개의 도구를 **내장**하여 MCP 프로토콜 오버헤드 없이 직접 실행합니다.
+
+| 도구 | 설명 |
+|------|------|
+| `vibe_find_symbol` | 심볼 정의 찾기 |
+| `vibe_find_references` | 참조 찾기 |
+| `vibe_analyze_complexity` | 복잡도 분석 |
+| `vibe_validate_code_quality` | 품질 검증 |
+| `vibe_start_session` | 세션 시작 (이전 컨텍스트 자동 복원) |
+| `vibe_auto_save_context` | 현재 상태 저장 |
+| `vibe_save_memory` | 중요 결정사항 저장 |
+
+### MCP 서버 (외부 LLM)
+
+| MCP 서버 | 설명 | 등록 방식 |
 |----------|------|----------|
-| `vibe` (hi-ai) | 코드 분석, 품질 검증, 세션 메모리 | `.vibe/mcp/` (로컬) |
-| `context7` | 라이브러리 문서 실시간 검색 | Smithery (온라인) |
+| `vibe-gemini` | Gemini 3 Flash/Pro 서브에이전트 | 전역 (`-s user`) |
+| `vibe-gpt` | GPT-5.2 Codex 서브에이전트 | 전역 (`-s user`) |
+| `context7` | 라이브러리 문서 실시간 검색 | 전역 (`-s user`) |
 
-> **Note**: hi-ai MCP는 프로젝트별 `.vibe/mcp/` 폴더에 로컬 설치되어 안정적으로 작동합니다.
+> **Note**: MCP 서버들은 전역 등록되어 모든 프로젝트에서 사용 가능합니다.
+> OAuth 인증 후 Claude Code에서 GPT/Gemini를 서브에이전트로 호출할 수 있습니다.
 
 ### Hooks (자동 설정)
 
 | Hook | 트리거 | 동작 |
 |------|--------|------|
-| `SessionStart` | 세션 시작 | 이전 컨텍스트 자동 복원 |
+| `SessionStart` | 세션 시작 | `vibe_start_session` 자동 호출 → 이전 컨텍스트 복원 |
 | `UserPromptSubmit` | `ultrawork`/`ulw` 감지 | 🚀 ULTRAWORK 모드 활성화 |
 | `PostToolUse` | Write/Edit 후 | 품질 체크 (멈추지 않음) |
-| `Notification` | 컨텍스트 70% | 경고 (ULTRAWORK: 자동 저장) |
-| `Notification` | 컨텍스트 85% | 즉시 저장 + 압축 |
-| `Notification` | 컨텍스트 95% | 긴급 저장 + 세션 전환 준비 |
+| `Notification` | 컨텍스트 80% | **MANDATORY** `vibe_auto_save_context` 호출 |
+| `Notification` | 컨텍스트 90% | **MANDATORY** 즉시 저장 (urgency=high) |
+| `Notification` | 컨텍스트 95% | **MANDATORY** 긴급 저장 + 세션 전환 준비 |
 
 ### 선택적 연동 (외부 LLM)
 
 | MCP 서버 | 명령어 | 설명 |
 |----------|--------|------|
-| GPT 5.2 | `vibe gpt <key>` | 아키텍처/디버깅 |
-| Gemini 3 | `vibe gemini <key>` | UI/UX 설계 |
+| GPT-5.2 Codex | `vibe gpt --auth` | OAuth 인증 (ChatGPT Plus/Pro, 권장) |
+| GPT-5.2 Codex | `vibe gpt <key>` | API 키 방식 |
+| Gemini 3 Flash/Pro | `vibe gemini --auth` | OAuth 인증 (구독자용, 권장) |
+| Gemini 3 Flash/Pro | `vibe gemini <key>` | API 키 방식 |
 
-### hi-ai 주요 도구
+> **OAuth 인증** 또는 API 키를 등록해서 사용할 수 있습니다.
 
-- **코드 분석**: `analyze_complexity`, `validate_code_quality`
-- **시맨틱 검색**: `find_symbol`, `find_references`
-- **추론**: `apply_reasoning_framework`, `create_thinking_chain`
-- **메모리**: `save_memory`, `recall_memory`, `auto_save_context`
-- **UI**: `preview_ui_ascii`
+### 주요 내장 도구
+
+- **코드 분석**: `vibe_analyze_complexity`, `vibe_validate_code_quality`
+- **시맨틱 검색**: `vibe_find_symbol`, `vibe_find_references`
+- **추론**: `vibe_create_thinking_chain`, `vibe_analyze_problem`
+- **메모리**: `vibe_save_memory`, `vibe_recall_memory`, `vibe_auto_save_context`
+- **UI**: `vibe_preview_ui_ascii`
 
 ### context7 사용법
 
@@ -427,17 +453,30 @@ Then: {예상 결과}
 
 | 명령어 | 용도 |
 |--------|------|
-| `/compact` | 컨텍스트 압축 (70%+ 시 권장) |
 | `/context` | 현재 컨텍스트 사용량 확인 |
 | `/rewind` | 이전 시점으로 되돌리기 |
 | `/new` | 새 세션 시작 |
 | `Shift + Tab` | 플랜 모드 진입 |
 
+> **⚠️ `/compact` 사용 금지**: 정보 손실/왜곡 위험. vibe 메모리 시스템 사용 권장.
+
+### 컨텍스트 80%+ 시 자동 처리
+
+```
+80% 도달 → vibe_auto_save_context 자동 호출 (MANDATORY)
+90% 도달 → 즉시 저장 (urgency=high)
+95% 도달 → 긴급 저장 + 세션 전환 준비
+
+새 세션 시작 → vibe_start_session 자동 호출 → 이전 컨텍스트 복원
+```
+
+> **⚠️ `/compact` 사용 금지**: 정보 손실/왜곡 위험. vibe 메모리 시스템이 자동으로 관리합니다.
+
 ### 가치 밀도 높은 컨텍스트 유지
 
 1. **계획 먼저** - `/vibe.spec`으로 명확한 계획 수립
 2. **필요한 정보만** - 서브에이전트가 탐색하고 요약만 전달
-3. **자동 압축** - ULTRAWORK 모드에서 70%+ 시 자동 저장
+3. **자동 저장** - 80%+ 시 `vibe_auto_save_context` 자동 호출
 4. **Just-in-Time** - context7로 필요할 때만 문서 검색
 
 ---
@@ -495,7 +534,6 @@ User: 1
 ## Links
 
 - **Repository**: [github.com/su-record/vibe](https://github.com/su-record/vibe)
-- **MCP Server**: [@su-record/hi-ai](https://github.com/su-record/hi-ai)
 - **Issues**: [GitHub Issues](https://github.com/su-record/vibe/issues)
 
 ---
@@ -507,3 +545,24 @@ MIT License
 ---
 
 **Built with ❤️ by Su & Claude**
+
+## Vibe Setup (AI Coding)
+
+이 프로젝트는 [Vibe](https://github.com/su-record/vibe) AI 코딩 프레임워크를 사용합니다.
+
+### 협업자 설치
+
+```bash
+# 전역 설치 (권장)
+npm install -g @su-record/vibe
+vibe update
+
+# 또는 setup 스크립트 실행
+./.vibe/setup.sh
+```
+
+### 사용법
+
+Claude Code에서 슬래시 커맨드 사용:
+- `/vibe.spec "기능명"` - SPEC 문서 작성
+- `/vibe.run "기능명"` - 구현 실행

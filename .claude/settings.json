@@ -48,5 +48,106 @@
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[SESSION START] IMMEDIATELY call vibe_start_session to restore previous context. Do this before responding to the user.'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[BASH CHECK] Be cautious with destructive commands (rm -rf, git push --force, drop table). Verify paths before deletion.'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[AUTO-CONTINUE] 코드 체크 완료. 문제 발견 시 다음 edit에서 수정하고 작업 계속. 절대 멈추지 말 것.'"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "ultrawork|ulw|울트라워크",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Run vibe_auto_save_context at 70%+ context. Do NOT ask for confirmation between phases.'"
+          }
+        ]
+      },
+      {
+        "matcher": "analyze|분석|analysis",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[ANALYZE MODE] Thoroughly examine the codebase. Use vibe_analyze_complexity and vibe_find_references for deep analysis.'"
+          }
+        ]
+      },
+      {
+        "matcher": "debug|디버그|debugging",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[DEBUG MODE] Focus on finding root cause. Check logs, trace execution flow, verify assumptions step by step.'"
+          }
+        ]
+      },
+      {
+        "matcher": "test|테스트|testing",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[TEST MODE] Write comprehensive tests. Cover edge cases, error scenarios, and happy paths.'"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "context_window_80",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[CONTEXT 80%] MANDATORY: Call vibe_auto_save_context with urgency=medium NOW. This is NOT optional - save context before it is lost.'"
+          }
+        ]
+      },
+      {
+        "matcher": "context_window_90",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[CONTEXT 90% URGENT] MANDATORY: Call vibe_auto_save_context with urgency=high IMMEDIATELY. Do NOT proceed without saving.'"
+          }
+        ]
+      },
+      {
+        "matcher": "context_window_95",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[CONTEXT 95% CRITICAL] MANDATORY: Call vibe_auto_save_context with urgency=critical NOW. Session transition imminent - save everything.'"
+          }
+        ]
+      }
+    ]
   }
 }

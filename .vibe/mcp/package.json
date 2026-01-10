@@ -1,8 +1,0 @@
-{
-  "name": "vibe-mcp",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "@su-record/hi-ai": "latest"
-  }
-}

@@ -303,10 +303,10 @@ Use hi-ai MCP semantic tools to accurately understand codebase before implementa
 
 | MCP Tool | Purpose | When Used |
 |----------|---------|-----------|
-| `mcp__vibe__find_symbol` | Find symbol definitions | Locate class/function |
-| `mcp__vibe__find_references` | Find references | Analyze impact scope |
-| `mcp__vibe__analyze_complexity` | Analyze complexity | Determine refactoring need |
-| `mcp__vibe__validate_code_quality` | Validate quality | Verify post-implementation quality |
+| `vibe_find_symbol` | Find symbol definitions | Locate class/function |
+| `vibe_find_references` | Find references | Analyze impact scope |
+| `vibe_analyze_complexity` | Analyze complexity | Determine refactoring need |
+| `vibe_validate_code_quality` | Validate quality | Verify post-implementation quality |
 
 ### Semantic Analysis Flow
 
@@ -330,13 +330,13 @@ validate_code_quality: Verify quality after implementation
 
 | MCP Tool | Purpose |
 |----------|---------|
-| `mcp__vibe__start_session` | Start session, restore previous context |
-| `mcp__vibe__auto_save_context` | Auto-save current state |
-| `mcp__vibe__restore_session_context` | Restore previous session context |
-| `mcp__vibe__save_memory` | Save important decisions/patterns |
+| `vibe_start_session` | Start session, restore previous context |
+| `vibe_auto_save_context` | Auto-save current state |
+| `vibe_restore_session_context` | Restore previous session context |
+| `vibe_save_memory` | Save important decisions/patterns |
 
-**On session start**: `mcp__vibe__start_session` auto-restores previous context
-**On session end**: Hook auto-executes `mcp__vibe__auto_save_context`
+**On session start**: `vibe_start_session` auto-restores previous context
+**On session end**: Hook auto-executes `vibe_auto_save_context`
 
 ## Process
 

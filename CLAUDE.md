@@ -36,6 +36,7 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 | `/vibe.analyze` | 프로젝트 분석 |
 | `/vibe.diagram` | 다이어그램 생성 |
 | `/vibe.ui "설명"` | UI 미리보기 |
+| `/vibe.continue` | **세션 복원** (이전 컨텍스트 로드) |
 
 ## PTCF Structure
 
@@ -50,22 +51,22 @@ SPEC 문서는 AI가 바로 실행 가능한 프롬프트 형태:
 <acceptance> 검증 기준
 ```
 
-## MCP 도구 (hi-ai)
+## 내장 도구
 
 ### 시맨틱 코드 분석
 | 도구 | 용도 |
 |------|------|
-| `mcp__vibe__find_symbol` | 심볼 정의 찾기 |
-| `mcp__vibe__find_references` | 참조 찾기 |
-| `mcp__vibe__analyze_complexity` | 복잡도 분석 |
-| `mcp__vibe__validate_code_quality` | 품질 검증 |
+| `vibe_find_symbol` | 심볼 정의 찾기 |
+| `vibe_find_references` | 참조 찾기 |
+| `vibe_analyze_complexity` | 복잡도 분석 |
+| `vibe_validate_code_quality` | 품질 검증 |
 
 ### 컨텍스트 관리
 | 도구 | 용도 |
 |------|------|
-| `mcp__vibe__start_session` | 세션 시작 (이전 컨텍스트 복원) |
-| `mcp__vibe__auto_save_context` | 현재 상태 저장 |
-| `mcp__vibe__save_memory` | 중요 결정사항 저장 |
+| `vibe_start_session` | 세션 시작 (이전 컨텍스트 복원) |
+| `vibe_auto_save_context` | 현재 상태 저장 |
+| `vibe_save_memory` | 중요 결정사항 저장 |
 
 ## 컨텍스트 관리 전략
 
@@ -74,10 +75,26 @@ SPEC 문서는 AI가 바로 실행 가능한 프롬프트 형태:
 - **구현/디버깅**: Sonnet
 - **아키텍처/복잡한 로직**: Opus
 
-### 문제 발생 시
-- `/compact` - 컨텍스트 압축
+### 컨텍스트 70%+ 시 (⚠️ 중요)
+```
+❌ /compact 사용 금지 (정보 손실/왜곡 위험)
+✅ save_memory로 중요 결정사항 저장 → /new로 새 세션
+```
+
+vibe는 자체 메모리 시스템으로 세션 간 컨텍스트를 유지합니다:
+1. `save_memory` - 중요 결정사항 명시적 저장
+2. `/new` - 새 세션 시작
+3. `start_session` - 이전 세션 자동 복원
+
+### 세션 복원
+새 세션에서 이전 작업을 이어가려면:
+```
+/vibe.continue
+```
+이 명령어가 `vibe_start_session`을 호출하여 프로젝트별 메모리에서 이전 컨텍스트를 복원합니다.
+
+### 기타 명령어
 - `/rewind` - 이전 시점으로 되돌리기
-- `/new` - 새 세션 시작
 - `/context` - 현재 사용량 확인
 
 ### context7 활용

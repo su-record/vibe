@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[SESSION START] If mcp__vibe__start_session is available, call it to restore previous context.'"
+            "command": "echo '[SESSION START] IMMEDIATELY call vibe_start_session to restore previous context. Do this before responding to the user.'"
           }
         ]
       }
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Run mcp__vibe__auto_save_context at 70%+ context. Do NOT ask for confirmation between phases.'"
+            "command": "echo '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Run vibe_auto_save_context at 70%+ context. Do NOT ask for confirmation between phases.'"
           }
         ]
       },
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[ANALYZE MODE] Thoroughly examine the codebase. Use mcp__vibe__analyze_complexity and mcp__vibe__find_references for deep analysis.'"
+            "command": "echo '[ANALYZE MODE] Thoroughly examine the codebase. Use vibe_analyze_complexity and vibe_find_references for deep analysis.'"
           }
         ]
       },
@@ -72,20 +72,20 @@
     ],
     "Notification": [
       {
-        "matcher": "context_window_70",
+        "matcher": "context_window_80",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[CONTEXT 70%] Start being selective about file reads. If ULTRAWORK mode: run mcp__vibe__auto_save_context now.'"
+            "command": "echo '[CONTEXT 80%] MANDATORY: Call vibe_auto_save_context with urgency=medium NOW. This is NOT optional - save context before it is lost.'"
           }
         ]
       },
       {
-        "matcher": "context_window_85",
+        "matcher": "context_window_90",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[CONTEXT 85%] IMMEDIATELY run mcp__vibe__auto_save_context with urgency=high.'"
+            "command": "echo '[CONTEXT 90% URGENT] MANDATORY: Call vibe_auto_save_context with urgency=high IMMEDIATELY. Do NOT proceed without saving.'"
           }
         ]
       },
@@ -94,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[CONTEXT 95% CRITICAL] Run mcp__vibe__auto_save_context with urgency=critical NOW. Prepare for session transition.'"
+            "command": "echo '[CONTEXT 95% CRITICAL] MANDATORY: Call vibe_auto_save_context with urgency=critical NOW. Session transition imminent - save everything.'"
           }
         ]
       }
