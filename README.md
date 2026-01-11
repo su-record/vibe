@@ -322,14 +322,37 @@ Playwright 기반 브라우저 자동화 테스트:
 문답으로 요구사항 확정 → 병렬 리서치 → SPEC 작성
 ```
 
-| 에이전트 | 역할 |
-|----------|------|
-| best-practices-agent | 확정된 기능+스택 베스트 프랙티스 |
-| framework-docs-agent | 확정된 스택 최신 문서 (context7) |
-| codebase-patterns-agent | 기존 유사 패턴 분석 |
-| security-advisory-agent | 확정된 기능 보안 권고 |
+| 에이전트 | 역할 | 외부 LLM 강화 |
+|----------|------|--------------|
+| best-practices-agent | 확정된 기능+스택 베스트 프랙티스 | - |
+| framework-docs-agent | 확정된 스택 최신 문서 (context7) | Gemini (웹 검색) |
+| codebase-patterns-agent | 기존 유사 패턴 분석 | - |
+| security-advisory-agent | 확정된 기능 보안 권고 | GPT (CVE 지식) |
 
 > ⚠️ **리서치는 요구사항 확정 후 실행** (VIBE 원칙: 요구사항 먼저)
+
+### 외부 LLM 통합 (선택적)
+
+GPT/Gemini가 활성화되어 있으면 특정 에이전트가 자동으로 활용합니다:
+
+| 에이전트 | 외부 LLM | 용도 |
+|----------|----------|------|
+| framework-docs-agent | Gemini | context7 문서 부재 시 웹 검색으로 최신 문서 보강 |
+| security-advisory-agent | GPT | CVE/보안 취약점 DB 지식 보강 |
+| python-reviewer | GPT Codex | Python 코드 리뷰 2nd opinion |
+
+**동작 방식:**
+```
+Primary: Task(Haiku) 실행
+      ↓
+[외부 LLM 활성화?]
+      ↓ YES
+외부 LLM 호출 → 결과 병합
+      ↓ NO
+Primary 결과만 사용
+```
+
+> **후방 호환성**: GPT/Gemini가 설정되지 않아도 Primary(Haiku)만으로 정상 작동합니다.
 
 ---
 

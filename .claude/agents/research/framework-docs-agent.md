@@ -37,6 +37,30 @@ resolve-library-id "django" → django
 get-library-docs "django" "authentication" → Auth 문서
 ```
 
+## External LLM Enhancement (Optional)
+
+**Gemini 활성화 시** 웹 검색 기반 최신 문서 보강:
+
+```
+Primary: Task(Haiku) + context7
+      ↓
+[Gemini enabled?]
+      ↓ YES
+mcp__vibe-gemini__gemini_chat(
+  prompt: "[framework] [version] latest API changes and best practices",
+  systemPrompt: "You are a framework documentation expert. Provide latest API info."
+)
+      ↓
+결과 병합 → SPEC Context 반영
+```
+
+**활용 시점:**
+- context7에서 최신 버전 문서 부재 시
+- Breaking changes 확인 필요 시
+- 공식 문서 외 실전 패턴 검색 시
+
+**Gemini 미설정 시:** Primary만으로 정상 작동
+
 ## Research Areas
 
 ### Frontend

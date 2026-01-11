@@ -128,9 +128,33 @@ For [payment feature]:
 - CWE Database: [url]
 ```
 
+## External LLM Enhancement (Optional)
+
+**GPT 활성화 시** CVE/보안 취약점 DB 지식 보강:
+
+```text
+Primary: Task(Haiku) + OWASP/CVE 검색
+      ↓
+[GPT enabled?]
+      ↓ YES
+mcp__vibe-gpt__gpt_chat(
+  prompt: "Security vulnerabilities for [feature]. Check recent CVEs, OWASP risks.",
+  systemPrompt: "You are a security expert. Provide CVE details and mitigations."
+)
+      ↓
+결과 병합 → SPEC Constraints 반영
+```
+
+**활용 시점:**
+- 최신 CVE 정보 필요 시
+- 특정 라이브러리 취약점 확인 시
+- 규정 준수(PCI-DSS, GDPR) 상세 검토 시
+
+**GPT 미설정 시:** Primary만으로 정상 작동
+
 ## Integration with /vibe.spec
 
-```
+```text
 /vibe.spec "결제 기능"
 
 → security-advisory-agent 실행:

@@ -119,10 +119,34 @@ Python 코드 전문 리뷰 에이전트
 
 ## Usage
 
-```
+```text
 Task(
   model: "haiku",
   subagent_type: "Explore",
   prompt: "Python review for [files]. Check PEP8, type hints, async patterns."
 )
 ```
+
+## External LLM Enhancement (Optional)
+
+**GPT Codex 활성화 시** Python 전문 2nd opinion:
+
+```text
+Primary: Task(Haiku) Python 리뷰
+      ↓
+[GPT enabled?]
+      ↓ YES
+mcp__vibe-gpt__gpt_analyze_architecture(
+  code: "[Python code to review]",
+  context: "Python code review. Check PEP8, type hints, async patterns, Django/FastAPI best practices."
+)
+      ↓
+결과 비교 → 공통 이슈는 신뢰도 상승, 차이점은 추가 검토
+```
+
+**활용 시점:**
+- 복잡한 async/await 패턴 검토 시
+- Django/FastAPI 아키텍처 리뷰 시
+- 타입 힌트 누락 심각할 때
+
+**GPT 미설정 시:** Primary만으로 정상 작동
