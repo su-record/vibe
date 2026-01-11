@@ -80,7 +80,51 @@ vibe status             # Check current settings
 - Tech stack: Confirm existing stack or suggest new
 - Design reference: UI/UX to reference
 
-### 3. Write SPEC Document (PTCF Structure)
+### 3. Parallel Research (v2.1.0) - Run AFTER requirements confirmed
+
+**⚠️ IMPORTANT: Research starts ONLY after requirements are confirmed via Q&A**
+
+Requirements confirmed when:
+- Feature type decided (e.g., "passkey authentication")
+- Tech stack confirmed (e.g., "React + Supabase")
+- Core requirements collected
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🔍 PARALLEL RESEARCH AGENTS (After requirements confirmed)     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Task 1: best-practices-agent                                   │
+│  └── Best practices for [confirmed feature] + [confirmed stack] │
+│                                                                 │
+│  Task 2: framework-docs-agent                                   │
+│  └── Latest docs for [confirmed stack] (via context7)           │
+│                                                                 │
+│  Task 3: codebase-patterns-agent                                │
+│  └── Analyze similar patterns in existing codebase              │
+│                                                                 │
+│  Task 4: security-advisory-agent                                │
+│  └── Security advisories for [confirmed feature]                │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Execution (ALL in parallel):**
+```
+# Generate specific prompts based on confirmed requirements
+Task(model: "haiku", subagent_type: "Explore",
+     prompt: "Research best practices for [passkey auth] with [React + Supabase]")
+Task(model: "haiku", subagent_type: "Explore",
+     prompt: "Get Supabase Auth + WebAuthn docs from context7")
+Task(model: "haiku", subagent_type: "Explore",
+     prompt: "Find existing auth patterns in this codebase")
+Task(model: "haiku", subagent_type: "Explore",
+     prompt: "Check OWASP WebAuthn security guidelines")
+```
+
+**Research results are reflected in SPEC's Context section.**
+
+### 4. Write SPEC Document (PTCF Structure)
 
 Create `.vibe/specs/{feature-name}.md`:
 
@@ -162,7 +206,7 @@ Define AI role and expertise for implementation
 </acceptance>
 ```
 
-### 4. Create Feature File (BDD) - Required
+### 5. Create Feature File (BDD) - Required
 
 **Must** create `.vibe/features/{feature-name}.feature` file.
 
@@ -202,7 +246,7 @@ Scenario: {title}
 | 1 | AC-1 | ⬜ |
 ```
 
-### 5. Ambiguity Scan - Required
+### 6. Ambiguity Scan - Required
 
 After creating SPEC draft, **must perform systematic ambiguity check**.
 
@@ -248,7 +292,7 @@ After creating SPEC draft, **must perform systematic ambiguity check**.
 Please clarify the above items.
 ```
 
-### 6. Quality Validation
+### 7. Quality Validation
 
 Self-evaluate against `.vibe/rules/quality/checklist.md` (0-100 score)
 

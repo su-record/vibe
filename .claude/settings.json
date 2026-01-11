@@ -93,29 +93,29 @@
         ]
       },
       {
-        "matcher": "analyze|분석|analysis",
+        "matcher": "버그.*(해결|수정|고침)|문제.*(해결|수정)|bug.*(fixed|resolved|solved)|issue.*(fixed|resolved)|PR.*(merged|머지)",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[ANALYZE MODE] Thoroughly examine the codebase. Use vibe_analyze_complexity and vibe_find_references for deep analysis.'"
+            "command": "echo '[COMPOUND TRIGGER] Significant solution detected. Consider /vibe.compound to document for future reference.'"
           }
         ]
       },
       {
-        "matcher": "debug|디버그|debugging",
+        "matcher": "코드\\s*리뷰|code\\s*review|PR\\s*리뷰|리뷰.*해줘|review.*this",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[DEBUG MODE] Focus on finding root cause. Check logs, trace execution flow, verify assumptions step by step.'"
+            "command": "echo '[REVIEW MODE] Use /vibe.review for parallel code review with 13+ specialized agents. P1=critical, P2=important, P3=nice-to-have.'"
           }
         ]
       },
       {
-        "matcher": "test|테스트|testing",
+        "matcher": "e2e.*테스트|e2e.*test|playwright|브라우저.*테스트|browser.*test",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[TEST MODE] Write comprehensive tests. Cover edge cases, error scenarios, and happy paths.'"
+            "command": "echo '[E2E MODE] Use /vibe.e2e for Playwright-based browser testing. Supports visual regression and video recording.'"
           }
         ]
       }
