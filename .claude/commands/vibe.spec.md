@@ -56,40 +56,6 @@ vibe status             # Check current settings
 
 ## Process
 
-### 0. Parallel Research (NEW - v2.1.0)
-
-**SPEC 작성 전 4개 리서치 에이전트 병렬 실행:**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  🔍 PARALLEL RESEARCH AGENTS                                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Task 1: best-practices-agent                                   │
-│  └── 업계 표준, 권장 패턴 조사                                   │
-│                                                                 │
-│  Task 2: framework-docs-agent                                   │
-│  └── 관련 프레임워크 최신 문서 수집 (context7 활용)              │
-│                                                                 │
-│  Task 3: codebase-patterns-agent                                │
-│  └── 기존 코드베이스 패턴 분석                                   │
-│                                                                 │
-│  Task 4: security-advisory-agent                                │
-│  └── 보안 권고사항, OWASP 체크                                   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**실행 방법 (모두 병렬 호출):**
-```
-Task(model: "haiku", subagent_type: "Explore", prompt: "Research best practices for [feature]")
-Task(model: "haiku", subagent_type: "Explore", prompt: "Get framework docs for [tech stack]")
-Task(model: "haiku", subagent_type: "Explore", prompt: "Analyze existing patterns in codebase for [feature]")
-Task(model: "haiku", subagent_type: "Explore", prompt: "Check security advisories for [feature]")
-```
-
-**리서치 결과는 SPEC의 Context 섹션에 자동 반영됨.**
-
 ### 1. Project Analysis
 
 **Existing project** (`vibe init`):
@@ -114,7 +80,51 @@ Task(model: "haiku", subagent_type: "Explore", prompt: "Check security advisorie
 - Tech stack: Confirm existing stack or suggest new
 - Design reference: UI/UX to reference
 
-### 3. Write SPEC Document (PTCF Structure)
+### 3. Parallel Research (v2.1.0) - 요구사항 확정 후 실행
+
+**⚠️ 중요: 문답으로 요구사항이 확정된 후에만 리서치 시작**
+
+요구사항 확정 시점:
+- 기능 유형 결정됨 (예: "패스키 인증")
+- 기술 스택 확정됨 (예: "React + Supabase")
+- 핵심 요구사항 수집 완료
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🔍 PARALLEL RESEARCH AGENTS (요구사항 확정 후)                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Task 1: best-practices-agent                                   │
+│  └── "[확정된 기능] + [확정된 스택]" 베스트 프랙티스             │
+│                                                                 │
+│  Task 2: framework-docs-agent                                   │
+│  └── "[확정된 스택]" 최신 문서 수집 (context7)                   │
+│                                                                 │
+│  Task 3: codebase-patterns-agent                                │
+│  └── 기존 코드베이스에서 유사 패턴 분석                          │
+│                                                                 │
+│  Task 4: security-advisory-agent                                │
+│  └── "[확정된 기능]" 관련 보안 권고                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**실행 방법 (모두 병렬 호출):**
+```
+# 확정된 요구사항 기반으로 구체적인 프롬프트 생성
+Task(model: "haiku", subagent_type: "Explore",
+     prompt: "Research best practices for [패스키 인증] with [React + Supabase]")
+Task(model: "haiku", subagent_type: "Explore",
+     prompt: "Get Supabase Auth + WebAuthn docs from context7")
+Task(model: "haiku", subagent_type: "Explore",
+     prompt: "Find existing auth patterns in this codebase")
+Task(model: "haiku", subagent_type: "Explore",
+     prompt: "Check OWASP WebAuthn security guidelines")
+```
+
+**리서치 결과는 SPEC의 Context 섹션에 반영됨.**
+
+### 4. Write SPEC Document (PTCF Structure)
 
 Create `.vibe/specs/{feature-name}.md`:
 
@@ -196,7 +206,7 @@ Define AI role and expertise for implementation
 </acceptance>
 ```
 
-### 4. Create Feature File (BDD) - Required
+### 5. Create Feature File (BDD) - Required
 
 **Must** create `.vibe/features/{feature-name}.feature` file.
 
@@ -236,7 +246,7 @@ Scenario: {title}
 | 1 | AC-1 | ⬜ |
 ```
 
-### 5. Ambiguity Scan - Required
+### 6. Ambiguity Scan - Required
 
 After creating SPEC draft, **must perform systematic ambiguity check**.
 
@@ -282,7 +292,7 @@ After creating SPEC draft, **must perform systematic ambiguity check**.
 Please clarify the above items.
 ```
 
-### 6. Quality Validation
+### 7. Quality Validation
 
 Self-evaluate against `.vibe/rules/quality/checklist.md` (0-100 score)
 

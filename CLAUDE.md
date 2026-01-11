@@ -90,14 +90,20 @@ Playwright 기반 자동화 테스트:
 
 ### 리서치 에이전트 강화
 
-`/vibe.spec` 실행 시 4개 병렬 리서치:
+`/vibe.spec` 실행 시 **요구사항 확정 후** 4개 병렬 리서치:
+
+```
+문답으로 요구사항 확정 → 병렬 리서치 실행 → SPEC 작성
+```
 
 | 에이전트 | 역할 |
 |----------|------|
-| best-practices-agent | 업계 표준 조사 |
-| framework-docs-agent | 최신 문서 수집 (context7) |
-| codebase-patterns-agent | 기존 패턴 분석 |
-| security-advisory-agent | 보안 권고 확인 |
+| best-practices-agent | 확정된 기능+스택 베스트 프랙티스 |
+| framework-docs-agent | 확정된 스택 최신 문서 (context7) |
+| codebase-patterns-agent | 기존 유사 패턴 분석 |
+| security-advisory-agent | 확정된 기능 보안 권고 |
+
+**⚠️ 리서치는 요구사항 확정 후 실행** (VIBE 원칙: 요구사항 먼저)
 
 ## PTCF Structure
 
@@ -236,7 +242,8 @@ vibe init
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  1. /vibe.spec "기능명"                                         │
-│     ├── 4개 병렬 리서치 에이전트                                 │
+│     ├── 문답으로 요구사항 수집                                   │
+│     ├── 요구사항 확정 후 4개 병렬 리서치                         │
 │     └── SPEC 문서 생성                                          │
 │                                                                 │
 │  2. /vibe.run "기능명" ultrawork                                │
