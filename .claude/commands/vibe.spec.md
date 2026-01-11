@@ -56,6 +56,40 @@ vibe status             # Check current settings
 
 ## Process
 
+### 0. Parallel Research (NEW - v2.1.0)
+
+**SPEC 작성 전 4개 리서치 에이전트 병렬 실행:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🔍 PARALLEL RESEARCH AGENTS                                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Task 1: best-practices-agent                                   │
+│  └── 업계 표준, 권장 패턴 조사                                   │
+│                                                                 │
+│  Task 2: framework-docs-agent                                   │
+│  └── 관련 프레임워크 최신 문서 수집 (context7 활용)              │
+│                                                                 │
+│  Task 3: codebase-patterns-agent                                │
+│  └── 기존 코드베이스 패턴 분석                                   │
+│                                                                 │
+│  Task 4: security-advisory-agent                                │
+│  └── 보안 권고사항, OWASP 체크                                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**실행 방법 (모두 병렬 호출):**
+```
+Task(model: "haiku", subagent_type: "Explore", prompt: "Research best practices for [feature]")
+Task(model: "haiku", subagent_type: "Explore", prompt: "Get framework docs for [tech stack]")
+Task(model: "haiku", subagent_type: "Explore", prompt: "Analyze existing patterns in codebase for [feature]")
+Task(model: "haiku", subagent_type: "Explore", prompt: "Check security advisories for [feature]")
+```
+
+**리서치 결과는 SPEC의 Context 섹션에 자동 반영됨.**
+
 ### 1. Project Analysis
 
 **Existing project** (`vibe init`):

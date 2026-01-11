@@ -93,6 +93,33 @@
         ]
       },
       {
+        "matcher": "it's fixed|해결됨|fixed|solved|머지됨|merged",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[COMPOUND TRIGGER] Solution detected! Consider running /vibe.compound to document this solution for future reference.'"
+          }
+        ]
+      },
+      {
+        "matcher": "review|리뷰|코드리뷰",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[REVIEW MODE] Use /vibe.review for parallel code review with 13+ specialized agents. P1=critical, P2=important, P3=nice-to-have.'"
+          }
+        ]
+      },
+      {
+        "matcher": "e2e|playwright|브라우저테스트",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[E2E MODE] Use /vibe.e2e for Playwright-based browser testing. Supports visual regression and video recording.'"
+          }
+        ]
+      },
+      {
         "matcher": "analyze|분석|analysis",
         "hooks": [
           {
