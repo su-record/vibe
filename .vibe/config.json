@@ -12,5 +12,19 @@
       "role": "exploration",
       "description": "Gemini 3 Flash/Pro (탐색, UI/UX)"
     }
+  },
+  "stacks": [
+    {
+      "type": "typescript-node",
+      "path": ""
+    }
+  ],
+  "details": {
+    "databases": [
+      "SQLite"
+    ],
+    "stateManagement": [],
+    "hosting": [],
+    "cicd": []
   }
 }

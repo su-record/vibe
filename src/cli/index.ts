@@ -1314,6 +1314,51 @@ async function update(): Promise<void> {
       log('   ✅ constitution.md 업데이트 완료\n');
     }
 
+    // CLAUDE.md 업데이트
+    const vibeClaudeMd = path.join(__dirname, '../../CLAUDE.md');
+    const projectClaudeMd = path.join(projectRoot, 'CLAUDE.md');
+
+    if (fs.existsSync(vibeClaudeMd)) {
+      const vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
+
+      if (fs.existsSync(projectClaudeMd)) {
+        const existingContent = fs.readFileSync(projectClaudeMd, 'utf-8');
+
+        // vibe 섹션 찾아서 교체 (# VIBE 부터 다음 --- 또는 끝까지)
+        const vibeStartMarker = '# VIBE';
+        const sectionSeparator = '\n---\n';
+
+        if (existingContent.includes(vibeStartMarker)) {
+          // 기존 vibe 섹션 교체
+          const vibeStartIdx = existingContent.indexOf(vibeStartMarker);
+          const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd();
+
+          // vibe 섹션 뒤에 다른 섹션이 있는지 확인
+          const afterVibeStart = existingContent.substring(vibeStartIdx);
+          const nextSeparatorIdx = afterVibeStart.indexOf(sectionSeparator);
+
+          let afterVibe = '';
+          if (nextSeparatorIdx !== -1) {
+            afterVibe = afterVibeStart.substring(nextSeparatorIdx);
+          }
+
+          const newContent = beforeVibe + (beforeVibe ? '\n\n---\n\n' : '') + vibeContent + afterVibe;
+          fs.writeFileSync(projectClaudeMd, newContent);
+          log('   ✅ CLAUDE.md vibe 섹션 업데이트 완료\n');
+        } else if (!existingContent.includes('/vibe.spec')) {
+          // vibe 섹션이 없으면 추가
+          const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
+          fs.writeFileSync(projectClaudeMd, mergedContent);
+          log('   ✅ CLAUDE.md에 vibe 섹션 추가\n');
+        } else {
+          log('   ℹ️  CLAUDE.md vibe 섹션 유지\n');
+        }
+      } else {
+        fs.copyFileSync(vibeClaudeMd, projectClaudeMd);
+        log('   ✅ CLAUDE.md 생성\n');
+      }
+    }
+
     // .vibe/rules/ 업데이트
     const rulesSource = path.join(__dirname, '../../.vibe/rules');
     const rulesTarget = path.join(vibeDir, 'rules');

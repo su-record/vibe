@@ -83,7 +83,7 @@
 ### Backend
 - Language: TypeScript/Node.js
 - Framework: Express/Fastify
-- Database: (프로젝트에 맞게 설정)
+- Database: SQLite
 
 ### Frontend
 - Framework: {Flutter / React / etc.}

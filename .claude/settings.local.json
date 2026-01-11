@@ -4,7 +4,17 @@
       "Bash(npx tsc:*)",
       "Bash(npm login:*)",
       "Bash(npm whoami:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(where:*)",
+      "Bash(npm update:*)",
+      "Bash(vibe --version:*)",
+      "Bash(vibe upgrade:*)",
+      "Bash(npm config:*)",
+      "Bash(claude --version)",
+      "Bash(claude mcp list:*)",
+      "Bash(C:Usersendba.localbinclaude.exe --version)",
+      "Bash(\"C:\\\\Users\\\\endba\\\\.local\\\\bin\\\\claude.exe\" --version)",
+      "Bash(npm cache clean:*)"
     ]
   }
 }
