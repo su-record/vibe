@@ -139,33 +139,59 @@ const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
 
 /**
  * Claude CLI 경로 찾기 (Windows/macOS/Linux 지원)
+ * 네이티브 설치와 npm 설치 모두 지원
  */
 function getClaudePath(): string {
-  // 먼저 기본 'claude' 시도
+  // 1. PATH에서 'claude' 찾기 (npm 설치 또는 PATH에 추가된 네이티브)
   try {
     execSync('claude --version', { stdio: 'pipe' });
     return 'claude';
   } catch {
-    // Windows에서 일반적인 설치 경로들 확인
-    if (process.platform === 'win32') {
-      const possiblePaths = [
-        path.join(os.homedir(), 'AppData', 'Local', 'Programs', '@anthropic', 'claude-code', 'claude.exe'),
-        path.join(os.homedir(), 'AppData', 'Local', 'AnthropicClaude', 'claude.exe'),
-        path.join(os.homedir(), '.claude', 'local', 'claude.exe'),
-        'C:\\Program Files\\Anthropic\\Claude\\claude.exe',
-        'C:\\Program Files (x86)\\Anthropic\\Claude\\claude.exe',
-      ];
+    // PATH에 없으면 플랫폼별 기본 경로 확인
+  }
 
-      for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
-          return `"${p}"`;
-        }
+  // 2. 플랫폼별 네이티브 설치 경로 확인
+  if (process.platform === 'win32') {
+    // Windows 네이티브 설치 경로
+    const possiblePaths = [
+      // 네이티브 설치 (claude install)
+      path.join(os.homedir(), '.local', 'bin', 'claude.exe'),
+      // npm 전역 설치
+      path.join(process.env.APPDATA || '', 'npm', 'claude.cmd'),
+      // 기타 가능한 경로
+      path.join(os.homedir(), 'AppData', 'Local', 'Programs', '@anthropic', 'claude-code', 'claude.exe'),
+      path.join(os.homedir(), 'AppData', 'Local', 'AnthropicClaude', 'claude.exe'),
+      path.join(os.homedir(), '.claude', 'local', 'claude.exe'),
+      'C:\\Program Files\\Anthropic\\Claude\\claude.exe',
+      'C:\\Program Files (x86)\\Anthropic\\Claude\\claude.exe',
+    ];
+
+    for (const p of possiblePaths) {
+      if (p && fs.existsSync(p)) {
+        return `"${p}"`;
       }
     }
+  } else {
+    // macOS/Linux 네이티브 설치 경로
+    const possiblePaths = [
+      // 네이티브 설치 (claude install)
+      path.join(os.homedir(), '.local', 'bin', 'claude'),
+      // npm 전역 설치 (일반적인 경로)
+      '/usr/local/bin/claude',
+      '/usr/bin/claude',
+      // macOS Homebrew
+      '/opt/homebrew/bin/claude',
+    ];
 
-    // 찾지 못하면 기본값 반환 (에러는 호출 측에서 처리)
-    return 'claude';
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        return p;
+      }
+    }
   }
+
+  // 찾지 못하면 기본값 반환 (에러는 호출 측에서 처리)
+  return 'claude';
 }
 
 // Claude CLI 경로 캐시
@@ -175,6 +201,125 @@ function claudeCmd(): string {
     _claudePath = getClaudePath();
   }
   return _claudePath;
+}
+
+/**
+ * Claude CLI가 사용 가능한지 확인
+ */
+function isClaudeCliAvailable(): boolean {
+  const cmd = claudeCmd();
+  try {
+    execSync(`${cmd} --version`, { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Claude 설정 파일 경로 가져오기
+ */
+function getClaudeSettingsPath(): string {
+  return path.join(os.homedir(), '.claude', 'settings.json');
+}
+
+/**
+ * Claude 설정 파일 읽기
+ */
+interface ClaudeSettings {
+  permissions?: { allow?: string[] };
+  mcpServers?: Record<string, McpServerConfig>;
+  [key: string]: unknown;
+}
+
+interface McpServerConfig {
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
+function readClaudeSettings(): ClaudeSettings {
+  const settingsPath = getClaudeSettingsPath();
+  if (fs.existsSync(settingsPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(settingsPath, 'utf-8')) as ClaudeSettings;
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+/**
+ * Claude 설정 파일 쓰기
+ */
+function writeClaudeSettings(settings: ClaudeSettings): void {
+  const settingsPath = getClaudeSettingsPath();
+  const dir = path.dirname(settingsPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+}
+
+/**
+ * MCP 서버 직접 추가 (CLI 없이 설정 파일 수정)
+ */
+function addMcpServer(name: string, config: McpServerConfig): void {
+  const settings = readClaudeSettings();
+  if (!settings.mcpServers) {
+    settings.mcpServers = {};
+  }
+  settings.mcpServers[name] = config;
+  writeClaudeSettings(settings);
+}
+
+/**
+ * MCP 서버 직접 제거 (CLI 없이 설정 파일 수정)
+ */
+function removeMcpServer(name: string): void {
+  const settings = readClaudeSettings();
+  if (settings.mcpServers && settings.mcpServers[name]) {
+    delete settings.mcpServers[name];
+    writeClaudeSettings(settings);
+  }
+}
+
+/**
+ * MCP 등록 (CLI 또는 직접 설정 파일 수정)
+ */
+function registerMcp(name: string, config: McpServerConfig): void {
+  if (isClaudeCliAvailable()) {
+    // CLI 사용
+    const argsStr = config.args ? config.args.map(a => `"${a}"`).join(' ') : '';
+    const envStr = config.env ? Object.entries(config.env).map(([k, v]) => `-e ${k}=${v}`).join(' ') : '';
+    const cmd = `${claudeCmd()} mcp add ${name} -s user ${envStr} -- ${config.command} ${argsStr}`.trim();
+    try {
+      execSync(cmd, { stdio: 'pipe' });
+    } catch {
+      // CLI 실패시 직접 설정 파일 수정
+      addMcpServer(name, config);
+    }
+  } else {
+    // CLI 없으면 직접 설정 파일 수정
+    addMcpServer(name, config);
+  }
+}
+
+/**
+ * MCP 제거 (CLI 또는 직접 설정 파일 수정)
+ */
+function unregisterMcp(name: string): void {
+  if (isClaudeCliAvailable()) {
+    try {
+      execSync(`${claudeCmd()} mcp remove ${name}`, { stdio: 'pipe' });
+    } catch { /* ignore */ }
+    try {
+      execSync(`${claudeCmd()} mcp remove ${name} -s user`, { stdio: 'pipe' });
+    } catch { /* ignore */ }
+  }
+  // 항상 설정 파일에서도 제거 (중복 가능)
+  removeMcpServer(name);
 }
 
 function log(message: string): void {
@@ -272,7 +417,11 @@ function getLLMAuthStatus(): LLMStatusMap {
 
   // Gemini 상태 확인
   try {
-    const tokenPath = path.join(os.homedir(), '.config', 'vibe', 'gemini-auth.json');
+    // Windows: %APPDATA%/vibe, macOS/Linux: ~/.config/vibe
+    const geminiConfigDir = process.platform === 'win32'
+      ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+      : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+    const tokenPath = path.join(geminiConfigDir, 'gemini-auth.json');
     if (fs.existsSync(tokenPath)) {
       const tokenData = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
       if (tokenData.accounts && tokenData.accounts.length > 0) {
@@ -743,20 +892,15 @@ async function init(projectName?: string): Promise<void> {
     const gptMcpPath = path.join(__dirname, '../lib/gpt-mcp.js');
 
     // 0. 기존 hi-ai/vibe MCP 제거 (마이그레이션 - 내장 도구로 전환)
-    try {
-      execSync(`${claudeCmd()} mcp remove vibe`, { stdio: 'pipe' });
-      execSync(`${claudeCmd()} mcp remove vibe -s user`, { stdio: 'pipe' });
-    } catch (e) {
-      // 이미 없으면 무시
-    }
+    unregisterMcp('vibe');
 
     // 1. vibe-gemini MCP
     if (fs.existsSync(geminiMcpPath)) {
       try {
-        execSync(`${claudeCmd()} mcp add vibe-gemini -s user node "${geminiMcpPath}"`, { stdio: 'pipe' });
+        registerMcp('vibe-gemini', { command: 'node', args: [geminiMcpPath] });
         log('   ✅ vibe-gemini MCP 등록 완료 (전역)\n');
       } catch (e: any) {
-        if (e.message.includes('already exists')) {
+        if (e.message?.includes('already exists')) {
           log('   ℹ️  vibe-gemini MCP 이미 등록됨\n');
         }
       }
@@ -765,10 +909,10 @@ async function init(projectName?: string): Promise<void> {
     // 3. vibe-gpt MCP
     if (fs.existsSync(gptMcpPath)) {
       try {
-        execSync(`${claudeCmd()} mcp add vibe-gpt -s user node "${gptMcpPath}"`, { stdio: 'pipe' });
+        registerMcp('vibe-gpt', { command: 'node', args: [gptMcpPath] });
         log('   ✅ vibe-gpt MCP 등록 완료 (전역)\n');
       } catch (e: any) {
-        if (e.message.includes('already exists')) {
+        if (e.message?.includes('already exists')) {
           log('   ℹ️  vibe-gpt MCP 이미 등록됨\n');
         }
       }
@@ -776,10 +920,10 @@ async function init(projectName?: string): Promise<void> {
 
     // 4. Context7 MCP
     try {
-      execSync(`${claudeCmd()} mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest`, { stdio: 'pipe' });
+      registerMcp('context7', { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] });
       log('   ✅ Context7 MCP 등록 완료 (라이브러리 문서 검색)\n');
     } catch (e: any) {
-      if (e.message.includes('already exists')) {
+      if (e.message?.includes('already exists')) {
         log('   ℹ️  Context7 MCP 이미 등록됨\n');
       } else {
         log('   ⚠️  Context7 MCP 수동 등록 필요\n');
@@ -1315,44 +1459,41 @@ async function update(): Promise<void> {
     // MCP 등록 (hi-ai는 내장 도구로 전환됨)
     try {
       // 기존 vibe MCP 제거 (hi-ai 기반 → 내장 도구로 마이그레이션)
-      try { execSync(`${claudeCmd()} mcp remove vibe`, { stdio: 'pipe' }); } catch (e) {}
-      try { execSync(`${claudeCmd()} mcp remove vibe -s user`, { stdio: 'pipe' }); } catch (e) {}
+      unregisterMcp('vibe');
 
       // vibe-gemini MCP 등록
-      try { execSync(`${claudeCmd()} mcp remove vibe-gemini`, { stdio: 'pipe' }); } catch (e) {}
-      try { execSync(`${claudeCmd()} mcp remove vibe-gemini -s user`, { stdio: 'pipe' }); } catch (e) {}
+      unregisterMcp('vibe-gemini');
       if (fs.existsSync(geminiMcpPath)) {
         try {
-          execSync(`${claudeCmd()} mcp add vibe-gemini -s user node "${geminiMcpPath}"`, { stdio: 'pipe' });
+          registerMcp('vibe-gemini', { command: 'node', args: [geminiMcpPath] });
           log('   ✅ vibe-gemini MCP 전역 등록 완료\n');
         } catch (e: any) {
-          if (e.message.includes('already exists')) {
+          if (e.message?.includes('already exists')) {
             log('   ℹ️  vibe-gemini MCP 이미 등록됨\n');
           }
         }
       }
 
       // vibe-gpt MCP 등록
-      try { execSync(`${claudeCmd()} mcp remove vibe-gpt`, { stdio: 'pipe' }); } catch (e) {}
-      try { execSync(`${claudeCmd()} mcp remove vibe-gpt -s user`, { stdio: 'pipe' }); } catch (e) {}
+      unregisterMcp('vibe-gpt');
       if (fs.existsSync(gptMcpPath)) {
         try {
-          execSync(`${claudeCmd()} mcp add vibe-gpt -s user node "${gptMcpPath}"`, { stdio: 'pipe' });
+          registerMcp('vibe-gpt', { command: 'node', args: [gptMcpPath] });
           log('   ✅ vibe-gpt MCP 전역 등록 완료\n');
         } catch (e: any) {
-          if (e.message.includes('already exists')) {
+          if (e.message?.includes('already exists')) {
             log('   ℹ️  vibe-gpt MCP 이미 등록됨\n');
           }
         }
       }
 
       // context7 MCP 등록
-      try { execSync(`${claudeCmd()} mcp remove context7`, { stdio: 'pipe' }); } catch (e) {}
+      unregisterMcp('context7');
       try {
-        execSync(`${claudeCmd()} mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest`, { stdio: 'pipe' });
+        registerMcp('context7', { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] });
         log('   ✅ context7 MCP 전역 등록 완료\n');
       } catch (e: any) {
-        if (e.message.includes('already exists')) {
+        if (e.message?.includes('already exists')) {
           log('   ℹ️  context7 MCP 이미 등록됨\n');
         }
       }
@@ -1404,19 +1545,11 @@ function remove(): void {
   console.log('🗑️  vibe 제거 중...\n');
 
   // MCP 서버 제거
-  try {
-    execSync(`${claudeCmd()} mcp remove vibe`, { stdio: 'pipe' });
-    console.log('   ✅ vibe MCP 제거 완료\n');
-  } catch (e) {
-    console.log('   ℹ️  vibe MCP 이미 제거됨 또는 없음\n');
-  }
-
-  try {
-    execSync(`${claudeCmd()} mcp remove context7`, { stdio: 'pipe' });
-    console.log('   ✅ context7 MCP 제거 완료\n');
-  } catch (e) {
-    console.log('   ℹ️  context7 MCP 이미 제거됨 또는 없음\n');
-  }
+  unregisterMcp('vibe');
+  unregisterMcp('vibe-gemini');
+  unregisterMcp('vibe-gpt');
+  unregisterMcp('context7');
+  console.log('   ✅ MCP 서버 제거 완료\n');
 
   // .vibe 폴더 제거
   if (fs.existsSync(vibeDir)) {
@@ -1524,11 +1657,12 @@ ${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : '
   const envKey = llmConfig.envKey;
 
   try {
-    try {
-      execSync(`${claudeCmd()} mcp remove ${llmConfig.name} -s user`, { stdio: 'pipe' });
-    } catch (e) {}
-
-    execSync(`${claudeCmd()} mcp add ${llmConfig.name} -s user -e ${envKey}=${apiKey} -- npx -y ${llmConfig.package}`, { stdio: 'pipe' });
+    unregisterMcp(llmConfig.name);
+    registerMcp(llmConfig.name, {
+      command: 'npx',
+      args: ['-y', llmConfig.package],
+      env: { [envKey]: apiKey }
+    });
 
     console.log(`
 ✅ ${llmType.toUpperCase()} 활성화 완료! (전역)
@@ -1538,13 +1672,11 @@ MCP: ${llmConfig.name}
 
 모든 프로젝트에서 /vibe.run 실행 시 자동으로 활용됩니다.
 
-비활성화: vibe ${llmType} --remove
+비활성화: vibe remove ${llmType}
     `);
   } catch (e) {
     console.log(`
-⚠️  MCP 등록 실패. 수동으로 등록하세요:
-
-${claudeCmd()} mcp add ${llmConfig.name} -s user -e ${envKey}=<your-key> -- npx -y ${llmConfig.package}
+⚠️  MCP 등록 실패. ~/.claude/settings.json에 수동으로 추가하세요.
     `);
   }
 }
@@ -1569,13 +1701,8 @@ function removeExternalLLM(llmType: string): void {
 
   const llmConfig = EXTERNAL_LLMS[llmType];
 
-  try {
-    try { execSync(`${claudeCmd()} mcp remove ${llmConfig.name}`, { stdio: 'pipe' }); } catch (e) {}
-    try { execSync(`${claudeCmd()} mcp remove ${llmConfig.name} -s user`, { stdio: 'pipe' }); } catch (e) {}
-    console.log(`✅ ${llmType.toUpperCase()} 비활성화 완료`);
-  } catch (e) {
-    console.log(`ℹ️  ${llmType.toUpperCase()} MCP가 등록되어 있지 않습니다.`);
-  }
+  unregisterMcp(llmConfig.name);
+  console.log(`✅ ${llmType.toUpperCase()} 비활성화 완료`);
 }
 
 // ============================================================================
@@ -1639,6 +1766,24 @@ ChatGPT Plus 또는 Pro 구독이 있으면 Codex API를 사용할 수 있습니
         };
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
       } catch (e) {}
+    }
+
+    // MCP 서버 등록
+    try {
+      const mcpPath = path.join(__dirname, '../lib/gpt-mcp.js');
+
+      unregisterMcp('vibe-gpt');
+      registerMcp('vibe-gpt', { command: 'node', args: [mcpPath] });
+
+      console.log(`
+✅ vibe-gpt MCP 서버 등록 완료! (전역)
+
+이제 모든 프로젝트에서 GPT 도구를 사용할 수 있습니다.
+      `);
+    } catch (mcpError) {
+      console.log(`
+⚠️  MCP 서버 등록 실패. ~/.claude/settings.json에 수동으로 추가하세요.
+      `);
     }
 
     process.exit(0);
@@ -1837,8 +1982,8 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
     try {
       const mcpPath = path.join(__dirname, '../lib/gemini-mcp.js');
 
-      try { execSync(`${claudeCmd()} mcp remove vibe-gemini -s user`, { stdio: 'ignore' }); } catch (e) {}
-      execSync(`${claudeCmd()} mcp add vibe-gemini -s user node "${mcpPath}"`, { stdio: 'inherit' });
+      unregisterMcp('vibe-gemini');
+      registerMcp('vibe-gemini', { command: 'node', args: [mcpPath] });
 
       console.log(`
 ✅ vibe-gemini MCP 서버 등록 완료! (전역)
@@ -1851,8 +1996,7 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
       `);
     } catch (mcpError) {
       console.log(`
-⚠️  MCP 서버 등록 실패 (수동 등록 필요):
-  ${claudeCmd()} mcp add vibe-gemini -s user node "${path.join(__dirname, '../lib/gemini-mcp.js')}"
+⚠️  MCP 서버 등록 실패. ~/.claude/settings.json에 수동으로 추가하세요.
       `);
     }
 
