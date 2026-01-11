@@ -855,6 +855,74 @@ const STACK_NAMES: Record<string, { lang: string; framework: string }> = {
   'swift-ios': { lang: 'Swift', framework: 'iOS/SwiftUI' }
 };
 
+// 언어별 CLAUDE.md 규칙
+const LANGUAGE_RULES: Record<string, string> = {
+  typescript: `### TypeScript 규칙
+- \`any\` 타입 사용 금지 → \`unknown\` + 타입 가드 사용
+- \`as any\` 캐스팅 금지 → 적절한 인터페이스 정의
+- \`@ts-ignore\` 금지 → 타입 문제 근본 해결
+- 모든 함수에 반환 타입 명시`,
+  python: `### Python 규칙
+- 타입 힌트 필수 (함수 매개변수, 반환값)
+- \`# type: ignore\` 금지 → 타입 문제 근본 해결
+- f-string 사용 권장 (format() 대신)
+- 리스트 컴프리헨션 적절히 활용`,
+  go: `### Go 규칙
+- 에러 반환 즉시 처리 (if err != nil)
+- 명시적 에러 래핑 (fmt.Errorf with %w)
+- 인터페이스는 사용처에서 정의
+- 고루틴 누수 방지 (context 활용)`,
+  rust: `### Rust 규칙
+- unwrap()/expect() 프로덕션 코드 금지 → Result/Option 처리
+- unsafe 블록 최소화
+- 명시적 에러 타입 정의
+- 소유권/수명 주석 명확히`,
+  java: `### Java 규칙
+- Optional 적극 활용 (null 대신)
+- 불변 객체 선호 (final 필드)
+- 체크 예외 적절히 처리
+- 스트림 API 활용`,
+  kotlin: `### Kotlin 규칙
+- nullable 타입 명시 (?)
+- !! 연산자 금지 → safe call (?.) 사용
+- data class 적극 활용
+- 확장 함수로 유틸리티 구현`,
+  dart: `### Dart 규칙
+- null safety 준수 (? 및 ! 적절히 사용)
+- late 키워드 남용 금지
+- const 생성자 활용
+- 비동기 코드에 async/await 사용`,
+  swift: `### Swift 규칙
+- 옵셔널 강제 언래핑 금지 → guard let / if let 사용
+- 프로토콜 지향 프로그래밍 권장
+- 값 타입(struct) 우선 사용
+- @escaping 클로저 메모리 관리 주의`
+};
+
+function getLanguageRulesForStacks(stacks: Array<{ type: string; path: string }>): string {
+  const addedRules = new Set<string>();
+  const rules: string[] = [];
+
+  for (const stack of stacks) {
+    let langKey = '';
+    if (stack.type.startsWith('typescript')) langKey = 'typescript';
+    else if (stack.type.startsWith('python')) langKey = 'python';
+    else if (stack.type === 'go') langKey = 'go';
+    else if (stack.type === 'rust') langKey = 'rust';
+    else if (stack.type.startsWith('java')) langKey = 'java';
+    else if (stack.type.startsWith('kotlin')) langKey = 'kotlin';
+    else if (stack.type.startsWith('dart')) langKey = 'dart';
+    else if (stack.type.startsWith('swift')) langKey = 'swift';
+
+    if (langKey && !addedRules.has(langKey) && LANGUAGE_RULES[langKey]) {
+      addedRules.add(langKey);
+      rules.push(LANGUAGE_RULES[langKey]);
+    }
+  }
+
+  return rules.join('\n\n');
+}
+
 // ============================================================================
 // Main Commands
 // ============================================================================
@@ -1040,13 +1108,23 @@ async function init(projectName?: string): Promise<void> {
     };
     fs.writeFileSync(path.join(vibeDir, 'config.json'), JSON.stringify(config, null, 2));
 
-    // CLAUDE.md 병합
+    // CLAUDE.md 병합 (언어별 규칙 동적 추가)
     const vibeClaudeMd = path.join(__dirname, '../../CLAUDE.md');
     const projectClaudeMd = path.join(projectRoot, 'CLAUDE.md');
+    let vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
+
+    // 감지된 기술 스택에 따라 언어별 규칙 추가
+    const languageRules = getLanguageRulesForStacks(detectedStacks);
+    if (languageRules) {
+      // "### 에러 처리 필수" 앞에 언어별 규칙 삽입
+      vibeContent = vibeContent.replace(
+        '### 에러 처리 필수',
+        languageRules + '\n\n### 에러 처리 필수'
+      );
+    }
 
     if (fs.existsSync(projectClaudeMd)) {
       const existingContent = fs.readFileSync(projectClaudeMd, 'utf-8');
-      const vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
 
       if (!existingContent.includes('/vibe.spec')) {
         const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
@@ -1056,7 +1134,7 @@ async function init(projectName?: string): Promise<void> {
         log('   ℹ️  CLAUDE.md에 vibe 섹션 이미 존재\n');
       }
     } else {
-      fs.copyFileSync(vibeClaudeMd, projectClaudeMd);
+      fs.writeFileSync(projectClaudeMd, vibeContent);
       log('   ✅ CLAUDE.md 생성\n');
     }
 
@@ -1314,12 +1392,21 @@ async function update(): Promise<void> {
       log('   ✅ constitution.md 업데이트 완료\n');
     }
 
-    // CLAUDE.md 업데이트
+    // CLAUDE.md 업데이트 (언어별 규칙 동적 추가)
     const vibeClaudeMd = path.join(__dirname, '../../CLAUDE.md');
     const projectClaudeMd = path.join(projectRoot, 'CLAUDE.md');
 
     if (fs.existsSync(vibeClaudeMd)) {
-      const vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
+      let vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
+
+      // 감지된 기술 스택에 따라 언어별 규칙 추가
+      const languageRules = getLanguageRulesForStacks(detectedStacks);
+      if (languageRules) {
+        vibeContent = vibeContent.replace(
+          '### 에러 처리 필수',
+          languageRules + '\n\n### 에러 처리 필수'
+        );
+      }
 
       if (fs.existsSync(projectClaudeMd)) {
         const existingContent = fs.readFileSync(projectClaudeMd, 'utf-8');
@@ -1354,7 +1441,7 @@ async function update(): Promise<void> {
           log('   ℹ️  CLAUDE.md vibe 섹션 유지\n');
         }
       } else {
-        fs.copyFileSync(vibeClaudeMd, projectClaudeMd);
+        fs.writeFileSync(projectClaudeMd, vibeContent);
         log('   ✅ CLAUDE.md 생성\n');
       }
     }

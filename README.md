@@ -338,6 +338,23 @@ Then: {예상 결과}
 
 ## Coding Rules (.vibe/rules/)
 
+### 언어별 규칙 자동 적용
+
+`vibe init` / `vibe update` 시 프로젝트의 기술 스택을 감지하여 **해당 언어에 맞는 규칙만** CLAUDE.md에 추가합니다.
+
+| 감지 스택 | 적용 규칙 |
+|----------|----------|
+| TypeScript/Node.js | `any` 금지, 반환 타입 명시 등 |
+| Python | 타입 힌트 필수, f-string 권장 등 |
+| Go | 에러 즉시 처리, 인터페이스 사용처 정의 등 |
+| Rust | unwrap() 금지, unsafe 최소화 등 |
+| Java | Optional 활용, 불변 객체 선호 등 |
+| Kotlin | nullable 명시, !! 금지 등 |
+| Dart/Flutter | null safety, const 생성자 등 |
+| Swift/iOS | 옵셔널 강제 언래핑 금지 등 |
+
+> Python 프로젝트에는 Python 규칙만, TypeScript 프로젝트에는 TypeScript 규칙만 적용됩니다.
+
 ### 핵심 원칙
 
 - **수술적 정밀도**: 요청받지 않은 코드는 절대 수정하지 않음
