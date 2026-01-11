@@ -47,10 +47,20 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 
 **활성화 기능:**
 - 병렬 서브에이전트 탐색 (3+ 동시)
+- **백그라운드 에이전트** - 구현 중 다음 Phase 준비
+- **Phase 파이프라이닝** - Phase 간 대기 시간 제거
 - Boulder Loop (모든 Phase 완료까지 자동 진행)
 - 에러 자동 재시도 (최대 3회)
 - 컨텍스트 70%+ 시 자동 압축/저장
 - Phase 간 확인 없이 연속 실행
+
+**속도 비교:**
+
+| Mode | Phase당 | 5 Phase |
+|------|---------|---------|
+| Sequential | ~2분 | ~10분 |
+| Parallel Exploration | ~1.5분 | ~7.5분 |
+| **ULTRAWORK Pipeline** | **~1분** | **~5분** |
 
 ## Commands
 

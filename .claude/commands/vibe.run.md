@@ -461,14 +461,28 @@ Then: 로그인 성공 + JWT 토큰 반환
                               │
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│  STEP 3: IMPLEMENT (Task sonnet)                                │
-│  - Execute implementation with full context                     │
+│  STEP 3: IMPLEMENT + BACKGROUND AGENTS (PARALLEL)               │
+│                                                                 │
+│  Main Agent (sonnet):                                           │
+│  └─→ Execute current phase implementation                       │
+│                                                                 │
+│  Background Agents (haiku, run_in_background=true):             │
+│  ├─→ Task: "Prepare Phase N+1 - analyze required files"         │
+│  ├─→ Task: "Pre-generate test cases for current implementation" │
+│  └─→ Task: "Search for related types/interfaces needed"         │
+│                                                                 │
+│  [ULTRAWORK] All 4 agents run simultaneously!                   │
 └─────────────────────────────────────────────────────────────────┘
                               │
-                              ↓
+                              ↓ (main completes, check backgrounds)
 ┌─────────────────────────────────────────────────────────────────┐
-│  STEP 4: TEST (Task haiku)                                      │
-│  - Write tests for implemented code                             │
+│  STEP 4: TEST + PHASE PIPELINING                                │
+│                                                                 │
+│  Current Phase:                                                 │
+│  └─→ Task(haiku): Write tests using pre-generated cases         │
+│                                                                 │
+│  Next Phase Prep (from background results):                     │
+│  └─→ Already have file analysis, ready to start immediately     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -492,6 +506,41 @@ Then: 로그인 성공 + JWT 토큰 반환
 → 3x slower, wastes time
 ```
 
+### Background Agent Pattern (ULTRAWORK)
+
+**During implementation, launch background agents for next phase:**
+```
+<message>
+  // Main agent - blocks until complete
+  Task(sonnet, "Implement Phase 1: Create login form component")
+
+  // Background agents - run simultaneously, don't block
+  Task(haiku, run_in_background=true, "Phase 2 prep: Analyze auth API endpoints")
+  Task(haiku, run_in_background=true, "Pre-generate test cases for login form")
+  Task(haiku, run_in_background=true, "Find existing validation patterns")
+</message>
+→ Main completes in ~60s, backgrounds ready when needed
+```
+
+**Checking background results:**
+```
+// After main implementation completes
+TaskOutput(task_id, block=false)  // Check if ready
+// OR
+Read(output_file)  // Read background agent's findings
+```
+
+**Why Background Agents Matter:**
+
+| Without Background | With Background |
+|--------------------|-----------------|
+| Phase 1: 60s | Phase 1: 60s (+ backgrounds running) |
+| Phase 2 prep: 20s | Phase 2 prep: 0s (already done!) |
+| Phase 2: 60s | Phase 2: 60s |
+| **Total: 140s** | **Total: 120s** |
+
+For 5 phases: 4 × 20s saved = **80s faster**
+
 ### Why Parallel Matters
 
 | Approach | Time | Cache Benefit |
@@ -501,12 +550,12 @@ Then: 로그인 성공 + JWT 토큰 반환
 
 hi-ai ProjectCache (LRU) caches ts-morph parsing results. Parallel calls share the warmed cache.
 
-### Phase Execution Flow
+### Phase Execution Flow (ULTRAWORK Pipeline)
 
 ```
 Phase N Start
     │
-    ├─→ [PARALLEL] Task(haiku) × 2-3: Exploration
+    ├─→ [PARALLEL] Task(haiku) × 3: Exploration
     │       - Related code analysis
     │       - Dependency check
     │       - Pattern discovery
@@ -515,13 +564,40 @@ Phase N Start
     │
     ├─→ Opus: Synthesize and decide
     │
-    ├─→ Task(sonnet): Implementation
+    ├─→ [PARALLEL PIPELINE] ←── KEY SPEED OPTIMIZATION
+    │       │
+    │       ├─→ Main: Task(sonnet) Implementation
+    │       │
+    │       └─→ Background (run_in_background=true):
+    │               ├─→ Task(haiku): Phase N+1 file analysis
+    │               ├─→ Task(haiku): Test case preparation
+    │               └─→ Task(haiku): Type/interface lookup
     │
-    ├─→ Task(haiku): Tests
+    ↓ (main completes)
+    │
+    ├─→ Task(haiku): Tests (uses pre-generated cases)
     │
     ↓
-Phase N Complete → Next Phase
+Phase N Complete
+    │
+    ↓ (Background results ready - NO WAIT for Phase N+1 exploration!)
+    │
+Phase N+1 Start (IMMEDIATE - exploration already done!)
 ```
+
+**Speed Comparison:**
+
+| Mode | Phase Time | 5 Phases Total |
+|------|------------|----------------|
+| Sequential | ~2min/phase | ~10min |
+| Parallel Exploration | ~1.5min/phase | ~7.5min |
+| **ULTRAWORK Pipeline** | **~1min/phase** | **~5min** |
+
+**Why Pipeline is Faster:**
+- Background agents prepare next phase WHILE current phase implements
+- No idle time between phases
+- Test cases pre-generated during implementation
+- Cache stays warm across parallel tasks
 
 ---
 
