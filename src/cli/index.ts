@@ -1955,7 +1955,11 @@ ChatGPT Plus 또는 Pro 구독이 있으면 Codex API를 사용할 수 있습니
       console.log(`
 ✅ vibe-gpt MCP 서버 등록 완료! (전역)
 
-이제 모든 프로젝트에서 GPT 도구를 사용할 수 있습니다.
+이제 모든 프로젝트에서 다음 도구를 사용할 수 있습니다:
+  - gpt_chat: GPT에 질문
+  - gpt_analyze_architecture: 아키텍처 분석
+  - gpt_debug: 디버깅
+  - gpt_quick_ask: 빠른 질문
       `);
     } catch (mcpError) {
       console.log(`
@@ -2166,10 +2170,10 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
 ✅ vibe-gemini MCP 서버 등록 완료! (전역)
 
 이제 모든 프로젝트에서 다음 도구를 사용할 수 있습니다:
-  - mcp__vibe-gemini__gemini_chat: Gemini에 질문
-  - mcp__vibe-gemini__gemini_analyze_code: 코드 분석
-  - mcp__vibe-gemini__gemini_review_ui: UI/UX 리뷰
-  - mcp__vibe-gemini__gemini_quick_ask: 빠른 질문
+  - gemini_chat: Gemini에 질문
+  - gemini_analyze_code: 코드 분석
+  - gemini_review_ui: UI/UX 리뷰
+  - gemini_quick_ask: 빠른 질문
       `);
     } catch (mcpError) {
       console.log(`
