@@ -113,13 +113,13 @@ Feature 로드 → Scenario 1 [구현→검증] → Scenario 2 [구현→검증]
 
 | 명령어 | 설명 |
 |--------|------|
-| `vibe gpt --auth` | GPT OAuth 인증 (ChatGPT Plus/Pro 구독자용, 권장) |
-| `vibe gpt <api-key>` | GPT API 키 방식 |
-| `vibe gemini --auth` | Gemini OAuth 인증 (구독자용, 권장) |
-| `vibe gemini <api-key>` | Gemini API 키 방식 |
-| `vibe <name> --status` | 인증 상태 확인 |
-| `vibe <name> --logout` | 로그아웃 |
-| `vibe <name> --remove` | 비활성화 |
+| `vibe auth gpt` | GPT OAuth 인증 (ChatGPT Plus/Pro 구독자용, 권장) |
+| `vibe auth gpt --key <key>` | GPT API 키 방식 |
+| `vibe auth gemini` | Gemini OAuth 인증 (구독자용, 권장) |
+| `vibe auth gemini --key <key>` | Gemini API 키 방식 |
+| `vibe status gpt` / `vibe status gemini` | 인증 상태 확인 |
+| `vibe logout gpt` / `vibe logout gemini` | 로그아웃 |
+| `vibe remove gpt` / `vibe remove gemini` | 비활성화 |
 
 > **OAuth 인증** 또는 API 키를 등록해서 사용할 수 있습니다.
 
@@ -411,10 +411,10 @@ vibe는 36개의 도구를 **내장**하여 MCP 프로토콜 오버헤드 없이
 
 | MCP 서버 | 명령어 | 설명 |
 |----------|--------|------|
-| GPT-5.2 Codex | `vibe gpt --auth` | OAuth 인증 (ChatGPT Plus/Pro, 권장) |
-| GPT-5.2 Codex | `vibe gpt <key>` | API 키 방식 |
-| Gemini 3 Flash/Pro | `vibe gemini --auth` | OAuth 인증 (구독자용, 권장) |
-| Gemini 3 Flash/Pro | `vibe gemini <key>` | API 키 방식 |
+| GPT-5.2 Codex | `vibe auth gpt` | OAuth 인증 (ChatGPT Plus/Pro, 권장) |
+| GPT-5.2 Codex | `vibe auth gpt --key <key>` | API 키 방식 |
+| Gemini 3 Flash/Pro | `vibe auth gemini` | OAuth 인증 (구독자용, 권장) |
+| Gemini 3 Flash/Pro | `vibe auth gemini --key <key>` | API 키 방식 |
 
 > **OAuth 인증** 또는 API 키를 등록해서 사용할 수 있습니다.
 

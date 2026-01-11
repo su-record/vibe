@@ -1577,8 +1577,8 @@ ChatGPT Plus 또는 Pro 구독이 있으면 Codex API를 사용할 수 있습니
 ⚠️  참고: ChatGPT Plus/Pro 구독이 있어야 API 호출이 가능합니다.
     구독이 없으면 인증은 성공하지만 API 호출 시 오류가 발생합니다.
 
-상태 확인: vibe gpt --status
-로그아웃: vibe gpt --logout
+상태 확인: vibe status gpt
+로그아웃: vibe logout gpt
     `);
 
     // config.json 업데이트
@@ -1649,7 +1649,7 @@ ${accounts.map((acc: any, i: number) => `  ${i === storage.loadAccounts()?.activ
 
 ⚠️  참고: ChatGPT Plus/Pro 구독이 있어야 API 호출이 가능합니다.
 
-로그아웃: vibe gpt --logout
+로그아웃: vibe logout gpt
     `);
 
   } catch (error: any) {
@@ -1701,29 +1701,30 @@ ${activeAccount.email} 계정이 제거되었습니다.
   }
 }
 
-function showGptHelp(): void {
+function showAuthHelp(): void {
   console.log(`
-🤖 GPT 설정
+🔐 vibe auth - LLM 인증
 
-ChatGPT Plus 또는 Pro 구독이 있으면 OpenAI Codex API를 사용할 수 있습니다.
+사용법:
+  vibe auth gpt              GPT Plus/Pro OAuth 인증
+  vibe auth gpt --key <key>  GPT API 키로 설정
+  vibe auth gemini           Gemini 구독 OAuth 인증 (권장)
+  vibe auth gemini --key <key>  Gemini API 키로 설정
 
-사용 방법:
+예시:
+  vibe auth gpt              OpenAI 로그인 (Plus/Pro 구독 필요)
+  vibe auth gemini           Google 로그인 (Gemini Advanced 구독 시 무료)
+  vibe auth gpt --key sk-xxx API 키로 설정 (사용량 과금)
+  `);
+}
 
-  1. OAuth 인증 (권장):
-     vibe gpt --auth       OpenAI 계정으로 로그인 (Plus/Pro 구독 필요)
+function showLogoutHelp(): void {
+  console.log(`
+🚪 vibe logout - LLM 로그아웃
 
-  2. API 키 방식:
-     vibe gpt <api-key>    API 키로 설정 (사용량 과금)
-
-관리 명령어:
-  vibe gpt --status      인증 상태 확인
-  vibe gpt --logout      로그아웃
-  vibe gpt --remove      API 키 제거
-
-⚠️  중요:
-  - OAuth 인증은 ChatGPT Plus 또는 Pro 구독이 있어야 API 호출 가능
-  - 구독이 없으면 인증은 성공하지만 API 호출 시 권한 오류 발생
-  - API 키 방식은 OpenAI Platform의 별도 과금 (구독과 무관)
+사용법:
+  vibe logout gpt     GPT 로그아웃
+  vibe logout gemini  Gemini 로그아웃
   `);
 }
 
@@ -1768,8 +1769,8 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
 
 /vibe.run 실행 시 자동으로 Gemini가 보조 모델로 활용됩니다.
 
-상태 확인: vibe gemini --status
-로그아웃: vibe gemini --logout
+상태 확인: vibe status gemini
+로그아웃: vibe logout gemini
     `);
 
     // config.json 업데이트
@@ -1867,7 +1868,7 @@ ${accounts.map((acc: any, i: number) => `  ${i === storage.loadAccounts()?.activ
 사용 가능한 모델:
 ${Object.entries(GEMINI_MODELS).map(([id, info]: [string, any]) => `  - ${id}: ${info.description}`).join('\n')}
 
-로그아웃: vibe gemini --logout
+로그아웃: vibe logout gemini
     `);
 
   } catch (error: any) {
@@ -1919,38 +1920,7 @@ ${activeAccount.email} 계정이 제거되었습니다.
   }
 }
 
-function showGeminiHelp(): void {
-  console.log(`
-🤖 Gemini 설정
-
-Gemini Advanced 구독이 있으면 추가 비용 없이 AI 보조 모델로 활용할 수 있습니다.
-
-사용 방법:
-
-  1. 구독 인증 (권장):
-     vibe gemini --auth       Google 계정으로 로그인 (추가 비용 없음)
-
-  2. API 키 방식:
-     vibe gemini <api-key>    API 키로 설정 (사용량 과금)
-
-관리 명령어:
-  vibe gemini --status      인증 상태 확인
-  vibe gemini --logout      로그아웃
-  vibe gemini --remove      API 키 제거
-
-사용 가능한 모델:
-  - gemini-2.5-flash: 안정적, Thinking 기능 (기본)
-  - gemini-2.5-flash-lite: 경량 버전
-  - gemini-3-flash: 최신 프리뷰, 빠름
-  - gemini-3-pro: 최신 프리뷰, 정확
-
-활용 방식:
-  /vibe.run 실행 시 자동으로 다음 용도로 활용됩니다:
-  - 코드 탐색/검색 (Gemini 3 Flash)
-  - UI/UX 분석 (Gemini 3 Pro)
-  - 병렬 작업 처리
-  `);
-}
+// showGeminiHelp 제거됨 - showAuthHelp로 통합
 
 // ============================================================================
 // Info Commands
@@ -1963,22 +1933,25 @@ function showHelp(): void {
 기본 명령어:
   vibe init [project]     프로젝트 초기화
   vibe update             설정 업데이트
-  vibe remove             vibe 제거 (MCP, 설정, 패키지)
   vibe status             현재 설정 상태
   vibe help               도움말
   vibe version            버전 정보
 
-외부 LLM (선택적):
-  vibe gpt --auth         GPT Plus/Pro 인증 (OAuth)
-  vibe gpt <api-key>      GPT API 키 설정 (사용량 과금)
-  vibe gpt --status       GPT 인증 상태 확인
-  vibe gpt --logout       GPT 로그아웃
-  vibe gpt --remove       GPT 비활성화
-  vibe gemini --auth      Gemini 구독 인증 (추가 비용 없음, 권장)
-  vibe gemini <api-key>   Gemini API 키 설정 (사용량 과금)
-  vibe gemini --status    Gemini 인증 상태 확인
-  vibe gemini --logout    Gemini 로그아웃
-  vibe gemini --remove    Gemini API 키 제거
+외부 LLM 인증:
+  vibe auth gpt           GPT Plus/Pro OAuth 인증
+  vibe auth gemini        Gemini 구독 OAuth 인증 (권장)
+  vibe auth gpt --key <key>     GPT API 키 설정
+  vibe auth gemini --key <key>  Gemini API 키 설정
+
+상태 및 관리:
+  vibe status             전체 상태 확인
+  vibe status gpt         GPT 인증 상태 확인
+  vibe status gemini      Gemini 인증 상태 확인
+  vibe logout gpt         GPT 로그아웃
+  vibe logout gemini      Gemini 로그아웃
+  vibe remove gpt         GPT 제거
+  vibe remove gemini      Gemini 제거
+  vibe remove             vibe 전체 제거 (MCP, 설정, 패키지)
 
 Claude Code 슬래시 커맨드:
   /vibe.spec "기능명"     SPEC 작성 (PTCF 구조)
@@ -2046,9 +2019,10 @@ MCP 서버:
   context7          라이브러리 문서 검색
 
 외부 LLM 설정:
-  vibe gpt <key>      GPT 활성화 (아키텍처/디버깅)
-  vibe gemini <key>   Gemini 활성화 (UI/UX)
-  vibe <name> --remove  비활성화
+  vibe auth gpt           GPT 활성화 (OAuth)
+  vibe auth gemini        Gemini 활성화 (OAuth)
+  vibe remove gpt         GPT 제거
+  vibe remove gemini      Gemini 제거
   `);
 }
 
@@ -2125,43 +2099,55 @@ switch (command) {
 
   case 'remove':
   case 'uninstall':
-    remove();
-    break;
-
-  case 'gpt':
-    if (args[1] === '--remove') {
-      removeExternalLLM('gpt');
-    } else if (args[1] === '--auth') {
-      gptAuth();
-    } else if (args[1] === '--status') {
-      gptStatus();
-    } else if (args[1] === '--logout') {
-      gptLogout();
-    } else if (args[1]) {
-      setupExternalLLM('gpt', args[1]);
+    // vibe remove gpt / vibe remove gemini
+    if (positionalArgs[1] === 'gpt' || positionalArgs[1] === 'gemini') {
+      removeExternalLLM(positionalArgs[1]);
     } else {
-      showGptHelp();
+      remove();
     }
     break;
 
-  case 'gemini':
-    if (args[1] === '--remove') {
-      removeExternalLLM('gemini');
-    } else if (args[1] === '--auth') {
-      geminiAuth();
-    } else if (args[1] === '--status') {
-      geminiStatus();
-    } else if (args[1] === '--logout') {
-      geminiLogout();
-    } else if (args[1]) {
-      setupExternalLLM('gemini', args[1]);
+  case 'auth':
+    // vibe auth gpt / vibe auth gemini
+    if (positionalArgs[1] === 'gpt') {
+      const keyIndex = args.indexOf('--key');
+      if (keyIndex !== -1 && args[keyIndex + 1]) {
+        setupExternalLLM('gpt', args[keyIndex + 1]);
+      } else {
+        gptAuth();
+      }
+    } else if (positionalArgs[1] === 'gemini') {
+      const keyIndex = args.indexOf('--key');
+      if (keyIndex !== -1 && args[keyIndex + 1]) {
+        setupExternalLLM('gemini', args[keyIndex + 1]);
+      } else {
+        geminiAuth();
+      }
     } else {
-      showGeminiHelp();
+      showAuthHelp();
+    }
+    break;
+
+  case 'logout':
+    // vibe logout gpt / vibe logout gemini
+    if (positionalArgs[1] === 'gpt') {
+      gptLogout();
+    } else if (positionalArgs[1] === 'gemini') {
+      geminiLogout();
+    } else {
+      showLogoutHelp();
     }
     break;
 
   case 'status':
-    showStatus();
+    // vibe status / vibe status gpt / vibe status gemini
+    if (positionalArgs[1] === 'gpt') {
+      gptStatus();
+    } else if (positionalArgs[1] === 'gemini') {
+      geminiStatus();
+    } else {
+      showStatus();
+    }
     break;
 
   case 'version':
@@ -2184,9 +2170,10 @@ switch (command) {
 사용 가능한 명령어:
   vibe init       프로젝트 초기화
   vibe update     설정 업데이트
-  vibe gpt        GPT 활성화/비활성화
-  vibe gemini     Gemini 활성화/비활성화
-  vibe status     현재 설정 상태
+  vibe auth       LLM 인증 (gpt, gemini)
+  vibe status     상태 확인
+  vibe logout     로그아웃
+  vibe remove     제거
   vibe help       도움말
   vibe version    버전 정보
 
