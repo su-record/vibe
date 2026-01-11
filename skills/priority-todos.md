@@ -39,7 +39,7 @@ P1/P2/P3 우선순위로 태스크를 분류하여 중요한 것 먼저 처리
 ### Directory Structure
 
 ```
-.vibe/todos/
+.claude/vibe/todos/
 ├── P1-security-sql-injection.md
 ├── P1-data-transaction-missing.md
 ├── P2-perf-n1-query.md
@@ -146,7 +146,7 @@ Last updated: 2026-01-11 10:30
 ```bash
 # /vibe.review 결과에서 자동 생성
 /vibe.review PR#123
-# → .vibe/todos/ 에 파일 생성
+# → .claude/vibe/todos/ 에 파일 생성
 
 # 수동 생성
 vibe todo add "SQL Injection in users.py" --priority P1 --category security
@@ -183,8 +183,8 @@ vibe todo done P1-security-sql-injection
 vibe todo archive
 
 # 결과:
-# .vibe/todos/P1-security-sql-injection.md
-# → .vibe/todos/done/2026-01-11-P1-security-sql-injection.md
+# .claude/vibe/todos/P1-security-sql-injection.md
+# → .claude/vibe/todos/done/2026-01-11-P1-security-sql-injection.md
 ```
 
 ## Integration with TodoWrite
@@ -215,7 +215,7 @@ TodoWrite({
 ## Auto-Blocking Rules
 
 ```yaml
-# .vibe/config.yaml
+# .claude/vibe/config.yaml
 merge_blocking:
   P1: true   # P1 있으면 머지 차단
   P2: false  # P2는 경고만

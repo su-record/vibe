@@ -1,6 +1,6 @@
 #!/bin/bash
 # Vibe 협업자 자동 설치 스크립트
-# 사용법: ./.vibe/setup.sh
+# 사용법: ./.claude/vibe/setup.sh
 
 set -e
 

@@ -159,7 +159,7 @@ erDiagram
 ```
 
 **Diagram save location:**
-  .vibe/diagrams/erd-2025-11-17.md
+  .claude/vibe/diagrams/erd-2025-11-17.md
 
 **Rendering options:**
   1. Push to GitHub (auto-renders)
@@ -171,7 +171,7 @@ erDiagram
 
 - Mermaid is supported in GitHub, GitLab, VSCode, etc.
 - Complex diagrams may need manual adjustments
-- Generated diagrams are saved in `.vibe/diagrams/` folder
+- Generated diagrams are saved in `.claude/vibe/diagrams/` folder
 
 ---
 

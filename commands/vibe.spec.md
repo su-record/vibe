@@ -15,7 +15,7 @@ Create a SPEC document (Specification Agent).
 
 ## Rules Reference
 
-**Must follow `.vibe/rules/`:**
+**Must follow `.claude/vibe/rules/`:**
 - `core/development-philosophy.md` - Surgical precision, simplicity
 - `core/quick-start.md` - Korean first, DRY, SRP
 - `core/communication-guide.md` - Communication principles
@@ -28,7 +28,7 @@ Collect requirements through conversation with the user and create an **AI-execu
 
 ## External LLM Integration (Optional)
 
-When external LLMs are enabled in `.vibe/config.json`, automatically utilize during SPEC creation:
+When external LLMs are enabled in `.claude/vibe/config.json`, automatically utilize during SPEC creation:
 
 ```
 /vibe.spec "complex feature"
@@ -126,7 +126,7 @@ Task(model: "haiku", subagent_type: "Explore",
 
 ### 4. Write SPEC Document (PTCF Structure)
 
-Create `.vibe/specs/{feature-name}.md`:
+Create `.claude/vibe/specs/{feature-name}.md`:
 
 ```markdown
 # SPEC: {feature-name}
@@ -208,7 +208,7 @@ Define AI role and expertise for implementation
 
 ### 5. Create Feature File (BDD) - Required
 
-**Must** create `.vibe/features/{feature-name}.feature` file.
+**Must** create `.claude/vibe/features/{feature-name}.feature` file.
 
 **Creation rules:**
 1. Convert each SPEC Acceptance Criteria → one Scenario
@@ -219,7 +219,7 @@ Define AI role and expertise for implementation
 ```markdown
 # Feature: {feature-name}
 
-**SPEC**: `.vibe/specs/{feature-name}.md`
+**SPEC**: `.claude/vibe/specs/{feature-name}.md`
 
 ## User Story
 **As a** {user}
@@ -294,12 +294,12 @@ Please clarify the above items.
 
 ### 7. Quality Validation
 
-Self-evaluate against `.vibe/rules/quality/checklist.md` (0-100 score)
+Self-evaluate against `.claude/vibe/rules/quality/checklist.md` (0-100 score)
 
 ## Output
 
-- `.vibe/specs/{feature-name}.md` - PTCF structured SPEC
-- `.vibe/features/{feature-name}.feature` - BDD Feature file
+- `.claude/vibe/specs/{feature-name}.md` - PTCF structured SPEC
+- `.claude/vibe/features/{feature-name}.feature` - BDD Feature file
 - Ambiguity scan results (0 ambiguities confirmed)
 - Quality score and improvement suggestions
 
@@ -367,8 +367,8 @@ Claude: Thank you. SPEC has been refined.
 🔍 Re-check result: 0 ambiguities
 
 ✅ SPEC document complete!
-📄 .vibe/specs/brick-game.md (PTCF structure)
-📄 .vibe/features/brick-game.feature
+📄 .claude/vibe/specs/brick-game.md (PTCF structure)
+📄 .claude/vibe/features/brick-game.feature
 📊 Quality score: 92/100 (A)
 ```
 

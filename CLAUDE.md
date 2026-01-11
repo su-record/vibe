@@ -4,7 +4,7 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 
 ## 코드 품질 기준 (필수)
 
-모든 코드 작성 시 아래 기준을 준수합니다. 상세 규칙은 `.vibe/rules/` 참조.
+모든 코드 작성 시 아래 기준을 준수합니다. 상세 규칙은 `.claude/vibe/rules/` 참조.
 
 ### 핵심 원칙
 - **요청 범위만 수정** - 관련 없는 코드 건드리지 않음
@@ -107,7 +107,7 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 해결한 문제를 자동 문서화:
 
 ```
-.vibe/solutions/
+.claude/vibe/solutions/
 ├── security/           # 보안 해결책
 ├── performance/        # 성능 최적화
 ├── database/           # DB 관련
@@ -213,7 +213,7 @@ git worktree remove ../review-123
 
 ### Priority Todos
 ```
-.vibe/todos/
+.claude/vibe/todos/
 ├── P1-security-sql-injection.md   # 🔴 머지 차단
 ├── P2-perf-n1-query.md            # 🟡 수정 권장
 └── P3-style-extract-helper.md     # 🔵 백로그
@@ -275,12 +275,12 @@ vibe는 자체 메모리 시스템으로 세션 간 컨텍스트를 유지합니
 
 **반드시 포함:**
 - `.claude/` 폴더 전체 (commands, agents, skills, settings.json)
-- `.vibe/rules/`, `.vibe/specs/`, `.vibe/features/`, `.vibe/solutions/`, `.vibe/todos/`
+- `.claude/vibe/rules/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/solutions/`, `.claude/vibe/todos/`
 - `CLAUDE.md`
 
 **제외:**
 - `.claude/settings.local.json` (개인 설정, 자동 제외)
-- `.vibe/mcp/` (node_modules, 자동 제외)
+- `.claude/vibe/mcp/` (node_modules, 자동 제외)
 
 ## Getting Started
 
@@ -317,7 +317,7 @@ vibe init
 │     └── Playwright E2E 테스트                                   │
 │                                                                 │
 │  6. /vibe.compound                                              │
-│     └── 해결책 문서화 → .vibe/solutions/                        │
+│     └── 해결책 문서화 → .claude/vibe/solutions/                        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```

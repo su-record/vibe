@@ -216,7 +216,7 @@ def test_login_contract():
 
 ```bash
 vibe feature "user login"
-# → .vibe/features/user-login.feature 생성
+# → .claude/vibe/features/user-login.feature 생성
 ```
 
 ### Contract 테스트 생성

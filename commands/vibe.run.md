@@ -165,7 +165,7 @@ Claude:
 🚀 ULTRAWORK MODE ACTIVATED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 SPEC: .vibe/specs/brick-game.md
+📄 SPEC: .claude/vibe/specs/brick-game.md
 🎯 4 Phases detected
 ⚡ Boulder Loop: ENABLED (will continue until all phases complete)
 🔄 Auto-retry: ON (max 3 per phase)
@@ -222,7 +222,7 @@ Claude:
 
 ## Rules Reference
 
-**Must follow `.vibe/rules/`:**
+**Must follow `.claude/vibe/rules/`:**
 - `core/development-philosophy.md` - Surgical precision, modify only requested scope
 - `core/quick-start.md` - Korean, DRY, SRP, YAGNI
 - `standards/complexity-metrics.md` - Functions ≤20 lines, nesting ≤3 levels
@@ -265,7 +265,7 @@ Automatically select optimal model based on task type:
 
 ### External LLM Usage (When Enabled)
 
-When external LLMs are enabled in `.vibe/config.json`:
+When external LLMs are enabled in `.claude/vibe/config.json`:
 
 | Role | Model | Condition |
 |------|-------|-----------|
@@ -343,8 +343,8 @@ validate_code_quality: Verify quality after implementation
 ### 1. Load SPEC + Feature
 
 ```
-📄 .vibe/specs/{feature-name}.md      → SPEC (구조, 제약, 컨텍스트)
-📄 .vibe/features/{feature-name}.feature → Feature (시나리오 = 구현 단위)
+📄 .claude/vibe/specs/{feature-name}.md      → SPEC (구조, 제약, 컨텍스트)
+📄 .claude/vibe/features/{feature-name}.feature → Feature (시나리오 = 구현 단위)
 ```
 
 **Feature 파일이 없으면 에러**:
@@ -682,8 +682,8 @@ Follow during implementation:
 
 ## Input
 
-- `.vibe/specs/{feature-name}.md` (PTCF SPEC)
-- `.vibe/features/{feature-name}.feature` (BDD)
+- `.claude/vibe/specs/{feature-name}.md` (PTCF SPEC)
+- `.claude/vibe/features/{feature-name}.feature` (BDD)
 - `CLAUDE.md` (project context)
 
 ## Output
@@ -698,8 +698,8 @@ Follow during implementation:
 User: /vibe.run "login"
 
 Claude:
-📄 Loading SPEC: .vibe/specs/login.md
-📄 Loading Feature: .vibe/features/login.feature
+📄 Loading SPEC: .claude/vibe/specs/login.md
+📄 Loading Feature: .claude/vibe/features/login.feature
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 Scenarios to Implement
@@ -801,7 +801,7 @@ Then: 로그인 성공 + JWT 토큰 반환
 User: /vibe.run "brick-game" --phase 2
 
 Claude:
-📄 Reading SPEC: .vibe/specs/brick-game.md
+📄 Reading SPEC: .claude/vibe/specs/brick-game.md
 🎯 Executing Phase 2 only.
 
 Phase 2: Game Logic

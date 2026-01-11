@@ -229,7 +229,7 @@ function identifyInformationSources(problem: string, context?: string): string {
    - Git, 패키지 관리자
 2. **정책/규칙**:
    - CLAUDE.md (기술 스택, 아키텍처)
-   - .vibe/constitution.md (프로젝트 규칙)
+   - .claude/vibe/constitution.md (프로젝트 규칙)
    - skills/ 폴더 (품질 기준, 코딩 표준)
 3. **메모리**:
    - recall_memory (이전 세션 정보)

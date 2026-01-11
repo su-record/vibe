@@ -10,7 +10,7 @@
       "Bash(git push:*)",
       "Bash(npm pack)",
       "Bash(npm install:*)",
-      "Read(//private/tmp/test-vibe-bdd/.vibe/**)",
+      "Read(//private/tmp/test-vibe-bdd/.claude/vibe/**)",
       "Read(//private/tmp/test-vibe-bdd/.claude/commands/**)",
       "Bash(npm view:*)",
       "Bash(gh release create:*)",

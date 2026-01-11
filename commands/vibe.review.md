@@ -213,7 +213,7 @@ Deep analysis after agent results:
 
 ### Phase 5: Todo File Creation
 
-Save findings to `.vibe/todos/`:
+Save findings to `.claude/vibe/todos/`:
 
 ```markdown
 ## File Naming Convention
@@ -293,7 +293,7 @@ Suggest E2E tests based on project type:
 │  ├── Testing: 2                                                 │
 │  └── Style: 2                                                   │
 │                                                                 │
-│  📁 Todos created: .vibe/todos/ (10 files)                      │
+│  📁 Todos created: .claude/vibe/todos/ (10 files)                      │
 │                                                                 │
 │  ❌ MERGE BLOCKED - Fix P1 issues first                         │
 │                                                                 │

@@ -2,13 +2,12 @@
   "name": "@su-record/vibe",
   "version": "2.2.0",
   "description": "SPEC-driven AI coding framework with parallel agents, BDD verification, and quality assurance",
-  "author": "su-record",
+  "author": {
+    "name": "su-record"
+  },
   "license": "MIT",
   "homepage": "https://github.com/su-record/vibe",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/su-record/vibe.git"
-  },
+  "repository": "https://github.com/su-record/vibe",
   "keywords": [
     "vibe",
     "spec",
@@ -19,155 +18,6 @@
     "code-review",
     "quality-assurance"
   ],
-  "commands": [
-    {
-      "name": "vibe.spec",
-      "description": "Create SPEC document with parallel research agents",
-      "file": "commands/vibe.spec.md"
-    },
-    {
-      "name": "vibe.run",
-      "description": "Execute implementation with ULTRAWORK pipeline",
-      "file": "commands/vibe.run.md"
-    },
-    {
-      "name": "vibe.verify",
-      "description": "Verify implementation against SPEC requirements",
-      "file": "commands/vibe.verify.md"
-    },
-    {
-      "name": "vibe.review",
-      "description": "Parallel code review with 13+ specialist agents",
-      "file": "commands/vibe.review.md"
-    },
-    {
-      "name": "vibe.e2e",
-      "description": "Playwright-based E2E testing",
-      "file": "commands/vibe.e2e.md"
-    },
-    {
-      "name": "vibe.compound",
-      "description": "Document solutions for knowledge compounding",
-      "file": "commands/vibe.compound.md"
-    },
-    {
-      "name": "vibe.reason",
-      "description": "Systematic reasoning framework",
-      "file": "commands/vibe.reason.md"
-    },
-    {
-      "name": "vibe.analyze",
-      "description": "Project analysis",
-      "file": "commands/vibe.analyze.md"
-    },
-    {
-      "name": "vibe.diagram",
-      "description": "Generate diagrams",
-      "file": "commands/vibe.diagram.md"
-    },
-    {
-      "name": "vibe.ui",
-      "description": "UI preview with ASCII art",
-      "file": "commands/vibe.ui.md"
-    },
-    {
-      "name": "vibe.continue",
-      "description": "Restore previous session context",
-      "file": "commands/vibe.continue.md"
-    },
-    {
-      "name": "vibe.tool",
-      "description": "Natural language tool invocation",
-      "file": "commands/vibe.tool.md"
-    }
-  ],
-  "agents": [
-    {
-      "name": "security-reviewer",
-      "file": "agents/review/security-reviewer.md"
-    },
-    {
-      "name": "performance-reviewer",
-      "file": "agents/review/performance-reviewer.md"
-    },
-    {
-      "name": "architecture-reviewer",
-      "file": "agents/review/architecture-reviewer.md"
-    },
-    {
-      "name": "complexity-reviewer",
-      "file": "agents/review/complexity-reviewer.md"
-    },
-    {
-      "name": "simplicity-reviewer",
-      "file": "agents/review/simplicity-reviewer.md"
-    },
-    {
-      "name": "data-integrity-reviewer",
-      "file": "agents/review/data-integrity-reviewer.md"
-    },
-    {
-      "name": "test-coverage-reviewer",
-      "file": "agents/review/test-coverage-reviewer.md"
-    },
-    {
-      "name": "git-history-reviewer",
-      "file": "agents/review/git-history-reviewer.md"
-    },
-    {
-      "name": "python-reviewer",
-      "file": "agents/review/python-reviewer.md"
-    },
-    {
-      "name": "typescript-reviewer",
-      "file": "agents/review/typescript-reviewer.md"
-    },
-    {
-      "name": "rails-reviewer",
-      "file": "agents/review/rails-reviewer.md"
-    },
-    {
-      "name": "react-reviewer",
-      "file": "agents/review/react-reviewer.md"
-    },
-    {
-      "name": "best-practices-agent",
-      "file": "agents/research/best-practices-agent.md"
-    },
-    {
-      "name": "framework-docs-agent",
-      "file": "agents/research/framework-docs-agent.md"
-    },
-    {
-      "name": "codebase-patterns-agent",
-      "file": "agents/research/codebase-patterns-agent.md"
-    },
-    {
-      "name": "security-advisory-agent",
-      "file": "agents/research/security-advisory-agent.md"
-    }
-  ],
-  "hooks": {
-    "file": "hooks.json"
-  },
-  "mcp": {
-    "file": ".mcp.json"
-  },
-  "dependencies": {
-    "context7": "^1.0.0"
-  },
-  "optionalDependencies": {
-    "vibe-gemini": "For framework docs research",
-    "vibe-gpt": "For security advisory research"
-  },
-  "projectFiles": {
-    "description": "Files to create in project on init",
-    "files": [
-      ".vibe/specs/.gitkeep",
-      ".vibe/features/.gitkeep",
-      ".vibe/solutions/.gitkeep",
-      ".vibe/todos/.gitkeep",
-      ".vibe/rules/.gitkeep"
-    ]
-  }
+  "commands": "./commands/",
+  "skills": "./skills/"
 }

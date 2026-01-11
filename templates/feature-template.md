@@ -2,7 +2,7 @@
 
 > 이 파일은 **품질 보장의 핵심**입니다. 모든 시나리오 통과 = 기능 완성.
 
-**SPEC**: `.vibe/specs/{기능명}.md`
+**SPEC**: `.claude/vibe/specs/{기능명}.md`
 **Last verified**: -
 **Quality score**: -
 

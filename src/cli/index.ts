@@ -405,7 +405,7 @@ function getLLMAuthStatus(): LLMStatusMap {
   // GPT API 키 확인 (프로젝트 config)
   if (!status.gpt) {
     try {
-      const configPath = path.join(process.cwd(), '.vibe', 'config.json');
+      const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
       if (fs.existsSync(configPath)) {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         if (config.models?.gpt?.enabled) {
@@ -439,7 +439,7 @@ function getLLMAuthStatus(): LLMStatusMap {
   // Gemini API 키 확인 (프로젝트 config)
   if (!status.gemini) {
     try {
-      const configPath = path.join(process.cwd(), '.vibe', 'config.json');
+      const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
       if (fs.existsSync(configPath)) {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         if (config.models?.gemini?.enabled) {
@@ -707,7 +707,7 @@ function detectTechStacks(projectRoot: string): DetectionResult {
 
 function setupCollaboratorAutoInstall(projectRoot: string): void {
   const packageJsonPath = path.join(projectRoot, 'package.json');
-  const vibeDir = path.join(projectRoot, '.vibe');
+  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
   const vibeVersion = getPackageJson().version;
 
   // 1. Node.js 프로젝트: package.json 정리
@@ -757,12 +757,15 @@ function setupCollaboratorAutoInstall(projectRoot: string): void {
     }
   }
 
-  // 2. .vibe/setup.sh 생성
+  // 2. .claude/vibe/setup.sh 생성
   const setupShPath = path.join(vibeDir, 'setup.sh');
+  if (!fs.existsSync(vibeDir)) {
+    fs.mkdirSync(vibeDir, { recursive: true });
+  }
   if (!fs.existsSync(setupShPath)) {
     const setupScript = `#!/bin/bash
 # Vibe 협업자 자동 설치 스크립트
-# 사용법: ./.vibe/setup.sh
+# 사용법: ./.claude/vibe/setup.sh
 
 set -e
 
@@ -794,7 +797,7 @@ echo "  /vibe.run \\"기능명\\"     구현 실행"
 `;
     fs.writeFileSync(setupShPath, setupScript);
     fs.chmodSync(setupShPath, '755');
-    log('   ✅ 협업자 설치 스크립트 생성 (.vibe/setup.sh)\n');
+    log('   ✅ 협업자 설치 스크립트 생성 (.claude/vibe/setup.sh)\n');
   }
 
   // 3. README.md에 협업자 안내 추가
@@ -812,7 +815,7 @@ npm install -g @su-record/vibe
 vibe update
 
 # 또는 setup 스크립트 실행
-./.vibe/setup.sh
+./.claude/vibe/setup.sh
 \`\`\`
 
 ### 사용법
@@ -945,9 +948,9 @@ async function init(projectName?: string): Promise<void> {
       isNewProject = true;
     }
 
-    const vibeDir = path.join(projectRoot, '.vibe');
+    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
     if (fs.existsSync(vibeDir)) {
-      log('❌ .vibe/ 폴더가 이미 존재합니다.');
+      log('❌ .claude/vibe/ 폴더가 이미 존재합니다.');
       return;
     }
 
@@ -998,26 +1001,34 @@ async function init(projectName?: string): Promise<void> {
       }
     }
 
-    // .vibe 폴더 구조 생성
+    // .claude/vibe 폴더 구조 생성
     ['specs', 'features'].forEach(dir => {
       ensureDir(path.join(vibeDir, dir));
     });
 
-    // 기존 .vibe/mcp/ 폴더 정리
-    const oldMcpDir = path.join(vibeDir, 'mcp');
-    if (fs.existsSync(oldMcpDir)) {
-      log('   🧹 기존 .vibe/mcp/ 폴더 정리 중...\n');
+    // 기존 .vibe/ 폴더 마이그레이션 (레거시)
+    const legacyVibeDir = path.join(projectRoot, '.vibe');
+    if (fs.existsSync(legacyVibeDir)) {
+      log('   🔄 레거시 .vibe/ 폴더 마이그레이션 중...\n');
       try {
-        removeDirRecursive(oldMcpDir);
-        log('   ✅ .vibe/mcp/ 폴더 삭제 완료\n');
+        // specs, features 등 데이터 폴더 이동
+        ['specs', 'features', 'solutions', 'todos', 'memory'].forEach(dir => {
+          const legacySrc = path.join(legacyVibeDir, dir);
+          const newDest = path.join(vibeDir, dir);
+          if (fs.existsSync(legacySrc) && !fs.existsSync(newDest)) {
+            copyDirRecursive(legacySrc, newDest);
+          }
+        });
+        removeDirRecursive(legacyVibeDir);
+        log('   ✅ .vibe/ → .claude/vibe/ 마이그레이션 완료\n');
       } catch (e) {
-        log('   ⚠️  .vibe/mcp/ 폴더 수동 삭제 필요\n');
+        log('   ⚠️  마이그레이션 실패 - .vibe/ 폴더 수동 삭제 필요\n');
       }
     }
 
     // .gitignore 업데이트
     const gitignorePath = path.join(projectRoot, '.gitignore');
-    const mcpIgnore = '.vibe/mcp/';
+    const mcpIgnore = '.claude/vibe/mcp/';
     if (fs.existsSync(gitignorePath)) {
       let gitignore = fs.readFileSync(gitignorePath, 'utf-8');
       if (!gitignore.includes(mcpIgnore)) {
@@ -1138,8 +1149,8 @@ async function init(projectName?: string): Promise<void> {
       log('   ✅ CLAUDE.md 생성\n');
     }
 
-    // .vibe/rules/ 복사
-    const rulesSource = path.join(__dirname, '../../.vibe/rules');
+    // .claude/vibe/rules/ 복사
+    const rulesSource = path.join(__dirname, '../../.claude/vibe/rules');
     const rulesTarget = path.join(vibeDir, 'rules');
 
     const coreDirs = ['core', 'quality', 'standards', 'tools'];
@@ -1166,7 +1177,7 @@ async function init(projectName?: string): Promise<void> {
       });
     }
 
-    log('   ✅ 코딩 규칙 설치 완료 (.vibe/rules/)\n');
+    log('   ✅ 코딩 규칙 설치 완료 (.claude/vibe/rules/)\n');
 
     // .claude/agents/ 복사
     const agentsDir = path.join(claudeDir, 'agents');
@@ -1217,17 +1228,17 @@ ${isNewProject ? `프로젝트 위치:
   .claude/
   ├── commands/                  # 슬래시 커맨드 (7개)
   ├── agents/                    # 서브에이전트 (simplifier)
-  └── settings.json              # Hooks 설정 (저장소 공유)
-  .vibe/
-  ├── config.json                # 프로젝트 설정
-  ├── constitution.md            # 프로젝트 원칙
-  ├── setup.sh                   # 협업자 설치 스크립트
-  ├── rules/                     # 코딩 규칙
-  │   ├── core/                  # 핵심 원칙
-  │   ├── quality/               # 품질 체크리스트
-  │   └── languages/             # 언어별 규칙
-  ├── specs/                     # SPEC 문서들
-  └── features/                  # BDD Feature 파일들
+  ├── settings.json              # Hooks 설정 (저장소 공유)
+  └── vibe/
+      ├── config.json            # 프로젝트 설정
+      ├── constitution.md        # 프로젝트 원칙
+      ├── setup.sh               # 협업자 설치 스크립트
+      ├── rules/                 # 코딩 규칙
+      │   ├── core/              # 핵심 원칙
+      │   ├── quality/           # 품질 체크리스트
+      │   └── languages/         # 언어별 규칙
+      ├── specs/                 # SPEC 문서들
+      └── features/              # BDD Feature 파일들
 
 내장 도구: ✓ (35+)
 협업자 자동 설치: ✓
@@ -1289,20 +1300,47 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
 async function update(): Promise<void> {
   try {
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.vibe');
+    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
     const claudeDir = path.join(projectRoot, '.claude');
+    const legacyVibeDir = path.join(projectRoot, '.vibe');
 
     // CI/프로덕션 환경에서는 스킵
     if (process.env.NODE_ENV === 'production' || process.env.CI === 'true') {
       return;
     }
 
-    if (!fs.existsSync(vibeDir)) {
+    // 레거시 .vibe/ 폴더가 있으면 마이그레이션
+    if (fs.existsSync(legacyVibeDir) && !fs.existsSync(vibeDir)) {
+      log('🔄 .vibe/ → .claude/vibe/ 마이그레이션 중...\n');
+      ensureDir(vibeDir);
+      ['specs', 'features', 'solutions', 'todos', 'memory', 'rules', 'config.json', 'constitution.md'].forEach(item => {
+        const src = path.join(legacyVibeDir, item);
+        const dst = path.join(vibeDir, item);
+        if (fs.existsSync(src) && !fs.existsSync(dst)) {
+          if (fs.statSync(src).isDirectory()) {
+            copyDirRecursive(src, dst);
+          } else {
+            fs.copyFileSync(src, dst);
+          }
+        }
+      });
+      try {
+        removeDirRecursive(legacyVibeDir);
+        log('   ✅ 마이그레이션 완료\n');
+      } catch (e) {
+        log('   ⚠️  .vibe/ 폴더 수동 삭제 필요\n');
+      }
+    }
+
+    if (!fs.existsSync(vibeDir) && !fs.existsSync(legacyVibeDir)) {
       if (!options.silent) {
         console.log('❌ vibe 프로젝트가 아닙니다. 먼저 vibe init을 실행하세요.');
       }
       return;
     }
+
+    // vibeDir이 없으면 생성
+    ensureDir(vibeDir);
 
     log('🔄 vibe 업데이트 중...\n');
 
@@ -1312,11 +1350,11 @@ async function update(): Promise<void> {
       if (wasUpgraded) return;
     }
 
-    // 마이그레이션: .agent/rules/ → .vibe/rules/
+    // 마이그레이션: .agent/rules/ → .claude/vibe/rules/
     const oldRulesDir = path.join(projectRoot, '.agent/rules');
     const oldAgentDir = path.join(projectRoot, '.agent');
     if (fs.existsSync(oldRulesDir)) {
-      log('   🔄 마이그레이션: .agent/rules/ → .vibe/rules/\n');
+      log('   🔄 마이그레이션: .agent/rules/ → .claude/vibe/rules/\n');
       removeDirRecursive(oldRulesDir);
       if (fs.existsSync(oldAgentDir) && fs.readdirSync(oldAgentDir).length === 0) {
         fs.rmdirSync(oldAgentDir);
@@ -1446,8 +1484,8 @@ async function update(): Promise<void> {
       }
     }
 
-    // .vibe/rules/ 업데이트
-    const rulesSource = path.join(__dirname, '../../.vibe/rules');
+    // .claude/vibe/rules/ 업데이트
+    const rulesSource = path.join(__dirname, '../../.claude/vibe/rules');
     const rulesTarget = path.join(vibeDir, 'rules');
 
     const coreDirs = ['core', 'quality', 'standards', 'tools'];
@@ -1481,7 +1519,7 @@ async function update(): Promise<void> {
     if (detectedStacks.length > 0) {
       log(`   🔍 감지된 기술 스택: ${detectedTypes.join(', ')}\n`);
     }
-    log('   ✅ 코딩 규칙 업데이트 완료 (.vibe/rules/)\n');
+    log('   ✅ 코딩 규칙 업데이트 완료 (.claude/vibe/rules/)\n');
 
     // .claude/agents/ 업데이트
     const agentsDir = path.join(claudeDir, 'agents');
@@ -1633,15 +1671,15 @@ async function update(): Promise<void> {
       log('   ⚠️  MCP 등록 실패\n');
     }
 
-    // 기존 .vibe/mcp/ 폴더 정리
+    // 기존 mcp/ 폴더 정리 (레거시)
     const oldMcpDir = path.join(vibeDir, 'mcp');
     if (fs.existsSync(oldMcpDir)) {
-      log('   🧹 기존 .vibe/mcp/ 폴더 정리 중...\n');
+      log('   🧹 기존 mcp/ 폴더 정리 중...\n');
       try {
         removeDirRecursive(oldMcpDir);
-        log('   ✅ .vibe/mcp/ 폴더 삭제 완료\n');
+        log('   ✅ mcp/ 폴더 삭제 완료\n');
       } catch (e) {
-        log('   ⚠️  .vibe/mcp/ 폴더 수동 삭제 필요\n');
+        log('   ⚠️  mcp/ 폴더 수동 삭제 필요\n');
       }
     }
 
@@ -1651,7 +1689,7 @@ async function update(): Promise<void> {
 
 업데이트된 항목:
   - 슬래시 커맨드 (7개)
-  - 코딩 규칙 (.vibe/rules/)
+  - 코딩 규칙 (.claude/vibe/rules/)
   - 서브에이전트 (.claude/agents/)
   - Hooks 설정
 
@@ -1666,10 +1704,11 @@ ${formatLLMStatus()}
 
 function remove(): void {
   const projectRoot = process.cwd();
-  const vibeDir = path.join(projectRoot, '.vibe');
+  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
+  const legacyVibeDir = path.join(projectRoot, '.vibe');
   const claudeDir = path.join(projectRoot, '.claude');
 
-  if (!fs.existsSync(vibeDir)) {
+  if (!fs.existsSync(vibeDir) && !fs.existsSync(legacyVibeDir)) {
     console.log('❌ vibe 프로젝트가 아닙니다.');
     return;
   }
@@ -1683,10 +1722,16 @@ function remove(): void {
   unregisterMcp('context7');
   console.log('   ✅ MCP 서버 제거 완료\n');
 
-  // .vibe 폴더 제거
+  // .claude/vibe 폴더 제거
   if (fs.existsSync(vibeDir)) {
     removeDirRecursive(vibeDir);
-    console.log('   ✅ .vibe/ 폴더 제거 완료\n');
+    console.log('   ✅ .claude/vibe/ 폴더 제거 완료\n');
+  }
+
+  // 레거시 .vibe 폴더도 제거
+  if (fs.existsSync(legacyVibeDir)) {
+    removeDirRecursive(legacyVibeDir);
+    console.log('   ✅ .vibe/ 폴더 제거 완료 (레거시)\n');
   }
 
   // .claude/commands 제거
@@ -1733,7 +1778,7 @@ function remove(): void {
 
 제거된 항목:
   - MCP 서버 (vibe, context7)
-  - .vibe/ 폴더
+  - .claude/vibe/ 폴더
   - 슬래시 커맨드 (7개)
   - 서브에이전트 (5개)
   - Hooks 설정
@@ -1760,7 +1805,7 @@ ${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : '
   }
 
   const projectRoot = process.cwd();
-  const vibeDir = path.join(projectRoot, '.vibe');
+  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(vibeDir, 'config.json');
 
   if (!fs.existsSync(vibeDir)) {
@@ -1815,7 +1860,7 @@ MCP: ${llmConfig.name}
 
 function removeExternalLLM(llmType: string): void {
   const projectRoot = process.cwd();
-  const vibeDir = path.join(projectRoot, '.vibe');
+  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(vibeDir, 'config.json');
 
   if (!fs.existsSync(vibeDir)) {
@@ -1882,7 +1927,7 @@ ChatGPT Plus 또는 Pro 구독이 있으면 Codex API를 사용할 수 있습니
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.vibe');
+    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
     const configPath = path.join(vibeDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
@@ -1998,7 +2043,7 @@ ${activeAccount.email} 계정이 제거되었습니다.
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.vibe');
+    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
     const configPath = path.join(vibeDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
@@ -2092,7 +2137,7 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.vibe');
+    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
     const configPath = path.join(vibeDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
@@ -2216,7 +2261,7 @@ ${activeAccount.email} 계정이 제거되었습니다.
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.vibe');
+    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
     const configPath = path.join(vibeDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
@@ -2295,7 +2340,7 @@ Workflow:
 
 function showStatus(): void {
   const projectRoot = process.cwd();
-  const vibeDir = path.join(projectRoot, '.vibe');
+  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(vibeDir, 'config.json');
 
   if (!fs.existsSync(vibeDir)) {

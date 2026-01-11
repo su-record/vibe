@@ -117,7 +117,7 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
 
 #### 6. Check Development Rules
 
-Load related rules from `.vibe/rules/`:
+Load related rules from `.claude/vibe/rules/`:
 - `core/quick-start.md` - 5 core principles
 - `standards/complexity-metrics.md` - Complexity standards
 - `quality/checklist.md` - Quality checklist
@@ -162,7 +162,7 @@ Based on `@su-record/hi-ai`:
 
 ### Analysis Report
 
-`.vibe/reports/analysis-{date}.md`:
+`.claude/vibe/reports/analysis-{date}.md`:
 
 ```markdown
 # Project Analysis Report

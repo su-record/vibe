@@ -33,8 +33,8 @@ argument-hint: "feature name"
 ### 1. Load Feature File
 
 ```
-📄 .vibe/features/{feature-name}.feature → 시나리오 목록
-📄 .vibe/specs/{feature-name}.md → 검증 기준 (참조)
+📄 .claude/vibe/features/{feature-name}.feature → 시나리오 목록
+📄 .claude/vibe/specs/{feature-name}.md → 검증 기준 (참조)
 ```
 
 **Feature 파일이 없으면**:
@@ -147,8 +147,8 @@ Then: 로그인 성공 + JWT 토큰 반환
 
 ## Input
 
-- `.vibe/features/{feature-name}.feature` - BDD scenarios
-- `.vibe/specs/{feature-name}.md` - SPEC document (reference)
+- `.claude/vibe/features/{feature-name}.feature` - BDD scenarios
+- `.claude/vibe/specs/{feature-name}.md` - SPEC document (reference)
 - Implemented source code
 
 ## Output
@@ -163,7 +163,7 @@ Then: 로그인 성공 + JWT 토큰 반환
 User: /vibe.verify "login"
 
 Claude:
-📄 Loading Feature: .vibe/features/login.feature
+📄 Loading Feature: .claude/vibe/features/login.feature
 🔍 검증 시작...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

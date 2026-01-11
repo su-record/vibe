@@ -22,7 +22,7 @@ Task(model: "haiku", prompt: "Write tests for the implemented code")
 
 ## Process
 
-1. Check `.vibe/features/{feature-name}.feature`
+1. Check `.claude/vibe/features/{feature-name}.feature`
 2. Analyze implemented code
 3. Write test cases
 4. Run tests

@@ -8,7 +8,7 @@ Automatically executed after `Write`, `Edit` operations via PostToolUse Hook.
 
 ## Rules Reference
 
-**Validation criteria (`.vibe/rules/`):**
+**Validation criteria (`.claude/vibe/rules/`):**
 
 ### Required Rules
 - `core/development-philosophy.md` - Surgical precision
