@@ -30,56 +30,122 @@ argument-hint: "PR number, branch name, or file path"
 
 ## Process
 
-### Phase 1: Setup & Target Determination
+### Phase 1: Tech Stack Detection & Target Analysis
+
+**Detect project tech stack FIRST before launching reviewers:**
 
 ```
-📋 Review Target Analysis
-├── Collect PR metadata (gh pr view)
-├── Gather changed files (git diff --name-only)
-├── Detect languages/frameworks
-└── Identify related test files
+📋 Tech Stack Detection
+├── Read package.json      → TypeScript, React, Node.js
+├── Read pyproject.toml    → Python, FastAPI, Django
+├── Read Gemfile           → Ruby, Rails
+├── Read pubspec.yaml      → Flutter, Dart
+├── Read go.mod            → Go
+├── Read CLAUDE.md         → Explicit tech stack declaration
+└── Analyze file extensions in changed files
 ```
 
-### Phase 2: Parallel Agent Review (CRITICAL)
+**Detection Logic:**
+```javascript
+// Stack detection from project files
+const stack = {
+  typescript: hasFile("package.json") && (hasDep("typescript") || hasFile("tsconfig.json")),
+  react: hasDep("react") || hasDep("next"),
+  python: hasFile("pyproject.toml") || hasFile("requirements.txt"),
+  rails: hasFile("Gemfile") && hasDep("rails"),
+  go: hasFile("go.mod"),
+  flutter: hasFile("pubspec.yaml")
+};
+```
 
-**Launch ALL agents simultaneously!**
+**Changed Files Analysis:**
+```
+git diff --name-only HEAD~1
+├── src/components/*.tsx  → React reviewer needed
+├── app/api/*.py          → Python reviewer needed
+├── app/models/*.rb       → Rails reviewer needed
+└── No .ts files          → Skip TypeScript reviewer
+```
+
+### Phase 2: Parallel Agent Review (STACK-AWARE)
+
+**Launch ONLY relevant agents based on detected stack!**
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🚀 PARALLEL AGENT LAUNCH (Run ALL at the same time)            │
+│  🚀 PARALLEL AGENT LAUNCH (Stack-Aware Selection)               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Security & Safety                                              │
+│  ✅ ALWAYS RUN (Core Reviewers)                                 │
 │  ├── security-reviewer      # OWASP Top 10, vulnerabilities     │
-│  └── data-integrity-reviewer # Data validation, constraints     │
-│                                                                 │
-│  Performance & Architecture                                     │
+│  ├── data-integrity-reviewer # Data validation, constraints     │
 │  ├── performance-reviewer   # N+1 queries, memory leaks         │
-│  └── architecture-reviewer  # Layer violations, cycles          │
-│                                                                 │
-│  Code Quality                                                   │
+│  ├── architecture-reviewer  # Layer violations, cycles          │
 │  ├── complexity-reviewer    # Cyclomatic complexity, length     │
-│  └── simplicity-reviewer    # Over-abstraction, dead code       │
-│                                                                 │
-│  Language Specific (auto-detect)                                │
-│  ├── python-reviewer        # PEP8, type hints, async patterns  │
-│  ├── typescript-reviewer    # Type safety, ESLint rules         │
-│  ├── rails-reviewer         # N+1, ActiveRecord, DHH style      │
-│  └── react-reviewer         # Hook rules, re-renders, a11y      │
-│                                                                 │
-│  Context Analysis                                               │
+│  ├── simplicity-reviewer    # Over-abstraction, dead code       │
 │  ├── git-history-reviewer   # Churn files, risk patterns        │
 │  └── test-coverage-reviewer # Missing tests, edge cases         │
+│                                                                 │
+│  🔍 CONDITIONAL (Based on Detected Stack)                       │
+│  ├── python-reviewer        # IF: .py files in diff             │
+│  ├── typescript-reviewer    # IF: .ts/.tsx files OR tsconfig    │
+│  ├── rails-reviewer         # IF: Gemfile has rails             │
+│  └── react-reviewer         # IF: package.json has react        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Agent invocation (ALL IN PARALLEL):**
+**Stack-Aware Agent Invocation:**
+```javascript
+// Core reviewers (ALWAYS)
+const coreAgents = [
+  "security-reviewer",
+  "data-integrity-reviewer",
+  "performance-reviewer",
+  "architecture-reviewer",
+  "complexity-reviewer",
+  "simplicity-reviewer",
+  "git-history-reviewer",
+  "test-coverage-reviewer"
+];
+
+// Language reviewers (CONDITIONAL)
+const languageAgents = [];
+if (stack.python || changedFiles.some(f => f.endsWith('.py'))) {
+  languageAgents.push("python-reviewer");
+}
+if (stack.typescript || changedFiles.some(f => f.match(/\.tsx?$/))) {
+  languageAgents.push("typescript-reviewer");
+}
+if (stack.react) {
+  languageAgents.push("react-reviewer");
+}
+if (stack.rails) {
+  languageAgents.push("rails-reviewer");
+}
+
+// Launch ALL selected agents in parallel
+const allAgents = [...coreAgents, ...languageAgents];
 ```
-Task(model: "haiku", subagent_type: "Explore", prompt: "Security review for...")
-Task(model: "haiku", subagent_type: "Explore", prompt: "Performance review for...")
-Task(model: "haiku", subagent_type: "Explore", prompt: "Architecture review for...")
-... (ALL IN PARALLEL)
+
+**Example Output:**
+```
+📦 Detected Stack: TypeScript + React + Node.js
+📄 Changed Files: 12 (.tsx: 8, .ts: 3, .json: 1)
+
+🚀 Launching 10 agents (8 core + 2 language-specific):
+   ✅ security-reviewer
+   ✅ data-integrity-reviewer
+   ✅ performance-reviewer
+   ✅ architecture-reviewer
+   ✅ complexity-reviewer
+   ✅ simplicity-reviewer
+   ✅ git-history-reviewer
+   ✅ test-coverage-reviewer
+   ✅ typescript-reviewer  ← Detected: tsconfig.json
+   ✅ react-reviewer       ← Detected: react in package.json
+   ⏭️ python-reviewer      ← Skipped: No Python files
+   ⏭️ rails-reviewer       ← Skipped: No Gemfile
 ```
 
 ### Phase 3: Ultra-Thinking Deep Analysis
