@@ -5,26 +5,26 @@ argument-hint: "PR number, branch name, or file path"
 
 # /vibe.review
 
-**병렬 에이전트 코드 리뷰** - 13+ 전문가가 동시에 검토
+**Parallel Agent Code Review** - 13+ specialists review simultaneously
 
 ## Usage
 
 ```
-/vibe.review                    # 현재 브랜치 전체 리뷰
-/vibe.review PR#123             # PR 리뷰
-/vibe.review feature/login      # 특정 브랜치 리뷰
-/vibe.review src/api/           # 특정 경로 리뷰
+/vibe.review                    # Review current branch
+/vibe.review PR#123             # Review specific PR
+/vibe.review feature/login      # Review specific branch
+/vibe.review src/api/           # Review specific path
 ```
 
-## 핵심 원칙
+## Core Principle
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  모든 전문가가 동시에 검토 = 빠르고 철저한 리뷰                  │
+│  All experts review simultaneously = Fast & Thorough            │
 │                                                                 │
-│  🔴 P1 (Critical): 머지 차단 - 반드시 수정                      │
-│  🟡 P2 (Important): 수정 권장 - 가능한 빨리                     │
-│  🔵 P3 (Nice-to-have): 개선 사항 - 시간 될 때                   │
+│  🔴 P1 (Critical): Blocks merge - MUST fix                      │
+│  🟡 P2 (Important): Should fix - Before merge                   │
+│  🔵 P3 (Nice-to-have): Enhancement - When time permits          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -34,15 +34,15 @@ argument-hint: "PR number, branch name, or file path"
 
 ```
 📋 Review Target Analysis
-├── PR 메타데이터 수집 (gh pr view)
-├── 변경 파일 목록 수집 (git diff --name-only)
-├── 언어/프레임워크 감지
-└── 관련 테스트 파일 식별
+├── Collect PR metadata (gh pr view)
+├── Gather changed files (git diff --name-only)
+├── Detect languages/frameworks
+└── Identify related test files
 ```
 
 ### Phase 2: Parallel Agent Review (CRITICAL)
 
-**모든 에이전트를 동시에 실행!**
+**Launch ALL agents simultaneously!**
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -50,31 +50,31 @@ argument-hint: "PR number, branch name, or file path"
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  Security & Safety                                              │
-│  ├── security-reviewer      # 보안 취약점 (OWASP Top 10)        │
-│  └── data-integrity-reviewer # 데이터 무결성, 검증              │
+│  ├── security-reviewer      # OWASP Top 10, vulnerabilities     │
+│  └── data-integrity-reviewer # Data validation, constraints     │
 │                                                                 │
 │  Performance & Architecture                                     │
-│  ├── performance-reviewer   # 성능 병목, N+1, 메모리 누수       │
-│  └── architecture-reviewer  # 아키텍처 위반, 의존성 순환        │
+│  ├── performance-reviewer   # N+1 queries, memory leaks         │
+│  └── architecture-reviewer  # Layer violations, cycles          │
 │                                                                 │
 │  Code Quality                                                   │
-│  ├── complexity-reviewer    # 복잡도 초과, 함수 길이            │
-│  └── simplicity-reviewer    # 과도한 추상화, 불필요한 코드      │
+│  ├── complexity-reviewer    # Cyclomatic complexity, length     │
+│  └── simplicity-reviewer    # Over-abstraction, dead code       │
 │                                                                 │
 │  Language Specific (auto-detect)                                │
-│  ├── python-reviewer        # PEP8, 타입힌트, async 패턴        │
-│  ├── typescript-reviewer    # 타입 안전성, ESLint 규칙          │
-│  ├── rails-reviewer         # N+1, ActiveRecord, DHH 스타일     │
-│  └── react-reviewer         # 훅 규칙, 리렌더링, 접근성         │
+│  ├── python-reviewer        # PEP8, type hints, async patterns  │
+│  ├── typescript-reviewer    # Type safety, ESLint rules         │
+│  ├── rails-reviewer         # N+1, ActiveRecord, DHH style      │
+│  └── react-reviewer         # Hook rules, re-renders, a11y      │
 │                                                                 │
 │  Context Analysis                                               │
-│  ├── git-history-reviewer   # 반복 수정 파일, 위험 패턴         │
-│  └── test-coverage-reviewer # 테스트 누락, 엣지케이스           │
+│  ├── git-history-reviewer   # Churn files, risk patterns        │
+│  └── test-coverage-reviewer # Missing tests, edge cases         │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**에이전트 호출 예시:**
+**Agent invocation (ALL IN PARALLEL):**
 ```
 Task(model: "haiku", subagent_type: "Explore", prompt: "Security review for...")
 Task(model: "haiku", subagent_type: "Explore", prompt: "Performance review for...")
@@ -84,33 +84,33 @@ Task(model: "haiku", subagent_type: "Explore", prompt: "Architecture review for.
 
 ### Phase 3: Ultra-Thinking Deep Analysis
 
-각 에이전트 결과 후 심층 분석:
+Deep analysis after agent results:
 
 ```markdown
 ## Deep Analysis Dimensions
 
 1. **System Context**
-   - 컴포넌트 상호작용
-   - 데이터 흐름
-   - 외부 의존성
+   - Component interactions
+   - Data flow
+   - External dependencies
 
 2. **Stakeholder Perspectives**
-   - 개발자: 유지보수성
-   - 운영팀: 배포 위험
-   - 보안팀: 취약점
-   - 비즈니스: 영향도
+   - Developers: Maintainability
+   - Ops: Deployment risk
+   - Security: Vulnerabilities
+   - Business: Impact
 
 3. **Edge Cases & Failure Scenarios**
-   - 레이스 컨디션
-   - 리소스 고갈
-   - 네트워크 실패
-   - 악의적 입력
+   - Race conditions
+   - Resource exhaustion
+   - Network failures
+   - Malicious input
 
 4. **Multiple Angles**
-   - 기술적 우수성
-   - 비즈니스 가치
-   - 리스크 관리
-   - 팀 역학
+   - Technical excellence
+   - Business value
+   - Risk management
+   - Team dynamics
 ```
 
 ### Phase 4: Findings Synthesis
@@ -147,7 +147,7 @@ Task(model: "haiku", subagent_type: "Explore", prompt: "Architecture review for.
 
 ### Phase 5: Todo File Creation
 
-발견 사항을 `.vibe/todos/` 에 저장:
+Save findings to `.vibe/todos/`:
 
 ```markdown
 ## File Naming Convention
@@ -196,7 +196,7 @@ cursor.execute(query, (email,))
 ### Phase 6: Optional E2E Testing
 
 ```
-프로젝트 유형에 따른 E2E 테스트 제안:
+Suggest E2E tests based on project type:
 ├── Web: /vibe.e2e (Playwright)
 ├── iOS: Xcode Test
 ├── Android: Espresso
@@ -243,15 +243,15 @@ cursor.execute(query, (email,))
 
 | Priority | Criteria | Action |
 |----------|----------|--------|
-| 🔴 P1 | 보안 취약점, 데이터 손실, 크래시 | 머지 차단, 즉시 수정 |
-| 🟡 P2 | 성능 문제, 아키텍처 위반, 테스트 누락 | 머지 전 수정 권장 |
-| 🔵 P3 | 스타일, 리팩토링 제안, 문서화 | 백로그에 추가 |
+| 🔴 P1 | Security vulnerabilities, data loss, crashes | Block merge, fix immediately |
+| 🟡 P2 | Performance issues, architecture violations, missing tests | Fix before merge |
+| 🔵 P3 | Style, refactoring suggestions, documentation | Add to backlog |
 
 ## Related Commands
 
-- `/vibe.e2e` - E2E 테스트 실행
-- `/vibe.compound` - 해결책 문서화
-- `/vibe.verify` - SPEC 기반 검증
+- `/vibe.e2e` - Run E2E tests
+- `/vibe.compound` - Document solutions
+- `/vibe.verify` - SPEC-based verification
 
 ---
 

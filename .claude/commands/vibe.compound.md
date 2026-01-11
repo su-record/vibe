@@ -5,29 +5,29 @@ argument-hint: "solution description (optional)"
 
 # /vibe.compound
 
-**지식 복리 효과** - 해결한 문제를 자동 문서화하여 미래 생산성 향상
+**Knowledge Compounding** - Auto-document solved problems to boost future productivity
 
 > "Each solution documented makes future problems easier to solve."
 
 ## Usage
 
 ```
-/vibe.compound                           # 최근 해결 사항 자동 감지
-/vibe.compound "Redis 캐시 무효화 문제"   # 특정 해결책 문서화
+/vibe.compound                           # Auto-detect recent solutions
+/vibe.compound "Redis cache invalidation" # Document specific solution
 ```
 
-## 자동 트리거
+## Auto-Triggers
 
-다음 키워드 감지 시 자동 제안:
-- "it's fixed", "해결됨", "fixed", "solved"
-- PR 머지 직후
-- `/vibe.verify` 통과 후
+Automatically suggested when these patterns detected:
+- "it's fixed", "fixed", "solved", "resolved"
+- After PR merge
+- After `/vibe.verify` passes
 
 ## Process
 
 ### Phase 1: Solution Extraction
 
-병렬 에이전트로 해결책 분석:
+Parallel agents analyze the solution:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -35,39 +35,39 @@ argument-hint: "solution description (optional)"
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  Task 1: problem-analyzer                                       │
-│  ├── 원래 문제 파악                                              │
-│  ├── 증상 및 에러 메시지                                         │
-│  └── 영향 범위                                                   │
+│  ├── Identify original problem                                  │
+│  ├── Symptoms and error messages                                │
+│  └── Impact scope                                               │
 │                                                                 │
 │  Task 2: solution-extractor                                     │
-│  ├── 적용된 수정 사항                                            │
-│  ├── 핵심 코드 변경                                              │
-│  └── 설정 변경                                                   │
+│  ├── Applied fixes                                              │
+│  ├── Key code changes                                           │
+│  └── Configuration changes                                      │
 │                                                                 │
 │  Task 3: root-cause-analyzer                                    │
-│  ├── 근본 원인                                                   │
-│  ├── 왜 발생했는지                                               │
-│  └── 방지 방법                                                   │
+│  ├── Root cause identification                                  │
+│  ├── Why it happened                                            │
+│  └── Prevention methods                                         │
 │                                                                 │
 │  Task 4: pattern-recognizer                                     │
-│  ├── 유사 문제 패턴                                              │
-│  ├── 관련 기술 스택                                              │
-│  └── 검색 키워드                                                 │
+│  ├── Similar problem patterns                                   │
+│  ├── Related tech stack                                         │
+│  └── Search keywords                                            │
 │                                                                 │
 │  Task 5: category-classifier                                    │
-│  ├── 카테고리 분류                                               │
-│  ├── 태그 생성                                                   │
-│  └── 관련 문서 링크                                              │
+│  ├── Category classification                                    │
+│  ├── Tag generation                                             │
+│  └── Related doc links                                          │
 │                                                                 │
 │  Task 6: code-snippet-extractor                                 │
-│  ├── Before/After 코드                                          │
-│  ├── 핵심 변경 하이라이트                                        │
-│  └── 복사 가능한 스니펫                                          │
+│  ├── Before/After code                                          │
+│  ├── Key change highlights                                      │
+│  └── Copy-paste snippets                                        │
 │                                                                 │
 │  Task 7: prevention-advisor                                     │
-│  ├── 재발 방지 체크리스트                                        │
-│  ├── 린터 규칙 제안                                              │
-│  └── 테스트 케이스 제안                                          │
+│  ├── Prevention checklist                                       │
+│  ├── Suggested linter rules                                     │
+│  └── Test case suggestions                                      │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -76,25 +76,25 @@ argument-hint: "solution description (optional)"
 
 ```
 .vibe/solutions/
-├── security/           # 보안 관련
+├── security/           # Security related
 │   ├── sql-injection-prevention.md
 │   └── xss-sanitization.md
-├── performance/        # 성능 최적화
+├── performance/        # Performance optimization
 │   ├── n1-query-fix.md
 │   └── redis-cache-invalidation.md
-├── database/           # DB 관련
+├── database/           # Database related
 │   ├── migration-rollback.md
 │   └── deadlock-resolution.md
-├── integration/        # 외부 연동
+├── integration/        # External integrations
 │   ├── stripe-webhook-retry.md
 │   └── aws-s3-timeout.md
-├── frontend/           # 프론트엔드
+├── frontend/           # Frontend issues
 │   ├── react-hydration-mismatch.md
 │   └── infinite-scroll-memory.md
-├── testing/            # 테스트
+├── testing/            # Testing related
 │   ├── flaky-test-fix.md
 │   └── mock-timezone.md
-└── deployment/         # 배포
+└── deployment/         # Deployment issues
     ├── docker-layer-cache.md
     └── k8s-rolling-update.md
 ```
@@ -102,66 +102,66 @@ argument-hint: "solution description (optional)"
 ### Phase 3: Document Generation
 
 ```markdown
-# [Solution] Redis 캐시 무효화 문제
+# [Solution] Redis Cache Invalidation
 
 ## TL;DR
-Redis 캐시 키에 버전 접미사 추가로 무효화 문제 해결
+Added version suffix to Redis cache key to fix invalidation issue
 
 ## Problem
-### 증상
-- 사용자 프로필 업데이트 후에도 이전 데이터 표시
-- 새로고침해도 동일한 문제
+### Symptoms
+- User profile shows stale data after update
+- Refresh doesn't fix the issue
 
-### 에러/로그
+### Error/Logs
 ```
 Cache hit: user:123 (stale data)
 ```
 
-### 영향 범위
-- 사용자 프로필 페이지
+### Impact Scope
+- User profile page
 - API: GET /api/users/:id
 
 ## Root Cause
-캐시 키가 user_id만 사용하여 업데이트 시 무효화되지 않음
+Cache key only used user_id, not invalidated on update
 
 ```python
 # Before
-cache_key = f"user:{user_id}"  # 버전 없음
+cache_key = f"user:{user_id}"  # No version
 ```
 
 ## Solution
-### 핵심 변경
-캐시 키에 updated_at 타임스탬프 추가
+### Key Change
+Add updated_at timestamp to cache key
 
 ```python
 # After
 cache_key = f"user:{user_id}:v{updated_at.timestamp()}"
 ```
 
-### 변경 파일
+### Changed Files
 - src/services/cache.py:42
 - src/api/users.py:78
 
 ## Prevention
-- [ ] 캐시 키에 항상 버전/타임스탬프 포함
-- [ ] 캐시 무효화 테스트 추가
-- [ ] 린터 규칙: cache_key 패턴 검사
+- [ ] Always include version/timestamp in cache keys
+- [ ] Add cache invalidation tests
+- [ ] Linter rule: cache_key pattern check
 
 ## Related
-- 유사 이슈: #234 (Session cache)
-- 문서: docs/caching-strategy.md
-- 태그: #redis #cache #invalidation
+- Similar issue: #234 (Session cache)
+- Docs: docs/caching-strategy.md
+- Tags: #redis #cache #invalidation
 
 ## Metadata
-- 해결일: 2026-01-11
-- 소요시간: 2시간
-- 난이도: 중
-- 재사용성: 높음
+- Resolved: 2026-01-11
+- Time spent: 2 hours
+- Difficulty: Medium
+- Reusability: High
 ```
 
 ### Phase 4: Index Update
 
-`.vibe/solutions/index.md` 자동 업데이트:
+Auto-update `.vibe/solutions/index.md`:
 
 ```markdown
 # Solution Index
@@ -169,8 +169,8 @@ cache_key = f"user:{user_id}:v{updated_at.timestamp()}"
 ## Recently Added
 | Date | Category | Title | Tags |
 |------|----------|-------|------|
-| 2026-01-11 | performance | Redis 캐시 무효화 | #redis #cache |
-| 2026-01-10 | security | SQL Injection 방지 | #sql #security |
+| 2026-01-11 | performance | Redis cache invalidation | #redis #cache |
+| 2026-01-10 | security | SQL Injection prevention | #sql #security |
 
 ## By Category
 - **Security** (5 solutions)
@@ -186,19 +186,19 @@ cache_key = f"user:{user_id}:v{updated_at.timestamp()}"
 
 ## Auto-Suggestion
 
-유사 문제 발생 시 자동 제안:
+When similar problem detected:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  💡 Similar Solution Found!                                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  You're working on: "캐시가 업데이트 안 됨"                      │
+│  You're working on: "Cache not updating"                        │
 │                                                                 │
 │  Related solution (85% match):                                  │
 │  📄 .vibe/solutions/performance/redis-cache-invalidation.md     │
 │                                                                 │
-│  Key insight: 캐시 키에 버전 접미사 추가                         │
+│  Key insight: Add version suffix to cache key                   │
 │                                                                 │
 │  Apply this solution? [Y/n]                                     │
 │                                                                 │
@@ -231,13 +231,13 @@ cache_key = f"user:{user_id}:v{updated_at.timestamp()}"
 
 ## Integration with Memory
 
-자동으로 `vibe_save_memory` 호출:
+Auto-invoke `vibe_save_memory`:
 
 ```json
 {
   "type": "solution",
   "category": "performance",
-  "title": "Redis 캐시 무효화",
+  "title": "Redis cache invalidation",
   "keywords": ["redis", "cache", "invalidation"],
   "file": ".vibe/solutions/performance/redis-cache-invalidation.md"
 }

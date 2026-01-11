@@ -5,31 +5,31 @@ argument-hint: "test scenario or URL"
 
 # /vibe.e2e
 
-**E2E 테스트 자동화** - Playwright 기반 브라우저 테스트
+**E2E Test Automation** - Playwright-based browser testing
 
 ## Usage
 
 ```
-/vibe.e2e                              # 전체 E2E 테스트 실행
-/vibe.e2e "login flow"                 # 특정 시나리오 테스트
-/vibe.e2e http://localhost:3000/login  # 특정 URL 테스트
-/vibe.e2e --visual                     # 시각적 회귀 테스트
-/vibe.e2e --record                     # 테스트 영상 녹화
+/vibe.e2e                              # Run all E2E tests
+/vibe.e2e "login flow"                 # Test specific scenario
+/vibe.e2e http://localhost:3000/login  # Test specific URL
+/vibe.e2e --visual                     # Visual regression testing
+/vibe.e2e --record                     # Record test video
 ```
 
-## 핵심 기능
+## Core Features
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  🎭 Playwright E2E Testing                                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ✅ 스크린샷 캡처 - UI 상태 기록                                 │
-│  ✅ 콘솔 에러 수집 - JavaScript 에러 감지                        │
-│  ✅ 네트워크 모니터링 - API 실패 감지                            │
-│  ✅ 시각적 회귀 테스트 - 스크린샷 비교                           │
-│  ✅ 비디오 녹화 - 버그 재현 증거                                 │
-│  ✅ 접근성 검사 - a11y 위반 감지                                 │
+│  ✅ Screenshot Capture - Record UI state                        │
+│  ✅ Console Error Collection - Detect JS errors                 │
+│  ✅ Network Monitoring - Detect API failures                    │
+│  ✅ Visual Regression - Compare screenshots                     │
+│  ✅ Video Recording - Bug reproduction evidence                 │
+│  ✅ Accessibility Check - Detect a11y violations                │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -39,10 +39,10 @@ argument-hint: "test scenario or URL"
 ### Phase 1: Environment Setup
 
 ```bash
-# Playwright 설치 확인
+# Check Playwright installation
 npx playwright --version
 
-# 브라우저 설치 (필요시)
+# Install browsers if needed
 npx playwright install chromium
 ```
 
@@ -50,16 +50,16 @@ npx playwright install chromium
 
 ```
 📋 Scenario Detection
-├── .vibe/features/{feature}.feature → BDD 시나리오 추출
-├── .vibe/specs/{feature}.md → 검증 기준 확인
-└── 기존 e2e/*.spec.ts 분석
+├── .vibe/features/{feature}.feature → Extract BDD scenarios
+├── .vibe/specs/{feature}.md → Check acceptance criteria
+└── Analyze existing e2e/*.spec.ts
 ```
 
 ### Phase 3: Test Execution
 
 **Single Page Test:**
 ```typescript
-// 자동 생성 테스트
+// Auto-generated test
 import { test, expect } from '@playwright/test';
 
 test('login flow', async ({ page }) => {
@@ -144,10 +144,10 @@ test('accessibility check', async ({ page }) => {
 
 ### Phase 6: Bug Reproduction (Optional)
 
-버그 리포트와 연계:
+Link with bug reports:
 
 ```
-/vibe.e2e --reproduce "사용자가 로그인 후 빈 페이지 표시"
+/vibe.e2e --reproduce "User sees blank page after login"
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  🐛 Bug Reproduction Mode                                        │
@@ -239,7 +239,7 @@ test('accessibility check', async ({ page }) => {
 
 ## Integration with Review
 
-`/vibe.review` 완료 후 자동 제안:
+Auto-suggest after `/vibe.review`:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -257,9 +257,9 @@ test('accessibility check', async ({ page }) => {
 
 ## Related Commands
 
-- `/vibe.review` - 코드 리뷰
-- `/vibe.verify` - SPEC 검증
-- `/vibe.compound` - 테스트 결과 문서화
+- `/vibe.review` - Code review
+- `/vibe.verify` - SPEC verification
+- `/vibe.compound` - Document test results
 
 ---
 

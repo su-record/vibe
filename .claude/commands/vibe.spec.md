@@ -80,40 +80,40 @@ vibe status             # Check current settings
 - Tech stack: Confirm existing stack or suggest new
 - Design reference: UI/UX to reference
 
-### 3. Parallel Research (v2.1.0) - 요구사항 확정 후 실행
+### 3. Parallel Research (v2.1.0) - Run AFTER requirements confirmed
 
-**⚠️ 중요: 문답으로 요구사항이 확정된 후에만 리서치 시작**
+**⚠️ IMPORTANT: Research starts ONLY after requirements are confirmed via Q&A**
 
-요구사항 확정 시점:
-- 기능 유형 결정됨 (예: "패스키 인증")
-- 기술 스택 확정됨 (예: "React + Supabase")
-- 핵심 요구사항 수집 완료
+Requirements confirmed when:
+- Feature type decided (e.g., "passkey authentication")
+- Tech stack confirmed (e.g., "React + Supabase")
+- Core requirements collected
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🔍 PARALLEL RESEARCH AGENTS (요구사항 확정 후)                  │
+│  🔍 PARALLEL RESEARCH AGENTS (After requirements confirmed)     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  Task 1: best-practices-agent                                   │
-│  └── "[확정된 기능] + [확정된 스택]" 베스트 프랙티스             │
+│  └── Best practices for [confirmed feature] + [confirmed stack] │
 │                                                                 │
 │  Task 2: framework-docs-agent                                   │
-│  └── "[확정된 스택]" 최신 문서 수집 (context7)                   │
+│  └── Latest docs for [confirmed stack] (via context7)           │
 │                                                                 │
 │  Task 3: codebase-patterns-agent                                │
-│  └── 기존 코드베이스에서 유사 패턴 분석                          │
+│  └── Analyze similar patterns in existing codebase              │
 │                                                                 │
 │  Task 4: security-advisory-agent                                │
-│  └── "[확정된 기능]" 관련 보안 권고                              │
+│  └── Security advisories for [confirmed feature]                │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**실행 방법 (모두 병렬 호출):**
+**Execution (ALL in parallel):**
 ```
-# 확정된 요구사항 기반으로 구체적인 프롬프트 생성
+# Generate specific prompts based on confirmed requirements
 Task(model: "haiku", subagent_type: "Explore",
-     prompt: "Research best practices for [패스키 인증] with [React + Supabase]")
+     prompt: "Research best practices for [passkey auth] with [React + Supabase]")
 Task(model: "haiku", subagent_type: "Explore",
      prompt: "Get Supabase Auth + WebAuthn docs from context7")
 Task(model: "haiku", subagent_type: "Explore",
@@ -122,7 +122,7 @@ Task(model: "haiku", subagent_type: "Explore",
      prompt: "Check OWASP WebAuthn security guidelines")
 ```
 
-**리서치 결과는 SPEC의 Context 섹션에 반영됨.**
+**Research results are reflected in SPEC's Context section.**
 
 ### 4. Write SPEC Document (PTCF Structure)
 
