@@ -137,6 +137,46 @@ const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
 // Utility Functions
 // ============================================================================
 
+/**
+ * Claude CLI 경로 찾기 (Windows/macOS/Linux 지원)
+ */
+function getClaudePath(): string {
+  // 먼저 기본 'claude' 시도
+  try {
+    execSync('claude --version', { stdio: 'pipe' });
+    return 'claude';
+  } catch {
+    // Windows에서 일반적인 설치 경로들 확인
+    if (process.platform === 'win32') {
+      const possiblePaths = [
+        path.join(os.homedir(), 'AppData', 'Local', 'Programs', '@anthropic', 'claude-code', 'claude.exe'),
+        path.join(os.homedir(), 'AppData', 'Local', 'AnthropicClaude', 'claude.exe'),
+        path.join(os.homedir(), '.claude', 'local', 'claude.exe'),
+        'C:\\Program Files\\Anthropic\\Claude\\claude.exe',
+        'C:\\Program Files (x86)\\Anthropic\\Claude\\claude.exe',
+      ];
+
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          return `"${p}"`;
+        }
+      }
+    }
+
+    // 찾지 못하면 기본값 반환 (에러는 호출 측에서 처리)
+    return 'claude';
+  }
+}
+
+// Claude CLI 경로 캐시
+let _claudePath: string | null = null;
+function claudeCmd(): string {
+  if (_claudePath === null) {
+    _claudePath = getClaudePath();
+  }
+  return _claudePath;
+}
+
 function log(message: string): void {
   if (!options.silent) {
     console.log(message);
@@ -704,8 +744,8 @@ async function init(projectName?: string): Promise<void> {
 
     // 0. 기존 hi-ai/vibe MCP 제거 (마이그레이션 - 내장 도구로 전환)
     try {
-      execSync('claude mcp remove vibe', { stdio: 'pipe' });
-      execSync('claude mcp remove vibe -s user', { stdio: 'pipe' });
+      execSync(`${claudeCmd()} mcp remove vibe`, { stdio: 'pipe' });
+      execSync(`${claudeCmd()} mcp remove vibe -s user`, { stdio: 'pipe' });
     } catch (e) {
       // 이미 없으면 무시
     }
@@ -713,7 +753,7 @@ async function init(projectName?: string): Promise<void> {
     // 1. vibe-gemini MCP
     if (fs.existsSync(geminiMcpPath)) {
       try {
-        execSync(`claude mcp add vibe-gemini -s user node "${geminiMcpPath}"`, { stdio: 'pipe' });
+        execSync(`${claudeCmd()} mcp add vibe-gemini -s user node "${geminiMcpPath}"`, { stdio: 'pipe' });
         log('   ✅ vibe-gemini MCP 등록 완료 (전역)\n');
       } catch (e: any) {
         if (e.message.includes('already exists')) {
@@ -725,7 +765,7 @@ async function init(projectName?: string): Promise<void> {
     // 3. vibe-gpt MCP
     if (fs.existsSync(gptMcpPath)) {
       try {
-        execSync(`claude mcp add vibe-gpt -s user node "${gptMcpPath}"`, { stdio: 'pipe' });
+        execSync(`${claudeCmd()} mcp add vibe-gpt -s user node "${gptMcpPath}"`, { stdio: 'pipe' });
         log('   ✅ vibe-gpt MCP 등록 완료 (전역)\n');
       } catch (e: any) {
         if (e.message.includes('already exists')) {
@@ -736,7 +776,7 @@ async function init(projectName?: string): Promise<void> {
 
     // 4. Context7 MCP
     try {
-      execSync('claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest', { stdio: 'pipe' });
+      execSync(`${claudeCmd()} mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest`, { stdio: 'pipe' });
       log('   ✅ Context7 MCP 등록 완료 (라이브러리 문서 검색)\n');
     } catch (e: any) {
       if (e.message.includes('already exists')) {
@@ -1275,15 +1315,15 @@ async function update(): Promise<void> {
     // MCP 등록 (hi-ai는 내장 도구로 전환됨)
     try {
       // 기존 vibe MCP 제거 (hi-ai 기반 → 내장 도구로 마이그레이션)
-      try { execSync('claude mcp remove vibe', { stdio: 'pipe' }); } catch (e) {}
-      try { execSync('claude mcp remove vibe -s user', { stdio: 'pipe' }); } catch (e) {}
+      try { execSync(`${claudeCmd()} mcp remove vibe`, { stdio: 'pipe' }); } catch (e) {}
+      try { execSync(`${claudeCmd()} mcp remove vibe -s user`, { stdio: 'pipe' }); } catch (e) {}
 
       // vibe-gemini MCP 등록
-      try { execSync('claude mcp remove vibe-gemini', { stdio: 'pipe' }); } catch (e) {}
-      try { execSync('claude mcp remove vibe-gemini -s user', { stdio: 'pipe' }); } catch (e) {}
+      try { execSync(`${claudeCmd()} mcp remove vibe-gemini`, { stdio: 'pipe' }); } catch (e) {}
+      try { execSync(`${claudeCmd()} mcp remove vibe-gemini -s user`, { stdio: 'pipe' }); } catch (e) {}
       if (fs.existsSync(geminiMcpPath)) {
         try {
-          execSync(`claude mcp add vibe-gemini -s user node "${geminiMcpPath}"`, { stdio: 'pipe' });
+          execSync(`${claudeCmd()} mcp add vibe-gemini -s user node "${geminiMcpPath}"`, { stdio: 'pipe' });
           log('   ✅ vibe-gemini MCP 전역 등록 완료\n');
         } catch (e: any) {
           if (e.message.includes('already exists')) {
@@ -1293,11 +1333,11 @@ async function update(): Promise<void> {
       }
 
       // vibe-gpt MCP 등록
-      try { execSync('claude mcp remove vibe-gpt', { stdio: 'pipe' }); } catch (e) {}
-      try { execSync('claude mcp remove vibe-gpt -s user', { stdio: 'pipe' }); } catch (e) {}
+      try { execSync(`${claudeCmd()} mcp remove vibe-gpt`, { stdio: 'pipe' }); } catch (e) {}
+      try { execSync(`${claudeCmd()} mcp remove vibe-gpt -s user`, { stdio: 'pipe' }); } catch (e) {}
       if (fs.existsSync(gptMcpPath)) {
         try {
-          execSync(`claude mcp add vibe-gpt -s user node "${gptMcpPath}"`, { stdio: 'pipe' });
+          execSync(`${claudeCmd()} mcp add vibe-gpt -s user node "${gptMcpPath}"`, { stdio: 'pipe' });
           log('   ✅ vibe-gpt MCP 전역 등록 완료\n');
         } catch (e: any) {
           if (e.message.includes('already exists')) {
@@ -1307,9 +1347,9 @@ async function update(): Promise<void> {
       }
 
       // context7 MCP 등록
-      try { execSync('claude mcp remove context7', { stdio: 'pipe' }); } catch (e) {}
+      try { execSync(`${claudeCmd()} mcp remove context7`, { stdio: 'pipe' }); } catch (e) {}
       try {
-        execSync('claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest', { stdio: 'pipe' });
+        execSync(`${claudeCmd()} mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest`, { stdio: 'pipe' });
         log('   ✅ context7 MCP 전역 등록 완료\n');
       } catch (e: any) {
         if (e.message.includes('already exists')) {
@@ -1365,14 +1405,14 @@ function remove(): void {
 
   // MCP 서버 제거
   try {
-    execSync('claude mcp remove vibe', { stdio: 'pipe' });
+    execSync(`${claudeCmd()} mcp remove vibe`, { stdio: 'pipe' });
     console.log('   ✅ vibe MCP 제거 완료\n');
   } catch (e) {
     console.log('   ℹ️  vibe MCP 이미 제거됨 또는 없음\n');
   }
 
   try {
-    execSync('claude mcp remove context7', { stdio: 'pipe' });
+    execSync(`${claudeCmd()} mcp remove context7`, { stdio: 'pipe' });
     console.log('   ✅ context7 MCP 제거 완료\n');
   } catch (e) {
     console.log('   ℹ️  context7 MCP 이미 제거됨 또는 없음\n');
@@ -1485,10 +1525,10 @@ ${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : '
 
   try {
     try {
-      execSync(`claude mcp remove ${llmConfig.name} -s user`, { stdio: 'pipe' });
+      execSync(`${claudeCmd()} mcp remove ${llmConfig.name} -s user`, { stdio: 'pipe' });
     } catch (e) {}
 
-    execSync(`claude mcp add ${llmConfig.name} -s user -e ${envKey}=${apiKey} -- npx -y ${llmConfig.package}`, { stdio: 'pipe' });
+    execSync(`${claudeCmd()} mcp add ${llmConfig.name} -s user -e ${envKey}=${apiKey} -- npx -y ${llmConfig.package}`, { stdio: 'pipe' });
 
     console.log(`
 ✅ ${llmType.toUpperCase()} 활성화 완료! (전역)
@@ -1504,7 +1544,7 @@ MCP: ${llmConfig.name}
     console.log(`
 ⚠️  MCP 등록 실패. 수동으로 등록하세요:
 
-claude mcp add ${llmConfig.name} -s user -e ${envKey}=<your-key> -- npx -y ${llmConfig.package}
+${claudeCmd()} mcp add ${llmConfig.name} -s user -e ${envKey}=<your-key> -- npx -y ${llmConfig.package}
     `);
   }
 }
@@ -1530,8 +1570,8 @@ function removeExternalLLM(llmType: string): void {
   const llmConfig = EXTERNAL_LLMS[llmType];
 
   try {
-    try { execSync(`claude mcp remove ${llmConfig.name}`, { stdio: 'pipe' }); } catch (e) {}
-    try { execSync(`claude mcp remove ${llmConfig.name} -s user`, { stdio: 'pipe' }); } catch (e) {}
+    try { execSync(`${claudeCmd()} mcp remove ${llmConfig.name}`, { stdio: 'pipe' }); } catch (e) {}
+    try { execSync(`${claudeCmd()} mcp remove ${llmConfig.name} -s user`, { stdio: 'pipe' }); } catch (e) {}
     console.log(`✅ ${llmType.toUpperCase()} 비활성화 완료`);
   } catch (e) {
     console.log(`ℹ️  ${llmType.toUpperCase()} MCP가 등록되어 있지 않습니다.`);
@@ -1797,8 +1837,8 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
     try {
       const mcpPath = path.join(__dirname, '../lib/gemini-mcp.js');
 
-      try { execSync('claude mcp remove vibe-gemini -s user', { stdio: 'ignore' }); } catch (e) {}
-      execSync(`claude mcp add vibe-gemini -s user node "${mcpPath}"`, { stdio: 'inherit' });
+      try { execSync(`${claudeCmd()} mcp remove vibe-gemini -s user`, { stdio: 'ignore' }); } catch (e) {}
+      execSync(`${claudeCmd()} mcp add vibe-gemini -s user node "${mcpPath}"`, { stdio: 'inherit' });
 
       console.log(`
 ✅ vibe-gemini MCP 서버 등록 완료! (전역)
@@ -1812,7 +1852,7 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
     } catch (mcpError) {
       console.log(`
 ⚠️  MCP 서버 등록 실패 (수동 등록 필요):
-  claude mcp add vibe-gemini -s user node "${path.join(__dirname, '../lib/gemini-mcp.js')}"
+  ${claudeCmd()} mcp add vibe-gemini -s user node "${path.join(__dirname, '../lib/gemini-mcp.js')}"
       `);
     }
 

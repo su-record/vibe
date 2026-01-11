@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx tsc:*)",
       "Bash(npm login:*)",
-      "Bash(npm whoami:*)"
+      "Bash(npm whoami:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
