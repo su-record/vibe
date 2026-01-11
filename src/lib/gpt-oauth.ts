@@ -261,10 +261,15 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
         timeoutId = null;
       }
       if (server) {
-        server.close(() => {});
+        // closeAllConnections 먼저 호출하여 활성 연결 종료
         if ('closeAllConnections' in server) {
           (server as http.Server & { closeAllConnections: () => void }).closeAllConnections();
         }
+        // 약간의 지연 후 서버 종료 (libuv 핸들 충돌 방지)
+        setImmediate(() => {
+          server?.close(() => {});
+          server = null;
+        });
       }
     };
 

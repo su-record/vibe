@@ -1,0 +1,9 @@
+{
+  "models": {
+    "gpt": {
+      "enabled": true,
+      "role": "architecture",
+      "description": "아키텍처/디버깅 (GPT 5.2)"
+    }
+  }
+}
