@@ -24,6 +24,13 @@ SPEC 문서 하나로 AI가 바로 구현하고, **시나리오별 자동 검증
 - **자동 컨텍스트 관리**: 80%+ 시 자동 저장, 세션 자동 복원
 - **36개 내장 도구**: 코드 분석, 품질 검증, 세션 메모리 (MCP 오버헤드 제거)
 
+### v2.1.0 신규 기능
+
+- **🔍 병렬 코드 리뷰**: 13+ 전문 에이전트가 동시 리뷰 (P1/P2/P3 우선순위)
+- **🎭 E2E 테스트**: Playwright 기반 브라우저 자동화 (시각적 회귀, 비디오 녹화)
+- **📚 지식 복리**: 해결책 자동 문서화 → `.vibe/solutions/`
+- **🔬 병렬 리서치**: 요구사항 확정 후 4개 에이전트 동시 조사
+
 ---
 
 ## Installation
@@ -65,17 +72,24 @@ cd my-project
 ┌─────────────────────────────────────────────────────┐
 │  /vibe.spec "기능명"                                │
 │  ↓ 대화형 요구사항 수집                              │
-│  ↓ .vibe/specs/{기능명}.md (PTCF 구조)              │
-│  ↓ .vibe/features/{기능명}.feature (BDD 시나리오)   │
+│  ↓ 요구사항 확정 후 4개 병렬 리서치 (v2.1.0)        │
+│  ↓ .vibe/specs/{기능명}.md + .feature              │
 ├─────────────────────────────────────────────────────┤
 │  /vibe.run "기능명" ultrawork                       │
 │  ↓ 시나리오별 구현 + 즉시 검증 (SDD)                │
-│  ↓ Scenario 1 → 구현 → ✅ → Scenario 2 → ...       │
-│  ↓ 실패 시 자동 재시도 (최대 3회)                   │
+│  ↓ Scenario 1 → ✅ → Scenario 2 → ...             │
 ├─────────────────────────────────────────────────────┤
 │  /vibe.verify "기능명"                              │
 │  ↓ Given/When/Then 단계별 검증                     │
-│  ↓ 품질 리포트 자동 생성                            │
+├─────────────────────────────────────────────────────┤
+│  /vibe.review                    ← NEW (v2.1.0)    │
+│  ↓ 13+ 병렬 리뷰 에이전트 (P1/P2/P3)               │
+├─────────────────────────────────────────────────────┤
+│  /vibe.e2e                       ← NEW (v2.1.0)    │
+│  ↓ Playwright E2E 테스트                           │
+├─────────────────────────────────────────────────────┤
+│  /vibe.compound                  ← NEW (v2.1.0)    │
+│  ↓ 해결책 문서화 → .vibe/solutions/                │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -129,12 +143,16 @@ Feature 로드 → Scenario 1 [구현→검증] → Scenario 2 [구현→검증]
 
 | 명령어 | 설명 |
 |--------|------|
-| `/vibe.spec "기능명"` | SPEC 작성 (PTCF 구조) |
+| `/vibe.spec "기능명"` | SPEC 작성 (PTCF 구조) + 병렬 리서치 |
 | `/vibe.run "기능명"` | 구현 실행 |
 | `/vibe.run "기능명" ultrawork` | 🚀 **최대 성능 모드** (권장) |
 | `/vibe.run "기능명" ulw` | ultrawork 단축어 |
 | `/vibe.run "기능명" --phase N` | 특정 Phase만 실행 |
 | `/vibe.verify "기능명"` | 검증 |
+| `/vibe.review` | 🆕 **병렬 코드 리뷰** (13+ 에이전트) |
+| `/vibe.e2e` | 🆕 **E2E 테스트** (Playwright) |
+| `/vibe.compound` | 🆕 **지식 문서화** (해결책 아카이브) |
+| `/vibe.continue` | 🆕 **세션 복원** (이전 컨텍스트 로드) |
 
 #### 분석 & 도구
 
@@ -243,6 +261,78 @@ When: "비밀번호 찾기" 클릭
 
 ---
 
+## New in v2.1.0
+
+### 병렬 코드 리뷰 (/vibe.review)
+
+13+ 전문 에이전트가 동시에 코드 리뷰:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  🚀 PARALLEL REVIEW AGENTS                          │
+├─────────────────────────────────────────────────────┤
+│  Security      │ OWASP Top 10, SQL injection, XSS  │
+│  Performance   │ N+1 queries, memory leaks         │
+│  Architecture  │ SOLID violations, layer breaches  │
+│  Language      │ Python, TypeScript, Rails, React  │
+│  Quality       │ Complexity, test coverage, git    │
+└─────────────────────────────────────────────────────┘
+```
+
+**우선순위 시스템:**
+- 🔴 **P1 (Critical)**: 머지 차단 - 보안 취약점, 데이터 손실
+- 🟡 **P2 (Important)**: 수정 권장 - 성능 문제, 테스트 누락
+- 🔵 **P3 (Nice-to-have)**: 백로그 - 코드 스타일, 리팩토링
+
+### E2E 테스트 (/vibe.e2e)
+
+Playwright 기반 브라우저 자동화 테스트:
+
+```bash
+/vibe.e2e "login flow"        # 시나리오 테스트
+/vibe.e2e --visual            # 시각적 회귀 테스트
+/vibe.e2e --record            # 비디오 녹화
+```
+
+**기능:**
+- 스크린샷 캡처 및 비교
+- 콘솔 에러 자동 수집
+- 접근성(a11y) 검사
+- 버그 재현 자동화
+
+### 지식 복리 (/vibe.compound)
+
+해결한 문제를 자동 문서화하여 지식 축적:
+
+```
+.vibe/solutions/
+├── security/           # 보안 해결책
+├── performance/        # 성능 최적화
+├── database/           # DB 관련
+└── integration/        # 외부 연동
+```
+
+**트리거**: "버그 해결됨", "bug fixed", "PR merged" 등
+
+### 리서치 에이전트 강화
+
+`/vibe.spec` 실행 시 **요구사항 확정 후** 4개 병렬 리서치:
+
+```
+문답으로 요구사항 확정 → 병렬 리서치 → SPEC 작성
+```
+
+| 에이전트 | 역할 |
+|----------|------|
+| best-practices-agent | 확정된 기능+스택 베스트 프랙티스 |
+| framework-docs-agent | 확정된 스택 최신 문서 (context7) |
+| codebase-patterns-agent | 기존 유사 패턴 분석 |
+| security-advisory-agent | 확정된 기능 보안 권고 |
+
+> ⚠️ **리서치는 요구사항 확정 후 실행** (VIBE 원칙: 요구사항 먼저)
+
+---
+
 ## Project Structure
 
 `vibe init` 실행 후 생성되는 구조:
@@ -251,16 +341,21 @@ When: "비밀번호 찾기" 클릭
 project/
 ├── CLAUDE.md                 # 프로젝트 컨텍스트        ← git 공유
 ├── .claude/                  # ⚠️ 반드시 git에 커밋    ← git 공유
-│   ├── commands/             # 슬래시 커맨드 (7개)
+│   ├── commands/             # 슬래시 커맨드 (12개)
 │   ├── agents/               # 서브에이전트
+│   │   ├── review/           # 리뷰 에이전트 (12개)   ← NEW
+│   │   └── research/         # 리서치 에이전트 (4개)  ← NEW
+│   ├── skills/               # 스킬 (2개)             ← NEW
 │   ├── settings.json         # Hooks 설정
 │   └── settings.local.json   # 개인 설정               ← git 제외 (자동)
 └── .vibe/
     ├── config.json           # 프로젝트 설정           ← git 공유
     ├── constitution.md       # 프로젝트 원칙           ← git 공유
-    ├── rules/                 # 코딩 규칙              ← git 공유
-    ├── specs/                 # SPEC 문서들            ← git 공유
-    └── features/              # BDD Feature 파일들     ← git 공유
+    ├── rules/                # 코딩 규칙               ← git 공유
+    ├── specs/                # SPEC 문서들             ← git 공유
+    ├── features/             # BDD Feature 파일들      ← git 공유
+    ├── solutions/            # 해결책 아카이브         ← NEW
+    └── todos/                # 우선순위 TODO           ← NEW
 ```
 
 > **⚠️ 중요**: `.claude/` 폴더는 팀과 공유해야 합니다. 커밋 시 제외하지 마세요.
