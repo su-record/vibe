@@ -1045,7 +1045,7 @@ async function init(projectName?: string): Promise<void> {
     ensureDir(claudeDir);
     ensureDir(commandsDir);
 
-    const sourceDir = path.join(__dirname, '../../.claude/commands');
+    const sourceDir = path.join(__dirname, '../../commands');
     copyDirContents(sourceDir, commandsDir);
     log('   ✅ 슬래시 커맨드 설치 완료 (7개)\n');
 
@@ -1182,7 +1182,7 @@ async function init(projectName?: string): Promise<void> {
     // .claude/agents/ 복사
     const agentsDir = path.join(claudeDir, 'agents');
     ensureDir(agentsDir);
-    const agentsSourceDir = path.join(__dirname, '../../.claude/agents');
+    const agentsSourceDir = path.join(__dirname, '../../agents');
     copyDirContents(agentsSourceDir, agentsDir);
     log('   ✅ 서브에이전트 설치 완료 (.claude/agents/)\n');
 
@@ -1365,7 +1365,7 @@ async function update(): Promise<void> {
     // .claude/commands 업데이트
     const commandsDir = path.join(claudeDir, 'commands');
     ensureDir(commandsDir);
-    const sourceDir = path.join(__dirname, '../../.claude/commands');
+    const sourceDir = path.join(__dirname, '../../commands');
     copyDirContents(sourceDir, commandsDir);
     log('   ✅ 슬래시 커맨드 업데이트 완료 (7개)\n');
 
@@ -1524,7 +1524,7 @@ async function update(): Promise<void> {
     // .claude/agents/ 업데이트
     const agentsDir = path.join(claudeDir, 'agents');
     ensureDir(agentsDir);
-    const agentsSourceDir = path.join(__dirname, '../../.claude/agents');
+    const agentsSourceDir = path.join(__dirname, '../../agents');
     copyDirContents(agentsSourceDir, agentsDir);
     log('   ✅ 서브에이전트 업데이트 완료 (.claude/agents/)\n');
 

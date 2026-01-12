@@ -58,6 +58,9 @@
   "files": [
     "dist/",
     ".claude/",
+    "commands/",
+    "agents/",
+    "skills/",
     "templates/",
     "CLAUDE.md",
     "README.md",

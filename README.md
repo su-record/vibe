@@ -48,15 +48,19 @@ vibe init
 **생성되는 구조:**
 
 ```text
-.claude/
-├── commands/          # 슬래시 커맨드 (7개)
-├── agents/            # 서브에이전트
-├── settings.json      # Hooks 설정
-└── vibe/
-    ├── rules/         # 코딩 규칙
-    ├── specs/         # SPEC 문서
-    ├── features/      # BDD Feature 파일
-    └── config.json    # 프로젝트 설정
+project/
+├── CLAUDE.md              # 프로젝트 컨텍스트
+└── .claude/
+    ├── commands/          # 슬래시 커맨드 (12개)
+    ├── agents/            # 서브에이전트
+    │   ├── review/        # 리뷰 에이전트 (12개)
+    │   └── research/      # 리서치 에이전트 (4개)
+    ├── settings.json      # Hooks 설정
+    └── vibe/
+        ├── rules/         # 코딩 규칙
+        ├── specs/         # SPEC 문서
+        ├── features/      # BDD Feature 파일
+        └── config.json    # 프로젝트 설정
 ```
 
 ---
@@ -381,22 +385,21 @@ Primary 결과만 사용
 ```
 project/
 ├── CLAUDE.md                 # 프로젝트 컨텍스트        ← git 공유
-├── .claude/                  # ⚠️ 반드시 git에 커밋    ← git 공유
-│   ├── commands/             # 슬래시 커맨드 (12개)
-│   ├── agents/               # 서브에이전트
-│   │   ├── review/           # 리뷰 에이전트 (12개)   ← NEW
-│   │   └── research/         # 리서치 에이전트 (4개)  ← NEW
-│   ├── skills/               # 스킬 (2개)             ← NEW
-│   ├── settings.json         # Hooks 설정
-│   └── settings.local.json   # 개인 설정               ← git 제외 (자동)
-└── .claude/vibe/
-    ├── config.json           # 프로젝트 설정           ← git 공유
-    ├── constitution.md       # 프로젝트 원칙           ← git 공유
-    ├── rules/                # 코딩 규칙               ← git 공유
-    ├── specs/                # SPEC 문서들             ← git 공유
-    ├── features/             # BDD Feature 파일들      ← git 공유
-    ├── solutions/            # 해결책 아카이브         ← NEW
-    └── todos/                # 우선순위 TODO           ← NEW
+└── .claude/                  # ⚠️ 반드시 git에 커밋    ← git 공유
+    ├── commands/             # 슬래시 커맨드 (12개)
+    ├── agents/               # 서브에이전트
+    │   ├── review/           # 리뷰 에이전트 (12개)
+    │   └── research/         # 리서치 에이전트 (4개)
+    ├── settings.json         # Hooks 설정
+    ├── settings.local.json   # 개인 설정              ← git 제외 (자동)
+    └── vibe/
+        ├── config.json       # 프로젝트 설정
+        ├── constitution.md   # 프로젝트 원칙
+        ├── rules/            # 코딩 규칙
+        ├── specs/            # SPEC 문서들
+        ├── features/         # BDD Feature 파일들
+        ├── solutions/        # 해결책 아카이브
+        └── todos/            # 우선순위 TODO
 ```
 
 > **⚠️ 중요**: `.claude/` 폴더는 팀과 공유해야 합니다. 커밋 시 제외하지 마세요.
