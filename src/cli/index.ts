@@ -1150,7 +1150,7 @@ async function init(projectName?: string): Promise<void> {
     }
 
     // .claude/vibe/rules/ 복사
-    const rulesSource = path.join(__dirname, '../../.claude/vibe/rules');
+    const rulesSource = path.join(__dirname, '../../rules');
     const rulesTarget = path.join(vibeDir, 'rules');
 
     const coreDirs = ['core', 'quality', 'standards', 'tools'];
@@ -1485,7 +1485,7 @@ async function update(): Promise<void> {
     }
 
     // .claude/vibe/rules/ 업데이트
-    const rulesSource = path.join(__dirname, '../../.claude/vibe/rules');
+    const rulesSource = path.join(__dirname, '../../rules');
     const rulesTarget = path.join(vibeDir, 'rules');
 
     const coreDirs = ['core', 'quality', 'standards', 'tools'];

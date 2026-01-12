@@ -61,6 +61,7 @@
     "commands/",
     "agents/",
     "skills/",
+    "rules/",
     "templates/",
     "CLAUDE.md",
     "README.md",
