@@ -1,6 +1,6 @@
 ---
 description: Analyze project or specific feature/module
-argument-hint: "feature-name" or --code or --deps or --arch (optional)
+argument-hint: "feature-name" or --code or --deps or --arch
 ---
 
 # /vibe.analyze
@@ -17,7 +17,7 @@ Analyze project or specific feature/module.
 /vibe.analyze --arch           # Architecture analysis only
 ```
 
-## ⚠️ Context Reset
+## Context Reset
 
 **When this command runs, previous conversation is ignored.**
 - Explore and analyze code from scratch like new session
@@ -83,7 +83,7 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
 #### 5. Output Analysis Results
 
 ```markdown
-## 📊 [feature-name] Analysis Results
+## [feature-name] Analysis Results
 
 ### Overview
 - **Feature description**: [one-line summary]
@@ -107,24 +107,12 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
   - Key fields: id, email, password_hash
   - Relationships: Session (1:N)
 
-### Flow Diagram
-[Text-based flow description]
-
 ### Reference File List
 - src/api/auth/router.py:L10-50
 - src/services/auth_service.py:L1-100
 ```
 
-#### 6. Check Development Rules
-
-Load related rules from `.claude/vibe/rules/`:
-- `core/quick-start.md` - 5 core principles
-- `standards/complexity-metrics.md` - Complexity standards
-- `quality/checklist.md` - Quality checklist
-
-Output any rule violations found.
-
-#### 7. Complete
+#### 6. Complete
 
 After analysis:
 1. Output analysis summary
@@ -133,7 +121,7 @@ After analysis:
 
 ---
 
-## Mode 2: Project Quality Analysis (no option or --code/--deps/--arch)
+## Mode 2: Project Quality Analysis (--code/--deps/--arch)
 
 ### Analysis Scope
 
@@ -142,22 +130,21 @@ After analysis:
 - **--deps**: Dependency analysis only
 - **--arch**: Architecture analysis only
 
-### MCP Tool Usage
+### Code Quality Analysis (--code)
 
-Based on `@su-record/hi-ai`:
+- Complexity analysis (Cyclomatic Complexity)
+- Code quality validation
+- Coupling/cohesion check
 
-#### Code Quality Analysis (--code)
-- `analyze_complexity`: Complexity analysis
-- `validate_code_quality`: Code quality validation
-- `check_coupling_cohesion`: Coupling/cohesion check
+### Dependency Analysis (--deps)
 
-#### Dependency Analysis (--deps)
 - Read `package.json` / `pyproject.toml` / `pubspec.yaml`
 - Analyze version conflicts, security vulnerabilities, packages needing updates
 
-#### Architecture Analysis (--arch)
-- `find_symbol`: Find core modules
-- `find_references`: Identify module dependencies
+### Architecture Analysis (--arch)
+
+- Find core modules
+- Identify module dependencies
 - Detect circular dependencies, layer violations
 
 ### Analysis Report
@@ -186,52 +173,6 @@ Based on `@su-record/hi-ai`:
 ## Improvement Suggestions
 1. Refactor service.py
 2. Apply lodash security patch
-```
-
----
-
-## Example
-
-### Feature Analysis
-```
-User: /vibe.analyze "login"
-
-Claude: Analyzing login related code...
-
-[Exploring code with Glob, Grep, Read tools]
-
-📊 Login Analysis Results
-
-### Overview
-- Feature description: JWT-based user authentication
-- Implementation status: Complete
-- Related files: 8
-
-### API Endpoints
-| POST | /api/v1/auth/login | Login | - |
-| POST | /api/v1/auth/refresh | Token refresh | Required |
-
-[Analysis continues...]
-
-What would you like me to help with?
-- Refactoring
-- Add new feature
-- Bug fix
-```
-
-### Quality Analysis
-```
-User: /vibe.analyze --code
-
-Claude: Starting code quality analysis...
-
-📊 Code Quality Score: 85/100 (B+)
-
-**Key findings:**
-- High complexity: src/service.py (CC: 15)
-
-**Improvement suggestions:**
-1. Split src/service.py into 3 modules
 ```
 
 ---

@@ -24,7 +24,14 @@ SPEC 문서 하나로 AI가 바로 구현하고, **시나리오별 자동 검증
 - **자동 컨텍스트 관리**: 80%+ 시 자동 저장, 세션 자동 복원
 - **36개 내장 도구**: 코드 분석, 품질 검증, 세션 메모리 (MCP 오버헤드 제거)
 
-### v2.2.0 신규 기능
+### v2.3.0 신규 기능
+
+- **📦 14개 프레임워크별 언어 룰**: Next.js, React, Vue, Nuxt, React Native 등 프레임워크별 최적화 규칙
+- **🔄 모노레포 완벽 지원**: packages/*, apps/* 하위 패키지별 자동 감지 및 룰 적용
+- **🧹 레거시 자동 정리**: `vibe update` 시 이전 버전 파일 자동 정리
+- **⚙️ 명령어 구조 개선**: 7개 core 명령어 + `/vibe.utils` 유틸리티 통합
+
+### v2.2.0 기능
 
 - **⚡ ULTRAWORK Pipeline**: 구현 중 백그라운드 에이전트로 다음 Phase 준비
 - **🔄 Phase 파이프라이닝**: Phase 간 대기 시간 제거 (~50% 속도 향상)
@@ -53,7 +60,7 @@ CLI 설치 시 생성되는 구조:
 project/
 ├── CLAUDE.md              # 프로젝트 컨텍스트
 └── .claude/
-    ├── commands/          # 슬래시 커맨드 (4개)
+    ├── commands/          # 슬래시 커맨드 (7개)
     ├── agents/            # 서브에이전트
     │   ├── review/        # 리뷰 에이전트 (12개)
     │   └── research/      # 리서치 에이전트 (4개)
@@ -104,12 +111,18 @@ cd my-project
 
 /vibe.verify "기능명"
   ↓ Given/When/Then 단계별 검증
-  ↓ --e2e 옵션: Playwright E2E 테스트
 
 /vibe.review
   ↓ 13+ 병렬 리뷰 에이전트 (P1/P2/P3)
-  ↓ --analyze 옵션: 코드 분석
-  ↓ --ui 옵션: UI 미리보기
+
+/vibe.analyze "기능명"
+  ↓ 코드 탐색/구조 분석
+
+/vibe.reason "문제"
+  ↓ 9단계 체계적 추론
+
+/vibe.utils --옵션
+  ↓ 유틸리티 (--ui, --diagram, --e2e, --compound)
 ```
 
 ### 시나리오 주도 개발 (SDD)
@@ -164,10 +177,10 @@ Feature 로드 → Scenario 1 [구현→검증] → Scenario 2 [구현→검증]
 | `/vibe.run "기능명"` | 구현 실행 |
 | `/vibe.run "기능명" ultrawork` | 🚀 **최대 성능 모드** (권장) |
 | `/vibe.verify "기능명"` | 검증 |
-| `/vibe.verify --e2e "기능명"` | E2E 브라우저 테스트 (Playwright) |
-| `/vibe.review` | 🆕 **병렬 코드 리뷰** (13+ 에이전트) |
-| `/vibe.review --analyze "기능명"` | 코드 분석 모드 |
-| `/vibe.review --ui "설명"` | UI 미리보기 |
+| `/vibe.review` | **병렬 코드 리뷰** (13+ 에이전트) |
+| `/vibe.analyze "기능명"` | 코드 탐색/분석 |
+| `/vibe.reason "문제"` | 체계적 추론 (9단계) |
+| `/vibe.utils --옵션` | 유틸리티 (--ui, --diagram, --e2e) |
 
 ---
 
@@ -274,14 +287,14 @@ When: "비밀번호 찾기" 클릭
 - 🟡 **P2 (Important)**: 수정 권장 - 성능 문제, 테스트 누락
 - 🔵 **P3 (Nice-to-have)**: 백로그 - 코드 스타일, 리팩토링
 
-### E2E 테스트 (/vibe.verify --e2e)
+### E2E 테스트 (/vibe.utils --e2e)
 
 Playwright 기반 브라우저 자동화 테스트:
 
 ```bash
-/vibe.verify --e2e "login flow"   # 시나리오 테스트
-/vibe.verify --e2e --visual       # 시각적 회귀 테스트
-/vibe.verify --e2e --record       # 비디오 녹화
+/vibe.utils --e2e "login flow"    # 시나리오 테스트
+/vibe.utils --e2e --visual        # 시각적 회귀 테스트
+/vibe.utils --e2e --record        # 비디오 녹화
 ```
 
 **기능:**
@@ -354,7 +367,7 @@ Primary 결과만 사용
 project/
 ├── CLAUDE.md                 # 프로젝트 컨텍스트        ← git 공유
 └── .claude/                  # ⚠️ 반드시 git에 커밋    ← git 공유
-    ├── commands/             # 슬래시 커맨드 (4개)
+    ├── commands/             # 슬래시 커맨드 (7개)
     ├── agents/               # 서브에이전트
     │   ├── review/           # 리뷰 에이전트 (12개)
     │   └── research/         # 리서치 에이전트 (4개)
@@ -445,22 +458,41 @@ Then: {예상 결과}
 
 ## Coding Rules (.claude/vibe/rules/)
 
-### 언어별 규칙 자동 적용
+### 14개 프레임워크별 언어 룰 (v2.3.0)
 
-`vibe init` / `vibe update` 시 프로젝트의 기술 스택을 감지하여 **해당 언어에 맞는 규칙만** CLAUDE.md에 추가합니다.
+`vibe init` / `vibe update` 시 프로젝트의 기술 스택을 감지하여 **프레임워크별 최적화 규칙**을 자동 설치합니다.
 
-| 감지 스택 | 적용 규칙 |
-|----------|----------|
-| TypeScript/Node.js | `any` 금지, 반환 타입 명시 등 |
-| Python | 타입 힌트 필수, f-string 권장 등 |
-| Go | 에러 즉시 처리, 인터페이스 사용처 정의 등 |
-| Rust | unwrap() 금지, unsafe 최소화 등 |
-| Java | Optional 활용, 불변 객체 선호 등 |
-| Kotlin | nullable 명시, !! 금지 등 |
-| Dart/Flutter | null safety, const 생성자 등 |
-| Swift/iOS | 옵셔널 강제 언래핑 금지 등 |
+| 감지 스택 | 룰 파일 | 주요 내용 |
+|----------|---------|----------|
+| Next.js | `typescript-nextjs.md` | App Router, Server Components, Server Actions |
+| React | `typescript-react.md` | Hooks, 컴포넌트 패턴, 상태관리 |
+| Vue.js | `typescript-vue.md` | Composition API, Pinia, script setup |
+| Nuxt 3 | `typescript-nuxt.md` | useFetch, Server API, Auto-imports |
+| React Native | `typescript-react-native.md` | 네이티브 모듈, 성능 최적화 |
+| Node.js | `typescript-node.md` | Express/Fastify/NestJS 패턴 |
+| FastAPI | `python-fastapi.md` | Pydantic, 비동기 처리, 의존성 주입 |
+| Django | `python-django.md` | ORM, 뷰 패턴, 시그널 |
+| Flutter | `dart-flutter.md` | Riverpod/BLoC, 위젯 트리 |
+| Go | `go.md` | 에러 처리, 고루틴, 인터페이스 |
+| Rust | `rust.md` | Result/Option, 소유권, unsafe |
+| Spring Boot | `java-spring.md` | DI, JPA, 트랜잭션 |
+| Android | `kotlin-android.md` | Compose, ViewModel, Coroutines |
+| iOS | `swift-ios.md` | SwiftUI, Combine, 프로토콜 |
 
-> Python 프로젝트에는 Python 규칙만, TypeScript 프로젝트에는 TypeScript 규칙만 적용됩니다.
+### 모노레포 지원
+
+`packages/*`, `apps/*` 하위 패키지별로 각각 감지하여 필요한 룰만 설치:
+
+```bash
+# 모노레포 예시
+monorepo/
+├── packages/
+│   ├── web/         → typescript-nextjs.md 설치
+│   ├── mobile/      → typescript-react-native.md 설치
+│   └── api/         → python-fastapi.md 설치
+```
+
+> 각 패키지에 맞는 프레임워크 규칙이 자동 적용됩니다.
 
 ### 핵심 원칙
 

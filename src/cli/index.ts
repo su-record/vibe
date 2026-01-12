@@ -506,8 +506,9 @@ function detectTechStacks(projectRoot: string): DetectionResult {
         if (deps['next']) detected.push({ type: 'typescript-nextjs', path: prefix });
         else if (deps['react-native']) detected.push({ type: 'typescript-react-native', path: prefix });
         else if (deps['react']) detected.push({ type: 'typescript-react', path: prefix });
+        else if (deps['nuxt'] || deps['nuxt3']) detected.push({ type: 'typescript-nuxt', path: prefix });
         else if (deps['vue']) detected.push({ type: 'typescript-vue', path: prefix });
-        else if (deps['express'] || deps['fastify'] || deps['koa']) detected.push({ type: 'typescript-node', path: prefix });
+        else if (deps['express'] || deps['fastify'] || deps['koa'] || deps['nest'] || deps['@nestjs/core']) detected.push({ type: 'typescript-node', path: prefix });
         else if (pkg.name) detected.push({ type: 'typescript-node', path: prefix });
 
         // DB 감지
@@ -849,6 +850,7 @@ const STACK_NAMES: Record<string, { lang: string; framework: string }> = {
   'typescript-nextjs': { lang: 'TypeScript', framework: 'Next.js' },
   'typescript-react': { lang: 'TypeScript', framework: 'React' },
   'typescript-vue': { lang: 'TypeScript', framework: 'Vue.js' },
+  'typescript-nuxt': { lang: 'TypeScript', framework: 'Nuxt 3' },
   'typescript-react-native': { lang: 'TypeScript', framework: 'React Native' },
   'dart-flutter': { lang: 'Dart', framework: 'Flutter' },
   'go': { lang: 'Go', framework: '-' },
@@ -1047,7 +1049,7 @@ async function init(projectName?: string): Promise<void> {
 
     const sourceDir = path.join(__dirname, '../../commands');
     copyDirRecursive(sourceDir, commandsDir);
-    log('   ✅ 슬래시 커맨드 설치 완료 (4개)\n');
+    log('   ✅ 슬래시 커맨드 설치 완료 (7개)\n');
 
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
@@ -1150,7 +1152,7 @@ async function init(projectName?: string): Promise<void> {
     }
 
     // .claude/vibe/rules/ 복사
-    const rulesSource = path.join(__dirname, '../../rules');
+    const rulesSource = path.join(__dirname, '../../.claude/vibe/rules');
     const rulesTarget = path.join(vibeDir, 'rules');
 
     const coreDirs = ['core', 'quality', 'standards', 'tools'];
@@ -1166,12 +1168,14 @@ async function init(projectName?: string): Promise<void> {
     const langTarget = path.join(rulesTarget, 'languages');
     ensureDir(langTarget);
 
-    const detectedTypes = detectedStacks.map(s => s.type);
+    // 감지된 스택 타입을 그대로 파일명으로 매칭 (typescript-nextjs -> typescript-nextjs.md)
+    const detectedTypes = new Set(detectedStacks.map(s => s.type));
+
     if (fs.existsSync(langSource)) {
       const langFiles = fs.readdirSync(langSource);
       langFiles.forEach(file => {
         const langType = file.replace('.md', '');
-        if (detectedTypes.includes(langType)) {
+        if (detectedTypes.has(langType)) {
           fs.copyFileSync(path.join(langSource, file), path.join(langTarget, file));
         }
       });
@@ -1226,7 +1230,7 @@ ${isNewProject ? `프로젝트 위치:
 ` : ''}생성된 구조:
   CLAUDE.md                      # 프로젝트 컨텍스트
   .claude/
-  ├── commands/                  # 슬래시 커맨드 (4개)
+  ├── commands/                  # 슬래시 커맨드 (7개)
   ├── agents/                    # 서브에이전트 (simplifier)
   ├── settings.json              # Hooks 설정 (저장소 공유)
   └── vibe/
@@ -1365,9 +1369,38 @@ async function update(): Promise<void> {
     // .claude/commands 업데이트
     const commandsDir = path.join(claudeDir, 'commands');
     ensureDir(commandsDir);
+
+    // 레거시 커맨드 파일 정리 (v2.2.7 이전 버전에서 제거된 커맨드들)
+    const legacyCommands = [
+      'vibe.analyze.md',  // agents/analyzer.md로 통합 후 다시 commands로 복원
+      'vibe.compound.md', // hooks 자동 트리거로 변경
+      'vibe.continue.md', // SessionStart hook으로 변경
+      'vibe.diagram.md',  // vibe.utils --diagram으로 변경
+      'vibe.e2e.md',      // vibe.utils --e2e로 변경
+      'vibe.reason.md',   // agents/reasoner.md로 통합 후 다시 commands로 복원
+      'vibe.setup.md',    // 제거됨
+      'vibe.ui.md',       // vibe.utils --ui로 변경
+    ];
+    legacyCommands.forEach(cmd => {
+      const cmdPath = path.join(commandsDir, cmd);
+      if (fs.existsSync(cmdPath)) {
+        fs.unlinkSync(cmdPath);
+      }
+    });
+
     const sourceDir = path.join(__dirname, '../../commands');
     copyDirRecursive(sourceDir, commandsDir);
-    log('   ✅ 슬래시 커맨드 업데이트 완료 (4개)\n');
+    log('   ✅ 슬래시 커맨드 업데이트 완료 (7개)\n');
+
+    // 레거시 에이전트 파일 정리 (commands에 통합된 에이전트들)
+    const agentsDir = path.join(claudeDir, 'agents');
+    const legacyAgents = ['reviewer.md', 'analyzer.md', 'reasoner.md'];
+    legacyAgents.forEach(agent => {
+      const agentPath = path.join(agentsDir, agent);
+      if (fs.existsSync(agentPath)) {
+        fs.unlinkSync(agentPath);
+      }
+    });
 
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
@@ -1485,7 +1518,7 @@ async function update(): Promise<void> {
     }
 
     // .claude/vibe/rules/ 업데이트
-    const rulesSource = path.join(__dirname, '../../rules');
+    const rulesSource = path.join(__dirname, '../../.claude/vibe/rules');
     const rulesTarget = path.join(vibeDir, 'rules');
 
     const coreDirs = ['core', 'quality', 'standards', 'tools'];
@@ -1505,24 +1538,25 @@ async function update(): Promise<void> {
     }
     ensureDir(langTarget);
 
-    const detectedTypes = detectedStacks.map(s => s.type);
+    // 감지된 스택 타입을 그대로 파일명으로 매칭 (typescript-nextjs -> typescript-nextjs.md)
+    const detectedTypes = new Set(detectedStacks.map(s => s.type));
+
     if (fs.existsSync(langSource)) {
       const langFiles = fs.readdirSync(langSource);
       langFiles.forEach(file => {
         const langType = file.replace('.md', '');
-        if (detectedTypes.includes(langType)) {
+        if (detectedTypes.has(langType)) {
           fs.copyFileSync(path.join(langSource, file), path.join(langTarget, file));
         }
       });
     }
 
     if (detectedStacks.length > 0) {
-      log(`   🔍 감지된 기술 스택: ${detectedTypes.join(', ')}\n`);
+      log(`   🔍 감지된 기술 스택: ${Array.from(detectedTypes).join(', ')}\n`);
     }
     log('   ✅ 코딩 규칙 업데이트 완료 (.claude/vibe/rules/)\n');
 
     // .claude/agents/ 업데이트
-    const agentsDir = path.join(claudeDir, 'agents');
     ensureDir(agentsDir);
     const agentsSourceDir = path.join(__dirname, '../../agents');
     copyDirRecursive(agentsSourceDir, agentsDir);
@@ -1688,7 +1722,7 @@ async function update(): Promise<void> {
 ✅ vibe 업데이트 완료! (v${packageJson.version})
 
 업데이트된 항목:
-  - 슬래시 커맨드 (4개)
+  - 슬래시 커맨드 (7개)
   - 코딩 규칙 (.claude/vibe/rules/)
   - 서브에이전트 (.claude/agents/)
   - Hooks 설정
@@ -1779,7 +1813,7 @@ function remove(): void {
 제거된 항목:
   - MCP 서버 (vibe, context7)
   - .claude/vibe/ 폴더
-  - 슬래시 커맨드 (4개)
+  - 슬래시 커맨드 (7개)
   - 서브에이전트 (5개)
   - Hooks 설정
 
