@@ -12,7 +12,10 @@ argument-hint: "feature name"
 ## Usage
 
 ```
-/vibe.verify "feature-name"
+/vibe.verify "feature-name"              # SPEC 기반 검증
+/vibe.verify --e2e "feature-name"        # E2E 브라우저 테스트 (agents/e2e-tester.md)
+/vibe.verify --e2e --visual              # 시각적 회귀 테스트
+/vibe.verify --e2e --record              # 비디오 녹화
 ```
 
 ## 핵심 원칙

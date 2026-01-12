@@ -40,18 +40,20 @@ SPEC 문서 하나로 AI가 바로 구현하고, **시나리오별 자동 검증
 
 ## Installation
 
+### CLI 설치
+
 ```bash
 npm install -g @su-record/vibe
 vibe init
 ```
 
-**생성되는 구조:**
+CLI 설치 시 생성되는 구조:
 
 ```text
 project/
 ├── CLAUDE.md              # 프로젝트 컨텍스트
 └── .claude/
-    ├── commands/          # 슬래시 커맨드 (12개)
+    ├── commands/          # 슬래시 커맨드 (4개)
     ├── agents/            # 서브에이전트
     │   ├── review/        # 리뷰 에이전트 (12개)
     │   └── research/      # 리서치 에이전트 (4개)
@@ -91,28 +93,23 @@ cd my-project
 ## Workflow
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  /vibe.spec "기능명"                                │
-│  ↓ 대화형 요구사항 수집                              │
-│  ↓ 요구사항 확정 후 4개 병렬 리서치 (v2.1.0)        │
-│  ↓ .claude/vibe/specs/{기능명}.md + .feature              │
-├─────────────────────────────────────────────────────┤
-│  /vibe.run "기능명" ultrawork                       │
-│  ↓ 시나리오별 구현 + 즉시 검증 (SDD)                │
-│  ↓ Scenario 1 → ✅ → Scenario 2 → ...             │
-├─────────────────────────────────────────────────────┤
-│  /vibe.verify "기능명"                              │
-│  ↓ Given/When/Then 단계별 검증                     │
-├─────────────────────────────────────────────────────┤
-│  /vibe.review                    ← NEW (v2.1.0)    │
-│  ↓ 13+ 병렬 리뷰 에이전트 (P1/P2/P3)               │
-├─────────────────────────────────────────────────────┤
-│  /vibe.e2e                       ← NEW (v2.1.0)    │
-│  ↓ Playwright E2E 테스트                           │
-├─────────────────────────────────────────────────────┤
-│  /vibe.compound                  ← NEW (v2.1.0)    │
-│  ↓ 해결책 문서화 → .claude/vibe/solutions/                │
-└─────────────────────────────────────────────────────┘
+/vibe.spec "기능명"
+  ↓ 대화형 요구사항 수집
+  ↓ 요구사항 확정 후 4개 병렬 리서치
+  ↓ .claude/vibe/specs/{기능명}.md + .feature
+
+/vibe.run "기능명" ultrawork
+  ↓ 시나리오별 구현 + 즉시 검증 (SDD)
+  ↓ Scenario 1 → Scenario 2 → ...
+
+/vibe.verify "기능명"
+  ↓ Given/When/Then 단계별 검증
+  ↓ --e2e 옵션: Playwright E2E 테스트
+
+/vibe.review
+  ↓ 13+ 병렬 리뷰 에이전트 (P1/P2/P3)
+  ↓ --analyze 옵션: 코드 분석
+  ↓ --ui 옵션: UI 미리보기
 ```
 
 ### 시나리오 주도 개발 (SDD)
@@ -161,35 +158,16 @@ Feature 로드 → Scenario 1 [구현→검증] → Scenario 2 [구현→검증]
 
 ### Claude Code 슬래시 커맨드
 
-#### 핵심 워크플로우
-
 | 명령어 | 설명 |
 |--------|------|
 | `/vibe.spec "기능명"` | SPEC 작성 (PTCF 구조) + 병렬 리서치 |
 | `/vibe.run "기능명"` | 구현 실행 |
 | `/vibe.run "기능명" ultrawork` | 🚀 **최대 성능 모드** (권장) |
-| `/vibe.run "기능명" ulw` | ultrawork 단축어 |
-| `/vibe.run "기능명" --phase N` | 특정 Phase만 실행 |
 | `/vibe.verify "기능명"` | 검증 |
+| `/vibe.verify --e2e "기능명"` | E2E 브라우저 테스트 (Playwright) |
 | `/vibe.review` | 🆕 **병렬 코드 리뷰** (13+ 에이전트) |
-| `/vibe.e2e` | 🆕 **E2E 테스트** (Playwright) |
-| `/vibe.compound` | 🆕 **지식 문서화** (해결책 아카이브) |
-| `/vibe.continue` | 🆕 **세션 복원** (이전 컨텍스트 로드) |
-
-#### 분석 & 도구
-
-| 명령어 | 설명 |
-|--------|------|
-| `/vibe.analyze` | 프로젝트 전체 분석 |
-| `/vibe.analyze "기능명"` | 특정 기능/모듈 분석 |
-| `/vibe.analyze --code` | 코드 품질 분석만 |
-| `/vibe.analyze --deps` | 의존성 분석만 |
-| `/vibe.analyze --arch` | 아키텍처 분석만 |
-| `/vibe.reason "문제"` | 체계적 추론 (9단계) |
-| `/vibe.ui "설명"` | ASCII UI 미리보기 |
-| `/vibe.diagram` | 아키텍처 다이어그램 |
-| `/vibe.diagram --er` | ERD 다이어그램 |
-| `/vibe.diagram --flow` | 플로우차트 |
+| `/vibe.review --analyze "기능명"` | 코드 분석 모드 |
+| `/vibe.review --ui "설명"` | UI 미리보기 |
 
 ---
 
@@ -245,24 +223,18 @@ Scenario 1 → Scenario 2 → Scenario 3 → ... → Scenario N
 
 `/vibe.verify` 실행 시 자동 생성되는 품질 리포트:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  📊 VERIFICATION REPORT: login                                   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ✅ 시나리오: 4/4 통과 (100%)                                   │
-│                                                                 │
-│  | # | Scenario              | Given | When | Then | Status |   │
-│  |---|───────────────────────|───────|──────|──────|────────|   │
-│  | 1 | 유효한 로그인 성공     | ✅    | ✅   | ✅   | ✅     |   │
-│  | 2 | 잘못된 비밀번호 에러   | ✅    | ✅   | ✅   | ✅     |   │
-│  | 3 | 이메일 형식 검증       | ✅    | ✅   | ✅   | ✅     |   │
-│  | 4 | 비밀번호 찾기 링크     | ✅    | ✅   | ✅   | ✅     |   │
-│                                                                 │
-│  📈 품질 점수: 94/100                                           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+**VERIFICATION REPORT: login**
+
+시나리오: 4/4 통과 (100%)
+
+| # | Scenario | Given | When | Then | Status |
+|---|----------|-------|------|------|--------|
+| 1 | 유효한 로그인 성공 | ✅ | ✅ | ✅ | ✅ |
+| 2 | 잘못된 비밀번호 에러 | ✅ | ✅ | ✅ | ✅ |
+| 3 | 이메일 형식 검증 | ✅ | ✅ | ✅ | ✅ |
+| 4 | 비밀번호 찾기 링크 | ✅ | ✅ | ✅ | ✅ |
+
+품질 점수: **94/100**
 
 ### 검증 실패 시
 
@@ -289,31 +261,27 @@ When: "비밀번호 찾기" 클릭
 
 13+ 전문 에이전트가 동시에 코드 리뷰:
 
-```
-┌─────────────────────────────────────────────────────┐
-│  🚀 PARALLEL REVIEW AGENTS                          │
-├─────────────────────────────────────────────────────┤
-│  Security      │ OWASP Top 10, SQL injection, XSS  │
-│  Performance   │ N+1 queries, memory leaks         │
-│  Architecture  │ SOLID violations, layer breaches  │
-│  Language      │ Python, TypeScript, Rails, React  │
-│  Quality       │ Complexity, test coverage, git    │
-└─────────────────────────────────────────────────────┘
-```
+| 분야 | 검토 항목 |
+|------|----------|
+| Security | OWASP Top 10, SQL injection, XSS |
+| Performance | N+1 queries, memory leaks |
+| Architecture | SOLID violations, layer breaches |
+| Language | Python, TypeScript, Rails, React |
+| Quality | Complexity, test coverage, git |
 
 **우선순위 시스템:**
 - 🔴 **P1 (Critical)**: 머지 차단 - 보안 취약점, 데이터 손실
 - 🟡 **P2 (Important)**: 수정 권장 - 성능 문제, 테스트 누락
 - 🔵 **P3 (Nice-to-have)**: 백로그 - 코드 스타일, 리팩토링
 
-### E2E 테스트 (/vibe.e2e)
+### E2E 테스트 (/vibe.verify --e2e)
 
 Playwright 기반 브라우저 자동화 테스트:
 
 ```bash
-/vibe.e2e "login flow"        # 시나리오 테스트
-/vibe.e2e --visual            # 시각적 회귀 테스트
-/vibe.e2e --record            # 비디오 녹화
+/vibe.verify --e2e "login flow"   # 시나리오 테스트
+/vibe.verify --e2e --visual       # 시각적 회귀 테스트
+/vibe.verify --e2e --record       # 비디오 녹화
 ```
 
 **기능:**
@@ -322,7 +290,7 @@ Playwright 기반 브라우저 자동화 테스트:
 - 접근성(a11y) 검사
 - 버그 재현 자동화
 
-### 지식 복리 (/vibe.compound)
+### 지식 복리 (자동 트리거)
 
 해결한 문제를 자동 문서화하여 지식 축적:
 
@@ -334,7 +302,7 @@ Playwright 기반 브라우저 자동화 테스트:
 └── integration/        # 외부 연동
 ```
 
-**트리거**: "버그 해결됨", "bug fixed", "PR merged" 등
+**자동 트리거**: "버그 해결됨", "bug fixed", "PR merged" 등 (Hooks에서 자동 감지)
 
 ### 리서치 에이전트 강화
 
@@ -386,7 +354,7 @@ Primary 결과만 사용
 project/
 ├── CLAUDE.md                 # 프로젝트 컨텍스트        ← git 공유
 └── .claude/                  # ⚠️ 반드시 git에 커밋    ← git 공유
-    ├── commands/             # 슬래시 커맨드 (12개)
+    ├── commands/             # 슬래시 커맨드 (4개)
     ├── agents/               # 서브에이전트
     │   ├── review/           # 리뷰 에이전트 (12개)
     │   └── research/         # 리서치 에이전트 (4개)

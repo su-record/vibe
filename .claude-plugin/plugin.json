@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "2.2.0",
+  "version": "2.2.6",
   "description": "SPEC-driven AI coding framework with parallel agents, BDD verification, and quality assurance",
   "author": {
     "name": "su-record"
@@ -19,5 +19,7 @@
     "quality-assurance"
   ],
   "commands": "./commands/",
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "hooks": "./hooks/hooks.json"
 }

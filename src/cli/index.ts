@@ -1047,7 +1047,7 @@ async function init(projectName?: string): Promise<void> {
 
     const sourceDir = path.join(__dirname, '../../commands');
     copyDirRecursive(sourceDir, commandsDir);
-    log('   ✅ 슬래시 커맨드 설치 완료 (12개)\n');
+    log('   ✅ 슬래시 커맨드 설치 완료 (4개)\n');
 
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
@@ -1226,7 +1226,7 @@ ${isNewProject ? `프로젝트 위치:
 ` : ''}생성된 구조:
   CLAUDE.md                      # 프로젝트 컨텍스트
   .claude/
-  ├── commands/                  # 슬래시 커맨드 (12개)
+  ├── commands/                  # 슬래시 커맨드 (4개)
   ├── agents/                    # 서브에이전트 (simplifier)
   ├── settings.json              # Hooks 설정 (저장소 공유)
   └── vibe/
@@ -1367,7 +1367,7 @@ async function update(): Promise<void> {
     ensureDir(commandsDir);
     const sourceDir = path.join(__dirname, '../../commands');
     copyDirRecursive(sourceDir, commandsDir);
-    log('   ✅ 슬래시 커맨드 업데이트 완료 (12개)\n');
+    log('   ✅ 슬래시 커맨드 업데이트 완료 (4개)\n');
 
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
@@ -1688,7 +1688,7 @@ async function update(): Promise<void> {
 ✅ vibe 업데이트 완료! (v${packageJson.version})
 
 업데이트된 항목:
-  - 슬래시 커맨드 (12개)
+  - 슬래시 커맨드 (4개)
   - 코딩 규칙 (.claude/vibe/rules/)
   - 서브에이전트 (.claude/agents/)
   - Hooks 설정
@@ -1779,7 +1779,7 @@ function remove(): void {
 제거된 항목:
   - MCP 서버 (vibe, context7)
   - .claude/vibe/ 폴더
-  - 슬래시 커맨드 (12개)
+  - 슬래시 커맨드 (4개)
   - 서브에이전트 (5개)
   - Hooks 설정
 
