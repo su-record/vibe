@@ -112,12 +112,31 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
 - src/services/auth_service.py:L1-100
 ```
 
-#### 6. Complete
+#### 6. Complete & Next Action
 
 After analysis:
 1. Output analysis summary
-2. Ask "What would you like me to help with?"
-3. Use collected context for subsequent development/modification requests
+2. **Ask user to choose workflow** when development is requested:
+
+```
+## Next Steps
+
+개발을 진행하려면 워크플로우를 선택하세요:
+
+| 작업 규모 | 권장 방식 |
+|----------|----------|
+| 간단한 수정 (1-2 파일) | Plan Mode |
+| 복잡한 기능 (3+ 파일, 리서치/검증 필요) | /vibe.spec |
+
+1. `/vibe.spec "feature-name"` - VIBE 워크플로우 (병렬 리서치 + SPEC 검증)
+2. Plan Mode - 빠른 구현 (간단한 작업용)
+
+어떤 방식으로 진행할까요?
+```
+
+3. Wait for user's choice before proceeding
+4. If user chooses VIBE → wait for `/vibe.spec` command
+5. If user chooses Plan Mode → proceed with EnterPlanMode
 
 ---
 

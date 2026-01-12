@@ -36,6 +36,28 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 /vibe.spec → /vibe.run → /vibe.verify → /vibe.compound
 ```
 
+## Plan Mode vs VIBE (워크플로우 선택)
+
+**개발 요청 시 사용자에게 선택권 제공:**
+
+| 작업 규모 | 권장 방식 |
+|----------|----------|
+| 간단한 수정 (1-2 파일) | Plan Mode |
+| 복잡한 기능 (3+ 파일, 리서치/검증 필요) | `/vibe.spec` |
+
+| 항목 | Plan Mode | VIBE |
+|------|-----------|------|
+| 저장 위치 | `~/.claude/plans/` (전역) | `.claude/vibe/specs/` (프로젝트) |
+| 문서 형식 | 자유 형식 | PTCF 구조 (AI 실행 최적화) |
+| 리서치 | 없음 | 4개 병렬 에이전트 |
+| 검증 | 없음 | `/vibe.verify`로 SPEC 대비 검증 |
+| 히스토리 | 추적 불가 | Git으로 버전 관리 |
+
+**규칙:**
+- `/vibe.analyze` 또는 `/vibe.review` 후 개발/수정 요청 시 → **사용자에게 워크플로우 선택 질문**
+- 사용자가 VIBE 선택 → `/vibe.spec` 대기
+- 사용자가 Plan Mode 선택 → EnterPlanMode 진행
+
 ## ULTRAWORK Mode (권장)
 
 `ultrawork` 또는 `ulw` 키워드를 포함하면 최대 성능 모드 활성화:

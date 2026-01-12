@@ -131,6 +131,30 @@ Next Steps:
 3. Re-run: /vibe.review
 ```
 
+### Phase 6: Guide to Fix Workflow
+
+**Ask user to choose workflow** when fix is requested:
+
+```
+## Fix Workflow
+
+발견된 이슈를 수정하려면 워크플로우를 선택하세요:
+
+| 작업 규모 | 권장 방식 |
+|----------|----------|
+| 간단한 수정 (1-2 파일) | Plan Mode |
+| 복잡한 수정 (3+ 파일, 검증 필요) | /vibe.spec |
+
+1. `/vibe.spec "fix: issue-name"` - VIBE 워크플로우 (SPEC 검증 + 재리뷰)
+2. Plan Mode - 빠른 수정 (간단한 작업용)
+
+어떤 방식으로 진행할까요?
+```
+
+- Wait for user's choice before proceeding
+- If user chooses VIBE → wait for `/vibe.spec` command
+- If user chooses Plan Mode → proceed with EnterPlanMode
+
 ---
 
 ARGUMENTS: $ARGUMENTS
