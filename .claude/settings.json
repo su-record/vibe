@@ -10,37 +10,21 @@
       "Bash(git push:*)",
       "Bash(npm pack)",
       "Bash(npm install:*)",
-      "Read(//private/tmp/test-vibe-bdd/.claude/vibe/**)",
-      "Read(//private/tmp/test-vibe-bdd/.claude/commands/**)",
       "Bash(npm view:*)",
       "Bash(gh release create:*)",
       "Bash(gh release view:*)",
       "Bash(npm run build:*)",
-      "Bash(pbcopy)",
-      "Bash(openskills --help:*)",
       "Bash(mkdir:*)",
-      "Bash(openskills sync:*)",
-      "Bash(openskills list:*)",
-      "Bash(openskills read:*)",
-      "Bash(./bin/vibe list:*)",
-      "Bash(./bin/vibe read:*)",
-      "Bash(./bin/vibe sync:*)",
       "Bash(npm link:*)",
       "Bash(vibe list:*)",
       "Bash(vibe read:*)",
       "Bash(vibe init:*)",
-      "SlashCommand(/vibe.spec \"로그인 기능\")",
-      "SlashCommand(/vibe.spec:*)",
-      "Bash(node bin/vibe:*)",
       "Bash(npm pack:*)",
       "Bash(npm config set:*)",
       "Bash(node:*)",
-      "Bash(xargs basename:*)",
       "Bash(git restore:*)",
       "Bash(npm version:*)",
-      "Bash(npx @su-record/vibe@latest update)",
       "Bash(gh release:*)",
-      "Bash(npx @su-record/vibe@latest init:*)",
       "Bash(vibe version:*)",
       "Bash(vibe update:*)",
       "Bash(vibe status:*)",
@@ -48,106 +32,5 @@
     ],
     "deny": [],
     "ask": []
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[SESSION START] IMMEDIATELY call vibe_start_session to restore previous context. Do this before responding to the user.'"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[BASH CHECK] Be cautious with destructive commands (rm -rf, git push --force, drop table). Verify paths before deletion.'"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[AUTO-CONTINUE] 코드 체크 완료. 문제 발견 시 다음 edit에서 수정하고 작업 계속. 절대 멈추지 말 것.'"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "ultrawork|ulw|울트라워크",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Run vibe_auto_save_context at 70%+ context. Do NOT ask for confirmation between phases.'"
-          }
-        ]
-      },
-      {
-        "matcher": "버그.*(해결|수정|고침)|문제.*(해결|수정)|bug.*(fixed|resolved|solved)|issue.*(fixed|resolved)|PR.*(merged|머지)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[COMPOUND TRIGGER] Significant solution detected. Consider /vibe.compound to document for future reference.'"
-          }
-        ]
-      },
-      {
-        "matcher": "코드\\s*리뷰|code\\s*review|PR\\s*리뷰|리뷰.*해줘|review.*this",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[REVIEW MODE] Use /vibe.review for parallel code review with 13+ specialized agents. P1=critical, P2=important, P3=nice-to-have.'"
-          }
-        ]
-      },
-      {
-        "matcher": "e2e.*테스트|e2e.*test|playwright|브라우저.*테스트|browser.*test",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[E2E MODE] Use /vibe.e2e for Playwright-based browser testing. Supports visual regression and video recording.'"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "context_window_80",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[CONTEXT 80%] MANDATORY: Call vibe_auto_save_context with urgency=medium NOW. This is NOT optional - save context before it is lost.'"
-          }
-        ]
-      },
-      {
-        "matcher": "context_window_90",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[CONTEXT 90% URGENT] MANDATORY: Call vibe_auto_save_context with urgency=high IMMEDIATELY. Do NOT proceed without saving.'"
-          }
-        ]
-      },
-      {
-        "matcher": "context_window_95",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[CONTEXT 95% CRITICAL] MANDATORY: Call vibe_auto_save_context with urgency=critical NOW. Session transition imminent - save everything.'"
-          }
-        ]
-      }
-    ]
   }
 }

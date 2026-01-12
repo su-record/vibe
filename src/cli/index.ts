@@ -1188,7 +1188,7 @@ async function init(projectName?: string): Promise<void> {
 
     // .claude/settings.json 설정
     const settingsPath = path.join(claudeDir, 'settings.json');
-    const hooksTemplate = path.join(__dirname, '../../templates/hooks-template.json');
+    const hooksTemplate = path.join(__dirname, '../../hooks/hooks.json');
     if (fs.existsSync(hooksTemplate)) {
       const vibeHooks = JSON.parse(fs.readFileSync(hooksTemplate, 'utf-8'));
       if (fs.existsSync(settingsPath)) {
@@ -1530,7 +1530,7 @@ async function update(): Promise<void> {
 
     // settings.json 업데이트
     const settingsPath = path.join(claudeDir, 'settings.json');
-    const hooksTemplate = path.join(__dirname, '../../templates/hooks-template.json');
+    const hooksTemplate = path.join(__dirname, '../../hooks/hooks.json');
 
     if (fs.existsSync(hooksTemplate)) {
       const vibeHooks = JSON.parse(fs.readFileSync(hooksTemplate, 'utf-8'));
