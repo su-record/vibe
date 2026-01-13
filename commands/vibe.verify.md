@@ -224,14 +224,55 @@ Claude:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## Vibe Tools (Code Analysis & Quality)
+
+### Tool Invocation
+
+All tools are called via:
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+```
+
+### Recommended Tools for Verification
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `validateCodeQuality` | Code quality validation | Check complexity, style violations |
+| `analyzeComplexity` | Complexity analysis | Verify function length, nesting depth |
+| `findSymbol` | Find implementations | Verify feature implementation exists |
+| `findReferences` | Find usages | Check if all references are correct |
+
+### Example Tool Usage in Verification
+
+**1. Validate code quality:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: 'src/auth/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
+**2. Analyze complexity of implementation:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPath: 'src/auth/login.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
+**3. Find implemented feature:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'handleLogin', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+```
+
 ## Next Step
 
 On verification pass:
+
 ```
 Complete! Proceed to next feature.
 ```
 
 On verification fail:
+
 ```
 /vibe.run "feature-name" --fix  # Fix failed scenarios
 ```

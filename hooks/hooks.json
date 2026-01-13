@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[SESSION START] IMMEDIATELY call vibe_start_session to restore previous context. Do this before responding to the user.'"
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';Promise.all([import('@su-record/vibe/tools').then(t => t.startSession({projectPath: p})), import('@su-record/vibe/tools').then(t => t.getCurrentTime({format: 'human', timezone: 'Asia/Seoul'})), import('@su-record/vibe/tools').then(t => t.listMemories({limit: 5, projectPath: p}))]).then(([session, time, memories]) => console.log(session.content[0].text + '\\n\\n' + time.content[0].text + '\\n\\n[Recent Memories]\\n' + memories.content[0].text))\""
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[AUTO-CONTINUE] 코드 체크 완료. 문제 발견 시 다음 edit에서 수정하고 작업 계속. 절대 멈추지 말 것.'"
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: '.', projectPath: p}).then(r => console.log('[CODE CHECK]', r.content[0].text.split('\\n').slice(0,3).join(' | ')))).catch(() => console.log('[AUTO-CONTINUE] Code written. Continue.'))\""
           }
         ]
       }
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Run vibe_auto_save_context at 70%+ context. Do NOT ask for confirmation between phases.'"
+            "command": "echo '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Do NOT ask for confirmation between phases.'"
           }
         ]
       },
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[COMPOUND TRIGGER] Significant solution detected. Consider /vibe.compound to document for future reference.'"
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'solution-' + Date.now(), value: 'Solution documented at ' + new Date().toISOString(), category: 'solution', projectPath: p}).then(r => console.log('[COMPOUND]', r.content[0].text))).catch(() => console.log('[COMPOUND TRIGGER] Consider /vibe.utils --compound'))\""
           }
         ]
       },
@@ -56,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[REVIEW MODE] Use /vibe.review for parallel code review with 13+ specialized agents. P1=critical, P2=important, P3=nice-to-have.'"
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: '.', projectPath: p}).then(r => console.log('[REVIEW PREP]', r.content[0].text.split('\\n').slice(0,5).join(' | ')))).catch(() => console.log('[REVIEW MODE] Use /vibe.review'))\""
           }
         ]
       },
@@ -65,7 +65,25 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[E2E MODE] Use /vibe.e2e for Playwright-based browser testing. Supports visual regression and video recording.'"
+            "command": "echo '[E2E MODE] Use /vibe.utils --e2e for Playwright-based browser testing. Supports visual regression and video recording.'"
+          }
+        ]
+      },
+      {
+        "matcher": "복잡도|complexity|분석해|analyze this",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPath: '.', projectPath: p}).then(r => console.log('[COMPLEXITY]', r.content[0].text.split('\\n').slice(0,5).join(' | ')))).catch(() => console.log('[ANALYZE] Use analyzeComplexity tool'))\""
+          }
+        ]
+      },
+      {
+        "matcher": "뭐였지|기억|recall|이전에.*결정|저번에",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.listMemories({limit: 10, projectPath: p}).then(r => console.log('[RECALL]', r.content[0].text.split('\\n').slice(0,7).join(' | ')))).catch(() => console.log('[RECALL] Use recallMemory tool'))\""
           }
         ]
       }
@@ -76,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[CONTEXT 80%] MANDATORY: Call vibe_auto_save_context with urgency=medium NOW. This is NOT optional - save context before it is lost.'"
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.autoSaveContext({urgency: 'medium', contextType: 'progress', summary: 'Context at 80% - auto checkpoint', projectPath: p}).then(r => console.log('[CONTEXT 80%]', r.content[0].text)))\""
           }
         ]
       },
@@ -85,7 +103,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[CONTEXT 90% URGENT] MANDATORY: Call vibe_auto_save_context with urgency=high IMMEDIATELY. Do NOT proceed without saving.'"
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.autoSaveContext({urgency: 'high', contextType: 'progress', summary: 'Context at 90% - save before overflow', projectPath: p}).then(r => console.log('[CONTEXT 90%]', r.content[0].text)))\""
           }
         ]
       },
@@ -94,7 +112,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[CONTEXT 95% CRITICAL] MANDATORY: Call vibe_auto_save_context with urgency=critical NOW. Session transition imminent - save everything.'"
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.autoSaveContext({urgency: 'critical', contextType: 'progress', summary: 'Context at 95% - CRITICAL save before session end', projectPath: p}).then(r => console.log('[CONTEXT 95%]', r.content[0].text)))\""
           }
         ]
       }

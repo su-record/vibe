@@ -62,6 +62,7 @@ vibe status             # Check current settings
 - Source code analysis: `package.json`, `pyproject.toml`, `pubspec.yaml`, `go.mod`, etc.
 - Reference `CLAUDE.md` file (tech stack)
 - Infer framework from file structure
+- **Use `findSymbol` tool** to locate relevant existing implementations
 
 **New project** (`vibe init <project-name>`):
 - Suggest tech stack (2-3 options)
@@ -370,6 +371,41 @@ Claude: Thank you. SPEC has been refined.
 📄 .claude/vibe/specs/brick-game.md (PTCF structure)
 📄 .claude/vibe/features/brick-game.feature
 📊 Quality score: 92/100 (A)
+```
+
+## Vibe Tools (Semantic Analysis & Memory)
+
+### Tool Invocation
+All tools are called via:
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+```
+
+### Recommended Tools for SPEC Creation
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `findSymbol` | Find symbol definitions | Locate existing implementations to reference |
+| `findReferences` | Find all references | Understand how existing code is used |
+| `analyzeComplexity` | Code complexity analysis | Evaluate complexity of code to modify |
+| `saveMemory` | Save important decisions | Store confirmed requirements, design decisions |
+| `recallMemory` | Recall saved memory | Retrieve previous project decisions |
+
+### Example Tool Usage in SPEC Creation
+
+**1. Find existing auth implementation:**
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+```
+
+**2. Save confirmed requirements:**
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'brick-game-requirements', value: 'Platform: Web, Stack: Phaser.js, Style: Neon', category: 'spec', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
+**3. Recall previous decisions:**
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.recallMemory({key: 'brick-game-requirements', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 ## Next Step

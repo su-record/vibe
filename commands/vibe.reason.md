@@ -178,6 +178,46 @@ AI: Analyzing with 9-step reasoning framework...
    - Verify hypotheses in order of likelihood
    - Feedback each verification result
 
+## Vibe Tools (Reasoning Support)
+
+### Tool Invocation
+
+All tools are called via:
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+```
+
+### Recommended Tools for Reasoning
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `findSymbol` | Find symbol definitions | Locate potential problem areas |
+| `findReferences` | Find all references | Trace data/control flow |
+| `analyzeComplexity` | Complexity analysis | Identify high-risk complex code |
+| `saveMemory` | Save reasoning progress | Store hypothesis verification results |
+| `recallMemory` | Recall saved memory | Retrieve previous reasoning context |
+
+### Example Tool Usage in Reasoning
+
+**1. Find potential problem source:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'getProfile', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+```
+
+**2. Trace references to understand flow:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.findReferences({symbolName: 'sessionData', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+```
+
+**3. Save hypothesis verification result:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'hypothesis-1-result', value: 'Session save timing issue confirmed - race condition in auth middleware', category: 'reasoning', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
 ---
 
 ARGUMENTS: $ARGUMENTS

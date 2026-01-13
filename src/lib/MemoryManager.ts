@@ -28,31 +28,40 @@ export class MemoryManager {
   private recallUpdateStmt: Database.Statement | null = null;
 
   private constructor(projectPath?: string) {
-    if (projectPath) {
-      // Project-based memory: store in {projectPath}/memories/
-      const memoryDir = path.join(projectPath, 'memories');
-      this.dbPath = path.join(memoryDir, 'memories.db');
+    // Determine project path: explicit > CLAUDE_PROJECT_DIR env > cwd (only if .claude exists)
+    let resolvedPath = projectPath;
 
+    if (!resolvedPath && process.env.CLAUDE_PROJECT_DIR) {
+      resolvedPath = process.env.CLAUDE_PROJECT_DIR;
+    }
+
+    if (!resolvedPath) {
+      // Only use cwd if it looks like a real project (has .claude folder)
+      const cwdClaudePath = path.join(process.cwd(), '.claude');
       try {
-        mkdirSync(memoryDir, { recursive: true });
-      } catch (error) {
-        const nodeError = error as NodeJS.ErrnoException;
-        if (nodeError.code !== 'EEXIST') {
-          throw new Error(`Failed to create memory directory: ${nodeError.message}`);
+        const fs = require('fs');
+        if (fs.existsSync(cwdClaudePath)) {
+          resolvedPath = process.cwd();
         }
+      } catch {
+        // Ignore errors
       }
-    } else {
-      // Fallback to process.cwd() (legacy behavior)
-      const memoryDir = path.join(process.cwd(), 'memories');
-      this.dbPath = path.join(memoryDir, 'memories.db');
+    }
 
-      try {
-        mkdirSync(memoryDir, { recursive: true });
-      } catch (error) {
-        const nodeError = error as NodeJS.ErrnoException;
-        if (nodeError.code !== 'EEXIST') {
-          throw new Error(`Failed to create memory directory: ${nodeError.message}`);
-        }
+    if (!resolvedPath) {
+      throw new Error('No valid project path found. Provide projectPath or set CLAUDE_PROJECT_DIR environment variable.');
+    }
+
+    // Project-based memory: store in {projectPath}/memories/
+    const memoryDir = path.join(resolvedPath, 'memories');
+    this.dbPath = path.join(memoryDir, 'memories.db');
+
+    try {
+      mkdirSync(memoryDir, { recursive: true });
+    } catch (error) {
+      const nodeError = error as NodeJS.ErrnoException;
+      if (nodeError.code !== 'EEXIST') {
+        throw new Error(`Failed to create memory directory: ${nodeError.message}`);
       }
     }
 

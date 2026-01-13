@@ -155,6 +155,46 @@ Next Steps:
 - If user chooses VIBE → wait for `/vibe.spec` command
 - If user chooses Plan Mode → proceed with EnterPlanMode
 
+## Vibe Tools (Code Analysis)
+
+### Tool Invocation
+
+All tools are called via:
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+```
+
+### Recommended Tools for Review
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `validateCodeQuality` | Code quality check | Overall code quality scan |
+| `analyzeComplexity` | Complexity metrics | Check function complexity |
+| `findSymbol` | Find definitions | Locate implementations |
+| `findReferences` | Find all usages | Track symbol usage |
+| `saveMemory` | Save findings | Store important review findings |
+
+### Example Tool Usage in Review
+
+**1. Validate code quality before review:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
+**2. Analyze complexity of changed files:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPath: 'src/api/users.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
+**3. Save critical finding for reference:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'review-pr123-critical', value: 'SQL injection in users.py:42', category: 'review', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
 ---
 
 ARGUMENTS: $ARGUMENTS

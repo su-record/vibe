@@ -297,46 +297,48 @@ When external LLM enabled, automatically called via MCP:
 - Continue with the implementation without interruption
 - Log the fallback but don't block progress
 
-## Semantic Code Analysis (hi-ai MCP)
+## Vibe Tools (Semantic Analysis & Memory)
 
-Use hi-ai MCP semantic tools to accurately understand codebase before implementation:
+Use vibe tools for accurate codebase understanding and session continuity.
 
-| MCP Tool | Purpose | When Used |
-|----------|---------|-----------|
-| `vibe_find_symbol` | Find symbol definitions | Locate class/function |
-| `vibe_find_references` | Find references | Analyze impact scope |
-| `vibe_analyze_complexity` | Analyze complexity | Determine refactoring need |
-| `vibe_validate_code_quality` | Validate quality | Verify post-implementation quality |
+### Tool Invocation
 
-### Semantic Analysis Flow
-
-```
-Start Implementation
-    │
-    ├─→ find_symbol: Locate exact position of function/class to modify
-    │
-    ├─→ find_references: Check all places using that symbol
-    │
-    ├─→ analyze_complexity: Check existing code complexity
-    │
-    ↓
-Implementation (with accurate understanding of impact scope)
-    │
-    ↓
-validate_code_quality: Verify quality after implementation
+All tools are called via:
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
 ```
 
-### Context Management (Session Continuity)
+### Semantic Analysis Tools
 
-| MCP Tool | Purpose |
-|----------|---------|
-| `vibe_start_session` | Start session, restore previous context |
-| `vibe_auto_save_context` | Auto-save current state |
-| `vibe_restore_session_context` | Restore previous session context |
-| `vibe_save_memory` | Save important decisions/patterns |
+| Tool | Purpose | Usage |
+|------|---------|-------|
+| `findSymbol` | Find symbol definitions | `{symbolName: 'functionName', searchPath: '.'}` |
+| `findReferences` | Find all references | `{symbolName: 'functionName', searchPath: '.'}` |
+| `analyzeComplexity` | Analyze code complexity | `{filePath: 'src/file.ts'}` |
+| `validateCodeQuality` | Validate code quality | `{filePath: 'src/file.ts'}` |
 
-**On session start**: `vibe_start_session` auto-restores previous context
-**On session end**: Hook auto-executes `vibe_auto_save_context`
+**Example - Find symbol:**
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: '.'}).then(r => console.log(r.content[0].text)))"
+```
+
+### Memory Tools
+
+| Tool | Purpose | Usage |
+|------|---------|-------|
+| `saveMemory` | Save important decisions | `{key: 'decision-name', value: 'content', category: 'project'}` |
+| `recallMemory` | Recall saved memory | `{key: 'decision-name'}` |
+| `listMemories` | List all memories | `{category: 'project'}` |
+
+**Example - Save important decision:**
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'auth-pattern', value: 'Using JWT with refresh tokens', category: 'project'}).then(r => console.log(r.content[0].text)))"
+```
+
+### Session Management (Auto via Hooks)
+
+- **Session start**: Hook auto-calls `startSession` to restore previous context
+- **Context 80%+**: Hook auto-calls `autoSaveContext` to preserve state
 
 ## Process
 

@@ -194,6 +194,52 @@ After analysis:
 2. Apply lodash security patch
 ```
 
+## Vibe Tools (Semantic Analysis)
+
+### Tool Invocation
+
+All tools are called via:
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+```
+
+### Recommended Tools for Analysis
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `findSymbol` | Find symbol definitions | Locate function/class implementations |
+| `findReferences` | Find all references | Track usage patterns |
+| `analyzeComplexity` | Complexity analysis | Measure code complexity metrics |
+| `validateCodeQuality` | Quality validation | Check code quality standards |
+| `saveMemory` | Save analysis results | Store analysis findings |
+
+### Example Tool Usage in Analysis
+
+**1. Find function definition:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+```
+
+**2. Analyze complexity:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPath: 'src/services/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
+**3. Validate code quality:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
+**4. Save analysis results:**
+
+```bash
+node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'analysis-login-module', value: 'Found 5 related files, complexity avg 6.2', category: 'analysis', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+```
+
 ---
 
 ARGUMENTS: $ARGUMENTS
