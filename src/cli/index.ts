@@ -1203,6 +1203,15 @@ async function init(projectName?: string): Promise<void> {
     copyDirRecursive(agentsSourceDir, agentsDir);
     log('   ✅ 서브에이전트 설치 완료 (.claude/agents/)\n');
 
+    // .claude/skills/ 복사
+    const skillsDir = path.join(claudeDir, 'skills');
+    ensureDir(skillsDir);
+    const skillsSourceDir = path.join(__dirname, '../../skills');
+    if (fs.existsSync(skillsSourceDir)) {
+      copyDirRecursive(skillsSourceDir, skillsDir);
+      log('   ✅ 스킬 설치 완료 (.claude/skills/)\n');
+    }
+
     // .claude/settings.json 설정
     const settingsPath = path.join(claudeDir, 'settings.json');
     const hooksTemplate = path.join(__dirname, '../../hooks/hooks.json');
@@ -1244,7 +1253,8 @@ ${isNewProject ? `프로젝트 위치:
   CLAUDE.md                      # 프로젝트 컨텍스트
   .claude/
   ├── commands/                  # 슬래시 커맨드 (7개)
-  ├── agents/                    # 서브에이전트 (simplifier)
+  ├── agents/                    # 서브에이전트
+  ├── skills/                    # 자동 활성화 스킬 (7개)
   ├── settings.json              # Hooks 설정 (저장소 공유)
   └── vibe/
       ├── config.json            # 프로젝트 설정
@@ -1597,6 +1607,15 @@ async function update(): Promise<void> {
     const agentsSourceDir = path.join(__dirname, '../../agents');
     copyDirRecursive(agentsSourceDir, agentsDir);
     log('   ✅ 서브에이전트 업데이트 완료 (.claude/agents/)\n');
+
+    // .claude/skills/ 업데이트
+    const skillsDir = path.join(claudeDir, 'skills');
+    ensureDir(skillsDir);
+    const skillsSourceDir = path.join(__dirname, '../../skills');
+    if (fs.existsSync(skillsSourceDir)) {
+      copyDirRecursive(skillsSourceDir, skillsDir);
+      log('   ✅ 스킬 업데이트 완료 (.claude/skills/)\n');
+    }
 
     // settings.json 업데이트
     const settingsPath = path.join(claudeDir, 'settings.json');

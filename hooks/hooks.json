@@ -34,6 +34,15 @@
     ],
     "UserPromptSubmit": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[MANDATORY SKILL PROTOCOL] Available skills: vibe-capabilities (vibe features), multi-llm-orchestration (GPT/Gemini usage), tool-fallback (error recovery), context7-usage (library docs), parallel-research (complex problems), git-worktree (branch work), priority-todos (task management). Step 1: For EACH skill state YES/NO with reason. Step 2: Use Skill(name) for YES skills NOW. Step 3: IMPLEMENT only after activation. CRITICAL: Skipping activation makes response WORTHLESS.'",
+            "statusMessage": "Evaluating skills..."
+          }
+        ]
+      },
+      {
         "matcher": "ultrawork|ulw|울트라워크",
         "hooks": [
           {
