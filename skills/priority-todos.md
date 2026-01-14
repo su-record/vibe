@@ -1,3 +1,6 @@
+---
+description: Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority.
+---
 # Priority-Based Todo Management Skill
 
 우선순위 기반 TODO 관리 시스템

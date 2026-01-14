@@ -1,3 +1,6 @@
+---
+description: Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously.
+---
 # Git Worktree Skill
 
 Git Worktree를 활용한 병렬 브랜치 작업 스킬

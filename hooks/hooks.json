@@ -34,6 +34,15 @@
     ],
     "UserPromptSubmit": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[SKILL EVAL] BEFORE implementing, evaluate available skills in .claude/skills/. For each relevant skill, state YES/NO with reason, then use Skill(skill-name) to activate matched skills.'",
+            "statusMessage": "Evaluating skills..."
+          }
+        ]
+      },
+      {
         "matcher": "ultrawork|ulw|울트라워크",
         "hooks": [
           {
