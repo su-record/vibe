@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[SKILL EVAL] BEFORE implementing, evaluate available skills in .claude/skills/. For each relevant skill, state YES/NO with reason, then use Skill(skill-name) to activate matched skills.'",
+            "command": "echo '[MANDATORY SKILL PROTOCOL] Step 1 - EVALUATE: List each skill in .claude/skills/ with YES/NO and reason. Step 2 - ACTIVATE: Use Skill(name) for YES skills NOW. Step 3 - IMPLEMENT: Only after activation. CRITICAL: Evaluation is WORTHLESS unless you ACTIVATE matched skills.'",
             "statusMessage": "Evaluating skills..."
           }
         ]
