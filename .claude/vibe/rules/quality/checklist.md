@@ -28,7 +28,7 @@ const typeSafety = {
 ```typescript
 const codeStructure = {
   singleResponsibility: true,    // ✅ 단일 책임 원칙
-  functionUnder20Lines: true,    // ✅ 함수 20줄 이하
+  functionUnder30Lines: true,    // ✅ 함수 30줄 이하 (권장), 50줄 허용
   maxNesting3Levels: true,       // ✅ 최대 중첩 3단계
   cyclomaticComplexity: 10,      // ✅ 순환 복잡도 ≤ 10
   cognitiveComplexity: 15,       // ✅ 인지 복잡도 ≤ 15
@@ -171,7 +171,7 @@ const bundleOptimization = {
 
 ```
 [ ] 단일 책임 원칙 준수
-[ ] 함수 길이 20줄 이하 유지
+[ ] 함수 길이 30줄 이하 유지 (최대 50줄)
 [ ] 중첩 깊이 3단계 이하
 [ ] 매직 넘버 상수화
 [ ] 타입 안전성 확보
@@ -207,7 +207,7 @@ module.exports = {
   rules: {
     'complexity': ['error', 10],
     'max-depth': ['error', 3],
-    'max-lines-per-function': ['error', 20],
+    'max-lines-per-function': ['error', 50],
     'max-params': ['error', 5],
     'no-magic-numbers': ['warn', { ignore: [0, 1, -1] }],
     '@typescript-eslint/no-explicit-any': 'error',
@@ -266,7 +266,7 @@ npm run format:check
 ```
 ✅ 요청 범위만 수정했는가?
 ✅ any 타입이 없는가?
-✅ 함수가 20줄 이하인가?
+✅ 함수가 30줄 이하인가? (최대 50줄)
 ✅ 중첩이 3단계 이하인가?
 ✅ 에러 처리를 했는가?
 ✅ 매직 넘버를 상수화했는가?
