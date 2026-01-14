@@ -508,28 +508,32 @@ Then: 로그인 성공 + JWT 토큰 반환
 → 3x slower, wastes time
 ```
 
-### Background Agent Pattern (ULTRAWORK)
+### Background Agent Pattern (ULTRAWORK) via Orchestrator
 
-**During implementation, launch background agents for next phase:**
-```
-<message>
-  // Main agent - blocks until complete
-  Task(sonnet, "Implement Phase 1: Create login form component")
+**Launch background agents for next phase via Orchestrator:**
+```bash
+# Start background agent (doesn't block)
+node -e "import('@su-record/vibe/orchestrator').then(o => o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep').then(r => console.log(r.content[0].text)))"
 
-  // Background agents - run simultaneously, don't block
-  Task(haiku, run_in_background=true, "Phase 2 prep: Analyze auth API endpoints")
-  Task(haiku, run_in_background=true, "Pre-generate test cases for login form")
-  Task(haiku, run_in_background=true, "Find existing validation patterns")
-</message>
-→ Main completes in ~60s, backgrounds ready when needed
+# Multiple backgrounds in parallel
+node -e "import('@su-record/vibe/orchestrator').then(async o => {
+  await Promise.all([
+    o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep'),
+    o.runAgent('Pre-generate test cases for login form', 'test-prep'),
+    o.runAgent('Find existing validation patterns', 'pattern-finder')
+  ]);
+  console.log('All background agents started');
+})"
 ```
 
-**Checking background results:**
+**Check background agent status:**
+```bash
+node -e "import('@su-record/vibe/orchestrator').then(o => console.log(o.status().content[0].text))"
 ```
-// After main implementation completes
-TaskOutput(task_id, block=false)  // Check if ready
-// OR
-Read(output_file)  // Read background agent's findings
+
+**Get result when ready:**
+```bash
+node -e "import('@su-record/vibe/orchestrator').then(o => o.getResult('SESSION_ID').then(r => console.log(r.content[0].text)))"
 ```
 
 **Why Background Agents Matter:**

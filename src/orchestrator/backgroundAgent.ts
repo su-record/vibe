@@ -1,0 +1,393 @@
+/**
+ * Background Agent - 백그라운드 에이전트 관리
+ * oh-my-opencode의 BackgroundManager 패턴 참고
+ */
+
+import {
+  BackgroundAgentArgs,
+  BackgroundAgentHandle,
+  AgentResult,
+  AgentMessage,
+  SessionInfo
+} from './types.js';
+import { ToolResult } from '../types/tool.js';
+
+// Agent SDK 동적 import
+let agentSdkQuery: typeof import('@anthropic-ai/claude-agent-sdk').query | null = null;
+
+async function getQueryFunction() {
+  if (agentSdkQuery) return agentSdkQuery;
+
+  try {
+    const sdk = await import('@anthropic-ai/claude-agent-sdk');
+    agentSdkQuery = sdk.query;
+    return agentSdkQuery;
+  } catch {
+    return null;
+  }
+}
+
+// 활성 세션 저장소
+const activeSessions = new Map<string, {
+  handle: BackgroundAgentHandle;
+  resultPromise: Promise<AgentResult>;
+  cancelController: AbortController;
+}>();
+
+// 세션 히스토리 (완료된 세션 포함)
+const sessionHistory: SessionInfo[] = [];
+
+/**
+ * 백그라운드 에이전트 시작
+ */
+export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<ToolResult> {
+  const {
+    prompt,
+    agentName = `agent-${Date.now()}`,
+    model = 'claude-sonnet-4-5',
+    maxTurns = 10,
+    allowedTools = ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'],
+    projectPath = process.cwd(),
+    onProgress
+  } = args;
+
+  const query = await getQueryFunction();
+
+  // Agent SDK가 없으면 시뮬레이션
+  if (!query) {
+    const handle: BackgroundAgentHandle = {
+      sessionId: `simulated-${Date.now()}`,
+      agentName,
+      status: 'completed',
+      startTime: Date.now(),
+      getResult: async () => ({
+        agentName,
+        sessionId: `simulated-${Date.now()}`,
+        result: `[Agent SDK not installed] Would execute: ${prompt.slice(0, 100)}...`,
+        success: true,
+        duration: 0
+      }),
+      cancel: () => {}
+    };
+
+    return {
+      content: [{
+        type: 'text',
+        text: `Background agent "${agentName}" started (simulated)\nSession ID: ${handle.sessionId}\n\nNote: Install @anthropic-ai/claude-agent-sdk for real execution.`
+      }],
+      handle
+    } as ToolResult & { handle: BackgroundAgentHandle };
+  }
+
+  const startTime = Date.now();
+  const cancelController = new AbortController();
+  let sessionId = '';
+  let result = '';
+  let status: BackgroundAgentHandle['status'] = 'running';
+
+  // 결과 수집 Promise
+  const resultPromise = new Promise<AgentResult>(async (resolve) => {
+    try {
+      const response = query({
+        prompt,
+        options: {
+          model,
+          maxTurns,
+          allowedTools,
+          cwd: projectPath
+        }
+      });
+
+      for await (const message of response) {
+        // 취소 체크
+        if (cancelController.signal.aborted) {
+          status = 'cancelled';
+          resolve({
+            agentName,
+            sessionId,
+            result: 'Cancelled by user',
+            success: false,
+            error: 'Cancelled',
+            duration: Date.now() - startTime
+          });
+          return;
+        }
+
+        const msg = message as AgentMessage;
+
+        // 세션 ID 캡처
+        if (msg.type === 'system' && msg.subtype === 'init' && msg.session_id) {
+          sessionId = msg.session_id;
+        }
+
+        // 진행 상황 콜백
+        if (msg.type === 'system' && msg.subtype === 'progress' && onProgress) {
+          onProgress(msg.content || 'Processing...');
+        }
+
+        // 결과 수집
+        if (msg.type === 'result' && msg.result) {
+          result = msg.result;
+        }
+
+        if (msg.type === 'assistant' && msg.message?.content) {
+          const textContent = msg.message.content
+            .filter(block => block.type === 'text' && block.text)
+            .map(block => block.text)
+            .join('\n');
+          if (textContent) {
+            result += textContent;
+          }
+        }
+      }
+
+      status = 'completed';
+      resolve({
+        agentName,
+        sessionId,
+        result: result || 'No result',
+        success: true,
+        duration: Date.now() - startTime
+      });
+
+    } catch (error) {
+      status = 'failed';
+      resolve({
+        agentName,
+        sessionId,
+        result: '',
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        duration: Date.now() - startTime
+      });
+    }
+  });
+
+  // 핸들 생성
+  const handle: BackgroundAgentHandle = {
+    sessionId: sessionId || `pending-${Date.now()}`,
+    agentName,
+    status,
+    startTime,
+    getResult: () => resultPromise,
+    cancel: () => {
+      cancelController.abort();
+      status = 'cancelled';
+    }
+  };
+
+  // 세션 등록
+  activeSessions.set(handle.sessionId, {
+    handle,
+    resultPromise,
+    cancelController
+  });
+
+  // 완료 시 히스토리에 추가
+  resultPromise.then((result) => {
+    sessionHistory.push({
+      sessionId: result.sessionId,
+      agentName: result.agentName,
+      status: result.success ? 'completed' : 'failed',
+      startTime,
+      endTime: Date.now(),
+      prompt
+    });
+
+    // 활성 세션에서 제거
+    activeSessions.delete(handle.sessionId);
+  });
+
+  return {
+    content: [{
+      type: 'text',
+      text: `Background agent "${agentName}" started\nSession ID: ${handle.sessionId}\nModel: ${model}\nMax Turns: ${maxTurns}\n\nUse getBackgroundAgentResult("${handle.sessionId}") to check status.`
+    }],
+    handle
+  } as ToolResult & { handle: BackgroundAgentHandle };
+}
+
+/**
+ * 백그라운드 에이전트 결과 조회
+ */
+export async function getBackgroundAgentResult(sessionId: string): Promise<ToolResult> {
+  const session = activeSessions.get(sessionId);
+
+  if (!session) {
+    // 히스토리에서 찾기
+    const historical = sessionHistory.find(s => s.sessionId === sessionId);
+    if (historical) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Session "${sessionId}" completed at ${new Date(historical.endTime!).toISOString()}\nStatus: ${historical.status}`
+        }]
+      };
+    }
+
+    return {
+      content: [{
+        type: 'text',
+        text: `Session "${sessionId}" not found`
+      }]
+    };
+  }
+
+  // 진행 중인 세션
+  if (session.handle.status === 'running') {
+    return {
+      content: [{
+        type: 'text',
+        text: `Session "${sessionId}" is still running\nAgent: ${session.handle.agentName}\nStarted: ${new Date(session.handle.startTime).toISOString()}`
+      }]
+    };
+  }
+
+  // 완료된 경우 결과 반환
+  const result = await session.resultPromise;
+
+  return {
+    content: [{
+      type: 'text',
+      text: `Session "${sessionId}" ${result.success ? 'completed' : 'failed'}\nDuration: ${(result.duration / 1000).toFixed(1)}s\n\nResult:\n${result.result}`
+    }],
+    result
+  } as ToolResult & { result: AgentResult };
+}
+
+/**
+ * 백그라운드 에이전트 취소
+ */
+export function cancelBackgroundAgent(sessionId: string): ToolResult {
+  const session = activeSessions.get(sessionId);
+
+  if (!session) {
+    return {
+      content: [{
+        type: 'text',
+        text: `Session "${sessionId}" not found or already completed`
+      }]
+    };
+  }
+
+  session.handle.cancel();
+
+  return {
+    content: [{
+      type: 'text',
+      text: `Session "${sessionId}" cancelled`
+    }]
+  };
+}
+
+/**
+ * 활성 세션 목록
+ */
+export function listActiveSessions(): ToolResult {
+  const sessions = Array.from(activeSessions.values()).map(s => ({
+    sessionId: s.handle.sessionId,
+    agentName: s.handle.agentName,
+    status: s.handle.status,
+    startTime: new Date(s.handle.startTime).toISOString(),
+    runningFor: `${((Date.now() - s.handle.startTime) / 1000).toFixed(0)}s`
+  }));
+
+  if (sessions.length === 0) {
+    return {
+      content: [{
+        type: 'text',
+        text: 'No active background agents'
+      }]
+    };
+  }
+
+  let summary = `## Active Background Agents (${sessions.length})\n\n`;
+  for (const session of sessions) {
+    summary += `- **${session.agentName}** (${session.sessionId})\n`;
+    summary += `  Status: ${session.status} | Running: ${session.runningFor}\n`;
+  }
+
+  return {
+    content: [{ type: 'text', text: summary }],
+    sessions
+  } as ToolResult & { sessions: typeof sessions };
+}
+
+/**
+ * 세션 히스토리 조회
+ */
+export function getSessionHistory(limit: number = 10): ToolResult {
+  const recent = sessionHistory.slice(-limit).reverse();
+
+  if (recent.length === 0) {
+    return {
+      content: [{
+        type: 'text',
+        text: 'No session history'
+      }]
+    };
+  }
+
+  let summary = `## Session History (last ${recent.length})\n\n`;
+  for (const session of recent) {
+    const duration = session.endTime
+      ? `${((session.endTime - session.startTime) / 1000).toFixed(1)}s`
+      : 'N/A';
+    summary += `- **${session.agentName}** (${session.sessionId})\n`;
+    summary += `  Status: ${session.status} | Duration: ${duration}\n`;
+  }
+
+  return {
+    content: [{ type: 'text', text: summary }],
+    history: recent
+  } as ToolResult & { history: SessionInfo[] };
+}
+
+/**
+ * 여러 백그라운드 에이전트 동시 실행
+ */
+export async function launchParallelAgents(
+  agentConfigs: BackgroundAgentArgs[]
+): Promise<ToolResult> {
+  const handles: BackgroundAgentHandle[] = [];
+  const errors: string[] = [];
+
+  // 병렬로 에이전트 시작
+  const results = await Promise.all(
+    agentConfigs.map(async (config) => {
+      try {
+        const result = await launchBackgroundAgent(config);
+        if ('handle' in result) {
+          return (result as ToolResult & { handle: BackgroundAgentHandle }).handle;
+        }
+        return null;
+      } catch (error) {
+        errors.push(`${config.agentName}: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+      }
+    })
+  );
+
+  for (const result of results) {
+    if (result) {
+      handles.push(result);
+    }
+  }
+
+  let summary = `## Launched ${handles.length} Background Agents\n\n`;
+  for (const handle of handles) {
+    summary += `- ${handle.agentName}: ${handle.sessionId}\n`;
+  }
+
+  if (errors.length > 0) {
+    summary += `\n### Errors (${errors.length})\n`;
+    for (const error of errors) {
+      summary += `- ${error}\n`;
+    }
+  }
+
+  return {
+    content: [{ type: 'text', text: summary }],
+    handles
+  } as ToolResult & { handles: BackgroundAgentHandle[] };
+}

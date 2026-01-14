@@ -81,7 +81,7 @@ vibe status             # Check current settings
 - Tech stack: Confirm existing stack or suggest new
 - Design reference: UI/UX to reference
 
-### 3. Parallel Research (v2.1.0) - Run AFTER requirements confirmed
+### 3. Parallel Research (v2.4.0) - Run AFTER requirements confirmed
 
 **⚠️ IMPORTANT: Research starts ONLY after requirements are confirmed via Q&A**
 
@@ -90,38 +90,24 @@ Requirements confirmed when:
 - Tech stack confirmed (e.g., "React + Supabase")
 - Core requirements collected
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  🔍 PARALLEL RESEARCH AGENTS (After requirements confirmed)     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Task 1: best-practices-agent                                   │
-│  └── Best practices for [confirmed feature] + [confirmed stack] │
-│                                                                 │
-│  Task 2: framework-docs-agent                                   │
-│  └── Latest docs for [confirmed stack] (via context7)           │
-│                                                                 │
-│  Task 3: codebase-patterns-agent                                │
-│  └── Analyze similar patterns in existing codebase              │
-│                                                                 │
-│  Task 4: security-advisory-agent                                │
-│  └── Security advisories for [confirmed feature]                │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+**Execution via Orchestrator (4 agents in parallel):**
+```bash
+node -e "import('@su-record/vibe/orchestrator').then(o => o.research('[FEATURE]', ['[STACK1]', '[STACK2]']).then(r => console.log(r.content[0].text)))"
 ```
 
-**Execution (ALL in parallel):**
+**Example:**
+```bash
+# After confirming: passkey auth + React + Supabase
+node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey authentication', ['React', 'Supabase']).then(r => console.log(r.content[0].text)))"
 ```
-# Generate specific prompts based on confirmed requirements
-Task(model: "haiku", subagent_type: "Explore",
-     prompt: "Research best practices for [passkey auth] with [React + Supabase]")
-Task(model: "haiku", subagent_type: "Explore",
-     prompt: "Get Supabase Auth + WebAuthn docs from context7")
-Task(model: "haiku", subagent_type: "Explore",
-     prompt: "Find existing auth patterns in this codebase")
-Task(model: "haiku", subagent_type: "Explore",
-     prompt: "Check OWASP WebAuthn security guidelines")
-```
+
+**What runs in parallel:**
+| Agent | Role |
+|-------|------|
+| `best-practices-agent` | Best practices for [feature] + [stack] |
+| `framework-docs-agent` | Latest docs via context7 |
+| `codebase-patterns-agent` | Similar patterns in existing codebase |
+| `security-advisory-agent` | Security advisories for [feature] |
 
 **Research results are reflected in SPEC's Context section.**
 

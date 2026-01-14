@@ -1003,6 +1003,19 @@ async function init(projectName?: string): Promise<void> {
       }
     }
 
+    // Agent SDK 설치 (오케스트레이터용)
+    log('   🤖 Agent SDK 설치 중 (오케스트레이터용)...\n');
+    try {
+      const { execSync } = await import('child_process');
+      execSync('npm install @anthropic-ai/claude-agent-sdk --save-dev', {
+        cwd: projectRoot,
+        stdio: 'pipe'
+      });
+      log('   ✅ Agent SDK 설치 완료\n');
+    } catch (e) {
+      log('   ⚠️  Agent SDK 설치 실패 - 수동 설치: npm i -D @anthropic-ai/claude-agent-sdk\n');
+    }
+
     // .claude/vibe 폴더 구조 생성
     ['specs', 'features'].forEach(dir => {
       ensureDir(path.join(vibeDir, dir));
@@ -1401,6 +1414,29 @@ async function update(): Promise<void> {
         fs.unlinkSync(agentPath);
       }
     });
+
+    // Agent SDK 설치 확인 (오케스트레이터용)
+    const packageJsonPath = path.join(projectRoot, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+        const hasAgentSdk = pkg.dependencies?.['@anthropic-ai/claude-agent-sdk'] ||
+                           pkg.devDependencies?.['@anthropic-ai/claude-agent-sdk'];
+        if (!hasAgentSdk) {
+          log('   🤖 Agent SDK 설치 중 (오케스트레이터용)...\n');
+          try {
+            const { execSync } = await import('child_process');
+            execSync('npm install @anthropic-ai/claude-agent-sdk --save-dev', {
+              cwd: projectRoot,
+              stdio: 'pipe'
+            });
+            log('   ✅ Agent SDK 설치 완료\n');
+          } catch (e) {
+            log('   ⚠️  Agent SDK 설치 실패 - 수동 설치: npm i -D @anthropic-ai/claude-agent-sdk\n');
+          }
+        }
+      } catch (e) {}
+    }
 
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);

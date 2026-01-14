@@ -24,7 +24,13 @@ SPEC 문서 하나로 AI가 바로 구현하고, **시나리오별 자동 검증
 - **자동 컨텍스트 관리**: 80%+ 시 자동 저장, 세션 자동 복원
 - **36개 내장 도구**: 코드 분석, 품질 검증, 세션 메모리 (MCP 오버헤드 제거)
 
-### v2.3.0 신규 기능
+### v2.4.0 신규 기능
+
+- **🎭 Agent Orchestrator**: Claude Agent SDK 기반 멀티에이전트 오케스트레이션
+- **🚀 병렬 에이전트 실행**: `@su-record/vibe/orchestrator` 모듈로 프로그래밍 방식 에이전트 제어
+- **📡 Background Agents**: 구현 중 다음 Phase 준비를 위한 백그라운드 에이전트
+
+### v2.3.0 기능
 
 - **📦 14개 프레임워크별 언어 룰**: Next.js, React, Vue, Nuxt, React Native 등 프레임워크별 최적화 규칙
 - **🔄 모노레포 완벽 지원**: packages/*, apps/* 하위 패키지별 자동 감지 및 룰 적용
@@ -696,6 +702,73 @@ User: 1
 📄 .claude/vibe/features/brick-game.feature
 
 다음 단계: /vibe.run "벽돌게임"
+```
+
+---
+
+## Orchestrator Module (v2.4.0)
+
+### `@su-record/vibe/orchestrator`
+
+Claude Agent SDK 기반 프로그래밍 방식 멀티에이전트 오케스트레이션.
+
+```javascript
+import('@su-record/vibe/orchestrator').then(o => {
+  // 병렬 리서치 (4개 에이전트 동시 실행)
+  o.research('passkey auth', ['React', 'Supabase'])
+    .then(r => console.log(r.content[0].text));
+
+  // 병렬 코드 리뷰 (12+ 에이전트 동시 실행)
+  o.review(['src/api/users.ts', 'src/components/Login.tsx'], ['TypeScript', 'React'])
+    .then(r => console.log(r.content[0].text));
+
+  // 커스텀 에이전트 실행
+  o.runAgent('Analyze authentication flow', 'auth-analyzer')
+    .then(r => console.log(r.content[0].text));
+
+  // 에이전트 목록 조회
+  o.listAgents().then(r => console.log(r.content[0].text));
+
+  // 오케스트레이터 상태
+  console.log(o.status().content[0].text);
+});
+```
+
+### 함수 목록
+
+| 함수 | 설명 |
+|------|------|
+| `research(feature, techStack)` | 4개 병렬 리서치 에이전트 실행 |
+| `review(filePaths, techStack)` | 12+ 병렬 리뷰 에이전트 실행 |
+| `runAgent(prompt, agentName?)` | 커스텀 에이전트 실행 |
+| `listAgents()` | 프로젝트의 에이전트 목록 조회 |
+| `status()` | 오케스트레이터 상태 (활성 세션, 메모리 등) |
+
+### 명령어 연동
+
+각 `/vibe.*` 명령어는 내부적으로 오케스트레이터를 활용합니다:
+
+| 명령어 | 오케스트레이터 사용 |
+|--------|-------------------|
+| `/vibe.spec` | `research()` - 4개 병렬 리서치 |
+| `/vibe.review` | `review()` - 12+ 병렬 리뷰 |
+| `/vibe.run ultrawork` | `runAgent()` - 백그라운드 에이전트 |
+| `/vibe.analyze` | `runAgent()` - 병렬 탐색 에이전트 |
+
+### 에이전트 디렉토리
+
+프로젝트의 `.claude/agents/` 또는 `agents/` 폴더에서 에이전트를 자동 탐지:
+
+```
+.claude/agents/
+├── review/           # 리뷰 에이전트 (12개)
+│   ├── security-reviewer.md
+│   ├── performance-reviewer.md
+│   └── ...
+└── research/         # 리서치 에이전트 (4개)
+    ├── best-practices-agent.md
+    ├── framework-docs-agent.md
+    └── ...
 ```
 
 ---

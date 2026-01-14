@@ -39,25 +39,38 @@ Read go.mod            -> Go
 Read CLAUDE.md         -> Explicit tech stack declaration
 ```
 
-### Phase 2: Parallel Agent Review (STACK-AWARE)
+### Phase 2: Parallel Agent Review (STACK-AWARE) via Orchestrator
 
-**Launch ONLY relevant agents based on detected stack!**
+**Execution via Orchestrator (12+ agents in parallel):**
+```bash
+node -e "import('@su-record/vibe/orchestrator').then(o => o.review(['FILE_PATHS'], ['DETECTED_STACKS']).then(r => console.log(r.content[0].text)))"
+```
 
-**ALWAYS RUN (Core Reviewers):**
-- security-reviewer: OWASP Top 10, vulnerabilities
-- data-integrity-reviewer: Data validation, constraints
-- performance-reviewer: N+1 queries, memory leaks
-- architecture-reviewer: Layer violations, cycles
-- complexity-reviewer: Cyclomatic complexity, length
-- simplicity-reviewer: Over-abstraction, dead code
-- git-history-reviewer: Churn files, risk patterns
-- test-coverage-reviewer: Missing tests, edge cases
+**Example:**
+```bash
+# Review changed files with TypeScript + React stack
+node -e "import('@su-record/vibe/orchestrator').then(o => o.review(['src/api/users.ts', 'src/components/Login.tsx'], ['TypeScript', 'React']).then(r => console.log(r.content[0].text)))"
+```
 
-**CONDITIONAL (Based on Detected Stack):**
-- python-reviewer: IF .py files in diff
-- typescript-reviewer: IF .ts/.tsx files OR tsconfig
-- rails-reviewer: IF Gemfile has rails
-- react-reviewer: IF package.json has react
+**Core Reviewers (Always Run):**
+| Agent | Focus |
+|-------|-------|
+| security-reviewer | OWASP Top 10, vulnerabilities |
+| data-integrity-reviewer | Data validation, constraints |
+| performance-reviewer | N+1 queries, memory leaks |
+| architecture-reviewer | Layer violations, cycles |
+| complexity-reviewer | Cyclomatic complexity, length |
+| simplicity-reviewer | Over-abstraction, dead code |
+| git-history-reviewer | Churn files, risk patterns |
+| test-coverage-reviewer | Missing tests, edge cases |
+
+**Stack-Specific Reviewers (Conditional):**
+| Agent | Condition |
+|-------|-----------|
+| python-reviewer | .py files in diff |
+| typescript-reviewer | .ts/.tsx files OR tsconfig |
+| rails-reviewer | Gemfile has rails |
+| react-reviewer | package.json has react |
 
 ### Phase 3: Deep Analysis
 

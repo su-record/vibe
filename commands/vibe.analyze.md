@@ -55,13 +55,28 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
 - React/Next.js: `src/components/`, `src/pages/`, `src/hooks/`
 - Flutter: `lib/screens/`, `lib/services/`, `lib/providers/`
 
-#### 3. Explore Related Code
+#### 3. Explore Related Code (Parallel via Orchestrator)
 
-**Exploration strategy:**
+**Exploration strategy using orchestrator:**
+```bash
+# Discover available agents
+node -e "import('@su-record/vibe/orchestrator').then(o => o.listAgents().then(r => console.log(r.content[0].text)))"
+
+# Run parallel exploration agents
+node -e "import('@su-record/vibe/orchestrator').then(async o => {
+  const results = await Promise.all([
+    o.runAgent('Find all [FEATURE] related API endpoints', 'api-explorer'),
+    o.runAgent('Find all [FEATURE] related services/logic', 'service-explorer'),
+    o.runAgent('Find all [FEATURE] related data models', 'model-explorer')
+  ]);
+  console.log('Exploration agents started');
+})"
+```
+
+**Alternative (direct tools):**
 1. **Glob** to collect related file list
 2. **Grep** to locate code by keyword
 3. **Read** to analyze key files in detail
-4. If needed, **Task (Explore)** agent for parallel exploration
 
 #### 4. Flow Analysis
 
