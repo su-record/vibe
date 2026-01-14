@@ -32,5 +32,18 @@
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/skill-forced-eval-hook.sh",
+            "statusMessage": "Evaluating skills..."
+          }
+        ]
+      }
+    ]
   }
 }
