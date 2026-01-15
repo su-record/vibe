@@ -56,6 +56,34 @@ vibe status             # Check current settings
 
 ## Process
 
+### 0. Git Branch Setup (Automatic)
+
+**CRITICAL: Always create feature branch before starting SPEC**
+
+```bash
+# Check current branch
+current=$(git branch --show-current 2>/dev/null || echo "main")
+
+# Sanitize feature name (spaces → hyphens, lowercase)
+branch_name="feature/$(echo "{feature-name}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
+
+# Create feature branch if on main/master
+if [[ "$current" == "main" || "$current" == "master" ]]; then
+  git checkout -b "$branch_name"
+  echo "✅ Created and switched to: $branch_name"
+else
+  echo "ℹ️  Already on feature branch: $current"
+  echo "   Continue on this branch? (Y/n)"
+  # If user says no, create new branch
+fi
+```
+
+**Rules:**
+- If on `main`/`master` → **Always** create `feature/{feature-name}` branch
+- If already on feature branch → Ask user to confirm or create new branch
+- Branch naming: `feature/passkey-auth`, `feature/dark-mode`, etc.
+- Git check BEFORE starting requirements gathering
+
 ### 1. Project Analysis
 
 **Existing project** (`vibe init`):
