@@ -21,7 +21,8 @@
       "Bash(claude plugin:*)",
       "Bash(npm unlink:*)",
       "Bash(find:*)",
-      "Bash(vibe auth status:*)"
+      "Bash(vibe auth status:*)",
+      "Bash(cd:*)"
     ]
   }
 }
