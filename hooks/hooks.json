@@ -122,7 +122,7 @@
         ]
       },
       {
-        "matcher": "gpt.*물어|gpt.*질문|gpt.*한테|ask.*gpt|gpt.*분석",
+        "matcher": "(?!.*gemini)(gpt\\s*한테|gpt\\s*에게|gpt에\\s*물어|gpt.*질문|ask\\s*gpt)",
         "hooks": [
           {
             "type": "command",
@@ -132,7 +132,7 @@
         ]
       },
       {
-        "matcher": "gemini.*물어|gemini.*질문|gemini.*한테|ask.*gemini|gemini.*분석|제미나이",
+        "matcher": "(?!.*gpt)(gemini\\s*한테|gemini\\s*에게|gemini에\\s*물어|gemini.*질문|ask\\s*gemini|제미나이)",
         "hooks": [
           {
             "type": "command",
