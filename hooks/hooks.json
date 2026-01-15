@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';Promise.all([import('@su-record/vibe/tools').then(t => t.startSession({projectPath: p})), import('@su-record/vibe/tools').then(t => t.getCurrentTime({format: 'human', timezone: 'Asia/Seoul'})), import('@su-record/vibe/tools').then(t => t.listMemories({limit: 5, projectPath: p}))]).then(([session, time, memories]) => console.log(session.content[0].text + '\\n\\n' + time.content[0].text + '\\n\\n[Recent Memories]\\n' + memories.content[0].text))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';Promise.all([import('@su-record/vibe/tools/memory').then(t => t.startSession({projectPath: p})), import('@su-record/vibe/tools/time').then(t => t.getCurrentTime({format: 'human', timezone: 'Asia/Seoul'})), import('@su-record/vibe/tools/memory').then(t => t.listMemories({limit: 5, projectPath: p}))]).then(([session, time, memories]) => console.log(session.content[0].text + '\\n\\n' + time.content[0].text + '\\n\\n[Recent Memories]\\n' + memories.content[0].text))\""
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: '.', projectPath: p}).then(r => console.log('[CODE CHECK]', r.content[0].text.split('\\n').slice(0,3).join(' | ')))).catch(() => console.log('[AUTO-CONTINUE] Code written. Continue.'))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools/convention').then(t => t.validateCodeQuality({targetPath: '.', projectPath: p}).then(r => console.log('[CODE CHECK]', r.content[0].text.split('\\n').slice(0,3).join(' | ')))).catch(() => console.log('[AUTO-CONTINUE] Code written. Continue.'))\""
           }
         ]
       }
@@ -56,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'solution-' + Date.now(), value: 'Solution documented at ' + new Date().toISOString(), category: 'solution', projectPath: p}).then(r => console.log('[COMPOUND]', r.content[0].text))).catch(() => console.log('[COMPOUND TRIGGER] Consider /vibe.utils --compound'))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools/memory').then(t => t.saveMemory({key: 'solution-' + Date.now(), value: 'Solution documented at ' + new Date().toISOString(), category: 'solution', projectPath: p}).then(r => console.log('[COMPOUND]', r.content[0].text))).catch(() => console.log('[COMPOUND TRIGGER] Consider /vibe.utils --compound'))\""
           }
         ]
       },
@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: '.', projectPath: p}).then(r => console.log('[REVIEW PREP]', r.content[0].text.split('\\n').slice(0,5).join(' | ')))).catch(() => console.log('[REVIEW MODE] Use /vibe.review'))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools/convention').then(t => t.validateCodeQuality({targetPath: '.', projectPath: p}).then(r => console.log('[REVIEW PREP]', r.content[0].text.split('\\n').slice(0,5).join(' | ')))).catch(() => console.log('[REVIEW MODE] Use /vibe.review'))\""
           }
         ]
       },
@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPath: '.', projectPath: p}).then(r => console.log('[COMPLEXITY]', r.content[0].text.split('\\n').slice(0,5).join(' | ')))).catch(() => console.log('[ANALYZE] Use analyzeComplexity tool'))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools/convention').then(t => t.analyzeComplexity({targetPath: '.', projectPath: p}).then(r => console.log('[COMPLEXITY]', r.content[0].text.split('\\n').slice(0,5).join(' | ')))).catch(() => console.log('[ANALYZE] Use analyzeComplexity tool'))\""
           }
         ]
       },
@@ -92,7 +92,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.listMemories({limit: 10, projectPath: p}).then(r => console.log('[RECALL]', r.content[0].text.split('\\n').slice(0,7).join(' | ')))).catch(() => console.log('[RECALL] Use recallMemory tool'))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools/memory').then(t => t.listMemories({limit: 10, projectPath: p}).then(r => console.log('[RECALL]', r.content[0].text.split('\\n').slice(0,7).join(' | ')))).catch(() => console.log('[RECALL] Use recallMemory tool'))\""
           }
         ]
       },
@@ -157,7 +157,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.autoSaveContext({urgency: 'medium', contextType: 'progress', summary: 'Context at 80% - auto checkpoint', projectPath: p}).then(r => console.log('[CONTEXT 80%]', r.content[0].text)))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools/memory').then(t => t.autoSaveContext({urgency: 'medium', contextType: 'progress', summary: 'Context at 80% - auto checkpoint', projectPath: p}).then(r => console.log('[CONTEXT 80%]', r.content[0].text)))\""
           }
         ]
       },
@@ -166,7 +166,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.autoSaveContext({urgency: 'high', contextType: 'progress', summary: 'Context at 90% - save before overflow', projectPath: p}).then(r => console.log('[CONTEXT 90%]', r.content[0].text)))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools/memory').then(t => t.autoSaveContext({urgency: 'high', contextType: 'progress', summary: 'Context at 90% - save before overflow', projectPath: p}).then(r => console.log('[CONTEXT 90%]', r.content[0].text)))\""
           }
         ]
       },
@@ -175,7 +175,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.autoSaveContext({urgency: 'critical', contextType: 'progress', summary: 'Context at 95% - CRITICAL save before session end', projectPath: p}).then(r => console.log('[CONTEXT 95%]', r.content[0].text)))\""
+            "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools/memory').then(t => t.autoSaveContext({urgency: 'critical', contextType: 'progress', summary: 'Context at 95% - CRITICAL save before session end', projectPath: p}).then(r => console.log('[CONTEXT 95%]', r.content[0].text)))\""
           }
         ]
       }
