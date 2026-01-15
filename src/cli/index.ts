@@ -24,7 +24,7 @@ import {
 } from './utils.js';
 import { unregisterMcp } from './mcp.js';
 import { detectTechStacks } from './detect.js';
-import { formatLLMStatus } from './auth.js';
+import { formatLLMStatus, getLLMAuthStatus } from './auth.js';
 import { setupCollaboratorAutoInstall } from './collaborator.js';
 import {
   setupExternalLLM,
@@ -492,8 +492,28 @@ function showStatus(): void {
     config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   }
 
-  const gptStatusText = config.models?.gpt?.enabled ? '✅ 활성' : '⬚ 비활성';
-  const geminiStatusText = config.models?.gemini?.enabled ? '✅ 활성' : '⬚ 비활성';
+  // 실제 OAuth 인증 상태 확인
+  const authStatus = getLLMAuthStatus();
+
+  // GPT 상태: OAuth 인증 > config enabled
+  let gptStatusText = '⬚ 비활성';
+  if (authStatus.gpt?.valid) {
+    gptStatusText = authStatus.gpt.type === 'oauth'
+      ? `✅ OAuth (${authStatus.gpt.email})`
+      : '✅ API 키';
+  } else if (config.models?.gpt?.enabled) {
+    gptStatusText = '⚠️  설정됨 (인증 필요)';
+  }
+
+  // Gemini 상태: OAuth 인증 > config enabled
+  let geminiStatusText = '⬚ 비활성';
+  if (authStatus.gemini?.valid) {
+    geminiStatusText = authStatus.gemini.type === 'oauth'
+      ? `✅ OAuth (${authStatus.gemini.email})`
+      : '✅ API 키';
+  } else if (config.models?.gemini?.enabled) {
+    geminiStatusText = '⚠️  설정됨 (인증 필요)';
+  }
 
   console.log(`
 📊 Vibe 상태 (v${packageJson.version})
@@ -502,26 +522,26 @@ function showStatus(): void {
 언어: ${config.language || 'ko'}
 
 모델 오케스트레이션:
-┌─────────────────────────────────────────┐
-│ Opus 4.5          오케스트레이터        │
-├─────────────────────────────────────────┤
-│ Sonnet 4          구현                  │
-│ Haiku 4.5         코드 탐색             │
-├─────────────────────────────────────────┤
-│ GPT 5.2           ${gptStatusText}  아키텍처/디버깅    │
-│ Gemini 3          ${geminiStatusText}  UI/UX 설계        │
-└─────────────────────────────────────────┘
+  Opus 4.5          오케스트레이터
+  Sonnet 4          구현
+  Haiku 4.5         코드 탐색
+  GPT 5.2           ${gptStatusText}
+  Gemini 3          ${geminiStatusText}
 
 MCP 서버:
-  vibe-gemini       Gemini API
-  vibe-gpt          GPT API
   context7          라이브러리 문서 검색
+
+GPT/Gemini 호출 방식:
+  Hook 기반 직접 호출 (MCP 불필요)
+  - "gpt한테 물어봐" → GPT 자동 호출
+  - "gemini한테 물어봐" → Gemini 자동 호출
+  - import('@su-record/vibe/lib/gpt') 직접 사용
 
 외부 LLM 설정:
   vibe auth gpt           GPT 활성화 (OAuth)
   vibe auth gemini        Gemini 활성화 (OAuth)
-  vibe remove gpt         GPT 제거
-  vibe remove gemini      Gemini 제거
+  vibe logout gpt         GPT 로그아웃
+  vibe logout gemini      Gemini 로그아웃
   `);
 }
 
