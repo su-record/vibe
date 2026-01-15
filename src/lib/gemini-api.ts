@@ -111,11 +111,11 @@ export const DEFAULT_MODEL = 'gemini-3-flash';
 
 /**
  * 엔드포인트 URL 목록 (fallback 순서)
- * production 먼저 시도, sandbox는 백업
+ * daily sandbox 먼저 시도 (Rate Limit 더 여유로움)
  */
 const ENDPOINT_FALLBACKS = [
-  'https://cloudcode-pa.googleapis.com',
   'https://daily-cloudcode-pa.sandbox.googleapis.com',
+  'https://cloudcode-pa.googleapis.com',
 ];
 
 /**
