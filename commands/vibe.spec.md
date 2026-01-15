@@ -109,14 +109,16 @@ fi
 - Tech stack: Confirm existing stack or suggest new
 - Design reference: UI/UX to reference
 
-### 3. Parallel Research (v2.4.0) - Run AFTER requirements confirmed
+### 3. Parallel Research (v2.4.0) - MANDATORY AFTER requirements confirmed
 
-**⚠️ IMPORTANT: Research starts ONLY after requirements are confirmed via Q&A**
+**🚨 CRITICAL: Research is MANDATORY after requirements are confirmed**
 
-Requirements confirmed when:
-- Feature type decided (e.g., "passkey authentication")
-- Tech stack confirmed (e.g., "React + Supabase")
-- Core requirements collected
+**When to trigger:**
+1. ✅ Feature type decided (e.g., "passkey authentication")
+2. ✅ Tech stack confirmed (e.g., "React + Supabase")
+3. ✅ Core requirements collected
+
+**→ IMMEDIATELY run orchestrator research. NO EXCEPTIONS.**
 
 **Execution via Orchestrator (4 agents in parallel):**
 ```bash
@@ -129,13 +131,20 @@ node -e "import('@su-record/vibe/orchestrator').then(o => o.research('[FEATURE]'
 node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey authentication', ['React', 'Supabase']).then(r => console.log(r.content[0].text)))"
 ```
 
-**What runs in parallel:**
-| Agent | Role |
-|-------|------|
-| `best-practices-agent` | Best practices for [feature] + [stack] |
-| `framework-docs-agent` | Latest docs via context7 |
-| `codebase-patterns-agent` | Similar patterns in existing codebase |
-| `security-advisory-agent` | Security advisories for [feature] |
+**What runs in parallel (180s timeout each):**
+| Agent | Role | Tools |
+|-------|------|-------|
+| `best-practices-agent` | Best practices for [feature] + [stack] | WebSearch |
+| `framework-docs-agent` | Latest docs via context7 | context7 MCP |
+| `codebase-patterns-agent` | Similar patterns in existing codebase | Glob, Grep |
+| `security-advisory-agent` | Security advisories for [feature] | WebSearch |
+
+**IMPORTANT:**
+- ❌ DO NOT skip research step
+- ❌ DO NOT ask user "should I run research?"
+- ✅ ALWAYS run after requirements confirmed
+- ✅ Show "Running parallel research..." message
+- ✅ Include all 4 agent results in SPEC Context
 
 **Research results are reflected in SPEC's Context section.**
 
