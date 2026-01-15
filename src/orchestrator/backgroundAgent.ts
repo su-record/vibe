@@ -11,21 +11,8 @@ import {
   SessionInfo
 } from './types.js';
 import { ToolResult } from '../types/tool.js';
-
-// Agent SDK 동적 import
-let agentSdkQuery: typeof import('@anthropic-ai/claude-agent-sdk').query | null = null;
-
-async function getQueryFunction() {
-  if (agentSdkQuery) return agentSdkQuery;
-
-  try {
-    const sdk = await import('@anthropic-ai/claude-agent-sdk');
-    agentSdkQuery = sdk.query;
-    return agentSdkQuery;
-  } catch {
-    return null;
-  }
-}
+import { getAgentSdkQuery } from '../lib/utils.js';
+import { DEFAULT_MODELS, AGENT } from '../lib/constants.js';
 
 // 활성 세션 저장소
 const activeSessions = new Map<string, {
@@ -44,14 +31,14 @@ export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<
   const {
     prompt,
     agentName = `agent-${Date.now()}`,
-    model = 'claude-sonnet-4-5',
-    maxTurns = 10,
-    allowedTools = ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'],
+    model = DEFAULT_MODELS.BACKGROUND,
+    maxTurns = AGENT.MAX_TURNS,
+    allowedTools = AGENT.DEFAULT_ALLOWED_TOOLS,
     projectPath = process.cwd(),
     onProgress
   } = args;
 
-  const query = await getQueryFunction();
+  const query = await getAgentSdkQuery();
 
   // Agent SDK가 없으면 시뮬레이션
   if (!query) {

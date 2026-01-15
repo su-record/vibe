@@ -7,6 +7,7 @@ import { PythonParser } from '../../lib/PythonParser.js';
 import { ProjectCache } from '../../lib/ProjectCache.js';
 import { readFile } from 'fs/promises';
 import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { errorLog } from '../../lib/utils.js';
 
 interface ReferenceInfo {
   filePath: string;
@@ -79,7 +80,7 @@ export async function findReferences(args: {
           }
         });
       } catch (error) {
-        console.error(`Error parsing Python file ${pyFile}:`, error);
+        errorLog(`Error parsing Python file ${pyFile}:`, error);
       }
     }
     

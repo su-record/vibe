@@ -44,7 +44,7 @@ export async function restoreSessionContext(args: { sessionId: string; restoreLe
         try {
           const contextData = JSON.parse(m.value);
           return contextData.contextType === filterType;
-        } catch {
+        } catch { /* ignore: optional operation */
           return false;
         }
       });
@@ -67,7 +67,7 @@ export async function restoreSessionContext(args: { sessionId: string; restoreLe
         response += `\n• ${data.contextType || 'context'} (${data.urgency || 'medium'})`;
         if (data.summary) response += `: ${data.summary}`;
         response += `\n  Time: ${new Date(m.timestamp).toLocaleString()}`;
-      } catch {
+      } catch { /* ignore: optional operation */
         response += `\n• ${m.key}\n  Time: ${new Date(m.timestamp).toLocaleString()}`;
       }
     });

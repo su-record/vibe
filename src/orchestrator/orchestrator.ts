@@ -17,6 +17,8 @@ import {
 } from './types.js';
 import { ToolResult } from '../types/tool.js';
 import { discoverAgents, loadAgent, listAgentsByCategory } from './agentDiscovery.js';
+import { debugLog, errorLog } from '../lib/utils.js';
+import { DEFAULT_MODELS } from '../lib/constants.js';
 import {
   parallelResearch,
   researchFeature,
@@ -188,7 +190,7 @@ export class VibeOrchestrator {
     const agentConfigs: BackgroundAgentArgs[] = relevantAgents.map(agent => ({
       agentName: agent.name,
       prompt: this.buildReviewPrompt(agent, filePaths),
-      model: 'claude-haiku-3-5', // 리뷰는 빠른 모델
+      model: DEFAULT_MODELS.REVIEW,
       maxTurns: 3,
       allowedTools: ['Read', 'Glob', 'Grep']
     }));
@@ -290,10 +292,10 @@ Provide findings in this format:
       await fs.writeFile(filepath, JSON.stringify(data, null, 2));
 
       if (this.options.verbose) {
-        console.log(`Saved orchestrator result: ${filepath}`);
+        debugLog(`Saved orchestrator result: ${filepath}`);
       }
     } catch (error) {
-      console.error('Failed to save orchestrator result:', error);
+      errorLog('Failed to save orchestrator result:', error);
     }
   }
 

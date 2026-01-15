@@ -43,7 +43,7 @@ export class MemoryManager {
         if (fs.existsSync(cwdClaudePath)) {
           resolvedPath = process.cwd();
         }
-      } catch {
+      } catch { /* ignore: optional operation */
         // Ignore errors
       }
     }

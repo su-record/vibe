@@ -5,6 +5,7 @@
 
 import { getValidAccessToken } from './gpt-oauth.js';
 import { CHATGPT_BASE_URL } from './gpt-constants.js';
+import { sleep } from './utils.js';
 
 // Types
 interface GptModelInfo {
@@ -127,7 +128,7 @@ export async function getCodexInstructions(model: string = 'gpt-5.2'): Promise<s
       const match = location.match(/\/tag\/([^/]+)$/);
       if (match) tag = match[1];
     }
-  } catch {
+  } catch { /* ignore: optional operation */
     // 기본 태그 사용
   }
 
@@ -141,7 +142,7 @@ export async function getCodexInstructions(model: string = 'gpt-5.2'): Promise<s
     cachedInstructions = await response.text();
     instructionsCacheTime = Date.now();
     return cachedInstructions;
-  } catch {
+  } catch { /* ignore: optional operation */
     // 캐시된 버전이 있으면 사용
     if (cachedInstructions) {
       return cachedInstructions;
@@ -149,13 +150,6 @@ export async function getCodexInstructions(model: string = 'gpt-5.2'): Promise<s
     // 기본 instructions 반환
     return 'You are a helpful coding assistant.';
   }
-}
-
-/**
- * 지연 함수
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -183,7 +177,7 @@ async function parseSSEStream(stream: ReadableStream<Uint8Array>): Promise<strin
           if (json.type === 'response.output_text.delta') {
             result += json.delta || '';
           }
-        } catch {
+        } catch { /* ignore: optional operation */
           // JSON 파싱 실패 무시
         }
       }
@@ -271,7 +265,7 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
         } else if (errorJson.detail) {
           errorMessage = errorJson.detail;
         }
-      } catch {
+      } catch { /* ignore: optional operation */
         errorMessage += `: ${errorText.substring(0, 200)}`;
       }
 
@@ -371,7 +365,7 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
           if (json.type === 'response.output_text.delta') {
             yield { type: 'delta', content: json.delta || '' };
           }
-        } catch {
+        } catch { /* ignore: optional operation */
           // JSON 파싱 실패 무시
         }
       }

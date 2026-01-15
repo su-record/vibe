@@ -224,7 +224,7 @@ function formatDate(timestamp: string): string {
     if (diffDays < 7) return `${diffDays}일 전`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전`;
     return date.toLocaleDateString('ko-KR');
-  } catch {
+  } catch { /* ignore: optional operation */
     return timestamp.substring(0, 10);
   }
 }

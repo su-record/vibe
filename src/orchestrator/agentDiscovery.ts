@@ -7,6 +7,7 @@ import path from 'path';
 import { glob } from 'glob';
 import { DiscoveredAgent, AgentDiscoveryArgs } from './types.js';
 import { ToolResult } from '../types/tool.js';
+import { errorLog } from '../lib/utils.js';
 
 // 에이전트 디렉토리 우선순위: .claude/agents > agents
 const AGENTS_DIRS = ['.claude/agents', 'agents'];
@@ -74,7 +75,7 @@ export async function discoverAgents(args: AgentDiscoveryArgs): Promise<ToolResu
         await fs.access(candidatePath);
         agentsBasePath = candidatePath;
         break;
-      } catch {
+      } catch { /* ignore: optional operation */
         // 다음 경로 시도
       }
     }
@@ -130,7 +131,7 @@ export async function discoverAgents(args: AgentDiscoveryArgs): Promise<ToolResu
         });
       } catch (error) {
         // 개별 파일 에러는 무시하고 계속 진행
-        console.error(`Failed to read agent file: ${filePath}`, error);
+        errorLog(`Failed to read agent file: ${filePath}`, error);
       }
     }
 

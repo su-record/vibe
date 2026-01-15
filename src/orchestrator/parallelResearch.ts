@@ -11,21 +11,8 @@ import {
   AgentMessage
 } from './types.js';
 import { ToolResult } from '../types/tool.js';
-
-// Agent SDK 동적 import (설치되지 않았을 경우 폴백)
-let agentSdkQuery: typeof import('@anthropic-ai/claude-agent-sdk').query | null = null;
-
-async function getQueryFunction() {
-  if (agentSdkQuery) return agentSdkQuery;
-
-  try {
-    const sdk = await import('@anthropic-ai/claude-agent-sdk');
-    agentSdkQuery = sdk.query;
-    return agentSdkQuery;
-  } catch {
-    return null;
-  }
-}
+import { getAgentSdkQuery } from '../lib/utils.js';
+import { DEFAULT_MODELS, TIMEOUTS, AGENT } from '../lib/constants.js';
 
 /**
  * 기본 리서치 태스크 템플릿
@@ -100,7 +87,7 @@ async function loadAgentFile(agentName: string, projectPath: string): Promise<st
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       return content;
-    } catch {
+    } catch { /* ignore: optional operation */
       // 다음 경로 시도
     }
   }
@@ -118,7 +105,7 @@ async function executeResearchTask(
 ): Promise<AgentResult> {
   const startTime = Date.now();
 
-  const query = await getQueryFunction();
+  const query = await getAgentSdkQuery();
 
   // Agent SDK가 없으면 시뮬레이션 결과 반환
   if (!query) {
@@ -142,11 +129,10 @@ async function executeResearchTask(
     const response = query({
       prompt: task.prompt,
       options: {
-        model: 'claude-haiku-4-5-20251001', // 리서치는 빠른 모델 사용 (Haiku 4.5)
+        model: DEFAULT_MODELS.RESEARCH,
         maxTurns: 3,
         allowedTools: ['Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
         cwd: projectPath,
-        // 에이전트 파일을 systemPrompt로 전달
         systemPrompt: agentContent || undefined
       }
     });
@@ -210,8 +196,8 @@ export async function parallelResearch(args: ParallelResearchArgs): Promise<Tool
   const {
     tasks,
     projectPath = process.cwd(),
-    maxConcurrency = 4,
-    timeout = 180000 // 3분 기본 타임아웃 (WebSearch 포함)
+    maxConcurrency = AGENT.MAX_CONCURRENCY,
+    timeout = TIMEOUTS.RESEARCH
   } = args;
 
   const startTime = Date.now();

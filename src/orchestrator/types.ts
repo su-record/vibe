@@ -4,12 +4,20 @@
 
 import { ToolResult } from '../types/tool.js';
 
+// 모델 타입 정의
+export type ClaudeModel =
+  | 'claude-sonnet-4-5'
+  | 'claude-opus-4'
+  | 'claude-haiku-3-5'
+  | 'claude-haiku-4-5-20251001'
+  | string; // 새 모델 호환성
+
 // Agent 관련 타입
 export interface AgentConfig {
   name: string;
   description: string;
   prompt: string;
-  model?: 'claude-sonnet-4-5' | 'claude-opus-4' | 'claude-haiku-3-5';
+  model?: ClaudeModel;
   maxTurns?: number;
   allowedTools?: string[];
   systemPrompt?: string;
@@ -49,7 +57,7 @@ export interface ParallelResearchResult {
 export interface BackgroundAgentArgs {
   prompt: string;
   agentName?: string;
-  model?: 'claude-sonnet-4-5' | 'claude-opus-4' | 'claude-haiku-3-5';
+  model?: ClaudeModel;
   maxTurns?: number;
   allowedTools?: string[];
   projectPath?: string;

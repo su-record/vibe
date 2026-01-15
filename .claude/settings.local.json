@@ -18,7 +18,10 @@
       "Bash(git status:*)",
       "Bash(gh pr create --repo anthropics/claude-plugins-official --title \"feat: add vibe plugin - SPEC-driven AI coding framework\" --body \"$\\(cat <<''EOF''\n## Plugin: vibe\n\nSPEC-driven AI coding framework for Claude Code with parallel agents, BDD verification, and quality assurance.\n\n### Features\n\n- **12 Slash Commands**: `/vibe.spec`, `/vibe.run`, `/vibe.verify`, `/vibe.review`, `/vibe.reason`, `/vibe.diagram`, and more\n- **16 Specialist Agents**: Security, performance, architecture reviewers + language-specific reviewers \\(Python, TypeScript, React, Rails\\)\n- **ULTRAWORK Pipeline**: Parallel execution with ~50% speed improvement through background agents and phase pipelining\n- **BDD Verification**: Behavior-driven development testing against SPEC requirements\n- **Context7 Integration**: Built-in support for up-to-date documentation lookup\n\n### Workflow\n\n```\n/vibe.spec \"feature\" → /vibe.run \"feature\" → /vibe.verify \"feature\"\n```\n\n### Repository\n\nhttps://github.com/su-record/vibe\n\n### License\n\nMIT\nEOF\n\\)\")",
       "Bash(git rev-parse:*)",
-      "Bash(claude plugin:*)"
+      "Bash(claude plugin:*)",
+      "Bash(npm unlink:*)",
+      "Bash(find:*)",
+      "Bash(vibe auth status:*)"
     ]
   }
 }

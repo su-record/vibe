@@ -106,7 +106,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GPT-5.2 AVAILABLE] Architecture review → Consider mcp__vibe-gpt__gpt_analyze_architecture for GPT-5.2 perspective.'"
+            "command": "echo '[GPT-5.2 AVAILABLE] Architecture review → Use mcp__vibe-gpt__gpt_analyze_architecture OR Hook will auto-call GPT if authenticated.'"
           }
         ]
       },
@@ -115,25 +115,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GEMINI-3-PRO AVAILABLE] UI/UX review → Consider mcp__vibe-gemini__gemini_review_ui for Gemini 3 Pro perspective.'"
+            "command": "echo '[GEMINI-3-PRO AVAILABLE] UI/UX review → Use mcp__vibe-gemini__gemini_review_ui OR Hook will auto-call Gemini if authenticated.'"
           }
         ]
       },
       {
-        "matcher": "gpt.*물어|gpt.*질문|gpt.*한테|ask.*gpt|gpt.*chat",
+        "matcher": "gpt.*물어|gpt.*질문|gpt.*한테|ask.*gpt|gpt.*분석",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GPT-5.2 MCP] To ask GPT-5.2 → Use mcp__vibe-gpt__gpt_chat directly.'"
+            "command": "node -e \"import('@su-record/vibe/lib/gpt').then(g => g.quickAsk('Briefly answer in Korean').then(r => console.log('[GPT-5.2 RESPONSE]\\n' + r.substring(0, 500)))).catch(e => console.log('[GPT] Auth required: vibe auth gpt'))\"",
+            "statusMessage": "Asking GPT-5.2..."
           }
         ]
       },
       {
-        "matcher": "gemini.*물어|gemini.*질문|gemini.*한테|ask.*gemini|gemini.*chat",
+        "matcher": "gemini.*물어|gemini.*질문|gemini.*한테|ask.*gemini|gemini.*분석",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GEMINI-3-PRO MCP] To ask Gemini 3 Pro → Use mcp__vibe-gemini__gemini_chat directly.'"
+            "command": "node -e \"import('@su-record/vibe/lib/gemini').then(g => g.quickAsk('Briefly answer in Korean').then(r => console.log('[GEMINI-3 RESPONSE]\\n' + r.substring(0, 500)))).catch(e => console.log('[GEMINI] Auth required: vibe auth gemini'))\"",
+            "statusMessage": "Asking Gemini 3..."
           }
         ]
       },
@@ -142,7 +144,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GPT-5.2 DEBUG] For debugging → Consider mcp__vibe-gpt__gpt_debug for GPT-5.2 second opinion.'"
+            "command": "echo '[GPT-5.2 DEBUG] For debugging → Use mcp__vibe-gpt__gpt_debug for GPT-5.2 second opinion.'"
           }
         ]
       },
@@ -151,7 +153,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GEMINI-3-PRO CODE] For code analysis → Consider mcp__vibe-gemini__gemini_analyze_code for Gemini 3 Pro second opinion.'"
+            "command": "echo '[GEMINI-3 CODE] For code analysis → Use mcp__vibe-gemini__gemini_analyze_code for Gemini 3 second opinion.'"
           }
         ]
       }

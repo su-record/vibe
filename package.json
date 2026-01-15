@@ -17,7 +17,9 @@
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/reasoning": "./dist/tools/reasoning/index.js",
     "./tools/analytics": "./dist/tools/analytics/index.js",
-    "./orchestrator": "./dist/orchestrator/index.js"
+    "./orchestrator": "./dist/orchestrator/index.js",
+    "./lib/gpt": "./dist/lib/gpt-api.js",
+    "./lib/gemini": "./dist/lib/gemini-api.js"
   },
   "bin": {
     "vibe": "./dist/cli/index.js"

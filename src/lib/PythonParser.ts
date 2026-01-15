@@ -27,7 +27,7 @@ function getPythonCommand(): string {
         if (pythonPath.includes('\\') && fs.existsSync(pythonPath)) {
           return `"${pythonPath}"`;
         }
-      } catch {
+      } catch { /* ignore: optional operation */
         continue;
       }
     }

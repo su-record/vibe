@@ -202,7 +202,7 @@ function formatTime(timestamp: string): string {
       hour: '2-digit',
       minute: '2-digit'
     });
-  } catch {
+  } catch { /* ignore: optional operation */
     return timestamp.substring(11, 16);
   }
 }

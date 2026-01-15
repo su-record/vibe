@@ -7,6 +7,7 @@ import { PythonParser } from '../../lib/PythonParser.js';
 import { ProjectCache } from '../../lib/ProjectCache.js';
 import { readFile } from 'fs/promises';
 import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { errorLog } from '../../lib/utils.js';
 
 interface SymbolInfo {
   name: string;
@@ -84,7 +85,7 @@ export async function findSymbol(args: {
         }
       } catch (error) {
         // Skip files that can't be parsed
-        console.error(`Error parsing Python file ${pyFile}:`, error);
+        errorLog(`Error parsing Python file ${pyFile}:`, error);
       }
     }
 

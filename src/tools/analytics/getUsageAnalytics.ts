@@ -291,7 +291,7 @@ function formatDate(dateString: string): string {
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR');
-  } catch {
+  } catch { /* ignore: optional operation */
     return dateString;
   }
 }

@@ -226,7 +226,7 @@ export async function fetchProjectId(accessToken: string): Promise<string> {
       if (typeof data.cloudaicompanionProject === 'object' && data.cloudaicompanionProject?.id) {
         return data.cloudaicompanionProject.id;
       }
-    } catch {
+    } catch { /* ignore: optional operation */
       // 다음 엔드포인트 시도
     }
   }

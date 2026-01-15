@@ -21,7 +21,7 @@ const GUIDES_FILE = path.join(GUIDES_DIR, 'coding_guides.json');
 async function ensureGuidesDir() {
   try {
     await fs.access(GUIDES_DIR);
-  } catch {
+  } catch { /* ignore: optional operation */
     await fs.mkdir(GUIDES_DIR, { recursive: true });
   }
 }
@@ -31,7 +31,7 @@ async function loadGuides(): Promise<CodingGuide[]> {
     await ensureGuidesDir();
     const data = await fs.readFile(GUIDES_FILE, 'utf-8');
     return JSON.parse(data);
-  } catch {
+  } catch { /* ignore: optional operation */
     return [];
   }
 }
@@ -107,7 +107,7 @@ export async function startSession(args: { greeting?: string; loadMemory?: boole
           try {
             const data = JSON.parse(ctx.value);
             summary += `  • ${data.urgency?.toUpperCase() || 'MEDIUM'} priority from ${new Date(ctx.timestamp).toLocaleString()}\n`;
-          } catch {
+          } catch { /* ignore: optional operation */
             summary += `  • Context from ${new Date(ctx.timestamp).toLocaleString()}\n`;
           }
         });

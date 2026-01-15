@@ -11,6 +11,7 @@ import {
 } from './gemini-constants.js';
 
 import { getValidAccessToken } from './gemini-oauth.js';
+import { sleep } from './utils.js';
 
 // Types
 interface GeminiModelInfo {
@@ -137,13 +138,6 @@ function wrapRequestBody(body: unknown, projectId: string, modelId: string): Rec
     userAgent: 'antigravity',
     requestId: generateRequestId(),
   };
-}
-
-/**
- * 지연 함수
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**

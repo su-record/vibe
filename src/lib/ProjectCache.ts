@@ -3,6 +3,7 @@
 
 import { Project } from 'ts-morph';
 import path from 'path';
+import { warnLog } from './utils.js';
 
 interface CachedProject {
   project: Project;
@@ -73,7 +74,7 @@ export class ProjectCache {
 
     // Skip caching if project is too large
     if (estimatedMemoryMB > this.MAX_PROJECT_MEMORY_MB) {
-      console.warn(`Project ${normalizedPath} is too large (${estimatedMemoryMB}MB, ${fileCount} files) - not caching`);
+      warnLog(`Project ${normalizedPath} is too large (${estimatedMemoryMB}MB, ${fileCount} files) - not caching`);
       return project;
     }
 
