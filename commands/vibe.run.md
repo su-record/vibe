@@ -655,14 +655,28 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Gemini 리뷰 호출:**
-```bash
+**MUST: Gemini MCP 호출 (필수)**
+
+Gemini MCP가 활성화된 경우, **반드시** 아래 MCP를 호출하여 코드 리뷰를 받아야 합니다:
+
+```
 mcp__vibe-gemini__gemini_analyze_code({
-  code: "[변경된 파일 내용]",
-  context: "SPEC 요구사항 및 시나리오",
+  code: "[변경된 파일들의 전체 코드]",
+  context: "SPEC 요구사항: [요약]\n시나리오: [구현한 시나리오 목록]",
   focus: "security,performance,best-practices"
 })
 ```
+
+**호출 순서:**
+1. 변경된 모든 파일 내용을 `code` 파라미터에 포함
+2. SPEC의 핵심 요구사항을 `context`에 요약
+3. MCP 호출 실행
+4. 응답의 피드백 항목별로 코드 수정
+5. 빌드/테스트 재실행
+
+**fallback 처리:**
+- `"status": "fallback"` 응답 시 → 스킵하고 다음 단계로 진행
+- 네트워크 에러 시 → 1회 재시도 후 스킵
 
 **리뷰 적용 규칙:**
 
