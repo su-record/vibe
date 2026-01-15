@@ -82,6 +82,33 @@ Provide security recommendations.`
 }
 
 /**
+ * 에이전트 파일 로드
+ */
+async function loadAgentFile(agentName: string, projectPath: string): Promise<string | null> {
+  const { promises: fs } = await import('fs');
+  const path = await import('path');
+
+  // 에이전트 파일 경로 우선순위
+  const possiblePaths = [
+    path.join(projectPath, '.claude', 'agents', 'research', `${agentName}.md`),
+    path.join(projectPath, 'agents', 'research', `${agentName}.md`),
+    // 패키지 내장 에이전트 (fallback)
+    path.join(process.cwd(), 'agents', 'research', `${agentName}.md`)
+  ];
+
+  for (const filePath of possiblePaths) {
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+      return content;
+    } catch {
+      // 다음 경로 시도
+    }
+  }
+
+  return null;
+}
+
+/**
  * 단일 리서치 태스크 실행
  */
 async function executeResearchTask(
@@ -108,14 +135,19 @@ async function executeResearchTask(
     let sessionId = '';
     let result = '';
 
+    // 에이전트 파일 로드 (systemPrompt로 사용)
+    const agentContent = await loadAgentFile(task.name, projectPath);
+
     // Agent SDK query 실행
     const response = query({
       prompt: task.prompt,
       options: {
-        model: 'claude-haiku-3-5', // 리서치는 빠른 모델 사용
+        model: 'claude-haiku-4-5-20251001', // 리서치는 빠른 모델 사용 (Haiku 4.5)
         maxTurns: 3,
         allowedTools: ['Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
-        cwd: projectPath
+        cwd: projectPath,
+        // 에이전트 파일을 systemPrompt로 전달
+        systemPrompt: agentContent || undefined
       }
     });
 
@@ -179,7 +211,7 @@ export async function parallelResearch(args: ParallelResearchArgs): Promise<Tool
     tasks,
     projectPath = process.cwd(),
     maxConcurrency = 4,
-    timeout = 60000 // 1분 기본 타임아웃
+    timeout = 180000 // 3분 기본 타임아웃 (WebSearch 포함)
   } = args;
 
   const startTime = Date.now();
