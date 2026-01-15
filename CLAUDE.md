@@ -19,6 +19,12 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 | 매개변수 | 5개 이하 |
 | 순환 복잡도 | 10 이하 |
 
+### TypeScript 규칙
+- `any` 타입 사용 금지 → `unknown` + 타입 가드 사용
+- `as any` 캐스팅 금지 → 적절한 인터페이스 정의
+- `@ts-ignore` 금지 → 타입 문제 근본 해결
+- 모든 함수에 반환 타입 명시
+
 ### 에러 처리 필수
 - try-catch 또는 error state 필수
 - 로딩 상태 처리

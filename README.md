@@ -179,3 +179,24 @@ Claude: 로그인 기능을 만드시는군요! 몇 가지 질문이 있습니�
 ## 라이선스
 
 MIT - [GitHub](https://github.com/su-record/vibe)
+
+## Vibe Setup (AI Coding)
+
+이 프로젝트는 [Vibe](https://github.com/su-record/vibe) AI 코딩 프레임워크를 사용합니다.
+
+### 협업자 설치
+
+```bash
+# 전역 설치 (권장)
+npm install -g @su-record/vibe
+vibe update
+
+# 또는 setup 스크립트 실행
+./.claude/vibe/setup.sh
+```
+
+### 사용법
+
+Claude Code에서 슬래시 커맨드 사용:
+- `/vibe.spec "기능명"` - SPEC 문서 작성
+- `/vibe.run "기능명"` - 구현 실행
