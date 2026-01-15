@@ -429,6 +429,18 @@ export function cleanupLegacy(projectRoot: string, claudeDir: string): void {
       }
     });
   }
+
+  // 프로젝트 로컬 settings.json 제거 (전역으로 이동됨)
+  const localSettingsPath = path.join(claudeDir, 'settings.json');
+  if (fs.existsSync(localSettingsPath)) {
+    log('   🧹 프로젝트 로컬 settings.json 제거 (전역으로 통합됨)...\n');
+    try {
+      fs.unlinkSync(localSettingsPath);
+      log('   ✅ .claude/settings.json 삭제 완료\n');
+    } catch { /* ignore: optional operation */
+      log('   ⚠️  .claude/settings.json 수동 삭제 필요\n');
+    }
+  }
 }
 
 /**
