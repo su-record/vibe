@@ -95,6 +95,60 @@
             "command": "node -e \"const p='$CLAUDE_PROJECT_DIR';import('@su-record/vibe/tools').then(t => t.listMemories({limit: 10, projectPath: p}).then(r => console.log('[RECALL]', r.content[0].text.split('\\n').slice(0,7).join(' | ')))).catch(() => console.log('[RECALL] Use recallMemory tool'))\""
           }
         ]
+      },
+      {
+        "matcher": "아키텍처|architecture|설계.*검토|design.*review|구조.*분석",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[GPT-5.2 AVAILABLE] Architecture review → Consider mcp__vibe-gpt__gpt_analyze_architecture for GPT-5.2 perspective.'"
+          }
+        ]
+      },
+      {
+        "matcher": "UI|UX|사용자.*경험|user.*experience|디자인.*리뷰|design.*feedback",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[GEMINI-3-PRO AVAILABLE] UI/UX review → Consider mcp__vibe-gemini__gemini_review_ui for Gemini 3 Pro perspective.'"
+          }
+        ]
+      },
+      {
+        "matcher": "gpt.*물어|gpt.*질문|gpt.*한테|ask.*gpt|gpt.*chat",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[GPT-5.2 MCP] To ask GPT-5.2 → Use mcp__vibe-gpt__gpt_chat directly.'"
+          }
+        ]
+      },
+      {
+        "matcher": "gemini.*물어|gemini.*질문|gemini.*한테|ask.*gemini|gemini.*chat",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[GEMINI-3-PRO MCP] To ask Gemini 3 Pro → Use mcp__vibe-gemini__gemini_chat directly.'"
+          }
+        ]
+      },
+      {
+        "matcher": "디버깅|debugging|버그.*찾|find.*bug|debug.*this",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[GPT-5.2 DEBUG] For debugging → Consider mcp__vibe-gpt__gpt_debug for GPT-5.2 second opinion.'"
+          }
+        ]
+      },
+      {
+        "matcher": "코드.*분석|analyze.*code|code.*review.*gemini",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[GEMINI-3-PRO CODE] For code analysis → Consider mcp__vibe-gemini__gemini_analyze_code for Gemini 3 Pro second opinion.'"
+          }
+        ]
       }
     ],
     "Notification": [
