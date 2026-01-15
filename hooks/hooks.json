@@ -106,7 +106,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GPT-5.2 AVAILABLE] Architecture review recommended. Claude should call: import(\"@su-record/vibe/lib/gpt\").then(g => g.chat({...}))'"
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import('@su-record/vibe/lib/gpt').then(g=>g.chat({messages:[{role:'user',content:q}],systemPrompt:'You are a software architect. Analyze and review the architecture.'})).then(r=>console.log('[GPT-5.2 Architecture]\\n'+r.content)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
+            "statusMessage": "GPT analyzing architecture..."
           }
         ]
       },
@@ -115,7 +116,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GEMINI-3 AVAILABLE] UI/UX review recommended. Claude should call: import(\"@su-record/vibe/lib/gemini\").then(g => g.chat({...}))'"
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import('@su-record/vibe/lib/gemini').then(g=>g.chat({messages:[{role:'user',content:q}],systemPrompt:'You are a UI/UX expert. Analyze and provide feedback.'})).then(r=>console.log('[GEMINI-3 UI/UX]\\n'+r.content)).catch(e=>console.log('[GEMINI] Error:',e.message))})\"",
+            "statusMessage": "Gemini reviewing UI/UX..."
           }
         ]
       },
@@ -124,7 +126,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GPT-5.2 READY] Claude should execute: node -e \"import(\\\"@su-record/vibe/lib/gpt\\\").then(g => g.quickAsk(\\\"USER_QUESTION_HERE\\\")).then(console.log).catch(e => console.error(e.message))\"'"
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/gpt.*?(물어|질문|한테|분석)[^가-힣]*/i,'').trim();import('@su-record/vibe/lib/gpt').then(g=>g.quickAsk(q)).then(r=>console.log('[GPT-5.2]\\n'+r)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
+            "statusMessage": "Asking GPT-5.2..."
           }
         ]
       },
@@ -133,7 +136,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GEMINI-3 READY] Claude should execute: node -e \"import(\\\"@su-record/vibe/lib/gemini\\\").then(g => g.quickAsk(\\\"USER_QUESTION_HERE\\\")).then(console.log).catch(e => console.error(e.message))\"'"
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/(gemini|제미나이).*?(물어|질문|한테|분석)[^가-힣]*/i,'').trim();import('@su-record/vibe/lib/gemini').then(g=>g.quickAsk(q)).then(r=>console.log('[GEMINI-3]\\n'+r)).catch(e=>console.log('[GEMINI] Error:',e.message))})\"",
+            "statusMessage": "Asking Gemini 3..."
           }
         ]
       },
@@ -142,7 +146,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GPT-5.2 DEBUG] For debugging, Claude should call GPT via: import(\"@su-record/vibe/lib/gpt\").then(g => g.chat({...}))'"
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import('@su-record/vibe/lib/gpt').then(g=>g.chat({messages:[{role:'user',content:q}],systemPrompt:'You are a debugging expert. Find bugs and suggest fixes.'})).then(r=>console.log('[GPT-5.2 Debug]\\n'+r.content)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
+            "statusMessage": "GPT debugging..."
           }
         ]
       },
@@ -151,7 +156,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[GEMINI-3 CODE] For code analysis, Claude should call Gemini via: import(\"@su-record/vibe/lib/gemini\").then(g => g.chat({...}))'"
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import('@su-record/vibe/lib/gemini').then(g=>g.chat({messages:[{role:'user',content:q}],systemPrompt:'You are a code analysis expert. Review and analyze the code.'})).then(r=>console.log('[GEMINI-3 Code]\\n'+r.content)).catch(e=>console.log('[GEMINI] Error:',e.message))})\"",
+            "statusMessage": "Gemini analyzing code..."
           }
         ]
       }
