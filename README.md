@@ -23,7 +23,10 @@ vibe init
 | `vibe status` | 현재 상태 확인 |
 | `vibe auth gpt` | GPT OAuth 인증 |
 | `vibe auth gemini` | Gemini OAuth 인증 |
+| `vibe logout gpt` | GPT 로그아웃 |
+| `vibe logout gemini` | Gemini 로그아웃 |
 | `vibe help` | 도움말 |
+| `vibe version` | 버전 정보 |
 
 ### Claude Code
 

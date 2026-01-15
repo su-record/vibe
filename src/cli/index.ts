@@ -453,13 +453,14 @@ function showHelp(): void {
   vibe remove             vibe 전체 제거 (MCP, 설정, 패키지)
 
 Claude Code 슬래시 커맨드:
-  /vibe.spec "기능명"     SPEC 작성 (PTCF 구조)
+  /vibe.spec "기능명"     SPEC 작성 (PTCF 구조) + 병렬 리서치
   /vibe.run "기능명"      구현 실행
-  /vibe.verify "기능명"   검증
+  /vibe.run ... ultrawork 최대 성능 모드
+  /vibe.verify "기능명"   BDD 검증
+  /vibe.review            병렬 코드 리뷰 (13+ 에이전트)
   /vibe.reason "문제"     체계적 추론
   /vibe.analyze           프로젝트 분석
-  /vibe.ui "설명"         UI 미리보기
-  /vibe.diagram           다이어그램 생성
+  /vibe.utils             유틸리티 (--e2e, --diagram, --continue)
 
 모델 오케스트레이션:
   Opus 4.5    오케스트레이터 (메인)

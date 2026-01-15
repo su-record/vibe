@@ -39,7 +39,7 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 ## Workflow
 
 ```
-/vibe.spec → /vibe.run → /vibe.verify → /vibe.compound
+/vibe.spec → /vibe.run → /vibe.verify → /vibe.review
 ```
 
 ## Plan Mode vs VIBE (워크플로우 선택)
@@ -99,13 +99,12 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 | `/vibe.run "기능명" ultrawork` | **최대 성능 모드** |
 | `/vibe.verify "기능명"` | 검증 |
 | `/vibe.review` | **병렬 코드 리뷰** (13+ 에이전트) |
-| `/vibe.compound` | **지식 문서화** (해결책 아카이브) |
-| `/vibe.e2e` | **E2E 테스트** (Playwright) |
 | `/vibe.reason "문제"` | 체계적 추론 |
 | `/vibe.analyze` | 프로젝트 분석 |
-| `/vibe.diagram` | 다이어그램 생성 |
-| `/vibe.ui "설명"` | UI 미리보기 |
-| `/vibe.continue` | **세션 복원** (이전 컨텍스트 로드) |
+| `/vibe.utils --e2e` | E2E 테스트 (Playwright) |
+| `/vibe.utils --diagram` | 다이어그램 생성 |
+| `/vibe.utils --ui "설명"` | UI 미리보기 |
+| `/vibe.utils --continue` | **세션 복원** (이전 컨텍스트 로드) |
 
 ## 새로운 기능 (v2.1.0)
 
@@ -130,28 +129,14 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 - 🟡 P2 (Important): 수정 권장
 - 🔵 P3 (Nice-to-have): 백로그
 
-### 지식 복리 (/vibe.compound)
-
-해결한 문제를 자동 문서화:
-
-```
-.claude/vibe/solutions/
-├── security/           # 보안 해결책
-├── performance/        # 성능 최적화
-├── database/           # DB 관련
-└── integration/        # 외부 연동
-```
-
-트리거: "it's fixed", "해결됨", PR 머지 후
-
-### E2E 테스트 (/vibe.e2e)
+### E2E 테스트 (/vibe.utils --e2e)
 
 Playwright 기반 자동화 테스트:
 
 ```bash
-/vibe.e2e "login flow"        # 시나리오 테스트
-/vibe.e2e --visual            # 시각적 회귀 테스트
-/vibe.e2e --record            # 비디오 녹화
+/vibe.utils --e2e "login flow"   # 시나리오 테스트
+/vibe.utils --e2e --visual       # 시각적 회귀 테스트
+/vibe.utils --e2e --record       # 비디오 녹화
 ```
 
 ### 리서치 에이전트 강화
@@ -268,7 +253,7 @@ vibe는 자체 메모리 시스템으로 세션 간 컨텍스트를 유지합니
 ### 세션 복원
 새 세션에서 이전 작업을 이어가려면:
 ```
-/vibe.continue
+/vibe.utils --continue
 ```
 이 명령어가 `vibe_start_session`을 호출하여 프로젝트별 메모리에서 이전 컨텍스트를 복원합니다.
 
@@ -341,11 +326,8 @@ vibe init
 │     ├── 13+ 병렬 리뷰 에이전트                                  │
 │     └── P1/P2/P3 우선순위 분류                                  │
 │                                                                 │
-│  5. /vibe.e2e                                                   │
+│  5. /vibe.utils --e2e                                           │
 │     └── Playwright E2E 테스트                                   │
-│                                                                 │
-│  6. /vibe.compound                                              │
-│     └── 해결책 문서화 → .claude/vibe/solutions/                        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
