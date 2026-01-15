@@ -73,14 +73,21 @@ vibe init
 
 ## 멀티모델 오케스트레이션
 
-Claude Code에서 GPT-5.2, Gemini 3 Pro를 서브에이전트로 활용:
+Claude Code에서 GPT-5.2, Gemini 3 Pro를 Hook으로 직접 호출:
 
-| 상황 | 추천 모델 | MCP 도구 |
+| 상황 | 추천 모델 | 호출 방법 |
 |------|----------|----------|
-| 아키텍처 검토 | GPT-5.2 | `gpt_analyze_architecture` |
-| UI/UX 리뷰 | Gemini 3 Pro | `gemini_review_ui` |
-| 디버깅 | GPT-5.2 | `gpt_debug` |
-| 코드 분석 | Gemini 3 Pro | `gemini_analyze_code` |
+| 아키텍처 검토 | GPT-5.2 | "gpt한테 물어봐" 또는 직접 import |
+| UI/UX 리뷰 | Gemini 3 Pro | "gemini한테 물어봐" 또는 직접 import |
+| 디버깅 | GPT-5.2 | Hook 자동 트리거 |
+| 코드 분석 | Gemini 3 Pro | Hook 자동 트리거 |
+
+**직접 API 호출:**
+
+```javascript
+import('@su-record/vibe/lib/gpt').then(g => g.quickAsk('질문'))
+import('@su-record/vibe/lib/gemini').then(g => g.quickAsk('질문'))
+```
 
 ## 병렬 리뷰 에이전트
 
@@ -113,16 +120,26 @@ Claude Code에서 GPT-5.2, Gemini 3 Pro를 서브에이전트로 활용:
 
 ## 프로젝트 구조
 
-```
-.claude/
-├── commands/       # 슬래시 커맨드
+**전역 설치 (`~/.claude/`):**
+
+```text
+~/.claude/
+├── commands/       # 슬래시 커맨드 (7개)
 ├── agents/         # 리뷰/리서치 에이전트
-├── skills/         # 자동 활성화 가이드
-└── vibe/
-    ├── specs/      # SPEC 문서
-    ├── features/   # BDD 시나리오
-    ├── rules/      # 코딩 규칙
-    └── solutions/  # 해결책 아카이브
+├── skills/         # 자동 활성화 가이드 (7개)
+└── settings.json   # Hooks + MCP 설정
+```
+
+**프로젝트별 (`프로젝트/.claude/vibe/`):**
+
+```text
+.claude/vibe/
+├── specs/          # SPEC 문서
+├── features/       # BDD 시나리오
+├── rules/          # 코딩 규칙 (기술스택별)
+├── solutions/      # 해결책 아카이브
+├── config.json     # 프로젝트 설정
+└── constitution.md # 프로젝트 원칙
 ```
 
 ## 코드 품질 기준
