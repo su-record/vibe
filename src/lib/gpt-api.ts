@@ -1,11 +1,70 @@
 /**
- * GPT API 호출 (ChatGPT Codex Backend)
- * ChatGPT Plus/Pro 구독으로 GPT-5.2 Codex 모델 사용
+ * GPT API 호출 (ChatGPT Codex Backend + OpenAI API)
+ * - OAuth: ChatGPT Plus/Pro 구독으로 GPT-5.2 Codex 모델 사용
+ * - API Key: OpenAI API 직접 호출
  */
 
+import path from 'path';
+import fs from 'fs';
 import { getValidAccessToken } from './gpt-oauth.js';
 import { CHATGPT_BASE_URL } from './gpt-constants.js';
 import { sleep } from './utils.js';
+
+// 인증 정보 타입
+interface AuthInfo {
+  type: 'oauth' | 'apikey';
+  accessToken?: string;
+  apiKey?: string;
+  email?: string;
+}
+
+// config에서 API Key 가져오기
+function getApiKeyFromConfig(): string | null {
+  try {
+    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (config.models?.gpt?.apiKey) {
+        return config.models.gpt.apiKey;
+      }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+// OAuth 토큰 없을 때 config에서 email 제거
+function removeEmailFromConfigIfNoToken(): void {
+  try {
+    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (config.models?.gpt?.email) {
+        delete config.models.gpt.email;
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+// 인증 방식 확인 (OAuth 우선, API Key 대체)
+async function getAuthInfo(): Promise<AuthInfo> {
+  // 1. OAuth 토큰 확인 (우선)
+  try {
+    const { accessToken, email } = await getValidAccessToken();
+    return { type: 'oauth', accessToken, email };
+  } catch {
+    // OAuth 실패 시 config에서 email 제거 (보안)
+    removeEmailFromConfigIfNoToken();
+  }
+
+  // 2. API Key 확인
+  const apiKey = getApiKeyFromConfig();
+  if (apiKey) {
+    return { type: 'apikey', apiKey };
+  }
+
+  throw new Error('GPT 인증 정보가 없습니다. vibe auth gpt (OAuth) 또는 vibe auth gpt --key <key> (API Key)로 설정하세요.');
+}
 
 // Types
 interface GptModelInfo {
@@ -190,9 +249,101 @@ async function parseSSEStream(stream: ReadableStream<Uint8Array>): Promise<strin
 }
 
 /**
- * GPT API 호출 (Codex Backend)
+ * OpenAI Chat Completions API 호출 (API Key 방식)
  */
-export async function chat(options: ChatOptions): Promise<ChatResponse> {
+async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<ChatResponse> {
+  const {
+    model = DEFAULT_MODEL,
+    messages = [],
+    maxTokens = 4096,
+    temperature = 0.7,
+    systemPrompt = '',
+  } = options;
+
+  // API Key 방식은 표준 OpenAI 모델 사용 (gpt-4o, gpt-4-turbo 등)
+  // Codex 모델은 OAuth 전용이므로 대체 모델 매핑
+  const apiKeyModelMap: Record<string, string> = {
+    'gpt-5.2': 'gpt-4o',
+    'gpt-5.2-codex': 'gpt-4o',
+    'gpt-5.1-codex': 'gpt-4-turbo',
+    'gpt-5.1-codex-mini': 'gpt-4o-mini',
+    'gpt-5.1-codex-max': 'gpt-4o',
+  };
+
+  const actualModel = apiKeyModelMap[model] || 'gpt-4o';
+
+  // 메시지 구성
+  const apiMessages: Array<{ role: string; content: string }> = [];
+  if (systemPrompt) {
+    apiMessages.push({ role: 'system', content: systemPrompt });
+  }
+  for (const msg of messages) {
+    apiMessages.push({ role: msg.role, content: msg.content });
+  }
+
+  const retryCount = options._retryCount || 0;
+  const maxRetries = 3;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: actualModel,
+        messages: apiMessages,
+        max_tokens: maxTokens,
+        temperature,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      // 429 Rate Limit - 재시도
+      if (response.status === 429 && retryCount < maxRetries) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        await sleep(delay);
+        return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
+      }
+
+      let errorMessage = `OpenAI API 오류 (${response.status})`;
+      try {
+        const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
+        if (errorJson.error?.message) {
+          errorMessage = errorJson.error.message;
+        }
+      } catch { /* ignore */ }
+
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json() as {
+      choices: Array<{ message: { content: string }; finish_reason: string }>;
+      model: string;
+    };
+
+    return {
+      content: result.choices[0]?.message?.content || '',
+      model: result.model,
+      finishReason: result.choices[0]?.finish_reason || 'stop',
+    };
+  } catch (error) {
+    if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
+      const delay = Math.pow(2, retryCount) * 1000;
+      await sleep(delay);
+      return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
+    }
+    throw error;
+  }
+}
+
+/**
+ * GPT API 호출 (Codex Backend - OAuth 방식)
+ */
+async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise<ChatResponse> {
   const {
     model = DEFAULT_MODEL,
     messages = [],
@@ -200,9 +351,6 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     webSearch = false,
     userLocation,
   } = options;
-
-  // 토큰 가져오기
-  const { accessToken } = await getValidAccessToken();
 
   // 모델 정보 가져오기
   const modelInfo = GPT_MODELS[model] || GPT_MODELS[DEFAULT_MODEL];
@@ -277,7 +425,7 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
       if (response.status === 429 && retryCount < maxRetries) {
         const delay = Math.pow(2, retryCount) * 1000;
         await sleep(delay);
-        return chat({ ...options, _retryCount: retryCount + 1 });
+        return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 });
       }
 
       // 에러 파싱
@@ -298,10 +446,11 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
 
     // 스트리밍 응답 파싱
     const content = await parseSSEStream(response.body!);
+    const modelInfo2 = GPT_MODELS[model] || GPT_MODELS[DEFAULT_MODEL];
 
     return {
       content,
-      model: modelInfo.name,
+      model: modelInfo2.name,
       finishReason: 'stop',
     };
   } catch (error) {
@@ -309,23 +458,63 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
       const delay = Math.pow(2, retryCount) * 1000;
       await sleep(delay);
-      return chat({ ...options, _retryCount: retryCount + 1 });
+      return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 });
     }
     throw error;
   }
 }
 
 /**
- * 스트리밍 Chat
+ * GPT API 호출 (OAuth 또는 API Key 자동 선택 + Fallback)
+ */
+export async function chat(options: ChatOptions): Promise<ChatResponse> {
+  const authInfo = await getAuthInfo();
+  const apiKey = getApiKeyFromConfig();
+
+  // API Key 방식
+  if (authInfo.type === 'apikey' && authInfo.apiKey) {
+    return chatWithApiKey(authInfo.apiKey, options);
+  }
+
+  // OAuth 방식 (API Key fallback 지원)
+  if (authInfo.type === 'oauth' && authInfo.accessToken) {
+    try {
+      return await chatWithOAuth(authInfo.accessToken, options);
+    } catch (error) {
+      // Rate Limit(429) 또는 인증 오류(401/403) 시 API Key로 fallback
+      const errorMsg = (error as Error).message;
+      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
+        console.log('⚠️ OAuth 한도 초과/오류 → API Key로 전환');
+        return chatWithApiKey(apiKey, options);
+      }
+      throw error;
+    }
+  }
+
+  throw new Error('GPT 인증 정보가 없습니다.');
+}
+
+/**
+ * 스트리밍 Chat (OAuth 또는 API Key 자동 선택)
  */
 export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamChunk> {
+  const authInfo = await getAuthInfo();
+
+  // API Key 방식은 스트리밍 미지원 - 일반 chat 사용
+  if (authInfo.type === 'apikey') {
+    const result = await chat(options);
+    yield { type: 'delta', content: result.content };
+    yield { type: 'done' };
+    return;
+  }
+
+  // OAuth 방식 - Codex 스트리밍
   const {
     model = DEFAULT_MODEL,
     messages = [],
     systemPrompt = '',
   } = options;
 
-  const { accessToken } = await getValidAccessToken();
   const modelInfo = GPT_MODELS[model] || GPT_MODELS[DEFAULT_MODEL];
   const instructions = await getCodexInstructions(modelInfo.id);
 
@@ -353,7 +542,7 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
   const response = await fetch(CODEX_RESPONSES_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      'Authorization': `Bearer ${authInfo.accessToken}`,
       'Content-Type': 'application/json',
       'OpenAI-Beta': 'responses=experimental',
       'originator': 'codex_cli_rs',

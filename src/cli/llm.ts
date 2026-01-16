@@ -70,12 +70,12 @@ ${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : '
   const llmConfig = EXTERNAL_LLMS[llmType];
   config.models[llmType as 'gpt' | 'gemini'] = {
     enabled: true,
+    authType: 'apikey',
     role: llmConfig.role,
-    description: llmConfig.description
+    description: llmConfig.description,
+    apiKey: apiKey
   };
 
-  // API 키를 config에 저장 (암호화 없이 - 로컬 전용)
-  config.models[llmType as 'gpt' | 'gemini']!.apiKey = apiKey;
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
   console.log(`

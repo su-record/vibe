@@ -37,7 +37,7 @@ export async function saveMemory(args: { key: string; value: string; category?: 
     const memoryManager = MemoryManager.getInstance(projectPath);
     memoryManager.save(memoryKey, memoryValue, category);
 
-    const location = projectPath ? `${projectPath}/memories/` : 'default';
+    const location = projectPath ? `${projectPath}/.claude/vibe/memories/` : 'default';
     return {
       content: [{ type: 'text', text: `✓ Saved: ${memoryKey}\nCategory: ${category}\nLocation: ${location}` }]
     };

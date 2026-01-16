@@ -1,9 +1,12 @@
 /**
- * Gemini API 호출 (Antigravity 경유)
- * Gemini 구독으로 Gemini 2.5/3 Flash/Pro 모델 사용
+ * Gemini API 호출 (Antigravity 경유 + Google AI API)
+ * - OAuth: Gemini 구독으로 Gemini 2.5/3 Flash/Pro 모델 사용
+ * - API Key: Google AI Studio API 직접 호출
  */
 
 import crypto from 'crypto';
+import path from 'path';
+import fs from 'fs';
 
 import {
   ANTIGRAVITY_HEADERS,
@@ -12,6 +15,63 @@ import {
 
 import { getValidAccessToken } from './gemini-oauth.js';
 import { sleep } from './utils.js';
+
+// 인증 정보 타입
+interface AuthInfo {
+  type: 'oauth' | 'apikey';
+  accessToken?: string;
+  apiKey?: string;
+  email?: string;
+  projectId?: string;
+}
+
+// config에서 API Key 가져오기
+function getApiKeyFromConfig(): string | null {
+  try {
+    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (config.models?.gemini?.apiKey) {
+        return config.models.gemini.apiKey;
+      }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+// OAuth 토큰 없을 때 config에서 email 제거
+function removeEmailFromConfigIfNoToken(): void {
+  try {
+    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (config.models?.gemini?.email) {
+        delete config.models.gemini.email;
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+// 인증 방식 확인 (OAuth 우선, API Key 대체)
+async function getAuthInfo(): Promise<AuthInfo> {
+  // 1. OAuth 토큰 확인 (우선)
+  try {
+    const { accessToken, email, projectId } = await getValidAccessToken();
+    return { type: 'oauth', accessToken, email, projectId };
+  } catch {
+    // OAuth 실패 시 config에서 email 제거 (보안)
+    removeEmailFromConfigIfNoToken();
+  }
+
+  // 2. API Key 확인
+  const apiKey = getApiKeyFromConfig();
+  if (apiKey) {
+    return { type: 'apikey', apiKey };
+  }
+
+  throw new Error('Gemini 인증 정보가 없습니다. vibe auth gemini (OAuth) 또는 vibe auth gemini --key <key> (API Key)로 설정하세요.');
+}
 
 // Types
 interface GeminiModelInfo {
@@ -32,6 +92,7 @@ interface ChatOptions {
   maxTokens?: number;
   temperature?: number;
   systemPrompt?: string;
+  webSearch?: boolean;
   _retryCount?: number;
 }
 
@@ -141,9 +202,9 @@ function wrapRequestBody(body: unknown, projectId: string, modelId: string): Rec
 }
 
 /**
- * Gemini API 호출 (Antigravity v1internal)
+ * Google AI Studio API 호출 (API Key 방식)
  */
-export async function chat(options: ChatOptions): Promise<ChatResponse> {
+async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<ChatResponse> {
   const {
     model = DEFAULT_MODEL,
     messages = [],
@@ -152,8 +213,112 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     systemPrompt = '',
   } = options;
 
-  // 토큰 가져오기
-  const { accessToken, projectId } = await getValidAccessToken();
+  // API Key 방식은 Google AI Studio 모델 사용
+  // Antigravity 전용 모델(claude-*)은 API Key로 사용 불가
+  const apiKeyModelMap: Record<string, string> = {
+    'gemini-3-pro-high': 'gemini-1.5-pro',
+    'gemini-3-pro': 'gemini-1.5-pro',
+    'gemini-3-flash': 'gemini-1.5-flash',
+    'claude-sonnet': 'gemini-1.5-pro', // Claude 모델은 Gemini Pro로 대체
+    'claude-sonnet-thinking': 'gemini-1.5-pro',
+    'claude-opus': 'gemini-1.5-pro',
+  };
+
+  const actualModel = apiKeyModelMap[model] || 'gemini-1.5-flash';
+
+  // 메시지를 Gemini 형식으로 변환
+  const contents = messages.map(msg => ({
+    role: msg.role === 'assistant' || msg.role === 'model' ? 'model' : 'user',
+    parts: [{ text: msg.content }],
+  }));
+
+  // 요청 본문
+  const requestBody: Record<string, unknown> = {
+    contents,
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature,
+    },
+  };
+
+  // 시스템 프롬프트 추가
+  if (systemPrompt) {
+    requestBody.systemInstruction = {
+      parts: [{ text: systemPrompt }],
+    };
+  }
+
+  const retryCount = options._retryCount || 0;
+  const maxRetries = 3;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${actualModel}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      // 429 Rate Limit - 재시도
+      if (response.status === 429 && retryCount < maxRetries) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        await sleep(delay);
+        return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
+      }
+
+      let errorMessage = `Google AI API 오류 (${response.status})`;
+      try {
+        const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
+        if (errorJson.error?.message) {
+          errorMessage = errorJson.error.message;
+        }
+      } catch { /* ignore */ }
+
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json() as GeminiApiResponse;
+
+    if (!result.candidates || result.candidates.length === 0) {
+      throw new Error('Gemini API 응답이 비어있습니다.');
+    }
+
+    const candidate = result.candidates[0];
+    const content = candidate.content?.parts?.[0]?.text || '';
+
+    return {
+      content,
+      model: actualModel,
+      finishReason: candidate.finishReason,
+      usage: result.usageMetadata,
+    };
+  } catch (error) {
+    if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
+      const delay = Math.pow(2, retryCount) * 1000;
+      await sleep(delay);
+      return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
+    }
+    throw error;
+  }
+}
+
+/**
+ * Gemini API 호출 (Antigravity v1internal - OAuth 방식)
+ */
+async function chatWithOAuth(accessToken: string, projectId: string | undefined, options: ChatOptions): Promise<ChatResponse> {
+  const {
+    model = DEFAULT_MODEL,
+    messages = [],
+    maxTokens = 4096,
+    temperature = 0.7,
+    systemPrompt = '',
+    webSearch = false,
+  } = options;
 
   // 모델 정보 가져오기
   const modelInfo = GEMINI_MODELS[model] || GEMINI_MODELS[DEFAULT_MODEL];
@@ -178,6 +343,15 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     innerRequest.systemInstruction = {
       parts: [{ text: systemPrompt }],
     };
+  }
+
+  // Google Search grounding 활성화
+  if (webSearch) {
+    innerRequest.tools = [
+      {
+        googleSearch: {},
+      },
+    ];
   }
 
   // Antigravity 형식으로 래핑
@@ -228,7 +402,7 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
           if (retryCount < 3) {
             const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
             await sleep(delay);
-            return chat({ ...options, _retryCount: retryCount + 1 });
+            return chatWithOAuth(accessToken, projectId, { ...options, _retryCount: retryCount + 1 });
           }
         }
         throw new Error(`Gemini API 오류 (${response.status}): ${errorText}`);
@@ -263,6 +437,36 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
 
   // 모든 엔드포인트 실패
   throw lastError || new Error('모든 Antigravity 엔드포인트 실패');
+}
+
+/**
+ * Gemini API 호출 (OAuth 또는 API Key 자동 선택 + Fallback)
+ */
+export async function chat(options: ChatOptions): Promise<ChatResponse> {
+  const authInfo = await getAuthInfo();
+  const apiKey = getApiKeyFromConfig();
+
+  // API Key 방식
+  if (authInfo.type === 'apikey' && authInfo.apiKey) {
+    return chatWithApiKey(authInfo.apiKey, options);
+  }
+
+  // OAuth 방식 (API Key fallback 지원)
+  if (authInfo.type === 'oauth' && authInfo.accessToken) {
+    try {
+      return await chatWithOAuth(authInfo.accessToken, authInfo.projectId, options);
+    } catch (error) {
+      // Rate Limit(429) 또는 인증 오류(401/403) 시 API Key로 fallback
+      const errorMsg = (error as Error).message;
+      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
+        console.log('⚠️ OAuth 한도 초과/오류 → API Key로 전환');
+        return chatWithApiKey(apiKey, options);
+      }
+      throw error;
+    }
+  }
+
+  throw new Error('Gemini 인증 정보가 없습니다.');
 }
 
 /**
@@ -307,6 +511,31 @@ export async function quickAsk(prompt: string): Promise<string> {
     model: 'gemini-3-flash',
     maxTokens: 2048,
     temperature: 0.3,
+  });
+}
+
+/**
+ * 웹서치로 최신 정보 검색 (Gemini 3 Pro + Google Search)
+ */
+export async function webSearch(prompt: string): Promise<string> {
+  return ask(prompt, {
+    model: 'gemini-3-pro',
+    maxTokens: 4096,
+    temperature: 0.3,
+    webSearch: true,
+    systemPrompt: 'Search the web for the latest information and provide accurate answers. Always include today\'s date and time context when relevant.',
+  });
+}
+
+/**
+ * 빠른 웹서치 (Gemini 3 Flash + Google Search)
+ */
+export async function quickWebSearch(prompt: string): Promise<string> {
+  return ask(prompt, {
+    model: 'gemini-3-flash',
+    maxTokens: 2048,
+    temperature: 0.3,
+    webSearch: true,
   });
 }
 

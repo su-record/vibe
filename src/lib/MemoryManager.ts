@@ -52,8 +52,16 @@ export class MemoryManager {
       throw new Error('No valid project path found. Provide projectPath or set CLAUDE_PROJECT_DIR environment variable.');
     }
 
-    // Project-based memory: store in {projectPath}/memories/
-    const memoryDir = path.join(resolvedPath, 'memories');
+    // Normalize path to handle Windows paths with .. or mixed separators
+    resolvedPath = path.resolve(resolvedPath);
+
+    // Skip memory creation for vibe package itself
+    if (this.isVibePackage(resolvedPath)) {
+      throw new Error('Memory storage disabled for vibe package development folder.');
+    }
+
+    // Project-based memory: store in {projectPath}/.claude/vibe/memories/
+    const memoryDir = path.join(resolvedPath, '.claude', 'vibe', 'memories');
     this.dbPath = path.join(memoryDir, 'memories.db');
 
     try {
@@ -73,6 +81,19 @@ export class MemoryManager {
   }
 
   private static cleanupRegistered = false;
+
+  /**
+   * Check if the given path is the vibe package itself (not a project using vibe)
+   */
+  private isVibePackage(projectPath: string): boolean {
+    try {
+      const packageJsonPath = path.join(projectPath, 'package.json');
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      return packageJson.name === '@su-record/vibe';
+    } catch {
+      return false;
+    }
+  }
 
   /**
    * Get MemoryManager instance for a specific project

@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "2.4.33",
+  "version": "2.4.34",
   "description": "Vibe - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
   "type": "module",
   "main": "dist/cli/index.js",
@@ -75,7 +75,8 @@
   },
   "files": [
     "dist/",
-    ".claude/",
+    "vibe/",
+    "languages/",
     "commands/",
     "agents/",
     "skills/",

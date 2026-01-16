@@ -133,7 +133,7 @@ export function updateConstitution(
   detectedStacks: TechStack[],
   stackDetails: StackDetails
 ): void {
-  const templatePath = path.join(__dirname, '../../templates/constitution-template.md');
+  const templatePath = path.join(__dirname, '../../vibe/templates/constitution-template.md');
   const constitutionPath = path.join(vibeDir, 'constitution.md');
 
   if (!fs.existsSync(templatePath)) return;
@@ -258,25 +258,18 @@ export function updateClaudeMd(
 // ============================================================================
 
 /**
- * .claude/vibe/rules/ 복사 또는 업데이트
+ * vibe/ 폴더 전체 복사 + languages/ 스택별 필터링
  */
 export function updateRules(vibeDir: string, detectedStacks: TechStack[], isUpdate = false): void {
-  const rulesSource = path.join(__dirname, '../../.claude/vibe/rules');
-  const rulesTarget = path.join(vibeDir, 'rules');
+  // 1. vibe/ 폴더 전체 복사 (rules/, templates/, config.json 등)
+  const vibeSource = path.join(__dirname, '../../vibe');
+  if (fs.existsSync(vibeSource)) {
+    copyDirRecursive(vibeSource, vibeDir);
+  }
 
-  // core, quality, standards, tools 복사
-  const coreDirs = ['core', 'quality', 'standards', 'tools'];
-  coreDirs.forEach(dir => {
-    const src = path.join(rulesSource, dir);
-    const dst = path.join(rulesTarget, dir);
-    if (fs.existsSync(src)) {
-      copyDirRecursive(src, dst);
-    }
-  });
-
-  // languages 폴더 처리
-  const langSource = path.join(rulesSource, 'languages');
-  const langTarget = path.join(rulesTarget, 'languages');
+  // 2. languages/ 폴더 처리 (루트에서 별도 복사, 스택별 필터링)
+  const langSource = path.join(__dirname, '../../languages');
+  const langTarget = path.join(vibeDir, 'languages');
 
   if (isUpdate && fs.existsSync(langTarget)) {
     removeDirRecursive(langTarget);
@@ -296,7 +289,7 @@ export function updateRules(vibeDir: string, detectedStacks: TechStack[], isUpda
     });
   }
 
-  log('   ✅ 코딩 규칙 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (.claude/vibe/rules/)\n');
+  log('   ✅ 코딩 규칙 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (.claude/vibe/)\n');
 }
 
 // ============================================================================

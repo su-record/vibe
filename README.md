@@ -94,7 +94,7 @@ Call GPT/Gemini directly with hook prefixes:
 
 ```javascript
 import('@su-record/vibe/lib/gpt').then(g => g.quickWebSearch('weather today'))
-import('@su-record/vibe/lib/gemini').then(g => g.quickAsk('question'))
+import('@su-record/vibe/lib/gemini').then(g => g.quickWebSearch('question'))
 ```
 
 ## Parallel Review Agents
@@ -199,8 +199,8 @@ This project uses [Vibe](https://github.com/su-record/vibe) AI coding framework.
 npm install -g @su-record/vibe
 vibe update
 
-# Or run setup script
-./.claude/vibe/setup.sh
+# Or use vibe init to setup
+vibe init
 ```
 
 ### Usage
