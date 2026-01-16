@@ -27,6 +27,8 @@ interface ChatOptions {
   maxTokens?: number;
   temperature?: number;
   systemPrompt?: string;
+  webSearch?: boolean;
+  userLocation?: { country: string };
   _retryCount?: number;
 }
 
@@ -195,6 +197,8 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     model = DEFAULT_MODEL,
     messages = [],
     systemPrompt = '',
+    webSearch = false,
+    userLocation,
   } = options;
 
   // 토큰 가져오기
@@ -218,8 +222,23 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     ? `${instructions}\n\n<user_context>\n${systemPrompt}\n</user_context>`
     : instructions;
 
+  // 웹서치 도구 설정
+  const tools: Array<{ type: string; user_location?: { type: string; country: string } }> = [];
+  if (webSearch) {
+    const webSearchTool: { type: string; user_location?: { type: string; country: string } } = {
+      type: 'web_search_preview',
+    };
+    if (userLocation) {
+      webSearchTool.user_location = {
+        type: 'approximate',
+        country: userLocation.country,
+      };
+    }
+    tools.push(webSearchTool);
+  }
+
   // 요청 본문
-  const requestBody = {
+  const requestBody: Record<string, unknown> = {
     model: modelInfo.id,
     store: false,
     stream: true,
@@ -229,6 +248,11 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     text: { verbosity: 'medium' },
     include: ['reasoning.encrypted_content'],
   };
+
+  // 웹서치 도구 추가
+  if (tools.length > 0) {
+    requestBody.tools = tools;
+  }
 
   // API 호출 (재시도 로직 포함)
   const retryCount = options._retryCount || 0;
@@ -430,5 +454,32 @@ export async function debugCode(prompt: string): Promise<string> {
     maxTokens: 4096,
     temperature: 0.3,
     systemPrompt: 'You are an expert debugger. Analyze the given code, identify bugs, and provide fixes with clear explanations.',
+  });
+}
+
+/**
+ * 웹서치로 최신 정보 검색 (GPT-5.2 + Web Search)
+ */
+export async function webSearch(prompt: string, country?: string): Promise<string> {
+  return ask(prompt, {
+    model: 'gpt-5.2',
+    maxTokens: 4096,
+    temperature: 0.3,
+    webSearch: true,
+    userLocation: country ? { country } : undefined,
+    systemPrompt: 'Search the web for the latest information and provide accurate answers with source citations.',
+  });
+}
+
+/**
+ * 빠른 웹서치 (GPT-5.1 Codex Mini + Web Search)
+ */
+export async function quickWebSearch(prompt: string): Promise<string> {
+  return ask(prompt, {
+    model: 'gpt-5.1-codex-mini',
+    maxTokens: 2048,
+    temperature: 0.3,
+    webSearch: true,
+    userLocation: { country: 'KR' },
   });
 }

@@ -267,29 +267,20 @@ Automatically select optimal model based on task type:
 
 When external LLMs are enabled in `.claude/vibe/config.json`:
 
-| Role | Model | Condition |
-|------|-------|-----------|
-| Architecture/Debugging | GPT 5.2 | When `vibe gpt <key>` executed |
-| UI/UX Design, Exploration | Gemini 2.5/3 | When `vibe gemini --auth` executed |
+| Role | Prefix | Condition |
+|------|--------|-----------|
+| Architecture/Debugging | `gpt-` or `지피티-` | When `vibe gpt login` executed |
+| UI/UX Design, Exploration | `gemini-` or `제미나이-` | When `vibe gemini login` executed |
 
-When external LLM enabled, automatically called via MCP:
-- `mcp__vibe-gpt__chat` - GPT 5.2 architecture consultation
-- `mcp__vibe-gemini__gemini_chat` - Gemini 질문/상담
-- `mcp__vibe-gemini__gemini_analyze_code` - 코드 분석
-- `mcp__vibe-gemini__gemini_review_ui` - UI/UX 리뷰
-- `mcp__vibe-gemini__gemini_quick_ask` - 빠른 질문 (탐색용)
+When external LLM enabled, use hook prefixes:
+- `gpt- [question]` - GPT architecture consultation
+- `gemini- [question]` - Gemini 질문/상담
+- `gemini- Analyze this code: [code]` - 코드 분석
+- `gemini- Review UI/UX for: [component]` - UI/UX 리뷰
 
 ### External LLM Fallback
 
-**IMPORTANT**: When Gemini/GPT MCP returns `"status": "fallback"`, Claude MUST handle the task directly:
-
-```json
-{
-  "status": "fallback",
-  "reason": "rate_limit",  // or "auth_error"
-  "message": "Gemini API 할당량 초과. Claude가 직접 처리해주세요."
-}
-```
+**IMPORTANT**: When GPT/Gemini hook fails, Claude MUST handle the task directly:
 
 **Fallback behavior**:
 - Do NOT retry the external LLM call
@@ -449,8 +440,8 @@ Then: 로그인 성공 + JWT 토큰 반환
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] + MCP(vibe-gpt): Architecture review          │
-│  [If Gemini enabled] + MCP(vibe-gemini): UI/UX consultation     │
+│  [If GPT enabled] gpt- Review architecture: [design]            │
+│  [If Gemini enabled] gemini- Suggest UX for: [component]        │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ↓ (wait for all to complete)
@@ -655,22 +646,27 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**MUST: Gemini MCP 호출 (필수)**
+**MUST: Gemini 코드 리뷰 (필수)**
 
-Gemini MCP가 활성화된 경우, **반드시** 아래 MCP를 호출하여 코드 리뷰를 받아야 합니다:
+Gemini가 활성화된 경우, **반드시** 아래 훅을 사용하여 코드 리뷰를 받아야 합니다:
 
 ```
-mcp__vibe-gemini__gemini_analyze_code({
-  code: "[변경된 파일들의 전체 코드]",
-  context: "SPEC 요구사항: [요약]\n시나리오: [구현한 시나리오 목록]",
-  focus: "security,performance,best-practices"
-})
+gemini- Review this code for security, performance, best-practices:
+[변경된 파일들의 전체 코드]
+SPEC 요구사항: [요약]
+시나리오: [구현한 시나리오 목록]
+```
+
+또는 한글로:
+```
+제미나이- 이 코드 리뷰해줘 (보안, 성능, 베스트프랙티스):
+[코드]
 ```
 
 **호출 순서:**
-1. 변경된 모든 파일 내용을 `code` 파라미터에 포함
-2. SPEC의 핵심 요구사항을 `context`에 요약
-3. MCP 호출 실행
+1. 변경된 모든 파일 내용을 질문에 포함
+2. SPEC의 핵심 요구사항 요약 추가
+3. 훅 호출 실행
 4. 응답의 피드백 항목별로 코드 수정
 5. 빌드/테스트 재실행
 

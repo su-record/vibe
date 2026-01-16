@@ -76,19 +76,24 @@ vibe init
 
 ## 멀티모델 오케스트레이션
 
-Claude Code에서 GPT-5.2, Gemini 3 Pro를 Hook으로 직접 호출:
+Claude Code에서 GPT, Gemini를 Hook prefix로 직접 호출:
 
-| 상황 | 추천 모델 | 호출 방법 |
+| LLM | Prefix | 예시 | 기능 |
+|-----|--------|------|------|
+| GPT | `gpt-`, `gpt.`, `지피티-` | `gpt.오늘 서울 날씨` | Web Search 지원 |
+| Gemini | `gemini-`, `gemini.`, `제미나이-` | `gemini-UI 개선점` | Google Search 지원 |
+
+| 상황 | 추천 모델 | 호출 예시 |
 |------|----------|----------|
-| 아키텍처 검토 | GPT-5.2 | "gpt한테 물어봐" 또는 직접 import |
-| UI/UX 리뷰 | Gemini 3 Pro | "gemini한테 물어봐" 또는 직접 import |
-| 디버깅 | GPT-5.2 | Hook 자동 트리거 |
-| 코드 분석 | Gemini 3 Pro | Hook 자동 트리거 |
+| 최신 정보 검색 | GPT | `gpt.React 19 변경사항` |
+| UI/UX 리뷰 | Gemini | `gemini.이 폼 UX 개선해줘` |
+| 아키텍처 검토 | GPT | `gpt-이 아키텍처 검토해줘` |
+| 코드 분석 | Gemini | `gemini-이 코드 분석해줘` |
 
 **직접 API 호출:**
 
 ```javascript
-import('@su-record/vibe/lib/gpt').then(g => g.quickAsk('질문'))
+import('@su-record/vibe/lib/gpt').then(g => g.quickWebSearch('오늘 날씨'))
 import('@su-record/vibe/lib/gemini').then(g => g.quickAsk('질문'))
 ```
 

@@ -3,50 +3,45 @@ description: Multi-LLM collaboration guide. Auto-activates for architecture revi
 ---
 # Multi-LLM Orchestration
 
-Guide for using GPT/Gemini as sub-agents in Claude Code.
+Guide for using GPT/Gemini as sub-agents in Claude Code via hooks.
 
-## When to Use GPT (mcp__vibe-gpt)
+## Calling GPT
 
-| Situation | Reason |
-|-----------|--------|
-| Architecture design/review | Get different perspective on design |
-| Complex debugging | Fresh eyes on the problem |
-| Algorithm optimization | Alternative algorithm suggestions |
-| Security review | Cross-check vulnerabilities |
-| Technology decisions | Compare pros/cons |
+Use `gpt-`, `gpt.`, or `지피티-` prefix:
 
-### Usage
+| Situation | Example |
+|-----------|---------|
+| Architecture review | `gpt- Review this auth architecture: [code]` |
+| Complex debugging | `gpt- Debug this error: [error message]` |
+| Algorithm optimization | `gpt- Suggest better algorithm for: [problem]` |
+| Security review | `gpt- Check security vulnerabilities in: [code]` |
+| Technology decisions | `gpt- Compare Redis vs Memcached for caching` |
 
-```
-mcp__vibe-gpt__gpt_chat({
-  prompt: "Review this auth architecture: [code/description]",
-  model: "gpt-5.2-codex"  // coding specialized
-})
-```
-
-### Recommended Models
-
-| Model | Use Case |
-|-------|----------|
-| gpt-5.2 | General purpose (default) |
-| gpt-5.2-codex | Coding specialized |
-| gpt-5.1-codex-mini | Quick responses needed |
-
-## When to Use Gemini (mcp__vibe-gemini)
-
-| Situation | Reason |
-|-----------|--------|
-| UI/UX design consultation | User experience perspective |
-| Design system advice | Component structuring |
-| Accessibility (a11y) review | Accessibility guidelines |
-| User flow design | UX optimization |
-
-### Usage
+### Usage Examples
 
 ```
-mcp__vibe-gemini__gemini_chat({
-  prompt: "Suggest UX improvements for this login form: [description]"
-})
+gpt- 이 인증 아키텍처를 검토해줘: [코드]
+gpt.Review this REST API design
+지피티- 이 알고리즘 최적화 방법 알려줘
+```
+
+## Calling Gemini
+
+Use `gemini-`, `gemini.`, or `제미나이-` prefix:
+
+| Situation | Example |
+|-----------|---------|
+| UI/UX consultation | `gemini- Improve UX for this login form` |
+| Design system advice | `gemini- Suggest component structure` |
+| Accessibility review | `gemini- Check a11y issues in this form` |
+| User flow design | `gemini- Optimize this checkout flow` |
+
+### Usage Examples
+
+```
+gemini- 이 로그인 폼 UX 개선해줘
+gemini.Suggest improvements for this dashboard
+제미나이- 이 컴포넌트 구조 분석해줘
 ```
 
 ## When NOT to Use
@@ -63,7 +58,7 @@ mcp__vibe-gemini__gemini_chat({
 ```
 Claude: Draft design
     ↓
-GPT: Architecture review (mcp__vibe-gpt__gpt_analyze_architecture)
+gpt- Review this architecture: [design]
     ↓
 Claude: Incorporate feedback into final design
 ```
@@ -73,7 +68,7 @@ Claude: Incorporate feedback into final design
 ```
 Claude: Attempt problem analysis
     ↓
-If stuck, ask GPT (mcp__vibe-gpt__gpt_debug)
+If stuck: gpt- Debug this issue: [error details]
     ↓
 Claude: Apply GPT's suggestions
 ```
@@ -83,7 +78,7 @@ Claude: Apply GPT's suggestions
 ```
 Claude: Implement feature
     ↓
-Gemini: Suggest UX improvements (mcp__vibe-gemini__gemini_chat)
+gemini- Suggest UX improvements for: [component]
     ↓
 Claude: Apply UX feedback
 ```
@@ -91,7 +86,7 @@ Claude: Apply UX feedback
 ## API Key Setup
 
 ```bash
-vibe gpt <api-key>      # Enable GPT
-vibe gemini <api-key>   # Enable Gemini
-vibe status             # Check current settings
+vibe gpt login      # Enable GPT (OAuth)
+vibe gemini login   # Enable Gemini (OAuth)
+vibe status         # Check current settings
 ```

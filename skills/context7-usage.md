@@ -78,5 +78,5 @@ context7 fails
     ↓
 Web Search for official docs
     ↓
-Ask vibe-gpt
+gpt- [library question]
 ```

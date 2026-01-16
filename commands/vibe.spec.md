@@ -28,30 +28,30 @@ Collect requirements through conversation with the user and create an **AI-execu
 
 ## External LLM Integration (Optional)
 
-When external LLMs are enabled in `.claude/vibe/config.json`, automatically utilize during SPEC creation:
+When external LLMs are enabled, automatically utilize during SPEC creation:
 
 ```
 /vibe.spec "complex feature"
       ↓
 [Claude Opus] Create SPEC draft
       ↓
-[GPT enabled?] → Cross-review design via MCP(vibe-gpt)
+[GPT enabled?] → gpt- Review this architecture: [design]
       ↓
-[Gemini enabled?] → UI/UX consultation via MCP(vibe-gemini)
+[Gemini enabled?] → gemini- Suggest UX improvements for: [component]
       ↓
 [Claude] Finalize SPEC
 ```
 
-| External LLM | Role | When Used |
-|--------------|------|-----------|
-| GPT 5.2 | Architecture/design review | After SPEC draft completion |
-| Gemini 3 | UI/UX consultation | During design reference discussion |
+| External LLM | Prefix | Role | When Used |
+|--------------|--------|------|-----------|
+| GPT | `gpt-` or `지피티-` | Architecture/design review | After SPEC draft completion |
+| Gemini | `gemini-` or `제미나이-` | UI/UX consultation | During design reference discussion |
 
 **Activation:**
 ```bash
-vibe gpt <api-key>      # Enable GPT
-vibe gemini <api-key>   # Enable Gemini
-vibe status             # Check current settings
+vibe gpt login      # Enable GPT (OAuth)
+vibe gemini login   # Enable Gemini (OAuth)
+vibe status         # Check current settings
 ```
 
 ## Process

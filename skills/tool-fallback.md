@@ -28,8 +28,8 @@ Tool State Machine:
 
 **Per-tool tracking:**
 ```
-vibe-gpt: failures=2, state=CLOSED
-vibe-gemini: failures=0, state=CLOSED
+GPT hook: failures=2, state=CLOSED
+Gemini hook: failures=0, state=CLOSED
 WebSearch: failures=3, state=OPEN (blocked until 14:32:00)
 context7: failures=1, state=CLOSED
 ```
@@ -39,7 +39,7 @@ context7: failures=1, state=CLOSED
 | Alternative | Method |
 |-------------|--------|
 | context7 MCP | `mcp__context7__query-docs` |
-| vibe-gpt | `mcp__vibe-gpt__gpt_chat` |
+| GPT hook | `gpt- [your question]` |
 | Cached knowledge | Use Claude's built-in knowledge |
 
 ```
@@ -51,7 +51,7 @@ If OPEN → Skip to alternative immediately
     ↓
 If CLOSED → Try context7 for library docs
     ↓
-If still fails, ask GPT
+If still fails: gpt- [question]
     ↓
 Last resort: Claude's built-in knowledge
 ```
@@ -78,14 +78,14 @@ Use Grep for content-based search
 Check git log for history
 ```
 
-## When MCP Fails
+## When LLM Hook Fails
 
 ```
-vibe-gpt fails
+gpt- or gpt. [question] fails
     ↓
 Check circuit: If OPEN, skip to next
     ↓
-Try vibe-gemini (similar capability)
+Try gemini- or gemini. [question] (similar capability)
     ↓
 Try context7 (for docs)
     ↓

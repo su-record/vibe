@@ -68,13 +68,15 @@ node -e "import('@su-record/vibe/orchestrator').then(o =>
 )"
 ```
 
-## MCP Integrations
+## LLM Integrations (Hooks)
 
-| MCP | Purpose |
-|-----|---------|
-| vibe-gpt | GPT sub-agent (architecture, debugging) |
-| vibe-gemini | Gemini sub-agent (UI/UX) |
-| context7 | Latest library documentation |
+Use prefix patterns to call GPT/Gemini:
+
+| LLM | Prefix | Example | Features |
+|-----|--------|---------|----------|
+| GPT | `gpt-`, `gpt.`, `지피티-` | `gpt.오늘 서울 날씨` | Web Search enabled |
+| Gemini | `gemini-`, `gemini.`, `제미나이-` | `gemini.Analyze UX` | Google Search enabled |
+| context7 | MCP call | Library documentation | - |
 
 ## ULTRAWORK Mode
 
@@ -122,6 +124,6 @@ Add `ultrawork` or `ulw` for maximum performance:
 Even without `/vibe.*` commands, you can:
 
 1. Call tools directly via node commands
-2. Use MCP integrations (gpt, gemini, context7)
+2. Use LLM hooks (`gpt-`, `gemini-`)
 3. Reference skills for guidance
 4. Apply coding rules from `.claude/vibe/rules/`
