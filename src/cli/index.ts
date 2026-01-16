@@ -44,6 +44,7 @@ import {
   updateClaudeMd,
   updateRules,
   installGlobalAssets,
+  installGlobalVibePackage,
   migrateLegacyVibe,
   updateGitignore,
   updateConfig,
@@ -122,6 +123,9 @@ async function init(projectName?: string): Promise<void> {
 
     // 전역 assets 설치
     installGlobalAssets(false);
+
+    // 전역 vibe 패키지 설치 (~/.config/vibe/)
+    installGlobalVibePackage(false);
 
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
@@ -297,6 +301,9 @@ async function update(): Promise<void> {
 
     // 전역 assets 업데이트
     installGlobalAssets(true);
+
+    // 전역 vibe 패키지 업데이트 (~/.config/vibe/)
+    installGlobalVibePackage(true);
 
     // 프로젝트 로컬 자산 제거
     removeLocalAssets(claudeDir);

@@ -5,14 +5,88 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { VibeConfig, TechStack, StackDetails } from './types.js';
-import { log, ensureDir, copyDirRecursive, removeDirRecursive } from './utils.js';
+import { log, ensureDir, copyDirRecursive, removeDirRecursive, getPackageJson } from './utils.js';
 import { registerMcp, unregisterMcp } from './mcp.js';
 import { STACK_NAMES, getLanguageRulesContent } from './detect.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// ============================================================================
+// 전역 vibe 패키지 설치
+// ============================================================================
+
+/**
+ * 전역 vibe 패키지 설치 경로:
+ * - Windows: %APPDATA%\vibe\ (예: C:\Users\xxx\AppData\Roaming\vibe\)
+ * - macOS/Linux: ~/.config/vibe/
+ * 훅에서 전역 경로로 접근할 수 있게 함 (모든 프로젝트가 공유)
+ */
+export function getVibeConfigDir(): string {
+  if (process.platform === 'win32') {
+    // Windows: APPDATA 환경변수 사용
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe');
+  }
+  // macOS/Linux: XDG 표준
+  return path.join(os.homedir(), '.config', 'vibe');
+}
+
+export function installGlobalVibePackage(isUpdate = false): void {
+  const globalVibeDir = getVibeConfigDir();
+  const nodeModulesDir = path.join(globalVibeDir, 'node_modules');
+  const vibePackageDir = path.join(nodeModulesDir, '@su-record', 'vibe');
+  const packageJson = getPackageJson();
+  const currentVersion = packageJson.version;
+
+  // 이미 설치되어 있는지 확인
+  const installedPackageJson = path.join(vibePackageDir, 'package.json');
+  if (fs.existsSync(installedPackageJson)) {
+    try {
+      const installed = JSON.parse(fs.readFileSync(installedPackageJson, 'utf-8'));
+      if (installed.version === currentVersion && !isUpdate) {
+        log('   ℹ️  vibe 패키지 이미 설치됨 (v' + currentVersion + ')\n');
+        return;
+      }
+    } catch { /* ignore: reinstall if can't read */ }
+  }
+
+  log('   📦 vibe 패키지 전역 설치 중 (~/.config/vibe/)...\n');
+
+  // 디렉토리 생성
+  ensureDir(globalVibeDir);
+  ensureDir(nodeModulesDir);
+  ensureDir(path.join(nodeModulesDir, '@su-record'));
+
+  // 기존 설치 제거
+  if (fs.existsSync(vibePackageDir)) {
+    removeDirRecursive(vibePackageDir);
+  }
+
+  try {
+    // 전역 npm에서 복사 (vibe는 전역으로 설치됨)
+    const globalNpmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
+    const globalNpmVibeDir = path.join(globalNpmRoot, '@su-record', 'vibe');
+
+    if (fs.existsSync(globalNpmVibeDir)) {
+      copyDirRecursive(globalNpmVibeDir, vibePackageDir);
+      log('   ✅ vibe 패키지 전역 설치 완료 (v' + currentVersion + ')\n');
+    } else {
+      // 전역 npm 설치가 없으면 npm install로 설치
+      log('   ⬇️  vibe 패키지 npm에서 설치 중...\n');
+      execSync(`npm install @su-record/vibe@${currentVersion} --prefix "${globalVibeDir}" --no-save`, {
+        stdio: 'pipe',
+      });
+      log('   ✅ vibe 패키지 전역 설치 완료 (v' + currentVersion + ')\n');
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log('   ⚠️  vibe 패키지 전역 설치 실패: ' + message + '\n');
+    log('   ℹ️  수동 설치: cd ~/.config/vibe && npm install @su-record/vibe\n');
+  }
+}
 
 // ============================================================================
 // MCP 서버 등록
@@ -259,19 +333,29 @@ export function installGlobalAssets(isUpdate = false): void {
     log('   ✅ 스킬 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (~/.claude/skills/)\n');
   }
 
-  // hooks
+  // hooks - 템플릿에서 {{VIBE_PATH}}를 실제 경로로 치환
   const globalSettingsPath = path.join(globalClaudeDir, 'settings.json');
   const hooksTemplate = path.join(__dirname, '../../hooks/hooks.json');
   if (fs.existsSync(hooksTemplate)) {
-    const vibeHooks = JSON.parse(fs.readFileSync(hooksTemplate, 'utf-8'));
+    // 템플릿 읽고 플레이스홀더 치환
+    let hooksContent = fs.readFileSync(hooksTemplate, 'utf-8');
+    const vibeConfigPath = getVibeConfigDir();
+
+    // Windows 경로는 file:// URL에서 슬래시 사용해야 함
+    const vibePathForUrl = vibeConfigPath.replace(/\\/g, '/');
+    hooksContent = hooksContent.replace(/\{\{VIBE_PATH\}\}/g, vibePathForUrl);
+
+    const vibeHooks = JSON.parse(hooksContent);
+
     if (fs.existsSync(globalSettingsPath)) {
       const existingSettings = JSON.parse(fs.readFileSync(globalSettingsPath, 'utf-8'));
       existingSettings.hooks = vibeHooks.hooks;
       fs.writeFileSync(globalSettingsPath, JSON.stringify(existingSettings, null, 2));
     } else {
-      fs.copyFileSync(hooksTemplate, globalSettingsPath);
+      fs.writeFileSync(globalSettingsPath, hooksContent);
     }
     log('   ✅ Hooks 설정 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (~/.claude/settings.json)\n');
+    log('   ℹ️  VIBE_PATH: ' + vibeConfigPath + '\n');
   }
 }
 
@@ -317,22 +401,27 @@ export function migrateLegacyVibe(projectRoot: string, vibeDir: string): boolean
 // ============================================================================
 
 /**
- * .gitignore 업데이트 (vibe MCP 제외, settings.local.json 제거)
+ * .gitignore 업데이트 (레거시 정리)
  */
 export function updateGitignore(projectRoot: string): void {
   const gitignorePath = path.join(projectRoot, '.gitignore');
-  const mcpIgnore = '.claude/vibe/mcp/';
 
-  let gitignore = '';
-  if (fs.existsSync(gitignorePath)) {
-    gitignore = fs.readFileSync(gitignorePath, 'utf-8');
-  }
+  if (!fs.existsSync(gitignorePath)) return;
 
+  let gitignore = fs.readFileSync(gitignorePath, 'utf-8');
   let modified = false;
 
-  // mcp 폴더 제외 추가
-  if (!gitignore.includes(mcpIgnore)) {
-    gitignore += `\n# vibe MCP\n${mcpIgnore}\n`;
+  // 레거시 mcp 폴더 제외 제거
+  if (gitignore.includes('.claude/vibe/mcp/')) {
+    gitignore = gitignore.replace(/# vibe MCP\n\.claude\/vibe\/mcp\/\n?/g, '');
+    gitignore = gitignore.replace(/\.claude\/vibe\/mcp\/\n?/g, '');
+    modified = true;
+  }
+
+  // 레거시 node_modules 제외 제거 (전역으로 이동됨)
+  if (gitignore.includes('.claude/vibe/node_modules/')) {
+    gitignore = gitignore.replace(/# vibe local packages\n\.claude\/vibe\/node_modules\/\n?/g, '');
+    gitignore = gitignore.replace(/\.claude\/vibe\/node_modules\/\n?/g, '');
     modified = true;
   }
 

@@ -18,5 +18,4 @@ wiki/
 # IDE
 .vscode/
 .idea/
-# vibe MCP
-.claude/vibe/mcp/
+
