@@ -122,21 +122,21 @@
         ]
       },
       {
-        "matcher": "(?!.*gemini)(gpt\\s*한테|gpt\\s*에게|gpt에\\s*물어|gpt.*질문|ask\\s*gpt)",
+        "matcher": "^(gpt-|지피티-)",
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/gpt.*?(물어|질문|한테|분석)[^가-힣]*/i,'').trim();import(V).then(g=>g.quickAsk(q)).then(r=>console.log('[GPT] '+r)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
+            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/^(gpt-|지피티-)\\s*/i,'').trim();import(V).then(g=>g.quickAsk(q)).then(r=>console.log('[GPT] '+r)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
             "statusMessage": "Asking GPT..."
           }
         ]
       },
       {
-        "matcher": "(?!.*gpt)(gemini\\s*한테|gemini\\s*에게|gemini에\\s*물어|gemini.*질문|ask\\s*gemini|제미나이)",
+        "matcher": "^(gemini-|제미나이-)",
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/(gemini|제미나이).*?(물어|질문|한테|분석)[^가-힣]*/i,'').trim();import(V).then(g=>g.quickAsk(q)).then(r=>console.log('[Gemini] '+r)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
+            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/^(gemini-|제미나이-)\\s*/i,'').trim();import(V).then(g=>g.quickAsk(q)).then(r=>console.log('[Gemini] '+r)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
             "statusMessage": "Asking Gemini..."
           }
         ]
