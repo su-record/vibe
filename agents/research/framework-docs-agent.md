@@ -46,10 +46,7 @@ Primary: Task(Haiku) + context7
       ↓
 [Gemini enabled?]
       ↓ YES
-mcp__vibe-gemini__gemini_chat(
-  prompt: "[framework] [version] latest API changes and best practices",
-  systemPrompt: "You are a framework documentation expert. Provide latest API info."
-)
+gemini.[framework] [version] latest API changes and best practices. Provide latest API info.
       ↓
 결과 병합 → SPEC Context 반영
 ```

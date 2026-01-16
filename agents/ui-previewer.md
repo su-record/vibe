@@ -23,22 +23,14 @@ Analyze user's requested UI description:
 - Required UI elements (buttons, inputs, cards, etc.)
 - Layout structure (header-footer, sidebar, grid, etc.)
 
-### 2. Use MCP Tool
+### 2. Generate ASCII Art
 
-Use `mcp__su-record-hi-ai__preview_ui_ascii` tool to generate ASCII art:
+Generate ASCII art based on the UI description:
 
-```javascript
-{
-  page_name: "Login Page",
-  layout_type: "centered",
-  components: [
-    { type: "header", label: "Welcome", position: "top" },
-    { type: "input", label: "Email", position: "center" },
-    { type: "input", label: "Password", position: "center" },
-    { type: "button", label: "Login", position: "center" }
-  ]
-}
-```
+**Input format:**
+- Page name
+- Layout type (centered, sidebar, grid, header-footer)
+- Components list (type, label, position)
 
 ### 3. Output ASCII Art
 

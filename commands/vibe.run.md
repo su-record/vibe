@@ -269,12 +269,12 @@ When external LLMs are enabled in `.claude/vibe/config.json`:
 
 | Role | Prefix | Condition |
 |------|--------|-----------|
-| Architecture/Debugging | `gpt-` or `지피티-` | When `vibe gpt login` executed |
-| UI/UX Design, Exploration | `gemini-` or `제미나이-` | When `vibe gemini login` executed |
+| Architecture/Debugging | `gpt-`, `gpt.`, `지피티-` | When `vibe gpt login` executed (Web Search enabled) |
+| UI/UX Design, Exploration | `gemini-`, `gemini.`, `제미나이-` | When `vibe gemini login` executed (Google Search enabled) |
 
 When external LLM enabled, use hook prefixes:
-- `gpt- [question]` - GPT architecture consultation
-- `gemini- [question]` - Gemini 질문/상담
+- `gpt.질문` - GPT architecture consultation (with web search)
+- `gemini.질문` - Gemini 질문/상담
 - `gemini- Analyze this code: [code]` - 코드 분석
 - `gemini- Review UI/UX for: [component]` - UI/UX 리뷰
 
@@ -545,7 +545,7 @@ For 5 phases: 4 × 20s saved = **80s faster**
 | Sequential (3 Tasks) | ~30s | Cache cold on each |
 | **Parallel (3 Tasks)** | **~10s** | **Cache warmed once, shared** |
 
-hi-ai ProjectCache (LRU) caches ts-morph parsing results. Parallel calls share the warmed cache.
+vibe ProjectCache (LRU) caches ts-morph parsing results. Parallel calls share the warmed cache.
 
 ### Phase Execution Flow (ULTRAWORK Pipeline)
 

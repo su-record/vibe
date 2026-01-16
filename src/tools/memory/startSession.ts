@@ -38,11 +38,11 @@ async function loadGuides(): Promise<CodingGuide[]> {
 
 export const startSessionDefinition: ToolDefinition = {
   name: 'start_session',
-  description: 'hi-ai|hello|안녕|하이아이 - Start session with context',
+  description: 'vibe|hello|안녕|하이 - Start session with context',
   inputSchema: {
     type: 'object',
     properties: {
-      greeting: { type: 'string', description: 'Greeting message that triggered this action (e.g., "하이아이", "hi-ai")' },
+      greeting: { type: 'string', description: 'Greeting message that triggered this action (e.g., "안녕", "vibe")' },
       loadMemory: { type: 'boolean', description: 'Load relevant project memories (default: true)' },
       loadGuides: { type: 'boolean', description: 'Load applicable coding guides (default: true)' },
       restoreContext: { type: 'boolean', description: 'Restore previous session context (default: true)' },

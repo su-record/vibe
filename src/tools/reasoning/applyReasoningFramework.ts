@@ -224,7 +224,7 @@ function evaluateAdaptability(problem: string, context?: string): string {
 function identifyInformationSources(problem: string, context?: string): string {
   return `**정보 소스**:
 1. **도구**:
-   - MCP 도구 (hi-ai 38개 도구)
+   - vibe 내장 도구 (36개)
    - 파일 시스템 (Read, Write, Edit, Glob, Grep)
    - Git, 패키지 관리자
 2. **정책/규칙**:

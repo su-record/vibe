@@ -137,10 +137,7 @@ Primary: Task(Haiku) + OWASP/CVE 검색
       ↓
 [GPT enabled?]
       ↓ YES
-mcp__vibe-gpt__gpt_chat(
-  prompt: "Security vulnerabilities for [feature]. Check recent CVEs, OWASP risks.",
-  systemPrompt: "You are a security expert. Provide CVE details and mitigations."
-)
+gpt.Security vulnerabilities for [feature]. Check recent CVEs, OWASP risks. Provide CVE details and mitigations.
       ↓
 결과 병합 → SPEC Constraints 반영
 ```

@@ -44,8 +44,8 @@ When external LLMs are enabled, automatically utilize during SPEC creation:
 
 | External LLM | Prefix | Role | When Used |
 |--------------|--------|------|-----------|
-| GPT | `gpt-` or `지피티-` | Architecture/design review | After SPEC draft completion |
-| Gemini | `gemini-` or `제미나이-` | UI/UX consultation | During design reference discussion |
+| GPT | `gpt-`, `gpt.`, `지피티-` | Architecture/design review (Web Search enabled) | After SPEC draft completion |
+| Gemini | `gemini-`, `gemini.`, `제미나이-` | UI/UX consultation (Google Search enabled) | During design reference discussion |
 
 **Activation:**
 ```bash

@@ -136,10 +136,8 @@ Primary: Task(Haiku) Python 리뷰
       ↓
 [GPT enabled?]
       ↓ YES
-mcp__vibe-gpt__gpt_analyze_architecture(
-  code: "[Python code to review]",
-  context: "Python code review. Check PEP8, type hints, async patterns, Django/FastAPI best practices."
-)
+gpt.Python code review. Check PEP8, type hints, async patterns, Django/FastAPI best practices:
+[Python code to review]
       ↓
 결과 비교 → 공통 이슈는 신뢰도 상승, 차이점은 추가 검토
 ```

@@ -227,7 +227,7 @@ if __name__ == '__main__':
     // Register cleanup handlers on first use
     this.registerCleanup();
 
-    this.scriptPath = path.join(os.tmpdir(), `hi-ai-parser-${process.pid}.py`);
+    this.scriptPath = path.join(os.tmpdir(), `vibe-parser-${process.pid}.py`);
     await writeFile(this.scriptPath, this.pythonScript);
     return this.scriptPath;
   }
@@ -242,7 +242,7 @@ if __name__ == '__main__':
       const scriptPath = await this.ensureScriptExists();
 
       // Write code to temp file with unique name
-      codePath = path.join(os.tmpdir(), `hi-ai-code-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.py`);
+      codePath = path.join(os.tmpdir(), `vibe-code-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.py`);
       await writeFile(codePath, code);
 
       // Execute Python script
