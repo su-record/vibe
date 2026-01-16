@@ -88,11 +88,11 @@ async function init(projectName?: string): Promise<void> {
       projectRoot = path.join(process.cwd(), projectName);
 
       if (fs.existsSync(projectRoot)) {
-        log(`❌ 폴더가 이미 존재합니다: ${projectName}/`);
+        log(`❌ Folder already exists: ${projectName}/`);
         return;
       }
 
-      log(`📁 새 프로젝트 생성: ${projectName}/\n`);
+      log(`📁 Creating project: ${projectName}/\n`);
       fs.mkdirSync(projectRoot, { recursive: true });
       isNewProject = true;
     }
@@ -100,14 +100,14 @@ async function init(projectName?: string): Promise<void> {
     const claudeDir = path.join(projectRoot, '.claude');
     const vibeDir = path.join(claudeDir, 'vibe');
     if (fs.existsSync(vibeDir)) {
-      log('❌ .claude/vibe/ 폴더가 이미 존재합니다.');
+      log('❌ .claude/vibe/ already exists.');
       return;
     }
 
     ensureDir(vibeDir);
 
-    // MCP 서버 등록
-    log('🔧 Claude Code MCP 서버 등록 중 (전역)...\n');
+    // MCP 서버 등록 (context7)
+    log('🔧 Registering settings (global)...\n');
     registerMcpServers(false);
 
     // .claude/vibe 폴더 구조 생성
@@ -130,7 +130,7 @@ async function init(projectName?: string): Promise<void> {
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
     if (detectedStacks.length > 0) {
-      log(`   🔍 감지된 기술 스택:\n`);
+      log(`   🔍 Detected stacks:\n`);
       detectedStacks.forEach(s => {
         log(`      - ${s.type}${s.path ? ` (${s.path}/)` : ''}\n`);
       });
@@ -159,48 +159,39 @@ async function init(projectName?: string): Promise<void> {
 
     // 완료 메시지
     log(`
-✅ vibe 초기화 완료!
+✅ vibe initialized!
 
-${isNewProject ? `프로젝트 위치:
+${isNewProject ? `Project location:
   ${projectRoot}/
 
-` : ''}전역 설치 (~/.claude/):
-  ~/.claude/
-  ├── commands/                  # 슬래시 커맨드 (7개)
-  ├── agents/                    # 서브에이전트
-  ├── skills/                    # 스킬 (7개)
-  └── settings.json              # Hooks + MCP 설정
+` : ''}Global (~/.claude/):
+  commands/     Slash commands (7)
+  agents/       Subagents
+  skills/       Skills (7)
+  settings.json Hooks + MCP
 
-프로젝트 설정 (.claude/vibe/):
-  CLAUDE.md                      # 프로젝트 컨텍스트
-  .claude/vibe/
-  ├── config.json                # 프로젝트 설정
-  ├── constitution.md            # 프로젝트 원칙
-  ├── setup.sh                   # 협업자 설치 스크립트
-  ├── rules/                     # 코딩 규칙
-  │   ├── core/                  # 핵심 원칙
-  │   ├── quality/               # 품질 체크리스트
-  │   └── languages/             # 언어별 규칙
-  ├── specs/                     # SPEC 문서들
-  └── features/                  # BDD Feature 파일들
+Project (.claude/vibe/):
+  config.json       Project config
+  constitution.md   Project principles
+  rules/            Coding rules
+  specs/            SPEC documents
+  features/         BDD features
 
-내장 도구: ✓ (35+)
-협업자 자동 설치: ✓
+Built-in tools: ✓ (35+)
 
 ${formatLLMStatus()}
 
-사용법:
-  /vibe.spec "기능명"            SPEC 작성 (대화형)
-  /vibe.run "기능명"             구현 실행
-  /vibe.verify "기능명"          검증
+Usage:
+  /vibe.spec "feature"    Create SPEC
+  /vibe.run "feature"     Implement
+  /vibe.verify "feature"  Verify
 
-다음 단계:
-  ${isNewProject ? `cd ${projectName}\n  ` : ''}/vibe.spec "기능명" 으로 시작하세요!
+Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"
     `);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('❌ 초기화 실패:', message);
+    console.error('❌ Init failed:', message);
     process.exit(1);
   }
 }
@@ -216,27 +207,27 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
 
     const isNewer = compareVersions(latestVersion, currentVersion) > 0;
     if (isNewer) {
-      log(`   📦 새 버전 발견: v${currentVersion} → v${latestVersion}\n`);
-      log('   ⬆️  vibe 업그레이드 중...\n');
+      log(`   📦 New version: v${currentVersion} → v${latestVersion}\n`);
+      log('   ⬆️  Upgrading vibe...\n');
 
       execSync('npm install -g @su-record/vibe@latest', {
         stdio: options.silent ? 'pipe' : 'inherit'
       });
 
-      log('   ✅ vibe 업그레이드 완료!\n');
+      log('   ✅ Upgrade complete!\n');
 
-      log('   🔄 새 버전으로 업데이트 재실행...\n\n');
+      log('   🔄 Re-running update...\n\n');
       execSync(`vibe update${options.silent ? ' --silent' : ''}`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
       return true;
     } else {
-      log(`   ✅ 최신 버전 사용 중 (v${currentVersion})\n`);
+      log(`   ✅ Up to date (v${currentVersion})\n`);
       return false;
     }
   } catch { /* ignore: optional operation */
-    log(`   ℹ️  버전 확인 스킵 (오프라인 또는 네트워크 오류)\n`);
+    log(`   ℹ️  Version check skipped (offline)\n`);
     return false;
   }
 }
@@ -260,14 +251,14 @@ async function update(): Promise<void> {
 
     if (!fs.existsSync(vibeDir) && !fs.existsSync(legacyVibeDir)) {
       if (!options.silent) {
-        console.log('❌ vibe 프로젝트가 아닙니다. 먼저 vibe init을 실행하세요.');
+        console.log('❌ Not a vibe project. Run vibe init first.');
       }
       return;
     }
 
     ensureDir(vibeDir);
 
-    log('🔄 vibe 업데이트 중...\n');
+    log('🔄 Updating vibe...\n');
 
     // 최신 버전 확인
     if (!options.silent) {
@@ -286,7 +277,7 @@ async function update(): Promise<void> {
 
     // constitution.md 업데이트
     updateConstitution(vibeDir, detectedStacks, stackDetails);
-    log('   ✅ constitution.md 업데이트 완료\n');
+    log('   ✅ constitution.md updated\n');
 
     // CLAUDE.md 업데이트
     updateClaudeMd(projectRoot, detectedStacks, true);
@@ -296,7 +287,7 @@ async function update(): Promise<void> {
 
     if (detectedStacks.length > 0) {
       const detectedTypes = new Set(detectedStacks.map(s => s.type));
-      log(`   🔍 감지된 기술 스택: ${Array.from(detectedTypes).join(', ')}\n`);
+      log(`   🔍 Detected: ${Array.from(detectedTypes).join(', ')}\n`);
     }
 
     // 전역 assets 업데이트
@@ -325,20 +316,20 @@ async function update(): Promise<void> {
 
     const packageJson = getPackageJson();
     log(`
-✅ vibe 업데이트 완료! (v${packageJson.version})
+✅ vibe updated! (v${packageJson.version})
 
-업데이트된 항목:
-  - 슬래시 커맨드 (7개)
-  - 코딩 규칙 (.claude/vibe/rules/)
-  - 서브에이전트 (.claude/agents/)
-  - Hooks 설정
+Updated:
+  - Slash commands (7)
+  - Coding rules
+  - Subagents
+  - Hooks
 
 ${formatLLMStatus()}
     `);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('❌ 업데이트 실패:', message);
+    console.error('❌ Update failed:', message);
     process.exit(1);
   }
 }
@@ -350,29 +341,29 @@ function remove(): void {
   const claudeDir = path.join(projectRoot, '.claude');
 
   if (!fs.existsSync(vibeDir) && !fs.existsSync(legacyVibeDir)) {
-    console.log('❌ vibe 프로젝트가 아닙니다.');
+    console.log('❌ Not a vibe project.');
     return;
   }
 
-  console.log('🗑️  vibe 제거 중...\n');
+  console.log('🗑️  Removing vibe...\n');
 
   // MCP 서버 제거
   unregisterMcp('vibe');
   unregisterMcp('vibe-gemini');
   unregisterMcp('vibe-gpt');
   unregisterMcp('context7');
-  console.log('   ✅ MCP 서버 제거 완료\n');
+  console.log('   ✅ MCP server removed\n');
 
   // .claude/vibe 폴더 제거
   if (fs.existsSync(vibeDir)) {
     removeDirRecursive(vibeDir);
-    console.log('   ✅ .claude/vibe/ 폴더 제거 완료\n');
+    console.log('   ✅ .claude/vibe/ removed\n');
   }
 
   // 레거시 .vibe 폴더도 제거
   if (fs.existsSync(legacyVibeDir)) {
     removeDirRecursive(legacyVibeDir);
-    console.log('   ✅ .vibe/ 폴더 제거 완료 (레거시)\n');
+    console.log('   ✅ .vibe/ removed (legacy)\n');
   }
 
   // .claude/commands 제거
@@ -385,7 +376,7 @@ function remove(): void {
         fs.unlinkSync(cmdPath);
       }
     });
-    console.log('   ✅ 슬래시 커맨드 제거 완료\n');
+    console.log('   ✅ Slash commands removed\n');
   }
 
   // .claude/agents 제거
@@ -398,7 +389,7 @@ function remove(): void {
         fs.unlinkSync(agentPath);
       }
     });
-    console.log('   ✅ 서브에이전트 제거 완료\n');
+    console.log('   ✅ Subagents removed\n');
   }
 
   // .claude/settings.json에서 hooks 제거
@@ -409,22 +400,22 @@ function remove(): void {
       if (settings.hooks) {
         delete settings.hooks;
         fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-        console.log('   ✅ Hooks 설정 제거 완료\n');
+        console.log('   ✅ Hooks removed\n');
       }
     } catch { /* ignore: optional operation */ }
   }
 
   console.log(`
-✅ vibe 제거 완료!
+✅ vibe removed!
 
-제거된 항목:
-  - MCP 서버 (vibe, context7)
-  - .claude/vibe/ 폴더
-  - 슬래시 커맨드 (7개)
-  - 서브에이전트 (5개)
-  - Hooks 설정
+Removed:
+  - MCP server (context7)
+  - .claude/vibe/ folder
+  - Slash commands (7)
+  - Subagents (5)
+  - Hooks settings
 
-다시 설치하려면: vibe init
+To reinstall: vibe init
   `);
 }
 
@@ -490,7 +481,7 @@ function showStatus(): void {
   const configPath = path.join(vibeDir, 'config.json');
 
   if (!fs.existsSync(vibeDir)) {
-    console.log('❌ vibe 프로젝트가 아닙니다. 먼저 vibe init을 실행하세요.');
+    console.log('❌ Not a vibe project. Run vibe init first.');
     return;
   }
 
@@ -504,52 +495,50 @@ function showStatus(): void {
   const authStatus = getLLMAuthStatus();
 
   // GPT 상태: OAuth 인증 > config enabled
-  let gptStatusText = '⬚ 비활성';
+  let gptStatusText = '⬚ Disabled';
   if (authStatus.gpt?.valid) {
     gptStatusText = authStatus.gpt.type === 'oauth'
       ? `✅ OAuth (${authStatus.gpt.email})`
-      : '✅ API 키';
+      : '✅ API Key';
   } else if (config.models?.gpt?.enabled) {
-    gptStatusText = '⚠️  설정됨 (인증 필요)';
+    gptStatusText = '⚠️  Configured (auth required)';
   }
 
   // Gemini 상태: OAuth 인증 > config enabled
-  let geminiStatusText = '⬚ 비활성';
+  let geminiStatusText = '⬚ Disabled';
   if (authStatus.gemini?.valid) {
     geminiStatusText = authStatus.gemini.type === 'oauth'
       ? `✅ OAuth (${authStatus.gemini.email})`
-      : '✅ API 키';
+      : '✅ API Key';
   } else if (config.models?.gemini?.enabled) {
-    geminiStatusText = '⚠️  설정됨 (인증 필요)';
+    geminiStatusText = '⚠️  Configured (auth required)';
   }
 
   console.log(`
-📊 Vibe 상태 (v${packageJson.version})
+📊 Vibe Status (v${packageJson.version})
 
-프로젝트: ${projectRoot}
-언어: ${config.language || 'ko'}
+Project: ${projectRoot}
+Language: ${config.language || 'ko'}
 
-모델 오케스트레이션:
-  Opus 4.5          오케스트레이터
-  Sonnet 4          구현
-  Haiku 4.5         코드 탐색
+Models:
+  Opus 4.5          Orchestrator
+  Sonnet 4          Implementation
+  Haiku 4.5         Code exploration
   GPT 5.2           ${gptStatusText}
   Gemini 3          ${geminiStatusText}
 
-MCP 서버:
-  context7          라이브러리 문서 검색
+MCP:
+  context7          Library docs search
 
-GPT/Gemini 호출 방식:
-  Hook 기반 직접 호출 (MCP 불필요)
-  - "gpt한테 물어봐" → GPT 자동 호출
-  - "gemini한테 물어봐" → Gemini 자동 호출
-  - import('@su-record/vibe/lib/gpt') 직접 사용
+GPT/Gemini (Hook-based):
+  - "gpt.question" → GPT with web search
+  - "gemini.question" → Gemini call
 
-외부 LLM 설정:
-  vibe auth gpt           GPT 활성화 (OAuth)
-  vibe auth gemini        Gemini 활성화 (OAuth)
-  vibe logout gpt         GPT 로그아웃
-  vibe logout gemini      Gemini 로그아웃
+LLM setup:
+  vibe auth gpt           Enable GPT (OAuth)
+  vibe auth gemini        Enable Gemini (OAuth)
+  vibe logout gpt         GPT logout
+  vibe logout gemini      Gemini logout
   `);
 }
 

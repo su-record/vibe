@@ -1,210 +1,210 @@
 # Vibe
 
-**SPEC 기반 AI 코딩 프레임워크** (Claude Code 전용)
+**SPEC-driven AI coding framework** (Claude Code only)
 
 [![npm version](https://img.shields.io/npm/v/@su-record/vibe.svg)](https://www.npmjs.com/package/@su-record/vibe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 설치
+## Install
 
 ```bash
 npm install -g @su-record/vibe
 vibe init
 ```
 
-## 명령어
+## Commands
 
-### 터미널
+### Terminal
 
-| 명령어 | 설명 |
-|--------|------|
-| `vibe init` | 프로젝트 초기화 |
-| `vibe update` | 설정 업데이트 |
-| `vibe status` | 현재 상태 확인 |
-| `vibe auth gpt` | GPT OAuth 인증 |
-| `vibe auth gemini` | Gemini OAuth 인증 |
-| `vibe logout gpt` | GPT 로그아웃 |
-| `vibe logout gemini` | Gemini 로그아웃 |
-| `vibe help` | 도움말 |
-| `vibe version` | 버전 정보 |
+| Command | Description |
+|---------|-------------|
+| `vibe init` | Initialize project |
+| `vibe update` | Update settings |
+| `vibe status` | Check status |
+| `vibe auth gpt` | GPT OAuth authentication |
+| `vibe auth gemini` | Gemini OAuth authentication |
+| `vibe logout gpt` | GPT logout |
+| `vibe logout gemini` | Gemini logout |
+| `vibe help` | Help |
+| `vibe version` | Version info |
 
 ### Claude Code
 
-| 명령어 | 설명 |
-|--------|------|
-| `/vibe.spec "기능"` | SPEC 문서 작성 + 병렬 리서치 |
-| `/vibe.run "기능"` | 구현 실행 |
-| `/vibe.run "기능" ultrawork` | 최대 성능 모드 |
-| `/vibe.verify "기능"` | BDD 검증 |
-| `/vibe.review` | 13+ 에이전트 병렬 리뷰 |
-| `/vibe.analyze` | 코드 분석 |
-| `/vibe.reason "문제"` | 체계적 추론 |
-| `/vibe.utils` | 유틸리티 (--e2e, --diagram 등) |
+| Command | Description |
+|---------|-------------|
+| `/vibe.spec "feature"` | Create SPEC + parallel research |
+| `/vibe.run "feature"` | Execute implementation |
+| `/vibe.run "feature" ultrawork` | Maximum performance mode |
+| `/vibe.verify "feature"` | BDD verification |
+| `/vibe.review` | 13+ agent parallel review |
+| `/vibe.analyze` | Code analysis |
+| `/vibe.reason "problem"` | Systematic reasoning |
+| `/vibe.utils` | Utilities (--e2e, --diagram, etc.) |
 
-## 워크플로우
+## Workflow
 
 ```
 /vibe.spec → /vibe.run → /vibe.verify → /vibe.review
 ```
 
-## 주요 기능
+## Key Features
 
-| 기능 | 설명 |
-|------|------|
-| **멀티모델 오케스트레이션** | Claude + GPT-5.2 + Gemini 3 Pro 통합 |
-| **13+ 병렬 리뷰 에이전트** | 보안, 성능, 아키텍처 동시 검토 |
-| **BDD 자동 검증** | Given/When/Then 시나리오별 검증 |
-| **ULTRAWORK 모드** | `ulw` 한 단어로 모든 최적화 활성화 |
-| **36개 내장 도구** | 코드 분석, 메모리 관리, 품질 검증 |
-| **자동 컨텍스트 관리** | 80%+ 자동 저장, 세션 복원 |
+| Feature | Description |
+|---------|-------------|
+| **Multi-model orchestration** | Claude + GPT-5.2 + Gemini 3 Pro |
+| **13+ parallel review agents** | Security, performance, architecture |
+| **BDD auto verification** | Given/When/Then scenario verification |
+| **ULTRAWORK mode** | One keyword enables all optimizations |
+| **36 built-in tools** | Code analysis, memory management, quality validation |
+| **Auto context management** | 80%+ auto-save, session restore |
 
-## ULTRAWORK 모드
+## ULTRAWORK Mode
 
-`ultrawork` 또는 `ulw` 키워드로 최대 성능 모드 활성화:
+Enable maximum performance with `ultrawork` or `ulw`:
 
 ```bash
-/vibe.run "기능명" ultrawork
-/vibe.run "기능명" ulw        # 동일
+/vibe.run "feature" ultrawork
+/vibe.run "feature" ulw        # Same
 ```
 
-**활성화 기능:**
-- 병렬 서브에이전트 탐색 (3+ 동시)
-- Boulder Loop (모든 시나리오 완료까지 자동 진행)
-- 에러 자동 재시도 (최대 3회)
-- Phase 간 확인 없이 연속 실행
-- 컨텍스트 80%+ 시 자동 저장
+**Enabled features:**
+- Parallel subagent exploration (3+ concurrent)
+- Boulder Loop (auto-progress until all scenarios complete)
+- Auto-retry on errors (max 3)
+- Continuous execution without phase confirmation
+- Auto-save at 80%+ context
 
-## 멀티모델 오케스트레이션
+## Multi-model Orchestration
 
-Claude Code에서 GPT, Gemini를 Hook prefix로 직접 호출:
+Call GPT/Gemini directly with hook prefixes:
 
-| LLM | Prefix | 예시 | 기능 |
-|-----|--------|------|------|
-| GPT | `gpt-`, `gpt.`, `지피티-` | `gpt.오늘 서울 날씨` | Web Search 지원 |
-| Gemini | `gemini-`, `gemini.`, `제미나이-` | `gemini-UI 개선점` | Google Search 지원 |
+| LLM | Prefix | Example | Features |
+|-----|--------|---------|----------|
+| GPT | `gpt-`, `gpt.` | `gpt.weather today` | Web Search enabled |
+| Gemini | `gemini-`, `gemini.` | `gemini.UI improvements` | Google Search enabled |
 
-| 상황 | 추천 모델 | 호출 예시 |
-|------|----------|----------|
-| 최신 정보 검색 | GPT | `gpt.React 19 변경사항` |
-| UI/UX 리뷰 | Gemini | `gemini.이 폼 UX 개선해줘` |
-| 아키텍처 검토 | GPT | `gpt-이 아키텍처 검토해줘` |
-| 코드 분석 | Gemini | `gemini-이 코드 분석해줘` |
+| Scenario | Recommended | Example |
+|----------|-------------|---------|
+| Latest info search | GPT | `gpt.React 19 changes` |
+| UI/UX review | Gemini | `gemini.improve this form UX` |
+| Architecture review | GPT | `gpt-review this architecture` |
+| Code analysis | Gemini | `gemini-analyze this code` |
 
-**직접 API 호출:**
+**Direct API call:**
 
 ```javascript
-import('@su-record/vibe/lib/gpt').then(g => g.quickWebSearch('오늘 날씨'))
-import('@su-record/vibe/lib/gemini').then(g => g.quickAsk('질문'))
+import('@su-record/vibe/lib/gpt').then(g => g.quickWebSearch('weather today'))
+import('@su-record/vibe/lib/gemini').then(g => g.quickAsk('question'))
 ```
 
-## 병렬 리뷰 에이전트
+## Parallel Review Agents
 
-`/vibe.review` 실행 시 13+ 에이전트가 동시 검토:
+`/vibe.review` runs 13+ agents concurrently:
 
-| 분야 | 에이전트 |
-|------|----------|
-| 보안 | security-reviewer, data-integrity-reviewer |
-| 성능 | performance-reviewer, complexity-reviewer |
-| 아키텍처 | architecture-reviewer, simplicity-reviewer |
-| 언어별 | python, typescript, rails, react reviewers |
-| 컨텍스트 | git-history, test-coverage reviewers |
+| Category | Agents |
+|----------|--------|
+| Security | security-reviewer, data-integrity-reviewer |
+| Performance | performance-reviewer, complexity-reviewer |
+| Architecture | architecture-reviewer, simplicity-reviewer |
+| Language | python, typescript, rails, react reviewers |
+| Context | git-history, test-coverage reviewers |
 
-**우선순위:**
-- 🔴 P1 (Critical): 머지 차단
-- 🟡 P2 (Important): 수정 권장
-- 🔵 P3 (Nice-to-have): 백로그
+**Priority:**
+- 🔴 P1 (Critical): Blocks merge
+- 🟡 P2 (Important): Recommended fix
+- 🔵 P3 (Nice-to-have): Backlog
 
-## 내장 도구
+## Built-in Tools
 
-| 도구 | 설명 |
-|------|------|
-| `vibe_find_symbol` | 심볼 정의 찾기 |
-| `vibe_find_references` | 참조 찾기 |
-| `vibe_analyze_complexity` | 복잡도 분석 |
-| `vibe_validate_code_quality` | 품질 검증 |
-| `vibe_start_session` | 세션 시작 (이전 컨텍스트 복원) |
-| `vibe_save_memory` | 중요 결정사항 저장 |
-| `vibe_auto_save_context` | 현재 상태 자동 저장 |
+| Tool | Description |
+|------|-------------|
+| `vibe_find_symbol` | Find symbol definition |
+| `vibe_find_references` | Find references |
+| `vibe_analyze_complexity` | Complexity analysis |
+| `vibe_validate_code_quality` | Quality validation |
+| `vibe_start_session` | Start session (restore previous context) |
+| `vibe_save_memory` | Save important decisions |
+| `vibe_auto_save_context` | Auto-save current state |
 
-## 프로젝트 구조
+## Project Structure
 
-**전역 설치 (`~/.claude/`):**
+**Global install (`~/.claude/`):**
 
 ```text
 ~/.claude/
-├── commands/       # 슬래시 커맨드 (7개)
-├── agents/         # 리뷰/리서치 에이전트
-├── skills/         # 자동 활성화 가이드 (7개)
-└── settings.json   # Hooks + MCP 설정
+├── commands/       # Slash commands (7)
+├── agents/         # Review/research agents
+├── skills/         # Auto-activated guides (7)
+└── settings.json   # Hooks + MCP settings
 ```
 
-**프로젝트별 (`프로젝트/.claude/vibe/`):**
+**Project-specific (`project/.claude/vibe/`):**
 
 ```text
 .claude/vibe/
-├── specs/          # SPEC 문서
-├── features/       # BDD 시나리오
-├── rules/          # 코딩 규칙 (기술스택별)
-├── solutions/      # 해결책 아카이브
-├── config.json     # 프로젝트 설정
-└── constitution.md # 프로젝트 원칙
+├── specs/          # SPEC documents
+├── features/       # BDD scenarios
+├── rules/          # Coding rules (per stack)
+├── solutions/      # Solution archive
+├── config.json     # Project settings
+└── constitution.md # Project principles
 ```
 
-## 코드 품질 기준
+## Code Quality Standards
 
-| 메트릭 | 제한 |
-|--------|------|
-| 함수 길이 | 30줄 권장, 50줄 허용 |
-| 중첩 깊이 | 3단계 이하 |
-| 매개변수 | 5개 이하 |
-| 순환 복잡도 | 10 이하 |
+| Metric | Limit |
+|--------|-------|
+| Function length | 30 lines recommended, 50 allowed |
+| Nesting depth | 3 levels max |
+| Parameters | 5 max |
+| Cyclomatic complexity | 10 max |
 
-## 사용 예시
+## Usage Example
 
 ```
-User: /vibe.spec "로그인 기능"
+User: /vibe.spec "login feature"
 
-Claude: 로그인 기능을 만드시는군요! 몇 가지 질문이 있습니다.
-        1. 인증 방식은? (이메일/비밀번호, OAuth, Passkey)
-        2. 기술 스택은?
+Claude: You're building a login feature! I have a few questions.
+        1. Auth method? (email/password, OAuth, Passkey)
+        2. Tech stack?
         ...
 
-[대화로 요구사항 확정]
-[4개 병렬 리서치 에이전트 실행]
+[Requirements confirmed via conversation]
+[4 parallel research agents run]
 
-✅ SPEC 문서 생성 완료
+✅ SPEC document created
 📄 .claude/vibe/specs/login.md
 📄 .claude/vibe/features/login.feature
 
-다음 단계: /vibe.run "로그인 기능" ultrawork
+Next: /vibe.run "login feature" ultrawork
 ```
 
-## 요구사항
+## Requirements
 
 - Node.js 18.0.0+
 - Claude Code
 
-## 라이선스
+## License
 
 MIT - [GitHub](https://github.com/su-record/vibe)
 
 ## Vibe Setup (AI Coding)
 
-이 프로젝트는 [Vibe](https://github.com/su-record/vibe) AI 코딩 프레임워크를 사용합니다.
+This project uses [Vibe](https://github.com/su-record/vibe) AI coding framework.
 
-### 협업자 설치
+### Collaborator Install
 
 ```bash
-# 전역 설치 (권장)
+# Global install (recommended)
 npm install -g @su-record/vibe
 vibe update
 
-# 또는 setup 스크립트 실행
+# Or run setup script
 ./.claude/vibe/setup.sh
 ```
 
-### 사용법
+### Usage
 
-Claude Code에서 슬래시 커맨드 사용:
-- `/vibe.spec "기능명"` - SPEC 문서 작성
-- `/vibe.run "기능명"` - 구현 실행
+Use slash commands in Claude Code:
+- `/vibe.spec "feature"` - Create SPEC document
+- `/vibe.run "feature"` - Execute implementation
