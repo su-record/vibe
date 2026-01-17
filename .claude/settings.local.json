@@ -29,7 +29,16 @@
       "Bash(npm root:*)",
       "Bash(npm unlink:*)",
       "Bash(npm publish:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(vibe update:*)",
+      "Bash(cd:*)",
+      "Bash(npm --version:*)",
+      "Bash(gh release create v2.4.46 --title \"v2.4.46\" --notes \"$\\(cat <<''EOF''\n## Changes\n\n- **Context7 plugin approach**: Replaced MCP auto-registration with plugin + subagent isolation\n  - Users now install context7 as a plugin: `/plugin marketplace add upstash/context7`\n  - Subagent pattern prevents main context bloat during docs queries\n  - Solves knowledge cutoff problem for long coding sessions\n\n- **Updated skill documentation**: `context7-usage.md` now guides subagent-based usage\n\n## Install / Update\n\n```bash\nnpm install -g @su-record/vibe\nvibe update\n```\n\n## Context7 Plugin Setup\n\n```bash\n/plugin marketplace add upstash/context7\n/plugin install context7-plugin@context7-marketplace\n```\nEOF\n\\)\")",
+      "Bash(claude plugin --help:*)",
+      "Bash(claude plugin list:*)",
+      "Bash(tsc:*)",
+      "Bash(cmd.exe /c \"npm run build\")",
+      "Bash(powershell.exe -Command \"npm run build\")"
     ]
   }
 }

@@ -6,6 +6,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { getValidAccessToken } from './gpt-oauth.js';
 import { CHATGPT_BASE_URL } from './gpt-constants.js';
 import { sleep, warnLog } from './utils.js';
@@ -19,18 +20,25 @@ interface AuthInfo {
   email?: string;
 }
 
-// config에서 API Key 가져오기
+// 전역 설정 디렉토리 경로
+function getGlobalConfigDir(): string {
+  return process.platform === 'win32'
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+}
+
+// API Key 가져오기 (전역 저장소)
 function getApiKeyFromConfig(): string | null {
   try {
-    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      if (config.models?.gpt?.apiKey) {
-        return config.models.gpt.apiKey;
+    const globalKeyPath = path.join(getGlobalConfigDir(), 'gpt-apikey.json');
+    if (fs.existsSync(globalKeyPath)) {
+      const data = JSON.parse(fs.readFileSync(globalKeyPath, 'utf-8'));
+      if (data.apiKey) {
+        return data.apiKey;
       }
     }
   } catch (e) {
-    warnLog('Failed to read GPT API key from config', e);
+    warnLog('GPT API 키 읽기 실패', e);
   }
   return null;
 }

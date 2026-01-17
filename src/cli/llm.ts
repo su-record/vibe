@@ -65,7 +65,7 @@ ${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : '
     fs.mkdirSync(globalConfigDir, { recursive: true });
   }
 
-  const authFile = path.join(globalConfigDir, `${llmType}-auth.json`);
+  const authFile = path.join(globalConfigDir, `${llmType}-apikey.json`);
   const authData = {
     type: 'apikey',
     apiKey: apiKey,
@@ -110,30 +110,49 @@ Disable: vibe remove ${llmType}
 }
 
 /**
- * 외부 LLM 제거
+ * 외부 LLM 제거 (전역 + 프로젝트)
  */
 export function removeExternalLLM(llmType: string): void {
+  const globalConfigDir = getGlobalConfigDir();
+  let removed = false;
+
+  // 1. 전역 API 키 파일 삭제
+  const apiKeyFile = path.join(globalConfigDir, `${llmType}-apikey.json`);
+  if (fs.existsSync(apiKeyFile)) {
+    fs.unlinkSync(apiKeyFile);
+    removed = true;
+  }
+
+  // 2. 전역 OAuth 토큰 파일 삭제
+  const authFile = path.join(globalConfigDir, `${llmType}-auth.json`);
+  if (fs.existsSync(authFile)) {
+    fs.unlinkSync(authFile);
+    removed = true;
+  }
+
+  // 3. 프로젝트 config.json 비활성화 (선택적)
   const projectRoot = process.cwd();
   const vibeDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(vibeDir, 'config.json');
 
-  if (!fs.existsSync(vibeDir)) {
-    console.log('❌ Not a vibe project.');
-    return;
-  }
-
   if (fs.existsSync(configPath)) {
-    const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    if (config.models?.[llmType as 'gpt' | 'gemini']) {
-      config.models[llmType as 'gpt' | 'gemini']!.enabled = false;
-      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-    }
+    try {
+      const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (config.models?.[llmType as 'gpt' | 'gemini']) {
+        config.models[llmType as 'gpt' | 'gemini']!.enabled = false;
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      }
+    } catch { /* ignore */ }
   }
 
   const llmConfig = EXTERNAL_LLMS[llmType];
-
   unregisterMcp(llmConfig.name);
-  console.log(`✅ ${llmType.toUpperCase()} disabled`);
+
+  if (removed) {
+    console.log(`✅ ${llmType.toUpperCase()} 인증 정보 삭제됨`);
+  } else {
+    console.log(`ℹ️ ${llmType.toUpperCase()} 인증 정보 없음`);
+  }
 }
 
 // ============================================================================
