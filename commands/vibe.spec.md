@@ -10,7 +10,84 @@ Create a SPEC document (Specification Agent).
 ## Usage
 
 ```
-/vibe.spec "feature-name"
+/vibe.spec "feature-name"           # 대화 모드 (요구사항 수집)
+/vibe.spec "docs/login-prd.md"      # 파일 입력 (자동 감지)
+/vibe.spec "requirements.txt"       # 파일 입력
+```
+
+## Input Mode Detection (자동 감지)
+
+**인자가 파일 경로인지 자동 판단:**
+
+```
+입력값 → 파일 존재 확인 → 존재하면 파일 모드 / 없으면 대화 모드
+```
+
+| 판단 기준 | 결과 |
+|----------|------|
+| **파일이 존재하면** | → 파일 입력 모드 (Read tool로 읽기) |
+| 파일이 없으면 | → 대화 모드 (기능명으로 시작) |
+
+**지원하는 모든 파일:**
+- 텍스트: `.md`, `.txt`, `.rst`, `.html`, `.json`, `.yaml` 등
+- 문서: `.pdf` (페이지별 분석)
+- 이미지: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg` 등
+- 노트북: `.ipynb` (Jupyter)
+- **Claude가 읽을 수 있는 모든 형식**
+
+**파일 입력 모드 흐름:**
+
+```
+/vibe.spec "docs/login-prd.md"
+
+📄 파일 로드: docs/login-prd.md (2.3KB)
+
+📋 파싱된 요구사항:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  기능: 로그인
+  - 이메일/비밀번호 로그인
+  - 소셜 로그인 (Google, Apple)
+  - 비밀번호 찾기
+  - 자동 로그인 유지
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❓ 추가 확인 필요:
+  1. 세션 만료 시간? (기본값: 24시간)
+  2. 동시 로그인 허용 여부?
+  3. 기술 스택 확인? (현재: React + Supabase)
+
+User: 1시간, 불허, 확인
+
+✅ 요구사항 확정 → 리서치 실행 → SPEC 생성 → 리뷰
+```
+
+**지원 파일 형식:**
+
+| 형식 | 확장자 | 용도 |
+|------|--------|------|
+| 마크다운 | `.md` | PRD, 기획서, README |
+| 텍스트 | `.txt` | 요구사항 목록 |
+| PDF | `.pdf` | 기획서, 디자인 문서 |
+| 이미지 | `.png`, `.jpg`, `.jpeg`, `.webp` | 와이어프레임, UI 디자인, 스크린샷 |
+
+**이미지 입력 예시:**
+```
+/vibe.spec "designs/login-wireframe.png"
+
+🖼️ 이미지 분석: designs/login-wireframe.png
+
+📋 감지된 UI 요소:
+  - 이메일 입력 필드
+  - 비밀번호 입력 필드
+  - "로그인" 버튼
+  - "비밀번호 찾기" 링크
+  - 소셜 로그인 버튼 (Google, Apple)
+
+❓ 확인 필요:
+  1. 기능명? (예: "login")
+  2. 추가 요구사항?
+
+→ SPEC 생성
 ```
 
 ## Rules Reference
