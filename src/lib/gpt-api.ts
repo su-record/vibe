@@ -10,109 +10,6 @@ import { getValidAccessToken } from './gpt-oauth.js';
 import { CHATGPT_BASE_URL } from './gpt-constants.js';
 import { sleep, warnLog } from './utils.js';
 
-// ============================================
-// Tavily Web Search Integration
-// ============================================
-
-interface TavilySearchResult {
-  title: string;
-  url: string;
-  content: string;
-  score: number;
-}
-
-interface TavilyResponse {
-  results: TavilySearchResult[];
-  answer?: string;
-}
-
-/**
- * Tavily API로 웹 검색 수행
- */
-async function searchWithTavily(query: string): Promise<string> {
-  const apiKey = getTavilyApiKey();
-  if (!apiKey) {
-    throw new Error('Tavily API 키가 설정되지 않았습니다. TAVILY_API_KEY 환경변수 또는 config.json에 설정하세요.');
-  }
-
-  try {
-    const response = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: apiKey,
-        query: query,
-        search_depth: 'advanced',
-        max_results: 5,
-        include_answer: true,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Tavily API 오류 (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json() as TavilyResponse;
-
-    // 검색 결과 포맷팅
-    let result = '';
-    if (data.answer) {
-      result += `**요약:** ${data.answer}\n\n`;
-    }
-    result += '**검색 결과:**\n';
-    for (const item of data.results.slice(0, 5)) {
-      result += `- [${item.title}](${item.url})\n  ${item.content.slice(0, 200)}...\n\n`;
-    }
-    return result;
-  } catch (error) {
-    throw new Error(`웹 검색 실패: ${(error as Error).message}`);
-  }
-}
-
-/**
- * Tavily API 키 가져오기
- */
-function getTavilyApiKey(): string | null {
-  // 1. 환경변수에서 확인
-  if (process.env.TAVILY_API_KEY) {
-    return process.env.TAVILY_API_KEY;
-  }
-
-  // 2. config.json에서 확인
-  try {
-    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      if (config.tavily?.apiKey) {
-        return config.tavily.apiKey;
-      }
-    }
-  } catch (e) {
-    warnLog('Failed to read Tavily API key from config', e);
-  }
-
-  return null;
-}
-
-// OpenAI Function Calling 도구 정의
-const WEB_SEARCH_TOOL = {
-  type: 'function' as const,
-  function: {
-    name: 'web_search',
-    description: '실시간 정보, 최신 뉴스, 날씨, 주가 등 현재 데이터가 필요할 때 웹 검색을 수행합니다.',
-    parameters: {
-      type: 'object',
-      properties: {
-        query: {
-          type: 'string',
-          description: '검색할 쿼리 (구체적이고 명확하게)',
-        },
-      },
-      required: ['query'],
-    },
-  },
-};
 
 // 인증 정보 타입
 interface AuthInfo {
@@ -416,7 +313,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
   const maxRetries = 3;
 
   // 웹 검색이 활성화되면 도구 추가
-  const tools = webSearch && getTavilyApiKey() ? [WEB_SEARCH_TOOL] : undefined;
+  const tools = webSearch ? [{ type: 'web_search' as const }] : undefined;
 
   try {
     // 1차 API 호출
@@ -465,63 +362,6 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     const result = await response.json() as OpenAIResponse;
     const assistantMessage = result.choices[0]?.message;
 
-    // Function Calling 처리 (웹 검색)
-    if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
-      // 메시지에 assistant 응답 추가
-      apiMessages.push({
-        role: 'assistant',
-        content: assistantMessage.content,
-        ...({ tool_calls: assistantMessage.tool_calls } as Record<string, unknown>),
-      } as typeof apiMessages[0]);
-
-      // 각 도구 호출 처리
-      for (const toolCall of assistantMessage.tool_calls) {
-        if (toolCall.function.name === 'web_search') {
-          const args = JSON.parse(toolCall.function.arguments) as { query: string };
-          let searchResult: string;
-
-          try {
-            searchResult = await searchWithTavily(args.query);
-          } catch (error) {
-            searchResult = `검색 오류: ${(error as Error).message}`;
-          }
-
-          // 도구 결과 추가
-          apiMessages.push({
-            role: 'tool',
-            content: searchResult,
-            tool_call_id: toolCall.id,
-            name: 'web_search',
-          });
-        }
-      }
-
-      // 2차 API 호출 (검색 결과 포함)
-      const secondResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: actualModel,
-          messages: apiMessages,
-          max_tokens: maxTokens,
-          temperature,
-        }),
-      });
-
-      if (!secondResponse.ok) {
-        throw new Error(`OpenAI API 2차 호출 오류 (${secondResponse.status})`);
-      }
-
-      const secondResult = await secondResponse.json() as OpenAIResponse;
-      return {
-        content: secondResult.choices[0]?.message?.content || '',
-        model: secondResult.model,
-        finishReason: secondResult.choices[0]?.finish_reason || 'stop',
-      };
-    }
 
     // 일반 응답 (Function Calling 없음)
     return {
@@ -541,7 +381,6 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 
 /**
  * GPT API 호출 (Codex Backend - OAuth 방식)
- * - webSearch가 true이면 Tavily로 먼저 검색 후 결과를 컨텍스트로 전달
  */
 async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise<ChatResponse> {
   const {
@@ -557,19 +396,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
   // Codex instructions 가져오기
   const instructions = await getCodexInstructions(modelInfo.id);
 
-  // 웹 검색이 필요하면 Tavily로 먼저 검색
-  let searchContext = '';
-  if (webSearch && getTavilyApiKey()) {
-    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-    if (lastUserMessage) {
-      try {
-        searchContext = await searchWithTavily(lastUserMessage.content);
-        searchContext = `\n\n<web_search_results>\n${searchContext}\n</web_search_results>`;
-      } catch {
-        // 검색 실패 시 무시하고 계속 진행
-      }
-    }
-  }
+  // 웹 검색은 Codex API의 web_search 도구로 처리
 
   // 메시지를 Codex 형식으로 변환
   const input = messages.map(msg => ({
@@ -578,13 +405,13 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
     content: [{ type: 'input_text', text: msg.content }],
   }));
 
-  // 시스템 프롬프트 + 검색 결과를 instructions에 추가
+  // 시스템 프롬프트를 instructions에 추가
   let finalInstructions = instructions;
-  if (systemPrompt || searchContext) {
-    finalInstructions = `${instructions}\n\n<user_context>\n${systemPrompt}${searchContext}\n</user_context>`;
+  if (systemPrompt) {
+    finalInstructions = `${instructions}\n\n<user_context>\n${systemPrompt}\n</user_context>`;
   }
 
-  // 요청 본문 (web_search_preview 도구는 사용하지 않음 - 지원 안 됨)
+  // 요청 본문 (web_search 도구 활성화)
   const requestBody: Record<string, unknown> = {
     model: modelInfo.id,
     store: false,
@@ -595,6 +422,9 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
     text: { verbosity: 'medium' },
     include: ['reasoning.encrypted_content'],
   };
+
+  // 참고: Codex API는 web_search 도구를 지원하지 않음
+  // 웹 검색이 필요하면 API Key 방식 사용 권장
 
   // API 호출 (재시도 로직 포함)
   const retryCount = options._retryCount || 0;
@@ -660,17 +490,10 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
 
 /**
  * GPT API 호출 (OAuth 또는 API Key 자동 선택 + Fallback)
- * - webSearch 옵션이 있으면 Tavily를 통해 검색 (API Key 방식 권장)
  */
 export async function chat(options: ChatOptions): Promise<ChatResponse> {
   const authInfo = await getAuthInfo();
   const apiKey = getApiKeyFromConfig();
-
-  // 웹 검색이 필요하고 Tavily API 키가 있으면 API Key 방식 우선 사용
-  // (Codex API는 web_search_preview를 지원하지 않음)
-  if (options.webSearch && getTavilyApiKey() && apiKey) {
-    return chatWithApiKey(apiKey, options);
-  }
 
   // API Key 방식
   if (authInfo.type === 'apikey' && authInfo.apiKey) {
@@ -695,7 +518,7 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
                             errorMsg.includes('Unsupported tool') ||
                             errorMsg.includes('web_search');
       if (apiKey && shouldFallback) {
-        console.log('⚠️ OAuth 오류 → API Key + Tavily로 전환');
+        console.log('⚠️ OAuth 오류 → API Key로 전환');
         return chatWithApiKey(apiKey, options);
       }
       throw error;
