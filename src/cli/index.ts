@@ -158,36 +158,11 @@ async function init(projectName?: string): Promise<void> {
     setupCollaboratorAutoInstall(projectRoot);
 
     // 완료 메시지
-    log(`
-✅ vibe initialized!
-
-${isNewProject ? `Project location:
-  ${projectRoot}/
-
-` : ''}Global (~/.claude/):
-  commands/     Slash commands (7)
-  agents/       Subagents
-  skills/       Skills (7)
-  settings.json Hooks + MCP
-
-Project (.claude/vibe/):
-  config.json       Project config
-  constitution.md   Project principles
-  rules/            Coding rules
-  specs/            SPEC documents
-  features/         BDD features
-
-Built-in tools: ✓ (35+)
-
+    const packageJson = getPackageJson();
+    log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus()}
-
-Usage:
-  /vibe.spec "feature"    Create SPEC
-  /vibe.run "feature"     Implement
-  /vibe.verify "feature"  Verify
-
 Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"
-    `);
+`);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -207,27 +182,20 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
 
     const isNewer = compareVersions(latestVersion, currentVersion) > 0;
     if (isNewer) {
-      log(`   📦 New version: v${currentVersion} → v${latestVersion}\n`);
-      log('   ⬆️  Upgrading vibe...\n');
+      log(`⬆️ Upgrading v${currentVersion} → v${latestVersion}...\n`);
 
       execSync('npm install -g @su-record/vibe@latest', {
         stdio: options.silent ? 'pipe' : 'inherit'
       });
 
-      log('   ✅ Upgrade complete!\n');
-
-      log('   🔄 Re-running update...\n\n');
       execSync(`vibe update${options.silent ? ' --silent' : ''}`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
       return true;
-    } else {
-      log(`   ✅ Up to date (v${currentVersion})\n`);
-      return false;
     }
+    return false;
   } catch { /* ignore: optional operation */
-    log(`   ℹ️  Version check skipped (offline)\n`);
     return false;
   }
 }
@@ -258,8 +226,6 @@ async function update(): Promise<void> {
 
     ensureDir(vibeDir);
 
-    log('🔄 Updating vibe...\n');
-
     // 최신 버전 확인
     if (!options.silent) {
       const wasUpgraded = await checkAndUpgradeVibe();
@@ -277,18 +243,12 @@ async function update(): Promise<void> {
 
     // constitution.md 업데이트
     updateConstitution(vibeDir, detectedStacks, stackDetails);
-    log('   ✅ constitution.md updated\n');
 
     // CLAUDE.md 업데이트
     updateClaudeMd(projectRoot, detectedStacks, true);
 
     // 규칙 업데이트
     updateRules(vibeDir, detectedStacks, true);
-
-    if (detectedStacks.length > 0) {
-      const detectedTypes = new Set(detectedStacks.map(s => s.type));
-      log(`   🔍 Detected: ${Array.from(detectedTypes).join(', ')}\n`);
-    }
 
     // 전역 vibe 패키지 먼저 설치 (~/.config/vibe/) - hooks에서 참조함
     installGlobalVibePackage(true);
@@ -315,17 +275,7 @@ async function update(): Promise<void> {
     cleanupLegacyMcp(vibeDir);
 
     const packageJson = getPackageJson();
-    log(`
-✅ vibe updated! (v${packageJson.version})
-
-Updated:
-  - Slash commands (7)
-  - Coding rules
-  - Subagents
-  - Hooks
-
-${formatLLMStatus()}
-    `);
+    log(`✅ vibe updated (v${packageJson.version})\n${formatLLMStatus()}`);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);

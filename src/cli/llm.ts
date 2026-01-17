@@ -39,12 +39,12 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
 export function setupExternalLLM(llmType: string, apiKey: string): void {
   if (!apiKey) {
     console.log(`
-❌ API 키가 필요합니다.
+❌ API key required.
 
-사용법:
+Usage:
   vibe ${llmType} <api-key>
 
-${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : 'Google API 키: https://aistudio.google.com/apikey'}
+${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : 'Google API key: https://aistudio.google.com/apikey'}
     `);
     return;
   }
@@ -127,10 +127,10 @@ export function removeExternalLLM(llmType: string): void {
  */
 export async function gptAuth(): Promise<void> {
   console.log(`
-🔐 GPT Plus/Pro 인증 (OAuth)
+🔐 GPT Plus/Pro Authentication (OAuth)
 
-ChatGPT Plus 또는 Pro 구독이 있으면 Codex API를 사용할 수 있습니다.
-브라우저에서 OpenAI 계정으로 로그인하세요.
+With ChatGPT Plus or Pro subscription, you can use the Codex API.
+Login with your OpenAI account in browser.
   `);
 
   try {
@@ -152,16 +152,15 @@ ChatGPT Plus 또는 Pro 구독이 있으면 Codex API를 사용할 수 있습니
     });
 
     console.log(`
-✅ GPT 인증 완료!
+✅ GPT authenticated!
 
-계정: ${tokens.email}
-계정 ID: ${tokens.accountId || '(자동 감지)'}
+Account: ${tokens.email}
+Account ID: ${tokens.accountId || '(auto-detected)'}
 
-⚠️  참고: ChatGPT Plus/Pro 구독이 있어야 API 호출이 가능합니다.
-    구독이 없으면 인증은 성공하지만 API 호출 시 오류가 발생합니다.
+⚠️  Note: ChatGPT Plus/Pro subscription required for API calls.
 
-상태 확인: vibe status gpt
-로그아웃: vibe logout gpt
+Status: vibe status gpt
+Logout: vibe logout gpt
     `);
 
     // config.json 업데이트
@@ -185,9 +184,9 @@ ChatGPT Plus 또는 Pro 구독이 있으면 Codex API를 사용할 수 있습니
     }
 
     console.log(`
-GPT는 Hook으로 직접 호출됩니다:
-  - "gpt한테 물어봐" 키워드로 자동 호출
-  - import('@su-record/vibe/lib/gpt') 로 직접 사용 가능
+GPT is called via Hooks:
+  - Auto-called with "gpt. query" prefix
+  - Direct use: import('@su-record/vibe/lib/gpt')
     `);
 
     process.exit(0);
@@ -195,11 +194,11 @@ GPT는 Hook으로 직접 호출됩니다:
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`
-❌ GPT 인증 실패
+❌ GPT authentication failed
 
-오류: ${message}
+Error: ${message}
 
-다시 시도하려면: vibe gpt --auth
+Retry: vibe gpt --auth
     `);
     process.exit(1);
   }
@@ -217,11 +216,11 @@ export function gptStatus(): void {
 
     if (accounts.length === 0) {
       console.log(`
-📊 GPT 인증 상태
+📊 GPT Status
 
-인증된 계정 없음
+No authenticated account
 
-로그인: vibe gpt --auth
+Login: vibe gpt --auth
       `);
       return;
     }
@@ -230,24 +229,24 @@ export function gptStatus(): void {
     const isExpired = storage.isTokenExpired(activeAccount);
 
     console.log(`
-📊 GPT 인증 상태
+📊 GPT Status
 
-활성 계정: ${activeAccount.email}
-계정 ID: ${activeAccount.accountId || '(없음)'}
-토큰 상태: ${isExpired ? '⚠️  만료됨 (자동 갱신됨)' : '✅ 유효'}
-마지막 사용: ${new Date(activeAccount.lastUsed).toLocaleString()}
+Active: ${activeAccount.email}
+Account ID: ${activeAccount.accountId || '(none)'}
+Token: ${isExpired ? '⚠️  Expired (auto-refresh)' : '✅ Valid'}
+Last used: ${new Date(activeAccount.lastUsed).toLocaleString()}
 
-등록된 계정 (${accounts.length}개):
+Accounts (${accounts.length}):
 ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAccounts()?.activeIndex ? '→' : ' '} ${acc.email}`).join('\n')}
 
-⚠️  참고: ChatGPT Plus/Pro 구독이 있어야 API 호출이 가능합니다.
+⚠️  Note: ChatGPT Plus/Pro subscription required.
 
-로그아웃: vibe logout gpt
+Logout: vibe logout gpt
     `);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('상태 확인 실패:', message);
+    console.error('Status check failed:', message);
   }
 }
 
@@ -269,11 +268,11 @@ export function gptLogout(): void {
     storage.clearAccounts();
 
     console.log(`
-✅ GPT 로그아웃 완료
+✅ GPT logged out
 
-${activeAccount.email} 계정이 제거되었습니다.
+Account ${activeAccount.email} removed.
 
-다시 로그인: vibe gpt --auth
+Login again: vibe gpt --auth
     `);
 
     // config.json 업데이트
@@ -295,7 +294,7 @@ ${activeAccount.email} 계정이 제거되었습니다.
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('로그아웃 실패:', message);
+    console.error('Logout failed:', message);
   }
 }
 
@@ -308,10 +307,10 @@ ${activeAccount.email} 계정이 제거되었습니다.
  */
 export async function geminiAuth(): Promise<void> {
   console.log(`
-🔐 Gemini 구독 인증 (OAuth)
+🔐 Gemini Authentication (OAuth)
 
-Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니다.
-브라우저에서 Google 계정으로 로그인하세요.
+With Gemini Advanced subscription, you can use it at no additional cost.
+Login with your Google account in browser.
   `);
 
   try {
@@ -332,19 +331,17 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
     });
 
     console.log(`
-✅ Gemini 인증 완료!
+✅ Gemini authenticated!
 
-계정: ${tokens.email}
-프로젝트: ${tokens.projectId || '(자동 감지)'}
+Account: ${tokens.email}
+Project: ${tokens.projectId || '(auto-detected)'}
 
-사용 가능한 모델:
-  - Gemini 3 Flash (빠른 응답, 탐색/검색)
-  - Gemini 3 Pro (높은 정확도)
+Available models:
+  - Gemini 3 Flash (fast, exploration/search)
+  - Gemini 3 Pro (high accuracy)
 
-/vibe.run 실행 시 자동으로 Gemini가 보조 모델로 활용됩니다.
-
-상태 확인: vibe status gemini
-로그아웃: vibe logout gemini
+Status: vibe status gemini
+Logout: vibe logout gemini
     `);
 
     // config.json 업데이트
@@ -368,9 +365,9 @@ Gemini Advanced 구독이 있으면 추가 비용 없이 사용할 수 있습니
     }
 
     console.log(`
-Gemini는 Hook으로 직접 호출됩니다:
-  - "gemini한테 물어봐" 키워드로 자동 호출
-  - import('@su-record/vibe/lib/gemini') 로 직접 사용 가능
+Gemini is called via Hooks:
+  - Auto-called with "gemini. query" prefix
+  - Direct use: import('@su-record/vibe/lib/gemini')
     `);
 
     process.exit(0);
@@ -378,11 +375,11 @@ Gemini는 Hook으로 직접 호출됩니다:
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`
-❌ Gemini 인증 실패
+❌ Gemini authentication failed
 
-오류: ${message}
+Error: ${message}
 
-다시 시도하려면: vibe gemini --auth
+Retry: vibe gemini --auth
     `);
     process.exit(1);
   }
@@ -403,11 +400,11 @@ export function geminiStatus(): void {
 
     if (accounts.length === 0) {
       console.log(`
-📊 Gemini 인증 상태
+📊 Gemini Status
 
-인증된 계정 없음
+No authenticated account
 
-로그인: vibe gemini --auth
+Login: vibe gemini --auth
       `);
       return;
     }
@@ -416,25 +413,25 @@ export function geminiStatus(): void {
     const isExpired = storage.isTokenExpired(activeAccount);
 
     console.log(`
-📊 Gemini 인증 상태
+📊 Gemini Status
 
-활성 계정: ${activeAccount.email}
-프로젝트: ${activeAccount.projectId || '(자동)'}
-토큰 상태: ${isExpired ? '⚠️  만료됨 (자동 갱신됨)' : '✅ 유효'}
-마지막 사용: ${new Date(activeAccount.lastUsed).toLocaleString()}
+Active: ${activeAccount.email}
+Project: ${activeAccount.projectId || '(auto)'}
+Token: ${isExpired ? '⚠️  Expired (auto-refresh)' : '✅ Valid'}
+Last used: ${new Date(activeAccount.lastUsed).toLocaleString()}
 
-등록된 계정 (${accounts.length}개):
+Accounts (${accounts.length}):
 ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAccounts()?.activeIndex ? '→' : ' '} ${acc.email}`).join('\n')}
 
-사용 가능한 모델:
+Available models:
 ${Object.entries(GEMINI_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
 
-로그아웃: vibe logout gemini
+Logout: vibe logout gemini
     `);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('상태 확인 실패:', message);
+    console.error('Status check failed:', message);
   }
 }
 
@@ -456,11 +453,11 @@ export function geminiLogout(): void {
     storage.clearAccounts();
 
     console.log(`
-✅ Gemini 로그아웃 완료
+✅ Gemini logged out
 
-${activeAccount.email} 계정이 제거되었습니다.
+Account ${activeAccount.email} removed.
 
-다시 로그인: vibe gemini --auth
+Login again: vibe gemini --auth
     `);
 
     // config.json 업데이트
@@ -482,7 +479,7 @@ ${activeAccount.email} 계정이 제거되었습니다.
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('로그아웃 실패:', message);
+    console.error('Logout failed:', message);
   }
 }
 
@@ -491,34 +488,34 @@ ${activeAccount.email} 계정이 제거되었습니다.
 // ============================================================================
 
 /**
- * 인증 도움말
+ * Auth help
  */
 export function showAuthHelp(): void {
   console.log(`
-🔐 vibe auth - LLM 인증
+🔐 vibe auth - LLM Authentication
 
-사용법:
-  vibe auth gpt                   GPT Plus/Pro OAuth 인증
-  vibe auth gpt --key <key>       GPT API 키로 설정
-  vibe auth gemini                Gemini 구독 OAuth 인증 (권장)
-  vibe auth gemini --key <key>    Gemini API 키로 설정
+Usage:
+  vibe auth gpt                   GPT Plus/Pro OAuth
+  vibe auth gpt --key <key>       GPT API key
+  vibe auth gemini                Gemini OAuth (recommended)
+  vibe auth gemini --key <key>    Gemini API key
 
-예시:
-  vibe auth gpt                   OpenAI 로그인 (Plus/Pro 구독 필요)
-  vibe auth gemini                Google 로그인 (Gemini Advanced 구독 시 무료)
-  vibe auth gpt --key sk-xxx      API 키로 설정 (사용량 과금)
+Examples:
+  vibe auth gpt                   OpenAI login (Plus/Pro subscription required)
+  vibe auth gemini                Google login (free with Gemini Advanced)
+  vibe auth gpt --key sk-xxx      API key (usage-based billing)
   `);
 }
 
 /**
- * 로그아웃 도움말
+ * Logout help
  */
 export function showLogoutHelp(): void {
   console.log(`
-🚪 vibe logout - LLM 로그아웃
+🚪 vibe logout - LLM Logout
 
-사용법:
-  vibe logout gpt       GPT 로그아웃
-  vibe logout gemini    Gemini 로그아웃
+Usage:
+  vibe logout gpt       GPT logout
+  vibe logout gemini    Gemini logout
   `);
 }

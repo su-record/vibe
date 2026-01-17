@@ -53,12 +53,8 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
 
       if (modified) {
         fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
-        log('   ✅ package.json cleaned up (legacy vibe settings removed)\n');
       }
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      log('   ⚠️  package.json modification failed: ' + message + '\n');
-    }
+    } catch { /* ignore: optional operation */ }
   }
 
   // 2. .claude/vibe/setup.sh 생성
@@ -101,7 +97,6 @@ echo "  /vibe.run \\"feature\\"     Implement"
 `;
     fs.writeFileSync(setupShPath, setupScript);
     fs.chmodSync(setupShPath, '755');
-    log('   ✅ Collaborator setup script created (.claude/vibe/setup.sh)\n');
   }
 
   // 3. README.md에 협업자 안내 추가
@@ -133,10 +128,8 @@ Use slash commands in Claude Code:
     const readme = fs.readFileSync(readmePath, 'utf-8');
     if (!readme.includes('## Vibe Setup')) {
       fs.appendFileSync(readmePath, vibeSetupSection);
-      log('   ✅ README.md collaborator guide added\n');
     }
   } else {
     fs.writeFileSync(readmePath, `# Project\n${vibeSetupSection}`);
-    log('   ✅ README.md created (with collaborator guide)\n');
   }
 }
