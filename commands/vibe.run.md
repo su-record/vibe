@@ -890,6 +890,31 @@ Then: 로그인 성공 + JWT 토큰 반환
 └─────────────────────────────────────────────────────────────────┘
 
 🎉 구현 완료! 모든 시나리오 통과 + Gemini 리뷰 반영.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 AUTO REVIEW (13+ Agents)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚡ [PARALLEL] 13개 전문 에이전트 리뷰 중...
+  - security-reviewer ✅
+  - performance-reviewer ✅
+  - architecture-reviewer ✅
+  - ...
+
+📋 리뷰 결과:
+  - P1 Critical: 0
+  - P2 Important: 2
+  - P3 Nice-to-have: 1
+
+🔧 P2 자동 수정 중...
+  1. [PERF] N+1 쿼리 → 수정 완료
+  2. [ARCH] 순환 의존성 → 수정 완료
+
+📝 배운점 저장: .claude/vibe/lessons/
+  - 2024-01-15-n1-query-fix.md
+  - 2024-01-15-circular-dep-fix.md
+
+✅ Auto Review 완료! 2개 문제 자동 해결.
 ```
 
 ### Phase-specific Execution
