@@ -33,7 +33,6 @@ export { validateCodeQuality } from './convention/validateCodeQuality.js';
 export { checkCouplingCohesion } from './convention/checkCouplingCohesion.js';
 export { suggestImprovements } from './convention/suggestImprovements.js';
 export { applyQualityRules } from './convention/applyQualityRules.js';
-export { getCodingGuide } from './convention/getCodingGuide.js';
 
 // Thinking tools
 export { createThinkingChain } from './thinking/createThinkingChain.js';

@@ -6,4 +6,3 @@ export { validateCodeQuality } from './validateCodeQuality.js';
 export { checkCouplingCohesion } from './checkCouplingCohesion.js';
 export { suggestImprovements } from './suggestImprovements.js';
 export { applyQualityRules } from './applyQualityRules.js';
-export { getCodingGuide } from './getCodingGuide.js';

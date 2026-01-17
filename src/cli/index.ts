@@ -533,7 +533,6 @@ export { validateCodeQuality } from '../tools/convention/validateCodeQuality.js'
 export { checkCouplingCohesion } from '../tools/convention/checkCouplingCohesion.js';
 export { suggestImprovements } from '../tools/convention/suggestImprovements.js';
 export { applyQualityRules } from '../tools/convention/applyQualityRules.js';
-export { getCodingGuide } from '../tools/convention/getCodingGuide.js';
 
 export { createThinkingChain } from '../tools/thinking/createThinkingChain.js';
 export { analyzeProblem } from '../tools/thinking/analyzeProblem.js';
