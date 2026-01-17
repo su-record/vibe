@@ -81,6 +81,23 @@ export function installGlobalVibePackage(isUpdate = false): void {
       });
       log('   ✅ vibe 패키지 전역 설치 완료 (v' + currentVersion + ')\n');
     }
+
+    // hooks/scripts 폴더를 VIBE_PATH에 복사 (hooks.json에서 참조)
+    // 소스 우선순위: 1) 방금 설치한 패키지 2) 현재 실행 패키지 루트 (npm link 등)
+    const packageRoot = path.resolve(__dirname, '..', '..');
+    const installedHooksSource = path.join(vibePackageDir, 'hooks', 'scripts');
+    const localHooksSource = path.join(packageRoot, 'hooks', 'scripts');
+    const hooksScriptsSource = fs.existsSync(installedHooksSource) ? installedHooksSource : localHooksSource;
+    const hooksScriptsTarget = path.join(globalVibeDir, 'hooks', 'scripts');
+
+    if (fs.existsSync(hooksScriptsSource)) {
+      ensureDir(path.join(globalVibeDir, 'hooks'));
+      if (fs.existsSync(hooksScriptsTarget)) {
+        removeDirRecursive(hooksScriptsTarget);
+      }
+      copyDirRecursive(hooksScriptsSource, hooksScriptsTarget);
+      log('   ✅ Hooks 스크립트 설치 완료 (~/.config/vibe/hooks/scripts/)\n');
+    }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     log('   ⚠️  vibe 패키지 전역 설치 실패: ' + message + '\n');
