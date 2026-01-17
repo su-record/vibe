@@ -161,6 +161,10 @@ async function init(projectName?: string): Promise<void> {
     const packageJson = getPackageJson();
     log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus()}
+📦 Context7 plugin (recommended):
+   /plugin marketplace add upstash/context7
+   /plugin install context7-plugin@context7-marketplace
+
 Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"
 `);
 
@@ -275,7 +279,12 @@ async function update(): Promise<void> {
     cleanupLegacyMcp(vibeDir);
 
     const packageJson = getPackageJson();
-    log(`✅ vibe updated (v${packageJson.version})\n${formatLLMStatus()}`);
+    log(`✅ vibe updated (v${packageJson.version})
+${formatLLMStatus()}
+📦 Context7 plugin (recommended):
+   /plugin marketplace add upstash/context7
+   /plugin install context7-plugin@context7-marketplace
+`);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
