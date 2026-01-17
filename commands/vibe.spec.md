@@ -35,17 +35,19 @@ When external LLMs are enabled, automatically utilize during SPEC creation:
       ↓
 [Claude Opus] Create SPEC draft
       ↓
-[GPT enabled?] → gpt- Review this architecture: [design]
+[GPT enabled?] → vibe-gpt- Review this architecture: [design]
       ↓
-[Gemini enabled?] → gemini- Suggest UX improvements for: [component]
+[Gemini enabled?] → vibe-gemini- Suggest UX improvements for: [component]
       ↓
 [Claude] Finalize SPEC
 ```
 
 | External LLM | Prefix | Role | When Used |
 |--------------|--------|------|-----------|
-| GPT | `gpt-`, `gpt.`, `지피티-` | Architecture/design review (Web Search enabled) | After SPEC draft completion |
-| Gemini | `gemini-`, `gemini.`, `제미나이-` | UI/UX consultation (Google Search enabled) | During design reference discussion |
+| GPT (user query) | `gpt-`, `gpt.`, `지피티-` | Direct question (Web Search enabled) | User asks directly |
+| GPT (orchestration) | `vibe-gpt-` | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
+| Gemini (user query) | `gemini-`, `gemini.`, `제미나이-` | Direct question (Google Search enabled) | User asks directly |
+| Gemini (orchestration) | `vibe-gemini-` | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
 
 **Activation:**
 ```bash

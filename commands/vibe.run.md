@@ -269,14 +269,16 @@ When external LLMs are enabled in `.claude/vibe/config.json`:
 
 | Role | Prefix | Condition |
 |------|--------|-----------|
-| Architecture/Debugging | `gpt-`, `gpt.`, `지피티-` | When `vibe gpt login` executed (Web Search enabled) |
-| UI/UX Design, Exploration | `gemini-`, `gemini.`, `제미나이-` | When `vibe gemini login` executed (Google Search enabled) |
+| User direct query | `gpt-`, `gpt.`, `지피티-` | Direct question with Web Search |
+| Internal orchestration (GPT) | `vibe-gpt-` | Internal JSON orchestration (no search) |
+| User direct query | `gemini-`, `gemini.`, `제미나이-` | Direct question with Google Search |
+| Internal orchestration (Gemini) | `vibe-gemini-` | Internal JSON orchestration (no search) |
 
 When external LLM enabled, use hook prefixes:
 - `gpt.질문` - GPT architecture consultation (with web search)
 - `gemini.질문` - Gemini 질문/상담
-- `gemini- Analyze this code: [code]` - 코드 분석
-- `gemini- Review UI/UX for: [component]` - UI/UX 리뷰
+- `vibe-gemini- Analyze this code: [code]` - 코드 분석 (orchestration)
+- `vibe-gemini- Review UI/UX for: [component]` - UI/UX 리뷰 (orchestration)
 
 ### External LLM Fallback
 
@@ -440,8 +442,8 @@ Then: 로그인 성공 + JWT 토큰 반환
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] gpt- Review architecture: [design]            │
-│  [If Gemini enabled] gemini- Suggest UX for: [component]        │
+│  [If GPT enabled] vibe-gpt- Review architecture: [design]       │
+│  [If Gemini enabled] vibe-gemini- Suggest UX for: [component]   │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ↓ (wait for all to complete)
@@ -651,7 +653,7 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 Gemini가 활성화된 경우, **반드시** 아래 훅을 사용하여 코드 리뷰를 받아야 합니다:
 
 ```
-gemini- Review this code for security, performance, best-practices:
+vibe-gemini- Review this code for security, performance, best-practices:
 [변경된 파일들의 전체 코드]
 SPEC 요구사항: [요약]
 시나리오: [구현한 시나리오 목록]

@@ -254,22 +254,29 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
     let timeoutId: NodeJS.Timeout | null = null;
     let isResolved = false;
 
-    // 안전하게 서버 종료
+    // 안전하게 서버 종료 (Windows libuv 핸들 충돌 방지)
     const closeServer = () => {
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
       }
       if (server) {
-        // closeAllConnections 먼저 호출하여 활성 연결 종료
-        if ('closeAllConnections' in server) {
-          (server as http.Server & { closeAllConnections: () => void }).closeAllConnections();
-        }
-        // 약간의 지연 후 서버 종료 (libuv 핸들 충돌 방지)
-        setImmediate(() => {
-          server?.close(() => {});
-          server = null;
-        });
+        const serverToClose = server;
+        server = null; // 먼저 null로 설정하여 중복 호출 방지
+
+        // Windows에서 libuv 핸들 충돌 방지를 위해 충분한 지연 후 종료
+        setTimeout(() => {
+          try {
+            // closeAllConnections가 있으면 먼저 호출
+            if ('closeAllConnections' in serverToClose) {
+              (serverToClose as http.Server & { closeAllConnections: () => void }).closeAllConnections();
+            }
+            // 서버 종료 (에러 무시)
+            serverToClose.close(() => {});
+          } catch {
+            // 이미 닫힌 경우 무시
+          }
+        }, 100);
       }
     };
 
