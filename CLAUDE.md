@@ -51,8 +51,14 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 ## Workflow
 
 ```
-/vibe.spec → /vibe.run → /vibe.verify → /vibe.review
+/vibe.spec → (자동) SPEC 리뷰 → /vibe.run → (자동) 코드 리뷰 → (자동) fix → ✅ 완료
 ```
+
+**자동화된 플로우:**
+1. `/vibe.spec` - SPEC 작성 + **(자동)** Gemini 리뷰 → 자동 반영
+2. `/vibe.run` - 구현 + Gemini 리뷰
+3. **(자동)** 13+ 에이전트 병렬 리뷰
+4. **(자동)** P1/P2 이슈 자동 수정
 
 ## Plan Mode vs VIBE (워크플로우 선택)
 
@@ -316,30 +322,23 @@ vibe init
 
 ## 전체 워크플로우
 
+```mermaid
+flowchart TD
+    A["/vibe.spec"] --> B["(자동) SPEC 리뷰"]
+    B --> C["SPEC 자동 보완"]
+    C --> D["/vibe.run ultrawork"]
+    D --> E["Gemini 코드 리뷰"]
+    E --> F["(자동) 13+ Agent Review"]
+    F --> G{"P1/P2 이슈?"}
+    G -->|있음| H["(자동) Auto-Fix"]
+    H --> I["✅ 완료"]
+    G -->|없음| I
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  VIBE Complete Workflow                                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  1. /vibe.spec "기능명"                                         │
-│     ├── 문답으로 요구사항 수집                                   │
-│     ├── 요구사항 확정 후 4개 병렬 리서치                         │
-│     └── SPEC 문서 생성                                          │
-│                                                                 │
-│  2. /vibe.run "기능명" ultrawork                                │
-│     ├── 구현                                                    │
-│     ├── 테스트                                                  │
-│     └── 자동 진행                                               │
-│                                                                 │
-│  3. /vibe.verify "기능명"                                       │
-│     └── BDD 시나리오 검증                                       │
-│                                                                 │
-│  4. /vibe.review                                                │
-│     ├── 13+ 병렬 리뷰 에이전트                                  │
-│     └── P1/P2/P3 우선순위 분류                                  │
-│                                                                 │
-│  5. /vibe.utils --e2e                                           │
-│     └── Playwright E2E 테스트                                   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+| 단계 | 설명 | 자동화 |
+|------|------|--------|
+| 1. `/vibe.spec` | 요구사항 수집 + SPEC 생성 | 수동 시작 |
+| 2. SPEC 리뷰 | Gemini가 SPEC 검토 + 자동 반영 | ✅ 자동 |
+| 3. `/vibe.run` | 구현 + Gemini 리뷰 | 수동 시작 |
+| 4. Agent Review | 13+ 에이전트 병렬 리뷰 | ✅ 자동 |
+| 5. Auto-Fix | P1/P2 이슈 자동 수정 | ✅ 자동 |

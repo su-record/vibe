@@ -1,4 +1,4 @@
-// Memory management tool - SQLite based (v1.3)
+// Memory management tool - SQLite based (v1.5)
 
 import { MemoryManager } from '../../lib/MemoryManager.js';
 import { ToolResult, ToolDefinition } from '../../types/tool.js';

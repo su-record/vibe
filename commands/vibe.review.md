@@ -99,17 +99,46 @@ P3 NICE-TO-HAVE (Enhancement) - N issues
 4. [STYLE] Consider extracting helper function
 ```
 
-### Phase 5: Todo File Creation
+### Phase 5: Auto-Fix (P1/P2)
 
-Save findings to `.claude/vibe/todos/`:
+**자동 수정 가능한 이슈는 바로 해결:**
+
+```
+🔧 AUTO-FIX 시작...
+
+P1 Critical:
+  1. [SECURITY] SQL Injection → parameterized query로 수정 ✅
+  2. [DATA] Transaction rollback 누락 → try-finally 추가 ✅
+
+P2 Important:
+  3. [PERF] N+1 query → select_related 추가 ✅
+  4. [ARCH] Circular dependency → 의존성 분리 ✅
+  5. [TEST] Missing edge case → 테스트 추가 ✅
+
+🔍 재검증 중...
+  ✅ 빌드 성공
+  ✅ 테스트 통과
+
+✅ 5개 이슈 자동 수정 완료!
+```
+
+**자동 수정 불가능한 경우:**
+- 아키텍처 대규모 변경 필요
+- 비즈니스 로직 결정 필요
+- 사용자 확인 필요한 경우
+
+→ Phase 6에서 수동 처리 안내
+
+### Phase 6: Todo File Creation (수동 처리 필요 항목)
+
+Save **remaining** findings to `.claude/vibe/todos/`:
 
 ```
 {priority}-{category}-{short-desc}.md
 
 Examples:
-- P1-security-sql-injection.md
-- P2-perf-n1-query.md
-- P3-style-extract-helper.md
+- P2-arch-large-refactor.md  (자동 수정 불가)
+- P3-style-extract-helper.md (백로그)
 ```
 
 ## Output
@@ -120,33 +149,32 @@ PR #123: Add user authentication
 
 Reviewers: 13 agents | Duration: 45s
 
-Score: 72/100 (Needs Work)
+Score: 92/100 (Good) ← 자동 수정 후 점수
 
 Issues Found:
-- P1 Critical: 2 (BLOCKS MERGE)
-- P2 Important: 5
-- P3 Nice-to-have: 3
+- P1 Critical: 2 → 0 (✅ 자동 수정)
+- P2 Important: 5 → 1 (✅ 4개 자동 수정)
+- P3 Nice-to-have: 3 (백로그)
 
-By Category:
-- Security: 2
-- Performance: 3
-- Architecture: 1
-- Testing: 2
-- Style: 2
+Auto-Fixed: 6 issues
+- [SECURITY] SQL Injection ✅
+- [DATA] Transaction rollback ✅
+- [PERF] N+1 query ✅
+- [ARCH] Circular dependency ✅
+- [PERF] Unnecessary loop ✅
+- [TEST] Missing edge case ✅
 
-Todos created: .claude/vibe/todos/ (10 files)
+Remaining (수동 처리 필요):
+- P2-arch-large-refactor.md (아키텍처 결정 필요)
+- P3-style-extract-helper.md (백로그)
+- P3-docs-add-readme.md (백로그)
 
-MERGE BLOCKED - Fix P1 issues first
-
-Next Steps:
-1. Fix P1-security-sql-injection.md
-2. Fix P1-data-transaction-rollback.md
-3. Re-run: /vibe.review
+✅ MERGE READY (P1/P2 해결됨)
 ```
 
-### Phase 6: Guide to Fix Workflow
+### Phase 7: Guide to Fix Workflow (수동 처리 항목)
 
-**Ask user to choose workflow** when fix is requested:
+**남은 이슈 처리 시 워크플로우 선택:**
 
 ```
 ## Fix Workflow
