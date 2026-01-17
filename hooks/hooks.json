@@ -106,7 +106,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.chat({messages:[{role:'user',content:q}],systemPrompt:'You are a software architect. Analyze and review the architecture.'})).then(r=>console.log('[GPT] '+r.content)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
+            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.vibeGptOrchestrate(q,'You are a software architect. Analyze and review the architecture.',{jsonMode:false})).then(r=>console.log('[GPT Architecture] '+r)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
             "statusMessage": "GPT analyzing architecture..."
           }
         ]
@@ -116,7 +116,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.chat({messages:[{role:'user',content:q}],systemPrompt:'You are a UI/UX expert. Analyze and provide feedback.'})).then(r=>console.log('[Gemini] '+r.content)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
+            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.vibeGeminiOrchestrate(q,'You are a UI/UX expert. Analyze and provide feedback.',{jsonMode:false})).then(r=>console.log('[Gemini UI/UX] '+r)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
             "statusMessage": "Gemini reviewing UI/UX..."
           }
         ]
@@ -132,6 +132,16 @@
         ]
       },
       {
+        "matcher": "^vibe-gpt-",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/^vibe-gpt-\\s*/i,'').trim();import(V).then(g=>g.vibeGptOrchestrate(q,'You are a Vibe orchestrator. Process the request and output structured JSON.',{jsonMode:true})).then(r=>console.log('[vibe-gpt] '+r)).catch(e=>console.log('[vibe-gpt] Error:',e.message))})\"",
+            "statusMessage": "Vibe GPT orchestrating (no search)..."
+          }
+        ]
+      },
+      {
         "matcher": "^(gemini[-.\\s]|제미나이-)",
         "hooks": [
           {
@@ -142,21 +152,31 @@
         ]
       },
       {
+        "matcher": "^vibe-gemini-",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/^vibe-gemini-\\s*/i,'').trim();import(V).then(g=>g.vibeGeminiOrchestrate(q,'You are a Vibe orchestrator. Process the request and output structured JSON.',{jsonMode:true})).then(r=>console.log('[vibe-gemini] '+r)).catch(e=>console.log('[vibe-gemini] Error:',e.message))})\"",
+            "statusMessage": "Vibe Gemini orchestrating (no search)..."
+          }
+        ]
+      },
+      {
         "matcher": "디버깅|debugging|버그.*찾|find.*bug|debug.*this",
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.chat({messages:[{role:'user',content:q}],systemPrompt:'You are a debugging expert. Find bugs and suggest fixes.'})).then(r=>console.log('[GPT] '+r.content)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
+            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.vibeGptOrchestrate(q,'You are a debugging expert. Find bugs and suggest fixes.',{jsonMode:false})).then(r=>console.log('[GPT Debug] '+r)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
             "statusMessage": "GPT debugging..."
           }
         ]
       },
       {
-        "matcher": "코드.*분석|analyze.*code|code.*review.*gemini",
+        "matcher": "코드.*분석|analyze.*code|code.*review",
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.chat({messages:[{role:'user',content:q}],systemPrompt:'You are a code analysis expert. Review and analyze the code.'})).then(r=>console.log('[Gemini] '+r.content)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
+            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.vibeGeminiOrchestrate(q,'You are a code analysis expert. Review and analyze the code.',{jsonMode:false})).then(r=>console.log('[Gemini Code] '+r)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
             "statusMessage": "Gemini analyzing code..."
           }
         ]
