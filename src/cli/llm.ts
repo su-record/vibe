@@ -4,6 +4,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import { ExternalLLMConfig, VibeConfig, OAuthTokens } from './types.js';
@@ -34,7 +35,16 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
 };
 
 /**
- * 외부 LLM API 키로 설정
+ * 전역 설정 디렉토리 경로 가져오기
+ */
+function getGlobalConfigDir(): string {
+  return process.platform === 'win32'
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+}
+
+/**
+ * 외부 LLM API 키로 설정 (전역 저장소)
  */
 export function setupExternalLLM(llmType: string, apiKey: string): void {
   if (!apiKey) {
@@ -42,46 +52,54 @@ export function setupExternalLLM(llmType: string, apiKey: string): void {
 ❌ API key required.
 
 Usage:
-  vibe ${llmType} <api-key>
+  vibe auth ${llmType} --key <api-key>
 
 ${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : 'Google API key: https://aistudio.google.com/apikey'}
     `);
     return;
   }
 
+  // 전역 설정 디렉토리에 저장
+  const globalConfigDir = getGlobalConfigDir();
+  if (!fs.existsSync(globalConfigDir)) {
+    fs.mkdirSync(globalConfigDir, { recursive: true });
+  }
+
+  const authFile = path.join(globalConfigDir, `${llmType}-auth.json`);
+  const authData = {
+    type: 'apikey',
+    apiKey: apiKey,
+    createdAt: Date.now()
+  };
+
+  fs.writeFileSync(authFile, JSON.stringify(authData, null, 2));
+
+  const llmConfig = EXTERNAL_LLMS[llmType];
+
+  // 프로젝트 config.json도 업데이트 (선택적)
   const projectRoot = process.cwd();
   const vibeDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(vibeDir, 'config.json');
 
-  if (!fs.existsSync(vibeDir)) {
-    console.log('❌ Not a vibe project. Run vibe init first.');
-    return;
-  }
-
-  let config: VibeConfig = {};
   if (fs.existsSync(configPath)) {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    try {
+      const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (!config.models) config.models = {};
+      config.models[llmType as 'gpt' | 'gemini'] = {
+        enabled: true,
+        authType: 'apikey',
+        role: llmConfig.role,
+        description: llmConfig.description,
+      };
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    } catch { /* ignore: optional operation */ }
   }
-
-  if (!config.models) {
-    config.models = {};
-  }
-
-  const llmConfig = EXTERNAL_LLMS[llmType];
-  config.models[llmType as 'gpt' | 'gemini'] = {
-    enabled: true,
-    authType: 'apikey',
-    role: llmConfig.role,
-    description: llmConfig.description,
-    apiKey: apiKey
-  };
-
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
   console.log(`
 ✅ ${llmType.toUpperCase()} API key configured!
 
 Role: ${llmConfig.description}
+Stored: ${authFile}
 
 ${llmType.toUpperCase()} is called directly via Hooks:
   - Auto-called with "${llmType}. query" prefix
