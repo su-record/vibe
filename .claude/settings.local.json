@@ -4,7 +4,23 @@
       "Bash(npm run build:*)",
       "Bash(node -e:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(wc:*)",
+      "Bash(cursor --help:*)",
+      "Bash(cursor help:*)",
+      "Bash(cursor:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "Bash(echo:*)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(node ./node_modules/typescript/bin/tsc:*)",
+      "Bash(set CURSOR_API_KEY=key_176dfdac62ce0d334d0f18ade4f7fc4e30e69bfa1831063e0951d650d3a616e7)",
+      "Bash(CURSOR_API_KEY=key_176dfdac62ce0d334d0f18ade4f7fc4e30e69bfa1831063e0951d650d3a616e7 node:*)",
+      "Bash(CURSOR_API_KEY=key_176dfdac62ce0d334d0f18ade4f7fc4e30e69bfa1831063e0951d650d3a616e7 COMPOSER_DEFAULT_REPO=https://github.com/su-record/vibe node -e \"\nimport\\(''./dist/lib/composer-api.js''\\).then\\(async \\(api\\) => {\n  try {\n    console.log\\(''Composer에 테스트 요청 전송 중...''\\);\n    const result = await api.ask\\(''Say hello in one word''\\);\n    console.log\\(''✓ Composer 응답:'', result.slice\\(0, 300\\)\\);\n  } catch \\(err\\) {\n    console.log\\(''✗ Composer 오류:'', err.message\\);\n  }\n}\\).catch\\(err => console.log\\(''Import 오류:'', err.message\\)\\);\n\")",
+      "Bash(curl:*)",
+      "Bash(dir /b \"c:\\\\Users\\\\endba\\\\WorkSpace\\\\vibe\\\\src\")",
+      "Bash(dir:*)"
     ]
   }
 }

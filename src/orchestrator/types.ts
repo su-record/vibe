@@ -134,3 +134,62 @@ export interface OrchestratorToolResult extends ToolResult {
     agentName?: string;
   };
 }
+
+// ============================================
+// Smart Routing Types
+// ============================================
+
+/** 작업 유형 - LLM 선택에 사용 */
+export type TaskType =
+  | 'architecture'    // 아키텍처 분석/리뷰 → GPT 우선
+  | 'debugging'       // 디버깅 → GPT 우선
+  | 'uiux'           // UI/UX 분석 → Gemini 우선
+  | 'code-analysis'  // 코드 분석 → Gemini 우선
+  | 'code-gen'       // 코드 생성 → Claude 직접
+  | 'web-search'     // 웹 검색 → GPT/Gemini
+  | 'general';       // 일반 → Claude 직접
+
+/** LLM 제공자 */
+export type LLMProvider = 'gpt' | 'gemini' | 'claude';
+
+/** 스마트 라우팅 요청 */
+export interface SmartRouteRequest {
+  type: TaskType;
+  prompt: string;
+  systemPrompt?: string;
+  /** 특정 LLM 강제 지정 (fallback은 여전히 동작) */
+  preferredLlm?: LLMProvider;
+  /** 재시도 횟수 (기본: 2) */
+  maxRetries?: number;
+}
+
+/** 스마트 라우팅 결과 */
+export interface SmartRouteResult {
+  content: string;
+  provider: LLMProvider;
+  success: boolean;
+  /** fallback 발생 여부 */
+  usedFallback: boolean;
+  /** 시도한 LLM 목록 */
+  attemptedProviders: LLMProvider[];
+  /** 각 LLM의 에러 (있는 경우) */
+  errors?: Record<LLMProvider, string>;
+  duration: number;
+}
+
+/** LLM 가용성 캐시 */
+export interface LLMAvailabilityCache {
+  gpt: { available: boolean; checkedAt: number; errorCount: number };
+  gemini: { available: boolean; checkedAt: number; errorCount: number };
+}
+
+/** 작업 유형별 LLM 우선순위 */
+export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
+  'architecture': ['gpt', 'gemini', 'claude'],
+  'debugging': ['gpt', 'gemini', 'claude'],
+  'uiux': ['gemini', 'gpt', 'claude'],
+  'code-analysis': ['gemini', 'gpt', 'claude'],
+  'code-gen': ['claude'],
+  'web-search': ['gpt', 'gemini', 'claude'],
+  'general': ['claude']
+};

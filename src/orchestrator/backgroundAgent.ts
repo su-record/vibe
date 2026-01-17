@@ -19,10 +19,52 @@ const activeSessions = new Map<string, {
   handle: BackgroundAgentHandle;
   resultPromise: Promise<AgentResult>;
   cancelController: AbortController;
+  createdAt: number;
 }>();
 
 // 세션 히스토리 (완료된 세션 포함)
 const sessionHistory: SessionInfo[] = [];
+
+// TTL 설정 (기본 1시간)
+const SESSION_TTL = 60 * 60 * 1000;
+const SESSION_HISTORY_TTL = 24 * 60 * 60 * 1000; // 히스토리는 24시간
+const CLEANUP_INTERVAL = 10 * 60 * 1000; // 10분마다 정리
+
+// 세션 정리 함수
+function cleanupExpiredSessions(): void {
+  const now = Date.now();
+
+  // 활성 세션 정리 (TTL 초과 + running 상태인 경우 취소)
+  for (const [sessionId, session] of activeSessions.entries()) {
+    if (now - session.createdAt > SESSION_TTL) {
+      if (session.handle.status === 'running') {
+        session.cancelController.abort();
+      }
+      activeSessions.delete(sessionId);
+    }
+  }
+
+  // 히스토리 정리 (24시간 초과)
+  const cutoff = now - SESSION_HISTORY_TTL;
+  while (sessionHistory.length > 0 && sessionHistory[0].startTime < cutoff) {
+    sessionHistory.shift();
+  }
+}
+
+// 정리 타이머 시작 (모듈 로드 시 자동 시작)
+let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+
+function startCleanupTimer(): void {
+  if (cleanupTimer) return;
+  cleanupTimer = setInterval(cleanupExpiredSessions, CLEANUP_INTERVAL);
+  // unref로 프로세스 종료를 막지 않음
+  if (cleanupTimer.unref) {
+    cleanupTimer.unref();
+  }
+}
+
+// 모듈 로드 시 타이머 시작
+startCleanupTimer();
 
 /**
  * 백그라운드 에이전트 시작
@@ -167,7 +209,8 @@ export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<
   activeSessions.set(handle.sessionId, {
     handle,
     resultPromise,
-    cancelController
+    cancelController,
+    createdAt: startTime
   });
 
   // 완료 시 히스토리에 추가

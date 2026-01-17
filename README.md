@@ -1,6 +1,6 @@
 # Vibe
 
-**SPEC-driven AI coding framework** (Claude Code only)
+**SPEC-Scenario-driven AI coding framework for Claude Code with Multi-LLM orchestration**  
 
 [![npm version](https://img.shields.io/npm/v/@su-record/vibe.svg)](https://www.npmjs.com/package/@su-record/vibe)
 [![npm downloads](https://img.shields.io/npm/dt/@su-record/vibe)](https://www.npmjs.com/package/@su-record/vibe)
@@ -24,8 +24,10 @@ vibe init
 | `vibe status` | Check status |
 | `vibe auth gpt` | GPT OAuth authentication |
 | `vibe auth gemini` | Gemini OAuth authentication |
+| `vibe auth composer --key <key>` | Composer API key setup |
 | `vibe logout gpt` | GPT logout |
 | `vibe logout gemini` | Gemini logout |
+| `vibe logout composer` | Composer logout |
 | `vibe help` | Help |
 | `vibe version` | Version info |
 
@@ -52,7 +54,7 @@ vibe init
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-model orchestration** | Claude + GPT-5.2 + Gemini 3 Pro |
+| **Multi-model orchestration** | Claude + GPT-5.2 + Gemini 3 Pro + Composer |
 | **13+ parallel review agents** | Security, performance, architecture |
 | **BDD auto verification** | Given/When/Then scenario verification |
 | **ULTRAWORK mode** | One keyword enables all optimizations |
@@ -77,12 +79,13 @@ Enable maximum performance with `ultrawork` or `ulw`:
 
 ## Multi-model Orchestration
 
-Call GPT/Gemini directly with hook prefixes:
+Call GPT/Gemini/Composer directly with hook prefixes:
 
 | LLM | Prefix | Example | Features |
 |-----|--------|---------|----------|
 | GPT | `gpt-`, `gpt.` | `gpt.weather today` | Web Search enabled |
 | Gemini | `gemini-`, `gemini.` | `gemini.UI improvements` | Google Search enabled |
+| Composer | `composer-`, `composer.` | `composer.create login form` | Fast multi-file editing |
 
 | Scenario | Recommended | Example |
 |----------|-------------|---------|
@@ -90,12 +93,14 @@ Call GPT/Gemini directly with hook prefixes:
 | UI/UX review | Gemini | `gemini.improve this form UX` |
 | Architecture review | GPT | `gpt-review this architecture` |
 | Code analysis | Gemini | `gemini-analyze this code` |
+| Code generation | Composer | `composer.create API endpoint` |
 
 **Direct API call:**
 
 ```javascript
 import('@su-record/vibe/lib/gpt').then(g => g.quickWebSearch('weather today'))
 import('@su-record/vibe/lib/gemini').then(g => g.quickWebSearch('question'))
+import('@su-record/vibe/lib/composer').then(c => c.ask('create login form'))
 ```
 
 ## Parallel Review Agents

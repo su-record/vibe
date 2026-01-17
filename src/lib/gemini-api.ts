@@ -1,6 +1,6 @@
 /**
- * Gemini API 호출 (Antigravity 경유 + Google AI API)
- * - OAuth: Gemini 구독으로 Gemini 2.5/3 Flash/Pro 모델 사용
+ * Gemini API 호출
+ * - OAuth: Gemini 구독으로 3 Flash/Pro 모델 사용
  * - API Key: Google AI Studio API 직접 호출
  */
 
@@ -14,7 +14,7 @@ import {
 } from './gemini-constants.js';
 
 import { getValidAccessToken } from './gemini-oauth.js';
-import { sleep } from './utils.js';
+import { sleep, warnLog } from './utils.js';
 
 // 인증 정보 타입
 interface AuthInfo {
@@ -35,7 +35,9 @@ function getApiKeyFromConfig(): string | null {
         return config.models.gemini.apiKey;
       }
     }
-  } catch { /* ignore */ }
+  } catch (e) {
+    warnLog('Failed to read Gemini API key from config', e);
+  }
   return null;
 }
 
@@ -50,7 +52,9 @@ function removeEmailFromConfigIfNoToken(): void {
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
       }
     }
-  } catch { /* ignore */ }
+  } catch (e) {
+    warnLog('Failed to remove email from Gemini config', e);
+  }
 }
 
 // 인증 방식 확인 (OAuth 우선, API Key 대체)

@@ -437,8 +437,8 @@ function showHelp(): void {
 외부 LLM 인증:
   vibe auth gpt           GPT Plus/Pro OAuth 인증
   vibe auth gemini        Gemini 구독 OAuth 인증 (권장)
-  vibe auth gpt --key <key>     GPT API 키 설정
-  vibe auth gemini --key <key>  Gemini API 키 설정
+  vibe auth gpt --key <key>       GPT API 키 설정
+  vibe auth gemini --key <key>    Gemini API 키 설정
 
 상태 및 관리:
   vibe status             전체 상태 확인

@@ -498,15 +498,15 @@ export function showAuthHelp(): void {
 🔐 vibe auth - LLM 인증
 
 사용법:
-  vibe auth gpt              GPT Plus/Pro OAuth 인증
-  vibe auth gpt --key <key>  GPT API 키로 설정
-  vibe auth gemini           Gemini 구독 OAuth 인증 (권장)
-  vibe auth gemini --key <key>  Gemini API 키로 설정
+  vibe auth gpt                   GPT Plus/Pro OAuth 인증
+  vibe auth gpt --key <key>       GPT API 키로 설정
+  vibe auth gemini                Gemini 구독 OAuth 인증 (권장)
+  vibe auth gemini --key <key>    Gemini API 키로 설정
 
 예시:
-  vibe auth gpt              OpenAI 로그인 (Plus/Pro 구독 필요)
-  vibe auth gemini           Google 로그인 (Gemini Advanced 구독 시 무료)
-  vibe auth gpt --key sk-xxx API 키로 설정 (사용량 과금)
+  vibe auth gpt                   OpenAI 로그인 (Plus/Pro 구독 필요)
+  vibe auth gemini                Google 로그인 (Gemini Advanced 구독 시 무료)
+  vibe auth gpt --key sk-xxx      API 키로 설정 (사용량 과금)
   `);
 }
 
@@ -518,7 +518,7 @@ export function showLogoutHelp(): void {
 🚪 vibe logout - LLM 로그아웃
 
 사용법:
-  vibe logout gpt     GPT 로그아웃
-  vibe logout gemini  Gemini 로그아웃
+  vibe logout gpt       GPT 로그아웃
+  vibe logout gemini    Gemini 로그아웃
   `);
 }

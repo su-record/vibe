@@ -19,3 +19,6 @@ wiki/
 .vscode/
 .idea/
 
+# config
+.claude/
+.env

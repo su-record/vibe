@@ -10,7 +10,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/';const p=process.env.CLAUDE_PROJECT_DIR||'.';Promise.all([import(B+'memory/index.js').then(t=>t.startSession({projectPath:p})),import(B+'time/index.js').then(t=>t.getCurrentTime({format:'human',timezone:'Asia/Seoul'})),import(B+'memory/index.js').then(t=>t.listMemories({limit:5,projectPath:p}))]).then(([s,t,m])=>console.log(s.content[0].text+'\\n\\n'+t.content[0].text+'\\n\\n[Recent Memories]\\n'+m.content[0].text)).catch(e=>console.log('[Session] Error:',e.message))\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/session-start.js"
           }
         ]
       }
@@ -32,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/convention/index.js';const p=process.env.CLAUDE_PROJECT_DIR||'.';import(B).then(t=>t.validateCodeQuality({targetPath:'.',projectPath:p}).then(r=>console.log('[CODE CHECK]',r.content[0].text.split('\\n').slice(0,3).join(' | ')))).catch(()=>console.log('[AUTO-CONTINUE] Code written. Continue.'))\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/code-check.js"
           }
         ]
       }
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/memory/index.js';const p=process.env.CLAUDE_PROJECT_DIR||'.';import(B).then(t=>t.saveMemory({key:'solution-'+Date.now(),value:'Solution documented at '+new Date().toISOString(),category:'solution',projectPath:p}).then(r=>console.log('[COMPOUND]',r.content[0].text))).catch(e=>console.log('[COMPOUND] \\u2717 Error:',e.message))\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/compound.js"
           }
         ]
       },
@@ -70,7 +70,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/convention/index.js';const p=process.env.CLAUDE_PROJECT_DIR||'.';import(B).then(t=>t.validateCodeQuality({targetPath:'.',projectPath:p}).then(r=>console.log('[CODE REVIEW]',r.content[0].text.split('\\n').slice(0,5).join(' | ')))).catch(e=>console.log('[CODE REVIEW] Error:',e.message))\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/code-review.js"
           }
         ]
       },
@@ -88,7 +88,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/convention/index.js';const p=process.env.CLAUDE_PROJECT_DIR||'.';import(B).then(t=>t.analyzeComplexity({targetPath:'.',projectPath:p}).then(r=>console.log('[COMPLEXITY]',r.content[0].text.split('\\n').slice(0,5).join(' | ')))).catch(e=>console.log('[COMPLEXITY] Error:',e.message))\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/complexity.js"
           }
         ]
       },
@@ -97,7 +97,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/memory/index.js';const p=process.env.CLAUDE_PROJECT_DIR||'.';import(B).then(t=>t.listMemories({limit:10,projectPath:p}).then(r=>console.log('[RECALL] \\u2713 Found '+r.content[0].text.split('\\n').length+' memories:',r.content[0].text.split('\\n').slice(0,7).join(' | ')))).catch(e=>console.log('[RECALL] Error:',e.message))\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/recall.js"
           }
         ]
       },
@@ -106,7 +106,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.vibeGptOrchestrate(q,'You are a software architect. Analyze and review the architecture.',{jsonMode:false})).then(r=>console.log('[GPT Architecture] '+r)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate \"You are a software architect. Analyze and review the architecture.\"",
             "statusMessage": "GPT analyzing architecture..."
           }
         ]
@@ -116,48 +116,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.vibeGeminiOrchestrate(q,'You are a UI/UX expert. Analyze and provide feedback.',{jsonMode:false})).then(r=>console.log('[Gemini UI/UX] '+r)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate \"You are a UI/UX expert. Analyze and provide feedback.\"",
             "statusMessage": "Gemini reviewing UI/UX..."
-          }
-        ]
-      },
-      {
-        "matcher": "^(gpt[-.\\s]|지피티-)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/^(gpt[-.\\s]|지피티-)\\s*/i,'').trim();import(V).then(g=>g.quickWebSearch(q)).then(r=>console.log('GPT-5.2 응답: '+r)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
-            "statusMessage": "Asking GPT (with web search)..."
-          }
-        ]
-      },
-      {
-        "matcher": "^vibe-gpt-",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/^vibe-gpt-\\s*/i,'').trim();import(V).then(g=>g.vibeGptOrchestrate(q,'You are a Vibe orchestrator. Process the request and output structured JSON.',{jsonMode:true})).then(r=>console.log('[vibe-gpt] '+r)).catch(e=>console.log('[vibe-gpt] Error:',e.message))})\"",
-            "statusMessage": "Vibe GPT orchestrating (no search)..."
-          }
-        ]
-      },
-      {
-        "matcher": "^(gemini[-.\\s]|제미나이-)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/^(gemini[-.\\s]|제미나이-)\\s*/i,'').trim();import(V).then(g=>g.quickWebSearch(q)).then(r=>console.log('Gemini-3 응답: '+r)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
-            "statusMessage": "Asking Gemini (with web search)..."
-          }
-        ]
-      },
-      {
-        "matcher": "^vibe-gemini-",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt.replace(/^vibe-gemini-\\s*/i,'').trim();import(V).then(g=>g.vibeGeminiOrchestrate(q,'You are a Vibe orchestrator. Process the request and output structured JSON.',{jsonMode:true})).then(r=>console.log('[vibe-gemini] '+r)).catch(e=>console.log('[vibe-gemini] Error:',e.message))})\"",
-            "statusMessage": "Vibe Gemini orchestrating (no search)..."
           }
         ]
       },
@@ -166,7 +126,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gpt-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.vibeGptOrchestrate(q,'You are a debugging expert. Find bugs and suggest fixes.',{jsonMode:false})).then(r=>console.log('[GPT Debug] '+r)).catch(e=>console.log('[GPT] Error:',e.message))})\"",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate \"You are a debugging expert. Find bugs and suggest fixes.\"",
             "statusMessage": "GPT debugging..."
           }
         ]
@@ -176,8 +136,48 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const V='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/lib/gemini-api.js';let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const q=JSON.parse(d).prompt;import(V).then(g=>g.vibeGeminiOrchestrate(q,'You are a code analysis expert. Review and analyze the code.',{jsonMode:false})).then(r=>console.log('[Gemini Code] '+r)).catch(e=>console.log('[Gemini] Error:',e.message))})\"",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate \"You are a code analysis expert. Review and analyze the code.\"",
             "statusMessage": "Gemini analyzing code..."
+          }
+        ]
+      },
+      {
+        "matcher": "^(gpt[-.\\s]|지피티-)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt search",
+            "statusMessage": "Asking GPT (with web search)..."
+          }
+        ]
+      },
+      {
+        "matcher": "^vibe-gpt-",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json \"You are a Vibe orchestrator. Process the request and output structured JSON.\"",
+            "statusMessage": "Vibe GPT orchestrating (no search)..."
+          }
+        ]
+      },
+      {
+        "matcher": "^(gemini[-.\\s]|제미나이-)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini search",
+            "statusMessage": "Asking Gemini (with web search)..."
+          }
+        ]
+      },
+      {
+        "matcher": "^vibe-gemini-",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json \"You are a Vibe orchestrator. Process the request and output structured JSON.\"",
+            "statusMessage": "Vibe Gemini orchestrating (no search)..."
           }
         ]
       }
@@ -188,7 +188,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/memory/index.js';const p=process.env.CLAUDE_PROJECT_DIR||'.';import(B).then(t=>t.autoSaveContext({urgency:'medium',contextType:'progress',summary:'Context at 80% - auto checkpoint',projectPath:p}).then(r=>console.log('[CONTEXT 80%]',r.content[0].text))).catch(()=>{})\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js medium"
           }
         ]
       },
@@ -197,7 +197,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/memory/index.js';const p=process.env.CLAUDE_PROJECT_DIR||'.';import(B).then(t=>t.autoSaveContext({urgency:'high',contextType:'progress',summary:'Context at 90% - save before overflow',projectPath:p}).then(r=>console.log('[CONTEXT 90%]',r.content[0].text))).catch(()=>{})\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js high"
           }
         ]
       },
@@ -206,7 +206,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const B='file:///{{VIBE_PATH}}/node_modules/@su-record/vibe/dist/tools/memory/index.js';const p=process.env.CLAUDE_PROJECT_DIR||'.';import(B).then(t=>t.autoSaveContext({urgency:'critical',contextType:'progress',summary:'Context at 95% - CRITICAL save before session end',projectPath:p}).then(r=>console.log('[CONTEXT 95%]',r.content[0].text))).catch(()=>{})\""
+            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js critical"
           }
         ]
       }

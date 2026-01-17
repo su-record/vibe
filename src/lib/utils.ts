@@ -53,3 +53,31 @@ export function errorLog(message: string, error?: unknown): void {
     console.error(`[VIBE ERROR] ${message}`, error);
   }
 }
+
+/**
+ * 안전한 JSON 파싱
+ * @param jsonString 파싱할 JSON 문자열
+ * @param context 에러 로깅에 사용할 컨텍스트 설명
+ * @returns 파싱된 객체 또는 null
+ */
+export function safeParseJSON<T = unknown>(jsonString: string, context?: string): T | null {
+  try {
+    return JSON.parse(jsonString) as T;
+  } catch (error) {
+    const ctx = context ? ` (${context})` : '';
+    warnLog(`JSON parse failed${ctx}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return null;
+  }
+}
+
+/**
+ * 안전한 JSON 파싱 (기본값 반환)
+ * @param jsonString 파싱할 JSON 문자열
+ * @param defaultValue 파싱 실패 시 반환할 기본값
+ * @param context 에러 로깅에 사용할 컨텍스트 설명
+ * @returns 파싱된 객체 또는 기본값
+ */
+export function safeParseJSONWithDefault<T>(jsonString: string, defaultValue: T, context?: string): T {
+  const result = safeParseJSON<T>(jsonString, context);
+  return result ?? defaultValue;
+}

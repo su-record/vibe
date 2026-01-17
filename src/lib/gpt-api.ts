@@ -1,6 +1,6 @@
 /**
- * GPT API 호출 (ChatGPT Codex Backend + OpenAI API)
- * - OAuth: ChatGPT Plus/Pro 구독으로 GPT-5.2 Codex 모델 사용
+ * GPT API 호출
+ * - OAuth: ChatGPT 구독으로 GPT 모델 사용
  * - API Key: OpenAI API 직접 호출
  */
 
@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { getValidAccessToken } from './gpt-oauth.js';
 import { CHATGPT_BASE_URL } from './gpt-constants.js';
-import { sleep } from './utils.js';
+import { sleep, warnLog } from './utils.js';
 
 // ============================================
 // Tavily Web Search Integration
@@ -88,7 +88,9 @@ function getTavilyApiKey(): string | null {
         return config.tavily.apiKey;
       }
     }
-  } catch { /* ignore */ }
+  } catch (e) {
+    warnLog('Failed to read Tavily API key from config', e);
+  }
 
   return null;
 }
@@ -130,7 +132,9 @@ function getApiKeyFromConfig(): string | null {
         return config.models.gpt.apiKey;
       }
     }
-  } catch { /* ignore */ }
+  } catch (e) {
+    warnLog('Failed to read GPT API key from config', e);
+  }
   return null;
 }
 
@@ -145,7 +149,9 @@ function removeEmailFromConfigIfNoToken(): void {
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
       }
     }
-  } catch { /* ignore */ }
+  } catch (e) {
+    warnLog('Failed to remove email from GPT config', e);
+  }
 }
 
 // 인증 방식 확인 (OAuth 우선, API Key 대체)
