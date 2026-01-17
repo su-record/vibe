@@ -3,8 +3,14 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-export const VIBE_PATH = process.env.VIBE_PATH || process.cwd();
+// 스크립트 위치에서 VIBE_PATH 자동 감지
+// hooks/scripts/utils.js → hooks → VIBE_PATH
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DETECTED_VIBE_PATH = path.resolve(__dirname, '..', '..');
+
+export const VIBE_PATH = process.env.VIBE_PATH || DETECTED_VIBE_PATH;
 export const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || '.';
 
 /**
