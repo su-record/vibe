@@ -88,7 +88,7 @@ The subagent handles the context7 calls and returns a summary, keeping main cont
 ```
 context7 plugin not installed
     ↓
-Prompt user: /plugin marketplace add upstash/context7
+Prompt user: /plugin install context7
     ↓
 If still unavailable: Web Search for official docs
 ```
@@ -98,6 +98,5 @@ If still unavailable: Web Search for official docs
 If context7 is not installed, guide user:
 
 ```bash
-/plugin marketplace add upstash/context7
-/plugin install context7-plugin@context7-marketplace
+/plugin install context7
 ```

@@ -193,8 +193,7 @@ Next: /vibe.run "login feature" ultrawork
 Install context7 plugin for up-to-date library documentation:
 
 ```bash
-/plugin marketplace add upstash/context7
-/plugin install context7-plugin@context7-marketplace
+/plugin install context7
 ```
 
 **Why plugin over MCP?**

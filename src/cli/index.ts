@@ -162,9 +162,7 @@ async function init(projectName?: string): Promise<void> {
     const context7Installed = isPluginInstalled('context7');
     const context7Guide = context7Installed
       ? '📦 Context7 plugin: ✔ installed'
-      : `📦 Context7 plugin (recommended):
-   /plugin marketplace add upstash/context7
-   /plugin install context7-plugin@context7-marketplace`;
+      : '📦 Context7 plugin (recommended): /plugin install context7';
 
     log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus()}
@@ -287,9 +285,7 @@ async function update(): Promise<void> {
     const context7Installed = isPluginInstalled('context7');
     const context7Guide = context7Installed
       ? '📦 Context7 plugin: ✔ installed'
-      : `📦 Context7 plugin (recommended):
-   /plugin marketplace add upstash/context7
-   /plugin install context7-plugin@context7-marketplace`;
+      : '📦 Context7 plugin (recommended): /plugin install context7';
 
     log(`✅ vibe updated (v${packageJson.version})
 ${formatLLMStatus()}
