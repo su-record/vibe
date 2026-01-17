@@ -163,15 +163,8 @@ export function registerMcp(name: string, config: McpServerConfig): void {
  * MCP 서버 등록 해제
  */
 export function unregisterMcp(name: string): void {
-  const cmd = claudeCmd();
-
-  try {
-    execSync(`${cmd} mcp remove ${name}`, { stdio: 'pipe' });
-  } catch { /* ignore: optional operation */
-    // 실패해도 무시
-  }
-
-  // 설정 파일에서도 제거
+  // 설정 파일에서 직접 제거 (CLI 호출 없이)
+  // CLI 호출 시 없는 MCP 제거 시도하면 무한 대기 문제 발생
   removeMcpServer(name);
 }
 
