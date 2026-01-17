@@ -366,8 +366,9 @@ Self-evaluate against `.claude/vibe/rules/quality/checklist.md` (0-100 score)
 
 **MUST: SPEC 리뷰 (필수)**
 
-Gemini/GPT가 활성화된 경우, **반드시** 아래 훅을 사용하여 SPEC 리뷰:
+Gemini 또는 GPT가 활성화된 경우, **반드시** 아래 훅을 사용하여 SPEC 리뷰:
 
+**Gemini 사용 시:**
 ```
 vibe-gemini- Review this SPEC for completeness, security, edge cases:
 
@@ -382,6 +383,24 @@ Check for:
 4. Integration points clarity
 5. Testability of acceptance criteria
 ```
+
+**GPT 사용 시:**
+```
+vibe-gpt- Review this SPEC for completeness, security, edge cases:
+
+SPEC: [SPEC 전체 내용]
+Feature: [Feature 파일 내용]
+Tech Stack: [기술 스택]
+
+Check for:
+1. Missing error handling scenarios
+2. Security considerations
+3. Edge cases and boundary conditions
+4. Integration points clarity
+5. Testability of acceptance criteria
+```
+
+**우선순위:** Gemini 먼저 시도 → 실패 시 GPT 시도 → 둘 다 실패 시 스킵
 
 **리뷰 항목:**
 
