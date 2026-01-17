@@ -1,14 +1,13 @@
 /**
  * UserPromptSubmit Hook - 코드 리뷰 요청 시 품질 검사
  */
-const VIBE_PATH = process.env.VIBE_PATH || process.cwd();
-const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || '.';
+import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
 
-const BASE_URL = `file:///${VIBE_PATH}/node_modules/@su-record/vibe/dist/tools/convention/index.js`;
+const BASE_URL = getToolsBaseUrl();
 
 async function main() {
   try {
-    const module = await import(BASE_URL);
+    const module = await import(`${BASE_URL}convention/index.js`);
     const result = await module.validateCodeQuality({
       targetPath: '.',
       projectPath: PROJECT_DIR,

@@ -3,12 +3,14 @@
  *
  * Usage: node llm-orchestrate.js <provider> <mode> <systemPrompt>
  *   provider: gpt | gemini
- *   mode: search | orchestrate
+ *   mode: search | orchestrate | orchestrate-json
  *   systemPrompt: (optional) custom system prompt for orchestrate mode
  *
  * Input: JSON from stdin with { prompt: string }
  */
-const VIBE_PATH = process.env.VIBE_PATH || process.cwd();
+import { getLibBaseUrl } from './utils.js';
+
+const LIB_URL = getLibBaseUrl();
 
 const provider = process.argv[2] || 'gemini';
 const mode = process.argv[3] || 'search';
@@ -38,7 +40,7 @@ async function main() {
   const cleanPrompt = prompt.replace(prefixPatterns[provider] || /^/, '').trim();
 
   try {
-    const modulePath = `file:///${VIBE_PATH}/node_modules/@su-record/vibe/dist/lib/${provider}-api.js`;
+    const modulePath = `${LIB_URL}${provider}-api.js`;
     const module = await import(modulePath);
 
     let result;

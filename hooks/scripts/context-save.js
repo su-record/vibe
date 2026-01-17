@@ -3,10 +3,9 @@
  * Usage: node context-save.js <urgency>
  *   urgency: medium | high | critical
  */
-const VIBE_PATH = process.env.VIBE_PATH || process.cwd();
-const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || '.';
+import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
 
-const BASE_URL = `file:///${VIBE_PATH}/node_modules/@su-record/vibe/dist/tools/memory/index.js`;
+const BASE_URL = getToolsBaseUrl();
 
 const urgency = process.argv[2] || 'medium';
 const summaryMap = {
@@ -17,7 +16,7 @@ const summaryMap = {
 
 async function main() {
   try {
-    const module = await import(BASE_URL);
+    const module = await import(`${BASE_URL}memory/index.js`);
     const result = await module.autoSaveContext({
       urgency,
       contextType: 'progress',

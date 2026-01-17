@@ -1,10 +1,9 @@
 /**
  * SessionStart Hook - 세션 시작 시 메모리/시간 로드
  */
-const VIBE_PATH = process.env.VIBE_PATH || process.cwd();
-const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || '.';
+import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
 
-const BASE_URL = `file:///${VIBE_PATH}/node_modules/@su-record/vibe/dist/tools/`;
+const BASE_URL = getToolsBaseUrl();
 
 async function main() {
   try {
