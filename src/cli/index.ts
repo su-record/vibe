@@ -121,11 +121,11 @@ async function init(projectName?: string): Promise<void> {
     // .gitignore 업데이트
     updateGitignore(projectRoot);
 
-    // 전역 assets 설치
-    installGlobalAssets(false);
-
-    // 전역 vibe 패키지 설치 (~/.config/vibe/)
+    // 전역 vibe 패키지 먼저 설치 (~/.config/vibe/) - hooks에서 참조함
     installGlobalVibePackage(false);
+
+    // 전역 assets 설치 (hooks가 위에서 설치된 패키지 참조)
+    installGlobalAssets(false);
 
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
@@ -290,11 +290,11 @@ async function update(): Promise<void> {
       log(`   🔍 Detected: ${Array.from(detectedTypes).join(', ')}\n`);
     }
 
-    // 전역 assets 업데이트
-    installGlobalAssets(true);
-
-    // 전역 vibe 패키지 업데이트 (~/.config/vibe/)
+    // 전역 vibe 패키지 먼저 설치 (~/.config/vibe/) - hooks에서 참조함
     installGlobalVibePackage(true);
+
+    // 전역 assets 업데이트 (hooks가 위에서 설치된 패키지 참조)
+    installGlobalAssets(true);
 
     // 프로젝트 로컬 자산 제거
     removeLocalAssets(claudeDir);
