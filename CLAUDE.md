@@ -51,8 +51,18 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 ## Workflow
 
 ```
-/vibe.spec → /vibe.run → /vibe.verify → /vibe.review
+/vibe.spec → /vibe.run → (자동) review → (자동) fix → graph 저장
+                              ↓
+                         클로드가 학습
 ```
+
+**자동화된 플로우:**
+1. `/vibe.spec` - SPEC 작성
+2. `/vibe.run` - 구현 + Gemini 리뷰
+3. **(자동)** 13+ 에이전트 병렬 리뷰
+4. **(자동)** P1/P2 이슈 자동 수정
+5. **(자동)** 문제→해결 패턴을 `.claude/vibe/graph/`에 저장
+6. 다음에 비슷한 문제 시 graph에서 패턴 참조
 
 ## Plan Mode vs VIBE (워크플로우 선택)
 
@@ -167,6 +177,38 @@ Playwright 기반 자동화 테스트:
 | security-advisory-agent | 확정된 기능 보안 권고 |
 
 **⚠️ 리서치는 요구사항 확정 후 실행** (VIBE 원칙: 요구사항 먼저)
+
+### 자기 학습 (Self-Learning with Graph)
+
+리뷰에서 발견한 문제와 해결 과정을 자동 저장하여 **클로드가 학습**:
+
+```
+.claude/vibe/graph/
+├── 2024-01-15-sql-injection.md
+├── 2024-01-15-n1-query.md
+└── 2024-01-15-circular-dep.md
+```
+
+**Graph 파일 구조:**
+```yaml
+problem: SQL Injection in users.py:42
+category: security
+severity: P1
+solution: parameterized query 사용
+code_before: |
+  query = f"SELECT * FROM users WHERE id = {user_id}"
+code_after: |
+  cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+tags: [security, sql, python]
+related: [input-validation, prepared-statements]
+learned_at: 2024-01-15
+project: my-app
+```
+
+**활용:**
+- 비슷한 문제 발생 시 graph에서 패턴 검색
+- 프로젝트 간 학습 공유 가능
+- 시간이 지날수록 클로드가 똑똑해짐
 
 ## PTCF Structure
 
@@ -300,7 +342,7 @@ vibe는 자체 메모리 시스템으로 세션 간 컨텍스트를 유지합니
 
 **반드시 포함:**
 - `.claude/` 폴더 전체 (commands, agents, skills, settings.json)
-- `.claude/vibe/rules/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/solutions/`, `.claude/vibe/todos/`
+- `.claude/vibe/rules/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/solutions/`, `.claude/vibe/todos/`, `.claude/vibe/graph/`
 - `CLAUDE.md`
 
 **제외:**
@@ -316,30 +358,24 @@ vibe init
 
 ## 전체 워크플로우
 
+```mermaid
+flowchart TD
+    A["/vibe.spec"] --> B["/vibe.run ultrawork"]
+    B --> C["Gemini 리뷰"]
+    C --> D["(자동) 13+ Agent Review"]
+    D --> E{"P1/P2 이슈?"}
+    E -->|있음| F["(자동) Auto-Fix"]
+    F --> G["(자동) Graph 저장"]
+    E -->|없음| G
+    G --> H["✅ 완료"]
+    G --> I["📚 클로드 학습됨"]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  VIBE Complete Workflow                                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  1. /vibe.spec "기능명"                                         │
-│     ├── 문답으로 요구사항 수집                                   │
-│     ├── 요구사항 확정 후 4개 병렬 리서치                         │
-│     └── SPEC 문서 생성                                          │
-│                                                                 │
-│  2. /vibe.run "기능명" ultrawork                                │
-│     ├── 구현                                                    │
-│     ├── 테스트                                                  │
-│     └── 자동 진행                                               │
-│                                                                 │
-│  3. /vibe.verify "기능명"                                       │
-│     └── BDD 시나리오 검증                                       │
-│                                                                 │
-│  4. /vibe.review                                                │
-│     ├── 13+ 병렬 리뷰 에이전트                                  │
-│     └── P1/P2/P3 우선순위 분류                                  │
-│                                                                 │
-│  5. /vibe.utils --e2e                                           │
-│     └── Playwright E2E 테스트                                   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+| 단계 | 설명 | 자동화 |
+|------|------|--------|
+| 1. `/vibe.spec` | 요구사항 수집 + SPEC 생성 | 수동 |
+| 2. `/vibe.run` | 구현 + Gemini 리뷰 | 수동 시작 |
+| 3. Agent Review | 13+ 에이전트 병렬 리뷰 | ✅ 자동 |
+| 4. Auto-Fix | P1/P2 이슈 자동 수정 | ✅ 자동 |
+| 5. Graph 저장 | 문제→해결 패턴 저장 | ✅ 자동 |
+| 6. 학습 | 다음에 패턴 재사용 | ✅ 자동 |
