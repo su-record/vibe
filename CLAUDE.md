@@ -51,11 +51,11 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 ## Workflow
 
 ```
-/vibe.spec → /vibe.run → (자동) review → (자동) fix → ✅ 완료
+/vibe.spec → (자동) SPEC 리뷰 → /vibe.run → (자동) 코드 리뷰 → (자동) fix → ✅ 완료
 ```
 
 **자동화된 플로우:**
-1. `/vibe.spec` - SPEC 작성
+1. `/vibe.spec` - SPEC 작성 + **(자동)** Gemini 리뷰 → 자동 반영
 2. `/vibe.run` - 구현 + Gemini 리뷰
 3. **(자동)** 13+ 에이전트 병렬 리뷰
 4. **(자동)** P1/P2 이슈 자동 수정
@@ -324,18 +324,21 @@ vibe init
 
 ```mermaid
 flowchart TD
-    A["/vibe.spec"] --> B["/vibe.run ultrawork"]
-    B --> C["Gemini 리뷰"]
-    C --> D["(자동) 13+ Agent Review"]
-    D --> E{"P1/P2 이슈?"}
-    E -->|있음| F["(자동) Auto-Fix"]
-    F --> G["✅ 완료"]
-    E -->|없음| G
+    A["/vibe.spec"] --> B["(자동) SPEC 리뷰"]
+    B --> C["SPEC 자동 보완"]
+    C --> D["/vibe.run ultrawork"]
+    D --> E["Gemini 코드 리뷰"]
+    E --> F["(자동) 13+ Agent Review"]
+    F --> G{"P1/P2 이슈?"}
+    G -->|있음| H["(자동) Auto-Fix"]
+    H --> I["✅ 완료"]
+    G -->|없음| I
 ```
 
 | 단계 | 설명 | 자동화 |
 |------|------|--------|
-| 1. `/vibe.spec` | 요구사항 수집 + SPEC 생성 | 수동 |
-| 2. `/vibe.run` | 구현 + Gemini 리뷰 | 수동 시작 |
-| 3. Agent Review | 13+ 에이전트 병렬 리뷰 | ✅ 자동 |
-| 4. Auto-Fix | P1/P2 이슈 자동 수정 | ✅ 자동 |
+| 1. `/vibe.spec` | 요구사항 수집 + SPEC 생성 | 수동 시작 |
+| 2. SPEC 리뷰 | Gemini가 SPEC 검토 + 자동 반영 | ✅ 자동 |
+| 3. `/vibe.run` | 구현 + Gemini 리뷰 | 수동 시작 |
+| 4. Agent Review | 13+ 에이전트 병렬 리뷰 | ✅ 자동 |
+| 5. Auto-Fix | P1/P2 이슈 자동 수정 | ✅ 자동 |
