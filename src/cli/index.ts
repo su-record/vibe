@@ -392,54 +392,37 @@ function showHelp(): void {
   console.log(`
 📖 Vibe - SPEC-driven AI coding framework (Claude Code exclusive)
 
-Basic Commands:
+Commands:
   vibe init [project]     Initialize project
   vibe update             Update settings
-  vibe status             Show current status
+  vibe status             Show status
   vibe help               Help
-  vibe version            Version info
+  vibe version            Version
 
-External LLM Auth:
-  vibe auth gpt           GPT Plus/Pro OAuth authentication
-  vibe auth gemini        Gemini subscription OAuth (recommended)
-  vibe auth gpt --key <key>       GPT API key setup
-  vibe auth gemini --key <key>    Gemini API key setup
+Auth:
+  vibe auth gpt           GPT OAuth (Plus/Pro)
+  vibe auth gemini        Gemini OAuth
+  vibe auth gpt --key     GPT API key
+  vibe auth gemini --key  Gemini API key
+  vibe logout gpt|gemini  Logout
+  vibe remove gpt|gemini  Remove LLM config
 
-Status & Management:
-  vibe status             Full status check
-  vibe status gpt         GPT auth status
-  vibe status gemini      Gemini auth status
-  vibe logout gpt         GPT logout
-  vibe logout gemini      Gemini logout
-  vibe remove gpt         Remove GPT
-  vibe remove gemini      Remove Gemini
-  vibe remove             Remove vibe entirely (MCP, settings, package)
-
-Claude Code Slash Commands:
-  /vibe.spec "feature"    Create SPEC (PTCF structure) + parallel research
+Slash Commands (Claude Code):
+  /vibe.spec "feature"    Create SPEC + parallel research
   /vibe.run "feature"     Execute implementation
-  /vibe.run ... ultrawork Maximum performance mode
   /vibe.verify "feature"  BDD verification
   /vibe.review            Parallel code review (13+ agents)
   /vibe.reason "problem"  Systematic reasoning
   /vibe.analyze           Project analysis
   /vibe.utils             Utilities (--e2e, --diagram, --continue)
 
-Hook-based LLM Routing (Auto):
-  "architecture/design" → GPT auto-routing
-  "UI/UX/design"        → Gemini auto-routing
-  "debugging/bug"       → GPT auto-routing
-  "code analysis"       → Gemini auto-routing
+LLM Routing:
+  gpt. / gemini.          Direct LLM call with web search
+  Auto-routing via hooks  (architecture→GPT, UI/UX→Gemini)
 
-Direct LLM Call:
-  gpt. / gpt-           GPT direct call (with web search)
-  gemini. / gemini-     Gemini direct call (with web search)
+Workflow: /vibe.spec → /vibe.run → /vibe.verify
 
-Workflow:
-  /vibe.spec → /vibe.run → /vibe.verify
-
-Docs:
-  https://github.com/su-record/vibe
+Docs: https://github.com/su-record/vibe
   `);
 }
 
