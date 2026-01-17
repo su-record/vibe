@@ -54,7 +54,7 @@ ${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : '
   const configPath = path.join(vibeDir, 'config.json');
 
   if (!fs.existsSync(vibeDir)) {
-    console.log('❌ vibe 프로젝트가 아닙니다. 먼저 vibe init을 실행하세요.');
+    console.log('❌ Not a vibe project. Run vibe init first.');
     return;
   }
 
@@ -79,15 +79,15 @@ ${llmType === 'gpt' ? 'OpenAI API 키: https://platform.openai.com/api-keys' : '
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
   console.log(`
-✅ ${llmType.toUpperCase()} API 키 설정 완료!
+✅ ${llmType.toUpperCase()} API key configured!
 
-역할: ${llmConfig.description}
+Role: ${llmConfig.description}
 
-${llmType.toUpperCase()}는 Hook으로 직접 호출됩니다:
-  - "${llmType}한테 물어봐" 키워드로 자동 호출
-  - import('@su-record/vibe/lib/${llmType}') 로 직접 사용 가능
+${llmType.toUpperCase()} is called directly via Hooks:
+  - Auto-called with "${llmType}. query" prefix
+  - Direct use: import('@su-record/vibe/lib/${llmType}')
 
-비활성화: vibe remove ${llmType}
+Disable: vibe remove ${llmType}
   `);
 }
 
@@ -100,7 +100,7 @@ export function removeExternalLLM(llmType: string): void {
   const configPath = path.join(vibeDir, 'config.json');
 
   if (!fs.existsSync(vibeDir)) {
-    console.log('❌ vibe 프로젝트가 아닙니다.');
+    console.log('❌ Not a vibe project.');
     return;
   }
 
@@ -115,7 +115,7 @@ export function removeExternalLLM(llmType: string): void {
   const llmConfig = EXTERNAL_LLMS[llmType];
 
   unregisterMcp(llmConfig.name);
-  console.log(`✅ ${llmType.toUpperCase()} 비활성화 완료`);
+  console.log(`✅ ${llmType.toUpperCase()} disabled`);
 }
 
 // ============================================================================
@@ -262,7 +262,7 @@ export function gptLogout(): void {
     const activeAccount = storage.getActiveAccount();
 
     if (!activeAccount) {
-      console.log('로그인된 계정이 없습니다.');
+      console.log('No account logged in.');
       return;
     }
 
@@ -449,7 +449,7 @@ export function geminiLogout(): void {
     const activeAccount = storage.getActiveAccount();
 
     if (!activeAccount) {
-      console.log('로그인된 계정이 없습니다.');
+      console.log('No account logged in.');
       return;
     }
 

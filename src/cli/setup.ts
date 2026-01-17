@@ -47,13 +47,13 @@ export function installGlobalVibePackage(isUpdate = false): void {
     try {
       const installed = JSON.parse(fs.readFileSync(installedPackageJson, 'utf-8'));
       if (installed.version === currentVersion && !isUpdate) {
-        log('   ℹ️  vibe 패키지 이미 설치됨 (v' + currentVersion + ')\n');
+        log('   ℹ️  vibe package already installed (v' + currentVersion + ')\n');
         return;
       }
     } catch { /* ignore: reinstall if can't read */ }
   }
 
-  log('   📦 vibe 패키지 전역 설치 중 (~/.config/vibe/)...\n');
+  log('   📦 Installing vibe package globally (~/.config/vibe/)...\n');
 
   // 디렉토리 생성
   ensureDir(globalVibeDir);
@@ -72,18 +72,18 @@ export function installGlobalVibePackage(isUpdate = false): void {
 
     if (fs.existsSync(globalNpmVibeDir)) {
       copyDirRecursive(globalNpmVibeDir, vibePackageDir);
-      log('   ✅ vibe 패키지 전역 설치 완료 (v' + currentVersion + ')\n');
+      log('   ✅ vibe package installed globally (v' + currentVersion + ')\n');
     } else {
-      // 전역 npm 설치가 없으면 npm install로 설치
-      log('   ⬇️  vibe 패키지 npm에서 설치 중...\n');
+      // Install from npm if global npm install not found
+      log('   ⬇️  Installing vibe package from npm...\n');
       execSync(`npm install @su-record/vibe@${currentVersion} --prefix "${globalVibeDir}" --no-save`, {
         stdio: 'pipe',
       });
-      log('   ✅ vibe 패키지 전역 설치 완료 (v' + currentVersion + ')\n');
+      log('   ✅ vibe package installed globally (v' + currentVersion + ')\n');
     }
 
-    // hooks/scripts 폴더를 VIBE_PATH에 복사 (hooks.json에서 참조)
-    // 소스 우선순위: 1) 방금 설치한 패키지 2) 현재 실행 패키지 루트 (npm link 등)
+    // Copy hooks/scripts folder to VIBE_PATH (referenced by hooks.json)
+    // Source priority: 1) Just installed package 2) Current package root (npm link etc)
     const packageRoot = path.resolve(__dirname, '..', '..');
     const installedHooksSource = path.join(vibePackageDir, 'hooks', 'scripts');
     const localHooksSource = path.join(packageRoot, 'hooks', 'scripts');
@@ -96,12 +96,12 @@ export function installGlobalVibePackage(isUpdate = false): void {
         removeDirRecursive(hooksScriptsTarget);
       }
       copyDirRecursive(hooksScriptsSource, hooksScriptsTarget);
-      log('   ✅ Hooks 스크립트 설치 완료 (~/.config/vibe/hooks/scripts/)\n');
+      log('   ✅ Hook scripts installed (~/.config/vibe/hooks/scripts/)\n');
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log('   ⚠️  vibe 패키지 전역 설치 실패: ' + message + '\n');
-    log('   ℹ️  수동 설치: cd ~/.config/vibe && npm install @su-record/vibe\n');
+    log('   ⚠️  vibe package global install failed: ' + message + '\n');
+    log('   ℹ️  Manual install: cd ~/.config/vibe && npm install @su-record/vibe\n');
   }
 }
 
@@ -125,17 +125,17 @@ export function registerMcpServers(isUpdate = false): void {
   // context7 MCP만 등록 (라이브러리 문서 검색용)
   try {
     registerMcp('context7', { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] });
-    log(isUpdate ? '   ✅ context7 MCP 전역 등록 완료\n' : '   ✅ Context7 MCP 등록 완료 (라이브러리 문서 검색)\n');
+    log(isUpdate ? '   ✅ context7 MCP registered globally\n' : '   ✅ Context7 MCP registered (library docs search)\n');
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     if (message.includes('already exists')) {
-      log('   ℹ️  Context7 MCP 이미 등록됨\n');
+      log('   ℹ️  Context7 MCP already registered\n');
     } else {
-      log('   ⚠️  Context7 MCP 수동 등록 필요\n');
+      log('   ⚠️  Context7 MCP manual registration required\n');
     }
   }
 
-  log('   ℹ️  GPT/Gemini는 Hook으로 직접 호출 (MCP 불필요)\n');
+  log('   ℹ️  GPT/Gemini called via Hooks (no MCP needed)\n');
 }
 
 // ============================================================================
@@ -179,19 +179,19 @@ export function updateConstitution(
 
   constitution = constitution.replace(
     '- Database: {PostgreSQL / MongoDB / etc.}',
-    stackDetails.databases.length > 0 ? `- Database: ${stackDetails.databases.join(', ')}` : '- Database: (프로젝트에 맞게 설정)'
+    stackDetails.databases.length > 0 ? `- Database: ${stackDetails.databases.join(', ')}` : '- Database: (configure for your project)'
   );
   constitution = constitution.replace(
     '- State Management: {Provider / Redux / etc.}',
-    stackDetails.stateManagement.length > 0 ? `- State Management: ${stackDetails.stateManagement.join(', ')}` : '- State Management: (프로젝트에 맞게 설정)'
+    stackDetails.stateManagement.length > 0 ? `- State Management: ${stackDetails.stateManagement.join(', ')}` : '- State Management: (configure for your project)'
   );
   constitution = constitution.replace(
     '- Hosting: {Cloud Run / Vercel / etc.}',
-    stackDetails.hosting.length > 0 ? `- Hosting: ${stackDetails.hosting.join(', ')}` : '- Hosting: (프로젝트에 맞게 설정)'
+    stackDetails.hosting.length > 0 ? `- Hosting: ${stackDetails.hosting.join(', ')}` : '- Hosting: (configure for your project)'
   );
   constitution = constitution.replace(
     '- CI/CD: {GitHub Actions / etc.}',
-    stackDetails.cicd.length > 0 ? `- CI/CD: ${stackDetails.cicd.join(', ')}` : '- CI/CD: (프로젝트에 맞게 설정)'
+    stackDetails.cicd.length > 0 ? `- CI/CD: ${stackDetails.cicd.join(', ')}` : '- CI/CD: (configure for your project)'
   );
 
   fs.writeFileSync(constitutionPath, constitution);
@@ -246,27 +246,27 @@ export function updateClaudeMd(
 
         const newContent = beforeVibe + (beforeVibe ? '\n\n---\n\n' : '') + vibeContent + afterVibe;
         fs.writeFileSync(projectClaudeMd, newContent);
-        log('   ✅ CLAUDE.md vibe 섹션 업데이트 완료\n');
+        log('   ✅ CLAUDE.md vibe section updated\n');
       } else if (!existingContent.includes('/vibe.spec')) {
         const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
         fs.writeFileSync(projectClaudeMd, mergedContent);
-        log('   ✅ CLAUDE.md에 vibe 섹션 추가\n');
+        log('   ✅ CLAUDE.md vibe section added\n');
       } else {
-        log('   ℹ️  CLAUDE.md vibe 섹션 유지\n');
+        log('   ℹ️  CLAUDE.md vibe section kept\n');
       }
     } else {
-      // init: 없으면 추가
+      // init: add if not exists
       if (!existingContent.includes('/vibe.spec')) {
         const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
         fs.writeFileSync(projectClaudeMd, mergedContent);
-        log('   ✅ CLAUDE.md에 vibe 섹션 추가\n');
+        log('   ✅ CLAUDE.md vibe section added\n');
       } else {
-        log('   ℹ️  CLAUDE.md에 vibe 섹션 이미 존재\n');
+        log('   ℹ️  CLAUDE.md vibe section already exists\n');
       }
     }
   } else {
     fs.writeFileSync(projectClaudeMd, vibeContent);
-    log('   ✅ CLAUDE.md 생성\n');
+    log('   ✅ CLAUDE.md created\n');
   }
 }
 
@@ -306,7 +306,7 @@ export function updateRules(vibeDir: string, detectedStacks: TechStack[], isUpda
     });
   }
 
-  log('   ✅ 코딩 규칙 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (.claude/vibe/)\n');
+  log('   ✅ Coding rules ' + (isUpdate ? 'updated' : 'installed') + ' (.claude/vibe/)\n');
 }
 
 // ============================================================================
@@ -325,14 +325,14 @@ export function installGlobalAssets(isUpdate = false): void {
   ensureDir(globalCommandsDir);
   const commandsSource = path.join(__dirname, '../../commands');
   copyDirRecursive(commandsSource, globalCommandsDir);
-  log('   ✅ 슬래시 커맨드 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (~/.claude/commands/)\n');
+  log('   ✅ Slash commands ' + (isUpdate ? 'updated' : 'installed') + ' (~/.claude/commands/)\n');
 
   // agents
   const globalAgentsDir = path.join(globalClaudeDir, 'agents');
   ensureDir(globalAgentsDir);
   const agentsSource = path.join(__dirname, '../../agents');
   copyDirRecursive(agentsSource, globalAgentsDir);
-  log('   ✅ 서브에이전트 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (~/.claude/agents/)\n');
+  log('   ✅ Subagents ' + (isUpdate ? 'updated' : 'installed') + ' (~/.claude/agents/)\n');
 
   // skills
   const globalSkillsDir = path.join(globalClaudeDir, 'skills');
@@ -340,7 +340,7 @@ export function installGlobalAssets(isUpdate = false): void {
   const skillsSource = path.join(__dirname, '../../skills');
   if (fs.existsSync(skillsSource)) {
     copyDirRecursive(skillsSource, globalSkillsDir);
-    log('   ✅ 스킬 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (~/.claude/skills/)\n');
+    log('   ✅ Skills ' + (isUpdate ? 'updated' : 'installed') + ' (~/.claude/skills/)\n');
   }
 
   // hooks - 템플릿에서 {{VIBE_PATH}}를 실제 경로로 치환
@@ -364,7 +364,7 @@ export function installGlobalAssets(isUpdate = false): void {
     } else {
       fs.writeFileSync(globalSettingsPath, hooksContent);
     }
-    log('   ✅ Hooks 설정 ' + (isUpdate ? '업데이트' : '설치') + ' 완료 (~/.claude/settings.json)\n');
+    log('   ✅ Hooks ' + (isUpdate ? 'updated' : 'installed') + ' (~/.claude/settings.json)\n');
     log('   ℹ️  VIBE_PATH: ' + vibeConfigPath + '\n');
   }
 }
@@ -381,7 +381,7 @@ export function migrateLegacyVibe(projectRoot: string, vibeDir: string): boolean
 
   if (!fs.existsSync(legacyVibeDir)) return false;
 
-  log('   🔄 레거시 .vibe/ 폴더 마이그레이션 중...\n');
+  log('   🔄 Migrating legacy .vibe/ folder...\n');
   ensureDir(vibeDir);
 
   try {
@@ -398,10 +398,10 @@ export function migrateLegacyVibe(projectRoot: string, vibeDir: string): boolean
       }
     });
     removeDirRecursive(legacyVibeDir);
-    log('   ✅ .vibe/ → .claude/vibe/ 마이그레이션 완료\n');
+    log('   ✅ .vibe/ → .claude/vibe/ migration complete\n');
     return true;
   } catch { /* ignore: optional operation */
-    log('   ⚠️  마이그레이션 실패 - .vibe/ 폴더 수동 삭제 필요\n');
+    log('   ⚠️  Migration failed - manual deletion of .vibe/ required\n');
     return false;
   }
 }
@@ -440,7 +440,7 @@ export function updateGitignore(projectRoot: string): void {
     gitignore = gitignore.replace(/\.claude\/settings\.local\.json\n?/g, '');
     gitignore = gitignore.replace(/settings\.local\.json\n?/g, '');
     modified = true;
-    log('   ✅ .gitignore에서 settings.local.json 제거\n');
+    log('   ✅ Removed settings.local.json from .gitignore\n');
   }
 
   if (modified) {
@@ -493,12 +493,12 @@ export function cleanupLegacy(projectRoot: string, claudeDir: string): void {
   const oldRulesDir = path.join(projectRoot, '.agent/rules');
   const oldAgentDir = path.join(projectRoot, '.agent');
   if (fs.existsSync(oldRulesDir)) {
-    log('   🔄 마이그레이션: .agent/rules/ → .claude/vibe/rules/\n');
+    log('   🔄 Migration: .agent/rules/ → .claude/vibe/rules/\n');
     removeDirRecursive(oldRulesDir);
     if (fs.existsSync(oldAgentDir) && fs.readdirSync(oldAgentDir).length === 0) {
       fs.rmdirSync(oldAgentDir);
     }
-    log('   ✅ 기존 .agent/rules/ 폴더 정리 완료\n');
+    log('   ✅ Legacy .agent/rules/ folder cleaned up\n');
   }
 
   // 레거시 커맨드 파일 정리
@@ -532,12 +532,12 @@ export function cleanupLegacy(projectRoot: string, claudeDir: string): void {
   // 프로젝트 로컬 settings.json 제거 (전역으로 이동됨)
   const localSettingsPath = path.join(claudeDir, 'settings.json');
   if (fs.existsSync(localSettingsPath)) {
-    log('   🧹 프로젝트 로컬 settings.json 제거 (전역으로 통합됨)...\n');
+    log('   🧹 Removing local settings.json (moved to global)...\n');
     try {
       fs.unlinkSync(localSettingsPath);
-      log('   ✅ .claude/settings.json 삭제 완료\n');
+      log('   ✅ .claude/settings.json deleted\n');
     } catch { /* ignore: optional operation */
-      log('   ⚠️  .claude/settings.json 수동 삭제 필요\n');
+      log('   ⚠️  .claude/settings.json manual deletion required\n');
     }
   }
 }
@@ -562,7 +562,7 @@ export function removeLocalAssets(claudeDir: string): void {
         fs.unlinkSync(asset.path);
       }
       const name = path.basename(asset.path);
-      log(`   🧹 프로젝트 로컬 ${name}${asset.isDir ? '/' : ''} 제거 (전역으로 이동)\n`);
+      log(`   🧹 Removed local ${name}${asset.isDir ? '/' : ''} (moved to global)\n`);
     }
   });
 }
@@ -590,7 +590,7 @@ export function cleanupClaudeConfig(): void {
             if (isLocalPath) {
               delete projectConfig.mcpServers.vibe;
               configModified = true;
-              log(`   🧹 ${projectPath}: 로컬 vibe MCP 제거\n`);
+              log(`   🧹 ${projectPath}: removed local vibe MCP\n`);
             }
           }
           if (projectConfig.mcpServers['vibe-gemini']) {
@@ -613,11 +613,11 @@ export function cleanupClaudeConfig(): void {
 
     if (configModified) {
       fs.writeFileSync(claudeConfigPath, JSON.stringify(claudeConfig, null, 2));
-      log('   ✅ ~/.claude.json 로컬 MCP 설정 정리 완료\n');
+      log('   ✅ ~/.claude.json local MCP settings cleaned up\n');
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log('   ⚠️  ~/.claude.json 정리 실패: ' + message + '\n');
+    log('   ⚠️  ~/.claude.json cleanup failed: ' + message + '\n');
   }
 }
 
@@ -627,12 +627,12 @@ export function cleanupClaudeConfig(): void {
 export function cleanupLegacyMcp(vibeDir: string): void {
   const oldMcpDir = path.join(vibeDir, 'mcp');
   if (fs.existsSync(oldMcpDir)) {
-    log('   🧹 기존 mcp/ 폴더 정리 중...\n');
+    log('   🧹 Cleaning up legacy mcp/ folder...\n');
     try {
       removeDirRecursive(oldMcpDir);
-      log('   ✅ mcp/ 폴더 삭제 완료\n');
+      log('   ✅ mcp/ folder deleted\n');
     } catch { /* ignore: optional operation */
-      log('   ⚠️  mcp/ 폴더 수동 삭제 필요\n');
+      log('   ⚠️  mcp/ folder manual deletion required\n');
     }
   }
 }

@@ -425,40 +425,40 @@ To reinstall: vibe init
 
 function showHelp(): void {
   console.log(`
-📖 Vibe - SPEC-driven AI coding framework (Claude Code 전용)
+📖 Vibe - SPEC-driven AI coding framework (Claude Code exclusive)
 
-기본 명령어:
-  vibe init [project]     프로젝트 초기화
-  vibe update             설정 업데이트
-  vibe status             현재 설정 상태
-  vibe help               도움말
-  vibe version            버전 정보
+Basic Commands:
+  vibe init [project]     Initialize project
+  vibe update             Update settings
+  vibe status             Show current status
+  vibe help               Help
+  vibe version            Version info
 
-외부 LLM 인증:
-  vibe auth gpt           GPT Plus/Pro OAuth 인증
-  vibe auth gemini        Gemini 구독 OAuth 인증 (권장)
-  vibe auth gpt --key <key>       GPT API 키 설정
-  vibe auth gemini --key <key>    Gemini API 키 설정
+External LLM Auth:
+  vibe auth gpt           GPT Plus/Pro OAuth authentication
+  vibe auth gemini        Gemini subscription OAuth (recommended)
+  vibe auth gpt --key <key>       GPT API key setup
+  vibe auth gemini --key <key>    Gemini API key setup
 
-상태 및 관리:
-  vibe status             전체 상태 확인
-  vibe status gpt         GPT 인증 상태 확인
-  vibe status gemini      Gemini 인증 상태 확인
-  vibe logout gpt         GPT 로그아웃
-  vibe logout gemini      Gemini 로그아웃
-  vibe remove gpt         GPT 제거
-  vibe remove gemini      Gemini 제거
-  vibe remove             vibe 전체 제거 (MCP, 설정, 패키지)
+Status & Management:
+  vibe status             Full status check
+  vibe status gpt         GPT auth status
+  vibe status gemini      Gemini auth status
+  vibe logout gpt         GPT logout
+  vibe logout gemini      Gemini logout
+  vibe remove gpt         Remove GPT
+  vibe remove gemini      Remove Gemini
+  vibe remove             Remove vibe entirely (MCP, settings, package)
 
-Claude Code 슬래시 커맨드:
-  /vibe.spec "기능명"     SPEC 작성 (PTCF 구조) + 병렬 리서치
-  /vibe.run "기능명"      구현 실행
-  /vibe.run ... ultrawork 최대 성능 모드
-  /vibe.verify "기능명"   BDD 검증
-  /vibe.review            병렬 코드 리뷰 (13+ 에이전트)
-  /vibe.reason "문제"     체계적 추론
-  /vibe.analyze           프로젝트 분석
-  /vibe.utils             유틸리티 (--e2e, --diagram, --continue)
+Claude Code Slash Commands:
+  /vibe.spec "feature"    Create SPEC (PTCF structure) + parallel research
+  /vibe.run "feature"     Execute implementation
+  /vibe.run ... ultrawork Maximum performance mode
+  /vibe.verify "feature"  BDD verification
+  /vibe.review            Parallel code review (13+ agents)
+  /vibe.reason "problem"  Systematic reasoning
+  /vibe.analyze           Project analysis
+  /vibe.utils             Utilities (--e2e, --diagram, --continue)
 
 Hook-based LLM Routing (Auto):
   "architecture/design" → GPT auto-routing
@@ -473,7 +473,7 @@ Direct LLM Call:
 Workflow:
   /vibe.spec → /vibe.run → /vibe.verify
 
-문서:
+Docs:
   https://github.com/su-record/vibe
   `);
 }
@@ -680,19 +680,19 @@ switch (command) {
 
   default:
     console.log(`
-❌ 알 수 없는 명령어: ${command}
+❌ Unknown command: ${command}
 
-사용 가능한 명령어:
-  vibe init       프로젝트 초기화
-  vibe update     설정 업데이트
-  vibe auth       LLM 인증 (gpt, gemini)
-  vibe status     상태 확인
-  vibe logout     로그아웃
-  vibe remove     제거
-  vibe help       도움말
-  vibe version    버전 정보
+Available commands:
+  vibe init       Initialize project
+  vibe update     Update settings
+  vibe auth       LLM auth (gpt, gemini)
+  vibe status     Show status
+  vibe logout     Logout
+  vibe remove     Remove
+  vibe help       Help
+  vibe version    Version info
 
-사용법: vibe help
+Usage: vibe help
     `);
     process.exit(1);
 }

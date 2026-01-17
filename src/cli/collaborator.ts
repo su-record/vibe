@@ -53,11 +53,11 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
 
       if (modified) {
         fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
-        log('   ✅ package.json 정리 완료 (레거시 vibe 설정 제거)\n');
+        log('   ✅ package.json cleaned up (legacy vibe settings removed)\n');
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
-      log('   ⚠️  package.json 수정 실패: ' + message + '\n');
+      log('   ⚠️  package.json modification failed: ' + message + '\n');
     }
   }
 
@@ -68,40 +68,40 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
   }
   if (!fs.existsSync(setupShPath)) {
     const setupScript = `#!/bin/bash
-# Vibe 협업자 자동 설치 스크립트
-# 사용법: ./.claude/vibe/setup.sh
+# Vibe collaborator auto-install script
+# Usage: ./.claude/vibe/setup.sh
 
 set -e
 
-echo "🔧 Vibe 설치 확인 중..."
+echo "🔧 Checking Vibe installation..."
 
-# npm/npx 확인
+# Check npm/npx
 if ! command -v npx &> /dev/null; then
-    echo "❌ Node.js/npm이 설치되어 있지 않습니다."
-    echo "   https://nodejs.org 에서 설치해주세요."
+    echo "❌ Node.js/npm is not installed."
+    echo "   Please install from https://nodejs.org"
     exit 1
 fi
 
-# vibe 설치 확인 및 업데이트
+# Check vibe installation and update
 if command -v vibe &> /dev/null; then
-    echo "✅ Vibe가 이미 설치되어 있습니다."
+    echo "✅ Vibe is already installed."
     vibe update --silent
-    echo "✅ Vibe 업데이트 완료!"
+    echo "✅ Vibe updated!"
 else
-    echo "📦 Vibe 설치 중..."
+    echo "📦 Installing Vibe..."
     npm install -g @su-record/vibe
     vibe update --silent
-    echo "✅ Vibe 설치 및 설정 완료!"
+    echo "✅ Vibe installed and configured!"
 fi
 
 echo ""
-echo "다음 명령어로 시작하세요:"
-echo "  /vibe.spec \\"기능명\\"    SPEC 작성"
-echo "  /vibe.run \\"기능명\\"     구현 실행"
+echo "Get started with:"
+echo "  /vibe.spec \\"feature\\"    Create SPEC"
+echo "  /vibe.run \\"feature\\"     Implement"
 `;
     fs.writeFileSync(setupShPath, setupScript);
     fs.chmodSync(setupShPath, '755');
-    log('   ✅ 협업자 설치 스크립트 생성 (.claude/vibe/setup.sh)\n');
+    log('   ✅ Collaborator setup script created (.claude/vibe/setup.sh)\n');
   }
 
   // 3. README.md에 협업자 안내 추가
@@ -109,34 +109,34 @@ echo "  /vibe.run \\"기능명\\"     구현 실행"
   const vibeSetupSection = `
 ## Vibe Setup (AI Coding)
 
-이 프로젝트는 [Vibe](https://github.com/su-record/vibe) AI 코딩 프레임워크를 사용합니다.
+This project uses [Vibe](https://github.com/su-record/vibe) AI coding framework.
 
-### 협업자 설치
+### Collaborator Install
 
 \`\`\`bash
-# 전역 설치 (권장)
+# Global install (recommended)
 npm install -g @su-record/vibe
 vibe update
 
-# 또는 setup 스크립트 실행
-./.claude/vibe/setup.sh
+# Or use vibe init to setup
+vibe init
 \`\`\`
 
-### 사용법
+### Usage
 
-Claude Code에서 슬래시 커맨드 사용:
-- \`/vibe.spec "기능명"\` - SPEC 문서 작성
-- \`/vibe.run "기능명"\` - 구현 실행
+Use slash commands in Claude Code:
+- \`/vibe.spec "feature"\` - Create SPEC document
+- \`/vibe.run "feature"\` - Execute implementation
 `;
 
   if (fs.existsSync(readmePath)) {
     const readme = fs.readFileSync(readmePath, 'utf-8');
     if (!readme.includes('## Vibe Setup')) {
       fs.appendFileSync(readmePath, vibeSetupSection);
-      log('   ✅ README.md에 협업자 안내 추가\n');
+      log('   ✅ README.md collaborator guide added\n');
     }
   } else {
     fs.writeFileSync(readmePath, `# Project\n${vibeSetupSection}`);
-    log('   ✅ README.md 생성 (협업자 안내 포함)\n');
+    log('   ✅ README.md created (with collaborator guide)\n');
   }
 }

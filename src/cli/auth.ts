@@ -93,30 +93,30 @@ export function formatLLMStatus(): string {
   const status = getLLMAuthStatus();
   const lines: string[] = [];
 
-  lines.push('외부 LLM:');
+  lines.push('External LLM:');
 
-  // GPT 상태
+  // GPT status
   if (status.gpt) {
     if (status.gpt.type === 'oauth') {
       const icon = status.gpt.valid ? '✓' : '⚠';
-      lines.push(`  GPT: ${icon} OAuth 인증됨 (${status.gpt.email})`);
+      lines.push(`  GPT: ${icon} OAuth authenticated (${status.gpt.email})`);
     } else {
-      lines.push('  GPT: ✓ API 키 설정됨');
+      lines.push('  GPT: ✓ API key configured');
     }
   } else {
-    lines.push('  GPT: ✗ 미설정 (vibe gpt --auth 또는 vibe gpt <api-key>)');
+    lines.push('  GPT: ✗ Not configured (vibe auth gpt or vibe gpt <api-key>)');
   }
 
-  // Gemini 상태
+  // Gemini status
   if (status.gemini) {
     if (status.gemini.type === 'oauth') {
       const icon = status.gemini.valid ? '✓' : '⚠';
-      lines.push(`  Gemini: ${icon} OAuth 인증됨 (${status.gemini.email})`);
+      lines.push(`  Gemini: ${icon} OAuth authenticated (${status.gemini.email})`);
     } else {
-      lines.push('  Gemini: ✓ API 키 설정됨');
+      lines.push('  Gemini: ✓ API key configured');
     }
   } else {
-    lines.push('  Gemini: ✗ 미설정 (vibe gemini --auth 또는 vibe gemini <api-key>)');
+    lines.push('  Gemini: ✗ Not configured (vibe auth gemini or vibe gemini <api-key>)');
   }
 
   return lines.join('\n');
