@@ -24,10 +24,8 @@ vibe init
 | `vibe status` | Check status |
 | `vibe auth gpt` | GPT OAuth authentication |
 | `vibe auth gemini` | Gemini OAuth authentication |
-| `vibe auth composer --key <key>` | Composer API key setup |
 | `vibe logout gpt` | GPT logout |
 | `vibe logout gemini` | Gemini logout |
-| `vibe logout composer` | Composer logout |
 | `vibe help` | Help |
 | `vibe version` | Version info |
 
@@ -54,7 +52,7 @@ vibe init
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-model orchestration** | Claude + GPT-5.2 + Gemini 3 Pro + Composer |
+| **Multi-model orchestration** | Claude + GPT-5.2 + Gemini 3 Pro |
 | **13+ parallel review agents** | Security, performance, architecture |
 | **BDD auto verification** | Given/When/Then scenario verification |
 | **ULTRAWORK mode** | One keyword enables all optimizations |
@@ -79,28 +77,33 @@ Enable maximum performance with `ultrawork` or `ulw`:
 
 ## Multi-model Orchestration
 
-Call GPT/Gemini/Composer directly with hook prefixes:
+**Hook-based automatic routing** - Keywords in your prompt trigger the right LLM automatically:
 
-| LLM | Prefix | Example | Features |
-|-----|--------|---------|----------|
-| GPT | `gpt-`, `gpt.` | `gpt.weather today` | Web Search enabled |
-| Gemini | `gemini-`, `gemini.` | `gemini.UI improvements` | Google Search enabled |
-| Composer | `composer-`, `composer.` | `composer.create login form` | Fast multi-file editing |
+| Keyword Pattern | Routes to | Use Case |
+|-----------------|-----------|----------|
+| `아키텍처`, `architecture`, `설계` | GPT | Architecture review |
+| `UI`, `UX`, `디자인` | Gemini | UI/UX feedback |
+| `디버깅`, `debugging`, `버그 찾` | GPT | Bug analysis |
+| `코드 분석`, `analyze code` | Gemini | Code review |
 
-| Scenario | Recommended | Example |
-|----------|-------------|---------|
-| Latest info search | GPT | `gpt.React 19 changes` |
-| UI/UX review | Gemini | `gemini.improve this form UX` |
-| Architecture review | GPT | `gpt-review this architecture` |
-| Code analysis | Gemini | `gemini-analyze this code` |
-| Code generation | Composer | `composer.create API endpoint` |
+**Direct LLM call** with prefixes:
 
-**Direct API call:**
+| LLM | Prefix | Example |
+|-----|--------|---------|
+| GPT | `gpt-`, `gpt.` | `gpt.weather today` |
+| Gemini | `gemini-`, `gemini.` | `gemini.UI improvements` |
+
+**Smart Routing features:**
+- Automatic LLM selection based on task type
+- 5-minute availability cache with fallback
+- Error retry with alternative LLM
+- Web search enabled for both GPT and Gemini
+
+**API usage:**
 
 ```javascript
 import('@su-record/vibe/lib/gpt').then(g => g.quickWebSearch('weather today'))
 import('@su-record/vibe/lib/gemini').then(g => g.quickWebSearch('question'))
-import('@su-record/vibe/lib/composer').then(c => c.ask('create login form'))
 ```
 
 ## Parallel Review Agents

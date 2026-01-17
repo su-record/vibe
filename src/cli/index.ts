@@ -460,12 +460,15 @@ Claude Code 슬래시 커맨드:
   /vibe.analyze           프로젝트 분석
   /vibe.utils             유틸리티 (--e2e, --diagram, --continue)
 
-모델 오케스트레이션:
-  Opus 4.5    오케스트레이터 (메인)
-  Sonnet 4    구현
-  Haiku 4.5   코드 탐색
-  GPT 5.2     아키텍처/디버깅 (선택적)
-  Gemini 3    UI/UX 설계 (선택적)
+Hook-based LLM Routing (Auto):
+  "architecture/design" → GPT auto-routing
+  "UI/UX/design"        → Gemini auto-routing
+  "debugging/bug"       → GPT auto-routing
+  "code analysis"       → Gemini auto-routing
+
+Direct LLM Call:
+  gpt. / gpt-           GPT direct call (with web search)
+  gemini. / gemini-     Gemini direct call (with web search)
 
 Workflow:
   /vibe.spec → /vibe.run → /vibe.verify
