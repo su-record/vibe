@@ -208,3 +208,7 @@ vibe init
 Use slash commands in Claude Code:
 - `/vibe.spec "feature"` - Create SPEC document
 - `/vibe.run "feature"` - Execute implementation
+
+---
+
+⭐ If this helps your workflow, consider giving it a star!
