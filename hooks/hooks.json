@@ -146,8 +146,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt search",
-            "statusMessage": "Asking GPT (with web search)..."
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate",
+            "statusMessage": "Asking GPT..."
           }
         ]
       },
@@ -157,7 +157,7 @@
           {
             "type": "command",
             "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json \"You are a Vibe orchestrator. Process the request and output structured JSON.\"",
-            "statusMessage": "Vibe GPT orchestrating (no search)..."
+            "statusMessage": "Vibe GPT orchestrating..."
           }
         ]
       },
@@ -166,8 +166,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini search",
-            "statusMessage": "Asking Gemini (with web search)..."
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate",
+            "statusMessage": "Asking Gemini..."
           }
         ]
       },
@@ -177,7 +177,7 @@
           {
             "type": "command",
             "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json \"You are a Vibe orchestrator. Process the request and output structured JSON.\"",
-            "statusMessage": "Vibe Gemini orchestrating (no search)..."
+            "statusMessage": "Vibe Gemini orchestrating..."
           }
         ]
       }

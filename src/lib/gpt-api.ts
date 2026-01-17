@@ -91,8 +91,6 @@ interface ChatOptions {
   maxTokens?: number;
   temperature?: number;
   systemPrompt?: string;
-  webSearch?: boolean;
-  userLocation?: { country: string };
   _retryCount?: number;
 }
 
@@ -285,7 +283,6 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     maxTokens = 4096,
     temperature = 0.7,
     systemPrompt = '',
-    webSearch = false,
   } = options;
 
   // API Key 방식은 표준 OpenAI 모델 사용 (gpt-4o, gpt-4-turbo 등)
@@ -301,7 +298,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
   const actualModel = apiKeyModelMap[model] || 'gpt-4o';
 
   // 메시지 구성
-  const apiMessages: Array<{ role: string; content: string | null; tool_call_id?: string; name?: string }> = [];
+  const apiMessages: Array<{ role: string; content: string | null }> = [];
   if (systemPrompt) {
     apiMessages.push({ role: 'system', content: systemPrompt });
   }
@@ -312,22 +309,13 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
   const retryCount = options._retryCount || 0;
   const maxRetries = 3;
 
-  // 웹 검색이 활성화되면 도구 추가
-  const tools = webSearch ? [{ type: 'web_search' as const }] : undefined;
-
   try {
-    // 1차 API 호출
     const requestBody: Record<string, unknown> = {
       model: actualModel,
       messages: apiMessages,
       max_tokens: maxTokens,
       temperature,
     };
-
-    if (tools) {
-      requestBody.tools = tools;
-      requestBody.tool_choice = 'auto';
-    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -387,7 +375,6 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
     model = DEFAULT_MODEL,
     messages = [],
     systemPrompt = '',
-    webSearch = false,
   } = options;
 
   // 모델 정보 가져오기
@@ -395,8 +382,6 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
 
   // Codex instructions 가져오기
   const instructions = await getCodexInstructions(modelInfo.id);
-
-  // 웹 검색은 Codex API의 web_search 도구로 처리
 
   // 메시지를 Codex 형식으로 변환
   const input = messages.map(msg => ({
@@ -411,7 +396,6 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
     finalInstructions = `${instructions}\n\n<user_context>\n${systemPrompt}\n</user_context>`;
   }
 
-  // 요청 본문 (web_search 도구 활성화)
   const requestBody: Record<string, unknown> = {
     model: modelInfo.id,
     store: false,
@@ -422,9 +406,6 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
     text: { verbosity: 'medium' },
     include: ['reasoning.encrypted_content'],
   };
-
-  // 참고: Codex API는 web_search 도구를 지원하지 않음
-  // 웹 검색이 필요하면 API Key 방식 사용 권장
 
   // API 호출 (재시도 로직 포함)
   const retryCount = options._retryCount || 0;
@@ -503,20 +484,13 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
   // OAuth 방식 (API Key fallback 지원)
   if (authInfo.type === 'oauth' && authInfo.accessToken) {
     try {
-      // 웹 검색 요청인데 OAuth 방식이면 web_search_preview 에러 가능
-      // → API Key로 우선 시도
-      if (options.webSearch && apiKey) {
-        return chatWithApiKey(apiKey, options);
-      }
       return await chatWithOAuth(authInfo.accessToken, options);
     } catch (error) {
-      // Rate Limit(429), 인증 오류(401/403), 또는 Unsupported tool 오류 시 API Key로 fallback
+      // Rate Limit(429), 인증 오류(401/403) 시 API Key로 fallback
       const errorMsg = (error as Error).message;
       const shouldFallback = errorMsg.includes('429') ||
                             errorMsg.includes('401') ||
-                            errorMsg.includes('403') ||
-                            errorMsg.includes('Unsupported tool') ||
-                            errorMsg.includes('web_search');
+                            errorMsg.includes('403');
       if (apiKey && shouldFallback) {
         console.log('⚠️ OAuth 오류 → API Key로 전환');
         return chatWithApiKey(apiKey, options);
@@ -680,36 +654,9 @@ export async function debugCode(prompt: string): Promise<string> {
   });
 }
 
-/**
- * 웹서치로 최신 정보 검색 (GPT-5.2 + Web Search)
- */
-export async function webSearch(prompt: string, country?: string): Promise<string> {
-  return ask(prompt, {
-    model: 'gpt-5.2',
-    maxTokens: 4096,
-    temperature: 0.3,
-    webSearch: true,
-    userLocation: country ? { country } : undefined,
-    systemPrompt: 'Search the web for the latest information and provide accurate answers with source citations.',
-  });
-}
-
-/**
- * 빠른 웹서치 (GPT-5.2 + Web Search)
- */
-export async function quickWebSearch(prompt: string): Promise<string> {
-  return ask(prompt, {
-    model: 'gpt-5.2',
-    maxTokens: 2048,
-    temperature: 0.3,
-    webSearch: true,
-    userLocation: { country: 'KR' },
-  });
-}
 
 // ============================================
 // Vibe GPT Orchestration Functions
-// 검색 없이 빠르고 결정론적인 응답
 // ============================================
 
 /**
@@ -738,7 +685,6 @@ export async function vibeGptOrchestrate(
     messages: [{ role: 'user', content: prompt }],
     maxTokens,
     temperature: 0,
-    webSearch: false, // 검색 제외
     systemPrompt: jsonMode
       ? `${systemPrompt}\n\nIMPORTANT: You must respond with valid JSON only. No markdown, no explanation, just pure JSON.`
       : systemPrompt,
