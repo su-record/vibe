@@ -97,13 +97,13 @@ Enable maximum performance with `ultrawork` or `ulw`:
 - Automatic LLM selection based on task type
 - 5-minute availability cache with fallback
 - Error retry with alternative LLM
-- Web search enabled for both GPT and Gemini
+- Web search via Gemini (Google Search grounding)
 
 **API usage:**
 
 ```javascript
-import('@su-record/vibe/lib/gpt').then(g => g.quickWebSearch('weather today'))
-import('@su-record/vibe/lib/gemini').then(g => g.quickWebSearch('question'))
+import('@su-record/vibe/lib/gpt').then(g => g.ask('question'))
+import('@su-record/vibe/lib/gemini').then(g => g.webSearch('search query'))
 ```
 
 ## Parallel Review Agents
