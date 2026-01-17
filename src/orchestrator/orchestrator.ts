@@ -640,11 +640,13 @@ Provide findings in this format:
   // ============================================
 
   /**
-   * GPT 웹 검색
+   * GPT 웹 검색 (Gemini로 위임)
    * @param query 검색 쿼리
+   * @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. geminiWebSearch를 사용하세요.
    */
   async gptWebSearch(query: string): Promise<string> {
-    return gptApi.quickWebSearch(query);
+    // GPT Codex API는 웹 검색 미지원 → Gemini로 위임
+    return this.geminiWebSearch(query);
   }
 
   /**

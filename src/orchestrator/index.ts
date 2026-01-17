@@ -207,24 +207,15 @@ import * as geminiApi from '../lib/gemini-api.js';
 // ============================================
 
 /**
- * GPT 웹 검색 (간편 API)
+ * GPT 질문 (간편 API) - 웹 검색 없음, Gemini로 위임
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.gptSearch('React 19 features')).then(console.log)"
+ * @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. geminiSearch를 사용하세요.
  */
 export async function gptSearch(query: string): Promise<ToolResult> {
-  try {
-    const result = await gptApi.quickWebSearch(query);
-    return {
-      content: [{ type: 'text', text: result }],
-      success: true
-    } as ToolResult & { success: boolean };
-  } catch (error) {
-    return {
-      content: [{ type: 'text', text: `[GPT Error] ${(error as Error).message}` }],
-      success: false
-    } as ToolResult & { success: boolean };
-  }
+  // GPT Codex API는 웹 검색 미지원 → Gemini로 위임
+  return geminiSearch(query);
 }
 
 /**
