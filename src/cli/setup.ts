@@ -102,22 +102,15 @@ export function installGlobalVibePackage(isUpdate = false): void {
 // ============================================================================
 
 /**
- * MCP 서버 등록 (context7만 유지, GPT/Gemini는 Hook으로 대체)
+ * MCP 서버 정리 (레거시 제거만, 새 등록 없음)
+ * context7은 사용자가 직접 플러그인으로 설치: /plugin install context7
  */
 export function registerMcpServers(isUpdate = false): void {
-  // 레거시 MCP 제거 (vibe, vibe-gemini, vibe-gpt)
+  // 레거시 MCP 제거 (vibe, vibe-gemini, vibe-gpt, context7)
   unregisterMcp('vibe');
   unregisterMcp('vibe-gemini');
   unregisterMcp('vibe-gpt');
-
-  if (isUpdate) {
-    unregisterMcp('context7');
-  }
-
-  // context7 MCP만 등록 (라이브러리 문서 검색용)
-  try {
-    registerMcp('context7', { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] });
-  } catch { /* ignore: optional */ }
+  unregisterMcp('context7');
 }
 
 // ============================================================================

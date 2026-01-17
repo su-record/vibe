@@ -188,6 +188,26 @@ Claude: You're building a login feature! I have a few questions.
 Next: /vibe.run "login feature" ultrawork
 ```
 
+## Context7 Plugin (Recommended)
+
+Install context7 plugin for up-to-date library documentation:
+
+```bash
+/plugin marketplace add upstash/context7
+/plugin install context7-plugin@context7-marketplace
+```
+
+**Why plugin over MCP?**
+
+- **Skill integration**: Auto-invokes context7 for library/API questions without prompting
+- **Subagent isolation**: Docs queries run in separate context, preventing main context bloat
+- **Knowledge cutoff solution**: Access latest docs for long coding sessions
+
+**Usage:**
+
+- Automatic: Ask library questions, vibe's skill triggers context7
+- Manual: `/context7:docs <library> [query]`
+
 ## Requirements
 
 - Node.js 18.0.0+
