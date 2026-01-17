@@ -127,46 +127,9 @@ P2 Important:
 - 비즈니스 로직 결정 필요
 - 사용자 확인 필요한 경우
 
-→ Phase 7에서 수동 처리 안내
+→ Phase 6에서 수동 처리 안내
 
-### Phase 6: Graph 저장 (배운점)
-
-**문제 → 해결 과정을 `.claude/vibe/graph/`에 저장:**
-
-```
-📝 그래프 저장 중...
-
-생성된 파일:
-- 2024-01-15-sql-injection.md
-- 2024-01-15-n1-query.md
-- 2024-01-15-circular-dep.md
-
-각 파일 구조:
----
-problem: SQL Injection in users.py:42
-category: security
-severity: P1
-solution: parameterized query 사용
-code_before: |
-  query = f"SELECT * FROM users WHERE id = {user_id}"
-code_after: |
-  query = "SELECT * FROM users WHERE id = %s"
-  cursor.execute(query, (user_id,))
-tags: [security, sql, python]
-related: [input-validation, prepared-statements]
-learned_at: 2024-01-15
-project: my-app
----
-```
-
-**Graph 검색 (나중에 재사용):**
-```bash
-# 비슷한 문제 검색
-grep -r "sql-injection" .claude/vibe/graph/
-grep -r "tags:.*security" .claude/vibe/graph/
-```
-
-### Phase 7: Todo File Creation (수동 처리 필요 항목)
+### Phase 6: Todo File Creation (수동 처리 필요 항목)
 
 Save **remaining** findings to `.claude/vibe/todos/`:
 
@@ -201,10 +164,6 @@ Auto-Fixed: 6 issues
 - [PERF] Unnecessary loop ✅
 - [TEST] Missing edge case ✅
 
-Graph Saved: .claude/vibe/graph/ (6 files)
-- 이 프로젝트에서 배운 패턴 저장됨
-- 다음에 비슷한 문제 시 자동 참조
-
 Remaining (수동 처리 필요):
 - P2-arch-large-refactor.md (아키텍처 결정 필요)
 - P3-style-extract-helper.md (백로그)
@@ -213,7 +172,7 @@ Remaining (수동 처리 필요):
 ✅ MERGE READY (P1/P2 해결됨)
 ```
 
-### Phase 8: Guide to Fix Workflow (수동 처리 항목)
+### Phase 7: Guide to Fix Workflow (수동 처리 항목)
 
 **남은 이슈 처리 시 워크플로우 선택:**
 

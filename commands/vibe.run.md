@@ -910,10 +910,6 @@ Then: 로그인 성공 + JWT 토큰 반환
   1. [PERF] N+1 쿼리 → 수정 완료
   2. [ARCH] 순환 의존성 → 수정 완료
 
-📝 그래프 저장: .claude/vibe/graph/
-  - 2024-01-15-n1-query.md
-  - 2024-01-15-circular-dep.md
-
 ✅ Auto Review 완료! 2개 문제 자동 해결.
 ```
 

@@ -51,9 +51,7 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 ## Workflow
 
 ```
-/vibe.spec → /vibe.run → (자동) review → (자동) fix → graph 저장
-                              ↓
-                         클로드가 학습
+/vibe.spec → /vibe.run → (자동) review → (자동) fix → ✅ 완료
 ```
 
 **자동화된 플로우:**
@@ -61,8 +59,6 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 2. `/vibe.run` - 구현 + Gemini 리뷰
 3. **(자동)** 13+ 에이전트 병렬 리뷰
 4. **(자동)** P1/P2 이슈 자동 수정
-5. **(자동)** 문제→해결 패턴을 `.claude/vibe/graph/`에 저장
-6. 다음에 비슷한 문제 시 graph에서 패턴 참조
 
 ## Plan Mode vs VIBE (워크플로우 선택)
 
@@ -177,38 +173,6 @@ Playwright 기반 자동화 테스트:
 | security-advisory-agent | 확정된 기능 보안 권고 |
 
 **⚠️ 리서치는 요구사항 확정 후 실행** (VIBE 원칙: 요구사항 먼저)
-
-### 자기 학습 (Self-Learning with Graph)
-
-리뷰에서 발견한 문제와 해결 과정을 자동 저장하여 **클로드가 학습**:
-
-```
-.claude/vibe/graph/
-├── 2024-01-15-sql-injection.md
-├── 2024-01-15-n1-query.md
-└── 2024-01-15-circular-dep.md
-```
-
-**Graph 파일 구조:**
-```yaml
-problem: SQL Injection in users.py:42
-category: security
-severity: P1
-solution: parameterized query 사용
-code_before: |
-  query = f"SELECT * FROM users WHERE id = {user_id}"
-code_after: |
-  cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-tags: [security, sql, python]
-related: [input-validation, prepared-statements]
-learned_at: 2024-01-15
-project: my-app
-```
-
-**활용:**
-- 비슷한 문제 발생 시 graph에서 패턴 검색
-- 프로젝트 간 학습 공유 가능
-- 시간이 지날수록 클로드가 똑똑해짐
 
 ## PTCF Structure
 
@@ -342,7 +306,7 @@ vibe는 자체 메모리 시스템으로 세션 간 컨텍스트를 유지합니
 
 **반드시 포함:**
 - `.claude/` 폴더 전체 (commands, agents, skills, settings.json)
-- `.claude/vibe/rules/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/solutions/`, `.claude/vibe/todos/`, `.claude/vibe/graph/`
+- `.claude/vibe/rules/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/solutions/`, `.claude/vibe/todos/`
 - `CLAUDE.md`
 
 **제외:**
@@ -365,10 +329,8 @@ flowchart TD
     C --> D["(자동) 13+ Agent Review"]
     D --> E{"P1/P2 이슈?"}
     E -->|있음| F["(자동) Auto-Fix"]
-    F --> G["(자동) Graph 저장"]
+    F --> G["✅ 완료"]
     E -->|없음| G
-    G --> H["✅ 완료"]
-    G --> I["📚 클로드 학습됨"]
 ```
 
 | 단계 | 설명 | 자동화 |
@@ -377,5 +339,3 @@ flowchart TD
 | 2. `/vibe.run` | 구현 + Gemini 리뷰 | 수동 시작 |
 | 3. Agent Review | 13+ 에이전트 병렬 리뷰 | ✅ 자동 |
 | 4. Auto-Fix | P1/P2 이슈 자동 수정 | ✅ 자동 |
-| 5. Graph 저장 | 문제→해결 패턴 저장 | ✅ 자동 |
-| 6. 학습 | 다음에 패턴 재사용 | ✅ 자동 |
