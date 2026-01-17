@@ -400,7 +400,7 @@ Check for:
 5. Testability of acceptance criteria
 ```
 
-**우선순위:** Gemini 먼저 시도 → 실패 시 GPT 시도 → 둘 다 실패 시 스킵
+**우선순위:** GPT 먼저 시도 (요구사항 분석에 강함) → 실패 시 Gemini 시도 → 둘 다 실패 시 스킵
 
 **리뷰 항목:**
 
