@@ -22,7 +22,7 @@ import {
   getPackageJson,
   compareVersions,
 } from './utils.js';
-import { unregisterMcp } from './mcp.js';
+import { unregisterMcp, isPluginInstalled } from './mcp.js';
 import { detectTechStacks } from './detect.js';
 import { formatLLMStatus, getLLMAuthStatus } from './auth.js';
 import { setupCollaboratorAutoInstall } from './collaborator.js';
@@ -159,11 +159,16 @@ async function init(projectName?: string): Promise<void> {
 
     // 완료 메시지
     const packageJson = getPackageJson();
+    const context7Installed = isPluginInstalled('context7');
+    const context7Guide = context7Installed
+      ? '📦 Context7 plugin: ✔ installed'
+      : `📦 Context7 plugin (recommended):
+   /plugin marketplace add upstash/context7
+   /plugin install context7-plugin@context7-marketplace`;
+
     log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus()}
-📦 Context7 plugin (recommended):
-   /plugin marketplace add upstash/context7
-   /plugin install context7-plugin@context7-marketplace
+${context7Guide}
 
 Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"
 `);
@@ -279,11 +284,16 @@ async function update(): Promise<void> {
     cleanupLegacyMcp(vibeDir);
 
     const packageJson = getPackageJson();
+    const context7Installed = isPluginInstalled('context7');
+    const context7Guide = context7Installed
+      ? '📦 Context7 plugin: ✔ installed'
+      : `📦 Context7 plugin (recommended):
+   /plugin marketplace add upstash/context7
+   /plugin install context7-plugin@context7-marketplace`;
+
     log(`✅ vibe updated (v${packageJson.version})
 ${formatLLMStatus()}
-📦 Context7 plugin (recommended):
-   /plugin marketplace add upstash/context7
-   /plugin install context7-plugin@context7-marketplace
+${context7Guide}
 `);
 
   } catch (error: unknown) {

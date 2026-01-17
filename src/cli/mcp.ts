@@ -175,3 +175,19 @@ export function isMcpRegistered(name: string): boolean {
   const settings = readClaudeSettings();
   return !!settings.mcpServers?.[name];
 }
+
+/**
+ * Claude Code 플러그인이 설치되어 있는지 확인
+ */
+export function isPluginInstalled(pluginName: string): boolean {
+  const cmd = claudeCmd();
+  try {
+    const output = execSync(`${cmd} plugin list`, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    return output.includes(pluginName);
+  } catch {
+    return false;
+  }
+}
