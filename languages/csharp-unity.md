@@ -1,38 +1,37 @@
-# 🎮 C# + Unity 품질 규칙
+# C# + Unity Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Unity 아키텍처 이해
+## Unity Architecture Understanding
 
-```
-┌─────────────────────────────────────────────┐
-│  MonoBehaviour Lifecycle                    │
-│  Awake → OnEnable → Start → Update → ...    │
-├─────────────────────────────────────────────┤
-│  ScriptableObject (데이터 에셋)              │
-│  - 설정, 이벤트, 공유 데이터                 │
-├─────────────────────────────────────────────┤
-│  Pure C# Classes (비-MonoBehaviour)         │
-│  - 게임 로직, 유틸리티                       │
-└─────────────────────────────────────────────┘
+```text
+MonoBehaviour Lifecycle
+Awake -> OnEnable -> Start -> Update -> ...
+
+ScriptableObject (Data Assets)
+- Settings, Events, Shared Data
+
+Pure C# Classes (Non-MonoBehaviour)
+- Game Logic, Utilities
 ```
 
-## C#/Unity 특화 규칙
+## C#/Unity Specific Rules
 
-### 1. MonoBehaviour 최소화
+### 1. Minimize MonoBehaviour
 
 ```csharp
-// ❌ 모든 로직을 MonoBehaviour에
+// Bad: All logic in MonoBehaviour
 public class PlayerController : MonoBehaviour
 {
     public float health;
@@ -41,12 +40,12 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // 이동, 전투, 인벤토리, UI 업데이트 모두 여기에...
-        // 수백 줄의 코드
+        // Movement, combat, inventory, UI update all here...
+        // Hundreds of lines of code
     }
 }
 
-// ✅ 관심사 분리
+// Good: Separation of concerns
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private PlayerData _data;
@@ -66,7 +65,7 @@ public class PlayerController : MonoBehaviour
     }
 }
 
-// Pure C# 클래스
+// Pure C# class
 public class PlayerMovement
 {
     private readonly PlayerData _data;
@@ -80,15 +79,15 @@ public class PlayerMovement
 
     public void Update(float deltaTime)
     {
-        // 이동 로직만
+        // Movement logic only
     }
 }
 ```
 
-### 2. ScriptableObject 활용
+### 2. Using ScriptableObject
 
 ```csharp
-// ✅ 데이터 에셋
+// Good: Data Asset
 [CreateAssetMenu(fileName = "PlayerData", menuName = "Game/PlayerData")]
 public class PlayerData : ScriptableObject
 {
@@ -101,7 +100,7 @@ public class PlayerData : ScriptableObject
     public float attackRange = 2f;
 }
 
-// ✅ 이벤트 채널
+// Good: Event Channel
 [CreateAssetMenu(fileName = "GameEvent", menuName = "Events/GameEvent")]
 public class GameEvent : ScriptableObject
 {
@@ -125,10 +124,10 @@ public interface IGameEventListener
 }
 ```
 
-### 3. 오브젝트 풀링
+### 3. Object Pooling
 
 ```csharp
-// ✅ 제네릭 오브젝트 풀
+// Good: Generic Object Pool
 public class ObjectPool<T> where T : Component
 {
     private readonly T _prefab;
@@ -167,7 +166,7 @@ public class ObjectPool<T> where T : Component
     }
 }
 
-// 사용 예시
+// Usage example
 public class BulletManager : MonoBehaviour
 {
     [SerializeField] private Bullet _bulletPrefab;
@@ -188,10 +187,10 @@ public class BulletManager : MonoBehaviour
 }
 ```
 
-### 4. 싱글톤 패턴 (주의해서 사용)
+### 4. Singleton Pattern (Use with Caution)
 
 ```csharp
-// ✅ 안전한 싱글톤
+// Good: Safe Singleton
 public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
     private static T _instance;
@@ -232,7 +231,7 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     }
 }
 
-// 사용
+// Usage
 public class GameManager : Singleton<GameManager>
 {
     public GameState CurrentState { get; private set; }
@@ -244,10 +243,10 @@ public class GameManager : Singleton<GameManager>
 }
 ```
 
-### 5. 코루틴 vs async/await
+### 5. Coroutine vs async/await
 
 ```csharp
-// ✅ 코루틴 (Unity 생명주기와 통합)
+// Good: Coroutine (integrated with Unity lifecycle)
 public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] private float _spawnInterval = 2f;
@@ -277,7 +276,7 @@ public class EnemySpawner : MonoBehaviour
     }
 }
 
-// ✅ async/await (I/O 작업)
+// Good: async/await (I/O operations)
 public class SaveManager : MonoBehaviour
 {
     public async Task SaveGameAsync(GameSaveData data)
@@ -302,10 +301,10 @@ public class SaveManager : MonoBehaviour
 }
 ```
 
-### 6. 이벤트 시스템
+### 6. Event System
 
 ```csharp
-// ✅ C# 이벤트
+// Good: C# Events
 public class Health : MonoBehaviour
 {
     public event Action<float> OnHealthChanged;
@@ -334,7 +333,7 @@ public class Health : MonoBehaviour
     }
 }
 
-// 구독
+// Subscription
 public class HealthUI : MonoBehaviour
 {
     [SerializeField] private Health _health;
@@ -357,10 +356,10 @@ public class HealthUI : MonoBehaviour
 }
 ```
 
-### 7. 인스펙터 최적화
+### 7. Inspector Optimization
 
 ```csharp
-// ✅ SerializeField + private
+// Good: SerializeField + private
 public class Enemy : MonoBehaviour
 {
     [Header("Settings")]
@@ -374,11 +373,11 @@ public class Enemy : MonoBehaviour
     [Header("Debug")]
     [SerializeField, ReadOnly] private float _distanceToTarget;
 
-    // public 프로퍼티로 읽기 전용 접근
+    // Read-only access via public property
     public float MoveSpeed => _moveSpeed;
 }
 
-// ✅ RequireComponent
+// Good: RequireComponent
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
 public class PhysicsObject : MonoBehaviour
@@ -392,19 +391,19 @@ public class PhysicsObject : MonoBehaviour
 }
 ```
 
-### 8. 성능 최적화
+### 8. Performance Optimization
 
 ```csharp
-// ✅ GetComponent 캐싱
+// Good: GetComponent Caching
 public class OptimizedBehaviour : MonoBehaviour
 {
-    // ❌ Update에서 GetComponent 호출
+    // Bad: GetComponent in Update
     void Update()
     {
         GetComponent<Rigidbody>().AddForce(Vector3.up);
     }
 
-    // ✅ 캐싱
+    // Good: Caching
     private Rigidbody _rb;
 
     void Awake()
@@ -418,49 +417,49 @@ public class OptimizedBehaviour : MonoBehaviour
     }
 }
 
-// ✅ string 비교 최적화
+// Good: String comparison optimization
 public class TagChecker : MonoBehaviour
 {
-    // ❌ 문자열 비교
+    // Bad: String comparison
     void OnTriggerEnter(Collider other)
     {
         if (other.tag == "Player") { }
     }
 
-    // ✅ CompareTag 사용
+    // Good: Use CompareTag
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player")) { }
     }
 }
 
-// ✅ 할당 최소화
+// Good: Minimize allocations
 public class NoAllocExample : MonoBehaviour
 {
-    // 미리 할당
+    // Pre-allocate
     private readonly Collider[] _hitBuffer = new Collider[10];
     private readonly RaycastHit[] _rayBuffer = new RaycastHit[5];
 
     void CheckOverlap(Vector3 position, float radius)
     {
-        // NonAlloc 버전 사용
+        // Use NonAlloc version
         int count = Physics.OverlapSphereNonAlloc(position, radius, _hitBuffer);
 
         for (int i = 0; i < count; i++)
         {
-            // _hitBuffer[i] 처리
+            // Process _hitBuffer[i]
         }
     }
 }
 ```
 
-## 폴더 구조 권장
+## Recommended Folder Structure
 
-```
+```text
 Assets/
-├── _Project/               # 프로젝트 에셋
+├── _Project/               # Project assets
 │   ├── Scripts/
-│   │   ├── Core/          # 핵심 시스템
+│   │   ├── Core/          # Core systems
 │   │   ├── Player/
 │   │   ├── Enemy/
 │   │   ├── UI/
@@ -473,44 +472,44 @@ Assets/
 │   ├── Textures/
 │   └── Audio/
 ├── Scenes/
-├── Resources/              # 런타임 로드 (주의해서 사용)
+├── Resources/              # Runtime load (use with caution)
 └── Plugins/
 ```
 
-## 네이밍 컨벤션
+## Naming Conventions
 
 ```csharp
-// 클래스: PascalCase
+// Class: PascalCase
 public class PlayerController { }
 
-// 인터페이스: I 접두사
+// Interface: I prefix
 public interface IDamageable { }
 
-// private 필드: _ 접두사 + camelCase
+// Private field: _ prefix + camelCase
 private float _moveSpeed;
 
-// SerializeField: _ 접두사 유지
+// SerializeField: Keep _ prefix
 [SerializeField] private float _health;
 
-// 상수: UPPER_SNAKE_CASE 또는 PascalCase
+// Constants: UPPER_SNAKE_CASE or PascalCase
 private const float MAX_HEALTH = 100f;
 private const float MaxHealth = 100f;
 
-// 프로퍼티: PascalCase
+// Property: PascalCase
 public float Health => _health;
 
-// 메서드: PascalCase
+// Method: PascalCase
 public void TakeDamage(float damage) { }
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] MonoBehaviour 로직 최소화
-- [ ] GetComponent 결과 캐싱
-- [ ] 이벤트 구독 해제 (OnDisable)
-- [ ] 오브젝트 풀링 적용
-- [ ] SerializeField + private 사용
-- [ ] CompareTag 사용
-- [ ] NonAlloc API 사용
-- [ ] Update 최소화 (필요시만)
-- [ ] ScriptableObject로 데이터 분리
+- [ ] Minimize MonoBehaviour logic
+- [ ] Cache GetComponent results
+- [ ] Unsubscribe events (OnDisable)
+- [ ] Apply object pooling
+- [ ] Use SerializeField + private
+- [ ] Use CompareTag
+- [ ] Use NonAlloc APIs
+- [ ] Minimize Update (only when needed)
+- [ ] Separate data with ScriptableObject

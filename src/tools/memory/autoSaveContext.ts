@@ -6,7 +6,7 @@ import { ToolResult, ToolDefinition } from '../../types/tool.js';
 
 export const autoSaveContextDefinition: ToolDefinition = {
   name: 'auto_save_context',
-  description: 'commit|save|checkpoint|backup|커밋|저장|compress - Auto-save and compress context',
+  description: 'commit|save|checkpoint|backup|compress - Auto-save and compress context',
   inputSchema: {
     type: 'object',
     properties: {

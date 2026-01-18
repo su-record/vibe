@@ -1,23 +1,24 @@
-# 🤖 Kotlin + Android 품질 규칙
+# Kotlin + Android Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Kotlin/Android 특화 규칙
+## Kotlin/Android Specific Rules
 
 ### 1. Jetpack Compose UI
 
 ```kotlin
-// ✅ Composable 함수
+// Good: Composable function
 @Composable
 fun UserProfileScreen(
     viewModel: UserProfileViewModel = hiltViewModel(),
@@ -32,7 +33,7 @@ fun UserProfileScreen(
     )
 }
 
-// ✅ Stateless Composable (재사용 가능)
+// Good: Stateless Composable (reusable)
 @Composable
 private fun UserProfileContent(
     uiState: UserProfileUiState,
@@ -43,10 +44,10 @@ private fun UserProfileContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("프로필") },
+                title = { Text("Profile") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -67,7 +68,7 @@ private fun UserProfileContent(
     }
 }
 
-// ✅ 재사용 가능한 컴포넌트
+// Good: Reusable component
 @Composable
 fun UserCard(
     user: User,
@@ -86,7 +87,7 @@ fun UserCard(
         ) {
             AsyncImage(
                 model = user.profileImage,
-                contentDescription = "${user.name} 프로필",
+                contentDescription = "${user.name} profile",
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
@@ -111,7 +112,7 @@ fun UserCard(
 ### 2. ViewModel (MVVM)
 
 ```kotlin
-// ✅ UiState 정의 (Sealed Interface)
+// Good: UiState definition (Sealed Interface)
 sealed interface UserListUiState {
     data object Loading : UserListUiState
     data class Success(
@@ -121,7 +122,7 @@ sealed interface UserListUiState {
     data class Error(val message: String) : UserListUiState
 }
 
-// ✅ ViewModel with Hilt
+// Good: ViewModel with Hilt
 @HiltViewModel
 class UserListViewModel @Inject constructor(
     private val getUsersUseCase: GetUsersUseCase,
@@ -160,7 +161,7 @@ class UserListViewModel @Inject constructor(
                 }
                 .onFailure { error ->
                     _uiState.value = UserListUiState.Error(
-                        error.message ?: "사용자 목록을 불러올 수 없습니다"
+                        error.message ?: "Failed to load user list"
                     )
                 }
         }
@@ -181,7 +182,7 @@ class UserListViewModel @Inject constructor(
                 .onSuccess { users ->
                     _uiState.value = UserListUiState.Success(users, isRefreshing = false)
                 }
-                .onFailure { /* 에러 처리 */ }
+                .onFailure { /* Error handling */ }
         }
     }
 }
@@ -190,7 +191,7 @@ class UserListViewModel @Inject constructor(
 ### 3. UseCase (Clean Architecture)
 
 ```kotlin
-// ✅ UseCase 정의
+// Good: UseCase definition
 class GetUsersUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -215,7 +216,7 @@ class CreateUserUseCase @Inject constructor(
     private val validator: UserValidator
 ) {
     suspend operator fun invoke(request: CreateUserRequest): Result<User> {
-        // 유효성 검사
+        // Validation
         validator.validate(request).onFailure { return Result.failure(it) }
 
         return runCatching {
@@ -225,10 +226,10 @@ class CreateUserUseCase @Inject constructor(
 }
 ```
 
-### 4. Repository 패턴
+### 4. Repository Pattern
 
 ```kotlin
-// ✅ Repository Interface
+// Good: Repository Interface
 interface UserRepository {
     suspend fun getUsers(): List<User>
     suspend fun getUser(id: String): User
@@ -237,7 +238,7 @@ interface UserRepository {
     suspend fun deleteUser(id: String)
 }
 
-// ✅ Repository 구현
+// Good: Repository implementation
 class UserRepositoryImpl @Inject constructor(
     private val apiService: UserApiService,
     private val userDao: UserDao,
@@ -246,16 +247,16 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun getUsers(): List<User> = withContext(dispatcher) {
         try {
-            // API에서 데이터 가져오기
+            // Fetch data from API
             val response = apiService.getUsers()
             val users = response.map { it.toDomain() }
 
-            // 로컬 캐시 업데이트
+            // Update local cache
             userDao.insertAll(users.map { it.toEntity() })
 
             users
         } catch (e: Exception) {
-            // 오프라인: 로컬 데이터 반환
+            // Offline: Return local data
             userDao.getAll().map { it.toDomain() }
         }
     }
@@ -267,22 +268,22 @@ class UserRepositoryImpl @Inject constructor(
 }
 ```
 
-### 5. 에러 처리
+### 5. Error Handling
 
 ```kotlin
-// ✅ 커스텀 예외
+// Good: Custom exception
 sealed class AppException(message: String) : Exception(message) {
-    class NetworkException(message: String = "네트워크 연결을 확인해주세요") : AppException(message)
-    class UnauthorizedException(message: String = "로그인이 필요합니다") : AppException(message)
+    class NetworkException(message: String = "Please check your network connection") : AppException(message)
+    class UnauthorizedException(message: String = "Login required") : AppException(message)
     class NotFoundException(
         val resource: String,
         val id: String
-    ) : AppException("${resource}을(를) 찾을 수 없습니다 (ID: $id)")
+    ) : AppException("$resource not found (ID: $id)")
     class ServerException(message: String) : AppException(message)
     class ValidationException(message: String) : AppException(message)
 }
 
-// ✅ Result 확장 함수
+// Good: Result extension functions
 inline fun <T> Result<T>.onSuccess(action: (T) -> Unit): Result<T> {
     getOrNull()?.let(action)
     return this
@@ -293,7 +294,7 @@ inline fun <T> Result<T>.onFailure(action: (Throwable) -> Unit): Result<T> {
     return this
 }
 
-// ✅ API 응답 처리
+// Good: API response handling
 suspend fun <T> safeApiCall(
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
     apiCall: suspend () -> T
@@ -305,8 +306,8 @@ suspend fun <T> safeApiCall(
             is HttpException -> {
                 when (throwable.code()) {
                     401 -> throw AppException.UnauthorizedException()
-                    404 -> throw AppException.NotFoundException("리소스", "unknown")
-                    else -> throw AppException.ServerException("서버 오류: ${throwable.code()}")
+                    404 -> throw AppException.NotFoundException("Resource", "unknown")
+                    else -> throw AppException.ServerException("Server error: ${throwable.code()}")
                 }
             }
             is IOException -> throw AppException.NetworkException()
@@ -316,10 +317,10 @@ suspend fun <T> safeApiCall(
 }
 ```
 
-### 6. Hilt 의존성 주입
+### 6. Hilt Dependency Injection
 
 ```kotlin
-// ✅ Module 정의
+// Good: Module definition
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
@@ -364,10 +365,10 @@ abstract class RepositoryModule {
 }
 ```
 
-### 7. 테스트
+### 7. Testing
 
 ```kotlin
-// ✅ ViewModel 테스트
+// Good: ViewModel test
 @OptIn(ExperimentalCoroutinesApi::class)
 class UserListViewModelTest {
 
@@ -386,11 +387,11 @@ class UserListViewModelTest {
     }
 
     @Test
-    fun `loadUsers 성공시 Success 상태가 된다`() = runTest {
+    fun `loadUsers success results in Success state`() = runTest {
         // Given
         val expectedUsers = listOf(
-            User(id = "1", name = "테스트1", email = "test1@example.com"),
-            User(id = "2", name = "테스트2", email = "test2@example.com")
+            User(id = "1", name = "Test1", email = "test1@example.com"),
+            User(id = "2", name = "Test2", email = "test2@example.com")
         )
         fakeUserRepository.setUsers(expectedUsers)
 
@@ -404,7 +405,7 @@ class UserListViewModelTest {
     }
 
     @Test
-    fun `loadUsers 실패시 Error 상태가 된다`() = runTest {
+    fun `loadUsers failure results in Error state`() = runTest {
         // Given
         fakeUserRepository.setShouldReturnError(true)
 
@@ -417,7 +418,7 @@ class UserListViewModelTest {
     }
 }
 
-// ✅ Fake Repository
+// Good: Fake Repository
 class FakeUserRepository : UserRepository {
     private var users = mutableListOf<User>()
     private var shouldReturnError = false
@@ -435,37 +436,37 @@ class FakeUserRepository : UserRepository {
         return users
     }
 
-    // ... 다른 메서드
+    // ... other methods
 }
 ```
 
-## 파일 구조
+## File Structure
 
 ```
 app/
 ├── src/main/java/com/example/app/
-│   ├── di/                      # Hilt 모듈
+│   ├── di/                      # Hilt modules
 │   │   ├── NetworkModule.kt
 │   │   └── RepositoryModule.kt
 │   ├── data/
-│   │   ├── api/                 # API 서비스
+│   │   ├── api/                 # API services
 │   │   │   └── UserApiService.kt
 │   │   ├── local/               # Room DAO
 │   │   │   └── UserDao.kt
 │   │   ├── model/               # DTO
 │   │   │   └── UserDto.kt
-│   │   └── repository/          # Repository 구현
+│   │   └── repository/          # Repository implementation
 │   │       └── UserRepositoryImpl.kt
 │   ├── domain/
-│   │   ├── model/               # 도메인 모델
+│   │   ├── model/               # Domain models
 │   │   │   └── User.kt
-│   │   ├── repository/          # Repository 인터페이스
+│   │   ├── repository/          # Repository interfaces
 │   │   │   └── UserRepository.kt
 │   │   └── usecase/             # UseCase
 │   │       └── GetUsersUseCase.kt
 │   └── presentation/
 │       ├── ui/
-│       │   ├── components/      # 공통 Composable
+│       │   ├── components/      # Common Composables
 │       │   └── theme/           # Material Theme
 │       └── feature/
 │           └── user/
@@ -479,13 +480,13 @@ app/
                 └── UserListViewModelTest.kt
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] Jetpack Compose 사용 (XML 레이아웃 지양)
-- [ ] StateFlow로 UI 상태 관리
-- [ ] Sealed Interface로 UiState 정의
-- [ ] Hilt로 의존성 주입
-- [ ] UseCase로 비즈니스 로직 분리
-- [ ] Repository 패턴으로 데이터 계층 추상화
-- [ ] Result/runCatching으로 에러 처리
-- [ ] collectAsStateWithLifecycle() 사용
+- [ ] Use Jetpack Compose (avoid XML layouts)
+- [ ] Manage UI state with StateFlow
+- [ ] Define UiState with Sealed Interface
+- [ ] Use Hilt for dependency injection
+- [ ] Separate business logic with UseCase
+- [ ] Abstract data layer with Repository pattern
+- [ ] Handle errors with Result/runCatching
+- [ ] Use collectAsStateWithLifecycle()

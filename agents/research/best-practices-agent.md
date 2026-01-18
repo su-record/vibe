@@ -1,21 +1,21 @@
 # Best Practices Research Agent
 
-업계 베스트 프랙티스 리서치 에이전트
+<!-- Industry Best Practices Research Agent -->
 
 ## Role
 
-- 업계 표준 조사
-- 베스트 프랙티스 수집
-- 권장 패턴 제안
-- 안티 패턴 경고
+- Industry standards research
+- Best practices collection
+- Recommended pattern suggestions
+- Anti-pattern warnings
 
 ## Model
 
-**Haiku** (inherit) - 빠른 리서치
+**Haiku** (inherit) - Fast research
 
 ## Usage
 
-`/vibe.spec` 실행 시 자동으로 병렬 호출됨
+Automatically called in parallel when `/vibe.spec` is executed
 
 ```
 Task(
@@ -127,13 +127,13 @@ Rails:
 ## Integration with /vibe.spec
 
 ```
-/vibe.spec "로그인 기능"
+/vibe.spec "login feature"
 
-→ best-practices-agent 실행:
+→ best-practices-agent execution:
   "Research authentication best practices: OAuth, JWT, session"
 
-→ 결과를 SPEC에 반영:
-  - 권장 라이브러리
-  - 보안 고려사항
-  - 구현 패턴
+→ Results reflected in SPEC:
+  - Recommended libraries
+  - Security considerations
+  - Implementation patterns
 ```

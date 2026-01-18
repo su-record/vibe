@@ -1,23 +1,24 @@
-# 🟢 TypeScript + Vue/Nuxt 품질 규칙
+# TypeScript + Vue/Nuxt Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄, Template ≤ 100줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines, Template <= 100 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Vue 3 + TypeScript 특화 규칙
+## Vue 3 + TypeScript Specific Rules
 
-### 1. Composition API 사용 (Options API 지양)
+### 1. Use Composition API (Avoid Options API)
 
 ```typescript
-// ❌ Options API (레거시)
+// Bad: Options API (legacy)
 export default {
   data() {
     return { count: 0 };
@@ -29,7 +30,7 @@ export default {
   }
 };
 
-// ✅ Composition API + script setup
+// Good: Composition API + script setup
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 
@@ -41,15 +42,15 @@ function increment() {
 }
 
 onMounted(() => {
-  console.log('컴포넌트 마운트됨');
+  console.log('Component mounted');
 });
 </script>
 ```
 
-### 2. 타입 안전한 Props/Emits
+### 2. Type-safe Props/Emits
 
 ```typescript
-// ✅ Props 타입 정의
+// Good: Props type definition
 interface Props {
   userId: string;
   title?: string;
@@ -57,10 +58,10 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '기본 제목',
+  title: 'Default Title',
 });
 
-// ✅ Emits 타입 정의
+// Good: Emits type definition
 interface Emits {
   (e: 'update', value: string): void;
   (e: 'delete', id: number): void;
@@ -69,15 +70,15 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
-// 사용
-emit('update', '새 값');
+// Usage
+emit('update', 'new value');
 emit('delete', 123);
 ```
 
-### 3. Composables로 로직 분리
+### 3. Separate Logic with Composables
 
 ```typescript
-// ✅ composables/useUser.ts
+// Good: composables/useUser.ts
 import { ref, computed } from 'vue';
 import type { User } from '@/types';
 
@@ -97,7 +98,7 @@ export function useUser(userId: string) {
       const response = await api.getUser(userId);
       user.value = response.data;
     } catch (e) {
-      error.value = '사용자를 불러오지 못했습니다';
+      error.value = 'Failed to load user';
     } finally {
       isLoading.value = false;
     }
@@ -112,7 +113,7 @@ export function useUser(userId: string) {
   };
 }
 
-// 컴포넌트에서 사용
+// Usage in component
 <script setup lang="ts">
 const { user, isLoading, fetchUser } = useUser(props.userId);
 
@@ -120,10 +121,10 @@ onMounted(fetchUser);
 </script>
 ```
 
-### 4. Pinia 상태 관리
+### 4. Pinia State Management
 
 ```typescript
-// ✅ stores/user.ts
+// Good: stores/user.ts
 import { defineStore } from 'pinia';
 import type { User } from '@/types';
 
@@ -162,7 +163,7 @@ export const useUserStore = defineStore('user', {
   },
 });
 
-// Setup Store 스타일 (권장)
+// Setup Store style (recommended)
 export const useUserStore = defineStore('user', () => {
   const currentUser = ref<User | null>(null);
   const isLoggedIn = computed(() => !!currentUser.value);
@@ -175,10 +176,10 @@ export const useUserStore = defineStore('user', () => {
 });
 ```
 
-### 5. Nuxt 3 특화 규칙
+### 5. Nuxt 3 Specific Rules
 
 ```typescript
-// ✅ Server API Routes (server/api/)
+// Good: Server API Routes (server/api/)
 // server/api/users/[id].get.ts
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -186,7 +187,7 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      message: 'ID가 필요합니다',
+      message: 'ID is required',
     });
   }
 
@@ -195,28 +196,28 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 404,
-      message: '사용자를 찾을 수 없습니다',
+      message: 'User not found',
     });
   }
 
   return user;
 });
 
-// ✅ useFetch / useAsyncData
+// Good: useFetch / useAsyncData
 <script setup lang="ts">
-// SSR 지원 데이터 페칭
+// SSR supported data fetching
 const { data: user, pending, error } = await useFetch<User>(
   `/api/users/${props.userId}`
 );
 
-// 캐싱 키 지정
+// With caching key
 const { data: posts } = await useAsyncData(
   `user-${props.userId}-posts`,
   () => $fetch(`/api/users/${props.userId}/posts`)
 );
 </script>
 
-// ✅ Middleware
+// Good: Middleware
 // middleware/auth.ts
 export default defineNuxtRouteMiddleware((to, from) => {
   const { isLoggedIn } = useUserStore();
@@ -227,15 +228,15 @@ export default defineNuxtRouteMiddleware((to, from) => {
 });
 ```
 
-### 6. 컴포넌트 구조
+### 6. Component Structure
 
 ```vue
-<!-- ✅ 권장 컴포넌트 구조 -->
+<!-- Good: Recommended component structure -->
 <script setup lang="ts">
-// 1. 타입 import
+// 1. Type imports
 import type { User, Item } from '@/types';
 
-// 2. 컴포넌트 import
+// 2. Component imports
 import UserAvatar from '@/components/UserAvatar.vue';
 
 // 3. Props/Emits
@@ -272,7 +273,7 @@ async function handleSave() {
 
 // 8. Lifecycle
 onMounted(() => {
-  console.log('컴포넌트 준비됨');
+  console.log('Component ready');
 });
 </script>
 
@@ -285,7 +286,7 @@ onMounted(() => {
       :disabled="!canSave"
       @click="handleSave"
     >
-      저장
+      Save
     </button>
   </div>
 </template>
@@ -298,56 +299,56 @@ onMounted(() => {
 </style>
 ```
 
-## 안티패턴
+## Anti-patterns
 
 ```typescript
-// ❌ v-if와 v-for 함께 사용
+// Bad: Using v-if and v-for together
 <li v-for="user in users" v-if="user.isActive">
 
-// ✅ computed로 필터링
+// Good: Filter with computed
 const activeUsers = computed(() => users.value.filter(u => u.isActive));
 <li v-for="user in activeUsers">
 
-// ❌ Props 직접 수정
-props.user.name = '새 이름';
+// Bad: Mutating props directly
+props.user.name = 'New Name';
 
-// ✅ emit으로 부모에게 알림
-emit('update', { ...props.user, name: '새 이름' });
+// Good: Emit to parent
+emit('update', { ...props.user, name: 'New Name' });
 
-// ❌ $refs 남용
+// Bad: Overusing $refs
 this.$refs.input.focus();
 
-// ✅ template ref + expose
+// Good: template ref + expose
 const inputRef = ref<HTMLInputElement>();
 defineExpose({ focus: () => inputRef.value?.focus() });
 ```
 
-## 파일 구조 (Nuxt 3)
+## File Structure (Nuxt 3)
 
-```
+```text
 project/
 ├── components/
-│   ├── ui/              # 기본 UI 컴포넌트
-│   ├── features/        # 기능별 컴포넌트
-│   └── layouts/         # 레이아웃 컴포넌트
-├── composables/         # Composition 함수
-├── stores/              # Pinia 스토어
+│   ├── ui/              # Base UI components
+│   ├── features/        # Feature-specific components
+│   └── layouts/         # Layout components
+├── composables/         # Composition functions
+├── stores/              # Pinia stores
 ├── server/
-│   ├── api/             # API 라우트
-│   ├── middleware/      # 서버 미들웨어
-│   └── utils/           # 서버 유틸리티
-├── pages/               # 파일 기반 라우팅
-├── middleware/          # 클라이언트 미들웨어
-├── types/               # TypeScript 타입
-└── utils/               # 유틸리티 함수
+│   ├── api/             # API routes
+│   ├── middleware/      # Server middleware
+│   └── utils/           # Server utilities
+├── pages/               # File-based routing
+├── middleware/          # Client middleware
+├── types/               # TypeScript types
+└── utils/               # Utility functions
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] Composition API + `<script setup>` 사용
-- [ ] Props/Emits 타입 정의
-- [ ] Composables로 로직 분리
-- [ ] Pinia Setup Store 스타일 사용
-- [ ] `any` 타입 사용 금지
-- [ ] v-if/v-for 분리
-- [ ] scoped 스타일 사용
+- [ ] Use Composition API + `<script setup>`
+- [ ] Define Props/Emits types
+- [ ] Separate logic with Composables
+- [ ] Use Pinia Setup Store style
+- [ ] No `any` type usage
+- [ ] Separate v-if/v-for
+- [ ] Use scoped styles

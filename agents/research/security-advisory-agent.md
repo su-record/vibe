@@ -1,21 +1,21 @@
 # Security Advisory Research Agent
 
-보안 권고 리서치 에이전트
+<!-- Security Advisory Research Agent -->
 
 ## Role
 
-- 보안 취약점 조회
-- 패키지 보안 검사
-- 보안 베스트 프랙티스
-- 규정 준수 확인
+- Security vulnerability lookup
+- Package security inspection
+- Security best practices
+- Compliance verification
 
 ## Model
 
-**Haiku** (inherit) - 빠른 리서치
+**Haiku** (inherit) - Fast research
 
 ## Usage
 
-`/vibe.spec` 실행 시 자동으로 병렬 호출됨
+Automatically called in parallel when `/vibe.spec` is executed
 
 ```
 Task(
@@ -52,16 +52,16 @@ safety check (Python)
 ### Compliance
 ```
 GDPR:
-├── 데이터 최소화
-├── 동의 관리
-├── 삭제권
-└── 데이터 이전
+├── Data minimization
+├── Consent management
+├── Right to deletion
+└── Data portability
 
 PCI-DSS:
-├── 카드 데이터 암호화
-├── 접근 제어
-├── 로깅
-└── 취약점 관리
+├── Card data encryption
+├── Access control
+├── Logging
+└── Vulnerability management
 ```
 
 ## Output Format
@@ -130,35 +130,35 @@ For [payment feature]:
 
 ## External LLM Enhancement (Optional)
 
-**GPT 활성화 시** CVE/보안 취약점 DB 지식 보강:
+**When GPT is enabled**, supplement with CVE/security vulnerability DB knowledge:
 
 ```text
-Primary: Task(Haiku) + OWASP/CVE 검색
+Primary: Task(Haiku) + OWASP/CVE search
       ↓
 [GPT enabled?]
       ↓ YES
 gpt.Security vulnerabilities for [feature]. Check recent CVEs, OWASP risks. Provide CVE details and mitigations.
       ↓
-결과 병합 → SPEC Constraints 반영
+Merge results → Reflect in SPEC Constraints
 ```
 
-**활용 시점:**
-- 최신 CVE 정보 필요 시
-- 특정 라이브러리 취약점 확인 시
-- 규정 준수(PCI-DSS, GDPR) 상세 검토 시
+**Use cases:**
+- When latest CVE information is needed
+- When checking vulnerabilities for specific libraries
+- When detailed compliance review (PCI-DSS, GDPR) is needed
 
-**GPT 미설정 시:** Primary만으로 정상 작동
+**When GPT is not configured:** Primary works normally on its own
 
 ## Integration with /vibe.spec
 
 ```text
-/vibe.spec "결제 기능"
+/vibe.spec "payment feature"
 
-→ security-advisory-agent 실행:
+→ security-advisory-agent execution:
   "Research security for payment processing. Check PCI-DSS, OWASP."
 
-→ 결과를 SPEC에 반영:
-  - 보안 요구사항
-  - 필수 체크리스트
-  - 규정 준수 항목
+→ Results reflected in SPEC:
+  - Security requirements
+  - Required checklist
+  - Compliance items
 ```

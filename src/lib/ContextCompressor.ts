@@ -35,7 +35,7 @@ export class ContextCompressor {
   ];
   private static readonly IMPORTANT_KEYWORDS = [
     'error', 'bug', 'fix', 'issue', 'problem', 'solution',
-    '에러', '버그', '수정', '문제', '해결', 'TODO', 'FIXME'
+    'TODO', 'FIXME', 'HACK', 'NOTE', 'WARNING'
   ];
 
   /**

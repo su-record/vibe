@@ -35,7 +35,7 @@ const CODE_QUALITY_METRICS = {
 
 export const validateCodeQualityDefinition: ToolDefinition = {
   name: 'validate_code_quality',
-  description: '품질|리뷰|검사|quality|review code|check quality|validate|코드 리뷰 - Validate code quality',
+  description: 'quality|review code|check quality|validate - Validate code quality',
   inputSchema: {
     type: 'object',
     properties: {

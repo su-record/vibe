@@ -44,7 +44,7 @@ function getApiKeyFromConfig(): string | null {
       }
     }
   } catch (e) {
-    warnLog('Gemini API 키 읽기 실패', e);
+    warnLog('Gemini API key read failed', e);
   }
   return null;
 }
@@ -82,7 +82,7 @@ async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  throw new Error('Gemini 인증 정보가 없습니다. vibe auth gemini (OAuth) 또는 vibe auth gemini --key <key> (API Key)로 설정하세요.');
+  throw new Error('Gemini credentials not found. Run vibe gemini auth (OAuth) or vibe gemini key <key> (API Key) to configure.');
 }
 
 // Types
@@ -139,21 +139,21 @@ export const GEMINI_MODELS: Record<string, GeminiModelInfo> = {
   'gemini-3-pro-high': {
     id: 'gemini-3-pro-high',
     name: 'Gemini 3 Pro (High)',
-    description: '최신 Pro, 최고 정확도',
+    description: 'Latest Pro, highest accuracy',
     maxTokens: 8192,
   },
   // Gemini 3 Pro Low (최신, 빠름)
   'gemini-3-pro': {
     id: 'gemini-3-pro-low',
     name: 'Gemini 3 Pro (Low)',
-    description: '최신 Pro, 빠른 응답',
+    description: 'Latest Pro, fast response',
     maxTokens: 8192,
   },
   // Gemini 3 Flash (최신, 가장 빠름)
   'gemini-3-flash': {
     id: 'gemini-3-flash',
     name: 'Gemini 3 Flash',
-    description: '최신 Flash, 가장 빠름',
+    description: 'Latest Flash, fastest',
     maxTokens: 8192,
   }
 };
@@ -258,7 +258,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
         return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
       }
 
-      let errorMessage = `Google AI API 오류 (${response.status})`;
+      let errorMessage = `Google AI API error (${response.status})`;
       try {
         const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
         if (errorJson.error?.message) {
@@ -272,7 +272,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     const result = await response.json() as GeminiApiResponse;
 
     if (!result.candidates || result.candidates.length === 0) {
-      throw new Error('Gemini API 응답이 비어있습니다.');
+      throw new Error('Gemini API response is empty.');
     }
 
     const candidate = result.candidates[0];
@@ -392,7 +392,7 @@ async function chatWithOAuth(accessToken: string, projectId: string | undefined,
             return chatWithOAuth(accessToken, projectId, { ...options, _retryCount: retryCount + 1 });
           }
         }
-        throw new Error(`Gemini API 오류 (${response.status}): ${errorText}`);
+        throw new Error(`Gemini API error (${response.status}): ${errorText}`);
       }
 
       const result = await response.json() as GeminiApiResponse;
@@ -400,7 +400,7 @@ async function chatWithOAuth(accessToken: string, projectId: string | undefined,
       // Antigravity 응답 파싱 (response.candidates 형식)
       const responseData = result.response || result;
       if (!responseData.candidates || responseData.candidates.length === 0) {
-        throw new Error('Gemini API 응답이 비어있습니다.');
+        throw new Error('Gemini API response is empty.');
       }
 
       const candidate = responseData.candidates[0];
@@ -423,7 +423,7 @@ async function chatWithOAuth(accessToken: string, projectId: string | undefined,
   }
 
   // 모든 엔드포인트 실패
-  throw lastError || new Error('모든 Antigravity 엔드포인트 실패');
+  throw lastError || new Error('All Antigravity endpoints failed');
 }
 
 /**
@@ -446,14 +446,14 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
       // Rate Limit(429) 또는 인증 오류(401/403) 시 API Key로 fallback
       const errorMsg = (error as Error).message;
       if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
-        console.log('⚠️ OAuth 한도 초과/오류 → API Key로 전환');
+        console.log('⚠️ OAuth limit exceeded/error → Switching to API Key');
         return chatWithApiKey(apiKey, options);
       }
       throw error;
     }
   }
 
-  throw new Error('Gemini 인증 정보가 없습니다.');
+  throw new Error('Gemini credentials not found.');
 }
 
 /**

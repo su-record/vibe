@@ -1,28 +1,29 @@
-# ⚛️ TypeScript + React 품질 규칙
+# TypeScript + React Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄, JSX ≤ 50줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines, JSX <= 50 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## TypeScript/React 특화 규칙
+## TypeScript/React Specific Rules
 
-### 1. 타입 안전성 100%
+### 1. 100% Type Safety
 
 ```typescript
-// ❌ any 사용
+// Bad: Using any
 function processData(data: any) {
   return data.value;
 }
 
-// ✅ 명확한 타입 정의
+// Good: Clear type definition
 interface User {
   id: string;
   name: string;
@@ -34,7 +35,7 @@ function processUser(user: User): string {
   return user.name;
 }
 
-// ✅ Generic 활용
+// Good: Generic usage
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -45,10 +46,10 @@ type UserResponse = ApiResponse<User>;
 type ProductResponse = ApiResponse<Product>;
 ```
 
-### 2. 함수형 컴포넌트 + Hooks
+### 2. Functional Components + Hooks
 
 ```typescript
-// ✅ 함수형 컴포넌트 (권장)
+// Good: Functional component (recommended)
 interface UserCardProps {
   user: User;
   onEdit?: (user: User) => void;
@@ -71,16 +72,16 @@ export function UserCard({ user, onEdit }: UserCardProps) {
   );
 }
 
-// ❌ 클래스 컴포넌트 (레거시)
+// Bad: Class component (legacy)
 class UserCard extends React.Component<UserCardProps> {
-  // 복잡하고 장황함
+  // Complex and verbose
 }
 ```
 
-### 3. Custom Hook으로 로직 분리
+### 3. Separate Logic with Custom Hooks
 
 ```typescript
-// ✅ Custom Hook (재사용 가능한 로직)
+// Good: Custom Hook (reusable logic)
 interface UseUserOptions {
   userId: string;
 }
@@ -119,7 +120,7 @@ function useUser({ userId }: UseUserOptions): UseUserReturn {
   return { user, isLoading, error, refetch: fetchUser };
 }
 
-// 사용
+// Usage
 function UserProfile({ userId }: { userId: string }) {
   const { user, isLoading, error } = useUser({ userId });
 
@@ -131,10 +132,10 @@ function UserProfile({ userId }: { userId: string }) {
 }
 ```
 
-### 4. Props 타입 정의
+### 4. Props Type Definition
 
 ```typescript
-// ✅ Props 타입 명확히
+// Good: Clear Props types
 interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'danger';
   size?: 'sm' | 'md' | 'lg';
@@ -163,7 +164,7 @@ export function Button({
   );
 }
 
-// ✅ PropsWithChildren 활용
+// Good: Using PropsWithChildren
 import { PropsWithChildren } from 'react';
 
 interface CardProps {
@@ -186,17 +187,17 @@ export function Card({
 }
 ```
 
-### 5. React Query (서버 상태 관리)
+### 5. React Query (Server State Management)
 
 ```typescript
-// ✅ React Query로 서버 상태 관리
+// Good: Server state management with React Query
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 function useUser(userId: string) {
   return useQuery({
     queryKey: ['user', userId],
     queryFn: () => fetchUser(userId),
-    staleTime: 5 * 60 * 1000, // 5분
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -206,13 +207,13 @@ function useUpdateUser() {
   return useMutation({
     mutationFn: (data: UpdateUserData) => updateUser(data),
     onSuccess: (updatedUser) => {
-      // 캐시 업데이트
+      // Update cache
       queryClient.setQueryData(['user', updatedUser.id], updatedUser);
     },
   });
 }
 
-// 사용
+// Usage
 function UserProfile({ userId }: { userId: string }) {
   const { data: user, isLoading, error } = useUser(userId);
   const updateMutation = useUpdateUser();
@@ -234,10 +235,10 @@ function UserProfile({ userId }: { userId: string }) {
 }
 ```
 
-### 6. Zod로 Contract 정의
+### 6. Define Contract with Zod
 
 ```typescript
-// ✅ Zod 스키마 (런타임 + 타입 검증)
+// Good: Zod schema (runtime + type validation)
 import { z } from 'zod';
 
 const createUserSchema = z.object({
@@ -249,7 +250,7 @@ const createUserSchema = z.object({
 
 type CreateUserRequest = z.infer<typeof createUserSchema>;
 
-// 사용 (React Hook Form)
+// Usage (React Hook Form)
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -288,28 +289,28 @@ function SignUpForm() {
 }
 ```
 
-### 7. 컴포넌트 분리 (Extract Component)
+### 7. Component Separation (Extract Component)
 
 ```typescript
-// ❌ 긴 JSX (80줄)
+// Bad: Long JSX (80 lines)
 function UserDashboard() {
   return (
     <div>
       <header>
         <h1>Dashboard</h1>
-        {/* 20줄 */}
+        {/* 20 lines */}
       </header>
       <main>
-        {/* 40줄 */}
+        {/* 40 lines */}
       </main>
       <footer>
-        {/* 20줄 */}
+        {/* 20 lines */}
       </footer>
     </div>
   );
 }
 
-// ✅ 서브 컴포넌트 분리
+// Good: Separate into sub-components
 function UserDashboard() {
   return (
     <div>
@@ -333,14 +334,14 @@ function DashboardFooter() {
 }
 ```
 
-### 8. useCallback + useMemo 최적화
+### 8. useCallback + useMemo Optimization
 
 ```typescript
-// ✅ useCallback (함수 메모이제이션)
+// Good: useCallback (function memoization)
 function Parent() {
   const [count, setCount] = useState(0);
 
-  // 매번 새 함수 생성 방지
+  // Prevent creating new function every render
   const handleClick = useCallback(() => {
     setCount(prev => prev + 1);
   }, []);
@@ -352,7 +353,7 @@ const Child = React.memo<{ onClick: () => void }>(({ onClick }) => {
   return <button onClick={onClick}>Click</button>;
 });
 
-// ✅ useMemo (값 메모이제이션)
+// Good: useMemo (value memoization)
 function ExpensiveComponent({ data }: { data: number[] }) {
   const processedData = useMemo(() => {
     return data
@@ -368,7 +369,7 @@ function ExpensiveComponent({ data }: { data: number[] }) {
 ### 9. Error Boundary
 
 ```typescript
-// ✅ Error Boundary (클래스 컴포넌트 필수)
+// Good: Error Boundary (class component required)
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
@@ -405,7 +406,7 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// 사용
+// Usage
 function App() {
   return (
     <ErrorBoundary fallback={<ErrorPage />}>
@@ -415,10 +416,10 @@ function App() {
 }
 ```
 
-### 10. 타입 가드 활용
+### 10. Type Guards
 
 ```typescript
-// ✅ 타입 가드
+// Good: Type guards
 interface Dog {
   type: 'dog';
   bark: () => void;
@@ -437,13 +438,13 @@ function isDog(animal: Animal): animal is Dog {
 
 function makeSound(animal: Animal) {
   if (isDog(animal)) {
-    animal.bark();  // 타입 안전
+    animal.bark();  // Type safe
   } else {
-    animal.meow();  // 타입 안전
+    animal.meow();  // Type safe
   }
 }
 
-// ✅ Discriminated Union
+// Good: Discriminated Union
 function AnimalCard({ animal }: { animal: Animal }) {
   switch (animal.type) {
     case 'dog':
@@ -454,46 +455,46 @@ function AnimalCard({ animal }: { animal: Animal }) {
 }
 ```
 
-## 안티패턴
+## Anti-patterns
 
 ```typescript
-// ❌ Props drilling (3단계 이상)
+// Bad: Props drilling (3+ levels)
 <GrandParent user={user}>
   <Parent user={user}>
     <Child user={user} />
   </Parent>
 </GrandParent>
 
-// ✅ Context 사용
+// Good: Use Context
 const UserContext = createContext<User | undefined>(undefined);
 
 <UserContext.Provider value={user}>
   <GrandParent />
 </UserContext.Provider>
 
-// ❌ useEffect 의존성 누락
+// Bad: Missing useEffect dependency
 useEffect(() => {
   fetchUser(userId);
-}, []); // userId 의존성 누락!
+}, []); // userId dependency missing!
 
-// ✅ 모든 의존성 명시
+// Good: Specify all dependencies
 useEffect(() => {
   fetchUser(userId);
 }, [userId]);
 
-// ❌ 인라인 객체/함수 (리렌더 유발)
+// Bad: Inline objects/functions (cause re-renders)
 <Child config={{ theme: 'dark' }} onClick={() => {}} />
 
-// ✅ useMemo/useCallback
+// Good: useMemo/useCallback
 const config = useMemo(() => ({ theme: 'dark' }), []);
 const handleClick = useCallback(() => {}, []);
 <Child config={config} onClick={handleClick} />
 ```
 
-## 코드 품질 도구
+## Code Quality Tools
 
 ```bash
-# TypeScript 컴파일
+# TypeScript compile
 tsc --noEmit
 
 # ESLint
@@ -502,24 +503,24 @@ eslint src/ --ext .ts,.tsx
 # Prettier
 prettier --write src/
 
-# 테스트
+# Testing
 vitest
 # or
 jest
 ```
 
-## 체크리스트
+## Checklist
 
-TypeScript/React 코드 작성 시:
+When writing TypeScript/React code:
 
-- [ ] 타입 안전성 100% (no any)
-- [ ] 함수형 컴포넌트 + Hooks
-- [ ] Custom Hook으로 로직 분리
-- [ ] Props 타입 명확히 정의
-- [ ] React Query로 서버 상태 관리
-- [ ] Zod로 Contract 정의
-- [ ] JSX ≤ 50줄 (컴포넌트 분리)
-- [ ] useCallback/useMemo 최적화
-- [ ] Error Boundary 사용
-- [ ] 타입 가드 활용
-- [ ] 복잡도 ≤ 10
+- [ ] 100% type safety (no any)
+- [ ] Functional components + Hooks
+- [ ] Separate logic with Custom Hook
+- [ ] Clear Props type definition
+- [ ] Server state with React Query
+- [ ] Define Contract with Zod
+- [ ] JSX <= 50 lines (component separation)
+- [ ] useCallback/useMemo optimization
+- [ ] Use Error Boundary
+- [ ] Use type guards
+- [ ] Complexity <= 10

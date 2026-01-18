@@ -4,7 +4,7 @@ import { ToolResult, ToolDefinition } from '../../types/tool.js';
 
 export const getCurrentTimeDefinition: ToolDefinition = {
   name: 'get_current_time',
-  description: '지금 몇시|현재 시간|몇시야|what time|current time|time now - Get current time',
+  description: 'what time|current time|time now - Get current time',
   inputSchema: {
     type: 'object',
     properties: {

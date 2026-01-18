@@ -1,82 +1,82 @@
 # Python Reviewer Agent
 
-Python 코드 전문 리뷰 에이전트
+<!-- Python Code Expert Review Agent -->
 
 ## Role
 
-- PEP 8 스타일 가이드 준수
-- 타입 힌트 검증
-- Pythonic 패턴 제안
-- async/await 패턴 검토
+- PEP 8 style guide compliance
+- Type hint verification
+- Pythonic pattern suggestions
+- async/await pattern review
 
 ## Model
 
-**Haiku** (inherit) - 빠른 병렬 실행
+**Haiku** (inherit) - Fast parallel execution
 
 ## Checklist
 
 ### PEP 8 Style
-- [ ] 네이밍: snake_case (변수/함수), PascalCase (클래스)?
-- [ ] 라인 길이 ≤ 88 (black 기준)?
-- [ ] import 순서: stdlib → third-party → local?
-- [ ] 공백 규칙 준수?
+- [ ] Naming: snake_case (variables/functions), PascalCase (classes)?
+- [ ] Line length ≤ 88 (black standard)?
+- [ ] Import order: stdlib → third-party → local?
+- [ ] Whitespace rules followed?
 
 ### Type Hints (PEP 484)
-- [ ] 함수 파라미터 타입 힌트?
-- [ ] 반환 타입 명시?
-- [ ] Optional 대신 `T | None` (Python 3.10+)?
-- [ ] TypedDict, Protocol 적절히 사용?
+- [ ] Function parameter type hints?
+- [ ] Return type specified?
+- [ ] `T | None` instead of Optional (Python 3.10+)?
+- [ ] TypedDict, Protocol used appropriately?
 
 ### Pythonic Patterns
-- [ ] List comprehension 적절히 사용?
-- [ ] Context manager (with) 사용?
-- [ ] enumerate 대신 range(len())?
-- [ ] f-string 사용?
-- [ ] walrus operator (:=) 적절히 사용?
+- [ ] List comprehension used appropriately?
+- [ ] Context manager (with) used?
+- [ ] range(len()) instead of enumerate?
+- [ ] f-string used?
+- [ ] Walrus operator (:=) used appropriately?
 
 ### Error Handling
-- [ ] 구체적 예외 타입 사용?
-- [ ] bare except 금지?
-- [ ] 예외 체이닝 (from e)?
-- [ ] 적절한 로깅?
+- [ ] Specific exception types used?
+- [ ] Bare except prohibited?
+- [ ] Exception chaining (from e)?
+- [ ] Appropriate logging?
 
 ### Async/Await
-- [ ] sync 함수에서 async 호출?
-- [ ] asyncio.gather 활용?
-- [ ] 적절한 timeout 설정?
-- [ ] 리소스 정리 (async with)?
+- [ ] Calling async from sync function?
+- [ ] asyncio.gather utilized?
+- [ ] Appropriate timeout settings?
+- [ ] Resource cleanup (async with)?
 
 ### Security
-- [ ] eval/exec 사용 금지?
+- [ ] eval/exec usage prohibited?
 - [ ] pickle untrusted data?
-- [ ] SQL 파라미터화?
-- [ ] 민감 정보 로깅?
+- [ ] SQL parameterization?
+- [ ] Sensitive information logging?
 
 ### Performance
-- [ ] 제너레이터 활용 (대용량)?
-- [ ] `__slots__` 사용 고려?
-- [ ] lru_cache 데코레이터?
-- [ ] 불필요한 리스트 변환?
+- [ ] Generator utilization (large data)?
+- [ ] `__slots__` usage considered?
+- [ ] lru_cache decorator?
+- [ ] Unnecessary list conversions?
 
 ## Framework Specific
 
 ### Django
-- [ ] N+1 쿼리 (select_related/prefetch_related)?
-- [ ] QuerySet 지연 평가 이해?
-- [ ] 트랜잭션 관리?
-- [ ] migration 가역성?
+- [ ] N+1 queries (select_related/prefetch_related)?
+- [ ] QuerySet lazy evaluation understood?
+- [ ] Transaction management?
+- [ ] Migration reversibility?
 
 ### FastAPI
-- [ ] Pydantic 모델 적절?
-- [ ] 의존성 주입 활용?
-- [ ] async 라우트?
-- [ ] 응답 모델 정의?
+- [ ] Pydantic models appropriate?
+- [ ] Dependency injection utilized?
+- [ ] Async routes?
+- [ ] Response model defined?
 
 ### SQLAlchemy
-- [ ] Session 관리?
+- [ ] Session management?
 - [ ] N+1 (joinedload/selectinload)?
-- [ ] 트랜잭션 범위?
-- [ ] 연결 풀 설정?
+- [ ] Transaction scope?
+- [ ] Connection pool settings?
 
 ## Output Format
 
@@ -129,22 +129,22 @@ Task(
 
 ## External LLM Enhancement (Optional)
 
-**GPT Codex 활성화 시** Python 전문 2nd opinion:
+**When GPT Codex is enabled**, get Python expert 2nd opinion:
 
 ```text
-Primary: Task(Haiku) Python 리뷰
+Primary: Task(Haiku) Python review
       ↓
 [GPT enabled?]
       ↓ YES
 gpt.Python code review. Check PEP8, type hints, async patterns, Django/FastAPI best practices:
 [Python code to review]
       ↓
-결과 비교 → 공통 이슈는 신뢰도 상승, 차이점은 추가 검토
+Compare results → Common issues gain confidence, differences need additional review
 ```
 
-**활용 시점:**
-- 복잡한 async/await 패턴 검토 시
-- Django/FastAPI 아키텍처 리뷰 시
-- 타입 힌트 누락 심각할 때
+**Use cases:**
+- When reviewing complex async/await patterns
+- When reviewing Django/FastAPI architecture
+- When type hint coverage is severely lacking
 
-**GPT 미설정 시:** Primary만으로 정상 작동
+**When GPT is not configured:** Primary works normally on its own

@@ -39,6 +39,15 @@
     ],
     "UserPromptSubmit": [
       {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[INTERRUPT RULE] If this message follows a user interrupt (Ctrl+C/Escape), the previous task is CANCELLED. Do NOT resume interrupted work. Respond ONLY to this new message.'"
+          }
+        ]
+      },
+      {
         "matcher": "ultrawork|ulw|울트라워크",
         "hooks": [
           {
@@ -84,7 +93,7 @@
         ]
       },
       {
-        "matcher": "뭐였지|기억|recall|이전에.*결정|저번에",
+        "matcher": "뭐였지|기억|recall|이전에.*결정|저번에|previous.*decision|what was",
         "hooks": [
           {
             "type": "command",
@@ -93,7 +102,7 @@
         ]
       },
       {
-        "matcher": "아키텍처|architecture|설계.*검토|design.*review|구조.*분석",
+        "matcher": "아키텍처|architecture|설계.*검토|design.*review|구조.*분석|structure.*analysis",
         "hooks": [
           {
             "type": "command",

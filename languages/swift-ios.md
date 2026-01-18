@@ -1,32 +1,33 @@
-# 🍎 Swift + iOS 품질 규칙
+# Swift + iOS Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Swift/iOS 특화 규칙
+## Swift/iOS Specific Rules
 
-### 1. SwiftUI 기본 구조
+### 1. SwiftUI Basic Structure
 
 ```swift
-// ✅ View 구조
+// Good: View structure
 import SwiftUI
 
 struct UserProfileView: View {
-    // 1. 상태 및 바인딩
+    // 1. State and bindings
     @StateObject private var viewModel: UserProfileViewModel
     @State private var isEditing = false
     @Binding var selectedUser: User?
 
-    // 2. 환경 변수
+    // 2. Environment variables
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authManager: AuthManager
 
@@ -34,14 +35,14 @@ struct UserProfileView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("프로필")
+                .navigationTitle("Profile")
                 .toolbar { toolbarContent }
                 .sheet(isPresented: $isEditing) { editSheet }
         }
         .task { await viewModel.loadUser() }
     }
 
-    // 4. 뷰 컴포넌트 분리
+    // 4. Separate view components
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading {
@@ -55,9 +56,9 @@ struct UserProfileView: View {
 
     private func userContent(_ user: User) -> some View {
         List {
-            Section("기본 정보") {
-                LabeledContent("이름", value: user.name)
-                LabeledContent("이메일", value: user.email)
+            Section("Basic Info") {
+                LabeledContent("Name", value: user.name)
+                LabeledContent("Email", value: user.email)
             }
         }
     }
@@ -65,7 +66,7 @@ struct UserProfileView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            Button("편집") { isEditing = true }
+            Button("Edit") { isEditing = true }
         }
     }
 }
@@ -74,18 +75,18 @@ struct UserProfileView: View {
 ### 2. ViewModel (MVVM)
 
 ```swift
-// ✅ ViewModel with @Observable (iOS 17+)
+// Good: ViewModel with @Observable (iOS 17+)
 import Foundation
 import Observation
 
 @Observable
 final class UserProfileViewModel {
-    // 상태
+    // State
     private(set) var user: User?
     private(set) var isLoading = false
     private(set) var error: AppError?
 
-    // 의존성
+    // Dependencies
     private let userRepository: UserRepository
     private let userId: String
 
@@ -117,7 +118,7 @@ final class UserProfileViewModel {
     }
 }
 
-// ✅ ViewModel with ObservableObject (iOS 13+)
+// Good: ViewModel with ObservableObject (iOS 13+)
 import Combine
 
 final class UserListViewModel: ObservableObject {
@@ -161,10 +162,10 @@ final class UserListViewModel: ObservableObject {
 }
 ```
 
-### 3. Repository 패턴
+### 3. Repository Pattern
 
 ```swift
-// ✅ Protocol 정의
+// Good: Protocol definition
 protocol UserRepository {
     func fetchUsers() async throws -> [User]
     func fetchUser(id: String) async throws -> User
@@ -173,7 +174,7 @@ protocol UserRepository {
     func deleteUser(id: String) async throws
 }
 
-// ✅ 구현체
+// Good: Implementation
 final class DefaultUserRepository: UserRepository {
     private let apiClient: APIClient
     private let cache: CacheManager
@@ -184,18 +185,18 @@ final class DefaultUserRepository: UserRepository {
     }
 
     func fetchUser(id: String) async throws -> User {
-        // 캐시 확인
+        // Check cache
         if let cached: User = cache.get(key: "user_\(id)") {
             return cached
         }
 
-        // API 호출
+        // API call
         let user: User = try await apiClient.request(
             endpoint: .user(id: id),
             method: .get
         )
 
-        // 캐시 저장
+        // Save to cache
         cache.set(key: "user_\(id)", value: user, ttl: 300)
 
         return user
@@ -210,10 +211,10 @@ final class DefaultUserRepository: UserRepository {
 }
 ```
 
-### 4. 에러 처리
+### 4. Error Handling
 
 ```swift
-// ✅ 커스텀 에러 정의
+// Good: Custom error definition
 enum AppError: LocalizedError {
     case networkError(underlying: Error)
     case decodingError(underlying: Error)
@@ -225,17 +226,17 @@ enum AppError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .networkError:
-            return "네트워크 연결을 확인해주세요"
+            return "Please check your network connection"
         case .decodingError:
-            return "데이터를 처리할 수 없습니다"
+            return "Unable to process data"
         case .notFound(let resource, let id):
-            return "\(resource)을(를) 찾을 수 없습니다 (ID: \(id))"
+            return "\(resource) not found (ID: \(id))"
         case .unauthorized:
-            return "로그인이 필요합니다"
+            return "Login required"
         case .serverError(let message):
-            return "서버 오류: \(message)"
+            return "Server error: \(message)"
         case .unknown:
-            return "알 수 없는 오류가 발생했습니다"
+            return "An unknown error occurred"
         }
     }
 
@@ -256,7 +257,7 @@ enum AppError: LocalizedError {
     }
 }
 
-// ✅ Result 타입 활용
+// Good: Result type usage
 func loadData() async -> Result<User, AppError> {
     do {
         let user = try await repository.fetchUser(id: userId)
@@ -267,10 +268,10 @@ func loadData() async -> Result<User, AppError> {
 }
 ```
 
-### 5. 네트워킹 (async/await)
+### 5. Networking (async/await)
 
 ```swift
-// ✅ API 클라이언트
+// Good: API Client
 final class APIClient {
     static let shared = APIClient()
 
@@ -295,7 +296,7 @@ final class APIClient {
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        // 인증 토큰
+        // Auth token
         if let token = AuthManager.shared.accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -324,7 +325,7 @@ final class APIClient {
     }
 }
 
-// ✅ Endpoint 정의
+// Good: Endpoint definition
 enum Endpoint {
     case users
     case user(id: String)
@@ -353,10 +354,10 @@ enum Endpoint {
 }
 ```
 
-### 6. 의존성 주입
+### 6. Dependency Injection
 
 ```swift
-// ✅ Environment를 통한 DI (SwiftUI)
+// Good: DI via Environment (SwiftUI)
 private struct UserRepositoryKey: EnvironmentKey {
     static let defaultValue: UserRepository = DefaultUserRepository()
 }
@@ -368,7 +369,7 @@ extension EnvironmentValues {
     }
 }
 
-// 사용
+// Usage
 struct ContentView: View {
     @Environment(\.userRepository) private var userRepository
 
@@ -377,7 +378,7 @@ struct ContentView: View {
     }
 }
 
-// ✅ Container 패턴
+// Good: Container pattern
 final class DIContainer {
     static let shared = DIContainer()
 
@@ -393,13 +394,13 @@ final class DIContainer {
 }
 ```
 
-### 7. 테스트
+### 7. Testing
 
 ```swift
 import XCTest
 @testable import MyApp
 
-// ✅ Mock Repository
+// Good: Mock Repository
 final class MockUserRepository: UserRepository {
     var fetchUsersResult: Result<[User], Error> = .success([])
     var fetchUserResult: Result<User, Error> = .failure(AppError.notFound(resource: "User", id: ""))
@@ -412,10 +413,10 @@ final class MockUserRepository: UserRepository {
         try fetchUserResult.get()
     }
 
-    // ... 다른 메서드
+    // ... other methods
 }
 
-// ✅ ViewModel 테스트
+// Good: ViewModel test
 final class UserListViewModelTests: XCTestCase {
     var sut: UserListViewModel!
     var mockRepository: MockUserRepository!
@@ -432,11 +433,11 @@ final class UserListViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    func test_loadUsers_성공시_users가_업데이트된다() async {
+    func test_loadUsers_onSuccess_updatesUsers() async {
         // Given
         let expectedUsers = [
-            User(id: "1", name: "테스트1", email: "test1@example.com"),
-            User(id: "2", name: "테스트2", email: "test2@example.com")
+            User(id: "1", name: "Test1", email: "test1@example.com"),
+            User(id: "2", name: "Test2", email: "test2@example.com")
         ]
         mockRepository.fetchUsersResult = .success(expectedUsers)
 
@@ -448,30 +449,30 @@ final class UserListViewModelTests: XCTestCase {
         XCTAssertFalse(sut.isLoading)
     }
 
-    func test_filteredUsers_검색어가_있으면_필터링된다() {
+    func test_filteredUsers_withSearchText_filtersCorrectly() {
         // Given
         sut.users = [
-            User(id: "1", name: "홍길동", email: "hong@example.com"),
-            User(id: "2", name: "김철수", email: "kim@example.com")
+            User(id: "1", name: "John Doe", email: "john@example.com"),
+            User(id: "2", name: "Jane Smith", email: "jane@example.com")
         ]
 
         // When
-        sut.searchText = "홍"
+        sut.searchText = "John"
 
         // Then
         XCTAssertEqual(sut.filteredUsers.count, 1)
-        XCTAssertEqual(sut.filteredUsers.first?.name, "홍길동")
+        XCTAssertEqual(sut.filteredUsers.first?.name, "John Doe")
     }
 }
 ```
 
-## 파일 구조
+## File Structure
 
-```
+```text
 Project/
 ├── App/
-│   ├── ProjectApp.swift         # 앱 진입점
-│   └── DIContainer.swift        # 의존성 컨테이너
+│   ├── ProjectApp.swift         # App entry point
+│   └── DIContainer.swift        # Dependency container
 ├── Features/
 │   ├── Auth/
 │   │   ├── Views/
@@ -504,13 +505,13 @@ Project/
     └── UITests/
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] @Observable 또는 @ObservableObject 사용
-- [ ] MVVM 패턴 준수
-- [ ] async/await로 비동기 처리
-- [ ] Protocol로 의존성 추상화
-- [ ] @MainActor로 UI 업데이트 보장
-- [ ] LocalizedError로 에러 메시지 정의
-- [ ] @ViewBuilder로 조건부 뷰 분리
-- [ ] 테스트 가능한 구조 (Mock 주입)
+- [ ] Use @Observable or @ObservableObject
+- [ ] Follow MVVM pattern
+- [ ] Handle async with async/await
+- [ ] Abstract dependencies with Protocol
+- [ ] Ensure UI updates with @MainActor
+- [ ] Define error messages with LocalizedError
+- [ ] Separate conditional views with @ViewBuilder
+- [ ] Testable structure (Mock injection)

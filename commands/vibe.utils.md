@@ -10,7 +10,7 @@ Collection of utility tools. Use with options.
 ## Usage
 
 ```
-/vibe.utils --ui "설명"              # UI ASCII preview
+/vibe.utils --ui "description"       # UI ASCII preview
 /vibe.utils --diagram                # Architecture diagram
 /vibe.utils --diagram --er           # ERD diagram
 /vibe.utils --diagram --flow         # Flowchart
@@ -30,7 +30,7 @@ Generate ASCII-based UI preview from description.
 
 **Example:**
 ```
-/vibe.utils --ui "로그인 폼 - 이메일, 비밀번호 입력 + 로그인 버튼"
+/vibe.utils --ui "Login form - email, password input + login button"
 ```
 
 ---
@@ -84,7 +84,7 @@ Read and follow `agents/compounder.md` for solution documentation.
 Document solved problems for knowledge accumulation.
 
 **Usually auto-triggered by hooks when:**
-- "버그 해결됨", "bug fixed", "PR merged" detected
+- "bug fixed", "PR merged" detected
 
 **Output location:** `.claude/vibe/solutions/`
 
@@ -95,6 +95,107 @@ Document solved problems for knowledge accumulation.
 ├── database/           # Database related
 └── integration/        # External integrations
 ```
+
+---
+
+## --continue (Session Restore)
+
+Restore previous session context for continuity.
+
+**Usage:**
+```
+/vibe.utils --continue
+```
+
+**What it does:**
+1. Calls `vibe_start_session` to load project memories
+2. Restores previous conversation context
+3. Resumes work from last checkpoint
+
+---
+
+## Quality Gate (Mandatory)
+
+### UI Preview Quality Checklist (--ui)
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Completeness** | All requested elements present | 30% |
+| **Layout** | Proper spacing and alignment | 20% |
+| **Labels** | All buttons/inputs labeled | 20% |
+| **Accessibility** | Tab order logical | 15% |
+| **Responsiveness** | Mobile/desktop variants shown | 15% |
+
+### Diagram Quality Checklist (--diagram)
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Accuracy** | Matches actual codebase structure | 30% |
+| **Completeness** | All major components included | 25% |
+| **Relationships** | Connections correctly shown | 20% |
+| **Readability** | Not too cluttered | 15% |
+| **Mermaid Syntax** | Valid, renders correctly | 10% |
+
+### E2E Test Quality Checklist (--e2e)
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Coverage** | All critical paths tested | 25% |
+| **Assertions** | Each step has verification | 20% |
+| **Stability** | No flaky selectors | 20% |
+| **Error Handling** | Failures captured with screenshots | 15% |
+| **Performance** | Tests complete in reasonable time | 10% |
+| **Accessibility** | a11y checks included | 10% |
+
+### E2E Test Requirements
+
+| Test Type | Required Output |
+|-----------|-----------------|
+| Standard | Pass/fail status + console errors |
+| Visual (`--visual`) | Screenshot comparison + diff |
+| Recording (`--record`) | Video file path + duration |
+
+### E2E Forbidden Patterns
+
+| Pattern | Issue | Required Fix |
+|---------|-------|--------------|
+| Hardcoded waits (`sleep(5000)`) | Flaky tests | Use `waitFor` conditions |
+| XPath selectors | Brittle | Use data-testid |
+| No assertions | Useless test | Add expect() calls |
+| Ignoring console errors | Missing bugs | Capture and report |
+
+### Compound (Solution) Quality Checklist (--compound)
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Problem** | Clearly described root cause | 25% |
+| **Solution** | Step-by-step fix documented | 25% |
+| **Prevention** | How to avoid in future | 20% |
+| **Code Samples** | Before/after snippets | 15% |
+| **Tags** | Properly categorized | 15% |
+
+### Quality Score Calculation
+
+```
+Score = Σ(checked items × weight) / 100
+
+Grades:
+- 95-100: ✅ EXCELLENT - Ready to use
+- 85-94:  ✅ GOOD - Minor improvements optional
+- 70-84:  ⚠️ FAIR - Improvements needed
+- 0-69:   ❌ POOR - Redo required
+```
+
+### Output Requirements by Tool
+
+| Tool | Required Output |
+|------|-----------------|
+| `--ui` | ASCII preview + component list |
+| `--diagram` | Valid Mermaid code + rendered preview |
+| `--diagram --er` | Entity names, fields, relationships |
+| `--diagram --flow` | Start/end nodes, decision points |
+| `--e2e` | Test file + execution results |
+| `--compound` | Solution markdown + category tag |
 
 ---
 

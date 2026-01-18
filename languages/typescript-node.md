@@ -1,23 +1,24 @@
-# 🟢 TypeScript + Node.js Backend 품질 규칙
+# TypeScript + Node.js Backend Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Express.js 규칙
+## Express.js Rules
 
-### 1. 라우터 구조화
+### 1. Structured Routers
 
 ```typescript
-// ✅ routes/user.routes.ts
+// Good: routes/user.routes.ts
 import { Router } from 'express';
 import { UserController } from '@/controllers/user.controller';
 import { authMiddleware } from '@/middleware/auth';
@@ -36,10 +37,10 @@ router.delete('/:id', authMiddleware, controller.delete);
 export default router;
 ```
 
-### 2. Controller 패턴
+### 2. Controller Pattern
 
 ```typescript
-// ✅ controllers/user.controller.ts
+// Good: controllers/user.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '@/services/user.service';
 import { CreateUserDto, UpdateUserDto } from '@/dto/user.dto';
@@ -64,7 +65,7 @@ export class UserController {
     try {
       const user = await this.userService.findById(req.params.id);
       if (!user) {
-        return res.status(404).json({ message: '사용자를 찾을 수 없습니다' });
+        return res.status(404).json({ message: 'User not found' });
       }
       res.json(user);
     } catch (error) {
@@ -84,10 +85,10 @@ export class UserController {
 }
 ```
 
-### 3. Service 레이어
+### 3. Service Layer
 
 ```typescript
-// ✅ services/user.service.ts
+// Good: services/user.service.ts
 import { prisma } from '@/lib/prisma';
 import { CreateUserDto, UpdateUserDto } from '@/dto/user.dto';
 import { hashPassword } from '@/utils/crypto';
@@ -124,7 +125,7 @@ export class UserService {
     });
 
     if (existing) {
-      throw new AppError('이미 존재하는 이메일입니다', 409);
+      throw new AppError('Email already exists', 409);
     }
 
     const hashedPassword = await hashPassword(dto.password);
@@ -139,12 +140,12 @@ export class UserService {
 }
 ```
 
-## NestJS 규칙
+## NestJS Rules
 
-### 1. Module 구조
+### 1. Module Structure
 
 ```typescript
-// ✅ user/user.module.ts
+// Good: user/user.module.ts
 import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
@@ -161,7 +162,7 @@ export class UserModule {}
 ### 2. Controller (NestJS)
 
 ```typescript
-// ✅ user/user.controller.ts
+// Good: user/user.controller.ts
 import {
   Controller,
   Get,
@@ -186,19 +187,19 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  @ApiOperation({ summary: '사용자 목록 조회' })
+  @ApiOperation({ summary: 'Get user list' })
   async findAll(@Query() query: UserQueryDto) {
     return this.userService.findAll(query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: '사용자 상세 조회' })
+  @ApiOperation({ summary: 'Get user detail' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findById(id);
   }
 
   @Post()
-  @ApiOperation({ summary: '사용자 생성' })
+  @ApiOperation({ summary: 'Create user' })
   async create(@Body() dto: CreateUserDto) {
     return this.userService.create(dto);
   }
@@ -206,7 +207,7 @@ export class UserController {
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '사용자 수정' })
+  @ApiOperation({ summary: 'Update user' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
@@ -220,7 +221,7 @@ export class UserController {
 ### 3. Service (NestJS)
 
 ```typescript
-// ✅ user/user.service.ts
+// Good: user/user.service.ts
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { CreateUserDto, UpdateUserDto } from './dto';
@@ -237,7 +238,7 @@ export class UserService {
   async findById(id: number) {
     const user = await this.userRepository.findById(id);
     if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다');
+      throw new NotFoundException('User not found');
     }
     return user;
   }
@@ -245,7 +246,7 @@ export class UserService {
   async create(dto: CreateUserDto) {
     const existing = await this.userRepository.findByEmail(dto.email);
     if (existing) {
-      throw new ConflictException('이미 존재하는 이메일입니다');
+      throw new ConflictException('Email already exists');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -257,24 +258,24 @@ export class UserService {
 }
 ```
 
-### 4. DTO와 Validation
+### 4. DTO and Validation
 
 ```typescript
-// ✅ user/dto/create-user.dto.ts
+// Good: user/dto/create-user.dto.ts
 import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'user@example.com' })
-  @IsEmail({}, { message: '올바른 이메일 형식이 아닙니다' })
+  @IsEmail({}, { message: 'Invalid email format' })
   email: string;
 
   @ApiProperty({ example: 'password123' })
   @IsString()
-  @MinLength(8, { message: '비밀번호는 8자 이상이어야 합니다' })
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
   password: string;
 
-  @ApiProperty({ example: '홍길동' })
+  @ApiProperty({ example: 'John Doe' })
   @IsString()
   name: string;
 
@@ -285,12 +286,12 @@ export class CreateUserDto {
 }
 ```
 
-## 공통 규칙
+## Common Rules
 
-### 에러 처리
+### Error Handling
 
 ```typescript
-// ✅ utils/errors.ts
+// Good: utils/errors.ts
 export class AppError extends Error {
   constructor(
     message: string,
@@ -302,7 +303,7 @@ export class AppError extends Error {
   }
 }
 
-// ✅ middleware/error.middleware.ts
+// Good: middleware/error.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@/utils/errors';
 
@@ -324,7 +325,7 @@ export function errorHandler(
 
   res.status(500).json({
     success: false,
-    message: '서버 오류가 발생했습니다',
+    message: 'Server error occurred',
   });
 }
 ```
@@ -332,14 +333,14 @@ export function errorHandler(
 ### Validation (Zod)
 
 ```typescript
-// ✅ schemas/user.schema.ts
+// Good: schemas/user.schema.ts
 import { z } from 'zod';
 
 export const createUserSchema = z.object({
   body: z.object({
-    email: z.string().email('올바른 이메일 형식이 아닙니다'),
-    password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다'),
-    name: z.string().min(1, '이름을 입력해주세요'),
+    email: z.string().email('Invalid email format'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    name: z.string().min(1, 'Name is required'),
     phone: z.string().optional(),
   }),
 });
@@ -347,29 +348,29 @@ export const createUserSchema = z.object({
 export type CreateUserInput = z.infer<typeof createUserSchema>['body'];
 ```
 
-## 파일 구조
+## File Structure
 
-```
+```text
 src/
-├── controllers/        # 라우트 핸들러
-├── services/           # 비즈니스 로직
-├── repositories/       # 데이터 액세스
+├── controllers/        # Route handlers
+├── services/           # Business logic
+├── repositories/       # Data access
 ├── dto/                # Data Transfer Objects
-├── schemas/            # Validation 스키마 (Zod)
-├── middleware/         # Express 미들웨어
-├── routes/             # 라우터 정의
-├── utils/              # 유틸리티
-├── types/              # TypeScript 타입
-├── config/             # 설정
-└── lib/                # 외부 라이브러리 래퍼
+├── schemas/            # Validation schemas (Zod)
+├── middleware/         # Express middleware
+├── routes/             # Router definitions
+├── utils/              # Utilities
+├── types/              # TypeScript types
+├── config/             # Configuration
+└── lib/                # External library wrappers
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] Controller → Service → Repository 레이어 분리
-- [ ] DTO로 입출력 타입 정의
-- [ ] Zod/class-validator로 입력 검증
-- [ ] 커스텀 에러 클래스 사용
-- [ ] 에러 미들웨어로 중앙 처리
-- [ ] `any` 타입 사용 금지
-- [ ] async/await + try/catch 또는 에러 미들웨어
+- [ ] Controller -> Service -> Repository layer separation
+- [ ] Define input/output types with DTO
+- [ ] Validate input with Zod/class-validator
+- [ ] Use custom error class
+- [ ] Centralize error handling with error middleware
+- [ ] No `any` type usage
+- [ ] async/await + try/catch or error middleware

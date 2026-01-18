@@ -3,11 +3,11 @@ description: Priority-based TODO management (P1/P2/P3). Auto-activates when mana
 ---
 # Priority-Based Todo Management Skill
 
-우선순위 기반 TODO 관리 시스템
+Priority-based TODO management system
 
 ## Overview
 
-P1/P2/P3 우선순위로 태스크를 분류하여 중요한 것 먼저 처리
+Classify tasks by P1/P2/P3 priority to handle important items first
 
 ## Priority Levels
 
@@ -17,22 +17,22 @@ P1/P2/P3 우선순위로 태스크를 분류하여 중요한 것 먼저 처리
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  🔴 P1 (Critical)                                               │
-│  ├── 보안 취약점                                                 │
-│  ├── 데이터 손실 위험                                            │
-│  ├── 프로덕션 장애                                               │
-│  └── 머지 차단 이슈                                              │
+│  ├── Security vulnerabilities                                   │
+│  ├── Data loss risk                                             │
+│  ├── Production incidents                                       │
+│  └── Merge-blocking issues                                      │
 │                                                                 │
 │  🟡 P2 (Important)                                              │
-│  ├── 성능 문제                                                   │
-│  ├── 테스트 누락                                                 │
-│  ├── 아키텍처 위반                                               │
-│  └── 기술 부채                                                   │
+│  ├── Performance issues                                         │
+│  ├── Missing tests                                              │
+│  ├── Architecture violations                                    │
+│  └── Technical debt                                             │
 │                                                                 │
 │  🔵 P3 (Nice-to-have)                                           │
-│  ├── 코드 스타일                                                 │
-│  ├── 리팩토링 제안                                               │
-│  ├── 문서화                                                      │
-│  └── 최적화 기회                                                 │
+│  ├── Code style                                                 │
+│  ├── Refactoring suggestions                                    │
+│  ├── Documentation                                              │
+│  └── Optimization opportunities                                 │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -147,25 +147,25 @@ Last updated: 2026-01-11 10:30
 ### Create Todo
 
 ```bash
-# /vibe.review 결과에서 자동 생성
+# Auto-generated from /vibe.review results
 /vibe.review PR#123
-# → .claude/vibe/todos/ 에 파일 생성
+# -> Creates files in .claude/vibe/todos/
 
-# 수동 생성
+# Manual creation
 vibe todo add "SQL Injection in users.py" --priority P1 --category security
 ```
 
 ### List Todos
 
 ```bash
-# 전체 목록
+# Full list
 vibe todo list
 
-# 우선순위별
+# By priority
 vibe todo list --priority P1
 vibe todo list --priority P2
 
-# 카테고리별
+# By category
 vibe todo list --category security
 vibe todo list --category performance
 ```
@@ -173,26 +173,26 @@ vibe todo list --category performance
 ### Complete Todo
 
 ```bash
-# 완료 처리
+# Mark as complete
 vibe todo done P1-security-sql-injection
 
-# 파일에 체크 표시 + index 업데이트
+# Updates checklist in file + updates index
 ```
 
 ### Clean Up
 
 ```bash
-# 완료된 항목 아카이브
+# Archive completed items
 vibe todo archive
 
-# 결과:
+# Result:
 # .claude/vibe/todos/P1-security-sql-injection.md
-# → .claude/vibe/todos/done/2026-01-11-P1-security-sql-injection.md
+# -> .claude/vibe/todos/done/2026-01-11-P1-security-sql-injection.md
 ```
 
 ## Integration with TodoWrite
 
-기존 TodoWrite 도구와 연동:
+Integration with existing TodoWrite tool:
 
 ```javascript
 TodoWrite({
@@ -201,8 +201,8 @@ TodoWrite({
       content: "[P1] Fix SQL injection in users.py:42",
       status: "in_progress",
       activeForm: "Fixing SQL injection vulnerability",
-      priority: "P1",  // 확장 필드
-      category: "security"  // 확장 필드
+      priority: "P1",  // extended field
+      category: "security"  // extended field
     },
     {
       content: "[P2] Add missing tests for auth",
@@ -220,20 +220,20 @@ TodoWrite({
 ```yaml
 # .claude/vibe/config.yaml
 merge_blocking:
-  P1: true   # P1 있으면 머지 차단
-  P2: false  # P2는 경고만
-  P3: false  # P3는 무시
+  P1: true   # Block merge if P1 exists
+  P2: false  # Warning only
+  P3: false  # Ignore
 
 notifications:
-  P1: immediate  # 즉시 알림
-  P2: daily      # 일일 요약
-  P3: weekly     # 주간 요약
+  P1: immediate  # Immediate notification
+  P2: daily      # Daily summary
+  P3: weekly     # Weekly summary
 ```
 
 ## Best Practices
 
-1. **P1은 즉시 처리**: 다른 작업 중단하고 수정
-2. **P2는 PR 전 처리**: 머지 전 해결 권장
-3. **P3는 백로그**: 시간 날 때 처리
-4. **정기 정리**: 주 1회 todo 리뷰
-5. **완료 기록**: 해결 방법 문서화
+1. **Handle P1 immediately**: Stop other work and fix
+2. **Handle P2 before PR**: Recommended to resolve before merge
+3. **P3 is backlog**: Handle when time permits
+4. **Regular cleanup**: Review todos weekly
+5. **Document completions**: Document how issues were resolved

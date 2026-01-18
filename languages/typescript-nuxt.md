@@ -1,36 +1,37 @@
-# 🟢 TypeScript + Nuxt 3 품질 규칙
+# TypeScript + Nuxt 3 Quality Rules
 
-## 핵심 원칙 (Vue에서 상속)
+## Core Principles (inherited from Vue)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄, Template ≤ 100줄
-✅ 중첩 ≤ 3단계
-✅ Composition API + script setup
+# Core Principles (inherited from Vue)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines, Template <= 100 lines
+Nesting <= 3 levels
+Composition API + script setup
 ```
 
-## Nuxt 3 특화 규칙
+## Nuxt 3 Specific Rules
 
-### 1. Auto-imports 활용
+### 1. Auto-imports Usage
 
 ```typescript
-// ✅ Nuxt 3는 자동 import (명시적 import 불필요)
+// Good: Nuxt 3 auto-imports (no explicit import needed)
 <script setup lang="ts">
-// ref, computed, watch 등 Vue API 자동 import
+// ref, computed, watch etc Vue API auto-imported
 const count = ref(0);
 const doubled = computed(() => count.value * 2);
 
-// useFetch, useAsyncData 등 Nuxt composables 자동 import
+// useFetch, useAsyncData etc Nuxt composables auto-imported
 const { data } = await useFetch('/api/users');
 
-// components/ 폴더의 컴포넌트 자동 import
-// <UserCard /> 바로 사용 가능
+// Components from components/ folder auto-imported
+// <UserCard /> can be used directly
 </script>
 
-// ❌ 불필요한 import
+// Bad: Unnecessary imports
 import { ref, computed } from 'vue';
 import { useFetch } from '#app';
 ```
@@ -38,21 +39,21 @@ import { useFetch } from '#app';
 ### 2. Server API Routes
 
 ```typescript
-// ✅ server/api/users/index.get.ts (GET /api/users)
+// Good: server/api/users/index.get.ts (GET /api/users)
 export default defineEventHandler(async (event) => {
   const users = await prisma.user.findMany();
   return users;
 });
 
-// ✅ server/api/users/index.post.ts (POST /api/users)
+// Good: server/api/users/index.post.ts (POST /api/users)
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
-  // 유효성 검사
+  // Validation
   if (!body.email || !body.name) {
     throw createError({
       statusCode: 400,
-      message: '이메일과 이름은 필수입니다',
+      message: 'Email and name are required',
     });
   }
 
@@ -60,7 +61,7 @@ export default defineEventHandler(async (event) => {
   return user;
 });
 
-// ✅ server/api/users/[id].get.ts (GET /api/users/:id)
+// Good: server/api/users/[id].get.ts (GET /api/users/:id)
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
 
@@ -69,14 +70,14 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 404,
-      message: '사용자를 찾을 수 없습니다',
+      message: 'User not found',
     });
   }
 
   return user;
 });
 
-// ✅ server/api/users/[id].put.ts (PUT /api/users/:id)
+// Good: server/api/users/[id].put.ts (PUT /api/users/:id)
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
   const body = await readBody(event);
@@ -89,7 +90,7 @@ export default defineEventHandler(async (event) => {
   return user;
 });
 
-// ✅ server/api/users/[id].delete.ts (DELETE /api/users/:id)
+// Good: server/api/users/[id].delete.ts (DELETE /api/users/:id)
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
   await prisma.user.delete({ where: { id } });
@@ -97,45 +98,45 @@ export default defineEventHandler(async (event) => {
 });
 ```
 
-### 3. Data Fetching (SSR 지원)
+### 3. Data Fetching (SSR Supported)
 
 ```typescript
-// ✅ useFetch - 기본 데이터 페칭
+// Good: useFetch - basic data fetching
 <script setup lang="ts">
 const { data: user, pending, error, refresh } = await useFetch<User>(
   `/api/users/${props.userId}`
 );
 
-// 옵션 사용
+// With options
 const { data: posts } = await useFetch('/api/posts', {
   query: { limit: 10, offset: 0 },
   headers: { 'X-Custom': 'value' },
-  pick: ['id', 'title'], // 필요한 필드만 선택
-  transform: (data) => data.items, // 응답 변환
+  pick: ['id', 'title'], // Select only needed fields
+  transform: (data) => data.items, // Transform response
 });
 </script>
 
-// ✅ useAsyncData - 커스텀 페칭 로직
+// Good: useAsyncData - custom fetching logic
 <script setup lang="ts">
 const { data, pending } = await useAsyncData(
-  'user-posts', // 캐시 키
+  'user-posts', // Cache key
   () => $fetch(`/api/users/${props.userId}/posts`),
   {
-    default: () => [], // 기본값
-    lazy: true, // 클라이언트에서만 실행
-    server: false, // SSR 비활성화
+    default: () => [], // Default value
+    lazy: true, // Execute only on client
+    server: false, // Disable SSR
   }
 );
 </script>
 
-// ✅ useLazyFetch - 지연 로딩 (Suspense 없이)
+// Good: useLazyFetch - lazy loading (without Suspense)
 <script setup lang="ts">
 const { data, pending } = useLazyFetch('/api/heavy-data');
 
-// pending 상태 처리
+// Handle pending state
 </script>
 <template>
-  <div v-if="pending">로딩 중...</div>
+  <div v-if="pending">Loading...</div>
   <div v-else>{{ data }}</div>
 </template>
 ```
@@ -143,9 +144,9 @@ const { data, pending } = useLazyFetch('/api/heavy-data');
 ### 4. State Management
 
 ```typescript
-// ✅ useState - 서버/클라이언트 공유 상태
+// Good: useState - server/client shared state
 <script setup lang="ts">
-// 모든 컴포넌트에서 공유되는 상태
+// State shared across all components
 const counter = useState('counter', () => 0);
 
 function increment() {
@@ -153,7 +154,7 @@ function increment() {
 }
 </script>
 
-// ✅ Pinia Store (복잡한 상태)
+// Good: Pinia Store (complex state)
 // stores/user.ts
 export const useUserStore = defineStore('user', () => {
   const user = ref<User | null>(null);
@@ -179,17 +180,17 @@ export const useUserStore = defineStore('user', () => {
 ### 5. Middleware
 
 ```typescript
-// ✅ middleware/auth.ts (Named middleware)
+// Good: middleware/auth.ts (Named middleware)
 export default defineNuxtRouteMiddleware((to, from) => {
   const { isLoggedIn } = useUserStore();
 
-  // 로그인 필요한 페이지 보호
+  // Protect pages requiring login
   if (!isLoggedIn && to.meta.requiresAuth) {
     return navigateTo('/login');
   }
 });
 
-// 페이지에서 사용
+// Usage in page
 <script setup lang="ts">
 definePageMeta({
   middleware: 'auth',
@@ -197,12 +198,12 @@ definePageMeta({
 });
 </script>
 
-// ✅ middleware/auth.global.ts (Global middleware)
+// Good: middleware/auth.global.ts (Global middleware)
 export default defineNuxtRouteMiddleware((to, from) => {
-  // 모든 라우트에 적용
+  // Applies to all routes
 });
 
-// ✅ Server middleware
+// Good: Server middleware
 // server/middleware/auth.ts
 export default defineEventHandler((event) => {
   const token = getCookie(event, 'auth-token');
@@ -210,7 +211,7 @@ export default defineEventHandler((event) => {
   if (!token && event.path.startsWith('/api/protected')) {
     throw createError({
       statusCode: 401,
-      message: '인증이 필요합니다',
+      message: 'Authentication required',
     });
   }
 });
@@ -219,7 +220,7 @@ export default defineEventHandler((event) => {
 ### 6. Layouts & Pages
 
 ```typescript
-// ✅ layouts/default.vue
+// Good: layouts/default.vue
 <template>
   <div class="layout">
     <AppHeader />
@@ -230,7 +231,7 @@ export default defineEventHandler((event) => {
   </div>
 </template>
 
-// ✅ layouts/admin.vue
+// Good: layouts/admin.vue
 <template>
   <div class="admin-layout">
     <AdminSidebar />
@@ -240,7 +241,7 @@ export default defineEventHandler((event) => {
   </div>
 </template>
 
-// ✅ pages/admin/index.vue
+// Good: pages/admin/index.vue
 <script setup lang="ts">
 definePageMeta({
   layout: 'admin',
@@ -248,7 +249,7 @@ definePageMeta({
 });
 </script>
 
-// ✅ pages/users/[id].vue (동적 라우트)
+// Good: pages/users/[id].vue (dynamic route)
 <script setup lang="ts">
 const route = useRoute();
 const userId = route.params.id;
@@ -256,7 +257,7 @@ const userId = route.params.id;
 const { data: user } = await useFetch(`/api/users/${userId}`);
 </script>
 
-// ✅ pages/posts/[...slug].vue (Catch-all 라우트)
+// Good: pages/posts/[...slug].vue (Catch-all route)
 <script setup lang="ts">
 const route = useRoute();
 const slugParts = route.params.slug; // ['a', 'b', 'c']
@@ -266,7 +267,7 @@ const slugParts = route.params.slug; // ['a', 'b', 'c']
 ### 7. SEO & Meta
 
 ```typescript
-// ✅ 페이지별 메타 설정
+// Good: Per-page meta configuration
 <script setup lang="ts">
 const { data: post } = await useFetch(`/api/posts/${route.params.id}`);
 
@@ -279,7 +280,7 @@ useHead({
   ],
 });
 
-// 또는 useSeoMeta
+// Or useSeoMeta
 useSeoMeta({
   title: post.value?.title,
   ogTitle: post.value?.title,
@@ -289,7 +290,7 @@ useSeoMeta({
 });
 </script>
 
-// ✅ nuxt.config.ts 전역 설정
+// Good: nuxt.config.ts global configuration
 export default defineNuxtConfig({
   app: {
     head: {
@@ -308,7 +309,7 @@ export default defineNuxtConfig({
 ### 8. Plugins & Modules
 
 ```typescript
-// ✅ plugins/api.ts
+// Good: plugins/api.ts
 export default defineNuxtPlugin(() => {
   const api = $fetch.create({
     baseURL: '/api',
@@ -333,11 +334,11 @@ export default defineNuxtPlugin(() => {
   };
 });
 
-// 사용
+// Usage
 const { $api } = useNuxtApp();
 const users = await $api('/users');
 
-// ✅ plugins/dayjs.client.ts (클라이언트 전용)
+// Good: plugins/dayjs.client.ts (client only)
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -350,7 +351,7 @@ export default defineNuxtPlugin(() => {
 ### 9. Composables
 
 ```typescript
-// ✅ composables/useAuth.ts
+// Good: composables/useAuth.ts
 export function useAuth() {
   const user = useState<User | null>('auth-user', () => null);
   const isLoggedIn = computed(() => !!user.value);
@@ -372,7 +373,7 @@ export function useAuth() {
   return { user, isLoggedIn, login, logout };
 }
 
-// ✅ composables/usePagination.ts
+// Good: composables/usePagination.ts
 export function usePagination<T>(
   fetchFn: (page: number) => Promise<{ items: T[]; total: number }>
 ) {
@@ -401,7 +402,7 @@ export function usePagination<T>(
 ### 10. Error Handling
 
 ```typescript
-// ✅ error.vue (전역 에러 페이지)
+// Good: error.vue (global error page)
 <script setup lang="ts">
 const props = defineProps<{
   error: {
@@ -417,11 +418,11 @@ const handleError = () => clearError({ redirect: '/' });
   <div class="error-page">
     <h1>{{ error.statusCode }}</h1>
     <p>{{ error.message }}</p>
-    <button @click="handleError">홈으로</button>
+    <button @click="handleError">Go Home</button>
   </div>
 </template>
 
-// ✅ 컴포넌트 레벨 에러 처리
+// Good: Component level error handling
 <script setup lang="ts">
 const { data, error } = await useFetch('/api/data');
 
@@ -433,89 +434,89 @@ if (error.value) {
 }
 </script>
 
-// ✅ NuxtErrorBoundary 사용
+// Good: NuxtErrorBoundary usage
 <template>
   <NuxtErrorBoundary @error="logError">
     <SomeComponent />
     <template #error="{ error, clearError }">
-      <p>오류 발생: {{ error.message }}</p>
-      <button @click="clearError">다시 시도</button>
+      <p>Error occurred: {{ error.message }}</p>
+      <button @click="clearError">Retry</button>
     </template>
   </NuxtErrorBoundary>
 </template>
 ```
 
-## 파일 구조 (Nuxt 3)
+## File Structure (Nuxt 3)
 
-```
+```text
 project/
-├── .nuxt/               # 빌드 산출물 (git 제외)
-├── assets/              # 빌드에 포함되는 에셋
-├── components/          # 자동 import 컴포넌트
-│   ├── ui/              # 기본 UI 컴포넌트
-│   ├── features/        # 기능별 컴포넌트
-│   └── App*.vue         # 앱 공통 컴포넌트
-├── composables/         # 자동 import composables
-├── layouts/             # 레이아웃
-├── middleware/          # 라우트 미들웨어
-├── pages/               # 파일 기반 라우팅
-├── plugins/             # Nuxt 플러그인
-├── public/              # 정적 파일
+├── .nuxt/               # Build output (git ignored)
+├── assets/              # Assets included in build
+├── components/          # Auto-imported components
+│   ├── ui/              # Base UI components
+│   ├── features/        # Feature-specific components
+│   └── App*.vue         # App common components
+├── composables/         # Auto-imported composables
+├── layouts/             # Layouts
+├── middleware/          # Route middleware
+├── pages/               # File-based routing
+├── plugins/             # Nuxt plugins
+├── public/              # Static files
 ├── server/
-│   ├── api/             # API 라우트
-│   ├── middleware/      # 서버 미들웨어
-│   └── utils/           # 서버 유틸리티
-├── stores/              # Pinia 스토어
-├── types/               # TypeScript 타입
-├── utils/               # 유틸리티 함수
-├── app.vue              # 앱 루트
-├── nuxt.config.ts       # Nuxt 설정
-└── tsconfig.json        # TypeScript 설정
+│   ├── api/             # API routes
+│   ├── middleware/      # Server middleware
+│   └── utils/           # Server utilities
+├── stores/              # Pinia stores
+├── types/               # TypeScript types
+├── utils/               # Utility functions
+├── app.vue              # App root
+├── nuxt.config.ts       # Nuxt configuration
+└── tsconfig.json        # TypeScript configuration
 ```
 
-## 안티패턴
+## Anti-patterns
 
 ```typescript
-// ❌ 클라이언트에서 직접 DB 접근
+// Bad: Direct DB access from client
 <script setup>
 import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient(); // 클라이언트에서 실행 불가
+const prisma = new PrismaClient(); // Cannot run on client
 </script>
 
-// ✅ Server API 통해 접근
+// Good: Access through Server API
 const { data } = await useFetch('/api/users');
 
-// ❌ useFetch를 조건부로 사용
+// Bad: Conditional useFetch
 if (someCondition) {
-  const { data } = await useFetch('/api/data'); // 에러 발생
+  const { data } = await useFetch('/api/data'); // Error
 }
 
-// ✅ enabled 옵션 사용
+// Good: Use enabled option
 const { data } = await useFetch('/api/data', {
   immediate: someCondition,
 });
 
-// ❌ navigateTo를 setup 밖에서 사용
+// Bad: Using navigateTo outside setup
 function handleClick() {
-  navigateTo('/page'); // 가능하지만 비권장
+  navigateTo('/page'); // Possible but not recommended
 }
 
-// ✅ useRouter 사용
+// Good: Use useRouter
 const router = useRouter();
 function handleClick() {
   router.push('/page');
 }
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] Auto-imports 활용 (불필요한 import 제거)
-- [ ] Server API 파일 네이밍 규칙 준수 (*.get.ts, *.post.ts)
-- [ ] useFetch/useAsyncData로 SSR 지원 데이터 페칭
-- [ ] useState로 서버/클라이언트 상태 공유
-- [ ] definePageMeta로 페이지별 메타 설정
-- [ ] 미들웨어로 라우트 보호
-- [ ] NuxtErrorBoundary로 에러 처리
-- [ ] useHead/useSeoMeta로 SEO 최적화
-- [ ] Composables로 로직 재사용
-- [ ] TypeScript 엄격 모드 사용
+- [ ] Use auto-imports (remove unnecessary imports)
+- [ ] Follow Server API file naming convention (*.get.ts, *.post.ts)
+- [ ] SSR-supported data fetching with useFetch/useAsyncData
+- [ ] Server/client state sharing with useState
+- [ ] Per-page meta with definePageMeta
+- [ ] Route protection with middleware
+- [ ] Error handling with NuxtErrorBoundary
+- [ ] SEO optimization with useHead/useSeoMeta
+- [ ] Logic reuse with Composables
+- [ ] Use TypeScript strict mode

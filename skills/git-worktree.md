@@ -3,23 +3,23 @@ description: Git Worktree for parallel branch work. Auto-activates for PR review
 ---
 # Git Worktree Skill
 
-Git Worktree를 활용한 병렬 브랜치 작업 스킬
+Parallel branch work using Git Worktree
 
 ## Overview
 
-메인 작업을 중단하지 않고 다른 브랜치에서 리뷰/테스트 수행
+Perform reviews/tests on other branches without interrupting main work
 
 ## Usage
 
 ```bash
-# Worktree 생성
+# Create worktree
 git worktree add ../review-pr123 pr/123
 
-# 해당 디렉토리에서 작업
+# Work in that directory
 cd ../review-pr123
 npm test
 
-# 작업 완료 후 정리
+# Clean up after work is done
 git worktree remove ../review-pr123
 ```
 
@@ -28,13 +28,13 @@ git worktree remove ../review-pr123
 ### Create Worktree
 
 ```bash
-# PR 리뷰용 worktree
+# Worktree for PR review
 git worktree add ../review-{pr_number} origin/pr/{pr_number}
 
-# 특정 브랜치 worktree
+# Worktree for specific branch
 git worktree add ../feature-work feature/new-feature
 
-# 새 브랜치로 worktree
+# Worktree with new branch
 git worktree add -b hotfix/urgent ../hotfix main
 ```
 
@@ -49,10 +49,10 @@ git worktree list
 ### Remove Worktree
 
 ```bash
-# 정상 제거
+# Normal removal
 git worktree remove ../review-123
 
-# 강제 제거 (uncommitted changes 무시)
+# Force removal (ignore uncommitted changes)
 git worktree remove --force ../review-123
 
 # Prune stale worktrees
@@ -102,36 +102,36 @@ git worktree prune
 
 ## Benefits
 
-1. **No Stash Needed**: 현재 작업 그대로 유지
-2. **Full Codebase**: 각 worktree는 완전한 코드베이스
-3. **Parallel Work**: 여러 브랜치 동시 작업
-4. **Clean Testing**: 격리된 환경에서 테스트
+1. **No Stash Needed**: Keep current work intact
+2. **Full Codebase**: Each worktree is a complete codebase
+3. **Parallel Work**: Work on multiple branches simultaneously
+4. **Clean Testing**: Test in isolated environment
 
 ## Best Practices
 
 ### Naming Convention
 
 ```bash
-# PR 리뷰
+# PR review
 ../review-{pr_number}
 
-# 핫픽스
+# Hotfix
 ../hotfix-{issue_number}
 
-# 실험
+# Experiment
 ../experiment-{feature_name}
 ```
 
 ### Cleanup
 
 ```bash
-# 정기 정리
+# Regular cleanup
 git worktree prune
 
-# 모든 worktree 확인
+# Check all worktrees
 git worktree list
 
-# 스크립트로 자동 정리
+# Auto cleanup with script
 for wt in $(git worktree list --porcelain | grep worktree | cut -d' ' -f2); do
   if [[ $wt == *"review-"* ]] || [[ $wt == *"hotfix-"* ]]; then
     git worktree remove "$wt" 2>/dev/null || true
@@ -161,21 +161,21 @@ done
 ### "already checked out" Error
 
 ```bash
-# 해결: 해당 브랜치가 다른 worktree에 있음
-git worktree list  # 확인
-git worktree remove <path>  # 제거
+# Solution: Branch is already in another worktree
+git worktree list  # Check
+git worktree remove <path>  # Remove
 ```
 
 ### Locked Worktree
 
 ```bash
-# 해결: 잠긴 worktree 해제
+# Solution: Unlock the locked worktree
 git worktree unlock <path>
 ```
 
 ### Stale Worktree
 
 ```bash
-# 해결: 삭제된 디렉토리 정리
+# Solution: Clean up deleted directories
 git worktree prune
 ```

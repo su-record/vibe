@@ -5,7 +5,7 @@ import { ToolResult, ToolDefinition } from '../../types/tool.js';
 
 export const updateMemoryDefinition: ToolDefinition = {
   name: 'update_memory',
-  description: '수정해|업데이트|바꿔|update|change|modify|edit - Update existing memory',
+  description: 'update|change|modify|edit - Update existing memory',
   inputSchema: {
     type: 'object',
     properties: {

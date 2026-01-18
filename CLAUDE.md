@@ -1,122 +1,123 @@
 # VIBE
 
-SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
+SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
-## 코드 품질 기준 (필수)
+## Code Quality Standards (Mandatory)
 
-모든 코드 작성 시 아래 기준을 준수합니다. 상세 규칙은 `~/.claude/vibe/rules/` (전역) 참조.
+Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) for detailed rules.
 
-### 핵심 원칙
-- **요청 범위만 수정** - 관련 없는 코드 건드리지 않음
-- **기존 스타일 유지** - 프로젝트 컨벤션 따름
-- **작동하는 코드 보존** - 불필요한 리팩토링 금지
+### Core Principles
+- **Modify only requested scope** - Don't touch unrelated code
+- **Preserve existing style** - Follow project conventions
+- **Keep working code** - No unnecessary refactoring
+- **Respect user interrupts** - If user interrupts (Ctrl+C/Escape) and sends a new message, the previous task is CANCELLED. Do NOT resume or continue interrupted work. Respond ONLY to the new message.
 
-### 코드 복잡도 제한
-| 메트릭 | 제한 |
-|--------|------|
-| 함수 길이 | 30줄 이하 (권장), 50줄 이하 (허용) |
-| 중첩 깊이 | 3단계 이하 |
-| 매개변수 | 5개 이하 |
-| 순환 복잡도 | 10 이하 |
+### Code Complexity Limits
+| Metric | Limit |
+|--------|-------|
+| Function length | ≤30 lines (recommended), ≤50 lines (allowed) |
+| Nesting depth | ≤3 levels |
+| Parameters | ≤5 |
+| Cyclomatic complexity | ≤10 |
 
-### TypeScript 규칙
-- `any` 타입 사용 금지 → `unknown` + 타입 가드 사용
-- `as any` 캐스팅 금지 → 적절한 인터페이스 정의
-- `@ts-ignore` 금지 → 타입 문제 근본 해결
-- 모든 함수에 반환 타입 명시
+### TypeScript Rules
+- No `any` type → Use `unknown` + type guards
+- No `as any` casting → Define proper interfaces
+- No `@ts-ignore` → Fix type issues at root
+- Explicit return types on all functions
 
-### 에러 처리 필수
-- try-catch 또는 error state 필수
-- 로딩 상태 처리
-- 사용자 친화적 에러 메시지
+### Error Handling Required
+- try-catch or error state required
+- Loading state handling
+- User-friendly error messages
 
-### 금지 패턴
-- console.log 커밋 금지 (디버깅 후 제거)
-- 하드코딩된 문자열/숫자 → 상수로 추출
-- 주석 처리된 코드 커밋 금지
-- TODO 없이 미완성 코드 커밋 금지
+### Forbidden Patterns
+- No console.log in commits (remove after debugging)
+- No hardcoded strings/numbers → Extract to constants
+- No commented-out code in commits
+- No incomplete code without TODO
 
 ## Workflow
 
 ```
-/vibe.spec → (자동) SPEC 리뷰 → /vibe.run → (자동) 코드 리뷰 → (자동) fix → ✅ 완료
+/vibe.spec → (auto) SPEC review → /vibe.run → (auto) code review → (auto) fix → ✅ Done
 ```
 
-**자동화된 플로우:**
-1. `/vibe.spec` - SPEC 작성 + **(자동)** Gemini 리뷰 → 자동 반영
-2. `/vibe.run` - 구현 + Gemini 리뷰
-3. **(자동)** 13+ 에이전트 병렬 리뷰
-4. **(자동)** P1/P2 이슈 자동 수정
+**Automated Flow:**
+1. `/vibe.spec` - Write SPEC + **(auto)** Gemini review → Auto-apply
+2. `/vibe.run` - Implementation + Gemini review
+3. **(auto)** 13+ agent parallel review
+4. **(auto)** P1/P2 issue auto-fix
 
-## Plan Mode vs VIBE (워크플로우 선택)
+## Plan Mode vs VIBE (Workflow Selection)
 
-**개발 요청 시 사용자에게 선택권 제공:**
+**Offer choice to user on development requests:**
 
-| 작업 규모 | 권장 방식 |
-|----------|----------|
-| 간단한 수정 (1-2 파일) | Plan Mode |
-| 복잡한 기능 (3+ 파일, 리서치/검증 필요) | `/vibe.spec` |
+| Task Size | Recommended |
+|-----------|-------------|
+| Simple changes (1-2 files) | Plan Mode |
+| Complex features (3+ files, research/verification needed) | `/vibe.spec` |
 
-| 항목 | Plan Mode | VIBE |
+| Item | Plan Mode | VIBE |
 |------|-----------|------|
-| 저장 위치 | `~/.claude/plans/` (전역) | `.claude/vibe/specs/` (프로젝트) |
-| 문서 형식 | 자유 형식 | PTCF 구조 (AI 실행 최적화) |
-| 리서치 | 없음 | 4개 병렬 에이전트 |
-| 검증 | 없음 | `/vibe.verify`로 SPEC 대비 검증 |
-| 히스토리 | 추적 불가 | Git으로 버전 관리 |
+| Storage location | `~/.claude/plans/` (global) | `.claude/vibe/specs/` (project) |
+| Document format | Free form | PTCF structure (AI-optimized) |
+| Research | None | 4 parallel agents |
+| Verification | None | `/vibe.verify` against SPEC |
+| History | Not trackable | Git version control |
 
-**규칙:**
-- `/vibe.analyze` 또는 `/vibe.review` 후 개발/수정 요청 시 → **사용자에게 워크플로우 선택 질문**
-- 사용자가 VIBE 선택 → `/vibe.spec` 대기
-- 사용자가 Plan Mode 선택 → EnterPlanMode 진행
+**Rules:**
+- After `/vibe.analyze` or `/vibe.review` with dev/modify request → **Ask user for workflow choice**
+- User chooses VIBE → Wait for `/vibe.spec`
+- User chooses Plan Mode → Proceed with EnterPlanMode
 
-## ULTRAWORK Mode (권장)
+## ULTRAWORK Mode (Recommended)
 
-`ultrawork` 또는 `ulw` 키워드를 포함하면 최대 성능 모드 활성화:
+Include `ultrawork` or `ulw` keyword to activate maximum performance mode:
 
 ```bash
-/vibe.run "기능명" ultrawork   # 모든 최적화 자동 활성화
-/vibe.run "기능명" ulw         # 동일 (단축어)
+/vibe.run "feature-name" ultrawork   # All optimizations auto-enabled
+/vibe.run "feature-name" ulw         # Same (shorthand)
 ```
 
-**활성화 기능:**
-- 병렬 서브에이전트 탐색 (3+ 동시)
-- **백그라운드 에이전트** - 구현 중 다음 Phase 준비
-- **Phase 파이프라이닝** - Phase 간 대기 시간 제거
-- Boulder Loop (모든 Phase 완료까지 자동 진행)
-- 에러 자동 재시도 (최대 3회)
-- 컨텍스트 70%+ 시 자동 압축/저장
-- Phase 간 확인 없이 연속 실행
+**Activated Features:**
+- Parallel sub-agent exploration (3+ concurrent)
+- **Background agents** - Prepare next Phase during implementation
+- **Phase pipelining** - Remove wait time between Phases
+- Boulder Loop (auto-continue until all Phases complete)
+- Auto-retry on error (max 3 times)
+- Auto-compress/save at 70%+ context
+- Continuous execution without confirmation between Phases
 
-**속도 비교:**
+**Speed Comparison:**
 
-| Mode | Phase당 | 5 Phase |
-|------|---------|---------|
-| Sequential | ~2분 | ~10분 |
-| Parallel Exploration | ~1.5분 | ~7.5분 |
-| **ULTRAWORK Pipeline** | **~1분** | **~5분** |
+| Mode | Per Phase | 5 Phases |
+|------|-----------|----------|
+| Sequential | ~2min | ~10min |
+| Parallel Exploration | ~1.5min | ~7.5min |
+| **ULTRAWORK Pipeline** | **~1min** | **~5min** |
 
 ## Commands
 
-| 명령어 | 설명 |
-|--------|------|
-| `/vibe.spec "기능명"` | SPEC 작성 (PTCF 구조) + 병렬 리서치 |
-| `/vibe.run "기능명"` | 구현 실행 |
-| `/vibe.run "기능명" ultrawork` | **최대 성능 모드** |
-| `/vibe.verify "기능명"` | 검증 |
-| `/vibe.review` | **병렬 코드 리뷰** (13+ 에이전트) |
-| `/vibe.reason "문제"` | 체계적 추론 |
-| `/vibe.analyze` | 프로젝트 분석 |
-| `/vibe.utils --e2e` | E2E 테스트 (Playwright) |
-| `/vibe.utils --diagram` | 다이어그램 생성 |
-| `/vibe.utils --ui "설명"` | UI 미리보기 |
-| `/vibe.utils --continue` | **세션 복원** (이전 컨텍스트 로드) |
+| Command | Description |
+|---------|-------------|
+| `/vibe.spec "feature-name"` | Write SPEC (PTCF structure) + parallel research |
+| `/vibe.run "feature-name"` | Execute implementation |
+| `/vibe.run "feature-name" ultrawork` | **Maximum performance mode** |
+| `/vibe.verify "feature-name"` | Verification |
+| `/vibe.review` | **Parallel code review** (13+ agents) |
+| `/vibe.reason "problem"` | Systematic reasoning |
+| `/vibe.analyze` | Project analysis |
+| `/vibe.utils --e2e` | E2E testing (Playwright) |
+| `/vibe.utils --diagram` | Generate diagrams |
+| `/vibe.utils --ui "description"` | UI preview |
+| `/vibe.utils --continue` | **Session restore** (load previous context) |
 
-## 새로운 기능 (v2.1.0)
+## New Features (v2.1.0)
 
-### 병렬 코드 리뷰 (/vibe.review)
+### Parallel Code Review (/vibe.review)
 
-13+ 전문 에이전트가 동시에 코드 리뷰:
+13+ specialized agents review code simultaneously:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -130,101 +131,101 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**우선순위 시스템:**
-- 🔴 P1 (Critical): 머지 차단
-- 🟡 P2 (Important): 수정 권장
-- 🔵 P3 (Nice-to-have): 백로그
+**Priority System:**
+- 🔴 P1 (Critical): Blocks merge
+- 🟡 P2 (Important): Fix recommended
+- 🔵 P3 (Nice-to-have): Backlog
 
-### E2E 테스트 (/vibe.utils --e2e)
+### E2E Testing (/vibe.utils --e2e)
 
-Playwright 기반 자동화 테스트:
+Playwright-based automated testing:
 
 ```bash
-/vibe.utils --e2e "login flow"   # 시나리오 테스트
-/vibe.utils --e2e --visual       # 시각적 회귀 테스트
-/vibe.utils --e2e --record       # 비디오 녹화
+/vibe.utils --e2e "login flow"   # Scenario test
+/vibe.utils --e2e --visual       # Visual regression test
+/vibe.utils --e2e --record       # Video recording
 ```
 
-### 리서치 에이전트 강화
+### Enhanced Research Agents
 
-`/vibe.spec` 실행 시 **요구사항 확정 후** 4개 병렬 리서치:
+4 parallel research agents run **after requirements confirmed** during `/vibe.spec`:
 
 ```
-문답으로 요구사항 확정 → 병렬 리서치 실행 → SPEC 작성
+Q&A to confirm requirements → Parallel research → SPEC writing
 ```
 
-| 에이전트 | 역할 |
-|----------|------|
-| best-practices-agent | 확정된 기능+스택 베스트 프랙티스 |
-| framework-docs-agent | 확정된 스택 최신 문서 (context7) |
-| codebase-patterns-agent | 기존 유사 패턴 분석 |
-| security-advisory-agent | 확정된 기능 보안 권고 |
+| Agent | Role |
+|-------|------|
+| best-practices-agent | Best practices for confirmed feature+stack |
+| framework-docs-agent | Latest docs for confirmed stack (context7) |
+| codebase-patterns-agent | Analyze existing similar patterns |
+| security-advisory-agent | Security advisory for confirmed feature |
 
-**⚠️ 리서치는 요구사항 확정 후 실행** (VIBE 원칙: 요구사항 먼저)
+**⚠️ Research runs after requirements confirmed** (VIBE principle: requirements first)
 
 ## PTCF Structure
 
-SPEC 문서는 AI가 바로 실행 가능한 프롬프트 형태:
+SPEC documents are AI-executable prompt format:
 
 ```
-<role>      AI 역할 정의
-<context>   배경, 기술 스택, 관련 코드
-<task>      Phase별 작업 목록
-<constraints> 제약 조건
-<output_format> 생성/수정할 파일
-<acceptance> 검증 기준
+<role>      AI role definition
+<context>   Background, tech stack, related code
+<task>      Phase-by-phase task list
+<constraints> Constraints
+<output_format> Files to create/modify
+<acceptance> Verification criteria
 ```
 
-## 내장 도구
+## Built-in Tools
 
-### 시맨틱 코드 분석
-| 도구 | 용도 |
-|------|------|
-| `vibe_find_symbol` | 심볼 정의 찾기 |
-| `vibe_find_references` | 참조 찾기 |
-| `vibe_analyze_complexity` | 복잡도 분석 |
-| `vibe_validate_code_quality` | 품질 검증 |
+### Semantic Code Analysis
+| Tool | Purpose |
+|------|---------|
+| `vibe_find_symbol` | Find symbol definitions |
+| `vibe_find_references` | Find references |
+| `vibe_analyze_complexity` | Analyze complexity |
+| `vibe_validate_code_quality` | Validate quality |
 
-### 컨텍스트 관리
-| 도구 | 용도 |
-|------|------|
-| `vibe_start_session` | 세션 시작 (이전 컨텍스트 복원) |
-| `vibe_auto_save_context` | 현재 상태 저장 |
-| `vibe_save_memory` | 중요 결정사항 저장 |
+### Context Management
+| Tool | Purpose |
+|------|---------|
+| `vibe_start_session` | Start session (restore previous context) |
+| `vibe_auto_save_context` | Save current state |
+| `vibe_save_memory` | Save important decisions |
 
-## 에이전트
+## Agents
 
-### Review 에이전트 (12개)
+### Review Agents (12)
 ```
 .claude/agents/review/
-├── security-reviewer.md        # 보안 취약점
-├── performance-reviewer.md     # 성능 병목
-├── architecture-reviewer.md    # 아키텍처 위반
-├── complexity-reviewer.md      # 복잡도 초과
-├── simplicity-reviewer.md      # 과도한 추상화
-├── data-integrity-reviewer.md  # 데이터 무결성
-├── test-coverage-reviewer.md   # 테스트 누락
-├── git-history-reviewer.md     # 위험 패턴
-├── python-reviewer.md          # Python 전문
-├── typescript-reviewer.md      # TypeScript 전문
-├── rails-reviewer.md           # Rails 전문
-└── react-reviewer.md           # React 전문
+├── security-reviewer.md        # Security vulnerabilities
+├── performance-reviewer.md     # Performance bottlenecks
+├── architecture-reviewer.md    # Architecture violations
+├── complexity-reviewer.md      # Complexity exceeded
+├── simplicity-reviewer.md      # Over-abstraction
+├── data-integrity-reviewer.md  # Data integrity
+├── test-coverage-reviewer.md   # Missing tests
+├── git-history-reviewer.md     # Risk patterns
+├── python-reviewer.md          # Python specialist
+├── typescript-reviewer.md      # TypeScript specialist
+├── rails-reviewer.md           # Rails specialist
+└── react-reviewer.md           # React specialist
 ```
 
-### Research 에이전트 (4개)
+### Research Agents (4)
 ```
 .claude/agents/research/
-├── best-practices-agent.md     # 베스트 프랙티스
-├── framework-docs-agent.md     # 프레임워크 문서
-├── codebase-patterns-agent.md  # 코드 패턴 분석
-└── security-advisory-agent.md  # 보안 권고
+├── best-practices-agent.md     # Best practices
+├── framework-docs-agent.md     # Framework docs
+├── codebase-patterns-agent.md  # Code pattern analysis
+└── security-advisory-agent.md  # Security advisory
 ```
 
-## 스킬
+## Skills
 
 ### Git Worktree
 ```bash
-# PR 리뷰용 격리 환경
+# Isolated environment for PR review
 git worktree add ../review-123 origin/pr/123
 cd ../review-123 && npm test
 git worktree remove ../review-123
@@ -233,101 +234,101 @@ git worktree remove ../review-123
 ### Priority Todos
 ```
 .claude/vibe/todos/
-├── P1-security-sql-injection.md   # 🔴 머지 차단
-├── P2-perf-n1-query.md            # 🟡 수정 권장
-└── P3-style-extract-helper.md     # 🔵 백로그
+├── P1-security-sql-injection.md   # 🔴 Blocks merge
+├── P2-perf-n1-query.md            # 🟡 Fix recommended
+└── P3-style-extract-helper.md     # 🔵 Backlog
 ```
 
-## 컨텍스트 관리 전략
+## Context Management Strategy
 
-### 모델 선택
-- **탐색/검색**: Haiku (서브에이전트 기본값)
-- **구현/디버깅**: Sonnet
-- **아키텍처/복잡한 로직**: Opus
+### Model Selection
+- **Exploration/Search**: Haiku (sub-agent default)
+- **Implementation/Debugging**: Sonnet
+- **Architecture/Complex logic**: Opus
 
-### 컨텍스트 70%+ 시 (⚠️ 중요)
+### At 70%+ Context (⚠️ Important)
 ```
-❌ /compact 사용 금지 (정보 손실/왜곡 위험)
-✅ save_memory로 중요 결정사항 저장 → /new로 새 세션
+❌ Don't use /compact (risk of information loss/distortion)
+✅ save_memory to store important decisions → /new for new session
 ```
 
-vibe는 자체 메모리 시스템으로 세션 간 컨텍스트를 유지합니다:
-1. `save_memory` - 중요 결정사항 명시적 저장
-2. `/new` - 새 세션 시작
-3. `start_session` - 이전 세션 자동 복원
+vibe maintains context across sessions with its own memory system:
+1. `save_memory` - Explicitly save important decisions
+2. `/new` - Start new session
+3. `start_session` - Auto-restore previous session
 
-### 세션 복원
-새 세션에서 이전 작업을 이어가려면:
+### Session Restore
+To continue previous work in a new session:
 ```
 /vibe.utils --continue
 ```
-이 명령어가 `vibe_start_session`을 호출하여 프로젝트별 메모리에서 이전 컨텍스트를 복원합니다.
+This command calls `vibe_start_session` to restore previous context from project memory.
 
-### 기타 명령어
-- `/rewind` - 이전 시점으로 되돌리기
-- `/context` - 현재 사용량 확인
+### Other Commands
+- `/rewind` - Revert to previous point
+- `/context` - Check current usage
 
-### context7 활용
-최신 라이브러리 문서가 필요할 때 context7 플러그인 사용:
+### Using context7
+Use context7 plugin when you need latest library documentation:
 ```
-"React 19 use() 훅을 context7으로 검색해줘"
+"Search React 19 use() hook with context7"
 ```
 
-## 문서 작성 규칙
+## Documentation Guidelines
 
-### 다이어그램/구조 표현
-- 아스키 박스 (┌─┐) 사용 금지 → 한글 폭 문제로 정렬 깨짐
-- 대안 사용:
-  - Mermaid 다이어그램 (GitHub/노션 지원)
-  - 마크다운 테이블
-  - 들여쓰기 + 구분선
+### Diagrams/Structure Representation
+- Avoid ASCII boxes (┌─┐) → Alignment breaks with mixed-width characters
+- Use alternatives:
+  - Mermaid diagrams (GitHub/Notion supported)
+  - Markdown tables
+  - Indentation + separators
 
-### 선호 형식
-| 용도 | 권장 방식 |
-|------|----------|
-| 흐름도 | Mermaid flowchart |
-| 구조/계층 | 들여쓰기 리스트 |
-| 비교/목록 | 마크다운 테이블 |
-| 시퀀스 | Mermaid sequenceDiagram |
+### Preferred Formats
+| Purpose | Recommended |
+|---------|-------------|
+| Flowcharts | Mermaid flowchart |
+| Structure/Hierarchy | Indented lists |
+| Comparisons/Lists | Markdown tables |
+| Sequences | Mermaid sequenceDiagram |
 
-## Git Commit 규칙
+## Git Commit Rules
 
-**반드시 포함:**
-- `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/` (프로젝트 문서)
-- `.claude/vibe/config.json`, `.claude/vibe/constitution.md` (프로젝트 설정)
+**Must include:**
+- `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/` (project docs)
+- `.claude/vibe/config.json`, `.claude/vibe/constitution.md` (project config)
 - `CLAUDE.md`
 
-**제외 (전역 설치됨):**
-- `~/.claude/vibe/rules/`, `~/.claude/vibe/languages/`, `~/.claude/vibe/templates/` (전역)
-- `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/` (전역)
-- `.claude/settings.local.json` (개인 설정)
+**Exclude (globally installed):**
+- `~/.claude/vibe/rules/`, `~/.claude/vibe/languages/`, `~/.claude/vibe/templates/` (global)
+- `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/` (global)
+- `.claude/settings.local.json` (personal settings)
 
 ## Getting Started
 
 ```bash
 vibe init
-/vibe.spec "로그인 기능"
+/vibe.spec "login feature"
 ```
 
-## 전체 워크플로우
+## Full Workflow
 
 ```mermaid
 flowchart TD
-    A["/vibe.spec"] --> B["(자동) SPEC 리뷰"]
-    B --> C["SPEC 자동 보완"]
+    A["/vibe.spec"] --> B["(auto) SPEC review"]
+    B --> C["SPEC auto-enhancement"]
     C --> D["/vibe.run ultrawork"]
-    D --> E["Gemini 코드 리뷰"]
-    E --> F["(자동) 13+ Agent Review"]
-    F --> G{"P1/P2 이슈?"}
-    G -->|있음| H["(자동) Auto-Fix"]
-    H --> I["✅ 완료"]
-    G -->|없음| I
+    D --> E["Gemini code review"]
+    E --> F["(auto) 13+ Agent Review"]
+    F --> G{"P1/P2 issues?"}
+    G -->|Yes| H["(auto) Auto-Fix"]
+    H --> I["✅ Done"]
+    G -->|No| I
 ```
 
-| 단계 | 설명 | 자동화 |
-|------|------|--------|
-| 1. `/vibe.spec` | 요구사항 수집 + SPEC 생성 | 수동 시작 |
-| 2. SPEC 리뷰 | Gemini가 SPEC 검토 + 자동 반영 | ✅ 자동 |
-| 3. `/vibe.run` | 구현 + Gemini 리뷰 | 수동 시작 |
-| 4. Agent Review | 13+ 에이전트 병렬 리뷰 | ✅ 자동 |
-| 5. Auto-Fix | P1/P2 이슈 자동 수정 | ✅ 자동 |
+| Step | Description | Automation |
+|------|-------------|------------|
+| 1. `/vibe.spec` | Collect requirements + Generate SPEC | Manual start |
+| 2. SPEC review | Gemini reviews SPEC + Auto-apply | ✅ Auto |
+| 3. `/vibe.run` | Implementation + Gemini review | Manual start |
+| 4. Agent Review | 13+ agent parallel review | ✅ Auto |
+| 5. Auto-Fix | P1/P2 issue auto-fix | ✅ Auto |

@@ -43,7 +43,7 @@ const CODE_QUALITY_METRICS = {
 
 export const analyzeComplexityDefinition: ToolDefinition = {
   name: 'analyze_complexity',
-  description: '복잡도|복잡한지|complexity|how complex|난이도 - Analyze code complexity',
+  description: 'complexity|how complex - Analyze code complexity',
   inputSchema: {
     type: 'object',
     properties: {
@@ -127,13 +127,13 @@ function calculateAstComplexity(code: string) {
       value: astCyclomatic,
       threshold,
       status: astCyclomatic <= threshold ? 'pass' : 'fail',
-      description: 'AST 기반 분기/조건문 수를 통한 cyclomatic complexity'
+      description: 'Cyclomatic complexity based on AST branch/conditional count'
     };
   } catch (e) {
     return {
       value: null,
       status: 'error',
-      description: 'AST 분석 실패: ' + (e instanceof Error ? e.message : String(e))
+      description: 'AST analysis failed: ' + (e instanceof Error ? e.message : String(e))
     };
   }
 }

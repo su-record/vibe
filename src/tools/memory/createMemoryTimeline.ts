@@ -5,35 +5,35 @@ import { MemoryManager } from '../../lib/MemoryManager.js';
 
 export const createMemoryTimelineDefinition: ToolDefinition = {
   name: 'create_memory_timeline',
-  description: `메모리 타임라인을 생성합니다.
+  description: `Creates a memory timeline visualization.
 
-키워드: 타임라인, 시간순, 히스토리, timeline, history, chronological
+Keywords: timeline, history, chronological, time-based
 
-사용 예시:
-- "최근 메모리 타임라인 보여줘"
-- "지난 7일간 메모리 히스토리"`,
+Examples:
+- "Show me the recent memory timeline"
+- "Memory history for the last 7 days"`,
   inputSchema: {
     type: 'object',
     properties: {
       startDate: {
         type: 'string',
-        description: '시작 날짜 (ISO 형식, 예: 2024-01-01)'
+        description: 'Start date (ISO format, e.g., 2024-01-01)'
       },
       endDate: {
         type: 'string',
-        description: '종료 날짜 (ISO 형식)'
+        description: 'End date (ISO format)'
       },
       category: {
         type: 'string',
-        description: '카테고리 필터'
+        description: 'Category filter'
       },
       limit: {
         type: 'number',
-        description: '최대 결과 수 (기본값: 20)'
+        description: 'Maximum number of results (default: 20)'
       },
       groupBy: {
         type: 'string',
-        description: '그룹화 기준',
+        description: 'Grouping criterion',
         enum: ['day', 'week', 'month', 'category']
       },
       projectPath: {
@@ -84,23 +84,23 @@ export async function createMemoryTimeline(args: CreateMemoryTimelineArgs): Prom
       return {
         content: [{
           type: 'text',
-          text: `✗ 지정된 기간에 메모리가 없습니다.
+          text: `✗ No memories found in the specified period.
 
-${startDate ? `**시작일**: ${startDate}` : ''}
-${endDate ? `**종료일**: ${endDate}` : ''}
-${category ? `**카테고리**: ${category}` : ''}`
+${startDate ? `**Start date**: ${startDate}` : ''}
+${endDate ? `**End date**: ${endDate}` : ''}
+${category ? `**Category**: ${category}` : ''}`
         }]
       };
     }
 
-    let output = '## 메모리 타임라인\n\n';
+    let output = '## Memory Timeline\n\n';
 
     // Add filter info
     if (startDate || endDate || category) {
-      output += '**필터**:\n';
-      if (startDate) output += `- 시작: ${startDate}\n`;
-      if (endDate) output += `- 종료: ${endDate}\n`;
-      if (category) output += `- 카테고리: ${category}\n`;
+      output += '**Filters**:\n';
+      if (startDate) output += `- Start: ${startDate}\n`;
+      if (endDate) output += `- End: ${endDate}\n`;
+      if (category) output += `- Category: ${category}\n`;
       output += '\n';
     }
 
@@ -124,7 +124,7 @@ ${category ? `**카테고리**: ${category}` : ''}`
 
     // Statistics
     const stats = generateTimelineStats(memories);
-    output += `---\n## 통계\n${stats}`;
+    output += `---\n## Statistics\n${stats}`;
 
     return {
       content: [{
@@ -136,7 +136,7 @@ ${category ? `**카테고리**: ${category}` : ''}`
     return {
       content: [{
         type: 'text',
-        text: `✗ 타임라인 생성 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
+        text: `✗ Timeline creation error: ${error instanceof Error ? error.message : 'Unknown error'}`
       }]
     };
   }
@@ -185,7 +185,7 @@ function formatGroupKey(key: string, groupBy: string): string {
     case 'day':
       return `📅 ${key}`;
     case 'week':
-      return `📆 ${key} 주간`;
+      return `📆 Week of ${key}`;
     case 'month':
       return `🗓️ ${key}`;
     case 'category':
@@ -198,7 +198,7 @@ function formatGroupKey(key: string, groupBy: string): string {
 function formatTime(timestamp: string): string {
   try {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('ko-KR', {
+    return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -220,13 +220,13 @@ function generateTimelineStats(memories: any[]): string {
     }
   }
 
-  let stats = `- **총 메모리**: ${memories.length}개\n`;
-  stats += `- **평균 우선순위**: ${priorityCount > 0 ? (totalPriority / priorityCount).toFixed(1) : 'N/A'}\n`;
-  stats += `- **카테고리 분포**:\n`;
+  let stats = `- **Total memories**: ${memories.length}\n`;
+  stats += `- **Average priority**: ${priorityCount > 0 ? (totalPriority / priorityCount).toFixed(1) : 'N/A'}\n`;
+  stats += `- **Category distribution**:\n`;
 
   for (const [cat, count] of Object.entries(categories).sort((a, b) => b[1] - a[1])) {
     const percentage = ((count / memories.length) * 100).toFixed(1);
-    stats += `  - ${cat}: ${count}개 (${percentage}%)\n`;
+    stats += `  - ${cat}: ${count} (${percentage}%)\n`;
   }
 
   return stats;

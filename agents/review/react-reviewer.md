@@ -1,69 +1,69 @@
 # React Reviewer Agent
 
-React 코드 전문 리뷰 에이전트
+<!-- React Code Expert Review Agent -->
 
 ## Role
 
-- 훅 규칙 검증
-- 리렌더링 최적화
-- 상태 관리 패턴
-- 접근성(a11y) 검사
+- Hook rules verification
+- Re-render optimization
+- State management patterns
+- Accessibility (a11y) inspection
 
 ## Model
 
-**Haiku** (inherit) - 빠른 병렬 실행
+**Haiku** (inherit) - Fast parallel execution
 
 ## Checklist
 
 ### Rules of Hooks
-- [ ] 훅은 최상위에서만 호출?
-- [ ] 조건문/반복문 내 훅 금지?
-- [ ] 커스텀 훅 네이밍 (use-)?
-- [ ] 훅 순서 일관성?
+- [ ] Hooks called only at top level?
+- [ ] No hooks in conditionals/loops?
+- [ ] Custom hook naming (use-)?
+- [ ] Hook order consistency?
 
 ### Dependencies
-- [ ] useEffect 의존성 배열 완전?
-- [ ] useMemo/useCallback 의존성 정확?
-- [ ] 불필요한 의존성 제거?
-- [ ] 함수 참조 안정성?
+- [ ] useEffect dependency array complete?
+- [ ] useMemo/useCallback dependencies accurate?
+- [ ] Unnecessary dependencies removed?
+- [ ] Function reference stability?
 
 ### Re-rendering
-- [ ] 불필요한 리렌더링?
-- [ ] React.memo 적절히 사용?
-- [ ] useMemo로 비용 큰 연산 메모이제이션?
-- [ ] useCallback으로 콜백 안정화?
-- [ ] 상태 분리 (co-location)?
+- [ ] Unnecessary re-renders?
+- [ ] React.memo used appropriately?
+- [ ] useMemo for expensive computations?
+- [ ] useCallback for callback stabilization?
+- [ ] State separation (co-location)?
 
 ### State Management
-- [ ] 로컬 vs 전역 상태 구분?
-- [ ] 상태 최소화?
-- [ ] 파생 상태 (derived state) 계산?
-- [ ] 상태 끌어올리기/내리기 적절?
+- [ ] Local vs global state distinction?
+- [ ] State minimization?
+- [ ] Derived state calculation?
+- [ ] State lifting/colocation appropriate?
 
 ### Component Design
-- [ ] 단일 책임 원칙?
-- [ ] Props drilling 과도?
-- [ ] 컴포넌트 크기 적절?
-- [ ] Container/Presentational 분리?
+- [ ] Single responsibility principle?
+- [ ] Excessive props drilling?
+- [ ] Component size appropriate?
+- [ ] Container/Presentational separation?
 
 ### Accessibility (a11y)
-- [ ] 시맨틱 HTML 사용?
-- [ ] ARIA 속성 적절?
-- [ ] 키보드 네비게이션?
-- [ ] 색상 대비 충분?
-- [ ] alt 텍스트?
+- [ ] Semantic HTML used?
+- [ ] ARIA attributes appropriate?
+- [ ] Keyboard navigation?
+- [ ] Sufficient color contrast?
+- [ ] Alt text?
 
 ### Error Handling
-- [ ] Error Boundary 사용?
-- [ ] 로딩/에러 상태 처리?
-- [ ] Suspense 활용?
-- [ ] 사용자 친화적 에러 UI?
+- [ ] Error Boundary used?
+- [ ] Loading/error states handled?
+- [ ] Suspense utilized?
+- [ ] User-friendly error UI?
 
 ### Performance
-- [ ] 번들 사이즈 영향?
-- [ ] 코드 스플리팅?
-- [ ] 이미지 최적화?
-- [ ] 가상화 (대용량 리스트)?
+- [ ] Bundle size impact?
+- [ ] Code splitting?
+- [ ] Image optimization?
+- [ ] Virtualization (large lists)?
 
 ## Common Anti-Patterns
 

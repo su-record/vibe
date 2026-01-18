@@ -1,45 +1,44 @@
-# ⚡ TypeScript + Electron 품질 규칙
+# TypeScript + Electron Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Electron 아키텍처 이해
+## Electron Architecture Understanding
 
-```
-┌─────────────────────────────────────────────┐
-│  Main Process (Node.js)                     │
-│  - 앱 생명주기 관리                          │
-│  - 시스템 API (파일, 네트워크)               │
-│  - BrowserWindow 생성/관리                  │
-├─────────────────────────────────────────────┤
-│  Preload Script (격리된 컨텍스트)            │
-│  - contextBridge로 API 노출                 │
-│  - Main ↔ Renderer 브릿지                   │
-├─────────────────────────────────────────────┤
-│  Renderer Process (Chromium)                │
-│  - UI 렌더링 (React/Vue/etc)                │
-│  - window.electronAPI 사용                  │
-└─────────────────────────────────────────────┘
+```text
+Main Process (Node.js)
+- App lifecycle management
+- System APIs (file, network)
+- BrowserWindow creation/management
+
+Preload Script (Isolated Context)
+- Expose APIs via contextBridge
+- Main <-> Renderer bridge
+
+Renderer Process (Chromium)
+- UI rendering (React/Vue/etc)
+- Use window.electronAPI
 ```
 
-## TypeScript/Electron 특화 규칙
+## TypeScript/Electron Specific Rules
 
-### 1. 프로세스 분리 필수
+### 1. Process Separation Required
 
 ```typescript
-// ❌ Renderer에서 직접 Node.js 사용 (보안 취약)
-// nodeIntegration: true 금지!
+// Bad: Direct Node.js usage in Renderer (security vulnerability)
+// nodeIntegration: true is prohibited!
 
-// ✅ Main Process (main.ts)
+// Good: Main Process (main.ts)
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 
@@ -49,9 +48,9 @@ function createWindow(): BrowserWindow {
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,    // 필수!
-      nodeIntegration: false,    // 필수!
-      sandbox: true              // 권장
+      contextIsolation: true,    // Required!
+      nodeIntegration: false,    // Required!
+      sandbox: true              // Recommended
     }
   });
 
@@ -62,13 +61,13 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(createWindow);
 ```
 
-### 2. Preload Script 패턴
+### 2. Preload Script Pattern
 
 ```typescript
 // preload.ts
 import { contextBridge, ipcRenderer } from 'electron';
 
-// ✅ 타입 정의
+// Good: Type definition
 interface ElectronAPI {
   readFile: (path: string) => Promise<string>;
   writeFile: (path: string, content: string) => Promise<void>;
@@ -76,7 +75,7 @@ interface ElectronAPI {
   platform: NodeJS.Platform;
 }
 
-// ✅ 안전하게 API 노출
+// Good: Safely expose API
 contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
   writeFile: (path: string, content: string) =>
@@ -89,7 +88,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform
 } satisfies ElectronAPI);
 
-// ✅ 타입 선언 (renderer에서 사용)
+// Good: Type declaration (for use in renderer)
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
@@ -97,7 +96,7 @@ declare global {
 }
 ```
 
-### 3. IPC 통신 타입 안전성
+### 3. IPC Communication Type Safety
 
 ```typescript
 // shared/ipc-types.ts
@@ -120,7 +119,7 @@ export interface AppInfo {
 import { ipcMain } from 'electron';
 import fs from 'fs/promises';
 
-// ✅ 타입 안전한 핸들러
+// Good: Type-safe handler
 ipcMain.handle('read-file', async (_event, path: string): Promise<string> => {
   return fs.readFile(path, 'utf-8');
 });
@@ -141,12 +140,12 @@ ipcMain.handle('get-app-info', async (): Promise<AppInfo> => {
 });
 ```
 
-### 4. Renderer에서 IPC 사용
+### 4. IPC Usage in Renderer
 
 ```typescript
 // renderer/hooks/useElectron.ts
 
-// ✅ Custom Hook
+// Good: Custom Hook
 function useFileReader() {
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -171,7 +170,7 @@ function useFileReader() {
   return { content, loading, error, readFile };
 }
 
-// ✅ 이벤트 구독 Hook
+// Good: Event subscription Hook
 function useFileWatcher(onChanged: (path: string) => void) {
   useEffect(() => {
     const unsubscribe = window.electronAPI.onFileChanged(onChanged);
@@ -180,13 +179,13 @@ function useFileWatcher(onChanged: (path: string) => void) {
 }
 ```
 
-### 5. 창 관리
+### 5. Window Management
 
 ```typescript
 // main.ts
 import { BrowserWindow, screen } from 'electron';
 
-// ✅ 창 상태 저장/복원
+// Good: Save/restore window state
 interface WindowState {
   x?: number;
   y?: number;
@@ -214,7 +213,7 @@ function createWindowWithState(): BrowserWindow {
     win.maximize();
   }
 
-  // 상태 변경 시 저장
+  // Save state on change
   win.on('close', () => {
     saveWindowState({
       ...win.getBounds(),
@@ -225,7 +224,7 @@ function createWindowWithState(): BrowserWindow {
   return win;
 }
 
-// ✅ 다중 창 관리
+// Good: Multiple window management
 const windows = new Map<string, BrowserWindow>();
 
 function getOrCreateWindow(id: string): BrowserWindow {
@@ -242,12 +241,12 @@ function getOrCreateWindow(id: string): BrowserWindow {
 }
 ```
 
-### 6. 메뉴 구성
+### 6. Menu Configuration
 
 ```typescript
 import { Menu, MenuItemConstructorOptions } from 'electron';
 
-// ✅ 플랫폼별 메뉴
+// Good: Platform-specific menu
 function createMenu(): Menu {
   const isMac = process.platform === 'darwin';
 
@@ -283,18 +282,18 @@ function createMenu(): Menu {
 }
 ```
 
-### 7. 자동 업데이트
+### 7. Auto Update
 
 ```typescript
 import { autoUpdater } from 'electron-updater';
 
-// ✅ 자동 업데이트 설정
+// Good: Auto update setup
 function setupAutoUpdater(): void {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on('update-available', (info) => {
-    // 사용자에게 알림
+    // Notify user
     dialog.showMessageBox({
       type: 'info',
       title: 'Update Available',
@@ -320,15 +319,15 @@ function setupAutoUpdater(): void {
     });
   });
 
-  // 앱 시작 시 업데이트 확인
+  // Check for updates on app start
   autoUpdater.checkForUpdates();
 }
 ```
 
-### 8. 보안 체크리스트
+### 8. Security Checklist
 
 ```typescript
-// ✅ 보안 설정 검증
+// Good: Validate security settings
 function validateSecuritySettings(win: BrowserWindow): void {
   const webPrefs = win.webContents.getWebPreferences();
 
@@ -343,9 +342,9 @@ function validateSecuritySettings(win: BrowserWindow): void {
   }
 }
 
-// ✅ 외부 링크 처리
+// Good: Handle external links
 win.webContents.setWindowOpenHandler(({ url }) => {
-  // 외부 URL은 시스템 브라우저에서 열기
+  // Open external URLs in system browser
   if (url.startsWith('https://')) {
     shell.openExternal(url);
   }
@@ -353,9 +352,9 @@ win.webContents.setWindowOpenHandler(({ url }) => {
 });
 ```
 
-## 폴더 구조 권장
+## Recommended Folder Structure
 
-```
+```text
 my-electron-app/
 ├── src/
 │   ├── main/               # Main Process
@@ -368,13 +367,13 @@ my-electron-app/
 │   │   ├── components/
 │   │   ├── hooks/
 │   │   └── App.tsx
-│   └── shared/             # 공유 타입
+│   └── shared/             # Shared types
 │       └── ipc-types.ts
 ├── electron-builder.yml
 └── package.json
 ```
 
-## 빌드 설정 (electron-builder)
+## Build Configuration (electron-builder)
 
 ```yaml
 # electron-builder.yml
@@ -394,14 +393,14 @@ linux:
   target: [AppImage, deb]
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] `contextIsolation: true` 설정
-- [ ] `nodeIntegration: false` 설정
-- [ ] Preload script로만 API 노출
-- [ ] IPC 채널 타입 정의
-- [ ] 외부 링크 처리 (setWindowOpenHandler)
-- [ ] 창 상태 저장/복원
-- [ ] 자동 업데이트 설정
-- [ ] 플랫폼별 메뉴 구성
-- [ ] CSP 헤더 설정
+- [ ] `contextIsolation: true` configured
+- [ ] `nodeIntegration: false` configured
+- [ ] Expose APIs only through preload script
+- [ ] Define IPC channel types
+- [ ] Handle external links (setWindowOpenHandler)
+- [ ] Save/restore window state
+- [ ] Auto update setup
+- [ ] Platform-specific menu configuration
+- [ ] CSP header configured

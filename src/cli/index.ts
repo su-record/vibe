@@ -2,7 +2,7 @@
 
 /**
  * vibe CLI (TypeScript version 2.0)
- * SPEC-driven AI coding framework (Claude Code 전용)
+ * SPEC-driven AI coding framework (Claude Code exclusive)
  */
 
 import path from 'path';

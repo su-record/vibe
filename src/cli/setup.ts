@@ -133,11 +133,11 @@ export function installGlobalVibePackage(isUpdate = false): void {
       }
       copyDirRecursive(hooksScriptsSource, hooksScriptsTarget);
     } else {
-      log('   ⚠️  훅 스크립트 소스를 찾을 수 없음: ' + hooksScriptsSource + '\n');
+      log('   ⚠️  Hook scripts source not found: ' + hooksScriptsSource + '\n');
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log('   ⚠️  훅 스크립트 복사 실패: ' + message + '\n');
+    log('   ⚠️  Hook scripts copy failed: ' + message + '\n');
   }
 }
 
@@ -236,8 +236,8 @@ export function updateClaudeMd(
   const languageRules = getLanguageRulesContent(detectedStacks);
   if (languageRules) {
     vibeContent = vibeContent.replace(
-      '### 에러 처리 필수',
-      languageRules + '\n\n### 에러 처리 필수'
+      '### Error Handling Required',
+      languageRules + '\n\n### Error Handling Required'
     );
   }
 

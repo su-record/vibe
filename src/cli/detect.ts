@@ -264,46 +264,46 @@ export function getLanguageRulesForStacks(stacks: Array<{ type: string; path: st
  * 언어별 CLAUDE.md 규칙
  */
 export const LANGUAGE_RULES: Record<string, string> = {
-  typescript: `### TypeScript 규칙
-- \`any\` 타입 사용 금지 → \`unknown\` + 타입 가드 사용
-- \`as any\` 캐스팅 금지 → 적절한 인터페이스 정의
-- \`@ts-ignore\` 금지 → 타입 문제 근본 해결
-- 모든 함수에 반환 타입 명시`,
-  python: `### Python 규칙
-- 타입 힌트 필수 (함수 매개변수, 반환값)
-- \`# type: ignore\` 금지 → 타입 문제 근본 해결
-- f-string 사용 권장 (format() 대신)
-- 리스트 컴프리헨션 적절히 활용`,
-  go: `### Go 규칙
-- 에러 반환 즉시 처리 (if err != nil)
-- 명시적 에러 래핑 (fmt.Errorf with %w)
-- 인터페이스는 사용처에서 정의
-- 고루틴 누수 방지 (context 활용)`,
-  rust: `### Rust 규칙
-- unwrap()/expect() 프로덕션 코드 금지 → Result/Option 처리
-- unsafe 블록 최소화
-- 명시적 에러 타입 정의
-- 소유권/수명 주석 명확히`,
-  java: `### Java 규칙
-- Optional 적극 활용 (null 대신)
-- 불변 객체 선호 (final 필드)
-- 체크 예외 적절히 처리
-- 스트림 API 활용`,
-  kotlin: `### Kotlin 규칙
-- nullable 타입 명시 (?)
-- !! 연산자 금지 → safe call (?.) 사용
-- data class 적극 활용
-- 확장 함수로 유틸리티 구현`,
-  dart: `### Dart 규칙
-- null safety 준수 (? 및 ! 적절히 사용)
-- late 키워드 남용 금지
-- const 생성자 활용
-- 비동기 코드에 async/await 사용`,
-  swift: `### Swift 규칙
-- 옵셔널 강제 언래핑 금지 → guard let / if let 사용
-- 프로토콜 지향 프로그래밍 권장
-- 값 타입(struct) 우선 사용
-- @escaping 클로저 메모리 관리 주의`
+  typescript: `### TypeScript Rules
+- No \`any\` type → use \`unknown\` + type guards
+- No \`as any\` casting → define proper interfaces
+- No \`@ts-ignore\` → fix type issues at root
+- Explicit return types on all functions`,
+  python: `### Python Rules
+- Type hints required (parameters, return values)
+- No \`# type: ignore\` → fix type issues at root
+- Prefer f-strings (over format())
+- Use list comprehensions appropriately`,
+  go: `### Go Rules
+- Handle errors immediately (if err != nil)
+- Explicit error wrapping (fmt.Errorf with %w)
+- Define interfaces at point of use
+- Prevent goroutine leaks (use context)`,
+  rust: `### Rust Rules
+- No unwrap()/expect() in production → handle Result/Option
+- Minimize unsafe blocks
+- Define explicit error types
+- Document ownership/lifetime clearly`,
+  java: `### Java Rules
+- Use Optional (instead of null)
+- Prefer immutable objects (final fields)
+- Handle checked exceptions properly
+- Utilize Stream API`,
+  kotlin: `### Kotlin Rules
+- Explicit nullable types (?)
+- No !! operator → use safe call (?.)
+- Use data classes actively
+- Implement utilities as extension functions`,
+  dart: `### Dart Rules
+- Follow null safety (use ? and ! properly)
+- Avoid late keyword abuse
+- Use const constructors
+- Use async/await for async code`,
+  swift: `### Swift Rules
+- No force unwrapping → use guard let / if let
+- Prefer protocol-oriented programming
+- Prefer value types (struct)
+- Watch memory management with @escaping closures`
 };
 
 /**

@@ -1,21 +1,21 @@
 # Codebase Patterns Research Agent
 
-기존 코드베이스 패턴 분석 에이전트
+<!-- Existing Codebase Patterns Analysis Agent -->
 
 ## Role
 
-- 기존 구현 패턴 분석
-- 코딩 컨벤션 추출
-- 유사 기능 참조
-- 일관성 확보
+- Existing implementation pattern analysis
+- Coding convention extraction
+- Similar feature reference
+- Consistency assurance
 
 ## Model
 
-**Haiku** (inherit) - 빠른 탐색
+**Haiku** (inherit) - Fast exploration
 
 ## Usage
 
-`/vibe.spec` 실행 시 자동으로 병렬 호출됨
+Automatically called in parallel when `/vibe.spec` is executed
 
 ```
 Task(
@@ -29,31 +29,31 @@ Task(
 
 ### File Structure
 ```
-프로젝트 구조 분석:
-├── 디렉토리 구성
-├── 네이밍 규칙
-├── 모듈 분리 방식
-└── 테스트 파일 위치
+Project structure analysis:
+├── Directory organization
+├── Naming conventions
+├── Module separation approach
+└── Test file locations
 ```
 
 ### Code Patterns
 ```
-패턴 추출:
-├── 에러 처리 방식
-├── 로깅 패턴
-├── 데이터 검증 방식
-├── API 응답 형식
-└── 의존성 주입 방식
+Pattern extraction:
+├── Error handling approach
+├── Logging patterns
+├── Data validation approach
+├── API response format
+└── Dependency injection approach
 ```
 
 ### Conventions
 ```
-컨벤션 분석:
-├── 변수/함수 네이밍
-├── 파일 네이밍
-├── import 순서
-├── 주석 스타일
-└── 타입 정의 방식
+Convention analysis:
+├── Variable/function naming
+├── File naming
+├── Import order
+├── Comment style
+└── Type definition approach
 ```
 
 ## Output Format
@@ -116,12 +116,12 @@ src/
 
 ### Similar Implementations
 
-For feature "결제 기능":
+For feature "payment feature":
 
 | Similar Feature | Location | Relevance |
 |-----------------|----------|-----------|
-| 주문 처리 | src/services/order.py | 90% |
-| 구독 관리 | src/services/subscription.py | 75% |
+| Order processing | src/services/order.py | 90% |
+| Subscription management | src/services/subscription.py | 75% |
 
 ### Recommendations
 
@@ -135,13 +135,13 @@ Based on existing patterns:
 ## Integration with /vibe.spec
 
 ```
-/vibe.spec "결제 기능"
+/vibe.spec "payment feature"
 
-→ codebase-patterns-agent 실행:
+→ codebase-patterns-agent execution:
   "Find similar payment/transaction code. Extract patterns."
 
-→ 결과를 SPEC에 반영:
-  - 기존 패턴 따르기
-  - 유사 코드 참조
-  - 일관성 유지
+→ Results reflected in SPEC:
+  - Follow existing patterns
+  - Reference similar code
+  - Maintain consistency
 ```

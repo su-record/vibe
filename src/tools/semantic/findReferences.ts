@@ -19,7 +19,7 @@ interface ReferenceInfo {
 
 export const findReferencesDefinition: ToolDefinition = {
   name: 'find_references',
-  description: '어디서 쓰|참조|사용처|find usage|references|where used - Find symbol references',
+  description: 'find usage|references|where used - Find symbol references',
   inputSchema: {
     type: 'object',
     properties: {

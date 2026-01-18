@@ -1,42 +1,41 @@
-# 🦀 TypeScript + Tauri v2 품질 규칙
+# TypeScript + Tauri v2 Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄, JSX ≤ 50줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines, JSX <= 50 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Tauri 아키텍처 이해
+## Tauri Architecture Understanding
 
-```
-┌─────────────────────────────────────────────┐
-│  Frontend (TypeScript/React/Vue/Svelte)     │
-│  - UI 렌더링                                 │
-│  - 사용자 인터랙션                           │
-│  - @tauri-apps/api 호출                     │
-├─────────────────────────────────────────────┤
-│  Tauri Core (Rust)                          │
-│  - 시스템 API 접근                          │
-│  - 파일 시스템, 네트워크                     │
-│  - 보안 샌드박스                            │
-└─────────────────────────────────────────────┘
+```text
+Frontend (TypeScript/React/Vue/Svelte)
+- UI rendering
+- User interaction
+- @tauri-apps/api calls
+
+Tauri Core (Rust)
+- System API access
+- File system, network
+- Security sandbox
 ```
 
-## TypeScript/Tauri 특화 규칙
+## TypeScript/Tauri Specific Rules
 
-### 1. Tauri Command 타입 안전성
+### 1. Tauri Command Type Safety
 
 ```typescript
-// ❌ any 사용
+// Bad: Using any
 const result = await invoke('get_data');
 
-// ✅ 명확한 타입 정의
+// Good: Clear type definition
 interface FileInfo {
   path: string;
   size: number;
@@ -45,7 +44,7 @@ interface FileInfo {
 
 const fileInfo = await invoke<FileInfo>('get_file_info', { path: '/path/to/file' });
 
-// ✅ Command 응답 타입 정의
+// Good: Command response type definition
 interface CommandResponse<T> {
   success: boolean;
   data?: T;
@@ -61,14 +60,14 @@ async function invokeCommand<T>(cmd: string, args?: Record<string, unknown>): Pr
 }
 ```
 
-### 2. Tauri API 사용 패턴
+### 2. Tauri API Usage Patterns
 
 ```typescript
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 
-// ✅ 파일 다이얼로그 + 읽기
+// Good: File dialog + read
 async function openFile(): Promise<string | null> {
   const selected = await open({
     multiple: false,
@@ -80,7 +79,7 @@ async function openFile(): Promise<string | null> {
   return await readTextFile(selected as string);
 }
 
-// ✅ 파일 저장
+// Good: File save
 async function saveFile(content: string): Promise<void> {
   const path = await save({
     filters: [{ name: 'Text', extensions: ['txt'] }]
@@ -92,12 +91,12 @@ async function saveFile(content: string): Promise<void> {
 }
 ```
 
-### 3. Event 시스템 활용
+### 3. Event System Usage
 
 ```typescript
 import { listen, emit } from '@tauri-apps/api/event';
 
-// ✅ 이벤트 리스너 (cleanup 필수)
+// Good: Event listener (cleanup required)
 function useBackendEvent<T>(eventName: string, handler: (payload: T) => void) {
   useEffect(() => {
     const unlisten = listen<T>(eventName, (event) => {
@@ -110,41 +109,41 @@ function useBackendEvent<T>(eventName: string, handler: (payload: T) => void) {
   }, [eventName, handler]);
 }
 
-// ✅ 프론트엔드 → 백엔드 이벤트
+// Good: Frontend -> Backend event
 async function notifyBackend(action: string, data: unknown): Promise<void> {
   await emit('frontend-action', { action, data });
 }
 ```
 
-### 4. Window 관리
+### 4. Window Management
 
 ```typescript
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
-// ✅ 창 제어
+// Good: Window control
 async function setupWindow(): Promise<void> {
   const appWindow = getCurrentWindow();
 
-  // 창 크기 설정
+  // Set window size
   await appWindow.setSize(new LogicalSize(800, 600));
 
-  // 창 위치 중앙
+  // Center window
   await appWindow.center();
 
-  // 창 제목 설정
+  // Set window title
   await appWindow.setTitle('My Tauri App');
 }
 
-// ✅ 창 이벤트 리스너
+// Good: Window event listener
 function useWindowEvents() {
   useEffect(() => {
     const appWindow = getCurrentWindow();
 
     const unlistenClose = appWindow.onCloseRequested(async (event) => {
-      // 저장되지 않은 변경사항 확인
+      // Check for unsaved changes
       if (hasUnsavedChanges) {
         event.preventDefault();
-        // 확인 다이얼로그 표시
+        // Show confirmation dialog
       }
     });
 
@@ -155,18 +154,18 @@ function useWindowEvents() {
 }
 ```
 
-### 5. Rust Command 정의 (백엔드)
+### 5. Rust Command Definition (Backend)
 
 ```rust
-// src-tauri/src/main.rs 또는 lib.rs
+// src-tauri/src/main.rs or lib.rs
 
-// ✅ Command 정의
+// Good: Command definition
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}!", name)
 }
 
-// ✅ 비동기 Command
+// Good: Async Command
 #[tauri::command]
 async fn read_file(path: String) -> Result<String, String> {
     tokio::fs::read_to_string(&path)
@@ -174,13 +173,13 @@ async fn read_file(path: String) -> Result<String, String> {
         .map_err(|e| e.to_string())
 }
 
-// ✅ State 사용
+// Good: Using State
 #[tauri::command]
 fn get_count(state: tauri::State<'_, AppState>) -> u32 {
     *state.count.lock().unwrap()
 }
 
-// main.rs에서 등록
+// Register in main.rs
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet, read_file, get_count])
@@ -189,7 +188,7 @@ fn main() {
 }
 ```
 
-### 6. 보안 설정 (tauri.conf.json)
+### 6. Security Configuration (tauri.conf.json)
 
 ```json
 {
@@ -210,10 +209,10 @@ fn main() {
 }
 ```
 
-### 7. Custom Hook 패턴
+### 7. Custom Hook Pattern
 
 ```typescript
-// ✅ Tauri Command Hook
+// Good: Tauri Command Hook
 function useTauriCommand<T, A extends Record<string, unknown>>(
   command: string
 ) {
@@ -240,7 +239,7 @@ function useTauriCommand<T, A extends Record<string, unknown>>(
   return { data, loading, error, execute };
 }
 
-// 사용 예시
+// Usage example
 function FileViewer() {
   const { data: content, loading, error, execute } = useTauriCommand<string>('read_file');
 
@@ -260,24 +259,24 @@ function FileViewer() {
 }
 ```
 
-### 8. 빌드 및 배포
+### 8. Build and Deploy
 
 ```bash
-# 개발 모드
+# Development mode
 npm run tauri dev
 
-# 프로덕션 빌드
+# Production build
 npm run tauri build
 
-# 특정 타겟
+# Specific target
 npm run tauri build -- --target x86_64-pc-windows-msvc
 npm run tauri build -- --target aarch64-apple-darwin
 npm run tauri build -- --target x86_64-unknown-linux-gnu
 ```
 
-## 폴더 구조 권장
+## Recommended Folder Structure
 
-```
+```text
 my-tauri-app/
 ├── src/                    # Frontend
 │   ├── components/
@@ -295,34 +294,34 @@ my-tauri-app/
 └── package.json
 ```
 
-## 성능 최적화
+## Performance Optimization
 
 ```typescript
-// ✅ 대용량 데이터 스트리밍
+// Good: Large data streaming
 import { Channel } from '@tauri-apps/api/core';
 
 async function streamLargeFile(path: string): Promise<void> {
   const channel = new Channel<string>();
 
   channel.onmessage = (chunk) => {
-    // 청크 단위로 처리
+    // Process chunk by chunk
     appendToDisplay(chunk);
   };
 
   await invoke('stream_file', { path, channel });
 }
 
-// ✅ 백그라운드 작업
+// Good: Background task
 async function runHeavyTask(): Promise<void> {
-  // Rust에서 별도 스레드로 처리
+  // Process in separate thread in Rust
   await invoke('heavy_computation', { data: largeData });
 }
 ```
 
-## 디버깅
+## Debugging
 
 ```typescript
-// ✅ 개발 모드에서만 로깅
+// Good: Logging only in development mode
 const isDev = import.meta.env.DEV;
 
 function debugLog(message: string, data?: unknown): void {
@@ -331,14 +330,14 @@ function debugLog(message: string, data?: unknown): void {
   }
 }
 
-// ✅ Rust 로그 확인 (터미널에서)
+// Good: Check Rust logs (in terminal)
 // RUST_LOG=debug npm run tauri dev
 ```
 
-## 테스트
+## Testing
 
 ```typescript
-// ✅ Command Mock
+// Good: Command Mock
 import { mockIPC } from '@tauri-apps/api/mocks';
 
 beforeAll(() => {
@@ -355,12 +354,12 @@ test('greet command', async () => {
 });
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] 모든 Command에 타입 정의
-- [ ] 이벤트 리스너 cleanup 처리
-- [ ] 파일 접근 scope 최소화 (tauri.conf.json)
-- [ ] CSP 설정 확인
-- [ ] 에러 핸들링 (Rust → Frontend)
-- [ ] 대용량 데이터 스트리밍 처리
-- [ ] 개발/프로덕션 환경 분리
+- [ ] Define types for all Commands
+- [ ] Handle event listener cleanup
+- [ ] Minimize file access scope (tauri.conf.json)
+- [ ] Verify CSP configuration
+- [ ] Error handling (Rust -> Frontend)
+- [ ] Handle large data streaming
+- [ ] Separate development/production environments

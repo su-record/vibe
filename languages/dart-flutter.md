@@ -1,23 +1,24 @@
-# 🎯 Dart + Flutter 품질 규칙
+# Dart + Flutter Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄, build() ≤ 50줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines, build() <= 50 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Dart/Flutter 특화 규칙
+## Dart/Flutter Specific Rules
 
-### 1. Immutability 우선 (@immutable)
+### 1. Immutability First (@immutable)
 
 ```dart
-// ❌ Mutable 클래스
+// Bad: Mutable class
 class User {
   String name;
   int age;
@@ -25,7 +26,7 @@ class User {
   User({required this.name, required this.age});
 }
 
-// ✅ Immutable 클래스 + copyWith
+// Good: Immutable class + copyWith
 @immutable
 class User {
   const User({
@@ -56,10 +57,10 @@ class User {
 }
 ```
 
-### 2. StatelessWidget 선호
+### 2. Prefer StatelessWidget
 
 ```dart
-// ✅ StatelessWidget (순수 위젯)
+// Good: StatelessWidget (pure widget)
 class UserAvatar extends StatelessWidget {
   const UserAvatar({
     super.key,
@@ -84,16 +85,16 @@ class UserAvatar extends StatelessWidget {
   }
 }
 
-// ❌ StatefulWidget 남용 (상태가 없는데 사용)
+// Bad: Overusing StatefulWidget (using it without state)
 class UserAvatar extends StatefulWidget {
-  // 상태 관리 불필요
+  // State management unnecessary
 }
 ```
 
-### 3. Provider 패턴 (상태 관리)
+### 3. Provider Pattern (State Management)
 
 ```dart
-// ✅ Immutable State + ChangeNotifier
+// Good: Immutable State + ChangeNotifier
 @immutable
 class FeedState {
   const FeedState({
@@ -141,7 +142,7 @@ class FeedProvider extends ChangeNotifier {
   }
 }
 
-// 사용
+// Usage
 class FeedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -155,38 +156,38 @@ class FeedScreen extends StatelessWidget {
 }
 ```
 
-### 4. Null Safety 명확히
+### 4. Null Safety Clearly
 
 ```dart
-// ✅ Null safety 활용
+// Good: Null safety usage
 class User {
   User({
-    required this.id,        // Non-nullable (필수)
+    required this.id,        // Non-nullable (required)
     required this.name,
-    this.bio,                // Nullable (선택)
+    this.bio,                // Nullable (optional)
   });
 
   final String id;
   final String name;
-  final String? bio;        // ? 명시
+  final String? bio;        // ? explicit
 
   String getBioOrDefault() {
-    return bio ?? 'No bio';  // ?? 연산자
+    return bio ?? 'No bio';  // ?? operator
   }
 
   void printBio() {
-    bio?.length;             // ?. 안전 호출
+    bio?.length;             // ?. safe call
   }
 }
 
-// ✅ Late 변수 (초기화 지연)
+// Good: Late variable (deferred initialization)
 class MyWidget extends StatefulWidget {
   @override
   State<MyWidget> createState() => _MyWidgetState();
 }
 
 class _MyWidgetState extends State<MyWidget> {
-  late AnimationController _controller;  // initState에서 초기화
+  late AnimationController _controller;  // Initialize in initState
 
   @override
   void initState() {
@@ -202,27 +203,27 @@ class _MyWidgetState extends State<MyWidget> {
 }
 ```
 
-### 5. 위젯 분리 (Extract Widget)
+### 5. Widget Separation (Extract Widget)
 
 ```dart
-// ❌ 긴 build 메서드 (80줄)
+// Bad: Long build method (80 lines)
 class UserProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 30줄: 헤더
+        // 30 lines: header
         Container(...),
-        // 25줄: 통계
+        // 25 lines: stats
         Row(...),
-        // 25줄: 피드 리스트
+        // 25 lines: feed list
         ListView(...),
       ],
     );
   }
 }
 
-// ✅ 서브 위젯으로 분리
+// Good: Separate into sub-widgets
 class UserProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -241,7 +242,7 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 헤더만
+    // Header only
   }
 }
 
@@ -250,26 +251,26 @@ class ProfileStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 통계만
+    // Stats only
   }
 }
 ```
 
-### 6. 순수 함수 (Static Methods)
+### 6. Pure Functions (Static Methods)
 
 ```dart
-// ✅ 순수 함수 (상태 없음)
+// Good: Pure function (no state)
 class DateUtils {
-  // Private constructor (인스턴스 생성 방지)
+  // Private constructor (prevent instantiation)
   DateUtils._();
 
   static String formatRelativeTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
-    if (difference.inDays > 0) return '${difference.inDays}일 전';
-    if (difference.inHours > 0) return '${difference.inHours}시간 전';
-    return '${difference.inMinutes}분 전';
+    if (difference.inDays > 0) return '${difference.inDays} days ago';
+    if (difference.inHours > 0) return '${difference.inHours} hours ago';
+    return '${difference.inMinutes} minutes ago';
   }
 
   static bool isToday(DateTime dateTime) {
@@ -280,14 +281,14 @@ class DateUtils {
   }
 }
 
-// 사용
+// Usage
 final formatted = DateUtils.formatRelativeTime(feed.createdAt);
 ```
 
-### 7. 에러 처리 (Result/Either 패턴)
+### 7. Error Handling (Result/Either Pattern)
 
 ```dart
-// ✅ Result 타입으로 에러 처리
+// Good: Result type for error handling
 sealed class Result<T> {
   const Result();
 }
@@ -302,7 +303,7 @@ class Failure<T> extends Result<T> {
   final String error;
 }
 
-// 사용
+// Usage
 Future<Result<User>> login(String email, String password) async {
   try {
     final user = await _authService.login(email, password);
@@ -312,7 +313,7 @@ Future<Result<User>> login(String email, String password) async {
   }
 }
 
-// 호출부 (Pattern matching)
+// Caller (Pattern matching)
 final result = await login(email, password);
 switch (result) {
   case Success(:final value):
@@ -325,7 +326,7 @@ switch (result) {
 ### 8. Extension Methods
 
 ```dart
-// ✅ Extension으로 기능 확장
+// Good: Extend functionality with Extension
 extension StringExtension on String {
   String capitalize() {
     if (isEmpty) return this;
@@ -345,15 +346,15 @@ extension ListExtension<T> on List<T> {
   }
 }
 
-// 사용
+// Usage
 final name = 'john'.capitalize();  // 'John'
 final isValid = 'test@example.com'.isEmail;  // true
 ```
 
-### 9. const Constructor 활용
+### 9. Using const Constructor
 
 ```dart
-// ✅ const constructor (컴파일 타임 상수)
+// Good: const constructor (compile-time constant)
 class AppColors {
   const AppColors._();
 
@@ -372,7 +373,7 @@ class Spacing {
   static const xl = 32.0;
 }
 
-// ✅ const 위젯 (재사용 시 성능 향상)
+// Good: const widget (performance improvement on reuse)
 class LoadingIndicator extends StatelessWidget {
   const LoadingIndicator({super.key});
 
@@ -384,14 +385,14 @@ class LoadingIndicator extends StatelessWidget {
   }
 }
 
-// 사용
-const LoadingIndicator()  // const로 생성
+// Usage
+const LoadingIndicator()  // Create with const
 ```
 
-### 10. 비동기 처리 (Future/Stream)
+### 10. Async Processing (Future/Stream)
 
 ```dart
-// ✅ Future (단일 비동기 작업)
+// Good: Future (single async operation)
 Future<List<Feed>> fetchFeeds() async {
   final response = await dio.get('/api/feeds');
   return (response.data as List)
@@ -399,7 +400,7 @@ Future<List<Feed>> fetchFeeds() async {
       .toList();
 }
 
-// ✅ Stream (연속 비동기 이벤트)
+// Good: Stream (continuous async events)
 Stream<List<Feed>> watchFeeds() {
   return Stream.periodic(
     const Duration(seconds: 30),
@@ -407,7 +408,7 @@ Stream<List<Feed>> watchFeeds() {
   ).asyncMap((future) => future);
 }
 
-// ✅ StreamBuilder 사용
+// Good: StreamBuilder usage
 class FeedStream extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -431,79 +432,79 @@ class FeedStream extends StatelessWidget {
 }
 ```
 
-## 안티패턴
+## Anti-patterns
 
 ```dart
-// ❌ Mutable state
+// Bad: Mutable state
 class BadCounter extends StatefulWidget {
-  int count = 0;  // 위험! StatefulWidget은 재생성될 수 있음
+  int count = 0;  // Dangerous! StatefulWidget can be recreated
 
   @override
   State<BadCounter> createState() => _BadCounterState();
 }
 
-// ❌ BuildContext를 async gap 너머에서 사용
+// Bad: Using BuildContext across async gap
 Future<void> badNavigate() async {
   await Future.delayed(Duration(seconds: 1));
-  Navigator.push(context, ...);  // ❌ context가 무효화됐을 수 있음
+  Navigator.push(context, ...);  // Bad: context might be invalidated
 }
 
-// ✅ mounted 체크
+// Good: Check mounted
 Future<void> goodNavigate() async {
   await Future.delayed(Duration(seconds: 1));
   if (!mounted) return;
   Navigator.push(context, ...);
 }
 
-// ❌ setState에서 긴 작업
+// Bad: Long operations in setState
 setState(() {
-  // 10줄의 복잡한 계산  ❌
+  // 10 lines of complex calculation  Bad
 });
 
-// ✅ 계산 후 setState
+// Good: Calculate then setState
 final newValue = expensiveCalculation();
 setState(() {
-  _value = newValue;  // 간단한 할당만
+  _value = newValue;  // Simple assignment only
 });
 
-// ❌ GlobalKey 남용
+// Bad: Overusing GlobalKey
 final GlobalKey<FormState> _formKey = GlobalKey();
 
-// ✅ Controller 사용
+// Good: Use Controller
 final TextEditingController _controller = TextEditingController();
 ```
 
-## 코드 품질 도구
+## Code Quality Tools
 
 ```bash
-# 분석
+# Analysis
 flutter analyze
 
-# 포맷팅
+# Formatting
 dart format .
 
-# 테스트
+# Testing
 flutter test
 flutter test --coverage
 
-# 빌드
+# Build
 flutter build apk --release
 flutter build ios --release
 flutter build web --release
 ```
 
-## 체크리스트
+## Checklist
 
-Dart/Flutter 코드 작성 시:
+When writing Dart/Flutter code:
 
-- [ ] @immutable + copyWith 패턴
-- [ ] StatelessWidget 우선 사용
-- [ ] Provider로 상태 관리 분리
+- [ ] @immutable + copyWith pattern
+- [ ] Prefer StatelessWidget
+- [ ] Separate state management with Provider
 - [ ] Null safety (?, ??, ?., !)
-- [ ] build() ≤ 50줄 (위젯 분리)
-- [ ] 순수 함수 (static methods)
-- [ ] Result 타입으로 에러 처리
-- [ ] Extension methods 활용
-- [ ] const constructor 사용
-- [ ] Future/Stream 적절히 선택
-- [ ] 복잡도 ≤ 10
+- [ ] build() <= 50 lines (extract widgets)
+- [ ] Pure functions (static methods)
+- [ ] Result type for error handling
+- [ ] Use extension methods
+- [ ] Use const constructor
+- [ ] Choose Future/Stream appropriately
+- [ ] Complexity <= 10

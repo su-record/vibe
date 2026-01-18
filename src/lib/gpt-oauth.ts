@@ -189,13 +189,13 @@ export async function exchangeCodeForTokens(code: string, verifier: string): Pro
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`토큰 교환 실패 (${response.status}): ${errorText}`);
+    throw new Error(`Token exchange failed (${response.status}): ${errorText}`);
   }
 
   const payload = await response.json() as TokenResponse;
 
   if (!payload.access_token || !payload.refresh_token) {
-    throw new Error('토큰 응답에 필수 필드가 없습니다.');
+    throw new Error('Token response missing required fields.');
   }
 
   // 이메일 및 계정 ID 추출
@@ -232,7 +232,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<Refreshe
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`토큰 갱신 실패 (${response.status}): ${errorText}`);
+    throw new Error(`Token refresh failed (${response.status}): ${errorText}`);
   }
 
   const payload = await response.json() as TokenResponse;
@@ -294,19 +294,19 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 실패</title></head>
+              <head><title>Authentication Failed</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 실패</h1>
-                <p>오류: ${error}</p>
+                <h1>Authentication Failed</h1>
+                <p>Error: ${error}</p>
                 <p>${errorDescription || ''}</p>
-                <p>이 창을 닫고 다시 시도해주세요.</p>
+                <p>Please close this window and try again.</p>
               </body>
             </html>
           `);
           if (!isResolved) {
             isResolved = true;
             closeServer();
-            reject(new Error(`OAuth 오류: ${error} - ${errorDescription || ''}`));
+            reject(new Error(`OAuth error: ${error} - ${errorDescription || ''}`));
           }
           return;
         }
@@ -316,17 +316,17 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 실패</title></head>
+              <head><title>Authentication Failed</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 실패</h1>
-                <p>State 불일치 - CSRF 공격 가능성</p>
+                <h1>Authentication Failed</h1>
+                <p>State mismatch - possible CSRF attack</p>
               </body>
             </html>
           `);
           if (!isResolved) {
             isResolved = true;
             closeServer();
-            reject(new Error('State 불일치'));
+            reject(new Error('State mismatch'));
           }
           return;
         }
@@ -335,17 +335,17 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 실패</title></head>
+              <head><title>Authentication Failed</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 실패</h1>
-                <p>Authorization code가 없습니다.</p>
+                <h1>Authentication Failed</h1>
+                <p>Authorization code missing.</p>
               </body>
             </html>
           `);
           if (!isResolved) {
             isResolved = true;
             closeServer();
-            reject(new Error('Authorization code 누락'));
+            reject(new Error('Authorization code missing'));
           }
           return;
         }
@@ -356,11 +356,11 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 성공</title></head>
+              <head><title>Authentication Successful</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 성공!</h1>
-                <p>${tokens.email}로 로그인되었습니다.</p>
-                <p>이 창을 닫아도 됩니다.</p>
+                <h1>Authentication Successful!</h1>
+                <p>Logged in as ${tokens.email}.</p>
+                <p>You may close this window.</p>
                 <script>setTimeout(() => window.close(), 2000);</script>
               </body>
             </html>
@@ -375,9 +375,9 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
           res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 실패</title></head>
+              <head><title>Authentication Failed</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 실패</h1>
+                <h1>Authentication Failed</h1>
                 <p>${(err as Error).message}</p>
               </body>
             </html>
@@ -399,8 +399,8 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
     server.headersTimeout = 5000;
 
     server.listen(1455, 'localhost', () => {
-      console.log('\n브라우저에서 OpenAI 로그인 페이지가 열립니다...\n');
-      console.log(`인증 URL: ${auth.url}\n`);
+      console.log('\nOpening OpenAI login page in browser...\n');
+      console.log(`Auth URL: ${auth.url}\n`);
 
       // 브라우저 열기
       const platform = process.platform;
@@ -418,7 +418,7 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
       if (!isResolved) {
         isResolved = true;
         if (err.code === 'EADDRINUSE') {
-          reject(new Error('포트 1455가 이미 사용 중입니다. 다른 인증 프로세스가 실행 중인지 확인하세요.'));
+          reject(new Error('Port 1455 is already in use. Check if another auth process is running.'));
         } else {
           reject(err);
         }
@@ -430,7 +430,7 @@ export function startOAuthFlow(): Promise<OAuthTokens> {
       if (!isResolved) {
         isResolved = true;
         closeServer();
-        reject(new Error('인증 타임아웃 (5분)'));
+        reject(new Error('Authentication timeout (5 minutes)'));
       }
     }, 5 * 60 * 1000);
   });
@@ -443,12 +443,12 @@ export async function getValidAccessToken(): Promise<ValidAccessToken> {
   const account = storage.getActiveAccount();
 
   if (!account) {
-    throw new Error('인증된 GPT 계정이 없습니다. vibe gpt --auth로 로그인하세요.');
+    throw new Error('No authenticated GPT account. Run vibe gpt auth to login.');
   }
 
   // 토큰이 만료되었으면 갱신
   if (storage.isTokenExpired(account)) {
-    console.log('GPT 액세스 토큰 갱신 중...');
+    console.log('Refreshing GPT access token...');
     const newTokens = await refreshAccessToken(account.refreshToken);
     storage.updateAccessToken(
       account.email,

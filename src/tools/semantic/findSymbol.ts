@@ -20,7 +20,7 @@ interface SymbolInfo {
 
 export const findSymbolDefinition: ToolDefinition = {
   name: 'find_symbol',
-  description: '함수 찾아|클래스 어디|변수 위치|find function|where is|locate - Find symbol definitions',
+  description: 'find function|where is|locate - Find symbol definitions',
   inputSchema: {
     type: 'object',
     properties: {

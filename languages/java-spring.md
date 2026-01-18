@@ -1,33 +1,34 @@
-# ☕ Java + Spring Boot 품질 규칙
+# Java + Spring Boot Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 메서드 ≤ 30줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Method <= 30 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Spring Boot 특화 규칙
+## Spring Boot Specific Rules
 
-### 1. Controller 레이어
+### 1. Controller Layer
 
 ```java
-// ✅ REST Controller
+// Good: REST Controller
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
-@Tag(name = "User", description = "사용자 관리 API")
+@Tag(name = "User", description = "User Management API")
 public class UserController {
 
     private final UserService userService;
 
     @GetMapping
-    @Operation(summary = "사용자 목록 조회")
+    @Operation(summary = "Get user list")
     public ResponseEntity<Page<UserResponse>> getUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
@@ -38,7 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "사용자 상세 조회")
+    @Operation(summary = "Get user detail")
     public ResponseEntity<UserResponse> getUser(
             @PathVariable Long id
     ) {
@@ -47,7 +48,7 @@ public class UserController {
     }
 
     @PostMapping
-    @Operation(summary = "사용자 생성")
+    @Operation(summary = "Create user")
     public ResponseEntity<UserResponse> createUser(
             @Valid @RequestBody CreateUserRequest request
     ) {
@@ -57,7 +58,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "사용자 수정")
+    @Operation(summary = "Update user")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUserRequest request
@@ -67,7 +68,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "사용자 삭제")
+    @Operation(summary = "Delete user")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
@@ -75,10 +76,10 @@ public class UserController {
 }
 ```
 
-### 2. Service 레이어
+### 2. Service Layer
 
 ```java
-// ✅ Service Interface
+// Good: Service Interface
 public interface UserService {
     Page<UserResponse> getUsers(Pageable pageable);
     UserResponse getUser(Long id);
@@ -87,7 +88,7 @@ public interface UserService {
     void deleteUser(Long id);
 }
 
-// ✅ Service 구현
+// Good: Service implementation
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -141,21 +142,21 @@ public class UserServiceImpl implements UserService {
 
     private User findUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("사용자", id));
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 
     private void validateEmailNotExists(String email) {
         if (userRepository.existsByEmail(email)) {
-            throw new DuplicateResourceException("이미 존재하는 이메일입니다: " + email);
+            throw new DuplicateResourceException("Email already exists: " + email);
         }
     }
 }
 ```
 
-### 3. Entity 설계
+### 3. Entity Design
 
 ```java
-// ✅ 기본 Entity (Auditing)
+// Good: Base Entity (Auditing)
 @Getter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
@@ -169,7 +170,7 @@ public abstract class BaseEntity {
     private LocalDateTime updatedAt;
 }
 
-// ✅ User Entity
+// Good: User Entity
 @Entity
 @Table(name = "users")
 @Getter
@@ -205,7 +206,7 @@ public class User extends BaseEntity {
         this.password = password;
     }
 
-    // 비즈니스 메서드
+    // Business methods
     public void update(String name, String phone) {
         this.name = name;
         this.phone = phone;
@@ -220,16 +221,16 @@ public class User extends BaseEntity {
     }
 }
 
-// ✅ Enum
+// Good: Enum
 public enum UserStatus {
     ACTIVE, INACTIVE, SUSPENDED
 }
 ```
 
-### 4. Repository 레이어
+### 4. Repository Layer
 
 ```java
-// ✅ JPA Repository
+// Good: JPA Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
@@ -243,7 +244,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> searchUsers(UserSearchCondition condition, Pageable pageable);
 }
 
-// ✅ Custom Repository 구현 (QueryDSL)
+// Good: Custom Repository implementation (QueryDSL)
 @RequiredArgsConstructor
 public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
@@ -290,57 +291,57 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 }
 ```
 
-### 5. DTO와 Validation
+### 5. DTO and Validation
 
 ```java
-// ✅ Request DTO
+// Good: Request DTO
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Schema(description = "사용자 생성 요청")
+@Schema(description = "Create user request")
 public class CreateUserRequest {
 
-    @NotBlank(message = "이메일은 필수입니다")
-    @Email(message = "올바른 이메일 형식이 아닙니다")
-    @Schema(description = "이메일", example = "user@example.com")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    @Schema(description = "Email", example = "user@example.com")
     private String email;
 
-    @NotBlank(message = "이름은 필수입니다")
-    @Size(min = 2, max = 50, message = "이름은 2~50자 사이여야 합니다")
-    @Schema(description = "이름", example = "홍길동")
+    @NotBlank(message = "Name is required")
+    @Size(min = 2, max = 50, message = "Name must be between 2-50 characters")
+    @Schema(description = "Name", example = "John Doe")
     private String name;
 
-    @NotBlank(message = "비밀번호는 필수입니다")
+    @NotBlank(message = "Password is required")
     @Pattern(
         regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$",
-        message = "비밀번호는 8자 이상, 영문/숫자/특수문자를 포함해야 합니다"
+        message = "Password must be at least 8 characters with letters/numbers/special characters"
     )
-    @Schema(description = "비밀번호", example = "Password123!")
+    @Schema(description = "Password", example = "Password123!")
     private String password;
 }
 
-// ✅ Response DTO
+// Good: Response DTO
 @Getter
 @Builder
-@Schema(description = "사용자 응답")
+@Schema(description = "User response")
 public class UserResponse {
 
-    @Schema(description = "사용자 ID", example = "1")
+    @Schema(description = "User ID", example = "1")
     private Long id;
 
-    @Schema(description = "이메일", example = "user@example.com")
+    @Schema(description = "Email", example = "user@example.com")
     private String email;
 
-    @Schema(description = "이름", example = "홍길동")
+    @Schema(description = "Name", example = "John Doe")
     private String name;
 
-    @Schema(description = "상태", example = "ACTIVE")
+    @Schema(description = "Status", example = "ACTIVE")
     private UserStatus status;
 
-    @Schema(description = "생성일시")
+    @Schema(description = "Created at")
     private LocalDateTime createdAt;
 }
 
-// ✅ Mapper (MapStruct)
+// Good: Mapper (MapStruct)
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
@@ -350,10 +351,10 @@ public interface UserMapper {
 }
 ```
 
-### 6. 예외 처리
+### 6. Exception Handling
 
 ```java
-// ✅ 커스텀 예외
+// Good: Custom exception
 @Getter
 public class BusinessException extends RuntimeException {
     private final ErrorCode errorCode;
@@ -371,7 +372,7 @@ public class BusinessException extends RuntimeException {
 
 public class ResourceNotFoundException extends BusinessException {
     public ResourceNotFoundException(String resource, Long id) {
-        super(ErrorCode.NOT_FOUND, String.format("%s을(를) 찾을 수 없습니다 (ID: %d)", resource, id));
+        super(ErrorCode.NOT_FOUND, String.format("%s not found (ID: %d)", resource, id));
     }
 }
 
@@ -381,26 +382,26 @@ public class DuplicateResourceException extends BusinessException {
     }
 }
 
-// ✅ Error Code
+// Good: Error Code
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode {
     // Common
-    INVALID_INPUT(HttpStatus.BAD_REQUEST, "C001", "잘못된 입력입니다"),
-    NOT_FOUND(HttpStatus.NOT_FOUND, "C002", "리소스를 찾을 수 없습니다"),
-    DUPLICATE(HttpStatus.CONFLICT, "C003", "이미 존재하는 리소스입니다"),
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C004", "서버 오류가 발생했습니다"),
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, "C001", "Invalid input"),
+    NOT_FOUND(HttpStatus.NOT_FOUND, "C002", "Resource not found"),
+    DUPLICATE(HttpStatus.CONFLICT, "C003", "Resource already exists"),
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C004", "Server error occurred"),
 
     // Auth
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "인증이 필요합니다"),
-    FORBIDDEN(HttpStatus.FORBIDDEN, "A002", "접근 권한이 없습니다");
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Authentication required"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "A002", "Access denied");
 
     private final HttpStatus status;
     private final String code;
     private final String message;
 }
 
-// ✅ Global Exception Handler
+// Good: Global Exception Handler
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
@@ -435,10 +436,10 @@ public class GlobalExceptionHandler {
 }
 ```
 
-### 7. 테스트
+### 7. Testing
 
 ```java
-// ✅ Service 단위 테스트
+// Good: Service unit test
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -455,7 +456,7 @@ class UserServiceTest {
     private UserServiceImpl userService;
 
     @Test
-    @DisplayName("사용자 조회 성공")
+    @DisplayName("Get user success")
     void getUser_Success() {
         // given
         Long userId = 1L;
@@ -475,7 +476,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 사용자 조회시 예외 발생")
+    @DisplayName("Get non-existent user throws exception")
     void getUser_NotFound_ThrowsException() {
         // given
         Long userId = 999L;
@@ -484,19 +485,19 @@ class UserServiceTest {
         // when & then
         assertThatThrownBy(() -> userService.getUser(userId))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("사용자");
+                .hasMessageContaining("User");
     }
 
     private User createTestUser(Long id) {
         return User.builder()
                 .email("test@example.com")
-                .name("테스트")
+                .name("Test")
                 .password("encoded")
                 .build();
     }
 }
 
-// ✅ Controller 통합 테스트
+// Good: Controller integration test
 @WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
 class UserControllerTest {
@@ -511,16 +512,16 @@ class UserControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("POST /api/v1/users - 사용자 생성 성공")
+    @DisplayName("POST /api/v1/users - Create user success")
     void createUser_Success() throws Exception {
         // given
         CreateUserRequest request = new CreateUserRequest(
-                "test@example.com", "테스트", "Password123!"
+                "test@example.com", "Test", "Password123!"
         );
         UserResponse response = UserResponse.builder()
                 .id(1L)
                 .email("test@example.com")
-                .name("테스트")
+                .name("Test")
                 .status(UserStatus.ACTIVE)
                 .build();
 
@@ -537,11 +538,11 @@ class UserControllerTest {
 }
 ```
 
-## 파일 구조
+## File Structure
 
-```
+```text
 src/main/java/com/example/app/
-├── config/                      # 설정
+├── config/                      # Configuration
 │   ├── SecurityConfig.java
 │   ├── JpaConfig.java
 │   └── SwaggerConfig.java
@@ -574,13 +575,13 @@ src/main/java/com/example/app/
 └── Application.java
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] Controller → Service → Repository 레이어 분리
-- [ ] @Valid로 요청 검증
-- [ ] @Transactional 적절히 사용 (readOnly 포함)
-- [ ] 커스텀 예외 + GlobalExceptionHandler
-- [ ] DTO ↔ Entity 변환 (MapStruct 권장)
-- [ ] JPA N+1 문제 방지 (fetch join, @EntityGraph)
-- [ ] 단위 테스트 + 통합 테스트
-- [ ] Swagger/OpenAPI 문서화
+- [ ] Controller -> Service -> Repository layer separation
+- [ ] Validate requests with @Valid
+- [ ] Use @Transactional appropriately (including readOnly)
+- [ ] Custom exception + GlobalExceptionHandler
+- [ ] DTO <-> Entity conversion (MapStruct recommended)
+- [ ] Prevent JPA N+1 problem (fetch join, @EntityGraph)
+- [ ] Unit tests + Integration tests
+- [ ] Swagger/OpenAPI documentation

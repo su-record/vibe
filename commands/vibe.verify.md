@@ -5,29 +5,29 @@ argument-hint: "feature name"
 
 # /vibe.verify
 
-**품질 검증 자동화** - 비개발자도 품질을 신뢰할 수 있도록.
+**Automated Quality Verification** - Making quality trustworthy even for non-developers.
 
-> 모든 시나리오 통과 = 품질 보장
+> All scenarios passed = Quality assured
 
 ## Usage
 
 ```
-/vibe.verify "feature-name"              # SPEC 기반 검증
-/vibe.verify --e2e "feature-name"        # E2E 브라우저 테스트 (agents/e2e-tester.md)
-/vibe.verify --e2e --visual              # 시각적 회귀 테스트
-/vibe.verify --e2e --record              # 비디오 녹화
+/vibe.verify "feature-name"              # SPEC-based verification
+/vibe.verify --e2e "feature-name"        # E2E browser test (agents/e2e-tester.md)
+/vibe.verify --e2e --visual              # Visual regression test
+/vibe.verify --e2e --record              # Video recording
 ```
 
-## 핵심 원칙
+## Core Principles
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  비개발자가 알아야 할 것                                         │
+│  What non-developers need to know                               │
 │                                                                 │
-│  ✅ 시나리오 4/4 통과                                           │
-│  📈 품질 점수: 94/100                                           │
+│  ✅ Scenarios: 4/4 passed                                       │
+│  📈 Quality Score: 94/100                                       │
 │                                                                 │
-│  이것만 보면 됨. 나머지는 시스템이 알아서.                        │
+│  Just look at this. The system handles the rest.                │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -36,114 +36,114 @@ argument-hint: "feature name"
 ### 1. Load Feature File
 
 ```
-📄 .claude/vibe/features/{feature-name}.feature → 시나리오 목록
-📄 .claude/vibe/specs/{feature-name}.md → 검증 기준 (참조)
+📄 .claude/vibe/features/{feature-name}.feature → Scenario list
+📄 .claude/vibe/specs/{feature-name}.md → Verification criteria (reference)
 ```
 
-**Feature 파일이 없으면**:
+**If feature file does not exist**:
 ```
-❌ Feature 파일이 없습니다.
-   먼저 /vibe.spec "{feature-name}"을 실행하세요.
+❌ Feature file not found.
+   Run /vibe.spec "{feature-name}" first.
 ```
 
 ### 2. Scenario-by-Scenario Verification
 
-각 시나리오별 자동 검증:
+Automatic verification for each scenario:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 1/4: 유효한 로그인 성공
+🔍 Scenario 1/4: Valid login success
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Given: 사용자가 등록되어 있다
-  → 검증: 사용자 생성 API 존재? ✅
-  → 검증: 테스트 사용자 데이터? ✅
+Given: User is registered
+  → Verify: User creation API exists? ✅
+  → Verify: Test user data available? ✅
 
-When: 유효한 이메일과 비밀번호로 로그인
-  → 검증: POST /login 엔드포인트? ✅
-  → 검증: 요청 처리 로직? ✅
+When: Login with valid email and password
+  → Verify: POST /login endpoint exists? ✅
+  → Verify: Request handling logic exists? ✅
 
-Then: 로그인 성공 + JWT 토큰 반환
-  → 검증: 성공 응답 코드 200? ✅
-  → 검증: JWT 토큰 포함? ✅
+Then: Login success + JWT token returned
+  → Verify: Success response code 200? ✅
+  → Verify: JWT token included? ✅
 
-✅ Scenario 1 통과!
+✅ Scenario 1 passed!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 3. Verification Methods (자동 선택)
+### 3. Verification Methods (Auto-selected)
 
-| 방법 | 조건 | 검증 내용 |
-|------|------|-----------|
-| **테스트 실행** | 테스트 파일 존재 시 | `npm test`, `pytest` 등 실행 |
-| **코드 분석** | 항상 | 구현 여부, 로직 확인 |
-| **빌드 검증** | 빌드 스크립트 존재 시 | 컴파일 에러 확인 |
-| **타입 검사** | TypeScript 등 | 타입 에러 확인 |
+| Method | Condition | Verification Content |
+|--------|-----------|---------------------|
+| **Test Execution** | When test files exist | Run `npm test`, `pytest`, etc. |
+| **Code Analysis** | Always | Check implementation, verify logic |
+| **Build Verification** | When build script exists | Check for compile errors |
+| **Type Check** | TypeScript, etc. | Check for type errors |
 
-### 4. Quality Report (자동 생성)
+### 4. Quality Report (Auto-generated)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  📊 VERIFICATION REPORT: login                                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ✅ 시나리오: 4/4 통과 (100%)                                   │
+│  ✅ Scenarios: 4/4 passed (100%)                                │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │ # │ Scenario              │ Given │ When │ Then │ Status │  │
 │  │───│───────────────────────│───────│──────│──────│────────│  │
-│  │ 1 │ 유효한 로그인 성공     │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 2 │ 잘못된 비밀번호 에러   │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 3 │ 이메일 형식 검증       │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 4 │ 비밀번호 찾기 링크     │ ✅    │ ✅   │ ✅   │ ✅     │  │
+│  │ 1 │ Valid login success   │ ✅    │ ✅   │ ✅   │ ✅     │  │
+│  │ 2 │ Invalid password error│ ✅    │ ✅   │ ✅   │ ✅     │  │
+│  │ 3 │ Email format validation│ ✅   │ ✅   │ ✅   │ ✅     │  │
+│  │ 4 │ Forgot password link  │ ✅    │ ✅   │ ✅   │ ✅     │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
-│  📈 품질 점수: 94/100                                           │
+│  📈 Quality Score: 94/100                                       │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │ 항목              │ 결과  │ 상세                        │    │
+│  │ Item              │ Result│ Details                     │    │
 │  │───────────────────│───────│─────────────────────────────│    │
-│  │ 빌드              │ ✅    │ 성공                        │    │
-│  │ 테스트            │ ✅    │ 12/12 통과                  │    │
-│  │ 타입 검사         │ ✅    │ 에러 0개                    │    │
-│  │ 복잡도            │ ✅    │ 모든 함수 ≤30줄            │    │
-│  │ 코드 커버리지     │ ⚠️    │ 78% (목표: 80%)             │    │
+│  │ Build             │ ✅    │ Success                     │    │
+│  │ Tests             │ ✅    │ 12/12 passed                │    │
+│  │ Type Check        │ ✅    │ 0 errors                    │    │
+│  │ Complexity        │ ✅    │ All functions ≤30 lines     │    │
+│  │ Code Coverage     │ ⚠️    │ 78% (target: 80%)           │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
-│  📋 권장 사항:                                                   │
-│  - 코드 커버리지 2% 추가 필요 (auth.service.ts line 45-52)      │
+│  📋 Recommendations:                                             │
+│  - Need 2% more code coverage (auth.service.ts line 45-52)      │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 실패 시 리포트
+### Failure Report
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  📊 VERIFICATION REPORT: login                                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ❌ 시나리오: 3/4 통과 (75%)                                    │
+│  ❌ Scenarios: 3/4 passed (75%)                                 │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │ # │ Scenario              │ Given │ When │ Then │ Status │  │
 │  │───│───────────────────────│───────│──────│──────│────────│  │
-│  │ 1 │ 유효한 로그인 성공     │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 2 │ 잘못된 비밀번호 에러   │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 3 │ 이메일 형식 검증       │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 4 │ 비밀번호 찾기 링크     │ ✅    │ ❌   │ -    │ ❌     │  │
+│  │ 1 │ Valid login success   │ ✅    │ ✅   │ ✅   │ ✅     │  │
+│  │ 2 │ Invalid password error│ ✅    │ ✅   │ ✅   │ ✅     │  │
+│  │ 3 │ Email format validation│ ✅   │ ✅   │ ✅   │ ✅     │  │
+│  │ 4 │ Forgot password link  │ ✅    │ ❌   │ -    │ ❌     │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
-│  ❌ 실패 상세:                                                   │
+│  ❌ Failure Details:                                             │
 │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
-│  Scenario 4: 비밀번호 찾기 링크                                  │
+│  Scenario 4: Forgot password link                               │
 │                                                                 │
-│  When: "비밀번호 찾기" 클릭                                      │
-│  ❌ 문제: 링크가 구현되지 않음                                   │
-│  📍 위치: LoginForm.tsx line 42                                  │
-│  💡 수정: "Forgot password" 링크 추가 필요                       │
+│  When: Click "Forgot password"                                  │
+│  ❌ Issue: Link not implemented                                 │
+│  📍 Location: LoginForm.tsx line 42                             │
+│  💡 Fix: Need to add "Forgot password" link                     │
 │                                                                 │
-│  🔧 자동 수정 실행: /vibe.run "login" --fix                      │
+│  🔧 Auto-fix command: /vibe.run "login" --fix                   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -167,59 +167,59 @@ User: /vibe.verify "login"
 
 Claude:
 📄 Loading Feature: .claude/vibe/features/login.feature
-🔍 검증 시작...
+🔍 Starting verification...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 1/4: 유효한 로그인 성공
+🔍 Scenario 1/4: Valid login success
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✅ Given: 사용자 등록 - OK
-  ✅ When: 로그인 시도 - OK
-  ✅ Then: JWT 토큰 반환 - OK
-✅ 통과!
+  ✅ Given: User registered - OK
+  ✅ When: Login attempt - OK
+  ✅ Then: JWT token returned - OK
+✅ Passed!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 2/4: 잘못된 비밀번호 에러
+🔍 Scenario 2/4: Invalid password error
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✅ Given: OK
   ✅ When: OK
   ✅ Then: OK
-✅ 통과!
+✅ Passed!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 3/4: 이메일 형식 검증
+🔍 Scenario 3/4: Email format validation
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✅ Given: OK
   ✅ When: OK
   ✅ Then: OK
-✅ 통과!
+✅ Passed!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 4/4: 비밀번호 찾기 링크
+🔍 Scenario 4/4: Forgot password link
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✅ Given: OK
-  ❌ When: "비밀번호 찾기" 링크 - 없음
-  - Then: (스킵)
-❌ 실패!
+  ❌ When: "Forgot password" link - missing
+  - Then: (skipped)
+❌ Failed!
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  📊 VERIFICATION REPORT: login                                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ❌ 시나리오: 3/4 통과 (75%)                                    │
+│  ❌ Scenarios: 3/4 passed (75%)                                 │
 │                                                                 │
 │  | # | Scenario              | Status |                         │
 │  |---|───────────────────────|────────|                         │
-│  | 1 | 유효한 로그인 성공     | ✅     |                         │
-│  | 2 | 잘못된 비밀번호 에러   | ✅     |                         │
-│  | 3 | 이메일 형식 검증       | ✅     |                         │
-│  | 4 | 비밀번호 찾기 링크     | ❌     |                         │
+│  | 1 | Valid login success   | ✅     |                         │
+│  | 2 | Invalid password error| ✅     |                         │
+│  | 3 | Email format validation| ✅    |                         │
+│  | 4 | Forgot password link  | ❌     |                         │
 │                                                                 │
-│  📈 품질 점수: 75/100                                           │
+│  📈 Quality Score: 75/100                                       │
 │                                                                 │
-│  ❌ 수정 필요:                                                   │
-│  - Scenario 4: LoginForm.tsx에 "Forgot password" 링크 추가      │
+│  ❌ Fixes needed:                                                │
+│  - Scenario 4: Add "Forgot password" link in LoginForm.tsx      │
 │                                                                 │
-│  🔧 자동 수정: /vibe.run "login" --fix                          │
+│  🔧 Auto-fix: /vibe.run "login" --fix                           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -276,6 +276,99 @@ On verification fail:
 ```
 /vibe.run "feature-name" --fix  # Fix failed scenarios
 ```
+
+---
+
+## Quality Gate (Mandatory)
+
+### Verification Quality Checklist
+
+Before marking verification complete, ALL items must pass:
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Scenario Coverage** | All scenarios from feature file tested | 25% |
+| **Given Verification** | All preconditions validated | 15% |
+| **When Verification** | All actions executable | 15% |
+| **Then Verification** | All expected outcomes confirmed | 20% |
+| **Build Status** | Project builds without errors | 10% |
+| **Test Status** | All existing tests pass | 10% |
+| **Type Check** | No TypeScript/type errors | 5% |
+
+### Verification Score Calculation
+
+```
+Score = (passed_scenarios / total_scenarios) × 100
+
+Grades:
+- 100%:   ✅ PERFECT - All scenarios pass
+- 90-99%: ⚠️ ALMOST - Minor gaps, review needed
+- 70-89%: ❌ INCOMPLETE - Significant gaps
+- 0-69%:  ❌ FAILED - Major implementation missing
+```
+
+### Pass/Fail Criteria
+
+| Metric | Pass Threshold | Action on Fail |
+|--------|----------------|----------------|
+| Scenario pass rate | 100% | Run `/vibe.run --fix` |
+| Build status | Success | Fix build errors first |
+| Test pass rate | 100% | Fix failing tests |
+| Type check | 0 errors | Fix type errors |
+
+### Verification Methods Matrix
+
+| Method | Trigger Condition | What It Checks |
+|--------|-------------------|----------------|
+| **Code Analysis** | Always | Implementation exists |
+| **Test Execution** | Test files exist | Logic correctness |
+| **Build Verification** | Build script exists | Compilation success |
+| **Type Check** | tsconfig.json exists | Type safety |
+| **Lint Check** | ESLint config exists | Code style |
+
+### Scenario Verification Depth
+
+For each scenario, verify at THREE levels:
+
+| Level | Verification | Example |
+|-------|--------------|---------|
+| **L1: Existence** | Code/function exists | `login()` function defined |
+| **L2: Logic** | Implementation is correct | Validates email format |
+| **L3: Integration** | Works with other components | Returns valid JWT |
+
+### Auto-Fix Triggers
+
+| Verification Failure | Auto-Fix Action |
+|----------------------|-----------------|
+| Missing implementation | Generate skeleton from scenario |
+| Test failure | Analyze and suggest fix |
+| Build error | Show error location |
+| Type error | Suggest type annotations |
+
+### Verification Report Requirements
+
+Every verification MUST produce:
+
+1. **Scenario Summary Table**
+   - Scenario name
+   - Given/When/Then status (✅/❌)
+   - Overall status
+
+2. **Quality Metrics**
+   - Build status
+   - Test pass count
+   - Type error count
+   - Code coverage percentage
+
+3. **Failure Details** (if any)
+   - Exact failure point (Given/When/Then)
+   - Expected vs actual
+   - File path and line number
+   - Suggested fix command
+
+4. **Recommendations**
+   - Specific files to modify
+   - Auto-fix command if available
 
 ---
 

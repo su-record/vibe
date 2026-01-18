@@ -64,7 +64,7 @@ export function loadAccounts(): GptStorage | null {
     const content = fs.readFileSync(storagePath, 'utf-8');
     return JSON.parse(content) as GptStorage;
   } catch (error) {
-    console.error('GPT 계정 정보 로드 실패:', (error as Error).message);
+    console.error('GPT account info load failed:', (error as Error).message);
     return null;
   }
 }
@@ -78,7 +78,7 @@ export function saveAccounts(storage: GptStorage): void {
     ensureDir(path.dirname(storagePath));
     fs.writeFileSync(storagePath, JSON.stringify(storage, null, 2), 'utf-8');
   } catch (error) {
-    console.error('GPT 계정 정보 저장 실패:', (error as Error).message);
+    console.error('GPT account info save failed:', (error as Error).message);
     throw error;
   }
 }
@@ -173,7 +173,7 @@ export function clearAccounts(): void {
       fs.unlinkSync(storagePath);
     }
   } catch (error) {
-    console.error('GPT 계정 정보 삭제 실패:', (error as Error).message);
+    console.error('GPT account info deletion failed:', (error as Error).message);
   }
 }
 

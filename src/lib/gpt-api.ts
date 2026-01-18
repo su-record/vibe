@@ -38,7 +38,7 @@ function getApiKeyFromConfig(): string | null {
       }
     }
   } catch (e) {
-    warnLog('GPT API 키 읽기 실패', e);
+    warnLog('GPT API key read failed', e);
   }
   return null;
 }
@@ -76,7 +76,7 @@ async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  throw new Error('GPT 인증 정보가 없습니다. vibe auth gpt (OAuth) 또는 vibe auth gpt --key <key> (API Key)로 설정하세요.');
+  throw new Error('GPT credentials not found. Run vibe gpt auth (OAuth) or vibe gpt key <key> (API Key) to configure.');
 }
 
 // Types
@@ -123,19 +123,19 @@ const INSTRUCTIONS_CACHE_TTL = 15 * 60 * 1000; // 15분
 
 // 사용 가능한 모델 목록
 export const GPT_MODELS: Record<string, GptModelInfo> = {
-  // GPT-5.2 (최신)
+  // GPT-5.2 (latest)
   'gpt-5.2': {
     id: 'gpt-5.2',
     name: 'GPT-5.2',
-    description: '최신 GPT, 범용',
+    description: 'Latest GPT, general purpose',
     maxTokens: 32768,
     reasoning: { effort: 'medium', summary: 'auto' },
   },
-  // GPT-5.2 Codex (코딩 특화)
+  // GPT-5.2 Codex (coding specialized)
   'gpt-5.2-codex': {
     id: 'gpt-5.2-codex',
     name: 'GPT-5.2 Codex',
-    description: '최신 Codex, 코딩 특화',
+    description: 'Latest Codex, coding specialized',
     maxTokens: 32768,
     reasoning: { effort: 'high', summary: 'auto' },
   }
@@ -319,7 +319,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
         return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
       }
 
-      let errorMessage = `OpenAI API 오류 (${response.status})`;
+      let errorMessage = `OpenAI API error (${response.status})`;
       try {
         const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
         if (errorJson.error?.message) {
@@ -417,7 +417,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
       }
 
       // 에러 파싱
-      let errorMessage = `GPT API 오류 (${response.status})`;
+      let errorMessage = `GPT API error (${response.status})`;
       try {
         const errorJson = JSON.parse(errorText) as { error?: { message?: string }; detail?: string };
         if (errorJson.error?.message) {
@@ -478,14 +478,14 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
                             errorMsg.toLowerCase().includes('rate limit') ||
                             errorMsg.toLowerCase().includes('quota');
       if (apiKey && shouldFallback) {
-        console.log('⚠️ OAuth 한도 초과/오류 → API Key로 전환');
+        console.log('⚠️ OAuth limit exceeded/error → Switching to API Key');
         return chatWithApiKey(apiKey, options);
       }
       throw error;
     }
   }
 
-  throw new Error('GPT 인증 정보가 없습니다.');
+  throw new Error('GPT credentials not found.');
 }
 
 /**
@@ -546,7 +546,7 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`GPT API 오류 (${response.status}): ${errorText}`);
+    throw new Error(`GPT API error (${response.status}): ${errorText}`);
   }
 
   const reader = response.body!.getReader();

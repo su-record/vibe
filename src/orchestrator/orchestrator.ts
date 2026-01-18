@@ -204,20 +204,18 @@ export class VibeOrchestrator {
       '429',
       'usage limit',
       'too many requests',
-      // 인증 에러 (토큰/키 없음) - 재시도 의미 없음
-      '토큰이 없습니다',
-      '토큰이 설정되지',
-      'api 키가 없습니다',
-      'api 키가 설정되지',
+      // Auth errors (no token/key) - no retry needed
       'no token',
+      'token not set',
       'no api key',
+      'api key not set',
       'missing token',
       'missing api key',
       'not authenticated',
       'authentication failed',
       'unauthorized',
       '401',
-      '인증'
+      'auth'
     ];
     const lowerMsg = errorMsg.toLowerCase();
     return skipPatterns.some(pattern => lowerMsg.includes(pattern));

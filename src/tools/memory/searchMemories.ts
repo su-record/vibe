@@ -5,7 +5,7 @@ import { ToolResult, ToolDefinition } from '../../types/tool.js';
 
 export const searchMemoriesDefinition: ToolDefinition = {
   name: 'search_memories',
-  description: '찾아|검색|기억 중에|search|find|look for - Search memories by content',
+  description: 'search|find|look for - Search memories by content',
   inputSchema: {
     type: 'object',
     properties: {

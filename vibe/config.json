@@ -4,13 +4,13 @@
       "enabled": false,
       "authType": "oauth",
       "role": "architecture",
-      "description": "아키텍처/디버깅 (GPT 5.2)"
+      "description": "Architecture/Debugging (GPT 5.2)"
     },
     "gemini": {
       "enabled": false,
       "authType": "oauth",
       "role": "exploration",
-      "description": "Gemini 3 Flash/Pro (탐색, UI/UX)"
+      "description": "Gemini 3 Flash/Pro (Exploration, UI/UX)"
     }
   },
   "stacks": [

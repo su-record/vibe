@@ -4,7 +4,7 @@ import { ToolResult, ToolDefinition } from '../../types/tool.js';
 
 export const suggestImprovementsDefinition: ToolDefinition = {
   name: 'suggest_improvements',
-  description: '개선|더 좋게|리팩토링|improve|make better|refactor|optimize|enhance code - Suggest improvements',
+  description: 'improve|make better|refactor|optimize|enhance code - Suggest improvements',
   inputSchema: {
     type: 'object',
     properties: {

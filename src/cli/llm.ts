@@ -20,14 +20,14 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
   gpt: {
     name: 'vibe-gpt',
     role: 'architecture',
-    description: '아키텍처/디버깅 (GPT 5.2)',
+    description: 'Architecture/Debugging (GPT 5.2)',
     package: '@anthropics/openai-mcp',
     envKey: 'OPENAI_API_KEY'
   },
   gemini: {
     name: 'vibe-gemini',
     role: 'ui-ux',
-    description: 'UI/UX 설계 (Gemini 3)',
+    description: 'UI/UX Design (Gemini 3)',
     package: '@anthropics/gemini-mcp',
     envKey: 'GOOGLE_API_KEY'
   }
@@ -145,9 +145,9 @@ export function removeExternalLLM(llmType: string): void {
   }
 
   if (removed) {
-    console.log(`✅ ${llmType.toUpperCase()} 인증 정보 삭제됨`);
+    console.log(`✅ ${llmType.toUpperCase()} credentials removed`);
   } else {
-    console.log(`ℹ️ ${llmType.toUpperCase()} 인증 정보 없음`);
+    console.log(`ℹ️ ${llmType.toUpperCase()} no credentials found`);
   }
 }
 
@@ -393,7 +393,7 @@ Logout: vibe gemini logout
           authType: 'oauth',
           email: tokens.email,
           role: 'exploration',
-          description: 'Gemini 3 Flash/Pro (탐색, UI/UX)',
+          description: 'Gemini 3 Flash/Pro (Exploration, UI/UX)',
         };
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
       } catch { /* ignore: optional operation */ }

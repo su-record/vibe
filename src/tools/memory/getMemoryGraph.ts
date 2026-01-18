@@ -5,33 +5,33 @@ import { MemoryManager } from '../../lib/MemoryManager.js';
 
 export const getMemoryGraphDefinition: ToolDefinition = {
   name: 'get_memory_graph',
-  description: `메모리 지식 그래프를 조회합니다.
+  description: `Retrieves the memory knowledge graph.
 
-키워드: 그래프, 관계도, 연결 보기, memory graph, relations, connections
+Keywords: graph, relations, connections, memory graph, knowledge graph
 
-사용 예시:
-- "project-architecture의 관계 그래프 보여줘"
-- "전체 메모리 그래프 조회"`,
+Examples:
+- "Show me the relation graph for project-architecture"
+- "View the entire memory graph"`,
   inputSchema: {
     type: 'object',
     properties: {
       key: {
         type: 'string',
-        description: '시작 메모리 키 (없으면 전체 그래프)'
+        description: 'Starting memory key (if omitted, returns entire graph)'
       },
       depth: {
         type: 'number',
-        description: '탐색 깊이 (기본값: 2)',
+        description: 'Traversal depth (default: 2)',
         minimum: 1,
         maximum: 5
       },
       relationType: {
         type: 'string',
-        description: '필터링할 관계 유형'
+        description: 'Relation type to filter by'
       },
       format: {
         type: 'string',
-        description: '출력 형식',
+        description: 'Output format',
         enum: ['tree', 'list', 'mermaid']
       },
       projectPath: {
@@ -70,8 +70,8 @@ export async function getMemoryGraph(args: GetMemoryGraphArgs): Promise<ToolResu
         content: [{
           type: 'text',
           text: key
-            ? `✗ 메모리를 찾을 수 없거나 관계가 없습니다: ${key}`
-            : `✗ 저장된 메모리가 없습니다`
+            ? `✗ Memory not found or has no relations: ${key}`
+            : `✗ No memories stored`
         }]
       };
     }
@@ -99,11 +99,11 @@ export async function getMemoryGraph(args: GetMemoryGraphArgs): Promise<ToolResu
     // Add statistics
     const stats = `
 ---
-**통계**
-- 노드 수: ${graph.nodes.length}
-- 관계 수: ${filteredEdges.length}
-- 클러스터 수: ${graph.clusters.length}
-${graph.clusters.length > 0 ? `- 클러스터: ${graph.clusters.map(c => `[${c.join(', ')}]`).join(', ')}` : ''}`;
+**Statistics**
+- Nodes: ${graph.nodes.length}
+- Relations: ${filteredEdges.length}
+- Clusters: ${graph.clusters.length}
+${graph.clusters.length > 0 ? `- Cluster members: ${graph.clusters.map(c => `[${c.join(', ')}]`).join(', ')}` : ''}`;
 
     return {
       content: [{
@@ -115,17 +115,17 @@ ${graph.clusters.length > 0 ? `- 클러스터: ${graph.clusters.map(c => `[${c.j
     return {
       content: [{
         type: 'text',
-        text: `✗ 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
+        text: `✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`
       }]
     };
   }
 }
 
 function generateTreeFormat(startKey: string | undefined, nodes: any[], edges: any[]): string {
-  let output = '## 메모리 그래프\n\n';
+  let output = '## Memory Graph\n\n';
 
   if (startKey) {
-    output += `**시작점**: ${startKey}\n\n`;
+    output += `**Starting point**: ${startKey}\n\n`;
   }
 
   // Build adjacency list
@@ -179,23 +179,23 @@ function generateTreeFormat(startKey: string | undefined, nodes: any[], edges: a
 }
 
 function generateListFormat(nodes: any[], edges: any[]): string {
-  let output = '## 메모리 그래프 (목록)\n\n';
+  let output = '## Memory Graph (List)\n\n';
 
-  output += '### 노드\n';
+  output += '### Nodes\n';
   for (const node of nodes) {
     output += `- **${node.key}** [${node.category}]: ${node.value.substring(0, 50)}${node.value.length > 50 ? '...' : ''}\n`;
   }
 
-  output += '\n### 관계\n';
+  output += '\n### Relations\n';
   for (const edge of edges) {
-    output += `- ${edge.sourceKey} --[${edge.relationType}]--> ${edge.targetKey} (강도: ${edge.strength})\n`;
+    output += `- ${edge.sourceKey} --[${edge.relationType}]--> ${edge.targetKey} (strength: ${edge.strength})\n`;
   }
 
   return output;
 }
 
 function generateMermaidDiagram(nodes: any[], edges: any[]): string {
-  let output = '## 메모리 그래프 (Mermaid)\n\n```mermaid\ngraph LR\n';
+  let output = '## Memory Graph (Mermaid)\n\n```mermaid\ngraph LR\n';
 
   // Add nodes with categories as subgraphs
   const categories: Record<string, string[]> = {};

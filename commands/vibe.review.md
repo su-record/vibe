@@ -101,35 +101,35 @@ P3 NICE-TO-HAVE (Enhancement) - N issues
 
 ### Phase 5: Auto-Fix (P1/P2)
 
-**자동 수정 가능한 이슈는 바로 해결:**
+**Auto-fixable issues are resolved immediately:**
 
 ```
-🔧 AUTO-FIX 시작...
+🔧 AUTO-FIX Starting...
 
 P1 Critical:
-  1. [SECURITY] SQL Injection → parameterized query로 수정 ✅
-  2. [DATA] Transaction rollback 누락 → try-finally 추가 ✅
+  1. [SECURITY] SQL Injection → Fixed with parameterized query ✅
+  2. [DATA] Missing transaction rollback → Added try-finally ✅
 
 P2 Important:
-  3. [PERF] N+1 query → select_related 추가 ✅
-  4. [ARCH] Circular dependency → 의존성 분리 ✅
-  5. [TEST] Missing edge case → 테스트 추가 ✅
+  3. [PERF] N+1 query → Added select_related ✅
+  4. [ARCH] Circular dependency → Separated dependencies ✅
+  5. [TEST] Missing edge case → Added test ✅
 
-🔍 재검증 중...
-  ✅ 빌드 성공
-  ✅ 테스트 통과
+🔍 Re-validating...
+  ✅ Build successful
+  ✅ Tests passed
 
-✅ 5개 이슈 자동 수정 완료!
+✅ 5 issues auto-fixed!
 ```
 
-**자동 수정 불가능한 경우:**
-- 아키텍처 대규모 변경 필요
-- 비즈니스 로직 결정 필요
-- 사용자 확인 필요한 경우
+**Cases that cannot be auto-fixed:**
+- Requires large-scale architecture changes
+- Requires business logic decisions
+- Requires user confirmation
 
-→ Phase 6에서 수동 처리 안내
+→ Manual handling instructions in Phase 6
 
-### Phase 6: Todo File Creation (수동 처리 필요 항목)
+### Phase 6: Todo File Creation (Items Requiring Manual Handling)
 
 Save **remaining** findings to `.claude/vibe/todos/`:
 
@@ -137,8 +137,8 @@ Save **remaining** findings to `.claude/vibe/todos/`:
 {priority}-{category}-{short-desc}.md
 
 Examples:
-- P2-arch-large-refactor.md  (자동 수정 불가)
-- P3-style-extract-helper.md (백로그)
+- P2-arch-large-refactor.md  (Cannot be auto-fixed)
+- P3-style-extract-helper.md (Backlog)
 ```
 
 ## Output
@@ -149,12 +149,12 @@ PR #123: Add user authentication
 
 Reviewers: 13 agents | Duration: 45s
 
-Score: 92/100 (Good) ← 자동 수정 후 점수
+Score: 92/100 (Good) ← Score after auto-fix
 
 Issues Found:
-- P1 Critical: 2 → 0 (✅ 자동 수정)
-- P2 Important: 5 → 1 (✅ 4개 자동 수정)
-- P3 Nice-to-have: 3 (백로그)
+- P1 Critical: 2 → 0 (✅ Auto-fixed)
+- P2 Important: 5 → 1 (✅ 4 auto-fixed)
+- P3 Nice-to-have: 3 (Backlog)
 
 Auto-Fixed: 6 issues
 - [SECURITY] SQL Injection ✅
@@ -164,32 +164,32 @@ Auto-Fixed: 6 issues
 - [PERF] Unnecessary loop ✅
 - [TEST] Missing edge case ✅
 
-Remaining (수동 처리 필요):
-- P2-arch-large-refactor.md (아키텍처 결정 필요)
-- P3-style-extract-helper.md (백로그)
-- P3-docs-add-readme.md (백로그)
+Remaining (Manual handling required):
+- P2-arch-large-refactor.md (Architecture decision required)
+- P3-style-extract-helper.md (Backlog)
+- P3-docs-add-readme.md (Backlog)
 
-✅ MERGE READY (P1/P2 해결됨)
+✅ MERGE READY (P1/P2 resolved)
 ```
 
-### Phase 7: Guide to Fix Workflow (수동 처리 항목)
+### Phase 7: Guide to Fix Workflow (Manual Handling Items)
 
-**남은 이슈 처리 시 워크플로우 선택:**
+**Choose workflow when handling remaining issues:**
 
 ```
 ## Fix Workflow
 
-발견된 이슈를 수정하려면 워크플로우를 선택하세요:
+Choose a workflow to fix the discovered issues:
 
-| 작업 규모 | 권장 방식 |
-|----------|----------|
-| 간단한 수정 (1-2 파일) | Plan Mode |
-| 복잡한 수정 (3+ 파일, 검증 필요) | /vibe.spec |
+| Task Scale | Recommended Approach |
+|------------|---------------------|
+| Simple fix (1-2 files) | Plan Mode |
+| Complex fix (3+ files, validation needed) | /vibe.spec |
 
-1. `/vibe.spec "fix: issue-name"` - VIBE 워크플로우 (SPEC 검증 + 재리뷰)
-2. Plan Mode - 빠른 수정 (간단한 작업용)
+1. `/vibe.spec "fix: issue-name"` - VIBE workflow (SPEC validation + re-review)
+2. Plan Mode - Quick fix (for simple tasks)
 
-어떤 방식으로 진행할까요?
+Which approach would you like to proceed with?
 ```
 
 - Wait for user's choice before proceeding
@@ -235,6 +235,91 @@ node -e "import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPa
 ```bash
 node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'review-pr123-critical', value: 'SQL injection in users.py:42', category: 'review', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
+
+---
+
+## Quality Gate (Mandatory)
+
+### Review Quality Checklist
+
+Before completing review, ALL items must be verified:
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Security** | OWASP Top 10 vulnerabilities scanned | 20% |
+| **Security** | Authentication/authorization verified | 10% |
+| **Security** | Sensitive data exposure checked | 10% |
+| **Performance** | N+1 queries detected and flagged | 10% |
+| **Performance** | Memory leaks checked | 5% |
+| **Architecture** | Layer violations detected | 10% |
+| **Architecture** | Circular dependencies checked | 5% |
+| **Code Quality** | Complexity limits enforced | 10% |
+| **Code Quality** | Forbidden patterns detected | 10% |
+| **Testing** | Test coverage gaps identified | 5% |
+| **Documentation** | Public API documentation checked | 5% |
+
+### Review Score Calculation
+
+```
+Score = 100 - (P1 × 20) - (P2 × 5) - (P3 × 1)
+
+Grades:
+- 95-100: ✅ EXCELLENT - Merge ready
+- 85-94:  ✅ GOOD - Minor fixes recommended
+- 70-84:  ⚠️ FAIR - Must fix P2 issues
+- 0-69:   ❌ POOR - Block merge, fix P1/P2
+```
+
+### Merge Decision Matrix
+
+| P1 Count | P2 Count | Decision |
+|----------|----------|----------|
+| 0 | 0-2 | ✅ MERGE READY |
+| 0 | 3+ | ⚠️ FIX P2 FIRST |
+| 1+ | Any | ❌ BLOCKED |
+
+### Auto-Fix Capability Matrix
+
+| Issue Type | Auto-Fixable | Method |
+|------------|--------------|--------|
+| SQL Injection | ✅ Yes | Parameterized query |
+| Missing transaction | ✅ Yes | Add try-finally |
+| N+1 query | ✅ Yes | Add eager loading |
+| Circular dependency | ⚠️ Partial | Suggest restructure |
+| Missing tests | ✅ Yes | Generate test skeleton |
+| Hardcoded secrets | ❌ No | Flag for manual review |
+| Architecture violation | ❌ No | Suggest refactoring plan |
+
+### Forbidden Patterns (P1 Critical)
+
+| Pattern | Risk Level | Detection Method |
+|---------|------------|------------------|
+| Hardcoded credentials | Critical | Regex + entropy scan |
+| SQL string concatenation | Critical | AST analysis |
+| `eval()` or `exec()` | Critical | AST analysis |
+| Disabled CSRF protection | Critical | Config scan |
+| Debug mode in production | Critical | Config scan |
+| Unvalidated redirects | High | URL pattern scan |
+
+### Review Output Requirements
+
+Every review MUST produce:
+
+1. **Summary Statistics**
+   - Total issues by priority (P1/P2/P3)
+   - Auto-fixed count
+   - Remaining manual fixes
+
+2. **Detailed Findings**
+   - File path and line number
+   - Issue description
+   - Recommended fix
+   - Auto-fix status (applied/pending/manual)
+
+3. **Quality Score**
+   - Numerical score (0-100)
+   - Grade (EXCELLENT/GOOD/FAIR/POOR)
+   - Merge recommendation
 
 ---
 

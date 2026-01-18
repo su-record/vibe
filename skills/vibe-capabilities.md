@@ -74,8 +74,8 @@ Use prefix patterns to call GPT/Gemini:
 
 | LLM | Prefix | Example | Features |
 |-----|--------|---------|----------|
-| GPT | `gpt-`, `gpt.`, `지피티-` | `gpt.오늘 서울 날씨` | Web Search enabled |
-| Gemini | `gemini-`, `gemini.`, `제미나이-` | `gemini.Analyze UX` | Google Search enabled |
+| GPT | `gpt-`, `gpt.` | `gpt.today's weather in Seoul` | Web Search enabled |
+| Gemini | `gemini-`, `gemini.` | `gemini.Analyze UX` | Google Search enabled |
 | context7 | Plugin call | Library documentation | `/plugin install context7` |
 
 ## ULTRAWORK Mode

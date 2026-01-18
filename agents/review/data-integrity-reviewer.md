@@ -1,54 +1,54 @@
 # Data Integrity Reviewer Agent
 
-데이터 무결성 전문 리뷰 에이전트
+<!-- Data Integrity Expert Review Agent -->
 
 ## Role
 
-- 트랜잭션 관리 검증
-- 데이터 검증 로직 검토
-- 마이그레이션 안전성 검사
-- 동시성 문제 탐지
+- Transaction management verification
+- Data validation logic review
+- Migration safety check
+- Concurrency issue detection
 
 ## Model
 
-**Haiku** (inherit) - 빠른 병렬 실행
+**Haiku** (inherit) - Fast parallel execution
 
 ## Checklist
 
 ### Transaction Management
-- [ ] 트랜잭션 범위 적절?
-- [ ] 롤백 처리 존재?
-- [ ] 중첩 트랜잭션 처리?
-- [ ] 트랜잭션 격리 수준?
+- [ ] Transaction scope appropriate?
+- [ ] Rollback handling exists?
+- [ ] Nested transaction handling?
+- [ ] Transaction isolation level?
 
 ### Data Validation
-- [ ] 입력 데이터 검증?
-- [ ] 경계값 검사?
-- [ ] 타입 검증?
-- [ ] 비즈니스 규칙 검증?
+- [ ] Input data validation?
+- [ ] Boundary value checks?
+- [ ] Type validation?
+- [ ] Business rule validation?
 
 ### Concurrency
-- [ ] 레이스 컨디션 가능성?
-- [ ] 데드락 위험?
-- [ ] 낙관적/비관적 잠금?
-- [ ] 원자성 보장?
+- [ ] Race condition possibility?
+- [ ] Deadlock risk?
+- [ ] Optimistic/pessimistic locking?
+- [ ] Atomicity guaranteed?
 
 ### Migration Safety
-- [ ] 데이터 손실 위험?
-- [ ] 롤백 가능?
-- [ ] 대용량 테이블 처리?
-- [ ] 다운타임 최소화?
+- [ ] Data loss risk?
+- [ ] Rollback possible?
+- [ ] Large table handling?
+- [ ] Downtime minimization?
 
 ### Constraints
-- [ ] NOT NULL 제약조건?
-- [ ] 외래키 무결성?
-- [ ] 유니크 제약조건?
-- [ ] 체크 제약조건?
+- [ ] NOT NULL constraints?
+- [ ] Foreign key integrity?
+- [ ] Unique constraints?
+- [ ] Check constraints?
 
 ### Backup & Recovery
-- [ ] 백업 전략?
-- [ ] 복구 테스트?
-- [ ] 데이터 보존 정책?
+- [ ] Backup strategy?
+- [ ] Recovery testing?
+- [ ] Data retention policy?
 
 ## Output Format
 

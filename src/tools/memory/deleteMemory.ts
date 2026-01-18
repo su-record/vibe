@@ -5,7 +5,7 @@ import { ToolResult, ToolDefinition } from '../../types/tool.js';
 
 export const deleteMemoryDefinition: ToolDefinition = {
   name: 'delete_memory',
-  description: '잊어|삭제해|지워|forget|delete|remove|erase - Delete specific memory',
+  description: 'forget|delete|remove|erase - Delete specific memory',
   inputSchema: {
     type: 'object',
     properties: {

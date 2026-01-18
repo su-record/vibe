@@ -159,7 +159,7 @@ export async function exchangeCodeForTokens(code: string, state: string): Promis
 
   if (!tokenResponse.ok) {
     const errorText = await tokenResponse.text();
-    throw new Error(`토큰 교환 실패: ${errorText}`);
+    throw new Error(`Token exchange failed: ${errorText}`);
   }
 
   const tokenPayload = await tokenResponse.json() as TokenResponse;
@@ -255,7 +255,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<Refreshe
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`토큰 갱신 실패: ${errorText}`);
+    throw new Error(`Token refresh failed: ${errorText}`);
   }
 
   const payload = await response.json() as TokenResponse;
@@ -316,18 +316,18 @@ export function startOAuthFlow(): Promise<GeminiOAuthTokens> {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 실패</title></head>
+              <head><title>Authentication Failed</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 실패</h1>
-                <p>오류: ${error}</p>
-                <p>이 창을 닫고 다시 시도해주세요.</p>
+                <h1>Authentication Failed</h1>
+                <p>Error: ${error}</p>
+                <p>Please close this window and try again.</p>
               </body>
             </html>
           `);
           if (!isResolved) {
             isResolved = true;
             closeServer();
-            reject(new Error(`OAuth 오류: ${error}`));
+            reject(new Error(`OAuth error: ${error}`));
           }
           return;
         }
@@ -336,17 +336,17 @@ export function startOAuthFlow(): Promise<GeminiOAuthTokens> {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 실패</title></head>
+              <head><title>Authentication Failed</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 실패</h1>
-                <p>필수 파라미터가 없습니다.</p>
+                <h1>Authentication Failed</h1>
+                <p>Required parameters missing.</p>
               </body>
             </html>
           `);
           if (!isResolved) {
             isResolved = true;
             closeServer();
-            reject(new Error('필수 파라미터 누락'));
+            reject(new Error('Required parameters missing'));
           }
           return;
         }
@@ -357,11 +357,11 @@ export function startOAuthFlow(): Promise<GeminiOAuthTokens> {
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 성공</title></head>
+              <head><title>Authentication Successful</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 성공!</h1>
-                <p>${tokens.email}로 로그인되었습니다.</p>
-                <p>이 창을 닫아도 됩니다.</p>
+                <h1>Authentication Successful!</h1>
+                <p>Logged in as ${tokens.email}.</p>
+                <p>You may close this window.</p>
                 <script>setTimeout(() => window.close(), 2000);</script>
               </body>
             </html>
@@ -376,9 +376,9 @@ export function startOAuthFlow(): Promise<GeminiOAuthTokens> {
           res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`
             <html>
-              <head><title>인증 실패</title></head>
+              <head><title>Authentication Failed</title></head>
               <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1>인증 실패</h1>
+                <h1>Authentication Failed</h1>
                 <p>${(err as Error).message}</p>
               </body>
             </html>
@@ -400,7 +400,7 @@ export function startOAuthFlow(): Promise<GeminiOAuthTokens> {
     server.headersTimeout = 5000;
 
     server.listen(51121, 'localhost', () => {
-      console.log('\n브라우저에서 Google 로그인 페이지가 열립니다...\n');
+      console.log('\nOpening Google login page in browser...\n');
 
       // 브라우저 열기
       const platform = process.platform;
@@ -418,7 +418,7 @@ export function startOAuthFlow(): Promise<GeminiOAuthTokens> {
       if (!isResolved) {
         isResolved = true;
         if (err.code === 'EADDRINUSE') {
-          reject(new Error('포트 51121이 이미 사용 중입니다. 다른 인증 프로세스가 실행 중인지 확인하세요.'));
+          reject(new Error('Port 51121 is already in use. Check if another auth process is running.'));
         } else {
           reject(err);
         }
@@ -430,7 +430,7 @@ export function startOAuthFlow(): Promise<GeminiOAuthTokens> {
       if (!isResolved) {
         isResolved = true;
         closeServer();
-        reject(new Error('인증 타임아웃 (5분)'));
+        reject(new Error('Authentication timeout (5 minutes)'));
       }
     }, 5 * 60 * 1000);
   });
@@ -443,12 +443,12 @@ export async function getValidAccessToken(): Promise<ValidAccessToken> {
   const account = storage.getActiveAccount();
 
   if (!account) {
-    throw new Error('인증된 Gemini 계정이 없습니다. vibe gemini --auth로 로그인하세요.');
+    throw new Error('No authenticated Gemini account. Run vibe gemini auth to login.');
   }
 
   // 토큰이 만료되었으면 갱신
   if (storage.isTokenExpired(account)) {
-    console.log('액세스 토큰 갱신 중...');
+    console.log('Refreshing access token...');
     const newTokens = await refreshAccessToken(account.refreshToken);
     storage.updateAccessToken(account.email, newTokens.accessToken, newTokens.expires);
     return {

@@ -84,10 +84,10 @@ Enable maximum performance with `ultrawork` or `ulw`:
 
 | Keyword Pattern | Routes to | Use Case |
 |-----------------|-----------|----------|
-| `아키텍처`, `architecture`, `설계` | GPT | Architecture review |
-| `UI`, `UX`, `디자인` | Gemini | UI/UX feedback |
-| `디버깅`, `debugging`, `버그 찾` | GPT | Bug analysis |
-| `코드 분석`, `analyze code` | Gemini | Code review |
+| `architecture`, `design` | GPT | Architecture review |
+| `UI`, `UX` | Gemini | UI/UX feedback |
+| `debugging`, `find bug` | GPT | Bug analysis |
+| `analyze code` | Gemini | Code review |
 
 **Smart Routing features:**
 - Automatic LLM selection based on task type

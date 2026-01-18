@@ -136,17 +136,17 @@ After analysis:
 ```
 ## Next Steps
 
-개발을 진행하려면 워크플로우를 선택하세요:
+Choose a workflow to proceed with development:
 
-| 작업 규모 | 권장 방식 |
+| Task Scope | Recommended Approach |
 |----------|----------|
-| 간단한 수정 (1-2 파일) | Plan Mode |
-| 복잡한 기능 (3+ 파일, 리서치/검증 필요) | /vibe.spec |
+| Simple fix (1-2 files) | Plan Mode |
+| Complex feature (3+ files, research/verification needed) | /vibe.spec |
 
-1. `/vibe.spec "feature-name"` - VIBE 워크플로우 (병렬 리서치 + SPEC 검증)
-2. Plan Mode - 빠른 구현 (간단한 작업용)
+1. `/vibe.spec "feature-name"` - VIBE workflow (parallel research + SPEC verification)
+2. Plan Mode - Quick implementation (for simple tasks)
 
-어떤 방식으로 진행할까요?
+Which approach would you like to use?
 ```
 
 3. Wait for user's choice before proceeding
@@ -254,6 +254,102 @@ node -e "import('@su-record/vibe/tools').then(t => t.validateCodeQuality({target
 ```bash
 node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'analysis-login-module', value: 'Found 5 related files, complexity avg 6.2', category: 'analysis', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
+
+---
+
+## Quality Gate (Mandatory)
+
+### Analysis Quality Checklist
+
+Before completing analysis, ALL items must be checked:
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Completeness** | All related files identified | 20% |
+| **Completeness** | All API endpoints documented | 15% |
+| **Completeness** | All data models mapped | 15% |
+| **Accuracy** | File paths verified to exist | 10% |
+| **Accuracy** | Line numbers accurate | 10% |
+| **Depth** | Business logic explained | 10% |
+| **Depth** | Dependencies mapped | 10% |
+| **Actionability** | Next steps clearly defined | 10% |
+
+### Analysis Score Calculation
+
+```
+Score = Σ(checked items × weight) / 100
+
+Grades:
+- 95-100: ✅ EXCELLENT - Comprehensive analysis
+- 85-94:  ✅ GOOD - Ready for development
+- 70-84:  ⚠️ FAIR - Needs more exploration
+- 0-69:   ❌ POOR - Incomplete, re-analyze
+```
+
+### Analysis Depth Levels
+
+| Level | Scope | Output |
+|-------|-------|--------|
+| **L1: Surface** | File names, basic structure | File list only |
+| **L2: Structure** | Functions, classes, imports | Structure map |
+| **L3: Logic** | Business logic, data flow | Flow diagrams |
+| **L4: Deep** | Edge cases, dependencies, risks | Full analysis |
+
+**Minimum required: L3 for feature analysis, L2 for project overview**
+
+### Analysis Output Requirements
+
+Every analysis MUST include:
+
+1. **Overview Section**
+   - Feature description (1 sentence)
+   - Implementation status (Complete/In progress/Not implemented)
+   - Related file count
+
+2. **Structure Section**
+   - API endpoints table (Method, Path, Description, Auth)
+   - Core services list with key methods
+   - Data models with fields and relationships
+
+3. **Reference File List**
+   - Absolute or relative paths
+   - Line number ranges for key sections
+   - Brief description per file
+
+4. **Next Steps**
+   - Workflow choice prompt (Plan Mode vs VIBE)
+   - Specific action items if applicable
+
+### Forbidden Incomplete Patterns
+
+| Pattern | Issue | Required Fix |
+|---------|-------|--------------|
+| "and more..." | Incomplete list | List all items |
+| "etc." | Vague scope | Be specific |
+| "related files" without list | Missing details | Provide file paths |
+| Missing line numbers | Hard to navigate | Add `:L10-50` format |
+| No auth info on endpoints | Security gap | Always specify auth |
+
+### Code Quality Analysis Thresholds
+
+When running `--code` analysis:
+
+| Metric | Good | Warning | Critical |
+|--------|------|---------|----------|
+| Avg Complexity | ≤10 | 11-15 | >15 |
+| Max Function Length | ≤30 | 31-50 | >50 |
+| High Complexity Files | 0 | 1-3 | >3 |
+| Circular Dependencies | 0 | 1 | >1 |
+
+### Dependency Analysis Thresholds
+
+When running `--deps` analysis:
+
+| Metric | Good | Warning | Critical |
+|--------|------|---------|----------|
+| Outdated Packages | 0-3 | 4-10 | >10 |
+| Security Vulnerabilities | 0 | 1-2 (low) | Any high/critical |
+| Major Version Behind | 0 | 1-2 | >2 |
 
 ---
 

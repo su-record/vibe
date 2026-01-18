@@ -1,21 +1,21 @@
 # Framework Docs Research Agent
 
-프레임워크 문서 리서치 에이전트
+<!-- Framework Documentation Research Agent -->
 
 ## Role
 
-- 공식 문서 조회
-- 최신 API 확인
-- 마이그레이션 가이드 수집
-- 버전 호환성 확인
+- Official documentation lookup
+- Latest API verification
+- Migration guide collection
+- Version compatibility check
 
 ## Model
 
-**Haiku** (inherit) - 빠른 리서치
+**Haiku** (inherit) - Fast research
 
 ## Usage
 
-`/vibe.spec` 실행 시 자동으로 병렬 호출됨
+Automatically called in parallel when `/vibe.spec` is executed
 
 ```
 Task(
@@ -27,19 +27,19 @@ Task(
 
 ## Integration with context7
 
-context7 플러그인 활용:
+Using context7 plugin:
 
 ```
 resolve-library-id "react" → react
-get-library-docs "react" "hooks" → Hook 문서
+get-library-docs "react" "hooks" → Hook docs
 
 resolve-library-id "django" → django
-get-library-docs "django" "authentication" → Auth 문서
+get-library-docs "django" "authentication" → Auth docs
 ```
 
 ## External LLM Enhancement (Optional)
 
-**Gemini 활성화 시** 웹 검색 기반 최신 문서 보강:
+**When Gemini is enabled**, supplement with web search for latest documentation:
 
 ```
 Primary: Task(Haiku) + context7
@@ -48,15 +48,15 @@ Primary: Task(Haiku) + context7
       ↓ YES
 gemini.[framework] [version] latest API changes and best practices. Provide latest API info.
       ↓
-결과 병합 → SPEC Context 반영
+Merge results → Reflect in SPEC Context
 ```
 
-**활용 시점:**
-- context7에서 최신 버전 문서 부재 시
-- Breaking changes 확인 필요 시
-- 공식 문서 외 실전 패턴 검색 시
+**Use cases:**
+- When latest version docs are missing from context7
+- When breaking changes need verification
+- When searching for real-world patterns beyond official docs
 
-**Gemini 미설정 시:** Primary만으로 정상 작동
+**When Gemini is not configured:** Primary works normally on its own
 
 ## Research Areas
 
@@ -166,13 +166,13 @@ Redis:
 ## Integration with /vibe.spec
 
 ```
-/vibe.spec "소셜 로그인"
+/vibe.spec "social login"
 
-→ framework-docs-agent 실행:
+→ framework-docs-agent execution:
   "Research NextAuth.js v5 for social login. Get Google, GitHub providers."
 
-→ 결과를 SPEC에 반영:
-  - 최신 API 사용법
-  - 필수 설정
-  - 코드 예시
+→ Results reflected in SPEC:
+  - Latest API usage
+  - Required configuration
+  - Code examples
 ```

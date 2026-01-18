@@ -12,7 +12,7 @@ interface UIComponent {
 
 export const previewUiAsciiDefinition: ToolDefinition = {
   name: 'preview_ui_ascii',
-  description: 'UI 만들어|페이지 개발|페이지 만들어|컴포넌트 작성|레이아웃|화면 구성|create page|build UI|design component|make page|develop page - Preview UI before coding',
+  description: 'create page|build UI|design component|make page|develop page|layout|screen design - Preview UI before coding',
   inputSchema: {
     type: 'object',
     properties: {
@@ -282,7 +282,7 @@ export async function previewUiAscii(args: {
     ascii_preview: preview.join('\n'),
     mobile_preview: responsive ? mobilePreview : null,
     components_count: components.length,
-    message: '✅ 이 레이아웃으로 진행하시겠습니까? 승인하시면 코드 생성을 시작합니다.',
+    message: '✅ Proceed with this layout? Approve to start code generation.',
     action: 'preview_ui_ascii',
     status: 'awaiting_confirmation'
   };

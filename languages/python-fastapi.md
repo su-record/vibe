@@ -1,39 +1,40 @@
-# 🐍 Python + FastAPI 품질 규칙
+# Python + FastAPI Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄 (권장), ≤ 50줄 (허용)
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines (recommended), <= 50 lines (allowed)
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Python 특화 규칙
+## Python Specific Rules
 
-### 1. 타입 힌트 100% 필수
+### 1. 100% Type Hints Required
 
 ```python
-# ❌ 타입 힌트 없음
+# Bad: No type hints
 def get_user(user_id):
     return db.get(user_id)
 
-# ✅ 완전한 타입 힌트
+# Good: Complete type hints
 async def get_user(user_id: str, db: AsyncSession) -> User | None:
     result = await db.execute(select(User).where(User.id == user_id))
     return result.scalar_one_or_none()
 ```
 
-### 2. Pydantic으로 Contract 정의
+### 2. Define Contract with Pydantic
 
 ```python
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
 class CreateUserRequest(BaseModel):
-    """사용자 생성 요청 스키마"""
+    """User creation request schema"""
     email: EmailStr
     username: str = Field(min_length=3, max_length=50)
     password: str = Field(min_length=8)
@@ -56,25 +57,25 @@ class CreateUserRequest(BaseModel):
         }
 
 class UserResponse(BaseModel):
-    """사용자 응답 스키마"""
+    """User response schema"""
     id: str
     email: str
     username: str
     created_at: datetime
 
     class Config:
-        from_attributes = True  # SQLAlchemy 호환
+        from_attributes = True  # SQLAlchemy compatible
 ```
 
-### 3. async/await 패턴
+### 3. async/await Pattern
 
 ```python
-# ✅ 비동기 I/O (데이터베이스, API 호출)
+# Good: Async I/O (database, API calls)
 async def get_user_with_posts(
     user_id: str,
     db: AsyncSession
 ) -> tuple[User, list[Post]]:
-    # 병렬 실행
+    # Parallel execution
     user_task = db.execute(select(User).where(User.id == user_id))
     posts_task = db.execute(select(Post).where(Post.user_id == user_id))
 
@@ -85,15 +86,15 @@ async def get_user_with_posts(
 
     return user, posts
 
-# ❌ 동기 함수 (블로킹)
+# Bad: Synchronous function (blocking)
 def get_user(user_id: str):
-    return requests.get(f"/users/{user_id}")  # 블로킹!
+    return requests.get(f"/users/{user_id}")  # Blocking!
 ```
 
-### 4. Early Return 선호
+### 4. Prefer Early Return
 
 ```python
-# ❌ 중첩된 if문
+# Bad: Nested if statements
 async def process_order(order_id: str, db: AsyncSession):
     order = await get_order(order_id, db)
     if order:
@@ -103,7 +104,7 @@ async def process_order(order_id: str, db: AsyncSession):
                     return await process_items(order.items)
     return None
 
-# ✅ Early return
+# Good: Early return
 async def process_order(order_id: str, db: AsyncSession) -> ProcessResult | None:
     order = await get_order(order_id, db)
     if not order:
@@ -118,12 +119,12 @@ async def process_order(order_id: str, db: AsyncSession) -> ProcessResult | None
     return await process_items(order.items)
 ```
 
-### 5. Repository 패턴 (데이터 액세스 분리)
+### 5. Repository Pattern (Separate Data Access)
 
 ```python
-# ✅ Repository 레이어
+# Good: Repository layer
 class UserRepository:
-    """데이터 액세스만 담당"""
+    """Handles data access only"""
 
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -146,9 +147,9 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
-# ✅ Service 레이어 (비즈니스 로직)
+# Good: Service layer (business logic)
 class UserService:
-    """비즈니스 로직만 담당"""
+    """Handles business logic only"""
 
     def __init__(self, repository: UserRepository):
         self.repository = repository
@@ -156,15 +157,15 @@ class UserService:
     async def create_user(
         self, request: CreateUserRequest
     ) -> UserResponse:
-        # 비즈니스 규칙: 이메일 중복 체크
+        # Business rule: Check email duplication
         existing = await self.repository.get_by_email(request.email)
         if existing:
             raise HTTPException(409, detail="Email already exists")
 
-        # 비즈니스 규칙: 비밀번호 해싱
+        # Business rule: Hash password
         hashed_password = hash_password(request.password)
 
-        # 생성
+        # Create
         user = User(
             email=request.email,
             username=request.username,
@@ -175,14 +176,14 @@ class UserService:
         return UserResponse.model_validate(user)
 ```
 
-### 6. 의존성 주입 (FastAPI Depends)
+### 6. Dependency Injection (FastAPI Depends)
 
 ```python
 # app/core/deps.py
 from sqlalchemy.ext.asyncio import AsyncSession
 
 async def get_db() -> AsyncSession:
-    """데이터베이스 세션 의존성"""
+    """Database session dependency"""
     async with async_session_maker() as session:
         yield session
 
@@ -190,7 +191,7 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db)
 ) -> User:
-    """현재 사용자 의존성"""
+    """Current user dependency"""
     payload = decode_jwt(token)
     user = await get_user_by_id(payload["sub"], db)
     if not user:
@@ -202,16 +203,16 @@ async def get_current_user(
 async def get_current_user_profile(
     current_user: User = Depends(get_current_user)
 ):
-    """현재 사용자 프로필 조회"""
+    """Get current user profile"""
     return UserResponse.model_validate(current_user)
 ```
 
-### 7. 에러 처리 표준
+### 7. Error Handling Standard
 
 ```python
 from fastapi import HTTPException
 
-# ✅ 명확한 에러 메시지
+# Good: Clear error messages
 async def get_user(user_id: str, db: AsyncSession) -> User:
     user = await db.get(User, user_id)
     if not user:
@@ -221,13 +222,13 @@ async def get_user(user_id: str, db: AsyncSession) -> User:
         )
     return user
 
-# ✅ 커스텀 예외
+# Good: Custom exception
 class UserNotFoundError(Exception):
     def __init__(self, user_id: str):
         self.user_id = user_id
         super().__init__(f"User {user_id} not found")
 
-# 전역 예외 핸들러
+# Global exception handler
 @app.exception_handler(UserNotFoundError)
 async def user_not_found_handler(request: Request, exc: UserNotFoundError):
     return JSONResponse(
@@ -236,13 +237,13 @@ async def user_not_found_handler(request: Request, exc: UserNotFoundError):
     )
 ```
 
-### 8. SQLAlchemy 2.0 스타일
+### 8. SQLAlchemy 2.0 Style
 
 ```python
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
-# ✅ 2.0 스타일 (async + select)
+# Good: 2.0 style (async + select)
 async def get_users_with_posts(db: AsyncSession) -> list[User]:
     result = await db.execute(
         select(User)
@@ -253,30 +254,30 @@ async def get_users_with_posts(db: AsyncSession) -> list[User]:
     )
     return list(result.scalars().all())
 
-# ❌ 1.x 스타일 (레거시)
+# Bad: 1.x style (legacy)
 def get_users():
     return session.query(User).filter_by(is_active=True).all()
 ```
 
-### 9. Python 관용구 활용
+### 9. Python Idioms
 
 ```python
-# ✅ List comprehension
+# Good: List comprehension
 active_users = [u for u in users if u.is_active]
 
-# ✅ Dictionary comprehension
+# Good: Dictionary comprehension
 user_dict = {u.id: u.name for u in users}
 
-# ✅ Generator expression (메모리 효율)
+# Good: Generator expression (memory efficient)
 total = sum(u.age for u in users)
 
-# ✅ Context manager
+# Good: Context manager
 async with db.begin():
     user = User(...)
     db.add(user)
-    # 자동 commit/rollback
+    # Auto commit/rollback
 
-# ✅ Dataclass (간단한 데이터 구조)
+# Good: Dataclass (simple data structure)
 from dataclasses import dataclass
 
 @dataclass(frozen=True)  # Immutable
@@ -285,14 +286,14 @@ class Point:
     y: float
 ```
 
-### 10. 로깅 표준
+### 10. Logging Standard
 
 ```python
 import structlog
 
 logger = structlog.get_logger()
 
-# ✅ 구조화된 로깅
+# Good: Structured logging
 async def create_user(request: CreateUserRequest):
     logger.info(
         "user_creation_started",
@@ -318,30 +319,30 @@ async def create_user(request: CreateUserRequest):
         raise
 ```
 
-## 안티패턴
+## Anti-patterns
 
 ```python
-# ❌ any 타입
-def process_data(data: any):  # 타입 안전성 상실
+# Bad: any type
+def process_data(data: any):  # Type safety lost
     return data
 
-# ❌ 블로킹 I/O in async 함수
+# Bad: Blocking I/O in async function
 async def bad_example():
-    data = requests.get("https://api.example.com")  # 블로킹!
+    data = requests.get("https://api.example.com")  # Blocking!
     return data
 
-# ❌ 예외 무시
+# Bad: Ignoring exceptions
 try:
     risky_operation()
 except:
-    pass  # 위험!
+    pass  # Dangerous!
 
-# ❌ Mutable default argument
-def append_to_list(item, my_list=[]):  # 버그!
+# Bad: Mutable default argument
+def append_to_list(item, my_list=[]):  # Bug!
     my_list.append(item)
     return my_list
 
-# ✅ 올바른 방법
+# Good: Correct way
 def append_to_list(item, my_list: list | None = None):
     if my_list is None:
         my_list = []
@@ -349,38 +350,38 @@ def append_to_list(item, my_list: list | None = None):
     return my_list
 ```
 
-## 코드 품질 도구
+## Code Quality Tools
 
 ```bash
-# 포맷팅
+# Formatting
 black .
 isort .
 
-# 린팅
+# Linting
 flake8 .
 ruff check .
 
-# 타입 체크
+# Type check
 mypy app/ --strict
 
-# 테스트
+# Testing
 pytest tests/ -v --cov=app
 
-# 보안 체크
+# Security check
 bandit -r app/
 ```
 
-## 체크리스트
+## Checklist
 
-Python/FastAPI 코드 작성 시:
+When writing Python/FastAPI code:
 
-- [ ] 타입 힌트 100% (함수 시그니처, 변수)
-- [ ] Pydantic 스키마로 Contract 정의
-- [ ] async/await 사용 (I/O 작업)
-- [ ] Early return 패턴
-- [ ] Repository + Service 레이어 분리
-- [ ] 의존성 주입 (Depends)
-- [ ] 명확한 에러 메시지
-- [ ] 구조화된 로깅
-- [ ] 함수 ≤ 30줄 (SRP 준수)
-- [ ] 복잡도 ≤ 10
+- [ ] 100% type hints (function signatures, variables)
+- [ ] Define contract with Pydantic schema
+- [ ] Use async/await (I/O operations)
+- [ ] Early return pattern
+- [ ] Repository + Service layer separation
+- [ ] Dependency injection (Depends)
+- [ ] Clear error messages
+- [ ] Structured logging
+- [ ] Function <= 30 lines (SRP)
+- [ ] Complexity <= 10

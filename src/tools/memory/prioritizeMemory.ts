@@ -5,7 +5,7 @@ import { ToolResult, ToolDefinition } from '../../types/tool.js';
 
 export const prioritizeMemoryDefinition: ToolDefinition = {
   name: 'prioritize_memory',
-  description: '중요한 거|우선순위|prioritize|important|what matters|priority - Prioritize memories by importance',
+  description: 'prioritize|important|what matters|priority - Prioritize memories by importance',
   inputSchema: {
     type: 'object',
     properties: {

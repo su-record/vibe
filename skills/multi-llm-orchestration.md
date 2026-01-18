@@ -7,7 +7,7 @@ Guide for using GPT/Gemini as sub-agents in Claude Code via hooks.
 
 ## Calling GPT
 
-Use `gpt-`, `gpt.`, or `지피티-` prefix:
+Use `gpt-` or `gpt.` prefix:
 
 | Situation | Example |
 |-----------|---------|
@@ -20,14 +20,13 @@ Use `gpt-`, `gpt.`, or `지피티-` prefix:
 ### Usage Examples
 
 ```
-gpt- 이 인증 아키텍처를 검토해줘: [코드]
+gpt- Review this authentication architecture: [code]
 gpt.Review this REST API design
-지피티- 이 알고리즘 최적화 방법 알려줘
 ```
 
 ## Calling Gemini
 
-Use `gemini-`, `gemini.`, or `제미나이-` prefix:
+Use `gemini-` or `gemini.` prefix:
 
 | Situation | Example |
 |-----------|---------|
@@ -39,9 +38,8 @@ Use `gemini-`, `gemini.`, or `제미나이-` prefix:
 ### Usage Examples
 
 ```
-gemini- 이 로그인 폼 UX 개선해줘
+gemini- Improve UX for this login form
 gemini.Suggest improvements for this dashboard
-제미나이- 이 컴포넌트 구조 분석해줘
 ```
 
 ## When NOT to Use

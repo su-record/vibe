@@ -7,7 +7,7 @@ argument-hint: "feature name" or --phase N
 
 Execute **Scenario-Driven Implementation** with automatic quality verification.
 
-> **핵심 원칙**: 시나리오가 곧 구현 단위이자 검증 기준. 모든 시나리오 통과 = 품질 보장.
+> **Core Principle**: Scenarios are both the implementation unit and verification criteria. All scenarios passing = Quality guaranteed.
 
 ## Usage
 
@@ -22,86 +22,86 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 
 ## **Scenario-Driven Development (SDD)**
 
-> 비개발자도 품질을 신뢰할 수 있도록, **시나리오 = 구현 = 검증**을 자동화
+> Automate **Scenario = Implementation = Verification** so even non-developers can trust quality
 
-### 핵심 흐름
+### Core Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    SCENARIO-DRIVEN IMPLEMENTATION                │
 │                                                                  │
-│   Feature 파일 로드                                              │
+│   Load Feature file                                              │
 │        ↓                                                        │
 │   ┌──────────────────────────────────────────────────────────┐  │
 │   │ Scenario 1: Happy Path                                    │  │
 │   │   Given → When → Then                                     │  │
 │   │        ↓                                                  │  │
-│   │   [구현] → [즉시 검증] → ✅ Pass                          │  │
+│   │   [Implement] → [Verify immediately] → ✅ Pass            │  │
 │   └──────────────────────────────────────────────────────────┘  │
 │        ↓                                                        │
 │   ┌──────────────────────────────────────────────────────────┐  │
 │   │ Scenario 2: Edge Case                                     │  │
 │   │   Given → When → Then                                     │  │
 │   │        ↓                                                  │  │
-│   │   [구현] → [즉시 검증] → ❌ Fail → [수정] → ✅ Pass       │  │
+│   │   [Implement] → [Verify] → ❌ Fail → [Fix] → ✅ Pass      │  │
 │   └──────────────────────────────────────────────────────────┘  │
 │        ↓                                                        │
 │   ┌──────────────────────────────────────────────────────────┐  │
 │   │ Scenario N: ...                                           │  │
-│   │   [구현] → [즉시 검증] → ✅ Pass                          │  │
+│   │   [Implement] → [Verify immediately] → ✅ Pass            │  │
 │   └──────────────────────────────────────────────────────────┘  │
 │        ↓                                                        │
 │   ┌──────────────────────────────────────────────────────────┐  │
 │   │  📊 QUALITY REPORT                                        │  │
 │   │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │  │
-│   │  시나리오: 5/5 통과 ✅                                    │  │
-│   │  품질 점수: 94/100                                        │  │
-│   │  빌드: ✅ | 테스트: ✅                                    │  │
+│   │  Scenarios: 5/5 passed ✅                                 │  │
+│   │  Quality score: 94/100                                    │  │
+│   │  Build: ✅ | Tests: ✅                                    │  │
 │   └──────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 시나리오 = 구현 단위
+### Scenario = Implementation Unit
 
-**기존 방식 (Phase 기반)**:
+**Traditional approach (Phase-based)**:
 ```
-Phase 1 → Phase 2 → Phase 3 → ... → 마지막에 검증
+Phase 1 → Phase 2 → Phase 3 → ... → Verify at the end
                                       ↓
-                              "어디서 잘못됐지?"
+                              "Where did it go wrong?"
 ```
 
-**SDD 방식 (Scenario 기반)**:
+**SDD approach (Scenario-based)**:
 ```
-Scenario 1 → 구현 → 검증 ✅
-Scenario 2 → 구현 → 검증 ✅
-Scenario 3 → 구현 → 검증 ❌ → 수정 → ✅
+Scenario 1 → Implement → Verify ✅
+Scenario 2 → Implement → Verify ✅
+Scenario 3 → Implement → Verify ❌ → Fix → ✅
 ...
-전체 통과 = 품질 보장
+All pass = Quality guaranteed
 ```
 
-### 검증 자동화
+### Automated Verification
 
-각 시나리오 구현 후 **자동 검증**:
+After implementing each scenario, **automatic verification**:
 
-| 검증 항목 | 자동 체크 |
-|-----------|-----------|
-| Given (전제조건) | 상태/데이터 준비 확인 |
-| When (행동) | 기능 실행 가능 여부 |
-| Then (결과) | 예상 결과 일치 여부 |
-| 코드 품질 | 복잡도, 스타일, 보안 |
+| Verification Item | Auto Check |
+|-------------------|------------|
+| Given (precondition) | State/data preparation confirmed |
+| When (action) | Feature execution possible |
+| Then (result) | Expected result matches |
+| Code quality | Complexity, style, security |
 
-### 실패 시 자동 수정
+### Auto-Fix on Failure
 
 ```
-Scenario 검증 실패
+Scenario verification failed
       ↓
-[원인 분석] - 어떤 Then 조건이 실패?
+[Root cause analysis] - Which Then condition failed?
       ↓
-[수정 구현] - 해당 부분만 수정
+[Implement fix] - Fix only that part
       ↓
-[재검증] - 다시 체크
+[Re-verify] - Check again
       ↓
-통과할 때까지 반복 (최대 3회)
+Repeat until pass (max 3 times)
 ```
 
 ---
@@ -229,7 +229,7 @@ Claude:
 - `standards/complexity-metrics.md` - Functions ≤20 lines, nesting ≤3 levels
 - `quality/checklist.md` - Code quality checklist
 
-**Language guide:** `~/.claude/vibe/languages/{stack}.md` (전역 참조)
+**Language guide:** `~/.claude/vibe/languages/{stack}.md` (global reference)
 
 ## Description
 
@@ -272,31 +272,31 @@ When external LLMs are enabled in `.claude/vibe/config.json`:
 
 | Role | Method | Condition |
 |------|--------|-----------|
-| User direct query | `gpt.질문`, `gemini.질문` | Hook이 자동 처리 |
-| Internal orchestration | Bash로 전역 스크립트 호출 | Claude가 직접 호출 |
+| User direct query | `gpt.question`, `gemini.question` | Hook auto-handles |
+| Internal orchestration | Call global script via Bash | Claude calls directly |
 
-**사용자 질문 (Hook 자동 처리):**
-- `gpt.질문` - GPT 아키텍처 상담
-- `gemini.질문` - Gemini 질문/상담
+**User questions (Hook auto-handles):**
+- `gpt.question` - GPT architecture consultation
+- `gemini.question` - Gemini Q&A/consultation
 
-**Claude 내부 호출 (Bash로 직접):**
+**Claude internal calls (directly via Bash):**
 ```bash
 # Usage: node llm-orchestrate.js <provider> <mode> [systemPrompt] [prompt]
-#   - systemPrompt 생략 시 기본값 사용
-#   - systemPrompt에 "-" 전달 시 기본값 사용하고 다음 인자를 prompt로 처리
+#   - If systemPrompt omitted, uses default
+#   - If systemPrompt is "-", uses default and treats next argument as prompt
 
-# GPT 호출 (Windows)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[질문 내용]"
-# GPT 호출 (macOS/Linux)
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[질문 내용]"
+# GPT call (Windows)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[question content]"
+# GPT call (macOS/Linux)
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[question content]"
 
-# Gemini 호출 (Windows)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[질문 내용]"
-# Gemini 호출 (macOS/Linux)
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[질문 내용]"
+# Gemini call (Windows)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[question content]"
+# Gemini call (macOS/Linux)
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[question content]"
 
-# 커스텀 시스템 프롬프트 사용
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a code reviewer" "[질문 내용]"
+# Custom system prompt usage
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a code reviewer" "[question content]"
 ```
 
 ### External LLM Fallback
@@ -357,84 +357,84 @@ node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'auth-patt
 ### 1. Load SPEC + Feature
 
 ```
-📄 .claude/vibe/specs/{feature-name}.md      → SPEC (구조, 제약, 컨텍스트)
-📄 .claude/vibe/features/{feature-name}.feature → Feature (시나리오 = 구현 단위)
+📄 .claude/vibe/specs/{feature-name}.md      → SPEC (structure, constraints, context)
+📄 .claude/vibe/features/{feature-name}.feature → Feature (scenario = implementation unit)
 ```
 
-**Feature 파일이 없으면 에러**:
+**Error if Feature file missing**:
 ```
-❌ Feature 파일이 없습니다.
-   먼저 /vibe.spec "{feature-name}"을 실행하세요.
+❌ Feature file not found.
+   Run /vibe.spec "{feature-name}" first.
 ```
 
-### 2. Scenario 목록 추출
+### 2. Extract Scenario List
 
-Feature 파일에서 모든 Scenario 추출:
+Extract all Scenarios from Feature file:
 
 ```markdown
 ## Scenarios to Implement
 
 | # | Scenario | Status |
 |---|----------|--------|
-| 1 | 유효한 로그인 성공 | ⬜ |
-| 2 | 잘못된 비밀번호 에러 | ⬜ |
-| 3 | 이메일 형식 검증 | ⬜ |
-| 4 | 비밀번호 찾기 링크 | ⬜ |
+| 1 | Valid login success | ⬜ |
+| 2 | Invalid password error | ⬜ |
+| 3 | Email format validation | ⬜ |
+| 4 | Password reset link | ⬜ |
 
 Total: 4 scenarios
 ```
 
-### 3. Scenario-by-Scenario Implementation (핵심)
+### 3. Scenario-by-Scenario Implementation (Core)
 
-**각 시나리오마다**:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Scenario 1/4: 유효한 로그인 성공
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Given: 사용자가 등록되어 있다
-When: 유효한 이메일과 비밀번호로 로그인
-Then: 로그인 성공 + JWT 토큰 반환
-
-[Step 1] 구현 분석...
-  - 필요한 파일: auth.service.ts, login.controller.ts
-  - 관련 코드 탐색 중...
-
-[Step 2] 구현 중...
-  ✅ auth.service.ts - login() 메서드 추가
-  ✅ login.controller.ts - POST /login 엔드포인트
-
-[Step 3] 검증 중...
-  ✅ Given: 테스트 사용자 생성 가능
-  ✅ When: 로그인 API 호출 성공
-  ✅ Then: JWT 토큰 반환 확인
-
-✅ Scenario 1 통과!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**실패 시**:
+**For each scenario**:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Scenario 2/4: 잘못된 비밀번호 에러
+🎯 Scenario 1/4: Valid login success
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[Step 3] 검증 중...
-  ✅ Given: 테스트 사용자 존재
-  ✅ When: 잘못된 비밀번호로 로그인 시도
-  ❌ Then: "Invalid credentials" 에러 메시지
-     실제: "Error occurred" 반환됨
+Given: User is registered
+When: Login with valid email and password
+Then: Login success + JWT token returned
 
-[자동 수정 1/3]
-  원인: 에러 메시지 하드코딩 안됨
-  수정: auth.service.ts line 42
+[Step 1] Analyzing implementation...
+  - Required files: auth.service.ts, login.controller.ts
+  - Exploring related code...
 
-[재검증]
-  ✅ Then: "Invalid credentials" 에러 메시지
+[Step 2] Implementing...
+  ✅ auth.service.ts - Added login() method
+  ✅ login.controller.ts - POST /login endpoint
 
-✅ Scenario 2 통과! (수정 1회)
+[Step 3] Verifying...
+  ✅ Given: Test user creation possible
+  ✅ When: Login API call succeeded
+  ✅ Then: JWT token return confirmed
+
+✅ Scenario 1 passed!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**On failure**:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Scenario 2/4: Invalid password error
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Step 3] Verifying...
+  ✅ Given: Test user exists
+  ✅ When: Login attempt with wrong password
+  ❌ Then: "Invalid credentials" error message
+     Actual: "Error occurred" returned
+
+[Auto-fix 1/3]
+  Cause: Error message not properly set
+  Fix: auth.service.ts line 42
+
+[Re-verify]
+  ✅ Then: "Invalid credentials" error message
+
+✅ Scenario 2 passed! (1 fix)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -461,8 +461,8 @@ Then: 로그인 성공 + JWT 토큰 반환
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[질문]"
-│  [If Gemini enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[질문]"
+│  [If GPT enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[question]"
+│  [If Gemini enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[question]"
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ↓ (wait for all to complete)
@@ -624,144 +624,144 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 3. **Constraint compliance**: Check `<constraints>`
 4. **Run verification**: Execute verification commands
 
-### 4. Gemini 코드 리뷰 + 자동 수정 (NEW)
+### 4. Gemini Code Review + Auto-Fix (NEW)
 
-모든 시나리오 구현 완료 후, **Gemini가 코드를 리뷰하고 피드백 기반으로 자동 수정**:
+After all scenarios are implemented, **Gemini reviews the code and auto-fixes based on feedback**:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔍 GEMINI CODE REVIEW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[Step 1] Gemini에게 구현 코드 전송...
-  - 변경된 파일: auth.service.ts, auth.controller.ts, ...
+[Step 1] Sending implementation code to Gemini...
+  - Changed files: auth.service.ts, auth.controller.ts, ...
 
-[Step 2] Gemini 리뷰 결과:
+[Step 2] Gemini review results:
   ┌─────────────────────────────────────────────────────┐
   │ 📝 Gemini Feedback                                  │
   │                                                     │
-  │ 1. [개선] auth.service.ts:24                        │
-  │    비밀번호 비교 시 timing attack 방지 필요         │
-  │    → crypto.timingSafeEqual() 사용 권장            │
+  │ 1. [Improvement] auth.service.ts:24                 │
+  │    Need timing attack prevention for password compare│
+  │    → Recommend using crypto.timingSafeEqual()       │
   │                                                     │
-  │ 2. [개선] auth.controller.ts:15                     │
-  │    rate limiting 미적용                             │
-  │    → 로그인 시도 제한 추가 권장                    │
+  │ 2. [Improvement] auth.controller.ts:15              │
+  │    Rate limiting not applied                        │
+  │    → Recommend adding login attempt limit           │
   │                                                     │
-  │ 3. [스타일] auth.service.ts:42                      │
-  │    매직 넘버 사용                                   │
-  │    → 상수로 추출 권장                              │
+  │ 3. [Style] auth.service.ts:42                       │
+  │    Magic number usage                               │
+  │    → Recommend extracting to constant               │
   └─────────────────────────────────────────────────────┘
 
-[Step 3] 피드백 기반 자동 수정...
-  ✅ auth.service.ts:24 - timingSafeEqual 적용
-  ✅ auth.controller.ts:15 - rate limiter 추가
-  ✅ auth.service.ts:42 - 상수 추출
+[Step 3] Auto-fixing based on feedback...
+  ✅ auth.service.ts:24 - Applied timingSafeEqual
+  ✅ auth.controller.ts:15 - Added rate limiter
+  ✅ auth.service.ts:42 - Extracted constant
 
-[Step 4] 재검증...
-  ✅ 빌드 성공
-  ✅ 테스트 통과
+[Step 4] Re-verifying...
+  ✅ Build succeeded
+  ✅ Tests passed
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Gemini 리뷰 완료! 3개 개선사항 반영
+✅ Gemini review complete! 3 improvements applied
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**MUST: Gemini 코드 리뷰 (필수)**
+**MUST: Gemini Code Review (Required)**
 
-Gemini가 활성화된 경우, **반드시** 전역 훅 스크립트로 코드 리뷰:
+When Gemini is enabled, **must** use global hook script for code review:
 
 ```bash
 # Windows
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review this code for security, performance, best-practices: [code summary]. SPEC: [summary]. Scenarios: [list]"
 
 # macOS/Linux
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review this code for security, performance, best-practices: [code summary]. SPEC: [summary]. Scenarios: [list]"
 ```
 
-**호출 순서:**
-1. 변경된 파일들의 핵심 내용 요약
-2. SPEC 요구사항 요약 추가
-3. 전역 스크립트 호출 실행
-4. 응답의 피드백 항목별로 코드 수정
-5. 빌드/테스트 재실행
+**Call sequence:**
+1. Summarize key content of changed files
+2. Add SPEC requirements summary
+3. Execute global script call
+4. Fix code for each feedback item in response
+5. Re-run build/tests
 
-**fallback 처리:**
-- `"status": "fallback"` 응답 시 → 스킵하고 다음 단계로 진행
-- 네트워크 에러 시 → 1회 재시도 후 스킵
+**Fallback handling:**
+- On `"status": "fallback"` response → Skip and proceed to next step
+- On network error → Retry once, then skip
 
-**리뷰 적용 규칙:**
+**Review application rules:**
 
-| 피드백 유형 | 처리 |
-|------------|------|
-| 보안 취약점 | 즉시 자동 수정 |
-| 성능 개선 | 즉시 자동 수정 |
-| 베스트 프랙티스 | 자동 수정 |
-| 스타일/취향 | 선택적 적용 (프로젝트 컨벤션 우선) |
+| Feedback Type | Action |
+|---------------|--------|
+| Security vulnerability | Auto-fix immediately |
+| Performance improvement | Auto-fix immediately |
+| Best practices | Auto-fix |
+| Style/preference | Apply selectively (project convention takes priority) |
 
-**조건:**
-- Gemini MCP가 활성화된 경우에만 실행 (`vibe gemini auth`)
-- fallback 응답 시 스킵하고 다음 단계로 진행
-- 수정 후 반드시 빌드/테스트 재검증
+**Conditions:**
+- Only runs when Gemini MCP is enabled (`vibe gemini auth`)
+- Skip and proceed on fallback response
+- Must re-verify build/tests after fixes
 
-### 5. Quality Report (자동 생성)
+### 5. Quality Report (Auto-generated)
 
-모든 시나리오 완료 + Gemini 리뷰 후 **품질 리포트 자동 생성**:
+After all scenarios complete + Gemini review, **quality report is auto-generated**:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  📊 QUALITY REPORT: login                                        │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ✅ 시나리오: 4/4 통과                                          │
+│  ✅ Scenarios: 4/4 passed                                       │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │ # │ Scenario                  │ Status │ Retries │        │  │
 │  │───│───────────────────────────│────────│─────────│        │  │
-│  │ 1 │ 유효한 로그인 성공         │ ✅     │ 0       │        │  │
-│  │ 2 │ 잘못된 비밀번호 에러       │ ✅     │ 1       │        │  │
-│  │ 3 │ 이메일 형식 검증           │ ✅     │ 0       │        │  │
-│  │ 4 │ 비밀번호 찾기 링크         │ ✅     │ 0       │        │  │
+│  │ 1 │ Valid login success       │ ✅     │ 0       │        │  │
+│  │ 2 │ Invalid password error    │ ✅     │ 1       │        │  │
+│  │ 3 │ Email format validation   │ ✅     │ 0       │        │  │
+│  │ 4 │ Password reset link       │ ✅     │ 0       │        │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
-│  📈 품질 점수: 94/100                                           │
+│  📈 Quality score: 94/100                                       │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │ 항목              │ 결과  │ 비고                        │    │
-│  │───────────────────│───────│─────────────────────────────│    │
-│  │ 빌드              │ ✅    │ npm run build 성공          │    │
-│  │ 테스트            │ ✅    │ 12/12 통과                  │    │
-│  │ 타입 검사         │ ✅    │ 에러 0개                    │    │
-│  │ 복잡도            │ ✅    │ 모든 함수 ≤30줄            │    │
-│  │ 보안              │ ✅    │ 취약점 0개                  │    │
-│  │ Gemini 리뷰       │ ✅    │ 3개 개선사항 반영           │    │
+│  │ Item              │ Result │ Notes                       │    │
+│  │───────────────────│────────│─────────────────────────────│    │
+│  │ Build             │ ✅     │ npm run build succeeded     │    │
+│  │ Tests             │ ✅     │ 12/12 passed                │    │
+│  │ Type check        │ ✅     │ 0 errors                    │    │
+│  │ Complexity        │ ✅     │ All functions ≤30 lines     │    │
+│  │ Security          │ ✅     │ 0 vulnerabilities           │    │
+│  │ Gemini review     │ ✅     │ 3 improvements applied      │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
-│  ⏱️ 총 소요: 3m 42s                                             │
+│  ⏱️ Total time: 3m 42s                                          │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**사용자가 확인할 것**:
-- 시나리오 통과율 (4/4 = 100%)
-- 품질 점수 (94/100)
-- 빌드/테스트 상태
+**What users should check**:
+- Scenario pass rate (4/4 = 100%)
+- Quality score (94/100)
+- Build/test status
 
-**이것만 보면 품질을 신뢰할 수 있음.**
+**This alone is enough to trust quality.**
 
 ### 6. Update Feature File
 
-시나리오 상태 자동 업데이트:
+Auto-update scenario status:
 
 ```markdown
 ## Coverage
 
 | Scenario | SPEC AC | Status |
 |----------|---------|--------|
-| 유효한 로그인 성공 | AC-1 | ✅ |
-| 잘못된 비밀번호 에러 | AC-2 | ✅ |
-| 이메일 형식 검증 | AC-3 | ✅ |
-| 비밀번호 찾기 링크 | AC-4 | ✅ |
+| Valid login success | AC-1 | ✅ |
+| Invalid password error | AC-2 | ✅ |
+| Email format validation | AC-3 | ✅ |
+| Password reset link | AC-4 | ✅ |
 
 **Last verified**: 2024-01-15 14:32
 **Quality score**: 94/100
@@ -806,125 +806,125 @@ Claude:
 
 | # | Scenario | Status |
 |---|----------|--------|
-| 1 | 유효한 로그인 성공 | ⬜ |
-| 2 | 잘못된 비밀번호 에러 | ⬜ |
-| 3 | 이메일 형식 검증 | ⬜ |
-| 4 | 비밀번호 찾기 링크 | ⬜ |
+| 1 | Valid login success | ⬜ |
+| 2 | Invalid password error | ⬜ |
+| 3 | Email format validation | ⬜ |
+| 4 | Password reset link | ⬜ |
 
 Total: 4 scenarios
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Scenario 1/4: 유효한 로그인 성공
+🎯 Scenario 1/4: Valid login success
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Given: 사용자가 등록되어 있다
-When: 유효한 이메일과 비밀번호로 로그인
-Then: 로그인 성공 + JWT 토큰 반환
+Given: User is registered
+When: Login with valid email and password
+Then: Login success + JWT token returned
 
-⚡ [PARALLEL] 탐색 중...
-✅ 탐색 완료 (2.1s)
+⚡ [PARALLEL] Exploring...
+✅ Exploration complete (2.1s)
 
-🔨 구현 중...
-  ✅ auth.service.ts - login() 추가
+🔨 Implementing...
+  ✅ auth.service.ts - Added login()
   ✅ auth.controller.ts - POST /login
 
-🔍 검증 중...
+🔍 Verifying...
   ✅ Given: OK
   ✅ When: OK
   ✅ Then: OK
 
-✅ Scenario 1 통과!
+✅ Scenario 1 passed!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Scenario 2/4: 잘못된 비밀번호 에러
+🎯 Scenario 2/4: Invalid password error
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔨 구현 중...
-  ✅ auth.service.ts - 비밀번호 검증 로직
+🔨 Implementing...
+  ✅ auth.service.ts - Password validation logic
 
-🔍 검증 중...
+🔍 Verifying...
   ✅ Given: OK
   ✅ When: OK
-  ❌ Then: "Invalid credentials" 에러 메시지
-     실제: "Error" 반환
+  ❌ Then: "Invalid credentials" error message
+     Actual: "Error" returned
 
-🔄 자동 수정 1/3...
-  수정: auth.service.ts line 42
+🔄 Auto-fix 1/3...
+  Fix: auth.service.ts line 42
 
-🔍 재검증...
+🔍 Re-verifying...
   ✅ Then: OK
 
-✅ Scenario 2 통과! (수정 1회)
+✅ Scenario 2 passed! (1 fix)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Scenario 3/4: 이메일 형식 검증
+🎯 Scenario 3/4: Email format validation
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔨 구현 중...
-🔍 검증 중...
-✅ Scenario 3 통과!
+🔨 Implementing...
+🔍 Verifying...
+✅ Scenario 3 passed!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Scenario 4/4: 비밀번호 찾기 링크
+🎯 Scenario 4/4: Password reset link
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔨 구현 중...
-🔍 검증 중...
-✅ Scenario 4 통과!
+🔨 Implementing...
+🔍 Verifying...
+✅ Scenario 4 passed!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔍 GEMINI CODE REVIEW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📤 Gemini에게 코드 전송 중...
-📝 Gemini 피드백:
-  1. [보안] timing attack 방지 필요 → 수정 중...
-  2. [성능] 불필요한 DB 호출 → 수정 중...
+📤 Sending code to Gemini...
+📝 Gemini feedback:
+  1. [Security] Need timing attack prevention → Fixing...
+  2. [Performance] Unnecessary DB call → Fixing...
 
-✅ 2개 개선사항 자동 반영
-🔍 재검증... ✅ 통과
+✅ 2 improvements auto-applied
+🔍 Re-verifying... ✅ Passed
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  📊 QUALITY REPORT: login                                        │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ✅ 시나리오: 4/4 통과                                          │
+│  ✅ Scenarios: 4/4 passed                                       │
 │                                                                 │
 │  | # | Scenario              | Status | Retries |               │
 │  |---|───────────────────────|───────|─────────|               │
-│  | 1 | 유효한 로그인 성공     | ✅    | 0       |               │
-│  | 2 | 잘못된 비밀번호 에러   | ✅    | 1       |               │
-│  | 3 | 이메일 형식 검증       | ✅    | 0       |               │
-│  | 4 | 비밀번호 찾기 링크     | ✅    | 0       |               │
+│  | 1 | Valid login success   | ✅    | 0       |               │
+│  | 2 | Invalid password error| ✅    | 1       |               │
+│  | 3 | Email format validation| ✅   | 0       |               │
+│  | 4 | Password reset link   | ✅    | 0       |               │
 │                                                                 │
-│  📈 품질 점수: 94/100                                           │
-│  빌드: ✅ | 테스트: ✅ | 타입: ✅ | Gemini: ✅ (2개 반영)       │
+│  📈 Quality score: 94/100                                       │
+│  Build: ✅ | Tests: ✅ | Types: ✅ | Gemini: ✅ (2 applied)     │
 │                                                                 │
-│  ⏱️ 총 소요: 3m 42s                                             │
+│  ⏱️ Total time: 3m 42s                                          │
 └─────────────────────────────────────────────────────────────────┘
 
-🎉 구현 완료! 모든 시나리오 통과 + Gemini 리뷰 반영.
+🎉 Implementation complete! All scenarios passed + Gemini review applied.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔍 AUTO REVIEW (13+ Agents)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-⚡ [PARALLEL] 13개 전문 에이전트 리뷰 중...
+⚡ [PARALLEL] 13 expert agents reviewing...
   - security-reviewer ✅
   - performance-reviewer ✅
   - architecture-reviewer ✅
   - ...
 
-📋 리뷰 결과:
+📋 Review results:
   - P1 Critical: 0
   - P2 Important: 2
   - P3 Nice-to-have: 1
 
-🔧 P2 자동 수정 중...
-  1. [PERF] N+1 쿼리 → 수정 완료
-  2. [ARCH] 순환 의존성 → 수정 완료
+🔧 Auto-fixing P2 issues...
+  1. [PERF] N+1 query → Fixed
+  2. [ARCH] Circular dependency → Fixed
 
-✅ Auto Review 완료! 2개 문제 자동 해결.
+✅ Auto Review complete! 2 issues auto-resolved.
 ```
 
 ### Phase-specific Execution
@@ -956,6 +956,71 @@ On failure:
 2. Review `<constraints>`
 3. Fix code and retry
 4. If continues to fail, report to user
+
+---
+
+## Quality Gate (Mandatory)
+
+### Implementation Quality Checklist
+
+Before marking any scenario as complete, ALL items must pass:
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Functionality** | All Given/When/Then conditions verified | 20% |
+| **Functionality** | Edge cases handled per scenario | 10% |
+| **Code Quality** | No `any` types in TypeScript | 10% |
+| **Code Quality** | Functions ≤30 lines, nesting ≤3 levels | 10% |
+| **Code Quality** | No hardcoded values (use constants) | 5% |
+| **Security** | Input validation implemented | 10% |
+| **Security** | Authentication/authorization checked | 5% |
+| **Error Handling** | Try-catch or error states present | 10% |
+| **Error Handling** | User-friendly error messages | 5% |
+| **Testing** | Unit tests exist for core logic | 10% |
+| **Performance** | No N+1 queries or unnecessary loops | 5% |
+
+### Quality Score Calculation
+
+```
+Score = Σ(checked items × weight) / 100
+
+Grades:
+- 95-100: ✅ EXCELLENT - Ready to merge
+- 85-94:  ✅ GOOD - Minor improvements recommended
+- 70-84:  ⚠️ FAIR - Improvements required before merge
+- 0-69:   ❌ POOR - Major fixes needed
+```
+
+### Quality Gate Thresholds
+
+| Gate | Minimum Score | Condition |
+|------|---------------|-----------|
+| **Scenario Complete** | 85 | Each scenario must score ≥85 |
+| **Phase Complete** | 90 | Average of all scenarios ≥90 |
+| **Feature Complete** | 90 | All phases complete + Gemini review |
+
+### Auto-Fix Triggers
+
+| Issue Type | Auto-Fix Action |
+|------------|-----------------|
+| Missing error handling | Add try-catch wrapper |
+| Hardcoded values | Extract to constants file |
+| Missing input validation | Add validation schema |
+| Function too long | Suggest split points |
+| N+1 query detected | Add eager loading |
+
+### Forbidden Patterns (Block Merge)
+
+| Pattern | Why Forbidden | Detection |
+|---------|---------------|-----------|
+| `console.log` | Debug code in production | Regex scan |
+| `// TODO` without issue | Untracked work | Comment scan |
+| `any` type | Type safety bypass | TypeScript check |
+| `@ts-ignore` | Type error suppression | TypeScript check |
+| Empty catch blocks | Silent error swallowing | AST analysis |
+| Commented-out code | Dead code | Comment scan |
+
+---
 
 ## Next Step
 

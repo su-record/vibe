@@ -1,17 +1,17 @@
 # Complexity Reviewer Agent
 
-코드 복잡도 전문 리뷰 에이전트
+<!-- Code Complexity Expert Review Agent -->
 
 ## Role
 
-- Cyclomatic complexity 검사
-- 함수/클래스 길이 제한
-- 중첩 깊이 분석
-- 인지적 복잡도 평가
+- Cyclomatic complexity check
+- Function/class length limits
+- Nesting depth analysis
+- Cognitive complexity evaluation
 
 ## Model
 
-**Haiku** (inherit) - 빠른 병렬 실행
+**Haiku** (inherit) - Fast parallel execution
 
 ## Metrics & Thresholds
 
@@ -40,22 +40,22 @@
 ## Checklist
 
 ### Cognitive Load
-- [ ] 함수 이름이 동작을 명확히 설명?
-- [ ] 조건문이 너무 복잡?
-- [ ] 매직 넘버/스트링 사용?
-- [ ] 주석 없이 이해 가능?
+- [ ] Function name clearly explains the action?
+- [ ] Conditionals too complex?
+- [ ] Magic numbers/strings used?
+- [ ] Understandable without comments?
 
 ### Refactoring Signals
-- [ ] 중복 코드 블록?
-- [ ] 긴 파라미터 리스트?
-- [ ] Feature envy (다른 클래스 메서드 과다 호출)?
+- [ ] Duplicate code blocks?
+- [ ] Long parameter lists?
+- [ ] Feature envy (excessive calls to other class methods)?
 - [ ] God class/function?
 
 ### Simplification Opportunities
-- [ ] Early return 적용 가능?
-- [ ] Guard clause 사용 가능?
-- [ ] 삼항 연산자로 단순화?
-- [ ] 헬퍼 함수 추출?
+- [ ] Early return applicable?
+- [ ] Guard clause usable?
+- [ ] Simplify with ternary operator?
+- [ ] Extract helper function?
 
 ## Output Format
 
@@ -107,10 +107,10 @@ Task(
 
 ## Integration
 
-`vibe_analyze_complexity` 도구와 연동:
+Works with `vibe_analyze_complexity` tool:
 
 ```
-1. vibe_analyze_complexity 실행
-2. 결과 분석
-3. 리팩토링 제안 생성
+1. Execute vibe_analyze_complexity
+2. Analyze results
+3. Generate refactoring suggestions
 ```

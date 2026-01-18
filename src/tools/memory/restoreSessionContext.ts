@@ -5,7 +5,7 @@ import { ToolResult, ToolDefinition } from '../../types/tool.js';
 
 export const restoreSessionContextDefinition: ToolDefinition = {
   name: 'restore_session_context',
-  description: 'restore|revert|go back|복원|되돌려 - Restore previous session context',
+  description: 'restore|revert|go back - Restore previous session context',
   inputSchema: {
     type: 'object',
     properties: {

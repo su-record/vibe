@@ -153,7 +153,7 @@ async function main() {
     const result = await callWithRetry(currentProvider, cleanPrompt, systemPrompt, jsonMode);
 
     if (result.success) {
-      console.log(`${label} 응답: ${result.result}`);
+      console.log(`${label} response: ${result.result}`);
       return;
     }
 

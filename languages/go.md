@@ -1,58 +1,59 @@
-# 🐹 Go 품질 규칙
+# Go Quality Rules
 
-## 핵심 원칙 (core에서 상속)
+## Core Principles (inherited from core)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄
-✅ 중첩 ≤ 3단계
-✅ Cyclomatic complexity ≤ 10
+# Core Principles (inherited from core)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines
+Nesting <= 3 levels
+Cyclomatic complexity <= 10
 ```
 
-## Go 특화 규칙
+## Go Specific Rules
 
-### 1. 에러 처리
+### 1. Error Handling
 
 ```go
-// ❌ 에러 무시
+// Bad: Ignoring error
 data, _ := ioutil.ReadFile("config.json")
 
-// ✅ 에러 항상 처리
+// Good: Always handle errors
 data, err := ioutil.ReadFile("config.json")
 if err != nil {
-    return fmt.Errorf("설정 파일 읽기 실패: %w", err)
+    return fmt.Errorf("failed to read config file: %w", err)
 }
 
-// ✅ 커스텀 에러 타입
+// Good: Custom error type
 type NotFoundError struct {
     Resource string
     ID       string
 }
 
 func (e *NotFoundError) Error() string {
-    return fmt.Sprintf("%s (ID: %s)를 찾을 수 없습니다", e.Resource, e.ID)
+    return fmt.Sprintf("%s not found (ID: %s)", e.Resource, e.ID)
 }
 
-// 사용
+// Usage
 func GetUser(id string) (*User, error) {
     user, err := repo.FindByID(id)
     if err != nil {
-        return nil, fmt.Errorf("사용자 조회 실패: %w", err)
+        return nil, fmt.Errorf("failed to get user: %w", err)
     }
     if user == nil {
-        return nil, &NotFoundError{Resource: "사용자", ID: id}
+        return nil, &NotFoundError{Resource: "User", ID: id}
     }
     return user, nil
 }
 ```
 
-### 2. 구조체와 인터페이스
+### 2. Structs and Interfaces
 
 ```go
-// ✅ 구조체 정의
+// Good: Struct definition
 type User struct {
     ID        string    `json:"id"`
     Email     string    `json:"email"`
@@ -61,7 +62,7 @@ type User struct {
     UpdatedAt time.Time `json:"updated_at"`
 }
 
-// ✅ 생성자 함수
+// Good: Constructor function
 func NewUser(email, name string) *User {
     now := time.Now()
     return &User{
@@ -73,7 +74,7 @@ func NewUser(email, name string) *User {
     }
 }
 
-// ✅ 작은 인터페이스 (Go의 철학)
+// Good: Small interfaces (Go philosophy)
 type Reader interface {
     Read(p []byte) (n int, err error)
 }
@@ -82,13 +83,13 @@ type Writer interface {
     Write(p []byte) (n int, err error)
 }
 
-// ✅ 인터페이스 조합
+// Good: Interface composition
 type ReadWriter interface {
     Reader
     Writer
 }
 
-// ✅ Repository 인터페이스
+// Good: Repository interface
 type UserRepository interface {
     FindByID(ctx context.Context, id string) (*User, error)
     FindByEmail(ctx context.Context, email string) (*User, error)
@@ -98,12 +99,12 @@ type UserRepository interface {
 }
 ```
 
-### 3. Context 사용
+### 3. Context Usage
 
 ```go
-// ✅ Context 전파
+// Good: Context propagation
 func (s *UserService) GetUser(ctx context.Context, id string) (*User, error) {
-    // Context를 하위 함수에 전달
+    // Pass context to downstream functions
     user, err := s.repo.FindByID(ctx, id)
     if err != nil {
         return nil, err
@@ -111,7 +112,7 @@ func (s *UserService) GetUser(ctx context.Context, id string) (*User, error) {
     return user, nil
 }
 
-// ✅ Context 타임아웃
+// Good: Context timeout
 func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
     ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
     defer cancel()
@@ -119,7 +120,7 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
     result, err := h.service.Process(ctx)
     if err != nil {
         if errors.Is(err, context.DeadlineExceeded) {
-            http.Error(w, "요청 시간 초과", http.StatusRequestTimeout)
+            http.Error(w, "Request timeout", http.StatusRequestTimeout)
             return
         }
         http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -130,10 +131,10 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-### 4. HTTP 핸들러 (net/http, Gin, Echo)
+### 4. HTTP Handlers (net/http, Gin, Echo)
 
 ```go
-// ✅ net/http 핸들러
+// Good: net/http handler
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
     id := chi.URLParam(r, "id")
 
@@ -144,7 +145,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
             http.Error(w, err.Error(), http.StatusNotFound)
             return
         }
-        http.Error(w, "서버 오류", http.StatusInternalServerError)
+        http.Error(w, "Server error", http.StatusInternalServerError)
         return
     }
 
@@ -152,7 +153,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(user)
 }
 
-// ✅ Gin 핸들러
+// Good: Gin handler
 func (h *UserHandler) GetUser(c *gin.Context) {
     id := c.Param("id")
 
@@ -163,14 +164,14 @@ func (h *UserHandler) GetUser(c *gin.Context) {
             c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
             return
         }
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "서버 오류"})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error"})
         return
     }
 
     c.JSON(http.StatusOK, user)
 }
 
-// ✅ Echo 핸들러
+// Good: Echo handler
 func (h *UserHandler) GetUser(c echo.Context) error {
     id := c.Param("id")
 
@@ -180,17 +181,17 @@ func (h *UserHandler) GetUser(c echo.Context) error {
         if errors.As(err, &notFound) {
             return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
         }
-        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "서버 오류"})
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
     }
 
     return c.JSON(http.StatusOK, user)
 }
 ```
 
-### 5. 의존성 주입
+### 5. Dependency Injection
 
 ```go
-// ✅ 구조체에 의존성 주입
+// Good: Inject dependencies into struct
 type UserService struct {
     repo   UserRepository
     cache  CacheRepository
@@ -209,7 +210,7 @@ func NewUserService(
     }
 }
 
-// ✅ 옵션 패턴
+// Good: Options pattern
 type ServerOption func(*Server)
 
 func WithPort(port int) ServerOption {
@@ -226,7 +227,7 @@ func WithTimeout(timeout time.Duration) ServerOption {
 
 func NewServer(opts ...ServerOption) *Server {
     s := &Server{
-        port:    8080,           // 기본값
+        port:    8080,           // Default
         timeout: 30 * time.Second,
     }
     for _, opt := range opts {
@@ -235,17 +236,17 @@ func NewServer(opts ...ServerOption) *Server {
     return s
 }
 
-// 사용
+// Usage
 server := NewServer(
     WithPort(3000),
     WithTimeout(60*time.Second),
 )
 ```
 
-### 6. 동시성
+### 6. Concurrency
 
 ```go
-// ✅ Goroutine + Channel
+// Good: Goroutine + Channel
 func ProcessItems(ctx context.Context, items []Item) ([]Result, error) {
     results := make(chan Result, len(items))
     errs := make(chan error, len(items))
@@ -264,7 +265,7 @@ func ProcessItems(ctx context.Context, items []Item) ([]Result, error) {
         }(item)
     }
 
-    // 결과 수집
+    // Collect results
     go func() {
         wg.Wait()
         close(results)
@@ -276,7 +277,7 @@ func ProcessItems(ctx context.Context, items []Item) ([]Result, error) {
         finalResults = append(finalResults, result)
     }
 
-    // 첫 번째 에러 반환
+    // Return first error
     select {
     case err := <-errs:
         return nil, err
@@ -285,7 +286,7 @@ func ProcessItems(ctx context.Context, items []Item) ([]Result, error) {
     }
 }
 
-// ✅ errgroup 사용 (권장)
+// Good: Using errgroup (recommended)
 import "golang.org/x/sync/errgroup"
 
 func ProcessItems(ctx context.Context, items []Item) ([]Result, error) {
@@ -293,7 +294,7 @@ func ProcessItems(ctx context.Context, items []Item) ([]Result, error) {
     results := make([]Result, len(items))
 
     for i, item := range items {
-        i, item := i, item // 클로저 캡처
+        i, item := i, item // Closure capture
         g.Go(func() error {
             result, err := processItem(ctx, item)
             if err != nil {
@@ -311,19 +312,19 @@ func ProcessItems(ctx context.Context, items []Item) ([]Result, error) {
 }
 ```
 
-### 7. 테스트
+### 7. Testing
 
 ```go
-// ✅ 테이블 기반 테스트
+// Good: Table-driven tests
 func TestAdd(t *testing.T) {
     tests := []struct {
         name     string
         a, b     int
         expected int
     }{
-        {"양수 덧셈", 2, 3, 5},
-        {"음수 덧셈", -1, -2, -3},
-        {"영과 덧셈", 0, 5, 5},
+        {"positive addition", 2, 3, 5},
+        {"negative addition", -1, -2, -3},
+        {"addition with zero", 0, 5, 5},
     }
 
     for _, tt := range tests {
@@ -336,7 +337,7 @@ func TestAdd(t *testing.T) {
     }
 }
 
-// ✅ Mock 사용 (testify)
+// Good: Using mock (testify)
 type MockUserRepository struct {
     mock.Mock
 }
@@ -353,7 +354,7 @@ func TestUserService_GetUser(t *testing.T) {
     mockRepo := new(MockUserRepository)
     service := NewUserService(mockRepo, nil, slog.Default())
 
-    expectedUser := &User{ID: "123", Name: "테스트"}
+    expectedUser := &User{ID: "123", Name: "Test"}
     mockRepo.On("FindByID", mock.Anything, "123").Return(expectedUser, nil)
 
     user, err := service.GetUser(context.Background(), "123")
@@ -364,33 +365,33 @@ func TestUserService_GetUser(t *testing.T) {
 }
 ```
 
-## 파일 구조
+## File Structure
 
-```
+```text
 project/
 ├── cmd/
 │   └── server/
-│       └── main.go       # 엔트리포인트
+│       └── main.go       # Entry point
 ├── internal/
-│   ├── domain/           # 도메인 모델
-│   ├── handler/          # HTTP 핸들러
-│   ├── service/          # 비즈니스 로직
-│   ├── repository/       # 데이터 액세스
-│   └── middleware/       # 미들웨어
-├── pkg/                  # 외부 공개 패키지
-├── config/               # 설정
-├── migrations/           # DB 마이그레이션
+│   ├── domain/           # Domain models
+│   ├── handler/          # HTTP handlers
+│   ├── service/          # Business logic
+│   ├── repository/       # Data access
+│   └── middleware/       # Middleware
+├── pkg/                  # Public packages
+├── config/               # Configuration
+├── migrations/           # DB migrations
 ├── go.mod
 └── go.sum
 ```
 
-## 체크리스트
+## Checklist
 
-- [ ] 에러 항상 처리 (_, err 금지)
-- [ ] fmt.Errorf("%w", err)로 에러 래핑
-- [ ] Context 첫 번째 인자로 전달
-- [ ] 작은 인터페이스 정의
-- [ ] 생성자 함수 (NewXxx) 사용
-- [ ] 테이블 기반 테스트
-- [ ] gofmt, golint, go vet 통과
-- [ ] 동시성에서 race condition 주의
+- [ ] Always handle errors (no _, err)
+- [ ] Wrap errors with fmt.Errorf("%w", err)
+- [ ] Pass Context as first argument
+- [ ] Define small interfaces
+- [ ] Use constructor functions (NewXxx)
+- [ ] Table-driven tests
+- [ ] Pass gofmt, golint, go vet
+- [ ] Watch for race conditions in concurrency

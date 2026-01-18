@@ -1,27 +1,28 @@
-# 📱 TypeScript + React Native 품질 규칙
+# TypeScript + React Native Quality Rules
 
-## 핵심 원칙 (core + React에서 상속)
+## Core Principles (inherited from core + React)
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 제거 (DRY)
-✅ 재사용성
-✅ 낮은 복잡도
-✅ 함수 ≤ 30줄, JSX ≤ 50줄
-✅ React 규칙 모두 적용
+# Core Principles (inherited from core + React)
+Single Responsibility (SRP)
+No Duplication (DRY)
+Reusability
+Low Complexity
+Function <= 30 lines, JSX <= 50 lines
+All React rules apply
 ```
 
-## React Native 특화 규칙
+## React Native Specific Rules
 
-### 1. 플랫폼별 코드 분리
+### 1. Platform-specific Code Separation
 
 ```typescript
-// ✅ 파일 확장자로 분리
-Button.ios.tsx      // iOS 전용
-Button.android.tsx  // Android 전용
-Button.tsx          // 공통
+// Good: Separate by file extension
+Button.ios.tsx      // iOS only
+Button.android.tsx  // Android only
+Button.tsx          // Common
 
-// ✅ Platform API 사용
+// Good: Using Platform API
 import { Platform, StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
@@ -39,21 +40,21 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ Platform.OS 체크
+// Good: Platform.OS check
 if (Platform.OS === 'ios') {
-  // iOS 전용 로직
+  // iOS specific logic
 } else if (Platform.OS === 'android') {
-  // Android 전용 로직
+  // Android specific logic
 }
 ```
 
-### 2. StyleSheet 사용 (인라인 스타일 지양)
+### 2. Use StyleSheet (Avoid Inline Styles)
 
 ```typescript
-// ❌ 인라인 스타일 (성능 저하)
+// Bad: Inline style (performance degradation)
 <View style={{ flex: 1, padding: 16, backgroundColor: '#fff' }} />
 
-// ✅ StyleSheet (최적화됨)
+// Good: StyleSheet (optimized)
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
@@ -66,18 +67,18 @@ const styles = StyleSheet.create({
 
 <View style={styles.container} />
 
-// ✅ 조건부 스타일
+// Good: Conditional styles
 <View style={[
   styles.container,
   isActive && styles.active,
-  { marginTop: offset }, // 동적 값만 인라인
+  { marginTop: offset }, // Inline only for dynamic values
 ]} />
 ```
 
-### 3. FlatList 최적화
+### 3. FlatList Optimization
 
 ```typescript
-// ✅ FlatList 성능 최적화
+// Good: FlatList performance optimization
 interface User {
   id: string;
   name: string;
@@ -96,23 +97,23 @@ const UserList = ({ users }: { users: User[] }) => {
       data={users}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      // 성능 최적화 옵션
+      // Performance optimization options
       removeClippedSubviews={true}
       maxToRenderPerBatch={10}
       updateCellsBatchingPeriod={50}
       initialNumToRender={10}
       windowSize={5}
-      // 헤더 고정
+      // Sticky header
       stickyHeaderIndices={[0]}
-      // 리스트 분리
+      // List separator
       ItemSeparatorComponent={() => <View style={styles.separator} />}
-      // 빈 상태
+      // Empty state
       ListEmptyComponent={<EmptyState />}
     />
   );
 };
 
-// ✅ UserCard 메모이제이션
+// Good: UserCard memoization
 const UserCard = React.memo<{ user: User }>(({ user }) => {
   return (
     <View style={styles.card}>
@@ -126,11 +127,11 @@ const UserCard = React.memo<{ user: User }>(({ user }) => {
 ### 4. Navigation (React Navigation)
 
 ```typescript
-// ✅ 타입 안전한 네비게이션
+// Good: Type-safe navigation
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-// 네비게이션 타입 정의
+// Navigation type definition
 type RootStackParamList = {
   Home: undefined;
   UserProfile: { userId: string };
@@ -151,7 +152,7 @@ function App() {
   );
 }
 
-// ✅ 타입 안전한 네비게이션 훅
+// Good: Type-safe navigation hook
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 
@@ -164,19 +165,19 @@ function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
 
   const navigateToProfile = (userId: string) => {
-    navigation.navigate('UserProfile', { userId }); // 타입 안전
+    navigation.navigate('UserProfile', { userId }); // Type safe
   };
 
   return <Button onPress={() => navigateToProfile('123')} title="Profile" />;
 }
 ```
 
-### 5. AsyncStorage (데이터 저장)
+### 5. AsyncStorage (Data Persistence)
 
 ```typescript
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ✅ 타입 안전한 Storage 래퍼
+// Good: Type-safe Storage wrapper
 class Storage {
   static async set<T>(key: string, value: T): Promise<void> {
     await AsyncStorage.setItem(key, JSON.stringify(value));
@@ -192,7 +193,7 @@ class Storage {
   }
 }
 
-// 사용
+// Usage
 interface User {
   id: string;
   name: string;
@@ -202,13 +203,13 @@ await Storage.set<User>('user', { id: '123', name: 'John' });
 const user = await Storage.get<User>('user');
 ```
 
-### 6. 이미지 최적화
+### 6. Image Optimization
 
 ```typescript
 import { Image } from 'react-native';
 import FastImage from 'react-native-fast-image';
 
-// ✅ FastImage 사용 (캐싱, 성능)
+// Good: Use FastImage (caching, performance)
 <FastImage
   source={{
     uri: user.avatar,
@@ -218,10 +219,10 @@ import FastImage from 'react-native-fast-image';
   resizeMode={FastImage.resizeMode.cover}
 />
 
-// ✅ 로컬 이미지
+// Good: Local image
 <Image source={require('./assets/logo.png')} style={styles.logo} />
 
-// ✅ 조건부 로딩
+// Good: Conditional loading
 {imageUrl && (
   <Image
     source={{ uri: imageUrl }}
@@ -230,12 +231,12 @@ import FastImage from 'react-native-fast-image';
 )}
 ```
 
-### 7. SafeAreaView (안전 영역)
+### 7. SafeAreaView (Safe Areas)
 
 ```typescript
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// ✅ SafeAreaView 사용 (노치/상태바 대응)
+// Good: Use SafeAreaView (notch/status bar handling)
 function Screen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -244,7 +245,7 @@ function Screen() {
   );
 }
 
-// ✅ useSafeAreaInsets 훅
+// Good: useSafeAreaInsets hook
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function CustomHeader() {
@@ -258,20 +259,20 @@ function CustomHeader() {
 }
 ```
 
-### 8. Hooks 최적화
+### 8. Hooks Optimization
 
 ```typescript
-// ✅ useCallback (이벤트 핸들러)
+// Good: useCallback (event handlers)
 const handlePress = useCallback(() => {
   navigation.navigate('UserProfile', { userId });
 }, [navigation, userId]);
 
-// ✅ useMemo (무거운 계산)
+// Good: useMemo (expensive calculations)
 const sortedUsers = useMemo(() => {
   return users.sort((a, b) => a.name.localeCompare(b.name));
 }, [users]);
 
-// ✅ Custom Hook (로직 재사용)
+// Good: Custom Hook (logic reuse)
 function useKeyboard() {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -293,13 +294,13 @@ function useKeyboard() {
 }
 ```
 
-### 9. 권한 처리
+### 9. Permission Handling
 
 ```typescript
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { Platform } from 'react-native';
 
-// ✅ 권한 체크 및 요청
+// Good: Permission check and request
 async function requestCameraPermission(): Promise<boolean> {
   const permission =
     Platform.OS === 'ios'
@@ -315,7 +316,7 @@ async function requestCameraPermission(): Promise<boolean> {
       const requested = await request(permission);
       return requested === RESULTS.GRANTED;
     case RESULTS.BLOCKED:
-      // 설정으로 이동 안내
+      // Guide to settings
       return false;
     default:
       return false;
@@ -323,10 +324,10 @@ async function requestCameraPermission(): Promise<boolean> {
 }
 ```
 
-### 10. 에러 경계 (Error Boundary)
+### 10. Error Boundary
 
 ```typescript
-// ✅ React Native용 Error Boundary
+// Good: React Native Error Boundary
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, Button } from 'react-native';
 
@@ -351,7 +352,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error caught:', error, errorInfo);
-    // 에러 로깅 서비스 (Sentry 등)
+    // Error logging service (Sentry etc.)
   }
 
   handleReset = () => {
@@ -373,18 +374,18 @@ class ErrorBoundary extends Component<Props, State> {
 }
 ```
 
-## 안티패턴
+## Anti-patterns
 
 ```typescript
-// ❌ ScrollView로 긴 리스트
+// Bad: ScrollView for long lists
 <ScrollView>
   {users.map(user => <UserCard key={user.id} user={user} />)}
 </ScrollView>
 
-// ✅ FlatList 사용
+// Good: Use FlatList
 <FlatList data={users} renderItem={renderItem} />
 
-// ❌ 중첩된 FlatList (성능 저하)
+// Bad: Nested FlatList (performance degradation)
 <FlatList
   data={categories}
   renderItem={({ item }) => (
@@ -392,17 +393,17 @@ class ErrorBoundary extends Component<Props, State> {
   )}
 />
 
-// ✅ 단일 FlatList + 섹션
+// Good: Single FlatList + sections
 <SectionList sections={sections} renderItem={renderItem} />
 
-// ❌ 비동기 setState in useEffect cleanup
+// Bad: Async setState in useEffect cleanup
 useEffect(() => {
   return () => {
-    setData(null); // ❌ 언마운트 후 setState
+    setData(null); // Bad: setState after unmount
   };
 }, []);
 
-// ✅ isMounted 체크
+// Good: isMounted check
 useEffect(() => {
   let isMounted = true;
 
@@ -416,31 +417,31 @@ useEffect(() => {
 }, []);
 ```
 
-## 성능 최적화 도구
+## Performance Optimization Tools
 
 ```bash
-# Flipper (디버깅)
+# Flipper (debugging)
 npx react-native-flipper
 
-# Bundle 분석
+# Bundle analysis
 npx react-native bundle --platform android --dev false \
   --entry-file index.js --bundle-output android.bundle
 
-# 메모리 프로파일링 (Flipper 사용)
+# Memory profiling (use Flipper)
 ```
 
-## 체크리스트
+## Checklist
 
-React Native 코드 작성 시:
+When writing React Native code:
 
-- [ ] StyleSheet 사용 (인라인 지양)
-- [ ] FlatList 최적화 (긴 리스트)
-- [ ] Platform 분기 처리
-- [ ] 타입 안전한 Navigation
-- [ ] SafeAreaView 사용
-- [ ] FastImage 사용 (이미지)
-- [ ] useCallback/useMemo 최적화
-- [ ] 권한 처리 (카메라, 위치 등)
-- [ ] Error Boundary 적용
-- [ ] AsyncStorage 타입 래퍼
-- [ ] 복잡도 ≤ 10
+- [ ] Use StyleSheet (avoid inline)
+- [ ] FlatList optimization (long lists)
+- [ ] Platform branching
+- [ ] Type-safe Navigation
+- [ ] Use SafeAreaView
+- [ ] Use FastImage (images)
+- [ ] useCallback/useMemo optimization
+- [ ] Permission handling (camera, location, etc.)
+- [ ] Apply Error Boundary
+- [ ] AsyncStorage type wrapper
+- [ ] Complexity <= 10

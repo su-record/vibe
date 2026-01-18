@@ -10,87 +10,87 @@ Create a SPEC document (Specification Agent).
 ## Usage
 
 ```
-/vibe.spec "feature-name"           # 대화 모드 (요구사항 수집)
-/vibe.spec "docs/login-prd.md"      # 파일 경로 입력 (자동 감지)
-/vibe.spec + 📎 파일 첨부            # 첨부 파일 사용
+/vibe.spec "feature-name"           # Conversation mode (requirements gathering)
+/vibe.spec "docs/login-prd.md"      # File path input (auto-detected)
+/vibe.spec + 📎 file attachment     # Use attached file
 ```
 
-## Input Mode Detection (자동 감지)
+## Input Mode Detection (Auto-detect)
 
-**입력 우선순위:**
+**Input priority:**
 
 ```
-1. 첨부 파일 있음? → 첨부 파일 사용
-2. 인자가 파일 경로? (존재 확인) → 파일 읽기
-3. 그 외 → 대화 모드 (기능명으로 시작)
+1. Attachment exists? → Use attached file
+2. Argument is file path? (existence check) → Read file
+3. Otherwise → Conversation mode (start with feature name)
 ```
 
-| 입력 | 결과 |
-|------|------|
-| 📎 첨부 파일 | → 첨부 파일 분석 |
-| 파일 경로 (존재함) | → 파일 읽기 (Read tool) |
-| 기능명 | → 대화 모드 시작 |
+| Input | Result |
+|-------|--------|
+| 📎 Attached file | → Analyze attached file |
+| File path (exists) | → Read file (Read tool) |
+| Feature name | → Start conversation mode |
 
-**지원하는 모든 파일:**
-- 텍스트: `.md`, `.txt`, `.rst`, `.html`, `.json`, `.yaml` 등
-- 문서: `.pdf` (페이지별 분석)
-- 이미지: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg` 등
-- 노트북: `.ipynb` (Jupyter)
-- **Claude가 읽을 수 있는 모든 형식**
+**All supported files:**
+- Text: `.md`, `.txt`, `.rst`, `.html`, `.json`, `.yaml`, etc.
+- Documents: `.pdf` (page-by-page analysis)
+- Images: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`, etc.
+- Notebooks: `.ipynb` (Jupyter)
+- **All formats Claude can read**
 
-**파일 입력 모드 흐름:**
+**File input mode flow:**
 
 ```
 /vibe.spec "docs/login-prd.md"
 
-📄 파일 로드: docs/login-prd.md (2.3KB)
+📄 File loaded: docs/login-prd.md (2.3KB)
 
-📋 파싱된 요구사항:
+📋 Parsed requirements:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  기능: 로그인
-  - 이메일/비밀번호 로그인
-  - 소셜 로그인 (Google, Apple)
-  - 비밀번호 찾기
-  - 자동 로그인 유지
+  Feature: Login
+  - Email/password login
+  - Social login (Google, Apple)
+  - Password recovery
+  - Auto login persistence
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-❓ 추가 확인 필요:
-  1. 세션 만료 시간? (기본값: 24시간)
-  2. 동시 로그인 허용 여부?
-  3. 기술 스택 확인? (현재: React + Supabase)
+❓ Additional confirmation needed:
+  1. Session expiration time? (default: 24 hours)
+  2. Allow concurrent login?
+  3. Confirm tech stack? (current: React + Supabase)
 
-User: 1시간, 불허, 확인
+User: 1 hour, disallow, confirm
 
-✅ 요구사항 확정 → 리서치 실행 → SPEC 생성 → 리뷰
+✅ Requirements confirmed → Run research → Generate SPEC → Review
 ```
 
-**지원 파일 형식:**
+**Supported file formats:**
 
-| 형식 | 확장자 | 용도 |
-|------|--------|------|
-| 마크다운 | `.md` | PRD, 기획서, README |
-| 텍스트 | `.txt` | 요구사항 목록 |
-| PDF | `.pdf` | 기획서, 디자인 문서 |
-| 이미지 | `.png`, `.jpg`, `.jpeg`, `.webp` | 와이어프레임, UI 디자인, 스크린샷 |
+| Format | Extension | Purpose |
+|--------|-----------|---------|
+| Markdown | `.md` | PRD, planning docs, README |
+| Text | `.txt` | Requirements list |
+| PDF | `.pdf` | Planning docs, design documents |
+| Image | `.png`, `.jpg`, `.jpeg`, `.webp` | Wireframes, UI design, screenshots |
 
-**이미지 입력 예시:**
+**Image input example:**
 ```
 /vibe.spec "designs/login-wireframe.png"
 
-🖼️ 이미지 분석: designs/login-wireframe.png
+🖼️ Image analysis: designs/login-wireframe.png
 
-📋 감지된 UI 요소:
-  - 이메일 입력 필드
-  - 비밀번호 입력 필드
-  - "로그인" 버튼
-  - "비밀번호 찾기" 링크
-  - 소셜 로그인 버튼 (Google, Apple)
+📋 Detected UI elements:
+  - Email input field
+  - Password input field
+  - "Login" button
+  - "Forgot password" link
+  - Social login buttons (Google, Apple)
 
-❓ 확인 필요:
-  1. 기능명? (예: "login")
-  2. 추가 요구사항?
+❓ Confirmation needed:
+  1. Feature name? (e.g., "login")
+  2. Additional requirements?
 
-→ SPEC 생성
+→ Generate SPEC
 ```
 
 ## Rules Reference
@@ -115,38 +115,38 @@ When external LLMs are enabled, automatically utilize during SPEC creation:
       ↓
 [Claude Opus] Create SPEC draft
       ↓
-[GPT enabled?] → Bash로 전역 훅 스크립트 호출
+[GPT enabled?] → Call global hook script via Bash
       ↓
-[Gemini enabled?] → Bash로 전역 훅 스크립트 호출
+[Gemini enabled?] → Call global hook script via Bash
       ↓
 [Claude] Finalize SPEC
 ```
 
-| External LLM | 호출 방법 | Role | When Used |
-|--------------|-----------|------|-----------|
-| GPT (user query) | `gpt-`, `gpt.`, `지피티-` 접두사 | Direct question (Web Search enabled) | User asks directly |
-| GPT (orchestration) | Bash로 전역 훅 스크립트 호출 | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
-| Gemini (user query) | `gemini-`, `gemini.`, `제미나이-` 접두사 | Direct question (Google Search enabled) | User asks directly |
-| Gemini (orchestration) | Bash로 전역 훅 스크립트 호출 | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
+| External LLM | Invocation Method | Role | When Used |
+|--------------|-------------------|------|-----------|
+| GPT (user query) | `gpt-`, `gpt.`, `지피티-` prefix | Direct question (Web Search enabled) | User asks directly |
+| GPT (orchestration) | Call global hook script via Bash | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
+| Gemini (user query) | `gemini-`, `gemini.`, `제미나이-` prefix | Direct question (Google Search enabled) | User asks directly |
+| Gemini (orchestration) | Call global hook script via Bash | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
 
-**Claude 내부 오케스트레이션 호출 (Bash):**
+**Claude internal orchestration call (Bash):**
 ```bash
 # Usage: node llm-orchestrate.js <provider> <mode> [systemPrompt] [prompt]
-#   - systemPrompt 생략 시 기본값 사용
-#   - systemPrompt에 "-" 전달 시 기본값 사용하고 다음 인자를 prompt로 처리
+#   - If systemPrompt is omitted, default value is used
+#   - If "-" is passed for systemPrompt, default value is used and next argument is treated as prompt
 
-# GPT 호출 (Windows)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[질문 내용]"
-# GPT 호출 (macOS/Linux)
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[질문 내용]"
+# GPT call (Windows)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[question content]"
+# GPT call (macOS/Linux)
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[question content]"
 
-# Gemini 호출 (Windows)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[질문 내용]"
-# Gemini 호출 (macOS/Linux)
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[질문 내용]"
+# Gemini call (Windows)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[question content]"
+# Gemini call (macOS/Linux)
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[question content]"
 
-# 커스텀 시스템 프롬프트 사용
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a SPEC reviewer" "[질문 내용]"
+# Custom system prompt usage
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a SPEC reviewer" "[question content]"
 ```
 
 **Activation:**
@@ -215,7 +215,7 @@ fi
 
 **🚨 CRITICAL: Read config.json references IMMEDIATELY after tech stack is confirmed**
 
-`vibe init` 시 감지된 스택 기반으로 `config.json`에 참조 문서가 자동 생성됩니다:
+Reference documents are automatically generated in `config.json` based on the stack detected during `vibe init`:
 
 ```json
 // .claude/vibe/config.json
@@ -250,18 +250,18 @@ fi
 
 **Example:**
 ```bash
-# 1. config.json에서 references 확인
+# 1. Check references in config.json
 Read .claude/vibe/config.json
 
-# 2. references.languages에 명시된 문서 참조
+# 2. Reference documents specified in references.languages
 Read ~/.claude/vibe/languages/typescript-react.md
 ```
 
-**중요:**
+**Important:**
 
-- 수동 매핑 불필요 - config.json이 모든 참조 경로 포함
-- `/vibe.run` 실행 시 `config.json.references` 자동 참조
-- 프로젝트에 복사하지 않음 (전역 패키지에서 참조)
+- No manual mapping needed - config.json contains all reference paths
+- `config.json.references` is automatically referenced when running `/vibe.run`
+- Not copied to project (referenced from global package)
 
 ### 3. Parallel Research (v2.4.0) - MANDATORY AFTER requirements confirmed
 
@@ -270,7 +270,7 @@ Read ~/.claude/vibe/languages/typescript-react.md
 **When to trigger:**
 1. ✅ Feature type decided (e.g., "passkey authentication")
 2. ✅ Tech stack confirmed (e.g., "React + Supabase")
-3. ✅ Language guide copied (2.5 단계)
+3. ✅ Language guide copied (step 2.5)
 4. ✅ Core requirements collected
 
 **→ IMMEDIATELY run orchestrator research. NO EXCEPTIONS.**
@@ -477,159 +477,279 @@ Scenario: {title}
 
 After creating SPEC draft, **must perform systematic ambiguity check**.
 
-**Check categories:**
+#### 6.1 Mandatory Check Categories
 
-| Category | Check Items |
-|----------|-------------|
-| **Functional Scope** | Missing features, unclear behavior definitions |
-| **Data Model** | Undefined entities, unclear relationships |
-| **Non-Functional** | Missing performance requirements, security considerations |
-| **Edge Cases** | Boundary conditions, error handling scenarios |
-| **Integration Points** | External system integration, API contracts |
+| Category | Check Items | Red Flags |
+|----------|-------------|-----------|
+| **Functional Scope** | Missing features, unclear behavior | "etc.", "other", "if needed" |
+| **Data Model** | Undefined entities, relationships | Undefined types, missing fields |
+| **Non-Functional** | Performance, security requirements | Performance requirements without numbers |
+| **Edge Cases** | Boundary conditions, errors | 0 failure scenarios |
+| **Integration Points** | External APIs, contracts | API version/endpoint undefined |
+| **User Input** | Validation rules, limits | Input limits not specified |
+| **State Management** | State transitions, persistence | Missing state diagram |
 
-**Check process:**
+#### 6.2 Forbidden Ambiguous Terms
+
+If the following terms exist in SPEC, **clarification is mandatory**:
+
+| Forbidden Term | Replacement Method |
+|----------------|-------------------|
+| "appropriately", "properly" | Provide specific criteria (e.g., "within 3 seconds") |
+| "quickly", "rapidly" | Specify with numbers (e.g., "under 100ms") |
+| "various", "multiple" | List specific items |
+| "etc.", "other" | Specify complete list or limit scope |
+| "if needed", "depending on situation" | Specify conditions (e.g., "when credits < 10") |
+| "later", "in the future" | Explicitly exclude from current scope |
+
+#### 6.3 Check Process
 
 ```
-1. Create SPEC draft
+1. Write SPEC draft
       ↓
-2. Scan by category for ambiguity
+2. Auto-scan for forbidden terms
       ↓
-3. Present list of found ambiguities
+3. Review checklist by category
       ↓
-4. Request user clarification
+4. List discovered ambiguities
       ↓
-5. Refine SPEC
+5. Auto-fixable items → Fix immediately
+   Needs user confirmation → Ask question
       ↓
-6. Re-check (until 0 ambiguities)
+6. Re-verify (repeat until 0 ambiguities)
 ```
 
-**Ambiguity output format:**
+#### 6.4 Auto-Fix for Common Ambiguities
+
+| Ambiguity Type | Auto-Fix Method |
+|----------------|-----------------|
+| Timeout undefined | Apply default 30 seconds |
+| Retry count undefined | Apply default 3 retries |
+| Pagination undefined | Apply default 20 items/page |
+| Input length undefined | Text 500 chars, password 8-64 chars |
+| File size undefined | Image 5MB, video 100MB |
+
+#### 6.5 Ambiguity Output Format
 
 ```markdown
 ## 🔍 Ambiguity Scan Results
 
-### Functional Scope
+### Found Issues: 3
+
+#### 1. Functional Scope
 - ⚠️ "Login failure behavior" not defined
+  → **Auto-fix**: Apply 5-minute lockout after 3 failures
 - ⚠️ "Session expiration handling" unclear
+  → **Question**: Session expiration time? (30min/1hour/24hours)
 
-### Edge Cases
+#### 2. Edge Cases
 - ⚠️ Concurrent login permission undefined
-- ⚠️ No password retry limit specified
+  → **Question**: Allow concurrent login? (Y/N)
 
-Please clarify the above items.
+### Auto-fixed: 1
+### Needs clarification: 2
 ```
 
-### 7. Quality Validation
+### 7. Quality Validation (Self-Check)
 
-Self-evaluate against `~/.claude/vibe/rules/quality/checklist.md` (0-100 score)
+**Must perform self-quality check after SPEC completion**
+
+#### 7.1 Quality Checklist (Required Items)
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Completeness** | All user flows included in Task | 15% |
+| **Completeness** | All ACs converted to Feature scenarios | 10% |
+| **Clarity** | No ambiguous terms (e.g., "appropriately", "quickly") | 10% |
+| **Clarity** | All numbers/limits specified (e.g., "max 500 chars") | 10% |
+| **Testability** | All ACs are auto-testable | 10% |
+| **Security** | Authentication/authorization requirements defined | 10% |
+| **Security** | Sensitive data handling method specified | 5% |
+| **Error Handling** | Major failure scenarios defined | 10% |
+| **Error Handling** | User error messages specified | 5% |
+| **Performance** | Response time/throughput targets specified | 5% |
+| **Edge Cases** | Boundary condition handling defined | 5% |
+| **Dependencies** | External systems/APIs specified | 5% |
+
+#### 7.2 Quality Score Calculation
+
+```
+Score = Σ(Check item met × Weight) / 100
+
+Grades:
+- 95-100: ✅ EXCELLENT - Ready to start implementation
+- 85-94:  ✅ GOOD - Implementation possible (minor improvements recommended)
+- 70-84:  ⚠️ FAIR - Improve before implementation
+- 0-69:   ❌ POOR - Rewrite required
+```
+
+#### 7.3 Quality Gate (Auto-verification)
+
+**Minimum 85 points required to proceed to next step (GPT+Gemini review)**
+
+```
+SPEC writing complete
+      ↓
+[Calculate Quality Score]
+      ↓
+Score < 85? → Show missing items → Attempt auto-fix
+      ↓
+Score ≥ 85 → Proceed to GPT + Gemini review
+```
+
+#### 7.4 Auto-Fix for Low Score
+
+If score is below 85, attempt automatic fixes:
+
+| Missing Item | Auto-Fix Method |
+|--------------|-----------------|
+| Missing AC | Auto-generate AC based on Task |
+| Numbers not specified | Apply project defaults (e.g., timeout 30s) |
+| Missing error handling | Add common error scenarios |
+| Missing performance targets | Apply industry standard criteria |
 
 ### 8. SPEC Review (GPT/Gemini) - Auto-Fix Loop
 
-**SPEC 완성 후 외부 LLM 리뷰 → 자동 반영:**
+**After SPEC completion, external LLM review → Auto-apply:**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔍 SPEC REVIEW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[Step 1] Gemini/GPT에게 SPEC 전송...
-  - SPEC 전체 내용
-  - Feature 파일 (시나리오)
-  - 프로젝트 컨텍스트
+[Step 1] Sending SPEC to Gemini/GPT...
+  - Full SPEC content
+  - Feature file (scenarios)
+  - Project context
 
-[Step 2] 리뷰 피드백:
+[Step 2] Review feedback:
   ┌─────────────────────────────────────────┐
   │ 📝 SPEC Review Feedback                 │
   │                                         │
-  │ 1. [누락] 에러 핸들링 시나리오 부족     │
-  │    → "네트워크 오류 시 재시도" 추가 권장│
+  │ 1. [Missing] Error handling scenarios   │
+  │    → Recommend adding "retry on network │
+  │      error"                             │
   │                                         │
-  │ 2. [보안] 인증 토큰 만료 처리 미정의    │
-  │    → refresh token 플로우 추가 권장     │
+  │ 2. [Security] Auth token expiry         │
+  │    handling undefined                   │
+  │    → Recommend adding refresh token     │
+  │      flow                               │
   │                                         │
-  │ 3. [엣지] 동시 로그인 정책 미정의       │
-  │    → 기존 세션 처리 방법 명시 필요      │
+  │ 3. [Edge] Concurrent login policy       │
+  │    undefined                            │
+  │    → Need to specify existing session   │
+  │      handling method                    │
   └─────────────────────────────────────────┘
 
-[Step 3] 자동 반영 중...
-  ✅ SPEC Task에 에러 핸들링 Phase 추가
-  ✅ Feature에 토큰 만료 시나리오 추가
-  ✅ Constraints에 동시 로그인 정책 추가
+[Step 3] Auto-applying...
+  ✅ Added error handling Phase to SPEC Task
+  ✅ Added token expiry scenario to Feature
+  ✅ Added concurrent login policy to Constraints
 
-[Step 4] 재검증...
+[Step 4] Re-verifying...
   ✅ Ambiguity Scan: 0 issues
   ✅ Quality Score: 95/100
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ SPEC Review 완료! 3개 개선사항 반영
+✅ SPEC Review complete! 3 improvements applied
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**MUST: SPEC 리뷰 (필수)**
+**MUST: SPEC Review (Required) - GPT + Gemini Parallel Execution**
 
-Gemini 또는 GPT가 활성화된 경우, **반드시** Bash로 훅 스크립트 호출:
+🚨 **Run GPT and Gemini in parallel for cross-validation to ensure quality**
 
-**GPT로 리뷰 (우선):**
-
-```bash
-# Windows
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
-
-# macOS/Linux
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
-
-# 커스텀 시스템 프롬프트 사용 시
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a SPEC reviewer" "[질문]"
-```
-
-**Gemini로 리뷰 (GPT 실패 시):**
+**Parallel execution (2 Bash calls simultaneously):**
 
 ```bash
-# Windows
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
+# GPT review (code patterns, architecture perspective)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
 
-# macOS/Linux
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
+# Gemini review (latest docs, best practices perspective)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
 ```
 
-**중요:**
+**macOS/Linux:**
 
-- Windows: `$APPDATA/vibe/hooks/scripts/` (Git Bash/PowerShell)
-- macOS/Linux: `~/.config/vibe/hooks/scripts/`
-- SPEC 전체를 보내지 말고 **핵심 요약**만 전송 (토큰 절약)
-- JSON 응답을 파싱하여 SPEC에 자동 반영
+```bash
+# GPT review
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
 
-**우선순위:** GPT 먼저 시도 → 실패 시 Gemini 시도 → 둘 다 실패 시 스킵
+# Gemini review
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
+```
 
-**리뷰 항목:**
+**Important:**
 
-| 카테고리 | 체크 포인트 |
-|----------|------------|
-| 완전성 | 모든 사용자 플로우 커버? |
-| 에러 처리 | 실패 시나리오 정의? |
-| 보안 | 인증/인가/데이터 보호? |
-| 엣지 케이스 | 경계 조건 처리? |
-| 테스트 가능성 | AC가 검증 가능? |
+- **Must call both GPT and Gemini** (parallel execution)
+- Merge feedback from both models and apply to SPEC
+- If one model fails, apply only the remaining result
+- Don't send full SPEC, send only **key summary** (save tokens)
+- Parse JSON response and auto-apply to SPEC
 
-**자동 반영 규칙:**
+**Why parallel execution:**
 
-| 피드백 유형 | 처리 |
-|------------|------|
-| 누락된 시나리오 | Feature에 자동 추가 |
-| 보안 고려사항 | Constraints에 자동 추가 |
-| 엣지 케이스 | Task Phase에 자동 추가 |
-| 명확성 부족 | 해당 섹션 보완 |
+| Model | Strengths |
+|-------|-----------|
+| GPT | Code patterns, architecture, logic validation |
+| Gemini | Latest web info, doc search, best practices |
 
-**Fallback 처리:**
-- `"status": "fallback"` 응답 시 → 스킵하고 다음 단계로 진행
-- 네트워크 에러 시 → 1회 재시도 후 스킵
+**Result merge:** Combine feedback from both models for more thorough review
 
-## Output
+**Review items:**
 
-- `.claude/vibe/specs/{feature-name}.md` - PTCF structured SPEC
-- `.claude/vibe/features/{feature-name}.feature` - BDD Feature file
-- Ambiguity scan results (0 ambiguities confirmed)
-- Quality score and improvement suggestions
+| Category | Check Point |
+|----------|-------------|
+| Completeness | All user flows covered? |
+| Error Handling | Failure scenarios defined? |
+| Security | Auth/authorization/data protection? |
+| Edge Cases | Boundary conditions handled? |
+| Testability | ACs verifiable? |
+
+**Auto-apply rules:**
+
+| Feedback Type | Action |
+|---------------|--------|
+| Missing scenario | Auto-add to Feature |
+| Security considerations | Auto-add to Constraints |
+| Edge cases | Auto-add to Task Phase |
+| Lack of clarity | Supplement the section |
+
+**Fallback handling:**
+- On `"status": "fallback"` response → Skip and proceed to next step
+- On network error → Retry once then skip
+
+## Output (MANDATORY File Creation)
+
+**🚨 CRITICAL: Files MUST be created in these EXACT paths. NO exceptions.**
+
+| File    | Path                                              | When                              |
+|---------|---------------------------------------------------|-----------------------------------|
+| SPEC    | `.claude/vibe/specs/{feature-name}.md`            | After quality validation (Step 7) |
+| Feature | `.claude/vibe/features/{feature-name}.feature`    | Immediately after SPEC            |
+
+**❌ FORBIDDEN:**
+
+- Creating files in project root (e.g., `feature-name.md`)
+- Creating files outside `.claude/vibe/` directory
+- Skipping file creation
+- Using different file names than feature-name
+
+**✅ REQUIRED:**
+
+- Use Write tool to create files
+- Verify directories exist (create if needed)
+- Confirm file creation in response
+
+**File creation template:**
+
+```
+# After SPEC content is finalized:
+1. Write .claude/vibe/specs/{feature-name}.md
+2. Write .claude/vibe/features/{feature-name}.feature
+3. Confirm: "✅ Created: .claude/vibe/specs/{feature-name}.md"
+4. Confirm: "✅ Created: .claude/vibe/features/{feature-name}.feature"
+```
 
 ## Example
 
@@ -699,21 +819,21 @@ Claude: Thank you. SPEC has been refined.
 🔍 SPEC REVIEW (Gemini)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📤 SPEC 전송 중...
-📝 Gemini 피드백:
-  1. [엣지] 볼 속도 증가 로직 미정의
-  2. [보안] 점수 조작 방지 필요
+📤 Sending SPEC...
+📝 Gemini feedback:
+  1. [Edge] Ball speed increase logic undefined
+  2. [Security] Need score manipulation prevention
 
-✅ 2개 개선사항 자동 반영
-🔍 재검증... ✅ 통과
+✅ 2 improvements auto-applied
+🔍 Re-verifying... ✅ Passed
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ SPEC 완성!
+✅ SPEC Complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📄 .claude/vibe/specs/brick-game.md (PTCF structure)
 📄 .claude/vibe/features/brick-game.feature
-📊 Quality score: 95/100 (A) ← 리뷰 반영 후 향상
+📊 Quality score: 95/100 (A) ← Improved after review
 ```
 
 ## Vibe Tools (Semantic Analysis & Memory)

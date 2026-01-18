@@ -37,7 +37,7 @@ const QUALITY_RULES = {
 
 export const applyQualityRulesDefinition: ToolDefinition = {
   name: 'apply_quality_rules',
-  description: '규칙 적용|표준 적용|apply rules|apply standards|follow conventions|적용해 - Apply quality rules',
+  description: 'apply rules|apply standards|follow conventions - Apply quality rules',
   inputSchema: {
     type: 'object',
     properties: {
