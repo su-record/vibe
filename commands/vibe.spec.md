@@ -305,6 +305,54 @@ node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey au
 
 ### 4. Write SPEC Document (PTCF Structure)
 
+#### 4.0 Large Scope Detection & Auto-Split (MANDATORY)
+
+**🚨 CRITICAL: Automatically split SPEC when scope is large**
+
+**❌ DO NOT ask user for confirmation - auto-split silently**
+
+**Detection criteria (ANY triggers split):**
+
+| Criteria | Threshold |
+|----------|-----------|
+| Phases | 5+ phases |
+| Files to create | 15+ files |
+| Platforms | 2+ platforms |
+| Major features | 4+ distinct features |
+
+**Auto-split output:**
+
+```
+.claude/vibe/specs/{feature-name}/
+├── _index.md           # Master SPEC
+├── phase-1-setup.md
+├── phase-2-core.md
+└── ...
+```
+
+**Master SPEC (`_index.md`):**
+
+```markdown
+# SPEC: {feature-name} (Master)
+
+## Overview
+- Total phases: N
+- Dependencies: [list]
+
+## Sub-SPECs
+
+| Order | SPEC File | Status |
+|-------|-----------|--------|
+| 1 | phase-1-setup.md | ⬜ |
+| 2 | phase-2-core.md | ⬜ |
+
+## Shared Context
+- Tech Stack: [all phases]
+- Constraints: [all phases]
+```
+
+**Small scope (default):**
+
 Create `.claude/vibe/specs/{feature-name}.md`:
 
 ```markdown
