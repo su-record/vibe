@@ -1,17 +1,17 @@
-# 🏗️ 코드 구조 자동화 규칙
+# Code Structure Automation Rules
 
-## 컴포넌트 구조 (엄격한 순서)
+## Component Structure (Strict Order)
 
 ```typescript
-// 1. Import 문
+// 1. Import statements
 import React, { useState, useEffect } from 'react';
 
-// 2. 타입/인터페이스 정의
+// 2. Type/Interface definitions
 interface Props {
   userId: string;
 }
 
-// 3. 컴포넌트 정의
+// 3. Component definition
 function UserProfile({ userId }: Props) {
   // 4. State & Refs
   const [user, setUser] = useState<User | null>(null);
@@ -45,17 +45,17 @@ function UserProfile({ userId }: Props) {
 }
 ```
 
-## 함수 분리 기준
+## Function Separation Criteria
 
-### 1. 함수 길이 기준
+### 1. Function Length Criteria
 
 ```typescript
-// ❌ 20줄 초과 - 분리 필요
+// ❌ Over 20 lines - needs separation
 function processUserData(user: User) {
-  // 30줄의 복잡한 로직
+  // 30 lines of complex logic
 }
 
-// ✅ 단일 책임으로 분리
+// ✅ Separate by single responsibility
 function processUserData(user: User) {
   const validated = validateUser(user);
   const transformed = transformUserData(validated);
@@ -67,19 +67,19 @@ function transformUserData(user: User) { /* ... */ }
 function saveUserData(user: User) { /* ... */ }
 ```
 
-### 2. 컴포넌트 JSX 길이 기준
+### 2. Component JSX Length Criteria
 
 ```typescript
-// ❌ JSX 50줄 초과 - 분리 필요
+// ❌ JSX over 50 lines - needs separation
 function Dashboard() {
   return (
     <div>
-      {/* 60줄의 복잡한 JSX */}
+      {/* 60 lines of complex JSX */}
     </div>
   );
 }
 
-// ✅ 서브 컴포넌트 추출
+// ✅ Extract sub-components
 function Dashboard() {
   return (
     <div>
@@ -95,37 +95,37 @@ function DashboardContent() { /* ... */ }
 function DashboardFooter() { /* ... */ }
 ```
 
-### 3. 중첩 깊이 기준
+### 3. Nesting Depth Criteria
 
 ```typescript
-// ❌ 중첩 3단계 초과
+// ❌ Nesting over 3 levels
 function processData(data: Data) {
   if (data) {
     if (data.isValid) {
       if (data.user) {
         if (data.user.isActive) {
-          // 너무 깊은 중첩
+          // Too deep nesting
         }
       }
     }
   }
 }
 
-// ✅ Early return으로 평탄화
+// ✅ Flatten with early returns
 function processData(data: Data) {
   if (!data) return null;
   if (!data.isValid) return null;
   if (!data.user) return null;
   if (!data.user.isActive) return null;
 
-  // 로직 실행
+  // Execute logic
 }
 ```
 
 ### 4. Cyclomatic Complexity > 10
 
 ```typescript
-// ❌ 복잡도 높음 (15)
+// ❌ High complexity (15)
 function calculatePrice(item: Item) {
   let price = item.basePrice;
   if (item.discount) price *= 0.9;
@@ -133,11 +133,11 @@ function calculatePrice(item: Item) {
   if (item.seasonal) price *= 0.95;
   if (item.member) price *= 0.85;
   if (item.firstTime) price *= 0.9;
-  // ... 더 많은 조건
+  // ... more conditions
   return price;
 }
 
-// ✅ 복잡도 감소 (3)
+// ✅ Reduced complexity (3)
 function calculatePrice(item: Item) {
   const basePrice = item.basePrice;
   const discounts = getApplicableDiscounts(item);
@@ -148,20 +148,20 @@ function calculatePrice(item: Item) {
 ### 5. Cognitive Complexity > 15
 
 ```typescript
-// ❌ 인지 복잡도 높음
+// ❌ High cognitive complexity
 function processOrder(order: Order) {
   if (order.isPremium) {
     for (let item of order.items) {
       if (item.category === 'electronics') {
         if (item.price > 1000) {
-          // 중첩된 복잡한 로직
+          // Nested complex logic
         }
       }
     }
   }
 }
 
-// ✅ 인지 복잡도 감소
+// ✅ Reduced cognitive complexity
 function processOrder(order: Order) {
   if (!order.isPremium) return;
 
@@ -172,7 +172,7 @@ function processOrder(order: Order) {
 }
 ```
 
-## 파일 구조 표준
+## File Structure Standard
 
 ```typescript
 // 📁 user-profile.component.tsx
@@ -189,23 +189,23 @@ type UserRole = 'admin' | 'user';
 const MAX_BIO_LENGTH = 500;
 const DEFAULT_AVATAR = '/avatar.png';
 
-// 4. Helper Functions (내부 전용)
+// 4. Helper Functions (internal only)
 function formatUserName(name: string) { }
 
 // 5. Main Component
 export function UserProfile() { }
 
-// 6. Sub Components (export하지 않음)
+// 6. Sub Components (not exported)
 function ProfileHeader() { }
 function ProfileContent() { }
 ```
 
-## 모듈 구성 원칙
+## Module Organization Principles
 
-### 1. 응집도 (Cohesion)
+### 1. Cohesion
 
 ```typescript
-// ✅ 높은 응집도 - 관련 기능만 모음
+// ✅ High cohesion - only related functions
 // 📁 user.service.ts
 export class UserService {
   getUser(id: string) { }
@@ -213,8 +213,8 @@ export class UserService {
   deleteUser(id: string) { }
 }
 
-// ❌ 낮은 응집도 - 관련 없는 기능 혼재
-// 📁 utils.ts (안티패턴)
+// ❌ Low cohesion - unrelated functions mixed
+// 📁 utils.ts (anti-pattern)
 export class Utils {
   validateEmail(email: string) { }
   formatCurrency(amount: number) { }
@@ -222,10 +222,10 @@ export class Utils {
 }
 ```
 
-### 2. 결합도 (Coupling)
+### 2. Coupling
 
 ```typescript
-// ✅ 느슨한 결합 - 인터페이스 의존
+// ✅ Loose coupling - depends on interface
 interface Storage {
   save(key: string, value: unknown): void;
   load(key: string): unknown;
@@ -235,16 +235,16 @@ class UserService {
   constructor(private storage: Storage) { }
 }
 
-// ❌ 강한 결합 - 구현체 직접 의존
+// ❌ Tight coupling - depends on implementation directly
 class UserService {
-  private storage = new LocalStorage(); // 직접 의존
+  private storage = new LocalStorage(); // Direct dependency
 }
 ```
 
-## 함수 매개변수 제한
+## Function Parameter Limit
 
 ```typescript
-// ❌ 매개변수 5개 초과
+// ❌ Over 5 parameters
 function createUser(
   name: string,
   email: string,
@@ -254,7 +254,7 @@ function createUser(
   role: string
 ) { }
 
-// ✅ 객체로 그룹화
+// ✅ Group into object
 interface CreateUserParams {
   name: string;
   email: string;
@@ -267,19 +267,19 @@ interface CreateUserParams {
 function createUser(params: CreateUserParams) { }
 ```
 
-## 순환 의존성 방지
+## Preventing Circular Dependencies
 
 ```typescript
-// ❌ 순환 의존성
+// ❌ Circular dependency
 // fileA.ts
 import { funcB } from './fileB';
 export function funcA() { funcB(); }
 
 // fileB.ts
-import { funcA } from './fileA'; // 순환!
+import { funcA } from './fileA'; // Circular!
 export function funcB() { funcA(); }
 
-// ✅ 공통 모듈 분리
+// ✅ Separate common module
 // shared.ts
 export function sharedFunc() { }
 

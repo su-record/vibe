@@ -56,8 +56,9 @@ vibe init
 | **13+ parallel review agents** | Security, performance, architecture |
 | **BDD auto verification** | Given/When/Then scenario verification |
 | **ULTRAWORK mode** | One keyword enables all optimizations |
-| **36 built-in tools** | Code analysis, memory management, quality validation |
+| **25 built-in tools** | Code analysis, memory management, quality validation |
 | **Auto context management** | 80%+ auto-save, session restore |
+| **23 language presets** | TypeScript, Python, Go, Rust, Swift, Kotlin, C#, Ruby, Dart, GDScript |
 
 ## ULTRAWORK Mode
 
@@ -85,13 +86,6 @@ Enable maximum performance with `ultrawork` or `ulw`:
 | `UI`, `UX`, `디자인` | Gemini | UI/UX feedback |
 | `디버깅`, `debugging`, `버그 찾` | GPT | Bug analysis |
 | `코드 분석`, `analyze code` | Gemini | Code review |
-
-**Direct LLM call** with prefixes:
-
-| LLM | Prefix | Example |
-|-----|--------|---------|
-| GPT | `gpt-`, `gpt.` | `gpt.weather today` |
-| Gemini | `gemini-`, `gemini.` | `gemini.UI improvements` |
 
 **Smart Routing features:**
 - Automatic LLM selection based on task type
@@ -123,17 +117,15 @@ import('@su-record/vibe/lib/gemini').then(g => g.webSearch('search query'))
 - 🟡 P2 (Important): Recommended fix
 - 🔵 P3 (Nice-to-have): Backlog
 
-## Built-in Tools
+## Built-in Tools (25)
 
-| Tool | Description |
-|------|-------------|
-| `vibe_find_symbol` | Find symbol definition |
-| `vibe_find_references` | Find references |
-| `vibe_analyze_complexity` | Complexity analysis |
-| `vibe_validate_code_quality` | Quality validation |
-| `vibe_start_session` | Start session (restore previous context) |
-| `vibe_save_memory` | Save important decisions |
-| `vibe_auto_save_context` | Auto-save current state |
+| Category | Tools |
+|----------|-------|
+| **Semantic** | `find_symbol`, `find_references`, `analyze_dependency_graph` |
+| **Convention** | `analyze_complexity`, `validate_code_quality`, `check_coupling_cohesion`, `suggest_improvements`, `apply_quality_rules` |
+| **Memory** | `start_session`, `save_memory`, `auto_save_context`, `recall_memory`, `search_memories`, `search_memories_advanced`, `list_memories`, `update_memory`, `delete_memory`, `link_memories`, `prioritize_memory`, `get_memory_graph`, `create_memory_timeline`, `get_session_context`, `restore_session_context` |
+| **UI** | `preview_ui_ascii` |
+| **Time** | `get_current_time` |
 
 ## Project Structure
 

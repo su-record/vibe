@@ -1,53 +1,52 @@
-# 🏛️ 개발 철학과 원칙 - "왜"에 대한 답
+# Development Philosophy and Principles - Answering "Why"
 
-## 1.1 🥇 최우선 순위: 수술적 정밀도
+## 1.1 Top Priority: Surgical Precision
 
-> **⚠️ 이것은 모든 작업에 앞서는 TORY의 첫 번째 원칙입니다.**
+> **⚠️ This is the first principle that precedes all work.**
 >
-> **요청받지 않은 코드는 절대 수정/삭제하지 않습니다.**
+> **Never modify/delete code that wasn't requested.**
 
-### 원칙
+### Principles
 
-- **엄격한 범위 준수**: 사용자가 명시적으로 요청한 파일과 코드 블록만 수정
-- **기존 코드 보존**: 작동하는 코드를 임의로 리팩토링하거나 제거하지 않음
-- **스타일 존중**: 기존 네이밍, 포맷팅, 주석 스타일 유지
+- **Strict scope adherence**: Only modify files and code blocks explicitly requested by the user
+- **Preserve existing code**: Do not arbitrarily refactor or remove working code
+- **Respect style**: Maintain existing naming, formatting, and comment styles
 
-## 1.2 핵심 철학
+## 1.2 Core Philosophy
 
-### 🎯 개발의 황금률
+### Development Golden Rules
 
-- **한국어 우선**: 모든 커뮤니케이션은 명확한 한국어로
-- **단순함의 미학**: 코드가 적을수록 좋은 코드
-- **DRY 원칙**: 반복하지 말고 재사용
-- **단일 책임**: 하나의 함수는 하나의 목적만
-- **실용주의**: 완벽보다 실용, YAGNI 정신
+- **Simplicity aesthetics**: Less code is better code
+- **DRY principle**: Don't repeat, reuse
+- **Single responsibility**: One function serves one purpose
+- **Pragmatism**: Practical over perfect, YAGNI spirit
 
-### 🎨 코드 품질 기준
+### Code Quality Standards
 
-- **가독성**: 코드는 사람을 위한 것
-- **예측 가능성**: 코드에서 놀라움은 금물
-- **유지보수성**: 미래의 나를 배려
-- **테스트 가능성**: 검증 가능한 구조
+- **Readability**: Code is for humans
+- **Predictability**: No surprises in code
+- **Maintainability**: Consider future you
+- **Testability**: Verifiable structure
 
-## 1.3 아키텍처 원칙
+## 1.3 Architecture Principles
 
-### 🏗️ 설계의 지혜
+### Design Wisdom
 
-- **패턴의 적절한 적용**: Composite, Observer, Factory 등 필요에 따라 적용
-- **과도한 추상화 지양**: 3단계 이상의 wrapper 금지
-- **순환 의존성 방지**: File A → File B → File A ❌
+- **Appropriate pattern application**: Apply Composite, Observer, Factory, etc. as needed
+- **Avoid over-abstraction**: No more than 3 levels of wrappers
+- **Prevent circular dependencies**: File A → File B → File A ❌
 
-### ♿ 접근성은 선택이 아닌 필수
+### Accessibility is Mandatory, Not Optional
 
-- Semantic HTML을 기본으로
-- 키보드 내비게이션 지원
-- 스크린 리더 최적화
-- ARIA 속성 적극 활용
+- Use semantic HTML as default
+- Support keyboard navigation
+- Optimize for screen readers
+- Actively use ARIA attributes
 
-## 핵심 가치
+## Core Values
 
-1. **명확성**: 코드는 자기 설명적이어야 함
-2. **간결성**: 불필요한 복잡도 제거
-3. **일관성**: 일관된 패턴과 스타일 유지
-4. **확장성**: 미래의 변화를 고려한 설계
-5. **안전성**: 오류 처리와 엣지 케이스 고려
+1. **Clarity**: Code should be self-explanatory
+2. **Conciseness**: Remove unnecessary complexity
+3. **Consistency**: Maintain consistent patterns and styles
+4. **Scalability**: Design considering future changes
+5. **Safety**: Consider error handling and edge cases

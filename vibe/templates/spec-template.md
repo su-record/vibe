@@ -1,102 +1,118 @@
-# SPEC: {기능명}
+# SPEC: {Feature Name}
 
 ## Metadata
-- **작성일**: {YYYY-MM-DD}
-- **작성자**: {이름}
-- **상태**: DRAFT
-- **우선순위**: {HIGH | MEDIUM | LOW}
-- **언어**: {ko | en}
-- **담당 에이전트**: {에이전트명}
-- **기술 스택**: {프로젝트 기술 스택 요약}
+
+- **Created**: {YYYY-MM-DD}
+- **Author**: {Name}
+- **Status**: DRAFT
+- **Priority**: {HIGH | MEDIUM | LOW}
+- **Language**: {en | ko}
+- **Assigned Agent**: {Agent Name}
+- **Tech Stack**: {Project Tech Stack Summary}
 
 ---
 
-## 1. 기능 개요
+## 1. Feature Overview
 
-{1-2문장으로 요약}
+{1-2 sentence summary}
 
-### 배경 (Background)
-{왜 이 기능이 필요한가}
+### Background
 
-### 목표 (Goals)
-- 목표 1
-- 목표 2
+{Why is this feature needed}
 
-### 비목표 (Non-Goals)
-- 이번에 하지 않을 것 1
-- 이번에 하지 않을 것 2
+### Goals
 
-### 기술 스택 컨텍스트
+- Goal 1
+- Goal 2
 
-**기존 기술:**
-- 백엔드: {FastAPI, Django, Express 등}
-- 프론트엔드: {React, Flutter, Vue 등}
-- 데이터베이스: {PostgreSQL, MySQL, MongoDB 등}
-- 인프라: {GCP, AWS, Azure 등}
+### Non-Goals
 
-**이번 기능에 필요한 새 기술:**
-- {새 라이브러리/서비스 1} - {사유}
-- {새 라이브러리/서비스 2} - {사유}
+- What we won't do this time 1
+- What we won't do this time 2
 
-**외부 API/서비스 연동:**
-- {서비스명} - {용도}
+### Tech Stack Context
 
-**제약사항:**
-- 비용 한도: {금액}
-- 성능 요구사항: {목표 응답 시간, 처리량 등}
+**Existing Technology:**
+
+- Backend: {FastAPI, Django, Express, etc.}
+- Frontend: {React, Flutter, Vue, etc.}
+- Database: {PostgreSQL, MySQL, MongoDB, etc.}
+- Infrastructure: {GCP, AWS, Azure, etc.}
+
+**New Technology Required for This Feature:**
+
+- {New library/service 1} - {Reason}
+- {New library/service 2} - {Reason}
+
+**External API/Service Integration:**
+
+- {Service name} - {Purpose}
+
+**Constraints:**
+
+- Cost limit: {Amount}
+- Performance requirements: {Target response time, throughput, etc.}
 
 ---
 
-## 2. 사용자 스토리
+## 2. User Stories
 
-### Story 1: {스토리 제목}
-**As a** {사용자 역할}
-**I want** {원하는 기능}
-**So that** {이유/가치}
+### Story 1: {Story Title}
+
+**As a** {User role}
+**I want** {Desired functionality}
+**So that** {Reason/Value}
 
 #### Acceptance Criteria
-- [ ] {검증 가능한 조건 1}
-- [ ] {검증 가능한 조건 2}
+
+- [ ] {Verifiable condition 1}
+- [ ] {Verifiable condition 2}
 
 ---
 
-## 3. Requirements (EARS 형식)
+## 3. Requirements (EARS Format)
 
-### REQ-001: {요구사항 제목}
+### REQ-001: {Requirement Title}
 
-**WHEN** {특정 조건}
-**THEN** {시스템 동작} (SHALL | SHOULD | MAY)
+**WHEN** {Specific condition}
+**THEN** {System behavior} (SHALL | SHOULD | MAY)
 
 #### Acceptance Criteria
-- [ ] {테스트 가능한 기준 1}
-- [ ] {테스트 가능한 기준 2}
+
+- [ ] {Testable criterion 1}
+- [ ] {Testable criterion 2}
 
 #### Example
-```
+
+```text
 Input: {...}
 Output: {...}
 ```
 
 ---
 
-## 4. 비기능 요구사항
+## 4. Non-Functional Requirements
 
-### 성능 (Performance)
-- 응답 시간: {목표}
-- 처리량: {목표}
+### Performance
 
-### 보안 (Security)
-- 인증: {방식}
-- 권한: {규칙}
+- Response time: {Target}
+- Throughput: {Target}
 
-### 확장성 (Scalability)
-- 예상 성장률: {수치}
+### Security
+
+- Authentication: {Method}
+- Authorization: {Rules}
+
+### Scalability
+
+- Expected growth rate: {Value}
 
 ---
 
-## 5. 데이터 모델 (초안)
+## 5. Data Model (Draft)
 
-### Entity: {이름}
+### Entity: {Name}
+
 ```json
 {
   "field1": "type",
@@ -106,10 +122,11 @@ Output: {...}
 
 ---
 
-## 6. API 계약 (초안)
+## 6. API Contract (Draft)
 
-### Endpoint: {이름}
-```
+### Endpoint: {Name}
+
+```text
 POST /api/v1/resource
 Request: {...}
 Response: {...}
@@ -117,28 +134,30 @@ Response: {...}
 
 ---
 
-## 7. 테스트 전략
+## 7. Test Strategy
 
-### BDD 시나리오 (Gherkin)
+### BDD Scenarios (Gherkin)
 
-**생성 명령어**: `vibe feature "{기능명}"`
+**Generate Command**: `vibe feature "{feature name}"`
 
 ```gherkin
-Scenario: {시나리오 제목}
-  Given {전제 조건}
-  When {사용자 행동}
-  Then {예상 결과}
+Scenario: {Scenario title}
+  Given {Precondition}
+  When {User action}
+  Then {Expected result}
 ```
 
-**매핑**:
+**Mapping**:
+
 - REQ-001 → Scenario 1, 2
 - REQ-002 → Scenario 3
 
-### Contract Tests (API 스키마)
+### Contract Tests (API Schema)
 
-**생성 명령어**: `vibe contract "{기능명}"`
+**Generate Command**: `vibe contract "{feature name}"`
 
 **Backend Contract**:
+
 ```json
 {
   "request": {
@@ -154,46 +173,49 @@ Scenario: {시나리오 제목}
 ```
 
 **Frontend Contract**:
-- Mock 서버로 독립 테스트
-- 응답 스키마 검증 (Zod, JSON Schema)
 
-### 테스트 커버리지 목표
+- Independent testing with mock server
+- Response schema validation (Zod, JSON Schema)
 
-- [ ] BDD: 모든 Acceptance Criteria 커버
-- [ ] Contract: 모든 API 엔드포인트 커버
-- [ ] Unit: 70%+ 커버리지
-- [ ] Integration: 핵심 경로 커버
+### Test Coverage Goals
+
+- [ ] BDD: Cover all Acceptance Criteria
+- [ ] Contract: Cover all API endpoints
+- [ ] Unit: 70%+ coverage
+- [ ] Integration: Cover critical paths
 
 ---
 
 ## 8. Out of Scope
 
-- ❌ {제외 항목 1}
-- ❌ {제외 항목 2}
+- ❌ {Excluded item 1}
+- ❌ {Excluded item 2}
 
 ---
 
-## 9. 검증 체크리스트
+## 9. Verification Checklist
 
-### 요구사항
-- [ ] 모든 요구사항이 테스트 가능한가?
-- [ ] SHALL/SHOULD/MAY가 명확한가?
-- [ ] Acceptance Criteria가 구체적인가?
-- [ ] 성능 목표가 측정 가능한가?
+### Requirements
 
-### 테스팅
-- [ ] BDD Feature 파일 생성 완료?
-- [ ] Contract 테스트 정의 완료?
-- [ ] Step Definitions 작성 완료?
-- [ ] 테스트 커버리지 목표 달성?
+- [ ] Are all requirements testable?
+- [ ] Is SHALL/SHOULD/MAY clear?
+- [ ] Are Acceptance Criteria specific?
+- [ ] Are performance goals measurable?
+
+### Testing
+
+- [ ] BDD Feature file generation complete?
+- [ ] Contract tests defined?
+- [ ] Step Definitions written?
+- [ ] Test coverage goal achieved?
 
 ---
 
-## 10. 승인
+## 10. Approval
 
-- [ ] 사용자 승인
-- [ ] 기술 리뷰 완료
-- [ ] 테스트 계획 승인
+- [ ] User approval
+- [ ] Technical review complete
+- [ ] Test plan approved
 
-승인일: ____________
-승인자: ____________
+Approval Date: ____________
+Approver: ____________

@@ -138,31 +138,7 @@ export const GPT_MODELS: Record<string, GptModelInfo> = {
     description: '최신 Codex, 코딩 특화',
     maxTokens: 32768,
     reasoning: { effort: 'high', summary: 'auto' },
-  },
-  // GPT-5.1 Codex
-  'gpt-5.1-codex': {
-    id: 'gpt-5.1-codex',
-    name: 'GPT-5.1 Codex',
-    description: '안정적인 Codex',
-    maxTokens: 32768,
-    reasoning: { effort: 'medium', summary: 'auto' },
-  },
-  // GPT-5.1 Codex Mini (빠름)
-  'gpt-5.1-codex-mini': {
-    id: 'gpt-5.1-codex-mini',
-    name: 'GPT-5.1 Codex Mini',
-    description: '빠른 Codex',
-    maxTokens: 16384,
-    reasoning: { effort: 'medium', summary: 'auto' },
-  },
-  // GPT-5.1 Codex Max (고성능)
-  'gpt-5.1-codex-max': {
-    id: 'gpt-5.1-codex-max',
-    name: 'GPT-5.1 Codex Max',
-    description: '최고 성능 Codex',
-    maxTokens: 32768,
-    reasoning: { effort: 'xhigh', summary: 'auto' },
-  },
+  }
 };
 
 // 기본 모델
@@ -293,17 +269,16 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     systemPrompt = '',
   } = options;
 
-  // API Key 방식은 표준 OpenAI 모델 사용 (gpt-4o, gpt-4-turbo 등)
-  // Codex 모델은 OAuth 전용이므로 대체 모델 매핑
+  // API Key 방식은 OpenAI 모델 사용
   const apiKeyModelMap: Record<string, string> = {
-    'gpt-5.2': 'gpt-4o',
-    'gpt-5.2-codex': 'gpt-4o',
-    'gpt-5.1-codex': 'gpt-4-turbo',
-    'gpt-5.1-codex-mini': 'gpt-4o-mini',
-    'gpt-5.1-codex-max': 'gpt-4o',
+    'gpt-5.2': 'gpt-5.2',
+    'gpt-5.2-codex': 'gpt-5.2',
+    'gpt-5.1-codex': 'gpt-5.2',
+    'gpt-5.1-codex-mini': 'gpt-5.2',
+    'gpt-5.1-codex-max': 'gpt-5.2',
   };
 
-  const actualModel = apiKeyModelMap[model] || 'gpt-4o';
+  const actualModel = apiKeyModelMap[model] || 'gpt-5.2';
 
   // 메시지 구성
   const apiMessages: Array<{ role: string; content: string | null }> = [];

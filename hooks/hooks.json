@@ -133,42 +133,22 @@
         ]
       },
       {
-        "matcher": "^(gpt[-.\\s]|지피티-)",
+        "matcher": "^vibe-test-gpt",
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate",
-            "statusMessage": "Asking GPT..."
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate \"You are a helpful assistant. Answer the user's question clearly and concisely.\"",
+            "statusMessage": "Testing GPT..."
           }
         ]
       },
       {
-        "matcher": "^vibe-gpt-",
+        "matcher": "^vibe-test-gemini",
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json \"You are a Vibe orchestrator. Process the request and output structured JSON.\"",
-            "statusMessage": "Vibe GPT orchestrating..."
-          }
-        ]
-      },
-      {
-        "matcher": "^(gemini[-.\\s]|제미나이-)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate",
-            "statusMessage": "Asking Gemini..."
-          }
-        ]
-      },
-      {
-        "matcher": "^vibe-gemini-",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json \"You are a Vibe orchestrator. Process the request and output structured JSON.\"",
-            "statusMessage": "Vibe Gemini orchestrating..."
+            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate \"You are a helpful assistant. Answer the user's question clearly and concisely.\"",
+            "statusMessage": "Testing Gemini..."
           }
         ]
       }

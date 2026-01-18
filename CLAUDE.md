@@ -4,7 +4,7 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 
 ## 코드 품질 기준 (필수)
 
-모든 코드 작성 시 아래 기준을 준수합니다. 상세 규칙은 `.claude/vibe/rules/` 참조.
+모든 코드 작성 시 아래 기준을 준수합니다. 상세 규칙은 `~/.claude/vibe/rules/` (전역) 참조.
 
 ### 핵심 원칙
 - **요청 범위만 수정** - 관련 없는 코드 건드리지 않음
@@ -18,18 +18,6 @@ SPEC 주도 AI 코딩 프레임워크 (Claude Code 전용)
 | 중첩 깊이 | 3단계 이하 |
 | 매개변수 | 5개 이하 |
 | 순환 복잡도 | 10 이하 |
-
-### TypeScript 규칙
-- `any` 타입 사용 금지 → `unknown` + 타입 가드 사용
-- `as any` 캐스팅 금지 → 적절한 인터페이스 정의
-- `@ts-ignore` 금지 → 타입 문제 근본 해결
-- 모든 함수에 반환 타입 명시
-
-### TypeScript 규칙
-- `any` 타입 사용 금지 → `unknown` + 타입 가드 사용
-- `as any` 캐스팅 금지 → 적절한 인터페이스 정의
-- `@ts-ignore` 금지 → 타입 문제 근본 해결
-- 모든 함수에 반환 타입 명시
 
 ### TypeScript 규칙
 - `any` 타입 사용 금지 → `unknown` + 타입 가드 사용
@@ -305,13 +293,14 @@ vibe는 자체 메모리 시스템으로 세션 간 컨텍스트를 유지합니
 ## Git Commit 규칙
 
 **반드시 포함:**
-- `.claude/` 폴더 전체 (commands, agents, skills, settings.json)
-- `.claude/vibe/rules/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/solutions/`, `.claude/vibe/todos/`
+- `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/` (프로젝트 문서)
+- `.claude/vibe/config.json`, `.claude/vibe/constitution.md` (프로젝트 설정)
 - `CLAUDE.md`
 
-**제외:**
-- `.claude/settings.local.json` (개인 설정, 자동 제외)
-- `.claude/vibe/mcp/` (node_modules, 자동 제외)
+**제외 (전역 설치됨):**
+- `~/.claude/vibe/rules/`, `~/.claude/vibe/languages/`, `~/.claude/vibe/templates/` (전역)
+- `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/` (전역)
+- `.claude/settings.local.json` (개인 설정)
 
 ## Getting Started
 

@@ -226,6 +226,8 @@ GPT is called via Hooks:
   - Direct use: import('@su-record/vibe/lib/gpt')
     `);
 
+    // Windows libuv 핸들 충돌 방지: 서버 완전 종료 대기
+    await new Promise(resolve => setTimeout(resolve, 200));
     process.exit(0);
 
   } catch (error: unknown) {
@@ -407,6 +409,8 @@ Gemini is called via Hooks:
   - Direct use: import('@su-record/vibe/lib/gemini')
     `);
 
+    // Windows libuv 핸들 충돌 방지: 서버 완전 종료 대기
+    await new Promise(resolve => setTimeout(resolve, 200));
     process.exit(0);
 
   } catch (error: unknown) {

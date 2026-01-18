@@ -8,9 +8,10 @@ Automatically executed after `Write`, `Edit` operations via PostToolUse Hook.
 
 ## Rules Reference
 
-**Validation criteria (`.claude/vibe/rules/`):**
+**Validation criteria (`~/.claude/vibe/rules/` global):**
 
 ### Required Rules
+
 - `core/development-philosophy.md` - Surgical precision
 - `core/quick-start.md` - DRY, SRP, YAGNI
 - `quality/checklist.md` - Quality checklist

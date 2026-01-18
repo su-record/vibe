@@ -1,20 +1,20 @@
-# 📖 자동 네이밍 규칙
+# Automatic Naming Rules
 
-## 기본 규칙
+## Basic Rules
 
+```text
+Variables: nouns (userList, userData)
+Functions: verb+noun (fetchData, updateUser)
+Events: handle prefix (handleClick, handleSubmit)
+Boolean: is/has/can prefix (isLoading, hasError, canEdit)
+Constants: UPPER_SNAKE_CASE (MAX_RETRY_COUNT, API_TIMEOUT)
+Components: PascalCase (UserProfile, HeaderSection)
+Hooks: use prefix (useUserData, useAuth)
 ```
-변수: 명사 (userList, userData)
-함수: 동사+명사 (fetchData, updateUser)
-이벤트: handle 접두사 (handleClick, handleSubmit)
-Boolean: is/has/can 접두사 (isLoading, hasError, canEdit)
-상수: UPPER_SNAKE_CASE (MAX_RETRY_COUNT, API_TIMEOUT)
-컴포넌트: PascalCase (UserProfile, HeaderSection)
-훅: use 접두사 (useUserData, useAuth)
-```
 
-## 변수 네이밍
+## Variable Naming
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 const userList = [...];
@@ -22,17 +22,17 @@ const totalAmount = 0;
 const currentPage = 1;
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-const list = [...];  // 무엇의 리스트?
-const total = 0;     // 무엇의 총합?
-const page = 1;      // 명확하지 않음
+const list = [...];  // List of what?
+const total = 0;     // Total of what?
+const page = 1;      // Not clear
 ```
 
-## 함수 네이밍
+## Function Naming
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 function fetchUserData() { }
@@ -41,17 +41,17 @@ function validateEmail() { }
 function calculateTotal() { }
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-function user() { }       // 동사 없음
-function data() { }       // 불명확
-function process() { }    // 무엇을 처리?
+function user() { }       // No verb
+function data() { }       // Unclear
+function process() { }    // Process what?
 ```
 
-## 이벤트 핸들러
+## Event Handlers
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 function handleClick() { }
@@ -59,17 +59,17 @@ function handleSubmit() { }
 function handleInputChange() { }
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-function onClick() { }      // handle 접두사 권장
-function submit() { }       // 이벤트임이 불명확
-function change() { }       // 무엇의 변경?
+function onClick() { }      // handle prefix recommended
+function submit() { }       // Unclear it's an event
+function change() { }       // Change of what?
 ```
 
-## Boolean 변수
+## Boolean Variables
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 const isLoading = false;
@@ -78,17 +78,17 @@ const canEdit = true;
 const shouldUpdate = false;
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-const loading = false;    // is 접두사 권장
-const error = false;      // has 권장
-const editable = true;    // can 권장
+const loading = false;    // is prefix recommended
+const error = false;      // has recommended
+const editable = true;    // can recommended
 ```
 
-## 상수
+## Constants
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 const MAX_RETRY_COUNT = 3;
@@ -96,16 +96,16 @@ const API_TIMEOUT_MS = 5000;
 const DEFAULT_PAGE_SIZE = 20;
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-const maxRetry = 3;       // UPPER_SNAKE_CASE 사용
-const timeout = 5000;     // 단위 명시 부족
+const maxRetry = 3;       // Use UPPER_SNAKE_CASE
+const timeout = 5000;     // Missing unit specification
 ```
 
-## 컴포넌트 & 클래스
+## Components & Classes
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 class UserProfile { }
@@ -114,17 +114,17 @@ function ProfileCard() { }
 function NavigationBar() { }
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-class userProfile { }     // PascalCase 사용
-class data { }            // 불명확
-function profile() { }    // PascalCase 권장
+class userProfile { }     // Use PascalCase
+class data { }            // Unclear
+function profile() { }    // PascalCase recommended
 ```
 
-## 커스텀 훅 (React)
+## Custom Hooks (React)
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 function useUserData() { }
@@ -132,16 +132,16 @@ function useAuth() { }
 function useLocalStorage() { }
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-function getUserData() { } // use 접두사 필수
-function auth() { }        // use 접두사 필수
+function getUserData() { } // use prefix required
+function auth() { }        // use prefix required
 ```
 
-## 타입 & 인터페이스 (TypeScript)
+## Types & Interfaces (TypeScript)
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 interface User { }
@@ -149,39 +149,39 @@ type UserRole = 'admin' | 'user';
 interface ApiResponse<T> { }
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-interface IUser { }       // I 접두사 불필요 (TypeScript)
-type user = { };          // PascalCase 사용
+interface IUser { }       // I prefix unnecessary (TypeScript)
+type user = { };          // Use PascalCase
 ```
 
-## 파일 네이밍
+## File Naming
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
-```
+```text
 user-profile.component.tsx
 user.service.ts
 auth.utils.ts
 constants.ts
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
+```text
+UserProfile.tsx           // kebab-case recommended
+user_service.ts           // kebab-case recommended
+utils.ts                  // Unclear
 ```
-UserProfile.tsx           // kebab-case 권장
-user_service.ts           // kebab-case 권장
-utils.ts                  // 불명확
-```
 
-## 약어 사용 원칙
+## Abbreviation Principles
 
-- 일반적인 약어만 사용 (URL, API, ID, HTML, CSS)
-- 프로젝트 특정 약어는 문서화 필수
-- 의미가 명확하지 않으면 전체 단어 사용
+- Use only common abbreviations (URL, API, ID, HTML, CSS)
+- Project-specific abbreviations must be documented
+- Use full words if meaning is not clear
 
-### ✅ 좋은 예
+### ✅ Good Examples
 
 ```typescript
 const userId = '123';
@@ -189,10 +189,10 @@ const apiEndpoint = '/users';
 const htmlContent = '<div>';
 ```
 
-### ❌ 나쁜 예
+### ❌ Bad Examples
 
 ```typescript
-const usrId = '123';      // 불명확한 약어
-const endpt = '/users';   // 과도한 축약
-const cnt = '<div>';      // content로 명확히
+const usrId = '123';      // Unclear abbreviation
+const endpt = '/users';   // Over-abbreviated
+const cnt = '<div>';      // Use "content" for clarity
 ```

@@ -222,11 +222,14 @@ Claude:
 
 ## Rules Reference
 
-**Must follow `.claude/vibe/rules/`:**
+**Must follow `~/.claude/vibe/rules/` (global):**
+
 - `core/development-philosophy.md` - Surgical precision, modify only requested scope
 - `core/quick-start.md` - Korean, DRY, SRP, YAGNI
 - `standards/complexity-metrics.md` - Functions ≤20 lines, nesting ≤3 levels
 - `quality/checklist.md` - Code quality checklist
+
+**Language guide:** `~/.claude/vibe/languages/{stack}.md` (전역 참조)
 
 ## Description
 
@@ -267,18 +270,27 @@ Automatically select optimal model based on task type:
 
 When external LLMs are enabled in `.claude/vibe/config.json`:
 
-| Role | Prefix | Condition |
+| Role | Method | Condition |
 |------|--------|-----------|
-| User direct query | `gpt-`, `gpt.`, `지피티-` | Direct question with Web Search |
-| Internal orchestration (GPT) | `vibe-gpt-` | Internal JSON orchestration (no search) |
-| User direct query | `gemini-`, `gemini.`, `제미나이-` | Direct question with Google Search |
-| Internal orchestration (Gemini) | `vibe-gemini-` | Internal JSON orchestration (no search) |
+| User direct query | `gpt.질문`, `gemini.질문` | Hook이 자동 처리 |
+| Internal orchestration | Bash로 전역 스크립트 호출 | Claude가 직접 호출 |
 
-When external LLM enabled, use hook prefixes:
-- `gpt.질문` - GPT architecture consultation (with web search)
+**사용자 질문 (Hook 자동 처리):**
+- `gpt.질문` - GPT 아키텍처 상담
 - `gemini.질문` - Gemini 질문/상담
-- `vibe-gemini- Analyze this code: [code]` - 코드 분석 (orchestration)
-- `vibe-gemini- Review UI/UX for: [component]` - UI/UX 리뷰 (orchestration)
+
+**Claude 내부 호출 (Bash로 직접):**
+```bash
+# GPT 호출 (Windows)
+echo '{"prompt":"[질문 내용]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+# GPT 호출 (macOS/Linux)
+echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json
+
+# Gemini 호출 (Windows)
+echo '{"prompt":"[질문 내용]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+# Gemini 호출 (macOS/Linux)
+echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
+```
 
 ### External LLM Fallback
 
@@ -442,8 +454,8 @@ Then: 로그인 성공 + JWT 토큰 반환
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] vibe-gpt- Review architecture: [design]       │
-│  [If Gemini enabled] vibe-gemini- Suggest UX for: [component]   │
+│  [If GPT enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json
+│  [If Gemini enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ↓ (wait for all to complete)
@@ -650,25 +662,20 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 
 **MUST: Gemini 코드 리뷰 (필수)**
 
-Gemini가 활성화된 경우, **반드시** 아래 훅을 사용하여 코드 리뷰를 받아야 합니다:
+Gemini가 활성화된 경우, **반드시** 전역 훅 스크립트로 코드 리뷰:
 
-```
-vibe-gemini- Review this code for security, performance, best-practices:
-[변경된 파일들의 전체 코드]
-SPEC 요구사항: [요약]
-시나리오: [구현한 시나리오 목록]
-```
+```bash
+# Windows
+echo '{"prompt":"Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 
-또는 한글로:
-```
-제미나이- 이 코드 리뷰해줘 (보안, 성능, 베스트프랙티스):
-[코드]
+# macOS/Linux
+echo '{"prompt":"Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
 ```
 
 **호출 순서:**
-1. 변경된 모든 파일 내용을 질문에 포함
-2. SPEC의 핵심 요구사항 요약 추가
-3. 훅 호출 실행
+1. 변경된 파일들의 핵심 내용 요약
+2. SPEC 요구사항 요약 추가
+3. 전역 스크립트 호출 실행
 4. 응답의 피드백 항목별로 코드 수정
 5. 빌드/테스트 재실행
 

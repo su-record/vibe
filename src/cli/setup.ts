@@ -7,13 +7,53 @@ import fs from 'fs';
 import os from 'os';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { VibeConfig, TechStack, StackDetails } from './types.js';
+import { VibeConfig, VibeReferences, TechStack, StackDetails } from './types.js';
 import { log, ensureDir, copyDirRecursive, removeDirRecursive, getPackageJson } from './utils.js';
 import { registerMcp, unregisterMcp } from './mcp.js';
 import { STACK_NAMES, getLanguageRulesContent } from './detect.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// ============================================================================
+// OS 언어 감지
+// ============================================================================
+
+/**
+ * OS 언어 설정 감지하여 vibe 언어 반환
+ * - 한국어 OS → 'ko'
+ * - 그 외 → 'en' (기본값)
+ */
+export function detectOsLanguage(): 'ko' | 'en' {
+  try {
+    let locale = '';
+
+    if (process.platform === 'win32') {
+      // Windows: PowerShell로 시스템 로캘 확인
+      try {
+        locale = execSync('powershell -Command "[System.Globalization.CultureInfo]::CurrentCulture.Name"', {
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'pipe']
+        }).trim();
+      } catch {
+        // 대안: LANG 환경변수
+        locale = process.env.LANG || process.env.LC_ALL || '';
+      }
+    } else {
+      // macOS/Linux: LANG 환경변수
+      locale = process.env.LANG || process.env.LC_ALL || process.env.LC_MESSAGES || '';
+    }
+
+    // 한국어 로캘 감지 (ko-KR, ko_KR, ko 등)
+    if (locale.toLowerCase().startsWith('ko')) {
+      return 'ko';
+    }
+
+    return 'en';
+  } catch {
+    return 'en';
+  }
+}
 
 // ============================================================================
 // 전역 vibe 패키지 설치
@@ -62,22 +102,25 @@ export function installGlobalVibePackage(isUpdate = false): void {
     removeDirRecursive(vibePackageDir);
   }
 
+  // 1. 패키지 복사 시도 (실패해도 훅은 복사)
   try {
-    // 전역 npm에서 복사 (vibe는 전역으로 설치됨)
     const globalNpmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
     const globalNpmVibeDir = path.join(globalNpmRoot, '@su-record', 'vibe');
 
     if (fs.existsSync(globalNpmVibeDir)) {
       copyDirRecursive(globalNpmVibeDir, vibePackageDir);
     } else {
-      // Install from npm if global npm install not found
       execSync(`npm install @su-record/vibe@${currentVersion} --prefix "${globalVibeDir}" --no-save`, {
         stdio: 'pipe',
       });
     }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log('   ⚠️  Package install failed: ' + message + '\n');
+  }
 
-    // Copy hooks/scripts folder to VIBE_PATH (referenced by hooks.json)
-    // Source priority: 1) Just installed package 2) Current package root (npm link etc)
+  // 2. 훅 스크립트 복사 (패키지 복사 실패해도 실행)
+  try {
     const packageRoot = path.resolve(__dirname, '..', '..');
     const installedHooksSource = path.join(vibePackageDir, 'hooks', 'scripts');
     const localHooksSource = path.join(packageRoot, 'hooks', 'scripts');
@@ -90,10 +133,12 @@ export function installGlobalVibePackage(isUpdate = false): void {
         removeDirRecursive(hooksScriptsTarget);
       }
       copyDirRecursive(hooksScriptsSource, hooksScriptsTarget);
+    } else {
+      log('   ⚠️  훅 스크립트 소스를 찾을 수 없음: ' + hooksScriptsSource + '\n');
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log('   ⚠️  Package install failed: ' + message + '\n');
+    log('   ⚠️  훅 스크립트 복사 실패: ' + message + '\n');
   }
 }
 
@@ -242,36 +287,33 @@ export function updateClaudeMd(
 // ============================================================================
 
 /**
- * vibe/ 폴더 전체 복사 + languages/ 스택별 필터링
+ * 프로젝트 vibe 폴더 설정 (rules/languages/templates는 전역 패키지 참조)
+ *
+ * 전역 패키지에서 참조하는 항목 (복사하지 않음):
+ * - vibe/rules/       - 범용 코딩 규칙
+ * - vibe/languages/   - 언어별 규칙
+ * - vibe/templates/   - SPEC/Feature 템플릿
+ *
+ * 프로젝트에 생성하는 항목:
+ * - specs/            - 생성된 SPEC 문서
+ * - features/         - 생성된 BDD 시나리오
+ * - config.json       - 프로젝트 설정
+ * - constitution.md   - 프로젝트별 커스터마이징
  */
 export function updateRules(vibeDir: string, detectedStacks: TechStack[], isUpdate = false): void {
-  // 1. vibe/ 폴더 전체 복사 (rules/, templates/, config.json 등)
-  const vibeSource = path.join(__dirname, '../../vibe');
-  if (fs.existsSync(vibeSource)) {
-    copyDirRecursive(vibeSource, vibeDir);
-  }
+  // 레거시 폴더 정리 (이전 버전에서 복사된 것들)
+  const legacyFolders = ['rules', 'languages', 'templates'];
+  legacyFolders.forEach(folder => {
+    const legacyPath = path.join(vibeDir, folder);
+    if (fs.existsSync(legacyPath)) {
+      removeDirRecursive(legacyPath);
+    }
+  });
 
-  // 2. languages/ 폴더 처리 (루트에서 별도 복사, 스택별 필터링)
-  const langSource = path.join(__dirname, '../../languages');
-  const langTarget = path.join(vibeDir, 'languages');
-
-  if (isUpdate && fs.existsSync(langTarget)) {
-    removeDirRecursive(langTarget);
-  }
-  ensureDir(langTarget);
-
-  // 감지된 스택 타입에 해당하는 언어 규칙만 복사
-  const detectedTypes = new Set(detectedStacks.map(s => s.type));
-
-  if (fs.existsSync(langSource)) {
-    const langFiles = fs.readdirSync(langSource);
-    langFiles.forEach(file => {
-      const langType = file.replace('.md', '');
-      if (detectedTypes.has(langType)) {
-        fs.copyFileSync(path.join(langSource, file), path.join(langTarget, file));
-      }
-    });
-  }
+  // specs, features 폴더 확인/생성
+  ['specs', 'features'].forEach(dir => {
+    ensureDir(path.join(vibeDir, dir));
+  });
 }
 
 // ============================================================================
@@ -409,8 +451,46 @@ export function updateGitignore(projectRoot: string): void {
 // ============================================================================
 
 /**
- * config.json 생성 또는 업데이트
+ * 스택 기반 references 생성
+ * Claude가 명시적으로 참조할 전역 문서 경로 목록
  */
+function generateReferences(detectedStacks: TechStack[]): VibeReferences {
+  const globalVibeDir = '~/.claude/vibe';
+
+  // 모든 rules 문서 (core, quality, standards)
+  const rules = [
+    // core
+    `${globalVibeDir}/rules/core/quick-start.md`,
+    `${globalVibeDir}/rules/core/development-philosophy.md`,
+    `${globalVibeDir}/rules/core/communication-guide.md`,
+    // quality
+    `${globalVibeDir}/rules/quality/checklist.md`,
+    `${globalVibeDir}/rules/quality/bdd-contract-testing.md`,
+    `${globalVibeDir}/rules/quality/testing-strategy.md`,
+    // standards
+    `${globalVibeDir}/rules/standards/anti-patterns.md`,
+    `${globalVibeDir}/rules/standards/code-structure.md`,
+    `${globalVibeDir}/rules/standards/complexity-metrics.md`,
+    `${globalVibeDir}/rules/standards/naming-conventions.md`
+  ];
+
+  // 스택 기반 languages
+  const languages = detectedStacks.map(stack =>
+    `${globalVibeDir}/languages/${stack.type}.md`
+  );
+
+  // 모든 templates
+  const templates = [
+    `${globalVibeDir}/templates/spec-template.md`,
+    `${globalVibeDir}/templates/feature-template.md`,
+    `${globalVibeDir}/templates/constitution-template.md`,
+    `${globalVibeDir}/templates/contract-backend-template.md`,
+    `${globalVibeDir}/templates/contract-frontend-template.md`
+  ];
+
+  return { rules, languages, templates };
+}
+
 export function updateConfig(
   vibeDir: string,
   detectedStacks: TechStack[],
@@ -418,20 +498,31 @@ export function updateConfig(
   isUpdate = false
 ): void {
   const configPath = path.join(vibeDir, 'config.json');
+  const references = generateReferences(detectedStacks);
 
   if (isUpdate && fs.existsSync(configPath)) {
     try {
       const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      // 기존 config에 language가 없으면 추가
+      if (!config.language) {
+        config.language = detectOsLanguage();
+      }
+      // 기존 config에 quality가 없으면 추가
+      if (!config.quality) {
+        config.quality = { strict: true, autoVerify: true };
+      }
       config.stacks = detectedStacks;
       config.details = stackDetails;
+      config.references = references;
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     } catch { /* ignore: optional operation */ }
   } else {
     const config: VibeConfig = {
-      language: 'ko',
+      language: detectOsLanguage(),
       quality: { strict: true, autoVerify: true },
       stacks: detectedStacks,
-      details: stackDetails
+      details: stackDetails,
+      references
     };
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
   }

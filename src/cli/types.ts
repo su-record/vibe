@@ -45,11 +45,18 @@ export interface ExternalLLMConfig {
   envKey: string;
 }
 
+export interface VibeReferences {
+  rules: string[];      // e.g., ["~/.claude/vibe/rules/code-quality.md"]
+  languages: string[];  // e.g., ["~/.claude/vibe/languages/typescript-react.md"]
+  templates: string[];  // e.g., ["~/.claude/vibe/templates/spec-template.md"]
+}
+
 export interface VibeConfig {
   language?: string;
   quality?: { strict: boolean; autoVerify: boolean };
   stacks?: DetectedStack[];
   details?: StackDetails;
+  references?: VibeReferences;
   models?: {
     gpt?: { enabled: boolean; authType?: string; email?: string; role?: string; description?: string; apiKey?: string };
     gemini?: { enabled: boolean; authType?: string; email?: string; role?: string; description?: string; apiKey?: string };

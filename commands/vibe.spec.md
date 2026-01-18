@@ -95,7 +95,7 @@ User: 1시간, 불허, 확인
 
 ## Rules Reference
 
-**Must follow `.claude/vibe/rules/`:**
+**Must follow `~/.claude/vibe/rules/` (global):**
 - `core/development-philosophy.md` - Surgical precision, simplicity
 - `core/quick-start.md` - Korean first, DRY, SRP
 - `core/communication-guide.md` - Communication principles
@@ -115,19 +115,32 @@ When external LLMs are enabled, automatically utilize during SPEC creation:
       ↓
 [Claude Opus] Create SPEC draft
       ↓
-[GPT enabled?] → vibe-gpt- Review this architecture: [design]
+[GPT enabled?] → Bash로 전역 훅 스크립트 호출
       ↓
-[Gemini enabled?] → vibe-gemini- Suggest UX improvements for: [component]
+[Gemini enabled?] → Bash로 전역 훅 스크립트 호출
       ↓
 [Claude] Finalize SPEC
 ```
 
-| External LLM | Prefix | Role | When Used |
-|--------------|--------|------|-----------|
-| GPT (user query) | `gpt-`, `gpt.`, `지피티-` | Direct question (Web Search enabled) | User asks directly |
-| GPT (orchestration) | `vibe-gpt-` | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
-| Gemini (user query) | `gemini-`, `gemini.`, `제미나이-` | Direct question (Google Search enabled) | User asks directly |
-| Gemini (orchestration) | `vibe-gemini-` | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
+| External LLM | 호출 방법 | Role | When Used |
+|--------------|-----------|------|-----------|
+| GPT (user query) | `gpt-`, `gpt.`, `지피티-` 접두사 | Direct question (Web Search enabled) | User asks directly |
+| GPT (orchestration) | Bash로 전역 훅 스크립트 호출 | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
+| Gemini (user query) | `gemini-`, `gemini.`, `제미나이-` 접두사 | Direct question (Google Search enabled) | User asks directly |
+| Gemini (orchestration) | Bash로 전역 훅 스크립트 호출 | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
+
+**Claude 내부 오케스트레이션 호출 (Bash):**
+```bash
+# GPT 호출 (Windows)
+echo '{"prompt":"[질문 내용]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+# GPT 호출 (macOS/Linux)
+echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json
+
+# Gemini 호출 (Windows)
+echo '{"prompt":"[질문 내용]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+# Gemini 호출 (macOS/Linux)
+echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
+```
 
 **Activation:**
 ```bash
@@ -191,6 +204,58 @@ fi
 - Tech stack: Confirm existing stack or suggest new
 - Design reference: UI/UX to reference
 
+### 2.5. Reference Documents via config.json (MANDATORY after tech stack confirmed)
+
+**🚨 CRITICAL: Read config.json references IMMEDIATELY after tech stack is confirmed**
+
+`vibe init` 시 감지된 스택 기반으로 `config.json`에 참조 문서가 자동 생성됩니다:
+
+```json
+// .claude/vibe/config.json
+{
+  "language": "ko",
+  "stacks": [
+    { "type": "typescript-react", "path": "package.json" }
+  ],
+  "references": {
+    "rules": [
+      "~/.claude/vibe/rules/code-quality.md",
+      "~/.claude/vibe/rules/error-handling.md",
+      "~/.claude/vibe/rules/security.md"
+    ],
+    "languages": [
+      "~/.claude/vibe/languages/typescript-react.md"
+    ],
+    "templates": [
+      "~/.claude/vibe/templates/spec-template.md",
+      "~/.claude/vibe/templates/feature-template.md",
+      "~/.claude/vibe/templates/constitution-template.md"
+    ]
+  }
+}
+```
+
+**Workflow:**
+
+1. Read `.claude/vibe/config.json`
+2. Extract `references.languages[]` paths
+3. Read each language document for stack-specific guidelines
+
+**Example:**
+```bash
+# 1. config.json에서 references 확인
+Read .claude/vibe/config.json
+
+# 2. references.languages에 명시된 문서 참조
+Read ~/.claude/vibe/languages/typescript-react.md
+```
+
+**중요:**
+
+- 수동 매핑 불필요 - config.json이 모든 참조 경로 포함
+- `/vibe.run` 실행 시 `config.json.references` 자동 참조
+- 프로젝트에 복사하지 않음 (전역 패키지에서 참조)
+
 ### 3. Parallel Research (v2.4.0) - MANDATORY AFTER requirements confirmed
 
 **🚨 CRITICAL: Research is MANDATORY after requirements are confirmed**
@@ -198,7 +263,8 @@ fi
 **When to trigger:**
 1. ✅ Feature type decided (e.g., "passkey authentication")
 2. ✅ Tech stack confirmed (e.g., "React + Supabase")
-3. ✅ Core requirements collected
+3. ✅ Language guide copied (2.5 단계)
+4. ✅ Core requirements collected
 
 **→ IMMEDIATELY run orchestrator research. NO EXCEPTIONS.**
 
@@ -400,7 +466,7 @@ Please clarify the above items.
 
 ### 7. Quality Validation
 
-Self-evaluate against `.claude/vibe/rules/quality/checklist.md` (0-100 score)
+Self-evaluate against `~/.claude/vibe/rules/quality/checklist.md` (0-100 score)
 
 ### 8. SPEC Review (GPT/Gemini) - Auto-Fix Loop
 
@@ -446,41 +512,36 @@ Self-evaluate against `.claude/vibe/rules/quality/checklist.md` (0-100 score)
 
 **MUST: SPEC 리뷰 (필수)**
 
-Gemini 또는 GPT가 활성화된 경우, **반드시** 아래 훅을 사용하여 SPEC 리뷰:
+Gemini 또는 GPT가 활성화된 경우, **반드시** Bash로 훅 스크립트 호출:
 
-**Gemini 사용 시:**
-```
-vibe-gemini- Review this SPEC for completeness, security, edge cases:
+**GPT로 리뷰 (우선):**
 
-SPEC: [SPEC 전체 내용]
-Feature: [Feature 파일 내용]
-Tech Stack: [기술 스택]
+```bash
+# Windows
+node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
 
-Check for:
-1. Missing error handling scenarios
-2. Security considerations
-3. Edge cases and boundary conditions
-4. Integration points clarity
-5. Testability of acceptance criteria
+# macOS/Linux
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
 ```
 
-**GPT 사용 시:**
-```
-vibe-gpt- Review this SPEC for completeness, security, edge cases:
+**Gemini로 리뷰 (GPT 실패 시):**
 
-SPEC: [SPEC 전체 내용]
-Feature: [Feature 파일 내용]
-Tech Stack: [기술 스택]
+```bash
+# Windows
+node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
 
-Check for:
-1. Missing error handling scenarios
-2. Security considerations
-3. Edge cases and boundary conditions
-4. Integration points clarity
-5. Testability of acceptance criteria
+# macOS/Linux
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
 ```
 
-**우선순위:** GPT 먼저 시도 (요구사항 분석에 강함) → 실패 시 Gemini 시도 → 둘 다 실패 시 스킵
+**중요:**
+
+- Windows: `%APPDATA%/vibe/hooks/scripts/`
+- macOS/Linux: `~/.config/vibe/hooks/scripts/`
+- SPEC 전체를 보내지 말고 **핵심 요약**만 전송 (토큰 절약)
+- JSON 응답을 파싱하여 SPEC에 자동 반영
+
+**우선순위:** GPT 먼저 시도 → 실패 시 Gemini 시도 → 둘 다 실패 시 스킵
 
 **리뷰 항목:**
 

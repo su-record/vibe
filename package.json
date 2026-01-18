@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "2.4.51",
+  "version": "2.4.61",
   "description": "Vibe - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
   "type": "module",
   "main": "dist/cli/index.js",
@@ -10,13 +10,8 @@
     "./tools/memory": "./dist/tools/memory/index.js",
     "./tools/convention": "./dist/tools/convention/index.js",
     "./tools/semantic": "./dist/tools/semantic/index.js",
-    "./tools/thinking": "./dist/tools/thinking/index.js",
-    "./tools/planning": "./dist/tools/planning/index.js",
-    "./tools/prompt": "./dist/tools/prompt/index.js",
     "./tools/ui": "./dist/tools/ui/index.js",
     "./tools/time": "./dist/tools/time/index.js",
-    "./tools/reasoning": "./dist/tools/reasoning/index.js",
-    "./tools/analytics": "./dist/tools/analytics/index.js",
     "./orchestrator": "./dist/orchestrator/index.js",
     "./lib/gpt": "./dist/lib/gpt-api.js",
     "./lib/gemini": "./dist/lib/gemini-api.js"
@@ -29,7 +24,8 @@
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "postinstall": "node dist/cli/postinstall.js"
   },
   "keywords": [
     "ai",

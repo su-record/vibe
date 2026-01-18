@@ -1,54 +1,54 @@
-# 🧪 AI 시대 테스트 전략
+# Testing Strategy for the AI Era
 
-## 핵심 원칙
+## Core Principles
 
 ```markdown
-✅ 단일 책임 (SRP)
-✅ 중복 코드 제거 (DRY)
-✅ 재사용성 (Reusability)
-✅ 낮은 복잡도 (Low Complexity)
-✅ 계약 우선 설계 (Contract-First)
+✅ Single Responsibility (SRP)
+✅ Don't Repeat Yourself (DRY)
+✅ Reusability
+✅ Low Complexity
+✅ Contract-First Design
 ```
 
-## AI 주도 개발에서의 테스트 우선순위
+## Test Priorities in AI-Driven Development
 
-### 1. Contract Testing (최우선) ⭐⭐⭐
+### 1. Contract Testing (Highest Priority) ⭐⭐⭐
 
-**개념**: 코드 작성 전에 **타입/스키마로 계약을 정의**
+**Concept**: **Define contracts with types/schemas** before writing code
 
-**이유**: AI가 계약을 따라 구현하므로, 타입 안전성이 자동 보장됨
+**Reason**: Since AI implements following contracts, type safety is automatically guaranteed
 
 #### Python (Pydantic)
 
 ```python
-# 계약 정의 (AI가 이를 따라 구현)
+# Contract definition (AI implements following this)
 from pydantic import BaseModel, Field, EmailStr
 
 class CreateUserRequest(BaseModel):
-    """사용자 생성 계약"""
+    """User creation contract"""
     email: EmailStr
     username: str = Field(min_length=3, max_length=50)
     password: str = Field(min_length=8)
     age: int = Field(ge=0, le=150)
 
 class UserResponse(BaseModel):
-    """사용자 응답 계약"""
+    """User response contract"""
     id: str
     email: str
     username: str
     created_at: str
 
-# AI가 이 계약을 위반할 수 없음 (자동 검증)
+# AI cannot violate this contract (auto-validated)
 ```
 
 #### TypeScript
 
 ```typescript
-// 계약 정의
+// Contract definition
 interface CreateUserRequest {
   email: string;
-  username: string; // 3-50자
-  password: string; // 최소 8자
+  username: string; // 3-50 chars
+  password: string; // min 8 chars
   age: number; // 0-150
 }
 
@@ -59,7 +59,7 @@ interface UserResponse {
   createdAt: string;
 }
 
-// Zod로 런타임 검증
+// Runtime validation with Zod
 import { z } from 'zod';
 
 const createUserSchema = z.object({
@@ -73,7 +73,7 @@ const createUserSchema = z.object({
 #### Dart (Flutter)
 
 ```dart
-// 계약 정의
+// Contract definition
 class CreateUserRequest {
   const CreateUserRequest({
     required this.email,
@@ -83,11 +83,11 @@ class CreateUserRequest {
   });
 
   final String email;
-  final String username; // 3-50자
-  final String password; // 최소 8자
+  final String username; // 3-50 chars
+  final String password; // min 8 chars
   final int age; // 0-150
 
-  // JSON 직렬화 (계약 강제)
+  // JSON serialization (contract enforcement)
   Map<String, dynamic> toJson() => {
     'email': email,
     'username': username,
@@ -97,24 +97,24 @@ class CreateUserRequest {
 }
 ```
 
-### 2. Integration Testing (높음) ⭐⭐⭐
+### 2. Integration Testing (High) ⭐⭐⭐
 
-**개념**: 여러 모듈이 함께 작동하는 **실제 시나리오 테스트**
+**Concept**: **Test real scenarios** where multiple modules work together
 
-**이유**: AI가 놓친 모듈 간 상호작용 오류를 발견
+**Reason**: Discovers module interaction errors that AI may have missed
 
 ```python
-# ✅ 통합 테스트: 실제 비즈니스 흐름
+# ✅ Integration test: Real business flow
 @pytest.mark.asyncio
 async def test_user_registration_flow():
     """
-    시나리오: 신규 사용자 가입
-    1. 이메일 중복 체크
-    2. 사용자 생성
-    3. 환영 이메일 발송
-    4. 기본 설정 생성
+    Scenario: New user registration
+    1. Check email duplication
+    2. Create user
+    3. Send welcome email
+    4. Create default settings
     """
-    # Given: 신규 사용자 정보
+    # Given: New user information
     request = CreateUserRequest(
         email="new@example.com",
         username="newuser",
@@ -122,50 +122,50 @@ async def test_user_registration_flow():
         age=25,
     )
 
-    # When: 회원가입 API 호출
+    # When: Call registration API
     response = await client.post("/api/users", json=request.dict())
 
-    # Then: 사용자 생성 성공
+    # Then: User creation succeeds
     assert response.status_code == 201
     data = response.json()
     assert data["email"] == "new@example.com"
 
-    # And: 환영 이메일 발송 확인
+    # And: Welcome email sent
     assert email_service.sent_count == 1
 
-    # And: 기본 설정 생성 확인
+    # And: Default settings created
     settings = await get_user_settings(data["id"])
     assert settings is not None
 ```
 
 ```typescript
-// ✅ 통합 테스트: React 컴포넌트 + API
+// ✅ Integration test: React component + API
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { UserRegistration } from './UserRegistration';
 
 test('user can register successfully', async () => {
-  // Given: 회원가입 폼 렌더링
+  // Given: Render registration form
   render(<UserRegistration />);
 
-  // When: 사용자가 폼 입력
+  // When: User fills form
   await userEvent.type(screen.getByLabelText('Email'), 'new@example.com');
   await userEvent.type(screen.getByLabelText('Username'), 'newuser');
   await userEvent.type(screen.getByLabelText('Password'), 'password123');
   await userEvent.click(screen.getByRole('button', { name: 'Sign Up' }));
 
-  // Then: 성공 메시지 표시
+  // Then: Success message displayed
   await waitFor(() => {
     expect(screen.getByText('Welcome!')).toBeInTheDocument();
   });
 });
 ```
 
-### 3. Property-Based Testing (중간) ⭐⭐
+### 3. Property-Based Testing (Medium) ⭐⭐
 
-**개념**: 입력 범위 전체를 **자동 생성하여 테스트**
+**Concept**: **Automatically generate inputs** across entire input range to test
 
-**이유**: AI가 생각 못한 엣지 케이스를 자동으로 발견
+**Reason**: Automatically discovers edge cases AI didn't think of
 
 ```python
 # ✅ Property-based testing (Hypothesis)
@@ -177,7 +177,7 @@ from hypothesis import given, strategies as st
     username=st.text(min_size=3, max_size=50),
 )
 def test_user_creation_with_any_valid_input(age, email, username):
-    """모든 유효한 입력으로 사용자 생성 가능"""
+    """User creation possible with any valid input"""
     user = create_user(email=email, username=username, age=age)
     assert user.age == age
     assert user.email == email
@@ -190,8 +190,8 @@ import fc from 'fast-check';
 test('discount calculation always returns valid percentage', () => {
   fc.assert(
     fc.property(
-      fc.float({ min: 0, max: 10000 }), // 가격
-      fc.float({ min: 0, max: 1 }), // 할인율
+      fc.float({ min: 0, max: 10000 }), // price
+      fc.float({ min: 0, max: 1 }), // discount rate
       (price, rate) => {
         const discount = calculateDiscount(price, rate);
         return discount >= 0 && discount <= price;
@@ -201,22 +201,22 @@ test('discount calculation always returns valid percentage', () => {
 });
 ```
 
-### 4. Unit Testing (낮음, 선택적) ⭐
+### 4. Unit Testing (Low, Selective) ⭐
 
-**개념**: 개별 함수/메서드 테스트
+**Concept**: Test individual functions/methods
 
-**언제 작성**: **복잡한 비즈니스 로직만** 선택적으로
+**When to write**: **Only for complex business logic** selectively
 
 ```python
-# ✅ Unit Test: 복잡한 비즈니스 규칙
+# ✅ Unit Test: Complex business rules
 def test_tier_selection_score_calculation():
     """
-    대장금 선발 점수 계산 (복잡한 가중치)
-    - 피드 ×1.15
+    Selection score calculation (complex weights)
+    - Feed ×1.15
     - OCR ×1.2
-    - 좋아요 ×1.0
-    - 북마크 ×1.0
-    - 연계 ×1.5
+    - Likes ×1.0
+    - Bookmarks ×1.0
+    - Partnerships ×1.5
     """
     score = calculate_selection_score(
         feeds=10,      # 10 × 1.15 = 11.5
@@ -227,73 +227,73 @@ def test_tier_selection_score_calculation():
     )
     assert score == 48.5
 
-# ❌ 불필요한 Unit Test: 단순 CRUD
+# ❌ Unnecessary Unit Test: Simple CRUD
 def test_get_user_by_id():
-    """Integration Test로 충분"""
+    """Integration Test is sufficient"""
     user = get_user("user-123")
-    assert user.id == "user-123"  # 의미 없음
+    assert user.id == "user-123"  # Meaningless
 ```
 
-### 5. E2E Testing (시나리오 검증) ⭐⭐
+### 5. E2E Testing (Scenario Verification) ⭐⭐
 
-**개념**: 사용자 관점의 전체 시나리오 테스트
+**Concept**: Test complete scenarios from user perspective
 
-**언제**: 주요 사용자 플로우만 선택적으로
+**When**: Only selectively for major user flows
 
 ```typescript
 // ✅ E2E Test: Playwright/Cypress
 test('user can complete full registration flow', async ({ page }) => {
-  // 1. 홈페이지 접속
+  // 1. Visit homepage
   await page.goto('https://app.example.com');
 
-  // 2. 회원가입 클릭
+  // 2. Click sign up
   await page.click('text=Sign Up');
 
-  // 3. 폼 입력
+  // 3. Fill form
   await page.fill('input[name="email"]', 'test@example.com');
   await page.fill('input[name="username"]', 'testuser');
   await page.fill('input[name="password"]', 'password123');
 
-  // 4. 제출
+  // 4. Submit
   await page.click('button[type="submit"]');
 
-  // 5. 대시보드로 리다이렉트 확인
+  // 5. Verify redirect to dashboard
   await expect(page).toHaveURL('/dashboard');
   await expect(page.locator('h1')).toContainText('Welcome, testuser!');
 });
 ```
 
-## 테스트 우선순위 결정 트리
+## Test Priority Decision Tree
 
 ```
-새 기능 개발 시:
+When developing new features:
 
-1. Contract 정의했는가?
-   No → Contract 먼저 작성 (Pydantic/Zod/Dart class)
+1. Did you define contracts?
+   No → Write contracts first (Pydantic/Zod/Dart class)
    Yes → ⬇️
 
-2. 여러 모듈이 협력하는가?
-   Yes → Integration Test 작성 ⭐⭐⭐
+2. Do multiple modules collaborate?
+   Yes → Write Integration Test ⭐⭐⭐
    No → ⬇️
 
-3. 복잡한 비즈니스 로직인가? (복잡도 > 10)
-   Yes → Unit Test 작성 ⭐
+3. Is it complex business logic? (complexity > 10)
+   Yes → Write Unit Test ⭐
    No → ⬇️
 
-4. 핵심 사용자 플로우인가?
-   Yes → E2E Test 작성 ⭐⭐
-   No → 완료 ✅
+4. Is it a core user flow?
+   Yes → Write E2E Test ⭐⭐
+   No → Done ✅
 ```
 
-## AI 시대의 TDD 대안: ATDD (AI-Test-Driven Development)
+## TDD Alternative for AI Era: ATDD (AI-Test-Driven Development)
 
 ```markdown
-# 새로운 개발 흐름
+# New development flow
 
-1. **요구사항 명확화** (개발자)
-   "프리미엄 사용자는 10% 할인을 받는다"
+1. **Clarify requirements** (Developer)
+   "Premium users get 10% discount"
 
-2. **Contract 정의** (개발자)
+2. **Define contracts** (Developer)
    interface DiscountRequest {
      userId: string;
      orderTotal: number;
@@ -305,28 +305,29 @@ test('user can complete full registration flow', async ({ page }) => {
      discountRate: number;
    }
 
-3. **테스트 시나리오 작성** (개발자 or AI)
+3. **Write test scenarios** (Developer or AI)
    test('premium user gets 10% discount', () => {
-     // Given: 프리미엄 유저, 100원 주문
-     // When: 할인 계산
-     // Then: 90원 (10% 할인)
+     // Given: Premium user, 100 order
+     // When: Calculate discount
+     // Then: 90 (10% discount)
    })
 
-4. **AI가 구현** (AI)
-   - Contract를 따라 코드 생성
-   - 테스트 통과하는 코드 작성
+4. **AI implements** (AI)
+   - Generate code following contracts
+   - Write code that passes tests
 
-5. **통합 테스트** (자동)
-   - CI/CD에서 전체 시나리오 검증
+5. **Integration test** (Automated)
+   - Verify complete scenarios in CI/CD
 
-6. **리팩토링** (AI + 개발자)
-   - 복잡도, 중복 제거
-   - SRP 준수 확인
+6. **Refactoring** (AI + Developer)
+   - Remove complexity, duplication
+   - Verify SRP compliance
 ```
 
-## 언어별 도구
+## Language-specific Tools
 
 ### Python
+
 ```bash
 # Contract Testing
 pip install pydantic
@@ -342,6 +343,7 @@ pip install pytest-cov
 ```
 
 ### TypeScript/JavaScript
+
 ```bash
 # Contract Testing
 npm install zod
@@ -357,6 +359,7 @@ npm install playwright
 ```
 
 ### Dart/Flutter
+
 ```bash
 # Integration Testing
 flutter pub add integration_test
@@ -368,29 +371,29 @@ flutter test
 flutter drive --target=test_driver/app.dart
 ```
 
-## 안티패턴
+## Anti-patterns
 
 ```python
-# ❌ 구현 세부사항 테스트 (깨지기 쉬움)
+# ❌ Testing implementation details (fragile)
 def test_internal_cache_structure():
     service = UserService()
-    assert service._cache == {}  # 내부 구현에 의존
+    assert service._cache == {}  # Depends on internal implementation
 
-# ✅ 공개 API 테스트 (견고함)
+# ✅ Testing public API (robust)
 def test_user_data_is_cached_after_first_call():
     service = UserService()
     user1 = service.get_user("123")
     user2 = service.get_user("123")
-    assert user1 is user2  # 동작만 검증
+    assert user1 is user2  # Only verify behavior
 ```
 
 ```typescript
-// ❌ 모든 함수에 Unit Test (과도함)
+// ❌ Unit tests for every function (excessive)
 test('add function adds two numbers', () => {
-  expect(add(1, 2)).toBe(3);  // 의미 없음
+  expect(add(1, 2)).toBe(3);  // Meaningless
 });
 
-// ✅ 복잡한 로직만 테스트
+// ✅ Only test complex logic
 test('calculate shipping cost with multiple conditions', () => {
   const cost = calculateShipping({
     weight: 10,
@@ -398,40 +401,40 @@ test('calculate shipping cost with multiple conditions', () => {
     isPremium: true,
     isExpress: false,
   });
-  expect(cost).toBe(45);  // 복잡한 규칙 검증
+  expect(cost).toBe(45);  // Verify complex rules
 });
 ```
 
-## 테스트 커버리지 목표
+## Test Coverage Goals
 
 ```markdown
-# 현실적인 목표
+# Realistic goals
 
-- Contract Coverage: 100% (모든 API는 스키마 정의)
-- Integration Coverage: 80% (주요 비즈니스 흐름)
-- Unit Coverage: 선택적 (복잡한 로직만)
-- E2E Coverage: 20-30% (핵심 사용자 플로우)
+- Contract Coverage: 100% (All APIs have schema definitions)
+- Integration Coverage: 80% (Major business flows)
+- Unit Coverage: Selective (Complex logic only)
+- E2E Coverage: 20-30% (Core user flows)
 
-# ❌ 피해야 할 것
-- 100% Unit Test Coverage (시간 낭비)
-- 단순 CRUD에 Unit Test (Integration으로 충분)
-- 모든 엣지 케이스 수동 테스트 (Property-based 사용)
+# ❌ Avoid
+- 100% Unit Test Coverage (waste of time)
+- Unit Tests for simple CRUD (Integration is sufficient)
+- Manual testing all edge cases (use Property-based)
 ```
 
-## 핵심 요약
+## Key Summary
 
 ```markdown
-AI 시대 테스트 전략:
+AI Era Testing Strategy:
 
-1. ✅ Contract-First (타입/스키마 먼저)
-2. ✅ Integration Testing (실제 시나리오)
-3. ⚠️ Unit Testing (복잡한 로직만)
-4. ❌ 전통적 TDD (AI 시대엔 비효율)
+1. ✅ Contract-First (types/schemas first)
+2. ✅ Integration Testing (real scenarios)
+3. ⚠️ Unit Testing (complex logic only)
+4. ❌ Traditional TDD (inefficient in AI era)
 
-목표:
-- 단일 책임 (SRP)
-- 중복 제거 (DRY)
-- 재사용성
-- 낮은 복잡도
-- 빠른 피드백
+Goals:
+- Single Responsibility (SRP)
+- No Duplication (DRY)
+- Reusability
+- Low Complexity
+- Fast Feedback
 ```

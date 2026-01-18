@@ -126,4 +126,4 @@ Even without `/vibe.*` commands, you can:
 1. Call tools directly via node commands
 2. Use LLM hooks (`gpt-`, `gemini-`)
 3. Reference skills for guidance
-4. Apply coding rules from `.claude/vibe/rules/`
+4. Apply coding rules from `~/.claude/vibe/rules/` (global)

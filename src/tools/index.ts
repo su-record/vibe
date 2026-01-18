@@ -34,35 +34,11 @@ export { checkCouplingCohesion } from './convention/checkCouplingCohesion.js';
 export { suggestImprovements } from './convention/suggestImprovements.js';
 export { applyQualityRules } from './convention/applyQualityRules.js';
 
-// Thinking tools
-export { createThinkingChain } from './thinking/createThinkingChain.js';
-export { analyzeProblem } from './thinking/analyzeProblem.js';
-export { stepByStepAnalysis } from './thinking/stepByStepAnalysis.js';
-export { formatAsPlan } from './thinking/formatAsPlan.js';
-export { breakDownProblem } from './thinking/breakDownProblem.js';
-export { thinkAloudProcess } from './thinking/thinkAloudProcess.js';
-
-// Planning tools
-export { generatePrd } from './planning/generatePrd.js';
-export { createUserStories } from './planning/createUserStories.js';
-export { analyzeRequirements } from './planning/analyzeRequirements.js';
-export { featureRoadmap } from './planning/featureRoadmap.js';
-
-// Prompt tools
-export { enhancePrompt } from './prompt/enhancePrompt.js';
-export { analyzePrompt } from './prompt/analyzePrompt.js';
-
 // UI tools
 export { previewUiAscii } from './ui/previewUiAscii.js';
 
 // Time tools
 export { getCurrentTime } from './time/getCurrentTime.js';
-
-// Reasoning tools
-export { applyReasoningFramework } from './reasoning/applyReasoningFramework.js';
-
-// Analytics tools
-export { getUsageAnalytics } from './analytics/getUsageAnalytics.js';
 
 // Lib exports (for advanced usage)
 export { MemoryManager } from '../lib/MemoryManager.js';

@@ -38,7 +38,11 @@
       "Bash(claude plugin list:*)",
       "Bash(tsc:*)",
       "Bash(cmd.exe /c \"npm run build\")",
-      "Bash(powershell.exe -Command \"npm run build\")"
+      "Bash(powershell.exe -Command \"npm run build\")",
+      "Bash(findstr:*)",
+      "Bash(powershell -Command \"cd ''c:\\\\Users\\\\endba\\\\WorkSpace\\\\vibe''; npx tsc; ls dist/cli/ | Select-String post\")",
+      "Bash(powershell -Command \"cd ''c:\\\\Users\\\\endba\\\\WorkSpace\\\\vibe''; npx tsc 2>&1\")",
+      "Bash(powershell -Command:*)"
     ]
   }
 }

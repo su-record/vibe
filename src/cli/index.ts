@@ -43,8 +43,6 @@ import {
   updateConstitution,
   updateClaudeMd,
   updateRules,
-  installGlobalAssets,
-  installGlobalVibePackage,
   migrateLegacyVibe,
   updateGitignore,
   updateConfig,
@@ -69,6 +67,8 @@ const command = args[0];
 const options: CliOptions = {
   silent: args.includes('--silent') || args.includes('-s')
 };
+
+const skipUpgrade = args.includes('--skip-upgrade');
 
 const positionalArgs = args.filter(arg => !arg.startsWith('-'));
 
@@ -106,26 +106,11 @@ async function init(projectName?: string): Promise<void> {
 
     ensureDir(vibeDir);
 
-    // MCP 서버 등록 (context7)
-    log('🔧 Registering settings (global)...\n');
-    registerMcpServers(false);
-
-    // .claude/vibe 폴더 구조 생성
-    ['specs', 'features'].forEach(dir => {
-      ensureDir(path.join(vibeDir, dir));
-    });
-
     // 레거시 마이그레이션
     migrateLegacyVibe(projectRoot, vibeDir);
 
     // .gitignore 업데이트
     updateGitignore(projectRoot);
-
-    // 전역 vibe 패키지 먼저 설치 (~/.config/vibe/) - hooks에서 참조함
-    installGlobalVibePackage(false);
-
-    // 전역 assets 설치 (hooks가 위에서 설치된 패키지 참조)
-    installGlobalAssets(false);
 
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
@@ -195,7 +180,8 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
         stdio: options.silent ? 'pipe' : 'inherit'
       });
 
-      execSync(`vibe update${options.silent ? ' --silent' : ''}`, {
+      // 업그레이드 완료 후 새 버전으로 설정 업데이트 (--skip-upgrade로 무한 루프 방지)
+      execSync(`vibe update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
@@ -219,6 +205,15 @@ async function update(): Promise<void> {
       return;
     }
 
+    // 1. 최신 버전 확인 및 업그레이드 (전역 패키지 먼저)
+    // npm install -g 실행 시 postinstall이 전역 설정을 자동 처리
+    // --skip-upgrade 플래그가 있으면 업그레이드 체크 건너뜀 (무한 루프 방지)
+    if (!skipUpgrade) {
+      const wasUpgraded = await checkAndUpgradeVibe();
+      if (wasUpgraded) return;
+    }
+
+    // 2. 프로젝트 설정 업데이트
     // 레거시 마이그레이션
     if (fs.existsSync(legacyVibeDir) && !fs.existsSync(vibeDir)) {
       migrateLegacyVibe(projectRoot, vibeDir);
@@ -232,12 +227,6 @@ async function update(): Promise<void> {
     }
 
     ensureDir(vibeDir);
-
-    // 최신 버전 확인
-    if (!options.silent) {
-      const wasUpgraded = await checkAndUpgradeVibe();
-      if (wasUpgraded) return;
-    }
 
     // 레거시 정리
     cleanupLegacy(projectRoot, claudeDir);
@@ -256,12 +245,6 @@ async function update(): Promise<void> {
 
     // 규칙 업데이트
     updateRules(vibeDir, detectedStacks, true);
-
-    // 전역 vibe 패키지 먼저 설치 (~/.config/vibe/) - hooks에서 참조함
-    installGlobalVibePackage(true);
-
-    // 전역 assets 업데이트 (hooks가 위에서 설치된 패키지 참조)
-    installGlobalAssets(true);
 
     // 프로젝트 로컬 자산 제거
     removeLocalAssets(claudeDir);
@@ -531,21 +514,6 @@ export { validateCodeQuality } from '../tools/convention/validateCodeQuality.js'
 export { checkCouplingCohesion } from '../tools/convention/checkCouplingCohesion.js';
 export { suggestImprovements } from '../tools/convention/suggestImprovements.js';
 export { applyQualityRules } from '../tools/convention/applyQualityRules.js';
-
-export { createThinkingChain } from '../tools/thinking/createThinkingChain.js';
-export { analyzeProblem } from '../tools/thinking/analyzeProblem.js';
-export { stepByStepAnalysis } from '../tools/thinking/stepByStepAnalysis.js';
-export { formatAsPlan } from '../tools/thinking/formatAsPlan.js';
-export { breakDownProblem } from '../tools/thinking/breakDownProblem.js';
-export { thinkAloudProcess } from '../tools/thinking/thinkAloudProcess.js';
-
-export { generatePrd } from '../tools/planning/generatePrd.js';
-export { createUserStories } from '../tools/planning/createUserStories.js';
-export { analyzeRequirements } from '../tools/planning/analyzeRequirements.js';
-export { featureRoadmap } from '../tools/planning/featureRoadmap.js';
-
-export { enhancePrompt } from '../tools/prompt/enhancePrompt.js';
-export { analyzePrompt } from '../tools/prompt/analyzePrompt.js';
 
 export { previewUiAscii } from '../tools/ui/previewUiAscii.js';
 export { getCurrentTime } from '../tools/time/getCurrentTime.js';

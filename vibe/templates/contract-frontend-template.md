@@ -1,6 +1,6 @@
-# Frontend Contract Tests: {기능명}
+# Frontend Contract Tests: {Feature Name}
 
-**Generated from**: `specs/{기능명}.md` (Section 6: API 계약)
+**Generated from**: `specs/{feature-name}.md` (Section 6: API Contract)
 **Framework**: {Flutter | React | React Native | Vue}
 **Language**: {Dart | TypeScript | JavaScript}
 **Priority**: {HIGH | MEDIUM | LOW}
@@ -9,13 +9,14 @@
 
 ## Overview
 
-Frontend Contract Testing은 **Consumer 관점에서 API 계약을 검증**합니다:
-- ✅ API 요청이 계약에 맞게 전송되는지
-- ✅ API 응답이 예상 스키마를 따르는지
-- ✅ 에러 처리가 계약대로 동작하는지
-- ✅ Mock 서버로 독립적 테스트 가능
+Frontend Contract Testing **validates API contracts from the Consumer perspective**:
 
-**Consumer-Driven Contract Testing** (Pact 패턴)
+- ✅ API requests are sent according to contract
+- ✅ API responses follow expected schema
+- ✅ Error handling works as per contract
+- ✅ Independent testing with mock server
+
+**Consumer-Driven Contract Testing** (Pact pattern)
 
 ---
 
@@ -24,6 +25,7 @@ Frontend Contract Testing은 **Consumer 관점에서 API 계약을 검증**합�
 ### Contract 1: Create Resource
 
 **Consumer Expectation**:
+
 ```json
 {
   "request": {
@@ -56,7 +58,7 @@ Frontend Contract Testing은 **Consumer 관점에서 API 계약을 검증**합�
 
 ### Flutter (Dart + http_mock_adapter)
 
-**File**: `test/contract/{기능명}_contract_test.dart`
+**File**: `test/contract/{feature_name}_contract_test.dart`
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
@@ -200,15 +202,16 @@ bool isValidUuid(String uuid) {
 ```
 
 **Run**:
+
 ```bash
-flutter test test/contract/{기능명}_contract_test.dart
+flutter test test/contract/{feature_name}_contract_test.dart
 ```
 
 ---
 
 ### React (TypeScript + MSW + Zod)
 
-**File**: `tests/contract/{기능명}.contract.test.ts`
+**File**: `tests/contract/{feature-name}.contract.test.ts`
 
 ```typescript
 import { rest } from 'msw';
@@ -391,15 +394,16 @@ describe('Schema Validation Utilities', () => {
 ```
 
 **Run**:
+
 ```bash
-npm test -- tests/contract/{기능명}.contract.test.ts
+npm test -- tests/contract/{feature-name}.contract.test.ts
 ```
 
 ---
 
 ### React Native (TypeScript + Axios + MockAdapter)
 
-**File**: `__tests__/contract/{기능명}.contract.test.ts`
+**File**: `__tests__/contract/{feature-name}.contract.test.ts`
 
 ```typescript
 import axios from 'axios';
@@ -447,6 +451,7 @@ describe('Create Resource Contract (React Native)', () => {
 ```
 
 **Run**:
+
 ```bash
 npm test -- __tests__/contract/
 ```
@@ -457,7 +462,7 @@ npm test -- __tests__/contract/
 
 ### Flutter (dart_pact)
 
-**File**: `test/pact/{기능명}_pact_test.dart`
+**File**: `test/pact/{feature_name}_pact_test.dart`
 
 ```dart
 import 'package:pact_consumer_dart/pact_consumer_dart.dart';
@@ -559,36 +564,36 @@ jobs:
 
 ## Best Practices
 
-1. **Mock 서버 활용**
-   - ✅ 백엔드 없이 독립적 테스트
-   - ✅ 계약 위반 시 즉시 감지
+1. **Use Mock Server**
+   - ✅ Independent testing without backend
+   - ✅ Immediate detection of contract violations
 
 2. **Schema Validation**
-   - ✅ Zod, JSON Schema로 응답 검증
-   - ✅ 타입 안정성 보장
+   - ✅ Validate responses with Zod, JSON Schema
+   - ✅ Ensure type safety
 
 3. **Consumer-Driven**
-   - ✅ Frontend 요구사항 먼저 정의
-   - ✅ Pact 파일로 백엔드 팀과 공유
+   - ✅ Define frontend requirements first
+   - ✅ Share Pact files with backend team
 
-4. **CI/CD 자동화**
-   - ✅ PR마다 Contract 검증
-   - ✅ Pact Broker로 중앙 관리
+4. **CI/CD Automation**
+   - ✅ Contract verification on every PR
+   - ✅ Central management with Pact Broker
 
 ---
 
 ## Next Steps
 
 ```bash
-# 1. Contract 테스트 작성
-vibe contract "{기능명}" --frontend
+# 1. Write contract tests
+vibe contract "{feature name}" --frontend
 
-# 2. Mock 서버로 개발
+# 2. Develop with mock server
 flutter test test/contract/ --watch
 
-# 3. Pact 생성 및 발행
+# 3. Generate and publish Pact
 flutter test test/pact/
 
-# 4. 백엔드와 계약 검증
-vibe verify "{기능명}" --contract
+# 4. Verify contract with backend
+vibe verify "{feature name}" --contract
 ```

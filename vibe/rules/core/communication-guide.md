@@ -1,104 +1,98 @@
-# 💬 커뮤니케이션 가이드
+# Communication Guide
 
-## ⚠️ 최우선 규칙: 한국어로 응답
+## Language Configuration
 
-**모든 대화, 설명, 주석은 한국어로 작성합니다.**
+Language can be configured per project in `.sutory/config.json`. Code itself (function names, variable names, etc.) should always be in English.
 
-- ✅ AI 응답: 한국어
-- ✅ 코드 주석: 한국어
-- ✅ 문서: 한국어
-- ✅ 에러 메시지: 한국어
-- ⚠️ 예외: 코드 자체 (함수명, 변수명 등)는 영어
-
-## 3.1 코드 제공 형식
+## 3.1 Code Delivery Format
 
 ```markdown
-### 작업 범위
+### Scope of Work
 
-"요청하신 대로 UserProfile 컴포넌트의 상태 관리 로직만 수정했습니다."
+"As requested, I only modified the state management logic in the UserProfile component."
 
-### 변경 사항 요약
+### Summary of Changes
 
-주문 상태 업데이트 로직 개선 - Optimistic updates 적용
+Improved order status update logic - Applied optimistic updates
 
-### 코드
+### Code
 
-[완전한 코드 블록]
+[Complete code block]
 
-### 참고사항
+### Notes
 
-- 에러 발생 시 자동 롤백
-- 네트워크 재시도 3회
+- Auto-rollback on error
+- 3 network retries
 ```
 
-## 3.2 리뷰 응답 형식
+## 3.2 Review Response Format
 
 ```markdown
-### 개선점
+### Improvements
 
-1. memoization 누락 (성능)
-2. error boundary 미적용 (안정성)
+1. Missing memoization (performance)
+2. Error boundary not applied (stability)
 
-### 권장사항
+### Recommendations
 
-useMemo 적용 및 ErrorBoundary로 감싸기
+Apply useMemo and wrap with ErrorBoundary
 ```
 
-## 3.3 에러 보고 형식
+## 3.3 Error Report Format
 
 ```markdown
-### 문제
+### Problem
 
-[발생한 문제 명확히 설명]
+[Clearly explain the issue that occurred]
 
-### 원인
+### Cause
 
-[분석된 원인]
+[Analyzed cause]
 
-### 해결 방법
+### Solution
 
-[구체적인 해결 단계]
+[Specific resolution steps]
 
-### 예방책
+### Prevention
 
-[향후 방지 방법]
+[How to prevent in the future]
 ```
 
-## 3.4 변경사항 설명 원칙
+## 3.4 Change Explanation Principles
 
-- **명확성**: 무엇을 왜 변경했는지 명확히
-- **간결성**: 핵심만 전달
-- **완전성**: 부작용과 주의사항 포함
-- **추적성**: 관련 이슈/요청 참조
+- **Clarity**: Clearly explain what was changed and why
+- **Conciseness**: Communicate only the essentials
+- **Completeness**: Include side effects and caveats
+- **Traceability**: Reference related issues/requests
 
-## 3.5 특수 명령어 실행
+## 3.5 Special Command Execution
 
-- **"optimize"**: 성능 개선 (memoization, 번들 크기 등)
-- **"enhance accessibility"**: ARIA, 키보드 지원 등 추가
-- **"strengthen types"**: any 제거, 타입 안전성 향상
-- **"cleanup"**: 불필요한 코드 제거 (요청 시에만)
-- **"split"**: 컴포넌트/함수 분리 (요청 시에만)
+- **"optimize"**: Performance improvements (memoization, bundle size, etc.)
+- **"enhance accessibility"**: Add ARIA, keyboard support, etc.
+- **"strengthen types"**: Remove `any`, improve type safety
+- **"cleanup"**: Remove unnecessary code (only when requested)
+- **"split"**: Separate components/functions (only when requested)
 
-## 3.6 질문 형식
+## 3.6 Question Format
 
-### 명확성이 필요할 때
+### When Clarity is Needed
 
 ```markdown
-다음 사항을 확인해주세요:
+Please clarify the following:
 
-1. [구체적인 질문 1]
-2. [구체적인 질문 2]
+1. [Specific question 1]
+2. [Specific question 2]
 
-이 정보가 있으면 더 정확한 구현이 가능합니다.
+With this information, a more accurate implementation is possible.
 ```
 
-### 대안 제시
+### Presenting Alternatives
 
 ```markdown
-요청하신 방법 외에 다음 대안도 가능합니다:
+In addition to your requested approach, the following alternatives are possible:
 
-**방법 A**: [설명] - 장점: [장점], 단점: [단점]
-**방법 B**: [설명] - 장점: [장점], 단점: [단점]
+**Method A**: [Description] - Pros: [Pros], Cons: [Cons]
+**Method B**: [Description] - Pros: [Pros], Cons: [Cons]
 
-어떤 방식을 선호하시나요?
+Which approach do you prefer?
 ```

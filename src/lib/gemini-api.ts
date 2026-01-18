@@ -155,28 +155,7 @@ export const GEMINI_MODELS: Record<string, GeminiModelInfo> = {
     name: 'Gemini 3 Flash',
     description: '최신 Flash, 가장 빠름',
     maxTokens: 8192,
-  },
-  // Claude Sonnet (Antigravity 경유)
-  'claude-sonnet': {
-    id: 'claude-sonnet-4-5',
-    name: 'Claude Sonnet 4.5 (Antigravity)',
-    description: 'Claude Sonnet via Gemini 구독',
-    maxTokens: 8192,
-  },
-  // Claude Sonnet Thinking (Antigravity 경유)
-  'claude-sonnet-thinking': {
-    id: 'claude-sonnet-4-5-thinking',
-    name: 'Claude Sonnet 4.5 Thinking (Antigravity)',
-    description: 'Claude Sonnet Thinking via Gemini 구독',
-    maxTokens: 8192,
-  },
-  // Claude Opus Thinking (Antigravity 경유)
-  'claude-opus': {
-    id: 'claude-opus-4-5-thinking',
-    name: 'Claude Opus 4.5 Thinking (Antigravity)',
-    description: 'Claude Opus via Gemini 구독',
-    maxTokens: 8192,
-  },
+  }
 };
 
 // 기본 모델 (gemini-3-flash가 빠름)
@@ -226,17 +205,13 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
   } = options;
 
   // API Key 방식은 Google AI Studio 모델 사용
-  // Antigravity 전용 모델(claude-*)은 API Key로 사용 불가
+  // OAuth(gemini-3-*)는 내부 모델, API Key는 공식 모델명 사용
   const apiKeyModelMap: Record<string, string> = {
-    'gemini-3-pro-high': 'gemini-1.5-pro',
-    'gemini-3-pro': 'gemini-1.5-pro',
-    'gemini-3-flash': 'gemini-1.5-flash',
-    'claude-sonnet': 'gemini-1.5-pro', // Claude 모델은 Gemini Pro로 대체
-    'claude-sonnet-thinking': 'gemini-1.5-pro',
-    'claude-opus': 'gemini-1.5-pro',
+    'gemini-3-pro': 'gemini-3-pro-preview',
+    'gemini-3-flash': 'gemini-3-flash-preview'
   };
 
-  const actualModel = apiKeyModelMap[model] || 'gemini-1.5-flash';
+  const actualModel = apiKeyModelMap[model] || 'gemini-3-flash-preview';
 
   // 메시지를 Gemini 형식으로 변환
   const contents = messages.map(msg => ({

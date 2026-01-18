@@ -1,84 +1,127 @@
 # Project Constitution
 
-이 문서는 프로젝트의 핵심 원칙과 코딩 표준을 정의합니다.
+This document defines the core principles and coding standards for the project.
 
 ---
 
-## 언어 설정
+## Conversation Language
 
-**기본 언어**: 한국어 (ko)
+**Response Language**: Auto-detected from OS (en/ko)
 
-변경하려면 `.sutory/config.json`에서 수정:
+This setting controls **conversation language with user only**.
+All generated documents (SPEC, Feature, etc.) are **always in English**.
+
+To change, modify in `.claude/vibe/config.json`:
+
 ```json
 {
-  "language": "ko"  // "en"으로 변경 가능
+  "language": "ko"  // "en" | "ko" - conversation language only
 }
 ```
 
 ---
 
-## 1. 프로젝트 원칙
+## Document References
 
-### 가치 (Values)
-1. **사용자 중심**: 사용자 경험을 최우선으로
-2. **품질**: 빠른 것보다 올바른 것
-3. **간결함**: 복잡함보다 단순함
-4. **협업**: 개인보다 팀
+All reference documents are stored globally and specified in `.claude/vibe/config.json`:
 
-### 의사결정 기준
-1. 보안 > 성능 > 편의성
-2. 명확함 > 영리함
-3. 테스트 가능 > 추상적 설계
+```json
+{
+  "references": {
+    "rules": [
+      "~/.claude/vibe/rules/core/quick-start.md",
+      "~/.claude/vibe/rules/core/development-philosophy.md",
+      "~/.claude/vibe/rules/core/communication-guide.md",
+      "~/.claude/vibe/rules/quality/checklist.md",
+      "~/.claude/vibe/rules/quality/bdd-contract-testing.md",
+      "~/.claude/vibe/rules/quality/testing-strategy.md",
+      "~/.claude/vibe/rules/standards/anti-patterns.md",
+      "~/.claude/vibe/rules/standards/code-structure.md",
+      "~/.claude/vibe/rules/standards/complexity-metrics.md",
+      "~/.claude/vibe/rules/standards/naming-conventions.md"
+    ],
+    "languages": [
+      "~/.claude/vibe/languages/{detected-stack}.md"
+    ],
+    "templates": [
+      "~/.claude/vibe/templates/spec-template.md",
+      "~/.claude/vibe/templates/feature-template.md",
+      "~/.claude/vibe/templates/constitution-template.md",
+      "~/.claude/vibe/templates/contract-backend-template.md",
+      "~/.claude/vibe/templates/contract-frontend-template.md"
+    ]
+  }
+}
+```
+
+- **rules**: Core principles, quality standards, coding conventions (10 documents)
+- **languages**: Stack-specific coding standards (auto-detected from package.json)
+- **templates**: Document templates for SPEC, Feature, Contract tests (5 documents)
 
 ---
 
-## 2. 코딩 표준
+## 1. Project Principles
 
-### 공통 원칙
+### Values
+1. **User-Centric**: User experience first
+2. **Quality**: Correct over fast
+3. **Simplicity**: Simple over complex
+4. **Collaboration**: Team over individual
+
+### Decision Criteria
+1. Security > Performance > Convenience
+2. Clarity > Cleverness
+3. Testable > Abstract Design
+
+---
+
+## 2. Coding Standards
+
+### Common Principles
 - **DRY**: Don't Repeat Yourself
 - **SRP**: Single Responsibility Principle
 - **YAGNI**: You Aren't Gonna Need It
-- **함수 ≤30줄** (권장), ≤50줄 (허용)
+- **Functions ≤30 lines** (recommended), ≤50 lines (allowed)
 - **Cyclomatic Complexity ≤10**
 - **Cognitive Complexity ≤15**
 
-### 네이밍 규칙
-- 변수: 명사 (`userData`, `userList`)
-- 함수: 동사+명사 (`fetchData`, `updateUser`)
+### Naming Rules
+- Variables: nouns (`userData`, `userList`)
+- Functions: verb+noun (`fetchData`, `updateUser`)
 - Boolean: `is/has/can` (`isLoading`, `hasError`)
-- 상수: `UPPER_SNAKE_CASE` (`MAX_RETRY_COUNT`)
+- Constants: `UPPER_SNAKE_CASE` (`MAX_RETRY_COUNT`)
 
 ---
 
-## 3. 품질 기준 (TRUST 5)
+## 3. Quality Standards (TRUST 5)
 
 ### T - Test-first
-- ✅ Contract Testing (최우선)
-- ✅ Integration Testing (70%+ 커버리지)
-- 🔵 Unit Testing (순수 함수만)
+- ✅ Contract Testing (highest priority)
+- ✅ Integration Testing (70%+ coverage)
+- 🔵 Unit Testing (pure functions only)
 
 ### R - Readable
-- 한국어 주석 및 docstring
-- 명확한 변수명
-- 복잡한 로직은 주석으로 설명
+- Clear comments and docstrings
+- Descriptive variable names
+- Comments for complex logic
 
 ### U - Unified
-- 일관된 코딩 스타일
-- 프로젝트 전체 동일한 패턴
+- Consistent coding style
+- Same patterns across project
 
 ### S - Secured
-- SQL Injection 방지
-- XSS 방지
-- 민감 정보 환경 변수로 관리
+- SQL Injection prevention
+- XSS prevention
+- Sensitive info via environment variables
 
 ### T - Trackable
-- Git commit 메시지 명확히
-- TODO/FIXME 주석 활용
-- 중요 결정사항 문서화
+- Clear git commit messages
+- Use TODO/FIXME comments
+- Document important decisions
 
 ---
 
-## 4. 기술 스택
+## 4. Tech Stack
 
 ### Backend
 - Language: TypeScript/Node.js
@@ -87,98 +130,98 @@
 
 ### Frontend
 - Framework: {Flutter / React / etc.}
-- State Management: (프로젝트에 맞게 설정)
+- State Management: (configure per project)
 
 ### Infrastructure
-- Hosting: (프로젝트에 맞게 설정)
-- CI/CD: (프로젝트에 맞게 설정)
+- Hosting: (configure per project)
+- CI/CD: (configure per project)
 
 ---
 
-## 5. Git 워크플로우
+## 5. Git Workflow
 
-### 브랜치 전략
-- `main`: 프로덕션
-- `develop`: 개발 (기본 브랜치)
-- `feature/{기능명}`: 새 기능
-- `fix/{버그명}`: 버그 수정
+### Branch Strategy
+- `main`: Production
+- `develop`: Development (default branch)
+- `feature/{feature-name}`: New features
+- `fix/{bug-name}`: Bug fixes
 
-### Commit 메시지 규칙
+### Commit Message Rules
 ```
-feat: 새 기능 추가
-fix: 버그 수정
-docs: 문서 수정
-refactor: 리팩토링
-test: 테스트 추가/수정
-chore: 빌드, 설정 변경
+feat: Add new feature
+fix: Fix bug
+docs: Update documentation
+refactor: Refactoring
+test: Add/modify tests
+chore: Build, config changes
 ```
 
-### PR 규칙
-1. SPEC 기반 개발
-2. 코드 리뷰 필수
-3. 테스트 통과 확인
-4. SPEC 검증 완료
+### PR Rules
+1. SPEC-based development
+2. Code review required
+3. Tests must pass
+4. SPEC verification complete
 
 ---
 
-## 6. 코드 리뷰 기준
+## 6. Code Review Criteria
 
-### 필수 체크
-- [ ] SPEC 요구사항 충족
-- [ ] TRUST 5 준수
-- [ ] 테스트 작성 및 통과
-- [ ] 문서화 완료
-- [ ] 보안 이슈 없음
+### Required Checks
+- [ ] SPEC requirements met
+- [ ] TRUST 5 compliant
+- [ ] Tests written and passing
+- [ ] Documentation complete
+- [ ] No security issues
 
-### 권장 사항
-- [ ] 성능 최적화 고려
-- [ ] 확장성 고려
-- [ ] 에러 처리 완비
+### Recommendations
+- [ ] Performance optimization considered
+- [ ] Scalability considered
+- [ ] Error handling complete
 
 ---
 
-## 7. 문서화 규칙
+## 7. Documentation Rules
 
-### 코드 주석
-- 모든 함수: 한국어 docstring
-- 복잡한 로직: 인라인 주석
-- TODO/FIXME: 이슈 번호 포함
+### Code Comments
+- All functions: docstrings
+- Complex logic: inline comments
+- TODO/FIXME: include issue number
 
-### API 문서
-- OpenAPI (Swagger) 자동 생성
-- 예시 Request/Response 포함
+### API Documentation
+- OpenAPI (Swagger) auto-generated
+- Include example Request/Response
 
 ### README
-- 프로젝트 개요
-- 설치 및 실행 방법
-- 주요 기능 설명
+- Project overview
+- Installation and run instructions
+- Main features description
 
 ---
 
-## 8. 보안 정책
+## 8. Security Policy
 
-### 인증
-- JWT 기반 인증
-- Refresh 토큰 사용
+### Authentication
+- JWT-based authentication
+- Refresh token usage
 
-### 권한
+### Authorization
 - Role-based Access Control
-- 최소 권한 원칙
+- Least privilege principle
 
-### 데이터 보호
-- 개인정보 암호화
-- HTTPS 필수
-- 환경 변수로 비밀 관리
+### Data Protection
+- Encrypt personal information
+- HTTPS required
+- Manage secrets via environment variables
 
 ---
 
-## 9. 성능 목표
+## 9. Performance Goals
 
-### 응답 시간
+### Response Time
 - API: P95 < 500ms
-- 웹페이지: FCP < 1.5s
+- Web page: FCP < 1.5s
 
-### 가용성
+### Availability
 - Uptime: 99.9%
-- RTO: 1시간
-- RPO: 15분
+- RTO: 1 hour
+- RPO: 15 minutes

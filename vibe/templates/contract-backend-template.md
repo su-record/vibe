@@ -1,6 +1,6 @@
-# Backend Contract Tests: {기능명}
+# Backend Contract Tests: {Feature Name}
 
-**Generated from**: `specs/{기능명}.md` (Section 6: API 계약)
+**Generated from**: `specs/{feature-name}.md` (Section 6: API Contract)
 **Framework**: {FastAPI | Django | Express | NestJS}
 **Language**: {Python | TypeScript | JavaScript}
 **Priority**: {HIGH | MEDIUM | LOW}
@@ -9,19 +9,20 @@
 
 ## Overview
 
-Contract Testing은 **API 계약(스키마)을 검증**합니다:
-- ✅ Request/Response 스키마 준수
-- ✅ 상태 코드 일치
-- ✅ 헤더 검증
-- ✅ 데이터 타입 및 필수 필드 확인
+Contract Testing **validates API contracts (schemas)**:
 
-**Consumer → Provider 계약 보장** (Pact 패턴)
+- ✅ Request/Response schema compliance
+- ✅ Status code matching
+- ✅ Header validation
+- ✅ Data types and required fields verification
+
+**Consumer → Provider contract assurance** (Pact pattern)
 
 ---
 
 ## API Contracts
 
-### Contract 1: {엔드포인트 이름}
+### Contract 1: {Endpoint Name}
 
 **Endpoint**: `POST /api/v1/{resource}`
 **Mapped to**: REQ-001 in SPEC
@@ -45,6 +46,7 @@ Contract Testing은 **API 계약(스키마)을 검증**합니다:
 ```
 
 **JSON Schema**:
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -88,6 +90,7 @@ Contract Testing은 **API 계약(스키마)을 검증**합니다:
 ```
 
 **JSON Schema**:
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -134,7 +137,7 @@ Contract Testing은 **API 계약(스키마)을 검증**합니다:
 
 ### Python (FastAPI + Pydantic)
 
-**File**: `tests/contract/test_{기능명}_contract.py`
+**File**: `tests/contract/test_{feature_name}_contract.py`
 
 ```python
 import pytest
@@ -268,15 +271,16 @@ class TestCreateResourceContract:
 ```
 
 **Run**:
+
 ```bash
-pytest tests/contract/test_{기능명}_contract.py -v --tb=short
+pytest tests/contract/test_{feature_name}_contract.py -v --tb=short
 ```
 
 ---
 
 ### Python (Pact - Consumer-Driven Contracts)
 
-**File**: `tests/pact/consumer_test_{기능명}.py`
+**File**: `tests/pact/consumer_test_{feature_name}.py`
 
 ```python
 import pytest
@@ -320,6 +324,7 @@ def test_create_resource_contract(setup_pact):
 ```
 
 **Generate Pact file**:
+
 ```bash
 pytest tests/pact/ --pact-broker-url=https://your-pact-broker.com
 ```
@@ -328,7 +333,7 @@ pytest tests/pact/ --pact-broker-url=https://your-pact-broker.com
 
 ### TypeScript (NestJS + Jest)
 
-**File**: `test/contract/{기능명}.contract.spec.ts`
+**File**: `test/contract/{feature-name}.contract.spec.ts`
 
 ```typescript
 import { Test } from '@nestjs/testing';
@@ -421,8 +426,9 @@ describe('Create Resource Contract (e2e)', () => {
 ```
 
 **Run**:
+
 ```bash
-npm test -- test/contract/{기능명}.contract.spec.ts
+npm test -- test/contract/{feature-name}.contract.spec.ts
 ```
 
 ---
@@ -430,24 +436,27 @@ npm test -- test/contract/{기능명}.contract.spec.ts
 ## Contract Testing Strategy
 
 ### 1. Provider Tests (Backend)
+
 ```bash
 # Run all contract tests
 pytest tests/contract/ -v
 
 # Run specific contract
-pytest tests/contract/test_{기능명}_contract.py
+pytest tests/contract/test_{feature_name}_contract.py
 
 # Generate Pact file for consumer
 pytest tests/pact/ --pact-broker-url=...
 ```
 
 ### 2. Consumer Tests (Frontend)
+
 ```bash
 # Verify against provider contract
 npm run test:contract -- --pact-broker-url=...
 ```
 
 ### 3. CI/CD Integration
+
 ```yaml
 # .github/workflows/contract-tests.yml
 name: Contract Tests
@@ -475,43 +484,43 @@ jobs:
 | Get Resource | REQ-002 | GET /api/v1/resource/:id | ⬜ |
 | Update Resource | REQ-003 | PATCH /api/v1/resource/:id | ⬜ |
 
-**Coverage**: 0 / {총 계약 수} (0%)
+**Coverage**: 0 / {Total contracts} (0%)
 
 ---
 
 ## Best Practices
 
 1. **Test Contract, Not Implementation**
-   - ✅ 스키마 준수 확인
-   - ❌ 비즈니스 로직 테스트 금지
+   - ✅ Verify schema compliance
+   - ❌ Do not test business logic
 
 2. **Provider-First vs Consumer-First**
-   - Provider-First: API 먼저 정의 → Contract 테스트 작성
-   - Consumer-First: Frontend 요구사항 → Pact 작성 → Provider 구현
+   - Provider-First: Define API first → Write contract tests
+   - Consumer-First: Frontend requirements → Write Pact → Implement provider
 
 3. **Version Control**
-   - API 버전별 Contract 파일 관리
-   - Breaking Changes 감지
+   - Manage contract files per API version
+   - Detect breaking changes
 
-4. **Pact Broker 활용**
-   - Contract 중앙 관리
-   - Consumer-Provider 매칭
-   - CI/CD 자동화
+4. **Pact Broker Usage**
+   - Central contract management
+   - Consumer-Provider matching
+   - CI/CD automation
 
 ---
 
 ## Next Steps
 
 ```bash
-# 1. Contract 테스트 작성
-vibe contract "{기능명}"
+# 1. Write contract tests
+vibe contract "{feature name}"
 
-# 2. Provider 구현
+# 2. Implement provider
 vibe run "Task 1-1"
 
-# 3. Contract 검증
-vibe test "{기능명}" --contract
+# 3. Verify contract
+vibe test "{feature name}" --contract
 
-# 4. Pact 발행 (선택)
+# 4. Publish Pact (optional)
 pytest tests/pact/ --pact-broker-url=...
 ```

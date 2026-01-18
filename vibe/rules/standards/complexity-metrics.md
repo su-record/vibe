@@ -1,15 +1,15 @@
-# 🔬 소프트웨어 엔지니어링 복잡도 측정
+# Software Engineering Complexity Measurement
 
-## 4.1 복잡도 메트릭
+## 4.1 Complexity Metrics
 
-### Cyclomatic Complexity (순환 복잡도)
+### Cyclomatic Complexity
 
-**정의**: 코드의 독립적인 실행 경로 수
+**Definition**: Number of independent execution paths in code
 
-**목표**: ≤ 10
+**Target**: ≤ 10
 
 ```typescript
-// ❌ 높은 순환 복잡도 (6)
+// ❌ High cyclomatic complexity (6)
 function processUser(user) {
   if (user.isActive) {        // +1
     if (user.hasPermission) { // +1
@@ -23,7 +23,7 @@ function processUser(user) {
   return null;
 }
 
-// ✅ 낮은 순환 복잡도 (4) - Early returns 사용
+// ✅ Low cyclomatic complexity (4) - Using early returns
 function processUser(user) {
   if (!user.isActive) return null;      // +1
   if (!user.hasPermission) return null; // +1
@@ -34,14 +34,14 @@ function processUser(user) {
 }
 ```
 
-### Cognitive Complexity (인지 복잡도)
+### Cognitive Complexity
 
-**정의**: 코드를 이해하는 데 필요한 정신적 노력
+**Definition**: Mental effort required to understand code
 
-**목표**: ≤ 15
+**Target**: ≤ 15
 
 ```typescript
-// ❌ 높은 인지 복잡도
+// ❌ High cognitive complexity
 function calculateDiscount(user, items) {
   let discount = 0;
   if (user.isPremium) {              // +1
@@ -56,7 +56,7 @@ function calculateDiscount(user, items) {
   return discount;
 }
 
-// ✅ 낮은 인지 복잡도 - 함수 분리
+// ✅ Low cognitive complexity - Function separation
 function calculateDiscount(user, items) {
   if (!user.isPremium) return 0; // +1
   return items.reduce((total, item) => total + getItemDiscount(item), 0);
@@ -71,49 +71,50 @@ function getItemDiscount(item) {
 }
 ```
 
-### Halstead Metrics (할스테드 메트릭)
+### Halstead Metrics
 
-**측정 항목**:
-- **Operators**: 연산자 (=, +, -, *, if, for 등)
-- **Operands**: 피연산자 (변수, 상수, 함수명)
-- **Vocabulary**: 고유 연산자 + 고유 피연산자
-- **Length**: 전체 토큰 수
-- **Difficulty**: 코드 이해 난이도
-- **Effort**: 코드 작성에 필요한 정신적 노력
+**Measurements**:
+
+- **Operators**: Operators (=, +, -, *, if, for, etc.)
+- **Operands**: Operands (variables, constants, function names)
+- **Vocabulary**: Unique operators + unique operands
+- **Length**: Total token count
+- **Difficulty**: Code comprehension difficulty
+- **Effort**: Mental effort required to write code
 
 ```typescript
-// Halstead 메트릭 측정 예시
+// Halstead metrics measurement example
 function calculateArea(radius: number): number {
   const pi = 3.14159;
   return pi * radius * radius;
 }
 
 /*
-Operators: =, *, const, function, :, return (6개)
-Operands: calculateArea, radius, number, pi, 3.14159 (5개)
+Operators: =, *, const, function, :, return (6)
+Operands: calculateArea, radius, number, pi, 3.14159 (5)
 Vocabulary: 6 + 5 = 11
-Length: 전체 토큰 수
-Difficulty: Vocabulary와 operand 반복으로 계산
+Length: Total token count
+Difficulty: Calculated from Vocabulary and operand repetition
 Effort: Difficulty × Volume
 */
 ```
 
-## 4.2 결합도 & 응집도
+## 4.2 Coupling & Cohesion
 
-### 느슨한 결합 (Loose Coupling)
+### Loose Coupling
 
-**목표**: 모듈 간 의존성 최소화
+**Goal**: Minimize dependencies between modules
 
 ```typescript
-// ❌ 강한 결합 - 직접 의존성
+// ❌ Tight coupling - Direct dependencies
 class UserService {
   constructor() {
-    this.database = new PostgreSQLDatabase(); // 직접 의존
-    this.emailService = new SendGridEmail();  // 직접 의존
+    this.database = new PostgreSQLDatabase(); // Direct dependency
+    this.emailService = new SendGridEmail();  // Direct dependency
   }
 }
 
-// ✅ 느슨한 결합 - 의존성 주입
+// ✅ Loose coupling - Dependency injection
 interface IDatabase {
   save(data: unknown): Promise<void>;
   load(id: string): Promise<unknown>;
@@ -130,19 +131,19 @@ class UserService {
   ) {}
 }
 
-// 사용
+// Usage
 const userService = new UserService(
   new PostgreSQLDatabase(),
   new SendGridEmail()
 );
 ```
 
-### 높은 응집도 (High Cohesion)
+### High Cohesion
 
-**목표**: 관련된 기능만 모음
+**Goal**: Group only related functions together
 
 ```typescript
-// ❌ 낮은 응집도 - 관련 없는 기능들
+// ❌ Low cohesion - Unrelated functions
 class Utils {
   validateEmail(email: string) { /* */ }
   formatCurrency(amount: number) { /* */ }
@@ -150,7 +151,7 @@ class Utils {
   calculateTax(income: number) { /* */ }
 }
 
-// ✅ 높은 응집도 - 관련 기능만
+// ✅ High cohesion - Only related functions
 class EmailValidator {
   validateFormat(email: string) { /* */ }
   validateDomain(email: string) { /* */ }
@@ -170,12 +171,12 @@ class TaxCalculator {
 }
 ```
 
-## 복잡도 감소 전략
+## Complexity Reduction Strategies
 
-### 1. Early Return 패턴
+### 1. Early Return Pattern
 
 ```typescript
-// ❌ 중첩된 if문
+// ❌ Nested if statements
 function processOrder(order: Order) {
   if (order) {
     if (order.isValid) {
@@ -200,10 +201,10 @@ function processOrder(order: Order) {
 }
 ```
 
-### 2. 전략 패턴 (Strategy Pattern)
+### 2. Strategy Pattern
 
 ```typescript
-// ❌ 복잡한 if-else 체인
+// ❌ Complex if-else chain
 function calculateShipping(type: string, weight: number) {
   if (type === 'express') {
     return weight * 5 + 10;
@@ -215,7 +216,7 @@ function calculateShipping(type: string, weight: number) {
   return 0;
 }
 
-// ✅ 전략 패턴
+// ✅ Strategy pattern
 interface ShippingStrategy {
   calculate(weight: number): number;
 }
@@ -243,18 +244,18 @@ function calculateShipping(type: string, weight: number) {
 }
 ```
 
-### 3. 함수 추출 (Extract Function)
+### 3. Extract Function
 
 ```typescript
-// ❌ 긴 함수
+// ❌ Long function
 function processUserRegistration(userData: UserData) {
-  // 20줄: 이메일 검증
-  // 15줄: 비밀번호 해싱
-  // 10줄: 데이터베이스 저장
-  // 5줄: 환영 이메일 발송
+  // 20 lines: Email validation
+  // 15 lines: Password hashing
+  // 10 lines: Database save
+  // 5 lines: Welcome email
 }
 
-// ✅ 함수 추출
+// ✅ Extract functions
 function processUserRegistration(userData: UserData) {
   validateEmail(userData.email);
   const hashedPassword = hashPassword(userData.password);
@@ -269,12 +270,12 @@ function saveToDatabase(data: UserData) { /* ... */ }
 function sendWelcomeEmail(email: string) { /* ... */ }
 ```
 
-## 측정 도구
+## Measurement Tools
 
 ### TypeScript/JavaScript
 
 ```bash
-# ESLint (복잡도 측정 플러그인)
+# ESLint (complexity measurement plugin)
 npm install eslint-plugin-complexity
 
 # .eslintrc.js
@@ -290,7 +291,7 @@ npm install eslint-plugin-complexity
 ### Python
 
 ```bash
-# Radon (복잡도 측정 도구)
+# Radon (complexity measurement tool)
 pip install radon
 
 # Cyclomatic Complexity
@@ -300,13 +301,13 @@ radon cc app/ -a -nc
 radon mi app/
 ```
 
-## 목표 메트릭 요약
+## Target Metrics Summary
 
-| 메트릭 | 목표 | 설명 |
-|--------|------|------|
-| Cyclomatic Complexity | ≤ 10 | 독립적 실행 경로 |
-| Cognitive Complexity | ≤ 15 | 이해하기 쉬움 |
-| Function Length | ≤ 20 lines | 짧고 집중된 함수 |
-| Nesting Depth | ≤ 3 levels | 평탄한 구조 |
-| Parameters | ≤ 5 | 함수 매개변수 제한 |
-| Dependencies | ≤ 7 | 모듈 의존성 제한 |
+| Metric | Target | Description |
+|--------|--------|-------------|
+| Cyclomatic Complexity | ≤ 10 | Independent execution paths |
+| Cognitive Complexity | ≤ 15 | Easy to understand |
+| Function Length | ≤ 20 lines | Short, focused functions |
+| Nesting Depth | ≤ 3 levels | Flat structure |
+| Parameters | ≤ 5 | Function parameter limit |
+| Dependencies | ≤ 7 | Module dependency limit |

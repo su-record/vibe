@@ -1,19 +1,19 @@
-# 🚫 자동 안티패턴 회피
+# Automatic Anti-Pattern Avoidance
 
-## TypeScript 안티패턴
+## TypeScript Anti-Patterns
 
-### 1. any 타입 사용
+### 1. Using any Type
 
 ```typescript
-// ❌ any 사용
+// ❌ Using any
 function processData(data: any) {
-  return data.value; // 타입 안전성 상실
+  return data.value; // Loss of type safety
 }
 
 // ✅ unknown + type guard
 function processData(data: unknown) {
   if (isValidData(data)) {
-    return data.value; // 타입 안전
+    return data.value; // Type safe
   }
   throw new Error('Invalid data');
 }
@@ -23,31 +23,31 @@ function isValidData(data: unknown): data is { value: string } {
 }
 ```
 
-### 2. as any 강제 타입 캐스팅
+### 2. Forced Type Casting with as any
 
 ```typescript
-// ❌ as any로 타입 우회
+// ❌ Bypassing types with as any
 const user = response as any;
-user.name; // 런타임 에러 위험
+user.name; // Runtime error risk
 
-// ✅ 적절한 타입 정의
+// ✅ Proper type definition
 interface User {
   name: string;
   email: string;
 }
 
 const user = response as User;
-user.name; // 타입 안전
+user.name; // Type safe
 ```
 
-### 3. @ts-ignore 남용
+### 3. Overusing @ts-ignore
 
 ```typescript
-// ❌ @ts-ignore로 에러 무시
+// ❌ Ignoring errors with @ts-ignore
 // @ts-ignore
 const result = problematicCode();
 
-// ✅ 타입 문제 근본 해결
+// ✅ Fix the type issue at its root
 interface Expected {
   id: string;
 }
@@ -57,17 +57,17 @@ const result: Expected = {
 };
 ```
 
-## React 안티패턴
+## React Anti-Patterns
 
-### 1. dangerouslySetInnerHTML 사용
+### 1. Using dangerouslySetInnerHTML
 
 ```typescript
-// ❌ XSS 취약점
+// ❌ XSS vulnerability
 function Component({ html }: { html: string }) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-// ✅ 안전한 렌더링
+// ✅ Safe rendering
 import DOMPurify from 'dompurify';
 
 function Component({ html }: { html: string }) {
@@ -75,7 +75,7 @@ function Component({ html }: { html: string }) {
   return <div dangerouslySetInnerHTML={{ __html: sanitized }} />;
 }
 
-// ✅ 더 나은 방법: 마크다운 라이브러리 사용
+// ✅ Better approach: Use markdown library
 import ReactMarkdown from 'react-markdown';
 
 function Component({ markdown }: { markdown: string }) {
@@ -83,7 +83,7 @@ function Component({ markdown }: { markdown: string }) {
 }
 ```
 
-### 2. Props Drilling (3단계 이상)
+### 2. Props Drilling (More than 3 levels)
 
 ```typescript
 // ❌ Props drilling
@@ -104,7 +104,7 @@ function GrandChild({ user }: { user: User }) {
   return <div>{user.name}</div>;
 }
 
-// ✅ Context API 사용
+// ✅ Use Context API
 const UserContext = createContext<User | undefined>(undefined);
 
 function App() {
@@ -122,73 +122,73 @@ function GrandChild() {
 }
 ```
 
-### 3. useEffect 의존성 배열 누락
+### 3. Missing useEffect Dependency Array
 
 ```typescript
-// ❌ 의존성 누락
+// ❌ Missing dependency
 function Component({ userId }: { userId: string }) {
   const [user, setUser] = useState<User>();
 
   useEffect(() => {
     fetchUser(userId).then(setUser);
-  }, []); // userId 의존성 누락!
+  }, []); // Missing userId dependency!
 
   return <div>{user?.name}</div>;
 }
 
-// ✅ 모든 의존성 명시
+// ✅ Specify all dependencies
 function Component({ userId }: { userId: string }) {
   const [user, setUser] = useState<User>();
 
   useEffect(() => {
     fetchUser(userId).then(setUser);
-  }, [userId]); // 의존성 명시
+  }, [userId]); // Dependency specified
 
   return <div>{user?.name}</div>;
 }
 ```
 
-## JavaScript 안티패턴
+## JavaScript Anti-Patterns
 
-### 1. var 사용
+### 1. Using var
 
 ```typescript
-// ❌ var 사용
+// ❌ Using var
 var count = 0;
 if (true) {
-  var count = 1; // 같은 변수!
+  var count = 1; // Same variable!
 }
 console.log(count); // 1
 
-// ✅ const/let 사용
+// ✅ Use const/let
 let count = 0;
 if (true) {
-  let count = 1; // 블록 스코프
+  let count = 1; // Block scope
 }
 console.log(count); // 0
 ```
 
-### 2. == 사용 (느슨한 비교)
+### 2. Using == (Loose Comparison)
 
 ```typescript
-// ❌ == 사용
-if (value == null) { } // undefined도 매칭
-if ('5' == 5) { }      // true (타입 강제 변환)
+// ❌ Using ==
+if (value == null) { } // Also matches undefined
+if ('5' == 5) { }      // true (type coercion)
 
-// ✅ === 사용
+// ✅ Use ===
 if (value === null) { }
 if (value === undefined) { }
 if ('5' === 5) { }     // false
 ```
 
-### 3. eval() 사용
+### 3. Using eval()
 
 ```typescript
-// ❌ eval() 사용 (보안 위험)
+// ❌ Using eval() (security risk)
 const code = userInput;
-eval(code); // 임의 코드 실행 가능
+eval(code); // Can execute arbitrary code
 
-// ✅ 대안 구현
+// ✅ Alternative implementation
 const allowedOperations = {
   add: (a: number, b: number) => a + b,
   subtract: (a: number, b: number) => a - b,
@@ -200,28 +200,28 @@ if (operation) {
 }
 ```
 
-## CSS 안티패턴
+## CSS Anti-Patterns
 
-### 1. !important 남용
+### 1. Overusing !important
 
 ```css
-/* ❌ !important 남용 */
+/* ❌ Overusing !important */
 .button {
   color: blue !important;
   background: red !important;
 }
 
-/* ✅ 구체적인 선택자 사용 */
+/* ✅ Use specific selectors */
 .navigation .button.primary {
   color: blue;
   background: red;
 }
 ```
 
-### 2. 인라인 스타일 남용
+### 2. Overusing Inline Styles
 
 ```typescript
-// ❌ 인라인 스타일
+// ❌ Inline styles
 function Button() {
   return (
     <button
@@ -237,7 +237,7 @@ function Button() {
   );
 }
 
-// ✅ CSS 클래스 사용
+// ✅ Use CSS classes
 function Button() {
   return <button className="btn-primary">Click me</button>;
 }
@@ -251,18 +251,18 @@ function Button() {
 }
 ```
 
-## 성능 안티패턴
+## Performance Anti-Patterns
 
-### 1. 불필요한 리렌더링
+### 1. Unnecessary Re-renders
 
 ```typescript
-// ❌ 매번 새 객체/함수 생성
+// ❌ Creating new objects/functions every render
 function Parent() {
   return <Child config={{ theme: 'dark' }} onClick={() => {}} />;
-  // 매 렌더마다 새 객체/함수 생성 → Child 리렌더
+  // New object/function created every render → Child re-renders
 }
 
-// ✅ useMemo/useCallback 사용
+// ✅ Use useMemo/useCallback
 function Parent() {
   const config = useMemo(() => ({ theme: 'dark' }), []);
   const handleClick = useCallback(() => {}, []);
@@ -271,10 +271,10 @@ function Parent() {
 }
 ```
 
-### 2. 동기적 무거운 연산
+### 2. Synchronous Heavy Computations
 
 ```typescript
-// ❌ 메인 스레드 블로킹
+// ❌ Blocking main thread
 function Component({ data }: { data: number[] }) {
   const result = data
     .map(heavyComputation)
@@ -284,7 +284,7 @@ function Component({ data }: { data: number[] }) {
   return <div>{result}</div>;
 }
 
-// ✅ useMemo로 메모이제이션
+// ✅ Memoization with useMemo
 function Component({ data }: { data: number[] }) {
   const result = useMemo(
     () =>
@@ -299,42 +299,42 @@ function Component({ data }: { data: number[] }) {
 }
 ```
 
-## 보안 안티패턴
+## Security Anti-Patterns
 
-### 1. 민감 정보 하드코딩
+### 1. Hardcoding Sensitive Information
 
 ```typescript
-// ❌ API 키 하드코딩
+// ❌ Hardcoded API key
 const API_KEY = 'sk-1234567890abcdef';
 
-// ✅ 환경 변수 사용
+// ✅ Use environment variables
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 ```
 
-### 2. SQL Injection 취약점
+### 2. SQL Injection Vulnerability
 
 ```typescript
-// ❌ 직접 문자열 연결
+// ❌ Direct string concatenation
 const query = `SELECT * FROM users WHERE id = ${userId}`;
 
-// ✅ 파라미터화된 쿼리
+// ✅ Parameterized query
 const query = 'SELECT * FROM users WHERE id = ?';
 db.execute(query, [userId]);
 ```
 
-## 에러 처리 안티패턴
+## Error Handling Anti-Patterns
 
-### 1. 빈 catch 블록
+### 1. Empty catch Block
 
 ```typescript
-// ❌ 에러 무시
+// ❌ Ignoring errors
 try {
   riskyOperation();
 } catch (e) {
-  // 아무것도 안 함
+  // Does nothing
 }
 
-// ✅ 적절한 에러 처리
+// ✅ Proper error handling
 try {
   riskyOperation();
 } catch (error) {
@@ -344,26 +344,26 @@ try {
 }
 ```
 
-### 2. 에러 타입 확인 없이 처리
+### 2. Handling Without Error Type Check
 
 ```typescript
-// ❌ 모든 에러 동일하게 처리
+// ❌ Treating all errors the same
 try {
   await fetchData();
 } catch (error) {
-  showError('Failed'); // 구체적이지 않음
+  showError('Failed'); // Not specific
 }
 
-// ✅ 에러 타입별 처리
+// ✅ Handle by error type
 try {
   await fetchData();
 } catch (error) {
   if (error instanceof NetworkError) {
-    showError('네트워크 연결을 확인해주세요');
+    showError('Please check your network connection');
   } else if (error instanceof AuthError) {
     redirectToLogin();
   } else {
-    showError('알 수 없는 오류가 발생했습니다');
+    showError('An unknown error occurred');
   }
 }
 ```

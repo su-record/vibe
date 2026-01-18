@@ -1,8 +1,8 @@
-# Feature: {기능명}
+# Feature: {Feature Name}
 
-> 이 파일은 **품질 보장의 핵심**입니다. 모든 시나리오 통과 = 기능 완성.
+> This file is **the core of quality assurance**. All scenarios passing = feature complete.
 
-**SPEC**: `.claude/vibe/specs/{기능명}.md`
+**SPEC**: `.claude/vibe/specs/{feature-name}.md`
 **Last verified**: -
 **Quality score**: -
 
@@ -10,26 +10,26 @@
 
 ## User Story
 
-**As a** {사용자 역할}
-**I want** {원하는 기능}
-**So that** {이유/가치}
+**As a** {User role}
+**I want** {Desired functionality}
+**So that** {Reason/Value}
 
 ---
 
 ## Scenarios
 
-> 각 시나리오가 구현 단위이자 검증 단위입니다.
+> Each scenario is both an implementation unit and a verification unit.
 
-### Scenario 1: {Happy Path - 정상 케이스}
+### Scenario 1: {Happy Path - Normal Case}
 
 ```gherkin
-Scenario: {시나리오 제목}
-  Given {전제 조건}
-    # 검증: {무엇을 확인하는가}
-  When {사용자 행동}
-    # 검증: {어떤 기능이 실행되는가}
-  Then {예상 결과}
-    # 검증: {무엇이 보이거나 반환되는가}
+Scenario: {Scenario title}
+  Given {Precondition}
+    # Verification: {What to check}
+  When {User action}
+    # Verification: {What functionality is executed}
+  Then {Expected result}
+    # Verification: {What is visible or returned}
 ```
 
 **SPEC AC**: #1
@@ -37,13 +37,13 @@ Scenario: {시나리오 제목}
 
 ---
 
-### Scenario 2: {Edge Case - 에러 케이스}
+### Scenario 2: {Edge Case - Error Case}
 
 ```gherkin
-Scenario: {에러 시나리오 제목}
-  Given {전제 조건}
-  When {잘못된 입력 또는 예외 상황}
-  Then {에러 메시지 또는 적절한 처리}
+Scenario: {Error scenario title}
+  Given {Precondition}
+  When {Invalid input or exception}
+  Then {Error message or appropriate handling}
 ```
 
 **SPEC AC**: #2
@@ -51,13 +51,13 @@ Scenario: {에러 시나리오 제목}
 
 ---
 
-### Scenario 3: {Boundary Case - 경계 케이스}
+### Scenario 3: {Boundary Case}
 
 ```gherkin
-Scenario: {경계값 테스트}
-  Given {전제 조건}
-  When {경계값 입력}
-  Then {적절한 처리}
+Scenario: {Boundary value test}
+  Given {Precondition}
+  When {Boundary value input}
+  Then {Appropriate handling}
 ```
 
 **SPEC AC**: #3
@@ -73,24 +73,24 @@ Scenario: {경계값 테스트}
 | 2 | {Edge Case} | AC-2 | ⬜ | - |
 | 3 | {Boundary Case} | AC-3 | ⬜ | - |
 
-**Total**: 0/3 통과 (0%)
+**Total**: 0/3 passed (0%)
 
 ---
 
 ## Verification Commands
 
 ```bash
-# 전체 검증
-/vibe.verify "{기능명}"
+# Full verification
+/vibe.verify "{feature name}"
 
-# 실패 시 자동 수정
-/vibe.run "{기능명}" --fix
+# Auto-fix on failure
+/vibe.run "{feature name}" --fix
 ```
 
 ---
 
 ## Notes
 
-- 시나리오 추가/수정 시 Coverage Summary도 함께 업데이트
-- Given/When/Then 각각에 검증 포인트 명시
-- 모든 시나리오 통과 시 품질 보장됨
+- Update Coverage Summary when adding/modifying scenarios
+- Specify verification points for each Given/When/Then
+- Quality is assured when all scenarios pass

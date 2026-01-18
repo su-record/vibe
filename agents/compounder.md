@@ -222,7 +222,7 @@ When similar problem detected:
 │  🔗 Similar solutions linked: 2                                  │
 │  🏷️ Tags: #redis #cache #invalidation #performance              │
 │                                                                 │
-│  💡 Prevention rules added to .claude/vibe/rules/                       │
+│  💡 Prevention rules added to ~/.claude/vibe/rules/                     │
 │                                                                 │
 │  "This solution will help future you (or teammates) save hours" │
 │                                                                 │
