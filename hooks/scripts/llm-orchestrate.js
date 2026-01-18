@@ -17,19 +17,28 @@ const mode = process.argv[3] || 'orchestrate';
 const systemPrompt = process.argv[4] || 'You are a helpful assistant.';
 
 async function main() {
-  // stdin에서 JSON 읽기
-  let inputData = '';
-  for await (const chunk of process.stdin) {
-    inputData += chunk;
-  }
-
   let prompt;
-  try {
-    const parsed = JSON.parse(inputData);
-    prompt = parsed.prompt;
-  } catch {
-    console.log(`[${provider.toUpperCase()}] Error: Invalid JSON input`);
-    return;
+
+  // CLI argument가 있으면 사용 (5번째 인자부터)
+  const cliPrompt = process.argv.slice(5).join(' ').trim();
+
+  if (cliPrompt) {
+    // CLI에서 직접 호출: node script.js gpt orchestrate "system" "prompt"
+    prompt = cliPrompt;
+  } else {
+    // Hook에서 호출: stdin으로 JSON 입력
+    let inputData = '';
+    for await (const chunk of process.stdin) {
+      inputData += chunk;
+    }
+
+    try {
+      const parsed = JSON.parse(inputData);
+      prompt = parsed.prompt;
+    } catch {
+      console.log(`[${provider.toUpperCase()}] Error: Invalid JSON input`);
+      return;
+    }
   }
 
   // 접두사 제거

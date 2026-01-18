@@ -281,13 +281,13 @@ When external LLMs are enabled in `.claude/vibe/config.json`:
 
 **Claude 내부 호출 (Bash로 직접):**
 ```bash
-# GPT 호출 (Windows)
-echo '{"prompt":"[질문 내용]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+# GPT 호출 (Windows - Git Bash/PowerShell)
+echo '{"prompt":"[질문 내용]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
 # GPT 호출 (macOS/Linux)
 echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json
 
-# Gemini 호출 (Windows)
-echo '{"prompt":"[질문 내용]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+# Gemini 호출 (Windows - Git Bash/PowerShell)
+echo '{"prompt":"[질문 내용]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 # Gemini 호출 (macOS/Linux)
 echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
 ```
@@ -665,8 +665,8 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 Gemini가 활성화된 경우, **반드시** 전역 훅 스크립트로 코드 리뷰:
 
 ```bash
-# Windows
-echo '{"prompt":"Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+# Windows (Git Bash/PowerShell)
+echo '{"prompt":"Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 
 # macOS/Linux
 echo '{"prompt":"Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json

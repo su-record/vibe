@@ -131,13 +131,13 @@ When external LLMs are enabled, automatically utilize during SPEC creation:
 
 **Claude 내부 오케스트레이션 호출 (Bash):**
 ```bash
-# GPT 호출 (Windows)
-echo '{"prompt":"[질문 내용]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+# GPT 호출 (Windows - Git Bash/PowerShell)
+echo '{"prompt":"[질문 내용]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
 # GPT 호출 (macOS/Linux)
 echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json
 
-# Gemini 호출 (Windows)
-echo '{"prompt":"[질문 내용]"}' | node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+# Gemini 호출 (Windows - Git Bash/PowerShell)
+echo '{"prompt":"[질문 내용]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 # Gemini 호출 (macOS/Linux)
 echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
 ```
@@ -517,8 +517,8 @@ Gemini 또는 GPT가 활성화된 경우, **반드시** Bash로 훅 스크립트
 **GPT로 리뷰 (우선):**
 
 ```bash
-# Windows
-node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
+# Windows (Git Bash/PowerShell)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
 
 # macOS/Linux
 node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
@@ -527,8 +527,8 @@ node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "Revie
 **Gemini로 리뷰 (GPT 실패 시):**
 
 ```bash
-# Windows
-node "%APPDATA%/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
+# Windows (Git Bash/PowerShell)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
 
 # macOS/Linux
 node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
@@ -536,7 +536,7 @@ node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Re
 
 **중요:**
 
-- Windows: `%APPDATA%/vibe/hooks/scripts/`
+- Windows: `$APPDATA/vibe/hooks/scripts/` (Git Bash/PowerShell)
 - macOS/Linux: `~/.config/vibe/hooks/scripts/`
 - SPEC 전체를 보내지 말고 **핵심 요약**만 전송 (토큰 절약)
 - JSON 응답을 파싱하여 SPEC에 자동 반영
