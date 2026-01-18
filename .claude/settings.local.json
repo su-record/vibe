@@ -42,7 +42,12 @@
       "Bash(findstr:*)",
       "Bash(powershell -Command \"cd ''c:\\\\Users\\\\endba\\\\WorkSpace\\\\vibe''; npx tsc; ls dist/cli/ | Select-String post\")",
       "Bash(powershell -Command \"cd ''c:\\\\Users\\\\endba\\\\WorkSpace\\\\vibe''; npx tsc 2>&1\")",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(find:*)",
+      "Bash(xargs -I {} bash -c 'echo \"\"=== {} ===\"\" && head -30 {}')",
+      "Bash(vibe gpt:*)"
     ]
   }
 }

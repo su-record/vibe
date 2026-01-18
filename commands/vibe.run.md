@@ -281,15 +281,22 @@ When external LLMs are enabled in `.claude/vibe/config.json`:
 
 **Claude 내부 호출 (Bash로 직접):**
 ```bash
-# GPT 호출 (Windows - Git Bash/PowerShell)
-echo '{"prompt":"[질문 내용]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
-# GPT 호출 (macOS/Linux)
-echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json
+# Usage: node llm-orchestrate.js <provider> <mode> [systemPrompt] [prompt]
+#   - systemPrompt 생략 시 기본값 사용
+#   - systemPrompt에 "-" 전달 시 기본값 사용하고 다음 인자를 prompt로 처리
 
-# Gemini 호출 (Windows - Git Bash/PowerShell)
-echo '{"prompt":"[질문 내용]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+# GPT 호출 (Windows)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[질문 내용]"
+# GPT 호출 (macOS/Linux)
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[질문 내용]"
+
+# Gemini 호출 (Windows)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[질문 내용]"
 # Gemini 호출 (macOS/Linux)
-echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[질문 내용]"
+
+# 커스텀 시스템 프롬프트 사용
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a code reviewer" "[질문 내용]"
 ```
 
 ### External LLM Fallback
@@ -454,8 +461,8 @@ Then: 로그인 성공 + JWT 토큰 반환
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json
-│  [If Gemini enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
+│  [If GPT enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[질문]"
+│  [If Gemini enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[질문]"
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ↓ (wait for all to complete)
@@ -665,11 +672,11 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 Gemini가 활성화된 경우, **반드시** 전역 훅 스크립트로 코드 리뷰:
 
 ```bash
-# Windows (Git Bash/PowerShell)
-echo '{"prompt":"Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+# Windows
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"
 
 # macOS/Linux
-echo '{"prompt":"Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review this code for security, performance, best-practices: [코드 요약]. SPEC: [요약]. Scenarios: [목록]"
 ```
 
 **호출 순서:**
@@ -693,7 +700,7 @@ echo '{"prompt":"Review this code for security, performance, best-practices: [�
 | 스타일/취향 | 선택적 적용 (프로젝트 컨벤션 우선) |
 
 **조건:**
-- Gemini MCP가 활성화된 경우에만 실행 (`vibe gemini --auth`)
+- Gemini MCP가 활성화된 경우에만 실행 (`vibe gemini auth`)
 - fallback 응답 시 스킵하고 다음 단계로 진행
 - 수정 후 반드시 빌드/테스트 재검증
 

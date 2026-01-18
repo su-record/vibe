@@ -131,21 +131,28 @@ When external LLMs are enabled, automatically utilize during SPEC creation:
 
 **Claude 내부 오케스트레이션 호출 (Bash):**
 ```bash
-# GPT 호출 (Windows - Git Bash/PowerShell)
-echo '{"prompt":"[질문 내용]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
-# GPT 호출 (macOS/Linux)
-echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json
+# Usage: node llm-orchestrate.js <provider> <mode> [systemPrompt] [prompt]
+#   - systemPrompt 생략 시 기본값 사용
+#   - systemPrompt에 "-" 전달 시 기본값 사용하고 다음 인자를 prompt로 처리
 
-# Gemini 호출 (Windows - Git Bash/PowerShell)
-echo '{"prompt":"[질문 내용]"}' | node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+# GPT 호출 (Windows)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[질문 내용]"
+# GPT 호출 (macOS/Linux)
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[질문 내용]"
+
+# Gemini 호출 (Windows)
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[질문 내용]"
 # Gemini 호출 (macOS/Linux)
-echo '{"prompt":"[질문 내용]"}' | node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json
+node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[질문 내용]"
+
+# 커스텀 시스템 프롬프트 사용
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a SPEC reviewer" "[질문 내용]"
 ```
 
 **Activation:**
 ```bash
-vibe gpt login      # Enable GPT (OAuth)
-vibe gemini login   # Enable Gemini (OAuth)
+vibe gpt auth       # Enable GPT (OAuth)
+vibe gemini auth    # Enable Gemini (OAuth)
 vibe status         # Check current settings
 ```
 
@@ -517,17 +524,20 @@ Gemini 또는 GPT가 활성화된 경우, **반드시** Bash로 훅 스크립트
 **GPT로 리뷰 (우선):**
 
 ```bash
-# Windows (Git Bash/PowerShell)
+# Windows
 node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
 
 # macOS/Linux
 node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
+
+# 커스텀 시스템 프롬프트 사용 시
+node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a SPEC reviewer" "[질문]"
 ```
 
 **Gemini로 리뷰 (GPT 실패 시):**
 
 ```bash
-# Windows (Git Bash/PowerShell)
+# Windows
 node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [기능명]. Stack: [스택]. Summary: [요약]. Check: completeness, error handling, security, edge cases."
 
 # macOS/Linux

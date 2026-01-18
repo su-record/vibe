@@ -8,7 +8,6 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import { ExternalLLMConfig, VibeConfig, OAuthTokens } from './types.js';
-import { unregisterMcp } from './mcp.js';
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -52,7 +51,7 @@ export function setupExternalLLM(llmType: string, apiKey: string): void {
 ❌ API key required.
 
 Usage:
-  vibe auth ${llmType} --key <api-key>
+  vibe ${llmType} key <api-key>
 
 ${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : 'Google API key: https://aistudio.google.com/apikey'}
     `);
@@ -105,7 +104,7 @@ ${llmType.toUpperCase()} is called directly via Hooks:
   - Auto-called with "${llmType}. query" prefix
   - Direct use: import('@su-record/vibe/lib/${llmType}')
 
-Disable: vibe remove ${llmType}
+Disable: vibe ${llmType} remove
   `);
 }
 
@@ -144,9 +143,6 @@ export function removeExternalLLM(llmType: string): void {
       }
     } catch { /* ignore */ }
   }
-
-  const llmConfig = EXTERNAL_LLMS[llmType];
-  unregisterMcp(llmConfig.name);
 
   if (removed) {
     console.log(`✅ ${llmType.toUpperCase()} 인증 정보 삭제됨`);
@@ -196,8 +192,8 @@ Account ID: ${tokens.accountId || '(auto-detected)'}
 
 ⚠️  Note: ChatGPT Plus/Pro subscription required for API calls.
 
-Status: vibe status gpt
-Logout: vibe logout gpt
+Status: vibe gpt status
+Logout: vibe gpt logout
     `);
 
     // config.json 업데이트
@@ -237,7 +233,7 @@ GPT is called via Hooks:
 
 Error: ${message}
 
-Retry: vibe gpt --auth
+Retry: vibe gpt auth
     `);
     process.exit(1);
   }
@@ -259,7 +255,7 @@ export function gptStatus(): void {
 
 No authenticated account
 
-Login: vibe gpt --auth
+Login: vibe gpt auth
       `);
       return;
     }
@@ -280,7 +276,7 @@ ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAcc
 
 ⚠️  Note: ChatGPT Plus/Pro subscription required.
 
-Logout: vibe logout gpt
+Logout: vibe gpt logout
     `);
 
   } catch (error: unknown) {
@@ -311,7 +307,7 @@ export function gptLogout(): void {
 
 Account ${activeAccount.email} removed.
 
-Login again: vibe gpt --auth
+Login again: vibe gpt auth
     `);
 
     // config.json 업데이트
@@ -379,8 +375,8 @@ Available models:
   - Gemini 3 Flash (fast, exploration/search)
   - Gemini 3 Pro (high accuracy)
 
-Status: vibe status gemini
-Logout: vibe logout gemini
+Status: vibe gemini status
+Logout: vibe gemini logout
     `);
 
     // config.json 업데이트
@@ -420,7 +416,7 @@ Gemini is called via Hooks:
 
 Error: ${message}
 
-Retry: vibe gemini --auth
+Retry: vibe gemini auth
     `);
     process.exit(1);
   }
@@ -445,7 +441,7 @@ export function geminiStatus(): void {
 
 No authenticated account
 
-Login: vibe gemini --auth
+Login: vibe gemini auth
       `);
       return;
     }
@@ -467,7 +463,7 @@ ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAcc
 Available models:
 ${Object.entries(GEMINI_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
 
-Logout: vibe logout gemini
+Logout: vibe gemini logout
     `);
 
   } catch (error: unknown) {
@@ -498,7 +494,7 @@ export function geminiLogout(): void {
 
 Account ${activeAccount.email} removed.
 
-Login again: vibe gemini --auth
+Login again: vibe gemini auth
     `);
 
     // config.json 업데이트
@@ -529,34 +525,36 @@ Login again: vibe gemini --auth
 // ============================================================================
 
 /**
- * Auth help
+ * Auth help (legacy - now shows new format)
  */
 export function showAuthHelp(): void {
   console.log(`
-🔐 vibe auth - LLM Authentication
+🔐 LLM Authentication
 
-Usage:
-  vibe auth gpt                   GPT Plus/Pro OAuth
-  vibe auth gpt --key <key>       GPT API key
-  vibe auth gemini                Gemini OAuth (recommended)
-  vibe auth gemini --key <key>    Gemini API key
+GPT Commands:
+  vibe gpt auth           OAuth (Plus/Pro subscription)
+  vibe gpt key <KEY>      API key
+
+Gemini Commands:
+  vibe gemini auth        OAuth (free with Advanced)
+  vibe gemini key <KEY>   API key
 
 Examples:
-  vibe auth gpt                   OpenAI login (Plus/Pro subscription required)
-  vibe auth gemini                Google login (free with Gemini Advanced)
-  vibe auth gpt --key sk-xxx      API key (usage-based billing)
+  vibe gpt auth           OpenAI login
+  vibe gemini auth        Google login
+  vibe gpt key sk-xxx     API key setup
   `);
 }
 
 /**
- * Logout help
+ * Logout help (legacy - now shows new format)
  */
 export function showLogoutHelp(): void {
   console.log(`
-🚪 vibe logout - LLM Logout
+🚪 LLM Logout
 
 Usage:
-  vibe logout gpt       GPT logout
-  vibe logout gemini    Gemini logout
+  vibe gpt logout       GPT logout
+  vibe gemini logout    Gemini logout
   `);
 }

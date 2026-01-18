@@ -22,10 +22,12 @@ vibe init
 | `vibe init` | Initialize project |
 | `vibe update` | Update settings |
 | `vibe status` | Check status |
-| `vibe auth gpt` | GPT OAuth authentication |
-| `vibe auth gemini` | Gemini OAuth authentication |
-| `vibe logout gpt` | GPT logout |
-| `vibe logout gemini` | Gemini logout |
+| `vibe gpt auth` | GPT OAuth authentication |
+| `vibe gpt key <KEY>` | GPT API key setup |
+| `vibe gpt logout` | GPT logout |
+| `vibe gemini auth` | Gemini OAuth authentication |
+| `vibe gemini key <KEY>` | Gemini API key setup |
+| `vibe gemini logout` | Gemini logout |
 | `vibe help` | Help |
 | `vibe version` | Version info |
 
@@ -89,8 +91,9 @@ Enable maximum performance with `ultrawork` or `ulw`:
 
 **Smart Routing features:**
 - Automatic LLM selection based on task type
-- 5-minute availability cache with fallback
-- Error retry with alternative LLM
+- Exponential backoff retry (3 attempts, 2s → 4s → 8s)
+- Auto fallback chain: GPT ↔ Gemini (if primary fails)
+- 5-minute availability cache
 - Web search via Gemini (Google Search grounding)
 
 **API usage:**
@@ -136,7 +139,7 @@ import('@su-record/vibe/lib/gemini').then(g => g.webSearch('search query'))
 ├── commands/       # Slash commands (7)
 ├── agents/         # Review/research agents
 ├── skills/         # Auto-activated guides (7)
-└── settings.json   # Hooks + MCP settings
+└── settings.json   # Hooks settings
 ```
 
 **Project-specific (`project/.claude/vibe/`):**
@@ -188,7 +191,7 @@ Install context7 plugin for up-to-date library documentation:
 /plugin install context7
 ```
 
-**Why plugin over MCP?**
+**Benefits:**
 
 - **Skill integration**: Auto-invokes context7 for library/API questions without prompting
 - **Subagent isolation**: Docs queries run in separate context, preventing main context bloat

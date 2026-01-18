@@ -38,8 +38,8 @@ context7: failures=1, state=CLOSED
 
 | Alternative | Method |
 |-------------|--------|
-| context7 MCP | `mcp__context7__query-docs` |
-| GPT hook | `gpt- [your question]` |
+| context7 plugin | `resolve-library-id` → `get-library-docs` |
+| VibeOrchestrator | `smartWebSearch()` - auto fallback chain |
 | Cached knowledge | Use Claude's built-in knowledge |
 
 ```
@@ -51,7 +51,7 @@ If OPEN → Skip to alternative immediately
     ↓
 If CLOSED → Try context7 for library docs
     ↓
-If still fails: gpt- [question]
+If still fails: VibeOrchestrator.smartWebSearch()
     ↓
 Last resort: Claude's built-in knowledge
 ```
@@ -78,7 +78,24 @@ Use Grep for content-based search
 Check git log for history
 ```
 
-## When LLM Hook Fails
+## When External LLM Fails
+
+**Production (VibeOrchestrator):**
+
+```
+VibeOrchestrator.smartRoute({ type, prompt })
+    ↓
+LLM priority based on task type:
+  - architecture/debugging: GPT → Gemini → Claude
+  - uiux/code-analysis: Gemini → GPT → Claude
+  - code-gen: Claude only
+    ↓
+Auto fallback on primary LLM failure
+    ↓
+Claude handles directly when all fail
+```
+
+**Test/Debug Hooks (development only):**
 
 ```
 gpt- or gpt. [question] fails
@@ -91,6 +108,10 @@ Try context7 (for docs)
     ↓
 Claude solves alone
 ```
+
+> **Note:** `test-gpt`, `test-gemini` prefixes are for hook connectivity testing only.
+> For actual work, use VIBE commands (`/vibe.run`, `/vibe.spec`, etc.) and
+> VibeOrchestrator will automatically select the appropriate LLM.
 
 ## Retry Strategy with Circuit Breaker
 
@@ -116,6 +137,49 @@ Check circuit state
                               ↓
                          Use alternative
 ```
+
+## VibeOrchestrator Smart Routing
+
+VIBE commands (`/vibe.spec`, `/vibe.run`, etc.) use VibeOrchestrator internally.
+
+### LLM Priority by Task Type
+
+| Task Type       | Primary | Secondary | Fallback |
+|-----------------|---------|-----------|----------|
+| `architecture`  | GPT     | Gemini    | Claude   |
+| `debugging`     | GPT     | Gemini    | Claude   |
+| `uiux`          | Gemini  | GPT       | Claude   |
+| `code-analysis` | Gemini  | GPT       | Claude   |
+| `web-search`    | GPT     | Gemini    | Claude   |
+| `code-gen`      | Claude  | -         | -        |
+| `general`       | Claude  | -         | -        |
+
+### Auto Fallback Logic
+
+```
+smartRoute({ type: 'architecture', prompt })
+    ↓
+1. Try GPT (max 2 retries)
+    ↓ fails (429, 401, 5xx)
+2. Try Gemini (max 2 retries)
+    ↓ fails
+3. Claude handles directly (fallback message)
+```
+
+### Retry vs Immediate Switch
+
+| Error            | Action                 |
+|------------------|------------------------|
+| 429 Rate Limit   | Skip to next LLM       |
+| 401/403 Auth     | Skip to next LLM       |
+| Network Error    | Retry with backoff     |
+| 5xx Server Error | Retry then switch      |
+
+### Availability Cache
+
+- 5-minute TTL for LLM status cache
+- Auto-disable after 3 consecutive failures
+- Failed LLMs are skipped in subsequent requests
 
 ## Principles
 

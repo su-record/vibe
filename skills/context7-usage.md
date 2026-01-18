@@ -10,7 +10,7 @@ Guide for searching latest library/framework documentation using Context7 plugin
 
 | Approach | Problem |
 |----------|---------|
-| Direct MCP call | Docs content fills main context, causing bloat |
+| Direct plugin call | Docs content fills main context, causing bloat |
 | Subagent isolation | Docs queried in separate context, only results returned |
 
 **Benefits:**

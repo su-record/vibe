@@ -73,13 +73,3 @@ export interface OAuthTokens {
   projectId?: string;
 }
 
-export interface McpServerConfig {
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-}
-
-export interface ClaudeSettings {
-  mcpServers?: Record<string, McpServerConfig>;
-  [key: string]: unknown;
-}

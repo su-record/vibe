@@ -22,7 +22,6 @@ import {
   getPackageJson,
   compareVersions,
 } from './utils.js';
-import { unregisterMcp, isPluginInstalled } from './mcp.js';
 import { detectTechStacks } from './detect.js';
 import { formatLLMStatus, getLLMAuthStatus } from './auth.js';
 import { setupCollaboratorAutoInstall } from './collaborator.js';
@@ -39,7 +38,6 @@ import {
   showLogoutHelp,
 } from './llm.js';
 import {
-  registerMcpServers,
   updateConstitution,
   updateClaudeMd,
   updateRules,
@@ -144,14 +142,10 @@ async function init(projectName?: string): Promise<void> {
 
     // 완료 메시지
     const packageJson = getPackageJson();
-    const context7Installed = isPluginInstalled('context7');
-    const context7Guide = context7Installed
-      ? '📦 Context7 plugin: ✔ installed'
-      : '📦 Context7 plugin (recommended): /plugin install context7';
 
     log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus()}
-${context7Guide}
+📦 Context7 plugin (recommended): /plugin install context7
 
 Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"
 `);
@@ -258,21 +252,14 @@ async function update(): Promise<void> {
     // ~/.claude.json 정리
     cleanupClaudeConfig();
 
-    // MCP 서버 등록
-    registerMcpServers(true);
-
     // 레거시 mcp 폴더 정리
     cleanupLegacyMcp(vibeDir);
 
     const packageJson = getPackageJson();
-    const context7Installed = isPluginInstalled('context7');
-    const context7Guide = context7Installed
-      ? '📦 Context7 plugin: ✔ installed'
-      : '📦 Context7 plugin (recommended): /plugin install context7';
 
     log(`✅ vibe updated (v${packageJson.version})
 ${formatLLMStatus()}
-${context7Guide}
+📦 Context7 plugin (recommended): /plugin install context7
 `);
 
   } catch (error: unknown) {
@@ -295,12 +282,6 @@ function remove(): void {
 
   console.log('🗑️  Removing vibe...\n');
 
-  // MCP 서버 제거
-  unregisterMcp('vibe');
-  unregisterMcp('vibe-gemini');
-  unregisterMcp('vibe-gpt');
-  unregisterMcp('context7');
-  console.log('   ✅ MCP server removed\n');
 
   // .claude/vibe 폴더 제거
   if (fs.existsSync(vibeDir)) {
@@ -382,13 +363,19 @@ Commands:
   vibe help               Help
   vibe version            Version
 
-Auth:
-  vibe auth gpt           GPT OAuth (Plus/Pro)
-  vibe auth gemini        Gemini OAuth
-  vibe auth gpt --key     GPT API key
-  vibe auth gemini --key  Gemini API key
-  vibe logout gpt|gemini  Logout
-  vibe remove gpt|gemini  Remove LLM config
+GPT:
+  vibe gpt auth           OAuth authentication (Plus/Pro)
+  vibe gpt key <KEY>      Set API key
+  vibe gpt status         Check status
+  vibe gpt logout         Logout
+  vibe gpt remove         Remove config
+
+Gemini:
+  vibe gemini auth        OAuth authentication
+  vibe gemini key <KEY>   Set API key
+  vibe gemini status      Check status
+  vibe gemini logout      Logout
+  vibe gemini remove      Remove config
 
 Slash Commands (Claude Code):
   /vibe.spec "feature"    Create SPEC + parallel research
@@ -469,10 +456,10 @@ GPT/Gemini (Hook-based):
   - "gemini.question" → Gemini call
 
 LLM setup:
-  vibe auth gpt           Enable GPT (OAuth)
-  vibe auth gemini        Enable Gemini (OAuth)
-  vibe logout gpt         GPT logout
-  vibe logout gemini      Gemini logout
+  vibe gpt auth           Enable GPT (OAuth)
+  vibe gemini auth        Enable Gemini (OAuth)
+  vibe gpt logout         GPT logout
+  vibe gemini logout      Gemini logout
   `);
 }
 
@@ -533,51 +520,87 @@ switch (command) {
 
   case 'remove':
   case 'uninstall':
-    if (positionalArgs[1] === 'gpt' || positionalArgs[1] === 'gemini') {
-      removeExternalLLM(positionalArgs[1]);
-    } else {
-      remove();
-    }
+    remove();
     break;
 
-  case 'auth':
-    if (positionalArgs[1] === 'gpt') {
-      const keyIndex = args.indexOf('--key');
-      if (keyIndex !== -1 && args[keyIndex + 1]) {
-        setupExternalLLM('gpt', args[keyIndex + 1]);
-      } else {
+  // vibe gpt <subcommand>
+  case 'gpt': {
+    const subCommand = positionalArgs[1];
+    switch (subCommand) {
+      case 'auth':
         gptAuth();
+        break;
+      case 'key': {
+        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'gpt' && a !== 'key');
+        if (apiKey) {
+          setupExternalLLM('gpt', apiKey);
+        } else {
+          console.log('Usage: vibe gpt key <API_KEY>');
+        }
+        break;
       }
-    } else if (positionalArgs[1] === 'gemini') {
-      const keyIndex = args.indexOf('--key');
-      if (keyIndex !== -1 && args[keyIndex + 1]) {
-        setupExternalLLM('gemini', args[keyIndex + 1]);
-      } else {
-        geminiAuth();
-      }
-    } else {
-      showAuthHelp();
+      case 'logout':
+        gptLogout();
+        break;
+      case 'remove':
+        removeExternalLLM('gpt');
+        break;
+      case 'status':
+        gptStatus();
+        break;
+      default:
+        console.log(`
+GPT Commands:
+  vibe gpt auth     OAuth authentication (Plus/Pro)
+  vibe gpt key      Set API key
+  vibe gpt status   Check status
+  vibe gpt logout   Logout
+  vibe gpt remove   Remove config
+        `);
     }
     break;
+  }
 
-  case 'logout':
-    if (positionalArgs[1] === 'gpt') {
-      gptLogout();
-    } else if (positionalArgs[1] === 'gemini') {
-      geminiLogout();
-    } else {
-      showLogoutHelp();
+  // vibe gemini <subcommand>
+  case 'gemini': {
+    const subCommand = positionalArgs[1];
+    switch (subCommand) {
+      case 'auth':
+        geminiAuth();
+        break;
+      case 'key': {
+        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'gemini' && a !== 'key');
+        if (apiKey) {
+          setupExternalLLM('gemini', apiKey);
+        } else {
+          console.log('Usage: vibe gemini key <API_KEY>');
+        }
+        break;
+      }
+      case 'logout':
+        geminiLogout();
+        break;
+      case 'remove':
+        removeExternalLLM('gemini');
+        break;
+      case 'status':
+        geminiStatus();
+        break;
+      default:
+        console.log(`
+Gemini Commands:
+  vibe gemini auth     OAuth authentication
+  vibe gemini key      Set API key
+  vibe gemini status   Check status
+  vibe gemini logout   Logout
+  vibe gemini remove   Remove config
+        `);
     }
     break;
+  }
 
   case 'status':
-    if (positionalArgs[1] === 'gpt') {
-      gptStatus();
-    } else if (positionalArgs[1] === 'gemini') {
-      geminiStatus();
-    } else {
-      showStatus();
-    }
+    showStatus();
     break;
 
   case 'version':
@@ -598,14 +621,14 @@ switch (command) {
 ❌ Unknown command: ${command}
 
 Available commands:
-  vibe init       Initialize project
-  vibe update     Update settings
-  vibe auth       LLM auth (gpt, gemini)
-  vibe status     Show status
-  vibe logout     Logout
-  vibe remove     Remove
-  vibe help       Help
-  vibe version    Version info
+  vibe init         Initialize project
+  vibe update       Update settings
+  vibe gpt <cmd>    GPT commands (auth, key, status, logout)
+  vibe gemini <cmd> Gemini commands (auth, key, status, logout)
+  vibe status       Show status
+  vibe remove       Remove vibe
+  vibe help         Help
+  vibe version      Version info
 
 Usage: vibe help
     `);

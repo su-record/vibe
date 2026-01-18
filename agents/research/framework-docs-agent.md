@@ -27,7 +27,7 @@ Task(
 
 ## Integration with context7
 
-context7 MCP 서버 활용:
+context7 플러그인 활용:
 
 ```
 resolve-library-id "react" → react

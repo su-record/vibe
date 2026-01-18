@@ -296,7 +296,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     const requestBody: Record<string, unknown> = {
       model: actualModel,
       messages: apiMessages,
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,  // GPT-5.2 uses max_completion_tokens instead of max_tokens
       temperature,
     };
 
@@ -469,13 +469,16 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     try {
       return await chatWithOAuth(authInfo.accessToken, options);
     } catch (error) {
-      // Rate Limit(429), 인증 오류(401/403) 시 API Key로 fallback
+      // Rate Limit(429), 인증 오류(401/403), 사용 한도 초과 시 API Key로 fallback
       const errorMsg = (error as Error).message;
       const shouldFallback = errorMsg.includes('429') ||
                             errorMsg.includes('401') ||
-                            errorMsg.includes('403');
+                            errorMsg.includes('403') ||
+                            errorMsg.toLowerCase().includes('usage limit') ||
+                            errorMsg.toLowerCase().includes('rate limit') ||
+                            errorMsg.toLowerCase().includes('quota');
       if (apiKey && shouldFallback) {
-        console.log('⚠️ OAuth 오류 → API Key로 전환');
+        console.log('⚠️ OAuth 한도 초과/오류 → API Key로 전환');
         return chatWithApiKey(apiKey, options);
       }
       throw error;
