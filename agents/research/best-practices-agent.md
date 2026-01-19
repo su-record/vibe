@@ -124,16 +124,66 @@ Rails:
 - [Article/Doc 2](url)
 ```
 
+## Multi-LLM Enhancement (Quality Assurance)
+
+**vibe = Quality Assurance Framework**
+
+Best practices research uses **3 perspectives in parallel** for comprehensive coverage:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  PARALLEL BEST PRACTICES RESEARCH                           │
+├─────────────────────────────────────────────────────────────┤
+│  Claude (Haiku)  │ Core patterns, anti-patterns            │
+│  GPT             │ Architecture patterns, code conventions  │
+│  Gemini          │ Latest trends, framework updates         │
+└─────────────────────────────────────────────────────────────┘
+        ↓
+    Merge & Dedupe
+        ↓
+    SPEC Context
+```
+
+**Execution flow:**
+
+```bash
+# 1. Claude (Primary) - Always runs
+Task(haiku, "Research best practices for [feature]")
+
+# 2. GPT (Parallel) - When enabled
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
+  "Best practices for [feature] with [stack]. Focus: architecture patterns, code conventions, testing strategies. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+
+# 3. Gemini (Parallel) - When enabled
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
+  "Best practices for [feature] with [stack]. Focus: latest trends, framework updates, community recommendations. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+```
+
+**Result merge strategy:**
+
+| Source | Priority | Focus Area |
+|--------|----------|------------|
+| Claude | High | Core patterns, anti-patterns |
+| GPT | Medium | Architecture, conventions |
+| Gemini | Medium | Latest trends, updates |
+
+**Merge rules:**
+- Duplicate patterns → Keep one with most detail
+- Conflicting advice → Claude takes precedence
+- Unique findings → All included
+
 ## Integration with /vibe.spec
 
 ```
 /vibe.spec "login feature"
 
-→ best-practices-agent execution:
-  "Research authentication best practices: OAuth, JWT, session"
+→ best-practices-agent execution (3 LLMs parallel):
+  - Claude: "Research authentication best practices: OAuth, JWT, session"
+  - GPT: "Architecture patterns for auth: repository, service layer"
+  - Gemini: "Latest auth trends: passkey, WebAuthn, passwordless"
 
-→ Results reflected in SPEC:
-  - Recommended libraries
-  - Security considerations
-  - Implementation patterns
+→ Merged results reflected in SPEC:
+  - Recommended libraries (consensus)
+  - Security considerations (all sources)
+  - Implementation patterns (deduplicated)
 ```

@@ -54,8 +54,11 @@ vibe init
 
 | Feature | Description |
 |---------|-------------|
+| **Multi-LLM Research (v2.5)** | Claude + GPT + Gemini 3-way validation during SPEC research |
 | **Multi-model orchestration** | Claude + GPT-5.2 + Gemini 3 Pro |
 | **13+ parallel review agents** | Security, performance, architecture |
+| **Iterative SPEC review** | GPT + Gemini convergence loop (max 3 rounds) |
+| **Large SPEC auto-split** | 5+ phases auto-split into phase files |
 | **BDD auto verification** | Given/When/Then scenario verification |
 | **ULTRAWORK mode** | One keyword enables all optimizations |
 | **25 built-in tools** | Code analysis, memory management, quality validation |
@@ -102,6 +105,28 @@ Enable maximum performance with `ultrawork` or `ulw`:
 import('@su-record/vibe/lib/gpt').then(g => g.ask('question'))
 import('@su-record/vibe/lib/gemini').then(g => g.webSearch('search query'))
 ```
+
+## Multi-LLM Research (v2.5)
+
+During `/vibe.spec`, research agents use **3 LLM perspectives** for quality assurance:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  MULTI-LLM PARALLEL RESEARCH                                │
+├─────────────────────────────────────────────────────────────┤
+│  best-practices-agent                                       │
+│    ├── Claude: Core patterns, anti-patterns                 │
+│    ├── GPT: Architecture patterns, code conventions         │
+│    └── Gemini: Latest trends, framework updates             │
+├─────────────────────────────────────────────────────────────┤
+│  security-advisory-agent                                    │
+│    ├── Claude: OWASP Top 10, security patterns              │
+│    ├── GPT: CVE database, vulnerability details             │
+│    └── Gemini: Latest security advisories, patches          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+> vibe = Quality Assurance Framework
 
 ## Parallel Review Agents
 

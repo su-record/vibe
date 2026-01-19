@@ -128,37 +128,76 @@ For [payment feature]:
 - CWE Database: [url]
 ```
 
-## External LLM Enhancement (Optional)
+## Multi-LLM Enhancement (Quality Assurance)
 
-**When GPT is enabled**, supplement with CVE/security vulnerability DB knowledge:
+**vibe = Quality Assurance Framework**
 
-```text
-Primary: Task(Haiku) + OWASP/CVE search
-      ↓
-[GPT enabled?]
-      ↓ YES
-gpt.Security vulnerabilities for [feature]. Check recent CVEs, OWASP risks. Provide CVE details and mitigations.
-      ↓
-Merge results → Reflect in SPEC Constraints
+Security research uses **3 perspectives in parallel** for comprehensive coverage:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  PARALLEL SECURITY RESEARCH                                 │
+├─────────────────────────────────────────────────────────────┤
+│  Claude (Haiku)  │ OWASP Top 10, security patterns          │
+│  GPT             │ CVE database, vulnerability details      │
+│  Gemini          │ Latest security advisories, patches      │
+└─────────────────────────────────────────────────────────────┘
+        ↓
+    Merge & Prioritize
+        ↓
+    SPEC Constraints
 ```
 
-**Use cases:**
-- When latest CVE information is needed
-- When checking vulnerabilities for specific libraries
-- When detailed compliance review (PCI-DSS, GDPR) is needed
+**Execution flow:**
 
-**When GPT is not configured:** Primary works normally on its own
+```bash
+# 1. Claude (Primary) - Always runs
+Task(haiku, "Research security advisories for [feature]. Check OWASP, common vulnerabilities.")
+
+# 2. GPT (Parallel) - When enabled
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
+  "Security vulnerabilities for [feature] with [stack]. Focus: CVE database, known exploits, mitigation strategies. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+
+# 3. Gemini (Parallel) - When enabled
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
+  "Security advisories for [feature] with [stack]. Focus: latest patches, security updates, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+```
+
+**Result merge strategy:**
+
+| Source | Priority | Focus Area |
+|--------|----------|------------|
+| Claude | High | OWASP, security patterns |
+| GPT | High | CVE details, exploits |
+| Gemini | Medium | Latest advisories, patches |
+
+**Security-specific merge rules:**
+
+- All vulnerabilities included (no deduplication for safety)
+- Highest severity rating kept when duplicated
+- All mitigations preserved
+- Compliance requirements merged
+
+**Use cases:**
+
+- Latest CVE information needed
+- Checking vulnerabilities for specific libraries
+- Detailed compliance review (PCI-DSS, GDPR, HIPAA)
+- Zero-day vulnerability awareness
 
 ## Integration with /vibe.spec
 
 ```text
 /vibe.spec "payment feature"
 
-→ security-advisory-agent execution:
-  "Research security for payment processing. Check PCI-DSS, OWASP."
+→ security-advisory-agent execution (3 LLMs parallel):
+  - Claude: "Research security for payment processing. Check PCI-DSS, OWASP."
+  - GPT: "CVE lookup for payment libraries, known exploits"
+  - Gemini: "Latest payment security advisories, recent breaches"
 
-→ Results reflected in SPEC:
-  - Security requirements
-  - Required checklist
-  - Compliance items
+→ Merged results reflected in SPEC:
+  - Security requirements (all sources)
+  - Vulnerability checklist (comprehensive)
+  - Compliance items (PCI-DSS, GDPR)
+  - Mitigation strategies (deduplicated)
 ```

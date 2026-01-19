@@ -262,7 +262,7 @@ Read ~/.claude/vibe/languages/typescript-react.md
 - `config.json.references` is automatically referenced when running `/vibe.run`
 - Not copied to project (referenced from global package)
 
-### 3. Parallel Research (v2.4.0) - MANDATORY AFTER requirements confirmed
+### 3. Parallel Research (v2.5.0) - MANDATORY AFTER requirements confirmed
 
 **🚨 CRITICAL: Research is MANDATORY after requirements are confirmed**
 
@@ -274,7 +274,7 @@ Read ~/.claude/vibe/languages/typescript-react.md
 
 **→ IMMEDIATELY run orchestrator research. NO EXCEPTIONS.**
 
-**Execution via Orchestrator (4 agents in parallel):**
+**Execution via Orchestrator (4 agents + Multi-LLM in parallel):**
 ```bash
 node -e "import('@su-record/vibe/orchestrator').then(o => o.research('[FEATURE]', ['[STACK1]', '[STACK2]']).then(r => console.log(r.content[0].text)))"
 ```
@@ -286,6 +286,7 @@ node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey au
 ```
 
 **What runs in parallel (180s timeout each):**
+
 | Agent | Role | Tools |
 |-------|------|-------|
 | `best-practices-agent` | Best practices for [feature] + [stack] | WebSearch |
@@ -293,12 +294,70 @@ node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey au
 | `codebase-patterns-agent` | Similar patterns in existing codebase | Glob, Grep |
 | `security-advisory-agent` | Security advisories for [feature] | WebSearch |
 
+#### 3.1 Multi-LLM Research Enhancement (v2.5.0)
+
+**vibe = Quality Assurance Framework**
+
+When GPT/Gemini are enabled, research agents use **3 LLM perspectives** for critical areas:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  MULTI-LLM PARALLEL RESEARCH                                │
+├─────────────────────────────────────────────────────────────┤
+│  best-practices-agent                                       │
+│    ├── Claude (Haiku): Core patterns, anti-patterns         │
+│    ├── GPT: Architecture patterns, code conventions         │
+│    └── Gemini: Latest trends, framework updates             │
+├─────────────────────────────────────────────────────────────┤
+│  security-advisory-agent                                    │
+│    ├── Claude (Haiku): OWASP Top 10, security patterns      │
+│    ├── GPT: CVE database, vulnerability details             │
+│    └── Gemini: Latest security advisories, patches          │
+└─────────────────────────────────────────────────────────────┘
+        ↓
+    Merge & Dedupe (per agent)
+        ↓
+    SPEC Context + Constraints
+```
+
+**Parallel execution (run alongside Claude agents):**
+
+```bash
+# Cross-platform path
+VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+
+# Best practices - GPT perspective
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
+  "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+
+# Best practices - Gemini perspective
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
+  "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+
+# Security - GPT perspective
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
+  "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+
+# Security - Gemini perspective
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
+  "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+```
+
+**Result merge rules:**
+
+| Area | Merge Strategy |
+|------|----------------|
+| Best Practices | Deduplicate, keep most detailed |
+| Security | ALL included (no dedup for safety) |
+| Libraries | Consensus recommendations |
+
 **IMPORTANT:**
 - ❌ DO NOT skip research step
 - ❌ DO NOT ask user "should I run research?"
 - ✅ ALWAYS run after requirements confirmed
-- ✅ Show "Running parallel research..." message
-- ✅ Include all 4 agent results in SPEC Context
+- ✅ Show "Running parallel research (Claude + GPT + Gemini)..." message
+- ✅ Include all agent + LLM results in SPEC Context
+- ✅ Run all LLM calls in parallel (4 Bash calls simultaneously)
 
 **Research results are reflected in SPEC's Context section.**
 
