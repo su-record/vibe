@@ -232,6 +232,18 @@ export function updateClaudeMd(
 
   let vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
 
+  // OS 언어 감지하여 응답 언어 설정 추가
+  const osLanguage = detectOsLanguage();
+  const languageInstruction = osLanguage === 'ko'
+    ? '\n\n## Response Language\n\n**IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.**'
+    : '\n\n## Response Language\n\n**IMPORTANT: Always respond in English unless the user explicitly requests otherwise.**';
+
+  // # VIBE 헤더 바로 다음에 언어 설정 추가
+  vibeContent = vibeContent.replace(
+    '# VIBE\n\nSPEC-driven AI Coding Framework (Claude Code Exclusive)',
+    '# VIBE\n\nSPEC-driven AI Coding Framework (Claude Code Exclusive)' + languageInstruction
+  );
+
   // 감지된 기술 스택에 따라 언어별 규칙 추가
   const languageRules = getLanguageRulesContent(detectedStacks);
   if (languageRules) {
