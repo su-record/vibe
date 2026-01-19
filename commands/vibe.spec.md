@@ -679,7 +679,44 @@ If score is below 85, attempt automatic fixes:
 | Missing error handling | Add common error scenarios |
 | Missing performance targets | Apply industry standard criteria |
 
-### 8. SPEC Review (GPT/Gemini) - Auto-Fix Loop
+### 8. SPEC Review (GPT/Gemini) - Iterative Review Loop
+
+**Default: Iterative review until convergence (max 3 rounds)**
+
+```bash
+/vibe.spec "feature"          # Default: Iterative review (max 3 rounds)
+/vibe.spec "feature" --quick  # Quick mode: Single review round
+```
+
+**Iterative Review Flow:**
+
+```
+SPEC Draft
+    ↓
+┌─────────────────────────────────────────┐
+│  Round 1: GPT + Gemini parallel review  │
+│           ↓                             │
+│  Apply feedback → Update SPEC           │
+│           ↓                             │
+│  Round 2: Re-review updated SPEC        │
+│           ↓                             │
+│  Apply feedback → Update SPEC           │
+│           ↓                             │
+│  Round 3: Final review (if needed)      │
+└─────────────────────────────────────────┘
+    ↓
+Convergence check:
+  - Both models: "no major issues" → Done
+  - Same feedback as previous round → Done
+  - Max 3 rounds reached → Done
+    ↓
+Final SPEC + Feature files
+```
+
+**Convergence Criteria:**
+- Both GPT and Gemini respond with no P1/P2 issues
+- Feedback is identical to previous round (no new improvements)
+- Maximum 3 rounds completed
 
 **After SPEC completion, external LLM review → Auto-apply:**
 
