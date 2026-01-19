@@ -355,27 +355,50 @@ export function installGlobalAssets(isUpdate = false): void {
     copyDirRecursive(skillsSource, globalSkillsDir);
   }
 
-  // hooks - 템플릿에서 {{VIBE_PATH}}를 실제 경로로 치환
-  const globalSettingsPath = path.join(globalClaudeDir, 'settings.json');
+  // hooks는 프로젝트 레벨에서 관리 (installProjectHooks에서 처리)
+  // 전역 설정에는 훅을 등록하지 않음 - 프로젝트별 .claude/settings.local.json 사용
+}
+
+// ============================================================================
+// 프로젝트 레벨 훅 설치
+// ============================================================================
+
+/**
+ * 프로젝트 레벨 훅 설치 (.claude/settings.local.json)
+ * 전역이 아닌 프로젝트별로 훅을 등록하여 다른 프로젝트에 영향 없음
+ */
+export function installProjectHooks(projectRoot: string): void {
+  const claudeDir = path.join(projectRoot, '.claude');
+  const settingsLocalPath = path.join(claudeDir, 'settings.local.json');
   const hooksTemplate = path.join(__dirname, '../../hooks/hooks.json');
-  if (fs.existsSync(hooksTemplate)) {
-    // 템플릿 읽고 플레이스홀더 치환
-    let hooksContent = fs.readFileSync(hooksTemplate, 'utf-8');
-    const vibeConfigPath = getVibeConfigDir();
 
-    // Windows 경로는 file:// URL에서 슬래시 사용해야 함
-    const vibePathForUrl = vibeConfigPath.replace(/\\/g, '/');
-    hooksContent = hooksContent.replace(/\{\{VIBE_PATH\}\}/g, vibePathForUrl);
+  if (!fs.existsSync(hooksTemplate)) return;
 
-    const vibeHooks = JSON.parse(hooksContent);
+  ensureDir(claudeDir);
 
-    if (fs.existsSync(globalSettingsPath)) {
-      const existingSettings = JSON.parse(fs.readFileSync(globalSettingsPath, 'utf-8'));
+  // 템플릿 읽고 플레이스홀더 치환
+  let hooksContent = fs.readFileSync(hooksTemplate, 'utf-8');
+  const vibeConfigPath = getVibeConfigDir();
+
+  // Windows 경로는 슬래시 사용
+  const vibePathForUrl = vibeConfigPath.replace(/\\/g, '/');
+  hooksContent = hooksContent.replace(/\{\{VIBE_PATH\}\}/g, vibePathForUrl);
+
+  const vibeHooks = JSON.parse(hooksContent);
+
+  if (fs.existsSync(settingsLocalPath)) {
+    // 기존 settings.local.json에 hooks 병합
+    try {
+      const existingSettings = JSON.parse(fs.readFileSync(settingsLocalPath, 'utf-8'));
       existingSettings.hooks = vibeHooks.hooks;
-      fs.writeFileSync(globalSettingsPath, JSON.stringify(existingSettings, null, 2));
-    } else {
-      fs.writeFileSync(globalSettingsPath, hooksContent);
+      fs.writeFileSync(settingsLocalPath, JSON.stringify(existingSettings, null, 2));
+    } catch {
+      // 파싱 실패시 새로 생성
+      fs.writeFileSync(settingsLocalPath, JSON.stringify(vibeHooks, null, 2));
     }
+  } else {
+    // 새로 생성
+    fs.writeFileSync(settingsLocalPath, JSON.stringify(vibeHooks, null, 2));
   }
 }
 
@@ -418,7 +441,7 @@ export function migrateLegacyVibe(projectRoot: string, vibeDir: string): boolean
 // ============================================================================
 
 /**
- * .gitignore 업데이트 (레거시 정리)
+ * .gitignore 업데이트 (레거시 정리 + settings.local.json 추가)
  */
 export function updateGitignore(projectRoot: string): void {
   const gitignorePath = path.join(projectRoot, '.gitignore');
@@ -427,6 +450,12 @@ export function updateGitignore(projectRoot: string): void {
 
   let gitignore = fs.readFileSync(gitignorePath, 'utf-8');
   let modified = false;
+
+  // settings.local.json 추가 (프로젝트 훅 설정 - 개인 설정이므로 커밋하지 않음)
+  if (!gitignore.includes('.claude/settings.local.json')) {
+    gitignore = gitignore.trimEnd() + '\n\n# vibe project hooks (personal)\n.claude/settings.local.json\n';
+    modified = true;
+  }
 
   // 레거시 mcp 폴더 제외 제거
   if (gitignore.includes('.claude/vibe/mcp/')) {
@@ -442,12 +471,8 @@ export function updateGitignore(projectRoot: string): void {
     modified = true;
   }
 
-  // settings.local.json 제거
-  if (gitignore.includes('settings.local.json')) {
-    gitignore = gitignore.replace(/\.claude\/settings\.local\.json\n?/g, '');
-    gitignore = gitignore.replace(/settings\.local\.json\n?/g, '');
-    modified = true;
-  }
+  // 레거시: settings.local.json 제거 로직 삭제됨
+  // 이제 settings.local.json은 프로젝트 훅 설정으로 사용됨
 
   if (modified) {
     fs.writeFileSync(gitignorePath, gitignore);
@@ -593,11 +618,12 @@ export function cleanupLegacy(projectRoot: string, claudeDir: string): void {
 
 /**
  * 프로젝트 로컬 설정/자산 제거 (전역으로 이동됨)
+ * 단, settings.local.json은 유지 (프로젝트 훅 설정)
  */
 export function removeLocalAssets(claudeDir: string): void {
   const localAssets = [
     { path: path.join(claudeDir, 'settings.json'), isDir: false },
-    { path: path.join(claudeDir, 'settings.local.json'), isDir: false },
+    // settings.local.json은 프로젝트 훅 설정이므로 유지
     { path: path.join(claudeDir, 'commands'), isDir: true },
     { path: path.join(claudeDir, 'agents'), isDir: true },
     { path: path.join(claudeDir, 'skills'), isDir: true },

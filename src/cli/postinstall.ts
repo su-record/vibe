@@ -154,26 +154,8 @@ function main(): void {
       copyDirRecursive(languagesSource, globalLanguagesDir);
     }
 
-    // 6. hooks.json → ~/.claude/settings.json 훅 등록
-    const hooksTemplate = path.join(packageRoot, 'hooks', 'hooks.json');
-    const globalSettingsPath = path.join(globalClaudeDir, 'settings.json');
-    if (fs.existsSync(hooksTemplate)) {
-      let hooksContent = fs.readFileSync(hooksTemplate, 'utf-8');
-      // {{VIBE_PATH}} 플레이스홀더를 실제 경로로 치환
-      const vibePathForUrl = globalVibeDir.replace(/\\/g, '/');
-      hooksContent = hooksContent.replace(/\{\{VIBE_PATH\}\}/g, vibePathForUrl);
-      const vibeHooks = JSON.parse(hooksContent);
-
-      if (fs.existsSync(globalSettingsPath)) {
-        // 기존 settings.json에 hooks 병합
-        const existingSettings = JSON.parse(fs.readFileSync(globalSettingsPath, 'utf-8'));
-        existingSettings.hooks = vibeHooks.hooks;
-        fs.writeFileSync(globalSettingsPath, JSON.stringify(existingSettings, null, 2));
-      } else {
-        // 새로 생성
-        fs.writeFileSync(globalSettingsPath, hooksContent);
-      }
-    }
+    // 6. hooks는 프로젝트 레벨에서 관리 (vibe init/update에서 처리)
+    // 전역 설정에는 훅을 등록하지 않음 - 프로젝트별 .claude/settings.local.json 사용
 
     console.log(`✅ vibe global setup complete: ${globalVibeDir}`);
   } catch (error) {

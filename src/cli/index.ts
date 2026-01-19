@@ -48,6 +48,7 @@ import {
   removeLocalAssets,
   cleanupClaudeConfig,
   cleanupLegacyMcp,
+  installProjectHooks,
 } from './setup.js';
 
 const require = createRequire(import.meta.url);
@@ -139,6 +140,9 @@ async function init(projectName?: string): Promise<void> {
 
     // 협업자 자동 설치 설정
     setupCollaboratorAutoInstall(projectRoot);
+
+    // 프로젝트 레벨 훅 설치
+    installProjectHooks(projectRoot);
 
     // 완료 메시지
     const packageJson = getPackageJson();
@@ -248,6 +252,9 @@ async function update(): Promise<void> {
 
     // 협업자 자동 설치 설정
     setupCollaboratorAutoInstall(projectRoot);
+
+    // 프로젝트 레벨 훅 설치
+    installProjectHooks(projectRoot);
 
     // ~/.claude.json 정리
     cleanupClaudeConfig();
