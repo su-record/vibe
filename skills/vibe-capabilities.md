@@ -15,7 +15,8 @@ Complete guide to vibe's scenario-driven development framework.
 
 | Command | Purpose |
 |---------|---------|
-| `/vibe.spec "feature"` | Create SPEC with PTCF structure + parallel research |
+| `/vibe.spec "feature"` | Create SPEC with PTCF structure + 8 parallel research |
+| `/vibe.spec "feature" split` | Create multiple SPECs for large scope features |
 | `/vibe.run "feature"` | Implement based on SPEC |
 | `/vibe.run "feature" ultrawork` | Maximum performance mode |
 | `/vibe.verify "feature"` | BDD scenario verification |
@@ -23,6 +24,9 @@ Complete guide to vibe's scenario-driven development framework.
 | `/vibe.analyze` | Project analysis |
 | `/vibe.reason "problem"` | Systematic reasoning |
 | `/vibe.utils --e2e` | Playwright E2E testing |
+| `/vibe.utils --diagram` | Generate diagrams |
+| `/vibe.utils --ui "description"` | UI preview |
+| `/vibe.utils --continue` | Session restore (load previous context) |
 | `/vibe.utils --compound` | Document solutions |
 
 ## Built-in Tools
@@ -52,14 +56,6 @@ node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...}))"
 
 ## Orchestrator
 
-### Parallel Research (4 agents)
-
-```bash
-node -e "import('@su-record/vibe/orchestrator').then(o =>
-  o.research('feature', ['stack1', 'stack2'])
-)"
-```
-
 ### Background Agents
 
 ```bash
@@ -68,15 +64,37 @@ node -e "import('@su-record/vibe/orchestrator').then(o =>
 )"
 ```
 
-## LLM Integrations (Hooks)
+## Multi-LLM Research (v2.5.0)
 
-Use prefix patterns to call GPT/Gemini:
+GPT/Gemini are automatically called within `/vibe.spec`:
 
-| LLM | Prefix | Example | Features |
-|-----|--------|---------|----------|
-| GPT | `gpt-`, `gpt.` | `gpt.today's weather in Seoul` | Web Search enabled |
-| Gemini | `gemini-`, `gemini.` | `gemini.Analyze UX` | Google Search enabled |
-| context7 | Plugin call | Library documentation | `/plugin install context7` |
+```text
+/vibe.spec "feature"
+      ↓
+[Claude] Draft SPEC
+      ↓
+[Parallel Research] 8 parallel tasks:
+  - 4x Bash: GPT/Gemini (best practices + security)
+  - 4x Task: Claude agents (docs, patterns, advisories)
+      ↓
+[SPEC Review] GPT + Gemini parallel review
+      ↓
+[Claude] Finalize SPEC
+```
+
+| Phase | Method | Tasks |
+|-------|--------|-------- |
+| Research | `llm-orchestrate.js` via Bash | GPT best practices, GPT security, Gemini best practices, Gemini security |
+| Research | Task tool (Claude agents) | framework-docs, codebase-patterns, best-practices, security-advisory |
+| SPEC Review | `llm-orchestrate.js` via Bash | SPEC quality validation |
+| Docs | context7 MCP | Latest library documentation |
+
+**Setup:**
+```bash
+vibe gpt auth       # Enable GPT
+vibe gemini auth    # Enable Gemini
+vibe status         # Check current settings
+```
 
 ## ULTRAWORK Mode
 
@@ -102,15 +120,30 @@ Add `ultrawork` or `ulw` for maximum performance:
 ## Project Structure
 
 ```
-.claude/
+# Global (~/.claude/)
+~/.claude/
 ├── commands/          # Slash commands
 ├── agents/            # Sub-agents
 ├── skills/            # Auto-activated guides
 └── vibe/
-    ├── specs/         # SPEC documents
-    ├── features/      # BDD scenarios
     ├── rules/         # Coding rules
-    └── solutions/     # Documented solutions
+    ├── languages/     # Language guides
+    └── templates/     # Templates
+
+# Global (%APPDATA%/vibe/ or ~/.config/vibe/)
+vibe/
+├── hooks/scripts/     # Hook scripts (llm-orchestrate.js)
+├── gpt.json           # GPT credentials
+└── gemini.json        # Gemini credentials
+
+# Project (.claude/)
+.claude/
+├── settings.local.json  # Hooks config (personal, gitignored)
+└── vibe/
+    ├── specs/           # SPEC documents
+    ├── features/        # BDD scenarios
+    ├── config.json      # Project config
+    └── constitution.md  # Project rules
 ```
 
 ## Context Management
@@ -124,6 +157,5 @@ Add `ultrawork` or `ulw` for maximum performance:
 Even without `/vibe.*` commands, you can:
 
 1. Call tools directly via node commands
-2. Use LLM hooks (`gpt-`, `gemini-`)
-3. Reference skills for guidance
-4. Apply coding rules from `~/.claude/vibe/rules/` (global)
+2. Reference skills for guidance
+3. Apply coding rules from `~/.claude/vibe/rules/` (global)

@@ -106,49 +106,23 @@ Collect requirements through conversation with the user and create an **AI-execu
 
 > **PTCF**: Persona, Task, Context, Format - Google Gemini prompt optimization framework
 
-## External LLM Integration (Optional)
+## External LLM Integration (GPT/Gemini)
 
-When external LLMs are enabled, automatically utilize during SPEC creation:
+When GPT/Gemini are enabled, they are automatically utilized during SPEC creation:
 
 ```
-/vibe.spec "complex feature"
+/vibe.spec "feature"
       ↓
-[Claude Opus] Create SPEC draft
+[Claude] Draft SPEC
       ↓
-[GPT enabled?] → Call global hook script via Bash
+[Parallel Research] GPT + Gemini + Claude agents (8 parallel)
       ↓
-[Gemini enabled?] → Call global hook script via Bash
+[SPEC Review] GPT + Gemini parallel review
       ↓
 [Claude] Finalize SPEC
 ```
 
-| External LLM | Invocation Method | Role | When Used |
-|--------------|-------------------|------|-----------|
-| GPT (user query) | `gpt-`, `gpt.`, `지피티-` prefix | Direct question (Web Search enabled) | User asks directly |
-| GPT (orchestration) | Call global hook script via Bash | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
-| Gemini (user query) | `gemini-`, `gemini.`, `제미나이-` prefix | Direct question (Google Search enabled) | User asks directly |
-| Gemini (orchestration) | Call global hook script via Bash | Internal orchestration (JSON, no search) | SPEC/vibe.run internal |
-
-**Claude internal orchestration call (Bash):**
-```bash
-# Usage: node llm-orchestrate.js <provider> <mode> [systemPrompt] [prompt]
-#   - If systemPrompt is omitted, default value is used
-#   - If "-" is passed for systemPrompt, default value is used and next argument is treated as prompt
-
-# Cross-platform path resolution (recommended)
-# Windows uses %APPDATA%, bash uses $APPDATA - Node.js handles both via process.env.APPDATA
-
-# GPT call
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[question content]"
-
-# Gemini call
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[question content]"
-
-# Custom system prompt usage
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a SPEC reviewer" "[question content]"
-```
-
-**Activation:**
+**Setup:**
 ```bash
 vibe gpt auth       # Enable GPT (OAuth)
 vibe gemini auth    # Enable Gemini (OAuth)
@@ -271,7 +245,7 @@ Read ~/.claude/vibe/languages/typescript-react.md
 1. **DO NOT** use Task tool to spawn research agents
 2. **DO NOT** use context7 MCP directly for research
 3. **DO NOT** use WebSearch tool directly for research
-4. **YOU MUST** use Bash tool to call the orchestrator command below
+4. **YOU MUST** use Bash tool to call llm-orchestrate.js directly
 
 **When to trigger:**
 1. ✅ Feature type decided (e.g., "passkey authentication")
@@ -279,84 +253,54 @@ Read ~/.claude/vibe/languages/typescript-react.md
 3. ✅ Language guide copied (step 2.5)
 4. ✅ Core requirements collected
 
-**→ IMMEDIATELY execute this EXACT Bash command (replace placeholders):**
+**→ IMMEDIATELY run these 4 Bash commands IN PARALLEL (all at once):**
 
 ```bash
-node -e "import('@su-record/vibe/orchestrator').then(o => o.research('[FEATURE]', ['[STACK1]', '[STACK2]']).then(r => console.log(r.content[0].text)))"
-```
-
-**Concrete example - copy, modify, and run via Bash tool:**
-```bash
-node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey authentication', ['React', 'Supabase']).then(r => console.log(r.content[0].text)))"
-```
-
-**WHY: The orchestrator runs 8 parallel research tasks including GPT and Gemini for 3-way validation.**
-
-**What the orchestrator runs in parallel:**
-
-| Component | Role | Source |
-|-----------|------|--------|
-| Claude Agent: `best-practices-agent` | Best practices for [feature] + [stack] | WebSearch |
-| Claude Agent: `framework-docs-agent` | Latest docs via context7 | context7 MCP |
-| Claude Agent: `codebase-patterns-agent` | Similar patterns in existing codebase | Glob, Grep |
-| Claude Agent: `security-advisory-agent` | Security advisories for [feature] | WebSearch |
-| **GPT: Best Practices** | Architecture patterns, code conventions | GPT API |
-| **GPT: Security** | CVE database, vulnerability details | GPT API |
-| **Gemini: Best Practices** | Latest trends, framework updates | Gemini API |
-| **Gemini: Security** | Latest security advisories, patches | Gemini API |
-
-**🚨 IF YOU USE TASK TOOL INSTEAD OF BASH, GPT/GEMINI WILL NOT BE CALLED! 🚨**
-
-#### 3.1 Multi-LLM Research Enhancement (v2.5.0)
-
-**vibe = Quality Assurance Framework**
-
-When GPT/Gemini are enabled, research agents use **3 LLM perspectives** for critical areas:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  MULTI-LLM PARALLEL RESEARCH                                │
-├─────────────────────────────────────────────────────────────┤
-│  best-practices-agent                                       │
-│    ├── Claude (Haiku): Core patterns, anti-patterns         │
-│    ├── GPT: Architecture patterns, code conventions         │
-│    └── Gemini: Latest trends, framework updates             │
-├─────────────────────────────────────────────────────────────┤
-│  security-advisory-agent                                    │
-│    ├── Claude (Haiku): OWASP Top 10, security patterns      │
-│    ├── GPT: CVE database, vulnerability details             │
-│    └── Gemini: Latest security advisories, patches          │
-└─────────────────────────────────────────────────────────────┘
-        ↓
-    Merge & Dedupe (per agent)
-        ↓
-    SPEC Context + Constraints
-```
-
-**Parallel execution (run alongside Claude agents):**
-
-```bash
-# Cross-platform path
+# Cross-platform path (works on Windows/macOS/Linux)
 VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
 
-# Best practices - GPT perspective
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
-  "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+# 1. GPT: Best practices
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
-# Best practices - Gemini perspective
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
-  "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+# 2. GPT: Security
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
-# Security - GPT perspective
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
-  "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+# 3. Gemini: Best practices
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
-# Security - Gemini perspective
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
-  "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+# 4. Gemini: Security
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 ```
 
-**Result merge rules:**
+**Concrete example - run all 4 in parallel:**
+```bash
+# GPT best practices
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+
+# GPT security
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+
+# Gemini best practices
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+
+# Gemini security
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+```
+
+**ALSO run Claude research agents in parallel using Task tool:**
+
+| Claude Agent | Role | Source |
+|--------------|------|--------|
+| `best-practices-agent` | Best practices for [feature] + [stack] | WebSearch |
+| `framework-docs-agent` | Latest docs via context7 | context7 MCP |
+| `codebase-patterns-agent` | Similar patterns in existing codebase | Glob, Grep |
+| `security-advisory-agent` | Security advisories for [feature] | WebSearch |
+
+**Total: 4 GPT/Gemini calls (Bash) + 4 Claude agents (Task) = 8 parallel research tasks**
+
+**🚨 GPT/Gemini MUST be called via Bash with llm-orchestrate.js! 🚨**
+
+#### 3.1 Result Merge Rules
 
 | Area | Merge Strategy |
 |------|----------------|
@@ -370,7 +314,7 @@ node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
 - ✅ ALWAYS run after requirements confirmed
 - ✅ Show "Running parallel research (Claude + GPT + Gemini)..." message
 - ✅ Include all agent + LLM results in SPEC Context
-- ✅ Run all LLM calls in parallel (4 Bash calls simultaneously)
+- ✅ Run all 4 Bash LLM calls in parallel + 4 Task agents in parallel
 
 **Research results are reflected in SPEC's Context section.**
 
