@@ -1,6 +1,8 @@
 // Convention management tool - completely independent
 
 import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { readFileSync, readdirSync, statSync } from 'fs';
+import { join, extname } from 'path';
 
 // Enhanced Software Engineering Metrics
 const CODE_QUALITY_METRICS = {
@@ -56,12 +58,172 @@ export const validateCodeQualityDefinition: ToolDefinition = {
   }
 };
 
-export async function validateCodeQuality(args: { code: string; type?: string; strict?: boolean; metrics?: string }): Promise<ToolResult> {
-  const { code: validateCode, type: validateType = 'general', strict = false, metrics = 'all' } = args;
-  
+/**
+ * Collect files from directory for analysis
+ */
+function collectFilesFromPath(targetPath: string, projectPath?: string): string[] {
+  const basePath = projectPath ? join(projectPath, targetPath) : targetPath;
+  const files: string[] = [];
+  const supportedExtensions = ['.ts', '.tsx', '.js', '.jsx'];
+
+  try {
+    const stat = statSync(basePath);
+    if (stat.isFile()) {
+      return [basePath];
+    }
+
+    const entries = readdirSync(basePath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'dist') {
+        continue;
+      }
+      const fullPath = join(basePath, entry.name);
+      if (entry.isFile() && supportedExtensions.includes(extname(entry.name))) {
+        files.push(fullPath);
+      } else if (entry.isDirectory()) {
+        files.push(...collectFilesFromPath(fullPath));
+      }
+    }
+  } catch {
+    // Path doesn't exist or not accessible
+  }
+
+  return files.slice(0, 20); // Limit to 20 files for performance
+}
+
+/**
+ * Validate single file code quality
+ */
+function validateSingleFile(code: string, validateType: string): { score: number; issues: number; grade: string } {
+  let score = 100;
+  let issues = 0;
+
+  const lines = code.split('\n');
+  const lineCount = lines.length;
+
+  // Line count check
+  if (lineCount > CODE_QUALITY_METRICS.COMPLEXITY.maxFunctionLines * 10) {
+    score -= 10;
+    issues++;
+  }
+
+  // Nesting depth check
+  let maxNesting = 0;
+  let currentNesting = 0;
+  for (const line of lines) {
+    const braceCount = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+    currentNesting += braceCount;
+    maxNesting = Math.max(maxNesting, currentNesting);
+  }
+  if (maxNesting > CODE_QUALITY_METRICS.COMPLEXITY.maxNestingDepth) {
+    score -= 10;
+    issues++;
+  }
+
+  // Cyclomatic complexity
+  const complexity = (code.match(/\bif\b|\bfor\b|\bwhile\b|\bcase\b|\b&&\b|\b\|\|\b/g) || []).length + 1;
+  if (complexity > CODE_QUALITY_METRICS.COMPLEXITY.maxCyclomaticComplexity) {
+    score -= 15;
+    issues++;
+  }
+
+  // Anti-patterns
+  if (code.includes(': any') || code.includes('<any>')) {
+    score -= 5;
+    issues++;
+  }
+  if (code.includes('== ') && !code.includes('===')) {
+    score -= 3;
+    issues++;
+  }
+  if (code.includes('var ')) {
+    score -= 5;
+    issues++;
+  }
+
+  score = Math.max(0, score);
+  const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+
+  return { score, issues, grade };
+}
+
+/**
+ * Validate code quality of files in a directory
+ */
+async function validateDirectoryQuality(targetPath: string, projectPath?: string): Promise<ToolResult> {
+  const files = collectFilesFromPath(targetPath, projectPath);
+
+  if (files.length === 0) {
+    return {
+      content: [{
+        type: 'text',
+        text: `No supported files found in ${targetPath}`
+      }]
+    };
+  }
+
+  const results: Array<{ file: string; score: number; issues: number; grade: string }> = [];
+  let totalScore = 0;
+  let totalIssues = 0;
+
+  for (const file of files) {
+    try {
+      const code = readFileSync(file, 'utf-8');
+      const result = validateSingleFile(code, 'general');
+
+      results.push({
+        file: file.replace(projectPath || '', '').replace(/^[/\\]/, ''),
+        ...result
+      });
+      totalScore += result.score;
+      totalIssues += result.issues;
+    } catch {
+      // Skip files that can't be read
+    }
+  }
+
+  if (results.length === 0) {
+    return {
+      content: [{
+        type: 'text',
+        text: 'No files could be analyzed'
+      }]
+    };
+  }
+
+  const avgScore = Math.round(totalScore / results.length);
+  const avgGrade = avgScore >= 90 ? 'A' : avgScore >= 80 ? 'B' : avgScore >= 70 ? 'C' : avgScore >= 60 ? 'D' : 'F';
+  const lowQualityFiles = results.filter(r => r.score < 70);
+
+  return {
+    content: [{
+      type: 'text',
+      text: `Files: ${results.length} | Avg Score: ${avgScore}/100 (${avgGrade}) | Total Issues: ${totalIssues}${lowQualityFiles.length > 0 ? ` | Low quality: ${lowQualityFiles.length} files` : ''}`
+    }]
+  };
+}
+
+export async function validateCodeQuality(args: { code?: string; type?: string; strict?: boolean; metrics?: string; targetPath?: string; projectPath?: string }): Promise<ToolResult> {
+  const { code: validateCode, type: validateType = 'general', strict = false, metrics = 'all', targetPath, projectPath } = args || {};
+
+  // If targetPath is provided, analyze directory
+  if (targetPath) {
+    return validateDirectoryQuality(targetPath, projectPath);
+  }
+
+  // Validate input for code analysis
+  if (!validateCode || typeof validateCode !== 'string') {
+    return {
+      content: [{
+        type: 'text',
+        text: 'Error: No code or targetPath provided. Please provide code to validate or a targetPath for directory analysis.'
+      }]
+    };
+  }
+
   const qualityIssues = [];
   const qualityScore = { total: 100, deductions: [] as Array<{reason: string, points: number}> };
-  
+
   // Basic complexity checks
   const lines = validateCode.split('\n');
   const functionLineCount = lines.length;

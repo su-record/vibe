@@ -3,6 +3,8 @@
 import { Project, ScriptKind } from "ts-morph";
 import { PythonParser } from '../../lib/PythonParser.js';
 import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { readFileSync, readdirSync, statSync } from 'fs';
+import { join, extname } from 'path';
 
 // Reusable in-memory project to avoid re-parsing standard lib every call
 const AST_PROJECT = new Project({
@@ -175,8 +177,115 @@ async function analyzePythonComplexity(code: string): Promise<ToolResult> {
   }
 }
 
-export async function analyzeComplexity(args: { code: string; metrics?: string }): Promise<ToolResult> {
-  const { code: complexityCode, metrics: complexityMetrics = 'all' } = args;
+/**
+ * Collect files from directory for analysis
+ */
+function collectFilesFromPath(targetPath: string, projectPath?: string): string[] {
+  const basePath = projectPath ? join(projectPath, targetPath) : targetPath;
+  const files: string[] = [];
+  const supportedExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py'];
+
+  try {
+    const stat = statSync(basePath);
+    if (stat.isFile()) {
+      return [basePath];
+    }
+
+    const entries = readdirSync(basePath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'dist') {
+        continue;
+      }
+      const fullPath = join(basePath, entry.name);
+      if (entry.isFile() && supportedExtensions.includes(extname(entry.name))) {
+        files.push(fullPath);
+      } else if (entry.isDirectory()) {
+        files.push(...collectFilesFromPath(fullPath));
+      }
+    }
+  } catch {
+    // Path doesn't exist or not accessible
+  }
+
+  return files.slice(0, 20); // Limit to 20 files for performance
+}
+
+/**
+ * Analyze complexity of files in a directory
+ */
+async function analyzeDirectoryComplexity(targetPath: string, projectPath?: string): Promise<ToolResult> {
+  const files = collectFilesFromPath(targetPath, projectPath);
+
+  if (files.length === 0) {
+    return {
+      content: [{
+        type: 'text',
+        text: `No supported files found in ${targetPath}`
+      }]
+    };
+  }
+
+  const results: Array<{ file: string; complexity: number; score: number }> = [];
+  let totalComplexity = 0;
+  let totalScore = 0;
+
+  for (const file of files) {
+    try {
+      const code = readFileSync(file, 'utf-8');
+      const astResult = calculateAstComplexity(code);
+      const complexity = astResult.value ?? 0;
+      const score = complexity <= CODE_QUALITY_METRICS.COMPLEXITY.maxCyclomaticComplexity ? 100 : Math.max(0, 100 - (complexity - 10) * 5);
+
+      results.push({
+        file: file.replace(projectPath || '', '').replace(/^[/\\]/, ''),
+        complexity,
+        score
+      });
+      totalComplexity += complexity;
+      totalScore += score;
+    } catch {
+      // Skip files that can't be read
+    }
+  }
+
+  if (results.length === 0) {
+    return {
+      content: [{
+        type: 'text',
+        text: 'No files could be analyzed'
+      }]
+    };
+  }
+
+  const avgComplexity = Math.round(totalComplexity / results.length * 10) / 10;
+  const avgScore = Math.round(totalScore / results.length);
+  const highComplexityFiles = results.filter(r => r.complexity > CODE_QUALITY_METRICS.COMPLEXITY.maxCyclomaticComplexity);
+
+  return {
+    content: [{
+      type: 'text',
+      text: `Files: ${results.length} | Avg Complexity: ${avgComplexity} | Avg Score: ${avgScore}/100${highComplexityFiles.length > 0 ? ` | High complexity: ${highComplexityFiles.length} files` : ''}`
+    }]
+  };
+}
+
+export async function analyzeComplexity(args: { code?: string; metrics?: string; targetPath?: string; projectPath?: string }): Promise<ToolResult> {
+  const { code: complexityCode, metrics: complexityMetrics = 'all', targetPath, projectPath } = args || {};
+
+  // If targetPath is provided, analyze directory
+  if (targetPath) {
+    return analyzeDirectoryComplexity(targetPath, projectPath);
+  }
+
+  // Validate input for code analysis
+  if (!complexityCode || typeof complexityCode !== 'string') {
+    return {
+      content: [{
+        type: 'text',
+        text: 'Error: No code or targetPath provided. Please provide code to analyze or a targetPath for directory analysis.'
+      }]
+    };
+  }
 
   // Check if this is Python code
   if (PythonParser.isPythonCode(complexityCode)) {
