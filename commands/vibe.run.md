@@ -285,18 +285,17 @@ When external LLMs are enabled in `.claude/vibe/config.json`:
 #   - If systemPrompt omitted, uses default
 #   - If systemPrompt is "-", uses default and treats next argument as prompt
 
-# GPT call (Windows)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[question content]"
-# GPT call (macOS/Linux)
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[question content]"
+# Cross-platform path (works on Windows/macOS/Linux)
+VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
 
-# Gemini call (Windows)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[question content]"
-# Gemini call (macOS/Linux)
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[question content]"
+# GPT call
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "[question content]"
+
+# Gemini call
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "[question content]"
 
 # Custom system prompt usage
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a code reviewer" "[question content]"
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "You are a code reviewer" "[question content]"
 ```
 
 ### External LLM Fallback
@@ -672,11 +671,10 @@ After all scenarios are implemented, **Gemini reviews the code and auto-fixes ba
 When Gemini is enabled, **must** use global hook script for code review:
 
 ```bash
-# Windows
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review this code for security, performance, best-practices: [code summary]. SPEC: [summary]. Scenarios: [list]"
+# Cross-platform path (works on Windows/macOS/Linux)
+VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
 
-# macOS/Linux
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review this code for security, performance, best-practices: [code summary]. SPEC: [summary]. Scenarios: [list]"
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this code for security, performance, best-practices: [code summary]. SPEC: [summary]. Scenarios: [list]"
 ```
 
 **Call sequence:**

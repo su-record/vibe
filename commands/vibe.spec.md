@@ -135,18 +135,17 @@ When external LLMs are enabled, automatically utilize during SPEC creation:
 #   - If systemPrompt is omitted, default value is used
 #   - If "-" is passed for systemPrompt, default value is used and next argument is treated as prompt
 
-# GPT call (Windows)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[question content]"
-# GPT call (macOS/Linux)
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[question content]"
+# Cross-platform path resolution (recommended)
+# Windows uses %APPDATA%, bash uses $APPDATA - Node.js handles both via process.env.APPDATA
 
-# Gemini call (Windows)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[question content]"
-# Gemini call (macOS/Linux)
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[question content]"
+# GPT call
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "[question content]"
+
+# Gemini call
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "[question content]"
 
 # Custom system prompt usage
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a SPEC reviewer" "[question content]"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "You are a SPEC reviewer" "[question content]"
 ```
 
 **Activation:**
@@ -662,21 +661,14 @@ If score is below 85, attempt automatic fixes:
 **Parallel execution (2 Bash calls simultaneously):**
 
 ```bash
+# Cross-platform path (works on Windows/macOS/Linux)
+VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+
 # GPT review (code patterns, architecture perspective)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
 
 # Gemini review (latest docs, best practices perspective)
-node "$APPDATA/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
-```
-
-**macOS/Linux:**
-
-```bash
-# GPT review
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
-
-# Gemini review
-node ~/.config/vibe/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
 ```
 
 **Important:**
