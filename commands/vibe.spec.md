@@ -264,7 +264,14 @@ Read ~/.claude/vibe/languages/typescript-react.md
 
 ### 3. Parallel Research (v2.5.0) - MANDATORY AFTER requirements confirmed
 
-**🚨 CRITICAL: Research is MANDATORY after requirements are confirmed**
+**🚨🚨🚨 ABSOLUTE RULE: YOU MUST USE BASH TOOL FOR RESEARCH 🚨🚨🚨**
+
+**STOP! Before doing ANY research, read this carefully:**
+
+1. **DO NOT** use Task tool to spawn research agents
+2. **DO NOT** use context7 MCP directly for research
+3. **DO NOT** use WebSearch tool directly for research
+4. **YOU MUST** use Bash tool to call the orchestrator command below
 
 **When to trigger:**
 1. ✅ Feature type decided (e.g., "passkey authentication")
@@ -272,25 +279,20 @@ Read ~/.claude/vibe/languages/typescript-react.md
 3. ✅ Language guide copied (step 2.5)
 4. ✅ Core requirements collected
 
-**→ IMMEDIATELY run orchestrator research via Bash. NO EXCEPTIONS.**
+**→ IMMEDIATELY execute this EXACT Bash command (replace placeholders):**
 
-**🚨 MANDATORY: Use Bash tool to call orchestrator**
-
-❌ **FORBIDDEN:** Using Task tool to spawn agents directly
-✅ **REQUIRED:** Use Bash tool to run the orchestrator command below
-
-**Execution via Bash (REQUIRED):**
 ```bash
 node -e "import('@su-record/vibe/orchestrator').then(o => o.research('[FEATURE]', ['[STACK1]', '[STACK2]']).then(r => console.log(r.content[0].text)))"
 ```
 
-**Example (copy and run via Bash tool):**
+**Concrete example - copy, modify, and run via Bash tool:**
 ```bash
-# After confirming: passkey auth + React + Supabase
 node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey authentication', ['React', 'Supabase']).then(r => console.log(r.content[0].text)))"
 ```
 
-**What runs in parallel (via orchestrator):**
+**WHY: The orchestrator runs 8 parallel research tasks including GPT and Gemini for 3-way validation.**
+
+**What the orchestrator runs in parallel:**
 
 | Component | Role | Source |
 |-----------|------|--------|
@@ -302,6 +304,8 @@ node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey au
 | **GPT: Security** | CVE database, vulnerability details | GPT API |
 | **Gemini: Best Practices** | Latest trends, framework updates | Gemini API |
 | **Gemini: Security** | Latest security advisories, patches | Gemini API |
+
+**🚨 IF YOU USE TASK TOOL INSTEAD OF BASH, GPT/GEMINI WILL NOT BE CALLED! 🚨**
 
 #### 3.1 Multi-LLM Research Enhancement (v2.5.0)
 
