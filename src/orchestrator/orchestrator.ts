@@ -28,7 +28,9 @@ import { DEFAULT_MODELS } from '../lib/constants.js';
 import {
   parallelResearch,
   researchFeature,
-  createResearchTasks
+  createResearchTasks,
+  parallelResearchWithMultiLlm,
+  executeMultiLlmResearch
 } from './parallelResearch.js';
 import {
   launchBackgroundAgent,
@@ -422,10 +424,34 @@ Claude, please handle this task using your own capabilities. Do NOT retry extern
 
   /**
    * 기능 기반 리서치 (간편 API)
+   * v2.5.0: Multi-LLM Research (Claude + GPT + Gemini) 지원
    */
   async researchFeature(feature: string, techStack: string[] = []): Promise<ParallelResearchResult> {
     const tasks = createResearchTasks(feature, techStack);
-    return this.runParallelResearch({ tasks });
+
+    // Multi-LLM 리서치 (Claude 에이전트 + GPT + Gemini 병렬 실행)
+    const result = await parallelResearchWithMultiLlm({
+      tasks,
+      projectPath: this.options.projectPath,
+      feature,
+      techStack
+    });
+
+    // 결과 저장
+    if (this.options.saveResults && 'results' in result) {
+      await this.saveOrchestratorResult('research', result);
+    }
+
+    if ('results' in result) {
+      return result as unknown as ParallelResearchResult;
+    }
+
+    return {
+      results: [],
+      totalDuration: 0,
+      successCount: 0,
+      failureCount: 0
+    };
   }
 
   /**

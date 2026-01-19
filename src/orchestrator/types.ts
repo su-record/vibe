@@ -51,6 +51,26 @@ export interface ParallelResearchResult {
   totalDuration: number;
   successCount: number;
   failureCount: number;
+  /** Multi-LLM 리서치 결과 (v2.5.0) */
+  multiLlm?: MultiLlmResearchResult;
+}
+
+/** Multi-LLM 단일 결과 (v2.5.0) */
+export interface MultiLlmResult {
+  provider: 'gpt' | 'gemini';
+  category: 'best-practices' | 'security';
+  result: string;
+  success: boolean;
+  error?: string;
+  duration: number;
+}
+
+/** Multi-LLM 리서치 전체 결과 (v2.5.0) */
+export interface MultiLlmResearchResult {
+  results: MultiLlmResult[];
+  totalDuration: number;
+  successCount: number;
+  failureCount: number;
 }
 
 // Background Agent 관련 타입

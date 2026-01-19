@@ -27,7 +27,10 @@ export type {
   LLMProvider,
   SmartRouteRequest,
   SmartRouteResult,
-  LLMAvailabilityCache
+  LLMAvailabilityCache,
+  // Multi-LLM types (v2.5.0)
+  MultiLlmResult,
+  MultiLlmResearchResult
 } from './types.js';
 
 // Smart Routing constants
@@ -44,7 +47,11 @@ export {
 export {
   parallelResearch,
   researchFeature,
-  createResearchTasks
+  createResearchTasks,
+  // Multi-LLM Research (v2.5.0)
+  parallelResearchWithMultiLlm,
+  executeMultiLlmResearch,
+  formatMultiLlmResults
 } from './parallelResearch.js';
 
 // Background Agent
@@ -70,6 +77,7 @@ export {
 import { VibeOrchestrator } from './orchestrator.js';
 import {
   parallelResearch as _parallelResearch,
+  parallelResearchWithMultiLlm as _parallelResearchWithMultiLlm,
   createResearchTasks
 } from './parallelResearch.js';
 import {
@@ -83,6 +91,7 @@ import { ToolResult } from '../types/tool.js';
 
 /**
  * 기능 기반 병렬 리서치 (간편 API)
+ * v2.5.0: Multi-LLM Research (Claude + GPT + Gemini) 지원
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.research('login feature', ['React', 'TypeScript'])).then(console.log)"
@@ -93,7 +102,8 @@ export async function research(
   projectPath: string = process.cwd()
 ): Promise<ToolResult> {
   const tasks = createResearchTasks(feature, techStack);
-  return _parallelResearch({ tasks, projectPath });
+  // Multi-LLM 리서치 (Claude 에이전트 + GPT + Gemini 병렬 실행)
+  return _parallelResearchWithMultiLlm({ tasks, projectPath, feature, techStack });
 }
 
 /**

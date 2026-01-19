@@ -1,6 +1,7 @@
 /**
  * Parallel Research - 병렬 리서치 에이전트 실행
  * Agent SDK의 query() 함수를 사용하여 여러 에이전트를 동시에 실행
+ * v2.5.0: Multi-LLM Research (Claude + GPT + Gemini)
  */
 
 import {
@@ -8,11 +9,14 @@ import {
   ParallelResearchResult,
   ResearchTask,
   AgentResult,
-  AgentMessage
+  AgentMessage,
+  MultiLlmResult
 } from './types.js';
 import { ToolResult } from '../types/tool.js';
-import { getAgentSdkQuery } from '../lib/utils.js';
+import { getAgentSdkQuery, warnLog } from '../lib/utils.js';
 import { DEFAULT_MODELS, TIMEOUTS, AGENT } from '../lib/constants.js';
+import * as gptApi from '../lib/gpt-api.js';
+import * as geminiApi from '../lib/gemini-api.js';
 
 /**
  * 기본 리서치 태스크 템플릿
@@ -276,4 +280,259 @@ export async function researchFeature(
 ): Promise<ToolResult> {
   const tasks = createResearchTasks(feature, techStack);
   return parallelResearch({ tasks, projectPath });
+}
+
+// ============================================
+// Multi-LLM Research (v2.5.0)
+// ============================================
+
+/**
+ * Multi-LLM 리서치 프롬프트 생성
+ */
+function createMultiLlmPrompts(feature: string, techStack: string[]): {
+  bestPractices: { gpt: string; gemini: string };
+  security: { gpt: string; gemini: string };
+} {
+  const stackStr = techStack.length > 0 ? techStack.join(', ') : 'the project';
+
+  return {
+    bestPractices: {
+      gpt: `Best practices for implementing "${feature}" with ${stackStr}.
+Focus on: architecture patterns, code conventions, design patterns.
+Return JSON: { patterns: string[], antiPatterns: string[], libraries: string[] }`,
+      gemini: `Best practices for implementing "${feature}" with ${stackStr}.
+Focus on: latest trends, framework updates, modern approaches.
+Return JSON: { patterns: string[], antiPatterns: string[], libraries: string[] }`
+    },
+    security: {
+      gpt: `Security considerations for "${feature}" with ${stackStr}.
+Focus on: CVE database, known vulnerabilities, exploit patterns.
+Return JSON: { vulnerabilities: string[], mitigations: string[], checklist: string[] }`,
+      gemini: `Security advisories for "${feature}" with ${stackStr}.
+Focus on: latest patches, recent incidents, security best practices.
+Return JSON: { advisories: string[], patches: string[], incidents: string[] }`
+    }
+  };
+}
+
+/**
+ * GPT API 호출 (에러 처리 포함)
+ */
+async function callGptSafe(
+  prompt: string,
+  systemPrompt: string,
+  jsonMode: boolean = true
+): Promise<{ result: string; success: boolean; error?: string }> {
+  try {
+    const result = await gptApi.vibeGptOrchestrate(prompt, systemPrompt, { jsonMode });
+    return { result, success: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    warnLog('[Multi-LLM] GPT call failed:', errorMsg);
+    return { result: '', success: false, error: errorMsg };
+  }
+}
+
+/**
+ * Gemini API 호출 (에러 처리 포함)
+ */
+async function callGeminiSafe(
+  prompt: string,
+  systemPrompt: string,
+  jsonMode: boolean = true
+): Promise<{ result: string; success: boolean; error?: string }> {
+  try {
+    const result = await geminiApi.vibeGeminiOrchestrate(prompt, systemPrompt, { jsonMode });
+    return { result, success: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    warnLog('[Multi-LLM] Gemini call failed:', errorMsg);
+    return { result: '', success: false, error: errorMsg };
+  }
+}
+
+/**
+ * Multi-LLM 병렬 리서치 실행
+ * Claude 에이전트와 함께 GPT/Gemini를 병렬로 호출하여 3-way validation 수행
+ */
+export async function executeMultiLlmResearch(
+  feature: string,
+  techStack: string[]
+): Promise<MultiLlmResult[]> {
+  const prompts = createMultiLlmPrompts(feature, techStack);
+  const results: MultiLlmResult[] = [];
+
+  // 4개 LLM 호출을 병렬로 실행
+  const promises: Promise<void>[] = [];
+
+  // Best Practices - GPT
+  promises.push(
+    (async () => {
+      const taskStart = Date.now();
+      const { result, success, error } = await callGptSafe(
+        prompts.bestPractices.gpt,
+        'You are an expert software architect. Provide best practices in JSON format.'
+      );
+      results.push({
+        provider: 'gpt',
+        category: 'best-practices',
+        result,
+        success,
+        error,
+        duration: Date.now() - taskStart
+      });
+    })()
+  );
+
+  // Best Practices - Gemini
+  promises.push(
+    (async () => {
+      const taskStart = Date.now();
+      const { result, success, error } = await callGeminiSafe(
+        prompts.bestPractices.gemini,
+        'You are an expert in modern development trends. Provide best practices in JSON format.'
+      );
+      results.push({
+        provider: 'gemini',
+        category: 'best-practices',
+        result,
+        success,
+        error,
+        duration: Date.now() - taskStart
+      });
+    })()
+  );
+
+  // Security - GPT
+  promises.push(
+    (async () => {
+      const taskStart = Date.now();
+      const { result, success, error } = await callGptSafe(
+        prompts.security.gpt,
+        'You are a security expert. Focus on CVE database and known vulnerabilities. Return JSON format.'
+      );
+      results.push({
+        provider: 'gpt',
+        category: 'security',
+        result,
+        success,
+        error,
+        duration: Date.now() - taskStart
+      });
+    })()
+  );
+
+  // Security - Gemini
+  promises.push(
+    (async () => {
+      const taskStart = Date.now();
+      const { result, success, error } = await callGeminiSafe(
+        prompts.security.gemini,
+        'You are a security advisor. Focus on latest advisories and patches. Return JSON format.'
+      );
+      results.push({
+        provider: 'gemini',
+        category: 'security',
+        result,
+        success,
+        error,
+        duration: Date.now() - taskStart
+      });
+    })()
+  );
+
+  // 모든 호출 대기
+  await Promise.all(promises);
+
+  return results;
+}
+
+/**
+ * Multi-LLM 결과 포맷팅
+ */
+export function formatMultiLlmResults(results: MultiLlmResult[]): string {
+  if (results.length === 0) {
+    return '[Multi-LLM] No results available';
+  }
+
+  const successCount = results.filter(r => r.success).length;
+  let output = `\n## Multi-LLM Research Results (${successCount}/${results.length} successful)\n\n`;
+
+  // Best Practices 섹션
+  const bestPractices = results.filter(r => r.category === 'best-practices');
+  if (bestPractices.length > 0) {
+    output += `### Best Practices\n\n`;
+    for (const bp of bestPractices) {
+      const status = bp.success ? '✅' : '❌';
+      output += `#### ${status} ${bp.provider.toUpperCase()} (${(bp.duration / 1000).toFixed(1)}s)\n`;
+      if (bp.success) {
+        output += `${bp.result}\n\n`;
+      } else {
+        output += `Error: ${bp.error}\n\n`;
+      }
+    }
+  }
+
+  // Security 섹션
+  const security = results.filter(r => r.category === 'security');
+  if (security.length > 0) {
+    output += `### Security Advisories\n\n`;
+    for (const sec of security) {
+      const status = sec.success ? '✅' : '❌';
+      output += `#### ${status} ${sec.provider.toUpperCase()} (${(sec.duration / 1000).toFixed(1)}s)\n`;
+      if (sec.success) {
+        output += `${sec.result}\n\n`;
+      } else {
+        output += `Error: ${sec.error}\n\n`;
+      }
+    }
+  }
+
+  return output;
+}
+
+/**
+ * 통합 병렬 리서치 (Claude 에이전트 + Multi-LLM)
+ * v2.5.0: GPT/Gemini가 가능하면 함께 실행
+ */
+export async function parallelResearchWithMultiLlm(args: ParallelResearchArgs & {
+  feature: string;
+  techStack: string[];
+}): Promise<ToolResult> {
+  const { feature, techStack, ...researchArgs } = args;
+  const startTime = Date.now();
+
+  // Claude 에이전트와 Multi-LLM을 병렬로 실행
+  const [claudeResult, multiLlmResults] = await Promise.all([
+    parallelResearch(researchArgs),
+    executeMultiLlmResearch(feature, techStack).catch(e => {
+      warnLog('[Multi-LLM] Research failed:', e);
+      return [] as MultiLlmResult[];
+    })
+  ]);
+
+  // 결과 병합
+  const totalDuration = Date.now() - startTime;
+  const multiLlmSuccess = multiLlmResults.filter(r => r.success).length;
+  const multiLlmFailure = multiLlmResults.length - multiLlmSuccess;
+
+  // Claude 결과 텍스트에 Multi-LLM 결과 추가
+  let combinedText = claudeResult.content[0].text;
+  if (multiLlmResults.length > 0) {
+    combinedText += formatMultiLlmResults(multiLlmResults);
+  }
+
+  return {
+    content: [{ type: 'text', text: combinedText }],
+    results: (claudeResult as unknown as ParallelResearchResult).results || [],
+    totalDuration,
+    successCount: ((claudeResult as unknown as ParallelResearchResult).successCount || 0) + multiLlmSuccess,
+    failureCount: ((claudeResult as unknown as ParallelResearchResult).failureCount || 0) + multiLlmFailure,
+    multiLlm: {
+      results: multiLlmResults,
+      totalDuration: multiLlmResults.reduce((sum, r) => sum + r.duration, 0),
+      successCount: multiLlmSuccess,
+      failureCount: multiLlmFailure
+    }
+  } as ToolResult & ParallelResearchResult;
 }
