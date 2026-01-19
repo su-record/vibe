@@ -272,27 +272,36 @@ Read ~/.claude/vibe/languages/typescript-react.md
 3. ✅ Language guide copied (step 2.5)
 4. ✅ Core requirements collected
 
-**→ IMMEDIATELY run orchestrator research. NO EXCEPTIONS.**
+**→ IMMEDIATELY run orchestrator research via Bash. NO EXCEPTIONS.**
 
-**Execution via Orchestrator (4 agents + Multi-LLM in parallel):**
+**🚨 MANDATORY: Use Bash tool to call orchestrator**
+
+❌ **FORBIDDEN:** Using Task tool to spawn agents directly
+✅ **REQUIRED:** Use Bash tool to run the orchestrator command below
+
+**Execution via Bash (REQUIRED):**
 ```bash
 node -e "import('@su-record/vibe/orchestrator').then(o => o.research('[FEATURE]', ['[STACK1]', '[STACK2]']).then(r => console.log(r.content[0].text)))"
 ```
 
-**Example:**
+**Example (copy and run via Bash tool):**
 ```bash
 # After confirming: passkey auth + React + Supabase
 node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey authentication', ['React', 'Supabase']).then(r => console.log(r.content[0].text)))"
 ```
 
-**What runs in parallel (180s timeout each):**
+**What runs in parallel (via orchestrator):**
 
-| Agent | Role | Tools |
-|-------|------|-------|
-| `best-practices-agent` | Best practices for [feature] + [stack] | WebSearch |
-| `framework-docs-agent` | Latest docs via context7 | context7 MCP |
-| `codebase-patterns-agent` | Similar patterns in existing codebase | Glob, Grep |
-| `security-advisory-agent` | Security advisories for [feature] | WebSearch |
+| Component | Role | Source |
+|-----------|------|--------|
+| Claude Agent: `best-practices-agent` | Best practices for [feature] + [stack] | WebSearch |
+| Claude Agent: `framework-docs-agent` | Latest docs via context7 | context7 MCP |
+| Claude Agent: `codebase-patterns-agent` | Similar patterns in existing codebase | Glob, Grep |
+| Claude Agent: `security-advisory-agent` | Security advisories for [feature] | WebSearch |
+| **GPT: Best Practices** | Architecture patterns, code conventions | GPT API |
+| **GPT: Security** | CVE database, vulnerability details | GPT API |
+| **Gemini: Best Practices** | Latest trends, framework updates | Gemini API |
+| **Gemini: Security** | Latest security advisories, patches | Gemini API |
 
 #### 3.1 Multi-LLM Research Enhancement (v2.5.0)
 

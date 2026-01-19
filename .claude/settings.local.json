@@ -47,7 +47,28 @@
       "Bash(npm install:*)",
       "Bash(find:*)",
       "Bash(xargs -I {} bash -c 'echo \"\"=== {} ===\"\" && head -30 {}')",
-      "Bash(vibe gpt:*)"
+      "Bash(vibe gpt:*)",
+      "Bash(npm run lint)",
+      "Bash(npx markdownlint-cli2:*)",
+      "Bash(npm ls:*)",
+      "Bash(npx eslint:*)",
+      "Bash({)",
+      "Bash(for f in CLAUDE.md commands/vibe.spec.md commands/vibe.run.md commands/vibe.review.md commands/vibe.verify.md)",
+      "Bash(do)",
+      "Bash(if [ -f \"$f\" ])",
+      "Bash(then)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(})",
+      "Bash(git reset:*)",
+      "Bash(where:*)",
+      "Bash(npm config:*)",
+      "Bash(npm test:*)",
+      "Bash(npx vitest run)",
+      "Bash(npx vitest run:*)",
+      "Bash(git tag:*)",
+      "Bash(gh release create v2.5.0 --title \"v2.5.0 - Multi-LLM Research for Quality Assurance\" --notes \"$\\(cat <<''EOF''\n## Multi-LLM Research \\(v2.5.0\\)\n\n**vibe = Quality Assurance Framework**\n\n### New Features\n\nDuring `/vibe.spec`, research agents now use **3 LLM perspectives** for comprehensive quality assurance:\n\n```\n┌─────────────────────────────────────────────────────────────┐\n│  MULTI-LLM PARALLEL RESEARCH                                │\n├─────────────────────────────────────────────────────────────┤\n│  best-practices-agent                                       │\n│    ├── Claude: Core patterns, anti-patterns                 │\n│    ├── GPT: Architecture patterns, code conventions         │\n│    └── Gemini: Latest trends, framework updates             │\n├─────────────────────────────────────────────────────────────┤\n│  security-advisory-agent                                    │\n│    ├── Claude: OWASP Top 10, security patterns              │\n│    ├── GPT: CVE database, vulnerability details             │\n│    └── Gemini: Latest security advisories, patches          │\n└─────────────────────────────────────────────────────────────┘\n```\n\n### Quality Assurance Strategy\n\n| Area | Merge Strategy |\n|------|----------------|\n| Best Practices | Deduplicate, keep most detailed |\n| Security | ALL included \\(no dedup for safety\\) |\n| Libraries | Consensus recommendations |\n\n### Changes\n\n- `best-practices-agent`: Claude + GPT + Gemini 3-way validation\n- `security-advisory-agent`: Claude + GPT + Gemini parallel research\n- `vibe.spec.md`: Multi-LLM research enhancement \\(v2.5.0\\)\n- `README.md`: Multi-LLM Research section added\n\n### Installation\n\n\\\\`\\\\`\\\\`bash\nnpm install -g @su-record/vibe\nvibe update\n\\\\`\\\\`\\\\`\n\n---\n\n**Full Changelog**: https://github.com/su-record/vibe/compare/v2.4.77...v2.5.0\nEOF\n\\)\")"
     ]
   }
 }
