@@ -319,7 +319,7 @@ node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey au
 | Platforms | 2+ platforms |
 | Major features | 4+ distinct features |
 
-**Auto-split output:**
+**Auto-split output (SPEC + Feature files must match):**
 
 ```
 .claude/vibe/specs/{feature-name}/
@@ -327,7 +327,15 @@ node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey au
 ├── phase-1-setup.md
 ├── phase-2-core.md
 └── ...
+
+.claude/vibe/features/{feature-name}/
+├── _index.feature      # Master Feature
+├── phase-1-setup.feature
+├── phase-2-core.feature
+└── ...
 ```
+
+**🚨 CRITICAL: Each SPEC phase file MUST have a matching Feature file**
 
 **Master SPEC (`_index.md`):**
 
@@ -340,14 +348,34 @@ node -e "import('@su-record/vibe/orchestrator').then(o => o.research('passkey au
 
 ## Sub-SPECs
 
-| Order | SPEC File | Status |
-|-------|-----------|--------|
-| 1 | phase-1-setup.md | ⬜ |
-| 2 | phase-2-core.md | ⬜ |
+| Order | SPEC File | Feature File | Status |
+|-------|-----------|--------------|--------|
+| 1 | phase-1-setup.md | phase-1-setup.feature | ⬜ |
+| 2 | phase-2-core.md | phase-2-core.feature | ⬜ |
 
 ## Shared Context
 - Tech Stack: [all phases]
 - Constraints: [all phases]
+```
+
+**Master Feature (`_index.feature`):**
+
+```markdown
+# Feature: {feature-name} (Master)
+
+**Master SPEC**: `.claude/vibe/specs/{feature-name}/_index.md`
+
+## Sub-Features
+
+| Order | Feature File | SPEC File | Status |
+|-------|--------------|-----------|--------|
+| 1 | phase-1-setup.feature | phase-1-setup.md | ⬜ |
+| 2 | phase-2-core.feature | phase-2-core.md | ⬜ |
+
+## Overall User Story
+**As a** {user}
+**I want** {complete feature}
+**So that** {value}
 ```
 
 **Small scope (default):**
@@ -434,14 +462,22 @@ Define AI role and expertise for implementation
 
 ### 5. Create Feature File (BDD) - Required
 
-**Must** create `.claude/vibe/features/{feature-name}.feature` file.
+**🚨 CRITICAL: Feature files MUST match SPEC file structure**
+
+| SPEC Structure | Feature Structure |
+|----------------|-------------------|
+| Single file (`{feature}.md`) | Single file (`{feature}.feature`) |
+| Split (`{feature}/_index.md` + phases) | Split (`{feature}/_index.feature` + phases) |
+
+#### 5.1 Single File (Small Scope)
+
+Create `.claude/vibe/features/{feature-name}.feature`:
 
 **Creation rules:**
 1. Convert each SPEC Acceptance Criteria → one Scenario
 2. Include Happy Path (normal case) + Edge Case (exception case)
 3. Follow Given-When-Then format
 
-**Feature structure:**
 ```markdown
 # Feature: {feature-name}
 
@@ -470,6 +506,42 @@ Scenario: {title}
 | Scenario | SPEC AC | Status |
 |----------|---------|--------|
 | 1 | AC-1 | ⬜ |
+```
+
+#### 5.2 Split Files (Large Scope)
+
+When SPEC is split into phases, Feature files MUST also be split:
+
+```
+.claude/vibe/features/{feature-name}/
+├── _index.feature        # Master: links to all phase features
+├── phase-1-setup.feature # Scenarios for phase-1-setup.md
+├── phase-2-core.feature  # Scenarios for phase-2-core.md
+└── ...
+```
+
+**Phase Feature file structure:**
+
+```markdown
+# Feature: {feature-name} - Phase {N}: {phase-name}
+
+**SPEC**: `.claude/vibe/specs/{feature-name}/phase-{N}-{name}.md`
+**Master Feature**: `.claude/vibe/features/{feature-name}/_index.feature`
+
+## User Story (Phase Scope)
+**As a** {user}
+**I want** {phase-specific feature}
+**So that** {phase-specific value}
+
+## Scenarios
+
+### Scenario 1: {Phase Happy Path}
+...
+
+## Coverage
+| Scenario | SPEC AC | Status |
+|----------|---------|--------|
+| 1 | Phase {N} AC-1 | ⬜ |
 ```
 
 ### 6. Ambiguity Scan - Required
@@ -715,10 +787,21 @@ node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for
 
 **🚨 CRITICAL: Files MUST be created in these EXACT paths. NO exceptions.**
 
-| File    | Path                                              | When                              |
-|---------|---------------------------------------------------|-----------------------------------|
-| SPEC    | `.claude/vibe/specs/{feature-name}.md`            | After quality validation (Step 7) |
-| Feature | `.claude/vibe/features/{feature-name}.feature`    | Immediately after SPEC            |
+### Small Scope (Single File)
+
+| File | Path | When |
+|------|------|------|
+| SPEC | `.claude/vibe/specs/{feature-name}.md` | After quality validation (Step 7) |
+| Feature | `.claude/vibe/features/{feature-name}.feature` | Immediately after SPEC |
+
+### Large Scope (Split Files)
+
+| File | Path | When |
+|------|------|------|
+| Master SPEC | `.claude/vibe/specs/{feature-name}/_index.md` | After quality validation |
+| Phase SPEC | `.claude/vibe/specs/{feature-name}/phase-{N}-{name}.md` | Per phase |
+| Master Feature | `.claude/vibe/features/{feature-name}/_index.feature` | After Master SPEC |
+| Phase Feature | `.claude/vibe/features/{feature-name}/phase-{N}-{name}.feature` | Per phase SPEC |
 
 **❌ FORBIDDEN:**
 
@@ -726,21 +809,33 @@ node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for
 - Creating files outside `.claude/vibe/` directory
 - Skipping file creation
 - Using different file names than feature-name
+- Creating split SPEC without matching split Feature files
 
 **✅ REQUIRED:**
 
 - Use Write tool to create files
 - Verify directories exist (create if needed)
 - Confirm file creation in response
+- **Each SPEC file must have a matching Feature file**
 
-**File creation template:**
+### File Creation Template
 
+**Single file:**
 ```
-# After SPEC content is finalized:
 1. Write .claude/vibe/specs/{feature-name}.md
 2. Write .claude/vibe/features/{feature-name}.feature
-3. Confirm: "✅ Created: .claude/vibe/specs/{feature-name}.md"
-4. Confirm: "✅ Created: .claude/vibe/features/{feature-name}.feature"
+3. Confirm: "✅ Created: specs/{feature-name}.md + features/{feature-name}.feature"
+```
+
+**Split files:**
+```
+1. Write .claude/vibe/specs/{feature-name}/_index.md
+2. Write .claude/vibe/specs/{feature-name}/phase-1-setup.md
+3. Write .claude/vibe/specs/{feature-name}/phase-2-core.md
+4. Write .claude/vibe/features/{feature-name}/_index.feature
+5. Write .claude/vibe/features/{feature-name}/phase-1-setup.feature
+6. Write .claude/vibe/features/{feature-name}/phase-2-core.feature
+7. Confirm: "✅ Created: {N} SPEC files + {N} Feature files"
 ```
 
 ## Example
