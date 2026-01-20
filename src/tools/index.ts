@@ -44,3 +44,78 @@ export { getCurrentTime } from './time/getCurrentTime.js';
 export { MemoryManager } from '../lib/MemoryManager.js';
 export { ProjectCache } from '../lib/ProjectCache.js';
 export { ContextCompressor } from '../lib/ContextCompressor.js';
+
+// Model routing & iteration tracking (v2.5.7)
+export {
+  routeToModel,
+  routeFromSpec,
+  selectAgentTier,
+  extractComplexitySignals,
+  calculateComplexityScore,
+} from '../lib/ModelRouter.js';
+
+export {
+  startIteration,
+  startPhase,
+  completePhase,
+  failPhase,
+  completeIteration,
+  getCurrentState,
+  formatProgress,
+  formatPhaseStart,
+  formatPhaseComplete,
+  formatIterationComplete,
+  extractPhaseNames,
+} from '../lib/IterationTracker.js';
+
+export {
+  validateSkillQuality,
+  validateBeforeSave,
+  classifySkill,
+  suggestPrincipleFormat,
+} from '../lib/SkillQualityGate.js';
+
+// Orchestrate workflow (v2.5.11)
+export {
+  checkIntentGate,
+  assessCodebase,
+  createDelegationPlan,
+  createVerificationChecklist,
+  formatOrchestrationStatus,
+  shouldRunInBackground,
+} from '../lib/OrchestrateWorkflow.js';
+
+// UltraQA (v2.5.11)
+export {
+  createQASession,
+  getCommandForGoal,
+  recordCycleResult,
+  shouldContinue,
+  generateDiagnosisPrompt,
+  generateFixPrompt,
+  formatQAStatus,
+  parseQAGoals,
+  describeUltraQAWorkflow,
+} from '../lib/UltraQA.js';
+
+// DeepInit (v2.5.11)
+export {
+  detectDirectoryPurpose,
+  isEntryPoint,
+  generateAgentsMd,
+  formatAgentsMd,
+  preserveManualNotes,
+  generateNavigationHeader,
+  describeDeepInitWorkflow,
+} from '../lib/DeepInit.js';
+
+// Skill Frontmatter (v2.5.11)
+export {
+  parseSkillFrontmatter,
+  generateSkillFrontmatter,
+  createSkillFile,
+  validateSkillMetadata,
+  mergeWithDefaults,
+  extractTriggersFromTemplate,
+  substituteTemplateVars,
+} from '../lib/SkillFrontmatter.js';

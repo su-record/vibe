@@ -21,7 +21,25 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[BASH CHECK] Be cautious with destructive commands (rm -rf, git push --force, drop table). Verify paths before deletion.'"
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Bash"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Edit"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Write"
           }
         ]
       }
@@ -57,11 +75,11 @@
         ]
       },
       {
-        "matcher": "ultrawork|ulw|울트라워크",
+        "matcher": "ultrawork|ulw|울트라워크|ralph|ralplan",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Do NOT ask for confirmation between phases.'"
+            "command": "node {{VIBE_PATH}}/hooks/scripts/keyword-detector.js"
           }
         ]
       },

@@ -237,34 +237,54 @@ Read PTCF structured SPEC document and execute implementation immediately.
 
 > **PLAN, TASKS documents unnecessary** - SPEC is the executable prompt
 
-## Model Orchestration
+## Model Orchestration (Intelligent Routing)
 
-Automatically select optimal model based on task type:
+Automatically select optimal model based on **task complexity analysis**.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│               Opus 4.5 (Orchestrator)                       │
-│               - Coordinate overall flow                     │
-│               - Final decisions/review                      │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-    ┌─────────────────────┼─────────────────────┐
-    ↓                     ↓                     ↓
-┌─────────┐         ┌─────────┐         ┌─────────┐
-│ Haiku   │         │ Sonnet  │         │ Haiku   │
-│(Explore)│         │ (Impl)  │         │ (Test)  │
-└─────────┘         └─────────┘         └─────────┘
-```
+### Complexity-Based Model Selection
+
+| Complexity Score | Model | When to Use |
+|------------------|-------|-------------|
+| 0-7 (Low) | **Haiku** | Simple fixes, searches, single file changes |
+| 8-19 (Medium) | **Sonnet** | Standard features, 3-5 files, integrations |
+| 20+ (High) | **Opus** | Architecture, security, multi-service, 6+ files |
+
+### Complexity Signals
+
+The following signals increase complexity score:
+
+| Signal | Score |
+|--------|-------|
+| Architecture change | +15 |
+| Security implication | +12 |
+| Multi-service | +8 |
+| Refactoring | +12 |
+| 6+ files | +15 |
+| 3-5 files | +8 |
+| New feature | +5 |
+| Bug fix | -3 |
+| Documentation | -5 |
+
+### Agent Tier System
+
+Each agent has tier variants for cost optimization:
+
+| Agent | Low (Haiku) | Medium (Sonnet) | High (Opus) |
+|-------|-------------|-----------------|-------------|
+| explorer | explorer-low | explorer-medium | explorer |
+| implementer | implementer-low | implementer-medium | implementer |
+| architect | architect-low | architect-medium | architect |
 
 ### Task Calls by Role
 
 | Task Type | Model | Task Parameter |
 |-----------|-------|----------------|
-| Codebase exploration | Haiku 4.5 | `model: "haiku"` |
-| Core implementation | Sonnet 4 | `model: "sonnet"` |
-| Test writing | Haiku 4.5 | `model: "haiku"` |
-| Architecture decisions | Opus 4.5 | Main session |
-| Final review | Opus 4.5 | Main session |
+| Simple search | Haiku | `model: "haiku"` |
+| Codebase exploration | Haiku/Sonnet | Auto-selected |
+| Core implementation | Sonnet | `model: "sonnet"` |
+| Test writing | Haiku | `model: "haiku"` |
+| Architecture decisions | Opus | Main session |
+| Final review | Opus | Main session |
 
 ### External LLM Usage (When Enabled)
 

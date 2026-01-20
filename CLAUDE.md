@@ -127,7 +127,107 @@ Include `ultrawork` or `ulw` keyword to activate maximum performance mode:
 | `/vibe.utils --ui "description"` | UI preview |
 | `/vibe.utils --continue` | **Session restore** (load previous context) |
 
-## New Features (v2.1.0)
+## New Features (v2.5.7)
+
+### Intelligent Model Routing
+
+Automatic model selection based on task complexity:
+
+| Complexity | Model | When |
+|------------|-------|------|
+| Low (0-7) | Haiku | Simple fixes, searches |
+| Medium (8-19) | Sonnet | Standard features, 3-5 files |
+| High (20+) | Opus | Architecture, security, 6+ files |
+
+### Agent Tier System
+
+Cost-optimized agent variants:
+
+| Agent | Low | Medium | High |
+|-------|-----|--------|------|
+| explorer | explorer-low | explorer-medium | explorer |
+| implementer | implementer-low | implementer-medium | implementer |
+| architect | architect-low | architect-medium | architect |
+
+### Magic Keywords
+
+| Keyword | Effect |
+|---------|--------|
+| `ultrawork` / `ulw` | Parallel + auto-continue |
+| `ralph` | Persist until verified complete |
+| `ralplan` | Iterative planning + persistence |
+| `verify` | Strict verification mode |
+| `quick` | Fast mode, minimal verification |
+
+**Combinations supported:** `ralph ultrawork`, `ralph verify`, etc.
+
+### Skill Quality Gate
+
+Memory saves are validated for quality:
+
+- Rejects generic/searchable information
+- Requires context, specificity, actionability
+- Suggests principle format: "When X, do Y because Z"
+
+### HUD Status (Real-time)
+
+```bash
+node hooks/scripts/hud-status.js show full
+node hooks/scripts/hud-status.js start ultrawork "feature"
+node hooks/scripts/hud-status.js phase 2 5 "Implementing core"
+```
+
+### Pre/Post Tool Hooks
+
+- **PreToolUse**: Validates dangerous commands before execution
+- **PostToolUse**: Provides error recovery hints
+
+### Orchestrate Workflow
+
+Intent Gate → Codebase Assessment → Delegation → Verification pattern:
+
+```typescript
+import { checkIntentGate, assessCodebase, createDelegationPlan } from '@su-record/vibe/tools';
+```
+
+### UltraQA (5-Cycle Autonomous QA)
+
+```
+Test/Build/Lint → Fail → Architect Diagnosis → Executor Fix → Repeat (max 5)
+```
+
+Exit conditions: All pass, Max cycles, Same failure 3x
+
+### DeepInit (Hierarchical AGENTS.md)
+
+```
+project/
+├── AGENTS.md              ← Root
+├── src/
+│   └── AGENTS.md          ← <!-- Parent: ../AGENTS.md -->
+```
+
+### Skill Frontmatter System
+
+```yaml
+---
+name: my-skill
+model: sonnet
+triggers: [keyword1, keyword2]
+---
+```
+
+### Trigger-Based Skill Injection
+
+Skills in `~/.claude/vibe/skills/` or `.claude/vibe/skills/` auto-inject on keyword match.
+
+### Multi-Line HUD
+
+```bash
+node hooks/scripts/hud-multiline.js multi    # Tree view
+node hooks/scripts/hud-multiline.js compact  # 2-line view
+node hooks/scripts/hud-multiline.js single   # 1-line view
+```
 
 ### Parallel Code Review (/vibe.review)
 
