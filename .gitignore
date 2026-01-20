@@ -22,3 +22,6 @@ wiki/
 # config
 .claude/
 .env
+
+# vibe project hooks (personal)
+.claude/settings.local.json

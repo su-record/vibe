@@ -4,6 +4,10 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
 ## Response Language
 
+**IMPORTANT: Always respond in English unless the user explicitly requests otherwise.**
+
+## Response Language
+
 **IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.**
 
 ## Code Quality Standards (Mandatory)
@@ -28,6 +32,12 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - No `any` type → Use `unknown` + type guards
 - No `as any` casting → Define proper interfaces
 - No `@ts-ignore` → Fix type issues at root
+- Explicit return types on all functions
+
+### TypeScript Rules
+- No `any` type → use `unknown` + type guards
+- No `as any` casting → define proper interfaces
+- No `@ts-ignore` → fix type issues at root
 - Explicit return types on all functions
 
 ### Error Handling Required

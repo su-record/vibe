@@ -457,16 +457,6 @@ Models:
 
 MCP:
   context7          Library docs search
-
-GPT/Gemini (Hook-based):
-  - "gpt.question" → GPT with web search
-  - "gemini.question" → Gemini call
-
-LLM setup:
-  vibe gpt auth           Enable GPT (OAuth)
-  vibe gemini auth        Enable Gemini (OAuth)
-  vibe gpt logout         GPT logout
-  vibe gemini logout      Gemini logout
   `);
 }
 
