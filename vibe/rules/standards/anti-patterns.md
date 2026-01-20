@@ -322,6 +322,178 @@ const query = 'SELECT * FROM users WHERE id = ?';
 db.execute(query, [userId]);
 ```
 
+## Immutability Anti-Patterns
+
+### 1. Direct State Mutation
+
+```typescript
+// ❌ Directly mutating state
+const [user, setUser] = useState({ name: 'John', age: 30 });
+
+function updateAge() {
+  user.age = 31; // Direct mutation!
+  setUser(user); // React won't detect the change
+}
+
+// ✅ Use spread operator for immutable update
+function updateAge() {
+  setUser({ ...user, age: 31 }); // New object created
+}
+
+// ✅ Or use functional update
+function updateAge() {
+  setUser(prev => ({ ...prev, age: prev.age + 1 }));
+}
+```
+
+### 2. Array Mutation Methods
+
+```typescript
+// ❌ Mutating array methods
+const [items, setItems] = useState(['a', 'b', 'c']);
+
+function addItem(item: string) {
+  items.push(item); // Mutates original array!
+  setItems(items);
+}
+
+function removeItem(index: number) {
+  items.splice(index, 1); // Mutates original array!
+  setItems(items);
+}
+
+// ✅ Immutable array operations
+function addItem(item: string) {
+  setItems([...items, item]); // Spread creates new array
+}
+
+function removeItem(index: number) {
+  setItems(items.filter((_, i) => i !== index)); // filter returns new array
+}
+
+function updateItem(index: number, newValue: string) {
+  setItems(items.map((item, i) => i === index ? newValue : item));
+}
+```
+
+### 3. Nested Object Mutation
+
+```typescript
+// ❌ Deeply nested mutation
+const [state, setState] = useState({
+  user: {
+    profile: {
+      name: 'John',
+      settings: { theme: 'dark' }
+    }
+  }
+});
+
+function updateTheme(theme: string) {
+  state.user.profile.settings.theme = theme; // Deep mutation!
+  setState(state);
+}
+
+// ✅ Immutable deep update
+function updateTheme(theme: string) {
+  setState({
+    ...state,
+    user: {
+      ...state.user,
+      profile: {
+        ...state.user.profile,
+        settings: {
+          ...state.user.profile.settings,
+          theme
+        }
+      }
+    }
+  });
+}
+
+// ✅ Better: Use immer for complex updates
+import { produce } from 'immer';
+
+function updateTheme(theme: string) {
+  setState(produce(draft => {
+    draft.user.profile.settings.theme = theme; // Safe with immer
+  }));
+}
+```
+
+### 4. Object.assign Misuse
+
+```typescript
+// ❌ Object.assign mutating first argument
+const original = { a: 1, b: 2 };
+const updated = Object.assign(original, { b: 3 }); // Mutates original!
+
+// ✅ Use empty object as first argument
+const updated = Object.assign({}, original, { b: 3 });
+
+// ✅ Or use spread (preferred)
+const updated = { ...original, b: 3 };
+```
+
+### 5. Reducer State Mutation
+
+```typescript
+// ❌ Mutating state in reducer
+function reducer(state: State, action: Action) {
+  switch (action.type) {
+    case 'ADD_ITEM':
+      state.items.push(action.payload); // Mutation!
+      return state;
+    default:
+      return state;
+  }
+}
+
+// ✅ Return new state
+function reducer(state: State, action: Action) {
+  switch (action.type) {
+    case 'ADD_ITEM':
+      return {
+        ...state,
+        items: [...state.items, action.payload]
+      };
+    default:
+      return state;
+  }
+}
+```
+
+### 6. Mutating Function Parameters
+
+```typescript
+// ❌ Mutating input parameter
+function addTimestamp(data: Record<string, unknown>) {
+  data.timestamp = Date.now(); // Mutates caller's object!
+  return data;
+}
+
+// ✅ Create new object
+function addTimestamp(data: Record<string, unknown>) {
+  return {
+    ...data,
+    timestamp: Date.now()
+  };
+}
+```
+
+### Immutable Methods Reference
+
+| Mutating (Avoid) | Immutable (Use) |
+|------------------|-----------------|
+| `push()` | `[...arr, item]` |
+| `pop()` | `arr.slice(0, -1)` |
+| `shift()` | `arr.slice(1)` |
+| `unshift()` | `[item, ...arr]` |
+| `splice()` | `filter()` / `slice()` + spread |
+| `sort()` | `[...arr].sort()` |
+| `reverse()` | `[...arr].reverse()` |
+| `obj.prop = x` | `{ ...obj, prop: x }` |
+
 ## Error Handling Anti-Patterns
 
 ### 1. Empty catch Block

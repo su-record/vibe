@@ -17,6 +17,9 @@ Collection of utility tools. Use with options.
 /vibe.utils --e2e "scenario"         # E2E browser test (Playwright)
 /vibe.utils --e2e --visual           # Visual regression test
 /vibe.utils --e2e --record           # Video recording
+/vibe.utils --build-fix              # Fix build errors (minimal diff)
+/vibe.utils --clean                  # Remove dead code + DELETION_LOG
+/vibe.utils --codemaps               # Generate architecture docs
 /vibe.utils --compound               # Document solution (usually auto-triggered)
 ```
 
@@ -73,6 +76,97 @@ Read and follow `agents/e2e-tester.md` for Playwright-based E2E testing.
 ```
 /vibe.utils --e2e "login flow"
 /vibe.utils --e2e --visual --record
+```
+
+---
+
+## --build-fix (Build Error Resolution)
+
+Read and follow `agents/build-error-resolver.md` for minimal-diff build fixes.
+
+Fix TypeScript/build errors with minimal changes.
+
+**Philosophy:** Changes must be < 5% of file. No refactoring.
+
+**Allowed:**
+- Add type annotations
+- Fix imports
+- Add null checks
+- Install missing deps
+
+**Forbidden:**
+- Refactor unrelated code
+- Change architecture
+- Rename variables
+
+**Example:**
+```
+/vibe.utils --build-fix
+```
+
+**Output:** List of minimal fixes applied + build status
+
+---
+
+## --clean (Dead Code Removal)
+
+Read and follow `agents/refactor-cleaner.md` for safe dead code removal.
+
+Detect and remove unused code with audit trail.
+
+**Analysis Tools:**
+- knip (unused exports, files, deps)
+- depcheck (unused npm packages)
+- ts-prune (unused TS exports)
+
+**Safety Levels:**
+| Level | Category | Action |
+|-------|----------|--------|
+| SAFE | Private functions, local vars | Auto-delete |
+| CAREFUL | Unused exports | Verify then delete |
+| RISKY | Public API, shared utils | Report only |
+
+**Example:**
+```
+/vibe.utils --clean
+```
+
+**Output:**
+- Removed items list
+- `.claude/vibe/DELETION_LOG.md` updated
+- Build/test verification
+
+---
+
+## --codemaps (Architecture Documentation)
+
+Generate auto-documentation from codebase structure.
+
+**Output Location:** `docs/CODEMAPS/`
+
+**Generated Files:**
+```
+docs/CODEMAPS/
+├── INDEX.md          # Overview of all areas
+├── frontend.md       # Frontend structure
+├── backend.md        # API/backend structure
+├── database.md       # Schema documentation
+└── integrations.md   # External services
+```
+
+**Each file contains:**
+- Module table (name, path, description)
+- Data flow diagram (Mermaid)
+- Dependencies list
+- Related areas
+
+**Tools Used:**
+- ts-morph (TypeScript AST)
+- madge (dependency graph)
+
+**Example:**
+```
+/vibe.utils --codemaps
 ```
 
 ---

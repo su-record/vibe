@@ -35,6 +35,15 @@
             "command": "node {{VIBE_PATH}}/hooks/scripts/code-check.js"
           }
         ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/post-edit.js"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
