@@ -695,46 +695,82 @@ If score is below 85, attempt automatic fixes:
 | Missing error handling | Add common error scenarios |
 | Missing performance targets | Apply industry standard criteria |
 
-### 8. SPEC Review (GPT/Gemini) - Iterative Review Loop
+### 8. SPEC Review (GPT/Gemini) - 3-Round Mandatory Review
 
-**Default: Iterative review until convergence (max 3 rounds)**
+**🚨 CRITICAL: YOU MUST EXECUTE ALL 3 ROUNDS. DO NOT SKIP.**
 
 ```bash
-/vibe.spec "feature"          # Default: Iterative review (max 3 rounds)
-/vibe.spec "feature" --quick  # Quick mode: Single review round
+/vibe.spec "feature"          # Default: 3 rounds (MANDATORY)
+/vibe.spec "feature" --quick  # Quick mode: 1 round only
 ```
 
-**Iterative Review Flow:**
+**3-Round Review Process (MANDATORY):**
 
 ```
-SPEC Draft
-    ↓
-┌─────────────────────────────────────────┐
-│  Round 1: GPT + Gemini parallel review  │
-│           ↓                             │
-│  Apply feedback → Update SPEC           │
-│           ↓                             │
-│  Round 2: Re-review updated SPEC        │
-│           ↓                             │
-│  Apply feedback → Update SPEC           │
-│           ↓                             │
-│  Round 3: Final review (if needed)      │
-└─────────────────────────────────────────┘
-    ↓
-Convergence check:
-  - Both models: "no major issues" → Done
-  - Same feedback as previous round → Done
-  - Max 3 rounds reached → Done
-    ↓
-Final SPEC + Feature files
+round_count = 0
+
+WHILE round_count < 3:
+    round_count += 1
+
+    print(f"━━━ Round {round_count}/3 ━━━")
+
+    # 1. Call GPT + Gemini in parallel (Bash)
+    gpt_result = Bash("node llm-orchestrate.js gpt ...")
+    gemini_result = Bash("node llm-orchestrate.js gemini ...")
+
+    # 2. Merge and apply feedback
+    apply_feedback(gpt_result, gemini_result)
+    update_spec()
+
+    # 3. Show progress
+    print(f"✅ Round {round_count}/3 complete")
+
+    # 4. Early exit ONLY if BOTH models say "no issues"
+    IF gpt_result.no_issues AND gemini_result.no_issues:
+        print("Both models: no issues found. Stopping early.")
+        BREAK
+
+print(f"🎉 Review complete! Total rounds: {round_count}")
 ```
 
-**Convergence Criteria:**
-- Both GPT and Gemini respond with no P1/P2 issues
-- Feedback is identical to previous round (no new improvements)
-- Maximum 3 rounds completed
+**🚨 RULES:**
+1. **ALWAYS start Round 1** - never skip
+2. **ALWAYS continue to Round 2** unless both models return "no issues"
+3. **ALWAYS continue to Round 3** unless both models return "no issues" in Round 2
+4. **MUST show "Round X/3"** in output for each round
+5. **Early exit ONLY when BOTH GPT AND Gemini say "no issues"**
 
-**After SPEC completion, external LLM review → Auto-apply:**
+**Output format for each round:**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 SPEC REVIEW - Round 1/3
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[GPT] 3 issues found: ...
+[Gemini] 2 issues found: ...
+✅ Applied 5 improvements
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 SPEC REVIEW - Round 2/3
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[GPT] 1 issue found: ...
+[Gemini] 0 issues found
+✅ Applied 1 improvement
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 SPEC REVIEW - Round 3/3
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[GPT] 0 issues found
+[Gemini] 0 issues found
+✅ No changes needed
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎉 SPEC Review complete! 3 rounds, 6 total improvements
+```
+
+**After SPEC draft, execute review loop:**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
