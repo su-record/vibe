@@ -2,10 +2,6 @@
 
 SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
-## Response Language
-
-**IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.**
-
 ## Code Quality Standards (Mandatory)
 
 Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) for detailed rules.
