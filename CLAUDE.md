@@ -4,10 +4,6 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
 ## Response Language
 
-**IMPORTANT: Always respond in English unless the user explicitly requests otherwise.**
-
-## Response Language
-
 **IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.**
 
 ## Code Quality Standards (Mandatory)

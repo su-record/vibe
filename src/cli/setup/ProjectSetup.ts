@@ -85,9 +85,15 @@ export function updateClaudeMd(
 
   let vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
 
-  // OS 언어 감지하여 응답 언어 설정 추가
+  // OS 언어 감지하여 응답 언어 설정 추가/교체
   const osLanguage = detectOsLanguage();
   const languageInstruction = getLanguageInstruction(osLanguage);
+
+  // 기존 Response Language 섹션 제거 (중복 방지)
+  vibeContent = vibeContent.replace(
+    /\n*## Response Language\n+\*\*IMPORTANT: Always respond in (?:English|Korean \(한국어\)) unless the user explicitly requests otherwise\.\*\*/g,
+    ''
+  );
 
   // # VIBE 헤더 바로 다음에 언어 설정 추가
   vibeContent = vibeContent.replace(
