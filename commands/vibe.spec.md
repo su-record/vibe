@@ -707,10 +707,10 @@ If score is below 95, attempt automatic fixes:
 **3-Round Review Process (MANDATORY):**
 
 ```
-round_count = 0
+# 🚨 CRITICAL: This is a FOR loop, NOT a WHILE loop with early exit
+# You MUST complete all 3 rounds regardless of feedback
 
-WHILE round_count < 3:
-    round_count += 1
+FOR round_count IN [1, 2, 3]:  # EXACTLY 3 rounds, NO early exit
 
     print(f"━━━ Round {round_count}/3 ━━━")
 
@@ -718,27 +718,27 @@ WHILE round_count < 3:
     gpt_result = Bash("node llm-orchestrate.js gpt ...")
     gemini_result = Bash("node llm-orchestrate.js gemini ...")
 
-    # 2. Merge and apply feedback
+    # 2. Merge and apply feedback (even if "no issues", still run next round)
     apply_feedback(gpt_result, gemini_result)
     update_spec()
 
     # 3. Show progress
     print(f"✅ Round {round_count}/3 complete")
 
-    # 4. Early exit ONLY if BOTH models say "no issues"
-    IF gpt_result.no_issues AND gemini_result.no_issues:
-        print("Both models: no issues found. Stopping early.")
-        BREAK
+    # 4. NO EARLY EXIT - continue to next round
+    # Even if both say "no issues", proceed to next round for verification
 
-print(f"🎉 Review complete! Total rounds: {round_count}")
+# After ALL 3 rounds complete:
+print(f"🎉 Review complete! All 3 rounds finished.")
 ```
 
-**🚨 RULES:**
-1. **ALWAYS start Round 1** - never skip
-2. **ALWAYS continue to Round 2** unless both models return "no issues"
-3. **ALWAYS continue to Round 3** unless both models return "no issues" in Round 2
-4. **MUST show "Round X/3"** in output for each round
-5. **Early exit ONLY when BOTH GPT AND Gemini say "no issues"**
+**🚨 ABSOLUTE RULES (NO EXCEPTIONS):**
+1. **MUST complete Round 1** - never skip
+2. **MUST complete Round 2** - even if Round 1 had no issues
+3. **MUST complete Round 3** - even if Round 1 and 2 had no issues
+4. **MUST show "Round X/3"** in output for EACH round
+5. **NO EARLY EXIT** - all 3 rounds are mandatory for quality assurance
+6. **VIOLATION = SPEC NOT COMPLETE** - if less than 3 rounds, SPEC is invalid
 
 **Output format for each round:**
 
