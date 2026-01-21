@@ -83,7 +83,7 @@ export function updateClaudeMd(
 
   if (!fs.existsSync(vibeClaudeMd)) return;
 
-  let vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8');
+  let vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8').replace(/\r\n/g, '\n');
 
   // OS 언어 감지하여 응답 언어 설정 추가/교체
   const osLanguage = detectOsLanguage();
