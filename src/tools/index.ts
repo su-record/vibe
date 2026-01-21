@@ -131,3 +131,43 @@ export {
 } from '../lib/SkillRepository.js';
 
 export type { SkillInfo, SkillRepositoryConfig } from '../lib/SkillRepository.js';
+
+// Rule Build System (v2.5.15)
+export {
+  parseRuleFile,
+  generateMarkdown,
+  buildRulesDocument,
+  extractTestCases,
+  extractTestCasesFromDir,
+  validateRule,
+  getImpactColor,
+  compareImpact,
+  IMPACT_ORDER,
+} from '../lib/RuleBuildSystem.js';
+
+export type {
+  ImpactLevel,
+  CodeExample,
+  Rule,
+  Section,
+  RulesDocument,
+  RuleFile,
+  TestCase,
+} from '../lib/RuleBuildSystem.js';
+
+// Framework Detector (v2.5.15)
+export {
+  detectFramework,
+  detectFrameworkFromContent,
+  getFrameworkRecommendations,
+  formatDetectionResult,
+  isFramework,
+  getSupportedFrameworks,
+  FRAMEWORKS,
+} from '../lib/FrameworkDetector.js';
+
+export type {
+  FrameworkInfo,
+  PackageJson,
+  DetectionResult,
+} from '../lib/FrameworkDetector.js';
