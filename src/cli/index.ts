@@ -408,18 +408,15 @@ function showStatus(): void {
   const vibeDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(vibeDir, 'config.json');
 
-  if (!fs.existsSync(vibeDir)) {
-    console.log('❌ Not a vibe project. Run vibe init first.');
-    return;
-  }
-
   const packageJson = getPackageJson();
+  const isVibeProject = fs.existsSync(vibeDir);
+
   let config: VibeConfig = { language: 'ko', models: {} };
-  if (fs.existsSync(configPath)) {
+  if (isVibeProject && fs.existsSync(configPath)) {
     config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   }
 
-  // 실제 OAuth 인증 상태 확인
+  // 실제 OAuth 인증 상태 확인 (전역 설정)
   const authStatus = getLLMAuthStatus();
 
   // GPT 상태: OAuth 인증 > config enabled
@@ -442,11 +439,16 @@ function showStatus(): void {
     geminiStatusText = '⚠️  Configured (auth required)';
   }
 
+  // 프로젝트 상태
+  const projectStatus = isVibeProject
+    ? `✅ ${projectRoot}`
+    : `⬚ Not a vibe project (run: vibe init)`;
+
   console.log(`
 📊 Vibe Status (v${packageJson.version})
 
-Project: ${projectRoot}
-Language: ${config.language || 'ko'}
+Project: ${projectStatus}
+${isVibeProject ? `Language: ${config.language || 'ko'}` : ''}
 
 Models:
   Opus 4.5          Orchestrator

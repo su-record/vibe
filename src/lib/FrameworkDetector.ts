@@ -4,8 +4,8 @@
  */
 
 import { readFile } from 'fs/promises';
-import { join, existsSync } from 'path';
-import { existsSync as existsSyncFs } from 'fs';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 export interface FrameworkInfo {
   id: string;
@@ -177,7 +177,7 @@ async function detectProjectType(projectPath: string, pkg: PackageJson | null): 
   // Check for monorepo indicators
   const monorepoFiles = ['pnpm-workspace.yaml', 'lerna.json', 'nx.json', 'turbo.json'];
   for (const file of monorepoFiles) {
-    if (existsSyncFs(join(projectPath, file))) {
+    if (existsSync(join(projectPath, file))) {
       return 'monorepo';
     }
   }
@@ -189,7 +189,7 @@ async function detectProjectType(projectPath: string, pkg: PackageJson | null): 
 
   // No package.json = likely static
   if (!pkg) {
-    const hasHtml = existsSyncFs(join(projectPath, 'index.html'));
+    const hasHtml = existsSync(join(projectPath, 'index.html'));
     return hasHtml ? 'static' : 'unknown';
   }
 
@@ -206,7 +206,7 @@ export async function detectFramework(projectPath: string): Promise<DetectionRes
 
   if (!pkg) {
     // Check for static HTML project
-    const hasHtml = existsSyncFs(join(projectPath, 'index.html'));
+    const hasHtml = existsSync(join(projectPath, 'index.html'));
     return {
       framework: hasHtml ? { id: 'static', name: 'Static HTML', category: 'static' } : null,
       confidence: hasHtml ? 'medium' : 'low',
