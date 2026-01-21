@@ -70,6 +70,27 @@ export {
   getOrchestrator
 } from './orchestrator.js';
 
+// Decomposed Components (v2.6.0)
+export {
+  SmartRouter,
+  SmartRouterOptions,
+  getSmartRouter
+} from './SmartRouter.js';
+
+export {
+  LLMCluster,
+  LLMClusterOptions,
+  MultiLlmQueryResult,
+  LlmStatusResult,
+  getLLMCluster
+} from './LLMCluster.js';
+
+export {
+  AgentManager,
+  AgentManagerOptions,
+  getAgentManager
+} from './AgentManager.js';
+
 // ============================================
 // 간편 함수 (hooks에서 직접 호출용)
 // ============================================
