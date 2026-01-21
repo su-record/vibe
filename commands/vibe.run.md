@@ -643,7 +643,73 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 3. **Constraint compliance**: Check `<constraints>`
 4. **Run verification**: Execute verification commands
 
-### 4. Gemini Code Review + Auto-Fix (NEW)
+### 4. Brand Assets Generation (Optional)
+
+When starting a **new project** with brand context in SPEC, auto-generate app icons and favicons:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 BRAND ASSETS GENERATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Check] Brand assets exist? → Skip if favicon.ico exists
+[Check] Gemini API configured? → Required for image generation
+[Check] SPEC has brand context? → Extract app name, colors, style
+
+[Generate] Creating app icon with Gemini Image API...
+  - Prompt: "App icon for [AppName], [style], [color]..."
+  - Generated: 512x512 master icon
+
+[Resize] Creating platform variants...
+  ✅ favicon.ico (16/32/48)
+  ✅ favicon-16x16.png
+  ✅ favicon-32x32.png
+  ✅ apple-touch-icon.png (180x180)
+  ✅ android-chrome-192x192.png
+  ✅ android-chrome-512x512.png
+  ✅ site.webmanifest
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Brand assets generated in public/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**SPEC Brand Context Example:**
+
+```xml
+<context>
+Brand:
+  - App Name: MyApp
+  - Primary Color: #2F6BFF
+  - Style: Modern, minimalist, flat design
+  - Icon Concept: Abstract geometric shape
+</context>
+```
+
+**Trigger Conditions:**
+- First `/vibe.run` execution (no existing icons)
+- SPEC contains brand/design context
+- Gemini API key configured (`vibe gemini auth`)
+
+**Manual Generation:**
+```bash
+node hooks/scripts/generate-brand-assets.js \
+  --spec ".claude/vibe/specs/my-feature.md" \
+  --output "./public"
+
+# Or with explicit values
+node hooks/scripts/generate-brand-assets.js \
+  --name "MyApp" \
+  --color "#2F6BFF" \
+  --style "modern minimal" \
+  --output "./public"
+```
+
+**Fallback:** If Gemini Image fails, generates text monogram icon (first letter + primary color).
+
+---
+
+### 5. Gemini Code Review + Auto-Fix
 
 After all scenarios are implemented, **Gemini reviews the code and auto-fixes based on feedback**:
 
@@ -722,7 +788,7 @@ node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this cod
 - Skip and proceed on fallback response
 - Must re-verify build/tests after fixes
 
-### 5. Quality Report (Auto-generated)
+### 6. Quality Report (Auto-generated)
 
 After all scenarios complete + Gemini review, **quality report is auto-generated**:
 
@@ -767,7 +833,7 @@ After all scenarios complete + Gemini review, **quality report is auto-generated
 
 **This alone is enough to trust quality.**
 
-### 6. Update Feature File
+### 7. Update Feature File
 
 Auto-update scenario status:
 
@@ -1004,18 +1070,18 @@ Score = Σ(checked items × weight) / 100
 
 Grades:
 - 95-100: ✅ EXCELLENT - Ready to merge
-- 85-94:  ✅ GOOD - Minor improvements recommended
-- 70-84:  ⚠️ FAIR - Improvements required before merge
-- 0-69:   ❌ POOR - Major fixes needed
+- 90-94:  ⚠️ GOOD - Minor improvements required before merge
+- 80-89:  ⚠️ FAIR - Significant improvements required
+- 0-79:   ❌ POOR - Major fixes needed
 ```
 
 ### Quality Gate Thresholds
 
 | Gate | Minimum Score | Condition |
 |------|---------------|-----------|
-| **Scenario Complete** | 85 | Each scenario must score ≥85 |
-| **Phase Complete** | 90 | Average of all scenarios ≥90 |
-| **Feature Complete** | 90 | All phases complete + Gemini review |
+| **Scenario Complete** | 95 | Each scenario must score ≥95 |
+| **Phase Complete** | 95 | Average of all scenarios ≥95 |
+| **Feature Complete** | 95 | All phases complete + Gemini review |
 
 ### Auto-Fix Triggers
 

@@ -1,6 +1,6 @@
 ---
-description: Utility tools (UI preview, diagram, E2E test, etc.)
-argument-hint: "--ui, --diagram, --e2e, or other options"
+description: Utility tools (UI preview, diagram, E2E test, image generation, etc.)
+argument-hint: "--ui, --diagram, --e2e, --image, or other options"
 ---
 
 # /vibe.utils
@@ -17,6 +17,8 @@ Collection of utility tools. Use with options.
 /vibe.utils --e2e "scenario"         # E2E browser test (Playwright)
 /vibe.utils --e2e --visual           # Visual regression test
 /vibe.utils --e2e --record           # Video recording
+/vibe.utils --image "description"    # Generate image with Gemini (icon, banner, etc.)
+/vibe.utils --image --icon "AppName" # Generate app icon/favicon
 /vibe.utils --build-fix              # Fix build errors (minimal diff)
 /vibe.utils --clean                  # Remove dead code + DELETION_LOG
 /vibe.utils --codemaps               # Generate architecture docs
@@ -54,6 +56,49 @@ Generate Mermaid diagrams for architecture visualization.
 ```
 /vibe.utils --diagram --er
 ```
+
+---
+
+## --image (Image Generation)
+
+Generate images using Gemini Image API. Requires Gemini API key (`vibe gemini auth`).
+
+**Options:**
+- `--image "description"`: Generate image from text description
+- `--image --icon "AppName"`: Generate app icon and favicon set
+- `--image --icon --color "#hex"`: Specify primary color
+- `--image --banner "title"`: Generate banner/header image
+
+**Icon Generation:**
+
+Creates complete icon set for web/mobile:
+- `favicon.ico` (16/32/48)
+- `favicon-16x16.png`, `favicon-32x32.png`
+- `apple-touch-icon.png` (180x180)
+- `android-chrome-192x192.png`, `android-chrome-512x512.png`
+- `site.webmanifest`
+
+**Example:**
+```
+/vibe.utils --image "A modern tech startup logo, blue gradient, minimal"
+/vibe.utils --image --icon "MyApp" --color "#2F6BFF"
+/vibe.utils --image --banner "Welcome to MyApp"
+```
+
+**Manual Script Execution:**
+```bash
+node hooks/scripts/generate-brand-assets.js \
+  --name "MyApp" \
+  --color "#2F6BFF" \
+  --style "modern minimal" \
+  --output "./public"
+```
+
+**Fallback:** If Gemini Image fails, generates text monogram (first letter + background color).
+
+**Prerequisites:**
+- Gemini API key configured (`vibe gemini auth`)
+- ImageMagick or sips (macOS) for image resizing
 
 ---
 
@@ -275,10 +320,20 @@ Score = Σ(checked items × weight) / 100
 
 Grades:
 - 95-100: ✅ EXCELLENT - Ready to use
-- 85-94:  ✅ GOOD - Minor improvements optional
-- 70-84:  ⚠️ FAIR - Improvements needed
-- 0-69:   ❌ POOR - Redo required
+- 90-94:  ⚠️ GOOD - Minor improvements recommended
+- 80-89:  ⚠️ FAIR - Improvements needed
+- 0-79:   ❌ POOR - Redo required
 ```
+
+### Image Generation Quality Checklist (--image)
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Relevance** | Image matches description/app concept | 30% |
+| **Format** | Correct sizes for all platforms | 25% |
+| **Quality** | Clear at small sizes (16x16) | 20% |
+| **Consistency** | Works in light/dark backgrounds | 15% |
+| **Completeness** | All required files generated | 10% |
 
 ### Output Requirements by Tool
 
@@ -289,6 +344,8 @@ Grades:
 | `--diagram --er` | Entity names, fields, relationships |
 | `--diagram --flow` | Start/end nodes, decision points |
 | `--e2e` | Test file + execution results |
+| `--image` | Generated image file(s) + path |
+| `--image --icon` | Full icon set + webmanifest |
 | `--compound` | Solution markdown + category tag |
 
 ---

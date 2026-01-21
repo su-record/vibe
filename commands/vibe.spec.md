@@ -665,28 +665,28 @@ Score = Σ(Check item met × Weight) / 100
 
 Grades:
 - 95-100: ✅ EXCELLENT - Ready to start implementation
-- 85-94:  ✅ GOOD - Implementation possible (minor improvements recommended)
-- 70-84:  ⚠️ FAIR - Improve before implementation
-- 0-69:   ❌ POOR - Rewrite required
+- 90-94:  ⚠️ GOOD - Minor improvements required before implementation
+- 80-89:  ⚠️ FAIR - Significant improvements required
+- 0-79:   ❌ POOR - Rewrite required
 ```
 
 #### 7.3 Quality Gate (Auto-verification)
 
-**Minimum 85 points required to proceed to next step (GPT+Gemini review)**
+**Minimum 95 points required to proceed to next step (GPT+Gemini review)**
 
 ```
 SPEC writing complete
       ↓
 [Calculate Quality Score]
       ↓
-Score < 85? → Show missing items → Attempt auto-fix
+Score < 95? → Show missing items → Attempt auto-fix → Re-evaluate
       ↓
-Score ≥ 85 → Proceed to GPT + Gemini review
+Score ≥ 95 → Proceed to GPT + Gemini review
 ```
 
 #### 7.4 Auto-Fix for Low Score
 
-If score is below 85, attempt automatic fixes:
+If score is below 95, attempt automatic fixes:
 
 | Missing Item | Auto-Fix Method |
 |--------------|-----------------|

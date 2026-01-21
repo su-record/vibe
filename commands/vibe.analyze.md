@@ -281,9 +281,9 @@ Score = Σ(checked items × weight) / 100
 
 Grades:
 - 95-100: ✅ EXCELLENT - Comprehensive analysis
-- 85-94:  ✅ GOOD - Ready for development
-- 70-84:  ⚠️ FAIR - Needs more exploration
-- 0-69:   ❌ POOR - Incomplete, re-analyze
+- 90-94:  ⚠️ GOOD - Additional exploration recommended
+- 80-89:  ⚠️ FAIR - Needs more exploration
+- 0-79:   ❌ POOR - Incomplete, re-analyze
 ```
 
 ### Analysis Depth Levels

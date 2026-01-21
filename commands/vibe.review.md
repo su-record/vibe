@@ -265,9 +265,9 @@ Score = 100 - (P1 × 20) - (P2 × 5) - (P3 × 1)
 
 Grades:
 - 95-100: ✅ EXCELLENT - Merge ready
-- 85-94:  ✅ GOOD - Minor fixes recommended
-- 70-84:  ⚠️ FAIR - Must fix P2 issues
-- 0-69:   ❌ POOR - Block merge, fix P1/P2
+- 90-94:  ⚠️ GOOD - Minor fixes required before merge
+- 80-89:  ⚠️ FAIR - Must fix P2 issues
+- 0-79:   ❌ POOR - Block merge, fix P1/P2
 ```
 
 ### Merge Decision Matrix
