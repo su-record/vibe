@@ -1,8 +1,6 @@
 /**
  * Skill Frontmatter System
  * YAML metadata for declarative skill configuration
- *
- * Inspired by oh-my-claudecode's skill metadata system
  */
 
 export interface SkillMetadata {

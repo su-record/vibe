@@ -1,6 +1,5 @@
 /**
  * Background Agent - 백그라운드 에이전트 관리
- * oh-my-opencode의 BackgroundManager 패턴 참고
  */
 
 import {

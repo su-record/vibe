@@ -1,8 +1,6 @@
 /**
  * Skill Quality Gate
  * 저장할 메모리/스킬의 품질을 검증
- *
- * Inspired by oh-my-claudecode's Mnemosyne/Learner skill extraction
  */
 
 export interface QualityCheckResult {

@@ -1,8 +1,6 @@
 /**
  * Iteration Tracker for ULTRAWORK/Ralph Loop
  * 작업 진행 상황을 추적하고 표시
- *
- * Inspired by oh-my-claudecode's Ralph Loop iteration tracking
  */
 
 export interface PhaseProgress {

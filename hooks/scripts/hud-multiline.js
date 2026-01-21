@@ -2,8 +2,6 @@
 /**
  * Multi-Line HUD Visualization
  * Tree-based status display with overflow handling
- *
- * Inspired by oh-my-claudecode's multi-line HUD visualization
  */
 
 import fs from 'fs';

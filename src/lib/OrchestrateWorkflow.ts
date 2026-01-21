@@ -1,8 +1,6 @@
 /**
  * Orchestrate Workflow Pattern
  * Intent Gate → Assessment → Delegation → Verification
- *
- * Inspired by oh-my-claudecode's orchestrate skill (410 lines)
  */
 
 export type CodebaseMaturity = 'disciplined' | 'transitional' | 'legacy' | 'greenfield';
@@ -313,7 +311,7 @@ export function formatOrchestrationStatus(
 }
 
 /**
- * Background task rules (from oh-my-claudecode)
+ * Background task rules
  */
 export function shouldRunInBackground(command: string): boolean {
   const backgroundPatterns = [

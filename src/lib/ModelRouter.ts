@@ -1,8 +1,6 @@
 /**
  * Intelligent Model Router
  * 작업 복잡도를 자동 분석하여 최적의 모델을 선택
- *
- * Inspired by oh-my-claudecode's model routing system
  */
 
 export type ModelTier = 'haiku' | 'sonnet' | 'opus';

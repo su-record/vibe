@@ -2,8 +2,6 @@
 /**
  * HUD Status Manager
  * 실시간 상태 시각화 (Claude Code statusline 연동)
- *
- * Inspired by oh-my-claudecode's HUD visualization
  */
 
 import fs from 'fs';

@@ -2,8 +2,6 @@
 /**
  * Skill Injector
  * Trigger-based skill injection on UserPromptSubmit
- *
- * Inspired by oh-my-claudecode's skill-injector.mjs
  */
 
 import fs from 'fs';

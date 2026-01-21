@@ -119,3 +119,15 @@ export {
   extractTriggersFromTemplate,
   substituteTemplateVars,
 } from '../lib/SkillFrontmatter.js';
+
+// Skill Repository (v2.5.12)
+export {
+  SkillRepository,
+  getGlobalSkillsDir,
+  getBundledSkillsDir,
+  ensureDefaultSkills,
+  seedInlineDefaultSkills,
+  DEFAULT_SKILLS,
+} from '../lib/SkillRepository.js';
+
+export type { SkillInfo, SkillRepositoryConfig } from '../lib/SkillRepository.js';

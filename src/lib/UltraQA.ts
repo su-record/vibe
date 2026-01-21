@@ -1,8 +1,6 @@
 /**
  * UltraQA - 5-Cycle Autonomous QA Loop
  * Test/Build/Lint → Fail → Architect Diagnosis → Executor Fix → Repeat
- *
- * Inspired by oh-my-claudecode's ultraqa skill (123 lines)
  */
 
 export type QAGoal = 'tests' | 'build' | 'lint' | 'typecheck' | 'custom' | 'all';

@@ -2,8 +2,6 @@
 /**
  * Keyword Detector & Combiner
  * 매직 키워드 감지 및 조합 처리
- *
- * Inspired by oh-my-claudecode's magic keywords (ralph, ralplan, ulw)
  */
 
 import { VIBE_PATH, PROJECT_DIR } from './utils.js';

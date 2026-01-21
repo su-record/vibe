@@ -2,8 +2,6 @@
 /**
  * Post-Tool Verify
  * 도구 실행 후 결과 검증 및 에러 복구 힌트 제공
- *
- * Inspired by oh-my-claudecode's PostToolUse hooks
  */
 
 import { VIBE_PATH, PROJECT_DIR } from './utils.js';

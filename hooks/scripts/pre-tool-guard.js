@@ -2,8 +2,6 @@
 /**
  * Pre-Tool Guard
  * 위험한 도구 사용 전 검증 및 경고
- *
- * Inspired by oh-my-claudecode's PreToolUse hooks
  */
 
 import { VIBE_PATH, PROJECT_DIR } from './utils.js';

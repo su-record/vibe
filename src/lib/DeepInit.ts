@@ -1,8 +1,6 @@
 /**
  * DeepInit - Hierarchical AGENTS.md Generation
  * Creates AI-readable documentation hierarchy with parent references
- *
- * Inspired by oh-my-claudecode's deepinit skill (321 lines)
  */
 
 import path from 'path';
