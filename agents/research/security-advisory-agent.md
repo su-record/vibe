@@ -13,6 +13,16 @@
 
 **Haiku** (inherit) - Fast research
 
+## ⚠️ CRITICAL: NO FILE CREATION
+
+**THIS AGENT MUST NEVER CREATE FILES.**
+
+- ❌ DO NOT use Write tool
+- ❌ DO NOT create any files in project root
+- ❌ DO NOT create SECURITY_*.md files
+- ✅ ONLY return research results as text output
+- ✅ Results will be merged into SPEC by vibe.spec command
+
 ## Usage
 
 Automatically called in parallel when `/vibe.spec` is executed

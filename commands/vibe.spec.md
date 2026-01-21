@@ -238,7 +238,7 @@ Read ~/.claude/vibe/languages/typescript-react.md
 
 ### 3. Parallel Research (v2.5.0) - MANDATORY AFTER requirements confirmed
 
-**🚨🚨🚨 ABSOLUTE RULE: YOU MUST USE BASH TOOL FOR RESEARCH 🚨🚨🚨**
+**🚨🚨🚨 ABSOLUTE RULES FOR RESEARCH PHASE 🚨🚨🚨**
 
 **STOP! Before doing ANY research, read this carefully:**
 
@@ -246,6 +246,14 @@ Read ~/.claude/vibe/languages/typescript-react.md
 2. **DO NOT** use context7 MCP directly for research
 3. **DO NOT** use WebSearch tool directly for research
 4. **YOU MUST** use Bash tool to call llm-orchestrate.js directly
+
+**🚨🚨🚨 CRITICAL: NO FILE CREATION DURING RESEARCH 🚨🚨🚨**
+
+5. **DO NOT** create any files in project root during research
+6. **DO NOT** create SECURITY_*.md, RESEARCH_*.md, SUMMARY_*.md files
+7. **DO NOT** use Write tool during research phase
+8. **ALL research results** must be returned as text output only
+9. **Files are ONLY created** in Step 4 (SPEC) and Step 5 (Feature) in `.claude/vibe/` directory
 
 **When to trigger:**
 1. ✅ Feature type decided (e.g., "passkey authentication")
