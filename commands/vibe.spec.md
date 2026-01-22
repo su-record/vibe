@@ -131,33 +131,50 @@ vibe status         # Check current settings
 
 ## Process
 
-### 0. Git Branch Setup (Automatic)
+### 0. Git Branch Setup (MANDATORY - Execute First!)
 
-**CRITICAL: Always create feature branch before starting SPEC**
+> ⚠️ **CRITICAL: You MUST execute this step FIRST before anything else!**
+> This is NOT optional documentation - you must RUN these git commands.
+
+**Step 0 is BLOCKING - do not proceed to Step 1 until branch is ready.**
+
+**Execute these commands using Bash tool:**
 
 ```bash
-# Check current branch
-current=$(git branch --show-current 2>/dev/null || echo "main")
-
-# Sanitize feature name (spaces → hyphens, lowercase)
-branch_name="feature/$(echo "{feature-name}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
-
-# Create feature branch if on main/master
-if [[ "$current" == "main" || "$current" == "master" ]]; then
-  git checkout -b "$branch_name"
-  echo "✅ Created and switched to: $branch_name"
-else
-  echo "ℹ️  Already on feature branch: $current"
-  echo "   Continue on this branch? (Y/n)"
-  # If user says no, create new branch
-fi
+# 1. Check current branch
+git branch --show-current
 ```
 
-**Rules:**
-- If on `main`/`master` → **Always** create `feature/{feature-name}` branch
-- If already on feature branch → Ask user to confirm or create new branch
-- Branch naming: `feature/passkey-auth`, `feature/dark-mode`, etc.
-- Git check BEFORE starting requirements gathering
+**Then based on result:**
+
+| Current Branch | Action |
+|----------------|--------|
+| `main` or `master` | **MUST** create feature branch: `git checkout -b feature/{feature-name}` |
+| `feature/*` | Ask user: "Continue on this branch or create new?" |
+| Other | Ask user to confirm |
+
+**Example execution:**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌿 GIT BRANCH SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current branch: main
+
+Creating feature branch...
+$ git checkout -b feature/login-page
+
+✅ Switched to new branch: feature/login-page
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Branch naming rules:**
+- Convert to lowercase: `Login Page` → `login-page`
+- Replace spaces with hyphens
+- Prefix with `feature/`
+- Example: `feature/passkey-auth`, `feature/dark-mode`
 
 ### 1. Project Analysis
 
