@@ -52,7 +52,9 @@ function getGeminiApiKey() {
 }
 
 async function generateImageWithGemini(prompt, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+  // Nano Banana (Gemini 2.5 Flash Image) - fast image generation for icons/logos
+  // For professional assets, use gemini-3-pro-image-preview (Nano Banana Pro)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
 
   const requestBody = {
     contents: [{
