@@ -280,8 +280,11 @@ Read ~/.claude/vibe/languages/typescript-react.md
 
 **→ IMMEDIATELY run these 4 Bash commands IN PARALLEL (all at once):**
 
+**🚨 MANDATORY: Copy the EXACT path below. DO NOT modify or use alternative paths.**
+
 ```bash
 # Cross-platform path (works on Windows/macOS/Linux)
+# ⚠️ COPY THIS EXACTLY - DO NOT USE ~/.claude/ or any other path!
 VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
 
 # 1. GPT: Best practices
@@ -705,7 +708,7 @@ Grades:
 
 #### 7.3 Quality Gate (Auto-verification)
 
-**Minimum 95 points required to proceed to next step (GPT+Gemini review)**
+**Minimum 95 points required to complete SPEC draft**
 
 ```
 SPEC writing complete
@@ -714,7 +717,7 @@ SPEC writing complete
       ↓
 Score < 95? → Show missing items → Attempt auto-fix → Re-evaluate
       ↓
-Score ≥ 95 → Proceed to GPT + Gemini review
+Score ≥ 95 → SPEC Draft Complete → Handoff to /vibe.spec.review
 ```
 
 #### 7.4 Auto-Fix for Low Score
@@ -728,182 +731,33 @@ If score is below 95, attempt automatic fixes:
 | Missing error handling | Add common error scenarios |
 | Missing performance targets | Apply industry standard criteria |
 
-### 8. SPEC Review (GPT/Gemini) - 3-Round Mandatory Review
+### 8. SPEC Draft Complete - Handoff to Review
 
-**🚨 CRITICAL: YOU MUST EXECUTE ALL 3 ROUNDS. DO NOT SKIP.**
+**🚨 IMPORTANT: GPT/Gemini review is now a SEPARATE command**
 
-```bash
-/vibe.spec "feature"          # Default: 3 rounds (MANDATORY)
-/vibe.spec "feature" --quick  # Quick mode: 1 round only
-```
-
-**3-Round Review Process (MANDATORY):**
+After SPEC draft is complete (score ≥ 95), output the handoff message:
 
 ```
-# 🚨 CRITICAL: This is a FOR loop, NOT a WHILE loop with early exit
-# You MUST complete all 3 rounds regardless of feedback
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ SPEC DRAFT COMPLETE: {feature-name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-FOR round_count IN [1, 2, 3]:  # EXACTLY 3 rounds, NO early exit
+📋 SPEC: .claude/vibe/specs/{feature-name}.spec.md
+📋 Feature: .claude/vibe/features/{feature-name}.feature
+📊 Quality Score: {score}/100
 
-    print(f"━━━ Round {round_count}/3 ━━━")
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ NEXT STEP: Run GPT/Gemini review in a NEW session
 
-    # 1. Call GPT + Gemini in parallel (Bash)
-    gpt_result = Bash("node llm-orchestrate.js gpt ...")
-    gemini_result = Bash("node llm-orchestrate.js gemini ...")
-
-    # 2. Merge and apply feedback (even if "no issues", still run next round)
-    apply_feedback(gpt_result, gemini_result)
-    update_spec()
-
-    # 3. Show progress
-    print(f"✅ Round {round_count}/3 complete")
-
-    # 4. NO EARLY EXIT - continue to next round
-    # Even if both say "no issues", proceed to next round for verification
-
-# After ALL 3 rounds complete:
-print(f"🎉 Review complete! All 3 rounds finished.")
+1. Start new session: /new
+2. Run review: /vibe.spec.review "{feature-name}"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**🚨 ABSOLUTE RULES (NO EXCEPTIONS):**
-1. **MUST complete Round 1** - never skip
-2. **MUST complete Round 2** - even if Round 1 had no issues
-3. **MUST complete Round 3** - even if Round 1 and 2 had no issues
-4. **MUST show "Round X/3"** in output for EACH round
-5. **NO EARLY EXIT** - all 3 rounds are mandatory for quality assurance
-6. **VIOLATION = SPEC NOT COMPLETE** - if less than 3 rounds, SPEC is invalid
-
-**Output format for each round:**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW - Round 1/3
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[GPT] 3 issues found: ...
-[Gemini] 2 issues found: ...
-✅ Applied 5 improvements
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW - Round 2/3
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[GPT] 1 issue found: ...
-[Gemini] 0 issues found
-✅ Applied 1 improvement
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW - Round 3/3
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[GPT] 0 issues found
-[Gemini] 0 issues found
-✅ No changes needed
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🎉 SPEC Review complete! 3 rounds, 6 total improvements
-```
-
-**After SPEC draft, execute review loop:**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[Step 1] Sending SPEC to Gemini/GPT...
-  - Full SPEC content
-  - Feature file (scenarios)
-  - Project context
-
-[Step 2] Review feedback:
-  ┌─────────────────────────────────────────┐
-  │ 📝 SPEC Review Feedback                 │
-  │                                         │
-  │ 1. [Missing] Error handling scenarios   │
-  │    → Recommend adding "retry on network │
-  │      error"                             │
-  │                                         │
-  │ 2. [Security] Auth token expiry         │
-  │    handling undefined                   │
-  │    → Recommend adding refresh token     │
-  │      flow                               │
-  │                                         │
-  │ 3. [Edge] Concurrent login policy       │
-  │    undefined                            │
-  │    → Need to specify existing session   │
-  │      handling method                    │
-  └─────────────────────────────────────────┘
-
-[Step 3] Auto-applying...
-  ✅ Added error handling Phase to SPEC Task
-  ✅ Added token expiry scenario to Feature
-  ✅ Added concurrent login policy to Constraints
-
-[Step 4] Re-verifying...
-  ✅ Ambiguity Scan: 0 issues
-  ✅ Quality Score: 95/100
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ SPEC Review complete! 3 improvements applied
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**MUST: SPEC Review (Required) - GPT + Gemini Parallel Execution**
-
-🚨 **Run GPT and Gemini in parallel for cross-validation to ensure quality**
-
-**Parallel execution (2 Bash calls simultaneously):**
-
-```bash
-# Cross-platform path (works on Windows/macOS/Linux)
-VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
-
-# GPT review (code patterns, architecture perspective)
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
-
-# Gemini review (latest docs, best practices perspective)
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for [feature-name]. Stack: [stack]. Summary: [summary]. Check: completeness, error handling, security, edge cases."
-```
-
-**Important:**
-
-- **Must call both GPT and Gemini** (parallel execution)
-- Merge feedback from both models and apply to SPEC
-- If one model fails, apply only the remaining result
-- Don't send full SPEC, send only **key summary** (save tokens)
-- Parse JSON response and auto-apply to SPEC
-
-**Why parallel execution:**
-
-| Model | Strengths |
-|-------|-----------|
-| GPT | Code patterns, architecture, logic validation |
-| Gemini | Latest web info, doc search, best practices |
-
-**Result merge:** Combine feedback from both models for more thorough review
-
-**Review items:**
-
-| Category | Check Point |
-|----------|-------------|
-| Completeness | All user flows covered? |
-| Error Handling | Failure scenarios defined? |
-| Security | Auth/authorization/data protection? |
-| Edge Cases | Boundary conditions handled? |
-| Testability | ACs verifiable? |
-
-**Auto-apply rules:**
-
-| Feedback Type | Action |
-|---------------|--------|
-| Missing scenario | Auto-add to Feature |
-| Security considerations | Auto-add to Constraints |
-| Edge cases | Auto-add to Task Phase |
-| Lack of clarity | Supplement the section |
-
-**Fallback handling:**
-- On `"status": "fallback"` response → Skip and proceed to next step
-- On network error → Retry once then skip
+**Why separate session?**
+- Prevents context bloat from affecting review accuracy
+- Ensures GPT/Gemini paths and instructions are followed correctly
+- Review command is short and focused
 
 ## Output (MANDATORY File Creation)
 

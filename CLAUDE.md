@@ -40,14 +40,17 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 ## Workflow
 
 ```
-/vibe.spec → (auto) SPEC review → /vibe.run → (auto) code review → (auto) fix → ✅ Done
+/vibe.spec → /new → /vibe.spec.review → /vibe.run → (auto) code review → ✅ Done
 ```
 
-**Automated Flow:**
-1. `/vibe.spec` - Write SPEC + **(auto)** Gemini review → Auto-apply
-2. `/vibe.run` - Implementation + Gemini review
-3. **(auto)** 13+ agent parallel review
-4. **(auto)** P1/P2 issue auto-fix
+**Flow:**
+
+1. `/vibe.spec` - Write SPEC (requirements + research + draft)
+2. `/new` - Start new session (clean context)
+3. `/vibe.spec.review` - GPT/Gemini review (3-round mandatory)
+4. `/vibe.run` - Implementation + Gemini review
+5. **(auto)** 13+ agent parallel review
+6. **(auto)** P1/P2 issue auto-fix
 
 ## Plan Mode vs VIBE (Workflow Selection)
 
@@ -102,6 +105,7 @@ Include `ultrawork` or `ulw` keyword to activate maximum performance mode:
 | Command | Description |
 |---------|-------------|
 | `/vibe.spec "feature-name"` | Write SPEC (PTCF structure) + parallel research |
+| `/vibe.spec.review "feature-name"` | **GPT/Gemini review** (run in new session) |
 | `/vibe.run "feature-name"` | Execute implementation |
 | `/vibe.run "feature-name" ultrawork` | **Maximum performance mode** |
 | `/vibe.verify "feature-name"` | Verification |
