@@ -50,6 +50,15 @@ import {
   cleanupLegacyMcp,
   installProjectHooks,
 } from './setup.js';
+import {
+  showHud,
+  startHud,
+  updateHudPhase,
+  manageHudAgent,
+  updateHudContext,
+  resetHud,
+  showHudHelp,
+} from './hud.js';
 
 const require = createRequire(import.meta.url);
 
@@ -367,6 +376,7 @@ Commands:
   vibe init [project]     Initialize project
   vibe update             Update settings
   vibe status             Show status
+  vibe hud [subcommand]   HUD status display
   vibe help               Help
   vibe version            Version
 
@@ -474,6 +484,7 @@ function showVersion(): void {
 export * from '../lib/MemoryManager.js';
 export * from '../lib/ProjectCache.js';
 export * from '../lib/ContextCompressor.js';
+export * from '../lib/ProgressTracker.js';
 
 export { saveMemory } from '../tools/memory/saveMemory.js';
 export { recallMemory } from '../tools/memory/recallMemory.js';
@@ -602,6 +613,64 @@ Gemini Commands:
     showStatus();
     break;
 
+  // vibe hud <subcommand>
+  case 'hud': {
+    const subCommand = positionalArgs[1];
+    switch (subCommand) {
+      case 'show':
+        showHud(positionalArgs[2] || 'focused');
+        break;
+      case 'start':
+        startHud(positionalArgs[2] || 'ultrawork', positionalArgs[3]);
+        break;
+      case 'phase': {
+        const current = parseInt(positionalArgs[2], 10) || 1;
+        const total = parseInt(positionalArgs[3], 10) || current;
+        const phaseName = positionalArgs.slice(4).join(' ') || undefined;
+        updateHudPhase(current, total, phaseName);
+        break;
+      }
+      case 'agent': {
+        const action = positionalArgs[2] as 'add' | 'remove' | 'clear';
+        if (action === 'add') {
+          manageHudAgent('add', positionalArgs[3], positionalArgs[4]);
+        } else if (action === 'remove') {
+          manageHudAgent('remove', positionalArgs[3]);
+        } else if (action === 'clear') {
+          manageHudAgent('clear');
+        } else {
+          console.log(`
+Agent Commands:
+  vibe hud agent add <name> [model]  Add agent (default: sonnet)
+  vibe hud agent remove <name>       Remove agent
+  vibe hud agent clear               Clear all agents
+          `);
+        }
+        break;
+      }
+      case 'context': {
+        const used = parseInt(positionalArgs[2], 10) || 0;
+        const total = parseInt(positionalArgs[3], 10) || 200000;
+        updateHudContext(used, total);
+        break;
+      }
+      case 'reset':
+      case 'done':
+        resetHud();
+        break;
+      case 'help':
+        showHudHelp();
+        break;
+      case undefined:
+        // No subcommand: show focused status by default
+        showHud('focused');
+        break;
+      default:
+        showHudHelp();
+    }
+    break;
+  }
+
   case 'version':
   case '-v':
   case '--version':
@@ -622,6 +691,7 @@ Gemini Commands:
 Available commands:
   vibe init         Initialize project
   vibe update       Update settings
+  vibe hud <cmd>    HUD status (show, start, phase, agent, reset)
   vibe gpt <cmd>    GPT commands (auth, key, status, logout)
   vibe gemini <cmd> Gemini commands (auth, key, status, logout)
   vibe status       Show status

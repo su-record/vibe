@@ -407,6 +407,14 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 Create `.claude/vibe/specs/{feature-name}.md`:
 
 ```markdown
+---
+status: pending
+currentPhase: 0
+totalPhases: 3
+createdAt: {ISO-timestamp}
+lastUpdated: {ISO-timestamp}
+---
+
 # SPEC: {feature-name}
 
 ## Persona
