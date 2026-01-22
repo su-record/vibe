@@ -403,11 +403,9 @@ Slash Commands (Claude Code):
   /vibe.analyze           Project analysis
   /vibe.utils             Utilities (--e2e, --diagram, --continue)
 
-LLM Routing:
-  gpt. / gemini.          Direct LLM call with web search
-  Auto-routing via hooks  (architecture→GPT, UI/UX→Gemini)
-
-Workflow: /vibe.spec → /vibe.run → /vibe.verify
+Workflow:
+  /vibe.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
+  /vibe.spec → /vibe.run            Manual step-by-step
 
 Docs: https://github.com/su-record/vibe
   `);

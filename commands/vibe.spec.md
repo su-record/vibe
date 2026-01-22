@@ -10,10 +10,27 @@ Create a SPEC document (Specification Agent).
 ## Usage
 
 ```
-/vibe.spec "feature-name"           # Conversation mode (requirements gathering)
-/vibe.spec "docs/login-prd.md"      # File path input (auto-detected)
-/vibe.spec + 📎 file attachment     # Use attached file
+/vibe.spec "feature-name"                    # Conversation mode (requirements gathering)
+/vibe.spec "feature-name" ultrawork          # Auto: SPEC → Review → Implementation
+/vibe.spec "docs/login-prd.md"               # File path input (auto-detected)
+/vibe.spec + 📎 file attachment              # Use attached file
 ```
+
+### ultrawork Mode
+
+When `ultrawork` (or `ulw`) is included, automatically chains:
+
+```
+/vibe.spec "feature" ultrawork
+    ↓
+[1] SPEC Creation (this command)
+    ↓
+[2] Auto: /vibe.spec.review "{feature}"
+    ↓
+[3] Auto: /vibe.run "{feature}" ultrawork
+```
+
+**No manual intervention between steps.**
 
 ## Input Mode Detection (Auto-detect)
 
@@ -735,29 +752,38 @@ If score is below 95, attempt automatic fixes:
 
 **🚨 IMPORTANT: GPT/Gemini review is now a SEPARATE command**
 
-After SPEC draft is complete (score ≥ 95), output the handoff message:
+After SPEC draft is complete (score ≥ 95):
+
+**If `ultrawork` mode:**
+- ❌ DO NOT show handoff message
+- ❌ DO NOT ask for confirmation
+- ✅ Immediately proceed to `/vibe.spec.review "{feature-name}"`
+- ✅ After review passes, immediately proceed to `/vibe.run "{feature-name}" ultrawork`
+
+**If normal mode:**
+Output the handoff message:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ SPEC DRAFT COMPLETE: {feature-name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 SPEC: .claude/vibe/specs/{feature-name}.spec.md
+📋 SPEC: .claude/vibe/specs/{feature-name}.md
 📋 Feature: .claude/vibe/features/{feature-name}.feature
 📊 Quality Score: {score}/100
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ NEXT STEP: Run GPT/Gemini review in a NEW session
+⚠️ NEXT STEP: Run SPEC review
 
-1. Start new session: /new
-2. Run review: /vibe.spec.review "{feature-name}"
+Option 1 (same session):
+  /vibe.spec.review "{feature-name}"
+
+Option 2 (recommended for large context):
+  /new → /vibe.spec.review "{feature-name}"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Why separate session?**
-- Prevents context bloat from affecting review accuracy
-- Ensures GPT/Gemini paths and instructions are followed correctly
-- Review command is short and focused
+**Tip:** New session recommended when context > 50% to ensure review accuracy
 
 ## Output (MANDATORY File Creation)
 
