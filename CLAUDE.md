@@ -229,13 +229,20 @@ Cost-optimized agent variants:
 
 | Keyword | Effect |
 |---------|--------|
-| `ultrawork` / `ulw` | Parallel + auto-continue |
-| `ralph` | Persist until verified complete |
+| `ultrawork` / `ulw` | Parallel + auto-continue + Ralph Loop |
+| `ralph` | **Ralph Loop**: Iterate until 100% complete (no scope reduction) |
 | `ralplan` | Iterative planning + persistence |
 | `verify` | Strict verification mode |
 | `quick` | Fast mode, minimal verification |
 
 **Combinations supported:** `ralph ultrawork`, `ralph verify`, etc.
+
+**Ralph Loop** (from [ghuntley.com/ralph](https://ghuntley.com/ralph)):
+
+- Compares ORIGINAL request vs current implementation
+- Lists ALL missing items explicitly
+- Iterates until 100% complete (max 5 iterations)
+- **ZERO tolerance for scope reduction** - Never say "basic version" or "simplified"
 
 ### Skill Quality Gate
 

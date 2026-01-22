@@ -156,6 +156,136 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Ralph Loop (Completion Verification) - CRITICAL
+
+> **Inspired by [ghuntley.com/ralph](https://ghuntley.com/ralph)**: "Deterministically bad in an undeterministic world" - Keep iterating until TRULY complete.
+
+**Problem**: AI often claims "complete" when implementation is partial.
+
+**Solution**: Self-referential completion verification with iteration tracking.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    RALPH LOOP (Mandatory)                        │
+│                                                                  │
+│   After ALL phases complete:                                     │
+│                                                                  │
+│   ┌──────────────────────────────────────────────────────────┐  │
+│   │  COMPLETION VERIFICATION [Iteration {{ITER}}/{{MAX}}]     │  │
+│   │                                                           │  │
+│   │  Compare ORIGINAL REQUEST vs IMPLEMENTATION:              │  │
+│   │                                                           │  │
+│   │  □ All SPEC requirements implemented?                     │  │
+│   │  □ All acceptance criteria passing?                       │  │
+│   │  □ All scenarios in Feature file complete?                │  │
+│   │  □ Build successful?                                      │  │
+│   │  □ Tests passing?                                         │  │
+│   │  □ No TODO/FIXME left unaddressed?                        │  │
+│   │  □ No partial implementations?                            │  │
+│   │                                                           │  │
+│   │  MISSING: [List any gaps]                                 │  │
+│   └──────────────────────────────────────────────────────────┘  │
+│                              │                                   │
+│                   ┌──────────┴──────────┐                       │
+│                   │   100% Complete?    │                       │
+│                   └──────────┬──────────┘                       │
+│                       │              │                          │
+│                      NO            YES                          │
+│                       │              │                          │
+│                       ↓              ↓                          │
+│              ┌────────────────┐  ┌────────────────┐             │
+│              │ IDENTIFY GAPS  │  │ ✅ TRULY DONE  │             │
+│              │ + FIX THEM     │  │                │             │
+│              │ (no scope      │  │ Report final   │             │
+│              │  reduction!)   │  │ completion     │             │
+│              └───────┬────────┘  └────────────────┘             │
+│                      │                                          │
+│                      └──────────→ [Back to Phase]               │
+│                                                                  │
+│   MAX_ITERATIONS: 5 (prevent infinite loops)                    │
+│   ZERO TOLERANCE for scope reduction                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Ralph Loop Rules:**
+
+| Rule | Description |
+|------|-------------|
+| **No Scope Reduction** | Never say "simplified" or "basic version" - implement FULL request |
+| **Iteration Tracking** | Display `[{{ITER}}/{{MAX}}]` to show progress |
+| **Explicit Gap List** | List EVERY missing item before fixing |
+| **Self-Referential** | Compare against ORIGINAL request, not current state |
+| **Max Iterations** | Stop at 5 iterations (report remaining gaps) |
+
+**Ralph Loop Output Format:**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 RALPH VERIFICATION [Iteration 1/5]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Original Request: "Full login page with form, validation, API integration"
+
+Checking against SPEC requirements:
+  ✅ Login form UI - implemented
+  ✅ Email validation - implemented
+  ✅ Password validation - implemented
+  ❌ Remember me checkbox - NOT FOUND
+  ❌ Forgot password link - NOT FOUND
+  ✅ API integration - implemented
+  ❌ Loading state - NOT FOUND
+  ❌ Error toast notifications - NOT FOUND
+
+Completion: 5/9 (55%)
+
+GAPS IDENTIFIED:
+  1. Remember me checkbox (SPEC line 24)
+  2. Forgot password link (SPEC line 28)
+  3. Loading state during API call (SPEC line 35)
+  4. Error toast notifications (SPEC line 42)
+
+⚠️ NOT COMPLETE - Continuing implementation...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 RALPH VERIFICATION [Iteration 2/5]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Checking against SPEC requirements:
+  ✅ Login form UI - implemented
+  ✅ Email validation - implemented
+  ✅ Password validation - implemented
+  ✅ Remember me checkbox - implemented
+  ✅ Forgot password link - implemented
+  ✅ API integration - implemented
+  ✅ Loading state - implemented
+  ✅ Error toast notifications - implemented
+
+Completion: 9/9 (100%)
+
+Build: ✅ Passed
+Tests: ✅ 12/12 Passed
+Type Check: ✅ No errors
+
+✅ RALPH VERIFIED COMPLETE!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**When to Trigger Ralph Loop:**
+
+1. After all phases complete
+2. Before final quality report
+3. Whenever user says "ultrawork" or "ralph"
+
+**Forbidden Responses (VIOLATIONS):**
+
+| ❌ NEVER Say | ✅ Instead |
+|-------------|-----------|
+| "I've implemented a basic version" | Implement the FULL version |
+| "This is a simplified approach" | Implement as specified |
+| "You can add X later" | Add X now |
+| "For demonstration purposes" | Implement production-ready |
+| "The core functionality is done" | ALL functionality must be done |
+
 ### ULTRAWORK Example
 
 ```
