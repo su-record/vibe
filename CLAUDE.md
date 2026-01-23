@@ -40,7 +40,9 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 ## Workflow
 
 ```
-/vibe.spec → /new → /vibe.spec.review → /vibe.run → (auto) code review → ✅ Done
+/vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → ✅ Done
+                                                         ↑
+                                                Coverage check (v2.6)
 ```
 
 **Flow:**

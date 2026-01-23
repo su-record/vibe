@@ -48,7 +48,9 @@ vibe init
 ## Workflow
 
 ```
-/vibe.spec → /vibe.run → /vibe.verify → /vibe.review
+/vibe.spec → /vibe.run → /vibe.trace → /vibe.verify → /vibe.review
+                              ↑
+                     Coverage check (v2.6)
 ```
 
 ## Key Features
