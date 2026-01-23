@@ -171,3 +171,58 @@ export type {
   PackageJson,
   DetectionResult,
 } from '../lib/FrameworkDetector.js';
+
+// PRD-to-SPEC Tools (v2.6.0)
+export {
+  // Requirement ID
+  generateRequirementId,
+  generateRequirementIds,
+  validateRequirementId,
+  checkDuplicateId,
+  registerExistingId,
+  registerExistingIds,
+  extractFeatureFromId,
+  extractNumberFromId,
+  getIdsByFeature,
+  getAllUsedIds,
+  resetCounters,
+  getCounterStatus,
+  // PRD Parser
+  parsePRD,
+  parsePRDFile,
+  // SPEC Generator
+  generateSpec,
+  // Traceability Matrix
+  generateTraceabilityMatrix,
+  formatMatrixAsMarkdown,
+  formatMatrixAsHtml,
+  // SPEC Versioning
+  bumpSpecVersion,
+  extractVersion,
+  incrementVersion,
+  generateChangelog,
+  createGitTag,
+  detectSpecChanges,
+  getLatestSpecCommit,
+  loadVersionHistory,
+  saveVersionHistory,
+  createBaseline,
+} from './spec/index.js';
+
+export type {
+  Requirement,
+  ParsedPRD,
+  PRDMetadata,
+  SpecGeneratorOptions,
+  GeneratedSpec,
+  // Traceability Matrix types
+  TraceItem,
+  TraceabilityMatrix,
+  TraceSummary,
+  TraceMatrixOptions,
+  // SPEC Versioning types
+  SpecVersion,
+  ChangeEntry,
+  VersionHistory,
+  BumpType,
+} from './spec/index.js';

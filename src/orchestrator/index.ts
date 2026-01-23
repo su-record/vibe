@@ -61,8 +61,19 @@ export {
   cancelBackgroundAgent,
   listActiveSessions,
   getSessionHistory,
-  launchParallelAgents
+  launchParallelAgents,
+  // BackgroundManager (v2.6.0)
+  backgroundManager,
+  launch,
+  poll,
+  cancel,
+  getStats,
+  QueueOverflowError,
+  TaskTimeoutError,
+  PipelineTimeoutError,
+  AgentExecutionError
 } from './backgroundAgent.js';
+export type { TaskStatus, TaskInfo, QueueStats } from './backgroundAgent.js';
 
 // Main Orchestrator Class
 export {
@@ -90,6 +101,22 @@ export {
   AgentManagerOptions,
   getAgentManager
 } from './AgentManager.js';
+
+// PhasePipeline (v2.6.0)
+export {
+  PhasePipeline,
+  createStage,
+  createPipeline,
+  createUltraworkPipeline,
+  pipelineResultToToolResult
+} from './PhasePipeline.js';
+export type {
+  PipelineStage,
+  StageContext,
+  StageResult,
+  PipelineOptions,
+  PipelineResult
+} from './PhasePipeline.js';
 
 // ============================================
 // 간편 함수 (hooks에서 직접 호출용)

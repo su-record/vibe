@@ -23,3 +23,17 @@ export {
   cancelBackgroundAgent,
   launchParallelAgents
 } from './AgentExecutor.js';
+
+// BackgroundManager (v2.6.0)
+export {
+  backgroundManager,
+  launch,
+  poll,
+  cancel,
+  getStats,
+  QueueOverflowError,
+  TaskTimeoutError,
+  PipelineTimeoutError,
+  AgentExecutionError
+} from './BackgroundManager.js';
+export type { TaskStatus, TaskInfo, QueueStats } from './BackgroundManager.js';

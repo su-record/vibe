@@ -117,7 +117,125 @@ Include `ultrawork` or `ulw` keyword to activate maximum performance mode:
 | `/vibe.utils --ui "description"` | UI preview |
 | `/vibe.utils --continue` | **Session restore** (load previous context) |
 
-## New Features (v2.5.15)
+## New Features (v2.6.0)
+
+### Fire-and-Forget Background Manager
+
+Launch background agents without blocking, with automatic concurrency control:
+
+```typescript
+import { launch, poll, cancel, getStats } from '@su-record/vibe/orchestrator';
+
+// Fire-and-forget - returns immediately (<100ms)
+const { taskId } = launch({
+  prompt: 'Analyze codebase',
+  agentName: 'analyzer',
+  model: 'claude-sonnet-4-5',
+});
+
+// Poll for result later
+const result = await poll(taskId);
+
+// Check queue stats
+const stats = getStats();
+```
+
+**Concurrency limits:**
+
+| Model | Limit |
+|-------|-------|
+| claude-opus-4 | 3 |
+| claude-sonnet-4-5 | 5 |
+| claude-haiku-* | 8 |
+
+**Error types:**
+- `QueueOverflowError`: Queue at capacity (100 tasks max)
+- `TaskTimeoutError`: Task exceeded 3 minutes
+- `PipelineTimeoutError`: Pipeline exceeded 10 minutes
+- `AgentExecutionError`: Agent execution failed
+
+### Phase Pipelining
+
+Remove wait time between phases with background preparation:
+
+```typescript
+import { PhasePipeline, createStage, createUltraworkPipeline } from '@su-record/vibe/orchestrator';
+
+const pipeline = createUltraworkPipeline('my-feature', [
+  createStage('Setup', async (ctx) => { /* ... */ }),
+  createStage('Core', async (ctx) => { /* ... */ }),
+  createStage('Test', async (ctx) => { /* ... */ }),
+]);
+
+const result = await pipeline.execute();
+// Next phase preparation happens during current phase execution!
+```
+
+### PRD-to-SPEC Automation
+
+Generate SPEC documents from PRD (Product Requirements Document):
+
+```typescript
+import { parsePRD, generateSpecFromPRD } from '@su-record/vibe/tools';
+
+// Parse PRD document
+const prd = parsePRD(prdContent, 'login');
+
+// Generate SPEC
+const spec = generateSpecFromPRD(prd, {
+  techStack: { frontend: 'React', backend: 'Node.js' },
+});
+```
+
+**Supported PRD formats:**
+- Markdown with `## Requirements` sections
+- YAML frontmatter with `requirements:` array
+- Mixed format
+
+### Requirements Traceability Matrix (/vibe.trace)
+
+Track requirements coverage across SPEC → Feature → Test:
+
+```bash
+/vibe.trace "login"           # Generate RTM
+/vibe.trace "login" --html    # HTML output
+/vibe.trace "login" --save    # Save to file
+```
+
+```typescript
+import { generateTraceabilityMatrix, formatMatrixAsMarkdown } from '@su-record/vibe/tools';
+
+const matrix = generateTraceabilityMatrix('login');
+const markdown = formatMatrixAsMarkdown(matrix);
+```
+
+**Coverage levels:**
+| Level | Meaning |
+|-------|---------|
+| Full (✅) | SPEC + Feature + Test all mapped |
+| Partial (⚠️) | Missing one or more mappings |
+| None (❌) | Only in SPEC |
+
+### SPEC Versioning
+
+Git-integrated version control for SPEC documents:
+
+```typescript
+import { bumpSpecVersion, createGitTag, generateChangelog } from '@su-record/vibe/tools';
+
+// Bump version (major/minor/patch)
+const newVersion = bumpSpecVersion(specPath, 'minor', [
+  { type: 'added', description: 'New login feature' },
+]);
+
+// Create git tag
+createGitTag('login', newVersion.version);
+
+// Generate changelog
+const changelog = generateChangelog(versionHistory);
+```
+
+## Previous Features (v2.5.15)
 
 ### Rule Build System
 

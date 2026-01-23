@@ -39,6 +39,7 @@ vibe init
 | `/vibe.run "feature"` | Execute implementation |
 | `/vibe.run "feature" ultrawork` | Maximum performance mode |
 | `/vibe.verify "feature"` | BDD verification |
+| `/vibe.trace "feature"` | Requirements traceability matrix (v2.6) |
 | `/vibe.review` | 13+ agent parallel review |
 | `/vibe.analyze` | Code analysis |
 | `/vibe.reason "problem"` | Systematic reasoning |
@@ -54,6 +55,10 @@ vibe init
 
 | Feature | Description |
 |---------|-------------|
+| **Fire-and-Forget Agents (v2.6)** | Non-blocking background execution with instant handle return |
+| **Phase Pipelining (v2.6)** | Prepare next phase during current execution |
+| **PRD-to-SPEC Automation (v2.6)** | Auto-generate SPEC from PRD documents |
+| **Traceability Matrix (v2.6)** | REQ → SPEC → Feature → Test coverage tracking |
 | **Multi-LLM Research (v2.5)** | Claude + GPT + Gemini 3-way validation during SPEC research |
 | **Multi-model orchestration** | Claude + GPT-5.2 + Gemini 3 Pro |
 | **13+ parallel review agents** | Security, performance, architecture |
@@ -61,7 +66,7 @@ vibe init
 | **Large SPEC auto-split** | 5+ phases auto-split into phase files |
 | **BDD auto verification** | Given/When/Then scenario verification |
 | **ULTRAWORK mode** | One keyword enables all optimizations |
-| **25 built-in tools** | Code analysis, memory management, quality validation |
+| **30+ built-in tools** | Code analysis, memory management, quality validation |
 | **Auto context management** | 80%+ auto-save, session restore |
 | **23 language presets** | TypeScript, Python, Go, Rust, Swift, Kotlin, C#, Ruby, Dart, GDScript |
 
@@ -76,10 +81,133 @@ Enable maximum performance with `ultrawork` or `ulw`:
 
 **Enabled features:**
 - Parallel subagent exploration (3+ concurrent)
+- **Background agents** (v2.6) - Prepare next phase during implementation
+- **Phase pipelining** (v2.6) - Zero wait time between phases
 - Boulder Loop (auto-progress until all scenarios complete)
 - Auto-retry on errors (max 3)
 - Continuous execution without phase confirmation
 - Auto-save at 80%+ context
+
+## Fire-and-Forget Background Manager (v2.6)
+
+Non-blocking task execution with instant response:
+
+```typescript
+import { launch, poll, getStats } from '@su-record/vibe/orchestrator';
+
+// Fire-and-forget: returns immediately (<100ms)
+const { taskId } = launch({
+  prompt: 'Analyze codebase security',
+  agentName: 'security-agent',
+  model: 'claude-sonnet-4-5'
+});
+
+// Poll for result later
+const result = await poll(taskId);
+
+// Check queue stats
+const stats = getStats();
+```
+
+**Concurrency limits:**
+
+| Model  | Concurrent Limit |
+|--------|------------------|
+| Opus   | 3                |
+| Sonnet | 5                |
+| Haiku  | 8                |
+
+**Queue features:**
+
+- Bounded queue (max 100 tasks)
+- Per-model rate limiting
+- Task timeout: 180s individual, 10min pipeline
+- Automatic cleanup (24h TTL)
+
+## Phase Pipelining (v2.6)
+
+Prepare next phase while current phase executes:
+
+```
+Phase N execution     │ Background: Phase N+1 preparation
+──────────────────────┼──────────────────────────────────
+[Implementing...]     │ [Analyzing files for next phase]
+[Testing...]          │ [Pre-generating test cases]
+[Complete]            │ [Ready to start immediately!]
+                      ↓
+Phase N+1 starts with ZERO wait time
+```
+
+**Speed comparison:**
+
+| Mode                      | 5 Phases Total |
+|---------------------------|----------------|
+| Sequential                | ~10min         |
+| Parallel Exploration      | ~7.5min        |
+| **ULTRAWORK + Pipeline**  | **~5min**      |
+
+## PRD-to-SPEC Automation (v2.6)
+
+Auto-generate SPEC from PRD documents:
+
+```typescript
+import { parsePRD } from '@su-record/vibe/tools';
+
+// Parse PRD (supports Markdown, YAML frontmatter)
+const prd = parsePRD(prdContent, 'login-feature');
+
+// Extracted requirements with auto-generated IDs
+// REQ-login-001, REQ-login-002, ...
+```
+
+**Requirement ID System:**
+
+- Format: `REQ-{feature}-{number}`
+- Auto-deduplication
+- Priority inference from keywords (must, should, nice-to-have)
+
+## Requirements Traceability Matrix (v2.6)
+
+Track coverage from requirements to tests:
+
+```bash
+/vibe.trace "feature-name"  # Generate RTM
+```
+
+**RTM tracks:**
+
+```
+REQ-login-001 → SPEC Phase 1 → Feature Scenario 1 → login.test.ts
+REQ-login-002 → SPEC Phase 2 → Feature Scenario 3 → auth.test.ts
+```
+
+**Coverage report:**
+
+- Requirements coverage %
+- Missing implementations
+- Untested features
+- Export: Markdown, HTML
+
+## SPEC Versioning (v2.6)
+
+Automatic version management for SPEC documents:
+
+```typescript
+import { bumpVersion, generateChangelog } from '@su-record/vibe/tools';
+
+// Auto-bump version on SPEC changes
+await bumpVersion('feature-name', 'minor');
+
+// Generate changelog
+await generateChangelog('feature-name');
+```
+
+**Features:**
+
+- Semantic versioning (major.minor.patch)
+- Git tag integration
+- Automatic changelog generation
+- Baseline tagging for releases
 
 ## Multi-model Orchestration
 
