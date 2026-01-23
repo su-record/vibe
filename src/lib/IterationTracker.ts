@@ -22,6 +22,8 @@ export interface IterationState {
   maxRetries: number;
   startTime: Date;
   endTime?: Date;
+  /** 파이프라인 모드 활성화 여부 (v2.6.0) */
+  pipelineEnabled?: boolean;
 }
 
 // 전역 상태 (세션 내 유지)
@@ -34,7 +36,8 @@ export function startIteration(
   featureName: string,
   phaseNames: string[],
   isUltrawork: boolean = false,
-  maxRetries: number = 3
+  maxRetries: number = 3,
+  pipelineEnabled: boolean = false
 ): IterationState {
   currentState = {
     featureName,
@@ -49,6 +52,7 @@ export function startIteration(
     isUltrawork,
     maxRetries,
     startTime: new Date(),
+    pipelineEnabled,
   };
 
   return currentState;

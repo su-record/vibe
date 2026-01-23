@@ -162,7 +162,7 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 
 **Problem**: AI often claims "complete" when implementation is partial.
 
-**Solution**: Self-referential completion verification with iteration tracking.
+**Solution**: RTM-based automated coverage verification with iteration tracking.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -171,41 +171,60 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 │   After ALL phases complete:                                     │
 │                                                                  │
 │   ┌──────────────────────────────────────────────────────────┐  │
-│   │  COMPLETION VERIFICATION [Iteration {{ITER}}/{{MAX}}]     │  │
+│   │  RTM COVERAGE VERIFICATION [Iteration {{ITER}}/{{MAX}}]   │  │
 │   │                                                           │  │
-│   │  Compare ORIGINAL REQUEST vs IMPLEMENTATION:              │  │
+│   │  Generate RTM via vibe tools:                             │  │
+│   │  → generateTraceabilityMatrix("{feature-name}")           │  │
 │   │                                                           │  │
-│   │  □ All SPEC requirements implemented?                     │  │
-│   │  □ All acceptance criteria passing?                       │  │
-│   │  □ All scenarios in Feature file complete?                │  │
+│   │  Coverage Metrics (automated):                            │  │
+│   │  □ Requirements coverage: {coveragePercent}%              │  │
+│   │  □ SPEC → Feature mapping: {featureCovered}/{total}       │  │
+│   │  □ Feature → Test mapping: {testCovered}/{total}          │  │
 │   │  □ Build successful?                                      │  │
 │   │  □ Tests passing?                                         │  │
-│   │  □ No TODO/FIXME left unaddressed?                        │  │
-│   │  □ No partial implementations?                            │  │
 │   │                                                           │  │
-│   │  MISSING: [List any gaps]                                 │  │
+│   │  UNCOVERED: {uncoveredRequirements[]}                     │  │
 │   └──────────────────────────────────────────────────────────┘  │
 │                              │                                   │
 │                   ┌──────────┴──────────┐                       │
-│                   │   100% Complete?    │                       │
+│                   │  Coverage ≥ 95%?    │                       │
 │                   └──────────┬──────────┘                       │
 │                       │              │                          │
 │                      NO            YES                          │
 │                       │              │                          │
 │                       ↓              ↓                          │
 │              ┌────────────────┐  ┌────────────────┐             │
-│              │ IDENTIFY GAPS  │  │ ✅ TRULY DONE  │             │
-│              │ + FIX THEM     │  │                │             │
-│              │ (no scope      │  │ Report final   │             │
-│              │  reduction!)   │  │ completion     │             │
+│              │ IMPLEMENT      │  │ ✅ TRULY DONE  │             │
+│              │ UNCOVERED      │  │                │             │
+│              │ REQUIREMENTS   │  │ Report final   │             │
+│              │ (auto-extract) │  │ RTM coverage   │             │
 │              └───────┬────────┘  └────────────────┘             │
 │                      │                                          │
-│                      └──────────→ [Back to Phase]               │
+│                      └──────────→ [Re-generate RTM]             │
 │                                                                  │
 │   MAX_ITERATIONS: 5 (prevent infinite loops)                    │
+│   COVERAGE_THRESHOLD: 95% (quality gate)                        │
 │   ZERO TOLERANCE for scope reduction                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+**Ralph Loop with RTM:**
+
+```bash
+# Generate RTM for coverage verification
+node -e "import('@su-record/vibe/tools').then(t => t.generateTraceabilityMatrix('{feature-name}', {projectPath: process.cwd()}).then(r => console.log(JSON.stringify(r, null, 2))))"
+```
+
+**RTM provides automated metrics:**
+
+| Metric | Description |
+|--------|-------------|
+| `totalRequirements` | Total REQ-* items in SPEC |
+| `specCovered` | Requirements with SPEC mapping |
+| `featureCovered` | Requirements with Feature scenarios |
+| `testCovered` | Requirements with test files |
+| `coveragePercent` | Overall coverage percentage |
+| `uncoveredRequirements` | List of missing REQ-* IDs |
 
 **Ralph Loop Rules:**
 
@@ -213,8 +232,8 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 |------|-------------|
 | **No Scope Reduction** | Never say "simplified" or "basic version" - implement FULL request |
 | **Iteration Tracking** | Display `[{{ITER}}/{{MAX}}]` to show progress |
-| **Explicit Gap List** | List EVERY missing item before fixing |
-| **Self-Referential** | Compare against ORIGINAL request, not current state |
+| **RTM-Based Gap List** | Use `uncoveredRequirements` array - no manual comparison |
+| **Coverage Threshold** | Must reach 95% coverage to complete |
 | **Max Iterations** | Stop at 5 iterations (report remaining gaps) |
 
 **Ralph Loop Output Format:**
@@ -224,49 +243,55 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 🔄 RALPH VERIFICATION [Iteration 1/5]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Original Request: "Full login page with form, validation, API integration"
+📊 RTM Coverage Report: login
 
-Checking against SPEC requirements:
-  ✅ Login form UI - implemented
-  ✅ Email validation - implemented
-  ✅ Password validation - implemented
-  ❌ Remember me checkbox - NOT FOUND
-  ❌ Forgot password link - NOT FOUND
-  ✅ API integration - implemented
-  ❌ Loading state - NOT FOUND
-  ❌ Error toast notifications - NOT FOUND
+Requirements Traceability:
+  Total Requirements: 9
+  SPEC Covered: 9/9 (100%)
+  Feature Covered: 5/9 (55%)
+  Test Covered: 4/9 (44%)
 
-Completion: 5/9 (55%)
+  ✅ REQ-login-001: Login form UI → Scenario 1 → login.test.ts
+  ✅ REQ-login-002: Email validation → Scenario 2 → validation.test.ts
+  ✅ REQ-login-003: Password validation → Scenario 2 → validation.test.ts
+  ❌ REQ-login-004: Remember me checkbox → NOT IMPLEMENTED
+  ❌ REQ-login-005: Forgot password link → NOT IMPLEMENTED
+  ✅ REQ-login-006: API integration → Scenario 3 → api.test.ts
+  ❌ REQ-login-007: Loading state → NOT IMPLEMENTED
+  ❌ REQ-login-008: Error toast → NOT IMPLEMENTED
+  ✅ REQ-login-009: Session storage → Scenario 4 → (no test)
 
-GAPS IDENTIFIED:
-  1. Remember me checkbox (SPEC line 24)
-  2. Forgot password link (SPEC line 28)
-  3. Loading state during API call (SPEC line 35)
-  4. Error toast notifications (SPEC line 42)
+Overall Coverage: 55% ⚠️ BELOW 95% THRESHOLD
 
-⚠️ NOT COMPLETE - Continuing implementation...
+UNCOVERED REQUIREMENTS (auto-extracted from RTM):
+  1. REQ-login-004: Remember me checkbox
+  2. REQ-login-005: Forgot password link
+  3. REQ-login-007: Loading state
+  4. REQ-login-008: Error toast notifications
+
+⚠️ NOT COMPLETE - Implementing uncovered requirements...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔄 RALPH VERIFICATION [Iteration 2/5]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Checking against SPEC requirements:
-  ✅ Login form UI - implemented
-  ✅ Email validation - implemented
-  ✅ Password validation - implemented
-  ✅ Remember me checkbox - implemented
-  ✅ Forgot password link - implemented
-  ✅ API integration - implemented
-  ✅ Loading state - implemented
-  ✅ Error toast notifications - implemented
+📊 RTM Coverage Report: login
 
-Completion: 9/9 (100%)
+Requirements Traceability:
+  Total Requirements: 9
+  SPEC Covered: 9/9 (100%)
+  Feature Covered: 9/9 (100%)
+  Test Covered: 9/9 (100%)
+
+Overall Coverage: 100% ✅ ABOVE 95% THRESHOLD
 
 Build: ✅ Passed
 Tests: ✅ 12/12 Passed
 Type Check: ✅ No errors
 
 ✅ RALPH VERIFIED COMPLETE!
+
+📄 RTM saved: .claude/vibe/rtm/login-rtm.md
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
