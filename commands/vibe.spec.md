@@ -218,6 +218,89 @@ $ git checkout -b feature/login-page
 - Tech stack: Confirm existing stack or suggest new
 - Design reference: UI/UX to reference
 
+### 2.1 Critical Requirements Confirmation (askUser) - v2.6.1
+
+**🚨 IMPORTANT: Use `askUser` tool for CRITICAL requirements that must not be missed**
+
+After initial conversation, use the structured `askUser` tool for:
+- 🔐 Authentication: method, MFA, password policy
+- 🛡️ Security: rate limiting, session management
+- ⏱️ Session: duration, concurrent login policy
+- 📊 Data Model: required fields, relationships
+
+**When to use askUser vs conversation:**
+
+| Scenario | Method |
+|----------|--------|
+| Exploratory (feature scope, style) | Natural conversation |
+| **Critical** (auth, security, session) | `askUser` tool |
+| Optional (performance, integration) | Natural conversation |
+
+**Usage:**
+
+```typescript
+import { askUser, askUserQuick } from '@su-record/vibe/tools';
+
+// Quick helper for common scenarios
+const result = await askUserQuick.login('my-login-feature');
+console.log(result.content[0].text);
+
+// Custom categories
+const result = await askUser({
+  featureName: 'user-dashboard',
+  categories: ['authentication', 'security', 'session', 'data_model'],
+  context: 'Building a user dashboard with role-based access',
+});
+```
+
+**Available categories:**
+- `authentication`: 인증 방식, MFA
+- `security`: 비밀번호 정책, 속도 제한
+- `session`: 세션 만료, 동시 로그인
+- `data_model`: 사용자 프로필 필드
+- `performance`: 응답 시간 목표
+- `integration`: 외부 서비스 연동
+
+**Example output:**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 요구사항 확인
+Feature: login
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## 🔐 인증
+
+### 🔐 Q-AUTHENTICATION-001
+
+**어떤 인증 방식을 지원할까요?**
+(복수 선택 가능)
+
+1. **이메일/비밀번호** ✓
+2. **Google 소셜 로그인**
+3. **Apple 소셜 로그인**
+...
+
+**필수**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+총 6개 질문 (필수: 4개)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Response parsing:**
+
+```typescript
+import { parseUserResponse } from '@su-record/vibe/tools';
+
+// User responds: "1, 2, 4" (선택한 옵션 번호)
+const response = parseUserResponse(question, "1, 2, 4");
+// { questionId: "Q-AUTH-001", value: ["email_password", "social_google", "passkey"], timestamp: "..." }
+```
+
+**ultrawork mode:**
+- askUser is **skipped** in ultrawork mode
+- Uses default values from templates automatically
+
 ### 2.5. Reference Documents via config.json (MANDATORY after tech stack confirmed)
 
 **🚨 CRITICAL: Read config.json references IMMEDIATELY after tech stack is confirmed**

@@ -12,6 +12,7 @@
     "./tools/semantic": "./dist/tools/semantic/index.js",
     "./tools/ui": "./dist/tools/ui/index.js",
     "./tools/time": "./dist/tools/time/index.js",
+    "./tools/interaction": "./dist/tools/interaction/index.js",
     "./orchestrator": "./dist/orchestrator/index.js",
     "./lib/gpt": "./dist/lib/gpt-api.js",
     "./lib/gemini": "./dist/lib/gemini-api.js"
