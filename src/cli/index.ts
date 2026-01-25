@@ -227,9 +227,11 @@ async function update(): Promise<void> {
     }
 
     if (!fs.existsSync(vibeDir) && !fs.existsSync(legacyVibeDir)) {
-      if (!options.silent) {
-        console.log('❌ Not a vibe project. Run vibe init first.');
-      }
+      // 프로젝트가 없어도 전역 업그레이드는 완료됨
+      const packageJson = getPackageJson();
+      log(`✅ vibe global updated (v${packageJson.version})
+${formatLLMStatus()}
+`);
       return;
     }
 
