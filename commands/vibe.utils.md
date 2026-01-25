@@ -29,13 +29,36 @@ Collection of utility tools. Use with options.
 
 ## --ui (UI Preview)
 
-Read and follow `agents/ui-previewer.md` for ASCII UI preview generation.
+Read and follow `agents/ui-previewer.md` for UI preview generation.
 
-Generate ASCII-based UI preview from description.
+Generate UI preview from description or design folder.
+
+- **Gemini enabled**: Actual UI mockup image
+- **Gemini disabled**: ASCII art fallback
+
+**Input types:**
+
+| Input | Example |
+| ----- | ------- |
+| Text description | `"Login form with email, password"` |
+| Design folder | `./design/` |
+| Single file | `./mockups/login.html` |
+
+**Supported file formats in folder:**
+
+- `*.html` - HTML mockups
+- `*.png` / `*.jpg` / `*.webp` - UI screenshots (Claude reads images)
+- `*.json` - Design tokens
+- `*.css` / `*.scss` - Style variables
+- `*.md` - Style guides
+- `*.svg` - Vector graphics
 
 **Example:**
+
 ```
 /vibe.utils --ui "Login form - email, password input + login button"
+/vibe.utils --ui ./design/dashboard/
+/vibe.utils --ui ./mockups/homepage.png
 ```
 
 ---
