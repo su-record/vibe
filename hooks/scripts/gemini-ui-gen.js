@@ -4,6 +4,7 @@
  * Gemini UI Code Generator
  *
  * 디자인 파일(이미지, HTML 등)을 분석해서 UI 코드를 생성합니다.
+ * 기존 gemini-api 인프라 사용.
  *
  * Usage:
  *   node gemini-ui-gen.js --image ./design.png --framework react --output ./src/components
@@ -13,165 +14,31 @@
 
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { getLibBaseUrl } from './utils.js';
+
+const LIB_URL = getLibBaseUrl();
 
 // ============================================
-// Config
+// Gemini API (기존 인프라 사용)
 // ============================================
 
-function getGlobalConfigDir() {
-  return process.platform === 'win32'
-    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
-    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+let geminiApi = null;
+
+async function getGeminiApi() {
+  if (!geminiApi) {
+    geminiApi = await import(`${LIB_URL}gemini-api.js`);
+  }
+  return geminiApi;
 }
 
-function getGeminiCredentials() {
-  const configDir = getGlobalConfigDir();
-
-  // OAuth 토큰 확인
-  const tokenPath = path.join(configDir, 'gemini-token.json');
-  if (fs.existsSync(tokenPath)) {
-    const tokenData = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
-    if (tokenData.access_token) {
-      return { type: 'oauth', accessToken: tokenData.access_token };
-    }
-  }
-
-  // API Key 확인
-  const keyPath = path.join(configDir, 'gemini-apikey.json');
-  if (fs.existsSync(keyPath)) {
-    const keyData = JSON.parse(fs.readFileSync(keyPath, 'utf-8'));
-    if (keyData.apiKey) {
-      return { type: 'apikey', apiKey: keyData.apiKey };
-    }
-  }
-
-  return null;
+async function getGeminiStatus() {
+  const api = await getGeminiApi();
+  return api.vibeGeminiStatus ? await api.vibeGeminiStatus() : null;
 }
 
-// ============================================
-// Gemini API with Vision
-// ============================================
-
-async function callGeminiWithImage(imageBase64, mimeType, prompt, creds) {
-  const model = 'gemini-2.0-flash';
-
-  const requestBody = {
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          {
-            inlineData: {
-              mimeType,
-              data: imageBase64
-            }
-          },
-          {
-            text: prompt
-          }
-        ]
-      }
-    ],
-    generationConfig: {
-      maxOutputTokens: 8192,
-      temperature: 0.3,
-    }
-  };
-
-  let url;
-  let headers;
-
-  if (creds.type === 'apikey') {
-    url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${creds.apiKey}`;
-    headers = { 'Content-Type': 'application/json' };
-  } else {
-    // OAuth - Antigravity
-    url = 'https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal:generateContent';
-    headers = {
-      'Authorization': `Bearer ${creds.accessToken}`,
-      'Content-Type': 'application/json',
-      'x-goog-api-client': 'vibe-ui-gen',
-    };
-
-    // Wrap for Antigravity
-    const wrappedBody = {
-      project: 'anthropic-api-proxy',
-      model: 'gemini-2.0-flash-001',
-      request: requestBody,
-      requestType: 'agent',
-      userAgent: 'antigravity',
-      requestId: `ui-gen-${Date.now()}`,
-    };
-    requestBody = wrappedBody;
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(creds.type === 'apikey' ? requestBody : requestBody),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini API error (${response.status}): ${errorText}`);
-  }
-
-  const result = await response.json();
-  const responseData = result.response || result;
-
-  if (!responseData.candidates || responseData.candidates.length === 0) {
-    throw new Error('Gemini returned empty response');
-  }
-
-  return responseData.candidates[0].content?.parts?.[0]?.text || '';
-}
-
-async function callGeminiText(prompt, creds) {
-  const model = 'gemini-2.0-flash';
-
-  const requestBody = {
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: prompt }]
-      }
-    ],
-    generationConfig: {
-      maxOutputTokens: 8192,
-      temperature: 0.3,
-    }
-  };
-
-  let url;
-  let headers;
-
-  if (creds.type === 'apikey') {
-    url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${creds.apiKey}`;
-    headers = { 'Content-Type': 'application/json' };
-  } else {
-    url = 'https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal:generateContent';
-    headers = {
-      'Authorization': `Bearer ${creds.accessToken}`,
-      'Content-Type': 'application/json',
-    };
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini API error (${response.status}): ${errorText}`);
-  }
-
-  const result = await response.json();
-  const responseData = result.response || result;
-
-  return responseData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+async function askGemini(prompt) {
+  const api = await getGeminiApi();
+  return api.ask(prompt, { model: 'gemini-3-flash', maxTokens: 8192, temperature: 0.3 });
 }
 
 // ============================================
@@ -206,7 +73,7 @@ function getFrameworkPrompt(framework) {
   return prompts[framework] || prompts.react;
 }
 
-async function generateUIFromImage(imagePath, framework, creds) {
+async function generateUIFromImage(imagePath, framework) {
   const imageBuffer = fs.readFileSync(imagePath);
   const imageBase64 = imageBuffer.toString('base64');
 
@@ -220,7 +87,10 @@ async function generateUIFromImage(imagePath, framework, creds) {
   };
   const mimeType = mimeTypes[ext] || 'image/png';
 
-  const prompt = `Analyze this UI design image and generate production-ready code.
+  const prompt = `[Image attached as base64: ${mimeType}]
+data:${mimeType};base64,${imageBase64}
+
+Analyze this UI design image and generate production-ready code.
 
 ${getFrameworkPrompt(framework)}
 
@@ -242,10 +112,10 @@ Also provide a summary of:
 - Components identified
 - Layout structure`;
 
-  return callGeminiWithImage(imageBase64, mimeType, prompt, creds);
+  return askGemini(prompt);
 }
 
-async function generateUIFromHTML(htmlPath, framework, creds) {
+async function generateUIFromHTML(htmlPath, framework) {
   const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
 
   const prompt = `Convert this HTML mockup to production-ready ${framework} code.
@@ -266,38 +136,55 @@ Requirements:
 
 Output the converted code in proper format.`;
 
-  return callGeminiText(prompt, creds);
+  return askGemini(prompt);
 }
 
-async function analyzeDesignFolder(folderPath, framework, creds) {
+async function analyzeDesignFolder(folderPath, framework) {
   const files = fs.readdirSync(folderPath);
-  const results = [];
+  let combinedPrompt = `Analyze the following design files and generate production-ready ${framework} code.\n\n`;
 
-  // Read all files
   for (const file of files) {
     const filePath = path.join(folderPath, file);
     const ext = path.extname(file).toLowerCase();
 
-    if (['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
-      console.log(`📷 Analyzing image: ${file}`);
-      const result = await generateUIFromImage(filePath, framework, creds);
-      results.push({ file, type: 'image', result });
+    if (['.png', '.jpg', '.jpeg', '.webp', '.gif'].includes(ext)) {
+      const imageBuffer = fs.readFileSync(filePath);
+      const imageBase64 = imageBuffer.toString('base64');
+      const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+      combinedPrompt += `\n--- Image: ${file} ---\ndata:${mimeType};base64,${imageBase64}\n`;
+      console.log(`📷 ${file}`);
     } else if (ext === '.html') {
-      console.log(`📄 Analyzing HTML: ${file}`);
-      const result = await generateUIFromHTML(filePath, framework, creds);
-      results.push({ file, type: 'html', result });
+      const content = fs.readFileSync(filePath, 'utf-8');
+      combinedPrompt += `\n--- HTML: ${file} ---\n${content}\n`;
+      console.log(`📄 ${file}`);
     } else if (ext === '.json') {
-      console.log(`📋 Reading tokens: ${file}`);
       const content = fs.readFileSync(filePath, 'utf-8');
-      results.push({ file, type: 'tokens', content });
+      combinedPrompt += `\n--- Design Tokens: ${file} ---\n${content}\n`;
+      console.log(`📋 ${file}`);
     } else if (['.css', '.scss'].includes(ext)) {
-      console.log(`🎨 Reading styles: ${file}`);
       const content = fs.readFileSync(filePath, 'utf-8');
-      results.push({ file, type: 'styles', content });
+      combinedPrompt += `\n--- Styles: ${file} ---\n${content}\n`;
+      console.log(`🎨 ${file}`);
+    } else if (ext === '.md') {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      combinedPrompt += `\n--- Guide: ${file} ---\n${content}\n`;
+      console.log(`📝 ${file}`);
     }
   }
 
-  return results;
+  combinedPrompt += `\n${getFrameworkPrompt(framework)}
+
+Requirements:
+1. Match the visual design exactly
+2. Extract design tokens from JSON if provided
+3. Use CSS variables from stylesheets if provided
+4. Create separate component files for each major UI section
+5. Make it responsive (mobile-first)
+6. Include accessibility attributes
+
+Output complete component code.`;
+
+  return askGemini(combinedPrompt);
 }
 
 // ============================================
@@ -307,7 +194,6 @@ async function analyzeDesignFolder(folderPath, framework, creds) {
 async function main() {
   const args = process.argv.slice(2);
 
-  // Parse arguments
   const options = {
     image: null,
     html: null,
@@ -358,14 +244,14 @@ Options:
     }
   }
 
-  // Check credentials
-  const creds = getGeminiCredentials();
-  if (!creds) {
+  // Check Gemini status
+  const status = await getGeminiStatus();
+  if (!status) {
     console.error('❌ Gemini credentials not found. Run: vibe gemini auth');
     process.exit(1);
   }
 
-  console.log(`🤖 Gemini UI Generator (${creds.type})`);
+  console.log(`🤖 Gemini UI Generator (${status.type}${status.email ? `: ${status.email}` : ''})`);
   console.log(`📦 Framework: ${options.framework}`);
 
   try {
@@ -373,14 +259,13 @@ Options:
 
     if (options.image) {
       console.log(`\n📷 Analyzing: ${options.image}\n`);
-      result = await generateUIFromImage(options.image, options.framework, creds);
+      result = await generateUIFromImage(options.image, options.framework);
     } else if (options.html) {
       console.log(`\n📄 Converting: ${options.html}\n`);
-      result = await generateUIFromHTML(options.html, options.framework, creds);
+      result = await generateUIFromHTML(options.html, options.framework);
     } else if (options.designFolder) {
       console.log(`\n📂 Analyzing folder: ${options.designFolder}\n`);
-      const results = await analyzeDesignFolder(options.designFolder, options.framework, creds);
-      result = JSON.stringify(results, null, 2);
+      result = await analyzeDesignFolder(options.designFolder, options.framework);
     } else {
       console.error('❌ No input specified. Use --image, --html, or --design-folder');
       process.exit(1);
@@ -390,7 +275,6 @@ Options:
     console.log(result);
     console.log('\n' + '='.repeat(60));
 
-    // Output to file if specified
     if (options.output && result) {
       if (!fs.existsSync(options.output)) {
         fs.mkdirSync(options.output, { recursive: true });
