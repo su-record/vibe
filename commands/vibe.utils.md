@@ -11,7 +11,6 @@ Collection of utility tools. Use with options.
 
 ```
 /vibe.utils --ui "description"       # UI ASCII preview
-/vibe.utils --ui-sync ./design/      # Sync UI code with design files
 /vibe.utils --diagram                # Architecture diagram
 /vibe.utils --diagram --er           # ERD diagram
 /vibe.utils --diagram --flow         # Flowchart
@@ -61,46 +60,6 @@ Generate UI preview from description or design folder.
 /vibe.utils --ui ./design/dashboard/
 /vibe.utils --ui ./mockups/homepage.png
 ```
-
----
-
-## --ui-sync (Design to Code Sync)
-
-Read and follow `agents/ui-syncer.md` for design-to-code synchronization.
-
-Analyze design files (HTML, images, CSS, tokens) and update existing UI code to match.
-
-**What it does:**
-
-1. Read ALL design files (including images)
-2. Extract design specs (colors, typography, spacing, components)
-3. Compare with existing code
-4. Generate update plan
-5. Apply changes (with confirmation)
-
-**Supported file formats:**
-
-- `*.html` - Structure, layout, classes
-- `*.png` / `*.jpg` / `*.webp` - Visual reference (Claude reads images)
-- `*.json` - Design tokens, theme config
-- `*.css` / `*.scss` - Variables, colors, spacing
-- `*.md` - Design guidelines
-- `*.svg` - Icons, vectors
-
-**Example:**
-
-```
-/vibe.utils --ui-sync ./design/ui/
-/vibe.utils --ui-sync ./mockups/dashboard/
-/vibe.utils --ui-sync ./design/homepage.html
-```
-
-**Output:**
-
-- Diff report (design vs code)
-- List of changes to apply
-- Confirmation prompt
-- Files modified
 
 ---
 

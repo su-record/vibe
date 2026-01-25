@@ -31,11 +31,6 @@ async function getGeminiApi() {
   return geminiApi;
 }
 
-async function getGeminiStatus() {
-  const api = await getGeminiApi();
-  return api.vibeGeminiStatus ? await api.vibeGeminiStatus() : null;
-}
-
 async function askGemini(prompt) {
   const api = await getGeminiApi();
   return api.ask(prompt, { model: 'gemini-3-flash', maxTokens: 8192, temperature: 0.3 });
@@ -244,14 +239,7 @@ Options:
     }
   }
 
-  // Check Gemini status
-  const status = await getGeminiStatus();
-  if (!status) {
-    console.error('❌ Gemini credentials not found. Run: vibe gemini auth');
-    process.exit(1);
-  }
-
-  console.log(`🤖 Gemini UI Generator (${status.type}${status.email ? `: ${status.email}` : ''})`);
+  console.log(`🤖 Gemini UI Generator`);
   console.log(`📦 Framework: ${options.framework}`);
 
   try {

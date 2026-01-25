@@ -44,7 +44,6 @@ vibe init
 | `/vibe.analyze` | Code analysis |
 | `/vibe.reason "problem"` | Systematic reasoning |
 | `/vibe.utils --ui` | UI preview (Gemini image / ASCII fallback) |
-| `/vibe.utils --ui-sync` | Sync design files to code (v2.6.3) |
 | `/vibe.utils --e2e` | E2E testing, diagrams, etc. |
 
 ## Workflow
@@ -213,9 +212,7 @@ await generateChangelog('feature-name');
 - Automatic changelog generation
 - Baseline tagging for releases
 
-## UI Design Tools (v2.6.3)
-
-### UI Preview (`--ui`)
+## UI Preview (`--ui`)
 
 Generate UI previews from text description or design folder:
 
@@ -229,27 +226,6 @@ Generate UI previews from text description or design folder:
 - **Gemini enabled**: Generates actual UI mockup image
 - **Gemini disabled**: ASCII art fallback
 - Supports: HTML, PNG, JPG, CSS, JSON, SVG, MD
-
-### Design-to-Code Sync (`--ui-sync`)
-
-Sync design files to existing UI code:
-
-```bash
-/vibe.utils --ui-sync ./design/ui/
-```
-
-**Workflow:**
-
-1. Read all design files (HTML, images, CSS, tokens)
-2. Extract design specs (colors, typography, spacing)
-3. Compare with existing code
-4. Generate update plan
-5. Apply changes (with confirmation)
-
-**Mode:**
-
-- **Gemini enabled**: Gemini generates code from design
-- **Gemini disabled**: Claude handles analysis and generation
 
 ## Multi-model Orchestration
 
