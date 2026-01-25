@@ -37,6 +37,30 @@ export { applyQualityRules } from './convention/applyQualityRules.js';
 // UI tools
 export { previewUiAscii } from './ui/previewUiAscii.js';
 
+// Interaction tools (v2.6.1)
+export {
+  askUser,
+  askUserQuick,
+  createQuestionFromTemplate,
+  createRequiredQuestionSet,
+  generateQuestionId,
+  formatQuestionAsMarkdown,
+  formatQuestionsForUser,
+  parseUserResponse,
+  QUESTION_TEMPLATES,
+} from './interaction/index.js';
+
+export type {
+  Question,
+  QuestionCategory,
+  QuestionOption,
+  QuestionResponse,
+  QuestionType,
+  AskUserInput,
+  AskUserOutput,
+  AskUserParams,
+} from './interaction/index.js';
+
 // Time tools
 export { getCurrentTime } from './time/getCurrentTime.js';
 

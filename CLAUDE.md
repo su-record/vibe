@@ -119,7 +119,39 @@ Include `ultrawork` or `ulw` keyword to activate maximum performance mode:
 | `/vibe.utils --ui "description"` | UI preview |
 | `/vibe.utils --continue` | **Session restore** (load previous context) |
 
-## New Features (v2.6.0)
+## New Features (v2.6.x)
+
+### Structured User Questions (v2.6.1)
+
+Use `askUser` tool for critical requirements that must not be missed:
+
+```typescript
+import { askUser, askUserQuick } from '@su-record/vibe/tools';
+
+// Quick helper for login features
+const result = await askUserQuick.login('my-login');
+
+// Custom categories
+const result = await askUser({
+  featureName: 'dashboard',
+  categories: ['authentication', 'security', 'session'],
+});
+```
+
+**Available categories:**
+| Category | Questions |
+|----------|-----------|
+| `authentication` | Auth method, MFA |
+| `security` | Password policy, rate limit |
+| `session` | Duration, concurrent login |
+| `data_model` | Profile fields |
+| `performance` | Response time targets |
+| `integration` | External services |
+
+**When to use:**
+- ✅ Critical: auth, security, session → `askUser`
+- ❌ Exploratory: scope, style → Natural conversation
+- ⚠️ ultrawork mode: skipped (uses defaults)
 
 ### Fire-and-Forget Background Manager
 
