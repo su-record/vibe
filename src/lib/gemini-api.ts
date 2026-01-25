@@ -179,7 +179,7 @@ function generateRequestId(): string {
 
 /**
  * Antigravity 요청 본문 래핑
- * requestType: "agent" 필드가 핵심! (opencode-antigravity-auth 참고)
+ * requestType: "agent" 필드가 핵심!
  */
 function wrapRequestBody(body: unknown, projectId: string, modelId: string): Record<string, unknown> {
   return {
