@@ -40,7 +40,7 @@ vibe init
 | `/vibe.run "feature" ultrawork` | Maximum performance mode |
 | `/vibe.verify "feature"` | BDD verification |
 | `/vibe.trace "feature"` | Requirements traceability matrix (v2.6) |
-| `/vibe.review` | 13+ agent parallel review |
+| `/vibe.review` | 13+ agent parallel review (`--race` for GPT+Gemini) |
 | `/vibe.analyze` | Code analysis |
 | `/vibe.reason "problem"` | Systematic reasoning |
 | `/vibe.utils --ui` | UI preview (Gemini image / ASCII fallback) |
@@ -58,6 +58,7 @@ vibe init
 
 | Feature | Description |
 |---------|-------------|
+| **Race Review (v2.6.9)** | GPT + Gemini parallel review with cross-validation |
 | **Fire-and-Forget Agents (v2.6)** | Non-blocking background execution with instant handle return |
 | **Phase Pipelining (v2.6)** | Prepare next phase during current execution |
 | **PRD-to-SPEC Automation (v2.6)** | Auto-generate SPEC from PRD documents |
@@ -273,6 +274,46 @@ During `/vibe.spec`, research agents use **3 LLM perspectives** for quality assu
 ```
 
 > vibe = Quality Assurance Framework
+
+## Race Review (v2.6.9)
+
+**Multi-LLM competitive review** - Same task runs on GPT + Gemini in parallel, results cross-validated:
+
+```bash
+/vibe.review --race              # All review types
+/vibe.review --race security     # Security only
+```
+
+**Cross-validation confidence:**
+
+| Agreement         | Priority | Action                  |
+|-------------------|----------|-------------------------|
+| Both agree (100%) | P1       | High confidence finding |
+| One model (50%)   | P2       | Needs verification      |
+
+**Output:**
+
+```text
+🏁 RACE REVIEW
+├─ GPT:    [SQL injection, XSS]
+└─ Gemini: [SQL injection, CSRF]
+         ↓
+Cross-validation:
+- SQL injection (2/2) → 🔴 P1 (100%)
+- XSS (1/2) → 🟡 P2 (50%)
+- CSRF (1/2) → 🟡 P2 (50%)
+```
+
+**ULTRAWORK default:** Race review is automatically enabled in ULTRAWORK mode.
+
+**API usage:**
+
+```javascript
+import('@su-record/vibe/tools').then(t =>
+  t.raceReview({ reviewType: 'security', code: 'CODE' })
+   .then(r => console.log(t.formatRaceResult(r)))
+)
+```
 
 ## Parallel Review Agents
 
