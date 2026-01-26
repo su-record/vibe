@@ -201,7 +201,7 @@ async function init(projectName?: string): Promise<void> {
     installCursorRules(projectRoot);
 
     // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template)
-    updateCursorGlobalAssets(detectedStacks);
+    updateCursorGlobalAssets(detectedStacks.map(s => s.type));
 
     // 완료 메시지
     const packageJson = getPackageJson();
@@ -321,7 +321,7 @@ ${formatLLMStatus()}
     installCursorRules(projectRoot);
 
     // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template)
-    updateCursorGlobalAssets(detectedStacks);
+    updateCursorGlobalAssets(detectedStacks.map(s => s.type));
 
     // ~/.claude.json 정리
     cleanupClaudeConfig();
