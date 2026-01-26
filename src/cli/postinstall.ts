@@ -360,13 +360,22 @@ ${nextStepsSection}
 
 /**
  * Cursor 프로젝트 룰 템플릿 생성 (VIBE 표준 기반)
+ * @param cursorRulesDir - 룰 파일 저장 경로
+ * @param detectedStacks - 감지된 기술 스택 배열 (예: ['TypeScript', 'React', 'Python'])
  */
-function generateCursorRules(cursorRulesDir: string): void {
+function generateCursorRules(cursorRulesDir: string, detectedStacks: string[] = []): void {
   ensureDir(cursorRulesDir);
 
-  const rules = [
+  // 스택 감지 결과를 소문자로 정규화
+  const normalizedStacks = detectedStacks.map(s => s.toLowerCase());
+  const hasTypeScript = normalizedStacks.some(s => s.includes('typescript') || s.includes('ts'));
+  const hasReact = normalizedStacks.some(s => s.includes('react'));
+  const hasPython = normalizedStacks.some(s => s.includes('python'));
+
+  const allRules = [
     {
       filename: 'typescript-standards.mdc',
+      stacks: ['typescript'],  // TypeScript 프로젝트에만
       content: `---
 description: TypeScript coding standards - complexity limits, type safety, error handling
 globs: "**/*.ts,**/*.tsx"
@@ -425,6 +434,7 @@ function processUser(user: User) {
     },
     {
       filename: 'react-patterns.mdc',
+      stacks: ['react'],  // React 프로젝트에만
       content: `---
 description: React component patterns and best practices
 globs: "**/*.tsx,**/*.jsx"
@@ -473,6 +483,7 @@ function UserProfile({ userId }: Props) {
     },
     {
       filename: 'code-quality.mdc',
+      stacks: [],  // 모든 프로젝트에 적용
       content: `---
 description: General code quality rules for all files
 alwaysApply: true
@@ -511,6 +522,7 @@ alwaysApply: true
     },
     {
       filename: 'security-checklist.mdc',
+      stacks: [],  // 모든 프로젝트에 적용
       content: `---
 description: Security checklist for code changes
 globs: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.py"
@@ -549,6 +561,7 @@ alwaysApply: false
     },
     {
       filename: 'python-standards.mdc',
+      stacks: ['python'],  // Python 프로젝트에만
       content: `---
 description: Python coding standards - PEP8, type hints, async patterns
 globs: "**/*.py"
@@ -606,8 +619,25 @@ except:
     },
   ];
 
+  // 스택에 맞는 룰만 필터링
+  const filteredRules = allRules.filter(rule => {
+    // stacks가 빈 배열이면 모든 프로젝트에 적용
+    if (rule.stacks.length === 0) return true;
+
+    // 스택이 감지되지 않았으면 모든 룰 적용 (fallback)
+    if (detectedStacks.length === 0) return true;
+
+    // 감지된 스택과 룰의 스택이 매칭되는지 확인
+    return rule.stacks.some(ruleStack => {
+      if (ruleStack === 'typescript') return hasTypeScript;
+      if (ruleStack === 'react') return hasReact;
+      if (ruleStack === 'python') return hasPython;
+      return false;
+    });
+  });
+
   let updated = 0;
-  for (const rule of rules) {
+  for (const rule of filteredRules) {
     const destPath = path.join(cursorRulesDir, rule.filename);
     try {
       fs.writeFileSync(destPath, rule.content, 'utf-8');
@@ -617,7 +647,8 @@ except:
     }
   }
 
-  console.log(`   📏 Cursor rules template: ${updated}/${rules.length} updated`);
+  const stackInfo = detectedStacks.length > 0 ? ` (${detectedStacks.join(', ')})` : '';
+  console.log(`   📏 Cursor rules template: ${updated}/${allRules.length} updated${stackInfo}`);
 }
 
 /**

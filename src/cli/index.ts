@@ -97,8 +97,9 @@ setSilentMode(options.silent);
 /**
  * Update global Cursor assets (agents, rules, skills)
  * Called by both vibe init and vibe update
+ * @param detectedStacks - 감지된 기술 스택 배열 (예: ['TypeScript', 'React'])
  */
-function updateCursorGlobalAssets(): void {
+function updateCursorGlobalAssets(detectedStacks: string[] = []): void {
   try {
     const packageRoot = path.resolve(__dirname, '..', '..');
     const agentsSource = path.join(packageRoot, 'agents');
@@ -110,9 +111,9 @@ function updateCursorGlobalAssets(): void {
       installCursorAgents(agentsSource, cursorAgentsDir);
     }
 
-    // 2. Cursor rules template
+    // 2. Cursor rules template (스택에 맞게 필터링)
     const cursorRulesTemplateDir = path.join(os.homedir(), '.cursor', 'rules-template');
-    generateCursorRules(cursorRulesTemplateDir);
+    generateCursorRules(cursorRulesTemplateDir, detectedStacks);
 
     // 3. Cursor skills (7 VIBE skills)
     const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
@@ -200,7 +201,7 @@ async function init(projectName?: string): Promise<void> {
     installCursorRules(projectRoot);
 
     // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template)
-    updateCursorGlobalAssets();
+    updateCursorGlobalAssets(detectedStacks);
 
     // 완료 메시지
     const packageJson = getPackageJson();
@@ -320,7 +321,7 @@ ${formatLLMStatus()}
     installCursorRules(projectRoot);
 
     // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template)
-    updateCursorGlobalAssets();
+    updateCursorGlobalAssets(detectedStacks);
 
     // ~/.claude.json 정리
     cleanupClaudeConfig();
