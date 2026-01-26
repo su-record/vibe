@@ -7,6 +7,126 @@ import fs from 'fs';
 import { DetectedStack, StackDetails, DetectionResult } from './types.js';
 
 /**
+ * 모노레포 워크스페이스 경로 감지
+ * 지원: pnpm-workspace.yaml, package.json workspaces, lerna.json, nx.json, turbo.json
+ */
+function detectWorkspacePaths(projectRoot: string): string[] {
+  const workspacePaths: Set<string> = new Set();
+
+  // 1. pnpm-workspace.yaml
+  const pnpmWorkspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
+  if (fs.existsSync(pnpmWorkspacePath)) {
+    try {
+      const content = fs.readFileSync(pnpmWorkspacePath, 'utf-8');
+      // 간단한 YAML 파싱 (packages: 배열)
+      const packagesMatch = content.match(/packages:\s*\n((?:\s*-\s*.+\n?)+)/);
+      if (packagesMatch) {
+        const lines = packagesMatch[1].split('\n');
+        for (const line of lines) {
+          const match = line.match(/^\s*-\s*['"]?([^'"#\n]+)['"]?\s*$/);
+          if (match) {
+            const pattern = match[1].trim();
+            // glob 패턴 확장 (예: packages/*)
+            expandGlobPattern(projectRoot, pattern, workspacePaths);
+          }
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // 2. package.json workspaces
+  const packageJsonPath = path.join(projectRoot, 'package.json');
+  if (fs.existsSync(packageJsonPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+      const workspaces = pkg.workspaces;
+      if (Array.isArray(workspaces)) {
+        for (const pattern of workspaces) {
+          expandGlobPattern(projectRoot, pattern, workspacePaths);
+        }
+      } else if (workspaces?.packages && Array.isArray(workspaces.packages)) {
+        // yarn workspaces 형식: { packages: [...] }
+        for (const pattern of workspaces.packages) {
+          expandGlobPattern(projectRoot, pattern, workspacePaths);
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // 3. lerna.json
+  const lernaPath = path.join(projectRoot, 'lerna.json');
+  if (fs.existsSync(lernaPath)) {
+    try {
+      const lerna = JSON.parse(fs.readFileSync(lernaPath, 'utf-8'));
+      const packages = lerna.packages || ['packages/*'];
+      for (const pattern of packages) {
+        expandGlobPattern(projectRoot, pattern, workspacePaths);
+      }
+    } catch { /* ignore */ }
+  }
+
+  // 4. nx.json (projects 경로 확인)
+  const nxPath = path.join(projectRoot, 'nx.json');
+  if (fs.existsSync(nxPath)) {
+    // nx는 보통 apps/, libs/, packages/ 구조
+    for (const dir of ['apps', 'libs', 'packages']) {
+      expandGlobPattern(projectRoot, `${dir}/*`, workspacePaths);
+    }
+  }
+
+  // 5. turbo.json (pipeline이 있으면 모노레포)
+  const turboPath = path.join(projectRoot, 'turbo.json');
+  if (fs.existsSync(turboPath)) {
+    // turbo는 package.json workspaces를 따르므로 추가 처리 불필요
+    // 기본 폴더 검사
+    for (const dir of ['apps', 'packages']) {
+      expandGlobPattern(projectRoot, `${dir}/*`, workspacePaths);
+    }
+  }
+
+  return [...workspacePaths];
+}
+
+/**
+ * glob 패턴을 실제 디렉토리 경로로 확장
+ */
+function expandGlobPattern(projectRoot: string, pattern: string, paths: Set<string>): void {
+  // 패턴 정규화
+  const cleanPattern = pattern.replace(/['"]/g, '').trim();
+
+  // ! 로 시작하면 제외 패턴 - 무시
+  if (cleanPattern.startsWith('!')) return;
+
+  // * 없으면 직접 경로
+  if (!cleanPattern.includes('*')) {
+    const fullPath = path.join(projectRoot, cleanPattern);
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      paths.add(cleanPattern);
+    }
+    return;
+  }
+
+  // 단일 레벨 glob 처리 (예: packages/*, apps/*)
+  if (cleanPattern.endsWith('/*') || cleanPattern.endsWith('/**/')) {
+    const baseDir = cleanPattern.replace(/\/\*+\/?$/, '');
+    const basePath = path.join(projectRoot, baseDir);
+
+    if (fs.existsSync(basePath) && fs.statSync(basePath).isDirectory()) {
+      try {
+        const entries = fs.readdirSync(basePath);
+        for (const entry of entries) {
+          if (entry.startsWith('.')) continue;
+          const entryPath = path.join(basePath, entry);
+          if (fs.statSync(entryPath).isDirectory()) {
+            paths.add(`${baseDir}/${entry}`);
+          }
+        }
+      } catch { /* ignore */ }
+    }
+  }
+}
+
+/**
  * 프로젝트 기술 스택 감지
  */
 export function detectTechStacks(projectRoot: string): DetectionResult {
@@ -190,8 +310,8 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
   // 루트 디렉토리 검사
   stacks.push(...detectInDir(projectRoot));
 
-  // 1레벨 하위 폴더 검사
-  const subDirs = ['backend', 'frontend', 'server', 'client', 'api', 'web', 'mobile', 'app', 'packages', 'apps'];
+  // 1레벨 하위 폴더 검사 (전통적인 폴더 구조)
+  const subDirs = ['backend', 'frontend', 'server', 'client', 'api', 'web', 'mobile', 'app'];
   for (const subDir of subDirs) {
     const subPath = path.join(projectRoot, subDir);
     if (fs.existsSync(subPath) && fs.statSync(subPath).isDirectory()) {
@@ -199,16 +319,39 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
     }
   }
 
-  // packages/* 또는 apps/* 내부 검사 (monorepo)
-  for (const monoDir of ['packages', 'apps']) {
-    const monoPath = path.join(projectRoot, monoDir);
-    if (fs.existsSync(monoPath) && fs.statSync(monoPath).isDirectory()) {
-      const subPackages = fs.readdirSync(monoPath).filter(f => {
-        const fullPath = path.join(monoPath, f);
-        return fs.statSync(fullPath).isDirectory() && !f.startsWith('.');
-      });
-      for (const pkg of subPackages) {
-        stacks.push(...detectInDir(path.join(monoPath, pkg), `${monoDir}/${pkg}`));
+  // 모노레포 워크스페이스 감지 및 검사
+  const workspacePaths = detectWorkspacePaths(projectRoot);
+  const scannedPaths = new Set<string>();
+
+  for (const workspacePath of workspacePaths) {
+    // 이미 검사한 경로는 건너뛰기
+    if (scannedPaths.has(workspacePath)) continue;
+    scannedPaths.add(workspacePath);
+
+    const fullPath = path.join(projectRoot, workspacePath);
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      stacks.push(...detectInDir(fullPath, workspacePath));
+    }
+  }
+
+  // 워크스페이스 설정이 없으면 기본 폴더 검사 (fallback)
+  if (workspacePaths.length === 0) {
+    for (const monoDir of ['packages', 'apps', 'libs']) {
+      const monoPath = path.join(projectRoot, monoDir);
+      if (fs.existsSync(monoPath) && fs.statSync(monoPath).isDirectory()) {
+        try {
+          const subPackages = fs.readdirSync(monoPath).filter(f => {
+            const fullPath = path.join(monoPath, f);
+            return fs.statSync(fullPath).isDirectory() && !f.startsWith('.');
+          });
+          for (const pkg of subPackages) {
+            const pkgPath = `${monoDir}/${pkg}`;
+            if (!scannedPaths.has(pkgPath)) {
+              scannedPaths.add(pkgPath);
+              stacks.push(...detectInDir(path.join(monoPath, pkg), pkgPath));
+            }
+          }
+        } catch { /* ignore */ }
       }
     }
   }
