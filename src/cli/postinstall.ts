@@ -228,6 +228,148 @@ function seedInlineSkills(targetDir: string): void {
   }
 }
 
+// 스택 타입 → 언어 룰 파일 매핑
+const STACK_TO_LANGUAGE_FILE: Record<string, string> = {
+  'typescript-nextjs': 'typescript-nextjs.md',
+  'typescript-react': 'typescript-react.md',
+  'typescript-react-native': 'typescript-react-native.md',
+  'typescript-nuxt': 'typescript-nuxt.md',
+  'typescript-vue': 'typescript-vue.md',
+  'typescript-node': 'typescript-node.md',
+  'typescript-angular': 'typescript-angular.md',
+  'typescript-svelte': 'typescript-svelte.md',
+  'typescript-astro': 'typescript-astro.md',
+  'typescript-nestjs': 'typescript-nestjs.md',
+  'typescript-tauri': 'typescript-tauri.md',
+  'typescript-electron': 'typescript-electron.md',
+  'python-fastapi': 'python-fastapi.md',
+  'python-django': 'python-django.md',
+  'python': 'python-fastapi.md', // fallback
+  'dart-flutter': 'dart-flutter.md',
+  'go': 'go.md',
+  'rust': 'rust.md',
+  'kotlin-android': 'kotlin-android.md',
+  'kotlin': 'kotlin-android.md', // fallback
+  'java-spring': 'java-spring.md',
+  'java': 'java-spring.md', // fallback
+  'swift-ios': 'swift-ios.md',
+  'ruby-rails': 'ruby-rails.md',
+  'csharp-unity': 'csharp-unity.md',
+  'gdscript-godot': 'gdscript-godot.md',
+};
+
+// 언어 룰 파일 → glob 패턴 매핑
+const LANGUAGE_GLOBS: Record<string, string> = {
+  'typescript-nextjs.md': '**/*.ts,**/*.tsx,**/next.config.*',
+  'typescript-react.md': '**/*.ts,**/*.tsx,**/*.jsx',
+  'typescript-react-native.md': '**/*.ts,**/*.tsx',
+  'typescript-nuxt.md': '**/*.ts,**/*.vue,**/nuxt.config.*',
+  'typescript-vue.md': '**/*.ts,**/*.vue',
+  'typescript-node.md': '**/*.ts,**/*.mts',
+  'typescript-angular.md': '**/*.ts,**/*.component.ts',
+  'typescript-svelte.md': '**/*.ts,**/*.svelte',
+  'typescript-astro.md': '**/*.ts,**/*.astro',
+  'typescript-nestjs.md': '**/*.ts,**/*.module.ts,**/*.controller.ts,**/*.service.ts',
+  'typescript-tauri.md': '**/*.ts,**/*.tsx,**/tauri.conf.json',
+  'typescript-electron.md': '**/*.ts,**/*.tsx',
+  'python-fastapi.md': '**/*.py',
+  'python-django.md': '**/*.py',
+  'dart-flutter.md': '**/*.dart',
+  'go.md': '**/*.go',
+  'rust.md': '**/*.rs',
+  'kotlin-android.md': '**/*.kt,**/*.kts',
+  'java-spring.md': '**/*.java',
+  'swift-ios.md': '**/*.swift',
+  'ruby-rails.md': '**/*.rb,**/*.erb',
+  'csharp-unity.md': '**/*.cs',
+  'gdscript-godot.md': '**/*.gd',
+};
+
+/**
+ * VIBE 언어 룰 파일을 Cursor .mdc 형식으로 변환
+ */
+function convertLanguageRuleToCursor(content: string, filename: string): string {
+  // Windows CRLF → LF 정규화
+  const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // 제목 추출
+  const titleMatch = normalizedContent.match(/^# (.+)$/m);
+  const title = titleMatch ? titleMatch[1].trim() : filename.replace('.md', '');
+
+  // 설명 생성 - 제목에서 "Quality Rules" 제거하고 간결하게
+  const description = title
+    .replace(' Quality Rules', ' coding standards')
+    .replace(' Specific Rules', ' best practices');
+
+  // glob 패턴 가져오기
+  const globs = LANGUAGE_GLOBS[filename] || '**/*';
+
+  // .mdc frontmatter + 본문
+  return `---
+description: ${description} - complexity limits, type safety, error handling
+globs: "${globs}"
+alwaysApply: false
+---
+
+${normalizedContent}
+`;
+}
+
+/**
+ * VIBE 언어 룰 디렉토리에서 .mdc 파일 생성
+ * @param languagesDir - VIBE 언어 룰 디렉토리 (~/.claude/vibe/languages/ 또는 패키지 내 languages/)
+ * @param outputDir - Cursor 룰 출력 디렉토리 (~/.cursor/rules-template/)
+ * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
+ * @returns 생성된 파일 수
+ */
+function generateCursorRulesFromVibeLanguages(
+  languagesDir: string,
+  outputDir: string,
+  detectedStacks: string[] = []
+): number {
+  if (!fs.existsSync(languagesDir)) {
+    return 0;
+  }
+
+  ensureDir(outputDir);
+
+  // 감지된 스택에 해당하는 언어 파일 결정
+  const targetFiles = new Set<string>();
+
+  if (detectedStacks.length === 0) {
+    // 스택 감지 없으면 공통 룰만 생성 (hardcoded fallback)
+    return 0;
+  }
+
+  for (const stack of detectedStacks) {
+    const languageFile = STACK_TO_LANGUAGE_FILE[stack.toLowerCase()];
+    if (languageFile) {
+      targetFiles.add(languageFile);
+    }
+  }
+
+  let generated = 0;
+
+  for (const file of targetFiles) {
+    const sourcePath = path.join(languagesDir, file);
+    if (!fs.existsSync(sourcePath)) {
+      continue;
+    }
+
+    try {
+      const content = fs.readFileSync(sourcePath, 'utf-8');
+      const mdcContent = convertLanguageRuleToCursor(content, file);
+      const destPath = path.join(outputDir, file.replace('.md', '.mdc'));
+      fs.writeFileSync(destPath, mdcContent, 'utf-8');
+      generated++;
+    } catch {
+      // 무시 - 파일 읽기/쓰기 실패
+    }
+  }
+
+  return generated;
+}
+
 // Cursor 모델 매핑 (각 리뷰어 유형에 최적의 모델)
 // 사용 가능: composer-1, claude-4.5-opus-high, claude-4.5-opus-high-thinking,
 //           claude-4.5-sonnet-thinking, gpt-5.2-codex, gpt-5.2, gpt-5.2-high,
@@ -359,131 +501,32 @@ ${nextStepsSection}
 }
 
 /**
- * Cursor 프로젝트 룰 템플릿 생성 (VIBE 표준 기반)
+ * Cursor 프로젝트 룰 템플릿 생성 (VIBE 언어 룰 기반)
  * @param cursorRulesDir - 룰 파일 저장 경로
- * @param detectedStacks - 감지된 기술 스택 배열 (예: ['TypeScript', 'React', 'Python'])
+ * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
+ * @param languagesDir - VIBE 언어 룰 디렉토리 (optional)
  */
-function generateCursorRules(cursorRulesDir: string, detectedStacks: string[] = []): void {
+function generateCursorRules(
+  cursorRulesDir: string,
+  detectedStacks: string[] = [],
+  languagesDir?: string
+): void {
   ensureDir(cursorRulesDir);
 
-  // 스택 감지 결과를 소문자로 정규화
-  const normalizedStacks = detectedStacks.map(s => s.toLowerCase());
-  const hasTypeScript = normalizedStacks.some(s => s.includes('typescript') || s.includes('ts'));
-  const hasReact = normalizedStacks.some(s => s.includes('react'));
-  const hasPython = normalizedStacks.some(s => s.includes('python'));
-
-  const allRules = [
-    {
-      filename: 'typescript-standards.mdc',
-      stacks: ['typescript'],  // TypeScript 프로젝트에만
-      content: `---
-description: TypeScript coding standards - complexity limits, type safety, error handling
-globs: "**/*.ts,**/*.tsx"
-alwaysApply: false
----
-
-# TypeScript Standards
-
-## Type Safety
-- No \`any\` type → Use \`unknown\` + type guards
-- No \`as any\` casting → Define proper interfaces
-- No \`@ts-ignore\` → Fix type issues at root
-- Explicit return types on all exported functions
-
-## Complexity Limits
-| Metric | Limit |
-|--------|-------|
-| Function length | ≤30 lines (recommended), ≤50 lines (max) |
-| Nesting depth | ≤3 levels |
-| Parameters | ≤5 |
-| Cyclomatic complexity | ≤10 |
-
-## Error Handling
-- Always use try-catch for async operations
-- Provide user-friendly error messages
-- Handle loading states appropriately
-
-## Code Structure Order
-1. Import statements
-2. Type/Interface definitions
-3. Constants
-4. Helper functions
-5. Main component/function
-6. Sub-components (if React)
-
-## Example - Early Return Pattern
-\`\`\`typescript
-// ❌ Avoid nested conditions
-function processUser(user: User) {
-  if (user.isActive) {
-    if (user.hasPermission) {
-      return process(user);
-    }
+  // 1. VIBE 언어 룰에서 .mdc 생성 시도
+  let vibeRulesGenerated = 0;
+  if (languagesDir && detectedStacks.length > 0) {
+    vibeRulesGenerated = generateCursorRulesFromVibeLanguages(
+      languagesDir,
+      cursorRulesDir,
+      detectedStacks
+    );
   }
-  return null;
-}
 
-// ✅ Use early returns
-function processUser(user: User) {
-  if (!user.isActive) return null;
-  if (!user.hasPermission) return null;
-  return process(user);
-}
-\`\`\`
-`,
-    },
-    {
-      filename: 'react-patterns.mdc',
-      stacks: ['react'],  // React 프로젝트에만
-      content: `---
-description: React component patterns and best practices
-globs: "**/*.tsx,**/*.jsx"
-alwaysApply: false
----
-
-# React Patterns
-
-## Component Structure
-1. State & Refs declarations
-2. Custom hooks
-3. Event handlers
-4. Effects (useEffect)
-5. Early returns (loading, error states)
-6. Main JSX return
-
-## Best Practices
-- Use functional components with hooks
-- Extract custom hooks for reusable logic
-- Keep components under 200 lines
-- Colocate styles with components
-
-## Example - Component Order
-\`\`\`tsx
-function UserProfile({ userId }: Props) {
-  // 1. State
-  const [user, setUser] = useState<User | null>(null);
-
-  // 2. Custom hooks
-  const { isAuthenticated } = useAuth();
-
-  // 3. Event handlers
-  const handleSubmit = (e: FormEvent) => { /* ... */ };
-
-  // 4. Effects
-  useEffect(() => { /* fetch user */ }, [userId]);
-
-  // 5. Early returns
-  if (!user) return <Loading />;
-
-  // 6. Main JSX
-  return <div>{/* ... */}</div>;
-}
-\`\`\`
-`,
-    },
+  // 2. 공통 룰 (모든 프로젝트에 적용)
+  const commonRules = [
     {
       filename: 'code-quality.mdc',
-      stacks: [],  // 모든 프로젝트에 적용
       content: `---
 description: General code quality rules for all files
 alwaysApply: true
@@ -514,6 +557,14 @@ alwaysApply: true
 - Descriptive names (verb + noun)
 - Document non-obvious behavior
 
+## Complexity Limits
+| Metric | Limit |
+|--------|-------|
+| Function length | ≤30 lines (recommended), ≤50 lines (max) |
+| Nesting depth | ≤3 levels |
+| Parameters | ≤5 |
+| Cyclomatic complexity | ≤10 |
+
 ## Dependency Management
 - Avoid circular dependencies
 - Keep loose coupling (depend on interfaces)
@@ -522,10 +573,9 @@ alwaysApply: true
     },
     {
       filename: 'security-checklist.mdc',
-      stacks: [],  // 모든 프로젝트에 적용
       content: `---
 description: Security checklist for code changes
-globs: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.py"
+globs: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.py,**/*.go,**/*.rs,**/*.java,**/*.kt,**/*.swift"
 alwaysApply: false
 ---
 
@@ -559,96 +609,22 @@ alwaysApply: false
 - Insufficient logging & monitoring
 `,
     },
-    {
-      filename: 'python-standards.mdc',
-      stacks: ['python'],  // Python 프로젝트에만
-      content: `---
-description: Python coding standards - PEP8, type hints, async patterns
-globs: "**/*.py"
-alwaysApply: false
----
-
-# Python Standards
-
-## Type Hints (Required)
-\`\`\`python
-# ✅ Good
-def process_user(user: User, options: dict[str, Any] | None = None) -> Result:
-    ...
-
-# ❌ Avoid
-def process_user(user, options=None):
-    ...
-\`\`\`
-
-## PEP8 Compliance
-- Max line length: 88 (Black formatter default)
-- Use snake_case for functions/variables
-- Use PascalCase for classes
-- 2 blank lines before top-level definitions
-
-## Async Patterns
-\`\`\`python
-# ✅ Proper async/await
-async def fetch_data(url: str) -> dict:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return await response.json()
-
-# ❌ Avoid blocking calls in async
-async def fetch_data(url: str) -> dict:
-    return requests.get(url).json()  # Blocks event loop!
-\`\`\`
-
-## Error Handling
-\`\`\`python
-# ✅ Specific exceptions
-try:
-    result = process_data(data)
-except ValidationError as e:
-    logger.error(f"Validation failed: {e}")
-    raise HTTPException(400, str(e))
-
-# ❌ Bare except
-try:
-    result = process_data(data)
-except:
-    pass  # Silent failure
-\`\`\`
-`,
-    },
   ];
 
-  // 스택에 맞는 룰만 필터링
-  const filteredRules = allRules.filter(rule => {
-    // stacks가 빈 배열이면 모든 프로젝트에 적용
-    if (rule.stacks.length === 0) return true;
-
-    // 스택이 감지되지 않았으면 모든 룰 적용 (fallback)
-    if (detectedStacks.length === 0) return true;
-
-    // 감지된 스택과 룰의 스택이 매칭되는지 확인
-    return rule.stacks.some(ruleStack => {
-      if (ruleStack === 'typescript') return hasTypeScript;
-      if (ruleStack === 'react') return hasReact;
-      if (ruleStack === 'python') return hasPython;
-      return false;
-    });
-  });
-
-  let updated = 0;
-  for (const rule of filteredRules) {
+  let commonUpdated = 0;
+  for (const rule of commonRules) {
     const destPath = path.join(cursorRulesDir, rule.filename);
     try {
       fs.writeFileSync(destPath, rule.content, 'utf-8');
-      updated++;
+      commonUpdated++;
     } catch {
       // 무시 - 권한 문제 등
     }
   }
 
-  const stackInfo = detectedStacks.length > 0 ? ` (${detectedStacks.join(', ')})` : '';
-  console.log(`   📏 Cursor rules template: ${updated}/${allRules.length} updated${stackInfo}`);
+  const totalUpdated = vibeRulesGenerated + commonUpdated;
+  const stackInfo = detectedStacks.length > 0 ? ` (${detectedStacks.slice(0, 3).join(', ')}${detectedStacks.length > 3 ? '...' : ''})` : '';
+  console.log(`   📏 Cursor rules: ${totalUpdated} updated (${vibeRulesGenerated} language + ${commonUpdated} common)${stackInfo}`);
 }
 
 /**
@@ -1592,8 +1568,9 @@ function main(): void {
 
     // 8. Cursor 프로젝트 룰 템플릿 생성 - ~/.cursor/rules-template/
     // 프로젝트별로 .cursor/rules/에 복사해서 사용
+    // postinstall에서는 스택 감지 없이 공통 룰만 생성
     const cursorRulesTemplateDir = path.join(os.homedir(), '.cursor', 'rules-template');
-    generateCursorRules(cursorRulesTemplateDir);
+    generateCursorRules(cursorRulesTemplateDir, [], globalLanguagesDir);
 
     // 9. Cursor Skills 생성 - ~/.cursor/skills/
     // VIBE 커맨드를 Cursor 스킬로 변환

@@ -97,13 +97,17 @@ setSilentMode(options.silent);
 /**
  * Update global Cursor assets (agents, rules, skills)
  * Called by both vibe init and vibe update
- * @param detectedStacks - 감지된 기술 스택 배열 (예: ['TypeScript', 'React'])
+ * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
  */
 function updateCursorGlobalAssets(detectedStacks: string[] = []): void {
   try {
     const packageRoot = path.resolve(__dirname, '..', '..');
     const agentsSource = path.join(packageRoot, 'agents');
 
+    // VIBE 언어 룰 디렉토리 (~/.claude/vibe/languages/ 또는 패키지 내 languages/)
+    const globalLanguagesDir = path.join(os.homedir(), '.claude', 'vibe', 'languages');
+    const packageLanguagesDir = path.join(packageRoot, 'languages');
+    const languagesDir = fs.existsSync(globalLanguagesDir) ? globalLanguagesDir : packageLanguagesDir;
 
     // 1. Cursor agents (12 reviewers)
     const cursorAgentsDir = path.join(os.homedir(), '.cursor', 'agents');
@@ -111,9 +115,9 @@ function updateCursorGlobalAssets(detectedStacks: string[] = []): void {
       installCursorAgents(agentsSource, cursorAgentsDir);
     }
 
-    // 2. Cursor rules template (스택에 맞게 필터링)
+    // 2. Cursor rules template (VIBE 언어 룰 기반 + 공통 룰)
     const cursorRulesTemplateDir = path.join(os.homedir(), '.cursor', 'rules-template');
-    generateCursorRules(cursorRulesTemplateDir, detectedStacks);
+    generateCursorRules(cursorRulesTemplateDir, detectedStacks, languagesDir);
 
     // 3. Cursor skills (7 VIBE skills)
     const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
