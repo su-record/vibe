@@ -49,6 +49,7 @@ import {
   cleanupClaudeConfig,
   cleanupLegacyMcp,
   installProjectHooks,
+  installCursorRules,
 } from './setup.js';
 import {
   showHud,
@@ -59,6 +60,12 @@ import {
   resetHud,
   showHudHelp,
 } from './hud.js';
+import {
+  installCursorAgents,
+  generateCursorRules,
+  generateCursorSkills,
+  getVibeConfigDir,
+} from './postinstall.js';
 
 const require = createRequire(import.meta.url);
 
@@ -82,6 +89,42 @@ const positionalArgs = args.filter(arg => !arg.startsWith('-'));
 
 // Silent 모드 설정
 setSilentMode(options.silent);
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Update global Cursor assets (agents, rules, skills)
+ * Called by both vibe init and vibe update
+ */
+function updateCursorGlobalAssets(): void {
+  try {
+    const packageRoot = path.resolve(__dirname, '..', '..');
+    const agentsSource = path.join(packageRoot, 'agents');
+
+
+    // 1. Cursor agents (12 reviewers)
+    const cursorAgentsDir = path.join(os.homedir(), '.cursor', 'agents');
+    if (fs.existsSync(agentsSource)) {
+      installCursorAgents(agentsSource, cursorAgentsDir);
+    }
+
+    // 2. Cursor rules template
+    const cursorRulesTemplateDir = path.join(os.homedir(), '.cursor', 'rules-template');
+    generateCursorRules(cursorRulesTemplateDir);
+
+    // 3. Cursor skills (7 VIBE skills)
+    const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
+    generateCursorSkills(cursorSkillsDir);
+
+  } catch (err) {
+    // Non-critical - don't fail init/update
+    if (!options.silent) {
+      console.warn(`   ⚠️ Cursor assets update warning: ${(err as Error).message}`);
+    }
+  }
+}
 
 // ============================================================================
 // Main Commands
@@ -152,6 +195,12 @@ async function init(projectName?: string): Promise<void> {
 
     // 프로젝트 레벨 훅 설치
     installProjectHooks(projectRoot);
+
+    // Cursor IDE 룰 설치 (프로젝트 레벨)
+    installCursorRules(projectRoot);
+
+    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template)
+    updateCursorGlobalAssets();
 
     // 완료 메시지
     const packageJson = getPackageJson();
@@ -267,6 +316,12 @@ ${formatLLMStatus()}
     // 프로젝트 레벨 훅 설치
     installProjectHooks(projectRoot);
 
+    // Cursor IDE 룰 설치/업데이트 (프로젝트 레벨)
+    installCursorRules(projectRoot);
+
+    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template)
+    updateCursorGlobalAssets();
+
     // ~/.claude.json 정리
     cleanupClaudeConfig();
 
@@ -352,6 +407,68 @@ function remove(): void {
     } catch { /* ignore: optional operation */ }
   }
 
+  // Cursor 글로벌 에셋 제거
+  const cursorDir = path.join(os.homedir(), '.cursor');
+
+  // Cursor agents 제거 (12 reviewers)
+  const cursorAgentsDir = path.join(cursorDir, 'agents');
+  if (fs.existsSync(cursorAgentsDir)) {
+    const vibeReviewers = [
+      'security-reviewer.md', 'architecture-reviewer.md', 'data-integrity-reviewer.md',
+      'typescript-reviewer.md', 'python-reviewer.md', 'react-reviewer.md', 'rails-reviewer.md',
+      'performance-reviewer.md', 'complexity-reviewer.md', 'simplicity-reviewer.md',
+      'test-coverage-reviewer.md', 'git-history-reviewer.md'
+    ];
+    let removedAgents = 0;
+    vibeReviewers.forEach(agent => {
+      const agentPath = path.join(cursorAgentsDir, agent);
+      if (fs.existsSync(agentPath)) {
+        fs.unlinkSync(agentPath);
+        removedAgents++;
+      }
+    });
+    if (removedAgents > 0) {
+      console.log(`   ✅ Cursor agents removed (${removedAgents})\n`);
+    }
+  }
+
+  // Cursor skills 제거 (7 vibe skills)
+  const cursorSkillsDir = path.join(cursorDir, 'skills');
+  if (fs.existsSync(cursorSkillsDir)) {
+    const vibeSkills = ['vibe-spec', 'vibe-run', 'vibe-review', 'vibe-analyze', 'vibe-verify', 'vibe-reason', 'vibe-ui'];
+    let removedSkills = 0;
+    vibeSkills.forEach(skill => {
+      const skillDir = path.join(cursorSkillsDir, skill);
+      if (fs.existsSync(skillDir)) {
+        removeDirRecursive(skillDir);
+        removedSkills++;
+      }
+    });
+    if (removedSkills > 0) {
+      console.log(`   ✅ Cursor skills removed (${removedSkills})\n`);
+    }
+  }
+
+  // Cursor rules template 제거 (5 rules)
+  const cursorRulesDir = path.join(cursorDir, 'rules-template');
+  if (fs.existsSync(cursorRulesDir)) {
+    const vibeRules = [
+      'typescript-standards.mdc', 'react-patterns.mdc', 'code-quality.mdc',
+      'security-checklist.mdc', 'python-standards.mdc'
+    ];
+    let removedRules = 0;
+    vibeRules.forEach(rule => {
+      const rulePath = path.join(cursorRulesDir, rule);
+      if (fs.existsSync(rulePath)) {
+        fs.unlinkSync(rulePath);
+        removedRules++;
+      }
+    });
+    if (removedRules > 0) {
+      console.log(`   ✅ Cursor rules template removed (${removedRules})\n`);
+    }
+  }
+
   console.log(`
 ✅ vibe removed!
 
@@ -361,6 +478,9 @@ Removed:
   - Slash commands (7)
   - Subagents (5)
   - Hooks settings
+  - Cursor agents (12)
+  - Cursor skills (7)
+  - Cursor rules template (5)
 
 To reinstall: vibe init
   `);

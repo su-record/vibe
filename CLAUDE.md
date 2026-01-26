@@ -2,6 +2,10 @@
 
 SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
+## Response Language
+
+**IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.**
+
 ## Code Quality Standards (Mandatory)
 
 Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) for detailed rules.
@@ -24,6 +28,18 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - No `any` type → Use `unknown` + type guards
 - No `as any` casting → Define proper interfaces
 - No `@ts-ignore` → Fix type issues at root
+- Explicit return types on all functions
+
+### TypeScript Rules
+- No `any` type → use `unknown` + type guards
+- No `as any` casting → define proper interfaces
+- No `@ts-ignore` → fix type issues at root
+- Explicit return types on all functions
+
+### TypeScript Rules
+- No `any` type → use `unknown` + type guards
+- No `as any` casting → define proper interfaces
+- No `@ts-ignore` → fix type issues at root
 - Explicit return types on all functions
 
 ### Error Handling Required
@@ -291,6 +307,389 @@ await extractTestCasesFromDir('./rules', './test-cases.json');
 
 **Rule file structure:**
 ```markdown
+---
+title: Rule Title
+impact: CRITICAL
+tags: security, performance
+---
+
+## Rule Title
+
+Explanation of the rule.
+
+**Incorrect:**
+\`\`\`typescript
+// Bad code
+\`\`\`
+
+**Correct:**
+\`\`\`typescript
+// Good code
+\`\`\`
+```
+
+### Impact-Based Classification
+
+Rules are classified by impact level:
+
+| Level | Color | Priority |
+|-------|-------|----------|
+| CRITICAL | 🔴 Red | 0 (highest) |
+| HIGH | 🟡 Yellow | 1 |
+| MEDIUM-HIGH | 🟡 Yellow | 2 |
+| MEDIUM | 🔵 Cyan | 3 |
+| LOW-MEDIUM | 🔵 Cyan | 4 |
+| LOW | 🟢 Green | 5 |
+
+### Framework Auto-Detection
+
+Automatically detect project framework from package.json:
+
+```typescript
+import { detectFramework, getFrameworkRecommendations } from '@su-record/vibe/tools';
+
+const result = await detectFramework('./my-project');
+// { framework: { id: 'nextjs', name: 'Next.js', category: 'fullstack' }, ... }
+
+const recs = getFrameworkRecommendations(result.framework);
+// { reviewers: ['react-reviewer'], rules: ['react-*'], features: ['ssr'] }
+```
+
+**Supported frameworks (40+):**
+- Fullstack: Next.js, Remix, Nuxt, SvelteKit, Astro, RedwoodJS
+- Frontend: React, Vue, Svelte, Angular, Preact
+- Backend: NestJS, Express, Fastify, Hono, Elysia
+- Docs: Docusaurus, VitePress, Eleventy
+
+### Test Case Extraction
+
+Extract good/bad examples from rules for LLM evaluation:
+
+```typescript
+import { extractTestCases, validateRule } from '@su-record/vibe/tools';
+
+const testCases = extractTestCases(rules);
+// [{ ruleId: '1.1', type: 'bad', code: '...', ... }]
+
+const validation = validateRule(rule);
+// { valid: true, errors: [] }
+```
+
+## Previous Features (v2.5.7-v2.5.11)
+
+### Intelligent Model Routing
+
+Automatic model selection based on task complexity:
+
+| Complexity | Model | When |
+|------------|-------|------|
+| Low (0-7) | Haiku | Simple fixes, searches |
+| Medium (8-19) | Sonnet | Standard features, 3-5 files |
+| High (20+) | Opus | Architecture, security, 6+ files |
+
+### Agent Tier System
+
+Cost-optimized agent variants:
+
+| Agent | Low | Medium | High |
+|-------|-----|--------|------|
+| explorer | explorer-low | explorer-medium | explorer |
+| implementer | implementer-low | implementer-medium | implementer |
+| architect | architect-low | architect-medium | architect |
+
+### Magic Keywords
+
+| Keyword | Effect |
+|---------|--------|
+| `ultrawork` / `ulw` | Parallel + auto-continue + Ralph Loop |
+| `ralph` | **Ralph Loop**: Iterate until 100% complete (no scope reduction) |
+| `ralplan` | Iterative planning + persistence |
+| `verify` | Strict verification mode |
+| `quick` | Fast mode, minimal verification |
+
+**Combinations supported:** `ralph ultrawork`, `ralph verify`, etc.
+
+**Ralph Loop** (from [ghuntley.com/ralph](https://ghuntley.com/ralph)):
+
+- Compares ORIGINAL request vs current implementation
+- Lists ALL missing items explicitly
+- Iterates until 100% complete (max 5 iterations)
+- **ZERO tolerance for scope reduction** - Never say "basic version" or "simplified"
+
+### Skill Quality Gate
+
+Memory saves are validated for quality:
+
+- Rejects generic/searchable information
+- Requires context, specificity, actionability
+- Suggests principle format: "When X, do Y because Z"
+
+### HUD Status (Real-time)
+
+```bash
+node hooks/scripts/hud-status.js show full
+node hooks/scripts/hud-status.js start ultrawork "feature"
+node hooks/scripts/hud-status.js phase 2 5 "Implementing core"
+```
+
+### Pre/Post Tool Hooks
+
+- **PreToolUse**: Validates dangerous commands before execution
+- **PostToolUse**: Provides error recovery hints
+
+### Orchestrate Workflow
+
+Intent Gate → Codebase Assessment → Delegation → Verification pattern:
+
+```typescript
+import { checkIntentGate, assessCodebase, createDelegationPlan } from '@su-record/vibe/tools';
+```
+
+### UltraQA (5-Cycle Autonomous QA)
+
+```
+Test/Build/Lint → Fail → Architect Diagnosis → Executor Fix → Repeat (max 5)
+```
+
+Exit conditions: All pass, Max cycles, Same failure 3x
+
+### DeepInit (Hierarchical AGENTS.md)
+
+```
+project/
+├── AGENTS.md              ← Root
+├── src/
+│   └── AGENTS.md          ← <!-- Parent: ../AGENTS.md -->
+```
+
+### Skill Frontmatter System
+
+```yaml
+---
+name: my-skill
+model: sonnet
+triggers: [keyword1, keyword2]
+---
+```
+
+### Trigger-Based Skill Injection
+
+Skills in `~/.claude/vibe/skills/` or `.claude/vibe/skills/` auto-inject on keyword match.
+
+### Multi-Line HUD
+
+```bash
+node hooks/scripts/hud-multiline.js multi    # Tree view
+node hooks/scripts/hud-multiline.js compact  # 2-line view
+node hooks/scripts/hud-multiline.js single   # 1-line view
+```
+
+### Parallel Code Review (/vibe.review)
+
+13+ specialized agents review code simultaneously:
+
+- Security: security-reviewer, data-integrity-reviewer
+- Performance: performance-reviewer, complexity-reviewer
+- Architecture: architecture-reviewer, simplicity-reviewer
+- Language-Specific: python, typescript, rails, react reviewers
+- Context: git-history, test-coverage reviewers
+
+**Priority System:**
+- 🔴 P1 (Critical): Blocks merge
+- 🟡 P2 (Important): Fix recommended
+- 🔵 P3 (Nice-to-have): Backlog
+
+### E2E Testing (/vibe.utils --e2e)
+
+Playwright-based automated testing:
+
+```bash
+/vibe.utils --e2e "login flow"   # Scenario test
+/vibe.utils --e2e --visual       # Visual regression test
+/vibe.utils --e2e --record       # Video recording
+```
+
+### Enhanced Research Agents
+
+4 parallel research agents run **after requirements confirmed** during `/vibe.spec`:
+
+| Agent | Role |
+|-------|------|
+| best-practices-agent | Best practices for confirmed feature+stack |
+| framework-docs-agent | Latest docs for confirmed stack (context7) |
+| codebase-patterns-agent | Analyze existing similar patterns |
+| security-advisory-agent | Security advisory for confirmed feature |
+
+## PTCF Structure
+
+SPEC documents are AI-executable prompt format:
+
+```
+<role>      AI role definition
+<context>   Background, tech stack, related code
+<task>      Phase-by-phase task list
+<constraints> Constraints
+<output_format> Files to create/modify
+<acceptance> Verification criteria
+```
+
+## Built-in Tools
+
+### Semantic Code Analysis
+| Tool | Purpose |
+|------|---------|
+| `vibe_find_symbol` | Find symbol definitions |
+| `vibe_find_references` | Find references |
+| `vibe_analyze_complexity` | Analyze complexity |
+| `vibe_validate_code_quality` | Validate quality |
+
+### Context Management
+| Tool | Purpose |
+|------|---------|
+| `vibe_start_session` | Start session (restore previous context) |
+| `vibe_auto_save_context` | Save current state |
+| `vibe_save_memory` | Save important decisions |
+
+## Agents
+
+### Review Agents (12)
+```
+.claude/agents/review/
+├── security-reviewer.md        # Security vulnerabilities
+├── performance-reviewer.md     # Performance bottlenecks
+├── architecture-reviewer.md    # Architecture violations
+├── complexity-reviewer.md      # Complexity exceeded
+├── simplicity-reviewer.md      # Over-abstraction
+├── data-integrity-reviewer.md  # Data integrity
+├── test-coverage-reviewer.md   # Missing tests
+├── git-history-reviewer.md     # Risk patterns
+├── python-reviewer.md          # Python specialist
+├── typescript-reviewer.md      # TypeScript specialist
+├── rails-reviewer.md           # Rails specialist
+└── react-reviewer.md           # React specialist
+```
+
+### Research Agents (4)
+```
+.claude/agents/research/
+├── best-practices-agent.md     # Best practices
+├── framework-docs-agent.md     # Framework docs
+├── codebase-patterns-agent.md  # Code pattern analysis
+└── security-advisory-agent.md  # Security advisory
+```
+
+## Skills
+
+### Git Worktree
+```bash
+# Isolated environment for PR review
+git worktree add ../review-123 origin/pr/123
+cd ../review-123 && npm test
+git worktree remove ../review-123
+```
+
+### Priority Todos
+```
+.claude/vibe/todos/
+├── P1-security-sql-injection.md   # 🔴 Blocks merge
+├── P2-perf-n1-query.md            # 🟡 Fix recommended
+└── P3-style-extract-helper.md     # 🔵 Backlog
+```
+
+## Context Management Strategy
+
+### Model Selection
+- **Exploration/Search**: Haiku (sub-agent default)
+- **Implementation/Debugging**: Sonnet
+- **Architecture/Complex logic**: Opus
+
+### At 70%+ Context (⚠️ Important)
+```
+❌ Don't use /compact (risk of information loss/distortion)
+✅ save_memory to store important decisions → /new for new session
+```
+
+vibe maintains context across sessions with its own memory system:
+1. `save_memory` - Explicitly save important decisions
+2. `/new` - Start new session
+3. `start_session` - Auto-restore previous session
+
+### Session Restore
+To continue previous work in a new session:
+```
+/vibe.utils --continue
+```
+This command calls `vibe_start_session` to restore previous context from project memory.
+
+### Other Commands
+- `/rewind` - Revert to previous point
+- `/context` - Check current usage
+
+### Using context7
+Use context7 plugin when you need latest library documentation:
+```
+"Search React 19 use() hook with context7"
+```
+
+## Documentation Guidelines
+
+### Diagrams/Structure Representation
+- Avoid ASCII boxes (┌─┐) → Alignment breaks with mixed-width characters
+- Use alternatives:
+  - Mermaid diagrams (GitHub/Notion supported)
+  - Markdown tables
+  - Indentation + separators
+
+### Preferred Formats
+| Purpose | Recommended |
+|---------|-------------|
+| Flowcharts | Mermaid flowchart |
+| Structure/Hierarchy | Indented lists |
+| Comparisons/Lists | Markdown tables |
+| Sequences | Mermaid sequenceDiagram |
+
+## Git Commit Rules
+
+**Must include:**
+- `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/` (project docs)
+- `.claude/vibe/config.json`, `.claude/vibe/constitution.md` (project config)
+- `CLAUDE.md`
+
+**Exclude (globally installed):**
+- `~/.claude/vibe/rules/`, `~/.claude/vibe/languages/`, `~/.claude/vibe/templates/` (global)
+- `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/` (global)
+- `.claude/settings.local.json` (personal settings)
+
+## Getting Started
+
+```bash
+vibe init
+/vibe.spec "login feature"
+```
+
+## Full Workflow
+
+```mermaid
+flowchart TD
+    A["/vibe.spec"] --> B["(auto) SPEC review"]
+    B --> C["SPEC auto-enhancement"]
+    C --> D["/vibe.run ultrawork"]
+    D --> E["Gemini code review"]
+    E --> F["(auto) 13+ Agent Review"]
+    F --> G{"P1/P2 issues?"}
+    G -->|Yes| H["(auto) Auto-Fix"]
+    H --> I["✅ Done"]
+    G -->|No| I
+```
+
+| Step | Description | Automation |
+|------|-------------|------------|
+| 1. `/vibe.spec` | Collect requirements + Generate SPEC | Manual start |
+| 2. SPEC review | Gemini reviews SPEC + Auto-apply | ✅ Auto |
+| 3. `/vibe.run` | Implementation + Gemini review | Manual start |
+| 4. Agent Review | 13+ agent parallel review | ✅ Auto |
+| 5. Auto-Fix | P1/P2 issue auto-fix | ✅ Auto |
+
 ---
 title: Rule Title
 impact: CRITICAL

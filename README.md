@@ -325,6 +325,54 @@ During `/vibe.spec`, research agents use **3 LLM perspectives** for quality assu
 └── constitution.md # Project principles
 ```
 
+## Cursor IDE Support (v2.6.8)
+
+VIBE automatically installs Cursor-compatible assets on `vibe init` and `vibe update`:
+
+**Installed locations:**
+
+| Asset | Path | Count |
+| ----- | ---- | ----- |
+| Subagents | `~/.cursor/agents/*.md` | 12 |
+| Skills | `~/.cursor/skills/*/SKILL.md` | 7 |
+| Rules Template | `~/.cursor/rules-template/*.mdc` | 5 |
+
+**12 Review Subagents with optimized model mapping:**
+
+| Agent Type | Model | Purpose |
+| ---------- | ----- | ------- |
+| security, architecture, data-integrity | `claude-4.5-sonnet-thinking` | Deep reasoning |
+| typescript, python, react, rails | `gpt-5.2-codex` | Code understanding |
+| performance, complexity, simplicity, test-coverage, git-history | `gemini-3-flash` | Fast pattern checks |
+
+**7 Skills (VIBE workflow guides):**
+
+- `vibe-spec` - SPEC creation
+- `vibe-run` - Implementation execution
+- `vibe-review` - Parallel code review
+- `vibe-analyze` - Project analysis
+- `vibe-verify` - Requirement verification
+- `vibe-reason` - Systematic reasoning
+- `vibe-ui` - UI preview utilities
+
+**5 Rules Templates:**
+
+- `typescript-standards.mdc` - Type safety, complexity limits
+- `react-patterns.mdc` - Component patterns
+- `code-quality.mdc` - General quality rules
+- `security-checklist.mdc` - OWASP checklist
+- `python-standards.mdc` - PEP8, type hints
+
+**Usage in Cursor:**
+
+```text
+# Invoke subagent
+"Use security-reviewer to check this code"
+
+# Use skill workflow
+"vibe spec login feature"
+```
+
 ## Code Quality Standards
 
 | Metric | Limit |

@@ -5,6 +5,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { VibeConfig, VibeReferences, TechStack, StackDetails } from '../types.js';
 import { ensureDir, removeDirRecursive } from '../utils.js';
@@ -310,5 +311,45 @@ export function updateConfig(
       references
     };
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  }
+}
+
+/**
+ * Cursor IDE 프로젝트 룰 설치
+ * ~/.cursor/rules-template/에서 프로젝트의 .cursor/rules/로 복사
+ */
+export function installCursorRules(projectRoot: string): void {
+  const cursorRulesTemplate = path.join(os.homedir(), '.cursor', 'rules-template');
+  const projectCursorRules = path.join(projectRoot, '.cursor', 'rules');
+
+  // 템플릿 디렉토리가 없으면 스킵
+  if (!fs.existsSync(cursorRulesTemplate)) {
+    return;
+  }
+
+  // .cursor/rules 디렉토리 생성
+  ensureDir(projectCursorRules);
+
+  // 템플릿 파일 복사 (기존 파일은 덮어쓰지 않음)
+  const files = fs.readdirSync(cursorRulesTemplate).filter(f => f.endsWith('.mdc'));
+  let installed = 0;
+
+  for (const file of files) {
+    const srcPath = path.join(cursorRulesTemplate, file);
+    const destPath = path.join(projectCursorRules, file);
+
+    // 기존 파일이 없을 때만 복사 (사용자 수정 보존)
+    if (!fs.existsSync(destPath)) {
+      try {
+        fs.copyFileSync(srcPath, destPath);
+        installed++;
+      } catch {
+        // 권한 문제 등 무시
+      }
+    }
+  }
+
+  if (installed > 0) {
+    console.log(`   📏 Cursor rules: ${installed} files installed to .cursor/rules/`);
   }
 }

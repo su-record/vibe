@@ -28,7 +28,8 @@ export {
   updateRules,
   installProjectHooks,
   updateGitignore,
-  updateConfig
+  updateConfig,
+  installCursorRules
 } from './setup/ProjectSetup.js';
 
 // LegacyMigration
