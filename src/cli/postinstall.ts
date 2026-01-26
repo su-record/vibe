@@ -665,7 +665,7 @@ model: claude-4.5-sonnet-thinking
 description: "SPEC document creation with parallel research. Use when starting new feature implementation."
 ---
 
-# /vibe.spec - SPEC Creation Skill
+# vibe spec - SPEC Creation Skill
 
 SPEC-driven feature development workflow. Creates AI-executable specification documents.
 
@@ -749,7 +749,7 @@ model: claude-4.5-opus-high
 description: "Execute SPEC implementation with Scenario-Driven Development. Use after SPEC is approved."
 ---
 
-# /vibe.run - Implementation Execution Skill
+# vibe run - Implementation Execution Skill
 
 Executes SPEC-based implementation using Scenario-Driven Development methodology.
 
@@ -835,7 +835,7 @@ model: auto
 description: "Parallel code review with 12+ specialized agents. Use after code changes."
 ---
 
-# /vibe.review - Parallel Code Review Skill
+# vibe review - Parallel Code Review Skill
 
 Orchestrates 12+ specialized review agents for comprehensive code review.
 
@@ -936,7 +936,7 @@ model: claude-4.5-sonnet-thinking
 description: "Project and feature analysis. Use when exploring codebase or planning changes."
 ---
 
-# /vibe.analyze - Analysis Skill
+# vibe analyze - Analysis Skill
 
 Comprehensive project and feature analysis for understanding codebases.
 
@@ -1050,7 +1050,7 @@ model: claude-4.5-sonnet-thinking
 description: "Verify implementation against SPEC requirements. Use after implementation."
 ---
 
-# /vibe.verify - Verification Skill
+# vibe verify - Verification Skill
 
 Verifies implementation completeness against SPEC requirements.
 
@@ -1151,7 +1151,7 @@ model: claude-4.5-opus-high-thinking
 description: "Systematic 9-step reasoning framework. Use for complex problem solving."
 ---
 
-# /vibe.reason - Reasoning Framework Skill
+# vibe reason - Reasoning Framework Skill
 
 Applies systematic reasoning to complex problems and decisions.
 
@@ -1287,7 +1287,7 @@ model: gpt-5.2-codex
 description: "UI preview and generation utilities. Use for UI component work."
 ---
 
-# /vibe.ui - UI Utilities Skill
+# vibe ui - UI Utilities Skill
 
 UI preview, generation, and refactoring utilities.
 
