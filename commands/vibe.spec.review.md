@@ -150,82 +150,101 @@ Score: 96/100 ✅ PASSED
 
 ---
 
-## Step 3: GPT/Gemini Review (3-Round Mandatory)
+## Step 3: Race Review (GPT + Gemini Cross-Validation) - 3 Rounds (v2.6.9)
 
-**🚨 CRITICAL: Execute ALL 3 rounds. DO NOT skip.**
+**🚨 CRITICAL: Execute ALL 3 rounds with cross-validation. DO NOT skip.**
 
-### 3.1 Path Configuration
+> Race Mode reviews SPEC with both GPT and Gemini in parallel, then cross-validates findings for higher confidence.
 
-**🚨 MANDATORY: Copy the EXACT path below. DO NOT modify or use alternative paths.**
+### 3.1 Race Review Invocation
 
 ```bash
-# Cross-platform path (works on Windows/macOS/Linux)
-# ⚠️ COPY THIS EXACTLY - DO NOT USE ~/.claude/ or any other path!
-VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+# Via vibe tools (recommended)
+node -e "import('@su-record/vibe/tools').then(t => t.raceReview({reviewType: 'general', code: '[SPEC content]', context: 'SPEC review round N/3'}).then(r => console.log(t.formatRaceResult(r))))"
 ```
 
-### 3.2 Review Loop (3 Rounds)
+### 3.2 Review Loop (3 Rounds with Cross-Validation)
 
 For each round (1 to 3):
 
-**Run GPT and Gemini in PARALLEL (2 Bash calls simultaneously):**
+**Run GPT and Gemini in PARALLEL with cross-validation:**
 
-```bash
-# GPT review
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review SPEC for {feature-name}. Stack: {stack}. Summary: {spec-summary}. Round {N}/3. Check: completeness, error handling, security, edge cases, performance."
-
-# Gemini review
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review SPEC for {feature-name}. Stack: {stack}. Summary: {spec-summary}. Round {N}/3. Check: completeness, error handling, security, edge cases, performance."
+```javascript
+// Race review - both models run simultaneously
+import('@su-record/vibe/tools').then(async t => {
+  const result = await t.raceReview({
+    reviewType: 'general',
+    code: specContent,
+    context: `SPEC review for ${featureName}. Stack: ${stack}. Round ${N}/3.`
+  });
+  console.log(t.formatRaceResult(result));
+});
 ```
 
+**Cross-validation rules:**
+
+| Agreement | Priority | Action |
+|-----------|----------|--------|
+| Both agree (100%) | P1 | Auto-apply immediately |
+| One model (50%) | P2 | Auto-apply with note |
+
 **After each round:**
-1. Parse JSON responses from both GPT and Gemini
-2. Merge feedback (deduplicate, prioritize)
-3. Auto-apply improvements to SPEC and Feature files
+
+1. Cross-validate findings (issues found by both → P1, single model → P2)
+2. Merge feedback with confidence scores
+3. Auto-apply P1/P2 improvements to SPEC and Feature files
 4. Continue to next round
 
 **Output format:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW - Round 1/3
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[GPT] 2 issues found:
-  1. Missing retry logic for API calls
-  2. Token refresh flow not specified
-
-[Gemini] 1 issue found:
-  1. Missing rate limiting specification
-
-Merged: 3 unique issues
-Auto-applying...
-  ✅ Added retry logic (3 attempts, exponential backoff)
-  ✅ Added token refresh flow to auth section
-  ✅ Added rate limiting (100 req/min)
-
-✅ Round 1 complete - 3 improvements applied
+🏁 SPEC RACE REVIEW - Round 1/3
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW - Round 2/3
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[GPT] 1 issue found:
-  1. Concurrent session handling unclear
+Model Results:
+| Model  | Issues | Duration |
+|--------|--------|----------|
+| GPT    | 2      | 1823ms   |
+| Gemini | 2      | 2156ms   |
 
-[Gemini] 0 issues found
+Cross-Validated Issues:
+| Issue                    | GPT | Gemini | Confidence |
+|--------------------------|-----|--------|------------|
+| Missing retry logic      | ✅  | ✅     | 100% → P1  |
+| Missing rate limiting    | ✅  | ✅     | 100% → P1  |
+| Token refresh unclear    | ✅  | ❌     | 50% → P2   |
 
 Auto-applying...
-  ✅ Added concurrent session policy
+  ✅ [P1] Added retry logic (3 attempts, exponential backoff)
+  ✅ [P1] Added rate limiting (100 req/min)
+  ✅ [P2] Added token refresh flow
 
-✅ Round 2 complete - 1 improvement applied
+✅ Round 1 complete - 3 improvements (2 P1, 1 P2)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW - Round 3/3
+🏁 SPEC RACE REVIEW - Round 2/3
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[GPT] 0 issues found
-[Gemini] 0 issues found
+
+Cross-Validated Issues:
+| Issue                       | GPT | Gemini | Confidence |
+|-----------------------------|-----|--------|------------|
+| Concurrent session unclear  | ✅  | ❌     | 50% → P2   |
+
+Auto-applying...
+  ✅ [P2] Added concurrent session policy
+
+✅ Round 2 complete - 1 improvement
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏁 SPEC RACE REVIEW - Round 3/3
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cross-Validated Issues: None
 
 ✅ No changes needed - SPEC is complete
+✅ Consensus Rate: 100%
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 

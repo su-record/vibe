@@ -122,6 +122,7 @@ When you include `ultrawork` (or `ulw`), ALL of these activate automatically:
 | **No Pause** | Doesn't wait for confirmation between phases |
 | **External LLMs** | Auto-consults GPT/Gemini if enabled |
 | **Error Recovery** | Auto-retries on failure (up to 3 times) |
+| **Race Review (v2.6.9)** | Multi-LLM review (GPT+Gemini) with cross-validation |
 
 ### Boulder Loop (Inspired by Sisyphus)
 
@@ -864,83 +865,76 @@ node hooks/scripts/generate-brand-assets.js \
 
 ---
 
-### 5. Gemini Code Review + Auto-Fix
+### 5. Race Code Review (GPT + Gemini) + Auto-Fix (v2.6.9)
 
-After all scenarios are implemented, **Gemini reviews the code and auto-fixes based on feedback**:
+After all scenarios are implemented, **GPT and Gemini review in parallel with cross-validation**:
+
+> **ULTRAWORK Default**: In ULTRAWORK mode, race review is automatically enabled.
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 GEMINI CODE REVIEW
+🏁 RACE CODE REVIEW (GPT + Gemini)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[Step 1] Sending implementation code to Gemini...
-  - Changed files: auth.service.ts, auth.controller.ts, ...
+[Step 1] Parallel review execution...
+  ├─ GPT-5.2-Codex: Reviewing...
+  └─ Gemini-3-Flash: Reviewing...
 
-[Step 2] Gemini review results:
-  ┌─────────────────────────────────────────────────────┐
-  │ 📝 Gemini Feedback                                  │
-  │                                                     │
-  │ 1. [Improvement] auth.service.ts:24                 │
-  │    Need timing attack prevention for password compare│
-  │    → Recommend using crypto.timingSafeEqual()       │
-  │                                                     │
-  │ 2. [Improvement] auth.controller.ts:15              │
-  │    Rate limiting not applied                        │
-  │    → Recommend adding login attempt limit           │
-  │                                                     │
-  │ 3. [Style] auth.service.ts:42                       │
-  │    Magic number usage                               │
-  │    → Recommend extracting to constant               │
-  └─────────────────────────────────────────────────────┘
+[Step 2] Cross-validation results:
+  ┌───────────────────────────────────────────────────────────┐
+  │ Issue                          │ GPT │ Gemini │ Confidence│
+  │────────────────────────────────│─────│────────│───────────│
+  │ Timing attack in password      │ ✅  │ ✅     │ 100% → P1 │
+  │ Rate limiting missing          │ ✅  │ ✅     │ 100% → P1 │
+  │ Magic number usage             │ ✅  │ ❌     │ 50% → P2  │
+  └───────────────────────────────────────────────────────────┘
 
-[Step 3] Auto-fixing based on feedback...
-  ✅ auth.service.ts:24 - Applied timingSafeEqual
-  ✅ auth.controller.ts:15 - Added rate limiter
-  ✅ auth.service.ts:42 - Extracted constant
+  Summary: 3 issues (P1: 2, P2: 1)
+
+[Step 3] Auto-fixing P1/P2 issues...
+  ✅ auth.service.ts:24 - Applied timingSafeEqual (P1)
+  ✅ auth.controller.ts:15 - Added rate limiter (P1)
+  ✅ auth.service.ts:42 - Extracted constant (P2)
 
 [Step 4] Re-verifying...
   ✅ Build succeeded
   ✅ Tests passed
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Gemini review complete! 3 improvements applied
+✅ Race review complete! 3 improvements (2 P1, 1 P2)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**MUST: Gemini Code Review (Required)**
-
-When Gemini is enabled, **must** use global hook script for code review:
+**Race Review Invocation:**
 
 ```bash
-# Cross-platform path (works on Windows/macOS/Linux)
-VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
-
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this code for security, performance, best-practices: [code summary]. SPEC: [summary]. Scenarios: [list]"
+# Via vibe tools
+node -e "import('@su-record/vibe/tools').then(t => t.raceReview({reviewType: 'security', code: '[code]'}).then(r => console.log(t.formatRaceResult(r))))"
 ```
 
-**Call sequence:**
-1. Summarize key content of changed files
-2. Add SPEC requirements summary
-3. Execute global script call
-4. Fix code for each feedback item in response
-5. Re-run build/tests
+**Confidence-based Priority:**
+
+| Confidence | Priority | Action |
+|------------|----------|--------|
+| 100% (2/2) | P1 | Auto-fix immediately |
+| 50% (1/2) | P2 | Auto-fix with review |
 
 **Fallback handling:**
-- On `"status": "fallback"` response → Skip and proceed to next step
-- On network error → Retry once, then skip
+- If one LLM fails → Use single LLM result (reduced confidence)
+- If both fail → Skip and proceed (log warning)
 
 **Review application rules:**
 
 | Feedback Type | Action |
 |---------------|--------|
-| Security vulnerability | Auto-fix immediately |
-| Performance improvement | Auto-fix immediately |
-| Best practices | Auto-fix |
-| Style/preference | Apply selectively (project convention takes priority) |
+| Security vulnerability (P1) | Auto-fix immediately |
+| Performance improvement (P1/P2) | Auto-fix immediately |
+| Best practices (P2) | Auto-fix |
+| Style/preference (P3) | Apply selectively |
 
 **Conditions:**
-- Only runs when Gemini MCP is enabled (`vibe gemini auth`)
-- Skip and proceed on fallback response
+- **ULTRAWORK**: Race review enabled by default
+- **Normal mode**: Use `--race` flag to enable
 - Must re-verify build/tests after fixes
 
 ### 6. Quality Report (Auto-generated)

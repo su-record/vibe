@@ -14,6 +14,92 @@ argument-hint: "PR number, branch name, or file path"
 /vibe.review PR#123                  # Review specific PR
 /vibe.review feature/login           # Review specific branch
 /vibe.review src/api/                # Review specific path
+/vibe.review --race                  # Multi-LLM race mode (GPT + Gemini)
+/vibe.review --race security         # Race mode for specific review type
+```
+
+## Race Mode (v2.6.9)
+
+**Multi-LLM competitive review** - Same review task runs on GPT + Gemini in parallel, results are cross-validated.
+
+### How It Works
+
+```
+/vibe.review --race
+
+security-review:
+├─ GPT-5.2-Codex  → [SQL injection, XSS]
+└─ Gemini-3-Flash → [SQL injection, CSRF]
+         ↓
+   Cross-validation:
+   - SQL injection (2/2) → 🔴 P1 (100% confidence)
+   - XSS (1/2) → 🟡 P2 (50% confidence)
+   - CSRF (1/2) → 🟡 P2 (50% confidence)
+```
+
+### Confidence-Based Priority
+
+| Confidence | Priority | Meaning |
+|------------|----------|---------|
+| 100% (2/2) | P1 | Both models agree - high confidence |
+| 50% (1/2) | P2 | One model found - needs verification |
+
+### Race Mode Options
+
+```
+/vibe.review --race                  # All review types
+/vibe.review --race security         # Security only
+/vibe.review --race performance      # Performance only
+/vibe.review --race architecture     # Architecture only
+```
+
+### Race Mode Output
+
+```
+## SECURITY Review (Race Mode)
+
+**Duration**: 3420ms
+**Models**: GPT-5.2-Codex, Gemini-3-Flash
+
+### Model Results
+
+| Model | Issues Found | Duration | Status |
+|-------|--------------|----------|--------|
+| gpt | 3 | 1823ms | OK |
+| gemini | 2 | 2156ms | OK |
+
+### Cross-Validated Issues
+
+**Summary**: 4 issues (P1: 1, P2: 2, P3: 1)
+**Consensus Rate**: 75%
+
+#### 🔴 P1 - SQL Injection in user query
+
+- **Confidence**: 100% (gpt, gemini)
+- **Severity**: critical
+- **Location**: `src/api/users.ts:42`
+- **Suggestion**: Use parameterized queries
+
+#### 🟡 P2 - XSS vulnerability in render
+
+- **Confidence**: 50% (gpt)
+- **Severity**: high
+- **Location**: `src/components/Comment.tsx:15`
+```
+
+### When to Use Race Mode
+
+| Scenario | Recommended |
+|----------|-------------|
+| Critical security review | ✅ `--race security` |
+| Pre-production audit | ✅ `--race` |
+| Quick iteration | ❌ Standard review |
+| API cost concerns | ❌ Standard review |
+
+### Tool Invocation (Race Mode)
+
+```bash
+node -e "import('@su-record/vibe/lib/ReviewRace').then(r => r.raceReview({reviewType: 'security', code: 'CODE_HERE'}).then(res => console.log(r.formatRaceResult(res))))"
 ```
 
 ## Priority System

@@ -250,3 +250,21 @@ export type {
   VersionHistory,
   BumpType,
 } from './spec/index.js';
+
+// Review Race (v2.6.9) - Multi-LLM competitive review
+export {
+  raceReview,
+  formatRaceResult,
+  checkLLMAvailability,
+} from '../lib/ReviewRace.js';
+
+export type {
+  RaceReviewResult,
+  RaceReviewOptions,
+  LLMProvider,
+  Priority,
+  ReviewType,
+  RaceReviewIssue,
+  RaceLLMResult,
+  RaceCrossValidatedIssue,
+} from '../lib/ReviewRace.js';
