@@ -142,14 +142,43 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
         const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8'));
         const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-        // 프레임워크 감지
-        if (deps['next']) detected.push({ type: 'typescript-nextjs', path: prefix });
-        else if (deps['react-native']) detected.push({ type: 'typescript-react-native', path: prefix });
-        else if (deps['react']) detected.push({ type: 'typescript-react', path: prefix });
-        else if (deps['nuxt'] || deps['nuxt3']) detected.push({ type: 'typescript-nuxt', path: prefix });
-        else if (deps['vue']) detected.push({ type: 'typescript-vue', path: prefix });
-        else if (deps['express'] || deps['fastify'] || deps['koa'] || deps['nest'] || deps['@nestjs/core']) detected.push({ type: 'typescript-node', path: prefix });
-        else if (pkg.name) detected.push({ type: 'typescript-node', path: prefix });
+        // 프레임워크 감지 (우선순위: 특수 프레임워크 → 범용 프레임워크)
+        // Desktop/Mobile 프레임워크 (최우선)
+        if (deps['@tauri-apps/cli'] || deps['@tauri-apps/api']) {
+          detected.push({ type: 'typescript-tauri', path: prefix });
+        } else if (deps['electron']) {
+          detected.push({ type: 'typescript-electron', path: prefix });
+        } else if (deps['react-native']) {
+          detected.push({ type: 'typescript-react-native', path: prefix });
+        }
+        // 풀스택/SSR 프레임워크
+        else if (deps['next']) {
+          detected.push({ type: 'typescript-nextjs', path: prefix });
+        } else if (deps['nuxt'] || deps['nuxt3']) {
+          detected.push({ type: 'typescript-nuxt', path: prefix });
+        } else if (deps['astro']) {
+          detected.push({ type: 'typescript-astro', path: prefix });
+        }
+        // 프론트엔드 프레임워크
+        else if (deps['@angular/core']) {
+          detected.push({ type: 'typescript-angular', path: prefix });
+        } else if (deps['svelte']) {
+          detected.push({ type: 'typescript-svelte', path: prefix });
+        } else if (deps['vue']) {
+          detected.push({ type: 'typescript-vue', path: prefix });
+        } else if (deps['react']) {
+          detected.push({ type: 'typescript-react', path: prefix });
+        }
+        // 백엔드 프레임워크
+        else if (deps['@nestjs/core']) {
+          detected.push({ type: 'typescript-nestjs', path: prefix });
+        } else if (deps['express'] || deps['fastify'] || deps['koa'] || deps['hono']) {
+          detected.push({ type: 'typescript-node', path: prefix });
+        }
+        // 기본 Node.js
+        else if (pkg.name) {
+          detected.push({ type: 'typescript-node', path: prefix });
+        }
 
         // DB 감지
         if (deps['pg'] || deps['postgres'] || deps['@prisma/client']) details.databases.push('PostgreSQL');
@@ -267,6 +296,34 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
       detected.push({ type: 'swift-ios', path: prefix });
     }
 
+    // Ruby / Rails
+    if (fs.existsSync(path.join(dir, 'Gemfile'))) {
+      try {
+        const content = fs.readFileSync(path.join(dir, 'Gemfile'), 'utf-8');
+        if (content.includes('rails')) {
+          detected.push({ type: 'ruby-rails', path: prefix });
+        }
+        if (content.includes('pg')) details.databases.push('PostgreSQL');
+        if (content.includes('mysql2')) details.databases.push('MySQL');
+        if (content.includes('sqlite3')) details.databases.push('SQLite');
+      } catch { /* ignore: optional operation */ }
+    }
+
+    // C# / Unity
+    if (fs.readdirSync(dir).some(f => f.endsWith('.csproj') || f.endsWith('.sln'))) {
+      // Unity 프로젝트 판별: ProjectSettings/ProjectVersion.txt 존재 여부
+      if (fs.existsSync(path.join(dir, 'ProjectSettings', 'ProjectVersion.txt')) ||
+          fs.existsSync(path.join(dir, 'Assets'))) {
+        detected.push({ type: 'csharp-unity', path: prefix });
+      }
+    }
+
+    // GDScript / Godot
+    if (fs.existsSync(path.join(dir, 'project.godot')) ||
+        fs.readdirSync(dir).some(f => f.endsWith('.gd'))) {
+      detected.push({ type: 'gdscript-godot', path: prefix });
+    }
+
     return detected;
   };
 
@@ -369,15 +426,27 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
  * 스택 타입에 대한 이름 매핑
  */
 export const STACK_NAMES: Record<string, { name: string; lang: string; framework: string }> = {
-  'typescript-nextjs': { name: 'Next.js', lang: 'TypeScript', framework: 'Next.js' },
-  'typescript-react': { name: 'React', lang: 'TypeScript', framework: 'React' },
+  // Desktop/Mobile
+  'typescript-tauri': { name: 'Tauri', lang: 'TypeScript', framework: 'Tauri' },
+  'typescript-electron': { name: 'Electron', lang: 'TypeScript', framework: 'Electron' },
   'typescript-react-native': { name: 'React Native', lang: 'TypeScript', framework: 'React Native' },
+  // Fullstack/SSR
+  'typescript-nextjs': { name: 'Next.js', lang: 'TypeScript', framework: 'Next.js' },
   'typescript-nuxt': { name: 'Nuxt', lang: 'TypeScript', framework: 'Nuxt' },
+  'typescript-astro': { name: 'Astro', lang: 'TypeScript', framework: 'Astro' },
+  // Frontend
+  'typescript-angular': { name: 'Angular', lang: 'TypeScript', framework: 'Angular' },
+  'typescript-svelte': { name: 'Svelte', lang: 'TypeScript', framework: 'Svelte/SvelteKit' },
   'typescript-vue': { name: 'Vue', lang: 'TypeScript', framework: 'Vue' },
+  'typescript-react': { name: 'React', lang: 'TypeScript', framework: 'React' },
+  // Backend
+  'typescript-nestjs': { name: 'NestJS', lang: 'TypeScript', framework: 'NestJS' },
   'typescript-node': { name: 'Node.js', lang: 'TypeScript', framework: 'Node.js' },
+  // Python
   'python-fastapi': { name: 'FastAPI', lang: 'Python 3.11+', framework: 'FastAPI' },
   'python-django': { name: 'Django', lang: 'Python 3.11+', framework: 'Django' },
   'python': { name: 'Python', lang: 'Python 3.11+', framework: 'Python' },
+  // Other languages
   'dart-flutter': { name: 'Flutter', lang: 'Dart', framework: 'Flutter' },
   'go': { name: 'Go', lang: 'Go 1.21+', framework: 'Go' },
   'rust': { name: 'Rust', lang: 'Rust', framework: 'Rust' },
@@ -386,6 +455,9 @@ export const STACK_NAMES: Record<string, { name: string; lang: string; framework
   'java-spring': { name: 'Spring', lang: 'Java 17+', framework: 'Spring Boot' },
   'java': { name: 'Java', lang: 'Java 17+', framework: 'Java' },
   'swift-ios': { name: 'iOS', lang: 'Swift', framework: 'SwiftUI/UIKit' },
+  'ruby-rails': { name: 'Rails', lang: 'Ruby', framework: 'Ruby on Rails' },
+  'csharp-unity': { name: 'Unity', lang: 'C#', framework: 'Unity' },
+  'gdscript-godot': { name: 'Godot', lang: 'GDScript', framework: 'Godot Engine' },
 };
 
 /**
