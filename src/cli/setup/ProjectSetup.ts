@@ -314,9 +314,18 @@ export function updateConfig(
   }
 }
 
+// VIBE에서 관리하는 언어 룰 파일 패턴 (항상 업데이트)
+const VIBE_MANAGED_LANGUAGE_RULES = [
+  'typescript-', 'python-', 'dart-', 'go.', 'rust.', 'kotlin-',
+  'java-', 'swift-', 'ruby-', 'csharp-', 'gdscript-'
+];
+
 /**
  * Cursor IDE 프로젝트 룰 설치
  * ~/.cursor/rules-template/에서 프로젝트의 .cursor/rules/로 복사
+ * - 언어 룰 (typescript-*, python-* 등): 항상 업데이트 (vibe에서 관리)
+ * - 공통 룰 (code-quality, security-checklist): 없을 때만 복사
+ * - 사용자 룰 (packages-*, apps-* 등): 보존
  */
 export function installCursorRules(projectRoot: string): void {
   const cursorRulesTemplate = path.join(os.homedir(), '.cursor', 'rules-template');
@@ -330,26 +339,37 @@ export function installCursorRules(projectRoot: string): void {
   // .cursor/rules 디렉토리 생성
   ensureDir(projectCursorRules);
 
-  // 템플릿 파일 복사 (기존 파일은 덮어쓰지 않음)
+  // 템플릿 파일 복사
   const files = fs.readdirSync(cursorRulesTemplate).filter(f => f.endsWith('.mdc'));
   let installed = 0;
+  let updated = 0;
 
   for (const file of files) {
     const srcPath = path.join(cursorRulesTemplate, file);
     const destPath = path.join(projectCursorRules, file);
+    const isLanguageRule = VIBE_MANAGED_LANGUAGE_RULES.some(prefix => file.startsWith(prefix));
+    const exists = fs.existsSync(destPath);
 
-    // 기존 파일이 없을 때만 복사 (사용자 수정 보존)
-    if (!fs.existsSync(destPath)) {
+    // 언어 룰: 항상 업데이트 (vibe에서 관리하는 파일)
+    // 기타 룰: 없을 때만 복사 (사용자 수정 보존)
+    if (isLanguageRule || !exists) {
       try {
         fs.copyFileSync(srcPath, destPath);
-        installed++;
+        if (exists) {
+          updated++;
+        } else {
+          installed++;
+        }
       } catch {
         // 권한 문제 등 무시
       }
     }
   }
 
-  if (installed > 0) {
-    console.log(`   📏 Cursor rules: ${installed} files installed to .cursor/rules/`);
+  if (installed > 0 || updated > 0) {
+    const parts = [];
+    if (installed > 0) parts.push(`${installed} new`);
+    if (updated > 0) parts.push(`${updated} updated`);
+    console.log(`   📏 Cursor rules: ${parts.join(', ')} in .cursor/rules/`);
   }
 }

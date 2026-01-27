@@ -201,11 +201,11 @@ async function init(projectName?: string): Promise<void> {
     // 프로젝트 레벨 훅 설치
     installProjectHooks(projectRoot);
 
-    // Cursor IDE 룰 설치 (프로젝트 레벨)
-    installCursorRules(projectRoot);
-
-    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template)
+    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template) - 먼저 실행!
     updateCursorGlobalAssets(detectedStacks.map(s => s.type));
+
+    // Cursor IDE 룰 설치 (프로젝트 레벨) - rules-template 생성 후 복사
+    installCursorRules(projectRoot);
 
     // 완료 메시지
     const packageJson = getPackageJson();
@@ -321,11 +321,11 @@ ${formatLLMStatus()}
     // 프로젝트 레벨 훅 설치
     installProjectHooks(projectRoot);
 
-    // Cursor IDE 룰 설치/업데이트 (프로젝트 레벨)
-    installCursorRules(projectRoot);
-
-    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template)
+    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template) - 먼저 실행!
     updateCursorGlobalAssets(detectedStacks.map(s => s.type));
+
+    // Cursor IDE 룰 설치/업데이트 (프로젝트 레벨) - rules-template 생성 후 복사
+    installCursorRules(projectRoot);
 
     // ~/.claude.json 정리
     cleanupClaudeConfig();
