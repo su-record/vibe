@@ -74,6 +74,10 @@ export function updateConstitution(
 /**
  * CLAUDE.md 업데이트 (vibe 섹션 추가/교체)
  */
+// VIBE 섹션 마커
+const VIBE_START_MARKER = '# VIBE';
+const VIBE_END_MARKER = '<!-- VIBE:END -->';
+
 export function updateClaudeMd(
   projectRoot: string,
   detectedStacks: TechStack[],
@@ -114,35 +118,57 @@ export function updateClaudeMd(
   if (fs.existsSync(projectClaudeMd)) {
     const existingContent = fs.readFileSync(projectClaudeMd, 'utf-8');
 
-    if (isUpdate) {
-      // update: vibe 섹션 찾아서 교체
-      const vibeStartMarker = '# VIBE';
-      const sectionSeparator = '\n---\n';
+    // VIBE 섹션 교체 (마커 기반)
+    const vibeStartIdx = existingContent.indexOf(VIBE_START_MARKER);
+    const vibeEndIdx = existingContent.indexOf(VIBE_END_MARKER);
 
-      if (existingContent.includes(vibeStartMarker)) {
-        const vibeStartIdx = existingContent.indexOf(vibeStartMarker);
-        const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd();
-        const afterVibeStart = existingContent.substring(vibeStartIdx);
-        const nextSeparatorIdx = afterVibeStart.indexOf(sectionSeparator);
+    if (vibeStartIdx !== -1 && vibeEndIdx !== -1) {
+      // 마커 기반 정확한 교체
+      const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd();
+      let afterVibe = existingContent.substring(vibeEndIdx + VIBE_END_MARKER.length).trimStart();
 
-        let afterVibe = '';
-        if (nextSeparatorIdx !== -1) {
-          afterVibe = afterVibeStart.substring(nextSeparatorIdx);
-        }
+      // afterVibe가 VIBE 중복 내용인지 확인
+      // 사용자 커스텀 섹션은 보통 # 으로 시작하는 새로운 헤더로 시작함 (## 가 아닌 # 레벨)
+      // --- 구분자와 빈 줄을 모두 제거하고 실제 내용 확인
+      const cleanedAfterVibe = afterVibe.replace(/^(-{3,}\s*\n*)+/g, '').trimStart();
 
-        const newContent = beforeVibe + (beforeVibe ? '\n\n---\n\n' : '') + vibeContent + afterVibe;
-        fs.writeFileSync(projectClaudeMd, newContent);
-      } else if (!existingContent.includes('/vibe.spec')) {
-        const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
-        fs.writeFileSync(projectClaudeMd, mergedContent);
+      // VIBE 관련 키워드가 있으면 중복으로 판단하여 버림
+      const isVibeContent = cleanedAfterVibe.startsWith('# VIBE') ||
+                           cleanedAfterVibe.startsWith('## Rule Title') ||
+                           cleanedAfterVibe.startsWith('## Response Language') ||
+                           cleanedAfterVibe.startsWith('## Code Quality') ||
+                           cleanedAfterVibe.startsWith('title:') ||
+                           cleanedAfterVibe.includes('SPEC-driven AI Coding Framework') ||
+                           cleanedAfterVibe.includes('/vibe.spec') ||
+                           cleanedAfterVibe.includes('ULTRAWORK');
+
+      if (isVibeContent) {
+        afterVibe = '';  // 중복 VIBE 내용 - 버림
       }
-    } else {
-      // init: add if not exists
-      if (!existingContent.includes('/vibe.spec')) {
-        const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
-        fs.writeFileSync(projectClaudeMd, mergedContent);
+
+      let newContent = '';
+      if (beforeVibe) {
+        newContent = beforeVibe + '\n\n---\n\n' + vibeContent;
+      } else {
+        newContent = vibeContent;
       }
+      if (afterVibe) {
+        newContent += '\n\n---\n\n' + afterVibe;
+      }
+      fs.writeFileSync(projectClaudeMd, newContent);
+    } else if (vibeStartIdx !== -1) {
+      // 구버전: # VIBE는 있지만 END 마커 없음
+      // VIBE 앞의 사용자 섹션만 보존하고, VIBE 이후는 전체 교체
+      // (VIBE 뒤의 내용은 대부분 누적된 중복 VIBE 섹션임)
+      const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd();
+      const newContent = (beforeVibe ? beforeVibe + '\n\n---\n\n' : '') + vibeContent;
+      fs.writeFileSync(projectClaudeMd, newContent);
+    } else if (!existingContent.includes('/vibe.spec')) {
+      // VIBE 섹션 없음 - 추가
+      const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
+      fs.writeFileSync(projectClaudeMd, mergedContent);
     }
+    // else: 이미 VIBE 관련 내용이 있지만 마커가 없는 경우 - 건드리지 않음
   } else {
     fs.writeFileSync(projectClaudeMd, vibeContent);
   }
