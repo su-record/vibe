@@ -233,7 +233,3 @@ import { webSearch } from '@su-record/vibe/lib/gemini';
 ## License
 
 MIT - [GitHub](https://github.com/su-record/vibe)
-
----
-
-If this helps your workflow, consider giving it a star!
