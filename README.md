@@ -6,7 +6,7 @@
 [![npm downloads](https://img.shields.io/npm/dt/@su-record/vibe)](https://www.npmjs.com/package/@su-record/vibe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> Claude Code 전용 AI 코딩 프레임워크. SPEC 기반 요구사항 관리, Multi-LLM(Claude + GPT + Gemini) 오케스트레이션, 13+ 병렬 리뷰 에이전트를 통한 품질 자동화.
+> AI coding framework for Claude Code. SPEC-based requirements management, Multi-LLM (Claude + GPT + Gemini) orchestration, and automated quality assurance with 13+ parallel review agents.
 
 ## Quick Start
 
@@ -20,21 +20,21 @@ vibe init
 ```
 /vibe.spec → /vibe.run → /vibe.trace → /vibe.verify → /vibe.review
      ↓            ↓            ↓             ↓              ↓
-  SPEC 작성    구현 실행    추적성 매트릭스   BDD 검증     병렬 리뷰
+  Write SPEC   Execute    Traceability   BDD Verify   Parallel Review
 ```
 
 ## Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **SPEC-driven Development** | 요구사항 → SPEC → Feature → Test 추적 가능한 개발 |
-| **Multi-LLM Orchestration** | Claude + GPT + Gemini 3-way 검증 및 자동 라우팅 |
-| **13+ Parallel Review Agents** | Security, Performance, Architecture 등 병렬 코드 리뷰 |
-| **ULTRAWORK Mode** | 키워드 하나로 모든 최적화 활성화 |
-| **Fire-and-Forget Agents** | 논블로킹 백그라운드 에이전트 실행 |
-| **Phase Pipelining** | 현재 Phase 실행 중 다음 Phase 준비 |
-| **Swarm Pattern** | 복잡한 작업 자동 분할 및 병렬 처리 (v2.7) |
-| **23 Language Presets** | TypeScript, Python, Go, Rust, Swift, Kotlin 등 |
+| **SPEC-driven Development** | Traceable development: Requirements → SPEC → Feature → Test |
+| **Multi-LLM Orchestration** | Claude + GPT + Gemini 3-way verification with automatic routing |
+| **13+ Parallel Review Agents** | Parallel code review: Security, Performance, Architecture, etc. |
+| **ULTRAWORK Mode** | Enable all optimizations with a single keyword |
+| **Fire-and-Forget Agents** | Non-blocking background agent execution |
+| **Phase Pipelining** | Prepare next phase while current phase executes |
+| **Swarm Pattern** | Auto-split complex tasks for parallel processing (v2.7) |
+| **23 Language Presets** | TypeScript, Python, Go, Rust, Swift, Kotlin, and more |
 
 ## Commands
 
@@ -42,40 +42,40 @@ vibe init
 
 | Command | Description |
 |---------|-------------|
-| `vibe init` | 프로젝트 초기화 |
-| `vibe update` | 설정 업데이트 |
-| `vibe status` | 상태 확인 |
-| `vibe gpt auth` | GPT OAuth 인증 |
-| `vibe gemini auth` | Gemini OAuth 인증 |
+| `vibe init` | Initialize project |
+| `vibe update` | Update configuration |
+| `vibe status` | Check status |
+| `vibe gpt auth` | GPT OAuth authentication |
+| `vibe gemini auth` | Gemini OAuth authentication |
 
 ### Claude Code Slash Commands
 
 | Command | Description |
 |---------|-------------|
-| `/vibe.spec "feature"` | SPEC 문서 생성 + 병렬 리서치 |
-| `/vibe.run "feature"` | 구현 실행 |
-| `/vibe.run "feature" ultrawork` | 최대 성능 모드 |
-| `/vibe.verify "feature"` | BDD 검증 |
-| `/vibe.trace "feature"` | 요구사항 추적성 매트릭스 |
-| `/vibe.review` | 13+ 에이전트 병렬 리뷰 |
-| `/vibe.review --race` | GPT + Gemini 경쟁 리뷰 |
+| `/vibe.spec "feature"` | Generate SPEC document + parallel research |
+| `/vibe.run "feature"` | Execute implementation |
+| `/vibe.run "feature" ultrawork` | Maximum performance mode |
+| `/vibe.verify "feature"` | BDD verification |
+| `/vibe.trace "feature"` | Requirements traceability matrix |
+| `/vibe.review` | 13+ agent parallel review |
+| `/vibe.review --race` | GPT + Gemini race review |
 
 ## ULTRAWORK Mode
 
-`ultrawork` 또는 `ulw` 키워드로 최대 성능 활성화:
+Activate maximum performance with `ultrawork` or `ulw` keyword:
 
 ```bash
 /vibe.run "feature" ultrawork
 ```
 
-**활성화 기능:**
-- 병렬 서브에이전트 탐색 (3+ 동시)
-- 백그라운드 에이전트 (다음 Phase 사전 준비)
-- Phase 파이프라이닝 (Phase 간 대기 시간 제거)
-- Boulder Loop (모든 시나리오 완료까지 자동 진행)
-- 80%+ 컨텍스트에서 자동 저장
+**Enabled Features:**
+- Parallel sub-agent exploration (3+ concurrent)
+- Background agents (prepare next phase during implementation)
+- Phase pipelining (eliminate wait time between phases)
+- Boulder Loop (auto-continue until all scenarios complete)
+- Auto-save at 80%+ context
 
-**속도 비교:**
+**Speed Comparison:**
 
 | Mode | 5 Phases |
 |------|----------|
@@ -87,18 +87,18 @@ vibe init
 
 ### Automatic Routing
 
-프롬프트 키워드에 따라 자동으로 적합한 LLM 라우팅:
+Automatically routes to the optimal LLM based on prompt keywords:
 
 | Keyword | Routes to | Use Case |
 |---------|-----------|----------|
-| `architecture`, `design` | GPT | 아키텍처 리뷰 |
-| `UI`, `UX` | Gemini | UI/UX 피드백 |
-| `debugging` | GPT | 버그 분석 |
-| `analyze code` | Gemini | 코드 리뷰 |
+| `architecture`, `design` | GPT | Architecture review |
+| `UI`, `UX` | Gemini | UI/UX feedback |
+| `debugging` | GPT | Bug analysis |
+| `analyze code` | Gemini | Code review |
 
 ### Race Review
 
-GPT + Gemini 병렬 실행 후 교차 검증:
+Run GPT + Gemini in parallel for cross-validation:
 
 ```bash
 /vibe.review --race
@@ -111,7 +111,7 @@ GPT + Gemini 병렬 실행 후 교차 검증:
 
 ## Parallel Review Agents
 
-`/vibe.review`로 13+ 에이전트 동시 실행:
+Run 13+ agents simultaneously with `/vibe.review`:
 
 | Category | Agents |
 |----------|--------|
@@ -121,40 +121,40 @@ GPT + Gemini 병렬 실행 후 교차 검증:
 | Language | python, typescript, rails, react reviewers |
 
 **Priority System:**
-- 🔴 P1 (Critical): 머지 차단
-- 🟡 P2 (Important): 수정 권장
-- 🔵 P3 (Nice-to-have): 백로그
+- P1 (Critical): Blocks merge
+- P2 (Important): Fix recommended
+- P3 (Nice-to-have): Backlog
 
 ## Swarm Pattern (v2.7)
 
-복잡한 작업을 자동으로 분할하여 병렬 처리:
+Automatically split complex tasks for parallel processing:
 
 ```typescript
 import { swarm, analyzeTaskComplexity } from '@su-record/vibe/orchestrator';
 
-// 복잡도 분석
+// Analyze complexity
 const analysis = analyzeTaskComplexity('Your prompt');
-console.log(analysis.score); // 15 이상이면 분할 대상
+console.log(analysis.score); // Split if >= 15
 
-// Swarm 실행
+// Execute swarm
 const result = await swarm({
   prompt: 'Complex task...',
-  maxDepth: 2,           // 최대 분할 깊이
-  splitThreshold: 15,    // 복잡도 임계값
+  maxDepth: 2,           // Maximum split depth
+  splitThreshold: 15,    // Complexity threshold
 });
 ```
 
-**작동 원리:**
+**How it works:**
 ```
-프롬프트 → 복잡도 분석 → 분할 결정
+Prompt → Complexity Analysis → Split Decision
                 ↓
-    ┌─ 낮음 → 직접 실행
-    └─ 높음 → 하위 태스크 생성 → 병렬 처리 → 결과 병합
+    ┌─ Low → Direct execution
+    └─ High → Create subtasks → Parallel processing → Merge results
 ```
 
 ## Requirements Traceability (v2.6)
 
-요구사항부터 테스트까지 추적:
+Track from requirements to tests:
 
 ```bash
 /vibe.trace "feature"
@@ -189,14 +189,14 @@ REQ-login-002 → SPEC Phase 2 → Feature Scenario 3 → auth.test.ts
 
 | Metric | Limit |
 |--------|-------|
-| Function length | 30 lines (권장), 50 lines (허용) |
+| Function length | 30 lines (recommended), 50 lines (allowed) |
 | Nesting depth | 3 levels |
 | Parameters | 5 |
 | Cyclomatic complexity | 10 |
 
 ## Cursor IDE Support
 
-`vibe init/update` 시 Cursor IDE 에셋 자동 설치:
+Assets auto-installed on `vibe init/update`:
 
 | Asset | Path | Count |
 |-------|------|-------|
@@ -212,7 +212,7 @@ import { launch, poll } from '@su-record/vibe/orchestrator';
 const { taskId } = launch({ prompt: 'Analyze code', agentName: 'analyzer' });
 const result = await poll(taskId);
 
-// Swarm pattern (v2.7) - 복잡한 작업 자동 분할
+// Swarm pattern (v2.7) - Auto-split complex tasks
 import { swarm } from '@su-record/vibe/orchestrator';
 const result = await swarm({
   prompt: 'Implement login with: 1. UI 2. Validation 3. API 4. Tests',
@@ -236,4 +236,4 @@ MIT - [GitHub](https://github.com/su-record/vibe)
 
 ---
 
-⭐ If this helps your workflow, consider giving it a star!
+If this helps your workflow, consider giving it a star!
