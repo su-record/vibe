@@ -118,6 +118,18 @@ export type {
   PipelineResult
 } from './PhasePipeline.js';
 
+// SwarmOrchestrator (v2.7.0) - 에이전트 자가 복제 패턴
+export {
+  SwarmOrchestrator,
+  swarm,
+  analyzeTaskComplexity
+} from './SwarmOrchestrator.js';
+export type {
+  SwarmConfig,
+  SwarmTask,
+  SwarmResult
+} from './SwarmOrchestrator.js';
+
 // ============================================
 // 간편 함수 (hooks에서 직접 호출용)
 // ============================================
