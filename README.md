@@ -33,6 +33,7 @@ vibe init
 | **ULTRAWORK Mode** | 키워드 하나로 모든 최적화 활성화 |
 | **Fire-and-Forget Agents** | 논블로킹 백그라운드 에이전트 실행 |
 | **Phase Pipelining** | 현재 Phase 실행 중 다음 Phase 준비 |
+| **Swarm Pattern** | 복잡한 작업 자동 분할 및 병렬 처리 (v2.7) |
 | **23 Language Presets** | TypeScript, Python, Go, Rust, Swift, Kotlin 등 |
 
 ## Commands
@@ -124,6 +125,33 @@ GPT + Gemini 병렬 실행 후 교차 검증:
 - 🟡 P2 (Important): 수정 권장
 - 🔵 P3 (Nice-to-have): 백로그
 
+## Swarm Pattern (v2.7)
+
+복잡한 작업을 자동으로 분할하여 병렬 처리:
+
+```typescript
+import { swarm, analyzeTaskComplexity } from '@su-record/vibe/orchestrator';
+
+// 복잡도 분석
+const analysis = analyzeTaskComplexity('Your prompt');
+console.log(analysis.score); // 15 이상이면 분할 대상
+
+// Swarm 실행
+const result = await swarm({
+  prompt: 'Complex task...',
+  maxDepth: 2,           // 최대 분할 깊이
+  splitThreshold: 15,    // 복잡도 임계값
+});
+```
+
+**작동 원리:**
+```
+프롬프트 → 복잡도 분석 → 분할 결정
+                ↓
+    ┌─ 낮음 → 직접 실행
+    └─ 높음 → 하위 태스크 생성 → 병렬 처리 → 결과 병합
+```
+
 ## Requirements Traceability (v2.6)
 
 요구사항부터 테스트까지 추적:
@@ -183,6 +211,14 @@ REQ-login-002 → SPEC Phase 2 → Feature Scenario 3 → auth.test.ts
 import { launch, poll } from '@su-record/vibe/orchestrator';
 const { taskId } = launch({ prompt: 'Analyze code', agentName: 'analyzer' });
 const result = await poll(taskId);
+
+// Swarm pattern (v2.7) - 복잡한 작업 자동 분할
+import { swarm } from '@su-record/vibe/orchestrator';
+const result = await swarm({
+  prompt: 'Implement login with: 1. UI 2. Validation 3. API 4. Tests',
+  maxDepth: 2,
+  splitThreshold: 15,
+});
 
 // LLM direct call
 import { ask } from '@su-record/vibe/lib/gpt';
