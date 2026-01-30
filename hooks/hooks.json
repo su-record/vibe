@@ -93,7 +93,7 @@
         ]
       },
       {
-        "matcher": "코드\\s*리뷰|code\\s*review|PR\\s*리뷰|리뷰.*해줘|review.*this",
+        "matcher": "코드\\s*리뷰|code\\s*review|PR\\s*리뷰|리뷰.*해줘|review.*code",
         "hooks": [
           {
             "type": "command",
@@ -111,7 +111,7 @@
         ]
       },
       {
-        "matcher": "복잡도|complexity|분석해|analyze this",
+        "matcher": "복잡도.*분석|복잡도.*확인|complexity.*analyz|코드.*복잡도",
         "hooks": [
           {
             "type": "command",
@@ -120,7 +120,7 @@
         ]
       },
       {
-        "matcher": "뭐였지|기억|recall|이전에.*결정|저번에|previous.*decision|what was",
+        "matcher": "뭐였지|이전에.*결정|저번에.*결정|previous.*decision|what was.*decided",
         "hooks": [
           {
             "type": "command",
@@ -129,7 +129,7 @@
         ]
       },
       {
-        "matcher": "아키텍처|architecture|설계.*검토|design.*review|구조.*분석|structure.*analysis",
+        "matcher": "아키텍처.*(검토|리뷰|분석)|architecture.*(review|analyz)|설계.*검토|구조.*분석.*해",
         "hooks": [
           {
             "type": "command",
@@ -139,7 +139,7 @@
         ]
       },
       {
-        "matcher": "UI|UX|사용자.*경험|user.*experience|디자인.*리뷰|design.*feedback",
+        "matcher": "(UI|UX).*(리뷰|검토|피드백|개선)|사용자.*경험.*검토|디자인.*리뷰|design.*feedback",
         "hooks": [
           {
             "type": "command",
@@ -149,7 +149,7 @@
         ]
       },
       {
-        "matcher": "디버깅|debugging|버그.*찾|find.*bug|debug.*this",
+        "matcher": "디버깅.*해|버그.*찾아|find.*bug|debug.*this.*code",
         "hooks": [
           {
             "type": "command",
@@ -159,7 +159,7 @@
         ]
       },
       {
-        "matcher": "코드.*분석|analyze.*code|code.*review",
+        "matcher": "코드.*정적.*분석|코드.*분석.*해줘|analyze.*code.*quality",
         "hooks": [
           {
             "type": "command",

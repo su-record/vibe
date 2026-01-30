@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { VibeConfig, VibeReferences, TechStack, StackDetails } from '../types.js';
 import { ensureDir, removeDirRecursive } from '../utils.js';
 import { STACK_NAMES, getLanguageRulesContent } from '../detect.js';
+import { STACK_TO_LANGUAGE_FILE } from '../postinstall.js';
 import { detectOsLanguage, getLanguageInstruction } from './LanguageDetector.js';
 import { getVibeConfigDir } from './GlobalInstaller.js';
 
@@ -124,7 +125,8 @@ export function updateClaudeMd(
 
     if (vibeStartIdx !== -1 && vibeEndIdx !== -1) {
       // 마커 기반 정확한 교체
-      const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd();
+      // 이전 버전에서 누적된 --- 구분선 정리
+      const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd().replace(/(\n---\s*)+$/g, '').trimEnd();
       let afterVibe = existingContent.substring(vibeEndIdx + VIBE_END_MARKER.length).trimStart();
 
       // afterVibe가 VIBE 중복 내용인지 확인
@@ -148,12 +150,12 @@ export function updateClaudeMd(
 
       let newContent = '';
       if (beforeVibe) {
-        newContent = beforeVibe + '\n\n---\n\n' + vibeContent;
+        newContent = beforeVibe + '\n\n' + vibeContent;
       } else {
         newContent = vibeContent;
       }
       if (afterVibe) {
-        newContent += '\n\n---\n\n' + afterVibe;
+        newContent += '\n\n' + afterVibe;
       }
       fs.writeFileSync(projectClaudeMd, newContent);
     } else if (vibeStartIdx !== -1) {
@@ -161,11 +163,11 @@ export function updateClaudeMd(
       // VIBE 앞의 사용자 섹션만 보존하고, VIBE 이후는 전체 교체
       // (VIBE 뒤의 내용은 대부분 누적된 중복 VIBE 섹션임)
       const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd();
-      const newContent = (beforeVibe ? beforeVibe + '\n\n---\n\n' : '') + vibeContent;
+      const newContent = (beforeVibe ? beforeVibe + '\n\n' : '') + vibeContent;
       fs.writeFileSync(projectClaudeMd, newContent);
     } else if (!existingContent.includes('/vibe.spec')) {
       // VIBE 섹션 없음 - 추가
-      const mergedContent = existingContent.trim() + '\n\n---\n\n' + vibeContent;
+      const mergedContent = existingContent.trim() + '\n\n' + vibeContent;
       fs.writeFileSync(projectClaudeMd, mergedContent);
     }
     // else: 이미 VIBE 관련 내용이 있지만 마커가 없는 경우 - 건드리지 않음
@@ -349,17 +351,26 @@ const VIBE_MANAGED_LANGUAGE_RULES = [
 /**
  * Cursor IDE 프로젝트 룰 설치
  * ~/.cursor/rules-template/에서 프로젝트의 .cursor/rules/로 복사
- * - 언어 룰 (typescript-*, python-* 등): 항상 업데이트 (vibe에서 관리)
+ * - 언어 룰 (typescript-*, python-* 등): 현재 프로젝트 스택에 해당하는 것만 설치/업데이트
  * - 공통 룰 (code-quality, security-checklist): 없을 때만 복사
  * - 사용자 룰 (packages-*, apps-* 등): 보존
  */
-export function installCursorRules(projectRoot: string): void {
+export function installCursorRules(projectRoot: string, detectedStacks: string[] = []): void {
   const cursorRulesTemplate = path.join(os.homedir(), '.cursor', 'rules-template');
   const projectCursorRules = path.join(projectRoot, '.cursor', 'rules');
 
   // 템플릿 디렉토리가 없으면 스킵
   if (!fs.existsSync(cursorRulesTemplate)) {
     return;
+  }
+
+  // 현재 프로젝트 스택에 해당하는 언어 룰 파일명 집합 생성
+  const allowedLanguageFiles = new Set<string>();
+  for (const stack of detectedStacks) {
+    const languageFile = STACK_TO_LANGUAGE_FILE[stack.toLowerCase()];
+    if (languageFile) {
+      allowedLanguageFiles.add(languageFile.replace('.md', '.mdc'));
+    }
   }
 
   // .cursor/rules 디렉토리 생성
@@ -369,6 +380,7 @@ export function installCursorRules(projectRoot: string): void {
   const files = fs.readdirSync(cursorRulesTemplate).filter(f => f.endsWith('.mdc'));
   let installed = 0;
   let updated = 0;
+  let removed = 0;
 
   for (const file of files) {
     const srcPath = path.join(cursorRulesTemplate, file);
@@ -376,26 +388,44 @@ export function installCursorRules(projectRoot: string): void {
     const isLanguageRule = VIBE_MANAGED_LANGUAGE_RULES.some(prefix => file.startsWith(prefix));
     const exists = fs.existsSync(destPath);
 
-    // 언어 룰: 항상 업데이트 (vibe에서 관리하는 파일)
-    // 기타 룰: 없을 때만 복사 (사용자 수정 보존)
-    if (isLanguageRule || !exists) {
+    if (isLanguageRule) {
+      // 언어 룰: 현재 프로젝트 스택에 해당하는 것만 설치/업데이트
+      if (allowedLanguageFiles.has(file)) {
+        try {
+          fs.copyFileSync(srcPath, destPath);
+          if (exists) {
+            updated++;
+          } else {
+            installed++;
+          }
+        } catch {
+          // 권한 문제 등 무시
+        }
+      } else if (exists) {
+        // 현재 프로젝트에 해당하지 않는 언어 룰 제거
+        try {
+          fs.unlinkSync(destPath);
+          removed++;
+        } catch {
+          // 무시
+        }
+      }
+    } else if (!exists) {
+      // 공통 룰: 없을 때만 복사 (사용자 수정 보존)
       try {
         fs.copyFileSync(srcPath, destPath);
-        if (exists) {
-          updated++;
-        } else {
-          installed++;
-        }
+        installed++;
       } catch {
         // 권한 문제 등 무시
       }
     }
   }
 
-  if (installed > 0 || updated > 0) {
+  if (installed > 0 || updated > 0 || removed > 0) {
     const parts = [];
     if (installed > 0) parts.push(`${installed} new`);
     if (updated > 0) parts.push(`${updated} updated`);
+    if (removed > 0) parts.push(`${removed} removed`);
     console.log(`   📏 Cursor rules: ${parts.join(', ')} in .cursor/rules/`);
   }
 }

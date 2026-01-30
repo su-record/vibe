@@ -229,7 +229,7 @@ function seedInlineSkills(targetDir: string): void {
 }
 
 // 스택 타입 → 언어 룰 파일 매핑
-const STACK_TO_LANGUAGE_FILE: Record<string, string> = {
+export const STACK_TO_LANGUAGE_FILE: Record<string, string> = {
   'typescript-nextjs': 'typescript-nextjs.md',
   'typescript-react': 'typescript-react.md',
   'typescript-react-native': 'typescript-react-native.md',
