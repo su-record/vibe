@@ -1,5 +1,4 @@
 // Structured observation storage for automatic tool-use capture
-// Inspired by claude-mem's observation model
 
 import Database from 'better-sqlite3';
 import { MemoryStorage } from './MemoryStorage.js';

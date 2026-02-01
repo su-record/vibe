@@ -52,6 +52,21 @@ export type {
   TraceMatrixOptions
 } from './traceabilityMatrix.js';
 
+// E2E Test Generator
+export {
+  generateE2ETests,
+  parseAcceptanceCriteria,
+  parseGherkinScenarios,
+  formatGenerationSummary
+} from './e2eTestGenerator.js';
+export type {
+  AcceptanceCriterion,
+  GherkinScenario,
+  GeneratedE2ETest,
+  E2EGeneratorOptions,
+  E2EGenerationResult
+} from './e2eTestGenerator.js';
+
 // SPEC Versioning
 export {
   bumpSpecVersion,
