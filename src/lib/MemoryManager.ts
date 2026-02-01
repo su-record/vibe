@@ -7,14 +7,17 @@ import { MemoryRelation, MemoryGraph } from '../types/tool.js';
 import { MemoryStorage, MemoryItem } from './memory/MemoryStorage.js';
 import { KnowledgeGraph } from './memory/KnowledgeGraph.js';
 import { MemorySearch, SearchStrategy, SearchOptions } from './memory/MemorySearch.js';
+import { ObservationStore, Observation, ObservationInput, ObservationType } from './memory/ObservationStore.js';
 
 // Re-export for backward compatibility
 export { MemoryItem } from './memory/MemoryStorage.js';
+export { Observation, ObservationInput, ObservationType } from './memory/ObservationStore.js';
 
 export class MemoryManager {
   private storage: MemoryStorage;
   private graph: KnowledgeGraph;
   private memorySearch: MemorySearch;
+  private observations: ObservationStore;
 
   // Map of projectPath -> MemoryManager instance (for project-based memory)
   private static instances: Map<string, MemoryManager> = new Map();
@@ -59,6 +62,7 @@ export class MemoryManager {
     this.storage = new MemoryStorage(resolvedPath);
     this.graph = new KnowledgeGraph(this.storage);
     this.memorySearch = new MemorySearch(this.storage, this.graph);
+    this.observations = new ObservationStore(this.storage);
   }
 
   /**
@@ -212,6 +216,30 @@ export class MemoryManager {
     options: SearchOptions = {}
   ): MemoryItem[] {
     return this.memorySearch.searchAdvanced(query, strategy, options);
+  }
+
+  // ============================================================================
+  // Observation Operations (delegated to ObservationStore)
+  // ============================================================================
+
+  public addObservation(input: ObservationInput): number {
+    return this.observations.add(input);
+  }
+
+  public searchObservations(query: string, limit: number = 20): Observation[] {
+    return this.observations.search(query, limit);
+  }
+
+  public getRecentObservations(limit: number = 10, type?: ObservationType): Observation[] {
+    return this.observations.getRecent(limit, type);
+  }
+
+  public getObservationsBySession(sessionId: string, limit: number = 50): Observation[] {
+    return this.observations.getBySession(sessionId, limit);
+  }
+
+  public getObservationStats(): { total: number; byType: Record<string, number> } {
+    return this.observations.getStats();
   }
 
   // ============================================================================

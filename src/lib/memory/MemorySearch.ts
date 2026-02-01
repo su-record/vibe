@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 import { MemoryItem, MemoryStorage } from './MemoryStorage.js';
 import { KnowledgeGraph } from './KnowledgeGraph.js';
 
-export type SearchStrategy = 'keyword' | 'graph_traversal' | 'temporal' | 'priority' | 'context_aware';
+export type SearchStrategy = 'keyword' | 'fulltext' | 'graph_traversal' | 'temporal' | 'priority' | 'context_aware';
 
 export interface SearchOptions {
   limit?: number;
@@ -40,6 +40,9 @@ export class MemorySearch {
       case 'keyword':
         return this.searchKeyword(query, limit, category);
 
+      case 'fulltext':
+        return this.searchFulltext(query, limit, category);
+
       case 'graph_traversal':
         if (!startKey) return this.searchKeyword(query, limit, category);
         return this.graph.getRelatedMemories(startKey, depth);
@@ -59,6 +62,30 @@ export class MemorySearch {
   }
 
   private searchKeyword(query: string, limit: number, category?: string): MemoryItem[] {
+    return this.searchKeywordLike(query, limit, category);
+  }
+
+  private searchFulltext(query: string, limit: number, category?: string): MemoryItem[] {
+    if (!this.storage.isFTS5Available()) {
+      return this.searchKeywordLike(query, limit, category);
+    }
+
+    if (category) {
+      const stmt = this.db.prepare(`
+        SELECT m.*, bm25(memories_fts) as rank
+        FROM memories_fts fts
+        JOIN memories m ON m.rowid = fts.rowid
+        WHERE memories_fts MATCH ? AND m.category = ?
+        ORDER BY rank
+        LIMIT ?
+      `);
+      return stmt.all(query, category, limit) as MemoryItem[];
+    }
+
+    return this.storage.searchFTS(query, limit);
+  }
+
+  private searchKeywordLike(query: string, limit: number, category?: string): MemoryItem[] {
     let sql = `
       SELECT * FROM memories
       WHERE (key LIKE ? OR value LIKE ?)
@@ -97,6 +124,44 @@ export class MemorySearch {
   }
 
   private searchContextAware(query: string, limit: number, category?: string): MemoryItem[] {
+    // Use FTS5 rank if available for better relevance scoring
+    if (this.storage.isFTS5Available()) {
+      try {
+        let sql: string;
+        const params: (string | number)[] = [];
+
+        if (category) {
+          sql = `
+            SELECT m.*,
+              (bm25(memories_fts) * -1 + m.priority * 0.5) as relevance_score
+            FROM memories_fts fts
+            JOIN memories m ON m.rowid = fts.rowid
+            WHERE memories_fts MATCH ? AND m.category = ?
+            ORDER BY relevance_score DESC, m.lastAccessed DESC
+            LIMIT ?
+          `;
+          params.push(query, category, limit);
+        } else {
+          sql = `
+            SELECT m.*,
+              (bm25(memories_fts) * -1 + m.priority * 0.5) as relevance_score
+            FROM memories_fts fts
+            JOIN memories m ON m.rowid = fts.rowid
+            WHERE memories_fts MATCH ?
+            ORDER BY relevance_score DESC, m.lastAccessed DESC
+            LIMIT ?
+          `;
+          params.push(query, limit);
+        }
+
+        const results = this.db.prepare(sql).all(...params) as MemoryItem[];
+        if (results.length > 0) return results;
+      } catch {
+        // FTS5 query failed, fall through to LIKE-based scoring
+      }
+    }
+
+    // LIKE-based fallback
     let sql = `
       SELECT *,
         (CASE WHEN key LIKE ? THEN 3 ELSE 0 END +

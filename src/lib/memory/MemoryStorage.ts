@@ -21,6 +21,7 @@ export class MemoryStorage {
   private saveStmt: Database.Statement | null = null;
   private recallSelectStmt: Database.Statement | null = null;
   private recallUpdateStmt: Database.Statement | null = null;
+  private fts5Available = false;
 
   constructor(projectPath: string) {
     // Normalize path
@@ -80,11 +81,110 @@ export class MemoryStorage {
       CREATE INDEX IF NOT EXISTS idx_rel_type ON memory_relations(relationType);
     `);
 
+    // Create observations table for structured observation capture
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS observations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sessionId TEXT,
+        type TEXT NOT NULL CHECK(type IN ('decision','bugfix','feature','refactor','discovery')),
+        title TEXT NOT NULL,
+        narrative TEXT,
+        facts TEXT,
+        concepts TEXT,
+        filesModified TEXT,
+        timestamp TEXT NOT NULL,
+        projectPath TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_obs_session ON observations(sessionId);
+      CREATE INDEX IF NOT EXISTS idx_obs_type ON observations(type);
+      CREATE INDEX IF NOT EXISTS idx_obs_timestamp ON observations(timestamp);
+    `);
+
+    // Create session_summaries table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS session_summaries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sessionId TEXT UNIQUE NOT NULL,
+        request TEXT,
+        investigated TEXT,
+        learned TEXT,
+        completed TEXT,
+        nextSteps TEXT,
+        filesRead TEXT,
+        filesEdited TEXT,
+        timestamp TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_ss_session ON session_summaries(sessionId);
+      CREATE INDEX IF NOT EXISTS idx_ss_timestamp ON session_summaries(timestamp);
+    `);
+
     // Enable WAL mode for better concurrency
     this.db.pragma('journal_mode = WAL');
 
+    // Initialize FTS5 full-text search (with fallback if not supported)
+    this.initializeFTS5();
+
     // Pre-compile frequently used statements
     this.initializePreparedStatements();
+  }
+
+  private initializeFTS5(): void {
+    try {
+      // Create FTS5 virtual table for memories
+      this.db.exec(`
+        CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts
+          USING fts5(key, value, content=memories, content_rowid=rowid);
+      `);
+
+      // Triggers to keep FTS5 in sync with memories table
+      this.db.exec(`
+        CREATE TRIGGER IF NOT EXISTS memories_ai AFTER INSERT ON memories BEGIN
+          INSERT INTO memories_fts(rowid, key, value) VALUES (new.rowid, new.key, new.value);
+        END;
+        CREATE TRIGGER IF NOT EXISTS memories_ad AFTER DELETE ON memories BEGIN
+          INSERT INTO memories_fts(memories_fts, rowid, key, value) VALUES('delete', old.rowid, old.key, old.value);
+        END;
+        CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories BEGIN
+          INSERT INTO memories_fts(memories_fts, rowid, key, value) VALUES('delete', old.rowid, old.key, old.value);
+          INSERT INTO memories_fts(rowid, key, value) VALUES (new.rowid, new.key, new.value);
+        END;
+      `);
+
+      // Create FTS5 for observations
+      this.db.exec(`
+        CREATE VIRTUAL TABLE IF NOT EXISTS observations_fts
+          USING fts5(title, narrative, facts, concepts, content=observations, content_rowid=id);
+
+        CREATE TRIGGER IF NOT EXISTS observations_ai AFTER INSERT ON observations BEGIN
+          INSERT INTO observations_fts(rowid, title, narrative, facts, concepts)
+            VALUES (new.id, new.title, new.narrative, new.facts, new.concepts);
+        END;
+        CREATE TRIGGER IF NOT EXISTS observations_ad AFTER DELETE ON observations BEGIN
+          INSERT INTO observations_fts(observations_fts, rowid, title, narrative, facts, concepts)
+            VALUES('delete', old.id, old.title, old.narrative, old.facts, old.concepts);
+        END;
+      `);
+
+      // Migrate existing data into FTS5 index
+      const ftsCount = (this.db.prepare(`SELECT COUNT(*) as cnt FROM memories_fts`).get() as { cnt: number }).cnt;
+      const memCount = (this.db.prepare(`SELECT COUNT(*) as cnt FROM memories`).get() as { cnt: number }).cnt;
+      if (ftsCount === 0 && memCount > 0) {
+        this.db.exec(`INSERT INTO memories_fts(rowid, key, value) SELECT rowid, key, value FROM memories`);
+      }
+
+      const obsFtsCount = (this.db.prepare(`SELECT COUNT(*) as cnt FROM observations_fts`).get() as { cnt: number }).cnt;
+      const obsCount = (this.db.prepare(`SELECT COUNT(*) as cnt FROM observations`).get() as { cnt: number }).cnt;
+      if (obsFtsCount === 0 && obsCount > 0) {
+        this.db.exec(`INSERT INTO observations_fts(rowid, title, narrative, facts, concepts) SELECT id, title, narrative, facts, concepts FROM observations`);
+      }
+
+      this.fts5Available = true;
+    } catch {
+      // FTS5 not supported in this build of better-sqlite3
+      this.fts5Available = false;
+    }
   }
 
   private initializePreparedStatements(): void {
@@ -230,9 +330,47 @@ export class MemoryStorage {
   }
 
   /**
-   * Search memories by keyword
+   * Search memories by keyword (FTS5 priority, LIKE fallback)
    */
   public search(query: string): MemoryItem[] {
+    if (this.fts5Available) {
+      try {
+        return this.searchFTS(query);
+      } catch {
+        // FTS5 query failed, fall through to LIKE
+      }
+    }
+    return this.searchLike(query);
+  }
+
+  /**
+   * Full-text search using FTS5 with bm25 ranking
+   */
+  public searchFTS(query: string, limit: number = 50): MemoryItem[] {
+    if (!this.fts5Available) {
+      return this.searchLike(query);
+    }
+
+    const stmt = this.db.prepare(`
+      SELECT m.*, bm25(memories_fts) as rank
+      FROM memories_fts fts
+      JOIN memories m ON m.rowid = fts.rowid
+      WHERE memories_fts MATCH ?
+      ORDER BY rank
+      LIMIT ?
+    `);
+
+    return stmt.all(query, limit) as MemoryItem[];
+  }
+
+  /**
+   * Check if FTS5 is available
+   */
+  public isFTS5Available(): boolean {
+    return this.fts5Available;
+  }
+
+  private searchLike(query: string): MemoryItem[] {
     const stmt = this.db.prepare(`
       SELECT * FROM memories
       WHERE key LIKE ? OR value LIKE ?

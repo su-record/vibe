@@ -1,7 +1,9 @@
-// Memory management tool - SQLite based (v1.5)
-// Enhanced with auto-orientation (Anthropic long-running agent pattern)
+// Memory management tool - SQLite based (v2.0)
+// Enhanced with auto-orientation + observations + session summaries
 
 import { MemoryManager } from '../../lib/MemoryManager.js';
+import { SessionSummarizer } from '../../lib/memory/SessionSummarizer.js';
+import { MemoryStorage } from '../../lib/memory/MemoryStorage.js';
 import { ToolResult, ToolDefinition } from '../../types/tool.js';
 import { loadProgress, getProgressSummary, incrementSession } from '../../lib/ProgressTracker.js';
 import { execSync } from 'child_process';
@@ -104,6 +106,18 @@ export async function startSession(args: { greeting?: string; loadMemory?: boole
           }
         });
       }
+    }
+
+    // Inject observations and session summaries context
+    try {
+      const storage = new MemoryStorage(projectRoot);
+      const summarizer = new SessionSummarizer(storage);
+      const obsContext = summarizer.generateSessionContext(2000);
+      if (obsContext.trim()) {
+        summary += `\n${obsContext}`;
+      }
+    } catch {
+      // Observation context injection is non-critical
     }
 
     summary += '\nReady to continue development! What would you like to work on?';

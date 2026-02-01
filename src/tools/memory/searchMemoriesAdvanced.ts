@@ -10,11 +10,12 @@ export const searchMemoriesAdvancedDefinition: ToolDefinition = {
 Keywords: advanced search, find memories, smart search
 
 **Search strategies:**
-- keyword: Traditional keyword search
+- keyword: Traditional keyword search (FTS5 enhanced)
+- fulltext: Full-text search with bm25 ranking (FTS5)
 - graph_traversal: Graph-based related memory exploration
 - temporal: Sort by time
 - priority: Priority-based
-- context_aware: Combined strategy (keyword + priority + recency)
+- context_aware: Combined strategy (FTS5 rank + priority + recency)
 
 Usage examples:
 - "advanced search for authentication-related memories"
@@ -29,7 +30,7 @@ Usage examples:
       strategy: {
         type: 'string',
         description: 'Search strategy',
-        enum: ['keyword', 'graph_traversal', 'temporal', 'priority', 'context_aware']
+        enum: ['keyword', 'fulltext', 'graph_traversal', 'temporal', 'priority', 'context_aware']
       },
       limit: {
         type: 'number',
@@ -172,11 +173,12 @@ Try a different search strategy:
 
 function getStrategyDescription(strategy: SearchStrategy): string {
   const descriptions: Record<SearchStrategy, string> = {
-    keyword: 'Keyword matching',
+    keyword: 'Keyword matching (FTS5 enhanced)',
+    fulltext: 'Full-text search with bm25 ranking',
     graph_traversal: 'Graph traversal',
     temporal: 'Time-based sorting',
     priority: 'Priority-based',
-    context_aware: 'Combined strategy (keyword + priority + recency)'
+    context_aware: 'Combined strategy (FTS5 rank + priority + recency)'
   };
   return descriptions[strategy] || strategy;
 }

@@ -16,3 +16,5 @@ export { createMemoryTimeline } from './createMemoryTimeline.js';
 export { restoreSessionContext } from './restoreSessionContext.js';
 export { prioritizeMemory } from './prioritizeMemory.js';
 export { getSessionContext } from './getSessionContext.js';
+export { addObservation } from './addObservation.js';
+export { searchObservations } from './searchObservations.js';

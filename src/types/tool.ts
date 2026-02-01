@@ -53,7 +53,7 @@ export interface MemoryGraph {
 }
 
 // v2.0 - Search Types
-export type SearchStrategy = 'keyword' | 'graph_traversal' | 'temporal' | 'priority' | 'context_aware';
+export type SearchStrategy = 'keyword' | 'fulltext' | 'graph_traversal' | 'temporal' | 'priority' | 'context_aware';
 
 // v2.0 - Analytics Types
 export interface ToolUsage {
