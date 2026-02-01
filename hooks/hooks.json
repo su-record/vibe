@@ -66,7 +66,6 @@
     ],
     "UserPromptSubmit": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
@@ -75,116 +74,10 @@
         ]
       },
       {
-        "matcher": "ultrawork|ulw|울트라워크|ralph|ralplan",
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/keyword-detector.js"
-          }
-        ]
-      },
-      {
-        "matcher": "버그.*(해결|수정|고침)|문제.*(해결|수정)|bug.*(fixed|resolved|solved)|issue.*(fixed|resolved)|PR.*(merged|머지)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/compound.js"
-          }
-        ]
-      },
-      {
-        "matcher": "코드\\s*리뷰|code\\s*review|PR\\s*리뷰|리뷰.*해줘|review.*code",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/code-review.js"
-          }
-        ]
-      },
-      {
-        "matcher": "e2e.*테스트|e2e.*test|playwright|브라우저.*테스트|browser.*test",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[E2E MODE] Use /vibe.utils --e2e for Playwright-based browser testing. Supports visual regression and video recording.'"
-          }
-        ]
-      },
-      {
-        "matcher": "복잡도.*분석|복잡도.*확인|complexity.*analyz|코드.*복잡도",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/complexity.js"
-          }
-        ]
-      },
-      {
-        "matcher": "뭐였지|이전에.*결정|저번에.*결정|previous.*decision|what was.*decided",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/recall.js"
-          }
-        ]
-      },
-      {
-        "matcher": "아키텍처.*(검토|리뷰|분석)|architecture.*(review|analyz)|설계.*검토|구조.*분석.*해",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate \"You are a software architect. Analyze and review the architecture.\"",
-            "statusMessage": "GPT analyzing architecture..."
-          }
-        ]
-      },
-      {
-        "matcher": "(UI|UX).*(리뷰|검토|피드백|개선)|사용자.*경험.*검토|디자인.*리뷰|design.*feedback",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate \"You are a UI/UX expert. Analyze and provide feedback.\"",
-            "statusMessage": "Gemini reviewing UI/UX..."
-          }
-        ]
-      },
-      {
-        "matcher": "디버깅.*해|버그.*찾아|find.*bug|debug.*this.*code",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate \"You are a debugging expert. Find bugs and suggest fixes.\"",
-            "statusMessage": "GPT debugging..."
-          }
-        ]
-      },
-      {
-        "matcher": "코드.*정적.*분석|코드.*분석.*해줘|analyze.*code.*quality",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate \"You are a code analysis expert. Review and analyze the code.\"",
-            "statusMessage": "Gemini analyzing code..."
-          }
-        ]
-      },
-      {
-        "matcher": "^test-gpt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate \"You are a helpful assistant. Answer the user's question clearly and concisely.\"",
-            "statusMessage": "Testing GPT..."
-          }
-        ]
-      },
-      {
-        "matcher": "^test-gemini",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate \"You are a helpful assistant. Answer the user's question clearly and concisely.\"",
-            "statusMessage": "Testing Gemini..."
+            "command": "node {{VIBE_PATH}}/hooks/scripts/prompt-dispatcher.js"
           }
         ]
       }

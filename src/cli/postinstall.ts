@@ -506,12 +506,31 @@ ${nextStepsSection}
  * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
  * @param languagesDir - VIBE 언어 룰 디렉토리 (optional)
  */
+// 언어 룰 파일 접두사 (이 접두사로 시작하는 .mdc는 vibe에서 관리)
+const LANGUAGE_RULE_PREFIXES = [
+  'typescript-', 'python-', 'dart-', 'go.', 'rust.', 'kotlin-',
+  'java-', 'swift-', 'ruby-', 'csharp-', 'gdscript-'
+];
+
 function generateCursorRules(
   cursorRulesDir: string,
   detectedStacks: string[] = [],
   languagesDir?: string
 ): void {
   ensureDir(cursorRulesDir);
+
+  // 0. 기존 언어 룰 정리 (이전 프로젝트에서 생성된 찌꺼기 제거)
+  try {
+    const existingFiles = fs.readdirSync(cursorRulesDir).filter(f => f.endsWith('.mdc'));
+    for (const file of existingFiles) {
+      const isLanguageRule = LANGUAGE_RULE_PREFIXES.some(prefix => file.startsWith(prefix));
+      if (isLanguageRule) {
+        fs.unlinkSync(path.join(cursorRulesDir, file));
+      }
+    }
+  } catch {
+    // 무시
+  }
 
   // 1. VIBE 언어 룰에서 .mdc 생성 시도
   let vibeRulesGenerated = 0;

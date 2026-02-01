@@ -1255,6 +1255,43 @@ Grades:
 
 ---
 
+## Auto-Retrospective (Post-Implementation)
+
+After ALL phases complete successfully, **automatically** perform a brief retrospective:
+
+### Retrospective Template
+
+```
+## Retrospective: {feature-name}
+
+### What Worked
+- [List effective patterns, tools, approaches used]
+
+### What Didn't
+- [List issues, failures, unexpected blockers]
+
+### Key Decisions
+- [Important architectural or implementation decisions made during this run]
+
+### Lessons Learned
+- [Principle format: "When X, do Y because Z"]
+```
+
+### Execution Steps
+
+1. Generate retrospective based on the implementation session
+2. Save to `.claude/vibe/retros/{feature-name}.md`
+3. Save key lessons via `vibe_save_memory` (for cross-session recall)
+4. Update `claude-progress.txt` with final status
+
+**Important:**
+
+- Keep it concise (under 20 lines)
+- Focus on **project-specific** insights, not generic knowledge
+- Only save to memory if the lesson is actionable and non-obvious
+
+---
+
 ## Next Step
 
 ```

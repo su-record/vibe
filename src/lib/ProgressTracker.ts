@@ -266,3 +266,67 @@ export function getProgressSummary(projectRoot: string): string | null {
 
   return `📋 Active feature: "${progress.feature}" - Phase ${progress.currentPhase}/${progress.totalPhases} (${phaseName})`;
 }
+
+/**
+ * Write plain text progress file (claude-progress.txt)
+ * Claude가 context compaction 후에도 읽을 수 있는 human-readable 진행 파일
+ */
+export function writeProgressText(projectRoot: string): void {
+  const progress = loadProgress(projectRoot);
+  if (!progress) return;
+
+  const progressTextPath = path.join(projectRoot, '.claude', 'vibe', 'claude-progress.txt');
+  const lines: string[] = [];
+
+  lines.push(`# Progress: ${progress.feature}`);
+  lines.push(`Updated: ${new Date().toISOString()}`);
+  lines.push(`Status: ${progress.status.toUpperCase()}`);
+  lines.push(`Session: ${progress.sessionCount}`);
+  lines.push('');
+
+  lines.push('## Phases');
+  for (const phase of progress.phases) {
+    const icon = { pending: '[ ]', in_progress: '[>]', completed: '[x]', blocked: '[!]' }[phase.status];
+    lines.push(`${icon} Phase ${phase.id}: ${phase.name}`);
+    if (phase.blockers?.length) {
+      for (const b of phase.blockers) {
+        lines.push(`    BLOCKED: ${b}`);
+      }
+    }
+  }
+
+  if (progress.completedTasks.length > 0) {
+    lines.push('');
+    lines.push('## Completed');
+    for (const task of progress.completedTasks) {
+      lines.push(`- ${task}`);
+    }
+  }
+
+  if (progress.pendingTasks.length > 0) {
+    lines.push('');
+    lines.push('## Remaining');
+    for (const task of progress.pendingTasks) {
+      lines.push(`- ${task}`);
+    }
+  }
+
+  if (progress.blockers.length > 0) {
+    lines.push('');
+    lines.push('## Blockers');
+    for (const blocker of progress.blockers) {
+      lines.push(`- ${blocker}`);
+    }
+  }
+
+  if (progress.lastCommit) {
+    lines.push('');
+    lines.push(`## Last Commit: ${progress.lastCommit}`);
+  }
+
+  const vibeDir = path.dirname(progressTextPath);
+  if (!fs.existsSync(vibeDir)) {
+    fs.mkdirSync(vibeDir, { recursive: true });
+  }
+  fs.writeFileSync(progressTextPath, lines.join('\n') + '\n');
+}

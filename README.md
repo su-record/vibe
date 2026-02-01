@@ -18,22 +18,35 @@ vibe init
 ## Core Workflow
 
 ```
-/vibe.spec → /vibe.run → /vibe.trace → /vibe.verify → /vibe.review
-     ↓            ↓            ↓             ↓              ↓
-  Write SPEC   Execute    Traceability   BDD Verify   Parallel Review
+/vibe.spec → /vibe.spec.review → [SPEC Summary] → /vibe.run → /vibe.trace → /vibe.review → [Retrospective]
+     ↓              ↓                  ↓               ↓            ↓              ↓              ↓
+  Write SPEC   GPT/Gemini Review  User Review     Execute     Traceability   Parallel Review  Auto-Save
 ```
+
+### Workflow Details
+
+| Step | Command | What Happens |
+|------|---------|-------------|
+| 1 | `/vibe.spec "feature"` | Generate SPEC + parallel research agents |
+| 2 | `/vibe.spec.review "feature"` | 3-round GPT/Gemini cross-validation |
+| 3 | SPEC Summary | User reviews spec before implementation |
+| 4 | `/vibe.run "feature"` | Execute implementation phase-by-phase |
+| 5 | `/vibe.trace "feature"` | Requirements traceability matrix |
+| 6 | `/vibe.review` | 13+ parallel review agents |
+| 7 | Auto-Retrospective | Lessons learned saved for cross-session recall |
 
 ## Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **SPEC-driven Development** | Traceable development: Requirements → SPEC → Feature → Test |
-| **Multi-LLM Orchestration** | Claude + GPT + Gemini 3-way verification with automatic routing |
-| **13+ Parallel Review Agents** | Parallel code review: Security, Performance, Architecture, etc. |
-| **ULTRAWORK Mode** | Enable all optimizations with a single keyword |
-| **Fire-and-Forget Agents** | Non-blocking background agent execution |
-| **Phase Pipelining** | Prepare next phase while current phase executes |
-| **Swarm Pattern** | Auto-split complex tasks for parallel processing (v2.7) |
+| **SPEC-driven Development** | Traceable: Requirements → SPEC → Feature → Test |
+| **Multi-LLM Orchestration** | Claude + GPT + Gemini 3-way verification |
+| **13+ Parallel Review Agents** | Security, Performance, Architecture, etc. |
+| **ULTRAWORK Mode** | All optimizations with a single keyword |
+| **Smart Hook Dispatcher** | Pattern-matched prompt routing (no wasted LLM calls) |
+| **Progress Tracking** | `claude-progress.txt` survives context compaction |
+| **Auto-Retrospective** | Lessons learned auto-saved after `/vibe.run` |
+| **Swarm Pattern** | Auto-split complex tasks for parallel processing |
 | **23 Language Presets** | TypeScript, Python, Go, Rust, Swift, Kotlin, and more |
 
 ## Commands
@@ -75,26 +88,27 @@ Activate maximum performance with `ultrawork` or `ulw` keyword:
 - Boulder Loop (auto-continue until all scenarios complete)
 - Auto-save at 80%+ context
 
-**Speed Comparison:**
+**Performance:**
 
-| Mode | 5 Phases |
-|------|----------|
-| Sequential | ~10min |
-| Parallel | ~7.5min |
-| **ULTRAWORK + Pipeline** | **~5min** |
+| Mode | Relative Speed |
+|------|---------------|
+| Sequential | Baseline |
+| Parallel | ~25% faster |
+| **ULTRAWORK + Pipeline** | **~50% faster** |
 
 ## Multi-LLM Orchestration
 
-### Automatic Routing
+### Smart Hook Dispatcher
 
-Automatically routes to the optimal LLM based on prompt keywords:
+A single dispatcher reads user prompts and routes to the right LLM only when patterns match. No wasted API calls:
 
-| Keyword | Routes to | Use Case |
+| Pattern | Routes to | Use Case |
 |---------|-----------|----------|
-| `architecture`, `design` | GPT | Architecture review |
-| `UI`, `UX` | Gemini | UI/UX feedback |
-| `debugging` | GPT | Bug analysis |
-| `analyze code` | Gemini | Code review |
+| Architecture keywords | GPT | Architecture review |
+| UI/UX keywords | Gemini | UI/UX feedback |
+| Debug keywords | GPT | Bug analysis |
+| Code analysis keywords | Gemini | Code quality review |
+| No match | None | No external LLM call |
 
 ### Race Review
 
@@ -125,40 +139,22 @@ Run 13+ agents simultaneously with `/vibe.review`:
 - P2 (Important): Fix recommended
 - P3 (Nice-to-have): Backlog
 
-## Swarm Pattern (v2.7)
+## Swarm Pattern
 
 Automatically split complex tasks for parallel processing:
 
-```typescript
-import { swarm, analyzeTaskComplexity } from '@su-record/vibe/orchestrator';
-
-// Analyze complexity
-const analysis = analyzeTaskComplexity('Your prompt');
-console.log(analysis.score); // Split if >= 15
-
-// Execute swarm
-const result = await swarm({
-  prompt: 'Complex task...',
-  maxDepth: 2,           // Maximum split depth
-  splitThreshold: 15,    // Complexity threshold
-});
-```
-
-**How it works:**
 ```
 Prompt → Complexity Analysis → Split Decision
                 ↓
-    ┌─ Low → Direct execution
-    └─ High → Create subtasks → Parallel processing → Merge results
+    Low  → Direct execution
+    High → Create subtasks → Parallel processing → Merge results
 ```
 
-## Requirements Traceability (v2.6)
+Tasks are scored by complexity. When the score exceeds the threshold (default: 15), the task is automatically split into subtasks and processed in parallel.
 
-Track from requirements to tests:
+## Requirements Traceability
 
-```bash
-/vibe.trace "feature"
-```
+Track from requirements to tests with `/vibe.trace`:
 
 ```
 REQ-login-001 → SPEC Phase 1 → Feature Scenario 1 → login.test.ts
@@ -179,9 +175,12 @@ REQ-login-002 → SPEC Phase 2 → Feature Scenario 3 → auth.test.ts
 **Project (`.claude/vibe/`):**
 ```
 .claude/vibe/
-├── specs/        # SPEC documents
-├── features/     # BDD scenarios
-├── config.json   # Project settings
+├── specs/              # SPEC documents
+├── features/           # BDD scenarios
+├── retros/             # Auto-retrospectives
+├── progress.json       # Structured progress state
+├── claude-progress.txt # Human-readable progress (for context survival)
+├── config.json         # Project settings
 └── constitution.md
 ```
 
@@ -194,16 +193,6 @@ REQ-login-002 → SPEC Phase 2 → Feature Scenario 3 → auth.test.ts
 | Parameters | 5 |
 | Cyclomatic complexity | 10 |
 
-## Cursor IDE Support
-
-Assets auto-installed on `vibe init/update`:
-
-| Asset | Path | Count |
-|-------|------|-------|
-| Subagents | `~/.cursor/agents/` | 12 |
-| Skills | `~/.cursor/skills/` | 7 |
-| Rules | `~/.cursor/rules-template/` | 23 languages |
-
 ## API Usage
 
 ```typescript
@@ -212,7 +201,7 @@ import { launch, poll } from '@su-record/vibe/orchestrator';
 const { taskId } = launch({ prompt: 'Analyze code', agentName: 'analyzer' });
 const result = await poll(taskId);
 
-// Swarm pattern (v2.7) - Auto-split complex tasks
+// Swarm pattern - Auto-split complex tasks
 import { swarm } from '@su-record/vibe/orchestrator';
 const result = await swarm({
   prompt: 'Implement login with: 1. UI 2. Validation 3. API 4. Tests',
@@ -224,6 +213,18 @@ const result = await swarm({
 import { ask } from '@su-record/vibe/lib/gpt';
 import { webSearch } from '@su-record/vibe/lib/gemini';
 ```
+
+## IDE Support
+
+### Cursor
+
+Assets auto-installed on `vibe init/update`:
+
+| Asset | Path | Count |
+|-------|------|-------|
+| Subagents | `~/.cursor/agents/` | 12 |
+| Skills | `~/.cursor/skills/` | 7 |
+| Rules | `~/.cursor/rules-template/` | 23 languages |
 
 ## Requirements
 

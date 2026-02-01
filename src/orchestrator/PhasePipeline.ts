@@ -24,6 +24,11 @@ import { backgroundManager, TaskInfo, PipelineTimeoutError } from './BackgroundM
 import { CONCURRENCY } from '../lib/constants.js';
 import { warnLog } from '../lib/utils.js';
 import { ToolResult } from '../types/tool.js';
+import {
+  initProgress,
+  updatePhase as updateProgressPhase,
+  writeProgressText,
+} from '../lib/ProgressTracker.js';
 
 // ============================================
 // Pipeline Types
@@ -67,6 +72,8 @@ export interface PipelineOptions {
   maxRetries?: number;
   /** 전체 파이프라인 타임아웃 (ms) */
   timeout?: number;
+  /** 프로젝트 루트 경로 (progress 파일 저장용) */
+  projectRoot?: string;
   /** Phase 완료 시 콜백 */
   onPhaseComplete?: (phase: PhaseProgress, result: StageResult) => void;
   /** Phase 시작 시 콜백 */
@@ -105,6 +112,7 @@ export class PhasePipeline {
       ultrawork: options.ultrawork ?? false,
       maxRetries: options.maxRetries ?? 3,
       timeout: options.timeout ?? CONCURRENCY.PIPELINE_TIMEOUT,
+      projectRoot: options.projectRoot ?? '',
       onPhaseComplete: options.onPhaseComplete ?? (() => {}),
       onPhaseStart: options.onPhaseStart ?? (() => {}),
       onError: options.onError ?? (() => {}),
@@ -145,6 +153,14 @@ export class PhasePipeline {
         this.options.maxRetries
       );
 
+      // Progress 파일 초기화 (projectRoot가 설정된 경우)
+      if (this.options.projectRoot) {
+        try {
+          initProgress(this.options.projectRoot, this.featureName, '', phaseNames);
+          writeProgressText(this.options.projectRoot);
+        } catch { /* progress 파일 실패는 무시 */ }
+      }
+
       // ULTRAWORK 모드: 백그라운드 준비 시작
       if (this.options.ultrawork) {
         this.startBackgroundPreparations();
@@ -167,6 +183,14 @@ export class PhasePipeline {
 
         this.options.onPhaseStart(phaseProgress);
         console.log(formatPhaseStart(phaseNumber, stage.name, this.stages.length));
+
+        // Progress 파일 업데이트
+        if (this.options.projectRoot) {
+          try {
+            updateProgressPhase(this.options.projectRoot, phaseNumber, 'in_progress');
+            writeProgressText(this.options.projectRoot);
+          } catch { /* 무시 */ }
+        }
 
         // 컨텍스트 생성
         let context: StageContext = {
@@ -215,6 +239,14 @@ export class PhasePipeline {
           const error = lastError || new Error('Unknown error');
           this.options.onError(phaseProgress, error);
 
+          // Progress 파일 업데이트 (blocked)
+          if (this.options.projectRoot) {
+            try {
+              updateProgressPhase(this.options.projectRoot, phaseNumber, 'blocked', [error.message]);
+              writeProgressText(this.options.projectRoot);
+            } catch { /* 무시 */ }
+          }
+
           // 정리 실행
           if (stage.cleanup) {
             await stage.cleanup(context).catch(() => {});
@@ -241,6 +273,14 @@ export class PhasePipeline {
         completePhase(phaseNumber);
         this.options.onPhaseComplete(phaseProgress, result);
         console.log(formatPhaseComplete(phaseNumber, this.stages.length));
+
+        // Progress 파일 업데이트 (completed)
+        if (this.options.projectRoot) {
+          try {
+            updateProgressPhase(this.options.projectRoot, phaseNumber, 'completed');
+            writeProgressText(this.options.projectRoot);
+          } catch { /* 무시 */ }
+        }
 
         // 정리 실행
         if (stage.cleanup) {
