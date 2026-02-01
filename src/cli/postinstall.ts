@@ -512,6 +512,11 @@ const LANGUAGE_RULE_PREFIXES = [
   'java-', 'swift-', 'ruby-', 'csharp-', 'gdscript-'
 ];
 
+// 이전 버전에서 생성된 레거시 파일명 (정리 대상)
+const LEGACY_RULE_FILES = [
+  'react-patterns.mdc', 'typescript-standards.mdc', 'python-standards.mdc'
+];
+
 function generateCursorRules(
   cursorRulesDir: string,
   detectedStacks: string[] = [],
@@ -519,12 +524,13 @@ function generateCursorRules(
 ): void {
   ensureDir(cursorRulesDir);
 
-  // 0. 기존 언어 룰 정리 (이전 프로젝트에서 생성된 찌꺼기 제거)
+  // 0. 기존 언어 룰 + 레거시 파일 정리
   try {
     const existingFiles = fs.readdirSync(cursorRulesDir).filter(f => f.endsWith('.mdc'));
     for (const file of existingFiles) {
       const isLanguageRule = LANGUAGE_RULE_PREFIXES.some(prefix => file.startsWith(prefix));
-      if (isLanguageRule) {
+      const isLegacy = LEGACY_RULE_FILES.includes(file);
+      if (isLanguageRule || isLegacy) {
         fs.unlinkSync(path.join(cursorRulesDir, file));
       }
     }

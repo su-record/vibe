@@ -348,6 +348,11 @@ const VIBE_MANAGED_LANGUAGE_RULES = [
   'java-', 'swift-', 'ruby-', 'csharp-', 'gdscript-'
 ];
 
+// 이전 버전에서 생성된 레거시 파일명 (정리 대상)
+const LEGACY_RULE_FILES = [
+  'react-patterns.mdc', 'typescript-standards.mdc', 'python-standards.mdc'
+];
+
 /**
  * Cursor IDE 프로젝트 룰 설치
  * ~/.cursor/rules-template/에서 프로젝트의 .cursor/rules/로 복사
@@ -375,6 +380,14 @@ export function installCursorRules(projectRoot: string, detectedStacks: string[]
 
   // .cursor/rules 디렉토리 생성
   ensureDir(projectCursorRules);
+
+  // 레거시 파일 정리 (이전 버전에서 생성된 파일)
+  for (const legacyFile of LEGACY_RULE_FILES) {
+    const legacyPath = path.join(projectCursorRules, legacyFile);
+    if (fs.existsSync(legacyPath)) {
+      try { fs.unlinkSync(legacyPath); } catch { /* 무시 */ }
+    }
+  }
 
   // 템플릿 파일 복사
   const files = fs.readdirSync(cursorRulesTemplate).filter(f => f.endsWith('.mdc'));
