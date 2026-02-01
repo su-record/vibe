@@ -178,28 +178,34 @@ Score: 96/100 ✅ PASSED
 
 ### 3.1 Review Loop (3 Rounds)
 
-**For EACH round (1, 2, 3), run GPT + Gemini in PARALLEL via Bash tool:**
+**For EACH round (1, 2, 3), run GPT + Gemini in PARALLEL via Bash tool.**
 
-**🚨 MANDATORY: Copy the EXACT path below. DO NOT modify or use alternative paths.**
+**🚨 IMPORTANT: SPEC content is too large for CLI arguments. Use stdin pipe method.**
+
+**Procedure for each round:**
+
+**Step A: Save SPEC content to scratchpad temp file (using Write tool):**
+- Write the SPEC content to `[SCRATCHPAD]/spec-content.txt`
+
+**Step B: Run GPT + Gemini in PARALLEL (two separate Bash tool calls at once):**
 
 ```bash
-# Cross-platform path (works on Windows/macOS/Linux)
-# ⚠️ COPY THIS EXACTLY - DO NOT USE ~/.claude/ or any other path!
-VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
-
 # GPT review (Bash tool call 1)
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"
-
-# Gemini review (Bash tool call 2 - run in parallel with GPT)
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
 ```
 
-**🚨 MANDATORY: Use the Bash tool to run BOTH commands above for EACH round.**
+```bash
+# Gemini review (Bash tool call 2 - run in parallel with GPT)
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+```
+
+**🚨 MANDATORY: Replace `[SCRATCHPAD]` with the actual scratchpad directory path.**
+**🚨 Replace `[N]` with the current round number (1, 2, or 3).**
 **🚨 Run GPT and Gemini calls in PARALLEL (two separate Bash tool calls at once).**
 
-- Round 1: Run GPT + Gemini in parallel → Cross-validate → Apply fixes → Update SPEC file
-- Round 2: Run with updated SPEC → Cross-validate → Apply fixes → Update SPEC file
-- Round 3: Run with final SPEC → Cross-validate → Confirm no issues remain
+- Round 1: Write SPEC → Run GPT + Gemini in parallel → Cross-validate → Apply fixes → Update SPEC file
+- Round 2: Write updated SPEC → Run → Cross-validate → Apply fixes → Update SPEC file
+- Round 3: Write final SPEC → Run → Cross-validate → Confirm no issues remain
 
 ### 3.2 Cross-Validation Rules
 

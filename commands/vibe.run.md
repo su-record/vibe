@@ -907,15 +907,19 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
 
 **Race Review Invocation (GPT + Gemini in parallel via Bash):**
 
+**🚨 Use stdin pipe to avoid CLI argument length limits on Windows.**
+
+1. Save code to review into `[SCRATCHPAD]/review-code.txt` (using Write tool)
+2. Run GPT + Gemini in PARALLEL (two Bash tool calls at once):
+
 ```bash
-# Cross-platform path
-VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
-
 # GPT review (Bash tool call 1)
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE]"
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+```
 
+```bash
 # Gemini review (Bash tool call 2 - run in parallel)
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE]"
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 ```
 
 **Confidence-based Priority:**
