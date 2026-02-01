@@ -165,48 +165,60 @@ Score: 96/100 ✅ PASSED
 
 ## Step 3: Race Review (GPT + Gemini Cross-Validation) - 3 Rounds (v2.6.9)
 
-**🚨 CRITICAL: Execute ALL 3 rounds with cross-validation. DO NOT skip.**
+**🚨🚨🚨 CRITICAL: YOU MUST EXECUTE ALL 3 ROUNDS. DO NOT SKIP THIS STEP. 🚨🚨🚨**
+
+**🚨 ABSOLUTE RULES FOR RACE REVIEW:**
+
+1. **YOU MUST** use the Bash tool to call `raceReview` via `node -e`
+2. **DO NOT** skip GPT/Gemini calls
+3. **DO NOT** simulate or fake review results
+4. **YOU MUST** run all 3 rounds sequentially (each round uses updated SPEC)
 
 > Race Mode reviews SPEC with both GPT and Gemini in parallel, then cross-validates findings for higher confidence.
 
-### 3.1 Race Review Invocation
+### 3.1 Review Loop (3 Rounds)
+
+**For EACH round (1, 2, 3), execute this Bash command:**
+
+Replace `[SPEC_CONTENT]` with the actual SPEC file content (escaped for JSON), `[FEATURE_NAME]` with the feature name, `[STACK]` with tech stack, and `[N]` with round number.
 
 ```bash
-# Via vibe tools (recommended)
-node -e "import('@su-record/vibe/tools').then(t => t.raceReview({reviewType: 'general', code: '[SPEC content]', context: 'SPEC review round N/3'}).then(r => console.log(t.formatRaceResult(r))))"
+node -e "import('@su-record/vibe/tools').then(async t => { const result = await t.raceReview({reviewType: 'general', code: \`[SPEC_CONTENT]\`, context: 'SPEC review for [FEATURE_NAME]. Stack: [STACK]. Round [N]/3.'}); console.log(t.formatRaceResult(result)); }).catch(e => console.error('Race review failed:', e.message))"
 ```
 
-### 3.2 Review Loop (3 Rounds with Cross-Validation)
+**🚨 MANDATORY: Use the Bash tool to run the above command for EACH round.**
 
-For each round (1 to 3):
+- Round 1: Run → Read results → Apply fixes to SPEC → Update SPEC file
+- Round 2: Run with updated SPEC → Read results → Apply fixes → Update SPEC file
+- Round 3: Run with final SPEC → Confirm no issues remain
 
-**Run GPT and Gemini in PARALLEL with cross-validation:**
+**If the `node -e` command fails** (e.g., module not found), use the fallback method:
 
-```javascript
-// Race review - both models run simultaneously
-import('@su-record/vibe/tools').then(async t => {
-  const result = await t.raceReview({
-    reviewType: 'general',
-    code: specContent,
-    context: `SPEC review for ${featureName}. Stack: ${stack}. Round ${N}/3.`
-  });
-  console.log(t.formatRaceResult(result));
-});
+**Fallback: Direct llm-orchestrate.js calls (run BOTH in parallel via Bash):**
+
+```bash
+VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+
+# GPT review (Bash tool call 1)
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review this SPEC for completeness, specificity, testability, security, and performance. Find issues. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"
+
+# Gemini review (Bash tool call 2 - run in parallel)
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this SPEC for completeness, specificity, testability, security, and performance. Find issues. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"
 ```
 
-**Cross-validation rules:**
+### 3.2 Cross-Validation Rules
 
 | Agreement | Priority | Action |
 |-----------|----------|--------|
-| Both agree (100%) | P1 | Auto-apply immediately |
-| One model (50%) | P2 | Auto-apply with note |
+| Both GPT + Gemini agree (100%) | P1 | Auto-apply immediately |
+| One model only (50%) | P2 | Auto-apply with note |
 
 **After each round:**
 
 1. Cross-validate findings (issues found by both → P1, single model → P2)
 2. Merge feedback with confidence scores
-3. Auto-apply P1/P2 improvements to SPEC and Feature files
-4. Continue to next round
+3. Auto-apply P1/P2 improvements to SPEC and Feature files (use Edit tool)
+4. Continue to next round with updated SPEC content
 
 **Output format:**
 ```
