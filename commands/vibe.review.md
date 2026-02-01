@@ -96,10 +96,17 @@ security-review:
 | Quick iteration | ❌ Standard review |
 | API cost concerns | ❌ Standard review |
 
-### Tool Invocation (Race Mode)
+### Tool Invocation (Race Mode - GPT + Gemini in parallel via Bash)
 
 ```bash
-node -e "import('@su-record/vibe/lib/ReviewRace').then(r => r.raceReview({reviewType: 'security', code: 'CODE_HERE'}).then(res => console.log(r.formatRaceResult(res))))"
+# Cross-platform path
+VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+
+# GPT review (Bash tool call 1)
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE_HERE]"
+
+# Gemini review (Bash tool call 2 - run in parallel)
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE_HERE]"
 ```
 
 ## Priority System

@@ -905,11 +905,17 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Race Review Invocation:**
+**Race Review Invocation (GPT + Gemini in parallel via Bash):**
 
 ```bash
-# Via vibe tools
-node -e "import('@su-record/vibe/tools').then(t => t.raceReview({reviewType: 'security', code: '[code]'}).then(r => console.log(t.formatRaceResult(r))))"
+# Cross-platform path
+VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+
+# GPT review (Bash tool call 1)
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE]"
+
+# Gemini review (Bash tool call 2 - run in parallel)
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE]"
 ```
 
 **Confidence-based Priority:**

@@ -169,7 +169,7 @@ Score: 96/100 ✅ PASSED
 
 **🚨 ABSOLUTE RULES FOR RACE REVIEW:**
 
-1. **YOU MUST** use the Bash tool to call `raceReview` via `node -e`
+1. **YOU MUST** use the Bash tool to call `llm-orchestrate.js` directly
 2. **DO NOT** skip GPT/Gemini calls
 3. **DO NOT** simulate or fake review results
 4. **YOU MUST** run all 3 rounds sequentially (each round uses updated SPEC)
@@ -178,33 +178,28 @@ Score: 96/100 ✅ PASSED
 
 ### 3.1 Review Loop (3 Rounds)
 
-**For EACH round (1, 2, 3), execute this Bash command:**
+**For EACH round (1, 2, 3), run GPT + Gemini in PARALLEL via Bash tool:**
 
-Replace `[SPEC_CONTENT]` with the actual SPEC file content (escaped for JSON), `[FEATURE_NAME]` with the feature name, `[STACK]` with tech stack, and `[N]` with round number.
-
-```bash
-node -e "import('@su-record/vibe/tools').then(async t => { const result = await t.raceReview({reviewType: 'general', code: \`[SPEC_CONTENT]\`, context: 'SPEC review for [FEATURE_NAME]. Stack: [STACK]. Round [N]/3.'}); console.log(t.formatRaceResult(result)); }).catch(e => console.error('Race review failed:', e.message))"
-```
-
-**🚨 MANDATORY: Use the Bash tool to run the above command for EACH round.**
-
-- Round 1: Run → Read results → Apply fixes to SPEC → Update SPEC file
-- Round 2: Run with updated SPEC → Read results → Apply fixes → Update SPEC file
-- Round 3: Run with final SPEC → Confirm no issues remain
-
-**If the `node -e` command fails** (e.g., module not found), use the fallback method:
-
-**Fallback: Direct llm-orchestrate.js calls (run BOTH in parallel via Bash):**
+**🚨 MANDATORY: Copy the EXACT path below. DO NOT modify or use alternative paths.**
 
 ```bash
+# Cross-platform path (works on Windows/macOS/Linux)
+# ⚠️ COPY THIS EXACTLY - DO NOT USE ~/.claude/ or any other path!
 VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
 
 # GPT review (Bash tool call 1)
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review this SPEC for completeness, specificity, testability, security, and performance. Find issues. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"
 
-# Gemini review (Bash tool call 2 - run in parallel)
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this SPEC for completeness, specificity, testability, security, and performance. Find issues. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"
+# Gemini review (Bash tool call 2 - run in parallel with GPT)
+node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"
 ```
+
+**🚨 MANDATORY: Use the Bash tool to run BOTH commands above for EACH round.**
+**🚨 Run GPT and Gemini calls in PARALLEL (two separate Bash tool calls at once).**
+
+- Round 1: Run GPT + Gemini in parallel → Cross-validate → Apply fixes → Update SPEC file
+- Round 2: Run with updated SPEC → Cross-validate → Apply fixes → Update SPEC file
+- Round 3: Run with final SPEC → Cross-validate → Confirm no issues remain
 
 ### 3.2 Cross-Validation Rules
 
