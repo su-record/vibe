@@ -13,8 +13,8 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 ```
 
 **Prerequisites:**
-- SPEC file exists: `.claude/vibe/specs/{feature-name}.spec.md`
-- Feature file exists: `.claude/vibe/features/{feature-name}.feature`
+- SPEC file exists: `.claude/vibe/specs/{feature-name}.md` (single) or `.claude/vibe/specs/{feature-name}/_index.md` (split)
+- Feature file exists: `.claude/vibe/features/{feature-name}.feature` (single) or `.claude/vibe/features/{feature-name}/_index.feature` (split)
 
 ---
 
@@ -34,12 +34,24 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 
 ## Step 1: Load SPEC Files
 
-Read the existing SPEC and Feature files:
+Detect SPEC structure (single file or split folder) and read files:
 
+**Single file structure:**
 ```
-.claude/vibe/specs/{feature-name}.spec.md
+.claude/vibe/specs/{feature-name}.md
 .claude/vibe/features/{feature-name}.feature
 ```
+
+**Split folder structure:**
+```
+.claude/vibe/specs/{feature-name}/_index.md      (+ phase files)
+.claude/vibe/features/{feature-name}/_index.feature (+ phase files)
+```
+
+**Detection logic:**
+1. Check if `.claude/vibe/specs/{feature-name}/` directory exists → Split mode
+2. Otherwise check `.claude/vibe/specs/{feature-name}.md` → Single mode
+3. If neither exists → Error
 
 **Output:**
 ```
@@ -48,8 +60,9 @@ Read the existing SPEC and Feature files:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Loading files...
-  ✅ SPEC: .claude/vibe/specs/{feature-name}.spec.md
-  ✅ Feature: .claude/vibe/features/{feature-name}.feature
+  Mode: {single|split}
+  ✅ SPEC: .claude/vibe/specs/{feature-name}.md (or _index.md + N phase files)
+  ✅ Feature: .claude/vibe/features/{feature-name}.feature (or _index.feature + N phase files)
 
 Extracted info:
   - Feature: {feature description}
@@ -262,8 +275,8 @@ Review Rounds: 3/3 ✅
 Total Improvements: 4
 
 Updated files:
-  📋 .claude/vibe/specs/{feature-name}.spec.md
-  📋 .claude/vibe/features/{feature-name}.feature
+  📋 .claude/vibe/specs/{feature-name}.md (or split folder)
+  📋 .claude/vibe/features/{feature-name}.feature (or split folder)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -334,7 +347,8 @@ After all review rounds, present the finalized SPEC to the user in a readable fo
 ```
 ❌ ERROR: SPEC file not found
 
-Expected: .claude/vibe/specs/{feature-name}.spec.md
+Expected (single): .claude/vibe/specs/{feature-name}.md
+Expected (split):  .claude/vibe/specs/{feature-name}/_index.md
 
 Please run /vibe.spec "{feature-name}" first to create the SPEC.
 ```
@@ -343,7 +357,8 @@ Please run /vibe.spec "{feature-name}" first to create the SPEC.
 ```
 ❌ ERROR: Feature file not found
 
-Expected: .claude/vibe/features/{feature-name}.feature
+Expected (single): .claude/vibe/features/{feature-name}.feature
+Expected (split):  .claude/vibe/features/{feature-name}/_index.feature
 
 Please run /vibe.spec "{feature-name}" first to create the Feature file.
 ```
@@ -370,3 +385,15 @@ For faster iteration (1 round only):
 ---
 
 ARGUMENTS: $ARGUMENTS
+
+**File Detection (execute before Step 1):**
+
+```
+Feature name: $ARGUMENTS
+
+1. Check split folder: .claude/vibe/specs/$ARGUMENTS/_index.md
+   - If exists → Split mode (read all files in folder)
+2. Check single file: .claude/vibe/specs/$ARGUMENTS.md
+   - If exists → Single mode
+3. Neither exists → Show error with both expected paths
+```
