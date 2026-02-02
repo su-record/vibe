@@ -152,6 +152,37 @@ Prompt → Complexity Analysis → Split Decision
 
 Tasks are scored by complexity. When the score exceeds the threshold (default: 15), the task is automatically split into subtasks and processed in parallel.
 
+## Session RAG
+
+Structured session context storage with hybrid BM25 search. Keeps decisions, constraints, goals, and evidence across sessions.
+
+| Entity | Description | Auto-injected |
+|--------|-------------|---------------|
+| **Decision** | User-confirmed choices with rationale | Recent active decisions |
+| **Constraint** | Technical/business limitations | High/critical severity |
+| **Goal** | Objective stack with progress tracking | Active goals |
+| **Evidence** | Test/build/lint verification results | - |
+
+**Tools:**
+
+| Tool | Purpose |
+|------|---------|
+| `save_session_item` | Save decision/constraint/goal/evidence |
+| `retrieve_session_context` | Hybrid search (BM25 + recency + priority) |
+| `manage_goals` | Goal lifecycle (list/update/complete) |
+
+Active goals and key constraints are automatically injected at session start via `start_session`.
+
+```typescript
+import { saveSessionItem, retrieveSessionContext, manageGoals } from '@su-record/vibe/tools';
+
+await saveSessionItem({ itemType: 'decision', title: 'Use Vitest', rationale: 'Fast and modern' });
+await saveSessionItem({ itemType: 'constraint', title: 'No vector DB', type: 'technical', severity: 'high' });
+await saveSessionItem({ itemType: 'goal', title: 'Implement login', priority: 2 });
+await retrieveSessionContext({ query: 'testing strategy' });
+await manageGoals({ action: 'complete', goalId: 1 });
+```
+
 ## Requirements Traceability
 
 Track from requirements to tests with `/vibe.trace`:

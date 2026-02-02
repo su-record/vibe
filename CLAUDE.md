@@ -110,15 +110,64 @@ SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_forma
 
 ## Built-in Tools
 
+### Semantic & Quality
+
 | Tool                          | Purpose                          |
 |-------------------------------|----------------------------------|
 | `vibe_find_symbol`            | Find symbol definitions          |
 | `vibe_find_references`        | Find references                  |
 | `vibe_analyze_complexity`     | Analyze complexity               |
 | `vibe_validate_code_quality`  | Validate quality                 |
+
+### Memory & Session
+
+| Tool                          | Purpose                          |
+|-------------------------------|----------------------------------|
 | `vibe_start_session`          | Restore previous session context |
 | `vibe_auto_save_context`      | Save current state               |
 | `vibe_save_memory`            | Save important decisions         |
+
+### Session RAG (v2.6.27)
+
+구조화된 세션 컨텍스트를 저장/검색하는 시스템. SQLite + FTS5 BM25 하이브리드 검색.
+
+| Tool                          | Purpose                          |
+|-------------------------------|----------------------------------|
+| `save_session_item`           | Decision/Constraint/Goal/Evidence 저장 |
+| `retrieve_session_context`    | 하이브리드 검색 (BM25 + recency + priority) |
+| `manage_goals`                | Goal 생명주기 관리 (list/update/complete) |
+
+**4가지 엔티티:**
+
+| Entity | Description | Key Fields |
+|--------|-------------|------------|
+| Decision | 사용자 확인 결정사항 | title, rationale, alternatives, impact, priority |
+| Constraint | 명시적 제약조건 | title, type (technical/business/resource/quality), severity |
+| Goal | 현재 목표 스택 (계층 지원) | title, status, priority, progressPercent, successCriteria |
+| Evidence | 검증/테스트 결과 | title, type (test/build/lint/coverage), status, metrics |
+
+**자동 주입:** `start_session` 호출 시 활성 Goals, 중요 Constraints, 최근 Decisions가 자동으로 세션 컨텍스트에 포함됨.
+
+```typescript
+import { saveSessionItem, retrieveSessionContext, manageGoals } from '@su-record/vibe/tools';
+
+// 결정 저장
+await saveSessionItem({ itemType: 'decision', title: 'Use Vitest', rationale: 'Fast and modern' });
+
+// 제약 저장
+await saveSessionItem({ itemType: 'constraint', title: 'No vector DB', type: 'technical', severity: 'high' });
+
+// 목표 저장
+await saveSessionItem({ itemType: 'goal', title: 'Implement Session RAG', priority: 2 });
+
+// 컨텍스트 검색
+await retrieveSessionContext({ query: 'testing' });
+
+// 목표 관리
+await manageGoals({ action: 'list' });
+await manageGoals({ action: 'update', goalId: 1, progressPercent: 80 });
+await manageGoals({ action: 'complete', goalId: 1 });
+```
 
 ## Agents
 
