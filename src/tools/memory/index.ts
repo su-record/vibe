@@ -18,3 +18,8 @@ export { prioritizeMemory } from './prioritizeMemory.js';
 export { getSessionContext } from './getSessionContext.js';
 export { addObservation } from './addObservation.js';
 export { searchObservations } from './searchObservations.js';
+
+// Session RAG tools
+export { saveSessionItem } from './saveSessionItem.js';
+export { retrieveSessionContext } from './retrieveSessionContext.js';
+export { manageGoals } from './manageGoals.js';

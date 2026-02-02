@@ -120,6 +120,37 @@ export async function startSession(args: { greeting?: string; loadMemory?: boole
       // Observation context injection is non-critical
     }
 
+    // Inject Session RAG context (active goals, constraints, recent decisions)
+    try {
+      const ragContext = memoryManager.retrieveActiveContext();
+
+      if (ragContext.goals.length > 0) {
+        summary += '\n## Active Goals\n';
+        ragContext.goals.forEach(g => {
+          const progress = g.progressPercent > 0 ? ` [${g.progressPercent}%]` : '';
+          summary += `  - ${g.title}${progress}\n`;
+        });
+      }
+
+      if (ragContext.constraints.length > 0) {
+        summary += '\n## Key Constraints\n';
+        ragContext.constraints.forEach(c => {
+          summary += `  - [${c.severity.toUpperCase()}] ${c.title}\n`;
+        });
+      }
+
+      if (ragContext.decisions.length > 0) {
+        summary += '\n## Recent Decisions\n';
+        ragContext.decisions.forEach(d => {
+          summary += `  - ${d.title}`;
+          if (d.rationale) summary += ` (${d.rationale})`;
+          summary += '\n';
+        });
+      }
+    } catch {
+      // Session RAG context injection is non-critical
+    }
+
     summary += '\nReady to continue development! What would you like to work on?';
 
     return {

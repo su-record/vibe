@@ -8,16 +8,22 @@ import { MemoryStorage, MemoryItem } from './memory/MemoryStorage.js';
 import { KnowledgeGraph } from './memory/KnowledgeGraph.js';
 import { MemorySearch, SearchStrategy, SearchOptions } from './memory/MemorySearch.js';
 import { ObservationStore, Observation, ObservationInput, ObservationType } from './memory/ObservationStore.js';
+import { SessionRAGStore, Decision, DecisionInput, Constraint, ConstraintInput, Goal, GoalInput, Evidence, EvidenceInput, SessionRAGStats, DecisionStatus, ConstraintType, ConstraintSeverity, GoalStatus, EvidenceType, EvidenceStatus } from './memory/SessionRAGStore.js';
+import { SessionRAGRetriever, RetrievalOptions, SessionRAGResult } from './memory/SessionRAGRetriever.js';
 
 // Re-export for backward compatibility
 export { MemoryItem } from './memory/MemoryStorage.js';
 export { Observation, ObservationInput, ObservationType } from './memory/ObservationStore.js';
+export { Decision, DecisionInput, Constraint, ConstraintInput, Goal, GoalInput, Evidence, EvidenceInput, SessionRAGStats, DecisionStatus, ConstraintType, ConstraintSeverity, GoalStatus, EvidenceType, EvidenceStatus } from './memory/SessionRAGStore.js';
+export { RetrievalOptions, SessionRAGResult } from './memory/SessionRAGRetriever.js';
 
 export class MemoryManager {
   private storage: MemoryStorage;
   private graph: KnowledgeGraph;
   private memorySearch: MemorySearch;
   private observations: ObservationStore;
+  private sessionRAG: SessionRAGStore;
+  private ragRetriever: SessionRAGRetriever;
 
   // Map of projectPath -> MemoryManager instance (for project-based memory)
   private static instances: Map<string, MemoryManager> = new Map();
@@ -63,6 +69,8 @@ export class MemoryManager {
     this.graph = new KnowledgeGraph(this.storage);
     this.memorySearch = new MemorySearch(this.storage, this.graph);
     this.observations = new ObservationStore(this.storage);
+    this.sessionRAG = new SessionRAGStore(this.storage);
+    this.ragRetriever = new SessionRAGRetriever(this.storage, this.sessionRAG);
   }
 
   /**
@@ -240,6 +248,95 @@ export class MemoryManager {
 
   public getObservationStats(): { total: number; byType: Record<string, number> } {
     return this.observations.getStats();
+  }
+
+  // ============================================================================
+  // Session RAG Operations (delegated to SessionRAGStore/Retriever)
+  // ============================================================================
+
+  // Decisions
+  public addDecision(input: DecisionInput): number {
+    return this.sessionRAG.addDecision(input);
+  }
+
+  public getDecision(id: number): Decision | null {
+    return this.sessionRAG.getDecision(id);
+  }
+
+  public updateDecision(id: number, updates: Partial<DecisionInput>): boolean {
+    return this.sessionRAG.updateDecision(id, updates);
+  }
+
+  public listDecisions(sessionId?: string, status?: DecisionStatus, limit?: number): Decision[] {
+    return this.sessionRAG.listDecisions(sessionId, status, limit);
+  }
+
+  public searchDecisions(query: string, limit?: number): Decision[] {
+    return this.sessionRAG.searchDecisions(query, limit);
+  }
+
+  // Constraints
+  public addConstraint(input: ConstraintInput): number {
+    return this.sessionRAG.addConstraint(input);
+  }
+
+  public getConstraint(id: number): Constraint | null {
+    return this.sessionRAG.getConstraint(id);
+  }
+
+  public updateConstraint(id: number, updates: Partial<ConstraintInput>): boolean {
+    return this.sessionRAG.updateConstraint(id, updates);
+  }
+
+  public listConstraints(sessionId?: string, type?: ConstraintType, severity?: ConstraintSeverity, limit?: number): Constraint[] {
+    return this.sessionRAG.listConstraints(sessionId, type, severity, limit);
+  }
+
+  // Goals
+  public addGoal(input: GoalInput): number {
+    return this.sessionRAG.addGoal(input);
+  }
+
+  public getGoal(id: number): Goal | null {
+    return this.sessionRAG.getGoal(id);
+  }
+
+  public updateGoal(id: number, updates: Partial<GoalInput>): boolean {
+    return this.sessionRAG.updateGoal(id, updates);
+  }
+
+  public getActiveGoals(limit?: number): Goal[] {
+    return this.sessionRAG.getActiveGoals(limit);
+  }
+
+  public listGoals(sessionId?: string, status?: GoalStatus, limit?: number): Goal[] {
+    return this.sessionRAG.listGoals(sessionId, status, limit);
+  }
+
+  // Evidence
+  public addEvidence(input: EvidenceInput): number {
+    return this.sessionRAG.addEvidence(input);
+  }
+
+  public getEvidence(id: number): Evidence | null {
+    return this.sessionRAG.getEvidence(id);
+  }
+
+  public listEvidence(sessionId?: string, type?: EvidenceType, status?: EvidenceStatus, limit?: number): Evidence[] {
+    return this.sessionRAG.listEvidence(sessionId, type, status, limit);
+  }
+
+  // Retrieval
+  public retrieveSessionContext(options: RetrievalOptions): SessionRAGResult {
+    return this.ragRetriever.retrieve(options);
+  }
+
+  public retrieveActiveContext(): { goals: Goal[]; constraints: Constraint[]; decisions: Decision[] } {
+    return this.ragRetriever.retrieveActiveContext();
+  }
+
+  public getSessionRAGStats(): SessionRAGStats {
+    return this.sessionRAG.getStats();
   }
 
   // ============================================================================

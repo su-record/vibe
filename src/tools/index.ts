@@ -22,6 +22,22 @@ export { restoreSessionContext } from './memory/restoreSessionContext.js';
 export { prioritizeMemory } from './memory/prioritizeMemory.js';
 export { getSessionContext } from './memory/getSessionContext.js';
 
+// Session RAG tools
+export { saveSessionItem } from './memory/saveSessionItem.js';
+export { retrieveSessionContext } from './memory/retrieveSessionContext.js';
+export { manageGoals } from './memory/manageGoals.js';
+
+// Session RAG types
+export type {
+  Decision, DecisionInput, Constraint, ConstraintInput,
+  Goal, GoalInput, Evidence, EvidenceInput,
+  DecisionStatus, ConstraintType, ConstraintSeverity,
+  GoalStatus, EvidenceType, EvidenceStatus, SessionRAGStats,
+} from '../lib/memory/SessionRAGStore.js';
+export type {
+  RetrievalOptions, SessionRAGResult, ScoredItem, ScoreBreakdown,
+} from '../lib/memory/SessionRAGRetriever.js';
+
 // Semantic tools
 export { findSymbol } from './semantic/findSymbol.js';
 export { findReferences } from './semantic/findReferences.js';
