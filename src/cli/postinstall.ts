@@ -76,6 +76,35 @@ function copySkillsIfMissing(src: string, dest: string): void {
 }
 
 /**
+ * 전역 ~/.claude/settings.json에서 hooks 정리
+ * vibe는 이제 프로젝트 레벨 (.claude/settings.local.json)에서 훅을 관리하므로
+ * 전역 설정의 hooks는 제거해야 함 (레거시 정리)
+ */
+function cleanupGlobalSettingsHooks(): void {
+  const globalClaudeDir = path.join(os.homedir(), '.claude');
+  const globalSettingsPath = path.join(globalClaudeDir, 'settings.json');
+
+  if (!fs.existsSync(globalSettingsPath)) {
+    return;
+  }
+
+  try {
+    const content = fs.readFileSync(globalSettingsPath, 'utf-8');
+    const settings = JSON.parse(content);
+
+    // hooks가 있으면 제거
+    if (settings.hooks) {
+      delete settings.hooks;
+      fs.writeFileSync(globalSettingsPath, JSON.stringify(settings, null, 2) + '\n');
+      console.log('   ✓ Cleaned up legacy hooks from global settings');
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    console.warn('   ⚠️  Failed to cleanup global settings hooks: ' + message);
+  }
+}
+
+/**
  * 인라인 기본 스킬 시딩 (번들에 없는 추가 스킬)
  */
 function seedInlineSkills(targetDir: string): void {
@@ -1586,6 +1615,8 @@ function main(): void {
 
     // 6. hooks는 프로젝트 레벨에서 관리 (vibe init/update에서 처리)
     // 전역 설정에는 훅을 등록하지 않음 - 프로젝트별 .claude/settings.local.json 사용
+    // 6-1. 레거시 전역 hooks 정리 (이전 버전 호환성)
+    cleanupGlobalSettingsHooks();
 
     // 7. Cursor IDE 지원 - ~/.cursor/agents/에 변환된 서브에이전트 설치
     const cursorAgentsDir = path.join(os.homedir(), '.cursor', 'agents');
