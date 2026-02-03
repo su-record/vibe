@@ -553,8 +553,8 @@ interface ImageGenerationResult {
 }
 
 /**
- * Gemini 이미지 생성 (Nano Banana - gemini-2.5-flash-preview-image-generation)
- * API Key 방식만 지원 (이미지 생성은 Google AI Studio API 직접 호출)
+ * Gemini Image Generation (Nano Banana - gemini-2.5-flash-image)
+ * API Key only (direct Google AI Studio API call for image generation)
  */
 export async function generateImage(
   prompt: string,
@@ -570,7 +570,7 @@ export async function generateImage(
   const aspectRatio = width && height ? `${width}:${height}` : '1:1';
 
   // Nano Banana (Gemini 2.5 Flash Image)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
 
   const requestBody = {
     contents: [{

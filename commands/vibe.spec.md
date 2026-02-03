@@ -254,36 +254,36 @@ const result = await askUser({
 ```
 
 **Available categories:**
-- `authentication`: 인증 방식, MFA
-- `security`: 비밀번호 정책, 속도 제한
-- `session`: 세션 만료, 동시 로그인
-- `data_model`: 사용자 프로필 필드
-- `performance`: 응답 시간 목표
-- `integration`: 외부 서비스 연동
+- `authentication`: Auth methods, MFA
+- `security`: Password policy, rate limiting
+- `session`: Session expiry, concurrent login
+- `data_model`: User profile fields
+- `performance`: Response time targets
+- `integration`: External service integration
 
 **Example output:**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 요구사항 확인
+📋 Requirements Confirmation
 Feature: login
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## 🔐 인증
+## 🔐 Authentication
 
 ### 🔐 Q-AUTHENTICATION-001
 
-**어떤 인증 방식을 지원할까요?**
-(복수 선택 가능)
+**Which authentication methods should be supported?**
+(Multiple selection allowed)
 
-1. **이메일/비밀번호** ✓
-2. **Google 소셜 로그인**
-3. **Apple 소셜 로그인**
+1. **Email/Password** ✓
+2. **Google Social Login**
+3. **Apple Social Login**
 ...
 
-**필수**
+**Required**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-총 6개 질문 (필수: 4개)
+Total 6 questions (Required: 4)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -292,7 +292,7 @@ Feature: login
 ```typescript
 import { parseUserResponse } from '@su-record/vibe/tools';
 
-// User responds: "1, 2, 4" (선택한 옵션 번호)
+// User responds: "1, 2, 4" (selected option numbers)
 const response = parseUserResponse(question, "1, 2, 4");
 // { questionId: "Q-AUTH-001", value: ["email_password", "social_google", "passkey"], timestamp: "..." }
 ```

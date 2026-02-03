@@ -393,26 +393,26 @@ Claude:
 
 ### Type Safety: Use Types Explicitly
 
-> **Core Principle**: 타입 시스템을 가진 모든 언어에서 타입을 명시적으로 사용해라!
+> **Core Principle**: Use types explicitly in every language that has a type system!
 
-타입 정의는 특정 언어의 문법이 아니라, **복잡한 소프트웨어를 단순화하고 통제하려는 엔지니어링의 핵심 철학**입니다.
+Type definitions are not just language syntax — they are a **core engineering philosophy for simplifying and controlling complex software**.
 
 ### Applies to ALL Typed Languages
 
 | Category | Languages | Key Principle |
 |----------|-----------|---------------|
-| **Static Typed** | Java, C#, C++, Go, Rust, Swift, Kotlin, Scala | 타입 = 컴파일 타임 계약 |
-| **Gradual Typed** | TypeScript, Python (typing), PHP (typed), Ruby (RBS) | 타입 = 선택적 안전장치 |
-| **Functional** | Haskell, OCaml, F#, Elm | 타입 = 논리적 증명 |
+| **Static Typed** | Java, C#, C++, Go, Rust, Swift, Kotlin, Scala | Types = compile-time contracts |
+| **Gradual Typed** | TypeScript, Python (typing), PHP (typed), Ruby (RBS) | Types = optional safety nets |
+| **Functional** | Haskell, OCaml, F#, Elm | Types = logical proofs |
 
 ### Universal Anti-Patterns (All Languages)
 
 | ❌ Forbidden Pattern | Why | ✅ Instead |
 |---------------------|-----|-----------|
-| Type escape hatches (`any`, `Any`, `Object`, `void*`, `interface{}`) | 타입 정보 손실, 런타임 에러 | 구체적 타입 또는 `unknown` + 가드 |
-| Type suppression (`@ts-ignore`, `# type: ignore`, `@SuppressWarnings`) | 에러 숨김 | 실제 타입 문제 해결 |
-| Raw generic types (`List`, `Map` without params) | 타입 안전성 상실 | `List<User>`, `Map<String, Order>` |
-| Excessive casting (`as`, `(Type)`, `unsafe`) | 컴파일러 우회 | 타입 가드 또는 패턴 매칭 |
+| Type escape hatches (`any`, `Any`, `Object`, `void*`, `interface{}`) | Loses type info, runtime errors | Concrete types or `unknown` + guards |
+| Type suppression (`@ts-ignore`, `# type: ignore`, `@SuppressWarnings`) | Hides errors | Fix actual type issues |
+| Raw generic types (`List`, `Map` without params) | Loses type safety | `List<User>`, `Map<String, Order>` |
+| Excessive casting (`as`, `(Type)`, `unsafe`) | Bypasses compiler | Type guards or pattern matching |
 
 ### Language-Specific Guidelines
 
@@ -481,11 +481,11 @@ Result result = Process(data);
 
 | Rule | Description |
 |------|-------------|
-| **Boundary Validation** | 시스템 경계(API, JSON, 사용자 입력)에서만 검증 |
-| **Internal Trust** | 검증 후 내부에서는 정확한 타입만 전달 |
-| **No Type Escape** | 타입 에러를 "해결"하기 위해 escape hatch 사용 금지 |
-| **Explicit Signatures** | 함수/메서드 시그니처에 타입 명시 |
-| **Generics with Params** | 제네릭은 항상 타입 파라미터와 함께 |
+| **Boundary Validation** | Validate only at system boundaries (API, JSON, user input) |
+| **Internal Trust** | After validation, pass only precise types internally |
+| **No Type Escape** | Never use escape hatches to "fix" type errors |
+| **Explicit Signatures** | Specify types in function/method signatures |
+| **Generics with Params** | Always use generics with type parameters |
 
 ### Quality Gate: Type Violations Block Merge
 
@@ -959,19 +959,8 @@ Brand:
 
 **Manual Generation:**
 ```bash
-node hooks/scripts/generate-brand-assets.js \
-  --spec ".claude/vibe/specs/my-feature.md" \
-  --output "./public"
-
-# Or with explicit values
-node hooks/scripts/generate-brand-assets.js \
-  --name "MyApp" \
-  --color "#2F6BFF" \
-  --style "modern minimal" \
-  --output "./public"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
-
-**Fallback:** If Gemini Image fails, generates text monogram icon (first letter + primary color).
 
 ---
 

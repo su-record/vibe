@@ -121,11 +121,7 @@ Output: High-quality UI mockup image (1280x720 or similar)
 **Execution:**
 
 ```bash
-node hooks/scripts/generate-brand-assets.js \
-  --type "ui-mockup" \
-  --description "[analyzed UI description]" \
-  --colors "[extracted colors]" \
-  --output "./ui-preview.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "[analyzed UI description]" --output "./ui-preview.png"
 ```
 
 **Output location:** `./ui-preview-{timestamp}.png`

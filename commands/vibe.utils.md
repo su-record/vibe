@@ -84,44 +84,69 @@ Generate Mermaid diagrams for architecture visualization.
 
 ## --image (Image Generation)
 
-Generate images using Gemini Image API. Requires Gemini API key (`vibe gemini auth`).
+Generate images using Gemini Image API (Nano Banana model).
 
-**Options:**
-- `--image "description"`: Generate image from text description
-- `--image --icon "AppName"`: Generate app icon and favicon set
-- `--image --icon --color "#hex"`: Specify primary color
-- `--image --banner "title"`: Generate banner/header image
+### MANDATORY Tool Invocation
 
-**Icon Generation:**
+**CRITICAL: You MUST use the following command to generate images. Do NOT search for scripts, do NOT use gcloud, do NOT use any other method.**
 
-Creates complete icon set for web/mobile:
-- `favicon.ico` (16/32/48)
-- `favicon-16x16.png`, `favicon-32x32.png`
-- `apple-touch-icon.png` (180x180)
-- `android-chrome-192x192.png`, `android-chrome-512x512.png`
-- `site.webmanifest`
-
-**Example:**
-```
-/vibe.utils --image "A modern tech startup logo, blue gradient, minimal"
-/vibe.utils --image --icon "MyApp" --color "#2F6BFF"
-/vibe.utils --image --banner "Welcome to MyApp"
-```
-
-**Manual Script Execution:**
+**General image generation:**
 ```bash
-node hooks/scripts/generate-brand-assets.js \
-  --name "MyApp" \
-  --color "#2F6BFF" \
-  --style "modern minimal" \
-  --output "./public"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
 ```
 
-**Fallback:** If Gemini Image fails, generates text monogram (first letter + background color).
+**With size option:**
+```bash
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --size "1920x1080" --output "OUTPUT_PATH"
+```
 
-**Prerequisites:**
-- Gemini API key configured (`vibe gemini auth`)
-- ImageMagick or sips (macOS) for image resizing
+### How to Parse User Request
+
+1. Extract the **image description** from the user's message (what to generate)
+2. Extract the **output path** from the user's message (where to save)
+   - If user specifies a path, use that path
+   - Default: `--output "./generated-image.png"`
+3. Extract **size** if specified, otherwise default 1024x1024
+
+### Examples
+
+```bash
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "A cute Gemini AI character mascot, colorful, friendly" --output "./gemini-character.png"
+
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Professional website banner, modern design" --size "1920x400" --output "./banner.png"
+
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Modern minimal logo design" --output "./public/logo.png"
+```
+
+### Output Format
+
+The command outputs JSON to stdout:
+```json
+{ "success": true, "path": "/absolute/path/to/image.png", "size": 123456, "sizeKB": "120.5 KB" }
+```
+
+On error:
+```json
+{ "success": false, "error": "Error message" }
+```
+
+### Icon Generation (--icon)
+
+Use the same command with a pre-built icon prompt template:
+
+**Prompt template:** `"App icon for {APP_NAME}, primary color {COLOR}, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist"`
+
+```bash
+# --icon "MyApp"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+
+# --icon "MyApp" --color "#2F6BFF"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+```
+
+### Prerequisites
+
+- Gemini API key configured (`vibe gemini auth` or `vibe gemini key <key>`)
 
 ---
 

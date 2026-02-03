@@ -59,7 +59,7 @@ Extract: name, colors, style keywords
 Generate Prompt: "App icon for [name], [style], [colors]..."
       |
       v
-Gemini Image API (imagen-3)
+Gemini Image API (gemini-2.5-flash-image)
       |
       v
 Resize & Convert: All platform sizes
@@ -102,12 +102,8 @@ Requirements:
 ## Manual Usage
 
 ```bash
-# Generate via hook script (when Gemini configured)
-node hooks/scripts/generate-brand-assets.js \
-  --name "MyApp" \
-  --color "#2F6BFF" \
-  --style "modern minimal" \
-  --output "./public"
+# Generate via llm-orchestrate (when Gemini configured)
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ## Integration with /vibe.run

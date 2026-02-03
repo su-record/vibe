@@ -21,11 +21,11 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 ## Workflow
 
 ```
-/vibe.spec "feature" → SPEC 생성 완료
+/vibe.spec "feature" → SPEC created
         ↓
-    /new (새 세션)
+    /new (new session)
         ↓
-/vibe.spec.review "feature" → 품질 검증 + GPT/Gemini 리뷰
+/vibe.spec.review "feature" → Quality validation + GPT/Gemini review
         ↓
     /vibe.run "feature"
 ```
@@ -306,43 +306,43 @@ After all review rounds, present the finalized SPEC to the user in a readable fo
 📋 SPEC SUMMARY: {feature-name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## 기능 개요
-{SPEC의 <role>과 <context>에서 추출한 기능 목적 1-2줄 요약}
+## Feature Overview
+{1-2 line summary of feature purpose from SPEC's <role> and <context>}
 
-## 기술 스택
-{<context>에서 추출한 기술 스택 목록}
+## Tech Stack
+{Tech stack list extracted from <context>}
 
-## 구현 단계
-| Phase | 이름 | 주요 작업 |
-|-------|------|----------|
-| 1 | {phase name} | {핵심 작업 1줄 요약} |
-| 2 | {phase name} | {핵심 작업 1줄 요약} |
+## Implementation Phases
+| Phase | Name | Key Tasks |
+|-------|------|-----------|
+| 1 | {phase name} | {1-line summary of core task} |
+| 2 | {phase name} | {1-line summary of core task} |
 | ... | ... | ... |
 
-## 핵심 시나리오 ({N}개)
-{Feature 파일에서 Scenario 이름 목록}
+## Key Scenarios ({N} total)
+{Scenario name list from Feature file}
 - Scenario: {name1}
 - Scenario: {name2}
 - ...
 
-## 주요 제약사항
-{<constraints>에서 핵심 항목 3-5개}
+## Key Constraints
+{3-5 key items from <constraints>}
 
-## 검증 기준
-{<acceptance>에서 핵심 항목 요약}
+## Acceptance Criteria
+{Summary of key items from <acceptance>}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ 위 내용에 잘못된 부분이 있으면 수정을 요청하세요.
-   문제가 없으면 /vibe.run "{feature-name}" 으로 진행합니다.
+If anything above is incorrect, please request changes.
+If no issues, proceed with /vibe.run "{feature-name}".
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Important:**
 
-- SPEC의 모든 Phase, Scenario, Constraint를 빠짐없이 나열
-- 사용자가 빠르게 검수할 수 있도록 핵심만 간결하게
-- 검토 후 사용자 확인 대기 (ultrawork 모드가 아닌 경우)
-- ultrawork 모드인 경우: 요약 출력 후 자동으로 `/vibe.run` 진행
+- List ALL Phases, Scenarios, and Constraints from SPEC without omission
+- Keep it concise for quick user review
+- Wait for user confirmation after review (unless ultrawork mode)
+- In ultrawork mode: output summary then auto-proceed to `/vibe.run`
 
 ---
 
