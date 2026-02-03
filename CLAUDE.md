@@ -2,6 +2,39 @@
 
 SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
+## Philosophy
+
+> **vibe = 바이브코딩을 쉽게 + 최소 품질 보장**
+
+| Principle | Description |
+|-----------|-------------|
+| **Easy Vibe Coding** | 빠른 흐름, 직관적 개발, AI와 협업하며 생각하기 |
+| **Minimum Quality Guaranteed** | 타입 안전성, 코드 품질, 보안 - 자동으로 하한선 확보 |
+| **Iterative Reasoning (6번 유형)** | AI에게 답을 맡기지 말고, 문제를 쪼개고 질문하며 함께 추론 |
+
+### How vibe Guarantees Quality
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  VIBE QUALITY GUARDRAILS (자동 품질 보장)                    │
+├─────────────────────────────────────────────────────────────┤
+│  1. Type Safety      → Quality Gate (any/Any 차단)          │
+│  2. Code Review      → Race Review (GPT + Gemini 병렬)      │
+│  3. Completion Check → Ralph Loop (100%까지 반복)           │
+│  4. Multi-LLM        → 3개 관점 검증 (Claude+GPT+Gemini)    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### User's Role (6번 Iterative-Reasoning Type)
+
+연구에 따르면, AI에게 답을 맡기는 것(1번 유형)보다 **문제를 쪼개고 추론하며 협업하는 것(6번 유형)**이 훨씬 좋은 성과를 냅니다.
+
+| ❌ Avoid | ✅ Do Instead |
+|----------|---------------|
+| "로그인 기능 만들어줘" | "로그인 기능의 요구사항을 분석해보자" |
+| AI 결과 그대로 사용 | "이 접근이 맞나?" 검증 질문 |
+| 완성 코드만 요청 | 단계별로 검토하며 진행 |
+
 ## Response Language
 
 **IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.**
