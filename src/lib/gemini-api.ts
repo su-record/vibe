@@ -539,6 +539,98 @@ export async function analyzeUI(prompt: string): Promise<string> {
 }
 
 // ============================================
+// Image Generation (Nano Banana)
+// ============================================
+
+interface ImageGenerationOptions {
+  size?: string;
+  output?: string;
+}
+
+interface ImageGenerationResult {
+  data: Buffer;
+  mimeType: string;
+}
+
+/**
+ * Gemini 이미지 생성 (Nano Banana - gemini-2.5-flash-preview-image-generation)
+ * API Key 방식만 지원 (이미지 생성은 Google AI Studio API 직접 호출)
+ */
+export async function generateImage(
+  prompt: string,
+  options: ImageGenerationOptions = {}
+): Promise<ImageGenerationResult> {
+  const apiKey = getApiKeyFromConfig();
+  if (!apiKey) {
+    throw new Error('Gemini API key not configured. Run "vibe gemini key <key>" to configure.');
+  }
+
+  const size = options.size || '1024x1024';
+  const [width, height] = size.split('x').map(Number);
+  const aspectRatio = width && height ? `${width}:${height}` : '1:1';
+
+  // Nano Banana (Gemini 2.5 Flash Image)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${apiKey}`;
+
+  const requestBody = {
+    contents: [{
+      parts: [{
+        text: `Generate an image: ${prompt}
+
+Requirements:
+- High quality, detailed image
+- Aspect ratio: ${aspectRatio}
+- Professional and polished look`
+      }]
+    }],
+    generationConfig: {
+      responseModalities: ['TEXT', 'IMAGE'],
+    }
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage = `Gemini Image API error (${response.status})`;
+    try {
+      const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
+      if (errorJson.error?.message) {
+        errorMessage = errorJson.error.message;
+      }
+    } catch { /* ignore */ }
+    throw new Error(errorMessage);
+  }
+
+  const result = await response.json() as {
+    candidates?: Array<{
+      content?: {
+        parts?: Array<{
+          text?: string;
+          inlineData?: { mimeType: string; data: string };
+        }>;
+      };
+    }>;
+  };
+
+  const parts = result.candidates?.[0]?.content?.parts || [];
+  for (const part of parts) {
+    if (part.inlineData?.mimeType?.startsWith('image/')) {
+      return {
+        data: Buffer.from(part.inlineData.data, 'base64'),
+        mimeType: part.inlineData.mimeType,
+      };
+    }
+  }
+
+  throw new Error('No image in Gemini response');
+}
+
+// ============================================
 // Vibe Gemini Orchestration Functions
 // 검색 없이 빠르고 결정론적인 응답
 // ============================================

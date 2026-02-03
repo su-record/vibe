@@ -23,8 +23,6 @@
 import { getLibBaseUrl } from './utils.js';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
-import https from 'https';
 
 const LIB_URL = getLibBaseUrl();
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant.';
@@ -71,90 +69,8 @@ function sleep(ms) {
 }
 
 // ============================================
-// Image Generation (Gemini only)
+// Image Generation (delegates to gemini-api)
 // ============================================
-
-const GEMINI_CONFIG_PATH = path.join(os.homedir(), '.config', 'vibe', 'gemini.json');
-
-function getGeminiApiKey() {
-  if (process.env.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
-  }
-  if (fs.existsSync(GEMINI_CONFIG_PATH)) {
-    try {
-      const config = JSON.parse(fs.readFileSync(GEMINI_CONFIG_PATH, 'utf8'));
-      if (config.apiKey) return config.apiKey;
-    } catch {
-      // ignore
-    }
-  }
-  return null;
-}
-
-async function generateImageWithGemini(prompt, options = {}) {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error('Gemini API key not configured. Run "vibe gemini auth" to configure.');
-  }
-
-  const size = options.size || '1024x1024';
-  const [width, height] = size.split('x').map(Number);
-  const aspectRatio = width && height ? `${width}:${height}` : '1:1';
-
-  // Nano Banana (Gemini 2.5 Flash Image)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${apiKey}`;
-
-  const requestBody = {
-    contents: [{
-      parts: [{
-        text: `Generate an image: ${prompt}
-
-Requirements:
-- High quality, detailed image
-- Aspect ratio: ${aspectRatio}
-- Professional and polished look`
-      }]
-    }],
-    generationConfig: {
-      responseModalities: ['TEXT', 'IMAGE'],
-    }
-  };
-
-  return new Promise((resolve, reject) => {
-    const req = https.request(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(data);
-          if (result.error) {
-            reject(new Error(result.error.message));
-            return;
-          }
-          const parts = result.candidates?.[0]?.content?.parts || [];
-          for (const part of parts) {
-            if (part.inlineData?.mimeType?.startsWith('image/')) {
-              resolve({
-                data: Buffer.from(part.inlineData.data, 'base64'),
-                mimeType: part.inlineData.mimeType
-              });
-              return;
-            }
-          }
-          reject(new Error('No image in response'));
-        } catch (e) {
-          reject(e);
-        }
-      });
-    });
-    req.on('error', reject);
-    req.write(JSON.stringify(requestBody));
-    req.end();
-  });
-}
 
 function parseImageArgs(args) {
   const result = { prompt: null, output: './generated-image.png', size: '1024x1024' };
@@ -238,7 +154,8 @@ async function main() {
     console.error(`  Output: ${imageArgs.output}`);
 
     try {
-      const image = await generateImageWithGemini(imageArgs.prompt, { size: imageArgs.size });
+      const geminiApi = await import(`${LIB_URL}gemini-api.js`);
+      const image = await geminiApi.generateImage(imageArgs.prompt, { size: imageArgs.size });
       fs.writeFileSync(imageArgs.output, image.data);
       const stats = fs.statSync(imageArgs.output);
       const sizeKB = (stats.size / 1024).toFixed(1);
