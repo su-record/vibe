@@ -387,6 +387,116 @@ Claude:
 
 **Language guide:** `~/.claude/vibe/languages/{stack}.md` (global reference)
 
+---
+
+## Coding Guidelines (Mandatory)
+
+### Type Safety: Use Types Explicitly
+
+> **Core Principle**: 타입 시스템을 가진 모든 언어에서 타입을 명시적으로 사용해라!
+
+타입 정의는 특정 언어의 문법이 아니라, **복잡한 소프트웨어를 단순화하고 통제하려는 엔지니어링의 핵심 철학**입니다.
+
+### Applies to ALL Typed Languages
+
+| Category | Languages | Key Principle |
+|----------|-----------|---------------|
+| **Static Typed** | Java, C#, C++, Go, Rust, Swift, Kotlin, Scala | 타입 = 컴파일 타임 계약 |
+| **Gradual Typed** | TypeScript, Python (typing), PHP (typed), Ruby (RBS) | 타입 = 선택적 안전장치 |
+| **Functional** | Haskell, OCaml, F#, Elm | 타입 = 논리적 증명 |
+
+### Universal Anti-Patterns (All Languages)
+
+| ❌ Forbidden Pattern | Why | ✅ Instead |
+|---------------------|-----|-----------|
+| Type escape hatches (`any`, `Any`, `Object`, `void*`, `interface{}`) | 타입 정보 손실, 런타임 에러 | 구체적 타입 또는 `unknown` + 가드 |
+| Type suppression (`@ts-ignore`, `# type: ignore`, `@SuppressWarnings`) | 에러 숨김 | 실제 타입 문제 해결 |
+| Raw generic types (`List`, `Map` without params) | 타입 안전성 상실 | `List<User>`, `Map<String, Order>` |
+| Excessive casting (`as`, `(Type)`, `unsafe`) | 컴파일러 우회 | 타입 가드 또는 패턴 매칭 |
+
+### Language-Specific Guidelines
+
+**TypeScript/JavaScript:**
+```typescript
+// ❌ BAD
+function process(data: any): any { return data.foo; }
+
+// ✅ GOOD
+function process(data: unknown): Result {
+  if (isValidData(data)) return data.foo;
+  throw new Error('Invalid');
+}
+```
+
+**Python:**
+```python
+# ❌ BAD
+def process(data: Any) -> Any: return data["key"]
+
+# ✅ GOOD
+def process(data: UserData) -> str: return data["name"]
+```
+
+**Java/Kotlin:**
+```java
+// ❌ BAD
+List items = new ArrayList();  // Raw type
+Object data = getData();       // Lost type info
+
+// ✅ GOOD
+List<User> users = new ArrayList<>();
+User user = getUser();
+```
+
+**Go:**
+```go
+// ❌ BAD
+func process(data interface{}) interface{} { ... }
+
+// ✅ GOOD
+func process(data UserRequest) (UserResponse, error) { ... }
+```
+
+**Rust:**
+```rust
+// ❌ BAD (unnecessary unsafe or Box<dyn Any>)
+let data: Box<dyn Any> = get_data();
+
+// ✅ GOOD
+let data: UserData = get_data()?;
+```
+
+**C#:**
+```csharp
+// ❌ BAD
+object data = GetData();
+dynamic result = Process(data);
+
+// ✅ GOOD
+UserData data = GetData();
+Result result = Process(data);
+```
+
+### Type Safety Rules (Universal)
+
+| Rule | Description |
+|------|-------------|
+| **Boundary Validation** | 시스템 경계(API, JSON, 사용자 입력)에서만 검증 |
+| **Internal Trust** | 검증 후 내부에서는 정확한 타입만 전달 |
+| **No Type Escape** | 타입 에러를 "해결"하기 위해 escape hatch 사용 금지 |
+| **Explicit Signatures** | 함수/메서드 시그니처에 타입 명시 |
+| **Generics with Params** | 제네릭은 항상 타입 파라미터와 함께 |
+
+### Quality Gate: Type Violations Block Merge
+
+| Violation | Action |
+|-----------|--------|
+| Type escape hatches (`any`, `Any`, `Object`, `interface{}`, etc.) | ❌ Block |
+| Type suppression comments | ❌ Block |
+| Raw generic types | ❌ Block |
+| Missing function return types | ⚠️ Warning |
+| Excessive type casting | ⚠️ Warning |
+
 ## Description
 
 Read PTCF structured SPEC document and execute implementation immediately.
