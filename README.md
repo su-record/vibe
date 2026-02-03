@@ -66,12 +66,20 @@ vibe init
 | Command | Description |
 |---------|-------------|
 | `/vibe.spec "feature"` | Generate SPEC document + parallel research |
+| `/vibe.spec.review "feature"` | GPT/Gemini 3-round cross-validation |
 | `/vibe.run "feature"` | Execute implementation |
 | `/vibe.run "feature" ultrawork` | Maximum performance mode |
 | `/vibe.verify "feature"` | BDD verification |
 | `/vibe.trace "feature"` | Requirements traceability matrix |
-| `/vibe.review` | 13+ agent parallel review |
-| `/vibe.review --race` | GPT + Gemini race review |
+| `/vibe.review` | 13+ agent parallel review (race mode 기본 포함) |
+| `/vibe.review --quick` | Fast review (race 없음) |
+| `/vibe.analyze` | Project analysis |
+| `/vibe.reason "problem"` | Systematic reasoning framework |
+| `/vibe.utils --ui "desc"` | UI mockup preview |
+| `/vibe.utils --diagram` | Generate diagrams (Mermaid) |
+| `/vibe.utils --e2e` | E2E testing (Playwright) |
+| `/vibe.utils --image "desc"` | Image generation (Gemini) |
+| `/vibe.utils --continue` | Session restore |
 
 ## ULTRAWORK Mode
 
@@ -110,12 +118,13 @@ A single dispatcher reads user prompts and routes to the right LLM only when pat
 | Code analysis keywords | Gemini | Code quality review |
 | No match | None | No external LLM call |
 
-### Race Review
+### Race Review (Default)
 
-Run GPT + Gemini in parallel for cross-validation:
+GPT + Gemini run in parallel for cross-validation. **Enabled by default** since v2.6.30.
 
 ```bash
-/vibe.review --race
+/vibe.review           # Race mode included
+/vibe.review --quick   # Fast mode (no race)
 ```
 
 | Agreement | Priority | Action |

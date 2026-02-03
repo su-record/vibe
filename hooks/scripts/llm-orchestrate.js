@@ -6,16 +6,25 @@
  *   node llm-orchestrate.js <provider> <mode> "systemPrompt" "prompt"
  *
  *   provider: gpt | gemini
- *   mode: orchestrate | orchestrate-json
+ *   mode: orchestrate | orchestrate-json | image
+ *
+ * Image Mode:
+ *   node llm-orchestrate.js gemini image "prompt" --output "./image.png"
+ *   node llm-orchestrate.js gemini image "prompt" --output "./image.png" --size "1920x1080"
  *
  * Features:
  *   - Exponential backoff retry (3 attempts)
  *   - Auto fallback: gemini → gpt, gpt → gemini
  *   - Overload/rate-limit detection
+ *   - Image generation (Gemini only, Nano Banana model)
  *
  * Input: JSON from stdin with { prompt: string } (when no CLI args)
  */
 import { getLibBaseUrl } from './utils.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import https from 'https';
 
 const LIB_URL = getLibBaseUrl();
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant.';
@@ -61,6 +70,106 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// ============================================
+// Image Generation (Gemini only)
+// ============================================
+
+const GEMINI_CONFIG_PATH = path.join(os.homedir(), '.config', 'vibe', 'gemini.json');
+
+function getGeminiApiKey() {
+  if (process.env.GEMINI_API_KEY) {
+    return process.env.GEMINI_API_KEY;
+  }
+  if (fs.existsSync(GEMINI_CONFIG_PATH)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(GEMINI_CONFIG_PATH, 'utf8'));
+      if (config.apiKey) return config.apiKey;
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
+async function generateImageWithGemini(prompt, options = {}) {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error('Gemini API key not configured. Run "vibe gemini auth" to configure.');
+  }
+
+  const size = options.size || '1024x1024';
+  const [width, height] = size.split('x').map(Number);
+  const aspectRatio = width && height ? `${width}:${height}` : '1:1';
+
+  // Nano Banana (Gemini 2.5 Flash Image)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${apiKey}`;
+
+  const requestBody = {
+    contents: [{
+      parts: [{
+        text: `Generate an image: ${prompt}
+
+Requirements:
+- High quality, detailed image
+- Aspect ratio: ${aspectRatio}
+- Professional and polished look`
+      }]
+    }],
+    generationConfig: {
+      responseModalities: ['TEXT', 'IMAGE'],
+    }
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          if (result.error) {
+            reject(new Error(result.error.message));
+            return;
+          }
+          const parts = result.candidates?.[0]?.content?.parts || [];
+          for (const part of parts) {
+            if (part.inlineData?.mimeType?.startsWith('image/')) {
+              resolve({
+                data: Buffer.from(part.inlineData.data, 'base64'),
+                mimeType: part.inlineData.mimeType
+              });
+              return;
+            }
+          }
+          reject(new Error('No image in response'));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(JSON.stringify(requestBody));
+    req.end();
+  });
+}
+
+function parseImageArgs(args) {
+  const result = { prompt: null, output: './generated-image.png', size: '1024x1024' };
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--output' || args[i] === '-o') {
+      result.output = args[++i];
+    } else if (args[i] === '--size' || args[i] === '-s') {
+      result.size = args[++i];
+    } else if (!args[i].startsWith('-') && !result.prompt) {
+      result.prompt = args[i];
+    }
+  }
+  return result;
+}
+
 async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   const modulePath = `${LIB_URL}${providerName}-api.js`;
   const module = await import(modulePath);
@@ -104,6 +213,54 @@ async function callWithRetry(providerName, prompt, sysPrompt, jsonMode) {
 }
 
 async function main() {
+  // Image mode handling
+  if (mode === 'image') {
+    if (provider !== 'gemini') {
+      console.log('[IMAGE] Error: Image generation only supports gemini provider');
+      return;
+    }
+
+    const imageArgs = parseImageArgs(process.argv.slice(4));
+    if (!imageArgs.prompt) {
+      console.log('[IMAGE] Error: --prompt is required');
+      return;
+    }
+
+    // Ensure output directory exists
+    const outputDir = path.dirname(imageArgs.output);
+    if (outputDir && outputDir !== '.' && !fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    console.error(`[IMAGE] Generating with Nano Banana...`);
+    console.error(`  Prompt: ${imageArgs.prompt}`);
+    console.error(`  Size: ${imageArgs.size}`);
+    console.error(`  Output: ${imageArgs.output}`);
+
+    try {
+      const image = await generateImageWithGemini(imageArgs.prompt, { size: imageArgs.size });
+      fs.writeFileSync(imageArgs.output, image.data);
+      const stats = fs.statSync(imageArgs.output);
+      const sizeKB = (stats.size / 1024).toFixed(1);
+
+      console.log(JSON.stringify({
+        success: true,
+        path: path.resolve(imageArgs.output),
+        size: stats.size,
+        sizeKB: `${sizeKB} KB`,
+        prompt: imageArgs.prompt
+      }));
+    } catch (err) {
+      console.log(JSON.stringify({
+        success: false,
+        error: err.message,
+        prompt: imageArgs.prompt
+      }));
+    }
+    return;
+  }
+
+  // Text generation mode (orchestrate / orchestrate-json)
   let prompt;
   let systemPrompt = DEFAULT_SYSTEM_PROMPT;
 
