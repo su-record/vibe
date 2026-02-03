@@ -97,34 +97,30 @@ vibe gemini status
 
 Or check config file: `~/.config/vibe/gemini.json`
 
-#### If Gemini Enabled: Generate UI Image
+#### If Gemini Enabled: Generate UI Image + Code
 
-Use Gemini Image API to generate actual UI mockup:
-
-**Prompt template for Gemini:**
-
-```
-Generate a modern UI mockup image for:
-
-[UI Description from step 2]
-
-Style requirements:
-- Clean, modern design
-- [Colors from design tokens if available]
-- [Typography from style guide if available]
-- Mobile-first responsive layout
-- Include all specified components
-
-Output: High-quality UI mockup image (1280x720 or similar)
-```
-
-**Execution:**
+##### A. UI Mockup Image Generation
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "[analyzed UI description]" --output "./ui-preview.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Modern UI mockup: [UI Description from step 2]. Clean design, [colors/typography if available], mobile-first responsive layout" --output "./ui-preview.png"
 ```
 
-**Output location:** `./ui-preview-{timestamp}.png`
+##### B. UI Code Generation (from design files)
+
+When design files (image/HTML/folder) are provided, use Gemini to generate production-ready component code:
+
+```bash
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate "You are a UI code generator. Analyze the provided design and generate production-ready React TypeScript components with Tailwind CSS. Output complete component code with proper types, responsive layout, and accessibility attributes."
+```
+
+Pass the design context (file contents, extracted colors, layout structure from step 2) as the user prompt via stdin or arguments.
+
+**When to use each:**
+
+| Input | Image (Step A) | Code (Step B) |
+| ----- | -------------- | ------------- |
+| Text description | Generate mockup | Skip |
+| Image/HTML/Folder | Generate mockup | Generate component code |
 
 #### If Gemini Disabled: ASCII Art Fallback
 

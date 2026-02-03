@@ -6,7 +6,7 @@
  *   node llm-orchestrate.js <provider> <mode> "systemPrompt" "prompt"
  *
  *   provider: gpt | gemini
- *   mode: orchestrate | orchestrate-json | image
+ *   mode: orchestrate | orchestrate-json | image | analyze-image
  *
  * Image Mode:
  *   node llm-orchestrate.js gemini image "prompt" --output "./image.png"
@@ -17,6 +17,11 @@
  *   - Auto fallback: gemini → gpt, gpt → gemini
  *   - Overload/rate-limit detection
  *   - Image generation (Gemini only, Nano Banana model)
+ *   - Image analysis (Gemini multimodal)
+ *
+ * Analyze-Image Mode:
+ *   node llm-orchestrate.js gemini analyze-image "./image.png" "Analyze this UI"
+ *   node llm-orchestrate.js gemini analyze-image "./image.png" "prompt" --system "system prompt"
  *
  * Input: JSON from stdin with { prompt: string } (when no CLI args)
  */
@@ -81,6 +86,26 @@ function parseImageArgs(args) {
       result.size = args[++i];
     } else if (!args[i].startsWith('-') && !result.prompt) {
       result.prompt = args[i];
+    }
+  }
+  return result;
+}
+
+// ============================================
+// Image Analysis (delegates to gemini-api)
+// ============================================
+
+function parseAnalyzeImageArgs(args) {
+  const result = { imagePath: null, prompt: null, systemPrompt: null };
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--system' || args[i] === '-s') {
+      result.systemPrompt = args[++i];
+    } else if (!args[i].startsWith('-')) {
+      if (!result.imagePath) {
+        result.imagePath = args[i];
+      } else if (!result.prompt) {
+        result.prompt = args[i];
+      }
     }
   }
   return result;
@@ -172,6 +197,60 @@ async function main() {
         success: false,
         error: err.message,
         prompt: imageArgs.prompt
+      }));
+    }
+    return;
+  }
+
+  // Analyze-image mode handling
+  if (mode === 'analyze-image') {
+    if (provider !== 'gemini') {
+      console.log('[ANALYZE-IMAGE] Error: Image analysis only supports gemini provider');
+      return;
+    }
+
+    const analyzeArgs = parseAnalyzeImageArgs(process.argv.slice(4));
+    if (!analyzeArgs.imagePath) {
+      console.log('[ANALYZE-IMAGE] Error: image path is required');
+      return;
+    }
+    if (!analyzeArgs.prompt) {
+      console.log('[ANALYZE-IMAGE] Error: analysis prompt is required');
+      return;
+    }
+
+    const absolutePath = path.resolve(analyzeArgs.imagePath);
+    if (!fs.existsSync(absolutePath)) {
+      console.log(JSON.stringify({
+        success: false,
+        error: `Image file not found: ${absolutePath}`,
+        imagePath: analyzeArgs.imagePath,
+      }));
+      return;
+    }
+
+    console.error(`[ANALYZE-IMAGE] Analyzing image with Gemini...`);
+    console.error(`  Image: ${absolutePath}`);
+    console.error(`  Prompt: ${analyzeArgs.prompt}`);
+
+    try {
+      const geminiApi = await import(`${LIB_URL}gemini-api.js`);
+      const options = {};
+      if (analyzeArgs.systemPrompt) {
+        options.systemPrompt = analyzeArgs.systemPrompt;
+      }
+      const analysis = await geminiApi.analyzeImage(absolutePath, analyzeArgs.prompt, options);
+
+      console.log(JSON.stringify({
+        success: true,
+        analysis,
+        imagePath: absolutePath,
+      }));
+    } catch (err) {
+      console.log(JSON.stringify({
+        success: false,
+        error: err.message,
+        imagePath: absolutePath,
       }));
     }
     return;

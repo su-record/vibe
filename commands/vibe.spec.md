@@ -90,11 +90,33 @@ User: 1 hour, disallow, confirm
 | PDF | `.pdf` | Planning docs, design documents |
 | Image | `.png`, `.jpg`, `.jpeg`, `.webp` | Wireframes, UI design, screenshots |
 
+**Image input analysis:**
+
+When image files (`.png`, `.jpg`, `.jpeg`, `.webp`) are provided as input, analyze them using the best available method:
+
+- **Gemini Enabled**: `llm-orchestrate.js gemini analyze-image` (Gemini 3 Flash - best image recognition)
+- **Gemini Disabled**: Claude Opus Read tool (built-in multimodal, existing behavior)
+
+**Gemini enabled - analyze via llm-orchestrate.js:**
+
+```bash
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
+```
+
+Parse the JSON result: `{ success: true, analysis: "..." }` → use `analysis` field content.
+
+If `success: false`, fall back to Claude Read tool.
+
+**Gemini disabled - analyze via Claude Read tool:**
+
+Use the Read tool directly on the image file. Claude can read images natively.
+
 **Image input example:**
 ```
 /vibe.spec "designs/login-wireframe.png"
 
 🖼️ Image analysis: designs/login-wireframe.png
+   (via Gemini 3 Flash / Claude Opus)
 
 📋 Detected UI elements:
   - Email input field

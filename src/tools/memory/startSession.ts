@@ -169,7 +169,7 @@ export async function startSession(args: { greeting?: string; loadMemory?: boole
 function getRecentGitLog(projectRoot: string): string | null {
   try {
     const result = execSync(
-      'git log --oneline -3 2>/dev/null',
+      `git log --oneline -3 2>/dev/null`,
       { cwd: projectRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
     ).trim();
 

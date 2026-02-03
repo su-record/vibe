@@ -33,7 +33,7 @@ Read and follow `agents/ui-previewer.md` for UI preview generation.
 
 Generate UI preview from description or design folder.
 
-- **Gemini enabled**: Actual UI mockup image
+- **Gemini enabled**: UI mockup image + component code generation (via `llm-orchestrate.js` → `gemini-api`)
 - **Gemini disabled**: ASCII art fallback
 
 **Input types:**

@@ -631,6 +631,204 @@ Requirements:
 }
 
 // ============================================
+// Image Analysis (Multimodal)
+// ============================================
+
+interface ImageAnalysisOptions {
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  systemPrompt?: string;
+}
+
+function getImageMimeType(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeMap: Record<string, string> = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.bmp': 'image/bmp',
+  };
+  return mimeMap[ext] || 'image/png';
+}
+
+/**
+ * Gemini Image Analysis (이미지 분석 - gemini-3-flash)
+ * 이미지 파일을 읽어서 Gemini 멀티모달 API로 분석
+ */
+export async function analyzeImage(
+  imagePath: string,
+  prompt: string,
+  options: ImageAnalysisOptions = {}
+): Promise<string> {
+  const {
+    model = 'gemini-3-flash',
+    maxTokens = 4096,
+    temperature = 0.3,
+    systemPrompt,
+  } = options;
+
+  const absolutePath = path.resolve(imagePath);
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`Image file not found: ${absolutePath}`);
+  }
+
+  const imageData = fs.readFileSync(absolutePath);
+  const base64Data = imageData.toString('base64');
+  const mimeType = getImageMimeType(absolutePath);
+
+  // Multimodal contents: inlineData + text
+  const contents = [{
+    role: 'user' as const,
+    parts: [
+      { inlineData: { mimeType, data: base64Data } },
+      { text: prompt },
+    ],
+  }];
+
+  const authInfo = await getAuthInfo();
+  const apiKey = getApiKeyFromConfig();
+
+  // API Key
+  if (authInfo.type === 'apikey' && authInfo.apiKey) {
+    return analyzeImageWithApiKey(authInfo.apiKey, contents, { model, maxTokens, temperature, systemPrompt });
+  }
+
+  // OAuth (API Key fallback)
+  if (authInfo.type === 'oauth' && authInfo.accessToken) {
+    try {
+      return await analyzeImageWithOAuth(authInfo.accessToken, authInfo.projectId, contents, { model, maxTokens, temperature, systemPrompt });
+    } catch (error) {
+      const errorMsg = (error as Error).message;
+      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
+        return analyzeImageWithApiKey(apiKey, contents, { model, maxTokens, temperature, systemPrompt });
+      }
+      throw error;
+    }
+  }
+
+  throw new Error('Gemini credentials not found. Run "vibe gemini auth" or "vibe gemini key <key>".');
+}
+
+type MultimodalContent = {
+  role: 'user';
+  parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
+};
+
+async function analyzeImageWithApiKey(
+  apiKey: string,
+  contents: MultimodalContent[],
+  options: { model: string; maxTokens: number; temperature: number; systemPrompt?: string }
+): Promise<string> {
+  const apiKeyModelMap: Record<string, string> = {
+    'gemini-3-pro': 'gemini-3-pro-preview',
+    'gemini-3-flash': 'gemini-3-flash-preview',
+  };
+  const actualModel = apiKeyModelMap[options.model] || 'gemini-3-flash-preview';
+
+  const requestBody: Record<string, unknown> = {
+    contents,
+    generationConfig: {
+      maxOutputTokens: options.maxTokens,
+      temperature: options.temperature,
+    },
+  };
+
+  if (options.systemPrompt) {
+    requestBody.systemInstruction = { parts: [{ text: options.systemPrompt }] };
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${actualModel}:generateContent?key=${apiKey}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+  }
+
+  const result = await response.json() as GeminiApiResponse;
+  if (!result.candidates || result.candidates.length === 0) {
+    throw new Error('Gemini API response is empty.');
+  }
+
+  return result.candidates[0].content?.parts?.[0]?.text || '';
+}
+
+async function analyzeImageWithOAuth(
+  accessToken: string,
+  projectId: string | undefined,
+  contents: MultimodalContent[],
+  options: { model: string; maxTokens: number; temperature: number; systemPrompt?: string }
+): Promise<string> {
+  const modelInfo = GEMINI_MODELS[options.model] || GEMINI_MODELS[DEFAULT_MODEL];
+
+  const innerRequest: Record<string, unknown> = {
+    contents,
+    generationConfig: {
+      maxOutputTokens: Math.min(options.maxTokens, modelInfo.maxTokens),
+      temperature: options.temperature,
+    },
+  };
+
+  if (options.systemPrompt) {
+    innerRequest.systemInstruction = { parts: [{ text: options.systemPrompt }] };
+  }
+
+  const requestBody = wrapRequestBody(
+    innerRequest,
+    projectId || ANTIGRAVITY_DEFAULT_PROJECT_ID,
+    modelInfo.id
+  );
+
+  let lastError: Error | null = null;
+  for (const endpoint of ENDPOINT_FALLBACKS) {
+    const url = `${endpoint}/${ANTIGRAVITY_API_VERSION}:generateContent`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          ...ANTIGRAVITY_HEADERS,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 404) {
+          lastError = new Error(`API not found: ${errorText}`);
+          continue;
+        }
+        throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+      }
+
+      const result = await response.json() as GeminiApiResponse;
+      const responseData = result.response || result;
+      if (!responseData.candidates || responseData.candidates.length === 0) {
+        throw new Error('Gemini API response is empty.');
+      }
+
+      return responseData.candidates[0].content?.parts?.[0]?.text || '';
+    } catch (error) {
+      lastError = error as Error;
+      if ((error as Error).name === 'TypeError' || (error as Error).message.includes('not found')) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw lastError || new Error('All Antigravity endpoints failed');
+}
+
+// ============================================
 // Vibe Gemini Orchestration Functions
 // 검색 없이 빠르고 결정론적인 응답
 // ============================================
