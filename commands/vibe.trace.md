@@ -133,10 +133,10 @@ The RTM generation uses vibe tools:
 
 ```bash
 # Generate RTM
-node -e "import('@su-record/vibe/tools').then(t => t.generateTraceabilityMatrix('login').then(m => console.log(t.formatMatrixAsMarkdown(m))))"
+node -e "import('@su-record/core/tools').then(t => t.generateTraceabilityMatrix('login').then(m => console.log(t.formatMatrixAsMarkdown(m))))"
 
 # Generate HTML
-node -e "import('@su-record/vibe/tools').then(t => t.generateTraceabilityMatrix('login').then(m => console.log(t.formatMatrixAsHtml(m))))"
+node -e "import('@su-record/core/tools').then(t => t.generateTraceabilityMatrix('login').then(m => console.log(t.formatMatrixAsHtml(m))))"
 ```
 
 ## Options

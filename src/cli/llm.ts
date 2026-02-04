@@ -102,7 +102,7 @@ Stored: ${authFile}
 
 ${llmType.toUpperCase()} is called directly via Hooks:
   - Auto-called with "${llmType}. query" prefix
-  - Direct use: import('@su-record/vibe/lib/${llmType}')
+  - Direct use: import('@su-record/core/lib/${llmType}')
 
 Disable: vibe ${llmType} remove
   `);
@@ -219,7 +219,7 @@ Logout: vibe gpt logout
     console.log(`
 GPT is called via Hooks:
   - Auto-called with "gpt. query" prefix
-  - Direct use: import('@su-record/vibe/lib/gpt')
+  - Direct use: import('@su-record/core/lib/gpt')
     `);
 
     // Windows libuv 핸들 충돌 방지: 서버 완전 종료 대기
@@ -402,7 +402,7 @@ Logout: vibe gemini logout
     console.log(`
 Gemini is called via Hooks:
   - Auto-called with "gemini. query" prefix
-  - Direct use: import('@su-record/vibe/lib/gemini')
+  - Direct use: import('@su-record/core/lib/gemini')
     `);
 
     // Windows libuv 핸들 충돌 방지: 서버 완전 종료 대기

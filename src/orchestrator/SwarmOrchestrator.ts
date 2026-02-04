@@ -434,7 +434,7 @@ export class SwarmOrchestrator {
  * Swarm 패턴으로 복잡한 작업 실행
  *
  * @example
- * import { swarm } from '@su-record/vibe/orchestrator';
+ * import { swarm } from '@su-record/core/orchestrator';
  *
  * const result = await swarm({
  *   prompt: 'Implement login feature with: 1. UI form 2. Validation 3. API call 4. Error handling',

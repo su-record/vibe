@@ -261,7 +261,7 @@ After initial conversation, use the structured `askUser` tool for:
 **Usage:**
 
 ```typescript
-import { askUser, askUserQuick } from '@su-record/vibe/tools';
+import { askUser, askUserQuick } from '@su-record/core/tools';
 
 // Quick helper for common scenarios
 const result = await askUserQuick.login('my-login-feature');
@@ -312,7 +312,7 @@ Total 6 questions (Required: 4)
 **Response parsing:**
 
 ```typescript
-import { parseUserResponse } from '@su-record/vibe/tools';
+import { parseUserResponse } from '@su-record/core/tools';
 
 // User responds: "1, 2, 4" (selected option numbers)
 const response = parseUserResponse(question, "1, 2, 4");
@@ -1035,7 +1035,7 @@ Claude: Thank you. SPEC has been refined.
 ### Tool Invocation
 All tools are called via:
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
 ```
 
 ### Recommended Tools for SPEC Creation
@@ -1052,17 +1052,17 @@ node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r
 
 **1. Find existing auth implementation:**
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
 ```
 
 **2. Save confirmed requirements:**
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'brick-game-requirements', value: 'Platform: Web, Stack: Phaser.js, Style: Neon', category: 'spec', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'brick-game-requirements', value: 'Platform: Web, Stack: Phaser.js, Style: Neon', category: 'spec', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **3. Recall previous decisions:**
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.recallMemory({key: 'brick-game-requirements', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.recallMemory({key: 'brick-game-requirements', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 ## Next Step

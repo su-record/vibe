@@ -20,7 +20,7 @@ if command -v vibe &> /dev/null; then
     echo "✅ Vibe 업데이트 완료!"
 else
     echo "📦 Vibe 설치 중..."
-    npm install -g @su-record/vibe
+    npm install -g @su-record/core
     vibe update --silent
     echo "✅ Vibe 설치 및 설정 완료!"
 fi

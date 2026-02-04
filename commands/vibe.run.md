@@ -213,7 +213,7 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 
 ```bash
 # Generate RTM for coverage verification
-node -e "import('@su-record/vibe/tools').then(t => t.generateTraceabilityMatrix('{feature-name}', {projectPath: process.cwd()}).then(r => console.log(JSON.stringify(r, null, 2))))"
+node -e "import('@su-record/core/tools').then(t => t.generateTraceabilityMatrix('{feature-name}', {projectPath: process.cwd()}).then(r => console.log(JSON.stringify(r, null, 2))))"
 ```
 
 **RTM provides automated metrics:**
@@ -602,7 +602,7 @@ Use vibe tools for accurate codebase understanding and session continuity.
 
 All tools are called via:
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
 ```
 
 ### Semantic Analysis Tools
@@ -616,7 +616,7 @@ node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r
 
 **Example - Find symbol:**
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: '.'}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: '.'}).then(r => console.log(r.content[0].text)))"
 ```
 
 ### Memory Tools
@@ -629,7 +629,7 @@ node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'lo
 
 **Example - Save important decision:**
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'auth-pattern', value: 'Using JWT with refresh tokens', category: 'project'}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'auth-pattern', value: 'Using JWT with refresh tokens', category: 'project'}).then(r => console.log(r.content[0].text)))"
 ```
 
 ### Session Management (Auto via Hooks)
@@ -810,10 +810,10 @@ Then: Login success + JWT token returned
 **Launch background agents for next phase via Orchestrator:**
 ```bash
 # Start background agent (doesn't block)
-node -e "import('@su-record/vibe/orchestrator').then(o => o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep').then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/orchestrator').then(o => o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep').then(r => console.log(r.content[0].text)))"
 
 # Multiple backgrounds in parallel
-node -e "import('@su-record/vibe/orchestrator').then(async o => {
+node -e "import('@su-record/core/orchestrator').then(async o => {
   await Promise.all([
     o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep'),
     o.runAgent('Pre-generate test cases for login form', 'test-prep'),
@@ -825,12 +825,12 @@ node -e "import('@su-record/vibe/orchestrator').then(async o => {
 
 **Check background agent status:**
 ```bash
-node -e "import('@su-record/vibe/orchestrator').then(o => console.log(o.status().content[0].text))"
+node -e "import('@su-record/core/orchestrator').then(o => console.log(o.status().content[0].text))"
 ```
 
 **Get result when ready:**
 ```bash
-node -e "import('@su-record/vibe/orchestrator').then(o => o.getResult('SESSION_ID').then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/orchestrator').then(o => o.getResult('SESSION_ID').then(r => console.log(r.content[0].text)))"
 ```
 
 **Why Background Agents Matter:**

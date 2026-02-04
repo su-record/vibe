@@ -64,7 +64,7 @@ export function installGlobalVibePackage(isUpdate = false): void {
     if (fs.existsSync(globalNpmVibeDir)) {
       copyDirRecursive(globalNpmVibeDir, vibePackageDir);
     } else {
-      execSync(`npm install @su-record/vibe@${currentVersion} --prefix "${globalVibeDir}" --no-save`, {
+      execSync(`npm install @su-record/core@${currentVersion} --prefix "${globalVibeDir}" --no-save`, {
         stdio: 'pipe',
       });
     }

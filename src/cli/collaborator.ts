@@ -19,9 +19,9 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
       const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
       let modified = false;
 
-      // 기존 devDependencies에서 @su-record/vibe 제거
-      if (pkg.devDependencies?.['@su-record/vibe']) {
-        delete pkg.devDependencies['@su-record/vibe'];
+      // 기존 devDependencies에서 @su-record/core 제거
+      if (pkg.devDependencies?.['@su-record/core']) {
+        delete pkg.devDependencies['@su-record/core'];
         modified = true;
       }
 
@@ -85,7 +85,7 @@ if command -v vibe &> /dev/null; then
     echo "✅ Vibe updated!"
 else
     echo "📦 Installing Vibe..."
-    npm install -g @su-record/vibe
+    npm install -g @su-record/core
     vibe update --silent
     echo "✅ Vibe installed and configured!"
 fi
@@ -104,13 +104,13 @@ echo "  /vibe.run \\"feature\\"     Implement"
   const vibeSetupSection = `
 ## Vibe Setup (AI Coding)
 
-This project uses [Vibe](https://github.com/su-record/vibe) AI coding framework.
+This project uses [Vibe](https://github.com/su-record/core) AI coding framework.
 
 ### Collaborator Install
 
 \`\`\`bash
 # Global install (recommended)
-npm install -g @su-record/vibe
+npm install -g @su-record/core
 vibe update
 
 # Or use vibe init to setup

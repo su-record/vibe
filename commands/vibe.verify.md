@@ -231,7 +231,7 @@ Claude:
 All tools are called via:
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
 ```
 
 ### Recommended Tools for Verification
@@ -248,19 +248,19 @@ node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r
 **1. Validate code quality:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: 'src/auth/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.validateCodeQuality({targetPath: 'src/auth/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **2. Analyze complexity of implementation:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPath: 'src/auth/login.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.analyzeComplexity({targetPath: 'src/auth/login.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **3. Find implemented feature:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'handleLogin', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.findSymbol({symbolName: 'handleLogin', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
 ```
 
 ## Next Step

@@ -229,7 +229,7 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
   const currentVersion = getPackageJson().version;
 
   try {
-    const latestVersion = execSync('npm view @su-record/vibe version', {
+    const latestVersion = execSync('npm view @su-record/core version', {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe']
     }).trim();
@@ -238,7 +238,7 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
     if (isNewer) {
       log(`⬆️ Upgrading v${currentVersion} → v${latestVersion}...\n`);
 
-      execSync('npm install -g @su-record/vibe@latest', {
+      execSync('npm install -g @su-record/core@latest', {
         stdio: options.silent ? 'pipe' : 'inherit'
       });
 
@@ -536,7 +536,7 @@ Workflow:
   /vibe.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
   /vibe.spec → /vibe.run            Manual step-by-step
 
-Docs: https://github.com/su-record/vibe
+Docs: https://github.com/su-record/core
   `);
 }
 

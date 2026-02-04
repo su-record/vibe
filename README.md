@@ -2,8 +2,8 @@
 
 **SPEC-driven AI Coding Framework with Multi-LLM Orchestration**
 
-[![npm version](https://img.shields.io/npm/v/@su-record/vibe.svg)](https://www.npmjs.com/package/@su-record/vibe)
-[![npm downloads](https://img.shields.io/npm/dt/@su-record/vibe)](https://www.npmjs.com/package/@su-record/vibe)
+[![npm version](https://img.shields.io/npm/v/@su-record/core.svg)](https://www.npmjs.com/package/@su-record/core)
+[![npm downloads](https://img.shields.io/npm/dt/@su-record/core)](https://www.npmjs.com/package/@su-record/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > AI coding framework for Claude Code. SPEC-based requirements management, Multi-LLM (Claude + GPT + Gemini) orchestration, and automated quality assurance with 13+ parallel review agents.
@@ -11,7 +11,7 @@
 ## Quick Start
 
 ```bash
-npm install -g @su-record/vibe
+npm install -g @su-record/core
 vibe init
 ```
 
@@ -183,7 +183,7 @@ Structured session context storage with hybrid BM25 search. Keeps decisions, con
 Active goals and key constraints are automatically injected at session start via `start_session`.
 
 ```typescript
-import { saveSessionItem, retrieveSessionContext, manageGoals } from '@su-record/vibe/tools';
+import { saveSessionItem, retrieveSessionContext, manageGoals } from '@su-record/core/tools';
 
 await saveSessionItem({ itemType: 'decision', title: 'Use Vitest', rationale: 'Fast and modern' });
 await saveSessionItem({ itemType: 'constraint', title: 'No vector DB', type: 'technical', severity: 'high' });
@@ -237,12 +237,12 @@ REQ-login-002 → SPEC Phase 2 → Feature Scenario 3 → auth.test.ts
 
 ```typescript
 // Background agent
-import { launch, poll } from '@su-record/vibe/orchestrator';
+import { launch, poll } from '@su-record/core/orchestrator';
 const { taskId } = launch({ prompt: 'Analyze code', agentName: 'analyzer' });
 const result = await poll(taskId);
 
 // Swarm pattern - Auto-split complex tasks
-import { swarm } from '@su-record/vibe/orchestrator';
+import { swarm } from '@su-record/core/orchestrator';
 const result = await swarm({
   prompt: 'Implement login with: 1. UI 2. Validation 3. API 4. Tests',
   maxDepth: 2,
@@ -250,8 +250,8 @@ const result = await swarm({
 });
 
 // LLM direct call
-import { ask } from '@su-record/vibe/lib/gpt';
-import { webSearch } from '@su-record/vibe/lib/gemini';
+import { ask } from '@su-record/core/lib/gpt';
+import { webSearch } from '@su-record/core/lib/gemini';
 ```
 
 ## IDE Support
@@ -273,4 +273,4 @@ Assets auto-installed on `vibe init/update`:
 
 ## License
 
-MIT - [GitHub](https://github.com/su-record/vibe)
+MIT - [GitHub](https://github.com/su-record/core)

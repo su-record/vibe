@@ -2,10 +2,10 @@
  * VIBE Orchestrator - Agent SDK 기반 멀티 에이전트 오케스트레이션
  *
  * 사용법 (hooks에서):
- *   node -e "import('@su-record/vibe/orchestrator').then(o => o.parallelResearch({...})).then(console.log)"
+ *   node -e "import('@su-record/core/orchestrator').then(o => o.parallelResearch({...})).then(console.log)"
  *
  * 사용법 (코드에서):
- *   import { VibeOrchestrator, parallelResearch } from '@su-record/vibe/orchestrator';
+ *   import { VibeOrchestrator, parallelResearch } from '@su-record/core/orchestrator';
  */
 
 // 타입 export
@@ -154,7 +154,7 @@ import { ToolResult } from '../types/tool.js';
  * v2.5.0: Multi-LLM Research (Claude + GPT + Gemini) 지원
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.research('login feature', ['React', 'TypeScript'])).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.research('login feature', ['React', 'TypeScript'])).then(console.log)"
  */
 export async function research(
   feature: string,
@@ -170,7 +170,7 @@ export async function research(
  * 백그라운드 에이전트 시작 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.runAgent('Fix the login bug', 'bug-fixer')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.runAgent('Fix the login bug', 'bug-fixer')).then(console.log)"
  */
 export async function runAgent(
   prompt: string,
@@ -188,7 +188,7 @@ export async function runAgent(
  * 에이전트 결과 조회 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.getResult('session-id')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.getResult('session-id')).then(console.log)"
  */
 export async function getResult(sessionId: string): Promise<ToolResult> {
   return _getBackgroundAgentResult(sessionId);
@@ -198,7 +198,7 @@ export async function getResult(sessionId: string): Promise<ToolResult> {
  * 에이전트 목록 조회 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.listAgents()).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.listAgents()).then(console.log)"
  */
 export async function listAgents(
   category?: string,
@@ -211,7 +211,7 @@ export async function listAgents(
  * 병렬 리뷰 실행 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.review(['src/api/user.ts'], ['TypeScript'])).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.review(['src/api/user.ts'], ['TypeScript'])).then(console.log)"
  */
 export async function review(
   filePaths: string[],
@@ -251,7 +251,7 @@ export async function review(
  * 오케스트레이터 상태 확인
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.status()).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.status()).then(console.log)"
  */
 export function status(): ToolResult {
   const active = listActiveSessions();
@@ -280,7 +280,7 @@ import * as geminiApi from '../lib/gemini-api.js';
  * GPT 질문 (간편 API) - 웹 검색 없음, Gemini로 위임
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.gptSearch('React 19 features')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.gptSearch('React 19 features')).then(console.log)"
  * @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. geminiSearch를 사용하세요.
  */
 export async function gptSearch(query: string): Promise<ToolResult> {
@@ -292,7 +292,7 @@ export async function gptSearch(query: string): Promise<ToolResult> {
  * GPT 오케스트레이션 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.gpt('Analyze this architecture')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.gpt('Analyze this architecture')).then(console.log)"
  */
 export async function gpt(
   prompt: string,
@@ -320,7 +320,7 @@ export async function gpt(
  * Gemini 웹 검색 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.geminiSearch('React 19 features')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.geminiSearch('React 19 features')).then(console.log)"
  */
 export async function geminiSearch(query: string): Promise<ToolResult> {
   try {
@@ -341,7 +341,7 @@ export async function geminiSearch(query: string): Promise<ToolResult> {
  * Gemini 오케스트레이션 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.gemini('Review this UI')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.gemini('Review this UI')).then(console.log)"
  */
 export async function gemini(
   prompt: string,
@@ -370,7 +370,7 @@ export async function gemini(
  * GPT, Gemini 동시 호출
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.multiLlm('Review this code')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.multiLlm('Review this code')).then(console.log)"
  */
 export async function multiLlm(
   prompt: string,
@@ -398,7 +398,7 @@ export async function multiLlm(
  * LLM 상태 확인 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.llmStatus()).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.llmStatus()).then(console.log)"
  */
 export async function llmStatus(): Promise<ToolResult> {
   const orchestrator = new VibeOrchestrator();
@@ -427,7 +427,7 @@ import type { TaskType, SmartRouteResult } from './types.js';
  * 스마트 라우팅 - 작업 유형에 따라 최적의 LLM 선택 + 자동 fallback
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartRoute({type:'architecture',prompt:'Review this design'})).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartRoute({type:'architecture',prompt:'Review this design'})).then(console.log)"
  */
 export async function smartRoute(
   type: TaskType,
@@ -454,7 +454,7 @@ export async function smartRoute(
  * 아키텍처 분석 with fallback (GPT → Gemini → Claude)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartArchitecture('Review this system design')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartArchitecture('Review this system design')).then(console.log)"
  */
 export async function smartArchitecture(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
   return smartRoute('architecture', prompt, 'You are a software architect. Analyze and review the architecture.');
@@ -464,7 +464,7 @@ export async function smartArchitecture(prompt: string): Promise<ToolResult & { 
  * UI/UX 분석 with fallback (Gemini → GPT → Claude)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartUiux('Improve this form UX')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartUiux('Improve this form UX')).then(console.log)"
  */
 export async function smartUiux(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
   return smartRoute('uiux', prompt, 'You are a UI/UX expert. Analyze and provide feedback.');
@@ -474,7 +474,7 @@ export async function smartUiux(prompt: string): Promise<ToolResult & { result: 
  * 코드 분석 with fallback (Gemini → GPT → Claude)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartCodeAnalysis('Analyze this code')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartCodeAnalysis('Analyze this code')).then(console.log)"
  */
 export async function smartCodeAnalysis(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
   return smartRoute('code-analysis', prompt, 'You are a code analysis expert. Review and analyze the code.');
@@ -484,7 +484,7 @@ export async function smartCodeAnalysis(prompt: string): Promise<ToolResult & { 
  * 디버깅 with fallback (GPT → Gemini → Claude)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartDebugging('Find bugs in this code')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartDebugging('Find bugs in this code')).then(console.log)"
  */
 export async function smartDebugging(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
   return smartRoute('debugging', prompt, 'You are a debugging expert. Find bugs and suggest fixes.');
@@ -494,7 +494,7 @@ export async function smartDebugging(prompt: string): Promise<ToolResult & { res
  * 웹 검색 with fallback (GPT → Gemini → Claude)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartWebSearch('React 19 new features')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartWebSearch('React 19 new features')).then(console.log)"
  */
 export async function smartWebSearch(query: string): Promise<ToolResult & { result: SmartRouteResult }> {
   return smartRoute('web-search', query, 'Search the web and provide relevant information.');
@@ -504,7 +504,7 @@ export async function smartWebSearch(query: string): Promise<ToolResult & { resu
  * 코드 생성 with fallback (Claude 직접)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartCodeGen('Create a React button component')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartCodeGen('Create a React button component')).then(console.log)"
  */
 export async function smartCodeGen(description: string, context?: string): Promise<ToolResult & { result: SmartRouteResult }> {
   const prompt = context ? `${description}\n\nContext:\n${context}` : description;

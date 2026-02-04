@@ -182,7 +182,7 @@ SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_forma
 **자동 주입:** `start_session` 호출 시 활성 Goals, 중요 Constraints, 최근 Decisions가 자동으로 세션 컨텍스트에 포함됨.
 
 ```typescript
-import { saveSessionItem, retrieveSessionContext, manageGoals } from '@su-record/vibe/tools';
+import { saveSessionItem, retrieveSessionContext, manageGoals } from '@su-record/core/tools';
 
 // 결정 저장
 await saveSessionItem({ itemType: 'decision', title: 'Use Vitest', rationale: 'Fast and modern' });

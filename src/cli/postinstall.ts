@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * postinstall 스크립트
- * npm install -g @su-record/vibe 시 전역 설정 폴더 생성
+ * npm install -g @su-record/core 시 전역 설정 폴더 생성
  */
 
 import path from 'path';
@@ -196,7 +196,7 @@ function seedInlineSkills(targetDir: string): void {
         '',
         '```bash',
         '# Analyze complexity',
-        "node -e \"import('@su-record/vibe/tools').then(t =>",
+        "node -e \"import('@su-record/core/tools').then(t =>",
         "  t.analyzeComplexity({targetPath: 'src/', projectPath: process.cwd()})",
         '  .then(r => console.log(r.content[0].text))',
         ')\"',

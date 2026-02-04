@@ -1,13 +1,13 @@
 {
-  "name": "@su-record/vibe",
+  "name": "@su-record/core",
   "version": "2.2.6",
   "description": "SPEC-driven AI coding framework with parallel agents, BDD verification, and quality assurance",
   "author": {
     "name": "su-record"
   },
   "license": "MIT",
-  "homepage": "https://github.com/su-record/vibe",
-  "repository": "https://github.com/su-record/vibe",
+  "homepage": "https://github.com/su-record/core",
+  "repository": "https://github.com/su-record/core",
   "keywords": [
     "vibe",
     "spec",

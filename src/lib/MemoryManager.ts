@@ -80,7 +80,7 @@ export class MemoryManager {
     try {
       const packageJsonPath = path.join(projectPath, 'package.json');
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-      return packageJson.name === '@su-record/vibe';
+      return packageJson.name === '@su-record/core';
     } catch {
       return false;
     }

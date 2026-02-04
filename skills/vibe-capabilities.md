@@ -34,7 +34,7 @@ Complete guide to vibe's scenario-driven development framework.
 ### Semantic Code Analysis
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...}))"
+node -e "import('@su-record/core/tools').then(t => t.TOOL_NAME({...}))"
 ```
 
 | Tool | Purpose |
@@ -59,7 +59,7 @@ node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...}))"
 ### Background Agents
 
 ```bash
-node -e "import('@su-record/vibe/orchestrator').then(o =>
+node -e "import('@su-record/core/orchestrator').then(o =>
   o.launchBackgroundAgent({ prompt: '...', agentName: '...' })
 )"
 ```

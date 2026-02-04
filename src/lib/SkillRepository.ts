@@ -414,13 +414,13 @@ priority: 60
 
 \`\`\`bash
 # Analyze complexity
-node -e "import('@su-record/vibe/tools').then(t =>
+node -e "import('@su-record/core/tools').then(t =>
   t.analyzeComplexity({targetPath: 'src/', projectPath: process.cwd()})
   .then(r => console.log(r.content[0].text))
 )"
 
 # Validate quality
-node -e "import('@su-record/vibe/tools').then(t =>
+node -e "import('@su-record/core/tools').then(t =>
   t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()})
   .then(r => console.log(r.content[0].text))
 )"
@@ -456,7 +456,7 @@ priority: 75
 
 \`\`\`bash
 # Auto-restore previous context
-node -e "import('@su-record/vibe/tools').then(t =>
+node -e "import('@su-record/core/tools').then(t =>
   t.startSession({projectPath: process.cwd()})
   .then(r => console.log(r.content[0].text))
 )"
@@ -466,7 +466,7 @@ node -e "import('@su-record/vibe/tools').then(t =>
 
 \`\`\`bash
 # Save important decisions
-node -e "import('@su-record/vibe/tools').then(t =>
+node -e "import('@su-record/core/tools').then(t =>
   t.saveMemory({
     key: 'decision-auth-method',
     value: 'Using JWT with refresh tokens for auth',

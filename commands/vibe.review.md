@@ -140,13 +140,13 @@ Read CLAUDE.md         -> Explicit tech stack declaration
 
 **Execution via Orchestrator (12+ agents in parallel):**
 ```bash
-node -e "import('@su-record/vibe/orchestrator').then(o => o.review(['FILE_PATHS'], ['DETECTED_STACKS']).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/orchestrator').then(o => o.review(['FILE_PATHS'], ['DETECTED_STACKS']).then(r => console.log(r.content[0].text)))"
 ```
 
 **Example:**
 ```bash
 # Review changed files with TypeScript + React stack
-node -e "import('@su-record/vibe/orchestrator').then(o => o.review(['src/api/users.ts', 'src/components/Login.tsx'], ['TypeScript', 'React']).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/orchestrator').then(o => o.review(['src/api/users.ts', 'src/components/Login.tsx'], ['TypeScript', 'React']).then(r => console.log(r.content[0].text)))"
 ```
 
 **Core Reviewers (Always Run):**
@@ -300,7 +300,7 @@ Which approach would you like to proceed with?
 All tools are called via:
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
 ```
 
 ### Recommended Tools for Review
@@ -318,19 +318,19 @@ node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r
 **1. Validate code quality before review:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **2. Analyze complexity of changed files:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPath: 'src/api/users.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.analyzeComplexity({targetPath: 'src/api/users.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **3. Save critical finding for reference:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'review-pr123-critical', value: 'SQL injection in users.py:42', category: 'review', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'review-pr123-critical', value: 'SQL injection in users.py:42', category: 'review', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 ---

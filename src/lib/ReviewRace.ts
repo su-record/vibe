@@ -6,7 +6,7 @@
  *
  * @example
  * ```typescript
- * import { raceReview, formatRaceResult } from '@su-record/vibe/lib/ReviewRace';
+ * import { raceReview, formatRaceResult } from '@su-record/core/lib/ReviewRace';
  *
  * const result = await raceReview({
  *   reviewType: 'security',

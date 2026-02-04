@@ -29,7 +29,7 @@ Parallel research patterns for solving complex problems.
 ### Method 1: Direct Orchestrator Call
 
 ```bash
-node -e "import('@su-record/vibe/orchestrator').then(o =>
+node -e "import('@su-record/core/orchestrator').then(o =>
   o.research('passkey authentication', ['React', 'Supabase'])
   .then(r => console.log(r.content[0].text))
 )"

@@ -1,7 +1,7 @@
 {
-  "name": "@su-record/vibe",
-  "version": "2.6.35",
-  "description": "Vibe - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
+  "name": "@su-record/core",
+  "version": "0.1.0",
+  "description": "Vibe core - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
   "type": "module",
   "main": "dist/cli/index.js",
   "exports": {
@@ -49,9 +49,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/su-record/vibe.git"
+    "url": "https://github.com/su-record/core.git"
   },
-  "homepage": "https://github.com/su-record/vibe#readme",
+  "homepage": "https://github.com/su-record/core#readme",
   "engines": {
     "node": ">=18.0.0"
   },

@@ -60,10 +60,10 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
 **Exploration strategy using orchestrator:**
 ```bash
 # Discover available agents
-node -e "import('@su-record/vibe/orchestrator').then(o => o.listAgents().then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/orchestrator').then(o => o.listAgents().then(r => console.log(r.content[0].text)))"
 
 # Run parallel exploration agents
-node -e "import('@su-record/vibe/orchestrator').then(async o => {
+node -e "import('@su-record/core/orchestrator').then(async o => {
   const results = await Promise.all([
     o.runAgent('Find all [FEATURE] related API endpoints', 'api-explorer'),
     o.runAgent('Find all [FEATURE] related services/logic', 'service-explorer'),
@@ -216,7 +216,7 @@ Which approach would you like to use?
 All tools are called via:
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
 ```
 
 ### Recommended Tools for Analysis
@@ -234,25 +234,25 @@ node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r
 **1. Find function definition:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.findSymbol({symbolName: 'login', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
 ```
 
 **2. Analyze complexity:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.analyzeComplexity({targetPath: 'src/services/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.analyzeComplexity({targetPath: 'src/services/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **3. Validate code quality:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **4. Save analysis results:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'analysis-login-module', value: 'Found 5 related files, complexity avg 6.2', category: 'analysis', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'analysis-login-module', value: 'Found 5 related files, complexity avg 6.2', category: 'analysis', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 ---

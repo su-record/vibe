@@ -185,7 +185,7 @@ AI: Analyzing with 9-step reasoning framework...
 All tools are called via:
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
 ```
 
 ### Recommended Tools for Reasoning
@@ -203,19 +203,19 @@ node -e "import('@su-record/vibe/tools').then(t => t.TOOL_NAME({...args}).then(r
 **1. Find potential problem source:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.findSymbol({symbolName: 'getProfile', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.findSymbol({symbolName: 'getProfile', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
 ```
 
 **2. Trace references to understand flow:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.findReferences({symbolName: 'sessionData', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.findReferences({symbolName: 'sessionData', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
 ```
 
 **3. Save hypothesis verification result:**
 
 ```bash
-node -e "import('@su-record/vibe/tools').then(t => t.saveMemory({key: 'hypothesis-1-result', value: 'Session save timing issue confirmed - race condition in auth middleware', category: 'reasoning', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'hypothesis-1-result', value: 'Session save timing issue confirmed - race condition in auth middleware', category: 'reasoning', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 ---
