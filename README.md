@@ -6,5 +6,5 @@
 
 ```bash
 npm install -g @su-record/core
-su-core init
+vibe init
 ```

@@ -443,7 +443,7 @@ export async function getValidAccessToken(): Promise<ValidAccessToken> {
   const account = storage.getActiveAccount();
 
   if (!account) {
-    throw new Error('No authenticated Gemini account. Run su-core gemini auth to login.');
+    throw new Error('No authenticated Gemini account. Run vibe gemini auth to login.');
   }
 
   // 토큰이 만료되었으면 갱신

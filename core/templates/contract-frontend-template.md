@@ -586,7 +586,7 @@ jobs:
 
 ```bash
 # 1. Write contract tests
-su-core contract "{feature name}" --frontend
+vibe contract "{feature name}" --frontend
 
 # 2. Develop with mock server
 flutter test test/contract/ --watch
@@ -595,5 +595,5 @@ flutter test test/contract/ --watch
 flutter test test/pact/
 
 # 4. Verify contract with backend
-su-core verify "{feature name}" --contract
+vibe verify "{feature name}" --contract
 ```

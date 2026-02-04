@@ -3,7 +3,7 @@ description: Verify implementation against SPEC requirements
 argument-hint: "feature name"
 ---
 
-# /su.verify
+# /vibe.verify
 
 **Automated Quality Verification** - Making quality trustworthy even for non-developers.
 
@@ -12,10 +12,10 @@ argument-hint: "feature name"
 ## Usage
 
 ```
-/su.verify "feature-name"              # SPEC-based verification
-/su.verify --e2e "feature-name"        # E2E browser test (agents/e2e-tester.md)
-/su.verify --e2e --visual              # Visual regression test
-/su.verify --e2e --record              # Video recording
+/vibe.verify "feature-name"              # SPEC-based verification
+/vibe.verify --e2e "feature-name"        # E2E browser test (agents/e2e-tester.md)
+/vibe.verify --e2e --visual              # Visual regression test
+/vibe.verify --e2e --record              # Video recording
 ```
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
@@ -45,7 +45,7 @@ argument-hint: "feature name"
 **If feature file does not exist**:
 ```
 ❌ Feature file not found.
-   Run /su.spec "{feature-name}" first.
+   Run /vibe.spec "{feature-name}" first.
 ```
 
 ### 2. Scenario-by-Scenario Verification
@@ -148,7 +148,7 @@ Then: Login success + JWT token returned
 │  📍 Location: LoginForm.tsx line 42                             │
 │  💡 Fix: Need to add "Forgot password" link                     │
 │                                                                 │
-│  🔧 Auto-fix command: /su.run "login" --fix                   │
+│  🔧 Auto-fix command: /vibe.run "login" --fix                   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -168,7 +168,7 @@ Then: Login success + JWT token returned
 ## Example
 
 ```
-User: /su.verify "login"
+User: /vibe.verify "login"
 
 Claude:
 📄 Loading Feature: .claude/core/features/login.feature
@@ -224,7 +224,7 @@ Claude:
 │  ❌ Fixes needed:                                                │
 │  - Scenario 4: Add "Forgot password" link in LoginForm.tsx      │
 │                                                                 │
-│  🔧 Auto-fix: /su.run "login" --fix                           │
+│  🔧 Auto-fix: /vibe.run "login" --fix                           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -279,7 +279,7 @@ Complete! Proceed to next feature.
 On verification fail:
 
 ```
-/su.run "feature-name" --fix  # Fix failed scenarios
+/vibe.run "feature-name" --fix  # Fix failed scenarios
 ```
 
 ---
@@ -316,7 +316,7 @@ Grades:
 
 | Metric | Pass Threshold | Action on Fail |
 |--------|----------------|----------------|
-| Scenario pass rate | 100% | Run `/su.run --fix` |
+| Scenario pass rate | 100% | Run `/vibe.run --fix` |
 | Build status | Success | Fix build errors first |
 | Test pass rate | 100% | Fix failing tests |
 | Type check | 0 errors | Fix type errors |

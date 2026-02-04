@@ -38,7 +38,7 @@ export async function checkAndUpgradeVibe(options: CliOptions = { silent: false 
     });
 
     // 업그레이드 완료 후 새 버전으로 설정 업데이트 (--skip-upgrade로 무한 루프 방지)
-    execSync(`su-core update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
+    execSync(`vibe update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
       stdio: 'inherit',
       cwd: process.cwd()
     });
@@ -133,7 +133,7 @@ ${formatLLMStatus()}
 
     const packageJson = getPackageJson();
 
-    log(`✅ su-core updated (v${packageJson.version})
+    log(`✅ vibe updated (v${packageJson.version})
 ${formatLLMStatus()}
 📦 Context7 plugin (recommended): /plugin install context7
 `);

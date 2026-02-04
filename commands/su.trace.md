@@ -1,13 +1,13 @@
-# /su.trace
+# /vibe.trace
 
 Generate and display Requirements Traceability Matrix (RTM).
 
 ## Usage
 
 ```bash
-/su.trace "feature-name"              # Generate RTM for feature
-/su.trace "feature-name" --html       # Output as HTML
-/su.trace "feature-name" --save       # Save to file
+/vibe.trace "feature-name"              # Generate RTM for feature
+/vibe.trace "feature-name" --html       # Output as HTML
+/vibe.trace "feature-name" --save       # Save to file
 ```
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
@@ -96,7 +96,7 @@ The following requirements lack full coverage:
 ## Example
 
 ```
-User: /su.trace "login"
+User: /vibe.trace "login"
 
 Claude:
 📊 Generating RTM for "login"...

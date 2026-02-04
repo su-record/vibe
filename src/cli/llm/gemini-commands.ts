@@ -50,8 +50,8 @@ Available models:
   - Gemini 3 Flash (fast, exploration/search)
   - Gemini 3 Pro (high accuracy)
 
-Status: su-core gemini status
-Logout: su-core gemini logout
+Status: vibe gemini status
+Logout: vibe gemini logout
     `);
 
     // config.json 업데이트
@@ -91,7 +91,7 @@ Gemini is called via Hooks:
 
 Error: ${message}
 
-Retry: su-core gemini auth
+Retry: vibe gemini auth
     `);
     process.exit(1);
   }
@@ -116,7 +116,7 @@ export function geminiStatus(): void {
 
 No authenticated account
 
-Login: su-core gemini auth
+Login: vibe gemini auth
       `);
       return;
     }
@@ -138,7 +138,7 @@ ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAcc
 Available models:
 ${Object.entries(GEMINI_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
 
-Logout: su-core gemini logout
+Logout: vibe gemini logout
     `);
 
   } catch (error: unknown) {
@@ -169,7 +169,7 @@ export function geminiLogout(): void {
 
 Account ${activeAccount.email} removed.
 
-Login again: su-core gemini auth
+Login again: vibe gemini auth
     `);
 
     // config.json 업데이트

@@ -25,19 +25,19 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
         modified = true;
       }
 
-      // 기존 postinstall/prepare에서 su update 제거
+      // 기존 postinstall/prepare에서 vibe update 제거
       if (pkg.scripts) {
         const oldPatterns = [
-          /\s*&&\s*npx @su-record\/su update[^&|;]*/g,
-          /npx @su-record\/su update[^&|;]*\s*&&\s*/g,
-          /npx @su-record\/su update[^&|;]*/g,
-          /\s*&&\s*node_modules\/\.bin\/su update[^&|;]*/g,
-          /node_modules\/\.bin\/su update[^&|;]*\s*&&\s*/g,
-          /node_modules\/\.bin\/su update[^&|;]*/g
+          /\s*&&\s*npx @su-record\/vibe update[^&|;]*/g,
+          /npx @su-record\/vibe update[^&|;]*\s*&&\s*/g,
+          /npx @su-record\/vibe update[^&|;]*/g,
+          /\s*&&\s*node_modules\/\.bin\/vibe update[^&|;]*/g,
+          /node_modules\/\.bin\/vibe update[^&|;]*\s*&&\s*/g,
+          /node_modules\/\.bin\/vibe update[^&|;]*/g
         ];
 
         ['postinstall', 'prepare'].forEach(script => {
-          if (pkg.scripts[script]?.includes('su update')) {
+          if (pkg.scripts[script]?.includes('vibe update')) {
             let cleaned = pkg.scripts[script];
             oldPatterns.forEach(p => { cleaned = cleaned.replace(p, ''); });
             cleaned = cleaned.trim();
@@ -79,21 +79,21 @@ if ! command -v npx &> /dev/null; then
 fi
 
 # Check core installation and update
-if command -v su-core &> /dev/null; then
+if command -v vibe &> /dev/null; then
     echo "✅ Core is already installed."
-    su-core update --silent
+    vibe update --silent
     echo "✅ Core updated!"
 else
     echo "📦 Installing Core..."
     npm install -g @su-record/core
-    su-core update --silent
+    vibe update --silent
     echo "✅ Core installed and configured!"
 fi
 
 echo ""
 echo "Get started with:"
-echo "  /su.spec \\"feature\\"    Create SPEC"
-echo "  /su.run \\"feature\\"     Implement"
+echo "  /vibe.spec \\"feature\\"    Create SPEC"
+echo "  /vibe.run \\"feature\\"     Implement"
 `;
     fs.writeFileSync(setupShPath, setupScript);
     fs.chmodSync(setupShPath, '755');
@@ -111,17 +111,17 @@ This project uses [Core](https://github.com/su-record/core) AI coding framework.
 \`\`\`bash
 # Global install (recommended)
 npm install -g @su-record/core
-su-core update
+vibe update
 
-# Or use su-core init to setup
-su-core init
+# Or use vibe init to setup
+vibe init
 \`\`\`
 
 ### Usage
 
 Use slash commands in Claude Code:
-- \`/su.spec "feature"\` - Create SPEC document
-- \`/su.run "feature"\` - Execute implementation
+- \`/vibe.spec "feature"\` - Create SPEC document
+- \`/vibe.run "feature"\` - Execute implementation
 `;
 
   if (fs.existsSync(readmePath)) {

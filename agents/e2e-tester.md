@@ -3,18 +3,18 @@ description: End-to-end testing with Playwright automation
 argument-hint: "test scenario or URL"
 ---
 
-# /su.e2e
+# /vibe.e2e
 
 **E2E Test Automation** - Playwright-based browser testing
 
 ## Usage
 
 ```
-/su.e2e                              # Run all E2E tests
-/su.e2e "login flow"                 # Test specific scenario
-/su.e2e http://localhost:3000/login  # Test specific URL
-/su.e2e --visual                     # Visual regression testing
-/su.e2e --record                     # Record test video
+/vibe.e2e                              # Run all E2E tests
+/vibe.e2e "login flow"                 # Test specific scenario
+/vibe.e2e http://localhost:3000/login  # Test specific URL
+/vibe.e2e --visual                     # Visual regression testing
+/vibe.e2e --record                     # Record test video
 ```
 
 ## Core Features
@@ -147,7 +147,7 @@ test('accessibility check', async ({ page }) => {
 Link with bug reports:
 
 ```
-/su.e2e --reproduce "User sees blank page after login"
+/vibe.e2e --reproduce "User sees blank page after login"
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  🐛 Bug Reproduction Mode                                        │
@@ -239,7 +239,7 @@ Link with bug reports:
 
 ## Integration with Review
 
-Auto-suggest after `/su.review`:
+Auto-suggest after `/vibe.review`:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -250,16 +250,16 @@ Auto-suggest after `/su.review`:
 │  - src/components/LoginForm.tsx                                 │
 │  - src/pages/Dashboard.tsx                                      │
 │                                                                 │
-│  Run E2E tests? /su.e2e "login flow"                          │
+│  Run E2E tests? /vibe.e2e "login flow"                          │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Related Commands
 
-- `/su.review` - Code review
-- `/su.verify` - SPEC verification
-- `/su.compound` - Document test results
+- `/vibe.review` - Code review
+- `/vibe.verify` - SPEC verification
+- `/vibe.compound` - Document test results
 
 ---
 

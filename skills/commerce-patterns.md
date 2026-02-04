@@ -329,7 +329,7 @@ try {
 | **Lost webhook** | Network failure | Retry + idempotent handler |
 | **Order state corruption** | Concurrent updates | State machine + versioning |
 
-## Integration with /su.run
+## Integration with /vibe.run
 
 During commerce feature implementation:
 

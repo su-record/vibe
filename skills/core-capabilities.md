@@ -8,26 +8,26 @@ Complete guide to core's scenario-driven development framework.
 ## Core Workflow
 
 ```
-/su.spec → /su.run → /su.verify → /su.review
+/vibe.spec → /vibe.run → /vibe.verify → /vibe.review
 ```
 
 ## Slash Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/su.spec "feature"` | Create SPEC with PTCF structure + 8 parallel research |
-| `/su.spec "feature" split` | Create multiple SPECs for large scope features |
-| `/su.run "feature"` | Implement based on SPEC |
-| `/su.run "feature" ultrawork` | Maximum performance mode |
-| `/su.verify "feature"` | BDD scenario verification |
-| `/su.review` | Parallel code review (13+ agents) |
-| `/su.analyze` | Project analysis |
-| `/su.reason "problem"` | Systematic reasoning |
-| `/su.utils --e2e` | Playwright E2E testing |
-| `/su.utils --diagram` | Generate diagrams |
-| `/su.utils --ui "description"` | UI preview |
-| `/su.utils --continue` | Session restore (load previous context) |
-| `/su.utils --compound` | Document solutions |
+| `/vibe.spec "feature"` | Create SPEC with PTCF structure + 8 parallel research |
+| `/vibe.spec "feature" split` | Create multiple SPECs for large scope features |
+| `/vibe.run "feature"` | Implement based on SPEC |
+| `/vibe.run "feature" ultrawork` | Maximum performance mode |
+| `/vibe.verify "feature"` | BDD scenario verification |
+| `/vibe.review` | Parallel code review (13+ agents) |
+| `/vibe.analyze` | Project analysis |
+| `/vibe.reason "problem"` | Systematic reasoning |
+| `/vibe.utils --e2e` | Playwright E2E testing |
+| `/vibe.utils --diagram` | Generate diagrams |
+| `/vibe.utils --ui "description"` | UI preview |
+| `/vibe.utils --continue` | Session restore (load previous context) |
+| `/vibe.utils --compound` | Document solutions |
 
 ## Built-in Tools
 
@@ -66,10 +66,10 @@ node -e "import('@su-record/core/orchestrator').then(o =>
 
 ## Multi-LLM Research (v2.5.0)
 
-GPT/Gemini are automatically called within `/su.spec`:
+GPT/Gemini are automatically called within `/vibe.spec`:
 
 ```text
-/su.spec "feature"
+/vibe.spec "feature"
       ↓
 [Claude] Draft SPEC
       ↓
@@ -91,9 +91,9 @@ GPT/Gemini are automatically called within `/su.spec`:
 
 **Setup:**
 ```bash
-su-core gpt auth       # Enable GPT
-su-core gemini auth    # Enable Gemini
-su-core status         # Check current settings
+vibe gpt auth       # Enable GPT
+vibe gemini auth    # Enable Gemini
+vibe status         # Check current settings
 ```
 
 ## ULTRAWORK Mode
@@ -154,7 +154,7 @@ core/
 
 ## Without Commands
 
-Even without `/su.*` commands, you can:
+Even without `/vibe.*` commands, you can:
 
 1. Call tools directly via node commands
 2. Reference skills for guidance

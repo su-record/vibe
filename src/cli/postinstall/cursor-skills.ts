@@ -20,7 +20,7 @@ model: claude-4.5-sonnet-thinking
 description: "SPEC document creation with parallel research. Use when starting new feature implementation."
 ---
 
-# su-core spec - SPEC Creation Skill
+# vibe spec - SPEC Creation Skill
 
 SPEC-driven feature development workflow. Creates AI-executable specification documents.
 
@@ -32,7 +32,7 @@ SPEC-driven feature development workflow. Creates AI-executable specification do
 
 ## Invocation
 
-User says: "su-core spec [feature-name]" or "Create SPEC for [feature-name]"
+User says: "vibe spec [feature-name]" or "Create SPEC for [feature-name]"
 
 ## Workflow
 
@@ -92,8 +92,8 @@ Save to \`.claude/core/specs/[feature-name]-spec.md\`
 ## Next Steps
 
 After SPEC creation:
-- "su-core spec review" - Review SPEC with external LLMs
-- "su-core run [feature-name]" - Start implementation
+- "vibe spec review" - Review SPEC with external LLMs
+- "vibe run [feature-name]" - Start implementation
 `,
     },
     {
@@ -104,7 +104,7 @@ model: claude-4.5-opus-high
 description: "Execute SPEC implementation with Scenario-Driven Development. Use after SPEC is approved."
 ---
 
-# su-core run - Implementation Execution Skill
+# vibe run - Implementation Execution Skill
 
 Executes SPEC-based implementation using Scenario-Driven Development methodology.
 
@@ -116,7 +116,7 @@ Executes SPEC-based implementation using Scenario-Driven Development methodology
 
 ## Invocation
 
-User says: "su-core run [feature-name]" or "Implement [feature-name]"
+User says: "vibe run [feature-name]" or "Implement [feature-name]"
 
 ## Pre-requisites
 
@@ -177,9 +177,9 @@ Per phase:
 ## Next Steps
 
 After implementation:
-- "su-core review" - Run 12+ agent code review
-- "su-core verify [feature-name]" - Verify against SPEC
-- "su-core trace [feature-name]" - Generate traceability matrix
+- "vibe review" - Run 12+ agent code review
+- "vibe verify [feature-name]" - Verify against SPEC
+- "vibe trace [feature-name]" - Generate traceability matrix
 `,
     },
     {
@@ -190,7 +190,7 @@ model: auto
 description: "Parallel code review with 12+ specialized agents. Use after code changes."
 ---
 
-# su-core review - Parallel Code Review Skill
+# vibe review - Parallel Code Review Skill
 
 Orchestrates 12+ specialized review agents for comprehensive code review.
 
@@ -202,7 +202,7 @@ Orchestrates 12+ specialized review agents for comprehensive code review.
 
 ## Invocation
 
-User says: "su-core review" or "Review my code"
+User says: "vibe review" or "Review my code"
 
 ## Available Review Agents
 
@@ -291,7 +291,7 @@ model: claude-4.5-sonnet-thinking
 description: "Project and feature analysis. Use when exploring codebase or planning changes."
 ---
 
-# su-core analyze - Analysis Skill
+# vibe analyze - Analysis Skill
 
 Comprehensive project and feature analysis for understanding codebases.
 
@@ -304,7 +304,7 @@ Comprehensive project and feature analysis for understanding codebases.
 
 ## Invocation
 
-User says: "su-core analyze" or "Analyze [feature/path]"
+User says: "vibe analyze" or "Analyze [feature/path]"
 
 ## Analysis Modes
 
@@ -314,8 +314,8 @@ Analyzes entire project structure and architecture.
 ### 2. Feature Analysis
 Analyzes specific feature or module.
 \`\`\`
-su-core analyze src/auth
-su-core analyze "login feature"
+vibe analyze src/auth
+vibe analyze "login feature"
 \`\`\`
 
 ### 3. Dependency Analysis
@@ -392,8 +392,8 @@ Identify main entry points:
 ## Next Steps
 
 After analysis:
-- "su-core spec [feature]" - Create SPEC for changes
-- "su-core review" - Review existing code quality
+- "vibe spec [feature]" - Create SPEC for changes
+- "vibe review" - Review existing code quality
 - Plan Mode - For simple modifications
 `,
     },
@@ -405,7 +405,7 @@ model: claude-4.5-sonnet-thinking
 description: "Verify implementation against SPEC requirements. Use after implementation."
 ---
 
-# su-core verify - Verification Skill
+# vibe verify - Verification Skill
 
 Verifies implementation completeness against SPEC requirements.
 
@@ -417,7 +417,7 @@ Verifies implementation completeness against SPEC requirements.
 
 ## Invocation
 
-User says: "su-core verify [feature-name]"
+User says: "vibe verify [feature-name]"
 
 ## Pre-requisites
 
@@ -493,8 +493,8 @@ Identify:
 
 After verification:
 - Fix gaps if any
-- "su-core trace [feature]" - Full traceability matrix
-- "su-core review" - Final code review
+- "vibe trace [feature]" - Full traceability matrix
+- "vibe review" - Final code review
 - Ready for release if all verified
 `,
     },
@@ -506,7 +506,7 @@ model: claude-4.5-opus-high-thinking
 description: "Systematic 9-step reasoning framework. Use for complex problem solving."
 ---
 
-# su-core reason - Reasoning Framework Skill
+# vibe reason - Reasoning Framework Skill
 
 Applies systematic reasoning to complex problems and decisions.
 
@@ -519,7 +519,7 @@ Applies systematic reasoning to complex problems and decisions.
 
 ## Invocation
 
-User says: "su-core reason [problem]" or "Reason about [problem]"
+User says: "vibe reason [problem]" or "Reason about [problem]"
 
 ## 9-Step Reasoning Framework
 
@@ -630,8 +630,8 @@ Final recommendation with:
 
 After reasoning:
 - Implement chosen solution
-- "su-core spec [solution]" - If solution needs SPEC
-- "su-core verify" - Verify solution addresses problem
+- "vibe spec [solution]" - If solution needs SPEC
+- "vibe verify" - Verify solution addresses problem
 `,
     },
     {
@@ -642,7 +642,7 @@ model: gpt-5.2-codex
 description: "UI preview and generation utilities. Use for UI component work."
 ---
 
-# su-core ui - UI Utilities Skill
+# vibe ui - UI Utilities Skill
 
 UI preview, generation, and refactoring utilities.
 
@@ -655,26 +655,26 @@ UI preview, generation, and refactoring utilities.
 
 ## Invocation
 
-User says: "su-core ui [description]" or "Preview UI for [description]"
+User says: "vibe ui [description]" or "Preview UI for [description]"
 
 ## Modes
 
 ### 1. UI Preview
 Generate visual preview of UI description.
 \`\`\`
-su-core ui "Login form with email, password, and remember me checkbox"
+vibe ui "Login form with email, password, and remember me checkbox"
 \`\`\`
 
 ### 2. Component Generation
 Generate component code from description.
 \`\`\`
-su-core ui generate "User profile card with avatar, name, and bio"
+vibe ui generate "User profile card with avatar, name, and bio"
 \`\`\`
 
 ### 3. UI Refactoring
 Refactor existing component for better patterns.
 \`\`\`
-su-core ui refactor src/components/UserCard.tsx
+vibe ui refactor src/components/UserCard.tsx
 \`\`\`
 
 ## Workflow
@@ -778,8 +778,8 @@ interface LoginFormProps {
 ## Next Steps
 
 After UI work:
-- "su-core review" - Review generated components
-- "su-core run [feature]" - Continue implementation
+- "vibe review" - Review generated components
+- "vibe run [feature]" - Continue implementation
 - Add tests for new components
 `,
     },

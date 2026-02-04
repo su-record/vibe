@@ -10,17 +10,17 @@ export function showAuthHelp(): void {
 🔐 LLM Authentication
 
 GPT Commands:
-  su-core gpt auth           OAuth (Plus/Pro subscription)
-  su-core gpt key <KEY>      API key
+  vibe gpt auth           OAuth (Plus/Pro subscription)
+  vibe gpt key <KEY>      API key
 
 Gemini Commands:
-  su-core gemini auth        OAuth (free with Advanced)
-  su-core gemini key <KEY>   API key
+  vibe gemini auth        OAuth (free with Advanced)
+  vibe gemini key <KEY>   API key
 
 Examples:
-  su-core gpt auth           OpenAI login
-  su-core gemini auth        Google login
-  su-core gpt key sk-xxx     API key setup
+  vibe gpt auth           OpenAI login
+  vibe gemini auth        Google login
+  vibe gpt key sk-xxx     API key setup
   `);
 }
 
@@ -32,7 +32,7 @@ export function showLogoutHelp(): void {
 🚪 LLM Logout
 
 Usage:
-  su-core gpt logout       GPT logout
-  su-core gemini logout    Gemini logout
+  vibe gpt logout       GPT logout
+  vibe gemini logout    Gemini logout
   `);
 }

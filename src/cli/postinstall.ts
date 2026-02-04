@@ -15,7 +15,7 @@
  * 이 파일은 하위 호환성을 위해 export + CLI 엔트리 포인트 유지
  */
 
-// Export functions for use in su init/update
+// Export functions for use in vibe init/update
 export {
   installCursorAgents,
   generateCursorRules,

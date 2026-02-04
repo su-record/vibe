@@ -3,7 +3,7 @@ description: Execute implementation from SPEC
 argument-hint: "feature name" or --phase N
 ---
 
-# /su.run
+# /vibe.run
 
 Execute **Scenario-Driven Implementation** with automatic quality verification.
 
@@ -12,10 +12,10 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 ## Usage
 
 ```
-/su.run "feature-name"              # Full implementation
-/su.run "feature-name" --phase 1    # Specific Phase only
-/su.run "feature-name" ultrawork    # ULTRAWORK mode (recommended)
-/su.run "feature-name" ulw          # Short alias for ultrawork
+/vibe.run "feature-name"              # Full implementation
+/vibe.run "feature-name" --phase 1    # Specific Phase only
+/vibe.run "feature-name" ultrawork    # ULTRAWORK mode (recommended)
+/vibe.run "feature-name" ulw          # Short alias for ultrawork
 ```
 
 ---
@@ -317,7 +317,7 @@ Type Check: ✅ No errors
 ### ULTRAWORK Example
 
 ```
-User: /su.run "brick-game" ultrawork
+User: /vibe.run "brick-game" ultrawork
 
 Claude:
 🚀 ULTRAWORK MODE ACTIVATED
@@ -651,7 +651,7 @@ node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'auth-patt
 **Error if Feature file missing**:
 ```
 ❌ Feature file not found.
-   Run /su.spec "{feature-name}" first.
+   Run /vibe.spec "{feature-name}" first.
 ```
 
 ### 2. Extract Scenario List
@@ -955,9 +955,9 @@ Brand:
 ```
 
 **Trigger Conditions:**
-- First `/su.run` execution (no existing icons)
+- First `/vibe.run` execution (no existing icons)
 - SPEC contains brand/design context
-- Gemini API key configured (`su-core gemini auth`)
+- Gemini API key configured (`vibe gemini auth`)
 
 **Manual Generation:**
 ```bash
@@ -1139,7 +1139,7 @@ Follow during implementation:
 ## Example
 
 ```
-User: /su.run "login"
+User: /vibe.run "login"
 
 Claude:
 📄 Loading SPEC: .claude/core/specs/login.md
@@ -1276,7 +1276,7 @@ Then: Login success + JWT token returned
 ### Phase-specific Execution
 
 ```
-User: /su.run "brick-game" --phase 2
+User: /vibe.run "brick-game" --phase 2
 
 Claude:
 📄 Reading SPEC: .claude/core/specs/brick-game.md
@@ -1408,7 +1408,7 @@ After ALL phases complete successfully, **automatically** perform a brief retros
 ## Next Step
 
 ```
-/su.verify "brick-game"
+/vibe.verify "brick-game"
 ```
 
 ---

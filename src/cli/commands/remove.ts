@@ -39,7 +39,7 @@ export function remove(): void {
   // .claude/commands 제거
   const commandsDir = path.join(claudeDir, 'commands');
   if (fs.existsSync(commandsDir)) {
-    const coreCommands = ['su.spec.md', 'su.run.md', 'su.verify.md', 'su.reason.md', 'su.analyze.md', 'su.utils.md', 'su.review.md', 'su.trace.md', 'su.spec.review.md', 'core.spec.md', 'core.run.md', 'core.verify.md', 'core.reason.md', 'core.analyze.md', 'core.ui.md', 'core.diagram.md'];
+    const coreCommands = ['vibe.spec.md', 'vibe.run.md', 'vibe.verify.md', 'vibe.reason.md', 'vibe.analyze.md', 'vibe.utils.md', 'vibe.review.md', 'vibe.trace.md', 'vibe.spec.review.md', 'core.spec.md', 'core.run.md', 'core.verify.md', 'core.reason.md', 'core.analyze.md', 'core.ui.md', 'core.diagram.md'];
     coreCommands.forEach(cmd => {
       const cmdPath = path.join(commandsDir, cmd);
       if (fs.existsSync(cmdPath)) {
@@ -138,7 +138,7 @@ export function remove(): void {
   }
 
   console.log(`
-✅ su-core removed!
+✅ vibe removed!
 
 Removed:
   - MCP server (context7)
@@ -150,6 +150,6 @@ Removed:
   - Cursor skills (7)
   - Cursor rules template (5)
 
-To reinstall: su-core init
+To reinstall: vibe init
   `);
 }

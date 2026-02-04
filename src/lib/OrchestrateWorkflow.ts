@@ -60,11 +60,11 @@ export interface Evidence {
 
 // Phase 0: Intent Gate
 const SKILL_KEYWORDS: Record<string, string[]> = {
-  'su.spec': ['spec', 'specification', 'requirements', 'design'],
-  'su.review': ['review', 'code review', 'PR review'],
-  'su.verify': ['verify', 'verification', 'test', 'check'],
-  'su.analyze': ['analyze', 'analysis', 'explore'],
-  'su.reason': ['reason', 'reasoning', 'think', 'problem'],
+  'vibe.spec': ['spec', 'specification', 'requirements', 'design'],
+  'vibe.review': ['review', 'code review', 'PR review'],
+  'vibe.verify': ['verify', 'verification', 'test', 'check'],
+  'vibe.analyze': ['analyze', 'analysis', 'explore'],
+  'vibe.reason': ['reason', 'reasoning', 'think', 'problem'],
 };
 
 /**

@@ -49,8 +49,8 @@ Account ID: ${tokens.accountId || '(auto-detected)'}
 
 ⚠️  Note: ChatGPT Plus/Pro subscription required for API calls.
 
-Status: su-core gpt status
-Logout: su-core gpt logout
+Status: vibe gpt status
+Logout: vibe gpt logout
     `);
 
     // config.json 업데이트
@@ -90,7 +90,7 @@ GPT is called via Hooks:
 
 Error: ${message}
 
-Retry: su-core gpt auth
+Retry: vibe gpt auth
     `);
     process.exit(1);
   }
@@ -112,7 +112,7 @@ export function gptStatus(): void {
 
 No authenticated account
 
-Login: su-core gpt auth
+Login: vibe gpt auth
       `);
       return;
     }
@@ -133,7 +133,7 @@ ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAcc
 
 ⚠️  Note: ChatGPT Plus/Pro subscription required.
 
-Logout: su-core gpt logout
+Logout: vibe gpt logout
     `);
 
   } catch (error: unknown) {
@@ -164,7 +164,7 @@ export function gptLogout(): void {
 
 Account ${activeAccount.email} removed.
 
-Login again: su-core gpt auth
+Login again: vibe gpt auth
     `);
 
     // config.json 업데이트

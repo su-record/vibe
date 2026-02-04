@@ -16,39 +16,39 @@ export function showHelp(): void {
 📖 Core - SPEC-driven AI coding framework (Claude Code exclusive)
 
 Commands:
-  su-core init [project]     Initialize project
-  su-core update             Update settings
-  su-core status             Show status
-  su-core hud [subcommand]   HUD status display
-  su-core help               Help
-  su-core version            Version
+  vibe init [project]     Initialize project
+  vibe update             Update settings
+  vibe status             Show status
+  vibe hud [subcommand]   HUD status display
+  vibe help               Help
+  vibe version            Version
 
 GPT:
-  su-core gpt auth           OAuth authentication (Plus/Pro)
-  su-core gpt key <KEY>      Set API key
-  su-core gpt status         Check status
-  su-core gpt logout         Logout
-  su-core gpt remove         Remove config
+  vibe gpt auth           OAuth authentication (Plus/Pro)
+  vibe gpt key <KEY>      Set API key
+  vibe gpt status         Check status
+  vibe gpt logout         Logout
+  vibe gpt remove         Remove config
 
 Gemini:
-  su-core gemini auth        OAuth authentication
-  su-core gemini key <KEY>   Set API key
-  su-core gemini status      Check status
-  su-core gemini logout      Logout
-  su-core gemini remove      Remove config
+  vibe gemini auth        OAuth authentication
+  vibe gemini key <KEY>   Set API key
+  vibe gemini status      Check status
+  vibe gemini logout      Logout
+  vibe gemini remove      Remove config
 
 Slash Commands (Claude Code):
-  /su.spec "feature"    Create SPEC + parallel research
-  /su.run "feature"     Execute implementation
-  /su.verify "feature"  BDD verification
-  /su.review            Parallel code review (13+ agents)
-  /su.reason "problem"  Systematic reasoning
-  /su.analyze           Project analysis
-  /su.utils             Utilities (--e2e, --diagram, --continue)
+  /vibe.spec "feature"    Create SPEC + parallel research
+  /vibe.run "feature"     Execute implementation
+  /vibe.verify "feature"  BDD verification
+  /vibe.review            Parallel code review (13+ agents)
+  /vibe.reason "problem"  Systematic reasoning
+  /vibe.analyze           Project analysis
+  /vibe.utils             Utilities (--e2e, --diagram, --continue)
 
 Workflow:
-  /su.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
-  /su.spec → /su.run            Manual step-by-step
+  /vibe.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
+  /vibe.spec → /vibe.run            Manual step-by-step
 
 Docs: https://github.com/su-record/core
   `);
@@ -96,7 +96,7 @@ export function showStatus(): void {
   // 프로젝트 상태
   const projectStatus = isCoreProject
     ? `✅ ${projectRoot}`
-    : `⬚ Not a core project (run: su-core init)`;
+    : `⬚ Not a core project (run: vibe init)`;
 
   console.log(`
 📊 Core Status (v${packageJson.version})

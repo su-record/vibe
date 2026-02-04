@@ -129,7 +129,7 @@ export function main(): void {
       copyDirRecursive(languagesSource, globalLanguagesDir);
     }
 
-    // 6. hooks는 프로젝트 레벨에서 관리 (su init/update에서 처리)
+    // 6. hooks는 프로젝트 레벨에서 관리 (vibe init/update에서 처리)
     // 전역 설정에는 훅을 등록하지 않음 - 프로젝트별 .claude/settings.local.json 사용
     // 6-1. 레거시 전역 hooks 정리 (이전 버전 호환성)
     cleanupGlobalSettingsHooks();

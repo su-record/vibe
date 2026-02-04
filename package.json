@@ -18,7 +18,7 @@
     "./lib/gemini": "./dist/lib/gemini-api.js"
   },
   "bin": {
-    "su-core": "./dist/cli/index.js"
+    "vibe": "./dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc",

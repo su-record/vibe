@@ -14,18 +14,18 @@ if ! command -v npx &> /dev/null; then
 fi
 
 # core 설치 확인 및 업데이트
-if command -v su-core &> /dev/null; then
+if command -v vibe &> /dev/null; then
     echo "✅ Vibe가 이미 설치되어 있습니다."
-    su-core update --silent
+    vibe update --silent
     echo "✅ Core 업데이트 완료!"
 else
     echo "📦 Core 설치 중..."
     npm install -g @su-record/core
-    su-core update --silent
+    vibe update --silent
     echo "✅ Core 설치 및 설정 완료!"
 fi
 
 echo ""
 echo "다음 명령어로 시작하세요:"
-echo "  /su.spec \"기능명\"    SPEC 작성"
-echo "  /su.run \"기능명\"     구현 실행"
+echo "  /vibe.spec \"기능명\"    SPEC 작성"
+echo "  /vibe.run \"기능명\"     구현 실행"

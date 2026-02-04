@@ -10,7 +10,7 @@ Development output SEO quality checklist for web projects.
 
 ## When to Use
 
-- Web application development with `/su.run`
+- Web application development with `/vibe.run`
 - Landing pages and marketing sites
 - E-commerce product pages
 - Content-heavy applications
@@ -206,7 +206,7 @@ function SEO({ title, description, image }) {
 | [Lighthouse](https://developer.chrome.com/docs/lighthouse) | SEO audit |
 | [Ahrefs/Screaming Frog](https://www.screamingfrog.co.uk/) | Site crawl |
 
-## Integration with /su.run
+## Integration with /vibe.run
 
 During implementation phase, check:
 

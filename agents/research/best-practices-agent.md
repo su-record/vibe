@@ -25,7 +25,7 @@
 
 ## Usage
 
-Automatically called in parallel when `/su.spec` is executed
+Automatically called in parallel when `/vibe.spec` is executed
 
 ```
 Task(
@@ -182,10 +182,10 @@ node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
 - Conflicting advice → Claude takes precedence
 - Unique findings → All included
 
-## Integration with /su.spec
+## Integration with /vibe.spec
 
 ```
-/su.spec "login feature"
+/vibe.spec "login feature"
 
 → best-practices-agent execution (3 LLMs parallel):
   - Claude: "Research authentication best practices: OAuth, JWT, session"

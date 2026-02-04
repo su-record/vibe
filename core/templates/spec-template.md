@@ -138,7 +138,7 @@ Response: {...}
 
 ### BDD Scenarios (Gherkin)
 
-**Generate Command**: `su-core feature "{feature name}"`
+**Generate Command**: `vibe feature "{feature name}"`
 
 ```gherkin
 Scenario: {Scenario title}
@@ -154,7 +154,7 @@ Scenario: {Scenario title}
 
 ### Contract Tests (API Schema)
 
-**Generate Command**: `su-core contract "{feature name}"`
+**Generate Command**: `vibe contract "{feature name}"`
 
 **Backend Contract**:
 

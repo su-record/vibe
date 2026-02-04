@@ -25,7 +25,7 @@
 
 ## Usage
 
-Automatically called in parallel when `/su.spec` is executed
+Automatically called in parallel when `/vibe.spec` is executed
 
 ```
 Task(
@@ -195,10 +195,10 @@ node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
 - Detailed compliance review (PCI-DSS, GDPR, HIPAA)
 - Zero-day vulnerability awareness
 
-## Integration with /su.spec
+## Integration with /vibe.spec
 
 ```text
-/su.spec "payment feature"
+/vibe.spec "payment feature"
 
 → security-advisory-agent execution (3 LLMs parallel):
   - Claude: "Research security for payment processing. Check PCI-DSS, OWASP."

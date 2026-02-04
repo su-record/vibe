@@ -3,7 +3,7 @@ description: Auto-document solutions for knowledge compounding
 argument-hint: "solution description (optional)"
 ---
 
-# /su.compound
+# /vibe.compound
 
 **Knowledge Compounding** - Auto-document solved problems to boost future productivity
 
@@ -12,8 +12,8 @@ argument-hint: "solution description (optional)"
 ## Usage
 
 ```
-/su.compound                           # Auto-detect recent solutions
-/su.compound "Redis cache invalidation" # Document specific solution
+/vibe.compound                           # Auto-detect recent solutions
+/vibe.compound "Redis cache invalidation" # Document specific solution
 ```
 
 ## Auto-Triggers
@@ -21,7 +21,7 @@ argument-hint: "solution description (optional)"
 Automatically suggested when these patterns detected:
 - "it's fixed", "fixed", "solved", "resolved"
 - After PR merge
-- After `/su.verify` passes
+- After `/vibe.verify` passes
 
 ## Process
 
@@ -246,7 +246,7 @@ Auto-invoke `core_save_memory`:
 ## Workflow Integration
 
 ```
-/su.spec → /su.run → /su.verify → /su.compound
+/vibe.spec → /vibe.run → /vibe.verify → /vibe.compound
                                               │
                                               ▼
                                     .claude/core/solutions/

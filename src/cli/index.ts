@@ -108,7 +108,7 @@ switch (command) {
     remove();
     break;
 
-  // su-core gpt <subcommand>
+  // vibe gpt <subcommand>
   case 'gpt': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
@@ -120,7 +120,7 @@ switch (command) {
         if (apiKey) {
           setupExternalLLM('gpt', apiKey);
         } else {
-          console.log('Usage: su-core gpt key <API_KEY>');
+          console.log('Usage: vibe gpt key <API_KEY>');
         }
         break;
       }
@@ -136,17 +136,17 @@ switch (command) {
       default:
         console.log(`
 GPT Commands:
-  su-core gpt auth     OAuth authentication (Plus/Pro)
-  su-core gpt key      Set API key
-  su-core gpt status   Check status
-  su-core gpt logout   Logout
-  su-core gpt remove   Remove config
+  vibe gpt auth     OAuth authentication (Plus/Pro)
+  vibe gpt key      Set API key
+  vibe gpt status   Check status
+  vibe gpt logout   Logout
+  vibe gpt remove   Remove config
         `);
     }
     break;
   }
 
-  // su-core gemini <subcommand>
+  // vibe gemini <subcommand>
   case 'gemini': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
@@ -158,7 +158,7 @@ GPT Commands:
         if (apiKey) {
           setupExternalLLM('gemini', apiKey);
         } else {
-          console.log('Usage: su-core gemini key <API_KEY>');
+          console.log('Usage: vibe gemini key <API_KEY>');
         }
         break;
       }
@@ -174,11 +174,11 @@ GPT Commands:
       default:
         console.log(`
 Gemini Commands:
-  su-core gemini auth     OAuth authentication
-  su-core gemini key      Set API key
-  su-core gemini status   Check status
-  su-core gemini logout   Logout
-  su-core gemini remove   Remove config
+  vibe gemini auth     OAuth authentication
+  vibe gemini key      Set API key
+  vibe gemini status   Check status
+  vibe gemini logout   Logout
+  vibe gemini remove   Remove config
         `);
     }
     break;
@@ -188,7 +188,7 @@ Gemini Commands:
     showStatus();
     break;
 
-  // su-core hud <subcommand>
+  // vibe hud <subcommand>
   case 'hud': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
@@ -216,9 +216,9 @@ Gemini Commands:
         } else {
           console.log(`
 Agent Commands:
-  su-core hud agent add <name> [model]  Add agent (default: sonnet)
-  su-core hud agent remove <name>       Remove agent
-  su-core hud agent clear               Clear all agents
+  vibe hud agent add <name> [model]  Add agent (default: sonnet)
+  vibe hud agent remove <name>       Remove agent
+  vibe hud agent clear               Clear all agents
           `);
         }
         break;
@@ -264,17 +264,17 @@ Agent Commands:
 ❌ Unknown command: ${command}
 
 Available commands:
-  su-core init         Initialize project
-  su-core update       Update settings
-  su-core hud <cmd>    HUD status (show, start, phase, agent, reset)
-  su-core gpt <cmd>    GPT commands (auth, key, status, logout)
-  su-core gemini <cmd> Gemini commands (auth, key, status, logout)
-  su-core status       Show status
-  su-core remove       Remove core
-  su-core help         Help
-  su-core version      Version info
+  vibe init         Initialize project
+  vibe update       Update settings
+  vibe hud <cmd>    HUD status (show, start, phase, agent, reset)
+  vibe gpt <cmd>    GPT commands (auth, key, status, logout)
+  vibe gemini <cmd> Gemini commands (auth, key, status, logout)
+  vibe status       Show status
+  vibe remove       Remove core
+  vibe help         Help
+  vibe version      Version info
 
-Usage: su-core help
+Usage: vibe help
     `);
     process.exit(1);
 }

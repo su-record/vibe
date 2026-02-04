@@ -75,5 +75,5 @@ export async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  throw new Error('Gemini credentials not found. Run su-core gemini auth (OAuth) or su-core gemini key <key> (API Key) to configure.');
+  throw new Error('Gemini credentials not found. Run vibe gemini auth (OAuth) or vibe gemini key <key> (API Key) to configure.');
 }

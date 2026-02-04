@@ -513,13 +513,13 @@ jobs:
 
 ```bash
 # 1. Write contract tests
-su-core contract "{feature name}"
+vibe contract "{feature name}"
 
 # 2. Implement provider
-su-core run "Task 1-1"
+vibe run "Task 1-1"
 
 # 3. Verify contract
-su-core test "{feature name}" --contract
+vibe test "{feature name}" --contract
 
 # 4. Publish Pact (optional)
 pytest tests/pact/ --pact-broker-url=...

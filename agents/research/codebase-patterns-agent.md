@@ -25,7 +25,7 @@
 
 ## Usage
 
-Automatically called in parallel when `/su.spec` is executed
+Automatically called in parallel when `/vibe.spec` is executed
 
 ```
 Task(
@@ -142,10 +142,10 @@ Based on existing patterns:
 4. Reuse `src/utils/api_response.py`
 ```
 
-## Integration with /su.spec
+## Integration with /vibe.spec
 
 ```
-/su.spec "payment feature"
+/vibe.spec "payment feature"
 
 → codebase-patterns-agent execution:
   "Find similar payment/transaction code. Extract patterns."

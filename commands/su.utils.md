@@ -3,26 +3,26 @@ description: Utility tools (UI preview, diagram, E2E test, image generation, etc
 argument-hint: "--ui, --diagram, --e2e, --image, or other options"
 ---
 
-# /su.utils
+# /vibe.utils
 
 Collection of utility tools. Use with options.
 
 ## Usage
 
 ```
-/su.utils --ui "description"       # UI ASCII preview
-/su.utils --diagram                # Architecture diagram
-/su.utils --diagram --er           # ERD diagram
-/su.utils --diagram --flow         # Flowchart
-/su.utils --e2e "scenario"         # E2E browser test (Playwright)
-/su.utils --e2e --visual           # Visual regression test
-/su.utils --e2e --record           # Video recording
-/su.utils --image "description"    # Generate image with Gemini (icon, banner, etc.)
-/su.utils --image --icon "AppName" # Generate app icon/favicon
-/su.utils --build-fix              # Fix build errors (minimal diff)
-/su.utils --clean                  # Remove dead code + DELETION_LOG
-/su.utils --codemaps               # Generate architecture docs
-/su.utils --compound               # Document solution (usually auto-triggered)
+/vibe.utils --ui "description"       # UI ASCII preview
+/vibe.utils --diagram                # Architecture diagram
+/vibe.utils --diagram --er           # ERD diagram
+/vibe.utils --diagram --flow         # Flowchart
+/vibe.utils --e2e "scenario"         # E2E browser test (Playwright)
+/vibe.utils --e2e --visual           # Visual regression test
+/vibe.utils --e2e --record           # Video recording
+/vibe.utils --image "description"    # Generate image with Gemini (icon, banner, etc.)
+/vibe.utils --image --icon "AppName" # Generate app icon/favicon
+/vibe.utils --build-fix              # Fix build errors (minimal diff)
+/vibe.utils --clean                  # Remove dead code + DELETION_LOG
+/vibe.utils --codemaps               # Generate architecture docs
+/vibe.utils --compound               # Document solution (usually auto-triggered)
 ```
 
 ---
@@ -56,9 +56,9 @@ Generate UI preview from description or design folder.
 **Example:**
 
 ```
-/su.utils --ui "Login form - email, password input + login button"
-/su.utils --ui ./design/dashboard/
-/su.utils --ui ./mockups/homepage.png
+/vibe.utils --ui "Login form - email, password input + login button"
+/vibe.utils --ui ./design/dashboard/
+/vibe.utils --ui ./mockups/homepage.png
 ```
 
 ---
@@ -77,7 +77,7 @@ Generate Mermaid diagrams for architecture visualization.
 
 **Example:**
 ```
-/su.utils --diagram --er
+/vibe.utils --diagram --er
 ```
 
 ---
@@ -146,7 +146,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 
 ### Prerequisites
 
-- Gemini API key configured (`su-core gemini auth` or `su-core gemini key <key>`)
+- Gemini API key configured (`vibe gemini auth` or `vibe gemini key <key>`)
 
 ---
 
@@ -167,8 +167,8 @@ Read and follow `agents/e2e-tester.md` for Playwright-based E2E testing.
 
 **Example:**
 ```
-/su.utils --e2e "login flow"
-/su.utils --e2e --visual --record
+/vibe.utils --e2e "login flow"
+/vibe.utils --e2e --visual --record
 ```
 
 ---
@@ -194,7 +194,7 @@ Fix TypeScript/build errors with minimal changes.
 
 **Example:**
 ```
-/su.utils --build-fix
+/vibe.utils --build-fix
 ```
 
 **Output:** List of minimal fixes applied + build status
@@ -221,7 +221,7 @@ Detect and remove unused code with audit trail.
 
 **Example:**
 ```
-/su.utils --clean
+/vibe.utils --clean
 ```
 
 **Output:**
@@ -259,7 +259,7 @@ docs/CODEMAPS/
 
 **Example:**
 ```
-/su.utils --codemaps
+/vibe.utils --codemaps
 ```
 
 ---
@@ -291,7 +291,7 @@ Restore previous session context for continuity.
 
 **Usage:**
 ```
-/su.utils --continue
+/vibe.utils --continue
 ```
 
 **What it does:**

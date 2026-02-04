@@ -100,7 +100,7 @@ def get_user_by_email(email: str):
 ## Metadata
 - Created: 2026-01-11
 - Author: Claude
-- Review: /su.review PR#123
+- Review: /vibe.review PR#123
 ```
 
 ### Index File
@@ -147,8 +147,8 @@ Last updated: 2026-01-11 10:30
 ### Create Todo
 
 ```bash
-# Auto-generated from /su.review results
-/su.review PR#123
+# Auto-generated from /vibe.review results
+/vibe.review PR#123
 # -> Creates files in .claude/core/todos/
 
 # Manual creation

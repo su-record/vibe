@@ -97,7 +97,7 @@ export async function generateImage(
 ): Promise<ImageGenerationResult> {
   const apiKey = getApiKeyFromConfig();
   if (!apiKey) {
-    throw new Error('Gemini API key not configured. Run "su-core gemini key <key>" to configure.');
+    throw new Error('Gemini API key not configured. Run "vibe gemini key <key>" to configure.');
   }
 
   const size = options.size || '1024x1024';
@@ -232,7 +232,7 @@ export async function analyzeImage(
     }
   }
 
-  throw new Error('Gemini credentials not found. Run "su-core gemini auth" or "su-core gemini key <key>".');
+  throw new Error('Gemini credentials not found. Run "vibe gemini auth" or "vibe gemini key <key>".');
 }
 
 async function analyzeImageWithApiKey(

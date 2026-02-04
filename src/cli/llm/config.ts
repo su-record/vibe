@@ -45,7 +45,7 @@ export function setupExternalLLM(llmType: string, apiKey: string): void {
 ❌ API key required.
 
 Usage:
-  su-core ${llmType} key <api-key>
+  vibe ${llmType} key <api-key>
 
 ${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : 'Google API key: https://aistudio.google.com/apikey'}
     `);
@@ -98,7 +98,7 @@ ${llmType.toUpperCase()} is called directly via Hooks:
   - Auto-called with "${llmType}. query" prefix
   - Direct use: import('@su-record/core/lib/${llmType}')
 
-Disable: su-core ${llmType} remove
+Disable: vibe ${llmType} remove
   `);
 }
 

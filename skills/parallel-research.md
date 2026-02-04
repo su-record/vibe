@@ -35,10 +35,10 @@ node -e "import('@su-record/core/orchestrator').then(o =>
 )"
 ```
 
-### Method 2: Use /su.spec
+### Method 2: Use /vibe.spec
 
 ```
-/su.spec "feature-name"
+/vibe.spec "feature-name"
 → Parallel research runs automatically after requirements confirmed
 ```
 

@@ -146,11 +146,11 @@ export async function init(projectName?: string): Promise<void> {
     // 완료 메시지
     const packageJson = getPackageJson();
 
-    log(`✅ su-core initialized (v${packageJson.version})
+    log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus()}
 📦 Context7 plugin (recommended): /plugin install context7
 
-Next: ${isNewProject ? `cd ${projectName} && ` : ''}/su.spec "feature"
+Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"
 `);
 
   } catch (error: unknown) {

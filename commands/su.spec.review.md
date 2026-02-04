@@ -1,15 +1,15 @@
-# /su.spec.review - SPEC Quality Review
+# /vibe.spec.review - SPEC Quality Review
 
 Review and enhance SPEC with GPT/Gemini cross-validation.
 
-**Purpose:** Run this command in a NEW session after `/su.spec` to ensure accurate review execution.
+**Purpose:** Run this command in a NEW session after `/vibe.spec` to ensure accurate review execution.
 
 ---
 
 ## Usage
 
 ```bash
-/su.spec.review "feature-name"
+/vibe.spec.review "feature-name"
 ```
 
 **Prerequisites:**
@@ -23,13 +23,13 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 ## Workflow
 
 ```
-/su.spec "feature" → SPEC created
+/vibe.spec "feature" → SPEC created
         ↓
     /new (new session)
         ↓
-/su.spec.review "feature" → Quality validation + GPT/Gemini review
+/vibe.spec.review "feature" → Quality validation + GPT/Gemini review
         ↓
-    /su.run "feature"
+    /vibe.run "feature"
 ```
 
 ---
@@ -337,7 +337,7 @@ Updated files:
 
 ## Step 5: SPEC Summary for User Review
 
-**🚨 MANDATORY: Always output this summary before proceeding to `/su.run`.**
+**🚨 MANDATORY: Always output this summary before proceeding to `/vibe.run`.**
 
 After all review rounds, present the finalized SPEC to the user in a readable format:
 
@@ -373,7 +373,7 @@ After all review rounds, present the finalized SPEC to the user in a readable fo
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 If anything above is incorrect, please request changes.
-If no issues, proceed with /su.run "{feature-name}".
+If no issues, proceed with /vibe.run "{feature-name}".
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -382,11 +382,11 @@ If no issues, proceed with /su.run "{feature-name}".
 - List ALL Phases, Scenarios, and Constraints from SPEC without omission
 - Keep it concise for quick user review
 - Wait for user confirmation after review (unless ultrawork mode)
-- In ultrawork mode: output summary then auto-proceed to `/su.run`
+- In ultrawork mode: output summary then auto-proceed to `/vibe.run`
 
 ### 5.1 Final User Checkpoint
 
-**🚨 MANDATORY: `/su.run` 진행 전 최종 사용자 확인**
+**🚨 MANDATORY: `/vibe.run` 진행 전 최종 사용자 확인**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -416,7 +416,7 @@ If no issues, proceed with /su.run "{feature-name}".
 ## Next Step
 
 ```
-/su.run "{feature-name}"
+/vibe.run "{feature-name}"
 ```
 
 ---
@@ -430,7 +430,7 @@ If no issues, proceed with /su.run "{feature-name}".
 Expected (single): .claude/core/specs/{feature-name}.md
 Expected (split):  .claude/core/specs/{feature-name}/_index.md
 
-Please run /su.spec "{feature-name}" first to create the SPEC.
+Please run /vibe.spec "{feature-name}" first to create the SPEC.
 ```
 
 ### Feature Not Found
@@ -440,7 +440,7 @@ Please run /su.spec "{feature-name}" first to create the SPEC.
 Expected (single): .claude/core/features/{feature-name}.feature
 Expected (split):  .claude/core/features/{feature-name}/_index.feature
 
-Please run /su.spec "{feature-name}" first to create the Feature file.
+Please run /vibe.spec "{feature-name}" first to create the Feature file.
 ```
 
 ### GPT/Gemini Call Failed
@@ -459,7 +459,7 @@ Continuing with {other model} results only...
 For faster iteration (1 round only):
 
 ```bash
-/su.spec.review "feature-name" --quick
+/vibe.spec.review "feature-name" --quick
 ```
 
 ---

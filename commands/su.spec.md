@@ -3,17 +3,17 @@ description: Create SPEC document with Specification Agent
 argument-hint: "feature name"
 ---
 
-# /su.spec
+# /vibe.spec
 
 Create a SPEC document (Specification Agent).
 
 ## Usage
 
 ```
-/su.spec "feature-name"                    # Conversation mode (requirements gathering)
-/su.spec "feature-name" ultrawork          # Auto: SPEC → Review → Implementation
-/su.spec "docs/login-prd.md"               # File path input (auto-detected)
-/su.spec + 📎 file attachment              # Use attached file
+/vibe.spec "feature-name"                    # Conversation mode (requirements gathering)
+/vibe.spec "feature-name" ultrawork          # Auto: SPEC → Review → Implementation
+/vibe.spec "docs/login-prd.md"               # File path input (auto-detected)
+/vibe.spec + 📎 file attachment              # Use attached file
 ```
 
 ### ultrawork Mode
@@ -21,13 +21,13 @@ Create a SPEC document (Specification Agent).
 When `ultrawork` (or `ulw`) is included, automatically chains:
 
 ```
-/su.spec "feature" ultrawork
+/vibe.spec "feature" ultrawork
     ↓
 [1] SPEC Creation (this command)
     ↓
-[2] Auto: /su.spec.review "{feature}"
+[2] Auto: /vibe.spec.review "{feature}"
     ↓
-[3] Auto: /su.run "{feature}" ultrawork
+[3] Auto: /vibe.run "{feature}" ultrawork
 ```
 
 **No manual intervention between steps.**
@@ -60,7 +60,7 @@ When `ultrawork` (or `ulw`) is included, automatically chains:
 **File input mode flow:**
 
 ```
-/su.spec "docs/login-prd.md"
+/vibe.spec "docs/login-prd.md"
 
 📄 File loaded: docs/login-prd.md (2.3KB)
 
@@ -115,7 +115,7 @@ Use the Read tool directly on the image file. Claude can read images natively.
 
 **Image input example:**
 ```
-/su.spec "designs/login-wireframe.png"
+/vibe.spec "designs/login-wireframe.png"
 
 🖼️ Image analysis: designs/login-wireframe.png
    (via Gemini 3 Flash / Claude Opus)
@@ -152,7 +152,7 @@ Collect requirements through conversation with the user and create an **AI-execu
 When GPT/Gemini are enabled, they are automatically utilized during SPEC creation:
 
 ```
-/su.spec "feature"
+/vibe.spec "feature"
       ↓
 [Claude] Draft SPEC
       ↓
@@ -165,9 +165,9 @@ When GPT/Gemini are enabled, they are automatically utilized during SPEC creatio
 
 **Setup:**
 ```bash
-su-core gpt auth       # Enable GPT (OAuth)
-su-core gemini auth    # Enable Gemini (OAuth)
-su-core status         # Check current settings
+vibe gpt auth       # Enable GPT (OAuth)
+vibe gemini auth    # Enable Gemini (OAuth)
+vibe status         # Check current settings
 ```
 
 ## Process
@@ -219,13 +219,13 @@ $ git checkout -b feature/login-page
 
 ### 1. Project Analysis
 
-**Existing project** (`su-core init`):
+**Existing project** (`vibe init`):
 - Source code analysis: `package.json`, `pyproject.toml`, `pubspec.yaml`, `go.mod`, etc.
 - Reference `CLAUDE.md` file (tech stack)
 - Infer framework from file structure
 - **Use `findSymbol` tool** to locate relevant existing implementations
 
-**New project** (`su-core init <project-name>`):
+**New project** (`vibe init <project-name>`):
 - Suggest tech stack (2-3 options)
 
 ### 2. Collect Requirements via Conversation
@@ -329,7 +329,7 @@ const response = parseUserResponse(question, "1, 2, 4");
 
 **🚨 CRITICAL: Read config.json references IMMEDIATELY after tech stack is confirmed**
 
-Reference documents are automatically generated in `config.json` based on the stack detected during `su-core init`:
+Reference documents are automatically generated in `config.json` based on the stack detected during `vibe init`:
 
 ```json
 // .claude/core/config.json
@@ -374,7 +374,7 @@ Read ~/.claude/core/languages/typescript-react.md
 **Important:**
 
 - No manual mapping needed - config.json contains all reference paths
-- `config.json.references` is automatically referenced when running `/su.run`
+- `config.json.references` is automatically referenced when running `/vibe.run`
 - Not copied to project (referenced from global package)
 
 ### 3. Parallel Research (v2.5.0) - MANDATORY AFTER requirements confirmed
@@ -841,7 +841,7 @@ SPEC writing complete
       ↓
 Score < 95? → Show missing items → Attempt auto-fix → Re-evaluate
       ↓
-Score ≥ 95 → SPEC Draft Complete → Handoff to /su.spec.review
+Score ≥ 95 → SPEC Draft Complete → Handoff to /vibe.spec.review
 ```
 
 #### 7.4 Auto-Fix for Low Score
@@ -864,8 +864,8 @@ After SPEC draft is complete (score ≥ 95):
 **If `ultrawork` mode:**
 - ❌ DO NOT show handoff message
 - ❌ DO NOT ask for confirmation
-- ✅ Immediately proceed to `/su.spec.review "{feature-name}"`
-- ✅ After review passes, immediately proceed to `/su.run "{feature-name}" ultrawork`
+- ✅ Immediately proceed to `/vibe.spec.review "{feature-name}"`
+- ✅ After review passes, immediately proceed to `/vibe.run "{feature-name}" ultrawork`
 
 **If normal mode:**
 Output the handoff message:
@@ -885,10 +885,10 @@ Output the handoff message:
 ⚠️ NEXT STEP: Run SPEC review
 
 Option 1 (same session):
-  /su.spec.review "{feature-name}"
+  /vibe.spec.review "{feature-name}"
 
 Option 2 (recommended for large context):
-  /new → /su.spec.review "{feature-name}"
+  /new → /vibe.spec.review "{feature-name}"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -952,7 +952,7 @@ Option 2 (recommended for large context):
 ## Example
 
 ```
-User: /su.spec "brick-game"
+User: /vibe.spec "brick-game"
 
 Claude:
 You're making a brick game! What style are you thinking of?
@@ -1072,7 +1072,7 @@ node -e "import('@su-record/core/tools').then(t => t.recallMemory({key: 'brick-g
 ## Next Step
 
 ```
-/su.run "brick-game"
+/vibe.run "brick-game"
 ```
 
 ---

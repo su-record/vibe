@@ -10,13 +10,13 @@ Auto-generate app icons and favicons based on SPEC brand information.
 
 ## When to Use
 
-- First-time project setup with `/su.run`
+- First-time project setup with `/vibe.run`
 - When SPEC contains brand/design information
 - When Gemini API key is configured
 
 ## Prerequisites
 
-- Gemini API key configured (`su-core gemini auth`)
+- Gemini API key configured (`vibe gemini auth`)
 - SPEC with brand context (app name, colors, style)
 
 ## Generated Assets
@@ -70,7 +70,7 @@ Save to: public/ or assets/
 
 ## Auto-Trigger Conditions
 
-1. First `/su.run` execution (no existing icons)
+1. First `/vibe.run` execution (no existing icons)
 2. SPEC contains brand/design context
 3. Gemini API key is available
 4. `--generate-icons` flag passed
@@ -106,7 +106,7 @@ Requirements:
 node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
-## Integration with /su.run
+## Integration with /vibe.run
 
 During Phase 1 (Setup), if brand assets don't exist:
 

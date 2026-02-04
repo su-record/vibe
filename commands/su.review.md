@@ -3,19 +3,19 @@ description: Multi-agent parallel code review with priority-based findings
 argument-hint: "PR number, branch name, or file path"
 ---
 
-# /su.review
+# /vibe.review
 
 **Parallel Agent Code Review** - 13+ specialists review simultaneously
 
 ## Usage
 
 ```
-/su.review                         # Review current branch
-/su.review PR#123                  # Review specific PR
-/su.review feature/login           # Review specific branch
-/su.review src/api/                # Review specific path
-/su.review --race                  # Multi-LLM race mode (GPT + Gemini)
-/su.review --race security         # Race mode for specific review type
+/vibe.review                         # Review current branch
+/vibe.review PR#123                  # Review specific PR
+/vibe.review feature/login           # Review specific branch
+/vibe.review src/api/                # Review specific path
+/vibe.review --race                  # Multi-LLM race mode (GPT + Gemini)
+/vibe.review --race security         # Race mode for specific review type
 ```
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
@@ -27,7 +27,7 @@ argument-hint: "PR number, branch name, or file path"
 ### How It Works
 
 ```
-/su.review --race
+/vibe.review --race
 
 security-review:
 ├─ GPT-5.2-Codex  → [SQL injection, XSS]
@@ -49,10 +49,10 @@ security-review:
 ### Race Mode Options
 
 ```
-/su.review --race                  # All review types
-/su.review --race security         # Security only
-/su.review --race performance      # Performance only
-/su.review --race architecture     # Architecture only
+/vibe.review --race                  # All review types
+/vibe.review --race security         # Security only
+/vibe.review --race performance      # Performance only
+/vibe.review --race architecture     # Architecture only
 ```
 
 ### Race Mode Output
@@ -285,16 +285,16 @@ Choose a workflow to fix the discovered issues:
 | Task Scale | Recommended Approach |
 |------------|---------------------|
 | Simple fix (1-2 files) | Plan Mode |
-| Complex fix (3+ files, validation needed) | /su.spec |
+| Complex fix (3+ files, validation needed) | /vibe.spec |
 
-1. `/su.spec "fix: issue-name"` - VIBE workflow (SPEC validation + re-review)
+1. `/vibe.spec "fix: issue-name"` - VIBE workflow (SPEC validation + re-review)
 2. Plan Mode - Quick fix (for simple tasks)
 
 Which approach would you like to proceed with?
 ```
 
 - Wait for user's choice before proceeding
-- If user chooses VIBE → wait for `/su.spec` command
+- If user chooses VIBE → wait for `/vibe.spec` command
 - If user chooses Plan Mode → proceed with EnterPlanMode
 
 ## Core Tools (Code Analysis)

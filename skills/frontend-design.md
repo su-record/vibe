@@ -79,10 +79,10 @@ const tokens = {
 
 ## Integration with Vibe
 
-Use with `/su.utils --ui` for preview:
+Use with `/vibe.utils --ui` for preview:
 
 ```bash
-/su.utils --ui "login form with bold typography and custom color scheme"
+/vibe.utils --ui "login form with bold typography and custom color scheme"
 ```
 
 ## Resources

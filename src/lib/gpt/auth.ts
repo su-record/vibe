@@ -65,5 +65,5 @@ export async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  throw new Error('GPT credentials not found. Run su-core gpt auth (OAuth) or su-core gpt key <key> (API Key) to configure.');
+  throw new Error('GPT credentials not found. Run vibe gpt auth (OAuth) or vibe gpt key <key> (API Key) to configure.');
 }

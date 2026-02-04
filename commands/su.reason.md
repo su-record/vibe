@@ -3,14 +3,14 @@ description: Apply systematic reasoning framework to complex problems
 argument-hint: "problem description"
 ---
 
-# /su.reason
+# /vibe.reason
 
 Apply 9-step reasoning framework to complex problems.
 
 ## Usage
 
 ```
-/su.reason "problem description"
+/vibe.reason "problem description"
 ```
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
@@ -128,7 +128,7 @@ Apply 9-step reasoning framework to complex problems.
 ## Example
 
 ```
-User: /su.reason "After user login, profile page intermittently returns 500 error"
+User: /vibe.reason "After user login, profile page intermittently returns 500 error"
 
 AI: Analyzing with 9-step reasoning framework...
 
