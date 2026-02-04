@@ -36,9 +36,26 @@ export function getLLMAuthStatus(): LLMStatusMap {
     }
   } catch { /* ignore: optional operation */ }
 
-  // GPT API 키 확인 (프로젝트 config)
+  // GPT API 키 확인 (전역 config → 프로젝트 config)
   if (!status.gpt) {
     try {
+      // 전역 gpt-apikey.json 확인
+      const gptConfigDir = process.platform === 'win32'
+        ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
+        : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
+      const gptApiKeyPath = path.join(gptConfigDir, 'gpt-apikey.json');
+      if (fs.existsSync(gptApiKeyPath)) {
+        const keyData = JSON.parse(fs.readFileSync(gptApiKeyPath, 'utf-8'));
+        if (keyData.apiKey) {
+          status.gpt = { type: 'apikey', valid: true };
+        }
+      }
+    } catch { /* ignore: optional operation */ }
+  }
+
+  if (!status.gpt) {
+    try {
+      // 프로젝트 config fallback
       const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
       if (fs.existsSync(configPath)) {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
@@ -70,9 +87,26 @@ export function getLLMAuthStatus(): LLMStatusMap {
     }
   } catch { /* ignore: optional operation */ }
 
-  // Gemini API 키 확인 (프로젝트 config)
+  // Gemini API 키 확인 (전역 config → 프로젝트 config)
   if (!status.gemini) {
     try {
+      // 전역 gemini-apikey.json 확인
+      const geminiKeyConfigDir = process.platform === 'win32'
+        ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
+        : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
+      const geminiApiKeyPath = path.join(geminiKeyConfigDir, 'gemini-apikey.json');
+      if (fs.existsSync(geminiApiKeyPath)) {
+        const keyData = JSON.parse(fs.readFileSync(geminiApiKeyPath, 'utf-8'));
+        if (keyData.apiKey) {
+          status.gemini = { type: 'apikey', valid: true };
+        }
+      }
+    } catch { /* ignore: optional operation */ }
+  }
+
+  if (!status.gemini) {
+    try {
+      // 프로젝트 config fallback
       const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
       if (fs.existsSync(configPath)) {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
