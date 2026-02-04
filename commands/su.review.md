@@ -18,6 +18,8 @@ argument-hint: "PR number, branch name, or file path"
 /su.review --race security         # Race mode for specific review type
 ```
 
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+
 ## Race Mode (v2.6.9)
 
 **Multi-LLM competitive review** - Same review task runs on GPT + Gemini in parallel, results are cross-validated.
@@ -244,7 +246,9 @@ Examples:
 CODE REVIEW SUMMARY
 PR #123: Add user authentication
 
-Reviewers: 13 agents | Duration: 45s
+Reviewers: 13 agents
+⏱️ Started: {start_time}
+⏱️ Completed: {getCurrentTime 결과}
 
 Score: 92/100 (Good) ← Score after auto-fix
 

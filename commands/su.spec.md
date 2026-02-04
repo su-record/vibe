@@ -32,6 +32,8 @@ When `ultrawork` (or `ulw`) is included, automatically chains:
 
 **No manual intervention between steps.**
 
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+
 ## Input Mode Detection (Auto-detect)
 
 **Input priority:**
@@ -876,6 +878,8 @@ Output the handoff message:
 📋 SPEC: .claude/core/specs/{feature-name}.md
 📋 Feature: .claude/core/features/{feature-name}.feature
 📊 Quality Score: {score}/100
+⏱️ Started: {start_time}
+⏱️ Completed: {getCurrentTime 결과}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ NEXT STEP: Run SPEC review

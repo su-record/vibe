@@ -13,6 +13,8 @@ Apply 9-step reasoning framework to complex problems.
 /su.reason "problem description"
 ```
 
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+
 ## When to Use
 
 1. **Complex bug debugging** - Root cause unclear, need systematic hypothesis verification
@@ -77,6 +79,8 @@ Apply 9-step reasoning framework to complex problems.
 **Problem**: [problem description]
 **Context**: [relevant information]
 **Steps Applied**: 9/9
+**⏱️ Started**: {start_time}
+**⏱️ Completed**: {getCurrentTime 결과}
 
 ---
 

@@ -10,6 +10,8 @@ Generate and display Requirements Traceability Matrix (RTM).
 /su.trace "feature-name" --save       # Save to file
 ```
 
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+
 ## Description
 
 Requirements Traceability Matrix (RTM) tracks the relationship between:
@@ -84,6 +86,9 @@ The following requirements lack full coverage:
 ⚠️ Coverage is at 60%. Consider:
 - Add Feature scenarios for uncovered requirements
 - Add test cases for uncovered requirements
+
+⏱️ Started: {start_time}
+⏱️ Completed: {getCurrentTime 결과}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```

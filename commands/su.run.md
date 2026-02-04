@@ -20,6 +20,8 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 
 ---
 
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+
 ## **Scenario-Driven Development (SDD)**
 
 > Automate **Scenario = Implementation = Verification** so even non-developers can trust quality
@@ -1079,7 +1081,8 @@ After all scenarios complete + Gemini review, **quality report is auto-generated
 │  │ Gemini review     │ ✅     │ 3 improvements applied      │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
-│  ⏱️ Total time: 3m 42s                                          │
+│  ⏱️ Started: {start_time}                                        │
+│  ⏱️ Completed: {getCurrentTime 결과}                             │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -1242,7 +1245,8 @@ Then: Login success + JWT token returned
 │  📈 Quality score: 94/100                                       │
 │  Build: ✅ | Tests: ✅ | Types: ✅ | Gemini: ✅ (2 applied)     │
 │                                                                 │
-│  ⏱️ Total time: 3m 42s                                          │
+│  ⏱️ Started: {start_time}                                        │
+│  ⏱️ Completed: {getCurrentTime 결과}                             │
 └─────────────────────────────────────────────────────────────────┘
 
 🎉 Implementation complete! All scenarios passed + Gemini review applied.

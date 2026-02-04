@@ -25,6 +25,8 @@ Analyze project or specific feature/module.
 
 ---
 
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+
 ## Mode 1: Feature/Module Analysis (`/su.analyze "feature-name"`)
 
 ### Goal
@@ -130,7 +132,7 @@ node -e "import('@su-record/core/orchestrator').then(async o => {
 #### 6. Complete & Next Action
 
 After analysis:
-1. Output analysis summary
+1. Output analysis summary (include `⏱️ Started: {start_time}` and `⏱️ Completed: {getCurrentTime 결과}`)
 2. **Ask user to choose workflow** when development is requested:
 
 ```

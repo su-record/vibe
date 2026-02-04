@@ -18,6 +18,8 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 
 ---
 
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+
 ## Workflow
 
 ```
@@ -322,6 +324,8 @@ Cross-Validated Issues: None
 Quality Score: 96/100 ✅
 Review Rounds: 3/3 ✅
 Total Improvements: 4
+⏱️ Started: {start_time}
+⏱️ Completed: {getCurrentTime 결과}
 
 Updated files:
   📋 .claude/core/specs/{feature-name}.md (or split folder)

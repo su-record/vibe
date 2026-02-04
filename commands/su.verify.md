@@ -18,6 +18,8 @@ argument-hint: "feature name"
 /su.verify --e2e --record              # Video recording
 ```
 
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+
 ## Core Principles
 
 ```
@@ -112,6 +114,9 @@ Then: Login success + JWT token returned
 │                                                                 │
 │  📋 Recommendations:                                             │
 │  - Need 2% more code coverage (auth.service.ts line 45-52)      │
+│                                                                 │
+│  ⏱️ Started: {start_time}                                        │
+│  ⏱️ Completed: {getCurrentTime 결과}                             │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
