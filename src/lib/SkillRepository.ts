@@ -340,9 +340,9 @@ node hooks/scripts/llm-orchestrate.js gemini "your prompt"
 ## Setup
 
 \`\`\`bash
-su gpt auth     # Configure GPT API key
-su gemini auth  # Configure Gemini OAuth/API key
-su status       # Check current configuration
+su-core gpt auth     # Configure GPT API key
+su-core gemini auth  # Configure Gemini OAuth/API key
+su-core status       # Check current configuration
 \`\`\`
 
 ## Best Practices

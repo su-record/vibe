@@ -79,14 +79,14 @@ if ! command -v npx &> /dev/null; then
 fi
 
 # Check core installation and update
-if command -v su &> /dev/null; then
+if command -v su-core &> /dev/null; then
     echo "✅ Core is already installed."
-    su update --silent
+    su-core update --silent
     echo "✅ Core updated!"
 else
     echo "📦 Installing Core..."
-    npm install -g git+https://github.com/su-record/core.git
-    su update --silent
+    npm install -g @su-record/core
+    su-core update --silent
     echo "✅ Core installed and configured!"
 fi
 
@@ -110,11 +110,11 @@ This project uses [Core](https://github.com/su-record/core) AI coding framework.
 
 \`\`\`bash
 # Global install (recommended)
-npm install -g git+https://github.com/su-record/core.git
-su update
+npm install -g @su-record/core
+su-core update
 
-# Or use su init to setup
-su init
+# Or use su-core init to setup
+su-core init
 \`\`\`
 
 ### Usage

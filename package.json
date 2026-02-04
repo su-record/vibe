@@ -1,6 +1,6 @@
 {
   "name": "@su-record/core",
-  "version": "0.1.0",
+  "version": "0.0.4",
   "description": "Su core - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
   "type": "module",
   "main": "dist/cli/index.js",
@@ -18,14 +18,14 @@
     "./lib/gemini": "./dist/lib/gemini-api.js"
   },
   "bin": {
-    "su": "./dist/cli/index.js"
+    "su-core": "./dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
     "postinstall": "node dist/cli/postinstall.js"
   },
   "keywords": [
@@ -58,12 +58,11 @@
     "@anthropic-ai/claude-agent-sdk": "^0.2.6",
     "better-sqlite3": "^12.4.1",
     "chalk": "^5.3.0",
-    "glob": "^11.0.3",
+    "glob": "^13.0.1",
     "ts-morph": "^26.0.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
-    "@types/glob": "^8.1.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.5.4",
     "vitest": "^4.0.9"

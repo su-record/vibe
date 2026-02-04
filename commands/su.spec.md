@@ -163,9 +163,9 @@ When GPT/Gemini are enabled, they are automatically utilized during SPEC creatio
 
 **Setup:**
 ```bash
-su gpt auth       # Enable GPT (OAuth)
-su gemini auth    # Enable Gemini (OAuth)
-su status         # Check current settings
+su-core gpt auth       # Enable GPT (OAuth)
+su-core gemini auth    # Enable Gemini (OAuth)
+su-core status         # Check current settings
 ```
 
 ## Process
@@ -217,13 +217,13 @@ $ git checkout -b feature/login-page
 
 ### 1. Project Analysis
 
-**Existing project** (`su init`):
+**Existing project** (`su-core init`):
 - Source code analysis: `package.json`, `pyproject.toml`, `pubspec.yaml`, `go.mod`, etc.
 - Reference `CLAUDE.md` file (tech stack)
 - Infer framework from file structure
 - **Use `findSymbol` tool** to locate relevant existing implementations
 
-**New project** (`su init <project-name>`):
+**New project** (`su-core init <project-name>`):
 - Suggest tech stack (2-3 options)
 
 ### 2. Collect Requirements via Conversation
@@ -327,7 +327,7 @@ const response = parseUserResponse(question, "1, 2, 4");
 
 **🚨 CRITICAL: Read config.json references IMMEDIATELY after tech stack is confirmed**
 
-Reference documents are automatically generated in `config.json` based on the stack detected during `su init`:
+Reference documents are automatically generated in `config.json` based on the stack detected during `su-core init`:
 
 ```json
 // .claude/core/config.json

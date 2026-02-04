@@ -91,9 +91,9 @@ GPT/Gemini are automatically called within `/su.spec`:
 
 **Setup:**
 ```bash
-su gpt auth       # Enable GPT
-su gemini auth    # Enable Gemini
-su status         # Check current settings
+su-core gpt auth       # Enable GPT
+su-core gemini auth    # Enable Gemini
+su-core status         # Check current settings
 ```
 
 ## ULTRAWORK Mode

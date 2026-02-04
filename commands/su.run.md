@@ -955,7 +955,7 @@ Brand:
 **Trigger Conditions:**
 - First `/su.run` execution (no existing icons)
 - SPEC contains brand/design context
-- Gemini API key configured (`su gemini auth`)
+- Gemini API key configured (`su-core gemini auth`)
 
 **Manual Generation:**
 ```bash

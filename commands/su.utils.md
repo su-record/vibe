@@ -146,7 +146,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 
 ### Prerequisites
 
-- Gemini API key configured (`su gemini auth` or `su gemini key <key>`)
+- Gemini API key configured (`su-core gemini auth` or `su-core gemini key <key>`)
 
 ---
 

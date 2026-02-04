@@ -64,7 +64,7 @@ export function installGlobalCorePackage(isUpdate = false): void {
     if (fs.existsSync(globalNpmCoreDir)) {
       copyDirRecursive(globalNpmCoreDir, corePackageDir);
     } else {
-      execSync(`npm install git+https://github.com/su-record/core.git --prefix "${globalCoreDir}" --no-save`, {
+      execSync(`npm install @su-record/core@${currentVersion} --prefix "${globalCoreDir}" --no-save`, {
         stdio: 'pipe',
       });
     }

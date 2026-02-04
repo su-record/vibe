@@ -4,6 +4,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ```bash
-npm install -g git+https://github.com/su-record/core.git
-su init
+npm install -g @su-record/core
+su-core init
 ```

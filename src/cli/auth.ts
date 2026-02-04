@@ -104,7 +104,7 @@ export function formatLLMStatus(): string {
       lines.push('  GPT: ✓ API key configured');
     }
   } else {
-    lines.push('  GPT: ✗ Not configured (core auth gpt or su gpt <api-key>)');
+    lines.push('  GPT: ✗ Not configured (su-core gpt auth or su-core gpt key <api-key>)');
   }
 
   // Gemini status
@@ -116,7 +116,7 @@ export function formatLLMStatus(): string {
       lines.push('  Gemini: ✓ API key configured');
     }
   } else {
-    lines.push('  Gemini: ✗ Not configured (core auth gemini or su gemini <api-key>)');
+    lines.push('  Gemini: ✗ Not configured (su-core gemini auth or su-core gemini key <api-key>)');
   }
 
   return lines.join('\n');

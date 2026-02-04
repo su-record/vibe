@@ -92,7 +92,7 @@ Analyze the UI structure:
 **Check Gemini authentication:**
 
 ```bash
-su gemini status
+su-core gemini status
 ```
 
 Or check config file: `~/.config/core/gemini.json`
@@ -243,7 +243,7 @@ Claude: Gemini not configured. Using ASCII preview...
 - Main: grid (3 columns)
 - Responsive: Changes to 1 column on mobile
 
-💡 Tip: Run `su gemini auth` for actual UI image generation
+💡 Tip: Run `su-core gemini auth` for actual UI image generation
 
 Next step: /su.spec "dashboard page"
 ```

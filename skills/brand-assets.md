@@ -16,7 +16,7 @@ Auto-generate app icons and favicons based on SPEC brand information.
 
 ## Prerequisites
 
-- Gemini API key configured (`su gemini auth`)
+- Gemini API key configured (`su-core gemini auth`)
 - SPEC with brand context (app name, colors, style)
 
 ## Generated Assets
