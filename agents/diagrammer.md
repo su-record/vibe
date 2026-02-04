@@ -3,23 +3,23 @@ description: Generate diagrams (architecture, ERD, flowchart)
 argument-hint: --er or --flow (optional)
 ---
 
-# /core.diagram
+# /su.diagram
 
 Generate diagrams (architecture, ERD, flowchart).
 
 ## Usage
 
 ```
-/core.diagram
-/core.diagram --er
-/core.diagram --flow
+/su.diagram
+/su.diagram --er
+/su.diagram --flow
 ```
 
 ## Process
 
 ### 1. Determine Diagram Type
 
-- **Default** (`/core.diagram`): Architecture diagram
+- **Default** (`/su.diagram`): Architecture diagram
 - **--er**: ERD (Entity-Relationship Diagram)
 - **--flow**: Flowchart (main processes)
 
@@ -110,7 +110,7 @@ Guide on how to render generated Mermaid code:
 ## Example
 
 ```
-User: /core.diagram --er
+User: /su.diagram --er
 
 Claude: Generating ERD...
 

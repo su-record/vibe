@@ -25,7 +25,7 @@
 
 ## Usage
 
-Automatically called in parallel when `/core.spec` is executed
+Automatically called in parallel when `/su.spec` is executed
 
 ```
 Task(
@@ -182,10 +182,10 @@ node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
 - Conflicting advice → Claude takes precedence
 - Unique findings → All included
 
-## Integration with /core.spec
+## Integration with /su.spec
 
 ```
-/core.spec "login feature"
+/su.spec "login feature"
 
 → best-practices-agent execution (3 LLMs parallel):
   - Claude: "Research authentication best practices: OAuth, JWT, session"

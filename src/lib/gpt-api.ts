@@ -76,7 +76,7 @@ async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  throw new Error('GPT credentials not found. Run core gpt auth (OAuth) or core gpt key <key> (API Key) to configure.');
+  throw new Error('GPT credentials not found. Run su gpt auth (OAuth) or su gpt key <key> (API Key) to configure.');
 }
 
 // Types

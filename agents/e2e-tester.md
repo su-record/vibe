@@ -3,18 +3,18 @@ description: End-to-end testing with Playwright automation
 argument-hint: "test scenario or URL"
 ---
 
-# /core.e2e
+# /su.e2e
 
 **E2E Test Automation** - Playwright-based browser testing
 
 ## Usage
 
 ```
-/core.e2e                              # Run all E2E tests
-/core.e2e "login flow"                 # Test specific scenario
-/core.e2e http://localhost:3000/login  # Test specific URL
-/core.e2e --visual                     # Visual regression testing
-/core.e2e --record                     # Record test video
+/su.e2e                              # Run all E2E tests
+/su.e2e "login flow"                 # Test specific scenario
+/su.e2e http://localhost:3000/login  # Test specific URL
+/su.e2e --visual                     # Visual regression testing
+/su.e2e --record                     # Record test video
 ```
 
 ## Core Features
@@ -147,7 +147,7 @@ test('accessibility check', async ({ page }) => {
 Link with bug reports:
 
 ```
-/core.e2e --reproduce "User sees blank page after login"
+/su.e2e --reproduce "User sees blank page after login"
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  🐛 Bug Reproduction Mode                                        │
@@ -239,7 +239,7 @@ Link with bug reports:
 
 ## Integration with Review
 
-Auto-suggest after `/core.review`:
+Auto-suggest after `/su.review`:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -250,16 +250,16 @@ Auto-suggest after `/core.review`:
 │  - src/components/LoginForm.tsx                                 │
 │  - src/pages/Dashboard.tsx                                      │
 │                                                                 │
-│  Run E2E tests? /core.e2e "login flow"                          │
+│  Run E2E tests? /su.e2e "login flow"                          │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Related Commands
 
-- `/core.review` - Code review
-- `/core.verify` - SPEC verification
-- `/core.compound` - Document test results
+- `/su.review` - Code review
+- `/su.verify` - SPEC verification
+- `/su.compound` - Document test results
 
 ---
 

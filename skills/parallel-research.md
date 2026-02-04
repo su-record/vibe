@@ -35,10 +35,10 @@ node -e "import('@su-record/core/orchestrator').then(o =>
 )"
 ```
 
-### Method 2: Use /core.spec
+### Method 2: Use /su.spec
 
 ```
-/core.spec "feature-name"
+/su.spec "feature-name"
 → Parallel research runs automatically after requirements confirmed
 ```
 

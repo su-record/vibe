@@ -1,6 +1,6 @@
 /**
  * Orchestrator - 메인 오케스트레이터 클래스
- * /core.* 명령어에서 사용할 중앙 오케스트레이션 로직
+ * /su.* 명령어에서 사용할 중앙 오케스트레이션 로직
  *
  * v2.6.0: SmartRouter, LLMCluster, AgentManager로 분리
  */
@@ -34,7 +34,7 @@ import { AgentManager, AgentManagerOptions } from './AgentManager.js';
 
 /**
  * Core Orchestrator
- * 모든 /core.* 명령어의 오케스트레이션을 담당
+ * 모든 /su.* 명령어의 오케스트레이션을 담당
  */
 export class CoreOrchestrator {
   private options: OrchestratorOptions;

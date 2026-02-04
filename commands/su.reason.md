@@ -3,14 +3,14 @@ description: Apply systematic reasoning framework to complex problems
 argument-hint: "problem description"
 ---
 
-# /core.reason
+# /su.reason
 
 Apply 9-step reasoning framework to complex problems.
 
 ## Usage
 
 ```
-/core.reason "problem description"
+/su.reason "problem description"
 ```
 
 ## When to Use
@@ -124,7 +124,7 @@ Apply 9-step reasoning framework to complex problems.
 ## Example
 
 ```
-User: /core.reason "After user login, profile page intermittently returns 500 error"
+User: /su.reason "After user login, profile page intermittently returns 500 error"
 
 AI: Analyzing with 9-step reasoning framework...
 

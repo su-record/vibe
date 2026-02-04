@@ -332,7 +332,7 @@ Use multiple LLMs for comprehensive research and validation.
 ## Usage
 
 \`\`\`bash
-# Via Bash hook (automatic in /core.spec)
+# Via Bash hook (automatic in /su.spec)
 node hooks/scripts/llm-orchestrate.js gpt "your prompt"
 node hooks/scripts/llm-orchestrate.js gemini "your prompt"
 \`\`\`
@@ -340,9 +340,9 @@ node hooks/scripts/llm-orchestrate.js gemini "your prompt"
 ## Setup
 
 \`\`\`bash
-core gpt auth     # Configure GPT API key
-core gemini auth  # Configure Gemini OAuth/API key
-core status       # Check current configuration
+su gpt auth     # Configure GPT API key
+su gemini auth  # Configure Gemini OAuth/API key
+su status       # Check current configuration
 \`\`\`
 
 ## Best Practices
@@ -486,7 +486,7 @@ At 70%+ context usage:
 ## Slash Command
 
 \`\`\`
-/core.utils --continue
+/su.utils --continue
 \`\`\`
 
 Restores previous session context automatically.

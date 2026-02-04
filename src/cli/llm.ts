@@ -192,8 +192,8 @@ Account ID: ${tokens.accountId || '(auto-detected)'}
 
 ⚠️  Note: ChatGPT Plus/Pro subscription required for API calls.
 
-Status: core gpt status
-Logout: core gpt logout
+Status: su gpt status
+Logout: su gpt logout
     `);
 
     // config.json 업데이트
@@ -233,7 +233,7 @@ GPT is called via Hooks:
 
 Error: ${message}
 
-Retry: core gpt auth
+Retry: su gpt auth
     `);
     process.exit(1);
   }
@@ -255,7 +255,7 @@ export function gptStatus(): void {
 
 No authenticated account
 
-Login: core gpt auth
+Login: su gpt auth
       `);
       return;
     }
@@ -276,7 +276,7 @@ ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAcc
 
 ⚠️  Note: ChatGPT Plus/Pro subscription required.
 
-Logout: core gpt logout
+Logout: su gpt logout
     `);
 
   } catch (error: unknown) {
@@ -307,7 +307,7 @@ export function gptLogout(): void {
 
 Account ${activeAccount.email} removed.
 
-Login again: core gpt auth
+Login again: su gpt auth
     `);
 
     // config.json 업데이트
@@ -375,8 +375,8 @@ Available models:
   - Gemini 3 Flash (fast, exploration/search)
   - Gemini 3 Pro (high accuracy)
 
-Status: core gemini status
-Logout: core gemini logout
+Status: su gemini status
+Logout: su gemini logout
     `);
 
     // config.json 업데이트
@@ -416,7 +416,7 @@ Gemini is called via Hooks:
 
 Error: ${message}
 
-Retry: core gemini auth
+Retry: su gemini auth
     `);
     process.exit(1);
   }
@@ -441,7 +441,7 @@ export function geminiStatus(): void {
 
 No authenticated account
 
-Login: core gemini auth
+Login: su gemini auth
       `);
       return;
     }
@@ -463,7 +463,7 @@ ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAcc
 Available models:
 ${Object.entries(GEMINI_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
 
-Logout: core gemini logout
+Logout: su gemini logout
     `);
 
   } catch (error: unknown) {
@@ -494,7 +494,7 @@ export function geminiLogout(): void {
 
 Account ${activeAccount.email} removed.
 
-Login again: core gemini auth
+Login again: su gemini auth
     `);
 
     // config.json 업데이트
@@ -532,17 +532,17 @@ export function showAuthHelp(): void {
 🔐 LLM Authentication
 
 GPT Commands:
-  core gpt auth           OAuth (Plus/Pro subscription)
-  core gpt key <KEY>      API key
+  su gpt auth           OAuth (Plus/Pro subscription)
+  su gpt key <KEY>      API key
 
 Gemini Commands:
-  core gemini auth        OAuth (free with Advanced)
-  core gemini key <KEY>   API key
+  su gemini auth        OAuth (free with Advanced)
+  su gemini key <KEY>   API key
 
 Examples:
-  core gpt auth           OpenAI login
-  core gemini auth        Google login
-  core gpt key sk-xxx     API key setup
+  su gpt auth           OpenAI login
+  su gemini auth        Google login
+  su gpt key sk-xxx     API key setup
   `);
 }
 
@@ -554,7 +554,7 @@ export function showLogoutHelp(): void {
 🚪 LLM Logout
 
 Usage:
-  core gpt logout       GPT logout
-  core gemini logout    Gemini logout
+  su gpt logout       GPT logout
+  su gemini logout    Gemini logout
   `);
 }

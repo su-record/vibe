@@ -141,7 +141,7 @@ export function updateClaudeMd(
                            cleanedAfterCore.startsWith('## Code Quality') ||
                            cleanedAfterCore.startsWith('title:') ||
                            cleanedAfterCore.includes('SPEC-driven AI Coding Framework') ||
-                           cleanedAfterCore.includes('/core.spec') ||
+                           cleanedAfterCore.includes('/su.spec') ||
                            cleanedAfterCore.includes('ULTRAWORK');
 
       if (isCoreContent) {
@@ -165,7 +165,7 @@ export function updateClaudeMd(
       const beforeCore = existingContent.substring(0, coreStartIdx).trimEnd();
       const newContent = (beforeCore ? beforeCore + '\n\n' : '') + coreContent;
       fs.writeFileSync(projectClaudeMd, newContent);
-    } else if (!existingContent.includes('/core.spec')) {
+    } else if (!existingContent.includes('/su.spec')) {
       // VIBE 섹션 없음 - 추가
       const mergedContent = existingContent.trim() + '\n\n' + coreContent;
       fs.writeFileSync(projectClaudeMd, mergedContent);

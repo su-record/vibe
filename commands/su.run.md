@@ -3,7 +3,7 @@ description: Execute implementation from SPEC
 argument-hint: "feature name" or --phase N
 ---
 
-# /core.run
+# /su.run
 
 Execute **Scenario-Driven Implementation** with automatic quality verification.
 
@@ -12,10 +12,10 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 ## Usage
 
 ```
-/core.run "feature-name"              # Full implementation
-/core.run "feature-name" --phase 1    # Specific Phase only
-/core.run "feature-name" ultrawork    # ULTRAWORK mode (recommended)
-/core.run "feature-name" ulw          # Short alias for ultrawork
+/su.run "feature-name"              # Full implementation
+/su.run "feature-name" --phase 1    # Specific Phase only
+/su.run "feature-name" ultrawork    # ULTRAWORK mode (recommended)
+/su.run "feature-name" ulw          # Short alias for ultrawork
 ```
 
 ---
@@ -315,7 +315,7 @@ Type Check: ✅ No errors
 ### ULTRAWORK Example
 
 ```
-User: /core.run "brick-game" ultrawork
+User: /su.run "brick-game" ultrawork
 
 Claude:
 🚀 ULTRAWORK MODE ACTIVATED
@@ -649,7 +649,7 @@ node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'auth-patt
 **Error if Feature file missing**:
 ```
 ❌ Feature file not found.
-   Run /core.spec "{feature-name}" first.
+   Run /su.spec "{feature-name}" first.
 ```
 
 ### 2. Extract Scenario List
@@ -953,9 +953,9 @@ Brand:
 ```
 
 **Trigger Conditions:**
-- First `/core.run` execution (no existing icons)
+- First `/su.run` execution (no existing icons)
 - SPEC contains brand/design context
-- Gemini API key configured (`core gemini auth`)
+- Gemini API key configured (`su gemini auth`)
 
 **Manual Generation:**
 ```bash
@@ -1136,7 +1136,7 @@ Follow during implementation:
 ## Example
 
 ```
-User: /core.run "login"
+User: /su.run "login"
 
 Claude:
 📄 Loading SPEC: .claude/core/specs/login.md
@@ -1272,7 +1272,7 @@ Then: Login success + JWT token returned
 ### Phase-specific Execution
 
 ```
-User: /core.run "brick-game" --phase 2
+User: /su.run "brick-game" --phase 2
 
 Claude:
 📄 Reading SPEC: .claude/core/specs/brick-game.md
@@ -1404,7 +1404,7 @@ After ALL phases complete successfully, **automatically** perform a brief retros
 ## Next Step
 
 ```
-/core.verify "brick-game"
+/su.verify "brick-game"
 ```
 
 ---

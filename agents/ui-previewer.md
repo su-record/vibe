@@ -3,7 +3,7 @@ description: Preview UI with Gemini image or ASCII art fallback
 argument-hint: "UI description or design folder path"
 ---
 
-# /core.ui
+# /su.ui
 
 Preview UI from description or design guide folder.
 
@@ -13,10 +13,10 @@ Preview UI from description or design guide folder.
 ## Usage
 
 ```
-/core.ui "login page"                    # Text description
-/core.ui "dashboard" --layout grid       # With layout option
-/core.ui ./design/                       # Design guide folder
-/core.ui ./mockups/login.html            # Single HTML file
+/su.ui "login page"                    # Text description
+/su.ui "dashboard" --layout grid       # With layout option
+/su.ui ./design/                       # Design guide folder
+/su.ui ./mockups/login.html            # Single HTML file
 ```
 
 ## Process
@@ -92,7 +92,7 @@ Analyze the UI structure:
 **Check Gemini authentication:**
 
 ```bash
-core gemini status
+su gemini status
 ```
 
 Or check config file: `~/.config/core/gemini.json`
@@ -183,7 +183,7 @@ src/
 ## Example (with Gemini)
 
 ```
-User: /core.ui ./design/dashboard/
+User: /su.ui ./design/dashboard/
 
 Claude: Reading design folder...
   - Found: mockup.png, tokens.json, style-guide.md
@@ -206,13 +206,13 @@ Generating UI mockup with Gemini...
 4. Footer (copyright, links)
 5. DashboardLayout (overall layout)
 
-Next step: /core.spec "dashboard page"
+Next step: /su.spec "dashboard page"
 ```
 
 ## Example (ASCII Fallback)
 
 ```
-User: /core.ui "Dashboard page - header, sidebar, main content (3 cards), footer"
+User: /su.ui "Dashboard page - header, sidebar, main content (3 cards), footer"
 
 Claude: Gemini not configured. Using ASCII preview...
 
@@ -243,9 +243,9 @@ Claude: Gemini not configured. Using ASCII preview...
 - Main: grid (3 columns)
 - Responsive: Changes to 1 column on mobile
 
-💡 Tip: Run `core gemini auth` for actual UI image generation
+💡 Tip: Run `su gemini auth` for actual UI image generation
 
-Next step: /core.spec "dashboard page"
+Next step: /su.spec "dashboard page"
 ```
 
 ## Notes

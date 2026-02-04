@@ -25,7 +25,7 @@
 
 ## Usage
 
-Automatically called in parallel when `/core.spec` is executed
+Automatically called in parallel when `/su.spec` is executed
 
 ```
 Task(
@@ -173,10 +173,10 @@ Redis:
 | React | 18.2 | 19.x |
 ```
 
-## Integration with /core.spec
+## Integration with /su.spec
 
 ```
-/core.spec "social login"
+/su.spec "social login"
 
 → framework-docs-agent execution:
   "Research NextAuth.js v5 for social login. Get Google, GitHub providers."

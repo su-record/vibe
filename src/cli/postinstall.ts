@@ -125,7 +125,7 @@ function seedInlineSkills(targetDir: string): void {
         '## Usage',
         '',
         '```bash',
-        '# Via Bash hook (automatic in /core.spec)',
+        '# Via Bash hook (automatic in /su.spec)',
         'node hooks/scripts/llm-orchestrate.js gpt "your prompt"',
         'node hooks/scripts/llm-orchestrate.js gemini "your prompt"',
         '```',
@@ -133,9 +133,9 @@ function seedInlineSkills(targetDir: string): void {
         '## Setup',
         '',
         '```bash',
-        'core gpt auth     # Configure GPT API key',
-        'core gemini auth  # Configure Gemini OAuth/API key',
-        'core status       # Check current configuration',
+        'su gpt auth     # Configure GPT API key',
+        'su gemini auth  # Configure Gemini OAuth/API key',
+        'su status       # Check current configuration',
         '```',
         '',
         '## Best Practices',
@@ -226,7 +226,7 @@ function seedInlineSkills(targetDir: string): void {
         '',
         '```bash',
         '# Auto-restore previous context',
-        '/core.utils --continue',
+        '/su.utils --continue',
         '```',
         '',
         '## Saving Context',
@@ -238,7 +238,7 @@ function seedInlineSkills(targetDir: string): void {
         '',
         '## Commands',
         '',
-        '- `/core.utils --continue` - Restore previous session',
+        '- `/su.utils --continue` - Restore previous session',
         '- `saveMemory` tool - Save important decisions',
         '- `startSession` tool - Initialize session with context',
       ].join('\n'),
@@ -719,14 +719,14 @@ function installCursorAgents(agentsSource: string, cursorAgentsDir: string): voi
 function generateCursorSkills(cursorSkillsDir: string): void {
   const skills = [
     {
-      id: 'core-spec',
+      id: 'su-spec',
       content: `---
-name: core-spec
+name: su-spec
 model: claude-4.5-sonnet-thinking
 description: "SPEC document creation with parallel research. Use when starting new feature implementation."
 ---
 
-# core spec - SPEC Creation Skill
+# su spec - SPEC Creation Skill
 
 SPEC-driven feature development workflow. Creates AI-executable specification documents.
 
@@ -738,7 +738,7 @@ SPEC-driven feature development workflow. Creates AI-executable specification do
 
 ## Invocation
 
-User says: "core spec [feature-name]" or "Create SPEC for [feature-name]"
+User says: "su spec [feature-name]" or "Create SPEC for [feature-name]"
 
 ## Workflow
 
@@ -798,19 +798,19 @@ Save to \`.claude/core/specs/[feature-name]-spec.md\`
 ## Next Steps
 
 After SPEC creation:
-- "core spec review" - Review SPEC with external LLMs
-- "core run [feature-name]" - Start implementation
+- "su spec review" - Review SPEC with external LLMs
+- "su run [feature-name]" - Start implementation
 `,
     },
     {
-      id: 'core-run',
+      id: 'su-run',
       content: `---
-name: core-run
+name: su-run
 model: claude-4.5-opus-high
 description: "Execute SPEC implementation with Scenario-Driven Development. Use after SPEC is approved."
 ---
 
-# core run - Implementation Execution Skill
+# su run - Implementation Execution Skill
 
 Executes SPEC-based implementation using Scenario-Driven Development methodology.
 
@@ -822,7 +822,7 @@ Executes SPEC-based implementation using Scenario-Driven Development methodology
 
 ## Invocation
 
-User says: "core run [feature-name]" or "Implement [feature-name]"
+User says: "su run [feature-name]" or "Implement [feature-name]"
 
 ## Pre-requisites
 
@@ -883,20 +883,20 @@ Per phase:
 ## Next Steps
 
 After implementation:
-- "core review" - Run 12+ agent code review
-- "core verify [feature-name]" - Verify against SPEC
+- "su review" - Run 12+ agent code review
+- "su verify [feature-name]" - Verify against SPEC
 - "core trace [feature-name]" - Generate traceability matrix
 `,
     },
     {
-      id: 'core-review',
+      id: 'su-review',
       content: `---
-name: core-review
+name: su-review
 model: auto
 description: "Parallel code review with 12+ specialized agents. Use after code changes."
 ---
 
-# core review - Parallel Code Review Skill
+# su review - Parallel Code Review Skill
 
 Orchestrates 12+ specialized review agents for comprehensive code review.
 
@@ -908,7 +908,7 @@ Orchestrates 12+ specialized review agents for comprehensive code review.
 
 ## Invocation
 
-User says: "core review" or "Review my code"
+User says: "su review" or "Review my code"
 
 ## Available Review Agents
 
@@ -990,14 +990,14 @@ After review:
 `,
     },
     {
-      id: 'core-analyze',
+      id: 'su-analyze',
       content: `---
-name: core-analyze
+name: su-analyze
 model: claude-4.5-sonnet-thinking
 description: "Project and feature analysis. Use when exploring codebase or planning changes."
 ---
 
-# core analyze - Analysis Skill
+# su analyze - Analysis Skill
 
 Comprehensive project and feature analysis for understanding codebases.
 
@@ -1010,7 +1010,7 @@ Comprehensive project and feature analysis for understanding codebases.
 
 ## Invocation
 
-User says: "core analyze" or "Analyze [feature/path]"
+User says: "su analyze" or "Analyze [feature/path]"
 
 ## Analysis Modes
 
@@ -1098,20 +1098,20 @@ Identify main entry points:
 ## Next Steps
 
 After analysis:
-- "core spec [feature]" - Create SPEC for changes
-- "core review" - Review existing code quality
+- "su spec [feature]" - Create SPEC for changes
+- "su review" - Review existing code quality
 - Plan Mode - For simple modifications
 `,
     },
     {
-      id: 'core-verify',
+      id: 'su-verify',
       content: `---
-name: core-verify
+name: su-verify
 model: claude-4.5-sonnet-thinking
 description: "Verify implementation against SPEC requirements. Use after implementation."
 ---
 
-# core verify - Verification Skill
+# su verify - Verification Skill
 
 Verifies implementation completeness against SPEC requirements.
 
@@ -1123,7 +1123,7 @@ Verifies implementation completeness against SPEC requirements.
 
 ## Invocation
 
-User says: "core verify [feature-name]"
+User says: "su verify [feature-name]"
 
 ## Pre-requisites
 
@@ -1200,19 +1200,19 @@ Identify:
 After verification:
 - Fix gaps if any
 - "core trace [feature]" - Full traceability matrix
-- "core review" - Final code review
+- "su review" - Final code review
 - Ready for release if all verified
 `,
     },
     {
-      id: 'core-reason',
+      id: 'su-reason',
       content: `---
-name: core-reason
+name: su-reason
 model: claude-4.5-opus-high-thinking
 description: "Systematic 9-step reasoning framework. Use for complex problem solving."
 ---
 
-# core reason - Reasoning Framework Skill
+# su reason - Reasoning Framework Skill
 
 Applies systematic reasoning to complex problems and decisions.
 
@@ -1225,7 +1225,7 @@ Applies systematic reasoning to complex problems and decisions.
 
 ## Invocation
 
-User says: "core reason [problem]" or "Reason about [problem]"
+User says: "su reason [problem]" or "Reason about [problem]"
 
 ## 9-Step Reasoning Framework
 
@@ -1336,19 +1336,19 @@ Final recommendation with:
 
 After reasoning:
 - Implement chosen solution
-- "core spec [solution]" - If solution needs SPEC
-- "core verify" - Verify solution addresses problem
+- "su spec [solution]" - If solution needs SPEC
+- "su verify" - Verify solution addresses problem
 `,
     },
     {
-      id: 'core-ui',
+      id: 'su-ui',
       content: `---
-name: core-ui
+name: su-ui
 model: gpt-5.2-codex
 description: "UI preview and generation utilities. Use for UI component work."
 ---
 
-# core ui - UI Utilities Skill
+# su ui - UI Utilities Skill
 
 UI preview, generation, and refactoring utilities.
 
@@ -1361,7 +1361,7 @@ UI preview, generation, and refactoring utilities.
 
 ## Invocation
 
-User says: "core ui [description]" or "Preview UI for [description]"
+User says: "su ui [description]" or "Preview UI for [description]"
 
 ## Modes
 
@@ -1484,8 +1484,8 @@ interface LoginFormProps {
 ## Next Steps
 
 After UI work:
-- "core review" - Review generated components
-- "core run [feature]" - Continue implementation
+- "su review" - Review generated components
+- "su run [feature]" - Continue implementation
 - Add tests for new components
 `,
     },
@@ -1613,7 +1613,7 @@ function main(): void {
       copyDirRecursive(languagesSource, globalLanguagesDir);
     }
 
-    // 6. hooks는 프로젝트 레벨에서 관리 (core init/update에서 처리)
+    // 6. hooks는 프로젝트 레벨에서 관리 (su init/update에서 처리)
     // 전역 설정에는 훅을 등록하지 않음 - 프로젝트별 .claude/settings.local.json 사용
     // 6-1. 레거시 전역 hooks 정리 (이전 버전 호환성)
     cleanupGlobalSettingsHooks();
@@ -1643,7 +1643,7 @@ function main(): void {
   }
 }
 
-// Export functions for use in core init/update
+// Export functions for use in su init/update
 export {
   installCursorAgents,
   generateCursorRules,

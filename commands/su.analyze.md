@@ -3,18 +3,18 @@ description: Analyze project or specific feature/module
 argument-hint: "feature-name" or --code or --deps or --arch
 ---
 
-# /core.analyze
+# /su.analyze
 
 Analyze project or specific feature/module.
 
 ## Usage
 
 ```
-/core.analyze                  # Full project quality analysis
-/core.analyze "login"          # Login related code exploration + context collection
-/core.analyze --code           # Code quality analysis only
-/core.analyze --deps           # Dependency analysis only
-/core.analyze --arch           # Architecture analysis only
+/su.analyze                  # Full project quality analysis
+/su.analyze "login"          # Login related code exploration + context collection
+/su.analyze --code           # Code quality analysis only
+/su.analyze --deps           # Dependency analysis only
+/su.analyze --arch           # Architecture analysis only
 ```
 
 ## Context Reset
@@ -25,7 +25,7 @@ Analyze project or specific feature/module.
 
 ---
 
-## Mode 1: Feature/Module Analysis (`/core.analyze "feature-name"`)
+## Mode 1: Feature/Module Analysis (`/su.analyze "feature-name"`)
 
 ### Goal
 
@@ -141,16 +141,16 @@ Choose a workflow to proceed with development:
 | Task Scope | Recommended Approach |
 |----------|----------|
 | Simple fix (1-2 files) | Plan Mode |
-| Complex feature (3+ files, research/verification needed) | /core.spec |
+| Complex feature (3+ files, research/verification needed) | /su.spec |
 
-1. `/core.spec "feature-name"` - VIBE workflow (parallel research + SPEC verification)
+1. `/su.spec "feature-name"` - VIBE workflow (parallel research + SPEC verification)
 2. Plan Mode - Quick implementation (for simple tasks)
 
 Which approach would you like to use?
 ```
 
 3. Wait for user's choice before proceeding
-4. If user chooses VIBE → wait for `/core.spec` command
+4. If user chooses VIBE → wait for `/su.spec` command
 5. If user chooses Plan Mode → proceed with EnterPlanMode
 
 ---
@@ -159,7 +159,7 @@ Which approach would you like to use?
 
 ### Analysis Scope
 
-- **Default** (`/core.analyze`): Full analysis (code + dependencies + architecture)
+- **Default** (`/su.analyze`): Full analysis (code + dependencies + architecture)
 - **--code**: Code quality analysis only
 - **--deps**: Dependency analysis only
 - **--arch**: Architecture analysis only

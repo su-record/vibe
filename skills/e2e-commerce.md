@@ -185,16 +185,16 @@ test('order completes even with webhook delay', async ({ page, request }) => {
 
 ```bash
 # Run all commerce e2e tests
-/core.utils --e2e commerce
+/su.utils --e2e commerce
 
 # Run specific scenario
-/core.utils --e2e checkout-flow
+/su.utils --e2e checkout-flow
 
 # Run with visual recording
-/core.utils --e2e commerce --record
+/su.utils --e2e commerce --record
 
 # Run against staging
-/core.utils --e2e commerce --env staging
+/su.utils --e2e commerce --env staging
 ```
 
 ## Test Environment Setup

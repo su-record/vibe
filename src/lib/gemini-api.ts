@@ -82,7 +82,7 @@ async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  throw new Error('Gemini credentials not found. Run core gemini auth (OAuth) or core gemini key <key> (API Key) to configure.');
+  throw new Error('Gemini credentials not found. Run su gemini auth (OAuth) or su gemini key <key> (API Key) to configure.');
 }
 
 // Types
@@ -562,7 +562,7 @@ export async function generateImage(
 ): Promise<ImageGenerationResult> {
   const apiKey = getApiKeyFromConfig();
   if (!apiKey) {
-    throw new Error('Gemini API key not configured. Run "core gemini key <key>" to configure.');
+    throw new Error('Gemini API key not configured. Run "su gemini key <key>" to configure.');
   }
 
   const size = options.size || '1024x1024';
@@ -709,7 +709,7 @@ export async function analyzeImage(
     }
   }
 
-  throw new Error('Gemini credentials not found. Run "core gemini auth" or "core gemini key <key>".');
+  throw new Error('Gemini credentials not found. Run "su gemini auth" or "su gemini key <key>".');
 }
 
 type MultimodalContent = {

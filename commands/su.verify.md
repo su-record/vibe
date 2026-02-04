@@ -3,7 +3,7 @@ description: Verify implementation against SPEC requirements
 argument-hint: "feature name"
 ---
 
-# /core.verify
+# /su.verify
 
 **Automated Quality Verification** - Making quality trustworthy even for non-developers.
 
@@ -12,10 +12,10 @@ argument-hint: "feature name"
 ## Usage
 
 ```
-/core.verify "feature-name"              # SPEC-based verification
-/core.verify --e2e "feature-name"        # E2E browser test (agents/e2e-tester.md)
-/core.verify --e2e --visual              # Visual regression test
-/core.verify --e2e --record              # Video recording
+/su.verify "feature-name"              # SPEC-based verification
+/su.verify --e2e "feature-name"        # E2E browser test (agents/e2e-tester.md)
+/su.verify --e2e --visual              # Visual regression test
+/su.verify --e2e --record              # Video recording
 ```
 
 ## Core Principles
@@ -43,7 +43,7 @@ argument-hint: "feature name"
 **If feature file does not exist**:
 ```
 ❌ Feature file not found.
-   Run /core.spec "{feature-name}" first.
+   Run /su.spec "{feature-name}" first.
 ```
 
 ### 2. Scenario-by-Scenario Verification
@@ -143,7 +143,7 @@ Then: Login success + JWT token returned
 │  📍 Location: LoginForm.tsx line 42                             │
 │  💡 Fix: Need to add "Forgot password" link                     │
 │                                                                 │
-│  🔧 Auto-fix command: /core.run "login" --fix                   │
+│  🔧 Auto-fix command: /su.run "login" --fix                   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -163,7 +163,7 @@ Then: Login success + JWT token returned
 ## Example
 
 ```
-User: /core.verify "login"
+User: /su.verify "login"
 
 Claude:
 📄 Loading Feature: .claude/core/features/login.feature
@@ -219,7 +219,7 @@ Claude:
 │  ❌ Fixes needed:                                                │
 │  - Scenario 4: Add "Forgot password" link in LoginForm.tsx      │
 │                                                                 │
-│  🔧 Auto-fix: /core.run "login" --fix                           │
+│  🔧 Auto-fix: /su.run "login" --fix                           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -274,7 +274,7 @@ Complete! Proceed to next feature.
 On verification fail:
 
 ```
-/core.run "feature-name" --fix  # Fix failed scenarios
+/su.run "feature-name" --fix  # Fix failed scenarios
 ```
 
 ---
@@ -311,7 +311,7 @@ Grades:
 
 | Metric | Pass Threshold | Action on Fail |
 |--------|----------------|----------------|
-| Scenario pass rate | 100% | Run `/core.run --fix` |
+| Scenario pass rate | 100% | Run `/su.run --fix` |
 | Build status | Success | Fix build errors first |
 | Test pass rate | 100% | Fix failing tests |
 | Type check | 0 errors | Fix type errors |

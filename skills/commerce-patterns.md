@@ -329,7 +329,7 @@ try {
 | **Lost webhook** | Network failure | Retry + idempotent handler |
 | **Order state corruption** | Concurrent updates | State machine + versioning |
 
-## Integration with /core.run
+## Integration with /su.run
 
 During commerce feature implementation:
 

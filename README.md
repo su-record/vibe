@@ -12,13 +12,13 @@
 
 ```bash
 npm install -g @su-record/core
-core init
+su init
 ```
 
 ## Core Workflow
 
 ```
-/core.spec → /core.spec.review → [SPEC Summary] → /core.run → /core.trace → /core.review → [Retrospective]
+/su.spec → /su.spec.review → [SPEC Summary] → /su.run → /su.trace → /su.review → [Retrospective]
      ↓              ↓                  ↓               ↓            ↓              ↓              ↓
   Write SPEC   GPT/Gemini Review  User Review     Execute     Traceability   Parallel Review  Auto-Save
 ```
@@ -27,12 +27,12 @@ core init
 
 | Step | Command | What Happens |
 |------|---------|-------------|
-| 1 | `/core.spec "feature"` | Generate SPEC + parallel research agents |
-| 2 | `/core.spec.review "feature"` | 3-round GPT/Gemini cross-validation |
+| 1 | `/su.spec "feature"` | Generate SPEC + parallel research agents |
+| 2 | `/su.spec.review "feature"` | 3-round GPT/Gemini cross-validation |
 | 3 | SPEC Summary | User reviews spec before implementation |
-| 4 | `/core.run "feature"` | Execute implementation phase-by-phase |
-| 5 | `/core.trace "feature"` | Requirements traceability matrix |
-| 6 | `/core.review` | 13+ parallel review agents |
+| 4 | `/su.run "feature"` | Execute implementation phase-by-phase |
+| 5 | `/su.trace "feature"` | Requirements traceability matrix |
+| 6 | `/su.review` | 13+ parallel review agents |
 | 7 | Auto-Retrospective | Lessons learned saved for cross-session recall |
 
 ## Key Features
@@ -45,7 +45,7 @@ core init
 | **ULTRAWORK Mode** | All optimizations with a single keyword |
 | **Smart Hook Dispatcher** | Pattern-matched prompt routing (no wasted LLM calls) |
 | **Progress Tracking** | `claude-progress.txt` survives context compaction |
-| **Auto-Retrospective** | Lessons learned auto-saved after `/core.run` |
+| **Auto-Retrospective** | Lessons learned auto-saved after `/su.run` |
 | **Swarm Pattern** | Auto-split complex tasks for parallel processing |
 | **23 Language Presets** | TypeScript, Python, Go, Rust, Swift, Kotlin, and more |
 
@@ -55,38 +55,38 @@ core init
 
 | Command | Description |
 |---------|-------------|
-| `core init` | Initialize project |
-| `core update` | Update configuration |
-| `core status` | Check status |
-| `core gpt auth` | GPT OAuth authentication |
-| `core gemini auth` | Gemini OAuth authentication |
+| `su init` | Initialize project |
+| `su update` | Update configuration |
+| `su status` | Check status |
+| `su gpt auth` | GPT OAuth authentication |
+| `su gemini auth` | Gemini OAuth authentication |
 
 ### Claude Code Slash Commands
 
 | Command | Description |
 |---------|-------------|
-| `/core.spec "feature"` | Generate SPEC document + parallel research |
-| `/core.spec.review "feature"` | GPT/Gemini 3-round cross-validation |
-| `/core.run "feature"` | Execute implementation |
-| `/core.run "feature" ultrawork` | Maximum performance mode |
-| `/core.verify "feature"` | BDD verification |
-| `/core.trace "feature"` | Requirements traceability matrix |
-| `/core.review` | 13+ agent parallel review (race mode 기본 포함) |
-| `/core.review --quick` | Fast review (race 없음) |
-| `/core.analyze` | Project analysis |
-| `/core.reason "problem"` | Systematic reasoning framework |
-| `/core.utils --ui "desc"` | UI mockup preview |
-| `/core.utils --diagram` | Generate diagrams (Mermaid) |
-| `/core.utils --e2e` | E2E testing (Playwright) |
-| `/core.utils --image "desc"` | Image generation (Gemini) |
-| `/core.utils --continue` | Session restore |
+| `/su.spec "feature"` | Generate SPEC document + parallel research |
+| `/su.spec.review "feature"` | GPT/Gemini 3-round cross-validation |
+| `/su.run "feature"` | Execute implementation |
+| `/su.run "feature" ultrawork` | Maximum performance mode |
+| `/su.verify "feature"` | BDD verification |
+| `/su.trace "feature"` | Requirements traceability matrix |
+| `/su.review` | 13+ agent parallel review (race mode 기본 포함) |
+| `/su.review --quick` | Fast review (race 없음) |
+| `/su.analyze` | Project analysis |
+| `/su.reason "problem"` | Systematic reasoning framework |
+| `/su.utils --ui "desc"` | UI mockup preview |
+| `/su.utils --diagram` | Generate diagrams (Mermaid) |
+| `/su.utils --e2e` | E2E testing (Playwright) |
+| `/su.utils --image "desc"` | Image generation (Gemini) |
+| `/su.utils --continue` | Session restore |
 
 ## ULTRAWORK Mode
 
 Activate maximum performance with `ultrawork` or `ulw` keyword:
 
 ```bash
-/core.run "feature" ultrawork
+/su.run "feature" ultrawork
 ```
 
 **Enabled Features:**
@@ -123,8 +123,8 @@ A single dispatcher reads user prompts and routes to the right LLM only when pat
 GPT + Gemini run in parallel for cross-validation. **Enabled by default** since v2.6.30.
 
 ```bash
-/core.review           # Race mode included
-/core.review --quick   # Fast mode (no race)
+/su.review           # Race mode included
+/su.review --quick   # Fast mode (no race)
 ```
 
 | Agreement | Priority | Action |
@@ -134,7 +134,7 @@ GPT + Gemini run in parallel for cross-validation. **Enabled by default** since 
 
 ## Parallel Review Agents
 
-Run 13+ agents simultaneously with `/core.review`:
+Run 13+ agents simultaneously with `/su.review`:
 
 | Category | Agents |
 |----------|--------|
@@ -194,7 +194,7 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 ## Requirements Traceability
 
-Track from requirements to tests with `/core.trace`:
+Track from requirements to tests with `/su.trace`:
 
 ```
 REQ-login-001 → SPEC Phase 1 → Feature Scenario 1 → login.test.ts
@@ -258,7 +258,7 @@ import { webSearch } from '@su-record/core/lib/gemini';
 
 ### Cursor
 
-Assets auto-installed on `core init/update`:
+Assets auto-installed on `su init/update`:
 
 | Asset | Path | Count |
 |-------|------|-------|

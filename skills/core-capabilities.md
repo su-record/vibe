@@ -8,26 +8,26 @@ Complete guide to core's scenario-driven development framework.
 ## Core Workflow
 
 ```
-/core.spec → /core.run → /core.verify → /core.review
+/su.spec → /su.run → /su.verify → /su.review
 ```
 
 ## Slash Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/core.spec "feature"` | Create SPEC with PTCF structure + 8 parallel research |
-| `/core.spec "feature" split` | Create multiple SPECs for large scope features |
-| `/core.run "feature"` | Implement based on SPEC |
-| `/core.run "feature" ultrawork` | Maximum performance mode |
-| `/core.verify "feature"` | BDD scenario verification |
-| `/core.review` | Parallel code review (13+ agents) |
-| `/core.analyze` | Project analysis |
-| `/core.reason "problem"` | Systematic reasoning |
-| `/core.utils --e2e` | Playwright E2E testing |
-| `/core.utils --diagram` | Generate diagrams |
-| `/core.utils --ui "description"` | UI preview |
-| `/core.utils --continue` | Session restore (load previous context) |
-| `/core.utils --compound` | Document solutions |
+| `/su.spec "feature"` | Create SPEC with PTCF structure + 8 parallel research |
+| `/su.spec "feature" split` | Create multiple SPECs for large scope features |
+| `/su.run "feature"` | Implement based on SPEC |
+| `/su.run "feature" ultrawork` | Maximum performance mode |
+| `/su.verify "feature"` | BDD scenario verification |
+| `/su.review` | Parallel code review (13+ agents) |
+| `/su.analyze` | Project analysis |
+| `/su.reason "problem"` | Systematic reasoning |
+| `/su.utils --e2e` | Playwright E2E testing |
+| `/su.utils --diagram` | Generate diagrams |
+| `/su.utils --ui "description"` | UI preview |
+| `/su.utils --continue` | Session restore (load previous context) |
+| `/su.utils --compound` | Document solutions |
 
 ## Built-in Tools
 
@@ -66,10 +66,10 @@ node -e "import('@su-record/core/orchestrator').then(o =>
 
 ## Multi-LLM Research (v2.5.0)
 
-GPT/Gemini are automatically called within `/core.spec`:
+GPT/Gemini are automatically called within `/su.spec`:
 
 ```text
-/core.spec "feature"
+/su.spec "feature"
       ↓
 [Claude] Draft SPEC
       ↓
@@ -91,9 +91,9 @@ GPT/Gemini are automatically called within `/core.spec`:
 
 **Setup:**
 ```bash
-core gpt auth       # Enable GPT
-core gemini auth    # Enable Gemini
-core status         # Check current settings
+su gpt auth       # Enable GPT
+su gemini auth    # Enable Gemini
+su status         # Check current settings
 ```
 
 ## ULTRAWORK Mode
@@ -154,7 +154,7 @@ core/
 
 ## Without Commands
 
-Even without `/core.*` commands, you can:
+Even without `/su.*` commands, you can:
 
 1. Call tools directly via node commands
 2. Reference skills for guidance

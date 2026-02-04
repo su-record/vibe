@@ -81,10 +81,10 @@ Scenario: {Boundary value test}
 
 ```bash
 # Full verification
-/core.verify "{feature name}"
+/su.verify "{feature name}"
 
 # Auto-fix on failure
-/core.run "{feature name}" --fix
+/su.run "{feature name}" --fix
 ```
 
 ---

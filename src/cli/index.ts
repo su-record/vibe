@@ -96,7 +96,7 @@ setSilentMode(options.silent);
 
 /**
  * Update global Cursor assets (agents, rules, skills)
- * Called by both core init and core update
+ * Called by both su init and su update
  * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
  */
 function updateCursorGlobalAssets(detectedStacks: string[] = []): void {
@@ -211,11 +211,11 @@ async function init(projectName?: string): Promise<void> {
     // 완료 메시지
     const packageJson = getPackageJson();
 
-    log(`✅ core initialized (v${packageJson.version})
+    log(`✅ su initialized (v${packageJson.version})
 ${formatLLMStatus()}
 📦 Context7 plugin (recommended): /plugin install context7
 
-Next: ${isNewProject ? `cd ${projectName} && ` : ''}/core.spec "feature"
+Next: ${isNewProject ? `cd ${projectName} && ` : ''}/su.spec "feature"
 `);
 
   } catch (error: unknown) {
@@ -229,7 +229,7 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
   const currentVersion = getPackageJson().version;
 
   try {
-    const latestVersion = execSync('npm view @su-record/core version', {
+    const latestVersion = execSync('npm view @su-record/su version', {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe']
     }).trim();
@@ -243,7 +243,7 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
       });
 
       // 업그레이드 완료 후 새 버전으로 설정 업데이트 (--skip-upgrade로 무한 루프 방지)
-      execSync(`core update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
+      execSync(`su update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
@@ -337,7 +337,7 @@ ${formatLLMStatus()}
 
     const packageJson = getPackageJson();
 
-    log(`✅ core updated (v${packageJson.version})
+    log(`✅ su updated (v${packageJson.version})
 ${formatLLMStatus()}
 📦 Context7 plugin (recommended): /plugin install context7
 `);
@@ -442,7 +442,7 @@ function remove(): void {
   // Cursor skills 제거 (7 core skills)
   const cursorSkillsDir = path.join(cursorDir, 'skills');
   if (fs.existsSync(cursorSkillsDir)) {
-    const coreSkills = ['core-spec', 'core-run', 'core-review', 'core-analyze', 'core-verify', 'core-reason', 'core-ui'];
+    const coreSkills = ['su-spec', 'su-run', 'su-review', 'su-analyze', 'su-verify', 'su-reason', 'su-ui'];
     let removedSkills = 0;
     coreSkills.forEach(skill => {
       const skillDir = path.join(cursorSkillsDir, skill);
@@ -477,7 +477,7 @@ function remove(): void {
   }
 
   console.log(`
-✅ core removed!
+✅ su removed!
 
 Removed:
   - MCP server (context7)
@@ -489,7 +489,7 @@ Removed:
   - Cursor skills (7)
   - Cursor rules template (5)
 
-To reinstall: core init
+To reinstall: su init
   `);
 }
 
@@ -502,39 +502,39 @@ function showHelp(): void {
 📖 Core - SPEC-driven AI coding framework (Claude Code exclusive)
 
 Commands:
-  core init [project]     Initialize project
-  core update             Update settings
-  core status             Show status
+  su init [project]     Initialize project
+  su update             Update settings
+  su status             Show status
   core hud [subcommand]   HUD status display
-  core help               Help
-  core version            Version
+  su help               Help
+  su version            Version
 
 GPT:
-  core gpt auth           OAuth authentication (Plus/Pro)
-  core gpt key <KEY>      Set API key
-  core gpt status         Check status
-  core gpt logout         Logout
-  core gpt remove         Remove config
+  su gpt auth           OAuth authentication (Plus/Pro)
+  su gpt key <KEY>      Set API key
+  su gpt status         Check status
+  su gpt logout         Logout
+  su gpt remove         Remove config
 
 Gemini:
-  core gemini auth        OAuth authentication
-  core gemini key <KEY>   Set API key
-  core gemini status      Check status
-  core gemini logout      Logout
-  core gemini remove      Remove config
+  su gemini auth        OAuth authentication
+  su gemini key <KEY>   Set API key
+  su gemini status      Check status
+  su gemini logout      Logout
+  su gemini remove      Remove config
 
 Slash Commands (Claude Code):
-  /core.spec "feature"    Create SPEC + parallel research
-  /core.run "feature"     Execute implementation
-  /core.verify "feature"  BDD verification
-  /core.review            Parallel code review (13+ agents)
-  /core.reason "problem"  Systematic reasoning
-  /core.analyze           Project analysis
-  /core.utils             Utilities (--e2e, --diagram, --continue)
+  /su.spec "feature"    Create SPEC + parallel research
+  /su.run "feature"     Execute implementation
+  /su.verify "feature"  BDD verification
+  /su.review            Parallel code review (13+ agents)
+  /su.reason "problem"  Systematic reasoning
+  /su.analyze           Project analysis
+  /su.utils             Utilities (--e2e, --diagram, --continue)
 
 Workflow:
-  /core.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
-  /core.spec → /core.run            Manual step-by-step
+  /su.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
+  /su.spec → /su.run            Manual step-by-step
 
 Docs: https://github.com/su-record/core
   `);
@@ -579,7 +579,7 @@ function showStatus(): void {
   // 프로젝트 상태
   const projectStatus = isCoreProject
     ? `✅ ${projectRoot}`
-    : `⬚ Not a core project (run: core init)`;
+    : `⬚ Not a core project (run: su init)`;
 
   console.log(`
 📊 Core Status (v${packageJson.version})
@@ -660,7 +660,7 @@ switch (command) {
     remove();
     break;
 
-  // core gpt <subcommand>
+  // su gpt <subcommand>
   case 'gpt': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
@@ -672,7 +672,7 @@ switch (command) {
         if (apiKey) {
           setupExternalLLM('gpt', apiKey);
         } else {
-          console.log('Usage: core gpt key <API_KEY>');
+          console.log('Usage: su gpt key <API_KEY>');
         }
         break;
       }
@@ -688,17 +688,17 @@ switch (command) {
       default:
         console.log(`
 GPT Commands:
-  core gpt auth     OAuth authentication (Plus/Pro)
-  core gpt key      Set API key
-  core gpt status   Check status
-  core gpt logout   Logout
-  core gpt remove   Remove config
+  su gpt auth     OAuth authentication (Plus/Pro)
+  su gpt key      Set API key
+  su gpt status   Check status
+  su gpt logout   Logout
+  su gpt remove   Remove config
         `);
     }
     break;
   }
 
-  // core gemini <subcommand>
+  // su gemini <subcommand>
   case 'gemini': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
@@ -710,7 +710,7 @@ GPT Commands:
         if (apiKey) {
           setupExternalLLM('gemini', apiKey);
         } else {
-          console.log('Usage: core gemini key <API_KEY>');
+          console.log('Usage: su gemini key <API_KEY>');
         }
         break;
       }
@@ -726,11 +726,11 @@ GPT Commands:
       default:
         console.log(`
 Gemini Commands:
-  core gemini auth     OAuth authentication
-  core gemini key      Set API key
-  core gemini status   Check status
-  core gemini logout   Logout
-  core gemini remove   Remove config
+  su gemini auth     OAuth authentication
+  su gemini key      Set API key
+  su gemini status   Check status
+  su gemini logout   Logout
+  su gemini remove   Remove config
         `);
     }
     break;
@@ -816,17 +816,17 @@ Agent Commands:
 ❌ Unknown command: ${command}
 
 Available commands:
-  core init         Initialize project
-  core update       Update settings
+  su init         Initialize project
+  su update       Update settings
   core hud <cmd>    HUD status (show, start, phase, agent, reset)
-  core gpt <cmd>    GPT commands (auth, key, status, logout)
-  core gemini <cmd> Gemini commands (auth, key, status, logout)
-  core status       Show status
-  core remove       Remove core
-  core help         Help
-  core version      Version info
+  su gpt <cmd>    GPT commands (auth, key, status, logout)
+  su gemini <cmd> Gemini commands (auth, key, status, logout)
+  su status       Show status
+  su remove       Remove core
+  su help         Help
+  su version      Version info
 
-Usage: core help
+Usage: su help
     `);
     process.exit(1);
 }

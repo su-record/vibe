@@ -82,13 +82,13 @@ Follow these standards when writing code. See `~/.claude/core/rules/` (global) f
 ## Workflow
 
 ```text
-/core.spec → /new → /core.spec.review → /core.run → /core.trace → (auto) code review → ✅ Done
+/su.spec → /new → /su.spec.review → /su.run → /su.trace → (auto) code review → ✅ Done
 ```
 
-1. `/core.spec` - Write SPEC (requirements + research + draft)
+1. `/su.spec` - Write SPEC (requirements + research + draft)
 2. `/new` - Start new session (clean context)
-3. `/core.spec.review` - GPT/Gemini review (3-round mandatory)
-4. `/core.run` - Implementation + Gemini review
+3. `/su.spec.review` - GPT/Gemini review (3-round mandatory)
+4. `/su.run` - Implementation + Gemini review
 5. **(auto)** 13+ agent parallel review + P1/P2 auto-fix
 
 ## Plan Mode vs CORE
@@ -96,9 +96,9 @@ Follow these standards when writing code. See `~/.claude/core/rules/` (global) f
 | Task Size                    | Recommended  |
 |------------------------------|--------------|
 | Simple changes (1-2 files)   | Plan Mode    |
-| Complex features (3+ files)  | `/core.spec` |
+| Complex features (3+ files)  | `/su.spec` |
 
-After `/core.analyze` or `/core.review` with dev request → **Ask user for workflow choice**
+After `/su.analyze` or `/su.review` with dev request → **Ask user for workflow choice**
 
 ## ULTRAWORK Mode
 
@@ -113,19 +113,19 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 
 | Command                      | Description                       |
 |------------------------------|-----------------------------------|
-| `/core.spec "name"`          | Write SPEC (PTCF) + parallel research |
-| `/core.spec.review "name"`   | GPT/Gemini review (new session)   |
-| `/core.run "name"`           | Execute implementation            |
-| `/core.run "name" ultrawork` | Maximum performance mode          |
-| `/core.verify "name"`        | Verification against SPEC         |
-| `/core.review`               | 13+ agent parallel code review    |
-| `/core.trace "name"`         | Requirements traceability matrix  |
-| `/core.reason "problem"`     | Systematic reasoning              |
-| `/core.analyze`              | Project analysis                  |
-| `/core.utils --e2e`          | E2E testing (Playwright)          |
-| `/core.utils --diagram`      | Generate diagrams                 |
-| `/core.utils --ui "desc"`    | UI preview                        |
-| `/core.utils --continue`     | Session restore                   |
+| `/su.spec "name"`          | Write SPEC (PTCF) + parallel research |
+| `/su.spec.review "name"`   | GPT/Gemini review (new session)   |
+| `/su.run "name"`           | Execute implementation            |
+| `/su.run "name" ultrawork` | Maximum performance mode          |
+| `/su.verify "name"`        | Verification against SPEC         |
+| `/su.review`               | 13+ agent parallel code review    |
+| `/su.trace "name"`         | Requirements traceability matrix  |
+| `/su.reason "problem"`     | Systematic reasoning              |
+| `/su.analyze`              | Project analysis                  |
+| `/su.utils --e2e`          | E2E testing (Playwright)          |
+| `/su.utils --diagram`      | Generate diagrams                 |
+| `/su.utils --ui "desc"`    | UI preview                        |
+| `/su.utils --continue`     | Session restore                   |
 
 ## Magic Keywords
 
@@ -219,7 +219,7 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 - Do NOT use `/compact` (information loss risk)
 - Use `save_memory` → `/new` for new session
-- Restore with `/core.utils --continue`
+- Restore with `/su.utils --continue`
 
 ## Documentation Guidelines
 

@@ -1,13 +1,13 @@
-# /core.trace
+# /su.trace
 
 Generate and display Requirements Traceability Matrix (RTM).
 
 ## Usage
 
 ```bash
-/core.trace "feature-name"              # Generate RTM for feature
-/core.trace "feature-name" --html       # Output as HTML
-/core.trace "feature-name" --save       # Save to file
+/su.trace "feature-name"              # Generate RTM for feature
+/su.trace "feature-name" --html       # Output as HTML
+/su.trace "feature-name" --save       # Save to file
 ```
 
 ## Description
@@ -91,7 +91,7 @@ The following requirements lack full coverage:
 ## Example
 
 ```
-User: /core.trace "login"
+User: /su.trace "login"
 
 Claude:
 📊 Generating RTM for "login"...
