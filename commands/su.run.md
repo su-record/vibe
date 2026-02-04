@@ -748,8 +748,8 @@ Then: Login success + JWT token returned
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[question]"
-│  [If Gemini enabled] Bash: node {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[question]"
+│  [If GPT enabled] Bash: node {{CORE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[question]"
+│  [If Gemini enabled] Bash: node {{CORE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[question]"
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ↓ (wait for all to complete)

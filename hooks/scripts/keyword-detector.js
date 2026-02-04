@@ -4,7 +4,7 @@
  * 매직 키워드 감지 및 조합 처리
  */
 
-import { VIBE_PATH, PROJECT_DIR } from './utils.js';
+import { CORE_PATH, PROJECT_DIR } from './utils.js';
 
 // 매직 키워드 정의
 const MAGIC_KEYWORDS = {

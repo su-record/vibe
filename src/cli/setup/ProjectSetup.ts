@@ -214,7 +214,7 @@ export function installProjectHooks(projectRoot: string): void {
 
   // Windows 경로는 슬래시 사용
   const corePathForUrl = coreConfigPath.replace(/\\/g, '/');
-  hooksContent = hooksContent.replace(/\{\{VIBE_PATH\}\}/g, corePathForUrl);
+  hooksContent = hooksContent.replace(/\{\{CORE_PATH\}\}/g, corePathForUrl);
 
   const coreHooks = JSON.parse(hooksContent);
 

@@ -4,7 +4,7 @@
  * 위험한 도구 사용 전 검증 및 경고
  */
 
-import { VIBE_PATH, PROJECT_DIR } from './utils.js';
+import { CORE_PATH, PROJECT_DIR } from './utils.js';
 
 // 위험한 명령어 패턴
 const DANGEROUS_PATTERNS = {

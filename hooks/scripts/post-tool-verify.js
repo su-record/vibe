@@ -4,7 +4,7 @@
  * 도구 실행 후 결과 검증 및 에러 복구 힌트 제공
  */
 
-import { VIBE_PATH, PROJECT_DIR } from './utils.js';
+import { CORE_PATH, PROJECT_DIR } from './utils.js';
 
 // 에러 패턴 및 복구 힌트
 const ERROR_RECOVERY_HINTS = {

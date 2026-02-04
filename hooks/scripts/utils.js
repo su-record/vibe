@@ -11,12 +11,12 @@ import os from 'os';
 // 플랫폼 감지
 const IS_WINDOWS = os.platform() === 'win32';
 
-// 스크립트 위치에서 VIBE_PATH 자동 감지
-// hooks/scripts/utils.js → hooks → VIBE_PATH
+// 스크립트 위치에서 CORE_PATH 자동 감지
+// hooks/scripts/utils.js → hooks → CORE_PATH
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DETECTED_VIBE_PATH = path.resolve(__dirname, '..', '..');
+const DETECTED_CORE_PATH = path.resolve(__dirname, '..', '..');
 
-export const VIBE_PATH = process.env.VIBE_PATH || DETECTED_VIBE_PATH;
+export const CORE_PATH = process.env.CORE_PATH || DETECTED_CORE_PATH;
 export const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || '.';
 
 /**
@@ -65,8 +65,8 @@ function getGlobalNpmPath() {
  * 우선순위: 로컬 빌드 → 전역 npm
  */
 export function getToolsBaseUrl() {
-  const localDist = path.join(VIBE_PATH, 'dist', 'tools');
-  const globalPackage = path.join(getGlobalNpmPath(), '@su-record', 'vibe', 'dist', 'tools');
+  const localDist = path.join(CORE_PATH, 'dist', 'tools');
+  const globalPackage = path.join(getGlobalNpmPath(), '@su-record', 'core', 'dist', 'tools');
 
   // 1. 로컬 빌드된 파일 확인 (개발 환경)
   const localIndex = path.join(localDist, 'index.js');
@@ -83,8 +83,8 @@ export function getToolsBaseUrl() {
  * 우선순위: 로컬 빌드 → 전역 npm
  */
 export function getLibBaseUrl() {
-  const localDist = path.join(VIBE_PATH, 'dist', 'lib');
-  const globalPackage = path.join(getGlobalNpmPath(), '@su-record', 'vibe', 'dist', 'lib');
+  const localDist = path.join(CORE_PATH, 'dist', 'lib');
+  const globalPackage = path.join(getGlobalNpmPath(), '@su-record', 'core', 'dist', 'lib');
 
   // 1. 로컬 빌드된 파일 확인 (개발 환경)
   const localGptApi = path.join(localDist, 'gpt-api.js');

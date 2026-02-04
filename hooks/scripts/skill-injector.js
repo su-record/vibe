@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { VIBE_PATH, PROJECT_DIR } from './utils.js';
+import { CORE_PATH, PROJECT_DIR } from './utils.js';
 
 // Skill storage locations
 const USER_SKILLS_DIR = path.join(os.homedir(), '.claude', 'vibe', 'skills');

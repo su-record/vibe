@@ -10,7 +10,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/session-start.js"
+            "command": "node {{CORE_PATH}}/hooks/scripts/session-start.js"
           }
         ]
       }
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Bash"
+            "command": "node {{CORE_PATH}}/hooks/scripts/pre-tool-guard.js Bash"
           }
         ]
       },
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Edit"
+            "command": "node {{CORE_PATH}}/hooks/scripts/pre-tool-guard.js Edit"
           }
         ]
       },
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Write"
+            "command": "node {{CORE_PATH}}/hooks/scripts/pre-tool-guard.js Write"
           }
         ]
       }
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/code-check.js"
+            "command": "node {{CORE_PATH}}/hooks/scripts/code-check.js"
           }
         ]
       },
@@ -59,7 +59,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/post-edit.js"
+            "command": "node {{CORE_PATH}}/hooks/scripts/post-edit.js"
           }
         ]
       }
@@ -77,7 +77,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/prompt-dispatcher.js"
+            "command": "node {{CORE_PATH}}/hooks/scripts/prompt-dispatcher.js"
           }
         ]
       }
@@ -88,7 +88,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js medium"
+            "command": "node {{CORE_PATH}}/hooks/scripts/context-save.js medium"
           }
         ]
       },
@@ -97,7 +97,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js high"
+            "command": "node {{CORE_PATH}}/hooks/scripts/context-save.js high"
           }
         ]
       },
@@ -106,7 +106,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js critical"
+            "command": "node {{CORE_PATH}}/hooks/scripts/context-save.js critical"
           }
         ]
       }
