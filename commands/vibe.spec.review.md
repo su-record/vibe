@@ -221,6 +221,42 @@ node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC
 3. Auto-apply P1/P2 improvements to SPEC and Feature files (use Edit tool)
 4. Continue to next round with updated SPEC content
 
+### 3.3 User Decision Checkpoint (Round 3 이후)
+
+**🚨 MANDATORY: 3라운드 완료 후 사용자 판단 체크포인트 실행**
+
+> Type 6 (Iterative-Reasoning) 패턴: AI가 혼자 결정하지 않고, 사용자와 함께 판단
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 USER CHECKPOINT: 리뷰 결과 검토
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3라운드 리뷰에서 발견된 주요 변경사항:
+
+| # | 변경 내용 | 출처 | 신뢰도 |
+|---|----------|------|--------|
+| 1 | {변경1} | GPT+Gemini | 100% |
+| 2 | {변경2} | GPT only | 50% |
+| ... | ... | ... | ... |
+
+질문:
+1. 위 변경사항 중 제외하고 싶은 항목이 있나요?
+2. 추가로 명시해야 할 요구사항이 있나요?
+3. 기술적 접근 방식에 동의하시나요?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Checkpoint 행동 규칙:**
+
+| 상황 | 행동 |
+|------|------|
+| `ultrawork` 모드 | 체크포인트 스킵, 자동 진행 |
+| 일반 모드 | 반드시 사용자 응답 대기 |
+| 사용자가 변경 요청 | 수정 후 다시 체크포인트 |
+| 사용자가 승인 | Step 4로 진행 |
+
 **Output format:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -343,6 +379,33 @@ If no issues, proceed with /vibe.run "{feature-name}".
 - Keep it concise for quick user review
 - Wait for user confirmation after review (unless ultrawork mode)
 - In ultrawork mode: output summary then auto-proceed to `/vibe.run`
+
+### 5.1 Final User Checkpoint
+
+**🚨 MANDATORY: `/vibe.run` 진행 전 최종 사용자 확인**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ SPEC 리뷰 완료 - 최종 확인
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+다음 질문에 답변해 주세요:
+
+1. **요구사항 정확성**: 위 SPEC이 원래 의도한 기능을 정확히 설명하고 있나요?
+2. **범위 적절성**: 구현 범위가 너무 크거나 작지 않나요?
+3. **기술 스택**: 선택된 기술 스택에 동의하시나요?
+4. **우선순위**: Phase 순서와 우선순위가 맞나요?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 "ok" 또는 "진행"으로 승인 / 수정 사항이 있으면 말씀해 주세요
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Why This Checkpoint Matters:**
+
+> AI가 더 많이 해준다고 좋은 게 아닙니다.
+> 사용자가 AI와 함께 생각하고 판단할 때 최고의 결과가 나옵니다.
+> 이 체크포인트는 Type 6 (Iterative-Reasoning) 패턴을 유도합니다.
 
 ---
 
