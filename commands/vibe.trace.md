@@ -24,10 +24,53 @@ Requirements Traceability Matrix (RTM) tracks the relationship between:
 
 ### 1. Load Files
 
+**Search order (check BOTH file AND folder):**
+
+```
+Step 1: Check if SPLIT structure exists (folder)
+  📁 .claude/core/specs/{feature-name}/        → Folder with _index.md + phase files
+  📁 .claude/core/features/{feature-name}/      → Folder with _index.feature + phase files
+
+Step 2: If no folder, check single file
+  📄 .claude/core/specs/{feature-name}.md       → Single SPEC file
+  📄 .claude/core/features/{feature-name}.feature → Single Feature file
+
+Step 3: If neither exists → Error
+```
+
+**Split structure (folder) detected:**
+```
+📁 .claude/core/specs/{feature-name}/
+├── _index.md              → Master SPEC (read first)
+├── phase-1-{name}.md      → Phase 1 SPEC
+└── ...
+
+📁 .claude/core/features/{feature-name}/
+├── _index.feature         → Master Feature (read first)
+├── phase-1-{name}.feature → Phase 1 scenarios
+└── ...
+
+→ Load all phase files, generate RTM across all phases
+```
+
+**Single file detected:**
 ```
 📄 .claude/core/specs/{feature-name}.md      → SPEC
 📄 .claude/core/features/{feature-name}.feature → Feature
+```
+
+**Additional (auto-detect):**
+```
 📄 src/**/*.test.ts                           → Tests (auto-detect)
+```
+
+**Error if NEITHER file NOR folder found:**
+```
+❌ SPEC not found. Searched:
+   - .claude/core/specs/{feature-name}/  (folder)
+   - .claude/core/specs/{feature-name}.md (file)
+
+   Run /vibe.spec "{feature-name}" first.
 ```
 
 ### 2. Extract Mappings

@@ -37,14 +37,48 @@ argument-hint: "feature name"
 
 ### 1. Load Feature File
 
+**Search order (check BOTH file AND folder):**
+
+```
+Step 1: Check if SPLIT structure exists (folder)
+  📁 .claude/core/features/{feature-name}/     → Folder with _index.feature + phase files
+  📁 .claude/core/specs/{feature-name}/         → Folder with _index.md + phase files
+
+Step 2: If no folder, check single file
+  📄 .claude/core/features/{feature-name}.feature → Single Feature file
+  📄 .claude/core/specs/{feature-name}.md         → Single SPEC file
+
+Step 3: If neither exists → Error
+```
+
+**Split structure (folder) detected:**
+```
+📁 .claude/core/features/{feature-name}/
+├── _index.feature         → Master Feature (read first for scenario overview)
+├── phase-1-{name}.feature → Phase 1 scenarios
+├── phase-2-{name}.feature → Phase 2 scenarios
+└── ...
+
+📁 .claude/core/specs/{feature-name}/
+├── _index.md              → Master SPEC (read first for overview)
+├── phase-1-{name}.md      → Phase 1 SPEC
+└── ...
+
+→ Load _index files first, then verify phase by phase
+```
+
+**Single file detected:**
 ```
 📄 .claude/core/features/{feature-name}.feature → Scenario list
 📄 .claude/core/specs/{feature-name}.md → Verification criteria (reference)
 ```
 
-**If feature file does not exist**:
+**Error if NEITHER file NOR folder found:**
 ```
-❌ Feature file not found.
+❌ Feature file not found. Searched:
+   - .claude/core/features/{feature-name}/  (folder)
+   - .claude/core/features/{feature-name}.feature (file)
+
    Run /vibe.spec "{feature-name}" first.
 ```
 
@@ -155,8 +189,8 @@ Then: Login success + JWT token returned
 
 ## Input
 
-- `.claude/core/features/{feature-name}.feature` - BDD scenarios
-- `.claude/core/specs/{feature-name}.md` - SPEC document (reference)
+- `.claude/core/features/{feature-name}.feature` or `.claude/core/features/{feature-name}/` - BDD scenarios
+- `.claude/core/specs/{feature-name}.md` or `.claude/core/specs/{feature-name}/` - SPEC document (reference)
 - Implemented source code
 
 ## Output

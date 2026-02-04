@@ -643,14 +643,50 @@ node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'auth-patt
 
 ### 1. Load SPEC + Feature
 
+**Search order (check BOTH file AND folder):**
+
+```
+Step 1: Check if SPLIT structure exists (folder)
+  📁 .claude/core/specs/{feature-name}/        → Folder with _index.md + phase files
+  📁 .claude/core/features/{feature-name}/      → Folder with _index.feature + phase files
+
+Step 2: If no folder, check single file
+  📄 .claude/core/specs/{feature-name}.md       → Single SPEC file
+  📄 .claude/core/features/{feature-name}.feature → Single Feature file
+
+Step 3: If neither exists → Error
+```
+
+**Split structure (folder) detected:**
+```
+📁 .claude/core/specs/{feature-name}/
+├── _index.md              → Master SPEC (read first for overview)
+├── phase-1-{name}.md      → Phase 1 SPEC
+├── phase-2-{name}.md      → Phase 2 SPEC
+└── ...
+
+📁 .claude/core/features/{feature-name}/
+├── _index.feature         → Master Feature (read first for scenario overview)
+├── phase-1-{name}.feature → Phase 1 scenarios
+├── phase-2-{name}.feature → Phase 2 scenarios
+└── ...
+
+→ Load _index.md first, then load phase files in order
+→ Execute phases sequentially (or per --phase flag)
+```
+
+**Single file detected:**
 ```
 📄 .claude/core/specs/{feature-name}.md      → SPEC (structure, constraints, context)
 📄 .claude/core/features/{feature-name}.feature → Feature (scenario = implementation unit)
 ```
 
-**Error if Feature file missing**:
+**Error if NEITHER file NOR folder found:**
 ```
-❌ Feature file not found.
+❌ SPEC not found. Searched:
+   - .claude/core/specs/{feature-name}/  (folder)
+   - .claude/core/specs/{feature-name}.md (file)
+
    Run /vibe.spec "{feature-name}" first.
 ```
 
