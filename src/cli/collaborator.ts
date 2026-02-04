@@ -84,8 +84,8 @@ if command -v su &> /dev/null; then
     su update --silent
     echo "✅ Core updated!"
 else
-    echo "📦 Installing Vibe..."
-    npm install -g @su-record/core
+    echo "📦 Installing Core..."
+    npm install -g git+https://github.com/su-record/core.git
     su update --silent
     echo "✅ Core installed and configured!"
 fi
@@ -104,13 +104,13 @@ echo "  /su.run \\"feature\\"     Implement"
   const coreSetupSection = `
 ## Core Setup (AI Coding)
 
-This project uses [Vibe](https://github.com/su-record/core) AI coding framework.
+This project uses [Core](https://github.com/su-record/core) AI coding framework.
 
 ### Collaborator Install
 
 \`\`\`bash
 # Global install (recommended)
-npm install -g @su-record/core
+npm install -g git+https://github.com/su-record/core.git
 su update
 
 # Or use su init to setup

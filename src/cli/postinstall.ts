@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * postinstall 스크립트
- * npm install -g @su-record/core 시 전역 설정 폴더 생성
+ * git 기반 전역 설치 시 전역 설정 폴더 생성
  */
 
 import path from 'path';

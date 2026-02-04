@@ -226,30 +226,19 @@ Next: ${isNewProject ? `cd ${projectName} && ` : ''}/su.spec "feature"
 }
 
 async function checkAndUpgradeVibe(): Promise<boolean> {
-  const currentVersion = getPackageJson().version;
-
   try {
-    const latestVersion = execSync('npm view @su-record/su version', {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe']
-    }).trim();
+    log(`⬆️ Upgrading from git...\n`);
 
-    const isNewer = compareVersions(latestVersion, currentVersion) > 0;
-    if (isNewer) {
-      log(`⬆️ Upgrading v${currentVersion} → v${latestVersion}...\n`);
+    execSync('npm install -g git+https://github.com/su-record/core.git', {
+      stdio: options.silent ? 'pipe' : 'inherit'
+    });
 
-      execSync('npm install -g @su-record/core@latest', {
-        stdio: options.silent ? 'pipe' : 'inherit'
-      });
-
-      // 업그레이드 완료 후 새 버전으로 설정 업데이트 (--skip-upgrade로 무한 루프 방지)
-      execSync(`su update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
-        stdio: 'inherit',
-        cwd: process.cwd()
-      });
-      return true;
-    }
-    return false;
+    // 업그레이드 완료 후 새 버전으로 설정 업데이트 (--skip-upgrade로 무한 루프 방지)
+    execSync(`su update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    return true;
   } catch { /* ignore: optional operation */
     return false;
   }
