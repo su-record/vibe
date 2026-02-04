@@ -21,11 +21,11 @@
 - ❌ DO NOT create any files in project root
 - ❌ DO NOT create *_RESEARCH.md or *_SUMMARY.md files
 - ✅ ONLY return research results as text output
-- ✅ Results will be merged into SPEC by vibe.spec command
+- ✅ Results will be merged into SPEC by core.spec command
 
 ## Usage
 
-Automatically called in parallel when `/vibe.spec` is executed
+Automatically called in parallel when `/core.spec` is executed
 
 ```
 Task(
@@ -136,7 +136,7 @@ Rails:
 
 ## Multi-LLM Enhancement (Quality Assurance)
 
-**vibe = Quality Assurance Framework**
+**core = Quality Assurance Framework**
 
 Best practices research uses **3 perspectives in parallel** for comprehensive coverage:
 
@@ -161,11 +161,11 @@ Best practices research uses **3 perspectives in parallel** for comprehensive co
 Task(haiku, "Research best practices for [feature]")
 
 # 2. GPT (Parallel) - When enabled
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
+node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
   "Best practices for [feature] with [stack]. Focus: architecture patterns, code conventions, testing strategies. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # 3. Gemini (Parallel) - When enabled
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
+node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
   "Best practices for [feature] with [stack]. Focus: latest trends, framework updates, community recommendations. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 ```
 
@@ -182,10 +182,10 @@ node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
 - Conflicting advice → Claude takes precedence
 - Unique findings → All included
 
-## Integration with /vibe.spec
+## Integration with /core.spec
 
 ```
-/vibe.spec "login feature"
+/core.spec "login feature"
 
 → best-practices-agent execution (3 LLMs parallel):
   - Claude: "Research authentication best practices: OAuth, JWT, session"

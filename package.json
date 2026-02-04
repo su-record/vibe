@@ -1,7 +1,7 @@
 {
   "name": "@su-record/core",
   "version": "0.1.0",
-  "description": "Vibe core - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
+  "description": "Su core - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
   "type": "module",
   "main": "dist/cli/index.js",
   "exports": {
@@ -18,7 +18,7 @@
     "./lib/gemini": "./dist/lib/gemini-api.js"
   },
   "bin": {
-    "vibe": "./dist/cli/index.js"
+    "core": "./dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -30,11 +30,10 @@
   },
   "keywords": [
     "ai",
-    "vibe",
+    "core",
     "coding",
     "spec-driven",
     "claude",
-    "mcp",
     "framework",
     "requirements",
     "user-story",
@@ -71,7 +70,7 @@
   },
   "files": [
     "dist/",
-    "vibe/",
+    "core/",
     "languages/",
     "commands/",
     "agents/",

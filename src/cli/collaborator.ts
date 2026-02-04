@@ -11,7 +11,7 @@ import { log, getPackageJson } from './utils.js';
  */
 export function setupCollaboratorAutoInstall(projectRoot: string): void {
   const packageJsonPath = path.join(projectRoot, 'package.json');
-  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
+  const coreDir = path.join(projectRoot, '.claude', 'core');
 
   // 1. Node.js 프로젝트: package.json 정리
   if (fs.existsSync(packageJsonPath)) {
@@ -25,19 +25,19 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
         modified = true;
       }
 
-      // 기존 postinstall/prepare에서 vibe update 제거
+      // 기존 postinstall/prepare에서 core update 제거
       if (pkg.scripts) {
         const oldPatterns = [
-          /\s*&&\s*npx @su-record\/vibe update[^&|;]*/g,
-          /npx @su-record\/vibe update[^&|;]*\s*&&\s*/g,
-          /npx @su-record\/vibe update[^&|;]*/g,
-          /\s*&&\s*node_modules\/\.bin\/vibe update[^&|;]*/g,
-          /node_modules\/\.bin\/vibe update[^&|;]*\s*&&\s*/g,
-          /node_modules\/\.bin\/vibe update[^&|;]*/g
+          /\s*&&\s*npx @su-record\/core update[^&|;]*/g,
+          /npx @su-record\/core update[^&|;]*\s*&&\s*/g,
+          /npx @su-record\/core update[^&|;]*/g,
+          /\s*&&\s*node_modules\/\.bin\/core update[^&|;]*/g,
+          /node_modules\/\.bin\/core update[^&|;]*\s*&&\s*/g,
+          /node_modules\/\.bin\/core update[^&|;]*/g
         ];
 
         ['postinstall', 'prepare'].forEach(script => {
-          if (pkg.scripts[script]?.includes('vibe update')) {
+          if (pkg.scripts[script]?.includes('core update')) {
             let cleaned = pkg.scripts[script];
             oldPatterns.forEach(p => { cleaned = cleaned.replace(p, ''); });
             cleaned = cleaned.trim();
@@ -57,19 +57,19 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
     } catch { /* ignore: optional operation */ }
   }
 
-  // 2. .claude/vibe/setup.sh 생성
-  const setupShPath = path.join(vibeDir, 'setup.sh');
-  if (!fs.existsSync(vibeDir)) {
-    fs.mkdirSync(vibeDir, { recursive: true });
+  // 2. .claude/core/setup.sh 생성
+  const setupShPath = path.join(coreDir, 'setup.sh');
+  if (!fs.existsSync(coreDir)) {
+    fs.mkdirSync(coreDir, { recursive: true });
   }
   if (!fs.existsSync(setupShPath)) {
     const setupScript = `#!/bin/bash
-# Vibe collaborator auto-install script
-# Usage: ./.claude/vibe/setup.sh
+# Core collaborator auto-install script
+# Usage: ./.claude/core/setup.sh
 
 set -e
 
-echo "🔧 Checking Vibe installation..."
+echo "🔧 Checking Core installation..."
 
 # Check npm/npx
 if ! command -v npx &> /dev/null; then
@@ -78,22 +78,22 @@ if ! command -v npx &> /dev/null; then
     exit 1
 fi
 
-# Check vibe installation and update
-if command -v vibe &> /dev/null; then
-    echo "✅ Vibe is already installed."
-    vibe update --silent
-    echo "✅ Vibe updated!"
+# Check core installation and update
+if command -v core &> /dev/null; then
+    echo "✅ Core is already installed."
+    core update --silent
+    echo "✅ Core updated!"
 else
     echo "📦 Installing Vibe..."
     npm install -g @su-record/core
-    vibe update --silent
-    echo "✅ Vibe installed and configured!"
+    core update --silent
+    echo "✅ Core installed and configured!"
 fi
 
 echo ""
 echo "Get started with:"
-echo "  /vibe.spec \\"feature\\"    Create SPEC"
-echo "  /vibe.run \\"feature\\"     Implement"
+echo "  /core.spec \\"feature\\"    Create SPEC"
+echo "  /core.run \\"feature\\"     Implement"
 `;
     fs.writeFileSync(setupShPath, setupScript);
     fs.chmodSync(setupShPath, '755');
@@ -101,8 +101,8 @@ echo "  /vibe.run \\"feature\\"     Implement"
 
   // 3. README.md에 협업자 안내 추가
   const readmePath = path.join(projectRoot, 'README.md');
-  const vibeSetupSection = `
-## Vibe Setup (AI Coding)
+  const coreSetupSection = `
+## Core Setup (AI Coding)
 
 This project uses [Vibe](https://github.com/su-record/core) AI coding framework.
 
@@ -111,25 +111,25 @@ This project uses [Vibe](https://github.com/su-record/core) AI coding framework.
 \`\`\`bash
 # Global install (recommended)
 npm install -g @su-record/core
-vibe update
+core update
 
-# Or use vibe init to setup
-vibe init
+# Or use core init to setup
+core init
 \`\`\`
 
 ### Usage
 
 Use slash commands in Claude Code:
-- \`/vibe.spec "feature"\` - Create SPEC document
-- \`/vibe.run "feature"\` - Execute implementation
+- \`/core.spec "feature"\` - Create SPEC document
+- \`/core.run "feature"\` - Execute implementation
 `;
 
   if (fs.existsSync(readmePath)) {
     const readme = fs.readFileSync(readmePath, 'utf-8');
-    if (!readme.includes('## Vibe Setup')) {
-      fs.appendFileSync(readmePath, vibeSetupSection);
+    if (!readme.includes('## Core Setup')) {
+      fs.appendFileSync(readmePath, coreSetupSection);
     }
   } else {
-    fs.writeFileSync(readmePath, `# Project\n${vibeSetupSection}`);
+    fs.writeFileSync(readmePath, `# Project\n${coreSetupSection}`);
   }
 }

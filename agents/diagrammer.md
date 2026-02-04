@@ -3,23 +3,23 @@ description: Generate diagrams (architecture, ERD, flowchart)
 argument-hint: --er or --flow (optional)
 ---
 
-# /vibe.diagram
+# /core.diagram
 
 Generate diagrams (architecture, ERD, flowchart).
 
 ## Usage
 
 ```
-/vibe.diagram
-/vibe.diagram --er
-/vibe.diagram --flow
+/core.diagram
+/core.diagram --er
+/core.diagram --flow
 ```
 
 ## Process
 
 ### 1. Determine Diagram Type
 
-- **Default** (`/vibe.diagram`): Architecture diagram
+- **Default** (`/core.diagram`): Architecture diagram
 - **--er**: ERD (Entity-Relationship Diagram)
 - **--flow**: Flowchart (main processes)
 
@@ -110,7 +110,7 @@ Guide on how to render generated Mermaid code:
 ## Example
 
 ```
-User: /vibe.diagram --er
+User: /core.diagram --er
 
 Claude: Generating ERD...
 
@@ -159,7 +159,7 @@ erDiagram
 ```
 
 **Diagram save location:**
-  .claude/vibe/diagrams/erd-2025-11-17.md
+  .claude/core/diagrams/erd-2025-11-17.md
 
 **Rendering options:**
   1. Push to GitHub (auto-renders)
@@ -171,7 +171,7 @@ erDiagram
 
 - Mermaid is supported in GitHub, GitLab, VSCode, etc.
 - Complex diagrams may need manual adjustments
-- Generated diagrams are saved in `.claude/vibe/diagrams/` folder
+- Generated diagrams are saved in `.claude/core/diagrams/` folder
 
 ---
 

@@ -110,7 +110,7 @@ Claude solves alone
 ```
 
 > **Note:** `test-gpt`, `test-gemini` prefixes are for hook connectivity testing only.
-> For actual work, use VIBE commands (`/vibe.run`, `/vibe.spec`, etc.) and
+> For actual work, use VIBE commands (`/core.run`, `/core.spec`, etc.) and
 > VibeOrchestrator will automatically select the appropriate LLM.
 
 ## Retry Strategy with Circuit Breaker
@@ -140,7 +140,7 @@ Check circuit state
 
 ## VibeOrchestrator Smart Routing
 
-VIBE commands (`/vibe.spec`, `/vibe.run`, etc.) use VibeOrchestrator internally.
+VIBE commands (`/core.spec`, `/core.run`, etc.) use VibeOrchestrator internally.
 
 ### LLM Priority by Task Type
 

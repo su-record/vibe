@@ -60,8 +60,8 @@ describe('Traceability Matrix', () => {
     it('should generate matrix for a feature', () => {
       const matrix = generateTraceabilityMatrix('test-feature', {
         projectPath: '/mock/project',
-        specPath: '.claude/vibe/specs/test-feature.md',
-        featurePath: '.claude/vibe/features/test-feature.feature',
+        specPath: '.claude/core/specs/test-feature.md',
+        featurePath: '.claude/core/features/test-feature.feature',
       });
 
       expect(matrix.featureName).toBe('test-feature');

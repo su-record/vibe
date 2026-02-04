@@ -48,7 +48,7 @@ export class LLMCluster {
     systemPrompt?: string,
     options?: { jsonMode?: boolean }
   ): Promise<string> {
-    return gptApi.vibeGptOrchestrate(
+    return gptApi.coreGptOrchestrate(
       prompt,
       systemPrompt ?? this.defaultSystemPrompt,
       options
@@ -63,7 +63,7 @@ export class LLMCluster {
     systemPrompt?: string,
     options?: { jsonMode?: boolean }
   ): Promise<string> {
-    return geminiApi.vibeGeminiOrchestrate(
+    return geminiApi.coreGeminiOrchestrate(
       prompt,
       systemPrompt ?? this.defaultSystemPrompt,
       options

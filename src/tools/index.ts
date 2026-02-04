@@ -1,5 +1,5 @@
 /**
- * Vibe Tools - CLI 없이 도구만 export
+ * Core Tools - CLI 없이 도구만 export
  *
  * 사용법:
  *   node -e "require('@su-record/core/tools').startSession({}).then(console.log)"

@@ -3,26 +3,26 @@ description: Utility tools (UI preview, diagram, E2E test, image generation, etc
 argument-hint: "--ui, --diagram, --e2e, --image, or other options"
 ---
 
-# /vibe.utils
+# /core.utils
 
 Collection of utility tools. Use with options.
 
 ## Usage
 
 ```
-/vibe.utils --ui "description"       # UI ASCII preview
-/vibe.utils --diagram                # Architecture diagram
-/vibe.utils --diagram --er           # ERD diagram
-/vibe.utils --diagram --flow         # Flowchart
-/vibe.utils --e2e "scenario"         # E2E browser test (Playwright)
-/vibe.utils --e2e --visual           # Visual regression test
-/vibe.utils --e2e --record           # Video recording
-/vibe.utils --image "description"    # Generate image with Gemini (icon, banner, etc.)
-/vibe.utils --image --icon "AppName" # Generate app icon/favicon
-/vibe.utils --build-fix              # Fix build errors (minimal diff)
-/vibe.utils --clean                  # Remove dead code + DELETION_LOG
-/vibe.utils --codemaps               # Generate architecture docs
-/vibe.utils --compound               # Document solution (usually auto-triggered)
+/core.utils --ui "description"       # UI ASCII preview
+/core.utils --diagram                # Architecture diagram
+/core.utils --diagram --er           # ERD diagram
+/core.utils --diagram --flow         # Flowchart
+/core.utils --e2e "scenario"         # E2E browser test (Playwright)
+/core.utils --e2e --visual           # Visual regression test
+/core.utils --e2e --record           # Video recording
+/core.utils --image "description"    # Generate image with Gemini (icon, banner, etc.)
+/core.utils --image --icon "AppName" # Generate app icon/favicon
+/core.utils --build-fix              # Fix build errors (minimal diff)
+/core.utils --clean                  # Remove dead code + DELETION_LOG
+/core.utils --codemaps               # Generate architecture docs
+/core.utils --compound               # Document solution (usually auto-triggered)
 ```
 
 ---
@@ -56,9 +56,9 @@ Generate UI preview from description or design folder.
 **Example:**
 
 ```
-/vibe.utils --ui "Login form - email, password input + login button"
-/vibe.utils --ui ./design/dashboard/
-/vibe.utils --ui ./mockups/homepage.png
+/core.utils --ui "Login form - email, password input + login button"
+/core.utils --ui ./design/dashboard/
+/core.utils --ui ./mockups/homepage.png
 ```
 
 ---
@@ -77,7 +77,7 @@ Generate Mermaid diagrams for architecture visualization.
 
 **Example:**
 ```
-/vibe.utils --diagram --er
+/core.utils --diagram --er
 ```
 
 ---
@@ -92,12 +92,12 @@ Generate images using Gemini Image API (Nano Banana model).
 
 **General image generation:**
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
 ```
 
 **With size option:**
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --size "1920x1080" --output "OUTPUT_PATH"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --size "1920x1080" --output "OUTPUT_PATH"
 ```
 
 ### How to Parse User Request
@@ -111,11 +111,11 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 ### Examples
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "A cute Gemini AI character mascot, colorful, friendly" --output "./gemini-character.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "A cute Gemini AI character mascot, colorful, friendly" --output "./gemini-character.png"
 
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Professional website banner, modern design" --size "1920x400" --output "./banner.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "Professional website banner, modern design" --size "1920x400" --output "./banner.png"
 
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Modern minimal logo design" --output "./public/logo.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "Modern minimal logo design" --output "./public/logo.png"
 ```
 
 ### Output Format
@@ -138,15 +138,15 @@ Use the same command with a pre-built icon prompt template:
 
 ```bash
 # --icon "MyApp"
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 
 # --icon "MyApp" --color "#2F6BFF"
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ### Prerequisites
 
-- Gemini API key configured (`vibe gemini auth` or `vibe gemini key <key>`)
+- Gemini API key configured (`core gemini auth` or `core gemini key <key>`)
 
 ---
 
@@ -167,8 +167,8 @@ Read and follow `agents/e2e-tester.md` for Playwright-based E2E testing.
 
 **Example:**
 ```
-/vibe.utils --e2e "login flow"
-/vibe.utils --e2e --visual --record
+/core.utils --e2e "login flow"
+/core.utils --e2e --visual --record
 ```
 
 ---
@@ -194,7 +194,7 @@ Fix TypeScript/build errors with minimal changes.
 
 **Example:**
 ```
-/vibe.utils --build-fix
+/core.utils --build-fix
 ```
 
 **Output:** List of minimal fixes applied + build status
@@ -221,12 +221,12 @@ Detect and remove unused code with audit trail.
 
 **Example:**
 ```
-/vibe.utils --clean
+/core.utils --clean
 ```
 
 **Output:**
 - Removed items list
-- `.claude/vibe/DELETION_LOG.md` updated
+- `.claude/core/DELETION_LOG.md` updated
 - Build/test verification
 
 ---
@@ -259,7 +259,7 @@ docs/CODEMAPS/
 
 **Example:**
 ```
-/vibe.utils --codemaps
+/core.utils --codemaps
 ```
 
 ---
@@ -273,10 +273,10 @@ Document solved problems for knowledge accumulation.
 **Usually auto-triggered by hooks when:**
 - "bug fixed", "PR merged" detected
 
-**Output location:** `.claude/vibe/solutions/`
+**Output location:** `.claude/core/solutions/`
 
 ```
-.claude/vibe/solutions/
+.claude/core/solutions/
 ├── security/           # Security solutions
 ├── performance/        # Performance optimizations
 ├── database/           # Database related
@@ -291,11 +291,11 @@ Restore previous session context for continuity.
 
 **Usage:**
 ```
-/vibe.utils --continue
+/core.utils --continue
 ```
 
 **What it does:**
-1. Calls `vibe_start_session` to load project memories
+1. Calls `core_start_session` to load project memories
 2. Restores previous conversation context
 3. Resumes work from last checkpoint
 

@@ -30,10 +30,10 @@ interface GeminiStorage {
 export function getConfigDir(): string {
   const platform = process.platform;
   if (platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe');
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core');
   }
   const xdgConfig = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config');
-  return path.join(xdgConfig, 'vibe');
+  return path.join(xdgConfig, 'core');
 }
 
 /**

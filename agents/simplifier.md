@@ -8,7 +8,7 @@ Automatically executed after `Write`, `Edit` operations via PostToolUse Hook.
 
 ## Rules Reference
 
-**Validation criteria (`~/.claude/vibe/rules/` global):**
+**Validation criteria (`~/.claude/core/rules/` global):**
 
 ### Required Rules
 

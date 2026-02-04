@@ -5,7 +5,7 @@
  *   node -e "import('@su-record/core/orchestrator').then(o => o.parallelResearch({...})).then(console.log)"
  *
  * 사용법 (코드에서):
- *   import { VibeOrchestrator, parallelResearch } from '@su-record/core/orchestrator';
+ *   import { CoreOrchestrator, parallelResearch } from '@su-record/core/orchestrator';
  */
 
 // 타입 export
@@ -77,7 +77,7 @@ export type { TaskStatus, TaskInfo, QueueStats } from './backgroundAgent.js';
 
 // Main Orchestrator Class
 export {
-  VibeOrchestrator,
+  CoreOrchestrator,
   getOrchestrator
 } from './orchestrator.js';
 
@@ -134,7 +134,7 @@ export type {
 // 간편 함수 (hooks에서 직접 호출용)
 // ============================================
 
-import { VibeOrchestrator } from './orchestrator.js';
+import { CoreOrchestrator } from './orchestrator.js';
 import {
   parallelResearch as _parallelResearch,
   parallelResearchWithMultiLlm as _parallelResearchWithMultiLlm,
@@ -218,7 +218,7 @@ export async function review(
   techStack: string[] = [],
   projectPath: string = process.cwd()
 ): Promise<ToolResult> {
-  const orchestrator = new VibeOrchestrator({ projectPath });
+  const orchestrator = new CoreOrchestrator({ projectPath });
   const results = await orchestrator.runParallelReview(filePaths, techStack);
 
   // 결과 포맷팅
@@ -299,7 +299,7 @@ export async function gpt(
   systemPrompt: string = 'You are a helpful assistant.'
 ): Promise<ToolResult> {
   try {
-    const result = await gptApi.vibeGptOrchestrate(prompt, systemPrompt, { jsonMode: false });
+    const result = await gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false });
     return {
       content: [{ type: 'text', text: result }],
       success: true
@@ -348,7 +348,7 @@ export async function gemini(
   systemPrompt: string = 'You are a helpful assistant.'
 ): Promise<ToolResult> {
   try {
-    const result = await geminiApi.vibeGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
+    const result = await geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
     return {
       content: [{ type: 'text', text: result }],
       success: true
@@ -376,7 +376,7 @@ export async function multiLlm(
   prompt: string,
   options?: { useGpt?: boolean; useGemini?: boolean }
 ): Promise<ToolResult> {
-  const orchestrator = new VibeOrchestrator();
+  const orchestrator = new CoreOrchestrator();
   const results = await orchestrator.multiLlmQuery(prompt, options);
 
   let summary = '## Multi-LLM Results\n\n';
@@ -401,7 +401,7 @@ export async function multiLlm(
  * node -e "import('@su-record/core/orchestrator').then(o => o.llmStatus()).then(console.log)"
  */
 export async function llmStatus(): Promise<ToolResult> {
-  const orchestrator = new VibeOrchestrator();
+  const orchestrator = new CoreOrchestrator();
   const llmStatusResult = await orchestrator.checkLlmStatus();
 
   const gptIcon = llmStatusResult.gpt.available ? '✓' : '✗';
@@ -434,7 +434,7 @@ export async function smartRoute(
   prompt: string,
   systemPrompt?: string
 ): Promise<ToolResult & { result: SmartRouteResult }> {
-  const orchestrator = new VibeOrchestrator();
+  const orchestrator = new CoreOrchestrator();
   const result = await orchestrator.smartRoute({ type, prompt, systemPrompt });
 
   const fallbackInfo = result.usedFallback

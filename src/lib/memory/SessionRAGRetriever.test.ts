@@ -13,7 +13,7 @@ describe('SessionRAGRetriever', () => {
   let testDir: string;
 
   beforeEach(() => {
-    testDir = join(tmpdir(), `vibe-srag-ret-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    testDir = join(tmpdir(), `core-srag-ret-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     storage = new MemoryStorage(testDir);
     store = new SessionRAGStore(storage);
     retriever = new SessionRAGRetriever(storage, store);

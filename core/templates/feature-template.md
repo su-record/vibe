@@ -2,7 +2,7 @@
 
 > This file is **the core of quality assurance**. All scenarios passing = feature complete.
 
-**SPEC**: `.claude/vibe/specs/{feature-name}.md`
+**SPEC**: `.claude/core/specs/{feature-name}.md`
 **Last verified**: -
 **Quality score**: -
 
@@ -81,10 +81,10 @@ Scenario: {Boundary value test}
 
 ```bash
 # Full verification
-/vibe.verify "{feature name}"
+/core.verify "{feature name}"
 
 # Auto-fix on failure
-/vibe.run "{feature name}" --fix
+/core.run "{feature name}" --fix
 ```
 
 ---

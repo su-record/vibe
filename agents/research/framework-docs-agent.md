@@ -21,11 +21,11 @@
 - ❌ DO NOT create any files in project root
 - ❌ DO NOT create DOCS_*.md or API_*.md files
 - ✅ ONLY return research results as text output
-- ✅ Results will be merged into SPEC by vibe.spec command
+- ✅ Results will be merged into SPEC by core.spec command
 
 ## Usage
 
-Automatically called in parallel when `/vibe.spec` is executed
+Automatically called in parallel when `/core.spec` is executed
 
 ```
 Task(
@@ -173,10 +173,10 @@ Redis:
 | React | 18.2 | 19.x |
 ```
 
-## Integration with /vibe.spec
+## Integration with /core.spec
 
 ```
-/vibe.spec "social login"
+/core.spec "social login"
 
 → framework-docs-agent execution:
   "Research NextAuth.js v5 for social login. Get Google, GitHub providers."

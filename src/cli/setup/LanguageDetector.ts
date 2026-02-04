@@ -8,7 +8,7 @@ import { execSync } from 'child_process';
 export type SupportedLanguage = 'ko' | 'en';
 
 /**
- * OS 언어 설정 감지하여 vibe 언어 반환
+ * OS 언어 설정 감지하여 core 언어 반환
  * - 한국어 OS → 'ko'
  * - 그 외 → 'en' (기본값)
  */

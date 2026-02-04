@@ -3,7 +3,7 @@ description: Verify implementation against SPEC requirements
 argument-hint: "feature name"
 ---
 
-# /vibe.verify
+# /core.verify
 
 **Automated Quality Verification** - Making quality trustworthy even for non-developers.
 
@@ -12,10 +12,10 @@ argument-hint: "feature name"
 ## Usage
 
 ```
-/vibe.verify "feature-name"              # SPEC-based verification
-/vibe.verify --e2e "feature-name"        # E2E browser test (agents/e2e-tester.md)
-/vibe.verify --e2e --visual              # Visual regression test
-/vibe.verify --e2e --record              # Video recording
+/core.verify "feature-name"              # SPEC-based verification
+/core.verify --e2e "feature-name"        # E2E browser test (agents/e2e-tester.md)
+/core.verify --e2e --visual              # Visual regression test
+/core.verify --e2e --record              # Video recording
 ```
 
 ## Core Principles
@@ -36,14 +36,14 @@ argument-hint: "feature name"
 ### 1. Load Feature File
 
 ```
-📄 .claude/vibe/features/{feature-name}.feature → Scenario list
-📄 .claude/vibe/specs/{feature-name}.md → Verification criteria (reference)
+📄 .claude/core/features/{feature-name}.feature → Scenario list
+📄 .claude/core/specs/{feature-name}.md → Verification criteria (reference)
 ```
 
 **If feature file does not exist**:
 ```
 ❌ Feature file not found.
-   Run /vibe.spec "{feature-name}" first.
+   Run /core.spec "{feature-name}" first.
 ```
 
 ### 2. Scenario-by-Scenario Verification
@@ -143,15 +143,15 @@ Then: Login success + JWT token returned
 │  📍 Location: LoginForm.tsx line 42                             │
 │  💡 Fix: Need to add "Forgot password" link                     │
 │                                                                 │
-│  🔧 Auto-fix command: /vibe.run "login" --fix                   │
+│  🔧 Auto-fix command: /core.run "login" --fix                   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Input
 
-- `.claude/vibe/features/{feature-name}.feature` - BDD scenarios
-- `.claude/vibe/specs/{feature-name}.md` - SPEC document (reference)
+- `.claude/core/features/{feature-name}.feature` - BDD scenarios
+- `.claude/core/specs/{feature-name}.md` - SPEC document (reference)
 - Implemented source code
 
 ## Output
@@ -163,10 +163,10 @@ Then: Login success + JWT token returned
 ## Example
 
 ```
-User: /vibe.verify "login"
+User: /core.verify "login"
 
 Claude:
-📄 Loading Feature: .claude/vibe/features/login.feature
+📄 Loading Feature: .claude/core/features/login.feature
 🔍 Starting verification...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -219,12 +219,12 @@ Claude:
 │  ❌ Fixes needed:                                                │
 │  - Scenario 4: Add "Forgot password" link in LoginForm.tsx      │
 │                                                                 │
-│  🔧 Auto-fix: /vibe.run "login" --fix                           │
+│  🔧 Auto-fix: /core.run "login" --fix                           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Vibe Tools (Code Analysis & Quality)
+## Core Tools (Code Analysis & Quality)
 
 ### Tool Invocation
 
@@ -274,7 +274,7 @@ Complete! Proceed to next feature.
 On verification fail:
 
 ```
-/vibe.run "feature-name" --fix  # Fix failed scenarios
+/core.run "feature-name" --fix  # Fix failed scenarios
 ```
 
 ---
@@ -311,7 +311,7 @@ Grades:
 
 | Metric | Pass Threshold | Action on Fail |
 |--------|----------------|----------------|
-| Scenario pass rate | 100% | Run `/vibe.run --fix` |
+| Scenario pass rate | 100% | Run `/core.run --fix` |
 | Build status | Success | Fix build errors first |
 | Test pass rate | 100% | Fix failing tests |
 | Type check | 0 errors | Fix type errors |

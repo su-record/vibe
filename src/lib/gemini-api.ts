@@ -29,8 +29,8 @@ interface AuthInfo {
 // 전역 설정 디렉토리 경로
 function getGlobalConfigDir(): string {
   return process.platform === 'win32'
-    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
-    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
 }
 
 // API Key 가져오기 (전역 저장소)
@@ -52,7 +52,7 @@ function getApiKeyFromConfig(): string | null {
 // OAuth 토큰 없을 때 config에서 email 제거
 function removeEmailFromConfigIfNoToken(): void {
   try {
-    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+    const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       if (config.models?.gemini?.email) {
@@ -82,7 +82,7 @@ async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  throw new Error('Gemini credentials not found. Run vibe gemini auth (OAuth) or vibe gemini key <key> (API Key) to configure.');
+  throw new Error('Gemini credentials not found. Run core gemini auth (OAuth) or core gemini key <key> (API Key) to configure.');
 }
 
 // Types
@@ -562,7 +562,7 @@ export async function generateImage(
 ): Promise<ImageGenerationResult> {
   const apiKey = getApiKeyFromConfig();
   if (!apiKey) {
-    throw new Error('Gemini API key not configured. Run "vibe gemini key <key>" to configure.');
+    throw new Error('Gemini API key not configured. Run "core gemini key <key>" to configure.');
   }
 
   const size = options.size || '1024x1024';
@@ -709,7 +709,7 @@ export async function analyzeImage(
     }
   }
 
-  throw new Error('Gemini credentials not found. Run "vibe gemini auth" or "vibe gemini key <key>".');
+  throw new Error('Gemini credentials not found. Run "core gemini auth" or "core gemini key <key>".');
 }
 
 type MultimodalContent = {
@@ -829,12 +829,12 @@ async function analyzeImageWithOAuth(
 }
 
 // ============================================
-// Vibe Gemini Orchestration Functions
+// Core Gemini Orchestration Functions
 // 검색 없이 빠르고 결정론적인 응답
 // ============================================
 
 /**
- * Vibe Gemini 오케스트레이션 옵션
+ * Core Gemini 오케스트레이션 옵션
  */
 interface VibeGeminiOptions {
   maxTokens?: number;
@@ -842,12 +842,12 @@ interface VibeGeminiOptions {
 }
 
 /**
- * Vibe Gemini 오케스트레이션 (검색 없음, JSON 모드)
+ * Core Gemini 오케스트레이션 (검색 없음, JSON 모드)
  * - 검색 제외로 빠른 응답
  * - temperature=0 으로 결정론적 결과
  * - JSON 출력 강제 가능
  */
-export async function vibeGeminiOrchestrate(
+export async function coreGeminiOrchestrate(
   prompt: string,
   systemPrompt: string,
   options: VibeGeminiOptions = {}
@@ -868,29 +868,29 @@ export async function vibeGeminiOrchestrate(
 }
 
 /**
- * Vibe Spec 파싱 (Vibe Spec → 실행 계획)
+ * Core Spec 파싱 (Core Spec → 실행 계획)
  */
-export async function vibeGeminiParseSpec(spec: string): Promise<string> {
-  return vibeGeminiOrchestrate(spec, `You are a Vibe Spec parser. Parse the given specification and output a structured execution plan.
+export async function coreGeminiParseSpec(spec: string): Promise<string> {
+  return coreGeminiOrchestrate(spec, `You are a Core Spec parser. Parse the given specification and output a structured execution plan.
 Output format: { "phases": [...], "files": [...], "dependencies": [...] }`);
 }
 
 /**
- * Vibe 실행 계획 수립 (Task → Steps)
+ * Core 실행 계획 수립 (Task → Steps)
  */
-export async function vibeGeminiPlanExecution(task: string, context: string): Promise<string> {
-  return vibeGeminiOrchestrate(
+export async function coreGeminiPlanExecution(task: string, context: string): Promise<string> {
+  return coreGeminiOrchestrate(
     `Task: ${task}\n\nContext:\n${context}`,
-    `You are a Vibe execution planner. Given a task and context, create a step-by-step execution plan.
+    `You are a Core execution planner. Given a task and context, create a step-by-step execution plan.
 Output format: { "steps": [{ "id": 1, "action": "...", "target": "...", "expected": "..." }], "estimatedComplexity": "low|medium|high" }`
   );
 }
 
 /**
- * Vibe 코드 분석 (빠른 구조 분석)
+ * Core 코드 분석 (빠른 구조 분석)
  */
-export async function vibeGeminiAnalyze(code: string, question: string): Promise<string> {
-  return vibeGeminiOrchestrate(
+export async function coreGeminiAnalyze(code: string, question: string): Promise<string> {
+  return coreGeminiOrchestrate(
     `Code:\n\`\`\`\n${code}\n\`\`\`\n\nQuestion: ${question}`,
     `You are a code analyzer. Answer the question about the given code concisely.
 Output format: { "answer": "...", "confidence": 0.0-1.0, "relatedSymbols": [...] }`
@@ -898,14 +898,14 @@ Output format: { "answer": "...", "confidence": 0.0-1.0, "relatedSymbols": [...]
 }
 
 /**
- * Vibe 다음 액션 결정 (상태 기반)
+ * Core 다음 액션 결정 (상태 기반)
  */
-export async function vibeGeminiDecideNextAction(
+export async function coreGeminiDecideNextAction(
   currentState: string,
   availableActions: string[],
   goal: string
 ): Promise<string> {
-  return vibeGeminiOrchestrate(
+  return coreGeminiOrchestrate(
     `Current State:\n${currentState}\n\nAvailable Actions:\n${availableActions.join('\n')}\n\nGoal: ${goal}`,
     `You are an action decider. Based on the current state and goal, select the best next action.
 Output format: { "selectedAction": "...", "reason": "...", "parameters": {} }`
@@ -913,10 +913,10 @@ Output format: { "selectedAction": "...", "reason": "...", "parameters": {} }`
 }
 
 /**
- * Vibe UI/UX 분석 (검색 없이 내부 지식으로)
+ * Core UI/UX 분석 (검색 없이 내부 지식으로)
  */
-export async function vibeGeminiAnalyzeUX(description: string): Promise<string> {
-  return vibeGeminiOrchestrate(
+export async function coreGeminiAnalyzeUX(description: string): Promise<string> {
+  return coreGeminiOrchestrate(
     description,
     `You are a UI/UX expert. Analyze the given design description and provide structured feedback.
 Output format: { "issues": [...], "suggestions": [...], "accessibility": { "score": 0-100, "concerns": [...] } }`,

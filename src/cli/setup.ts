@@ -15,8 +15,8 @@ export { detectOsLanguage } from './setup/LanguageDetector.js';
 
 // GlobalInstaller
 export {
-  getVibeConfigDir,
-  installGlobalVibePackage,
+  getCoreConfigDir,
+  installGlobalCorePackage,
   installGlobalAssets,
   registerMcpServers
 } from './setup/GlobalInstaller.js';
@@ -34,7 +34,7 @@ export {
 
 // LegacyMigration
 export {
-  migrateLegacyVibe,
+  migrateLegacyCore,
   cleanupLegacy,
   removeLocalAssets,
   cleanupClaudeConfig,

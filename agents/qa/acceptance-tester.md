@@ -27,8 +27,8 @@
 This agent analyzes **SPEC and Feature documents**, NOT source code.
 
 Input files:
-- `.claude/vibe/specs/{feature-name}.md` - SPEC with `<acceptance>` section
-- `.claude/vibe/features/{feature-name}.feature` - Feature with Gherkin scenarios
+- `.claude/core/specs/{feature-name}.md` - SPEC with `<acceptance>` section
+- `.claude/core/features/{feature-name}.feature` - Feature with Gherkin scenarios
 
 ## Checklist
 

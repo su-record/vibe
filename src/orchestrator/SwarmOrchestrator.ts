@@ -2,7 +2,7 @@
  * SwarmOrchestrator - 에이전트 자가 복제 패턴 (Swarm Pattern)
  * v2.7.0: 복잡한 작업을 자동으로 분할하여 병렬 처리
  *
- * SKILL.md 참조: Claude Code의 Swarm 패턴을 Vibe 자체 구현으로 재현
+ * SKILL.md 참조: Claude Code의 Swarm 패턴을 Core 자체 구현으로 재현
  * - 에이전트가 "너무 복잡하다" 판단 시 하위 에이전트 동적 생성
  * - 기존 launch()/poll() 인프라 활용
  * - Claude Code + Cursor IDE 모두 지원 (플랫폼 독립)

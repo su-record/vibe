@@ -107,10 +107,10 @@ Task(
 
 ## Integration
 
-Works with `vibe_analyze_complexity` tool:
+Works with `core_analyze_complexity` tool:
 
 ```
-1. Execute vibe_analyze_complexity
+1. Execute core_analyze_complexity
 2. Analyze results
 3. Generate refactoring suggestions
 ```

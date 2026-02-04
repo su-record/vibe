@@ -1,6 +1,6 @@
 /**
  * HUD (Heads-Up Display) CLI Module
- * Real-time status visualization for vibe operations
+ * Real-time status visualization for core operations
  */
 
 import fs from 'fs';
@@ -8,7 +8,7 @@ import path from 'path';
 import os from 'os';
 
 // State storage path
-const STATE_DIR = path.join(os.homedir(), '.claude', '.vibe-hud');
+const STATE_DIR = path.join(os.homedir(), '.claude', '.core-hud');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
 
 // Default state
@@ -268,21 +268,21 @@ export function showHudHelp(): void {
 VIBE HUD - Real-time status visualization
 
 Commands:
-  vibe hud                      Show current status (focused)
-  vibe hud show [format]        Show status (minimal|focused|full)
-  vibe hud start [mode] [name]  Start tracking (ultrawork|spec|review)
-  vibe hud phase <cur> <tot> [name]  Update phase progress
-  vibe hud agent add <name> [model]  Add agent
-  vibe hud agent remove <name>       Remove agent
-  vibe hud agent clear               Clear all agents
-  vibe hud context <used> [total]    Update context usage
-  vibe hud reset                     Reset to idle state
+  core hud                      Show current status (focused)
+  core hud show [format]        Show status (minimal|focused|full)
+  core hud start [mode] [name]  Start tracking (ultrawork|spec|review)
+  core hud phase <cur> <tot> [name]  Update phase progress
+  core hud agent add <name> [model]  Add agent
+  core hud agent remove <name>       Remove agent
+  core hud agent clear               Clear all agents
+  core hud context <used> [total]    Update context usage
+  core hud reset                     Reset to idle state
 
 Examples:
-  vibe hud show full
-  vibe hud start ultrawork "login-feature"
-  vibe hud phase 2 5 "Implementing core"
-  vibe hud agent add "explorer-1" haiku
-  vibe hud context 50000 200000
+  core hud show full
+  core hud start ultrawork "login-feature"
+  core hud phase 2 5 "Implementing core"
+  core hud agent add "explorer-1" haiku
+  core hud context 50000 200000
   `);
 }

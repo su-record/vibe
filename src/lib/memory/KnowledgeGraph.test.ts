@@ -12,7 +12,7 @@ describe('KnowledgeGraph', () => {
   let testDir: string;
 
   beforeEach(() => {
-    testDir = join(tmpdir(), `vibe-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    testDir = join(tmpdir(), `core-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     storage = new MemoryStorage(testDir);
     graph = new KnowledgeGraph(storage);
 

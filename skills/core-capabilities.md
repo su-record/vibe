@@ -1,33 +1,33 @@
 ---
-description: Vibe framework capabilities overview. Auto-activates when working on vibe projects, asking about available features, or needing workflow guidance.
+description: Core framework capabilities overview. Auto-activates when working on core projects, asking about available features, or needing workflow guidance.
 ---
-# Vibe Capabilities
+# Core Capabilities
 
-Complete guide to vibe's scenario-driven development framework.
+Complete guide to core's scenario-driven development framework.
 
 ## Core Workflow
 
 ```
-/vibe.spec → /vibe.run → /vibe.verify → /vibe.review
+/core.spec → /core.run → /core.verify → /core.review
 ```
 
 ## Slash Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/vibe.spec "feature"` | Create SPEC with PTCF structure + 8 parallel research |
-| `/vibe.spec "feature" split` | Create multiple SPECs for large scope features |
-| `/vibe.run "feature"` | Implement based on SPEC |
-| `/vibe.run "feature" ultrawork` | Maximum performance mode |
-| `/vibe.verify "feature"` | BDD scenario verification |
-| `/vibe.review` | Parallel code review (13+ agents) |
-| `/vibe.analyze` | Project analysis |
-| `/vibe.reason "problem"` | Systematic reasoning |
-| `/vibe.utils --e2e` | Playwright E2E testing |
-| `/vibe.utils --diagram` | Generate diagrams |
-| `/vibe.utils --ui "description"` | UI preview |
-| `/vibe.utils --continue` | Session restore (load previous context) |
-| `/vibe.utils --compound` | Document solutions |
+| `/core.spec "feature"` | Create SPEC with PTCF structure + 8 parallel research |
+| `/core.spec "feature" split` | Create multiple SPECs for large scope features |
+| `/core.run "feature"` | Implement based on SPEC |
+| `/core.run "feature" ultrawork` | Maximum performance mode |
+| `/core.verify "feature"` | BDD scenario verification |
+| `/core.review` | Parallel code review (13+ agents) |
+| `/core.analyze` | Project analysis |
+| `/core.reason "problem"` | Systematic reasoning |
+| `/core.utils --e2e` | Playwright E2E testing |
+| `/core.utils --diagram` | Generate diagrams |
+| `/core.utils --ui "description"` | UI preview |
+| `/core.utils --continue` | Session restore (load previous context) |
+| `/core.utils --compound` | Document solutions |
 
 ## Built-in Tools
 
@@ -66,10 +66,10 @@ node -e "import('@su-record/core/orchestrator').then(o =>
 
 ## Multi-LLM Research (v2.5.0)
 
-GPT/Gemini are automatically called within `/vibe.spec`:
+GPT/Gemini are automatically called within `/core.spec`:
 
 ```text
-/vibe.spec "feature"
+/core.spec "feature"
       ↓
 [Claude] Draft SPEC
       ↓
@@ -91,9 +91,9 @@ GPT/Gemini are automatically called within `/vibe.spec`:
 
 **Setup:**
 ```bash
-vibe gpt auth       # Enable GPT
-vibe gemini auth    # Enable Gemini
-vibe status         # Check current settings
+core gpt auth       # Enable GPT
+core gemini auth    # Enable Gemini
+core status         # Check current settings
 ```
 
 ## ULTRAWORK Mode
@@ -125,13 +125,13 @@ Add `ultrawork` or `ulw` for maximum performance:
 ├── commands/          # Slash commands
 ├── agents/            # Sub-agents
 ├── skills/            # Auto-activated guides
-└── vibe/
+└── core/
     ├── rules/         # Coding rules
     ├── languages/     # Language guides
     └── templates/     # Templates
 
-# Global (%APPDATA%/vibe/ or ~/.config/vibe/)
-vibe/
+# Global (%APPDATA%/core/ or ~/.config/core/)
+core/
 ├── hooks/scripts/     # Hook scripts (llm-orchestrate.js)
 ├── gpt.json           # GPT credentials
 └── gemini.json        # Gemini credentials
@@ -139,7 +139,7 @@ vibe/
 # Project (.claude/)
 .claude/
 ├── settings.local.json  # Hooks config (personal, gitignored)
-└── vibe/
+└── core/
     ├── specs/           # SPEC documents
     ├── features/        # BDD scenarios
     ├── config.json      # Project config
@@ -154,8 +154,8 @@ vibe/
 
 ## Without Commands
 
-Even without `/vibe.*` commands, you can:
+Even without `/core.*` commands, you can:
 
 1. Call tools directly via node commands
 2. Reference skills for guidance
-3. Apply coding rules from `~/.claude/vibe/rules/` (global)
+3. Apply coding rules from `~/.claude/core/rules/` (global)

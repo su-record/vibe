@@ -46,7 +46,7 @@ async function callGptSafe(
   jsonMode: boolean = true
 ): Promise<{ result: string; success: boolean; error?: string }> {
   try {
-    const result = await gptApi.vibeGptOrchestrate(prompt, systemPrompt, { jsonMode });
+    const result = await gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode });
     return { result, success: true };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -64,7 +64,7 @@ async function callGeminiSafe(
   jsonMode: boolean = true
 ): Promise<{ result: string; success: boolean; error?: string }> {
   try {
-    const result = await geminiApi.vibeGeminiOrchestrate(prompt, systemPrompt, { jsonMode });
+    const result = await geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode });
     return { result, success: true };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);

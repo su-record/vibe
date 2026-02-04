@@ -27,8 +27,8 @@ export class MemoryStorage {
     // Normalize path
     const resolvedPath = path.resolve(projectPath);
 
-    // Project-based memory: store in {projectPath}/.claude/vibe/memories/
-    const memoryDir = path.join(resolvedPath, '.claude', 'vibe', 'memories');
+    // Project-based memory: store in {projectPath}/.claude/core/memories/
+    const memoryDir = path.join(resolvedPath, '.claude', 'core', 'memories');
     this.dbPath = path.join(memoryDir, 'memories.db');
 
     try {

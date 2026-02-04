@@ -9,20 +9,20 @@ import os from 'os';
 import { ensureDir, copyDirRecursive, removeDirRecursive, log } from '../utils.js';
 
 /**
- * .vibe/ → .claude/vibe/ 마이그레이션
+ * .core/ → .claude/core/ 마이그레이션
  */
-export function migrateLegacyVibe(projectRoot: string, vibeDir: string): boolean {
-  const legacyVibeDir = path.join(projectRoot, '.vibe');
+export function migrateLegacyCore(projectRoot: string, coreDir: string): boolean {
+  const legacyCoreDir = path.join(projectRoot, '.core');
 
-  if (!fs.existsSync(legacyVibeDir)) return false;
+  if (!fs.existsSync(legacyCoreDir)) return false;
 
-  ensureDir(vibeDir);
+  ensureDir(coreDir);
 
   try {
     const itemsToMigrate = ['specs', 'features', 'solutions', 'todos', 'memory', 'rules', 'config.json', 'constitution.md'];
     itemsToMigrate.forEach(item => {
-      const src = path.join(legacyVibeDir, item);
-      const dst = path.join(vibeDir, item);
+      const src = path.join(legacyCoreDir, item);
+      const dst = path.join(coreDir, item);
       if (fs.existsSync(src) && !fs.existsSync(dst)) {
         if (fs.statSync(src).isDirectory()) {
           copyDirRecursive(src, dst);
@@ -31,7 +31,7 @@ export function migrateLegacyVibe(projectRoot: string, vibeDir: string): boolean
         }
       }
     });
-    removeDirRecursive(legacyVibeDir);
+    removeDirRecursive(legacyCoreDir);
     return true;
   } catch { /* ignore: optional operation */
     return false;
@@ -56,9 +56,9 @@ export function cleanupLegacy(projectRoot: string, claudeDir: string): void {
   const commandsDir = path.join(claudeDir, 'commands');
   if (fs.existsSync(commandsDir)) {
     const legacyCommands = [
-      'vibe.analyze.md', 'vibe.compound.md', 'vibe.continue.md',
-      'vibe.diagram.md', 'vibe.e2e.md', 'vibe.reason.md',
-      'vibe.setup.md', 'vibe.ui.md'
+      'core.analyze.md', 'core.compound.md', 'core.continue.md',
+      'core.diagram.md', 'core.e2e.md', 'core.reason.md',
+      'core.setup.md', 'core.ui.md'
     ];
     legacyCommands.forEach(cmd => {
       const cmdPath = path.join(commandsDir, cmd);
@@ -126,24 +126,24 @@ export function cleanupClaudeConfig(): void {
     if (claudeConfig.projects) {
       for (const [projectPath, projectConfig] of Object.entries(claudeConfig.projects) as [string, { mcpServers?: Record<string, { args?: string[] }> }][]) {
         if (projectConfig.mcpServers) {
-          if (projectConfig.mcpServers.vibe) {
-            const vibeArgs = projectConfig.mcpServers.vibe.args || [];
-            const isLocalPath = vibeArgs.some((arg: string) =>
-              arg.includes('.vibe/mcp/') || arg.includes('.vibe\\mcp\\')
+          if (projectConfig.mcpServers.core) {
+            const coreArgs = projectConfig.mcpServers.core.args || [];
+            const isLocalPath = coreArgs.some((arg: string) =>
+              arg.includes('.core/mcp/') || arg.includes('.core\\mcp\\')
             );
             if (isLocalPath) {
-              delete projectConfig.mcpServers.vibe;
+              delete projectConfig.mcpServers.core;
               configModified = true;
-              log(`   🧹 ${projectPath}: removed local vibe MCP\n`);
+              log(`   🧹 ${projectPath}: removed local core MCP\n`);
             }
           }
-          if (projectConfig.mcpServers['vibe-gemini']) {
-            const geminiArgs = projectConfig.mcpServers['vibe-gemini'].args || [];
+          if (projectConfig.mcpServers['core-gemini']) {
+            const geminiArgs = projectConfig.mcpServers['core-gemini'].args || [];
             const isLocalPath = geminiArgs.some((arg: string) =>
-              arg.includes('.vibe/') || arg.includes('.vibe\\')
+              arg.includes('.core/') || arg.includes('.core\\')
             );
             if (isLocalPath) {
-              delete projectConfig.mcpServers['vibe-gemini'];
+              delete projectConfig.mcpServers['core-gemini'];
               configModified = true;
             }
           }
@@ -164,8 +164,8 @@ export function cleanupClaudeConfig(): void {
 /**
  * 레거시 mcp/ 폴더 정리
  */
-export function cleanupLegacyMcp(vibeDir: string): void {
-  const oldMcpDir = path.join(vibeDir, 'mcp');
+export function cleanupLegacyMcp(coreDir: string): void {
+  const oldMcpDir = path.join(coreDir, 'mcp');
   if (fs.existsSync(oldMcpDir)) {
     try {
       removeDirRecursive(oldMcpDir);

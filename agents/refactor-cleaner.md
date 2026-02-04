@@ -64,7 +64,7 @@ Task(model: "sonnet", prompt: "Find and remove dead code, maintain DELETION_LOG"
 
 ## DELETION_LOG Format
 
-Create/update `.claude/vibe/DELETION_LOG.md`:
+Create/update `.claude/core/DELETION_LOG.md`:
 
 ```markdown
 # Deletion Log
@@ -112,7 +112,7 @@ Create/update `.claude/vibe/DELETION_LOG.md`:
 
 ### DELETION_LOG Updated
 - Added 18 entries
-- Location: .claude/vibe/DELETION_LOG.md
+- Location: .claude/core/DELETION_LOG.md
 ```
 
 ## Anti-Patterns
@@ -137,7 +137,7 @@ export function sharedHelper() { ... }
 
 ## Rules Reference
 
-Must follow `~/.claude/vibe/rules/`:
+Must follow `~/.claude/core/rules/`:
 
 - `core/development-philosophy.md` - Surgical precision
 - `quality/checklist.md` - Verification requirements

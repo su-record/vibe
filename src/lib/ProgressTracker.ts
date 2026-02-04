@@ -50,7 +50,7 @@ const DEFAULT_PROGRESS: ProgressState = {
  * Get progress file path for a project
  */
 export function getProgressPath(projectRoot: string): string {
-  return path.join(projectRoot, '.claude', 'vibe', 'progress.json');
+  return path.join(projectRoot, '.claude', 'core', 'progress.json');
 }
 
 /**
@@ -74,10 +74,10 @@ export function loadProgress(projectRoot: string): ProgressState | null {
  */
 export function saveProgress(projectRoot: string, progress: ProgressState): void {
   const progressPath = getProgressPath(projectRoot);
-  const vibeDir = path.dirname(progressPath);
+  const coreDir = path.dirname(progressPath);
 
-  if (!fs.existsSync(vibeDir)) {
-    fs.mkdirSync(vibeDir, { recursive: true });
+  if (!fs.existsSync(coreDir)) {
+    fs.mkdirSync(coreDir, { recursive: true });
   }
 
   progress.lastUpdated = new Date().toISOString();
@@ -275,7 +275,7 @@ export function writeProgressText(projectRoot: string): void {
   const progress = loadProgress(projectRoot);
   if (!progress) return;
 
-  const progressTextPath = path.join(projectRoot, '.claude', 'vibe', 'claude-progress.txt');
+  const progressTextPath = path.join(projectRoot, '.claude', 'core', 'claude-progress.txt');
   const lines: string[] = [];
 
   lines.push(`# Progress: ${progress.feature}`);
@@ -324,9 +324,9 @@ export function writeProgressText(projectRoot: string): void {
     lines.push(`## Last Commit: ${progress.lastCommit}`);
   }
 
-  const vibeDir = path.dirname(progressTextPath);
-  if (!fs.existsSync(vibeDir)) {
-    fs.mkdirSync(vibeDir, { recursive: true });
+  const coreDir = path.dirname(progressTextPath);
+  if (!fs.existsSync(coreDir)) {
+    fs.mkdirSync(coreDir, { recursive: true });
   }
   fs.writeFileSync(progressTextPath, lines.join('\n') + '\n');
 }

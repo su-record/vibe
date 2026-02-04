@@ -23,8 +23,8 @@ interface AuthInfo {
 // 전역 설정 디렉토리 경로
 function getGlobalConfigDir(): string {
   return process.platform === 'win32'
-    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
-    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
 }
 
 // API Key 가져오기 (전역 저장소)
@@ -46,7 +46,7 @@ function getApiKeyFromConfig(): string | null {
 // OAuth 토큰 없을 때 config에서 email 제거
 function removeEmailFromConfigIfNoToken(): void {
   try {
-    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+    const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       if (config.models?.gpt?.email) {
@@ -76,7 +76,7 @@ async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  throw new Error('GPT credentials not found. Run vibe gpt auth (OAuth) or vibe gpt key <key> (API Key) to configure.');
+  throw new Error('GPT credentials not found. Run core gpt auth (OAuth) or core gpt key <key> (API Key) to configure.');
 }
 
 // Types
@@ -642,11 +642,11 @@ export async function debugCode(prompt: string): Promise<string> {
 
 
 // ============================================
-// Vibe GPT Orchestration Functions
+// Core GPT Orchestration Functions
 // ============================================
 
 /**
- * Vibe GPT 오케스트레이션 옵션
+ * Core GPT 오케스트레이션 옵션
  */
 interface VibeGptOptions {
   maxTokens?: number;
@@ -654,12 +654,12 @@ interface VibeGptOptions {
 }
 
 /**
- * Vibe GPT 오케스트레이션 (검색 없음, JSON 모드)
+ * Core GPT 오케스트레이션 (검색 없음, JSON 모드)
  * - 검색 제외로 빠른 응답
  * - temperature=0 으로 결정론적 결과
  * - JSON 출력 강제 가능
  */
-export async function vibeGptOrchestrate(
+export async function coreGptOrchestrate(
   prompt: string,
   systemPrompt: string,
   options: VibeGptOptions = {}
@@ -679,29 +679,29 @@ export async function vibeGptOrchestrate(
 }
 
 /**
- * Vibe Spec 파싱 (Vibe Spec → 실행 계획)
+ * Core Spec 파싱 (Core Spec → 실행 계획)
  */
-export async function vibeGptParseSpec(spec: string): Promise<string> {
-  return vibeGptOrchestrate(spec, `You are a Vibe Spec parser. Parse the given specification and output a structured execution plan.
+export async function coreGptParseSpec(spec: string): Promise<string> {
+  return coreGptOrchestrate(spec, `You are a Core Spec parser. Parse the given specification and output a structured execution plan.
 Output format: { "phases": [...], "files": [...], "dependencies": [...] }`);
 }
 
 /**
- * Vibe 실행 계획 수립 (Task → Steps)
+ * Core 실행 계획 수립 (Task → Steps)
  */
-export async function vibeGptPlanExecution(task: string, context: string): Promise<string> {
-  return vibeGptOrchestrate(
+export async function coreGptPlanExecution(task: string, context: string): Promise<string> {
+  return coreGptOrchestrate(
     `Task: ${task}\n\nContext:\n${context}`,
-    `You are a Vibe execution planner. Given a task and context, create a step-by-step execution plan.
+    `You are a Core execution planner. Given a task and context, create a step-by-step execution plan.
 Output format: { "steps": [{ "id": 1, "action": "...", "target": "...", "expected": "..." }], "estimatedComplexity": "low|medium|high" }`
   );
 }
 
 /**
- * Vibe 코드 분석 (빠른 구조 분석)
+ * Core 코드 분석 (빠른 구조 분석)
  */
-export async function vibeGptAnalyze(code: string, question: string): Promise<string> {
-  return vibeGptOrchestrate(
+export async function coreGptAnalyze(code: string, question: string): Promise<string> {
+  return coreGptOrchestrate(
     `Code:\n\`\`\`\n${code}\n\`\`\`\n\nQuestion: ${question}`,
     `You are a code analyzer. Answer the question about the given code concisely.
 Output format: { "answer": "...", "confidence": 0.0-1.0, "relatedSymbols": [...] }`
@@ -709,14 +709,14 @@ Output format: { "answer": "...", "confidence": 0.0-1.0, "relatedSymbols": [...]
 }
 
 /**
- * Vibe 다음 액션 결정 (상태 기반)
+ * Core 다음 액션 결정 (상태 기반)
  */
-export async function vibeGptDecideNextAction(
+export async function coreGptDecideNextAction(
   currentState: string,
   availableActions: string[],
   goal: string
 ): Promise<string> {
-  return vibeGptOrchestrate(
+  return coreGptOrchestrate(
     `Current State:\n${currentState}\n\nAvailable Actions:\n${availableActions.join('\n')}\n\nGoal: ${goal}`,
     `You are an action decider. Based on the current state and goal, select the best next action.
 Output format: { "selectedAction": "...", "reason": "...", "parameters": {} }`

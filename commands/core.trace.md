@@ -1,13 +1,13 @@
-# /vibe.trace
+# /core.trace
 
 Generate and display Requirements Traceability Matrix (RTM).
 
 ## Usage
 
 ```bash
-/vibe.trace "feature-name"              # Generate RTM for feature
-/vibe.trace "feature-name" --html       # Output as HTML
-/vibe.trace "feature-name" --save       # Save to file
+/core.trace "feature-name"              # Generate RTM for feature
+/core.trace "feature-name" --html       # Output as HTML
+/core.trace "feature-name" --save       # Save to file
 ```
 
 ## Description
@@ -23,8 +23,8 @@ Requirements Traceability Matrix (RTM) tracks the relationship between:
 ### 1. Load Files
 
 ```
-📄 .claude/vibe/specs/{feature-name}.md      → SPEC
-📄 .claude/vibe/features/{feature-name}.feature → Feature
+📄 .claude/core/specs/{feature-name}.md      → SPEC
+📄 .claude/core/features/{feature-name}.feature → Feature
 📄 src/**/*.test.ts                           → Tests (auto-detect)
 ```
 
@@ -91,14 +91,14 @@ The following requirements lack full coverage:
 ## Example
 
 ```
-User: /vibe.trace "login"
+User: /core.trace "login"
 
 Claude:
 📊 Generating RTM for "login"...
 
 Loading files:
-  ✅ SPEC: .claude/vibe/specs/login.md (5 requirements)
-  ✅ Feature: .claude/vibe/features/login.feature (4 scenarios)
+  ✅ SPEC: .claude/core/specs/login.md (5 requirements)
+  ✅ Feature: .claude/core/features/login.feature (4 scenarios)
   ✅ Tests: 3 test files found
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -129,7 +129,7 @@ Loading files:
 
 ## Tool Integration
 
-The RTM generation uses vibe tools:
+The RTM generation uses core tools:
 
 ```bash
 # Generate RTM
@@ -144,7 +144,7 @@ node -e "import('@su-record/core/tools').then(t => t.generateTraceabilityMatrix(
 | Option | Description |
 |--------|-------------|
 | `--html` | Output as HTML file |
-| `--save` | Save to `.claude/vibe/reports/{feature}-rtm.md` |
+| `--save` | Save to `.claude/core/reports/{feature}-rtm.md` |
 | `--json` | Output as JSON |
 
 ## Coverage Targets

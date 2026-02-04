@@ -275,8 +275,8 @@ export function generateE2ETests(
 ): E2EGenerationResult {
   const {
     projectPath = process.cwd(),
-    specPath = `.claude/vibe/specs/${featureName}.md`,
-    featurePath = `.claude/vibe/features/${featureName}.feature`,
+    specPath = `.claude/core/specs/${featureName}.md`,
+    featurePath = `.claude/core/features/${featureName}.feature`,
     outputDir = `tests/e2e/${featureName}`,
   } = options;
 
@@ -292,7 +292,7 @@ export function generateE2ETests(
   if (!featureContent) {
     const splitPath = path.join(
       projectPath,
-      `.claude/vibe/features/${featureName}/_index.feature`
+      `.claude/core/features/${featureName}/_index.feature`
     );
     featureContent = readFileSafe(splitPath);
     if (featureContent) featureFullPath = splitPath;

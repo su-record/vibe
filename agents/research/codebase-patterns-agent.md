@@ -21,11 +21,11 @@
 - ❌ DO NOT create any files in project root
 - ❌ DO NOT create PATTERNS_*.md or ANALYSIS_*.md files
 - ✅ ONLY return research results as text output
-- ✅ Results will be merged into SPEC by vibe.spec command
+- ✅ Results will be merged into SPEC by core.spec command
 
 ## Usage
 
-Automatically called in parallel when `/vibe.spec` is executed
+Automatically called in parallel when `/core.spec` is executed
 
 ```
 Task(
@@ -142,10 +142,10 @@ Based on existing patterns:
 4. Reuse `src/utils/api_response.py`
 ```
 
-## Integration with /vibe.spec
+## Integration with /core.spec
 
 ```
-/vibe.spec "payment feature"
+/core.spec "payment feature"
 
 → codebase-patterns-agent execution:
   "Find similar payment/transaction code. Extract patterns."

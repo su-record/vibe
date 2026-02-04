@@ -18,14 +18,14 @@ const __dirname = path.dirname(__filename);
  */
 export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
   gpt: {
-    name: 'vibe-gpt',
+    name: 'core-gpt',
     role: 'architecture',
     description: 'Architecture/Debugging (GPT 5.2)',
     package: '@anthropics/openai-mcp',
     envKey: 'OPENAI_API_KEY'
   },
   gemini: {
-    name: 'vibe-gemini',
+    name: 'core-gemini',
     role: 'ui-ux',
     description: 'UI/UX Design (Gemini 3)',
     package: '@anthropics/gemini-mcp',
@@ -38,8 +38,8 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
  */
 function getGlobalConfigDir(): string {
   return process.platform === 'win32'
-    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
-    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
 }
 
 /**
@@ -51,7 +51,7 @@ export function setupExternalLLM(llmType: string, apiKey: string): void {
 ❌ API key required.
 
 Usage:
-  vibe ${llmType} key <api-key>
+  core ${llmType} key <api-key>
 
 ${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : 'Google API key: https://aistudio.google.com/apikey'}
     `);
@@ -77,8 +77,8 @@ ${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : '
 
   // 프로젝트 config.json도 업데이트 (선택적)
   const projectRoot = process.cwd();
-  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
-  const configPath = path.join(vibeDir, 'config.json');
+  const coreDir = path.join(projectRoot, '.claude', 'core');
+  const configPath = path.join(coreDir, 'config.json');
 
   if (fs.existsSync(configPath)) {
     try {
@@ -104,7 +104,7 @@ ${llmType.toUpperCase()} is called directly via Hooks:
   - Auto-called with "${llmType}. query" prefix
   - Direct use: import('@su-record/core/lib/${llmType}')
 
-Disable: vibe ${llmType} remove
+Disable: core ${llmType} remove
   `);
 }
 
@@ -131,8 +131,8 @@ export function removeExternalLLM(llmType: string): void {
 
   // 3. 프로젝트 config.json 비활성화 (선택적)
   const projectRoot = process.cwd();
-  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
-  const configPath = path.join(vibeDir, 'config.json');
+  const coreDir = path.join(projectRoot, '.claude', 'core');
+  const configPath = path.join(coreDir, 'config.json');
 
   if (fs.existsSync(configPath)) {
     try {
@@ -192,14 +192,14 @@ Account ID: ${tokens.accountId || '(auto-detected)'}
 
 ⚠️  Note: ChatGPT Plus/Pro subscription required for API calls.
 
-Status: vibe gpt status
-Logout: vibe gpt logout
+Status: core gpt status
+Logout: core gpt logout
     `);
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
-    const configPath = path.join(vibeDir, 'config.json');
+    const coreDir = path.join(projectRoot, '.claude', 'core');
+    const configPath = path.join(coreDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
       try {
@@ -233,7 +233,7 @@ GPT is called via Hooks:
 
 Error: ${message}
 
-Retry: vibe gpt auth
+Retry: core gpt auth
     `);
     process.exit(1);
   }
@@ -255,7 +255,7 @@ export function gptStatus(): void {
 
 No authenticated account
 
-Login: vibe gpt auth
+Login: core gpt auth
       `);
       return;
     }
@@ -276,7 +276,7 @@ ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAcc
 
 ⚠️  Note: ChatGPT Plus/Pro subscription required.
 
-Logout: vibe gpt logout
+Logout: core gpt logout
     `);
 
   } catch (error: unknown) {
@@ -307,13 +307,13 @@ export function gptLogout(): void {
 
 Account ${activeAccount.email} removed.
 
-Login again: vibe gpt auth
+Login again: core gpt auth
     `);
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
-    const configPath = path.join(vibeDir, 'config.json');
+    const coreDir = path.join(projectRoot, '.claude', 'core');
+    const configPath = path.join(coreDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
       try {
@@ -375,14 +375,14 @@ Available models:
   - Gemini 3 Flash (fast, exploration/search)
   - Gemini 3 Pro (high accuracy)
 
-Status: vibe gemini status
-Logout: vibe gemini logout
+Status: core gemini status
+Logout: core gemini logout
     `);
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
-    const configPath = path.join(vibeDir, 'config.json');
+    const coreDir = path.join(projectRoot, '.claude', 'core');
+    const configPath = path.join(coreDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
       try {
@@ -416,7 +416,7 @@ Gemini is called via Hooks:
 
 Error: ${message}
 
-Retry: vibe gemini auth
+Retry: core gemini auth
     `);
     process.exit(1);
   }
@@ -441,7 +441,7 @@ export function geminiStatus(): void {
 
 No authenticated account
 
-Login: vibe gemini auth
+Login: core gemini auth
       `);
       return;
     }
@@ -463,7 +463,7 @@ ${accounts.map((acc: { email: string }, i: number) => `  ${i === storage.loadAcc
 Available models:
 ${Object.entries(GEMINI_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
 
-Logout: vibe gemini logout
+Logout: core gemini logout
     `);
 
   } catch (error: unknown) {
@@ -494,13 +494,13 @@ export function geminiLogout(): void {
 
 Account ${activeAccount.email} removed.
 
-Login again: vibe gemini auth
+Login again: core gemini auth
     `);
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
-    const configPath = path.join(vibeDir, 'config.json');
+    const coreDir = path.join(projectRoot, '.claude', 'core');
+    const configPath = path.join(coreDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
       try {
@@ -532,17 +532,17 @@ export function showAuthHelp(): void {
 🔐 LLM Authentication
 
 GPT Commands:
-  vibe gpt auth           OAuth (Plus/Pro subscription)
-  vibe gpt key <KEY>      API key
+  core gpt auth           OAuth (Plus/Pro subscription)
+  core gpt key <KEY>      API key
 
 Gemini Commands:
-  vibe gemini auth        OAuth (free with Advanced)
-  vibe gemini key <KEY>   API key
+  core gemini auth        OAuth (free with Advanced)
+  core gemini key <KEY>   API key
 
 Examples:
-  vibe gpt auth           OpenAI login
-  vibe gemini auth        Google login
-  vibe gpt key sk-xxx     API key setup
+  core gpt auth           OpenAI login
+  core gemini auth        Google login
+  core gpt key sk-xxx     API key setup
   `);
 }
 
@@ -554,7 +554,7 @@ export function showLogoutHelp(): void {
 🚪 LLM Logout
 
 Usage:
-  vibe gpt logout       GPT logout
-  vibe gemini logout    Gemini logout
+  core gpt logout       GPT logout
+  core gemini logout    Gemini logout
   `);
 }

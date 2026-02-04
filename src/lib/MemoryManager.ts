@@ -59,9 +59,9 @@ export class MemoryManager {
     // Normalize path
     resolvedPath = path.resolve(resolvedPath);
 
-    // Skip memory creation for vibe package itself
-    if (this.isVibePackage(resolvedPath)) {
-      throw new Error('Memory storage disabled for vibe package development folder.');
+    // Skip memory creation for core package itself
+    if (this.isCorePackage(resolvedPath)) {
+      throw new Error('Memory storage disabled for core package development folder.');
     }
 
     // Initialize modules
@@ -74,9 +74,9 @@ export class MemoryManager {
   }
 
   /**
-   * Check if the given path is the vibe package itself
+   * Check if the given path is the core package itself
    */
-  private isVibePackage(projectPath: string): boolean {
+  private isCorePackage(projectPath: string): boolean {
     try {
       const packageJsonPath = path.join(projectPath, 'package.json');
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));

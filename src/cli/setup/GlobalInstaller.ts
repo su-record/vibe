@@ -14,29 +14,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * 전역 vibe 패키지 설치 경로:
- * - Windows: %APPDATA%\vibe\ (예: C:\Users\xxx\AppData\Roaming\vibe\)
- * - macOS/Linux: ~/.config/vibe/
+ * 전역 core 패키지 설치 경로:
+ * - Windows: %APPDATA%\core\ (예: C:\Users\xxx\AppData\Roaming\core\)
+ * - macOS/Linux: ~/.config/core/
  */
-export function getVibeConfigDir(): string {
+export function getCoreConfigDir(): string {
   if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe');
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core');
   }
-  return path.join(os.homedir(), '.config', 'vibe');
+  return path.join(os.homedir(), '.config', 'core');
 }
 
 /**
- * 전역 vibe 패키지 설치
+ * 전역 core 패키지 설치
  */
-export function installGlobalVibePackage(isUpdate = false): void {
-  const globalVibeDir = getVibeConfigDir();
-  const nodeModulesDir = path.join(globalVibeDir, 'node_modules');
-  const vibePackageDir = path.join(nodeModulesDir, '@su-record', 'vibe');
+export function installGlobalCorePackage(isUpdate = false): void {
+  const globalCoreDir = getCoreConfigDir();
+  const nodeModulesDir = path.join(globalCoreDir, 'node_modules');
+  const corePackageDir = path.join(nodeModulesDir, '@su-record', 'core');
   const packageJson = getPackageJson();
   const currentVersion = packageJson.version;
 
   // 이미 설치되어 있는지 확인
-  const installedPackageJson = path.join(vibePackageDir, 'package.json');
+  const installedPackageJson = path.join(corePackageDir, 'package.json');
   if (fs.existsSync(installedPackageJson)) {
     try {
       const installed = JSON.parse(fs.readFileSync(installedPackageJson, 'utf-8'));
@@ -47,24 +47,24 @@ export function installGlobalVibePackage(isUpdate = false): void {
   }
 
   // 디렉토리 생성
-  ensureDir(globalVibeDir);
+  ensureDir(globalCoreDir);
   ensureDir(nodeModulesDir);
   ensureDir(path.join(nodeModulesDir, '@su-record'));
 
   // 기존 설치 제거
-  if (fs.existsSync(vibePackageDir)) {
-    removeDirRecursive(vibePackageDir);
+  if (fs.existsSync(corePackageDir)) {
+    removeDirRecursive(corePackageDir);
   }
 
   // 1. 패키지 복사 시도 (실패해도 훅은 복사)
   try {
     const globalNpmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
-    const globalNpmVibeDir = path.join(globalNpmRoot, '@su-record', 'vibe');
+    const globalNpmCoreDir = path.join(globalNpmRoot, '@su-record', 'core');
 
-    if (fs.existsSync(globalNpmVibeDir)) {
-      copyDirRecursive(globalNpmVibeDir, vibePackageDir);
+    if (fs.existsSync(globalNpmCoreDir)) {
+      copyDirRecursive(globalNpmCoreDir, corePackageDir);
     } else {
-      execSync(`npm install @su-record/core@${currentVersion} --prefix "${globalVibeDir}" --no-save`, {
+      execSync(`npm install @su-record/core@${currentVersion} --prefix "${globalCoreDir}" --no-save`, {
         stdio: 'pipe',
       });
     }
@@ -74,22 +74,22 @@ export function installGlobalVibePackage(isUpdate = false): void {
   }
 
   // 2. 훅 스크립트 복사 (패키지 복사 실패해도 실행)
-  copyHookScripts(vibePackageDir, globalVibeDir);
+  copyHookScripts(corePackageDir, globalCoreDir);
 }
 
 /**
  * 훅 스크립트 복사
  */
-function copyHookScripts(vibePackageDir: string, globalVibeDir: string): void {
+function copyHookScripts(corePackageDir: string, globalCoreDir: string): void {
   try {
     const packageRoot = path.resolve(__dirname, '..', '..', '..');
-    const installedHooksSource = path.join(vibePackageDir, 'hooks', 'scripts');
+    const installedHooksSource = path.join(corePackageDir, 'hooks', 'scripts');
     const localHooksSource = path.join(packageRoot, 'hooks', 'scripts');
     const hooksScriptsSource = fs.existsSync(installedHooksSource) ? installedHooksSource : localHooksSource;
-    const hooksScriptsTarget = path.join(globalVibeDir, 'hooks', 'scripts');
+    const hooksScriptsTarget = path.join(globalCoreDir, 'hooks', 'scripts');
 
     if (fs.existsSync(hooksScriptsSource)) {
-      ensureDir(path.join(globalVibeDir, 'hooks'));
+      ensureDir(path.join(globalCoreDir, 'hooks'));
       if (fs.existsSync(hooksScriptsTarget)) {
         removeDirRecursive(hooksScriptsTarget);
       }
@@ -135,15 +135,15 @@ export function installGlobalAssets(isUpdate = false): void {
 
 /**
  * MCP 서버 정리 (no-op)
- * vibe는 더 이상 MCP를 사용하지 않음
+ * core는 더 이상 MCP를 사용하지 않음
  */
 export function registerMcpServers(_isUpdate = false): void {
-  // no-op: vibe는 MCP를 사용하지 않음
+  // no-op: core는 MCP를 사용하지 않음
 }
 
 /**
  * 전역 ~/.claude/settings.json에서 hooks 정리
- * vibe는 이제 프로젝트 레벨 (.claude/settings.local.json)에서 훅을 관리하므로
+ * core는 이제 프로젝트 레벨 (.claude/settings.local.json)에서 훅을 관리하므로
  * 전역 설정의 hooks는 제거해야 함 (레거시 정리)
  */
 export function cleanupGlobalSettingsHooks(): void {

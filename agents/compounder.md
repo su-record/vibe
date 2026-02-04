@@ -3,7 +3,7 @@ description: Auto-document solutions for knowledge compounding
 argument-hint: "solution description (optional)"
 ---
 
-# /vibe.compound
+# /core.compound
 
 **Knowledge Compounding** - Auto-document solved problems to boost future productivity
 
@@ -12,8 +12,8 @@ argument-hint: "solution description (optional)"
 ## Usage
 
 ```
-/vibe.compound                           # Auto-detect recent solutions
-/vibe.compound "Redis cache invalidation" # Document specific solution
+/core.compound                           # Auto-detect recent solutions
+/core.compound "Redis cache invalidation" # Document specific solution
 ```
 
 ## Auto-Triggers
@@ -21,7 +21,7 @@ argument-hint: "solution description (optional)"
 Automatically suggested when these patterns detected:
 - "it's fixed", "fixed", "solved", "resolved"
 - After PR merge
-- After `/vibe.verify` passes
+- After `/core.verify` passes
 
 ## Process
 
@@ -75,7 +75,7 @@ Parallel agents analyze the solution:
 ### Phase 2: Category Classification
 
 ```
-.claude/vibe/solutions/
+.claude/core/solutions/
 ├── security/           # Security related
 │   ├── sql-injection-prevention.md
 │   └── xss-sanitization.md
@@ -161,7 +161,7 @@ cache_key = f"user:{user_id}:v{updated_at.timestamp()}"
 
 ### Phase 4: Index Update
 
-Auto-update `.claude/vibe/solutions/index.md`:
+Auto-update `.claude/core/solutions/index.md`:
 
 ```markdown
 # Solution Index
@@ -196,7 +196,7 @@ When similar problem detected:
 │  You're working on: "Cache not updating"                        │
 │                                                                 │
 │  Related solution (85% match):                                  │
-│  📄 .claude/vibe/solutions/performance/redis-cache-invalidation.md     │
+│  📄 .claude/core/solutions/performance/redis-cache-invalidation.md     │
 │                                                                 │
 │  Key insight: Add version suffix to cache key                   │
 │                                                                 │
@@ -212,7 +212,7 @@ When similar problem detected:
 │  📚 SOLUTION DOCUMENTED                                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ✅ Created: .claude/vibe/solutions/performance/redis-cache-invalid... │
+│  ✅ Created: .claude/core/solutions/performance/redis-cache-invalid... │
 │                                                                 │
 │  📊 Knowledge Base Stats:                                        │
 │  ├── Total Solutions: 42                                        │
@@ -222,7 +222,7 @@ When similar problem detected:
 │  🔗 Similar solutions linked: 2                                  │
 │  🏷️ Tags: #redis #cache #invalidation #performance              │
 │                                                                 │
-│  💡 Prevention rules added to ~/.claude/vibe/rules/                     │
+│  💡 Prevention rules added to ~/.claude/core/rules/                     │
 │                                                                 │
 │  "This solution will help future you (or teammates) save hours" │
 │                                                                 │
@@ -231,7 +231,7 @@ When similar problem detected:
 
 ## Integration with Memory
 
-Auto-invoke `vibe_save_memory`:
+Auto-invoke `core_save_memory`:
 
 ```json
 {
@@ -239,17 +239,17 @@ Auto-invoke `vibe_save_memory`:
   "category": "performance",
   "title": "Redis cache invalidation",
   "keywords": ["redis", "cache", "invalidation"],
-  "file": ".claude/vibe/solutions/performance/redis-cache-invalidation.md"
+  "file": ".claude/core/solutions/performance/redis-cache-invalidation.md"
 }
 ```
 
 ## Workflow Integration
 
 ```
-/vibe.spec → /vibe.run → /vibe.verify → /vibe.compound
+/core.spec → /core.run → /core.verify → /core.compound
                                               │
                                               ▼
-                                    .claude/vibe/solutions/
+                                    .claude/core/solutions/
                                               │
                                               ▼
                                     Future problem?

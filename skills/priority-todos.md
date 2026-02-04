@@ -42,7 +42,7 @@ Classify tasks by P1/P2/P3 priority to handle important items first
 ### Directory Structure
 
 ```
-.claude/vibe/todos/
+.claude/core/todos/
 ├── P1-security-sql-injection.md
 ├── P1-data-transaction-missing.md
 ├── P2-perf-n1-query.md
@@ -100,7 +100,7 @@ def get_user_by_email(email: str):
 ## Metadata
 - Created: 2026-01-11
 - Author: Claude
-- Review: /vibe.review PR#123
+- Review: /core.review PR#123
 ```
 
 ### Index File
@@ -147,34 +147,34 @@ Last updated: 2026-01-11 10:30
 ### Create Todo
 
 ```bash
-# Auto-generated from /vibe.review results
-/vibe.review PR#123
-# -> Creates files in .claude/vibe/todos/
+# Auto-generated from /core.review results
+/core.review PR#123
+# -> Creates files in .claude/core/todos/
 
 # Manual creation
-vibe todo add "SQL Injection in users.py" --priority P1 --category security
+core todo add "SQL Injection in users.py" --priority P1 --category security
 ```
 
 ### List Todos
 
 ```bash
 # Full list
-vibe todo list
+core todo list
 
 # By priority
-vibe todo list --priority P1
-vibe todo list --priority P2
+core todo list --priority P1
+core todo list --priority P2
 
 # By category
-vibe todo list --category security
-vibe todo list --category performance
+core todo list --category security
+core todo list --category performance
 ```
 
 ### Complete Todo
 
 ```bash
 # Mark as complete
-vibe todo done P1-security-sql-injection
+core todo done P1-security-sql-injection
 
 # Updates checklist in file + updates index
 ```
@@ -183,11 +183,11 @@ vibe todo done P1-security-sql-injection
 
 ```bash
 # Archive completed items
-vibe todo archive
+core todo archive
 
 # Result:
-# .claude/vibe/todos/P1-security-sql-injection.md
-# -> .claude/vibe/todos/done/2026-01-11-P1-security-sql-injection.md
+# .claude/core/todos/P1-security-sql-injection.md
+# -> .claude/core/todos/done/2026-01-11-P1-security-sql-injection.md
 ```
 
 ## Integration with TodoWrite
@@ -218,7 +218,7 @@ TodoWrite({
 ## Auto-Blocking Rules
 
 ```yaml
-# .claude/vibe/config.yaml
+# .claude/core/config.yaml
 merge_blocking:
   P1: true   # Block merge if P1 exists
   P2: false  # Warning only

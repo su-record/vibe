@@ -1,7 +1,7 @@
 /**
  * AskUserQuestion Tool - 구조화된 사용자 질문 도구
  *
- * Claude Code의 AskUserQuestionTool 개념을 vibe에 통합
+ * Claude Code의 AskUserQuestionTool 개념을 core에 통합
  * 필수 확인 항목에 대해 명시적인 질문-응답 플로우 제공
  *
  * @since v2.6.1

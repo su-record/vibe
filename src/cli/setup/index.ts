@@ -17,8 +17,8 @@ export {
 
 // GlobalInstaller
 export {
-  getVibeConfigDir,
-  installGlobalVibePackage,
+  getCoreConfigDir,
+  installGlobalCorePackage,
   installGlobalAssets,
   registerMcpServers
 } from './GlobalInstaller.js';
@@ -35,7 +35,7 @@ export {
 
 // LegacyMigration
 export {
-  migrateLegacyVibe,
+  migrateLegacyCore,
   cleanupLegacy,
   removeLocalAssets,
   cleanupClaudeConfig,

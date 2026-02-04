@@ -12,11 +12,11 @@ import path from 'path';
 
 export const startSessionDefinition: ToolDefinition = {
   name: 'start_session',
-  description: 'vibe|hello|hi|start - Start session with context',
+  description: 'core|hello|hi|start - Start session with context',
   inputSchema: {
     type: 'object',
     properties: {
-      greeting: { type: 'string', description: 'Greeting message that triggered this action (e.g., "hello", "vibe")' },
+      greeting: { type: 'string', description: 'Greeting message that triggered this action (e.g., "hello", "core")' },
       loadMemory: { type: 'boolean', description: 'Load relevant project memories (default: true)' },
       restoreContext: { type: 'boolean', description: 'Restore previous session context (default: true)' },
       projectPath: { type: 'string', description: 'Project directory path for project-specific memory' }

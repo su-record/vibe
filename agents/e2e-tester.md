@@ -3,18 +3,18 @@ description: End-to-end testing with Playwright automation
 argument-hint: "test scenario or URL"
 ---
 
-# /vibe.e2e
+# /core.e2e
 
 **E2E Test Automation** - Playwright-based browser testing
 
 ## Usage
 
 ```
-/vibe.e2e                              # Run all E2E tests
-/vibe.e2e "login flow"                 # Test specific scenario
-/vibe.e2e http://localhost:3000/login  # Test specific URL
-/vibe.e2e --visual                     # Visual regression testing
-/vibe.e2e --record                     # Record test video
+/core.e2e                              # Run all E2E tests
+/core.e2e "login flow"                 # Test specific scenario
+/core.e2e http://localhost:3000/login  # Test specific URL
+/core.e2e --visual                     # Visual regression testing
+/core.e2e --record                     # Record test video
 ```
 
 ## Core Features
@@ -50,8 +50,8 @@ npx playwright install chromium
 
 ```
 📋 Scenario Detection
-├── .claude/vibe/features/{feature}.feature → Extract BDD scenarios
-├── .claude/vibe/specs/{feature}.md → Check acceptance criteria
+├── .claude/core/features/{feature}.feature → Extract BDD scenarios
+├── .claude/core/specs/{feature}.md → Check acceptance criteria
 └── Analyze existing e2e/*.spec.ts
 ```
 
@@ -114,15 +114,15 @@ test.beforeEach(async ({ page }) => {
 │  Comparing screenshots:                                          │
 │                                                                 │
 │  ├── login-page.png                                             │
-│  │   ├── Baseline: .claude/vibe/e2e/baseline/login-page.png           │
-│  │   ├── Current:  .claude/vibe/e2e/current/login-page.png            │
+│  │   ├── Baseline: .claude/core/e2e/baseline/login-page.png           │
+│  │   ├── Current:  .claude/core/e2e/current/login-page.png            │
 │  │   └── Diff: ✅ 0.02% (threshold: 1%)                         │
 │  │                                                              │
 │  ├── dashboard.png                                              │
-│  │   ├── Baseline: .claude/vibe/e2e/baseline/dashboard.png            │
-│  │   ├── Current:  .claude/vibe/e2e/current/dashboard.png             │
+│  │   ├── Baseline: .claude/core/e2e/baseline/dashboard.png            │
+│  │   ├── Current:  .claude/core/e2e/current/dashboard.png             │
 │  │   └── Diff: ❌ 5.3% (threshold: 1%)                          │
-│  │       └── .claude/vibe/e2e/diff/dashboard-diff.png                 │
+│  │       └── .claude/core/e2e/diff/dashboard-diff.png                 │
 │  │                                                              │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -147,7 +147,7 @@ test('accessibility check', async ({ page }) => {
 Link with bug reports:
 
 ```
-/vibe.e2e --reproduce "User sees blank page after login"
+/core.e2e --reproduce "User sees blank page after login"
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  🐛 Bug Reproduction Mode                                        │
@@ -195,7 +195,7 @@ Link with bug reports:
 │  ❌ "should show error for invalid password"                    │
 │     Expected: "Invalid password" message                        │
 │     Actual: No error message displayed                          │
-│     📸 Screenshot: .claude/vibe/e2e/failures/invalid-password.png      │
+│     📸 Screenshot: .claude/core/e2e/failures/invalid-password.png      │
 │                                                                 │
 │  Console Errors: 2                                               │
 │  ├── TypeError at Dashboard.tsx:42                              │
@@ -207,16 +207,16 @@ Link with bug reports:
 │  └── [minor] Missing skip link                                  │
 │                                                                 │
 │  Artifacts:                                                      │
-│  ├── 📸 Screenshots: .claude/vibe/e2e/screenshots/                     │
-│  ├── 🎥 Video: .claude/vibe/e2e/videos/                                │
-│  └── 📋 Report: .claude/vibe/e2e/report.html                           │
+│  ├── 📸 Screenshots: .claude/core/e2e/screenshots/                     │
+│  ├── 🎥 Video: .claude/core/e2e/videos/                                │
+│  └── 📋 Report: .claude/core/e2e/report.html                           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Configuration
 
-`.claude/vibe/e2e/config.json`:
+`.claude/core/e2e/config.json`:
 
 ```json
 {
@@ -239,7 +239,7 @@ Link with bug reports:
 
 ## Integration with Review
 
-Auto-suggest after `/vibe.review`:
+Auto-suggest after `/core.review`:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -250,16 +250,16 @@ Auto-suggest after `/vibe.review`:
 │  - src/components/LoginForm.tsx                                 │
 │  - src/pages/Dashboard.tsx                                      │
 │                                                                 │
-│  Run E2E tests? /vibe.e2e "login flow"                          │
+│  Run E2E tests? /core.e2e "login flow"                          │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Related Commands
 
-- `/vibe.review` - Code review
-- `/vibe.verify` - SPEC verification
-- `/vibe.compound` - Document test results
+- `/core.review` - Code review
+- `/core.verify` - SPEC verification
+- `/core.compound` - Document test results
 
 ---
 

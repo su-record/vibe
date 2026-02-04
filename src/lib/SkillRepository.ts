@@ -1,5 +1,5 @@
 /**
- * Skill Repository - ~/.claude/vibe/skills/ 저장소 관리
+ * Skill Repository - ~/.claude/core/skills/ 저장소 관리
  *
  * 기본 스킬 세트를 전역 위치에 설치하고 관리
  */
@@ -31,7 +31,7 @@ export interface SkillRepositoryConfig {
  * 기본 전역 스킬 디렉토리 경로
  */
 export function getGlobalSkillsDir(): string {
-  return path.join(os.homedir(), '.claude', 'vibe', 'skills');
+  return path.join(os.homedir(), '.claude', 'core', 'skills');
 }
 
 /**
@@ -332,7 +332,7 @@ Use multiple LLMs for comprehensive research and validation.
 ## Usage
 
 \`\`\`bash
-# Via Bash hook (automatic in /vibe.spec)
+# Via Bash hook (automatic in /core.spec)
 node hooks/scripts/llm-orchestrate.js gpt "your prompt"
 node hooks/scripts/llm-orchestrate.js gemini "your prompt"
 \`\`\`
@@ -340,9 +340,9 @@ node hooks/scripts/llm-orchestrate.js gemini "your prompt"
 ## Setup
 
 \`\`\`bash
-vibe gpt auth     # Configure GPT API key
-vibe gemini auth  # Configure Gemini OAuth/API key
-vibe status       # Check current configuration
+core gpt auth     # Configure GPT API key
+core gemini auth  # Configure Gemini OAuth/API key
+core status       # Check current configuration
 \`\`\`
 
 ## Best Practices
@@ -404,13 +404,13 @@ npm cache clean --force
     id: 'code-quality-check',
     content: `---
 name: code-quality-check
-description: "Code quality validation using vibe tools"
+description: "Code quality validation using core tools"
 triggers: [quality, lint, complexity, review]
 priority: 60
 ---
 # Code Quality Check
 
-## Using Vibe Tools
+## Using Core Tools
 
 \`\`\`bash
 # Analyze complexity
@@ -486,7 +486,7 @@ At 70%+ context usage:
 ## Slash Command
 
 \`\`\`
-/vibe.utils --continue
+/core.utils --continue
 \`\`\`
 
 Restores previous session context automatically.

@@ -66,7 +66,7 @@ export async function getAuthInfo(
   // No auth available
   const providerName = provider === 'gpt' ? 'GPT' : 'Gemini';
   throw new Error(
-    `${providerName} not configured. Run 'vibe ${provider} auth' to set up authentication.`
+    `${providerName} not configured. Run 'core ${provider} auth' to set up authentication.`
   );
 }
 

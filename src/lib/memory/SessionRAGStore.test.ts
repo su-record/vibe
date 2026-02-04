@@ -11,7 +11,7 @@ describe('SessionRAGStore', () => {
   let testDir: string;
 
   beforeEach(() => {
-    testDir = join(tmpdir(), `vibe-srag-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    testDir = join(tmpdir(), `core-srag-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     storage = new MemoryStorage(testDir);
     store = new SessionRAGStore(storage);
   });

@@ -1,22 +1,22 @@
-# VIBE
+# CORE
 
 SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
 ## Philosophy
 
-> **vibe = 바이브코딩을 쉽게 + 최소 품질 보장**
+> **core = 바이브코딩을 쉽게 + 최소 품질 보장**
 
 | Principle | Description |
 |-----------|-------------|
-| **Easy Vibe Coding** | 빠른 흐름, 직관적 개발, AI와 협업하며 생각하기 |
+| **Easy Core Coding** | 빠른 흐름, 직관적 개발, AI와 협업하며 생각하기 |
 | **Minimum Quality Guaranteed** | 타입 안전성, 코드 품질, 보안 - 자동으로 하한선 확보 |
 | **Iterative Reasoning (6번 유형)** | AI에게 답을 맡기지 말고, 문제를 쪼개고 질문하며 함께 추론 |
 
-### How vibe Guarantees Quality
+### How core Guarantees Quality
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  VIBE QUALITY GUARDRAILS (자동 품질 보장)                    │
+│  CORE QUALITY GUARDRAILS (자동 품질 보장)                    │
 ├─────────────────────────────────────────────────────────────┤
 │  1. Type Safety      → Quality Gate (any/Any 차단)          │
 │  2. Code Review      → Race Review (GPT + Gemini 병렬)      │
@@ -41,7 +41,7 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
 ## Code Quality Standards (Mandatory)
 
-Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) for detailed rules.
+Follow these standards when writing code. See `~/.claude/core/rules/` (global) for detailed rules.
 
 ### Core Principles
 
@@ -82,23 +82,23 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 ## Workflow
 
 ```text
-/vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → ✅ Done
+/core.spec → /new → /core.spec.review → /core.run → /core.trace → (auto) code review → ✅ Done
 ```
 
-1. `/vibe.spec` - Write SPEC (requirements + research + draft)
+1. `/core.spec` - Write SPEC (requirements + research + draft)
 2. `/new` - Start new session (clean context)
-3. `/vibe.spec.review` - GPT/Gemini review (3-round mandatory)
-4. `/vibe.run` - Implementation + Gemini review
+3. `/core.spec.review` - GPT/Gemini review (3-round mandatory)
+4. `/core.run` - Implementation + Gemini review
 5. **(auto)** 13+ agent parallel review + P1/P2 auto-fix
 
-## Plan Mode vs VIBE
+## Plan Mode vs CORE
 
 | Task Size                    | Recommended  |
 |------------------------------|--------------|
 | Simple changes (1-2 files)   | Plan Mode    |
-| Complex features (3+ files)  | `/vibe.spec` |
+| Complex features (3+ files)  | `/core.spec` |
 
-After `/vibe.analyze` or `/vibe.review` with dev request → **Ask user for workflow choice**
+After `/core.analyze` or `/core.review` with dev request → **Ask user for workflow choice**
 
 ## ULTRAWORK Mode
 
@@ -113,19 +113,19 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 
 | Command                      | Description                       |
 |------------------------------|-----------------------------------|
-| `/vibe.spec "name"`          | Write SPEC (PTCF) + parallel research |
-| `/vibe.spec.review "name"`   | GPT/Gemini review (new session)   |
-| `/vibe.run "name"`           | Execute implementation            |
-| `/vibe.run "name" ultrawork` | Maximum performance mode          |
-| `/vibe.verify "name"`        | Verification against SPEC         |
-| `/vibe.review`               | 13+ agent parallel code review    |
-| `/vibe.trace "name"`         | Requirements traceability matrix  |
-| `/vibe.reason "problem"`     | Systematic reasoning              |
-| `/vibe.analyze`              | Project analysis                  |
-| `/vibe.utils --e2e`          | E2E testing (Playwright)          |
-| `/vibe.utils --diagram`      | Generate diagrams                 |
-| `/vibe.utils --ui "desc"`    | UI preview                        |
-| `/vibe.utils --continue`     | Session restore                   |
+| `/core.spec "name"`          | Write SPEC (PTCF) + parallel research |
+| `/core.spec.review "name"`   | GPT/Gemini review (new session)   |
+| `/core.run "name"`           | Execute implementation            |
+| `/core.run "name" ultrawork` | Maximum performance mode          |
+| `/core.verify "name"`        | Verification against SPEC         |
+| `/core.review`               | 13+ agent parallel code review    |
+| `/core.trace "name"`         | Requirements traceability matrix  |
+| `/core.reason "problem"`     | Systematic reasoning              |
+| `/core.analyze`              | Project analysis                  |
+| `/core.utils --e2e`          | E2E testing (Playwright)          |
+| `/core.utils --diagram`      | Generate diagrams                 |
+| `/core.utils --ui "desc"`    | UI preview                        |
+| `/core.utils --continue`     | Session restore                   |
 
 ## Magic Keywords
 
@@ -147,18 +147,18 @@ SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_forma
 
 | Tool                          | Purpose                          |
 |-------------------------------|----------------------------------|
-| `vibe_find_symbol`            | Find symbol definitions          |
-| `vibe_find_references`        | Find references                  |
-| `vibe_analyze_complexity`     | Analyze complexity               |
-| `vibe_validate_code_quality`  | Validate quality                 |
+| `core_find_symbol`            | Find symbol definitions          |
+| `core_find_references`        | Find references                  |
+| `core_analyze_complexity`     | Analyze complexity               |
+| `core_validate_code_quality`  | Validate quality                 |
 
 ### Memory & Session
 
 | Tool                          | Purpose                          |
 |-------------------------------|----------------------------------|
-| `vibe_start_session`          | Restore previous session context |
-| `vibe_auto_save_context`      | Save current state               |
-| `vibe_save_memory`            | Save important decisions         |
+| `core_start_session`          | Restore previous session context |
+| `core_auto_save_context`      | Save current state               |
+| `core_save_memory`            | Save important decisions         |
 
 ### Session RAG (v2.6.27)
 
@@ -219,7 +219,7 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 - Do NOT use `/compact` (information loss risk)
 - Use `save_memory` → `/new` for new session
-- Restore with `/vibe.utils --continue`
+- Restore with `/core.utils --continue`
 
 ## Documentation Guidelines
 
@@ -228,8 +228,8 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 ## Git Commit Rules
 
-**Must include:** `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Must include:** `.claude/core/specs/`, `.claude/core/features/`, `.claude/core/todos/`, `.claude/core/config.json`, `CLAUDE.md`
 
-**Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
+**Exclude:** `~/.claude/core/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
 
-<!-- VIBE:END -->
+<!-- CORE:END -->

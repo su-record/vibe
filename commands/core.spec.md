@@ -3,17 +3,17 @@ description: Create SPEC document with Specification Agent
 argument-hint: "feature name"
 ---
 
-# /vibe.spec
+# /core.spec
 
 Create a SPEC document (Specification Agent).
 
 ## Usage
 
 ```
-/vibe.spec "feature-name"                    # Conversation mode (requirements gathering)
-/vibe.spec "feature-name" ultrawork          # Auto: SPEC → Review → Implementation
-/vibe.spec "docs/login-prd.md"               # File path input (auto-detected)
-/vibe.spec + 📎 file attachment              # Use attached file
+/core.spec "feature-name"                    # Conversation mode (requirements gathering)
+/core.spec "feature-name" ultrawork          # Auto: SPEC → Review → Implementation
+/core.spec "docs/login-prd.md"               # File path input (auto-detected)
+/core.spec + 📎 file attachment              # Use attached file
 ```
 
 ### ultrawork Mode
@@ -21,13 +21,13 @@ Create a SPEC document (Specification Agent).
 When `ultrawork` (or `ulw`) is included, automatically chains:
 
 ```
-/vibe.spec "feature" ultrawork
+/core.spec "feature" ultrawork
     ↓
 [1] SPEC Creation (this command)
     ↓
-[2] Auto: /vibe.spec.review "{feature}"
+[2] Auto: /core.spec.review "{feature}"
     ↓
-[3] Auto: /vibe.run "{feature}" ultrawork
+[3] Auto: /core.run "{feature}" ultrawork
 ```
 
 **No manual intervention between steps.**
@@ -58,7 +58,7 @@ When `ultrawork` (or `ulw`) is included, automatically chains:
 **File input mode flow:**
 
 ```
-/vibe.spec "docs/login-prd.md"
+/core.spec "docs/login-prd.md"
 
 📄 File loaded: docs/login-prd.md (2.3KB)
 
@@ -100,7 +100,7 @@ When image files (`.png`, `.jpg`, `.jpeg`, `.webp`) are provided as input, analy
 **Gemini enabled - analyze via llm-orchestrate.js:**
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
 ```
 
 Parse the JSON result: `{ success: true, analysis: "..." }` → use `analysis` field content.
@@ -113,7 +113,7 @@ Use the Read tool directly on the image file. Claude can read images natively.
 
 **Image input example:**
 ```
-/vibe.spec "designs/login-wireframe.png"
+/core.spec "designs/login-wireframe.png"
 
 🖼️ Image analysis: designs/login-wireframe.png
    (via Gemini 3 Flash / Claude Opus)
@@ -134,7 +134,7 @@ Use the Read tool directly on the image file. Claude can read images natively.
 
 ## Rules Reference
 
-**Must follow `~/.claude/vibe/rules/` (global):**
+**Must follow `~/.claude/core/rules/` (global):**
 - `core/development-philosophy.md` - Surgical precision, simplicity
 - `core/quick-start.md` - Korean first, DRY, SRP
 - `core/communication-guide.md` - Communication principles
@@ -150,7 +150,7 @@ Collect requirements through conversation with the user and create an **AI-execu
 When GPT/Gemini are enabled, they are automatically utilized during SPEC creation:
 
 ```
-/vibe.spec "feature"
+/core.spec "feature"
       ↓
 [Claude] Draft SPEC
       ↓
@@ -163,9 +163,9 @@ When GPT/Gemini are enabled, they are automatically utilized during SPEC creatio
 
 **Setup:**
 ```bash
-vibe gpt auth       # Enable GPT (OAuth)
-vibe gemini auth    # Enable Gemini (OAuth)
-vibe status         # Check current settings
+core gpt auth       # Enable GPT (OAuth)
+core gemini auth    # Enable Gemini (OAuth)
+core status         # Check current settings
 ```
 
 ## Process
@@ -217,13 +217,13 @@ $ git checkout -b feature/login-page
 
 ### 1. Project Analysis
 
-**Existing project** (`vibe init`):
+**Existing project** (`core init`):
 - Source code analysis: `package.json`, `pyproject.toml`, `pubspec.yaml`, `go.mod`, etc.
 - Reference `CLAUDE.md` file (tech stack)
 - Infer framework from file structure
 - **Use `findSymbol` tool** to locate relevant existing implementations
 
-**New project** (`vibe init <project-name>`):
+**New project** (`core init <project-name>`):
 - Suggest tech stack (2-3 options)
 
 ### 2. Collect Requirements via Conversation
@@ -327,10 +327,10 @@ const response = parseUserResponse(question, "1, 2, 4");
 
 **🚨 CRITICAL: Read config.json references IMMEDIATELY after tech stack is confirmed**
 
-Reference documents are automatically generated in `config.json` based on the stack detected during `vibe init`:
+Reference documents are automatically generated in `config.json` based on the stack detected during `core init`:
 
 ```json
-// .claude/vibe/config.json
+// .claude/core/config.json
 {
   "language": "ko",
   "stacks": [
@@ -338,17 +338,17 @@ Reference documents are automatically generated in `config.json` based on the st
   ],
   "references": {
     "rules": [
-      "~/.claude/vibe/rules/code-quality.md",
-      "~/.claude/vibe/rules/error-handling.md",
-      "~/.claude/vibe/rules/security.md"
+      "~/.claude/core/rules/code-quality.md",
+      "~/.claude/core/rules/error-handling.md",
+      "~/.claude/core/rules/security.md"
     ],
     "languages": [
-      "~/.claude/vibe/languages/typescript-react.md"
+      "~/.claude/core/languages/typescript-react.md"
     ],
     "templates": [
-      "~/.claude/vibe/templates/spec-template.md",
-      "~/.claude/vibe/templates/feature-template.md",
-      "~/.claude/vibe/templates/constitution-template.md"
+      "~/.claude/core/templates/spec-template.md",
+      "~/.claude/core/templates/feature-template.md",
+      "~/.claude/core/templates/constitution-template.md"
     ]
   }
 }
@@ -356,23 +356,23 @@ Reference documents are automatically generated in `config.json` based on the st
 
 **Workflow:**
 
-1. Read `.claude/vibe/config.json`
+1. Read `.claude/core/config.json`
 2. Extract `references.languages[]` paths
 3. Read each language document for stack-specific guidelines
 
 **Example:**
 ```bash
 # 1. Check references in config.json
-Read .claude/vibe/config.json
+Read .claude/core/config.json
 
 # 2. Reference documents specified in references.languages
-Read ~/.claude/vibe/languages/typescript-react.md
+Read ~/.claude/core/languages/typescript-react.md
 ```
 
 **Important:**
 
 - No manual mapping needed - config.json contains all reference paths
-- `config.json.references` is automatically referenced when running `/vibe.run`
+- `config.json.references` is automatically referenced when running `/core.run`
 - Not copied to project (referenced from global package)
 
 ### 3. Parallel Research (v2.5.0) - MANDATORY AFTER requirements confirmed
@@ -392,7 +392,7 @@ Read ~/.claude/vibe/languages/typescript-react.md
 6. **DO NOT** create SECURITY_*.md, RESEARCH_*.md, SUMMARY_*.md files
 7. **DO NOT** use Write tool during research phase
 8. **ALL research results** must be returned as text output only
-9. **Files are ONLY created** in Step 4 (SPEC) and Step 5 (Feature) in `.claude/vibe/` directory
+9. **Files are ONLY created** in Step 4 (SPEC) and Step 5 (Feature) in `.claude/core/` directory
 
 **When to trigger:**
 1. ✅ Feature type decided (e.g., "passkey authentication")
@@ -407,34 +407,34 @@ Read ~/.claude/vibe/languages/typescript-react.md
 ```bash
 # Cross-platform path (works on Windows/macOS/Linux)
 # ⚠️ COPY THIS EXACTLY - DO NOT USE ~/.claude/ or any other path!
-VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+CORE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts"
 
 # 1. GPT: Best practices
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # 2. GPT: Security
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # 3. Gemini: Best practices
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # 4. Gemini: Security
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 ```
 
 **Concrete example - run all 4 in parallel:**
 ```bash
 # GPT best practices
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # GPT security
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # Gemini best practices
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # Gemini security
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 ```
 
 **ALSO run Claude research agents in parallel using Task tool:**
@@ -488,13 +488,13 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 **Auto-split output (SPEC + Feature files must match):**
 
 ```
-.claude/vibe/specs/{feature-name}/
+.claude/core/specs/{feature-name}/
 ├── _index.md           # Master SPEC
 ├── phase-1-setup.md
 ├── phase-2-core.md
 └── ...
 
-.claude/vibe/features/{feature-name}/
+.claude/core/features/{feature-name}/
 ├── _index.feature      # Master Feature
 ├── phase-1-setup.feature
 ├── phase-2-core.feature
@@ -529,7 +529,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 ```markdown
 # Feature: {feature-name} (Master)
 
-**Master SPEC**: `.claude/vibe/specs/{feature-name}/_index.md`
+**Master SPEC**: `.claude/core/specs/{feature-name}/_index.md`
 
 ## Sub-Features
 
@@ -546,7 +546,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 
 **Small scope (default):**
 
-Create `.claude/vibe/specs/{feature-name}.md`:
+Create `.claude/core/specs/{feature-name}.md`:
 
 ```markdown
 ---
@@ -645,7 +645,7 @@ Define AI role and expertise for implementation
 
 #### 5.1 Single File (Small Scope)
 
-Create `.claude/vibe/features/{feature-name}.feature`:
+Create `.claude/core/features/{feature-name}.feature`:
 
 **Creation rules:**
 1. Convert each SPEC Acceptance Criteria → one Scenario
@@ -655,7 +655,7 @@ Create `.claude/vibe/features/{feature-name}.feature`:
 ```markdown
 # Feature: {feature-name}
 
-**SPEC**: `.claude/vibe/specs/{feature-name}.md`
+**SPEC**: `.claude/core/specs/{feature-name}.md`
 
 ## User Story
 **As a** {user}
@@ -687,7 +687,7 @@ Scenario: {title}
 When SPEC is split into phases, Feature files MUST also be split:
 
 ```
-.claude/vibe/features/{feature-name}/
+.claude/core/features/{feature-name}/
 ├── _index.feature        # Master: links to all phase features
 ├── phase-1-setup.feature # Scenarios for phase-1-setup.md
 ├── phase-2-core.feature  # Scenarios for phase-2-core.md
@@ -699,8 +699,8 @@ When SPEC is split into phases, Feature files MUST also be split:
 ```markdown
 # Feature: {feature-name} - Phase {N}: {phase-name}
 
-**SPEC**: `.claude/vibe/specs/{feature-name}/phase-{N}-{name}.md`
-**Master Feature**: `.claude/vibe/features/{feature-name}/_index.feature`
+**SPEC**: `.claude/core/specs/{feature-name}/phase-{N}-{name}.md`
+**Master Feature**: `.claude/core/features/{feature-name}/_index.feature`
 
 ## User Story (Phase Scope)
 **As a** {user}
@@ -839,7 +839,7 @@ SPEC writing complete
       ↓
 Score < 95? → Show missing items → Attempt auto-fix → Re-evaluate
       ↓
-Score ≥ 95 → SPEC Draft Complete → Handoff to /vibe.spec.review
+Score ≥ 95 → SPEC Draft Complete → Handoff to /core.spec.review
 ```
 
 #### 7.4 Auto-Fix for Low Score
@@ -862,8 +862,8 @@ After SPEC draft is complete (score ≥ 95):
 **If `ultrawork` mode:**
 - ❌ DO NOT show handoff message
 - ❌ DO NOT ask for confirmation
-- ✅ Immediately proceed to `/vibe.spec.review "{feature-name}"`
-- ✅ After review passes, immediately proceed to `/vibe.run "{feature-name}" ultrawork`
+- ✅ Immediately proceed to `/core.spec.review "{feature-name}"`
+- ✅ After review passes, immediately proceed to `/core.run "{feature-name}" ultrawork`
 
 **If normal mode:**
 Output the handoff message:
@@ -873,18 +873,18 @@ Output the handoff message:
 ✅ SPEC DRAFT COMPLETE: {feature-name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 SPEC: .claude/vibe/specs/{feature-name}.md
-📋 Feature: .claude/vibe/features/{feature-name}.feature
+📋 SPEC: .claude/core/specs/{feature-name}.md
+📋 Feature: .claude/core/features/{feature-name}.feature
 📊 Quality Score: {score}/100
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ NEXT STEP: Run SPEC review
 
 Option 1 (same session):
-  /vibe.spec.review "{feature-name}"
+  /core.spec.review "{feature-name}"
 
 Option 2 (recommended for large context):
-  /new → /vibe.spec.review "{feature-name}"
+  /new → /core.spec.review "{feature-name}"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -898,22 +898,22 @@ Option 2 (recommended for large context):
 
 | File | Path | When |
 |------|------|------|
-| SPEC | `.claude/vibe/specs/{feature-name}.md` | After quality validation (Step 7) |
-| Feature | `.claude/vibe/features/{feature-name}.feature` | Immediately after SPEC |
+| SPEC | `.claude/core/specs/{feature-name}.md` | After quality validation (Step 7) |
+| Feature | `.claude/core/features/{feature-name}.feature` | Immediately after SPEC |
 
 ### Large Scope (Split Files)
 
 | File | Path | When |
 |------|------|------|
-| Master SPEC | `.claude/vibe/specs/{feature-name}/_index.md` | After quality validation |
-| Phase SPEC | `.claude/vibe/specs/{feature-name}/phase-{N}-{name}.md` | Per phase |
-| Master Feature | `.claude/vibe/features/{feature-name}/_index.feature` | After Master SPEC |
-| Phase Feature | `.claude/vibe/features/{feature-name}/phase-{N}-{name}.feature` | Per phase SPEC |
+| Master SPEC | `.claude/core/specs/{feature-name}/_index.md` | After quality validation |
+| Phase SPEC | `.claude/core/specs/{feature-name}/phase-{N}-{name}.md` | Per phase |
+| Master Feature | `.claude/core/features/{feature-name}/_index.feature` | After Master SPEC |
+| Phase Feature | `.claude/core/features/{feature-name}/phase-{N}-{name}.feature` | Per phase SPEC |
 
 **❌ FORBIDDEN:**
 
 - Creating files in project root (e.g., `feature-name.md`)
-- Creating files outside `.claude/vibe/` directory
+- Creating files outside `.claude/core/` directory
 - Skipping file creation
 - Using different file names than feature-name
 - Creating split SPEC without matching split Feature files
@@ -929,26 +929,26 @@ Option 2 (recommended for large context):
 
 **Single file:**
 ```
-1. Write .claude/vibe/specs/{feature-name}.md
-2. Write .claude/vibe/features/{feature-name}.feature
+1. Write .claude/core/specs/{feature-name}.md
+2. Write .claude/core/features/{feature-name}.feature
 3. Confirm: "✅ Created: specs/{feature-name}.md + features/{feature-name}.feature"
 ```
 
 **Split files:**
 ```
-1. Write .claude/vibe/specs/{feature-name}/_index.md
-2. Write .claude/vibe/specs/{feature-name}/phase-1-setup.md
-3. Write .claude/vibe/specs/{feature-name}/phase-2-core.md
-4. Write .claude/vibe/features/{feature-name}/_index.feature
-5. Write .claude/vibe/features/{feature-name}/phase-1-setup.feature
-6. Write .claude/vibe/features/{feature-name}/phase-2-core.feature
+1. Write .claude/core/specs/{feature-name}/_index.md
+2. Write .claude/core/specs/{feature-name}/phase-1-setup.md
+3. Write .claude/core/specs/{feature-name}/phase-2-core.md
+4. Write .claude/core/features/{feature-name}/_index.feature
+5. Write .claude/core/features/{feature-name}/phase-1-setup.feature
+6. Write .claude/core/features/{feature-name}/phase-2-core.feature
 7. Confirm: "✅ Created: {N} SPEC files + {N} Feature files"
 ```
 
 ## Example
 
 ```
-User: /vibe.spec "brick-game"
+User: /core.spec "brick-game"
 
 Claude:
 You're making a brick game! What style are you thinking of?
@@ -1025,12 +1025,12 @@ Claude: Thank you. SPEC has been refined.
 ✅ SPEC Complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 .claude/vibe/specs/brick-game.md (PTCF structure)
-📄 .claude/vibe/features/brick-game.feature
+📄 .claude/core/specs/brick-game.md (PTCF structure)
+📄 .claude/core/features/brick-game.feature
 📊 Quality score: 95/100 (A) ← Improved after review
 ```
 
-## Vibe Tools (Semantic Analysis & Memory)
+## Core Tools (Semantic Analysis & Memory)
 
 ### Tool Invocation
 All tools are called via:
@@ -1068,7 +1068,7 @@ node -e "import('@su-record/core/tools').then(t => t.recallMemory({key: 'brick-g
 ## Next Step
 
 ```
-/vibe.run "brick-game"
+/core.run "brick-game"
 ```
 
 ---

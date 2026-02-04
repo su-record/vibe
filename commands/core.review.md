@@ -3,19 +3,19 @@ description: Multi-agent parallel code review with priority-based findings
 argument-hint: "PR number, branch name, or file path"
 ---
 
-# /vibe.review
+# /core.review
 
 **Parallel Agent Code Review** - 13+ specialists review simultaneously
 
 ## Usage
 
 ```
-/vibe.review                         # Review current branch
-/vibe.review PR#123                  # Review specific PR
-/vibe.review feature/login           # Review specific branch
-/vibe.review src/api/                # Review specific path
-/vibe.review --race                  # Multi-LLM race mode (GPT + Gemini)
-/vibe.review --race security         # Race mode for specific review type
+/core.review                         # Review current branch
+/core.review PR#123                  # Review specific PR
+/core.review feature/login           # Review specific branch
+/core.review src/api/                # Review specific path
+/core.review --race                  # Multi-LLM race mode (GPT + Gemini)
+/core.review --race security         # Race mode for specific review type
 ```
 
 ## Race Mode (v2.6.9)
@@ -25,7 +25,7 @@ argument-hint: "PR number, branch name, or file path"
 ### How It Works
 
 ```
-/vibe.review --race
+/core.review --race
 
 security-review:
 ├─ GPT-5.2-Codex  → [SQL injection, XSS]
@@ -47,10 +47,10 @@ security-review:
 ### Race Mode Options
 
 ```
-/vibe.review --race                  # All review types
-/vibe.review --race security         # Security only
-/vibe.review --race performance      # Performance only
-/vibe.review --race architecture     # Architecture only
+/core.review --race                  # All review types
+/core.review --race security         # Security only
+/core.review --race performance      # Performance only
+/core.review --race architecture     # Architecture only
 ```
 
 ### Race Mode Output
@@ -105,12 +105,12 @@ security-review:
 
 ```bash
 # GPT review (Bash tool call 1)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
 ```
 
 ```bash
 # Gemini review (Bash tool call 2 - run in parallel)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 ```
 
 ## Priority System
@@ -228,7 +228,7 @@ P2 Important:
 
 ### Phase 6: Todo File Creation (Items Requiring Manual Handling)
 
-Save **remaining** findings to `.claude/vibe/todos/`:
+Save **remaining** findings to `.claude/core/todos/`:
 
 ```
 {priority}-{category}-{short-desc}.md
@@ -281,19 +281,19 @@ Choose a workflow to fix the discovered issues:
 | Task Scale | Recommended Approach |
 |------------|---------------------|
 | Simple fix (1-2 files) | Plan Mode |
-| Complex fix (3+ files, validation needed) | /vibe.spec |
+| Complex fix (3+ files, validation needed) | /core.spec |
 
-1. `/vibe.spec "fix: issue-name"` - VIBE workflow (SPEC validation + re-review)
+1. `/core.spec "fix: issue-name"` - VIBE workflow (SPEC validation + re-review)
 2. Plan Mode - Quick fix (for simple tasks)
 
 Which approach would you like to proceed with?
 ```
 
 - Wait for user's choice before proceeding
-- If user chooses VIBE → wait for `/vibe.spec` command
+- If user chooses VIBE → wait for `/core.spec` command
 - If user chooses Plan Mode → proceed with EnterPlanMode
 
-## Vibe Tools (Code Analysis)
+## Core Tools (Code Analysis)
 
 ### Tool Invocation
 

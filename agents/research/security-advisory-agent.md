@@ -21,11 +21,11 @@
 - ❌ DO NOT create any files in project root
 - ❌ DO NOT create SECURITY_*.md files
 - ✅ ONLY return research results as text output
-- ✅ Results will be merged into SPEC by vibe.spec command
+- ✅ Results will be merged into SPEC by core.spec command
 
 ## Usage
 
-Automatically called in parallel when `/vibe.spec` is executed
+Automatically called in parallel when `/core.spec` is executed
 
 ```
 Task(
@@ -140,7 +140,7 @@ For [payment feature]:
 
 ## Multi-LLM Enhancement (Quality Assurance)
 
-**vibe = Quality Assurance Framework**
+**core = Quality Assurance Framework**
 
 Security research uses **3 perspectives in parallel** for comprehensive coverage:
 
@@ -165,11 +165,11 @@ Security research uses **3 perspectives in parallel** for comprehensive coverage
 Task(haiku, "Research security advisories for [feature]. Check OWASP, common vulnerabilities.")
 
 # 2. GPT (Parallel) - When enabled
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
+node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
   "Security vulnerabilities for [feature] with [stack]. Focus: CVE database, known exploits, mitigation strategies. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # 3. Gemini (Parallel) - When enabled
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
+node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
   "Security advisories for [feature] with [stack]. Focus: latest patches, security updates, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 ```
 
@@ -195,10 +195,10 @@ node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
 - Detailed compliance review (PCI-DSS, GDPR, HIPAA)
 - Zero-day vulnerability awareness
 
-## Integration with /vibe.spec
+## Integration with /core.spec
 
 ```text
-/vibe.spec "payment feature"
+/core.spec "payment feature"
 
 → security-advisory-agent execution (3 LLMs parallel):
   - Claude: "Research security for payment processing. Check PCI-DSS, OWASP."

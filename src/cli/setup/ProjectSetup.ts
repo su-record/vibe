@@ -12,7 +12,7 @@ import { ensureDir, removeDirRecursive } from '../utils.js';
 import { STACK_NAMES, getLanguageRulesContent } from '../detect.js';
 import { STACK_TO_LANGUAGE_FILE } from '../postinstall.js';
 import { detectOsLanguage, getLanguageInstruction } from './LanguageDetector.js';
-import { getVibeConfigDir } from './GlobalInstaller.js';
+import { getCoreConfigDir } from './GlobalInstaller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,12 +21,12 @@ const __dirname = path.dirname(__filename);
  * constitution.md 생성 또는 업데이트
  */
 export function updateConstitution(
-  vibeDir: string,
+  coreDir: string,
   detectedStacks: TechStack[],
   stackDetails: StackDetails
 ): void {
-  const templatePath = path.join(__dirname, '../../../vibe/templates/constitution-template.md');
-  const constitutionPath = path.join(vibeDir, 'constitution.md');
+  const templatePath = path.join(__dirname, '../../../core/templates/constitution-template.md');
+  const constitutionPath = path.join(coreDir, 'constitution.md');
 
   if (!fs.existsSync(templatePath)) return;
 
@@ -73,36 +73,36 @@ export function updateConstitution(
 }
 
 /**
- * CLAUDE.md 업데이트 (vibe 섹션 추가/교체)
+ * CLAUDE.md 업데이트 (core 섹션 추가/교체)
  */
 // VIBE 섹션 마커
-const VIBE_START_MARKER = '# VIBE';
-const VIBE_END_MARKER = '<!-- VIBE:END -->';
+const CORE_START_MARKER = '# VIBE';
+const CORE_END_MARKER = '<!-- VIBE:END -->';
 
 export function updateClaudeMd(
   projectRoot: string,
   detectedStacks: TechStack[],
   isUpdate = false
 ): void {
-  const vibeClaudeMd = path.join(__dirname, '../../../CLAUDE.md');
+  const coreClaudeMd = path.join(__dirname, '../../../CLAUDE.md');
   const projectClaudeMd = path.join(projectRoot, 'CLAUDE.md');
 
-  if (!fs.existsSync(vibeClaudeMd)) return;
+  if (!fs.existsSync(coreClaudeMd)) return;
 
-  let vibeContent = fs.readFileSync(vibeClaudeMd, 'utf-8').replace(/\r\n/g, '\n');
+  let coreContent = fs.readFileSync(coreClaudeMd, 'utf-8').replace(/\r\n/g, '\n');
 
   // OS 언어 감지하여 응답 언어 설정 추가/교체
   const osLanguage = detectOsLanguage();
   const languageInstruction = getLanguageInstruction(osLanguage);
 
   // 기존 Response Language 섹션 제거 (중복 방지)
-  vibeContent = vibeContent.replace(
+  coreContent = coreContent.replace(
     /\n*## Response Language\n+\*\*IMPORTANT: Always respond in (?:English|Korean \(한국어\)) unless the user explicitly requests otherwise\.\*\*/g,
     ''
   );
 
   // # VIBE 헤더 바로 다음에 언어 설정 추가
-  vibeContent = vibeContent.replace(
+  coreContent = coreContent.replace(
     '# VIBE\n\nSPEC-driven AI Coding Framework (Claude Code Exclusive)',
     '# VIBE\n\nSPEC-driven AI Coding Framework (Claude Code Exclusive)' + languageInstruction
   );
@@ -110,7 +110,7 @@ export function updateClaudeMd(
   // 감지된 기술 스택에 따라 언어별 규칙 추가
   const languageRules = getLanguageRulesContent(detectedStacks);
   if (languageRules) {
-    vibeContent = vibeContent.replace(
+    coreContent = coreContent.replace(
       '### Error Handling Required',
       languageRules + '\n\n### Error Handling Required'
     );
@@ -120,70 +120,70 @@ export function updateClaudeMd(
     const existingContent = fs.readFileSync(projectClaudeMd, 'utf-8');
 
     // VIBE 섹션 교체 (마커 기반)
-    const vibeStartIdx = existingContent.indexOf(VIBE_START_MARKER);
-    const vibeEndIdx = existingContent.indexOf(VIBE_END_MARKER);
+    const coreStartIdx = existingContent.indexOf(CORE_START_MARKER);
+    const coreEndIdx = existingContent.indexOf(CORE_END_MARKER);
 
-    if (vibeStartIdx !== -1 && vibeEndIdx !== -1) {
+    if (coreStartIdx !== -1 && coreEndIdx !== -1) {
       // 마커 기반 정확한 교체
       // 이전 버전에서 누적된 --- 구분선 정리
-      const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd().replace(/(\n---\s*)+$/g, '').trimEnd();
-      let afterVibe = existingContent.substring(vibeEndIdx + VIBE_END_MARKER.length).trimStart();
+      const beforeCore = existingContent.substring(0, coreStartIdx).trimEnd().replace(/(\n---\s*)+$/g, '').trimEnd();
+      let afterCore = existingContent.substring(coreEndIdx + CORE_END_MARKER.length).trimStart();
 
-      // afterVibe가 VIBE 중복 내용인지 확인
+      // afterCore가 CORE 중복 내용인지 확인
       // 사용자 커스텀 섹션은 보통 # 으로 시작하는 새로운 헤더로 시작함 (## 가 아닌 # 레벨)
       // --- 구분자와 빈 줄을 모두 제거하고 실제 내용 확인
-      const cleanedAfterVibe = afterVibe.replace(/^(-{3,}\s*\n*)+/g, '').trimStart();
+      const cleanedAfterCore = afterCore.replace(/^(-{3,}\s*\n*)+/g, '').trimStart();
 
-      // VIBE 관련 키워드가 있으면 중복으로 판단하여 버림
-      const isVibeContent = cleanedAfterVibe.startsWith('# VIBE') ||
-                           cleanedAfterVibe.startsWith('## Rule Title') ||
-                           cleanedAfterVibe.startsWith('## Response Language') ||
-                           cleanedAfterVibe.startsWith('## Code Quality') ||
-                           cleanedAfterVibe.startsWith('title:') ||
-                           cleanedAfterVibe.includes('SPEC-driven AI Coding Framework') ||
-                           cleanedAfterVibe.includes('/vibe.spec') ||
-                           cleanedAfterVibe.includes('ULTRAWORK');
+      // CORE 관련 키워드가 있으면 중복으로 판단하여 버림
+      const isCoreContent = cleanedAfterCore.startsWith('# CORE') ||
+                           cleanedAfterCore.startsWith('## Rule Title') ||
+                           cleanedAfterCore.startsWith('## Response Language') ||
+                           cleanedAfterCore.startsWith('## Code Quality') ||
+                           cleanedAfterCore.startsWith('title:') ||
+                           cleanedAfterCore.includes('SPEC-driven AI Coding Framework') ||
+                           cleanedAfterCore.includes('/core.spec') ||
+                           cleanedAfterCore.includes('ULTRAWORK');
 
-      if (isVibeContent) {
-        afterVibe = '';  // 중복 VIBE 내용 - 버림
+      if (isCoreContent) {
+        afterCore = '';  // 중복 CORE 내용 - 버림
       }
 
       let newContent = '';
-      if (beforeVibe) {
-        newContent = beforeVibe + '\n\n' + vibeContent;
+      if (beforeCore) {
+        newContent = beforeCore + '\n\n' + coreContent;
       } else {
-        newContent = vibeContent;
+        newContent = coreContent;
       }
-      if (afterVibe) {
-        newContent += '\n\n' + afterVibe;
+      if (afterCore) {
+        newContent += '\n\n' + afterCore;
       }
       fs.writeFileSync(projectClaudeMd, newContent);
-    } else if (vibeStartIdx !== -1) {
+    } else if (coreStartIdx !== -1) {
       // 구버전: # VIBE는 있지만 END 마커 없음
       // VIBE 앞의 사용자 섹션만 보존하고, VIBE 이후는 전체 교체
       // (VIBE 뒤의 내용은 대부분 누적된 중복 VIBE 섹션임)
-      const beforeVibe = existingContent.substring(0, vibeStartIdx).trimEnd();
-      const newContent = (beforeVibe ? beforeVibe + '\n\n' : '') + vibeContent;
+      const beforeCore = existingContent.substring(0, coreStartIdx).trimEnd();
+      const newContent = (beforeCore ? beforeCore + '\n\n' : '') + coreContent;
       fs.writeFileSync(projectClaudeMd, newContent);
-    } else if (!existingContent.includes('/vibe.spec')) {
+    } else if (!existingContent.includes('/core.spec')) {
       // VIBE 섹션 없음 - 추가
-      const mergedContent = existingContent.trim() + '\n\n' + vibeContent;
+      const mergedContent = existingContent.trim() + '\n\n' + coreContent;
       fs.writeFileSync(projectClaudeMd, mergedContent);
     }
     // else: 이미 VIBE 관련 내용이 있지만 마커가 없는 경우 - 건드리지 않음
   } else {
-    fs.writeFileSync(projectClaudeMd, vibeContent);
+    fs.writeFileSync(projectClaudeMd, coreContent);
   }
 }
 
 /**
- * 프로젝트 vibe 폴더 설정
+ * 프로젝트 core 폴더 설정
  */
-export function updateRules(vibeDir: string, detectedStacks: TechStack[], isUpdate = false): void {
+export function updateRules(coreDir: string, detectedStacks: TechStack[], isUpdate = false): void {
   // 레거시 폴더 정리 (이전 버전에서 복사된 것들)
   const legacyFolders = ['rules', 'languages', 'templates'];
   legacyFolders.forEach(folder => {
-    const legacyPath = path.join(vibeDir, folder);
+    const legacyPath = path.join(coreDir, folder);
     if (fs.existsSync(legacyPath)) {
       removeDirRecursive(legacyPath);
     }
@@ -191,7 +191,7 @@ export function updateRules(vibeDir: string, detectedStacks: TechStack[], isUpda
 
   // specs, features 폴더 확인/생성
   ['specs', 'features'].forEach(dir => {
-    ensureDir(path.join(vibeDir, dir));
+    ensureDir(path.join(coreDir, dir));
   });
 }
 
@@ -210,27 +210,27 @@ export function installProjectHooks(projectRoot: string): void {
 
   // 템플릿 읽고 플레이스홀더 치환
   let hooksContent = fs.readFileSync(hooksTemplate, 'utf-8');
-  const vibeConfigPath = getVibeConfigDir();
+  const coreConfigPath = getCoreConfigDir();
 
   // Windows 경로는 슬래시 사용
-  const vibePathForUrl = vibeConfigPath.replace(/\\/g, '/');
-  hooksContent = hooksContent.replace(/\{\{VIBE_PATH\}\}/g, vibePathForUrl);
+  const corePathForUrl = coreConfigPath.replace(/\\/g, '/');
+  hooksContent = hooksContent.replace(/\{\{VIBE_PATH\}\}/g, corePathForUrl);
 
-  const vibeHooks = JSON.parse(hooksContent);
+  const coreHooks = JSON.parse(hooksContent);
 
   if (fs.existsSync(settingsLocalPath)) {
     // 기존 settings.local.json에 hooks 병합
     try {
       const existingSettings = JSON.parse(fs.readFileSync(settingsLocalPath, 'utf-8'));
-      existingSettings.hooks = vibeHooks.hooks;
+      existingSettings.hooks = coreHooks.hooks;
       fs.writeFileSync(settingsLocalPath, JSON.stringify(existingSettings, null, 2));
     } catch {
       // 파싱 실패시 새로 생성
-      fs.writeFileSync(settingsLocalPath, JSON.stringify(vibeHooks, null, 2));
+      fs.writeFileSync(settingsLocalPath, JSON.stringify(coreHooks, null, 2));
     }
   } else {
     // 새로 생성
-    fs.writeFileSync(settingsLocalPath, JSON.stringify(vibeHooks, null, 2));
+    fs.writeFileSync(settingsLocalPath, JSON.stringify(coreHooks, null, 2));
   }
 }
 
@@ -247,20 +247,20 @@ export function updateGitignore(projectRoot: string): void {
 
   // settings.local.json 추가
   if (!gitignore.includes('.claude/settings.local.json')) {
-    gitignore = gitignore.trimEnd() + '\n\n# vibe project hooks (personal)\n.claude/settings.local.json\n';
+    gitignore = gitignore.trimEnd() + '\n\n# core project hooks (personal)\n.claude/settings.local.json\n';
     modified = true;
   }
 
   // 레거시 mcp 폴더 제외 제거
-  if (gitignore.includes('.claude/vibe/mcp/')) {
-    gitignore = gitignore.replace(/# vibe MCP\n\.claude\/vibe\/mcp\/\n?/g, '');
-    gitignore = gitignore.replace(/\.claude\/vibe\/mcp\/\n?/g, '');
+  if (gitignore.includes('.claude/core/mcp/')) {
+    gitignore = gitignore.replace(/# core MCP\n\.claude\/core\/mcp\/\n?/g, '');
+    gitignore = gitignore.replace(/\.claude\/core\/mcp\/\n?/g, '');
     modified = true;
   }
 
   // 레거시 node_modules 제외 제거
-  if (gitignore.includes('.claude/vibe/node_modules/')) {
-    gitignore = gitignore.replace(/# vibe local packages\n\.claude\/vibe\/node_modules\/\n?/g, '');
+  if (gitignore.includes('.claude/core/node_modules/')) {
+    gitignore = gitignore.replace(/# core local packages\n\.claude\/vibe\/node_modules\/\n?/g, '');
     gitignore = gitignore.replace(/\.claude\/vibe\/node_modules\/\n?/g, '');
     modified = true;
   }
@@ -274,31 +274,31 @@ export function updateGitignore(projectRoot: string): void {
  * 스택 기반 references 생성
  */
 function generateReferences(detectedStacks: TechStack[]): VibeReferences {
-  const globalVibeDir = '~/.claude/vibe';
+  const globalCoreDir = '~/.claude/core';
 
   const rules = [
-    `${globalVibeDir}/rules/core/quick-start.md`,
-    `${globalVibeDir}/rules/core/development-philosophy.md`,
-    `${globalVibeDir}/rules/core/communication-guide.md`,
-    `${globalVibeDir}/rules/quality/checklist.md`,
-    `${globalVibeDir}/rules/quality/bdd-contract-testing.md`,
-    `${globalVibeDir}/rules/quality/testing-strategy.md`,
-    `${globalVibeDir}/rules/standards/anti-patterns.md`,
-    `${globalVibeDir}/rules/standards/code-structure.md`,
-    `${globalVibeDir}/rules/standards/complexity-metrics.md`,
-    `${globalVibeDir}/rules/standards/naming-conventions.md`
+    `${globalCoreDir}/rules/core/quick-start.md`,
+    `${globalCoreDir}/rules/core/development-philosophy.md`,
+    `${globalCoreDir}/rules/core/communication-guide.md`,
+    `${globalCoreDir}/rules/quality/checklist.md`,
+    `${globalCoreDir}/rules/quality/bdd-contract-testing.md`,
+    `${globalCoreDir}/rules/quality/testing-strategy.md`,
+    `${globalCoreDir}/rules/standards/anti-patterns.md`,
+    `${globalCoreDir}/rules/standards/code-structure.md`,
+    `${globalCoreDir}/rules/standards/complexity-metrics.md`,
+    `${globalCoreDir}/rules/standards/naming-conventions.md`
   ];
 
   const languages = detectedStacks.map(stack =>
-    `${globalVibeDir}/languages/${stack.type}.md`
+    `${globalCoreDir}/languages/${stack.type}.md`
   );
 
   const templates = [
-    `${globalVibeDir}/templates/spec-template.md`,
-    `${globalVibeDir}/templates/feature-template.md`,
-    `${globalVibeDir}/templates/constitution-template.md`,
-    `${globalVibeDir}/templates/contract-backend-template.md`,
-    `${globalVibeDir}/templates/contract-frontend-template.md`
+    `${globalCoreDir}/templates/spec-template.md`,
+    `${globalCoreDir}/templates/feature-template.md`,
+    `${globalCoreDir}/templates/constitution-template.md`,
+    `${globalCoreDir}/templates/contract-backend-template.md`,
+    `${globalCoreDir}/templates/contract-frontend-template.md`
   ];
 
   return { rules, languages, templates };
@@ -308,12 +308,12 @@ function generateReferences(detectedStacks: TechStack[]): VibeReferences {
  * config.json 생성/업데이트
  */
 export function updateConfig(
-  vibeDir: string,
+  coreDir: string,
   detectedStacks: TechStack[],
   stackDetails: StackDetails,
   isUpdate = false
 ): void {
-  const configPath = path.join(vibeDir, 'config.json');
+  const configPath = path.join(coreDir, 'config.json');
   const references = generateReferences(detectedStacks);
 
   if (isUpdate && fs.existsSync(configPath)) {

@@ -3,7 +3,7 @@ description: Preview UI with Gemini image or ASCII art fallback
 argument-hint: "UI description or design folder path"
 ---
 
-# /vibe.ui
+# /core.ui
 
 Preview UI from description or design guide folder.
 
@@ -13,10 +13,10 @@ Preview UI from description or design guide folder.
 ## Usage
 
 ```
-/vibe.ui "login page"                    # Text description
-/vibe.ui "dashboard" --layout grid       # With layout option
-/vibe.ui ./design/                       # Design guide folder
-/vibe.ui ./mockups/login.html            # Single HTML file
+/core.ui "login page"                    # Text description
+/core.ui "dashboard" --layout grid       # With layout option
+/core.ui ./design/                       # Design guide folder
+/core.ui ./mockups/login.html            # Single HTML file
 ```
 
 ## Process
@@ -92,17 +92,17 @@ Analyze the UI structure:
 **Check Gemini authentication:**
 
 ```bash
-vibe gemini status
+core gemini status
 ```
 
-Or check config file: `~/.config/vibe/gemini.json`
+Or check config file: `~/.config/core/gemini.json`
 
 #### If Gemini Enabled: Generate UI Image + Code
 
 ##### A. UI Mockup Image Generation
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Modern UI mockup: [UI Description from step 2]. Clean design, [colors/typography if available], mobile-first responsive layout" --output "./ui-preview.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "Modern UI mockup: [UI Description from step 2]. Clean design, [colors/typography if available], mobile-first responsive layout" --output "./ui-preview.png"
 ```
 
 ##### B. UI Code Generation (from design files)
@@ -110,7 +110,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 When design files (image/HTML/folder) are provided, use Gemini to generate production-ready component code:
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate "You are a UI code generator. Analyze the provided design and generate production-ready React TypeScript components with Tailwind CSS. Output complete component code with proper types, responsive layout, and accessibility attributes."
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate "You are a UI code generator. Analyze the provided design and generate production-ready React TypeScript components with Tailwind CSS. Output complete component code with proper types, responsive layout, and accessibility attributes."
 ```
 
 Pass the design context (file contents, extracted colors, layout structure from step 2) as the user prompt via stdin or arguments.
@@ -183,7 +183,7 @@ src/
 ## Example (with Gemini)
 
 ```
-User: /vibe.ui ./design/dashboard/
+User: /core.ui ./design/dashboard/
 
 Claude: Reading design folder...
   - Found: mockup.png, tokens.json, style-guide.md
@@ -206,13 +206,13 @@ Generating UI mockup with Gemini...
 4. Footer (copyright, links)
 5. DashboardLayout (overall layout)
 
-Next step: /vibe.spec "dashboard page"
+Next step: /core.spec "dashboard page"
 ```
 
 ## Example (ASCII Fallback)
 
 ```
-User: /vibe.ui "Dashboard page - header, sidebar, main content (3 cards), footer"
+User: /core.ui "Dashboard page - header, sidebar, main content (3 cards), footer"
 
 Claude: Gemini not configured. Using ASCII preview...
 
@@ -243,9 +243,9 @@ Claude: Gemini not configured. Using ASCII preview...
 - Main: grid (3 columns)
 - Responsive: Changes to 1 column on mobile
 
-💡 Tip: Run `vibe gemini auth` for actual UI image generation
+💡 Tip: Run `core gemini auth` for actual UI image generation
 
-Next step: /vibe.spec "dashboard page"
+Next step: /core.spec "dashboard page"
 ```
 
 ## Notes

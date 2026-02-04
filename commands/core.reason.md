@@ -3,14 +3,14 @@ description: Apply systematic reasoning framework to complex problems
 argument-hint: "problem description"
 ---
 
-# /vibe.reason
+# /core.reason
 
 Apply 9-step reasoning framework to complex problems.
 
 ## Usage
 
 ```
-/vibe.reason "problem description"
+/core.reason "problem description"
 ```
 
 ## When to Use
@@ -124,7 +124,7 @@ Apply 9-step reasoning framework to complex problems.
 ## Example
 
 ```
-User: /vibe.reason "After user login, profile page intermittently returns 500 error"
+User: /core.reason "After user login, profile page intermittently returns 500 error"
 
 AI: Analyzing with 9-step reasoning framework...
 
@@ -178,7 +178,7 @@ AI: Analyzing with 9-step reasoning framework...
    - Verify hypotheses in order of likelihood
    - Feedback each verification result
 
-## Vibe Tools (Reasoning Support)
+## Core Tools (Reasoning Support)
 
 ### Tool Invocation
 

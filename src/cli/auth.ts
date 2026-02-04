@@ -39,7 +39,7 @@ export function getLLMAuthStatus(): LLMStatusMap {
   // GPT API 키 확인 (프로젝트 config)
   if (!status.gpt) {
     try {
-      const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+      const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
       if (fs.existsSync(configPath)) {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         if (config.models?.gpt?.enabled) {
@@ -51,10 +51,10 @@ export function getLLMAuthStatus(): LLMStatusMap {
 
   // Gemini 상태 확인
   try {
-    // Windows: %APPDATA%/vibe, macOS/Linux: ~/.config/vibe
+    // Windows: %APPDATA%/core, macOS/Linux: ~/.config/core
     const geminiConfigDir = process.platform === 'win32'
-      ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
-      : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+      ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
+      : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
     const tokenPath = path.join(geminiConfigDir, 'gemini-auth.json');
     if (fs.existsSync(tokenPath)) {
       const tokenData = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
@@ -73,7 +73,7 @@ export function getLLMAuthStatus(): LLMStatusMap {
   // Gemini API 키 확인 (프로젝트 config)
   if (!status.gemini) {
     try {
-      const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+      const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
       if (fs.existsSync(configPath)) {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         if (config.models?.gemini?.enabled) {
@@ -104,7 +104,7 @@ export function formatLLMStatus(): string {
       lines.push('  GPT: ✓ API key configured');
     }
   } else {
-    lines.push('  GPT: ✗ Not configured (vibe auth gpt or vibe gpt <api-key>)');
+    lines.push('  GPT: ✗ Not configured (core auth gpt or core gpt <api-key>)');
   }
 
   // Gemini status
@@ -116,7 +116,7 @@ export function formatLLMStatus(): string {
       lines.push('  Gemini: ✓ API key configured');
     }
   } else {
-    lines.push('  Gemini: ✗ Not configured (vibe auth gemini or vibe gemini <api-key>)');
+    lines.push('  Gemini: ✗ Not configured (core auth gemini or core gemini <api-key>)');
   }
 
   return lines.join('\n');

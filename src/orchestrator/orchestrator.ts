@@ -1,6 +1,6 @@
 /**
  * Orchestrator - 메인 오케스트레이터 클래스
- * /vibe.* 명령어에서 사용할 중앙 오케스트레이션 로직
+ * /core.* 명령어에서 사용할 중앙 오케스트레이션 로직
  *
  * v2.6.0: SmartRouter, LLMCluster, AgentManager로 분리
  */
@@ -33,10 +33,10 @@ import { LLMCluster, LLMClusterOptions, MultiLlmQueryResult, LlmStatusResult } f
 import { AgentManager, AgentManagerOptions } from './AgentManager.js';
 
 /**
- * Vibe Orchestrator
- * 모든 /vibe.* 명령어의 오케스트레이션을 담당
+ * Core Orchestrator
+ * 모든 /core.* 명령어의 오케스트레이션을 담당
  */
-export class VibeOrchestrator {
+export class CoreOrchestrator {
   private options: OrchestratorOptions;
   private memoryManager: MemoryManager;
 
@@ -50,7 +50,7 @@ export class VibeOrchestrator {
       projectPath: process.cwd(),
       verbose: false,
       saveResults: true,
-      resultsPath: '.claude/vibe/orchestrator',
+      resultsPath: '.claude/core/orchestrator',
       ...options
     };
 
@@ -289,11 +289,11 @@ export class VibeOrchestrator {
 }
 
 // 싱글톤 인스턴스 (선택적 사용)
-let defaultOrchestrator: VibeOrchestrator | null = null;
+let defaultOrchestrator: CoreOrchestrator | null = null;
 
-export function getOrchestrator(options?: OrchestratorOptions): VibeOrchestrator {
+export function getOrchestrator(options?: OrchestratorOptions): CoreOrchestrator {
   if (!defaultOrchestrator || options) {
-    defaultOrchestrator = new VibeOrchestrator(options);
+    defaultOrchestrator = new CoreOrchestrator(options);
   }
   return defaultOrchestrator;
 }

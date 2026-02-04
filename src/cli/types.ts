@@ -46,9 +46,9 @@ export interface ExternalLLMConfig {
 }
 
 export interface VibeReferences {
-  rules: string[];      // e.g., ["~/.claude/vibe/rules/code-quality.md"]
-  languages: string[];  // e.g., ["~/.claude/vibe/languages/typescript-react.md"]
-  templates: string[];  // e.g., ["~/.claude/vibe/templates/spec-template.md"]
+  rules: string[];      // e.g., ["~/.claude/core/rules/code-quality.md"]
+  languages: string[];  // e.g., ["~/.claude/core/languages/typescript-react.md"]
+  templates: string[];  // e.g., ["~/.claude/core/templates/spec-template.md"]
 }
 
 export interface VibeConfig {

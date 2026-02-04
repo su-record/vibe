@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * vibe CLI (TypeScript version 2.0)
+ * core CLI (TypeScript version 2.0)
  * SPEC-driven AI coding framework (Claude Code exclusive)
  */
 
@@ -41,7 +41,7 @@ import {
   updateConstitution,
   updateClaudeMd,
   updateRules,
-  migrateLegacyVibe,
+  migrateLegacyCore,
   updateGitignore,
   updateConfig,
   cleanupLegacy,
@@ -64,7 +64,7 @@ import {
   installCursorAgents,
   generateCursorRules,
   generateCursorSkills,
-  getVibeConfigDir,
+  getCoreConfigDir,
 } from './postinstall.js';
 
 const require = createRequire(import.meta.url);
@@ -96,7 +96,7 @@ setSilentMode(options.silent);
 
 /**
  * Update global Cursor assets (agents, rules, skills)
- * Called by both vibe init and vibe update
+ * Called by both core init and core update
  * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
  */
 function updateCursorGlobalAssets(detectedStacks: string[] = []): void {
@@ -104,8 +104,8 @@ function updateCursorGlobalAssets(detectedStacks: string[] = []): void {
     const packageRoot = path.resolve(__dirname, '..', '..');
     const agentsSource = path.join(packageRoot, 'agents');
 
-    // VIBE 언어 룰 디렉토리 (~/.claude/vibe/languages/ 또는 패키지 내 languages/)
-    const globalLanguagesDir = path.join(os.homedir(), '.claude', 'vibe', 'languages');
+    // VIBE 언어 룰 디렉토리 (~/.claude/core/languages/ 또는 패키지 내 languages/)
+    const globalLanguagesDir = path.join(os.homedir(), '.claude', 'core', 'languages');
     const packageLanguagesDir = path.join(packageRoot, 'languages');
     const languagesDir = fs.existsSync(globalLanguagesDir) ? globalLanguagesDir : packageLanguagesDir;
 
@@ -154,16 +154,16 @@ async function init(projectName?: string): Promise<void> {
     }
 
     const claudeDir = path.join(projectRoot, '.claude');
-    const vibeDir = path.join(claudeDir, 'vibe');
-    if (fs.existsSync(vibeDir)) {
-      log('❌ .claude/vibe/ already exists.');
+    const coreDir = path.join(claudeDir, 'core');
+    if (fs.existsSync(coreDir)) {
+      log('❌ .claude/core/ already exists.');
       return;
     }
 
-    ensureDir(vibeDir);
+    ensureDir(coreDir);
 
     // 레거시 마이그레이션
-    migrateLegacyVibe(projectRoot, vibeDir);
+    migrateLegacyCore(projectRoot, coreDir);
 
     // .gitignore 업데이트
     updateGitignore(projectRoot);
@@ -184,16 +184,16 @@ async function init(projectName?: string): Promise<void> {
     }
 
     // constitution.md 생성
-    updateConstitution(vibeDir, detectedStacks, stackDetails);
+    updateConstitution(coreDir, detectedStacks, stackDetails);
 
     // config.json 생성
-    updateConfig(vibeDir, detectedStacks, stackDetails, false);
+    updateConfig(coreDir, detectedStacks, stackDetails, false);
 
     // CLAUDE.md 병합
     updateClaudeMd(projectRoot, detectedStacks, false);
 
     // 규칙 복사
-    updateRules(vibeDir, detectedStacks, false);
+    updateRules(coreDir, detectedStacks, false);
 
     // 협업자 자동 설치 설정
     setupCollaboratorAutoInstall(projectRoot);
@@ -211,11 +211,11 @@ async function init(projectName?: string): Promise<void> {
     // 완료 메시지
     const packageJson = getPackageJson();
 
-    log(`✅ vibe initialized (v${packageJson.version})
+    log(`✅ core initialized (v${packageJson.version})
 ${formatLLMStatus()}
 📦 Context7 plugin (recommended): /plugin install context7
 
-Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"
+Next: ${isNewProject ? `cd ${projectName} && ` : ''}/core.spec "feature"
 `);
 
   } catch (error: unknown) {
@@ -243,7 +243,7 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
       });
 
       // 업그레이드 완료 후 새 버전으로 설정 업데이트 (--skip-upgrade로 무한 루프 방지)
-      execSync(`vibe update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
+      execSync(`core update --skip-upgrade${options.silent ? ' --silent' : ''}`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
@@ -258,9 +258,9 @@ async function checkAndUpgradeVibe(): Promise<boolean> {
 async function update(): Promise<void> {
   try {
     const projectRoot = process.cwd();
-    const vibeDir = path.join(projectRoot, '.claude', 'vibe');
+    const coreDir = path.join(projectRoot, '.claude', 'core');
     const claudeDir = path.join(projectRoot, '.claude');
-    const legacyVibeDir = path.join(projectRoot, '.vibe');
+    const legacyCoreDir = path.join(projectRoot, '.core');
 
     // CI/프로덕션 환경에서는 스킵
     if (process.env.NODE_ENV === 'production' || process.env.CI === 'true') {
@@ -277,20 +277,20 @@ async function update(): Promise<void> {
 
     // 2. 프로젝트 설정 업데이트
     // 레거시 마이그레이션
-    if (fs.existsSync(legacyVibeDir) && !fs.existsSync(vibeDir)) {
-      migrateLegacyVibe(projectRoot, vibeDir);
+    if (fs.existsSync(legacyCoreDir) && !fs.existsSync(coreDir)) {
+      migrateLegacyCore(projectRoot, coreDir);
     }
 
-    if (!fs.existsSync(vibeDir) && !fs.existsSync(legacyVibeDir)) {
+    if (!fs.existsSync(coreDir) && !fs.existsSync(legacyCoreDir)) {
       // 프로젝트가 없어도 전역 업그레이드는 완료됨
       const packageJson = getPackageJson();
-      log(`✅ vibe global updated (v${packageJson.version})
+      log(`✅ core global updated (v${packageJson.version})
 ${formatLLMStatus()}
 `);
       return;
     }
 
-    ensureDir(vibeDir);
+    ensureDir(coreDir);
 
     // 레거시 정리
     cleanupLegacy(projectRoot, claudeDir);
@@ -299,16 +299,16 @@ ${formatLLMStatus()}
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
 
     // config.json 업데이트
-    updateConfig(vibeDir, detectedStacks, stackDetails, true);
+    updateConfig(coreDir, detectedStacks, stackDetails, true);
 
     // constitution.md 업데이트
-    updateConstitution(vibeDir, detectedStacks, stackDetails);
+    updateConstitution(coreDir, detectedStacks, stackDetails);
 
     // CLAUDE.md 업데이트
     updateClaudeMd(projectRoot, detectedStacks, true);
 
     // 규칙 업데이트
-    updateRules(vibeDir, detectedStacks, true);
+    updateRules(coreDir, detectedStacks, true);
 
     // 프로젝트 로컬 자산 제거
     removeLocalAssets(claudeDir);
@@ -333,11 +333,11 @@ ${formatLLMStatus()}
     cleanupClaudeConfig();
 
     // 레거시 mcp 폴더 정리
-    cleanupLegacyMcp(vibeDir);
+    cleanupLegacyMcp(coreDir);
 
     const packageJson = getPackageJson();
 
-    log(`✅ vibe updated (v${packageJson.version})
+    log(`✅ core updated (v${packageJson.version})
 ${formatLLMStatus()}
 📦 Context7 plugin (recommended): /plugin install context7
 `);
@@ -351,35 +351,35 @@ ${formatLLMStatus()}
 
 function remove(): void {
   const projectRoot = process.cwd();
-  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
-  const legacyVibeDir = path.join(projectRoot, '.vibe');
+  const coreDir = path.join(projectRoot, '.claude', 'core');
+  const legacyCoreDir = path.join(projectRoot, '.core');
   const claudeDir = path.join(projectRoot, '.claude');
 
-  if (!fs.existsSync(vibeDir) && !fs.existsSync(legacyVibeDir)) {
-    console.log('❌ Not a vibe project.');
+  if (!fs.existsSync(coreDir) && !fs.existsSync(legacyCoreDir)) {
+    console.log('❌ Not a core project.');
     return;
   }
 
-  console.log('🗑️  Removing vibe...\n');
+  console.log('🗑️  Removing core...\n');
 
 
-  // .claude/vibe 폴더 제거
-  if (fs.existsSync(vibeDir)) {
-    removeDirRecursive(vibeDir);
-    console.log('   ✅ .claude/vibe/ removed\n');
+  // .claude/core 폴더 제거
+  if (fs.existsSync(coreDir)) {
+    removeDirRecursive(coreDir);
+    console.log('   ✅ .claude/core/ removed\n');
   }
 
-  // 레거시 .vibe 폴더도 제거
-  if (fs.existsSync(legacyVibeDir)) {
-    removeDirRecursive(legacyVibeDir);
-    console.log('   ✅ .vibe/ removed (legacy)\n');
+  // 레거시 .core 폴더도 제거
+  if (fs.existsSync(legacyCoreDir)) {
+    removeDirRecursive(legacyCoreDir);
+    console.log('   ✅ .core/ removed (legacy)\n');
   }
 
   // .claude/commands 제거
   const commandsDir = path.join(claudeDir, 'commands');
   if (fs.existsSync(commandsDir)) {
-    const vibeCommands = ['vibe.spec.md', 'vibe.run.md', 'vibe.verify.md', 'vibe.reason.md', 'vibe.analyze.md', 'vibe.ui.md', 'vibe.diagram.md'];
-    vibeCommands.forEach(cmd => {
+    const coreCommands = ['core.spec.md', 'core.run.md', 'core.verify.md', 'core.reason.md', 'core.analyze.md', 'core.ui.md', 'core.diagram.md'];
+    coreCommands.forEach(cmd => {
       const cmdPath = path.join(commandsDir, cmd);
       if (fs.existsSync(cmdPath)) {
         fs.unlinkSync(cmdPath);
@@ -391,8 +391,8 @@ function remove(): void {
   // .claude/agents 제거
   const agentsDir = path.join(claudeDir, 'agents');
   if (fs.existsSync(agentsDir)) {
-    const vibeAgents = ['simplifier.md', 'explorer.md', 'implementer.md', 'tester.md', 'searcher.md'];
-    vibeAgents.forEach(agent => {
+    const coreAgents = ['simplifier.md', 'explorer.md', 'implementer.md', 'tester.md', 'searcher.md'];
+    coreAgents.forEach(agent => {
       const agentPath = path.join(agentsDir, agent);
       if (fs.existsSync(agentPath)) {
         fs.unlinkSync(agentPath);
@@ -420,14 +420,14 @@ function remove(): void {
   // Cursor agents 제거 (12 reviewers)
   const cursorAgentsDir = path.join(cursorDir, 'agents');
   if (fs.existsSync(cursorAgentsDir)) {
-    const vibeReviewers = [
+    const coreReviewers = [
       'security-reviewer.md', 'architecture-reviewer.md', 'data-integrity-reviewer.md',
       'typescript-reviewer.md', 'python-reviewer.md', 'react-reviewer.md', 'rails-reviewer.md',
       'performance-reviewer.md', 'complexity-reviewer.md', 'simplicity-reviewer.md',
       'test-coverage-reviewer.md', 'git-history-reviewer.md'
     ];
     let removedAgents = 0;
-    vibeReviewers.forEach(agent => {
+    coreReviewers.forEach(agent => {
       const agentPath = path.join(cursorAgentsDir, agent);
       if (fs.existsSync(agentPath)) {
         fs.unlinkSync(agentPath);
@@ -439,12 +439,12 @@ function remove(): void {
     }
   }
 
-  // Cursor skills 제거 (7 vibe skills)
+  // Cursor skills 제거 (7 core skills)
   const cursorSkillsDir = path.join(cursorDir, 'skills');
   if (fs.existsSync(cursorSkillsDir)) {
-    const vibeSkills = ['vibe-spec', 'vibe-run', 'vibe-review', 'vibe-analyze', 'vibe-verify', 'vibe-reason', 'vibe-ui'];
+    const coreSkills = ['core-spec', 'core-run', 'core-review', 'core-analyze', 'core-verify', 'core-reason', 'core-ui'];
     let removedSkills = 0;
-    vibeSkills.forEach(skill => {
+    coreSkills.forEach(skill => {
       const skillDir = path.join(cursorSkillsDir, skill);
       if (fs.existsSync(skillDir)) {
         removeDirRecursive(skillDir);
@@ -459,12 +459,12 @@ function remove(): void {
   // Cursor rules template 제거 (5 rules)
   const cursorRulesDir = path.join(cursorDir, 'rules-template');
   if (fs.existsSync(cursorRulesDir)) {
-    const vibeRules = [
+    const coreRules = [
       'typescript-standards.mdc', 'react-patterns.mdc', 'code-quality.mdc',
       'security-checklist.mdc', 'python-standards.mdc'
     ];
     let removedRules = 0;
-    vibeRules.forEach(rule => {
+    coreRules.forEach(rule => {
       const rulePath = path.join(cursorRulesDir, rule);
       if (fs.existsSync(rulePath)) {
         fs.unlinkSync(rulePath);
@@ -477,11 +477,11 @@ function remove(): void {
   }
 
   console.log(`
-✅ vibe removed!
+✅ core removed!
 
 Removed:
   - MCP server (context7)
-  - .claude/vibe/ folder
+  - .claude/core/ folder
   - Slash commands (7)
   - Subagents (5)
   - Hooks settings
@@ -489,7 +489,7 @@ Removed:
   - Cursor skills (7)
   - Cursor rules template (5)
 
-To reinstall: vibe init
+To reinstall: core init
   `);
 }
 
@@ -499,42 +499,42 @@ To reinstall: vibe init
 
 function showHelp(): void {
   console.log(`
-📖 Vibe - SPEC-driven AI coding framework (Claude Code exclusive)
+📖 Core - SPEC-driven AI coding framework (Claude Code exclusive)
 
 Commands:
-  vibe init [project]     Initialize project
-  vibe update             Update settings
-  vibe status             Show status
-  vibe hud [subcommand]   HUD status display
-  vibe help               Help
-  vibe version            Version
+  core init [project]     Initialize project
+  core update             Update settings
+  core status             Show status
+  core hud [subcommand]   HUD status display
+  core help               Help
+  core version            Version
 
 GPT:
-  vibe gpt auth           OAuth authentication (Plus/Pro)
-  vibe gpt key <KEY>      Set API key
-  vibe gpt status         Check status
-  vibe gpt logout         Logout
-  vibe gpt remove         Remove config
+  core gpt auth           OAuth authentication (Plus/Pro)
+  core gpt key <KEY>      Set API key
+  core gpt status         Check status
+  core gpt logout         Logout
+  core gpt remove         Remove config
 
 Gemini:
-  vibe gemini auth        OAuth authentication
-  vibe gemini key <KEY>   Set API key
-  vibe gemini status      Check status
-  vibe gemini logout      Logout
-  vibe gemini remove      Remove config
+  core gemini auth        OAuth authentication
+  core gemini key <KEY>   Set API key
+  core gemini status      Check status
+  core gemini logout      Logout
+  core gemini remove      Remove config
 
 Slash Commands (Claude Code):
-  /vibe.spec "feature"    Create SPEC + parallel research
-  /vibe.run "feature"     Execute implementation
-  /vibe.verify "feature"  BDD verification
-  /vibe.review            Parallel code review (13+ agents)
-  /vibe.reason "problem"  Systematic reasoning
-  /vibe.analyze           Project analysis
-  /vibe.utils             Utilities (--e2e, --diagram, --continue)
+  /core.spec "feature"    Create SPEC + parallel research
+  /core.run "feature"     Execute implementation
+  /core.verify "feature"  BDD verification
+  /core.review            Parallel code review (13+ agents)
+  /core.reason "problem"  Systematic reasoning
+  /core.analyze           Project analysis
+  /core.utils             Utilities (--e2e, --diagram, --continue)
 
 Workflow:
-  /vibe.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
-  /vibe.spec → /vibe.run            Manual step-by-step
+  /core.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
+  /core.spec → /core.run            Manual step-by-step
 
 Docs: https://github.com/su-record/core
   `);
@@ -542,14 +542,14 @@ Docs: https://github.com/su-record/core
 
 function showStatus(): void {
   const projectRoot = process.cwd();
-  const vibeDir = path.join(projectRoot, '.claude', 'vibe');
-  const configPath = path.join(vibeDir, 'config.json');
+  const coreDir = path.join(projectRoot, '.claude', 'core');
+  const configPath = path.join(coreDir, 'config.json');
 
   const packageJson = getPackageJson();
-  const isVibeProject = fs.existsSync(vibeDir);
+  const isCoreProject = fs.existsSync(coreDir);
 
   let config: VibeConfig = { language: 'ko', models: {} };
-  if (isVibeProject && fs.existsSync(configPath)) {
+  if (isCoreProject && fs.existsSync(configPath)) {
     config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   }
 
@@ -577,15 +577,15 @@ function showStatus(): void {
   }
 
   // 프로젝트 상태
-  const projectStatus = isVibeProject
+  const projectStatus = isCoreProject
     ? `✅ ${projectRoot}`
-    : `⬚ Not a vibe project (run: vibe init)`;
+    : `⬚ Not a core project (run: core init)`;
 
   console.log(`
-📊 Vibe Status (v${packageJson.version})
+📊 Core Status (v${packageJson.version})
 
 Project: ${projectStatus}
-${isVibeProject ? `Language: ${config.language || 'ko'}` : ''}
+${isCoreProject ? `Language: ${config.language || 'ko'}` : ''}
 
 Models:
   Opus 4.5          Orchestrator
@@ -601,7 +601,7 @@ MCP:
 
 function showVersion(): void {
   const packageJson = getPackageJson();
-  console.log(`vibe v${packageJson.version}`);
+  console.log(`core v${packageJson.version}`);
 }
 
 // ============================================================================
@@ -660,7 +660,7 @@ switch (command) {
     remove();
     break;
 
-  // vibe gpt <subcommand>
+  // core gpt <subcommand>
   case 'gpt': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
@@ -672,7 +672,7 @@ switch (command) {
         if (apiKey) {
           setupExternalLLM('gpt', apiKey);
         } else {
-          console.log('Usage: vibe gpt key <API_KEY>');
+          console.log('Usage: core gpt key <API_KEY>');
         }
         break;
       }
@@ -688,17 +688,17 @@ switch (command) {
       default:
         console.log(`
 GPT Commands:
-  vibe gpt auth     OAuth authentication (Plus/Pro)
-  vibe gpt key      Set API key
-  vibe gpt status   Check status
-  vibe gpt logout   Logout
-  vibe gpt remove   Remove config
+  core gpt auth     OAuth authentication (Plus/Pro)
+  core gpt key      Set API key
+  core gpt status   Check status
+  core gpt logout   Logout
+  core gpt remove   Remove config
         `);
     }
     break;
   }
 
-  // vibe gemini <subcommand>
+  // core gemini <subcommand>
   case 'gemini': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
@@ -710,7 +710,7 @@ GPT Commands:
         if (apiKey) {
           setupExternalLLM('gemini', apiKey);
         } else {
-          console.log('Usage: vibe gemini key <API_KEY>');
+          console.log('Usage: core gemini key <API_KEY>');
         }
         break;
       }
@@ -726,11 +726,11 @@ GPT Commands:
       default:
         console.log(`
 Gemini Commands:
-  vibe gemini auth     OAuth authentication
-  vibe gemini key      Set API key
-  vibe gemini status   Check status
-  vibe gemini logout   Logout
-  vibe gemini remove   Remove config
+  core gemini auth     OAuth authentication
+  core gemini key      Set API key
+  core gemini status   Check status
+  core gemini logout   Logout
+  core gemini remove   Remove config
         `);
     }
     break;
@@ -740,7 +740,7 @@ Gemini Commands:
     showStatus();
     break;
 
-  // vibe hud <subcommand>
+  // core hud <subcommand>
   case 'hud': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
@@ -768,9 +768,9 @@ Gemini Commands:
         } else {
           console.log(`
 Agent Commands:
-  vibe hud agent add <name> [model]  Add agent (default: sonnet)
-  vibe hud agent remove <name>       Remove agent
-  vibe hud agent clear               Clear all agents
+  core hud agent add <name> [model]  Add agent (default: sonnet)
+  core hud agent remove <name>       Remove agent
+  core hud agent clear               Clear all agents
           `);
         }
         break;
@@ -816,17 +816,17 @@ Agent Commands:
 ❌ Unknown command: ${command}
 
 Available commands:
-  vibe init         Initialize project
-  vibe update       Update settings
-  vibe hud <cmd>    HUD status (show, start, phase, agent, reset)
-  vibe gpt <cmd>    GPT commands (auth, key, status, logout)
-  vibe gemini <cmd> Gemini commands (auth, key, status, logout)
-  vibe status       Show status
-  vibe remove       Remove vibe
-  vibe help         Help
-  vibe version      Version info
+  core init         Initialize project
+  core update       Update settings
+  core hud <cmd>    HUD status (show, start, phase, agent, reset)
+  core gpt <cmd>    GPT commands (auth, key, status, logout)
+  core gemini <cmd> Gemini commands (auth, key, status, logout)
+  core status       Show status
+  core remove       Remove core
+  core help         Help
+  core version      Version info
 
-Usage: vibe help
+Usage: core help
     `);
     process.exit(1);
 }

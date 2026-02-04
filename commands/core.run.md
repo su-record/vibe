@@ -3,7 +3,7 @@ description: Execute implementation from SPEC
 argument-hint: "feature name" or --phase N
 ---
 
-# /vibe.run
+# /core.run
 
 Execute **Scenario-Driven Implementation** with automatic quality verification.
 
@@ -12,10 +12,10 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 ## Usage
 
 ```
-/vibe.run "feature-name"              # Full implementation
-/vibe.run "feature-name" --phase 1    # Specific Phase only
-/vibe.run "feature-name" ultrawork    # ULTRAWORK mode (recommended)
-/vibe.run "feature-name" ulw          # Short alias for ultrawork
+/core.run "feature-name"              # Full implementation
+/core.run "feature-name" --phase 1    # Specific Phase only
+/core.run "feature-name" ultrawork    # ULTRAWORK mode (recommended)
+/core.run "feature-name" ulw          # Short alias for ultrawork
 ```
 
 ---
@@ -174,7 +174,7 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 │   ┌──────────────────────────────────────────────────────────┐  │
 │   │  RTM COVERAGE VERIFICATION [Iteration {{ITER}}/{{MAX}}]   │  │
 │   │                                                           │  │
-│   │  Generate RTM via vibe tools:                             │  │
+│   │  Generate RTM via core tools:                             │  │
 │   │  → generateTraceabilityMatrix("{feature-name}")           │  │
 │   │                                                           │  │
 │   │  Coverage Metrics (automated):                            │  │
@@ -292,7 +292,7 @@ Type Check: ✅ No errors
 
 ✅ RALPH VERIFIED COMPLETE!
 
-📄 RTM saved: .claude/vibe/rtm/login-rtm.md
+📄 RTM saved: .claude/core/rtm/login-rtm.md
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -315,13 +315,13 @@ Type Check: ✅ No errors
 ### ULTRAWORK Example
 
 ```
-User: /vibe.run "brick-game" ultrawork
+User: /core.run "brick-game" ultrawork
 
 Claude:
 🚀 ULTRAWORK MODE ACTIVATED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 SPEC: .claude/vibe/specs/brick-game.md
+📄 SPEC: .claude/core/specs/brick-game.md
 🎯 4 Phases detected
 ⚡ Boulder Loop: ENABLED (will continue until all phases complete)
 🔄 Auto-retry: ON (max 3 per phase)
@@ -378,14 +378,14 @@ Claude:
 
 ## Rules Reference
 
-**Must follow `~/.claude/vibe/rules/` (global):**
+**Must follow `~/.claude/core/rules/` (global):**
 
 - `core/development-philosophy.md` - Surgical precision, modify only requested scope
 - `core/quick-start.md` - Korean, DRY, SRP, YAGNI
 - `standards/complexity-metrics.md` - Functions ≤20 lines, nesting ≤3 levels
 - `quality/checklist.md` - Code quality checklist
 
-**Language guide:** `~/.claude/vibe/languages/{stack}.md` (global reference)
+**Language guide:** `~/.claude/core/languages/{stack}.md` (global reference)
 
 ---
 
@@ -554,7 +554,7 @@ Each agent has tier variants for cost optimization:
 
 ### External LLM Usage (When Enabled)
 
-When external LLMs are enabled in `.claude/vibe/config.json`:
+When external LLMs are enabled in `.claude/core/config.json`:
 
 | Role | Method | Condition |
 |------|--------|-----------|
@@ -572,16 +572,16 @@ When external LLMs are enabled in `.claude/vibe/config.json`:
 #   - If systemPrompt is "-", uses default and treats next argument as prompt
 
 # Cross-platform path (works on Windows/macOS/Linux)
-VIBE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+CORE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts"
 
 # GPT call
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "[question content]"
+node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "[question content]"
 
 # Gemini call
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "[question content]"
+node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "[question content]"
 
 # Custom system prompt usage
-node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "You are a code reviewer" "[question content]"
+node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "You are a code reviewer" "[question content]"
 ```
 
 ### External LLM Fallback
@@ -594,9 +594,9 @@ node "$VIBE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "You are a code rev
 - Continue with the implementation without interruption
 - Log the fallback but don't block progress
 
-## Vibe Tools (Semantic Analysis & Memory)
+## Core Tools (Semantic Analysis & Memory)
 
-Use vibe tools for accurate codebase understanding and session continuity.
+Use core tools for accurate codebase understanding and session continuity.
 
 ### Tool Invocation
 
@@ -642,14 +642,14 @@ node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'auth-patt
 ### 1. Load SPEC + Feature
 
 ```
-📄 .claude/vibe/specs/{feature-name}.md      → SPEC (structure, constraints, context)
-📄 .claude/vibe/features/{feature-name}.feature → Feature (scenario = implementation unit)
+📄 .claude/core/specs/{feature-name}.md      → SPEC (structure, constraints, context)
+📄 .claude/core/features/{feature-name}.feature → Feature (scenario = implementation unit)
 ```
 
 **Error if Feature file missing**:
 ```
 ❌ Feature file not found.
-   Run /vibe.spec "{feature-name}" first.
+   Run /core.spec "{feature-name}" first.
 ```
 
 ### 2. Extract Scenario List
@@ -851,7 +851,7 @@ For 5 phases: 4 × 20s saved = **80s faster**
 | Sequential (3 Tasks) | ~30s | Cache cold on each |
 | **Parallel (3 Tasks)** | **~10s** | **Cache warmed once, shared** |
 
-vibe ProjectCache (LRU) caches ts-morph parsing results. Parallel calls share the warmed cache.
+core ProjectCache (LRU) caches ts-morph parsing results. Parallel calls share the warmed cache.
 
 ### Phase Execution Flow (ULTRAWORK Pipeline)
 
@@ -953,13 +953,13 @@ Brand:
 ```
 
 **Trigger Conditions:**
-- First `/vibe.run` execution (no existing icons)
+- First `/core.run` execution (no existing icons)
 - SPEC contains brand/design context
-- Gemini API key configured (`vibe gemini auth`)
+- Gemini API key configured (`core gemini auth`)
 
 **Manual Generation:**
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ---
@@ -1013,12 +1013,12 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
 
 ```bash
 # GPT review (Bash tool call 1)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
 ```
 
 ```bash
 # Gemini review (Bash tool call 2 - run in parallel)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 ```
 
 **Confidence-based Priority:**
@@ -1123,8 +1123,8 @@ Follow during implementation:
 
 ## Input
 
-- `.claude/vibe/specs/{feature-name}.md` (PTCF SPEC)
-- `.claude/vibe/features/{feature-name}.feature` (BDD)
+- `.claude/core/specs/{feature-name}.md` (PTCF SPEC)
+- `.claude/core/features/{feature-name}.feature` (BDD)
 - `CLAUDE.md` (project context)
 
 ## Output
@@ -1136,11 +1136,11 @@ Follow during implementation:
 ## Example
 
 ```
-User: /vibe.run "login"
+User: /core.run "login"
 
 Claude:
-📄 Loading SPEC: .claude/vibe/specs/login.md
-📄 Loading Feature: .claude/vibe/features/login.feature
+📄 Loading SPEC: .claude/core/specs/login.md
+📄 Loading Feature: .claude/core/features/login.feature
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 Scenarios to Implement
@@ -1272,10 +1272,10 @@ Then: Login success + JWT token returned
 ### Phase-specific Execution
 
 ```
-User: /vibe.run "brick-game" --phase 2
+User: /core.run "brick-game" --phase 2
 
 Claude:
-📄 Reading SPEC: .claude/vibe/specs/brick-game.md
+📄 Reading SPEC: .claude/core/specs/brick-game.md
 🎯 Executing Phase 2 only.
 
 Phase 2: Game Logic
@@ -1389,8 +1389,8 @@ After ALL phases complete successfully, **automatically** perform a brief retros
 ### Execution Steps
 
 1. Generate retrospective based on the implementation session
-2. Save to `.claude/vibe/retros/{feature-name}.md`
-3. Save key lessons via `vibe_save_memory` (for cross-session recall)
+2. Save to `.claude/core/retros/{feature-name}.md`
+3. Save key lessons via `core_save_memory` (for cross-session recall)
 4. Update `claude-progress.txt` with final status
 
 **Important:**
@@ -1404,7 +1404,7 @@ After ALL phases complete successfully, **automatically** perform a brief retros
 ## Next Step
 
 ```
-/vibe.verify "brick-game"
+/core.verify "brick-game"
 ```
 
 ---

@@ -138,9 +138,9 @@ export class SmartRouter {
   ): Promise<string> {
     switch (provider) {
       case 'gpt':
-        return gptApi.vibeGptOrchestrate(prompt, systemPrompt, { jsonMode: false });
+        return gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'gemini':
-        return geminiApi.vibeGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
+        return geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'claude':
         throw new Error('Claude fallback - handled by caller');
       default:

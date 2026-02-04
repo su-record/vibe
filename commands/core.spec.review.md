@@ -1,33 +1,33 @@
-# /vibe.spec.review - SPEC Quality Review
+# /core.spec.review - SPEC Quality Review
 
 Review and enhance SPEC with GPT/Gemini cross-validation.
 
-**Purpose:** Run this command in a NEW session after `/vibe.spec` to ensure accurate review execution.
+**Purpose:** Run this command in a NEW session after `/core.spec` to ensure accurate review execution.
 
 ---
 
 ## Usage
 
 ```bash
-/vibe.spec.review "feature-name"
+/core.spec.review "feature-name"
 ```
 
 **Prerequisites:**
-- SPEC file exists: `.claude/vibe/specs/{feature-name}.md` (single) or `.claude/vibe/specs/{feature-name}/_index.md` (split)
-- Feature file exists: `.claude/vibe/features/{feature-name}.feature` (single) or `.claude/vibe/features/{feature-name}/_index.feature` (split)
+- SPEC file exists: `.claude/core/specs/{feature-name}.md` (single) or `.claude/core/specs/{feature-name}/_index.md` (split)
+- Feature file exists: `.claude/core/features/{feature-name}.feature` (single) or `.claude/core/features/{feature-name}/_index.feature` (split)
 
 ---
 
 ## Workflow
 
 ```
-/vibe.spec "feature" → SPEC created
+/core.spec "feature" → SPEC created
         ↓
     /new (new session)
         ↓
-/vibe.spec.review "feature" → Quality validation + GPT/Gemini review
+/core.spec.review "feature" → Quality validation + GPT/Gemini review
         ↓
-    /vibe.run "feature"
+    /core.run "feature"
 ```
 
 ---
@@ -38,19 +38,19 @@ Detect SPEC structure (single file or split folder) and read files:
 
 **Single file structure:**
 ```
-.claude/vibe/specs/{feature-name}.md
-.claude/vibe/features/{feature-name}.feature
+.claude/core/specs/{feature-name}.md
+.claude/core/features/{feature-name}.feature
 ```
 
 **Split folder structure:**
 ```
-.claude/vibe/specs/{feature-name}/_index.md      (+ phase files)
-.claude/vibe/features/{feature-name}/_index.feature (+ phase files)
+.claude/core/specs/{feature-name}/_index.md      (+ phase files)
+.claude/core/features/{feature-name}/_index.feature (+ phase files)
 ```
 
 **Detection logic:**
-1. Check if `.claude/vibe/specs/{feature-name}/` directory exists → Split mode
-2. Otherwise check `.claude/vibe/specs/{feature-name}.md` → Single mode
+1. Check if `.claude/core/specs/{feature-name}/` directory exists → Split mode
+2. Otherwise check `.claude/core/specs/{feature-name}.md` → Single mode
 3. If neither exists → Error
 
 **Output:**
@@ -61,8 +61,8 @@ Detect SPEC structure (single file or split folder) and read files:
 
 Loading files...
   Mode: {single|split}
-  ✅ SPEC: .claude/vibe/specs/{feature-name}.md (or _index.md + N phase files)
-  ✅ Feature: .claude/vibe/features/{feature-name}.feature (or _index.feature + N phase files)
+  ✅ SPEC: .claude/core/specs/{feature-name}.md (or _index.md + N phase files)
+  ✅ Feature: .claude/core/features/{feature-name}.feature (or _index.feature + N phase files)
 
 Extracted info:
   - Feature: {feature description}
@@ -191,12 +191,12 @@ Score: 96/100 ✅ PASSED
 
 ```bash
 # GPT review (Bash tool call 1)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
 ```
 
 ```bash
 # Gemini review (Bash tool call 2 - run in parallel with GPT)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 ```
 
 **🚨 MANDATORY: Replace `[SCRATCHPAD]` with the actual scratchpad directory path.**
@@ -324,8 +324,8 @@ Review Rounds: 3/3 ✅
 Total Improvements: 4
 
 Updated files:
-  📋 .claude/vibe/specs/{feature-name}.md (or split folder)
-  📋 .claude/vibe/features/{feature-name}.feature (or split folder)
+  📋 .claude/core/specs/{feature-name}.md (or split folder)
+  📋 .claude/core/features/{feature-name}.feature (or split folder)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -333,7 +333,7 @@ Updated files:
 
 ## Step 5: SPEC Summary for User Review
 
-**🚨 MANDATORY: Always output this summary before proceeding to `/vibe.run`.**
+**🚨 MANDATORY: Always output this summary before proceeding to `/core.run`.**
 
 After all review rounds, present the finalized SPEC to the user in a readable format:
 
@@ -369,7 +369,7 @@ After all review rounds, present the finalized SPEC to the user in a readable fo
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 If anything above is incorrect, please request changes.
-If no issues, proceed with /vibe.run "{feature-name}".
+If no issues, proceed with /core.run "{feature-name}".
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -378,11 +378,11 @@ If no issues, proceed with /vibe.run "{feature-name}".
 - List ALL Phases, Scenarios, and Constraints from SPEC without omission
 - Keep it concise for quick user review
 - Wait for user confirmation after review (unless ultrawork mode)
-- In ultrawork mode: output summary then auto-proceed to `/vibe.run`
+- In ultrawork mode: output summary then auto-proceed to `/core.run`
 
 ### 5.1 Final User Checkpoint
 
-**🚨 MANDATORY: `/vibe.run` 진행 전 최종 사용자 확인**
+**🚨 MANDATORY: `/core.run` 진행 전 최종 사용자 확인**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -412,7 +412,7 @@ If no issues, proceed with /vibe.run "{feature-name}".
 ## Next Step
 
 ```
-/vibe.run "{feature-name}"
+/core.run "{feature-name}"
 ```
 
 ---
@@ -423,20 +423,20 @@ If no issues, proceed with /vibe.run "{feature-name}".
 ```
 ❌ ERROR: SPEC file not found
 
-Expected (single): .claude/vibe/specs/{feature-name}.md
-Expected (split):  .claude/vibe/specs/{feature-name}/_index.md
+Expected (single): .claude/core/specs/{feature-name}.md
+Expected (split):  .claude/core/specs/{feature-name}/_index.md
 
-Please run /vibe.spec "{feature-name}" first to create the SPEC.
+Please run /core.spec "{feature-name}" first to create the SPEC.
 ```
 
 ### Feature Not Found
 ```
 ❌ ERROR: Feature file not found
 
-Expected (single): .claude/vibe/features/{feature-name}.feature
-Expected (split):  .claude/vibe/features/{feature-name}/_index.feature
+Expected (single): .claude/core/features/{feature-name}.feature
+Expected (split):  .claude/core/features/{feature-name}/_index.feature
 
-Please run /vibe.spec "{feature-name}" first to create the Feature file.
+Please run /core.spec "{feature-name}" first to create the Feature file.
 ```
 
 ### GPT/Gemini Call Failed
@@ -455,7 +455,7 @@ Continuing with {other model} results only...
 For faster iteration (1 round only):
 
 ```bash
-/vibe.spec.review "feature-name" --quick
+/core.spec.review "feature-name" --quick
 ```
 
 ---
@@ -467,9 +467,9 @@ ARGUMENTS: $ARGUMENTS
 ```
 Feature name: $ARGUMENTS
 
-1. Check split folder: .claude/vibe/specs/$ARGUMENTS/_index.md
+1. Check split folder: .claude/core/specs/$ARGUMENTS/_index.md
    - If exists → Split mode (read all files in folder)
-2. Check single file: .claude/vibe/specs/$ARGUMENTS.md
+2. Check single file: .claude/core/specs/$ARGUMENTS.md
    - If exists → Single mode
 3. Neither exists → Show error with both expected paths
 ```

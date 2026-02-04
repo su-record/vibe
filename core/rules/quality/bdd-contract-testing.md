@@ -214,33 +214,33 @@ def test_login_contract():
 
 ---
 
-## 4. Vibe Commands
+## 4. Core Commands
 
 ### Generate Feature File
 
 ```bash
-vibe feature "user login"
-# → Creates .claude/vibe/features/user-login.feature
+core feature "user login"
+# → Creates .claude/core/features/user-login.feature
 ```
 
 ### Generate Contract Test
 
 ```bash
-vibe contract "user login"
+core contract "user login"
 # → Creates tests/contract/test_user_login_contract.py
 ```
 
 ### Run Tests
 
 ```bash
-vibe test "user login"
+core test "user login"
 # → Runs BDD + Contract tests
 ```
 
 ### Verify
 
 ```bash
-vibe verify "user login"
+core verify "user login"
 # → Confirms 100% SPEC Acceptance Criteria met
 ```
 
@@ -387,7 +387,7 @@ BDD + Contract Testing enables **AI agents to accurately implement SPECs and aut
 **Usage in Vibe**:
 
 ```bash
-vibe spec "feature" → vibe feature "feature" → vibe contract "feature" → vibe run
+core spec "feature" → core feature "feature" → core contract "feature" → core run
 ```
 
 **Test-First → AI Implementation → Verify → Done** 🎉

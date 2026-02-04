@@ -13,13 +13,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * 전역 vibe 설정 디렉토리 경로
+ * 전역 core 설정 디렉토리 경로
  */
-function getVibeConfigDir(): string {
+function getCoreConfigDir(): string {
   if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe');
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core');
   }
-  return path.join(os.homedir(), '.config', 'vibe');
+  return path.join(os.homedir(), '.config', 'core');
 }
 
 /**
@@ -77,7 +77,7 @@ function copySkillsIfMissing(src: string, dest: string): void {
 
 /**
  * 전역 ~/.claude/settings.json에서 hooks 정리
- * vibe는 이제 프로젝트 레벨 (.claude/settings.local.json)에서 훅을 관리하므로
+ * core는 이제 프로젝트 레벨 (.claude/settings.local.json)에서 훅을 관리하므로
  * 전역 설정의 hooks는 제거해야 함 (레거시 정리)
  */
 function cleanupGlobalSettingsHooks(): void {
@@ -125,7 +125,7 @@ function seedInlineSkills(targetDir: string): void {
         '## Usage',
         '',
         '```bash',
-        '# Via Bash hook (automatic in /vibe.spec)',
+        '# Via Bash hook (automatic in /core.spec)',
         'node hooks/scripts/llm-orchestrate.js gpt "your prompt"',
         'node hooks/scripts/llm-orchestrate.js gemini "your prompt"',
         '```',
@@ -133,9 +133,9 @@ function seedInlineSkills(targetDir: string): void {
         '## Setup',
         '',
         '```bash',
-        'vibe gpt auth     # Configure GPT API key',
-        'vibe gemini auth  # Configure Gemini OAuth/API key',
-        'vibe status       # Check current configuration',
+        'core gpt auth     # Configure GPT API key',
+        'core gemini auth  # Configure Gemini OAuth/API key',
+        'core status       # Check current configuration',
         '```',
         '',
         '## Best Practices',
@@ -186,13 +186,13 @@ function seedInlineSkills(targetDir: string): void {
       content: [
         '---',
         'name: code-quality-check',
-        'description: "Code quality validation using vibe tools"',
+        'description: "Code quality validation using core tools"',
         'triggers: [quality, lint, complexity, review]',
         'priority: 60',
         '---',
         '# Code Quality Check',
         '',
-        '## Using Vibe Tools',
+        '## Using Core Tools',
         '',
         '```bash',
         '# Analyze complexity',
@@ -226,7 +226,7 @@ function seedInlineSkills(targetDir: string): void {
         '',
         '```bash',
         '# Auto-restore previous context',
-        '/vibe.utils --continue',
+        '/core.utils --continue',
         '```',
         '',
         '## Saving Context',
@@ -238,7 +238,7 @@ function seedInlineSkills(targetDir: string): void {
         '',
         '## Commands',
         '',
-        '- `/vibe.utils --continue` - Restore previous session',
+        '- `/core.utils --continue` - Restore previous session',
         '- `saveMemory` tool - Save important decisions',
         '- `startSession` tool - Initialize session with context',
       ].join('\n'),
@@ -346,12 +346,12 @@ ${normalizedContent}
 
 /**
  * VIBE 언어 룰 디렉토리에서 .mdc 파일 생성
- * @param languagesDir - VIBE 언어 룰 디렉토리 (~/.claude/vibe/languages/ 또는 패키지 내 languages/)
+ * @param languagesDir - VIBE 언어 룰 디렉토리 (~/.claude/core/languages/ 또는 패키지 내 languages/)
  * @param outputDir - Cursor 룰 출력 디렉토리 (~/.cursor/rules-template/)
  * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
  * @returns 생성된 파일 수
  */
-function generateCursorRulesFromVibeLanguages(
+function generateCursorRulesFromCoreLanguages(
   languagesDir: string,
   outputDir: string,
   detectedStacks: string[] = []
@@ -535,7 +535,7 @@ ${nextStepsSection}
  * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
  * @param languagesDir - VIBE 언어 룰 디렉토리 (optional)
  */
-// 언어 룰 파일 접두사 (이 접두사로 시작하는 .mdc는 vibe에서 관리)
+// 언어 룰 파일 접두사 (이 접두사로 시작하는 .mdc는 core에서 관리)
 const LANGUAGE_RULE_PREFIXES = [
   'typescript-', 'python-', 'dart-', 'go.', 'rust.', 'kotlin-',
   'java-', 'swift-', 'ruby-', 'csharp-', 'gdscript-'
@@ -568,9 +568,9 @@ function generateCursorRules(
   }
 
   // 1. VIBE 언어 룰에서 .mdc 생성 시도
-  let vibeRulesGenerated = 0;
+  let coreRulesGenerated = 0;
   if (languagesDir && detectedStacks.length > 0) {
-    vibeRulesGenerated = generateCursorRulesFromVibeLanguages(
+    coreRulesGenerated = generateCursorRulesFromCoreLanguages(
       languagesDir,
       cursorRulesDir,
       detectedStacks
@@ -676,9 +676,9 @@ alwaysApply: false
     }
   }
 
-  const totalUpdated = vibeRulesGenerated + commonUpdated;
+  const totalUpdated = coreRulesGenerated + commonUpdated;
   const stackInfo = detectedStacks.length > 0 ? ` (${detectedStacks.slice(0, 3).join(', ')}${detectedStacks.length > 3 ? '...' : ''})` : '';
-  console.log(`   📏 Cursor rules: ${totalUpdated} updated (${vibeRulesGenerated} language + ${commonUpdated} common)${stackInfo}`);
+  console.log(`   📏 Cursor rules: ${totalUpdated} updated (${coreRulesGenerated} language + ${commonUpdated} common)${stackInfo}`);
 }
 
 /**
@@ -719,14 +719,14 @@ function installCursorAgents(agentsSource: string, cursorAgentsDir: string): voi
 function generateCursorSkills(cursorSkillsDir: string): void {
   const skills = [
     {
-      id: 'vibe-spec',
+      id: 'core-spec',
       content: `---
-name: vibe-spec
+name: core-spec
 model: claude-4.5-sonnet-thinking
 description: "SPEC document creation with parallel research. Use when starting new feature implementation."
 ---
 
-# vibe spec - SPEC Creation Skill
+# core spec - SPEC Creation Skill
 
 SPEC-driven feature development workflow. Creates AI-executable specification documents.
 
@@ -738,7 +738,7 @@ SPEC-driven feature development workflow. Creates AI-executable specification do
 
 ## Invocation
 
-User says: "vibe spec [feature-name]" or "Create SPEC for [feature-name]"
+User says: "core spec [feature-name]" or "Create SPEC for [feature-name]"
 
 ## Workflow
 
@@ -765,7 +765,7 @@ Create SPEC in PTCF format:
 \`\`\`
 
 ### Phase 4: Save SPEC
-Save to \`.claude/vibe/specs/[feature-name]-spec.md\`
+Save to \`.claude/core/specs/[feature-name]-spec.md\`
 
 ## Output Format
 
@@ -798,19 +798,19 @@ Save to \`.claude/vibe/specs/[feature-name]-spec.md\`
 ## Next Steps
 
 After SPEC creation:
-- "vibe spec review" - Review SPEC with external LLMs
-- "vibe run [feature-name]" - Start implementation
+- "core spec review" - Review SPEC with external LLMs
+- "core run [feature-name]" - Start implementation
 `,
     },
     {
-      id: 'vibe-run',
+      id: 'core-run',
       content: `---
-name: vibe-run
+name: core-run
 model: claude-4.5-opus-high
 description: "Execute SPEC implementation with Scenario-Driven Development. Use after SPEC is approved."
 ---
 
-# vibe run - Implementation Execution Skill
+# core run - Implementation Execution Skill
 
 Executes SPEC-based implementation using Scenario-Driven Development methodology.
 
@@ -822,17 +822,17 @@ Executes SPEC-based implementation using Scenario-Driven Development methodology
 
 ## Invocation
 
-User says: "vibe run [feature-name]" or "Implement [feature-name]"
+User says: "core run [feature-name]" or "Implement [feature-name]"
 
 ## Pre-requisites
 
-1. SPEC document exists at \`.claude/vibe/specs/[feature-name]-spec.md\`
+1. SPEC document exists at \`.claude/core/specs/[feature-name]-spec.md\`
 2. SPEC has been reviewed (optional but recommended)
 
 ## Workflow
 
 ### Step 1: Load SPEC
-Read SPEC from \`.claude/vibe/specs/[feature-name]-spec.md\`
+Read SPEC from \`.claude/core/specs/[feature-name]-spec.md\`
 
 ### Step 2: For Each Phase in SPEC
 
@@ -883,20 +883,20 @@ Per phase:
 ## Next Steps
 
 After implementation:
-- "vibe review" - Run 12+ agent code review
-- "vibe verify [feature-name]" - Verify against SPEC
-- "vibe trace [feature-name]" - Generate traceability matrix
+- "core review" - Run 12+ agent code review
+- "core verify [feature-name]" - Verify against SPEC
+- "core trace [feature-name]" - Generate traceability matrix
 `,
     },
     {
-      id: 'vibe-review',
+      id: 'core-review',
       content: `---
-name: vibe-review
+name: core-review
 model: auto
 description: "Parallel code review with 12+ specialized agents. Use after code changes."
 ---
 
-# vibe review - Parallel Code Review Skill
+# core review - Parallel Code Review Skill
 
 Orchestrates 12+ specialized review agents for comprehensive code review.
 
@@ -908,7 +908,7 @@ Orchestrates 12+ specialized review agents for comprehensive code review.
 
 ## Invocation
 
-User says: "vibe review" or "Review my code"
+User says: "core review" or "Review my code"
 
 ## Available Review Agents
 
@@ -990,14 +990,14 @@ After review:
 `,
     },
     {
-      id: 'vibe-analyze',
+      id: 'core-analyze',
       content: `---
-name: vibe-analyze
+name: core-analyze
 model: claude-4.5-sonnet-thinking
 description: "Project and feature analysis. Use when exploring codebase or planning changes."
 ---
 
-# vibe analyze - Analysis Skill
+# core analyze - Analysis Skill
 
 Comprehensive project and feature analysis for understanding codebases.
 
@@ -1010,7 +1010,7 @@ Comprehensive project and feature analysis for understanding codebases.
 
 ## Invocation
 
-User says: "vibe analyze" or "Analyze [feature/path]"
+User says: "core analyze" or "Analyze [feature/path]"
 
 ## Analysis Modes
 
@@ -1020,8 +1020,8 @@ Analyzes entire project structure and architecture.
 ### 2. Feature Analysis
 Analyzes specific feature or module.
 \`\`\`
-vibe analyze src/auth
-vibe analyze "login feature"
+core analyze src/auth
+core analyze "login feature"
 \`\`\`
 
 ### 3. Dependency Analysis
@@ -1098,20 +1098,20 @@ Identify main entry points:
 ## Next Steps
 
 After analysis:
-- "vibe spec [feature]" - Create SPEC for changes
-- "vibe review" - Review existing code quality
+- "core spec [feature]" - Create SPEC for changes
+- "core review" - Review existing code quality
 - Plan Mode - For simple modifications
 `,
     },
     {
-      id: 'vibe-verify',
+      id: 'core-verify',
       content: `---
-name: vibe-verify
+name: core-verify
 model: claude-4.5-sonnet-thinking
 description: "Verify implementation against SPEC requirements. Use after implementation."
 ---
 
-# vibe verify - Verification Skill
+# core verify - Verification Skill
 
 Verifies implementation completeness against SPEC requirements.
 
@@ -1123,11 +1123,11 @@ Verifies implementation completeness against SPEC requirements.
 
 ## Invocation
 
-User says: "vibe verify [feature-name]"
+User says: "core verify [feature-name]"
 
 ## Pre-requisites
 
-1. SPEC exists at \`.claude/vibe/specs/[feature-name]-spec.md\`
+1. SPEC exists at \`.claude/core/specs/[feature-name]-spec.md\`
 2. Implementation is complete
 
 ## Workflow
@@ -1199,20 +1199,20 @@ Identify:
 
 After verification:
 - Fix gaps if any
-- "vibe trace [feature]" - Full traceability matrix
-- "vibe review" - Final code review
+- "core trace [feature]" - Full traceability matrix
+- "core review" - Final code review
 - Ready for release if all verified
 `,
     },
     {
-      id: 'vibe-reason',
+      id: 'core-reason',
       content: `---
-name: vibe-reason
+name: core-reason
 model: claude-4.5-opus-high-thinking
 description: "Systematic 9-step reasoning framework. Use for complex problem solving."
 ---
 
-# vibe reason - Reasoning Framework Skill
+# core reason - Reasoning Framework Skill
 
 Applies systematic reasoning to complex problems and decisions.
 
@@ -1225,7 +1225,7 @@ Applies systematic reasoning to complex problems and decisions.
 
 ## Invocation
 
-User says: "vibe reason [problem]" or "Reason about [problem]"
+User says: "core reason [problem]" or "Reason about [problem]"
 
 ## 9-Step Reasoning Framework
 
@@ -1336,19 +1336,19 @@ Final recommendation with:
 
 After reasoning:
 - Implement chosen solution
-- "vibe spec [solution]" - If solution needs SPEC
-- "vibe verify" - Verify solution addresses problem
+- "core spec [solution]" - If solution needs SPEC
+- "core verify" - Verify solution addresses problem
 `,
     },
     {
-      id: 'vibe-ui',
+      id: 'core-ui',
       content: `---
-name: vibe-ui
+name: core-ui
 model: gpt-5.2-codex
 description: "UI preview and generation utilities. Use for UI component work."
 ---
 
-# vibe ui - UI Utilities Skill
+# core ui - UI Utilities Skill
 
 UI preview, generation, and refactoring utilities.
 
@@ -1361,26 +1361,26 @@ UI preview, generation, and refactoring utilities.
 
 ## Invocation
 
-User says: "vibe ui [description]" or "Preview UI for [description]"
+User says: "core ui [description]" or "Preview UI for [description]"
 
 ## Modes
 
 ### 1. UI Preview
 Generate visual preview of UI description.
 \`\`\`
-vibe ui "Login form with email, password, and remember me checkbox"
+core ui "Login form with email, password, and remember me checkbox"
 \`\`\`
 
 ### 2. Component Generation
 Generate component code from description.
 \`\`\`
-vibe ui generate "User profile card with avatar, name, and bio"
+core ui generate "User profile card with avatar, name, and bio"
 \`\`\`
 
 ### 3. UI Refactoring
 Refactor existing component for better patterns.
 \`\`\`
-vibe ui refactor src/components/UserCard.tsx
+core ui refactor src/components/UserCard.tsx
 \`\`\`
 
 ## Workflow
@@ -1484,8 +1484,8 @@ interface LoginFormProps {
 ## Next Steps
 
 After UI work:
-- "vibe review" - Review generated components
-- "vibe run [feature]" - Continue implementation
+- "core review" - Review generated components
+- "core run [feature]" - Continue implementation
 - Add tests for new components
 `,
     },
@@ -1512,29 +1512,29 @@ After UI work:
  */
 function main(): void {
   try {
-    const globalVibeDir = getVibeConfigDir();
-    const nodeModulesDir = path.join(globalVibeDir, 'node_modules');
-    const vibePackageDir = path.join(nodeModulesDir, '@su-record', 'vibe');
+    const globalCoreDir = getCoreConfigDir();
+    const nodeModulesDir = path.join(globalCoreDir, 'node_modules');
+    const corePackageDir = path.join(nodeModulesDir, '@su-record', 'core');
     const packageRoot = path.resolve(__dirname, '..', '..');
 
-    // 1. 전역 vibe 디렉토리 구조 생성
-    ensureDir(globalVibeDir);
+    // 1. 전역 core 디렉토리 구조 생성
+    ensureDir(globalCoreDir);
     ensureDir(nodeModulesDir);
     ensureDir(path.join(nodeModulesDir, '@su-record'));
 
     // 2. 패키지 복사
-    if (fs.existsSync(vibePackageDir)) {
-      removeDirRecursive(vibePackageDir);
+    if (fs.existsSync(corePackageDir)) {
+      removeDirRecursive(corePackageDir);
     }
     if (fs.existsSync(packageRoot)) {
-      copyDirRecursive(packageRoot, vibePackageDir);
+      copyDirRecursive(packageRoot, corePackageDir);
     }
 
-    // 3. 훅 스크립트 복사 (%APPDATA%/vibe/hooks/scripts/)
+    // 3. 훅 스크립트 복사 (%APPDATA%/core/hooks/scripts/)
     const hooksSource = path.join(packageRoot, 'hooks', 'scripts');
-    const hooksTarget = path.join(globalVibeDir, 'hooks', 'scripts');
+    const hooksTarget = path.join(globalCoreDir, 'hooks', 'scripts');
     if (fs.existsSync(hooksSource)) {
-      ensureDir(path.join(globalVibeDir, 'hooks'));
+      ensureDir(path.join(globalCoreDir, 'hooks'));
       if (fs.existsSync(hooksTarget)) {
         removeDirRecursive(hooksTarget);
       }
@@ -1569,23 +1569,23 @@ function main(): void {
       copySkillsIfMissing(skillsSource, globalSkillsDir);
     }
 
-    // 5. ~/.claude/vibe/ 전역 문서 설치 (rules, languages, templates)
+    // 5. ~/.claude/core/ 전역 문서 설치 (rules, languages, templates)
     // 프로젝트별로 복사하지 않고 전역에서 참조
-    const globalVibeAssetsDir = path.join(globalClaudeDir, 'vibe');
-    ensureDir(globalVibeAssetsDir);
+    const globalCoreAssetsDir = path.join(globalClaudeDir, 'core');
+    ensureDir(globalCoreAssetsDir);
 
-    // ~/.claude/vibe/skills/ 전역 vibe 스킬 설치 (v2.5.12)
-    const vibeSkillsDir = path.join(globalVibeAssetsDir, 'skills');
-    ensureDir(vibeSkillsDir);
+    // ~/.claude/core/skills/ 전역 core 스킬 설치 (v2.5.12)
+    const coreSkillsDir = path.join(globalCoreAssetsDir, 'skills');
+    ensureDir(coreSkillsDir);
     if (fs.existsSync(skillsSource)) {
-      copySkillsIfMissing(skillsSource, vibeSkillsDir);
+      copySkillsIfMissing(skillsSource, coreSkillsDir);
     }
     // 인라인 기본 스킬 추가 (번들에 없는 추가 스킬)
-    seedInlineSkills(vibeSkillsDir);
+    seedInlineSkills(coreSkillsDir);
 
-    // vibe/rules 복사
-    const rulesSource = path.join(packageRoot, 'vibe', 'rules');
-    const globalRulesDir = path.join(globalVibeAssetsDir, 'rules');
+    // core/rules 복사
+    const rulesSource = path.join(packageRoot, 'core', 'rules');
+    const globalRulesDir = path.join(globalCoreAssetsDir, 'rules');
     if (fs.existsSync(rulesSource)) {
       if (fs.existsSync(globalRulesDir)) {
         removeDirRecursive(globalRulesDir);
@@ -1593,9 +1593,9 @@ function main(): void {
       copyDirRecursive(rulesSource, globalRulesDir);
     }
 
-    // vibe/templates 복사
-    const templatesSource = path.join(packageRoot, 'vibe', 'templates');
-    const globalTemplatesDir = path.join(globalVibeAssetsDir, 'templates');
+    // core/templates 복사
+    const templatesSource = path.join(packageRoot, 'core', 'templates');
+    const globalTemplatesDir = path.join(globalCoreAssetsDir, 'templates');
     if (fs.existsSync(templatesSource)) {
       if (fs.existsSync(globalTemplatesDir)) {
         removeDirRecursive(globalTemplatesDir);
@@ -1605,7 +1605,7 @@ function main(): void {
 
     // languages 복사
     const languagesSource = path.join(packageRoot, 'languages');
-    const globalLanguagesDir = path.join(globalVibeAssetsDir, 'languages');
+    const globalLanguagesDir = path.join(globalCoreAssetsDir, 'languages');
     if (fs.existsSync(languagesSource)) {
       if (fs.existsSync(globalLanguagesDir)) {
         removeDirRecursive(globalLanguagesDir);
@@ -1613,7 +1613,7 @@ function main(): void {
       copyDirRecursive(languagesSource, globalLanguagesDir);
     }
 
-    // 6. hooks는 프로젝트 레벨에서 관리 (vibe init/update에서 처리)
+    // 6. hooks는 프로젝트 레벨에서 관리 (core init/update에서 처리)
     // 전역 설정에는 훅을 등록하지 않음 - 프로젝트별 .claude/settings.local.json 사용
     // 6-1. 레거시 전역 hooks 정리 (이전 버전 호환성)
     cleanupGlobalSettingsHooks();
@@ -1633,22 +1633,22 @@ function main(): void {
     const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
     generateCursorSkills(cursorSkillsDir);
 
-    console.log(`✅ vibe global setup complete: ${globalVibeDir}`);
+    console.log(`✅ core global setup complete: ${globalCoreDir}`);
     console.log(`✅ cursor agents installed: ${cursorAgentsDir}`);
     console.log(`✅ cursor rules template: ${cursorRulesTemplateDir}`);
     console.log(`✅ cursor skills installed: ${cursorSkillsDir}`);
   } catch (error) {
     // postinstall 실패해도 설치는 계속 진행
-    console.warn('⚠️  vibe postinstall warning:', (error as Error).message);
+    console.warn('⚠️  core postinstall warning:', (error as Error).message);
   }
 }
 
-// Export functions for use in vibe init/update
+// Export functions for use in core init/update
 export {
   installCursorAgents,
   generateCursorRules,
   generateCursorSkills,
-  getVibeConfigDir,
+  getCoreConfigDir,
 };
 
 // CLI로 직접 실행할 때만 main() 호출 (ESM entry point detection)
