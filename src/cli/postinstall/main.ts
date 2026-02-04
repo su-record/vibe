@@ -61,10 +61,13 @@ export function main(): void {
     const globalClaudeDir = path.join(os.homedir(), '.claude');
     ensureDir(globalClaudeDir);
 
-    // commands 복사
+    // commands 복사 (이전 파일 정리 후 복사)
     const commandsSource = path.join(packageRoot, 'commands');
     const globalCommandsDir = path.join(globalClaudeDir, 'commands');
     if (fs.existsSync(commandsSource)) {
+      if (fs.existsSync(globalCommandsDir)) {
+        removeDirRecursive(globalCommandsDir);
+      }
       ensureDir(globalCommandsDir);
       copyDirRecursive(commandsSource, globalCommandsDir);
     }

@@ -87,6 +87,8 @@ Follow these standards when writing code. See `~/.claude/core/rules/` (global) f
 4. `/vibe.run` - Implementation + Gemini review
 5. **(auto)** 13+ agent parallel review + P1/P2 auto-fix
 
+**모든 명령어는 시작/종료 시 `getCurrentTime`을 호출하여 소요 시간을 표시합니다.**
+
 ## Plan Mode vs CORE
 
 | Task Size | Recommended |
