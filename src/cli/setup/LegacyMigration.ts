@@ -90,25 +90,85 @@ export function cleanupLegacy(projectRoot: string, claudeDir: string): void {
 }
 
 /**
- * 프로젝트 로컬 설정/자산 제거
+ * 패키지 소스 디렉토리의 파일 목록을 재귀적으로 수집 (상대 경로)
  */
-export function removeLocalAssets(claudeDir: string): void {
-  const localAssets = [
-    { path: path.join(claudeDir, 'settings.json'), isDir: false },
-    { path: path.join(claudeDir, 'commands'), isDir: true },
-    { path: path.join(claudeDir, 'agents'), isDir: true },
-    { path: path.join(claudeDir, 'skills'), isDir: true },
-  ];
+function collectFiles(dir: string, baseDir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const files: string[] = [];
+  for (const item of fs.readdirSync(dir)) {
+    const fullPath = path.join(dir, item);
+    if (fs.statSync(fullPath).isDirectory()) {
+      files.push(...collectFiles(fullPath, baseDir));
+    } else {
+      files.push(path.relative(baseDir, fullPath));
+    }
+  }
+  return files;
+}
 
-  localAssets.forEach(asset => {
-    if (fs.existsSync(asset.path)) {
-      if (asset.isDir) {
-        removeDirRecursive(asset.path);
-      } else {
-        fs.unlinkSync(asset.path);
+/**
+ * core가 설치한 파일만 선별적으로 제거하고, 사용자 커스텀 파일은 보존.
+ * 빈 디렉토리는 정리.
+ */
+function removeCoreOwnedFiles(localDir: string, sourceDir: string): void {
+  if (!fs.existsSync(localDir)) return;
+
+  const coreFiles = collectFiles(sourceDir, sourceDir);
+  for (const relPath of coreFiles) {
+    const targetPath = path.join(localDir, relPath);
+    if (fs.existsSync(targetPath)) {
+      fs.unlinkSync(targetPath);
+    }
+  }
+
+  // 빈 하위 디렉토리 정리 (깊은 곳부터)
+  cleanEmptyDirs(localDir);
+}
+
+/**
+ * 빈 디렉토리를 재귀적으로 제거 (리프부터)
+ */
+function cleanEmptyDirs(dir: string): void {
+  if (!fs.existsSync(dir)) return;
+  for (const item of fs.readdirSync(dir)) {
+    const fullPath = path.join(dir, item);
+    if (fs.statSync(fullPath).isDirectory()) {
+      cleanEmptyDirs(fullPath);
+    }
+  }
+  if (fs.readdirSync(dir).length === 0) {
+    fs.rmdirSync(dir);
+  }
+}
+
+/**
+ * 프로젝트 로컬 설정/자산 제거 (core 소유 파일만 선별 삭제, 사용자 커스텀 파일 보존)
+ */
+export function removeLocalAssets(claudeDir: string, packageRoot?: string): void {
+  // 레거시 settings.json은 무조건 제거
+  const localSettingsJson = path.join(claudeDir, 'settings.json');
+  if (fs.existsSync(localSettingsJson)) {
+    fs.unlinkSync(localSettingsJson);
+  }
+
+  if (packageRoot) {
+    // 패키지 소스 기준으로 core 소유 파일만 선별 삭제
+    const assetDirs = ['commands', 'agents', 'skills'] as const;
+    for (const dir of assetDirs) {
+      const sourceDir = path.join(packageRoot, dir);
+      const localDir = path.join(claudeDir, dir);
+      removeCoreOwnedFiles(localDir, sourceDir);
+    }
+  } else {
+    // packageRoot 없으면 레거시 동작 (전체 삭제) — 하위 호환
+    const dirs = ['commands', 'agents', 'skills'];
+    for (const dir of dirs) {
+      const dirPath = path.join(claudeDir, dir);
+      if (fs.existsSync(dirPath)) {
+        removeDirRecursive(dirPath);
       }
     }
-  });
+  }
 }
 
 /**

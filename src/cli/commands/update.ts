@@ -5,8 +5,12 @@
 import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 import { CliOptions } from '../types.js';
 import { log, ensureDir, getPackageJson } from '../utils.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { detectTechStacks } from '../detect.js';
 import { formatLLMStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
@@ -106,8 +110,9 @@ ${formatLLMStatus()}
     // 규칙 업데이트
     updateRules(coreDir, detectedStacks, true);
 
-    // 프로젝트 로컬 자산 제거
-    removeLocalAssets(claudeDir);
+    // 프로젝트 로컬 자산 제거 (core 소유 파일만 선별 삭제, 사용자 커스텀 파일 보존)
+    const packageRoot = path.resolve(__dirname, '..', '..', '..');
+    removeLocalAssets(claudeDir, packageRoot);
 
     // .gitignore 업데이트
     updateGitignore(projectRoot);
