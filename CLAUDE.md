@@ -1,6 +1,6 @@
 # CORE
 
-SPEC-driven AI Coding Framework (Claude Code Exclusive)
+SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.0.11
 
 ## Philosophy
 
@@ -8,29 +8,25 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive)
 
 | Principle | Description |
 |-----------|-------------|
-| **Easy Core Coding** | 빠른 흐름, 직관적 개발, AI와 협업하며 생각하기 |
+| **Easy Vibe Coding** | 빠른 흐름, 직관적 개발, AI와 협업하며 생각하기 |
 | **Minimum Quality Guaranteed** | 타입 안전성, 코드 품질, 보안 - 자동으로 하한선 확보 |
 | **Iterative Reasoning (6번 유형)** | AI에게 답을 맡기지 말고, 문제를 쪼개고 질문하며 함께 추론 |
 
-### How core Guarantees Quality
+### How CORE Guarantees Quality
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  CORE QUALITY GUARDRAILS (자동 품질 보장)                    │
-├─────────────────────────────────────────────────────────────┤
-│  1. Type Safety      → Quality Gate (any/Any 차단)          │
-│  2. Code Review      → Race Review (GPT + Gemini 병렬)      │
-│  3. Completion Check → Ralph Loop (100%까지 반복)           │
-│  4. Multi-LLM        → 3개 관점 검증 (Claude+GPT+Gemini)    │
-└─────────────────────────────────────────────────────────────┘
-```
+| Guardrail | Mechanism |
+|-----------|-----------|
+| Type Safety | Quality Gate (`any`/`Any` 차단) |
+| Code Review | Race Review (GPT + Gemini 병렬) |
+| Completion Check | Ralph Loop (100%까지 반복) |
+| Multi-LLM | 3개 관점 검증 (Claude + GPT + Gemini) |
 
 ### User's Role (6번 Iterative-Reasoning Type)
 
 연구에 따르면, AI에게 답을 맡기는 것(1번 유형)보다 **문제를 쪼개고 추론하며 협업하는 것(6번 유형)**이 훨씬 좋은 성과를 냅니다.
 
-| ❌ Avoid | ✅ Do Instead |
-|----------|---------------|
+| Avoid | Do Instead |
+|-------|------------|
 | "로그인 기능 만들어줘" | "로그인 기능의 요구사항을 분석해보자" |
 | AI 결과 그대로 사용 | "이 접근이 맞나?" 검증 질문 |
 | 완성 코드만 요청 | 단계별로 검토하며 진행 |
@@ -52,12 +48,12 @@ Follow these standards when writing code. See `~/.claude/core/rules/` (global) f
 
 ### Code Complexity Limits
 
-| Metric               | Limit                                        |
-|----------------------|----------------------------------------------|
-| Function length      | ≤30 lines (recommended), ≤50 lines (allowed) |
-| Nesting depth        | ≤3 levels                                    |
-| Parameters           | ≤5                                           |
-| Cyclomatic complexity | ≤10                                         |
+| Metric | Limit |
+|--------|-------|
+| Function length | ≤30 lines (recommended), ≤50 lines (allowed) |
+| Nesting depth | ≤3 levels |
+| Parameters | ≤5 |
+| Cyclomatic complexity | ≤10 |
 
 ### TypeScript Rules
 
@@ -82,7 +78,7 @@ Follow these standards when writing code. See `~/.claude/core/rules/` (global) f
 ## Workflow
 
 ```text
-/vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → ✅ Done
+/vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → Done
 ```
 
 1. `/vibe.spec` - Write SPEC (requirements + research + draft)
@@ -93,10 +89,10 @@ Follow these standards when writing code. See `~/.claude/core/rules/` (global) f
 
 ## Plan Mode vs CORE
 
-| Task Size                    | Recommended  |
-|------------------------------|--------------|
-| Simple changes (1-2 files)   | Plan Mode    |
-| Complex features (3+ files)  | `/vibe.spec` |
+| Task Size | Recommended |
+|-----------|-------------|
+| Simple changes (1-2 files) | Plan Mode |
+| Complex features (3+ files) | `/vibe.spec` |
 
 After `/vibe.analyze` or `/vibe.review` with dev request → **Ask user for workflow choice**
 
@@ -111,64 +107,107 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 
 ## Commands
 
-| Command                      | Description                       |
-|------------------------------|-----------------------------------|
-| `/vibe.spec "name"`          | Write SPEC (PTCF) + parallel research |
-| `/vibe.spec.review "name"`   | GPT/Gemini review (new session)   |
-| `/vibe.run "name"`           | Execute implementation            |
-| `/vibe.run "name" ultrawork` | Maximum performance mode          |
-| `/vibe.verify "name"`        | Verification against SPEC         |
-| `/vibe.review`               | 13+ agent parallel code review    |
-| `/vibe.trace "name"`         | Requirements traceability matrix  |
-| `/vibe.reason "problem"`     | Systematic reasoning              |
-| `/vibe.analyze`              | Project analysis                  |
-| `/vibe.utils --e2e`          | E2E testing (Playwright)          |
-| `/vibe.utils --diagram`      | Generate diagrams                 |
-| `/vibe.utils --ui "desc"`    | UI preview                        |
-| `/vibe.utils --continue`     | Session restore                   |
+| Command | Description |
+|---------|-------------|
+| `/vibe.spec "name"` | Write SPEC (PTCF) + parallel research |
+| `/vibe.spec.review "name"` | GPT/Gemini review (new session) |
+| `/vibe.run "name"` | Execute implementation |
+| `/vibe.run "name" ultrawork` | Maximum performance mode |
+| `/vibe.verify "name"` | Verification against SPEC |
+| `/vibe.review` | 13+ agent parallel code review |
+| `/vibe.trace "name"` | Requirements traceability matrix |
+| `/vibe.reason "problem"` | Systematic reasoning |
+| `/vibe.analyze` | Project analysis |
+| `/vibe.utils --e2e` | E2E testing (Playwright) |
+| `/vibe.utils --diagram` | Generate diagrams |
+| `/vibe.utils --ui "desc"` | UI preview |
+| `/vibe.utils --continue` | Session restore |
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `vibe init` | Initialize project |
+| `vibe update` | Update settings |
+| `vibe status` | Show status |
+| `vibe hud <cmd>` | HUD status (show, start, phase, agent, reset) |
+| `vibe gpt <cmd>` | GPT commands (auth, key, status, logout) |
+| `vibe gemini <cmd>` | Gemini commands (auth, key, status, logout) |
+| `vibe remove` | Remove core |
+| `vibe help` | Help |
+| `vibe version` | Version info |
 
 ## Magic Keywords
 
-| Keyword              | Effect                                        |
-|----------------------|-----------------------------------------------|
-| `ultrawork` / `ulw`  | Parallel + auto-continue + Ralph Loop         |
-| `ralph`              | Iterate until 100% complete (no scope reduction) |
-| `ralplan`            | Iterative planning + persistence              |
-| `verify`             | Strict verification mode                      |
-| `quick`              | Fast mode, minimal verification               |
+| Keyword | Effect |
+|---------|--------|
+| `ultrawork` / `ulw` | Parallel + auto-continue + Ralph Loop |
+| `ralph` | Iterate until 100% complete (no scope reduction) |
+| `ralplan` | Iterative planning + persistence |
+| `verify` | Strict verification mode |
+| `quick` | Fast mode, minimal verification |
 
 ## PTCF Structure
 
 SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_format>` `<acceptance>`
 
-## Built-in Tools
-
-### Semantic & Quality
-
-| Tool                          | Purpose                          |
-|-------------------------------|----------------------------------|
-| `core_find_symbol`            | Find symbol definitions          |
-| `core_find_references`        | Find references                  |
-| `core_analyze_complexity`     | Analyze complexity               |
-| `core_validate_code_quality`  | Validate quality                 |
+## Built-in Tools (35+)
 
 ### Memory & Session
 
-| Tool                          | Purpose                          |
-|-------------------------------|----------------------------------|
-| `core_start_session`          | Restore previous session context |
-| `core_auto_save_context`      | Save current state               |
-| `core_save_memory`            | Save important decisions         |
+| Tool | Purpose |
+|------|---------|
+| `core_start_session` | Restore previous session context |
+| `core_auto_save_context` | Save current state |
+| `core_save_memory` | Save important decisions |
+| `core_recall_memory` | Recall saved memories |
+| `core_list_memories` | List all memories |
+| `core_search_memories` | Search memories |
+| `core_search_memories_advanced` | Advanced memory search |
+| `core_link_memories` | Link related memories |
+| `core_get_memory_graph` | Visualize memory graph |
+| `core_create_memory_timeline` | Create memory timeline |
+| `core_restore_session_context` | Restore session context |
+| `core_prioritize_memory` | Prioritize memory items |
 
-### Session RAG (v2.6.27)
+### Semantic & Quality
+
+| Tool | Purpose |
+|------|---------|
+| `core_find_symbol` | Find symbol definitions |
+| `core_find_references` | Find references |
+| `core_analyze_dependency_graph` | Analyze dependency graph |
+| `core_analyze_complexity` | Analyze complexity |
+| `core_validate_code_quality` | Validate quality |
+| `core_check_coupling_cohesion` | Check coupling/cohesion |
+| `core_suggest_improvements` | Suggest improvements |
+| `core_apply_quality_rules` | Apply quality rules |
+
+### UI & Utility
+
+| Tool | Purpose |
+|------|---------|
+| `core_preview_ui_ascii` | UI preview in ASCII |
+| `core_get_current_time` | Get current time |
+
+### SPEC & Testing
+
+| Tool | Purpose |
+|------|---------|
+| `core_spec_generator` | Generate SPEC documents |
+| `core_prd_parser` | Parse PRD documents |
+| `core_traceability_matrix` | Generate traceability matrix |
+| `core_e2e_test_generator` | Generate E2E tests |
+
+### Session RAG
 
 구조화된 세션 컨텍스트를 저장/검색하는 시스템. SQLite + FTS5 BM25 하이브리드 검색.
 
-| Tool                          | Purpose                          |
-|-------------------------------|----------------------------------|
-| `save_session_item`           | Decision/Constraint/Goal/Evidence 저장 |
-| `retrieve_session_context`    | 하이브리드 검색 (BM25 + recency + priority) |
-| `manage_goals`                | Goal 생명주기 관리 (list/update/complete) |
+| Tool | Purpose |
+|------|---------|
+| `save_session_item` | Decision/Constraint/Goal/Evidence 저장 |
+| `retrieve_session_context` | 하이브리드 검색 (BM25 + recency + priority) |
+| `manage_goals` | Goal 생명주기 관리 (list/update/complete) |
 
 **4가지 엔티티:**
 
@@ -204,8 +243,49 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 ## Agents
 
-- **Review (12)**: security, performance, architecture, complexity, simplicity, data-integrity, test-coverage, git-history, python, typescript, rails, react reviewers → `.claude/agents/review/`
-- **Research (4)**: best-practices, framework-docs, codebase-patterns, security-advisory → `.claude/agents/research/`
+### Main Agents (18)
+
+- **Explorer** (high/medium/low) - Codebase exploration
+- **Implementer** (high/medium/low) - Code implementation
+- **Architect** (high/medium/low) - Architecture design
+- **Searcher** - Code search
+- **Tester** - Test generation
+- **Simplifier** - Code simplification
+- **Refactor Cleaner** - Refactoring cleanup
+- **Build Error Resolver** - Build error fixing
+- **Compounder** - Multi-step compound tasks
+- **Diagrammer** - Diagram generation
+- **E2E Tester** - E2E test execution
+- **UI Previewer** - UI preview
+
+### Review Agents (12)
+
+security, performance, architecture, complexity, simplicity, data-integrity, test-coverage, git-history, typescript, python, rails, react → `agents/review/`
+
+### Research Agents (4)
+
+best-practices, framework-docs, codebase-patterns, security-advisory → `agents/research/`
+
+## Hooks System
+
+| Event | Hooks |
+|-------|-------|
+| SessionStart | `session-start.js` |
+| PreToolUse (Bash/Edit/Write) | `pre-tool-guard.js` |
+| PostToolUse (Write/Edit) | `post-edit.js`, `code-check.js`, `post-tool-verify.js` |
+| UserPromptSubmit | `prompt-dispatcher.js`, `skill-injector.js`, `keyword-detector.js`, `hud-status.js` |
+| Notification (context 80/90/95%) | `context-save.js` |
+
+**Additional hooks:** `code-review.js`, `llm-orchestrate.js`, `recall.js`, `complexity.js`, `compound.js`
+
+## Language Support (23 frameworks)
+
+- **TypeScript**: Next.js, React, Angular, NestJS, Vue, Svelte, Nuxt, Tauri, Electron, React Native, Node
+- **Python**: Django, FastAPI
+- **Java**: Spring
+- **Kotlin**: Android
+- **Ruby**: Rails
+- **Go**, **Rust**, **Swift** (iOS), **C#** (Unity), **Dart** (Flutter), **GDScript** (Godot)
 
 ## Context Management
 
