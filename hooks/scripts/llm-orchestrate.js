@@ -116,8 +116,8 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   const module = await import(modulePath);
 
   const orchestrateFn = providerName === 'gpt'
-    ? module.vibeGptOrchestrate
-    : module.vibeGeminiOrchestrate;
+    ? module.coreGptOrchestrate
+    : module.coreGeminiOrchestrate;
 
   return await orchestrateFn(prompt, sysPrompt, { jsonMode });
 }
