@@ -5,6 +5,7 @@
 
 import * as gptApi from '../lib/gpt-api.js';
 import * as geminiApi from '../lib/gemini-api.js';
+import * as kimiApi from '../lib/kimi-api.js';
 import { warnLog } from '../lib/utils.js';
 
 /**
@@ -13,6 +14,7 @@ import { warnLog } from '../lib/utils.js';
 export interface MultiLlmQueryResult {
   gpt?: string;
   gemini?: string;
+  kimi?: string;
 }
 
 /**
@@ -21,6 +23,7 @@ export interface MultiLlmQueryResult {
 export interface LlmStatusResult {
   gpt: { available: boolean };
   gemini: { available: boolean };
+  kimi: { available: boolean };
 }
 
 /**
@@ -71,6 +74,21 @@ export class LLMCluster {
   }
 
   /**
+   * Kimi 오케스트레이션
+   */
+  async kimiOrchestrate(
+    prompt: string,
+    systemPrompt?: string,
+    options?: { jsonMode?: boolean }
+  ): Promise<string> {
+    return kimiApi.coreKimiOrchestrate(
+      prompt,
+      systemPrompt ?? this.defaultSystemPrompt,
+      options
+    );
+  }
+
+  /**
    * Gemini 웹 검색
    */
   async geminiWebSearch(query: string): Promise<string> {
@@ -91,9 +109,9 @@ export class LLMCluster {
    */
   async multiQuery(
     prompt: string,
-    options?: { useGpt?: boolean; useGemini?: boolean }
+    options?: { useGpt?: boolean; useGemini?: boolean; useKimi?: boolean }
   ): Promise<MultiLlmQueryResult> {
-    const { useGpt = true, useGemini = true } = options || {};
+    const { useGpt = true, useGemini = true, useKimi = false } = options || {};
     const results: MultiLlmQueryResult = {};
 
     const promises: Promise<void>[] = [];
@@ -114,6 +132,14 @@ export class LLMCluster {
       );
     }
 
+    if (useKimi) {
+      promises.push(
+        this.kimiOrchestrate(prompt)
+          .then(r => { results.kimi = r; })
+          .catch(e => { warnLog('Kimi query failed in multiLlm', e); })
+      );
+    }
+
     await Promise.all(promises);
     return results;
   }
@@ -124,6 +150,7 @@ export class LLMCluster {
   async checkStatus(): Promise<LlmStatusResult> {
     let gptAvailable = false;
     let geminiAvailable = false;
+    let kimiAvailable = false;
 
     const promises: Promise<void>[] = [
       this.gptOrchestrate('ping', 'Reply with pong')
@@ -131,14 +158,18 @@ export class LLMCluster {
         .catch(e => { warnLog('GPT status check failed', e); }),
       this.geminiOrchestrate('ping', 'Reply with pong')
         .then(() => { geminiAvailable = true; })
-        .catch(e => { warnLog('Gemini status check failed', e); })
+        .catch(e => { warnLog('Gemini status check failed', e); }),
+      this.kimiOrchestrate('ping', 'Reply with pong')
+        .then(() => { kimiAvailable = true; })
+        .catch(e => { warnLog('Kimi status check failed', e); })
     ];
 
     await Promise.all(promises);
 
     return {
       gpt: { available: gptAvailable },
-      gemini: { available: geminiAvailable }
+      gemini: { available: geminiAvailable },
+      kimi: { available: kimiAvailable }
     };
   }
 }

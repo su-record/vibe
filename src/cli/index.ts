@@ -22,6 +22,8 @@ import {
   geminiAuth,
   geminiStatus,
   geminiLogout,
+  kimiStatus,
+  kimiLogout,
 } from './llm.js';
 import {
   showHud,
@@ -184,6 +186,40 @@ Gemini Commands:
     break;
   }
 
+  // vibe kimi <subcommand>
+  case 'kimi': {
+    const subCommand = positionalArgs[1];
+    switch (subCommand) {
+      case 'key': {
+        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'kimi' && a !== 'key');
+        if (apiKey) {
+          setupExternalLLM('kimi', apiKey);
+        } else {
+          console.log('Usage: vibe kimi key <API_KEY>');
+        }
+        break;
+      }
+      case 'logout':
+        kimiLogout();
+        break;
+      case 'remove':
+        removeExternalLLM('kimi');
+        break;
+      case 'status':
+        kimiStatus();
+        break;
+      default:
+        console.log(`
+Kimi Commands:
+  vibe kimi key       Set Moonshot API key
+  vibe kimi status    Check status
+  vibe kimi logout    Remove key
+  vibe kimi remove    Remove config
+        `);
+    }
+    break;
+  }
+
   case 'status':
     showStatus();
     break;
@@ -269,6 +305,7 @@ Available commands:
   vibe hud <cmd>    HUD status (show, start, phase, agent, reset)
   vibe gpt <cmd>    GPT commands (auth, key, status, logout)
   vibe gemini <cmd> Gemini commands (auth, key, status, logout)
+  vibe kimi <cmd>   Kimi commands (key, status, logout)
   vibe status       Show status
   vibe remove       Remove core
   vibe help         Help

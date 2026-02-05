@@ -13,6 +13,8 @@ import { ToolResult } from '../types/tool.js';
 import { CONCURRENCY, DEFAULT_MODELS } from '../lib/constants.js';
 import { warnLog } from '../lib/utils.js';
 import { launchBackgroundAgent } from './AgentExecutor.js';
+import { agentAnnouncer } from './AgentAnnouncer.js';
+import { AgentRegistry } from './AgentRegistry.js';
 
 // ============================================
 // Error Types (SPEC Error Taxonomy)
@@ -238,9 +240,22 @@ class BackgroundManagerImpl {
   private readonly tasks = new Map<string, TaskInfo>();
   private processing = false;
   private cleanupTimer: ReturnType<typeof setInterval> | null = null;
+  private registry: AgentRegistry | null = null;
 
   constructor() {
     this.startCleanupTimer();
+  }
+
+  /**
+   * 레지스트리 초기화 (프로젝트 경로가 있을 때만)
+   */
+  initRegistry(projectPath: string): void {
+    try {
+      this.registry = new AgentRegistry(projectPath);
+      this.registry.markOrphaned(3600000); // 1시간 이상 running = crashed
+    } catch (e) {
+      warnLog('[BackgroundManager] Registry init failed', e);
+    }
   }
 
   private startCleanupTimer(): void {
@@ -399,6 +414,7 @@ class BackgroundManagerImpl {
   getStats(): ToolResult & { stats: QueueStats } {
     const stats = this.taskQueue.getStats();
     const concurrencyStatus = this.concurrency.getStatus();
+    const announcerStats = agentAnnouncer.getStats();
 
     let text = `## BackgroundManager Stats\n\n`;
     text += `**Queue**: ${stats.queueSize}/${stats.maxQueueSize}\n`;
@@ -408,6 +424,11 @@ class BackgroundManagerImpl {
     text += `- Completed: ${stats.completed}\n`;
     text += `- Failed: ${stats.failed}\n`;
     text += `- Cancelled: ${stats.cancelled}\n\n`;
+    text += `**Agent Stats**:\n`;
+    text += `- Launched: ${announcerStats.totalLaunched}\n`;
+    text += `- Completed: ${announcerStats.totalCompleted}\n`;
+    text += `- Failed: ${announcerStats.totalFailed}\n`;
+    text += `- Avg Duration: ${Math.round(announcerStats.avgDuration)}ms\n\n`;
     text += `**Concurrency**:\n`;
     text += `- By Model: ${JSON.stringify(concurrencyStatus.byModel)}\n`;
     text += `- By Provider: ${JSON.stringify(concurrencyStatus.byProvider)}\n`;
@@ -454,6 +475,22 @@ class BackgroundManagerImpl {
    */
   private async executeTask(task: TaskInfo): Promise<void> {
     const timeout = CONCURRENCY.TASK_TIMEOUT;
+    const agentName = task.args.agentName || 'unnamed';
+
+    // Announce start
+    agentAnnouncer.announceStart({
+      taskId: task.id, agentName, model: task.model,
+      prompt: task.args.prompt || '', timestamp: Date.now(),
+    });
+
+    // Registry record start
+    try {
+      this.registry?.recordStart({
+        id: task.id, taskId: task.id, agentName,
+        prompt: task.args.prompt, model: task.model,
+      });
+    } catch { /* registry is optional */ }
+
     const timeoutId = setTimeout(() => {
       if (task.status === 'running') {
         task.status = 'failed';
@@ -487,7 +524,25 @@ class BackgroundManagerImpl {
     } finally {
       clearTimeout(timeoutId);
       task.completedAt = Date.now();
+      const duration = (task.startedAt && task.completedAt)
+        ? task.completedAt - task.startedAt : 0;
       this.concurrency.release(task.model, task.provider);
+
+      // Announce + Registry record
+      if (task.status === 'completed') {
+        agentAnnouncer.announceComplete({
+          taskId: task.id, agentName, success: true, duration, model: task.model,
+          resultSummary: task.result?.result || '', timestamp: Date.now(),
+        });
+        try { this.registry?.recordComplete(task.id, task.result?.result || '', duration); } catch { /* optional */ }
+      } else if (task.status === 'failed') {
+        const retryable = !task.error?.includes('timeout');
+        agentAnnouncer.announceError({
+          taskId: task.id, agentName, error: task.error || 'Unknown',
+          retryable, duration, timestamp: Date.now(),
+        });
+        try { this.registry?.recordFailure(task.id, task.error || 'Unknown', duration); } catch { /* optional */ }
+      }
 
       // 큐에 대기 중인 태스크가 있으면 계속 처리
       if (!this.taskQueue.isEmpty()) {
@@ -500,6 +555,7 @@ class BackgroundManagerImpl {
     if (model.startsWith('claude')) return 'claude';
     if (model.startsWith('gpt')) return 'gpt';
     if (model.startsWith('gemini')) return 'gemini';
+    if (model.startsWith('kimi') || model.startsWith('moonshot')) return 'kimi';
     return 'default';
   }
 

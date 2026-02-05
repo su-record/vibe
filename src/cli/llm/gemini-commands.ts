@@ -111,6 +111,25 @@ export function geminiStatus(): void {
     const accounts = storage.getAllAccounts();
 
     if (accounts.length === 0) {
+      // Gemini CLI 크레덴셜 감지 확인
+      try {
+        const geminiAuthPath = path.join(__dirname, '../../lib/gemini/auth.js');
+        const { getGeminiCliCredentials } = require(geminiAuthPath);
+        const cliCreds = getGeminiCliCredentials();
+        if (cliCreds) {
+          console.log(`
+📊 Gemini Status
+
+No Vibe-specific account, but:
+🔍 Gemini CLI credentials detected!
+
+Auto-import: vibe gemini import
+Manual auth: vibe gemini auth
+          `);
+          return;
+        }
+      } catch { /* ignore: optional check */ }
+
       console.log(`
 📊 Gemini Status
 
@@ -192,5 +211,36 @@ Login again: vibe gemini auth
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Logout failed:', message);
+  }
+}
+
+/**
+ * Gemini CLI 크레덴셜 자동 가져오기
+ */
+export function geminiImport(): void {
+  try {
+    const geminiAuthPath = path.join(__dirname, '../../lib/gemini/auth.js');
+    const geminiOAuthPath = path.join(__dirname, '../../lib/gemini-oauth.js');
+
+    const { getGeminiCliCredentials } = require(geminiAuthPath);
+    const { importGeminiCliTokens } = require(geminiOAuthPath);
+
+    const cliCreds = getGeminiCliCredentials();
+    if (!cliCreds) {
+      console.log('No Gemini CLI credentials found.');
+      return;
+    }
+
+    importGeminiCliTokens(cliCreds);
+    console.log(`
+✅ Gemini CLI credentials imported!
+
+Token expiry: ${new Date(cliCreds.expiry_date).toLocaleString()}
+
+Status: vibe gemini status
+    `);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Import failed:', message);
   }
 }

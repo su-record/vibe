@@ -85,7 +85,8 @@ export {
 export {
   SmartRouter,
   SmartRouterOptions,
-  getSmartRouter
+  getSmartRouter,
+  AllProvidersFailedError
 } from './SmartRouter.js';
 
 export {
@@ -101,6 +102,24 @@ export {
   AgentManagerOptions,
   getAgentManager
 } from './AgentManager.js';
+
+// AgentAnnouncer (v2.8.0)
+export { AgentAnnouncer, agentAnnouncer } from './AgentAnnouncer.js';
+export type {
+  AgentStartEvent,
+  AgentCompleteEvent,
+  AgentErrorEvent,
+  AgentStats
+} from './AgentAnnouncer.js';
+
+// AgentRegistry (v2.8.0)
+export { AgentRegistry } from './AgentRegistry.js';
+export type {
+  AgentExecution,
+  AgentHistoryItem,
+  AgentStatsSummary,
+  GlobalAgentStats
+} from './AgentRegistry.js';
 
 // PhasePipeline (v2.6.0)
 export {
@@ -266,11 +285,12 @@ export function status(): ToolResult {
 }
 
 // ============================================
-// Multi-LLM Integration (GPT, Gemini)
+// Multi-LLM Integration (GPT, Gemini, Kimi)
 // ============================================
 
 import * as gptApi from '../lib/gpt-api.js';
 import * as geminiApi from '../lib/gemini-api.js';
+import * as kimiApi from '../lib/kimi-api.js';
 
 // ============================================
 // GPT Integration (웹 검색, 아키텍처 분석)
@@ -362,6 +382,34 @@ export async function gemini(
 }
 
 // ============================================
+// Kimi Integration (코드 리뷰, 추론)
+// ============================================
+
+/**
+ * Kimi 오케스트레이션 (간편 API)
+ *
+ * @example
+ * node -e "import('@su-record/core/orchestrator').then(o => o.kimi('Review this code')).then(console.log)"
+ */
+export async function kimi(
+  prompt: string,
+  systemPrompt: string = 'You are a helpful assistant.'
+): Promise<ToolResult> {
+  try {
+    const result = await kimiApi.coreKimiOrchestrate(prompt, systemPrompt, { jsonMode: false });
+    return {
+      content: [{ type: 'text', text: result }],
+      success: true
+    } as ToolResult & { success: boolean };
+  } catch (error) {
+    return {
+      content: [{ type: 'text', text: `[Kimi Error] ${(error as Error).message}` }],
+      success: false
+    } as ToolResult & { success: boolean };
+  }
+}
+
+// ============================================
 // Multi-LLM Orchestration
 // ============================================
 
@@ -374,7 +422,7 @@ export async function gemini(
  */
 export async function multiLlm(
   prompt: string,
-  options?: { useGpt?: boolean; useGemini?: boolean }
+  options?: { useGpt?: boolean; useGemini?: boolean; useKimi?: boolean }
 ): Promise<ToolResult> {
   const orchestrator = new CoreOrchestrator();
   const results = await orchestrator.multiLlmQuery(prompt, options);
@@ -386,6 +434,9 @@ export async function multiLlm(
   }
   if (results.gemini) {
     summary += `### Gemini\n${results.gemini}\n\n`;
+  }
+  if (results.kimi) {
+    summary += `### Kimi\n${results.kimi}\n\n`;
   }
 
   return {
@@ -406,10 +457,12 @@ export async function llmStatus(): Promise<ToolResult> {
 
   const gptIcon = llmStatusResult.gpt.available ? '✓' : '✗';
   const geminiIcon = llmStatusResult.gemini.available ? '✓' : '✗';
+  const kimiIcon = llmStatusResult.kimi.available ? '✓' : '✗';
 
   let text = '## LLM Status\n\n';
   text += `- GPT: ${gptIcon} ${llmStatusResult.gpt.available ? 'Available' : 'Unavailable'}\n`;
   text += `- Gemini: ${geminiIcon} ${llmStatusResult.gemini.available ? 'Available' : 'Unavailable'}\n`;
+  text += `- Kimi: ${kimiIcon} ${llmStatusResult.kimi.available ? 'Available' : 'Unavailable'}\n`;
 
   return {
     content: [{ type: 'text', text }],
@@ -509,4 +562,24 @@ export async function smartWebSearch(query: string): Promise<ToolResult & { resu
 export async function smartCodeGen(description: string, context?: string): Promise<ToolResult & { result: SmartRouteResult }> {
   const prompt = context ? `${description}\n\nContext:\n${context}` : description;
   return smartRoute('code-gen', prompt, 'Generate clean, well-documented code.');
+}
+
+/**
+ * 코드 리뷰 with fallback (Kimi → GPT → Gemini → Claude)
+ *
+ * @example
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartCodeReview('Review this PR')).then(console.log)"
+ */
+export async function smartCodeReview(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
+  return smartRoute('code-review', prompt, 'You are a code review expert. Review the code for bugs, style, and best practices.');
+}
+
+/**
+ * 추론/분석 with fallback (Kimi → GPT → Gemini → Claude)
+ *
+ * @example
+ * node -e "import('@su-record/core/orchestrator').then(o => o.smartReasoning('Analyze this problem')).then(console.log)"
+ */
+export async function smartReasoning(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
+  return smartRoute('reasoning', prompt, 'You are a reasoning expert. Analyze the problem step by step.');
 }

@@ -167,10 +167,12 @@ export type TaskType =
   | 'code-analysis'  // 코드 분석 → Gemini 우선
   | 'code-gen'       // 코드 생성 → Claude 직접
   | 'web-search'     // 웹 검색 → GPT/Gemini
-  | 'general';       // 일반 → Claude 직접
+  | 'general'        // 일반 → Claude 직접
+  | 'code-review'    // 코드 리뷰 → Kimi 우선
+  | 'reasoning';     // 추론 → Kimi 우선
 
 /** LLM 제공자 */
-export type LLMProvider = 'gpt' | 'gemini' | 'claude';
+export type LLMProvider = 'gpt' | 'gemini' | 'claude' | 'kimi';
 
 /** 스마트 라우팅 요청 */
 export interface SmartRouteRequest {
@@ -201,15 +203,18 @@ export interface SmartRouteResult {
 export interface LLMAvailabilityCache {
   gpt: { available: boolean; checkedAt: number; errorCount: number };
   gemini: { available: boolean; checkedAt: number; errorCount: number };
+  kimi: { available: boolean; checkedAt: number; errorCount: number };
 }
 
 /** 작업 유형별 LLM 우선순위 */
 export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
-  'architecture': ['gpt', 'gemini', 'claude'],
-  'debugging': ['gpt', 'gemini', 'claude'],
+  'architecture': ['gpt', 'kimi', 'gemini', 'claude'],
+  'debugging': ['gpt', 'kimi', 'gemini', 'claude'],
   'uiux': ['gemini', 'gpt', 'claude'],
-  'code-analysis': ['gemini', 'gpt', 'claude'],
+  'code-analysis': ['kimi', 'gemini', 'gpt', 'claude'],
   'code-gen': ['claude'],
-  'web-search': ['gpt', 'gemini', 'claude'],
-  'general': ['claude']
+  'web-search': ['gemini', 'gpt', 'claude'],
+  'general': ['claude'],
+  'code-review': ['kimi', 'gpt', 'gemini', 'claude'],
+  'reasoning': ['kimi', 'gpt', 'gemini', 'claude'],
 };

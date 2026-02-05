@@ -4,6 +4,11 @@
 
 export * from './ConfigManager.js';
 export * from './ApiKeyManager.js';
+export { TokenRefresher, tokenRefresher } from './TokenRefresher.js';
+export type { RefreshResult, ReadCurrentTokenFn } from './TokenRefresher.js';
+export { AuthProfileManager, getAuthProfileManager } from './AuthProfileManager.js';
+export type { AuthProfile, AuthProfileProvider } from './AuthProfileManager.js';
+export { ProfileFileLock } from './ProfileFileLock.js';
 
 import type { AuthInfo, LLMProvider } from '../types.js';
 import { getApiKey } from './ApiKeyManager.js';

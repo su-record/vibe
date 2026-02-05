@@ -18,6 +18,7 @@ import {
 } from './gemini-constants.js';
 
 import * as storage from './gemini-storage.js';
+import { tokenRefresher } from './llm/auth/TokenRefresher.js';
 
 // Types
 interface PKCE {
@@ -446,13 +447,27 @@ export async function getValidAccessToken(): Promise<ValidAccessToken> {
     throw new Error('No authenticated Gemini account. Run vibe gemini auth to login.');
   }
 
-  // 토큰이 만료되었으면 갱신
+  // 토큰이 만료되었으면 갱신 (TokenRefresher로 race condition 방지)
   if (storage.isTokenExpired(account)) {
-    console.log('Refreshing access token...');
-    const newTokens = await refreshAccessToken(account.refreshToken);
-    storage.updateAccessToken(account.email, newTokens.accessToken, newTokens.expires);
+    const result = await tokenRefresher.refreshWithLock(
+      'gemini',
+      async () => {
+        const newTokens = await refreshAccessToken(account.refreshToken);
+        storage.updateAccessToken(account.email, newTokens.accessToken, newTokens.expires);
+        return {
+          accessToken: newTokens.accessToken,
+          refreshToken: newTokens.refreshToken,
+          expires: newTokens.expires,
+        };
+      },
+      () => {
+        const current = storage.getActiveAccount();
+        if (!current) return null;
+        return { accessToken: current.accessToken, expires: current.expires };
+      }
+    );
     return {
-      accessToken: newTokens.accessToken,
+      accessToken: result.accessToken,
       email: account.email,
       projectId: account.projectId,
     };
@@ -463,4 +478,20 @@ export async function getValidAccessToken(): Promise<ValidAccessToken> {
     email: account.email,
     projectId: account.projectId,
   };
+}
+
+/**
+ * Gemini CLI 토큰을 Vibe 포맷으로 가져오기
+ */
+export function importGeminiCliTokens(cliCreds: {
+  access_token: string;
+  refresh_token: string;
+  expiry_date: number;
+}): void {
+  storage.addAccount({
+    email: 'gemini-cli-import',
+    accessToken: cliCreds.access_token,
+    refreshToken: cliCreds.refresh_token,
+    expires: cliCreds.expiry_date,
+  });
 }

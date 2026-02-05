@@ -31,6 +31,7 @@ import { debugLog, errorLog } from '../lib/utils.js';
 import { SmartRouter, SmartRouterOptions } from './SmartRouter.js';
 import { LLMCluster, LLMClusterOptions, MultiLlmQueryResult, LlmStatusResult } from './LLMCluster.js';
 import { AgentManager, AgentManagerOptions } from './AgentManager.js';
+import { backgroundManager } from './BackgroundManager.js';
 
 /**
  * Core Orchestrator
@@ -60,6 +61,11 @@ export class CoreOrchestrator {
     this.router = new SmartRouter({ verbose: this.options.verbose });
     this.llmCluster = new LLMCluster();
     this.agentManager = new AgentManager({ projectPath: this.options.projectPath });
+
+    // Registry 초기화 (프로젝트 경로가 있을 때만)
+    if (this.options.projectPath) {
+      backgroundManager.initRegistry(this.options.projectPath);
+    }
   }
 
   // ============================================

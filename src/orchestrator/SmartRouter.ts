@@ -13,10 +13,37 @@ import {
 } from './types.js';
 import * as gptApi from '../lib/gpt-api.js';
 import * as geminiApi from '../lib/gemini-api.js';
+import * as kimiApi from '../lib/kimi-api.js';
 import { debugLog } from '../lib/utils.js';
 
 // LLM 가용성 캐시 (5분 TTL)
 const LLM_CACHE_TTL = 5 * 60 * 1000;
+
+// 프로바이더별 timeout (30초)
+const PROVIDER_TIMEOUT_MS = 30_000;
+
+/**
+ * AllProvidersFailedError - 모든 LLM 프로바이더 실패 시 throw
+ */
+export class AllProvidersFailedError extends Error {
+  public readonly attemptedProviders: LLMProvider[];
+  public readonly errors: Record<string, string>;
+  public readonly duration: number;
+
+  constructor(
+    attemptedProviders: LLMProvider[],
+    errors: Record<string, string>,
+    duration: number
+  ) {
+    const lastProvider = attemptedProviders[attemptedProviders.length - 1];
+    const lastError = lastProvider ? errors[lastProvider] : 'No providers attempted';
+    super(`All LLM providers failed. Last error (${lastProvider}): ${lastError}`);
+    this.name = 'AllProvidersFailedError';
+    this.attemptedProviders = attemptedProviders;
+    this.errors = errors;
+    this.duration = duration;
+  }
+}
 
 /**
  * SmartRouter 설정
@@ -36,7 +63,8 @@ export class SmartRouter {
     this.verbose = options.verbose ?? false;
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
-      gemini: { available: true, checkedAt: 0, errorCount: 0 }
+      gemini: { available: true, checkedAt: 0, errorCount: 0 },
+      kimi: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 
@@ -72,7 +100,7 @@ export class SmartRouter {
       // 재시도 로직
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-          const content = await this.callLlm(provider, prompt, systemPrompt);
+          const content = await this.callLlmWithTimeout(provider, prompt, systemPrompt);
           this.markAvailable(provider);
 
           return {
@@ -105,16 +133,12 @@ export class SmartRouter {
       this.markUnavailable(provider);
     }
 
-    // 모든 외부 LLM 실패 - Claude fallback
-    return {
-      content: this.buildFallbackMessage(type, prompt, errors),
-      provider: 'claude',
-      success: true,
-      usedFallback: true,
+    // 모든 외부 LLM 실패 - AllProvidersFailedError throw
+    throw new AllProvidersFailedError(
       attemptedProviders,
-      errors: errors as Record<LLMProvider, string>,
-      duration: Date.now() - startTime
-    };
+      errors,
+      Date.now() - startTime
+    );
   }
 
   /**
@@ -126,6 +150,30 @@ export class SmartRouter {
       return [preferredLlm, ...others];
     }
     return [...TASK_LLM_PRIORITY[type]];
+  }
+
+  /**
+   * LLM 호출 with timeout (프로바이더당 30초)
+   */
+  private async callLlmWithTimeout(
+    provider: LLMProvider,
+    prompt: string,
+    systemPrompt: string
+  ): Promise<string> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`Provider ${provider} timeout (${PROVIDER_TIMEOUT_MS / 1000}s)`)), PROVIDER_TIMEOUT_MS);
+    });
+
+    try {
+      const result = await Promise.race([
+        this.callLlm(provider, prompt, systemPrompt),
+        timeoutPromise
+      ]);
+      return result;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   /**
@@ -141,6 +189,8 @@ export class SmartRouter {
         return gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'gemini':
         return geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
+      case 'kimi':
+        return kimiApi.coreKimiOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'claude':
         throw new Error('Claude fallback - handled by caller');
       default:
@@ -206,32 +256,6 @@ export class SmartRouter {
     if (cache.errorCount >= 3) {
       cache.available = false;
     }
-  }
-
-  /**
-   * Fallback 메시지 생성
-   */
-  private buildFallbackMessage(
-    type: TaskType,
-    prompt: string,
-    errors: Record<string, string>
-  ): string {
-    const errorSummary = Object.entries(errors)
-      .map(([provider, msg]) => `- ${provider}: ${msg}`)
-      .join('\n');
-
-    return `[External LLM Unavailable - Claude Direct Handling]
-
-All external LLMs failed. Claude should handle this ${type} task directly.
-
-**Original Request:**
-${prompt}
-
-**Failed Providers:**
-${errorSummary}
-
-**Action Required:**
-Claude, please handle this task using your own capabilities. Do NOT retry external LLMs.`;
   }
 
   private delay(ms: number): Promise<void> {
@@ -304,7 +328,8 @@ Claude, please handle this task using your own capabilities. Do NOT retry extern
   resetCache(): void {
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
-      gemini: { available: true, checkedAt: 0, errorCount: 0 }
+      gemini: { available: true, checkedAt: 0, errorCount: 0 },
+      kimi: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 }

@@ -24,6 +24,13 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
     description: 'UI/UX Design (Gemini 3)',
     package: '@anthropics/gemini-mcp',
     envKey: 'GOOGLE_API_KEY'
+  },
+  kimi: {
+    name: 'core-kimi',
+    role: 'code-review',
+    description: 'Code Review/Reasoning (Kimi K2.5)',
+    package: '',
+    envKey: 'MOONSHOT_API_KEY'
   }
 };
 

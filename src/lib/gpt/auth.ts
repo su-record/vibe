@@ -7,6 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import { getValidAccessToken } from '../gpt-oauth.js';
 import { warnLog } from '../utils.js';
+import { getAuthProfileManager } from '../llm/auth/AuthProfileManager.js';
 import type { AuthInfo } from './types.js';
 
 // 전역 설정 디렉토리 경로
@@ -66,4 +67,25 @@ export async function getAuthInfo(): Promise<AuthInfo> {
   }
 
   throw new Error('GPT credentials not found. Run vibe gpt auth (OAuth) or vibe gpt key <key> (API Key) to configure.');
+}
+
+/**
+ * Auth Profile 기반 성공/실패 마킹 (optional)
+ */
+export async function markAuthSuccess(profileId: string): Promise<void> {
+  try {
+    const manager = getAuthProfileManager();
+    await manager.markSuccess(profileId);
+  } catch {
+    // Profile rotation is optional — ignore errors
+  }
+}
+
+export async function markAuthFailure(profileId: string, errorMsg?: string): Promise<void> {
+  try {
+    const manager = getAuthProfileManager();
+    await manager.markFailure(profileId, errorMsg);
+  } catch {
+    // Profile rotation is optional — ignore errors
+  }
 }

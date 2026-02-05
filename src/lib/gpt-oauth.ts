@@ -18,6 +18,7 @@ import {
 
 import * as storage from './gpt-storage.js';
 import type { GptAccount } from './gpt-storage.js';
+import { tokenRefresher } from './llm/auth/TokenRefresher.js';
 
 // Types
 interface PKCE {
@@ -446,18 +447,32 @@ export async function getValidAccessToken(): Promise<ValidAccessToken> {
     throw new Error('No authenticated GPT account. Run vibe gpt auth to login.');
   }
 
-  // 토큰이 만료되었으면 갱신
+  // 토큰이 만료되었으면 갱신 (TokenRefresher로 race condition 방지)
   if (storage.isTokenExpired(account)) {
-    console.log('Refreshing GPT access token...');
-    const newTokens = await refreshAccessToken(account.refreshToken);
-    storage.updateAccessToken(
-      account.email,
-      newTokens.accessToken,
-      newTokens.refreshToken,
-      newTokens.expires
+    const result = await tokenRefresher.refreshWithLock(
+      'gpt',
+      async () => {
+        const newTokens = await refreshAccessToken(account.refreshToken);
+        storage.updateAccessToken(
+          account.email,
+          newTokens.accessToken,
+          newTokens.refreshToken,
+          newTokens.expires
+        );
+        return {
+          accessToken: newTokens.accessToken,
+          refreshToken: newTokens.refreshToken,
+          expires: newTokens.expires,
+        };
+      },
+      () => {
+        const current = storage.getActiveAccount();
+        if (!current) return null;
+        return { accessToken: current.accessToken, expires: current.expires };
+      }
     );
     return {
-      accessToken: newTokens.accessToken,
+      accessToken: result.accessToken,
       email: account.email,
       accountId: account.accountId,
     };
