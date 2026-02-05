@@ -67,8 +67,8 @@ export function generateTraceabilityMatrix(
 ): TraceabilityMatrix {
   const {
     projectPath = process.cwd(),
-    specPath = `.claude/core/specs/${featureName}.md`,
-    featurePath = `.claude/core/features/${featureName}.feature`,
+    specPath = `.claude/vibe/specs/${featureName}.md`,
+    featurePath = `.claude/vibe/features/${featureName}.feature`,
     testPath,
   } = options;
 

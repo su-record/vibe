@@ -25,7 +25,7 @@ export function updateConstitution(
   detectedStacks: TechStack[],
   stackDetails: StackDetails
 ): void {
-  const templatePath = path.join(__dirname, '../../../core/templates/constitution-template.md');
+  const templatePath = path.join(__dirname, '../../../vibe/templates/constitution-template.md');
   const constitutionPath = path.join(coreDir, 'constitution.md');
 
   if (!fs.existsSync(templatePath)) return;
@@ -252,14 +252,14 @@ export function updateGitignore(projectRoot: string): void {
   }
 
   // 레거시 mcp 폴더 제외 제거
-  if (gitignore.includes('.claude/core/mcp/')) {
-    gitignore = gitignore.replace(/# core MCP\n\.claude\/core\/mcp\/\n?/g, '');
-    gitignore = gitignore.replace(/\.claude\/core\/mcp\/\n?/g, '');
+  if (gitignore.includes('.claude/vibe/mcp/')) {
+    gitignore = gitignore.replace(/# core MCP\n\.claude\/vibe\/mcp\/\n?/g, '');
+    gitignore = gitignore.replace(/\.claude\/vibe\/mcp\/\n?/g, '');
     modified = true;
   }
 
   // 레거시 node_modules 제외 제거
-  if (gitignore.includes('.claude/core/node_modules/')) {
+  if (gitignore.includes('.claude/vibe/node_modules/')) {
     gitignore = gitignore.replace(/# core local packages\n\.claude\/vibe\/node_modules\/\n?/g, '');
     gitignore = gitignore.replace(/\.claude\/vibe\/node_modules\/\n?/g, '');
     modified = true;
@@ -274,12 +274,12 @@ export function updateGitignore(projectRoot: string): void {
  * 스택 기반 references 생성
  */
 function generateReferences(detectedStacks: TechStack[]): VibeReferences {
-  const globalCoreDir = '~/.claude/core';
+  const globalCoreDir = '~/.claude/vibe';
 
   const rules = [
-    `${globalCoreDir}/rules/core/quick-start.md`,
-    `${globalCoreDir}/rules/core/development-philosophy.md`,
-    `${globalCoreDir}/rules/core/communication-guide.md`,
+    `${globalCoreDir}/rules/principles/quick-start.md`,
+    `${globalCoreDir}/rules/principles/development-philosophy.md`,
+    `${globalCoreDir}/rules/principles/communication-guide.md`,
     `${globalCoreDir}/rules/quality/checklist.md`,
     `${globalCoreDir}/rules/quality/bdd-contract-testing.md`,
     `${globalCoreDir}/rules/quality/testing-strategy.md`,

@@ -59,7 +59,7 @@ Create SPEC in PTCF format:
 \`\`\`
 
 ### Phase 4: Save SPEC
-Save to \`.claude/core/specs/[feature-name]-spec.md\`
+Save to \`.claude/vibe/specs/[feature-name]-spec.md\`
 
 ## Output Format
 
@@ -120,13 +120,13 @@ User says: "vibe run [feature-name]" or "Implement [feature-name]"
 
 ## Pre-requisites
 
-1. SPEC document exists at \`.claude/core/specs/[feature-name]-spec.md\`
+1. SPEC document exists at \`.claude/vibe/specs/[feature-name]-spec.md\`
 2. SPEC has been reviewed (optional but recommended)
 
 ## Workflow
 
 ### Step 1: Load SPEC
-Read SPEC from \`.claude/core/specs/[feature-name]-spec.md\`
+Read SPEC from \`.claude/vibe/specs/[feature-name]-spec.md\`
 
 ### Step 2: For Each Phase in SPEC
 
@@ -421,7 +421,7 @@ User says: "vibe verify [feature-name]"
 
 ## Pre-requisites
 
-1. SPEC exists at \`.claude/core/specs/[feature-name]-spec.md\`
+1. SPEC exists at \`.claude/vibe/specs/[feature-name]-spec.md\`
 2. Implementation is complete
 
 ## Workflow

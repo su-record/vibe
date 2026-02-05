@@ -58,7 +58,7 @@ export async function checkAndUpgradeVibe(options: CliOptions = { silent: false 
 export async function update(options: CliOptions = { silent: false }, skipUpgrade = false): Promise<void> {
   try {
     const projectRoot = process.cwd();
-    const coreDir = path.join(projectRoot, '.claude', 'core');
+    const coreDir = path.join(projectRoot, '.claude', 'vibe');
     const claudeDir = path.join(projectRoot, '.claude');
     const legacyCoreDir = path.join(projectRoot, '.core');
 

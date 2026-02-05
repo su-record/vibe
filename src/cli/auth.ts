@@ -41,8 +41,8 @@ export function getLLMAuthStatus(): LLMStatusMap {
     try {
       // 전역 gpt-apikey.json 확인
       const gptConfigDir = process.platform === 'win32'
-        ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
-        : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
+        ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+        : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
       const gptApiKeyPath = path.join(gptConfigDir, 'gpt-apikey.json');
       if (fs.existsSync(gptApiKeyPath)) {
         const keyData = JSON.parse(fs.readFileSync(gptApiKeyPath, 'utf-8'));
@@ -56,7 +56,7 @@ export function getLLMAuthStatus(): LLMStatusMap {
   if (!status.gpt) {
     try {
       // 프로젝트 config fallback
-      const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
+      const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
       if (fs.existsSync(configPath)) {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         if (config.models?.gpt?.enabled) {
@@ -68,10 +68,10 @@ export function getLLMAuthStatus(): LLMStatusMap {
 
   // Gemini 상태 확인
   try {
-    // Windows: %APPDATA%/core, macOS/Linux: ~/.config/core
+    // Windows: %APPDATA%/vibe, macOS/Linux: ~/.config/vibe
     const geminiConfigDir = process.platform === 'win32'
-      ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
-      : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
+      ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+      : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
     const tokenPath = path.join(geminiConfigDir, 'gemini-auth.json');
     if (fs.existsSync(tokenPath)) {
       const tokenData = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
@@ -92,8 +92,8 @@ export function getLLMAuthStatus(): LLMStatusMap {
     try {
       // 전역 gemini-apikey.json 확인
       const geminiKeyConfigDir = process.platform === 'win32'
-        ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
-        : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
+        ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+        : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
       const geminiApiKeyPath = path.join(geminiKeyConfigDir, 'gemini-apikey.json');
       if (fs.existsSync(geminiApiKeyPath)) {
         const keyData = JSON.parse(fs.readFileSync(geminiApiKeyPath, 'utf-8'));
@@ -107,7 +107,7 @@ export function getLLMAuthStatus(): LLMStatusMap {
   if (!status.gemini) {
     try {
       // 프로젝트 config fallback
-      const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
+      const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
       if (fs.existsSync(configPath)) {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         if (config.models?.gemini?.enabled) {

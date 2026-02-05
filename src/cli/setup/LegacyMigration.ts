@@ -9,7 +9,7 @@ import os from 'os';
 import { ensureDir, copyDirRecursive, removeDirRecursive, log } from '../utils.js';
 
 /**
- * .core/ → .claude/core/ 마이그레이션
+ * .core/ → .claude/vibe/ 마이그레이션
  */
 export function migrateLegacyCore(projectRoot: string, coreDir: string): boolean {
   const legacyCoreDir = path.join(projectRoot, '.core');

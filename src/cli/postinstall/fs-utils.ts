@@ -7,13 +7,13 @@ import fs from 'fs';
 import os from 'os';
 
 /**
- * 전역 core 설정 디렉토리 경로
+ * 전역 vibe 설정 디렉토리 경로
  */
 export function getCoreConfigDir(): string {
   if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core');
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe');
   }
-  return path.join(os.homedir(), '.config', 'core');
+  return path.join(os.homedir(), '.config', 'vibe');
 }
 
 /**

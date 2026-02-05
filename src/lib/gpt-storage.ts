@@ -30,10 +30,10 @@ interface GptStorage {
 export function getConfigDir(): string {
   const platform = process.platform;
   if (platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core');
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe');
   }
   const xdgConfig = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config');
-  return path.join(xdgConfig, 'core');
+  return path.join(xdgConfig, 'vibe');
 }
 
 /**
@@ -76,7 +76,7 @@ export function saveAccounts(storage: GptStorage): void {
   try {
     const storagePath = getStoragePath();
     ensureDir(path.dirname(storagePath));
-    fs.writeFileSync(storagePath, JSON.stringify(storage, null, 2), 'utf-8');
+    fs.writeFileSync(storagePath, JSON.stringify(storage, null, 2), { encoding: 'utf-8', mode: 0o600 });
   } catch (error) {
     console.error('GPT account info save failed:', (error as Error).message);
     throw error;

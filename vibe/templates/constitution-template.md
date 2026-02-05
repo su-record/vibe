@@ -11,7 +11,7 @@ This document defines the core principles and coding standards for the project.
 This setting controls **conversation language with user only**.
 All generated documents (SPEC, Feature, etc.) are **always in English**.
 
-To change, modify in `.claude/core/config.json`:
+To change, modify in `.claude/vibe/config.json`:
 
 ```json
 {
@@ -23,32 +23,32 @@ To change, modify in `.claude/core/config.json`:
 
 ## Document References
 
-All reference documents are stored globally and specified in `.claude/core/config.json`:
+All reference documents are stored globally and specified in `.claude/vibe/config.json`:
 
 ```json
 {
   "references": {
     "rules": [
-      "~/.claude/core/rules/core/quick-start.md",
-      "~/.claude/core/rules/core/development-philosophy.md",
-      "~/.claude/core/rules/core/communication-guide.md",
-      "~/.claude/core/rules/quality/checklist.md",
-      "~/.claude/core/rules/quality/bdd-contract-testing.md",
-      "~/.claude/core/rules/quality/testing-strategy.md",
-      "~/.claude/core/rules/standards/anti-patterns.md",
-      "~/.claude/core/rules/standards/code-structure.md",
-      "~/.claude/core/rules/standards/complexity-metrics.md",
-      "~/.claude/core/rules/standards/naming-conventions.md"
+      "~/.claude/vibe/rules/principles/quick-start.md",
+      "~/.claude/vibe/rules/principles/development-philosophy.md",
+      "~/.claude/vibe/rules/principles/communication-guide.md",
+      "~/.claude/vibe/rules/quality/checklist.md",
+      "~/.claude/vibe/rules/quality/bdd-contract-testing.md",
+      "~/.claude/vibe/rules/quality/testing-strategy.md",
+      "~/.claude/vibe/rules/standards/anti-patterns.md",
+      "~/.claude/vibe/rules/standards/code-structure.md",
+      "~/.claude/vibe/rules/standards/complexity-metrics.md",
+      "~/.claude/vibe/rules/standards/naming-conventions.md"
     ],
     "languages": [
-      "~/.claude/core/languages/{detected-stack}.md"
+      "~/.claude/vibe/languages/{detected-stack}.md"
     ],
     "templates": [
-      "~/.claude/core/templates/spec-template.md",
-      "~/.claude/core/templates/feature-template.md",
-      "~/.claude/core/templates/constitution-template.md",
-      "~/.claude/core/templates/contract-backend-template.md",
-      "~/.claude/core/templates/contract-frontend-template.md"
+      "~/.claude/vibe/templates/spec-template.md",
+      "~/.claude/vibe/templates/feature-template.md",
+      "~/.claude/vibe/templates/constitution-template.md",
+      "~/.claude/vibe/templates/contract-backend-template.md",
+      "~/.claude/vibe/templates/contract-frontend-template.md"
     ]
   }
 }

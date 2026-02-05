@@ -56,7 +56,7 @@ Logout: vibe gemini logout
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const coreDir = path.join(projectRoot, '.claude', 'core');
+    const coreDir = path.join(projectRoot, '.claude', 'vibe');
     const configPath = path.join(coreDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
@@ -174,7 +174,7 @@ Login again: vibe gemini auth
 
     // config.json 업데이트
     const projectRoot = process.cwd();
-    const coreDir = path.join(projectRoot, '.claude', 'core');
+    const coreDir = path.join(projectRoot, '.claude', 'vibe');
     const configPath = path.join(coreDir, 'config.json');
 
     if (fs.existsSync(configPath)) {

@@ -33,7 +33,7 @@ export function main(): void {
     const corePackageDir = path.join(nodeModulesDir, '@su-record', 'core');
     const packageRoot = path.resolve(__dirname, '..', '..', '..');
 
-    // 1. 전역 core 디렉토리 구조 생성
+    // 1. 전역 vibe 디렉토리 구조 생성
     ensureDir(globalCoreDir);
     ensureDir(nodeModulesDir);
     ensureDir(path.join(nodeModulesDir, '@su-record'));
@@ -46,7 +46,7 @@ export function main(): void {
       copyDirRecursive(packageRoot, corePackageDir);
     }
 
-    // 3. 훅 스크립트 복사 (%APPDATA%/core/hooks/scripts/)
+    // 3. 훅 스크립트 복사 (%APPDATA%/vibe/hooks/scripts/)
     const hooksSource = path.join(packageRoot, 'hooks', 'scripts');
     const hooksTarget = path.join(globalCoreDir, 'hooks', 'scripts');
     if (fs.existsSync(hooksSource)) {
@@ -88,12 +88,12 @@ export function main(): void {
       copySkillsIfMissing(skillsSource, globalSkillsDir);
     }
 
-    // 5. ~/.claude/core/ 전역 문서 설치 (rules, languages, templates)
+    // 5. ~/.claude/vibe/ 전역 문서 설치 (rules, languages, templates)
     // 프로젝트별로 복사하지 않고 전역에서 참조
-    const globalCoreAssetsDir = path.join(globalClaudeDir, 'core');
+    const globalCoreAssetsDir = path.join(globalClaudeDir, 'vibe');
     ensureDir(globalCoreAssetsDir);
 
-    // ~/.claude/core/skills/ 전역 core 스킬 설치 (v2.5.12)
+    // ~/.claude/vibe/skills/ 전역 vibe 스킬 설치 (v2.5.12)
     const coreSkillsDir = path.join(globalCoreAssetsDir, 'skills');
     ensureDir(coreSkillsDir);
     if (fs.existsSync(skillsSource)) {
@@ -102,8 +102,8 @@ export function main(): void {
     // 인라인 기본 스킬 추가 (번들에 없는 추가 스킬)
     seedInlineSkills(coreSkillsDir);
 
-    // core/rules 복사
-    const rulesSource = path.join(packageRoot, 'core', 'rules');
+    // vibe/rules 복사
+    const rulesSource = path.join(packageRoot, 'vibe', 'rules');
     const globalRulesDir = path.join(globalCoreAssetsDir, 'rules');
     if (fs.existsSync(rulesSource)) {
       if (fs.existsSync(globalRulesDir)) {
@@ -112,8 +112,8 @@ export function main(): void {
       copyDirRecursive(rulesSource, globalRulesDir);
     }
 
-    // core/templates 복사
-    const templatesSource = path.join(packageRoot, 'core', 'templates');
+    // vibe/templates 복사
+    const templatesSource = path.join(packageRoot, 'vibe', 'templates');
     const globalTemplatesDir = path.join(globalCoreAssetsDir, 'templates');
     if (fs.existsSync(templatesSource)) {
       if (fs.existsSync(globalTemplatesDir)) {

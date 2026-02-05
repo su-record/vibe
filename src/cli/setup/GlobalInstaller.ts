@@ -14,15 +14,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * 전역 core 패키지 설치 경로:
- * - Windows: %APPDATA%\core\ (예: C:\Users\xxx\AppData\Roaming\core\)
- * - macOS/Linux: ~/.config/core/
+ * 전역 vibe 패키지 설치 경로:
+ * - Windows: %APPDATA%\vibe\ (예: C:\Users\xxx\AppData\Roaming\vibe\)
+ * - macOS/Linux: ~/.config/vibe/
  */
 export function getCoreConfigDir(): string {
   if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core');
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe');
   }
-  return path.join(os.homedir(), '.config', 'core');
+  return path.join(os.homedir(), '.config', 'vibe');
 }
 
 /**

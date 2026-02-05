@@ -50,7 +50,7 @@ export class CoreOrchestrator {
       projectPath: process.cwd(),
       verbose: false,
       saveResults: true,
-      resultsPath: '.claude/core/orchestrator',
+      resultsPath: '.claude/vibe/orchestrator',
       ...options
     };
 

@@ -32,8 +32,8 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
  */
 export function getGlobalConfigDir(): string {
   return process.platform === 'win32'
-    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
-    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
 }
 
 /**
@@ -71,7 +71,7 @@ ${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : '
 
   // 프로젝트 config.json도 업데이트 (선택적)
   const projectRoot = process.cwd();
-  const coreDir = path.join(projectRoot, '.claude', 'core');
+  const coreDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(coreDir, 'config.json');
 
   if (fs.existsSync(configPath)) {
@@ -125,7 +125,7 @@ export function removeExternalLLM(llmType: string): void {
 
   // 3. 프로젝트 config.json 비활성화 (선택적)
   const projectRoot = process.cwd();
-  const coreDir = path.join(projectRoot, '.claude', 'core');
+  const coreDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(coreDir, 'config.json');
 
   if (fs.existsSync(configPath)) {

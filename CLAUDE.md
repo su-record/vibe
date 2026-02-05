@@ -37,7 +37,7 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.0.11
 
 ## Code Quality Standards (Mandatory)
 
-Follow these standards when writing code. See `~/.claude/core/rules/` (global) for detailed rules.
+Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) for detailed rules.
 
 ### Core Principles
 
@@ -310,8 +310,8 @@ best-practices, framework-docs, codebase-patterns, security-advisory → `agents
 
 ## Git Commit Rules
 
-**Must include:** `.claude/core/specs/`, `.claude/core/features/`, `.claude/core/todos/`, `.claude/core/config.json`, `CLAUDE.md`
+**Must include:** `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/`, `.claude/vibe/config.json`, `CLAUDE.md`
 
-**Exclude:** `~/.claude/core/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
+**Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
 
 <!-- CORE:END -->

@@ -44,7 +44,7 @@ ${normalizedContent}
 
 /**
  * VIBE 언어 룰 디렉토리에서 .mdc 파일 생성
- * @param languagesDir - VIBE 언어 룰 디렉토리 (~/.claude/core/languages/ 또는 패키지 내 languages/)
+ * @param languagesDir - VIBE 언어 룰 디렉토리 (~/.claude/vibe/languages/ 또는 패키지 내 languages/)
  * @param outputDir - Cursor 룰 출력 디렉토리 (~/.cursor/rules-template/)
  * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
  * @returns 생성된 파일 수

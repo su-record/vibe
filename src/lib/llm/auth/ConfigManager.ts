@@ -13,9 +13,9 @@ import type { LLMProvider } from '../types.js';
 export function getGlobalConfigDir(): string {
   const homeDir = os.homedir();
   if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming'), 'core');
+    return path.join(process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming'), 'vibe');
   }
-  return path.join(homeDir, '.config', 'core');
+  return path.join(homeDir, '.config', 'vibe');
 }
 
 /**

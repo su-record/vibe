@@ -220,7 +220,7 @@ def test_login_contract():
 
 ```bash
 core feature "user login"
-# → Creates .claude/core/features/user-login.feature
+# → Creates .claude/vibe/features/user-login.feature
 ```
 
 ### Generate Contract Test

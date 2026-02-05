@@ -50,7 +50,7 @@ const DEFAULT_PROGRESS: ProgressState = {
  * Get progress file path for a project
  */
 export function getProgressPath(projectRoot: string): string {
-  return path.join(projectRoot, '.claude', 'core', 'progress.json');
+  return path.join(projectRoot, '.claude', 'vibe', 'progress.json');
 }
 
 /**
@@ -275,7 +275,7 @@ export function writeProgressText(projectRoot: string): void {
   const progress = loadProgress(projectRoot);
   if (!progress) return;
 
-  const progressTextPath = path.join(projectRoot, '.claude', 'core', 'claude-progress.txt');
+  const progressTextPath = path.join(projectRoot, '.claude', 'vibe', 'claude-progress.txt');
   const lines: string[] = [];
 
   lines.push(`# Progress: ${progress.feature}`);

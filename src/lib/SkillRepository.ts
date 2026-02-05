@@ -1,5 +1,5 @@
 /**
- * Skill Repository - ~/.claude/core/skills/ 저장소 관리
+ * Skill Repository - ~/.claude/vibe/skills/ 저장소 관리
  *
  * 기본 스킬 세트를 전역 위치에 설치하고 관리
  */
@@ -31,7 +31,7 @@ export interface SkillRepositoryConfig {
  * 기본 전역 스킬 디렉토리 경로
  */
 export function getGlobalSkillsDir(): string {
-  return path.join(os.homedir(), '.claude', 'core', 'skills');
+  return path.join(os.homedir(), '.claude', 'vibe', 'skills');
 }
 
 /**

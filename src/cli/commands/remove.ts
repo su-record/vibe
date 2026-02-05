@@ -12,7 +12,7 @@ import { removeDirRecursive } from '../utils.js';
  */
 export function remove(): void {
   const projectRoot = process.cwd();
-  const coreDir = path.join(projectRoot, '.claude', 'core');
+  const coreDir = path.join(projectRoot, '.claude', 'vibe');
   const legacyCoreDir = path.join(projectRoot, '.core');
   const claudeDir = path.join(projectRoot, '.claude');
 
@@ -24,10 +24,10 @@ export function remove(): void {
   console.log('🗑️  Removing core...\n');
 
 
-  // .claude/core 폴더 제거
+  // .claude/vibe 폴더 제거
   if (fs.existsSync(coreDir)) {
     removeDirRecursive(coreDir);
-    console.log('   ✅ .claude/core/ removed\n');
+    console.log('   ✅ .claude/vibe/ removed\n');
   }
 
   // 레거시 .core 폴더도 제거
@@ -142,7 +142,7 @@ export function remove(): void {
 
 Removed:
   - MCP server (context7)
-  - .claude/core/ folder
+  - .claude/vibe/ folder
   - Slash commands (7)
   - Subagents (5)
   - Hooks settings

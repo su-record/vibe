@@ -40,8 +40,8 @@ export function updateCursorGlobalAssets(
     const packageRoot = path.resolve(__dirname, '..', '..', '..');
     const agentsSource = path.join(packageRoot, 'agents');
 
-    // VIBE 언어 룰 디렉토리 (~/.claude/core/languages/ 또는 패키지 내 languages/)
-    const globalLanguagesDir = path.join(os.homedir(), '.claude', 'core', 'languages');
+    // VIBE 언어 룰 디렉토리 (~/.claude/vibe/languages/ 또는 패키지 내 languages/)
+    const globalLanguagesDir = path.join(os.homedir(), '.claude', 'vibe', 'languages');
     const packageLanguagesDir = path.join(packageRoot, 'languages');
     const languagesDir = fs.existsSync(globalLanguagesDir) ? globalLanguagesDir : packageLanguagesDir;
 
@@ -89,9 +89,9 @@ export async function init(projectName?: string): Promise<void> {
     }
 
     const claudeDir = path.join(projectRoot, '.claude');
-    const coreDir = path.join(claudeDir, 'core');
+    const coreDir = path.join(claudeDir, 'vibe');
     if (fs.existsSync(coreDir)) {
-      log('❌ .claude/core/ already exists.');
+      log('❌ .claude/vibe/ already exists.');
       return;
     }
 

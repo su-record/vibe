@@ -27,8 +27,8 @@ export class MemoryStorage {
     // Normalize path
     const resolvedPath = path.resolve(projectPath);
 
-    // Project-based memory: store in {projectPath}/.claude/core/memories/
-    const memoryDir = path.join(resolvedPath, '.claude', 'core', 'memories');
+    // Project-based memory: store in {projectPath}/.claude/vibe/memories/
+    const memoryDir = path.join(resolvedPath, '.claude', 'vibe', 'memories');
     this.dbPath = path.join(memoryDir, 'memories.db');
 
     try {
@@ -41,6 +41,9 @@ export class MemoryStorage {
     }
 
     this.db = new Database(this.dbPath);
+    this.db.pragma('journal_mode = WAL');
+    this.db.pragma('busy_timeout = 5000');
+    this.db.pragma('foreign_keys = ON');
     this.initializeDatabase();
     this.migrateFromJSON();
   }

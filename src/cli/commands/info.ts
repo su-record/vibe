@@ -59,7 +59,7 @@ Docs: https://github.com/su-record/core
  */
 export function showStatus(): void {
   const projectRoot = process.cwd();
-  const coreDir = path.join(projectRoot, '.claude', 'core');
+  const coreDir = path.join(projectRoot, '.claude', 'vibe');
   const configPath = path.join(coreDir, 'config.json');
 
   const packageJson = getPackageJson();

@@ -12,8 +12,8 @@ import type { AuthInfo } from './types.js';
 // 전역 설정 디렉토리 경로
 export function getGlobalConfigDir(): string {
   return process.platform === 'win32'
-    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'core')
-    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'core');
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
 }
 
 // API Key 가져오기 (전역 저장소)
@@ -35,7 +35,7 @@ export function getApiKeyFromConfig(): string | null {
 // OAuth 토큰 없을 때 config에서 email 제거
 export function removeEmailFromConfigIfNoToken(): void {
   try {
-    const configPath = path.join(process.cwd(), '.claude', 'core', 'config.json');
+    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       if (config.models?.gpt?.email) {
