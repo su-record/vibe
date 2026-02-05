@@ -20,7 +20,7 @@ export async function coreGeminiOrchestrate(
   const { maxTokens = 4096, jsonMode = true } = options;
 
   const result = await chat({
-    model: 'gemini-3-pro-high',
+    model: 'gemini-3-pro',
     messages: [{ role: 'user', content: prompt }],
     maxTokens,
     temperature: 0,

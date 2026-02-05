@@ -5,7 +5,7 @@
 import path from 'path';
 import fs from 'fs';
 import { VibeConfig } from '../types.js';
-import { getPackageJson } from '../utils.js';
+import { getPackageJson, isSoxInstalled } from '../utils.js';
 import { getLLMAuthStatus } from '../auth.js';
 
 /**
@@ -37,6 +37,12 @@ Gemini:
   vibe gemini logout      Logout
   vibe gemini remove      Remove config
 
+NVIDIA NIM:
+  vibe nvidia key <KEY>   Set NVIDIA API key
+  vibe nvidia status      Check status
+  vibe nvidia logout      Remove key
+  vibe nvidia remove      Remove config
+
 Slash Commands (Claude Code):
   /vibe.spec "feature"    Create SPEC + parallel research
   /vibe.run "feature"     Execute implementation
@@ -45,6 +51,7 @@ Slash Commands (Claude Code):
   /vibe.reason "problem"  Systematic reasoning
   /vibe.analyze           Project analysis
   /vibe.utils             Utilities (--e2e, --diagram, --continue)
+  /vibe.voice             Voice-to-coding (Gemini + sox)
 
 Workflow:
   /vibe.spec "feature" ultrawork    Full automation (SPEC→Review→Implement)
@@ -93,6 +100,24 @@ export function showStatus(): void {
     geminiStatusText = '⚠️  Configured (auth required)';
   }
 
+  // NVIDIA 상태
+  let nvidiaStatusText = '⬚ Disabled';
+  if (authStatus.nvidia?.valid) {
+    nvidiaStatusText = '✅ API Key';
+  }
+
+  // Voice 상태 (Gemini 활성화 + sox 설치)
+  let voiceStatusText = '⬚ Disabled (requires Gemini)';
+  if (authStatus.gemini?.valid) {
+    if (isSoxInstalled()) {
+      voiceStatusText = '✅ Ready';
+    } else {
+      const soxCmd = process.platform === 'darwin' ? 'brew install sox'
+        : process.platform === 'win32' ? 'choco install sox' : 'apt install sox';
+      voiceStatusText = `⚠️  sox not installed (${soxCmd})`;
+    }
+  }
+
   // 프로젝트 상태
   const projectStatus = isCoreProject
     ? `✅ ${projectRoot}`
@@ -110,9 +135,10 @@ Models:
   Haiku 4.5         Code exploration
   GPT 5.2           ${gptStatusText}
   Gemini 3          ${geminiStatusText}
+  NVIDIA NIM        ${nvidiaStatusText}
 
-MCP:
-  context7          Library docs search
+Features:
+  /vibe.voice       ${voiceStatusText}
   `);
 }
 

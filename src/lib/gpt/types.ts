@@ -2,12 +2,29 @@
  * GPT API 타입 정의
  */
 
+// GPT 인증 방식
+export type GptAuthMethod = 'oauth' | 'apikey' | 'azure';
+
 // 인증 정보 타입
 export interface AuthInfo {
-  type: 'oauth' | 'apikey';
+  type: GptAuthMethod;
   accessToken?: string;
   apiKey?: string;
   email?: string;
+  // Azure 전용
+  azureEndpoint?: string;
+  azureApiKey?: string;
+  azureDeployment?: string;
+  azureApiVersion?: string;
+}
+
+// Azure 설정
+export interface AzureOpenAIConfig {
+  endpoint: string;
+  apiKey: string;
+  deployment: string;
+  apiVersion: string;
+  createdAt: number;
 }
 
 // 모델 정보

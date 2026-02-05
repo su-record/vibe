@@ -15,6 +15,7 @@ import { sleep } from '../utils.js';
 import { getAuthInfo, getApiKeyFromConfig } from './auth.js';
 import type {
   GeminiModelInfo,
+  GeminiAuthMethod,
   ChatOptions,
   ChatResponse,
   GeminiApiResponse,
@@ -32,26 +33,34 @@ const ENDPOINT_FALLBACKS = [
   'https://cloudcode-pa.googleapis.com',
 ];
 
-// 사용 가능한 모델 목록 (Antigravity 지원 모델)
+// 사용 가능한 모델 목록
+// Antigravity 엔드포인트는 gemini-2.5-*, gemini-3-*-preview 형식을 사용
+// Google AI Studio (API Key)는 gemini-3-*-preview 형식을 사용
 export const GEMINI_MODELS: Record<string, GeminiModelInfo> = {
-  'gemini-3-pro-high': {
-    id: 'gemini-3-pro-high',
-    name: 'Gemini 3 Pro (High)',
-    description: 'Latest Pro, highest accuracy',
+  'gemini-2.5-pro': {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
+    description: 'Stable Pro model',
+    maxTokens: 8192,
+  },
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    description: 'Stable Flash model, fast',
     maxTokens: 8192,
   },
   'gemini-3-pro': {
-    id: 'gemini-3-pro-low',
-    name: 'Gemini 3 Pro (Low)',
-    description: 'Latest Pro, fast response',
+    id: 'gemini-3-pro-preview',
+    name: 'Gemini 3 Pro (Preview)',
+    description: 'Latest Pro preview',
     maxTokens: 8192,
   },
   'gemini-3-flash': {
-    id: 'gemini-3-flash',
-    name: 'Gemini 3 Flash',
-    description: 'Latest Flash, fastest',
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash (Preview)',
+    description: 'Latest Flash preview, fastest',
     maxTokens: 8192,
-  }
+  },
 };
 
 export const DEFAULT_MODEL = 'gemini-3-flash';
@@ -64,17 +73,30 @@ function generateRequestId(): string {
 }
 
 /**
- * Antigravity 요청 본문 래핑
+ * v1internal 요청 본문 래핑
+ * - vibe OAuth: Antigravity 전용 필드(requestType, userAgent, requestId) 포함
+ * - Gemini CLI: 최소 필드만 (model, project, request)
  */
-function wrapRequestBody(body: unknown, projectId: string, modelId: string): Record<string, unknown> {
-  return {
+function wrapRequestBody(
+  body: unknown,
+  projectId: string,
+  modelId: string,
+  authType: GeminiAuthMethod = 'oauth'
+): Record<string, unknown> {
+  const wrapped: Record<string, unknown> = {
     project: projectId,
     model: modelId,
     request: body,
-    requestType: 'agent',
-    userAgent: 'antigravity',
-    requestId: generateRequestId(),
   };
+
+  // Antigravity 전용 필드 (vibe OAuth만)
+  if (authType === 'oauth') {
+    wrapped.requestType = 'agent';
+    wrapped.userAgent = 'antigravity';
+    wrapped.requestId = generateRequestId();
+  }
+
+  return wrapped;
 }
 
 /**
@@ -89,12 +111,9 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     systemPrompt = '',
   } = options;
 
-  const apiKeyModelMap: Record<string, string> = {
-    'gemini-3-pro': 'gemini-3-pro-preview',
-    'gemini-3-flash': 'gemini-3-flash-preview'
-  };
-
-  const actualModel = apiKeyModelMap[model] || 'gemini-3-flash-preview';
+  // GEMINI_MODELS의 id를 사용하거나, 없으면 기본 모델의 id 사용
+  const modelInfo = GEMINI_MODELS[model] || GEMINI_MODELS[DEFAULT_MODEL];
+  const actualModel = modelInfo.id;
 
   const contents = messages.map(msg => ({
     role: msg.role === 'assistant' || msg.role === 'model' ? 'model' : 'user',
@@ -174,9 +193,14 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 }
 
 /**
- * Gemini API 호출 (Antigravity v1internal - OAuth 방식)
+ * Gemini API 호출 (v1internal 엔드포인트 - OAuth / Gemini CLI 공용)
  */
-async function chatWithOAuth(accessToken: string, projectId: string | undefined, options: ChatOptions): Promise<ChatResponse> {
+async function chatWithOAuth(
+  accessToken: string,
+  projectId: string | undefined,
+  options: ChatOptions,
+  authType: GeminiAuthMethod = 'oauth'
+): Promise<ChatResponse> {
   const {
     model = DEFAULT_MODEL,
     messages = [],
@@ -214,7 +238,8 @@ async function chatWithOAuth(accessToken: string, projectId: string | undefined,
   const requestBody = wrapRequestBody(
     innerRequest,
     projectId || ANTIGRAVITY_DEFAULT_PROJECT_ID,
-    modelInfo.id
+    modelInfo.id,
+    authType
   );
 
   const isClaudeModel = modelInfo.id.startsWith('claude-');
@@ -227,8 +252,13 @@ async function chatWithOAuth(accessToken: string, projectId: string | undefined,
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
-      ...ANTIGRAVITY_HEADERS,
     };
+
+    // Antigravity 커스텀 헤더는 vibe OAuth에서만 사용
+    // Gemini CLI 토큰 + 이 헤더 조합은 403 발생
+    if (authType === 'oauth') {
+      Object.assign(headers, ANTIGRAVITY_HEADERS);
+    }
 
     if (isClaudeModel && isThinkingModel) {
       headers['anthropic-beta'] = 'interleaved-thinking-2025-05-14';
@@ -252,7 +282,7 @@ async function chatWithOAuth(accessToken: string, projectId: string | undefined,
           if (retryCount < 3) {
             const delay = Math.pow(2, retryCount) * 1000;
             await sleep(delay);
-            return chatWithOAuth(accessToken, projectId, { ...options, _retryCount: retryCount + 1 });
+            return chatWithOAuth(accessToken, projectId, { ...options, _retryCount: retryCount + 1 }, authType);
           }
         }
         throw new Error(`Gemini API error (${response.status}): ${errorText}`);
@@ -287,23 +317,32 @@ async function chatWithOAuth(accessToken: string, projectId: string | undefined,
 }
 
 /**
- * Gemini API 호출 (OAuth 또는 API Key 자동 선택 + Fallback)
+ * Gemini API 호출 (OAuth / Gemini CLI / API Key 자동 선택 + Fallback)
+ *
+ * 라우팅:
+ * - oauth → Antigravity (Bearer token + projectId)
+ * - gemini-cli → Antigravity (Bearer token + loadCodeAssist projectId)
+ * - apikey → Google AI Studio (?key=)
  */
 export async function chat(options: ChatOptions): Promise<ChatResponse> {
   const authInfo = await getAuthInfo();
   const apiKey = getApiKeyFromConfig();
 
+  // API Key 방식 → Google AI Studio
   if (authInfo.type === 'apikey' && authInfo.apiKey) {
     return chatWithApiKey(authInfo.apiKey, options);
   }
 
-  if (authInfo.type === 'oauth' && authInfo.accessToken) {
+  // OAuth / Gemini CLI → 둘 다 v1internal 엔드포인트 사용
+  if ((authInfo.type === 'oauth' || authInfo.type === 'gemini-cli') && authInfo.accessToken) {
     try {
-      return await chatWithOAuth(authInfo.accessToken, authInfo.projectId, options);
+      return await chatWithOAuth(authInfo.accessToken, authInfo.projectId, options, authInfo.type);
     } catch (error) {
       const errorMsg = (error as Error).message;
-      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
-        console.log('⚠️ OAuth limit exceeded/error → Switching to API Key');
+      const shouldFallback = errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403');
+
+      // API Key fallback
+      if (shouldFallback && apiKey) {
         return chatWithApiKey(apiKey, options);
       }
       throw error;
@@ -347,7 +386,7 @@ export async function ask(prompt: string, options: Omit<ChatOptions, 'messages'>
 }
 
 /**
- * 코드 탐색용 빠른 질문 (Gemini 3 Flash 사용)
+ * 코드 탐색용 빠른 질문 (Gemini Flash 사용)
  */
 export async function quickAsk(prompt: string): Promise<string> {
   return ask(prompt, {

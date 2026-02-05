@@ -6,9 +6,9 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { CliOptions } from '../types.js';
-import { log, ensureDir, getPackageJson } from '../utils.js';
+import { log, ensureDir, getPackageJson, formatVoiceHint } from '../utils.js';
 import { detectTechStacks } from '../detect.js';
-import { formatLLMStatus } from '../auth.js';
+import { formatLLMStatus, getLLMAuthStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
 import {
   updateConstitution,
@@ -146,8 +146,10 @@ export async function init(projectName?: string): Promise<void> {
     // 완료 메시지
     const packageJson = getPackageJson();
 
+    const authStatus = getLLMAuthStatus();
     log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus()}
+${formatVoiceHint(!!authStatus.gemini?.valid)}
 📦 Context7 plugin (recommended): /plugin install context7
 
 Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"

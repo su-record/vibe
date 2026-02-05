@@ -17,7 +17,11 @@ import type {
   ImageGenerationOptions,
   ImageGenerationResult,
   ImageAnalysisOptions,
+  AudioTranscriptionOptions,
+  AudioTranscriptionResult,
+  AudioMimeType,
   GeminiApiResponse,
+  GeminiAuthMethod,
   MultimodalContent,
 } from './types.js';
 
@@ -87,9 +91,16 @@ export async function analyzeUI(prompt: string): Promise<string> {
 // Image Generation (Nano Banana)
 // ============================================
 
+// 이미지 생성 모델 매핑
+const IMAGE_MODELS = {
+  'nano-banana': 'gemini-2.5-flash-image',
+  'nano-banana-pro': 'gemini-3-pro-image-preview',
+} as const;
+
 /**
- * Gemini Image Generation (Nano Banana - gemini-2.5-flash-image)
- * API Key only (direct Google AI Studio API call for image generation)
+ * Gemini Image Generation (API Key only - Google AI Studio)
+ * default: gemini-2.5-flash-image (Nano Banana)
+ * option: gemini-3-pro-image-preview (Nano Banana Pro)
  */
 export async function generateImage(
   prompt: string,
@@ -104,7 +115,8 @@ export async function generateImage(
   const [width, height] = size.split('x').map(Number);
   const aspectRatio = width && height ? `${width}:${height}` : '1:1';
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
+  const imageModel = IMAGE_MODELS[options.model || 'nano-banana'];
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent?key=${apiKey}`;
 
   const requestBody = {
     contents: [{
@@ -220,9 +232,9 @@ export async function analyzeImage(
     return analyzeImageWithApiKey(authInfo.apiKey, contents, { model, maxTokens, temperature, systemPrompt });
   }
 
-  if (authInfo.type === 'oauth' && authInfo.accessToken) {
+  if ((authInfo.type === 'oauth' || authInfo.type === 'gemini-cli') && authInfo.accessToken) {
     try {
-      return await analyzeImageWithOAuth(authInfo.accessToken, authInfo.projectId, contents, { model, maxTokens, temperature, systemPrompt });
+      return await analyzeImageWithOAuth(authInfo.accessToken, authInfo.projectId, contents, { model, maxTokens, temperature, systemPrompt }, authInfo.type);
     } catch (error) {
       const errorMsg = (error as Error).message;
       if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
@@ -240,11 +252,8 @@ async function analyzeImageWithApiKey(
   contents: MultimodalContent[],
   options: { model: string; maxTokens: number; temperature: number; systemPrompt?: string }
 ): Promise<string> {
-  const apiKeyModelMap: Record<string, string> = {
-    'gemini-3-pro': 'gemini-3-pro-preview',
-    'gemini-3-flash': 'gemini-3-flash-preview',
-  };
-  const actualModel = apiKeyModelMap[options.model] || 'gemini-3-flash-preview';
+  const modelInfo = GEMINI_MODELS[options.model] || GEMINI_MODELS[DEFAULT_MODEL];
+  const actualModel = modelInfo.id;
 
   const requestBody: Record<string, unknown> = {
     contents,
@@ -282,7 +291,8 @@ async function analyzeImageWithOAuth(
   accessToken: string,
   projectId: string | undefined,
   contents: MultimodalContent[],
-  options: { model: string; maxTokens: number; temperature: number; systemPrompt?: string }
+  options: { model: string; maxTokens: number; temperature: number; systemPrompt?: string },
+  authType: GeminiAuthMethod = 'oauth'
 ): Promise<string> {
   const modelInfo = GEMINI_MODELS[options.model] || GEMINI_MODELS[DEFAULT_MODEL];
 
@@ -308,13 +318,17 @@ async function analyzeImageWithOAuth(
   for (const endpoint of ENDPOINT_FALLBACKS) {
     const url = `${endpoint}/${ANTIGRAVITY_API_VERSION}:generateContent`;
     try {
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      };
+      if (authType === 'oauth') {
+        Object.assign(headers, ANTIGRAVITY_HEADERS);
+      }
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          ...ANTIGRAVITY_HEADERS,
-        },
+        headers,
         body: JSON.stringify(requestBody),
       });
 
@@ -344,4 +358,109 @@ async function analyzeImageWithOAuth(
   }
 
   throw lastError || new Error('All Antigravity endpoints failed');
+}
+
+// ============================================
+// Audio Transcription
+// ============================================
+
+function getAudioMimeType(filePath: string): AudioMimeType {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeMap: Record<string, AudioMimeType> = {
+    '.wav': 'audio/wav',
+    '.mp3': 'audio/mp3',
+    '.mpeg': 'audio/mpeg',
+    '.aiff': 'audio/aiff',
+    '.aac': 'audio/aac',
+    '.ogg': 'audio/ogg',
+    '.flac': 'audio/flac',
+    '.webm': 'audio/webm',
+  };
+  return mimeMap[ext] || 'audio/wav';
+}
+
+/**
+ * Gemini Audio Transcription (음성 인식)
+ * 오디오 파일을 텍스트로 변환 (gemini-3-flash 기본)
+ */
+export async function transcribeAudio(
+  audioPath: string,
+  options: AudioTranscriptionOptions = {}
+): Promise<AudioTranscriptionResult> {
+  const {
+    model = 'gemini-3-flash',
+    maxTokens = 4096,
+    temperature = 0.1,
+    language,
+    systemPrompt,
+  } = options;
+
+  const absolutePath = path.resolve(audioPath);
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`Audio file not found: ${absolutePath}`);
+  }
+
+  const audioData = fs.readFileSync(absolutePath);
+  const base64Data = audioData.toString('base64');
+  const mimeType = getAudioMimeType(absolutePath);
+
+  // WAV 파일 기준 대략적 재생 시간 계산 (16kHz, 16-bit, mono)
+  const stats = fs.statSync(absolutePath);
+  const WAV_HEADER_SIZE = 44;
+  const BYTES_PER_SECOND = 16000 * 2 * 1;
+  const estimatedDuration = Math.max(0, (stats.size - WAV_HEADER_SIZE) / BYTES_PER_SECOND);
+
+  let transcriptionPrompt = 'Transcribe this audio accurately. Output ONLY the transcribed text, nothing else. No explanations, no formatting, no quotation marks.';
+  if (language) {
+    transcriptionPrompt += ` The audio is in ${language}. Transcribe in the original language.`;
+  }
+
+  const contents: MultimodalContent[] = [{
+    role: 'user' as const,
+    parts: [
+      { inlineData: { mimeType, data: base64Data } },
+      { text: transcriptionPrompt },
+    ],
+  }];
+
+  const authInfo = await getAuthInfo();
+  const apiKey = getApiKeyFromConfig();
+
+  const callOptions = {
+    model,
+    maxTokens,
+    temperature,
+    systemPrompt: systemPrompt || 'You are a precise audio transcription system. Output only the exact words spoken. No commentary.',
+  };
+
+  let transcription: string;
+
+  if (authInfo.type === 'apikey' && authInfo.apiKey) {
+    transcription = await analyzeImageWithApiKey(authInfo.apiKey, contents, callOptions);
+  } else if ((authInfo.type === 'oauth' || authInfo.type === 'gemini-cli') && authInfo.accessToken) {
+    try {
+      transcription = await analyzeImageWithOAuth(
+        authInfo.accessToken,
+        authInfo.projectId,
+        contents,
+        callOptions,
+        authInfo.type
+      );
+    } catch (error) {
+      const errorMsg = (error as Error).message;
+      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
+        transcription = await analyzeImageWithApiKey(apiKey, contents, callOptions);
+      } else {
+        throw error;
+      }
+    }
+  } else {
+    throw new Error('Gemini credentials not found. Run "vibe gemini auth" or "vibe gemini key <key>".');
+  }
+
+  return {
+    transcription: transcription.trim(),
+    model,
+    duration: Math.round(estimatedDuration * 10) / 10,
+  };
 }

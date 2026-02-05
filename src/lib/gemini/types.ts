@@ -2,12 +2,18 @@
  * Gemini API 타입 정의
  */
 
+// Gemini 인증 방식
+export type GeminiAuthMethod = 'oauth' | 'gemini-cli' | 'apikey';
+
 export interface AuthInfo {
-  type: 'oauth' | 'apikey';
+  type: GeminiAuthMethod;
   accessToken?: string;
   apiKey?: string;
   email?: string;
   projectId?: string;
+  refreshToken?: string;
+  tokenUri?: string;
+  expiryDate?: number;
 }
 
 export interface GeminiModelInfo {
@@ -57,6 +63,7 @@ export interface GeminiApiResponse {
 export interface ImageGenerationOptions {
   size?: string;
   output?: string;
+  model?: 'nano-banana' | 'nano-banana-pro';
 }
 
 export interface ImageGenerationResult {
@@ -79,4 +86,29 @@ export type MultimodalContent = {
 export interface VibeGeminiOptions {
   maxTokens?: number;
   jsonMode?: boolean;
+}
+
+// Audio transcription types
+export type AudioMimeType =
+  | 'audio/wav'
+  | 'audio/mp3'
+  | 'audio/mpeg'
+  | 'audio/aiff'
+  | 'audio/aac'
+  | 'audio/ogg'
+  | 'audio/flac'
+  | 'audio/webm';
+
+export interface AudioTranscriptionOptions {
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  language?: string;
+  systemPrompt?: string;
+}
+
+export interface AudioTranscriptionResult {
+  transcription: string;
+  model: string;
+  duration?: number;
 }

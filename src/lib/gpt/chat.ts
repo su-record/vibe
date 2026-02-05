@@ -4,7 +4,7 @@
 
 import { CHATGPT_BASE_URL } from '../gpt-constants.js';
 import { sleep } from '../utils.js';
-import { getAuthInfo, getApiKeyFromConfig } from './auth.js';
+import { getAuthInfo, getApiKeyFromConfig, getAzureConfig } from './auth.js';
 import type {
   GptModelInfo,
   ChatMessage,
@@ -13,6 +13,7 @@ import type {
   StreamChunk,
   OpenAIResponse,
   VibeGptOptions,
+  AuthInfo,
 } from './types.js';
 
 // Codex API 엔드포인트
@@ -333,39 +334,181 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
 }
 
 /**
- * GPT API 호출 (OAuth 또는 API Key 자동 선택 + Fallback)
+ * Azure OpenAI Chat Completions API 호출
+ */
+async function chatWithAzure(authInfo: AuthInfo, options: ChatOptions): Promise<ChatResponse> {
+  const {
+    messages = [],
+    maxTokens = 4096,
+    temperature = 0.7,
+    systemPrompt = '',
+  } = options;
+
+  const endpoint = authInfo.azureEndpoint!;
+  const apiKey = authInfo.azureApiKey!;
+  const deployment = authInfo.azureDeployment!;
+  const apiVersion = authInfo.azureApiVersion || '2024-12-01-preview';
+
+  // 메시지 구성
+  const apiMessages: Array<{ role: string; content: string | null }> = [];
+  if (systemPrompt) {
+    apiMessages.push({ role: 'system', content: systemPrompt });
+  }
+  for (const msg of messages) {
+    apiMessages.push({ role: msg.role, content: msg.content });
+  }
+
+  const retryCount = options._retryCount || 0;
+  const maxRetries = 3;
+
+  const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+
+  // 요청 body 구성 (모델에 따라 지원하지 않는 파라미터 제외)
+  const requestBody: Record<string, unknown> = {
+    messages: apiMessages,
+    max_completion_tokens: maxTokens,
+  };
+  // temperature 1이 아닐 때만 포함 (일부 모델은 기본값만 지원)
+  if (temperature !== undefined && temperature !== 1) {
+    requestBody.temperature = temperature;
+  }
+
+  const headers = { 'api-key': apiKey, 'Content-Type': 'application/json' };
+
+  try {
+    let response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    // temperature 미지원 모델 → temperature 제거 후 재시도
+    if (!response.ok && requestBody.temperature !== undefined) {
+      const text = await response.text();
+      if (text.includes("'temperature' does not support")) {
+        delete requestBody.temperature;
+        response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestBody),
+        });
+      }
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      if (response.status === 429 && retryCount < maxRetries) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        await sleep(delay);
+        return chatWithAzure(authInfo, { ...options, _retryCount: retryCount + 1 });
+      }
+
+      let errorMessage = `Azure OpenAI API error (${response.status})`;
+      try {
+        const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
+        if (errorJson.error?.message) {
+          errorMessage = errorJson.error.message;
+        }
+      } catch { /* ignore */ }
+
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json() as OpenAIResponse;
+    const assistantMessage = result.choices[0]?.message;
+
+    return {
+      content: assistantMessage?.content || '',
+      model: result.model || `azure:${deployment}`,
+      finishReason: result.choices[0]?.finish_reason || 'stop',
+    };
+  } catch (error) {
+    if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
+      const delay = Math.pow(2, retryCount) * 1000;
+      await sleep(delay);
+      return chatWithAzure(authInfo, { ...options, _retryCount: retryCount + 1 });
+    }
+    throw error;
+  }
+}
+
+/**
+ * 인증 방식에 따라 적절한 chat 함수 호출
+ */
+async function callWithAuth(authInfo: AuthInfo, options: ChatOptions): Promise<ChatResponse> {
+  switch (authInfo.type) {
+    case 'azure':
+      return chatWithAzure(authInfo, options);
+    case 'apikey':
+      return chatWithApiKey(authInfo.apiKey!, options);
+    case 'oauth':
+      return chatWithOAuth(authInfo.accessToken!, options);
+    default:
+      throw new Error(`Unknown auth type: ${authInfo.type}`);
+  }
+}
+
+/**
+ * fallback 가능한 에러인지 확인
+ */
+function isFallbackError(errorMsg: string): boolean {
+  return errorMsg.includes('429') ||
+    errorMsg.includes('401') ||
+    errorMsg.includes('403') ||
+    errorMsg.toLowerCase().includes('usage limit') ||
+    errorMsg.toLowerCase().includes('rate limit') ||
+    errorMsg.toLowerCase().includes('quota');
+}
+
+/**
+ * GPT API 호출 (고정 순서 인증 + Fallback)
+ * oauth → apikey → azure 순서, 실패 시 다음 방식으로 자동 전환
  */
 export async function chat(options: ChatOptions): Promise<ChatResponse> {
   const authInfo = await getAuthInfo();
-  const apiKey = getApiKeyFromConfig();
 
-  // API Key 방식
-  if (authInfo.type === 'apikey' && authInfo.apiKey) {
-    return chatWithApiKey(authInfo.apiKey, options);
-  }
-
-  // OAuth 방식 (API Key fallback 지원)
-  if (authInfo.type === 'oauth' && authInfo.accessToken) {
-    try {
-      return await chatWithOAuth(authInfo.accessToken, options);
-    } catch (error) {
-      // Rate Limit(429), 인증 오류(401/403), 사용 한도 초과 시 API Key로 fallback
-      const errorMsg = (error as Error).message;
-      const shouldFallback = errorMsg.includes('429') ||
-                            errorMsg.includes('401') ||
-                            errorMsg.includes('403') ||
-                            errorMsg.toLowerCase().includes('usage limit') ||
-                            errorMsg.toLowerCase().includes('rate limit') ||
-                            errorMsg.toLowerCase().includes('quota');
-      if (apiKey && shouldFallback) {
-        console.log('⚠️ OAuth limit exceeded/error → Switching to API Key');
-        return chatWithApiKey(apiKey, options);
-      }
+  try {
+    return await callWithAuth(authInfo, options);
+  } catch (error) {
+    const errorMsg = (error as Error).message;
+    if (!isFallbackError(errorMsg)) {
       throw error;
     }
-  }
 
-  throw new Error('GPT credentials not found.');
+    // 현재 방식 실패 → 다른 방식으로 fallback
+    const fallbacks: Array<() => AuthInfo | null> = [];
+
+    if (authInfo.type !== 'apikey') {
+      fallbacks.push(() => {
+        const apiKey = getApiKeyFromConfig();
+        return apiKey ? { type: 'apikey' as const, apiKey } : null;
+      });
+    }
+    if (authInfo.type !== 'azure') {
+      fallbacks.push(() => {
+        const config = getAzureConfig();
+        return config ? {
+          type: 'azure' as const,
+          azureEndpoint: config.endpoint,
+          azureApiKey: config.apiKey,
+          azureDeployment: config.deployment,
+          azureApiVersion: config.apiVersion,
+        } : null;
+      });
+    }
+
+    for (const getFallback of fallbacks) {
+      try {
+        const fallbackAuth = getFallback();
+        if (fallbackAuth) {
+          return await callWithAuth(fallbackAuth, options);
+        }
+      } catch { continue; }
+    }
+
+    throw error;
+  }
 }
 
 /**
@@ -374,8 +517,8 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
 export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamChunk> {
   const authInfo = await getAuthInfo();
 
-  // API Key 방식은 스트리밍 미지원 - 일반 chat 사용
-  if (authInfo.type === 'apikey') {
+  // API Key / Azure 방식은 스트리밍 미지원 - 일반 chat 사용
+  if (authInfo.type === 'apikey' || authInfo.type === 'azure') {
     const result = await chat(options);
     yield { type: 'delta', content: result.content };
     yield { type: 'done' };

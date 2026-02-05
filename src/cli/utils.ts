@@ -5,6 +5,7 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
@@ -118,4 +119,32 @@ export function compareVersions(a: string, b: string): number {
  */
 export function getCliDir(): string {
   return __dirname;
+}
+
+/**
+ * sox 설치 여부 확인
+ */
+export function isSoxInstalled(): boolean {
+  try {
+    execSync('sox --version', { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * /vibe.voice 옵션 도구 상태 안내 문자열
+ * Gemini 활성화 시에만 표시, sox 설치 여부에 따라 안내
+ */
+export function formatVoiceHint(geminiActive: boolean): string {
+  if (!geminiActive) {
+    return '🎤 /vibe.voice available (requires Gemini: vibe gemini auth)';
+  }
+  if (isSoxInstalled()) {
+    return '🎤 /vibe.voice ready (Gemini + sox)';
+  }
+  const installCmd = process.platform === 'darwin' ? 'brew install sox'
+    : process.platform === 'win32' ? 'choco install sox' : 'apt install sox';
+  return `🎤 /vibe.voice available — install sox for voice input: ${installCmd}`;
 }

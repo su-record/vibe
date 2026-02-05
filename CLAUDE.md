@@ -124,6 +124,7 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 | `/vibe.utils --diagram` | Generate diagrams |
 | `/vibe.utils --ui "desc"` | UI preview |
 | `/vibe.utils --continue` | Session restore |
+| `/vibe.voice` | Voice-to-coding command (Gemini audio) |
 
 ## CLI Commands
 

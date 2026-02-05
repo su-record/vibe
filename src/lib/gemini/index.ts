@@ -19,6 +19,9 @@ export type {
   ImageGenerationOptions,
   ImageGenerationResult,
   ImageAnalysisOptions,
+  AudioMimeType,
+  AudioTranscriptionOptions,
+  AudioTranscriptionResult,
   MultimodalContent,
   VibeGeminiOptions,
 } from './types.js';
@@ -47,6 +50,7 @@ export {
   analyzeUI,
   generateImage,
   analyzeImage,
+  transcribeAudio,
 } from './capabilities.js';
 
 export {

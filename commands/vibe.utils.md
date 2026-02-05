@@ -84,15 +84,23 @@ Generate Mermaid diagrams for architecture visualization.
 
 ## --image (Image Generation)
 
-Generate images using Gemini Image API (Nano Banana model).
+Generate images using Gemini Image API.
+
+- **Default**: Nano Banana (`gemini-2.5-flash-image`) - 빠르고 가벼운 이미지 생성
+- **--pro**: Nano Banana Pro (`gemini-3-pro-image-preview`) - 고품질 이미지 생성
 
 ### MANDATORY Tool Invocation
 
 **CRITICAL: You MUST use the following command to generate images. Do NOT search for scripts, do NOT use gcloud, do NOT use any other method.**
 
-**General image generation:**
+**General image generation (Nano Banana):**
 ```bash
 node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
+```
+
+**Pro quality (Nano Banana Pro):**
+```bash
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --pro --output "OUTPUT_PATH"
 ```
 
 **With size option:**
@@ -107,13 +115,14 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
    - If user specifies a path, use that path
    - Default: `--output "./generated-image.png"`
 3. Extract **size** if specified, otherwise default 1024x1024
+4. If user requests **high quality / pro / 고품질**, add `--pro` flag
 
 ### Examples
 
 ```bash
 node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "A cute Gemini AI character mascot, colorful, friendly" --output "./gemini-character.png"
 
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "Professional website banner, modern design" --size "1920x400" --output "./banner.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "Professional website banner, modern design" --pro --size "1920x400" --output "./banner.png"
 
 node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "Modern minimal logo design" --output "./public/logo.png"
 ```
