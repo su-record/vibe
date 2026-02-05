@@ -13,7 +13,7 @@ import {
 } from './types.js';
 import * as gptApi from '../lib/gpt-api.js';
 import * as geminiApi from '../lib/gemini-api.js';
-import * as kimiApi from '../lib/kimi-api.js';
+import * as nvidiaApi from '../lib/nvidia-api.js';
 import { debugLog } from '../lib/utils.js';
 
 // LLM 가용성 캐시 (5분 TTL)
@@ -64,7 +64,7 @@ export class SmartRouter {
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
       gemini: { available: true, checkedAt: 0, errorCount: 0 },
-      kimi: { available: true, checkedAt: 0, errorCount: 0 }
+      nvidia: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 
@@ -189,8 +189,8 @@ export class SmartRouter {
         return gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'gemini':
         return geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
-      case 'kimi':
-        return kimiApi.coreKimiOrchestrate(prompt, systemPrompt, { jsonMode: false });
+      case 'nvidia':
+        return nvidiaApi.coreNvidiaOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'claude':
         throw new Error('Claude fallback - handled by caller');
       default:
@@ -329,7 +329,7 @@ export class SmartRouter {
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
       gemini: { available: true, checkedAt: 0, errorCount: 0 },
-      kimi: { available: true, checkedAt: 0, errorCount: 0 }
+      nvidia: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 }

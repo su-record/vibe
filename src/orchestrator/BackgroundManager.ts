@@ -555,7 +555,7 @@ class BackgroundManagerImpl {
     if (model.startsWith('claude')) return 'claude';
     if (model.startsWith('gpt')) return 'gpt';
     if (model.startsWith('gemini')) return 'gemini';
-    if (model.startsWith('kimi') || model.startsWith('moonshot')) return 'kimi';
+    if (model.startsWith('kimi') || model.startsWith('moonshot') || model.startsWith('nvidia') || model.startsWith('deepseek') || model.startsWith('qwen') || model.startsWith('devstral')) return 'nvidia';
     return 'default';
   }
 

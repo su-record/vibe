@@ -168,11 +168,11 @@ export type TaskType =
   | 'code-gen'       // 코드 생성 → Claude 직접
   | 'web-search'     // 웹 검색 → GPT/Gemini
   | 'general'        // 일반 → Claude 직접
-  | 'code-review'    // 코드 리뷰 → Kimi 우선
-  | 'reasoning';     // 추론 → Kimi 우선
+  | 'code-review'    // 코드 리뷰 → NVIDIA (devstral-2) 우선
+  | 'reasoning';     // 추론 → NVIDIA (kimi-k2-thinking) 우선
 
 /** LLM 제공자 */
-export type LLMProvider = 'gpt' | 'gemini' | 'claude' | 'kimi';
+export type LLMProvider = 'gpt' | 'gemini' | 'claude' | 'nvidia';
 
 /** 스마트 라우팅 요청 */
 export interface SmartRouteRequest {
@@ -203,18 +203,22 @@ export interface SmartRouteResult {
 export interface LLMAvailabilityCache {
   gpt: { available: boolean; checkedAt: number; errorCount: number };
   gemini: { available: boolean; checkedAt: number; errorCount: number };
-  kimi: { available: boolean; checkedAt: number; errorCount: number };
+  nvidia: { available: boolean; checkedAt: number; errorCount: number };
 }
 
-/** 작업 유형별 LLM 우선순위 */
+/**
+ * 작업 유형별 LLM 우선순위
+ * - NVIDIA NIM (무료) → GPT/Gemini (유료, 등록 시 1순위로 승격) → Claude (기본)
+ * - GPT/Gemini 키 등록 시 SmartRouter에서 동적으로 우선순위 조정
+ */
 export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
-  'architecture': ['gpt', 'kimi', 'gemini', 'claude'],
-  'debugging': ['gpt', 'kimi', 'gemini', 'claude'],
-  'uiux': ['gemini', 'gpt', 'claude'],
-  'code-analysis': ['kimi', 'gemini', 'gpt', 'claude'],
-  'code-gen': ['claude'],
-  'web-search': ['gemini', 'gpt', 'claude'],
-  'general': ['claude'],
-  'code-review': ['kimi', 'gpt', 'gemini', 'claude'],
-  'reasoning': ['kimi', 'gpt', 'gemini', 'claude'],
+  'architecture': ['nvidia', 'gpt', 'gemini', 'claude'],
+  'debugging': ['nvidia', 'gpt', 'gemini', 'claude'],
+  'uiux': ['gemini', 'nvidia', 'gpt', 'claude'],
+  'code-analysis': ['nvidia', 'gemini', 'gpt', 'claude'],
+  'code-gen': ['nvidia', 'claude'],
+  'web-search': ['gemini', 'nvidia', 'gpt', 'claude'],
+  'general': ['nvidia', 'claude'],
+  'code-review': ['nvidia', 'gpt', 'gemini', 'claude'],
+  'reasoning': ['nvidia', 'gpt', 'gemini', 'claude'],
 };

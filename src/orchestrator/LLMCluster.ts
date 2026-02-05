@@ -5,7 +5,7 @@
 
 import * as gptApi from '../lib/gpt-api.js';
 import * as geminiApi from '../lib/gemini-api.js';
-import * as kimiApi from '../lib/kimi-api.js';
+import * as nvidiaApi from '../lib/nvidia-api.js';
 import { warnLog } from '../lib/utils.js';
 
 /**
@@ -14,7 +14,7 @@ import { warnLog } from '../lib/utils.js';
 export interface MultiLlmQueryResult {
   gpt?: string;
   gemini?: string;
-  kimi?: string;
+  nvidia?: string;
 }
 
 /**
@@ -23,7 +23,7 @@ export interface MultiLlmQueryResult {
 export interface LlmStatusResult {
   gpt: { available: boolean };
   gemini: { available: boolean };
-  kimi: { available: boolean };
+  nvidia: { available: boolean };
 }
 
 /**
@@ -34,7 +34,7 @@ export interface LLMClusterOptions {
 }
 
 /**
- * LLMCluster - GPT/Gemini 병렬 쿼리 및 상태 관리
+ * LLMCluster - GPT/Gemini/NVIDIA 병렬 쿼리 및 상태 관리
  */
 export class LLMCluster {
   private defaultSystemPrompt: string;
@@ -74,14 +74,14 @@ export class LLMCluster {
   }
 
   /**
-   * Kimi 오케스트레이션
+   * NVIDIA NIM 오케스트레이션
    */
-  async kimiOrchestrate(
+  async nvidiaOrchestrate(
     prompt: string,
     systemPrompt?: string,
     options?: { jsonMode?: boolean }
   ): Promise<string> {
-    return kimiApi.coreKimiOrchestrate(
+    return nvidiaApi.coreNvidiaOrchestrate(
       prompt,
       systemPrompt ?? this.defaultSystemPrompt,
       options
@@ -105,13 +105,12 @@ export class LLMCluster {
 
   /**
    * 멀티 LLM 병렬 쿼리
-   * GPT, Gemini 동시 호출하여 결과 비교
    */
   async multiQuery(
     prompt: string,
-    options?: { useGpt?: boolean; useGemini?: boolean; useKimi?: boolean }
+    options?: { useGpt?: boolean; useGemini?: boolean; useNvidia?: boolean }
   ): Promise<MultiLlmQueryResult> {
-    const { useGpt = true, useGemini = true, useKimi = false } = options || {};
+    const { useGpt = true, useGemini = true, useNvidia = false } = options || {};
     const results: MultiLlmQueryResult = {};
 
     const promises: Promise<void>[] = [];
@@ -132,11 +131,11 @@ export class LLMCluster {
       );
     }
 
-    if (useKimi) {
+    if (useNvidia) {
       promises.push(
-        this.kimiOrchestrate(prompt)
-          .then(r => { results.kimi = r; })
-          .catch(e => { warnLog('Kimi query failed in multiLlm', e); })
+        this.nvidiaOrchestrate(prompt)
+          .then(r => { results.nvidia = r; })
+          .catch(e => { warnLog('NVIDIA query failed in multiLlm', e); })
       );
     }
 
@@ -150,7 +149,7 @@ export class LLMCluster {
   async checkStatus(): Promise<LlmStatusResult> {
     let gptAvailable = false;
     let geminiAvailable = false;
-    let kimiAvailable = false;
+    let nvidiaAvailable = false;
 
     const promises: Promise<void>[] = [
       this.gptOrchestrate('ping', 'Reply with pong')
@@ -159,9 +158,9 @@ export class LLMCluster {
       this.geminiOrchestrate('ping', 'Reply with pong')
         .then(() => { geminiAvailable = true; })
         .catch(e => { warnLog('Gemini status check failed', e); }),
-      this.kimiOrchestrate('ping', 'Reply with pong')
-        .then(() => { kimiAvailable = true; })
-        .catch(e => { warnLog('Kimi status check failed', e); })
+      this.nvidiaOrchestrate('ping', 'Reply with pong')
+        .then(() => { nvidiaAvailable = true; })
+        .catch(e => { warnLog('NVIDIA status check failed', e); })
     ];
 
     await Promise.all(promises);
@@ -169,7 +168,7 @@ export class LLMCluster {
     return {
       gpt: { available: gptAvailable },
       gemini: { available: geminiAvailable },
-      kimi: { available: kimiAvailable }
+      nvidia: { available: nvidiaAvailable }
     };
   }
 }

@@ -17,16 +17,16 @@ Gemini Commands:
   vibe gemini auth        OAuth (free with Advanced)
   vibe gemini key <KEY>   API key
 
-Kimi Commands:
-  vibe kimi key <KEY>     API key (Moonshot)
-  vibe kimi status        Check status
-  vibe kimi logout        Remove key
+NVIDIA NIM Commands:
+  vibe nvidia key <KEY>   API key (nvapi-xxx)
+  vibe nvidia status      Check status & models
+  vibe nvidia logout      Remove key
 
 Examples:
   vibe gpt auth           OpenAI login
   vibe gemini auth        Google login
   vibe gpt key sk-xxx     API key setup
-  vibe kimi key sk-xxx    Moonshot API key
+  vibe nvidia key nvapi-xxx  NVIDIA API key
   `);
 }
 
@@ -40,6 +40,6 @@ export function showLogoutHelp(): void {
 Usage:
   vibe gpt logout       GPT logout
   vibe gemini logout    Gemini logout
-  vibe kimi logout      Kimi logout
+  vibe nvidia logout    NVIDIA logout
   `);
 }

@@ -1,5 +1,5 @@
 /**
- * Kimi CLI 명령어
+ * NVIDIA NIM CLI 명령어
  */
 
 import path from 'path';
@@ -13,56 +13,57 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Kimi 상태 확인
+ * NVIDIA NIM 상태 확인
  */
-export function kimiStatus(): void {
+export function nvidiaStatus(): void {
   try {
-    const kimiStoragePath = path.join(__dirname, '../../lib/kimi-storage.js');
-    const kimiConstantsPath = path.join(__dirname, '../../lib/kimi-constants.js');
+    const storagePath = path.join(__dirname, '../../lib/nvidia-storage.js');
+    const constantsPath = path.join(__dirname, '../../lib/nvidia-constants.js');
 
-    const storage = require(kimiStoragePath);
-    const { KIMI_MODELS } = require(kimiConstantsPath);
+    const storage = require(storagePath);
+    const { NVIDIA_MODELS } = require(constantsPath);
 
     const hasKey = storage.hasApiKey();
 
     if (!hasKey) {
       // 환경변수 확인
-      const envKey = process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY;
+      const envKey = process.env.NVIDIA_API_KEY || process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY;
       if (envKey) {
         console.log(`
-📊 Kimi Status
+📊 NVIDIA NIM Status
 
 Auth: ✅ Environment variable
 Key: ${storage.maskApiKey(envKey)}
 
 Available models:
-${Object.entries(KIMI_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
+${Object.entries(NVIDIA_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
         `);
         return;
       }
 
       console.log(`
-📊 Kimi Status
+📊 NVIDIA NIM Status
 
 No API key configured
 
-Setup: vibe kimi key <MOONSHOT_API_KEY>
-Or set MOONSHOT_API_KEY environment variable
+Setup: vibe nvidia key <NVIDIA_API_KEY>
+Get key: https://build.nvidia.com/
+Or set NVIDIA_API_KEY environment variable
       `);
       return;
     }
 
     const apiKey = storage.loadApiKey();
     console.log(`
-📊 Kimi Status
+📊 NVIDIA NIM Status
 
 Auth: ✅ API Key
 Key: ${storage.maskApiKey(apiKey)}
 
 Available models:
-${Object.entries(KIMI_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
+${Object.entries(NVIDIA_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
 
-Logout: vibe kimi logout
+Logout: vibe nvidia logout
     `);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -71,24 +72,24 @@ Logout: vibe kimi logout
 }
 
 /**
- * Kimi 로그아웃 (API Key 삭제)
+ * NVIDIA NIM 로그아웃 (API Key 삭제)
  */
-export function kimiLogout(): void {
+export function nvidiaLogout(): void {
   try {
-    const kimiStoragePath = path.join(__dirname, '../../lib/kimi-storage.js');
-    const storage = require(kimiStoragePath);
+    const storagePath = path.join(__dirname, '../../lib/nvidia-storage.js');
+    const storage = require(storagePath);
 
     const removed = storage.removeApiKey();
 
     if (!removed) {
-      console.log('No Kimi API key stored.');
+      console.log('No NVIDIA API key stored.');
       return;
     }
 
     console.log(`
-✅ Kimi API key removed
+✅ NVIDIA API key removed
 
-Setup again: vibe kimi key <MOONSHOT_API_KEY>
+Setup again: vibe nvidia key <NVIDIA_API_KEY>
     `);
 
     // config.json 업데이트
@@ -96,8 +97,8 @@ Setup again: vibe kimi key <MOONSHOT_API_KEY>
     if (fs.existsSync(configPath)) {
       try {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        if (config.models && 'kimi' in config.models) {
-          delete (config.models as Record<string, unknown>)['kimi'];
+        if (config.models && 'nvidia' in config.models) {
+          delete (config.models as Record<string, unknown>)['nvidia'];
           fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
         }
       } catch { /* ignore: optional operation */ }
@@ -107,3 +108,9 @@ Setup again: vibe kimi key <MOONSHOT_API_KEY>
     console.error('Logout failed:', message);
   }
 }
+
+// 하위 호환
+/** @deprecated Use nvidiaStatus */
+export const kimiStatus = nvidiaStatus;
+/** @deprecated Use nvidiaLogout */
+export const kimiLogout = nvidiaLogout;

@@ -1,17 +1,25 @@
 /**
- * Kimi Chat API
- * OpenAI-compatible endpoint (api.moonshot.ai/v1/chat/completions)
+ * NVIDIA NIM Chat API
+ * 모든 모델이 integrate.api.nvidia.com/v1/chat/completions 사용
  */
 
 import { getAuthInfo } from './auth.js';
-import { KIMI_BASE_URL, KIMI_MODELS, KIMI_DEFAULT_MODEL } from '../kimi-constants.js';
-import type { ChatOptions, ChatResponse, ChatMessage, KimiModelInfo } from './types.js';
+import {
+  NVIDIA_BASE_URL,
+  NVIDIA_MODELS,
+  NVIDIA_DEFAULT_MODEL,
+  NVIDIA_MODEL_MAP,
+  isThinkingModel,
+  getModelConfig,
+} from '../nvidia-constants.js';
+import type { ChatOptions, ChatResponse, ChatMessage } from './types.js';
+import type { NvidiaModelMeta } from '../nvidia-constants.js';
 
-const API_TIMEOUT_MS = 30_000;
+const API_TIMEOUT_MS = 60_000;
 
 interface OpenAIApiResponse {
   choices: Array<{
-    message: { role: string; content: string | null };
+    message: { role: string; content: string | null; reasoning_content?: string | null };
     finish_reason: string;
   }>;
   model: string;
@@ -23,10 +31,10 @@ function sleep(ms: number): Promise<void> {
 
 async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<ChatResponse> {
   const {
-    model = KIMI_DEFAULT_MODEL,
+    model = NVIDIA_DEFAULT_MODEL,
     messages = [],
     maxTokens = 4096,
-    temperature = 0.7,
+    temperature,
     systemPrompt = '',
   } = options;
 
@@ -41,22 +49,38 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     apiMessages.push({ role: msg.role, content: msg.content });
   }
 
+  const actualModel = NVIDIA_MODEL_MAP[model] || model;
+  const modelConfig = getModelConfig(model);
+
+  // temperature: 사용자 지정 → 모델 권장값
+  const useThinking = isThinkingModel(model);
+  const effectiveTemp = temperature ?? modelConfig.recommendedTemp;
+  // thinking 모델은 최소 1.0
+  const finalTemp = useThinking ? Math.max(effectiveTemp, 1.0) : effectiveTemp;
+
+  const requestBody: Record<string, unknown> = {
+    model: actualModel,
+    messages: apiMessages,
+    max_tokens: maxTokens,
+    temperature: finalTemp,
+  };
+
+  // Kimi K2 계열: chat_template_kwargs
+  if (modelConfig.thinking !== undefined) {
+    requestBody.chat_template_kwargs = { thinking: modelConfig.thinking };
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${KIMI_BASE_URL}/chat/completions`, {
+    const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model,
-        messages: apiMessages,
-        max_tokens: maxTokens,
-        temperature,
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     });
 
@@ -70,8 +94,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
         return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
       }
 
-      // 4xx (non-429): non-retryable
-      let errorMessage = `Kimi API error (${response.status})`;
+      let errorMessage = `NVIDIA NIM API error (${response.status})`;
       try {
         const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
         if (errorJson.error?.message) {
@@ -83,14 +106,16 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     }
 
     const result = await response.json() as OpenAIApiResponse;
+    const msg = result.choices[0]?.message;
     return {
-      content: result.choices[0]?.message?.content || '',
+      content: msg?.content || msg?.reasoning_content || '',
+      reasoning: msg?.reasoning_content || undefined,
       model: result.model,
       finishReason: result.choices[0]?.finish_reason || 'stop',
     };
   } catch (error) {
     if ((error as Error).name === 'AbortError') {
-      throw new Error(`Kimi API timeout (${API_TIMEOUT_MS / 1000}s)`);
+      throw new Error(`NVIDIA NIM API timeout (${API_TIMEOUT_MS / 1000}s)`);
     }
     if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
       const delay = Math.pow(2, retryCount) * 2000;
@@ -104,7 +129,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 }
 
 /**
- * Kimi 채팅 요청
+ * NVIDIA NIM 채팅 요청
  */
 export async function chat(options: ChatOptions): Promise<ChatResponse> {
   const auth = await getAuthInfo();
@@ -132,9 +157,9 @@ export async function quickAsk(prompt: string): Promise<string> {
 /**
  * 사용 가능한 모델 목록
  */
-export function getAvailableModels(): KimiModelInfo[] {
-  return Object.values(KIMI_MODELS);
+export function getAvailableModels(): NvidiaModelMeta[] {
+  return Object.values(NVIDIA_MODELS);
 }
 
-export { KIMI_MODELS };
+export { NVIDIA_MODELS };
 export type { ChatMessage };

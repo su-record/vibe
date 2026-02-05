@@ -5,7 +5,7 @@
  *   node llm-orchestrate.js <provider> <mode> "prompt"
  *   node llm-orchestrate.js <provider> <mode> "systemPrompt" "prompt"
  *
- *   provider: gpt | gemini
+ *   provider: gpt | gemini | nvidia
  *   mode: orchestrate | orchestrate-json | image | analyze-image
  *
  * Image Mode:
@@ -28,6 +28,9 @@
 import { getLibBaseUrl } from './utils.js';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import crypto from 'crypto';
+import { execSync, spawn } from 'child_process';
 
 const LIB_URL = getLibBaseUrl();
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant.';
@@ -78,12 +81,14 @@ function sleep(ms) {
 // ============================================
 
 function parseImageArgs(args) {
-  const result = { prompt: null, output: './generated-image.png', size: '1024x1024' };
+  const result = { prompt: null, output: './generated-image.png', size: '1024x1024', model: 'nano-banana' };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--output' || args[i] === '-o') {
       result.output = args[++i];
     } else if (args[i] === '--size' || args[i] === '-s') {
       result.size = args[++i];
+    } else if (args[i] === '--pro') {
+      result.model = 'nano-banana-pro';
     } else if (!args[i].startsWith('-') && !result.prompt) {
       result.prompt = args[i];
     }
@@ -111,13 +116,105 @@ function parseAnalyzeImageArgs(args) {
   return result;
 }
 
+// ============================================
+// Voice Transcription (record + Gemini STT)
+// ============================================
+
+function parseVoiceArgs(args) {
+  const result = { pro: false, lang: null, duration: 60 };
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--pro') {
+      result.pro = true;
+    } else if (args[i] === '--lang' || args[i] === '-l') {
+      result.lang = args[++i];
+    } else if (args[i] === '--duration' || args[i] === '-d') {
+      result.duration = parseInt(args[++i], 10) || 60;
+    }
+  }
+  return result;
+}
+
+function checkSoxInstalled() {
+  try {
+    execSync('sox --version', { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function recordAudio(outputPath, maxDuration) {
+  return new Promise((resolve, reject) => {
+    const soxProcess = spawn('sox', [
+      '-d',
+      '-r', '16000',
+      '-c', '1',
+      '-b', '16',
+      '-t', 'wav',
+      outputPath,
+      'trim', '0', String(maxDuration),
+    ], { stdio: ['pipe', 'pipe', 'pipe'] });
+
+    let stderrData = '';
+    soxProcess.stderr.on('data', (data) => {
+      stderrData += data.toString();
+    });
+
+    // Enter 키로 녹음 중지
+    if (process.stdin.setRawMode) {
+      process.stdin.setRawMode(true);
+    }
+    process.stdin.resume();
+
+    const onKeypress = (key) => {
+      if (key[0] === 13 || key[0] === 10 || key[0] === 3) {
+        if (process.stdin.setRawMode) {
+          process.stdin.setRawMode(false);
+        }
+        process.stdin.pause();
+        process.stdin.removeListener('data', onKeypress);
+        soxProcess.kill('SIGTERM');
+      }
+    };
+    process.stdin.on('data', onKeypress);
+
+    soxProcess.on('close', () => {
+      if (process.stdin.setRawMode) {
+        process.stdin.setRawMode(false);
+      }
+      process.stdin.pause();
+      process.stdin.removeListener('data', onKeypress);
+
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 44) {
+        resolve(outputPath);
+      } else {
+        reject(new Error(`Recording failed: ${stderrData || 'empty audio'}`));
+      }
+    });
+
+    soxProcess.on('error', (err) => {
+      if (process.stdin.setRawMode) {
+        process.stdin.setRawMode(false);
+      }
+      process.stdin.pause();
+      process.stdin.removeListener('data', onKeypress);
+      reject(new Error(`Sox process error: ${err.message}`));
+    });
+  });
+}
+
 async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   const modulePath = `${LIB_URL}${providerName}-api.js`;
   const module = await import(modulePath);
 
-  const orchestrateFn = providerName === 'gpt'
-    ? module.coreGptOrchestrate
-    : module.coreGeminiOrchestrate;
+  let orchestrateFn;
+  if (providerName === 'gpt') {
+    orchestrateFn = module.coreGptOrchestrate;
+  } else if (providerName === 'nvidia') {
+    orchestrateFn = module.coreNvidiaOrchestrate;
+  } else {
+    orchestrateFn = module.coreGeminiOrchestrate;
+  }
 
   return await orchestrateFn(prompt, sysPrompt, { jsonMode });
 }
@@ -173,14 +270,16 @@ async function main() {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    console.error(`[IMAGE] Generating with Nano Banana...`);
+    const modelLabel = imageArgs.model === 'nano-banana-pro' ? 'Nano Banana Pro' : 'Nano Banana';
+    console.error(`[IMAGE] Generating with ${modelLabel}...`);
     console.error(`  Prompt: ${imageArgs.prompt}`);
     console.error(`  Size: ${imageArgs.size}`);
+    console.error(`  Model: ${modelLabel}`);
     console.error(`  Output: ${imageArgs.output}`);
 
     try {
       const geminiApi = await import(`${LIB_URL}gemini-api.js`);
-      const image = await geminiApi.generateImage(imageArgs.prompt, { size: imageArgs.size });
+      const image = await geminiApi.generateImage(imageArgs.prompt, { size: imageArgs.size, model: imageArgs.model });
       fs.writeFileSync(imageArgs.output, image.data);
       const stats = fs.statSync(imageArgs.output);
       const sizeKB = (stats.size / 1024).toFixed(1);
@@ -256,6 +355,66 @@ async function main() {
     return;
   }
 
+  // Voice mode handling
+  if (mode === 'voice') {
+    if (provider !== 'gemini') {
+      console.log(JSON.stringify({
+        success: false,
+        error: 'Voice transcription only supports gemini provider',
+      }));
+      return;
+    }
+
+    if (!checkSoxInstalled()) {
+      console.log(JSON.stringify({
+        success: false,
+        error: 'sox is not installed. Install with: brew install sox (macOS) or apt install sox (Linux)',
+      }));
+      return;
+    }
+
+    const voiceArgs = parseVoiceArgs(process.argv.slice(4));
+    const voiceModel = voiceArgs.pro ? 'gemini-3-pro' : 'gemini-3-flash';
+    const tmpFile = path.join(os.tmpdir(), `vibe-voice-${crypto.randomUUID()}.wav`);
+
+    console.error(`[VOICE] Recording audio... (press Enter to stop, max ${voiceArgs.duration}s)`);
+    console.error(`  Model: ${voiceModel}`);
+    if (voiceArgs.lang) {
+      console.error(`  Language: ${voiceArgs.lang}`);
+    }
+
+    try {
+      await recordAudio(tmpFile, voiceArgs.duration);
+
+      const stats = fs.statSync(tmpFile);
+      const fileSizeKB = (stats.size / 1024).toFixed(1);
+      console.error(`[VOICE] Recording complete (${fileSizeKB} KB). Transcribing...`);
+
+      const geminiApi = await import(`${LIB_URL}gemini-api.js`);
+      const result = await geminiApi.transcribeAudio(tmpFile, {
+        model: voiceModel,
+        language: voiceArgs.lang || undefined,
+      });
+
+      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+
+      console.log(JSON.stringify({
+        success: true,
+        transcription: result.transcription,
+        duration: result.duration,
+        model: result.model,
+      }));
+    } catch (err) {
+      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+
+      console.log(JSON.stringify({
+        success: false,
+        error: err.message,
+      }));
+    }
+    return;
+  }
+
   // Text generation mode (orchestrate / orchestrate-json)
   let prompt;
   let systemPrompt = DEFAULT_SYSTEM_PROMPT;
@@ -293,16 +452,24 @@ async function main() {
   const prefixPatterns = {
     gpt: /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
     gemini: /^(gemini[-.\s]|제미나이-|vibe-gemini-)\s*/i,
+    nvidia: /^(nvidia[-.\s]|엔비디아-|vibe-nvidia-)\s*/i,
   };
   const cleanPrompt = prompt.replace(prefixPatterns[provider] || /^/, '').trim();
   const jsonMode = mode === 'orchestrate-json';
 
-  // Provider chain: primary → fallback
-  const fallbackProvider = provider === 'gpt' ? 'gemini' : 'gpt';
-  const providerChain = [provider, fallbackProvider];
+  // Provider chain: primary → nvidia fallback → cross fallback
+  const providerLabels = { gpt: 'GPT-5.2', gemini: 'Gemini-3', nvidia: 'NVIDIA NIM' };
+  let providerChain;
+  if (provider === 'nvidia') {
+    providerChain = ['nvidia', 'gpt', 'gemini'];
+  } else if (provider === 'gpt') {
+    providerChain = ['gpt', 'nvidia', 'gemini'];
+  } else {
+    providerChain = ['gemini', 'nvidia', 'gpt'];
+  }
 
   for (const currentProvider of providerChain) {
-    const label = currentProvider === 'gpt' ? 'GPT-5.2' : 'Gemini-3';
+    const label = providerLabels[currentProvider] || currentProvider.toUpperCase();
     const result = await callWithRetry(currentProvider, cleanPrompt, systemPrompt, jsonMode);
 
     if (result.success) {
@@ -312,8 +479,9 @@ async function main() {
 
     // Log failure and try fallback
     if (currentProvider !== providerChain[providerChain.length - 1]) {
-      const fallbackLabel = fallbackProvider === 'gpt' ? 'GPT' : 'Gemini';
-      console.error(`[${currentProvider.toUpperCase()}] Failed: ${result.error}. Falling back to ${fallbackLabel}...`);
+      const nextProvider = providerChain[providerChain.indexOf(currentProvider) + 1];
+      const nextLabel = providerLabels[nextProvider] || nextProvider.toUpperCase();
+      console.error(`[${currentProvider.toUpperCase()}] Failed: ${result.error}. Falling back to ${nextLabel}...`);
     } else {
       // All providers failed
       console.log(`[LLM] Error: All providers failed. Last error: ${result.error}`);

@@ -16,14 +16,17 @@ import { setSilentMode } from './utils.js';
 import {
   setupExternalLLM,
   removeExternalLLM,
+  setupAzureConfig,
+  setupAzureFromCli,
+  removeAzureConfig,
   gptAuth,
   gptStatus,
   gptLogout,
   geminiAuth,
   geminiStatus,
   geminiLogout,
-  kimiStatus,
-  kimiLogout,
+  nvidiaStatus,
+  nvidiaLogout,
 } from './llm.js';
 import {
   showHud,
@@ -132,17 +135,39 @@ switch (command) {
       case 'remove':
         removeExternalLLM('gpt');
         break;
+      case 'azure': {
+        const hasManualArgs = args.includes('--endpoint') || args.includes('--key') || args.includes('--deployment');
+        if (hasManualArgs) {
+          const endpoint = args[args.indexOf('--endpoint') + 1] || '';
+          const azureKey = args[args.indexOf('--key') + 1] || '';
+          const deployment = args[args.indexOf('--deployment') + 1] || '';
+          const apiVersion = args.includes('--api-version') ? args[args.indexOf('--api-version') + 1] : undefined;
+          setupAzureConfig(endpoint, azureKey, deployment, apiVersion);
+        } else {
+          // 인자 없으면 az CLI 자동 탐지
+          setupAzureFromCli();
+        }
+        break;
+      }
+      case 'azure-remove':
+        removeAzureConfig();
+        break;
       case 'status':
         gptStatus();
         break;
       default:
         console.log(`
 GPT Commands:
-  vibe gpt auth     OAuth authentication (Plus/Pro)
-  vibe gpt key      Set API key
-  vibe gpt status   Check status
-  vibe gpt logout   Logout
-  vibe gpt remove   Remove config
+  vibe gpt auth                    OAuth authentication (Plus/Pro)
+  vibe gpt key <key>               Set API key
+  vibe gpt azure --endpoint <url> --key <key> --deployment <name>
+                                   Set Azure OpenAI (auto-detect if no args)
+  vibe gpt azure-remove            Remove Azure config
+  vibe gpt status                  Check status
+  vibe gpt logout                  Logout
+  vibe gpt remove                  Remove config
+
+Auth order: oauth → apikey → azure
         `);
     }
     break;
@@ -176,45 +201,47 @@ GPT Commands:
       default:
         console.log(`
 Gemini Commands:
-  vibe gemini auth     OAuth authentication
-  vibe gemini key      Set API key
-  vibe gemini status   Check status
-  vibe gemini logout   Logout
-  vibe gemini remove   Remove config
+  vibe gemini auth                 OAuth authentication
+  vibe gemini key <key>            Set API key
+  vibe gemini status               Check status
+  vibe gemini logout               Logout
+  vibe gemini remove               Remove config
+
+Auth order: gemini-cli(auto) → oauth → apikey
         `);
     }
     break;
   }
 
-  // vibe kimi <subcommand>
-  case 'kimi': {
+  // vibe nvidia <subcommand>
+  case 'nvidia': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
       case 'key': {
-        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'kimi' && a !== 'key');
+        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'nvidia' && a !== 'key');
         if (apiKey) {
-          setupExternalLLM('kimi', apiKey);
+          setupExternalLLM('nvidia', apiKey);
         } else {
-          console.log('Usage: vibe kimi key <API_KEY>');
+          console.log('Usage: vibe nvidia key <NVIDIA_API_KEY>');
         }
         break;
       }
       case 'logout':
-        kimiLogout();
+        nvidiaLogout();
         break;
       case 'remove':
-        removeExternalLLM('kimi');
+        removeExternalLLM('nvidia');
         break;
       case 'status':
-        kimiStatus();
+        nvidiaStatus();
         break;
       default:
         console.log(`
-Kimi Commands:
-  vibe kimi key       Set Moonshot API key
-  vibe kimi status    Check status
-  vibe kimi logout    Remove key
-  vibe kimi remove    Remove config
+NVIDIA NIM Commands:
+  vibe nvidia key <key>   Set NVIDIA API key (nvapi-xxx)
+  vibe nvidia status      Check status & available models
+  vibe nvidia logout      Remove key
+  vibe nvidia remove      Remove config
         `);
     }
     break;
@@ -305,7 +332,7 @@ Available commands:
   vibe hud <cmd>    HUD status (show, start, phase, agent, reset)
   vibe gpt <cmd>    GPT commands (auth, key, status, logout)
   vibe gemini <cmd> Gemini commands (auth, key, status, logout)
-  vibe kimi <cmd>   Kimi commands (key, status, logout)
+  vibe nvidia <cmd>  NVIDIA NIM commands (key, status, logout)
   vibe status       Show status
   vibe remove       Remove core
   vibe help         Help

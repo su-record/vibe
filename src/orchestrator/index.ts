@@ -285,12 +285,12 @@ export function status(): ToolResult {
 }
 
 // ============================================
-// Multi-LLM Integration (GPT, Gemini, Kimi)
+// Multi-LLM Integration (GPT, Gemini, NVIDIA)
 // ============================================
 
 import * as gptApi from '../lib/gpt-api.js';
 import * as geminiApi from '../lib/gemini-api.js';
-import * as kimiApi from '../lib/kimi-api.js';
+import * as nvidiaApi from '../lib/nvidia-api.js';
 
 // ============================================
 // GPT Integration (웹 검색, 아키텍처 분석)
@@ -382,32 +382,35 @@ export async function gemini(
 }
 
 // ============================================
-// Kimi Integration (코드 리뷰, 추론)
+// NVIDIA NIM Integration (코드 리뷰, 추론)
 // ============================================
 
 /**
- * Kimi 오케스트레이션 (간편 API)
+ * NVIDIA NIM 오케스트레이션 (간편 API)
  *
  * @example
- * node -e "import('@su-record/core/orchestrator').then(o => o.kimi('Review this code')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.nvidia('Review this code')).then(console.log)"
  */
-export async function kimi(
+export async function nvidia(
   prompt: string,
   systemPrompt: string = 'You are a helpful assistant.'
 ): Promise<ToolResult> {
   try {
-    const result = await kimiApi.coreKimiOrchestrate(prompt, systemPrompt, { jsonMode: false });
+    const result = await nvidiaApi.coreNvidiaOrchestrate(prompt, systemPrompt, { jsonMode: false });
     return {
       content: [{ type: 'text', text: result }],
       success: true
     } as ToolResult & { success: boolean };
   } catch (error) {
     return {
-      content: [{ type: 'text', text: `[Kimi Error] ${(error as Error).message}` }],
+      content: [{ type: 'text', text: `[NVIDIA Error] ${(error as Error).message}` }],
       success: false
     } as ToolResult & { success: boolean };
   }
 }
+
+/** @deprecated Use nvidia() */
+export const kimi = nvidia;
 
 // ============================================
 // Multi-LLM Orchestration
@@ -422,7 +425,7 @@ export async function kimi(
  */
 export async function multiLlm(
   prompt: string,
-  options?: { useGpt?: boolean; useGemini?: boolean; useKimi?: boolean }
+  options?: { useGpt?: boolean; useGemini?: boolean; useNvidia?: boolean }
 ): Promise<ToolResult> {
   const orchestrator = new CoreOrchestrator();
   const results = await orchestrator.multiLlmQuery(prompt, options);
@@ -435,8 +438,8 @@ export async function multiLlm(
   if (results.gemini) {
     summary += `### Gemini\n${results.gemini}\n\n`;
   }
-  if (results.kimi) {
-    summary += `### Kimi\n${results.kimi}\n\n`;
+  if (results.nvidia) {
+    summary += `### NVIDIA\n${results.nvidia}\n\n`;
   }
 
   return {
@@ -457,12 +460,12 @@ export async function llmStatus(): Promise<ToolResult> {
 
   const gptIcon = llmStatusResult.gpt.available ? '✓' : '✗';
   const geminiIcon = llmStatusResult.gemini.available ? '✓' : '✗';
-  const kimiIcon = llmStatusResult.kimi.available ? '✓' : '✗';
+  const nvidiaIcon = llmStatusResult.nvidia.available ? '✓' : '✗';
 
   let text = '## LLM Status\n\n';
   text += `- GPT: ${gptIcon} ${llmStatusResult.gpt.available ? 'Available' : 'Unavailable'}\n`;
   text += `- Gemini: ${geminiIcon} ${llmStatusResult.gemini.available ? 'Available' : 'Unavailable'}\n`;
-  text += `- Kimi: ${kimiIcon} ${llmStatusResult.kimi.available ? 'Available' : 'Unavailable'}\n`;
+  text += `- NVIDIA: ${nvidiaIcon} ${llmStatusResult.nvidia.available ? 'Available' : 'Unavailable'}\n`;
 
   return {
     content: [{ type: 'text', text }],
@@ -565,7 +568,7 @@ export async function smartCodeGen(description: string, context?: string): Promi
 }
 
 /**
- * 코드 리뷰 with fallback (Kimi → GPT → Gemini → Claude)
+ * 코드 리뷰 with fallback (NVIDIA → GPT → Gemini → Claude)
  *
  * @example
  * node -e "import('@su-record/core/orchestrator').then(o => o.smartCodeReview('Review this PR')).then(console.log)"
@@ -575,7 +578,7 @@ export async function smartCodeReview(prompt: string): Promise<ToolResult & { re
 }
 
 /**
- * 추론/분석 with fallback (Kimi → GPT → Gemini → Claude)
+ * 추론/분석 with fallback (NVIDIA → GPT → Gemini → Claude)
  *
  * @example
  * node -e "import('@su-record/core/orchestrator').then(o => o.smartReasoning('Analyze this problem')).then(console.log)"
