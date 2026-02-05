@@ -1,6 +1,6 @@
 # CORE
 
-SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.0.11
+SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.1.0
 
 ## Philosophy
 
@@ -19,7 +19,7 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.0.11
 | Type Safety | Quality Gate (`any`/`Any` 차단) |
 | Code Review | Race Review (GPT + Gemini 병렬) |
 | Completion Check | Ralph Loop (100%까지 반복) |
-| Multi-LLM | 3개 관점 검증 (Claude + GPT + Gemini) |
+| Multi-LLM | 4개 관점 검증 (Claude + GPT + Gemini + Kimi) |
 
 ### User's Role (6번 Iterative-Reasoning Type)
 
@@ -135,6 +135,7 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 | `vibe hud <cmd>` | HUD status (show, start, phase, agent, reset) |
 | `vibe gpt <cmd>` | GPT commands (auth, key, status, logout) |
 | `vibe gemini <cmd>` | Gemini commands (auth, key, status, logout) |
+| `vibe kimi <cmd>` | Kimi commands (key, status, logout) |
 | `vibe remove` | Remove core |
 | `vibe help` | Help |
 | `vibe version` | Version info |
@@ -242,6 +243,35 @@ await manageGoals({ action: 'list' });
 await manageGoals({ action: 'update', goalId: 1, progressPercent: 80 });
 await manageGoals({ action: 'complete', goalId: 1 });
 ```
+
+## Multi-LLM Orchestration (v0.1.0)
+
+4개 LLM(Claude + GPT + Gemini + Kimi) 멀티 오케스트레이션 시스템.
+
+### Core Modules
+
+| Module | Purpose |
+|--------|---------|
+| `SmartRouter` | Task 유형별 최적 LLM 선택 + fallback chain |
+| `LLMCluster` | 병렬 멀티 LLM 호출 (GPT + Gemini + Kimi) |
+| `AgentRegistry` | SQLite 기반 에이전트 실행 추적 (WAL mode) |
+| `AllProvidersFailedError` | 모든 프로바이더 실패 시 구조화된 에러 |
+
+### SmartRouter Priority
+
+| Task Type | Priority Order |
+|-----------|---------------|
+| code-analysis, code-review, reasoning | Kimi → GPT → Gemini → Claude |
+| architecture, debugging | GPT → Kimi → Gemini → Claude |
+| uiux, web-search | Gemini → GPT → Claude |
+| code-gen, general | Claude |
+
+### Kimi Integration
+
+- API: `https://api.moonshot.ai/v1/chat/completions` (OpenAI 호환)
+- Model: `kimi-k2.5` (256K context, 기본값)
+- Auth: `MOONSHOT_API_KEY` 환경변수 또는 `vibe kimi key <key>`
+- Timeout: 30초/provider, 3회 재시도 (지수 백오프)
 
 ## Agents
 
