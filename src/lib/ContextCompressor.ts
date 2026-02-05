@@ -228,7 +228,7 @@ export class ContextCompressor {
     let score = 0;
 
     // Type-based scoring
-    score += this.getTypeScore(type, lowerText);
+    score += this.getTypeScore(type);
 
     // Keyword bonus
     score += this.getKeywordScore(lowerText);
@@ -242,7 +242,7 @@ export class ContextCompressor {
   /**
    * Get score based on chunk type
    */
-  private static getTypeScore(type: ChunkScore['type'], lowerText: string): number {
+  private static getTypeScore(type: ChunkScore['type']): number {
     const typeScores: Record<ChunkScore['type'], number> = {
       code: 30,
       answer: 35,

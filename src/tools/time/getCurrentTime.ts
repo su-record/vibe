@@ -58,15 +58,6 @@ export async function getCurrentTime(args: { format?: string; timezone?: string 
       timeResult = now.toISOString();
   }
   
-  const currentTimeResult = {
-    action: 'get_current_time',
-    format,
-    timezone: timezone || 'local',
-    result: timeResult,
-    timestamp: now.getTime(),
-    status: 'success'
-  };
-  
   return {
     content: [{ type: 'text', text: `Time: ${timeResult}\nFormat: ${format}\nTimezone: ${timezone || 'local'}\nTimestamp: ${now.getTime()}` }]
   };
