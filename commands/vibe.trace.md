@@ -28,24 +28,24 @@ Requirements Traceability Matrix (RTM) tracks the relationship between:
 
 ```
 Step 1: Check if SPLIT structure exists (folder)
-  📁 .claude/core/specs/{feature-name}/        → Folder with _index.md + phase files
-  📁 .claude/core/features/{feature-name}/      → Folder with _index.feature + phase files
+  📁 .claude/vibe/specs/{feature-name}/        → Folder with _index.md + phase files
+  📁 .claude/vibe/features/{feature-name}/      → Folder with _index.feature + phase files
 
 Step 2: If no folder, check single file
-  📄 .claude/core/specs/{feature-name}.md       → Single SPEC file
-  📄 .claude/core/features/{feature-name}.feature → Single Feature file
+  📄 .claude/vibe/specs/{feature-name}.md       → Single SPEC file
+  📄 .claude/vibe/features/{feature-name}.feature → Single Feature file
 
 Step 3: If neither exists → Error
 ```
 
 **Split structure (folder) detected:**
 ```
-📁 .claude/core/specs/{feature-name}/
+📁 .claude/vibe/specs/{feature-name}/
 ├── _index.md              → Master SPEC (read first)
 ├── phase-1-{name}.md      → Phase 1 SPEC
 └── ...
 
-📁 .claude/core/features/{feature-name}/
+📁 .claude/vibe/features/{feature-name}/
 ├── _index.feature         → Master Feature (read first)
 ├── phase-1-{name}.feature → Phase 1 scenarios
 └── ...
@@ -55,8 +55,8 @@ Step 3: If neither exists → Error
 
 **Single file detected:**
 ```
-📄 .claude/core/specs/{feature-name}.md      → SPEC
-📄 .claude/core/features/{feature-name}.feature → Feature
+📄 .claude/vibe/specs/{feature-name}.md      → SPEC
+📄 .claude/vibe/features/{feature-name}.feature → Feature
 ```
 
 **Additional (auto-detect):**
@@ -67,8 +67,8 @@ Step 3: If neither exists → Error
 **Error if NEITHER file NOR folder found:**
 ```
 ❌ SPEC not found. Searched:
-   - .claude/core/specs/{feature-name}/  (folder)
-   - .claude/core/specs/{feature-name}.md (file)
+   - .claude/vibe/specs/{feature-name}/  (folder)
+   - .claude/vibe/specs/{feature-name}.md (file)
 
    Run /vibe.spec "{feature-name}" first.
 ```
@@ -145,8 +145,8 @@ Claude:
 📊 Generating RTM for "login"...
 
 Loading files:
-  ✅ SPEC: .claude/core/specs/login.md (5 requirements)
-  ✅ Feature: .claude/core/features/login.feature (4 scenarios)
+  ✅ SPEC: .claude/vibe/specs/login.md (5 requirements)
+  ✅ Feature: .claude/vibe/features/login.feature (4 scenarios)
   ✅ Tests: 3 test files found
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -192,7 +192,7 @@ node -e "import('@su-record/core/tools').then(t => t.generateTraceabilityMatrix(
 | Option | Description |
 |--------|-------------|
 | `--html` | Output as HTML file |
-| `--save` | Save to `.claude/core/reports/{feature}-rtm.md` |
+| `--save` | Save to `.claude/vibe/reports/{feature}-rtm.md` |
 | `--json` | Output as JSON |
 
 ## Coverage Targets

@@ -41,25 +41,25 @@ argument-hint: "feature name"
 
 ```
 Step 1: Check if SPLIT structure exists (folder)
-  📁 .claude/core/features/{feature-name}/     → Folder with _index.feature + phase files
-  📁 .claude/core/specs/{feature-name}/         → Folder with _index.md + phase files
+  📁 .claude/vibe/features/{feature-name}/     → Folder with _index.feature + phase files
+  📁 .claude/vibe/specs/{feature-name}/         → Folder with _index.md + phase files
 
 Step 2: If no folder, check single file
-  📄 .claude/core/features/{feature-name}.feature → Single Feature file
-  📄 .claude/core/specs/{feature-name}.md         → Single SPEC file
+  📄 .claude/vibe/features/{feature-name}.feature → Single Feature file
+  📄 .claude/vibe/specs/{feature-name}.md         → Single SPEC file
 
 Step 3: If neither exists → Error
 ```
 
 **Split structure (folder) detected:**
 ```
-📁 .claude/core/features/{feature-name}/
+📁 .claude/vibe/features/{feature-name}/
 ├── _index.feature         → Master Feature (read first for scenario overview)
 ├── phase-1-{name}.feature → Phase 1 scenarios
 ├── phase-2-{name}.feature → Phase 2 scenarios
 └── ...
 
-📁 .claude/core/specs/{feature-name}/
+📁 .claude/vibe/specs/{feature-name}/
 ├── _index.md              → Master SPEC (read first for overview)
 ├── phase-1-{name}.md      → Phase 1 SPEC
 └── ...
@@ -69,15 +69,15 @@ Step 3: If neither exists → Error
 
 **Single file detected:**
 ```
-📄 .claude/core/features/{feature-name}.feature → Scenario list
-📄 .claude/core/specs/{feature-name}.md → Verification criteria (reference)
+📄 .claude/vibe/features/{feature-name}.feature → Scenario list
+📄 .claude/vibe/specs/{feature-name}.md → Verification criteria (reference)
 ```
 
 **Error if NEITHER file NOR folder found:**
 ```
 ❌ Feature file not found. Searched:
-   - .claude/core/features/{feature-name}/  (folder)
-   - .claude/core/features/{feature-name}.feature (file)
+   - .claude/vibe/features/{feature-name}/  (folder)
+   - .claude/vibe/features/{feature-name}.feature (file)
 
    Run /vibe.spec "{feature-name}" first.
 ```
@@ -189,8 +189,8 @@ Then: Login success + JWT token returned
 
 ## Input
 
-- `.claude/core/features/{feature-name}.feature` or `.claude/core/features/{feature-name}/` - BDD scenarios
-- `.claude/core/specs/{feature-name}.md` or `.claude/core/specs/{feature-name}/` - SPEC document (reference)
+- `.claude/vibe/features/{feature-name}.feature` or `.claude/vibe/features/{feature-name}/` - BDD scenarios
+- `.claude/vibe/specs/{feature-name}.md` or `.claude/vibe/specs/{feature-name}/` - SPEC document (reference)
 - Implemented source code
 
 ## Output
@@ -205,7 +205,7 @@ Then: Login success + JWT token returned
 User: /vibe.verify "login"
 
 Claude:
-📄 Loading Feature: .claude/core/features/login.feature
+📄 Loading Feature: .claude/vibe/features/login.feature
 🔍 Starting verification...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -13,8 +13,8 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 ```
 
 **Prerequisites:**
-- SPEC file exists: `.claude/core/specs/{feature-name}.md` (single) or `.claude/core/specs/{feature-name}/_index.md` (split)
-- Feature file exists: `.claude/core/features/{feature-name}.feature` (single) or `.claude/core/features/{feature-name}/_index.feature` (split)
+- SPEC file exists: `.claude/vibe/specs/{feature-name}.md` (single) or `.claude/vibe/specs/{feature-name}/_index.md` (split)
+- Feature file exists: `.claude/vibe/features/{feature-name}.feature` (single) or `.claude/vibe/features/{feature-name}/_index.feature` (split)
 
 ---
 
@@ -40,20 +40,27 @@ Detect SPEC structure (single file or split folder) and read files:
 
 **Single file structure:**
 ```
-.claude/core/specs/{feature-name}.md
-.claude/core/features/{feature-name}.feature
+.claude/vibe/specs/{feature-name}.md
+.claude/vibe/features/{feature-name}.feature
 ```
 
 **Split folder structure:**
 ```
-.claude/core/specs/{feature-name}/_index.md      (+ phase files)
-.claude/core/features/{feature-name}/_index.feature (+ phase files)
+.claude/vibe/specs/{feature-name}/_index.md      (+ phase files)
+.claude/vibe/specs/{feature-name}/phase-*.md     (phase-1-xxx.md, phase-2-xxx.md, ...)
+.claude/vibe/features/{feature-name}/_index.feature (+ phase files)
+.claude/vibe/features/{feature-name}/phase-*.feature
 ```
 
 **Detection logic:**
-1. Check if `.claude/core/specs/{feature-name}/` directory exists → Split mode
-2. Otherwise check `.claude/core/specs/{feature-name}.md` → Single mode
+1. Check if `.claude/vibe/specs/{feature-name}/` directory exists → Split mode
+2. Otherwise check `.claude/vibe/specs/{feature-name}.md` → Single mode
 3. If neither exists → Error
+
+**Split mode file loading:**
+1. Read `_index.md` for master SPEC overview
+2. Glob `phase-*.md` files and read all phase SPECs
+3. Read corresponding `_index.feature` and `phase-*.feature` files
 
 **Output:**
 ```
@@ -63,8 +70,8 @@ Detect SPEC structure (single file or split folder) and read files:
 
 Loading files...
   Mode: {single|split}
-  ✅ SPEC: .claude/core/specs/{feature-name}.md (or _index.md + N phase files)
-  ✅ Feature: .claude/core/features/{feature-name}.feature (or _index.feature + N phase files)
+  ✅ SPEC: .claude/vibe/specs/{feature-name}.md (or _index.md + N phase files)
+  ✅ Feature: .claude/vibe/features/{feature-name}.feature (or _index.feature + N phase files)
 
 Extracted info:
   - Feature: {feature description}
@@ -328,8 +335,8 @@ Total Improvements: 4
 ⏱️ Completed: {getCurrentTime 결과}
 
 Updated files:
-  📋 .claude/core/specs/{feature-name}.md (or split folder)
-  📋 .claude/core/features/{feature-name}.feature (or split folder)
+  📋 .claude/vibe/specs/{feature-name}.md (or split folder)
+  📋 .claude/vibe/features/{feature-name}.feature (or split folder)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -427,8 +434,8 @@ If no issues, proceed with /vibe.run "{feature-name}".
 ```
 ❌ ERROR: SPEC file not found
 
-Expected (single): .claude/core/specs/{feature-name}.md
-Expected (split):  .claude/core/specs/{feature-name}/_index.md
+Expected (single): .claude/vibe/specs/{feature-name}.md
+Expected (split):  .claude/vibe/specs/{feature-name}/_index.md
 
 Please run /vibe.spec "{feature-name}" first to create the SPEC.
 ```
@@ -437,8 +444,8 @@ Please run /vibe.spec "{feature-name}" first to create the SPEC.
 ```
 ❌ ERROR: Feature file not found
 
-Expected (single): .claude/core/features/{feature-name}.feature
-Expected (split):  .claude/core/features/{feature-name}/_index.feature
+Expected (single): .claude/vibe/features/{feature-name}.feature
+Expected (split):  .claude/vibe/features/{feature-name}/_index.feature
 
 Please run /vibe.spec "{feature-name}" first to create the Feature file.
 ```
@@ -471,9 +478,9 @@ ARGUMENTS: $ARGUMENTS
 ```
 Feature name: $ARGUMENTS
 
-1. Check split folder: .claude/core/specs/$ARGUMENTS/_index.md
+1. Check split folder: .claude/vibe/specs/$ARGUMENTS/_index.md
    - If exists → Split mode (read all files in folder)
-2. Check single file: .claude/core/specs/$ARGUMENTS.md
+2. Check single file: .claude/vibe/specs/$ARGUMENTS.md
    - If exists → Single mode
 3. Neither exists → Show error with both expected paths
 ```

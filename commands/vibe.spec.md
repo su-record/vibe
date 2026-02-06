@@ -136,7 +136,7 @@ Use the Read tool directly on the image file. Claude can read images natively.
 
 ## Rules Reference
 
-**Must follow `~/.claude/core/rules/` (global):**
+**Must follow `~/.claude/vibe/rules/` (global):**
 - `core/development-philosophy.md` - Surgical precision, simplicity
 - `core/quick-start.md` - Korean first, DRY, SRP
 - `core/communication-guide.md` - Communication principles
@@ -332,7 +332,7 @@ const response = parseUserResponse(question, "1, 2, 4");
 Reference documents are automatically generated in `config.json` based on the stack detected during `vibe init`:
 
 ```json
-// .claude/core/config.json
+// .claude/vibe/config.json
 {
   "language": "ko",
   "stacks": [
@@ -340,17 +340,17 @@ Reference documents are automatically generated in `config.json` based on the st
   ],
   "references": {
     "rules": [
-      "~/.claude/core/rules/code-quality.md",
-      "~/.claude/core/rules/error-handling.md",
-      "~/.claude/core/rules/security.md"
+      "~/.claude/vibe/rules/code-quality.md",
+      "~/.claude/vibe/rules/error-handling.md",
+      "~/.claude/vibe/rules/security.md"
     ],
     "languages": [
-      "~/.claude/core/languages/typescript-react.md"
+      "~/.claude/vibe/languages/typescript-react.md"
     ],
     "templates": [
-      "~/.claude/core/templates/spec-template.md",
-      "~/.claude/core/templates/feature-template.md",
-      "~/.claude/core/templates/constitution-template.md"
+      "~/.claude/vibe/templates/spec-template.md",
+      "~/.claude/vibe/templates/feature-template.md",
+      "~/.claude/vibe/templates/constitution-template.md"
     ]
   }
 }
@@ -358,17 +358,17 @@ Reference documents are automatically generated in `config.json` based on the st
 
 **Workflow:**
 
-1. Read `.claude/core/config.json`
+1. Read `.claude/vibe/config.json`
 2. Extract `references.languages[]` paths
 3. Read each language document for stack-specific guidelines
 
 **Example:**
 ```bash
 # 1. Check references in config.json
-Read .claude/core/config.json
+Read .claude/vibe/config.json
 
 # 2. Reference documents specified in references.languages
-Read ~/.claude/core/languages/typescript-react.md
+Read ~/.claude/vibe/languages/typescript-react.md
 ```
 
 **Important:**
@@ -394,7 +394,7 @@ Read ~/.claude/core/languages/typescript-react.md
 6. **DO NOT** create SECURITY_*.md, RESEARCH_*.md, SUMMARY_*.md files
 7. **DO NOT** use Write tool during research phase
 8. **ALL research results** must be returned as text output only
-9. **Files are ONLY created** in Step 4 (SPEC) and Step 5 (Feature) in `.claude/core/` directory
+9. **Files are ONLY created** in Step 4 (SPEC) and Step 5 (Feature) in `.claude/vibe/` directory
 
 **When to trigger:**
 1. ✅ Feature type decided (e.g., "passkey authentication")
@@ -490,13 +490,13 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 **Auto-split output (SPEC + Feature files must match):**
 
 ```
-.claude/core/specs/{feature-name}/
+.claude/vibe/specs/{feature-name}/
 ├── _index.md           # Master SPEC
 ├── phase-1-setup.md
 ├── phase-2-core.md
 └── ...
 
-.claude/core/features/{feature-name}/
+.claude/vibe/features/{feature-name}/
 ├── _index.feature      # Master Feature
 ├── phase-1-setup.feature
 ├── phase-2-core.feature
@@ -531,7 +531,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 ```markdown
 # Feature: {feature-name} (Master)
 
-**Master SPEC**: `.claude/core/specs/{feature-name}/_index.md`
+**Master SPEC**: `.claude/vibe/specs/{feature-name}/_index.md`
 
 ## Sub-Features
 
@@ -548,7 +548,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 
 **Small scope (default):**
 
-Create `.claude/core/specs/{feature-name}.md`:
+Create `.claude/vibe/specs/{feature-name}.md`:
 
 ```markdown
 ---
@@ -647,7 +647,7 @@ Define AI role and expertise for implementation
 
 #### 5.1 Single File (Small Scope)
 
-Create `.claude/core/features/{feature-name}.feature`:
+Create `.claude/vibe/features/{feature-name}.feature`:
 
 **Creation rules:**
 1. Convert each SPEC Acceptance Criteria → one Scenario
@@ -657,7 +657,7 @@ Create `.claude/core/features/{feature-name}.feature`:
 ```markdown
 # Feature: {feature-name}
 
-**SPEC**: `.claude/core/specs/{feature-name}.md`
+**SPEC**: `.claude/vibe/specs/{feature-name}.md`
 
 ## User Story
 **As a** {user}
@@ -689,7 +689,7 @@ Scenario: {title}
 When SPEC is split into phases, Feature files MUST also be split:
 
 ```
-.claude/core/features/{feature-name}/
+.claude/vibe/features/{feature-name}/
 ├── _index.feature        # Master: links to all phase features
 ├── phase-1-setup.feature # Scenarios for phase-1-setup.md
 ├── phase-2-core.feature  # Scenarios for phase-2-core.md
@@ -701,8 +701,8 @@ When SPEC is split into phases, Feature files MUST also be split:
 ```markdown
 # Feature: {feature-name} - Phase {N}: {phase-name}
 
-**SPEC**: `.claude/core/specs/{feature-name}/phase-{N}-{name}.md`
-**Master Feature**: `.claude/core/features/{feature-name}/_index.feature`
+**SPEC**: `.claude/vibe/specs/{feature-name}/phase-{N}-{name}.md`
+**Master Feature**: `.claude/vibe/features/{feature-name}/_index.feature`
 
 ## User Story (Phase Scope)
 **As a** {user}
@@ -875,8 +875,8 @@ Output the handoff message:
 ✅ SPEC DRAFT COMPLETE: {feature-name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 SPEC: .claude/core/specs/{feature-name}.md
-📋 Feature: .claude/core/features/{feature-name}.feature
+📋 SPEC: .claude/vibe/specs/{feature-name}.md
+📋 Feature: .claude/vibe/features/{feature-name}.feature
 📊 Quality Score: {score}/100
 ⏱️ Started: {start_time}
 ⏱️ Completed: {getCurrentTime 결과}
@@ -902,22 +902,22 @@ Option 2 (recommended for large context):
 
 | File | Path | When |
 |------|------|------|
-| SPEC | `.claude/core/specs/{feature-name}.md` | After quality validation (Step 7) |
-| Feature | `.claude/core/features/{feature-name}.feature` | Immediately after SPEC |
+| SPEC | `.claude/vibe/specs/{feature-name}.md` | After quality validation (Step 7) |
+| Feature | `.claude/vibe/features/{feature-name}.feature` | Immediately after SPEC |
 
 ### Large Scope (Split Files)
 
 | File | Path | When |
 |------|------|------|
-| Master SPEC | `.claude/core/specs/{feature-name}/_index.md` | After quality validation |
-| Phase SPEC | `.claude/core/specs/{feature-name}/phase-{N}-{name}.md` | Per phase |
-| Master Feature | `.claude/core/features/{feature-name}/_index.feature` | After Master SPEC |
-| Phase Feature | `.claude/core/features/{feature-name}/phase-{N}-{name}.feature` | Per phase SPEC |
+| Master SPEC | `.claude/vibe/specs/{feature-name}/_index.md` | After quality validation |
+| Phase SPEC | `.claude/vibe/specs/{feature-name}/phase-{N}-{name}.md` | Per phase |
+| Master Feature | `.claude/vibe/features/{feature-name}/_index.feature` | After Master SPEC |
+| Phase Feature | `.claude/vibe/features/{feature-name}/phase-{N}-{name}.feature` | Per phase SPEC |
 
 **❌ FORBIDDEN:**
 
 - Creating files in project root (e.g., `feature-name.md`)
-- Creating files outside `.claude/core/` directory
+- Creating files outside `.claude/vibe/` directory
 - Skipping file creation
 - Using different file names than feature-name
 - Creating split SPEC without matching split Feature files
@@ -933,19 +933,19 @@ Option 2 (recommended for large context):
 
 **Single file:**
 ```
-1. Write .claude/core/specs/{feature-name}.md
-2. Write .claude/core/features/{feature-name}.feature
+1. Write .claude/vibe/specs/{feature-name}.md
+2. Write .claude/vibe/features/{feature-name}.feature
 3. Confirm: "✅ Created: specs/{feature-name}.md + features/{feature-name}.feature"
 ```
 
 **Split files:**
 ```
-1. Write .claude/core/specs/{feature-name}/_index.md
-2. Write .claude/core/specs/{feature-name}/phase-1-setup.md
-3. Write .claude/core/specs/{feature-name}/phase-2-core.md
-4. Write .claude/core/features/{feature-name}/_index.feature
-5. Write .claude/core/features/{feature-name}/phase-1-setup.feature
-6. Write .claude/core/features/{feature-name}/phase-2-core.feature
+1. Write .claude/vibe/specs/{feature-name}/_index.md
+2. Write .claude/vibe/specs/{feature-name}/phase-1-setup.md
+3. Write .claude/vibe/specs/{feature-name}/phase-2-core.md
+4. Write .claude/vibe/features/{feature-name}/_index.feature
+5. Write .claude/vibe/features/{feature-name}/phase-1-setup.feature
+6. Write .claude/vibe/features/{feature-name}/phase-2-core.feature
 7. Confirm: "✅ Created: {N} SPEC files + {N} Feature files"
 ```
 
@@ -1029,8 +1029,8 @@ Claude: Thank you. SPEC has been refined.
 ✅ SPEC Complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 .claude/core/specs/brick-game.md (PTCF structure)
-📄 .claude/core/features/brick-game.feature
+📄 .claude/vibe/specs/brick-game.md (PTCF structure)
+📄 .claude/vibe/features/brick-game.feature
 📊 Quality score: 95/100 (A) ← Improved after review
 ```
 

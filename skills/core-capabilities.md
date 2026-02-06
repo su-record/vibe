@@ -158,4 +158,4 @@ Even without `/vibe.*` commands, you can:
 
 1. Call tools directly via node commands
 2. Reference skills for guidance
-3. Apply coding rules from `~/.claude/core/rules/` (global)
+3. Apply coding rules from `~/.claude/vibe/rules/` (global)

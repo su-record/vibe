@@ -230,7 +230,7 @@ P2 Important:
 
 ### Phase 6: Todo File Creation (Items Requiring Manual Handling)
 
-Save **remaining** findings to `.claude/core/todos/`:
+Save **remaining** findings to `.claude/vibe/todos/`:
 
 ```
 {priority}-{category}-{short-desc}.md
