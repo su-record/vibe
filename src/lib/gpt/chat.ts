@@ -2,6 +2,7 @@
  * GPT 채팅 API
  */
 
+import crypto from 'crypto';
 import { CHATGPT_BASE_URL } from '../gpt-constants.js';
 import { sleep } from '../utils.js';
 import { getAuthInfo, getApiKeyFromConfig, getAzureConfig } from './auth.js';
@@ -234,7 +235,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 /**
  * GPT API 호출 (Codex Backend - OAuth 방식)
  */
-async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise<ChatResponse> {
+async function chatWithOAuth(accessToken: string, options: ChatOptions, accountId?: string): Promise<ChatResponse> {
   const {
     model = DEFAULT_MODEL,
     messages = [],
@@ -260,6 +261,8 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
     finalInstructions = `${instructions}\n\n<user_context>\n${systemPrompt}\n</user_context>`;
   }
 
+  const sessionId = crypto.randomUUID();
+
   const requestBody: Record<string, unknown> = {
     model: modelInfo.id,
     store: false,
@@ -269,6 +272,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
     reasoning: modelInfo.reasoning,
     text: { verbosity: 'medium' },
     include: ['reasoning.encrypted_content'],
+    prompt_cache_key: sessionId,
   };
 
   // API 호출 (재시도 로직 포함)
@@ -276,14 +280,20 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
   const maxRetries = 3;
 
   try {
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'responses=experimental',
+      'originator': 'codex_cli_rs',
+      'session_id': sessionId,
+    };
+    if (accountId) {
+      headers['chatgpt-account-id'] = accountId;
+    }
+
     const response = await fetch(CODEX_RESPONSES_URL, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'responses=experimental',
-        'originator': 'codex_cli_rs',
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -294,7 +304,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
       if (response.status === 429 && retryCount < maxRetries) {
         const delay = Math.pow(2, retryCount) * 1000;
         await sleep(delay);
-        return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 });
+        return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
       }
 
       // 에러 파싱
@@ -327,7 +337,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions): Promise
     if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
       const delay = Math.pow(2, retryCount) * 1000;
       await sleep(delay);
-      return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 });
+      return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
     }
     throw error;
   }
@@ -443,7 +453,7 @@ async function callWithAuth(authInfo: AuthInfo, options: ChatOptions): Promise<C
     case 'apikey':
       return chatWithApiKey(authInfo.apiKey!, options);
     case 'oauth':
-      return chatWithOAuth(authInfo.accessToken!, options);
+      return chatWithOAuth(authInfo.accessToken!, options, authInfo.accountId);
     default:
       throw new Error(`Unknown auth type: ${authInfo.type}`);
   }
@@ -545,6 +555,8 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
     ? `${instructions}\n\n<user_context>\n${systemPrompt}\n</user_context>`
     : instructions;
 
+  const streamSessionId = crypto.randomUUID();
+
   const requestBody = {
     model: modelInfo.id,
     store: false,
@@ -554,16 +566,23 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
     reasoning: modelInfo.reasoning,
     text: { verbosity: 'medium' },
     include: ['reasoning.encrypted_content'],
+    prompt_cache_key: streamSessionId,
   };
+
+  const streamHeaders: Record<string, string> = {
+    'Authorization': `Bearer ${authInfo.accessToken}`,
+    'Content-Type': 'application/json',
+    'OpenAI-Beta': 'responses=experimental',
+    'originator': 'codex_cli_rs',
+    'session_id': streamSessionId,
+  };
+  if (authInfo.accountId) {
+    streamHeaders['chatgpt-account-id'] = authInfo.accountId;
+  }
 
   const response = await fetch(CODEX_RESPONSES_URL, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${authInfo.accessToken}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'responses=experimental',
-      'originator': 'codex_cli_rs',
-    },
+    headers: streamHeaders,
     body: JSON.stringify(requestBody),
   });
 

@@ -121,13 +121,21 @@ export function extractAccountId(token: string): string | null {
   if (!payload) return null;
 
   // OpenAI 토큰 클레임 경로에서 계정 ID 추출
-  const authClaim = payload[JWT_CLAIM_PATH] as { organization_id?: string; organizations?: Array<{ organization_id: string }> } | undefined;
-  if (authClaim && authClaim.organization_id) {
+  const authClaim = payload[JWT_CLAIM_PATH] as {
+    chatgpt_account_id?: string;
+    organization_id?: string;
+    organizations?: Array<{ organization_id: string }>;
+  } | undefined;
+
+  if (authClaim?.chatgpt_account_id) {
+    return authClaim.chatgpt_account_id;
+  }
+
+  if (authClaim?.organization_id) {
     return authClaim.organization_id;
   }
 
-  // 또는 organizations 배열에서
-  if (authClaim && authClaim.organizations && authClaim.organizations.length > 0) {
+  if (authClaim?.organizations && authClaim.organizations.length > 0) {
     return authClaim.organizations[0].organization_id;
   }
 
@@ -447,6 +455,9 @@ export async function getValidAccessToken(): Promise<ValidAccessToken> {
     throw new Error('No authenticated GPT account. Run vibe gpt auth to login.');
   }
 
+  // accountId가 저장에 없으면 현재 토큰에서 추출
+  const accountId = account.accountId || extractAccountId(account.accessToken) || undefined;
+
   // 토큰이 만료되었으면 갱신 (TokenRefresher로 race condition 방지)
   if (storage.isTokenExpired(account)) {
     const result = await tokenRefresher.refreshWithLock(
@@ -474,13 +485,13 @@ export async function getValidAccessToken(): Promise<ValidAccessToken> {
     return {
       accessToken: result.accessToken,
       email: account.email,
-      accountId: account.accountId,
+      accountId,
     };
   }
 
   return {
     accessToken: account.accessToken,
     email: account.email,
-    accountId: account.accountId,
+    accountId,
   };
 }

@@ -226,8 +226,8 @@ async function tryAuthMethod(method: GptAuthMethod): Promise<AuthInfo | null> {
   switch (method) {
     case 'oauth': {
       try {
-        const { accessToken, email } = await getValidAccessToken();
-        return { type: 'oauth', accessToken, email };
+        const { accessToken, email, accountId } = await getValidAccessToken();
+        return { type: 'oauth', accessToken, email, accountId };
       } catch {
         removeEmailFromConfigIfNoToken();
         return null;

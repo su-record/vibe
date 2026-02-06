@@ -11,6 +11,7 @@ export interface AuthInfo {
   accessToken?: string;
   apiKey?: string;
   email?: string;
+  accountId?: string;
   // Azure 전용
   azureEndpoint?: string;
   azureApiKey?: string;
