@@ -14,11 +14,12 @@ import {
   removeDirRecursive,
   copySkillsIfMissing,
 } from './fs-utils.js';
-import { cleanupGlobalSettingsHooks } from './global-config.js';
+import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
 import { applyNpmrcScope } from './npmrc.js';
 import { seedInlineSkills } from './inline-skills.js';
 import { generateCursorRules } from './cursor-rules.js';
 import { installCursorAgents } from './cursor-agents.js';
+import { installClaudeAgents } from './claude-agents.js';
 import { generateCursorSkills } from './cursor-skills.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -73,13 +74,10 @@ export function main(): void {
       copyDirRecursive(commandsSource, globalCommandsDir);
     }
 
-    // agents 복사
+    // agents 변환 및 설치 (Claude Code 네이티브 서브에이전트 형식)
     const agentsSource = path.join(packageRoot, 'agents');
     const globalAgentsDir = path.join(globalClaudeDir, 'agents');
-    if (fs.existsSync(agentsSource)) {
-      ensureDir(globalAgentsDir);
-      copyDirRecursive(agentsSource, globalAgentsDir);
-    }
+    installClaudeAgents(agentsSource, globalAgentsDir);
 
     // skills 복사 (덮어쓰지 않고 없는 것만 추가)
     const skillsSource = path.join(packageRoot, 'skills');
@@ -141,6 +139,9 @@ export function main(): void {
     // 6-1. 레거시 전역 hooks 정리 (이전 버전 호환성)
     cleanupGlobalSettingsHooks();
 
+    // 6-2. 전역 env 설정 (Agent Teams 등 모든 프로젝트에 필요한 환경변수)
+    ensureGlobalEnvSettings();
+
     // 7. Cursor IDE 지원 - ~/.cursor/agents/에 변환된 서브에이전트 설치
     const cursorAgentsDir = path.join(os.homedir(), '.cursor', 'agents');
     installCursorAgents(agentsSource, cursorAgentsDir);
@@ -157,6 +158,7 @@ export function main(): void {
     generateCursorSkills(cursorSkillsDir);
 
     console.log(`✅ core global setup complete: ${globalCoreDir}`);
+    console.log(`✅ claude agents installed: ${globalAgentsDir}`);
     console.log(`✅ cursor agents installed: ${cursorAgentsDir}`);
     console.log(`✅ cursor rules template: ${cursorRulesTemplateDir}`);
     console.log(`✅ cursor skills installed: ${cursorSkillsDir}`);

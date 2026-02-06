@@ -305,6 +305,25 @@ security, performance, architecture, complexity, simplicity, data-integrity, tes
 
 best-practices, framework-docs, codebase-patterns, security-advisory → `agents/research/`
 
+### Agent Teams (Experimental)
+
+> 에이전트들이 팀을 구성하여 공유 태스크 리스트로 협업하고 상호 피드백합니다.
+> 요구사항: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (`.claude/settings.local.json` env)
+
+| Team | 워크플로우 | Members | 역할 |
+|------|-----------|---------|------|
+| Research Team | `/vibe.spec` Step 3 | best-practices, security-advisory, codebase-patterns, framework-docs | 리서치 결과 교차 검증 + 통합 |
+| Review Debate Team | `/vibe.review` Phase 4.5 | security, architecture, performance, simplicity | P1/P2 교차 검증 + 오탐 제거 |
+| Implementation Team | `/vibe.run` ULTRAWORK | architect, implementer, tester, security-reviewer | 실시간 협업 구현 + 즉시 피드백 |
+
+**기존 병렬 모드와의 차이:**
+
+| 측면 | 병렬 서브에이전트 | Agent Teams |
+|------|-----------------|-------------|
+| 통신 | 결과만 수집 | 실시간 상호 피드백 |
+| 검증 | 사후 검증 | 실시간 교차 검증 |
+| 충돌 해결 | 메인 에이전트만 결정 | 팀 합의 (리더 주도) |
+
 ## Hooks System
 
 | Event | Hooks |

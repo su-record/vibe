@@ -9,6 +9,7 @@
  * - postinstall/inline-skills: 인라인 스킬 시딩
  * - postinstall/cursor-rules: Cursor 룰 변환/생성
  * - postinstall/cursor-agents: Cursor 에이전트 변환/설치
+ * - postinstall/claude-agents: Claude Code 네이티브 에이전트 변환/설치
  * - postinstall/cursor-skills: Cursor 스킬 생성
  * - postinstall/main: 메인 오케스트레이션
  *
@@ -18,6 +19,7 @@
 // Export functions for use in vibe init/update
 export {
   installCursorAgents,
+  installClaudeAgents,
   generateCursorRules,
   generateCursorSkills,
   getCoreConfigDir,

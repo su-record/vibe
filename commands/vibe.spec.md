@@ -464,6 +464,67 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 
 **🚨 GPT/Gemini/NVIDIA MUST be called via Bash with llm-orchestrate.js! 🚨**
 
+#### 3.0.1 Agent Teams — Research Collaboration (Experimental)
+
+> **Agent Teams**: 개별 리서치 결과를 팀 토론으로 통합하여 더 깊은 인사이트를 도출합니다.
+> 요구사항: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
+
+**10개 병렬 리서치 완료 후, 리서치 에이전트 팀이 결과를 토론:**
+
+```text
+10개 병렬 리서치 결과 수집
+        ↓
+┌─────────────────────────────────────────────────────────┐
+│  🔬 RESEARCH TEAM                                        │
+│                                                          │
+│  Team Members:                                           │
+│  ├─ best-practices-agent (리더 — 패턴/안티패턴 종합)      │
+│  ├─ security-advisory-agent (보안 관점 검증)              │
+│  ├─ codebase-patterns-agent (기존 코드와의 일관성)        │
+│  └─ framework-docs-agent (최신 문서/API 변경사항)         │
+│                                                          │
+│  공유 Task List:                                          │
+│  □ GPT/Gemini/NVIDIA 리서치 결과 교차 검증                │
+│  □ 상충되는 권장사항 토론 → 프로젝트에 맞는 결론 도출     │
+│  □ 보안 권고와 성능 권고가 충돌할 때 트레이드오프 분석     │
+│  □ 기존 코드베이스 패턴과 새 패턴의 호환성 검증           │
+│  □ 최종 통합 리서치 요약 생성                             │
+│                                                          │
+│  결과:                                                    │
+│  - 검증된 Best Practices (팀 합의)                        │
+│  - 프로젝트별 맞춤 보안 체크리스트                        │
+│  - 기존 코드와 호환되는 구현 권장사항                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Task 호출 패턴:**
+
+```text
+Task(subagent_type="general-purpose", prompt="""
+[AGENT TEAM: Research Collaboration]
+
+You are leading a research team to synthesize findings from multiple sources.
+
+Research results from 10 parallel agents:
+{all_research_results}
+
+Team members and their synthesis roles:
+- best-practices-agent (lead): Identify consensus patterns, resolve conflicts
+- security-advisory-agent: Flag any security implications in recommended patterns
+- codebase-patterns-agent: Check compatibility with existing codebase conventions
+- framework-docs-agent: Verify recommendations against latest API/docs
+
+Tasks:
+1. Cross-validate findings: Where do GPT/Gemini/NVIDIA/Claude agree?
+2. Resolve conflicts: Where they disagree, which recommendation fits this project?
+3. Security gate: Do any best-practice recommendations introduce security risks?
+4. Codebase fit: Do recommendations align with existing patterns?
+5. Produce final integrated research summary for SPEC Context section.
+""")
+```
+
+**토론 결과는 SPEC의 Context 섹션에 반영됩니다.**
+
 #### 3.1 Result Merge Rules
 
 | Area | Merge Strategy |

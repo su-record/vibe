@@ -204,6 +204,96 @@ P3 NICE-TO-HAVE (Enhancement) - N issues
 4. [STYLE] Consider extracting helper function
 ```
 
+### Phase 4.5: Agent Teams — Review Debate (Experimental)
+
+> **Agent Teams**: 개별 리뷰어의 발견을 팀으로 토론하여 우선순위를 검증하고 오탐을 제거합니다.
+> 요구사항: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
+
+**개별 리뷰 완료 후, 핵심 리뷰어들이 팀을 형성하여 교차 검증:**
+
+```
+Phase 2 결과 (13+ 개별 리뷰)
+        ↓
+┌─────────────────────────────────────────────────────────┐
+│  🤝 REVIEW DEBATE TEAM                                   │
+│                                                          │
+│  Team Members:                                           │
+│  ├─ security-reviewer (보안 전문)                         │
+│  ├─ architecture-reviewer (아키텍처 전문)                  │
+│  ├─ performance-reviewer (성능 전문)                      │
+│  └─ simplicity-reviewer (복잡도 전문)                     │
+│                                                          │
+│  공유 Task List:                                          │
+│  □ Phase 2에서 발견된 모든 P1/P2 이슈 검증                │
+│  □ 각 이슈에 대해 다른 리뷰어의 관점으로 반론 시도         │
+│  □ 합의된 우선순위 결정 (P1 → P2 강등 또는 P2 → P1 승격)  │
+│  □ 오탐 제거 (false positive 식별)                       │
+│  □ 놓친 이슈 상호 보완                                   │
+│                                                          │
+│  결과:                                                    │
+│  - 검증된 P1/P2 목록 (팀 합의)                            │
+│  - 오탐 제거 리포트                                      │
+│  - 추가 발견 이슈                                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Task 호출 패턴:**
+
+```
+Task(subagent_type="general-purpose", prompt="""
+[AGENT TEAM: Review Debate]
+
+You are leading a review debate team. The following P1/P2 issues were found by individual reviewers:
+
+{phase2_findings}
+
+Team members and their roles:
+- security-reviewer: Challenge non-security issues, validate security findings
+- architecture-reviewer: Evaluate structural impact, identify hidden coupling
+- performance-reviewer: Assess performance implications
+- simplicity-reviewer: Question over-engineered fixes, suggest simpler alternatives
+
+For each finding:
+1. Is this a true positive? (cross-validate with other perspectives)
+2. Is the priority correct? (P1 vs P2)
+3. Is there a simpler fix than suggested?
+4. Are there related issues the individual reviewers missed?
+
+Output: Validated findings with team consensus priority.
+""")
+```
+
+**토론 결과 예시:**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤝 REVIEW DEBATE RESULTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Team Consensus (4 reviewers):
+
+✅ Validated P1 (unanimous):
+  1. [SECURITY] SQL Injection — 4/4 agree critical
+
+⬆️ Upgraded P2→P1 (debate result):
+  2. [PERF] Unbounded query — architecture-reviewer pointed out
+     cascading failure risk under load → team agreed P1
+
+⬇️ Downgraded P1→P2 (debate result):
+  3. [SECURITY] CSRF on read-only endpoint — simplicity-reviewer
+     noted endpoint has no side effects → team agreed P2
+
+❌ Removed (false positive):
+  4. [ARCH] "Circular dependency" — architecture-reviewer confirmed
+     this is intentional bi-directional reference, not a cycle
+
+🆕 New findings (team discussion):
+  5. [DATA] Race condition in concurrent updates — emerged from
+     security + performance discussion
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
 ### Phase 5: Auto-Fix (P1/P2)
 
 **Auto-fixable issues are resolved immediately:**

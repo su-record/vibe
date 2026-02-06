@@ -942,6 +942,88 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 
 ---
 
+### Agent Teams — Dev Team (Experimental)
+
+> **Agent Teams**: 에이전트들이 팀을 이루어 서로 소통하며 구현합니다.
+> 요구사항: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
+
+**ULTRAWORK 모드에서 복잡한 구현 시, 에이전트 팀이 역할 분담:**
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  🏗️ IMPLEMENTATION TEAM                                  │
+│                                                          │
+│  Team Members:                                           │
+│  ├─ architect (리더 — 설계 결정, 구현 방향 조율)          │
+│  ├─ implementer (핵심 코드 구현)                          │
+│  ├─ tester (테스트 작성 + 검증)                           │
+│  └─ security-reviewer (실시간 보안 검증)                  │
+│                                                          │
+│  공유 Task List:                                          │
+│  □ SPEC Phase 분석 → 구현 계획 수립 (architect)           │
+│  □ 핵심 비즈니스 로직 구현 (implementer)                  │
+│  □ 구현 중 보안 취약점 즉시 피드백 (security-reviewer)    │
+│  □ 구현 완료 부분부터 테스트 작성 (tester)                │
+│  □ 테스트 실패 시 implementer에게 피드백                  │
+│  □ 전체 통합 검증 (architect 주도)                        │
+│                                                          │
+│  Inter-agent Communication:                               │
+│  architect → implementer: "이 패턴으로 구현해주세요"      │
+│  implementer → tester: "LoginService 구현 완료, 테스트 요청" │
+│  security-reviewer → implementer: "SQL injection 위험, 수정 필요" │
+│  tester → architect: "edge case 3건 실패, 설계 검토 요청" │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Task 호출 패턴:**
+
+```text
+Task(subagent_type="general-purpose", prompt="""
+[AGENT TEAM: Implementation]
+
+You are leading an implementation team for Phase {N} of {feature-name}.
+
+SPEC: {spec_content}
+Feature Scenarios: {scenarios}
+
+Team members:
+- architect (lead): Design decisions, resolve conflicts, ensure SPEC compliance
+- implementer: Write production code following architect's design
+- tester: Write tests as implementer completes each component
+- security-reviewer: Continuously review code for security issues
+
+Workflow:
+1. Architect analyzes SPEC phase → creates implementation plan
+2. Implementer builds code → signals tester when component ready
+3. Tester writes tests immediately → reports failures to implementer
+4. Security-reviewer flags issues → implementer fixes before proceeding
+5. Architect verifies all scenarios pass → signs off on phase
+
+Rules:
+- Tester must NOT wait for all implementation — test incrementally
+- Security issues are BLOCKING — implementer must fix before continuing
+- Architect resolves any design disagreements
+- All Given/When/Then conditions must be verified
+""")
+```
+
+**팀 모드 vs 기존 병렬 모드 비교:**
+
+| 측면 | 기존 병렬 모드 | Agent Teams |
+|------|---------------|-------------|
+| 통신 | 결과만 수집 | 실시간 상호 피드백 |
+| 테스트 | 구현 후 별도 단계 | 구현과 동시 진행 |
+| 보안 | 사후 리뷰 | 실시간 검증 |
+| 설계 변경 | 메인 에이전트만 결정 | architect 주도 팀 합의 |
+| 오류 복구 | 재시도 루프 | 팀 내 즉시 피드백 |
+
+**활성화 조건:**
+- ULTRAWORK 모드 + 3개 이상 시나리오
+- 또는 복잡도 점수 20+ (High)
+- 단순 구현(1-2 파일)에서는 기존 병렬 모드 유지
+
+---
+
 1. **Related code analysis**: Task(haiku) explores `<context>` related code
 2. **File creation/modification**: Task(sonnet) implements per `<output_format>`
 3. **Constraint compliance**: Check `<constraints>`
