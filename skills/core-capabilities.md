@@ -130,7 +130,7 @@ Add `ultrawork` or `ulw` for maximum performance:
     ├── languages/     # Language guides
     └── templates/     # Templates
 
-# Global (%APPDATA%/core/ or ~/.config/core/)
+# Global (%APPDATA%/core/ or ~/.config/vibe/)
 core/
 ├── hooks/scripts/     # Hook scripts (llm-orchestrate.js)
 ├── gpt.json           # GPT credentials

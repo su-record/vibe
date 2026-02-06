@@ -95,17 +95,17 @@ Generate images using Gemini Image API.
 
 **General image generation (Nano Banana):**
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
 ```
 
 **Pro quality (Nano Banana Pro):**
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --pro --output "OUTPUT_PATH"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --pro --output "OUTPUT_PATH"
 ```
 
 **With size option:**
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --size "1920x1080" --output "OUTPUT_PATH"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "IMAGE_DESCRIPTION" --size "1920x1080" --output "OUTPUT_PATH"
 ```
 
 ### How to Parse User Request
@@ -120,11 +120,11 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 ### Examples
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "A cute Gemini AI character mascot, colorful, friendly" --output "./gemini-character.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "A cute Gemini AI character mascot, colorful, friendly" --output "./gemini-character.png"
 
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "Professional website banner, modern design" --pro --size "1920x400" --output "./banner.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Professional website banner, modern design" --pro --size "1920x400" --output "./banner.png"
 
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "Modern minimal logo design" --output "./public/logo.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Modern minimal logo design" --output "./public/logo.png"
 ```
 
 ### Output Format
@@ -147,10 +147,10 @@ Use the same command with a pre-built icon prompt template:
 
 ```bash
 # --icon "MyApp"
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 
 # --icon "MyApp" --color "#2F6BFF"
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ### Prerequisites

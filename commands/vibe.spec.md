@@ -102,7 +102,7 @@ When image files (`.png`, `.jpg`, `.jpeg`, `.webp`) are provided as input, analy
 **Gemini enabled - analyze via llm-orchestrate.js:**
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
 ```
 
 Parse the JSON result: `{ success: true, analysis: "..." }` → use `analysis` field content.
@@ -409,7 +409,7 @@ Read ~/.claude/vibe/languages/typescript-react.md
 ```bash
 # Cross-platform path (works on Windows/macOS/Linux)
 # ⚠️ COPY THIS EXACTLY - DO NOT USE ~/.claude/ or any other path!
-CORE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts"
+CORE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
 
 # 1. GPT: Best practices
 node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
@@ -433,22 +433,22 @@ node "$CORE_SCRIPTS/llm-orchestrate.js" nvidia orchestrate-json "Architecture an
 **Concrete example - run all 6 in parallel:**
 ```bash
 # GPT best practices
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # GPT security
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # Gemini best practices
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # Gemini security
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 
 # NVIDIA code review patterns
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json "Code review patterns for passkey authentication with React, Supabase. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json "Code review patterns for passkey authentication with React, Supabase. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
 
 # NVIDIA architecture analysis
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json "Architecture analysis for passkey authentication with React, Supabase. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json "Architecture analysis for passkey authentication with React, Supabase. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
 ```
 
 **ALSO run Claude research agents in parallel using Task tool:**

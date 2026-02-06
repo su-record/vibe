@@ -200,17 +200,17 @@ Score: 96/100 ✅ PASSED
 
 ```bash
 # GPT review (Bash tool call 1)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
 ```
 
 ```bash
 # Gemini review (Bash tool call 2 - run in parallel with GPT)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 ```
 
 ```bash
 # NVIDIA (Kimi) review (Bash tool call 3 - run in parallel with GPT/Gemini)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json
 ```
 
 **🚨 MANDATORY: Replace `[SCRATCHPAD]` with the actual scratchpad directory path.**
