@@ -37,7 +37,7 @@ import {
   resetHud,
   showHudHelp,
 } from './hud.js';
-import { init, update, remove, showHelp, showStatus, showVersion } from './commands/index.js';
+import { init, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout } from './commands/index.js';
 
 // ============================================================================
 // Constants
@@ -251,6 +251,55 @@ NVIDIA NIM Commands:
     showStatus();
     break;
 
+  // vibe sync <subcommand> (async)
+  case 'sync': {
+    const syncSub = positionalArgs[1];
+    const onlyAuth = args.includes('--only') && args[args.indexOf('--only') + 1] === 'auth';
+    const onlyMemory = args.includes('--only') && args[args.indexOf('--only') + 1] === 'memory';
+    const only = onlyAuth ? 'auth' : onlyMemory ? 'memory' : undefined;
+    (async () => {
+      try {
+        switch (syncSub) {
+          case 'login':
+            await syncLogin();
+            break;
+          case 'push':
+            await syncPush(only);
+            break;
+          case 'pull':
+            await syncPull(only);
+            break;
+          case 'status':
+            syncStatus();
+            break;
+          case 'logout':
+            syncLogout();
+            break;
+          default:
+            console.log(`
+vibe sync — Google Drive AppData 인증/메모리 동기화
+
+  vibe sync login              Google 계정 연결 (1회)
+  vibe sync push               현재 인증+메모리를 클라우드에 업로드
+  vibe sync push --only auth   인증만 업로드
+  vibe sync push --only memory 메모리만 업로드
+  vibe sync pull               클라우드에서 복원
+  vibe sync pull --only auth   인증만 복원
+  vibe sync pull --only memory 메모리만 복원
+  vibe sync status             로그인 상태 확인
+  vibe sync logout             연결 해제
+
+필요: VIBE_SYNC_GOOGLE_CLIENT_ID (Google Cloud OAuth Desktop 클라이언트)
+        `);
+        }
+      } catch (err) {
+        console.error('❌', (err as Error).message);
+        process.exit(1);
+      }
+    })();
+    break;
+  }
+
   // vibe hud <subcommand>
   case 'hud': {
     const subCommand = positionalArgs[1];
@@ -334,6 +383,7 @@ Available commands:
   vibe gemini <cmd> Gemini commands (auth, key, status, logout)
   vibe nvidia <cmd>  NVIDIA NIM commands (key, status, logout)
   vibe status       Show status
+  vibe sync <cmd>   인증/메모리 동기화 (login, push, pull, status, logout)
   vibe remove       Remove core
   vibe help         Help
   vibe version      Version info

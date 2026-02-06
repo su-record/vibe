@@ -133,6 +133,7 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 | `vibe init` | Initialize project |
 | `vibe update` | Update settings |
 | `vibe status` | Show status |
+| `vibe sync <cmd>` | 인증/메모리 동기화 (login, push, pull, status, logout) |
 | `vibe hud <cmd>` | HUD status (show, start, phase, agent, reset) |
 | `vibe gpt <cmd>` | GPT commands (auth, key, status, logout) |
 | `vibe gemini <cmd>` | Gemini commands (auth, key, status, logout) |

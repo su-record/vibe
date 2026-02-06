@@ -7,6 +7,7 @@ import fs from 'fs';
 import { VibeConfig } from '../types.js';
 import { getPackageJson, isSoxInstalled } from '../utils.js';
 import { getLLMAuthStatus } from '../auth.js';
+import { loadSyncAuth } from '../../lib/sync/index.js';
 
 /**
  * 도움말 표시
@@ -19,6 +20,7 @@ Commands:
   vibe init [project]     Initialize project
   vibe update             Update settings
   vibe status             Show status
+  vibe sync <cmd>         인증/메모리 동기화 (login, push, pull, status, logout)
   vibe hud [subcommand]   HUD status display
   vibe help               Help
   vibe version            Version
@@ -118,6 +120,10 @@ export function showStatus(): void {
     }
   }
 
+  // vibe sync 상태
+  const syncAuth = loadSyncAuth();
+  const syncStatusText = syncAuth ? `✅ ${syncAuth.email ?? 'Logged in'}` : '⬚ Not logged in (vibe sync login)';
+
   // 프로젝트 상태
   const projectStatus = isCoreProject
     ? `✅ ${projectRoot}`
@@ -139,6 +145,7 @@ Models:
 
 Features:
   /vibe.voice       ${voiceStatusText}
+  vibe sync         ${syncStatusText}
   `);
 }
 
