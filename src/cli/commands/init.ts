@@ -149,7 +149,7 @@ export async function init(projectName?: string): Promise<void> {
     const authStatus = getLLMAuthStatus();
     log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus()}
-${formatVoiceHint(!!authStatus.gemini?.valid)}
+${formatVoiceHint(authStatus.gemini.length > 0)}
 📦 Context7 plugin (recommended): /plugin install context7
 
 Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"

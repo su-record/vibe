@@ -17,9 +17,13 @@ const __dirname = path.dirname(__filename);
  * LLM 인증 상태 확인
  */
 export function getLLMAuthStatus(): LLMStatusMap {
-  const status: LLMStatusMap = { gpt: null, gemini: null, az: null };
+  const configDir = process.platform === 'win32'
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
 
-  // GPT 상태 확인
+  const status: LLMStatusMap = { gpt: [], gemini: [], az: [] };
+
+  // GPT OAuth
   try {
     const gptStoragePath = path.join(__dirname, '../lib/gpt-storage.js');
     if (fs.existsSync(gptStoragePath)) {
@@ -27,110 +31,60 @@ export function getLLMAuthStatus(): LLMStatusMap {
       const account = gptStorage.getActiveAccount();
       if (account) {
         const isExpired = gptStorage.isTokenExpired(account);
-        status.gpt = {
-          type: 'oauth',
-          email: account.email,
-          valid: !isExpired
-        };
+        status.gpt.push({ type: 'oauth', valid: !isExpired });
       }
     }
-  } catch { /* ignore: optional operation */ }
+  } catch { /* ignore */ }
 
-  // GPT API 키 확인 (전역 config → 프로젝트 config)
-  if (!status.gpt) {
-    try {
-      // 전역 gpt-apikey.json 확인
-      const gptConfigDir = process.platform === 'win32'
-        ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
-        : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
-      const gptApiKeyPath = path.join(gptConfigDir, 'gpt-apikey.json');
-      if (fs.existsSync(gptApiKeyPath)) {
-        const keyData = JSON.parse(fs.readFileSync(gptApiKeyPath, 'utf-8'));
-        if (keyData.apiKey) {
-          status.gpt = { type: 'apikey', valid: true };
-        }
-      }
-    } catch { /* ignore: optional operation */ }
-  }
-
-  if (!status.gpt) {
-    try {
-      // 프로젝트 config fallback
-      const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
-      if (fs.existsSync(configPath)) {
-        const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        if (config.models?.gpt?.enabled) {
-          status.gpt = { type: 'apikey', valid: true };
-        }
-      }
-    } catch { /* ignore: optional operation */ }
-  }
-
-  // Gemini 상태 확인
+  // GPT API Key
   try {
-    // Windows: %APPDATA%/vibe, macOS/Linux: ~/.config/vibe
-    const geminiConfigDir = process.platform === 'win32'
-      ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
-      : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
-    const tokenPath = path.join(geminiConfigDir, 'gemini-auth.json');
+    const gptApiKeyPath = path.join(configDir, 'gpt-apikey.json');
+    if (fs.existsSync(gptApiKeyPath)) {
+      const keyData = JSON.parse(fs.readFileSync(gptApiKeyPath, 'utf-8'));
+      if (keyData.apiKey) {
+        status.gpt.push({ type: 'apikey', valid: true });
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Gemini OAuth
+  try {
+    const tokenPath = path.join(configDir, 'gemini-auth.json');
     if (fs.existsSync(tokenPath)) {
       const tokenData = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
       if (tokenData.accounts && tokenData.accounts.length > 0) {
         const activeAccount = tokenData.accounts.find((a: { active?: boolean }) => a.active) || tokenData.accounts[0];
         const isExpired = activeAccount.expires && Date.now() > activeAccount.expires;
-        status.gemini = {
-          type: 'oauth',
-          email: activeAccount.email || 'default',
-          valid: !isExpired || !!activeAccount.refreshToken
-        };
+        status.gemini.push({ type: 'oauth', valid: !isExpired || !!activeAccount.refreshToken });
       }
     }
-  } catch { /* ignore: optional operation */ }
+  } catch { /* ignore */ }
 
-  // Gemini API 키 확인 (전역 config → 프로젝트 config)
-  if (!status.gemini) {
-    try {
-      // 전역 gemini-apikey.json 확인
-      const geminiKeyConfigDir = process.platform === 'win32'
-        ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
-        : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
-      const geminiApiKeyPath = path.join(geminiKeyConfigDir, 'gemini-apikey.json');
-      if (fs.existsSync(geminiApiKeyPath)) {
-        const keyData = JSON.parse(fs.readFileSync(geminiApiKeyPath, 'utf-8'));
-        if (keyData.apiKey) {
-          status.gemini = { type: 'apikey', valid: true };
-        }
+  // Gemini API Key
+  try {
+    const geminiApiKeyPath = path.join(configDir, 'gemini-apikey.json');
+    if (fs.existsSync(geminiApiKeyPath)) {
+      const keyData = JSON.parse(fs.readFileSync(geminiApiKeyPath, 'utf-8'));
+      if (keyData.apiKey) {
+        status.gemini.push({ type: 'apikey', valid: true });
       }
-    } catch { /* ignore: optional operation */ }
-  }
+    }
+  } catch { /* ignore */ }
 
-  if (!status.gemini) {
-    try {
-      // 프로젝트 config fallback
-      const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
-      if (fs.existsSync(configPath)) {
-        const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        if (config.models?.gemini?.enabled) {
-          status.gemini = { type: 'apikey', valid: true };
-        }
-      }
-    } catch { /* ignore: optional operation */ }
-  }
-
-  // AZ 상태 확인
+  // AZ API Key (파일)
   try {
     const azStoragePath = path.join(__dirname, '../lib/az-storage.js');
     if (fs.existsSync(azStoragePath)) {
       const azStorage = require(azStoragePath);
       if (azStorage.hasApiKey()) {
-        status.az = { type: 'apikey', valid: true };
+        status.az.push({ type: 'apikey', valid: true });
       }
     }
-  } catch { /* ignore: optional operation */ }
+  } catch { /* ignore */ }
 
-  // AZ 환경변수 fallback
-  if (!status.az && process.env.AZ_API_KEY) {
-    status.az = { type: 'apikey', valid: true };
+  // AZ 환경변수
+  if (status.az.length === 0 && process.env.AZ_API_KEY) {
+    status.az.push({ type: 'apikey', valid: true });
   }
 
   return status;
@@ -139,42 +93,23 @@ export function getLLMAuthStatus(): LLMStatusMap {
 /**
  * LLM 상태 포맷팅
  */
+export function formatAuthMethods(auths: LLMAuthStatus[]): string {
+  if (auths.length === 0) return '✗ Not configured';
+  return auths.map(a => {
+    const icon = a.valid ? '✓' : '⚠';
+    const method = a.type === 'oauth' ? 'OAuth' : 'API Key';
+    return `${icon} ${method}`;
+  }).join(', ');
+}
+
 export function formatLLMStatus(): string {
   const status = getLLMAuthStatus();
   const lines: string[] = [];
 
   lines.push('External LLM:');
-
-  // GPT status
-  if (status.gpt) {
-    if (status.gpt.type === 'oauth') {
-      const icon = status.gpt.valid ? '✓' : '⚠';
-      lines.push(`  GPT: ${icon} OAuth authenticated (${status.gpt.email})`);
-    } else {
-      lines.push('  GPT: ✓ API key configured');
-    }
-  } else {
-    lines.push('  GPT: ✗ Not configured (vibe gpt auth or vibe gpt key <api-key>)');
-  }
-
-  // Gemini status
-  if (status.gemini) {
-    if (status.gemini.type === 'oauth') {
-      const icon = status.gemini.valid ? '✓' : '⚠';
-      lines.push(`  Gemini: ${icon} OAuth authenticated (${status.gemini.email})`);
-    } else {
-      lines.push('  Gemini: ✓ API key configured');
-    }
-  } else {
-    lines.push('  Gemini: ✗ Not configured (vibe gemini auth or vibe gemini key <api-key>)');
-  }
-
-  // AZ status
-  if (status.az) {
-    lines.push('  AZ: ✓ API key configured');
-  } else {
-    lines.push('  AZ: ✗ Not configured (vibe az key <api-key>)');
-  }
+  lines.push(`  GPT: ${formatAuthMethods(status.gpt)}`);
+  lines.push(`  Gemini: ${formatAuthMethods(status.gemini)}`);
+  lines.push(`  AZ: ${formatAuthMethods(status.az)}`);
 
   return lines.join('\n');
 }

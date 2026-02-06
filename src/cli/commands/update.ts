@@ -141,7 +141,7 @@ ${formatLLMStatus()}
     const authStatus = getLLMAuthStatus();
     log(`✅ vibe updated (v${packageJson.version})
 ${formatLLMStatus()}
-${formatVoiceHint(!!authStatus.gemini?.valid)}
+${formatVoiceHint(authStatus.gemini.length > 0)}
 📦 Context7 plugin (recommended): /plugin install context7
 `);
 

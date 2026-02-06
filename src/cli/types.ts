@@ -13,9 +13,9 @@ export interface LLMAuthStatus {
 }
 
 export interface LLMStatusMap {
-  gpt: LLMAuthStatus | null;
-  gemini: LLMAuthStatus | null;
-  az: LLMAuthStatus | null;
+  gpt: LLMAuthStatus[];
+  gemini: LLMAuthStatus[];
+  az: LLMAuthStatus[];
 }
 
 export interface DetectedStack {
