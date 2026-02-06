@@ -5,7 +5,7 @@
  *   node llm-orchestrate.js <provider> <mode> "prompt"
  *   node llm-orchestrate.js <provider> <mode> "systemPrompt" "prompt"
  *
- *   provider: gpt | gemini | nvidia
+ *   provider: gpt | gemini | kimi
  *   mode: orchestrate | orchestrate-json | image | analyze-image
  *
  * Image Mode:
@@ -210,8 +210,8 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   let orchestrateFn;
   if (providerName === 'gpt') {
     orchestrateFn = module.coreGptOrchestrate;
-  } else if (providerName === 'nvidia') {
-    orchestrateFn = module.coreNvidiaOrchestrate;
+  } else if (providerName === 'kimi') {
+    orchestrateFn = module.coreKimiOrchestrate;
   } else {
     orchestrateFn = module.coreGeminiOrchestrate;
   }
@@ -452,20 +452,20 @@ async function main() {
   const prefixPatterns = {
     gpt: /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
     gemini: /^(gemini[-.\s]|제미나이-|vibe-gemini-)\s*/i,
-    nvidia: /^(nvidia[-.\s]|엔비디아-|vibe-nvidia-)\s*/i,
+    kimi: /^(kimi[-.\s]|키미-|vibe-kimi-)\s*/i,
   };
   const cleanPrompt = prompt.replace(prefixPatterns[provider] || /^/, '').trim();
   const jsonMode = mode === 'orchestrate-json';
 
-  // Provider chain: primary → nvidia fallback → cross fallback
-  const providerLabels = { gpt: 'GPT-5.2', gemini: 'Gemini-3', nvidia: 'NVIDIA NIM' };
+  // Provider chain: primary → kimi fallback → cross fallback
+  const providerLabels = { gpt: 'GPT-5.2', gemini: 'Gemini-3', kimi: 'Kimi' };
   let providerChain;
-  if (provider === 'nvidia') {
-    providerChain = ['nvidia', 'gpt', 'gemini'];
+  if (provider === 'kimi') {
+    providerChain = ['kimi', 'gpt', 'gemini'];
   } else if (provider === 'gpt') {
-    providerChain = ['gpt', 'nvidia', 'gemini'];
+    providerChain = ['gpt', 'kimi', 'gemini'];
   } else {
-    providerChain = ['gemini', 'nvidia', 'gpt'];
+    providerChain = ['gemini', 'kimi', 'gpt'];
   }
 
   for (const currentProvider of providerChain) {

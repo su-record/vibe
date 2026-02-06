@@ -17,16 +17,16 @@ Gemini Commands:
   vibe gemini auth        OAuth (free with Advanced)
   vibe gemini key <KEY>   API key
 
-NVIDIA NIM Commands:
-  vibe nvidia key <KEY>   API key (nvapi-xxx)
-  vibe nvidia status      Check status & models
-  vibe nvidia logout      Remove key
+AZ Commands:
+  vibe az key <KEY>       API key
+  vibe az status          Check status & models
+  vibe az logout          Remove key
 
 Examples:
   vibe gpt auth           OpenAI login
   vibe gemini auth        Google login
   vibe gpt key sk-xxx     API key setup
-  vibe nvidia key nvapi-xxx  NVIDIA API key
+  vibe az key <key>       AZ API key
   `);
 }
 
@@ -40,6 +40,6 @@ export function showLogoutHelp(): void {
 Usage:
   vibe gpt logout       GPT logout
   vibe gemini logout    Gemini logout
-  vibe nvidia logout    NVIDIA logout
+  vibe az logout        AZ logout
   `);
 }

@@ -110,14 +110,14 @@ const DISPATCH_RULES = [
   {
     pattern: /코드.*리뷰|code.*review|PR.*리뷰|리뷰.*해줘.*코드/i,
     script: 'llm-orchestrate.js',
-    args: ['nvidia', 'orchestrate', 'You are a code review expert. Review the code for best practices, security, and performance.'],
-    label: 'nvidia-codereview',
+    args: ['kimi', 'orchestrate', 'You are a code review expert. Review the code for best practices, security, and performance.'],
+    label: 'kimi-codereview',
   },
   {
     pattern: /추론.*해|reasoning|복잡.*분석|deep.*analysis/i,
     script: 'llm-orchestrate.js',
-    args: ['nvidia', 'orchestrate', 'You are a reasoning expert. Analyze the problem deeply and provide detailed reasoning.'],
-    label: 'nvidia-reasoning',
+    args: ['kimi', 'orchestrate', 'You are a reasoning expert. Analyze the problem deeply and provide detailed reasoning.'],
+    label: 'kimi-reasoning',
   },
 
   // 테스트용
@@ -134,10 +134,10 @@ const DISPATCH_RULES = [
     label: 'test-gemini',
   },
   {
-    pattern: /^test-nvidia/i,
+    pattern: /^test-kimi/i,
     script: 'llm-orchestrate.js',
-    args: ['nvidia', 'orchestrate', 'You are a helpful assistant. Answer the user\'s question clearly and concisely.'],
-    label: 'test-nvidia',
+    args: ['kimi', 'orchestrate', 'You are a helpful assistant. Answer the user\'s question clearly and concisely.'],
+    label: 'test-kimi',
   },
 ];
 

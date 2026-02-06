@@ -2,7 +2,7 @@
 
 ## 개요
 
-작업 환경이 바뀔 때마다 GPT, Gemini, NVIDIA, Kimi 인증을 반복하는 문제를 해결.
+작업 환경이 바뀔 때마다 GPT, Gemini, AZ 인증을 반복하는 문제를 해결.
 Google Drive AppData에 암호화된 인증 정보를 저장하고, 새 환경에서 pull로 복원.
 
 ## 사용법
@@ -76,8 +76,7 @@ npm i -g @su-record/core && vibe sync login && vibe sync pull
 | `gemini-apikey.json` | Gemini API 키 | `~/.config/vibe/` |
 | `gpt-auth.json` | GPT OAuth 토큰 | `~/.config/vibe/` |
 | `gpt-apikey.json` | GPT API 키 | `~/.config/vibe/` |
-| `nvidia-apikey.json` | NVIDIA API 키 | `~/.config/vibe/` |
-| `kimi-apikey.json` | Kimi API 키 | `~/.config/vibe/` |
+| `az-apikey.json` | AZ API 키 | `~/.config/vibe/` |
 
 ### 전역 메모리 (Session RAG)
 

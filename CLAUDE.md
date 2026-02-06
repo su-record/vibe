@@ -17,9 +17,9 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.1.0
 | Guardrail | Mechanism |
 |-----------|-----------|
 | Type Safety | Quality Gate (`any`/`Any` 차단) |
-| Code Review | Race Review (GPT + Gemini + NVIDIA 병렬) |
+| Code Review | Race Review (GPT + Gemini + AZ Kimi K2.5 병렬) |
 | Completion Check | Ralph Loop (100%까지 반복) |
-| Multi-LLM | 4개 관점 검증 (Claude + GPT + Gemini + NVIDIA) |
+| Multi-LLM | 4개 관점 검증 (Claude + GPT + Gemini + AZ Kimi K2.5) |
 
 ### User's Role (6번 Iterative-Reasoning Type)
 
@@ -83,8 +83,8 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 
 1. `/vibe.spec` - Write SPEC (requirements + research + draft) + 6개 LLM 병렬 리서치
 2. `/new` - Start new session (clean context)
-3. `/vibe.spec.review` - GPT/Gemini/NVIDIA review (3-round mandatory)
-4. `/vibe.run` - Implementation + GPT/Gemini/NVIDIA Race Review
+3. `/vibe.spec.review` - GPT/Gemini/AZ (Kimi K2.5) review (3-round mandatory)
+4. `/vibe.run` - Implementation + GPT/Gemini/AZ (Kimi K2.5) Race Review
 5. **(auto)** 13+ agent parallel review + P1/P2 auto-fix
 
 **모든 명령어는 시작/종료 시 `getCurrentTime`을 호출하여 소요 시간을 표시합니다.**
@@ -137,7 +137,7 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 | `vibe hud <cmd>` | HUD status (show, start, phase, agent, reset) |
 | `vibe gpt <cmd>` | GPT commands (auth, key, status, logout) |
 | `vibe gemini <cmd>` | Gemini commands (auth, key, status, logout) |
-| `vibe kimi <cmd>` | Kimi commands (key, status, logout) |
+| `vibe az <cmd>` | AZ (Kimi K2.5) commands (key, status, logout) |
 | `vibe remove` | Remove core |
 | `vibe help` | Help |
 | `vibe version` | Version info |
@@ -248,14 +248,14 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 ## Multi-LLM Orchestration (v0.1.0)
 
-4개 LLM(Claude + GPT + Gemini + NVIDIA) 멀티 오케스트레이션 시스템.
+4개 LLM(Claude + GPT + Gemini + AZ) 멀티 오케스트레이션 시스템.
 
 ### Core Modules
 
 | Module | Purpose |
 |--------|---------|
 | `SmartRouter` | Task 유형별 최적 LLM 선택 + fallback chain |
-| `LLMCluster` | 병렬 멀티 LLM 호출 (GPT + Gemini + NVIDIA) |
+| `LLMCluster` | 병렬 멀티 LLM 호출 (GPT + Gemini + AZ Kimi K2.5) |
 | `AgentRegistry` | SQLite 기반 에이전트 실행 추적 (WAL mode) |
 | `AllProvidersFailedError` | 모든 프로바이더 실패 시 구조화된 에러 |
 
@@ -263,25 +263,21 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 | Task Type | Priority Order |
 |-----------|---------------|
-| code-analysis, code-review | NVIDIA (Devstral-2) → GPT → Gemini → Claude |
-| reasoning, architecture | NVIDIA (Kimi K2 Thinking) → GPT → Gemini → Claude |
-| code-gen | NVIDIA (Qwen3 Coder) → GPT → Gemini → Claude |
-| debugging | NVIDIA (DeepSeek V3.2) → GPT → Gemini → Claude |
-| uiux, web-search | Gemini → GPT → Claude |
-| general | Claude |
+| code-analysis, code-review | AZ (Kimi K2.5) → GPT → Gemini → Claude |
+| reasoning, architecture | AZ (Kimi K2.5) → GPT → Gemini → Claude |
+| code-gen | AZ (Kimi K2.5) → Claude |
+| debugging | AZ (Kimi K2.5) → GPT → Gemini → Claude |
+| uiux, web-search | Gemini → AZ (Kimi K2.5) → GPT → Claude |
+| general | AZ (Kimi K2.5) → Claude |
 
-### NVIDIA NIM Integration
+### AZ (Azure Foundry) Integration
 
-- API: `https://integrate.api.nvidia.com/v1` (무료)
+- Chat API: `https://fallingo-ai-foundry.services.ai.azure.com/openai/v1`
+- Embedding API: `https://fallingo-ai-foundry.cognitiveservices.azure.com`
 - Models:
-  - `kimi-k2.5` (256K context, 범용)
-  - `kimi-k2-thinking` (추론/아키텍처)
-  - `kimi-k2-instruct` (코딩/에이전트)
-  - `deepseek-v3.2` (685B, 디버깅)
-  - `qwen3-coder` (480B MoE, 코드 생성)
-  - `devstral-2` (123B, 코드 리뷰)
-  - `nv-embed` (임베딩, 26개 언어)
-- Auth: `NVIDIA_API_KEY` 환경변수 또는 `vibe nvidia key <key>`
+  - `Kimi-K2.5` (채팅/추론/코드 분석 — 모든 태스크)
+  - `text-embedding-3-large` (임베딩)
+- Auth: `AZ_API_KEY` 환경변수 또는 `vibe az key <key>` (동일 키로 Chat + Embedding 모두 사용)
 - Timeout: 30초/provider, 3회 재시도 (지수 백오프)
 
 ## Agents

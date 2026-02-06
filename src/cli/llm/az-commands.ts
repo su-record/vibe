@@ -1,5 +1,5 @@
 /**
- * NVIDIA NIM CLI 명령어
+ * Azure Foundry CLI 명령어
  */
 
 import path from 'path';
@@ -13,57 +13,56 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * NVIDIA NIM 상태 확인
+ * AZ 상태 확인
  */
-export function nvidiaStatus(): void {
+export function azStatus(): void {
   try {
-    const storagePath = path.join(__dirname, '../../lib/nvidia-storage.js');
-    const constantsPath = path.join(__dirname, '../../lib/nvidia-constants.js');
+    const storagePath = path.join(__dirname, '../../lib/az-storage.js');
+    const constantsPath = path.join(__dirname, '../../lib/az-constants.js');
 
     const storage = require(storagePath);
-    const { NVIDIA_MODELS } = require(constantsPath);
+    const { AZ_MODELS } = require(constantsPath);
 
     const hasKey = storage.hasApiKey();
 
     if (!hasKey) {
       // 환경변수 확인
-      const envKey = process.env.NVIDIA_API_KEY || process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY;
+      const envKey = process.env.AZ_API_KEY;
       if (envKey) {
         console.log(`
-📊 NVIDIA NIM Status
+📊 AZ Status
 
 Auth: ✅ Environment variable
 Key: ${storage.maskApiKey(envKey)}
 
 Available models:
-${Object.entries(NVIDIA_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
+${Object.entries(AZ_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
         `);
         return;
       }
 
       console.log(`
-📊 NVIDIA NIM Status
+📊 AZ Status
 
 No API key configured
 
-Setup: vibe nvidia key <NVIDIA_API_KEY>
-Get key: https://build.nvidia.com/
-Or set NVIDIA_API_KEY environment variable
+Setup: vibe az key <AZ_API_KEY>
+Or set AZ_API_KEY environment variable
       `);
       return;
     }
 
     const apiKey = storage.loadApiKey();
     console.log(`
-📊 NVIDIA NIM Status
+📊 AZ Status
 
 Auth: ✅ API Key
 Key: ${storage.maskApiKey(apiKey)}
 
 Available models:
-${Object.entries(NVIDIA_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
+${Object.entries(AZ_MODELS).map(([id, info]) => `  - ${id}: ${(info as { description: string }).description}`).join('\n')}
 
-Logout: vibe nvidia logout
+Logout: vibe az logout
     `);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -72,24 +71,24 @@ Logout: vibe nvidia logout
 }
 
 /**
- * NVIDIA NIM 로그아웃 (API Key 삭제)
+ * AZ 로그아웃 (API Key 삭제)
  */
-export function nvidiaLogout(): void {
+export function azLogout(): void {
   try {
-    const storagePath = path.join(__dirname, '../../lib/nvidia-storage.js');
+    const storagePath = path.join(__dirname, '../../lib/az-storage.js');
     const storage = require(storagePath);
 
     const removed = storage.removeApiKey();
 
     if (!removed) {
-      console.log('No NVIDIA API key stored.');
+      console.log('No AZ API key stored.');
       return;
     }
 
     console.log(`
-✅ NVIDIA API key removed
+✅ AZ API key removed
 
-Setup again: vibe nvidia key <NVIDIA_API_KEY>
+Setup again: vibe az key <AZ_API_KEY>
     `);
 
     // config.json 업데이트
@@ -97,8 +96,8 @@ Setup again: vibe nvidia key <NVIDIA_API_KEY>
     if (fs.existsSync(configPath)) {
       try {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        if (config.models && 'nvidia' in config.models) {
-          delete (config.models as Record<string, unknown>)['nvidia'];
+        if (config.models && 'az' in config.models) {
+          delete (config.models as Record<string, unknown>)['az'];
           fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
         }
       } catch { /* ignore: optional operation */ }
@@ -109,8 +108,3 @@ Setup again: vibe nvidia key <NVIDIA_API_KEY>
   }
 }
 
-// 하위 호환
-/** @deprecated Use nvidiaStatus */
-export const kimiStatus = nvidiaStatus;
-/** @deprecated Use nvidiaLogout */
-export const kimiLogout = nvidiaLogout;

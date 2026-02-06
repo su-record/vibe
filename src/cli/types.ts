@@ -15,7 +15,7 @@ export interface LLMAuthStatus {
 export interface LLMStatusMap {
   gpt: LLMAuthStatus | null;
   gemini: LLMAuthStatus | null;
-  nvidia: LLMAuthStatus | null;
+  az: LLMAuthStatus | null;
 }
 
 export interface DetectedStack {

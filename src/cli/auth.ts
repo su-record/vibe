@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
  * LLM 인증 상태 확인
  */
 export function getLLMAuthStatus(): LLMStatusMap {
-  const status: LLMStatusMap = { gpt: null, gemini: null, nvidia: null };
+  const status: LLMStatusMap = { gpt: null, gemini: null, az: null };
 
   // GPT 상태 확인
   try {
@@ -117,20 +117,20 @@ export function getLLMAuthStatus(): LLMStatusMap {
     } catch { /* ignore: optional operation */ }
   }
 
-  // NVIDIA NIM 상태 확인
+  // AZ 상태 확인
   try {
-    const nvidiaStoragePath = path.join(__dirname, '../lib/nvidia-storage.js');
-    if (fs.existsSync(nvidiaStoragePath)) {
-      const nvidiaStorage = require(nvidiaStoragePath);
-      if (nvidiaStorage.hasApiKey()) {
-        status.nvidia = { type: 'apikey', valid: true };
+    const azStoragePath = path.join(__dirname, '../lib/az-storage.js');
+    if (fs.existsSync(azStoragePath)) {
+      const azStorage = require(azStoragePath);
+      if (azStorage.hasApiKey()) {
+        status.az = { type: 'apikey', valid: true };
       }
     }
   } catch { /* ignore: optional operation */ }
 
-  // NVIDIA 환경변수 fallback
-  if (!status.nvidia && process.env.NVIDIA_API_KEY) {
-    status.nvidia = { type: 'apikey', valid: true };
+  // AZ 환경변수 fallback
+  if (!status.az && process.env.AZ_API_KEY) {
+    status.az = { type: 'apikey', valid: true };
   }
 
   return status;
@@ -169,11 +169,11 @@ export function formatLLMStatus(): string {
     lines.push('  Gemini: ✗ Not configured (vibe gemini auth or vibe gemini key <api-key>)');
   }
 
-  // NVIDIA status
-  if (status.nvidia) {
-    lines.push('  NVIDIA: ✓ API key configured');
+  // AZ status
+  if (status.az) {
+    lines.push('  AZ: ✓ API key configured');
   } else {
-    lines.push('  NVIDIA: ✗ Not configured (vibe nvidia key <api-key>)');
+    lines.push('  AZ: ✗ Not configured (vibe az key <api-key>)');
   }
 
   return lines.join('\n');

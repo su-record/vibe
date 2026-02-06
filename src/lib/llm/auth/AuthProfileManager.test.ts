@@ -55,13 +55,13 @@ describe('AuthProfileManager', () => {
   });
 
   it('should apply cooldown after 3 failures', async () => {
-    const profile = await manager.addProfile('nvidia', 'apikey', 'sk-test-key-1234', 1);
+    const profile = await manager.addProfile('az', 'apikey', 'sk-test-key-1234', 1);
 
     await manager.markFailure(profile.id, 'rate limit 429');
     await manager.markFailure(profile.id, 'rate limit 429');
     await manager.markFailure(profile.id, 'rate limit 429');
 
-    const profiles = manager.listProfiles('nvidia');
+    const profiles = manager.listProfiles('az');
     const updated = profiles.find(p => p.id === profile.id);
     expect(updated).toBeDefined();
     expect(updated!.errorCount).toBe(3);
@@ -116,12 +116,12 @@ describe('AuthProfileManager', () => {
   });
 
   it('should remove profiles', async () => {
-    const profile = await manager.addProfile('nvidia', 'apikey', 'key-1234', 1);
-    expect(manager.listProfiles('nvidia')).toHaveLength(1);
+    const profile = await manager.addProfile('az', 'apikey', 'key-1234', 1);
+    expect(manager.listProfiles('az')).toHaveLength(1);
 
     const removed = await manager.removeProfile(profile.id);
     expect(removed).toBe(true);
-    expect(manager.listProfiles('nvidia')).toHaveLength(0);
+    expect(manager.listProfiles('az')).toHaveLength(0);
   });
 
   it('should enforce max profiles per provider', async () => {

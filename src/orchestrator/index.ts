@@ -285,12 +285,12 @@ export function status(): ToolResult {
 }
 
 // ============================================
-// Multi-LLM Integration (GPT, Gemini, NVIDIA)
+// AZ Integration (Kimi K2.5, Embedding)
 // ============================================
 
 import * as gptApi from '../lib/gpt-api.js';
 import * as geminiApi from '../lib/gemini-api.js';
-import * as nvidiaApi from '../lib/nvidia-api.js';
+import * as azApi from '../lib/az-api.js';
 
 // ============================================
 // GPT Integration (웹 검색, 아키텍처 분석)
@@ -382,35 +382,32 @@ export async function gemini(
 }
 
 // ============================================
-// NVIDIA NIM Integration (코드 리뷰, 추론)
+// AZ Integration — Kimi K2.5 (코드 리뷰, 추론, 범용)
 // ============================================
 
 /**
- * NVIDIA NIM 오케스트레이션 (간편 API)
+ * AZ (Kimi K2.5) 오케스트레이션 (간편 API)
  *
  * @example
- * node -e "import('@su-record/core/orchestrator').then(o => o.nvidia('Review this code')).then(console.log)"
+ * node -e "import('@su-record/core/orchestrator').then(o => o.az('Review this code')).then(console.log)"
  */
-export async function nvidia(
+export async function az(
   prompt: string,
   systemPrompt: string = 'You are a helpful assistant.'
 ): Promise<ToolResult> {
   try {
-    const result = await nvidiaApi.coreNvidiaOrchestrate(prompt, systemPrompt, { jsonMode: false });
+    const result = await azApi.coreAzOrchestrate(prompt, systemPrompt, { jsonMode: false });
     return {
       content: [{ type: 'text', text: result }],
       success: true
     } as ToolResult & { success: boolean };
   } catch (error) {
     return {
-      content: [{ type: 'text', text: `[NVIDIA Error] ${(error as Error).message}` }],
+      content: [{ type: 'text', text: `[AZ Error] ${(error as Error).message}` }],
       success: false
     } as ToolResult & { success: boolean };
   }
 }
-
-/** @deprecated Use nvidia() */
-export const kimi = nvidia;
 
 // ============================================
 // Multi-LLM Orchestration
@@ -425,7 +422,7 @@ export const kimi = nvidia;
  */
 export async function multiLlm(
   prompt: string,
-  options?: { useGpt?: boolean; useGemini?: boolean; useNvidia?: boolean }
+  options?: { useGpt?: boolean; useGemini?: boolean; useAz?: boolean }
 ): Promise<ToolResult> {
   const orchestrator = new CoreOrchestrator();
   const results = await orchestrator.multiLlmQuery(prompt, options);
@@ -438,8 +435,8 @@ export async function multiLlm(
   if (results.gemini) {
     summary += `### Gemini\n${results.gemini}\n\n`;
   }
-  if (results.nvidia) {
-    summary += `### NVIDIA\n${results.nvidia}\n\n`;
+  if (results.az) {
+    summary += `### AZ (Kimi K2.5)\n${results.az}\n\n`;
   }
 
   return {
@@ -460,12 +457,12 @@ export async function llmStatus(): Promise<ToolResult> {
 
   const gptIcon = llmStatusResult.gpt.available ? '✓' : '✗';
   const geminiIcon = llmStatusResult.gemini.available ? '✓' : '✗';
-  const nvidiaIcon = llmStatusResult.nvidia.available ? '✓' : '✗';
+  const azIcon = llmStatusResult.az.available ? '✓' : '✗';
 
   let text = '## LLM Status\n\n';
   text += `- GPT: ${gptIcon} ${llmStatusResult.gpt.available ? 'Available' : 'Unavailable'}\n`;
   text += `- Gemini: ${geminiIcon} ${llmStatusResult.gemini.available ? 'Available' : 'Unavailable'}\n`;
-  text += `- NVIDIA: ${nvidiaIcon} ${llmStatusResult.nvidia.available ? 'Available' : 'Unavailable'}\n`;
+  text += `- AZ (Kimi K2.5): ${azIcon} ${llmStatusResult.az.available ? 'Available' : 'Unavailable'}\n`;
 
   return {
     content: [{ type: 'text', text }],
@@ -568,7 +565,7 @@ export async function smartCodeGen(description: string, context?: string): Promi
 }
 
 /**
- * 코드 리뷰 with fallback (NVIDIA → GPT → Gemini → Claude)
+ * 코드 리뷰 with fallback (AZ Kimi K2.5 → GPT → Gemini → Claude)
  *
  * @example
  * node -e "import('@su-record/core/orchestrator').then(o => o.smartCodeReview('Review this PR')).then(console.log)"
@@ -578,7 +575,7 @@ export async function smartCodeReview(prompt: string): Promise<ToolResult & { re
 }
 
 /**
- * 추론/분석 with fallback (NVIDIA → GPT → Gemini → Claude)
+ * 추론/분석 with fallback (AZ Kimi K2.5 → GPT → Gemini → Claude)
  *
  * @example
  * node -e "import('@su-record/core/orchestrator').then(o => o.smartReasoning('Analyze this problem')).then(console.log)"
