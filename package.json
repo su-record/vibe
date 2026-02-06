@@ -27,7 +27,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build",
-    "postinstall": "node dist/cli/postinstall.js",
+    "postinstall": "node dist/cli/postinstall.js || true",
     "deploy": "npm version patch --no-git-tag-version && npm run build && npm publish"
   },
   "keywords": [
