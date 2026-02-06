@@ -32,6 +32,7 @@ vibe init
 - [매직 키워드](#매직-키워드)
 - [프로젝트 구조](#프로젝트-구조)
 - [시스템 아키텍처](#시스템-아키텍처)
+- [GitHub Packages 배포](#github-packages-배포)
 
 ---
 
@@ -829,6 +830,12 @@ Session RAG 루프:
     code-check.js → 타입 안전성/복잡도 검증
     post-edit.js → Git 인덱스 동기화
 ```
+
+---
+
+## GitHub Packages 배포
+
+패키지는 **GitHub Packages**로 비공개 배포됩니다. Release 발행 시 자동 배포되며, 설치 시 인증(PAT, `read:packages`)이 필요합니다. 상세한 배포·설치 방법은 [github-packages.md](./github-packages.md)를 참고하세요.
 
 ---
 

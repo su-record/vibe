@@ -75,7 +75,7 @@ Parallel agents analyze the solution:
 ### Phase 2: Category Classification
 
 ```
-.claude/core/solutions/
+.claude/vibe/solutions/
 ├── security/           # Security related
 │   ├── sql-injection-prevention.md
 │   └── xss-sanitization.md
@@ -161,7 +161,7 @@ cache_key = f"user:{user_id}:v{updated_at.timestamp()}"
 
 ### Phase 4: Index Update
 
-Auto-update `.claude/core/solutions/index.md`:
+Auto-update `.claude/vibe/solutions/index.md`:
 
 ```markdown
 # Solution Index
@@ -196,7 +196,7 @@ When similar problem detected:
 │  You're working on: "Cache not updating"                        │
 │                                                                 │
 │  Related solution (85% match):                                  │
-│  📄 .claude/core/solutions/performance/redis-cache-invalidation.md     │
+│  📄 .claude/vibe/solutions/performance/redis-cache-invalidation.md     │
 │                                                                 │
 │  Key insight: Add version suffix to cache key                   │
 │                                                                 │
@@ -212,7 +212,7 @@ When similar problem detected:
 │  📚 SOLUTION DOCUMENTED                                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ✅ Created: .claude/core/solutions/performance/redis-cache-invalid... │
+│  ✅ Created: .claude/vibe/solutions/performance/redis-cache-invalid... │
 │                                                                 │
 │  📊 Knowledge Base Stats:                                        │
 │  ├── Total Solutions: 42                                        │
@@ -222,7 +222,7 @@ When similar problem detected:
 │  🔗 Similar solutions linked: 2                                  │
 │  🏷️ Tags: #redis #cache #invalidation #performance              │
 │                                                                 │
-│  💡 Prevention rules added to ~/.claude/core/rules/                     │
+│  💡 Prevention rules added to ~/.claude/vibe/rules/                     │
 │                                                                 │
 │  "This solution will help future you (or teammates) save hours" │
 │                                                                 │
@@ -239,7 +239,7 @@ Auto-invoke `core_save_memory`:
   "category": "performance",
   "title": "Redis cache invalidation",
   "keywords": ["redis", "cache", "invalidation"],
-  "file": ".claude/core/solutions/performance/redis-cache-invalidation.md"
+  "file": ".claude/vibe/solutions/performance/redis-cache-invalidation.md"
 }
 ```
 
@@ -249,7 +249,7 @@ Auto-invoke `core_save_memory`:
 /vibe.spec → /vibe.run → /vibe.verify → /vibe.compound
                                               │
                                               ▼
-                                    .claude/core/solutions/
+                                    .claude/vibe/solutions/
                                               │
                                               ▼
                                     Future problem?

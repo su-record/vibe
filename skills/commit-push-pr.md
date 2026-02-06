@@ -106,7 +106,7 @@ gh pr create \
 
 ## git-workflow rule 연계
 
-이 스킬은 `.claude/core/rules/standards/git-workflow.md`의 규칙을 따른다:
+이 스킬은 `.claude/vibe/rules/standards/git-workflow.md`의 규칙을 따른다:
 
 - Conventional Commits 한국어 형식
 - PR 체크리스트 항목 준수

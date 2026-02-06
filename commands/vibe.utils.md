@@ -235,7 +235,7 @@ Detect and remove unused code with audit trail.
 
 **Output:**
 - Removed items list
-- `.claude/core/DELETION_LOG.md` updated
+- `.claude/vibe/DELETION_LOG.md` updated
 - Build/test verification
 
 ---
@@ -282,10 +282,10 @@ Document solved problems for knowledge accumulation.
 **Usually auto-triggered by hooks when:**
 - "bug fixed", "PR merged" detected
 
-**Output location:** `.claude/core/solutions/`
+**Output location:** `.claude/vibe/solutions/`
 
 ```
-.claude/core/solutions/
+.claude/vibe/solutions/
 ├── security/           # Security solutions
 ├── performance/        # Performance optimizations
 ├── database/           # Database related

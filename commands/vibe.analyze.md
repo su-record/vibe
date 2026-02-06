@@ -185,7 +185,7 @@ Which approach would you like to use?
 
 ### Analysis Report
 
-`.claude/core/reports/analysis-{date}.md`:
+`.claude/vibe/reports/analysis-{date}.md`:
 
 ```markdown
 # Project Analysis Report

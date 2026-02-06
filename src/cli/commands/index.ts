@@ -12,3 +12,4 @@ export { init, updateCursorGlobalAssets } from './init.js';
 export { update, checkAndUpgradeVibe } from './update.js';
 export { remove } from './remove.js';
 export { showHelp, showStatus, showVersion } from './info.js';
+export { syncLogin, syncPush, syncPull, syncStatus, syncLogout } from './sync.js';

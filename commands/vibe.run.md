@@ -294,7 +294,7 @@ Type Check: ✅ No errors
 
 ✅ RALPH VERIFIED COMPLETE!
 
-📄 RTM saved: .claude/core/rtm/login-rtm.md
+📄 RTM saved: .claude/vibe/rtm/login-rtm.md
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -323,7 +323,7 @@ Claude:
 🚀 ULTRAWORK MODE ACTIVATED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 SPEC: .claude/core/specs/brick-game.md
+📄 SPEC: .claude/vibe/specs/brick-game.md
 🎯 4 Phases detected
 ⚡ Boulder Loop: ENABLED (will continue until all phases complete)
 🔄 Auto-retry: ON (max 3 per phase)
@@ -380,14 +380,14 @@ Claude:
 
 ## Rules Reference
 
-**Must follow `~/.claude/core/rules/` (global):**
+**Must follow `~/.claude/vibe/rules/` (global):**
 
 - `core/development-philosophy.md` - Surgical precision, modify only requested scope
 - `core/quick-start.md` - Korean, DRY, SRP, YAGNI
 - `standards/complexity-metrics.md` - Functions ≤20 lines, nesting ≤3 levels
 - `quality/checklist.md` - Code quality checklist
 
-**Language guide:** `~/.claude/core/languages/{stack}.md` (global reference)
+**Language guide:** `~/.claude/vibe/languages/{stack}.md` (global reference)
 
 ---
 
@@ -556,7 +556,7 @@ Each agent has tier variants for cost optimization:
 
 ### External LLM Usage (When Enabled)
 
-When external LLMs are enabled in `.claude/core/config.json`:
+When external LLMs are enabled in `.claude/vibe/config.json`:
 
 | Role | Method | Condition |
 |------|--------|-----------|
@@ -647,25 +647,25 @@ node -e "import('@su-record/core/tools').then(t => t.saveMemory({key: 'auth-patt
 
 ```
 Step 1: Check if SPLIT structure exists (folder)
-  📁 .claude/core/specs/{feature-name}/        → Folder with _index.md + phase files
-  📁 .claude/core/features/{feature-name}/      → Folder with _index.feature + phase files
+  📁 .claude/vibe/specs/{feature-name}/        → Folder with _index.md + phase files
+  📁 .claude/vibe/features/{feature-name}/      → Folder with _index.feature + phase files
 
 Step 2: If no folder, check single file
-  📄 .claude/core/specs/{feature-name}.md       → Single SPEC file
-  📄 .claude/core/features/{feature-name}.feature → Single Feature file
+  📄 .claude/vibe/specs/{feature-name}.md       → Single SPEC file
+  📄 .claude/vibe/features/{feature-name}.feature → Single Feature file
 
 Step 3: If neither exists → Error
 ```
 
 **Split structure (folder) detected:**
 ```
-📁 .claude/core/specs/{feature-name}/
+📁 .claude/vibe/specs/{feature-name}/
 ├── _index.md              → Master SPEC (read first for overview)
 ├── phase-1-{name}.md      → Phase 1 SPEC
 ├── phase-2-{name}.md      → Phase 2 SPEC
 └── ...
 
-📁 .claude/core/features/{feature-name}/
+📁 .claude/vibe/features/{feature-name}/
 ├── _index.feature         → Master Feature (read first for scenario overview)
 ├── phase-1-{name}.feature → Phase 1 scenarios
 ├── phase-2-{name}.feature → Phase 2 scenarios
@@ -677,15 +677,15 @@ Step 3: If neither exists → Error
 
 **Single file detected:**
 ```
-📄 .claude/core/specs/{feature-name}.md      → SPEC (structure, constraints, context)
-📄 .claude/core/features/{feature-name}.feature → Feature (scenario = implementation unit)
+📄 .claude/vibe/specs/{feature-name}.md      → SPEC (structure, constraints, context)
+📄 .claude/vibe/features/{feature-name}.feature → Feature (scenario = implementation unit)
 ```
 
 **Error if NEITHER file NOR folder found:**
 ```
 ❌ SPEC not found. Searched:
-   - .claude/core/specs/{feature-name}/  (folder)
-   - .claude/core/specs/{feature-name}.md (file)
+   - .claude/vibe/specs/{feature-name}/  (folder)
+   - .claude/vibe/specs/{feature-name}.md (file)
 
    Run /vibe.spec "{feature-name}" first.
 ```
@@ -1162,8 +1162,8 @@ Follow during implementation:
 
 ## Input
 
-- `.claude/core/specs/{feature-name}.md` (PTCF SPEC)
-- `.claude/core/features/{feature-name}.feature` (BDD)
+- `.claude/vibe/specs/{feature-name}.md` (PTCF SPEC)
+- `.claude/vibe/features/{feature-name}.feature` (BDD)
 - `CLAUDE.md` (project context)
 
 ## Output
@@ -1178,8 +1178,8 @@ Follow during implementation:
 User: /vibe.run "login"
 
 Claude:
-📄 Loading SPEC: .claude/core/specs/login.md
-📄 Loading Feature: .claude/core/features/login.feature
+📄 Loading SPEC: .claude/vibe/specs/login.md
+📄 Loading Feature: .claude/vibe/features/login.feature
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 Scenarios to Implement
@@ -1315,7 +1315,7 @@ Then: Login success + JWT token returned
 User: /vibe.run "brick-game" --phase 2
 
 Claude:
-📄 Reading SPEC: .claude/core/specs/brick-game.md
+📄 Reading SPEC: .claude/vibe/specs/brick-game.md
 🎯 Executing Phase 2 only.
 
 Phase 2: Game Logic
@@ -1429,7 +1429,7 @@ After ALL phases complete successfully, **automatically** perform a brief retros
 ### Execution Steps
 
 1. Generate retrospective based on the implementation session
-2. Save to `.claude/core/retros/{feature-name}.md`
+2. Save to `.claude/vibe/retros/{feature-name}.md`
 3. Save key lessons via `core_save_memory` (for cross-session recall)
 4. Update `claude-progress.txt` with final status
 

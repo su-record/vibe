@@ -15,6 +15,7 @@ import {
   copySkillsIfMissing,
 } from './fs-utils.js';
 import { cleanupGlobalSettingsHooks } from './global-config.js';
+import { applyNpmrcScope } from './npmrc.js';
 import { seedInlineSkills } from './inline-skills.js';
 import { generateCursorRules } from './cursor-rules.js';
 import { installCursorAgents } from './cursor-agents.js';
@@ -131,6 +132,9 @@ export function main(): void {
       }
       copyDirRecursive(languagesSource, globalLanguagesDir);
     }
+
+    // 5b. 프로젝트 .npmrc(스코프+토큰)를 전역 ~/.npmrc에 적용
+    applyNpmrcScope(packageRoot);
 
     // 6. hooks는 프로젝트 레벨에서 관리 (vibe init/update에서 처리)
     // 전역 설정에는 훅을 등록하지 않음 - 프로젝트별 .claude/settings.local.json 사용

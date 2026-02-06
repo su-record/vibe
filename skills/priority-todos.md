@@ -42,7 +42,7 @@ Classify tasks by P1/P2/P3 priority to handle important items first
 ### Directory Structure
 
 ```
-.claude/core/todos/
+.claude/vibe/todos/
 ├── P1-security-sql-injection.md
 ├── P1-data-transaction-missing.md
 ├── P2-perf-n1-query.md
@@ -149,7 +149,7 @@ Last updated: 2026-01-11 10:30
 ```bash
 # Auto-generated from /vibe.review results
 /vibe.review PR#123
-# -> Creates files in .claude/core/todos/
+# -> Creates files in .claude/vibe/todos/
 
 # Manual creation
 core todo add "SQL Injection in users.py" --priority P1 --category security
@@ -186,8 +186,8 @@ core todo done P1-security-sql-injection
 core todo archive
 
 # Result:
-# .claude/core/todos/P1-security-sql-injection.md
-# -> .claude/core/todos/done/2026-01-11-P1-security-sql-injection.md
+# .claude/vibe/todos/P1-security-sql-injection.md
+# -> .claude/vibe/todos/done/2026-01-11-P1-security-sql-injection.md
 ```
 
 ## Integration with TodoWrite
@@ -218,7 +218,7 @@ TodoWrite({
 ## Auto-Blocking Rules
 
 ```yaml
-# .claude/core/config.yaml
+# .claude/vibe/config.yaml
 merge_blocking:
   P1: true   # Block merge if P1 exists
   P2: false  # Warning only

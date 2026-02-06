@@ -109,7 +109,7 @@ function getData(): Promise<Response> {
 
 ## Rules Reference
 
-Must follow `~/.claude/core/rules/`:
+Must follow `~/.claude/vibe/rules/`:
 
 - `core/development-philosophy.md` - Surgical precision
 - `standards/anti-patterns.md` - Avoid over-engineering
