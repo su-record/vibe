@@ -423,11 +423,11 @@ node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Best practices 
 # 4. Gemini: Security
 node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 
-# 5. NVIDIA (Kimi): Code review patterns
-node "$CORE_SCRIPTS/llm-orchestrate.js" nvidia orchestrate-json "Code review patterns for [FEATURE] with [STACK]. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
+# 5. Kimi K2.5: Code review patterns
+node "$CORE_SCRIPTS/llm-orchestrate.js" kimi orchestrate-json "Code review patterns for [FEATURE] with [STACK]. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
 
-# 6. NVIDIA (Kimi): Architecture analysis
-node "$CORE_SCRIPTS/llm-orchestrate.js" nvidia orchestrate-json "Architecture analysis for [FEATURE] with [STACK]. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
+# 6. Kimi K2.5: Architecture analysis
+node "$CORE_SCRIPTS/llm-orchestrate.js" kimi orchestrate-json "Architecture analysis for [FEATURE] with [STACK]. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
 ```
 
 **Concrete example - run all 6 in parallel:**
@@ -444,11 +444,11 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 # Gemini security
 node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 
-# NVIDIA code review patterns
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json "Code review patterns for passkey authentication with React, Supabase. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
+# Kimi K2.5 code review patterns
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json "Code review patterns for passkey authentication with React, Supabase. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
 
-# NVIDIA architecture analysis
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json "Architecture analysis for passkey authentication with React, Supabase. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
+# Kimi K2.5 architecture analysis
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json "Architecture analysis for passkey authentication with React, Supabase. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
 ```
 
 **ALSO run Claude research agents in parallel using Task tool:**
@@ -460,9 +460,9 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 | `codebase-patterns-agent` | Similar patterns in existing codebase | Glob, Grep |
 | `security-advisory-agent` | Security advisories for [feature] | WebSearch |
 
-**Total: 6 GPT/Gemini/NVIDIA calls (Bash) + 4 Claude agents (Task) = 10 parallel research tasks**
+**Total: 6 GPT/Gemini/Kimi calls (Bash) + 4 Claude agents (Task) = 10 parallel research tasks**
 
-**🚨 GPT/Gemini/NVIDIA MUST be called via Bash with llm-orchestrate.js! 🚨**
+**🚨 GPT/Gemini/Kimi MUST be called via Bash with llm-orchestrate.js! 🚨**
 
 #### 3.0.1 Agent Teams — Research Collaboration (Experimental)
 
@@ -484,7 +484,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 │  └─ framework-docs-agent (최신 문서/API 변경사항)         │
 │                                                          │
 │  공유 Task List:                                          │
-│  □ GPT/Gemini/NVIDIA 리서치 결과 교차 검증                │
+│  □ GPT/Gemini/Kimi 리서치 결과 교차 검증                    │
 │  □ 상충되는 권장사항 토론 → 프로젝트에 맞는 결론 도출     │
 │  □ 보안 권고와 성능 권고가 충돌할 때 트레이드오프 분석     │
 │  □ 기존 코드베이스 패턴과 새 패턴의 호환성 검증           │
@@ -515,7 +515,7 @@ Team members and their synthesis roles:
 - framework-docs-agent: Verify recommendations against latest API/docs
 
 Tasks:
-1. Cross-validate findings: Where do GPT/Gemini/NVIDIA/Claude agree?
+1. Cross-validate findings: Where do GPT/Gemini/Kimi/Claude agree?
 2. Resolve conflicts: Where they disagree, which recommendation fits this project?
 3. Security gate: Do any best-practice recommendations introduce security risks?
 4. Codebase fit: Do recommendations align with existing patterns?
@@ -537,7 +537,7 @@ Tasks:
 - ❌ DO NOT skip research step
 - ❌ DO NOT ask user "should I run research?"
 - ✅ ALWAYS run after requirements confirmed
-- ✅ Show "Running parallel research (Claude + GPT + Gemini + NVIDIA)..." message
+- ✅ Show "Running parallel research (Claude + GPT + Gemini + Kimi)..." message
 - ✅ Include all agent + LLM results in SPEC Context
 - ✅ Run all 6 Bash LLM calls in parallel + 4 Task agents in parallel
 

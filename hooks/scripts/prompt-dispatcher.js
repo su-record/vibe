@@ -82,7 +82,7 @@ const DISPATCH_RULES = [
     label: 'e2e-echo',
   },
 
-  // 외부 LLM 호출 (GPT/Gemini/NVIDIA) - 패턴 매칭 필수
+  // 외부 LLM 호출 (GPT/Gemini/Kimi) - 패턴 매칭 필수
   {
     pattern: /아키텍처.*(검토|리뷰|분석)|architecture.*(review|analyz)|설계.*검토|구조.*분석.*해/i,
     script: 'llm-orchestrate.js',
