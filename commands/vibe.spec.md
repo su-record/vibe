@@ -402,7 +402,7 @@ Read ~/.claude/vibe/languages/typescript-react.md
 3. ✅ Language guide copied (step 2.5)
 4. ✅ Core requirements collected
 
-**→ IMMEDIATELY run these 4 Bash commands IN PARALLEL (all at once):**
+**→ IMMEDIATELY run these 6 Bash commands IN PARALLEL (all at once):**
 
 **🚨 MANDATORY: Copy the EXACT path below. DO NOT modify or use alternative paths.**
 
@@ -422,9 +422,15 @@ node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Best practices 
 
 # 4. Gemini: Security
 node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+
+# 5. NVIDIA (Kimi): Code review patterns
+node "$CORE_SCRIPTS/llm-orchestrate.js" nvidia orchestrate-json "Code review patterns for [FEATURE] with [STACK]. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
+
+# 6. NVIDIA (Kimi): Architecture analysis
+node "$CORE_SCRIPTS/llm-orchestrate.js" nvidia orchestrate-json "Architecture analysis for [FEATURE] with [STACK]. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
 ```
 
-**Concrete example - run all 4 in parallel:**
+**Concrete example - run all 6 in parallel:**
 ```bash
 # GPT best practices
 node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
@@ -437,6 +443,12 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 
 # Gemini security
 node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+
+# NVIDIA code review patterns
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json "Code review patterns for passkey authentication with React, Supabase. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
+
+# NVIDIA architecture analysis
+node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json "Architecture analysis for passkey authentication with React, Supabase. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
 ```
 
 **ALSO run Claude research agents in parallel using Task tool:**
@@ -448,9 +460,9 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 | `codebase-patterns-agent` | Similar patterns in existing codebase | Glob, Grep |
 | `security-advisory-agent` | Security advisories for [feature] | WebSearch |
 
-**Total: 4 GPT/Gemini calls (Bash) + 4 Claude agents (Task) = 8 parallel research tasks**
+**Total: 6 GPT/Gemini/NVIDIA calls (Bash) + 4 Claude agents (Task) = 10 parallel research tasks**
 
-**🚨 GPT/Gemini MUST be called via Bash with llm-orchestrate.js! 🚨**
+**🚨 GPT/Gemini/NVIDIA MUST be called via Bash with llm-orchestrate.js! 🚨**
 
 #### 3.1 Result Merge Rules
 
@@ -464,9 +476,9 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/c
 - ❌ DO NOT skip research step
 - ❌ DO NOT ask user "should I run research?"
 - ✅ ALWAYS run after requirements confirmed
-- ✅ Show "Running parallel research (Claude + GPT + Gemini)..." message
+- ✅ Show "Running parallel research (Claude + GPT + Gemini + NVIDIA)..." message
 - ✅ Include all agent + LLM results in SPEC Context
-- ✅ Run all 4 Bash LLM calls in parallel + 4 Task agents in parallel
+- ✅ Run all 6 Bash LLM calls in parallel + 4 Task agents in parallel
 
 **Research results are reflected in SPEC's Context section.**
 

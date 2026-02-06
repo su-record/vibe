@@ -82,7 +82,7 @@ const DISPATCH_RULES = [
     label: 'e2e-echo',
   },
 
-  // 외부 LLM 호출 (GPT/Gemini) - 패턴 매칭 필수
+  // 외부 LLM 호출 (GPT/Gemini/NVIDIA) - 패턴 매칭 필수
   {
     pattern: /아키텍처.*(검토|리뷰|분석)|architecture.*(review|analyz)|설계.*검토|구조.*분석.*해/i,
     script: 'llm-orchestrate.js',
@@ -107,6 +107,18 @@ const DISPATCH_RULES = [
     args: ['gemini', 'orchestrate', 'You are a code analysis expert. Review and analyze the code.'],
     label: 'gemini-analysis',
   },
+  {
+    pattern: /코드.*리뷰|code.*review|PR.*리뷰|리뷰.*해줘.*코드/i,
+    script: 'llm-orchestrate.js',
+    args: ['nvidia', 'orchestrate', 'You are a code review expert. Review the code for best practices, security, and performance.'],
+    label: 'nvidia-codereview',
+  },
+  {
+    pattern: /추론.*해|reasoning|복잡.*분석|deep.*analysis/i,
+    script: 'llm-orchestrate.js',
+    args: ['nvidia', 'orchestrate', 'You are a reasoning expert. Analyze the problem deeply and provide detailed reasoning.'],
+    label: 'nvidia-reasoning',
+  },
 
   // 테스트용
   {
@@ -120,6 +132,12 @@ const DISPATCH_RULES = [
     script: 'llm-orchestrate.js',
     args: ['gemini', 'orchestrate', 'You are a helpful assistant. Answer the user\'s question clearly and concisely.'],
     label: 'test-gemini',
+  },
+  {
+    pattern: /^test-nvidia/i,
+    script: 'llm-orchestrate.js',
+    args: ['nvidia', 'orchestrate', 'You are a helpful assistant. Answer the user\'s question clearly and concisely.'],
+    label: 'test-nvidia',
   },
 ];
 

@@ -1,5 +1,5 @@
 /**
- * UserPromptSubmit Hook - LLM 오케스트레이션 (GPT/Gemini)
+ * UserPromptSubmit Hook - LLM 오케스트레이션 (GPT/Gemini/NVIDIA)
  *
  * Usage:
  *   node llm-orchestrate.js <provider> <mode> "prompt"

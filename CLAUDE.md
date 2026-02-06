@@ -1,4 +1,4 @@
-# CORE
+# VIBE
 
 SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.1.0
 
@@ -17,9 +17,9 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.1.0
 | Guardrail | Mechanism |
 |-----------|-----------|
 | Type Safety | Quality Gate (`any`/`Any` 차단) |
-| Code Review | Race Review (GPT + Gemini 병렬) |
+| Code Review | Race Review (GPT + Gemini + NVIDIA 병렬) |
 | Completion Check | Ralph Loop (100%까지 반복) |
-| Multi-LLM | 4개 관점 검증 (Claude + GPT + Gemini + Kimi) |
+| Multi-LLM | 4개 관점 검증 (Claude + GPT + Gemini + NVIDIA) |
 
 ### User's Role (6번 Iterative-Reasoning Type)
 
@@ -81,10 +81,10 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 /vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → Done
 ```
 
-1. `/vibe.spec` - Write SPEC (requirements + research + draft)
+1. `/vibe.spec` - Write SPEC (requirements + research + draft) + 6개 LLM 병렬 리서치
 2. `/new` - Start new session (clean context)
-3. `/vibe.spec.review` - GPT/Gemini review (3-round mandatory)
-4. `/vibe.run` - Implementation + Gemini review
+3. `/vibe.spec.review` - GPT/Gemini/NVIDIA review (3-round mandatory)
+4. `/vibe.run` - Implementation + GPT/Gemini/NVIDIA Race Review
 5. **(auto)** 13+ agent parallel review + P1/P2 auto-fix
 
 **모든 명령어는 시작/종료 시 `getCurrentTime`을 호출하여 소요 시간을 표시합니다.**
@@ -248,14 +248,14 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 ## Multi-LLM Orchestration (v0.1.0)
 
-4개 LLM(Claude + GPT + Gemini + Kimi) 멀티 오케스트레이션 시스템.
+4개 LLM(Claude + GPT + Gemini + NVIDIA) 멀티 오케스트레이션 시스템.
 
 ### Core Modules
 
 | Module | Purpose |
 |--------|---------|
 | `SmartRouter` | Task 유형별 최적 LLM 선택 + fallback chain |
-| `LLMCluster` | 병렬 멀티 LLM 호출 (GPT + Gemini + Kimi) |
+| `LLMCluster` | 병렬 멀티 LLM 호출 (GPT + Gemini + NVIDIA) |
 | `AgentRegistry` | SQLite 기반 에이전트 실행 추적 (WAL mode) |
 | `AllProvidersFailedError` | 모든 프로바이더 실패 시 구조화된 에러 |
 
@@ -263,16 +263,25 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 | Task Type | Priority Order |
 |-----------|---------------|
-| code-analysis, code-review, reasoning | Kimi → GPT → Gemini → Claude |
-| architecture, debugging | GPT → Kimi → Gemini → Claude |
+| code-analysis, code-review | NVIDIA (Devstral-2) → GPT → Gemini → Claude |
+| reasoning, architecture | NVIDIA (Kimi K2 Thinking) → GPT → Gemini → Claude |
+| code-gen | NVIDIA (Qwen3 Coder) → GPT → Gemini → Claude |
+| debugging | NVIDIA (DeepSeek V3.2) → GPT → Gemini → Claude |
 | uiux, web-search | Gemini → GPT → Claude |
-| code-gen, general | Claude |
+| general | Claude |
 
-### Kimi Integration
+### NVIDIA NIM Integration
 
-- API: `https://api.moonshot.ai/v1/chat/completions` (OpenAI 호환)
-- Model: `kimi-k2.5` (256K context, 기본값)
-- Auth: `MOONSHOT_API_KEY` 환경변수 또는 `vibe kimi key <key>`
+- API: `https://integrate.api.nvidia.com/v1` (무료)
+- Models:
+  - `kimi-k2.5` (256K context, 범용)
+  - `kimi-k2-thinking` (추론/아키텍처)
+  - `kimi-k2-instruct` (코딩/에이전트)
+  - `deepseek-v3.2` (685B, 디버깅)
+  - `qwen3-coder` (480B MoE, 코드 생성)
+  - `devstral-2` (123B, 코드 리뷰)
+  - `nv-embed` (임베딩, 26개 언어)
+- Auth: `NVIDIA_API_KEY` 환경변수 또는 `vibe nvidia key <key>`
 - Timeout: 30초/provider, 3회 재시도 (지수 백오프)
 
 ## Agents
@@ -346,4 +355,4 @@ best-practices, framework-docs, codebase-patterns, security-advisory → `agents
 
 **Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
 
-<!-- CORE:END -->
+<!-- VIBE:END -->

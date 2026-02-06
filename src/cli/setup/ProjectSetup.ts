@@ -134,8 +134,9 @@ export function updateClaudeMd(
       // --- 구분자와 빈 줄을 모두 제거하고 실제 내용 확인
       const cleanedAfterCore = afterCore.replace(/^(-{3,}\s*\n*)+/g, '').trimStart();
 
-      // CORE 관련 키워드가 있으면 중복으로 판단하여 버림
-      const isCoreContent = cleanedAfterCore.startsWith('# CORE') ||
+      // VIBE 관련 키워드가 있으면 중복으로 판단하여 버림
+      const isCoreContent = cleanedAfterCore.startsWith('# VIBE') ||
+                           cleanedAfterCore.startsWith('# CORE') ||
                            cleanedAfterCore.startsWith('## Rule Title') ||
                            cleanedAfterCore.startsWith('## Response Language') ||
                            cleanedAfterCore.startsWith('## Code Quality') ||

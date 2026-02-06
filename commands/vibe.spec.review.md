@@ -172,22 +172,22 @@ Score: 96/100 ✅ PASSED
 
 ---
 
-## Step 3: Race Review (GPT + Gemini Cross-Validation) - 3 Rounds (v2.6.9)
+## Step 3: Race Review (GPT + Gemini + NVIDIA Cross-Validation) - 3 Rounds (v2.6.9)
 
 **🚨🚨🚨 CRITICAL: YOU MUST EXECUTE ALL 3 ROUNDS. DO NOT SKIP THIS STEP. 🚨🚨🚨**
 
 **🚨 ABSOLUTE RULES FOR RACE REVIEW:**
 
 1. **YOU MUST** use the Bash tool to call `llm-orchestrate.js` directly
-2. **DO NOT** skip GPT/Gemini calls
+2. **DO NOT** skip GPT/Gemini/NVIDIA calls
 3. **DO NOT** simulate or fake review results
 4. **YOU MUST** run all 3 rounds sequentially (each round uses updated SPEC)
 
-> Race Mode reviews SPEC with both GPT and Gemini in parallel, then cross-validates findings for higher confidence.
+> Race Mode reviews SPEC with GPT, Gemini, and NVIDIA (Kimi) in parallel, then cross-validates findings for higher confidence.
 
 ### 3.1 Review Loop (3 Rounds)
 
-**For EACH round (1, 2, 3), run GPT + Gemini in PARALLEL via Bash tool.**
+**For EACH round (1, 2, 3), run GPT + Gemini + NVIDIA in PARALLEL via Bash tool.**
 
 **🚨 IMPORTANT: SPEC content is too large for CLI arguments. Use stdin pipe method.**
 
@@ -196,7 +196,7 @@ Score: 96/100 ✅ PASSED
 **Step A: Save SPEC content to scratchpad temp file (using Write tool):**
 - Write the SPEC content to `[SCRATCHPAD]/spec-content.txt`
 
-**Step B: Run GPT + Gemini in PARALLEL (two separate Bash tool calls at once):**
+**Step B: Run GPT + Gemini + NVIDIA in PARALLEL (three separate Bash tool calls at once):**
 
 ```bash
 # GPT review (Bash tool call 1)
@@ -208,9 +208,14 @@ node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC
 node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 ```
 
+```bash
+# NVIDIA (Kimi) review (Bash tool call 3 - run in parallel with GPT/Gemini)
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json
+```
+
 **🚨 MANDATORY: Replace `[SCRATCHPAD]` with the actual scratchpad directory path.**
 **🚨 Replace `[N]` with the current round number (1, 2, or 3).**
-**🚨 Run GPT and Gemini calls in PARALLEL (two separate Bash tool calls at once).**
+**🚨 Run GPT, Gemini, and NVIDIA calls in PARALLEL (three separate Bash tool calls at once).**
 
 - Round 1: Write SPEC → Run GPT + Gemini in parallel → Cross-validate → Apply fixes → Update SPEC file
 - Round 2: Write updated SPEC → Run → Cross-validate → Apply fixes → Update SPEC file
@@ -220,12 +225,13 @@ node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC
 
 | Agreement | Priority | Action |
 |-----------|----------|--------|
-| Both GPT + Gemini agree (100%) | P1 | Auto-apply immediately |
-| One model only (50%) | P2 | Auto-apply with note |
+| All 3 models agree (100%) | P1 | Auto-apply immediately |
+| 2 of 3 models agree (67%) | P1 | Auto-apply immediately |
+| 1 model only (33%) | P2 | Auto-apply with note |
 
 **After each round:**
 
-1. Cross-validate findings (issues found by both → P1, single model → P2)
+1. Cross-validate findings (issues found by 2+ models → P1, single model → P2)
 2. Merge feedback with confidence scores
 3. Auto-apply P1/P2 improvements to SPEC and Feature files (use Edit tool)
 4. Continue to next round with updated SPEC content
@@ -245,8 +251,9 @@ node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC
 
 | # | 변경 내용 | 출처 | 신뢰도 |
 |---|----------|------|--------|
-| 1 | {변경1} | GPT+Gemini | 100% |
-| 2 | {변경2} | GPT only | 50% |
+| 1 | {변경1} | GPT+Gemini+NVIDIA | 100% |
+| 2 | {변경2} | GPT+Gemini | 67% |
+| 3 | {변경3} | GPT only | 33% |
 | ... | ... | ... | ... |
 
 질문:

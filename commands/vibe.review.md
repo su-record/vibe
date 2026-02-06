@@ -61,7 +61,7 @@ security-review:
 ## SECURITY Review (Race Mode)
 
 **Duration**: 3420ms
-**Models**: GPT-5.2-Codex, Gemini-3-Flash
+**Models**: GPT-5.2-Codex, Gemini-3-Flash, NVIDIA Kimi K2
 
 ### Model Results
 
@@ -69,22 +69,23 @@ security-review:
 |-------|--------------|----------|--------|
 | gpt | 3 | 1823ms | OK |
 | gemini | 2 | 2156ms | OK |
+| nvidia | 3 | 1950ms | OK |
 
 ### Cross-Validated Issues
 
-**Summary**: 4 issues (P1: 1, P2: 2, P3: 1)
-**Consensus Rate**: 75%
+**Summary**: 4 issues (P1: 2, P2: 1, P3: 1)
+**Consensus Rate**: 83%
 
 #### 🔴 P1 - SQL Injection in user query
 
-- **Confidence**: 100% (gpt, gemini)
+- **Confidence**: 100% (gpt, gemini, nvidia)
 - **Severity**: critical
 - **Location**: `src/api/users.ts:42`
 - **Suggestion**: Use parameterized queries
 
-#### 🟡 P2 - XSS vulnerability in render
+#### 🔴 P1 - XSS vulnerability in render
 
-- **Confidence**: 50% (gpt)
+- **Confidence**: 67% (gpt, nvidia)
 - **Severity**: high
 - **Location**: `src/components/Comment.tsx:15`
 ```
@@ -98,12 +99,12 @@ security-review:
 | Quick iteration | ❌ Standard review |
 | API cost concerns | ❌ Standard review |
 
-### Tool Invocation (Race Mode - GPT + Gemini in parallel via Bash)
+### Tool Invocation (Race Mode - GPT + Gemini + NVIDIA in parallel via Bash)
 
 **🚨 Use stdin pipe to avoid CLI argument length limits on Windows.**
 
 1. Save code to review into `[SCRATCHPAD]/review-code.txt` (using Write tool)
-2. Run GPT + Gemini in PARALLEL (two Bash tool calls at once):
+2. Run GPT + Gemini + NVIDIA in PARALLEL (three Bash tool calls at once):
 
 ```bash
 # GPT review (Bash tool call 1)
@@ -113,6 +114,11 @@ node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code
 ```bash
 # Gemini review (Bash tool call 2 - run in parallel)
 node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+```
+
+```bash
+# NVIDIA (Kimi) review (Bash tool call 3 - run in parallel)
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json
 ```
 
 ## Priority System

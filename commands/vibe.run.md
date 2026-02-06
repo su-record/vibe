@@ -1042,12 +1042,12 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Race Review Invocation (GPT + Gemini in parallel via Bash):**
+**Race Review Invocation (GPT + Gemini + NVIDIA in parallel via Bash):**
 
 **🚨 Use stdin pipe to avoid CLI argument length limits on Windows.**
 
 1. Save code to review into `[SCRATCHPAD]/review-code.txt` (using Write tool)
-2. Run GPT + Gemini in PARALLEL (two Bash tool calls at once):
+2. Run GPT + Gemini + NVIDIA in PARALLEL (three Bash tool calls at once):
 
 ```bash
 # GPT review (Bash tool call 1)
@@ -1059,16 +1059,22 @@ node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code
 node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
 ```
 
+```bash
+# NVIDIA (Kimi) review (Bash tool call 3 - run in parallel)
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/core/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json
+```
+
 **Confidence-based Priority:**
 
 | Confidence | Priority | Action |
 |------------|----------|--------|
-| 100% (2/2) | P1 | Auto-fix immediately |
-| 50% (1/2) | P2 | Auto-fix with review |
+| 100% (3/3) | P1 | Auto-fix immediately |
+| 67% (2/3) | P1 | Auto-fix immediately |
+| 33% (1/3) | P2 | Auto-fix with review |
 
 **Fallback handling:**
-- If one LLM fails → Use single LLM result (reduced confidence)
-- If both fail → Skip and proceed (log warning)
+- If one LLM fails → Use remaining LLM results (reduced confidence)
+- If all fail → Skip and proceed (log warning)
 
 **Review application rules:**
 
@@ -1114,7 +1120,7 @@ After all scenarios complete + Gemini review, **quality report is auto-generated
 │  │ Type check        │ ✅     │ 0 errors                    │    │
 │  │ Complexity        │ ✅     │ All functions ≤30 lines     │    │
 │  │ Security          │ ✅     │ 0 vulnerabilities           │    │
-│  │ Gemini review     │ ✅     │ 3 improvements applied      │    │
+│  │ Race review       │ ✅     │ 3 improvements applied      │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  ⏱️ Started: {start_time}                                        │
