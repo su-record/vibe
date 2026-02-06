@@ -23,8 +23,7 @@ const AUTH_FILES = [
   'gemini-apikey.json',
   'gpt-auth.json',
   'gpt-apikey.json',
-  'nvidia-apikey.json',
-  'kimi-apikey.json',
+  'az-apikey.json',
 ];
 
 function getClaudeVibeDir(): string {

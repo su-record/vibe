@@ -1,5 +1,5 @@
 /**
- * NVIDIA NIM API 타입 정의
+ * Azure Foundry API 타입 정의
  */
 
 export interface AuthInfo {
@@ -28,10 +28,10 @@ export interface ChatResponse {
   finishReason: string;
 }
 
-export interface VibeNvidiaOptions {
+export interface VibeAzOptions {
   maxTokens?: number;
   jsonMode?: boolean;
-  taskType?: import('../nvidia-constants.js').NvidiaTaskType;
+  taskType?: import('../az-constants.js').AzTaskType;
 }
 
 export interface EmbeddingResponse {
@@ -39,6 +39,3 @@ export interface EmbeddingResponse {
   model: string;
 }
 
-// 하위 호환
-/** @deprecated Use VibeNvidiaOptions */
-export type VibeKimiOptions = VibeNvidiaOptions;

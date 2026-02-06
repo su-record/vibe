@@ -1,6 +1,6 @@
 /**
- * NVIDIA NIM 인증 관리
- * API Key only (nvapi- 접두사)
+ * Azure Foundry 인증 관리
+ * API Key only
  */
 
 import path from 'path';
@@ -19,32 +19,13 @@ function getGlobalConfigDir(): string {
 function getApiKeyFromConfig(): string | null {
   const configDir = getGlobalConfigDir();
 
-  // 1. nvidia-apikey.json (새 경로)
   try {
-    const keyPath = path.join(configDir, 'nvidia-apikey.json');
+    const keyPath = path.join(configDir, 'az-apikey.json');
     if (fs.existsSync(keyPath)) {
       const data: unknown = JSON.parse(fs.readFileSync(keyPath, 'utf-8'));
       if (data && typeof data === 'object' && 'apiKey' in data) {
         const apiKey = (data as { apiKey: unknown }).apiKey;
         if (typeof apiKey === 'string') return apiKey;
-      }
-    }
-  } catch { /* ignore */ }
-
-  // 2. kimi-apikey.json (하위 호환 — 마이그레이션)
-  try {
-    const legacyPath = path.join(configDir, 'kimi-apikey.json');
-    if (fs.existsSync(legacyPath)) {
-      const data: unknown = JSON.parse(fs.readFileSync(legacyPath, 'utf-8'));
-      if (data && typeof data === 'object' && 'apiKey' in data) {
-        const apiKey = (data as { apiKey: unknown }).apiKey;
-        if (typeof apiKey === 'string') {
-          // 새 경로로 마이그레이션
-          const newPath = path.join(configDir, 'nvidia-apikey.json');
-          fs.writeFileSync(newPath, JSON.stringify({ apiKey, createdAt: new Date().toISOString() }, null, 2), { mode: 0o600 });
-          fs.unlinkSync(legacyPath);
-          return apiKey;
-        }
       }
     }
   } catch { /* ignore */ }
@@ -56,8 +37,8 @@ function getApiKeyFromConfig(): string | null {
  * 인증 정보 가져오기 (환경변수 → 저장 파일)
  */
 export async function getAuthInfo(): Promise<AuthInfo> {
-  // 1. 환경변수 확인 (NVIDIA_API_KEY → MOONSHOT_API_KEY → KIMI_API_KEY)
-  const envKey = process.env.NVIDIA_API_KEY || process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY;
+  // 환경변수 확인
+  const envKey = process.env.AZ_API_KEY;
   if (envKey) {
     return { type: 'apikey', apiKey: envKey };
   }
@@ -68,7 +49,7 @@ export async function getAuthInfo(): Promise<AuthInfo> {
     return { type: 'apikey', apiKey: storedKey };
   }
 
-  throw new Error('NVIDIA NIM credentials not found. Run "vibe nvidia key <nvapi-xxx>" or set NVIDIA_API_KEY env variable.');
+  throw new Error('Azure Foundry credentials not found. Run "vibe az key <api-key>" or set AZ_API_KEY env variable.');
 }
 
 /**

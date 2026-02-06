@@ -1,0 +1,48 @@
+{
+  "name": "command-safety",
+  "version": "1.0.0",
+  "type": "safety",
+  "enabled": true,
+  "rules": [
+    {
+      "id": "cs-001",
+      "description": "Block rm -rf",
+      "condition": { "action.command": { "regex": "rm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|--recursive)\\s" } },
+      "effect": "reject",
+      "message": "Recursive force delete is not allowed",
+      "severity": "critical"
+    },
+    {
+      "id": "cs-002",
+      "description": "Block sudo commands",
+      "condition": { "action.command": { "regex": "^\\s*sudo\\s" } },
+      "effect": "reject",
+      "message": "Sudo commands are not allowed",
+      "severity": "critical"
+    },
+    {
+      "id": "cs-003",
+      "description": "Block chmod 777",
+      "condition": { "action.command": { "contains": "chmod 777" } },
+      "effect": "reject",
+      "message": "Setting world-writable permissions is not allowed",
+      "severity": "high"
+    },
+    {
+      "id": "cs-004",
+      "description": "Warn on git push --force",
+      "condition": { "action.command": { "regex": "git\\s+push\\s+.*--force" } },
+      "effect": "warn",
+      "message": "Force push detected - this can overwrite remote history",
+      "severity": "high"
+    },
+    {
+      "id": "cs-005",
+      "description": "Warn on npm publish",
+      "condition": { "action.command": { "regex": "npm\\s+publish" } },
+      "effect": "warn",
+      "message": "Publishing package to npm",
+      "severity": "medium"
+    }
+  ]
+}

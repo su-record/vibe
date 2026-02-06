@@ -12,7 +12,7 @@ import { ProfileFileLock } from './ProfileFileLock.js';
 // Types
 // ============================================
 
-export type AuthProfileProvider = 'gpt' | 'gemini' | 'nvidia';
+export type AuthProfileProvider = 'gpt' | 'gemini' | 'az';
 
 export interface AuthProfile {
   id: string;

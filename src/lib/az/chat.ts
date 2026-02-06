@@ -1,19 +1,18 @@
 /**
- * NVIDIA NIM Chat API
- * 모든 모델이 integrate.api.nvidia.com/v1/chat/completions 사용
+ * Kimi K2.5 Chat API (Azure Foundry)
+ * 엔드포인트: fallingo-ai-foundry.services.ai.azure.com/openai/v1/chat/completions
  */
 
 import { getAuthInfo } from './auth.js';
 import {
-  NVIDIA_BASE_URL,
-  NVIDIA_MODELS,
-  NVIDIA_DEFAULT_MODEL,
-  NVIDIA_MODEL_MAP,
-  isThinkingModel,
+  AZ_BASE_URL,
+  AZ_MODELS,
+  AZ_DEFAULT_MODEL,
+  AZ_MODEL_MAP,
   getModelConfig,
-} from '../nvidia-constants.js';
+} from '../az-constants.js';
 import type { ChatOptions, ChatResponse, ChatMessage } from './types.js';
-import type { NvidiaModelMeta } from '../nvidia-constants.js';
+import type { AzModelMeta } from '../az-constants.js';
 
 const API_TIMEOUT_MS = 60_000;
 
@@ -31,7 +30,7 @@ function sleep(ms: number): Promise<void> {
 
 async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<ChatResponse> {
   const {
-    model = NVIDIA_DEFAULT_MODEL,
+    model = AZ_DEFAULT_MODEL,
     messages = [],
     maxTokens = 4096,
     temperature,
@@ -49,14 +48,11 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     apiMessages.push({ role: msg.role, content: msg.content });
   }
 
-  const actualModel = NVIDIA_MODEL_MAP[model] || model;
+  const actualModel = AZ_MODEL_MAP[model] || model;
   const modelConfig = getModelConfig(model);
 
   // temperature: 사용자 지정 → 모델 권장값
-  const useThinking = isThinkingModel(model);
-  const effectiveTemp = temperature ?? modelConfig.recommendedTemp;
-  // thinking 모델은 최소 1.0
-  const finalTemp = useThinking ? Math.max(effectiveTemp, 1.0) : effectiveTemp;
+  const finalTemp = temperature ?? modelConfig.recommendedTemp;
 
   const requestBody: Record<string, unknown> = {
     model: actualModel,
@@ -65,16 +61,11 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     temperature: finalTemp,
   };
 
-  // Kimi K2 계열: chat_template_kwargs
-  if (modelConfig.thinking !== undefined) {
-    requestBody.chat_template_kwargs = { thinking: modelConfig.thinking };
-  }
-
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+    const response = await fetch(`${AZ_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -94,7 +85,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
         return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
       }
 
-      let errorMessage = `NVIDIA NIM API error (${response.status})`;
+      let errorMessage = `AZ API error (${response.status})`;
       try {
         const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
         if (errorJson.error?.message) {
@@ -115,7 +106,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     };
   } catch (error) {
     if ((error as Error).name === 'AbortError') {
-      throw new Error(`NVIDIA NIM API timeout (${API_TIMEOUT_MS / 1000}s)`);
+      throw new Error(`AZ API timeout (${API_TIMEOUT_MS / 1000}s)`);
     }
     if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
       const delay = Math.pow(2, retryCount) * 2000;
@@ -129,7 +120,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 }
 
 /**
- * NVIDIA NIM 채팅 요청
+ * Azure Foundry 채팅 요청
  */
 export async function chat(options: ChatOptions): Promise<ChatResponse> {
   const auth = await getAuthInfo();
@@ -157,9 +148,9 @@ export async function quickAsk(prompt: string): Promise<string> {
 /**
  * 사용 가능한 모델 목록
  */
-export function getAvailableModels(): NvidiaModelMeta[] {
-  return Object.values(NVIDIA_MODELS);
+export function getAvailableModels(): AzModelMeta[] {
+  return Object.values(AZ_MODELS);
 }
 
-export { NVIDIA_MODELS };
+export { AZ_MODELS };
 export type { ChatMessage };

@@ -161,18 +161,18 @@ export interface OrchestratorToolResult extends ToolResult {
 
 /** 작업 유형 - LLM 선택에 사용 */
 export type TaskType =
-  | 'architecture'    // 아키텍처 분석/리뷰 → GPT 우선
-  | 'debugging'       // 디버깅 → GPT 우선
+  | 'architecture'    // 아키텍처 분석/리뷰 → AZ (Kimi K2.5) 우선
+  | 'debugging'       // 디버깅 → AZ (Kimi K2.5) 우선
   | 'uiux'           // UI/UX 분석 → Gemini 우선
-  | 'code-analysis'  // 코드 분석 → Gemini 우선
-  | 'code-gen'       // 코드 생성 → Claude 직접
-  | 'web-search'     // 웹 검색 → GPT/Gemini
-  | 'general'        // 일반 → Claude 직접
-  | 'code-review'    // 코드 리뷰 → NVIDIA (devstral-2) 우선
-  | 'reasoning';     // 추론 → NVIDIA (kimi-k2-thinking) 우선
+  | 'code-analysis'  // 코드 분석 → AZ (Kimi K2.5) 우선
+  | 'code-gen'       // 코드 생성 → AZ (Kimi K2.5) 우선
+  | 'web-search'     // 웹 검색 → Gemini 우선
+  | 'general'        // 일반 → AZ (Kimi K2.5) 우선
+  | 'code-review'    // 코드 리뷰 → AZ (Kimi K2.5) 우선
+  | 'reasoning';     // 추론 → AZ (Kimi K2.5) 우선
 
 /** LLM 제공자 */
-export type LLMProvider = 'gpt' | 'gemini' | 'claude' | 'nvidia';
+export type LLMProvider = 'gpt' | 'gemini' | 'claude' | 'az';
 
 /** 스마트 라우팅 요청 */
 export interface SmartRouteRequest {
@@ -203,22 +203,23 @@ export interface SmartRouteResult {
 export interface LLMAvailabilityCache {
   gpt: { available: boolean; checkedAt: number; errorCount: number };
   gemini: { available: boolean; checkedAt: number; errorCount: number };
-  nvidia: { available: boolean; checkedAt: number; errorCount: number };
+  az: { available: boolean; checkedAt: number; errorCount: number };
 }
 
 /**
  * 작업 유형별 LLM 우선순위
- * - NVIDIA NIM (무료) → GPT/Gemini (유료, 등록 시 1순위로 승격) → Claude (기본)
+ * - AZ (Kimi K2.5) → GPT/Gemini → Claude (기본)
+ * - 현재 Azure Foundry에 Kimi K2.5만 배포되어 모든 태스크 → Kimi K2.5
  * - GPT/Gemini 키 등록 시 SmartRouter에서 동적으로 우선순위 조정
  */
 export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
-  'architecture': ['nvidia', 'gpt', 'gemini', 'claude'],
-  'debugging': ['nvidia', 'gpt', 'gemini', 'claude'],
-  'uiux': ['gemini', 'nvidia', 'gpt', 'claude'],
-  'code-analysis': ['nvidia', 'gemini', 'gpt', 'claude'],
-  'code-gen': ['nvidia', 'claude'],
-  'web-search': ['gemini', 'nvidia', 'gpt', 'claude'],
-  'general': ['nvidia', 'claude'],
-  'code-review': ['nvidia', 'gpt', 'gemini', 'claude'],
-  'reasoning': ['nvidia', 'gpt', 'gemini', 'claude'],
+  'architecture': ['az', 'gpt', 'gemini', 'claude'],
+  'debugging': ['az', 'gpt', 'gemini', 'claude'],
+  'uiux': ['gemini', 'az', 'gpt', 'claude'],
+  'code-analysis': ['az', 'gemini', 'gpt', 'claude'],
+  'code-gen': ['az', 'claude'],
+  'web-search': ['gemini', 'az', 'gpt', 'claude'],
+  'general': ['az', 'claude'],
+  'code-review': ['az', 'gpt', 'gemini', 'claude'],
+  'reasoning': ['az', 'gpt', 'gemini', 'claude'],
 };

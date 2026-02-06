@@ -25,8 +25,8 @@ import {
   geminiAuth,
   geminiStatus,
   geminiLogout,
-  nvidiaStatus,
-  nvidiaLogout,
+  azStatus,
+  azLogout,
 } from './llm.js';
 import {
   showHud,
@@ -37,7 +37,7 @@ import {
   resetHud,
   showHudHelp,
 } from './hud.js';
-import { init, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout } from './commands/index.js';
+import { init, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStart, telegramStop, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp } from './commands/index.js';
 
 // ============================================================================
 // Constants
@@ -213,35 +213,35 @@ Auth order: gemini-cli(auto) → oauth → apikey
     break;
   }
 
-  // vibe nvidia <subcommand>
-  case 'nvidia': {
+  // vibe az <subcommand>
+  case 'az': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
       case 'key': {
-        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'nvidia' && a !== 'key');
+        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'az' && a !== 'key');
         if (apiKey) {
-          setupExternalLLM('nvidia', apiKey);
+          setupExternalLLM('az', apiKey);
         } else {
-          console.log('Usage: vibe nvidia key <NVIDIA_API_KEY>');
+          console.log('Usage: vibe az key <AZ_API_KEY>');
         }
         break;
       }
       case 'logout':
-        nvidiaLogout();
+        azLogout();
         break;
       case 'remove':
-        removeExternalLLM('nvidia');
+        removeExternalLLM('az');
         break;
       case 'status':
-        nvidiaStatus();
+        azStatus();
         break;
       default:
         console.log(`
-NVIDIA NIM Commands:
-  vibe nvidia key <key>   Set NVIDIA API key (nvapi-xxx)
-  vibe nvidia status      Check status & available models
-  vibe nvidia logout      Remove key
-  vibe nvidia remove      Remove config
+AZ Commands:
+  vibe az key <key>     Set Azure Foundry API key
+  vibe az status        Check status & available models
+  vibe az logout        Remove key
+  vibe az remove        Remove config
         `);
     }
     break;
@@ -250,6 +250,172 @@ NVIDIA NIM Commands:
   case 'status':
     showStatus();
     break;
+
+  // vibe daemon <subcommand>
+  case 'daemon': {
+    const daemonSub = positionalArgs[1];
+    switch (daemonSub) {
+      case 'start':
+        daemonStart();
+        break;
+      case 'stop':
+        daemonStop();
+        break;
+      case 'status':
+        daemonStatus();
+        break;
+      case 'restart':
+        daemonRestart();
+        break;
+      case 'help':
+        daemonHelp();
+        break;
+      default:
+        daemonHelp();
+    }
+    break;
+  }
+
+  // vibe job <subcommand>
+  case 'job': {
+    const jobSub = positionalArgs[1];
+    switch (jobSub) {
+      case 'list':
+        jobList();
+        break;
+      case 'status':
+        jobStatus(positionalArgs[2]);
+        break;
+      case 'cancel':
+        jobCancel(positionalArgs[2]);
+        break;
+      case 'help':
+        jobHelp();
+        break;
+      default:
+        jobHelp();
+    }
+    break;
+  }
+
+  // vibe policy <subcommand>
+  case 'policy': {
+    const policySub = positionalArgs[1];
+    switch (policySub) {
+      case 'list':
+        policyList();
+        break;
+      case 'enable':
+        policyEnable(positionalArgs[2]);
+        break;
+      case 'disable':
+        policyDisable(positionalArgs[2]);
+        break;
+      case 'set':
+        policySet(positionalArgs[2], positionalArgs[3]);
+        break;
+      case 'help':
+        policyHelp();
+        break;
+      default:
+        policyHelp();
+    }
+    break;
+  }
+
+  // vibe telegram <subcommand>
+  case 'telegram': {
+    const telegramSub = positionalArgs[1];
+    switch (telegramSub) {
+      case 'setup':
+        telegramSetup(positionalArgs[2]);
+        break;
+      case 'chat':
+        telegramChat(positionalArgs[2]);
+        break;
+      case 'start':
+        telegramStart();
+        break;
+      case 'stop':
+        telegramStop();
+        break;
+      case 'status':
+        telegramStatus();
+        break;
+      case 'help':
+        telegramHelp();
+        break;
+      default:
+        telegramHelp();
+    }
+    break;
+  }
+
+  // vibe interface <subcommand>
+  case 'interface': {
+    const ifaceSub = positionalArgs[1];
+    switch (ifaceSub) {
+      case 'list':
+        interfaceList();
+        break;
+      case 'enable':
+        interfaceEnable(positionalArgs[2]);
+        break;
+      case 'disable':
+        interfaceDisable(positionalArgs[2]);
+        break;
+      case 'help':
+        interfaceHelp();
+        break;
+      default:
+        interfaceHelp();
+    }
+    break;
+  }
+
+  // vibe webhook <subcommand>
+  case 'webhook': {
+    const webhookSub = positionalArgs[1];
+    switch (webhookSub) {
+      case 'add':
+        webhookAdd(positionalArgs[2], positionalArgs[3], positionalArgs[4]);
+        break;
+      case 'list':
+        webhookList();
+        break;
+      case 'remove':
+        webhookRemove(positionalArgs[2]);
+        break;
+      case 'help':
+        webhookHelp();
+        break;
+      default:
+        webhookHelp();
+    }
+    break;
+  }
+
+  // vibe device <subcommand>
+  case 'device': {
+    const deviceSub = positionalArgs[1];
+    switch (deviceSub) {
+      case 'list':
+        deviceList();
+        break;
+      case 'rename':
+        deviceRename(positionalArgs.slice(2).join(' '));
+        break;
+      case 'remove':
+        deviceRemove(positionalArgs[2]);
+        break;
+      case 'help':
+        deviceHelp();
+        break;
+      default:
+        deviceHelp();
+    }
+    break;
+  }
 
   // vibe sync <subcommand> (async)
   case 'sync': {
@@ -378,12 +544,19 @@ Agent Commands:
 Available commands:
   vibe init         Initialize project
   vibe update       Update settings
+  vibe daemon <cmd> Daemon commands (start, stop, status, restart)
+  vibe job <cmd>    Job commands (list, status, cancel)
+  vibe policy <cmd> Policy commands (list, enable, disable, set)
+  vibe telegram <cmd> Telegram bot (setup, chat, start, stop, status)
+  vibe interface <cmd> Interface management (list, enable, disable)
+  vibe webhook <cmd> Webhook management (add, list, remove)
   vibe hud <cmd>    HUD status (show, start, phase, agent, reset)
   vibe gpt <cmd>    GPT commands (auth, key, status, logout)
   vibe gemini <cmd> Gemini commands (auth, key, status, logout)
-  vibe nvidia <cmd>  NVIDIA NIM commands (key, status, logout)
+  vibe az <cmd>      AZ commands (key, status, logout)
   vibe status       Show status
   vibe sync <cmd>   인증/메모리 동기화 (login, push, pull, status, logout)
+  vibe device <cmd> Device management (list, rename, remove)
   vibe remove       Remove core
   vibe help         Help
   vibe version      Version info

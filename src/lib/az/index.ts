@@ -1,5 +1,5 @@
 /**
- * NVIDIA NIM API 모듈
+ * Azure Foundry API 모듈
  */
 
 export * from './types.js';

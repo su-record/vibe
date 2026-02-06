@@ -1,0 +1,48 @@
+{
+  "name": "file-safety",
+  "version": "1.0.0",
+  "type": "safety",
+  "enabled": true,
+  "rules": [
+    {
+      "id": "fs-001",
+      "description": "Block system path modifications",
+      "condition": { "action.target": { "regex": "^/(etc|usr|bin|sbin|var|boot|proc|sys)/" } },
+      "effect": "reject",
+      "message": "Modifying system paths is not allowed",
+      "severity": "critical"
+    },
+    {
+      "id": "fs-002",
+      "description": "Block SSH key modifications",
+      "condition": { "action.target": { "contains": ".ssh/" } },
+      "effect": "reject",
+      "message": "Modifying SSH keys is not allowed",
+      "severity": "critical"
+    },
+    {
+      "id": "fs-003",
+      "description": "Warn on .env file modification",
+      "condition": { "action.target": { "regex": "(\\.env|\\.env\\..*)$" } },
+      "effect": "warn",
+      "message": "Modifying sensitive environment file",
+      "severity": "high"
+    },
+    {
+      "id": "fs-004",
+      "description": "Warn on credentials file modification",
+      "condition": { "action.target": { "regex": "(credentials|secrets|passwords|tokens)\\.(json|yaml|yml|toml|env)$" } },
+      "effect": "warn",
+      "message": "Modifying credentials file",
+      "severity": "high"
+    },
+    {
+      "id": "fs-005",
+      "description": "Block home directory config overwrites",
+      "condition": { "action.target": { "regex": "^~/\\." } },
+      "effect": "warn",
+      "message": "Modifying home directory config file",
+      "severity": "medium"
+    }
+  ]
+}

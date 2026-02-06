@@ -25,12 +25,12 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
     package: '@anthropics/gemini-mcp',
     envKey: 'GOOGLE_API_KEY'
   },
-  nvidia: {
-    name: 'core-nvidia',
+  az: {
+    name: 'core-az',
     role: 'code-review',
-    description: 'Multi-model orchestration (NVIDIA NIM)',
+    description: 'Multi-model orchestration (Azure Foundry)',
     package: '',
-    envKey: 'NVIDIA_API_KEY'
+    envKey: 'AZ_API_KEY'
   }
 };
 

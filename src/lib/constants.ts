@@ -54,7 +54,7 @@ export const CONCURRENCY = {
     'claude': 10,
     'gpt': 5,
     'gemini': 5,
-    'nvidia': 5,
+    'az': 5,
     'default': 10,
   } as Record<string, number>,
   /** 기본 동시 실행 제한 */
