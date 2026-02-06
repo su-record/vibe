@@ -61,7 +61,7 @@ security-review:
 ## SECURITY Review (Race Mode)
 
 **Duration**: 3420ms
-**Models**: GPT-5.2-Codex, Gemini-3-Flash, NVIDIA Kimi K2
+**Models**: GPT-5.2-Codex, Gemini-3-Flash, AZ Kimi K2.5
 
 ### Model Results
 
@@ -69,7 +69,7 @@ security-review:
 |-------|--------------|----------|--------|
 | gpt | 3 | 1823ms | OK |
 | gemini | 2 | 2156ms | OK |
-| nvidia | 3 | 1950ms | OK |
+| kimi | 3 | 1950ms | OK |
 
 ### Cross-Validated Issues
 
@@ -78,14 +78,14 @@ security-review:
 
 #### 🔴 P1 - SQL Injection in user query
 
-- **Confidence**: 100% (gpt, gemini, nvidia)
+- **Confidence**: 100% (gpt, gemini, kimi)
 - **Severity**: critical
 - **Location**: `src/api/users.ts:42`
 - **Suggestion**: Use parameterized queries
 
 #### 🔴 P1 - XSS vulnerability in render
 
-- **Confidence**: 67% (gpt, nvidia)
+- **Confidence**: 67% (gpt, kimi)
 - **Severity**: high
 - **Location**: `src/components/Comment.tsx:15`
 ```
@@ -99,12 +99,12 @@ security-review:
 | Quick iteration | ❌ Standard review |
 | API cost concerns | ❌ Standard review |
 
-### Tool Invocation (Race Mode - GPT + Gemini + NVIDIA in parallel via Bash)
+### Tool Invocation (Race Mode - GPT + Gemini + Kimi in parallel via Bash)
 
 **🚨 Use stdin pipe to avoid CLI argument length limits on Windows.**
 
 1. Save code to review into `[SCRATCHPAD]/review-code.txt` (using Write tool)
-2. Run GPT + Gemini + NVIDIA in PARALLEL (three Bash tool calls at once):
+2. Run GPT + Gemini + Kimi in PARALLEL (three Bash tool calls at once):
 
 ```bash
 # GPT review (Bash tool call 1)
@@ -117,8 +117,8 @@ node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code
 ```
 
 ```bash
-# NVIDIA (Kimi) review (Bash tool call 3 - run in parallel)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json
+# Kimi review (Bash tool call 3 - run in parallel)
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json
 ```
 
 ## Priority System

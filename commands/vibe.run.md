@@ -1124,12 +1124,12 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Race Review Invocation (GPT + Gemini + NVIDIA in parallel via Bash):**
+**Race Review Invocation (GPT + Gemini + Kimi in parallel via Bash):**
 
 **🚨 Use stdin pipe to avoid CLI argument length limits on Windows.**
 
 1. Save code to review into `[SCRATCHPAD]/review-code.txt` (using Write tool)
-2. Run GPT + Gemini + NVIDIA in PARALLEL (three Bash tool calls at once):
+2. Run GPT + Gemini + Kimi in PARALLEL (three Bash tool calls at once):
 
 ```bash
 # GPT review (Bash tool call 1)
@@ -1142,8 +1142,8 @@ node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code
 ```
 
 ```bash
-# NVIDIA (Kimi) review (Bash tool call 3 - run in parallel)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" nvidia orchestrate-json
+# Kimi review (Bash tool call 3 - run in parallel)
+node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json
 ```
 
 **Confidence-based Priority:**
