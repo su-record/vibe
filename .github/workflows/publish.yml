@@ -12,7 +12,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +46,6 @@ jobs:
         if: steps.version.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           echo "Publishing ${{ steps.version.outputs.local }} (was ${{ steps.version.outputs.published }})"
-          npm publish --provenance
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
