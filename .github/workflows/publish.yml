@@ -40,7 +40,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.version.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
-        run: npm ci
+        run: npm install
 
       - name: Publish
         if: steps.version.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
