@@ -55,6 +55,8 @@ function createContext(content: string): RouteContext {
       logger: mockLogger,
       sendTelegram: vi.fn(),
       sendTelegramInlineKeyboard: vi.fn(),
+      registerCallbackHandler: vi.fn(),
+      unregisterCallbackHandler: vi.fn(),
       router: mockRouter,
       config: {
         repos: { aliases: {}, basePaths: [] },

@@ -37,9 +37,13 @@ export class TelegramQABridge {
     this.chatId = chatId;
   }
 
-  /** Set services (deferred) */
+  /** Set services and auto-register callback handler */
   setServices(services: RouteServices): void {
     this.services = services;
+    // Auto-register callback handler for this chat
+    services.registerCallbackHandler(this.chatId, (data: string) => {
+      this.handleCallbackResponse(data);
+    });
   }
 
   /** Handle a permission request from ClaudeCodeBridge */
@@ -81,7 +85,7 @@ export class TelegramQABridge {
     this.processNext();
   }
 
-  /** Cleanup all pending requests */
+  /** Cleanup all pending requests and unregister callback handler */
   cleanup(): void {
     for (const pending of this.pendingQueue) {
       clearTimeout(pending.timer);
@@ -89,6 +93,10 @@ export class TelegramQABridge {
     }
     this.pendingQueue = [];
     this.processing = false;
+    // Unregister callback handler
+    if (this.services) {
+      this.services.unregisterCallbackHandler(this.chatId);
+    }
   }
 
   /** Check if tool is in auto-approve list */

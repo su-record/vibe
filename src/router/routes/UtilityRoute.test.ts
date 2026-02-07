@@ -36,6 +36,8 @@ function createContext(query: string): RouteContext {
       logger: mockLogger,
       sendTelegram: vi.fn(),
       sendTelegramInlineKeyboard: vi.fn(),
+      registerCallbackHandler: vi.fn(),
+      unregisterCallbackHandler: vi.fn(),
       router: mockRouterObj,
       config: { repos: { aliases: {}, basePaths: [] }, qa: { autoApproveTools: [], maxWaitSeconds: 60, readOnTimeout: 'approve', writeOnTimeout: 'deny' }, notifications: { quietHoursStart: 23, quietHoursEnd: 7, minIntervalMs: 10000 } },
     } as RouteServices,

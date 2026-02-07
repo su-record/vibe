@@ -35,6 +35,8 @@ function createMockServices(): RouteServices {
     logger: mockLogger,
     sendTelegram: vi.fn().mockResolvedValue(undefined),
     sendTelegramInlineKeyboard: vi.fn().mockResolvedValue(123),
+    registerCallbackHandler: vi.fn(),
+    unregisterCallbackHandler: vi.fn(),
     router: {
       handleMessage: vi.fn(),
       getSmartRouter: vi.fn(),

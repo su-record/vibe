@@ -20,6 +20,12 @@ import { TelegramFormatter } from './TelegramFormatter.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
+export type CallbackQueryHandler = (
+  chatId: string,
+  data: string,
+  callbackQueryId: string,
+) => Promise<void>;
+
 export class TelegramBot extends BaseInterface {
   readonly name = 'telegram';
   readonly channel: ChannelType = 'telegram';
@@ -30,6 +36,7 @@ export class TelegramBot extends BaseInterface {
   private retryCount: number = 0;
   private maxRetries: number = 5;
   private formatter: TelegramFormatter;
+  private callbackQueryHandler?: CallbackQueryHandler;
 
   constructor(config: TelegramConfig, logger: InterfaceLogger) {
     super(logger);
@@ -70,6 +77,46 @@ export class TelegramBot extends BaseInterface {
         parse_mode: 'Markdown',
       });
     }
+  }
+
+  /** Send message with inline keyboard buttons */
+  async sendInlineKeyboard(
+    chatId: string,
+    text: string,
+    buttons: Array<Array<{ text: string; callback_data: string }>>,
+  ): Promise<number | undefined> {
+    const result = await this.apiCall('sendMessage', {
+      chat_id: chatId,
+      text,
+      reply_markup: { inline_keyboard: buttons },
+    }) as Record<string, unknown>;
+    return typeof result?.message_id === 'number' ? result.message_id : undefined;
+  }
+
+  /** Answer a callback query (removes loading spinner on inline button) */
+  async answerCallbackQuery(callbackQueryId: string, text?: string): Promise<void> {
+    await this.apiCall('answerCallbackQuery', {
+      callback_query_id: callbackQueryId,
+      ...(text ? { text } : {}),
+    });
+  }
+
+  /** Register handler for inline keyboard callback queries */
+  onCallbackQuery(handler: CallbackQueryHandler): void {
+    this.callbackQueryHandler = handler;
+  }
+
+  /** Get downloadable URL for a Telegram file */
+  async getFileUrl(fileId: string): Promise<string> {
+    const file = await this.apiCall('getFile', { file_id: fileId }) as Record<string, unknown>;
+    const filePath = String(file.file_path);
+    return `${TELEGRAM_API}/file/bot${this.config.botToken}/${filePath}`;
+  }
+
+  /** Download a Telegram file as Buffer */
+  async downloadFile(fileId: string): Promise<Buffer> {
+    const fileUrl = await this.getFileUrl(fileId);
+    return this.httpGetBuffer(fileUrl);
   }
 
   /** Check if a chat ID is authorized */
@@ -128,6 +175,13 @@ export class TelegramBot extends BaseInterface {
   }
 
   private async handleUpdate(update: Record<string, unknown>): Promise<void> {
+    // Handle callback queries (inline keyboard button presses)
+    const callbackQuery = update.callback_query as Record<string, unknown> | undefined;
+    if (callbackQuery) {
+      await this.handleCallbackQuery(callbackQuery);
+      return;
+    }
+
     const message = update.message as Record<string, unknown> | undefined;
     if (!message) return;
 
@@ -146,17 +200,32 @@ export class TelegramBot extends BaseInterface {
 
     let content = '';
     let type: ExternalMessage['type'] = 'text';
+    const metadata: Record<string, unknown> = { telegramMessageId: messageId };
 
     if (message.text) {
       content = String(message.text);
       type = 'text';
     } else if (message.voice || message.audio) {
       type = 'voice';
+      const voiceObj = (message.voice || message.audio) as Record<string, unknown>;
       content = '[voice message]';
+      metadata.telegramFileId = String(voiceObj.file_id || '');
+      metadata.voiceDuration = voiceObj.duration;
+      metadata.voiceMimeType = String(voiceObj.mime_type || 'audio/ogg');
     } else if (message.document) {
       type = 'file';
       const doc = message.document as Record<string, unknown>;
       content = String(doc.file_name || 'unknown');
+      metadata.telegramFileId = String(doc.file_id || '');
+      metadata.fileMimeType = String(doc.mime_type || '');
+      metadata.fileSize = doc.file_size;
+    } else if (message.photo) {
+      type = 'file';
+      const photos = message.photo as Array<Record<string, unknown>>;
+      const largest = photos[photos.length - 1];
+      content = '[photo]';
+      metadata.telegramFileId = String(largest.file_id || '');
+      metadata.fileMimeType = 'image/jpeg';
     }
 
     const externalMessage: ExternalMessage = {
@@ -166,11 +235,37 @@ export class TelegramBot extends BaseInterface {
       userId,
       content,
       type,
-      metadata: { telegramMessageId: messageId },
+      metadata,
       timestamp: new Date().toISOString(),
     };
 
     await this.dispatchMessage(externalMessage);
+  }
+
+  private async handleCallbackQuery(query: Record<string, unknown>): Promise<void> {
+    const message = query.message as Record<string, unknown> | undefined;
+    if (!message) return;
+
+    const chat = message.chat as Record<string, unknown>;
+    const chatId = String(chat.id);
+
+    if (!this.isAuthorized(chatId)) return;
+
+    const data = String(query.data || '');
+    const callbackQueryId = String(query.id);
+
+    if (this.callbackQueryHandler) {
+      try {
+        await this.callbackQueryHandler(chatId, data, callbackQueryId);
+      } catch (err) {
+        this.logger('warn', `Callback query handler error: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // Always answer to remove loading spinner
+    try {
+      await this.answerCallbackQuery(callbackQueryId);
+    } catch { /* ignore */ }
   }
 
   private apiCall(method: string, params?: Record<string, unknown>): Promise<unknown> {
@@ -211,6 +306,19 @@ export class TelegramBot extends BaseInterface {
         req.write(postData);
       }
       req.end();
+    });
+  }
+
+  /** Download a file from URL as Buffer */
+  private httpGetBuffer(fileUrl: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const url = new URL(fileUrl);
+      https.get(url, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => resolve(Buffer.concat(chunks)));
+        res.on('error', reject);
+      }).on('error', reject);
     });
   }
 }

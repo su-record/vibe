@@ -117,6 +117,16 @@ async function main(): Promise<void> {
     await bot.sendResponse(response);
   });
 
+  // Wire up inline keyboard send function
+  router.setSendInlineKeyboard(async (chatId, text, buttons) => {
+    return bot.sendInlineKeyboard(chatId, text, buttons);
+  });
+
+  // Wire up callback query handler
+  bot.onCallbackQuery(async (chatId, data, _callbackQueryId) => {
+    router.handleCallbackQuery(chatId, data);
+  });
+
   // Initialize notification manager send function
   router.getNotificationManager().setSendFunction(async (chatId, text) => {
     await bot.sendResponse({
@@ -142,6 +152,23 @@ async function main(): Promise<void> {
 
   // Try to initialize SmartRouter (optional)
   const smartRouter = await initSmartRouter(router);
+
+  // Wire up voice transcriber (download OGG → SmartRouter STT)
+  if (smartRouter) {
+    router.setVoiceTranscriber(async (fileId: string) => {
+      const audioBuffer = await bot.downloadFile(fileId);
+      const base64Audio = audioBuffer.toString('base64');
+      const result = await smartRouter.route({
+        type: 'general',
+        systemPrompt: '사용자가 보낸 음성 메시지를 텍스트로 변환했습니다. 아래 음성 내용을 그대로 반환하세요.',
+        prompt: `[음성 메시지 - base64 OGG 오디오, ${audioBuffer.length} bytes]\n\n음성 내용을 텍스트로 변환해주세요. 변환된 텍스트만 반환하세요.`,
+      });
+      if (!result.success || !result.content) {
+        throw new Error('음성 인식 실패');
+      }
+      return result.content;
+    });
+  }
 
   // Google Route (works without SmartRouter)
   const googleAuth = new GoogleAuthManager(logger);

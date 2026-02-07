@@ -39,6 +39,8 @@ export class ModelARouter implements ModelARouterInterface {
     text: string,
     buttons: InlineKeyboardButton[][],
   ) => Promise<number | undefined>) | null = null;
+  private callbackHandlers: Map<string, (data: string) => void> = new Map();
+  private voiceTranscriberFn: ((fileId: string) => Promise<string>) | null = null;
 
   constructor(logger: InterfaceLogger, config?: Partial<RouterConfig>) {
     this.logger = logger;
@@ -76,6 +78,21 @@ export class ModelARouter implements ModelARouterInterface {
     this.sendInlineKeyboardFn = fn;
   }
 
+  /** Handle a callback query from inline keyboard */
+  handleCallbackQuery(chatId: string, data: string): void {
+    const handler = this.callbackHandlers.get(chatId);
+    if (handler) {
+      handler(data);
+    } else {
+      this.logger('debug', `No callback handler for chat ${chatId}`);
+    }
+  }
+
+  /** Set voice transcriber function (downloads file + STT) */
+  setVoiceTranscriber(fn: (fileId: string) => Promise<string>): void {
+    this.voiceTranscriberFn = fn;
+  }
+
   /** Get route registry for route registration */
   getRegistry(): RouteRegistry {
     return this.registry;
@@ -104,7 +121,13 @@ export class ModelARouter implements ModelARouterInterface {
     }
 
     try {
-      // Step 2: Classify intent
+      // Step 2: Pre-process voice/file messages
+      const processedContent = await this.preprocessMessage(message, correlationId);
+      if (processedContent !== null) {
+        message = { ...message, content: processedContent, type: 'text' };
+      }
+
+      // Step 3: Classify intent
       const intent = await this.classifier.classify(message.content);
       this.logger('info', `[${correlationId}] Intent: ${intent.category} (${intent.confidence})`);
 
@@ -242,6 +265,8 @@ export class ModelARouter implements ModelARouterInterface {
       logger: this.logger,
       sendTelegram: (chatId, text, options) => this.sendText(chatId, text, options?.format),
       sendTelegramInlineKeyboard: (chatId, text, buttons) => this.sendInlineKeyboard(chatId, text, buttons),
+      registerCallbackHandler: (chatId, handler) => { this.callbackHandlers.set(chatId, handler); },
+      unregisterCallbackHandler: (chatId) => { this.callbackHandlers.delete(chatId); },
       router: this,
       config: this.config,
     };
@@ -290,5 +315,41 @@ export class ModelARouter implements ModelARouterInterface {
       await this.sendText(chatId, `❌ ${msg}`);
     }
     this.logger('info', `[${correlationId}] Result: ${result.success ? 'success' : 'failed'}`);
+  }
+
+  /** Pre-process voice/file messages before classification */
+  private async preprocessMessage(
+    message: ExternalMessage,
+    correlationId: string,
+  ): Promise<string | null> {
+    // Voice message → transcribe to text
+    if (message.type === 'voice' && message.metadata?.telegramFileId) {
+      const fileId = String(message.metadata.telegramFileId);
+      if (this.voiceTranscriberFn) {
+        try {
+          await this.sendText(message.chatId, '🎙️ 음성 메시지를 처리하고 있습니다...');
+          const transcribed = await this.voiceTranscriberFn(fileId);
+          this.logger('info', `[${correlationId}] Voice transcribed: "${transcribed.slice(0, 80)}"`);
+          return transcribed;
+        } catch (err) {
+          this.logger('warn', `[${correlationId}] Voice transcription failed`, {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          await this.sendText(message.chatId, '음성 인식에 실패했습니다. 텍스트로 다시 보내주세요.');
+          return null;
+        }
+      }
+      await this.sendText(message.chatId, '음성 메시지 처리가 설정되지 않았습니다. 텍스트로 보내주세요.');
+      return null;
+    }
+
+    // File message → include file info in content for classification
+    if (message.type === 'file' && message.metadata?.telegramFileId) {
+      const fileName = message.content;
+      const mimeType = String(message.metadata.fileMimeType || '');
+      return `파일 분석 요청: ${fileName} (${mimeType})`;
+    }
+
+    return null;
   }
 }

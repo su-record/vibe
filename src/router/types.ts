@@ -102,6 +102,10 @@ export interface RouteServices {
     text: string,
     buttons: InlineKeyboardButton[][],
   ) => Promise<number | undefined>;
+  /** Register a callback query handler for a chat (inline keyboard responses) */
+  registerCallbackHandler: (chatId: string, handler: (data: string) => void) => void;
+  /** Unregister a callback query handler for a chat */
+  unregisterCallbackHandler: (chatId: string) => void;
   router: ModelARouterInterface;
   config: RouterConfig;
 }
