@@ -421,32 +421,35 @@ async function main() {
   let prompt;
   let systemPrompt = DEFAULT_SYSTEM_PROMPT;
 
-  // CLI argument가 있으면 사용
-  // Usage 1: node script.js gpt orchestrate "system prompt" "user prompt"
-  // Usage 2: node script.js gpt orchestrate "user prompt" (uses default system prompt)
-  const arg4 = process.argv[4]?.trim();
-  const arg5 = process.argv.slice(5).join(' ').trim();
-
-  if (arg5) {
-    // 5번째 인자가 있으면: arg4=시스템 프롬프트, arg5=사용자 프롬프트
-    systemPrompt = arg4;
-    prompt = arg5;
-  } else if (arg4) {
-    // 4번째 인자만 있으면: arg4=사용자 프롬프트 (시스템 프롬프트는 기본값)
-    prompt = arg4;
-  } else {
-    // --input <file> 플래그 확인 (파이프 대체, Windows 호환)
-    const inputFlagIdx = process.argv.indexOf('--input');
-    if (inputFlagIdx !== -1 && process.argv[inputFlagIdx + 1]) {
-      const inputFile = process.argv[inputFlagIdx + 1];
-      try {
-        const inputData = fs.readFileSync(inputFile, 'utf8');
-        const parsed = JSON.parse(inputData);
-        prompt = parsed.prompt;
-      } catch (err) {
-        console.log(`[${provider.toUpperCase()}] Error: Failed to read input file: ${err.message}`);
-        return;
+  // --input <file> 플래그를 먼저 확인 (위치 인자보다 우선)
+  const inputFlagIdx = process.argv.indexOf('--input');
+  if (inputFlagIdx !== -1 && process.argv[inputFlagIdx + 1]) {
+    const inputFile = process.argv[inputFlagIdx + 1];
+    try {
+      const inputData = fs.readFileSync(inputFile, 'utf8');
+      const parsed = JSON.parse(inputData);
+      prompt = parsed.prompt;
+      if (parsed.systemPrompt) {
+        systemPrompt = parsed.systemPrompt;
       }
+    } catch (err) {
+      console.log(`[${provider.toUpperCase()}] Error: Failed to read input file: ${err.message}`);
+      return;
+    }
+  } else {
+    // CLI argument 사용
+    // Usage 1: node script.js gpt orchestrate "system prompt" "user prompt"
+    // Usage 2: node script.js gpt orchestrate "user prompt" (uses default system prompt)
+    const arg4 = process.argv[4]?.trim();
+    const arg5 = process.argv.slice(5).join(' ').trim();
+
+    if (arg5) {
+      // 5번째 인자가 있으면: arg4=시스템 프롬프트, arg5=사용자 프롬프트
+      systemPrompt = arg4;
+      prompt = arg5;
+    } else if (arg4) {
+      // 4번째 인자만 있으면: arg4=사용자 프롬프트 (시스템 프롬프트는 기본값)
+      prompt = arg4;
     } else {
       // Hook에서 호출: stdin으로 JSON 입력 (fallback)
       let inputData = '';
