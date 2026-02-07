@@ -50,6 +50,7 @@ const KEYWORD_MAP: Record<IntentCategory, readonly string[]> = {
   browse: [
     '브라우저', '크롬', '웹사이트', '사이트', '페이지', '열어',
     'browser', 'chrome', 'open', 'browse', 'website', '접속',
+    '브라우저 동의', '브라우저 철회', '동의 철회',
   ],
   composite: [],
   conversation: [],
