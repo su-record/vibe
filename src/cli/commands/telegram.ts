@@ -109,6 +109,42 @@ function isProcessRunning(pid: number): boolean {
   }
 }
 
+function ensurePlaywright(): boolean {
+  // Check if playwright exists in node_modules
+  const selfDir = path.dirname(url.fileURLToPath(import.meta.url));
+  const candidates = [
+    path.join(process.cwd(), 'node_modules', 'playwright'),
+    path.resolve(selfDir, '..', '..', '..', 'node_modules', 'playwright'),
+  ];
+  const found = candidates.some((p) => fs.existsSync(p));
+  if (found) return true;
+
+  console.log('Playwright가 설치되어 있지 않습니다. 자동 설치를 시작합니다...');
+  console.log('(스크린샷/웹 캡처 기능에 필요합니다)');
+
+  try {
+    child_process.execSync('npm install playwright', {
+      stdio: 'inherit',
+      timeout: 120_000,
+    });
+    console.log('Playwright 설치 완료. Chromium 브라우저를 설치합니다...');
+    child_process.execSync('npx playwright install chromium', {
+      stdio: 'inherit',
+      timeout: 300_000,
+    });
+    console.log('Chromium 설치 완료!');
+    return true;
+  } catch (err) {
+    console.warn(
+      'Playwright 자동 설치 실패. 스크린샷 기능 없이 시작합니다.',
+    );
+    console.warn(
+      '수동 설치: npm install playwright && npx playwright install chromium',
+    );
+    return false;
+  }
+}
+
 export function telegramStart(): void {
   // Check if already running
   const existingPid = readPid();
@@ -136,6 +172,9 @@ export function telegramStart(): void {
     console.log('No allowed chat IDs. Run: vibe telegram chat <chat-id>');
     return;
   }
+
+  // Auto-install Playwright if missing (non-blocking: starts even if install fails)
+  ensurePlaywright();
 
   // Find bridge entry point (assistant or legacy)
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
