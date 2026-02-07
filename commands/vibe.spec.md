@@ -466,61 +466,65 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 
 #### 3.0.1 Agent Teams — Research Collaboration (Experimental)
 
-> **Agent Teams**: 개별 리서치 결과를 팀 토론으로 통합하여 더 깊은 인사이트를 도출합니다.
+> **Agent Teams**: 개별 리서치 결과를 실제 팀으로 교차 검증하여 더 깊은 인사이트를 도출합니다.
 > 요구사항: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
 
-**10개 병렬 리서치 완료 후, 리서치 에이전트 팀이 결과를 토론:**
+**팀 구성:**
+
+| 팀원 | 역할 |
+|------|------|
+| best-practices (리더) | 패턴/안티패턴 종합, 충돌 해결, 최종 요약 |
+| security-advisory | 보안 관점 검증, 보안 리스크 식별 |
+| codebase-patterns | 기존 코드와의 일관성 검증 |
+| framework-docs | 최신 문서/API 변경사항 확인 |
+
+**실행 순서:**
+
+1. `TeamCreate(team_name="research-{feature}")` — 팀 + 공유 태스크 리스트 생성
+2. 4개 팀원 병렬 생성 — 각각 `Task(team_name=..., name=..., subagent_type=...)` 으로 spawn
+3. 팀원들이 공유 TaskList에서 작업을 claim하고, SendMessage로 상호 검증
+4. 리더(best-practices)가 최종 통합 요약 작성 → SPEC Context에 반영
+5. 모든 팀원 shutdown_request → TeamDelete로 정리
+
+**팀원 spawn 패턴:**
 
 ```text
-10개 병렬 리서치 결과 수집
-        ↓
-┌─────────────────────────────────────────────────────────┐
-│  🔬 RESEARCH TEAM                                        │
-│                                                          │
-│  Team Members:                                           │
-│  ├─ best-practices-agent (리더 — 패턴/안티패턴 종합)      │
-│  ├─ security-advisory-agent (보안 관점 검증)              │
-│  ├─ codebase-patterns-agent (기존 코드와의 일관성)        │
-│  └─ framework-docs-agent (최신 문서/API 변경사항)         │
-│                                                          │
-│  공유 Task List:                                          │
-│  □ GPT/Gemini/Kimi 리서치 결과 교차 검증                    │
-│  □ 상충되는 권장사항 토론 → 프로젝트에 맞는 결론 도출     │
-│  □ 보안 권고와 성능 권고가 충돌할 때 트레이드오프 분석     │
-│  □ 기존 코드베이스 패턴과 새 패턴의 호환성 검증           │
-│  □ 최종 통합 리서치 요약 생성                             │
-│                                                          │
-│  결과:                                                    │
-│  - 검증된 Best Practices (팀 합의)                        │
-│  - 프로젝트별 맞춤 보안 체크리스트                        │
-│  - 기존 코드와 호환되는 구현 권장사항                     │
-└─────────────────────────────────────────────────────────┘
+TeamCreate(team_name="research-{feature}", description="Research collaboration for {feature}")
+
+# 4개 병렬 spawn
+Task(team_name="research-{feature}", name="best-practices", subagent_type="best-practices-agent",
+  prompt="리서치 팀 리더. 10개 병렬 리서치 결과를 종합하세요.
+  리서치 결과: {all_research_results}
+  역할: 패턴/안티패턴 종합, 팀원 간 충돌 해결, 최종 통합 요약 작성.
+  TaskList를 확인하고 작업을 claim하세요. 팀원에게 SendMessage로 검증을 요청하세요.
+  모든 작업 완료 후 최종 요약을 작성하세요.")
+
+Task(team_name="research-{feature}", name="security-advisory", subagent_type="security-advisory-agent",
+  prompt="리서치 팀 보안 담당. 리서치 결과: {all_research_results}
+  역할: 보안 관점에서 모든 권장사항 검증.
+  보안 리스크 발견 시 best-practices에게 SendMessage로 알리세요.
+  TaskList에서 보안 관련 작업을 claim하세요.")
+
+Task(team_name="research-{feature}", name="codebase-patterns", subagent_type="codebase-patterns-agent",
+  prompt="리서치 팀 코드베이스 담당. 리서치 결과: {all_research_results}
+  역할: 권장사항이 기존 코드 패턴과 호환되는지 검증.
+  비호환 발견 시 best-practices에게 SendMessage로 알리세요.
+  TaskList에서 호환성 관련 작업을 claim하세요.")
+
+Task(team_name="research-{feature}", name="framework-docs", subagent_type="framework-docs-agent",
+  prompt="리서치 팀 문서 담당. 리서치 결과: {all_research_results}
+  역할: 최신 API/문서와 권장사항 대조 검증.
+  폐기/변경된 API 발견 시 best-practices에게 SendMessage로 알리세요.
+  TaskList에서 문서 검증 관련 작업을 claim하세요.")
 ```
 
-**Task 호출 패턴:**
+**팀원 간 통신 예시:**
 
 ```text
-Task(subagent_type="general-purpose", prompt="""
-[AGENT TEAM: Research Collaboration]
-
-You are leading a research team to synthesize findings from multiple sources.
-
-Research results from 10 parallel agents:
-{all_research_results}
-
-Team members and their synthesis roles:
-- best-practices-agent (lead): Identify consensus patterns, resolve conflicts
-- security-advisory-agent: Flag any security implications in recommended patterns
-- codebase-patterns-agent: Check compatibility with existing codebase conventions
-- framework-docs-agent: Verify recommendations against latest API/docs
-
-Tasks:
-1. Cross-validate findings: Where do GPT/Gemini/Kimi/Claude agree?
-2. Resolve conflicts: Where they disagree, which recommendation fits this project?
-3. Security gate: Do any best-practice recommendations introduce security risks?
-4. Codebase fit: Do recommendations align with existing patterns?
-5. Produce final integrated research summary for SPEC Context section.
-""")
+security-advisory → best-practices: "JWT 라이브러리 권장사항에 CVE-2024-xxxx 취약점. 대안 필요"
+codebase-patterns → best-practices: "기존 코드가 class 패턴인데 함수형 권장은 비호환. 점진적 마이그레이션 제안"
+framework-docs → best-practices: "React 19에서 useEffect 패턴 변경됨. 리서치 결과의 패턴은 구버전"
+best-practices → broadcast: "최종 합의: JWT는 jose 라이브러리로 교체, 함수형 전환은 신규 파일만 적용"
 ```
 
 **토론 결과는 SPEC의 Context 섹션에 반영됩니다.**

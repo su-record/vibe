@@ -947,64 +947,69 @@ Phase N+1 Start (IMMEDIATE - exploration already done!)
 > **Agent Teams**: 에이전트들이 팀을 이루어 서로 소통하며 구현합니다.
 > 요구사항: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
 
-**ULTRAWORK 모드에서 복잡한 구현 시, 에이전트 팀이 역할 분담:**
+**팀 구성:**
+
+| 팀원 | 역할 |
+|------|------|
+| architect (리더) | 설계 결정, 구현 방향 조율, SPEC 준수 검증, 팀 합의 주도 |
+| implementer | 핵심 비즈니스 로직 구현, architect 설계를 따라 코드 작성 |
+| tester | 구현 완료 즉시 테스트 작성, 실패 시 implementer에 피드백 |
+| security-reviewer | 실시간 보안 취약점 검증, 블로킹 이슈 식별 |
+
+**실행 순서:**
+
+1. `TeamCreate(team_name="dev-{feature}")` — 팀 + 공유 태스크 리스트 생성
+2. 4개 팀원 병렬 생성 — 각각 `Task(team_name=..., name=..., subagent_type=...)` 으로 spawn
+3. architect가 SPEC Phase를 분석하여 구현 계획 수립 → TaskList에 작업 등록
+4. 팀원들이 TaskList에서 작업을 claim하고, SendMessage로 실시간 협업
+5. 모든 시나리오 검증 완료 → 팀원 shutdown_request → TeamDelete로 정리
+
+**팀원 spawn 패턴:**
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  🏗️ IMPLEMENTATION TEAM                                  │
-│                                                          │
-│  Team Members:                                           │
-│  ├─ architect (리더 — 설계 결정, 구현 방향 조율)          │
-│  ├─ implementer (핵심 코드 구현)                          │
-│  ├─ tester (테스트 작성 + 검증)                           │
-│  └─ security-reviewer (실시간 보안 검증)                  │
-│                                                          │
-│  공유 Task List:                                          │
-│  □ SPEC Phase 분석 → 구현 계획 수립 (architect)           │
-│  □ 핵심 비즈니스 로직 구현 (implementer)                  │
-│  □ 구현 중 보안 취약점 즉시 피드백 (security-reviewer)    │
-│  □ 구현 완료 부분부터 테스트 작성 (tester)                │
-│  □ 테스트 실패 시 implementer에게 피드백                  │
-│  □ 전체 통합 검증 (architect 주도)                        │
-│                                                          │
-│  Inter-agent Communication:                               │
-│  architect → implementer: "이 패턴으로 구현해주세요"      │
-│  implementer → tester: "LoginService 구현 완료, 테스트 요청" │
-│  security-reviewer → implementer: "SQL injection 위험, 수정 필요" │
-│  tester → architect: "edge case 3건 실패, 설계 검토 요청" │
-└─────────────────────────────────────────────────────────┘
+TeamCreate(team_name="dev-{feature}", description="Implementation team for {feature} Phase {N}")
+
+# 4개 병렬 spawn
+Task(team_name="dev-{feature}", name="architect", subagent_type="architect",
+  prompt="구현 팀 리더. Phase {N}의 SPEC을 분석하고 구현 계획을 수립하세요.
+  SPEC: {spec_content}
+  Feature Scenarios: {scenarios}
+  역할: 설계 결정, 구현 방향 조율, 팀원 간 충돌 해결, SPEC 준수 검증.
+  TaskList에 구현 작업을 등록하세요. implementer에게 설계를 SendMessage로 전달하세요.
+  모든 시나리오가 통과할 때까지 팀을 조율하세요.")
+
+Task(team_name="dev-{feature}", name="implementer", subagent_type="implementer",
+  prompt="구현 팀 코드 담당. SPEC: {spec_content}
+  역할: architect의 설계를 따라 프로덕션 코드 작성.
+  architect에게서 설계를 받으면 구현을 시작하세요.
+  컴포넌트 구현 완료 시 tester에게 SendMessage로 테스트 요청하세요.
+  security-reviewer의 블로킹 이슈는 즉시 수정하세요.
+  TaskList에서 구현 작업을 claim하세요.")
+
+Task(team_name="dev-{feature}", name="tester", subagent_type="tester",
+  prompt="구현 팀 테스트 담당. SPEC: {spec_content}
+  역할: implementer가 완료한 컴포넌트부터 즉시 테스트 작성.
+  구현 전체를 기다리지 말고 컴포넌트 단위로 점진적 테스트하세요.
+  테스트 실패 시 implementer에게 SendMessage로 피드백하세요.
+  edge case 발견 시 architect에게 설계 검토를 요청하세요.
+  TaskList에서 테스트 작업을 claim하세요.")
+
+Task(team_name="dev-{feature}", name="security-reviewer", subagent_type="security-reviewer",
+  prompt="구현 팀 보안 담당. SPEC: {spec_content}
+  역할: 구현 코드의 보안 취약점 실시간 검증.
+  보안 이슈는 BLOCKING — implementer에게 SendMessage로 즉시 수정 요청하세요.
+  심각한 설계 결함 발견 시 architect에게 SendMessage로 알리세요.
+  TaskList에서 보안 검증 작업을 claim하세요.")
 ```
 
-**Task 호출 패턴:**
+**팀원 간 통신 예시:**
 
 ```text
-Task(subagent_type="general-purpose", prompt="""
-[AGENT TEAM: Implementation]
-
-You are leading an implementation team for Phase {N} of {feature-name}.
-
-SPEC: {spec_content}
-Feature Scenarios: {scenarios}
-
-Team members:
-- architect (lead): Design decisions, resolve conflicts, ensure SPEC compliance
-- implementer: Write production code following architect's design
-- tester: Write tests as implementer completes each component
-- security-reviewer: Continuously review code for security issues
-
-Workflow:
-1. Architect analyzes SPEC phase → creates implementation plan
-2. Implementer builds code → signals tester when component ready
-3. Tester writes tests immediately → reports failures to implementer
-4. Security-reviewer flags issues → implementer fixes before proceeding
-5. Architect verifies all scenarios pass → signs off on phase
-
-Rules:
-- Tester must NOT wait for all implementation — test incrementally
-- Security issues are BLOCKING — implementer must fix before continuing
-- Architect resolves any design disagreements
-- All Given/When/Then conditions must be verified
-""")
+architect → implementer: "Repository 패턴으로 데이터 접근 계층 분리해서 구현해주세요. 인터페이스는 TaskList에 등록했습니다"
+implementer → tester: "LoginService 구현 완료. 정상/실패/잠금 시나리오 테스트 요청합니다"
+security-reviewer → implementer: "SQL injection 위험: raw query 사용 감지. parameterized query로 즉시 수정 필요"
+tester → architect: "edge case 3건 실패 (빈 입력, 특수문자, 동시 요청). 설계 검토 요청합니다"
+architect → broadcast: "Phase {N} 모든 시나리오 통과 확인. 구현 완료합니다"
 ```
 
 **팀 모드 vs 기존 병렬 모드 비교:**
