@@ -137,9 +137,11 @@ export function telegramStart(): void {
     return;
   }
 
-  // Find bridge entry point (relative to compiled dist/)
+  // Find bridge entry point (Model A or legacy)
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-  const bridgePath = path.resolve(__dirname, '..', '..', 'bridge', 'telegram-bridge.js');
+  const modelAPath = path.resolve(__dirname, '..', '..', 'bridge', 'model-a-bridge.js');
+  const legacyPath = path.resolve(__dirname, '..', '..', 'bridge', 'telegram-bridge.js');
+  const bridgePath = fs.existsSync(modelAPath) ? modelAPath : legacyPath;
 
   if (!fs.existsSync(bridgePath)) {
     console.error(`Bridge module not found: ${bridgePath}`);
