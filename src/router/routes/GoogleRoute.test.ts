@@ -89,14 +89,19 @@ describe('GoogleRoute', () => {
   });
 
   describe('Authentication check', () => {
-    it('should return auth URL when not authenticated', async () => {
-      const route = new GoogleRoute(mockLogger, createMockAuth(false));
+    it('should start auth flow and send URL when not authenticated', async () => {
+      const mockAuth = createMockAuth(false);
+      mockAuth.startAuthFlow = vi.fn().mockRejectedValue(new Error('OAuth 인증 타임아웃 (5분)'));
+      const route = new GoogleRoute(mockLogger, mockAuth);
       const context = createContext('메일 보내줘');
 
       const result = await route.execute(context);
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Google 인증이 필요합니다');
-      expect(result.error).toContain('accounts.google.com');
+      expect(result.error).toContain('Google 인증 실패');
+      expect(context.services.sendTelegram).toHaveBeenCalledWith(
+        context.chatId,
+        expect.stringContaining('accounts.google.com'),
+      );
     });
   });
 

@@ -84,12 +84,30 @@ export class GoogleRoute extends BaseRoute {
     }
   }
 
-  private handleUnauthenticated(context: RouteContext): RouteResult {
+  private async handleUnauthenticated(context: RouteContext): Promise<RouteResult> {
     const authUrl = this.authManager.getAuthUrl();
-    return {
-      success: false,
-      error: `Google 인증이 필요합니다.\n\n위 링크로 Google 인증을 완료해주세요:\n${authUrl}`,
-    };
+
+    // Send auth URL to user via Telegram
+    await context.services.sendTelegram(
+      context.chatId,
+      `Google 인증이 필요합니다.\n\n아래 링크를 눌러 Google 계정을 연결해주세요:\n${authUrl}\n\n(5분 내 인증을 완료해주세요)`,
+    );
+
+    // Start OAuth callback server and wait for code
+    try {
+      const code = await this.authManager.startAuthFlow();
+      await this.authManager.exchangeCode(code);
+
+      await context.services.sendTelegram(
+        context.chatId,
+        'Google 인증 완료! 이제 명령을 다시 보내주세요.',
+      );
+
+      return { success: true, data: 'Google 인증이 완료되었습니다. 명령을 다시 보내주세요.' };
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      return { success: false, error: `Google 인증 실패: ${error}` };
+    }
   }
 
   private async routeSubIntent(

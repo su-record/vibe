@@ -15,6 +15,7 @@ import {
   SYNC_OAUTH_TOKEN_URL,
 } from '../../lib/sync/constants.js';
 import { GoogleAuthTokens } from './google-types.js';
+import { loadSyncAuth } from '../../lib/sync/storage.js';
 
 const AUTH_REDIRECT_PORT = 51123;
 const AUTH_REDIRECT_URI = `http://localhost:${AUTH_REDIRECT_PORT}/oauth-callback`;
@@ -205,12 +206,31 @@ export class GoogleAuthManager {
   }
 
   private loadTokens(): void {
+    // 1. Try own token file first (google-tokens.json)
     try {
-      if (!fs.existsSync(this.tokenPath)) return;
-      const content = fs.readFileSync(this.tokenPath, 'utf-8');
-      this.tokens = JSON.parse(content) as GoogleAuthTokens;
+      if (fs.existsSync(this.tokenPath)) {
+        const content = fs.readFileSync(this.tokenPath, 'utf-8');
+        this.tokens = JSON.parse(content) as GoogleAuthTokens;
+        return;
+      }
     } catch {
       this.logger('warn', 'Google 토큰 로드 실패');
+    }
+
+    // 2. Fallback: use sync-auth.json (from vibe sync login)
+    try {
+      const syncAuth = loadSyncAuth();
+      if (syncAuth?.refreshToken) {
+        this.tokens = {
+          accessToken: syncAuth.accessToken,
+          refreshToken: syncAuth.refreshToken,
+          expires: syncAuth.expires,
+          scopes: [...GOOGLE_SCOPES],
+        };
+        this.logger('info', 'sync-auth.json에서 Google 토큰 로드 완료');
+      }
+    } catch {
+      this.logger('warn', 'sync-auth 토큰 fallback 실패');
     }
   }
 
