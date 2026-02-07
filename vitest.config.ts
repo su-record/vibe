@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    pool: 'vmForks',
     include: ['src/**/*.test.ts', 'hooks/scripts/__tests__/*.test.js'],
     coverage: {
       provider: 'v8',
