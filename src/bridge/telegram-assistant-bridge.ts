@@ -14,9 +14,21 @@ import { LogLevel } from '../daemon/types.js';
 import { ExternalResponse, InterfaceLogger } from '../interface/types.js';
 import { ModelARouter } from '../router/ModelARouter.js';
 import { DevRoute } from '../router/routes/DevRoute.js';
+import { GoogleRoute } from '../router/routes/GoogleRoute.js';
+import { ResearchRoute } from '../router/routes/ResearchRoute.js';
+import { UtilityRoute } from '../router/routes/UtilityRoute.js';
+import { MonitorRoute } from '../router/routes/MonitorRoute.js';
+import { CompositeRoute } from '../router/routes/CompositeRoute.js';
 import { RepoResolver } from '../router/resolvers/RepoResolver.js';
 import { DevSessionManager } from '../router/sessions/DevSessionManager.js';
-import { RouterConfig, DEFAULT_ROUTER_CONFIG, InlineKeyboardButton } from '../router/types.js';
+import { GoogleAuthManager } from '../router/services/GoogleAuthManager.js';
+import { BookmarkService } from '../router/services/BookmarkService.js';
+import { NoteService } from '../router/services/NoteService.js';
+import { SchedulerEngine } from '../router/services/SchedulerEngine.js';
+import { DailyReportGenerator } from '../router/services/DailyReportGenerator.js';
+import { BrowserManager } from '../router/browser/BrowserManager.js';
+import { BrowserPool } from '../router/browser/BrowserPool.js';
+import { RouterConfig, DEFAULT_ROUTER_CONFIG, InlineKeyboardButton, SmartRouterLike } from '../router/types.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const TELEGRAM_CONFIG_PATH = path.join(VIBE_DIR, 'telegram.json');
@@ -124,11 +136,47 @@ async function main(): Promise<void> {
     sessionManager,
     router.getNotificationManager(),
   );
-
   router.getRegistry().register(devRoute);
 
   // Try to initialize SmartRouter (optional)
-  await initSmartRouter(router);
+  const smartRouter = await initSmartRouter(router);
+
+  // Google Route (works without SmartRouter)
+  const googleAuth = new GoogleAuthManager(logger);
+  const googleRoute = new GoogleRoute(logger, googleAuth, smartRouter ?? undefined);
+  router.getRegistry().register(googleRoute);
+
+  // Browser pool for utility route
+  const browserManager = new BrowserManager(logger);
+  const browserPool = new BrowserPool(logger, browserManager);
+
+  // Routes that require SmartRouter
+  let scheduler: SchedulerEngine | undefined;
+  if (smartRouter) {
+    // Research Route
+    const bookmarkService = new BookmarkService(logger);
+    const researchRoute = new ResearchRoute(logger, smartRouter, bookmarkService);
+    router.getRegistry().register(researchRoute);
+
+    // Utility Route
+    const noteService = new NoteService(logger, undefined, smartRouter);
+    const utilityRoute = new UtilityRoute(logger, smartRouter, noteService);
+    router.getRegistry().register(utilityRoute);
+
+    // Monitor Route
+    scheduler = new SchedulerEngine(logger, smartRouter);
+    const reportGen = new DailyReportGenerator(logger, smartRouter, noteService);
+    const monitorRoute = new MonitorRoute(logger, smartRouter, scheduler, reportGen);
+    router.getRegistry().register(monitorRoute);
+
+    // Composite Route
+    const compositeRoute = new CompositeRoute(logger, smartRouter, router.getNotificationManager());
+    router.getRegistry().register(compositeRoute);
+
+    logger('info', `라우트 등록 완료: dev, google, research, utility, monitor, composite`);
+  } else {
+    logger('warn', 'SmartRouter 없음 — dev, google 라우트만 활성');
+  }
 
   // Wire message handler
   bot.onMessage(async (message) => {
@@ -159,6 +207,8 @@ async function main(): Promise<void> {
   const shutdown = async (): Promise<void> => {
     logger('info', '종료 중...');
     router.getNotificationManager().stop();
+    if (scheduler) await scheduler.shutdown();
+    await browserPool.closeAll();
     await sessionManager.closeAll();
     await bot.stop();
     process.exit(0);
@@ -169,16 +219,18 @@ async function main(): Promise<void> {
 }
 
 /** Try to initialize SmartRouter for LLM classification */
-async function initSmartRouter(router: ModelARouter): Promise<void> {
+async function initSmartRouter(router: ModelARouter): Promise<SmartRouterLike | null> {
   try {
     const { SmartRouter } = await import('../orchestrator/SmartRouter.js');
     const smartRouter = new SmartRouter();
     router.setSmartRouter(smartRouter);
     logger('info', 'SmartRouter initialized');
+    return smartRouter as unknown as SmartRouterLike;
   } catch (err) {
     logger('warn', 'SmartRouter initialization failed (LLM classification disabled)', {
       error: err instanceof Error ? err.message : String(err),
     });
+    return null;
   }
 }
 
