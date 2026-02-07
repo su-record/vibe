@@ -102,8 +102,9 @@ Requirements:
 ## Manual Usage
 
 ```bash
+# Resolve path first: node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"
 # Generate via llm-orchestrate (when Gemini configured)
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "[LLM_SCRIPT]" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ## Integration with /vibe.run

@@ -573,17 +573,22 @@ When external LLMs are enabled in `.claude/vibe/config.json`:
 #   - If systemPrompt omitted, uses default
 #   - If systemPrompt is "-", uses default and treats next argument as prompt
 
-# Cross-platform path (works on Windows/macOS/Linux)
-CORE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+# Step 1: Resolve script path (once per session)
+node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"
+# Save output as [LLM_SCRIPT]
 
-# GPT call
-node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "[question content]"
+# GPT call (short prompt - CLI arg)
+node "[LLM_SCRIPT]" gpt orchestrate-json "[question content]"
 
 # Gemini call
-node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "[question content]"
+node "[LLM_SCRIPT]" gemini orchestrate-json "[question content]"
 
 # Custom system prompt usage
-node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "You are a code reviewer" "[question content]"
+node "[LLM_SCRIPT]" gpt orchestrate-json "You are a code reviewer" "[question content]"
+
+# Long prompt - use --input file (write JSON file first with Write tool)
+# JSON format: {"prompt": "your prompt here"}
+node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/input.json"
 ```
 
 ### External LLM Fallback
@@ -784,8 +789,8 @@ Then: Login success + JWT token returned
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] Bash: node {{CORE_PATH}}/hooks/scripts/llm-orchestrate.js gpt orchestrate-json "[question]"
-│  [If Gemini enabled] Bash: node {{CORE_PATH}}/hooks/scripts/llm-orchestrate.js gemini orchestrate-json "[question]"
+│  [If GPT enabled] Bash: node "[LLM_SCRIPT]" gpt orchestrate-json "[question]"
+│  [If Gemini enabled] Bash: node "[LLM_SCRIPT]" gemini orchestrate-json "[question]"
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ↓ (wait for all to complete)
@@ -1084,7 +1089,8 @@ Brand:
 
 **Manual Generation:**
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+# [LLM_SCRIPT] = resolved path from: node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"
+node "[LLM_SCRIPT]" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ---
@@ -1131,24 +1137,29 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
 
 **Race Review Invocation (GPT + Gemini + Kimi in parallel via Bash):**
 
-**🚨 Use stdin pipe to avoid CLI argument length limits on Windows.**
+**🚨 Use --input file to avoid CLI argument length limits and Windows pipe issues.**
 
 1. Save code to review into `[SCRATCHPAD]/review-code.txt` (using Write tool)
-2. Run GPT + Gemini + Kimi in PARALLEL (three Bash tool calls at once):
+2. Write JSON input file `[SCRATCHPAD]/review-input.json` (using Write tool):
+   - `{"prompt": "Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE_CONTENT]"}`
+   - Where `[CODE_CONTENT]` is the code text (properly JSON-escaped inside the prompt string)
+3. Resolve script path (once per session): `node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"`
+   - Save output as `[LLM_SCRIPT]`
+4. Run GPT + Gemini + Kimi in PARALLEL (three Bash tool calls at once):
 
 ```bash
 # GPT review (Bash tool call 1)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/review-input.json"
 ```
 
 ```bash
 # Gemini review (Bash tool call 2 - run in parallel)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.json"
 ```
 
 ```bash
 # Kimi review (Bash tool call 3 - run in parallel)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json
+node "[LLM_SCRIPT]" kimi orchestrate-json --input "[SCRATCHPAD]/review-input.json"
 ```
 
 **Confidence-based Priority:**

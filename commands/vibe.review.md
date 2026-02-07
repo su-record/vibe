@@ -101,24 +101,29 @@ security-review:
 
 ### Tool Invocation (Race Mode - GPT + Gemini + Kimi in parallel via Bash)
 
-**🚨 Use stdin pipe to avoid CLI argument length limits on Windows.**
+**🚨 Use --input file to avoid CLI argument length limits and Windows pipe issues.**
 
 1. Save code to review into `[SCRATCHPAD]/review-code.txt` (using Write tool)
-2. Run GPT + Gemini + Kimi in PARALLEL (three Bash tool calls at once):
+2. Write JSON input file `[SCRATCHPAD]/review-input.json` (using Write tool):
+   - `{"prompt": "Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE_CONTENT]"}`
+   - Where `[CODE_CONTENT]` is the code text (properly JSON-escaped inside the prompt string)
+3. Resolve script path (once per session): `node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"`
+   - Save output as `[LLM_SCRIPT]`
+4. Run GPT + Gemini + Kimi in PARALLEL (three Bash tool calls at once):
 
 ```bash
 # GPT review (Bash tool call 1)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/review-input.json"
 ```
 
 ```bash
 # Gemini review (Bash tool call 2 - run in parallel)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.json"
 ```
 
 ```bash
 # Kimi review (Bash tool call 3 - run in parallel)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: '+fs.readFileSync('[SCRATCHPAD]/review-code.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json
+node "[LLM_SCRIPT]" kimi orchestrate-json --input "[SCRATCHPAD]/review-input.json"
 ```
 
 ## Priority System

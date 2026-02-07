@@ -165,11 +165,11 @@ Security research uses **3 perspectives in parallel** for comprehensive coverage
 Task(haiku, "Research security advisories for [feature]. Check OWASP, common vulnerabilities.")
 
 # 2. GPT (Parallel) - When enabled
-node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json \
+node "[LLM_SCRIPT]" gpt orchestrate-json \
   "Security vulnerabilities for [feature] with [stack]. Focus: CVE database, known exploits, mitigation strategies. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # 3. Gemini (Parallel) - When enabled
-node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json \
+node "[LLM_SCRIPT]" gemini orchestrate-json \
   "Security advisories for [feature] with [stack]. Focus: latest patches, security updates, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 ```
 
