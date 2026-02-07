@@ -17,7 +17,10 @@ export interface AuthInfo {
 }
 
 export interface GeminiModelInfo {
+  /** API Key (Google AI Studio) 모델 ID */
   id: string;
+  /** OAuth/CLI (Antigravity v1internal) 모델 ID — 없으면 id 사용 */
+  oauthId?: string;
   name: string;
   description: string;
   maxTokens: number;

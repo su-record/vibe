@@ -25,6 +25,7 @@ import {
   geminiAuth,
   geminiStatus,
   geminiLogout,
+  geminiImport,
   azStatus,
   azLogout,
 } from './llm.js';
@@ -198,16 +199,20 @@ Auth order: oauth → apikey → azure
       case 'status':
         geminiStatus();
         break;
+      case 'import':
+        geminiImport();
+        break;
       default:
         console.log(`
 Gemini Commands:
   vibe gemini auth                 OAuth authentication
   vibe gemini key <key>            Set API key
+  vibe gemini import               Import Gemini CLI credentials
   vibe gemini status               Check status
   vibe gemini logout               Logout
   vibe gemini remove               Remove config
 
-Auth order: gemini-cli(auto) → oauth → apikey
+Auth order: oauth → apikey → gemini-cli(auto)
         `);
     }
     break;

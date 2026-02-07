@@ -237,7 +237,7 @@ export async function analyzeImage(
       return await analyzeImageWithOAuth(authInfo.accessToken, authInfo.projectId, contents, { model, maxTokens, temperature, systemPrompt }, authInfo.type);
     } catch (error) {
       const errorMsg = (error as Error).message;
-      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
+      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403') || errorMsg.includes('404') || errorMsg.includes('not found'))) {
         return analyzeImageWithApiKey(apiKey, contents, { model, maxTokens, temperature, systemPrompt });
       }
       throw error;
@@ -308,10 +308,12 @@ async function analyzeImageWithOAuth(
     innerRequest.systemInstruction = { parts: [{ text: options.systemPrompt }] };
   }
 
+  const effectiveModelId = modelInfo.oauthId || modelInfo.id;
+
   const requestBody = wrapRequestBody(
     innerRequest,
     projectId || ANTIGRAVITY_DEFAULT_PROJECT_ID,
-    modelInfo.id
+    effectiveModelId
   );
 
   let lastError: Error | null = null;
@@ -448,7 +450,7 @@ export async function transcribeAudio(
       );
     } catch (error) {
       const errorMsg = (error as Error).message;
-      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403'))) {
+      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403') || errorMsg.includes('404') || errorMsg.includes('not found'))) {
         transcription = await analyzeImageWithApiKey(apiKey, contents, callOptions);
       } else {
         throw error;

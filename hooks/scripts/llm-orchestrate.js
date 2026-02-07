@@ -204,14 +204,16 @@ function recordAudio(outputPath, maxDuration) {
 }
 
 async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
-  const modulePath = `${LIB_URL}${providerName}-api.js`;
+  // kimi는 az-api.js의 별칭 (Azure Foundry Kimi K2.5)
+  const moduleKey = providerName === 'kimi' ? 'az' : providerName;
+  const modulePath = `${LIB_URL}${moduleKey}-api.js`;
   const module = await import(modulePath);
 
   let orchestrateFn;
-  if (providerName === 'gpt') {
+  if (moduleKey === 'gpt') {
     orchestrateFn = module.coreGptOrchestrate;
-  } else if (providerName === 'kimi') {
-    orchestrateFn = module.coreKimiOrchestrate;
+  } else if (moduleKey === 'az') {
+    orchestrateFn = module.coreAzOrchestrate;
   } else {
     orchestrateFn = module.coreGeminiOrchestrate;
   }

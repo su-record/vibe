@@ -16,8 +16,8 @@ import {
 } from '../gemini-constants.js';
 import type { AuthInfo, GeminiAuthMethod } from './types.js';
 
-// 고정 인증 순서: gemini-cli(자동 탐지) → oauth → apikey
-const AUTH_ORDER: GeminiAuthMethod[] = ['gemini-cli', 'oauth', 'apikey'];
+// 고정 인증 순서: oauth → apikey → gemini-cli
+const AUTH_ORDER: GeminiAuthMethod[] = ['oauth', 'apikey', 'gemini-cli'];
 
 /**
  * 전역 설정 디렉토리 경로

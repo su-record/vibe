@@ -34,29 +34,19 @@ const ENDPOINT_FALLBACKS = [
 ];
 
 // 사용 가능한 모델 목록
-// Antigravity 엔드포인트는 gemini-2.5-*, gemini-3-*-preview 형식을 사용
-// Google AI Studio (API Key)는 gemini-3-*-preview 형식을 사용
+// - id: API Key (Google AI Studio) 모델명 — gemini-3-*-preview 형식
+// - oauthId: OAuth/CLI (Antigravity v1internal) 모델명 — gemini-3-* 형식 (접미사 없음)
 export const GEMINI_MODELS: Record<string, GeminiModelInfo> = {
-  'gemini-2.5-pro': {
-    id: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
-    description: 'Stable Pro model',
-    maxTokens: 8192,
-  },
-  'gemini-2.5-flash': {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
-    description: 'Stable Flash model, fast',
-    maxTokens: 8192,
-  },
   'gemini-3-pro': {
     id: 'gemini-3-pro-preview',
+    oauthId: 'gemini-3-pro',
     name: 'Gemini 3 Pro (Preview)',
     description: 'Latest Pro preview',
     maxTokens: 8192,
   },
   'gemini-3-flash': {
     id: 'gemini-3-flash-preview',
+    oauthId: 'gemini-3-flash',
     name: 'Gemini 3 Flash (Preview)',
     description: 'Latest Flash preview, fastest',
     maxTokens: 8192,
@@ -235,15 +225,18 @@ async function chatWithOAuth(
     innerRequest.tools = [{ googleSearch: {} }];
   }
 
+  // OAuth/CLI → oauthId 사용, API Key 경로에서는 id 사용
+  const effectiveModelId = modelInfo.oauthId || modelInfo.id;
+
   const requestBody = wrapRequestBody(
     innerRequest,
     projectId || ANTIGRAVITY_DEFAULT_PROJECT_ID,
-    modelInfo.id,
+    effectiveModelId,
     authType
   );
 
-  const isClaudeModel = modelInfo.id.startsWith('claude-');
-  const isThinkingModel = modelInfo.id.includes('thinking');
+  const isClaudeModel = effectiveModelId.startsWith('claude-');
+  const isThinkingModel = effectiveModelId.includes('thinking');
 
   let lastError: Error | null = null;
   for (const endpoint of ENDPOINT_FALLBACKS) {
@@ -333,16 +326,37 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     return chatWithApiKey(authInfo.apiKey, options);
   }
 
-  // OAuth / Gemini CLI → 둘 다 v1internal 엔드포인트 사용
+  // OAuth / Gemini CLI → v1internal 엔드포인트
+  // Fallback chain: 요청 모델 → gemini-3-flash → API Key
   if ((authInfo.type === 'oauth' || authInfo.type === 'gemini-cli') && authInfo.accessToken) {
+    const requestedModel = options.model || DEFAULT_MODEL;
+
     try {
       return await chatWithOAuth(authInfo.accessToken, authInfo.projectId, options, authInfo.type);
     } catch (error) {
       const errorMsg = (error as Error).message;
-      const shouldFallback = errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403');
+      const isRateLimit = errorMsg.includes('429') || errorMsg.includes('503') || errorMsg.includes('capacity');
+      const isNotFound = errorMsg.includes('404') || errorMsg.includes('not found');
+      const isAuthError = errorMsg.includes('401') || errorMsg.includes('403');
+
+      // 모델 fallback: pro → flash (rate limit/capacity 한정)
+      if (isRateLimit && requestedModel !== 'gemini-3-flash') {
+        try {
+          return await chatWithOAuth(
+            authInfo.accessToken, authInfo.projectId,
+            { ...options, model: 'gemini-3-flash' }, authInfo.type
+          );
+        } catch (flashError) {
+          // flash도 실패 → API Key fallback
+          if (apiKey) {
+            return chatWithApiKey(apiKey, options);
+          }
+          throw flashError;
+        }
+      }
 
       // API Key fallback
-      if (shouldFallback && apiKey) {
+      if ((isRateLimit || isNotFound || isAuthError) && apiKey) {
         return chatWithApiKey(apiKey, options);
       }
       throw error;
