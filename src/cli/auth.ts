@@ -106,7 +106,7 @@ export function formatLLMStatus(): string {
   const status = getLLMAuthStatus();
   const lines: string[] = [];
 
-  lines.push('External LLM:');
+  lines.push('🤖 External LLM:');
   lines.push(`  GPT: ${formatAuthMethods(status.gpt)}`);
   lines.push(`  Gemini: ${formatAuthMethods(status.gemini)}`);
   lines.push(`  AZ: ${formatAuthMethods(status.az)}`);

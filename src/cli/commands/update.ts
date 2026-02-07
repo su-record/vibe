@@ -35,10 +35,10 @@ import { updateCursorGlobalAssets } from './init.js';
  */
 export async function checkAndUpgradeVibe(options: CliOptions = { silent: false }): Promise<boolean> {
   try {
-    log(`⬆️ Upgrading to latest version...\n`);
+    log('⬆️ Upgrading to latest version...\n');
 
     execSync('npm install -g @su-record/core@latest', {
-      stdio: options.silent ? 'pipe' : 'inherit'
+      stdio: 'pipe',
     });
 
     // 업그레이드 완료 후 새 버전으로 설정 업데이트 (--skip-upgrade로 무한 루프 방지)
@@ -84,9 +84,7 @@ export async function update(options: CliOptions = { silent: false }, skipUpgrad
     if (!fs.existsSync(coreDir) && !fs.existsSync(legacyCoreDir)) {
       // 프로젝트가 없어도 전역 업그레이드는 완료됨
       const packageJson = getPackageJson();
-      log(`✅ core global updated (v${packageJson.version})
-${formatLLMStatus()}
-`);
+      log(`\n✅ core global updated (v${packageJson.version})\n\n${formatLLMStatus()}\n`);
       return;
     }
 
@@ -139,11 +137,7 @@ ${formatLLMStatus()}
     const packageJson = getPackageJson();
 
     const authStatus = getLLMAuthStatus();
-    log(`✅ vibe updated (v${packageJson.version})
-${formatLLMStatus()}
-${formatVoiceHint(authStatus.gemini.length > 0)}
-📦 Context7 plugin (recommended): /plugin install context7
-`);
+    log(`\n✅ vibe updated (v${packageJson.version})\n\n${formatLLMStatus()}\n${formatVoiceHint(authStatus.gemini.length > 0)}\n📦 Context7 plugin (recommended): /plugin install context7\n`);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
