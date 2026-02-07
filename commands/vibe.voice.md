@@ -31,8 +31,14 @@ argument-hint: "--pro for high accuracy, --lang ko for Korean"
 
 ### Step 2: 음성 녹음 및 변환
 
+**스크립트 경로 해석 (세션당 1회):**
 ```bash
-node "$(npm -g prefix 2>/dev/null || echo ~/.local)/lib/node_modules/@anthropic-ai/claude-code/node_modules/@su-record/core/dist/hooks/scripts/llm-orchestrate.js" gemini voice $ARGUMENTS
+node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"
+```
+출력값을 `[LLM_SCRIPT]`로 저장.
+
+```bash
+node "[LLM_SCRIPT]" gemini voice $ARGUMENTS
 ```
 
 **대체 경로** (프로젝트 로컬):

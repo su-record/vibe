@@ -189,32 +189,43 @@ Score: 96/100 ✅ PASSED
 
 **For EACH round (1, 2, 3), run GPT + Gemini + Kimi in PARALLEL via Bash tool.**
 
-**🚨 IMPORTANT: SPEC content is too large for CLI arguments. Use stdin pipe method.**
+**🚨 IMPORTANT: SPEC content is too large for CLI arguments. Use --input file method (no pipe needed).**
 
 **Procedure for each round:**
 
-**Step A: Save SPEC content to scratchpad temp file (using Write tool):**
-- Write the SPEC content to `[SCRATCHPAD]/spec-content.txt`
+**Step A: Save SPEC content + prompt as JSON to scratchpad temp file (using Write tool):**
+- Write JSON to `[SCRATCHPAD]/spec-review-input.json` with content:
+```json
+{"prompt": "Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"}
+```
+- Where `[SPEC_CONTENT]` is the full SPEC text (properly JSON-escaped inside the prompt string)
 
-**Step B: Run GPT + Gemini + Kimi in PARALLEL (three separate Bash tool calls at once):**
+**Step B: Resolve script path (one-time per session, using Bash tool):**
+```bash
+node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"
+```
+- Save the output as `[LLM_SCRIPT]` for use in all subsequent calls.
+
+**Step C: Run GPT + Gemini + Kimi in PARALLEL (three separate Bash tool calls at once):**
 
 ```bash
 # GPT review (Bash tool call 1)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json
+node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/spec-review-input.json"
 ```
 
 ```bash
 # Gemini review (Bash tool call 2 - run in parallel with GPT)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json
+node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/spec-review-input.json"
 ```
 
 ```bash
 # Kimi review (Bash tool call 3 - run in parallel with GPT/Gemini)
-node -e "const fs=require('fs');const p=JSON.stringify({prompt:'Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: '+fs.readFileSync('[SCRATCHPAD]/spec-content.txt','utf8')});process.stdout.write(p)" | node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json
+node "[LLM_SCRIPT]" kimi orchestrate-json --input "[SCRATCHPAD]/spec-review-input.json"
 ```
 
 **🚨 MANDATORY: Replace `[SCRATCHPAD]` with the actual scratchpad directory path.**
 **🚨 Replace `[N]` with the current round number (1, 2, or 3).**
+**🚨 Replace `[LLM_SCRIPT]` with the resolved absolute path from Step B.**
 **🚨 Run GPT, Gemini, and Kimi calls in PARALLEL (three separate Bash tool calls at once).**
 
 - Round 1: Write SPEC → Run GPT + Gemini in parallel → Cross-validate → Apply fixes → Update SPEC file

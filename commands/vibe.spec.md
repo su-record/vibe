@@ -102,7 +102,8 @@ When image files (`.png`, `.jpg`, `.jpeg`, `.webp`) are provided as input, analy
 **Gemini enabled - analyze via llm-orchestrate.js:**
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
+# [LLM_SCRIPT] = resolved path from: node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"
+node "[LLM_SCRIPT]" gemini analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
 ```
 
 Parse the JSON result: `{ success: true, analysis: "..." }` → use `analysis` field content.
@@ -406,49 +407,52 @@ Read ~/.claude/vibe/languages/typescript-react.md
 
 **🚨 MANDATORY: Copy the EXACT path below. DO NOT modify or use alternative paths.**
 
+**Step 0: Resolve script path (once per session, using Bash tool):**
 ```bash
-# Cross-platform path (works on Windows/macOS/Linux)
-# ⚠️ COPY THIS EXACTLY - DO NOT USE ~/.claude/ or any other path!
-CORE_SCRIPTS="$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts"
+node -e "console.log(require('path').join(process.env.APPDATA || require('os').homedir() + '/.config', 'vibe/hooks/scripts/llm-orchestrate.js'))"
+```
+Save the output as `[LLM_SCRIPT]` for use in all subsequent calls.
 
+**Run all 6 in PARALLEL (each as separate Bash tool call):**
+```bash
 # 1. GPT: Best practices
-node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "[LLM_SCRIPT]" gpt orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # 2. GPT: Security
-node "$CORE_SCRIPTS/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+node "[LLM_SCRIPT]" gpt orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # 3. Gemini: Best practices
-node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "[LLM_SCRIPT]" gemini orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # 4. Gemini: Security
-node "$CORE_SCRIPTS/llm-orchestrate.js" gemini orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 
 # 5. Kimi K2.5: Code review patterns
-node "$CORE_SCRIPTS/llm-orchestrate.js" kimi orchestrate-json "Code review patterns for [FEATURE] with [STACK]. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
+node "[LLM_SCRIPT]" kimi orchestrate-json "Code review patterns for [FEATURE] with [STACK]. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
 
 # 6. Kimi K2.5: Architecture analysis
-node "$CORE_SCRIPTS/llm-orchestrate.js" kimi orchestrate-json "Architecture analysis for [FEATURE] with [STACK]. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
+node "[LLM_SCRIPT]" kimi orchestrate-json "Architecture analysis for [FEATURE] with [STACK]. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
 ```
 
 **Concrete example - run all 6 in parallel:**
 ```bash
 # GPT best practices
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "[LLM_SCRIPT]" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # GPT security
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gpt orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+node "[LLM_SCRIPT]" gpt orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # Gemini best practices
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+node "[LLM_SCRIPT]" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # Gemini security
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 
 # Kimi K2.5 code review patterns
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json "Code review patterns for passkey authentication with React, Supabase. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
+node "[LLM_SCRIPT]" kimi orchestrate-json "Code review patterns for passkey authentication with React, Supabase. Focus: edge cases, error handling, testing strategies. Return JSON: {patterns: [], edgeCases: [], testStrategies: []}"
 
 # Kimi K2.5 architecture analysis
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" kimi orchestrate-json "Architecture analysis for passkey authentication with React, Supabase. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
+node "[LLM_SCRIPT]" kimi orchestrate-json "Architecture analysis for passkey authentication with React, Supabase. Focus: scalability, maintainability, performance. Return JSON: {architecturePatterns: [], scalabilityNotes: [], performanceTips: []}"
 ```
 
 **ALSO run Claude research agents in parallel using Task tool:**

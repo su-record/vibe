@@ -102,7 +102,7 @@ Or check config file: `~/.config/vibe/gemini.json`
 ##### A. UI Mockup Image Generation
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini image "Modern UI mockup: [UI Description from step 2]. Clean design, [colors/typography if available], mobile-first responsive layout" --output "./ui-preview.png"
+node "[LLM_SCRIPT]" gemini image "Modern UI mockup: [UI Description from step 2]. Clean design, [colors/typography if available], mobile-first responsive layout" --output "./ui-preview.png"
 ```
 
 ##### B. UI Code Generation (from design files)
@@ -110,7 +110,7 @@ node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/v
 When design files (image/HTML/folder) are provided, use Gemini to generate production-ready component code:
 
 ```bash
-node "$(node -p "process.env.APPDATA || require('os').homedir() + '/.config'")/vibe/hooks/scripts/llm-orchestrate.js" gemini orchestrate "You are a UI code generator. Analyze the provided design and generate production-ready React TypeScript components with Tailwind CSS. Output complete component code with proper types, responsive layout, and accessibility attributes."
+node "[LLM_SCRIPT]" gemini orchestrate "You are a UI code generator. Analyze the provided design and generate production-ready React TypeScript components with Tailwind CSS. Output complete component code with proper types, responsive layout, and accessibility attributes."
 ```
 
 Pass the design context (file contents, extracted colors, layout structure from step 2) as the user prompt via stdin or arguments.

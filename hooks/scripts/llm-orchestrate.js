@@ -435,18 +435,32 @@ async function main() {
     // 4번째 인자만 있으면: arg4=사용자 프롬프트 (시스템 프롬프트는 기본값)
     prompt = arg4;
   } else {
-    // Hook에서 호출: stdin으로 JSON 입력
-    let inputData = '';
-    for await (const chunk of process.stdin) {
-      inputData += chunk;
-    }
+    // --input <file> 플래그 확인 (파이프 대체, Windows 호환)
+    const inputFlagIdx = process.argv.indexOf('--input');
+    if (inputFlagIdx !== -1 && process.argv[inputFlagIdx + 1]) {
+      const inputFile = process.argv[inputFlagIdx + 1];
+      try {
+        const inputData = fs.readFileSync(inputFile, 'utf8');
+        const parsed = JSON.parse(inputData);
+        prompt = parsed.prompt;
+      } catch (err) {
+        console.log(`[${provider.toUpperCase()}] Error: Failed to read input file: ${err.message}`);
+        return;
+      }
+    } else {
+      // Hook에서 호출: stdin으로 JSON 입력 (fallback)
+      let inputData = '';
+      for await (const chunk of process.stdin) {
+        inputData += chunk;
+      }
 
-    try {
-      const parsed = JSON.parse(inputData);
-      prompt = parsed.prompt;
-    } catch {
-      console.log(`[${provider.toUpperCase()}] Error: Invalid JSON input`);
-      return;
+      try {
+        const parsed = JSON.parse(inputData);
+        prompt = parsed.prompt;
+      } catch {
+        console.log(`[${provider.toUpperCase()}] Error: Invalid JSON input`);
+        return;
+      }
     }
   }
 

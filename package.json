@@ -1,6 +1,6 @@
 {
   "name": "@su-record/core",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Su core - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
   "type": "module",
   "main": "dist/cli/index.js",
