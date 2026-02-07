@@ -14,9 +14,26 @@
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/interaction": "./dist/tools/interaction/index.js",
     "./orchestrator": "./dist/orchestrator/index.js",
+    "./interface": {
+      "types": "./dist/interface/index.d.ts",
+      "default": "./dist/interface/index.js"
+    },
+    "./router": {
+      "types": "./dist/router/index.d.ts",
+      "default": "./dist/router/index.js"
+    },
+    "./memory": {
+      "types": "./dist/lib/memory/index.d.ts",
+      "default": "./dist/lib/memory/index.js"
+    },
+    "./policy": {
+      "types": "./dist/policy/index.d.ts",
+      "default": "./dist/policy/index.js"
+    },
     "./lib/gpt": "./dist/lib/gpt-api.js",
     "./lib/gemini": "./dist/lib/gemini-api.js",
-    "./lib/kimi": "./dist/lib/kimi-api.js"
+    "./lib/kimi": "./dist/lib/az-api.js",
+    "./lib/az": "./dist/lib/az-api.js"
   },
   "bin": {
     "vibe": "./dist/cli/index.js"
