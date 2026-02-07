@@ -23,7 +23,7 @@ export const getCurrentTimeDefinition: ToolDefinition = {
   }
 };
 
-export async function getCurrentTime(args: { format?: string; timezone?: string }): Promise<ToolResult> {
+export async function getCurrentTime(args: { format?: string; timezone?: string } = {}): Promise<ToolResult> {
   const { format = 'iso', timezone } = args;
   const now = new Date();
   
