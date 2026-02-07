@@ -80,6 +80,12 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - No `@ts-ignore` → fix type issues at root
 - Explicit return types on all functions
 
+### TypeScript Rules
+- No `any` type → use `unknown` + type guards
+- No `as any` casting → define proper interfaces
+- No `@ts-ignore` → fix type issues at root
+- Explicit return types on all functions
+
 ### Error Handling Required
 
 - try-catch or error state required
@@ -322,6 +328,31 @@ security, performance, architecture, complexity, simplicity, data-integrity, tes
 ### Research Agents (4)
 
 best-practices, framework-docs, codebase-patterns, security-advisory → `agents/research/`
+
+### UI/UX Agents (8)
+
+CSV 데이터 기반 디자인 인텔리전스. BM25 검색 엔진으로 24개 CSV에서 산업별 디자인 전략 자동 생성.
+
+| Phase | Agent | Model | Role |
+|-------|-------|-------|------|
+| SPEC | ① ui-industry-analyzer | Haiku | 산업 분석 + 디자인 전략 결정 |
+| SPEC | ② ui-design-system-gen | Sonnet | MASTER.md 디자인 시스템 생성 |
+| SPEC | ③ ui-layout-architect | Haiku | 페이지 구조/섹션/CTA 설계 |
+| RUN | ④ ui-stack-implementer | Haiku | 프레임워크별 컴포넌트 가이드 |
+| RUN | ⑤ ui-dataviz-advisor | Haiku | 차트/시각화 라이브러리 추천 |
+| REVIEW | ⑥ ux-compliance-reviewer | Haiku | UX 가이드라인 준수 검증 |
+| REVIEW | ⑦ ui-a11y-auditor | Haiku | WCAG 2.1 AA 접근성 감사 |
+| REVIEW | ⑧ ui-antipattern-detector | Haiku | UI 안티패턴 검출 |
+
+**실행 흐름**: ①→②③ (SPEC, supervisor-worker) → ④⑤ (RUN, Phase 시작 전) → ⑥⑦⑧ (REVIEW, UI 파일 변경 시)
+
+**비활성화**: `.claude/vibe/config.json`에 `"uiUxAnalysis": false` 설정
+
+**MCP 도구**: `core_ui_search`, `core_ui_stack_search`, `core_ui_generate_design_system`, `core_ui_persist_design_system`
+
+**데이터**: `~/.claude/vibe/ui-ux-data/` (11 도메인 CSV + 13 스택 CSV)
+
+→ `agents/ui/`
 
 ### Agent Teams (Experimental)
 

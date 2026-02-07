@@ -52,6 +52,10 @@ export { applyQualityRules } from './convention/applyQualityRules.js';
 
 // UI tools
 export { previewUiAscii } from './ui/previewUiAscii.js';
+export { searchUiUx } from './ui/searchUiUx.js';
+export { searchUiUxStack } from './ui/searchUiUxStack.js';
+export { generateDesignSystem } from './ui/generateDesignSystem.js';
+export { persistDesignSystem } from './ui/persistDesignSystem.js';
 
 // Interaction tools (v2.6.1)
 export {
@@ -84,6 +88,27 @@ export { getCurrentTime } from './time/getCurrentTime.js';
 export { MemoryManager } from '../lib/MemoryManager.js';
 export { ProjectCache } from '../lib/ProjectCache.js';
 export { ContextCompressor } from '../lib/ContextCompressor.js';
+
+// UI/UX Design Intelligence
+export {
+  CsvDataLoader,
+  Bm25Engine,
+  SearchService,
+  DesignSystemGenerator,
+} from '../lib/ui-ux/index.js';
+
+export type {
+  SearchDomain,
+  StackName,
+  SearchResult,
+  SearchResultItem,
+  DesignSystem,
+  DesignSystemColorPalette,
+  DesignSystemTypography,
+  DesignSystemStyle,
+  DesignSystemLayout,
+  DecisionRules,
+} from '../lib/ui-ux/types.js';
 
 // Model routing & iteration tracking (v2.5.7)
 export {

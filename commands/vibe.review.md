@@ -182,6 +182,39 @@ node -e "import('@su-record/core/orchestrator').then(o => o.review(['src/api/use
 | rails-reviewer | Gemfile has rails |
 | react-reviewer | package.json has react |
 
+### Phase 2.5: UI/UX Review Agents (Auto-triggered)
+
+> **활성화 조건**: 변경된 파일 중 UI 파일 존재 (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.css`, `.scss`)
+> **비활성화**: `.claude/vibe/config.json`에 `"uiUxAnalysis": false` 설정
+
+**기존 12+ 리뷰 에이전트와 병렬 실행:**
+
+| Agent | Role | Output |
+|-------|------|--------|
+| ⑥ ux-compliance-reviewer | UX 가이드라인 준수 검증 | P1/P2/P3 findings |
+| ⑦ ui-a11y-auditor | WCAG 2.1 AA 접근성 감사 | P1/P2/P3 findings |
+| ⑧ ui-antipattern-detector | UI 안티패턴 + 디자인 시스템 일관성 | P1/P2/P3 findings |
+
+**실행 방법 — 기존 Phase 2 에이전트와 병렬 실행:**
+
+```text
+# ⑥ UX 준수 검증 (Haiku)
+Task(subagent_type="ux-compliance-reviewer",
+  prompt="Review UI files for UX guideline compliance: {changed_ui_files}. Use core_ui_search against ux-guidelines and web-interface domains.")
+
+# ⑦ 접근성 감사 (Haiku)
+Task(subagent_type="ui-a11y-auditor",
+  prompt="Audit UI files for WCAG 2.1 AA compliance: {changed_ui_files}.")
+
+# ⑧ 안티패턴 검출 (Haiku)
+Task(subagent_type="ui-antipattern-detector",
+  prompt="Detect UI anti-patterns in: {changed_ui_files}. Check against MASTER.md if exists at .claude/vibe/design-system/{project}/MASTER.md.")
+```
+
+**findings 통합**: ⑥⑦⑧ findings를 기존 findings[]와 병합 → P1/P2/P3 통합 정렬
+
+**⑦ Critical finding 에스컬레이션**: ui-a11y-auditor의 P1 finding은 Review Debate Team(Phase 4.5)에 자동 포함
+
 ### Phase 3: Deep Analysis
 
 After agent results:

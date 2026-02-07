@@ -101,6 +101,16 @@ export function main(): void {
     // 인라인 기본 스킬 추가 (번들에 없는 추가 스킬)
     seedInlineSkills(coreSkillsDir);
 
+    // vibe/ui-ux-data 복사 (UI/UX Design Intelligence CSV 데이터)
+    const uiUxDataSource = path.join(packageRoot, 'vibe', 'ui-ux-data');
+    const globalUiUxDataDir = path.join(globalCoreAssetsDir, 'ui-ux-data');
+    if (fs.existsSync(uiUxDataSource)) {
+      if (fs.existsSync(globalUiUxDataDir)) {
+        removeDirRecursive(globalUiUxDataDir);
+      }
+      copyDirRecursive(uiUxDataSource, globalUiUxDataDir);
+    }
+
     // vibe/rules 복사
     const rulesSource = path.join(packageRoot, 'vibe', 'rules');
     const globalRulesDir = path.join(globalCoreAssetsDir, 'rules');
