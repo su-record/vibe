@@ -1,6 +1,10 @@
 # VIBE
 
-SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.1.0
+SPEC-driven AI Coding Framework (Claude Code Exclusive)
+
+## Response Language
+
+**IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.** — v0.1.0
 
 ## Philosophy
 
@@ -31,10 +35,6 @@ SPEC-driven AI Coding Framework (Claude Code Exclusive) — v0.1.0
 | AI 결과 그대로 사용 | "이 접근이 맞나?" 검증 질문 |
 | 완성 코드만 요청 | 단계별로 검토하며 진행 |
 
-## Response Language
-
-**IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.**
-
 ## Code Quality Standards (Mandatory)
 
 Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) for detailed rules.
@@ -61,6 +61,12 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - No `as any` → proper interfaces
 - No `@ts-ignore`
 - Explicit return types
+
+### TypeScript Rules
+- No `any` type → use `unknown` + type guards
+- No `as any` casting → define proper interfaces
+- No `@ts-ignore` → fix type issues at root
+- Explicit return types on all functions
 
 ### Error Handling Required
 

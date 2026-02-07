@@ -21,6 +21,7 @@ wiki/
 
 # config
 .claude/
+.cursor/
 .env
 
 # vibe project hooks (personal)
