@@ -47,6 +47,10 @@ const KEYWORD_MAP: Record<IntentCategory, readonly string[]> = {
     '스케줄', '매일', '매주', '모니터', '알림', '리포트',
     'schedule', 'daily', 'weekly', 'monitor', 'alert', 'report', 'cron',
   ],
+  browse: [
+    '브라우저', '크롬', '웹사이트', '사이트', '페이지', '열어',
+    'browser', 'chrome', 'open', 'browse', 'website', '접속',
+  ],
   composite: [],
   conversation: [],
 };

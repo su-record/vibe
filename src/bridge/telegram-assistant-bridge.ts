@@ -19,6 +19,8 @@ import { ResearchRoute } from '../router/routes/ResearchRoute.js';
 import { UtilityRoute } from '../router/routes/UtilityRoute.js';
 import { MonitorRoute } from '../router/routes/MonitorRoute.js';
 import { CompositeRoute } from '../router/routes/CompositeRoute.js';
+import { BrowseRoute } from '../router/routes/BrowseRoute.js';
+import { BrowserAgent } from '../router/browser/BrowserAgent.js';
 import { RepoResolver } from '../router/resolvers/RepoResolver.js';
 import { DevSessionManager } from '../router/sessions/DevSessionManager.js';
 import { GoogleAuthManager } from '../router/services/GoogleAuthManager.js';
@@ -173,7 +175,13 @@ async function main(): Promise<void> {
     const compositeRoute = new CompositeRoute(logger, smartRouter, router.getNotificationManager());
     router.getRegistry().register(compositeRoute);
 
-    logger('info', `라우트 등록 완료: dev, google, research, utility, monitor, composite`);
+    // Browse Route (uses user's Chrome profile)
+    const userBrowserManager = new BrowserManager(logger, { useUserProfile: true });
+    const browseAgent = new BrowserAgent(logger, smartRouter, userBrowserManager);
+    const browseRoute = new BrowseRoute(logger, browseAgent);
+    router.getRegistry().register(browseRoute);
+
+    logger('info', `라우트 등록 완료: dev, google, research, utility, monitor, composite, browse`);
   } else {
     logger('warn', 'SmartRouter 없음 — dev, google 라우트만 활성');
   }

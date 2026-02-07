@@ -16,6 +16,7 @@ export type IntentCategory =
   | 'utility'
   | 'monitor'
   | 'composite'
+  | 'browse'
   | 'conversation';
 
 export interface ClassifiedIntent {

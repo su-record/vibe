@@ -1,6 +1,6 @@
 /**
  * BrowserManager - Playwright browser management
- * Dedicated bot profile (separate from user's Chrome)
+ * Supports both dedicated bot profile and user's Chrome profile
  */
 
 import * as fs from 'node:fs';
@@ -12,6 +12,30 @@ const DEFAULT_PROFILE_DIR = path.join(
   os.homedir(),
   process.platform === 'win32' ? 'AppData/Roaming/vibe/browser-profile' : '.config/vibe/browser-profile',
 );
+
+/** Detect user's Chrome profile directory */
+function detectChromeProfileDir(): string | null {
+  const home = os.homedir();
+  const candidates = process.platform === 'win32'
+    ? [
+        path.join(home, 'AppData', 'Local', 'Google', 'Chrome', 'User Data'),
+        path.join(home, 'AppData', 'Local', 'Chromium', 'User Data'),
+      ]
+    : process.platform === 'darwin'
+      ? [
+          path.join(home, 'Library', 'Application Support', 'Google', 'Chrome'),
+          path.join(home, 'Library', 'Application Support', 'Chromium'),
+        ]
+      : [
+          path.join(home, '.config', 'google-chrome'),
+          path.join(home, '.config', 'chromium'),
+        ];
+
+  for (const dir of candidates) {
+    if (fs.existsSync(dir)) return dir;
+  }
+  return null;
+}
 
 /** Playwright types (dynamic import to avoid hard dependency) */
 interface BrowserContext {
@@ -38,6 +62,7 @@ interface PlaywrightModule {
 export interface BrowserManagerOptions {
   profileDir?: string;
   headless?: boolean;
+  useUserProfile?: boolean;
 }
 
 export class BrowserManager {
@@ -49,9 +74,20 @@ export class BrowserManager {
 
   constructor(logger: InterfaceLogger, options?: BrowserManagerOptions) {
     this.logger = logger;
-    this.profileDir = options?.profileDir ?? DEFAULT_PROFILE_DIR;
+    if (options?.useUserProfile) {
+      const detected = detectChromeProfileDir();
+      this.profileDir = detected ?? DEFAULT_PROFILE_DIR;
+      if (detected) this.logger('info', `사용자 Chrome 프로필 감지: ${detected}`);
+    } else {
+      this.profileDir = options?.profileDir ?? DEFAULT_PROFILE_DIR;
+    }
     this.headless = options?.headless ?? false;
     this.ensureProfileDir();
+  }
+
+  /** Get profile directory path */
+  getProfileDir(): string {
+    return this.profileDir;
   }
 
   /** Get or create persistent browser context */
