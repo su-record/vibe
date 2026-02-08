@@ -73,6 +73,37 @@ export interface TestCase {
   description?: string;
 }
 
+export interface RulePressureTestConfig {
+  minExamples: number;
+  requireBothTypes: boolean;
+  requireRationalization: boolean;
+  minCodeLength: number;
+}
+
+export interface RuleTDDScores {
+  hasExamples: boolean;
+  hasBothTypes: boolean;
+  hasRationalization: boolean;
+  hasEdgeCases: boolean;
+  exampleQuality: number;
+  coverageScore: number;
+}
+
+export interface RuleTDDResult {
+  ruleId: string;
+  ruleTitle: string;
+  scores: RuleTDDScores;
+  issues: string[];
+  passed: boolean;
+}
+
+export interface RulePressureTestSummary {
+  total: number;
+  passed: number;
+  failed: number;
+  results: RuleTDDResult[];
+}
+
 /**
  * Parse YAML frontmatter from markdown file
  */
@@ -536,4 +567,182 @@ export function getImpactColor(impact: ImpactLevel): string {
  */
 export function compareImpact(a: ImpactLevel, b: ImpactLevel): number {
   return IMPACT_ORDER[a] - IMPACT_ORDER[b];
+}
+
+// --- Rules TDD (Pressure Testing) ---
+
+const DEFAULT_PRESSURE_CONFIG: RulePressureTestConfig = {
+  minExamples: 2,
+  requireBothTypes: true,
+  requireRationalization: false,
+  minCodeLength: 20,
+};
+
+const RATIONALIZATION_KEYWORDS = [
+  'excuse', 'why wrong', 'avoid', 'rationalization',
+  '변명', '왜 틀렸', '합리화', '회피',
+];
+
+/**
+ * Pressure-test a single rule for completeness and quality
+ * Returns weighted score (0-100) with 70+ = passed
+ */
+export function pressureTestRule(
+  rule: Rule,
+  config: Partial<RulePressureTestConfig> = {}
+): RuleTDDResult {
+  const cfg = { ...DEFAULT_PRESSURE_CONFIG, ...config };
+  const issues: string[] = [];
+
+  // Check 1: Has examples (20 points)
+  const hasExamples = rule.examples.length >= 1;
+  if (!hasExamples) issues.push('No examples provided');
+
+  // Check 2: Has both Incorrect + Correct (25 points)
+  const hasIncorrect = rule.examples.some(e =>
+    /incorrect|wrong|bad|❌/i.test(e.label)
+  );
+  const hasCorrect = rule.examples.some(e =>
+    /correct|good|✅/i.test(e.label)
+  );
+  const hasBothTypes = hasIncorrect && hasCorrect;
+  if (!hasBothTypes) issues.push('Missing Incorrect or Correct example');
+
+  // Check 3: Has rationalization counters (20 points)
+  const fullText = `${rule.explanation} ${rule.examples.map(e => e.code).join(' ')}`;
+  const hasRationalization = RATIONALIZATION_KEYWORDS.some(kw =>
+    fullText.toLowerCase().includes(kw.toLowerCase())
+  );
+  if (cfg.requireRationalization && !hasRationalization) {
+    issues.push('No rationalization counter patterns found');
+  }
+
+  // Check 4: Has edge cases / 3+ examples (15 points)
+  const hasEdgeCases = rule.examples.length >= 3;
+  if (!hasEdgeCases) issues.push(`Only ${rule.examples.length} examples (recommend 3+)`);
+
+  // Check 5: Example code quality (20 points)
+  const codeExamples = rule.examples.filter(e => e.code.trim().length > 0);
+  const avgCodeLength = codeExamples.length > 0
+    ? codeExamples.reduce((sum, e) => sum + e.code.length, 0) / codeExamples.length
+    : 0;
+  const exampleQuality = Math.min(100, Math.round((avgCodeLength / cfg.minCodeLength) * 100));
+
+  // Calculate weighted coverage score
+  const coverageScore =
+    (hasExamples ? 20 : 0) +
+    (hasBothTypes ? 25 : 0) +
+    (hasRationalization ? 20 : 0) +
+    (hasEdgeCases ? 15 : 0) +
+    Math.round(exampleQuality * 0.2);
+
+  return {
+    ruleId: rule.id,
+    ruleTitle: rule.title,
+    scores: {
+      hasExamples,
+      hasBothTypes,
+      hasRationalization,
+      hasEdgeCases,
+      exampleQuality,
+      coverageScore,
+    },
+    issues,
+    passed: coverageScore >= 70,
+  };
+}
+
+/**
+ * Batch pressure-test all rules in a directory
+ */
+export async function pressureTestRulesDirectory(
+  rulesDir: string,
+  config: Partial<RulePressureTestConfig> = {}
+): Promise<RulePressureTestSummary> {
+  const files = await readdir(rulesDir);
+  const ruleFiles = files.filter(f =>
+    f.endsWith('.md') && !f.startsWith('_') && f !== 'README.md'
+  );
+
+  const results: RuleTDDResult[] = [];
+  for (const file of ruleFiles) {
+    const filePath = join(rulesDir, file);
+    try {
+      const { rule } = await parseRuleFile(filePath);
+      rule.id = file.replace('.md', '');
+      results.push(pressureTestRule(rule, config));
+    } catch {
+      results.push({
+        ruleId: file,
+        ruleTitle: file,
+        scores: {
+          hasExamples: false,
+          hasBothTypes: false,
+          hasRationalization: false,
+          hasEdgeCases: false,
+          exampleQuality: 0,
+          coverageScore: 0,
+        },
+        issues: ['Failed to parse rule file'],
+        passed: false,
+      });
+    }
+  }
+
+  return {
+    total: results.length,
+    passed: results.filter(r => r.passed).length,
+    failed: results.filter(r => !r.passed).length,
+    results,
+  };
+}
+
+/**
+ * Format pressure test results as markdown report
+ */
+export function formatPressureTestReport(summary: RulePressureTestSummary): string {
+  const lines: string[] = [];
+  const passRate = summary.total > 0
+    ? Math.round((summary.passed / summary.total) * 100)
+    : 0;
+
+  lines.push('# Rules TDD - Pressure Test Report\n');
+  lines.push(`| Metric | Value |`);
+  lines.push(`|--------|-------|`);
+  lines.push(`| Total Rules | ${summary.total} |`);
+  lines.push(`| Passed | ${summary.passed} |`);
+  lines.push(`| Failed | ${summary.failed} |`);
+  lines.push(`| Pass Rate | ${passRate}% |`);
+  lines.push('');
+
+  const failed = summary.results.filter(r => !r.passed);
+  if (failed.length > 0) {
+    lines.push('## Failed Rules\n');
+    for (const r of failed) {
+      lines.push(`### ${r.ruleId}: ${r.ruleTitle} (${r.scores.coverageScore}/100)\n`);
+      lines.push(`| Check | Status |`);
+      lines.push(`|-------|--------|`);
+      lines.push(`| Examples | ${r.scores.hasExamples ? '✅' : '❌'} |`);
+      lines.push(`| Both Types | ${r.scores.hasBothTypes ? '✅' : '❌'} |`);
+      lines.push(`| Rationalization | ${r.scores.hasRationalization ? '✅' : '❌'} |`);
+      lines.push(`| Edge Cases (3+) | ${r.scores.hasEdgeCases ? '✅' : '❌'} |`);
+      lines.push(`| Code Quality | ${r.scores.exampleQuality}/100 |`);
+      if (r.issues.length > 0) {
+        lines.push(`\n**Issues:** ${r.issues.join(', ')}\n`);
+      }
+    }
+  }
+
+  const passed = summary.results.filter(r => r.passed);
+  if (passed.length > 0) {
+    lines.push('## Passed Rules\n');
+    lines.push(`| Rule | Score | Rationalization |`);
+    lines.push(`|------|-------|-----------------|`);
+    for (const r of passed) {
+      const rat = r.scores.hasRationalization ? '✅' : '⚠️';
+      lines.push(`| ${r.ruleTitle} | ${r.scores.coverageScore}/100 | ${rat} |`);
+    }
+  }
+
+  return lines.join('\n');
 }
