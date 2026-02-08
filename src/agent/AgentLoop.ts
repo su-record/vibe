@@ -16,18 +16,19 @@
 
 import type { ExternalMessage } from '../interface/types.js';
 import type { RouteServices } from '../router/types.js';
-import type { AgentMessage, HeadModelProvider, HeadModelResponse, ToolCall } from './types.js';
+import type { AgentMessage, AgentProgressEvent, HeadModelProvider, HeadModelResponse, ToolCall } from './types.js';
 import type { HeadModelSelector } from './HeadModelSelector.js';
 import type { ToolRegistry } from './ToolRegistry.js';
 import { ConversationState } from './ConversationState.js';
 import { ToolExecutor, type AgentLogger } from './ToolExecutor.js';
 import { buildSystemPrompt, type SystemPromptConfig } from './SystemPrompt.js';
 import { MediaPreprocessor, type MediaPreprocessorConfig } from './preprocessors/MediaPreprocessor.js';
-import { bindSendTelegram, unbindSendTelegram } from './tools/send-telegram.js';
+import { bindSendTelegram, unbindSendTelegram, runInChatContext } from './tools/send-telegram.js';
 
 const MAX_ITERATIONS = 10;
 const HEAD_MODEL_TIMEOUT_MS = 10_000;
 const MAX_INVALID_TOOL_RETRIES = 2;
+const MAX_IDEMPOTENCY_CACHE_SIZE = 500;
 
 // === Error Messages ===
 
@@ -39,11 +40,14 @@ const ERROR_MESSAGES = {
 
 // === AgentLoop ===
 
+export type OnProgressCallback = (event: AgentProgressEvent) => void;
+
 export interface AgentLoopDeps {
   headSelector: HeadModelSelector;
   toolRegistry: ToolRegistry;
   systemPromptConfig?: SystemPromptConfig;
   mediaPreprocessorConfig?: MediaPreprocessorConfig;
+  onProgress?: OnProgressCallback;
 }
 
 export class AgentLoop {
@@ -54,6 +58,7 @@ export class AgentLoop {
   private executedToolCalls = new Map<string, string>(); // idempotency cache
   private systemPromptConfig: SystemPromptConfig | undefined;
   private mediaPreprocessor: MediaPreprocessor;
+  private onProgress: OnProgressCallback | undefined;
 
   constructor(deps: AgentLoopDeps) {
     this.headSelector = deps.headSelector;
@@ -61,6 +66,11 @@ export class AgentLoop {
     this.systemPromptConfig = deps.systemPromptConfig;
     this.toolExecutor = new ToolExecutor((_level, _msg) => {});
     this.mediaPreprocessor = new MediaPreprocessor(deps.mediaPreprocessorConfig);
+    this.onProgress = deps.onProgress;
+  }
+
+  setOnProgress(callback: OnProgressCallback | undefined): void {
+    this.onProgress = callback;
   }
 
   setLogger(logger: AgentLogger): void {
@@ -69,11 +79,20 @@ export class AgentLoop {
 
   async process(message: ExternalMessage, services: RouteServices): Promise<void> {
     const { chatId } = message;
+    const jobId = message.id;
 
     // Check session expiry
     if (this.conversationState.isSessionExpired(chatId)) {
       this.conversationState.resetSession(chatId);
     }
+
+    // Emit job:created
+    this.emitProgress({
+      type: 'job:created',
+      jobId,
+      data: { kind: 'created', chatId, content: message.content },
+      timestamp: new Date().toISOString(),
+    });
 
     // Media preprocessing (voice/image/file)
     let content = message.content;
@@ -83,6 +102,12 @@ export class AgentLoop {
       const result = await this.mediaPreprocessor.preprocess(message, sendFn);
 
       if (!result.success) {
+        this.emitProgress({
+          type: 'job:error',
+          jobId,
+          data: { kind: 'error', message: result.error ?? '미디어 처리 실패' },
+          timestamp: new Date().toISOString(),
+        });
         await services.sendTelegram(chatId, result.error ?? '미디어 처리 실패');
         return;
       }
@@ -97,22 +122,31 @@ export class AgentLoop {
       content,
     });
 
-    // Bind send_telegram tool to current chat
+    // Bind send_telegram tool to current chat (Map에 sendFn 등록)
     bindSendTelegram(chatId, services.sendTelegram);
 
     // Select head model
     const headModel = await this.headSelector.selectHead();
 
-    try {
-      await this.runLoop(chatId, headModel, services);
-    } catch (err) {
-      this.headSelector.reportFailure(headModel, err);
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      services.logger('error', `AgentLoop error: ${errorMsg}`);
-      await services.sendTelegram(chatId, ERROR_MESSAGES.headModelFailure);
-    } finally {
-      unbindSendTelegram();
-    }
+    // AsyncLocalStorage로 chatId를 요청 스코프에 바인딩
+    await runInChatContext(chatId, async () => {
+      try {
+        await this.runLoop(chatId, headModel, services, jobId);
+      } catch (err) {
+        this.headSelector.reportFailure(headModel, err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        services.logger('error', `AgentLoop error: ${errorMsg}`);
+        this.emitProgress({
+          type: 'job:error',
+          jobId,
+          data: { kind: 'error', message: errorMsg },
+          timestamp: new Date().toISOString(),
+        });
+        await services.sendTelegram(chatId, ERROR_MESSAGES.headModelFailure);
+      } finally {
+        unbindSendTelegram(chatId);
+      }
+    });
   }
 
   getConversationState(): ConversationState {
@@ -123,9 +157,11 @@ export class AgentLoop {
     chatId: string,
     headModel: HeadModelProvider,
     services: RouteServices,
+    jobId?: string,
   ): Promise<void> {
     const tools = this.toolRegistry.list();
     let invalidToolRetries = 0;
+    const jid = jobId ?? chatId;
 
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
       // Build messages: system prompt + conversation history
@@ -148,8 +184,24 @@ export class AgentLoop {
           role: 'assistant',
           content: response.content,
         });
+        this.emitProgress({
+          type: 'job:complete',
+          jobId: jid,
+          data: { kind: 'complete', content: response.content, model: response.model },
+          timestamp: new Date().toISOString(),
+        });
         await services.sendTelegram(chatId, response.content, { format: 'markdown' });
         return;
+      }
+
+      // Emit chunk for assistant content (if any)
+      if (response.content) {
+        this.emitProgress({
+          type: 'job:chunk',
+          jobId: jid,
+          data: { kind: 'chunk', content: response.content },
+          timestamp: new Date().toISOString(),
+        });
       }
 
       // Has tool calls → execute them
@@ -163,6 +215,7 @@ export class AgentLoop {
         chatId,
         response.toolCalls,
         services,
+        jid,
       );
 
       if (hasInvalidTool) {
@@ -182,8 +235,10 @@ export class AgentLoop {
     chatId: string,
     toolCalls: ToolCall[],
     services: RouteServices,
+    jobId?: string,
   ): Promise<boolean> {
     let hasInvalidTool = false;
+    const jid = jobId ?? chatId;
 
     for (const toolCall of toolCalls) {
       // Idempotency: check if already executed
@@ -197,13 +252,39 @@ export class AgentLoop {
         continue;
       }
 
+      // Emit tool start progress
+      this.emitProgress({
+        type: 'job:progress',
+        jobId: jid,
+        data: { kind: 'tool_start', toolName: toolCall.name, toolCallId: toolCall.id },
+        timestamp: new Date().toISOString(),
+      });
+
       const result = await this.toolExecutor.execute(toolCall, this.toolRegistry);
+
+      // Emit tool end progress
+      this.emitProgress({
+        type: 'job:progress',
+        jobId: jid,
+        data: {
+          kind: 'tool_end',
+          toolName: toolCall.name,
+          toolCallId: toolCall.id,
+          status: result.status,
+          latencyMs: result.latencyMs,
+        },
+        timestamp: new Date().toISOString(),
+      });
 
       if (result.status === 'error' && result.content.includes('not found')) {
         hasInvalidTool = true;
       }
 
-      // Cache result for idempotency
+      // Cache result for idempotency (with size limit)
+      if (this.executedToolCalls.size >= MAX_IDEMPOTENCY_CACHE_SIZE) {
+        const firstKey = this.executedToolCalls.keys().next().value;
+        if (firstKey !== undefined) this.executedToolCalls.delete(firstKey);
+      }
       this.executedToolCalls.set(toolCall.id, result.content);
 
       this.conversationState.addMessage(chatId, {
@@ -216,6 +297,14 @@ export class AgentLoop {
     }
 
     return hasInvalidTool;
+  }
+
+  private emitProgress(event: AgentProgressEvent): void {
+    try {
+      this.onProgress?.(event);
+    } catch {
+      // Progress callback errors should not break the agent loop
+    }
   }
 
   private async callHeadModelWithRetry(

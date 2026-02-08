@@ -9,6 +9,14 @@ export { TelegramBot } from './telegram/TelegramBot.js';
 export { TelegramFormatter } from './telegram/TelegramFormatter.js';
 export { WebServer } from './web/WebServer.js';
 export { WebhookHandler } from './webhook/WebhookHandler.js';
+export { VisionInterface } from './vision/VisionInterface.js';
+export { GeminiVision } from './vision/GeminiVisionClass.js';
+export { ScreenCapture } from './vision/ScreenCapture.js';
+export { SlackBot } from './slack/SlackBot.js';
+export { SlackFormatter } from './slack/SlackFormatter.js';
+export { IMessageBot } from './imessage/IMessageBot.js';
+export { IMessageSender } from './imessage/IMessageSender.js';
+export { IMessageFormatter } from './imessage/IMessageFormatter.js';
 
 export type {
   ExternalInterface,
@@ -18,6 +26,8 @@ export type {
   InterfaceStatus,
   InterfaceInfo,
   TelegramConfig,
+  SlackConfig,
+  IMessageConfig,
   WebServerConfig,
   WebSocketMessage,
   WebhookConfig,
@@ -28,4 +38,7 @@ export type {
   PermissionRequest,
   PermissionResponse,
   InterfaceLogger,
+  VisionConfig,
 } from './types.js';
+
+export type { CaptureOptions } from './vision/ScreenCapture.js';

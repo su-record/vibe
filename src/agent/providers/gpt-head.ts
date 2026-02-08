@@ -120,21 +120,29 @@ function safeJsonParse(str: string): Record<string, unknown> {
 
 function getApiEndpoint(authInfo: AuthInfo): { url: string; headers: Record<string, string> } {
   switch (authInfo.type) {
-    case 'apikey':
+    case 'apikey': {
+      if (!authInfo.apiKey) throw new GptHeadError(0, 'API key is missing from auth info');
       return {
         url: 'https://api.openai.com/v1/chat/completions',
-        headers: { 'Authorization': `Bearer ${authInfo.apiKey!}` },
+        headers: { 'Authorization': `Bearer ${authInfo.apiKey}` },
       };
-    case 'azure':
+    }
+    case 'azure': {
+      if (!authInfo.azureEndpoint || !authInfo.azureDeployment || !authInfo.azureApiKey) {
+        throw new GptHeadError(0, 'Azure configuration is incomplete');
+      }
       return {
-        url: `${authInfo.azureEndpoint!}/openai/deployments/${authInfo.azureDeployment!}/chat/completions?api-version=${authInfo.azureApiVersion || '2024-12-01-preview'}`,
-        headers: { 'api-key': authInfo.azureApiKey! },
+        url: `${authInfo.azureEndpoint}/openai/deployments/${authInfo.azureDeployment}/chat/completions?api-version=${authInfo.azureApiVersion || '2024-12-01-preview'}`,
+        headers: { 'api-key': authInfo.azureApiKey },
       };
-    case 'oauth':
+    }
+    case 'oauth': {
+      if (!authInfo.accessToken) throw new GptHeadError(0, 'OAuth access token is missing');
       return {
         url: 'https://api.openai.com/v1/chat/completions',
-        headers: { 'Authorization': `Bearer ${authInfo.accessToken!}` },
+        headers: { 'Authorization': `Bearer ${authInfo.accessToken}` },
       };
+    }
   }
 }
 

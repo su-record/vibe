@@ -9,7 +9,7 @@ import { LogLevel } from '../daemon/types.js';
 // Message & Response (Channel-agnostic)
 // ============================================================================
 
-export type ChannelType = 'telegram' | 'web' | 'webhook' | 'cli';
+export type ChannelType = 'telegram' | 'web' | 'webhook' | 'cli' | 'vision' | 'slack' | 'imessage';
 
 export interface ExternalMessage {
   id: string;
@@ -71,6 +71,63 @@ export interface TelegramConfig {
 }
 
 // ============================================================================
+// Vision Types
+// ============================================================================
+
+export interface VisionConfig {
+  enabled: boolean;
+  geminiApiKey?: string;
+  maxImageSizeMB?: number;
+}
+
+// ============================================================================
+// Slack Types
+// ============================================================================
+
+export interface SlackConfig {
+  botToken: string;
+  appToken: string;
+  allowedChannelIds: string[];
+}
+
+// ============================================================================
+// iMessage Types
+// ============================================================================
+
+export interface IMessageConfig {
+  allowedHandles: string[];
+  pollingIntervalMs?: number;
+  dbPath?: string;
+}
+
+// ============================================================================
+// Multi-Channel Configuration
+// ============================================================================
+
+export interface VibeChannelsConfig {
+  telegram?: {
+    enabled: boolean;
+    config?: TelegramConfig;
+  };
+  slack?: {
+    enabled: boolean;
+    config?: SlackConfig;
+  };
+  imessage?: {
+    enabled: boolean;
+    config?: IMessageConfig;
+  };
+  vision?: {
+    enabled: boolean;
+    config?: VisionConfig;
+  };
+  web?: {
+    enabled: boolean;
+    config?: WebServerConfig;
+  };
+}
+
+// ============================================================================
 // Web Server Types
 // ============================================================================
 
@@ -79,9 +136,14 @@ export interface WebServerConfig {
   host: string;
   authToken: string;
   maxConnections: number;
+  maxSseConnections: number;
   idleTimeoutMs: number;
   maxPayloadBytes: number;
   corsOrigins: string[];
+  authMode: 'local' | 'cloud';
+  jwtSecret?: string;
+  jwtIssuer?: string;
+  jwtAudience?: string;
 }
 
 export interface WebSocketMessage {

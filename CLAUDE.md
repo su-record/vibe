@@ -68,6 +68,12 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - No `@ts-ignore` → fix type issues at root
 - Explicit return types on all functions
 
+### TypeScript Rules
+- No `any` type → use `unknown` + type guards
+- No `as any` casting → define proper interfaces
+- No `@ts-ignore` → fix type issues at root
+- Explicit return types on all functions
+
 ### Error Handling Required
 
 - try-catch or error state required
@@ -164,6 +170,29 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 | `vibe help` | Help |
 | `vibe version` | Version info |
 
+## External Channels
+
+| Channel | Interface | Requirements |
+|---------|-----------|-------------|
+| Telegram | TelegramBot (polling) | `TELEGRAM_BOT_TOKEN` |
+| Web/API | WebServer (SSE + WebSocket) | JWT auth |
+| Slack | SlackBot (Socket Mode) | `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN` |
+| iMessage | IMessageBot (DB polling) | macOS only, Full Disk Access |
+| Vision | VisionInterface | `GEMINI_API_KEY` |
+
+### Channel Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `VIBE_TELEGRAM_ENABLED` | Enable Telegram channel |
+| `VIBE_SLACK_ENABLED` | Enable Slack channel |
+| `VIBE_IMESSAGE_ENABLED` | Enable iMessage channel (macOS only) |
+| `VIBE_VISION_ENABLED` | Enable Vision channel |
+| `SLACK_BOT_TOKEN` | Slack bot token (xoxb-) |
+| `SLACK_APP_TOKEN` | Slack app-level token (xapp-) |
+| `SLACK_ALLOWED_CHANNELS` | Comma-separated allowed channel IDs |
+| `GEMINI_API_KEY` | Google Gemini API key |
+
 ## Magic Keywords
 
 | Keyword | Effect |
@@ -178,7 +207,7 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 
 SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_format>` `<acceptance>`
 
-## Built-in Tools (35+)
+## Built-in Tools (39+)
 
 ### Memory & Session
 
@@ -216,6 +245,15 @@ SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_forma
 |------|---------|
 | `core_preview_ui_ascii` | UI preview in ASCII |
 | `core_get_current_time` | Get current time |
+
+### Channel Tools
+
+| Tool | Purpose |
+|------|---------|
+| `send_slack` | Send message to Slack channel |
+| `send_imessage` | Send iMessage (macOS only) |
+| `vision_capture` | Capture screen for analysis |
+| `vision_analyze` | Analyze image with Gemini Vision |
 
 ### SPEC & Testing
 

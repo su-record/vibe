@@ -57,9 +57,12 @@ export interface SmartRouterOptions {
 /**
  * SmartRouter - Task 유형별 최적 LLM 선택 + fallback chain
  */
+const PRIORITY_CONFIG_CACHE_TTL = 60_000; // 1분
+
 export class SmartRouter {
   private cache: LLMAvailabilityCache;
   private verbose: boolean;
+  private priorityConfigCache: { config: ReturnType<typeof loadPriorityConfig>; cachedAt: number } | null = null;
 
   constructor(options: SmartRouterOptions = {}) {
     this.verbose = options.verbose ?? false;
@@ -156,9 +159,9 @@ export class SmartRouter {
 
     const providers = [...TASK_LLM_PRIORITY[type]];
 
-    // priority config에 따라 az/kimi 순서 조정
+    // priority config에 따라 az/kimi 순서 조정 (캐시 사용)
     try {
-      const priorityConfig = loadPriorityConfig();
+      const priorityConfig = this.getCachedPriorityConfig();
       if (priorityConfig.kimi[0] === 'kimi') {
         // Kimi Direct 우선: kimi를 az 앞으로 이동
         const azIdx = providers.indexOf('az');
@@ -279,6 +282,16 @@ export class SmartRouter {
     if (cache.errorCount >= 3) {
       cache.available = false;
     }
+  }
+
+  private getCachedPriorityConfig(): ReturnType<typeof loadPriorityConfig> {
+    const now = Date.now();
+    if (this.priorityConfigCache && now - this.priorityConfigCache.cachedAt < PRIORITY_CONFIG_CACHE_TTL) {
+      return this.priorityConfigCache.config;
+    }
+    const config = loadPriorityConfig();
+    this.priorityConfigCache = { config, cachedAt: now };
+    return config;
   }
 
   private delay(ms: number): Promise<void> {

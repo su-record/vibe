@@ -24,11 +24,13 @@ const MAX_TOKENS = 8192;
 // === Anthropic API Types ===
 
 interface AnthropicContentBlock {
-  type: 'text' | 'tool_use';
+  type: 'text' | 'tool_use' | 'tool_result';
   text?: string;
   id?: string;
   name?: string;
   input?: Record<string, unknown>;
+  tool_use_id?: string;
+  content?: string;
 }
 
 interface AnthropicRequestMessage {
@@ -68,10 +70,10 @@ function convertMessagesToAnthropic(
       apiMessages.push({
         role: 'user',
         content: [{
-          type: 'tool_result' as 'text',
+          type: 'tool_result',
           tool_use_id: msg.toolCallId,
           content: msg.content,
-        } as unknown as AnthropicContentBlock],
+        }],
       });
       continue;
     }

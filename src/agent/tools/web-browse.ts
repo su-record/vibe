@@ -10,12 +10,15 @@
  */
 
 import * as dns from 'node:dns/promises';
+import * as http from 'node:http';
+import * as https from 'node:https';
 import { z } from 'zod';
 import type { ToolRegistrationInput } from '../ToolRegistry.js';
 
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 3;
 const MAX_RESPONSE_SIZE = 50_000; // 50KB text
+const MAX_BODY_BUFFER = MAX_RESPONSE_SIZE * 2; // 응답 스트리밍 중 메모리 제한
 
 export const webBrowseSchema = z.object({
   url: z.string().url().describe('URL to fetch'),
@@ -61,29 +64,82 @@ function validateUrl(urlStr: string): URL {
   return parsed;
 }
 
-async function resolveAndValidate(hostname: string): Promise<void> {
+/**
+ * DNS를 해석하고 모든 주소가 public IP인지 검증한 뒤, 첫 번째 safe IP 반환.
+ * DNS rebinding 방지: 반환된 IP를 직접 연결에 사용하여 TOCTOU 제거.
+ */
+async function resolveToSafeIP(hostname: string): Promise<string> {
+  // IPv4
   try {
-    const addresses = await dns.resolve4(hostname);
-    for (const addr of addresses) {
-      if (isPrivateIP(addr)) {
-        throw new Error(`Private IP access blocked: ${addr}`);
-      }
+    const addrs = await dns.resolve4(hostname);
+    for (const addr of addrs) {
+      if (isPrivateIP(addr)) throw new Error(`Private IP access blocked: ${addr}`);
     }
+    if (addrs.length > 0) return addrs[0];
   } catch (err) {
     if (err instanceof Error && err.message.includes('Private IP')) throw err;
-    // DNS resolution might fail for some domains; allow fetch to handle
   }
 
+  // IPv6 fallback
   try {
-    const addresses6 = await dns.resolve6(hostname);
-    for (const addr of addresses6) {
-      if (isPrivateIP(addr)) {
-        throw new Error(`Private IPv6 access blocked: ${addr}`);
-      }
+    const addrs = await dns.resolve6(hostname);
+    for (const addr of addrs) {
+      if (isPrivateIP(addr)) throw new Error(`Private IPv6 access blocked: ${addr}`);
     }
-  } catch {
-    // IPv6 resolution failure is OK
+    if (addrs.length > 0) return addrs[0];
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Private IP')) throw err;
   }
+
+  throw new Error(`DNS resolution failed for ${hostname}`);
+}
+
+/**
+ * 검증된 IP로 직접 HTTP(S) 요청. DNS를 재해석하지 않으므로 rebinding 불가.
+ * - hostname → resolvedIP로 연결
+ * - Host 헤더 → 원래 hostname (virtual hosting)
+ * - servername → 원래 hostname (TLS SNI + 인증서 검증)
+ */
+function pinnedRequest(
+  parsed: URL,
+  resolvedIP: string,
+): Promise<{ statusCode: number; headers: http.IncomingHttpHeaders; body: string }> {
+  return new Promise((resolve, reject) => {
+    const isHttps = parsed.protocol === 'https:';
+    const mod = isHttps ? https : http;
+    const port = parsed.port || (isHttps ? '443' : '80');
+
+    const options: https.RequestOptions = {
+      hostname: resolvedIP,
+      port: Number(port),
+      path: parsed.pathname + parsed.search,
+      method: 'GET',
+      headers: { 'User-Agent': 'VIBE-Agent/1.0', Host: parsed.host },
+      timeout: FETCH_TIMEOUT_MS,
+      ...(isHttps ? { servername: parsed.hostname } : {}),
+    };
+
+    const req = mod.request(options, (res) => {
+      const chunks: Buffer[] = [];
+      let totalSize = 0;
+      res.on('data', (chunk: Buffer) => {
+        totalSize += chunk.length;
+        if (totalSize <= MAX_BODY_BUFFER) chunks.push(chunk);
+      });
+      res.on('end', () => {
+        resolve({
+          statusCode: res.statusCode ?? 0,
+          headers: res.headers,
+          body: Buffer.concat(chunks).toString('utf8'),
+        });
+      });
+      res.on('error', reject);
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Fetch timed out')); });
+    req.end();
+  });
 }
 
 async function safeFetch(urlStr: string, redirectCount = 0): Promise<string> {
@@ -92,31 +148,25 @@ async function safeFetch(urlStr: string, redirectCount = 0): Promise<string> {
   }
 
   const parsed = validateUrl(urlStr);
-  await resolveAndValidate(parsed.hostname);
+  const resolvedIP = await resolveToSafeIP(parsed.hostname);
+  const { statusCode, headers, body } = await pinnedRequest(parsed, resolvedIP);
 
-  const response = await fetch(urlStr, {
-    redirect: 'manual',
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    headers: { 'User-Agent': 'VIBE-Agent/1.0' },
-  });
-
-  // Handle redirects manually
-  if (response.status >= 300 && response.status < 400) {
-    const location = response.headers.get('location');
+  // Handle redirects — 각 hop마다 resolveToSafeIP로 재검증
+  if (statusCode >= 300 && statusCode < 400) {
+    const location = headers.location;
     if (!location) throw new Error('Redirect without Location header');
     const redirectUrl = new URL(location, urlStr).toString();
     return safeFetch(redirectUrl, redirectCount + 1);
   }
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  if (statusCode < 200 || statusCode >= 300) {
+    throw new Error(`HTTP ${statusCode}`);
   }
 
-  const text = await response.text();
-  if (text.length > MAX_RESPONSE_SIZE) {
-    return text.substring(0, MAX_RESPONSE_SIZE) + '\n\n[...truncated]';
+  if (body.length > MAX_RESPONSE_SIZE) {
+    return body.substring(0, MAX_RESPONSE_SIZE) + '\n\n[...truncated]';
   }
-  return text;
+  return body;
 }
 
 // === Tool Handler ===
@@ -150,4 +200,4 @@ export const webBrowseTool: ToolRegistrationInput = {
   scope: 'read',
 };
 
-export { isPrivateIP, validateUrl };
+export { isPrivateIP, validateUrl, resolveToSafeIP };

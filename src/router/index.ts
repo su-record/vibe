@@ -6,6 +6,7 @@
 // Core Router
 export { ModelARouter } from './ModelARouter.js';
 export { RouteRegistry } from './RouteRegistry.js';
+export { MultiChannelRouter } from './MultiChannelRouter.js';
 
 // Base Route
 export { BaseRoute } from './routes/BaseRoute.js';
@@ -52,6 +53,9 @@ export type {
   ModelARouterInterface,
   SmartRouterLike,
   DedupEntry,
+  ChannelSendOptions,
 } from './types.js';
+
+export type { BroadcastResult } from './MultiChannelRouter.js';
 
 export { DEFAULT_ROUTER_CONFIG } from './types.js';
