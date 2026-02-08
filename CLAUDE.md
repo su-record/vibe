@@ -62,18 +62,6 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - No `@ts-ignore` → fix type issues at root
 - Explicit return types on all functions
 
-### TypeScript Rules
-- No `any` type → use `unknown` + type guards
-- No `as any` casting → define proper interfaces
-- No `@ts-ignore` → fix type issues at root
-- Explicit return types on all functions
-
-### TypeScript Rules
-- No `any` type → use `unknown` + type guards
-- No `as any` casting → define proper interfaces
-- No `@ts-ignore` → fix type issues at root
-- Explicit return types on all functions
-
 ### Error Handling Required
 
 - try-catch or error state required
@@ -207,7 +195,7 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 
 SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_format>` `<acceptance>`
 
-## Built-in Tools (39+)
+## Built-in Tools (41+)
 
 ### Memory & Session
 
@@ -308,7 +296,7 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 ## Multi-LLM Orchestration (v0.1.0)
 
-5개 LLM(Claude + GPT + Gemini + AZ + Kimi Direct) 멀티 오케스트레이션 시스템.
+4개 LLM(Claude + GPT + Gemini + Kimi K2.5) 멀티 오케스트레이션 시스템. AZ(Azure Foundry)와 Kimi Direct(Moonshot)는 동일 모델의 다른 엔드포인트.
 
 ### Core Modules
 
@@ -473,9 +461,9 @@ junior-mentor — Junior developer mentor with EXPLANATION.md generation
 
 **Additional hooks:** `code-review.js`, `llm-orchestrate.js`, `recall.js`, `complexity.js`, `compound.js`
 
-## Language Support (23 frameworks)
+## Language Support (25 frameworks)
 
-- **TypeScript**: Next.js, React, Angular, NestJS, Vue, Svelte, Nuxt, Tauri, Electron, React Native, Node
+- **TypeScript**: Next.js, React, Angular, NestJS, Vue, Svelte, Nuxt, Tauri, Electron, React Native, Node, Astro
 - **Python**: Django, FastAPI
 - **Java**: Spring
 - **Kotlin**: Android
