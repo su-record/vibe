@@ -349,6 +349,22 @@ CSV 데이터 기반 디자인 인텔리전스. BM25 검색 엔진으로 24개 C
 
 → `agents/ui/`
 
+### Planning Agents (2)
+
+requirements-analyst, ux-advisor → `agents/planning/`
+
+### QA Agents (2)
+
+edge-case-finder, acceptance-tester → `agents/qa/`
+
+### Docs Agents (2)
+
+api-documenter, changelog-writer → `agents/docs/`
+
+### Mentor Agent (1)
+
+junior-mentor — Junior developer mentor with EXPLANATION.md generation
+
 ### Agent Teams (Experimental)
 
 > 에이전트들이 팀을 구성하여 공유 태스크 리스트로 협업하고 상호 피드백합니다.

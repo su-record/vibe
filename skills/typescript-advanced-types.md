@@ -1,40 +1,40 @@
 ---
-description: "TypeScript 고급 타입 시스템 마스터 가이드. Generics, Conditional Types, Mapped Types, Template Literals, Utility Types 포함. 복잡한 타입 로직, 재사용 가능한 타입 유틸리티, 컴파일 타임 타입 안전성 확보 시 활성화."
+description: "TypeScript advanced type system master guide. Covers Generics, Conditional Types, Mapped Types, Template Literals, Utility Types. Activates for complex type logic, reusable type utilities, and compile-time type safety."
 ---
 
 # TypeScript Advanced Types
 
-TypeScript의 고급 타입 시스템을 활용하여 타입 안전한 애플리케이션을 구축하기 위한 종합 가이드. Generics, Conditional Types, Mapped Types, Template Literal Types, Utility Types를 다룬다.
+Comprehensive guide for building type-safe applications using TypeScript's advanced type system. Covers Generics, Conditional Types, Mapped Types, Template Literal Types, and Utility Types.
 
-## 적용 시점
+## When to Apply
 
-- 타입 안전한 라이브러리/프레임워크 구축 시
-- 재사용 가능한 제네릭 컴포넌트 생성 시
-- 복잡한 타입 추론 로직 구현 시
-- 타입 안전한 API 클라이언트 설계 시
-- 폼 유효성 검증 시스템 구축 시
-- 강력한 타입의 설정 객체 생성 시
-- 타입 안전한 상태 관리 구현 시
-- JavaScript → TypeScript 마이그레이션 시
+- Building type-safe libraries/frameworks
+- Creating reusable generic components
+- Implementing complex type inference logic
+- Designing type-safe API clients
+- Building form validation systems
+- Creating strongly-typed configuration objects
+- Implementing type-safe state management
+- Migrating JavaScript to TypeScript
 
-## vibe TypeScript 규칙 연계
+## VIBE TypeScript Rule Integration
 
-> vibe는 `any` 타입 사용을 차단한다. 이 스킬의 패턴은 `any` 없이 타입 안전성을 확보하는 대안을 제공한다.
+> VIBE blocks `any` type usage. The patterns in this skill provide alternatives for type safety without `any`.
 
-| 금지 패턴 | 대안 (이 스킬 참고) |
-|----------|-------------------|
-| `any` | `unknown` + 타입 가드 |
-| `as any` | 적절한 인터페이스 정의 |
-| `@ts-ignore` | 타입 문제 직접 해결 |
-| Raw generic types | 타입 파라미터 명시 |
+| Forbidden Pattern | Alternative (from this skill) |
+|-------------------|-------------------------------|
+| `any` | `unknown` + type guards |
+| `as any` | Define proper interfaces |
+| `@ts-ignore` | Fix type issues directly |
+| Raw generic types | Specify type parameters |
 
-## 핵심 개념
+## Core Concepts
 
 ### 1. Generics
 
-재사용 가능하면서 타입 안전한 컴포넌트를 만드는 핵심 도구.
+The key tool for creating reusable yet type-safe components.
 
-**기본 제네릭 함수:**
+**Basic Generic Function:**
 
 ```typescript
 function identity<T>(value: T): T {
@@ -43,10 +43,10 @@ function identity<T>(value: T): T {
 
 const num = identity<number>(42); // Type: number
 const str = identity<string>("hello"); // Type: string
-const auto = identity(true); // Type: boolean (추론)
+const auto = identity(true); // Type: boolean (inferred)
 ```
 
-**제네릭 제약 (Constraints):**
+**Generic Constraints:**
 
 ```typescript
 interface HasLength {
@@ -58,12 +58,12 @@ function logLength<T extends HasLength>(item: T): T {
   return item;
 }
 
-logLength("hello"); // OK: string은 length를 가짐
-logLength([1, 2, 3]); // OK: array는 length를 가짐
-// logLength(42);     // Error: number는 length가 없음
+logLength("hello"); // OK: string has length
+logLength([1, 2, 3]); // OK: array has length
+// logLength(42);     // Error: number has no length
 ```
 
-**다중 타입 파라미터:**
+**Multiple Type Parameters:**
 
 ```typescript
 function merge<T, U>(obj1: T, obj2: U): T & U {
@@ -76,9 +76,9 @@ const merged = merge({ name: "John" }, { age: 30 });
 
 ### 2. Conditional Types
 
-조건에 따라 타입이 결정되는 정교한 타입 로직.
+Sophisticated type logic where types are determined by conditions.
 
-**기본 Conditional Type:**
+**Basic Conditional Type:**
 
 ```typescript
 type IsString<T> = T extends string ? true : false;
@@ -87,7 +87,7 @@ type A = IsString<string>; // true
 type B = IsString<number>; // false
 ```
 
-**반환 타입 추출:**
+**Return Type Extraction:**
 
 ```typescript
 type ReturnType<T> = T extends (...args: unknown[]) => infer R ? R : never;
@@ -109,7 +109,7 @@ type StrOrNumArray = ToArray<string | number>;
 // Type: string[] | number[]
 ```
 
-**중첩 조건:**
+**Nested Conditions:**
 
 ```typescript
 type TypeName<T> = T extends string
@@ -130,9 +130,9 @@ type T2 = TypeName<() => void>; // "function"
 
 ### 3. Mapped Types
 
-기존 타입의 프로퍼티를 순회하며 변환하는 타입.
+Types that iterate over and transform properties of existing types.
 
-**기본 Mapped Type:**
+**Basic Mapped Type:**
 
 ```typescript
 type Readonly<T> = {
@@ -148,7 +148,7 @@ type ReadonlyUser = Readonly<User>;
 // Type: { readonly id: number; readonly name: string; }
 ```
 
-**키 리매핑:**
+**Key Remapping:**
 
 ```typescript
 type Getters<T> = {
@@ -164,7 +164,7 @@ type PersonGetters = Getters<Person>;
 // Type: { getName: () => string; getAge: () => number; }
 ```
 
-**타입 기반 프로퍼티 필터링:**
+**Property Filtering by Type:**
 
 ```typescript
 type PickByType<T, U> = {
@@ -184,9 +184,9 @@ type OnlyNumbers = PickByType<Mixed, number>;
 
 ### 4. Template Literal Types
 
-문자열 기반 패턴 매칭 및 변환 타입.
+String-based pattern matching and transformation types.
 
-**기본 Template Literal:**
+**Basic Template Literal:**
 
 ```typescript
 type EventName = "click" | "focus" | "blur";
@@ -194,7 +194,7 @@ type EventHandler = `on${Capitalize<EventName>}`;
 // Type: "onClick" | "onFocus" | "onBlur"
 ```
 
-**문자열 조작:**
+**String Manipulation:**
 
 ```typescript
 type Upper = Uppercase<"hello">; // "HELLO"
@@ -203,7 +203,7 @@ type Cap = Capitalize<"john">; // "John"
 type Uncap = Uncapitalize<"John">; // "john"
 ```
 
-**경로 빌더:**
+**Path Builder:**
 
 ```typescript
 type Path<T> = T extends object
@@ -225,40 +225,40 @@ type ConfigPath = Path<Config>;
 
 ### 5. Utility Types
 
-TypeScript 내장 유틸리티 타입 활용.
+Built-in TypeScript utility types.
 
 ```typescript
-// Partial<T> — 모든 프로퍼티를 선택적으로
+// Partial<T> — make all properties optional
 type PartialUser = Partial<User>;
 
-// Required<T> — 모든 프로퍼티를 필수로
+// Required<T> — make all properties required
 type RequiredUser = Required<PartialUser>;
 
-// Readonly<T> — 모든 프로퍼티를 읽기 전용으로
+// Readonly<T> — make all properties readonly
 type ReadonlyUser = Readonly<User>;
 
-// Pick<T, K> — 특정 프로퍼티만 선택
+// Pick<T, K> — pick specific properties
 type UserName = Pick<User, "name" | "email">;
 
-// Omit<T, K> — 특정 프로퍼티 제거
+// Omit<T, K> — omit specific properties
 type UserWithoutPassword = Omit<User, "password">;
 
-// Exclude<T, U> — 유니온에서 타입 제외
+// Exclude<T, U> — exclude types from union
 type T1 = Exclude<"a" | "b" | "c", "a">; // "b" | "c"
 
-// Extract<T, U> — 유니온에서 타입 추출
+// Extract<T, U> — extract types from union
 type T2 = Extract<"a" | "b" | "c", "a" | "b">; // "a" | "b"
 
-// NonNullable<T> — null/undefined 제외
+// NonNullable<T> — exclude null/undefined
 type T3 = NonNullable<string | null | undefined>; // string
 
-// Record<K, T> — 키 K, 값 T인 객체 타입
+// Record<K, T> — object type with keys K and values T
 type PageInfo = Record<"home" | "about", { title: string }>;
 ```
 
-## 고급 패턴
+## Advanced Patterns
 
-### 패턴 1: 타입 안전한 이벤트 이미터
+### Pattern 1: Type-safe Event Emitter
 
 ```typescript
 type EventMap = {
@@ -289,11 +289,11 @@ class TypedEventEmitter<T extends Record<string, unknown>> {
 
 const emitter = new TypedEventEmitter<EventMap>();
 emitter.on("user:created", (data) => {
-  console.log(data.id, data.name); // 타입 안전!
+  console.log(data.id, data.name); // type-safe!
 });
 ```
 
-### 패턴 2: 타입 안전한 API 클라이언트
+### Pattern 2: Type-safe API Client
 
 ```typescript
 type HTTPMethod = "GET" | "POST" | "PUT" | "DELETE";
@@ -332,14 +332,14 @@ class APIClient<Config extends Record<string, Record<string, unknown>>> {
           },
         ]
   ): Promise<ExtractResponse<Config[Path][Method]>> {
-    // 구현부
+    // implementation
     return {} as ExtractResponse<Config[Path][Method]>;
   }
 }
 
 const api = new APIClient<EndpointConfig>();
 
-// 타입 안전한 API 호출
+// Type-safe API calls
 const users = await api.request("/users", "GET");
 // Type: User[]
 
@@ -354,7 +354,7 @@ const user = await api.request("/users/:id", "GET", {
 // Type: User
 ```
 
-### 패턴 3: Deep Readonly/Partial
+### Pattern 3: Deep Readonly/Partial
 
 ```typescript
 type DeepReadonly<T> = {
@@ -374,7 +374,7 @@ type DeepPartial<T> = {
 };
 ```
 
-### 패턴 4: 타입 안전한 폼 유효성 검증
+### Pattern 4: Type-safe Form Validation
 
 ```typescript
 type ValidationRule<T> = {
@@ -420,7 +420,7 @@ class FormValidator<T extends Record<string, unknown>> {
 }
 ```
 
-### 패턴 5: Discriminated Unions
+### Pattern 5: Discriminated Unions
 
 ```typescript
 type Success<T> = { status: "success"; data: T };
@@ -444,7 +444,7 @@ function handleState<T>(state: AsyncState<T>): void {
 }
 ```
 
-**타입 안전한 상태 머신:**
+**Type-safe State Machine:**
 
 ```typescript
 type State =
@@ -480,7 +480,7 @@ function reducer(state: State, event: Event): State {
 }
 ```
 
-### 패턴 6: Builder Pattern (타입 안전)
+### Pattern 6: Builder Pattern (Type-safe)
 
 ```typescript
 type BuilderState<T> = {
@@ -524,14 +524,14 @@ const config = userBuilder
   .set("id", "1")
   .set("name", "John")
   .set("email", "john@example.com")
-  .build(); // OK: 모든 필수 필드 설정됨
+  .build(); // OK: all required fields set
 
 // const incomplete = userBuilder
 //   .set("id", "1")
-//   .build(); // Error: 필수 필드 누락
+//   .build(); // Error: required fields missing
 ```
 
-### 패턴 7: Deep Readonly/Partial 활용 예시
+### Pattern 7: Deep Readonly/Partial Usage
 
 ```typescript
 interface AppConfig {
@@ -553,18 +553,18 @@ interface AppConfig {
 }
 
 type ReadonlyConfig = DeepReadonly<AppConfig>;
-// 모든 중첩 프로퍼티가 readonly
+// All nested properties are readonly
 
 type PartialConfig = DeepPartial<AppConfig>;
-// 모든 중첩 프로퍼티가 optional
+// All nested properties are optional
 
-// 설정 업데이트 함수에서 활용
+// Used in config update function
 function updateConfig(current: AppConfig, patch: DeepPartial<AppConfig>): AppConfig {
   return deepMerge(current, patch);
 }
 ```
 
-### 패턴 8: 폼 유효성 검증 활용 예시
+### Pattern 8: Form Validation Usage
 
 ```typescript
 interface LoginForm {
@@ -576,17 +576,17 @@ const loginValidator = new FormValidator<LoginForm>({
   email: [
     {
       validate: (v) => v.includes("@"),
-      message: "이메일 형식이 올바르지 않습니다",
+      message: "Invalid email format",
     },
     {
       validate: (v) => v.length > 0,
-      message: "이메일은 필수입니다",
+      message: "Email is required",
     },
   ],
   password: [
     {
       validate: (v) => v.length >= 8,
-      message: "비밀번호는 8자 이상이어야 합니다",
+      message: "Password must be at least 8 characters",
     },
   ],
 });
@@ -598,24 +598,24 @@ const errors = loginValidator.validate({
 // Type: { email?: string[]; password?: string[]; } | null
 ```
 
-## 타입 추론 기법
+## Type Inference Techniques
 
-### 1. Infer 키워드
+### 1. The Infer Keyword
 
 ```typescript
-// 배열 요소 타입 추출
+// Extract array element type
 type ElementType<T> = T extends (infer U)[] ? U : never;
 type Num = ElementType<number[]>; // number
 
-// Promise 타입 추출
+// Extract Promise type
 type PromiseType<T> = T extends Promise<infer U> ? U : never;
 type AsyncNum = PromiseType<Promise<number>>; // number
 
-// 함수 파라미터 추출
+// Extract function parameters
 type Parameters<T> = T extends (...args: infer P) => unknown ? P : never;
 ```
 
-### 2. 타입 가드
+### 2. Type Guards
 
 ```typescript
 function isString(value: unknown): value is string {
@@ -635,7 +635,7 @@ if (isArrayOf(data, isString)) {
 }
 ```
 
-### 3. Assertion 함수
+### 3. Assertion Functions
 
 ```typescript
 function assertIsString(value: unknown): asserts value is string {
@@ -646,28 +646,28 @@ function assertIsString(value: unknown): asserts value is string {
 
 function processValue(value: unknown): void {
   assertIsString(value);
-  // value는 이제 string으로 타입됨
+  // value is now typed as string
   console.log(value.toUpperCase());
 }
 ```
 
-## 모범 사례
+## Best Practices
 
-1. **`any` 대신 `unknown`**: 타입 검증 강제
-2. **객체 형태에는 `interface`**: 더 나은 에러 메시지
-3. **유니온/복잡한 타입에는 `type`**: 더 유연
-4. **타입 추론 활용**: TypeScript가 추론할 수 있으면 명시 생략
-5. **헬퍼 타입 생성**: 재사용 가능한 타입 유틸리티 구축
-6. **const assertion 사용**: 리터럴 타입 보존
-7. **타입 단언 회피**: 타입 가드 사용
-8. **복잡한 타입 문서화**: JSDoc 주석 추가
-9. **strict 모드 사용**: 모든 strict 컴파일러 옵션 활성화
-10. **타입 테스트**: 타입 동작 검증
+1. **Use `unknown` instead of `any`**: Forces type validation
+2. **Use `interface` for object shapes**: Better error messages
+3. **Use `type` for unions/complex types**: More flexible
+4. **Leverage type inference**: Omit explicit types when TypeScript can infer
+5. **Create helper types**: Build reusable type utilities
+6. **Use const assertions**: Preserve literal types
+7. **Avoid type assertions**: Use type guards instead
+8. **Document complex types**: Add JSDoc comments
+9. **Use strict mode**: Enable all strict compiler options
+10. **Test your types**: Verify type behavior
 
-## 타입 테스트
+## Type Testing
 
 ```typescript
-// 타입 동등성 단언 테스트
+// Type equality assertion test
 type AssertEqual<T, U> = [T] extends [U]
   ? [U] extends [T]
     ? true
@@ -678,28 +678,28 @@ type Test1 = AssertEqual<string, string>; // true
 type Test2 = AssertEqual<string, number>; // false
 ```
 
-## 흔한 실수
+## Common Mistakes
 
-1. **`any` 남용**: TypeScript의 목적 무효화
-2. **strict null 검사 무시**: 런타임 에러 유발
-3. **과도하게 복잡한 타입**: 컴파일 속도 저하
-4. **Discriminated Unions 미사용**: 타입 내로잉 기회 상실
-5. **readonly 수정자 누락**: 의도하지 않은 변경 허용
-6. **순환 타입 참조**: 컴파일러 에러 유발
-7. **엣지 케이스 미처리**: 빈 배열, null 값 등
+1. **Overusing `any`**: Defeats the purpose of TypeScript
+2. **Ignoring strict null checks**: Causes runtime errors
+3. **Overly complex types**: Slows down compilation
+4. **Not using discriminated unions**: Misses type narrowing opportunities
+5. **Missing readonly modifiers**: Allows unintended mutations
+6. **Circular type references**: Causes compiler errors
+7. **Unhandled edge cases**: Empty arrays, null values, etc.
 
-## 성능 고려사항
+## Performance Considerations
 
-- 깊은 중첩 Conditional Type 회피
-- 가능하면 단순한 타입 사용
-- 복잡한 타입 계산 캐싱
-- 재귀 타입의 깊이 제한
-- 프로덕션 빌드에서 타입 검사 생략 도구 활용
+- Avoid deeply nested conditional types
+- Use simpler types when possible
+- Cache complex type computations
+- Limit depth of recursive types
+- Use tools that skip type checking in production builds
 
-## 참고 자료
+## References
 
 - TypeScript Handbook: https://www.typescriptlang.org/docs/handbook/
 - Type Challenges: https://github.com/type-challenges/type-challenges
-- Effective TypeScript (Dan Vanderkam 저)
+- Effective TypeScript (by Dan Vanderkam)
 
-> **vibe 도구 연계**: `core_validate_code_quality`로 `any` 타입 사용 탐지, `core_apply_quality_rules`로 TypeScript 규칙 자동 적용
+> **VIBE tool integration**: `core_validate_code_quality` detects `any` type usage, `core_apply_quality_rules` auto-applies TypeScript rules

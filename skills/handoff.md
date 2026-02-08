@@ -1,98 +1,98 @@
 ---
-description: "세션 종료 전 HANDOFF.md 작업 인계 문서 생성. 인계, handoff, 세션 정리 키워드에 자동 활성화."
+description: "Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords."
 ---
 
-# Handoff — 세션 인계 문서 생성
+# Handoff — Session Handover Document
 
-세션 종료 전 작업 상태를 기록하여 다음 세션에서 즉시 이어서 작업할 수 있도록 한다.
+Record work status before session end so the next session can pick up immediately.
 
-## HANDOFF.md란?
+## What is HANDOFF.md?
 
-컨텍스트 리셋 전에 현재 작업 상태를 기록하는 파일이다. 새 세션에서 이 파일만 읽으면 바로 이어서 작업할 수 있다.
+A file that records the current work status before context reset. Reading this file in a new session allows immediate continuation.
 
-### `/vibe.utils --continue`와의 차이점
+### Difference from `/vibe.utils --continue`
 
-| 항목 | `/vibe.utils --continue` | Handoff |
+| Item | `/vibe.utils --continue` | Handoff |
 |------|--------------------------|---------|
-| 방식 | 자동 세션 컨텍스트 복원 | 수동 인계 문서 생성 |
-| 포함 정보 | 메모리 + 세션 상태 | 작업 진행상황 + 주의사항 + 파일 목록 |
-| 사용 시점 | 새 세션 시작 시 | 세션 종료 전 |
-| 용도 | 빠른 자동 복원 | 상세한 인수인계 (팀/미래 자신) |
+| Method | Automatic session context restore | Manual handover document |
+| Includes | Memory + session state | Work progress + notes + file list |
+| When to use | At new session start | Before session end |
+| Purpose | Quick auto-restore | Detailed handover (team/future self) |
 
-## 사용 시점
+## When to Use
 
-- 컨텍스트가 80-100k 토큰에 도달했을 때
-- `/compact` 3회 사용 후
-- 작업을 장시간 중단하기 전
-- 복잡한 작업 중간에 진행상황 기록이 필요할 때
+- When context reaches 80-100k tokens
+- After using `/compact` 3 times
+- Before pausing work for an extended period
+- When progress recording is needed during complex work
 
-## vibe 도구 연계
+## VIBE Tool Integration
 
-Handoff 생성 전에 vibe 내장 도구를 활용하여 현재 상태를 저장한다:
+Use VIBE built-in tools to save current state before generating Handoff:
 
 ```bash
-# 현재 세션 컨텍스트 저장
+# Save current session context
 core_auto_save_context
 
-# 중요 결정사항 메모리에 저장
-core_save_memory --key "handoff-decision" --value "인증 방식을 JWT로 결정" --category "project"
+# Save important decisions to memory
+core_save_memory --key "handoff-decision" --value "Decided on JWT for auth" --category "project"
 
-# 저장된 메모리 확인
+# Verify saved memories
 core_list_memories --category "project"
 ```
 
-## HANDOFF.md 생성 템플릿
+## HANDOFF.md Template
 
 ```markdown
-# 작업 인계 문서
+# Work Handover Document
 
-## 완료된 작업
-- [x] 완료된 작업 1
-- [x] 완료된 작업 2
+## Completed Tasks
+- [x] Completed task 1
+- [x] Completed task 2
 
-## 진행 중인 작업
-- [ ] 현재 작업 중인 것
-  - 진행 상황: 70%
-  - 다음 단계: ~~ 구현
+## In Progress
+- [ ] Currently working on
+  - Progress: 70%
+  - Next step: implement ~~
 
-## 다음에 해야 할 작업
-1. 우선순위 높은 작업
-2. 그다음 작업
+## Next Tasks
+1. High priority task
+2. Next task
 
-## 주의사항
-- 건드리면 안 되는 파일: ~~
-- 알려진 버그: ~~
-- 임시 해결책: ~~
+## Notes & Cautions
+- Do not touch: ~~
+- Known bugs: ~~
+- Temporary workarounds: ~~
 
-## 관련 파일
-- src/components/Login.tsx — 로그인 폼
-- src/api/auth.ts — 인증 API
+## Related Files
+- src/components/Login.tsx — Login form
+- src/api/auth.ts — Auth API
 
-## 마지막 상태
-- 브랜치: feature/auth
-- 마지막 커밋: abc1234
-- 테스트 상태: 통과
+## Last State
+- Branch: feature/auth
+- Last commit: abc1234
+- Test status: passing
 ```
 
-## 생성 절차
+## Generation Steps
 
-1. `git status`로 현재 변경 파일 확인
-2. `git log --oneline -5`로 최근 커밋 확인
-3. 진행 중인 작업과 남은 작업을 정리
-4. `core_auto_save_context`로 세션 컨텍스트 저장
-5. `core_save_memory`로 핵심 결정사항 저장
-6. HANDOFF.md 파일 생성
+1. Check current changed files with `git status`
+2. Check recent commits with `git log --oneline -5`
+3. Organize in-progress and remaining tasks
+4. Save session context with `core_auto_save_context`
+5. Save key decisions with `core_save_memory`
+6. Generate HANDOFF.md file
 
-## 새 세션에서 복원
+## Restoring in New Session
 
 ```
-HANDOFF.md 읽고 이어서 작업해줘
+Read HANDOFF.md and continue working
 ```
 
-또는 vibe 자동 복원과 병행:
+Or use alongside VIBE auto-restore:
 
 ```
 /vibe.utils --continue
 ```
 
-이 경우 `core_recall_memory`로 저장된 결정사항도 함께 복원된다.
+In this case, saved decisions are also restored via `core_recall_memory`.

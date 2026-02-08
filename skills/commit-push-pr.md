@@ -1,115 +1,115 @@
 ---
-description: "변경사항 커밋, 푸시, PR 생성을 한 번에 수행. 커밋, PR, 푸시, commit, push 키워드에 자동 활성화."
+description: "Commit, push, and create PR in one go. Auto-activates on commit, PR, push keywords."
 ---
 
-# Commit-Push-PR — 커밋부터 PR까지 한 번에
+# Commit-Push-PR — From Commit to PR in One Step
 
-현재 변경사항을 커밋하고, 원격 브랜치에 푸시한 후, GitHub PR을 생성한다.
+Commit current changes, push to the remote branch, and create a GitHub PR.
 
-## 사전 확인
+## Pre-checks
 
 ```bash
-# 현재 상태 확인
+# Check current state
 git status
 git diff --stat
 git log --oneline -5
 ```
 
-## 작업 순서
+## Workflow
 
-1. 변경된 파일 확인 및 스테이징
-2. 커밋 메시지 작성 (Conventional Commits 한국어 형식)
-3. 원격 브랜치로 푸시
-4. `gh pr create`로 PR 생성
-5. PR 제목/본문 한국어 작성
+1. Review and stage changed files
+2. Write commit message (Conventional Commits format)
+3. Push to remote branch
+4. Create PR with `gh pr create`
+5. Write PR title/body
 
-## 커밋 메시지 형식
+## Commit Message Format
 
 ```
-[타입] 제목 (50자 이내)
+[type] title (under 50 chars)
 
-본문 (선택, 72자 줄바꿈)
-- 무엇을 변경했는지
-- 왜 변경했는지
+body (optional, 72 char line wrap)
+- What was changed
+- Why it was changed
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-### 타입 목록
+### Type List
 
-| 타입 | 설명 |
-|------|------|
-| `feat` | 새 기능 |
-| `fix` | 버그 수정 |
-| `docs` | 문서 변경 |
-| `style` | 포맷팅 (코드 변경 없음) |
-| `refactor` | 리팩토링 |
-| `test` | 테스트 추가/수정 |
-| `chore` | 빌드, 설정 변경 |
-| `perf` | 성능 개선 |
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation changes |
+| `style` | Formatting (no code changes) |
+| `refactor` | Refactoring |
+| `test` | Add/modify tests |
+| `chore` | Build, config changes |
+| `perf` | Performance improvement |
 
-## Co-Authored-By 규칙
+## Co-Authored-By Rule
 
-AI가 생성/수정한 코드에는 반드시 추가:
+Always add for AI-generated/modified code:
 
 ```
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-## 보안 파일 체크
+## Security File Check
 
-커밋 전 반드시 확인:
+Always verify before committing:
 
 ```bash
-# 위험 파일 탐지
+# Detect sensitive files
 git diff --cached --name-only | grep -E '\.(env|pem|key)$|credentials|secret'
 ```
 
-### 커밋 금지 파일
+### Never Commit These Files
 
-| 파일 패턴 | 이유 |
-|----------|------|
-| `.env`, `.env.local` | 환경 변수 (시크릿 포함) |
-| `*.pem`, `*.key` | 인증서/키 |
-| `credentials.json` | 인증 정보 |
-| `service-account.json` | 서비스 계정 |
+| File Pattern | Reason |
+|-------------|--------|
+| `.env`, `.env.local` | Environment variables (contains secrets) |
+| `*.pem`, `*.key` | Certificates/keys |
+| `credentials.json` | Authentication info |
+| `service-account.json` | Service account |
 
-> 위 파일이 스테이징에 포함되면 즉시 경고하고 커밋을 중단한다.
+> If any of these files are staged, immediately warn and abort the commit.
 
-## 브랜치 보호 규칙
+## Branch Protection Rules
 
-### main/master 브랜치 보호
+### main/master Branch Protection
 
 ```bash
-# 현재 브랜치 확인
+# Check current branch
 git branch --show-current
 ```
 
-- **main/master에서는 직접 커밋/푸시 금지**
-- main/master인 경우: 새 브랜치 생성을 권장하고 중단
-- `--force` push 절대 금지 (main/master)
+- **No direct commits/pushes to main/master**
+- If on main/master: recommend creating a new branch and abort
+- **Never** `--force` push (main/master)
 
-## PR 생성 형식
+## PR Creation Format
 
 ```bash
 gh pr create \
-  --title "[타입] 제목" \
-  --body "## 변경 사항
-- 주요 변경 내용
+  --title "[type] title" \
+  --body "## Changes
+- Key changes
 
-## 관련 이슈
-- Closes #이슈번호
+## Related Issues
+- Closes #issue-number
 
-## 테스트
-- 테스트 방법 및 결과"
+## Testing
+- Test methods and results"
 ```
 
-## git-workflow rule 연계
+## git-workflow Rule Integration
 
-이 스킬은 `.claude/vibe/rules/standards/git-workflow.md`의 규칙을 따른다:
+This skill follows rules from `.claude/vibe/rules/standards/git-workflow.md`:
 
-- Conventional Commits 한국어 형식
-- PR 체크리스트 항목 준수
-- 금지사항 (force push, .env 커밋 등) 준수
+- Conventional Commits format
+- PR checklist compliance
+- Prohibited actions (force push, .env commits, etc.)
 
-> **vibe 도구 연계**: `/vibe.review`의 git-history 에이전트가 커밋 품질을 자동 검증한다
+> **VIBE tool integration**: `/vibe.review`'s git-history agent automatically validates commit quality
