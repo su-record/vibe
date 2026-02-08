@@ -28,6 +28,11 @@ import {
   geminiImport,
   azStatus,
   azLogout,
+  kimiStatus,
+  kimiLogout,
+  setEmbeddingPriority,
+  setKimiPriority,
+  showPriorityConfig,
 } from './llm.js';
 import {
   showHud,
@@ -38,7 +43,7 @@ import {
   resetHud,
   showHudHelp,
 } from './hud.js';
-import { init, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStart, telegramStop, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp } from './commands/index.js';
+import { init, setup, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStart, telegramStop, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp } from './commands/index.js';
 
 // ============================================================================
 // Constants
@@ -103,6 +108,12 @@ export { getCurrentTime } from '../tools/time/getCurrentTime.js';
 switch (command) {
   case 'init':
     init(positionalArgs[1]);
+    break;
+
+  case 'setup':
+    (async () => {
+      await setup();
+    })();
     break;
 
   case 'update':
@@ -247,6 +258,66 @@ AZ Commands:
   vibe az status        Check status & available models
   vibe az logout        Remove key
   vibe az remove        Remove config
+        `);
+    }
+    break;
+  }
+
+  // vibe kimi <subcommand>
+  case 'kimi': {
+    const subCommand = positionalArgs[1];
+    switch (subCommand) {
+      case 'key': {
+        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'kimi' && a !== 'key');
+        if (apiKey) {
+          setupExternalLLM('kimi', apiKey);
+        } else {
+          console.log('Usage: vibe kimi key <KIMI_API_KEY>');
+        }
+        break;
+      }
+      case 'logout':
+        kimiLogout();
+        break;
+      case 'remove':
+        removeExternalLLM('kimi');
+        break;
+      case 'status':
+        kimiStatus();
+        break;
+      default:
+        console.log(`
+Kimi Commands:
+  vibe kimi key <key>     Set Moonshot API key
+  vibe kimi status        Check status & available models
+  vibe kimi logout        Remove key
+  vibe kimi remove        Remove config
+
+Get key: https://platform.moonshot.ai/
+        `);
+    }
+    break;
+  }
+
+  // vibe config <subcommand>
+  case 'config': {
+    const subCommand = positionalArgs[1];
+    switch (subCommand) {
+      case 'embedding-priority':
+        setEmbeddingPriority(positionalArgs[2]);
+        break;
+      case 'kimi-priority':
+        setKimiPriority(positionalArgs[2]);
+        break;
+      case 'show':
+        showPriorityConfig();
+        break;
+      default:
+        console.log(`
+Config Commands:
+  vibe config embedding-priority <az,gpt|gpt,az>    Set embedding provider priority
+  vibe config kimi-priority <az,kimi|kimi,az>        Set Kimi chat provider priority
+  vibe config show                                   Show current priority config
         `);
     }
     break;
@@ -547,6 +618,7 @@ Agent Commands:
 ❌ Unknown command: ${command}
 
 Available commands:
+  vibe setup        Interactive setup wizard
   vibe init         Initialize project
   vibe update       Update settings
   vibe daemon <cmd> Daemon commands (start, stop, status, restart)
@@ -559,6 +631,8 @@ Available commands:
   vibe gpt <cmd>    GPT commands (auth, key, status, logout)
   vibe gemini <cmd> Gemini commands (auth, key, status, logout)
   vibe az <cmd>      AZ commands (key, status, logout)
+  vibe kimi <cmd>   Kimi commands (key, status, logout)
+  vibe config <cmd> Priority config (embedding-priority, kimi-priority, show)
   vibe status       Show status
   vibe sync <cmd>   인증/메모리 동기화 (login, push, pull, status, logout)
   vibe device <cmd> Device management (list, rename, remove)

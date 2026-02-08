@@ -9,6 +9,7 @@
  */
 
 export { init, updateCursorGlobalAssets } from './init.js';
+export { setup } from './setup.js';
 export { update, checkAndUpgradeVibe } from './update.js';
 export { remove } from './remove.js';
 export { showHelp, showStatus, showVersion } from './info.js';

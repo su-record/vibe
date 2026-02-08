@@ -17,6 +17,7 @@ export function showHelp(): void {
 📖 Core - SPEC-driven AI coding framework (Claude Code exclusive)
 
 Commands:
+  vibe setup              Interactive setup wizard
   vibe init [project]     Initialize project
   vibe update             Update settings
   vibe status             Show status
@@ -84,6 +85,7 @@ export function showStatus(): void {
   const gptStatusText = formatAuthMethods(authStatus.gpt);
   const geminiStatusText = formatAuthMethods(authStatus.gemini);
   const azStatusText = formatAuthMethods(authStatus.az);
+  const kimiStatusText = formatAuthMethods(authStatus.kimi);
 
   // Voice 상태 (Gemini 활성화 + sox 설치)
   let voiceStatusText = '⬚ Disabled (requires Gemini)';
@@ -116,6 +118,7 @@ Auth:
   GPT             ${gptStatusText}
   Gemini          ${geminiStatusText}
   AZ              ${azStatusText}
+  Kimi            ${kimiStatusText}
 
 Features:
   /vibe.voice       ${voiceStatusText}

@@ -13,16 +13,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Gemini OAuth 인증
+ * Gemini OAuth 핵심 로직 (process.exit 없음)
+ * setup 위저드 및 geminiAuth()에서 공유
+ * @returns 성공 시 OAuthTokens, 실패 시 null
  */
-export async function geminiAuth(): Promise<void> {
-  console.log(`
-🔐 Gemini Authentication (OAuth)
-
-With Gemini Advanced subscription, you can use it at no additional cost.
-Login with your Google account in browser.
-  `);
-
+export async function geminiAuthCore(): Promise<OAuthTokens | null> {
   try {
     const geminiOAuthPath = path.join(__dirname, '../../lib/gemini-oauth.js');
     const geminiStoragePath = path.join(__dirname, '../../lib/gemini-storage.js');
@@ -30,6 +25,7 @@ Login with your Google account in browser.
     const { startOAuthFlow } = require(geminiOAuthPath);
     const storage = require(geminiStoragePath);
 
+    console.log('\nOpening browser for Google OAuth...\n');
     const tokens: OAuthTokens = await startOAuthFlow();
 
     storage.addAccount({
@@ -40,25 +36,8 @@ Login with your Google account in browser.
       projectId: tokens.projectId,
     });
 
-    console.log(`
-✅ Gemini authenticated!
-
-Account: ${tokens.email}
-Project: ${tokens.projectId || '(auto-detected)'}
-
-Available models:
-  - Gemini 3 Flash (fast, exploration/search)
-  - Gemini 3 Pro (high accuracy)
-
-Status: vibe gemini status
-Logout: vibe gemini logout
-    `);
-
     // config.json 업데이트
-    const projectRoot = process.cwd();
-    const coreDir = path.join(projectRoot, '.claude', 'vibe');
-    const configPath = path.join(coreDir, 'config.json');
-
+    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
     if (fs.existsSync(configPath)) {
       try {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
@@ -74,25 +53,50 @@ Logout: vibe gemini logout
       } catch { /* ignore: optional operation */ }
     }
 
+    console.log(`Gemini authenticated! (${tokens.email})`);
+
+    // Windows libuv 핸들 충돌 방지: 서버 완전 종료 대기
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return tokens;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Gemini authentication failed: ${message}`);
+    return null;
+  }
+}
+
+/**
+ * Gemini OAuth 인증 (CLI 명령어용)
+ */
+export async function geminiAuth(): Promise<void> {
+  console.log(`
+🔐 Gemini Authentication (OAuth)
+
+With Gemini Advanced subscription, you can use it at no additional cost.
+Login with your Google account in browser.
+  `);
+
+  const tokens = await geminiAuthCore();
+
+  if (tokens) {
     console.log(`
+Account: ${tokens.email}
+Project: ${tokens.projectId || '(auto-detected)'}
+
+Available models:
+  - Gemini 3 Flash (fast, exploration/search)
+  - Gemini 3 Pro (high accuracy)
+
+Status: vibe gemini status
+Logout: vibe gemini logout
+
 Gemini is called via Hooks:
   - Auto-called with "gemini. query" prefix
   - Direct use: import('@su-record/core/lib/gemini')
     `);
-
-    // Windows libuv 핸들 충돌 방지: 서버 완전 종료 대기
-    await new Promise(resolve => setTimeout(resolve, 200));
     process.exit(0);
-
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`
-❌ Gemini authentication failed
-
-Error: ${message}
-
-Retry: vibe gemini auth
-    `);
+  } else {
+    console.error('\nRetry: vibe gemini auth');
     process.exit(1);
   }
 }
@@ -215,9 +219,10 @@ Login again: vibe gemini auth
 }
 
 /**
- * Gemini CLI 크레덴셜 자동 가져오기
+ * Gemini CLI 크레덴셜 가져오기 핵심 로직
+ * @returns 성공 시 true, 실패 시 false
  */
-export function geminiImport(): void {
+export function geminiImportCore(): boolean {
   try {
     const geminiAuthPath = path.join(__dirname, '../../lib/gemini/auth.js');
     const geminiOAuthPath = path.join(__dirname, '../../lib/gemini-oauth.js');
@@ -228,19 +233,25 @@ export function geminiImport(): void {
     const cliCreds = getGeminiCliCredentials();
     if (!cliCreds) {
       console.log('No Gemini CLI credentials found.');
-      return;
+      return false;
     }
 
     importGeminiCliTokens(cliCreds);
-    console.log(`
-✅ Gemini CLI credentials imported!
-
-Token expiry: ${new Date(cliCreds.expiry_date).toLocaleString()}
-
-Status: vibe gemini status
-    `);
+    console.log(`Gemini CLI credentials imported! (expires: ${new Date(cliCreds.expiry_date).toLocaleString()})`);
+    return true;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Import failed:', message);
+    console.error(`Import failed: ${message}`);
+    return false;
+  }
+}
+
+/**
+ * Gemini CLI 크레덴셜 자동 가져오기 (CLI 명령어용)
+ */
+export function geminiImport(): void {
+  const success = geminiImportCore();
+  if (success) {
+    console.log('\nStatus: vibe gemini status');
   }
 }

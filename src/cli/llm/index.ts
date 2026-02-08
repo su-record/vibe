@@ -12,4 +12,6 @@ export * from './config.js';
 export * from './gpt-commands.js';
 export * from './gemini-commands.js';
 export * from './az-commands.js';
+export * from './kimi-commands.js';
+export * from './priority-commands.js';
 export * from './help.js';

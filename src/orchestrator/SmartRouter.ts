@@ -14,6 +14,8 @@ import {
 import * as gptApi from '../lib/gpt-api.js';
 import * as geminiApi from '../lib/gemini-api.js';
 import * as azApi from '../lib/az-api.js';
+import * as kimiApi from '../lib/kimi-api.js';
+import { loadPriorityConfig } from '../lib/priority-config.js';
 import { debugLog } from '../lib/utils.js';
 
 // LLM 가용성 캐시 (5분 TTL)
@@ -64,7 +66,8 @@ export class SmartRouter {
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
       gemini: { available: true, checkedAt: 0, errorCount: 0 },
-      az: { available: true, checkedAt: 0, errorCount: 0 }
+      az: { available: true, checkedAt: 0, errorCount: 0 },
+      kimi: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 
@@ -143,13 +146,31 @@ export class SmartRouter {
 
   /**
    * LLM 우선순위 결정
+   * priority config에 따라 az/kimi 순서를 동적으로 조정
    */
   private getProviderPriority(type: TaskType, preferredLlm?: LLMProvider): LLMProvider[] {
     if (preferredLlm) {
       const others = TASK_LLM_PRIORITY[type].filter(p => p !== preferredLlm);
       return [preferredLlm, ...others];
     }
-    return [...TASK_LLM_PRIORITY[type]];
+
+    const providers = [...TASK_LLM_PRIORITY[type]];
+
+    // priority config에 따라 az/kimi 순서 조정
+    try {
+      const priorityConfig = loadPriorityConfig();
+      if (priorityConfig.kimi[0] === 'kimi') {
+        // Kimi Direct 우선: kimi를 az 앞으로 이동
+        const azIdx = providers.indexOf('az');
+        const kimiIdx = providers.indexOf('kimi');
+        if (azIdx >= 0 && kimiIdx >= 0 && kimiIdx > azIdx) {
+          providers.splice(kimiIdx, 1);
+          providers.splice(azIdx, 0, 'kimi');
+        }
+      }
+    } catch { /* priority config 실패 시 기본 순서 유지 */ }
+
+    return providers;
   }
 
   /**
@@ -191,6 +212,8 @@ export class SmartRouter {
         return geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'az':
         return azApi.coreAzOrchestrate(prompt, systemPrompt, { jsonMode: false });
+      case 'kimi':
+        return kimiApi.coreKimiOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'claude':
         throw new Error('Claude fallback - handled by caller');
       default:
@@ -329,7 +352,8 @@ export class SmartRouter {
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
       gemini: { available: true, checkedAt: 0, errorCount: 0 },
-      az: { available: true, checkedAt: 0, errorCount: 0 }
+      az: { available: true, checkedAt: 0, errorCount: 0 },
+      kimi: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 }
