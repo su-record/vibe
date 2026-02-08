@@ -137,6 +137,14 @@ export type {
   PipelineResult
 } from './PhasePipeline.js';
 
+// PhaseResultStore (v2.9.0) - File-based Phase result persistence
+export { PhaseResultStore } from './PhaseResultStore.js';
+export type { PhaseResultFile } from './PhaseResultStore.js';
+
+// CheckpointManager (v2.9.0) - Approval gates between phases
+export { CheckpointManager } from './CheckpointManager.js';
+export type { CheckpointGate } from './CheckpointManager.js';
+
 // SwarmOrchestrator (v2.7.0) - 에이전트 자가 복제 패턴
 export {
   SwarmOrchestrator,

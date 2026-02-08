@@ -29,6 +29,9 @@ import {
   updatePhase as updateProgressPhase,
   writeProgressText,
 } from '../lib/ProgressTracker.js';
+import { PhaseResultStore } from './PhaseResultStore.js';
+import { CheckpointManager } from './CheckpointManager.js';
+import type { CheckpointGate } from './CheckpointManager.js';
 
 // ============================================
 // Pipeline Types
@@ -53,6 +56,8 @@ export interface StageContext {
   data: Record<string, unknown>;
   preparedData?: Record<string, unknown>;
   previousResult?: StageResult;
+  /** All previous phase results (available when using resultStore or resumeFrom) */
+  allPreviousResults?: StageResult[];
 }
 
 /** 스테이지 결과 */
@@ -80,6 +85,14 @@ export interface PipelineOptions {
   onPhaseStart?: (phase: PhaseProgress) => void;
   /** 에러 발생 시 콜백 */
   onError?: (phase: PhaseProgress, error: Error) => void;
+  /** Enable file-based result persistence */
+  resultStore?: boolean;
+  /** Checkpoint gates between phases */
+  checkpoints?: CheckpointGate[];
+  /** Resume from specific phase number (loads previous results from disk) */
+  resumeFrom?: number;
+  /** Callback when pipeline pauses at a checkpoint */
+  onCheckpointPause?: (phaseNumber: number, gate: CheckpointGate) => void;
 }
 
 /** 파이프라인 결과 */
@@ -92,6 +105,8 @@ export interface PipelineResult {
   totalDuration: number;
   results: StageResult[];
   error?: string;
+  /** Phase number where pipeline paused at a checkpoint (if any) */
+  pausedAtCheckpoint?: number;
 }
 
 // ============================================
@@ -103,6 +118,8 @@ export class PhasePipeline {
   private options: Required<PipelineOptions>;
   private abortController: AbortController;
   private backgroundPreparations = new Map<number, Promise<StageContext>>();
+  private resultStore: PhaseResultStore | null = null;
+  private checkpointManager: CheckpointManager | null = null;
 
   constructor(
     private featureName: string,
@@ -116,8 +133,25 @@ export class PhasePipeline {
       onPhaseComplete: options.onPhaseComplete ?? (() => {}),
       onPhaseStart: options.onPhaseStart ?? (() => {}),
       onError: options.onError ?? (() => {}),
+      resultStore: options.resultStore ?? false,
+      checkpoints: options.checkpoints ?? [],
+      resumeFrom: options.resumeFrom ?? 0,
+      onCheckpointPause: options.onCheckpointPause ?? (() => {}),
     };
     this.abortController = new AbortController();
+
+    // Initialize result store if enabled
+    if (this.options.resultStore && this.options.projectRoot) {
+      this.resultStore = new PhaseResultStore(this.options.projectRoot, featureName);
+    }
+
+    // Initialize checkpoint manager if gates provided
+    if (this.options.checkpoints.length > 0) {
+      this.checkpointManager = new CheckpointManager(this.options.checkpoints, {
+        ultrawork: this.options.ultrawork,
+        storeDir: this.resultStore?.getStoreDir(),
+      });
+    }
   }
 
   /** 스테이지 추가 */
@@ -137,6 +171,22 @@ export class PhasePipeline {
     const startTime = Date.now();
     const results: StageResult[] = [];
     let lastContext: StageContext | null = null;
+
+    // Determine start phase (for resume support)
+    const resumeFrom = this.options.resumeFrom || 0;
+    let startIndex = 0;
+
+    // Load previous results when resuming
+    if (resumeFrom > 0 && this.resultStore) {
+      const savedResults = this.resultStore.loadAll();
+      for (const saved of savedResults) {
+        if (saved.phaseNumber < resumeFrom) {
+          results.push(saved.result);
+        }
+      }
+      startIndex = resumeFrom - 1; // 0-based index
+      warnLog(`[Pipeline] Resuming from phase ${resumeFrom} (${results.length} previous results loaded)`);
+    }
 
     // 타임아웃 설정
     const timeoutId = setTimeout(() => {
@@ -166,8 +216,8 @@ export class PhasePipeline {
         this.startBackgroundPreparations();
       }
 
-      // Phase 순차 실행
-      for (let i = 0; i < this.stages.length; i++) {
+      // Phase 순차 실행 (startIndex부터)
+      for (let i = startIndex; i < this.stages.length; i++) {
         if (this.abortController.signal.aborted) {
           throw new PipelineTimeoutError(this.options.timeout);
         }
@@ -197,7 +247,8 @@ export class PhasePipeline {
           phaseNumber,
           phaseName: stage.name,
           data: {},
-          previousResult: lastContext ? results[results.length - 1] : undefined,
+          previousResult: results.length > 0 ? results[results.length - 1] : undefined,
+          allPreviousResults: results.length > 0 ? [...results] : undefined,
         };
 
         // 백그라운드 준비 결과 병합
@@ -273,6 +324,44 @@ export class PhasePipeline {
         completePhase(phaseNumber);
         this.options.onPhaseComplete(phaseProgress, result);
         console.log(formatPhaseComplete(phaseNumber, this.stages.length));
+
+        // Save result to disk (if result store enabled)
+        if (this.resultStore) {
+          try {
+            this.resultStore.save(phaseNumber, stage.name, result);
+          } catch {
+            warnLog(`[Pipeline] Failed to save phase ${phaseNumber} result to disk`);
+          }
+        }
+
+        // Checkpoint gate check
+        if (this.checkpointManager && this.checkpointManager.shouldPause(phaseNumber, result)) {
+          const gate = this.checkpointManager.getGate(phaseNumber);
+          if (gate) {
+            this.options.onCheckpointPause(phaseNumber, gate);
+          }
+
+          // Progress 파일 업데이트
+          if (this.options.projectRoot) {
+            try {
+              updateProgressPhase(this.options.projectRoot, phaseNumber, 'completed');
+              writeProgressText(this.options.projectRoot);
+            } catch { /* 무시 */ }
+          }
+
+          completeIteration();
+          clearTimeout(timeoutId);
+
+          return {
+            success: false,
+            featureName: this.featureName,
+            totalPhases: this.stages.length,
+            completedPhases: i + 1,
+            totalDuration: Date.now() - startTime,
+            results,
+            pausedAtCheckpoint: phaseNumber,
+          };
+        }
 
         // Progress 파일 업데이트 (completed)
         if (this.options.projectRoot) {

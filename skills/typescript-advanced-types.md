@@ -1,5 +1,20 @@
 ---
 description: "TypeScript advanced type system master guide. Covers Generics, Conditional Types, Mapped Types, Template Literals, Utility Types. Activates for complex type logic, reusable type utilities, and compile-time type safety."
+sections:
+  - name: "Core Concepts"
+    triggers: [generic, generics, constraint, conditional, infer, mapped, utility, Pick, Omit, Partial, Required, Record, Exclude, Extract, readonly]
+  - name: "Advanced Patterns"
+    triggers: [template literal, branded, opaque, phantom, discriminated union, exhaustive, builder pattern, recursive type, variadic tuple]
+  - name: "Type Inference"
+    triggers: [inference, infer, type narrowing, type guard, satisfies, const assertion]
+  - name: "Best Practices"
+    triggers: [best practice, type safety, convention]
+  - name: "Type Testing"
+    triggers: [type test, type assertion, expectType, tsd]
+  - name: "Common Mistakes"
+    triggers: [mistake, pitfall, error, wrong]
+  - name: "Performance"
+    triggers: [performance, compile time, type complexity, depth limit]
 ---
 
 # TypeScript Advanced Types
