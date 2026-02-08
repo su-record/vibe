@@ -57,30 +57,6 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 
 ### TypeScript Rules
 
-- No `any` → `unknown` + type guards
-- No `as any` → proper interfaces
-- No `@ts-ignore`
-- Explicit return types
-
-### TypeScript Rules
-- No `any` type → use `unknown` + type guards
-- No `as any` casting → define proper interfaces
-- No `@ts-ignore` → fix type issues at root
-- Explicit return types on all functions
-
-### TypeScript Rules
-- No `any` type → use `unknown` + type guards
-- No `as any` casting → define proper interfaces
-- No `@ts-ignore` → fix type issues at root
-- Explicit return types on all functions
-
-### TypeScript Rules
-- No `any` type → use `unknown` + type guards
-- No `as any` casting → define proper interfaces
-- No `@ts-ignore` → fix type issues at root
-- Explicit return types on all functions
-
-### TypeScript Rules
 - No `any` type → use `unknown` + type guards
 - No `as any` casting → define proper interfaces
 - No `@ts-ignore` → fix type issues at root
@@ -98,6 +74,19 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - No hardcoded strings/numbers
 - No commented-out code
 - No incomplete code without TODO
+
+### Superpowers Integration (v0.2.0)
+
+Superpowers 프로젝트에서 영감받은 4가지 품질 메커니즘:
+
+| 기능 | 설명 | 위치 |
+|------|------|------|
+| **합리화 방지** | AI 변명 패턴 6개 카테고리 차단 (SPEC 생략, 품질 생략, 검증 생략, 스코프 확장, 아키텍처 회피, 증거 회피) | `rules/principles/anti-rationalization.md` |
+| **증거 게이트** | 5단계 검증 프로토콜 (IDENTIFY → RUN → READ → VERIFY → CLAIM). 증거 없는 완료 주장 금지 | `rules/quality/evidence-gate.md` + UltraQA |
+| **3-수정 규칙** | 동일 실패 3회 → 아키텍처 질문 전환. Fix #4 시도 전 사용자 논의 필수 | UltraQA `architecture_question` status |
+| **규칙 TDD** | 6가지 품질 체크 (예제/양면/합리화/엣지/품질/종합), 70점+ 패스 기준 | RuleBuildSystem `pressureTestRule()` |
+
+**핵심 원칙:** 규칙의 문자를 위반하는 것은 규칙의 정신을 위반하는 것입니다.
 
 ## Workflow
 

@@ -29,7 +29,8 @@ export interface QASession {
   cycles: QACycleResult[];
   currentCycle: number;
   consecutiveFailures: Map<string, number>;
-  status: 'running' | 'passed' | 'failed' | 'max_cycles' | 'env_error';
+  status: 'running' | 'passed' | 'failed' | 'max_cycles' | 'env_error' | 'architecture_question';
+  evidenceCollected: boolean;
   startTime: Date;
   endTime?: Date;
 }
@@ -60,6 +61,7 @@ export function createQASession(config: Partial<QAConfig> = {}): QASession {
     currentCycle: 0,
     consecutiveFailures: new Map(),
     status: 'running',
+    evidenceCollected: false,
     startTime: new Date(),
   };
 }
@@ -93,9 +95,9 @@ export function recordCycleResult(
     const count = (session.consecutiveFailures.get(failureKey) || 0) + 1;
     session.consecutiveFailures.set(failureKey, count);
 
-    // Check for same failure 3 times
+    // 3-Fix Rule: Same failure 3 times → Architecture Question
     if (count >= session.config.maxSameFailure) {
-      session.status = 'failed';
+      session.status = 'architecture_question';
       session.endTime = new Date();
     }
   } else {
@@ -195,18 +197,90 @@ Apply the fix identified in the diagnosis. Make minimal changes to resolve the i
 }
 
 /**
+ * 3-Fix Rule: Generate architecture escalation prompt
+ * When same failure occurs 3+ times, stop fixing and question architecture
+ */
+export function generateArchitectureEscalationPrompt(session: QASession): string {
+  const recentFailures = session.cycles.filter(c => !c.passed).slice(-3);
+  const failureSummary = recentFailures
+    .map((c, i) => `  Attempt ${i + 1}: ${c.goal} - ${c.output.slice(0, 150)}`)
+    .join('\n');
+
+  return `
+## ⚠️ 3-Fix Rule Triggered - Architecture Question Required
+
+**Same issue failed ${session.config.maxSameFailure}+ times.** This suggests an architectural problem, not a failed hypothesis.
+
+### Failure Pattern:
+${failureSummary}
+
+### Architecture Problem Indicators:
+- Each fix reveals new shared state/coupling issues in different places
+- Fixes require "massive refactoring" to implement
+- Each fix creates new symptoms elsewhere
+
+### Required Action:
+**STOP attempting more fixes.** Discuss with user before proceeding.
+
+### Questions for User:
+1. Is the current approach fundamentally sound?
+2. Are we persisting through sheer inertia?
+3. Should we refactor architecture vs. continue fixing symptoms?
+
+**Do NOT attempt Fix #${session.config.maxSameFailure + 1} without architectural discussion.**
+`.trim();
+}
+
+/**
+ * Evidence Gate: Check if session has verification evidence
+ */
+export function requireEvidence(session: QASession): { hasEvidence: boolean; message: string } {
+  const passedCycles = session.cycles.filter(c => c.passed);
+
+  if (passedCycles.length === 0) {
+    return {
+      hasEvidence: false,
+      message: 'No passing evidence found. Run verification commands before claiming completion.',
+    };
+  }
+
+  const goalsCovered = new Set(passedCycles.map(c => c.goal));
+  const goalsMissing = session.config.goals.filter(g => !goalsCovered.has(g));
+
+  if (goalsMissing.length > 0) {
+    return {
+      hasEvidence: false,
+      message: `Missing evidence for: ${goalsMissing.join(', ')}. Run verification for all goals.`,
+    };
+  }
+
+  return { hasEvidence: true, message: 'All goals have passing evidence.' };
+}
+
+/**
+ * Mark evidence as collected for the session
+ */
+export function markEvidenceCollected(session: QASession): void {
+  session.evidenceCollected = true;
+}
+
+/**
  * Format QA session status
  */
 export function formatQAStatus(session: QASession): string {
   const lines: string[] = [];
   const icon = session.status === 'passed' ? '✅' :
-               session.status === 'running' ? '🔄' : '❌';
+               session.status === 'running' ? '🔄' :
+               session.status === 'architecture_question' ? '⚠️' : '❌';
 
   lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   lines.push(`${icon} ULTRAQA - Cycle ${session.currentCycle}/${session.config.maxCycles}`);
   lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
   lines.push(`Status: ${session.status.toUpperCase()}`);
+  if (session.status === 'architecture_question') {
+    lines.push(`⚠️ 3-Fix Rule: Architecture Question Required`);
+  }
   lines.push(`Goals: ${session.config.goals.join(', ')}`);
 
   if (session.cycles.length > 0) {
@@ -275,9 +349,9 @@ export function describeUltraQAWorkflow(): string {
 \`\`\`
 
 Exit conditions:
-- ✅ All goals pass
+- ✅ All goals pass (with evidence)
+- ⚠️ Same failure 3 times → Architecture Question (3-Fix Rule)
 - ❌ Max 5 cycles reached
-- ❌ Same failure 3 times
 - ❌ Environment error
 `.trim();
 }
