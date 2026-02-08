@@ -31,6 +31,13 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
     description: 'Multi-model orchestration (Azure Foundry)',
     package: '',
     envKey: 'AZ_API_KEY'
+  },
+  kimi: {
+    name: 'core-kimi',
+    role: 'code-review',
+    description: 'Kimi K2.5 Direct (Moonshot API)',
+    package: '',
+    envKey: 'KIMI_API_KEY'
   }
 };
 

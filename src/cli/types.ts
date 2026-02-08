@@ -16,6 +16,7 @@ export interface LLMStatusMap {
   gpt: LLMAuthStatus[];
   gemini: LLMAuthStatus[];
   az: LLMAuthStatus[];
+  kimi: LLMAuthStatus[];
 }
 
 export interface ClaudeCodeStatus {
@@ -67,6 +68,12 @@ export interface VibeConfig {
   models?: {
     gpt?: { enabled: boolean; authType?: string; email?: string; role?: string; description?: string; apiKey?: string };
     gemini?: { enabled: boolean; authType?: string; email?: string; role?: string; description?: string; apiKey?: string };
+    az?: { enabled: boolean; authType?: string; role?: string; description?: string };
+    kimi?: { enabled: boolean; authType?: string; role?: string; description?: string };
+  };
+  priority?: {
+    embedding?: Array<'az' | 'gpt'>;
+    kimi?: Array<'az' | 'kimi'>;
   };
 }
 

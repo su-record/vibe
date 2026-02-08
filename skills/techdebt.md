@@ -1,119 +1,119 @@
 ---
-description: "기술 부채 정리 — 중복 코드, console.log, 미사용 import, any 타입 등 검사 및 정리. 세션 종료 전 사용 권장. techdebt, 기술부채, 정리 키워드에 활성화."
+description: "Technical debt cleanup — detect and fix duplicate code, console.log, unused imports, any types, etc. Recommended before session end. Activates on techdebt, cleanup, debt keywords."
 ---
 
-# Techdebt — 기술 부채 정리
+# Techdebt — Technical Debt Cleanup
 
-세션 종료 전 또는 주기적으로 코드베이스의 기술 부채를 탐지하고 정리한다.
+Detect and clean up technical debt in the codebase before session end or periodically.
 
-## 검사 항목
+## Inspection Items
 
-### 1. 중복 코드
+### 1. Duplicate Code
 
-- 유사한 함수/로직이 여러 파일에 존재하는지 확인
-- 공통 유틸리티로 추출 가능한 코드 식별
-- 검사 방법: `core_analyze_complexity`로 유사 코드 탐지
+- Check for similar functions/logic across multiple files
+- Identify code extractable into common utilities
+- Method: Detect similar code with `core_analyze_complexity`
 
-### 2. 미사용 코드
+### 2. Unused Code
 
-- 미사용 import 문
-- 미사용 변수/함수
-- 주석 처리된 코드 블록
+- Unused import statements
+- Unused variables/functions
+- Commented-out code blocks
 
-검사 도구:
+Detection tools:
 
 ```
-# 미사용 import 탐지 (Grep 도구 사용)
-Grep: pattern="^import .+ from" → 사용처 교차 검증
+# Detect unused imports (using Grep tool)
+Grep: pattern="^import .+ from" → cross-reference usage
 
-# 주석 처리된 코드 블록 탐지
+# Detect commented-out code blocks
 Grep: pattern="^\\s*//.*\\b(function|const|let|var|class|import)\\b"
 ```
 
-### 3. 디버그 코드
+### 3. Debug Code
 
 - `console.log` / `console.error` / `console.warn`
-- `debugger` 문
-- 임시 주석: `// TODO`, `// FIXME`, `// HACK`, `// XXX`
+- `debugger` statements
+- Temporary comments: `// TODO`, `// FIXME`, `// HACK`, `// XXX`
 
-검사 도구:
+Detection tools:
 
 ```
-# console 문 탐지 (Grep 도구 사용)
+# Detect console statements (using Grep tool)
 Grep: pattern="console\\.(log|error|warn|debug)" glob="*.{ts,tsx}"
 
-# TODO/FIXME 탐지
+# Detect TODO/FIXME
 Grep: pattern="(TODO|FIXME|HACK|XXX)" glob="*.{ts,tsx}"
 
-# debugger 문 탐지
+# Detect debugger statements
 Grep: pattern="\\bdebugger\\b" glob="*.{ts,tsx}"
 ```
 
-### 4. 코드 품질
+### 4. Code Quality
 
-- `any` 타입 사용 (TypeScript)
-- 하드코딩된 값 (매직 넘버/스트링)
-- 50줄 초과 함수
-- 4단계 초과 중첩
+- `any` type usage (TypeScript)
+- Hardcoded values (magic numbers/strings)
+- Functions exceeding 50 lines
+- Nesting deeper than 4 levels
 
-검사 도구:
+Detection tools:
 
 ```
-# any 타입 탐지 (Grep 도구 사용)
+# Detect any types (using Grep tool)
 Grep: pattern=": any\\b|as any\\b" glob="*.{ts,tsx}"
 
-# vibe 내장 도구로 복잡도 분석
+# Analyze complexity with built-in VIBE tools
 core_analyze_complexity: filePath="src/**/*.ts"
 core_validate_code_quality: filePath="src/**/*.ts"
 ```
 
-## 출력 형식
+## Output Format
 
 ```markdown
-## 기술 부채 리포트
+## Technical Debt Report
 
-### 중복 코드 (N건)
+### Duplicate Code (N items)
 - src/utils.ts:formatDate ↔ src/helpers.ts:formatDateTime
 
-### 미사용 import (N건)
+### Unused Imports (N items)
 - src/components/Button.tsx:3 — React (unused)
 
-### 디버그 코드 (N건)
+### Debug Code (N items)
 - src/api/auth.ts:23 — console.log
 
-### 코드 품질 이슈 (N건)
-- src/services/user.ts:45 — any 타입 사용
-- src/utils/calc.ts:10 — 매직 넘버 (하드코딩 365)
+### Code Quality Issues (N items)
+- src/services/user.ts:45 — any type usage
+- src/utils/calc.ts:10 — magic number (hardcoded 365)
 
-총 N건의 기술 부채가 발견되었습니다.
+Total: N technical debt items found.
 ```
 
-## 자동 수정 범위
+## Auto-fix Scope
 
-### 자동 수정 가능 (안전)
+### Auto-fixable (Safe)
 
-| 항목 | 수정 방법 |
-|------|----------|
-| 미사용 import | 해당 import 문 삭제 |
-| `console.log` / `debugger` | 해당 라인 삭제 |
-| 후행 공백 / 빈 줄 정리 | 포맷터 적용 |
+| Item | Fix Method |
+|------|-----------|
+| Unused imports | Delete the import statement |
+| `console.log` / `debugger` | Delete the line |
+| Trailing whitespace / blank lines | Apply formatter |
 
-### 수동 확인 필요 (안전 가드)
+### Requires Manual Review (Safety Guard)
 
-| 항목 | 이유 |
-|------|------|
-| 중복 코드 추출 | 로직 동일성 확인 필요 |
-| `any` 타입 수정 | 적절한 타입 설계 필요 |
-| 매직 넘버 추출 | 상수명과 위치 결정 필요 |
-| 긴 함수 분리 | 로직 분리 기준 결정 필요 |
+| Item | Reason |
+|------|--------|
+| Duplicate code extraction | Need to verify logic equivalence |
+| `any` type fixes | Need proper type design |
+| Magic number extraction | Need to decide constant names and locations |
+| Long function splitting | Need to decide logic separation criteria |
 
-> 자동 수정 전 반드시 변경 범위를 사용자에게 보여주고 확인을 받는다.
+> Always show the scope of changes to the user and get confirmation before auto-fixing.
 
-## vibe 도구 연계
+## VIBE Tool Integration
 
-| 도구 | 용도 |
-|------|------|
-| `core_analyze_complexity` | 함수 복잡도 측정 (nesting, line count) |
-| `core_validate_code_quality` | 코드 품질 규칙 위반 탐지 |
-| `core_suggest_improvements` | 개선 제안 생성 |
-| `core_check_coupling_cohesion` | 모듈 결합도/응집도 분석 |
+| Tool | Purpose |
+|------|---------|
+| `core_analyze_complexity` | Measure function complexity (nesting, line count) |
+| `core_validate_code_quality` | Detect code quality rule violations |
+| `core_suggest_improvements` | Generate improvement suggestions |
+| `core_check_coupling_cohesion` | Analyze module coupling/cohesion |

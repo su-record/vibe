@@ -93,3 +93,9 @@ export interface VibeGptOptions {
   maxTokens?: number;
   jsonMode?: boolean;
 }
+
+// 임베딩 응답
+export interface EmbeddingResponse {
+  embeddings: number[][];
+  model: string;
+}

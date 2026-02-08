@@ -22,7 +22,7 @@ export function getLLMAuthStatus(): LLMStatusMap {
     ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
     : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
 
-  const status: LLMStatusMap = { gpt: [], gemini: [], az: [] };
+  const status: LLMStatusMap = { gpt: [], gemini: [], az: [], kimi: [] };
 
   // GPT OAuth
   try {
@@ -86,6 +86,22 @@ export function getLLMAuthStatus(): LLMStatusMap {
   // AZ 환경변수
   if (status.az.length === 0 && process.env.AZ_API_KEY) {
     status.az.push({ type: 'apikey', valid: true });
+  }
+
+  // Kimi Direct API Key (파일)
+  try {
+    const kimiStoragePath = path.join(__dirname, '../lib/kimi-storage.js');
+    if (fs.existsSync(kimiStoragePath)) {
+      const kimiStorage = require(kimiStoragePath);
+      if (kimiStorage.hasApiKey()) {
+        status.kimi.push({ type: 'apikey', valid: true });
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Kimi 환경변수
+  if (status.kimi.length === 0 && process.env.KIMI_API_KEY) {
+    status.kimi.push({ type: 'apikey', valid: true });
   }
 
   return status;

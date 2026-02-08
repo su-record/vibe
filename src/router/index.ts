@@ -1,11 +1,10 @@
 /**
  * Router Module Exports
- * Runtime Infrastructure: Routing, Intent Classification, Task Planning, Browser Automation
+ * Runtime Infrastructure: Routing, Task Planning, Browser Automation
  */
 
 // Core Router
 export { ModelARouter } from './ModelARouter.js';
-export { IntentClassifier } from './IntentClassifier.js';
 export { RouteRegistry } from './RouteRegistry.js';
 
 // Base Route

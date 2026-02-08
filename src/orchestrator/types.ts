@@ -172,7 +172,7 @@ export type TaskType =
   | 'reasoning';     // 추론 → AZ (Kimi K2.5) 우선
 
 /** LLM 제공자 */
-export type LLMProvider = 'gpt' | 'gemini' | 'claude' | 'az';
+export type LLMProvider = 'gpt' | 'gemini' | 'claude' | 'az' | 'kimi';
 
 /** 스마트 라우팅 요청 */
 export interface SmartRouteRequest {
@@ -204,22 +204,23 @@ export interface LLMAvailabilityCache {
   gpt: { available: boolean; checkedAt: number; errorCount: number };
   gemini: { available: boolean; checkedAt: number; errorCount: number };
   az: { available: boolean; checkedAt: number; errorCount: number };
+  kimi: { available: boolean; checkedAt: number; errorCount: number };
 }
 
 /**
  * 작업 유형별 LLM 우선순위
- * - AZ (Kimi K2.5) → GPT/Gemini → Claude (기본)
- * - 현재 Azure Foundry에 Kimi K2.5만 배포되어 모든 태스크 → Kimi K2.5
+ * - AZ (Kimi K2.5) / Kimi Direct → GPT/Gemini → Claude (기본)
+ * - priority config에 따라 az/kimi 순서가 동적으로 조정됨
  * - GPT/Gemini 키 등록 시 SmartRouter에서 동적으로 우선순위 조정
  */
 export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
-  'architecture': ['az', 'gpt', 'gemini', 'claude'],
-  'debugging': ['az', 'gpt', 'gemini', 'claude'],
-  'uiux': ['gemini', 'az', 'gpt', 'claude'],
-  'code-analysis': ['az', 'gemini', 'gpt', 'claude'],
-  'code-gen': ['az', 'claude'],
-  'web-search': ['gemini', 'az', 'gpt', 'claude'],
-  'general': ['az', 'claude'],
-  'code-review': ['az', 'gpt', 'gemini', 'claude'],
-  'reasoning': ['az', 'gpt', 'gemini', 'claude'],
+  'architecture': ['az', 'kimi', 'gpt', 'gemini', 'claude'],
+  'debugging': ['az', 'kimi', 'gpt', 'gemini', 'claude'],
+  'uiux': ['gemini', 'az', 'kimi', 'gpt', 'claude'],
+  'code-analysis': ['az', 'kimi', 'gemini', 'gpt', 'claude'],
+  'code-gen': ['az', 'kimi', 'claude'],
+  'web-search': ['gemini', 'az', 'kimi', 'gpt', 'claude'],
+  'general': ['az', 'kimi', 'claude'],
+  'code-review': ['az', 'kimi', 'gpt', 'gemini', 'claude'],
+  'reasoning': ['az', 'kimi', 'gpt', 'gemini', 'claude'],
 };

@@ -4,9 +4,8 @@ describe('Router barrel file exports', () => {
   it('should export all infrastructure classes', async () => {
     const router = await import('./index.js');
 
-    // Core Router (3)
+    // Core Router (2)
     expect(router.ModelARouter).toBeDefined();
-    expect(router.IntentClassifier).toBeDefined();
     expect(router.RouteRegistry).toBeDefined();
 
     // Base Route (1)
@@ -49,7 +48,6 @@ describe('Router barrel file exports', () => {
 
     const classExports = [
       router.ModelARouter,
-      router.IntentClassifier,
       router.RouteRegistry,
       router.BaseRoute,
       router.TaskPlanner,
@@ -64,7 +62,7 @@ describe('Router barrel file exports', () => {
       router.TelegramQABridge,
     ];
 
-    expect(classExports).toHaveLength(14);
+    expect(classExports).toHaveLength(13);
     classExports.forEach((cls) => {
       expect(typeof cls).toBe('function');
     });

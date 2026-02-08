@@ -31,6 +31,10 @@ import { DailyReportGenerator } from '../router/services/DailyReportGenerator.js
 import { BrowserManager } from '../router/browser/BrowserManager.js';
 import { BrowserPool } from '../router/browser/BrowserPool.js';
 import { RouterConfig, DEFAULT_ROUTER_CONFIG, InlineKeyboardButton, SmartRouterLike } from '../router/types.js';
+import { HeadModelSelector } from '../agent/HeadModelSelector.js';
+import { ToolRegistry } from '../agent/ToolRegistry.js';
+import { AgentLoop } from '../agent/AgentLoop.js';
+import { registerAllTools } from '../agent/tools/index.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const TELEGRAM_CONFIG_PATH = path.join(VIBE_DIR, 'telegram.json');
@@ -153,22 +157,19 @@ async function main(): Promise<void> {
   // Try to initialize SmartRouter (optional)
   const smartRouter = await initSmartRouter(router);
 
-  // Wire up voice transcriber (download OGG → SmartRouter STT)
-  if (smartRouter) {
-    router.setVoiceTranscriber(async (fileId: string) => {
-      const audioBuffer = await bot.downloadFile(fileId);
-      const base64Audio = audioBuffer.toString('base64');
-      const result = await smartRouter.route({
-        type: 'general',
-        systemPrompt: '사용자가 보낸 음성 메시지를 텍스트로 변환했습니다. 아래 음성 내용을 그대로 반환하세요.',
-        prompt: `[음성 메시지 - base64 OGG 오디오, ${audioBuffer.length} bytes]\n\n음성 내용을 텍스트로 변환해주세요. 변환된 텍스트만 반환하세요.`,
-      });
-      if (!result.success || !result.content) {
-        throw new Error('음성 인식 실패');
-      }
-      return result.content;
-    });
-  }
+  // Initialize AgentLoop (function-calling agent)
+  const headSelector = new HeadModelSelector();
+  const toolRegistry = new ToolRegistry();
+  registerAllTools(toolRegistry);
+
+  const agentLoop = new AgentLoop({
+    headSelector,
+    toolRegistry,
+    systemPromptConfig: { userName: '사용자', language: 'ko', timezone: 'Asia/Seoul' },
+    mediaPreprocessorConfig: { showConfirmation: true },
+  });
+  router.setAgentLoop(agentLoop);
+  logger('info', `AgentLoop 초기화 완료 (도구 ${toolRegistry.size}개 등록)`);
 
   // Google Route (works without SmartRouter)
   const googleAuth = new GoogleAuthManager(logger);

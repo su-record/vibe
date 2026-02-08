@@ -3,6 +3,11 @@
  * YAML metadata for declarative skill configuration
  */
 
+export interface SkillSectionMeta {
+  name: string;
+  triggers?: string[];
+}
+
 export interface SkillMetadata {
   name: string;
   description: string;
@@ -15,6 +20,7 @@ export interface SkillMetadata {
   triggers?: string[];
   priority?: number;
   mcpConfig?: McpConfig;
+  sections?: SkillSectionMeta[];
 }
 
 export interface McpConfig {

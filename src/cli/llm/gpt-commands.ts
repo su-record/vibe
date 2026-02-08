@@ -13,16 +13,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * GPT OAuth 인증
+ * GPT OAuth 핵심 로직 (process.exit 없음)
+ * setup 위저드 및 gptAuth()에서 공유
+ * @returns 성공 시 OAuthTokens, 실패 시 null
  */
-export async function gptAuth(): Promise<void> {
-  console.log(`
-🔐 GPT Plus/Pro Authentication (OAuth)
-
-With ChatGPT Plus or Pro subscription, you can use the Codex API.
-Login with your OpenAI account in browser.
-  `);
-
+export async function gptAuthCore(): Promise<OAuthTokens | null> {
   try {
     const gptOAuthPath = path.join(__dirname, '../../lib/gpt-oauth.js');
     const gptStoragePath = path.join(__dirname, '../../lib/gpt-storage.js');
@@ -30,6 +25,7 @@ Login with your OpenAI account in browser.
     const { startOAuthFlow } = require(gptOAuthPath);
     const storage = require(gptStoragePath);
 
+    console.log('\nOpening browser for OpenAI OAuth...\n');
     const tokens: OAuthTokens = await startOAuthFlow();
 
     storage.addAccount({
@@ -41,23 +37,8 @@ Login with your OpenAI account in browser.
       accountId: tokens.accountId,
     });
 
-    console.log(`
-✅ GPT authenticated!
-
-Account: ${tokens.email}
-Account ID: ${tokens.accountId || '(auto-detected)'}
-
-⚠️  Note: ChatGPT Plus/Pro subscription required for API calls.
-
-Status: vibe gpt status
-Logout: vibe gpt logout
-    `);
-
     // config.json 업데이트
-    const projectRoot = process.cwd();
-    const coreDir = path.join(projectRoot, '.claude', 'vibe');
-    const configPath = path.join(coreDir, 'config.json');
-
+    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
     if (fs.existsSync(configPath)) {
       try {
         const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
@@ -73,25 +54,48 @@ Logout: vibe gpt logout
       } catch { /* ignore: optional operation */ }
     }
 
+    console.log(`GPT authenticated! (${tokens.email})`);
+
+    // Windows libuv 핸들 충돌 방지: 서버 완전 종료 대기
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return tokens;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`GPT authentication failed: ${message}`);
+    return null;
+  }
+}
+
+/**
+ * GPT OAuth 인증 (CLI 명령어용)
+ */
+export async function gptAuth(): Promise<void> {
+  console.log(`
+🔐 GPT Plus/Pro Authentication (OAuth)
+
+With ChatGPT Plus or Pro subscription, you can use the Codex API.
+Login with your OpenAI account in browser.
+  `);
+
+  const tokens = await gptAuthCore();
+
+  if (tokens) {
     console.log(`
+Account: ${tokens.email}
+Account ID: ${tokens.accountId || '(auto-detected)'}
+
+⚠️  Note: ChatGPT Plus/Pro subscription required for API calls.
+
+Status: vibe gpt status
+Logout: vibe gpt logout
+
 GPT is called via Hooks:
   - Auto-called with "gpt. query" prefix
   - Direct use: import('@su-record/core/lib/gpt')
     `);
-
-    // Windows libuv 핸들 충돌 방지: 서버 완전 종료 대기
-    await new Promise(resolve => setTimeout(resolve, 200));
     process.exit(0);
-
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`
-❌ GPT authentication failed
-
-Error: ${message}
-
-Retry: vibe gpt auth
-    `);
+  } else {
+    console.error('\nRetry: vibe gpt auth');
     process.exit(1);
   }
 }

@@ -100,6 +100,108 @@ function loadSkillBody(skillPath) {
   }
 }
 
+// ============================================
+// Section-Level Progressive Disclosure
+// ============================================
+
+/**
+ * Parse skill body into sections (split by ## headings)
+ * Returns array of { name, content } objects
+ */
+function parseBodySections(body) {
+  const sections = [];
+  const lines = body.split('\n');
+  let currentSection = null;
+  let currentLines = [];
+
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      if (currentSection !== null) {
+        sections.push({ name: currentSection, content: currentLines.join('\n').trim() });
+      }
+      currentSection = line.slice(3).trim();
+      currentLines = [line];
+    } else {
+      currentLines.push(line);
+    }
+  }
+
+  if (currentSection !== null) {
+    sections.push({ name: currentSection, content: currentLines.join('\n').trim() });
+  } else if (currentLines.length > 0) {
+    sections.push({ name: '_intro', content: currentLines.join('\n').trim() });
+  }
+
+  return sections;
+}
+
+/**
+ * Load skill body with section-level filtering.
+ * If metadata has `sections` array, only load matching sections.
+ * Otherwise, load full body (backward compatible).
+ */
+function loadSkillBodyWithSections(skillPath, metadata, prompt) {
+  const body = loadSkillBody(skillPath);
+  if (!body) return { body: '', loadedSections: [], availableSections: [] };
+
+  const sectionsMeta = metadata.sections;
+  if (!sectionsMeta || !Array.isArray(sectionsMeta) || sectionsMeta.length === 0) {
+    return { body, loadedSections: [], availableSections: [] };
+  }
+
+  const parsedSections = parseBodySections(body);
+  const loadedSections = [];
+  const skippedSections = [];
+
+  // Always include intro content (before first ## heading)
+  let resultParts = [];
+  const introSection = parsedSections.find(s => s.name === '_intro');
+  if (introSection) {
+    resultParts.push(introSection.content);
+  }
+
+  // Score each section defined in frontmatter
+  const sectionScores = sectionsMeta.map(secMeta => {
+    const triggers = secMeta.triggers;
+    const score = (triggers && triggers.length > 0) ? scoreSkillMatch(triggers, prompt) : -1;
+    const parsed = parsedSections.find(p =>
+      p.name.toLowerCase().includes(secMeta.name.toLowerCase()) ||
+      secMeta.name.toLowerCase().includes(p.name.toLowerCase())
+    );
+    return { meta: secMeta, score, parsed };
+  });
+
+  // Include sections with score > 0, or sections without triggers (always load)
+  for (const { meta, score, parsed } of sectionScores) {
+    if (!parsed) continue;
+
+    if (score > 0 || score === -1) {
+      resultParts.push(parsed.content);
+      loadedSections.push(meta.name);
+    } else {
+      skippedSections.push(meta.name);
+    }
+  }
+
+  // Include body sections NOT tracked in frontmatter (untracked always loaded)
+  for (const parsed of parsedSections) {
+    if (parsed.name === '_intro') continue;
+    const isTracked = sectionsMeta.some(s =>
+      parsed.name.toLowerCase().includes(s.name.toLowerCase()) ||
+      s.name.toLowerCase().includes(parsed.name.toLowerCase())
+    );
+    if (!isTracked) {
+      resultParts.push(parsed.content);
+    }
+  }
+
+  return {
+    body: resultParts.join('\n\n').trim(),
+    loadedSections,
+    availableSections: skippedSections,
+  };
+}
+
 /**
  * List skill resources (scripts/, references/, assets/)
  */
@@ -323,8 +425,10 @@ function findMatchingSkills(prompt) {
     const score = scoreSkillMatch(triggers, prompt);
 
     if (score > 0) {
-      // Tier 2: Load body on match
-      let body = loadSkillBody(skillPath);
+      // Tier 2: Load body on match (with section-level filtering)
+      const { body: sectionBody, loadedSections, availableSections } =
+        loadSkillBodyWithSections(skillPath, meta, prompt);
+      let body = sectionBody;
 
       // Apply maxBodyTokens truncation
       if (meta.maxBodyTokens && typeof meta.maxBodyTokens === 'number') {
@@ -347,6 +451,8 @@ function findMatchingSkills(prompt) {
         body,
         resources,
         metadata: meta,
+        loadedSections,
+        availableSections,
       });
     }
   }
@@ -406,6 +512,12 @@ function formatSkillInjection(result) {
       lines.push(skill.body);
       lines.push('');
 
+      // Section-level disclosure: show available (not loaded) sections
+      if (skill.availableSections && skill.availableSections.length > 0) {
+        lines.push(`<!-- More sections available: ${skill.availableSections.map(s => `"${s}"`).join(', ')} -->`);
+        lines.push('');
+      }
+
       // Tier 3: Resource listing
       if (skill.resources.length > 0) {
         lines.push(`<!-- Resources available: ${skill.resources.join(', ')} -->`);
@@ -434,6 +546,8 @@ function formatSkillInjection(result) {
 export {
   loadSkillMetadataOnly,
   loadSkillBody,
+  loadSkillBodyWithSections,
+  parseBodySections,
   listSkillResources,
   checkSkillEligibility,
   findMatchingSkills,

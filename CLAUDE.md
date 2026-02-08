@@ -62,6 +62,12 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - No `@ts-ignore` → fix type issues at root
 - Explicit return types on all functions
 
+### TypeScript Rules
+- No `any` type → use `unknown` + type guards
+- No `as any` casting → define proper interfaces
+- No `@ts-ignore` → fix type issues at root
+- Explicit return types on all functions
+
 ### Error Handling Required
 
 - try-catch or error state required
@@ -143,6 +149,7 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 
 | Command | Description |
 |---------|-------------|
+| `vibe setup` | Interactive setup wizard (LLM auth + priority + init) |
 | `vibe init` | Initialize project |
 | `vibe update` | Update settings |
 | `vibe status` | Show status |
@@ -151,6 +158,8 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 | `vibe gpt <cmd>` | GPT commands (auth, key, status, logout) |
 | `vibe gemini <cmd>` | Gemini commands (auth, key, status, logout) |
 | `vibe az <cmd>` | AZ (Kimi K2.5) commands (key, status, logout) |
+| `vibe kimi <cmd>` | Kimi Direct (Moonshot) commands (key, status, logout) |
+| `vibe config <cmd>` | Provider priority config (embedding-priority, kimi-priority, show) |
 | `vibe remove` | Remove core |
 | `vibe help` | Help |
 | `vibe version` | Version info |
@@ -261,14 +270,14 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 ## Multi-LLM Orchestration (v0.1.0)
 
-4개 LLM(Claude + GPT + Gemini + AZ) 멀티 오케스트레이션 시스템.
+5개 LLM(Claude + GPT + Gemini + AZ + Kimi Direct) 멀티 오케스트레이션 시스템.
 
 ### Core Modules
 
 | Module | Purpose |
 |--------|---------|
-| `SmartRouter` | Task 유형별 최적 LLM 선택 + fallback chain |
-| `LLMCluster` | 병렬 멀티 LLM 호출 (GPT + Gemini + AZ Kimi K2.5) |
+| `SmartRouter` | Task 유형별 최적 LLM 선택 + fallback chain + provider priority |
+| `LLMCluster` | 병렬 멀티 LLM 호출 (GPT + Gemini + AZ Kimi K2.5 + Kimi Direct) |
 | `AgentRegistry` | SQLite 기반 에이전트 실행 추적 (WAL mode) |
 | `AllProvidersFailedError` | 모든 프로바이더 실패 시 구조화된 에러 |
 
@@ -276,12 +285,14 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 | Task Type | Priority Order |
 |-----------|---------------|
-| code-analysis, code-review | AZ (Kimi K2.5) → GPT → Gemini → Claude |
-| reasoning, architecture | AZ (Kimi K2.5) → GPT → Gemini → Claude |
-| code-gen | AZ (Kimi K2.5) → Claude |
-| debugging | AZ (Kimi K2.5) → GPT → Gemini → Claude |
-| uiux, web-search | Gemini → AZ (Kimi K2.5) → GPT → Claude |
-| general | AZ (Kimi K2.5) → Claude |
+| code-analysis, code-review | AZ → Kimi → GPT → Gemini → Claude |
+| reasoning, architecture | AZ → Kimi → GPT → Gemini → Claude |
+| code-gen | AZ → Kimi → Claude |
+| debugging | AZ → Kimi → GPT → Gemini → Claude |
+| uiux, web-search | Gemini → AZ → Kimi → GPT → Claude |
+| general | AZ → Kimi → Claude |
+
+**Provider Priority Config**: `vibe config kimi-priority kimi,az` 설정 시 Kimi Direct가 AZ보다 우선
 
 ### AZ (Azure Foundry) Integration
 
@@ -292,6 +303,40 @@ await manageGoals({ action: 'complete', goalId: 1 });
   - `text-embedding-3-large` (임베딩)
 - Auth: `AZ_API_KEY` 환경변수 또는 `vibe az key <key>` (동일 키로 Chat + Embedding 모두 사용)
 - Timeout: 30초/provider, 3회 재시도 (지수 백오프)
+
+### Kimi Direct (Moonshot) Integration
+
+- Chat API: `https://api.moonshot.ai/v1`
+- Model: `kimi-k2.5` (256K context, 8192 max tokens)
+- Auth: `KIMI_API_KEY` 환경변수 또는 `vibe kimi key <key>`
+- Timeout: 60초, 3회 재시도 (지수 백오프, 429/5xx)
+- AZ의 Kimi K2.5와 동일 모델, Moonshot 직접 API 경유
+
+### GPT Embedding (OpenAI Direct)
+
+- Endpoint: `https://api.openai.com/v1/embeddings`
+- Model: `text-embedding-3-large` (AZ Embedding과 동일)
+- Auth: `OPENAI_API_KEY` 환경변수 또는 GPT API Key (OAuth 미지원)
+- AZ Embedding의 대안으로, `vibe config embedding-priority gpt,az`로 우선순위 설정
+
+### Provider Priority Configuration
+
+`.claude/vibe/config.json`의 `priority` 키로 관리:
+
+```json
+{
+  "priority": {
+    "embedding": ["az", "gpt"],
+    "kimi": ["az", "kimi"]
+  }
+}
+```
+
+| 설정 | 명령어 | 기본값 |
+|------|--------|--------|
+| 임베딩 우선순위 | `vibe config embedding-priority az,gpt` | AZ 우선 |
+| Kimi 채팅 우선순위 | `vibe config kimi-priority az,kimi` | AZ 우선 |
+| 현재 설정 확인 | `vibe config show` | - |
 
 ## Agents
 
@@ -342,6 +387,22 @@ CSV 데이터 기반 디자인 인텔리전스. BM25 검색 엔진으로 24개 C
 **데이터**: `~/.claude/vibe/ui-ux-data/` (11 도메인 CSV + 13 스택 CSV)
 
 → `agents/ui/`
+
+### Planning Agents (2)
+
+requirements-analyst, ux-advisor → `agents/planning/`
+
+### QA Agents (2)
+
+edge-case-finder, acceptance-tester → `agents/qa/`
+
+### Docs Agents (2)
+
+api-documenter, changelog-writer → `agents/docs/`
+
+### Mentor Agent (1)
+
+junior-mentor — Junior developer mentor with EXPLANATION.md generation
 
 ### Agent Teams (Experimental)
 
