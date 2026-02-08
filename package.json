@@ -1,11 +1,15 @@
 {
   "name": "@su-record/core",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "description": "Su core - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
   "type": "module",
   "main": "dist/cli/index.js",
   "exports": {
     ".": "./dist/cli/index.js",
+    "./agent": {
+      "types": "./dist/agent/index.d.ts",
+      "default": "./dist/agent/index.js"
+    },
     "./tools": "./dist/tools/index.js",
     "./tools/memory": "./dist/tools/memory/index.js",
     "./tools/convention": "./dist/tools/convention/index.js",

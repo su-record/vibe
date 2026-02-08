@@ -17,6 +17,7 @@ const TOOL_TIMEOUT_MS = 30_000;
 const MAX_RESULT_SIZE = 10 * 1024; // 10KB
 const KEEP_SIZE = 1024; // 1KB each for head/tail
 const SENSITIVE_KEYS = ['key', 'token', 'secret', 'password', 'auth'];
+const MAX_AUDIT_LOG_SIZE = 1000;
 
 export type AgentLogger = (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) => void;
 
@@ -122,6 +123,9 @@ export class ToolExecutor {
     success: boolean,
     errorType?: string,
   ): void {
+    if (this.auditLog.length >= MAX_AUDIT_LOG_SIZE) {
+      this.auditLog.splice(0, Math.floor(MAX_AUDIT_LOG_SIZE / 4));
+    }
     this.auditLog.push({
       timestamp: new Date().toISOString(),
       toolName: toolCall.name,

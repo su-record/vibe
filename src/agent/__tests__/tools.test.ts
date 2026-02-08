@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { ToolRegistry } from '../ToolRegistry.js';
 import { registerAllTools } from '../tools/index.js';
 import { isPrivateIP, validateUrl } from '../tools/web-browse.js';
-import { bindSendTelegram, unbindSendTelegram } from '../tools/send-telegram.js';
+import { bindSendTelegram, unbindSendTelegram, runInChatContext } from '../tools/send-telegram.js';
 
 describe('Phase 3: Tool Definitions', () => {
   // Scenario 5: web_browse SSRF 방지
@@ -92,11 +92,11 @@ describe('Phase 3: Tool Definitions', () => {
 
   // Scenario 10: 전체 Tool 일괄 등록
   describe('Scenario 10: Register all tools', () => {
-    it('should register all 8 tools', () => {
+    it('should register all 12 tools', () => {
       const registry = new ToolRegistry();
       registerAllTools(registry);
 
-      expect(registry.size).toBe(8);
+      expect(registry.size).toBe(12);
 
       const expectedTools = [
         'claude_code',
@@ -107,6 +107,10 @@ describe('Phase 3: Tool Definitions', () => {
         'send_telegram',
         'save_memory',
         'recall_memory',
+        'vision_capture',
+        'vision_analyze',
+        'send_slack',
+        'send_imessage',
       ];
 
       for (const name of expectedTools) {
@@ -133,7 +137,7 @@ describe('Phase 3: Tool Definitions', () => {
       registerAllTools(registry);
 
       const openAITools = registry.toOpenAIFormat();
-      expect(openAITools).toHaveLength(8);
+      expect(openAITools).toHaveLength(12);
 
       for (const tool of openAITools) {
         expect(tool.type).toBe('function');
@@ -148,7 +152,7 @@ describe('Phase 3: Tool Definitions', () => {
       registerAllTools(registry);
 
       const anthropicTools = registry.toAnthropicFormat();
-      expect(anthropicTools).toHaveLength(8);
+      expect(anthropicTools).toHaveLength(12);
 
       for (const tool of anthropicTools) {
         expect(tool.name).toBeTruthy();
@@ -161,7 +165,7 @@ describe('Phase 3: Tool Definitions', () => {
   // send_telegram binding test
   describe('send_telegram binding', () => {
     it('should fail when not bound', async () => {
-      unbindSendTelegram();
+      unbindSendTelegram('nonexistent');
       const registry = new ToolRegistry();
       registerAllTools(registry);
 
@@ -178,11 +182,12 @@ describe('Phase 3: Tool Definitions', () => {
       registerAllTools(registry);
 
       const tool = registry.get('send_telegram')!;
-      const result = await tool.handler({ text: 'hello' });
+      // AsyncLocalStorage 컨텍스트 내에서 실행해야 chatId 접근 가능
+      const result = await runInChatContext('chat-123', () => tool.handler({ text: 'hello' }));
       expect(result).toContain('Message sent');
       expect(mockSend).toHaveBeenCalledWith('chat-123', 'hello', { format: 'text' });
 
-      unbindSendTelegram();
+      unbindSendTelegram('chat-123');
     });
   });
 });

@@ -13,7 +13,10 @@ import { z } from 'zod';
 import type { ToolRegistrationInput } from '../ToolRegistry.js';
 
 const SYNC_TIMEOUT_MS = 30_000;
-const PROJECT_ROOT = process.cwd();
+
+function getProjectRoot(): string {
+  return process.cwd();
+}
 
 // Long-running task keywords
 const LONG_TASK_KEYWORDS = [
@@ -32,10 +35,11 @@ function isLongRunningTask(task: string): boolean {
 }
 
 function sanitizeWorkingDir(dir: string | undefined): string {
-  if (!dir) return PROJECT_ROOT;
+  const projectRoot = getProjectRoot();
+  if (!dir) return projectRoot;
 
-  const resolved = path.resolve(PROJECT_ROOT, dir);
-  if (!resolved.startsWith(PROJECT_ROOT)) {
+  const resolved = path.resolve(projectRoot, dir);
+  if (!resolved.startsWith(projectRoot)) {
     throw new Error('workingDirectory must be within project root (path traversal blocked)');
   }
   return resolved;

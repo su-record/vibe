@@ -1,19 +1,15 @@
-<div align="center">
-
 # Vibe
 
 ### SPEC-driven AI Coding Framework for Claude Code
 
-[![npm downloads](https://img.shields.io/npm/dt/@su-record/vibe)](https://www.npmjs.com/package/@su-record/vibe)
+[![npm downloads](https://img.shields.io/npm/dt/@su-record/core)](https://www.npmjs.com/package/@su-record/vibe)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **바이브코딩을 쉽게, 최소 품질은 자동으로 보장합니다.**
 
-46개 에이전트 · 41+ 내장 도구 · 34개 스킬 · 4개 LLM 오케스트레이션 · 23개 프레임워크 지원
-
-</div>
+46개 에이전트 · 41+ 내장 도구 · 34개 스킬 · 4개 LLM 오케스트레이션 · 25개 프레임워크 지원
 
 ---
 
@@ -52,7 +48,7 @@ npm i -g @su-record/core && vibe sync login && vibe sync pull
 - [슬래시 명령어](#슬래시-명령어)
 - [41+ 내장 도구](#41-내장-도구)
 - [34개 스킬](#34개-스킬)
-- [23개 프레임워크 지원](#23개-프레임워크-지원)
+- [25개 프레임워크 지원](#25개-프레임워크-지원)
 - [품질 보장 시스템](#품질-보장-시스템)
 - [CLI 명령어](#cli-명령어)
 - [인증 동기화 (vibe sync)](#인증-동기화-vibe-sync)
@@ -118,7 +114,7 @@ flowchart LR
 
 | 서브패스 | 설명 | 주요 export |
 |---------|------|------------|
-| `@su-record/core/interface` | 외부 인터페이스 (Telegram, Web, Webhook) | `BaseInterface`, `TelegramBot`, `WebServer`, `ClaudeCodeBridge` + 15개 타입 |
+| `@su-record/core/interface` | 외부 인터페이스 (Telegram, Web, Slack, iMessage, Vision) | `BaseInterface`, `TelegramBot`, `WebServer`, `SlackBot`, `IMessageBot`, `VisionInterface` + 타입 |
 | `@su-record/core/router` | 라우팅 인프라 (Intent, Task Planning, Browser) | `ModelARouter`, `IntentClassifier`, `TaskPlanner`, `BrowserAgent` 등 14개 클래스 + 16개 타입 |
 | `@su-record/core/memory` | 메모리 시스템 (Storage, KnowledgeGraph, Session RAG) | `MemoryStorage`, `KnowledgeGraph`, `SessionRAGStore` 등 7개 클래스 + 18개 타입 |
 | `@su-record/core/policy` | 정책 엔진 (Policy, Risk) | `PolicyEngine`, `PolicyStore`, `RiskCalculator` 등 4개 클래스 + 13개 타입 |
@@ -468,7 +464,7 @@ Brand Assets, Commerce Patterns, Commit Push PR, Context7 Usage, Core Capabiliti
 
 ---
 
-## 23개 프레임워크 지원
+## 25개 프레임워크 지원
 
 프로젝트의 기술 스택을 자동 감지하고, 해당 프레임워크의 코딩 규칙을 적용합니다.
 모노레포도 지원합니다 (pnpm-workspace, npm workspaces, Lerna, Nx, Turborepo).
@@ -479,7 +475,7 @@ Brand Assets, Commerce Patterns, Commit Push PR, Context7 Usage, Core Capabiliti
 
 **Java/Kotlin (4)** — Spring Boot, Java, Android, Kotlin
 
-**기타 (5)** — Rails, Go, Rust, Swift (iOS), Unity (C#), Flutter (Dart), Godot (GDScript)
+**기타 (7)** — Rails, Go, Rust, Swift (iOS), Unity (C#), Flutter (Dart), Godot (GDScript)
 
 ### 자동 감지 대상
 
@@ -686,24 +682,3 @@ flowchart TD
 ## 라이선스
 
 MIT License - Copyright (c) 2025 Su
-
-## Core Setup (AI Coding)
-
-This project uses [Core](https://github.com/su-record/core) AI coding framework.
-
-### Collaborator Install
-
-```bash
-# Global install (recommended)
-npm install -g @su-record/core
-vibe update
-
-# Or use vibe init to setup
-vibe init
-```
-
-### Usage
-
-Use slash commands in Claude Code:
-- `/vibe.spec "feature"` - Create SPEC document
-- `/vibe.run "feature"` - Execute implementation

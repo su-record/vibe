@@ -146,3 +146,29 @@ export interface ConversationSession {
   messages: AgentMessage[];
   lastActivity: number;
 }
+
+// === Phase 1 (core-infra): Agent Progress Events ===
+
+export type AgentProgressEventType =
+  | 'job:created'
+  | 'job:progress'
+  | 'job:chunk'
+  | 'job:complete'
+  | 'job:error'
+  | 'permission:request';
+
+export interface AgentProgressEvent {
+  type: AgentProgressEventType;
+  jobId: string;
+  data: AgentProgressData;
+  timestamp: string;
+}
+
+export type AgentProgressData =
+  | { kind: 'created'; chatId: string; content: string }
+  | { kind: 'tool_start'; toolName: string; toolCallId: string }
+  | { kind: 'tool_end'; toolName: string; toolCallId: string; status: string; latencyMs: number }
+  | { kind: 'chunk'; content: string }
+  | { kind: 'complete'; content: string; model: string }
+  | { kind: 'error'; message: string }
+  | { kind: 'permission'; tool: string; description: string };

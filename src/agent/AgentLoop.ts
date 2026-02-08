@@ -16,18 +16,23 @@
 
 import type { ExternalMessage } from '../interface/types.js';
 import type { RouteServices } from '../router/types.js';
-import type { AgentMessage, HeadModelProvider, HeadModelResponse, ToolCall } from './types.js';
+import type { AgentMessage, AgentProgressEvent, HeadModelProvider, HeadModelResponse, ToolCall } from './types.js';
 import type { HeadModelSelector } from './HeadModelSelector.js';
 import type { ToolRegistry } from './ToolRegistry.js';
 import { ConversationState } from './ConversationState.js';
 import { ToolExecutor, type AgentLogger } from './ToolExecutor.js';
 import { buildSystemPrompt, type SystemPromptConfig } from './SystemPrompt.js';
 import { MediaPreprocessor, type MediaPreprocessorConfig } from './preprocessors/MediaPreprocessor.js';
-import { bindSendTelegram, unbindSendTelegram } from './tools/send-telegram.js';
+import { bindSendTelegram, unbindSendTelegram, runInChatContext } from './tools/send-telegram.js';
+import { bindSendSlack, unbindSendSlack, runInSlackContext } from './tools/send-slack.js';
+import { bindSendIMessage, unbindSendIMessage, runInIMessageContext } from './tools/send-imessage.js';
+
+type ChannelSendFn = (chatId: string, text: string, options?: { format?: 'text' | 'markdown' | 'html' }) => Promise<void>;
 
 const MAX_ITERATIONS = 10;
 const HEAD_MODEL_TIMEOUT_MS = 10_000;
 const MAX_INVALID_TOOL_RETRIES = 2;
+const MAX_IDEMPOTENCY_CACHE_SIZE = 500;
 
 // === Error Messages ===
 
@@ -39,11 +44,14 @@ const ERROR_MESSAGES = {
 
 // === AgentLoop ===
 
+export type OnProgressCallback = (event: AgentProgressEvent) => void;
+
 export interface AgentLoopDeps {
   headSelector: HeadModelSelector;
   toolRegistry: ToolRegistry;
   systemPromptConfig?: SystemPromptConfig;
   mediaPreprocessorConfig?: MediaPreprocessorConfig;
+  onProgress?: OnProgressCallback;
 }
 
 export class AgentLoop {
@@ -54,6 +62,7 @@ export class AgentLoop {
   private executedToolCalls = new Map<string, string>(); // idempotency cache
   private systemPromptConfig: SystemPromptConfig | undefined;
   private mediaPreprocessor: MediaPreprocessor;
+  private onProgress: OnProgressCallback | undefined;
 
   constructor(deps: AgentLoopDeps) {
     this.headSelector = deps.headSelector;
@@ -61,6 +70,11 @@ export class AgentLoop {
     this.systemPromptConfig = deps.systemPromptConfig;
     this.toolExecutor = new ToolExecutor((_level, _msg) => {});
     this.mediaPreprocessor = new MediaPreprocessor(deps.mediaPreprocessorConfig);
+    this.onProgress = deps.onProgress;
+  }
+
+  setOnProgress(callback: OnProgressCallback | undefined): void {
+    this.onProgress = callback;
   }
 
   setLogger(logger: AgentLogger): void {
@@ -68,22 +82,54 @@ export class AgentLoop {
   }
 
   async process(message: ExternalMessage, services: RouteServices): Promise<void> {
-    const { chatId } = message;
+    const { chatId, channel } = message;
+    const jobId = message.id;
 
     // Check session expiry
     if (this.conversationState.isSessionExpired(chatId)) {
       this.conversationState.resetSession(chatId);
     }
 
+    // Emit job:created
+    this.emitProgress({
+      type: 'job:created',
+      jobId,
+      data: { kind: 'created', chatId, content: message.content },
+      timestamp: new Date().toISOString(),
+    });
+
+    // Channel-agnostic send function
+    const sendFn: ChannelSendFn = async (cid, text, options) => {
+      if (channel === 'telegram') {
+        if (options) {
+          await services.sendTelegram(cid, text, options);
+        } else {
+          await services.sendTelegram(cid, text);
+        }
+      } else if (services.sendToChannel) {
+        if (options) {
+          await services.sendToChannel(channel, cid, text, options);
+        } else {
+          await services.sendToChannel(channel, cid, text);
+        }
+      } else {
+        services.logger('error', `No send function for channel: ${channel}`);
+      }
+    };
+
     // Media preprocessing (voice/image/file)
     let content = message.content;
     if (message.type === 'voice' || message.type === 'file') {
-      const sendFn = (cid: string, text: string): Promise<void> =>
-        services.sendTelegram(cid, text);
       const result = await this.mediaPreprocessor.preprocess(message, sendFn);
 
       if (!result.success) {
-        await services.sendTelegram(chatId, result.error ?? '미디어 처리 실패');
+        this.emitProgress({
+          type: 'job:error',
+          jobId,
+          data: { kind: 'error', message: result.error ?? '미디어 처리 실패' },
+          timestamp: new Date().toISOString(),
+        });
+        await sendFn(chatId, result.error ?? '미디어 처리 실패');
         return;
       }
       if (result.transcribedText) {
@@ -97,21 +143,77 @@ export class AgentLoop {
       content,
     });
 
-    // Bind send_telegram tool to current chat
-    bindSendTelegram(chatId, services.sendTelegram);
+    // Bind channel-specific send tool
+    this.bindChannelTool(channel, chatId, message, services);
 
     // Select head model
     const headModel = await this.headSelector.selectHead();
 
-    try {
-      await this.runLoop(chatId, headModel, services);
-    } catch (err) {
-      this.headSelector.reportFailure(headModel, err);
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      services.logger('error', `AgentLoop error: ${errorMsg}`);
-      await services.sendTelegram(chatId, ERROR_MESSAGES.headModelFailure);
-    } finally {
-      unbindSendTelegram();
+    // Run in channel-specific AsyncLocalStorage context
+    const runInContext = channel === 'slack' ? runInSlackContext
+      : channel === 'imessage' ? runInIMessageContext
+      : runInChatContext;
+
+    await runInContext(chatId, async () => {
+      try {
+        await this.runLoop(chatId, headModel, services, sendFn, jobId);
+      } catch (err) {
+        this.headSelector.reportFailure(headModel, err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        services.logger('error', `AgentLoop error: ${errorMsg}`);
+        this.emitProgress({
+          type: 'job:error',
+          jobId,
+          data: { kind: 'error', message: errorMsg },
+          timestamp: new Date().toISOString(),
+        });
+        await sendFn(chatId, ERROR_MESSAGES.headModelFailure);
+      } finally {
+        this.unbindChannelTool(channel, chatId);
+      }
+    });
+  }
+
+  private bindChannelTool(
+    channel: string,
+    chatId: string,
+    message: ExternalMessage,
+    services: RouteServices,
+  ): void {
+    switch (channel) {
+      case 'slack':
+        if (services.sendToChannel) {
+          const slackSendFn = (cid: string, text: string, opts?: { thread_ts?: string }): Promise<void> =>
+            services.sendToChannel!(channel, cid, text, { threadId: opts?.thread_ts });
+          const allowedChannelIds = (message.metadata?.allowedChannelIds as string[]) ?? [chatId];
+          bindSendSlack(chatId, slackSendFn, allowedChannelIds);
+        }
+        break;
+      case 'imessage':
+        if (services.sendToChannel) {
+          const imsgSendFn = (handle: string, text: string): Promise<void> =>
+            services.sendToChannel!(channel, handle, text);
+          const allowedHandles = (message.metadata?.allowedHandles as string[]) ?? [chatId];
+          bindSendIMessage(chatId, imsgSendFn, allowedHandles);
+        }
+        break;
+      default:
+        bindSendTelegram(chatId, services.sendTelegram);
+        break;
+    }
+  }
+
+  private unbindChannelTool(channel: string, chatId: string): void {
+    switch (channel) {
+      case 'slack':
+        unbindSendSlack(chatId);
+        break;
+      case 'imessage':
+        unbindSendIMessage(chatId);
+        break;
+      default:
+        unbindSendTelegram(chatId);
+        break;
     }
   }
 
@@ -123,9 +225,12 @@ export class AgentLoop {
     chatId: string,
     headModel: HeadModelProvider,
     services: RouteServices,
+    sendFn: ChannelSendFn,
+    jobId?: string,
   ): Promise<void> {
     const tools = this.toolRegistry.list();
     let invalidToolRetries = 0;
+    const jid = jobId ?? chatId;
 
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
       // Build messages: system prompt + conversation history
@@ -148,8 +253,24 @@ export class AgentLoop {
           role: 'assistant',
           content: response.content,
         });
-        await services.sendTelegram(chatId, response.content, { format: 'markdown' });
+        this.emitProgress({
+          type: 'job:complete',
+          jobId: jid,
+          data: { kind: 'complete', content: response.content, model: response.model },
+          timestamp: new Date().toISOString(),
+        });
+        await sendFn(chatId, response.content, { format: 'markdown' });
         return;
+      }
+
+      // Emit chunk for assistant content (if any)
+      if (response.content) {
+        this.emitProgress({
+          type: 'job:chunk',
+          jobId: jid,
+          data: { kind: 'chunk', content: response.content },
+          timestamp: new Date().toISOString(),
+        });
       }
 
       // Has tool calls → execute them
@@ -163,27 +284,30 @@ export class AgentLoop {
         chatId,
         response.toolCalls,
         services,
+        jid,
       );
 
       if (hasInvalidTool) {
         invalidToolRetries++;
         if (invalidToolRetries > MAX_INVALID_TOOL_RETRIES) {
-          await services.sendTelegram(chatId, ERROR_MESSAGES.headModelFailure);
+          await sendFn(chatId, ERROR_MESSAGES.headModelFailure);
           return;
         }
       }
     }
 
     // Max iterations reached
-    await services.sendTelegram(chatId, ERROR_MESSAGES.maxIterations);
+    await sendFn(chatId, ERROR_MESSAGES.maxIterations);
   }
 
   private async executeToolCalls(
     chatId: string,
     toolCalls: ToolCall[],
     services: RouteServices,
+    jobId?: string,
   ): Promise<boolean> {
     let hasInvalidTool = false;
+    const jid = jobId ?? chatId;
 
     for (const toolCall of toolCalls) {
       // Idempotency: check if already executed
@@ -197,13 +321,39 @@ export class AgentLoop {
         continue;
       }
 
+      // Emit tool start progress
+      this.emitProgress({
+        type: 'job:progress',
+        jobId: jid,
+        data: { kind: 'tool_start', toolName: toolCall.name, toolCallId: toolCall.id },
+        timestamp: new Date().toISOString(),
+      });
+
       const result = await this.toolExecutor.execute(toolCall, this.toolRegistry);
+
+      // Emit tool end progress
+      this.emitProgress({
+        type: 'job:progress',
+        jobId: jid,
+        data: {
+          kind: 'tool_end',
+          toolName: toolCall.name,
+          toolCallId: toolCall.id,
+          status: result.status,
+          latencyMs: result.latencyMs,
+        },
+        timestamp: new Date().toISOString(),
+      });
 
       if (result.status === 'error' && result.content.includes('not found')) {
         hasInvalidTool = true;
       }
 
-      // Cache result for idempotency
+      // Cache result for idempotency (with size limit)
+      if (this.executedToolCalls.size >= MAX_IDEMPOTENCY_CACHE_SIZE) {
+        const firstKey = this.executedToolCalls.keys().next().value;
+        if (firstKey !== undefined) this.executedToolCalls.delete(firstKey);
+      }
       this.executedToolCalls.set(toolCall.id, result.content);
 
       this.conversationState.addMessage(chatId, {
@@ -216,6 +366,14 @@ export class AgentLoop {
     }
 
     return hasInvalidTool;
+  }
+
+  private emitProgress(event: AgentProgressEvent): void {
+    try {
+      this.onProgress?.(event);
+    } catch {
+      // Progress callback errors should not break the agent loop
+    }
   }
 
   private async callHeadModelWithRetry(

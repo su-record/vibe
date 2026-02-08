@@ -90,12 +90,16 @@ export class ConversationState {
     const tokenLimit = TOKEN_LIMITS[providerType];
     let totalTokens = this.estimateTokensAll(messages);
 
-    while (totalTokens > tokenLimit && messages.length > 1) {
-      messages.shift();
-      totalTokens = this.estimateTokensAll(messages);
+    if (totalTokens <= tokenLimit) return messages;
+
+    // O(n): 앞에서부터 제거할 메시지 수를 먼저 계산 후 한 번에 slice
+    let removeCount = 0;
+    while (totalTokens > tokenLimit && removeCount < messages.length - 1) {
+      totalTokens -= Math.ceil(this.estimateStringTokens(messages[removeCount].content) * 1.2);
+      removeCount++;
     }
 
-    return messages;
+    return removeCount > 0 ? messages.slice(removeCount) : messages;
   }
 
   private estimateTokensAll(messages: AgentMessage[]): number {

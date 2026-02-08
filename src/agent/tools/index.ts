@@ -11,6 +11,10 @@ import { kimiAnalyzeTool } from './kimi-analyze.js';
 import { webBrowseTool } from './web-browse.js';
 import { sendTelegramTool } from './send-telegram.js';
 import { saveMemoryTool, recallMemoryTool } from './manage-memory.js';
+import { visionCaptureTool } from './vision-capture.js';
+import { visionAnalyzeTool } from './vision-analyze.js';
+import { sendSlackTool } from './send-slack.js';
+import { sendIMessageTool } from './send-imessage.js';
 
 const ALL_TOOLS = [
   claudeCodeTool,
@@ -21,6 +25,10 @@ const ALL_TOOLS = [
   sendTelegramTool,
   saveMemoryTool,
   recallMemoryTool,
+  visionCaptureTool,
+  visionAnalyzeTool,
+  sendSlackTool,
+  sendIMessageTool,
 ];
 
 export function registerAllTools(registry: ToolRegistry): void {
@@ -38,4 +46,8 @@ export {
   sendTelegramTool,
   saveMemoryTool,
   recallMemoryTool,
+  visionCaptureTool,
+  visionAnalyzeTool,
+  sendSlackTool,
+  sendIMessageTool,
 };

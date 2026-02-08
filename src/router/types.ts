@@ -3,7 +3,7 @@
  * Model A: Telegram AI Assistant Router
  */
 
-import { ExternalMessage, InterfaceLogger } from '../interface/types.js';
+import { ExternalMessage, InterfaceLogger, ChannelType, ExternalInterface } from '../interface/types.js';
 
 // ============================================================================
 // Intent Classification
@@ -108,6 +108,10 @@ export interface RouteServices {
   unregisterCallbackHandler: (chatId: string) => void;
   router: ModelARouterInterface;
   config: RouterConfig;
+  /** Send message to any active channel */
+  sendToChannel?: (channel: ChannelType, chatId: string, text: string, options?: ChannelSendOptions) => Promise<void>;
+  /** Map of active channel interfaces */
+  channels?: Map<ChannelType, ExternalInterface>;
 }
 
 export interface TelegramSendOptions {
@@ -118,6 +122,11 @@ export interface TelegramSendOptions {
 export interface InlineKeyboardButton {
   text: string;
   callback_data: string;
+}
+
+export interface ChannelSendOptions {
+  format?: 'text' | 'markdown' | 'html';
+  threadId?: string;
 }
 
 // ============================================================================
