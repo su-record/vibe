@@ -551,6 +551,52 @@ best-practices → broadcast: "최종 합의: JWT는 jose 라이브러리로 교
 
 **Research results are reflected in SPEC's Context section.**
 
+### 3.2 UI/UX Design Intelligence (Auto-triggered)
+
+> **조건**: SPEC 컨텍스트에 UI/UX 키워드 포함 시 자동 실행 (website, landing, dashboard, app, e-commerce, portfolio, SaaS, mobile app, web app, UI, UX, frontend, 디자인)
+> **비활성화**: `.claude/vibe/config.json`에 `"uiUxAnalysis": false` 설정
+
+**UI/UX 키워드 감지 시, 리서치와 병렬로 3개 에이전트 순차 실행:**
+
+```
+[Parallel Research] GPT + Gemini + Kimi + Claude agents
+        ↓ (동시 실행)
+[UI/UX Intelligence]
+  ① ui-industry-analyzer (Haiku) → 산업 분석 + 디자인 전략
+        ↓
+  ②③ 병렬 실행:
+    ② ui-design-system-gen (Sonnet) → MASTER.md 생성
+    ③ ui-layout-architect (Haiku) → 레이아웃 설계
+```
+
+**실행 방법:**
+
+1. **① ui-industry-analyzer** — Task(haiku) 에이전트로 실행:
+```text
+Task(subagent_type="ui-industry-analyzer",
+  prompt="Analyze product: [USER_DESCRIPTION]. Use core_ui_search to detect category, style priority, color mood, typography mood. Save result to .claude/vibe/design-system/{project}/analysis-result.json")
+```
+
+2. **②③ 병렬 실행** — ①의 결과를 입력으로:
+```text
+# ② 디자인 시스템 생성 (Sonnet)
+Task(subagent_type="ui-design-system-gen",
+  prompt="Generate design system from analysis-result.json for project '{project}'. Use core_ui_search for style/color/typography, then core_ui_generate_design_system and core_ui_persist_design_system.")
+
+# ③ 레이아웃 설계 (Haiku) — 병렬 실행
+Task(subagent_type="ui-layout-architect",
+  prompt="Design layout from analysis-result.json for project '{project}'. Use core_ui_search for landing patterns and dashboard layout.")
+```
+
+3. **결과를 SPEC Context에 주입:**
+```markdown
+### Design System (Auto-generated)
+- Category: {①의 category}
+- Style: {①의 style_priority}
+- MASTER.md: .claude/vibe/design-system/{project}/MASTER.md
+- Layout: {③의 pattern + sections}
+```
+
 ### 4. Write SPEC Document (PTCF Structure)
 
 #### 4.0 Large Scope Detection & Auto-Split (MANDATORY)

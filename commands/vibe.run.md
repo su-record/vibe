@@ -896,6 +896,35 @@ For 5 phases: 4 × 20s saved = **80s faster**
 
 core ProjectCache (LRU) caches ts-morph parsing results. Parallel calls share the warmed cache.
 
+### UI/UX Design Intelligence (Auto-triggered before Phase 1)
+
+> **조건**: SPEC 또는 Feature에 UI/UX 키워드 포함 시 자동 실행
+> **비활성화**: `.claude/vibe/config.json`에 `"uiUxAnalysis": false` 설정
+
+**Phase 1 시작 전, 2개 에이전트 자동 실행:**
+
+| Agent | Condition | Role |
+|-------|-----------|------|
+| ④ ui-stack-implementer | **항상 실행** | 프레임워크별 컴포넌트 가이드라인 제공 |
+| ⑤ ui-dataviz-advisor | **조건부** (chart/dashboard/visualization 키워드) | 차트/시각화 라이브러리 추천 |
+
+**실행 방법:**
+
+```text
+# ④ 항상 실행 (Haiku)
+Task(subagent_type="ui-stack-implementer",
+  prompt="Provide implementation guidelines for project '{project}' using {detected_stack}. Use core_ui_stack_search for framework-specific patterns.")
+
+# ⑤ 조건부 실행 (Haiku) — SPEC에 차트/대시보드/시각화 키워드 포함 시
+Task(subagent_type="ui-dataviz-advisor",
+  prompt="Recommend data visualization approach for project '{project}'. Use core_ui_search for chart types and react-performance patterns.")
+```
+
+**디자인 시스템 자동 참조:**
+- `.claude/vibe/design-system/{project}/MASTER.md` 존재 시 자동 로드
+- 구현 에이전트가 CSS 변수, 폰트, 색상 팔레트를 직접 참조
+- 페이지별 오버라이드 `pages/{page}.md` 존재 시 우선 적용
+
 ### Phase Execution Flow (ULTRAWORK Pipeline)
 
 ```
