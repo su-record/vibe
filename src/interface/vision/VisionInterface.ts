@@ -5,7 +5,7 @@
 
 import { BaseInterface } from '../BaseInterface.js';
 import { ChannelType, ExternalMessage, ExternalResponse, InterfaceLogger } from '../types.js';
-import { GeminiVision } from './GeminiVisionClass.js';
+import { GeminiVision } from './GeminiVision.js';
 import * as crypto from 'node:crypto';
 
 export interface VisionConfig {

@@ -89,7 +89,7 @@ export class ScreenCapture {
     try {
       return await this.captureWithScrot(options);
     } catch (error) {
-      console.warn('scrot failed, falling back to ImageMagick import');
+      // scrot failed, falling back to ImageMagick import
       return await this.captureWithImageMagick(options);
     }
   }
@@ -210,14 +210,11 @@ export class ScreenCapture {
         return imageBuffer;
       }
 
-      console.warn(
-        `Image resolution ${dimensions.width}x${dimensions.height} exceeds ` +
-        `${this.MAX_WIDTH}x${this.MAX_HEIGHT}, attempting to resize...`
-      );
+      // Image exceeds max resolution, attempting to resize
 
       return await this.resizeImage(imageBuffer);
     } catch (error) {
-      console.warn('Failed to check/resize image:', error);
+      // Failed to check/resize image - return original
       return imageBuffer;
     }
   }
@@ -252,7 +249,7 @@ export class ScreenCapture {
         return await this.resizeLinux(imageBuffer);
       }
     } catch (error) {
-      console.warn('Resize failed, returning original image:', error);
+      // Resize failed, returning original image
     }
 
     return imageBuffer;

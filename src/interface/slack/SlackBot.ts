@@ -6,6 +6,7 @@
  * Uses native HTTPS for Slack Web API.
  */
 
+import * as http from 'node:http';
 import * as https from 'node:https';
 import * as crypto from 'node:crypto';
 import { BaseInterface } from '../BaseInterface.js';
@@ -20,6 +21,7 @@ import { SlackFormatter } from './SlackFormatter.js';
 
 const SLACK_API = 'https://slack.com/api';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_EVENT_DEDUP_SIZE = 10_000;
 
 interface TokenBucket {
   tokens: number;
@@ -154,7 +156,7 @@ export class SlackBot extends BaseInterface {
         },
       };
 
-      const httpModule = isSecure ? https : require('node:http');
+      const httpModule = isSecure ? https : http;
       const req = httpModule.request(options);
 
       req.on('upgrade', (res: unknown, socket: import('node:net').Socket, head: Buffer) => {
@@ -320,6 +322,10 @@ export class SlackBot extends BaseInterface {
     // Deduplication
     if (this.eventDedup.has(eventId)) {
       return;
+    }
+    if (this.eventDedup.size >= MAX_EVENT_DEDUP_SIZE) {
+      const oldestKey = this.eventDedup.keys().next().value;
+      if (oldestKey !== undefined) this.eventDedup.delete(oldestKey);
     }
     this.eventDedup.set(eventId, { eventId, timestamp: Date.now() });
 

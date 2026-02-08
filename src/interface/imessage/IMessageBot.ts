@@ -161,9 +161,6 @@ export class IMessageBot extends BaseInterface {
       for (const msg of messages) {
         await this.processMessage(msg);
         this.lastRowId = msg.ROWID;
-      }
-
-      if (messages.length > 0) {
         await this.saveState();
       }
     } catch (err) {

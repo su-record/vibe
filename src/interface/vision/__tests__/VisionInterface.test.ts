@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { InterfaceLogger } from '../../types.js';
 
 // Mock GeminiVisionClass BEFORE importing VisionInterface
-vi.mock('../GeminiVisionClass.js', () => {
+vi.mock('../GeminiVision.js', () => {
   class MockGeminiVision {
     analyzeImage = vi.fn().mockResolvedValue('analysis result');
     startLiveSession = vi.fn();

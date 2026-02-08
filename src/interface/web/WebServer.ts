@@ -437,19 +437,25 @@ export class WebServer extends BaseInterface {
       }
     }, WS_HANDSHAKE_TIMEOUT_MS);
 
-    let buffer = Buffer.alloc(0);
+    const chunks: Buffer[] = head.length > 0 ? [head] : [];
 
     socket.on('data', (chunk: Buffer) => {
-      buffer = Buffer.concat([buffer, chunk]);
+      chunks.push(chunk);
+      let buffer = Buffer.concat(chunks);
+      chunks.length = 0;
 
       while (buffer.length > 0) {
         const result = this.wsParseFrame(buffer);
         if (!result) break;
 
         const { frame, consumed } = result;
-        buffer = buffer.slice(consumed);
+        buffer = buffer.subarray(consumed);
 
         this.wsHandleFrame(client, frame);
+      }
+
+      if (buffer.length > 0) {
+        chunks.push(buffer);
       }
     });
 
@@ -478,7 +484,17 @@ export class WebServer extends BaseInterface {
     if (buffer.length < 2) return null;
 
     const fin = (buffer[0] & 0x80) !== 0;
+    const rsv = buffer[0] & 0x70;
     const opcode = buffer[0] & 0x0f;
+
+    // RFC 6455 §5.2: RSV1-3 must be 0 unless extension negotiated
+    if (rsv !== 0) {
+      return {
+        frame: { opcode: WS_OPCODE_CLOSE, payload: Buffer.from([]), masked: false },
+        consumed: buffer.length,
+      };
+    }
+
     const masked = (buffer[1] & 0x80) !== 0;
     let payloadLen = buffer[1] & 0x7f;
     let offset = 2;
@@ -951,7 +967,8 @@ export class WebServer extends BaseInterface {
   private isOriginAllowed(origin: string): boolean {
     return this.config.corsOrigins.some((pattern) => {
       if (pattern.includes('*')) {
-        const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+        const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*');
+        const regex = new RegExp('^' + escaped + '$');
         return regex.test(origin);
       }
       return pattern === origin;

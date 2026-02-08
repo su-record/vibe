@@ -10,7 +10,7 @@ export { TelegramFormatter } from './telegram/TelegramFormatter.js';
 export { WebServer } from './web/WebServer.js';
 export { WebhookHandler } from './webhook/WebhookHandler.js';
 export { VisionInterface } from './vision/VisionInterface.js';
-export { GeminiVision } from './vision/GeminiVisionClass.js';
+export { GeminiVision } from './vision/GeminiVision.js';
 export { ScreenCapture } from './vision/ScreenCapture.js';
 export { SlackBot } from './slack/SlackBot.js';
 export { SlackFormatter } from './slack/SlackFormatter.js';

@@ -5,6 +5,6 @@
 
 export { ScreenCapture } from './ScreenCapture.js';
 export type { CaptureOptions } from './ScreenCapture.js';
-export { GeminiVision } from './GeminiVisionClass.js';
+export { GeminiVision } from './GeminiVision.js';
 export { VisionInterface } from './VisionInterface.js';
 export type { VisionConfig } from './VisionInterface.js';

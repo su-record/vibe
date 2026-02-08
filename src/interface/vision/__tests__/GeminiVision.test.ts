@@ -24,7 +24,7 @@ describe('GeminiVision', () => {
 
   describe('constructor', () => {
     it('initializes with API key', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
       expect(vision).toBeDefined();
     });
@@ -32,7 +32,7 @@ describe('GeminiVision', () => {
 
   describe('rate limiting', () => {
     it('enforces rate limit per minute', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
 
       // Consume all tokens
@@ -44,7 +44,7 @@ describe('GeminiVision', () => {
     });
 
     it('refills tokens after time passes', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
 
       // Set last refill to past
@@ -58,7 +58,7 @@ describe('GeminiVision', () => {
 
   describe('image validation', () => {
     it('resizes image if too large', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
 
       const largeImage = Buffer.alloc(5 * 1024 * 1024); // 5MB
@@ -68,7 +68,7 @@ describe('GeminiVision', () => {
     });
 
     it('keeps image as-is if within limit', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
 
       const smallImage = Buffer.alloc(1024); // 1KB
@@ -80,7 +80,7 @@ describe('GeminiVision', () => {
 
   describe('session management', () => {
     it('starts live session', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
 
       vision.startLiveSession('analyze this');
@@ -90,7 +90,7 @@ describe('GeminiVision', () => {
     });
 
     it('throws if starting session when already active', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
 
       vision.startLiveSession('prompt 1');
@@ -99,7 +99,7 @@ describe('GeminiVision', () => {
     });
 
     it('stops live session', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
 
       vision.startLiveSession('test');
@@ -109,7 +109,7 @@ describe('GeminiVision', () => {
     });
 
     it('handles stop on inactive session', async () => {
-      const { GeminiVision } = await import('../GeminiVisionClass.js');
+      const { GeminiVision } = await import('../GeminiVision.js');
       const vision = new GeminiVision('test-key');
 
       // Should not throw

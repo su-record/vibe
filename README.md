@@ -1,5 +1,3 @@
-<div align="center">
-
 # Vibe
 
 ### SPEC-driven AI Coding Framework for Claude Code
