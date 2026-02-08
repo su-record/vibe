@@ -1,17 +1,15 @@
 /**
- * ModelARouter Integration Tests
- * Full pipeline: message → classify → route → execute → respond
+ * ModelARouter Tests
+ * Pipeline: message → dedup → AgentLoop.process()
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ModelARouter } from './ModelARouter.js';
-import { ExternalMessage } from '../interface/types.js';
-import { SmartRouterLike, ClassifiedIntent, RouteContext, RouteResult } from './types.js';
-import { BaseRoute } from './routes/BaseRoute.js';
+import type { ExternalMessage } from '../interface/types.js';
 
 const mockLogger = vi.fn();
 
-function createMessage(content: string, chatId: string = 'chat-1'): ExternalMessage {
+function createMessage(content: string, chatId = 'chat-1', updateId = '12345'): ExternalMessage {
   return {
     id: 'msg-1',
     channel: 'telegram',
@@ -19,30 +17,9 @@ function createMessage(content: string, chatId: string = 'chat-1'): ExternalMess
     userId: 'user-1',
     content,
     type: 'text',
-    metadata: { telegramMessageId: '12345' },
+    metadata: { telegramMessageId: updateId },
     timestamp: new Date().toISOString(),
   };
-}
-
-/** Simple test route */
-class TestRoute extends BaseRoute {
-  readonly name = 'test';
-  private category: string;
-  public executeFn: (context: RouteContext) => Promise<RouteResult>;
-
-  constructor(category: string, executeFn?: (context: RouteContext) => Promise<RouteResult>) {
-    super(mockLogger);
-    this.category = category;
-    this.executeFn = executeFn ?? (async () => ({ success: true, data: 'done' }));
-  }
-
-  canHandle(intent: ClassifiedIntent): boolean {
-    return intent.category === this.category;
-  }
-
-  protected async executeInternal(context: RouteContext): Promise<RouteResult> {
-    return this.executeFn(context);
-  }
 }
 
 describe('ModelARouter', () => {
@@ -57,97 +34,97 @@ describe('ModelARouter', () => {
     router.setSendResponse(async (response) => {
       sentResponses.push({ chatId: response.chatId, content: response.content });
     });
-
-    // Setup notification manager
-    router.getNotificationManager().setSendFunction(async (chatId, text) => {
-      sentResponses.push({ chatId, content: text });
-    });
   });
 
-  describe('Intent classification pipeline', () => {
-    it('should route /dev command to development route', async () => {
-      const devRoute = new TestRoute('development');
-      router.getRegistry().register(devRoute);
-
-      await router.handleMessage(createMessage('/dev test project'));
-
-      // Should have sent at least one response
-      expect(sentResponses.length).toBeGreaterThan(0);
-    });
-
-    it('should handle conversation intent without routes', async () => {
-      const mockSmartRouter: SmartRouterLike = {
-        route: vi.fn().mockResolvedValue({
-          content: 'Hello! How can I help?',
-          success: true,
-        }),
+  describe('Agent routing', () => {
+    it('should delegate to AgentLoop when set', async () => {
+      const mockProcess = vi.fn().mockResolvedValue(undefined);
+      const mockAgentLoop = {
+        process: mockProcess,
+        setLogger: vi.fn(),
       };
-      router.setSmartRouter(mockSmartRouter);
+      router.setAgentLoop(mockAgentLoop as never);
 
-      await router.handleMessage(createMessage('안녕, 오늘 날씨 어때?'));
+      await router.handleMessage(createMessage('안녕하세요'));
 
-      expect(sentResponses.some((r) => r.content.includes('Hello'))).toBe(true);
+      expect(mockProcess).toHaveBeenCalledTimes(1);
+      expect(mockProcess.mock.calls[0][0].content).toBe('안녕하세요');
     });
 
-    it('should handle composite intent with not-ready message', async () => {
-      await router.handleMessage(createMessage('검색해서 메일로 보내줘'));
+    it('should send error when AgentLoop not initialized', async () => {
+      await router.handleMessage(createMessage('테스트'));
 
       expect(sentResponses.some((r) =>
-        r.content.includes('복합 명령은 아직 지원하지 않습니다'),
+        r.content.includes('에이전트가 초기화되지 않았습니다'),
+      )).toBe(true);
+    });
+
+    it('should catch and report AgentLoop errors', async () => {
+      const mockAgentLoop = {
+        process: vi.fn().mockRejectedValue(new Error('LLM timeout')),
+        setLogger: vi.fn(),
+      };
+      router.setAgentLoop(mockAgentLoop as never);
+
+      await router.handleMessage(createMessage('에러 유발'));
+
+      expect(sentResponses.some((r) =>
+        r.content.includes('LLM timeout'),
       )).toBe(true);
     });
   });
 
   describe('Dedup (update_id)', () => {
     it('should ignore duplicate update_id', async () => {
-      const devRoute = new TestRoute('development');
-      router.getRegistry().register(devRoute);
+      const mockAgentLoop = {
+        process: vi.fn().mockResolvedValue(undefined),
+        setLogger: vi.fn(),
+      };
+      router.setAgentLoop(mockAgentLoop as never);
 
-      const msg = createMessage('/dev test');
+      const msg = createMessage('중복 테스트', 'chat-1', '99999');
 
       await router.handleMessage(msg);
-      const firstCount = sentResponses.length;
-
       await router.handleMessage(msg);
-      // Second call should not add more responses (deduped)
-      expect(sentResponses.length).toBe(firstCount);
+
+      expect(mockAgentLoop.process).toHaveBeenCalledTimes(1);
+    });
+
+    it('should process messages with different update_ids', async () => {
+      const mockAgentLoop = {
+        process: vi.fn().mockResolvedValue(undefined),
+        setLogger: vi.fn(),
+      };
+      router.setAgentLoop(mockAgentLoop as never);
+
+      await router.handleMessage(createMessage('첫번째', 'chat-1', '100'));
+      await router.handleMessage(createMessage('두번째', 'chat-1', '101'));
+
+      expect(mockAgentLoop.process).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('Error handling', () => {
-    it('should send error message when route execution fails', async () => {
-      const failRoute = new TestRoute('development', async () => ({
-        success: false,
-        error: '테스트 에러',
-      }));
-      router.getRegistry().register(failRoute);
-
-      await router.handleMessage(createMessage('/dev fail'));
-
-      expect(sentResponses.some((r) => r.content.includes('테스트 에러'))).toBe(true);
+  describe('SmartRouter', () => {
+    it('should throw when SmartRouter not set', () => {
+      expect(() => router.getSmartRouter()).toThrow('SmartRouter not initialized');
     });
 
-    it('should send error when no route matches', async () => {
-      // No routes registered, and using /dev which classifies as development
-      await router.handleMessage(createMessage('/dev test'));
-
-      expect(sentResponses.some((r) =>
-        r.content.includes('라우트가 없습니다'),
-      )).toBe(true);
+    it('should return SmartRouter when set', () => {
+      const mockSR = { route: vi.fn() };
+      router.setSmartRouter(mockSR);
+      expect(router.getSmartRouter()).toBe(mockSR);
     });
   });
 
-  describe('Route result handling', () => {
-    it('should send success result to user', async () => {
-      const successRoute = new TestRoute('development', async () => ({
-        success: true,
-        data: '작업 완료!',
-      }));
-      router.getRegistry().register(successRoute);
+  describe('Callback handlers', () => {
+    it('should dispatch callback to registered handler', () => {
+      const handler = vi.fn();
+      const services = router.buildServices();
+      services.registerCallbackHandler('chat-1', handler);
 
-      await router.handleMessage(createMessage('/dev test'));
+      router.handleCallbackQuery('chat-1', 'button_data');
 
-      expect(sentResponses.some((r) => r.content.includes('작업 완료'))).toBe(true);
+      expect(handler).toHaveBeenCalledWith('button_data');
     });
   });
 });

@@ -42,7 +42,15 @@ export const GPT_MODELS: Record<string, GptModelInfo> = {
     description: 'Latest Codex, coding specialized',
     maxTokens: 32768,
     reasoning: { effort: 'high', summary: 'auto' },
-  }
+  },
+  // GPT-5.3 Codex (function calling optimized)
+  'gpt-5.3-codex': {
+    id: 'gpt-5.3-codex',
+    name: 'GPT-5.3 Codex',
+    description: 'Function calling optimized, agent head model',
+    maxTokens: 32768,
+    reasoning: { effort: 'high', summary: 'auto' },
+  },
 };
 
 // 기본 모델
@@ -155,6 +163,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
   const apiKeyModelMap: Record<string, string> = {
     'gpt-5.2': 'gpt-5.2',
     'gpt-5.2-codex': 'gpt-5.2',
+    'gpt-5.3-codex': 'gpt-5.3-codex',
     'gpt-5.1-codex': 'gpt-5.2',
     'gpt-5.1-codex-mini': 'gpt-5.2',
     'gpt-5.1-codex-max': 'gpt-5.2',

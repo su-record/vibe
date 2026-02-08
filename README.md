@@ -686,3 +686,24 @@ flowchart TD
 ## 라이선스
 
 MIT License - Copyright (c) 2025 Su
+
+## Core Setup (AI Coding)
+
+This project uses [Core](https://github.com/su-record/core) AI coding framework.
+
+### Collaborator Install
+
+```bash
+# Global install (recommended)
+npm install -g @su-record/core
+vibe update
+
+# Or use vibe init to setup
+vibe init
+```
+
+### Usage
+
+Use slash commands in Claude Code:
+- `/vibe.spec "feature"` - Create SPEC document
+- `/vibe.run "feature"` - Execute implementation
