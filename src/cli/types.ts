@@ -18,6 +18,12 @@ export interface LLMStatusMap {
   az: LLMAuthStatus[];
 }
 
+export interface ClaudeCodeStatus {
+  installed: boolean;
+  version: string | null;
+  authenticated: boolean | null;
+}
+
 export interface DetectedStack {
   type: string;
   path: string;

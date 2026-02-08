@@ -8,7 +8,7 @@ import os from 'os';
 import { CliOptions } from '../types.js';
 import { log, ensureDir, getPackageJson, formatVoiceHint } from '../utils.js';
 import { detectTechStacks } from '../detect.js';
-import { formatLLMStatus, getLLMAuthStatus } from '../auth.js';
+import { formatLLMStatus, getLLMAuthStatus, getClaudeCodeStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
 import {
   updateConstitution,
@@ -147,8 +147,9 @@ export async function init(projectName?: string): Promise<void> {
     const packageJson = getPackageJson();
 
     const authStatus = getLLMAuthStatus();
+    const claudeStatus = getClaudeCodeStatus(true);
     log(`✅ vibe initialized (v${packageJson.version})
-${formatLLMStatus()}
+${formatLLMStatus(claudeStatus)}
 ${formatVoiceHint(authStatus.gemini.length > 0)}
 📦 Context7 plugin (recommended): /plugin install context7
 

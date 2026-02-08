@@ -5,9 +5,10 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
-import { LLMAuthStatus, LLMStatusMap, VibeConfig } from './types.js';
+import { LLMAuthStatus, LLMStatusMap, ClaudeCodeStatus, VibeConfig } from './types.js';
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -90,6 +91,70 @@ export function getLLMAuthStatus(): LLMStatusMap {
   return status;
 }
 
+const CLAUDE_AUTH_CHECK_TIMEOUT = 10_000;
+
+/**
+ * Claude Code CLI 설치 및 인증 상태 확인
+ *
+ * @param checkAuth - true이면 실제 API 호출로 인증까지 검증 (vibe init용), false이면 CLI 존재만 확인 (postinstall용)
+ * @returns Claude Code 상태 객체
+ */
+export function getClaudeCodeStatus(checkAuth = false): ClaudeCodeStatus {
+  const status: ClaudeCodeStatus = { installed: false, version: null, authenticated: null };
+
+  try {
+    const versionOutput = execSync('claude --version', {
+      timeout: 5_000,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+
+    if (versionOutput) {
+      status.installed = true;
+      status.version = versionOutput;
+    }
+  } catch {
+    return status;
+  }
+
+  if (!checkAuth) {
+    return status;
+  }
+
+  try {
+    const result = execSync(
+      'claude -p "hi" --output-format json --max-budget-usd 0.001 --no-session-persistence',
+      {
+        timeout: CLAUDE_AUTH_CHECK_TIMEOUT,
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      },
+    );
+    const json = JSON.parse(result) as { is_error?: boolean };
+    status.authenticated = json.is_error !== true;
+  } catch {
+    status.authenticated = false;
+  }
+
+  return status;
+}
+
+/**
+ * Claude Code 상태 포맷팅
+ */
+export function formatClaudeCodeStatus(status: ClaudeCodeStatus): string {
+  if (!status.installed) {
+    return '✗ Not installed (npm i -g @anthropic-ai/claude-code)';
+  }
+  if (status.authenticated === null) {
+    return `✓ Installed (${status.version})`;
+  }
+  if (status.authenticated) {
+    return `✓ Authenticated (${status.version})`;
+  }
+  return `⚠ Not authenticated (${status.version}) — run: claude login`;
+}
+
 /**
  * LLM 상태 포맷팅
  */
@@ -102,10 +167,13 @@ export function formatAuthMethods(auths: LLMAuthStatus[]): string {
   }).join(', ');
 }
 
-export function formatLLMStatus(): string {
+export function formatLLMStatus(claudeStatus?: ClaudeCodeStatus): string {
   const status = getLLMAuthStatus();
   const lines: string[] = [];
 
+  if (claudeStatus) {
+    lines.push(`🧠 Claude Code: ${formatClaudeCodeStatus(claudeStatus)}`);
+  }
   lines.push('🤖 External LLM:');
   lines.push(`  GPT: ${formatAuthMethods(status.gpt)}`);
   lines.push(`  Gemini: ${formatAuthMethods(status.gemini)}`);

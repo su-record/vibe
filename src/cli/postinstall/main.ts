@@ -21,6 +21,7 @@ import { generateCursorRules } from './cursor-rules.js';
 import { installCursorAgents } from './cursor-agents.js';
 import { installClaudeAgents } from './claude-agents.js';
 import { generateCursorSkills } from './cursor-skills.js';
+import { getClaudeCodeStatus, formatClaudeCodeStatus } from '../auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -167,11 +168,20 @@ export function main(): void {
     const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
     generateCursorSkills(cursorSkillsDir);
 
+    // 10. Claude Code CLI 존재 확인 (인증은 vibe init에서)
+    const claudeStatus = getClaudeCodeStatus(false);
+    const claudeStatusMsg = formatClaudeCodeStatus(claudeStatus);
+
     console.log(`✅ core global setup complete: ${globalCoreDir}`);
     console.log(`✅ claude agents installed: ${globalAgentsDir}`);
     console.log(`✅ cursor agents installed: ${cursorAgentsDir}`);
     console.log(`✅ cursor rules template: ${cursorRulesTemplateDir}`);
     console.log(`✅ cursor skills installed: ${cursorSkillsDir}`);
+    console.log(`🧠 Claude Code: ${claudeStatusMsg}`);
+    if (!claudeStatus.installed) {
+      console.warn('⚠️  Claude Code is required for full VIBE features.');
+      console.warn('   Install: npm i -g @anthropic-ai/claude-code');
+    }
   } catch (error) {
     // postinstall 실패해도 설치는 계속 진행
     console.warn('⚠️  core postinstall warning:', (error as Error).message);
