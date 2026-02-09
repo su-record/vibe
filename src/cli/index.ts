@@ -43,7 +43,7 @@ import {
   resetHud,
   showHudHelp,
 } from './hud.js';
-import { init, setup, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStart, telegramStop, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp, autostartEnable, autostartDisable, autostartStatus, autostartHelp, slackSetup, slackChannel, slackStatus, slackHelp, imessageSetup, imessageStatus, imessageHelp } from './commands/index.js';
+import { init, setup, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceEnableConfigured, interfaceDisableAll, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp, autostartEnable, autostartDisable, autostartStatus, autostartHelp, slackSetup, slackChannel, slackStatus, slackHelp, imessageSetup, imessageStatus, imessageHelp } from './commands/index.js';
 
 // ============================================================================
 // Constants
@@ -327,27 +327,13 @@ Config Commands:
     showStatus();
     break;
 
-  // vibe daemon <subcommand>
+  // vibe daemon status (하위 호환)
   case 'daemon': {
     const daemonSub = positionalArgs[1];
-    switch (daemonSub) {
-      case 'start':
-        daemonStart();
-        break;
-      case 'stop':
-        daemonStop();
-        break;
-      case 'status':
-        daemonStatus();
-        break;
-      case 'restart':
-        daemonRestart();
-        break;
-      case 'help':
-        daemonHelp();
-        break;
-      default:
-        daemonHelp();
+    if (daemonSub === 'status') {
+      daemonStatus();
+    } else {
+      console.log('vibe start / stop / restart 를 사용하세요.');
     }
     break;
   }
@@ -408,12 +394,6 @@ Config Commands:
         break;
       case 'chat':
         telegramChat(positionalArgs[2]);
-        break;
-      case 'start':
-        telegramStart();
-        break;
-      case 'stop':
-        telegramStop();
         break;
       case 'status':
         telegramStatus();
@@ -534,24 +514,15 @@ Config Commands:
     break;
   }
 
-  // vibe autostart <subcommand>
+  // vibe autostart (하위 호환 → vibe start/stop 안내)
   case 'autostart': {
     const autostartSub = positionalArgs[1];
     switch (autostartSub) {
-      case 'enable':
-        autostartEnable();
-        break;
-      case 'disable':
-        autostartDisable();
-        break;
       case 'status':
         autostartStatus();
         break;
-      case 'help':
-        autostartHelp();
-        break;
       default:
-        autostartHelp();
+        console.log('vibe start / stop 을 사용하세요. 상태 확인: vibe autostart status');
     }
     break;
   }
@@ -663,6 +634,25 @@ Agent Commands:
     break;
   }
 
+  // vibe start = auto-enable configured interfaces + daemon start + autostart enable
+  case 'start':
+    interfaceEnableConfigured();
+    daemonStart();
+    autostartEnable();
+    break;
+
+  // vibe stop = daemon stop + autostart disable + disable all interfaces
+  case 'stop':
+    daemonStop();
+    autostartDisable();
+    interfaceDisableAll();
+    break;
+
+  // vibe restart = daemon restart
+  case 'restart':
+    daemonRestart();
+    break;
+
   case 'version':
   case '-v':
   case '--version':
@@ -681,30 +671,35 @@ Agent Commands:
 ❌ Unknown command: ${command}
 
 Available commands:
-  vibe setup        Interactive setup wizard
-  vibe init         Initialize project
-  vibe update       Update settings
-  vibe daemon <cmd> Daemon commands (start, stop, status, restart)
-  vibe autostart <cmd> Auto-start on boot (enable, disable, status)
-  vibe job <cmd>    Job commands (list, status, cancel)
-  vibe policy <cmd> Policy commands (list, enable, disable, set)
-  vibe telegram <cmd> Telegram bot (setup, chat, start, stop, status)
-  vibe slack <cmd>    Slack bot (setup, channel, status)
-  vibe imessage <cmd> iMessage (setup, status) — macOS only
-  vibe interface <cmd> Interface management (list, enable, disable)
-  vibe webhook <cmd> Webhook management (add, list, remove)
-  vibe hud <cmd>    HUD status (show, start, phase, agent, reset)
-  vibe gpt <cmd>    GPT commands (auth, key, status, logout)
-  vibe gemini <cmd> Gemini commands (auth, key, status, logout)
-  vibe az <cmd>      AZ commands (key, status, logout)
-  vibe kimi <cmd>   Kimi commands (key, status, logout)
-  vibe config <cmd> Priority config (embedding-priority, kimi-priority, show)
-  vibe status       Show status
-  vibe sync <cmd>   인증/메모리 동기화 (login, push, pull, status, logout)
-  vibe device <cmd> Device management (list, rename, remove)
-  vibe remove       Remove core
-  vibe help         Help
-  vibe version      Version info
+  vibe start              데몬 시작 + 인터페이스 자동 활성화 + 부팅 자동시작
+  vibe stop               데몬 중지 + 인터페이스 비활성화 + 자동시작 해제
+  vibe restart            데몬 재시작
+  vibe setup              Interactive setup wizard
+  vibe init               Initialize project
+  vibe update             Update settings
+  vibe status             Show status
+
+  vibe telegram <cmd>     Telegram bot (setup, chat, status)
+  vibe slack <cmd>        Slack bot (setup, channel, status)
+  vibe imessage <cmd>     iMessage (setup, status) — macOS only
+  vibe interface <cmd>    Interface management (list, enable, disable)
+  vibe webhook <cmd>      Webhook management (add, list, remove)
+
+  vibe job <cmd>          Job commands (list, status, cancel)
+  vibe policy <cmd>       Policy commands (list, enable, disable, set)
+  vibe device <cmd>       Device management (list, rename, remove)
+  vibe sync <cmd>         인증/메모리 동기화 (login, push, pull, status, logout)
+  vibe hud <cmd>          HUD status (show, start, phase, agent, reset)
+
+  vibe gpt <cmd>          GPT commands (auth, key, status, logout)
+  vibe gemini <cmd>       Gemini commands (auth, key, status, logout)
+  vibe az <cmd>           AZ commands (key, status, logout)
+  vibe kimi <cmd>         Kimi commands (key, status, logout)
+  vibe config <cmd>       Priority config (embedding-priority, kimi-priority, show)
+
+  vibe remove             Remove core
+  vibe help               Help
+  vibe version            Version info
 
 Usage: vibe help
     `);

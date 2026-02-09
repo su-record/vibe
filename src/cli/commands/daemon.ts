@@ -243,12 +243,11 @@ export function daemonRestart(): void {
 export function daemonHelp(): void {
   console.log(`
 Vibe Daemon Commands:
-  vibe daemon start          Start background daemon
-  vibe daemon stop           Stop daemon (graceful)
-  vibe daemon status         Show daemon status
-  vibe daemon status --json  Show status as JSON
-  vibe daemon restart        Restart daemon
-  vibe daemon help           Show this help
+  vibe start                   데몬 시작 + 인터페이스 활성화 + 부팅 자동시작
+  vibe stop                    데몬 중지 + 인터페이스 비활성화 + 자동시작 해제
+  vibe restart                 데몬 재시작
+  vibe daemon status           데몬 상태 확인
+  vibe daemon status --json    JSON 형식 상태
 
 Log file: ~/.vibe/logs/daemon.log
   `);

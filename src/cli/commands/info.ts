@@ -16,6 +16,11 @@ export function showHelp(): void {
   console.log(`
 📖 Core - SPEC-driven AI coding framework (Claude Code exclusive)
 
+Lifecycle:
+  vibe start              데몬 시작 + 인터페이스 활성화 + 부팅 자동시작
+  vibe stop               데몬 중지 + 인터페이스 비활성화 + 자동시작 해제
+  vibe restart            데몬 재시작
+
 Commands:
   vibe setup              Interactive setup wizard
   vibe init [project]     Initialize project
@@ -26,25 +31,24 @@ Commands:
   vibe help               Help
   vibe version            Version
 
-GPT:
-  vibe gpt auth           OAuth authentication (Plus/Pro)
-  vibe gpt key <KEY>      Set API key
-  vibe gpt status         Check status
-  vibe gpt logout         Logout
-  vibe gpt remove         Remove config
+Channels:
+  vibe telegram <cmd>     Telegram bot (setup, chat, status)
+  vibe slack <cmd>        Slack bot (setup, channel, status)
+  vibe imessage <cmd>     iMessage (setup, status) — macOS only
+  vibe interface <cmd>    Interface management (list, enable, disable)
+  vibe webhook <cmd>      Webhook management (add, list, remove)
 
-Gemini:
-  vibe gemini auth        OAuth authentication
-  vibe gemini key <KEY>   Set API key
-  vibe gemini status      Check status
-  vibe gemini logout      Logout
-  vibe gemini remove      Remove config
+Engine:
+  vibe job <cmd>          Job commands (list, status, cancel)
+  vibe policy <cmd>       Policy commands (list, enable, disable, set)
+  vibe device <cmd>       Device management (list, rename, remove)
 
-AZ:
-  vibe az key <KEY>       Set AZ API key
-  vibe az status          Check status
-  vibe az logout          Remove key
-  vibe az remove          Remove config
+LLM:
+  vibe gpt <cmd>          GPT (auth, key, status, logout)
+  vibe gemini <cmd>       Gemini (auth, key, status, logout)
+  vibe az <cmd>           AZ (key, status, logout)
+  vibe kimi <cmd>         Kimi (key, status, logout)
+  vibe config <cmd>       Priority config (embedding-priority, kimi-priority, show)
 
 Slash Commands (Claude Code):
   /vibe.spec "feature"    Create SPEC + parallel research

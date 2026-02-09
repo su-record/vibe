@@ -154,6 +154,40 @@ export function interfaceEnable(name: string): void {
   console.log(`✅ Interface "${name}" enabled`);
 }
 
+export function interfaceEnableConfigured(): void {
+  const state = loadState();
+  let enabled = 0;
+
+  for (const name of VALID_INTERFACES) {
+    const prereq = checkPrerequisites(name);
+    if (prereq.ok) {
+      state[name] = { enabled: true, lastUpdated: new Date().toISOString() };
+      enabled++;
+    }
+  }
+
+  saveState(state);
+  if (enabled > 0) {
+    const names = Object.entries(state)
+      .filter(([, v]) => v.enabled)
+      .map(([k]) => k);
+    console.log(`✅ ${names.join(', ')} 인터페이스 활성화`);
+  } else {
+    console.log('ℹ️  활성화 가능한 인터페이스가 없습니다.');
+  }
+}
+
+export function interfaceDisableAll(): void {
+  const state = loadState();
+  for (const name of VALID_INTERFACES) {
+    if (state[name]?.enabled) {
+      state[name] = { enabled: false, lastUpdated: new Date().toISOString() };
+    }
+  }
+  saveState(state);
+  console.log('모든 인터페이스 비활성화');
+}
+
 export function interfaceDisable(name: string): void {
   if (!name) {
     console.log('Usage: vibe interface disable <name>');

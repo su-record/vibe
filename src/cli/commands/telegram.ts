@@ -269,10 +269,12 @@ export function telegramHelp(): void {
 Vibe Telegram Commands:
   vibe telegram setup <token>    Set bot token
   vibe telegram chat <id>        Add allowed chat ID
-  vibe telegram start            Start bridge (background)
-  vibe telegram stop             Stop bridge
   vibe telegram status           Show configuration
   vibe telegram help             Show this help
+
+Start/Stop:
+  vibe start                     데몬 + 모든 인터페이스 시작
+  vibe interface enable telegram 텔레그램만 활성화
 
 Get a bot token from @BotFather on Telegram.
   `);

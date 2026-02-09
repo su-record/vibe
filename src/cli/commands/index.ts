@@ -18,7 +18,7 @@ export { daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp } from
 export { jobList, jobStatus, jobCancel, jobHelp } from './job.js';
 export { policyList, policyEnable, policyDisable, policySet, policyHelp } from './policy.js';
 export { telegramSetup, telegramChat, telegramStart, telegramStop, telegramStatus, telegramHelp } from './telegram.js';
-export { interfaceList, interfaceEnable, interfaceDisable, interfaceHelp } from './interface.js';
+export { interfaceList, interfaceEnable, interfaceDisable, interfaceEnableConfigured, interfaceDisableAll, interfaceHelp } from './interface.js';
 export { webhookAdd, webhookList, webhookRemove, webhookHelp } from './webhook.js';
 export { deviceList, deviceRename, deviceRemove, deviceHelp } from './device.js';
 export { autostartEnable, autostartDisable, autostartStatus, autostartHelp } from './autostart.js';
