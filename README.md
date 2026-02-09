@@ -1,13 +1,13 @@
 # Vibe
 
-### SPEC-driven AI Coding Framework for Claude Code
+### Personalized AI Agent for Claude Code
 
 [![npm downloads](https://img.shields.io/npm/dt/@su-record/core)](https://www.npmjs.com/package/@su-record/vibe)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**바이브코딩을 쉽게, 최소 품질은 자동으로 보장합니다.**
+**설치 한 줄로 Claude Code에 46개 에이전트, 41+ 도구, 4개 LLM을 더합니다.**
 
 46개 에이전트 · 41+ 내장 도구 · 34개 스킬 · 4개 LLM 오케스트레이션 · 25개 프레임워크 지원
 

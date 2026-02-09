@@ -21,3 +21,6 @@ export { telegramSetup, telegramChat, telegramStart, telegramStop, telegramStatu
 export { interfaceList, interfaceEnable, interfaceDisable, interfaceHelp } from './interface.js';
 export { webhookAdd, webhookList, webhookRemove, webhookHelp } from './webhook.js';
 export { deviceList, deviceRename, deviceRemove, deviceHelp } from './device.js';
+export { autostartEnable, autostartDisable, autostartStatus, autostartHelp } from './autostart.js';
+export { slackSetup, slackChannel, slackStatus, slackHelp } from './slack.js';
+export { imessageSetup, imessageStatus, imessageHelp } from './imessage.js';

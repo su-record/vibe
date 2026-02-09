@@ -1,7 +1,7 @@
 {
   "name": "@su-record/core",
   "version": "0.1.23",
-  "description": "Su core - Claude Code exclusive SPEC-driven AI coding framework with 35+ integrated tools",
+  "description": "Personalized AI agent for Claude Code — 46 agents, 41+ tools, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
   "exports": {
@@ -57,7 +57,7 @@
     "coding",
     "spec-driven",
     "claude",
-    "framework",
+    "agent",
     "requirements",
     "user-story",
     "ultrawork",

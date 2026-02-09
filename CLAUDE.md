@@ -1,6 +1,6 @@
 # VIBE
 
-SPEC-driven AI Coding Framework (Claude Code Exclusive)
+Personalized AI Agent (Claude Code Exclusive)
 
 ## Response Language
 

@@ -25,6 +25,7 @@ import {
 } from './types.js';
 import { DaemonIPC } from './DaemonIPC.js';
 import { SessionPool } from './SessionPool.js';
+import { InterfaceManager } from './InterfaceManager.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const VERSION = '0.1.0';
@@ -50,6 +51,7 @@ export class VibeDaemon {
   private readonly config: DaemonConfig;
   private ipc: DaemonIPC;
   private sessionPool: SessionPool;
+  private interfaceManager: InterfaceManager;
   private startTime: number = 0;
   private stopping = false;
   private listeners: DaemonEventListener[] = [];
@@ -59,6 +61,7 @@ export class VibeDaemon {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.ipc = new DaemonIPC(this.config, this.log.bind(this));
     this.sessionPool = new SessionPool(this.config, this.log.bind(this));
+    this.interfaceManager = new InterfaceManager(this.log.bind(this));
   }
 
   /** Get or create singleton instance */
@@ -118,6 +121,9 @@ export class VibeDaemon {
     // Setup signal handlers
     this.setupSignalHandlers();
 
+    // Start enabled interfaces (slack, imessage, telegram, etc.)
+    await this.interfaceManager.startEnabledInterfaces();
+
     this.log('info', `Vibe Daemon v${VERSION} started (PID: ${process.pid})`);
     this.emit({ type: 'started', pid: process.pid });
   }
@@ -132,6 +138,7 @@ export class VibeDaemon {
 
     // Stop accepting new connections, wait for ongoing work
     const shutdownPromise = (async () => {
+      await this.interfaceManager.stopAll();
       await this.sessionPool.stop();
       await this.ipc.stop();
     })();
@@ -206,7 +213,10 @@ export class VibeDaemon {
 
   private registerBuiltinMethods(): void {
     this.ipc.registerMethod('daemon.health', () => {
-      return this.getHealth();
+      return {
+        ...this.getHealth(),
+        interfaces: this.interfaceManager.getActiveInterfaces(),
+      };
     });
 
     this.ipc.registerMethod('daemon.stop', async () => {

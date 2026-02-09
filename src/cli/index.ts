@@ -43,7 +43,7 @@ import {
   resetHud,
   showHudHelp,
 } from './hud.js';
-import { init, setup, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStart, telegramStop, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp } from './commands/index.js';
+import { init, setup, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStart, telegramStop, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp, autostartEnable, autostartDisable, autostartStatus, autostartHelp, slackSetup, slackChannel, slackStatus, slackHelp, imessageSetup, imessageStatus, imessageHelp } from './commands/index.js';
 
 // ============================================================================
 // Constants
@@ -427,6 +427,47 @@ Config Commands:
     break;
   }
 
+  // vibe slack <subcommand>
+  case 'slack': {
+    const slackSub = positionalArgs[1];
+    switch (slackSub) {
+      case 'setup':
+        slackSetup(positionalArgs[2], positionalArgs[3]);
+        break;
+      case 'channel':
+        slackChannel(positionalArgs[2]);
+        break;
+      case 'status':
+        slackStatus();
+        break;
+      case 'help':
+        slackHelp();
+        break;
+      default:
+        slackHelp();
+    }
+    break;
+  }
+
+  // vibe imessage <subcommand>
+  case 'imessage': {
+    const imessageSub = positionalArgs[1];
+    switch (imessageSub) {
+      case 'setup':
+        imessageSetup(positionalArgs[2]);
+        break;
+      case 'status':
+        imessageStatus();
+        break;
+      case 'help':
+        imessageHelp();
+        break;
+      default:
+        imessageHelp();
+    }
+    break;
+  }
+
   // vibe interface <subcommand>
   case 'interface': {
     const ifaceSub = positionalArgs[1];
@@ -489,6 +530,28 @@ Config Commands:
         break;
       default:
         deviceHelp();
+    }
+    break;
+  }
+
+  // vibe autostart <subcommand>
+  case 'autostart': {
+    const autostartSub = positionalArgs[1];
+    switch (autostartSub) {
+      case 'enable':
+        autostartEnable();
+        break;
+      case 'disable':
+        autostartDisable();
+        break;
+      case 'status':
+        autostartStatus();
+        break;
+      case 'help':
+        autostartHelp();
+        break;
+      default:
+        autostartHelp();
     }
     break;
   }
@@ -622,9 +685,12 @@ Available commands:
   vibe init         Initialize project
   vibe update       Update settings
   vibe daemon <cmd> Daemon commands (start, stop, status, restart)
+  vibe autostart <cmd> Auto-start on boot (enable, disable, status)
   vibe job <cmd>    Job commands (list, status, cancel)
   vibe policy <cmd> Policy commands (list, enable, disable, set)
   vibe telegram <cmd> Telegram bot (setup, chat, start, stop, status)
+  vibe slack <cmd>    Slack bot (setup, channel, status)
+  vibe imessage <cmd> iMessage (setup, status) — macOS only
   vibe interface <cmd> Interface management (list, enable, disable)
   vibe webhook <cmd> Webhook management (add, list, remove)
   vibe hud <cmd>    HUD status (show, start, phase, agent, reset)
