@@ -9,8 +9,8 @@
  */
 
 import * as path from 'node:path';
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition } from '../types.js';
+import type { JsonSchema } from '../types.js';
 
 const SYNC_TIMEOUT_MS = 30_000;
 
@@ -24,10 +24,14 @@ const LONG_TASK_KEYWORDS = [
   'create', 'refactor', 'write tests', 'build',
 ];
 
-export const claudeCodeSchema = z.object({
-  task: z.string().describe('Development task to execute'),
-  workingDirectory: z.string().optional().describe('Working directory (relative to project root)'),
-});
+const claudeCodeParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    task: { type: 'string', description: 'Development task to execute' },
+    workingDirectory: { type: 'string', description: 'Working directory (relative to project root)' },
+  },
+  required: ['task'],
+};
 
 function isLongRunningTask(task: string): boolean {
   const lower = task.toLowerCase();
@@ -46,7 +50,7 @@ function sanitizeWorkingDir(dir: string | undefined): string {
 }
 
 async function handleClaudeCode(args: Record<string, unknown>): Promise<string> {
-  const { task, workingDirectory } = args as z.infer<typeof claudeCodeSchema>;
+  const { task, workingDirectory } = args as { task: string; workingDirectory?: string };
 
   const cwd = sanitizeWorkingDir(workingDirectory);
 
@@ -80,10 +84,10 @@ async function handleClaudeCode(args: Record<string, unknown>): Promise<string> 
   }
 }
 
-export const claudeCodeTool: ToolRegistrationInput = {
+export const claudeCodeTool: ToolDefinition = {
   name: 'claude_code',
   description: 'Execute development tasks via Claude Code CLI (code analysis, file modifications, debugging)',
-  schema: claudeCodeSchema,
+  parameters: claudeCodeParameters,
   handler: handleClaudeCode,
   scope: 'execute',
 };

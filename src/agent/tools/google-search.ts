@@ -5,23 +5,23 @@
  * Gemini webSearch() 활용
  */
 
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition } from '../types.js';
+import type { JsonSchema } from '../types.js';
 
 const DEFAULT_MAX_RESULTS = 5;
 const MAX_RESULTS_LIMIT = 10;
 
-export const googleSearchSchema = z.object({
-  query: z.string().describe('Search query'),
-  maxResults: z.number()
-    .min(1)
-    .max(MAX_RESULTS_LIMIT)
-    .optional()
-    .describe('Maximum number of results (1-10, default: 5)'),
-});
+const googleSearchParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    query: { type: 'string', description: 'Search query' },
+    maxResults: { type: 'number', minimum: 1, maximum: 10, description: 'Maximum number of results (1-10, default: 5)' },
+  },
+  required: ['query'],
+};
 
 async function handleGoogleSearch(args: Record<string, unknown>): Promise<string> {
-  const { query, maxResults } = args as z.infer<typeof googleSearchSchema>;
+  const { query, maxResults } = args as { query: string; maxResults?: number };
   const limit = Math.min(maxResults ?? DEFAULT_MAX_RESULTS, MAX_RESULTS_LIMIT);
 
   try {
@@ -35,10 +35,10 @@ async function handleGoogleSearch(args: Record<string, unknown>): Promise<string
   }
 }
 
-export const googleSearchTool: ToolRegistrationInput = {
+export const googleSearchTool: ToolDefinition = {
   name: 'google_search',
   description: 'Search the web for information using Google Search via Gemini',
-  schema: googleSearchSchema,
+  parameters: googleSearchParameters,
   handler: handleGoogleSearch,
   scope: 'read',
 };

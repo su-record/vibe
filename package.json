@@ -1,6 +1,6 @@
 {
   "name": "@su-record/core",
-  "version": "0.1.27",
+  "version": "0.1.29",
   "description": "Personalized AI agent for Claude Code — 46 agents, 41+ tools, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
@@ -96,6 +96,7 @@
     "@types/node": "^22.0.0",
     "@types/node-cron": "^3.0.11",
     "@types/papaparse": "^5.5.2",
+    "ajv": "^8.17.1",
     "typescript": "^5.5.4",
     "vitest": "^4.0.9"
   },

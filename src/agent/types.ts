@@ -3,8 +3,6 @@
  * Phase 1: Head Model Selection & Tool Registry
  */
 
-import type { z } from 'zod';
-
 // === Provider Types ===
 
 export type HeadModelProviderType = 'gpt' | 'claude';
@@ -89,10 +87,19 @@ export interface AgentToolDefinition {
   scope: ToolScope;
 }
 
+/** @deprecated Use ToolDefinition instead (Zod dependency removed) */
 export interface RegisteredTool {
   name: string;
   description: string;
-  schema: z.ZodType;
+  schema: unknown;
+  handler: (args: Record<string, unknown>) => Promise<string>;
+  scope: ToolScope;
+}
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: JsonSchema;
   handler: (args: Record<string, unknown>) => Promise<string>;
   scope: ToolScope;
 }

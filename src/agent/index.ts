@@ -4,24 +4,21 @@
  * Exports:
  * - AgentLoop: Main agent execution loop with message handling and tool execution
  * - HeadModelSelector: Automatic head model selection with circuit breaker
- * - ToolRegistry: Tool registration and validation system
  * - ToolExecutor: Tool execution engine with timeout and result handling
  * - ConversationState: Conversation history management with sliding window
+ * - ConversationStore: SQLite-based persistent conversation history storage
  * - Types: All agent-related type definitions
  */
 
 // Runtime classes
 export { AgentLoop } from './AgentLoop.js';
 export { HeadModelSelector } from './HeadModelSelector.js';
-export { ToolRegistry } from './ToolRegistry.js';
 export { ToolExecutor } from './ToolExecutor.js';
 export { ConversationState } from './ConversationState.js';
+export { ConversationStore } from './ConversationStore.js';
 
 // Types from AgentLoop
 export type { AgentLoopDeps, OnProgressCallback } from './AgentLoop.js';
-
-// Types from ToolRegistry
-export type { ToolRegistrationInput } from './ToolRegistry.js';
 
 // Core types from types.ts
 export type {
@@ -35,6 +32,7 @@ export type {
   ToolScope,
   HeadModelProviderType,
   AgentToolDefinition,
+  ToolDefinition,
   RegisteredTool,
   ToolCallResult,
   HeadModelConfig,

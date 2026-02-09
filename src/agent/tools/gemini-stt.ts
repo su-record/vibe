@@ -5,15 +5,19 @@
  * Gemini transcribeAudio() 활용
  */
 
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition } from '../types.js';
+import type { JsonSchema } from '../types.js';
 
-export const geminiSttSchema = z.object({
-  audioFileId: z.string().describe('Telegram audio file ID'),
-});
+const geminiSttParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    audioFileId: { type: 'string', description: 'Telegram audio file ID' },
+  },
+  required: ['audioFileId'],
+};
 
 async function handleGeminiStt(args: Record<string, unknown>): Promise<string> {
-  const { audioFileId } = args as z.infer<typeof geminiSttSchema>;
+  const { audioFileId } = args as { audioFileId: string };
 
   try {
     const { transcribeAudio } = await import('../../lib/gemini/capabilities.js');
@@ -25,10 +29,10 @@ async function handleGeminiStt(args: Record<string, unknown>): Promise<string> {
   }
 }
 
-export const geminiSttTool: ToolRegistrationInput = {
+export const geminiSttTool: ToolDefinition = {
   name: 'gemini_stt',
   description: 'Transcribe voice audio to text using Gemini STT',
-  schema: geminiSttSchema,
+  parameters: geminiSttParameters,
   handler: handleGeminiStt,
   scope: 'execute',
 };

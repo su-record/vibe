@@ -7,14 +7,18 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition } from '../types.js';
+import type { JsonSchema } from '../types.js';
 import type { TelegramSendOptions } from '../../router/types.js';
 
-export const sendTelegramSchema = z.object({
-  text: z.string().describe('Message text to send'),
-  parseMode: z.enum(['HTML', 'Markdown']).optional().describe('Message parse mode'),
-});
+const sendTelegramParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    text: { type: 'string', description: 'Message text to send' },
+    parseMode: { type: 'string', enum: ['HTML', 'Markdown'], description: 'Message parse mode' },
+  },
+  required: ['text'],
+};
 
 type SendFn = (chatId: string, text: string, options?: TelegramSendOptions) => Promise<void>;
 
@@ -44,7 +48,7 @@ export function runInChatContext<T>(chatId: string, fn: () => T): T {
 }
 
 async function handleSendTelegram(args: Record<string, unknown>): Promise<string> {
-  const { text, parseMode } = args as z.infer<typeof sendTelegramSchema>;
+  const { text, parseMode } = args as { text: string; parseMode?: 'HTML' | 'Markdown' };
 
   const chatId = chatIdStore.getStore();
   const ctx = chatId ? boundContexts.get(chatId) : undefined;
@@ -63,10 +67,10 @@ async function handleSendTelegram(args: Record<string, unknown>): Promise<string
   }
 }
 
-export const sendTelegramTool: ToolRegistrationInput = {
+export const sendTelegramTool: ToolDefinition = {
   name: 'send_telegram',
   description: 'Send a message to the current Telegram chat',
-  schema: sendTelegramSchema,
+  parameters: sendTelegramParameters,
   handler: handleSendTelegram,
   scope: 'write',
 };

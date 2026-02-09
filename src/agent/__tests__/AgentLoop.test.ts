@@ -4,11 +4,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { z } from 'zod';
 import { AgentLoop } from '../AgentLoop.js';
-import { ToolRegistry } from '../ToolRegistry.js';
 import type { HeadModelSelector } from '../HeadModelSelector.js';
-import type { HeadModelProvider, HeadModelResponse } from '../types.js';
+import type { HeadModelProvider, HeadModelResponse, ToolDefinition } from '../types.js';
 import type { ExternalMessage } from '../../interface/types.js';
 import type { RouteServices } from '../../router/types.js';
 
@@ -66,11 +64,11 @@ function createMockSelector(provider: HeadModelProvider): HeadModelSelector {
 }
 
 describe('AgentLoop', () => {
-  let registry: ToolRegistry;
+  let tools: ToolDefinition[];
 
   beforeEach(() => {
     vi.clearAllMocks();
-    registry = new ToolRegistry();
+    tools = [];
   });
 
   // Scenario 1: 단순 텍스트 응답
@@ -82,7 +80,7 @@ describe('AgentLoop', () => {
       const selector = createMockSelector(provider);
       const services = createMockServices();
 
-      const loop = new AgentLoop({ headSelector: selector, toolRegistry: registry });
+      const loop = new AgentLoop({ headSelector: selector, tools });
       await loop.process(createMockMessage('안녕하세요'), services);
 
       expect(services.sendTelegram).toHaveBeenCalledWith(
@@ -96,13 +94,19 @@ describe('AgentLoop', () => {
   // Scenario 2: Single Tool Call
   describe('Scenario 2: Single tool call', () => {
     it('should execute tool and return final response', async () => {
-      registry.register({
-        name: 'google_search',
-        description: 'Search the web',
-        schema: z.object({ query: z.string() }),
-        handler: async () => '서울 날씨: 맑음, 15도',
-        scope: 'read',
-      });
+      const testTools: ToolDefinition[] = [
+        {
+          name: 'google_search',
+          description: 'Search the web',
+          parameters: {
+            type: 'object',
+            properties: { query: { type: 'string' } },
+            required: ['query'],
+          },
+          handler: async () => '서울 날씨: 맑음, 15도',
+          scope: 'read',
+        },
+      ];
 
       const provider = createMockProvider([
         {
@@ -120,7 +124,7 @@ describe('AgentLoop', () => {
       const selector = createMockSelector(provider);
       const services = createMockServices();
 
-      const loop = new AgentLoop({ headSelector: selector, toolRegistry: registry });
+      const loop = new AgentLoop({ headSelector: selector, tools: testTools });
       await loop.process(createMockMessage('오늘 날씨 알려줘'), services);
 
       expect(provider.chat).toHaveBeenCalledTimes(2);
@@ -135,13 +139,19 @@ describe('AgentLoop', () => {
   // Scenario 3: Multi-turn Tool Call
   describe('Scenario 3: Multi-turn tool calls', () => {
     it('should handle sequential tool calls', async () => {
-      registry.register({
-        name: 'kimi_analyze',
-        description: 'Analyze code',
-        schema: z.object({ content: z.string() }),
-        handler: async () => 'SQL injection vulnerability found',
-        scope: 'read',
-      });
+      const testTools: ToolDefinition[] = [
+        {
+          name: 'kimi_analyze',
+          description: 'Analyze code',
+          parameters: {
+            type: 'object',
+            properties: { content: { type: 'string' } },
+            required: ['content'],
+          },
+          handler: async () => 'SQL injection vulnerability found',
+          scope: 'read',
+        },
+      ];
 
       const provider = createMockProvider([
         {
@@ -159,7 +169,7 @@ describe('AgentLoop', () => {
       const selector = createMockSelector(provider);
       const services = createMockServices();
 
-      const loop = new AgentLoop({ headSelector: selector, toolRegistry: registry });
+      const loop = new AgentLoop({ headSelector: selector, tools: testTools });
       await loop.process(createMockMessage('로그인 코드 분석해줘'), services);
 
       expect(provider.chat).toHaveBeenCalledTimes(2);
@@ -174,13 +184,19 @@ describe('AgentLoop', () => {
   // Scenario 4: Max Iterations
   describe('Scenario 4: Max iterations exceeded', () => {
     it('should stop after 10 iterations and send error message', async () => {
-      registry.register({
-        name: 'test_tool',
-        description: 'Test',
-        schema: z.object({ input: z.string() }),
-        handler: async () => 'result',
-        scope: 'read',
-      });
+      const testTools: ToolDefinition[] = [
+        {
+          name: 'test_tool',
+          description: 'Test',
+          parameters: {
+            type: 'object',
+            properties: { input: { type: 'string' } },
+            required: ['input'],
+          },
+          handler: async () => 'result',
+          scope: 'read',
+        },
+      ];
 
       // HeadModel always returns tool calls (infinite loop scenario)
       const infiniteToolCall: HeadModelResponse = {
@@ -205,7 +221,7 @@ describe('AgentLoop', () => {
       const selector = createMockSelector(provider);
       const services = createMockServices();
 
-      const loop = new AgentLoop({ headSelector: selector, toolRegistry: registry });
+      const loop = new AgentLoop({ headSelector: selector, tools: testTools });
       await loop.process(createMockMessage('무한 루프 테스트'), services);
 
       expect(provider.chat).toHaveBeenCalledTimes(10);
@@ -227,7 +243,7 @@ describe('AgentLoop', () => {
       const selector = createMockSelector(provider);
       const services = createMockServices();
 
-      const loop = new AgentLoop({ headSelector: selector, toolRegistry: registry });
+      const loop = new AgentLoop({ headSelector: selector, tools });
       await loop.process(createMockMessage('테스트'), services);
 
       expect(services.sendTelegram).toHaveBeenCalledWith(

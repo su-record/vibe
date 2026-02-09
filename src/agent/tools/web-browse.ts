@@ -12,22 +12,29 @@
 import * as dns from 'node:dns/promises';
 import * as http from 'node:http';
 import * as https from 'node:https';
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition, JsonSchema } from '../types.js';
 
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 3;
 const MAX_RESPONSE_SIZE = 50_000; // 50KB text
 const MAX_BODY_BUFFER = MAX_RESPONSE_SIZE * 2; // 응답 스트리밍 중 메모리 제한
 
-export const webBrowseSchema = z.object({
-  url: z.string().url().describe('URL to fetch'),
-  extractMode: z.enum(['text', 'summary']).optional().describe('Extract mode: text or summary (default: text)'),
-});
+const webBrowseParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    url: { type: 'string', description: 'URL to fetch' },
+    extractMode: {
+      type: 'string',
+      enum: ['text', 'summary'],
+      description: 'Extract mode: text or summary (default: text)',
+    },
+  },
+  required: ['url'],
+};
 
 // === SSRF Protection ===
 
-function isPrivateIP(ip: string): boolean {
+export function isPrivateIP(ip: string): boolean {
   // IPv4 private ranges
   if (/^10\./.test(ip)) return true;
   if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return true;
@@ -47,7 +54,7 @@ function isPrivateIP(ip: string): boolean {
   return false;
 }
 
-function validateUrl(urlStr: string): URL {
+export function validateUrl(urlStr: string): URL {
   const parsed = new URL(urlStr);
 
   // Scheme check
@@ -68,7 +75,7 @@ function validateUrl(urlStr: string): URL {
  * DNS를 해석하고 모든 주소가 public IP인지 검증한 뒤, 첫 번째 safe IP 반환.
  * DNS rebinding 방지: 반환된 IP를 직접 연결에 사용하여 TOCTOU 제거.
  */
-async function resolveToSafeIP(hostname: string): Promise<string> {
+export async function resolveToSafeIP(hostname: string): Promise<string> {
   // IPv4
   try {
     const addrs = await dns.resolve4(hostname);
@@ -172,7 +179,7 @@ async function safeFetch(urlStr: string, redirectCount = 0): Promise<string> {
 // === Tool Handler ===
 
 async function handleWebBrowse(args: Record<string, unknown>): Promise<string> {
-  const { url } = args as z.infer<typeof webBrowseSchema>;
+  const { url } = args as { url: string; extractMode?: 'text' | 'summary' };
 
   try {
     const rawContent = await safeFetch(url);
@@ -192,12 +199,10 @@ async function handleWebBrowse(args: Record<string, unknown>): Promise<string> {
   }
 }
 
-export const webBrowseTool: ToolRegistrationInput = {
+export const webBrowseTool: ToolDefinition = {
   name: 'web_browse',
   description: 'Fetch and read web page content from a URL (with SSRF protection)',
-  schema: webBrowseSchema,
+  parameters: webBrowseParameters,
   handler: handleWebBrowse,
   scope: 'read',
 };
-
-export { isPrivateIP, validateUrl, resolveToSafeIP };

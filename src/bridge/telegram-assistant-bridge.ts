@@ -32,9 +32,8 @@ import { BrowserManager } from '../router/browser/BrowserManager.js';
 import { BrowserPool } from '../router/browser/BrowserPool.js';
 import { RouterConfig, DEFAULT_ROUTER_CONFIG, InlineKeyboardButton, SmartRouterLike } from '../router/types.js';
 import { HeadModelSelector } from '../agent/HeadModelSelector.js';
-import { ToolRegistry } from '../agent/ToolRegistry.js';
 import { AgentLoop } from '../agent/AgentLoop.js';
-import { registerAllTools } from '../agent/tools/index.js';
+import { getAllTools } from '../agent/tools/index.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const TELEGRAM_CONFIG_PATH = path.join(VIBE_DIR, 'telegram.json');
@@ -159,17 +158,16 @@ async function main(): Promise<void> {
 
   // Initialize AgentLoop (function-calling agent)
   const headSelector = new HeadModelSelector();
-  const toolRegistry = new ToolRegistry();
-  registerAllTools(toolRegistry);
+  const tools = getAllTools();
 
   const agentLoop = new AgentLoop({
     headSelector,
-    toolRegistry,
+    tools,
     systemPromptConfig: { userName: '사용자', language: 'ko', timezone: 'Asia/Seoul' },
     mediaPreprocessorConfig: { showConfirmation: true },
   });
   router.setAgentLoop(agentLoop);
-  logger('info', `AgentLoop 초기화 완료 (도구 ${toolRegistry.size}개 등록)`);
+  logger('info', `AgentLoop 초기화 완료 (도구 ${tools.length}개 등록)`);
 
   // Google Route (works without SmartRouter)
   const googleAuth = new GoogleAuthManager(logger);

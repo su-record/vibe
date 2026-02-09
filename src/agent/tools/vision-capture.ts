@@ -6,21 +6,38 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition, JsonSchema } from '../types.js';
 import type { GeminiVision } from '../../interface/vision/index.js';
 import { ScreenCapture } from '../../interface/vision/index.js';
 
-export const visionCaptureSchema = z.object({
-  area: z.enum(['full', 'region']).optional().describe('Capture area (full screen or region)'),
-  region: z.object({
-    x: z.number().describe('X coordinate'),
-    y: z.number().describe('Y coordinate'),
-    w: z.number().describe('Width'),
-    h: z.number().describe('Height'),
-  }).optional().describe('Region to capture (required if area=region)'),
-  prompt: z.string().describe('Analysis prompt for Gemini Vision'),
-});
+const visionCaptureParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    area: {
+      type: 'string',
+      enum: ['full', 'region'],
+      description: 'Capture area (full screen or region)',
+    },
+    region: {
+      type: 'object',
+      properties: {
+        x: { type: 'number', description: 'X coordinate' },
+        y: { type: 'number', description: 'Y coordinate' },
+        w: { type: 'number', description: 'Width' },
+        h: { type: 'number', description: 'Height' },
+      },
+      required: ['x', 'y', 'w', 'h'],
+      description: 'Region to capture (required if area=region)',
+    },
+    prompt: { type: 'string', description: 'Analysis prompt for Gemini Vision' },
+    mode: {
+      type: 'string',
+      enum: ['rest', 'live'],
+      description: 'Analysis mode: rest (default) or live (WebSocket)',
+    },
+  },
+  required: ['prompt'],
+};
 
 // AsyncLocalStorage for vision instance isolation
 const visionStore = new AsyncLocalStorage<GeminiVision>();
@@ -38,7 +55,12 @@ export function runInVisionContext<T>(vision: GeminiVision, fn: () => T): T {
 }
 
 async function handleVisionCapture(args: Record<string, unknown>): Promise<string> {
-  const { area, region, prompt } = args as z.infer<typeof visionCaptureSchema>;
+  const { area, region, prompt, mode = 'rest' } = args as {
+    area?: 'full' | 'region';
+    region?: { x: number; y: number; w: number; h: number };
+    prompt: string;
+    mode?: 'rest' | 'live';
+  };
 
   const vision = visionStore.getStore();
   if (!vision) {
@@ -51,8 +73,22 @@ async function handleVisionCapture(args: Record<string, unknown>): Promise<strin
       : { area: 'full' as const };
 
     const imageBuffer = await ScreenCapture.capture(captureOptions);
-    const result = await vision.analyzeImage(imageBuffer, prompt);
 
+    // Use live mode (WebSocket) if requested and available
+    if (mode === 'live') {
+      const visionInterface = (vision as unknown as { analyzeLive?: (b64: string, p: string) => Promise<string> }).analyzeLive;
+      if (visionInterface) {
+        const imageBase64 = imageBuffer.toString('base64');
+        const result = await visionInterface.call(vision, imageBase64, prompt);
+        return result;
+      }
+      // Fallback to REST
+      const result = await vision.analyzeImage(imageBuffer, prompt);
+      return result;
+    }
+
+    // Default REST mode
+    const result = await vision.analyzeImage(imageBuffer, prompt);
     return result;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -60,10 +96,10 @@ async function handleVisionCapture(args: Record<string, unknown>): Promise<strin
   }
 }
 
-export const visionCaptureTool: ToolRegistrationInput = {
+export const visionCaptureTool: ToolDefinition = {
   name: 'vision_capture',
-  description: 'Capture screen and analyze with Gemini Vision',
-  schema: visionCaptureSchema,
+  description: 'Capture screen and analyze with Gemini Vision. Use mode=live for WebSocket streaming.',
+  parameters: visionCaptureParameters,
   handler: handleVisionCapture,
   scope: 'read',
 };
