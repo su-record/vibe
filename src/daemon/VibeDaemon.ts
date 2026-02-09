@@ -32,9 +32,20 @@ import { runPreflight } from './preflight.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const VERSION = '0.1.0';
+const IS_WINDOWS = process.platform === 'win32';
+
+/** Cross-platform IPC path: Named Pipe on Windows, Unix socket on macOS/Linux */
+function getSocketPath(): string {
+  if (IS_WINDOWS) {
+    // Per-user unique pipe name to avoid collisions in multi-user environments
+    const username = os.userInfo().username;
+    return `\\\\.\\pipe\\vibe-daemon-${username}`;
+  }
+  return path.join(VIBE_DIR, 'daemon.sock');
+}
 
 const DEFAULT_CONFIG: DaemonConfig = {
-  socketPath: path.join(VIBE_DIR, 'daemon.sock'),
+  socketPath: getSocketPath(),
   pidFile: path.join(VIBE_DIR, 'daemon.pid'),
   tokenFile: path.join(VIBE_DIR, 'daemon.token'),
   logDir: path.join(VIBE_DIR, 'logs'),

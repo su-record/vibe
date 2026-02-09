@@ -18,7 +18,9 @@ import * as url from 'node:url';
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const PID_FILE = path.join(VIBE_DIR, 'daemon.pid');
 const TOKEN_FILE = path.join(VIBE_DIR, 'daemon.token');
-const SOCKET_PATH = path.join(VIBE_DIR, 'daemon.sock');
+const SOCKET_PATH = process.platform === 'win32'
+  ? `\\\\.\\pipe\\vibe-daemon-${os.userInfo().username}`
+  : path.join(VIBE_DIR, 'daemon.sock');
 
 function readPid(): number | null {
   try {

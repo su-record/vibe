@@ -327,6 +327,23 @@ export class DaemonIPC {
 
   private async safeCleanSocket(): Promise<void> {
     const socketPath = this.config.socketPath;
+
+    // Windows Named Pipes are managed by the OS — no file cleanup needed,
+    // but we still check if another daemon is already listening.
+    if (process.platform === 'win32') {
+      try {
+        await DaemonIPC.sendRequest(socketPath, 'daemon.health', undefined, undefined, 2000);
+        throw new Error('Another daemon is already running');
+      } catch (err) {
+        if (err instanceof Error && err.message === 'Another daemon is already running') {
+          throw err;
+        }
+        // No daemon listening — safe to proceed
+      }
+      return;
+    }
+
+    // Unix: file-based socket cleanup
     try {
       const stat = fs.lstatSync(socketPath);
       if (stat.isSymbolicLink()) {
@@ -356,6 +373,9 @@ export class DaemonIPC {
   }
 
   private cleanupSocket(): void {
+    // Windows Named Pipes are auto-cleaned by the OS when the server closes
+    if (process.platform === 'win32') return;
+
     try {
       if (fs.existsSync(this.config.socketPath)) {
         fs.unlinkSync(this.config.socketPath);
