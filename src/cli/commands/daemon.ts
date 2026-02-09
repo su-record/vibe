@@ -63,9 +63,8 @@ export function daemonStart(): void {
     try { fs.unlinkSync(PID_FILE); } catch { /* ignore */ }
   }
 
-  // Find the daemon entry point
-  const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-  const daemonPath = path.resolve(__dirname, '..', 'daemon', 'VibeDaemon.js');
+  // Find the daemon entry point (cross-platform, works regardless of install location)
+  const daemonPath = url.fileURLToPath(new URL('../../daemon/VibeDaemon.js', import.meta.url));
 
   if (!fs.existsSync(daemonPath)) {
     console.error(`❌ Daemon module not found at: ${daemonPath}`);
