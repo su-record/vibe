@@ -49,6 +49,9 @@ export class TelegramBot extends BaseInterface {
     this.logger('info', 'Starting Telegram bot...');
 
     try {
+      // Remove any existing webhook so getUpdates polling works
+      await this.apiCall('deleteWebhook', { drop_pending_updates: false });
+
       const me = await this.apiCall('getMe') as Record<string, unknown>;
       this.logger('info', `Telegram bot connected: @${String(me.username)}`);
       this.status = 'enabled';
@@ -137,10 +140,12 @@ export class TelegramBot extends BaseInterface {
     if (!this.pollingActive) return;
 
     try {
-      const updates = await this.apiCall('getUpdates', {
-        offset: this.pollingOffset,
-        timeout: this.config.pollingTimeout || 30,
-      });
+      const pollingTimeout = this.config.pollingTimeout || 30;
+      const updates = await this.apiCall(
+        'getUpdates',
+        { offset: this.pollingOffset, timeout: pollingTimeout },
+        (pollingTimeout + 15) * 1000, // client timeout must exceed server long-poll timeout
+      );
 
       this.retryCount = 0;
 
@@ -268,7 +273,11 @@ export class TelegramBot extends BaseInterface {
     } catch { /* ignore */ }
   }
 
-  private apiCall(method: string, params?: Record<string, unknown>): Promise<unknown> {
+  private apiCall(
+    method: string,
+    params?: Record<string, unknown>,
+    timeoutMs?: number,
+  ): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const url = new URL(`${TELEGRAM_API}/bot${this.config.botToken}/${method}`);
 
@@ -298,7 +307,7 @@ export class TelegramBot extends BaseInterface {
       });
 
       req.on('error', reject);
-      req.setTimeout(30000, () => {
+      req.setTimeout(timeoutMs ?? 30_000, () => {
         req.destroy(new Error('Telegram API timeout'));
       });
 
