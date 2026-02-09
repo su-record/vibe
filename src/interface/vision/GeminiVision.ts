@@ -1,6 +1,9 @@
 /**
- * GeminiVision - Gemini API Vision wrapper
+ * GeminiVision - Gemini API Vision wrapper (REST)
  * Single image & continuous stream analysis with rate limiting
+ *
+ * @deprecated For real-time streaming, consider using GeminiLive (WebSocket) instead.
+ * This REST implementation remains available as a fallback.
  */
 
 import https from 'node:https';

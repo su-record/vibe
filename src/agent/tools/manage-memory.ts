@@ -5,21 +5,30 @@
  * 기존 src/tools/memory/ 활용
  */
 
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition, JsonSchema } from '../types.js';
 
 // === save_memory ===
 
-export const saveMemorySchema = z.object({
-  key: z.string().describe('Memory key identifier'),
-  value: z.string().describe('Information to save'),
-  category: z.enum(['project', 'personal', 'code', 'notes', 'general'])
-    .optional()
-    .describe('Memory category (default: general)'),
-});
+const saveMemoryParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    key: { type: 'string', description: 'Memory key identifier' },
+    value: { type: 'string', description: 'Information to save' },
+    category: {
+      type: 'string',
+      enum: ['project', 'personal', 'code', 'notes', 'general'],
+      description: 'Memory category (default: general)',
+    },
+  },
+  required: ['key', 'value'],
+};
 
 async function handleSaveMemory(args: Record<string, unknown>): Promise<string> {
-  const { key, value, category } = args as z.infer<typeof saveMemorySchema>;
+  const { key, value, category } = args as {
+    key: string;
+    value: string;
+    category?: 'project' | 'personal' | 'code' | 'notes' | 'general';
+  };
 
   try {
     const { saveMemory } = await import('../../tools/memory/index.js');
@@ -32,23 +41,27 @@ async function handleSaveMemory(args: Record<string, unknown>): Promise<string> 
   }
 }
 
-export const saveMemoryTool: ToolRegistrationInput = {
+export const saveMemoryTool: ToolDefinition = {
   name: 'save_memory',
   description: 'Save important information/decisions to persistent memory',
-  schema: saveMemorySchema,
+  parameters: saveMemoryParameters,
   handler: handleSaveMemory,
   scope: 'write',
 };
 
 // === recall_memory ===
 
-export const recallMemorySchema = z.object({
-  key: z.string().describe('Memory key to recall'),
-  category: z.string().optional().describe('Filter by category'),
-});
+const recallMemoryParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    key: { type: 'string', description: 'Memory key to recall' },
+    category: { type: 'string', description: 'Filter by category' },
+  },
+  required: ['key'],
+};
 
 async function handleRecallMemory(args: Record<string, unknown>): Promise<string> {
-  const { key, category } = args as z.infer<typeof recallMemorySchema>;
+  const { key, category } = args as { key: string; category?: string };
 
   try {
     const { recallMemory } = await import('../../tools/memory/index.js');
@@ -61,10 +74,10 @@ async function handleRecallMemory(args: Record<string, unknown>): Promise<string
   }
 }
 
-export const recallMemoryTool: ToolRegistrationInput = {
+export const recallMemoryTool: ToolDefinition = {
   name: 'recall_memory',
   description: 'Recall previously saved information from memory',
-  schema: recallMemorySchema,
+  parameters: recallMemoryParameters,
   handler: handleRecallMemory,
   scope: 'read',
 };

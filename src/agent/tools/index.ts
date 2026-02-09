@@ -1,9 +1,11 @@
 /**
- * Tool Index - 전체 Tool 등록
+ * Tool Index - 전체 Tool 목록
  * Phase 3: Function Calling Tool Definitions
+ *
+ * ToolRegistry 제거 후 직접 ToolDefinition[] 반환
  */
 
-import type { ToolRegistry } from '../ToolRegistry.js';
+import type { ToolDefinition } from '../types.js';
 import { claudeCodeTool } from './claude-code.js';
 import { geminiSttTool } from './gemini-stt.js';
 import { googleSearchTool } from './google-search.js';
@@ -15,8 +17,9 @@ import { visionCaptureTool } from './vision-capture.js';
 import { visionAnalyzeTool } from './vision-analyze.js';
 import { sendSlackTool } from './send-slack.js';
 import { sendIMessageTool } from './send-imessage.js';
+import { dmPairTool } from './dm-pair.js';
 
-const ALL_TOOLS = [
+const ALL_TOOLS: ToolDefinition[] = [
   claudeCodeTool,
   geminiSttTool,
   googleSearchTool,
@@ -29,12 +32,12 @@ const ALL_TOOLS = [
   visionAnalyzeTool,
   sendSlackTool,
   sendIMessageTool,
+  dmPairTool,
 ];
 
-export function registerAllTools(registry: ToolRegistry): void {
-  for (const tool of ALL_TOOLS) {
-    registry.register(tool);
-  }
+/** Get all tool definitions (replaces registerAllTools) */
+export function getAllTools(): ToolDefinition[] {
+  return ALL_TOOLS;
 }
 
 export {
@@ -50,4 +53,5 @@ export {
   visionAnalyzeTool,
   sendSlackTool,
   sendIMessageTool,
+  dmPairTool,
 };

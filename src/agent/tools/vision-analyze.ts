@@ -6,17 +6,25 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { z } from 'zod';
 import { readFile, realpath, stat } from 'node:fs/promises';
 import { join, resolve, relative, extname } from 'node:path';
 import { tmpdir } from 'node:os';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition, JsonSchema } from '../types.js';
 import type { GeminiVision } from '../../interface/vision/index.js';
 
-export const visionAnalyzeSchema = z.object({
-  imagePath: z.string().describe('Path to image file'),
-  prompt: z.string().describe('Analysis prompt for Gemini Vision'),
-});
+const visionAnalyzeParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    imagePath: { type: 'string', description: 'Path to image file' },
+    prompt: { type: 'string', description: 'Analysis prompt for Gemini Vision' },
+    mode: {
+      type: 'string',
+      enum: ['rest', 'live'],
+      description: 'Analysis mode: rest (default) or live (WebSocket)',
+    },
+  },
+  required: ['imagePath', 'prompt'],
+};
 
 const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
@@ -76,7 +84,11 @@ async function validateImagePath(imagePath: string): Promise<string> {
 }
 
 async function handleVisionAnalyze(args: Record<string, unknown>): Promise<string> {
-  const { imagePath, prompt } = args as z.infer<typeof visionAnalyzeSchema>;
+  const { imagePath, prompt, mode = 'rest' } = args as {
+    imagePath: string;
+    prompt: string;
+    mode?: 'rest' | 'live';
+  };
 
   const vision = visionStore.getStore();
   if (!vision) {
@@ -86,8 +98,24 @@ async function handleVisionAnalyze(args: Record<string, unknown>): Promise<strin
   try {
     const validatedPath = await validateImagePath(imagePath);
     const imageBuffer = await readFile(validatedPath);
-    const result = await vision.analyzeImage(imageBuffer, prompt);
 
+    // Use live mode (WebSocket) if requested and available
+    if (mode === 'live') {
+      // Try to use VisionInterface's analyzeLive method via AsyncLocalStorage
+      // For now, fall back to REST if not available
+      const visionInterface = (vision as unknown as { analyzeLive?: (b64: string, p: string) => Promise<string> }).analyzeLive;
+      if (visionInterface) {
+        const imageBase64 = imageBuffer.toString('base64');
+        const result = await visionInterface.call(vision, imageBase64, prompt);
+        return result;
+      }
+      // Fallback to REST
+      const result = await vision.analyzeImage(imageBuffer, prompt);
+      return result;
+    }
+
+    // Default REST mode
+    const result = await vision.analyzeImage(imageBuffer, prompt);
     return result;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -95,10 +123,11 @@ async function handleVisionAnalyze(args: Record<string, unknown>): Promise<strin
   }
 }
 
-export const visionAnalyzeTool: ToolRegistrationInput = {
+export const visionAnalyzeTool: ToolDefinition = {
   name: 'vision_analyze',
-  description: 'Analyze an image file with Gemini Vision (supports png, jpg, jpeg, gif, webp, bmp)',
-  schema: visionAnalyzeSchema,
+  description:
+    'Analyze an image file with Gemini Vision (supports png, jpg, jpeg, gif, webp, bmp). Use mode=live for WebSocket streaming.',
+  parameters: visionAnalyzeParameters,
   handler: handleVisionAnalyze,
   scope: 'read',
 };

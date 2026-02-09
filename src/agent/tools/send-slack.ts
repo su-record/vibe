@@ -7,14 +7,18 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition } from '../types.js';
+import type { JsonSchema } from '../types.js';
 
-export const sendSlackSchema = z.object({
-  message: z.string().describe('Message text to send'),
-  channel: z.string().optional().describe('Target channel ID (requires allowlist check)'),
-  thread_ts: z.string().optional().describe('Thread timestamp for replies'),
-});
+const sendSlackParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    message: { type: 'string', description: 'Message text to send' },
+    channel: { type: 'string', description: 'Target channel ID (requires allowlist check)' },
+    thread_ts: { type: 'string', description: 'Thread timestamp for replies' },
+  },
+  required: ['message'],
+};
 
 type SendFn = (channelId: string, message: string, options?: { thread_ts?: string }) => Promise<void>;
 
@@ -50,7 +54,7 @@ export function runInSlackContext<T>(channelId: string, fn: () => T): T {
 }
 
 async function handleSendSlack(args: Record<string, unknown>): Promise<string> {
-  const { message, channel, thread_ts } = args as z.infer<typeof sendSlackSchema>;
+  const { message, channel, thread_ts } = args as { message: string; channel?: string; thread_ts?: string };
 
   const channelId = channelIdStore.getStore();
   const ctx = channelId ? boundContexts.get(channelId) : undefined;
@@ -74,10 +78,10 @@ async function handleSendSlack(args: Record<string, unknown>): Promise<string> {
   }
 }
 
-export const sendSlackTool: ToolRegistrationInput = {
+export const sendSlackTool: ToolDefinition = {
   name: 'send_slack',
   description: 'Send a message to the current Slack channel',
-  schema: sendSlackSchema,
+  parameters: sendSlackParameters,
   handler: handleSendSlack,
   scope: 'write',
 };

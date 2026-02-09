@@ -7,13 +7,17 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition } from '../types.js';
+import type { JsonSchema } from '../types.js';
 
-export const sendIMessageSchema = z.object({
-  message: z.string().describe('Message text to send'),
-  handle: z.string().optional().describe('Override recipient handle (phone/email)'),
-});
+const sendIMessageParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    message: { type: 'string', description: 'Message text to send' },
+    handle: { type: 'string', description: 'Override recipient handle (phone/email)' },
+  },
+  required: ['message'],
+};
 
 type SendFn = (handle: string, message: string) => Promise<void>;
 
@@ -49,7 +53,7 @@ async function handleSendIMessage(args: Record<string, unknown>): Promise<string
     return 'Error: iMessage only available on macOS';
   }
 
-  const { message, handle: overrideHandle } = args as z.infer<typeof sendIMessageSchema>;
+  const { message, handle: overrideHandle } = args as { message: string; handle?: string };
 
   const contextHandle = handleStore.getStore();
   const ctx = contextHandle ? boundContexts.get(contextHandle) : undefined;
@@ -75,10 +79,10 @@ async function handleSendIMessage(args: Record<string, unknown>): Promise<string
   }
 }
 
-export const sendIMessageTool: ToolRegistrationInput = {
+export const sendIMessageTool: ToolDefinition = {
   name: 'send_imessage',
   description: 'Send a message to the current iMessage conversation',
-  schema: sendIMessageSchema,
+  parameters: sendIMessageParameters,
   handler: handleSendIMessage,
   scope: 'write',
 };

@@ -16,12 +16,15 @@
 
 import type { ExternalMessage } from '../interface/types.js';
 import type { RouteServices } from '../router/types.js';
-import type { AgentMessage, AgentProgressEvent, HeadModelProvider, HeadModelResponse, ToolCall } from './types.js';
+import type { AgentMessage, AgentProgressEvent, AgentToolDefinition, HeadModelProvider, HeadModelResponse, ToolCall, ToolDefinition } from './types.js';
 import type { HeadModelSelector } from './HeadModelSelector.js';
-import type { ToolRegistry } from './ToolRegistry.js';
+import type { PolicyEngine } from '../policy/PolicyEngine.js';
+import type { EvalContext } from '../policy/types.js';
+import type { RateLimiter } from './RateLimiter.js';
+import type { ConversationStore } from './ConversationStore.js';
 import { ConversationState } from './ConversationState.js';
 import { ToolExecutor, type AgentLogger } from './ToolExecutor.js';
-import { buildSystemPrompt, type SystemPromptConfig } from './SystemPrompt.js';
+import { buildSystemPrompt, truncateInput, wrapUserMessage, type SystemPromptConfig } from './SystemPrompt.js';
 import { MediaPreprocessor, type MediaPreprocessorConfig } from './preprocessors/MediaPreprocessor.js';
 import { bindSendTelegram, unbindSendTelegram, runInChatContext } from './tools/send-telegram.js';
 import { bindSendSlack, unbindSendSlack, runInSlackContext } from './tools/send-slack.js';
@@ -48,29 +51,38 @@ export type OnProgressCallback = (event: AgentProgressEvent) => void;
 
 export interface AgentLoopDeps {
   headSelector: HeadModelSelector;
-  toolRegistry: ToolRegistry;
+  tools: ToolDefinition[];
   systemPromptConfig?: SystemPromptConfig;
   mediaPreprocessorConfig?: MediaPreprocessorConfig;
   onProgress?: OnProgressCallback;
+  policyEngine?: PolicyEngine;
+  rateLimiter?: RateLimiter;
+  conversationStore?: ConversationStore;
 }
 
 export class AgentLoop {
   private headSelector: HeadModelSelector;
-  private toolRegistry: ToolRegistry;
+  private tools: ToolDefinition[];
   private conversationState = new ConversationState();
+  private conversationStore: ConversationStore | undefined;
   private toolExecutor: ToolExecutor;
   private executedToolCalls = new Map<string, string>(); // idempotency cache
   private systemPromptConfig: SystemPromptConfig | undefined;
   private mediaPreprocessor: MediaPreprocessor;
   private onProgress: OnProgressCallback | undefined;
+  private policyEngine: PolicyEngine | undefined;
+  private rateLimiter: RateLimiter | undefined;
 
   constructor(deps: AgentLoopDeps) {
     this.headSelector = deps.headSelector;
-    this.toolRegistry = deps.toolRegistry;
+    this.tools = deps.tools;
     this.systemPromptConfig = deps.systemPromptConfig;
-    this.toolExecutor = new ToolExecutor((_level, _msg) => {});
+    this.toolExecutor = new ToolExecutor((_level, _msg) => {}, deps.tools);
     this.mediaPreprocessor = new MediaPreprocessor(deps.mediaPreprocessorConfig);
     this.onProgress = deps.onProgress;
+    this.policyEngine = deps.policyEngine;
+    this.rateLimiter = deps.rateLimiter;
+    this.conversationStore = deps.conversationStore;
   }
 
   setOnProgress(callback: OnProgressCallback | undefined): void {
@@ -78,7 +90,7 @@ export class AgentLoop {
   }
 
   setLogger(logger: AgentLogger): void {
-    this.toolExecutor = new ToolExecutor(logger);
+    this.toolExecutor = new ToolExecutor(logger, this.tools);
   }
 
   async process(message: ExternalMessage, services: RouteServices): Promise<void> {
@@ -86,8 +98,9 @@ export class AgentLoop {
     const jobId = message.id;
 
     // Check session expiry
-    if (this.conversationState.isSessionExpired(chatId)) {
-      this.conversationState.resetSession(chatId);
+    const backend = this.getConvBackend();
+    if (backend.isSessionExpired(chatId)) {
+      backend.resetSession(chatId);
     }
 
     // Emit job:created
@@ -137,10 +150,13 @@ export class AgentLoop {
       }
     }
 
-    // Add user message to conversation
-    this.conversationState.addMessage(chatId, {
+    // Apply input truncation and wrapping for prompt injection defense
+    content = truncateInput(content);
+
+    // Add user message to conversation with wrapped content
+    this.getConvBackend().addMessage(chatId, {
       role: 'user',
-      content,
+      content: wrapUserMessage(content),
     });
 
     // Bind channel-specific send tool
@@ -221,6 +237,14 @@ export class AgentLoop {
     return this.conversationState;
   }
 
+  /**
+   * Get conversation backend (store or state)
+   * If conversationStore is provided, use it; otherwise use in-memory conversationState
+   */
+  private getConvBackend(): ConversationStore | ConversationState {
+    return this.conversationStore ?? this.conversationState;
+  }
+
   private async runLoop(
     chatId: string,
     headModel: HeadModelProvider,
@@ -228,14 +252,20 @@ export class AgentLoop {
     sendFn: ChannelSendFn,
     jobId?: string,
   ): Promise<void> {
-    const tools = this.toolRegistry.list();
+    const tools: AgentToolDefinition[] = this.tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+      parameters: t.parameters,
+      scope: t.scope,
+    }));
     let invalidToolRetries = 0;
     const jid = jobId ?? chatId;
 
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
       // Build messages: system prompt + conversation history
       const systemPrompt = buildSystemPrompt(tools, this.systemPromptConfig);
-      const historyMessages = this.conversationState.getMessages(
+      const backend = this.getConvBackend();
+      const historyMessages = backend.getMessages(
         chatId,
         headModel.provider,
       );
@@ -249,7 +279,7 @@ export class AgentLoop {
 
       // No tool calls → final text response
       if (!response.toolCalls?.length) {
-        this.conversationState.addMessage(chatId, {
+        this.getConvBackend().addMessage(chatId, {
           role: 'assistant',
           content: response.content,
         });
@@ -274,7 +304,7 @@ export class AgentLoop {
       }
 
       // Has tool calls → execute them
-      this.conversationState.addMessage(chatId, {
+      this.getConvBackend().addMessage(chatId, {
         role: 'assistant',
         content: response.content,
         toolCalls: response.toolCalls,
@@ -309,11 +339,13 @@ export class AgentLoop {
     let hasInvalidTool = false;
     const jid = jobId ?? chatId;
 
+    const backend = this.getConvBackend();
+
     for (const toolCall of toolCalls) {
       // Idempotency: check if already executed
       const cached = this.executedToolCalls.get(toolCall.id);
       if (cached) {
-        this.conversationState.addMessage(chatId, {
+        backend.addMessage(chatId, {
           role: 'tool',
           content: cached,
           toolCallId: toolCall.id,
@@ -329,7 +361,100 @@ export class AgentLoop {
         timestamp: new Date().toISOString(),
       });
 
-      const result = await this.toolExecutor.execute(toolCall, this.toolRegistry);
+      // Rate limit check
+      if (this.rateLimiter) {
+        const rateCheck = this.rateLimiter.check(chatId, toolCall.name);
+        if (!rateCheck.allowed) {
+          const rateLimitResult = rateCheck.message ?? `Rate limit exceeded: ${toolCall.name}`;
+          backend.addMessage(chatId, {
+            role: 'tool',
+            content: rateLimitResult,
+            toolCallId: toolCall.id,
+          });
+          this.emitProgress({
+            type: 'job:progress',
+            jobId: jid,
+            data: {
+              kind: 'tool_end',
+              toolName: toolCall.name,
+              toolCallId: toolCall.id,
+              status: 'rejected',
+              latencyMs: 0,
+            },
+            timestamp: new Date().toISOString(),
+          });
+          continue;
+        }
+        this.rateLimiter.record(chatId, toolCall.name);
+      }
+
+      // Policy check
+      if (this.policyEngine) {
+        const evalContext: EvalContext = {
+          actions: [{
+            type: 'tool_call',
+            target: toolCall.name,
+            command: JSON.stringify(toolCall.arguments),
+          }],
+          projectPath: '',
+          riskLevel: 'none',
+        };
+
+        try {
+          const policyResult = this.policyEngine.evaluate(evalContext, jid);
+
+          if (policyResult.decision === 'reject') {
+            const rejectMsg = policyResult.reasons.length > 0
+              ? policyResult.reasons[0].message
+              : '도구 실행이 보안 정책에 의해 차단되었습니다';
+            backend.addMessage(chatId, {
+              role: 'tool',
+              content: rejectMsg,
+              toolCallId: toolCall.id,
+            });
+            this.emitProgress({
+              type: 'job:progress',
+              jobId: jid,
+              data: {
+                kind: 'tool_end',
+                toolName: toolCall.name,
+                toolCallId: toolCall.id,
+                status: 'rejected',
+                latencyMs: 0,
+              },
+              timestamp: new Date().toISOString(),
+            });
+            continue;
+          }
+
+          if (policyResult.decision === 'warn') {
+            services.logger('warn', `Policy warning for ${toolCall.name}: ${policyResult.reasons.map(r => r.message).join(', ')}`);
+          }
+        } catch (err) {
+          // PolicyEngine error → fail-closed (block tool execution)
+          services.logger('error', `PolicyEngine error: ${err instanceof Error ? err.message : String(err)}`);
+          backend.addMessage(chatId, {
+            role: 'tool',
+            content: '정책 엔진 오류로 도구 실행이 차단되었습니다.',
+            toolCallId: toolCall.id,
+          });
+          this.emitProgress({
+            type: 'job:progress',
+            jobId: jid,
+            data: {
+              kind: 'tool_end',
+              toolName: toolCall.name,
+              toolCallId: toolCall.id,
+              status: 'rejected',
+              latencyMs: 0,
+            },
+            timestamp: new Date().toISOString(),
+          });
+          continue;
+        }
+      }
+
+      const result = await this.toolExecutor.execute(toolCall);
 
       // Emit tool end progress
       this.emitProgress({
@@ -356,7 +481,7 @@ export class AgentLoop {
       }
       this.executedToolCalls.set(toolCall.id, result.content);
 
-      this.conversationState.addMessage(chatId, {
+      backend.addMessage(chatId, {
         role: 'tool',
         content: result.content,
         toolCallId: toolCall.id,
@@ -380,7 +505,12 @@ export class AgentLoop {
     headModel: HeadModelProvider,
     messages: AgentMessage[],
   ): Promise<HeadModelResponse> {
-    const tools = this.toolRegistry.list();
+    const tools: AgentToolDefinition[] = this.tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+      parameters: t.parameters,
+      scope: t.scope,
+    }));
 
     try {
       return await withTimeout(

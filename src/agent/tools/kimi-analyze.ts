@@ -5,8 +5,7 @@
  * AZ Kimi K2.5 coreAzOrchestrate() 활용
  */
 
-import { z } from 'zod';
-import type { ToolRegistrationInput } from '../ToolRegistry.js';
+import type { ToolDefinition, JsonSchema } from '../types.js';
 
 const ANALYSIS_TYPES = ['code-review', 'architecture', 'security', 'general'] as const;
 
@@ -17,13 +16,24 @@ const SYSTEM_PROMPTS: Record<typeof ANALYSIS_TYPES[number], string> = {
   'general': 'You are an AI analyst. Analyze the following content and provide insights, key points, and recommendations.',
 };
 
-export const kimiAnalyzeSchema = z.object({
-  content: z.string().describe('Content to analyze (code, document, etc.)'),
-  analysisType: z.enum(ANALYSIS_TYPES).describe('Type of analysis to perform'),
-});
+const kimiAnalyzeParameters: JsonSchema = {
+  type: 'object',
+  properties: {
+    content: { type: 'string', description: 'Content to analyze (code, document, etc.)' },
+    analysisType: {
+      type: 'string',
+      enum: ['code-review', 'architecture', 'security', 'general'],
+      description: 'Type of analysis to perform',
+    },
+  },
+  required: ['content', 'analysisType'],
+};
 
 async function handleKimiAnalyze(args: Record<string, unknown>): Promise<string> {
-  const { content, analysisType } = args as z.infer<typeof kimiAnalyzeSchema>;
+  const { content, analysisType } = args as {
+    content: string;
+    analysisType: 'code-review' | 'architecture' | 'security' | 'general';
+  };
 
   try {
     const { coreAzOrchestrate } = await import('../../lib/az/orchestration.js');
@@ -39,10 +49,10 @@ async function handleKimiAnalyze(args: Record<string, unknown>): Promise<string>
   }
 }
 
-export const kimiAnalyzeTool: ToolRegistrationInput = {
+export const kimiAnalyzeTool: ToolDefinition = {
   name: 'kimi_analyze',
   description: 'Analyze code or documents using Kimi K2.5 (supports: code-review, architecture, security, general)',
-  schema: kimiAnalyzeSchema,
+  parameters: kimiAnalyzeParameters,
   handler: handleKimiAnalyze,
   scope: 'read',
 };

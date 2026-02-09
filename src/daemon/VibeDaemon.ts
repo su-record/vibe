@@ -26,6 +26,9 @@ import {
 import { DaemonIPC } from './DaemonIPC.js';
 import { SessionPool } from './SessionPool.js';
 import { InterfaceManager } from './InterfaceManager.js';
+import { HeadModelSelector } from '../agent/HeadModelSelector.js';
+import { getAllTools } from '../agent/tools/index.js';
+import { runPreflight } from './preflight.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const VERSION = '0.1.0';
@@ -101,6 +104,18 @@ export class VibeDaemon {
       throw new Error('Daemon is already running');
     }
 
+    // Preflight checks
+    const preflight = await runPreflight();
+
+    for (const warning of preflight.warnings) {
+      this.log('warn', `[Preflight] ${warning.message}${warning.resolution ? ` → ${warning.resolution}` : ''}`);
+    }
+
+    if (!preflight.passed) {
+      const errorMsgs = preflight.errors.map((e) => `  - ${e.message}${e.resolution ? ` (${e.resolution})` : ''}`);
+      throw new Error(`Preflight failed:\n${errorMsgs.join('\n')}`);
+    }
+
     this.startTime = Date.now();
 
     // Generate auth token
@@ -114,6 +129,12 @@ export class VibeDaemon {
 
     // Start session pool
     this.sessionPool.start();
+
+    // Initialize agent pipeline (HeadModelSelector + Tools → SessionPool)
+    const headSelector = new HeadModelSelector();
+    const tools = getAllTools();
+    this.sessionPool.setAgentDeps({ headSelector, tools });
+    this.log('info', `Agent pipeline initialized (${tools.length} tools)`);
 
     // Write PID file
     this.writePidFile();

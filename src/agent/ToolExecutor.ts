@@ -3,15 +3,14 @@
  * Phase 2: Agent Core Loop
  *
  * 기능:
- * - Tool argument 검증 (Zod) → 실행 → 결과 정규화
+ * - Tool lookup via Map<name, ToolDefinition>
  * - 개별 tool timeout: 30초
  * - 결과 크기 제한: >10KB → 앞/뒤 1KB + truncate 마커
  * - 에러 메시지 템플릿 기반 변환
  * - 감사 로깅 (민감 필드 마스킹)
  */
 
-import type { ToolCall, ToolAuditEntry, ToolExecutionResult } from './types.js';
-import type { ToolRegistry } from './ToolRegistry.js';
+import type { ToolCall, ToolAuditEntry, ToolExecutionResult, ToolDefinition } from './types.js';
 
 const TOOL_TIMEOUT_MS = 30_000;
 const MAX_RESULT_SIZE = 10 * 1024; // 10KB
@@ -24,19 +23,23 @@ export type AgentLogger = (level: 'debug' | 'info' | 'warn' | 'error', message: 
 export class ToolExecutor {
   private auditLog: ToolAuditEntry[] = [];
   private logger: AgentLogger;
+  private toolMap: Map<string, ToolDefinition>;
 
-  constructor(logger: AgentLogger) {
+  constructor(logger: AgentLogger, tools: ToolDefinition[] = []) {
     this.logger = logger;
+    this.toolMap = new Map(tools.map((t) => [t.name, t]));
   }
 
-  async execute(
-    toolCall: ToolCall,
-    registry: ToolRegistry,
-  ): Promise<ToolExecutionResult> {
+  /** Update the tool map (e.g. when tools change) */
+  setTools(tools: ToolDefinition[]): void {
+    this.toolMap = new Map(tools.map((t) => [t.name, t]));
+  }
+
+  async execute(toolCall: ToolCall): Promise<ToolExecutionResult> {
     const startTime = Date.now();
 
     // Validate tool exists
-    const tool = registry.get(toolCall.name);
+    const tool = this.toolMap.get(toolCall.name);
     if (!tool) {
       return this.buildError(
         toolCall.name,
@@ -46,21 +49,10 @@ export class ToolExecutor {
       );
     }
 
-    // Validate arguments
-    const validation = registry.validate(toolCall.name, toolCall.arguments);
-    if (!validation.success) {
-      return this.buildError(
-        toolCall.name,
-        startTime,
-        `Invalid arguments: ${validation.error}`,
-        'validation',
-      );
-    }
-
-    // Execute with timeout
+    // Execute with timeout (handler receives raw args directly)
     try {
       const rawResult = await withTimeout(
-        tool.handler(validation.data),
+        tool.handler(toolCall.arguments),
         TOOL_TIMEOUT_MS,
         toolCall.name,
       );

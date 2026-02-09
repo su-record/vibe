@@ -3,12 +3,35 @@
  * Phase 3: Scenarios 5, 8, 9, 10
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { z } from 'zod';
-import { ToolRegistry } from '../ToolRegistry.js';
-import { registerAllTools } from '../tools/index.js';
+import { describe, it, expect, vi } from 'vitest';
+import { getAllTools } from '../tools/index.js';
 import { isPrivateIP, validateUrl } from '../tools/web-browse.js';
 import { bindSendTelegram, unbindSendTelegram, runInChatContext } from '../tools/send-telegram.js';
+import type { ToolDefinition, OpenAITool, AnthropicTool, JsonSchema } from '../types.js';
+import Ajv from 'ajv';
+
+// Helper functions for validation and conversion
+function validateToolArgs(tool: ToolDefinition, args: Record<string, unknown>): { success: boolean; error?: string } {
+  const ajv = new Ajv();
+  const validate = ajv.compile(tool.parameters);
+  const valid = validate(args);
+  return valid ? { success: true } : { success: false, error: ajv.errorsText(validate.errors) };
+}
+
+function toOpenAIFormat(tools: ToolDefinition[]): OpenAITool[] {
+  return tools.map((t) => ({
+    type: 'function' as const,
+    function: { name: t.name, description: t.description, parameters: t.parameters },
+  }));
+}
+
+function toAnthropicFormat(tools: ToolDefinition[]): AnthropicTool[] {
+  return tools.map((t) => ({
+    name: t.name,
+    description: t.description,
+    input_schema: t.parameters,
+  }));
+}
 
 describe('Phase 3: Tool Definitions', () => {
   // Scenario 5: web_browse SSRF 방지
@@ -57,32 +80,32 @@ describe('Phase 3: Tool Definitions', () => {
   // Scenario 8: Tool argument validation
   describe('Scenario 8: Tool argument validation', () => {
     it('should reject invalid google_search arguments', () => {
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
+      const tools = getAllTools();
+      const googleSearchTool = tools.find((t) => t.name === 'google_search')!;
 
-      const result = registry.validate('google_search', { query: 123 as unknown });
+      const result = validateToolArgs(googleSearchTool, { query: 123 as unknown });
       expect(result.success).toBe(false);
     });
 
     it('should accept valid google_search arguments', () => {
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
+      const tools = getAllTools();
+      const googleSearchTool = tools.find((t) => t.name === 'google_search')!;
 
-      const result = registry.validate('google_search', { query: 'test' });
+      const result = validateToolArgs(googleSearchTool, { query: 'test' });
       expect(result.success).toBe(true);
     });
 
     it('should validate kimi_analyze analysis types', () => {
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
+      const tools = getAllTools();
+      const kimiAnalyzeTool = tools.find((t) => t.name === 'kimi_analyze')!;
 
-      const valid = registry.validate('kimi_analyze', {
+      const valid = validateToolArgs(kimiAnalyzeTool, {
         content: 'code here',
         analysisType: 'security',
       });
       expect(valid.success).toBe(true);
 
-      const invalid = registry.validate('kimi_analyze', {
+      const invalid = validateToolArgs(kimiAnalyzeTool, {
         content: 'code here',
         analysisType: 'invalid-type',
       });
@@ -92,11 +115,10 @@ describe('Phase 3: Tool Definitions', () => {
 
   // Scenario 10: 전체 Tool 일괄 등록
   describe('Scenario 10: Register all tools', () => {
-    it('should register all 12 tools', () => {
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
+    it('should have all 13 tools', () => {
+      const tools = getAllTools();
 
-      expect(registry.size).toBe(12);
+      expect(tools.length).toBe(13);
 
       const expectedTools = [
         'claude_code',
@@ -111,33 +133,33 @@ describe('Phase 3: Tool Definitions', () => {
         'vision_analyze',
         'send_slack',
         'send_imessage',
+        'dm_pair',
       ];
 
+      const toolNames = tools.map((t) => t.name);
       for (const name of expectedTools) {
-        expect(registry.has(name)).toBe(true);
+        expect(toolNames).toContain(name);
       }
     });
 
     it('should have correct scopes', () => {
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
+      const tools = getAllTools();
+      const toolMap = new Map(tools.map((t) => [t.name, t]));
 
-      expect(registry.get('google_search')?.scope).toBe('read');
-      expect(registry.get('recall_memory')?.scope).toBe('read');
-      expect(registry.get('kimi_analyze')?.scope).toBe('read');
-      expect(registry.get('web_browse')?.scope).toBe('read');
-      expect(registry.get('save_memory')?.scope).toBe('write');
-      expect(registry.get('send_telegram')?.scope).toBe('write');
-      expect(registry.get('claude_code')?.scope).toBe('execute');
-      expect(registry.get('gemini_stt')?.scope).toBe('execute');
+      expect(toolMap.get('google_search')?.scope).toBe('read');
+      expect(toolMap.get('recall_memory')?.scope).toBe('read');
+      expect(toolMap.get('kimi_analyze')?.scope).toBe('read');
+      expect(toolMap.get('web_browse')?.scope).toBe('read');
+      expect(toolMap.get('save_memory')?.scope).toBe('write');
+      expect(toolMap.get('send_telegram')?.scope).toBe('write');
+      expect(toolMap.get('claude_code')?.scope).toBe('execute');
+      expect(toolMap.get('gemini_stt')?.scope).toBe('execute');
     });
 
     it('should generate valid OpenAI format for all tools', () => {
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
-
-      const openAITools = registry.toOpenAIFormat();
-      expect(openAITools).toHaveLength(12);
+      const tools = getAllTools();
+      const openAITools = toOpenAIFormat(tools);
+      expect(openAITools).toHaveLength(13);
 
       for (const tool of openAITools) {
         expect(tool.type).toBe('function');
@@ -148,11 +170,9 @@ describe('Phase 3: Tool Definitions', () => {
     });
 
     it('should generate valid Anthropic format for all tools', () => {
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
-
-      const anthropicTools = registry.toAnthropicFormat();
-      expect(anthropicTools).toHaveLength(12);
+      const tools = getAllTools();
+      const anthropicTools = toAnthropicFormat(tools);
+      expect(anthropicTools).toHaveLength(13);
 
       for (const tool of anthropicTools) {
         expect(tool.name).toBeTruthy();
@@ -166,11 +186,10 @@ describe('Phase 3: Tool Definitions', () => {
   describe('send_telegram binding', () => {
     it('should fail when not bound', async () => {
       unbindSendTelegram('nonexistent');
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
+      const tools = getAllTools();
+      const sendTelegramTool = tools.find((t) => t.name === 'send_telegram')!;
 
-      const tool = registry.get('send_telegram')!;
-      const result = await tool.handler({ text: 'test' });
+      const result = await sendTelegramTool.handler({ text: 'test' });
       expect(result).toContain('not bound');
     });
 
@@ -178,12 +197,11 @@ describe('Phase 3: Tool Definitions', () => {
       const mockSend = vi.fn().mockResolvedValue(undefined);
       bindSendTelegram('chat-123', mockSend);
 
-      const registry = new ToolRegistry();
-      registerAllTools(registry);
+      const tools = getAllTools();
+      const sendTelegramTool = tools.find((t) => t.name === 'send_telegram')!;
 
-      const tool = registry.get('send_telegram')!;
       // AsyncLocalStorage 컨텍스트 내에서 실행해야 chatId 접근 가능
-      const result = await runInChatContext('chat-123', () => tool.handler({ text: 'hello' }));
+      const result = await runInChatContext('chat-123', () => sendTelegramTool.handler({ text: 'hello' }));
       expect(result).toContain('Message sent');
       expect(mockSend).toHaveBeenCalledWith('chat-123', 'hello', { format: 'text' });
 
