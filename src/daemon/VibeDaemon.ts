@@ -121,6 +121,9 @@ export class VibeDaemon {
     // Setup signal handlers
     this.setupSignalHandlers();
 
+    // Connect session pool to interface manager for message routing
+    this.interfaceManager.setSessionPool(this.sessionPool);
+
     // Start enabled interfaces (slack, imessage, telegram, etc.)
     await this.interfaceManager.startEnabledInterfaces();
 

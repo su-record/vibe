@@ -10,6 +10,8 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import type { LogLevel } from './types.js';
 import type { BaseInterface } from '../interface/BaseInterface.js';
+import type { ExternalMessage } from '../interface/types.js';
+import type { SessionPool } from './SessionPool.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const INTERFACE_CONFIG = path.join(VIBE_DIR, 'interfaces.json');
@@ -26,9 +28,15 @@ type Logger = (level: LogLevel, message: string, data?: unknown) => void;
 export class InterfaceManager {
   private interfaces: Map<string, BaseInterface> = new Map();
   private logger: Logger;
+  private sessionPool?: SessionPool;
 
   constructor(logger: Logger) {
     this.logger = logger;
+  }
+
+  /** Attach session pool for message routing */
+  setSessionPool(pool: SessionPool): void {
+    this.sessionPool = pool;
   }
 
   async startEnabledInterfaces(): Promise<void> {
@@ -96,6 +104,47 @@ export class InterfaceManager {
     }
   }
 
+  private registerMessageHandler(name: string, iface: BaseInterface): void {
+    iface.onMessage(async (message: ExternalMessage) => {
+      this.logger('info', `[${name}] Message received from ${message.userId}: ${message.content.slice(0, 100)}`);
+
+      if (!this.sessionPool) {
+        this.logger('warn', `[${name}] No session pool attached, cannot process message`);
+        await iface.sendResponse({
+          messageId: message.id,
+          channel: message.channel,
+          chatId: message.chatId,
+          content: 'Vibe 데몬이 메시지를 수신했으나, 세션 풀이 아직 준비되지 않았습니다.',
+          format: 'text',
+        });
+        return;
+      }
+
+      try {
+        const session = this.sessionPool.getOrCreateSession(process.cwd());
+        const result = await this.sessionPool.sendRequest(session.id, message.content);
+        await iface.sendResponse({
+          messageId: message.id,
+          channel: message.channel,
+          chatId: message.chatId,
+          content: result,
+          format: 'markdown',
+        });
+      } catch (err) {
+        this.logger('error', `[${name}] Failed to process message`, {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        await iface.sendResponse({
+          messageId: message.id,
+          channel: message.channel,
+          chatId: message.chatId,
+          content: '처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+          format: 'text',
+        });
+      }
+    });
+  }
+
   private async startSlack(logger: Logger): Promise<void> {
     // Read from env vars first, then config file (vibe slack setup)
     let botToken = process.env.SLACK_BOT_TOKEN;
@@ -131,6 +180,7 @@ export class InterfaceManager {
     );
 
     await slack.start();
+    this.registerMessageHandler('slack', slack);
     this.interfaces.set('slack', slack);
     this.logger('info', 'Slack interface started');
   }
@@ -169,6 +219,7 @@ export class InterfaceManager {
     );
 
     await imessage.start();
+    this.registerMessageHandler('imessage', imessage);
     this.interfaces.set('imessage', imessage);
     this.logger('info', 'iMessage interface started');
   }
@@ -206,6 +257,7 @@ export class InterfaceManager {
     );
 
     await telegram.start();
+    this.registerMessageHandler('telegram', telegram);
     this.interfaces.set('telegram', telegram);
     this.logger('info', 'Telegram interface started');
   }
