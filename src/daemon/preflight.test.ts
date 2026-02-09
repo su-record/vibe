@@ -17,6 +17,7 @@ describe('Preflight', () => {
     delete process.env.VIBE_IMESSAGE_ENABLED;
     delete process.env.VIBE_VISION_ENABLED;
     delete process.env.VIBE_WEB_ENABLED;
+    delete process.env.VIBE_BROWSER_ENABLED;
   });
 
   afterEach(() => {
@@ -52,5 +53,55 @@ describe('Preflight', () => {
     await runPreflight();
     const elapsed = Date.now() - start;
     expect(elapsed).toBeLessThan(2000);
+  });
+
+  describe('macOS Permissions (OpenClaw pattern)', () => {
+    it('should skip macOS checks when channels are disabled', async () => {
+      const result = await runPreflight();
+      const macChecks = [...result.errors, ...result.warnings].filter(
+        (item) => ['imsg-binary', 'accessibility', 'playwright', 'playwright-chromium'].includes(item.check),
+      );
+      expect(macChecks).toHaveLength(0);
+    });
+
+    it('should check imsg binary when iMessage enabled', async () => {
+      if (process.platform !== 'darwin') return;
+      process.env.VIBE_IMESSAGE_ENABLED = 'true';
+      const result = await runPreflight();
+      const imsgItems = [...result.errors, ...result.warnings].filter(
+        (item) => item.check.startsWith('imsg'),
+      );
+      expect(imsgItems.length).toBeGreaterThan(0);
+      expect(imsgItems[0].resolution).toContain('Full Disk Access');
+    });
+
+    it('should not warn screen recording for vision (Gemini Live = WebSocket, no TCC)', async () => {
+      if (process.platform !== 'darwin') return;
+      process.env.VIBE_VISION_ENABLED = 'true';
+      process.env.GEMINI_API_KEY = 'test-key';
+      const result = await runPreflight();
+      const srWarning = result.warnings.find((w) => w.check === 'screen-recording');
+      expect(srWarning).toBeUndefined();
+    });
+
+    it('should warn accessibility when browser enabled', async () => {
+      if (process.platform !== 'darwin') return;
+      process.env.VIBE_BROWSER_ENABLED = 'true';
+      const result = await runPreflight();
+      const accWarning = result.warnings.find((w) => w.check === 'accessibility');
+      expect(accWarning).toBeDefined();
+      expect(accWarning?.resolution).toContain('x-apple.systempreferences');
+    });
+
+    it('should check playwright via filesystem, not execSync', async () => {
+      if (process.platform !== 'darwin') return;
+      process.env.VIBE_BROWSER_ENABLED = 'true';
+      const result = await runPreflight();
+      const pwItems = [...result.errors, ...result.warnings].filter(
+        (item) => item.check.startsWith('playwright'),
+      );
+      expect(pwItems.length).toBeGreaterThan(0);
+      expect(pwItems[0].resolution).toContain('playwright');
+    });
   });
 });

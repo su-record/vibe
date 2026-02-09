@@ -7,12 +7,14 @@
  * - Channel-specific configurations
  * - Port availability
  * - Database accessibility
+ * - macOS system permissions (Full Disk Access, Screen Recording, Accessibility)
  */
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as net from 'node:net';
+import { execSync } from 'node:child_process';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 
@@ -43,6 +45,11 @@ export async function runPreflight(): Promise<PreflightResult> {
 
   // 4. SQLite DB accessibility
   checkDatabaseAccess(errors, warnings);
+
+  // 5. macOS system permissions
+  if (process.platform === 'darwin') {
+    checkMacOSPermissions(errors, warnings);
+  }
 
   return {
     passed: errors.length === 0,
@@ -152,6 +159,74 @@ function isPortInUse(port: number): Promise<boolean> {
     });
     server.listen(port);
   });
+}
+
+function checkMacOSPermissions(errors: PreflightItem[], warnings: PreflightItem[]): void {
+  // OpenClaw pattern: Don't trigger TCC prompts in preflight (they'd attach to the parent
+  // process — Terminal/Cursor/IDE, not Vibe). Instead:
+  //   1. Check binary/tool availability (non-TCC, safe)
+  //   2. Inform user which permissions are needed + System Settings URL
+  //   3. Let actual usage handle permission failures with clear error messages
+
+  // 1. iMessage: imsg binary availability (Full Disk Access is on imsg, not Node)
+  if (process.env.VIBE_IMESSAGE_ENABLED === 'true' || process.env.VIBE_IMESSAGE_ENABLED === '1') {
+    checkImsgBinary(errors);
+  }
+
+  // 2. Browser automation — Playwright availability + permission guidance
+  if (process.env.VIBE_BROWSER_ENABLED === 'true' || process.env.VIBE_BROWSER_ENABLED === '1') {
+    checkPlaywrightAvailable(errors, warnings);
+    warnAccessibility(warnings);
+  }
+}
+
+/** Check imsg binary exists. Full Disk Access is granted to imsg, not to Node/Vibe. */
+function checkImsgBinary(errors: PreflightItem[]): void {
+  try {
+    execSync('which imsg', { stdio: 'pipe', timeout: 3000 });
+  } catch {
+    errors.push({
+      check: 'imsg-binary',
+      message: 'imsg CLI가 설치되어 있지 않습니다',
+      resolution: 'brew install plentyofcode/tap/imsg 또는 imsg 바이너리를 PATH에 추가\n'
+        + '  설치 후 Full Disk Access 권한 필요:\n'
+        + '  open "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"',
+    });
+  }
+}
+
+/** Inform user that Accessibility permission is needed for browser automation */
+function warnAccessibility(warnings: PreflightItem[]): void {
+  warnings.push({
+    check: 'accessibility',
+    message: '브라우저 자동화 시 Accessibility 권한이 필요할 수 있습니다',
+    resolution: '시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용 → 터미널 앱 추가\n'
+      + '  open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"',
+  });
+}
+
+/** Check Playwright + Chromium installed for browser automation */
+function checkPlaywrightAvailable(errors: PreflightItem[], warnings: PreflightItem[]): void {
+  // Check playwright module (fast, no TCC trigger)
+  const playwrightDir = path.join(process.cwd(), 'node_modules', 'playwright');
+  if (!fs.existsSync(playwrightDir)) {
+    errors.push({
+      check: 'playwright',
+      message: 'Playwright가 설치되어 있지 않습니다',
+      resolution: 'npm install playwright && npx playwright install chromium',
+    });
+    return;
+  }
+
+  // Check if chromium binary is downloaded
+  const chromiumMarker = path.join(os.homedir(), 'Library', 'Caches', 'ms-playwright');
+  if (!fs.existsSync(chromiumMarker)) {
+    warnings.push({
+      check: 'playwright-chromium',
+      message: 'Playwright Chromium 브라우저가 다운로드되지 않았습니다',
+      resolution: 'npx playwright install chromium',
+    });
+  }
 }
 
 function checkDatabaseAccess(errors: PreflightItem[], _warnings: PreflightItem[]): void {
