@@ -121,6 +121,9 @@ function isCircuitBreakerFailure(error: unknown): boolean {
 
   const msg = error.message.toLowerCase();
 
+  // HTTP 4xx (model not found, unauthorized, forbidden)
+  if (/\b40[134]\b/.test(error.message)) return true;
+
   // HTTP 5xx
   if (/\b5\d{2}\b/.test(error.message)) return true;
 

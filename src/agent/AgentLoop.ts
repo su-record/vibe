@@ -177,6 +177,20 @@ export class AgentLoop {
         this.headSelector.reportFailure(headModel, err);
         const errorMsg = err instanceof Error ? err.message : String(err);
         services.logger('error', `AgentLoop error: ${errorMsg}`);
+
+        // Immediate fallback to Claude when GPT fails
+        if (headModel.provider === 'gpt') {
+          services.logger('info', 'Falling back to Claude head model...');
+          const claudeModel = this.headSelector.getClaudeProvider();
+          try {
+            await this.runLoop(chatId, claudeModel, services, sendFn, jobId);
+            return;
+          } catch (fallbackErr) {
+            const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+            services.logger('error', `Claude fallback error: ${fallbackMsg}`);
+          }
+        }
+
         this.emitProgress({
           type: 'job:error',
           jobId,
