@@ -1,6 +1,6 @@
 {
   "name": "@su-record/core",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "description": "Personalized AI agent for Claude Code — 46 agents, 41+ tools, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
