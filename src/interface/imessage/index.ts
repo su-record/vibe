@@ -4,5 +4,5 @@
  */
 
 export { IMessageBot } from './IMessageBot.js';
-export { IMessageSender } from './IMessageSender.js';
+export { IMessageRpcClient, createIMessageRpcClient } from './IMessageRpcClient.js';
 export { IMessageFormatter } from './IMessageFormatter.js';

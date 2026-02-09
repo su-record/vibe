@@ -194,23 +194,25 @@ export class InterfaceManager {
     // Read from env var first, then config file (vibe imessage setup)
     // macOS에서는 allowedHandles 없어도 자동 시작 (전체 허용)
     let allowedHandles = (process.env.IMESSAGE_ALLOWED_HANDLES || '').split(',').filter(Boolean);
+    let cliPath = process.env.IMESSAGE_CLI_PATH || undefined;
 
-    if (allowedHandles.length === 0) {
-      try {
-        if (fs.existsSync(IMESSAGE_CONFIG)) {
-          const config = JSON.parse(fs.readFileSync(IMESSAGE_CONFIG, 'utf-8'));
-          if (Array.isArray(config?.allowedHandles) && config.allowedHandles.length > 0) {
-            allowedHandles = config.allowedHandles;
-          }
+    try {
+      if (fs.existsSync(IMESSAGE_CONFIG)) {
+        const config = JSON.parse(fs.readFileSync(IMESSAGE_CONFIG, 'utf-8'));
+        if (allowedHandles.length === 0 && Array.isArray(config?.allowedHandles) && config.allowedHandles.length > 0) {
+          allowedHandles = config.allowedHandles;
         }
-      } catch {
-        // ignore parse errors
+        if (!cliPath && config?.cliPath) {
+          cliPath = config.cliPath;
+        }
       }
+    } catch {
+      // ignore parse errors
     }
 
     const { IMessageBot } = await import('../interface/imessage/IMessageBot.js');
     const imessage = new IMessageBot(
-      { allowedHandles },
+      { allowedHandles, cliPath },
       logger,
     );
 

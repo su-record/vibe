@@ -96,7 +96,7 @@ export interface SlackConfig {
 
 export interface IMessageConfig {
   allowedHandles: string[];
-  pollingIntervalMs?: number;
+  cliPath?: string;
   dbPath?: string;
 }
 

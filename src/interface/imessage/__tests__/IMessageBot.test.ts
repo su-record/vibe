@@ -5,32 +5,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { IMessageConfig, InterfaceLogger } from '../../types.js';
 
-// Mock better-sqlite3 to prevent actual DB access
-vi.mock('better-sqlite3', () => ({
-  default: vi.fn(),
-}));
-
-// Mock fs/promises
-vi.mock('node:fs/promises', () => ({
-  readFile: vi.fn().mockRejectedValue(new Error('not found')),
-  writeFile: vi.fn().mockResolvedValue(undefined),
-  mkdir: vi.fn().mockResolvedValue(undefined),
-  unlink: vi.fn().mockResolvedValue(undefined),
-  stat: vi.fn().mockResolvedValue({ size: 100 }),
-}));
-
-// Mock IMessageSender
-vi.mock('../IMessageSender.js', () => ({
-  IMessageSender: {
-    send: vi.fn().mockResolvedValue(undefined),
-  },
+// Mock child_process.execFile for probe
+vi.mock('node:child_process', () => ({
+  execFile: vi.fn((_cmd: string, _args: string[], _opts: unknown, cb: (err: Error | null) => void) => {
+    cb(new Error('not found'));
+  }),
+  spawn: vi.fn(),
 }));
 
 describe('IMessageBot', () => {
   const mockLogger: InterfaceLogger = vi.fn();
   const config: IMessageConfig = {
     allowedHandles: ['+1234567890', 'user@example.com'],
-    pollingIntervalMs: 1000,
   };
 
   beforeEach(() => {
@@ -51,7 +37,6 @@ describe('IMessageBot', () => {
     it('validates phone number format', async () => {
       const { IMessageBot } = await import('../IMessageBot.js');
       const bot = new IMessageBot(config, mockLogger);
-      // Access private method via bracket notation
       expect(bot['isValidHandle']('+1234567890')).toBe(true);
       expect(bot['isValidHandle']('+1 (234) 567-890')).toBe(true);
       expect(bot['isValidHandle']('123')).toBe(false);
@@ -62,6 +47,23 @@ describe('IMessageBot', () => {
       const bot = new IMessageBot(config, mockLogger);
       expect(bot['isValidHandle']('user@example.com')).toBe(true);
       expect(bot['isValidHandle']('invalid-email')).toBe(false);
+    });
+  });
+
+  describe('authorization', () => {
+    it('allows all handles when allowedHandles is empty', async () => {
+      const { IMessageBot } = await import('../IMessageBot.js');
+      const emptyConfig: IMessageConfig = { allowedHandles: [] };
+      const bot = new IMessageBot(emptyConfig, mockLogger);
+      expect(bot['isAuthorizedHandle']('+9876543210')).toBe(true);
+    });
+
+    it('only allows listed handles', async () => {
+      const { IMessageBot } = await import('../IMessageBot.js');
+      const bot = new IMessageBot(config, mockLogger);
+      expect(bot['isAuthorizedHandle']('+1234567890')).toBe(true);
+      expect(bot['isAuthorizedHandle']('user@example.com')).toBe(true);
+      expect(bot['isAuthorizedHandle']('+9876543210')).toBe(false);
     });
   });
 });
