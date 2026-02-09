@@ -192,6 +192,7 @@ export class InterfaceManager {
     }
 
     // Read from env var first, then config file (vibe imessage setup)
+    // macOS에서는 allowedHandles 없어도 자동 시작 (전체 허용)
     let allowedHandles = (process.env.IMESSAGE_ALLOWED_HANDLES || '').split(',').filter(Boolean);
 
     if (allowedHandles.length === 0) {
@@ -205,11 +206,6 @@ export class InterfaceManager {
       } catch {
         // ignore parse errors
       }
-    }
-
-    if (allowedHandles.length === 0) {
-      this.logger('warn', 'iMessage: no allowed handles (env or ~/.vibe/imessage.json), skipping');
-      return;
     }
 
     const { IMessageBot } = await import('../interface/imessage/IMessageBot.js');

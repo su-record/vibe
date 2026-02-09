@@ -32,23 +32,9 @@ interface PrereqResult {
 function checkPrerequisites(name: string): PrereqResult {
   switch (name) {
     case 'imessage': {
+      // macOS만 지원, macOS이면 자동 활성화 (allowedHandles는 선택)
       if (process.platform !== 'darwin') {
         return { ok: false, reason: 'iMessage는 macOS에서만 사용할 수 있습니다.' };
-      }
-      // Check env var first, then config file (vibe imessage setup)
-      let hasHandles = !!process.env.IMESSAGE_ALLOWED_HANDLES;
-      if (!hasHandles) {
-        try {
-          if (fs.existsSync(IMESSAGE_CONFIG)) {
-            const config = JSON.parse(fs.readFileSync(IMESSAGE_CONFIG, 'utf-8'));
-            hasHandles = Array.isArray(config?.allowedHandles) && config.allowedHandles.length > 0;
-          }
-        } catch {
-          // ignore parse errors
-        }
-      }
-      if (!hasHandles) {
-        return { ok: false, reason: 'iMessage 핸들이 설정되지 않았습니다. vibe imessage setup <handle>로 설정하세요.' };
       }
       return { ok: true };
     }

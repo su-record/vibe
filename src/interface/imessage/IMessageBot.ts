@@ -286,6 +286,8 @@ export class IMessageBot extends BaseInterface {
   }
 
   private isAuthorizedHandle(handle: string): boolean {
+    // allowedHandles 비어있으면 전체 허용 (macOS 자동 연결)
+    if (this.config.allowedHandles.length === 0) return true;
     return this.config.allowedHandles.includes(handle);
   }
 
