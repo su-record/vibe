@@ -1,8 +1,8 @@
 // Tool for manually adding structured observations
 
-import { MemoryManager } from '../../lib/MemoryManager.js';
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
-import { ObservationType } from '../../lib/memory/ObservationStore.js';
+import { MemoryManager } from '../../infra/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+import { ObservationType } from '../../infra/lib/memory/ObservationStore.js';
 
 export const addObservationDefinition: ToolDefinition = {
   name: 'add_observation',

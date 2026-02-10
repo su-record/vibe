@@ -1,6 +1,6 @@
 // Time utility tool - completely independent
 
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 export const getCurrentTimeDefinition: ToolDefinition = {
   name: 'get_current_time',

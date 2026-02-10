@@ -1,11 +1,11 @@
 // Dashboard tools for self-evolution Phase 4
 
-import { MemoryStorage } from '../../lib/memory/MemoryStorage.js';
-import { GenerationRegistry } from '../../lib/evolution/GenerationRegistry.js';
-import { UsageTracker } from '../../lib/evolution/UsageTracker.js';
-import { LifecycleManager } from '../../lib/evolution/LifecycleManager.js';
-import { RollbackManager } from '../../lib/evolution/RollbackManager.js';
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { MemoryStorage } from '../../infra/lib/memory/MemoryStorage.js';
+import { GenerationRegistry } from '../../infra/lib/evolution/GenerationRegistry.js';
+import { UsageTracker } from '../../infra/lib/evolution/UsageTracker.js';
+import { LifecycleManager } from '../../infra/lib/evolution/LifecycleManager.js';
+import { RollbackManager } from '../../infra/lib/evolution/RollbackManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 // ============================================================================
 // core_evolution_status

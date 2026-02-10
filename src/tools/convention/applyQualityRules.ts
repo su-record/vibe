@@ -1,6 +1,6 @@
 // Convention management tool - completely independent
 
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 // Code Quality Standards
 const QUALITY_RULES = {

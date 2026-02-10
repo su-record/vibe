@@ -1,8 +1,8 @@
 // Reflection tools for self-evolution Phase 1
 // core_reflect_now, core_search_reflections, core_get_session_reflections
 
-import { MemoryManager } from '../../lib/MemoryManager.js';
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { MemoryManager } from '../../infra/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 // ============================================================================
 // core_reflect_now - 수동 reflection 트리거

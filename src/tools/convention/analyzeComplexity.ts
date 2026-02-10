@@ -1,8 +1,8 @@
 // Convention management tool - completely independent
 
 import { Project, ScriptKind } from "ts-morph";
-import { PythonParser } from '../../lib/PythonParser.js';
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { PythonParser } from '../../infra/lib/PythonParser.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, extname } from 'path';
 

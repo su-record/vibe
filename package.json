@@ -17,7 +17,7 @@
     "./tools/ui": "./dist/tools/ui/index.js",
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/interaction": "./dist/tools/interaction/index.js",
-    "./orchestrator": "./dist/orchestrator/index.js",
+    "./orchestrator": "./dist/infra/orchestrator/index.js",
     "./interface": {
       "types": "./dist/interface/index.d.ts",
       "default": "./dist/interface/index.js"
@@ -27,17 +27,17 @@
       "default": "./dist/router/index.js"
     },
     "./memory": {
-      "types": "./dist/lib/memory/index.d.ts",
-      "default": "./dist/lib/memory/index.js"
+      "types": "./dist/infra/lib/memory/index.d.ts",
+      "default": "./dist/infra/lib/memory/index.js"
     },
     "./policy": {
-      "types": "./dist/policy/index.d.ts",
-      "default": "./dist/policy/index.js"
+      "types": "./dist/infra/policy/index.d.ts",
+      "default": "./dist/infra/policy/index.js"
     },
-    "./lib/gpt": "./dist/lib/gpt-api.js",
-    "./lib/gemini": "./dist/lib/gemini-api.js",
-    "./lib/kimi": "./dist/lib/az-api.js",
-    "./lib/az": "./dist/lib/az-api.js"
+    "./lib/gpt": "./dist/infra/lib/gpt-api.js",
+    "./lib/gemini": "./dist/infra/lib/gemini-api.js",
+    "./lib/kimi": "./dist/infra/lib/az-api.js",
+    "./lib/az": "./dist/infra/lib/az-api.js"
   },
   "bin": {
     "vibe": "./dist/cli/index.js"
@@ -83,8 +83,7 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.6",
     "@clack/prompts": "^1.0.0",
-    "@clack/prompts": "^1.0.0",
-    "better-sqlite3": "^12.4.1",
+    "better-sqlite3": "^12.6.2",
     "chalk": "^5.3.0",
     "glob": "^13.0.1",
     "node-cron": "^3.0.3",

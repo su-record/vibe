@@ -33,7 +33,7 @@ export { reflectNow, searchReflections, getSessionReflections } from './memory/r
 // Reflection types
 export type {
   Reflection, ReflectionInput, ReflectionType, ReflectionTrigger,
-} from '../lib/memory/ReflectionStore.js';
+} from '../infra/lib/memory/ReflectionStore.js';
 
 // Session RAG types
 export type {
@@ -41,10 +41,10 @@ export type {
   Goal, GoalInput, Evidence, EvidenceInput,
   DecisionStatus, ConstraintType, ConstraintSeverity,
   GoalStatus, EvidenceType, EvidenceStatus, SessionRAGStats,
-} from '../lib/memory/SessionRAGStore.js';
+} from '../infra/lib/memory/SessionRAGStore.js';
 export type {
   RetrievalOptions, SessionRAGResult, ScoredItem, ScoreBreakdown,
-} from '../lib/memory/SessionRAGRetriever.js';
+} from '../infra/lib/memory/SessionRAGRetriever.js';
 
 // Semantic tools
 export { findSymbol } from './semantic/findSymbol.js';
@@ -92,10 +92,100 @@ export type {
 // Time tools
 export { getCurrentTime } from './time/getCurrentTime.js';
 
+// Browser tools (Phase 1: pc-control)
+export {
+  browserSnapshot,
+  browserAct,
+  browserNavigate,
+  browserScreenshot,
+  browserStatus,
+  shutdownBrowserService,
+  browserSnapshotDefinition,
+  browserActDefinition,
+  browserNavigateDefinition,
+  browserScreenshotDefinition,
+  browserStatusDefinition,
+} from './browser/index.js';
+
+// Google tools (Phase 2: pc-control)
+export {
+  googleAuth,
+  googleGmailSend,
+  googleGmailSearch,
+  googleGmailReport,
+  googleDriveUpload,
+  googleDriveDownload,
+  googleDriveList,
+  googleSheetsRead,
+  googleSheetsWrite,
+  googleCalendarList,
+  googleCalendarCreate,
+  shutdownGoogleService,
+  googleAuthDefinition,
+  googleGmailSendDefinition,
+  googleGmailSearchDefinition,
+  googleGmailReportDefinition,
+  googleDriveUploadDefinition,
+  googleDriveDownloadDefinition,
+  googleDriveListDefinition,
+  googleSheetsReadDefinition,
+  googleSheetsWriteDefinition,
+  googleCalendarListDefinition,
+  googleCalendarCreateDefinition,
+} from './google/index.js';
+
+// Voice tools (Phase 3: pc-control)
+export {
+  voiceStatus,
+  ttsSpeak,
+  sttTranscribe,
+  shutdownVoiceService,
+  voiceStatusDefinition,
+  ttsSpeakDefinition,
+  sttTranscribeDefinition,
+} from './voice/index.js';
+
+// Vision tools (Phase 4: pc-control)
+export {
+  visionStart,
+  visionStop,
+  visionMode,
+  visionSnapshot,
+  visionAsk,
+  shutdownVisionService,
+  visionStartDefinition,
+  visionStopDefinition,
+  visionModeDefinition,
+  visionSnapshotDefinition,
+  visionAskDefinition,
+} from './vision/index.js';
+
+// Sandbox tools (Phase 5: pc-control)
+export {
+  sandboxStatus,
+  sandboxExec,
+  sandboxBrowserTool,
+  shutdownSandboxService,
+  sandboxStatusDefinition,
+  sandboxExecDefinition,
+  sandboxBrowserDefinition,
+} from './sandbox/index.js';
+
+// Integration tools (Phase 6: pc-control)
+export {
+  pcStatus,
+  pcCommand,
+  pcModules,
+  shutdownIntegrationService,
+  pcStatusDefinition,
+  pcCommandDefinition,
+  pcModulesDefinition,
+} from './integration/index.js';
+
 // Lib exports (for advanced usage)
-export { MemoryManager } from '../lib/MemoryManager.js';
-export { ProjectCache } from '../lib/ProjectCache.js';
-export { ContextCompressor } from '../lib/ContextCompressor.js';
+export { MemoryManager } from '../infra/lib/MemoryManager.js';
+export { ProjectCache } from '../infra/lib/ProjectCache.js';
+export { ContextCompressor } from '../infra/lib/ContextCompressor.js';
 
 // UI/UX Design Intelligence
 export {
@@ -103,7 +193,7 @@ export {
   Bm25Engine,
   SearchService,
   DesignSystemGenerator,
-} from '../lib/ui-ux/index.js';
+} from '../infra/lib/ui-ux/index.js';
 
 export type {
   SearchDomain,
@@ -116,7 +206,7 @@ export type {
   DesignSystemStyle,
   DesignSystemLayout,
   DecisionRules,
-} from '../lib/ui-ux/types.js';
+} from '../infra/lib/ui-ux/types.js';
 
 // Model routing & iteration tracking (v2.5.7)
 export {
@@ -125,7 +215,7 @@ export {
   selectAgentTier,
   extractComplexitySignals,
   calculateComplexityScore,
-} from '../lib/ModelRouter.js';
+} from '../infra/lib/ModelRouter.js';
 
 export {
   startIteration,
@@ -139,14 +229,14 @@ export {
   formatPhaseComplete,
   formatIterationComplete,
   extractPhaseNames,
-} from '../lib/IterationTracker.js';
+} from '../infra/lib/IterationTracker.js';
 
 export {
   validateSkillQuality,
   validateBeforeSave,
   classifySkill,
   suggestPrincipleFormat,
-} from '../lib/SkillQualityGate.js';
+} from '../infra/lib/SkillQualityGate.js';
 
 // Orchestrate workflow (v2.5.11)
 export {
@@ -156,7 +246,7 @@ export {
   createVerificationChecklist,
   formatOrchestrationStatus,
   shouldRunInBackground,
-} from '../lib/OrchestrateWorkflow.js';
+} from '../infra/lib/OrchestrateWorkflow.js';
 
 // UltraQA (v2.5.11)
 export {
@@ -169,7 +259,7 @@ export {
   formatQAStatus,
   parseQAGoals,
   describeUltraQAWorkflow,
-} from '../lib/UltraQA.js';
+} from '../infra/lib/UltraQA.js';
 
 // DeepInit (v2.5.11)
 export {
@@ -180,7 +270,7 @@ export {
   preserveManualNotes,
   generateNavigationHeader,
   describeDeepInitWorkflow,
-} from '../lib/DeepInit.js';
+} from '../infra/lib/DeepInit.js';
 
 // Skill Frontmatter (v2.5.11)
 export {
@@ -191,7 +281,7 @@ export {
   mergeWithDefaults,
   extractTriggersFromTemplate,
   substituteTemplateVars,
-} from '../lib/SkillFrontmatter.js';
+} from '../infra/lib/SkillFrontmatter.js';
 
 // Skill Repository (v2.5.12)
 export {
@@ -201,9 +291,9 @@ export {
   ensureDefaultSkills,
   seedInlineDefaultSkills,
   DEFAULT_SKILLS,
-} from '../lib/SkillRepository.js';
+} from '../infra/lib/SkillRepository.js';
 
-export type { SkillInfo, SkillRepositoryConfig } from '../lib/SkillRepository.js';
+export type { SkillInfo, SkillRepositoryConfig } from '../infra/lib/SkillRepository.js';
 
 // Rule Build System (v2.5.15)
 export {
@@ -216,7 +306,7 @@ export {
   getImpactColor,
   compareImpact,
   IMPACT_ORDER,
-} from '../lib/RuleBuildSystem.js';
+} from '../infra/lib/RuleBuildSystem.js';
 
 export type {
   ImpactLevel,
@@ -226,7 +316,7 @@ export type {
   RulesDocument,
   RuleFile,
   TestCase,
-} from '../lib/RuleBuildSystem.js';
+} from '../infra/lib/RuleBuildSystem.js';
 
 // Framework Detector (v2.5.15)
 export {
@@ -237,13 +327,13 @@ export {
   isFramework,
   getSupportedFrameworks,
   FRAMEWORKS,
-} from '../lib/FrameworkDetector.js';
+} from '../infra/lib/FrameworkDetector.js';
 
 export type {
   FrameworkInfo,
   PackageJson,
   DetectionResult,
-} from '../lib/FrameworkDetector.js';
+} from '../infra/lib/FrameworkDetector.js';
 
 // PRD-to-SPEC Tools (v2.6.0)
 export {
@@ -305,7 +395,7 @@ export {
   raceReview,
   formatRaceResult,
   checkLLMAvailability,
-} from '../lib/ReviewRace.js';
+} from '../infra/lib/ReviewRace.js';
 
 export type {
   RaceReviewResult,
@@ -316,4 +406,4 @@ export type {
   RaceReviewIssue,
   RaceLLMResult,
   RaceCrossValidatedIssue,
-} from '../lib/ReviewRace.js';
+} from '../infra/lib/ReviewRace.js';

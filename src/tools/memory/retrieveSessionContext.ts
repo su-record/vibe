@@ -1,7 +1,7 @@
 // Retrieve relevant session context via hybrid search
 
-import { MemoryManager } from '../../lib/MemoryManager.js';
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { MemoryManager } from '../../infra/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 export const retrieveSessionContextDefinition: ToolDefinition = {
   name: 'retrieve_session_context',

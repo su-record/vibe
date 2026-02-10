@@ -7,7 +7,7 @@ import {
   savePriorityConfig,
   type EmbeddingProvider,
   type KimiProvider,
-} from '../../lib/priority-config.js';
+} from '../../infra/lib/priority-config.js';
 
 /**
  * 임베딩 우선순위 설정
