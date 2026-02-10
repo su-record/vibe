@@ -213,13 +213,11 @@ describe('Evolution CLI commands', () => {
     expect(mod.evolutionHelp).toBeDefined();
   });
 
-  it('should have evolution case in CLI router', () => {
+  it('should NOT have evolution case in CLI router (removed: internal automation)', () => {
     const cliPath = join(__dirname, '..', '..', '..', 'cli', 'index.ts');
     const content = readFileSync(cliPath, 'utf8');
-    expect(content).toContain("case 'evolution'");
-    expect(content).toContain('evolutionStatus');
-    expect(content).toContain('evolutionApprove');
-    expect(content).toContain('evolutionDisableAll');
+    // Evolution commands removed from CLI — handled by hooks/automation
+    expect(content).not.toContain("case 'evolution'");
   });
 });
 

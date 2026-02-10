@@ -35,15 +35,14 @@ import {
   showPriorityConfig,
 } from './llm.js';
 import {
-  showHud,
-  startHud,
-  updateHudPhase,
-  manageHudAgent,
-  updateHudContext,
-  resetHud,
-  showHudHelp,
-} from './hud.js';
-import { init, setup, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceEnableConfigured, interfaceDisableAll, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp, autostartEnable, autostartDisable, autostartStatus, autostartHelp, slackSetup, slackChannel, slackStatus, slackHelp, imessageSetup, imessageStatus, imessageHelp, evolutionStatus, evolutionList, evolutionApprove, evolutionReject, evolutionDisable, evolutionRollback, evolutionDisableAll, evolutionRun, evolutionInsights, evolutionGaps, evolutionHelp } from './commands/index.js';
+  init, setup, update, remove, showHelp, showStatus, showVersion,
+  syncLogin, syncPush, syncPull, syncStatus, syncLogout,
+  daemonStart, daemonStop, daemonRestart,
+  telegramSetup, telegramChat, telegramStatus, telegramHelp,
+  slackSetup, slackChannel, slackStatus, slackHelp,
+  interfaceEnableConfigured, interfaceDisableAll,
+  autostartEnable, autostartDisable,
+} from './commands/index.js';
 
 // ============================================================================
 // Constants
@@ -327,64 +326,6 @@ Config Commands:
     showStatus();
     break;
 
-  // vibe daemon status (하위 호환)
-  case 'daemon': {
-    const daemonSub = positionalArgs[1];
-    if (daemonSub === 'status') {
-      daemonStatus();
-    } else {
-      console.log('vibe start / stop / restart 를 사용하세요.');
-    }
-    break;
-  }
-
-  // vibe job <subcommand>
-  case 'job': {
-    const jobSub = positionalArgs[1];
-    switch (jobSub) {
-      case 'list':
-        jobList();
-        break;
-      case 'status':
-        jobStatus(positionalArgs[2]);
-        break;
-      case 'cancel':
-        jobCancel(positionalArgs[2]);
-        break;
-      case 'help':
-        jobHelp();
-        break;
-      default:
-        jobHelp();
-    }
-    break;
-  }
-
-  // vibe policy <subcommand>
-  case 'policy': {
-    const policySub = positionalArgs[1];
-    switch (policySub) {
-      case 'list':
-        policyList();
-        break;
-      case 'enable':
-        policyEnable(positionalArgs[2]);
-        break;
-      case 'disable':
-        policyDisable(positionalArgs[2]);
-        break;
-      case 'set':
-        policySet(positionalArgs[2], positionalArgs[3]);
-        break;
-      case 'help':
-        policyHelp();
-        break;
-      default:
-        policyHelp();
-    }
-    break;
-  }
-
   // vibe telegram <subcommand>
   case 'telegram': {
     const telegramSub = positionalArgs[1];
@@ -425,104 +366,6 @@ Config Commands:
         break;
       default:
         slackHelp();
-    }
-    break;
-  }
-
-  // vibe imessage <subcommand>
-  case 'imessage': {
-    const imessageSub = positionalArgs[1];
-    switch (imessageSub) {
-      case 'setup':
-        imessageSetup(positionalArgs[2]);
-        break;
-      case 'status':
-        imessageStatus();
-        break;
-      case 'help':
-        imessageHelp();
-        break;
-      default:
-        imessageHelp();
-    }
-    break;
-  }
-
-  // vibe interface <subcommand>
-  case 'interface': {
-    const ifaceSub = positionalArgs[1];
-    switch (ifaceSub) {
-      case 'list':
-        interfaceList();
-        break;
-      case 'enable':
-        interfaceEnable(positionalArgs[2]);
-        break;
-      case 'disable':
-        interfaceDisable(positionalArgs[2]);
-        break;
-      case 'help':
-        interfaceHelp();
-        break;
-      default:
-        interfaceHelp();
-    }
-    break;
-  }
-
-  // vibe webhook <subcommand>
-  case 'webhook': {
-    const webhookSub = positionalArgs[1];
-    switch (webhookSub) {
-      case 'add':
-        webhookAdd(positionalArgs[2], positionalArgs[3], positionalArgs[4]);
-        break;
-      case 'list':
-        webhookList();
-        break;
-      case 'remove':
-        webhookRemove(positionalArgs[2]);
-        break;
-      case 'help':
-        webhookHelp();
-        break;
-      default:
-        webhookHelp();
-    }
-    break;
-  }
-
-  // vibe device <subcommand>
-  case 'device': {
-    const deviceSub = positionalArgs[1];
-    switch (deviceSub) {
-      case 'list':
-        deviceList();
-        break;
-      case 'rename':
-        deviceRename(positionalArgs.slice(2).join(' '));
-        break;
-      case 'remove':
-        deviceRemove(positionalArgs[2]);
-        break;
-      case 'help':
-        deviceHelp();
-        break;
-      default:
-        deviceHelp();
-    }
-    break;
-  }
-
-  // vibe autostart (하위 호환 → vibe start/stop 안내)
-  case 'autostart': {
-    const autostartSub = positionalArgs[1];
-    switch (autostartSub) {
-      case 'status':
-        autostartStatus();
-        break;
-      default:
-        console.log('vibe start / stop 을 사용하세요. 상태 확인: vibe autostart status');
     }
     break;
   }
@@ -576,64 +419,6 @@ vibe sync — Google Drive AppData 인증/메모리 동기화
     break;
   }
 
-  // vibe hud <subcommand>
-  case 'hud': {
-    const subCommand = positionalArgs[1];
-    switch (subCommand) {
-      case 'show':
-        showHud(positionalArgs[2] || 'focused');
-        break;
-      case 'start':
-        startHud(positionalArgs[2] || 'ultrawork', positionalArgs[3]);
-        break;
-      case 'phase': {
-        const current = parseInt(positionalArgs[2], 10) || 1;
-        const total = parseInt(positionalArgs[3], 10) || current;
-        const phaseName = positionalArgs.slice(4).join(' ') || undefined;
-        updateHudPhase(current, total, phaseName);
-        break;
-      }
-      case 'agent': {
-        const action = positionalArgs[2] as 'add' | 'remove' | 'clear';
-        if (action === 'add') {
-          manageHudAgent('add', positionalArgs[3], positionalArgs[4]);
-        } else if (action === 'remove') {
-          manageHudAgent('remove', positionalArgs[3]);
-        } else if (action === 'clear') {
-          manageHudAgent('clear');
-        } else {
-          console.log(`
-Agent Commands:
-  vibe hud agent add <name> [model]  Add agent (default: sonnet)
-  vibe hud agent remove <name>       Remove agent
-  vibe hud agent clear               Clear all agents
-          `);
-        }
-        break;
-      }
-      case 'context': {
-        const used = parseInt(positionalArgs[2], 10) || 0;
-        const total = parseInt(positionalArgs[3], 10) || 200000;
-        updateHudContext(used, total);
-        break;
-      }
-      case 'reset':
-      case 'done':
-        resetHud();
-        break;
-      case 'help':
-        showHudHelp();
-        break;
-      case undefined:
-        // No subcommand: show focused status by default
-        showHud('focused');
-        break;
-      default:
-        showHudHelp();
-    }
-    break;
-  }
-
   // vibe start = auto-enable configured interfaces + daemon start + autostart enable
   case 'start':
     interfaceEnableConfigured();
@@ -653,46 +438,6 @@ Agent Commands:
     daemonRestart();
     break;
 
-  // vibe evolution <subcommand>
-  case 'evolution': {
-    const evoSub = positionalArgs[1];
-    switch (evoSub) {
-      case 'status':
-        evolutionStatus();
-        break;
-      case 'list':
-        evolutionList();
-        break;
-      case 'approve':
-        evolutionApprove(positionalArgs[2]);
-        break;
-      case 'reject':
-        evolutionReject(positionalArgs[2]);
-        break;
-      case 'disable':
-        evolutionDisable(positionalArgs[2]);
-        break;
-      case 'rollback':
-        evolutionRollback(positionalArgs[2]);
-        break;
-      case 'disable-all':
-        evolutionDisableAll();
-        break;
-      case 'run':
-        evolutionRun();
-        break;
-      case 'insights':
-        evolutionInsights();
-        break;
-      case 'gaps':
-        evolutionGaps();
-        break;
-      default:
-        evolutionHelp();
-    }
-    break;
-  }
-
   case 'version':
   case '-v':
   case '--version':
@@ -711,35 +456,18 @@ Agent Commands:
 ❌ Unknown command: ${command}
 
 Available commands:
-  vibe start              데몬 시작 + 인터페이스 자동 활성화 + 부팅 자동시작
-  vibe stop               데몬 중지 + 인터페이스 비활성화 + 자동시작 해제
-  vibe restart            데몬 재시작
-  vibe setup              Interactive setup wizard
-  vibe init               Initialize project
-  vibe update             Update settings
-  vibe status             Show status
+  vibe setup              셋업 위자드
+  vibe start / stop       데몬 시작/중지
+  vibe status             전체 상태 확인
+  vibe sync <cmd>         클라우드 동기화
 
-  vibe telegram <cmd>     Telegram bot (setup, chat, status)
-  vibe slack <cmd>        Slack bot (setup, channel, status)
-  vibe imessage <cmd>     iMessage (setup, status) — macOS only
-  vibe interface <cmd>    Interface management (list, enable, disable)
-  vibe webhook <cmd>      Webhook management (add, list, remove)
+  vibe gpt <cmd>          GPT (auth, key, status, logout)
+  vibe gemini <cmd>       Gemini (auth, key, status, logout)
+  vibe az <cmd>           AZ (key, status, logout)
+  vibe kimi <cmd>         Kimi (key, status, logout)
 
-  vibe job <cmd>          Job commands (list, status, cancel)
-  vibe policy <cmd>       Policy commands (list, enable, disable, set)
-  vibe device <cmd>       Device management (list, rename, remove)
-  vibe sync <cmd>         인증/메모리 동기화 (login, push, pull, status, logout)
-  vibe hud <cmd>          HUD status (show, start, phase, agent, reset)
-
-  vibe gpt <cmd>          GPT commands (auth, key, status, logout)
-  vibe gemini <cmd>       Gemini commands (auth, key, status, logout)
-  vibe az <cmd>           AZ commands (key, status, logout)
-  vibe kimi <cmd>         Kimi commands (key, status, logout)
-  vibe config <cmd>       Priority config (embedding-priority, kimi-priority, show)
-
-  vibe remove             Remove core
-  vibe help               Help
-  vibe version            Version info
+  vibe telegram <cmd>     Telegram (setup, chat, status)
+  vibe slack <cmd>        Slack (setup, channel, status)
 
 Usage: vibe help
     `);

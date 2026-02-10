@@ -14,9 +14,6 @@ export { GeminiVision } from './vision/GeminiVision.js';
 export { ScreenCapture } from './vision/ScreenCapture.js';
 export { SlackBot } from './slack/SlackBot.js';
 export { SlackFormatter } from './slack/SlackFormatter.js';
-export { IMessageBot } from './imessage/IMessageBot.js';
-export { IMessageRpcClient, createIMessageRpcClient } from './imessage/IMessageRpcClient.js';
-export { IMessageFormatter } from './imessage/IMessageFormatter.js';
 
 export type {
   ExternalInterface,
@@ -27,7 +24,6 @@ export type {
   InterfaceInfo,
   TelegramConfig,
   SlackConfig,
-  IMessageConfig,
   WebServerConfig,
   WebSocketMessage,
   WebhookConfig,

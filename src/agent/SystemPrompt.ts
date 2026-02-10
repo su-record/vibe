@@ -7,7 +7,7 @@
  * - 사용 가능한 tool 목록 주입
  * - 사용자 컨텍스트 (이름, 선호 언어, 시간대)
  * - 도구 사용 가이드라인 (사용 시점, 금지 행위, 사고 과정)
- * - 채널별 컨텍스트 (Telegram: 모바일 친화, Slack: 팀 협업, iMessage: 개인)
+ * - 채널별 컨텍스트 (Telegram: 모바일 친화, Slack: 팀 협업)
  * - 프롬프트 인젝션 방어 (사용자 입력 경계 분리)
  * - 입력 길이 제한 (10,000자)
  */
@@ -70,7 +70,7 @@ ${toolList}
 - **화면 캡처/이미지 분석** → vision_capture, vision_analyze
 - **웹 페이지 탐색** → web_browse
 - **메모리 저장/검색** → manage_memory
-- **메시지 전송** → send_telegram, send_slack, send_imessage (채널별)
+- **메시지 전송** → send_telegram, send_slack (채널별)
 
 ### 도구 사용 원칙
 1. 단순 대화나 일반 지식 질문은 도구 없이 직접 답변하세요.
@@ -108,8 +108,6 @@ function getChannelContext(channel?: ChannelType): string {
       return '- 채널: Telegram (모바일 친화적 — 짧은 응답, 마크다운 사용)';
     case 'slack':
       return '- 채널: Slack (팀 협업 — 스레드 활용, 구조화된 응답)';
-    case 'imessage':
-      return '- 채널: iMessage (개인 — 간결한 대화체)';
     case 'web':
       return '- 채널: Web (풍부한 서식 지원)';
     default:

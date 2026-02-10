@@ -3,7 +3,6 @@
  * Phase 4: External Interface
  *
  * Enable validates prerequisites:
- * - imessage: macOS only
  * - slack: SLACK_BOT_TOKEN + SLACK_APP_TOKEN required
  * - telegram: TELEGRAM_BOT_TOKEN required
  */
@@ -16,9 +15,8 @@ const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const INTERFACE_CONFIG = path.join(VIBE_DIR, 'interfaces.json');
 const TELEGRAM_CONFIG = path.join(VIBE_DIR, 'telegram.json');
 const SLACK_CONFIG = path.join(VIBE_DIR, 'slack.json');
-const IMESSAGE_CONFIG = path.join(VIBE_DIR, 'imessage.json');
 
-const VALID_INTERFACES = ['telegram', 'web', 'webhook', 'slack', 'imessage'] as const;
+const VALID_INTERFACES = ['telegram', 'web', 'webhook', 'slack'] as const;
 
 interface InterfaceState {
   [name: string]: { enabled: boolean; lastUpdated: string };
@@ -31,14 +29,6 @@ interface PrereqResult {
 
 function checkPrerequisites(name: string): PrereqResult {
   switch (name) {
-    case 'imessage': {
-      // macOS만 지원, macOS이면 자동 활성화 (allowedHandles는 선택)
-      if (process.platform !== 'darwin') {
-        return { ok: false, reason: 'iMessage는 macOS에서만 사용할 수 있습니다.' };
-      }
-      return { ok: true };
-    }
-
     case 'slack': {
       // Check env vars first, then config file (vibe slack setup)
       let hasSlackTokens = !!process.env.SLACK_BOT_TOKEN && !!process.env.SLACK_APP_TOKEN;
@@ -199,6 +189,5 @@ Interfaces: ${VALID_INTERFACES.join(', ')}
 Prerequisites:
   telegram   vibe telegram setup <token>
   slack      vibe slack setup <bot-token> <app-token>
-  imessage   macOS only + vibe imessage setup <handle>
   `);
 }

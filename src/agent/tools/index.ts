@@ -16,7 +16,6 @@ import { saveMemoryTool, recallMemoryTool } from './manage-memory.js';
 import { visionCaptureTool } from './vision-capture.js';
 import { visionAnalyzeTool } from './vision-analyze.js';
 import { sendSlackTool } from './send-slack.js';
-import { sendIMessageTool } from './send-imessage.js';
 import { dmPairTool } from './dm-pair.js';
 
 const ALL_TOOLS: ToolDefinition[] = [
@@ -31,7 +30,6 @@ const ALL_TOOLS: ToolDefinition[] = [
   visionCaptureTool,
   visionAnalyzeTool,
   sendSlackTool,
-  sendIMessageTool,
   dmPairTool,
 ];
 
@@ -52,6 +50,5 @@ export {
   visionCaptureTool,
   visionAnalyzeTool,
   sendSlackTool,
-  sendIMessageTool,
   dmPairTool,
 };

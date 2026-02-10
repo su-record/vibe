@@ -36,12 +36,12 @@ const parametersSchema: JsonSchema = {
   properties: {
     sourceChannel: {
       type: 'string',
-      enum: ['telegram', 'slack', 'imessage', 'web'],
+      enum: ['telegram', 'slack', 'web'],
       description: 'Source channel',
     },
     targetChannel: {
       type: 'string',
-      enum: ['telegram', 'slack', 'imessage', 'web'],
+      enum: ['telegram', 'slack', 'web'],
       description: 'Target channel',
     },
     targetChatId: {

@@ -156,7 +156,7 @@ export class VibeDaemon {
     // Connect session pool to interface manager for message routing
     this.interfaceManager.setSessionPool(this.sessionPool);
 
-    // Start enabled interfaces (slack, imessage, telegram, etc.)
+    // Start enabled interfaces (slack, telegram, etc.)
     await this.interfaceManager.startEnabledInterfaces();
 
     this.log('info', `Vibe Daemon v${VERSION} started (PID: ${process.pid})`);

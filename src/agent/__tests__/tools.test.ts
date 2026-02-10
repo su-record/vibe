@@ -115,10 +115,10 @@ describe('Phase 3: Tool Definitions', () => {
 
   // Scenario 10: 전체 Tool 일괄 등록
   describe('Scenario 10: Register all tools', () => {
-    it('should have all 13 tools', () => {
+    it('should have all 12 tools', () => {
       const tools = getAllTools();
 
-      expect(tools.length).toBe(13);
+      expect(tools.length).toBe(12);
 
       const expectedTools = [
         'claude_code',
@@ -132,7 +132,6 @@ describe('Phase 3: Tool Definitions', () => {
         'vision_capture',
         'vision_analyze',
         'send_slack',
-        'send_imessage',
         'dm_pair',
       ];
 
@@ -159,7 +158,7 @@ describe('Phase 3: Tool Definitions', () => {
     it('should generate valid OpenAI format for all tools', () => {
       const tools = getAllTools();
       const openAITools = toOpenAIFormat(tools);
-      expect(openAITools).toHaveLength(13);
+      expect(openAITools).toHaveLength(12);
 
       for (const tool of openAITools) {
         expect(tool.type).toBe('function');
@@ -172,7 +171,7 @@ describe('Phase 3: Tool Definitions', () => {
     it('should generate valid Anthropic format for all tools', () => {
       const tools = getAllTools();
       const anthropicTools = toAnthropicFormat(tools);
-      expect(anthropicTools).toHaveLength(13);
+      expect(anthropicTools).toHaveLength(12);
 
       for (const tool of anthropicTools) {
         expect(tool.name).toBeTruthy();

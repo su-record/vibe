@@ -143,20 +143,22 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 
 | Command | Description |
 |---------|-------------|
-| `vibe setup` | Interactive setup wizard (LLM auth + priority + init) |
-| `vibe init` | Initialize project |
-| `vibe update` | Update settings |
-| `vibe status` | Show status |
-| `vibe sync <cmd>` | 인증/메모리 동기화 (login, push, pull, status, logout) |
-| `vibe hud <cmd>` | HUD status (show, start, phase, agent, reset) |
-| `vibe gpt <cmd>` | GPT commands (auth, key, status, logout) |
-| `vibe gemini <cmd>` | Gemini commands (auth, key, status, logout) |
-| `vibe az <cmd>` | AZ (Kimi K2.5) commands (key, status, logout) |
-| `vibe kimi <cmd>` | Kimi Direct (Moonshot) commands (key, status, logout) |
-| `vibe config <cmd>` | Provider priority config (embedding-priority, kimi-priority, show) |
-| `vibe remove` | Remove core |
-| `vibe help` | Help |
-| `vibe version` | Version info |
+| `vibe setup` | 셋업 위자드 (인증, 채널, 설정 한번에) |
+| `vibe start / stop` | 데몬 시작/중지 (인터페이스 자동 관리) |
+| `vibe status` | 전체 상태 확인 (LLM, Agent, Sentinel 통합) |
+| `vibe sync <cmd>` | 클라우드 동기화 (login, push, pull, status, logout) |
+| `vibe init` | 프로젝트 초기화 |
+| `vibe update` | 설정 업데이트 |
+| `vibe gpt <cmd>` | GPT (auth, key, status, logout) |
+| `vibe gemini <cmd>` | Gemini (auth, key, status, logout) |
+| `vibe az <cmd>` | AZ (key, status, logout) |
+| `vibe kimi <cmd>` | Kimi (key, status, logout) |
+| `vibe config <cmd>` | Provider priority (embedding-priority, kimi-priority, show) |
+| `vibe telegram <cmd>` | Telegram (setup, chat, status) |
+| `vibe slack <cmd>` | Slack (setup, channel, status) |
+
+Sentinel, Evolution, Policy, HUD, Job 등은 내부 자동화로 처리되며 별도 CLI 명령어 없음.
+Autonomy 모드 변경은 `.claude/vibe/config.json`의 `autonomy.mode` 값으로 설정.
 
 ## External Channels
 
@@ -165,7 +167,6 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 | Telegram | TelegramBot (polling) | `TELEGRAM_BOT_TOKEN` |
 | Web/API | WebServer (SSE + WebSocket) | JWT auth |
 | Slack | SlackBot (Socket Mode) | `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN` |
-| iMessage | IMessageBot (DB polling) | macOS only, Full Disk Access |
 | Vision | VisionInterface | `GEMINI_API_KEY` |
 
 ### Channel Environment Variables
@@ -174,7 +175,6 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 |----------|-------------|
 | `VIBE_TELEGRAM_ENABLED` | Enable Telegram channel |
 | `VIBE_SLACK_ENABLED` | Enable Slack channel |
-| `VIBE_IMESSAGE_ENABLED` | Enable iMessage channel (macOS only) |
 | `VIBE_VISION_ENABLED` | Enable Vision channel |
 | `SLACK_BOT_TOKEN` | Slack bot token (xoxb-) |
 | `SLACK_APP_TOKEN` | Slack app-level token (xapp-) |
@@ -239,7 +239,6 @@ SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_forma
 | Tool | Purpose |
 |------|---------|
 | `send_slack` | Send message to Slack channel |
-| `send_imessage` | Send iMessage (macOS only) |
 | `vision_capture` | Capture screen for analysis |
 | `vision_analyze` | Analyze image with Gemini Vision |
 

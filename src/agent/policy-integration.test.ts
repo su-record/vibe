@@ -50,10 +50,9 @@ describe('SystemPrompt Enhancement', () => {
     expect(msg.content).toContain('팀 협업');
   });
 
-  it('should include channel context for imessage', () => {
-    const msg = buildSystemPrompt(mockTools, { channel: 'imessage' });
-    expect(msg.content).toContain('iMessage');
-    expect(msg.content).toContain('간결한');
+  it('should include channel context for web', () => {
+    const msg = buildSystemPrompt(mockTools, { channel: 'web' });
+    expect(msg.content).toContain('Web');
   });
 });
 
