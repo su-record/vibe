@@ -20,7 +20,6 @@ wiki/
 .idea/
 
 # config
-.claude/
 .cursor/
 .env
 

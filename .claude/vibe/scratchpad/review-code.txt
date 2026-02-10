@@ -1,0 +1,1627 @@
+=== FILE: c:\Users\endba\WorkSpace\vibe\src\browser\types.ts ===
+
+/**
+ * Browser Automation Types
+ *
+ * Playwright ARIA Snapshot 기반 브라우저 자동화 타입 정의.
+ * OpenClaw 패턴 참조, VIBE MCP 도구 체계에 맞춰 재구현.
+ */
+
+import type { Page, BrowserContext, CDPSession } from 'playwright';
+
+// ============================================================================
+// Provider Interface (Factory Pattern)
+// ============================================================================
+
+/** 브라우저 프로바이더 인터페이스 — Local(Phase1) / Sandbox(Phase5) 분기 */
+export interface IBrowserProvider {
+  /** CDP WebSocket URL 반환 */
+  getCDPUrl(): Promise<string>;
+  /** 샌드박스 모드 여부 */
+  isSandboxed(): boolean;
+  /** 프로바이더 종료 */
+  terminate(): Promise<void>;
+  /** 프로바이더 이름 */
+  readonly name: string;
+}
+
+// ============================================================================
+// Role Ref System
+// ============================================================================
+
+/** 개별 역할 참조 (e1, e2, ...) */
+export interface RoleRef {
+  role: string;
+  name?: string;
+  nth?: number;
+}
+
+/** ref ID → RoleRef 매핑 */
+export type RoleRefMap = Record<string, RoleRef>;
+
+/** 인터랙티브 역할 (클릭/입력 가능 요소) */
+export const INTERACTIVE_ROLES: ReadonlySet<string> = new Set([
+  'button', 'link', 'textbox', 'checkbox', 'radio', 'combobox',
+  'listbox', 'menuitem', 'option', 'searchbox', 'slider',
+  'switch', 'tab', 'treeitem',
+]);
+
+/** 콘텐츠 역할 (이름 있으면 ref 할당) */
+export const CONTENT_ROLES: ReadonlySet<string> = new Set([
+  'heading', 'cell', 'gridcell', 'columnheader', 'listitem',
+  'article', 'region', 'main', 'navigation',
+]);
+
+/** 구조 역할 (compact 모드에서 제거) */
+export const STRUCTURAL_ROLES: ReadonlySet<string> = new Set([
+  'generic', 'group', 'list', 'table', 'row', 'menu', 'toolbar',
+  'tablist', 'tree', 'banner', 'complementary', 'contentinfo',
+  'dialog', 'form', 'grid', 'separator', 'status',
+]);
+
+// ============================================================================
+// Snapshot Options
+// ============================================================================
+
+export interface SnapshotOptions {
+  /** 인터랙티브 요소만 필터링 */
+  interactive?: boolean;
+  /** 구조 요소 제거 (compact 모드) */
+  compact?: boolean;
+  /** 최대 트리 깊이 */
+  maxDepth?: number;
+}
+
+export interface SnapshotResult {
+  /** ARIA 트리 텍스트 (AI-friendly) */
+  tree: string;
+  /** ref ID → RoleRef 매핑 */
+  refs: RoleRefMap;
+  /** 스냅샷 버전 (stale ref 감지용) */
+  snapshotVersion: number;
+  /** 콘텐츠 체크섬 (변경 감지) */
+  checksum: string;
+  /** 인터랙티브 요소 수 */
+  interactiveCount: number;
+  /** 전체 요소 수 */
+  totalCount: number;
+}
+
+// ============================================================================
+// Browser Session
+// ============================================================================
+
+export interface BrowserSessionInfo {
+  tenantId: string;
+  targetId: string;
+  url: string;
+  title: string;
+  connected: boolean;
+  createdAt: string;
+}
+
+export interface PageState {
+  roleRefs: RoleRefMap;
+  snapshotVersion: number;
+  lastSnapshotAt?: string;
+}
+
+// ============================================================================
+// Action Types
+// ============================================================================
+
+export type BrowserActionType =
+  | 'click' | 'type' | 'scroll' | 'pressKey'
+  | 'navigate' | 'screenshot' | 'fillForm';
+
+export interface ClickOptions {
+  button?: 'left' | 'right' | 'middle';
+  clickCount?: number;
+  modifiers?: Array<'Alt' | 'Control' | 'Meta' | 'Shift'>;
+}
+
+export interface TypeOptions {
+  submit?: boolean;
+  slowly?: boolean;
+}
+
+export interface FormField {
+  ref: string;
+  value: string;
+  type?: 'text' | 'checkbox' | 'radio' | 'select';
+}
+
+export interface ScrollOptions {
+  direction: 'up' | 'down' | 'left' | 'right';
+  amount?: number;
+}
+
+export interface ScreenshotOptions {
+  fullPage?: boolean;
+  ref?: string;
+  quality?: number;
+}
+
+export interface NavigateOptions {
+  waitUntil?: 'load' | 'domcontentloaded' | 'networkidle';
+}
+
+// ============================================================================
+// Action Result
+// ============================================================================
+
+export interface BrowserActionResult {
+  success: boolean;
+  action: string;
+  data?: unknown;
+  error?: BrowserError;
+  durationMs: number;
+}
+
+// ============================================================================
+// Error Types
+// ============================================================================
+
+export type BrowserErrorCode =
+  | 'CDP_CONNECTION_FAILED'
+  | 'ACTION_TIMEOUT'
+  | 'REF_STALE'
+  | 'REF_NOT_FOUND'
+  | 'NAVIGATION_BLOCKED'
+  | 'SCREENSHOT_FAILED'
+  | 'BROWSER_DISCONNECTED'
+  | 'SNAPSHOT_FAILED'
+  | 'UNSUPPORTED_API'
+  | 'MAX_SESSIONS_REACHED';
+
+export interface BrowserError {
+  error: BrowserErrorCode;
+  message: string;
+  retries?: number;
+  timeout?: number;
+  details?: unknown;
+}
+
+// ============================================================================
+// Connection Config
+// ============================================================================
+
+export interface BrowserServiceConfig {
+  /** CDP 연결 타임아웃 (ms) */
+  connectTimeout?: number;
+  /** 액션 기본 타임아웃 (ms) */
+  actionTimeout?: number;
+  /** 최대 재시도 횟수 */
+  maxRetries?: number;
+  /** 로컬 최대 동시 세션 */
+  maxLocalSessions?: number;
+  /** SaaS 사용자당 최대 세션 */
+  maxSaasSessionsPerUser?: number;
+  /** 스크린샷 저장 디렉토리 */
+  screenshotDir?: string;
+}
+
+export const DEFAULT_CONFIG: BrowserServiceConfig = {
+  connectTimeout: 10_000,
+  actionTimeout: 8_000,
+  maxRetries: 3,
+  maxLocalSessions: 3,
+  maxSaasSessionsPerUser: 1,
+};
+
+// ============================================================================
+// URL Validation
+// ============================================================================
+
+/** 허용 URL 스킴 */
+export const ALLOWED_SCHEMES: ReadonlySet<string> = new Set(['http:', 'https:']);
+
+/** 차단 IP 대역 (SSRF 방지) */
+export const BLOCKED_IP_PATTERNS: readonly RegExp[] = [
+  /^127\./,              // loopback
+  /^10\./,               // private A
+  /^172\.(1[6-9]|2\d|3[01])\./,  // private B
+  /^192\.168\./,         // private C
+  /^169\.254\./,         // link-local / metadata
+  /^0\./,                // unspecified
+  /^::1$/,               // IPv6 loopback
+  /^fc00:/i,             // IPv6 unique local
+  /^fe80:/i,             // IPv6 link-local
+];
+
+// ============================================================================
+// Internal Types (for WeakMap state)
+// ============================================================================
+
+export interface ConnectedBrowser {
+  context: BrowserContext;
+  cdpSession: CDPSession;
+  cdpUrl: string;
+  provider: IBrowserProvider;
+  connectedAt: string;
+}
+
+export interface RoleRefsCacheEntry {
+  refs: RoleRefMap;
+  snapshotVersion: number;
+  cachedAt: number;
+}
+
+
+=== FILE: c:\Users\endba\WorkSpace\vibe\src\browser\BrowserService.ts ===
+
+/**
+ * BrowserService — Playwright CDP 연결 관리 (팩토리 패턴)
+ *
+ * IBrowserProvider를 통해 Local(Phase1) / Sandbox(Phase5) 분기.
+ * 연결 캐싱, 자동 재연결 (exponential backoff + jitter), 테넌트별 격리.
+ */
+
+import { chromium } from 'playwright';
+import type { Browser, BrowserContext, Page } from 'playwright';
+import * as crypto from 'node:crypto';
+import type {
+  IBrowserProvider,
+  ConnectedBrowser,
+  BrowserServiceConfig,
+  BrowserSessionInfo,
+  BrowserError,
+  PageState,
+  RoleRefMap,
+  RoleRefsCacheEntry,
+} from './types.js';
+import { DEFAULT_CONFIG } from './types.js';
+
+type Logger = (level: string, message: string, data?: unknown) => void;
+
+/** LRU 캐시 — targetId 기반 ref 캐싱 (최대 50개) */
+class LRUCache<K, V> {
+  private cache = new Map<K, V>();
+  constructor(private readonly maxSize: number) {}
+
+  get(key: K): V | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    this.cache.delete(key);
+    if (this.cache.size >= this.maxSize) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest !== undefined) this.cache.delete(oldest);
+    }
+    this.cache.set(key, value);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
+}
+
+export class BrowserService {
+  private browser: Browser | null = null;
+  private contexts = new Map<string, BrowserContext>();
+  private pageStates = new WeakMap<Page, PageState>();
+  private refCache = new LRUCache<string, RoleRefsCacheEntry>(50);
+  private config: Required<BrowserServiceConfig>;
+  private logger: Logger;
+  private connecting: Promise<Browser> | null = null;
+
+  constructor(logger: Logger, config?: BrowserServiceConfig) {
+    this.logger = logger;
+    this.config = {
+      connectTimeout: config?.connectTimeout ?? DEFAULT_CONFIG.connectTimeout!,
+      actionTimeout: config?.actionTimeout ?? DEFAULT_CONFIG.actionTimeout!,
+      maxRetries: config?.maxRetries ?? DEFAULT_CONFIG.maxRetries!,
+      maxLocalSessions: config?.maxLocalSessions ?? DEFAULT_CONFIG.maxLocalSessions!,
+      maxSaasSessionsPerUser: config?.maxSaasSessionsPerUser ?? DEFAULT_CONFIG.maxSaasSessionsPerUser!,
+      screenshotDir: config?.screenshotDir ?? '',
+    };
+  }
+
+  /** CDP provider를 통해 브라우저에 연결 */
+  async connect(provider: IBrowserProvider): Promise<void> {
+    if (this.browser?.isConnected()) return;
+    if (this.connecting) {
+      await this.connecting;
+      return;
+    }
+
+    this.connecting = this.connectWithRetry(provider);
+    try {
+      this.browser = await this.connecting;
+      this.logger('info', `Browser connected via ${provider.name}`);
+    } finally {
+      this.connecting = null;
+    }
+  }
+
+  /** 연결 해제 및 정리 */
+  async disconnect(): Promise<void> {
+    for (const [tenantId, ctx] of this.contexts) {
+      try {
+        await ctx.close();
+      } catch { /* ignore close errors */ }
+      this.contexts.delete(tenantId);
+    }
+    if (this.browser) {
+      try {
+        await this.browser.close();
+      } catch { /* ignore */ }
+      this.browser = null;
+    }
+    this.refCache.clear();
+    this.logger('info', 'Browser disconnected');
+  }
+
+  /** 연결 상태 확인 */
+  isConnected(): boolean {
+    return this.browser?.isConnected() ?? false;
+  }
+
+  /** 테넌트별 격리된 Page 객체 반환 */
+  async getPage(tenantId: string, targetId?: string): Promise<Page> {
+    this.ensureConnected();
+
+    let context = this.contexts.get(tenantId);
+    if (!context) {
+      this.enforceSessionLimit(tenantId);
+      context = await this.browser!.newContext();
+      this.contexts.set(tenantId, context);
+    }
+
+    if (targetId) {
+      const existing = context.pages().find(p => this.getTargetId(p) === targetId);
+      if (existing) return existing;
+    }
+
+    const pages = context.pages();
+    if (pages.length > 0 && !targetId) return pages[0];
+
+    const page = await context.newPage();
+    this.setupDialogHandler(page);
+    return page;
+  }
+
+  /** 활성 페이지 목록 조회 */
+  async listPages(tenantId: string): Promise<BrowserSessionInfo[]> {
+    const context = this.contexts.get(tenantId);
+    if (!context) return [];
+
+    return context.pages().map(page => ({
+      tenantId,
+      targetId: this.getTargetId(page),
+      url: page.url(),
+      title: '', // sync access only
+      connected: this.isConnected(),
+      createdAt: new Date().toISOString(),
+    }));
+  }
+
+  /** 새 탭 열기 */
+  async openPage(tenantId: string, url: string): Promise<Page> {
+    const page = await this.getPage(tenantId);
+    await page.goto(url, { timeout: this.config.connectTimeout });
+    return page;
+  }
+
+  /** 특정 탭 닫기 */
+  async closePage(tenantId: string, targetId: string): Promise<void> {
+    const context = this.contexts.get(tenantId);
+    if (!context) return;
+    const page = context.pages().find(p => this.getTargetId(p) === targetId);
+    if (page) await page.close();
+  }
+
+  /** 테넌트 컨텍스트 전체 삭제 (ephemeral) */
+  async destroyContext(tenantId: string): Promise<void> {
+    const context = this.contexts.get(tenantId);
+    if (context) {
+      await context.close();
+      this.contexts.delete(tenantId);
+    }
+  }
+
+  /** 페이지 상태 저장/조회 */
+  getPageState(page: Page): PageState | undefined {
+    return this.pageStates.get(page);
+  }
+
+  setPageState(page: Page, state: PageState): void {
+    this.pageStates.set(page, state);
+  }
+
+  /** ref 캐시 관리 */
+  cacheRefs(targetId: string, refs: RoleRefMap, version: number): void {
+    this.refCache.set(targetId, {
+      refs,
+      snapshotVersion: version,
+      cachedAt: Date.now(),
+    });
+  }
+
+  getCachedRefs(targetId: string): RoleRefsCacheEntry | undefined {
+    return this.refCache.get(targetId);
+  }
+
+  /** 활성 세션 수 */
+  get activeSessionCount(): number {
+    return this.contexts.size;
+  }
+
+  get actionTimeout(): number {
+    return this.config.actionTimeout;
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Private
+  // ──────────────────────────────────────────────────────────
+
+  /** exponential backoff + jitter 재시도 */
+  private async connectWithRetry(provider: IBrowserProvider): Promise<Browser> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < this.config.maxRetries; attempt++) {
+      try {
+        const cdpUrl = await provider.getCDPUrl();
+        const browser = await chromium.connectOverCDP(cdpUrl, {
+          timeout: this.config.connectTimeout,
+        });
+        return browser;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        const baseDelay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        const jitter = Math.random() * 1000 - 500;     // ±500ms
+        const delay = Math.max(0, baseDelay + jitter);
+        this.logger('warn', `CDP connection attempt ${attempt + 1}/${this.config.maxRetries} failed, retrying in ${Math.round(delay)}ms`, {
+          error: lastError.message,
+        });
+        await this.sleep(delay);
+      }
+    }
+
+    throw lastError ?? new Error('CDP connection failed');
+  }
+
+  private ensureConnected(): void {
+    if (!this.browser?.isConnected()) {
+      throw this.createError('BROWSER_DISCONNECTED', 'Browser is not connected');
+    }
+  }
+
+  private enforceSessionLimit(tenantId: string): void {
+    if (this.contexts.size >= this.config.maxLocalSessions) {
+      throw this.createError('MAX_SESSIONS_REACHED',
+        `Maximum ${this.config.maxLocalSessions} concurrent sessions reached`);
+    }
+  }
+
+  private getTargetId(page: Page): string {
+    // URL-based identifier (CDP target ID not directly available)
+    return crypto.createHash('md5').update(page.url()).digest('hex').slice(0, 8);
+  }
+
+  private setupDialogHandler(page: Page): void {
+    page.on('dialog', async (dialog) => {
+      this.logger('info', `Auto-dismissing ${dialog.type()} dialog: ${dialog.message()}`);
+      await dialog.dismiss();
+    });
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /** 구조화된 에러 생성 */
+  createError(code: BrowserError['error'], message: string, extra?: Partial<BrowserError>): BrowserError & Error {
+    const error = new Error(message) as BrowserError & Error;
+    error.error = code;
+    error.message = message;
+    if (extra?.retries !== undefined) error.retries = extra.retries;
+    if (extra?.timeout !== undefined) error.timeout = extra.timeout;
+    if (extra?.details !== undefined) error.details = extra.details;
+    return error;
+  }
+}
+
+// ============================================================================
+// LocalBrowserProvider — Phase 1 (로컬 Chrome CDP 연결)
+// ============================================================================
+
+export class LocalBrowserProvider implements IBrowserProvider {
+  readonly name = 'local';
+  private cdpPort: number;
+  private process: import('node:child_process').ChildProcess | null = null;
+
+  constructor(cdpPort = 9222) {
+    this.cdpPort = cdpPort;
+  }
+
+  async getCDPUrl(): Promise<string> {
+    // 기존 Chrome CDP 엔드포인트 탐색
+    try {
+      const resp = await fetch(`http://127.0.0.1:${this.cdpPort}/json/version`);
+      const data = await resp.json() as { webSocketDebuggerUrl?: string };
+      if (data.webSocketDebuggerUrl) {
+        return data.webSocketDebuggerUrl;
+      }
+    } catch {
+      // CDP 미실행 — Playwright 내장 브라우저로 대체
+    }
+
+    // Playwright chromium launch (CDP 서버 포함)
+    return `http://127.0.0.1:${this.cdpPort}`;
+  }
+
+  isSandboxed(): boolean {
+    return false;
+  }
+
+  async terminate(): Promise<void> {
+    if (this.process) {
+      this.process.kill();
+      this.process = null;
+    }
+  }
+}
+
+
+=== FILE: c:\Users\endba\WorkSpace\vibe\src\browser\RoleSnapshotManager.ts ===
+
+/**
+ * RoleSnapshotManager — ARIA Snapshot → Role Ref 변환
+ *
+ * Playwright `page._snapshotForAI()` 호출 → 접근성 트리를 role ref (e1, e2, ...)로 변환.
+ * Content-checksum 기반 변경 감지, snapshotVersion 관리.
+ */
+
+import type { Page } from 'playwright';
+import * as crypto from 'node:crypto';
+import type {
+  RoleRef,
+  RoleRefMap,
+  SnapshotOptions,
+  SnapshotResult,
+} from './types.js';
+import { INTERACTIVE_ROLES, CONTENT_ROLES, STRUCTURAL_ROLES } from './types.js';
+
+/** role:name 중복 추적 */
+class RoleNameTracker {
+  private counts = new Map<string, number>();
+  private assignments = new Map<string, number[]>();
+
+  /** 발생 횟수 기록, 인덱스 반환 */
+  track(role: string, name?: string): number {
+    const key = `${role}:${name ?? ''}`;
+    const idx = this.counts.get(key) ?? 0;
+    this.counts.set(key, idx + 1);
+
+    const idxList = this.assignments.get(key) ?? [];
+    idxList.push(idx);
+    this.assignments.set(key, idxList);
+
+    return idx;
+  }
+
+  /** 중복이 있는 항목만 nth를 유지 (단일 항목은 nth 제거) */
+  hasDuplicates(role: string, name?: string): boolean {
+    const key = `${role}:${name ?? ''}`;
+    return (this.counts.get(key) ?? 0) > 1;
+  }
+}
+
+/** ARIA 스냅샷 노드 (Playwright 내부 포맷) */
+interface AriaNode {
+  role: string;
+  name?: string;
+  value?: string;
+  checked?: boolean | 'mixed';
+  disabled?: boolean;
+  expanded?: boolean;
+  level?: number;
+  pressed?: boolean | 'mixed';
+  selected?: boolean;
+  children?: AriaNode[];
+}
+
+export class RoleSnapshotManager {
+  private versionCounter = 0;
+
+  /** 페이지 ARIA 스냅샷 수집 + Role Ref 생성 */
+  async snapshot(page: Page, options: SnapshotOptions = {}): Promise<SnapshotResult> {
+    const rawSnapshot = await this.captureAriaSnapshot(page);
+    return this.buildSnapshot(rawSnapshot, options);
+  }
+
+  /** 원시 ARIA 스냅샷 캡처 */
+  private async captureAriaSnapshot(page: Page): Promise<string> {
+    // Playwright 1.58+ `_snapshotForAI()` API 사용
+    const snapshotFn = (page as unknown as { _snapshotForAI?: () => Promise<string> })._snapshotForAI;
+    if (typeof snapshotFn !== 'function') {
+      throw new Error('Playwright _snapshotForAI() not available. Requires Playwright 1.58+');
+    }
+    return snapshotFn.call(page);
+  }
+
+  /** ARIA 스냅샷 텍스트를 파싱하여 Role Ref 맵 생성 */
+  buildSnapshot(rawSnapshot: string, options: SnapshotOptions = {}): SnapshotResult {
+    this.versionCounter += 1;
+    const tracker = new RoleNameTracker();
+    const refs: RoleRefMap = {};
+    let refCounter = 0;
+    let interactiveCount = 0;
+    let totalCount = 0;
+
+    const lines = rawSnapshot.split('\n');
+    const outputLines: string[] = [];
+
+    // Pass 1: 모든 요소 카운트 (중복 추적)
+    const preTracker = new RoleNameTracker();
+    for (const line of lines) {
+      const parsed = this.parseLine(line);
+      if (!parsed) continue;
+      preTracker.track(parsed.role, parsed.name);
+    }
+
+    // Pass 2: ref 할당 + 출력 생성
+    for (const line of lines) {
+      const parsed = this.parseLine(line);
+      if (!parsed) {
+        if (!options.compact) outputLines.push(line);
+        continue;
+      }
+
+      totalCount++;
+      const { role, name, indent, rest } = parsed;
+
+      // maxDepth 체크
+      if (options.maxDepth !== undefined) {
+        const depth = indent.length / 2;
+        if (depth > options.maxDepth) continue;
+      }
+
+      const isInteractive = INTERACTIVE_ROLES.has(role);
+      const isContent = CONTENT_ROLES.has(role);
+      const isStructural = STRUCTURAL_ROLES.has(role);
+
+      // interactive 필터
+      if (options.interactive && !isInteractive) {
+        if (!isStructural) outputLines.push(line);
+        continue;
+      }
+
+      // compact: 구조 요소 제거
+      if (options.compact && isStructural) continue;
+
+      // Ref 할당 조건: interactive 또는 이름 있는 content
+      const shouldAssignRef = isInteractive || (isContent && name !== undefined);
+
+      if (shouldAssignRef) {
+        refCounter++;
+        const refId = `e${refCounter}`;
+        if (isInteractive) interactiveCount++;
+
+        const nth = preTracker.hasDuplicates(role, name)
+          ? tracker.track(role, name)
+          : undefined;
+
+        refs[refId] = { role, name, ...(nth !== undefined ? { nth } : {}) };
+
+        // 출력에 ref ID 주석 추가
+        outputLines.push(`${indent}[${refId}] ${role}${name ? ` "${name}"` : ''}${rest}`);
+      } else {
+        outputLines.push(line);
+      }
+    }
+
+    const tree = outputLines.join('\n');
+    const checksum = crypto.createHash('md5').update(tree).digest('hex');
+
+    return {
+      tree,
+      refs,
+      snapshotVersion: this.versionCounter,
+      checksum,
+      interactiveCount,
+      totalCount,
+    };
+  }
+
+  /** 현재 스냅샷 버전 */
+  get currentVersion(): number {
+    return this.versionCounter;
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Private
+  // ──────────────────────────────────────────────────────────
+
+  /** ARIA 스냅샷 라인 파싱 */
+  private parseLine(line: string): {
+    role: string;
+    name?: string;
+    indent: string;
+    rest: string;
+  } | null {
+    // Playwright ARIA snapshot 포맷: "  - role "name": additional"
+    // 또는: "  - role: additional"
+    const match = line.match(/^(\s*)- (\w+)(?:\s+"([^"]*)")?(.*)$/);
+    if (!match) return null;
+
+    const [, indent, role, name, rest] = match;
+    return {
+      role,
+      name: name || undefined,
+      indent,
+      rest: rest || '',
+    };
+  }
+}
+
+
+=== FILE: c:\Users\endba\WorkSpace\vibe\src\browser\RefLocator.ts ===
+
+/**
+ * RefLocator — Ref ID → Playwright Locator 변환
+ *
+ * "e1" → `page.getByRole(role, { name, exact: true })` 변환.
+ * nth 처리 (동일 role+name 중복 시), stale ref 감지.
+ */
+
+import type { Page, Locator } from 'playwright';
+import type { RoleRefMap, RoleRef, PageState, BrowserError } from './types.js';
+
+export class RefLocator {
+  /**
+   * ref ID를 Playwright Locator로 변환
+   *
+   * @param page - 대상 페이지
+   * @param ref - ref ID (e.g., "e1", "e3")
+   * @param state - 현재 페이지 상태 (refs + snapshotVersion)
+   * @returns Playwright Locator
+   * @throws REF_NOT_FOUND | REF_STALE
+   */
+  resolve(page: Page, ref: string, state: PageState): Locator {
+    const normalizedRef = this.normalizeRef(ref);
+    const roleRef = state.roleRefs[normalizedRef];
+
+    if (!roleRef) {
+      throw this.createRefError('REF_NOT_FOUND',
+        `Ref "${normalizedRef}" not found. Available refs: ${this.listAvailableRefs(state.roleRefs)}`);
+    }
+
+    return this.buildLocator(page, roleRef);
+  }
+
+  /**
+   * 여러 ref를 한번에 해석
+   */
+  resolveAll(page: Page, refs: string[], state: PageState): Map<string, Locator> {
+    const locators = new Map<string, Locator>();
+    for (const ref of refs) {
+      locators.set(ref, this.resolve(page, ref, state));
+    }
+    return locators;
+  }
+
+  /**
+   * ref 형식 정규화: "@e1", "ref=e1", "e1" → "e1"
+   */
+  normalizeRef(ref: string): string {
+    if (ref.startsWith('@')) return ref.slice(1);
+    if (ref.startsWith('ref=')) return ref.slice(4);
+    return ref;
+  }
+
+  /**
+   * ref가 stale인지 확인 (현재 snapshotVersion과 비교)
+   */
+  isStale(
+    refSnapshotVersion: number,
+    currentSnapshotVersion: number,
+  ): boolean {
+    return refSnapshotVersion !== currentSnapshotVersion;
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Private
+  // ──────────────────────────────────────────────────────────
+
+  /** RoleRef → Playwright Locator 빌드 */
+  private buildLocator(page: Page, roleRef: RoleRef): Locator {
+    const { role, name, nth } = roleRef;
+
+    let locator: Locator;
+    if (name !== undefined) {
+      locator = page.getByRole(role as Parameters<Page['getByRole']>[0], {
+        name,
+        exact: true,
+      });
+    } else {
+      locator = page.getByRole(role as Parameters<Page['getByRole']>[0]);
+    }
+
+    if (nth !== undefined) {
+      locator = locator.nth(nth);
+    }
+
+    return locator;
+  }
+
+  /** 사용 가능한 ref ID 목록 (에러 메시지용) */
+  private listAvailableRefs(refs: RoleRefMap): string {
+    const entries = Object.entries(refs).slice(0, 10);
+    const list = entries.map(([id, r]) => `${id}(${r.role}${r.name ? ` "${r.name}"` : ''})`);
+    if (Object.keys(refs).length > 10) list.push('...');
+    return list.join(', ') || '(none)';
+  }
+
+  /** 구조화된 ref 에러 생성 */
+  private createRefError(code: BrowserError['error'], message: string): BrowserError & Error {
+    const error = new Error(message) as BrowserError & Error;
+    error.error = code;
+    error.message = message;
+    return error;
+  }
+}
+
+
+=== FILE: c:\Users\endba\WorkSpace\vibe\src\browser\BrowserActions.ts ===
+
+/**
+ * BrowserActions — 상호작용 액션 (click, type, scroll, navigate, screenshot)
+ *
+ * 모든 액션은 ref 기반으로 동작. 타임아웃 기본 8초, 에러 → JSON 결과.
+ */
+
+import type { Page, Locator } from 'playwright';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as crypto from 'node:crypto';
+import { RefLocator } from './RefLocator.js';
+import type { BrowserService } from './BrowserService.js';
+import type {
+  BrowserActionResult,
+  ClickOptions,
+  TypeOptions,
+  FormField,
+  ScrollOptions,
+  ScreenshotOptions,
+  NavigateOptions,
+  PageState,
+  BrowserError,
+} from './types.js';
+import { ALLOWED_SCHEMES, BLOCKED_IP_PATTERNS } from './types.js';
+
+const refLocator = new RefLocator();
+
+/** 타임아웃 정규화: [500ms, 60s], 기본 8s */
+function normalizeTimeout(timeoutMs?: number, defaultMs = 8000): number {
+  return Math.max(500, Math.min(60_000, timeoutMs ?? defaultMs));
+}
+
+/** URL 보안 검증 (SSRF 방지) */
+function validateUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw createActionError('NAVIGATION_BLOCKED', `Invalid URL: ${url}`);
+  }
+
+  if (!ALLOWED_SCHEMES.has(parsed.protocol)) {
+    throw createActionError('NAVIGATION_BLOCKED',
+      `Blocked scheme "${parsed.protocol}". Only http/https allowed.`);
+  }
+
+  const hostname = parsed.hostname;
+  for (const pattern of BLOCKED_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      throw createActionError('NAVIGATION_BLOCKED',
+        `Blocked private/metadata IP: ${hostname}`);
+    }
+  }
+}
+
+/** 에러 생성 헬퍼 */
+function createActionError(
+  code: BrowserError['error'],
+  message: string,
+  extra?: Partial<BrowserError>,
+): BrowserError & Error {
+  const error = new Error(message) as BrowserError & Error;
+  error.error = code;
+  error.message = message;
+  if (extra?.timeout) error.timeout = extra.timeout;
+  if (extra?.retries) error.retries = extra.retries;
+  return error;
+}
+
+/** 액션 실행 래퍼 (타이밍 + 에러 핸들링) */
+async function executeAction(
+  action: string,
+  fn: () => Promise<unknown>,
+): Promise<BrowserActionResult> {
+  const start = Date.now();
+  try {
+    const data = await fn();
+    return {
+      success: true,
+      action,
+      data,
+      durationMs: Date.now() - start,
+    };
+  } catch (err) {
+    const browserErr = err as BrowserError & Error;
+    return {
+      success: false,
+      action,
+      error: {
+        error: browserErr.error ?? 'ACTION_TIMEOUT',
+        message: browserErr.message ?? String(err),
+        timeout: browserErr.timeout,
+      },
+      durationMs: Date.now() - start,
+    };
+  }
+}
+
+// ============================================================================
+// Actions
+// ============================================================================
+
+/** 클릭 액션 */
+export async function click(
+  page: Page,
+  ref: string,
+  state: PageState,
+  options?: ClickOptions,
+  timeoutMs?: number,
+): Promise<BrowserActionResult> {
+  return executeAction('click', async () => {
+    const locator = refLocator.resolve(page, ref, state);
+    const timeout = normalizeTimeout(timeoutMs);
+
+    if (options?.clickCount === 2) {
+      await locator.dblclick({
+        button: options.button,
+        modifiers: options.modifiers,
+        timeout,
+      });
+    } else {
+      await locator.click({
+        button: options?.button,
+        clickCount: options?.clickCount,
+        modifiers: options?.modifiers,
+        timeout,
+      });
+    }
+  });
+}
+
+/** 텍스트 입력 액션 */
+export async function type(
+  page: Page,
+  ref: string,
+  text: string,
+  state: PageState,
+  options?: TypeOptions,
+  timeoutMs?: number,
+): Promise<BrowserActionResult> {
+  return executeAction('type', async () => {
+    const locator = refLocator.resolve(page, ref, state);
+    const timeout = normalizeTimeout(timeoutMs);
+
+    if (options?.slowly) {
+      await locator.pressSequentially(text, { delay: 75, timeout });
+    } else {
+      await locator.fill(text, { timeout });
+    }
+
+    if (options?.submit) {
+      await page.keyboard.press('Enter');
+    }
+  });
+}
+
+/** 다중 필드 일괄 입력 */
+export async function fillForm(
+  page: Page,
+  fields: FormField[],
+  state: PageState,
+  timeoutMs?: number,
+): Promise<BrowserActionResult> {
+  return executeAction('fillForm', async () => {
+    const timeout = normalizeTimeout(timeoutMs);
+    const results: Array<{ ref: string; success: boolean }> = [];
+
+    for (const field of fields) {
+      const locator = refLocator.resolve(page, field.ref, state);
+
+      switch (field.type) {
+        case 'checkbox':
+          if (field.value === 'true') {
+            await locator.check({ timeout });
+          } else {
+            await locator.uncheck({ timeout });
+          }
+          break;
+        case 'radio':
+          await locator.check({ timeout });
+          break;
+        case 'select':
+          await locator.selectOption(field.value, { timeout });
+          break;
+        default:
+          await locator.fill(field.value, { timeout });
+      }
+      results.push({ ref: field.ref, success: true });
+    }
+
+    return { fieldsProcessed: results.length, results };
+  });
+}
+
+/** 스크롤 액션 */
+export async function scroll(
+  page: Page,
+  direction: ScrollOptions['direction'],
+  amount?: number,
+  timeoutMs?: number,
+): Promise<BrowserActionResult> {
+  return executeAction('scroll', async () => {
+    const scrollAmount = amount ?? 300;
+    const deltaX = direction === 'left' ? -scrollAmount : direction === 'right' ? scrollAmount : 0;
+    const deltaY = direction === 'up' ? -scrollAmount : direction === 'down' ? scrollAmount : 0;
+    await page.mouse.wheel(deltaX, deltaY);
+  });
+}
+
+/** 키보드 입력 */
+export async function pressKey(
+  page: Page,
+  key: string,
+  modifiers?: Array<'Alt' | 'Control' | 'Meta' | 'Shift'>,
+): Promise<BrowserActionResult> {
+  return executeAction('pressKey', async () => {
+    const combo = modifiers?.length
+      ? `${modifiers.join('+')}+${key}`
+      : key;
+    await page.keyboard.press(combo);
+  });
+}
+
+/** URL 이동 */
+export async function navigate(
+  page: Page,
+  url: string,
+  options?: NavigateOptions,
+  timeoutMs?: number,
+): Promise<BrowserActionResult> {
+  validateUrl(url);
+
+  return executeAction('navigate', async () => {
+    const timeout = normalizeTimeout(timeoutMs, 15_000);
+    const response = await page.goto(url, {
+      waitUntil: options?.waitUntil ?? 'domcontentloaded',
+      timeout,
+    });
+    return {
+      url: page.url(),
+      status: response?.status(),
+      title: await page.title(),
+    };
+  });
+}
+
+/** 스크린샷 캡처 */
+export async function screenshot(
+  page: Page,
+  screenshotDir: string,
+  tenantId: string,
+  options?: ScreenshotOptions,
+  state?: PageState,
+): Promise<BrowserActionResult> {
+  return executeAction('screenshot', async () => {
+    // 테넌트별 격리 디렉토리
+    const safeDir = path.resolve(screenshotDir, tenantId);
+
+    // 경로 순회 차단
+    if (!safeDir.startsWith(path.resolve(screenshotDir))) {
+      throw createActionError('SCREENSHOT_FAILED', 'Path traversal blocked');
+    }
+
+    if (!fs.existsSync(safeDir)) {
+      fs.mkdirSync(safeDir, { recursive: true });
+    }
+
+    // 랜덤 파일명
+    const filename = `screenshot-${crypto.randomBytes(8).toString('hex')}.png`;
+    const filePath = path.join(safeDir, filename);
+
+    let buffer: Buffer;
+    if (options?.ref && state) {
+      // 요소 스크린샷
+      const locator = refLocator.resolve(page, options.ref, state);
+      buffer = await locator.screenshot({ timeout: 8000 });
+    } else {
+      // 페이지 스크린샷
+      buffer = await page.screenshot({
+        fullPage: options?.fullPage ?? false,
+      });
+    }
+
+    // 5MB 제한 확인
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (buffer.length > MAX_SIZE) {
+      throw createActionError('SCREENSHOT_FAILED',
+        `Screenshot exceeds 5MB limit (${(buffer.length / 1024 / 1024).toFixed(1)}MB)`);
+    }
+
+    fs.writeFileSync(filePath, buffer);
+
+    return {
+      filePath,
+      sizeBytes: buffer.length,
+      fullPage: options?.fullPage ?? false,
+    };
+  });
+}
+
+
+=== FILE: c:\Users\endba\WorkSpace\vibe\src\tools\browser\index.ts ===
+
+/**
+ * Browser MCP Tools — ARIA Snapshot 기반 브라우저 자동화 도구
+ *
+ * - core_browser_snapshot: 페이지 ARIA 스냅샷 (AI-friendly 텍스트 + ref)
+ * - core_browser_act: 상호작용 (click/type/scroll/pressKey/fillForm)
+ * - core_browser_navigate: URL 이동 + 새 탭 열기/닫기
+ * - core_browser_screenshot: 스크린샷 캡처
+ * - core_browser_status: 브라우저 연결 상태 확인
+ */
+
+import type { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { BrowserService, LocalBrowserProvider } from '../../browser/BrowserService.js';
+import { RoleSnapshotManager } from '../../browser/RoleSnapshotManager.js';
+import * as BrowserActions from '../../browser/BrowserActions.js';
+import type { BrowserError, PageState, FormField, BrowserActionResult } from '../../browser/types.js';
+import * as os from 'node:os';
+import * as path from 'node:path';
+
+// ============================================================================
+// Singleton Service (lazy init)
+// ============================================================================
+
+let browserService: BrowserService | null = null;
+const snapshotManager = new RoleSnapshotManager();
+const DEFAULT_TENANT = 'local';
+
+function getScreenshotDir(): string {
+  return path.join(os.tmpdir(), 'vibe-screenshots');
+}
+
+function getLogger(): (level: string, message: string, data?: unknown) => void {
+  return (level, message, data) => {
+    if (level === 'error') {
+      console.error(`[browser] ${message}`, data ?? '');
+    }
+  };
+}
+
+async function getService(): Promise<BrowserService> {
+  if (!browserService) {
+    browserService = new BrowserService(getLogger(), {
+      screenshotDir: getScreenshotDir(),
+    });
+  }
+  if (!browserService.isConnected()) {
+    const provider = new LocalBrowserProvider();
+    await browserService.connect(provider);
+  }
+  return browserService;
+}
+
+/** 에러 → ToolResult JSON */
+function errorResult(err: unknown): ToolResult {
+  const browserErr = err as BrowserError & Error;
+  const errorObj = {
+    error: browserErr.error ?? 'UNKNOWN_ERROR',
+    message: browserErr.message ?? String(err),
+    ...(browserErr.retries !== undefined ? { retries: browserErr.retries } : {}),
+    ...(browserErr.timeout !== undefined ? { timeout: browserErr.timeout } : {}),
+  };
+  return { content: [{ type: 'text', text: JSON.stringify(errorObj, null, 2) }] };
+}
+
+/** BrowserActionResult → ToolResult */
+function actionResult(result: BrowserActionResult): ToolResult {
+  if (result.success) {
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          success: true,
+          action: result.action,
+          data: result.data,
+          durationMs: result.durationMs,
+        }, null, 2),
+      }],
+    };
+  }
+  return {
+    content: [{
+      type: 'text',
+      text: JSON.stringify({
+        success: false,
+        action: result.action,
+        error: result.error,
+        durationMs: result.durationMs,
+      }, null, 2),
+    }],
+  };
+}
+
+// ============================================================================
+// Tool Definitions
+// ============================================================================
+
+export const browserSnapshotDefinition: ToolDefinition = {
+  name: 'core_browser_snapshot',
+  description: 'browser snapshot|aria snapshot|page elements - Capture page ARIA snapshot with role-based refs (e1, e2, ...)',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      interactive: {
+        type: 'boolean',
+        description: 'Only include interactive elements (buttons, links, inputs)',
+      },
+      compact: {
+        type: 'boolean',
+        description: 'Remove structural elements for compact output',
+      },
+      maxDepth: {
+        type: 'number',
+        description: 'Maximum tree depth',
+      },
+    },
+  },
+  annotations: {
+    title: 'Browser Snapshot',
+    audience: ['assistant'],
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+};
+
+export const browserActDefinition: ToolDefinition = {
+  name: 'core_browser_act',
+  description: 'browser click|browser type|browser action - Interact with page elements via ref IDs',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      action: {
+        type: 'string',
+        enum: ['click', 'type', 'scroll', 'pressKey', 'fillForm'],
+        description: 'Action to perform',
+      },
+      ref: {
+        type: 'string',
+        description: 'Element ref ID (e.g., "e1", "e3")',
+      },
+      text: {
+        type: 'string',
+        description: 'Text to type (for type action)',
+      },
+      key: {
+        type: 'string',
+        description: 'Key to press (for pressKey action)',
+      },
+      direction: {
+        type: 'string',
+        enum: ['up', 'down', 'left', 'right'],
+        description: 'Scroll direction',
+      },
+      fields: {
+        type: 'array',
+        description: 'Form fields to fill (for fillForm action)',
+        items: {
+          type: 'object',
+          properties: {
+            ref: { type: 'string' },
+            value: { type: 'string' },
+            type: { type: 'string', enum: ['text', 'checkbox', 'radio', 'select'] },
+          },
+          required: ['ref', 'value'],
+        },
+      },
+      button: {
+        type: 'string',
+        enum: ['left', 'right', 'middle'],
+        description: 'Mouse button (for click)',
+      },
+      clickCount: { type: 'number', description: 'Click count (2 for double-click)' },
+      modifiers: {
+        type: 'array',
+        items: { type: 'string', enum: ['Alt', 'Control', 'Meta', 'Shift'] },
+        description: 'Keyboard modifiers',
+      },
+      submit: { type: 'boolean', description: 'Press Enter after type' },
+      slowly: { type: 'boolean', description: 'Type character by character' },
+      amount: { type: 'number', description: 'Scroll amount in pixels' },
+    },
+    required: ['action'],
+  },
+  annotations: {
+    title: 'Browser Action',
+    audience: ['assistant'],
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  },
+};
+
+export const browserNavigateDefinition: ToolDefinition = {
+  name: 'core_browser_navigate',
+  description: 'browser go to|open url|navigate - Navigate browser to URL',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      url: { type: 'string', description: 'URL to navigate to' },
+      waitUntil: {
+        type: 'string',
+        enum: ['load', 'domcontentloaded', 'networkidle'],
+        description: 'Wait condition',
+      },
+    },
+    required: ['url'],
+  },
+  annotations: {
+    title: 'Browser Navigate',
+    audience: ['assistant'],
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  },
+};
+
+export const browserScreenshotDefinition: ToolDefinition = {
+  name: 'core_browser_screenshot',
+  description: 'browser screenshot|capture page|page image - Take page screenshot',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      fullPage: { type: 'boolean', description: 'Capture full page (scroll)' },
+      ref: { type: 'string', description: 'Capture specific element by ref' },
+    },
+  },
+  annotations: {
+    title: 'Browser Screenshot',
+    audience: ['assistant'],
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  },
+};
+
+export const browserStatusDefinition: ToolDefinition = {
+  name: 'core_browser_status',
+  description: 'browser status|browser connected|is browser running - Check browser connection status',
+  inputSchema: {
+    type: 'object',
+    properties: {},
+  },
+  annotations: {
+    title: 'Browser Status',
+    audience: ['user', 'assistant'],
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
+};
+
+// ============================================================================
+// Tool Handlers
+// ============================================================================
+
+export async function browserSnapshot(
+  args: { interactive?: boolean; compact?: boolean; maxDepth?: number } = {},
+): Promise<ToolResult> {
+  try {
+    const service = await getService();
+    const page = await service.getPage(DEFAULT_TENANT);
+
+    const result = await snapshotManager.snapshot(page, {
+      interactive: args.interactive,
+      compact: args.compact,
+      maxDepth: args.maxDepth,
+    });
+
+    // 페이지 상태 업데이트
+    service.setPageState(page, {
+      roleRefs: result.refs,
+      snapshotVersion: result.snapshotVersion,
+      lastSnapshotAt: new Date().toISOString(),
+    });
+
+    return {
+      content: [{
+        type: 'text',
+        text: [
+          `ARIA Snapshot (v${result.snapshotVersion})`,
+          `Interactive: ${result.interactiveCount} | Total: ${result.totalCount}`,
+          `Checksum: ${result.checksum}`,
+          '',
+          result.tree,
+        ].join('\n'),
+      }],
+    };
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export async function browserAct(
+  args: {
+    action: string;
+    ref?: string;
+    text?: string;
+    key?: string;
+    direction?: string;
+    fields?: FormField[];
+    button?: string;
+    clickCount?: number;
+    modifiers?: string[];
+    submit?: boolean;
+    slowly?: boolean;
+    amount?: number;
+  },
+): Promise<ToolResult> {
+  try {
+    const service = await getService();
+    const page = await service.getPage(DEFAULT_TENANT);
+    const state = service.getPageState(page);
+
+    if (!state) {
+      return errorResult({
+        error: 'REF_STALE',
+        message: 'No snapshot available. Call core_browser_snapshot first.',
+      });
+    }
+
+    const timeout = service.actionTimeout;
+    let result: BrowserActionResult;
+
+    switch (args.action) {
+      case 'click':
+        if (!args.ref) return errorResult({ error: 'REF_NOT_FOUND', message: 'ref is required for click' });
+        result = await BrowserActions.click(page, args.ref, state, {
+          button: args.button as 'left' | 'right' | 'middle',
+          clickCount: args.clickCount,
+          modifiers: args.modifiers as Array<'Alt' | 'Control' | 'Meta' | 'Shift'>,
+        }, timeout);
+        break;
+
+      case 'type':
+        if (!args.ref) return errorResult({ error: 'REF_NOT_FOUND', message: 'ref is required for type' });
+        if (!args.text) return errorResult({ error: 'REF_NOT_FOUND', message: 'text is required for type' });
+        result = await BrowserActions.type(page, args.ref, args.text, state, {
+          submit: args.submit,
+          slowly: args.slowly,
+        }, timeout);
+        break;
+
+      case 'scroll':
+        result = await BrowserActions.scroll(
+          page,
+          (args.direction ?? 'down') as 'up' | 'down' | 'left' | 'right',
+          args.amount,
+          timeout,
+        );
+        break;
+
+      case 'pressKey':
+        if (!args.key) return errorResult({ error: 'REF_NOT_FOUND', message: 'key is required for pressKey' });
+        result = await BrowserActions.pressKey(
+          page,
+          args.key,
+          args.modifiers as Array<'Alt' | 'Control' | 'Meta' | 'Shift'>,
+        );
+        break;
+
+      case 'fillForm':
+        if (!args.fields?.length) return errorResult({ error: 'REF_NOT_FOUND', message: 'fields are required for fillForm' });
+        result = await BrowserActions.fillForm(page, args.fields, state, timeout);
+        break;
+
+      default:
+        return errorResult({
+          error: 'ACTION_TIMEOUT',
+          message: `Unknown action: ${args.action}. Use: click, type, scroll, pressKey, fillForm`,
+        });
+    }
+
+    return actionResult(result);
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export async function browserNavigate(
+  args: { url: string; waitUntil?: string },
+): Promise<ToolResult> {
+  try {
+    const service = await getService();
+    const page = await service.getPage(DEFAULT_TENANT);
+
+    const result = await BrowserActions.navigate(page, args.url, {
+      waitUntil: args.waitUntil as 'load' | 'domcontentloaded' | 'networkidle',
+    });
+
+    return actionResult(result);
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export async function browserScreenshot(
+  args: { fullPage?: boolean; ref?: string } = {},
+): Promise<ToolResult> {
+  try {
+    const service = await getService();
+    const page = await service.getPage(DEFAULT_TENANT);
+    const state = service.getPageState(page);
+
+    const result = await BrowserActions.screenshot(
+      page,
+      getScreenshotDir(),
+      DEFAULT_TENANT,
+      { fullPage: args.fullPage, ref: args.ref },
+      state,
+    );
+
+    return actionResult(result);
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export async function browserStatus(): Promise<ToolResult> {
+  const connected = browserService?.isConnected() ?? false;
+  const sessions = browserService?.activeSessionCount ?? 0;
+
+  const status = {
+    connected,
+    activeSessions: sessions,
+    provider: connected ? 'local' : 'none',
+  };
+
+  return {
+    content: [{
+      type: 'text',
+      text: JSON.stringify(status, null, 2),
+    }],
+  };
+}
+
+/** 서비스 종료 (데몬 stop 시 호출) */
+export async function shutdownBrowserService(): Promise<void> {
+  if (browserService) {
+    await browserService.disconnect();
+    browserService = null;
+  }
+}
