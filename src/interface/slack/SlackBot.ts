@@ -33,6 +33,22 @@ interface EventDedup {
   timestamp: number;
 }
 
+/** Slack Block Kit block (section, actions, etc.) */
+interface SlackBlock {
+  type: string;
+  text?: { type: string; text: string };
+  elements?: Array<{
+    type: string;
+    text?: { type: string; text: string };
+    action_id?: string;
+    style?: string;
+    url?: string;
+  }>;
+  block_id?: string;
+}
+
+type BlockActionHandler = (channelId: string, actionId: string, userId: string) => Promise<void>;
+
 export class SlackBot extends BaseInterface {
   readonly name = 'slack';
   readonly channel: ChannelType = 'slack';
@@ -47,6 +63,7 @@ export class SlackBot extends BaseInterface {
   private tokenBucket: TokenBucket;
   private eventDedup: Map<string, EventDedup>;
   private cleanupTimer: NodeJS.Timeout | null = null;
+  private blockActionHandler?: BlockActionHandler;
 
   constructor(config: SlackConfig, logger: InterfaceLogger) {
     super(logger);
@@ -113,6 +130,29 @@ export class SlackBot extends BaseInterface {
         });
       });
     }
+  }
+
+  /**
+   * Block Kit 메시지 전송 (버튼 포함)
+   * Slack Block Kit actions 블록으로 인터랙티브 버튼 지원
+   */
+  async sendBlockMessage(
+    channelId: string,
+    text: string,
+    blocks: SlackBlock[],
+  ): Promise<void> {
+    await this.rateLimitedCall(async () => {
+      await this.apiCall('chat.postMessage', {
+        channel: channelId,
+        text,
+        blocks,
+      });
+    });
+  }
+
+  /** Block action 이벤트 핸들러 등록 */
+  onBlockAction(handler: BlockActionHandler): void {
+    this.blockActionHandler = handler;
   }
 
   /** Check if a channel ID is authorized */
@@ -306,6 +346,9 @@ export class SlackBot extends BaseInterface {
         const payload = envelope.payload as Record<string, unknown>;
         const event = payload.event as Record<string, unknown>;
         await this.handleEvent(event);
+      } else if (type === 'interactive') {
+        const payload = envelope.payload as Record<string, unknown>;
+        await this.handleInteractive(payload);
       } else if (type === 'disconnect') {
         this.logger('warn', 'Slack requested disconnect');
         this.handleReconnect();
@@ -336,6 +379,32 @@ export class SlackBot extends BaseInterface {
 
     if (eventType === 'message' || eventType === 'app_mention') {
       await this.handleMessageEvent(event);
+    }
+  }
+
+  private async handleInteractive(payload: Record<string, unknown>): Promise<void> {
+    const interactionType = String(payload.type || '');
+    if (interactionType !== 'block_actions') return;
+
+    const actions = payload.actions as Array<Record<string, unknown>> | undefined;
+    if (!actions?.length) return;
+
+    const channelObj = payload.channel as Record<string, unknown> | undefined;
+    const channelId = String(channelObj?.id || '');
+    const userObj = payload.user as Record<string, unknown> | undefined;
+    const userId = String(userObj?.id || '');
+
+    for (const action of actions) {
+      const actionId = String(action.action_id || '');
+      if (actionId && this.blockActionHandler) {
+        try {
+          await this.blockActionHandler(channelId, actionId, userId);
+        } catch (err) {
+          this.logger('error', `Block action handler error: ${actionId}`, {
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
     }
   }
 

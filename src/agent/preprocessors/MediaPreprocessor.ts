@@ -9,6 +9,9 @@
  * - 음성 파일 20MB 크기 제한
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import type { ExternalMessage } from '../../interface/types.js';
 
 const MAX_VOICE_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
@@ -23,13 +26,23 @@ export interface MediaPreprocessorConfig {
   showConfirmation?: boolean; // 음성 인식 결과 확인 메시지 표시 여부
 }
 
+/** 파일 다운로더 (Telegram downloadFile 등) */
+export type FileDownloader = (fileId: string) => Promise<Buffer>;
+
 export type SendFn = (chatId: string, text: string) => Promise<void>;
 
 export class MediaPreprocessor {
   private config: MediaPreprocessorConfig;
+  private fileDownloader?: FileDownloader;
 
-  constructor(config?: MediaPreprocessorConfig) {
+  constructor(config?: MediaPreprocessorConfig, fileDownloader?: FileDownloader) {
     this.config = { showConfirmation: true, ...config };
+    this.fileDownloader = fileDownloader;
+  }
+
+  /** 파일 다운로더 설정 (런타임에 TelegramBot.downloadFile 등 주입) */
+  setFileDownloader(downloader: FileDownloader): void {
+    this.fileDownloader = downloader;
   }
 
   async preprocess(
@@ -62,23 +75,49 @@ export class MediaPreprocessor {
     }
 
     try {
-      const { transcribeAudio } = await import('../../lib/gemini/capabilities.js');
-      const result = await transcribeAudio(fileId, { language: 'Korean' });
-      const text = result.transcription?.trim();
-
-      if (!text) {
-        return { success: false, error: '음성을 인식하지 못했습니다. 다시 시도해주세요.' };
+      // 파일 다운로드 → 임시 저장 → STT
+      const audioBuffer = await this.downloadVoiceFile(fileId);
+      if (!audioBuffer) {
+        return { success: false, error: '음성 파일 다운로드에 실패했습니다.' };
       }
 
-      // Send confirmation
-      if (this.config.showConfirmation) {
-        await sendFn(message.chatId, `🎙️ 음성 인식: "${text}"`);
+      const mimeType = (message.metadata?.voiceMimeType as string) || 'audio/ogg';
+      const ext = mimeType.includes('ogg') ? '.ogg' : '.mp3';
+      const tmpDir = path.join(os.tmpdir(), 'vibe-stt');
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
       }
+      const tmpFile = path.join(tmpDir, `voice-${Date.now()}${ext}`);
+      fs.writeFileSync(tmpFile, audioBuffer);
 
-      return { success: true, transcribedText: text };
+      try {
+        const { transcribeAudio } = await import('../../lib/gemini/capabilities.js');
+        const result = await transcribeAudio(tmpFile, { language: 'Korean' });
+        const text = result.transcription?.trim();
+
+        if (!text) {
+          return { success: false, error: '음성을 인식하지 못했습니다. 다시 시도해주세요.' };
+        }
+
+        if (this.config.showConfirmation) {
+          await sendFn(message.chatId, `음성 인식: "${text}"`);
+        }
+
+        return { success: true, transcribedText: text };
+      } finally {
+        try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+      }
     } catch {
       return { success: false, error: '음성을 인식하지 못했습니다. 다시 시도해주세요.' };
     }
+  }
+
+  /** 파일 다운로드 (downloader가 없으면 null) */
+  private async downloadVoiceFile(fileId: string): Promise<Buffer | null> {
+    if (!this.fileDownloader) {
+      return null;
+    }
+    return this.fileDownloader(fileId);
   }
 
   private async handleFile(message: ExternalMessage): Promise<PreprocessResult> {

@@ -1,10 +1,6 @@
 # VIBE
 
-Personalized AI Agent (Claude Code Exclusive)
-
-## Response Language
-
-**IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.** — v0.1.0
+Personalized AI Agent (Claude Code Exclusive) — v0.1.0
 
 ## Philosophy
 
@@ -57,6 +53,12 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 
 ### TypeScript Rules
 
+- No `any` type → use `unknown` + type guards
+- No `as any` casting → define proper interfaces
+- No `@ts-ignore` → fix type issues at root
+- Explicit return types on all functions
+
+### TypeScript Rules
 - No `any` type → use `unknown` + type guards
 - No `as any` casting → define proper interfaces
 - No `@ts-ignore` → fix type issues at root

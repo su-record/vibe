@@ -216,29 +216,38 @@ export async function daemonStatus(): Promise<void> {
 
 export function daemonRestart(): void {
   const pid = readPid();
+
+  const upgradeAndStart = (): void => {
+    // 패키지 전역 재설치 (postinstall로 전역 에셋 복원)
+    try {
+      console.log('⬆️  Upgrading package...');
+      child_process.execSync('npm install -g @su-record/core@latest', { stdio: 'pipe' });
+      console.log('✅ Package updated');
+    } catch {
+      console.log('⚠️  Package upgrade skipped (offline or up-to-date)');
+    }
+    daemonStart();
+  };
+
   if (pid !== null && isProcessRunning(pid)) {
     console.log('⏳ Restarting daemon...');
-    // Stop then start
     try {
       process.kill(pid, 'SIGTERM');
     } catch { /* ignore */ }
 
-    // Wait for process to exit, then start
     let checks = 0;
     const interval = setInterval(() => {
       checks++;
       if (!isProcessRunning(pid) || checks >= 20) {
         clearInterval(interval);
-        // Clean up
         try { fs.unlinkSync(PID_FILE); } catch { /* ignore */ }
         try { fs.unlinkSync(SOCKET_PATH); } catch { /* ignore */ }
         try { fs.unlinkSync(TOKEN_FILE); } catch { /* ignore */ }
-        // Start new daemon
-        daemonStart();
+        upgradeAndStart();
       }
     }, 500);
   } else {
-    daemonStart();
+    upgradeAndStart();
   }
 }
 

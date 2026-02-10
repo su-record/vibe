@@ -126,9 +126,17 @@ export class InterfaceManager {
         return;
       }
 
+      // Voice message → STT 전처리
+      let content = message.content;
+      if (message.type === 'voice') {
+        const transcribed = await this.transcribeVoice(name, iface, message);
+        if (!transcribed) return; // 에러 메시지는 transcribeVoice에서 전송
+        content = transcribed;
+      }
+
       try {
         const session = this.sessionPool.getOrCreateSession(process.cwd());
-        const result = await this.sessionPool.sendRequest(session.id, message.content);
+        const result = await this.sessionPool.sendRequest(session.id, content);
         await iface.sendResponse({
           messageId: message.id,
           channel: message.channel,
@@ -149,6 +157,84 @@ export class InterfaceManager {
         });
       }
     });
+  }
+
+  /**
+   * 음성 메시지 → Gemini STT 변환
+   * Telegram file download → 임시 파일 → transcribeAudio → 정리
+   */
+  private async transcribeVoice(
+    name: string,
+    iface: BaseInterface,
+    message: ExternalMessage,
+  ): Promise<string | null> {
+    const fileId = message.metadata?.telegramFileId as string | undefined;
+    if (!fileId) {
+      await iface.sendResponse({
+        messageId: message.id,
+        channel: message.channel,
+        chatId: message.chatId,
+        content: '음성 파일 정보가 없습니다.',
+        format: 'text',
+      });
+      return null;
+    }
+
+    try {
+      // 1. Telegram에서 파일 다운로드
+      const { TelegramBot } = await import('../interface/telegram/TelegramBot.js');
+      if (!(iface instanceof TelegramBot)) {
+        return null;
+      }
+
+      const audioBuffer = await iface.downloadFile(fileId);
+      const mimeType = (message.metadata?.voiceMimeType as string) || 'audio/ogg';
+      const ext = mimeType.includes('ogg') ? '.ogg' : '.mp3';
+
+      // 2. 임시 파일 저장
+      const tmpDir = path.join(os.tmpdir(), 'vibe-stt');
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+      const tmpFile = path.join(tmpDir, `voice-${Date.now()}${ext}`);
+      fs.writeFileSync(tmpFile, audioBuffer);
+
+      // 3. Gemini STT 변환
+      const { transcribeAudio } = await import('../lib/gemini/capabilities.js');
+      const result = await transcribeAudio(tmpFile, { language: 'Korean' });
+
+      // 4. 임시 파일 정리
+      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+
+      const text = result.transcription?.trim();
+      if (!text) {
+        await iface.sendResponse({
+          messageId: message.id,
+          channel: message.channel,
+          chatId: message.chatId,
+          content: '음성을 인식하지 못했습니다. 다시 시도해주세요.',
+          format: 'text',
+        });
+        return null;
+      }
+
+      // 5. 인식 결과 확인 메시지
+      this.logger('info', `[${name}] Voice transcribed: ${text.slice(0, 100)}`);
+
+      return text;
+    } catch (err) {
+      this.logger('error', `[${name}] Voice transcription failed`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      await iface.sendResponse({
+        messageId: message.id,
+        channel: message.channel,
+        chatId: message.chatId,
+        content: '음성 인식에 실패했습니다. 텍스트로 입력해주세요.',
+        format: 'text',
+      });
+      return null;
+    }
   }
 
   private async startSlack(logger: Logger): Promise<void> {
@@ -231,7 +317,7 @@ export class InterfaceManager {
 
   /**
    * 데몬 시작 시 연결된 인터페이스에 알림 전송
-   * Google Apps 미인증 시 설정 안내 포함
+   * Google Apps 미인증 시 인라인 버튼으로 인증 요청
    */
   private async sendStartupNotification(): Promise<void> {
     if (this.interfaces.size === 0) return;
@@ -240,57 +326,211 @@ export class InterfaceManager {
       path.join(getGlobalConfigDir(), 'google-tokens.json'),
     );
 
-    const lines = ['VIBE is ready.'];
-    if (!googleAppsOk) {
-      lines.push(
-        '',
-        'Google Apps is not connected.',
-        'Run `vibe setup` and select Google Apps to enable Gmail, Drive, Sheets, Calendar.',
-      );
-    }
-    const message = lines.join('\n');
-
-    // Telegram: send to all allowedChatIds
+    // Telegram: inline keyboard button for Google Apps auth
     const telegram = this.interfaces.get('telegram');
     if (telegram) {
-      const chatIds = this.loadTelegramChatIds();
+      await this.sendTelegramStartup(telegram, googleAppsOk);
+    }
+
+    // Slack: Block Kit 버튼 (Google Apps 미연결 시)
+    const slack = this.interfaces.get('slack');
+    if (slack) {
+      await this.sendSlackStartup(slack, googleAppsOk);
+    }
+  }
+
+  private async sendTelegramStartup(telegram: BaseInterface, googleAppsOk: boolean): Promise<void> {
+    const { TelegramBot } = await import('../interface/telegram/TelegramBot.js');
+    if (!(telegram instanceof TelegramBot)) return;
+
+    const chatIds = this.loadTelegramChatIds();
+
+    if (googleAppsOk) {
+      // Already connected — simple text message
       for (const chatId of chatIds) {
         try {
           await telegram.sendResponse({
             messageId: `startup-${Date.now()}`,
             channel: 'telegram',
             chatId,
-            content: message,
+            content: 'VIBE is ready.',
             format: 'text',
           });
-        } catch (err) {
-          this.logger('warn', `[telegram] Failed to send startup notification to ${chatId}`, {
-            error: err instanceof Error ? err.message : String(err),
-          });
-        }
+        } catch { /* ignore */ }
+      }
+      return;
+    }
+
+    // Not connected — send inline button for Google Apps OAuth
+    for (const chatId of chatIds) {
+      try {
+        await telegram.sendInlineKeyboard(
+          chatId,
+          'VIBE is ready.\n\nGoogle Apps is not connected.',
+          [[{ text: 'Connect Google Apps', callback_data: 'google_apps_auth' }]],
+        );
+      } catch (err) {
+        this.logger('warn', `[telegram] Startup notification failed for ${chatId}`, {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
 
-    // Slack: send to all allowedChannelIds
-    const slack = this.interfaces.get('slack');
-    if (slack) {
-      const channelIds = this.loadSlackChannelIds();
+    // Register callback handler for the button
+    telegram.onCallbackQuery(async (chatId: string, data: string, callbackQueryId: string) => {
+      if (data !== 'google_apps_auth') return;
+
+      await telegram.answerCallbackQuery(callbackQueryId, 'Starting Google Apps OAuth...');
+
+      try {
+        const { GoogleAuthManager } = await import('../router/services/GoogleAuthManager.js');
+        const logger = (level: string, msg: string): void => {
+          if (level === 'error') this.logger('warn', `[google-auth] ${msg}`);
+        };
+        const authManager = new GoogleAuthManager(logger as never);
+        const authUrl = authManager.getAuthUrl();
+
+        // Send auth URL as clickable link
+        await telegram.sendInlineKeyboard(
+          chatId,
+          'Open this link to authorize Google Apps:',
+          [[{ text: 'Authorize Google Account', callback_data: 'noop' }]],
+        );
+        await telegram.sendResponse({
+          messageId: `google-auth-${Date.now()}`,
+          channel: 'telegram',
+          chatId,
+          content: authUrl,
+          format: 'text',
+        });
+
+        // Wait for OAuth callback
+        const code = await authManager.startAuthFlow();
+        await authManager.exchangeCode(code);
+
+        await telegram.sendResponse({
+          messageId: `google-auth-done-${Date.now()}`,
+          channel: 'telegram',
+          chatId,
+          content: 'Google Apps connected! (Gmail, Drive, Sheets, Calendar, YouTube)',
+          format: 'text',
+        });
+      } catch (err) {
+        await telegram.sendResponse({
+          messageId: `google-auth-fail-${Date.now()}`,
+          channel: 'telegram',
+          chatId,
+          content: `Google Apps OAuth failed: ${err instanceof Error ? err.message : String(err)}`,
+          format: 'text',
+        });
+      }
+    });
+  }
+
+  private async sendSlackStartup(slack: BaseInterface, googleAppsOk: boolean): Promise<void> {
+    const { SlackBot } = await import('../interface/slack/SlackBot.js');
+    if (!(slack instanceof SlackBot)) return;
+
+    const channelIds = this.loadSlackChannelIds();
+
+    if (googleAppsOk) {
       for (const channelId of channelIds) {
         try {
           await slack.sendResponse({
             messageId: `startup-${Date.now()}`,
             channel: 'slack',
             chatId: channelId,
-            content: message,
+            content: 'VIBE is ready.',
             format: 'text',
           });
-        } catch (err) {
-          this.logger('warn', `[slack] Failed to send startup notification to ${channelId}`, {
-            error: err instanceof Error ? err.message : String(err),
-          });
-        }
+        } catch { /* ignore */ }
+      }
+      return;
+    }
+
+    // Google Apps 미연결 → Block Kit 버튼
+    for (const channelId of channelIds) {
+      try {
+        await slack.sendBlockMessage(channelId, 'VIBE is ready.', [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: ':white_check_mark: *VIBE is ready.*\n\n:warning: Google Apps is not connected.',
+            },
+          },
+          {
+            type: 'actions',
+            elements: [
+              {
+                type: 'button',
+                text: { type: 'plain_text', text: 'Connect Google Apps' },
+                action_id: 'google_apps_auth',
+                style: 'primary',
+              },
+            ],
+          },
+        ]);
+      } catch (err) {
+        this.logger('warn', `[slack] Startup notification failed for ${channelId}`, {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
+
+    // Block action 핸들러 등록
+    slack.onBlockAction(async (channelId: string, actionId: string) => {
+      if (actionId !== 'google_apps_auth') return;
+
+      try {
+        const { GoogleAuthManager } = await import('../router/services/GoogleAuthManager.js');
+        const logger = (level: string, msg: string): void => {
+          if (level === 'error') this.logger('warn', `[google-auth] ${msg}`);
+        };
+        const authManager = new GoogleAuthManager(logger as never);
+        const authUrl = authManager.getAuthUrl();
+
+        await slack.sendBlockMessage(channelId, 'Google Apps Authorization', [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: ':link: Open this link to authorize Google Apps:',
+            },
+          },
+          {
+            type: 'actions',
+            elements: [
+              {
+                type: 'button',
+                text: { type: 'plain_text', text: 'Authorize Google Account' },
+                action_id: 'google_apps_open_link',
+                url: authUrl,
+              },
+            ],
+          },
+        ]);
+
+        const code = await authManager.startAuthFlow();
+        await authManager.exchangeCode(code);
+
+        await slack.sendResponse({
+          messageId: `google-auth-done-${Date.now()}`,
+          channel: 'slack',
+          chatId: channelId,
+          content: ':tada: Google Apps connected! (Gmail, Drive, Sheets, Calendar, YouTube)',
+          format: 'text',
+        });
+      } catch (err) {
+        await slack.sendResponse({
+          messageId: `google-auth-fail-${Date.now()}`,
+          channel: 'slack',
+          chatId: channelId,
+          content: `:x: Google Apps OAuth failed: ${err instanceof Error ? err.message : String(err)}`,
+          format: 'text',
+        });
+      }
+    });
   }
 
   private loadTelegramChatIds(): string[] {

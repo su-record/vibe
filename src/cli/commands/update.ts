@@ -4,6 +4,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { CliOptions } from '../types.js';
@@ -81,8 +82,16 @@ export async function update(options: CliOptions = { silent: false }, skipUpgrad
       migrateLegacyCore(projectRoot, coreDir);
     }
 
-    if (!fs.existsSync(coreDir) && !fs.existsSync(legacyCoreDir)) {
-      // 프로젝트가 없어도 전역 업그레이드는 완료됨
+    // 프로젝트 감지: 홈 디렉토리이거나 프로젝트 마커(.git, package.json)가 없으면
+    // 전역 업그레이드만 수행하고 프로젝트 설정 업데이트는 건너뜀
+    // (홈의 ~/.claude/vibe/는 postinstall이 만든 전역 디렉토리)
+    const isHome = path.resolve(projectRoot) === path.resolve(os.homedir());
+    const hasProjectMarker = fs.existsSync(path.join(projectRoot, '.git'))
+      || fs.existsSync(path.join(projectRoot, 'package.json'));
+    const isProject = !isHome && hasProjectMarker
+      && (fs.existsSync(coreDir) || fs.existsSync(legacyCoreDir));
+
+    if (!isProject) {
       const packageJson = getPackageJson();
       log(`\n✅ core global updated (v${packageJson.version})\n\n${formatLLMStatus()}\n`);
       return;
