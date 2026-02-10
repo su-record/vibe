@@ -153,7 +153,7 @@ describe('Full evolution pipeline', () => {
 // Phase 5 Scenario 1: evolution-engine.js hook exists and is valid JS
 describe('Evolution hook file', () => {
   it('should have evolution-engine.js with PostToolUse logic', async () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', 'hooks', 'scripts', 'evolution-engine.js');
+    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'evolution-engine.js');
     expect(existsSync(hookPath)).toBe(true);
     const content = readFileSync(hookPath, 'utf8');
     expect(content).toContain('PostToolUse');
@@ -166,7 +166,7 @@ describe('Evolution hook file', () => {
 // Phase 5 Scenario 2: prompt-dispatcher gap detection
 describe('Prompt dispatcher gap detection', () => {
   it('should have gap logging code in prompt-dispatcher.js', () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', 'hooks', 'scripts', 'prompt-dispatcher.js');
+    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'prompt-dispatcher.js');
     expect(existsSync(hookPath)).toBe(true);
     const content = readFileSync(hookPath, 'utf8');
     expect(content).toContain('gapDetection');
@@ -178,7 +178,7 @@ describe('Prompt dispatcher gap detection', () => {
 // Phase 5 Scenario 3: skill-injector auto/ scan + .disabled filter
 describe('Skill injector auto/ directory', () => {
   it('should scan auto/ directories and skip .disabled files', () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', 'hooks', 'scripts', 'skill-injector.js');
+    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'skill-injector.js');
     expect(existsSync(hookPath)).toBe(true);
     const content = readFileSync(hookPath, 'utf8');
     expect(content).toContain("'auto'");
@@ -188,7 +188,7 @@ describe('Skill injector auto/ directory', () => {
   });
 
   it('should track usage of auto-generated skills', () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', 'hooks', 'scripts', 'skill-injector.js');
+    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'skill-injector.js');
     const content = readFileSync(hookPath, 'utf8');
     expect(content).toContain('UsageTracker');
     expect(content).toContain('recordUsage');
@@ -214,7 +214,7 @@ describe('Evolution CLI commands', () => {
   });
 
   it('should NOT have evolution case in CLI router (removed: internal automation)', () => {
-    const cliPath = join(__dirname, '..', '..', '..', 'cli', 'index.ts');
+    const cliPath = join(__dirname, '..', '..', '..', '..', 'cli', 'index.ts');
     const content = readFileSync(cliPath, 'utf8');
     // Evolution commands removed from CLI — handled by hooks/automation
     expect(content).not.toContain("case 'evolution'");
@@ -224,7 +224,7 @@ describe('Evolution CLI commands', () => {
 // Phase 5 Scenario 7: Ultrawork mode auto override
 describe('Ultrawork auto mode override', () => {
   it('should support mode from config (suggest/auto) in evolution-engine', () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', 'hooks', 'scripts', 'evolution-engine.js');
+    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'evolution-engine.js');
     const content = readFileSync(hookPath, 'utf8');
     expect(content).toContain('config.mode');
     expect(content).toContain("'suggest'");
@@ -236,7 +236,7 @@ describe('Ultrawork auto mode override', () => {
 // Phase 5 Scenario 8: Session start evolution status
 describe('Session start evolution status', () => {
   it('should display evolution status on session start', () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', 'hooks', 'scripts', 'session-start.js');
+    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'session-start.js');
     const content = readFileSync(hookPath, 'utf8');
     expect(content).toContain('Evolution');
     expect(content).toContain('GenerationRegistry');

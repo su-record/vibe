@@ -86,7 +86,7 @@ describe('AgentLoop', () => {
       expect(services.sendTelegram).toHaveBeenCalledWith(
         'test-chat',
         '안녕하세요! 무엇을 도와드릴까요?',
-        { format: 'markdown' },
+        { format: 'text' },
       );
     });
   });
@@ -131,7 +131,7 @@ describe('AgentLoop', () => {
       expect(services.sendTelegram).toHaveBeenCalledWith(
         'test-chat',
         '오늘 서울 날씨는 맑고 15도입니다.',
-        { format: 'markdown' },
+        { format: 'text' },
       );
     });
   });
@@ -176,7 +176,7 @@ describe('AgentLoop', () => {
       expect(services.sendTelegram).toHaveBeenCalledWith(
         'test-chat',
         '분석 결과, SQL injection 취약점이 발견되었습니다.',
-        { format: 'markdown' },
+        { format: 'text' },
       );
     });
   });

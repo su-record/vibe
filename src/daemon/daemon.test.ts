@@ -28,8 +28,9 @@ const TEST_DIR = path.join(os.tmpdir(), `vibe-daemon-test-${process.pid}`);
 
 function makeTestConfig(): DaemonConfig {
   const id = crypto.randomBytes(4).toString('hex');
+  const isWindows = process.platform === 'win32';
   return {
-    socketPath: path.join(TEST_DIR, `test-${id}.sock`),
+    socketPath: isWindows ? `\\\\.\\pipe\\vibe-test-${id}` : path.join(TEST_DIR, `test-${id}.sock`),
     pidFile: path.join(TEST_DIR, `test-${id}.pid`),
     tokenFile: path.join(TEST_DIR, `test-${id}.token`),
     logDir: path.join(TEST_DIR, 'logs'),

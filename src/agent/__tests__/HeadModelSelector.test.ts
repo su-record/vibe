@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeadModelSelector, CircuitBreaker, isCircuitBreakerFailure } from '../HeadModelSelector.js';
 
 // Mock GPT auth
-vi.mock('../../lib/gpt/auth.js', () => ({
+vi.mock('../../infra/lib/gpt/auth.js', () => ({
   getAuthInfo: vi.fn(),
 }));
 

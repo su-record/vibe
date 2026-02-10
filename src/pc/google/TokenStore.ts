@@ -95,10 +95,17 @@ export class TokenStore {
   /** 토큰 로드 (복호화) */
   load(userId: string): DecryptedTokens | null {
     const row = this.db.prepare(`
-      SELECT * FROM google_tokens
+      SELECT
+        user_id AS userId, provider, scope_hash AS scopeHash,
+        scopes_json AS scopesJson,
+        access_token_enc AS accessTokenEnc, refresh_token_enc AS refreshTokenEnc,
+        expires_at AS expiresAt, created_at AS createdAt,
+        family_id AS familyId, generation,
+        dek_wrapped AS dekWrapped, kek_version AS kekVersion
+      FROM google_tokens
       WHERE user_id = ? AND provider = 'google'
       ORDER BY expires_at DESC LIMIT 1
-    `).get(userId) as EncryptedTokenRow | undefined;
+    `).get(userId) as (EncryptedTokenRow & { scopesJson?: string }) | undefined;
 
     if (!row) return null;
 
@@ -339,10 +346,11 @@ export class TokenStore {
     return crypto.createHash('sha256').update(sorted).digest('hex').slice(0, 16);
   }
 
-  private parseScopesJson(row: EncryptedTokenRow & { scopes_json?: string }): string[] {
-    if (row.scopes_json) {
+  private parseScopesJson(row: EncryptedTokenRow & { scopesJson?: string; scopes_json?: string }): string[] {
+    const json = row.scopesJson ?? row.scopes_json;
+    if (json) {
       try {
-        const parsed: unknown = JSON.parse(row.scopes_json);
+        const parsed: unknown = JSON.parse(json);
         if (Array.isArray(parsed) && parsed.every((s): s is string => typeof s === 'string')) {
           return parsed;
         }

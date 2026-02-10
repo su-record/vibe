@@ -62,6 +62,7 @@ describe('Scenario 1: Configure Telegram bot', () => {
 
 describe('Scenario 2: Receive text message from Telegram', () => {
   it('should dispatch external message to handler', async () => {
+    vi.useFakeTimers();
     const config: TelegramConfig = {
       botToken: 'test-token',
       allowedChatIds: ['123456'],
@@ -87,9 +88,13 @@ describe('Scenario 2: Receive text message from Telegram', () => {
 
     await (bot as unknown as { dispatchMessage(m: ExternalMessage): Promise<void> }).dispatchMessage(message);
 
+    // Advance past the 2s batch debounce timer
+    await vi.advanceTimersByTimeAsync(2100);
+
     expect(received.length).toBe(1);
     expect(received[0].content).toBe('Fix the bug in login.ts');
     expect(received[0].channel).toBe('telegram');
+    vi.useRealTimers();
   });
 });
 
@@ -334,6 +339,8 @@ describe('Scenario 9: Create Job via Web API', () => {
       const body = JSON.parse(res.body);
       expect(body.messageId).toBeDefined();
       expect(body.status).toBe('created');
+      // Wait for batch debounce timer (2s) to flush
+      await new Promise(r => setTimeout(r, 2200));
       expect(dispatched.length).toBe(1);
       expect(dispatched[0].content).toBe('Add tests');
     } finally {

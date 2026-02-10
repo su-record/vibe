@@ -6,7 +6,7 @@ import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const fixturesPath = join(__dirname, '../../../tests/fixtures/ui-ux-data');
+const fixturesPath = join(__dirname, '../../../../vibe/ui-ux-data');
 
 describe('CsvDataLoader', () => {
   describe('load', () => {
