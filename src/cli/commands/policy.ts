@@ -3,7 +3,7 @@
  * Phase 3: Policy Engine
  */
 
-import { PolicyStore } from '../../core/policy/PolicyStore.js';
+import { PolicyStore } from '../../infra/policy/PolicyStore.js';
 import { LogLevel } from '../../daemon/types.js';
 
 const noopLogger = (_l: LogLevel, _m: string, _d?: unknown): void => {};

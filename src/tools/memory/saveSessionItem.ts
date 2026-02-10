@@ -1,13 +1,13 @@
 // Save structured session items (decisions, constraints, goals, evidence)
 
-import { MemoryManager } from '../../core/lib/MemoryManager.js';
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { MemoryManager } from '../../infra/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import {
   DecisionInput,
   ConstraintInput,
   GoalInput,
   EvidenceInput,
-} from '../../core/lib/memory/SessionRAGStore.js';
+} from '../../infra/lib/memory/SessionRAGStore.js';
 
 export const saveSessionItemDefinition: ToolDefinition = {
   name: 'save_session_item',

@@ -1,6 +1,6 @@
 // UI Preview tool - ASCII art visualization before development
 
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 interface UIComponent {
   type: string;

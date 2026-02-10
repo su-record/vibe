@@ -20,7 +20,7 @@ import type {
   EnvelopeEncrypted,
 } from './types.js';
 import { createGoogleError } from './types.js';
-import { getGlobalConfigDir } from '../../core/lib/llm/auth/ConfigManager.js';
+import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;

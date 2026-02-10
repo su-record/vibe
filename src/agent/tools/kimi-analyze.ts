@@ -36,7 +36,7 @@ async function handleKimiAnalyze(args: Record<string, unknown>): Promise<string>
   };
 
   try {
-    const { coreAzOrchestrate } = await import('../../core/lib/az/orchestration.js');
+    const { coreAzOrchestrate } = await import('../../infra/lib/az/orchestration.js');
     const systemPrompt = SYSTEM_PROMPTS[analysisType];
     const result = await coreAzOrchestrate(content, systemPrompt, {
       maxTokens: 4096,

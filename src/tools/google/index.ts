@@ -14,7 +14,7 @@
  * - core_google_calendar_create: 일정 생성
  */
 
-import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import type { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import * as path from 'node:path';
 import Database from 'better-sqlite3';
 import { TokenStore } from '../../pc/google/TokenStore.js';
@@ -26,11 +26,11 @@ import { PerUserSheetsService } from '../../pc/google/services/SheetsService.js'
 import { PerUserCalendarService } from '../../pc/google/services/CalendarService.js';
 import { GOOGLE_SCOPE_MAP } from '../../pc/google/types.js';
 import type { GoogleLogger } from '../../pc/google/types.js';
-import { getGlobalConfigDir } from '../../core/lib/llm/auth/ConfigManager.js';
+import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
 import {
   getSyncClientId,
   getSyncClientSecret,
-} from '../../core/lib/sync/constants.js';
+} from '../../infra/lib/sync/constants.js';
 
 // ============================================================================
 // Singleton (lazy init)

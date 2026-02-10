@@ -1,7 +1,7 @@
 // v2.0 - Get memory graph structure (Knowledge Graph visualization)
 
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
-import { MemoryManager } from '../../core/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+import { MemoryManager } from '../../infra/lib/MemoryManager.js';
 
 export const getMemoryGraphDefinition: ToolDefinition = {
   name: 'get_memory_graph',

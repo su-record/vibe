@@ -1,6 +1,6 @@
 // Convention management tool - completely independent
 
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 // Enhanced Software Engineering Metrics
 const CODE_QUALITY_METRICS = {

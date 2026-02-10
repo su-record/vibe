@@ -1,7 +1,7 @@
 // v2.0 - Analyze code dependency graph
 
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
-import { ProjectCache } from '../../core/lib/ProjectCache.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+import { ProjectCache } from '../../infra/lib/ProjectCache.js';
 import { Node, SyntaxKind } from 'ts-morph';
 
 export const analyzeDependencyGraphDefinition: ToolDefinition = {

@@ -8,7 +8,7 @@
  * - core_browser_status: 브라우저 연결 상태 확인
  */
 
-import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import type { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import { BrowserService, LocalBrowserProvider } from '../../pc/browser/BrowserService.js';
 import { RoleSnapshotManager } from '../../pc/browser/RoleSnapshotManager.js';
 import * as BrowserActions from '../../pc/browser/BrowserActions.js';

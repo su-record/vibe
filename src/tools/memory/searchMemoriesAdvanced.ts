@@ -1,7 +1,7 @@
 // v2.0 - Advanced multi-strategy memory search
 
-import { ToolResult, ToolDefinition, SearchStrategy } from '../../core/types/tool.js';
-import { MemoryManager } from '../../core/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition, SearchStrategy } from '../../infra/types/tool.js';
+import { MemoryManager } from '../../infra/lib/MemoryManager.js';
 
 export const searchMemoriesAdvancedDefinition: ToolDefinition = {
   name: 'search_memories_advanced',

@@ -4,14 +4,14 @@
  */
 
 import path from 'path';
-import { MemoryStorage } from '../../core/lib/memory/MemoryStorage.js';
-import { GenerationRegistry } from '../../core/lib/evolution/GenerationRegistry.js';
-import { InsightStore } from '../../core/lib/evolution/InsightStore.js';
-import { SkillGapDetector } from '../../core/lib/evolution/SkillGapDetector.js';
-import { InsightExtractor } from '../../core/lib/evolution/InsightExtractor.js';
-import { EvolutionOrchestrator } from '../../core/lib/evolution/EvolutionOrchestrator.js';
-import { LifecycleManager } from '../../core/lib/evolution/LifecycleManager.js';
-import { RollbackManager } from '../../core/lib/evolution/RollbackManager.js';
+import { MemoryStorage } from '../../infra/lib/memory/MemoryStorage.js';
+import { GenerationRegistry } from '../../infra/lib/evolution/GenerationRegistry.js';
+import { InsightStore } from '../../infra/lib/evolution/InsightStore.js';
+import { SkillGapDetector } from '../../infra/lib/evolution/SkillGapDetector.js';
+import { InsightExtractor } from '../../infra/lib/evolution/InsightExtractor.js';
+import { EvolutionOrchestrator } from '../../infra/lib/evolution/EvolutionOrchestrator.js';
+import { LifecycleManager } from '../../infra/lib/evolution/LifecycleManager.js';
+import { RollbackManager } from '../../infra/lib/evolution/RollbackManager.js';
 
 function getStorage(): MemoryStorage {
   const projectPath = process.env.CLAUDE_PROJECT_DIR || process.cwd();

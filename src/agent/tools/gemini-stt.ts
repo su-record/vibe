@@ -20,7 +20,7 @@ async function handleGeminiStt(args: Record<string, unknown>): Promise<string> {
   const { audioFileId } = args as { audioFileId: string };
 
   try {
-    const { transcribeAudio } = await import('../../core/lib/gemini/capabilities.js');
+    const { transcribeAudio } = await import('../../infra/lib/gemini/capabilities.js');
     const result = await transcribeAudio(audioFileId, { language: 'Korean' });
     return result.transcription || '(transcription empty)';
   } catch (err) {

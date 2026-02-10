@@ -74,10 +74,10 @@ setSilentMode(options.silent);
 // Tool Exports (for slash commands)
 // ============================================================================
 
-export * from '../core/lib/MemoryManager.js';
-export * from '../core/lib/ProjectCache.js';
-export * from '../core/lib/ContextCompressor.js';
-export * from '../core/lib/ProgressTracker.js';
+export * from '../infra/lib/MemoryManager.js';
+export * from '../infra/lib/ProjectCache.js';
+export * from '../infra/lib/ContextCompressor.js';
+export * from '../infra/lib/ProgressTracker.js';
 
 export { saveMemory } from '../tools/memory/saveMemory.js';
 export { recallMemory } from '../tools/memory/recallMemory.js';

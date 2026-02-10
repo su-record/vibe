@@ -6,7 +6,7 @@
  * - core_sandbox_browser: 샌드박스 브라우저 제어
  */
 
-import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import type { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import type { SandboxLogger } from '../../pc/sandbox/types.js';
 import { ContainerManager } from '../../pc/sandbox/ContainerManager.js';
 import { SandboxBrowser } from '../../pc/sandbox/SandboxBrowser.js';

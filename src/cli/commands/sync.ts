@@ -15,8 +15,8 @@ import {
   uploadMemoryEnc,
   downloadAuthEnc,
   downloadMemoryEnc,
-} from '../../core/lib/sync/index.js';
-import { getGlobalConfigDir } from '../../core/lib/llm/auth/ConfigManager.js';
+} from '../../infra/lib/sync/index.js';
+import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
 
 const AUTH_FILES = [
   'gemini-auth.json',

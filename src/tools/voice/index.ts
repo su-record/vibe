@@ -8,7 +8,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import type { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import { STTProviderChain, getDefaultSTTConfigs } from '../../interface/voice/STTProvider.js';
 import { TTSProviderChain, getDefaultTTSConfigs } from '../../interface/voice/TTSProvider.js';
 import { VoiceSessionManager } from '../../interface/voice/VoiceSession.js';

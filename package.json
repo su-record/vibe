@@ -17,7 +17,7 @@
     "./tools/ui": "./dist/tools/ui/index.js",
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/interaction": "./dist/tools/interaction/index.js",
-    "./orchestrator": "./dist/core/orchestrator/index.js",
+    "./orchestrator": "./dist/infra/orchestrator/index.js",
     "./interface": {
       "types": "./dist/interface/index.d.ts",
       "default": "./dist/interface/index.js"
@@ -27,17 +27,17 @@
       "default": "./dist/router/index.js"
     },
     "./memory": {
-      "types": "./dist/core/lib/memory/index.d.ts",
-      "default": "./dist/core/lib/memory/index.js"
+      "types": "./dist/infra/lib/memory/index.d.ts",
+      "default": "./dist/infra/lib/memory/index.js"
     },
     "./policy": {
-      "types": "./dist/core/policy/index.d.ts",
-      "default": "./dist/core/policy/index.js"
+      "types": "./dist/infra/policy/index.d.ts",
+      "default": "./dist/infra/policy/index.js"
     },
-    "./lib/gpt": "./dist/core/lib/gpt-api.js",
-    "./lib/gemini": "./dist/core/lib/gemini-api.js",
-    "./lib/kimi": "./dist/core/lib/az-api.js",
-    "./lib/az": "./dist/core/lib/az-api.js"
+    "./lib/gpt": "./dist/infra/lib/gpt-api.js",
+    "./lib/gemini": "./dist/infra/lib/gemini-api.js",
+    "./lib/kimi": "./dist/infra/lib/az-api.js",
+    "./lib/az": "./dist/infra/lib/az-api.js"
   },
   "bin": {
     "vibe": "./dist/cli/index.js"

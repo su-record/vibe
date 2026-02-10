@@ -1,8 +1,8 @@
 // Persist Design System Tool - Write design system to MASTER.md and page overrides
 
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
-import { DesignSystemGenerator } from '../../core/lib/ui-ux/DesignSystemGenerator.js';
-import { SearchService } from '../../core/lib/ui-ux/SearchService.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+import { DesignSystemGenerator } from '../../infra/lib/ui-ux/DesignSystemGenerator.js';
+import { SearchService } from '../../infra/lib/ui-ux/SearchService.js';
 
 let generator: DesignSystemGenerator | null = null;
 

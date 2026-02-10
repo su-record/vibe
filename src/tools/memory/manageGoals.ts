@@ -1,8 +1,8 @@
 // Manage session goals (list, update, complete)
 
-import { MemoryManager } from '../../core/lib/MemoryManager.js';
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
-import { GoalStatus } from '../../core/lib/memory/SessionRAGStore.js';
+import { MemoryManager } from '../../infra/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+import { GoalStatus } from '../../infra/lib/memory/SessionRAGStore.js';
 
 export const manageGoalsDefinition: ToolDefinition = {
   name: 'manage_goals',

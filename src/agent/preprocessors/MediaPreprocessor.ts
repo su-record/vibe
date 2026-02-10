@@ -91,7 +91,7 @@ export class MediaPreprocessor {
       fs.writeFileSync(tmpFile, audioBuffer);
 
       try {
-        const { transcribeAudio } = await import('../../core/lib/gemini/capabilities.js');
+        const { transcribeAudio } = await import('../../infra/lib/gemini/capabilities.js');
         const result = await transcribeAudio(tmpFile, { language: 'Korean' });
         const text = result.transcription?.trim();
 
@@ -145,7 +145,7 @@ export class MediaPreprocessor {
     }
 
     try {
-      const { analyzeImage } = await import('../../core/lib/gemini/capabilities.js');
+      const { analyzeImage } = await import('../../infra/lib/gemini/capabilities.js');
       const description = await analyzeImage(fileId, '이 이미지를 한국어로 자세히 설명해주세요.');
       return { success: true, transcribedText: `[이미지 설명]\n${description}` };
     } catch {

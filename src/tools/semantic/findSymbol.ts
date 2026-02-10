@@ -3,11 +3,11 @@
 
 import { Node } from 'ts-morph';
 import * as path from 'path';
-import { PythonParser } from '../../core/lib/PythonParser.js';
-import { ProjectCache } from '../../core/lib/ProjectCache.js';
+import { PythonParser } from '../../infra/lib/PythonParser.js';
+import { ProjectCache } from '../../infra/lib/ProjectCache.js';
 import { readFile } from 'fs/promises';
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
-import { errorLog } from '../../core/lib/utils.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+import { errorLog } from '../../infra/lib/utils.js';
 
 interface SymbolInfo {
   name: string;

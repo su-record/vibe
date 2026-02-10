@@ -15,7 +15,7 @@ import type {
 } from './types.js';
 import type { ModuleRegistry } from './ModuleRegistry.js';
 import type { SessionContextManager } from './SessionContext.js';
-import { coreGptOrchestrate } from '../core/lib/gpt/orchestration.js';
+import { coreGptOrchestrate } from '../infra/lib/gpt/orchestration.js';
 
 // ============================================================================
 // Module Descriptions (GPT classification prompt)

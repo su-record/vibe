@@ -1,7 +1,7 @@
 // Memory management tool - SQLite based (v1.3)
 
-import { MemoryManager } from '../../core/lib/MemoryManager.js';
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { MemoryManager } from '../../infra/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 export const recallMemoryDefinition: ToolDefinition = {
   name: 'recall_memory',

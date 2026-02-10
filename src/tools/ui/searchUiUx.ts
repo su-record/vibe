@@ -1,8 +1,8 @@
 // UI/UX Search Tool - BM25 domain search across 12 design intelligence domains
 
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
-import { SearchService } from '../../core/lib/ui-ux/SearchService.js';
-import type { SearchDomain } from '../../core/lib/ui-ux/types.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+import { SearchService } from '../../infra/lib/ui-ux/SearchService.js';
+import type { SearchDomain } from '../../infra/lib/ui-ux/types.js';
 
 // Singleton SearchService instance
 let searchService: SearchService | null = null;

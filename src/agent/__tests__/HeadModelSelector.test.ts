@@ -11,7 +11,7 @@ vi.mock('../../lib/gpt/auth.js', () => ({
   getAuthInfo: vi.fn(),
 }));
 
-import { getAuthInfo } from '../../core/lib/gpt/auth.js';
+import { getAuthInfo } from '../../infra/lib/gpt/auth.js';
 const mockGetAuthInfo = vi.mocked(getAuthInfo);
 
 describe('HeadModelSelector', () => {

@@ -25,7 +25,7 @@ async function handleGoogleSearch(args: Record<string, unknown>): Promise<string
   const limit = Math.min(maxResults ?? DEFAULT_MAX_RESULTS, MAX_RESULTS_LIMIT);
 
   try {
-    const { webSearch } = await import('../../core/lib/gemini/capabilities.js');
+    const { webSearch } = await import('../../infra/lib/gemini/capabilities.js');
     const prompt = `Search for: "${query}"\n\nReturn up to ${limit} results. For each result, include: title, URL, and a brief snippet.`;
     const result = await webSearch(prompt);
     return result || '(no results found)';

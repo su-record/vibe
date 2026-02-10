@@ -6,7 +6,7 @@
  * - core_pc_modules: 모듈 활성화/비활성화
  */
 
-import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import type { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import type { IntegrationLogger, ModuleName } from '../../pc/types.js';
 import { ModuleRegistry } from '../../pc/ModuleRegistry.js';
 import { CommandDispatcher } from '../../pc/CommandDispatcher.js';

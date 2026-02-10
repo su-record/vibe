@@ -1,7 +1,7 @@
 // Memory management tool - completely independent
 
-import { MemoryManager, MemoryItem } from '../../core/lib/MemoryManager.js';
-import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { MemoryManager, MemoryItem } from '../../infra/lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
 export const prioritizeMemoryDefinition: ToolDefinition = {
   name: 'prioritize_memory',
