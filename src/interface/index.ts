@@ -9,11 +9,23 @@ export { TelegramBot } from './telegram/TelegramBot.js';
 export { TelegramFormatter } from './telegram/TelegramFormatter.js';
 export { WebServer } from './web/WebServer.js';
 export { WebhookHandler } from './webhook/WebhookHandler.js';
+export { SlackBot } from './slack/SlackBot.js';
+export { SlackFormatter } from './slack/SlackFormatter.js';
+
+// Vision (interface + engine)
 export { VisionInterface } from './vision/VisionInterface.js';
 export { GeminiVision } from './vision/GeminiVision.js';
 export { ScreenCapture } from './vision/ScreenCapture.js';
-export { SlackBot } from './slack/SlackBot.js';
-export { SlackFormatter } from './slack/SlackFormatter.js';
+export { ScreenCaptureEngine } from './vision/ScreenCaptureEngine.js';
+export { VisionSession, VisionSessionManager } from './vision/VisionSession.js';
+export { GeminiLiveStream } from './vision/GeminiLiveStream.js';
+export { AdaptiveFrameSampler } from './vision/AdaptiveFrameSampler.js';
+
+// Voice
+export { STTProviderChain } from './voice/STTProvider.js';
+export { TTSProviderChain } from './voice/TTSProvider.js';
+export { VoiceSessionManager } from './voice/VoiceSession.js';
+export { VADProcessor } from './voice/VADProcessor.js';
 
 export type {
   ExternalInterface,

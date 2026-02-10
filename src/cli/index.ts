@@ -44,6 +44,12 @@ import {
   slackSetup, slackChannel, slackStatus, slackHelp,
   interfaceEnableConfigured, interfaceDisableAll,
   autostartEnable, autostartDisable,
+  browserStatus, browserOpen, browserSnapshot, browserHelp,
+  googleAuth, googleStatus, googleRevoke, googleHelp,
+  voiceStatusCmd, voiceTestTTS, voiceTestSTT, voiceHelp,
+  visionStartCmd, visionStopCmd, visionSnapshotCmd, visionHelp,
+  sandboxStatusCmd, sandboxCleanupCmd, sandboxHelp,
+  pcStatusCmd, pcModulesCmd, pcHealthCmd, pcHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -454,6 +460,141 @@ vibe sync — Google Drive AppData 인증/메모리 동기화
     break;
   }
 
+  // vibe browser <subcommand>
+  case 'browser': {
+    const browserSub = positionalArgs[1];
+    switch (browserSub) {
+      case 'status':
+        (async () => { await browserStatus(); })();
+        break;
+      case 'open':
+        (async () => { await browserOpen(positionalArgs[2]); })();
+        break;
+      case 'snapshot':
+        (async () => { await browserSnapshot(); })();
+        break;
+      case 'help':
+        browserHelp();
+        break;
+      default:
+        browserHelp();
+    }
+    break;
+  }
+
+  // vibe google <subcommand>
+  case 'google': {
+    const googleSub = positionalArgs[1];
+    switch (googleSub) {
+      case 'auth':
+        (async () => { await googleAuth(); })();
+        break;
+      case 'status':
+        (async () => { await googleStatus(); })();
+        break;
+      case 'revoke':
+        (async () => { await googleRevoke(); })();
+        break;
+      case 'help':
+        googleHelp();
+        break;
+      default:
+        googleHelp();
+    }
+    break;
+  }
+
+  // vibe voice [subcommand]
+  case 'voice': {
+    const voiceSub = args[1];
+    switch (voiceSub) {
+      case 'status':
+        await voiceStatusCmd();
+        break;
+      case 'test-tts':
+        await voiceTestTTS(args.slice(2).join(' ') || 'Hello, this is a test.');
+        break;
+      case 'test-stt':
+        await voiceTestSTT(args[2] ?? '');
+        break;
+      case 'help':
+        voiceHelp();
+        break;
+      default:
+        voiceHelp();
+    }
+    break;
+  }
+
+  // vibe vision [subcommand]
+  case 'vision': {
+    const visionSub = positionalArgs[1];
+    switch (visionSub) {
+      case 'start': {
+        const modeFlag = args.find(a => a === '--mode');
+        const modeVal = modeFlag ? args[args.indexOf(modeFlag) + 1] : undefined;
+        (async () => { await visionStartCmd(modeVal); })();
+        break;
+      }
+      case 'stop':
+        (async () => { await visionStopCmd(); })();
+        break;
+      case 'snapshot': {
+        const regionFlag = args.find(a => a === '--region');
+        const regionVal = regionFlag ? args[args.indexOf(regionFlag) + 1] : undefined;
+        (async () => { await visionSnapshotCmd(regionVal); })();
+        break;
+      }
+      case 'help':
+        visionHelp();
+        break;
+      default:
+        visionHelp();
+    }
+    break;
+  }
+
+  // vibe sandbox [subcommand]
+  case 'sandbox': {
+    const sandboxSub = positionalArgs[1];
+    switch (sandboxSub) {
+      case 'status':
+        (async () => { await sandboxStatusCmd(); })();
+        break;
+      case 'cleanup':
+        (async () => { await sandboxCleanupCmd(); })();
+        break;
+      case 'help':
+        sandboxHelp();
+        break;
+      default:
+        sandboxHelp();
+    }
+    break;
+  }
+
+  // vibe pc [subcommand]
+  case 'pc': {
+    const pcSub = positionalArgs[1];
+    switch (pcSub) {
+      case 'status':
+        (async () => { await pcStatusCmd(); })();
+        break;
+      case 'modules':
+        (async () => { await pcModulesCmd(); })();
+        break;
+      case 'health':
+        (async () => { await pcHealthCmd(); })();
+        break;
+      case 'help':
+        pcHelp();
+        break;
+      default:
+        pcHelp();
+    }
+    break;
+  }
+
   // vibe start = auto-enable configured interfaces + daemon start + autostart enable
   case 'start':
     interfaceEnableConfigured();
@@ -504,6 +645,9 @@ Available commands:
 
   vibe telegram <cmd>     Telegram (setup, chat, status)
   vibe slack <cmd>        Slack (setup, channel, status)
+  vibe browser <cmd>      Browser (status, open, snapshot)
+  vibe sandbox <cmd>      Sandbox (status, cleanup)
+  vibe pc <cmd>           PC Control (status, modules, health)
 
 Usage: vibe help
     `);

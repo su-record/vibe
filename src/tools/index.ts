@@ -92,6 +92,96 @@ export type {
 // Time tools
 export { getCurrentTime } from './time/getCurrentTime.js';
 
+// Browser tools (Phase 1: pc-control)
+export {
+  browserSnapshot,
+  browserAct,
+  browserNavigate,
+  browserScreenshot,
+  browserStatus,
+  shutdownBrowserService,
+  browserSnapshotDefinition,
+  browserActDefinition,
+  browserNavigateDefinition,
+  browserScreenshotDefinition,
+  browserStatusDefinition,
+} from './browser/index.js';
+
+// Google tools (Phase 2: pc-control)
+export {
+  googleAuth,
+  googleGmailSend,
+  googleGmailSearch,
+  googleGmailReport,
+  googleDriveUpload,
+  googleDriveDownload,
+  googleDriveList,
+  googleSheetsRead,
+  googleSheetsWrite,
+  googleCalendarList,
+  googleCalendarCreate,
+  shutdownGoogleService,
+  googleAuthDefinition,
+  googleGmailSendDefinition,
+  googleGmailSearchDefinition,
+  googleGmailReportDefinition,
+  googleDriveUploadDefinition,
+  googleDriveDownloadDefinition,
+  googleDriveListDefinition,
+  googleSheetsReadDefinition,
+  googleSheetsWriteDefinition,
+  googleCalendarListDefinition,
+  googleCalendarCreateDefinition,
+} from './google/index.js';
+
+// Voice tools (Phase 3: pc-control)
+export {
+  voiceStatus,
+  ttsSpeak,
+  sttTranscribe,
+  shutdownVoiceService,
+  voiceStatusDefinition,
+  ttsSpeakDefinition,
+  sttTranscribeDefinition,
+} from './voice/index.js';
+
+// Vision tools (Phase 4: pc-control)
+export {
+  visionStart,
+  visionStop,
+  visionMode,
+  visionSnapshot,
+  visionAsk,
+  shutdownVisionService,
+  visionStartDefinition,
+  visionStopDefinition,
+  visionModeDefinition,
+  visionSnapshotDefinition,
+  visionAskDefinition,
+} from './vision/index.js';
+
+// Sandbox tools (Phase 5: pc-control)
+export {
+  sandboxStatus,
+  sandboxExec,
+  sandboxBrowserTool,
+  shutdownSandboxService,
+  sandboxStatusDefinition,
+  sandboxExecDefinition,
+  sandboxBrowserDefinition,
+} from './sandbox/index.js';
+
+// Integration tools (Phase 6: pc-control)
+export {
+  pcStatus,
+  pcCommand,
+  pcModules,
+  shutdownIntegrationService,
+  pcStatusDefinition,
+  pcCommandDefinition,
+  pcModulesDefinition,
+} from './integration/index.js';
+
 // Lib exports (for advanced usage)
 export { MemoryManager } from '../lib/MemoryManager.js';
 export { ProjectCache } from '../lib/ProjectCache.js';

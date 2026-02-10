@@ -17,3 +17,9 @@ export { slackSetup, slackChannel, slackStatus, slackHelp } from './slack.js';
 // start/stop 내부 사용
 export { interfaceEnableConfigured, interfaceDisableAll } from './interface.js';
 export { autostartEnable, autostartDisable } from './autostart.js';
+export { browserStatus, browserOpen, browserSnapshot, browserHelp } from './browser.js';
+export { googleAuth, googleStatus, googleRevoke, googleHelp } from './google.js';
+export { voiceStatusCmd, voiceTestTTS, voiceTestSTT, voiceHelp } from './voice.js';
+export { visionStartCmd, visionStopCmd, visionSnapshotCmd, visionHelp } from './vision.js';
+export { sandboxStatusCmd, sandboxCleanupCmd, sandboxHelp } from './sandbox.js';
+export { pcStatusCmd, pcModulesCmd, pcHealthCmd, pcHelp } from './pc.js';

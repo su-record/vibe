@@ -73,6 +73,60 @@ export class InterfaceManager {
   }
 
   async stopAll(): Promise<void> {
+    // Stop browser service
+    try {
+      const { shutdownBrowserService } = await import('../tools/browser/index.js');
+      await shutdownBrowserService();
+      this.logger('info', 'Browser service stopped');
+    } catch {
+      // Browser service may not be initialized — ignore
+    }
+
+    // Stop Google service
+    try {
+      const { shutdownGoogleService } = await import('../tools/google/index.js');
+      shutdownGoogleService();
+      this.logger('info', 'Google service stopped');
+    } catch {
+      // Google service may not be initialized — ignore
+    }
+
+    // Stop Voice service
+    try {
+      const { shutdownVoiceService } = await import('../tools/voice/index.js');
+      shutdownVoiceService();
+      this.logger('info', 'Voice service stopped');
+    } catch {
+      // Voice service may not be initialized — ignore
+    }
+
+    // Stop Vision service
+    try {
+      const { shutdownVisionService } = await import('../tools/vision/index.js');
+      shutdownVisionService();
+      this.logger('info', 'Vision service stopped');
+    } catch {
+      // Vision service may not be initialized — ignore
+    }
+
+    // Stop Sandbox service
+    try {
+      const { shutdownSandboxService } = await import('../tools/sandbox/index.js');
+      await shutdownSandboxService();
+      this.logger('info', 'Sandbox service stopped');
+    } catch {
+      // Sandbox service may not be initialized — ignore
+    }
+
+    // Stop Integration service
+    try {
+      const { shutdownIntegrationService } = await import('../tools/integration/index.js');
+      await shutdownIntegrationService();
+      this.logger('info', 'Integration service stopped');
+    } catch {
+      // Integration service may not be initialized — ignore
+    }
+
     for (const [name, iface] of this.interfaces) {
       try {
         await iface.stop();
@@ -325,35 +379,46 @@ export class InterfaceManager {
     const googleAppsOk = fs.existsSync(
       path.join(getGlobalConfigDir(), 'google-tokens.json'),
     );
+    // Google OAuth 환경변수 확인 — 없으면 버튼 표시 불가
+    const googleOAuthReady = Boolean(
+      process.env.VIBE_SYNC_GOOGLE_CLIENT_ID && process.env.VIBE_SYNC_GOOGLE_CLIENT_SECRET,
+    );
 
     // Telegram: inline keyboard button for Google Apps auth
     const telegram = this.interfaces.get('telegram');
     if (telegram) {
-      await this.sendTelegramStartup(telegram, googleAppsOk);
+      await this.sendTelegramStartup(telegram, googleAppsOk, googleOAuthReady);
     }
 
     // Slack: Block Kit 버튼 (Google Apps 미연결 시)
     const slack = this.interfaces.get('slack');
     if (slack) {
-      await this.sendSlackStartup(slack, googleAppsOk);
+      await this.sendSlackStartup(slack, googleAppsOk, googleOAuthReady);
     }
   }
 
-  private async sendTelegramStartup(telegram: BaseInterface, googleAppsOk: boolean): Promise<void> {
+  private async sendTelegramStartup(
+    telegram: BaseInterface,
+    googleAppsOk: boolean,
+    googleOAuthReady: boolean,
+  ): Promise<void> {
     const { TelegramBot } = await import('../interface/telegram/TelegramBot.js');
     if (!(telegram instanceof TelegramBot)) return;
 
     const chatIds = this.loadTelegramChatIds();
 
-    if (googleAppsOk) {
-      // Already connected — simple text message
+    // Google Apps 연결 완료 또는 OAuth 환경변수 미설정 → 텍스트만
+    if (googleAppsOk || !googleOAuthReady) {
+      const msg = googleAppsOk
+        ? 'VIBE is ready.'
+        : 'VIBE is ready.\n\nGoogle Apps: not configured (set VIBE_SYNC_GOOGLE_CLIENT_ID)';
       for (const chatId of chatIds) {
         try {
           await telegram.sendResponse({
             messageId: `startup-${Date.now()}`,
             channel: 'telegram',
             chatId,
-            content: 'VIBE is ready.',
+            content: msg,
             format: 'text',
           });
         } catch { /* ignore */ }
@@ -361,7 +426,7 @@ export class InterfaceManager {
       return;
     }
 
-    // Not connected — send inline button for Google Apps OAuth
+    // OAuth 환경변수 있고, 토큰 없음 → 인라인 버튼으로 인증 유도
     for (const chatId of chatIds) {
       try {
         await telegram.sendInlineKeyboard(
@@ -390,21 +455,14 @@ export class InterfaceManager {
         const authManager = new GoogleAuthManager(logger as never);
         const authUrl = authManager.getAuthUrl();
 
-        // Send auth URL as clickable link
-        await telegram.sendInlineKeyboard(
-          chatId,
-          'Open this link to authorize Google Apps:',
-          [[{ text: 'Authorize Google Account', callback_data: 'noop' }]],
-        );
         await telegram.sendResponse({
           messageId: `google-auth-${Date.now()}`,
           channel: 'telegram',
           chatId,
-          content: authUrl,
+          content: `Open this link to authorize Google Apps:\n${authUrl}`,
           format: 'text',
         });
 
-        // Wait for OAuth callback
         const code = await authManager.startAuthFlow();
         await authManager.exchangeCode(code);
 
@@ -427,20 +485,27 @@ export class InterfaceManager {
     });
   }
 
-  private async sendSlackStartup(slack: BaseInterface, googleAppsOk: boolean): Promise<void> {
+  private async sendSlackStartup(
+    slack: BaseInterface,
+    googleAppsOk: boolean,
+    googleOAuthReady: boolean,
+  ): Promise<void> {
     const { SlackBot } = await import('../interface/slack/SlackBot.js');
     if (!(slack instanceof SlackBot)) return;
 
     const channelIds = this.loadSlackChannelIds();
 
-    if (googleAppsOk) {
+    if (googleAppsOk || !googleOAuthReady) {
+      const msg = googleAppsOk
+        ? 'VIBE is ready.'
+        : 'VIBE is ready.\n\nGoogle Apps: not configured (set VIBE_SYNC_GOOGLE_CLIENT_ID)';
       for (const channelId of channelIds) {
         try {
           await slack.sendResponse({
             messageId: `startup-${Date.now()}`,
             channel: 'slack',
             chatId: channelId,
-            content: 'VIBE is ready.',
+            content: msg,
             format: 'text',
           });
         } catch { /* ignore */ }
@@ -448,7 +513,7 @@ export class InterfaceManager {
       return;
     }
 
-    // Google Apps 미연결 → Block Kit 버튼
+    // OAuth 환경변수 있고 토큰 없음 → Block Kit 버튼
     for (const channelId of channelIds) {
       try {
         await slack.sendBlockMessage(channelId, 'VIBE is ready.', [
