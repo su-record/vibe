@@ -1,5 +1,8 @@
 ---
+name: vercel-react-best-practices
 description: "React/Next.js performance optimization guide (based on Vercel engineering). Auto-activates when writing, reviewing, or refactoring React components. 45 rules across 8 priority categories."
+triggers: [react, next.js, performance, optimization, vercel, component, rendering]
+priority: 60
 ---
 
 # Vercel React Best Practices

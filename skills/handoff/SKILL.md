@@ -1,5 +1,8 @@
 ---
+name: handoff
 description: "Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords."
+triggers: [handoff, handover, session cleanup, session end, context save]
+priority: 70
 ---
 
 # Handoff — Session Handover Document

@@ -1,5 +1,8 @@
 ---
-description: Core framework capabilities overview. Auto-activates when working on core projects, asking about available features, or needing workflow guidance.
+name: core-capabilities
+description: "Core framework capabilities overview. Auto-activates when working on core projects, asking about available features, or needing workflow guidance."
+triggers: [core, capabilities, features, workflow, framework guide]
+priority: 50
 ---
 # Core Capabilities
 

@@ -1,5 +1,8 @@
 ---
-description: Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously.
+name: git-worktree
+description: "Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously."
+triggers: [worktree, PR review, hotfix, parallel branch, multiple branches]
+priority: 50
 ---
 # Git Worktree Skill
 

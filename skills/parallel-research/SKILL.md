@@ -1,5 +1,8 @@
 ---
-description: Parallel research guide. Auto-activates for complex features, new technologies, security-critical work, architecture design, or technology selection decisions.
+name: parallel-research
+description: "Parallel research guide. Auto-activates for complex features, new technologies, security-critical work, architecture design, or technology selection decisions."
+triggers: [parallel research, complex feature, technology selection, architecture design, security critical]
+priority: 60
 ---
 # Parallel Research
 
