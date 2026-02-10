@@ -25,3 +25,4 @@ wiki/
 
 # vibe project hooks (personal)
 .claude/settings.local.json
+.claude/vibe/config.json
