@@ -269,6 +269,18 @@ export class SessionRAGStore {
       CREATE INDEX IF NOT EXISTS idx_sevi_timestamp ON session_evidence(timestamp);
     `);
 
+    // Phase 5: Conversation history table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS conversation_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chatId TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
+        content TEXT NOT NULL,
+        timestamp TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_conv_chat_time ON conversation_history(chatId, timestamp);
+    `);
+
     this.initializeFTS5();
   }
 
@@ -876,5 +888,63 @@ export class SessionRAGStore {
       goals: { total: goal.total, byStatus: goal.record },
       evidence: { total: evi.total, byType: evi.record },
     };
+  }
+
+  // ==========================================================================
+  // Phase 5: Conversation History
+  // ==========================================================================
+
+  /** Save a conversation entry (user or assistant) */
+  saveConversationEntry(
+    chatId: string,
+    role: 'user' | 'assistant',
+    content: string,
+    timestamp?: string,
+  ): void {
+    try {
+      const ts = timestamp ?? new Date().toISOString();
+      const stmt = this.db.prepare(
+        'INSERT INTO conversation_history (chatId, role, content, timestamp) VALUES (?, ?, ?, ?)',
+      );
+      stmt.run(chatId, role, content, ts);
+    } catch {
+      // DB write failure must not break main flow
+    }
+  }
+
+  /** Get recent conversation history (default 24h, max 8000 chars) */
+  getRecentConversationHistory(
+    chatId: string,
+    hoursBack: number = 24,
+    maxChars: number = 8000,
+  ): Array<{ role: string; content: string; timestamp: string }> {
+    try {
+      const cutoff = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
+      const rows = this.db.prepare(
+        'SELECT role, content, timestamp FROM conversation_history WHERE chatId = ? AND timestamp > ? ORDER BY timestamp ASC',
+      ).all(chatId, cutoff) as Array<{ role: string; content: string; timestamp: string }>;
+
+      // Apply max chars limit (oldest first removed)
+      let totalChars = 0;
+      const result: Array<{ role: string; content: string; timestamp: string }> = [];
+      for (let i = rows.length - 1; i >= 0; i--) {
+        totalChars += rows[i].content.length;
+        if (totalChars > maxChars) break;
+        result.unshift(rows[i]);
+      }
+      return result;
+    } catch {
+      return [];
+    }
+  }
+
+  /** Delete conversation entries older than specified hours */
+  cleanupOldConversationHistory(olderThanHours: number = 48): void {
+    try {
+      const cutoff = new Date(Date.now() - olderThanHours * 60 * 60 * 1000).toISOString();
+      this.db.prepare('DELETE FROM conversation_history WHERE timestamp < ?').run(cutoff);
+    } catch {
+      // Cleanup failure is not critical
+    }
   }
 }

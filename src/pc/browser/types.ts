@@ -2,7 +2,6 @@
  * Browser Automation Types
  *
  * Playwright ARIA Snapshot 기반 브라우저 자동화 타입 정의.
- * OpenClaw 패턴 참조, VIBE MCP 도구 체계에 맞춰 재구현.
  */
 
 import type { Page, BrowserContext, CDPSession } from 'playwright';

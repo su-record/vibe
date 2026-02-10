@@ -251,6 +251,7 @@ export class VibeDaemon {
       return {
         ...this.getHealth(),
         interfaces: this.interfaceManager.getActiveInterfaces(),
+        hasPendingMessages: this.sessionPool.hasAnyPendingInstructions(),
       };
     });
 

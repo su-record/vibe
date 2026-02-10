@@ -164,6 +164,32 @@ export class InterfaceManager {
     }
   }
 
+  /**
+   * Phase 6: Quick Pre-Check — 동기적 O(1) 사전 필터링
+   * - 'skip': 빈 메시지 (텍스트+파일+위치 모두 없음)
+   * - 'busy': 세션 처리 중 → pendingInstructions로 전달
+   * - 'process': 정상 처리 진행
+   */
+  quickPreCheck(message: ExternalMessage): 'process' | 'skip' | 'busy' {
+    const hasContent = (message.content?.trim().length ?? 0) > 0;
+    const hasFiles = Boolean(message.files?.length);
+    const hasLocation = Boolean(message.location);
+
+    if (!hasContent && !hasFiles && !hasLocation) {
+      return 'skip';
+    }
+
+    if (this.sessionPool) {
+      const session = this.sessionPool.findSessionByProject(process.cwd());
+      if (session?.status === 'busy') {
+        this.sessionPool.addPendingInstruction(session.id, message.content);
+        return 'busy';
+      }
+    }
+
+    return 'process';
+  }
+
   private registerMessageHandler(name: string, iface: BaseInterface): void {
     iface.onMessage(async (message: ExternalMessage) => {
       this.logger('info', `[${name}] Message received from ${message.userId}: ${message.content.slice(0, 100)}`);
@@ -175,6 +201,24 @@ export class InterfaceManager {
           channel: message.channel,
           chatId: message.chatId,
           content: 'Vibe 데몬이 메시지를 수신했으나, 세션 풀이 아직 준비되지 않았습니다.',
+          format: 'text',
+        });
+        return;
+      }
+
+      // Phase 6: Quick Pre-Check
+      const preCheck = this.quickPreCheck(message);
+      if (preCheck === 'skip') {
+        this.logger('debug', `[${name}] Empty message skipped`);
+        return;
+      }
+      if (preCheck === 'busy') {
+        this.logger('info', `[${name}] Session busy, message queued as pending instruction`);
+        await iface.sendResponse({
+          messageId: message.id,
+          channel: message.channel,
+          chatId: message.chatId,
+          content: '현재 요청을 처리 중입니다. 메시지가 대기열에 추가되었습니다.',
           format: 'text',
         });
         return;

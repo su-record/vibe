@@ -57,7 +57,7 @@ export class AgentExecutionError extends Error {
 // ============================================
 
 /** 작업 상태 (SPEC Job Lifecycle) */
-export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type TaskStatus = 'pending' | 'running' | 'stale_canceling' | 'completed' | 'failed' | 'cancelled';
 
 /** 작업 정보 */
 export interface TaskInfo {
@@ -73,6 +73,10 @@ export interface TaskInfo {
   model: string;
   provider: string;
   retryCount: number;
+  /** 마지막 의미 있는 활동 타임스탬프 */
+  lastActivity: number;
+  /** Stale 감지 여부 */
+  stale: boolean;
 }
 
 /** 큐 통계 */
@@ -80,6 +84,7 @@ export interface QueueStats {
   total: number;
   pending: number;
   running: number;
+  stale_canceling: number;
   completed: number;
   failed: number;
   cancelled: number;
@@ -213,6 +218,7 @@ class TaskQueue {
       total: this.queue.length,
       pending: 0,
       running: 0,
+      stale_canceling: 0,
       completed: 0,
       failed: 0,
       cancelled: 0,
@@ -243,8 +249,11 @@ class BackgroundManagerImpl {
   private cleanupTimer: ReturnType<typeof setInterval> | null = null;
   private registry: AgentRegistry | null = null;
 
+  private staleCheckTimer: ReturnType<typeof setInterval> | null = null;
+
   constructor() {
     this.startCleanupTimer();
+    this.startStaleDetection();
   }
 
   /**
@@ -273,6 +282,38 @@ class BackgroundManagerImpl {
   }
 
   /**
+   * Stale 감지 타이머 — running 태스크의 무활동 감지
+   */
+  private startStaleDetection(): void {
+    if (this.staleCheckTimer) return;
+    this.staleCheckTimer = setInterval(() => {
+      this.checkStaleRunningTasks();
+    }, CONCURRENCY.STALE_CHECK_INTERVAL);
+    if (this.staleCheckTimer.unref) {
+      this.staleCheckTimer.unref();
+    }
+  }
+
+  /**
+   * Running 태스크의 stale 감지 — CAS 패턴 (running → stale_canceling)
+   */
+  private checkStaleRunningTasks(): void {
+    for (const task of this.taskQueue.getAll()) {
+      if (task.status === 'running' && !task.stale) {
+        const inactiveMs = Date.now() - task.lastActivity;
+        if (inactiveMs > CONCURRENCY.ACTIVITY_TIMEOUT) {
+          task.stale = true;
+          task.status = 'stale_canceling';
+          if (task.handle) {
+            task.handle.cancel();
+          }
+          warnLog(`[BackgroundManager] Task ${task.id} stale — no activity for ${inactiveMs}ms`);
+        }
+      }
+    }
+  }
+
+  /**
    * Fire-and-forget 방식으로 백그라운드 에이전트 시작
    * 즉시 handle 반환 (< 100ms)
    */
@@ -288,7 +329,9 @@ class BackgroundManagerImpl {
       createdAt: Date.now(),
       model,
       provider,
-      retryCount: 0
+      retryCount: 0,
+      lastActivity: Date.now(),
+      stale: false,
     };
 
     try {
@@ -347,7 +390,16 @@ class BackgroundManagerImpl {
         return {
           content: [{
             type: 'text',
-            text: `🔄 Task "${taskId}" is running\nStarted: ${new Date(task.startedAt!).toISOString()}`
+            text: `🔄 Task "${taskId}" is running\nStarted: ${new Date(task.startedAt!).toISOString()}\nLast activity: ${new Date(task.lastActivity).toISOString()}\nStale: ${task.stale}`
+          }],
+          task
+        };
+
+      case 'stale_canceling':
+        return {
+          content: [{
+            type: 'text',
+            text: `⚠️ Task "${taskId}" detected stale, canceling for retry\nLast activity: ${new Date(task.lastActivity).toISOString()}`
           }],
           task
         };
@@ -452,6 +504,9 @@ class BackgroundManagerImpl {
       // 대기 제한: PIPELINE_TIMEOUT 이내에서만 큐 처리 시도
       const deadline = Date.now() + CONCURRENCY.PIPELINE_TIMEOUT;
       while (!this.taskQueue.isEmpty()) {
+        // Stale 감지: running 태스크 순회 (SPEC Phase 1-4)
+        this.checkStaleRunningTasks();
+
         const task = this.taskQueue.peek();
         if (!task) break;
 
@@ -500,6 +555,17 @@ class BackgroundManagerImpl {
       });
     } catch { /* registry is optional */ }
 
+    // onProgress를 래핑하여 activity 갱신 (Phase 1-3)
+    const originalOnProgress = task.args.onProgress;
+    const activityTrackingArgs: BackgroundAgentArgs = {
+      ...task.args,
+      onProgress: (message: string) => {
+        // 의미 있는 활동만 갱신 (system.progress 이벤트 = tool/model 활동)
+        task.lastActivity = Date.now();
+        if (originalOnProgress) originalOnProgress(message);
+      },
+    };
+
     while (task.retryCount <= maxRetries) {
       // 재시도 시 상태 리셋
       if (task.retryCount > 0) {
@@ -510,6 +576,8 @@ class BackgroundManagerImpl {
         task.handle = undefined;
         task.error = undefined;
         task.startedAt = Date.now();
+        task.lastActivity = Date.now();
+        task.stale = false;
       }
 
       let timedOut = false;
@@ -525,7 +593,7 @@ class BackgroundManagerImpl {
       }, timeout);
 
       try {
-        const result = await launchBackgroundAgent(task.args);
+        const result = await launchBackgroundAgent(activityTrackingArgs);
         const handle = (result as ToolResult & { handle?: BackgroundAgentHandle }).handle;
 
         if (handle) {
@@ -557,7 +625,13 @@ class BackgroundManagerImpl {
         clearTimeout(timeoutId);
       }
 
+      // stale 감지 후 cancel된 경우 에러 메시지 보강 (status는 try-catch에서 이미 'failed' 처리)
+      if (task.stale && task.status === 'failed') {
+        task.error = task.error || `Stale: no activity for ${CONCURRENCY.ACTIVITY_TIMEOUT}ms`;
+      }
+
       // 실패가 아닌 경우 (성공/취소) → 재시도 안 함
+      // SPEC: 태스크가 cancel 도중 자체 완료하면 완료 우선
       if (task.status !== 'failed') {
         break;
       }

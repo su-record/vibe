@@ -1,7 +1,7 @@
 /**
  * vibe setup - Interactive TUI Setup Wizard (@clack/prompts)
  *
- * OpenClaw/SimpleClaw 스타일의 통합 설정 위자드
+ * 통합 설정 위자드
  * - Phase 1: 상태 감지 + AZ 자동 발견
  * - Phase 2: 인증 방식 복수 선택 + 순차 수집
  * - Phase 3: 자동 우선순위 + 활성화 검증

@@ -8,11 +8,16 @@
 
 import * as https from 'node:https';
 import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import { BaseInterface } from '../BaseInterface.js';
 import {
   ChannelType,
   ExternalMessage,
   ExternalResponse,
+  FileAttachment,
+  LocationInfo,
   InterfaceLogger,
   TelegramConfig,
 } from '../types.js';
@@ -66,6 +71,7 @@ export class TelegramBot extends BaseInterface {
 
   async stop(): Promise<void> {
     this.pollingActive = false;
+    await this.flushAllBuffers();
     this.status = 'disabled';
     this.logger('info', 'Telegram bot stopped');
   }
@@ -73,12 +79,23 @@ export class TelegramBot extends BaseInterface {
   async sendResponse(response: ExternalResponse): Promise<void> {
     const chunks = this.formatter.splitMessage(response.content);
 
+    // Phase 7: parse_mode depends on format
+    const parseModeMap: Record<string, string | undefined> = {
+      text: undefined,
+      markdown: 'Markdown',
+      html: 'HTML',
+    };
+    const parseMode = parseModeMap[response.format ?? 'markdown'];
+
     for (const chunk of chunks) {
-      await this.apiCall('sendMessage', {
+      const params: Record<string, unknown> = {
         chat_id: response.chatId,
         text: chunk,
-        parse_mode: 'Markdown',
-      });
+      };
+      if (parseMode) {
+        params.parse_mode = parseMode;
+      }
+      await this.apiCall('sendMessage', params);
     }
   }
 
@@ -207,30 +224,93 @@ export class TelegramBot extends BaseInterface {
     let type: ExternalMessage['type'] = 'text';
     const metadata: Record<string, unknown> = { telegramMessageId: messageId };
 
+    const files: FileAttachment[] = [];
+    let location: LocationInfo | undefined;
+    const msgDir = this.getFileStoragePath(chatId, messageId);
+
     if (message.text) {
       content = String(message.text);
       type = 'text';
     } else if (message.voice || message.audio) {
       type = 'voice';
       const voiceObj = (message.voice || message.audio) as Record<string, unknown>;
+      const fileId = String(voiceObj.file_id || '');
+      const mimeType = String(voiceObj.mime_type || 'audio/ogg');
+      const isVoice = Boolean(message.voice);
+      const ext = mimeType.includes('ogg') ? 'ogg' : 'mp3';
+      const fileName = isVoice ? `voice_${messageId}.${ext}` : this.sanitizeFileName(String(voiceObj.file_name || `audio_${messageId}.${ext}`));
+
       content = '[voice message]';
-      metadata.telegramFileId = String(voiceObj.file_id || '');
+      metadata.telegramFileId = fileId;
       metadata.voiceDuration = voiceObj.duration;
-      metadata.voiceMimeType = String(voiceObj.mime_type || 'audio/ogg');
+      metadata.voiceMimeType = mimeType;
+
+      const saved = await this.downloadAndSaveFile(fileId, msgDir, fileName);
+      if (saved) {
+        files.push({ type: isVoice ? 'voice' : 'audio', path: saved, name: fileName, mimeType, size: voiceObj.file_size as number | undefined, duration: voiceObj.duration as number | undefined });
+      }
     } else if (message.document) {
       type = 'file';
       const doc = message.document as Record<string, unknown>;
-      content = String(doc.file_name || 'unknown');
-      metadata.telegramFileId = String(doc.file_id || '');
-      metadata.fileMimeType = String(doc.mime_type || '');
+      const fileId = String(doc.file_id || '');
+      const origName = String(doc.file_name || 'unknown');
+      const fileName = this.sanitizeFileName(origName);
+      const mimeType = String(doc.mime_type || '');
+
+      content = origName;
+      metadata.telegramFileId = fileId;
+      metadata.fileMimeType = mimeType;
       metadata.fileSize = doc.file_size;
+
+      const saved = await this.downloadAndSaveFile(fileId, msgDir, fileName);
+      if (saved) {
+        files.push({ type: 'document', path: saved, name: fileName, mimeType, size: doc.file_size as number | undefined });
+      }
     } else if (message.photo) {
       type = 'file';
       const photos = message.photo as Array<Record<string, unknown>>;
       const largest = photos[photos.length - 1];
+      const fileId = String(largest.file_id || '');
+      const fileName = `image_${messageId}.jpg`;
+
       content = '[photo]';
-      metadata.telegramFileId = String(largest.file_id || '');
+      metadata.telegramFileId = fileId;
       metadata.fileMimeType = 'image/jpeg';
+
+      const saved = await this.downloadAndSaveFile(fileId, msgDir, fileName);
+      if (saved) {
+        files.push({ type: 'photo', path: saved, name: fileName, mimeType: 'image/jpeg', size: largest.file_size as number | undefined });
+      }
+    } else if (message.video) {
+      type = 'file';
+      const video = message.video as Record<string, unknown>;
+      const fileId = String(video.file_id || '');
+      const mimeType = String(video.mime_type || 'video/mp4');
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'mkv';
+      const fileName = `video_${messageId}.${ext}`;
+
+      content = '[video]';
+      metadata.telegramFileId = fileId;
+      metadata.fileMimeType = mimeType;
+
+      const saved = await this.downloadAndSaveFile(fileId, msgDir, fileName);
+      if (saved) {
+        files.push({ type: 'video', path: saved, name: fileName, mimeType, size: video.file_size as number | undefined, duration: video.duration as number | undefined });
+      }
+    }
+
+    // Location handling
+    if (message.location) {
+      const loc = message.location as Record<string, unknown>;
+      location = {
+        latitude: Number(loc.latitude),
+        longitude: Number(loc.longitude),
+        ...(loc.horizontal_accuracy ? { accuracy: Number(loc.horizontal_accuracy) } : {}),
+      };
+      if (!content) {
+        content = `[위치: ${location.latitude}, ${location.longitude}]`;
+        type = 'text';
+      }
     }
 
     const externalMessage: ExternalMessage = {
@@ -242,6 +322,8 @@ export class TelegramBot extends BaseInterface {
       type,
       metadata,
       timestamp: new Date().toISOString(),
+      ...(files.length > 0 ? { files } : {}),
+      ...(location ? { location } : {}),
     };
 
     await this.dispatchMessage(externalMessage);
@@ -329,5 +411,35 @@ export class TelegramBot extends BaseInterface {
         res.on('error', reject);
       }).on('error', reject);
     });
+  }
+
+  /** Sanitize filename to prevent path traversal */
+  private sanitizeFileName(name: string): string {
+    return name.replace(/[/\\:*?"<>|]/g, '_').replace(/\.\./g, '_');
+  }
+
+  /** Get local file storage path for a message */
+  private getFileStoragePath(chatId: string, messageId: string): string {
+    return path.join(
+      os.homedir(), '.vibe', 'files', 'telegram', chatId, `msg_${messageId}`,
+    );
+  }
+
+  /** Download a Telegram file and save to local disk */
+  private async downloadAndSaveFile(
+    fileId: string,
+    dir: string,
+    fileName: string,
+  ): Promise<string | null> {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      const buffer = await this.downloadFile(fileId);
+      const filePath = path.join(dir, fileName);
+      fs.writeFileSync(filePath, buffer);
+      return filePath;
+    } catch (err) {
+      this.logger('warn', `Failed to download file ${fileId}: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }
   }
 }

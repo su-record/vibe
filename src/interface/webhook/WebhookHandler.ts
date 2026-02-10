@@ -79,6 +79,7 @@ export class WebhookHandler extends BaseInterface {
   }
 
   async stop(): Promise<void> {
+    await this.flushAllBuffers();
     if (this.server) {
       return new Promise<void>((resolve) => {
         this.server!.close(() => {

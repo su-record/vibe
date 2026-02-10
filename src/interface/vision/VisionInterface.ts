@@ -64,6 +64,7 @@ export class VisionInterface extends BaseInterface {
       await this.geminiLive.disconnect();
       this.geminiLive = null;
     }
+    await this.flushAllBuffers();
     this.status = 'disabled';
     this.logger('info', 'Vision interface stopped');
   }

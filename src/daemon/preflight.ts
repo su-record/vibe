@@ -166,7 +166,7 @@ function isPortInUse(port: number): Promise<boolean> {
 }
 
 function checkMacOSPermissions(errors: PreflightItem[], warnings: PreflightItem[]): void {
-  // OpenClaw pattern: Don't trigger TCC prompts in preflight (they'd attach to the parent
+  // Don't trigger TCC prompts in preflight (they'd attach to the parent
   // process — Terminal/Cursor/IDE, not Vibe). Instead:
   //   1. Check binary/tool availability (non-TCC, safe)
   //   2. Inform user which permissions are needed + System Settings URL

@@ -11,6 +11,23 @@ import { LogLevel } from '../daemon/types.js';
 
 export type ChannelType = 'telegram' | 'web' | 'webhook' | 'cli' | 'vision' | 'slack';
 
+/** 파일 첨부 정보 (Phase 2: sonolbot-patterns) */
+export interface FileAttachment {
+  type: 'photo' | 'document' | 'video' | 'audio' | 'voice';
+  path: string;
+  name: string;
+  mimeType?: string;
+  size?: number;
+  duration?: number;
+}
+
+/** GPS 위치 정보 (Phase 2: sonolbot-patterns) */
+export interface LocationInfo {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+}
+
 export interface ExternalMessage {
   id: string;
   channel: ChannelType;
@@ -20,6 +37,14 @@ export interface ExternalMessage {
   type: 'text' | 'voice' | 'file' | 'command';
   metadata?: Record<string, unknown>;
   timestamp: string;
+  /** 첨부 파일 목록 (Phase 2) */
+  files?: FileAttachment[];
+  /** GPS 위치 정보 (Phase 2) */
+  location?: LocationInfo;
+  /** 배치 합산된 원본 메시지 ID (Phase 3) */
+  batchedFrom?: string[];
+  /** 각 메시지의 타임스탬프 (Phase 3) */
+  allTimestamps?: string[];
 }
 
 export interface ExternalResponse {
