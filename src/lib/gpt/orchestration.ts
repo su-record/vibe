@@ -19,7 +19,7 @@ export async function coreGptOrchestrate(
   const { maxTokens = 4096, jsonMode = true } = options;
 
   const result = await chat({
-    model: 'gpt-5.2-codex',
+    model: 'gpt-5.3-codex',
     messages: [{ role: 'user', content: prompt }],
     maxTokens,
     temperature: 0,

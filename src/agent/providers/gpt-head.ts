@@ -20,7 +20,7 @@ import type {
   ToolCall,
 } from '../types.js';
 
-const MODEL_ID = 'gpt-5.2';
+const MODEL_ID = 'gpt-5.3-codex';
 const TEMPERATURE = 0;
 const MAX_TOKENS = 32768;
 

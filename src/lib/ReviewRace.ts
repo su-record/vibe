@@ -305,7 +305,7 @@ ${code}
 Respond with JSON only.`;
 
     const response = await gptApi.ask(prompt, {
-      model: 'gpt-5.2-codex',
+      model: 'gpt-5.3-codex',
       temperature: 0.3,
     });
 

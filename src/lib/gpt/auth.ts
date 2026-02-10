@@ -113,7 +113,7 @@ function saveAzureConfig(config: AzureOpenAIConfig): void {
 
 /**
  * GPT 모델 등급 점수 (높을수록 우수)
- * gpt-5.2 > gpt-5 > gpt-4o > gpt-4 > gpt-3.5 > 기타
+ * gpt-5.3 > gpt-5.2 > gpt-5
  */
 function modelScore(model: string): number {
   const m = model.toLowerCase();

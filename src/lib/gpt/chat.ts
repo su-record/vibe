@@ -27,39 +27,31 @@ const INSTRUCTIONS_CACHE_TTL = 15 * 60 * 1000; // 15분
 
 // 사용 가능한 모델 목록
 export const GPT_MODELS: Record<string, GptModelInfo> = {
-  // GPT-5.2 (latest)
-  'gpt-5.2': {
-    id: 'gpt-5.2',
-    name: 'GPT-5.2',
-    description: 'Latest GPT, general purpose',
-    maxTokens: 32768,
-    reasoning: { effort: 'medium', summary: 'auto' },
-  },
-  // GPT-5.2 Codex (coding specialized)
-  'gpt-5.2-codex': {
-    id: 'gpt-5.2-codex',
-    name: 'GPT-5.2 Codex',
-    description: 'Latest Codex, coding specialized',
-    maxTokens: 32768,
-    reasoning: { effort: 'high', summary: 'auto' },
-  },
-  // GPT-5.3 Codex (function calling optimized)
+  // GPT-5.3 Codex (latest, coding + function calling optimized)
   'gpt-5.3-codex': {
     id: 'gpt-5.3-codex',
     name: 'GPT-5.3 Codex',
-    description: 'Function calling optimized, agent head model',
+    description: 'Latest Codex, coding + function calling optimized',
     maxTokens: 32768,
     reasoning: { effort: 'high', summary: 'auto' },
+  },
+  // GPT-5.2 (legacy general purpose)
+  'gpt-5.2': {
+    id: 'gpt-5.2',
+    name: 'GPT-5.2',
+    description: 'General purpose',
+    maxTokens: 32768,
+    reasoning: { effort: 'medium', summary: 'auto' },
   },
 };
 
 // 기본 모델
-export const DEFAULT_MODEL = 'gpt-5.2';
+export const DEFAULT_MODEL = 'gpt-5.3-codex';
 
 /**
  * GitHub에서 Codex instructions 가져오기
  */
-export async function getCodexInstructions(model: string = 'gpt-5.2'): Promise<string> {
+export async function getCodexInstructions(model: string = 'gpt-5.3-codex'): Promise<string> {
   // 캐시 확인
   if (cachedInstructions && Date.now() - instructionsCacheTime < INSTRUCTIONS_CACHE_TTL) {
     return cachedInstructions;
@@ -161,15 +153,15 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 
   // API Key 방식은 OpenAI 모델 사용
   const apiKeyModelMap: Record<string, string> = {
-    'gpt-5.2': 'gpt-5.2',
-    'gpt-5.2-codex': 'gpt-5.2',
     'gpt-5.3-codex': 'gpt-5.3-codex',
-    'gpt-5.1-codex': 'gpt-5.2',
-    'gpt-5.1-codex-mini': 'gpt-5.2',
-    'gpt-5.1-codex-max': 'gpt-5.2',
+    'gpt-5.2': 'gpt-5.3-codex',
+    'gpt-5.2-codex': 'gpt-5.3-codex',
+    'gpt-5.1-codex': 'gpt-5.3-codex',
+    'gpt-5.1-codex-mini': 'gpt-5.3-codex',
+    'gpt-5.1-codex-max': 'gpt-5.3-codex',
   };
 
-  const actualModel = apiKeyModelMap[model] || 'gpt-5.2';
+  const actualModel = apiKeyModelMap[model] || 'gpt-5.3-codex';
 
   // 메시지 구성
   const apiMessages: Array<{ role: string; content: string | null }> = [];

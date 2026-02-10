@@ -638,7 +638,7 @@ After reasoning:
       id: 'su-ui',
       content: `---
 name: su-ui
-model: gpt-5.2-codex
+model: gpt-5.3-codex
 description: "UI preview and generation utilities. Use for UI component work."
 ---
 
