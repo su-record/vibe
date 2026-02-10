@@ -2,6 +2,12 @@
 
 Personalized AI Agent (Claude Code Exclusive) — v0.1.0
 
+## Project Nature
+
+> **This project is the source code for the `@su-record/core` npm package.**
+> Since users install this via `npm install`, all bug fixes and improvements MUST be made in **this project source** — not in installed locations (e.g., AppData).
+> Always modify files in this repository, never the installed copy.
+
 ## Philosophy
 
 > **core = 바이브코딩을 쉽게 + 최소 품질 보장**
