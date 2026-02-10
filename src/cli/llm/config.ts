@@ -11,6 +11,13 @@ import { ExternalLLMConfig, VibeConfig } from '../types.js';
  * 외부 LLM 설정
  */
 export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
+  claude: {
+    name: 'core-claude',
+    role: 'fallback',
+    description: 'Claude API (Anthropic Direct)',
+    package: '',
+    envKey: 'ANTHROPIC_API_KEY'
+  },
   gpt: {
     name: 'core-gpt',
     role: 'architecture',

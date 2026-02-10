@@ -26,6 +26,8 @@ import {
   geminiStatus,
   geminiLogout,
   geminiImport,
+  claudeStatus,
+  claudeLogout,
   azStatus,
   azLogout,
   kimiStatus,
@@ -123,6 +125,39 @@ switch (command) {
   case 'uninstall':
     remove();
     break;
+
+  // vibe claude <subcommand>
+  case 'claude': {
+    const subCommand = positionalArgs[1];
+    switch (subCommand) {
+      case 'key': {
+        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'claude' && a !== 'key');
+        if (apiKey) {
+          setupExternalLLM('claude', apiKey);
+        } else {
+          console.log('Usage: vibe claude key <ANTHROPIC_API_KEY>');
+        }
+        break;
+      }
+      case 'logout':
+      case 'remove':
+        claudeLogout();
+        break;
+      case 'status':
+        claudeStatus();
+        break;
+      default:
+        console.log(`
+Claude Commands:
+  vibe claude key <key>     Set Anthropic API key
+  vibe claude status        Check status
+  vibe claude logout        Remove key
+
+Get key: https://console.anthropic.com/settings/keys
+        `);
+    }
+    break;
+  }
 
   // vibe gpt <subcommand>
   case 'gpt': {
@@ -461,6 +496,7 @@ Available commands:
   vibe status             전체 상태 확인
   vibe sync <cmd>         클라우드 동기화
 
+  vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (auth, key, status, logout)
   vibe gemini <cmd>       Gemini (auth, key, status, logout)
   vibe az <cmd>           AZ (key, status, logout)

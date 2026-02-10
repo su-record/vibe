@@ -14,7 +14,7 @@ export const GPT_TOKEN_URL = 'https://auth.openai.com/oauth/token';
 export const GPT_REDIRECT_URI = 'http://localhost:1455/auth/callback';
 
 // OAuth 스코프
-export const GPT_SCOPE = 'openid profile email offline_access';
+export const GPT_SCOPE = 'openid profile email offline_access model.request';
 
 // ChatGPT API 엔드포인트
 export const CHATGPT_BASE_URL = 'https://chatgpt.com/backend-api';

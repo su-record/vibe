@@ -38,14 +38,20 @@ jobs:
           registry-url: "https://npm.pkg.github.com"
           scope: "@su-record"
 
+      - name: Setup pnpm
+        if: steps.version.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install dependencies
         if: steps.version.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Publish
         if: steps.version.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           echo "Publishing ${{ steps.version.outputs.local }} (was ${{ steps.version.outputs.published }})"
-          npm publish
+          pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
