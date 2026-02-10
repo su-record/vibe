@@ -344,26 +344,34 @@ function checkSkillEligibility(metadata) {
 // ============================================
 
 /**
- * Find all skill files
+ * Find all skill files (including auto/ subdirectories)
+ * Ignores .disabled files
  */
 function findSkillFiles() {
   const skills = [];
 
-  // Project skills (higher priority)
-  if (fs.existsSync(PROJECT_SKILLS_DIR)) {
-    const projectSkills = fs.readdirSync(PROJECT_SKILLS_DIR)
-      .filter(f => f.endsWith('.md'))
-      .map(f => ({ path: path.join(PROJECT_SKILLS_DIR, f), scope: 'project' }));
-    skills.push(...projectSkills);
+  // Helper: scan directory for .md files, skip .disabled
+  function scanDir(dir, scope) {
+    if (!fs.existsSync(dir)) return;
+    try {
+      const files = fs.readdirSync(dir)
+        .filter(f => f.endsWith('.md') && !f.endsWith('.disabled'))
+        .map(f => ({ path: path.join(dir, f), scope }));
+      skills.push(...files);
+    } catch { /* skip unreadable */ }
   }
 
+  // Project skills (higher priority)
+  scanDir(PROJECT_SKILLS_DIR, 'project');
+
+  // Project auto-generated skills
+  scanDir(path.join(PROJECT_SKILLS_DIR, 'auto'), 'project-auto');
+
   // User skills
-  if (fs.existsSync(USER_SKILLS_DIR)) {
-    const userSkills = fs.readdirSync(USER_SKILLS_DIR)
-      .filter(f => f.endsWith('.md'))
-      .map(f => ({ path: path.join(USER_SKILLS_DIR, f), scope: 'user' }));
-    skills.push(...userSkills);
-  }
+  scanDir(USER_SKILLS_DIR, 'user');
+
+  // User auto-generated skills
+  scanDir(path.join(USER_SKILLS_DIR, 'auto'), 'user-auto');
 
   return skills;
 }
@@ -607,6 +615,40 @@ if (isMainModule) {
     const injection = formatSkillInjection(result);
     if (injection) {
       console.log(injection);
+    }
+
+    // Track usage of auto-generated skills (fire-and-forget)
+    const autoTriggered = result.triggered.filter(
+      s => s.metadata && (s.metadata.generated === true || s.metadata.generated === 'true')
+    );
+    if (autoTriggered.length > 0) {
+      setImmediate(async () => {
+        try {
+          const { getLibBaseUrl } = await import('./utils.js');
+          const LIB_BASE = getLibBaseUrl();
+          const [memMod, trackerMod, regMod] = await Promise.all([
+            import(`${LIB_BASE}memory/MemoryStorage.js`),
+            import(`${LIB_BASE}evolution/UsageTracker.js`),
+            import(`${LIB_BASE}evolution/GenerationRegistry.js`),
+          ]);
+          const storage = new memMod.MemoryStorage(PROJECT_DIR);
+          const registry = new regMod.GenerationRegistry(storage);
+          const tracker = new trackerMod.UsageTracker(storage);
+
+          for (const skill of autoTriggered) {
+            const insightId = skill.metadata.insightId;
+            if (insightId) {
+              const gen = registry.getByName(skill.name);
+              if (gen) {
+                tracker.recordUsage(gen.id, process.env.SESSION_ID, prompt.slice(0, 200));
+              }
+            }
+          }
+          storage.close();
+        } catch (e) {
+          process.stderr.write(`[Evolution] Usage tracking error: ${e.message}\n`);
+        }
+      });
     }
   }
 }

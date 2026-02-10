@@ -1,7 +1,7 @@
 /**
  * InterfaceManager - Auto-start enabled interfaces on daemon boot
  *
- * Reads ~/.vibe/interfaces.json and starts enabled interfaces (slack, imessage, etc.)
+ * Reads ~/.vibe/interfaces.json and starts enabled interfaces (slack, telegram, etc.)
  * Environment variables provide credentials; interfaces.json controls enabled state.
  */
 
@@ -17,7 +17,6 @@ const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const INTERFACE_CONFIG = path.join(VIBE_DIR, 'interfaces.json');
 const TELEGRAM_CONFIG = path.join(VIBE_DIR, 'telegram.json');
 const SLACK_CONFIG = path.join(VIBE_DIR, 'slack.json');
-const IMESSAGE_CONFIG = path.join(VIBE_DIR, 'imessage.json');
 
 interface InterfaceState {
   [name: string]: { enabled: boolean; lastUpdated: string };
@@ -92,9 +91,6 @@ export class InterfaceManager {
     switch (name) {
       case 'slack':
         await this.startSlack(ifaceLogger);
-        break;
-      case 'imessage':
-        await this.startIMessage(ifaceLogger);
         break;
       case 'telegram':
         await this.startTelegram(ifaceLogger);
@@ -183,43 +179,6 @@ export class InterfaceManager {
     this.registerMessageHandler('slack', slack);
     this.interfaces.set('slack', slack);
     this.logger('info', 'Slack interface started');
-  }
-
-  private async startIMessage(logger: Logger): Promise<void> {
-    if (process.platform !== 'darwin') {
-      this.logger('warn', 'iMessage: not macOS, skipping');
-      return;
-    }
-
-    // Read from env var first, then config file (vibe imessage setup)
-    // macOS에서는 allowedHandles 없어도 자동 시작 (전체 허용)
-    let allowedHandles = (process.env.IMESSAGE_ALLOWED_HANDLES || '').split(',').filter(Boolean);
-    let cliPath = process.env.IMESSAGE_CLI_PATH || undefined;
-
-    try {
-      if (fs.existsSync(IMESSAGE_CONFIG)) {
-        const config = JSON.parse(fs.readFileSync(IMESSAGE_CONFIG, 'utf-8'));
-        if (allowedHandles.length === 0 && Array.isArray(config?.allowedHandles) && config.allowedHandles.length > 0) {
-          allowedHandles = config.allowedHandles;
-        }
-        if (!cliPath && config?.cliPath) {
-          cliPath = config.cliPath;
-        }
-      }
-    } catch {
-      // ignore parse errors
-    }
-
-    const { IMessageBot } = await import('../interface/imessage/IMessageBot.js');
-    const imessage = new IMessageBot(
-      { allowedHandles, cliPath },
-      logger,
-    );
-
-    await imessage.start();
-    this.registerMessageHandler('imessage', imessage);
-    this.interfaces.set('imessage', imessage);
-    this.logger('info', 'iMessage interface started');
   }
 
   private async startTelegram(logger: Logger): Promise<void> {

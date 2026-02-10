@@ -177,3 +177,40 @@ for (const rule of DISPATCH_RULES) {
 }
 
 await Promise.all(execPromises);
+
+// Evolution: Gap detection — log unmatched prompts for skill gap analysis
+const matched = DISPATCH_RULES.some(r =>
+  r.label !== 'skip' && r.label !== 'keyword' &&
+  r.pattern !== null && r.pattern.test(prompt) &&
+  (r.script || r.echo)
+);
+
+if (!matched) {
+  setImmediate(async () => {
+    try {
+      const configPath = path.join(process.env.CLAUDE_PROJECT_DIR || '.', '.claude', 'vibe', 'config.json');
+      let gapEnabled = true;
+      try {
+        const fs = await import('fs');
+        if (fs.existsSync(configPath)) {
+          const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          gapEnabled = config.evolution?.gapDetection !== false && config.evolution?.enabled !== false;
+        }
+      } catch { /* ignore */ }
+
+      if (gapEnabled) {
+        const LIB_BASE = (await import('./utils.js')).getLibBaseUrl();
+        const [memMod, gapMod] = await Promise.all([
+          import(`${LIB_BASE}memory/MemoryStorage.js`),
+          import(`${LIB_BASE}evolution/SkillGapDetector.js`),
+        ]);
+        const storage = new memMod.MemoryStorage(process.env.CLAUDE_PROJECT_DIR || '.');
+        const detector = new gapMod.SkillGapDetector(storage);
+        detector.logMiss(prompt.slice(0, 200));
+        storage.close();
+      }
+    } catch (e) {
+      process.stderr.write(`[Evolution] Gap log error: ${e.message}\n`);
+    }
+  });
+}

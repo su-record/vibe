@@ -28,7 +28,6 @@ import { buildSystemPrompt, truncateInput, wrapUserMessage, type SystemPromptCon
 import { MediaPreprocessor, type MediaPreprocessorConfig } from './preprocessors/MediaPreprocessor.js';
 import { bindSendTelegram, unbindSendTelegram, runInChatContext } from './tools/send-telegram.js';
 import { bindSendSlack, unbindSendSlack, runInSlackContext } from './tools/send-slack.js';
-import { bindSendIMessage, unbindSendIMessage, runInIMessageContext } from './tools/send-imessage.js';
 
 type ChannelSendFn = (chatId: string, text: string, options?: { format?: 'text' | 'markdown' | 'html' }) => Promise<void>;
 
@@ -167,7 +166,6 @@ export class AgentLoop {
 
     // Run in channel-specific AsyncLocalStorage context
     const runInContext = channel === 'slack' ? runInSlackContext
-      : channel === 'imessage' ? runInIMessageContext
       : runInChatContext;
 
     await runInContext(chatId, async () => {
@@ -219,14 +217,6 @@ export class AgentLoop {
           bindSendSlack(chatId, slackSendFn, allowedChannelIds);
         }
         break;
-      case 'imessage':
-        if (services.sendToChannel) {
-          const imsgSendFn = (handle: string, text: string): Promise<void> =>
-            services.sendToChannel!(channel, handle, text);
-          const allowedHandles = (message.metadata?.allowedHandles as string[]) ?? [chatId];
-          bindSendIMessage(chatId, imsgSendFn, allowedHandles);
-        }
-        break;
       default:
         bindSendTelegram(chatId, services.sendTelegram);
         break;
@@ -237,9 +227,6 @@ export class AgentLoop {
     switch (channel) {
       case 'slack':
         unbindSendSlack(chatId);
-        break;
-      case 'imessage':
-        unbindSendIMessage(chatId);
         break;
       default:
         unbindSendTelegram(chatId);

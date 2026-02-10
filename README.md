@@ -114,7 +114,7 @@ flowchart LR
 
 | 서브패스 | 설명 | 주요 export |
 |---------|------|------------|
-| `@su-record/core/interface` | 외부 인터페이스 (Telegram, Web, Slack, iMessage, Vision) | `BaseInterface`, `TelegramBot`, `WebServer`, `SlackBot`, `IMessageBot`, `VisionInterface` + 타입 |
+| `@su-record/core/interface` | 외부 인터페이스 (Telegram, Web, Slack, Vision) | `BaseInterface`, `TelegramBot`, `WebServer`, `SlackBot`, `VisionInterface` + 타입 |
 | `@su-record/core/router` | 라우팅 인프라 (Intent, Task Planning, Browser) | `ModelARouter`, `IntentClassifier`, `TaskPlanner`, `BrowserAgent` 등 14개 클래스 + 16개 타입 |
 | `@su-record/core/memory` | 메모리 시스템 (Storage, KnowledgeGraph, Session RAG) | `MemoryStorage`, `KnowledgeGraph`, `SessionRAGStore` 등 7개 클래스 + 18개 타입 |
 | `@su-record/core/policy` | 정책 엔진 (Policy, Risk) | `PolicyEngine`, `PolicyStore`, `RiskCalculator` 등 4개 클래스 + 13개 타입 |

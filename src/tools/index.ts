@@ -27,6 +27,14 @@ export { saveSessionItem } from './memory/saveSessionItem.js';
 export { retrieveSessionContext } from './memory/retrieveSessionContext.js';
 export { manageGoals } from './memory/manageGoals.js';
 
+// Reflection tools (self-evolution Phase 1)
+export { reflectNow, searchReflections, getSessionReflections } from './memory/reflectionTools.js';
+
+// Reflection types
+export type {
+  Reflection, ReflectionInput, ReflectionType, ReflectionTrigger,
+} from '../lib/memory/ReflectionStore.js';
+
 // Session RAG types
 export type {
   Decision, DecisionInput, Constraint, ConstraintInput,

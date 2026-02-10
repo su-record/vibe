@@ -120,6 +120,29 @@ export async function startSession(args: { greeting?: string; loadMemory?: boole
       // Observation context injection is non-critical
     }
 
+    // Inject high-value reflections from previous sessions
+    try {
+      const reflectionStore = memoryManager.getReflectionStore();
+      const highValueReflections = reflectionStore.getHighValue(0.7, 5);
+
+      if (highValueReflections.length > 0) {
+        summary += '\n## Previous Session Insights\n';
+        for (const ref of highValueReflections) {
+          if (ref.insights.length > 0) {
+            summary += `  Insights: ${ref.insights.slice(0, 3).join('; ')}\n`;
+          }
+          if (ref.decisions.length > 0) {
+            summary += `  Decisions: ${ref.decisions.slice(0, 3).join('; ')}\n`;
+          }
+          if (ref.patterns.length > 0) {
+            summary += `  Patterns: ${ref.patterns.slice(0, 3).join('; ')}\n`;
+          }
+        }
+      }
+    } catch {
+      // Reflection injection is non-critical
+    }
+
     // Inject Session RAG context (active goals, constraints, recent decisions)
     try {
       const ragContext = memoryManager.retrieveActiveContext();

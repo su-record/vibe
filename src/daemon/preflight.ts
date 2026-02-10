@@ -18,6 +18,13 @@ import { execSync } from 'node:child_process';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 
+/** 실제 인증 저장 디렉토리 (gpt-storage.ts, gpt/auth.ts와 동일) */
+function getGlobalConfigDir(): string {
+  return process.platform === 'win32'
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+}
+
 export interface PreflightResult {
   passed: boolean;
   errors: PreflightItem[];
@@ -58,18 +65,26 @@ export async function runPreflight(): Promise<PreflightResult> {
   };
 }
 
-function checkHeadModelApiKey(errors: PreflightItem[], warnings: PreflightItem[]): void {
-  // Check GPT API key
-  const gptKeyPath = path.join(VIBE_DIR, 'gpt-api-key');
-  const gptOAuthPath = path.join(VIBE_DIR, 'gpt_tokens.json');
-  const hasGptKey = fs.existsSync(gptKeyPath) || process.env.OPENAI_API_KEY;
+function checkHeadModelApiKey(_errors: PreflightItem[], warnings: PreflightItem[]): void {
+  const configDir = getGlobalConfigDir();
+
+  // OAuth: %APPDATA%/vibe/gpt-auth.json (Windows) or ~/.config/vibe/gpt-auth.json
+  const gptOAuthPath = path.join(configDir, 'gpt-auth.json');
   const hasOAuth = fs.existsSync(gptOAuthPath);
 
-  if (!hasGptKey && !hasOAuth) {
+  // API Key: %APPDATA%/vibe/gpt-apikey.json or env
+  const gptApiKeyPath = path.join(configDir, 'gpt-apikey.json');
+  const hasApiKey = fs.existsSync(gptApiKeyPath) || !!process.env.OPENAI_API_KEY;
+
+  // Azure: %APPDATA%/vibe/gpt-azure.json
+  const azurePath = path.join(configDir, 'gpt-azure.json');
+  const hasAzure = fs.existsSync(azurePath);
+
+  if (!hasOAuth && !hasApiKey && !hasAzure) {
     warnings.push({
       check: 'head-model-api-key',
-      message: 'GPT API 키가 설정되지 않았습니다 (Claude fallback 사용)',
-      resolution: 'vibe gpt auth 또는 vibe gpt key <key> 실행',
+      message: 'GPT 인증이 설정되지 않았습니다 (Claude fallback 사용)',
+      resolution: 'vibe gpt auth (OAuth) 또는 vibe gpt key <key> (API Key) 실행',
     });
   }
 }
@@ -101,17 +116,6 @@ function checkChannelConfigs(errors: PreflightItem[], warnings: PreflightItem[])
         check: 'slack-app-token',
         message: 'SLACK_APP_TOKEN이 설정되지 않았습니다',
         resolution: 'SLACK_APP_TOKEN 환경변수 설정',
-      });
-    }
-  }
-
-  // iMessage
-  if (process.env.VIBE_IMESSAGE_ENABLED === 'true' || process.env.VIBE_IMESSAGE_ENABLED === '1') {
-    if (process.platform !== 'darwin') {
-      warnings.push({
-        check: 'imessage-platform',
-        message: 'iMessage는 macOS에서만 지원됩니다',
-        resolution: 'macOS에서 실행하거나 VIBE_IMESSAGE_ENABLED=false 설정',
       });
     }
   }
@@ -168,30 +172,10 @@ function checkMacOSPermissions(errors: PreflightItem[], warnings: PreflightItem[
   //   2. Inform user which permissions are needed + System Settings URL
   //   3. Let actual usage handle permission failures with clear error messages
 
-  // 1. iMessage: imsg binary availability (Full Disk Access is on imsg, not Node)
-  if (process.env.VIBE_IMESSAGE_ENABLED === 'true' || process.env.VIBE_IMESSAGE_ENABLED === '1') {
-    checkImsgBinary(errors);
-  }
-
-  // 2. Browser automation — Playwright availability + permission guidance
+  // Browser automation — Playwright availability + permission guidance
   if (process.env.VIBE_BROWSER_ENABLED === 'true' || process.env.VIBE_BROWSER_ENABLED === '1') {
     checkPlaywrightAvailable(errors, warnings);
     warnAccessibility(warnings);
-  }
-}
-
-/** Check imsg binary exists. Full Disk Access is granted to imsg, not to Node/Vibe. */
-function checkImsgBinary(errors: PreflightItem[]): void {
-  try {
-    execSync('which imsg', { stdio: 'pipe', timeout: 3000 });
-  } catch {
-    errors.push({
-      check: 'imsg-binary',
-      message: 'imsg CLI가 설치되어 있지 않습니다',
-      resolution: 'brew install plentyofcode/tap/imsg 또는 imsg 바이너리를 PATH에 추가\n'
-        + '  설치 후 Full Disk Access 권한 필요:\n'
-        + '  open "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"',
-    });
   }
 }
 

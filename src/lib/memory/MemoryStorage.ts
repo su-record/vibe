@@ -123,6 +123,45 @@ export class MemoryStorage {
       CREATE INDEX IF NOT EXISTS idx_ss_timestamp ON session_summaries(timestamp);
     `);
 
+    // Create usage_events table for self-evolution (Phase 4)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS usage_events (
+        id TEXT PRIMARY KEY,
+        generationId TEXT NOT NULL,
+        sessionId TEXT,
+        matchedPrompt TEXT,
+        feedback TEXT CHECK(feedback IN ('positive','negative','neutral') OR feedback IS NULL),
+        createdAt TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_ue_gen ON usage_events(generationId);
+      CREATE INDEX IF NOT EXISTS idx_ue_session ON usage_events(sessionId);
+      CREATE INDEX IF NOT EXISTS idx_ue_feedback ON usage_events(feedback);
+      CREATE INDEX IF NOT EXISTS idx_ue_created ON usage_events(createdAt);
+    `);
+
+    // Create reflections table for self-evolution (Phase 1)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS reflections (
+        id TEXT PRIMARY KEY,
+        sessionId TEXT,
+        type TEXT NOT NULL CHECK(type IN ('minor','major')),
+        trigger TEXT NOT NULL CHECK(trigger IN ('context_pressure','session_end','manual')),
+        insights TEXT,
+        decisions TEXT,
+        patterns TEXT,
+        filesContext TEXT,
+        score REAL DEFAULT 0.5 CHECK(score >= 0 AND score <= 1),
+        createdAt TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_refl_session ON reflections(sessionId);
+      CREATE INDEX IF NOT EXISTS idx_refl_type ON reflections(type);
+      CREATE INDEX IF NOT EXISTS idx_refl_trigger ON reflections(trigger);
+      CREATE INDEX IF NOT EXISTS idx_refl_score ON reflections(score);
+      CREATE INDEX IF NOT EXISTS idx_refl_created ON reflections(createdAt);
+    `);
+
     // Enable WAL mode for better concurrency
     this.db.pragma('journal_mode = WAL');
 
@@ -167,6 +206,27 @@ export class MemoryStorage {
         CREATE TRIGGER IF NOT EXISTS observations_ad AFTER DELETE ON observations BEGIN
           INSERT INTO observations_fts(observations_fts, rowid, title, narrative, facts, concepts)
             VALUES('delete', old.id, old.title, old.narrative, old.facts, old.concepts);
+        END;
+      `);
+
+      // Create FTS5 for reflections
+      this.db.exec(`
+        CREATE VIRTUAL TABLE IF NOT EXISTS reflections_fts
+          USING fts5(insights, decisions, patterns, content=reflections, content_rowid=rowid);
+
+        CREATE TRIGGER IF NOT EXISTS reflections_ai AFTER INSERT ON reflections BEGIN
+          INSERT INTO reflections_fts(rowid, insights, decisions, patterns)
+            VALUES (new.rowid, new.insights, new.decisions, new.patterns);
+        END;
+        CREATE TRIGGER IF NOT EXISTS reflections_ad AFTER DELETE ON reflections BEGIN
+          INSERT INTO reflections_fts(reflections_fts, rowid, insights, decisions, patterns)
+            VALUES('delete', old.rowid, old.insights, old.decisions, old.patterns);
+        END;
+        CREATE TRIGGER IF NOT EXISTS reflections_au AFTER UPDATE ON reflections BEGIN
+          INSERT INTO reflections_fts(reflections_fts, rowid, insights, decisions, patterns)
+            VALUES('delete', old.rowid, old.insights, old.decisions, old.patterns);
+          INSERT INTO reflections_fts(rowid, insights, decisions, patterns)
+            VALUES (new.rowid, new.insights, new.decisions, new.patterns);
         END;
       `);
 

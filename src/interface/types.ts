@@ -9,7 +9,7 @@ import { LogLevel } from '../daemon/types.js';
 // Message & Response (Channel-agnostic)
 // ============================================================================
 
-export type ChannelType = 'telegram' | 'web' | 'webhook' | 'cli' | 'vision' | 'slack' | 'imessage';
+export type ChannelType = 'telegram' | 'web' | 'webhook' | 'cli' | 'vision' | 'slack';
 
 export interface ExternalMessage {
   id: string;
@@ -91,16 +91,6 @@ export interface SlackConfig {
 }
 
 // ============================================================================
-// iMessage Types
-// ============================================================================
-
-export interface IMessageConfig {
-  allowedHandles: string[];
-  cliPath?: string;
-  dbPath?: string;
-}
-
-// ============================================================================
 // Multi-Channel Configuration
 // ============================================================================
 
@@ -112,10 +102,6 @@ export interface VibeChannelsConfig {
   slack?: {
     enabled: boolean;
     config?: SlackConfig;
-  };
-  imessage?: {
-    enabled: boolean;
-    config?: IMessageConfig;
   };
   vision?: {
     enabled: boolean;

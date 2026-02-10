@@ -10,12 +10,14 @@ import { MemorySearch, SearchStrategy, SearchOptions } from './memory/MemorySear
 import { ObservationStore, Observation, ObservationInput, ObservationType } from './memory/ObservationStore.js';
 import { SessionRAGStore, Decision, DecisionInput, Constraint, ConstraintInput, Goal, GoalInput, Evidence, EvidenceInput, SessionRAGStats, DecisionStatus, ConstraintType, ConstraintSeverity, GoalStatus, EvidenceType, EvidenceStatus } from './memory/SessionRAGStore.js';
 import { SessionRAGRetriever, RetrievalOptions, SessionRAGResult } from './memory/SessionRAGRetriever.js';
+import { ReflectionStore, Reflection, ReflectionInput, ReflectionType, ReflectionTrigger } from './memory/ReflectionStore.js';
 
 // Re-export for backward compatibility
 export { MemoryItem } from './memory/MemoryStorage.js';
 export { Observation, ObservationInput, ObservationType } from './memory/ObservationStore.js';
 export { Decision, DecisionInput, Constraint, ConstraintInput, Goal, GoalInput, Evidence, EvidenceInput, SessionRAGStats, DecisionStatus, ConstraintType, ConstraintSeverity, GoalStatus, EvidenceType, EvidenceStatus } from './memory/SessionRAGStore.js';
 export { RetrievalOptions, SessionRAGResult } from './memory/SessionRAGRetriever.js';
+export { Reflection, ReflectionInput, ReflectionType, ReflectionTrigger } from './memory/ReflectionStore.js';
 
 export class MemoryManager {
   private storage: MemoryStorage;
@@ -24,6 +26,7 @@ export class MemoryManager {
   private observations: ObservationStore;
   private sessionRAG: SessionRAGStore;
   private ragRetriever: SessionRAGRetriever;
+  private reflections: ReflectionStore;
 
   // Map of projectPath -> MemoryManager instance (for project-based memory)
   private static instances: Map<string, MemoryManager> = new Map();
@@ -71,6 +74,7 @@ export class MemoryManager {
     this.observations = new ObservationStore(this.storage);
     this.sessionRAG = new SessionRAGStore(this.storage);
     this.ragRetriever = new SessionRAGRetriever(this.storage, this.sessionRAG);
+    this.reflections = new ReflectionStore(this.storage);
   }
 
   /**
@@ -337,6 +341,34 @@ export class MemoryManager {
 
   public getSessionRAGStats(): SessionRAGStats {
     return this.sessionRAG.getStats();
+  }
+
+  // ============================================================================
+  // Reflection Operations (delegated to ReflectionStore)
+  // ============================================================================
+
+  public getReflectionStore(): ReflectionStore {
+    return this.reflections;
+  }
+
+  public addReflection(input: ReflectionInput): string {
+    return this.reflections.save(input);
+  }
+
+  public searchReflections(query: string, limit?: number): Reflection[] {
+    return this.reflections.search(query, limit);
+  }
+
+  public getRecentReflections(limit?: number): Reflection[] {
+    return this.reflections.getRecent(limit);
+  }
+
+  public getHighValueReflections(minScore?: number, limit?: number): Reflection[] {
+    return this.reflections.getHighValue(minScore, limit);
+  }
+
+  public getReflectionsBySession(sessionId: string): Reflection[] {
+    return this.reflections.getBySession(sessionId);
   }
 
   // ============================================================================

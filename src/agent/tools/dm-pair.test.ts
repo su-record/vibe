@@ -94,7 +94,7 @@ describe('dm_pair tool', () => {
       },
       allowedPairs: [
         { source: 'telegram' as ChannelType, target: 'slack' as ChannelType },
-        { source: 'slack' as ChannelType, target: 'imessage' as ChannelType },
+        { source: 'slack' as ChannelType, target: 'web' as ChannelType },
         { source: 'web' as ChannelType, target: 'telegram' as ChannelType },
       ],
     };
@@ -113,8 +113,8 @@ describe('dm_pair tool', () => {
     await runInDmPairContext(context, () =>
       dmPairTool.handler({
         sourceChannel: 'slack',
-        targetChannel: 'imessage',
-        targetChatId: '+1234',
+        targetChannel: 'web',
+        targetChatId: 'session1',
         message: 'msg2',
       })
     );
@@ -122,7 +122,7 @@ describe('dm_pair tool', () => {
     // Test disallowed pair
     const result = await runInDmPairContext(context, () =>
       dmPairTool.handler({
-        sourceChannel: 'imessage',
+        sourceChannel: 'slack',
         targetChannel: 'telegram',
         targetChatId: 'chat1',
         message: 'msg3',
@@ -131,7 +131,7 @@ describe('dm_pair tool', () => {
 
     expect(sent).toHaveLength(2);
     expect(sent[0].channel).toBe('slack');
-    expect(sent[1].channel).toBe('imessage');
+    expect(sent[1].channel).toBe('web');
     expect(result).toContain('not allowed');
   });
 });

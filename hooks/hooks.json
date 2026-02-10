@@ -21,6 +21,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node {{CORE_PATH}}/hooks/scripts/sentinel-guard.js Bash"
+          },
+          {
+            "type": "command",
             "command": "node {{CORE_PATH}}/hooks/scripts/pre-tool-guard.js Bash"
           }
         ]
@@ -30,6 +34,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node {{CORE_PATH}}/hooks/scripts/sentinel-guard.js Edit"
+          },
+          {
+            "type": "command",
             "command": "node {{CORE_PATH}}/hooks/scripts/pre-tool-guard.js Edit"
           }
         ]
@@ -37,6 +45,10 @@
       {
         "matcher": "Write",
         "hooks": [
+          {
+            "type": "command",
+            "command": "node {{CORE_PATH}}/hooks/scripts/sentinel-guard.js Write"
+          },
           {
             "type": "command",
             "command": "node {{CORE_PATH}}/hooks/scripts/pre-tool-guard.js Write"
