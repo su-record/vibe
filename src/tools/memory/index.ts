@@ -23,3 +23,6 @@ export { searchObservations } from './searchObservations.js';
 export { saveSessionItem } from './saveSessionItem.js';
 export { retrieveSessionContext } from './retrieveSessionContext.js';
 export { manageGoals } from './manageGoals.js';
+
+// Reflection tools (self-evolution Phase 1)
+export { reflectNow, searchReflections, getSessionReflections } from './reflectionTools.js';

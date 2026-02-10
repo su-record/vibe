@@ -43,7 +43,7 @@ import {
   resetHud,
   showHudHelp,
 } from './hud.js';
-import { init, setup, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceEnableConfigured, interfaceDisableAll, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp, autostartEnable, autostartDisable, autostartStatus, autostartHelp, slackSetup, slackChannel, slackStatus, slackHelp, imessageSetup, imessageStatus, imessageHelp } from './commands/index.js';
+import { init, setup, update, remove, showHelp, showStatus, showVersion, syncLogin, syncPush, syncPull, syncStatus, syncLogout, daemonStart, daemonStop, daemonStatus, daemonRestart, daemonHelp, jobList, jobStatus, jobCancel, jobHelp, policyList, policyEnable, policyDisable, policySet, policyHelp, telegramSetup, telegramChat, telegramStatus, telegramHelp, interfaceList, interfaceEnable, interfaceDisable, interfaceEnableConfigured, interfaceDisableAll, interfaceHelp, webhookAdd, webhookList, webhookRemove, webhookHelp, deviceList, deviceRename, deviceRemove, deviceHelp, autostartEnable, autostartDisable, autostartStatus, autostartHelp, slackSetup, slackChannel, slackStatus, slackHelp, imessageSetup, imessageStatus, imessageHelp, evolutionStatus, evolutionList, evolutionApprove, evolutionReject, evolutionDisable, evolutionRollback, evolutionDisableAll, evolutionRun, evolutionInsights, evolutionGaps, evolutionHelp } from './commands/index.js';
 
 // ============================================================================
 // Constants
@@ -652,6 +652,46 @@ Agent Commands:
   case 'restart':
     daemonRestart();
     break;
+
+  // vibe evolution <subcommand>
+  case 'evolution': {
+    const evoSub = positionalArgs[1];
+    switch (evoSub) {
+      case 'status':
+        evolutionStatus();
+        break;
+      case 'list':
+        evolutionList();
+        break;
+      case 'approve':
+        evolutionApprove(positionalArgs[2]);
+        break;
+      case 'reject':
+        evolutionReject(positionalArgs[2]);
+        break;
+      case 'disable':
+        evolutionDisable(positionalArgs[2]);
+        break;
+      case 'rollback':
+        evolutionRollback(positionalArgs[2]);
+        break;
+      case 'disable-all':
+        evolutionDisableAll();
+        break;
+      case 'run':
+        evolutionRun();
+        break;
+      case 'insights':
+        evolutionInsights();
+        break;
+      case 'gaps':
+        evolutionGaps();
+        break;
+      default:
+        evolutionHelp();
+    }
+    break;
+  }
 
   case 'version':
   case '-v':

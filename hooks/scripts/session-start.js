@@ -22,6 +22,33 @@ async function main() {
     console.log('\n' + time.content[0].text);
     console.log('\n[Recent Memories]');
     console.log(memories.content[0].text);
+
+    // Evolution status summary
+    try {
+      const LIB_BASE = (await import('./utils.js')).getLibBaseUrl();
+      const [memMod, regMod, insMod] = await Promise.all([
+        import(`${LIB_BASE}memory/MemoryStorage.js`),
+        import(`${LIB_BASE}evolution/GenerationRegistry.js`),
+        import(`${LIB_BASE}evolution/InsightStore.js`),
+      ]);
+      const storage = new memMod.MemoryStorage(PROJECT_DIR);
+      const registry = new regMod.GenerationRegistry(storage);
+      const insightStore = new insMod.InsightStore(storage);
+
+      const genStats = registry.getStats();
+      const active = genStats.byStatus?.active || 0;
+      const drafts = genStats.byStatus?.draft || 0;
+      const gaps = insightStore.getByType('skill_gap').length;
+
+      if (active > 0 || drafts > 0 || gaps > 0) {
+        const parts = [];
+        if (active > 0) parts.push(`${active} active skills`);
+        if (drafts > 0) parts.push(`${drafts} pending approval`);
+        if (gaps > 0) parts.push(`${gaps} gaps detected`);
+        console.log(`\n🧬 Evolution: ${parts.join(', ')}`);
+      }
+      storage.close();
+    } catch { /* evolution not yet initialized, skip */ }
   } catch (e) {
     console.log('[Session] Error:', e.message);
   }

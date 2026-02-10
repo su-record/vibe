@@ -24,3 +24,4 @@ export { deviceList, deviceRename, deviceRemove, deviceHelp } from './device.js'
 export { autostartEnable, autostartDisable, autostartStatus, autostartHelp } from './autostart.js';
 export { slackSetup, slackChannel, slackStatus, slackHelp } from './slack.js';
 export { imessageSetup, imessageStatus, imessageHelp } from './imessage.js';
+export { evolutionStatus, evolutionList, evolutionApprove, evolutionReject, evolutionDisable, evolutionRollback, evolutionDisableAll, evolutionRun, evolutionInsights, evolutionGaps, evolutionHelp } from './evolution.js';
