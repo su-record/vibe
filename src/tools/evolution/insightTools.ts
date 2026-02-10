@@ -1,11 +1,11 @@
 // Insight tools for self-evolution Phase 2
 
-import { MemoryManager } from '../../lib/MemoryManager.js';
-import { MemoryStorage } from '../../lib/memory/MemoryStorage.js';
-import { InsightExtractor } from '../../lib/evolution/InsightExtractor.js';
-import { InsightStore } from '../../lib/evolution/InsightStore.js';
-import { SkillGapDetector } from '../../lib/evolution/SkillGapDetector.js';
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { MemoryManager } from '../../core/lib/MemoryManager.js';
+import { MemoryStorage } from '../../core/lib/memory/MemoryStorage.js';
+import { InsightExtractor } from '../../core/lib/evolution/InsightExtractor.js';
+import { InsightStore } from '../../core/lib/evolution/InsightStore.js';
+import { SkillGapDetector } from '../../core/lib/evolution/SkillGapDetector.js';
+import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
 
 // ============================================================================
 // core_extract_insights

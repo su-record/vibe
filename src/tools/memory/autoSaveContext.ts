@@ -1,8 +1,8 @@
 // Memory management tool - SQLite based with context compression (v1.3)
 
-import { MemoryManager } from '../../lib/MemoryManager.js';
-import { ContextCompressor } from '../../lib/ContextCompressor.js';
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { MemoryManager } from '../../core/lib/MemoryManager.js';
+import { ContextCompressor } from '../../core/lib/ContextCompressor.js';
+import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
 
 export const autoSaveContextDefinition: ToolDefinition = {
   name: 'auto_save_context',

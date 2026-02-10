@@ -7,7 +7,7 @@
  */
 
 import https from 'node:https';
-import { getApiKeyFromConfig } from '../../lib/gemini/auth.js';
+import { getApiKeyFromConfig } from '../../core/lib/gemini/auth.js';
 
 const GEMINI_VISION_MODEL = 'gemini-2.0-flash';
 const API_ENDPOINT = 'generativelanguage.googleapis.com';

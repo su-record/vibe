@@ -7,7 +7,7 @@
  * @since v2.6.1
  */
 
-import type { ToolResult } from '../../types/tool.js';
+import type { ToolResult } from '../../core/types/tool.js';
 
 // ============================================================================
 // Types

@@ -6,12 +6,12 @@
  * - core_sandbox_browser: 샌드박스 브라우저 제어
  */
 
-import type { ToolResult, ToolDefinition } from '../../types/tool.js';
-import type { SandboxLogger } from '../../sandbox/types.js';
-import { ContainerManager } from '../../sandbox/ContainerManager.js';
-import { SandboxBrowser } from '../../sandbox/SandboxBrowser.js';
-import { ExecAllowlist } from '../../sandbox/ExecAllowlist.js';
-import { ToolPolicyEvaluator, getDefaultSaaSPolicy, getDefaultLocalPolicy } from '../../sandbox/ToolPolicy.js';
+import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import type { SandboxLogger } from '../../pc/sandbox/types.js';
+import { ContainerManager } from '../../pc/sandbox/ContainerManager.js';
+import { SandboxBrowser } from '../../pc/sandbox/SandboxBrowser.js';
+import { ExecAllowlist } from '../../pc/sandbox/ExecAllowlist.js';
+import { ToolPolicyEvaluator, getDefaultSaaSPolicy, getDefaultLocalPolicy } from '../../pc/sandbox/ToolPolicy.js';
 
 // ============================================================================
 // Singleton

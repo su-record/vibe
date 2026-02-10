@@ -1,8 +1,8 @@
 // v2.1 - Get session context for automatic context injection
 // This tool aggregates memories, knowledge graph, and timeline for session start
 
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
-import { MemoryManager } from '../../lib/MemoryManager.js';
+import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { MemoryManager } from '../../core/lib/MemoryManager.js';
 
 export const getSessionContextDefinition: ToolDefinition = {
   name: 'get_session_context',

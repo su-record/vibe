@@ -9,8 +9,8 @@
  * Temperature=0 고정 (결정론적 tool selection)
  */
 
-import { getAuthInfo } from '../../lib/gpt/auth.js';
-import type { AuthInfo } from '../../lib/gpt/types.js';
+import { getAuthInfo } from '../../core/lib/gpt/auth.js';
+import type { AuthInfo } from '../../core/lib/gpt/types.js';
 import type {
   AgentMessage,
   AgentToolDefinition,

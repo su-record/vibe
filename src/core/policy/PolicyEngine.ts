@@ -23,7 +23,7 @@ import {
 import { PolicyStore } from './PolicyStore.js';
 import { RiskCalculator } from './RiskCalculator.js';
 import { EvidenceStore } from './Evidence.js';
-import { LogLevel } from '../daemon/types.js';
+import { LogLevel } from '../../daemon/types.js';
 
 const MAX_REGEX_LENGTH = 100;
 const REGEX_TIMEOUT_MS = 10;

@@ -8,7 +8,7 @@
  * - Rate limiting: 최소 3초 간격
  */
 
-import type { JobProgress } from './types.js';
+import type { JobProgress } from './agent-job-types.js';
 
 const RATE_LIMIT_MS = 3_000;
 

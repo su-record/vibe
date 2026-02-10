@@ -1,7 +1,7 @@
 // UI/UX Stack Search Tool - Framework-specific implementation guidelines
 
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
-import { SearchService } from '../../lib/ui-ux/SearchService.js';
+import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { SearchService } from '../../core/lib/ui-ux/SearchService.js';
 
 // Singleton SearchService instance
 let searchService: SearchService | null = null;

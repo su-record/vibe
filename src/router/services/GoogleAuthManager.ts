@@ -7,15 +7,15 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as http from 'node:http';
 import { InterfaceLogger } from '../../interface/types.js';
-import { getGlobalConfigDir } from '../../lib/llm/auth/ConfigManager.js';
+import { getGlobalConfigDir } from '../../core/lib/llm/auth/ConfigManager.js';
 import {
   getSyncClientId,
   getSyncClientSecret,
   SYNC_OAUTH_AUTH_URL,
   SYNC_OAUTH_TOKEN_URL,
-} from '../../lib/sync/constants.js';
+} from '../../core/lib/sync/constants.js';
 import { GoogleAuthTokens } from './google-types.js';
-import { loadSyncAuth } from '../../lib/sync/storage.js';
+import { loadSyncAuth } from '../../core/lib/sync/storage.js';
 
 const AUTH_REDIRECT_PORT = 51123;
 const AUTH_REDIRECT_URI = `http://localhost:${AUTH_REDIRECT_PORT}/oauth-callback`;

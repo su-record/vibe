@@ -13,7 +13,7 @@
  * - Half-open: TTL 만료 후 1회 시험 요청
  */
 
-import { getAuthInfo } from '../lib/gpt/auth.js';
+import { getAuthInfo } from '../core/lib/gpt/auth.js';
 import { GptHeadModelProvider } from './providers/gpt-head.js';
 import { ClaudeHeadModelProvider } from './providers/claude-head.js';
 import type { CircuitBreakerState, HeadModelProvider } from './types.js';

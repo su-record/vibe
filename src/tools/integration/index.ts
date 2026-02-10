@@ -6,13 +6,13 @@
  * - core_pc_modules: 모듈 활성화/비활성화
  */
 
-import type { ToolResult, ToolDefinition } from '../../types/tool.js';
-import type { IntegrationLogger, ModuleName } from '../../integration/types.js';
-import { ModuleRegistry } from '../../integration/ModuleRegistry.js';
-import { CommandDispatcher } from '../../integration/CommandDispatcher.js';
-import { SessionContextManager } from '../../integration/SessionContext.js';
-import { SecurityGate } from '../../integration/SecurityGate.js';
-import { ResultFormatter } from '../../integration/ResultFormatter.js';
+import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import type { IntegrationLogger, ModuleName } from '../../pc/types.js';
+import { ModuleRegistry } from '../../pc/ModuleRegistry.js';
+import { CommandDispatcher } from '../../pc/CommandDispatcher.js';
+import { SessionContextManager } from '../../pc/SessionContext.js';
+import { SecurityGate } from '../../pc/SecurityGate.js';
+import { ResultFormatter } from '../../pc/ResultFormatter.js';
 
 // ============================================================================
 // Singleton

@@ -37,7 +37,7 @@ describe('Evolution module exports', () => {
 // Tool exports test
 describe('Evolution tool exports', () => {
   it('should export all insight and dashboard tools', async () => {
-    const mod = await import('../../../tools/evolution/index.js');
+    const mod = await import('../../../../tools/evolution/index.js');
 
     // Phase 2 tools
     expect(mod.extractInsightsDefinition).toBeDefined();
@@ -199,7 +199,7 @@ describe('Skill injector auto/ directory', () => {
 // Phase 5 Scenario 4 & 5 & 9: CLI commands
 describe('Evolution CLI commands', () => {
   it('should export all CLI functions', async () => {
-    const mod = await import('../../../cli/commands/evolution.js');
+    const mod = await import('../../../../cli/commands/evolution.js');
     expect(mod.evolutionStatus).toBeDefined();
     expect(mod.evolutionList).toBeDefined();
     expect(mod.evolutionApprove).toBeDefined();

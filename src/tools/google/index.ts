@@ -14,23 +14,23 @@
  * - core_google_calendar_create: 일정 생성
  */
 
-import type { ToolResult, ToolDefinition } from '../../types/tool.js';
+import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
 import * as path from 'node:path';
 import Database from 'better-sqlite3';
-import { TokenStore } from '../../google/TokenStore.js';
-import { ScopeManager } from '../../google/ScopeManager.js';
-import { OAuthFlow } from '../../google/OAuthFlow.js';
-import { PerUserGmailService } from '../../google/services/GmailService.js';
-import { PerUserDriveService } from '../../google/services/DriveService.js';
-import { PerUserSheetsService } from '../../google/services/SheetsService.js';
-import { PerUserCalendarService } from '../../google/services/CalendarService.js';
-import { GOOGLE_SCOPE_MAP } from '../../google/types.js';
-import type { GoogleLogger } from '../../google/types.js';
-import { getGlobalConfigDir } from '../../lib/llm/auth/ConfigManager.js';
+import { TokenStore } from '../../pc/google/TokenStore.js';
+import { ScopeManager } from '../../pc/google/ScopeManager.js';
+import { OAuthFlow } from '../../pc/google/OAuthFlow.js';
+import { PerUserGmailService } from '../../pc/google/services/GmailService.js';
+import { PerUserDriveService } from '../../pc/google/services/DriveService.js';
+import { PerUserSheetsService } from '../../pc/google/services/SheetsService.js';
+import { PerUserCalendarService } from '../../pc/google/services/CalendarService.js';
+import { GOOGLE_SCOPE_MAP } from '../../pc/google/types.js';
+import type { GoogleLogger } from '../../pc/google/types.js';
+import { getGlobalConfigDir } from '../../core/lib/llm/auth/ConfigManager.js';
 import {
   getSyncClientId,
   getSyncClientSecret,
-} from '../../lib/sync/constants.js';
+} from '../../core/lib/sync/constants.js';
 
 // ============================================================================
 // Singleton (lazy init)

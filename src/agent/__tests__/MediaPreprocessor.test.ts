@@ -14,7 +14,7 @@ vi.mock('../../lib/gemini/capabilities.js', () => ({
   analyzeImage: vi.fn(),
 }));
 
-import { transcribeAudio, analyzeImage } from '../../lib/gemini/capabilities.js';
+import { transcribeAudio, analyzeImage } from '../../core/lib/gemini/capabilities.js';
 const mockTranscribe = vi.mocked(transcribeAudio);
 const mockAnalyzeImage = vi.mocked(analyzeImage);
 

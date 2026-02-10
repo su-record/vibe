@@ -1,6 +1,6 @@
 // Convention management tool - completely independent
 
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
+import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
 
 export const suggestImprovementsDefinition: ToolDefinition = {
   name: 'suggest_improvements',

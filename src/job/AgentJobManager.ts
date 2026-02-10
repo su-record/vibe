@@ -15,7 +15,7 @@ import * as crypto from 'node:crypto';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as fs from 'node:fs';
-import type { AgentJob, JobProgress, JobRow, JobStatus } from './types.js';
+import type { AgentJob, JobProgress, JobRow, JobStatus } from './agent-job-types.js';
 
 const MAX_CONCURRENT = 3;
 const JOB_TIMEOUT_MS = 10 * 60 * 1000; // 10분

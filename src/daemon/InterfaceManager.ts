@@ -254,7 +254,7 @@ export class InterfaceManager {
       fs.writeFileSync(tmpFile, audioBuffer);
 
       // 3. Gemini STT 변환
-      const { transcribeAudio } = await import('../lib/gemini/capabilities.js');
+      const { transcribeAudio } = await import('../core/lib/gemini/capabilities.js');
       const result = await transcribeAudio(tmpFile, { language: 'Korean' });
 
       // 4. 임시 파일 정리

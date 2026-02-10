@@ -7,9 +7,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as fs from 'node:fs';
-import { JobManager } from '../jobs/JobManager.js';
-import { ProgressReporter } from '../jobs/ProgressReporter.js';
-import type { JobProgress } from '../jobs/types.js';
+import { JobManager } from './AgentJobManager.js';
+import { ProgressReporter } from './ProgressReporter.js';
+import type { JobProgress } from './agent-job-types.js';
 
 function createTempDbPath(): string {
   const dir = path.join(os.tmpdir(), `vibe-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);

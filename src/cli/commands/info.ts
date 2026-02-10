@@ -7,7 +7,7 @@ import fs from 'fs';
 import { VibeConfig } from '../types.js';
 import { getPackageJson, isSoxInstalled } from '../utils.js';
 import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
-import { loadSyncAuth } from '../../lib/sync/index.js';
+import { loadSyncAuth } from '../../core/lib/sync/index.js';
 import { getGlobalConfigDir } from '../llm/config.js';
 
 /**

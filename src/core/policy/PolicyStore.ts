@@ -10,7 +10,7 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import * as url from 'node:url';
 import { Policy, PolicyFile } from './types.js';
-import { LogLevel } from '../daemon/types.js';
+import { LogLevel } from '../../daemon/types.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const USER_POLICIES_DIR = path.join(VIBE_DIR, 'policies');

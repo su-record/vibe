@@ -1,8 +1,8 @@
 // Generate Design System Tool - 5-stage AI pipeline for complete design system
 
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
-import { DesignSystemGenerator } from '../../lib/ui-ux/DesignSystemGenerator.js';
-import { SearchService } from '../../lib/ui-ux/SearchService.js';
+import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { DesignSystemGenerator } from '../../core/lib/ui-ux/DesignSystemGenerator.js';
+import { SearchService } from '../../core/lib/ui-ux/SearchService.js';
 
 let generator: DesignSystemGenerator | null = null;
 

@@ -12,7 +12,7 @@ import { PolicyStore } from './PolicyStore.js';
 import { RiskCalculator } from './RiskCalculator.js';
 import { EvidenceStore } from './Evidence.js';
 import { EvalContext, maxRisk } from './types.js';
-import { LogLevel } from '../daemon/types.js';
+import { LogLevel } from '../../daemon/types.js';
 
 const TEST_DIR = path.join(os.tmpdir(), `vibe-policy-test-${process.pid}`);
 const noopLogger = (_level: LogLevel, _msg: string, _data?: unknown): void => {};

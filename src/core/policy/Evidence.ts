@@ -10,7 +10,7 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import * as fs from 'node:fs';
 import { EvidenceRecord, EvidenceEventType, EvaluationResult } from './types.js';
-import { LogLevel } from '../daemon/types.js';
+import { LogLevel } from '../../daemon/types.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const DEFAULT_DB_PATH = path.join(VIBE_DIR, 'evidence.db');

@@ -8,7 +8,7 @@
  * - core_vision_ask: 현재 화면에 질문
  */
 
-import type { ToolResult, ToolDefinition } from '../../types/tool.js';
+import type { ToolResult, ToolDefinition } from '../../core/types/tool.js';
 import { ScreenCaptureEngine, LocalCaptureSource, CDPCaptureSource, RemoteCaptureSource } from '../../interface/vision/ScreenCaptureEngine.js';
 import { VisionSessionManager } from '../../interface/vision/VisionSession.js';
 import { GeminiLiveStream } from '../../interface/vision/GeminiLiveStream.js';

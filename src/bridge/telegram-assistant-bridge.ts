@@ -255,7 +255,7 @@ async function main(): Promise<void> {
 /** Try to initialize SmartRouter for LLM classification */
 async function initSmartRouter(router: ModelARouter): Promise<SmartRouterLike | null> {
   try {
-    const { SmartRouter } = await import('../orchestrator/SmartRouter.js');
+    const { SmartRouter } = await import('../core/orchestrator/SmartRouter.js');
     const smartRouter = new SmartRouter();
     router.setSmartRouter(smartRouter);
     logger('info', 'SmartRouter initialized');

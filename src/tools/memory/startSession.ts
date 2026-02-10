@@ -1,11 +1,11 @@
 // Memory management tool - SQLite based (v2.0)
 // Enhanced with auto-orientation + observations + session summaries
 
-import { MemoryManager } from '../../lib/MemoryManager.js';
-import { SessionSummarizer } from '../../lib/memory/SessionSummarizer.js';
-import { MemoryStorage } from '../../lib/memory/MemoryStorage.js';
-import { ToolResult, ToolDefinition } from '../../types/tool.js';
-import { loadProgress, getProgressSummary, incrementSession } from '../../lib/ProgressTracker.js';
+import { MemoryManager } from '../../core/lib/MemoryManager.js';
+import { SessionSummarizer } from '../../core/lib/memory/SessionSummarizer.js';
+import { MemoryStorage } from '../../core/lib/memory/MemoryStorage.js';
+import { ToolResult, ToolDefinition } from '../../core/types/tool.js';
+import { loadProgress, getProgressSummary, incrementSession } from '../../core/lib/ProgressTracker.js';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
