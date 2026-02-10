@@ -18,6 +18,13 @@ const INTERFACE_CONFIG = path.join(VIBE_DIR, 'interfaces.json');
 const TELEGRAM_CONFIG = path.join(VIBE_DIR, 'telegram.json');
 const SLACK_CONFIG = path.join(VIBE_DIR, 'slack.json');
 
+/** Global config dir for Google Apps token check */
+function getGlobalConfigDir(): string {
+  return process.platform === 'win32'
+    ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
+}
+
 interface InterfaceState {
   [name: string]: { enabled: boolean; lastUpdated: string };
 }
@@ -60,6 +67,9 @@ export class InterfaceManager {
         });
       }
     }
+
+    // Send startup notification to all connected interfaces
+    await this.sendStartupNotification();
   }
 
   async stopAll(): Promise<void> {
@@ -217,6 +227,94 @@ export class InterfaceManager {
     this.registerMessageHandler('telegram', telegram);
     this.interfaces.set('telegram', telegram);
     this.logger('info', 'Telegram interface started');
+  }
+
+  /**
+   * 데몬 시작 시 연결된 인터페이스에 알림 전송
+   * Google Apps 미인증 시 설정 안내 포함
+   */
+  private async sendStartupNotification(): Promise<void> {
+    if (this.interfaces.size === 0) return;
+
+    const googleAppsOk = fs.existsSync(
+      path.join(getGlobalConfigDir(), 'google-tokens.json'),
+    );
+
+    const lines = ['VIBE is ready.'];
+    if (!googleAppsOk) {
+      lines.push(
+        '',
+        'Google Apps is not connected.',
+        'Run `vibe setup` and select Google Apps to enable Gmail, Drive, Sheets, Calendar.',
+      );
+    }
+    const message = lines.join('\n');
+
+    // Telegram: send to all allowedChatIds
+    const telegram = this.interfaces.get('telegram');
+    if (telegram) {
+      const chatIds = this.loadTelegramChatIds();
+      for (const chatId of chatIds) {
+        try {
+          await telegram.sendResponse({
+            messageId: `startup-${Date.now()}`,
+            channel: 'telegram',
+            chatId,
+            content: message,
+            format: 'text',
+          });
+        } catch (err) {
+          this.logger('warn', `[telegram] Failed to send startup notification to ${chatId}`, {
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    }
+
+    // Slack: send to all allowedChannelIds
+    const slack = this.interfaces.get('slack');
+    if (slack) {
+      const channelIds = this.loadSlackChannelIds();
+      for (const channelId of channelIds) {
+        try {
+          await slack.sendResponse({
+            messageId: `startup-${Date.now()}`,
+            channel: 'slack',
+            chatId: channelId,
+            content: message,
+            format: 'text',
+          });
+        } catch (err) {
+          this.logger('warn', `[slack] Failed to send startup notification to ${channelId}`, {
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    }
+  }
+
+  private loadTelegramChatIds(): string[] {
+    try {
+      const ids = (process.env.TELEGRAM_ALLOWED_CHAT_IDS || '').split(',').filter(Boolean);
+      if (ids.length > 0) return ids;
+      if (fs.existsSync(TELEGRAM_CONFIG)) {
+        const config = JSON.parse(fs.readFileSync(TELEGRAM_CONFIG, 'utf-8'));
+        if (Array.isArray(config?.allowedChatIds)) return config.allowedChatIds;
+      }
+    } catch { /* ignore */ }
+    return [];
+  }
+
+  private loadSlackChannelIds(): string[] {
+    try {
+      const ids = (process.env.SLACK_ALLOWED_CHANNELS || '').split(',').filter(Boolean);
+      if (ids.length > 0) return ids;
+      if (fs.existsSync(SLACK_CONFIG)) {
+        const config = JSON.parse(fs.readFileSync(SLACK_CONFIG, 'utf-8'));
+        if (Array.isArray(config?.allowedChannelIds)) return config.allowedChannelIds;
+      }
+    } catch { /* ignore */ }
+    return [];
   }
 
   private loadState(): InterfaceState {
