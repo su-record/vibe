@@ -73,6 +73,26 @@ export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<
 
   // 결과 수집 Promise
   const resultPromise = new Promise<AgentResult>(async (resolve) => {
+    // cancel 시 즉시 resolve되도록 abort 리스너 등록
+    let resolved = false;
+    const safeResolve = (value: AgentResult): void => {
+      if (!resolved) {
+        resolved = true;
+        resolve(value);
+      }
+    };
+
+    cancelController.signal.addEventListener('abort', () => {
+      status = 'cancelled';
+      safeResolve({
+        agentName, sessionId,
+        result: result || 'Cancelled by user',
+        success: false,
+        error: 'Cancelled',
+        duration: Date.now() - startTime
+      });
+    });
+
     try {
       const response = query({
         prompt,
@@ -81,15 +101,7 @@ export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<
 
       for await (const message of response) {
         if (cancelController.signal.aborted) {
-          status = 'cancelled';
-          resolve({
-            agentName, sessionId,
-            result: 'Cancelled by user',
-            success: false,
-            error: 'Cancelled',
-            duration: Date.now() - startTime
-          });
-          return;
+          return; // abort 리스너에서 이미 resolve됨
         }
 
         const msg = message as AgentMessage;
@@ -116,7 +128,7 @@ export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<
       }
 
       status = 'completed';
-      resolve({
+      safeResolve({
         agentName, sessionId,
         result: result || 'No result',
         success: true,
@@ -124,9 +136,9 @@ export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<
       });
     } catch (error) {
       status = 'failed';
-      resolve({
+      safeResolve({
         agentName, sessionId,
-        result: '',
+        result: result || '',
         success: false,
         error: error instanceof Error ? error.message : String(error),
         duration: Date.now() - startTime

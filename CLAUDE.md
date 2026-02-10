@@ -40,6 +40,7 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 - **Modify only requested scope** - Don't touch unrelated code
 - **Preserve existing style** - Follow project conventions
 - **Keep working code** - No unnecessary refactoring
+- **Edit existing files, never create new ones** - When fixing errors/bugs, ALWAYS modify the original file. NEVER create new files (wrappers, adapters, V2 copies) as a workaround. Fix the problem at its source.
 - **Respect user interrupts** - If user interrupts (Ctrl+C/Escape) and sends a new message, the previous task is CANCELLED. Do NOT resume or continue interrupted work. Respond ONLY to the new message.
 
 ### Code Complexity Limits

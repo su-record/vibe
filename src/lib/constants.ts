@@ -62,7 +62,11 @@ export const CONCURRENCY = {
   /** 큐 최대 크기 */
   QUEUE_MAX_SIZE: 100,
   /** 개별 태스크 타임아웃 (ms) */
-  TASK_TIMEOUT: 180000, // 3분
+  TASK_TIMEOUT: 300000, // 5분
   /** 전체 파이프라인 타임아웃 (ms) */
-  PIPELINE_TIMEOUT: 600000, // 10분
+  PIPELINE_TIMEOUT: 900000, // 15분
+  /** 태스크 실패 시 최대 재시도 횟수 */
+  MAX_RETRIES: 3,
+  /** 재시도 간격 (ms) — 지수 백오프 적용 */
+  RETRY_BASE_DELAY: 2000, // 2초
 } as const;

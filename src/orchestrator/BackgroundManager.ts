@@ -72,6 +72,7 @@ export interface TaskInfo {
   completedAt?: number;
   model: string;
   provider: string;
+  retryCount: number;
 }
 
 /** 큐 통계 */
@@ -286,7 +287,8 @@ class BackgroundManagerImpl {
       status: 'pending',
       createdAt: Date.now(),
       model,
-      provider
+      provider,
+      retryCount: 0
     };
 
     try {
@@ -447,11 +449,17 @@ class BackgroundManagerImpl {
     this.processing = true;
 
     try {
+      // 대기 제한: PIPELINE_TIMEOUT 이내에서만 큐 처리 시도
+      const deadline = Date.now() + CONCURRENCY.PIPELINE_TIMEOUT;
       while (!this.taskQueue.isEmpty()) {
         const task = this.taskQueue.peek();
         if (!task) break;
 
         if (!this.concurrency.canRun(task.model, task.provider)) {
+          if (Date.now() > deadline) {
+            warnLog(`[BackgroundManager] Queue processing deadline exceeded — ${this.taskQueue.size} tasks still pending`);
+            break;
+          }
           await this.sleep(100);
           continue;
         }
@@ -471,10 +479,11 @@ class BackgroundManagerImpl {
   }
 
   /**
-   * 태스크 실행 (내부)
+   * 태스크 실행 (내부) — 실패 시 자동 재시도 (MAX_RETRIES)
    */
   private async executeTask(task: TaskInfo): Promise<void> {
     const timeout = CONCURRENCY.TASK_TIMEOUT;
+    const maxRetries = CONCURRENCY.MAX_RETRIES;
     const agentName = task.args.agentName || 'unnamed';
 
     // Announce start
@@ -491,63 +500,100 @@ class BackgroundManagerImpl {
       });
     } catch { /* registry is optional */ }
 
-    const timeoutId = setTimeout(() => {
-      if (task.status === 'running') {
-        task.status = 'failed';
-        task.error = new TaskTimeoutError(task.id, timeout).message;
-        task.completedAt = Date.now();
-        this.concurrency.release(task.model, task.provider);
-        warnLog(`[BackgroundManager] Task ${task.id} timed out`);
+    while (task.retryCount <= maxRetries) {
+      // 재시도 시 상태 리셋
+      if (task.retryCount > 0) {
+        const delay = CONCURRENCY.RETRY_BASE_DELAY * Math.pow(2, task.retryCount - 1);
+        warnLog(`[BackgroundManager] Task ${task.id} retry ${task.retryCount}/${maxRetries} after ${delay}ms`);
+        await this.sleep(delay);
+        task.status = 'running';
+        task.handle = undefined;
+        task.error = undefined;
+        task.startedAt = Date.now();
       }
-    }, timeout);
 
-    try {
-      const result = await launchBackgroundAgent(task.args);
-      const handle = (result as ToolResult & { handle?: BackgroundAgentHandle }).handle;
-
-      if (handle) {
-        task.handle = handle;
-        const agentResult = await handle.getResult();
-        task.result = agentResult;
-        task.status = agentResult.success ? 'completed' : 'failed';
-        if (!agentResult.success) {
-          task.error = agentResult.error;
+      let timedOut = false;
+      const timeoutId = setTimeout(() => {
+        if (task.status === 'running') {
+          timedOut = true;
+          // handle 정리하여 Agent SDK 스트림 종료
+          if (task.handle) {
+            task.handle.cancel();
+          }
+          warnLog(`[BackgroundManager] Task ${task.id} timed out after ${timeout}ms (attempt ${task.retryCount + 1})`);
         }
-      } else {
+      }, timeout);
+
+      try {
+        const result = await launchBackgroundAgent(task.args);
+        const handle = (result as ToolResult & { handle?: BackgroundAgentHandle }).handle;
+
+        if (handle) {
+          task.handle = handle;
+          // getResult()에 타임아웃 — 스트림이 hang되면 재시도 가능하도록
+          const agentResult = await Promise.race([
+            handle.getResult(),
+            new Promise<AgentResult>((_, reject) =>
+              setTimeout(() => reject(new TaskTimeoutError(task.id, timeout)), timeout)
+            )
+          ]);
+          task.result = agentResult;
+          task.status = agentResult.success ? 'completed' : 'failed';
+          if (!agentResult.success) {
+            task.error = agentResult.error;
+          }
+        } else {
+          task.status = 'failed';
+          task.error = 'No handle returned';
+        }
+      } catch (error) {
+        // handle 정리
+        if (task.handle) {
+          task.handle.cancel();
+        }
         task.status = 'failed';
-        task.error = 'No handle returned';
-      }
-    } catch (error) {
-      task.status = 'failed';
-      task.error = error instanceof Error ? error.message : String(error);
-      warnLog(`[BackgroundManager] Task ${task.id} failed: ${task.error}`);
-    } finally {
-      clearTimeout(timeoutId);
-      task.completedAt = Date.now();
-      const duration = (task.startedAt && task.completedAt)
-        ? task.completedAt - task.startedAt : 0;
-      this.concurrency.release(task.model, task.provider);
-
-      // Announce + Registry record
-      if (task.status === 'completed') {
-        agentAnnouncer.announceComplete({
-          taskId: task.id, agentName, success: true, duration, model: task.model,
-          resultSummary: task.result?.result || '', timestamp: Date.now(),
-        });
-        try { this.registry?.recordComplete(task.id, task.result?.result || '', duration); } catch { /* optional */ }
-      } else if (task.status === 'failed') {
-        const retryable = !task.error?.includes('timeout');
-        agentAnnouncer.announceError({
-          taskId: task.id, agentName, error: task.error || 'Unknown',
-          retryable, duration, timestamp: Date.now(),
-        });
-        try { this.registry?.recordFailure(task.id, task.error || 'Unknown', duration); } catch { /* optional */ }
+        task.error = error instanceof Error ? error.message : String(error);
+      } finally {
+        clearTimeout(timeoutId);
       }
 
-      // 큐에 대기 중인 태스크가 있으면 계속 처리
-      if (!this.taskQueue.isEmpty()) {
-        this.processQueue().catch(() => {});
+      // 실패가 아닌 경우 (성공/취소) → 재시도 안 함
+      if (task.status !== 'failed') {
+        break;
       }
+
+      // 실패 → 재시도 여부 판단
+      task.retryCount++;
+      if (task.retryCount > maxRetries) {
+        warnLog(`[BackgroundManager] Task ${task.id} exhausted ${maxRetries} retries — giving up`);
+        break;
+      }
+    }
+
+    // 최종 정리
+    task.completedAt = Date.now();
+    const duration = (task.startedAt && task.completedAt)
+      ? task.completedAt - task.startedAt : 0;
+    this.concurrency.release(task.model, task.provider);
+
+    // Announce + Registry record
+    if (task.status === 'completed') {
+      agentAnnouncer.announceComplete({
+        taskId: task.id, agentName, success: true, duration, model: task.model,
+        resultSummary: task.result?.result || '', timestamp: Date.now(),
+      });
+      try { this.registry?.recordComplete(task.id, task.result?.result || '', duration); } catch { /* optional */ }
+    } else if (task.status === 'failed') {
+      agentAnnouncer.announceError({
+        taskId: task.id, agentName, error: task.error || 'Unknown',
+        retryable: false, duration, timestamp: Date.now(),
+      });
+      try { this.registry?.recordFailure(task.id, task.error || 'Unknown', duration); } catch { /* optional */ }
+    }
+
+    // 큐에 대기 중인 태스크가 있으면 계속 처리
+    if (!this.taskQueue.isEmpty()) {
+      this.processQueue().catch(() => {});
     }
   }
 

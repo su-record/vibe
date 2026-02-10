@@ -12,7 +12,7 @@ import { ToolResult } from '../types/tool.js';
 import { launch, poll, cancel } from './BackgroundManager.js';
 import type { TaskInfo, TaskStatus, QueueStats } from './BackgroundManager.js';
 import type { AgentResult, ClaudeModel, BackgroundAgentArgs } from './types.js';
-import { DEFAULT_MODELS } from '../lib/constants.js';
+import { DEFAULT_MODELS, CONCURRENCY } from '../lib/constants.js';
 import { warnLog } from '../lib/utils.js';
 
 // ============================================
@@ -334,38 +334,58 @@ export class SwarmOrchestrator {
   }
 
   /**
-   * 태스크 실행 (분할 없이)
+   * 태스크 실행 (분할 없이) — 실패 시 자동 재시도
    */
   private async executeTask(task: SwarmTask): Promise<void> {
-    task.status = 'running';
+    const maxRetries = CONCURRENCY.MAX_RETRIES;
+    let attempt = 0;
 
-    const args: BackgroundAgentArgs = {
-      prompt: task.prompt,
-      agentName: `${this.config.agentName}-${task.depth}-${task.id.slice(-6)}`,
-      model: this.config.model,
-      projectPath: this.config.projectPath
-    };
+    while (attempt <= maxRetries) {
+      task.status = 'running';
 
-    // launch로 백그라운드 실행
-    const launchResult = launch(args);
-    task.taskId = launchResult.taskId;
-
-    // poll로 결과 대기
-    let pollResult = await poll(launchResult.taskId);
-    while (pollResult.task?.status === 'pending' || pollResult.task?.status === 'running') {
-      await this.sleep(500);
-      pollResult = await poll(launchResult.taskId);
-    }
-
-    if (pollResult.result) {
-      task.result = pollResult.result;
-      task.status = pollResult.result.success ? 'completed' : 'failed';
-      if (!pollResult.result.success) {
-        task.error = pollResult.result.error;
+      if (attempt > 0) {
+        const delay = CONCURRENCY.RETRY_BASE_DELAY * Math.pow(2, attempt - 1);
+        warnLog(`[SwarmOrchestrator] Task ${task.id} retry ${attempt}/${maxRetries} after ${delay}ms`);
+        await this.sleep(delay);
       }
-    } else {
-      task.status = 'failed';
-      task.error = 'No result from agent';
+
+      const args: BackgroundAgentArgs = {
+        prompt: task.prompt,
+        agentName: `${this.config.agentName}-${task.depth}-${task.id.slice(-6)}`,
+        model: this.config.model,
+        projectPath: this.config.projectPath
+      };
+
+      // launch로 백그라운드 실행
+      const launchResult = launch(args);
+      task.taskId = launchResult.taskId;
+
+      // poll로 결과 대기 (TASK_TIMEOUT 이내)
+      const pollDeadline = Date.now() + CONCURRENCY.TASK_TIMEOUT;
+      let pollResult = await poll(launchResult.taskId);
+      while (pollResult.task?.status === 'pending' || pollResult.task?.status === 'running') {
+        if (Date.now() > pollDeadline) {
+          cancel(launchResult.taskId);
+          warnLog(`[SwarmOrchestrator] Task ${task.id} polling timed out (attempt ${attempt + 1})`);
+          break;
+        }
+        await this.sleep(500);
+        pollResult = await poll(launchResult.taskId);
+      }
+
+      if (pollResult.result?.success) {
+        task.result = pollResult.result;
+        task.status = 'completed';
+        break;
+      }
+
+      // 실패 — 재시도 가능 여부 확인
+      attempt++;
+      if (attempt > maxRetries) {
+        task.status = 'failed';
+        task.error = pollResult.result?.error || 'No result from agent (retries exhausted)';
+        warnLog(`[SwarmOrchestrator] Task ${task.id} exhausted ${maxRetries} retries`);
+      }
     }
 
     task.completedAt = Date.now();
