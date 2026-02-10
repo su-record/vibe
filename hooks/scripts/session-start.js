@@ -23,6 +23,55 @@ async function main() {
     console.log('\n[Recent Memories]');
     console.log(memories.content[0].text);
 
+    // Autonomy status summary
+    try {
+      const fs = await import('fs');
+      const configPath = `${PROJECT_DIR}/.claude/vibe/config.json`;
+      let autonomyMode = 'suggest';
+      let sentinelEnabled = true;
+
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        autonomyMode = config.autonomy?.mode || 'suggest';
+        sentinelEnabled = config.sentinel?.enabled !== false;
+      }
+
+      const LIB_BASE_A = (await import('./utils.js')).getLibBaseUrl();
+      const memModA = await import(`${LIB_BASE_A}memory/MemoryStorage.js`);
+      const storageA = new memModA.MemoryStorage(PROJECT_DIR);
+      const db = storageA.getDatabase();
+
+      const last24h = new Date(Date.now() - 86_400_000).toISOString();
+      let totalActions = 0;
+      let allowedActions = 0;
+      let blockedActions = 0;
+      let pendingSuggestions = 0;
+      let pendingConfirmations = 0;
+
+      try {
+        totalActions = db.prepare('SELECT COUNT(*) as c FROM audit_events WHERE createdAt >= ?').get(last24h)?.c ?? 0;
+        allowedActions = db.prepare("SELECT COUNT(*) as c FROM audit_events WHERE createdAt >= ? AND outcome = 'allowed'").get(last24h)?.c ?? 0;
+        blockedActions = db.prepare("SELECT COUNT(*) as c FROM audit_events WHERE createdAt >= ? AND outcome = 'blocked'").get(last24h)?.c ?? 0;
+      } catch { /* table not initialized yet */ }
+
+      try {
+        pendingSuggestions = db.prepare("SELECT COUNT(*) as c FROM suggestions WHERE status = 'pending'").get()?.c ?? 0;
+      } catch { /* table not initialized yet */ }
+
+      try {
+        pendingConfirmations = db.prepare("SELECT COUNT(*) as c FROM confirmations WHERE status = 'pending'").get()?.c ?? 0;
+      } catch { /* table not initialized yet */ }
+
+      const parts = [`${autonomyMode} mode`];
+      if (sentinelEnabled) parts.push('sentinel ON');
+      if (pendingConfirmations > 0) parts.push(`${pendingConfirmations} pending confirmations`);
+      if (pendingSuggestions > 0) parts.push(`${pendingSuggestions} suggestions`);
+      if (totalActions > 0) parts.push(`${totalActions} actions (${allowedActions} ok, ${blockedActions} blocked)`);
+
+      console.log(`\n🤖 Autonomy: ${parts.join(' | ')}`);
+      storageA.close();
+    } catch { /* autonomy not yet initialized, skip */ }
+
     // Evolution status summary
     try {
       const LIB_BASE = (await import('./utils.js')).getLibBaseUrl();
