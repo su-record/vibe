@@ -10,32 +10,32 @@ Personalized AI Agent (Claude Code Exclusive) — v0.1.0
 
 ## Philosophy
 
-> **core = 바이브코딩을 쉽게 + 최소 품질 보장**
+> **core = Easy vibe coding + Minimum quality guaranteed**
 
 | Principle | Description |
 |-----------|-------------|
-| **Easy Vibe Coding** | 빠른 흐름, 직관적 개발, AI와 협업하며 생각하기 |
-| **Minimum Quality Guaranteed** | 타입 안전성, 코드 품질, 보안 - 자동으로 하한선 확보 |
-| **Iterative Reasoning (6번 유형)** | AI에게 답을 맡기지 말고, 문제를 쪼개고 질문하며 함께 추론 |
+| **Easy Vibe Coding** | Fast flow, intuitive development, think collaboratively with AI |
+| **Minimum Quality Guaranteed** | Type safety, code quality, security — automatic baseline enforcement |
+| **Iterative Reasoning (Type 6)** | Don't delegate answers to AI — break down problems, ask questions, reason together |
 
 ### How CORE Guarantees Quality
 
 | Guardrail | Mechanism |
 |-----------|-----------|
-| Type Safety | Quality Gate (`any`/`Any` 차단) |
-| Code Review | Race Review (GPT + Gemini + AZ Kimi K2.5 병렬) |
-| Completion Check | Ralph Loop (100%까지 반복) |
-| Multi-LLM | 4개 관점 검증 (Claude + GPT + Gemini + AZ Kimi K2.5) |
+| Type Safety | Quality Gate — blocks `any` / `Any` / `@ts-ignore` |
+| Code Review | Race Review — GPT + Gemini + AZ Kimi K2.5 in parallel |
+| Completion Check | Ralph Loop — iterate until 100% complete (no scope reduction) |
+| Multi-LLM | 4-perspective cross-validation (Claude + GPT + Gemini + AZ Kimi K2.5) |
 
-### User's Role (6번 Iterative-Reasoning Type)
+### User's Role (Iterative-Reasoning Type)
 
-연구에 따르면, AI에게 답을 맡기는 것(1번 유형)보다 **문제를 쪼개고 추론하며 협업하는 것(6번 유형)**이 훨씬 좋은 성과를 냅니다.
+Research shows that **breaking down problems and reasoning collaboratively (Type 6)** produces far better results than simply delegating to AI (Type 1).
 
 | Avoid | Do Instead |
 |-------|------------|
-| "로그인 기능 만들어줘" | "로그인 기능의 요구사항을 분석해보자" |
-| AI 결과 그대로 사용 | "이 접근이 맞나?" 검증 질문 |
-| 완성 코드만 요청 | 단계별로 검토하며 진행 |
+| "Build login feature" | "Let's analyze the requirements for login" |
+| Accept AI output as-is | Ask "Is this approach correct?" |
+| Request complete code only | Review step by step |
 
 ## Code Quality Standards (Mandatory)
 
@@ -43,11 +43,11 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 
 ### Core Principles
 
-- **Modify only requested scope** - Don't touch unrelated code
-- **Preserve existing style** - Follow project conventions
-- **Keep working code** - No unnecessary refactoring
-- **Edit existing files, never create new ones** - When fixing errors/bugs, ALWAYS modify the original file. NEVER create new files (wrappers, adapters, V2 copies) as a workaround. Fix the problem at its source.
-- **Respect user interrupts** - If user interrupts (Ctrl+C/Escape) and sends a new message, the previous task is CANCELLED. Do NOT resume or continue interrupted work. Respond ONLY to the new message.
+- **Modify only requested scope** — Don't touch unrelated code
+- **Preserve existing style** — Follow project conventions
+- **Keep working code** — No unnecessary refactoring
+- **Edit existing files, never create new ones** — When fixing errors/bugs, ALWAYS modify the original file. NEVER create new files (wrappers, adapters, V2 copies) as a workaround. Fix the problem at its source.
+- **Respect user interrupts** — If user interrupts (Ctrl+C/Escape) and sends a new message, the previous task is CANCELLED. Do NOT resume or continue interrupted work. Respond ONLY to the new message.
 
 ### Code Complexity Limits
 
@@ -60,15 +60,9 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 
 ### TypeScript Rules
 
-- No `any` type → use `unknown` + type guards
-- No `as any` casting → define proper interfaces
-- No `@ts-ignore` → fix type issues at root
-- Explicit return types on all functions
-
-### TypeScript Rules
-- No `any` type → use `unknown` + type guards
-- No `as any` casting → define proper interfaces
-- No `@ts-ignore` → fix type issues at root
+- No `any` type — use `unknown` + type guards
+- No `as any` casting — define proper interfaces
+- No `@ts-ignore` — fix type issues at root
 - Explicit return types on all functions
 
 ### Error Handling Required
@@ -86,16 +80,16 @@ Follow these standards when writing code. See `~/.claude/vibe/rules/` (global) f
 
 ### Superpowers Integration (v0.2.0)
 
-Superpowers 프로젝트에서 영감받은 4가지 품질 메커니즘:
+Four quality mechanisms inspired by the Superpowers project:
 
-| 기능 | 설명 | 위치 |
-|------|------|------|
-| **합리화 방지** | AI 변명 패턴 6개 카테고리 차단 (SPEC 생략, 품질 생략, 검증 생략, 스코프 확장, 아키텍처 회피, 증거 회피) | `rules/principles/anti-rationalization.md` |
-| **증거 게이트** | 5단계 검증 프로토콜 (IDENTIFY → RUN → READ → VERIFY → CLAIM). 증거 없는 완료 주장 금지 | `rules/quality/evidence-gate.md` + UltraQA |
-| **3-수정 규칙** | 동일 실패 3회 → 아키텍처 질문 전환. Fix #4 시도 전 사용자 논의 필수 | UltraQA `architecture_question` status |
-| **규칙 TDD** | 6가지 품질 체크 (예제/양면/합리화/엣지/품질/종합), 70점+ 패스 기준 | RuleBuildSystem `pressureTestRule()` |
+| Feature | Description | Location |
+|---------|-------------|----------|
+| **Anti-Rationalization** | Blocks 6 categories of AI excuse patterns (SPEC skip, quality skip, verification skip, scope expansion, architecture avoidance, evidence avoidance) | `rules/principles/anti-rationalization.md` |
+| **Evidence Gate** | 5-step verification protocol (IDENTIFY → RUN → READ → VERIFY → CLAIM). No completion claims without evidence | `rules/quality/evidence-gate.md` + UltraQA |
+| **3-Fix Rule** | Same failure 3 times → switch to architecture question. User discussion required before fix #4 | UltraQA `architecture_question` status |
+| **Rule TDD** | 6 quality checks (example/both-sides/rationalization/edge/quality/comprehensive), 70+ pass threshold | RuleBuildSystem `pressureTestRule()` |
 
-**핵심 원칙:** 규칙의 문자를 위반하는 것은 규칙의 정신을 위반하는 것입니다.
+**Core principle:** Violating the letter of a rule is violating the spirit of a rule.
 
 ## Workflow
 
@@ -103,13 +97,13 @@ Superpowers 프로젝트에서 영감받은 4가지 품질 메커니즘:
 /vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → Done
 ```
 
-1. `/vibe.spec` - Write SPEC (requirements + research + draft) + 6개 LLM 병렬 리서치
-2. `/new` - Start new session (clean context)
-3. `/vibe.spec.review` - GPT/Gemini/AZ (Kimi K2.5) review (3-round mandatory)
-4. `/vibe.run` - Implementation + GPT/Gemini/AZ (Kimi K2.5) Race Review
-5. **(auto)** 13+ agent parallel review + P1/P2 auto-fix
+1. `/vibe.spec` — Write SPEC (requirements + research + draft) + parallel LLM research
+2. `/new` — Start new session (clean context)
+3. `/vibe.spec.review` — GPT/Gemini/AZ (Kimi K2.5) review (3-round mandatory)
+4. `/vibe.run` — Implementation + GPT/Gemini/AZ (Kimi K2.5) Race Review
+5. **(auto)** — 13+ agent parallel review + P1/P2 auto-fix
 
-**모든 명령어는 시작/종료 시 `getCurrentTime`을 호출하여 소요 시간을 표시합니다.**
+**All commands call `getCurrentTime` at start/end to display elapsed time.**
 
 ## Plan Mode vs CORE
 
@@ -152,12 +146,12 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 
 | Command | Description |
 |---------|-------------|
-| `vibe setup` | 셋업 위자드 (인증, 채널, 설정 한번에) |
-| `vibe start / stop` | 데몬 시작/중지 (인터페이스 자동 관리) |
-| `vibe status` | 전체 상태 확인 (LLM, Agent, Sentinel 통합) |
-| `vibe sync <cmd>` | 클라우드 동기화 (login, push, pull, status, logout) |
-| `vibe init` | 프로젝트 초기화 |
-| `vibe update` | 설정 업데이트 |
+| `vibe setup` | Setup wizard (auth, channels, config in one go) |
+| `vibe start / stop` | Start/stop daemon (auto-manages interfaces) |
+| `vibe status` | Full status check (LLM, Agent, Sentinel) |
+| `vibe sync <cmd>` | Cloud sync (login, push, pull, status, logout) |
+| `vibe init` | Project initialization |
+| `vibe update` | Update configuration |
 | `vibe gpt <cmd>` | GPT (auth, key, status, logout) |
 | `vibe gemini <cmd>` | Gemini (auth, key, status, logout) |
 | `vibe az <cmd>` | AZ (key, status, logout) |
@@ -166,8 +160,8 @@ Include `ultrawork` or `ulw` keyword for maximum performance:
 | `vibe telegram <cmd>` | Telegram (setup, chat, status) |
 | `vibe slack <cmd>` | Slack (setup, channel, status) |
 
-Sentinel, Evolution, Policy, HUD, Job 등은 내부 자동화로 처리되며 별도 CLI 명령어 없음.
-Autonomy 모드 변경은 `.claude/vibe/config.json`의 `autonomy.mode` 값으로 설정.
+Sentinel, Evolution, Policy, HUD, and Job are handled by internal automation — no separate CLI commands.
+Autonomy mode is configured via `autonomy.mode` in `.claude/vibe/config.json`.
 
 ## External Channels
 
@@ -262,41 +256,41 @@ SPEC documents use: `<role>` `<context>` `<task>` `<constraints>` `<output_forma
 
 ### Session RAG
 
-구조화된 세션 컨텍스트를 저장/검색하는 시스템. SQLite + FTS5 BM25 하이브리드 검색.
+Structured session context storage/retrieval system. SQLite + FTS5 BM25 hybrid search.
 
 | Tool | Purpose |
 |------|---------|
-| `save_session_item` | Decision/Constraint/Goal/Evidence 저장 |
-| `retrieve_session_context` | 하이브리드 검색 (BM25 + recency + priority) |
-| `manage_goals` | Goal 생명주기 관리 (list/update/complete) |
+| `save_session_item` | Store Decision/Constraint/Goal/Evidence |
+| `retrieve_session_context` | Hybrid search (BM25 + recency + priority) |
+| `manage_goals` | Goal lifecycle management (list/update/complete) |
 
-**4가지 엔티티:**
+**4 Entity Types:**
 
 | Entity | Description | Key Fields |
 |--------|-------------|------------|
-| Decision | 사용자 확인 결정사항 | title, rationale, alternatives, impact, priority |
-| Constraint | 명시적 제약조건 | title, type (technical/business/resource/quality), severity |
-| Goal | 현재 목표 스택 (계층 지원) | title, status, priority, progressPercent, successCriteria |
-| Evidence | 검증/테스트 결과 | title, type (test/build/lint/coverage), status, metrics |
+| Decision | User-confirmed decisions | title, rationale, alternatives, impact, priority |
+| Constraint | Explicit constraints | title, type (technical/business/resource/quality), severity |
+| Goal | Current goal stack (hierarchical) | title, status, priority, progressPercent, successCriteria |
+| Evidence | Verification/test results | title, type (test/build/lint/coverage), status, metrics |
 
-**자동 주입:** `start_session` 호출 시 활성 Goals, 중요 Constraints, 최근 Decisions가 자동으로 세션 컨텍스트에 포함됨.
+**Auto-injection:** When `start_session` is called, active Goals, critical Constraints, and recent Decisions are automatically included in session context.
 
 ```typescript
 import { saveSessionItem, retrieveSessionContext, manageGoals } from '@su-record/core/tools';
 
-// 결정 저장
+// Save decision
 await saveSessionItem({ itemType: 'decision', title: 'Use Vitest', rationale: 'Fast and modern' });
 
-// 제약 저장
+// Save constraint
 await saveSessionItem({ itemType: 'constraint', title: 'No vector DB', type: 'technical', severity: 'high' });
 
-// 목표 저장
+// Save goal
 await saveSessionItem({ itemType: 'goal', title: 'Implement Session RAG', priority: 2 });
 
-// 컨텍스트 검색
+// Search context
 await retrieveSessionContext({ query: 'testing' });
 
-// 목표 관리
+// Manage goals
 await manageGoals({ action: 'list' });
 await manageGoals({ action: 'update', goalId: 1, progressPercent: 80 });
 await manageGoals({ action: 'complete', goalId: 1 });
@@ -304,16 +298,16 @@ await manageGoals({ action: 'complete', goalId: 1 });
 
 ## Multi-LLM Orchestration (v0.1.0)
 
-4개 LLM(Claude + GPT + Gemini + Kimi K2.5) 멀티 오케스트레이션 시스템. AZ(Azure Foundry)와 Kimi Direct(Moonshot)는 동일 모델의 다른 엔드포인트.
+4-LLM orchestration system (Claude + GPT + Gemini + Kimi K2.5). AZ (Azure Foundry) and Kimi Direct (Moonshot) are different endpoints for the same model.
 
 ### Core Modules
 
 | Module | Purpose |
 |--------|---------|
-| `SmartRouter` | Task 유형별 최적 LLM 선택 + fallback chain + provider priority |
-| `LLMCluster` | 병렬 멀티 LLM 호출 (GPT + Gemini + AZ Kimi K2.5 + Kimi Direct) |
-| `AgentRegistry` | SQLite 기반 에이전트 실행 추적 (WAL mode) |
-| `AllProvidersFailedError` | 모든 프로바이더 실패 시 구조화된 에러 |
+| `SmartRouter` | Task-type-specific LLM selection + fallback chain + provider priority |
+| `LLMCluster` | Parallel multi-LLM calls (GPT + Gemini + AZ Kimi K2.5 + Kimi Direct) |
+| `AgentRegistry` | SQLite-based agent execution tracking (WAL mode) |
+| `AllProvidersFailedError` | Structured error when all providers fail |
 
 ### SmartRouter Priority
 
@@ -326,36 +320,36 @@ await manageGoals({ action: 'complete', goalId: 1 });
 | uiux, web-search | Gemini → AZ → Kimi → GPT → Claude |
 | general | AZ → Kimi → Claude |
 
-**Provider Priority Config**: `vibe config kimi-priority kimi,az` 설정 시 Kimi Direct가 AZ보다 우선
+**Provider Priority Config**: Setting `vibe config kimi-priority kimi,az` makes Kimi Direct take priority over AZ.
 
 ### AZ (Azure Foundry) Integration
 
 - Chat API: `https://fallingo-ai-foundry.services.ai.azure.com/openai/v1`
 - Embedding API: `https://fallingo-ai-foundry.cognitiveservices.azure.com`
 - Models:
-  - `Kimi-K2.5` (채팅/추론/코드 분석 — 모든 태스크)
-  - `text-embedding-3-large` (임베딩)
-- Auth: `AZ_API_KEY` 환경변수 또는 `vibe az key <key>` (동일 키로 Chat + Embedding 모두 사용)
-- Timeout: 30초/provider, 3회 재시도 (지수 백오프)
+  - `Kimi-K2.5` (chat/reasoning/code analysis — all tasks)
+  - `text-embedding-3-large` (embeddings)
+- Auth: `AZ_API_KEY` env variable or `vibe az key <key>` (same key for both Chat + Embedding)
+- Timeout: 30s/provider, 3 retries (exponential backoff)
 
 ### Kimi Direct (Moonshot) Integration
 
 - Chat API: `https://api.moonshot.ai/v1`
 - Model: `kimi-k2.5` (256K context, 8192 max tokens)
-- Auth: `KIMI_API_KEY` 환경변수 또는 `vibe kimi key <key>`
-- Timeout: 60초, 3회 재시도 (지수 백오프, 429/5xx)
-- AZ의 Kimi K2.5와 동일 모델, Moonshot 직접 API 경유
+- Auth: `KIMI_API_KEY` env variable or `vibe kimi key <key>`
+- Timeout: 60s, 3 retries (exponential backoff, 429/5xx)
+- Same model as AZ Kimi K2.5, via Moonshot direct API
 
 ### GPT Embedding (OpenAI Direct)
 
 - Endpoint: `https://api.openai.com/v1/embeddings`
-- Model: `text-embedding-3-large` (AZ Embedding과 동일)
-- Auth: `OPENAI_API_KEY` 환경변수 또는 GPT API Key (OAuth 미지원)
-- AZ Embedding의 대안으로, `vibe config embedding-priority gpt,az`로 우선순위 설정
+- Model: `text-embedding-3-large` (same as AZ Embedding)
+- Auth: `OPENAI_API_KEY` env variable or GPT API Key (OAuth not supported)
+- Alternative to AZ Embedding; set priority with `vibe config embedding-priority gpt,az`
 
 ### Provider Priority Configuration
 
-`.claude/vibe/config.json`의 `priority` 키로 관리:
+Managed via `priority` key in `.claude/vibe/config.json`:
 
 ```json
 {
@@ -366,28 +360,28 @@ await manageGoals({ action: 'complete', goalId: 1 });
 }
 ```
 
-| 설정 | 명령어 | 기본값 |
-|------|--------|--------|
-| 임베딩 우선순위 | `vibe config embedding-priority az,gpt` | AZ 우선 |
-| Kimi 채팅 우선순위 | `vibe config kimi-priority az,kimi` | AZ 우선 |
-| 현재 설정 확인 | `vibe config show` | - |
+| Setting | Command | Default |
+|---------|---------|---------|
+| Embedding priority | `vibe config embedding-priority az,gpt` | AZ first |
+| Kimi chat priority | `vibe config kimi-priority az,kimi` | AZ first |
+| Show current config | `vibe config show` | - |
 
 ## Agents
 
 ### Main Agents (18)
 
-- **Explorer** (high/medium/low) - Codebase exploration
-- **Implementer** (high/medium/low) - Code implementation
-- **Architect** (high/medium/low) - Architecture design
-- **Searcher** - Code search
-- **Tester** - Test generation
-- **Simplifier** - Code simplification
-- **Refactor Cleaner** - Refactoring cleanup
-- **Build Error Resolver** - Build error fixing
-- **Compounder** - Multi-step compound tasks
-- **Diagrammer** - Diagram generation
-- **E2E Tester** - E2E test execution
-- **UI Previewer** - UI preview
+- **Explorer** (high/medium/low) — Codebase exploration
+- **Implementer** (high/medium/low) — Code implementation
+- **Architect** (high/medium/low) — Architecture design
+- **Searcher** — Code search
+- **Tester** — Test generation
+- **Simplifier** — Code simplification
+- **Refactor Cleaner** — Refactoring cleanup
+- **Build Error Resolver** — Build error fixing
+- **Compounder** — Multi-step compound tasks
+- **Diagrammer** — Diagram generation
+- **E2E Tester** — E2E test execution
+- **UI Previewer** — UI preview
 
 ### Review Agents (12)
 
@@ -399,26 +393,26 @@ best-practices, framework-docs, codebase-patterns, security-advisory → `agents
 
 ### UI/UX Agents (8)
 
-CSV 데이터 기반 디자인 인텔리전스. BM25 검색 엔진으로 24개 CSV에서 산업별 디자인 전략 자동 생성.
+CSV data-driven design intelligence. BM25 search engine auto-generates industry-specific design strategies from 24 CSV files.
 
 | Phase | Agent | Model | Role |
 |-------|-------|-------|------|
-| SPEC | ① ui-industry-analyzer | Haiku | 산업 분석 + 디자인 전략 결정 |
-| SPEC | ② ui-design-system-gen | Sonnet | MASTER.md 디자인 시스템 생성 |
-| SPEC | ③ ui-layout-architect | Haiku | 페이지 구조/섹션/CTA 설계 |
-| RUN | ④ ui-stack-implementer | Haiku | 프레임워크별 컴포넌트 가이드 |
-| RUN | ⑤ ui-dataviz-advisor | Haiku | 차트/시각화 라이브러리 추천 |
-| REVIEW | ⑥ ux-compliance-reviewer | Haiku | UX 가이드라인 준수 검증 |
-| REVIEW | ⑦ ui-a11y-auditor | Haiku | WCAG 2.1 AA 접근성 감사 |
-| REVIEW | ⑧ ui-antipattern-detector | Haiku | UI 안티패턴 검출 |
+| SPEC | 1. ui-industry-analyzer | Haiku | Industry analysis + design strategy |
+| SPEC | 2. ui-design-system-gen | Sonnet | MASTER.md design system generation |
+| SPEC | 3. ui-layout-architect | Haiku | Page structure/sections/CTA design |
+| RUN | 4. ui-stack-implementer | Haiku | Framework-specific component guide |
+| RUN | 5. ui-dataviz-advisor | Haiku | Chart/visualization library recommendations |
+| REVIEW | 6. ux-compliance-reviewer | Haiku | UX guideline compliance verification |
+| REVIEW | 7. ui-a11y-auditor | Haiku | WCAG 2.1 AA accessibility audit |
+| REVIEW | 8. ui-antipattern-detector | Haiku | UI anti-pattern detection |
 
-**실행 흐름**: ①→②③ (SPEC, supervisor-worker) → ④⑤ (RUN, Phase 시작 전) → ⑥⑦⑧ (REVIEW, UI 파일 변경 시)
+**Execution flow**: 1→2,3 (SPEC, supervisor-worker) → 4,5 (RUN, before Phase start) → 6,7,8 (REVIEW, on UI file changes)
 
-**비활성화**: `.claude/vibe/config.json`에 `"uiUxAnalysis": false` 설정
+**Disable**: Set `"uiUxAnalysis": false` in `.claude/vibe/config.json`
 
-**MCP 도구**: `core_ui_search`, `core_ui_stack_search`, `core_ui_generate_design_system`, `core_ui_persist_design_system`
+**MCP tools**: `core_ui_search`, `core_ui_stack_search`, `core_ui_generate_design_system`, `core_ui_persist_design_system`
 
-**데이터**: `~/.claude/vibe/ui-ux-data/` (11 도메인 CSV + 13 스택 CSV)
+**Data**: `~/.claude/vibe/ui-ux-data/` (11 domain CSVs + 13 stack CSVs)
 
 → `agents/ui/`
 
@@ -440,22 +434,22 @@ junior-mentor — Junior developer mentor with EXPLANATION.md generation
 
 ### Agent Teams (Experimental)
 
-> 에이전트들이 팀을 구성하여 공유 태스크 리스트로 협업하고 상호 피드백합니다.
-> 요구사항: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (`.claude/settings.local.json` env)
+> Agents form teams to collaborate via shared task lists with mutual feedback.
+> Requirement: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (`.claude/settings.local.json` env)
 
-| Team | 워크플로우 | Members | 역할 |
-|------|-----------|---------|------|
-| Research Team | `/vibe.spec` Step 3 | best-practices, security-advisory, codebase-patterns, framework-docs | 리서치 결과 교차 검증 + 통합 |
-| Review Debate Team | `/vibe.review` Phase 4.5 | security, architecture, performance, simplicity | P1/P2 교차 검증 + 오탐 제거 |
-| Implementation Team | `/vibe.run` ULTRAWORK | architect, implementer, tester, security-reviewer | 실시간 협업 구현 + 즉시 피드백 |
+| Team | Workflow | Members | Role |
+|------|----------|---------|------|
+| Research Team | `/vibe.spec` Step 3 | best-practices, security-advisory, codebase-patterns, framework-docs | Cross-validate + integrate research results |
+| Review Debate Team | `/vibe.review` Phase 4.5 | security, architecture, performance, simplicity | Cross-validate P1/P2 + eliminate false positives |
+| Implementation Team | `/vibe.run` ULTRAWORK | architect, implementer, tester, security-reviewer | Real-time collaborative implementation + instant feedback |
 
-**기존 병렬 모드와의 차이:**
+**Difference from parallel mode:**
 
-| 측면 | 병렬 서브에이전트 | Agent Teams |
-|------|-----------------|-------------|
-| 통신 | 결과만 수집 | 실시간 상호 피드백 |
-| 검증 | 사후 검증 | 실시간 교차 검증 |
-| 충돌 해결 | 메인 에이전트만 결정 | 팀 합의 (리더 주도) |
+| Aspect | Parallel Sub-agents | Agent Teams |
+|--------|-------------------|-------------|
+| Communication | Collect results only | Real-time mutual feedback |
+| Verification | Post-hoc | Real-time cross-validation |
+| Conflict resolution | Main agent decides | Team consensus (leader-driven) |
 
 ## Hooks System
 

@@ -2,7 +2,8 @@
 
 ### Personalized AI Agent for Claude Code
 
-[![npm downloads](https://img.shields.io/npm/dt/@su-record/core)](https://www.npmjs.com/package/@su-record/vibe)
+[![npm downloads](https://img.shields.io/npm/dt/@su-record/vibe.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/@su-record/vibe)
+[![npm version](https://img.shields.io/npm/v/@su-record/core)](https://github.com/su-record/core/packages)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -26,6 +27,7 @@ vibe init
 vibe gpt auth            # GPT OAuth (Plus/Pro)
 vibe gemini auth         # Gemini OAuth
 vibe az key <KEY>        # AZ API 키 (Azure Foundry)
+vibe kimi key <KEY>      # Kimi API 키 (Moonshot Direct)
 ```
 
 새 환경 셋업 (한 줄):
@@ -160,21 +162,22 @@ import azApi from '@su-record/core/lib/az';
 
 | 프로바이더 | 모델 | 역할 | 인증 |
 |-----------|------|------|------|
-| **Claude** | Opus 4.5 / Sonnet 4 / Haiku 4.5 | 오케스트레이션, 코드 생성 | 내장 |
-| **GPT** | GPT-5.2-Codex | 아키텍처, 디버깅 | OAuth / API 키 |
-| **Gemini** | Gemini 3 Flash / Pro | UI/UX, 웹 검색, 음성 | OAuth / API 키 |
+| **Claude** | Opus / Sonnet / Haiku | 오케스트레이션, 코드 생성 | 내장 |
+| **GPT** | GPT (Responses API) | 아키텍처, 디버깅 | OAuth / API 키 |
+| **Gemini** | Gemini Flash / Pro | UI/UX, 웹 검색, 음성 | OAuth / API 키 |
 | **AZ** | Kimi K2.5 (Azure Foundry) | 코드 분석, 추론, 리뷰 | API 키 |
+| **Kimi** | Kimi K2.5 (Moonshot Direct) | AZ 대체 / 백업 | API 키 |
 
 ### SmartRouter — 작업 유형별 자동 라우팅
 
 | 작업 유형 | 우선순위 (폴백 체인) |
 |----------|---------------------|
-| 코드 분석, 리뷰, 추론 | AZ → GPT → Gemini → Claude |
-| 아키텍처, 디버깅 | GPT → AZ → Gemini → Claude |
-| UI/UX, 웹 검색 | Gemini → GPT → Claude |
-| 코드 생성, 일반 | AZ → Claude |
+| 코드 분석, 리뷰, 추론 | AZ → Kimi → GPT → Gemini → Claude |
+| 아키텍처, 디버깅 | AZ → Kimi → GPT → Gemini → Claude |
+| UI/UX, 웹 검색 | Gemini → AZ → Kimi → GPT → Claude |
+| 코드 생성, 일반 | AZ → Kimi → Claude |
 
-- 프로바이더별 30초 타임아웃, 최대 2회 재시도 (지수 백오프)
+- 프로바이더별 30초 타임아웃, 최대 3회 재시도 (지수 백오프)
 - 5분 가용성 캐시 — 실패한 프로바이더는 5분간 스킵
 
 ### LLMCluster — 병렬 멀티 LLM 호출
@@ -205,13 +208,32 @@ GPT/Gemini/AZ가 동시에 코드를 리뷰하고, 결과를 교차 검증하여
 
 P1/P2 이슈는 자동으로 수정됩니다.
 
+### Provider Priority 설정
+
+`.claude/vibe/config.json`에서 프로바이더 우선순위를 관리합니다:
+
+```json
+{
+  "priority": {
+    "embedding": ["az", "gpt"],
+    "kimi": ["az", "kimi"]
+  }
+}
+```
+
+```bash
+vibe config embedding-priority az,gpt   # 임베딩 우선순위
+vibe config kimi-priority kimi,az       # Kimi 채팅 우선순위
+vibe config show                        # 현재 설정 확인
+```
+
 ---
 
 ## 에이전트 시스템
 
 46개 전문 에이전트가 각자의 역할에 맞게 작업을 수행합니다.
 
-### 메인 에이전트 (24)
+### 메인 에이전트 (18)
 
 | 에이전트 | 등급 | 역할 |
 |----------|------|------|
@@ -228,9 +250,6 @@ P1/P2 이슈는 자동으로 수정됩니다.
 | **E2E Tester** | - | E2E 테스트 실행 |
 | **UI Previewer** | - | UI 미리보기 |
 | **Junior Mentor** | - | 주니어 개발자 멘토링 |
-| **Quality Reviewer** | - | 품질 리뷰 |
-
-스페셜리스트: Backend Python, Database Postgres, Frontend Flutter, Frontend React
 
 ### 리뷰 에이전트 (12)
 
@@ -250,9 +269,34 @@ P1/P2 이슈는 자동으로 수정됩니다.
 
 Best Practices, Framework Docs, Codebase Patterns, Security Advisory
 
+### UI/UX 에이전트 (8)
+
+CSV 데이터 기반 디자인 인텔리전스. BM25 검색 엔진으로 24개 CSV에서 산업별 디자인 전략을 자동 생성합니다.
+
+| 단계 | 에이전트 | 역할 |
+|------|---------|------|
+| SPEC | ui-industry-analyzer | 산업 분석 + 디자인 전략 |
+| SPEC | ui-design-system-gen | MASTER.md 디자인 시스템 생성 |
+| SPEC | ui-layout-architect | 페이지 구조/섹션/CTA 설계 |
+| RUN | ui-stack-implementer | 프레임워크별 컴포넌트 가이드 |
+| RUN | ui-dataviz-advisor | 차트/시각화 라이브러리 추천 |
+| REVIEW | ux-compliance-reviewer | UX 가이드라인 준수 검증 |
+| REVIEW | ui-a11y-auditor | WCAG 2.1 AA 접근성 감사 |
+| REVIEW | ui-antipattern-detector | UI 안티패턴 검출 |
+
 ### QA & 기획 에이전트 (6)
 
 Requirements Analyst, UX Advisor, Acceptance Tester, Edge Case Finder, API Documenter, Changelog Writer
+
+### 에이전트 팀 (Experimental)
+
+에이전트들이 팀을 구성하여 공유 태스크 리스트로 협업하고 상호 피드백합니다.
+
+| 팀 | 워크플로우 | 역할 |
+|-----|-----------|------|
+| Research Team | `/vibe.spec` | 리서치 결과 교차 검증 + 통합 |
+| Review Debate Team | `/vibe.review` | P1/P2 교차 검증 + 오탐 제거 |
+| Implementation Team | `/vibe.run` ULTRAWORK | 실시간 협업 구현 + 즉시 피드백 |
 
 ---
 
@@ -290,6 +334,7 @@ ULTRAWORK 모드에서는 현재 Phase 실행 중에 다음 Phase의 `prepare()`
 - 모델별/프로바이더별 동시 실행 제한
 - 바운디드 큐 (오버플로 방지)
 - 태스크 생명주기: `pending → running → completed/failed/cancelled`
+- 타임아웃 시 kill이 아닌 retry (최대 3회, 지수 백오프)
 - 24시간 이상 된 완료 태스크 자동 정리
 
 ### AgentRegistry — 실행 추적
@@ -442,6 +487,15 @@ flowchart TD
 | `core_get_current_time` | 현재 시간 (소요 시간 추적) |
 | `core_ask_user` | 사용자 상호작용 |
 
+### UI/UX 도구 (4)
+
+| 도구 | 역할 |
+|------|------|
+| `core_ui_search` | BM25 기반 UI 데이터 검색 |
+| `core_ui_stack_search` | 프레임워크별 UI 패턴 검색 |
+| `core_ui_generate_design_system` | 디자인 시스템 자동 생성 |
+| `core_ui_persist_design_system` | 디자인 시스템 저장 |
+
 ---
 
 ## 34개 스킬
@@ -498,6 +552,9 @@ Brand Assets, Commerce Patterns, Commit Push PR, Context7 Usage, Core Capabiliti
 | **멀티 LLM** | LLMCluster — 4개 관점 교차 검증 |
 | **스코프 보호** | pre-tool-guard — 요청 범위 외 수정 방지 |
 | **컨텍스트 보호** | context-save — 80/90/95%에서 자동 저장 |
+| **합리화 방지** | Anti-Rationalization — AI 변명 패턴 6개 카테고리 차단 |
+| **증거 게이트** | Evidence Gate — 증거 없는 완료 주장 금지 |
+| **3-수정 규칙** | 동일 실패 3회 → 아키텍처 질문 전환 |
 
 ### 코드 복잡도 제한
 
@@ -513,26 +570,38 @@ Brand Assets, Commerce Patterns, Commit Push PR, Context7 Usage, Core Capabiliti
 ## CLI 명령어
 
 ```bash
-# 프로젝트
-vibe init [project]      # 프로젝트 초기화
-vibe update              # 설정 업데이트
-vibe status              # 상태 확인
-vibe remove              # 제거
+# 셋업
+vibe setup                # 셋업 위자드 (인증, 채널, 설정 한번에)
+vibe init [project]       # 프로젝트 초기화
+vibe update               # 설정 업데이트
+vibe status               # 상태 확인
+vibe remove               # 제거
+
+# 데몬
+vibe start                # 데몬 시작
+vibe stop                 # 데몬 중지
 
 # LLM 인증
 vibe gpt auth / key / status / logout
 vibe gemini auth / key / status / logout
 vibe az key / status / logout
+vibe kimi key / status / logout
+
+# Provider 우선순위
+vibe config embedding-priority az,gpt
+vibe config kimi-priority az,kimi
+vibe config show
 
 # 인증 동기화
 vibe sync login / push / pull / status / logout
 
-# HUD
-vibe hud show / start / phase / agent / context / reset
+# 외부 채널
+vibe telegram setup / chat / status
+vibe slack setup / channel / status
 
 # 정보
-vibe help                # 도움말
-vibe version             # 버전
+vibe help                 # 도움말
+vibe version              # 버전
 ```
 
 ### 인증 우선순위
@@ -542,6 +611,7 @@ vibe version             # 버전
 | **GPT** | OAuth → API Key → Azure OpenAI |
 | **Gemini** | gemini-cli 자동감지 → OAuth → API Key |
 | **AZ** | API Key (AZ_API_KEY) |
+| **Kimi** | API Key (KIMI_API_KEY) |
 
 ---
 
@@ -560,7 +630,7 @@ vibe sync pull           # 새 환경에서 복원
 
 | 카테고리 | 내용 |
 |----------|------|
-| **인증** | GPT/Gemini/AZ 토큰 및 API 키 |
+| **인증** | GPT/Gemini/AZ/Kimi 토큰 및 API 키 |
 | **메모리** | Session RAG DB, 저장된 메모리 |
 
 ### 보안
@@ -569,8 +639,6 @@ vibe sync pull           # 새 환경에서 복원
 - Google Drive AppData 스코프만 사용 (사용자 Drive 파일 접근 불가)
 - PKCE + localhost 콜백 OAuth 플로우
 - 파일 권한 0o600
-
-> 상세 설계 문서: [docs/auth-sync-design.md](docs/auth-sync-design.md)
 
 ---
 
@@ -656,9 +724,7 @@ flowchart TD
 
 ## GitHub Packages 배포
 
-패키지는 **GitHub Packages**로 비공개 배포됩니다. Release 발행 시 자동 배포되며, 설치 시 인증(PAT, `read:packages`)이 필요합니다.
-
-> 상세 배포 가이드: [docs/github-packages.md](docs/github-packages.md)
+패키지는 **GitHub Packages**로 배포됩니다. Release 발행 시 자동 배포되며, 설치 시 인증(PAT, `read:packages`)이 필요합니다.
 
 ---
 
@@ -666,7 +732,7 @@ flowchart TD
 
 - **Node.js** >= 18.0.0
 - **Claude Code** (필수)
-- GPT, Gemini, AZ는 선택사항 (멀티 LLM 기능용)
+- GPT, Gemini, AZ, Kimi는 선택사항 (멀티 LLM 기능용)
 - sox는 선택사항 (`/vibe.voice` 음성 입력용)
 
 ### 주요 의존성
@@ -676,30 +742,11 @@ flowchart TD
 | `@anthropic-ai/claude-agent-sdk` | Claude Agent SDK |
 | `better-sqlite3` | Session RAG, AgentRegistry |
 | `ts-morph` | TypeScript AST 조작 |
+| `zod` | 스키마 검증 |
+| `playwright` | E2E 테스트, 브라우저 자동화 |
 | `chalk` | 터미널 색상 |
 | `glob` | 파일 패턴 매칭 |
 
 ## 라이선스
 
 MIT License - Copyright (c) 2025 Su
-
-## Core Setup (AI Coding)
-
-This project uses [Core](https://github.com/su-record/core) AI coding framework.
-
-### Collaborator Install
-
-```bash
-# Global install (recommended)
-npm install -g @su-record/core
-vibe update
-
-# Or use vibe init to setup
-vibe init
-```
-
-### Usage
-
-Use slash commands in Claude Code:
-- `/vibe.spec "feature"` - Create SPEC document
-- `/vibe.run "feature"` - Execute implementation

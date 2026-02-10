@@ -47,8 +47,8 @@ async function main() {
   // Critical (95%): 세션 요약 자동 생성 + Major Reflection
   if (urgency === 'critical') {
     try {
-      const { SessionSummarizer } = await import(`${BASE_URL}../lib/memory/SessionSummarizer.js`);
-      const { MemoryStorage } = await import(`${BASE_URL}../lib/memory/MemoryStorage.js`);
+      const { SessionSummarizer } = await import(`${LIB_URL}memory/SessionSummarizer.js`);
+      const { MemoryStorage } = await import(`${LIB_URL}memory/MemoryStorage.js`);
 
       const storage = new MemoryStorage(PROJECT_DIR);
       const summarizer = new SessionSummarizer(storage);

@@ -83,8 +83,8 @@ export function getToolsBaseUrl() {
  * 우선순위: 로컬 빌드 → 전역 npm
  */
 export function getLibBaseUrl() {
-  const localDist = path.join(CORE_PATH, 'dist', 'lib');
-  const globalPackage = path.join(getGlobalNpmPath(), '@su-record', 'core', 'dist', 'lib');
+  const localDist = path.join(CORE_PATH, 'dist', 'infra', 'lib');
+  const globalPackage = path.join(getGlobalNpmPath(), '@su-record', 'core', 'dist', 'infra', 'lib');
 
   // 1. 로컬 빌드된 파일 확인 (개발 환경)
   const localGptApi = path.join(localDist, 'gpt-api.js');

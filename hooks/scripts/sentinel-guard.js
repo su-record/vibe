@@ -5,9 +5,9 @@
  * Runs before pre-tool-guard.js.
  */
 
-const SENTINEL_PATH_PREFIX = 'src/lib/autonomy/';
+const SENTINEL_PATH_PREFIX = 'src/infra/lib/autonomy/';
 
-const SENTINEL_PATH_RE = /^(\.\/|\.\\)?src[\\/]lib[\\/]autonomy[\\/]/;
+const SENTINEL_PATH_RE = /^(\.\/|\.\\)?src[\\/]infra[\\/]lib[\\/]autonomy[\\/]/;
 
 const DANGEROUS_BASH_RE =
   /\b(rm\s+-rf|kill\s+-9|drop\s+table|truncate|shutdown|reboot|mkfs|dd\s+if=)\b/i;
@@ -77,7 +77,7 @@ function guard(toolName, toolInput) {
     }
     if (command && DANGEROUS_BASH_RE.test(command)) {
       // Check if command targets sentinel files
-      if (command.includes(SENTINEL_PATH_PREFIX) || command.includes('src/lib/autonomy')) {
+      if (command.includes(SENTINEL_PATH_PREFIX) || command.includes('src/infra/lib/autonomy')) {
         return {
           decision: 'block',
           reason: `Dangerous command targeting sentinel path: ${command}`,
