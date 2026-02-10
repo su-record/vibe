@@ -14,6 +14,7 @@ import { getAuthProfileManager } from '../llm/auth/AuthProfileManager.js';
 import type { AuthInfo, GptAuthMethod, AzureOpenAIConfig } from './types.js';
 
 // 고정 인증 순서: oauth → apikey → azure
+// OAuth(Codex CLI) → chatgpt.com/backend-api/codex, API Key → api.openai.com/v1
 const AUTH_ORDER: GptAuthMethod[] = ['oauth', 'apikey', 'azure'];
 
 // 전역 설정 디렉토리 경로

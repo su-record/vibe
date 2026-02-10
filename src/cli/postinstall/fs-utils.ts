@@ -25,13 +25,17 @@ export function ensureDir(dir: string): void {
   }
 }
 
+/** Directories to skip during recursive copy */
+const COPY_SKIP_DIRS = new Set(['node_modules', '.git']);
+
 /**
- * 디렉토리 복사 (재귀)
+ * 디렉토리 복사 (재귀, node_modules/.git 제외)
  */
 export function copyDirRecursive(src: string, dest: string): void {
   ensureDir(dest);
   const entries = fs.readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
+    if (COPY_SKIP_DIRS.has(entry.name)) continue;
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {

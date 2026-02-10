@@ -6,7 +6,7 @@ dist/
 mcp/dist/
 *.tgz
 
-# Lock files (npm package - ignore for libraries)
+# Lock files (npm - unused)
 package-lock.json
 
 # Docs

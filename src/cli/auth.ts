@@ -22,7 +22,23 @@ export function getLLMAuthStatus(): LLMStatusMap {
     ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'vibe')
     : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'vibe');
 
-  const status: LLMStatusMap = { gpt: [], gemini: [], az: [], kimi: [] };
+  const status: LLMStatusMap = { claude: [], gpt: [], gemini: [], az: [], kimi: [] };
+
+  // Claude API Key
+  try {
+    const claudeApiKeyPath = path.join(configDir, 'claude-apikey.json');
+    if (fs.existsSync(claudeApiKeyPath)) {
+      const keyData = JSON.parse(fs.readFileSync(claudeApiKeyPath, 'utf-8'));
+      if (keyData.apiKey) {
+        status.claude.push({ type: 'apikey', valid: true });
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Claude 환경변수
+  if (status.claude.length === 0 && process.env.ANTHROPIC_API_KEY) {
+    status.claude.push({ type: 'apikey', valid: true });
+  }
 
   // GPT OAuth
   try {
@@ -191,6 +207,7 @@ export function formatLLMStatus(claudeStatus?: ClaudeCodeStatus): string {
     lines.push(`🧠 Claude Code: ${formatClaudeCodeStatus(claudeStatus)}`);
   }
   lines.push('🤖 External LLM:');
+  lines.push(`  Claude: ${formatAuthMethods(status.claude)}`);
   lines.push(`  GPT: ${formatAuthMethods(status.gpt)}`);
   lines.push(`  Gemini: ${formatAuthMethods(status.gemini)}`);
   lines.push(`  AZ: ${formatAuthMethods(status.az)}`);

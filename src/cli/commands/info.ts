@@ -8,6 +8,7 @@ import { VibeConfig } from '../types.js';
 import { getPackageJson, isSoxInstalled } from '../utils.js';
 import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
 import { loadSyncAuth } from '../../lib/sync/index.js';
+import { getGlobalConfigDir } from '../llm/config.js';
 
 /**
  * 도움말 표시
@@ -33,6 +34,7 @@ Channels:
   vibe slack <cmd>        Slack (setup, channel, status)
 
 LLM:
+  vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (auth, key, status, logout)
   vibe gemini <cmd>       Gemini (auth, key, status, logout)
   vibe az <cmd>           AZ (key, status, logout)
@@ -72,6 +74,7 @@ export function showStatus(): void {
 
   const authStatus = getLLMAuthStatus();
 
+  const claudeStatusText = formatAuthMethods(authStatus.claude);
   const gptStatusText = formatAuthMethods(authStatus.gpt);
   const geminiStatusText = formatAuthMethods(authStatus.gemini);
   const azStatusText = formatAuthMethods(authStatus.az);
@@ -137,6 +140,7 @@ Project: ${projectStatus}
 ${isCoreProject ? `Language: ${config.language || 'ko'}` : ''}
 
 LLM:
+  Claude          ${claudeStatusText}
   GPT             ${gptStatusText}
   Gemini          ${geminiStatusText}
   AZ              ${azStatusText}
@@ -147,6 +151,9 @@ Agent:
   Sentinel        ${sentinelOn ? 'ON' : 'OFF'}
   Proactive       ${proactiveOn ? 'ON' : 'OFF'}
 ${dbStats}
+Services:
+  Google Apps      ${fs.existsSync(path.join(getGlobalConfigDir(), 'google-tokens.json')) ? '\u2705 Connected (Gmail, Drive, Sheets, Calendar, YouTube)' : '\u2B1A Not connected (vibe setup)'}
+
 Features:
   /vibe.voice       ${voiceStatusText}
   vibe sync         ${syncStatusText}
