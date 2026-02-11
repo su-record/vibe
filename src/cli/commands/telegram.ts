@@ -176,11 +176,9 @@ export function telegramStart(): void {
   // Auto-install Playwright if missing (non-blocking: starts even if install fails)
   ensurePlaywright();
 
-  // Find bridge entry point (assistant or legacy)
+  // Find bridge entry point
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-  const assistantPath = path.resolve(__dirname, '..', '..', 'bridge', 'telegram-assistant-bridge.js');
-  const legacyPath = path.resolve(__dirname, '..', '..', 'bridge', 'telegram-bridge.js');
-  const bridgePath = fs.existsSync(assistantPath) ? assistantPath : legacyPath;
+  const bridgePath = path.resolve(__dirname, '..', '..', 'bridge', 'telegram-assistant-bridge.js');
 
   if (!fs.existsSync(bridgePath)) {
     console.error(`Bridge module not found: ${bridgePath}`);

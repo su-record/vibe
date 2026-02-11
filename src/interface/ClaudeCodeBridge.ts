@@ -24,6 +24,7 @@ export class ClaudeCodeBridge extends EventEmitter {
   private buffer: string = '';
   private restartCount: number = 0;
   private running: boolean = false;
+  private startPromise: Promise<void> | null = null;
 
   constructor(config: ClaudeSessionConfig, logger: InterfaceLogger) {
     super();
@@ -33,8 +34,20 @@ export class ClaudeCodeBridge extends EventEmitter {
 
   /** Start a new Claude Code session */
   async start(): Promise<void> {
+    // Phase 3-3: Return existing promise for duplicate start() calls
+    if (this.running && this.startPromise) return this.startPromise;
     if (this.running) return;
 
+    this.startPromise = this.doStart();
+    try {
+      await this.startPromise;
+    } finally {
+      this.startPromise = null;
+    }
+  }
+
+  /** Internal start implementation */
+  private async doStart(): Promise<void> {
     const args = [
       '-p',
       '--input-format', 'stream-json',
@@ -66,6 +79,7 @@ export class ClaudeCodeBridge extends EventEmitter {
 
       this.process.on('close', (code: number | null) => {
         this.running = false;
+        this.startPromise = null;
         if (code !== 0 && code !== null) {
           this.logger('error', `Claude Code exited with code ${code}`);
           this.emit('crash', code);
@@ -77,6 +91,7 @@ export class ClaudeCodeBridge extends EventEmitter {
 
       this.process.on('error', (err: Error) => {
         this.running = false;
+        this.startPromise = null;
         this.logger('error', `Claude Code process error: ${err.message}`);
         this.emit('error', err);
       });
@@ -84,6 +99,7 @@ export class ClaudeCodeBridge extends EventEmitter {
       this.logger('info', 'Claude Code bridge started');
     } catch (err) {
       this.running = false;
+      this.startPromise = null;
       throw err;
     }
   }

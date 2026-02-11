@@ -3,6 +3,7 @@
  * Model A Bridge - Telegram AI Assistant
  * Replaces telegram-bridge.ts with ModelARouter architecture
  *
+ * sonolbot-v2: ProgressReporter wiring + channel config
  * Run: vibe telegram start
  */
 
@@ -34,6 +35,8 @@ import { RouterConfig, DEFAULT_ROUTER_CONFIG, InlineKeyboardButton, SmartRouterL
 import { HeadModelSelector } from '../agent/HeadModelSelector.js';
 import { AgentLoop } from '../agent/AgentLoop.js';
 import { getAllTools } from '../agent/tools/index.js';
+import { ProgressReporter } from '../router/services/ProgressReporter.js';
+import type { AgentProgressEvent } from '../agent/types.js';
 
 const VIBE_DIR = path.join(os.homedir(), '.vibe');
 const TELEGRAM_CONFIG_PATH = path.join(VIBE_DIR, 'telegram.json');
@@ -163,11 +166,67 @@ async function main(): Promise<void> {
   const agentLoop = new AgentLoop({
     headSelector,
     tools,
-    systemPromptConfig: { userName: '사용자', language: 'ko', timezone: 'Asia/Seoul' },
+    // Phase 4: channel config for external style guide
+    systemPromptConfig: {
+      userName: '사용자',
+      language: 'ko',
+      timezone: 'Asia/Seoul',
+      channel: 'telegram',
+    },
     mediaPreprocessorConfig: { showConfirmation: true },
   });
   router.setAgentLoop(agentLoop);
   logger('info', `AgentLoop 초기화 완료 (도구 ${tools.length}개 등록)`);
+
+  // Phase 1: Wire ProgressReporter via onProgress
+  const activeReporters = new Map<string, ProgressReporter>();
+  const jobToChatId = new Map<string, string>();
+
+  agentLoop.setOnProgress((event: AgentProgressEvent) => {
+    // Phase 3: Update router heartbeat
+    router.handleProgressEvent(event);
+
+    // Phase 1: Track jobId → chatId mapping
+    if (event.type === 'job:created' && event.data.kind === 'created') {
+      const chatId = event.data.chatId;
+      jobToChatId.set(event.jobId, chatId);
+
+      // Create ProgressReporter for this chatId
+      if (!activeReporters.has(chatId)) {
+        const reporter = new ProgressReporter({
+          chatId,
+          sendFn: async (cid: string, text: string) => {
+            return bot.sendResponseWithId({
+              chatId: cid,
+              channel: 'telegram',
+              content: text,
+              messageId: '',
+              format: 'text',
+            });
+          },
+          editFn: (cid: string, messageId: number, text: string) =>
+            bot.editMessage(cid, messageId, text),
+        });
+        activeReporters.set(chatId, reporter);
+      }
+    }
+
+    // Dispatch to reporter
+    const chatId = jobToChatId.get(event.jobId);
+    if (chatId) {
+      const reporter = activeReporters.get(chatId);
+      reporter?.handleProgressEvent(event);
+    }
+
+    // Cleanup on complete/error
+    if (event.type === 'job:complete' || event.type === 'job:error') {
+      const cid = jobToChatId.get(event.jobId);
+      if (cid) {
+        activeReporters.delete(cid);
+        jobToChatId.delete(event.jobId);
+      }
+    }
+  });
 
   // Google Route (works without SmartRouter)
   const googleAuth = new GoogleAuthManager(logger);
@@ -241,6 +300,7 @@ async function main(): Promise<void> {
   const shutdown = async (): Promise<void> => {
     logger('info', '종료 중...');
     router.getNotificationManager().stop();
+    router.dispose();
     if (scheduler) await scheduler.shutdown();
     await browserPool.closeAll();
     await sessionManager.closeAll();

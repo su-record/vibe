@@ -77,6 +77,11 @@ export class TelegramBot extends BaseInterface {
   }
 
   async sendResponse(response: ExternalResponse): Promise<void> {
+    await this.sendResponseWithId(response);
+  }
+
+  /** Send response and return the first message_id (for progress tracking) */
+  async sendResponseWithId(response: ExternalResponse): Promise<number | undefined> {
     const chunks = this.formatter.splitMessage(response.content);
 
     // Phase 7: parse_mode depends on format
@@ -87,6 +92,7 @@ export class TelegramBot extends BaseInterface {
     };
     const parseMode = parseModeMap[response.format ?? 'markdown'];
 
+    let firstMessageId: number | undefined;
     for (const chunk of chunks) {
       const params: Record<string, unknown> = {
         chat_id: response.chatId,
@@ -95,7 +101,33 @@ export class TelegramBot extends BaseInterface {
       if (parseMode) {
         params.parse_mode = parseMode;
       }
-      await this.apiCall('sendMessage', params);
+      const result = await this.apiCall('sendMessage', params) as Record<string, unknown>;
+      if (firstMessageId === undefined && typeof result?.message_id === 'number') {
+        firstMessageId = result.message_id;
+      }
+    }
+    return firstMessageId;
+  }
+
+  /** Edit an existing message (for progress updates) */
+  async editMessage(
+    chatId: string,
+    messageId: number,
+    text: string,
+    parseMode?: string,
+  ): Promise<void> {
+    try {
+      const params: Record<string, unknown> = {
+        chat_id: chatId,
+        message_id: messageId,
+        text,
+      };
+      if (parseMode) {
+        params.parse_mode = parseMode;
+      }
+      await this.apiCall('editMessageText', params);
+    } catch (err) {
+      this.logger('warn', `Failed to edit message ${messageId}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

@@ -14,6 +14,7 @@
  * - Circuit breaker 연동 (HeadModelSelector)
  */
 
+import * as crypto from 'node:crypto';
 import type { ExternalMessage } from '../interface/types.js';
 import type { RouteServices } from '../router/types.js';
 import type { AgentMessage, AgentProgressEvent, AgentToolDefinition, HeadModelProvider, HeadModelResponse, ToolCall, ToolDefinition } from './types.js';
@@ -35,6 +36,10 @@ const MAX_ITERATIONS = 10;
 const HEAD_MODEL_TIMEOUT_MS = 10_000;
 const MAX_INVALID_TOOL_RETRIES = 2;
 const MAX_IDEMPOTENCY_CACHE_SIZE = 500;
+// sonolbot-v2: Import from centralized constants
+import { MESSAGING } from '../infra/lib/constants.js';
+const MAX_DRAIN_INJECTIONS = MESSAGING.MAX_INJECTION_PER_PROCESS;
+const MAX_INJECTION_CHARS = MESSAGING.MAX_INJECTION_CHARS;
 
 // === Error Messages ===
 
@@ -50,6 +55,9 @@ export type OnProgressCallback = (event: AgentProgressEvent) => void;
 
 /** Callback to drain pending instructions from SessionPool (Phase 4) */
 export type PendingInstructionsProvider = () => string | null;
+
+/** Callback to drain pending messages for mid-task injection (sonolbot-v2 Phase 2) */
+export type DrainPendingFn = () => ExternalMessage[];
 
 /** Phase 5: Conversation history callbacks */
 export type ConversationHistoryGetter = (chatId: string) => Array<{ role: string; content: string; timestamp: string }>;
@@ -152,7 +160,16 @@ export class AgentLoop {
     this.conversationEntrySaver = saver;
   }
 
-  async process(message: ExternalMessage, services: RouteServices): Promise<void> {
+  /** Get MediaPreprocessor for external use (Phase 2: pending message preprocessing) */
+  getMediaPreprocessor(): MediaPreprocessor {
+    return this.mediaPreprocessor;
+  }
+
+  async process(
+    message: ExternalMessage,
+    services: RouteServices,
+    drainPendingFn?: DrainPendingFn,
+  ): Promise<void> {
     const { chatId, channel } = message;
     const jobId = message.id;
 
@@ -235,7 +252,7 @@ export class AgentLoop {
 
     await runInContext(chatId, async () => {
       try {
-        await this.runLoop(chatId, headModel, services, sendFn, jobId, channel);
+        await this.runLoop(chatId, headModel, services, sendFn, jobId, channel, drainPendingFn);
       } catch (err) {
         this.headSelector.reportFailure(headModel, err);
         const errorMsg = err instanceof Error ? err.message : String(err);
@@ -246,7 +263,7 @@ export class AgentLoop {
           services.logger('info', 'Falling back to Claude head model...');
           const claudeModel = this.headSelector.getClaudeProvider();
           try {
-            await this.runLoop(chatId, claudeModel, services, sendFn, jobId, channel);
+            await this.runLoop(chatId, claudeModel, services, sendFn, jobId, channel, drainPendingFn);
             return;
           } catch (fallbackErr) {
             const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
@@ -318,6 +335,7 @@ export class AgentLoop {
     sendFn: ChannelSendFn,
     jobId?: string,
     channel?: string,
+    drainPendingFn?: DrainPendingFn,
   ): Promise<void> {
     const tools: AgentToolDefinition[] = this.tools.map((t) => ({
       name: t.name,
@@ -327,9 +345,37 @@ export class AgentLoop {
     }));
     let invalidToolRetries = 0;
     let injectionCount = 0;
+    let drainInjectionCount = 0;
     const jid = jobId ?? chatId;
 
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+      // sonolbot-v2 Phase 2: Drain pending messages for mid-task injection
+      if (drainPendingFn && drainInjectionCount < MAX_DRAIN_INJECTIONS) {
+        const pendingMsgs = drainPendingFn();
+        if (pendingMsgs.length > 0) {
+          let injectedCount = 0;
+          for (const msg of pendingMsgs) {
+            if (drainInjectionCount >= MAX_DRAIN_INJECTIONS) break;
+            drainInjectionCount++;
+            injectedCount++;
+            const requestId = crypto.randomUUID();
+            let content = msg.content;
+            if (content.length > MAX_INJECTION_CHARS) {
+              content = content.slice(0, MAX_INJECTION_CHARS) + '[...truncated]';
+            }
+            this.getConvBackend().addMessage(chatId, {
+              role: 'user',
+              content: wrapUserMessage(
+                `[ADDITIONAL_REQUEST:${requestId}]\n${content}\n[/ADDITIONAL_REQUEST]\n위 요청을 현재 작업에 반영하세요.`,
+              ),
+            });
+          }
+          if (injectedCount > 0) {
+            await sendFn(chatId, `✅ 새로운 요청 ${injectedCount}개 반영`);
+          }
+        }
+      }
+
       // Phase 4: Mid-task instruction injection
       if (injectionCount < MAX_INJECTIONS_PER_SESSION && this.pendingInstructionsProvider) {
         const pending = this.pendingInstructionsProvider();

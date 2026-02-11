@@ -105,7 +105,7 @@ export class MediaPreprocessor {
       case 'audio':
         return this.processVoiceFile(file, message, sendFn);
       case 'photo':
-        return this.processPhotoFile(file);
+        return this.processPhotoFile(file, message, sendFn);
       case 'document':
         return this.processDocumentFile(file);
       case 'video':
@@ -137,11 +137,21 @@ export class MediaPreprocessor {
   }
 
   /** Vision analysis from local photo file */
-  private async processPhotoFile(file: FileAttachment): Promise<string | null> {
+  private async processPhotoFile(
+    file: FileAttachment,
+    message: ExternalMessage,
+    sendFn: SendFn,
+  ): Promise<string | null> {
     if (!fs.existsSync(file.path)) return `[이미지: ${file.name}]`;
     try {
+      if (this.config.showConfirmation) {
+        await sendFn(message.chatId, '🔄 이미지 분석 중...');
+      }
       const { analyzeImage } = await import('../../infra/lib/gemini/capabilities.js');
       const description = await analyzeImage(file.path, '이 이미지를 한국어로 자세히 설명해주세요.');
+      if (this.config.showConfirmation) {
+        await sendFn(message.chatId, '✅ 이미지 분석 완료!');
+      }
       return `[이미지 설명]\n${description}`;
     } catch {
       return `[이미지: ${file.name}]`;

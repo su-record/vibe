@@ -84,3 +84,29 @@ export const CONCURRENCY = {
   /** 대화 이력 정리 기준 (시간) — Phase 5 */
   CONVERSATION_CLEANUP_HOURS: 48,
 } as const;
+
+// sonolbot-v2 상수
+export const MESSAGING = {
+  /** Phase 1: ProgressReporter 메시지 편집 최소 간격 (Telegram rate limit 방지) */
+  PROGRESS_MIN_INTERVAL_MS: 3_000,
+  /** Phase 2: chatId당 대기 큐 최대 크기 */
+  MAX_PENDING_MESSAGES: 10,
+  /** Phase 2: 대기 메시지 TTL */
+  PENDING_MESSAGE_TTL_MS: 300_000,
+  /** Phase 2: process당 최대 injection 횟수 */
+  MAX_INJECTION_PER_PROCESS: 3,
+  /** Phase 2: injection content 최대 문자수 (LLM context overflow 방지) */
+  MAX_INJECTION_CHARS: 4_000,
+  /** Phase 2: 새 요청 확인 알림 debounce */
+  ACK_DEBOUNCE_MS: 5_000,
+  /** Phase 3: 무활동 감지 타임아웃 */
+  ACTIVITY_TIMEOUT_MS: 600_000,
+  /** Phase 3: Stale 감지 주기 */
+  STALE_CHECK_INTERVAL_MS: 60_000,
+  /** Phase 3: stale 후 자동 재처리 최대 횟수 (poison pill 방지) */
+  MAX_STALE_RETRY: 1,
+  /** Phase 3: DevSessionManager lock 대기 최대 시간 */
+  LOCK_WAIT_TIMEOUT_MS: 30_000,
+  /** Phase 4: 외부 채널 기본 포맷 */
+  DEFAULT_EXTERNAL_FORMAT: 'text' as const,
+} as const;

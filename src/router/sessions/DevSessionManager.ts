@@ -7,9 +7,12 @@
 import { ClaudeCodeBridge } from '../../interface/ClaudeCodeBridge.js';
 import { InterfaceLogger } from '../../interface/types.js';
 
+import { MESSAGING } from '../../infra/lib/constants.js';
+
 const MAX_CONCURRENT_SESSIONS = 3;
 const IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours
 const MAX_RETRIES = 3;
+const LOCK_WAIT_TIMEOUT_MS = MESSAGING.LOCK_WAIT_TIMEOUT_MS;
 
 interface DevSession {
   key: string;
@@ -24,30 +27,62 @@ export class DevSessionManager {
   private sessions: Map<string, DevSession> = new Map();
   private logger: InterfaceLogger;
   private maxSessions: number;
+  private locks: Map<string, Promise<void>> = new Map();
 
   constructor(logger: InterfaceLogger, maxSessions: number = MAX_CONCURRENT_SESSIONS) {
     this.logger = logger;
     this.maxSessions = maxSessions;
   }
 
+  /** Phase 3: Async mutex — serialize concurrent access per key */
+  async withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    const existing = this.locks.get(key);
+
+    // Wait for existing lock with timeout
+    if (existing) {
+      await Promise.race([
+        existing,
+        new Promise<void>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Lock timeout for key: ${key}`)),
+            LOCK_WAIT_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+    }
+
+    let resolve: () => void;
+    const lockPromise = new Promise<void>((r) => { resolve = r; });
+    this.locks.set(key, lockPromise);
+
+    try {
+      return await fn();
+    } finally {
+      resolve!();
+      this.locks.delete(key);
+    }
+  }
+
   /** Get or create a session for chatId + projectPath */
   async getSession(chatId: string, projectPath: string): Promise<ClaudeCodeBridge> {
     const key = this.makeKey(chatId, projectPath);
 
-    // Reuse existing session
-    const existing = this.sessions.get(key);
-    if (existing && existing.bridge.isRunning()) {
-      this.touchSession(existing);
-      return existing.bridge;
-    }
+    return this.withLock(key, async () => {
+      // Reuse existing session
+      const existing = this.sessions.get(key);
+      if (existing && existing.bridge.isRunning()) {
+        this.touchSession(existing);
+        return existing.bridge;
+      }
 
-    // Evict oldest if at capacity
-    if (this.sessions.size >= this.maxSessions) {
-      this.evictOldest();
-    }
+      // Evict oldest if at capacity
+      if (this.sessions.size >= this.maxSessions) {
+        this.evictOldest();
+      }
 
-    // Create new session
-    return this.createSession(key, chatId, projectPath);
+      // Create new session
+      return this.createSession(key, chatId, projectPath);
+    });
   }
 
   /** Check if a session exists */

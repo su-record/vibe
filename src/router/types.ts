@@ -66,10 +66,23 @@ export type RouteJobStatus =
 // Router Configuration
 // ============================================================================
 
+export interface ResponseStyleConfig {
+  format: 'text' | 'markdown';
+  useEmoji: boolean;
+  allowMarkdownForCode: boolean;
+}
+
+export interface MessagingConfig {
+  progressMinIntervalMs: number;
+  activityTimeoutMs: number;
+}
+
 export interface RouterConfig {
   repos: RepoConfig;
   qa: QAConfig;
   notifications: NotificationConfig;
+  responseStyle?: ResponseStyleConfig;
+  messaging?: MessagingConfig;
 }
 
 export interface RepoConfig {
