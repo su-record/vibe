@@ -279,7 +279,7 @@ function extractSection(content: string, sectionNames: string[]): string | null 
 
     const startIndex = headerMatch.index + headerMatch[0].length;
     const nextHeader = content.slice(startIndex).match(/^##\s/m);
-    const endIndex = nextHeader ? startIndex + nextHeader.index : content.length;
+    const endIndex = nextHeader?.index != null ? startIndex + nextHeader.index : content.length;
 
     return content.slice(startIndex, endIndex).trim();
   }
