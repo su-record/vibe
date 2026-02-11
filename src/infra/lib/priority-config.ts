@@ -19,11 +19,39 @@ const DEFAULT_PRIORITY: PriorityConfig = {
   kimi: ['az', 'kimi'],
 };
 
+/** Phase 7: Response style configuration */
+export interface ResponseStyleConfig {
+  format: 'text' | 'markdown' | 'html';
+  useEmoji: boolean;
+  tone: 'conversational' | 'formal';
+}
+
+/** Phase 8: Messaging configuration */
+export interface MessagingConfig {
+  batchWaitMs: number;
+  maxInjectionPerSession: number;
+  conversationHistoryHours: number;
+}
+
+const DEFAULT_RESPONSE_STYLE: ResponseStyleConfig = {
+  format: 'text',
+  useEmoji: true,
+  tone: 'conversational',
+};
+
+const DEFAULT_MESSAGING: MessagingConfig = {
+  batchWaitMs: 2000,
+  maxInjectionPerSession: 3,
+  conversationHistoryHours: 24,
+};
+
 interface ConfigJson {
   priority?: {
     embedding?: string[];
     kimi?: string[];
   };
+  responseStyle?: Partial<ResponseStyleConfig>;
+  messaging?: Partial<MessagingConfig>;
   [key: string]: unknown;
 }
 
@@ -97,6 +125,46 @@ export function loadPriorityConfig(): PriorityConfig {
   }
 
   return result;
+}
+
+/**
+ * Phase 7: Response style 로드 (기본값 fallback)
+ */
+export function loadResponseStyleConfig(): ResponseStyleConfig {
+  const config = readConfig();
+  const style = config.responseStyle;
+  if (!style) return { ...DEFAULT_RESPONSE_STYLE };
+
+  const validFormats = ['text', 'markdown', 'html'] as const;
+  const validTones = ['conversational', 'formal'] as const;
+
+  return {
+    format: validFormats.includes(style.format as never)
+      ? (style.format as ResponseStyleConfig['format'])
+      : DEFAULT_RESPONSE_STYLE.format,
+    useEmoji: typeof style.useEmoji === 'boolean' ? style.useEmoji : DEFAULT_RESPONSE_STYLE.useEmoji,
+    tone: validTones.includes(style.tone as never)
+      ? (style.tone as ResponseStyleConfig['tone'])
+      : DEFAULT_RESPONSE_STYLE.tone,
+  };
+}
+
+/**
+ * Phase 8: Messaging config 로드 (기본값 fallback)
+ */
+export function loadMessagingConfig(): MessagingConfig {
+  const config = readConfig();
+  const msg = config.messaging;
+  if (!msg) return { ...DEFAULT_MESSAGING };
+
+  return {
+    batchWaitMs: typeof msg.batchWaitMs === 'number' && msg.batchWaitMs > 0
+      ? msg.batchWaitMs : DEFAULT_MESSAGING.batchWaitMs,
+    maxInjectionPerSession: typeof msg.maxInjectionPerSession === 'number' && msg.maxInjectionPerSession > 0
+      ? msg.maxInjectionPerSession : DEFAULT_MESSAGING.maxInjectionPerSession,
+    conversationHistoryHours: typeof msg.conversationHistoryHours === 'number' && msg.conversationHistoryHours > 0
+      ? msg.conversationHistoryHours : DEFAULT_MESSAGING.conversationHistoryHours,
+  };
 }
 
 /**

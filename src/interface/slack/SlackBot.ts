@@ -9,11 +9,15 @@
 import * as http from 'node:http';
 import * as https from 'node:https';
 import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import { BaseInterface } from '../BaseInterface.js';
 import {
   ChannelType,
   ExternalMessage,
   ExternalResponse,
+  FileAttachment,
   InterfaceLogger,
   SlackConfig,
 } from '../types.js';
@@ -113,13 +117,17 @@ export class SlackBot extends BaseInterface {
       this.ws = null;
     }
 
+    await this.flushAllBuffers();
     this.status = 'disabled';
     this.logger('info', 'Slack bot stopped');
   }
 
   async sendResponse(response: ExternalResponse): Promise<void> {
-    const formatted = this.formatter.toSlackMrkdwn(response.content);
-    const chunks = this.formatter.splitMessage(formatted);
+    // Phase 7: Skip mrkdwn conversion for plain text format
+    const content = response.format === 'text'
+      ? response.content
+      : this.formatter.toSlackMrkdwn(response.content);
+    const chunks = this.formatter.splitMessage(content);
 
     for (const chunk of chunks) {
       await this.rateLimitedCall(async () => {
@@ -429,10 +437,11 @@ export class SlackBot extends BaseInterface {
       metadata.thread_ts = threadTs;
     }
 
-    // Handle file uploads
+    // Handle file uploads — download locally + create FileAttachment[]
+    const fileAttachments: FileAttachment[] = [];
     if (Array.isArray(event.files) && event.files.length > 0) {
       const files = event.files as Array<Record<string, unknown>>;
-      const fileData: Array<{ url: string; name: string; mimeType: string; size: number }> = [];
+      const msgDir = this.getFileStoragePath(channel, ts);
 
       for (const file of files) {
         const fileId = String(file.id || '');
@@ -440,22 +449,27 @@ export class SlackBot extends BaseInterface {
           const fileInfo = await this.apiCall('files.info', { file: fileId }) as Record<string, unknown>;
           const fileObj = fileInfo.file as Record<string, unknown>;
           const urlPrivate = String(fileObj.url_private || '');
-          const name = String(fileObj.name || 'unknown');
+          const origName = String(fileObj.name || 'unknown');
+          const fileName = this.sanitizeFileName(origName);
           const mimeType = String(fileObj.mimetype || 'application/octet-stream');
           const size = typeof fileObj.size === 'number' ? fileObj.size : 0;
 
           if (size > MAX_FILE_SIZE) {
-            this.logger('warn', `File ${name} exceeds max size (10MB), skipping`);
+            this.logger('warn', `File ${fileName} exceeds max size (10MB), skipping`);
             continue;
           }
 
-          fileData.push({ url: urlPrivate, name, mimeType, size });
+          const saved = await this.downloadSlackFile(urlPrivate, msgDir, fileName);
+          if (saved) {
+            const fileType = this.detectFileType(mimeType);
+            fileAttachments.push({ type: fileType, path: saved, name: fileName, mimeType, size });
+          }
         } catch (err) {
           this.logger('warn', `Failed to get file info for ${fileId}`, { error: err instanceof Error ? err.message : String(err) });
         }
       }
 
-      metadata.files = fileData;
+      metadata.files = fileAttachments.map(f => ({ name: f.name, mimeType: f.mimeType, size: f.size }));
     }
 
     const externalMessage: ExternalMessage = {
@@ -464,9 +478,10 @@ export class SlackBot extends BaseInterface {
       chatId: channel,
       userId: user,
       content: text,
-      type: 'text',
+      type: fileAttachments.length > 0 ? 'file' : 'text',
       metadata,
       timestamp: new Date().toISOString(),
+      ...(fileAttachments.length > 0 ? { files: fileAttachments } : {}),
     };
 
     await this.dispatchMessage(externalMessage);
@@ -598,5 +613,72 @@ export class SlackBot extends BaseInterface {
 
     this.tokenBucket.tokens -= 1;
     await fn();
+  }
+
+  // ========================================================================
+  // Private - File Download
+  // ========================================================================
+
+  /** Sanitize filename to prevent path traversal */
+  private sanitizeFileName(name: string): string {
+    return name.replace(/[/\\:*?"<>|]/g, '_').replace(/\.\./g, '_');
+  }
+
+  /** Get local file storage path for a Slack message */
+  private getFileStoragePath(channelId: string, ts: string): string {
+    const safeTs = ts.replace(/\./g, '_');
+    return path.join(
+      os.homedir(), '.vibe', 'files', 'slack', channelId, `msg_${safeTs}`,
+    );
+  }
+
+  /** Detect FileAttachment type from MIME type */
+  private detectFileType(mimeType: string): FileAttachment['type'] {
+    if (mimeType.startsWith('image/')) return 'photo';
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType.startsWith('audio/')) return 'audio';
+    return 'document';
+  }
+
+  /** Download a file from Slack url_private with auth header */
+  private async downloadSlackFile(
+    url: string,
+    dir: string,
+    fileName: string,
+  ): Promise<string | null> {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      const buffer = await this.httpGetWithAuth(url);
+      const filePath = path.join(dir, fileName);
+      fs.writeFileSync(filePath, buffer);
+      return filePath;
+    } catch (err) {
+      this.logger('warn', `Failed to download Slack file: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }
+  }
+
+  /** HTTP GET with Bearer token auth (for Slack file downloads) */
+  private httpGetWithAuth(fileUrl: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const url = new URL(fileUrl);
+      const options = {
+        headers: { 'Authorization': `Bearer ${this.config.botToken}` },
+      };
+      https.get(url, options, (res) => {
+        // Follow redirects (Slack sometimes redirects file URLs)
+        if (res.statusCode === 302 || res.statusCode === 301) {
+          const redirectUrl = res.headers.location;
+          if (redirectUrl) {
+            this.httpGetWithAuth(redirectUrl).then(resolve).catch(reject);
+            return;
+          }
+        }
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => resolve(Buffer.concat(chunks)));
+        res.on('error', reject);
+      }).on('error', reject);
+    });
   }
 }

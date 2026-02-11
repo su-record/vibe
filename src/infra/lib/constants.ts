@@ -69,4 +69,18 @@ export const CONCURRENCY = {
   MAX_RETRIES: 3,
   /** 재시도 간격 (ms) — 지수 백오프 적용 */
   RETRY_BASE_DELAY: 2000, // 2초
+  /** 활동 기반 타임아웃 — 무활동 감지 (ms) */
+  ACTIVITY_TIMEOUT: 180_000, // 3분
+  /** Stale 감지 주기 (ms) */
+  STALE_CHECK_INTERVAL: 30_000, // 30초
+  /** 멀티 메시지 배칭 대기 시간 (ms) — Phase 3 */
+  BATCH_WAIT_MS: 2_000, // 2초
+  /** 세션당 최대 인스트럭션 주입 횟수 — Phase 4 */
+  MAX_INJECTION_PER_SESSION: 3,
+  /** 대화 이력 조회 기간 (시간) — Phase 5 */
+  CONVERSATION_HISTORY_HOURS: 24,
+  /** 대화 이력 최대 문자 수 — Phase 5 */
+  CONVERSATION_HISTORY_MAX_CHARS: 8_000,
+  /** 대화 이력 정리 기준 (시간) — Phase 5 */
+  CONVERSATION_CLEANUP_HOURS: 48,
 } as const;

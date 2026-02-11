@@ -59,7 +59,7 @@ describe('Preflight', () => {
     expect(elapsed).toBeLessThan(2000);
   });
 
-  describe('macOS Permissions (OpenClaw pattern)', () => {
+  describe('macOS Permissions', () => {
     it('should skip macOS checks when channels are disabled', async () => {
       const result = await runPreflight();
       const macChecks = [...result.errors, ...result.warnings].filter(

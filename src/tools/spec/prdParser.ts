@@ -273,11 +273,15 @@ function extractRequirementsFromYaml(
  */
 function extractSection(content: string, sectionNames: string[]): string | null {
   for (const name of sectionNames) {
-    const pattern = new RegExp(`^##\\s*${name}[:\\s]*\\n([\\s\\S]*?)(?=^##\\s|$)`, 'mi');
-    const match = content.match(pattern);
-    if (match) {
-      return match[1].trim();
-    }
+    const headerPattern = new RegExp(`^##\\s*${name}[:\\s]*$`, 'mi');
+    const headerMatch = headerPattern.exec(content);
+    if (!headerMatch) continue;
+
+    const startIndex = headerMatch.index + headerMatch[0].length;
+    const nextHeader = content.slice(startIndex).match(/^##\s/m);
+    const endIndex = nextHeader ? startIndex + nextHeader.index : content.length;
+
+    return content.slice(startIndex, endIndex).trim();
   }
   return null;
 }

@@ -186,6 +186,8 @@ export class WebServer extends BaseInterface {
     }
     this.connections.clear();
 
+    await this.flushAllBuffers();
+
     return new Promise<void>((resolve) => {
       this.server!.close(() => {
         this.server = null;

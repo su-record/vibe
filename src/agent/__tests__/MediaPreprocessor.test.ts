@@ -9,7 +9,7 @@ import type { ExternalMessage } from '../../interface/types.js';
 import type { Mock } from 'vitest';
 
 // Mock Gemini capabilities
-vi.mock('../../lib/gemini/capabilities.js', () => ({
+vi.mock('../../infra/lib/gemini/capabilities.js', () => ({
   transcribeAudio: vi.fn(),
   analyzeImage: vi.fn(),
 }));

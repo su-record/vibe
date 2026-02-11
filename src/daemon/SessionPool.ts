@@ -20,9 +20,12 @@ import type { ToolDefinition } from '../agent/types.js';
 import type { HeadModelSelector } from '../agent/HeadModelSelector.js';
 import { AgentLoop } from '../agent/AgentLoop.js';
 import type { AgentProgressEvent } from '../agent/types.js';
+import type { SessionRAGStore } from '../infra/lib/memory/SessionRAGStore.js';
 
 const MAX_QUEUE_DEPTH = 5;
 const REQUEST_TIMEOUT_MS = 60_000;
+const MAX_PENDING_INSTRUCTIONS = 10;
+const PENDING_TTL_MS = 5 * 60 * 1000; // 5분
 
 interface QueuedRequest {
   message: string;
@@ -32,9 +35,15 @@ interface QueuedRequest {
   reject: (error: Error) => void;
 }
 
+interface PendingInstruction {
+  content: string;
+  timestamp: number;
+}
+
 interface AgentDeps {
   headSelector: HeadModelSelector;
   tools: ToolDefinition[];
+  ragStore?: SessionRAGStore;
 }
 
 export class SessionPool {
@@ -53,6 +62,9 @@ export class SessionPool {
 
   /** Collected response per request */
   private responseCollectors: Map<string, string> = new Map();
+
+  /** Phase 4: Pending instructions per session */
+  private pendingInstructions: Map<string, PendingInstruction[]> = new Map();
 
   constructor(
     config: DaemonConfig,
@@ -93,6 +105,7 @@ export class SessionPool {
     this.processing.clear();
     this.agentLoops.clear();
     this.responseCollectors.clear();
+    this.pendingInstructions.clear();
     this.logger('info', 'Session pool stopped');
   }
 
@@ -186,6 +199,60 @@ export class SessionPool {
     return this.sessions.size;
   }
 
+  /** Phase 6: Find existing session by project path (O(1) scan, no I/O) */
+  findSessionByProject(projectPath: string): SessionInfo | undefined {
+    for (const [, session] of this.sessions) {
+      if (session.projectPath === projectPath && session.status !== 'error') {
+        return session;
+      }
+    }
+    return undefined;
+  }
+
+  /** Phase 6: Check if any session has pending instructions */
+  hasAnyPendingInstructions(): boolean {
+    for (const [, queue] of this.pendingInstructions) {
+      if (queue.length > 0) return true;
+    }
+    return false;
+  }
+
+  /** Phase 4: Add pending instruction for a busy session */
+  addPendingInstruction(sessionId: string, content: string): boolean {
+    const queue = this.pendingInstructions.get(sessionId) ?? [];
+    if (queue.length >= MAX_PENDING_INSTRUCTIONS) {
+      this.logger('warn', `Pending instruction queue full for session ${sessionId}`);
+      return false;
+    }
+    queue.push({ content, timestamp: Date.now() });
+    this.pendingInstructions.set(sessionId, queue);
+    this.logger('info', `Added pending instruction for session ${sessionId} (${queue.length} total)`);
+    return true;
+  }
+
+  /** Phase 4: Drain pending instructions (returns combined string or null) */
+  drainPendingInstructions(sessionId: string): string | null {
+    const queue = this.pendingInstructions.get(sessionId);
+    if (!queue?.length) return null;
+
+    const now = Date.now();
+    // Filter out TTL-expired items
+    const valid = queue.filter((item) => now - item.timestamp < PENDING_TTL_MS);
+    this.pendingInstructions.delete(sessionId);
+
+    if (valid.length === 0) return null;
+
+    // Combine all pending instructions
+    if (valid.length === 1) return valid[0].content;
+    return valid.map((item, i) => `[추가 요청 ${i + 1}]\n${item.content}`).join('\n\n');
+  }
+
+  /** Phase 4: Check if session has pending instructions */
+  hasPendingInstructions(sessionId: string): boolean {
+    const queue = this.pendingInstructions.get(sessionId);
+    return Boolean(queue?.length);
+  }
+
   /** Close a specific session */
   closeSession(sessionId: string): boolean {
     const session = this.sessions.get(sessionId);
@@ -195,6 +262,7 @@ export class SessionPool {
     this.requestQueues.delete(sessionId);
     this.processing.delete(sessionId);
     this.agentLoops.delete(sessionId);
+    this.pendingInstructions.delete(sessionId);
     this.logger('info', `Closed session ${sessionId}`);
     return true;
   }
@@ -353,6 +421,21 @@ export class SessionPool {
 
     const agentLoop = this.getOrCreateAgentLoop(session.id);
 
+    // Phase 4: Wire up pending instructions provider
+    agentLoop.setPendingInstructionsProvider(() => {
+      return this.drainPendingInstructions(session.id);
+    });
+
+    // Phase 5: Wire up conversation history callbacks
+    if (this.agentDeps.ragStore) {
+      const store = this.agentDeps.ragStore;
+      agentLoop.setConversationHistoryCallbacks(
+        (cid: string) => store.getRecentConversationHistory(cid),
+        (cid: string, role: 'user' | 'assistant', content: string) =>
+          store.saveConversationEntry(cid, role, content),
+      );
+    }
+
     // Build ExternalMessage
     const externalMessage: ExternalMessage = {
       id: `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -435,6 +518,7 @@ export class SessionPool {
         this.sessions.delete(id);
         this.requestQueues.delete(id);
         this.agentLoops.delete(id);
+        this.pendingInstructions.delete(id);
       }
     }
   }
@@ -456,6 +540,7 @@ export class SessionPool {
       this.sessions.delete(oldest[0]);
       this.requestQueues.delete(oldest[0]);
       this.agentLoops.delete(oldest[0]);
+      this.pendingInstructions.delete(oldest[0]);
       return true;
     }
     return false;

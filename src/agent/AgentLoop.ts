@@ -24,7 +24,7 @@ import type { RateLimiter } from './RateLimiter.js';
 import type { ConversationStore } from './ConversationStore.js';
 import { ConversationState } from './ConversationState.js';
 import { ToolExecutor, type AgentLogger } from './ToolExecutor.js';
-import { buildSystemPrompt, truncateInput, wrapUserMessage, type SystemPromptConfig } from './SystemPrompt.js';
+import { buildSystemPrompt, formatConversationHistoryBlock, isExternalChannel, truncateInput, wrapUserMessage, type SystemPromptConfig } from './SystemPrompt.js';
 import { MediaPreprocessor, type MediaPreprocessorConfig } from './preprocessors/MediaPreprocessor.js';
 import { bindSendTelegram, unbindSendTelegram, runInChatContext } from './tools/send-telegram.js';
 import { bindSendSlack, unbindSendSlack, runInSlackContext } from './tools/send-slack.js';
@@ -48,6 +48,13 @@ const ERROR_MESSAGES = {
 
 export type OnProgressCallback = (event: AgentProgressEvent) => void;
 
+/** Callback to drain pending instructions from SessionPool (Phase 4) */
+export type PendingInstructionsProvider = () => string | null;
+
+/** Phase 5: Conversation history callbacks */
+export type ConversationHistoryGetter = (chatId: string) => Array<{ role: string; content: string; timestamp: string }>;
+export type ConversationEntrySaver = (chatId: string, role: 'user' | 'assistant', content: string) => void;
+
 export interface AgentLoopDeps {
   headSelector: HeadModelSelector;
   tools: ToolDefinition[];
@@ -57,6 +64,36 @@ export interface AgentLoopDeps {
   policyEngine?: PolicyEngine;
   rateLimiter?: RateLimiter;
   conversationStore?: ConversationStore;
+}
+
+const MAX_INJECTIONS_PER_SESSION = 3;
+
+/** Phase 7: Response style configuration */
+export interface ResponseStyleConfig {
+  format: 'text' | 'markdown' | 'html';
+  useEmoji: boolean;
+  tone: 'conversational' | 'formal';
+  allowMarkdownForCode: boolean;
+}
+
+const DEFAULT_RESPONSE_STYLE: ResponseStyleConfig = {
+  format: 'text',
+  useEmoji: true,
+  tone: 'conversational',
+  allowMarkdownForCode: true,
+};
+
+/** Determine format for a response: markdown if code block detected + allowed */
+function resolveFormat(
+  content: string,
+  channel: string | undefined,
+  style: ResponseStyleConfig,
+): 'text' | 'markdown' | 'html' {
+  // CLI channel always uses markdown
+  if (!isExternalChannel(channel)) return 'markdown';
+  // Dynamic: code blocks → markdown if allowed
+  if (style.allowMarkdownForCode && content.includes('```')) return 'markdown';
+  return style.format;
 }
 
 export class AgentLoop {
@@ -71,6 +108,10 @@ export class AgentLoop {
   private onProgress: OnProgressCallback | undefined;
   private policyEngine: PolicyEngine | undefined;
   private rateLimiter: RateLimiter | undefined;
+  private pendingInstructionsProvider: PendingInstructionsProvider | undefined;
+  private conversationHistoryGetter: ConversationHistoryGetter | undefined;
+  private conversationEntrySaver: ConversationEntrySaver | undefined;
+  private responseStyle: ResponseStyleConfig = { ...DEFAULT_RESPONSE_STYLE };
 
   constructor(deps: AgentLoopDeps) {
     this.headSelector = deps.headSelector;
@@ -88,8 +129,27 @@ export class AgentLoop {
     this.onProgress = callback;
   }
 
+  /** Phase 7: Set response style config */
+  setResponseStyle(style: Partial<ResponseStyleConfig>): void {
+    this.responseStyle = { ...DEFAULT_RESPONSE_STYLE, ...style };
+  }
+
   setLogger(logger: AgentLogger): void {
     this.toolExecutor = new ToolExecutor(logger, this.tools);
+  }
+
+  /** Set provider for mid-task instruction injection (Phase 4) */
+  setPendingInstructionsProvider(provider: PendingInstructionsProvider): void {
+    this.pendingInstructionsProvider = provider;
+  }
+
+  /** Set conversation history callbacks (Phase 5) */
+  setConversationHistoryCallbacks(
+    getter: ConversationHistoryGetter,
+    saver: ConversationEntrySaver,
+  ): void {
+    this.conversationHistoryGetter = getter;
+    this.conversationEntrySaver = saver;
   }
 
   async process(message: ExternalMessage, services: RouteServices): Promise<void> {
@@ -158,6 +218,11 @@ export class AgentLoop {
       content: wrapUserMessage(content),
     });
 
+    // Phase 5: Auto-save user message to conversation history
+    if (this.conversationEntrySaver) {
+      try { this.conversationEntrySaver(chatId, 'user', content); } catch { /* ignore */ }
+    }
+
     // Bind channel-specific send tool
     this.bindChannelTool(channel, chatId, message, services);
 
@@ -170,7 +235,7 @@ export class AgentLoop {
 
     await runInContext(chatId, async () => {
       try {
-        await this.runLoop(chatId, headModel, services, sendFn, jobId);
+        await this.runLoop(chatId, headModel, services, sendFn, jobId, channel);
       } catch (err) {
         this.headSelector.reportFailure(headModel, err);
         const errorMsg = err instanceof Error ? err.message : String(err);
@@ -181,7 +246,7 @@ export class AgentLoop {
           services.logger('info', 'Falling back to Claude head model...');
           const claudeModel = this.headSelector.getClaudeProvider();
           try {
-            await this.runLoop(chatId, claudeModel, services, sendFn, jobId);
+            await this.runLoop(chatId, claudeModel, services, sendFn, jobId, channel);
             return;
           } catch (fallbackErr) {
             const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
@@ -252,6 +317,7 @@ export class AgentLoop {
     services: RouteServices,
     sendFn: ChannelSendFn,
     jobId?: string,
+    channel?: string,
   ): Promise<void> {
     const tools: AgentToolDefinition[] = this.tools.map((t) => ({
       name: t.name,
@@ -260,11 +326,35 @@ export class AgentLoop {
       scope: t.scope,
     }));
     let invalidToolRetries = 0;
+    let injectionCount = 0;
     const jid = jobId ?? chatId;
 
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+      // Phase 4: Mid-task instruction injection
+      if (injectionCount < MAX_INJECTIONS_PER_SESSION && this.pendingInstructionsProvider) {
+        const pending = this.pendingInstructionsProvider();
+        if (pending) {
+          injectionCount++;
+          this.getConvBackend().addMessage(chatId, {
+            role: 'user',
+            content: wrapUserMessage(`⚠️ [새로운 지시사항]\n${pending}\n[지시사항 끝]`),
+          });
+          await sendFn(chatId, `✅ 새로운 요청 ${injectionCount}개 확인`);
+        }
+      }
+
       // Build messages: system prompt + conversation history
       const systemPrompt = buildSystemPrompt(tools, this.systemPromptConfig);
+
+      // Phase 5: Inject 24h conversation history into system prompt (first iteration only)
+      if (iteration === 0 && this.conversationHistoryGetter) {
+        const recentHistory = this.conversationHistoryGetter(chatId);
+        const historyBlock = formatConversationHistoryBlock(recentHistory);
+        if (historyBlock) {
+          systemPrompt.content += historyBlock;
+        }
+      }
+
       const backend = this.getConvBackend();
       const historyMessages = backend.getMessages(
         chatId,
@@ -290,7 +380,13 @@ export class AgentLoop {
           data: { kind: 'complete', content: response.content, model: response.model },
           timestamp: new Date().toISOString(),
         });
-        await sendFn(chatId, response.content, { format: 'markdown' });
+        const fmt = resolveFormat(response.content, channel, this.responseStyle);
+        await sendFn(chatId, response.content, { format: fmt });
+
+        // Phase 5: Auto-save assistant response to conversation history
+        if (this.conversationEntrySaver) {
+          try { this.conversationEntrySaver(chatId, 'assistant', response.content); } catch { /* ignore */ }
+        }
         return;
       }
 
