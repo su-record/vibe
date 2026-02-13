@@ -67,8 +67,8 @@ export function generateTraceabilityMatrix(
 ): TraceabilityMatrix {
   const {
     projectPath = process.cwd(),
-    specPath = `.claude/vibe/specs/${featureName}.md`,
-    featurePath = `.claude/vibe/features/${featureName}.feature`,
+    specPath = `.claude/specs/${featureName}.md`,
+    featurePath = `.claude/features/${featureName}.feature`,
     testPath,
   } = options;
 
@@ -307,16 +307,23 @@ function extractRequirementsFromSpec(content: string): { id: string; description
 
 /**
  * Feature 파일에서 시나리오 추출
+ * 각 시나리오 블록을 분리 후 Verification 태그 검색
  */
 function extractScenariosFromFeature(content: string): { name: string; verification?: string }[] {
   const scenarios: { name: string; verification?: string }[] = [];
-  const scenarioPattern = /###\s*Scenario\s*\d*[:\s]*([^\n]+)[\s\S]*?(?:\*\*Verification\*\*[:\s]*([^\n]+))?/gi;
-  let match;
+  const headingPattern = /###\s*Scenario\s*\d*[:\s]*([^\n]+)/gi;
+  const matches = [...content.matchAll(headingPattern)];
 
-  while ((match = scenarioPattern.exec(content)) !== null) {
+  for (let i = 0; i < matches.length; i++) {
+    const name = matches[i][1].trim();
+    const blockStart = matches[i].index! + matches[i][0].length;
+    const blockEnd = i < matches.length - 1 ? matches[i + 1].index! : content.length;
+    const block = content.slice(blockStart, blockEnd);
+
+    const verMatch = block.match(/\*\*Verification\*\*[:\s]*([^\n]+)/i);
     scenarios.push({
-      name: match[1].trim(),
-      verification: match[2]?.trim(),
+      name,
+      verification: verMatch?.[1]?.trim(),
     });
   }
 

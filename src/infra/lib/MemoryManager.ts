@@ -230,6 +230,14 @@ export class MemoryManager {
     return this.memorySearch.searchAdvanced(query, strategy, options);
   }
 
+  public async searchAdvancedAsync(
+    query: string,
+    strategy: SearchStrategy,
+    options: SearchOptions = {}
+  ): Promise<MemoryItem[]> {
+    return this.memorySearch.searchAdvancedAsync(query, strategy, options);
+  }
+
   // ============================================================================
   // Observation Operations (delegated to ObservationStore)
   // ============================================================================

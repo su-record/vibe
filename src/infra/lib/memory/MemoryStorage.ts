@@ -4,6 +4,9 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { mkdirSync, readFileSync, renameSync, existsSync } from 'fs';
+import { VectorStore } from '../embedding/VectorStore.js';
+import { EmbeddingProvider } from '../embedding/EmbeddingProvider.js';
+import type { EmbeddingProviderType } from '../embedding/types.js';
 
 export interface MemoryItem {
   key: string;
@@ -22,13 +25,15 @@ export class MemoryStorage {
   private recallSelectStmt: Database.Statement | null = null;
   private recallUpdateStmt: Database.Statement | null = null;
   private fts5Available = false;
+  private vectorStore: VectorStore | null = null;
+  private embeddingProvider: EmbeddingProvider | null = null;
 
-  constructor(projectPath: string) {
+  constructor(projectPath: string, embeddingPriority?: EmbeddingProviderType[]) {
     // Normalize path
     const resolvedPath = path.resolve(projectPath);
 
-    // Project-based memory: store in {projectPath}/.claude/vibe/memories/
-    const memoryDir = path.join(resolvedPath, '.claude', 'vibe', 'memories');
+    // Project-based memory: store in {projectPath}/.claude/memories/
+    const memoryDir = path.join(resolvedPath, '.claude', 'memories');
     this.dbPath = path.join(memoryDir, 'memories.db');
 
     try {
@@ -46,6 +51,7 @@ export class MemoryStorage {
     this.db.pragma('foreign_keys = ON');
     this.initializeDatabase();
     this.migrateFromJSON();
+    this.initializeEmbedding(embeddingPriority);
   }
 
   private initializeDatabase(): void {
@@ -306,6 +312,64 @@ export class MemoryStorage {
     }
   }
 
+  private initializeEmbedding(priority?: EmbeddingProviderType[]): void {
+    try {
+      this.embeddingProvider = new EmbeddingProvider(
+        priority ? { priority } : undefined,
+      );
+      if (this.embeddingProvider.isAvailable()) {
+        this.vectorStore = new VectorStore(this.db);
+      } else {
+        this.embeddingProvider = null;
+      }
+    } catch {
+      this.embeddingProvider = null;
+      this.vectorStore = null;
+    }
+  }
+
+  /**
+   * VectorStore 인스턴스 (벡터 검색 불가 시 null)
+   */
+  public getVectorStore(): VectorStore | null {
+    return this.vectorStore;
+  }
+
+  /**
+   * EmbeddingProvider 인스턴스 (API 키 없으면 null)
+   */
+  public getEmbeddingProvider(): EmbeddingProvider | null {
+    return this.embeddingProvider;
+  }
+
+  /**
+   * 벡터 검색 사용 가능 여부
+   */
+  public isVectorAvailable(): boolean {
+    return this.vectorStore !== null && this.embeddingProvider !== null;
+  }
+
+  /**
+   * 비동기 임베딩 생성 + 벡터 저장 (실패 무시)
+   */
+  private embedAndStoreAsync(key: string, text: string): void {
+    if (!this.embeddingProvider || !this.vectorStore) return;
+
+    const provider = this.embeddingProvider;
+    const store = this.vectorStore;
+
+    void (async (): Promise<void> => {
+      try {
+        const result = await provider.embed([text]);
+        if (result.embeddings.length > 0) {
+          store.saveMemoryVector(key, result.embeddings[0]);
+        }
+      } catch {
+        // 임베딩 실패 → 무시 (메모리 저장은 이미 성공)
+      }
+    })();
+  }
+
   /**
    * Save or update a memory item
    */
@@ -321,6 +385,8 @@ export class MemoryStorage {
       `);
       stmt.run(key, value, category, timestamp, timestamp, priority);
     }
+
+    this.embedAndStoreAsync(key, `${key}: ${value}`);
   }
 
   /**
@@ -352,6 +418,11 @@ export class MemoryStorage {
   public delete(key: string): boolean {
     // Also delete related relations
     this.db.prepare(`DELETE FROM memory_relations WHERE sourceKey = ? OR targetKey = ?`).run(key, key);
+
+    // Delete vector if exists
+    if (this.vectorStore) {
+      this.vectorStore.deleteMemoryVector(key);
+    }
 
     const stmt = this.db.prepare(`DELETE FROM memories WHERE key = ?`);
     const result = stmt.run(key);

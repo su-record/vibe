@@ -1,4 +1,4 @@
-// Session RAG Retriever - Hybrid search with BM25 + metadata scoring
+// Session RAG Retriever - Hybrid search with BM25 + Vector + metadata scoring
 // Retrieves relevant session context (decisions/constraints/goals/evidence)
 
 import Database from 'better-sqlite3';
@@ -10,6 +10,8 @@ import {
   Goal,
   Evidence,
 } from './SessionRAGStore.js';
+import type { VectorStore } from '../embedding/VectorStore.js';
+import type { EmbeddingProvider } from '../embedding/EmbeddingProvider.js';
 
 // ============================================================================
 // Types
@@ -22,12 +24,14 @@ export interface RetrievalOptions {
   recencyWeight?: number;
   priorityWeight?: number;
   bm25Weight?: number;
+  vectorWeight?: number;
 }
 
 export interface ScoreBreakdown {
   bm25: number;
   recency: number;
   priority: number;
+  vector: number;
 }
 
 export interface ScoredItem<T> {
@@ -48,7 +52,16 @@ const DEFAULT_LIMIT = 5;
 const DEFAULT_BM25_WEIGHT = 0.4;
 const DEFAULT_RECENCY_WEIGHT = 0.3;
 const DEFAULT_PRIORITY_WEIGHT = 0.3;
+const DEFAULT_VECTOR_WEIGHT = 0.25;
 const RECENCY_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Entity type → FTS table mapping
+const ENTITY_TYPE_MAP: Record<string, string> = {
+  decisions: 'session_decisions',
+  constraints: 'session_constraints',
+  goals: 'session_goals',
+  evidence: 'session_evidence',
+};
 
 // ============================================================================
 // SessionRAGRetriever
@@ -57,18 +70,43 @@ const RECENCY_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 export class SessionRAGRetriever {
   private db: Database.Database;
   private store: SessionRAGStore;
+  private storage: MemoryStorage;
   private fts5Available: boolean;
 
   constructor(storage: MemoryStorage, store: SessionRAGStore) {
     this.db = storage.getDatabase();
     this.store = store;
+    this.storage = storage;
     this.fts5Available = storage.isFTS5Available();
   }
 
   /**
-   * Retrieve relevant session context with hybrid scoring
+   * Retrieve relevant session context with hybrid scoring (sync — backward compatible)
+   * BM25 + Recency + Priority only
    */
   public retrieve(options: RetrievalOptions): SessionRAGResult {
+    return this.retrieveSync(options);
+  }
+
+  /**
+   * Retrieve with vector support (async)
+   * 벡터 사용 가능 시: Vector + BM25 + Recency + Priority
+   * 벡터 불가 시: BM25 + Recency + Priority (기존 동작)
+   */
+  public async retrieveAsync(options: RetrievalOptions): Promise<SessionRAGResult> {
+    const vectorAvailable = this.storage.isVectorAvailable();
+
+    if (vectorAvailable && options.vectorWeight !== 0) {
+      return this.retrieveWithVector(options);
+    }
+
+    return this.retrieveSync(options);
+  }
+
+  /**
+   * 동기 retrieve (벡터 없이 — 기존 동작)
+   */
+  private retrieveSync(options: RetrievalOptions): SessionRAGResult {
     const startTime = Date.now();
     const {
       query,
@@ -78,7 +116,7 @@ export class SessionRAGRetriever {
       bm25Weight = DEFAULT_BM25_WEIGHT,
     } = options;
 
-    const weights = { bm25Weight, recencyWeight, priorityWeight };
+    const weights = { bm25Weight, recencyWeight, priorityWeight, vectorWeight: 0 };
 
     const decisions = this.scoreDecisions(query, limit, weights);
     const constraints = this.scoreConstraints(query, limit, weights);
@@ -92,6 +130,94 @@ export class SessionRAGRetriever {
       evidence,
       queryTime: Date.now() - startTime,
     };
+  }
+
+  /**
+   * 비동기 retrieve (벡터 포함)
+   */
+  private async retrieveWithVector(options: RetrievalOptions): Promise<SessionRAGResult> {
+    const startTime = Date.now();
+    const {
+      query,
+      limit = DEFAULT_LIMIT,
+      vectorWeight = DEFAULT_VECTOR_WEIGHT,
+    } = options;
+
+    // 벡터 포함 시 가중치 재분배: vector(0.25) + bm25(0.25) + recency(0.25) + priority(0.25)
+    const remaining = 1 - vectorWeight;
+    const bm25Weight = (options.bm25Weight ?? DEFAULT_BM25_WEIGHT) * (remaining / (1 - 0));
+    const recencyWeight = (options.recencyWeight ?? DEFAULT_RECENCY_WEIGHT) * (remaining / (1 - 0));
+    const priorityWeight = (options.priorityWeight ?? DEFAULT_PRIORITY_WEIGHT) * (remaining / (1 - 0));
+
+    // Normalize so all weights sum to 1
+    const totalW = vectorWeight + bm25Weight + recencyWeight + priorityWeight;
+    const weights = {
+      vectorWeight: vectorWeight / totalW,
+      bm25Weight: bm25Weight / totalW,
+      recencyWeight: recencyWeight / totalW,
+      priorityWeight: priorityWeight / totalW,
+    };
+
+    // 쿼리 임베딩 생성
+    let queryEmbedding: number[] | null = null;
+    const provider = this.storage.getEmbeddingProvider();
+    if (provider) {
+      try {
+        const embResult = await provider.embed([query]);
+        if (embResult.embeddings.length > 0) {
+          queryEmbedding = embResult.embeddings[0];
+        }
+      } catch {
+        // 임베딩 실패 → 벡터 없이 진행
+      }
+    }
+
+    // 벡터 스코어 맵 (entityType → entityId → similarity)
+    const vectorScores = this.getVectorScores(queryEmbedding);
+    const effectiveWeights = queryEmbedding ? weights : {
+      vectorWeight: 0,
+      bm25Weight: DEFAULT_BM25_WEIGHT,
+      recencyWeight: DEFAULT_RECENCY_WEIGHT,
+      priorityWeight: DEFAULT_PRIORITY_WEIGHT,
+    };
+
+    const decisions = this.scoreDecisions(query, limit, effectiveWeights, vectorScores.get('decisions'));
+    const constraints = this.scoreConstraints(query, limit, effectiveWeights, vectorScores.get('constraints'));
+    const goals = this.scoreGoals(query, limit, effectiveWeights, vectorScores.get('goals'));
+    const evidence = this.scoreEvidence(query, limit, effectiveWeights, vectorScores.get('evidence'));
+
+    return {
+      decisions,
+      constraints,
+      goals,
+      evidence,
+      queryTime: Date.now() - startTime,
+    };
+  }
+
+  /**
+   * 벡터 스코어 맵 생성
+   */
+  private getVectorScores(
+    queryEmbedding: number[] | null,
+  ): Map<string, Map<number, number>> {
+    const result = new Map<string, Map<number, number>>();
+
+    if (!queryEmbedding) return result;
+
+    const vectorStore = this.storage.getVectorStore();
+    if (!vectorStore) return result;
+
+    for (const entityType of ['decisions', 'constraints', 'goals', 'evidence']) {
+      const scores = new Map<number, number>();
+      const results = vectorStore.searchSessionVectors(entityType, queryEmbedding, 50);
+      for (const r of results) {
+        scores.set(r.entityId, r.similarity);
+      }
+      result.set(entityType, scores);
+    }
+
+    return result;
   }
 
   /**
@@ -117,7 +243,8 @@ export class SessionRAGRetriever {
   private scoreDecisions(
     query: string,
     limit: number,
-    weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number },
+    weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number; vectorWeight: number },
+    vectorScores?: Map<number, number>,
   ): ScoredItem<Decision>[] {
     const bm25Scores = this.getBM25Scores('session_decisions', 'session_decisions_fts', query, limit * 3);
     const candidates = this.getCandidateDecisions(query, bm25Scores, limit * 3);
@@ -126,14 +253,16 @@ export class SessionRAGRetriever {
       .map(item => {
         const bm25 = this.normalizeBM25(bm25Scores.get(item.id) ?? 0);
         const recency = this.calculateRecency(item.timestamp);
-        const priority = item.priority / 2; // normalize 0-2 → 0-1
+        const priority = item.priority / 2;
+        const vector = vectorScores?.get(item.id) ?? 0;
 
         const score =
           bm25 * weights.bm25Weight +
           recency * weights.recencyWeight +
-          priority * weights.priorityWeight;
+          priority * weights.priorityWeight +
+          vector * weights.vectorWeight;
 
-        return { item, score, breakdown: { bm25, recency, priority } };
+        return { item, score, breakdown: { bm25, recency, priority, vector } };
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
@@ -142,7 +271,8 @@ export class SessionRAGRetriever {
   private scoreConstraints(
     query: string,
     limit: number,
-    weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number },
+    weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number; vectorWeight: number },
+    vectorScores?: Map<number, number>,
   ): ScoredItem<Constraint>[] {
     const bm25Scores = this.getBM25Scores('session_constraints', 'session_constraints_fts', query, limit * 3);
     const candidates = this.getCandidateConstraints(query, bm25Scores, limit * 3);
@@ -154,13 +284,15 @@ export class SessionRAGRetriever {
         const bm25 = this.normalizeBM25(bm25Scores.get(item.id) ?? 0);
         const recency = this.calculateRecency(item.timestamp);
         const priority = severityMap[item.severity] ?? 0.5;
+        const vector = vectorScores?.get(item.id) ?? 0;
 
         const score =
           bm25 * weights.bm25Weight +
           recency * weights.recencyWeight +
-          priority * weights.priorityWeight;
+          priority * weights.priorityWeight +
+          vector * weights.vectorWeight;
 
-        return { item, score, breakdown: { bm25, recency, priority } };
+        return { item, score, breakdown: { bm25, recency, priority, vector } };
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
@@ -169,7 +301,8 @@ export class SessionRAGRetriever {
   private scoreGoals(
     query: string,
     limit: number,
-    weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number },
+    weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number; vectorWeight: number },
+    vectorScores?: Map<number, number>,
   ): ScoredItem<Goal>[] {
     const bm25Scores = this.getBM25Scores('session_goals', 'session_goals_fts', query, limit * 3);
     const candidates = this.getCandidateGoals(query, bm25Scores, limit * 3);
@@ -179,13 +312,15 @@ export class SessionRAGRetriever {
         const bm25 = this.normalizeBM25(bm25Scores.get(item.id) ?? 0);
         const recency = this.calculateRecency(item.timestamp);
         const priority = item.priority / 2;
+        const vector = vectorScores?.get(item.id) ?? 0;
 
         const score =
           bm25 * weights.bm25Weight +
           recency * weights.recencyWeight +
-          priority * weights.priorityWeight;
+          priority * weights.priorityWeight +
+          vector * weights.vectorWeight;
 
-        return { item, score, breakdown: { bm25, recency, priority } };
+        return { item, score, breakdown: { bm25, recency, priority, vector } };
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
@@ -194,7 +329,8 @@ export class SessionRAGRetriever {
   private scoreEvidence(
     query: string,
     limit: number,
-    weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number },
+    weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number; vectorWeight: number },
+    vectorScores?: Map<number, number>,
   ): ScoredItem<Evidence>[] {
     const bm25Scores = this.getBM25Scores('session_evidence', 'session_evidence_fts', query, limit * 3);
     const candidates = this.getCandidateEvidence(query, bm25Scores, limit * 3);
@@ -206,13 +342,15 @@ export class SessionRAGRetriever {
         const bm25 = this.normalizeBM25(bm25Scores.get(item.id) ?? 0);
         const recency = this.calculateRecency(item.timestamp);
         const priority = statusMap[item.status] ?? 0.5;
+        const vector = vectorScores?.get(item.id) ?? 0;
 
         const score =
           bm25 * weights.bm25Weight +
           recency * weights.recencyWeight +
-          priority * weights.priorityWeight;
+          priority * weights.priorityWeight +
+          vector * weights.vectorWeight;
 
-        return { item, score, breakdown: { bm25, recency, priority } };
+        return { item, score, breakdown: { bm25, recency, priority, vector } };
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);

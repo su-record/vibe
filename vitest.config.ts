@@ -1,6 +1,20 @@
 import { defineConfig } from 'vitest/config';
+import type { Plugin } from 'vite';
+
+/** Strip shebangs from hook scripts so vitest can parse them */
+function stripShebang(): Plugin {
+  return {
+    name: 'strip-shebang',
+    transform(code: string, id: string) {
+      if (id.includes('hooks') && code.startsWith('#!')) {
+        return { code: code.replace(/^#![^\n]*\n/, ''), map: null };
+      }
+    },
+  };
+}
 
 export default defineConfig({
+  plugins: [stripShebang()],
   test: {
     globals: true,
     environment: 'node',
