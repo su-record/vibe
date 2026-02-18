@@ -13,6 +13,7 @@ import {
   copyDirRecursive,
   removeDirRecursive,
   copySkillsFiltered,
+  replaceTemplatesInDir,
 } from './fs-utils.js';
 import { GLOBAL_SKILLS } from './constants.js';
 import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
@@ -74,6 +75,7 @@ export function main(): void {
       }
       ensureDir(globalCommandsDir);
       copyDirRecursive(commandsSource, globalCommandsDir);
+      replaceTemplatesInDir(globalCommandsDir);
     }
 
     // agents 변환 및 설치 (Claude Code 네이티브 서브에이전트 형식)
@@ -87,6 +89,7 @@ export function main(): void {
     if (fs.existsSync(skillsSource)) {
       ensureDir(globalSkillsDir);
       copySkillsFiltered(skillsSource, globalSkillsDir, GLOBAL_SKILLS);
+      replaceTemplatesInDir(globalSkillsDir);
     }
 
     // 5. ~/.claude/vibe/ 전역 문서 설치 (rules, languages, templates)
@@ -99,6 +102,7 @@ export function main(): void {
     ensureDir(coreSkillsDir);
     if (fs.existsSync(skillsSource)) {
       copySkillsFiltered(skillsSource, coreSkillsDir, GLOBAL_SKILLS);
+      replaceTemplatesInDir(coreSkillsDir);
     }
     // 인라인 기본 스킬 추가 (번들에 없는 추가 스킬)
     seedInlineSkills(coreSkillsDir);

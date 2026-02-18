@@ -97,63 +97,6 @@ function copyHookScripts(corePackageDir: string, globalCoreDir: string): void {
 }
 
 /**
- * 디렉토리 내 모든 .md 파일에서 {{VIBE_PATH}} 템플릿 치환 (크로스 플랫폼)
- * - Windows: C:/Users/endba/.vibe
- * - macOS/Linux: /Users/name/.vibe
- */
-function replaceTemplatesInDir(dirPath: string): void {
-  const corePath = getCoreConfigDir().replace(/\\/g, '/');
-  const corePathUrl = 'file:///' + corePath.replace(/^\//, '');
-
-  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-    if (entry.isDirectory()) {
-      replaceTemplatesInDir(fullPath);
-    } else if (entry.name.endsWith('.md')) {
-      let content = fs.readFileSync(fullPath, 'utf-8');
-      if (content.includes('{{VIBE_PATH_URL}}') || content.includes('{{VIBE_PATH}}')) {
-        content = content.replace(/\{\{VIBE_PATH_URL\}\}/g, corePathUrl);
-        content = content.replace(/\{\{VIBE_PATH\}\}/g, corePath);
-        fs.writeFileSync(fullPath, content);
-      }
-    }
-  }
-}
-
-/**
- * ~/.claude/ 전역 assets 설치 (commands, agents, skills)
- */
-export function installGlobalAssets(isUpdate = false): void {
-  const globalClaudeDir = path.join(os.homedir(), '.claude');
-  ensureDir(globalClaudeDir);
-
-  const packageRoot = path.resolve(__dirname, '..', '..', '..');
-
-  // commands
-  const globalCommandsDir = path.join(globalClaudeDir, 'commands');
-  ensureDir(globalCommandsDir);
-  const commandsSource = path.join(packageRoot, 'commands');
-  copyDirRecursive(commandsSource, globalCommandsDir);
-  replaceTemplatesInDir(globalCommandsDir);
-
-  // agents
-  const globalAgentsDir = path.join(globalClaudeDir, 'agents');
-  ensureDir(globalAgentsDir);
-  const agentsSource = path.join(packageRoot, 'agents');
-  copyDirRecursive(agentsSource, globalAgentsDir);
-
-  // skills
-  const globalSkillsDir = path.join(globalClaudeDir, 'skills');
-  ensureDir(globalSkillsDir);
-  const skillsSource = path.join(packageRoot, 'skills');
-  if (fs.existsSync(skillsSource)) {
-    copyDirRecursive(skillsSource, globalSkillsDir);
-    replaceTemplatesInDir(globalSkillsDir);
-  }
-}
-
-/**
  * MCP 서버 정리 (no-op)
  * core는 더 이상 MCP를 사용하지 않음
  */

@@ -13,7 +13,7 @@
  * - main: 메인 오케스트레이션
  */
 
-export { getCoreConfigDir } from './fs-utils.js';
+export { getCoreConfigDir, replaceTemplatesInDir } from './fs-utils.js';
 export { STACK_TO_LANGUAGE_FILE, GLOBAL_SKILLS, STACK_TO_SKILLS, COMMERCE_SKILLS, resolveLocalSkills } from './constants.js';
 export { copySkillsFiltered } from './fs-utils.js';
 export { generateCursorRules } from './cursor-rules.js';

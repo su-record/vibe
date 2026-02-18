@@ -12,7 +12,6 @@ import { formatLLMStatus, getLLMAuthStatus, getClaudeCodeStatus } from '../auth.
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
 import {
   updateConstitution,
-  updateClaudeMd,
   updateRules,
   migrateLegacyCore,
   updateGitignore,
@@ -146,9 +145,6 @@ export async function init(projectName?: string): Promise<void> {
 
     // config.json 생성
     updateConfig(coreDir, detectedStacks, stackDetails, false);
-
-    // CLAUDE.md 병합
-    updateClaudeMd(projectRoot, detectedStacks, false);
 
     // 규칙 복사
     updateRules(coreDir, detectedStacks, false);

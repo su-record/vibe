@@ -13,14 +13,12 @@ export {
 export {
   getCoreConfigDir,
   installGlobalCorePackage,
-  installGlobalAssets,
   registerMcpServers
 } from './GlobalInstaller.js';
 
 // ProjectSetup
 export {
   updateConstitution,
-  updateClaudeMd,
   updateRules,
   installProjectHooks,
   updateGitignore,

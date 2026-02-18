@@ -12,6 +12,31 @@ import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
 export const getCoreConfigDir = getGlobalConfigDir;
 
 /**
+ * 디렉토리 내 모든 .md 파일에서 {{VIBE_PATH}} / {{VIBE_PATH_URL}} 템플릿 치환
+ * - {{VIBE_PATH}}     → ~/.vibe  (forward slash)
+ * - {{VIBE_PATH_URL}} → file:///~/.vibe/
+ */
+export function replaceTemplatesInDir(dirPath: string): void {
+  const corePath = getCoreConfigDir().replace(/\\/g, '/');
+  const corePathUrl = 'file:///' + corePath.replace(/^\//, '');
+
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      replaceTemplatesInDir(fullPath);
+    } else if (entry.name.endsWith('.md')) {
+      let content = fs.readFileSync(fullPath, 'utf-8');
+      if (content.includes('{{VIBE_PATH_URL}}') || content.includes('{{VIBE_PATH}}')) {
+        content = content.replace(/\{\{VIBE_PATH_URL\}\}/g, corePathUrl);
+        content = content.replace(/\{\{VIBE_PATH\}\}/g, corePath);
+        fs.writeFileSync(fullPath, content);
+      }
+    }
+  }
+}
+
+/**
  * 디렉토리 생성 (재귀)
  */
 export function ensureDir(dir: string): void {

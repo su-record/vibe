@@ -17,7 +17,6 @@ import { formatLLMStatus, getLLMAuthStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
 import {
   updateConstitution,
-  updateClaudeMd,
   updateRules,
   migrateLegacyCore,
   updateGitignore,
@@ -79,9 +78,6 @@ export function update(options: CliOptions = { silent: false }): void {
 
     // constitution.md 업데이트
     updateConstitution(coreDir, detectedStacks, stackDetails);
-
-    // CLAUDE.md 업데이트
-    updateClaudeMd(projectRoot, detectedStacks, true);
 
     // 규칙 업데이트
     updateRules(coreDir, detectedStacks, true);

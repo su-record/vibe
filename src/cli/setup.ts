@@ -9,14 +9,12 @@ export { detectOsLanguage } from './setup/LanguageDetector.js';
 export {
   getCoreConfigDir,
   installGlobalCorePackage,
-  installGlobalAssets,
   registerMcpServers
 } from './setup/GlobalInstaller.js';
 
 // ProjectSetup
 export {
   updateConstitution,
-  updateClaudeMd,
   updateRules,
   installProjectHooks,
   updateGitignore,
