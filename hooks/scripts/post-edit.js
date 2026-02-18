@@ -2,61 +2,31 @@
  * PostToolUse Hook - Edit 후 console.log 감지
  *
  * NOTE: tsc, prettier 제거 — 빌드/커밋 시점에 실행하므로 Edit마다 불필요
+ * grep spawn 대신 fs.readFileSync + regex로 프로세스 오버헤드 제거
  */
-import { execFileSync } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import path from 'path';
-import { PROJECT_DIR } from './utils.js';
 
-// Claude Code에서 전달받는 환경변수에서 파일 경로 추출
-const toolInput = process.env.TOOL_INPUT || '{}';
+const CONSOLE_LOG_RE = /console\.log/;
+const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
 
-function main() {
-  try {
-    const input = JSON.parse(toolInput);
-    const filePath = input.file_path || input.path || '';
+try {
+  const input = JSON.parse(process.env.TOOL_INPUT || '{}');
+  const filePath = input.file_path || input.path || '';
 
-    if (!filePath) {
-      return;
-    }
-
-    // 경로 검증: resolve로 정규화
+  if (filePath && CODE_EXT_RE.test(filePath)) {
     const resolved = path.resolve(filePath);
-    if (!existsSync(resolved)) {
-      return;
-    }
-
-    // TypeScript/JavaScript 파일인지 확인
-    const isTs = /\.(ts|tsx)$/.test(resolved);
-    const isJs = /\.(js|jsx|mjs|cjs)$/.test(resolved);
-
-    if (!isTs && !isJs) {
-      return;
-    }
-
-    const results = [];
-
-    // console.log 감지 (execFileSync로 command injection 방지)
-    try {
-      const grepResult = execFileSync(
-        'grep', ['-n', 'console\\.log', resolved],
-        { cwd: PROJECT_DIR, stdio: 'pipe', encoding: 'utf-8' }
-      );
-      if (grepResult.trim()) {
-        const lines = grepResult.trim().split('\n').slice(0, 3).map(l => l.split(':')[0]).join(',');
-        results.push(`console.log at line ${lines}`);
+    if (existsSync(resolved)) {
+      const lines = readFileSync(resolved, 'utf-8').split('\n');
+      const hits = [];
+      for (let i = 0; i < lines.length && hits.length < 3; i++) {
+        if (CONSOLE_LOG_RE.test(lines[i])) hits.push(i + 1);
       }
-    } catch {
-      // grep 실패는 console.log 없음을 의미
+      if (hits.length > 0) {
+        console.log(`[POST-EDIT] ${path.basename(resolved)}: console.log at line ${hits.join(',')}`);
+      }
     }
-
-    if (results.length > 0) {
-      console.log(`[POST-EDIT] ${path.basename(resolved)}: ${results.join(' | ')}`);
-    }
-
-  } catch {
-    // 조용히 실패
   }
+} catch {
+  // 조용히 실패
 }
-
-main();
