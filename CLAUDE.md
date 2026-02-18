@@ -193,12 +193,11 @@ Lite, Dev (ULTRAWORK), Research, Review Debate, SPEC Debate, Debug, Security, Mi
 | Event | Hooks |
 |-------|-------|
 | SessionStart | `session-start.js` |
-| PreToolUse | `pre-tool-guard.js` |
-| PostToolUse | `post-edit.js`, `code-check.js`, `post-tool-verify.js` |
-| UserPromptSubmit | `prompt-dispatcher.js`, `skill-injector.js`, `keyword-detector.js`, `hud-status.js` |
+| PreToolUse | `sentinel-guard.js`, `pre-tool-guard.js` |
+| PostToolUse | `post-edit.js`, `code-check.js` |
+| UserPromptSubmit | `prompt-dispatcher.js` → `keyword-detector.js`, `llm-orchestrate.js` |
 | Notification | `context-save.js` (80/90/95%) |
-
-Additional: `code-review.js`, `llm-orchestrate.js`, `recall.js`, `complexity.js`, `compound.js`, `stop-notify.js`
+| Stop | `stop-notify.js` |
 
 ## Language Support (25 frameworks)
 

@@ -49,31 +49,6 @@ const DISPATCH_RULES = [
     script: null, // keyword-detector가 이미 처리
     label: 'skip',
   },
-  {
-    pattern: /버그.*(해결|수정|고침)|문제.*(해결|수정)|bug.*(fixed|resolved|solved)|issue.*(fixed|resolved)|PR.*(merged|머지)/i,
-    script: 'compound.js',
-    args: [],
-    label: 'compound',
-  },
-  {
-    pattern: /코드\s*리뷰|code\s*review|PR\s*리뷰|리뷰.*해줘|review.*code/i,
-    script: 'code-review.js',
-    args: [],
-    label: 'code-review',
-  },
-  {
-    pattern: /복잡도.*분석|복잡도.*확인|complexity.*analyz|코드.*복잡도/i,
-    script: 'complexity.js',
-    args: [],
-    label: 'complexity',
-  },
-  {
-    pattern: /뭐였지|이전에.*결정|저번에.*결정|previous.*decision|what was.*decided/i,
-    script: 'recall.js',
-    args: [],
-    label: 'recall',
-  },
-
   // echo 전용 (stdout으로 직접 출력)
   {
     pattern: /e2e.*테스트|e2e.*test|playwright|브라우저.*테스트|browser.*test/i,
