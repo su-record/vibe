@@ -1,0 +1,191 @@
+/**
+ * GlobalInstaller - 전역 패키지 및 자산 설치
+ */
+
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import { log, ensureDir, copyDirRecursive, removeDirRecursive, getPackageJson } from '../utils.js';
+import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * 전역 vibe 패키지 설치 경로 (getCoreConfigDir = getGlobalConfigDir alias)
+ */
+export const getCoreConfigDir = getGlobalConfigDir;
+
+/**
+ * 전역 core 패키지 설치
+ */
+export function installGlobalCorePackage(isUpdate = false): void {
+  const globalCoreDir = getCoreConfigDir();
+  const nodeModulesDir = path.join(globalCoreDir, 'node_modules');
+  const corePackageDir = path.join(nodeModulesDir, '@su-record', 'vibe');
+  const packageJson = getPackageJson();
+  const currentVersion = packageJson.version;
+
+  // 이미 설치되어 있는지 확인
+  const installedPackageJson = path.join(corePackageDir, 'package.json');
+  if (fs.existsSync(installedPackageJson)) {
+    try {
+      const installed = JSON.parse(fs.readFileSync(installedPackageJson, 'utf-8'));
+      if (installed.version === currentVersion && !isUpdate) {
+        return;
+      }
+    } catch { /* ignore: reinstall if can't read */ }
+  }
+
+  // 디렉토리 생성
+  ensureDir(globalCoreDir);
+  ensureDir(nodeModulesDir);
+  ensureDir(path.join(nodeModulesDir, '@su-record'));
+
+  // 기존 설치 제거
+  if (fs.existsSync(corePackageDir)) {
+    removeDirRecursive(corePackageDir);
+  }
+
+  // 1. 패키지 복사 시도 (실패해도 훅은 복사)
+  try {
+    const globalNpmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
+    const globalNpmCoreDir = path.join(globalNpmRoot, '@su-record', 'vibe');
+
+    if (fs.existsSync(globalNpmCoreDir)) {
+      copyDirRecursive(globalNpmCoreDir, corePackageDir);
+    } else {
+      execSync(`npm install @su-record/vibe@${currentVersion} --prefix "${globalCoreDir}" --no-save`, {
+        stdio: 'pipe',
+      });
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log('   ⚠️  Package install failed: ' + message + '\n');
+  }
+
+  // 2. 훅 스크립트 복사 (패키지 복사 실패해도 실행)
+  copyHookScripts(corePackageDir, globalCoreDir);
+}
+
+/**
+ * 훅 스크립트 복사
+ */
+function copyHookScripts(corePackageDir: string, globalCoreDir: string): void {
+  try {
+    const packageRoot = path.resolve(__dirname, '..', '..', '..');
+    const installedHooksSource = path.join(corePackageDir, 'hooks', 'scripts');
+    const localHooksSource = path.join(packageRoot, 'hooks', 'scripts');
+    const hooksScriptsSource = fs.existsSync(installedHooksSource) ? installedHooksSource : localHooksSource;
+    const hooksScriptsTarget = path.join(globalCoreDir, 'hooks', 'scripts');
+
+    if (fs.existsSync(hooksScriptsSource)) {
+      ensureDir(path.join(globalCoreDir, 'hooks'));
+      if (fs.existsSync(hooksScriptsTarget)) {
+        removeDirRecursive(hooksScriptsTarget);
+      }
+      copyDirRecursive(hooksScriptsSource, hooksScriptsTarget);
+    } else {
+      log('   ⚠️  Hook scripts source not found: ' + hooksScriptsSource + '\n');
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log('   ⚠️  Hook scripts copy failed: ' + message + '\n');
+  }
+}
+
+/**
+ * 디렉토리 내 모든 .md 파일에서 {{VIBE_PATH}} 템플릿 치환 (크로스 플랫폼)
+ * - Windows: C:/Users/endba/.vibe
+ * - macOS/Linux: /Users/name/.vibe
+ */
+function replaceTemplatesInDir(dirPath: string): void {
+  const corePath = getCoreConfigDir().replace(/\\/g, '/');
+  const corePathUrl = 'file:///' + corePath.replace(/^\//, '');
+
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      replaceTemplatesInDir(fullPath);
+    } else if (entry.name.endsWith('.md')) {
+      let content = fs.readFileSync(fullPath, 'utf-8');
+      if (content.includes('{{VIBE_PATH_URL}}') || content.includes('{{VIBE_PATH}}')) {
+        content = content.replace(/\{\{VIBE_PATH_URL\}\}/g, corePathUrl);
+        content = content.replace(/\{\{VIBE_PATH\}\}/g, corePath);
+        fs.writeFileSync(fullPath, content);
+      }
+    }
+  }
+}
+
+/**
+ * ~/.claude/ 전역 assets 설치 (commands, agents, skills)
+ */
+export function installGlobalAssets(isUpdate = false): void {
+  const globalClaudeDir = path.join(os.homedir(), '.claude');
+  ensureDir(globalClaudeDir);
+
+  const packageRoot = path.resolve(__dirname, '..', '..', '..');
+
+  // commands
+  const globalCommandsDir = path.join(globalClaudeDir, 'commands');
+  ensureDir(globalCommandsDir);
+  const commandsSource = path.join(packageRoot, 'commands');
+  copyDirRecursive(commandsSource, globalCommandsDir);
+  replaceTemplatesInDir(globalCommandsDir);
+
+  // agents
+  const globalAgentsDir = path.join(globalClaudeDir, 'agents');
+  ensureDir(globalAgentsDir);
+  const agentsSource = path.join(packageRoot, 'agents');
+  copyDirRecursive(agentsSource, globalAgentsDir);
+
+  // skills
+  const globalSkillsDir = path.join(globalClaudeDir, 'skills');
+  ensureDir(globalSkillsDir);
+  const skillsSource = path.join(packageRoot, 'skills');
+  if (fs.existsSync(skillsSource)) {
+    copyDirRecursive(skillsSource, globalSkillsDir);
+    replaceTemplatesInDir(globalSkillsDir);
+  }
+}
+
+/**
+ * MCP 서버 정리 (no-op)
+ * core는 더 이상 MCP를 사용하지 않음
+ */
+export function registerMcpServers(_isUpdate = false): void {
+  // no-op: core는 MCP를 사용하지 않음
+}
+
+/**
+ * 전역 ~/.claude/settings.json에서 hooks 정리
+ * core는 이제 프로젝트 레벨 (.claude/settings.local.json)에서 훅을 관리하므로
+ * 전역 설정의 hooks는 제거해야 함 (레거시 정리)
+ */
+export function cleanupGlobalSettingsHooks(): void {
+  const globalClaudeDir = path.join(os.homedir(), '.claude');
+  const globalSettingsPath = path.join(globalClaudeDir, 'settings.json');
+
+  if (!fs.existsSync(globalSettingsPath)) {
+    return;
+  }
+
+  try {
+    const content = fs.readFileSync(globalSettingsPath, 'utf-8');
+    const settings = JSON.parse(content);
+
+    // hooks가 있으면 제거
+    if (settings.hooks) {
+      delete settings.hooks;
+      fs.writeFileSync(globalSettingsPath, JSON.stringify(settings, null, 2) + '\n');
+      log('   ✓ Cleaned up legacy hooks from global settings\n');
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log('   ⚠️  Failed to cleanup global settings hooks: ' + message + '\n');
+  }
+}

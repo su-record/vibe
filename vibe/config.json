@@ -1,0 +1,30 @@
+{
+  "models": {
+    "gpt": {
+      "enabled": false,
+      "authType": "oauth",
+      "role": "architecture",
+      "description": "Architecture/Debugging (GPT 5.2)"
+    },
+    "gemini": {
+      "enabled": false,
+      "authType": "oauth",
+      "role": "exploration",
+      "description": "Gemini 3 Flash/Pro (Exploration, UI/UX)"
+    }
+  },
+  "stacks": [
+    {
+      "type": "typescript-node",
+      "path": ""
+    }
+  ],
+  "details": {
+    "databases": [
+      "SQLite"
+    ],
+    "stateManagement": [],
+    "hosting": [],
+    "cicd": []
+  }
+}

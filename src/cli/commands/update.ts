@@ -1,0 +1,128 @@
+/**
+ * update 명령어 — 프로젝트 설정 업데이트
+ * 패키지 업그레이드는 `vibe upgrade` 사용
+ */
+
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
+import { fileURLToPath } from 'url';
+import { CliOptions } from '../types.js';
+import { log, ensureDir, getPackageJson, formatVoiceHint } from '../utils.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { detectTechStacks } from '../detect.js';
+import { formatLLMStatus, getLLMAuthStatus } from '../auth.js';
+import { setupCollaboratorAutoInstall } from '../collaborator.js';
+import {
+  updateConstitution,
+  updateClaudeMd,
+  updateRules,
+  migrateLegacyCore,
+  updateGitignore,
+  updateConfig,
+  cleanupLegacy,
+  removeLocalAssets,
+  cleanupClaudeConfig,
+  cleanupLegacyMcp,
+  installProjectHooks,
+  installCursorRules,
+} from '../setup.js';
+import { updateCursorGlobalAssets, installLocalSkills } from './init.js';
+
+/**
+ * update 명령어 실행 — 프로젝트 설정만 업데이트
+ */
+export function update(options: CliOptions = { silent: false }): void {
+  try {
+    const projectRoot = process.cwd();
+    const coreDir = path.join(projectRoot, '.claude', 'vibe');
+    const claudeDir = path.join(projectRoot, '.claude');
+    const legacyCoreDir = path.join(projectRoot, '.core');
+
+    // CI/프로덕션 환경에서는 스킵
+    if (process.env.NODE_ENV === 'production' || process.env.CI === 'true') {
+      return;
+    }
+
+    // 레거시 마이그레이션
+    if (fs.existsSync(legacyCoreDir) && !fs.existsSync(coreDir)) {
+      migrateLegacyCore(projectRoot, coreDir);
+    }
+
+    // 프로젝트 감지: 홈 디렉토리이거나 프로젝트 마커(.git, package.json)가 없으면
+    // 전역 업그레이드만 수행하고 프로젝트 설정 업데이트는 건너뜀
+    // (홈의 ~/.claude/vibe/는 postinstall이 만든 전역 디렉토리)
+    const isHome = path.resolve(projectRoot) === path.resolve(os.homedir());
+    const hasProjectMarker = fs.existsSync(path.join(projectRoot, '.git'))
+      || fs.existsSync(path.join(projectRoot, 'package.json'));
+    const isProject = !isHome && hasProjectMarker
+      && (fs.existsSync(coreDir) || fs.existsSync(legacyCoreDir));
+
+    if (!isProject) {
+      const packageJson = getPackageJson();
+      log(`\n✅ core global updated (v${packageJson.version})\n\n${formatLLMStatus()}\n`);
+      return;
+    }
+
+    ensureDir(coreDir);
+
+    // 레거시 정리
+    cleanupLegacy(projectRoot, claudeDir);
+
+    // 기술 스택 감지
+    const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
+
+    // config.json 업데이트
+    updateConfig(coreDir, detectedStacks, stackDetails, true);
+
+    // constitution.md 업데이트
+    updateConstitution(coreDir, detectedStacks, stackDetails);
+
+    // CLAUDE.md 업데이트
+    updateClaudeMd(projectRoot, detectedStacks, true);
+
+    // 규칙 업데이트
+    updateRules(coreDir, detectedStacks, true);
+
+    // 프로젝트 로컬 자산 제거 (core 소유 파일만 선별 삭제, 사용자 커스텀 파일 보존)
+    const packageRoot = path.resolve(__dirname, '..', '..', '..');
+    removeLocalAssets(claudeDir, packageRoot);
+
+    // .gitignore 업데이트
+    updateGitignore(projectRoot);
+
+    // 협업자 자동 설치 설정
+    setupCollaboratorAutoInstall(projectRoot);
+
+    // 프로젝트 레벨 훅 설치
+    installProjectHooks(projectRoot);
+
+    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template) - 먼저 실행!
+    const stackTypes = detectedStacks.map(s => s.type);
+    updateCursorGlobalAssets(stackTypes, options);
+
+    // Cursor IDE 룰 설치/업데이트 (프로젝트 레벨) - rules-template 생성 후 현재 스택에 해당하는 룰만 복사
+    installCursorRules(projectRoot, stackTypes);
+
+    // 스택 기반 로컬 스킬 업데이트 (.claude/skills/)
+    installLocalSkills(projectRoot, stackTypes);
+
+    // ~/.claude.json 정리
+    cleanupClaudeConfig();
+
+    // 레거시 mcp 폴더 정리
+    cleanupLegacyMcp(coreDir);
+
+    const packageJson = getPackageJson();
+
+    const authStatus = getLLMAuthStatus();
+    log(`\n✅ vibe updated (v${packageJson.version})\n\n${formatLLMStatus()}\n${formatVoiceHint(authStatus.gemini.length > 0)}\n📦 Context7 plugin (recommended): /plugin install context7\n`);
+
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('❌ Update failed:', message);
+    process.exit(1);
+  }
+}

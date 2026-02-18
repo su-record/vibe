@@ -1,0 +1,137 @@
+{
+  "permissions": {
+    "allow": [],
+    "deny": [],
+    "ask": []
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/session-start.js"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Bash"
+          },
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Bash"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Edit"
+          },
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Edit"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Write"
+          },
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Write"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/code-check.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/post-edit.js"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[INTERRUPT RULE] If this message follows a user interrupt (Ctrl+C/Escape), the previous task is CANCELLED. Do NOT resume interrupted work. Respond ONLY to this new message.'"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/prompt-dispatcher.js"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "context_window_80",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js medium"
+          }
+        ]
+      },
+      {
+        "matcher": "context_window_90",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js high"
+          }
+        ]
+      },
+      {
+        "matcher": "context_window_95",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js critical"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/stop-notify.js"
+          }
+        ]
+      }
+    ]
+  }
+}

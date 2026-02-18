@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+mcp/dist/
+*.tgz
+
+# Lock files (npm - unused)
+package-lock.json
+
+# Docs
+wiki/
+
+# OS files
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# config
+.cursor/
+.env
+
+# vibe project hooks (personal)
+.claude/settings.local.json
+.claude/vibe/config.json
