@@ -161,7 +161,7 @@ Best practices research uses **3 perspectives in parallel** for comprehensive co
 Task(haiku, "Research best practices for [feature]")
 
 # 2. GPT (Parallel) - When enabled
-node "[LLM_SCRIPT]" gpt orchestrate-json \
+node "[LLM_SCRIPT]" gpt-spark orchestrate-json \
   "Best practices for [feature] with [stack]. Focus: architecture patterns, code conventions, testing strategies. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
 # 3. Gemini (Parallel) - When enabled

@@ -410,11 +410,11 @@ Read ~/.claude/vibe/languages/typescript-react.md
 
 **Run all 4 in PARALLEL (each as separate Bash tool call):**
 ```bash
-# 1. GPT: Best practices
-node "[LLM_SCRIPT]" gpt orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+# 1. GPT: Best practices (spark — fast research)
+node "[LLM_SCRIPT]" gpt-spark orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
-# 2. GPT: Security
-node "[LLM_SCRIPT]" gpt orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+# 2. GPT: Security (spark — fast research)
+node "[LLM_SCRIPT]" gpt-spark orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # 3. Gemini: Best practices
 node "[LLM_SCRIPT]" gemini orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
@@ -425,11 +425,11 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for [FEATURE] w
 
 **Concrete example - run all 4 in parallel:**
 ```bash
-# GPT best practices
-node "[LLM_SCRIPT]" gpt orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+# GPT best practices (spark — fast research)
+node "[LLM_SCRIPT]" gpt-spark orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
-# GPT security
-node "[LLM_SCRIPT]" gpt orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+# GPT security (spark — fast research)
+node "[LLM_SCRIPT]" gpt-spark orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # Gemini best practices
 node "[LLM_SCRIPT]" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"

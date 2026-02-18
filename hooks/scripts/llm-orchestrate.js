@@ -13,11 +13,12 @@
  *   node llm-orchestrate.js gemini image "prompt" --output "./image.png" --size "1920x1080"
  *
  * Features:
+ *   - CLI-based: GPT → codex exec, Gemini → gemini -p (CLI quota first → Antigravity API fallback)
  *   - Exponential backoff retry (3 attempts)
  *   - Auto fallback: gpt ↔ gemini
  *   - Overload/rate-limit detection
- *   - Image generation (Gemini only, Nano Banana model)
- *   - Image analysis (Gemini multimodal)
+ *   - Image generation (Gemini API, Nano Banana model)
+ *   - Image analysis (Gemini API multimodal)
  *
  * Analyze-Image Mode:
  *   node llm-orchestrate.js gemini analyze-image "./image.png" "Analyze this UI"
@@ -48,6 +49,7 @@ const SKIP_RETRY_PATTERNS = [
   /quota/i,
   /unauthorized/i,
   /forbidden/i,
+  /authentication/i,
   /401/,
   /403/,
   /429/,
@@ -62,6 +64,7 @@ const RETRY_PATTERNS = [
   /timeout/i,
   /ECONNRESET/i,
   /ETIMEDOUT/i,
+  /spawn error/i,
 ];
 
 function shouldSkipRetry(errorMsg) {
@@ -203,15 +206,147 @@ function recordAudio(outputPath, maxDuration) {
   });
 }
 
+// ============================================
+// CLI Provider Functions
+// ============================================
+
+const CLI_TIMEOUT_MS = 120000;
+const IS_WINDOWS = os.platform() === 'win32';
+
+function spawnCli(cmd, args, options) {
+  // Windows: .cmd shim은 spawn 직접 실행 불가 → cmd.exe /c 로 실행
+  if (IS_WINDOWS) {
+    return spawn(process.env.ComSpec || 'cmd.exe', ['/c', cmd, ...args], options);
+  }
+  return spawn(cmd, args, options);
+}
+
+function buildCliPrompt(prompt, sysPrompt, jsonMode) {
+  let fullPrompt = sysPrompt && sysPrompt !== DEFAULT_SYSTEM_PROMPT
+    ? `[System]\n${sysPrompt}\n\n[User]\n${prompt}`
+    : prompt;
+  if (jsonMode) {
+    fullPrompt += '\n\nIMPORTANT: You must respond with valid JSON only.';
+  }
+  return fullPrompt;
+}
+
+function isAntigravityAuth() {
+  const vibeConfig = readVibeConfig();
+  if (vibeConfig.credentials?.gemini?.oauthSource === 'antigravity') return true;
+  const oauthCredsPath = path.join(os.homedir(), '.gemini', 'oauth_creds.json');
+  try {
+    if (fs.existsSync(oauthCredsPath)) {
+      const creds = JSON.parse(fs.readFileSync(oauthCredsPath, 'utf8'));
+      if (creds.scope?.includes('cclog') || creds.scope?.includes('experimentsandconfigs')) return true;
+    }
+  } catch { /* not antigravity */ }
+  return false;
+}
+
+function callCodexCli(prompt, sysPrompt, jsonMode, model) {
+  const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
+  const outputFile = path.join(os.tmpdir(), `vibe-codex-${crypto.randomUUID()}.txt`);
+  // stdin pipe로 프롬프트 전달 (shell escaping 이슈 회피)
+  const args = ['exec', '-m', model, '--sandbox', 'read-only', '--ephemeral', '-o', outputFile, '-'];
+
+  // config에 저장된 API key를 환경변수로 전달 (임베딩과 동일한 키 사용)
+  const vibeConfig = readVibeConfig();
+  const apiKey = vibeConfig.credentials?.gpt?.apiKey || process.env.OPENAI_API_KEY;
+  const env = apiKey ? { ...process.env, OPENAI_API_KEY: apiKey } : process.env;
+
+  return new Promise((resolve, reject) => {
+    const proc = spawnCli('codex', args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: CLI_TIMEOUT_MS,
+      env,
+    });
+    proc.stdin.write(fullPrompt);
+    proc.stdin.end();
+
+    let stderr = '';
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+    proc.on('close', (code) => {
+      if (code === 0 && fs.existsSync(outputFile)) {
+        const result = fs.readFileSync(outputFile, 'utf8');
+        try { fs.unlinkSync(outputFile); } catch { /* ignore */ }
+        resolve(result);
+      } else {
+        try { fs.unlinkSync(outputFile); } catch { /* ignore */ }
+        reject(new Error(`codex exec failed (code ${code}): ${stderr.slice(0, 500)}`));
+      }
+    });
+
+    proc.on('error', (err) => {
+      try { fs.unlinkSync(outputFile); } catch { /* ignore */ }
+      reject(new Error(`codex exec spawn error: ${err.message}`));
+    });
+  });
+}
+
+function callGeminiCli(prompt, sysPrompt, jsonMode, model) {
+  const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
+  // -p 로 headless 모드, stdin으로 프롬프트 전달 (stdin is appended to -p value)
+  const args = ['-p', '.', '-o', 'text'];
+  if (model) args.push('-m', model);
+
+  return new Promise((resolve, reject) => {
+    const proc = spawnCli('gemini', args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: CLI_TIMEOUT_MS,
+    });
+    proc.stdin.write(fullPrompt);
+    proc.stdin.end();
+
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+    proc.on('close', (code) => {
+      if (code === 0 && stdout.trim()) {
+        resolve(stdout.trim());
+      } else {
+        reject(new Error(`gemini cli failed (code ${code}): ${(stderr || stdout).slice(0, 500)}`));
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(new Error(`gemini cli spawn error: ${err.message}`));
+    });
+  });
+}
+
 async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
-  const modulePath = `${LIB_URL}${providerName}-api.js`;
-  const module = await import(modulePath);
+  const vibeConfig = readVibeConfig();
 
-  const orchestrateFn = providerName === 'gpt'
-    ? module.coreGptOrchestrate
-    : module.coreGeminiOrchestrate;
+  if (providerName === 'gpt' || providerName === 'gpt-spark') {
+    const isSpark = providerName === 'gpt-spark';
+    const model = isSpark
+      ? (vibeConfig.models?.gptSpark || process.env.GPT_SPARK_MODEL || 'gpt-5.3-codex-spark')
+      : (vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.3-codex');
+    return await callCodexCli(prompt, sysPrompt, jsonMode, model);
+  }
 
-  return await orchestrateFn(prompt, sysPrompt, { jsonMode });
+  if (providerName === 'gemini') {
+    // 1차: gemini CLI (일반 쿼터 먼저 소진)
+    const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3-pro-preview';
+    try {
+      return await callGeminiCli(prompt, sysPrompt, jsonMode, model);
+    } catch (cliErr) {
+      // 2차: Antigravity API fallback (프리미엄 쿼터 아껴둠)
+      if (isAntigravityAuth()) {
+        console.error(`[GEMINI] CLI failed, falling back to Antigravity API...`);
+        const modulePath = `${LIB_URL}gemini-api.js`;
+        const module = await import(modulePath);
+        return await module.coreGeminiOrchestrate(prompt, sysPrompt, { jsonMode });
+      }
+      throw cliErr;
+    }
+  }
+
+  throw new Error(`Unknown provider: ${providerName}`);
 }
 
 async function callWithRetry(providerName, prompt, sysPrompt, jsonMode) {
@@ -473,18 +608,18 @@ async function main() {
   // 접두사 제거
   const prefixPatterns = {
     gpt: /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
+    'gpt-spark': /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
     gemini: /^(gemini[-.\s]|제미나이-|vibe-gemini-)\s*/i,
   };
   const cleanPrompt = prompt.replace(prefixPatterns[provider] || /^/, '').trim();
   const jsonMode = mode === 'orchestrate-json';
 
   // Provider chain: primary → cross fallback
-  const vibeConfig = readVibeConfig();
-  const gptModel = vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.3-codex';
-  const gptLabel = gptModel.includes('spark') ? 'GPT-5.3 Spark' : 'GPT-5.3';
-  const providerLabels = { gpt: gptLabel, gemini: 'Gemini-3' };
-  const providerChain = provider === 'gpt'
-    ? ['gpt', 'gemini']
+  // gpt-spark fallback: gpt-spark → gemini (spark는 full gpt로 fallback하지 않음)
+  const providerLabels = { gpt: 'GPT-5.3', 'gpt-spark': 'GPT-5.3 Spark', gemini: 'Gemini-3' };
+  const isGpt = provider === 'gpt' || provider === 'gpt-spark';
+  const providerChain = isGpt
+    ? [provider, 'gemini']
     : ['gemini', 'gpt'];
 
   for (const currentProvider of providerChain) {

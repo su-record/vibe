@@ -11,7 +11,6 @@ import path from 'path';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
-import { gptAuthCore } from '../llm/gpt-commands.js';
 import { geminiAuthCore } from '../llm/gemini-commands.js';
 import { setupExternalLLM } from '../llm/config.js';
 import type { LLMStatusMap } from '../types.js';
@@ -23,7 +22,6 @@ import { init } from './init.js';
 
 type AuthMethod =
   | 'claude-apikey'
-  | 'gpt-oauth'
   | 'gpt-apikey'
   | 'gemini-cli'
   | 'gemini-apikey';
@@ -56,15 +54,8 @@ function buildAuthOptions(status: LLMStatusMap): Array<{
       hint: status.claude.length > 0 ? 'configured' : 'console.anthropic.com/settings/keys',
     },
     {
-      value: 'gpt-oauth' as const,
-      label: 'GPT OAuth',
-      hint: status.gpt.some(a => a.type === 'oauth')
-        ? 'configured'
-        : 'ChatGPT Plus/Pro — opens browser',
-    },
-    {
       value: 'gpt-apikey' as const,
-      label: 'GPT API Key',
+      label: 'GPT API Key (for embeddings)',
       hint: status.gpt.some(a => a.type === 'apikey')
         ? 'configured'
         : 'platform.openai.com/api-keys',
@@ -100,22 +91,6 @@ async function executeAuthMethod(method: AuthMethod): Promise<boolean> {
       if (p.isCancel(key)) return false;
       setupExternalLLM('claude', key as string);
       return true;
-    }
-
-    case 'gpt-oauth': {
-      const s = p.spinner();
-      s.start('Opening browser for OpenAI OAuth...');
-      try {
-        const tokens = await gptAuthCore();
-        if (tokens) {
-          s.stop(`GPT authenticated (${tokens.email})`);
-          return true;
-        }
-        s.stop('GPT OAuth failed');
-      } catch {
-        s.stop('GPT OAuth failed');
-      }
-      return false;
     }
 
     case 'gpt-apikey': {

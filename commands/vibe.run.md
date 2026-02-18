@@ -787,7 +787,7 @@ Then: Login success + JWT token returned
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] Bash: node "[LLM_SCRIPT]" gpt orchestrate-json "[question]"
+│  [If GPT enabled] Bash: node "[LLM_SCRIPT]" gpt-spark orchestrate-json "[question]"
 │  [If Gemini enabled] Bash: node "[LLM_SCRIPT]" gemini orchestrate-json "[question]"
 └─────────────────────────────────────────────────────────────────┘
                               │

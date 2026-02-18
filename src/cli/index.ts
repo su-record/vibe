@@ -12,7 +12,6 @@ import { setSilentMode } from './utils.js';
 import {
   setupExternalLLM,
   removeExternalLLM,
-  gptAuth,
   gptStatus,
   gptLogout,
   geminiAuth,
@@ -149,9 +148,6 @@ Get key: https://console.anthropic.com/settings/keys
   case 'gpt': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
-      case 'auth':
-        gptAuth();
-        break;
       case 'key': {
         const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'gpt' && a !== 'key');
         if (apiKey) {
@@ -162,10 +158,8 @@ Get key: https://console.anthropic.com/settings/keys
         break;
       }
       case 'logout':
-        gptLogout();
-        break;
       case 'remove':
-        removeExternalLLM('gpt');
+        gptLogout();
         break;
       case 'status':
         gptStatus();
@@ -173,13 +167,13 @@ Get key: https://console.anthropic.com/settings/keys
       default:
         console.log(`
 GPT Commands:
-  vibe gpt auth                    OAuth authentication (Plus/Pro)
-  vibe gpt key <key>               Set API key
-  vibe gpt status                  Check status
-  vibe gpt logout                  Logout
-  vibe gpt remove                  Remove config
+  vibe gpt key <key>     Set OpenAI API key (for embeddings)
+  vibe gpt status        Check status (Codex CLI + API key)
+  vibe gpt logout        Remove API key
 
-Auth order: oauth → apikey
+Text generation: codex exec (via Codex CLI)
+Embeddings: OpenAI API (requires API key)
+Codex auth: codex auth
         `);
     }
     break;
