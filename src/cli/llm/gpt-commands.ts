@@ -11,10 +11,12 @@ import {
   readGlobalConfig,
   writeGlobalConfig,
 } from '../../infra/lib/config/GlobalConfigManager.js';
+import { findCodexCredentials } from '../../infra/lib/gpt/auth.js';
 
 /**
  * GPT 상태 확인
  * - codex CLI 설치/버전
+ * - Codex CLI credential 감지
  * - API Key 상태 (임베딩용)
  * - 모델 설정
  */
@@ -29,6 +31,17 @@ export function gptStatus(): void {
     codexVersion = execSync('codex --version', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
   } catch { /* not installed */ }
 
+  // Codex CLI credential 자동 감지
+  const codexCreds = findCodexCredentials();
+  let codexAuthStatus = 'not detected';
+  if (codexCreds) {
+    const expiresAt = new Date(codexCreds.tokens.expires_at);
+    const isExpired = isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now();
+    codexAuthStatus = isExpired
+      ? 'detected (token expired, will auto-refresh)'
+      : `detected (expires ${expiresAt.toLocaleString()})`;
+  }
+
   const modelGpt = config.models?.gpt || 'gpt-5.3-codex (default)';
   const modelSpark = config.models?.gptSpark || 'gpt-5.3-codex-spark (default)';
 
@@ -36,12 +49,14 @@ export function gptStatus(): void {
 GPT Status
 
 Codex CLI: ${codexVersion}
+Codex Auth: ${codexAuthStatus}
 API Key: ${hasApiKey ? 'configured (for embeddings)' : 'not set'}
 
 Models:
   gpt (review):    ${modelGpt}
   gpt-spark (research): ${modelSpark}
 
+Auth priority: oauth (config) > codex-cli (~/.codex/auth.json) > apikey
 Stored: ~/.vibe/config.json
 
 Commands:

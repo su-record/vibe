@@ -3,7 +3,7 @@
  */
 
 // GPT 인증 방식
-export type GptAuthMethod = 'oauth' | 'apikey';
+export type GptAuthMethod = 'oauth' | 'codex-cli' | 'apikey';
 
 // ChatGPT 플랜 타입
 export type ChatGptPlan = 'pro' | 'plus' | 'free';

@@ -388,6 +388,7 @@ async function callWithAuth(authInfo: { type: string; apiKey?: string; accessTok
     case 'apikey':
       return chatWithApiKey(authInfo.apiKey!, options);
     case 'oauth':
+    case 'codex-cli':
       return chatWithOAuth(authInfo.accessToken!, options, authInfo.accountId);
     default:
       throw new Error(`Unknown auth type: ${authInfo.type}`);

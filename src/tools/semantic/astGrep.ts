@@ -3,39 +3,59 @@
  *
  * 지원 언어: JavaScript, TypeScript, TSX, JSX, HTML, CSS
  * (Python, Go, Rust 등은 ast-grep-napi에서 별도 동적 등록 필요)
+ *
+ * @ast-grep/napi는 네이티브 바이너리 optional dependency → 동적 import
  */
 
-import * as sg from '@ast-grep/napi';
+import { createRequire } from 'module';
 import { readFile, readdir, stat, writeFile } from 'fs/promises';
 import * as path from 'path';
 import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 
-// 언어별 파서 매핑 (ast-grep napi에서 지원하는 언어)
-type LangParser = typeof sg.js;
+// ast-grep 동적 로딩 (createRequire — 네이티브 바이너리에 안정적)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let sgModule: any = null;
+let sgLoadFailed = false;
 
-const LANG_PARSERS: Record<string, LangParser> = {
-  '.js': sg.js,
-  '.mjs': sg.js,
-  '.cjs': sg.js,
-  '.jsx': sg.jsx,
-  '.ts': sg.ts,
-  '.mts': sg.ts,
-  '.cts': sg.ts,
-  '.tsx': sg.tsx,
-  '.html': sg.html,
-  '.htm': sg.html,
-  '.css': sg.css,
-  '.scss': sg.css,
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function loadAstGrep(): any {
+  if (sgModule) return sgModule;
+  if (sgLoadFailed) {
+    throw new Error('@ast-grep/napi is not installed. Run: npm install @ast-grep/napi');
+  }
+  try {
+    const require = createRequire(import.meta.url);
+    sgModule = require('@ast-grep/napi');
+    return sgModule;
+  } catch {
+    sgLoadFailed = true;
+    throw new Error('@ast-grep/napi is not installed. Run: npm install @ast-grep/napi');
+  }
+}
 
-const LANG_NAME_MAP: Record<string, LangParser> = {
-  javascript: sg.js,
-  typescript: sg.ts,
-  tsx: sg.tsx,
-  jsx: sg.jsx,
-  html: sg.html,
-  css: sg.css,
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LangParser = any;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getLangParsers(sg: any): Record<string, LangParser> {
+  return {
+    '.js': sg.js, '.mjs': sg.js, '.cjs': sg.js,
+    '.jsx': sg.jsx,
+    '.ts': sg.ts, '.mts': sg.ts, '.cts': sg.ts,
+    '.tsx': sg.tsx,
+    '.html': sg.html, '.htm': sg.html,
+    '.css': sg.css, '.scss': sg.css,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getLangNameMap(sg: any): Record<string, LangParser> {
+  return {
+    javascript: sg.js, typescript: sg.ts,
+    tsx: sg.tsx, jsx: sg.jsx,
+    html: sg.html, css: sg.css,
+  };
+}
 
 interface SearchMatch {
   file: string;
@@ -129,16 +149,20 @@ export const astGrepReplaceDefinition: ToolDefinition = {
   }
 };
 
-function getParserFromExtension(filePath: string): LangParser | null {
+function getParserFromExtension(parsers: Record<string, LangParser>, filePath: string): LangParser | null {
   const ext = path.extname(filePath).toLowerCase();
-  return LANG_PARSERS[ext] || null;
+  return parsers[ext] || null;
 }
 
-function getParserFromString(langStr: string): LangParser | null {
-  return LANG_NAME_MAP[langStr.toLowerCase()] || null;
+function getParserFromString(nameMap: Record<string, LangParser>, langStr: string): LangParser | null {
+  return nameMap[langStr.toLowerCase()] || null;
 }
 
-async function getFilesRecursive(dir: string, targetParser?: LangParser): Promise<string[]> {
+async function getFilesRecursive(
+  dir: string,
+  parsers: Record<string, LangParser>,
+  targetParser?: LangParser,
+): Promise<string[]> {
   const files: string[] = [];
   const ignoreDirs = ['node_modules', '.git', 'dist', 'build', '__pycache__', 'venv', '.venv'];
 
@@ -153,7 +177,7 @@ async function getFilesRecursive(dir: string, targetParser?: LangParser): Promis
           await walk(fullPath);
         }
       } else if (entry.isFile()) {
-        const fileParser = getParserFromExtension(fullPath);
+        const fileParser = getParserFromExtension(parsers, fullPath);
         if (fileParser !== null && (targetParser === undefined || fileParser === targetParser)) {
           files.push(fullPath);
         }
@@ -186,14 +210,18 @@ export async function astGrepSearch(args: {
   const { pattern, path: searchPath, lang, maxResults = 50 } = args;
 
   try {
-    const targetParser = lang ? getParserFromString(lang) : undefined;
-    const files = await getFilesRecursive(searchPath, targetParser ?? undefined);
+    const sg = loadAstGrep();
+    const parsers = getLangParsers(sg);
+    const nameMap = getLangNameMap(sg);
+
+    const targetParser = lang ? getParserFromString(nameMap, lang) : undefined;
+    const files = await getFilesRecursive(searchPath, parsers, targetParser ?? undefined);
     const matches: SearchMatch[] = [];
 
     for (const file of files) {
       if (matches.length >= maxResults) break;
 
-      const fileParser = getParserFromExtension(file);
+      const fileParser = getParserFromExtension(parsers, file);
       if (!fileParser) continue;
 
       try {
@@ -257,13 +285,17 @@ export async function astGrepReplace(args: {
   const { pattern, replacement, path: searchPath, lang, dryRun = true } = args;
 
   try {
-    const targetParser = lang ? getParserFromString(lang) : undefined;
-    const files = await getFilesRecursive(searchPath, targetParser ?? undefined);
+    const sg = loadAstGrep();
+    const parsers = getLangParsers(sg);
+    const nameMap = getLangNameMap(sg);
+
+    const targetParser = lang ? getParserFromString(nameMap, lang) : undefined;
+    const files = await getFilesRecursive(searchPath, parsers, targetParser ?? undefined);
     const previews: ReplacePreview[] = [];
     const fileChanges: Map<string, { content: string; edits: Array<{ start: number; end: number; text: string }> }> = new Map();
 
     for (const file of files) {
-      const fileParser = getParserFromExtension(file);
+      const fileParser = getParserFromExtension(parsers, file);
       if (!fileParser) continue;
 
       try {

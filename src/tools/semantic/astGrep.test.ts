@@ -4,7 +4,15 @@ import { writeFile, mkdir, rm } from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 
-describe('ast-grep tools', () => {
+// @ast-grep/napi는 optional dependency — 미설치 시 테스트 스킵
+import { createRequire } from 'module';
+let astGrepAvailable = false;
+try {
+  createRequire(import.meta.url).resolve('@ast-grep/napi');
+  astGrepAvailable = true;
+} catch { /* not installed */ }
+
+describe.skipIf(!astGrepAvailable)('ast-grep tools', () => {
   const testDir = path.join(os.tmpdir(), 'ast-grep-test-' + Date.now());
 
   beforeAll(async () => {
