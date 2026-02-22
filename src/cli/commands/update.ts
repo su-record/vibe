@@ -7,7 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { CliOptions } from '../types.js';
+import { CliOptions, VibeConfig } from '../types.js';
 import { log, ensureDir, getPackageJson, formatVoiceHint } from '../utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,6 +29,7 @@ import {
   installCursorRules,
 } from '../setup.js';
 import { updateCursorGlobalAssets, installLocalSkills } from './init.js';
+import { Provisioner } from '../setup/Provisioner.js';
 
 /**
  * update 명령어 실행 — 프로젝트 설정만 업데이트
@@ -73,6 +74,19 @@ export function update(options: CliOptions = { silent: false }): void {
     // 기술 스택 감지
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
 
+    // config.json에 저장된 사용자 선택 capabilities 병합 (init 시 선택한 값 보존)
+    const configPath = path.join(coreDir, 'config.json');
+    if (fs.existsSync(configPath)) {
+      try {
+        const existingConfig: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        const storedCaps = existingConfig.details?.capabilities ?? [];
+        if (storedCaps.length > 0) {
+          const merged = new Set([...stackDetails.capabilities, ...storedCaps]);
+          stackDetails.capabilities = [...merged];
+        }
+      } catch { /* ignore: optional operation */ }
+    }
+
     // config.json 업데이트
     updateConfig(coreDir, detectedStacks, stackDetails, true);
 
@@ -102,8 +116,11 @@ export function update(options: CliOptions = { silent: false }): void {
     // Cursor IDE 룰 설치/업데이트 (프로젝트 레벨) - rules-template 생성 후 현재 스택에 해당하는 룰만 복사
     installCursorRules(projectRoot, stackTypes);
 
-    // 스택 기반 로컬 스킬 업데이트 (.claude/skills/)
-    installLocalSkills(projectRoot, stackTypes);
+    // 스택 + capability 기반 로컬 스킬 업데이트 (.claude/skills/)
+    installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
+
+    // Provisioner: 추천 에이전트 + SPEC 템플릿 생성 (미존재 시에만)
+    Provisioner.provision(projectRoot, detectedStacks, stackDetails);
 
     // ~/.claude.json 정리
     cleanupClaudeConfig();

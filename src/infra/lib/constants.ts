@@ -69,6 +69,13 @@ export const CONCURRENCY = {
   CONVERSATION_CLEANUP_HOURS: 48,
 } as const;
 
+// 토큰 예산 설정
+export const TOKENS = {
+  PER_CHAR_ESTIMATE: 0.25,
+  DEFAULT_BUDGET: 128_000,
+  DEFAULT_TARGET: 4000,
+} as const;
+
 // sonolbot-v2 상수
 export const MESSAGING = {
   /** Phase 1: ProgressReporter 메시지 편집 최소 간격 (Telegram rate limit 방지) */

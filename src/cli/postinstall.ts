@@ -13,7 +13,8 @@ export {
   STACK_TO_LANGUAGE_FILE,
   GLOBAL_SKILLS,
   STACK_TO_SKILLS,
-  COMMERCE_SKILLS,
+  CAPABILITY_SKILLS,
+  AVAILABLE_CAPABILITIES,
   resolveLocalSkills,
   copySkillsFiltered,
 } from './postinstall/index.js';

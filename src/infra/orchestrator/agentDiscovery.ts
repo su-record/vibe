@@ -15,7 +15,7 @@ const AGENTS_DIRS = ['.claude/agents', 'agents'];
 /**
  * 에이전트 마크다운 파일에서 메타데이터 추출
  */
-function parseAgentMarkdown(content: string, filePath: string): Partial<DiscoveredAgent> {
+export function parseAgentMarkdown(content: string, filePath: string): Partial<DiscoveredAgent> {
   const lines = content.split('\n');
   let name = path.basename(filePath, '.md');
   let description = '';
@@ -48,7 +48,7 @@ function parseAgentMarkdown(content: string, filePath: string): Partial<Discover
 /**
  * 카테고리 추출 (폴더명 기반)
  */
-function extractCategory(filePath: string, basePath: string): string {
+export function extractCategory(filePath: string, basePath: string): string {
   const relativePath = path.relative(basePath, filePath);
   const parts = relativePath.split(path.sep);
 

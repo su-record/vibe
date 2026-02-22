@@ -40,8 +40,14 @@ export { TASK_LLM_PRIORITY } from './types.js';
 export {
   discoverAgents,
   loadAgent,
-  listAgentsByCategory
+  listAgentsByCategory,
+  parseAgentMarkdown,
+  extractCategory
 } from './agentDiscovery.js';
+
+// Agent Manifest Cache
+export { AgentManifestCache } from './AgentManifestCache.js';
+export type { AgentManifest, CachedFullAgent, AgentCacheStats } from './AgentManifestCache.js';
 
 // Parallel Research
 export {

@@ -39,5 +39,24 @@ export type {
   SessionSummary,
 } from './SessionSummarizer.js';
 
+// TaskContext
+export { TaskContext } from '../TaskContext.js';
+export type {
+  ContextScope,
+  TaskContextData,
+  TaskContextCreateOptions,
+  TaskContextForkOptions,
+  ScopeFilter,
+} from '../TaskContext.js';
+
+// TokenBudgetTracker
+export { TokenBudgetTracker } from '../TokenBudgetTracker.js';
+export type {
+  TokenSource,
+  ThresholdLevel,
+  BudgetSnapshot,
+  ActionEstimate,
+} from '../TokenBudgetTracker.js';
+
 // Re-export MemoryManager facade from parent for backward compatibility
 // Note: MemoryManager is in parent directory, import it from there

@@ -15,6 +15,7 @@ export const GLOBAL_SKILLS: ReadonlyArray<string> = [
   'tool-fallback',
   'context7-usage',
   'techdebt',
+  'characterization-test',
 ];
 
 /** 스택 → 로컬 스킬 매핑 (vibe init/update → .claude/skills/) */
@@ -36,17 +37,29 @@ export const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>> = {
   'kotlin-android': ['ui-ux-pro-max'],
 };
 
-/** E-commerce 스킬 (의존성 감지 시 추가) */
-export const COMMERCE_SKILLS: ReadonlyArray<string> = [
-  'commerce-patterns',
-  'e2e-commerce',
+/** Capability → 로컬 스킬 매핑 (의존성 감지 기반 자동 설치) */
+export const CAPABILITY_SKILLS: Record<string, ReadonlyArray<string>> = {
+  'commerce': ['commerce-patterns', 'e2e-commerce'],
+  'video': ['video-production'],
+};
+
+/** 사용자 선택 가능한 capability 목록 (vibe init 인터랙티브 프롬프트용) */
+export const AVAILABLE_CAPABILITIES: ReadonlyArray<{
+  value: string;
+  label: string;
+  hint: string;
+}> = [
+  { value: 'commerce', label: 'Commerce / Payments', hint: 'Stripe, Shopify, PayPal 등' },
+  { value: 'video', label: 'Video Production', hint: 'FFmpeg, 트랜스코딩, 스트리밍 등' },
 ];
 
 /**
- * 스택 타입 배열 → 로컬 설치할 스킬 목록 결정
+ * 스택 타입 + capabilities → 로컬 설치할 스킬 목록 결정
  */
-export function resolveLocalSkills(stackTypes: string[]): string[] {
+export function resolveLocalSkills(stackTypes: string[], capabilities: string[] = []): string[] {
   const skills = new Set<string>();
+
+  // 스택 기반 스킬
   for (const stack of stackTypes) {
     // exact match (e.g., 'typescript-react')
     const exact = STACK_TO_SKILLS[stack];
@@ -58,6 +71,13 @@ export function resolveLocalSkills(stackTypes: string[]): string[] {
       if (prefixSkills) prefixSkills.forEach(s => skills.add(s));
     }
   }
+
+  // Capability 기반 스킬
+  for (const cap of capabilities) {
+    const capSkills = CAPABILITY_SKILLS[cap];
+    if (capSkills) capSkills.forEach(s => skills.add(s));
+  }
+
   return [...skills];
 }
 

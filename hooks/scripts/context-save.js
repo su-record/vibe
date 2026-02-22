@@ -29,6 +29,18 @@ async function main() {
     });
     const percent = urgency === 'critical' ? '95' : urgency === 'high' ? '90' : '80';
     console.log(`[CONTEXT ${percent}%]`, result.content[0].text);
+
+    // Sync TokenBudgetTracker with current context usage
+    try {
+      const { TokenBudgetTracker } = await import(`${LIB_URL}TokenBudgetTracker.js`);
+      const tracker = TokenBudgetTracker.getInstance(PROJECT_DIR);
+      const numPercent = Number(percent);
+      if (!isNaN(numPercent)) {
+        tracker.syncToPercent(numPercent);
+      }
+    } catch {
+      // TokenBudgetTracker sync is non-critical
+    }
   } catch {
     // 무시
   }

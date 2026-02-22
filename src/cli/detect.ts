@@ -131,7 +131,7 @@ function expandGlobPattern(projectRoot: string, pattern: string, paths: Set<stri
  */
 export function detectTechStacks(projectRoot: string): DetectionResult {
   const stacks: DetectedStack[] = [];
-  const details: StackDetails = { databases: [], stateManagement: [], hosting: [], cicd: [] };
+  const details: StackDetails = { databases: [], stateManagement: [], hosting: [], cicd: [], capabilities: [] };
 
   const detectInDir = (dir: string, prefix = ''): DetectedStack[] => {
     const detected: DetectedStack[] = [];
@@ -201,6 +201,20 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
         if (deps['swr']) details.stateManagement.push('SWR');
         if (deps['pinia']) details.stateManagement.push('Pinia');
         if (deps['vuex']) details.stateManagement.push('Vuex');
+
+        // Capability 감지: Commerce
+        if (deps['stripe'] || deps['@stripe/stripe-js'] || deps['@stripe/react-stripe-js']
+          || deps['@shopify/shopify-api'] || deps['shopify-api-node']
+          || deps['@medusajs/medusa'] || deps['@paypal/checkout-server-sdk']
+          || deps['toss-payments'] || deps['iamport-rest-client']) {
+          details.capabilities.push('commerce');
+        }
+
+        // Capability 감지: Video
+        if (deps['fluent-ffmpeg'] || deps['@ffmpeg/ffmpeg'] || deps['ffmpeg-static']
+          || deps['remotion'] || deps['video.js'] || deps['@mux/mux-node']) {
+          details.capabilities.push('video');
+        }
       } catch { /* ignore: optional operation */ }
     }
 
@@ -216,6 +230,14 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
         if (content.includes('pymongo')) details.databases.push('MongoDB');
         if (content.includes('sqlalchemy')) details.databases.push('SQLAlchemy');
         if (content.includes('prisma')) details.databases.push('Prisma');
+
+        // Python capability 감지
+        if (content.includes('stripe') || content.includes('shopify') || content.includes('saleor')) {
+          details.capabilities.push('commerce');
+        }
+        if (content.includes('moviepy') || content.includes('ffmpeg') || content.includes('opencv') || content.includes('vidgear')) {
+          details.capabilities.push('video');
+        }
       } catch { /* ignore: optional operation */ }
     } else if (fs.existsSync(path.join(dir, 'requirements.txt'))) {
       try {
@@ -227,6 +249,14 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
         if (content.includes('psycopg') || content.includes('asyncpg')) details.databases.push('PostgreSQL');
         if (content.includes('pymongo')) details.databases.push('MongoDB');
         if (content.includes('sqlalchemy')) details.databases.push('SQLAlchemy');
+
+        // Python capability 감지
+        if (content.includes('stripe') || content.includes('shopify') || content.includes('saleor')) {
+          details.capabilities.push('commerce');
+        }
+        if (content.includes('moviepy') || content.includes('ffmpeg') || content.includes('opencv') || content.includes('vidgear')) {
+          details.capabilities.push('video');
+        }
       } catch { /* ignore: optional operation */ }
     }
 
@@ -418,6 +448,7 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
   details.stateManagement = [...new Set(details.stateManagement)];
   details.hosting = [...new Set(details.hosting)];
   details.cicd = [...new Set(details.cicd)];
+  details.capabilities = [...new Set(details.capabilities)];
 
   return { stacks, details };
 }

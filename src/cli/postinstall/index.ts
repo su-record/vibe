@@ -14,7 +14,7 @@
  */
 
 export { getCoreConfigDir, replaceTemplatesInDir } from './fs-utils.js';
-export { STACK_TO_LANGUAGE_FILE, GLOBAL_SKILLS, STACK_TO_SKILLS, COMMERCE_SKILLS, resolveLocalSkills } from './constants.js';
+export { STACK_TO_LANGUAGE_FILE, GLOBAL_SKILLS, STACK_TO_SKILLS, CAPABILITY_SKILLS, AVAILABLE_CAPABILITIES, resolveLocalSkills } from './constants.js';
 export { copySkillsFiltered } from './fs-utils.js';
 export { generateCursorRules } from './cursor-rules.js';
 export { installCursorAgents } from './cursor-agents.js';

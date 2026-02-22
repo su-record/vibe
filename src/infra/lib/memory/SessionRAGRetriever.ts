@@ -12,6 +12,7 @@ import {
 } from './SessionRAGStore.js';
 import type { VectorStore } from '../embedding/VectorStore.js';
 import type { EmbeddingProvider } from '../embedding/EmbeddingProvider.js';
+import { TaskContext, type TaskContextData } from '../TaskContext.js';
 
 // ============================================================================
 // Types
@@ -25,6 +26,7 @@ export interface RetrievalOptions {
   priorityWeight?: number;
   bm25Weight?: number;
   vectorWeight?: number;
+  taskContext?: import('../TaskContext.js').TaskContextData;
 }
 
 export interface ScoreBreakdown {
@@ -117,11 +119,12 @@ export class SessionRAGRetriever {
     } = options;
 
     const weights = { bm25Weight, recencyWeight, priorityWeight, vectorWeight: 0 };
+    const tc = options.taskContext;
 
-    const decisions = this.scoreDecisions(query, limit, weights);
-    const constraints = this.scoreConstraints(query, limit, weights);
-    const goals = this.scoreGoals(query, limit, weights);
-    const evidence = this.scoreEvidence(query, limit, weights);
+    const decisions = this.scoreDecisions(query, limit, weights, undefined, tc);
+    const constraints = this.scoreConstraints(query, limit, weights, undefined, tc);
+    const goals = this.scoreGoals(query, limit, weights, undefined, tc);
+    const evidence = this.scoreEvidence(query, limit, weights, undefined, tc);
 
     return {
       decisions,
@@ -245,9 +248,10 @@ export class SessionRAGRetriever {
     limit: number,
     weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number; vectorWeight: number },
     vectorScores?: Map<number, number>,
+    taskContext?: TaskContextData,
   ): ScoredItem<Decision>[] {
     const bm25Scores = this.getBM25Scores('session_decisions', 'session_decisions_fts', query, limit * 3);
-    const candidates = this.getCandidateDecisions(query, bm25Scores, limit * 3);
+    const candidates = this.getCandidateDecisions(query, bm25Scores, limit * 3, taskContext);
 
     return candidates
       .map(item => {
@@ -273,9 +277,10 @@ export class SessionRAGRetriever {
     limit: number,
     weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number; vectorWeight: number },
     vectorScores?: Map<number, number>,
+    taskContext?: TaskContextData,
   ): ScoredItem<Constraint>[] {
     const bm25Scores = this.getBM25Scores('session_constraints', 'session_constraints_fts', query, limit * 3);
-    const candidates = this.getCandidateConstraints(query, bm25Scores, limit * 3);
+    const candidates = this.getCandidateConstraints(query, bm25Scores, limit * 3, taskContext);
 
     const severityMap: Record<string, number> = { critical: 1.0, high: 0.75, medium: 0.5, low: 0.25 };
 
@@ -303,9 +308,10 @@ export class SessionRAGRetriever {
     limit: number,
     weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number; vectorWeight: number },
     vectorScores?: Map<number, number>,
+    taskContext?: TaskContextData,
   ): ScoredItem<Goal>[] {
     const bm25Scores = this.getBM25Scores('session_goals', 'session_goals_fts', query, limit * 3);
-    const candidates = this.getCandidateGoals(query, bm25Scores, limit * 3);
+    const candidates = this.getCandidateGoals(query, bm25Scores, limit * 3, taskContext);
 
     return candidates
       .map(item => {
@@ -331,9 +337,10 @@ export class SessionRAGRetriever {
     limit: number,
     weights: { bm25Weight: number; recencyWeight: number; priorityWeight: number; vectorWeight: number },
     vectorScores?: Map<number, number>,
+    taskContext?: TaskContextData,
   ): ScoredItem<Evidence>[] {
     const bm25Scores = this.getBM25Scores('session_evidence', 'session_evidence_fts', query, limit * 3);
-    const candidates = this.getCandidateEvidence(query, bm25Scores, limit * 3);
+    const candidates = this.getCandidateEvidence(query, bm25Scores, limit * 3, taskContext);
 
     const statusMap: Record<string, number> = { fail: 1.0, warning: 0.75, pass: 0.5, info: 0.25 };
 
@@ -360,47 +367,78 @@ export class SessionRAGRetriever {
   // Candidate retrieval (FTS5 or LIKE fallback)
   // ==========================================================================
 
-  private getCandidateDecisions(_query: string, bm25Scores: Map<number, number>, limit: number): Decision[] {
+  private getCandidateDecisions(_query: string, bm25Scores: Map<number, number>, limit: number, taskContext?: TaskContextData): Decision[] {
     if (bm25Scores.size > 0) {
-      // Use IDs from bm25Scores directly to avoid duplicate FTS query
       const ids = [...bm25Scores.keys()].slice(0, limit);
       return ids
         .map(id => this.store.getDecision(id))
         .filter((d): d is Decision => d !== null);
     }
-    // No BM25 results, get all recent ones for scoring
+    if (taskContext) {
+      const sf = TaskContext.buildScopeFilter(taskContext);
+      if (sf.clause) {
+        const rows = this.db.prepare(
+          `SELECT * FROM session_decisions WHERE 1=1${sf.clause} ORDER BY priority DESC, timestamp DESC LIMIT ?`
+        ).all(...sf.params, limit) as Decision[];
+        return rows;
+      }
+    }
     return this.store.listDecisions(undefined, undefined, limit);
   }
 
-  private getCandidateConstraints(_query: string, bm25Scores: Map<number, number>, limit: number): Constraint[] {
+  private getCandidateConstraints(_query: string, bm25Scores: Map<number, number>, limit: number, taskContext?: TaskContextData): Constraint[] {
     if (bm25Scores.size > 0) {
-      // Use IDs from bm25Scores directly to avoid duplicate FTS query
       const ids = [...bm25Scores.keys()].slice(0, limit);
       return ids
         .map(id => this.store.getConstraint(id))
         .filter((c): c is Constraint => c !== null);
     }
+    if (taskContext) {
+      const sf = TaskContext.buildScopeFilter(taskContext);
+      if (sf.clause) {
+        const rows = this.db.prepare(
+          `SELECT * FROM session_constraints WHERE 1=1${sf.clause} ORDER BY timestamp DESC LIMIT ?`
+        ).all(...sf.params, limit) as Constraint[];
+        return rows;
+      }
+    }
     return this.store.listConstraints(undefined, undefined, undefined, limit);
   }
 
-  private getCandidateGoals(_query: string, bm25Scores: Map<number, number>, limit: number): Goal[] {
+  private getCandidateGoals(_query: string, bm25Scores: Map<number, number>, limit: number, taskContext?: TaskContextData): Goal[] {
     if (bm25Scores.size > 0) {
-      // Use IDs from bm25Scores directly to avoid duplicate FTS query
       const ids = [...bm25Scores.keys()].slice(0, limit);
       return ids
         .map(id => this.store.getGoal(id))
         .filter((g): g is Goal => g !== null);
     }
+    if (taskContext) {
+      const sf = TaskContext.buildScopeFilter(taskContext);
+      if (sf.clause) {
+        const rows = this.db.prepare(
+          `SELECT * FROM session_goals WHERE 1=1${sf.clause} ORDER BY priority DESC, timestamp DESC LIMIT ?`
+        ).all(...sf.params, limit) as Goal[];
+        return rows;
+      }
+    }
     return this.store.listGoals(undefined, undefined, limit);
   }
 
-  private getCandidateEvidence(_query: string, bm25Scores: Map<number, number>, limit: number): Evidence[] {
+  private getCandidateEvidence(_query: string, bm25Scores: Map<number, number>, limit: number, taskContext?: TaskContextData): Evidence[] {
     if (bm25Scores.size > 0) {
-      // Use IDs from bm25Scores directly to avoid duplicate FTS query
       const ids = [...bm25Scores.keys()].slice(0, limit);
       return ids
         .map(id => this.store.getEvidence(id))
         .filter((e): e is Evidence => e !== null);
+    }
+    if (taskContext) {
+      const sf = TaskContext.buildScopeFilter(taskContext);
+      if (sf.clause) {
+        const rows = this.db.prepare(
+          `SELECT * FROM session_evidence WHERE 1=1${sf.clause} ORDER BY timestamp DESC LIMIT ?`
+        ).all(...sf.params, limit) as Evidence[];
+        return rows;
+      }
     }
     return this.store.listEvidence(undefined, undefined, undefined, limit);
   }

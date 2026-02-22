@@ -19,13 +19,16 @@ import {
   installProjectHooks,
   installCursorRules,
 } from '../setup.js';
+import * as p from '@clack/prompts';
 import {
   installCursorAgents,
   generateCursorRules,
   generateCursorSkills,
   resolveLocalSkills,
   copySkillsFiltered,
+  AVAILABLE_CAPABILITIES,
 } from '../postinstall.js';
+import { Provisioner } from '../setup/Provisioner.js';
 
 /**
  * Update global Cursor assets (agents, rules, skills)
@@ -69,14 +72,15 @@ export function updateCursorGlobalAssets(
 }
 
 /**
- * 스택 기반 로컬 스킬 설치 (.claude/skills/)
+ * 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)
  * init, update 공용
  */
 export function installLocalSkills(
   projectRoot: string,
   stackTypes: string[],
+  capabilities: string[] = [],
 ): void {
-  const localSkills = resolveLocalSkills(stackTypes);
+  const localSkills = resolveLocalSkills(stackTypes, capabilities);
   if (localSkills.length === 0) return;
 
   const __dir = path.dirname(new URL(import.meta.url).pathname);
@@ -140,6 +144,22 @@ export async function init(projectName?: string): Promise<void> {
       }
     }
 
+    // Capability 인터랙티브 선택 (자동 감지 결과가 없을 때만)
+    if (stackDetails.capabilities.length === 0 && !process.env.CI && AVAILABLE_CAPABILITIES.length > 0) {
+      const selected = await p.multiselect({
+        message: 'Select project capabilities (Space to toggle, Enter to confirm):',
+        options: AVAILABLE_CAPABILITIES.map(c => ({
+          value: c.value,
+          label: c.label,
+          hint: c.hint,
+        })),
+        required: false,
+      });
+      if (!p.isCancel(selected) && Array.isArray(selected) && selected.length > 0) {
+        stackDetails.capabilities.push(...selected as string[]);
+      }
+    }
+
     // constitution.md 생성
     updateConstitution(coreDir, detectedStacks, stackDetails);
 
@@ -162,8 +182,20 @@ export async function init(projectName?: string): Promise<void> {
     // Cursor IDE 룰 설치 (프로젝트 레벨) - rules-template 생성 후 현재 스택에 해당하는 룰만 복사
     installCursorRules(projectRoot, stackTypes);
 
-    // 스택 기반 로컬 스킬 설치 (.claude/skills/)
-    installLocalSkills(projectRoot, stackTypes);
+    // 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)
+    installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
+    if (stackDetails.capabilities.length > 0) {
+      log(`      - Capabilities: ${stackDetails.capabilities.join(', ')}\n`);
+    }
+
+    // Provisioner: 추천 에이전트 + SPEC 템플릿 생성
+    const provisionResult = Provisioner.provision(projectRoot, detectedStacks, stackDetails);
+    if (provisionResult.agentsGenerated) {
+      log(`   🤖 Recommended agents generated\n`);
+    }
+    if (provisionResult.specTemplateGenerated) {
+      log(`   📋 SPEC template generated\n`);
+    }
 
     // 완료 메시지
     const packageJson = getPackageJson();

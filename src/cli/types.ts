@@ -37,6 +37,7 @@ export interface StackDetails {
   stateManagement: string[];
   hosting: string[];
   cicd: string[];
+  capabilities: string[];
 }
 
 export interface DetectionResult {

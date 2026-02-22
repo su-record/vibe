@@ -32,6 +32,7 @@ export interface Decision {
 
 export interface DecisionInput {
   sessionId?: string;
+  taskId?: string;
   title: string;
   description?: string;
   rationale?: string;
@@ -56,6 +57,7 @@ export interface Constraint {
 
 export interface ConstraintInput {
   sessionId?: string;
+  taskId?: string;
   title: string;
   description?: string;
   type: ConstraintType;
@@ -79,6 +81,7 @@ export interface Goal {
 
 export interface GoalInput {
   sessionId?: string;
+  taskId?: string;
   parentId?: number;
   title: string;
   description?: string;
@@ -102,6 +105,7 @@ export interface Evidence {
 
 export interface EvidenceInput {
   sessionId?: string;
+  taskId?: string;
   type: EvidenceType;
   title: string;
   status: EvidenceStatus;
@@ -281,6 +285,21 @@ export class SessionRAGStore {
       CREATE INDEX IF NOT EXISTS idx_conv_chat_time ON conversation_history(chatId, timestamp);
     `);
 
+    // Schema migration: add taskId column to all session tables
+    const tables = [
+      'session_decisions',
+      'session_constraints',
+      'session_goals',
+      'session_evidence',
+    ];
+    for (const table of tables) {
+      try {
+        this.db.exec(`ALTER TABLE ${table} ADD COLUMN taskId TEXT`);
+      } catch {
+        // Column already exists — idempotent
+      }
+    }
+
     this.initializeFTS5();
   }
 
@@ -383,12 +402,13 @@ export class SessionRAGStore {
   public addDecision(input: DecisionInput): number {
     const timestamp = new Date().toISOString();
     const stmt = this.db.prepare(`
-      INSERT INTO session_decisions (sessionId, title, description, rationale, alternatives, impact, status, priority, relatedFiles, tags, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO session_decisions (sessionId, taskId, title, description, rationale, alternatives, impact, status, priority, relatedFiles, tags, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
       input.sessionId || null,
+      input.taskId || null,
       input.title,
       input.description || null,
       input.rationale || null,
@@ -499,12 +519,13 @@ export class SessionRAGStore {
   public addConstraint(input: ConstraintInput): number {
     const timestamp = new Date().toISOString();
     const stmt = this.db.prepare(`
-      INSERT INTO session_constraints (sessionId, title, description, type, severity, scope, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO session_constraints (sessionId, taskId, title, description, type, severity, scope, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
       input.sessionId || null,
+      input.taskId || null,
       input.title,
       input.description || null,
       input.type,
@@ -604,12 +625,13 @@ export class SessionRAGStore {
   public addGoal(input: GoalInput): number {
     const timestamp = new Date().toISOString();
     const stmt = this.db.prepare(`
-      INSERT INTO session_goals (sessionId, parentId, title, description, status, priority, progressPercent, successCriteria, timestamp, completedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO session_goals (sessionId, taskId, parentId, title, description, status, priority, progressPercent, successCriteria, timestamp, completedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
       input.sessionId || null,
+      input.taskId || null,
       input.parentId || null,
       input.title,
       input.description || null,
@@ -752,12 +774,13 @@ export class SessionRAGStore {
   public addEvidence(input: EvidenceInput): number {
     const timestamp = new Date().toISOString();
     const stmt = this.db.prepare(`
-      INSERT INTO session_evidence (sessionId, type, title, status, details, metrics, relatedGoals, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO session_evidence (sessionId, taskId, type, title, status, details, metrics, relatedGoals, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
       input.sessionId || null,
+      input.taskId || null,
       input.type,
       input.title,
       input.status,
@@ -842,6 +865,26 @@ export class SessionRAGStore {
       relatedGoals: row.relatedGoals ? JSON.parse(row.relatedGoals) : [],
       timestamp: row.timestamp,
     };
+  }
+
+  // ==========================================================================
+  // Task-scoped cleanup
+  // ==========================================================================
+
+  public deleteByTaskId(taskId: string): void {
+    const tables = [
+      'session_decisions',
+      'session_constraints',
+      'session_goals',
+      'session_evidence',
+    ];
+    for (const table of tables) {
+      try {
+        this.db.prepare(`DELETE FROM ${table} WHERE taskId = ?`).run(taskId);
+      } catch {
+        // Column may not exist yet — idempotent
+      }
+    }
   }
 
   // ==========================================================================
