@@ -27,6 +27,7 @@ import {
   resolveLocalSkills,
   copySkillsFiltered,
   AVAILABLE_CAPABILITIES,
+  STACK_TO_LANGUAGE_FILE,
 } from '../postinstall.js';
 import { Provisioner } from '../setup/Provisioner.js';
 
@@ -94,6 +95,43 @@ export function installLocalSkills(
 }
 
 /**
+ * 감지된 스택에 해당하는 언어 룰 파일을 프로젝트 로컬에 설치
+ * 전역 ~/.claude/vibe/languages/ → 프로젝트 .claude/vibe/languages/
+ */
+export function installLanguageRules(
+  projectRoot: string,
+  stackTypes: string[],
+): void {
+  const globalLanguagesDir = path.join(os.homedir(), '.claude', 'vibe', 'languages');
+  if (!fs.existsSync(globalLanguagesDir)) return;
+
+  // 감지된 스택에 해당하는 언어 파일만 선별
+  const languageFiles = new Set<string>();
+  for (const stack of stackTypes) {
+    const file = STACK_TO_LANGUAGE_FILE[stack];
+    if (file) languageFiles.add(file);
+  }
+  if (languageFiles.size === 0) return;
+
+  const localLanguagesDir = path.join(projectRoot, '.claude', 'vibe', 'languages');
+  ensureDir(localLanguagesDir);
+
+  const installed: string[] = [];
+  for (const file of languageFiles) {
+    const src = path.join(globalLanguagesDir, file);
+    const dest = path.join(localLanguagesDir, file);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, dest);
+      installed.push(file);
+    }
+  }
+
+  if (installed.length > 0) {
+    log(`   📝 Language rules installed: ${installed.join(', ')}\n`);
+  }
+}
+
+/**
  * init 명령어 실행
  */
 export async function init(projectName?: string): Promise<void> {
@@ -147,7 +185,7 @@ export async function init(projectName?: string): Promise<void> {
     // Capability 인터랙티브 선택 (자동 감지 결과가 없을 때만)
     if (stackDetails.capabilities.length === 0 && !process.env.CI && AVAILABLE_CAPABILITIES.length > 0) {
       const selected = await p.multiselect({
-        message: 'Select project capabilities (Space to toggle, Enter to confirm):',
+        message: 'Select project capabilities (Space to toggle, Enter to skip/confirm):',
         options: AVAILABLE_CAPABILITIES.map(c => ({
           value: c.value,
           label: c.label,
@@ -181,6 +219,9 @@ export async function init(projectName?: string): Promise<void> {
 
     // Cursor IDE 룰 설치 (프로젝트 레벨) - rules-template 생성 후 현재 스택에 해당하는 룰만 복사
     installCursorRules(projectRoot, stackTypes);
+
+    // 감지된 스택 언어 룰 설치 (.claude/vibe/languages/)
+    installLanguageRules(projectRoot, stackTypes);
 
     // 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)
     installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);

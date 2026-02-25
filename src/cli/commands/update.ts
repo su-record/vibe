@@ -28,7 +28,7 @@ import {
   installProjectHooks,
   installCursorRules,
 } from '../setup.js';
-import { updateCursorGlobalAssets, installLocalSkills } from './init.js';
+import { updateCursorGlobalAssets, installLocalSkills, installLanguageRules } from './init.js';
 import { Provisioner } from '../setup/Provisioner.js';
 
 /**
@@ -115,6 +115,9 @@ export function update(options: CliOptions = { silent: false }): void {
 
     // Cursor IDE 룰 설치/업데이트 (프로젝트 레벨) - rules-template 생성 후 현재 스택에 해당하는 룰만 복사
     installCursorRules(projectRoot, stackTypes);
+
+    // 감지된 스택 언어 룰 설치/업데이트 (.claude/vibe/languages/)
+    installLanguageRules(projectRoot, stackTypes);
 
     // 스택 + capability 기반 로컬 스킬 업데이트 (.claude/skills/)
     installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
