@@ -16,6 +16,7 @@ export const GLOBAL_SKILLS: ReadonlyArray<string> = [
   'context7-usage',
   'techdebt',
   'characterization-test',
+  'agents-md',
 ];
 
 /** 스택 → 로컬 스킬 매핑 (vibe init/update → .claude/skills/) */
