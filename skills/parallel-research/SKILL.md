@@ -78,3 +78,10 @@ Reference during implementation
 - Research runs **after requirements confirmed**
 - Split overly broad topics
 - Research results are references, not absolute truth
+
+## Done Criteria (K4)
+
+- [ ] All 4 research agents returned results (or documented why not)
+- [ ] Results synthesized into actionable recommendations
+- [ ] Key findings reflected in SPEC Context section or implementation notes
+- [ ] Conflicting recommendations resolved with reasoning

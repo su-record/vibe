@@ -5,94 +5,53 @@ triggers: [commit, push, PR, pull request, merge]
 priority: 70
 ---
 
-# Commit-Push-PR — From Commit to PR in One Step
-
-Commit current changes, push to the remote branch, and create a GitHub PR.
+# Commit-Push-PR
 
 ## Pre-checks
 
 ```bash
-# Check current state
-git status
-git diff --stat
-git log --oneline -5
+git status            # What's changed
+git diff --stat       # Review changes
+git log --oneline -5  # Recent commits for style
 ```
 
 ## Workflow
 
 1. Review and stage changed files
-2. Write commit message (Conventional Commits format)
+2. Write commit message (Conventional Commits)
 3. Push to remote branch
 4. Create PR with `gh pr create`
-5. Write PR title/body
 
 ## Commit Message Format
 
 ```
 [type] title (under 50 chars)
 
-body (optional, 72 char line wrap)
-- What was changed
-- Why it was changed
+body (optional, 72 char wrap)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-### Type List
+Types: `feat` | `fix` | `docs` | `style` | `refactor` | `test` | `chore` | `perf`
 
-| Type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation changes |
-| `style` | Formatting (no code changes) |
-| `refactor` | Refactoring |
-| `test` | Add/modify tests |
-| `chore` | Build, config changes |
-| `perf` | Performance improvement |
-
-## Co-Authored-By Rule
-
-Always add for AI-generated/modified code:
-
-```
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-## Security File Check
-
-Always verify before committing:
+## Security Checks (CRITICAL)
 
 ```bash
-# Detect sensitive files
+# Before committing — detect sensitive files
 git diff --cached --name-only | grep -E '\.(env|pem|key)$|credentials|secret'
 ```
 
-### Never Commit These Files
+**Never commit:** `.env`, `.env.local`, `*.pem`, `*.key`, `credentials.json`, `service-account.json`
 
-| File Pattern | Reason |
-|-------------|--------|
-| `.env`, `.env.local` | Environment variables (contains secrets) |
-| `*.pem`, `*.key` | Certificates/keys |
-| `credentials.json` | Authentication info |
-| `service-account.json` | Service account |
+> If sensitive files are staged, **immediately warn and abort**.
 
-> If any of these files are staged, immediately warn and abort the commit.
-
-## Branch Protection Rules
-
-### main/master Branch Protection
-
-```bash
-# Check current branch
-git branch --show-current
-```
+## Branch Protection
 
 - **No direct commits/pushes to main/master**
-- If on main/master: recommend creating a new branch and abort
-- **Never** `--force` push (main/master)
+- If on main: create a new branch first
+- **Never** `--force` push to main/master
 
-## PR Creation Format
+## PR Format
 
 ```bash
 gh pr create \
@@ -107,12 +66,10 @@ gh pr create \
 - Test methods and results"
 ```
 
-## git-workflow Rule Integration
+## Done Criteria (K4)
 
-This skill follows rules from `.claude/vibe/rules/standards/git-workflow.md`:
-
-- Conventional Commits format
-- PR checklist compliance
-- Prohibited actions (force push, .env commits, etc.)
-
-> **VIBE tool integration**: `/vibe.review`'s git-history agent automatically validates commit quality
+- [ ] No sensitive files in commit
+- [ ] Commit message follows Conventional Commits
+- [ ] Co-Authored-By line included
+- [ ] Not pushing directly to main/master
+- [ ] PR created with clear description

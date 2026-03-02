@@ -11,6 +11,10 @@ priority: 65
 
 Lock existing behavior with snapshot/characterization tests before modifying code. This prevents regressions in legacy, complex, or unfamiliar codebases.
 
+## Pre-check (K1)
+
+> Are you modifying existing code with uncertain behavior? If the code is new (you just wrote it), well-tested, or trivially simple, skip characterization tests and write regular unit tests instead.
+
 ## When to Use
 
 | Scenario | Signal |

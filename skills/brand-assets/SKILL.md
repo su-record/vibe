@@ -136,3 +136,11 @@ public/
   android-chrome-512x512.png
   site.webmanifest
 ```
+
+## Done Criteria (K4)
+
+- [ ] All required sizes generated (16x16 through 512x512)
+- [ ] Icons work at small sizes (recognizable at 16x16)
+- [ ] No text/letters in icon (illegible at small sizes)
+- [ ] `site.webmanifest` updated with icon paths
+- [ ] Fallback generated if Gemini API unavailable

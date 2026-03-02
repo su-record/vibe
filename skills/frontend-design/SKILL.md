@@ -4,14 +4,19 @@ description: "Production-grade frontend with bold aesthetic direction for UI-foc
 triggers: [frontend, ui design, aesthetic, beautiful ui, design system, ui quality, visual design]
 priority: 70
 ---
+
 # Frontend Design Skill
 
 Create production-grade frontend with bold aesthetic direction.
 
+## Pre-check (K1)
+
+> Does this project need a custom design direction? If using an existing design system (shadcn/ui, Material UI, Ant Design) without customization, standard component docs suffice.
+
 ## When to Use
 
 - UI-focused projects requiring high visual quality
-- Design system implementation
+- Design system implementation from scratch
 - User-facing features where aesthetics matter
 
 ## Core Principles
@@ -49,24 +54,6 @@ Create production-grade frontend with bold aesthetic direction.
 - Stock photography without curation
 - Safe, corporate color palettes
 
-## Implementation Guidelines
-
-```typescript
-// Design token structure
-const tokens = {
-  colors: {
-    primary: { /* custom palette */ },
-    semantic: { /* success, error, warning */ },
-  },
-  typography: {
-    fontFamily: { /* display, body, mono */ },
-    scale: { /* modular scale */ },
-  },
-  spacing: { /* consistent rhythm */ },
-  motion: { /* duration, easing */ },
-};
-```
-
 ## Quality Checklist
 
 - [ ] Typography creates clear hierarchy
@@ -77,16 +64,10 @@ const tokens = {
 - [ ] Dark mode (if applicable) is intentional
 - [ ] Micro-interactions provide feedback
 
-## Integration with Vibe
+## Done Criteria (K4)
 
-Use with `/vibe.utils --ui` for preview:
-
-```bash
-/vibe.utils --ui "login form with bold typography and custom color scheme"
-```
-
-## Resources
-
-- [Refactoring UI](https://www.refactoringui.com/) - Design principles
-- [Motion Design](https://motion.dev/) - Animation library
-- [Radix Primitives](https://www.radix-ui.com/) - Accessible components
+- [ ] Design tokens defined (colors, typography, spacing, motion)
+- [ ] Visual hierarchy clear at all breakpoints
+- [ ] No default/uncustomized framework styles remain
+- [ ] All interactive states designed (hover, focus, active, disabled)
+- [ ] Accessibility verified (contrast, focus rings, motion preferences)

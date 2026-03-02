@@ -4,16 +4,16 @@ description: "Tool failure fallback strategies with circuit breaker. Auto-activa
 triggers: [API error, search failure, timeout, 429, 5xx, overloaded, fallback, circuit breaker]
 priority: 80
 ---
+
 # Tool Fallback Strategies
 
-Guide for finding alternatives when tools fail to continue work.
+## Pre-check (K1)
 
-## Circuit Breaker Pattern
+> Did a tool just fail? If the error is a simple typo or wrong path, fix the input first. This skill is for persistent failures (429, 5xx, timeouts).
 
-Track tool failures and temporarily disable unreliable tools:
+## Circuit Breaker State Machine
 
 ```
-Tool State Machine:
 ┌─────────┐   3 failures   ┌─────────┐   30s cooldown   ┌─────────────┐
 │ CLOSED  │ ─────────────→ │  OPEN   │ ───────────────→ │ HALF-OPEN   │
 │ (normal)│                │ (block) │                  │ (test 1 req)│
@@ -25,169 +25,79 @@ Tool State Machine:
 
 | State | Behavior |
 |-------|----------|
-| **CLOSED** | Normal operation, count failures |
-| **OPEN** | Block all requests, use alternative immediately |
-| **HALF-OPEN** | Allow 1 test request after cooldown |
+| CLOSED | Normal operation, count failures |
+| OPEN | Skip tool immediately, use alternative |
+| HALF-OPEN | Allow 1 test request after cooldown |
 
-**Per-tool tracking:**
-```
-GPT hook: failures=2, state=CLOSED
-Gemini hook: failures=0, state=CLOSED
-WebSearch: failures=3, state=OPEN (blocked until 14:32:00)
-context7: failures=1, state=CLOSED
-```
+## Decision Trees
 
-## When Web Search Fails
-
-| Alternative | Method |
-|-------------|--------|
-| context7 plugin | `resolve-library-id` → `get-library-docs` |
-| VibeOrchestrator | `smartWebSearch()` - auto fallback chain |
-| Cached knowledge | Use Claude's built-in knowledge |
+### Web Search Fails
 
 ```
 Web Search fails (429, 529, timeout)
-    ↓
-Check circuit breaker state
-    ↓
-If OPEN → Skip to alternative immediately
-    ↓
-If CLOSED → Try context7 for library docs
-    ↓
-If still fails: VibeOrchestrator.smartWebSearch()
-    ↓
-Last resort: Claude's built-in knowledge
+  → Check circuit state
+  → OPEN? → Skip to alternative immediately
+  → CLOSED? → Try context7 for library docs
+  → Still fails? → Claude's built-in knowledge (last resort)
 ```
 
-## API Error Responses
-
-| Error | Cause | Response | Circuit Breaker |
-|-------|-------|----------|-----------------|
-| 429 | Rate Limit | Exponential backoff | +1 failure count |
-| 5xx | Server Error | Switch to alternative | +1 failure count |
-| 529 | Overloaded | Wait and retry | +1 failure count |
-| Timeout | Network | Split request or retry | +1 failure count |
-| 401/403 | Auth Error | Re-auth or alternative | Don't count (auth issue) |
-
-## When File/Code Not Found
-
-```
-Glob fails
-    ↓
-Expand pattern: *.ts → **/*.ts → **/*
-    ↓
-Use Grep for content-based search
-    ↓
-Check git log for history
-```
-
-## When External LLM Fails
-
-**Production (VibeOrchestrator):**
+### External LLM Fails
 
 ```
 VibeOrchestrator.smartRoute({ type, prompt })
-    ↓
-LLM priority based on task type:
-  - architecture/debugging: GPT → Gemini → Claude
-  - uiux/code-analysis: Gemini → GPT → Claude
-  - code-gen: Claude only
-    ↓
-Auto fallback on primary LLM failure
-    ↓
-Claude handles directly when all fail
+  → Primary LLM fails (429, 401, 5xx)
+  → Skip to secondary LLM (no retry on rate limit)
+  → Secondary fails → Claude handles directly
 ```
 
-**Test/Debug Hooks (development only):**
+### File/Code Not Found
 
 ```
-gpt- or gpt. [question] fails
-    ↓
-Check circuit: If OPEN, skip to next
-    ↓
-Try gemini- or gemini. [question] (similar capability)
-    ↓
-Try context7 (for docs)
-    ↓
-Claude solves alone
+Glob fails → Expand pattern: *.ts → **/*.ts → **/*
+  → Use Grep for content-based search
+  → Check git log for file history
 ```
 
-> **Note:** `test-gpt`, `test-gemini` prefixes are for hook connectivity testing only.
-> For actual work, use VIBE commands (`/vibe.run`, `/vibe.spec`, etc.) and
-> VibeOrchestrator will automatically select the appropriate LLM.
+## Error Response Actions
 
-## Retry Strategy with Circuit Breaker
+| Error | Action | Circuit Impact |
+|-------|--------|---------------|
+| 429 Rate Limit | Skip to next alternative (don't retry) | +1 failure |
+| 5xx Server Error | Retry with backoff, then switch | +1 failure |
+| 529 Overloaded | Wait and retry once | +1 failure |
+| Timeout | Split request or retry | +1 failure |
+| 401/403 Auth | Re-auth or switch alternative | Don't count |
 
-```
-Request to tool
-    ↓
-Check circuit state
-    ↓
-┌─ OPEN? ──→ Use alternative immediately (no retry)
-│
-└─ CLOSED/HALF-OPEN? ──→ Try request
-                              ↓
-                         Success? ──→ Reset failure count
-                              ↓ No
-                         Retry with backoff:
-                           retry(1): wait 2s
-                           retry(2): wait 4s
-                           retry(3): wait 8s
-                              ↓
-                         All failed? ──→ +1 failure, check threshold
-                              ↓
-                         failures >= 3? ──→ OPEN circuit for 30s
-                              ↓
-                         Use alternative
-```
-
-## VibeOrchestrator Smart Routing
-
-VIBE commands (`/vibe.spec`, `/vibe.run`, etc.) use VibeOrchestrator internally.
-
-### LLM Priority by Task Type
-
-| Task Type       | Primary | Secondary | Fallback |
-|-----------------|---------|-----------|----------|
-| `architecture`  | GPT     | Gemini    | Claude   |
-| `debugging`     | GPT     | Gemini    | Claude   |
-| `uiux`          | Gemini  | GPT       | Claude   |
-| `code-analysis` | Gemini  | GPT       | Claude   |
-| `web-search`    | GPT     | Gemini    | Claude   |
-| `code-gen`      | Claude  | -         | -        |
-| `general`       | Claude  | -         | -        |
-
-### Auto Fallback Logic
+## Retry Strategy
 
 ```
-smartRoute({ type: 'architecture', prompt })
-    ↓
-1. Try GPT (max 2 retries)
-    ↓ fails (429, 401, 5xx)
-2. Try Gemini (max 2 retries)
-    ↓ fails
-3. Claude handles directly (fallback message)
+Request → Check circuit
+  ├─ OPEN → Use alternative immediately
+  └─ CLOSED/HALF-OPEN → Try request
+       ├─ Success → Reset failure count
+       └─ Fail → Backoff (2s → 4s → 8s)
+            └─ All retries failed → +1 failure
+                 └─ failures ≥ 3 → OPEN circuit (30s)
+                      └─ Use alternative
 ```
 
-### Retry vs Immediate Switch
+## LLM Priority by Task Type
 
-| Error            | Action                 |
-|------------------|------------------------|
-| 429 Rate Limit   | Skip to next LLM       |
-| 401/403 Auth     | Skip to next LLM       |
-| Network Error    | Retry with backoff     |
-| 5xx Server Error | Retry then switch      |
-
-### Availability Cache
-
-- 5-minute TTL for LLM status cache
-- Auto-disable after 3 consecutive failures
-- Failed LLMs are skipped in subsequent requests
+| Task Type | Primary → Secondary → Fallback |
+|-----------|-------------------------------|
+| architecture, debugging | GPT → Gemini → Claude |
+| uiux, code-analysis | Gemini → GPT → Claude |
+| code-gen, general | Claude only |
 
 ## Principles
 
-1. **Never stop** - Always find an alternative
-2. **Before asking user** - Try alternatives first
-3. **Track failures** - Open circuit after 3 consecutive failures
-4. **Auto-recover** - Test after 30s cooldown
-5. **Fail fast** - Skip blocked tools immediately
+1. **Never stop** — always find an alternative
+2. **Try before asking** — exhaust alternatives before asking user
+3. **Fail fast** — skip OPEN-circuit tools immediately
+4. **Auto-recover** — test after 30s cooldown
+
+## Done Criteria (K4)
+
+- [ ] Work continued despite tool failure
+- [ ] Alternative tool/method used successfully
+- [ ] No unnecessary retries on rate-limited tools

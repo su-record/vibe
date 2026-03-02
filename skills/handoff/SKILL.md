@@ -99,3 +99,11 @@ Or use alongside VIBE auto-restore:
 ```
 
 In this case, saved decisions are also restored via `core_recall_memory`.
+
+## Done Criteria (K4)
+
+- [ ] HANDOFF.md created with all sections filled
+- [ ] Completed/in-progress/next tasks accurately listed
+- [ ] Related files section includes all modified files
+- [ ] Session context saved via `core_auto_save_context`
+- [ ] Key decisions saved via `core_save_memory`
