@@ -1,0 +1,73 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/session-start.js"
+      }
+    ],
+    "BeforeTool": [
+      {
+        "tool_name": "shell",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Bash"
+      },
+      {
+        "tool_name": "shell",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Bash"
+      },
+      {
+        "tool_name": "edit",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Edit"
+      },
+      {
+        "tool_name": "edit",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Edit"
+      },
+      {
+        "tool_name": "write_file",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Write"
+      },
+      {
+        "tool_name": "write_file",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Write"
+      }
+    ],
+    "AfterTool": [
+      {
+        "tool_name": "edit",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/code-check.js"
+      },
+      {
+        "tool_name": "write_file",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/code-check.js"
+      },
+      {
+        "tool_name": "edit",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/post-edit.js"
+      }
+    ],
+    "BeforeAgent": [
+      {
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/prompt-dispatcher.js"
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "context_window_80",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/context-save.js medium"
+      },
+      {
+        "matcher": "context_window_90",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/context-save.js high"
+      },
+      {
+        "matcher": "context_window_95",
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/context-save.js critical"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "command": "VIBE_CLI=gemini node {{VIBE_PATH}}/hooks/scripts/stop-notify.js"
+      }
+    ]
+  }
+}

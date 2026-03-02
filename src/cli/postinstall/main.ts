@@ -22,6 +22,11 @@ import { generateCursorRules } from './cursor-rules.js';
 import { installCursorAgents } from './cursor-agents.js';
 import { installClaudeAgents } from './claude-agents.js';
 import { generateCursorSkills } from './cursor-skills.js';
+import { installCodexAgents } from './codex-agents.js';
+import { generateCodexAgentsMd } from './codex-instruction.js';
+import { installGeminiAgents } from './gemini-agents.js';
+import { generateGeminiMd } from './gemini-instruction.js';
+import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { getClaudeCodeStatus, formatClaudeCodeStatus } from '../auth.js';
 import { migrateLegacyFiles } from '../../infra/lib/config/GlobalConfigManager.js';
 
@@ -180,7 +185,35 @@ export function main(): void {
     const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
     generateCursorSkills(cursorSkillsDir);
 
-    // 10. Claude Code CLI 존재 확인 (인증은 vibe init에서)
+    // 10. Codex CLI 지원
+    try {
+      const codexStatus = detectCodexCli();
+      if (codexStatus.installed) {
+        const codexAgentsDir = path.join(codexStatus.configDir, 'agents');
+        installCodexAgents(agentsSource, codexAgentsDir);
+        copySkillsFiltered(skillsSource, path.join(codexStatus.configDir, 'skills'), GLOBAL_SKILLS);
+        generateCodexAgentsMd(codexStatus.configDir, packageRoot);
+        console.log(`✅ codex agents/skills installed: ${codexStatus.configDir}`);
+      }
+    } catch {
+      // Non-critical — don't fail postinstall
+    }
+
+    // 11. Gemini CLI 지원
+    try {
+      const geminiStatus = detectGeminiCli();
+      if (geminiStatus.installed) {
+        const geminiAgentsDir = path.join(geminiStatus.configDir, 'agents');
+        installGeminiAgents(agentsSource, geminiAgentsDir);
+        copySkillsFiltered(skillsSource, path.join(geminiStatus.configDir, 'skills'), GLOBAL_SKILLS);
+        generateGeminiMd(geminiStatus.configDir, packageRoot);
+        console.log(`✅ gemini agents/skills installed: ${geminiStatus.configDir}`);
+      }
+    } catch {
+      // Non-critical — don't fail postinstall
+    }
+
+    // 12. Claude Code CLI 존재 확인 (인증은 vibe init에서)
     const claudeStatus = getClaudeCodeStatus(false);
     const claudeStatusMsg = formatClaudeCodeStatus(claudeStatus);
 

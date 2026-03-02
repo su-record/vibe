@@ -20,4 +20,8 @@ export { generateCursorRules } from './cursor-rules.js';
 export { installCursorAgents } from './cursor-agents.js';
 export { installClaudeAgents } from './claude-agents.js';
 export { generateCursorSkills } from './cursor-skills.js';
+export { installCodexAgents } from './codex-agents.js';
+export { generateCodexAgentsMd } from './codex-instruction.js';
+export { installGeminiAgents } from './gemini-agents.js';
+export { generateGeminiMd } from './gemini-instruction.js';
 export { main } from './main.js';

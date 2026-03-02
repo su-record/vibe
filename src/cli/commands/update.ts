@@ -27,8 +27,18 @@ import {
   cleanupLegacyMcp,
   installProjectHooks,
   installCursorRules,
+  updateCodexAgentsMd,
+  updateGeminiMd,
+  installGeminiHooks,
 } from '../setup.js';
-import { updateCursorGlobalAssets, installLocalSkills, installLanguageRules } from './init.js';
+import {
+  updateCursorGlobalAssets,
+  updateCodexGlobalAssets,
+  updateGeminiGlobalAssets,
+  installLocalSkills,
+  installLanguageRules,
+} from './init.js';
+import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 
 /**
@@ -118,6 +128,23 @@ export function update(options: CliOptions = { silent: false }): void {
 
     // 감지된 스택 언어 룰 설치/업데이트 (.claude/vibe/languages/)
     installLanguageRules(projectRoot, stackTypes);
+
+    // Codex CLI 글로벌 에셋 업데이트
+    updateCodexGlobalAssets(stackTypes, options);
+
+    // Gemini CLI 글로벌 에셋 업데이트
+    updateGeminiGlobalAssets(stackTypes, options);
+
+    // Codex/Gemini 프로젝트 레벨 설정
+    const codexStatus = detectCodexCli();
+    if (codexStatus.installed) {
+      updateCodexAgentsMd(projectRoot, detectedStacks);
+    }
+    const geminiStatus = detectGeminiCli();
+    if (geminiStatus.installed) {
+      updateGeminiMd(projectRoot, detectedStacks);
+      installGeminiHooks(projectRoot);
+    }
 
     // 스택 + capability 기반 로컬 스킬 업데이트 (.claude/skills/)
     installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);

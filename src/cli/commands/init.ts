@@ -18,17 +18,26 @@ import {
   updateConfig,
   installProjectHooks,
   installCursorRules,
+  updateCodexAgentsMd,
+  updateGeminiMd,
+  installGeminiHooks,
 } from '../setup.js';
 import * as p from '@clack/prompts';
 import {
   installCursorAgents,
   generateCursorRules,
   generateCursorSkills,
+  installCodexAgents,
+  generateCodexAgentsMd,
+  installGeminiAgents,
+  generateGeminiMd,
   resolveLocalSkills,
   copySkillsFiltered,
   AVAILABLE_CAPABILITIES,
   STACK_TO_LANGUAGE_FILE,
+  GLOBAL_SKILLS,
 } from '../postinstall.js';
+import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 
 /**
@@ -68,6 +77,78 @@ export function updateCursorGlobalAssets(
     // Non-critical - don't fail init/update
     if (!options.silent) {
       console.warn(`   ⚠️ Cursor assets update warning: ${(err as Error).message}`);
+    }
+  }
+}
+
+/**
+ * Update global Codex CLI assets (agents, skills, AGENTS.md)
+ * Called by both init and update
+ */
+export function updateCodexGlobalAssets(
+  detectedStacks: string[] = [],
+  options: CliOptions = { silent: false }
+): void {
+  try {
+    const codexStatus = detectCodexCli();
+    if (!codexStatus.installed) return;
+
+    const __dir = path.dirname(new URL(import.meta.url).pathname);
+    const packageRoot = path.resolve(__dir, '..', '..', '..');
+    const agentsSource = path.join(packageRoot, 'agents');
+    const skillsSource = path.join(packageRoot, 'skills');
+
+    // Codex agents (전체)
+    if (fs.existsSync(agentsSource)) {
+      installCodexAgents(agentsSource, path.join(codexStatus.configDir, 'agents'));
+    }
+
+    // Codex skills (전역 공통)
+    if (fs.existsSync(skillsSource)) {
+      copySkillsFiltered(skillsSource, path.join(codexStatus.configDir, 'skills'), GLOBAL_SKILLS);
+    }
+
+    // Codex AGENTS.md (전역)
+    generateCodexAgentsMd(codexStatus.configDir, packageRoot);
+  } catch (err) {
+    if (!options.silent) {
+      console.warn(`   ⚠️ Codex assets update warning: ${(err as Error).message}`);
+    }
+  }
+}
+
+/**
+ * Update global Gemini CLI assets (agents, skills, GEMINI.md)
+ * Called by both init and update
+ */
+export function updateGeminiGlobalAssets(
+  detectedStacks: string[] = [],
+  options: CliOptions = { silent: false }
+): void {
+  try {
+    const geminiStatus = detectGeminiCli();
+    if (!geminiStatus.installed) return;
+
+    const __dir = path.dirname(new URL(import.meta.url).pathname);
+    const packageRoot = path.resolve(__dir, '..', '..', '..');
+    const agentsSource = path.join(packageRoot, 'agents');
+    const skillsSource = path.join(packageRoot, 'skills');
+
+    // Gemini agents (전체)
+    if (fs.existsSync(agentsSource)) {
+      installGeminiAgents(agentsSource, path.join(geminiStatus.configDir, 'agents'));
+    }
+
+    // Gemini skills (전역 공통)
+    if (fs.existsSync(skillsSource)) {
+      copySkillsFiltered(skillsSource, path.join(geminiStatus.configDir, 'skills'), GLOBAL_SKILLS);
+    }
+
+    // Gemini GEMINI.md (전역)
+    generateGeminiMd(geminiStatus.configDir, packageRoot);
+  } catch (err) {
+    if (!options.silent) {
+      console.warn(`   ⚠️ Gemini assets update warning: ${(err as Error).message}`);
     }
   }
 }
@@ -222,6 +303,23 @@ export async function init(projectName?: string): Promise<void> {
 
     // 감지된 스택 언어 룰 설치 (.claude/vibe/languages/)
     installLanguageRules(projectRoot, stackTypes);
+
+    // Codex CLI 프로젝트 설정
+    const codexStatus = detectCodexCli();
+    if (codexStatus.installed) {
+      updateCodexGlobalAssets(stackTypes);
+      updateCodexAgentsMd(projectRoot, detectedStacks);
+      log(`   📝 AGENTS.md generated (Codex)\n`);
+    }
+
+    // Gemini CLI 프로젝트 설정
+    const geminiStatus = detectGeminiCli();
+    if (geminiStatus.installed) {
+      updateGeminiGlobalAssets(stackTypes);
+      updateGeminiMd(projectRoot, detectedStacks);
+      installGeminiHooks(projectRoot);
+      log(`   📝 GEMINI.md + hooks generated (Gemini)\n`);
+    }
 
     // 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)
     installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);

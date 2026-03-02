@@ -19,7 +19,10 @@ export {
   installProjectHooks,
   updateGitignore,
   updateConfig,
-  installCursorRules
+  installCursorRules,
+  updateCodexAgentsMd,
+  updateGeminiMd,
+  installGeminiHooks,
 } from './setup/ProjectSetup.js';
 
 export {

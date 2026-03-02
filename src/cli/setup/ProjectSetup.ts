@@ -251,6 +251,12 @@ export function updateGitignore(projectRoot: string): void {
     modified = true;
   }
 
+  // .gemini/settings.json 추가 (Gemini CLI hooks - 개인 설정)
+  if (!gitignore.includes('.gemini/settings.json')) {
+    gitignore = gitignore.trimEnd() + '\n\n# Gemini CLI hooks (personal)\n.gemini/settings.json\n';
+    modified = true;
+  }
+
   // 레거시 mcp 폴더 제외 제거
   if (gitignore.includes('.claude/vibe/mcp/')) {
     gitignore = gitignore.replace(/# core MCP\n\.claude\/vibe\/mcp\/\n?/g, '');
@@ -440,5 +446,172 @@ export function installCursorRules(projectRoot: string, detectedStacks: string[]
     if (updated > 0) parts.push(`${updated} updated`);
     if (removed > 0) parts.push(`${removed} removed`);
     console.log(`   📏 Cursor rules: ${parts.join(', ')} in .cursor/rules/`);
+  }
+}
+
+// ─────────── Codex / Gemini 프로젝트 레벨 설정 ───────────
+
+const VIBE_START = '<!-- VIBE:START -->';
+const VIBE_END_TAG = '<!-- VIBE:END -->';
+
+/**
+ * CLAUDE.md에서 VIBE 섹션 추출 (CLI-neutral 공통 내용)
+ */
+function getVibeInstructionContent(packageRoot: string): string {
+  const claudeMdPath = path.join(packageRoot, 'CLAUDE.md');
+  if (!fs.existsSync(claudeMdPath)) return '';
+
+  const content = fs.readFileSync(claudeMdPath, 'utf-8').replace(/\r\n/g, '\n');
+  const startIdx = content.indexOf('# VIBE');
+  const endIdx = content.indexOf('<!-- VIBE:END -->');
+
+  if (startIdx === -1) return '';
+  const endPos = endIdx !== -1 ? endIdx + '<!-- VIBE:END -->'.length : content.length;
+
+  return content.substring(startIdx, endPos);
+}
+
+/**
+ * VIBE 내용을 Codex 형식으로 변환
+ */
+function adaptInstructionForCodex(content: string): string {
+  let adapted = content;
+  adapted = adapted.replace(/\(Claude Code Exclusive\)/g, '');
+  adapted = adapted.replace(/Claude Code Exclusive/g, '');
+  adapted = adapted.replace(/## Hooks System\n[\s\S]*?(?=\n## )/g, '');
+  adapted = adapted.replace(/~\/\.claude\//g, '~/.codex/');
+  adapted = adapted.replace(/\.claude\//g, '.codex/');
+  adapted = adapted.replace(/Claude Code/g, 'Codex CLI');
+  return adapted.trim();
+}
+
+/**
+ * VIBE 내용을 Gemini 형식으로 변환
+ */
+function adaptInstructionForGemini(content: string): string {
+  let adapted = content;
+  adapted = adapted.replace(/\(Claude Code Exclusive\)/g, '');
+  adapted = adapted.replace(/Claude Code Exclusive/g, '');
+  adapted = adapted.replace(/PreToolUse/g, 'BeforeTool');
+  adapted = adapted.replace(/PostToolUse/g, 'AfterTool');
+  adapted = adapted.replace(/UserPromptSubmit/g, 'BeforeAgent');
+  adapted = adapted.replace(/\bStop\b/g, 'SessionEnd');
+  adapted = adapted.replace(/~\/\.claude\//g, '~/.gemini/');
+  adapted = adapted.replace(/\.claude\//g, '.gemini/');
+  adapted = adapted.replace(/Claude Code/g, 'Gemini CLI');
+  return adapted.trim();
+}
+
+/**
+ * 프로젝트 AGENTS.md 생성/업데이트 (Codex CLI용)
+ * updateClaudeMd() 패턴 재사용 — VIBE 마커 기반 교체
+ */
+export function updateCodexAgentsMd(projectRoot: string, detectedStacks: TechStack[]): void {
+  const packageRoot = path.resolve(__dirname, '..', '..', '..');
+  const vibeContent = getVibeInstructionContent(packageRoot);
+  if (!vibeContent) return;
+
+  const codexContent = adaptInstructionForCodex(vibeContent);
+  const agentsMdPath = path.join(projectRoot, 'AGENTS.md');
+
+  // 스택별 언어 규칙 추가
+  const languageRules = getLanguageRulesContent(detectedStacks);
+  const fullContent = languageRules
+    ? codexContent.replace('### Error Handling Required', languageRules + '\n\n### Error Handling Required')
+    : codexContent;
+
+  if (fs.existsSync(agentsMdPath)) {
+    const existing = fs.readFileSync(agentsMdPath, 'utf-8');
+    const startIdx = existing.indexOf(VIBE_START);
+    const endIdx = existing.indexOf(VIBE_END_TAG);
+
+    if (startIdx !== -1 && endIdx !== -1) {
+      // 마커 기반 교체
+      const before = existing.substring(0, startIdx).trimEnd();
+      const after = existing.substring(endIdx + VIBE_END_TAG.length).trimStart();
+      const wrapped = `${VIBE_START}\n${fullContent}\n${VIBE_END_TAG}`;
+      const newContent = (before ? before + '\n\n' : '') + wrapped + (after ? '\n\n' + after : '');
+      fs.writeFileSync(agentsMdPath, newContent);
+    } else if (!existing.includes('/vibe.spec')) {
+      // VIBE 섹션 없음 — 마커 포함하여 추가
+      const wrapped = `${VIBE_START}\n${fullContent}\n${VIBE_END_TAG}`;
+      fs.writeFileSync(agentsMdPath, existing.trimEnd() + '\n\n' + wrapped + '\n');
+    }
+  } else {
+    const wrapped = `${VIBE_START}\n${fullContent}\n${VIBE_END_TAG}`;
+    fs.writeFileSync(agentsMdPath, wrapped + '\n');
+  }
+}
+
+/**
+ * 프로젝트 GEMINI.md 생성/업데이트 (Gemini CLI용)
+ * updateClaudeMd() 패턴 재사용 — VIBE 마커 기반 교체
+ */
+export function updateGeminiMd(projectRoot: string, detectedStacks: TechStack[]): void {
+  const packageRoot = path.resolve(__dirname, '..', '..', '..');
+  const vibeContent = getVibeInstructionContent(packageRoot);
+  if (!vibeContent) return;
+
+  const geminiContent = adaptInstructionForGemini(vibeContent);
+  const geminiMdPath = path.join(projectRoot, 'GEMINI.md');
+
+  // 스택별 언어 규칙 추가
+  const languageRules = getLanguageRulesContent(detectedStacks);
+  const fullContent = languageRules
+    ? geminiContent.replace('### Error Handling Required', languageRules + '\n\n### Error Handling Required')
+    : geminiContent;
+
+  if (fs.existsSync(geminiMdPath)) {
+    const existing = fs.readFileSync(geminiMdPath, 'utf-8');
+    const startIdx = existing.indexOf(VIBE_START);
+    const endIdx = existing.indexOf(VIBE_END_TAG);
+
+    if (startIdx !== -1 && endIdx !== -1) {
+      const before = existing.substring(0, startIdx).trimEnd();
+      const after = existing.substring(endIdx + VIBE_END_TAG.length).trimStart();
+      const wrapped = `${VIBE_START}\n${fullContent}\n${VIBE_END_TAG}`;
+      const newContent = (before ? before + '\n\n' : '') + wrapped + (after ? '\n\n' + after : '');
+      fs.writeFileSync(geminiMdPath, newContent);
+    } else if (!existing.includes('/vibe.spec')) {
+      const wrapped = `${VIBE_START}\n${fullContent}\n${VIBE_END_TAG}`;
+      fs.writeFileSync(geminiMdPath, existing.trimEnd() + '\n\n' + wrapped + '\n');
+    }
+  } else {
+    const wrapped = `${VIBE_START}\n${fullContent}\n${VIBE_END_TAG}`;
+    fs.writeFileSync(geminiMdPath, wrapped + '\n');
+  }
+}
+
+/**
+ * Gemini CLI 프로젝트 훅 설치 (.gemini/settings.json)
+ * installProjectHooks() 패턴과 동일
+ */
+export function installGeminiHooks(projectRoot: string): void {
+  const geminiDir = path.join(projectRoot, '.gemini');
+  const settingsPath = path.join(geminiDir, 'settings.json');
+  const packageRoot = path.resolve(__dirname, '..', '..', '..');
+  const hooksTemplate = path.join(packageRoot, 'hooks', 'gemini-hooks.json');
+
+  if (!fs.existsSync(hooksTemplate)) return;
+
+  ensureDir(geminiDir);
+
+  // 템플릿 읽고 플레이스홀더 치환
+  let hooksContent = fs.readFileSync(hooksTemplate, 'utf-8');
+  const corePathForUrl = getCoreConfigDir().replace(/\\/g, '/');
+  hooksContent = hooksContent.replace(/\{\{VIBE_PATH\}\}/g, corePathForUrl);
+
+  const coreHooks = JSON.parse(hooksContent);
+
+  if (fs.existsSync(settingsPath)) {
+    try {
+      const existingSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      existingSettings.hooks = coreHooks.hooks;
+      fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
+    } catch {
+      fs.writeFileSync(settingsPath, JSON.stringify(coreHooks, null, 2));
+    }
+  } else {
+    fs.writeFileSync(settingsPath, JSON.stringify(coreHooks, null, 2));
   }
 }
