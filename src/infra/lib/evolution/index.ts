@@ -29,3 +29,20 @@ export { LifecycleManager } from './LifecycleManager.js';
 export { RollbackManager } from './RollbackManager.js';
 export { CircuitBreaker } from './CircuitBreaker.js';
 export type { CircuitState } from './CircuitBreaker.js';
+
+// Phase 5: Skill Testing & Evaluation
+export { SkillEvalRunner } from './SkillEvalRunner.js';
+export type {
+  SkillEvalCase, EvalAssertion, EvalRunResult, AssertionGrade,
+  EvalStatus, EvalSetInput,
+} from './SkillEvalRunner.js';
+export { SkillBenchmark } from './SkillBenchmark.js';
+export type {
+  BenchmarkResult, BenchmarkSummary, VariantStats, DeltaStats, EvalBreakdown,
+} from './SkillBenchmark.js';
+export { SkillClassifier } from './SkillClassifier.js';
+export type { SkillCategory, ClassificationResult } from './SkillClassifier.js';
+export { DescriptionOptimizer } from './DescriptionOptimizer.js';
+export type {
+  TriggerEvalQuery, TriggerEvalResult, DescriptionCandidate, OptimizationRun,
+} from './DescriptionOptimizer.js';
