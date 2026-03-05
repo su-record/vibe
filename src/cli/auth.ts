@@ -5,6 +5,7 @@
 import { execSync } from 'child_process';
 import { LLMAuthStatus, LLMStatusMap, ClaudeCodeStatus } from './types.js';
 import { readGlobalConfig } from '../infra/lib/config/GlobalConfigManager.js';
+import { detectCodexCli, detectGeminiCli } from './utils/cli-detector.js';
 
 /**
  * LLM 인증 상태 확인 (config.json 우선, process.env fallback)
@@ -99,25 +100,32 @@ export function formatClaudeCodeStatus(status: ClaudeCodeStatus): string {
 /**
  * LLM 상태 포맷팅
  */
-export function formatAuthMethods(auths: LLMAuthStatus[]): string {
-  if (auths.length === 0) return '✗ Not configured';
-  return auths.map(a => {
+export function formatAuthMethods(auths: LLMAuthStatus[], cliInstalled?: boolean): string {
+  const parts: string[] = [];
+  if (cliInstalled !== undefined) {
+    parts.push(cliInstalled ? '✓ CLI' : '✗ CLI');
+  }
+  parts.push(...auths.map(a => {
     const icon = a.valid ? '✓' : '⚠';
     const method = a.type === 'oauth' ? 'OAuth' : 'API Key';
     return `${icon} ${method}`;
-  }).join(', ');
+  }));
+  if (parts.length === 0) return '✗ Not configured';
+  return parts.join(', ');
 }
 
 export function formatLLMStatus(claudeStatus?: ClaudeCodeStatus): string {
   const status = getLLMAuthStatus();
+  const codexCli = detectCodexCli();
+  const geminiCli = detectGeminiCli();
   const lines: string[] = [];
 
   if (claudeStatus) {
     lines.push(`🧠 Claude Code: ${formatClaudeCodeStatus(claudeStatus)}`);
   }
   lines.push('🤖 External LLM:');
-  lines.push(`  GPT: ${formatAuthMethods(status.gpt)}`);
-  lines.push(`  Gemini: ${formatAuthMethods(status.gemini)}`);
+  lines.push(`  GPT: ${formatAuthMethods(status.gpt, codexCli.installed)}`);
+  lines.push(`  Gemini: ${formatAuthMethods(status.gemini, geminiCli.installed)}`);
 
   return lines.join('\n');
 }
