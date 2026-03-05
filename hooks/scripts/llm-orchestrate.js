@@ -331,7 +331,7 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
 
   if (providerName === 'gemini') {
     // 1차: gemini CLI (일반 쿼터 먼저 소진)
-    const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3-pro-preview';
+    const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview';
     try {
       return await callGeminiCli(prompt, sysPrompt, jsonMode, model);
     } catch (cliErr) {
@@ -504,7 +504,7 @@ async function main() {
     }
 
     const voiceArgs = parseVoiceArgs(process.argv.slice(4));
-    const voiceModel = voiceArgs.pro ? 'gemini-3-pro' : 'gemini-3-flash';
+    const voiceModel = voiceArgs.pro ? 'gemini-3.1-pro' : 'gemini-3-flash';
     const tmpFile = path.join(os.tmpdir(), `vibe-voice-${crypto.randomUUID()}.wav`);
 
     console.error(`[VOICE] Recording audio... (press Enter to stop, max ${voiceArgs.duration}s)`);

@@ -350,7 +350,7 @@ vibe help / version
     "telegram": { "botToken": "...", "allowedChatIds": ["..."] },
     "slack": { "botToken": "...", "appToken": "...", "allowedChannelIds": ["..."] }
   },
-  "models": { "gpt": "gpt-5.4", "gemini": "gemini-3-pro-preview" }
+  "models": { "gpt": "gpt-5.4", "gemini": "gemini-3.1-pro-preview" }
 }
 ```
 

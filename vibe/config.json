@@ -10,7 +10,7 @@
       "enabled": false,
       "authType": "oauth",
       "role": "exploration",
-      "description": "Gemini 3 Flash/Pro (Exploration, UI/UX)"
+      "description": "Gemini 3.1 Pro / 3 Flash (Exploration, UI/UX)"
     }
   },
   "stacks": [

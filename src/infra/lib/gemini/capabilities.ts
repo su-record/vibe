@@ -93,7 +93,7 @@ export async function analyzeUI(prompt: string): Promise<string> {
 // =============================================
 
 const IMAGE_MODELS = {
-  'nano-banana': 'gemini-2.5-flash-image',
+  'nano-banana': 'gemini-3-flash-preview',
   'nano-banana-pro': 'gemini-3-pro-image-preview',
 } as const;
 

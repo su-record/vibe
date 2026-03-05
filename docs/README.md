@@ -430,7 +430,7 @@ vibe version             # 버전
   },
   "models": {
     "gpt": "gpt-5.4",
-    "gemini": "gemini-3-pro-preview",
+    "gemini": "gemini-3.1-pro-preview",
     "geminiFlash": "gemini-3-flash-preview"
   }
 }
