@@ -13,7 +13,7 @@
  *   node llm-orchestrate.js gemini image "prompt" --output "./image.png" --size "1920x1080"
  *
  * Features:
- *   - CLI-based: GPT → codex exec, Gemini → gemini -p (CLI quota first → Antigravity API fallback)
+ *   - CLI-based: GPT → codex exec, Gemini → gemini -p
  *   - Exponential backoff retry (3 attempts)
  *   - Auto fallback: gpt ↔ gemini
  *   - Overload/rate-limit detection
@@ -231,18 +231,6 @@ function buildCliPrompt(prompt, sysPrompt, jsonMode) {
   return fullPrompt;
 }
 
-function isAntigravityAuth() {
-  const vibeConfig = readVibeConfig();
-  if (vibeConfig.credentials?.gemini?.oauthSource === 'antigravity') return true;
-  const oauthCredsPath = path.join(os.homedir(), '.gemini', 'oauth_creds.json');
-  try {
-    if (fs.existsSync(oauthCredsPath)) {
-      const creds = JSON.parse(fs.readFileSync(oauthCredsPath, 'utf8'));
-      if (creds.scope?.includes('cclog') || creds.scope?.includes('experimentsandconfigs')) return true;
-    }
-  } catch { /* not antigravity */ }
-  return false;
-}
 
 function callCodexCli(prompt, sysPrompt, jsonMode, model) {
   const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
@@ -330,20 +318,8 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   }
 
   if (providerName === 'gemini') {
-    // 1차: gemini CLI (일반 쿼터 먼저 소진)
     const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview';
-    try {
-      return await callGeminiCli(prompt, sysPrompt, jsonMode, model);
-    } catch (cliErr) {
-      // 2차: Antigravity API fallback (프리미엄 쿼터 아껴둠)
-      if (isAntigravityAuth()) {
-        console.error(`[GEMINI] CLI failed, falling back to Antigravity API...`);
-        const modulePath = `${LIB_URL}gemini-api.js`;
-        const module = await import(modulePath);
-        return await module.coreGeminiOrchestrate(prompt, sysPrompt, { jsonMode });
-      }
-      throw cliErr;
-    }
+    return await callGeminiCli(prompt, sysPrompt, jsonMode, model);
   }
 
   throw new Error(`Unknown provider: ${providerName}`);

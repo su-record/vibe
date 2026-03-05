@@ -1,20 +1,15 @@
 /**
- * Gemini / Antigravity 확장 기능
+ * Gemini 확장 기능
  *
  * - 웹 검색, UI 분석, 이미지 생성, 이미지 분석, 오디오 전사
- * - Endpoint: Production 우선 (Pro 계정 429 방지)
+ * - API Key → Google AI Studio
  */
 
 import path from 'path';
 import fs from 'fs';
 
-import { getAuthInfo, getApiKeyFromConfig } from './auth.js';
+import { getApiKeyFromConfig } from './auth.js';
 import { ask, getGeminiModels, DEFAULT_MODEL } from './chat.js';
-import {
-  ENDPOINT_FALLBACKS,
-  API_VERSION,
-  ANTIGRAVITY_HEADERS,
-} from './constants.js';
 import type {
   ImageGenerationOptions,
   ImageGenerationResult,
@@ -24,24 +19,7 @@ import type {
   AudioMimeType,
   GeminiApiResponse,
   MultimodalContent,
-  V1InternalRequest,
 } from './types.js';
-
-// =============================================
-// v1internal 요청 래핑
-// =============================================
-
-function wrapRequest(
-  body: unknown,
-  projectId: string,
-  modelId: string,
-): V1InternalRequest {
-  return {
-    project: projectId,
-    model: modelId,
-    request: body,
-  };
-}
 
 // =============================================
 // 웹 검색
@@ -222,73 +200,6 @@ async function analyzeImageWithApiKey(
   return result.candidates[0].content?.parts?.[0]?.text || '';
 }
 
-async function analyzeImageWithOAuth(
-  accessToken: string,
-  projectId: string | undefined,
-  contents: MultimodalContent[],
-  options: { model: string; maxTokens: number; temperature: number; systemPrompt?: string },
-): Promise<string> {
-  const modelInfo = getGeminiModels()[options.model] || getGeminiModels()[DEFAULT_MODEL];
-  const effectiveModelId = modelInfo.oauthId || modelInfo.id;
-
-  const innerRequest: Record<string, unknown> = {
-    contents,
-    generationConfig: {
-      maxOutputTokens: Math.min(options.maxTokens, modelInfo.maxTokens),
-      temperature: options.temperature,
-    },
-  };
-  if (options.systemPrompt) {
-    innerRequest.systemInstruction = { parts: [{ text: options.systemPrompt }] };
-  }
-
-  const requestBody = wrapRequest(innerRequest, projectId || '', effectiveModelId);
-
-  let lastError: Error | null = null;
-
-  for (const endpoint of ENDPOINT_FALLBACKS) {
-    const url = `${endpoint}/${API_VERSION}:generateContent`;
-    const headers: Record<string, string> = {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      ...ANTIGRAVITY_HEADERS,
-    };
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        if (response.status === 404) {
-          lastError = new Error(`API not found: ${errorText}`);
-          continue;
-        }
-        throw new Error(`Gemini API error (${response.status}): ${errorText}`);
-      }
-
-      const result = await response.json() as GeminiApiResponse;
-      const responseData = result.response || result;
-      if (!responseData.candidates || responseData.candidates.length === 0) {
-        throw new Error('Gemini API response is empty.');
-      }
-      return responseData.candidates[0].content?.parts?.[0]?.text || '';
-    } catch (error) {
-      lastError = error as Error;
-      const msg = (error as Error).message || '';
-      if ((error as Error).name === 'TypeError' || msg.includes('not found')) {
-        continue;
-      }
-      throw error;
-    }
-  }
-
-  throw lastError || new Error('All endpoints failed');
-}
-
 /**
  * Gemini 이미지 분석 (Multimodal)
  */
@@ -321,27 +232,12 @@ export async function analyzeImage(
     ],
   }];
 
-  const authInfo = await getAuthInfo();
   const apiKey = getApiKeyFromConfig();
-  const callOptions = { model, maxTokens, temperature, systemPrompt };
-
-  if (authInfo.type === 'apikey' && authInfo.apiKey) {
-    return analyzeImageWithApiKey(authInfo.apiKey, contents, callOptions);
+  if (!apiKey) {
+    throw new Error('Gemini API key required for image analysis.');
   }
 
-  if (authInfo.accessToken) {
-    try {
-      return await analyzeImageWithOAuth(authInfo.accessToken, authInfo.projectId, contents, callOptions);
-    } catch (error) {
-      const errorMsg = (error as Error).message;
-      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403') || errorMsg.includes('404'))) {
-        return analyzeImageWithApiKey(apiKey, contents, callOptions);
-      }
-      throw error;
-    }
-  }
-
-  throw new Error('Gemini credentials not found.');
+  return analyzeImageWithApiKey(apiKey, contents, { model, maxTokens, temperature, systemPrompt });
 }
 
 // =============================================
@@ -405,8 +301,11 @@ export async function transcribeAudio(
     ],
   }];
 
-  const authInfo = await getAuthInfo();
   const apiKey = getApiKeyFromConfig();
+  if (!apiKey) {
+    throw new Error('Gemini API key required for audio transcription.');
+  }
+
   const callOptions = {
     model,
     maxTokens,
@@ -414,26 +313,7 @@ export async function transcribeAudio(
     systemPrompt: systemPrompt || 'You are a precise audio transcription system. Output only the exact words spoken.',
   };
 
-  let transcription: string;
-
-  if (authInfo.type === 'apikey' && authInfo.apiKey) {
-    transcription = await analyzeImageWithApiKey(authInfo.apiKey, contents, callOptions);
-  } else if (authInfo.accessToken) {
-    try {
-      transcription = await analyzeImageWithOAuth(
-        authInfo.accessToken, authInfo.projectId, contents, callOptions,
-      );
-    } catch (error) {
-      const errorMsg = (error as Error).message;
-      if (apiKey && (errorMsg.includes('429') || errorMsg.includes('401') || errorMsg.includes('403') || errorMsg.includes('404'))) {
-        transcription = await analyzeImageWithApiKey(apiKey, contents, callOptions);
-      } else {
-        throw error;
-      }
-    }
-  } else {
-    throw new Error('Gemini credentials not found.');
-  }
+  const transcription = await analyzeImageWithApiKey(apiKey, contents, callOptions);
 
   return {
     transcription: transcription.trim(),
