@@ -35,7 +35,7 @@ export interface StreamChunk {
 }
 
 export interface AuthInfo {
-  type: 'oauth' | 'apikey';
+  type: 'codex-cli' | 'gemini-cli' | 'apikey';
   accessToken?: string;
   apiKey?: string;
   email?: string;

@@ -2,7 +2,7 @@
   "models": {
     "gpt": {
       "enabled": false,
-      "authType": "oauth",
+      "authType": "codex-cli",
       "role": "architecture",
       "description": "Architecture/Debugging/Coding (GPT 5.4)"
     },

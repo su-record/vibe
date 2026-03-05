@@ -3,7 +3,7 @@
  * 모델: text-embedding-3-large
  * 엔드포인트: api.openai.com/v1/embeddings
  *
- * 주의: API Key 인증만 지원 (OAuth 토큰은 임베딩에 사용 불가)
+ * 주의: API Key 인증만 지원
  */
 
 import { getApiKeyFromConfig } from './auth.js';
@@ -23,7 +23,7 @@ interface OpenAIEmbeddingApiResponse {
 
 /**
  * API Key 가져오기 (환경변수 → 저장 파일)
- * OAuth는 임베딩에 사용 불가하므로 API Key만 확인
+ * API Key만 확인
  */
 function getEmbeddingApiKey(): string {
   // 1. 환경변수 확인
@@ -35,7 +35,7 @@ function getEmbeddingApiKey(): string {
   if (storedKey) return storedKey;
 
   throw new Error(
-    'GPT Embedding requires API Key. OAuth is not supported for embeddings. ' +
+    'GPT Embedding requires API Key. ' +
     'Run "vibe gpt key <api-key>" or set OPENAI_API_KEY env variable.'
   );
 }

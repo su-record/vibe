@@ -56,7 +56,7 @@ Models:
   gpt (review):    ${modelGpt}
   gpt-spark (research): ${modelSpark}
 
-Auth priority: oauth (config) > codex-cli (~/.codex/auth.json) > apikey
+Auth priority: codex-cli (~/.codex/auth.json) > apikey
 Stored: ~/.vibe/config.json
 
 Commands:

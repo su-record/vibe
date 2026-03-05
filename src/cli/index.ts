@@ -299,7 +299,6 @@ Example: vibe skills add vercel-labs/skills
       const envContent = fs.readFileSync(envSource, 'utf-8');
       const ENV_TO_CONFIG: Record<string, (v: string, p: Partial<GlobalVibeConfig>) => void> = {
         OPENAI_API_KEY: (v, p) => { (p.credentials ??= {}).gpt = { ...(p.credentials.gpt ?? {}), apiKey: v }; },
-        GPT_OAUTH_REFRESH_TOKEN: (v, p) => { (p.credentials ??= {}).gpt = { ...(p.credentials.gpt ?? {}), oauthRefreshToken: v }; },
         GEMINI_API_KEY: (v, p) => { (p.credentials ??= {}).gemini = { ...(p.credentials.gemini ?? {}), apiKey: v }; },
         TELEGRAM_BOT_TOKEN: (v, p) => { (p.channels ??= {}).telegram = { ...(p.channels.telegram ?? {}), botToken: v }; },
         TELEGRAM_ALLOWED_CHAT_IDS: (v, p) => { (p.channels ??= {}).telegram = { ...(p.channels.telegram ?? {}), allowedChatIds: v.split(',').map(s => s.trim()) }; },

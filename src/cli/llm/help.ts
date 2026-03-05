@@ -10,16 +10,16 @@ export function showAuthHelp(): void {
 🔐 LLM Authentication
 
 GPT Commands:
-  vibe gpt auth           OAuth (Plus/Pro subscription)
   vibe gpt key <KEY>      API key
+  vibe gpt status         Check status
+  codex auth              Codex CLI authentication
 
 Gemini Commands:
-  vibe gemini auth        Detect Gemini CLI credentials
   vibe gemini key <KEY>   API key
+  vibe gemini status      Check status
 
 Examples:
-  vibe gpt auth           OpenAI login
-  vibe gemini auth        Gemini CLI detect
+  codex auth              Codex CLI login
   vibe gpt key sk-xxx     API key setup
   `);
 }

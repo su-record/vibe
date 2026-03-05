@@ -17,7 +17,7 @@ export type AuthProfileProvider = 'gpt' | 'gemini';
 export interface AuthProfile {
   id: string;
   provider: AuthProfileProvider;
-  type: 'oauth' | 'apikey';
+  type: 'codex-cli' | 'gemini-cli' | 'apikey';
   identifier: string;       // email 또는 key last 4자리
   priority: number;          // 낮을수록 우선
   cooldownUntil: number;     // timestamp, 0 = 사용 가능
@@ -115,7 +115,7 @@ export class AuthProfileManager {
    */
   async addProfile(
     provider: AuthProfileProvider,
-    type: 'oauth' | 'apikey',
+    type: 'codex-cli' | 'gemini-cli' | 'apikey',
     rawIdentifier: string,
     priority: number = 100
   ): Promise<AuthProfile> {

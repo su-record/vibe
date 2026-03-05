@@ -128,10 +128,6 @@ export function getGptApiKey(): string | null {
   return readGlobalConfig().credentials?.gpt?.apiKey ?? null;
 }
 
-export function getGptOAuthRefreshToken(): string | null {
-  return readGlobalConfig().credentials?.gpt?.oauthRefreshToken ?? null;
-}
-
 export function getGeminiApiKey(): string | null {
   return readGlobalConfig().credentials?.gemini?.apiKey ?? null;
 }
@@ -222,12 +218,6 @@ export function migrateLegacyFiles(): void {
       config.credentials.gpt.apiKey = envVars.OPENAI_API_KEY;
       changed = true;
     }
-    if (envVars.GPT_OAUTH_REFRESH_TOKEN && !config.credentials.gpt?.oauthRefreshToken) {
-      if (!config.credentials.gpt) config.credentials.gpt = {};
-      config.credentials.gpt.oauthRefreshToken = envVars.GPT_OAUTH_REFRESH_TOKEN;
-      changed = true;
-    }
-
     // Gemini credentials
     if (envVars.GEMINI_API_KEY && !config.credentials.gemini?.apiKey) {
       if (!config.credentials.gemini) config.credentials.gemini = {};

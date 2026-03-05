@@ -2,7 +2,7 @@
  * TokenRefresher - Centralized token refresh with file locking
  *
  * Prevents race conditions when multiple parallel agents attempt
- * to refresh the same OAuth token simultaneously.
+ * to refresh the same token simultaneously.
  *
  * Uses:
  * - In-process dedupe: provider-scoped Promise map (single process)

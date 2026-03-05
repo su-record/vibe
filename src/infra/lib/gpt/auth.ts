@@ -1,19 +1,18 @@
 /**
  * GPT 인증 관리
- * - 고정 순서: oauth → codex-cli → apikey
+ * - 고정 순서: codex-cli → apikey
  */
 
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { getValidAccessToken, refreshAccessToken, extractEmailFromToken, extractAccountId, extractPlanFromToken } from './oauth.js';
-import { warnLog } from '../utils.js';
+import { refreshAccessToken, extractEmailFromToken, extractAccountId, extractPlanFromToken } from './oauth.js';
 import { getAuthProfileManager } from '../llm/auth/AuthProfileManager.js';
 import { getGptApiKey } from '../config/GlobalConfigManager.js';
 import type { AuthInfo, GptAuthMethod } from './types.js';
 
-// 고정 인증 순서: oauth → codex-cli → apikey
-const AUTH_ORDER: GptAuthMethod[] = ['oauth', 'codex-cli', 'apikey'];
+// 고정 인증 순서: codex-cli → apikey
+const AUTH_ORDER: GptAuthMethod[] = ['codex-cli', 'apikey'];
 
 // =============================================
 // Codex CLI credential auto-detection
@@ -54,7 +53,6 @@ function getCodexCredentialPaths(): string[] {
 
 /**
  * Codex CLI credential 파일 탐색 (read-only, 보안 체크)
- * Gemini의 findOAuthCredentials() 패턴과 동일
  */
 export function findCodexCredentials(): CodexAuthFile | null {
   for (const credPath of getCodexCredentialPaths()) {
@@ -87,7 +85,6 @@ async function tryCodexCliAuth(): Promise<AuthInfo | null> {
   if (!creds) return null;
 
   try {
-    // 토큰 만료 확인 → 필요시 refresh
     const expiresAt = new Date(creds.tokens.expires_at).getTime();
     let accessToken = creds.tokens.access_token;
 
@@ -121,36 +118,11 @@ export function getApiKeyFromConfig(): string | null {
   return null;
 }
 
-// OAuth 토큰 없을 때 config에서 email 제거
-export function removeEmailFromConfigIfNoToken(): void {
-  try {
-    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      if (config.models?.gpt?.email) {
-        delete config.models.gpt.email;
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-      }
-    }
-  } catch (e) {
-    warnLog('Failed to remove email from GPT config', e);
-  }
-}
-
 /**
  * 개별 인증 방식 시도
  */
 async function tryAuthMethod(method: GptAuthMethod): Promise<AuthInfo | null> {
   switch (method) {
-    case 'oauth': {
-      try {
-        const { accessToken, email, accountId, plan } = await getValidAccessToken();
-        return { type: 'oauth', accessToken, email, accountId, plan };
-      } catch {
-        removeEmailFromConfigIfNoToken();
-        return null;
-      }
-    }
     case 'codex-cli':
       return tryCodexCliAuth();
     case 'apikey': {
@@ -166,8 +138,7 @@ async function tryAuthMethod(method: GptAuthMethod): Promise<AuthInfo | null> {
 }
 
 /**
- * 인증 방식 확인 (고정 순서: oauth → codex-cli → apikey)
- * 순서대로 시도, 실패 시 다음 방식으로 fallback
+ * 인증 방식 확인 (고정 순서: codex-cli → apikey)
  */
 export async function getAuthInfo(): Promise<AuthInfo> {
   for (const method of AUTH_ORDER) {
@@ -176,7 +147,7 @@ export async function getAuthInfo(): Promise<AuthInfo> {
   }
 
   throw new Error(
-    'GPT credentials not found. Tried: oauth, codex-cli, apikey. ' +
+    'GPT credentials not found. Tried: codex-cli, apikey. ' +
     'Run: codex auth (Codex CLI) or vibe gpt key <key> (API Key) to configure.'
   );
 }
@@ -189,7 +160,7 @@ export async function markAuthSuccess(profileId: string): Promise<void> {
     const manager = getAuthProfileManager();
     await manager.markSuccess(profileId);
   } catch {
-    // Profile rotation is optional — ignore errors
+    // Profile rotation is optional
   }
 }
 
@@ -198,6 +169,6 @@ export async function markAuthFailure(profileId: string, errorMsg?: string): Pro
     const manager = getAuthProfileManager();
     await manager.markFailure(profileId, errorMsg);
   } catch {
-    // Profile rotation is optional — ignore errors
+    // Profile rotation is optional
   }
 }

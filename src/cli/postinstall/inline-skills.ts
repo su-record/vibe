@@ -36,7 +36,7 @@ export function seedInlineSkills(targetDir: string): void {
         '',
         '```bash',
         'vibe gpt auth     # Configure GPT API key',
-        'vibe gemini auth  # Configure Gemini OAuth/API key',
+        'vibe gemini auth  # Configure Gemini API key',
         'vibe status       # Check current configuration',
         '```',
         '',

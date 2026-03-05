@@ -7,7 +7,7 @@ export interface CliOptions {
 }
 
 export interface LLMAuthStatus {
-  type: 'oauth' | 'apikey';
+  type: 'codex-cli' | 'gemini-cli' | 'apikey';
   email?: string;
   valid: boolean;
 }
@@ -78,22 +78,10 @@ export interface VibeConfig {
   installedExternalSkills?: string[];
 }
 
-export interface OAuthTokens {
-  email: string;
-  accessToken: string;
-  refreshToken: string;
-  idToken?: string;
-  expires: number;
-  accountId?: string;
-  projectId?: string;
-}
-
 // ─── Global Config (~/.vibe/config.json) ────────────────────────────
 
 export interface GptCredentials {
   apiKey?: string;
-  oauthRefreshToken?: string;
-  oauthEmail?: string;
   createdAt?: string;
 }
 

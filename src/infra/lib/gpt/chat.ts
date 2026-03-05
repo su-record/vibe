@@ -258,9 +258,9 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 }
 
 /**
- * GPT API 호출 (Codex Backend - OAuth 방식)
+ * GPT API 호출 (Codex Backend)
  */
-async function chatWithOAuth(accessToken: string, options: ChatOptions, accountId?: string): Promise<ChatResponse> {
+async function chatWithCodex(accessToken: string, options: ChatOptions, accountId?: string): Promise<ChatResponse> {
   const {
     model = DEFAULT_MODEL,
     messages = [],
@@ -329,7 +329,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions, accountI
       if (response.status === 429 && retryCount < maxRetries) {
         const delay = Math.pow(2, retryCount) * 1000;
         await sleep(delay);
-        return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
+        return chatWithCodex(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
       }
 
       // 에러 파싱
@@ -362,7 +362,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions, accountI
     if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
       const delay = Math.pow(2, retryCount) * 1000;
       await sleep(delay);
-      return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
+      return chatWithCodex(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
     }
     throw error;
   }
@@ -375,9 +375,8 @@ async function callWithAuth(authInfo: { type: string; apiKey?: string; accessTok
   switch (authInfo.type) {
     case 'apikey':
       return chatWithApiKey(authInfo.apiKey!, options);
-    case 'oauth':
     case 'codex-cli':
-      return chatWithOAuth(authInfo.accessToken!, options, authInfo.accountId);
+      return chatWithCodex(authInfo.accessToken!, options, authInfo.accountId);
     default:
       throw new Error(`Unknown auth type: ${authInfo.type}`);
   }
@@ -397,7 +396,7 @@ function isFallbackError(errorMsg: string): boolean {
 
 /**
  * GPT API 호출 (고정 순서 인증 + Fallback)
- * oauth → apikey 순서, 실패 시 다음 방식으로 자동 전환
+ * codex-cli → apikey 순서, 실패 시 다음 방식으로 자동 전환
  */
 export async function chat(options: ChatOptions): Promise<ChatResponse> {
   const authInfo = await getAuthInfo();
@@ -430,7 +429,7 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
 }
 
 /**
- * 스트리밍 Chat (OAuth 또는 API Key 자동 선택)
+ * 스트리밍 Chat (Codex 또는 API Key 자동 선택)
  */
 export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamChunk> {
   const authInfo = await getAuthInfo();
@@ -443,7 +442,7 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
     return;
   }
 
-  // OAuth 방식 - Codex 스트리밍
+  // Codex 스트리밍
   const planModel = getDefaultModel(authInfo.plan);
   const {
     model = planModel,
