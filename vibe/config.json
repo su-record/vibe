@@ -4,7 +4,7 @@
       "enabled": false,
       "authType": "oauth",
       "role": "architecture",
-      "description": "Architecture/Debugging (GPT 5.2)"
+      "description": "Architecture/Debugging/Coding (GPT 5.4)"
     },
     "gemini": {
       "enabled": false,

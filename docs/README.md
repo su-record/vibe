@@ -429,7 +429,7 @@ vibe version             # 버전
     "slack": { "botToken": "xoxb-...", "appToken": "xapp-...", "allowedChannelIds": ["C01..."] }
   },
   "models": {
-    "gpt": "gpt-5.2",
+    "gpt": "gpt-5.4",
     "gemini": "gemini-3-pro-preview",
     "geminiFlash": "gemini-3-flash-preview"
   }

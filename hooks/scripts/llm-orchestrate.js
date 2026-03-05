@@ -324,8 +324,8 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   if (providerName === 'gpt' || providerName === 'gpt-spark') {
     const isSpark = providerName === 'gpt-spark';
     const model = isSpark
-      ? (vibeConfig.models?.gptSpark || process.env.GPT_SPARK_MODEL || 'gpt-5.3-codex-spark')
-      : (vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.3-codex');
+      ? (vibeConfig.models?.gptSpark || process.env.GPT_SPARK_MODEL || 'gpt-5.4-pro')
+      : (vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.4');
     return await callCodexCli(prompt, sysPrompt, jsonMode, model);
   }
 

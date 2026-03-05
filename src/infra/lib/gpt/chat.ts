@@ -27,29 +27,29 @@ const INSTRUCTIONS_CACHE_TTL = 15 * 60 * 1000; // 15분
 
 // 사용 가능한 모델 목록
 export const GPT_MODELS: Record<string, GptModelInfo> = {
-  // GPT-5.3 Codex Spark (Pro plan — Cerebras 1000+ tok/s)
-  'gpt-5.3-codex-spark': {
-    id: 'gpt-5.3-codex-spark',
-    name: 'GPT-5.3 Codex Spark',
-    description: 'Pro plan, ultra-fast Cerebras inference',
-    maxTokens: 32768,
+  // GPT-5.4 Pro (Pro plan — highest quality, complex tasks)
+  'gpt-5.4-pro': {
+    id: 'gpt-5.4-pro',
+    name: 'GPT-5.4 Pro',
+    description: 'Pro plan, smarter and more precise responses',
+    maxTokens: 128000,
     reasoning: { effort: 'high', summary: 'auto' },
   },
-  // GPT-5.3 Codex (Plus plan, coding + function calling optimized)
+  // GPT-5.4 (Plus plan, frontier model for professional work)
+  'gpt-5.4': {
+    id: 'gpt-5.4',
+    name: 'GPT-5.4',
+    description: 'Plus plan, frontier model for professional work',
+    maxTokens: 128000,
+    reasoning: { effort: 'high', summary: 'auto' },
+  },
+  // GPT-5.3 Codex (legacy, previous generation)
   'gpt-5.3-codex': {
     id: 'gpt-5.3-codex',
     name: 'GPT-5.3 Codex',
-    description: 'Plus plan, coding + function calling optimized',
+    description: 'Previous generation codex',
     maxTokens: 32768,
     reasoning: { effort: 'high', summary: 'auto' },
-  },
-  // GPT-5.2 (legacy general purpose)
-  'gpt-5.2': {
-    id: 'gpt-5.2',
-    name: 'GPT-5.2',
-    description: 'General purpose',
-    maxTokens: 32768,
-    reasoning: { effort: 'medium', summary: 'auto' },
   },
 };
 
@@ -67,9 +67,9 @@ const ENV_MODEL = resolveGptModelOverride();
 
 // 플랜별 기본 모델 매핑
 const PLAN_MODEL_MAP: Record<ChatGptPlan, string> = {
-  pro: 'gpt-5.3-codex-spark',
-  plus: 'gpt-5.3-codex',
-  free: 'gpt-5.2',
+  pro: 'gpt-5.4-pro',
+  plus: 'gpt-5.4',
+  free: 'gpt-5.3-codex',
 };
 
 /**
@@ -78,16 +78,16 @@ const PLAN_MODEL_MAP: Record<ChatGptPlan, string> = {
 export function getDefaultModel(plan?: ChatGptPlan): string {
   if (ENV_MODEL) return ENV_MODEL;
   if (plan) return PLAN_MODEL_MAP[plan];
-  return 'gpt-5.3-codex';
+  return 'gpt-5.4';
 }
 
 // 하위 호환용
-export const DEFAULT_MODEL = ENV_MODEL || 'gpt-5.3-codex';
+export const DEFAULT_MODEL = ENV_MODEL || 'gpt-5.4';
 
 /**
  * GitHub에서 Codex instructions 가져오기
  */
-export async function getCodexInstructions(model: string = 'gpt-5.3-codex'): Promise<string> {
+export async function getCodexInstructions(model: string = 'gpt-5.4'): Promise<string> {
   // 캐시 확인
   if (cachedInstructions && Date.now() - instructionsCacheTime < INSTRUCTIONS_CACHE_TTL) {
     return cachedInstructions;
@@ -189,15 +189,16 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 
   // API Key 방식은 OpenAI 모델 사용
   const apiKeyModelMap: Record<string, string> = {
-    'gpt-5.3-codex': 'gpt-5.3-codex',
-    'gpt-5.2': 'gpt-5.3-codex',
-    'gpt-5.2-codex': 'gpt-5.3-codex',
-    'gpt-5.1-codex': 'gpt-5.3-codex',
-    'gpt-5.1-codex-mini': 'gpt-5.3-codex',
-    'gpt-5.1-codex-max': 'gpt-5.3-codex',
+    'gpt-5.4': 'gpt-5.4',
+    'gpt-5.3-codex': 'gpt-5.4',
+    'gpt-5.2': 'gpt-5.4',
+    'gpt-5.2-codex': 'gpt-5.4',
+    'gpt-5.1-codex': 'gpt-5.4',
+    'gpt-5.1-codex-mini': 'gpt-5.4',
+    'gpt-5.1-codex-max': 'gpt-5.4',
   };
 
-  const actualModel = apiKeyModelMap[model] || 'gpt-5.3-codex';
+  const actualModel = apiKeyModelMap[model] || 'gpt-5.4';
 
   // 메시지 구성
   const apiMessages: Array<{ role: string; content: string | null }> = [];
