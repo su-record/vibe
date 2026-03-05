@@ -99,9 +99,6 @@ export interface GptCredentials {
 
 export interface GeminiCredentials {
   apiKey?: string;
-  oauthRefreshToken?: string;
-  oauthSource?: 'antigravity' | 'gemini-cli';
-  oauthEmail?: string;
   createdAt?: string;
 }
 

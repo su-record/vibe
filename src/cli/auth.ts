@@ -23,9 +23,6 @@ export function getLLMAuthStatus(): LLMStatusMap {
   }
 
   // Gemini
-  if (config.credentials?.gemini?.oauthRefreshToken || process.env.ANTIGRAVITY_REFRESH_TOKEN || process.env.GEMINI_OAUTH_REFRESH_TOKEN) {
-    status.gemini.push({ type: 'oauth', valid: true });
-  }
   if (config.credentials?.gemini?.apiKey || process.env.GEMINI_API_KEY) {
     status.gemini.push({ type: 'apikey', valid: true });
   }
