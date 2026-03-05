@@ -693,6 +693,89 @@ Step 3: If neither exists → Error
    Run /vibe.spec "{feature-name}" first.
 ```
 
+### 1-1. Phase Isolation Protocol (Large SPEC Guard)
+
+> **Problem**: Large SPECs (3+ phases, 5+ scenarios) overflow context — agent drifts from SPEC by Phase 3.
+> **Solution**: Load only the current phase's SPEC section. Re-anchor before each scenario.
+
+**Phase Isolation Rules (MANDATORY for 3+ phases):**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE ISOLATION PROTOCOL                                       │
+│                                                                  │
+│  ❌ WRONG: Load entire SPEC → implement all phases              │
+│  ✅ RIGHT: Load _index overview → per-phase load → implement    │
+│                                                                  │
+│  Step A: Read _index.md (overview only — phase list, REQ IDs)   │
+│  Step B: For each Phase N:                                       │
+│    1. RE-READ Phase N SPEC section (every time, no memory)       │
+│    2. RE-READ Phase N Feature scenarios                          │
+│    3. Extract Phase N scope: files, scenarios, requirements      │
+│    4. Implement Phase N scenarios                                 │
+│    5. Verify Phase N                                             │
+│    6. Write Phase Checkpoint → .claude/vibe/checkpoints/         │
+│    7. DISCARD Phase N details from working memory                │
+│  Step C: Next Phase — go to Step B                               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Phase Checkpoint Format** (`.claude/vibe/checkpoints/{feature}-phase-{N}.md`):
+
+```markdown
+# Checkpoint: {feature} Phase {N}
+
+## Completed
+- Scenario 1: {name} ✅
+- Scenario 2: {name} ✅
+
+## Files Changed
+- src/auth.service.ts (added login(), validateToken())
+- src/auth.controller.ts (POST /login, POST /refresh)
+
+## State for Next Phase
+- Auth service exports: login(), logout(), validateToken(), refreshToken()
+- JWT secret configured in .env (JWT_SECRET)
+- Test baseline: 12 tests passing
+
+## Remaining Phases
+- Phase {N+1}: {name} — {scenario count} scenarios
+- Phase {N+2}: {name} — {scenario count} scenarios
+```
+
+**SPEC Re-anchoring (Before EVERY scenario):**
+
+```
+Before implementing Scenario X:
+  1. Re-read the EXACT Given/When/Then from Feature file (not from memory!)
+  2. Compare: "Am I about to implement what the SPEC says, or what I think it says?"
+  3. If single-file SPEC: re-read only the current phase section (use line offsets)
+  4. If split SPEC: re-read only phase-N-{name}.md
+```
+
+**Scope Lock (Per Phase):**
+
+```
+At Phase start, declare:
+  MODIFY: [list of files this phase will touch]
+  CREATE: [list of files this phase will create]
+  DO NOT TOUCH: everything else
+
+If implementation requires files outside scope:
+  → STOP. Re-read SPEC. Is this actually needed?
+  → If yes: add to scope with explicit justification
+  → If no: you're drifting. Return to SPEC.
+```
+
+**Context Pressure Handling:**
+
+| Context Level | Action |
+|---------------|--------|
+| < 50% | Normal execution |
+| 50-70% | Save checkpoint, trim exploration results |
+| 70%+ | Save checkpoint → `/new` → resume from checkpoint |
+| Phase boundary | Always save checkpoint regardless of context level |
+
 ### 2. Extract Scenario List
 
 Extract all Scenarios from Feature file:

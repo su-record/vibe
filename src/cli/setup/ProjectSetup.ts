@@ -257,6 +257,12 @@ export function updateGitignore(projectRoot: string): void {
     modified = true;
   }
 
+  // checkpoints 디렉토리 제외 (Phase Isolation Protocol 임시 파일)
+  if (!gitignore.includes('.claude/vibe/checkpoints/')) {
+    gitignore = gitignore.trimEnd() + '\n\n# Phase checkpoints (ephemeral)\n.claude/vibe/checkpoints/\n';
+    modified = true;
+  }
+
   // 레거시 mcp 폴더 제외 제거
   if (gitignore.includes('.claude/vibe/mcp/')) {
     gitignore = gitignore.replace(/# core MCP\n\.claude\/vibe\/mcp\/\n?/g, '');
