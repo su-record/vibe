@@ -188,10 +188,10 @@ export const CURSOR_MODEL_MAPPING: Record<string, string> = {
   'data-integrity-reviewer': 'claude-4.5-sonnet-thinking',
 
   // 언어별 전문가: 코드 이해 필요 → codex
-  'typescript-reviewer': 'gpt-5.4',
-  'python-reviewer': 'gpt-5.4',
-  'react-reviewer': 'gpt-5.4',
-  'rails-reviewer': 'gpt-5.4',
+  'typescript-reviewer': 'gpt-5.3-codex',
+  'python-reviewer': 'gpt-5.3-codex',
+  'react-reviewer': 'gpt-5.3-codex',
+  'rails-reviewer': 'gpt-5.3-codex',
 
   // 빠른 패턴 체크: 경량 모델
   'performance-reviewer': 'gemini-flash',
