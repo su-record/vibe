@@ -43,6 +43,14 @@ export const GPT_MODELS: Record<string, GptModelInfo> = {
     maxTokens: 128000,
     reasoning: { effort: 'high', summary: 'auto' },
   },
+  // GPT-5.3 Codex (legacy, previous generation)
+  'gpt-5.3-codex': {
+    id: 'gpt-5.3-codex',
+    name: 'GPT-5.3 Codex',
+    description: 'Previous generation codex',
+    maxTokens: 32768,
+    reasoning: { effort: 'high', summary: 'auto' },
+  },
 };
 
 import { getModelOverride } from '../config/GlobalConfigManager.js';
@@ -61,7 +69,7 @@ const ENV_MODEL = resolveGptModelOverride();
 const PLAN_MODEL_MAP: Record<ChatGptPlan, string> = {
   pro: 'gpt-5.4-pro',
   plus: 'gpt-5.4',
-  free: 'gpt-5.4',
+  free: 'gpt-5.3-codex',
 };
 
 /**
@@ -86,7 +94,16 @@ export async function getCodexInstructions(model: string = 'gpt-5.4'): Promise<s
   }
 
   // 모델에 따른 prompt 파일 선택
-  const promptFile = 'gpt_5_2_prompt.md';
+  let promptFile = 'gpt_5_2_prompt.md';
+  if (model.includes('5.1-codex-max')) {
+    promptFile = 'gpt-5.1-codex-max_prompt.md';
+  } else if (model.includes('5.1-codex')) {
+    promptFile = 'gpt_5_codex_prompt.md';
+  } else if (model.includes('5.2-codex')) {
+    promptFile = 'gpt-5.2-codex_prompt.md';
+  } else if (model.includes('5.1')) {
+    promptFile = 'gpt_5_1_prompt.md';
+  }
 
   // 최신 릴리스 태그 가져오기
   let tag = 'rust-v0.80.0'; // 기본값
@@ -171,7 +188,17 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
   } = options;
 
   // API Key 방식은 OpenAI 모델 사용
-  const actualModel = model.startsWith('gpt-5.4') ? model : 'gpt-5.4';
+  const apiKeyModelMap: Record<string, string> = {
+    'gpt-5.4': 'gpt-5.4',
+    'gpt-5.3-codex': 'gpt-5.4',
+    'gpt-5.2': 'gpt-5.4',
+    'gpt-5.2-codex': 'gpt-5.4',
+    'gpt-5.1-codex': 'gpt-5.4',
+    'gpt-5.1-codex-mini': 'gpt-5.4',
+    'gpt-5.1-codex-max': 'gpt-5.4',
+  };
+
+  const actualModel = apiKeyModelMap[model] || 'gpt-5.4';
 
   // 메시지 구성
   const apiMessages: Array<{ role: string; content: string | null }> = [];
@@ -543,11 +570,11 @@ export async function ask(prompt: string, options: Omit<ChatOptions, 'messages'>
 }
 
 /**
- * 빠른 질문 (GPT-5.4 사용)
+ * 빠른 질문 (GPT-5.1 Codex Mini 사용)
  */
 export async function quickAsk(prompt: string): Promise<string> {
   return ask(prompt, {
-    model: 'gpt-5.4',
+    model: 'gpt-5.1-codex-mini',
     maxTokens: 2048,
     temperature: 0.3,
   });

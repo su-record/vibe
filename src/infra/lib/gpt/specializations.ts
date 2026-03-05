@@ -17,11 +17,11 @@ export async function analyzeArchitecture(prompt: string): Promise<string> {
 }
 
 /**
- * 코드 디버깅 (GPT-5.4 사용)
+ * 코드 디버깅 (GPT-5.3 Codex 사용 — 코딩 특화)
  */
 export async function debugCode(prompt: string): Promise<string> {
   return ask(prompt, {
-    model: 'gpt-5.4',
+    model: 'gpt-5.3-codex',
     maxTokens: 4096,
     temperature: 0.3,
     systemPrompt: 'You are an expert debugger. Analyze the given code, identify bugs, and provide fixes with clear explanations.',
