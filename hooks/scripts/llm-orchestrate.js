@@ -504,7 +504,7 @@ async function main() {
     }
 
     const voiceArgs = parseVoiceArgs(process.argv.slice(4));
-    const voiceModel = voiceArgs.pro ? 'gemini-3.1-pro' : 'gemini-3.1-flash-lite';
+    const voiceModel = voiceArgs.pro ? 'gemini-pro' : 'gemini-flash';
     const tmpFile = path.join(os.tmpdir(), `vibe-voice-${crypto.randomUUID()}.wav`);
 
     console.error(`[VOICE] Recording audio... (press Enter to stop, max ${voiceArgs.duration}s)`);
