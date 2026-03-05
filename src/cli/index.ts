@@ -26,6 +26,7 @@ import {
   init, setup, update, upgrade, remove, showHelp, showStatus, showVersion,
   telegramSetup, telegramChat, telegramStatus, telegramHelp,
   slackSetup, slackChannel, slackStatus, slackHelp,
+  skillsAdd,
 } from './commands/index.js';
 
 // ============================================================================
@@ -215,6 +216,24 @@ Gemini Commands:
 
 Auth order: gemini-cli → apikey
 Requires: npm i -g @google/gemini-cli && gemini
+        `);
+    }
+    break;
+  }
+
+  // vibe skills <subcommand>
+  case 'skills': {
+    const skillsSub = positionalArgs[1];
+    switch (skillsSub) {
+      case 'add':
+        skillsAdd(positionalArgs[2]);
+        break;
+      default:
+        console.log(`
+Skills Commands:
+  vibe skills add <owner/repo>  Install skill from skills.sh
+
+Example: vibe skills add vercel-labs/skills
         `);
     }
     break;

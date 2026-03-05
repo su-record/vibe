@@ -38,6 +38,7 @@ import {
   installLocalSkills,
   installLanguageRules,
 } from './init.js';
+import { installExternalSkills } from './skills.js';
 import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 
@@ -148,6 +149,9 @@ export function update(options: CliOptions = { silent: false }): void {
 
     // 스택 + capability 기반 로컬 스킬 업데이트 (.claude/skills/)
     installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
+
+    // 스택 기반 외부 스킬 자동 설치 (skills.sh)
+    installExternalSkills(projectRoot, stackTypes, stackDetails.capabilities);
 
     // Provisioner: 추천 에이전트 + SPEC 템플릿 생성 (미존재 시에만)
     Provisioner.provision(projectRoot, detectedStacks, stackDetails);

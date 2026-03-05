@@ -75,6 +75,7 @@ export interface VibeConfig {
     embedding?: Array<'gpt'>;
   };
   uiUxAnalysis?: boolean;
+  installedExternalSkills?: string[];
 }
 
 export interface OAuthTokens {

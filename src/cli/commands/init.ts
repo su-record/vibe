@@ -39,6 +39,7 @@ import {
 } from '../postinstall.js';
 import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
+import { installExternalSkills } from './skills.js';
 
 /**
  * Update global Cursor assets (agents, rules, skills)
@@ -323,6 +324,9 @@ export async function init(projectName?: string): Promise<void> {
 
     // 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)
     installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
+
+    // 스택 기반 외부 스킬 자동 설치 (skills.sh)
+    installExternalSkills(projectRoot, stackTypes, stackDetails.capabilities);
     if (stackDetails.capabilities.length > 0) {
       log(`      - Capabilities: ${stackDetails.capabilities.join(', ')}\n`);
     }

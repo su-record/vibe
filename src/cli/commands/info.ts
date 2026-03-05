@@ -31,6 +31,9 @@ LLM:
   vibe gemini <cmd>       Gemini (auth, key, status, logout)
   vibe env import [path]  .env → ~/.vibe/config.json 가져오기
 
+Skills:
+  vibe skills add <pkg>   Install skill from skills.sh
+
 Channels:
   vibe telegram <cmd>     Telegram (setup, chat, status)
   vibe slack <cmd>        Slack (setup, channel, status)

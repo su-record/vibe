@@ -47,6 +47,15 @@ export const CAPABILITY_SKILLS: Record<string, ReadonlyArray<string>> = {
   'video': ['video-production'],
 };
 
+/** 스택 → 외부 스킬(skills.sh) 매핑 (vibe init/update → npx skills add) */
+export const STACK_TO_EXTERNAL_SKILLS: Record<string, ReadonlyArray<string>> = {
+  'typescript-react': ['vercel-labs/agent-skills'],
+  'typescript-nextjs': ['vercel-labs/agent-skills', 'vercel-labs/next-skills'],
+};
+
+/** Capability → 외부 스킬(skills.sh) 매핑 */
+export const CAPABILITY_EXTERNAL_SKILLS: Record<string, ReadonlyArray<string>> = {};
+
 /** 사용자 선택 가능한 capability 목록 (vibe init 인터랙티브 프롬프트용) */
 export const AVAILABLE_CAPABILITIES: ReadonlyArray<{
   value: string;
@@ -79,6 +88,30 @@ export function resolveLocalSkills(stackTypes: string[], capabilities: string[] 
   // Capability 기반 스킬
   for (const cap of capabilities) {
     const capSkills = CAPABILITY_SKILLS[cap];
+    if (capSkills) capSkills.forEach(s => skills.add(s));
+  }
+
+  return [...skills];
+}
+
+/**
+ * 스택 타입 + capabilities → 외부 스킬(skills.sh) 목록 결정
+ */
+export function resolveExternalSkills(stackTypes: string[], capabilities: string[] = []): string[] {
+  const skills = new Set<string>();
+
+  for (const stack of stackTypes) {
+    const exact = STACK_TO_EXTERNAL_SKILLS[stack];
+    if (exact) exact.forEach(s => skills.add(s));
+    const prefix = stack.split('-')[0];
+    if (prefix !== stack) {
+      const prefixSkills = STACK_TO_EXTERNAL_SKILLS[prefix];
+      if (prefixSkills) prefixSkills.forEach(s => skills.add(s));
+    }
+  }
+
+  for (const cap of capabilities) {
+    const capSkills = CAPABILITY_EXTERNAL_SKILLS[cap];
     if (capSkills) capSkills.forEach(s => skills.add(s));
   }
 
