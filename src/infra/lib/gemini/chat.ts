@@ -33,7 +33,7 @@ import type {
 
 export function getGeminiModels(): Record<string, GeminiModelInfo> {
   const proId = getModelOverride('gemini') ?? process.env.GEMINI_MODEL ?? 'gemini-3.1-pro-preview';
-  const flashId = getModelOverride('geminiFlash') ?? process.env.GEMINI_FLASH_MODEL ?? 'gemini-3-flash-preview';
+  const flashId = getModelOverride('geminiFlash') ?? process.env.GEMINI_FLASH_MODEL ?? 'gemini-3.1-flash-lite-preview';
   const oauthProId = getModelOverride('geminiOauth') ?? process.env.GEMINI_OAUTH_MODEL ?? proId.replace(/-preview$/, '');
   const oauthFlashId = getModelOverride('geminiOauthFlash') ?? process.env.GEMINI_OAUTH_FLASH_MODEL ?? flashId.replace(/-preview$/, '');
 
