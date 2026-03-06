@@ -1,9 +1,7 @@
 /**
- * Gemini / Antigravity API 모듈
+ * Gemini API 모듈
  *
- * Endpoint: Production 우선 (Pro 계정 429 방지)
- * Auth: Antigravity OAuth → Gemini CLI → API Key
- * API: generateContent + completeCode + fetchAvailableModels + SSE Streaming
+ * Auth: gemini-cli / codex-cli (hooks) + API Key (library)
  */
 
 export type {
@@ -17,8 +15,6 @@ export type {
   StreamChunk,
   GeminiApiResponse,
   GeminiCandidate,
-  CompleteCodeOptions,
-  CompleteCodeResponse,
   ImageGenerationOptions,
   ImageGenerationResult,
   ImageAnalysisOptions,
@@ -27,14 +23,11 @@ export type {
   AudioTranscriptionResult,
   MultimodalContent,
   VibeGeminiOptions,
-  V1InternalRequest,
 } from './types.js';
 
 export {
   getApiKeyFromConfig,
   getAuthInfo,
-  markAuthSuccess,
-  markAuthFailure,
 } from './auth.js';
 
 export { getGlobalConfigDir } from '../llm/auth/ConfigManager.js';
@@ -68,7 +61,5 @@ export {
   coreGeminiDecideNextAction,
   coreGeminiAnalyzeUX,
 } from './orchestration.js';
-
-export { completeCode } from './completion.js';
 
 export { fetchAvailableModels } from './models.js';

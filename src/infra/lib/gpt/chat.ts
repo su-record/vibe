@@ -27,29 +27,29 @@ const INSTRUCTIONS_CACHE_TTL = 15 * 60 * 1000; // 15분
 
 // 사용 가능한 모델 목록
 export const GPT_MODELS: Record<string, GptModelInfo> = {
-  // GPT-5.3 Codex Spark (Pro plan — Cerebras 1000+ tok/s)
-  'gpt-5.3-codex-spark': {
-    id: 'gpt-5.3-codex-spark',
-    name: 'GPT-5.3 Codex Spark',
-    description: 'Pro plan, ultra-fast Cerebras inference',
-    maxTokens: 32768,
+  // GPT-5.4 Pro (Pro plan — highest quality, complex tasks)
+  'gpt-5.4-pro': {
+    id: 'gpt-5.4-pro',
+    name: 'GPT-5.4 Pro',
+    description: 'Pro plan, smarter and more precise responses',
+    maxTokens: 128000,
     reasoning: { effort: 'high', summary: 'auto' },
   },
-  // GPT-5.3 Codex (Plus plan, coding + function calling optimized)
+  // GPT-5.4 (Plus plan, frontier model for professional work)
+  'gpt-5.4': {
+    id: 'gpt-5.4',
+    name: 'GPT-5.4',
+    description: 'Plus plan, frontier model for professional work',
+    maxTokens: 128000,
+    reasoning: { effort: 'high', summary: 'auto' },
+  },
+  // GPT-5.3 Codex (코딩 특화)
   'gpt-5.3-codex': {
     id: 'gpt-5.3-codex',
     name: 'GPT-5.3 Codex',
-    description: 'Plus plan, coding + function calling optimized',
+    description: 'Coding specialized model',
     maxTokens: 32768,
     reasoning: { effort: 'high', summary: 'auto' },
-  },
-  // GPT-5.2 (legacy general purpose)
-  'gpt-5.2': {
-    id: 'gpt-5.2',
-    name: 'GPT-5.2',
-    description: 'General purpose',
-    maxTokens: 32768,
-    reasoning: { effort: 'medium', summary: 'auto' },
   },
 };
 
@@ -67,9 +67,9 @@ const ENV_MODEL = resolveGptModelOverride();
 
 // 플랜별 기본 모델 매핑
 const PLAN_MODEL_MAP: Record<ChatGptPlan, string> = {
-  pro: 'gpt-5.3-codex-spark',
-  plus: 'gpt-5.3-codex',
-  free: 'gpt-5.2',
+  pro: 'gpt-5.4-pro',
+  plus: 'gpt-5.4',
+  free: 'gpt-5.3-codex',
 };
 
 /**
@@ -78,32 +78,23 @@ const PLAN_MODEL_MAP: Record<ChatGptPlan, string> = {
 export function getDefaultModel(plan?: ChatGptPlan): string {
   if (ENV_MODEL) return ENV_MODEL;
   if (plan) return PLAN_MODEL_MAP[plan];
-  return 'gpt-5.3-codex';
+  return 'gpt-5.4';
 }
 
 // 하위 호환용
-export const DEFAULT_MODEL = ENV_MODEL || 'gpt-5.3-codex';
+export const DEFAULT_MODEL = ENV_MODEL || 'gpt-5.4';
 
 /**
  * GitHub에서 Codex instructions 가져오기
  */
-export async function getCodexInstructions(model: string = 'gpt-5.3-codex'): Promise<string> {
+export async function getCodexInstructions(model: string = 'gpt-5.4'): Promise<string> {
   // 캐시 확인
   if (cachedInstructions && Date.now() - instructionsCacheTime < INSTRUCTIONS_CACHE_TTL) {
     return cachedInstructions;
   }
 
   // 모델에 따른 prompt 파일 선택
-  let promptFile = 'gpt_5_2_prompt.md';
-  if (model.includes('5.1-codex-max')) {
-    promptFile = 'gpt-5.1-codex-max_prompt.md';
-  } else if (model.includes('5.1-codex')) {
-    promptFile = 'gpt_5_codex_prompt.md';
-  } else if (model.includes('5.2-codex')) {
-    promptFile = 'gpt-5.2-codex_prompt.md';
-  } else if (model.includes('5.1')) {
-    promptFile = 'gpt_5_1_prompt.md';
-  }
+  const promptFile = 'gpt_5_2_prompt.md';
 
   // 최신 릴리스 태그 가져오기
   let tag = 'rust-v0.80.0'; // 기본값
@@ -187,17 +178,14 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     systemPrompt = '',
   } = options;
 
-  // API Key 방식은 OpenAI 모델 사용
+  // API Key 방식은 OpenAI 모델 사용 (5.4 계열 + 5.3-codex만 지원)
   const apiKeyModelMap: Record<string, string> = {
+    'gpt-5.4': 'gpt-5.4',
+    'gpt-5.4-pro': 'gpt-5.4',
     'gpt-5.3-codex': 'gpt-5.3-codex',
-    'gpt-5.2': 'gpt-5.3-codex',
-    'gpt-5.2-codex': 'gpt-5.3-codex',
-    'gpt-5.1-codex': 'gpt-5.3-codex',
-    'gpt-5.1-codex-mini': 'gpt-5.3-codex',
-    'gpt-5.1-codex-max': 'gpt-5.3-codex',
   };
 
-  const actualModel = apiKeyModelMap[model] || 'gpt-5.3-codex';
+  const actualModel = apiKeyModelMap[model] || 'gpt-5.4';
 
   // 메시지 구성
   const apiMessages: Array<{ role: string; content: string | null }> = [];
@@ -270,9 +258,9 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 }
 
 /**
- * GPT API 호출 (Codex Backend - OAuth 방식)
+ * GPT API 호출 (Codex Backend)
  */
-async function chatWithOAuth(accessToken: string, options: ChatOptions, accountId?: string): Promise<ChatResponse> {
+async function chatWithCodex(accessToken: string, options: ChatOptions, accountId?: string): Promise<ChatResponse> {
   const {
     model = DEFAULT_MODEL,
     messages = [],
@@ -341,7 +329,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions, accountI
       if (response.status === 429 && retryCount < maxRetries) {
         const delay = Math.pow(2, retryCount) * 1000;
         await sleep(delay);
-        return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
+        return chatWithCodex(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
       }
 
       // 에러 파싱
@@ -374,7 +362,7 @@ async function chatWithOAuth(accessToken: string, options: ChatOptions, accountI
     if ((error as Error).name === 'TypeError' && retryCount < maxRetries) {
       const delay = Math.pow(2, retryCount) * 1000;
       await sleep(delay);
-      return chatWithOAuth(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
+      return chatWithCodex(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
     }
     throw error;
   }
@@ -387,9 +375,8 @@ async function callWithAuth(authInfo: { type: string; apiKey?: string; accessTok
   switch (authInfo.type) {
     case 'apikey':
       return chatWithApiKey(authInfo.apiKey!, options);
-    case 'oauth':
     case 'codex-cli':
-      return chatWithOAuth(authInfo.accessToken!, options, authInfo.accountId);
+      return chatWithCodex(authInfo.accessToken!, options, authInfo.accountId);
     default:
       throw new Error(`Unknown auth type: ${authInfo.type}`);
   }
@@ -409,7 +396,7 @@ function isFallbackError(errorMsg: string): boolean {
 
 /**
  * GPT API 호출 (고정 순서 인증 + Fallback)
- * oauth → apikey 순서, 실패 시 다음 방식으로 자동 전환
+ * codex-cli → apikey 순서, 실패 시 다음 방식으로 자동 전환
  */
 export async function chat(options: ChatOptions): Promise<ChatResponse> {
   const authInfo = await getAuthInfo();
@@ -442,7 +429,7 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
 }
 
 /**
- * 스트리밍 Chat (OAuth 또는 API Key 자동 선택)
+ * 스트리밍 Chat (Codex 또는 API Key 자동 선택)
  */
 export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamChunk> {
   const authInfo = await getAuthInfo();
@@ -455,7 +442,7 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
     return;
   }
 
-  // OAuth 방식 - Codex 스트리밍
+  // Codex 스트리밍
   const planModel = getDefaultModel(authInfo.plan);
   const {
     model = planModel,
@@ -569,11 +556,11 @@ export async function ask(prompt: string, options: Omit<ChatOptions, 'messages'>
 }
 
 /**
- * 빠른 질문 (GPT-5.1 Codex Mini 사용)
+ * 빠른 질문 (GPT-5.4 사용)
  */
 export async function quickAsk(prompt: string): Promise<string> {
   return ask(prompt, {
-    model: 'gpt-5.1-codex-mini',
+    model: 'gpt-5.4',
     maxTokens: 2048,
     temperature: 0.3,
   });

@@ -13,7 +13,7 @@
  *   node llm-orchestrate.js gemini image "prompt" --output "./image.png" --size "1920x1080"
  *
  * Features:
- *   - CLI-based: GPT → codex exec, Gemini → gemini -p (CLI quota first → Antigravity API fallback)
+ *   - CLI-based: GPT → codex exec, Gemini → gemini -p
  *   - Exponential backoff retry (3 attempts)
  *   - Auto fallback: gpt ↔ gemini
  *   - Overload/rate-limit detection
@@ -231,18 +231,6 @@ function buildCliPrompt(prompt, sysPrompt, jsonMode) {
   return fullPrompt;
 }
 
-function isAntigravityAuth() {
-  const vibeConfig = readVibeConfig();
-  if (vibeConfig.credentials?.gemini?.oauthSource === 'antigravity') return true;
-  const oauthCredsPath = path.join(os.homedir(), '.gemini', 'oauth_creds.json');
-  try {
-    if (fs.existsSync(oauthCredsPath)) {
-      const creds = JSON.parse(fs.readFileSync(oauthCredsPath, 'utf8'));
-      if (creds.scope?.includes('cclog') || creds.scope?.includes('experimentsandconfigs')) return true;
-    }
-  } catch { /* not antigravity */ }
-  return false;
-}
 
 function callCodexCli(prompt, sysPrompt, jsonMode, model) {
   const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
@@ -324,26 +312,14 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   if (providerName === 'gpt' || providerName === 'gpt-spark') {
     const isSpark = providerName === 'gpt-spark';
     const model = isSpark
-      ? (vibeConfig.models?.gptSpark || process.env.GPT_SPARK_MODEL || 'gpt-5.3-codex-spark')
-      : (vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.3-codex');
+      ? (vibeConfig.models?.gptSpark || process.env.GPT_SPARK_MODEL || 'gpt-5.4-pro')
+      : (vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.4');
     return await callCodexCli(prompt, sysPrompt, jsonMode, model);
   }
 
   if (providerName === 'gemini') {
-    // 1차: gemini CLI (일반 쿼터 먼저 소진)
-    const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3-pro-preview';
-    try {
-      return await callGeminiCli(prompt, sysPrompt, jsonMode, model);
-    } catch (cliErr) {
-      // 2차: Antigravity API fallback (프리미엄 쿼터 아껴둠)
-      if (isAntigravityAuth()) {
-        console.error(`[GEMINI] CLI failed, falling back to Antigravity API...`);
-        const modulePath = `${LIB_URL}gemini-api.js`;
-        const module = await import(modulePath);
-        return await module.coreGeminiOrchestrate(prompt, sysPrompt, { jsonMode });
-      }
-      throw cliErr;
-    }
+    const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview';
+    return await callGeminiCli(prompt, sysPrompt, jsonMode, model);
   }
 
   throw new Error(`Unknown provider: ${providerName}`);
@@ -504,7 +480,7 @@ async function main() {
     }
 
     const voiceArgs = parseVoiceArgs(process.argv.slice(4));
-    const voiceModel = voiceArgs.pro ? 'gemini-3-pro' : 'gemini-3-flash';
+    const voiceModel = voiceArgs.pro ? 'gemini-pro' : 'gemini-flash';
     const tmpFile = path.join(os.tmpdir(), `vibe-voice-${crypto.randomUUID()}.wav`);
 
     console.error(`[VOICE] Recording audio... (press Enter to stop, max ${voiceArgs.duration}s)`);

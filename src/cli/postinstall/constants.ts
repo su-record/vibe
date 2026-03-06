@@ -179,7 +179,7 @@ export const LANGUAGE_GLOBS: Record<string, string> = {
 
 // Cursor 모델 매핑 (각 리뷰어 유형에 최적의 모델)
 // 사용 가능: composer-1, claude-4.5-opus-high, claude-4.5-opus-high-thinking,
-//           claude-4.5-sonnet-thinking, gpt-5.3-codex, gpt-5.2, gpt-5.2-high,
+//           claude-4.5-sonnet-thinking, gpt-5.4, gpt-5.4-pro, gpt-5.3-codex,
 //           gemini-3-pro, gemini-3-flash
 export const CURSOR_MODEL_MAPPING: Record<string, string> = {
   // 보안/아키텍처: 깊은 추론 필요 → thinking 모델

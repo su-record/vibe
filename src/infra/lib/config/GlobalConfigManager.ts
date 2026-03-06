@@ -128,16 +128,8 @@ export function getGptApiKey(): string | null {
   return readGlobalConfig().credentials?.gpt?.apiKey ?? null;
 }
 
-export function getGptOAuthRefreshToken(): string | null {
-  return readGlobalConfig().credentials?.gpt?.oauthRefreshToken ?? null;
-}
-
 export function getGeminiApiKey(): string | null {
   return readGlobalConfig().credentials?.gemini?.apiKey ?? null;
-}
-
-export function getGeminiOAuthRefreshToken(): string | null {
-  return readGlobalConfig().credentials?.gemini?.oauthRefreshToken ?? null;
 }
 
 // ─── Model helpers ──────────────────────────────────────────────────
@@ -226,30 +218,12 @@ export function migrateLegacyFiles(): void {
       config.credentials.gpt.apiKey = envVars.OPENAI_API_KEY;
       changed = true;
     }
-    if (envVars.GPT_OAUTH_REFRESH_TOKEN && !config.credentials.gpt?.oauthRefreshToken) {
-      if (!config.credentials.gpt) config.credentials.gpt = {};
-      config.credentials.gpt.oauthRefreshToken = envVars.GPT_OAUTH_REFRESH_TOKEN;
-      changed = true;
-    }
-
     // Gemini credentials
     if (envVars.GEMINI_API_KEY && !config.credentials.gemini?.apiKey) {
       if (!config.credentials.gemini) config.credentials.gemini = {};
       config.credentials.gemini.apiKey = envVars.GEMINI_API_KEY;
       changed = true;
     }
-    if (envVars.GEMINI_OAUTH_REFRESH_TOKEN && !config.credentials.gemini?.oauthRefreshToken) {
-      if (!config.credentials.gemini) config.credentials.gemini = {};
-      config.credentials.gemini.oauthRefreshToken = envVars.GEMINI_OAUTH_REFRESH_TOKEN;
-      changed = true;
-    }
-    if (envVars.ANTIGRAVITY_REFRESH_TOKEN && !config.credentials.gemini?.oauthRefreshToken) {
-      if (!config.credentials.gemini) config.credentials.gemini = {};
-      config.credentials.gemini.oauthRefreshToken = envVars.ANTIGRAVITY_REFRESH_TOKEN;
-      config.credentials.gemini.oauthSource = 'antigravity';
-      changed = true;
-    }
-
     // Model overrides
     if (!config.models) config.models = {};
     const modelMap: Record<string, keyof NonNullable<GlobalVibeConfig['models']>> = {
@@ -257,8 +231,6 @@ export function migrateLegacyFiles(): void {
       GEMINI_MODEL: 'gemini',
       GEMINI_FLASH_MODEL: 'geminiFlash',
       GEMINI_SEARCH_MODEL: 'geminiSearch',
-      GEMINI_OAUTH_MODEL: 'geminiOauth',
-      GEMINI_OAUTH_FLASH_MODEL: 'geminiOauthFlash',
       CLAUDE_ARCHITECTURE_MODEL: 'claudeArchitecture',
       CLAUDE_RESEARCH_MODEL: 'claudeResearch',
       CLAUDE_REVIEW_MODEL: 'claudeReview',

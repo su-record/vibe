@@ -299,9 +299,7 @@ Example: vibe skills add vercel-labs/skills
       const envContent = fs.readFileSync(envSource, 'utf-8');
       const ENV_TO_CONFIG: Record<string, (v: string, p: Partial<GlobalVibeConfig>) => void> = {
         OPENAI_API_KEY: (v, p) => { (p.credentials ??= {}).gpt = { ...(p.credentials.gpt ?? {}), apiKey: v }; },
-        GPT_OAUTH_REFRESH_TOKEN: (v, p) => { (p.credentials ??= {}).gpt = { ...(p.credentials.gpt ?? {}), oauthRefreshToken: v }; },
         GEMINI_API_KEY: (v, p) => { (p.credentials ??= {}).gemini = { ...(p.credentials.gemini ?? {}), apiKey: v }; },
-        GEMINI_OAUTH_REFRESH_TOKEN: (v, p) => { (p.credentials ??= {}).gemini = { ...(p.credentials.gemini ?? {}), oauthRefreshToken: v }; },
         TELEGRAM_BOT_TOKEN: (v, p) => { (p.channels ??= {}).telegram = { ...(p.channels.telegram ?? {}), botToken: v }; },
         TELEGRAM_ALLOWED_CHAT_IDS: (v, p) => { (p.channels ??= {}).telegram = { ...(p.channels.telegram ?? {}), allowedChatIds: v.split(',').map(s => s.trim()) }; },
         SLACK_BOT_TOKEN: (v, p) => { (p.channels ??= {}).slack = { ...(p.channels.slack ?? {}), botToken: v }; },
@@ -311,8 +309,6 @@ Example: vibe skills add vercel-labs/skills
         GEMINI_MODEL: (v, p) => { (p.models ??= {}).gemini = v; },
         GEMINI_FLASH_MODEL: (v, p) => { (p.models ??= {}).geminiFlash = v; },
         GEMINI_SEARCH_MODEL: (v, p) => { (p.models ??= {}).geminiSearch = v; },
-        GEMINI_OAUTH_MODEL: (v, p) => { (p.models ??= {}).geminiOauth = v; },
-        GEMINI_OAUTH_FLASH_MODEL: (v, p) => { (p.models ??= {}).geminiOauthFlash = v; },
         CLAUDE_BACKGROUND_MODEL: (v, p) => { (p.models ??= {}).claudeBackground = v; },
         CLAUDE_RESEARCH_MODEL: (v, p) => { (p.models ??= {}).claudeResearch = v; },
         CLAUDE_REVIEW_MODEL: (v, p) => { (p.models ??= {}).claudeReview = v; },

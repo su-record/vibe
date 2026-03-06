@@ -37,7 +37,7 @@ describe('AuthProfileManager', () => {
 
   it('should add and list profiles', async () => {
     await manager.addProfile('gpt', 'apikey', 'sk-test1234567890', 1);
-    await manager.addProfile('gpt', 'oauth', 'user@example.com', 2);
+    await manager.addProfile('gpt', 'codex-cli', 'user@example.com', 2);
 
     const profiles = manager.listProfiles('gpt');
     expect(profiles).toHaveLength(2);

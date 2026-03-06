@@ -15,17 +15,11 @@ export function getLLMAuthStatus(): LLMStatusMap {
   const config = readGlobalConfig();
 
   // GPT
-  if (config.credentials?.gpt?.oauthRefreshToken || process.env.GPT_OAUTH_REFRESH_TOKEN) {
-    status.gpt.push({ type: 'oauth', valid: true });
-  }
   if (config.credentials?.gpt?.apiKey || process.env.OPENAI_API_KEY) {
     status.gpt.push({ type: 'apikey', valid: true });
   }
 
   // Gemini
-  if (config.credentials?.gemini?.oauthRefreshToken || process.env.ANTIGRAVITY_REFRESH_TOKEN || process.env.GEMINI_OAUTH_REFRESH_TOKEN) {
-    status.gemini.push({ type: 'oauth', valid: true });
-  }
   if (config.credentials?.gemini?.apiKey || process.env.GEMINI_API_KEY) {
     status.gemini.push({ type: 'apikey', valid: true });
   }
@@ -107,7 +101,7 @@ export function formatAuthMethods(auths: LLMAuthStatus[], cliInstalled?: boolean
   }
   parts.push(...auths.map(a => {
     const icon = a.valid ? '✓' : '⚠';
-    const method = a.type === 'oauth' ? 'OAuth' : 'API Key';
+    const method = a.type === 'apikey' ? 'API Key' : a.type;
     return `${icon} ${method}`;
   }));
   if (parts.length === 0) return '✗ Not configured';

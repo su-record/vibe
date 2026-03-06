@@ -42,8 +42,8 @@ export function gptStatus(): void {
       : `detected (expires ${expiresAt.toLocaleString()})`;
   }
 
-  const modelGpt = config.models?.gpt || 'gpt-5.3-codex (default)';
-  const modelSpark = config.models?.gptSpark || 'gpt-5.3-codex-spark (default)';
+  const modelGpt = config.models?.gpt || 'gpt-5.4 (default)';
+  const modelSpark = config.models?.gptSpark || 'gpt-5.4-pro (default)';
 
   console.log(`
 GPT Status
@@ -56,7 +56,7 @@ Models:
   gpt (review):    ${modelGpt}
   gpt-spark (research): ${modelSpark}
 
-Auth priority: oauth (config) > codex-cli (~/.codex/auth.json) > apikey
+Auth priority: codex-cli (~/.codex/auth.json) > apikey
 Stored: ~/.vibe/config.json
 
 Commands:

@@ -63,7 +63,7 @@ function buildAuthOptions(status: LLMStatusMap): Array<{
     {
       value: 'gemini-cli' as const,
       label: 'Gemini CLI',
-      hint: status.gemini.some(a => a.type === 'oauth')
+      hint: status.gemini.some(a => a.type === 'gemini-cli')
         ? 'configured'
         : 'requires @google/gemini-cli',
     },
