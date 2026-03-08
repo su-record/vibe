@@ -20,6 +20,14 @@ argument-hint: "feature name"
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
+## File Reading Policy (Mandatory)
+
+- **SPEC/Feature 파일**: 반드시 `Read` 도구로 전체 파일을 읽을 것 (Grep 금지)
+- **소스코드 파일**: 검증 대상 파일은 반드시 `Read` 도구로 전체 읽은 후 검증할 것
+- **Grep 사용 제한**: 파일 위치 탐색(어떤 파일에 있는지 찾기)에만 사용. 파일 내용 파악에는 반드시 Read 사용
+- **시나리오 검증 시**: Given/When/Then 각 단계의 구현 코드를 Read로 전체 읽어 확인할 것. Grep 매칭만으로 "구현됨"이라 판단 금지
+- **부분 읽기 금지**: Grep 결과의 주변 몇 줄만 보고 판단하지 말 것. 전체 맥락을 파악해야 정확한 검증 가능
+
 ## Core Principles
 
 ```

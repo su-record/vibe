@@ -17,6 +17,14 @@ Analyze project or specific feature/module.
 /vibe.analyze --arch           # Architecture analysis only
 ```
 
+## File Reading Policy (Mandatory)
+
+- **SPEC/Feature 파일**: 반드시 `Read` 도구로 전체 파일을 읽을 것 (Grep 금지)
+- **소스코드 파일**: 분석 대상 파일은 반드시 `Read` 도구로 전체 읽은 후 분석할 것
+- **Grep 사용 제한**: 파일 위치 탐색(어떤 파일에 있는지 찾기)에만 사용. 파일 내용 파악에는 반드시 Read 사용
+- **에이전트 spawn 시**: 프롬프트에 "대상 파일을 Read 도구로 전체 읽은 후 분석하라"를 반드시 포함할 것
+- **부분 읽기 금지**: Grep 결과의 주변 몇 줄만 보고 판단하지 말 것. 전체 맥락을 파악해야 정확한 분석 가능
+
 ## Context Reset
 
 **When this command runs, previous conversation is ignored.**
