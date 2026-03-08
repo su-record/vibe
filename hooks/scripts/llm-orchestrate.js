@@ -17,7 +17,7 @@
  *   - Exponential backoff retry (3 attempts)
  *   - Auto fallback: gpt ↔ gemini
  *   - Overload/rate-limit detection
- *   - Image generation (Gemini API, Nano Banana model)
+ *   - Image generation (Gemini API, Gemini Flash Image model)
  *   - Image analysis (Gemini API multimodal)
  *
  * Analyze-Image Mode:
@@ -289,7 +289,7 @@ async function main() {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    const modelLabel = imageArgs.model === 'nano-banana-pro' ? 'Nano Banana Pro' : 'Nano Banana';
+    const modelLabel = imageArgs.model === 'nano-banana-pro' ? 'Gemini Pro Image' : 'Gemini Flash Image';
     console.error(`[IMAGE] Generating with ${modelLabel}...`);
     console.error(`  Prompt: ${imageArgs.prompt}`);
     console.error(`  Size: ${imageArgs.size}`);

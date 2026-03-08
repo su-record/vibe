@@ -86,8 +86,8 @@ Generate Mermaid diagrams for architecture visualization.
 
 Generate images using Gemini Image API.
 
-- **Default**: Nano Banana (`gemini-2.5-flash-image`) - 빠르고 가벼운 이미지 생성
-- **--pro**: Nano Banana Pro (`gemini-3-pro-image-preview`) - 고품질 이미지 생성
+- **Default**: Gemini Flash Image (`gemini-2.5-flash-image`) - 빠르고 가벼운 이미지 생성
+- **--pro**: Gemini Pro Image (`gemini-3-pro-image-preview`) - 고품질 이미지 생성
 
 ### MANDATORY Tool Invocation
 
@@ -96,12 +96,12 @@ Generate images using Gemini Image API.
 **Step 0: Script path:**
 - `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
 
-**General image generation (Nano Banana):**
+**General image generation (Gemini Flash Image):**
 ```bash
 node "[LLM_SCRIPT]" gemini image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
 ```
 
-**Pro quality (Nano Banana Pro):**
+**Pro quality (Gemini Pro Image):**
 ```bash
 node "[LLM_SCRIPT]" gemini image "IMAGE_DESCRIPTION" --pro --output "OUTPUT_PATH"
 ```

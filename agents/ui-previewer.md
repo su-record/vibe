@@ -95,8 +95,6 @@ Analyze the UI structure:
 vibe gemini status
 ```
 
-Or check config file: `~/.config/vibe/gemini.json`
-
 #### If Gemini Enabled: Generate UI Image + Code
 
 ##### A. UI Mockup Image Generation

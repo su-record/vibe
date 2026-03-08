@@ -113,8 +113,6 @@ export interface ModelOverrides {
   gemini: string;
   geminiFlash: string;
   geminiSearch: string;
-  geminiOauth: string;
-  geminiOauthFlash: string;
   claudeArchitecture: string;
   claudeResearch: string;
   claudeReview: string;

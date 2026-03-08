@@ -32,7 +32,7 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
   gemini: {
     name: 'core-gemini',
     role: 'ui-ux',
-    description: 'UI/UX Design (Gemini 3)',
+    description: 'UI/UX Design (Gemini)',
     package: '@anthropics/gemini-mcp',
     envKey: 'GOOGLE_API_KEY'
   },
