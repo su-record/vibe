@@ -8,12 +8,12 @@ import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { CliOptions, VibeConfig } from '../types.js';
-import { log, ensureDir, getPackageJson, formatVoiceHint } from '../utils.js';
+import { log, ensureDir, getPackageJson } from '../utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { detectTechStacks } from '../detect.js';
-import { formatLLMStatus, getLLMAuthStatus } from '../auth.js';
+import { formatLLMStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
 import {
   updateConstitution,
@@ -164,8 +164,7 @@ export function update(options: CliOptions = { silent: false }): void {
 
     const packageJson = getPackageJson();
 
-    const authStatus = getLLMAuthStatus();
-    log(`\n✅ vibe updated (v${packageJson.version})\n\n${formatLLMStatus()}\n${formatVoiceHint(authStatus.gemini.length > 0)}\n📦 Context7 plugin (recommended): /plugin install context7\n`);
+    log(`\n✅ vibe updated (v${packageJson.version})\n\n${formatLLMStatus()}\n📦 Context7 plugin (recommended): /plugin install context7\n`);
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);

@@ -1,5 +1,5 @@
 /**
- * Gemini Voice / Vision / Chat 기능 테스트
+ * Gemini Vision / Chat 기능 테스트
  * 실행: npx tsx tests/gemini-capabilities.test.ts
  */
 
@@ -24,7 +24,7 @@ if (fs.existsSync(envPath)) {
 }
 
 import { chat, ask, quickAsk } from '../dist/infra/lib/gemini/chat.js';
-import { analyzeImage, transcribeAudio, webSearch } from '../dist/infra/lib/gemini/capabilities.js';
+import { analyzeImage, webSearch } from '../dist/infra/lib/gemini/capabilities.js';
 import { getAuthInfo } from '../dist/infra/lib/gemini/auth.js';
 
 const TEMP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
@@ -95,38 +95,6 @@ function createTestImage(): string {
   return filePath;
 }
 
-function createTestWav(): string {
-  // 최소한의 WAV 파일 (0.1초 무음, 16kHz, 16-bit, mono)
-  const sampleRate = 16000;
-  const duration = 0.1;
-  const numSamples = Math.floor(sampleRate * duration);
-  const dataSize = numSamples * 2; // 16-bit = 2 bytes
-  const fileSize = 44 + dataSize;
-
-  const buffer = Buffer.alloc(fileSize);
-  // RIFF header
-  buffer.write('RIFF', 0);
-  buffer.writeUInt32LE(fileSize - 8, 4);
-  buffer.write('WAVE', 8);
-  // fmt chunk
-  buffer.write('fmt ', 12);
-  buffer.writeUInt32LE(16, 16); // chunk size
-  buffer.writeUInt16LE(1, 20); // PCM
-  buffer.writeUInt16LE(1, 22); // mono
-  buffer.writeUInt32LE(sampleRate, 24);
-  buffer.writeUInt32LE(sampleRate * 2, 28); // byte rate
-  buffer.writeUInt16LE(2, 32); // block align
-  buffer.writeUInt16LE(16, 34); // bits per sample
-  // data chunk
-  buffer.write('data', 36);
-  buffer.writeUInt32LE(dataSize, 40);
-  // samples = all zeros (silence)
-
-  if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
-  const filePath = path.join(TEMP_DIR, 'test-audio.wav');
-  fs.writeFileSync(filePath, buffer);
-  return filePath;
-}
 
 // ── Tests ──
 
@@ -178,22 +146,6 @@ async function testVision(): Promise<boolean> {
   }
 }
 
-async function testVoice(): Promise<boolean> {
-  console.log('\n=== 4. Voice (Audio Transcription) ===');
-  try {
-    const audioPath = createTestWav();
-    console.log(`  Test audio: ${audioPath}`);
-    const result = await transcribeAudio(audioPath);
-    console.log(`  Transcription: "${result.transcription}"`);
-    console.log(`  Duration: ${result.duration}s`);
-    console.log('  PASS (silence expected)');
-    return true;
-  } catch (e) {
-    console.error(`  FAIL: ${(e as Error).message}`);
-    return false;
-  }
-}
-
 async function testWebSearch(): Promise<boolean> {
   console.log('\n=== 5. Web Search ===');
   try {
@@ -218,7 +170,6 @@ async function main(): Promise<void> {
   results.push(['Auth', await testAuth()]);
   results.push(['Chat', await testChat()]);
   results.push(['Vision', await testVision()]);
-  results.push(['Voice', await testVoice()]);
   results.push(['WebSearch', await testWebSearch()]);
 
   console.log('\n========================');
@@ -233,9 +184,7 @@ async function main(): Promise<void> {
   // cleanup
   try {
     const testImage = path.join(TEMP_DIR, 'test-image.png');
-    const testAudio = path.join(TEMP_DIR, 'test-audio.wav');
     if (fs.existsSync(testImage)) fs.unlinkSync(testImage);
-    if (fs.existsSync(testAudio)) fs.unlinkSync(testAudio);
   } catch { /* ignore */ }
 
   process.exit(allPassed ? 0 : 1);

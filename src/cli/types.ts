@@ -109,7 +109,7 @@ export interface DiscordChannelConfig {
 
 export interface ModelOverrides {
   gpt: string;
-  gptSpark: string;
+  gptCodex: string;
   gemini: string;
   geminiFlash: string;
   geminiSearch: string;

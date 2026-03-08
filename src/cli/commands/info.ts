@@ -5,7 +5,7 @@
 import path from 'path';
 import fs from 'fs';
 import { VibeConfig } from '../types.js';
-import { getPackageJson, isSoxInstalled } from '../utils.js';
+import { getPackageJson } from '../utils.js';
 import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
 import { getGlobalConfigDir } from '../llm/config.js';
 import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
@@ -47,7 +47,6 @@ Slash Commands (Claude Code):
   /vibe.analyze           프로젝트 분석
   /vibe.trace "feature"   요구사항 추적 매트릭스
   /vibe.utils             유틸리티 (--e2e, --diagram, --continue)
-  /vibe.voice             음성 코딩 (Gemini + sox)
 
 Docs: https://github.com/su-record/vibe
   `);
@@ -77,18 +76,6 @@ export function showStatus(): void {
   const claudeStatusText = formatAuthMethods(authStatus.claude);
   const gptStatusText = formatAuthMethods(authStatus.gpt, codexCli.installed);
   const geminiStatusText = formatAuthMethods(authStatus.gemini, geminiCli.installed);
-
-  // Voice 상태 (Gemini 활성화 + sox 설치)
-  let voiceStatusText = '⬚ Disabled (requires Gemini)';
-  if (authStatus.gemini.length > 0) {
-    if (isSoxInstalled()) {
-      voiceStatusText = '✅ Ready';
-    } else {
-      const soxCmd = process.platform === 'darwin' ? 'brew install sox'
-        : process.platform === 'win32' ? 'choco install sox' : 'apt install sox';
-      voiceStatusText = `⚠️  sox not installed (${soxCmd})`;
-    }
-  }
 
   // 프로젝트 상태
   const projectStatus = isCoreProject
@@ -146,8 +133,6 @@ ${dbStats}
 Services:
   Google Apps      ${fs.existsSync(path.join(getGlobalConfigDir(), 'google-tokens.json')) ? '\u2705 Connected (Gmail, Drive, Sheets, Calendar, YouTube)' : '\u2B1A Not connected (vibe setup)'}
 
-Features:
-  /vibe.voice       ${voiceStatusText}
   `);
 }
 

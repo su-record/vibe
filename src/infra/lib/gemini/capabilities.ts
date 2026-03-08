@@ -1,7 +1,7 @@
 /**
  * Gemini 확장 기능
  *
- * - 웹 검색, UI 분석, 이미지 생성, 이미지 분석, 오디오 전사
+ * - 웹 검색, UI 분석, 이미지 생성, 이미지 분석
  * - API Key → Google AI Studio
  */
 
@@ -14,9 +14,6 @@ import type {
   ImageGenerationOptions,
   ImageGenerationResult,
   ImageAnalysisOptions,
-  AudioTranscriptionOptions,
-  AudioTranscriptionResult,
-  AudioMimeType,
   GeminiApiResponse,
   MultimodalContent,
 } from './types.js';
@@ -240,84 +237,3 @@ export async function analyzeImage(
   return analyzeImageWithApiKey(apiKey, contents, { model, maxTokens, temperature, systemPrompt });
 }
 
-// =============================================
-// 오디오 전사 (STT)
-// =============================================
-
-function getAudioMimeType(filePath: string): AudioMimeType {
-  const ext = path.extname(filePath).toLowerCase();
-  const mimeMap: Record<string, AudioMimeType> = {
-    '.wav': 'audio/wav',
-    '.mp3': 'audio/mp3',
-    '.mpeg': 'audio/mpeg',
-    '.aiff': 'audio/aiff',
-    '.aac': 'audio/aac',
-    '.ogg': 'audio/ogg',
-    '.flac': 'audio/flac',
-    '.webm': 'audio/webm',
-  };
-  return mimeMap[ext] || 'audio/wav';
-}
-
-/**
- * Gemini 오디오 전사 (STT)
- */
-export async function transcribeAudio(
-  audioPath: string,
-  options: AudioTranscriptionOptions = {},
-): Promise<AudioTranscriptionResult> {
-  const {
-    model = 'gemini-flash',
-    maxTokens = 4096,
-    temperature = 0.1,
-    language,
-    systemPrompt,
-  } = options;
-
-  const absolutePath = path.resolve(audioPath);
-  if (!fs.existsSync(absolutePath)) {
-    throw new Error(`Audio file not found: ${absolutePath}`);
-  }
-
-  const audioData = fs.readFileSync(absolutePath);
-  const base64Data = audioData.toString('base64');
-  const mimeType = getAudioMimeType(absolutePath);
-
-  const stats = fs.statSync(absolutePath);
-  const WAV_HEADER_SIZE = 44;
-  const BYTES_PER_SECOND = 16000 * 2 * 1;
-  const estimatedDuration = Math.max(0, (stats.size - WAV_HEADER_SIZE) / BYTES_PER_SECOND);
-
-  let transcriptionPrompt = 'Transcribe this audio accurately. Output ONLY the transcribed text, nothing else.';
-  if (language) {
-    transcriptionPrompt += ` The audio is in ${language}. Transcribe in the original language.`;
-  }
-
-  const contents: MultimodalContent[] = [{
-    role: 'user' as const,
-    parts: [
-      { inlineData: { mimeType, data: base64Data } },
-      { text: transcriptionPrompt },
-    ],
-  }];
-
-  const apiKey = getApiKeyFromConfig();
-  if (!apiKey) {
-    throw new Error('Gemini API key required for audio transcription.');
-  }
-
-  const callOptions = {
-    model,
-    maxTokens,
-    temperature,
-    systemPrompt: systemPrompt || 'You are a precise audio transcription system. Output only the exact words spoken.',
-  };
-
-  const transcription = await analyzeImageWithApiKey(apiKey, contents, callOptions);
-
-  return {
-    transcription: transcription.trim(),
-    model,
-    duration: Math.round(estimatedDuration * 10) / 10,
-  };
-}

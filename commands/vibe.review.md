@@ -30,8 +30,8 @@ argument-hint: "PR number, branch name, or file path"
 /vibe.review --race
 
 security-review:
-├─ GPT-5.2-Codex  → [SQL injection, XSS]
-└─ Gemini-3-Flash → [SQL injection, CSRF]
+├─ GPT Codex  → [SQL injection, XSS]
+└─ Gemini     → [SQL injection, CSRF]
          ↓
    Cross-validation:
    - SQL injection (2/2) → 🔴 P1 (100% confidence)
@@ -61,7 +61,7 @@ security-review:
 ## SECURITY Review (Race Mode)
 
 **Duration**: 3420ms
-**Models**: GPT-5.2-Codex, Gemini-3-Flash
+**Models**: GPT Codex, Gemini
 
 ### Model Results
 

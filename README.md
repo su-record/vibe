@@ -280,7 +280,6 @@ vibe skills add vercel-labs/next-skills
 | `/vibe.trace "기능"` | 요구사항 추적성 매트릭스 |
 | `/vibe.reason "문제"` | 체계적 추론 프레임워크 |
 | `/vibe.analyze` | 프로젝트 분석 |
-| `/vibe.voice` | 음성 → 코딩 명령 (Gemini + sox) |
 | `/vibe.utils` | 유틸리티 (E2E, 다이어그램, UI, 세션 복원) |
 
 ---
@@ -444,7 +443,6 @@ flowchart TD
 - **Node.js** >= 18.0.0
 - **Claude Code** (필수)
 - GPT, Gemini (선택 — 멀티 LLM 기능용)
-- sox (선택 — `/vibe.voice` 음성 입력용)
 
 ## 라이선스
 

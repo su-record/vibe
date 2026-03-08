@@ -96,7 +96,7 @@ User: 1 hour, disallow, confirm
 
 When image files (`.png`, `.jpg`, `.jpeg`, `.webp`) are provided as input, analyze them using the best available method:
 
-- **Gemini Enabled**: `llm-orchestrate.js gemini analyze-image` (Gemini 3 Flash - best image recognition)
+- **Gemini Enabled**: `llm-orchestrate.js gemini analyze-image` (Gemini Flash - best image recognition)
 - **Gemini Disabled**: Claude Opus Read tool (built-in multimodal, existing behavior)
 
 **Gemini enabled - analyze via llm-orchestrate.js:**
@@ -119,7 +119,7 @@ Use the Read tool directly on the image file. Claude can read images natively.
 /vibe.spec "designs/login-wireframe.png"
 
 🖼️ Image analysis: designs/login-wireframe.png
-   (via Gemini 3 Flash / Claude Opus)
+   (via Gemini Flash / Claude Opus)
 
 📋 Detected UI elements:
   - Email input field
@@ -410,11 +410,11 @@ Read ~/.claude/vibe/languages/typescript-react.md
 
 **Run all 4 in PARALLEL (each as separate Bash tool call):**
 ```bash
-# 1. GPT: Best practices (spark — fast research)
-node "[LLM_SCRIPT]" gpt-spark orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+# 1. GPT: Best practices (codex — code review & analysis)
+node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
-# 2. GPT: Security (spark — fast research)
-node "[LLM_SCRIPT]" gpt-spark orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+# 2. GPT: Security (codex — code review & analysis)
+node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # 3. Gemini: Best practices
 node "[LLM_SCRIPT]" gemini orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
@@ -425,11 +425,11 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for [FEATURE] w
 
 **Concrete example - run all 4 in parallel:**
 ```bash
-# GPT best practices (spark — fast research)
-node "[LLM_SCRIPT]" gpt-spark orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+# GPT best practices (codex — code review & analysis)
+node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
-# GPT security (spark — fast research)
-node "[LLM_SCRIPT]" gpt-spark orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
+# GPT security (codex — code review & analysis)
+node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
 # Gemini best practices
 node "[LLM_SCRIPT]" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"

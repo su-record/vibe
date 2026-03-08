@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { CliOptions } from '../types.js';
-import { log, ensureDir, getPackageJson, formatVoiceHint } from '../utils.js';
+import { log, ensureDir, getPackageJson } from '../utils.js';
 import { detectTechStacks } from '../detect.js';
 import { formatLLMStatus, getLLMAuthStatus, getClaudeCodeStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
@@ -347,7 +347,6 @@ export async function init(projectName?: string): Promise<void> {
     const claudeStatus = getClaudeCodeStatus(true);
     log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus(claudeStatus)}
-${formatVoiceHint(authStatus.gemini.length > 0)}
 📦 Context7 plugin (recommended): /plugin install context7
 
 Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"

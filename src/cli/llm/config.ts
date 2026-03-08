@@ -25,7 +25,7 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
   gpt: {
     name: 'core-gpt',
     role: 'architecture',
-    description: 'Architecture/Debugging/Coding (GPT 5.4)',
+    description: 'Code Review/Analysis/Debugging (GPT 5.4 + Codex)',
     package: '@anthropics/openai-mcp',
     envKey: 'OPENAI_API_KEY'
   },

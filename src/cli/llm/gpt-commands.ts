@@ -43,7 +43,7 @@ export function gptStatus(): void {
   }
 
   const modelGpt = config.models?.gpt || 'gpt-5.4 (default)';
-  const modelSpark = config.models?.gptSpark || 'gpt-5.4-pro (default)';
+  const modelCodex = config.models?.gptCodex || 'gpt-5.3-codex (default)';
 
   console.log(`
 GPT Status
@@ -54,7 +54,7 @@ API Key: ${hasApiKey ? 'configured (for embeddings)' : 'not set'}
 
 Models:
   gpt (review):    ${modelGpt}
-  gpt-spark (research): ${modelSpark}
+  gpt-codex (code review & analysis): ${modelCodex}
 
 Auth priority: codex-cli (~/.codex/auth.json) > apikey
 Stored: ~/.vibe/config.json

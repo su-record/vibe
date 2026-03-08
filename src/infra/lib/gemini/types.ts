@@ -116,29 +116,6 @@ export type MultimodalContent = {
   }>;
 };
 
-export type AudioMimeType =
-  | 'audio/wav'
-  | 'audio/mp3'
-  | 'audio/mpeg'
-  | 'audio/aiff'
-  | 'audio/aac'
-  | 'audio/ogg'
-  | 'audio/flac'
-  | 'audio/webm';
-
-export interface AudioTranscriptionOptions {
-  model?: string;
-  maxTokens?: number;
-  temperature?: number;
-  language?: string;
-  systemPrompt?: string;
-}
-
-export interface AudioTranscriptionResult {
-  transcription: string;
-  model: string;
-  duration?: number;
-}
 
 // =============================================
 // Code Completion (stub — OAuth 제거됨)

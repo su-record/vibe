@@ -120,93 +120,6 @@ function parseAnalyzeImageArgs(args) {
 }
 
 // ============================================
-// Voice Transcription (record + Gemini STT)
-// ============================================
-
-function parseVoiceArgs(args) {
-  const result = { pro: false, lang: null, duration: 60 };
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--pro') {
-      result.pro = true;
-    } else if (args[i] === '--lang' || args[i] === '-l') {
-      result.lang = args[++i];
-    } else if (args[i] === '--duration' || args[i] === '-d') {
-      result.duration = parseInt(args[++i], 10) || 60;
-    }
-  }
-  return result;
-}
-
-function checkSoxInstalled() {
-  try {
-    execSync('sox --version', { stdio: 'pipe' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function recordAudio(outputPath, maxDuration) {
-  return new Promise((resolve, reject) => {
-    const soxProcess = spawn('sox', [
-      '-d',
-      '-r', '16000',
-      '-c', '1',
-      '-b', '16',
-      '-t', 'wav',
-      outputPath,
-      'trim', '0', String(maxDuration),
-    ], { stdio: ['pipe', 'pipe', 'pipe'] });
-
-    let stderrData = '';
-    soxProcess.stderr.on('data', (data) => {
-      stderrData += data.toString();
-    });
-
-    // Enter 키로 녹음 중지
-    if (process.stdin.setRawMode) {
-      process.stdin.setRawMode(true);
-    }
-    process.stdin.resume();
-
-    const onKeypress = (key) => {
-      if (key[0] === 13 || key[0] === 10 || key[0] === 3) {
-        if (process.stdin.setRawMode) {
-          process.stdin.setRawMode(false);
-        }
-        process.stdin.pause();
-        process.stdin.removeListener('data', onKeypress);
-        soxProcess.kill('SIGTERM');
-      }
-    };
-    process.stdin.on('data', onKeypress);
-
-    soxProcess.on('close', () => {
-      if (process.stdin.setRawMode) {
-        process.stdin.setRawMode(false);
-      }
-      process.stdin.pause();
-      process.stdin.removeListener('data', onKeypress);
-
-      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 44) {
-        resolve(outputPath);
-      } else {
-        reject(new Error(`Recording failed: ${stderrData || 'empty audio'}`));
-      }
-    });
-
-    soxProcess.on('error', (err) => {
-      if (process.stdin.setRawMode) {
-        process.stdin.setRawMode(false);
-      }
-      process.stdin.pause();
-      process.stdin.removeListener('data', onKeypress);
-      reject(new Error(`Sox process error: ${err.message}`));
-    });
-  });
-}
-
-// ============================================
 // CLI Provider Functions
 // ============================================
 
@@ -309,10 +222,10 @@ function callGeminiCli(prompt, sysPrompt, jsonMode, model) {
 async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   const vibeConfig = readVibeConfig();
 
-  if (providerName === 'gpt' || providerName === 'gpt-spark') {
-    const isSpark = providerName === 'gpt-spark';
-    const model = isSpark
-      ? (vibeConfig.models?.gptSpark || process.env.GPT_SPARK_MODEL || 'gpt-5.4-pro')
+  if (providerName === 'gpt' || providerName === 'gpt-codex') {
+    const isCodex = providerName === 'gpt-codex';
+    const model = isCodex
+      ? (vibeConfig.models?.gptCodex || process.env.GPT_CODEX_MODEL || 'gpt-5.3-codex')
       : (vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.4');
     return await callCodexCli(prompt, sysPrompt, jsonMode, model);
   }
@@ -461,66 +374,6 @@ async function main() {
     return;
   }
 
-  // Voice mode handling
-  if (mode === 'voice') {
-    if (provider !== 'gemini') {
-      console.log(JSON.stringify({
-        success: false,
-        error: 'Voice transcription only supports gemini provider',
-      }));
-      return;
-    }
-
-    if (!checkSoxInstalled()) {
-      console.log(JSON.stringify({
-        success: false,
-        error: 'sox is not installed. Install with: brew install sox (macOS) or apt install sox (Linux)',
-      }));
-      return;
-    }
-
-    const voiceArgs = parseVoiceArgs(process.argv.slice(4));
-    const voiceModel = voiceArgs.pro ? 'gemini-pro' : 'gemini-flash';
-    const tmpFile = path.join(os.tmpdir(), `vibe-voice-${crypto.randomUUID()}.wav`);
-
-    console.error(`[VOICE] Recording audio... (press Enter to stop, max ${voiceArgs.duration}s)`);
-    console.error(`  Model: ${voiceModel}`);
-    if (voiceArgs.lang) {
-      console.error(`  Language: ${voiceArgs.lang}`);
-    }
-
-    try {
-      await recordAudio(tmpFile, voiceArgs.duration);
-
-      const stats = fs.statSync(tmpFile);
-      const fileSizeKB = (stats.size / 1024).toFixed(1);
-      console.error(`[VOICE] Recording complete (${fileSizeKB} KB). Transcribing...`);
-
-      const geminiApi = await import(`${LIB_URL}gemini-api.js`);
-      const result = await geminiApi.transcribeAudio(tmpFile, {
-        model: voiceModel,
-        language: voiceArgs.lang || undefined,
-      });
-
-      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
-
-      console.log(JSON.stringify({
-        success: true,
-        transcription: result.transcription,
-        duration: result.duration,
-        model: result.model,
-      }));
-    } catch (err) {
-      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
-
-      console.log(JSON.stringify({
-        success: false,
-        error: err.message,
-      }));
-    }
-    return;
-  }
-
   // Text generation mode (orchestrate / orchestrate-json)
   let prompt;
   let systemPrompt = DEFAULT_SYSTEM_PROMPT;
@@ -584,16 +437,16 @@ async function main() {
   // 접두사 제거
   const prefixPatterns = {
     gpt: /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
-    'gpt-spark': /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
+    'gpt-codex': /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
     gemini: /^(gemini[-.\s]|제미나이-|vibe-gemini-)\s*/i,
   };
   const cleanPrompt = prompt.replace(prefixPatterns[provider] || /^/, '').trim();
   const jsonMode = mode === 'orchestrate-json';
 
   // Provider chain: primary → cross fallback
-  // gpt-spark fallback: gpt-spark → gemini (spark는 full gpt로 fallback하지 않음)
-  const providerLabels = { gpt: 'GPT-5.3', 'gpt-spark': 'GPT-5.3 Spark', gemini: 'Gemini-3' };
-  const isGpt = provider === 'gpt' || provider === 'gpt-spark';
+  // gpt-codex fallback: gpt-codex → gemini (codex는 full gpt로 fallback하지 않음)
+  const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', gemini: 'Gemini' };
+  const isGpt = provider === 'gpt' || provider === 'gpt-codex';
   const providerChain = isGpt
     ? [provider, 'gemini']
     : ['gemini', 'gpt'];

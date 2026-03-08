@@ -926,7 +926,7 @@ Then: Login success + JWT token returned
 │               │                                                 │
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
-│  [If GPT enabled] Bash: node "[LLM_SCRIPT]" gpt-spark orchestrate-json "[question]"
+│  [If GPT enabled] Bash: node "[LLM_SCRIPT]" gpt-codex orchestrate-json "[question]"
 │  [If Gemini enabled] Bash: node "[LLM_SCRIPT]" gemini orchestrate-json "[question]"
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -1636,8 +1636,8 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [Step 1] Parallel review execution...
-  ├─ GPT-5.2-Codex: Reviewing...
-  └─ Gemini-3-Flash: Reviewing...
+  ├─ GPT Codex: Reviewing...
+  └─ Gemini: Reviewing...
 
 [Step 2] Cross-validation results:
   ┌───────────────────────────────────────────────────────────┐
