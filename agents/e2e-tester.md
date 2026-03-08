@@ -1,11 +1,21 @@
 ---
-description: End-to-end testing with Playwright automation
+description: End-to-end testing with Closed Loop automation
 argument-hint: "test scenario or URL"
 ---
 
 # /vibe.e2e
 
-**E2E Test Automation** - Playwright-based browser testing
+**Closed Loop E2E Testing** - AI가 직접 브라우저를 조작하여 검증하고, 실패 시 자동 수정을 반복
+
+## Philosophy: Closed Loop
+
+```
+구현 → 검증 → 실패 → 수정 → 재검증 → ... → 통과
+       ↑_________________________________↓
+
+사람 개입 없이 AI가 루프를 완주한다.
+검증이 가벼울수록 루프는 더 많이 돈다.
+```
 
 ## Usage
 
@@ -17,117 +27,176 @@ argument-hint: "test scenario or URL"
 /vibe.e2e --record                     # Record test video
 ```
 
-## Core Features
+## Browser Tool Selection (Token Efficiency)
+
+**검증 비용이 비싸면 루프가 돌지 않는다.**
+
+| Tool | 클릭 1회 토큰 | 방식 | Closed Loop 적합성 |
+|------|-------------|------|-------------------|
+| Playwright MCP | ~12,000+ chars | DOM 트리 전체 전달 | Bad - 2~3회 만에 컨텍스트 소진 |
+| Agent Browser | ~6 chars | 접근성 트리 (의미만 추출) | Good - 수십 회 루프 가능 |
+| Playwright Test Runner | N/A (코드 실행) | 테스트 코드 결과만 반환 | Good - pass/fail만 반환 |
+
+### Tool Priority
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  🎭 Playwright E2E Testing                                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ✅ Screenshot Capture - Record UI state                        │
-│  ✅ Console Error Collection - Detect JS errors                 │
-│  ✅ Network Monitoring - Detect API failures                    │
-│  ✅ Visual Regression - Compare screenshots                     │
-│  ✅ Video Recording - Bug reproduction evidence                 │
-│  ✅ Accessibility Check - Detect a11y violations                │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+1. Agent Browser (MCP) — AI가 직접 브라우저 조작, 접근성 트리 기반 (최소 토큰)
+2. Playwright Test Runner — 테스트 코드 작성 후 실행, 결과만 수신 (pass/fail)
+3. Playwright MCP — DOM 기반 직접 조작 (토큰 비효율, 최후 수단)
 ```
+
+### Why Accessibility Tree?
+
+```
+DOM (Playwright MCP):
+  div class="nav-wrapper mx-4 flex items-center justify-between..." → 200+ chars
+
+Accessibility Tree (Agent Browser):
+  button "Sign In" → 15 chars
+
+AI에게 필요한 건 후자다.
+시각장애인용 스크린 리더가 쓰는 트리가, AI 에이전트에게도 최적의 웹 표현이다.
+```
+
+## Core Features
+
+- Screenshot Capture - Record UI state
+- Console Error Collection - Detect JS errors
+- Network Monitoring - Detect API failures
+- Visual Regression - Compare screenshots
+- Video Recording - Bug reproduction evidence
+- Accessibility Check - Detect a11y violations
 
 ## Process
 
-### Phase 1: Environment Setup
+### Phase 1: Environment Detection
 
-```bash
-# Check Playwright installation
-npx playwright --version
-
-# Install browsers if needed
-npx playwright install chromium
+```
+1. Agent Browser MCP 사용 가능? → 사용 (최우선)
+2. Playwright 설치됨? → npx playwright --version
+3. 없으면 → npx playwright install chromium
 ```
 
 ### Phase 2: Test Scenario Analysis
 
 ```
-📋 Scenario Detection
+Scenario Detection
 ├── .claude/vibe/features/{feature}.feature → Extract BDD scenarios
 ├── .claude/vibe/specs/{feature}.md → Check acceptance criteria
 └── Analyze existing e2e/*.spec.ts
 ```
 
-### Phase 3: Test Execution
+**File Reading Policy**: Feature/SPEC 파일은 반드시 Read 도구로 전체 읽을 것.
 
-**Single Page Test:**
+### Phase 3: Closed Loop Execution
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  CLOSED LOOP E2E VERIFICATION                                    │
+│                                                                  │
+│  For each scenario in Feature file:                              │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │ Scenario: "User submits notification form"                │    │
+│  │                                                           │    │
+│  │  [Browser] Navigate to URL                                │    │
+│  │  [Browser] Find form (accessibility tree)                 │    │
+│  │  [Browser] Fill inputs                                    │    │
+│  │  [Browser] Click submit                                   │    │
+│  │  [Browser] Check success message                          │    │
+│  │       │                                                   │    │
+│  │       ├─ PASS → Next scenario                             │    │
+│  │       └─ FAIL → Root cause analysis                       │    │
+│  │              → Fix code                                   │    │
+│  │              → Re-run scenario (max 3 retries)            │    │
+│  └──────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  All scenarios pass → DONE                                       │
+│  Max retries exceeded → Report failures                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Agent Browser approach (preferred):**
+
+```
+AI directly controls browser:
+  1. navigate("http://localhost:3000/login")
+  2. type("email field", "test@example.com")
+  3. type("password field", "password123")
+  4. click("Sign In")
+  5. assert: page contains "Dashboard"
+
+Each action: ~6-20 chars of context (accessibility tree)
+Total scenario: ~100-200 chars
+→ Can run 50+ scenarios in one session
+```
+
+**Playwright Test Runner approach (fallback):**
+
 ```typescript
-// Auto-generated test
+// Auto-generated lightweight test
 import { test, expect } from '@playwright/test';
 
 test('login flow', async ({ page }) => {
-  // Navigate
   await page.goto('http://localhost:3000/login');
-
-  // Screenshot: initial state
-  await page.screenshot({ path: 'screenshots/login-initial.png' });
-
-  // Fill form
   await page.fill('[data-testid="email"]', 'test@example.com');
   await page.fill('[data-testid="password"]', 'password123');
-
-  // Submit
   await page.click('[data-testid="submit"]');
-
-  // Wait for navigation
   await page.waitForURL('**/dashboard');
-
-  // Screenshot: success state
-  await page.screenshot({ path: 'screenshots/login-success.png' });
-
-  // Assertions
   await expect(page.locator('h1')).toContainText('Dashboard');
 });
 ```
 
-**Console Error Collection:**
-```typescript
-test.beforeEach(async ({ page }) => {
-  // Collect console errors
-  page.on('console', msg => {
-    if (msg.type() === 'error') {
-      console.log(`Console Error: ${msg.text()}`);
-    }
-  });
-
-  // Collect network failures
-  page.on('requestfailed', request => {
-    console.log(`Request failed: ${request.url()}`);
-  });
-});
+```bash
+# Run and get pass/fail only (minimal token usage)
+npx playwright test --reporter=line 2>&1 | tail -5
 ```
 
-### Phase 4: Visual Regression (--visual)
+### Phase 4: Auto-Fix Loop (Closed Loop Core)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  👁️ Visual Regression Test                                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Comparing screenshots:                                          │
-│                                                                 │
-│  ├── login-page.png                                             │
-│  │   ├── Baseline: .claude/vibe/e2e/baseline/login-page.png           │
-│  │   ├── Current:  .claude/vibe/e2e/current/login-page.png            │
-│  │   └── Diff: ✅ 0.02% (threshold: 1%)                         │
-│  │                                                              │
-│  ├── dashboard.png                                              │
-│  │   ├── Baseline: .claude/vibe/e2e/baseline/dashboard.png            │
-│  │   ├── Current:  .claude/vibe/e2e/current/dashboard.png             │
-│  │   └── Diff: ❌ 5.3% (threshold: 1%)                          │
-│  │       └── .claude/vibe/e2e/diff/dashboard-diff.png                 │
-│  │                                                              │
-└─────────────────────────────────────────────────────────────────┘
+E2E scenario FAILED
+      │
+      ↓
+[Collect evidence]
+  - Screenshot of failure state
+  - Console errors
+  - Network failures
+  - Accessibility tree snapshot (lightweight)
+      │
+      ↓
+[Root cause analysis]
+  - Which step failed? (Given/When/Then)
+  - Error type? (element not found / assertion failed / network error)
+      │
+      ↓
+[Fix implementation]
+  - Read target source file (FULL, not Grep)
+  - Apply minimal fix
+      │
+      ↓
+[Re-run ONLY failed scenario]
+  - Don't re-run passed scenarios (save tokens)
+      │
+      ↓
+  PASS → Continue to next scenario
+  FAIL → Retry (max 3)
+  3x FAIL → Report as manual fix needed
 ```
 
-### Phase 5: Accessibility Check
+### Phase 5: Visual Regression (--visual)
+
+```
+Comparing screenshots:
+├── login-page.png
+│   ├── Baseline: .claude/vibe/e2e/baseline/login-page.png
+│   ├── Current:  .claude/vibe/e2e/current/login-page.png
+│   └── Diff: 0.02% (threshold: 1%) → PASS
+├── dashboard.png
+│   └── Diff: 5.3% (threshold: 1%) → FAIL → auto-fix loop
+```
+
+### Phase 6: Accessibility Check
 
 ```typescript
 import { injectAxe, checkA11y } from 'axe-playwright';
@@ -142,76 +211,31 @@ test('accessibility check', async ({ page }) => {
 });
 ```
 
-### Phase 6: Bug Reproduction (Optional)
-
-Link with bug reports:
-
-```
-/vibe.e2e --reproduce "User sees blank page after login"
-
-┌─────────────────────────────────────────────────────────────────┐
-│  🐛 Bug Reproduction Mode                                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Steps executed:                                                │
-│  1. ✅ Navigate to /login                                       │
-│  2. ✅ Enter credentials                                        │
-│  3. ✅ Click login button                                       │
-│  4. ❌ Dashboard shows blank                                    │
-│                                                                 │
-│  Evidence collected:                                             │
-│  ├── 📸 screenshots/bug-step-1.png                              │
-│  ├── 📸 screenshots/bug-step-2.png                              │
-│  ├── 📸 screenshots/bug-step-3.png                              │
-│  ├── 📸 screenshots/bug-step-4-FAIL.png                         │
-│  ├── 🎥 videos/bug-reproduction.webm                            │
-│  └── 📋 logs/console-errors.txt                                 │
-│                                                                 │
-│  Console Errors Found:                                           │
-│  └── TypeError: Cannot read property 'user' of undefined        │
-│      at Dashboard.tsx:42                                        │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
 ## Output
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  🎭 E2E TEST RESULTS                                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Test Suite: Login Flow                                          │
-│  Duration: 12.3s                                                │
-│  Browser: Chromium 120                                          │
-│                                                                 │
-│  Results:                                                        │
-│  ├── ✅ Passed: 8                                                │
-│  ├── ❌ Failed: 1                                                │
-│  └── ⏭️ Skipped: 0                                               │
-│                                                                 │
-│  Failed Tests:                                                   │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
-│  ❌ "should show error for invalid password"                    │
-│     Expected: "Invalid password" message                        │
-│     Actual: No error message displayed                          │
-│     📸 Screenshot: .claude/vibe/e2e/failures/invalid-password.png      │
-│                                                                 │
-│  Console Errors: 2                                               │
-│  ├── TypeError at Dashboard.tsx:42                              │
-│  └── 404 at /api/user/preferences                               │
-│                                                                 │
-│  Accessibility Issues: 3                                         │
-│  ├── [serious] Form input missing label                         │
-│  ├── [moderate] Color contrast insufficient                     │
-│  └── [minor] Missing skip link                                  │
-│                                                                 │
-│  Artifacts:                                                      │
-│  ├── 📸 Screenshots: .claude/vibe/e2e/screenshots/                     │
-│  ├── 🎥 Video: .claude/vibe/e2e/videos/                                │
-│  └── 📋 Report: .claude/vibe/e2e/report.html                           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+E2E CLOSED LOOP RESULTS
+
+Test Suite: Login Flow
+Duration: 12.3s
+Browser Tool: Agent Browser (accessibility tree)
+Loop Iterations: 2 (1 auto-fix applied)
+
+Results:
+  Passed: 8 (1 after auto-fix)
+  Failed: 0
+  Skipped: 0
+
+Auto-Fixes Applied:
+  1. Scenario "invalid password error"
+     Root cause: Missing error message element
+     Fix: Added error toast in LoginForm.tsx:42
+     Re-test: PASSED
+
+Console Errors: 0
+Accessibility Issues: 0
+
+Token Usage: ~2,400 chars (vs ~96,000 with DOM-based approach)
 ```
 
 ## Configuration
@@ -223,6 +247,13 @@ Link with bug reports:
   "baseURL": "http://localhost:3000",
   "browsers": ["chromium"],
   "viewport": { "width": 1280, "height": 720 },
+  "browserTool": "auto",
+  "closedLoop": {
+    "enabled": true,
+    "maxRetries": 3,
+    "autoFix": true,
+    "rerunFailedOnly": true
+  },
   "video": "retain-on-failure",
   "screenshot": "only-on-failure",
   "trace": "retain-on-failure",
@@ -237,29 +268,26 @@ Link with bug reports:
 }
 ```
 
-## Integration with Review
+## Integration with /vibe.run
 
-Auto-suggest after `/vibe.review`:
+`/vibe.run` 에서 UI 시나리오 구현 후 자동으로 Closed Loop E2E 검증 트리거:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  💡 E2E Test Recommended                                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  UI changes detected in this PR:                                 │
-│  - src/components/LoginForm.tsx                                 │
-│  - src/pages/Dashboard.tsx                                      │
-│                                                                 │
-│  Run E2E tests? /vibe.e2e "login flow"                          │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+/vibe.run "login" ultrawork
+  ├── Phase 1: Implement login form
+  ├── Phase 2: Implement validation
+  ├── [AUTO] E2E Closed Loop verification
+  │   ├── Scenario 1: valid login → PASS
+  │   ├── Scenario 2: invalid password → FAIL → auto-fix → PASS
+  │   └── Scenario 3: email validation → PASS
+  └── All scenarios verified → Complete
 ```
 
 ## Related Commands
 
 - `/vibe.review` - Code review
 - `/vibe.verify` - SPEC verification
-- `/vibe.compound` - Document test results
+- `/vibe.run` - Implementation with auto-verification
 
 ---
 

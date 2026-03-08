@@ -89,27 +89,75 @@ Scenario 3 → Implement → Verify ❌ → Fix → ✅
 All pass = Quality guaranteed
 ```
 
-### Automated Verification
+### Automated Verification (Closed Loop)
+
+**자율적 AI 코딩 = 구현 + 검증 + 반복. 검증을 AI에게 맡기는 순간 루프가 닫힌다.**
 
 After implementing each scenario, **automatic verification**:
 
-| Verification Item | Auto Check |
-|-------------------|------------|
-| Given (precondition) | State/data preparation confirmed |
-| When (action) | Feature execution possible |
-| Then (result) | Expected result matches |
-| Code quality | Complexity, style, security |
+| Verification Item | Auto Check | Method |
+|-------------------|------------|--------|
+| Given (precondition) | State/data preparation confirmed | Code analysis |
+| When (action) | Feature execution possible | Code analysis + Build |
+| Then (result) | Expected result matches | Code analysis + Test |
+| Code quality | Complexity, style, security | Static analysis |
+| **UI behavior** | **실제 브라우저에서 동작 확인** | **E2E Closed Loop** |
+
+### E2E Closed Loop (UI Scenarios)
+
+**UI 시나리오가 포함된 Feature일 때 자동 활성화.**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  CLOSED LOOP = 구현 + 검증 + 반복                                 │
+│                                                                  │
+│  Scenario 구현 완료                                               │
+│       ↓                                                          │
+│  [E2E 검증] AI가 직접 브라우저 조작                                │
+│       │   (접근성 트리 기반 — 토큰 효율적)                         │
+│       ├─ PASS → Next scenario                                    │
+│       └─ FAIL → Root cause analysis                              │
+│              → Fix code (Read full file first)                   │
+│              → Re-run failed scenario only                       │
+│              → PASS? → Next scenario                             │
+│              → FAIL? → Retry (max 3)                             │
+│                                                                  │
+│  핵심: 검증이 가벼울수록 루프는 더 많이 돈다                       │
+│  - 접근성 트리: button "Sign In" = 15 chars                      │
+│  - DOM 트리: div class="nav-wrapper mx-4..." = 200+ chars        │
+│  - 전자를 써야 한 세션에서 수십 개 시나리오 검증 가능               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Browser Tool Priority:**
+
+| Priority | Tool | 용도 |
+|----------|------|------|
+| 1st | Agent Browser (접근성 트리) | AI 직접 조작, 최소 토큰 |
+| 2nd | Playwright Test Runner | 테스트 코드 실행, pass/fail 반환 |
+| 3rd | Playwright MCP (DOM) | 최후 수단, 토큰 비효율 |
+
+**활성화 조건:**
+- Feature 파일에 UI 관련 시나리오 존재 (form, button, page, navigate 등)
+- `.claude/vibe/e2e/config.json`의 `closedLoop.enabled: true` (기본값)
+- dev server가 실행 중 (`baseURL` 접근 가능)
 
 ### Auto-Fix on Failure
 
 ```
-Scenario verification failed
+Scenario verification failed (코드 분석 또는 E2E)
+      ↓
+[Collect evidence]
+  - E2E: screenshot, console errors, accessibility tree snapshot
+  - Code: build errors, test failures, type errors
       ↓
 [Root cause analysis] - Which Then condition failed?
       ↓
+[Read target file FULLY] - Grep으로 훑지 말 것
+      ↓
 [Implement fix] - Fix only that part
       ↓
-[Re-verify] - Check again
+[Re-verify] - Re-run ONLY failed scenario (save tokens)
       ↓
 Repeat until pass (max 3 times)
 ```

@@ -123,6 +123,43 @@ Then: Login success + JWT token returned
 | **Code Analysis** | Always | Check implementation, verify logic |
 | **Build Verification** | When build script exists | Check for compile errors |
 | **Type Check** | TypeScript, etc. | Check for type errors |
+| **E2E Closed Loop** | `--e2e` flag or UI scenarios | Browser-based verification (see below) |
+
+### 3.1. E2E Closed Loop Verification (`--e2e`)
+
+**AI가 직접 브라우저를 조작하여 시나리오를 검증하고, 실패 시 자동 수정 후 재검증한다.**
+
+```
+구현 → E2E 검증 → 실패 → 수정 → 재검증 → ... → 통과
+       ↑_____________________________________↓
+       Closed Loop: 사람 개입 없이 AI가 완주
+```
+
+**Browser Tool Priority (토큰 효율 순):**
+
+| Priority | Tool | 토큰/액션 | 사용 조건 |
+|----------|------|----------|----------|
+| 1st | Agent Browser (접근성 트리) | ~6-20 chars | MCP 사용 가능 시 |
+| 2nd | Playwright Test Runner | pass/fail만 | 테스트 코드 실행 |
+| 3rd | Playwright MCP (DOM) | ~12,000+ chars | 최후 수단 |
+
+**Closed Loop 실행 흐름:**
+
+```
+For each UI scenario in Feature file:
+  1. [Browser] Navigate → Find elements → Interact → Assert
+  2. PASS → Next scenario
+  3. FAIL → Collect evidence (screenshot, console errors)
+       → Root cause analysis
+       → Fix code (Read full file first, then edit)
+       → Re-run ONLY failed scenario (max 3 retries)
+  4. 3x FAIL → Report as manual fix needed
+```
+
+**핵심 원칙: 검증이 가벼워야 루프가 충분히 돈다.**
+- 접근성 트리 기반: `button "Sign In"` = 15 chars
+- DOM 기반: `div class="nav-wrapper mx-4 flex..."` = 200+ chars
+- 전자를 사용해야 시나리오 50개도 한 세션에서 검증 가능
 
 ### 4. Quality Report (Auto-generated)
 
