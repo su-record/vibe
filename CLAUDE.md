@@ -38,6 +38,14 @@
 - No `@ts-ignore` — fix type issues at root
 - Explicit return types on all functions
 
+### Convergence Principle (Over-Diagnosis Prevention)
+
+- **P1만 필수, P2/P3는 best-effort** — P1=0이면 완료
+- **반복 리뷰는 스코프 축소** — 2회차: P1+P2만, 3회차+: P1만
+- **수렴 감지** — 이전 라운드와 동일한 결과 → 즉시 종료
+- **실패 3회 = 에스컬레이션** — 재시도 금지, TODO로 이관
+- **변경 파일만 검사** — 전체 프로젝트 스캔 금지
+
 ### Forbidden Patterns
 
 - No `console.log` in commits

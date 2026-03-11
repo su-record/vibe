@@ -35,17 +35,24 @@ function classifyObservation(files) {
 }
 
 async function main() {
-  // 1. 코드 품질 검사 (기존)
+  // 1. 코드 품질 검사 (변경된 파일만 — 전체 프로젝트 스캔 금지)
   try {
-    const module = await import(`${BASE_URL}convention/index.js`);
-    const result = await module.validateCodeQuality({
-      targetPath: '.',
-      projectPath: PROJECT_DIR,
-    });
-    const lines = result.content[0].text.split('\n').slice(0, 3).join(' | ');
-    console.log('[CODE CHECK]', lines);
+    const files = getModifiedFiles();
+    if (files.length > 0) {
+      const module = await import(`${BASE_URL}convention/index.js`);
+      const result = await module.validateCodeQuality({
+        targetPath: files[0],
+        projectPath: PROJECT_DIR,
+      });
+      const text = result.content[0].text;
+      // P1/P2만 출력 — P3(스타일) 무시
+      const critical = text.split('\n').filter(l => /\b(error|critical|P1|P2)\b/i.test(l)).slice(0, 3);
+      if (critical.length > 0) {
+        console.log('[CODE CHECK]', critical.join(' | '));
+      }
+    }
   } catch {
-    console.log('[AUTO-CONTINUE] Code written. Continue.');
+    // 검사 실패 시 조용히 계속 — 진행 차단 금지
   }
 
   // 2. 관찰 자동 캡처

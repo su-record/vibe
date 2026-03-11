@@ -293,7 +293,9 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 | **Iteration Tracking** | Display `[{{ITER}}/{{MAX}}]` to show progress |
 | **RTM-Based Gap List** | Use `uncoveredRequirements` array - no manual comparison |
 | **Coverage Threshold** | Must reach 95% coverage to complete |
-| **Max Iterations** | Stop at 5 iterations (report remaining gaps) |
+| **Max Iterations** | Stop at 5 iterations (report remaining gaps as TODO) |
+| **Convergence Detection** | If coverage % unchanged between iterations → STOP (수렴 완료) |
+| **Diminishing Returns** | Iteration 3+ → core requirements (REQ-*-001~003) 미충족만 추가 구현, 나머지 TODO |
 
 **Ralph Loop Output Format:**
 

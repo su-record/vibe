@@ -873,7 +873,7 @@ If the following terms exist in SPEC, **clarification is mandatory**:
 5. Auto-fixable items → Fix immediately
    Needs user confirmation → Ask question
       ↓
-6. Re-verify (repeat until 0 ambiguities)
+6. Re-verify (max 2 rounds — remaining ambiguities → user confirmation or TODO)
 ```
 
 #### 6.4 Auto-Fix for Common Ambiguities

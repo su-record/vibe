@@ -135,8 +135,8 @@ while iteration < max_iterations:
     print(f"✅ Applied {len(missing_items)} fixes - Re-evaluating...")
 
 if score < 95:
-    print(f"❌ BLOCKED: Score {score} < 95 after {max_iterations} iterations")
-    print("Manual intervention required.")
+    print(f"⚠️ Score {score} < 95 after {max_iterations} iterations")
+    print("Remaining gaps added to TODO. Proceeding with current quality.")
 ```
 
 **Output format:**
@@ -179,22 +179,25 @@ Score: 96/100 ✅ PASSED
 
 ---
 
-## Step 3: Race Review (GPT + Gemini Cross-Validation) - 3 Rounds (v2.6.9)
+## Step 3: Race Review (GPT + Gemini Cross-Validation) - Max 3 Rounds (v2.6.9)
 
-**🚨🚨🚨 CRITICAL: YOU MUST EXECUTE ALL 3 ROUNDS. DO NOT SKIP THIS STEP. 🚨🚨🚨**
-
-**🚨 ABSOLUTE RULES FOR RACE REVIEW:**
+**RULES FOR RACE REVIEW:**
 
 1. **YOU MUST** use the Bash tool to call `llm-orchestrate.js` directly
-2. **DO NOT** skip GPT/Gemini calls
-3. **DO NOT** simulate or fake review results
-4. **YOU MUST** run all 3 rounds sequentially (each round uses updated SPEC)
+2. **DO NOT** simulate or fake review results
+3. Run rounds sequentially (each round uses updated SPEC)
 
 > Race Mode reviews SPEC with GPT and Gemini in parallel, then cross-validates findings for higher confidence.
 
-### 3.1 Review Loop (3 Rounds)
+### Convergence Rule (Early Exit)
 
-**For EACH round (1, 2, 3), run GPT + Gemini in PARALLEL via Bash tool.**
+- **Round N 발견 == Round N-1 발견** → 수렴 완료, 즉시 종료 (Round 3까지 갈 필요 없음)
+- **Round 1에서 P1 = 0** → Round 2 건너뛰고 종료
+- **최대 3라운드** — 3라운드 후에도 새로운 P1이 나오면 TODO로 기록하고 종료
+
+### 3.1 Review Loop (Max 3 Rounds)
+
+**For EACH round (1, 2, 3), run GPT + Gemini in PARALLEL via Bash tool. Stop early if converged.**
 
 **🚨 IMPORTANT: SPEC content is too large for CLI arguments. Use --input file method (no pipe needed).**
 

@@ -134,6 +134,36 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.j
 | P2 | Performance issues, architecture violations, missing tests | Fix before merge |
 | P3 | Style, refactoring suggestions, documentation | Add to backlog |
 
+## Convergence Rules (Over-Diagnosis Prevention)
+
+> **Principle**: Reviews must converge. A review that always finds more issues is broken, not thorough.
+
+### Scope Limiting
+
+- **Review ONLY changed files** — `git diff --name-only` 기준. 전체 프로젝트 스캔 금지
+- **git diff가 없으면** (첫 리뷰) — 대상 경로의 파일만 리뷰
+
+### Severity Filtering by Round
+
+| Round | What to Report |
+|-------|---------------|
+| 1st review | P1 + P2 + P3 (전체) |
+| 2nd review (same code) | P1 + P2 only (P3 무시) |
+| 3rd+ review | P1 only (새로운 P1만 보고) |
+
+### Stop Conditions
+
+- **P1 = 0 이면 MERGE READY** — P2/P3가 남아있어도 머지 가능
+- **Auto-fix 후 P1 = 0 이면 종료** — P2 auto-fix 실패해도 TODO로 남기고 종료
+- **Review Debate 후 최종 P1 리스트가 이전과 동일하면 종료** — 새로운 발견 없음 = 수렴 완료
+
+### Anti-Patterns (FORBIDDEN)
+
+- "모든 항목 검증 필수" → P1만 필수, P2/P3는 best-effort
+- "한 가지 더 발견했습니다" (반복) → 이전 리뷰에서 언급 안 된 P1만 보고
+- P3 이슈로 코드 수정 강제 → P3는 TODO 파일로만 기록, 코드 수정 금지
+- auto-fix 실패 시 무한 재시도 → max 1회 재시도 후 TODO로 이관
+
 ## Process
 
 ### Phase 1: Tech Stack Detection
@@ -481,7 +511,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 ### Review Quality Checklist
 
-Before completing review, ALL items must be verified:
+Before completing review, check P1-critical items. P2/P3 items are best-effort:
 
 | Category | Check Item | Weight |
 |----------|------------|--------|

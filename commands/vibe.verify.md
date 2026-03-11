@@ -429,6 +429,21 @@ For each scenario, verify at THREE levels:
 | Build error | Show error location |
 | Type error | Suggest type annotations |
 
+### Failure Escalation (max 3 retries)
+
+```
+Auto-fix attempt 1 → Re-verify
+  ❌ Still failing?
+Auto-fix attempt 2 → Re-verify
+  ❌ Still failing?
+Auto-fix attempt 3 → Re-verify
+  ❌ Still failing?
+    → STOP. Do NOT retry further.
+    → Record failure in .claude/vibe/todos/verify-failure-{scenario}.md
+    → Report to user: "Scenario X failed after 3 attempts. Manual review needed."
+    → Continue to next scenario (don't block entire verification)
+```
+
 ### Verification Report Requirements
 
 Every verification MUST produce:
