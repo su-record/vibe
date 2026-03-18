@@ -221,10 +221,15 @@ $ git checkout -b feature/login-page
 ### 1. Project Analysis
 
 **Existing project** (`vibe init`):
-- Source code analysis: `package.json`, `pyproject.toml`, `pubspec.yaml`, `go.mod`, etc.
 - Reference `CLAUDE.md` file (tech stack)
-- Infer framework from file structure
-- **Use `findSymbol` tool** to locate relevant existing implementations
+- **Delegate codebase analysis to explorer agent** — do NOT read project files in main session:
+
+```text
+Task(subagent_type="explorer-low",
+  prompt="Analyze project structure: package.json, pyproject.toml, pubspec.yaml, go.mod.
+  Find existing implementations related to [FEATURE]. Return: tech stack, relevant files, patterns used.
+  Keep summary under 200 tokens.")
+```
 
 **New project** (`vibe init <project-name>`):
 - Suggest tech stack (2-3 options)

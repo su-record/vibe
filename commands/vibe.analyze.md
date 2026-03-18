@@ -67,12 +67,15 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
 
 #### 3. Explore Related Code (Parallel Sub-Agents)
 
-**🚨 MANDATORY: 3개 이상의 Task를 병렬로 실행하세요. 순차 실행은 위반입니다.**
+**MANDATORY: Always use explorer sub-agents. Never explore in main session.**
 
-**병렬 탐색 패턴 (한 메시지에 모든 Task 호출):**
+> Why: 3 explorer-low agents return ~600 tokens of summaries to main session.
+> Direct Glob/Grep/Read in main session would add 5-15K tokens of raw file content.
+
+**Parallel exploration (ALL tasks in ONE message):**
 
 ```text
-# 3개 explorer 에이전트 병렬 실행 (single message, multiple tool calls)
+# 3 explorer agents in parallel (single message, multiple tool calls)
 Task(subagent_type="explorer-low", model="haiku",
   prompt="Find all [FEATURE] related API endpoints in this project. List file paths, HTTP methods, routes, and auth requirements.")
 
@@ -83,10 +86,10 @@ Task(subagent_type="explorer-low", model="haiku",
   prompt="Find all [FEATURE] related data models, schemas, and database queries. Document relationships and key fields.")
 ```
 
-**추가 탐색 (프로젝트 규모에 따라):**
+**Additional exploration (scale by project size):**
 
 ```text
-# 대규모 프로젝트 (6+ 관련 파일) — 추가 2개 병렬 실행
+# Large projects (6+ related files) — add 2 more in parallel
 Task(subagent_type="explorer-low", model="haiku",
   prompt="Find all test files related to [FEATURE]. Identify tested vs untested paths.")
 
@@ -94,14 +97,9 @@ Task(subagent_type="explorer-low", model="haiku",
   prompt="Analyze [FEATURE] configuration, environment variables, and external integrations.")
 ```
 
-**결과 종합:**
-- 모든 Task 완료 후 결과를 종합하여 Flow Analysis (Step 4) 진행
-- 탐색 결과 기반으로 관련 파일을 직접 Read하여 상세 분석
-
-**Fallback (direct tools — 소규모 프로젝트):**
-1. **Glob** to collect related file list
-2. **Grep** to locate code by keyword
-3. **Read** to analyze key files in detail
+**After all agents return:**
+- Synthesize results → proceed to Flow Analysis (Step 4)
+- Only Read specific files in main session when agent summary needs clarification
 
 #### 4. Flow Analysis
 

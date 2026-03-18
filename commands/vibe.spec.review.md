@@ -36,10 +36,11 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 
 ## File Reading Policy (Mandatory)
 
-- **SPEC/Feature 파일**: 반드시 `Read` 도구로 전체 파일을 읽을 것 (Grep 금지)
-- **Split 구조의 경우**: `_index` 파일과 모든 `phase-*` 파일을 각각 `Read`로 전체 읽을 것
-- **Grep 사용 제한**: 파일 위치 탐색(어떤 파일에 있는지 찾기)에만 사용. 파일 내용 파악에는 반드시 Read 사용
-- **부분 읽기 금지**: Grep 결과의 주변 몇 줄만 보고 리뷰하지 말 것. 전체 맥락을 파악해야 정확한 품질 검증 가능
+- **Delegate SPEC reading to sub-agents** — Do NOT read all SPEC/Feature files in main session
+- **Split structure (3+ phases)**: Use `Task(subagent_type="explorer-medium")` to read and summarize
+- **Single file structure**: Main session may Read directly (small enough)
+- **Never use Grep** for content analysis — Grep is for file location only
+- **Agent spawn rule**: Include "Read target files FULLY with Read tool" in agent prompts
 
 ## Step 1: Load SPEC Files
 

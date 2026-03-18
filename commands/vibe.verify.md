@@ -115,15 +115,25 @@ Then: Login success + JWT token returned
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 3. Verification Methods (Auto-selected)
+### 3. Verification Methods (PARALLEL — run all applicable at once)
 
-| Method | Condition | Verification Content |
-|--------|-----------|---------------------|
-| **Test Execution** | When test files exist | Run `npm test`, `pytest`, etc. |
-| **Code Analysis** | Always | Check implementation, verify logic |
-| **Build Verification** | When build script exists | Check for compile errors |
-| **Type Check** | TypeScript, etc. | Check for type errors |
-| **E2E Closed Loop** | `--e2e` flag or UI scenarios | Browser-based verification (see below) |
+> **Run these as parallel sub-agents, not sequentially in main session.**
+> Each method returns pass/fail summary (~200 tokens) instead of bloating main context.
+
+| Method | Agent | Condition |
+|--------|-------|-----------|
+| **Test Execution** | `Task(Bash, "npm test")` | When test files exist |
+| **Build Verification** | `Task(Bash, "npm run build")` | When build script exists |
+| **Type Check** | `Task(subagent_type="typescript-reviewer")` | TypeScript projects |
+| **Code Analysis** | `Task(subagent_type="explorer-low")` | Always (verify logic against SPEC) |
+| **E2E Closed Loop** | `Task(subagent_type="e2e-tester")` | `--e2e` flag or UI scenarios |
+
+```text
+# Launch ALL applicable methods in ONE message (parallel)
+Task(Bash, command="npm run build && echo BUILD_OK || echo BUILD_FAIL")
+Task(Bash, command="npm test -- --reporter=verbose 2>&1 | tail -20")
+Task(subagent_type="explorer-low", prompt="Verify [scenario] Given/When/Then against code...")
+```
 
 ### 3.1. E2E Closed Loop Verification (`--e2e`)
 
