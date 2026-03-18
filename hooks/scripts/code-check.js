@@ -35,7 +35,7 @@ function classifyObservation(files) {
 }
 
 async function main() {
-  // 1. 코드 품질 검사 (변경된 파일만 — 전체 프로젝트 스캔 금지)
+  // 1. Code quality check (changed files only — never scan entire project)
   try {
     const files = getModifiedFiles();
     if (files.length > 0) {
@@ -45,14 +45,14 @@ async function main() {
         projectPath: PROJECT_DIR,
       });
       const text = result.content[0].text;
-      // P1/P2만 출력 — P3(스타일) 무시
+      // Output P1/P2 only — skip P3 (style)
       const critical = text.split('\n').filter(l => /\b(error|critical|P1|P2)\b/i.test(l)).slice(0, 3);
       if (critical.length > 0) {
         console.log('[CODE CHECK]', critical.join(' | '));
       }
     }
   } catch {
-    // 검사 실패 시 조용히 계속 — 진행 차단 금지
+    // Silently continue on check failure — never block progress
   }
 
   // 2. 관찰 자동 캡처

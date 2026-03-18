@@ -294,8 +294,8 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 | **RTM-Based Gap List** | Use `uncoveredRequirements` array - no manual comparison |
 | **Coverage Threshold** | Must reach 95% coverage to complete |
 | **Max Iterations** | Stop at 5 iterations (report remaining gaps as TODO) |
-| **Convergence Detection** | If coverage % unchanged between iterations → STOP (수렴 완료) |
-| **Diminishing Returns** | Iteration 3+ → core requirements (REQ-*-001~003) 미충족만 추가 구현, 나머지 TODO |
+| **Convergence Detection** | If coverage % unchanged between iterations → STOP (converged) |
+| **Diminishing Returns** | Iteration 3+ → only implement unmet core requirements (REQ-*-001~003), rest goes to TODO |
 
 **Ralph Loop Output Format:**
 
@@ -833,6 +833,50 @@ If implementation requires files outside scope:
 | 50-70% | Save checkpoint, trim exploration results |
 | 70%+ | Save checkpoint → `/new` → resume from checkpoint |
 | Phase boundary | Always save checkpoint regardless of context level |
+
+### 1-2. SPEC-First Gate (Level 3: Spec = Source of Truth)
+
+> **Principle**: SPEC is the source of truth for code. To modify code, update the SPEC first.
+
+**When a change not in the SPEC is needed during implementation:**
+
+```
+Discovery during implementation: "An API endpoint not in SPEC is needed"
+    │
+    ├─ Already in SPEC?
+    │   YES → Implement as-is
+    │
+    ├─ Not in SPEC but within SPEC scope?
+    │   YES → Add to SPEC first (Edit tool → SPEC file)
+    │       → Add corresponding scenario to Feature file
+    │       → Then implement
+    │
+    └─ Outside SPEC scope?
+        YES → Record as TODO and exclude from current scope
+              .claude/vibe/todos/out-of-scope-{item}.md
+```
+
+**Required when changing SPEC:**
+
+1. Update REQ-* IDs in SPEC file (add new requirements)
+2. Add corresponding scenarios to Feature file
+3. New REQ-* must be traceable in RTM after implementation
+
+**Reverse direction also applies — when requirements change from code:**
+
+```
+Test failure → "Is this behavior correct?"
+    │
+    ├─ Check SPEC → If SPEC is correct, fix the code
+    │
+    └─ If SPEC is wrong → Fix SPEC first → Then fix code
+        (Changing code without updating SPEC causes SPEC ↔ code drift)
+```
+
+**Extended Git commit rules:**
+
+- SPEC changes and code changes must be in the same commit
+- Committing feature code without SPEC changes → warning (except intentional refactoring)
 
 ### 2. Extract Scenario List
 

@@ -140,29 +140,29 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.j
 
 ### Scope Limiting
 
-- **Review ONLY changed files** — `git diff --name-only` 기준. 전체 프로젝트 스캔 금지
-- **git diff가 없으면** (첫 리뷰) — 대상 경로의 파일만 리뷰
+- **Review ONLY changed files** — based on `git diff --name-only`. Never scan the entire project
+- **If no git diff** (first review) — review only files in the target path
 
 ### Severity Filtering by Round
 
 | Round | What to Report |
 |-------|---------------|
-| 1st review | P1 + P2 + P3 (전체) |
-| 2nd review (same code) | P1 + P2 only (P3 무시) |
-| 3rd+ review | P1 only (새로운 P1만 보고) |
+| 1st review | P1 + P2 + P3 (all) |
+| 2nd review (same code) | P1 + P2 only (skip P3) |
+| 3rd+ review | P1 only (report only new P1s) |
 
 ### Stop Conditions
 
-- **P1 = 0 이면 MERGE READY** — P2/P3가 남아있어도 머지 가능
-- **Auto-fix 후 P1 = 0 이면 종료** — P2 auto-fix 실패해도 TODO로 남기고 종료
-- **Review Debate 후 최종 P1 리스트가 이전과 동일하면 종료** — 새로운 발견 없음 = 수렴 완료
+- **P1 = 0 means MERGE READY** — mergeable even with remaining P2/P3
+- **P1 = 0 after auto-fix means DONE** — record P2 auto-fix failures as TODO and stop
+- **Final P1 list unchanged after Review Debate → DONE** — no new findings = converged
 
 ### Anti-Patterns (FORBIDDEN)
 
-- "모든 항목 검증 필수" → P1만 필수, P2/P3는 best-effort
-- "한 가지 더 발견했습니다" (반복) → 이전 리뷰에서 언급 안 된 P1만 보고
-- P3 이슈로 코드 수정 강제 → P3는 TODO 파일로만 기록, 코드 수정 금지
-- auto-fix 실패 시 무한 재시도 → max 1회 재시도 후 TODO로 이관
+- "All items must be verified" → Only P1 is mandatory, P2/P3 are best-effort
+- "Found one more issue" (repeated) → Only report P1s not mentioned in previous review
+- Forcing code changes for P3 issues → P3 goes to TODO files only, never force code changes
+- Infinite retries on auto-fix failure → max 1 retry then move to TODO
 
 ## Process
 
@@ -177,6 +177,18 @@ Read Gemfile           -> Ruby, Rails
 Read pubspec.yaml      -> Flutter, Dart
 Read go.mod            -> Go
 Read CLAUDE.md         -> Explicit tech stack declaration
+```
+
+### Phase 1.5: SPEC ↔ Code Alignment Check
+
+> When SPEC files exist, verify that code changes align with the SPEC
+
+```
+1. Search .claude/vibe/specs/ for related SPEC files (based on git diff filenames)
+2. Compare SPEC REQ-* list against functionality in changed code
+3. If functionality added that's not in SPEC → P2 finding: "Feature added without SPEC"
+4. If implementation differs from SPEC → P1 finding: "SPEC ↔ code mismatch"
+5. If no SPEC files exist → Skip (reviews work without SPEC too)
 ```
 
 ### Phase 2: Parallel Agent Review (STACK-AWARE) via Orchestrator

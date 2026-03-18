@@ -191,9 +191,9 @@ Score: 96/100 ✅ PASSED
 
 ### Convergence Rule (Early Exit)
 
-- **Round N 발견 == Round N-1 발견** → 수렴 완료, 즉시 종료 (Round 3까지 갈 필요 없음)
-- **Round 1에서 P1 = 0** → Round 2 건너뛰고 종료
-- **최대 3라운드** — 3라운드 후에도 새로운 P1이 나오면 TODO로 기록하고 종료
+- **Round N findings == Round N-1 findings** → converged, stop immediately (no need to reach Round 3)
+- **Round 1 with P1 = 0** → skip Round 2 and stop
+- **Max 3 rounds** — if new P1s still appear after 3 rounds, record as TODO and stop
 
 ### 3.1 Review Loop (Max 3 Rounds)
 
