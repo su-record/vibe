@@ -3,17 +3,39 @@
  */
 
 import { execSync } from 'child_process';
+import { readdirSync, rmSync } from 'fs';
+import { join } from 'path';
 import { CliOptions } from '../types.js';
 import { log, getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
 
 /**
- * 전역 패키지를 최신 버전으로 업그레이드
- * npm install -g 실행 → postinstall이 전역 설정 자동 처리
+ * Remove stale npm temp directories that cause ENOTEMPTY errors
  */
-export function upgrade(options: CliOptions = { silent: false }): void {
+function cleanStaleTempDirs(): void {
+  try {
+    const parentDir = execSync('npm root -g', { encoding: 'utf-8' }).trim();
+    const scopeDir = join(parentDir, '@su-record');
+    const entries = readdirSync(scopeDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory() && entry.name.startsWith('.vibe-')) {
+        rmSync(join(scopeDir, entry.name), { recursive: true, force: true });
+      }
+    }
+  } catch {
+    // Scope dir may not exist yet — ignore
+  }
+}
+
+/**
+ * Upgrade global package to latest version
+ * npm install -g → postinstall handles global config
+ */
+export function upgrade(_options: CliOptions = { silent: false }): void {
   try {
     log('⬆️ Upgrading to latest version...\n');
+
+    cleanStaleTempDirs();
 
     execSync('npm install -g @su-record/vibe@latest', {
       stdio: 'pipe',
