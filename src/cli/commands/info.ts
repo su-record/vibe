@@ -130,9 +130,6 @@ Agent:
   Sentinel        ${sentinelOn ? 'ON' : 'OFF'}
   Proactive       ${proactiveOn ? 'ON' : 'OFF'}
 ${dbStats}
-Services:
-  Google Apps      ${fs.existsSync(path.join(getGlobalConfigDir(), 'google-tokens.json')) ? '\u2705 Connected (Gmail, Drive, Sheets, Calendar, YouTube)' : '\u2B1A Not connected (vibe setup)'}
-
   `);
 }
 
