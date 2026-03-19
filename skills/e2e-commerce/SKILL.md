@@ -48,6 +48,10 @@ priority: 65
 | Test data leaks between tests | Seed in `beforeAll`, clean in `afterAll` |
 | Hardcoded test card numbers | Document: `4000000000000002` = decline |
 
+## Related
+
+See `commerce-patterns` skill for implementation gotchas (idempotency, atomic stock, payment state machine) that these tests verify.
+
 ## Done Criteria (K4)
 
 - [ ] All P0 scenarios pass in CI

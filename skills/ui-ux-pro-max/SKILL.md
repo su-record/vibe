@@ -1,6 +1,6 @@
 ---
 name: ui-ux-pro-max
-description: "UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, mobile app, .html, .tsx, .vue, .svelte. Elements: button, modal, navbar, sidebar, card, table, form, chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, flat design. Topics: color palette, accessibility, animation, layout, typography, font pairing, spacing, hover, shadow, gradient. Integrations: shadcn/ui MCP for component search and examples."
+description: "UI/UX design intelligence with bold aesthetic direction. 50+ styles, 97 palettes, 57 font pairings, 99 UX guidelines, 25 chart types across 9 stacks."
 ---
 
 # UI/UX Pro Max - Design Intelligence
@@ -198,9 +198,24 @@ Stacks: `html-tailwind`, `react`, `nextjs`, `vue`, `svelte`, `swiftui`, `react-n
 - [ ] Color is not the only indicator
 - [ ] `prefers-reduced-motion` respected
 
+## Design Direction Anti-Patterns
+
+Avoid these signs of generic, AI-generated UI:
+
+| Anti-Pattern | Fix |
+|---|---|
+| Default Bootstrap/Tailwind without customization | Define design tokens first (colors, typography, spacing, motion) |
+| Overused fonts (Inter, Roboto) without styling | Choose distinctive typefaces that set the tone |
+| Predictable card-based layouts everywhere | Use asymmetry and unconventional layouts when appropriate |
+| Stock photography without curation | Custom icons and illustrations |
+| Safe, corporate color palettes | Develop unique color palettes beyond defaults |
+| No micro-interactions | Add meaningful motion to guide user attention (150-300ms) |
+
 ## Done Criteria (K4)
 
 - [ ] Design system generated before implementation
 - [ ] All pre-delivery checklist items verified
 - [ ] Both light and dark modes tested
 - [ ] Responsive at all breakpoints
+- [ ] No default/uncustomized framework styles remain
+- [ ] All interactive states designed (hover, focus, active, disabled)

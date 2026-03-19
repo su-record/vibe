@@ -6,7 +6,6 @@
 
 /** 전역 설치 스킬 (postinstall → ~/.claude/skills/) — 모든 프로젝트에 공통 */
 export const GLOBAL_SKILLS: ReadonlyArray<string> = [
-  'core-capabilities',
   'parallel-research',
   'commit-push-pr',
   'git-worktree',
@@ -27,13 +26,13 @@ export const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>> = {
   // TypeScript 공통
   'typescript': ['typescript-advanced-types'],
   // Web frontend → UI/UX + SEO + React best practices
-  'typescript-react': ['frontend-design', 'ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices'],
-  'typescript-nextjs': ['frontend-design', 'ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices'],
-  'typescript-vue': ['frontend-design', 'ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  'typescript-nuxt': ['frontend-design', 'ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  'typescript-svelte': ['frontend-design', 'ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  'typescript-angular': ['frontend-design', 'ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  'typescript-astro': ['frontend-design', 'ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
+  'typescript-react': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices'],
+  'typescript-nextjs': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices'],
+  'typescript-vue': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
+  'typescript-nuxt': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
+  'typescript-svelte': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
+  'typescript-angular': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
+  'typescript-astro': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
   // Mobile → UI만
   'typescript-react-native': ['ui-ux-pro-max'],
   'dart-flutter': ['ui-ux-pro-max'],

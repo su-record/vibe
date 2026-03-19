@@ -49,6 +49,10 @@ Cart Validation → Order Creation (PENDING) → Stock Reservation (15min) → P
   └─ Failure → Order FAILED, Stock RELEASE
 ```
 
+## Related
+
+See `e2e-commerce` skill for test scenarios covering these patterns (P0 duplicate payment, stock release on failure, etc.).
+
 ## Done Criteria (K4)
 
 - [ ] Idempotency key on all payment requests
