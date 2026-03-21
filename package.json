@@ -43,6 +43,8 @@
   "scripts": {
     "build": "tsc && chmod +x dist/cli/index.js",
     "dev": "tsc --watch",
+    "gen:skill-docs": "npx tsx scripts/gen-skill-docs.ts",
+    "gen:skill-docs:check": "npx tsx scripts/gen-skill-docs.ts --check",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "pnpm build",

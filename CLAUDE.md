@@ -90,6 +90,9 @@
 | Language rules | `languages/` |
 | SPEC/rule templates | `vibe/rules/`, `vibe/templates/` |
 | Infra (daemon, memory, policy) | `src/infra/` |
+| Telemetry (local JSONL) | `src/infra/lib/telemetry/` |
+| Test helpers (shared) | `src/test-helpers/` |
+| Skill catalog generator | `scripts/gen-skill-docs.ts` |
 
 ### Gotchas
 
@@ -119,6 +122,22 @@
 | `ralplan` | Iterative planning + persistence |
 | `verify` | Strict verification mode |
 | `quick` | Fast mode, minimal verification |
+
+## Proactive Skill Suggestions
+
+When the user's context matches a pattern below, suggest the relevant skill **once** per session. If the user says "stop suggesting", disable for the rest of the session.
+
+| User Context | Suggested Skill | Signal |
+|-------------|-----------------|--------|
+| Writing a new SPEC / planning | `/vibe.spec` | "let's build", "new feature", "requirements" |
+| SPEC exists, ready to implement | `/vibe.run` | SPEC file present, no implementation started |
+| Implementation done, verifying | `/vibe.trace` | Code changes match SPEC phases |
+| Complex feature, unknown tech | `/parallel-research` | "how should we", "which library", architecture questions |
+| Debugging errors repeatedly | `/vibe.trace` | 3+ error cycles without resolution |
+| Pre-merge / PR preparation | `/commit-push-pr` | "ready to merge", "create PR" |
+| Session ending, work incomplete | `/handoff` | 70%+ context, incomplete tasks |
+| Technical debt accumulating | `/techdebt` | Multiple `any` types, console.log, unused imports |
+| Multi-file refactoring planned | `/exec-plan` | 3+ files to change, complex dependencies |
 
 ## Context Management
 
