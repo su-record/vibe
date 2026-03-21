@@ -215,6 +215,16 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
           || deps['remotion'] || deps['video.js'] || deps['@mux/mux-node']) {
           details.capabilities.push('video');
         }
+
+        // Capability 감지: Event Automation
+        if (deps['@notionhq/client'] || deps['aligo-smartsms'] || deps['nodemailer']
+          || deps['python-pptx'] || deps['google-generativeai']) {
+          // Check for event-specific directory structures
+          if (fs.existsSync(path.join(dir, 'agents')) || fs.existsSync(path.join(dir, 'schedules'))
+            || fs.existsSync(path.join(dir, '.event_state.json')) || fs.existsSync(path.join(dir, 'prompts'))) {
+            details.capabilities.push('event-automation');
+          }
+        }
       } catch { /* ignore: optional operation */ }
     }
 
@@ -238,6 +248,13 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
         if (content.includes('moviepy') || content.includes('ffmpeg') || content.includes('opencv') || content.includes('vidgear')) {
           details.capabilities.push('video');
         }
+        if (content.includes('notion-client') || content.includes('python-pptx') || content.includes('google-generativeai')
+          || content.includes('aligo')) {
+          if (fs.existsSync(path.join(dir, 'agents')) || fs.existsSync(path.join(dir, 'schedules'))
+            || fs.existsSync(path.join(dir, '.event_state.json')) || fs.existsSync(path.join(dir, 'prompts'))) {
+            details.capabilities.push('event-automation');
+          }
+        }
       } catch { /* ignore: optional operation */ }
     } else if (fs.existsSync(path.join(dir, 'requirements.txt'))) {
       try {
@@ -256,6 +273,13 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
         }
         if (content.includes('moviepy') || content.includes('ffmpeg') || content.includes('opencv') || content.includes('vidgear')) {
           details.capabilities.push('video');
+        }
+        if (content.includes('notion-client') || content.includes('python-pptx') || content.includes('google-generativeai')
+          || content.includes('aligo')) {
+          if (fs.existsSync(path.join(dir, 'agents')) || fs.existsSync(path.join(dir, 'schedules'))
+            || fs.existsSync(path.join(dir, '.event_state.json')) || fs.existsSync(path.join(dir, 'prompts'))) {
+            details.capabilities.push('event-automation');
+          }
         }
       } catch { /* ignore: optional operation */ }
     }
