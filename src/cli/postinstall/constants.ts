@@ -44,6 +44,7 @@ export const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>> = {
 export const CAPABILITY_SKILLS: Record<string, ReadonlyArray<string>> = {
   'commerce': ['commerce-patterns', 'e2e-commerce'],
   'video': ['video-production'],
+  'event-automation': ['event-planning', 'event-comms', 'event-ops'],
 };
 
 /** 스택 → 외부 스킬(skills.sh) 매핑 (vibe init/update → npx skills add) */
@@ -63,6 +64,7 @@ export const AVAILABLE_CAPABILITIES: ReadonlyArray<{
 }> = [
   { value: 'commerce', label: 'Commerce / Payments', hint: 'Stripe, Shopify, PayPal 등' },
   { value: 'video', label: 'Video Production', hint: 'FFmpeg, 트랜스코딩, 스트리밍 등' },
+  { value: 'event-automation', label: 'Event Automation', hint: '커뮤니티 행사 자동화 (밋업, 웨비나, 컨퍼런스)' },
 ];
 
 /**
@@ -265,6 +267,13 @@ export const CLAUDE_MODEL_MAPPING: Record<string, string> = {
   // Docs agents
   'api-documenter': 'haiku',
   'changelog-writer': 'haiku',
+  // Event agents
+  'event-scheduler': 'sonnet',
+  'event-content': 'sonnet',
+  'event-speaker': 'haiku',
+  'event-comms': 'sonnet',
+  'event-ops': 'sonnet',
+  'event-image': 'haiku',
 };
 
 // Claude Code 에이전트 도구 세트 정의
@@ -327,6 +336,13 @@ export const CLAUDE_AGENT_TOOL_CATEGORY: Record<string, string> = {
   // Docs agents
   'api-documenter': 'read-only',
   'changelog-writer': 'read-only-git',
+  // Event agents
+  'event-scheduler': 'write-capable',
+  'event-content': 'write-capable',
+  'event-speaker': 'web-search',
+  'event-comms': 'write-capable',
+  'event-ops': 'write-capable',
+  'event-image': 'write-capable',
 };
 
 // 에이전트 → 권한 모드 매핑
@@ -353,6 +369,13 @@ export const CLAUDE_AGENT_PERMISSION_MODE: Record<string, string> = {
   'compounder': 'acceptEdits', 'diagrammer': 'acceptEdits',
   'e2e-tester': 'acceptEdits', 'ui-previewer': 'acceptEdits',
   'junior-mentor': 'acceptEdits',
+  // Event agents
+  'event-scheduler': 'acceptEdits',
+  'event-content': 'acceptEdits',
+  'event-speaker': 'plan',
+  'event-comms': 'acceptEdits',
+  'event-ops': 'acceptEdits',
+  'event-image': 'acceptEdits',
 };
 
 // NO FILE CREATION 에이전트 → Write, Edit 차단
@@ -367,6 +390,7 @@ export const CLAUDE_AGENT_DISALLOWED_TOOLS: Record<string, string[]> = {
   'security-advisory-agent': ['Write', 'Edit'],
   'api-documenter': ['Write', 'Edit'],
   'changelog-writer': ['Write', 'Edit'],
+  'event-speaker': ['Write', 'Edit'],
 };
 
 // 지속 메모리 설정 (세션 간 패턴 축적)
