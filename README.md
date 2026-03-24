@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**설치 한 줄로 Claude Code에 49개 에이전트, 41+ 도구, 멀티 LLM 오케스트레이션을 더합니다.**
+**설치 한 줄로 Claude Code에 54개 에이전트, 43+ 도구, 멀티 LLM 오케스트레이션을 더합니다.**
 
 ```bash
 npm install -g @su-record/vibe
@@ -24,7 +24,7 @@ Vibe는 구조로 해결합니다.
 |------|------|
 | AI가 `any` 타입 남발 | Quality Gate가 `any`/`@ts-ignore` 차단 |
 | 한 번에 완성 기대 | SPEC → 구현 → 검증 단계별 워크플로우 |
-| 리뷰 없이 머지 | 13개 에이전트 병렬 리뷰 |
+| 리뷰 없이 머지 | 12개 에이전트 병렬 리뷰 |
 | AI 결과를 그대로 수용 | GPT + Gemini 교차 검증 |
 | 컨텍스트 소실 | Session RAG로 자동 저장/복원 |
 | 복잡한 작업에서 길을 잃음 | SwarmOrchestrator 자동 분해 + 병렬 실행 |
@@ -52,7 +52,7 @@ flowchart LR
 1. **`/vibe.spec`** — 요구사항을 SPEC 문서로 정의 (GPT + Gemini 병렬 리서치)
 2. **`/vibe.spec.review`** — SPEC 품질 리뷰
 3. **`/vibe.run`** — SPEC 기반 구현 + 병렬 코드 리뷰
-4. **자동 리뷰** — 13개 전문 에이전트 병렬 검토, P1/P2 자동 수정
+4. **자동 리뷰** — 12개 전문 에이전트 병렬 검토, P1/P2 자동 수정
 
 `ultrawork` 키워드를 붙이면 전 과정이 자동화됩니다:
 
@@ -62,7 +62,7 @@ flowchart LR
 
 ---
 
-## 에이전트 (49개)
+## 에이전트 (54개)
 
 ### 메인 에이전트 (19)
 
@@ -90,6 +90,10 @@ Security, Performance, Architecture, Complexity, Simplicity, Data Integrity, Tes
 ### 리서치 & QA (10)
 
 Best Practices, Framework Docs, Codebase Patterns, Security Advisory, Requirements Analyst, UX Advisor, Acceptance Tester, Edge Case Finder, API Documenter, Changelog Writer
+
+### 이벤트 에이전트 (6)
+
+Event Listener, Event Trigger, Event Filter, Event Logger, Event Scheduler, Event Aggregator
 
 ### 에이전트 팀 (9팀)
 
@@ -125,16 +129,6 @@ Best Practices, Framework Docs, Codebase Patterns, Security Advisory, Requiremen
 |----------|---------|
 | 코드 분석, 리뷰, 추론, 아키텍처 | GPT → Gemini → Claude |
 | UI/UX, 웹 검색 | Gemini → GPT → Claude |
-
-### ReviewRace
-
-GPT/Gemini가 동시에 리뷰 → Jaccard 유사도 교차 검증 → 우선순위 산출.
-
-| 우선순위 | 조건 | 처리 |
-|---------|------|------|
-| **P1** | 신뢰도 >= 0.9 AND critical/high | 자동 수정 |
-| **P2** | 신뢰도 >= 0.6 OR medium | 자동 수정 |
-| **P3** | 나머지 | 참고 |
 
 ---
 
@@ -216,7 +210,7 @@ vibe skills add vercel-labs/next-skills
 
 ---
 
-## 41+ 내장 도구
+## 43+ 내장 도구
 
 ### 메모리 & 세션 (21)
 
@@ -226,13 +220,17 @@ vibe skills add vercel-labs/next-skills
 
 `core_find_symbol`, `core_find_references`, `core_analyze_dependency_graph`, `core_analyze_complexity`, `core_validate_code_quality`, `core_check_coupling_cohesion`, `core_suggest_improvements`, `core_apply_quality_rules`
 
-### SPEC & 테스트 (9)
+### SPEC & 테스트 (7)
 
-`core_spec_generator`, `core_prd_parser`, `core_traceability_matrix`, `core_e2e_test_generator`, `core_preview_ui_ascii` 등
+`core_spec_generator`, `core_prd_parser`, `core_traceability_matrix`, `core_preview_ui_ascii` 등
 
 ### UI/UX (4)
 
 `core_ui_search`, `core_ui_stack_search`, `core_ui_generate_design_system`, `core_ui_persist_design_system`
+
+### 반복 제어 (3+)
+
+`LoopBreaker`, `VerificationLoop`, `DecisionTracer`, `InteractiveCheckpoint`, `AutomationLevel`
 
 ---
 
@@ -241,11 +239,11 @@ vibe skills add vercel-labs/next-skills
 | 가드레일 | 메커니즘 |
 |----------|---------|
 | **타입 안전성** | Quality Gate — `any`, `@ts-ignore` 차단 |
-| **코드 리뷰** | ReviewRace — GPT + Gemini 교차 검증 |
+| **코드 리뷰** | 12개 전문 에이전트 병렬 리뷰 |
 | **완성도** | Ralph Loop — 100%까지 반복 (범위 축소 없음) |
+| **수렴 보장** | Convergence — P1=0이면 완료, 반복 시 범위 축소 |
 | **스코프 보호** | pre-tool-guard — 요청 범위 외 수정 방지 |
 | **컨텍스트 보호** | context-save — 80/90/95% 자동 저장 |
-| **합리화 방지** | Anti-Rationalization — AI 변명 패턴 차단 |
 | **증거 게이트** | Evidence Gate — 증거 없는 완료 주장 금지 |
 
 **복잡도 제한**: 함수 ≤50줄 | 중첩 ≤3단계 | 매개변수 ≤5 | 순환 복잡도 ≤10
@@ -274,12 +272,13 @@ vibe skills add vercel-labs/next-skills
 |--------|------|
 | `/vibe.spec "기능"` | SPEC 작성 + GPT/Gemini 병렬 리서치 |
 | `/vibe.spec.review` | SPEC 품질 리뷰 |
-| `/vibe.run "기능"` | SPEC 기반 구현 + Race Review |
+| `/vibe.run "기능"` | SPEC 기반 구현 + 병렬 코드 리뷰 |
 | `/vibe.verify "기능"` | SPEC 대비 BDD 검증 |
-| `/vibe.review` | 13개 에이전트 병렬 코드 리뷰 |
+| `/vibe.review` | 12개 에이전트 병렬 코드 리뷰 |
 | `/vibe.trace "기능"` | 요구사항 추적성 매트릭스 |
 | `/vibe.reason "문제"` | 체계적 추론 프레임워크 |
 | `/vibe.analyze` | 프로젝트 분석 |
+| `/vibe.event` | 이벤트 자동화 |
 | `/vibe.utils` | 유틸리티 (E2E, 다이어그램, UI, 세션 복원) |
 
 ---
@@ -371,10 +370,15 @@ import { findSymbol, validateCodeQuality } from '@su-record/vibe/tools';
 
 | 서브패스 | 주요 export |
 |---------|------------|
-| `@su-record/vibe/agent` | Agent 클래스 및 타입 |
 | `@su-record/vibe/memory` | `MemoryStorage`, `KnowledgeGraph`, `SessionRAGStore` |
 | `@su-record/vibe/orchestrator` | `SwarmOrchestrator`, `PhasePipeline`, `BackgroundManager` |
 | `@su-record/vibe/tools` | `findSymbol`, `validateCodeQuality`, `saveMemory` 등 |
+| `@su-record/vibe/tools/memory` | 메모리 도구 |
+| `@su-record/vibe/tools/convention` | 코드 품질 도구 |
+| `@su-record/vibe/tools/semantic` | 시맨틱 분석 도구 |
+| `@su-record/vibe/tools/ui` | UI/UX 도구 |
+| `@su-record/vibe/tools/interaction` | 사용자 상호작용 도구 |
+| `@su-record/vibe/tools/time` | 시간 도구 |
 
 ---
 
@@ -402,8 +406,8 @@ your-project/
 │   ├── ui-ux-data/            # UI/UX CSV 데이터
 │   ├── session-rag.db         # Session RAG (SQLite + FTS5)
 │   └── memories.json          # 저장된 메모리
-├── commands/                  # 슬래시 명령어 (10개)
-└── agents/                    # 에이전트 정의 (49개)
+├── commands/                  # 슬래시 명령어
+└── agents/                    # 에이전트 정의 (54개)
 ```
 
 ---
@@ -425,11 +429,9 @@ flowchart TD
     G --> H["BackgroundManager"]
     H --> I["AgentRegistry"]
 
-    D --> J["ReviewRace"]
-    J --> J1["GPT 리뷰"]
-    J --> J2["Gemini 리뷰"]
-    J1 --> K["교차 검증 → P1/P2/P3"]
-    J2 --> K
+    D --> J["병렬 리뷰"]
+    J --> J1["12개 리뷰 에이전트"]
+    J1 --> K["P1/P2/P3 분류"]
 
     L["Session RAG"] -.-> M["Decision / Constraint / Goal / Evidence"]
     O["품질 게이트"] -.-> P["pre-tool-guard → 차단"]
