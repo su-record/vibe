@@ -6,10 +6,6 @@
   "main": "dist/cli/index.js",
   "exports": {
     ".": "./dist/cli/index.js",
-    "./agent": {
-      "types": "./dist/agent/index.d.ts",
-      "default": "./dist/agent/index.js"
-    },
     "./tools": "./dist/tools/index.js",
     "./tools/memory": "./dist/tools/memory/index.js",
     "./tools/convention": "./dist/tools/convention/index.js",
@@ -18,24 +14,10 @@
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/interaction": "./dist/tools/interaction/index.js",
     "./orchestrator": "./dist/infra/orchestrator/index.js",
-    "./interface": {
-      "types": "./dist/interface/index.d.ts",
-      "default": "./dist/interface/index.js"
-    },
-    "./router": {
-      "types": "./dist/router/index.d.ts",
-      "default": "./dist/router/index.js"
-    },
     "./memory": {
       "types": "./dist/infra/lib/memory/index.d.ts",
       "default": "./dist/infra/lib/memory/index.js"
-    },
-    "./policy": {
-      "types": "./dist/infra/policy/index.d.ts",
-      "default": "./dist/infra/policy/index.js"
-    },
-    "./lib/gpt": "./dist/infra/lib/gpt-api.js",
-    "./lib/gemini": "./dist/infra/lib/gemini-api.js"
+    }
   },
   "bin": {
     "vibe": "dist/cli/index.js"
@@ -81,26 +63,22 @@
     "node": ">=18.0.0"
   },
   "optionalDependencies": {
-    "@ast-grep/napi": "^0.40.5"
+    "@ast-grep/napi": "^0.40.5",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.6"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.6",
     "@clack/prompts": "^1.0.0",
     "better-sqlite3": "^12.6.2",
     "chalk": "^5.3.0",
     "glob": "^13.0.1",
-    "node-cron": "^3.0.3",
     "papaparse": "^5.5.3",
-    "playwright": "^1.58.2",
     "ts-morph": "^26.0.0",
     "uuidv7": "^1.1.0",
-    "vscode-languageserver-protocol": "^3.17.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
-    "@types/node-cron": "^3.0.11",
     "@types/papaparse": "^5.5.2",
     "ajv": "^8.17.1",
     "typescript": "^5.5.4",

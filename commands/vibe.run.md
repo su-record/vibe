@@ -436,6 +436,99 @@ Claude:
 
 ---
 
+## Automation Level System
+
+Magic keywords in the user input automatically set the **AutomationLevel**, which controls how much the AI self-advances vs. pausing for confirmation.
+
+### Level Definitions
+
+| Level | Name | Keyword(s) | Auto-advance | Auto-retry | Max Retries | Parallel Agents | Checkpoints |
+|-------|------|------------|--------------|------------|-------------|-----------------|-------------|
+| L0 | Manual | `manual` | No | No | 0 | No | All |
+| L1 | Guided | `guided`, `verify` | No | No | 0 | No | All |
+| L2 | Semi-auto | `quick` (default) | Yes | Yes | 2 | No | Key points |
+| L3 | Auto | `ultrawork`, `ulw` | Yes | Yes | 3 | Yes | Checkpoint-only |
+| L4 | Full-auto | `ralph`, `ralplan` | Yes | Yes | 5 | Yes | None |
+
+### Detection Rule
+
+The AI detects automation level from word boundaries in the user's input:
+
+```
+/vibe.run "login"              → L2 Semi-auto (default)
+/vibe.run "login" ultrawork    → L3 Auto
+/vibe.run "login" ralph        → L4 Full-auto
+/vibe.run "login" verify       → L1 Guided
+```
+
+### Confirmation Matrix
+
+Certain action types require user confirmation depending on the active level:
+
+| Action | L0 | L1 | L2 | L3 | L4 |
+|--------|----|----|----|----|-----|
+| `destructive` | confirm | confirm | confirm | confirm | auto |
+| `architecture_choice` | confirm | confirm | confirm | auto | auto |
+| `implementation_scope` | confirm | confirm | confirm | auto | auto |
+| `phase_advance` | confirm | confirm | auto | auto | auto |
+| `fix_strategy` | confirm | confirm | auto | auto | auto |
+| `retry` | confirm | auto | auto | auto | auto |
+
+**Rule**: When confirmation is required, pause and display a checkpoint before proceeding.
+
+---
+
+## Interactive Checkpoints
+
+Checkpoints are decision gates inserted at critical points in the workflow. At L3/L4, most checkpoints are **auto-resolved** using the default option.
+
+### Checkpoint Types
+
+| Type | When It Fires | Default Option |
+|------|--------------|----------------|
+| `requirements_confirm` | Before starting Phase 1 | Confirm (a) |
+| `architecture_choice` | When architecture approach is ambiguous | Clean/balanced (b) |
+| `implementation_scope` | Before any large scope change (6+ files) | Approve (a) |
+| `verification_result` | After each VerificationLoop iteration below threshold | Continue fixing (a) |
+| `fix_strategy` | When critical issues are found during quality gate | Fix all (a) |
+
+### Checkpoint Format
+
+When a checkpoint fires, display it in this format:
+
+```
+──────────────────────────────────────────────────
+CHECKPOINT: Requirements Confirmation
+──────────────────────────────────────────────────
+Feature: login
+
+Requirements:
+  1. User can log in with email and password
+  2. Invalid credentials show an error message
+  3. Remember me persists session for 30 days
+
+Options:
+  a) Confirm
+     Proceed with these requirements as stated.
+  b) Revise
+     Modify or clarify requirements before proceeding.
+  c) Abort
+     Cancel this workflow.
+
+Default: a
+──────────────────────────────────────────────────
+```
+
+### Auto-Resolution (L3/L4)
+
+At automation levels L3 and L4, checkpoints that do not require confirmation are auto-resolved:
+
+```
+[AUTO] CHECKPOINT: implementation_scope → option a (Approve) [auto-resolved]
+```
+
+---
+
 ## Rules Reference
 
 **Must follow `~/.claude/vibe/rules/` (global):**

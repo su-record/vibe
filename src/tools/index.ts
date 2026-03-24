@@ -51,36 +51,6 @@ export { findSymbol } from './semantic/findSymbol.js';
 export { findReferences } from './semantic/findReferences.js';
 export { analyzeDependencyGraph } from './semantic/analyzeDependencyGraph.js';
 
-// ast-grep Tools
-export {
-  astGrepSearch,
-  astGrepReplace,
-  astGrepSearchDefinition,
-  astGrepReplaceDefinition,
-} from './semantic/astGrep.js';
-
-// LSP Tools
-export {
-  lspHover,
-  lspGotoDefinition,
-  lspFindReferences,
-  lspDocumentSymbols,
-  lspWorkspaceSymbols,
-  lspDiagnostics,
-  lspDiagnosticsDirectory,
-  lspRename,
-  lspCodeActions,
-  lspHoverDefinition,
-  lspGotoDefinitionDefinition,
-  lspFindReferencesDefinition,
-  lspDocumentSymbolsDefinition,
-  lspWorkspaceSymbolsDefinition,
-  lspDiagnosticsDefinition,
-  lspDiagnosticsDirectoryDefinition,
-  lspRenameDefinition,
-  lspCodeActionsDefinition,
-} from './semantic/lsp.js';
-
 // Convention tools
 export { analyzeComplexity } from './convention/analyzeComplexity.js';
 export { validateCodeQuality } from './convention/validateCodeQuality.js';
@@ -148,134 +118,6 @@ export type {
   DecisionRules,
 } from '../infra/lib/ui-ux/types.js';
 
-// Model routing & iteration tracking
-export {
-  routeToModel,
-  routeFromSpec,
-  selectAgentTier,
-  extractComplexitySignals,
-  calculateComplexityScore,
-} from '../infra/lib/ModelRouter.js';
-
-export {
-  startIteration,
-  startPhase,
-  completePhase,
-  failPhase,
-  completeIteration,
-  getCurrentState,
-  formatProgress,
-  formatPhaseStart,
-  formatPhaseComplete,
-  formatIterationComplete,
-  extractPhaseNames,
-} from '../infra/lib/IterationTracker.js';
-
-export {
-  validateSkillQuality,
-  validateBeforeSave,
-  classifySkill,
-  suggestPrincipleFormat,
-} from '../infra/lib/SkillQualityGate.js';
-
-// Orchestrate workflow
-export {
-  checkIntentGate,
-  assessCodebase,
-  createDelegationPlan,
-  createVerificationChecklist,
-  formatOrchestrationStatus,
-  shouldRunInBackground,
-} from '../infra/lib/OrchestrateWorkflow.js';
-
-// UltraQA
-export {
-  createQASession,
-  getCommandForGoal,
-  recordCycleResult,
-  shouldContinue,
-  generateDiagnosisPrompt,
-  generateFixPrompt,
-  formatQAStatus,
-  parseQAGoals,
-  describeUltraQAWorkflow,
-} from '../infra/lib/UltraQA.js';
-
-// DeepInit
-export {
-  detectDirectoryPurpose,
-  isEntryPoint,
-  generateAgentsMd,
-  formatAgentsMd,
-  preserveManualNotes,
-  generateNavigationHeader,
-  describeDeepInitWorkflow,
-} from '../infra/lib/DeepInit.js';
-
-// Skill Frontmatter
-export {
-  parseSkillFrontmatter,
-  generateSkillFrontmatter,
-  createSkillFile,
-  validateSkillMetadata,
-  mergeWithDefaults,
-  extractTriggersFromTemplate,
-  substituteTemplateVars,
-} from '../infra/lib/SkillFrontmatter.js';
-
-// Skill Repository
-export {
-  SkillRepository,
-  getGlobalSkillsDir,
-  getBundledSkillsDir,
-  ensureDefaultSkills,
-  seedInlineDefaultSkills,
-  DEFAULT_SKILLS,
-  getDefaultSkills,
-} from '../infra/lib/SkillRepository.js';
-
-export type { SkillInfo, SkillRepositoryConfig } from '../infra/lib/SkillRepository.js';
-
-// Rule Build System
-export {
-  parseRuleFile,
-  generateMarkdown,
-  buildRulesDocument,
-  extractTestCases,
-  extractTestCasesFromDir,
-  validateRule,
-  getImpactColor,
-  compareImpact,
-  IMPACT_ORDER,
-} from '../infra/lib/RuleBuildSystem.js';
-
-export type {
-  ImpactLevel,
-  CodeExample,
-  Rule,
-  Section,
-  RulesDocument,
-  RuleFile,
-  TestCase,
-} from '../infra/lib/RuleBuildSystem.js';
-
-// Framework Detector
-export {
-  detectFramework,
-  detectFrameworkFromContent,
-  getFrameworkRecommendations,
-  formatDetectionResult,
-  isFramework,
-  getSupportedFrameworks,
-  FRAMEWORKS,
-} from '../infra/lib/FrameworkDetector.js';
-
-export type {
-  FrameworkInfo,
-  PackageJson,
-  DetectionResult,
-} from '../infra/lib/FrameworkDetector.js';
-
 // PRD-to-SPEC Tools
 export {
   // Requirement ID
@@ -300,17 +142,6 @@ export {
   generateTraceabilityMatrix,
   formatMatrixAsMarkdown,
   formatMatrixAsHtml,
-  // SPEC Versioning
-  bumpSpecVersion,
-  extractVersion,
-  incrementVersion,
-  generateChangelog,
-  createGitTag,
-  detectSpecChanges,
-  getLatestSpecCommit,
-  loadVersionHistory,
-  saveVersionHistory,
-  createBaseline,
 } from './spec/index.js';
 
 export type {
@@ -324,27 +155,83 @@ export type {
   TraceabilityMatrix,
   TraceSummary,
   TraceMatrixOptions,
-  // SPEC Versioning types
-  SpecVersion,
-  ChangeEntry,
-  VersionHistory,
-  BumpType,
 } from './spec/index.js';
 
-// Review Race
-export {
-  raceReview,
-  formatRaceResult,
-  checkLLMAvailability,
-} from '../infra/lib/ReviewRace.js';
-
+// ─── Loop Breaker ───
+export { LoopBreaker, LOOP_LIMITS } from '../infra/lib/LoopBreaker.js';
 export type {
-  RaceReviewResult,
-  RaceReviewOptions,
-  LLMProvider,
-  Priority,
-  ReviewType,
-  RaceReviewIssue,
-  RaceLLMResult,
-  RaceCrossValidatedIssue,
-} from '../infra/lib/ReviewRace.js';
+  LoopEvent,
+  LoopBreakResult,
+  LoopCounters,
+  LoopLimitOptions,
+} from '../infra/lib/LoopBreaker.js';
+
+// ─── Automation Level ───
+export {
+  AUTOMATION_LEVELS,
+  KEYWORD_LEVEL_MAP,
+  detectAutomationLevel,
+  getAutomationLevel,
+  needsConfirmation,
+  createTrustScore,
+  recordTrustSuccess,
+  recordTrustFailure,
+  getRecommendedLevel,
+} from '../infra/lib/AutomationLevel.js';
+export type {
+  AutomationLevelNumber,
+  AutomationLevel,
+  AutomationAction,
+  TrustScore,
+} from '../infra/lib/AutomationLevel.js';
+
+// ─── Decision Tracer ───
+export { DecisionTracer } from '../infra/lib/DecisionTracer.js';
+export type {
+  DecisionRecord,
+  DecisionCategory,
+  DecisionContext,
+  DecisionOutcome,
+  DecisionInput as TracerDecisionInput,
+  FeatureSummary,
+} from '../infra/lib/DecisionTracer.js';
+
+// ─── Verification Loop ───
+export {
+  createLoop,
+  calculateAchievementRate,
+  recordVerification,
+  getUnmetRequirements,
+  formatVerificationResult,
+  formatLoopSummary,
+  isImproving,
+  DEFAULT_VERIFICATION_CONFIG,
+} from '../infra/lib/VerificationLoop.js';
+export type {
+  RequirementResult,
+  VerificationResult,
+  VerificationLoopConfig,
+  LoopState,
+  VerificationAction,
+} from '../infra/lib/VerificationLoop.js';
+
+// ─── Interactive Checkpoint ───
+export {
+  createRequirementsCheckpoint,
+  createArchitectureCheckpoint,
+  createScopeCheckpoint,
+  createVerificationCheckpoint,
+  createFixStrategyCheckpoint,
+  formatCheckpoint,
+  resolveCheckpoint,
+  autoResolveCheckpoint,
+  createHistory,
+  addToHistory,
+} from '../infra/lib/InteractiveCheckpoint.js';
+export type {
+  CheckpointType,
+  CheckpointOption,
+  Checkpoint,
+  CheckpointResult,
+  CheckpointHistory,
+} from '../infra/lib/InteractiveCheckpoint.js';

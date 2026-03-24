@@ -1,7 +1,310 @@
 /**
  * Iteration Tracker for ULTRAWORK/Ralph Loop
  * 작업 진행 상황을 추적하고 표시
+ *
+ * Also provides disk-based progress persistence (merged from ProgressTracker).
  */
+
+import fs from 'fs';
+import path from 'path';
+import { LoopBreaker } from './LoopBreaker.js';
+
+// ============================================
+// Disk-Persisted Progress Types
+// ============================================
+
+export interface PhaseInfo {
+  id: number;
+  name: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'blocked';
+  startedAt?: string;
+  completedAt?: string;
+  blockers?: string[];
+}
+
+export interface ProgressState {
+  feature: string;
+  spec: string;
+  status: 'pending' | 'in_progress' | 'blocked' | 'completed';
+  currentPhase: number;
+  totalPhases: number;
+  phases: PhaseInfo[];
+  completedTasks: string[];
+  pendingTasks: string[];
+  blockers: string[];
+  lastCommit?: string;
+  lastUpdated: string;
+  startedAt: string;
+  sessionCount: number;
+}
+
+const DEFAULT_PROGRESS: ProgressState = {
+  feature: '',
+  spec: '',
+  status: 'pending',
+  currentPhase: 0,
+  totalPhases: 0,
+  phases: [],
+  completedTasks: [],
+  pendingTasks: [],
+  blockers: [],
+  lastUpdated: new Date().toISOString(),
+  startedAt: new Date().toISOString(),
+  sessionCount: 0,
+};
+
+export function getProgressPath(projectRoot: string): string {
+  return path.join(projectRoot, '.claude', 'vibe', 'progress.json');
+}
+
+export function loadProgress(projectRoot: string): ProgressState | null {
+  const progressPath = getProgressPath(projectRoot);
+  try {
+    if (fs.existsSync(progressPath)) {
+      const content = fs.readFileSync(progressPath, 'utf-8');
+      return JSON.parse(content) as ProgressState;
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null;
+}
+
+export function saveProgress(projectRoot: string, progress: ProgressState): void {
+  const progressPath = getProgressPath(projectRoot);
+  const coreDir = path.dirname(progressPath);
+
+  if (!fs.existsSync(coreDir)) {
+    fs.mkdirSync(coreDir, { recursive: true });
+  }
+
+  progress.lastUpdated = new Date().toISOString();
+  fs.writeFileSync(progressPath, JSON.stringify(progress, null, 2));
+}
+
+export function initProgress(
+  projectRoot: string,
+  feature: string,
+  spec: string,
+  phases: string[]
+): ProgressState {
+  const progress: ProgressState = {
+    ...DEFAULT_PROGRESS,
+    feature,
+    spec,
+    status: 'in_progress',
+    currentPhase: 1,
+    totalPhases: phases.length,
+    phases: phases.map((name, idx) => ({
+      id: idx + 1,
+      name,
+      status: idx === 0 ? 'in_progress' : 'pending',
+      startedAt: idx === 0 ? new Date().toISOString() : undefined,
+    })),
+    pendingTasks: phases.slice(1),
+    startedAt: new Date().toISOString(),
+    sessionCount: 1,
+  };
+
+  saveProgress(projectRoot, progress);
+  return progress;
+}
+
+export function updatePhase(
+  projectRoot: string,
+  phaseNumber: number,
+  status: PhaseInfo['status'],
+  blockers?: string[]
+): ProgressState | null {
+  const progress = loadProgress(projectRoot);
+  if (!progress) return null;
+
+  const phase = progress.phases.find(p => p.id === phaseNumber);
+  if (phase) {
+    phase.status = status;
+    if (status === 'in_progress') {
+      phase.startedAt = new Date().toISOString();
+      progress.currentPhase = phaseNumber;
+    } else if (status === 'completed') {
+      phase.completedAt = new Date().toISOString();
+      progress.completedTasks.push(phase.name);
+      progress.pendingTasks = progress.pendingTasks.filter(t => t !== phase.name);
+
+      const nextPhase = progress.phases.find(p => p.id === phaseNumber + 1);
+      if (nextPhase) {
+        nextPhase.status = 'in_progress';
+        nextPhase.startedAt = new Date().toISOString();
+        progress.currentPhase = nextPhase.id;
+      } else {
+        progress.status = 'completed';
+      }
+    } else if (status === 'blocked') {
+      phase.blockers = blockers;
+      progress.blockers = blockers || [];
+      progress.status = 'blocked';
+    }
+  }
+
+  saveProgress(projectRoot, progress);
+  return progress;
+}
+
+export function completeTask(projectRoot: string, task: string): ProgressState | null {
+  const progress = loadProgress(projectRoot);
+  if (!progress) return null;
+
+  if (!progress.completedTasks.includes(task)) {
+    progress.completedTasks.push(task);
+  }
+  progress.pendingTasks = progress.pendingTasks.filter(t => t !== task);
+
+  saveProgress(projectRoot, progress);
+  return progress;
+}
+
+export function recordCommit(projectRoot: string, commitHash: string): ProgressState | null {
+  const progress = loadProgress(projectRoot);
+  if (!progress) return null;
+
+  progress.lastCommit = commitHash;
+  saveProgress(projectRoot, progress);
+  return progress;
+}
+
+export function incrementSession(projectRoot: string): ProgressState | null {
+  const progress = loadProgress(projectRoot);
+  if (!progress) return null;
+
+  progress.sessionCount++;
+  saveProgress(projectRoot, progress);
+  return progress;
+}
+
+export function formatProgressState(progress: ProgressState): string {
+  const lines: string[] = [];
+
+  const statusIcon = {
+    pending: '⏳',
+    in_progress: '🔨',
+    blocked: '🚫',
+    completed: '✅',
+  }[progress.status];
+
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  lines.push(`${statusIcon} Feature: ${progress.feature}`);
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  lines.push(`Status: ${progress.status.toUpperCase()}`);
+  lines.push(`Phase: ${progress.currentPhase}/${progress.totalPhases}`);
+  lines.push(`Sessions: ${progress.sessionCount}`);
+  lines.push(``);
+
+  lines.push(`Phases:`);
+  for (const phase of progress.phases) {
+    const icon = {
+      pending: '○',
+      in_progress: '●',
+      completed: '✓',
+      blocked: '✗',
+    }[phase.status];
+    lines.push(`  ${icon} ${phase.id}. ${phase.name}`);
+  }
+
+  if (progress.completedTasks.length > 0) {
+    lines.push(``);
+    lines.push(`Completed: ${progress.completedTasks.length} tasks`);
+  }
+
+  if (progress.blockers.length > 0) {
+    lines.push(``);
+    lines.push(`Blockers:`);
+    for (const blocker of progress.blockers) {
+      lines.push(`  - ${blocker}`);
+    }
+  }
+
+  if (progress.lastCommit) {
+    lines.push(``);
+    lines.push(`Last commit: ${progress.lastCommit}`);
+  }
+
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
+  return lines.join('\n');
+}
+
+export function getProgressSummary(projectRoot: string): string | null {
+  const progress = loadProgress(projectRoot);
+  if (!progress || progress.status === 'completed') return null;
+
+  const currentPhase = progress.phases.find(p => p.id === progress.currentPhase);
+  const phaseName = currentPhase?.name || 'Unknown';
+
+  return `Active feature: "${progress.feature}" - Phase ${progress.currentPhase}/${progress.totalPhases} (${phaseName})`;
+}
+
+export function writeProgressText(projectRoot: string): void {
+  const progress = loadProgress(projectRoot);
+  if (!progress) return;
+
+  const progressTextPath = path.join(projectRoot, '.claude', 'vibe', 'claude-progress.txt');
+  const lines: string[] = [];
+
+  lines.push(`# Progress: ${progress.feature}`);
+  lines.push(`Updated: ${new Date().toISOString()}`);
+  lines.push(`Status: ${progress.status.toUpperCase()}`);
+  lines.push(`Session: ${progress.sessionCount}`);
+  lines.push('');
+
+  lines.push('## Phases');
+  for (const phase of progress.phases) {
+    const icon = { pending: '[ ]', in_progress: '[>]', completed: '[x]', blocked: '[!]' }[phase.status];
+    lines.push(`${icon} Phase ${phase.id}: ${phase.name}`);
+    if (phase.blockers?.length) {
+      for (const b of phase.blockers) {
+        lines.push(`    BLOCKED: ${b}`);
+      }
+    }
+  }
+
+  if (progress.completedTasks.length > 0) {
+    lines.push('');
+    lines.push('## Completed');
+    for (const task of progress.completedTasks) {
+      lines.push(`- ${task}`);
+    }
+  }
+
+  if (progress.pendingTasks.length > 0) {
+    lines.push('');
+    lines.push('## Remaining');
+    for (const task of progress.pendingTasks) {
+      lines.push(`- ${task}`);
+    }
+  }
+
+  if (progress.blockers.length > 0) {
+    lines.push('');
+    lines.push('## Blockers');
+    for (const blocker of progress.blockers) {
+      lines.push(`- ${blocker}`);
+    }
+  }
+
+  if (progress.lastCommit) {
+    lines.push('');
+    lines.push(`## Last Commit: ${progress.lastCommit}`);
+  }
+
+  const coreDir = path.dirname(progressTextPath);
+  if (!fs.existsSync(coreDir)) {
+    fs.mkdirSync(coreDir, { recursive: true });
+  }
+  fs.writeFileSync(progressTextPath, lines.join('\n') + '\n');
+}
+
+// ============================================
+// In-Memory Iteration State Types
+// ============================================
 
 export interface PhaseProgress {
   phaseNumber: number;
@@ -29,6 +332,16 @@ export interface IterationState {
 // 전역 상태 (세션 내 유지)
 let currentState: IterationState | null = null;
 
+// Module-level LoopBreaker instance (lazy init per startIteration call)
+let _loopBreaker: LoopBreaker | null = null;
+
+function getLoopBreaker(): LoopBreaker {
+  if (!_loopBreaker) {
+    _loopBreaker = new LoopBreaker();
+  }
+  return _loopBreaker;
+}
+
 /**
  * 새 작업 시작
  */
@@ -39,6 +352,9 @@ export function startIteration(
   maxRetries: number = 3,
   pipelineEnabled: boolean = false
 ): IterationState {
+  // Reset LoopBreaker for the new iteration
+  _loopBreaker = new LoopBreaker();
+
   currentState = {
     featureName,
     totalPhases: phaseNames.length,
@@ -60,9 +376,15 @@ export function startIteration(
 
 /**
  * Phase 시작
+ * Records an iteration with LoopBreaker; returns null if the loop limit is hit.
  */
 export function startPhase(phaseNumber: number): PhaseProgress | null {
   if (!currentState || phaseNumber < 1 || phaseNumber > currentState.totalPhases) {
+    return null;
+  }
+
+  const breakResult = getLoopBreaker().recordIteration();
+  if (breakResult.shouldBreak) {
     return null;
   }
 
@@ -76,11 +398,14 @@ export function startPhase(phaseNumber: number): PhaseProgress | null {
 
 /**
  * Phase 완료
+ * Resets the consecutive error counter in LoopBreaker on success.
  */
 export function completePhase(phaseNumber: number): PhaseProgress | null {
   if (!currentState || phaseNumber < 1 || phaseNumber > currentState.totalPhases) {
     return null;
   }
+
+  getLoopBreaker().recordSuccess();
 
   const phase = currentState.phases[phaseNumber - 1];
   phase.status = 'completed';
@@ -91,17 +416,21 @@ export function completePhase(phaseNumber: number): PhaseProgress | null {
 
 /**
  * Phase 실패 (재시도 가능)
+ * Records an error with LoopBreaker; forces canRetry=false when the error limit is hit.
  */
 export function failPhase(phaseNumber: number, error: string): { canRetry: boolean; phase: PhaseProgress } | null {
   if (!currentState || phaseNumber < 1 || phaseNumber > currentState.totalPhases) {
     return null;
   }
 
+  const breakResult = getLoopBreaker().recordError();
+
   const phase = currentState.phases[phaseNumber - 1];
   phase.retryCount += 1;
   phase.error = error;
 
-  const canRetry = phase.retryCount < currentState.maxRetries;
+  const withinRetries = phase.retryCount < currentState.maxRetries;
+  const canRetry = withinRetries && !breakResult.shouldBreak;
   phase.status = canRetry ? 'retrying' : 'failed';
 
   return { canRetry, phase };
@@ -125,6 +454,13 @@ export function completeIteration(): IterationState | null {
  */
 export function getCurrentState(): IterationState | null {
   return currentState;
+}
+
+/**
+ * Returns the current LoopBreaker instance for external inspection.
+ */
+export function getIterationLoopBreaker(): LoopBreaker {
+  return getLoopBreaker();
 }
 
 /**

@@ -4,7 +4,7 @@ import { MemoryManager } from '../../infra/lib/MemoryManager.js';
 import { SessionSummarizer } from '../../infra/lib/memory/SessionSummarizer.js';
 import { MemoryStorage } from '../../infra/lib/memory/MemoryStorage.js';
 import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
-import { loadProgress, getProgressSummary, incrementSession } from '../../infra/lib/ProgressTracker.js';
+import { loadProgress, getProgressSummary, incrementSession } from '../../infra/lib/IterationTracker.js';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';

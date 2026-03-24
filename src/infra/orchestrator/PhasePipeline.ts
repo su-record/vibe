@@ -27,7 +27,7 @@ import {
   initProgress,
   updatePhase as updateProgressPhase,
   writeProgressText,
-} from '../lib/ProgressTracker.js';
+} from '../lib/IterationTracker.js';
 import { PhaseResultStore } from './PhaseResultStore.js';
 import { CheckpointManager } from './CheckpointManager.js';
 import type { CheckpointGate } from './CheckpointManager.js';

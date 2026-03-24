@@ -53,7 +53,21 @@ setSilentMode(options.silent);
 export * from '../infra/lib/MemoryManager.js';
 export * from '../infra/lib/ProjectCache.js';
 export * from '../infra/lib/ContextCompressor.js';
-export * from '../infra/lib/ProgressTracker.js';
+export {
+  PhaseInfo,
+  ProgressState,
+  getProgressPath,
+  loadProgress,
+  saveProgress,
+  initProgress,
+  updatePhase,
+  completeTask,
+  recordCommit,
+  incrementSession,
+  formatProgressState,
+  getProgressSummary,
+  writeProgressText,
+} from '../infra/lib/IterationTracker.js';
 
 export { saveMemory } from '../tools/memory/saveMemory.js';
 export { recallMemory } from '../tools/memory/recallMemory.js';

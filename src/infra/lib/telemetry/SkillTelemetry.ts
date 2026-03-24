@@ -9,6 +9,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { DecisionTracer, DecisionInput, DecisionRecord } from '../DecisionTracer.js';
 
 // ─── Event Schema ───
 
@@ -47,10 +48,12 @@ export interface SkillSummary {
 export class SkillTelemetry {
   private readonly logPath: string;
   private readonly enabled: boolean;
+  readonly decisions: DecisionTracer;
 
   constructor(analyticsDir: string, enabled = true) {
     this.logPath = path.join(analyticsDir, 'skill-usage.jsonl');
     this.enabled = enabled;
+    this.decisions = new DecisionTracer(analyticsDir, enabled);
 
     if (enabled) {
       fs.mkdirSync(analyticsDir, { recursive: true });
@@ -157,6 +160,16 @@ export class SkillTelemetry {
         lastUsed: data.lastUsed,
       }))
       .sort((a, b) => b.count - a.count);
+  }
+
+  /** Record an AI decision alongside skill telemetry */
+  logDecision(input: DecisionInput): DecisionRecord {
+    return this.decisions.record(input);
+  }
+
+  /** Retrieve all recorded decisions */
+  getDecisions(): DecisionRecord[] {
+    return this.decisions.readAll();
   }
 
   /** 로그 파일 경로 */

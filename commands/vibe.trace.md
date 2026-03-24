@@ -187,6 +187,56 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.generateTraceabilityMatrix('login').then(m => console.log(t.formatMatrixAsHtml(m))))"
 ```
 
+## VerificationLoop Integration
+
+`/vibe.trace` results feed directly into the **VerificationLoop** module, which quantifies achievement rate and drives automatic re-iteration.
+
+### Key Functions
+
+| Function | Purpose |
+|----------|---------|
+| `createLoop(feature, config?)` | Initialize a new verification loop for a feature |
+| `recordVerification(state, requirements)` | Record RTM results and determine next action |
+| `formatVerificationResult(result, config)` | Format a single iteration result for display |
+| `formatLoopSummary(state)` | Format the full loop history as readable text |
+| `getUnmetRequirements(result)` | Extract failed/partial requirements for targeted fixing |
+| `isImproving(state)` | Detect whether achievement rate is increasing across iterations |
+
+### Loop Configuration
+
+```
+threshold:      90    — Minimum achievement rate (%) to pass (default)
+maxIterations:  3     — Max re-verification attempts before stopping
+autoRetry:      false — Whether to auto-trigger re-implementation
+```
+
+### Action Types
+
+After each `recordVerification` call, the loop returns one of:
+
+| Action | Condition | Meaning |
+|--------|-----------|---------|
+| `passed` | rate >= threshold | All requirements met — done |
+| `retry` | rate < threshold AND iterations remaining | Fix unmet requirements and re-run |
+| `max_iterations` | rate < threshold AND no iterations left | Report remaining gaps as TODO |
+
+### Convergence Detection
+
+If the achievement rate does not improve between iterations (`isImproving` returns false), the loop stops early to avoid wasted cycles.
+
+### Example Flow
+
+```
+/vibe.trace "login"
+  → RTM generated: 7/9 requirements covered (78%)
+  → createLoop("login", { threshold: 90, maxIterations: 3 })
+  → recordVerification(...) → action: retry (iteration 1, 3 unmet)
+  → [fix unmet requirements]
+  → /vibe.trace "login"
+  → recordVerification(...) → action: passed (rate: 100%)
+  → formatVerificationResult → display final report
+```
+
 ## Options
 
 | Option | Description |
