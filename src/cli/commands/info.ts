@@ -7,7 +7,6 @@ import fs from 'fs';
 import { VibeConfig } from '../types.js';
 import { getPackageJson } from '../utils.js';
 import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
-import { getGlobalConfigDir } from '../llm/config.js';
 import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 
 /**
@@ -82,38 +81,6 @@ export function showStatus(): void {
     ? `✅ ${projectRoot}`
     : `⬚ Not a core project (run: vibe init)`;
 
-  // Autonomy / Sentinel 상태 (config.json에서 읽기)
-  const autonomyCfg = config.autonomy as Record<string, unknown> | undefined;
-  const sentinelCfg = config.sentinel as Record<string, unknown> | undefined;
-  const autonomyMode = (autonomyCfg?.mode as string) || 'suggest';
-  const sentinelOn = sentinelCfg?.enabled !== false;
-  const proactiveCfg = autonomyCfg?.proactive as Record<string, unknown> | undefined;
-  const proactiveOn = proactiveCfg?.enabled !== false;
-
-  // DB 통계 (가능하면)
-  let dbStats = '';
-  try {
-    const dbPath = path.join(coreDir, 'memory.db');
-    if (fs.existsSync(dbPath)) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const Database = require('better-sqlite3');
-      const db = new Database(dbPath, { readonly: true });
-      const last24h = new Date(Date.now() - 86_400_000).toISOString();
-
-      let totalActions = 0;
-      let blockedActions = 0;
-      try {
-        totalActions = (db.prepare('SELECT COUNT(*) as c FROM audit_events WHERE createdAt >= ?').get(last24h) as { c: number })?.c ?? 0;
-        blockedActions = (db.prepare("SELECT COUNT(*) as c FROM audit_events WHERE createdAt >= ? AND outcome = 'blocked'").get(last24h) as { c: number })?.c ?? 0;
-      } catch { /* table may not exist */ }
-
-      if (totalActions > 0) {
-        dbStats = `  Last 24h: ${totalActions} actions (${blockedActions} blocked)\n`;
-      }
-      db.close();
-    }
-  } catch { /* DB not available */ }
-
   console.log(`
 VIBE Status (v${packageJson.version})
 
@@ -124,12 +91,6 @@ LLM:
   Claude          ${claudeStatusText}
   GPT             ${gptStatusText}
   Gemini          ${geminiStatusText}
-
-Agent:
-  Autonomy        ${autonomyMode} mode
-  Sentinel        ${sentinelOn ? 'ON' : 'OFF'}
-  Proactive       ${proactiveOn ? 'ON' : 'OFF'}
-${dbStats}
   `);
 }
 

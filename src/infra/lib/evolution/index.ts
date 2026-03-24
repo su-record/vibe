@@ -46,3 +46,9 @@ export { DescriptionOptimizer } from './DescriptionOptimizer.js';
 export type {
   TriggerEvalQuery, TriggerEvalResult, DescriptionCandidate, OptimizationRun,
 } from './DescriptionOptimizer.js';
+export { DeprecationDetector } from './DeprecationDetector.js';
+export type { DeprecationCandidate, DeprecationReport } from './DeprecationDetector.js';
+
+// Phase 5b: Model Parity Testing
+export { ParityTester, PARITY_THRESHOLDS } from './ParityTester.js';
+export type { ParityTestResult, ModelVersion, EvalComparison } from './ParityTester.js';

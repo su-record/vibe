@@ -96,15 +96,15 @@ export function formatClaudeCodeStatus(status: ClaudeCodeStatus): string {
  */
 export function formatAuthMethods(auths: LLMAuthStatus[], cliInstalled?: boolean): string {
   const parts: string[] = [];
-  if (cliInstalled !== undefined) {
-    parts.push(cliInstalled ? '✓ CLI' : '✗ CLI');
+  if (cliInstalled !== undefined && cliInstalled) {
+    parts.push('✓ CLI');
   }
   parts.push(...auths.map(a => {
     const icon = a.valid ? '✓' : '⚠';
     const method = a.type === 'apikey' ? 'API Key' : a.type;
     return `${icon} ${method}`;
   }));
-  if (parts.length === 0) return '✗ Not configured';
+  if (parts.length === 0) return '⬚ Not connected';
   return parts.join(', ');
 }
 

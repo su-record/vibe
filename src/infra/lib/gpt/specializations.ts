@@ -17,7 +17,7 @@ export async function analyzeArchitecture(prompt: string): Promise<string> {
 }
 
 /**
- * 코드 디버깅 (GPT-5.3 Codex 사용 — 코딩 특화)
+ * 코드 디버깅 (GPT-5.4 Codex 사용 — 코딩 특화)
  */
 export async function debugCode(prompt: string): Promise<string> {
   return ask(prompt, {

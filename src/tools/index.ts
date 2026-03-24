@@ -166,6 +166,13 @@ export type {
   LoopLimitOptions,
 } from '../infra/lib/LoopBreaker.js';
 
+// ─── Deprecation Detection ───
+export { DeprecationDetector } from '../infra/lib/evolution/DeprecationDetector.js';
+export type {
+  DeprecationCandidate,
+  DeprecationReport,
+} from '../infra/lib/evolution/DeprecationDetector.js';
+
 // ─── Automation Level ───
 export {
   AUTOMATION_LEVELS,
@@ -235,3 +242,10 @@ export type {
   CheckpointResult,
   CheckpointHistory,
 } from '../infra/lib/InteractiveCheckpoint.js';
+
+// ─── Skill Parity Testing ───
+export { ParityTester, PARITY_THRESHOLDS } from '../infra/lib/evolution/ParityTester.js';
+export type {
+  ParityTestResult,
+  ModelVersion,
+} from '../infra/lib/evolution/ParityTester.js';
