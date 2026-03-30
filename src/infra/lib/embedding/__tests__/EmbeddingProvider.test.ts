@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EmbeddingProvider } from '../EmbeddingProvider.js';
 
+vi.mock('../../config/GlobalConfigManager.js', () => ({
+  getGptApiKey: vi.fn().mockReturnValue(null),
+  readGlobalConfig: vi.fn().mockReturnValue({ version: '1' }),
+}));
+
 describe('EmbeddingProvider', () => {
   const originalEnv = { ...process.env };
 

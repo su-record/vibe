@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**설치 한 줄로 Claude Code에 54개 에이전트, 43+ 도구, 멀티 LLM 오케스트레이션을 더합니다.**
+**설치 한 줄로 Claude Code에 53개 에이전트, 43+ 도구, 멀티 LLM 오케스트레이션을 더합니다.**
 
 ```bash
 npm install -g @su-record/vibe
@@ -62,7 +62,7 @@ flowchart LR
 
 ---
 
-## 에이전트 (54개)
+## 에이전트 (53개)
 
 ### 메인 에이전트 (19)
 
@@ -118,12 +118,12 @@ Event Listener, Event Trigger, Event Filter, Event Logger, Event Scheduler, Even
 | 프로바이더 | 역할 | 인증 |
 |-----------|------|------|
 | **Claude** | 오케스트레이션, 코드 생성 | 내장 (Claude Code) |
-| **GPT** | 아키텍처, 디버깅, 교차 리뷰 | OAuth / API Key |
-| **Gemini** | UI/UX, 웹 검색, 음성, 리서치 | OAuth / API Key |
+| **GPT** | 아키텍처, 디버깅, 교차 리뷰 | Codex CLI / API Key |
+| **Gemini** | UI/UX, 웹 검색, 음성, 리서치 | gemini-cli / API Key |
 
 ### SmartRouter
 
-작업 유형별 자동 라우팅 + 폴백 체인. 프로바이더별 30초 타임아웃, 최대 3회 재시도, 5분 가용성 캐시.
+작업 유형별 자동 라우팅. 각 프로바이더는 CLI 위임 방식으로 호출합니다 (Codex CLI, gemini-cli).
 
 | 작업 유형 | 우선순위 |
 |----------|---------|
@@ -315,8 +315,8 @@ vibe help / version
 
 | 프로바이더 | 우선순위 |
 |-----------|---------|
-| **GPT** | OAuth → API Key → Azure OpenAI |
-| **Gemini** | gemini-cli 자동감지 → OAuth → API Key |
+| **GPT** | Codex CLI → API Key |
+| **Gemini** | gemini-cli 자동감지 → API Key |
 
 ---
 
@@ -341,8 +341,8 @@ vibe help / version
 ```json
 {
   "credentials": {
-    "gpt": { "oauthRefreshToken": "..." },
-    "gemini": { "oauthRefreshToken": "..." }
+    "gpt": { "apiKey": "..." },
+    "gemini": { "apiKey": "..." }
   },
   "channels": {
     "telegram": { "botToken": "...", "allowedChatIds": ["..."] },
@@ -407,7 +407,7 @@ your-project/
 │   ├── session-rag.db         # Session RAG (SQLite + FTS5)
 │   └── memories.json          # 저장된 메모리
 ├── commands/                  # 슬래시 명령어
-└── agents/                    # 에이전트 정의 (54개)
+└── agents/                    # 에이전트 정의 (53개)
 ```
 
 ---

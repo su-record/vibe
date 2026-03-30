@@ -672,6 +672,7 @@ class BackgroundManagerImpl {
   }
 
   private extractProvider(model: string): string {
+    if (!model) return 'default';
     if (model.startsWith('claude')) return 'claude';
     if (model.startsWith('gpt')) return 'gpt';
     if (model.startsWith('gemini')) return 'gemini';
