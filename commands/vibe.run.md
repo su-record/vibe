@@ -22,8 +22,13 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 
 ## Codex Plugin Integration
 
-> **Codex 플러그인 활성화 여부**: Codex Claude Code 플러그인(`codex-plugin-cc`) 설치 시 자동 활용.
-> 미설치 시 Codex 관련 단계는 자동 스킵 — 기존 워크플로우로 동작.
+> **Codex 플러그인 감지**: 워크플로우 시작 시 아래 명령으로 자동 감지.
+>
+> ```bash
+> CODEX_AVAILABLE=$(node "{{VIBE_PATH}}/hooks/scripts/codex-detect.js" 2>/dev/null || echo "unavailable")
+> ```
+>
+> `available`이면 `/codex:rescue` (구현 위임), `/codex:review` (코드 리뷰) 자동 호출. `unavailable`이면 기존 워크플로우로 동작.
 
 ---
 
