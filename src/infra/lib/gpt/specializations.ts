@@ -3,11 +3,13 @@
  */
 
 import { ask } from './chat.js';
+import { isCodexAvailable } from '../llm-availability.js';
 
 /**
  * 아키텍처/디버깅 분석 (GPT-5.4 사용)
  */
 export async function analyzeArchitecture(prompt: string): Promise<string> {
+  if (!isCodexAvailable()) return '';
   return ask(prompt, {
     model: 'gpt-5.4',
     maxTokens: 8192,
@@ -20,6 +22,7 @@ export async function analyzeArchitecture(prompt: string): Promise<string> {
  * 코드 디버깅 (GPT-5.4 Codex 사용 — 코딩 특화)
  */
 export async function debugCode(prompt: string): Promise<string> {
+  if (!isCodexAvailable()) return '';
   return ask(prompt, {
     model: 'gpt-5.3-codex',
     maxTokens: 4096,

@@ -222,11 +222,15 @@ function callGeminiCli(prompt, sysPrompt, jsonMode, model) {
 async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
   const vibeConfig = readVibeConfig();
 
-  if (providerName === 'gpt' || providerName === 'gpt-codex') {
-    const isCodex = providerName === 'gpt-codex';
-    const model = isCodex
-      ? (vibeConfig.models?.gptCodex || process.env.GPT_CODEX_MODEL || 'gpt-5.3-codex')
-      : (vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.4');
+  if (providerName === 'gpt' || providerName === 'gpt-codex' || providerName === 'gpt-spark') {
+    let model;
+    if (providerName === 'gpt-spark') {
+      model = vibeConfig.models?.gptCodexSpark || process.env.GPT_CODEX_SPARK_MODEL || 'gpt-5.3-codex-spark';
+    } else if (providerName === 'gpt-codex') {
+      model = vibeConfig.models?.gptCodex || process.env.GPT_CODEX_MODEL || 'gpt-5.3-codex';
+    } else {
+      model = vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.4';
+    }
     return await callCodexCli(prompt, sysPrompt, jsonMode, model);
   }
 

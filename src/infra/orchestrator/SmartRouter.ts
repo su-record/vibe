@@ -8,7 +8,8 @@ import {
   SmartRouteRequest,
   SmartRouteResult,
   LLMAvailabilityCache,
-  TASK_LLM_PRIORITY
+  TASK_LLM_PRIORITY,
+  getTaskLlmPriority
 } from './types.js';
 import * as gptApi from '../lib/gpt/index.js';
 import * as geminiApi from '../lib/gemini/index.js';
@@ -143,12 +144,14 @@ export class SmartRouter {
    * LLM 우선순위 결정
    */
   private getProviderPriority(type: TaskType, preferredLlm?: LLMProvider): LLMProvider[] {
+    const basePriority = getTaskLlmPriority(type);
+
     if (preferredLlm) {
-      const others = TASK_LLM_PRIORITY[type].filter(p => p !== preferredLlm);
+      const others = basePriority.filter(p => p !== preferredLlm);
       return [preferredLlm, ...others];
     }
 
-    return [...TASK_LLM_PRIORITY[type]];
+    return basePriority;
   }
 
   /**

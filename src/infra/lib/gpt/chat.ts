@@ -51,6 +51,14 @@ export const GPT_MODELS: Record<string, GptModelInfo> = {
     maxTokens: 32768,
     reasoning: { effort: 'high', summary: 'auto' },
   },
+  // GPT-5.3 Codex Spark (초고속 코딩 — 1000+ tok/s)
+  'gpt-5.3-codex-spark': {
+    id: 'gpt-5.3-codex-spark',
+    name: 'GPT-5.3 Codex Spark',
+    description: 'Ultra-fast coding model (1000+ tok/s)',
+    maxTokens: 16384,
+    reasoning: { effort: 'low', summary: 'auto' },
+  },
 };
 
 import { getModelOverride } from '../config/GlobalConfigManager.js';

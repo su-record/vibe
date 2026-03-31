@@ -6,6 +6,7 @@ import { MultiLlmResult } from './types.js';
 import { warnLog } from '../lib/utils.js';
 import * as gptApi from '../lib/gpt/index.js';
 import * as geminiApi from '../lib/gemini/index.js';
+import { isCodexAvailable, isGeminiAvailable } from '../lib/llm-availability.js';
 
 /**
  * Multi-LLM 리서치 프롬프트 생성
@@ -84,72 +85,80 @@ export async function executeMultiLlmResearch(
   const promises: Promise<void>[] = [];
 
   // Best Practices - GPT
-  promises.push(
-    (async () => {
-      const taskStart = Date.now();
-      const { result, success, error } = await callGptSafe(
-        prompts.bestPractices.gpt,
-        'You are an expert software architect. Provide best practices in JSON format.'
-      );
-      results.push({
-        provider: 'gpt',
-        category: 'best-practices',
-        result, success, error,
-        duration: Date.now() - taskStart
-      });
-    })()
-  );
+  if (isCodexAvailable()) {
+    promises.push(
+      (async () => {
+        const taskStart = Date.now();
+        const { result, success, error } = await callGptSafe(
+          prompts.bestPractices.gpt,
+          'You are an expert software architect. Provide best practices in JSON format.'
+        );
+        results.push({
+          provider: 'gpt',
+          category: 'best-practices',
+          result, success, error,
+          duration: Date.now() - taskStart
+        });
+      })()
+    );
+  }
 
   // Best Practices - Gemini
-  promises.push(
-    (async () => {
-      const taskStart = Date.now();
-      const { result, success, error } = await callGeminiSafe(
-        prompts.bestPractices.gemini,
-        'You are an expert in modern development trends. Provide best practices in JSON format.'
-      );
-      results.push({
-        provider: 'gemini',
-        category: 'best-practices',
-        result, success, error,
-        duration: Date.now() - taskStart
-      });
-    })()
-  );
+  if (isGeminiAvailable()) {
+    promises.push(
+      (async () => {
+        const taskStart = Date.now();
+        const { result, success, error } = await callGeminiSafe(
+          prompts.bestPractices.gemini,
+          'You are an expert in modern development trends. Provide best practices in JSON format.'
+        );
+        results.push({
+          provider: 'gemini',
+          category: 'best-practices',
+          result, success, error,
+          duration: Date.now() - taskStart
+        });
+      })()
+    );
+  }
 
   // Security - GPT
-  promises.push(
-    (async () => {
-      const taskStart = Date.now();
-      const { result, success, error } = await callGptSafe(
-        prompts.security.gpt,
-        'You are a security expert. Focus on CVE database and known vulnerabilities. Return JSON format.'
-      );
-      results.push({
-        provider: 'gpt',
-        category: 'security',
-        result, success, error,
-        duration: Date.now() - taskStart
-      });
-    })()
-  );
+  if (isCodexAvailable()) {
+    promises.push(
+      (async () => {
+        const taskStart = Date.now();
+        const { result, success, error } = await callGptSafe(
+          prompts.security.gpt,
+          'You are a security expert. Focus on CVE database and known vulnerabilities. Return JSON format.'
+        );
+        results.push({
+          provider: 'gpt',
+          category: 'security',
+          result, success, error,
+          duration: Date.now() - taskStart
+        });
+      })()
+    );
+  }
 
   // Security - Gemini
-  promises.push(
-    (async () => {
-      const taskStart = Date.now();
-      const { result, success, error } = await callGeminiSafe(
-        prompts.security.gemini,
-        'You are a security advisor. Focus on latest advisories and patches. Return JSON format.'
-      );
-      results.push({
-        provider: 'gemini',
-        category: 'security',
-        result, success, error,
-        duration: Date.now() - taskStart
-      });
-    })()
-  );
+  if (isGeminiAvailable()) {
+    promises.push(
+      (async () => {
+        const taskStart = Date.now();
+        const { result, success, error } = await callGeminiSafe(
+          prompts.security.gemini,
+          'You are a security advisor. Focus on latest advisories and patches. Return JSON format.'
+        );
+        results.push({
+          provider: 'gemini',
+          category: 'security',
+          result, success, error,
+          duration: Date.now() - taskStart
+        });
+      })()
+    );
+  }
 
   await Promise.all(promises);
   return results;

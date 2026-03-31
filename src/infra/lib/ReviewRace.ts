@@ -20,6 +20,7 @@
 
 import * as gptApi from './gpt/index.js';
 import * as geminiApi from './gemini/index.js';
+import { isCodexAvailable, isGeminiAvailable } from './llm-availability.js';
 
 // ============================================================================
 // Types
@@ -305,7 +306,7 @@ ${code}
 Respond with JSON only.`;
 
     const response = await gptApi.ask(prompt, {
-      model: 'gpt-5.3-codex',
+      model: isCodexAvailable() ? 'gpt-5.3-codex-spark' : 'gpt-5.3-codex',
       temperature: 0.3,
     });
 
@@ -470,13 +471,16 @@ export async function raceReview(options: RaceReviewOptions): Promise<RaceReview
   const { reviewType, code, context } = options;
   const startTime = Date.now();
 
-  // GPT + Gemini 병렬 실행
-  const [gptResult, geminiResult] = await Promise.all([
-    reviewWithGPT(reviewType, code, context),
-    reviewWithGemini(reviewType, code, context),
-  ]);
+  // GPT + Gemini 병렬 실행 (가용성 체크)
+  const reviewPromises: Promise<LLMReviewResult>[] = [];
+  if (isCodexAvailable()) {
+    reviewPromises.push(reviewWithGPT(reviewType, code, context));
+  }
+  if (isGeminiAvailable()) {
+    reviewPromises.push(reviewWithGemini(reviewType, code, context));
+  }
 
-  const llmResults = [gptResult, geminiResult];
+  const llmResults = await Promise.all(reviewPromises);
 
   // 교차 검증
   const crossValidated = crossValidateIssues(llmResults);

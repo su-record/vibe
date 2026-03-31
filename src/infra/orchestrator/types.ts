@@ -3,6 +3,7 @@
  */
 
 import { ToolResult } from '../types/tool.js';
+import { detectLlmAvailability } from '../lib/llm-availability.js';
 
 // 모델 타입 정의
 export type ClaudeModel =
@@ -222,3 +223,44 @@ export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
   'code-review': ['gpt', 'gemini', 'claude'],
   'reasoning': ['gpt', 'gemini', 'claude'],
 };
+
+/**
+ * 동적 LLM 우선순위 — Codex/Gemini 활성화 상태에 따라 자동 조정
+ *
+ * 기본: Claude만 사용
+ * +Codex: 추론/코딩/리뷰에 GPT 추가
+ * +Gemini: 리서치/리뷰/UI에 Gemini 추가
+ */
+export function getTaskLlmPriority(type: TaskType): LLMProvider[] {
+  const { codex, gemini } = detectLlmAvailability();
+
+  // 둘 다 비활성화 → Claude only
+  if (!codex && !gemini) {
+    return ['claude'];
+  }
+
+  // 기본 Claude 베이스
+  const priority: LLMProvider[] = [];
+
+  if (codex) {
+    // GPT 우선 작업 유형
+    if (['architecture', 'reasoning', 'code-analysis', 'code-gen', 'debugging', 'code-review'].includes(type)) {
+      priority.push('gpt');
+    }
+  }
+
+  if (gemini) {
+    // Gemini 우선 작업 유형
+    if (['web-search', 'uiux'].includes(type)) {
+      priority.unshift('gemini');
+    } else if (['code-review', 'architecture', 'reasoning'].includes(type)) {
+      // 교차 검증용 — GPT 뒤에
+      priority.push('gemini');
+    }
+  }
+
+  // Claude는 항상 fallback
+  priority.push('claude');
+
+  return priority;
+}
