@@ -1,6 +1,6 @@
 ---
 name: commerce-patterns
-description: "E-commerce domain patterns - cart, payment, inventory with transaction safety"
+description: "E-commerce domain patterns — cart management, payment processing (Toss/Stripe/PG), inventory tracking, and order state machines with transaction safety. Use when implementing any shopping cart, checkout flow, payment integration, stock management, or order lifecycle. Covers idempotency keys, double-charge prevention, stock reservation, and refund flows. Must use this skill when the codebase involves e-commerce — even for seemingly simple 'add to cart' features."
 triggers: [commerce, ecommerce, cart, payment, checkout, inventory, stock, order, pg, toss, stripe]
 priority: 70
 ---

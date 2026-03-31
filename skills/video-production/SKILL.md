@@ -1,6 +1,6 @@
 ---
 name: video-production
-description: "Video processing gotchas — FFmpeg, transcoding, streaming, subtitles."
+description: "Video processing gotchas — FFmpeg commands, transcoding pipelines, HLS/DASH streaming setup, subtitle embedding (SRT/VTT), and thumbnail extraction. Use when the project involves any video manipulation, media processing, or streaming infrastructure. Covers codec selection, bitrate optimization, and common FFmpeg pitfalls. Must use this skill when user works with video files, mentions FFmpeg, or needs media processing — even for simple tasks like 'generate a thumbnail'."
 triggers: [video, ffmpeg, transcode, encode, stream, media, subtitle, thumbnail, hls, dash]
 priority: 60
 ---

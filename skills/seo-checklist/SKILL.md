@@ -1,6 +1,6 @@
 ---
 name: seo-checklist
-description: "SEO gotchas for web development - easy-to-miss items that hurt search ranking"
+description: "SEO gotchas for web development — easy-to-miss items that hurt search ranking. Covers meta tags, Open Graph, structured data (JSON-LD), sitemap, robots.txt, canonical URLs, and Naver/Google-specific requirements. Use when building or reviewing any public-facing web page, landing page, or marketing site. Must use this skill when user mentions SEO, search ranking, meta tags, or when deploying a web app that needs to be discoverable."
 triggers: [seo, search, meta, sitemap, schema, structured data, og, opengraph, google, naver]
 priority: 65
 ---

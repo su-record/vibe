@@ -1,6 +1,6 @@
 ---
 name: capability-loop
-description: "When an agent fails, diagnose which capability is missing and build it into the repo."
+description: "When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking 'why does this keep failing'."
 triggers: [capability loop, failure loop, build capability, missing capability, agent failed, why did it fail]
 priority: 75
 ---

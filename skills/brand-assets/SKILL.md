@@ -1,6 +1,6 @@
 ---
 name: brand-assets
-description: "Auto-generate app icons and favicons from SPEC brand information using Gemini Image API"
+description: "Auto-generate app icons (iOS/Android/PWA), favicons, and OG images from SPEC brand information using Gemini Image API. Use when the project needs visual brand assets, when user mentions 'icon', 'favicon', 'logo', or 'brand assets', or when a SPEC defines brand colors/identity but no assets exist yet. Outputs multiple sizes and formats ready for deployment. Not for complex illustration or marketing graphics — focused on app identity assets."
 triggers: [icon, favicon, brand, logo, app icon, branding, assets]
 priority: 65
 ---

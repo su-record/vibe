@@ -1,6 +1,6 @@
 ---
 name: ui-ux-pro-max
-description: "UI/UX design intelligence with bold aesthetic direction. 50+ styles, 97 palettes, 57 font pairings, 99 UX guidelines, 25 chart types across 9 stacks."
+description: "UI/UX design intelligence with bold aesthetic direction. Searchable database: 50+ styles, 97 color palettes, 57 font pairings, 99 UX guidelines, 25 chart types across 9 stacks (React, Vue, Svelte, Angular, Astro, Next.js, Flutter, Swift, Kotlin). Use when building any UI component, choosing color schemes, selecting typography, applying design patterns, or reviewing UX compliance. Must use this skill when user builds frontend — pages, components, dashboards, or landing pages — to ensure design quality beyond generic AI output."
 ---
 
 # UI/UX Pro Max - Design Intelligence
