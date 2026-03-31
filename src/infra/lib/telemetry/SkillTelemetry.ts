@@ -10,6 +10,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DecisionTracer, DecisionInput, DecisionRecord } from '../DecisionTracer.js';
+import type { VibeSpan } from './VibeSpan.js';
 
 // ─── Event Schema ───
 
@@ -49,11 +50,13 @@ export class SkillTelemetry {
   private readonly logPath: string;
   private readonly enabled: boolean;
   readonly decisions: DecisionTracer;
+  private readonly spanLogPath: string;
 
   constructor(analyticsDir: string, enabled = true) {
     this.logPath = path.join(analyticsDir, 'skill-usage.jsonl');
     this.enabled = enabled;
     this.decisions = new DecisionTracer(analyticsDir, enabled);
+    this.spanLogPath = path.join(analyticsDir, 'spans.jsonl');
 
     if (enabled) {
       fs.mkdirSync(analyticsDir, { recursive: true });
@@ -170,6 +173,44 @@ export class SkillTelemetry {
   /** Retrieve all recorded decisions */
   getDecisions(): DecisionRecord[] {
     return this.decisions.readAll();
+  }
+
+  /** Log a structured span (v2) */
+  logSpan(span: VibeSpan): void {
+    if (!this.enabled) return;
+
+    try {
+      fs.appendFileSync(this.spanLogPath, JSON.stringify(span) + '\n');
+    } catch {
+      // Silent fail
+    }
+  }
+
+  /** Read all spans */
+  readSpans(): VibeSpan[] {
+    if (!fs.existsSync(this.spanLogPath)) return [];
+
+    try {
+      const content = fs.readFileSync(this.spanLogPath, 'utf-8');
+      return content
+        .trim()
+        .split('\n')
+        .filter(line => line.trim().length > 0)
+        .flatMap(line => {
+          try {
+            return [JSON.parse(line) as VibeSpan];
+          } catch {
+            return [];
+          }
+        });
+    } catch {
+      return [];
+    }
+  }
+
+  /** Get span log file path */
+  getSpanLogPath(): string {
+    return this.spanLogPath;
   }
 
   /** 로그 파일 경로 */

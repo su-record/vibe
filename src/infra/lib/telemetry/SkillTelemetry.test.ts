@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, readFileSync } from 'fs';
 import { createTempDir, cleanupTempDir, parseJsonl } from '../../../test-helpers/index.js';
 import { SkillTelemetry, SkillEvent } from './SkillTelemetry.js';
+import { createSpan, completeSpan } from './VibeSpan.js';
 
 describe('SkillTelemetry', () => {
   let telemetry: SkillTelemetry;
@@ -109,6 +110,44 @@ describe('SkillTelemetry', () => {
       disabled.logSuccess('should-not-log', 1, '1.0.0');
 
       expect(existsSync(disabled.getLogPath())).toBe(false);
+    });
+  });
+
+  describe('spans', () => {
+    it('should log and read spans', () => {
+      const span = createSpan('skill_run', 'vibe.run', { skill: 'vibe.run' });
+      const completed = completeSpan(span, 'ok', 1500);
+      telemetry.logSpan(completed);
+
+      const spans = telemetry.readSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].v).toBe(2);
+      expect(spans[0].type).toBe('skill_run');
+      expect(spans[0].name).toBe('vibe.run');
+      expect(spans[0].duration_ms).toBe(1500);
+      expect(spans[0].status).toBe('ok');
+    });
+
+    it('should support parent spans', () => {
+      const parent = createSpan('agent_run', 'explorer');
+      const child = createSpan('llm_call', 'claude-haiku', {}, parent.id);
+      telemetry.logSpan(parent);
+      telemetry.logSpan(child);
+
+      const spans = telemetry.readSpans();
+      expect(spans).toHaveLength(2);
+      expect(spans[1].parent_id).toBe(spans[0].id);
+    });
+
+    it('should return empty array for missing span file', () => {
+      expect(telemetry.readSpans()).toEqual([]);
+    });
+
+    it('should not write spans when disabled', () => {
+      const disabled = new SkillTelemetry(testDir, false);
+      const span = createSpan('build', 'tsc');
+      disabled.logSpan(span);
+      expect(disabled.readSpans()).toEqual([]);
     });
   });
 });

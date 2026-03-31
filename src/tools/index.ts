@@ -249,3 +249,22 @@ export type {
   ParityTestResult,
   ModelVersion,
 } from '../infra/lib/evolution/ParityTester.js';
+
+// ─── Store Interface (Agent-Lightning pattern) ───
+export type { IMemoryStorage } from '../infra/lib/memory/IMemoryStorage.js';
+export { InMemoryStorage } from '../infra/lib/memory/InMemoryStorage.js';
+
+// ─── Structured Telemetry Spans (Agent-Lightning pattern) ───
+export { createSpan, completeSpan } from '../infra/lib/telemetry/VibeSpan.js';
+export type {
+  VibeSpan,
+  SpanType,
+  SpanStatus,
+} from '../infra/lib/telemetry/VibeSpan.js';
+
+// ─── Component Registry (Agent-Lightning pattern) ───
+export { ComponentRegistry } from '../infra/lib/ComponentRegistry.js';
+export type {
+  ComponentSpec,
+  ComponentEntry,
+} from '../infra/lib/ComponentRegistry.js';

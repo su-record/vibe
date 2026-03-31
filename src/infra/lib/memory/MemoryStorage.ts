@@ -1,6 +1,7 @@
 // Core memory storage operations (CRUD)
 // Extracted from MemoryManager for better separation of concerns
 
+import type { IMemoryStorage } from './IMemoryStorage.js';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { mkdirSync, readFileSync, renameSync, existsSync } from 'fs';
@@ -17,7 +18,7 @@ export interface MemoryItem {
   priority?: number;
 }
 
-export class MemoryStorage {
+export class MemoryStorage implements IMemoryStorage {
   protected db: Database.Database;
   protected readonly dbPath: string;
   private recallStmt: Database.Statement | null = null;

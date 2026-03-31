@@ -2,6 +2,8 @@
 // Provides both modular components and legacy MemoryManager facade
 
 export { MemoryStorage, MemoryItem } from './MemoryStorage.js';
+export type { IMemoryStorage } from './IMemoryStorage.js';
+export { InMemoryStorage } from './InMemoryStorage.js';
 export { KnowledgeGraph } from './KnowledgeGraph.js';
 export { MemorySearch, SearchStrategy, SearchOptions } from './MemorySearch.js';
 export { ObservationStore, Observation, ObservationInput, ObservationType } from './ObservationStore.js';
