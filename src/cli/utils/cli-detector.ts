@@ -13,6 +13,7 @@ import os from 'os';
 export interface AiCliStatus {
   installed: boolean;
   configDir: string;
+  pluginDir?: string;
 }
 
 /**
@@ -36,6 +37,7 @@ export function detectCodexCli(): AiCliStatus {
   return {
     installed: hasBin || hasDir,
     configDir,
+    pluginDir: path.join(configDir, 'plugins', 'vibe'),
   };
 }
 

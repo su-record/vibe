@@ -9,6 +9,7 @@ export {
   installClaudeAgents,
   generateCursorRules,
   generateCursorSkills,
+  installCodexPlugin,
   installCodexAgents,
   generateCodexAgentsMd,
   installGeminiAgents,

@@ -27,8 +27,7 @@ import {
   installCursorAgents,
   generateCursorRules,
   generateCursorSkills,
-  installCodexAgents,
-  generateCodexAgentsMd,
+  installCodexPlugin,
   installGeminiAgents,
   generateGeminiMd,
   resolveLocalSkills,
@@ -99,21 +98,11 @@ export function updateCodexGlobalAssets(
     const agentsSource = path.join(packageRoot, 'agents');
     const skillsSource = path.join(packageRoot, 'skills');
 
-    // Codex agents (전체)
-    if (fs.existsSync(agentsSource)) {
-      installCodexAgents(agentsSource, path.join(codexStatus.configDir, 'agents'));
-    }
-
-    // Codex skills (전역 공통)
-    if (fs.existsSync(skillsSource)) {
-      copySkillsFiltered(skillsSource, path.join(codexStatus.configDir, 'skills'), GLOBAL_SKILLS);
-    }
-
-    // Codex AGENTS.md (전역)
-    generateCodexAgentsMd(codexStatus.configDir, packageRoot);
+    // Codex 플러그인 설치 (agents + skills + manifest + AGENTS.md)
+    installCodexPlugin(agentsSource, skillsSource, codexStatus.configDir, packageRoot);
   } catch (err) {
     if (!options.silent) {
-      console.warn(`   ⚠️ Codex assets update warning: ${(err as Error).message}`);
+      console.warn(`   ⚠️ Codex plugin update warning: ${(err as Error).message}`);
     }
   }
 }

@@ -22,8 +22,7 @@ import { generateCursorRules } from './cursor-rules.js';
 import { installCursorAgents } from './cursor-agents.js';
 import { installClaudeAgents } from './claude-agents.js';
 import { generateCursorSkills } from './cursor-skills.js';
-import { installCodexAgents } from './codex-agents.js';
-import { generateCodexAgentsMd } from './codex-instruction.js';
+import { installCodexPlugin } from './codex-agents.js';
 import { installGeminiAgents } from './gemini-agents.js';
 import { generateGeminiMd } from './gemini-instruction.js';
 import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
@@ -185,15 +184,12 @@ export function main(): void {
     const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
     generateCursorSkills(cursorSkillsDir);
 
-    // 10. Codex CLI 지원
+    // 10. Codex CLI 지원 (플러그인 시스템)
     try {
       const codexStatus = detectCodexCli();
       if (codexStatus.installed) {
-        const codexAgentsDir = path.join(codexStatus.configDir, 'agents');
-        installCodexAgents(agentsSource, codexAgentsDir);
-        copySkillsFiltered(skillsSource, path.join(codexStatus.configDir, 'skills'), GLOBAL_SKILLS);
-        generateCodexAgentsMd(codexStatus.configDir, packageRoot);
-        console.log(`✅ codex agents/skills installed: ${codexStatus.configDir}`);
+        installCodexPlugin(agentsSource, skillsSource, codexStatus.configDir, packageRoot);
+        console.log(`✅ codex plugin installed: ${codexStatus.pluginDir}`);
       }
     } catch {
       // Non-critical — don't fail postinstall
