@@ -3,7 +3,7 @@
  */
 
 import { execSync } from 'child_process';
-import { readdirSync, rmSync } from 'fs';
+import { readdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { CliOptions } from '../types.js';
 import { log, getPackageJson } from '../utils.js';
@@ -37,12 +37,26 @@ export function upgrade(_options: CliOptions = { silent: false }): void {
 
     cleanStaleTempDirs();
 
-    execSync('npm install -g @su-record/vibe@latest', {
+    // --prefer-online: npm 캐시 대신 레지스트리에서 최신 버전 확인
+    execSync('npm install -g @su-record/vibe@latest --prefer-online', {
       stdio: 'pipe',
     });
 
-    const packageJson = getPackageJson();
-    log(`\n✅ vibe upgraded (v${packageJson.version})\n\n${formatLLMStatus()}\n`);
+    // 설치된 새 버전을 디스크에서 직접 읽기 (현재 프로세스의 캐시된 값이 아닌)
+    let newVersion = 'unknown';
+    try {
+      const globalRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
+      const installedPkg = JSON.parse(
+        readFileSync(
+          join(globalRoot, '@su-record', 'vibe', 'package.json'),
+          'utf-8'
+        )
+      ) as { version: string };
+      newVersion = installedPkg.version;
+    } catch {
+      newVersion = getPackageJson().version;
+    }
+    log(`\n✅ vibe upgraded (v${newVersion})\n\n${formatLLMStatus()}\n`);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Upgrade failed:', message);
