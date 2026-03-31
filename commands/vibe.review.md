@@ -20,6 +20,11 @@ argument-hint: "PR number, branch name, or file path"
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
+## Codex Plugin Integration
+
+> **Codex 플러그인 활성화 여부**: Codex Claude Code 플러그인(`codex-plugin-cc`) 설치 시 자동 활용.
+> 미설치 시 Codex 관련 단계는 자동 스킵 — 기존 GPT+Gemini Race 모드로 동작.
+
 ## Race Mode (v2.6.9)
 
 **Multi-LLM competitive review** - Same review task runs on GPT + Gemini in parallel, results are cross-validated.
@@ -88,6 +93,25 @@ security-review:
 - **Severity**: high
 - **Location**: `src/components/Comment.tsx:15`
 ```
+
+### Codex Review (Codex 플러그인 활성화 시)
+
+Race Mode에서 GPT+Gemini와 **동시에** Codex review 실행하여 3중 교차 검증:
+
+```
+/codex:review
+```
+
+교차 검증 테이블:
+
+```markdown
+| Issue | GPT | Gemini | Codex | Confidence |
+|-------|-----|--------|-------|------------|
+| {이슈} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
+```
+
+- 3개 모델 중 2개 이상 동의 → **High Confidence** (P1 자동 수정)
+- Codex만 발견 → **Medium Confidence** (P2 수동 검토)
 
 ### When to Use Race Mode
 
@@ -447,6 +471,16 @@ P2 Important:
 - Requires user confirmation
 
 → Manual handling instructions in Phase 6
+
+### Auto-Fix 실패 시 Codex Rescue (Codex 플러그인 활성화 시)
+
+P1/P2 auto-fix **3회 실패** 시, Codex에 위임:
+
+```
+/codex:rescue "Fix {priority} issue: {issue-description}. File: {file-path}"
+```
+
+Codex 수정 완료 후 해당 리뷰 에이전트가 재검증.
 
 ### Phase 6: Todo File Creation (Items Requiring Manual Handling)
 

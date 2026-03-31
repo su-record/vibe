@@ -20,6 +20,11 @@ argument-hint: "feature name"
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
+## Codex Plugin Integration
+
+> **Codex 플러그인 활성화 여부**: Codex Claude Code 플러그인(`codex-plugin-cc`) 설치 시 자동 활용.
+> 미설치 시 Codex 관련 단계는 자동 스킵.
+
 ## File Reading Policy (Mandatory)
 
 - **SPEC/Feature 파일**: 반드시 `Read` 도구로 전체 파일을 읽을 것 (Grep 금지)
@@ -356,6 +361,22 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 ```bash
 node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.findSymbol({symbolName: 'handleLogin', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
 ```
+
+### Final Codex Review Gate (Codex 플러그인 활성화 시)
+
+> 모든 시나리오 검증 통과 후, 최종 안전망으로 Codex review 실행.
+
+```
+/codex:review
+```
+
+**Codex P1 발견 시:**
+1. 즉시 수정
+2. 해당 시나리오 재검증
+3. 재검증 통과 시 최종 완료
+
+**Codex P2 발견 시:**
+- TODO 파일에 기록 후 완료 처리
 
 ## Next Step
 

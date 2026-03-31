@@ -20,6 +20,13 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 
 ---
 
+## Codex Plugin Integration
+
+> **Codex 플러그인 활성화 여부**: Codex Claude Code 플러그인(`codex-plugin-cc`) 설치 시 자동 활용.
+> 미설치 시 Codex 관련 단계는 자동 스킵 — 기존 워크플로우로 동작.
+
+---
+
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
 ## File Reading Policy (Mandatory)
@@ -1049,6 +1056,26 @@ Then: Login success + JWT token returned
 > **MUST USE PARALLEL TASK CALLS** - This is REQUIRED, not optional.
 > Sequential execution when parallel is possible = VIOLATION of this workflow.
 
+### Codex 병렬 구현 (Codex 플러그인 활성화 시)
+
+> **활성화 조건**: Codex 플러그인 설치 + 독립적인 시나리오 2개 이상
+> 미설치 시 기존 Claude 서브에이전트 방식으로 동작.
+
+독립적인 시나리오(파일 의존성 없음)를 Codex에 위임하여 Claude와 **병렬 구현**:
+
+```
+/codex:rescue "Implement scenario: {scenario-name}. Files: {file-list}. Requirements: {requirements-summary}" --background
+```
+
+- Claude는 다음 시나리오를 **동시에** 구현
+- Codex 완료 시 `/codex:result`로 결과 확인
+- 충돌 발생 시 Claude가 merge 판단
+
+**위임 기준**:
+- 시나리오 간 파일 의존성 없음 (독립적)
+- 시나리오 복잡도 중간 이하
+- 의존성 있는 시나리오는 Claude가 직접 구현
+
 ### Mandatory Parallel Exploration (Phase Start)
 
 **BEFORE any implementation, you MUST launch these Task calls IN PARALLEL (single message, multiple tool calls):**
@@ -1779,13 +1806,13 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
   └─ Gemini: Reviewing...
 
 [Step 2] Cross-validation results:
-  ┌───────────────────────────────────────────────────────────┐
-  │ Issue                          │ GPT │ Gemini │ Confidence│
-  │────────────────────────────────│─────│────────│───────────│
-  │ Timing attack in password      │ ✅  │ ✅     │ 100% → P1 │
-  │ Rate limiting missing          │ ✅  │ ✅     │ 100% → P1 │
-  │ Magic number usage             │ ✅  │ ❌     │ 50% → P2  │
-  └───────────────────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ Issue                          │ GPT │ Gemini │ Codex │ Confidence│
+  │────────────────────────────────│─────│────────│───────│───────────│
+  │ Timing attack in password      │ ✅  │ ✅     │ ✅    │ 100% → P1 │
+  │ Rate limiting missing          │ ✅  │ ✅     │ ✅    │ 100% → P1 │
+  │ Magic number usage             │ ✅  │ ❌     │ ❌    │ 50% → P2  │
+  └──────────────────────────────────────────────────────────────────┘
 
   Summary: 3 issues (P1: 2, P2: 1)
 
@@ -1828,8 +1855,9 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.j
 
 | Confidence | Priority | Action |
 |------------|----------|--------|
-| 100% (2/2) | P1 | Auto-fix immediately |
-| 50% (1/2) | P2 | Auto-fix with review |
+| 100% (3/3 or 2/2) | P1 | Auto-fix immediately |
+| 67% (2/3) | P1 | Auto-fix immediately |
+| 50% (1/2) or 33% (1/3) | P2 | Auto-fix with review |
 
 **Fallback handling:**
 - If one LLM fails → Use remaining LLM results (reduced confidence)
@@ -1848,6 +1876,22 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.j
 - **ULTRAWORK**: Race review enabled by default
 - **Normal mode**: Use `--race` flag to enable
 - Must re-verify build/tests after fixes
+
+### Codex Code Review (Codex 플러그인 활성화 시)
+
+GPT+Gemini race와 **동시에** Codex review 실행:
+
+```
+/codex:review
+```
+
+결과를 race review 교차 검증에 포함 — 3중 리뷰:
+
+```markdown
+| Issue | GPT | Gemini | Codex | Confidence |
+|-------|-----|--------|-------|------------|
+| {이슈} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
+```
 
 ### 6. Quality Report (Auto-generated)
 
@@ -2155,6 +2199,16 @@ Grades:
 | Missing input validation | Add validation schema |
 | Function too long | Suggest split points |
 | N+1 query detected | Add eager loading |
+
+### Auto-Fix 실패 시 Codex Rescue (Codex 플러그인 활성화 시)
+
+P1 auto-fix가 **3회 실패** 시, Codex에 위임:
+
+```
+/codex:rescue "Fix P1 issue: {issue-description}. File: {file-path}. Error: {error-message}"
+```
+
+Codex 수정 완료 후 재검증. Codex도 실패 시 TODO 파일에 기록.
 
 ### Forbidden Patterns (Block Merge)
 

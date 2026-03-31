@@ -18,6 +18,13 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 
 ---
 
+## Codex Plugin Integration
+
+> **Codex 플러그인 활성화 여부**: Codex Claude Code 플러그인(`codex-plugin-cc`) 설치 시 자동 활용.
+> 미설치 시 Codex 관련 단계는 자동 스킵 — 기존 GPT+Gemini 워크플로우로 동작.
+
+---
+
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
 ## Workflow
@@ -298,11 +305,11 @@ Model Results:
 | Gemini | 2      | 2156ms   |
 
 Cross-Validated Issues:
-| Issue                    | GPT | Gemini | Confidence |
-|--------------------------|-----|--------|------------|
-| Missing retry logic      | ✅  | ✅     | 100% → P1  |
-| Missing rate limiting    | ✅  | ✅     | 100% → P1  |
-| Token refresh unclear    | ✅  | ❌     | 50% → P2   |
+| Issue                    | GPT | Gemini | Codex | Confidence |
+|--------------------------|-----|--------|-------|------------|
+| Missing retry logic      | ✅  | ✅     | ✅    | 100% → P1  |
+| Missing rate limiting    | ✅  | ✅     | ✅    | 100% → P1  |
+| Token refresh unclear    | ✅  | ❌     | ❌    | 50% → P2   |
 
 Auto-applying...
   ✅ [P1] Added retry logic (3 attempts, exponential backoff)
@@ -317,9 +324,9 @@ Auto-applying...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Cross-Validated Issues:
-| Issue                       | GPT | Gemini | Confidence |
-|-----------------------------|-----|--------|------------|
-| Concurrent session unclear  | ✅  | ❌     | 50% → P2   |
+| Issue                       | GPT | Gemini | Codex | Confidence |
+|-----------------------------|-----|--------|-------|------------|
+| Concurrent session unclear  | ✅  | ❌     | ❌    | 50% → P2   |
 
 Auto-applying...
   ✅ [P2] Added concurrent session policy
@@ -337,6 +344,34 @@ Cross-Validated Issues: None
 ✅ Consensus Rate: 100%
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+### Step 3.1: Codex Adversarial Review (Codex 플러그인 활성화 시)
+
+> **활성화 조건**: Codex 플러그인 설치 시 자동 실행. 미설치 시 스킵.
+> GPT+Gemini Race Review와 **동시에** 실행하여 3중 교차 검증.
+
+Codex adversarial review는 SPEC의 **설계 결정에 도전**합니다:
+- 대안적 아키텍처가 더 나은지 검증
+- 오버엔지니어링 또는 과소 설계 여부
+- 누락된 엣지케이스 및 비기능 요구사항
+
+**실행 (GPT+Gemini Race와 병렬):**
+
+```
+/codex:adversarial-review
+```
+
+**결과 통합**: Race Review 교차 검증 테이블에 Codex 열 추가:
+
+```markdown
+| Issue | GPT | Gemini | Codex | Confidence |
+|-------|-----|--------|-------|------------|
+| {이슈} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
+```
+
+- 3개 모델 중 2개 이상 동의 → **High Confidence**
+- Codex만 발견한 이슈 → **P2** (설계 관점 검토 필요)
+- 3개 모두 동의 → **P1** (즉시 수정)
 
 ---
 
