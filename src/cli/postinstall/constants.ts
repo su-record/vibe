@@ -259,6 +259,7 @@ export const CLAUDE_MODEL_MAPPING: Record<string, string> = {
   'ui-previewer': 'sonnet',
   'junior-mentor': 'sonnet',
   // QA agents
+  'qa-coordinator': 'sonnet',
   'edge-case-finder': 'haiku',
   'acceptance-tester': 'haiku',
   // Planning agents
@@ -328,6 +329,7 @@ export const CLAUDE_AGENT_TOOL_CATEGORY: Record<string, string> = {
   'ui-previewer': 'write-capable',
   'junior-mentor': 'write-capable',
   // QA agents — read-only
+  'qa-coordinator': 'read-only',
   'edge-case-finder': 'read-only',
   'acceptance-tester': 'read-only',
   // Planning agents — read-only
@@ -358,7 +360,7 @@ export const CLAUDE_AGENT_PERMISSION_MODE: Record<string, string> = {
   'rails-reviewer': 'plan', 'react-reviewer': 'plan',
   'best-practices-agent': 'plan', 'framework-docs-agent': 'plan',
   'codebase-patterns-agent': 'plan', 'security-advisory-agent': 'plan',
-  'edge-case-finder': 'plan', 'acceptance-tester': 'plan',
+  'qa-coordinator': 'plan', 'edge-case-finder': 'plan', 'acceptance-tester': 'plan',
   'requirements-analyst': 'plan', 'ux-advisor': 'plan',
   'api-documenter': 'plan', 'changelog-writer': 'plan',
   'searcher': 'plan',
@@ -382,6 +384,7 @@ export const CLAUDE_AGENT_PERMISSION_MODE: Record<string, string> = {
 export const CLAUDE_AGENT_DISALLOWED_TOOLS: Record<string, string[]> = {
   'requirements-analyst': ['Write', 'Edit'],
   'ux-advisor': ['Write', 'Edit'],
+  'qa-coordinator': ['Write', 'Edit'],
   'edge-case-finder': ['Write', 'Edit'],
   'acceptance-tester': ['Write', 'Edit'],
   'best-practices-agent': ['Write', 'Edit'],

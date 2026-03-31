@@ -66,6 +66,7 @@ function generateDescription(name: string, title: string, roleLines: string[]): 
     'ui-previewer': `UI preview generator. ${roleDesc}. Generates UI mockups from descriptions or design files.`,
     'junior-mentor': `Junior developer mentor. ${roleDesc}. Implements features with thorough explanations.`,
     // QA agents
+    'qa-coordinator': `QA orchestrator that routes changed code to appropriate QA agents. ${roleDesc}. Analyzes change types (API, UI, auth, data) and dispatches edge-case-finder, security-reviewer, performance-reviewer etc. in parallel, then synthesizes a unified QA report. Use after implementation to run comprehensive quality checks.`,
     'edge-case-finder': `Edge case and boundary condition detector. ${roleDesc}. Use to identify potential race conditions and data overflow risks.`,
     'acceptance-tester': `Acceptance criteria testability verifier. ${roleDesc}. Validates SPEC acceptance criteria are measurable and automatable.`,
     // Planning agents
