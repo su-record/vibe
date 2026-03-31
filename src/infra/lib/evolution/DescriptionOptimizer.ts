@@ -313,6 +313,215 @@ export class DescriptionOptimizer {
     return row ? this.rowToRun(row) : null;
   }
 
+  /**
+   * Generate a 20-query trigger validation eval set for a skill.
+   * Follows Harness pattern: 10 should-trigger + 10 should-NOT-trigger.
+   *
+   * Should-trigger queries cover:
+   * - Diverse phrasing of the same intent (formal/casual)
+   * - Implicit need (no explicit skill mention)
+   * - Edge use cases
+   *
+   * Should-NOT-trigger queries focus on near-misses:
+   * - Similar keywords but different intent
+   * - Adjacent domains
+   * - Ambiguous phrasing that belongs to a different skill
+   */
+  public generateTriggerEvalSet(
+    skillName: string,
+    description: string,
+    existingSkillDescriptions?: Map<string, string>
+  ): TriggerEvalQuery[] {
+    const descWords = this.extractKeywords(description);
+    const keywordList = Array.from(descWords);
+
+    // Generate should-trigger queries from description keywords
+    const shouldTrigger: TriggerEvalQuery[] = [];
+    const shouldNot: TriggerEvalQuery[] = [];
+
+    // Strategy 1: Direct keyword combinations (4 queries)
+    for (let i = 0; i < Math.min(4, keywordList.length); i++) {
+      const words = keywordList.slice(i, i + 3).join(' ');
+      shouldTrigger.push({
+        query: `Help me with ${words} in this project`,
+        shouldTrigger: true,
+      });
+    }
+
+    // Strategy 2: Casual phrasing (3 queries)
+    const casualPrefixes = ['can you', 'I need to', 'please'];
+    for (let i = 0; i < Math.min(3, keywordList.length); i++) {
+      shouldTrigger.push({
+        query: `${casualPrefixes[i % 3]} ${keywordList[i]} ${keywordList[(i + 1) % keywordList.length]}`,
+        shouldTrigger: true,
+      });
+    }
+
+    // Strategy 3: Implicit need (3 queries)
+    const implicitPhrases = [
+      `The ${keywordList[0] ?? 'feature'} is broken`,
+      `How does the ${keywordList[1] ?? 'system'} work here?`,
+      `Set up ${keywordList[2] ?? 'this feature'} for the project`,
+    ];
+    for (const phrase of implicitPhrases) {
+      shouldTrigger.push({ query: phrase, shouldTrigger: true });
+    }
+
+    // Generate should-NOT-trigger queries (near-misses from other skills)
+    if (existingSkillDescriptions) {
+      let nearMissCount = 0;
+      for (const [otherName, otherDesc] of existingSkillDescriptions) {
+        if (otherName === skillName || nearMissCount >= 5) break;
+        const otherWords = this.extractKeywords(otherDesc);
+        const overlap = this.computeOverlap(descWords, otherWords);
+        // Near-miss: some keyword overlap but different skill
+        if (overlap > 0.05 && overlap < 0.4) {
+          const otherKeywords = Array.from(otherWords).slice(0, 3).join(' ');
+          shouldNot.push({
+            query: `Help me with ${otherKeywords}`,
+            shouldTrigger: false,
+          });
+          nearMissCount++;
+        }
+      }
+    }
+
+    // Fill remaining should-NOT-trigger with generic near-misses
+    const genericNearMisses = [
+      'Write a unit test for the login function',
+      'Deploy the application to production',
+      'Create a new database migration',
+      'Fix the CSS layout on mobile',
+      'Refactor the authentication middleware',
+      'Generate API documentation',
+      'Set up CI/CD pipeline',
+      'Review this pull request',
+      'Optimize the database queries',
+      'Add logging to the service layer',
+    ];
+
+    while (shouldNot.length < 10) {
+      const idx = shouldNot.length % genericNearMisses.length;
+      // Only add if not already matching the skill
+      const overlap = this.computeOverlap(descWords, this.extractKeywords(genericNearMisses[idx]));
+      if (overlap < 0.15) {
+        shouldNot.push({ query: genericNearMisses[idx], shouldTrigger: false });
+      } else {
+        // Skip this generic and try a truly unrelated one
+        shouldNot.push({
+          query: `Write a poem about ${genericNearMisses[idx].split(' ').slice(-2).join(' ')}`,
+          shouldTrigger: false,
+        });
+      }
+    }
+
+    return [...shouldTrigger.slice(0, 10), ...shouldNot.slice(0, 10)];
+  }
+
+  /**
+   * Validate trigger accuracy for a skill against its 20-query eval set.
+   * Returns accuracy score and details of failures.
+   */
+  public validateTriggers(
+    skillName: string,
+    description: string,
+    queries?: TriggerEvalQuery[],
+    existingSkillDescriptions?: Map<string, string>
+  ): {
+    accuracy: number;
+    falsePositives: TriggerEvalResult[];
+    falseNegatives: TriggerEvalResult[];
+    results: TriggerEvalResult[];
+  } {
+    const evalQueries = queries ?? this.generateTriggerEvalSet(
+      skillName, description, existingSkillDescriptions
+    );
+    const results = this.evaluateDescription(description, evalQueries);
+    const accuracy = this.scoreResults(results);
+    const falsePositives = results.filter(r => !r.shouldTrigger && r.didTrigger);
+    const falseNegatives = results.filter(r => r.shouldTrigger && !r.didTrigger);
+
+    return { accuracy, falsePositives, falseNegatives, results };
+  }
+
+  /**
+   * Check for trigger collisions between a new skill and existing skills.
+   * Returns skills whose trigger queries would incorrectly fire for the new skill's description.
+   */
+  public checkCollisions(
+    skillName: string,
+    description: string,
+    existingSkills: Map<string, string>
+  ): Array<{
+    collidingSkill: string;
+    overlapScore: number;
+    sharedKeywords: string[];
+  }> {
+    const descWords = this.extractKeywords(description);
+    const collisions: Array<{
+      collidingSkill: string;
+      overlapScore: number;
+      sharedKeywords: string[];
+    }> = [];
+
+    for (const [otherName, otherDesc] of existingSkills) {
+      if (otherName === skillName) continue;
+
+      const otherWords = this.extractKeywords(otherDesc);
+      const overlapScore = this.computeOverlap(descWords, otherWords);
+
+      if (overlapScore >= 0.3) {
+        const shared: string[] = [];
+        for (const word of descWords) {
+          if (otherWords.has(word)) shared.push(word);
+        }
+        collisions.push({
+          collidingSkill: otherName,
+          overlapScore,
+          sharedKeywords: shared,
+        });
+      }
+    }
+
+    return collisions.sort((a, b) => b.overlapScore - a.overlapScore);
+  }
+
+  /**
+   * Batch validate all skills' trigger accuracy.
+   * Returns a report of skills with low accuracy that need description improvement.
+   */
+  public batchValidate(
+    skills: Map<string, string>,
+    accuracyThreshold: number = 0.7
+  ): Array<{
+    skillName: string;
+    accuracy: number;
+    falsePositiveCount: number;
+    falseNegativeCount: number;
+    needsImprovement: boolean;
+  }> {
+    const results: Array<{
+      skillName: string;
+      accuracy: number;
+      falsePositiveCount: number;
+      falseNegativeCount: number;
+      needsImprovement: boolean;
+    }> = [];
+
+    for (const [name, description] of skills) {
+      const validation = this.validateTriggers(name, description, undefined, skills);
+      results.push({
+        skillName: name,
+        accuracy: validation.accuracy,
+        falsePositiveCount: validation.falsePositives.length,
+        falseNegativeCount: validation.falseNegatives.length,
+        needsImprovement: validation.accuracy < accuracyThreshold,
+      });
+    }
+
+    return results.sort((a, b) => a.accuracy - b.accuracy);
+  }
+
   // --- Internal helpers ---
 
   private extractKeywords(text: string): Set<string> {

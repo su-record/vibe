@@ -634,6 +634,98 @@ describe('DescriptionOptimizer', () => {
     expect(candidate.results).toHaveLength(4); // train + test
   });
 
+  it('should generate 20-query trigger eval set', () => {
+    const queries = optimizer.generateTriggerEvalSet(
+      'csv-analyzer',
+      'Analyze CSV files, parse spreadsheet data, generate statistical summaries and charts'
+    );
+
+    expect(queries).toHaveLength(20);
+    const shouldTrigger = queries.filter(q => q.shouldTrigger);
+    const shouldNot = queries.filter(q => !q.shouldTrigger);
+    expect(shouldTrigger).toHaveLength(10);
+    expect(shouldNot).toHaveLength(10);
+  });
+
+  it('should generate near-miss queries from existing skills', () => {
+    const existingSkills = new Map([
+      ['pdf-processor', 'Process PDF files, extract text and tables from PDF documents'],
+      ['email-writer', 'Write professional emails, compose messages, draft correspondence'],
+    ]);
+
+    const queries = optimizer.generateTriggerEvalSet(
+      'csv-analyzer',
+      'Analyze CSV files, parse spreadsheet data, generate statistical summaries',
+      existingSkills
+    );
+
+    expect(queries).toHaveLength(20);
+    // Should have near-miss queries from adjacent skills
+    const shouldNot = queries.filter(q => !q.shouldTrigger);
+    expect(shouldNot.length).toBe(10);
+  });
+
+  it('should validate trigger accuracy', () => {
+    const result = optimizer.validateTriggers(
+      'csv-analyzer',
+      'Analyze CSV files, parse spreadsheet data, generate statistical summaries',
+      [
+        { query: 'analyze this csv file and show statistics', shouldTrigger: true },
+        { query: 'parse my data spreadsheet', shouldTrigger: true },
+        { query: 'write a poem about nature', shouldTrigger: false },
+        { query: 'deploy to production', shouldTrigger: false },
+      ]
+    );
+
+    expect(result.accuracy).toBeGreaterThanOrEqual(0);
+    expect(result.accuracy).toBeLessThanOrEqual(1);
+    expect(result.results).toHaveLength(4);
+    expect(Array.isArray(result.falsePositives)).toBe(true);
+    expect(Array.isArray(result.falseNegatives)).toBe(true);
+  });
+
+  it('should detect trigger collisions between skills', () => {
+    const existingSkills = new Map([
+      ['data-analyzer', 'Analyze data files, parse CSV and JSON, generate reports'],
+      ['email-writer', 'Write professional emails and compose messages'],
+      ['pdf-processor', 'Process PDF documents, extract text and tables'],
+    ]);
+
+    const collisions = optimizer.checkCollisions(
+      'csv-analyzer',
+      'Analyze CSV data files, parse spreadsheets, generate statistical reports',
+      existingSkills
+    );
+
+    // data-analyzer should collide (similar keywords)
+    expect(collisions.length).toBeGreaterThanOrEqual(1);
+    expect(collisions[0].collidingSkill).toBe('data-analyzer');
+    expect(collisions[0].overlapScore).toBeGreaterThan(0);
+    expect(collisions[0].sharedKeywords.length).toBeGreaterThan(0);
+  });
+
+  it('should batch validate multiple skills', () => {
+    const skills = new Map([
+      ['csv-analyzer', 'Analyze CSV files, parse spreadsheet data, generate statistical summaries'],
+      ['email-writer', 'Write professional emails, compose messages, draft correspondence'],
+      ['pdf-processor', 'Process PDF files, extract text and tables from PDF documents'],
+    ]);
+
+    const results = optimizer.batchValidate(skills, 0.7);
+
+    expect(results).toHaveLength(3);
+    for (const result of results) {
+      expect(result.skillName).toBeTruthy();
+      expect(result.accuracy).toBeGreaterThanOrEqual(0);
+      expect(result.accuracy).toBeLessThanOrEqual(1);
+      expect(typeof result.needsImprovement).toBe('boolean');
+    }
+    // Results should be sorted by accuracy (ascending)
+    for (let i = 1; i < results.length; i++) {
+      expect(results[i].accuracy).toBeGreaterThanOrEqual(results[i - 1].accuracy);
+    }
+  });
+
   it('should stop optimization early on perfect score', () => {
     // Simple case where description already matches perfectly
     const queries: TriggerEvalQuery[] = [
