@@ -50,9 +50,22 @@ Vibe는 구조로 해결합니다.
 | **Cursor** | `~/.cursor/agents/` | 56개 | `~/.cursor/skills/` | `.cursorrules` |
 | **Gemini CLI** | `~/.gemini/agents/` | 56개 | `~/.gemini/skills/` | `GEMINI.md` |
 
-### Codex 플러그인
+### Codex 플러그인 통합
 
-Codex v0.117.0+ 플러그인 시스템을 지원합니다. `vibe init` 시 자동 생성:
+Codex Claude Code 플러그인(`codex-plugin-cc`) 설치 시 워크플로우 전 단계에서 자동 활용:
+
+| 워크플로우 | Codex 활용 | 명령 |
+|-----------|-----------|------|
+| **spec review** | SPEC 설계 도전 리뷰 | `/codex:adversarial-review` |
+| **run** | 병렬 구현 위임 | `/codex:rescue --background` |
+| **run / review** | 3중 교차 코드 리뷰 (GPT+Gemini+Codex) | `/codex:review` |
+| **run / review** | auto-fix 실패 시 폴백 | `/codex:rescue` |
+| **verify** | 최종 리뷰 게이트 | `/codex:review` |
+| **Stop 훅** | 코드 변경 시 자동 리뷰 | `codex-review-gate.js` |
+
+Codex 미설치 시 자동 스킵 — 기존 워크플로우로 동작.
+
+`vibe init` 시 Codex 플러그인 번들도 자동 생성:
 
 ```
 ~/.codex/plugins/vibe/
@@ -75,9 +88,9 @@ flowchart LR
 ```
 
 1. **`/vibe.spec`** — 요구사항을 SPEC 문서로 정의 (GPT + Gemini 병렬 리서치)
-2. **`/vibe.spec.review`** — SPEC 품질 리뷰
-3. **`/vibe.run`** — SPEC 기반 구현 + 병렬 코드 리뷰
-4. **자동 리뷰** — 12개 전문 에이전트 병렬 검토, 경계면 불일치 감지, P1/P2 자동 수정
+2. **`/vibe.spec.review`** — SPEC 품질 리뷰 + Codex adversarial review (3중 교차 검증)
+3. **`/vibe.run`** — SPEC 기반 구현 (Codex rescue 병렬 위임) + 3중 코드 리뷰
+4. **자동 리뷰** — 12개 전문 에이전트 병렬 검토 + Codex/경계면 검증, P1/P2 자동 수정
 
 `ultrawork` 키워드를 붙이면 전 과정이 자동화됩니다:
 
@@ -130,20 +143,24 @@ Event Content, Event Image, Event Speaker, Event Ops, Event Comms, Event Schedul
 
 ## 멀티 LLM 오케스트레이션
 
-| 프로바이더 | 역할 | 인증 |
-|-----------|------|------|
-| **Claude** | 오케스트레이션, 코드 생성 | 내장 (Claude Code) |
-| **GPT** | 아키텍처, 디버깅, 교차 리뷰 | Codex CLI / API Key |
-| **Gemini** | UI/UX, 웹 검색, 음성, 리서치 | gemini-cli / API Key |
+| 프로바이더 | 모델 | 역할 | 인증 |
+|-----------|------|------|------|
+| **Claude** | Opus / Sonnet / Haiku | SPEC 작성, 코드 리뷰, 오케스트레이션 | 내장 (Claude Code) |
+| **GPT** | gpt-5.4 | 추론, 아키텍처, 엣지케이스 분석 | Codex CLI / API Key |
+| **Codex** | gpt-5.3-codex | 구현, 멀티파일 코딩 | Codex CLI / Plugin |
+| **Codex Spark** | gpt-5.3-codex-spark | 초고속 리뷰/린트 (1000+ tok/s) | Codex CLI / Plugin |
+| **Gemini** | gemini-3.1-pro | 리서치, 교차 검증, UI/UX | gemini-cli / API Key |
 
-### SmartRouter
+### 동적 모델 라우팅
 
-작업 유형별 자동 라우팅. 각 프로바이더는 CLI 위임 방식으로 호출합니다 (Codex CLI, gemini-cli).
+Codex/Gemini 활성화 상태에 따라 자동 스위칭. 기본은 Claude만으로 동작.
 
-| 작업 유형 | 우선순위 |
-|----------|---------|
-| 코드 분석, 리뷰, 추론, 아키텍처 | GPT → Gemini → Claude |
-| UI/UX, 웹 검색 | Gemini → GPT → Claude |
+| 상태 | 동작 |
+|------|------|
+| **Claude only** | Opus(설계/판단) + Sonnet(리뷰/구현) + Haiku(탐색) |
+| **+Codex** | 구현→5.3-Codex, 리뷰→Spark, 추론→5.4 스위칭 |
+| **+Gemini** | 리서치/리뷰에 Gemini 병렬 추가 |
+| **+Codex +Gemini** | 풀 오케스트레이션 (7개 모델) |
 
 ---
 
@@ -303,7 +320,7 @@ vibe skills add vercel-labs/next-skills
 | 가드레일 | 메커니즘 |
 |----------|---------|
 | **타입 안전성** | Quality Gate — `any`, `@ts-ignore` 차단 |
-| **코드 리뷰** | 12개 전문 에이전트 병렬 리뷰 |
+| **코드 리뷰** | 12개 Sonnet 에이전트 병렬 리뷰 + Codex 3중 교차 검증 |
 | **경계면 검증** | API↔프론트엔드 타입/라우팅/상태 정합성 자동 검증 |
 | **완성도** | Ralph Loop — 100%까지 반복 (범위 축소 없음) |
 | **수렴 보장** | Convergence — P1=0이면 완료, 반복 시 범위 축소 |
@@ -327,7 +344,7 @@ vibe skills add vercel-labs/next-skills
 | UserPromptSubmit | `keyword-detector.js` | 매직 키워드 감지 |
 | Notification | `context-save.js` | 컨텍스트 80/90/95% 자동 저장 |
 
-추가: `llm-orchestrate.js`, `code-review.js`, `recall.js`, `complexity.js`, `compound.js`, `stop-notify.js`
+추가: `llm-orchestrate.js`, `codex-review-gate.js`, `codex-detect.js`, `code-review.js`, `recall.js`, `complexity.js`, `compound.js`, `stop-notify.js`
 
 ---
 
@@ -498,8 +515,9 @@ flowchart TD
     C --> D["SmartRouter"]
 
     D --> E["LLMCluster"]
-    E --> E1["GPT"]
-    E --> E2["Gemini"]
+    E --> E1["GPT-5.4 (추론)"]
+    E --> E2["Codex Spark (리뷰)"]
+    E --> E3["Gemini (리서치)"]
 
     D --> F["PhasePipeline"]
     F --> G["SwarmOrchestrator"]
@@ -507,9 +525,11 @@ flowchart TD
     H --> I["AgentRegistry"]
 
     D --> J["병렬 리뷰"]
-    J --> J1["12개 리뷰 에이전트"]
-    J1 --> K["P1/P2/P3 분류"]
-    J --> J2["경계면 검증"]
+    J --> J1["12개 Sonnet 리뷰 에이전트"]
+    J --> J2["/codex:review"]
+    J1 --> K["3중 교차 검증 → P1/P2/P3"]
+    J2 --> K
+    J --> J3["경계면 검증"]
 
     L["Session RAG"] -.-> M["Decision / Constraint / Goal / Evidence"]
     N["VibeSpan"] -.-> O["spans.jsonl (로컬 텔레메트리)"]
