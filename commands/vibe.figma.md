@@ -1,25 +1,19 @@
 ---
-description: Convert Figma design to code — image + layer JSON + project stack aware
-argument-hint: [--output <path>] or --component <name>
+description: Figma design to code — extract + generate in one step
+argument-hint: "figma-url" or --local
 ---
 
 # /vibe.figma
 
-Convert Figma design data (layers JSON + frame image) into production-ready component code, tailored to the project's tech stack.
+Extract Figma design data and generate production-ready component code, tailored to the project's tech stack.
 
 ## Usage
 
 ```
-/vibe.figma                          # Convert using default figma-output/
-/vibe.figma --output src/components  # Specify output directory for generated code
-/vibe.figma --component LoginForm    # Name the root component explicitly
+/vibe.figma "https://www.figma.com/design/ABC123/Project?node-id=1-2"   # Full pipeline
+/vibe.figma --local                                                      # Skip extraction, use existing figma-output/
+/vibe.figma "url" --component LoginForm                                  # Name the root component
 ```
-
-## Prerequisites
-
-Run `vibe figma extract <url>` first to generate:
-- `figma-output/layers.json` — Figma layer structure with design tokens
-- `figma-output/frame.png` — Rendered frame image (when node-id specified)
 
 ## File Reading Policy (Mandatory)
 
@@ -37,9 +31,45 @@ Run `vibe figma extract <url>` first to generate:
 
 ---
 
-## Process
+> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
-### Phase 1: Design Analysis (Image-First)
+## Phase 0: Figma Data Extraction
+
+**Skip this phase if `--local` flag is provided and `figma-output/` already exists.**
+
+### 0-1. Token Check
+
+Check Figma access token availability:
+
+```
+1. Read ~/.vibe/config.json → credentials.figma.accessToken
+2. Fallback: FIGMA_ACCESS_TOKEN env variable
+3. If neither → ask user: "vibe figma setup <token> 으로 토큰을 설정해주세요"
+```
+
+### 0-2. Extract via CLI
+
+Run extraction using the Bash tool:
+
+```bash
+npx vibe figma extract "$argument"
+```
+
+This produces:
+- `figma-output/layers.json` — Figma layer structure with design tokens
+- `figma-output/frame.png` — Rendered frame image (when node-id present in URL)
+
+### 0-3. Verify Output
+
+```
+1. Check figma-output/layers.json exists → if not, report error and stop
+2. Check figma-output/frame.png exists → optional (only with node-id)
+3. Validate layers.json has children array → warn if empty
+```
+
+---
+
+## Phase 1: Design Analysis (Image-First)
 
 Read `figma-output/frame.png` and analyze:
 
@@ -53,7 +83,7 @@ Read `figma-output/frame.png` and analyze:
 | States | Hover/active/disabled indicators if visible |
 | Responsive hints | Breakpoint indicators, fluid vs fixed widths |
 
-### Phase 2: Layer Data Extraction
+## Phase 2: Layer Data Extraction
 
 Read `figma-output/layers.json` and extract:
 
@@ -65,7 +95,7 @@ Read `figma-output/layers.json` and extract:
 
 **Correction rule**: When image and JSON disagree, **image wins**. The image shows designer intent; JSON may have structural artifacts.
 
-### Phase 3: Project Stack Detection
+## Phase 3: Project Stack Detection
 
 Determine the target tech stack:
 
@@ -79,7 +109,7 @@ Determine the target tech stack:
    - `styled-components` / `@emotion` in deps → CSS-in-JS
 3. Read `.claude/vibe/design-context.json` if available → brand tokens, theme preferences
 
-### Phase 4: Code Generation
+## Phase 4: Code Generation
 
 Generate code following these rules per stack:
 
@@ -136,7 +166,7 @@ Generate code following these rules per stack:
 | Responsive | Mobile-first, handle all breakpoints |
 | Component splitting | One component per visual boundary (max 50 lines) |
 
-### Phase 5: Token Mapping
+## Phase 5: Token Mapping
 
 Map extracted design tokens to the project's token system:
 
@@ -158,7 +188,7 @@ Map extracted design tokens to the project's token system:
     */
    ```
 
-### Phase 6: Correction Notes
+## Phase 6: Correction Notes
 
 After generating code, output a brief correction report:
 
@@ -174,6 +204,8 @@ After generating code, output a brief correction report:
 - Name layers semantically (e.g., "login-form" not "Frame 47")
 - Use consistent spacing tokens
 ```
+
+---
 
 ## Output Format
 
@@ -208,7 +240,7 @@ After generating code, output a brief correction report:
 | Grep | Search for existing color/spacing/typography definitions |
 | Write | Create new component files |
 | Edit | Update existing theme/token files to add new tokens |
-| Bash | Only for checking installed dependencies |
+| Bash | `npx vibe figma extract` for data extraction, dependency checks |
 
 ## Important
 
