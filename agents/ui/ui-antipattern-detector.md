@@ -56,6 +56,14 @@
 - [ ] Spacing not matching MASTER.md scale
 - [ ] Custom shadows instead of design tokens
 
+### AI Generated Aesthetic (AI Slop Tells)
+- [ ] Color: cyan-on-dark, purple-to-blue gradients, neon accents, gradient text on metrics
+- [ ] Layout: hero metric template (big number + label), nested cards, identical card grids, centered everything
+- [ ] Typography: Inter/Roboto/Open Sans as lazy default, monospace as decoration
+- [ ] Effects: glassmorphism everywhere, one-sided colored border rounded rect, generic drop shadows, sparklines as decoration
+- [ ] Motion: bounce/elastic easing, animations >500ms for feedback
+- [ ] Copy: cliched loading messages ("Herding pixels"), redundant headers repeating intros
+
 ### Dark Patterns
 - [ ] Confirm-shaming (negative CTA wording)
 - [ ] Hidden unsubscribe/close buttons

@@ -16,28 +16,30 @@ export const GLOBAL_SKILLS: ReadonlyArray<string> = [
   'techdebt',
   'characterization-test',
   'agents-md',
+  'claude-md-guide',
   'exec-plan',
   'arch-guard',
   'capability-loop',
+  'design-teach',
 ];
 
 /** 스택 → 로컬 스킬 매핑 (vibe init/update → .claude/skills/) */
 export const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>> = {
   // TypeScript 공통
   'typescript': ['typescript-advanced-types'],
-  // Web frontend → UI/UX + SEO + React best practices
-  'typescript-react': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices'],
-  'typescript-nextjs': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices'],
-  'typescript-vue': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  'typescript-nuxt': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  'typescript-svelte': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  'typescript-angular': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  'typescript-astro': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist'],
-  // Mobile → UI만
-  'typescript-react-native': ['ui-ux-pro-max'],
-  'dart-flutter': ['ui-ux-pro-max'],
-  'swift-ios': ['ui-ux-pro-max'],
-  'kotlin-android': ['ui-ux-pro-max'],
+  // Web frontend → UI/UX + SEO + Design steering + React best practices
+  'typescript-react': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
+  'typescript-nextjs': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
+  'typescript-vue': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
+  'typescript-nuxt': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
+  'typescript-svelte': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
+  'typescript-angular': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
+  'typescript-astro': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
+  // Mobile → UI + design-audit/critique only (polish/normalize/distill are CSS-based)
+  'typescript-react-native': ['ui-ux-pro-max', 'design-audit', 'design-critique'],
+  'dart-flutter': ['ui-ux-pro-max', 'design-audit', 'design-critique'],
+  'swift-ios': ['ui-ux-pro-max', 'design-audit', 'design-critique'],
+  'kotlin-android': ['ui-ux-pro-max', 'design-audit', 'design-critique'],
 };
 
 /** Capability → 로컬 스킬 매핑 (의존성 감지 기반 자동 설치) */
@@ -45,6 +47,7 @@ export const CAPABILITY_SKILLS: Record<string, ReadonlyArray<string>> = {
   'commerce': ['commerce-patterns', 'e2e-commerce'],
   'video': ['video-production'],
   'event-automation': ['event-planning', 'event-comms', 'event-ops'],
+  'pm': ['create-prd', 'prioritization-frameworks', 'user-personas'],
 };
 
 /** 스택 → 외부 스킬(skills.sh) 매핑 (vibe init/update → npx skills add) */
@@ -65,6 +68,7 @@ export const AVAILABLE_CAPABILITIES: ReadonlyArray<{
   { value: 'commerce', label: 'Commerce / Payments', hint: 'Stripe, Shopify, PayPal 등' },
   { value: 'video', label: 'Video Production', hint: 'FFmpeg, 트랜스코딩, 스트리밍 등' },
   { value: 'event-automation', label: 'Event Automation', hint: '커뮤니티 행사 자동화 (밋업, 웨비나, 컨퍼런스)' },
+  { value: 'pm', label: 'Product Management', hint: 'PRD, 우선순위, 페르소나 등' },
 ];
 
 /**
