@@ -6,9 +6,9 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**설치 한 줄로 56개 에이전트, 43+ 도구, 멀티 LLM 오케스트레이션을 더합니다.**
+**One install adds 56 agents, 36 skills, multi-LLM orchestration, and automated quality gates to your AI coding workflow.**
 
-Claude Code, Codex, Cursor, Gemini CLI 모두 지원.
+Works with Claude Code, Codex, Cursor, and Gemini CLI.
 
 ```bash
 npm install -g @su-record/vibe
@@ -17,212 +17,240 @@ vibe init
 
 ---
 
-## 왜 Vibe인가
+## Why Vibe
 
-AI에게 "로그인 기능 만들어줘"라고 던지면 동작은 하지만 품질은 운에 맡기게 됩니다.
-Vibe는 구조로 해결합니다.
+AI generates working code, but quality is left to chance.
+Vibe solves this structurally.
 
-| 문제 | 해결 |
-|------|------|
-| AI가 `any` 타입 남발 | Quality Gate가 `any`/`@ts-ignore` 차단 |
-| 한 번에 완성 기대 | SPEC → 구현 → 검증 단계별 워크플로우 |
-| 리뷰 없이 머지 | 12개 에이전트 병렬 리뷰 + 경계면 불일치 감지 |
-| AI 결과를 그대로 수용 | GPT + Gemini 교차 검증 |
-| 컨텍스트 소실 | Session RAG로 자동 저장/복원 |
-| 복잡한 작업에서 길을 잃음 | SwarmOrchestrator 자동 분해 + 병렬 실행 |
+| Problem | Solution |
+|---------|----------|
+| AI scatters `any` types | Quality Gate blocks `any` / `@ts-ignore` |
+| Expecting one-shot perfection | SPEC → Implement → Verify staged workflow |
+| Merging without review | 12 agents run parallel code review |
+| Accepting AI output blindly | GPT + Gemini cross-validation |
+| Losing context between sessions | Session RAG auto-saves and restores |
+| Getting lost on complex tasks | SwarmOrchestrator auto-decomposes + parallelizes |
 
-### 설계 철학
+### Design Philosophy
 
-| 원칙 | 설명 |
-|------|------|
-| **Easy Vibe Coding** | 빠른 흐름, AI와 협업하며 생각하기 |
-| **Minimum Quality Guaranteed** | 타입 안전성, 코드 품질, 보안 — 자동 하한선 |
-| **Iterative Reasoning** | 문제를 쪼개고 질문하며 함께 추론 |
-
----
-
-## 멀티 CLI 지원
-
-| CLI | 설치 방식 | 에이전트 | 스킬 | 지시사항 |
-|-----|----------|---------|------|---------|
-| **Claude Code** | `~/.claude/agents/` (YAML frontmatter) | 56개 | `~/.claude/skills/` | `CLAUDE.md` |
-| **Codex** | `~/.codex/plugins/vibe/` (Plugin) | 56개 | 플러그인 내장 | `AGENTS.md` |
-| **Cursor** | `~/.cursor/agents/` | 56개 | `~/.cursor/skills/` | `.cursorrules` |
-| **Gemini CLI** | `~/.gemini/agents/` | 56개 | `~/.gemini/skills/` | `GEMINI.md` |
-
-### Codex 플러그인 통합
-
-Codex Claude Code 플러그인(`codex-plugin-cc`) 설치 시 워크플로우 전 단계에서 자동 활용:
-
-| 워크플로우 | Codex 활용 | 명령 |
-|-----------|-----------|------|
-| **spec review** | SPEC 설계 도전 리뷰 | `/codex:adversarial-review` |
-| **run** | 병렬 구현 위임 | `/codex:rescue --background` |
-| **run / review** | 3중 교차 코드 리뷰 (GPT+Gemini+Codex) | `/codex:review` |
-| **run / review** | auto-fix 실패 시 폴백 | `/codex:rescue` |
-| **verify** | 최종 리뷰 게이트 | `/codex:review` |
-| **Stop 훅** | 코드 변경 시 자동 리뷰 | `codex-review-gate.js` |
-
-Codex 미설치 시 자동 스킵 — 기존 워크플로우로 동작.
-
-`vibe init` 시 Codex 플러그인 번들도 자동 생성:
-
-```
-~/.codex/plugins/vibe/
-├── .codex-plugin/plugin.json   # 플러그인 매니페스트
-├── agents/                     # 56개 에이전트 (순수 마크다운)
-├── skills/                     # 전역 스킬
-└── AGENTS.md                   # VIBE 지시사항
-```
+| Principle | Description |
+|-----------|-------------|
+| **Easy Vibe Coding** | Fast flow — think collaboratively with AI |
+| **Minimum Quality Guaranteed** | Type safety, code quality, security — automatic baseline |
+| **Iterative Reasoning** | Break down problems, ask questions, reason together |
 
 ---
 
-## 워크플로우
+## Workflow
 
 ```mermaid
 flowchart LR
     A["/vibe.spec"] --> B["/vibe.spec.review"]
     B --> C["/vibe.run"]
-    C --> D["자동 리뷰"]
-    D --> E["완료"]
+    C --> D["Auto Review"]
+    D --> E["Done"]
 ```
 
-1. **`/vibe.spec`** — 요구사항을 SPEC 문서로 정의 (GPT + Gemini 병렬 리서치)
-2. **`/vibe.spec.review`** — SPEC 품질 리뷰 + Codex adversarial review (3중 교차 검증)
-3. **`/vibe.run`** — SPEC 기반 구현 (Codex rescue 병렬 위임) + 3중 코드 리뷰
-4. **자동 리뷰** — 12개 전문 에이전트 병렬 검토 + Codex/경계면 검증, P1/P2 자동 수정
+1. **`/vibe.spec`** — Define requirements as a SPEC document (GPT + Gemini parallel research)
+2. **`/vibe.spec.review`** — SPEC quality review + Codex adversarial review (triple cross-validation)
+3. **`/vibe.run`** — Implement from SPEC (Codex rescue parallel delegation) + triple code review
+4. **Auto Review** — 12 specialized agents review in parallel + boundary verification, P1/P2 auto-fix
 
-`ultrawork` 키워드를 붙이면 전 과정이 자동화됩니다:
+Add `ultrawork` to automate the entire pipeline:
 
 ```bash
-/vibe.run "기능" ultrawork
+/vibe.run "feature" ultrawork
 ```
 
 ---
 
-## 에이전트 (56개)
+## Multi-CLI Support
 
-### 메인 에이전트 (19)
+| CLI | Install Location | Agents | Skills | Instructions |
+|-----|-----------------|--------|--------|-------------|
+| **Claude Code** | `~/.claude/agents/` | 56 | `~/.claude/skills/` | `CLAUDE.md` |
+| **Codex** | `~/.codex/plugins/vibe/` | 56 | Plugin built-in | `AGENTS.md` |
+| **Cursor** | `~/.cursor/agents/` | 56 | `~/.cursor/skills/` | `.cursorrules` |
+| **Gemini CLI** | `~/.gemini/agents/` | 56 | `~/.gemini/skills/` | `GEMINI.md` |
 
-| 카테고리 | 에이전트 |
-|----------|---------|
-| **탐색** | Explorer (High/Medium/Low) |
-| **구현** | Implementer (High/Medium/Low) |
-| **설계** | Architect (High/Medium/Low) |
-| **유틸** | Searcher, Tester, Simplifier, Refactor Cleaner, Build Error Resolver, Compounder, Diagrammer, E2E Tester, UI Previewer, Junior Mentor |
+### Codex Plugin Integration
 
-### 리뷰 에이전트 (12)
+When the Codex Claude Code plugin (`codex-plugin-cc`) is installed, Vibe automatically integrates it across every workflow stage:
+
+| Workflow | Codex Usage | Command |
+|----------|------------|---------|
+| **spec review** | Adversarial SPEC challenge | `/codex:adversarial-review` |
+| **run** | Parallel implementation delegation | `/codex:rescue --background` |
+| **run / review** | Triple code review (GPT + Gemini + Codex) | `/codex:review` |
+| **run / review** | Fallback on auto-fix failure | `/codex:rescue` |
+| **verify** | Final review gate | `/codex:review` |
+| **Stop hook** | Auto-review on code changes | `codex-review-gate.js` |
+
+Auto-skips when Codex is not installed — existing workflow continues as-is.
+
+---
+
+## Agents (56)
+
+### Core Agents (19)
+
+| Category | Agents |
+|----------|--------|
+| **Exploration** | Explorer (High / Medium / Low) |
+| **Implementation** | Implementer (High / Medium / Low) |
+| **Architecture** | Architect (High / Medium / Low) |
+| **Utility** | Searcher, Tester, Simplifier, Refactor Cleaner, Build Error Resolver, Compounder, Diagrammer, E2E Tester, UI Previewer, Junior Mentor |
+
+### Review Agents (12)
 
 Security, Performance, Architecture, Complexity, Simplicity, Data Integrity, Test Coverage, Git History, TypeScript, Python, Rails, React
 
-### UI/UX 에이전트 (8)
+### UI/UX Agents (8)
 
-24개 CSV 기반 디자인 인텔리전스. 산업 분석 → 디자인 시스템 생성 → 구현 가이드 → 접근성 감사.
+Design intelligence backed by 48 CSV datasets. Industry analysis → Design system generation → Implementation guide → Accessibility audit.
 
-| 단계 | 에이전트 |
-|------|---------|
+| Phase | Agents |
+|-------|--------|
 | SPEC | ui-industry-analyzer, ui-design-system-gen, ui-layout-architect |
 | RUN | ui-stack-implementer, ui-dataviz-advisor |
 | REVIEW | ux-compliance-reviewer, ui-a11y-auditor, ui-antipattern-detector |
 
-### QA & 리서치 (11)
+### QA & Research (11)
 
-| 카테고리 | 에이전트 |
-|----------|---------|
+| Category | Agents |
+|----------|--------|
 | **QA** | QA Coordinator, Edge Case Finder, Acceptance Tester |
-| **리서치** | Best Practices, Framework Docs, Codebase Patterns, Security Advisory |
-| **분석** | Requirements Analyst, UX Advisor, API Documenter, Changelog Writer |
+| **Research** | Best Practices, Framework Docs, Codebase Patterns, Security Advisory |
+| **Analysis** | Requirements Analyst, UX Advisor, API Documenter, Changelog Writer |
 
-QA Coordinator는 변경된 코드를 분석하여 적절한 QA 에이전트를 병렬 디스패치하고, 통합 QA 리포트를 생성합니다.
+QA Coordinator analyzes changed code and dispatches appropriate QA agents in parallel, then produces a unified QA report.
 
-### 이벤트 에이전트 (6)
+### Event Agents (6)
 
 Event Content, Event Image, Event Speaker, Event Ops, Event Comms, Event Scheduler
 
 ---
 
-## 멀티 LLM 오케스트레이션
+## Skills (36)
 
-| 프로바이더 | 모델 | 역할 | 인증 |
-|-----------|------|------|------|
-| **Claude** | Opus / Sonnet / Haiku | SPEC 작성, 코드 리뷰, 오케스트레이션 | 내장 (Claude Code) |
-| **GPT** | gpt-5.4 | 추론, 아키텍처, 엣지케이스 분석 | Codex CLI / API Key |
-| **Codex** | gpt-5.3-codex | 구현, 멀티파일 코딩 | Codex CLI / Plugin |
-| **Codex Spark** | gpt-5.3-codex-spark | 초고속 리뷰/린트 (1000+ tok/s) | Codex CLI / Plugin |
-| **Gemini** | gemini-3.1-pro | 리서치, 교차 검증, UI/UX | gemini-cli / API Key |
+Domain-specific skill modules auto-installed based on detected stack.
 
-### 동적 모델 라우팅
+**Core (15):** Core Capabilities, Parallel Research, Commit Push PR, Git Worktree, Handoff, Priority Todos, Tool Fallback, Context7, Tech Debt, Characterization Test, Agents MD, Claude MD Guide, Exec Plan, Arch Guard, Capability Loop
 
-Codex/Gemini 활성화 상태에 따라 자동 스위칭. 기본은 Claude만으로 동작.
+**Design (7):** Frontend Design, UI/UX Pro Max, Design Teach, Design Audit, Design Critique, Design Polish, Design Normalize
 
-| 상태 | 동작 |
-|------|------|
-| **Claude only** | Opus(설계/판단) + Sonnet(리뷰/구현) + Haiku(탐색) |
-| **+Codex** | 구현→5.3-Codex, 리뷰→Spark, 추론→5.4 스위칭 |
-| **+Gemini** | 리서치/리뷰에 Gemini 병렬 추가 |
-| **+Codex +Gemini** | 풀 오케스트레이션 (7개 모델) |
+**Domain (3):** Commerce Patterns, E2E Commerce, Video Production
+
+**PM (3):** Create PRD, Prioritization Frameworks, User Personas
+
+**Event (3):** Event Planning, Event Comms, Event Ops
+
+**Stack-Specific (5):** TypeScript Advanced Types, Vercel React Best Practices, SEO Checklist, Brand Assets, Design Distill
+
+### External Skills (skills.sh)
+
+Install community skills from the [skills.sh](https://skills.sh) ecosystem:
+
+```bash
+vibe skills add vercel-labs/next-skills
+```
+
+Auto-installed by stack during `vibe init` / `vibe update`:
+
+| Stack | Auto-installed Package |
+|-------|----------------------|
+| `typescript-react` | `vercel-labs/agent-skills` |
+| `typescript-nextjs` | `vercel-labs/agent-skills`, `vercel-labs/next-skills` |
 
 ---
 
-## 오케스트레이터
+## Multi-LLM Orchestration
+
+| Provider | Role | Auth |
+|----------|------|------|
+| **Claude** (Opus / Sonnet / Haiku) | SPEC writing, code review, orchestration | Built-in (Claude Code) |
+| **GPT** | Reasoning, architecture, edge-case analysis | Codex CLI / API Key |
+| **Gemini** | Research, cross-validation, UI/UX | gemini-cli / API Key |
+
+### Dynamic Model Routing
+
+Auto-switches based on active LLM availability. Defaults to Claude-only operation.
+
+| State | Behavior |
+|-------|----------|
+| **Claude only** | Opus (design/judgment) + Sonnet (review/implementation) + Haiku (exploration) |
+| **+ GPT** | Implementation → GPT, review → GPT, reasoning → GPT |
+| **+ Gemini** | Research/review gets parallel Gemini |
+| **+ GPT + Gemini** | Full orchestration across all models |
+
+---
+
+## 24 Framework Detection
+
+Auto-detects project stack and applies framework-specific coding rules.
+Supports monorepos (pnpm-workspace, npm workspaces, Lerna, Nx, Turborepo).
+
+- **TypeScript (12)** — Next.js, React, Angular, Vue, Svelte, Nuxt, NestJS, Node, Electron, Tauri, React Native, Astro
+- **Python (2)** — Django, FastAPI
+- **Java/Kotlin (2)** — Spring Boot, Android
+- **Other** — Rails, Go, Rust, Swift (iOS), Unity (C#), Flutter (Dart), Godot (GDScript)
+
+Also detects: databases (PostgreSQL, MySQL, MongoDB, Redis, Prisma, Drizzle, etc.), state management (Redux, Zustand, Jotai, Pinia, etc.), CI/CD, and hosting platforms.
+
+---
+
+## Orchestrators
 
 ### SwarmOrchestrator
 
-복잡도 15점 이상인 작업을 자동 분해하여 병렬 실행합니다.
-최대 깊이 2단계, 동시 실행 5개, 기본 타임아웃 5분.
+Auto-decomposes tasks with complexity score ≥ 15 into parallel subtasks.
+Max depth 2, concurrent limit 5, default timeout 5 min.
 
 ### PhasePipeline
 
-`prepare()` → `execute()` → `cleanup()` 생명주기.
-ULTRAWORK 모드에서 다음 Phase의 `prepare()`를 병렬 실행.
+`prepare()` → `execute()` → `cleanup()` lifecycle.
+In ULTRAWORK mode, the next phase's `prepare()` runs in parallel.
 
 ### BackgroundManager
 
-모델별/프로바이더별 동시 실행 제한. 타임아웃 시 retry (최대 3회, 지수 백오프). 24시간 TTL 자동 정리.
+Per-model/provider concurrency limits. Timeout retry (max 3, exponential backoff). 24-hour TTL auto-cleanup.
 
 ---
 
-## 인프라 패턴
+## Infrastructure
 
-Agent-Lightning(Microsoft Research)의 핵심 아키텍처 패턴을 적용합니다.
+### Session RAG
 
-### Store Interface
+SQLite + FTS5 hybrid search for cross-session context persistence.
 
-`IMemoryStorage` 인터페이스로 스토어를 추상화합니다. 테스트에서 SQLite 없이 `InMemoryStorage`로 교체 가능.
+**4 entity types:** Decision, Constraint, Goal, Evidence
 
-```typescript
-import { InMemoryStorage } from '@su-record/vibe/tools';
-const store = new InMemoryStorage(); // DB 없이 테스트
+```
+Score = BM25 × 0.4 + Recency × 0.3 + Priority × 0.3
 ```
 
-### Structured Telemetry Spans
+On session start, active Goals, critical Constraints, and recent Decisions are auto-injected.
 
-8종의 타입화된 스팬으로 모든 작업을 추적합니다.
+### Structured Telemetry
 
-| 스팬 타입 | 용도 |
-|----------|------|
-| `skill_run` | 스킬 실행 |
-| `agent_run` | 에이전트 실행 |
-| `edit` | 파일 수정 |
-| `build` | 빌드/컴파일 |
-| `review` | 코드 리뷰 |
-| `hook` | 훅 실행 |
-| `llm_call` | LLM 호출 |
-| `decision` | 의사결정 |
+8 typed span kinds track all operations:
 
-```typescript
-import { createSpan, completeSpan } from '@su-record/vibe/tools';
+`skill_run` · `agent_run` · `edit` · `build` · `review` · `hook` · `llm_call` · `decision`
 
-const span = createSpan('agent_run', 'explorer-low', { model: 'haiku' });
-// ... 작업 수행
-const done = completeSpan(span, 'ok', 1500);
-```
+Parent-child hierarchy via `parent_id`. All data stays in local JSONL.
 
-부모-자식 계층 추적을 지원합니다 (`parent_id`). 모든 데이터는 로컬 JSONL에만 저장됩니다.
+### Evolution System
+
+Self-improving agent/skill/rule generation with benchmarking:
+
+- Usage tracking and insight extraction
+- Skill gap detection
+- Auto-generation with evaluation runners
+- Circuit breaker and rollback safety
 
 ### Component Registry
 
-런타임 컴포넌트 등록/해제를 지원하는 범용 레지스트리입니다.
+Runtime component registration/resolution with metadata:
 
 ```typescript
 import { ComponentRegistry } from '@su-record/vibe/tools';
@@ -234,191 +262,133 @@ const runner = skills.resolve('review');
 
 ---
 
-## Session RAG
+## Hooks (16 scripts)
 
-SQLite + FTS5 하이브리드 검색으로 세션 간 컨텍스트를 유지합니다.
+| Event | Script | Role |
+|-------|--------|------|
+| SessionStart | `session-start.js` | Restore session context, load memory |
+| PreToolUse | `pre-tool-guard.js` | Block destructive commands, scope protection |
+| PostToolUse | `code-check.js` | Type safety / complexity verification |
+| PostToolUse | `post-edit.js` | Git index update |
+| UserPromptSubmit | `prompt-dispatcher.js` | Command routing |
+| UserPromptSubmit | `keyword-detector.js` | Magic keyword detection |
+| Notification | `context-save.js` | Auto-save at 80/90/95% context |
 
-**4가지 엔티티**: Decision, Constraint, Goal, Evidence
-
-```
-최종 점수 = BM25 × 0.4 + 최신성 × 0.3 + 우선순위 × 0.3
-```
-
-세션 시작 시 활성 Goals, 중요 Constraints, 최근 Decisions 자동 주입.
-
----
-
-## 스킬
-
-### 내장 스킬 (26개)
-
-에이전트가 활용하는 도메인별 스킬 모듈입니다. 스택 감지 결과에 따라 자동 설치됩니다.
-
-**코어**: Core Capabilities, Parallel Research, Commit Push PR, Git Worktree, Handoff, Priority Todos, Tool Fallback, Context7, Tech Debt, Characterization Test, Agents MD, Exec Plan, Arch Guard, Capability Loop
-
-**프론트엔드**: Frontend Design, UI/UX Pro Max, Brand Assets, SEO Checklist
-
-**도메인**: Commerce Patterns, E2E Commerce, Video Production
-
-### 외부 스킬 (skills.sh)
-
-[skills.sh](https://skills.sh) 에코시스템의 외부 스킬을 설치할 수 있습니다.
-
-```bash
-vibe skills add vercel-labs/next-skills
-```
-
-`vibe init`/`vibe update` 시 감지된 스택에 맞는 외부 스킬이 자동 설치됩니다.
-
-| 스택 | 자동 설치 패키지 |
-|------|-----------------|
-| `typescript-react` | `vercel-labs/agent-skills` |
-| `typescript-nextjs` | `vercel-labs/agent-skills`, `vercel-labs/next-skills` |
+Additional: `llm-orchestrate.js`, `codex-review-gate.js`, `codex-detect.js`, `sentinel-guard.js`, `skill-injector.js`, `evolution-engine.js`, `hud-status.js`, `stop-notify.js`
 
 ---
 
-## 25개 프레임워크 지원
+## Quality Gates
 
-프로젝트의 기술 스택을 자동 감지하고 프레임워크별 코딩 규칙을 적용합니다.
-모노레포 지원 (pnpm-workspace, npm workspaces, Lerna, Nx, Turborepo).
+| Guard | Mechanism |
+|-------|-----------|
+| **Type Safety** | Quality Gate — blocks `any`, `@ts-ignore` |
+| **Code Review** | 12 Sonnet agents parallel review + Codex triple cross-validation |
+| **Boundary Check** | API ↔ Frontend type/routing/state consistency verification |
+| **Completeness** | Ralph Loop — iterates until 100% (no scope reduction) |
+| **Convergence** | P1=0 means done; scope narrows on repeated rounds |
+| **Scope Protection** | pre-tool-guard — prevents out-of-scope modifications |
+| **Context Protection** | context-save — auto-saves at 80/90/95% |
+| **Evidence Gate** | No completion claims without evidence |
 
-- **TypeScript (12)** — Next.js, React, Angular, Vue, Svelte, Nuxt, NestJS, Node, Electron, Tauri, React Native, Astro
-- **Python (2)** — Django, FastAPI
-- **Java/Kotlin (2)** — Spring Boot, Android
-- **기타** — Rails, Go, Rust, Swift (iOS), Unity (C#), Flutter (Dart), Godot (GDScript)
-
-자동 감지: DB (PostgreSQL, MySQL, MongoDB, Redis, Prisma, Drizzle 등), 상태 관리 (Redux, Zustand, Jotai 등), CI/CD, 호스팅
-
----
-
-## 43+ 내장 도구
-
-### 메모리 & 세션 (21)
-
-`save_session_item`, `retrieve_session_context`, `manage_goals`, `core_save_memory`, `core_recall_memory`, `core_search_memories`, `core_start_session`, `core_auto_save_context` 등
-
-### 코드 품질 & 분석 (8)
-
-`core_find_symbol`, `core_find_references`, `core_analyze_dependency_graph`, `core_analyze_complexity`, `core_validate_code_quality`, `core_check_coupling_cohesion`, `core_suggest_improvements`, `core_apply_quality_rules`
-
-### SPEC & 테스트 (7)
-
-`core_spec_generator`, `core_prd_parser`, `core_traceability_matrix`, `core_preview_ui_ascii` 등
-
-### UI/UX (4)
-
-`core_ui_search`, `core_ui_stack_search`, `core_ui_generate_design_system`, `core_ui_persist_design_system`
-
-### 반복 제어 (3+)
-
-`LoopBreaker`, `VerificationLoop`, `DecisionTracer`, `InteractiveCheckpoint`, `AutomationLevel`
+**Complexity limits:** Function ≤ 50 lines | Nesting ≤ 3 | Parameters ≤ 5 | Cyclomatic complexity ≤ 10
 
 ---
 
-## 품질 보장
+## Slash Commands
 
-| 가드레일 | 메커니즘 |
-|----------|---------|
-| **타입 안전성** | Quality Gate — `any`, `@ts-ignore` 차단 |
-| **코드 리뷰** | 12개 Sonnet 에이전트 병렬 리뷰 + Codex 3중 교차 검증 |
-| **경계면 검증** | API↔프론트엔드 타입/라우팅/상태 정합성 자동 검증 |
-| **완성도** | Ralph Loop — 100%까지 반복 (범위 축소 없음) |
-| **수렴 보장** | Convergence — P1=0이면 완료, 반복 시 범위 축소 |
-| **스코프 보호** | pre-tool-guard — 요청 범위 외 수정 방지 |
-| **컨텍스트 보호** | context-save — 80/90/95% 자동 저장 |
-| **증거 게이트** | Evidence Gate — 증거 없는 완료 주장 금지 |
-
-**복잡도 제한**: 함수 ≤50줄 | 중첩 ≤3단계 | 매개변수 ≤5 | 순환 복잡도 ≤10
-
----
-
-## 훅 시스템
-
-| 이벤트 | 스크립트 | 역할 |
-|--------|---------|------|
-| SessionStart | `session-start.js` | 세션 컨텍스트 복원, 메모리 로드 |
-| PreToolUse | `pre-tool-guard.js` | 파괴적 명령어 차단, 스코프 보호 |
-| PostToolUse | `code-check.js` | 타입 안전성/복잡도 검증 |
-| PostToolUse | `post-edit.js` | Git 인덱스 업데이트 |
-| UserPromptSubmit | `prompt-dispatcher.js` | 명령어 라우팅 |
-| UserPromptSubmit | `keyword-detector.js` | 매직 키워드 감지 |
-| Notification | `context-save.js` | 컨텍스트 80/90/95% 자동 저장 |
-
-추가: `llm-orchestrate.js`, `codex-review-gate.js`, `codex-detect.js`, `code-review.js`, `recall.js`, `complexity.js`, `compound.js`, `stop-notify.js`
+| Command | Description |
+|---------|-------------|
+| `/vibe.spec "feature"` | Write SPEC + GPT/Gemini parallel research |
+| `/vibe.spec.review` | SPEC quality review |
+| `/vibe.run "feature"` | Implement from SPEC + parallel code review |
+| `/vibe.verify "feature"` | BDD verification against SPEC |
+| `/vibe.review` | 12-agent parallel code review |
+| `/vibe.trace "feature"` | Requirements traceability matrix |
+| `/vibe.reason "problem"` | Systematic reasoning framework |
+| `/vibe.analyze` | Project analysis |
+| `/vibe.event` | Event automation |
+| `/vibe.utils` | Utilities (E2E, diagrams, UI, session restore) |
 
 ---
 
-## 슬래시 명령어
+## Magic Keywords
 
-| 명령어 | 설명 |
-|--------|------|
-| `/vibe.spec "기능"` | SPEC 작성 + GPT/Gemini 병렬 리서치 |
-| `/vibe.spec.review` | SPEC 품질 리뷰 |
-| `/vibe.run "기능"` | SPEC 기반 구현 + 병렬 코드 리뷰 |
-| `/vibe.verify "기능"` | SPEC 대비 BDD 검증 |
-| `/vibe.review` | 12개 에이전트 병렬 코드 리뷰 |
-| `/vibe.trace "기능"` | 요구사항 추적성 매트릭스 |
-| `/vibe.reason "문제"` | 체계적 추론 프레임워크 |
-| `/vibe.analyze` | 프로젝트 분석 |
-| `/vibe.event` | 이벤트 자동화 |
-| `/vibe.utils` | 유틸리티 (E2E, 다이어그램, UI, 세션 복원) |
+| Keyword | Effect |
+|---------|--------|
+| `ultrawork` / `ulw` | Parallel processing + phase pipelining + auto-continue + Ralph Loop |
+| `ralph` | Iterate until 100% complete (no scope reduction) |
+| `ralplan` | Iterative planning + persistence |
+| `verify` | Strict verification mode |
+| `quick` | Fast mode, minimal verification |
 
 ---
 
 ## CLI
 
 ```bash
-# 프로젝트
-vibe init [project]       # 프로젝트 초기화
-vibe update               # 설정 업데이트 (스택 재감지)
-vibe upgrade              # 최신 버전으로 업그레이드
-vibe setup                # 셋업 위자드
-vibe status               # 상태 확인
-vibe remove               # 제거
+# Project
+vibe init [project]       # Initialize project
+vibe update               # Update settings (re-detect stacks)
+vibe upgrade              # Upgrade to latest version
+vibe setup                # Interactive setup wizard
+vibe status               # Show status
+vibe remove               # Uninstall
 
-# LLM 인증
+# LLM Auth
 vibe gpt auth|key|status|logout
 vibe gemini auth|key|status|logout
 vibe claude key|status|logout
 
-# 외부 스킬
-vibe skills add <owner/repo>   # skills.sh 스킬 설치
+# External Skills
+vibe skills add <owner/repo>   # Install skills from skills.sh
 
-# 채널
+# Channels
 vibe telegram setup|chat|status
 vibe slack setup|channel|status
 
-# 기타
-vibe env import [path]    # .env → config.json 마이그레이션
+# Other
+vibe env import [path]    # Migrate .env → config.json
 vibe help / version
 ```
 
-### 인증 우선순위
+### Auth Priority
 
-| 프로바이더 | 우선순위 |
-|-----------|---------|
+| Provider | Priority |
+|----------|----------|
 | **GPT** | Codex CLI → API Key |
-| **Gemini** | gemini-cli 자동감지 → API Key |
+| **Gemini** | gemini-cli auto-detect → API Key |
 
 ---
 
-## 매직 키워드
+## Subpath Exports
 
-| 키워드 | 효과 |
-|--------|------|
-| `ultrawork` / `ulw` | 병렬 처리 + Phase 파이프라이닝 + 자동 계속 + Ralph Loop |
-| `ralph` | 100% 완성까지 반복 (범위 축소 없음) |
-| `ralplan` | 반복적 계획 수립 + 영속화 |
-| `verify` | 엄격 검증 모드 |
-| `quick` | 빠른 모드, 최소 검증 |
+```typescript
+import { MemoryStorage, SessionRAGStore } from '@su-record/vibe/memory';
+import { SwarmOrchestrator, PhasePipeline } from '@su-record/vibe/orchestrator';
+import { findSymbol, validateCodeQuality } from '@su-record/vibe/tools';
+import { InMemoryStorage, ComponentRegistry, createSpan } from '@su-record/vibe/tools';
+```
+
+| Subpath | Key Exports |
+|---------|-------------|
+| `@su-record/vibe/memory` | `MemoryStorage`, `IMemoryStorage`, `InMemoryStorage`, `KnowledgeGraph`, `SessionRAGStore` |
+| `@su-record/vibe/orchestrator` | `SwarmOrchestrator`, `PhasePipeline`, `BackgroundManager` |
+| `@su-record/vibe/tools` | `findSymbol`, `validateCodeQuality`, `createSpan`, `ComponentRegistry`, etc. |
+| `@su-record/vibe/tools/memory` | Memory tools |
+| `@su-record/vibe/tools/convention` | Code quality tools |
+| `@su-record/vibe/tools/semantic` | Semantic analysis (symbol search, AST, LSP) |
+| `@su-record/vibe/tools/ui` | UI/UX tools |
+| `@su-record/vibe/tools/interaction` | User interaction tools |
+| `@su-record/vibe/tools/time` | Time utilities |
 
 ---
 
-## 설정
+## Configuration
 
-### 전역: `~/.vibe/config.json`
+### Global: `~/.vibe/config.json`
 
-인증, 채널, 모델 설정 통합 관리 (파일 권한 0o600).
+Auth, channels, and model settings (file permissions `0o600`).
 
 ```json
 {
@@ -434,70 +404,43 @@ vibe help / version
 }
 ```
 
-### 프로젝트: `.claude/vibe/config.json`
+### Project: `.claude/vibe/config.json`
 
-프로젝트별 설정 — language, quality, stacks, details, references, installedExternalSkills.
-
----
-
-## 모듈 서브패스 Export
-
-런타임 모듈을 서브패스 export로 제공합니다.
-
-```typescript
-import { MemoryStorage, SessionRAGStore } from '@su-record/vibe/memory';
-import { SwarmOrchestrator, PhasePipeline } from '@su-record/vibe/orchestrator';
-import { findSymbol, validateCodeQuality } from '@su-record/vibe/tools';
-
-// Agent-Lightning 패턴
-import { InMemoryStorage, ComponentRegistry, createSpan } from '@su-record/vibe/tools';
-```
-
-| 서브패스 | 주요 export |
-|---------|------------|
-| `@su-record/vibe/memory` | `MemoryStorage`, `IMemoryStorage`, `InMemoryStorage`, `KnowledgeGraph`, `SessionRAGStore` |
-| `@su-record/vibe/orchestrator` | `SwarmOrchestrator`, `PhasePipeline`, `BackgroundManager` |
-| `@su-record/vibe/tools` | `findSymbol`, `validateCodeQuality`, `createSpan`, `ComponentRegistry` 등 |
-| `@su-record/vibe/tools/memory` | 메모리 도구 |
-| `@su-record/vibe/tools/convention` | 코드 품질 도구 |
-| `@su-record/vibe/tools/semantic` | 시맨틱 분석 도구 |
-| `@su-record/vibe/tools/ui` | UI/UX 도구 |
-| `@su-record/vibe/tools/interaction` | 사용자 상호작용 도구 |
-| `@su-record/vibe/tools/time` | 시간 도구 |
+Per-project settings — language, quality, stacks, details, references, installedExternalSkills.
 
 ---
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 your-project/
 ├── .claude/
 │   ├── vibe/
-│   │   ├── config.json        # 프로젝트 설정
-│   │   ├── constitution.md    # 프로젝트 원칙
-│   │   ├── specs/             # SPEC 문서
-│   │   ├── features/          # 기능 추적
-│   │   ├── todos/             # P1/P2/P3 이슈
-│   │   └── reports/           # 리뷰 리포트
-│   └── skills/                # 로컬 + 외부 스킬
-├── CLAUDE.md                  # 프로젝트 가이드 (자동 생성)
-├── AGENTS.md                  # Codex CLI 가이드 (자동 생성)
+│   │   ├── config.json        # Project config
+│   │   ├── constitution.md    # Project principles
+│   │   ├── specs/             # SPEC documents
+│   │   ├── features/          # Feature tracking
+│   │   ├── todos/             # P1/P2/P3 issues
+│   │   └── reports/           # Review reports
+│   └── skills/                # Local + external skills
+├── CLAUDE.md                  # Project guide (auto-generated)
+├── AGENTS.md                  # Codex CLI guide (auto-generated)
 └── ...
 
-~/.vibe/config.json            # 전역 설정 (인증, 채널, 모델)
-~/.vibe/analytics/             # 텔레메트리 (로컬 JSONL)
-│   ├── skill-usage.jsonl      # 스킬 사용 기록
-│   ├── spans.jsonl            # 구조화된 스팬
-│   └── decisions.jsonl        # 의사결정 추적
+~/.vibe/config.json            # Global config (auth, channels, models)
+~/.vibe/analytics/             # Telemetry (local JSONL)
+│   ├── skill-usage.jsonl
+│   ├── spans.jsonl
+│   └── decisions.jsonl
 ~/.claude/
 ├── vibe/
-│   ├── rules/                 # 코딩 규칙
-│   ├── skills/                # 전역 스킬
-│   └── ui-ux-data/            # UI/UX CSV 데이터
-├── commands/                  # 슬래시 명령어
-└── agents/                    # 에이전트 정의 (56개)
+│   ├── rules/                 # Coding rules
+│   ├── skills/                # Global skills
+│   └── ui-ux-data/            # UI/UX CSV datasets (48 files)
+├── commands/                  # Slash commands
+└── agents/                    # Agent definitions (56)
 ~/.codex/
-└── plugins/vibe/              # Codex 플러그인
+└── plugins/vibe/              # Codex plugin
     ├── .codex-plugin/plugin.json
     ├── agents/
     ├── skills/
@@ -506,45 +449,44 @@ your-project/
 
 ---
 
-## 시스템 아키텍처
+## Architecture
 
 ```mermaid
 flowchart TD
-    A["사용자 요청"] --> B["keyword-detector"]
+    A["User Request"] --> B["keyword-detector"]
     B --> C["prompt-dispatcher"]
     C --> D["SmartRouter"]
 
     D --> E["LLMCluster"]
-    E --> E1["GPT-5.4 (추론)"]
-    E --> E2["Codex Spark (리뷰)"]
-    E --> E3["Gemini (리서치)"]
+    E --> E1["GPT (Reasoning)"]
+    E --> E2["Gemini (Research)"]
 
     D --> F["PhasePipeline"]
     F --> G["SwarmOrchestrator"]
     G --> H["BackgroundManager"]
     H --> I["AgentRegistry"]
 
-    D --> J["병렬 리뷰"]
-    J --> J1["12개 Sonnet 리뷰 에이전트"]
-    J --> J2["/codex:review"]
-    J1 --> K["3중 교차 검증 → P1/P2/P3"]
+    D --> J["Parallel Review"]
+    J --> J1["12 Sonnet Review Agents"]
+    J --> J2["Codex Review"]
+    J1 --> K["Triple Cross-Validation → P1/P2/P3"]
     J2 --> K
-    J --> J3["경계면 검증"]
+    J --> J3["Boundary Verification"]
 
     L["Session RAG"] -.-> M["Decision / Constraint / Goal / Evidence"]
-    N["VibeSpan"] -.-> O["spans.jsonl (로컬 텔레메트리)"]
-    P["품질 게이트"] -.-> Q["pre-tool-guard → 차단"]
-    P -.-> R["code-check → 검증"]
+    N["VibeSpan"] -.-> O["spans.jsonl (Local Telemetry)"]
+    P["Quality Gate"] -.-> Q["pre-tool-guard → Block"]
+    P -.-> R["code-check → Verify"]
 ```
 
 ---
 
-## 요구사항
+## Requirements
 
 - **Node.js** >= 18.0.0
-- **Claude Code** (필수)
-- GPT, Gemini (선택 — 멀티 LLM 기능용)
+- **Claude Code** (required)
+- GPT, Gemini (optional — for multi-LLM features)
 
-## 라이선스
+## License
 
 MIT License - Copyright (c) 2025 Su
