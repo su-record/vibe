@@ -3,6 +3,7 @@ name: techdebt
 description: "Technical debt cleanup — detect and fix duplicate code, console.log, unused imports, any types, etc. Recommended before session end. Activates on techdebt, cleanup, debt keywords."
 triggers: [techdebt, cleanup, debt, unused imports, console.log, dead code]
 priority: 60
+chain-next: [commit-push-pr]
 ---
 
 # Techdebt — Technical Debt Cleanup

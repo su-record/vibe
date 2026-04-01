@@ -19,6 +19,7 @@ export interface SkillMetadata {
   allowedTools?: string[];
   triggers?: string[];
   priority?: number;
+  chainNext?: string[];
   mcpConfig?: McpConfig;
   sections?: SkillSectionMeta[];
 }
@@ -148,6 +149,10 @@ export function generateSkillFrontmatter(metadata: SkillMetadata): string {
     lines.push(`priority: ${metadata.priority}`);
   }
 
+  if (metadata.chainNext !== undefined) {
+    lines.push(`chain-next: [${metadata.chainNext.join(', ')}]`);
+  }
+
   lines.push('---');
 
   return lines.join('\n');
@@ -207,6 +212,7 @@ export function mergeWithDefaults(metadata: Partial<SkillMetadata>): SkillMetada
     allowedTools: metadata.allowedTools,
     triggers: metadata.triggers,
     priority: metadata.priority ?? 50,
+    chainNext: metadata.chainNext,
     mcpConfig: metadata.mcpConfig,
   };
 }

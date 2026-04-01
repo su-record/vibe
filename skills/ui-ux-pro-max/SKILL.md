@@ -211,6 +211,20 @@ Avoid these signs of generic, AI-generated UI:
 | Safe, corporate color palettes | Develop unique color palettes beyond defaults |
 | No micro-interactions | Add meaningful motion to guide user attention (150-300ms) |
 
+## Deep Reference Guides
+
+For detailed guidance on specific domains, see the reference files:
+
+| Reference | Domain | Use When |
+|-----------|--------|----------|
+| [typography](reference/typography.md) | Type systems, font pairing, scales | Setting up type hierarchy |
+| [color-and-contrast](reference/color-and-contrast.md) | OKLCH, tinted neutrals, dark mode | Choosing colors, dark mode |
+| [spatial-design](reference/spatial-design.md) | Spacing systems, grids, hierarchy | Layout and spacing decisions |
+| [motion-design](reference/motion-design.md) | Easing, staggering, reduced motion | Adding animations |
+| [interaction-design](reference/interaction-design.md) | States, focus, forms, modals | Building interactive elements |
+| [responsive-design](reference/responsive-design.md) | Mobile-first, fluid, containers | Responsive implementation |
+| [ux-writing](reference/ux-writing.md) | Labels, errors, empty states | Writing UI copy |
+
 ## Done Criteria (K4)
 
 - [ ] Design system generated before implementation

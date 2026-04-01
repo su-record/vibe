@@ -138,6 +138,10 @@ When the user's context matches a pattern below, suggest the relevant skill **on
 | Session ending, work incomplete | `/handoff` | 70%+ context, incomplete tasks |
 | Technical debt accumulating | `/techdebt` | Multiple `any` types, console.log, unused imports |
 | Multi-file refactoring planned | `/exec-plan` | 3+ files to change, complex dependencies |
+| Building new UI/UX | `/design-teach` | "new page", "landing", "dashboard", Figma URL |
+| UI code review | `/design-audit` | After implementing UI components |
+| New project setup / CLAUDE.md | `/claude-md-guide` | "new project", "write CLAUDE.md", "project instructions" |
+| Before shipping UI | `/design-polish` | "ready to deploy", "final check" |
 
 ## Context Management
 
