@@ -51,7 +51,7 @@ Slash Commands (Claude Code):
   /vibe.analyze           프로젝트 분석
   /vibe.trace "feature"   요구사항 추적 매트릭스
   /vibe.utils             유틸리티 (--e2e, --diagram, --continue)
-  /figma-to-code          Figma 디자인 → 코드 변환
+  /vibe.figma             Figma 디자인 → 코드 변환
 
 Docs: https://github.com/su-record/vibe
   `);

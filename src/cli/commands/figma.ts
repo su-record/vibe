@@ -222,7 +222,7 @@ export async function figmaExtract(url?: string, outputDir?: string): Promise<vo
     }
 
     console.log(`\nDone! Output: ${resolvedOutput}`);
-    console.log('Next: Run /figma-to-code in Claude Code to generate components');
+    console.log('Next: Run /vibe.figma in Claude Code to generate components');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`Extract failed: ${message}`);
@@ -248,7 +248,7 @@ Extract options:
 Workflow:
   1. vibe figma setup <token>
   2. vibe figma extract "https://www.figma.com/design/ABC/Project?node-id=1-2"
-  3. claude /figma-to-code
+  3. claude /vibe.figma
 
 Get a token from: Figma > Settings > Personal access tokens
   `);

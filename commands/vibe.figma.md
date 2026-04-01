@@ -1,18 +1,18 @@
 ---
-description: Convert Figma design to code using extracted layers + frame image
+description: Convert Figma design to code — image + layer JSON + project stack aware
 argument-hint: [--output <path>] or --component <name>
 ---
 
-# /figma-to-code
+# /vibe.figma
 
 Convert Figma design data (layers JSON + frame image) into production-ready component code, tailored to the project's tech stack.
 
 ## Usage
 
 ```
-/figma-to-code                          # Convert using default figma-output/
-/figma-to-code --output src/components  # Specify output directory for generated code
-/figma-to-code --component LoginForm    # Name the root component explicitly
+/vibe.figma                          # Convert using default figma-output/
+/vibe.figma --output src/components  # Specify output directory for generated code
+/vibe.figma --component LoginForm    # Name the root component explicitly
 ```
 
 ## Prerequisites
