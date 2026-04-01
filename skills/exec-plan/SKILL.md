@@ -3,6 +3,7 @@ name: exec-plan
 description: "Convert SPEC into a self-contained execution plan that agents can run autonomously for hours. Use when a SPEC has 3+ phases, multiple files to change, or complex dependencies between tasks. Produces a plan with explicit file paths, interface extracts, and acceptance criteria so agents never need to 'figure out' context. Must use this skill when launching long-running autonomous work, parallelizing implementation across agents, or when user says 'execute this spec' or 'run this plan'."
 triggers: [exec plan, execution plan, autonomous plan, self-contained plan, long-running]
 priority: 70
+chain-next: [commit-push-pr]
 ---
 
 # ExecPlan — Self-Contained Execution Plan Generator
