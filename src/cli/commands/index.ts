@@ -11,3 +11,4 @@ export { showHelp, showStatus, showVersion } from './info.js';
 export { telegramSetup, telegramChat, telegramStatus, telegramHelp } from './telegram.js';
 export { slackSetup, slackChannel, slackStatus, slackHelp } from './slack.js';
 export { skillsAdd, installExternalSkills } from './skills.js';
+export { figmaSetup, figmaExtract, figmaStatus, figmaLogout, figmaHelp } from './figma.js';

@@ -30,6 +30,11 @@ LLM:
   vibe gemini <cmd>       Gemini (auth, key, status, logout)
   vibe env import [path]  .env → ~/.vibe/config.json 가져오기
 
+Figma:
+  vibe figma setup <token>  Set Figma access token
+  vibe figma extract <url>  Extract layers + image from Figma URL
+  vibe figma status         Check configuration
+
 Skills:
   vibe skills add <pkg>   Install skill from skills.sh
 
@@ -46,6 +51,7 @@ Slash Commands (Claude Code):
   /vibe.analyze           프로젝트 분석
   /vibe.trace "feature"   요구사항 추적 매트릭스
   /vibe.utils             유틸리티 (--e2e, --diagram, --continue)
+  /vibe.figma             Figma 디자인 → 코드 변환
 
 Docs: https://github.com/su-record/vibe
   `);

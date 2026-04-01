@@ -27,6 +27,7 @@ import {
   telegramSetup, telegramChat, telegramStatus, telegramHelp,
   slackSetup, slackChannel, slackStatus, slackHelp,
   skillsAdd,
+  figmaSetup, figmaExtract, figmaStatus, figmaLogout, figmaHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -301,6 +302,36 @@ Example: vibe skills add vercel-labs/skills
     break;
   }
 
+  // vibe figma <subcommand>
+  case 'figma': {
+    const figmaSub = positionalArgs[1];
+    switch (figmaSub) {
+      case 'setup':
+        figmaSetup(positionalArgs[2]);
+        break;
+      case 'extract':
+        (async () => {
+          const outputFlag = args.indexOf('--output');
+          const outputDir = outputFlag >= 0 ? args[outputFlag + 1] : undefined;
+          await figmaExtract(positionalArgs[2], outputDir);
+        })();
+        break;
+      case 'status':
+        figmaStatus();
+        break;
+      case 'logout':
+      case 'remove':
+        figmaLogout();
+        break;
+      case 'help':
+        figmaHelp();
+        break;
+      default:
+        figmaHelp();
+    }
+    break;
+  }
+
   // vibe env import [path]
   case 'env': {
     const envSub = positionalArgs[1];
@@ -312,6 +343,7 @@ Example: vibe skills add vercel-labs/skills
       }
       const envContent = fs.readFileSync(envSource, 'utf-8');
       const ENV_TO_CONFIG: Record<string, (v: string, p: Partial<GlobalVibeConfig>) => void> = {
+        FIGMA_ACCESS_TOKEN: (v, p) => { (p.credentials ??= {}).figma = { ...(p.credentials.figma ?? {}), accessToken: v }; },
         OPENAI_API_KEY: (v, p) => { (p.credentials ??= {}).gpt = { ...(p.credentials.gpt ?? {}), apiKey: v }; },
         GEMINI_API_KEY: (v, p) => { (p.credentials ??= {}).gemini = { ...(p.credentials.gemini ?? {}), apiKey: v }; },
         TELEGRAM_BOT_TOKEN: (v, p) => { (p.channels ??= {}).telegram = { ...(p.channels.telegram ?? {}), botToken: v }; },
@@ -402,6 +434,7 @@ Available commands:
   vibe gpt <cmd>          GPT (auth, key, status, logout)
   vibe gemini <cmd>       Gemini (auth, key, status, logout)
 
+  vibe figma <cmd>        Figma (setup, extract, status, logout)
   vibe telegram <cmd>     Telegram (setup, status) - notification only
   vibe slack <cmd>        Slack (setup, status) - notification only
 

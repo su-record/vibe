@@ -122,11 +122,17 @@ export interface ModelOverrides {
   geminiEmbedding: string;
 }
 
+export interface FigmaCredentials {
+  accessToken?: string;
+  createdAt?: string;
+}
+
 export interface GlobalVibeConfig {
   version: '1';
   credentials?: {
     gpt?: GptCredentials;
     gemini?: GeminiCredentials;
+    figma?: FigmaCredentials;
   };
   channels?: {
     telegram?: TelegramChannelConfig;
