@@ -346,6 +346,33 @@ function handleConfirm(): void {
 → Step B/C에서 코드 생성 시 이 함수들의 body를 구현
 ```
 
+## Phase 7: Step A 검증 루프
+
+> **⛔ 아래 조건을 모두 만족해야 Step B로 진행. 하나라도 실패 시 수정 후 재검증.**
+
+```
+🔄 검증 체크리스트:
+
+1. 파일 생성 완료 확인:
+   □ 루트 페이지 파일 존재 (pages/{feature}.vue)
+   □ PAGE 프레임 수 = 생성된 섹션 컴포넌트 수 (1개도 빠짐 없음)
+   □ 팝업 컴포넌트 생성됨 (스토리보드에 팝업이 있으면)
+   □ 스타일 디렉토리 생성됨 (styles/{feature}/)
+
+2. 코드 품질 확인 (각 컴포넌트 Read로 확인):
+   □ 모든 컴포넌트에 기능 정의 JSDoc 주석 있음
+   □ v-for 리스트에 목 데이터 채워짐 (빈 배열 없음)
+   □ 이벤트 핸들러 함수 정의됨 (handleXxx)
+   □ TypeScript 인터페이스 정의됨
+   □ 팝업 open/close가 v-if + ref로 연결됨
+
+3. 빌드 확인:
+   □ 프로젝트 빌드 에러 없음 (Bash: npm run build 또는 nuxt build)
+
+실패 항목 → Edit으로 수정 → 재검증 (횟수 제한 없음)
+동일 항목 3회 연속 실패 → 사용자에게 확인 후 계속
+```
+
 ## 출력 요약
 
 ```
@@ -353,6 +380,9 @@ function handleConfirm(): void {
 ✅ 각 섹션 컴포넌트 (구조 코드 + 기능 주석 + 이벤트 핸들러 + TypeScript 인터페이스)
 ✅ 공통 컴포넌트 (GNB, Footer, Popup — 기존 재사용 또는 신규)
 ✅ 인터랙션 매핑 테이블
-✅ 스타일은 빈 블록 → Step B(모바일)에서 디자인 URL 받고 채움
+✅ 목 데이터 채워짐 (빈 배열 없음)
+✅ 빌드 성공
+✅ 스타일은 빈 블록 → Step B에서 디자인 URL 받고 채움
 ✅ 이미지는 placeholder → Step B에서 다운로드 후 교체
+→ Step B 진행 가능
 ```
