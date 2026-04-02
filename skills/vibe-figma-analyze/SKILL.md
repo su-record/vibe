@@ -258,12 +258,21 @@ function handleClaimReward(milestone: Milestone): void {
 }
 </script>
 
-<style lang="scss" scoped>
-/* Step B: 모바일 디자인 URL 반영 시 스타일 구현 */
-.dailyCheckInSection {
-  /* layout will be filled in Step B */
-}
-</style>
+<!-- ⛔ <style> 블록을 컴포넌트에 넣지 않는다 -->
+<!-- 스타일은 외부 파일에서 관리: styles/{feature}/layout/, components/ -->
+</script>
+```
+
+### ⛔ 스타일 분리 규칙
+
+```
+Step A에서 컴포넌트 파일에 <style> 블록을 작성하지 않는다.
+스타일은 Step B에서 외부 파일로 생성:
+  --new 모드: styles/{feature}/layout/_daily-checkin.scss
+  기본 모드: 기존 프로젝트 스타일 패턴을 따름
+
+컴포넌트는 <template> + <script setup> 만 포함.
+스타일 import는 루트 페이지 또는 nuxt.config에서 처리.
 ```
 
 ### 핵심 원칙: 스타일 없이 동작하는 코드
