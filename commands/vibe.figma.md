@@ -59,16 +59,22 @@ When multiple URLs are provided:
 
 ## Model Routing
 
-| Phase | Model | 이유 |
-|-------|-------|------|
-| Phase 0 (추출) | **Haiku / Sonnet** | MCP 호출 + 데이터 수집, 판단 불필요 |
-| Phase 1-2 (분석) | **Sonnet** | 이미지 비교 + 구조 파악 |
-| Phase 3 (감지) | **Haiku / Sonnet** | 파일 읽기 + 패턴 매칭 |
-| Phase 4-5 (토큰/마크업) | **Sonnet** | 토큰 매핑 + 시맨틱 판단 |
-| Phase 6 (코드 생성) | **Sonnet / Opus** | 스택 적응 + 반응형 로직, 복잡도에 따라 |
-| Phase 7-8 (매핑/리포트) | **Sonnet** | 토큰 매핑 + 보고서 |
+| Phase | Model | Codex | 이유 |
+|-------|-------|-------|------|
+| Phase 0 (추출) | **Haiku / Sonnet** | — | MCP 호출 + 데이터 수집, 판단 불필요 |
+| Phase 1-2 (분석) | **Sonnet** | — | 이미지 비교 + 구조 파악 |
+| Phase 3 (감지) | **Haiku / Sonnet** | — | 파일 읽기 + 패턴 매칭 |
+| Phase 4-5 (토큰/마크업) | **Sonnet** | — | 토큰 매핑 + 시맨틱 판단 |
+| Phase 6 (코드 생성) | **Sonnet / Opus** | `/codex:rescue --background` | 복잡한 컴포넌트를 Codex에 병렬 위임 |
+| Phase 7-8 (매핑/리포트) | **Sonnet** | — | 토큰 매핑 + 보고서 |
+| Post (코드 리뷰) | — | `/codex:review` | 생성된 코드 크로스 검증 |
 
-빠른 모델로 시작하고, 코드 생성 단계에서만 필요 시 상위 모델 사용.
+빠른 모델로 시작하고, 코드 생성에서만 상위 모델 또는 Codex 병렬 사용.
+
+**Codex 활용 조건** (codex-plugin-cc 설치 시):
+- Phase 6에서 섹션 컴포넌트가 3개 이상이면 → `/codex:rescue --background`로 일부 컴포넌트 병렬 생성
+- 코드 생성 완료 후 → `/codex:review`로 생성 품질 검증 (design fidelity + 코드 품질)
+- Codex 미설치 시 자동 스킵
 
 ## Phase 0: Figma Data Extraction
 
