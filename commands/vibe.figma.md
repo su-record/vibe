@@ -76,7 +76,7 @@ https://www.figma.com/design/:fileKey/:fileName?node-id=:nodeId
 **Single URL:**
 
 ```
-1. get_design_context(fileKey, nodeId) → 코드 + 스크린샷 + 메타데이터
+1. get_design_context(fileKey, nodeId) → 코드 + 스크린샷 + 메타데이터 + 에셋 URL
 2. get_metadata(fileKey, nodeId) → 레이어 구조 (XML)
 3. get_screenshot(fileKey, nodeId) → 프레임 이미지
 ```
@@ -88,17 +88,59 @@ https://www.figma.com/design/:fileKey/:fileName?node-id=:nodeId
 프레임 width로 mobile/tablet/desktop 자동 감지.
 ```
 
-### 0-3. Verify Output & Detect Mode
+### 0-2. Image Asset Extraction (필수)
+
+`get_design_context` 응답에 포함된 이미지 에셋 URL을 **반드시 다운로드**하여 프로젝트에 저장해야 함.
+MCP가 반환하는 URL은 **7일 후 만료**되므로 임시 URL을 코드에 직접 넣으면 안 됨.
+
+**에셋 URL 감지:**
+
+`get_design_context` 응답의 코드에 다음 패턴이 포함됨:
+```
+const image = 'https://www.figma.com/api/mcp/asset/...'
+```
+
+**다운로드 및 저장:**
 
 ```
-1. Check figma-output/responsive.json exists → if yes, enter RESPONSIVE MODE
-2. If responsive mode:
-   - Read responsive.json → verify all listed files exist
-   - Confirm at least 2 viewports with different width classes
-3. If single mode:
-   - Check figma-output/layers.json exists → if not, report error and stop
-   - Check figma-output/frame.png exists → optional (only with node-id)
-4. Validate all layers JSON files have children array → warn if empty
+1. 응답에서 모든 이미지 URL 추출 (https://www.figma.com/api/mcp/asset/...)
+2. WebFetch로 각 URL 다운로드
+3. 프로젝트의 에셋 디렉토리에 저장:
+   - Nuxt: public/images/{feature}/ 또는 assets/images/{feature}/
+   - Next.js: public/images/{feature}/
+   - React: public/images/{feature}/ 또는 src/assets/{feature}/
+4. 파일명은 레이어 이름 기반 (kebab-case):
+   - "Hero Background" → hero-background.webp
+   - "Product Photo 1" → product-photo-1.webp
+5. 생성된 코드에서 임시 URL을 로컬 경로로 교체:
+   - 'https://www.figma.com/api/mcp/asset/...' → '/images/{feature}/hero-background.webp'
+```
+
+**SVG 처리:**
+
+```
+- 아이콘/로고 등 벡터 에셋은 SVG로 추출
+- SVG는 인라인 컴포넌트로 변환하거나 파일로 저장
+  - 작은 아이콘 (< 1KB) → 인라인 SVG 컴포넌트
+  - 큰 SVG → 파일로 저장 후 <img> 또는 import
+```
+
+**에셋 미추출 시 경고:**
+
+코드 생성 완료 후, MCP 임시 URL이 코드에 남아있으면 경고:
+```
+⚠️ 임시 Figma URL이 코드에 남아있습니다. 7일 후 만료됩니다:
+   - src/components/Hero.vue: line 12 (hero-bg)
+   → WebFetch로 다운로드 후 로컬 경로로 교체하세요.
+```
+
+### 0-3. Verify Extraction
+
+```
+1. 모든 MCP 호출 성공 확인
+2. 이미지 에셋 다운로드 완료 확인
+3. 임시 URL이 코드에 남아있지 않은지 확인
+4. Responsive mode: 최소 2개 뷰포트 확인
 ```
 
 ---
