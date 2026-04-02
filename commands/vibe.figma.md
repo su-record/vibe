@@ -35,16 +35,21 @@ When multiple URLs are provided:
 
 ## File Reading Policy (Mandatory)
 
-### Single design mode
+### MCP 경로 (Phase 0-2a)
+- **Design context first**: `get_design_context` 결과의 스크린샷을 먼저 분석
+- **Then metadata**: `get_metadata` 결과로 레이어 구조 파악
+- **Saved files**: `figma-output/` 에 저장된 파일도 Read로 재확인
+
+### CLI 경로 (Phase 0-2b) — Single design
 - **Image first**: ALWAYS read `figma-output/frame.png` with the Read tool before anything else
 - **Then JSON**: Read `figma-output/layers.json` to extract structural data and tokens
 
-### Responsive mode (responsive.json exists)
+### CLI 경로 — Responsive mode (responsive.json exists)
 - **Manifest first**: Read `figma-output/responsive.json` to identify viewports
 - **All images**: Read each `frame.{N}.png` — compare visual differences across viewports
 - **All layers**: Read each `layers.{N}.json` — extract per-viewport tokens and layout
 
-### Always
+### Always (both paths)
 - **Project config**: Read `.claude/vibe/config.json` to determine tech stack
 - **Design context**: Read `.claude/vibe/design-context.json` if it exists (brand, tokens, theme)
 - **Existing code**: Scan project for existing component patterns, theme config, design system
@@ -63,38 +68,73 @@ When multiple URLs are provided:
 
 **Skip this phase if `--local` flag is provided and `figma-output/` already exists.**
 
-### 0-1. Token Check
-
-Check Figma access token availability:
+### 0-1. Extraction Strategy Selection
 
 ```
-1. Read ~/.vibe/config.json → credentials.figma.accessToken
-2. Fallback: FIGMA_ACCESS_TOKEN env variable
-3. If neither → ask user: "vibe figma setup <token> 으로 토큰을 설정해주세요"
+1. Figma MCP 플러그인 사용 가능? (mcp__plugin_figma_figma__get_design_context 호출 가능 여부)
+   → YES: MCP 경로 (0-2a) — 토큰 설정 불필요
+   → NO: CLI 경로 (0-2b) — Access Token 필요
+
+2. CLI 경로 시 토큰 확인:
+   a. ~/.vibe/config.json → credentials.figma.accessToken
+   b. FIGMA_ACCESS_TOKEN env variable
+   c. 둘 다 없으면 → "vibe figma setup <token> 으로 토큰을 설정해주세요"
 ```
 
-### 0-2. Extract via CLI
+### 0-2a. Extract via MCP (Primary — 토큰 불필요)
 
-Parse all URLs from the argument. URLs are space-separated, each quoted.
+Figma MCP 플러그인이 자체 인증을 처리하므로 별도 토큰 설정이 필요 없음.
+
+**URL에서 fileKey와 nodeId 추출:**
+
+```
+https://www.figma.com/design/:fileKey/:fileName?node-id=:nodeId
+  → fileKey, nodeId (하이픈을 콜론으로: "110-6231" → "110:6231")
+```
 
 **Single URL:**
-```bash
-npx vibe figma extract "$url"
+
+```
+1. get_design_context(fileKey, nodeId) → 코드 + 스크린샷 + 메타데이터
+2. get_metadata(fileKey, nodeId) → 레이어 구조 (XML)
+3. get_screenshot(fileKey, nodeId) → 프레임 이미지
+
+결과를 figma-output/ 에 저장:
+  - figma-output/layers.json ← get_metadata 결과를 JSON 변환
+  - figma-output/frame.png ← get_screenshot 이미지
+  - figma-output/design-context.txt ← get_design_context 코드 참조
 ```
 
 **Multiple URLs (responsive mode):**
+
+```
+각 URL에 대해 위 과정 반복:
+  - figma-output/layers.1.json, frame.1.png, design-context.1.txt
+  - figma-output/layers.2.json, frame.2.png, design-context.2.txt
+  - figma-output/responsive.json ← 뷰포트 매니페스트 (프레임 width로 자동 감지)
+```
+
+### 0-2b. Extract via CLI (Fallback — 토큰 필요)
+
+MCP 플러그인이 없는 환경에서 사용. Figma REST API 직접 호출.
+
 ```bash
+# Single URL
+npx vibe figma extract "$url"
+
+# Multiple URLs (responsive mode)
 npx vibe figma extract "$url1" "$url2"
 ```
 
 Single URL produces:
 - `figma-output/layers.json` — Figma layer structure with design tokens
 - `figma-output/frame.png` — Rendered frame image (when node-id present in URL)
+- `figma-output/assets/` — Background image fills (imageRef 기반 추출)
 
 Multiple URLs produce:
-- `figma-output/layers.1.json`, `figma-output/layers.2.json`, ... — Per-viewport layer data
-- `figma-output/frame.1.png`, `figma-output/frame.2.png`, ... — Per-viewport frame images
-- `figma-output/responsive.json` — Viewport manifest with width/label/file mapping
+- `figma-output/layers.{N}.json`, `figma-output/frame.{N}.png` — Per-viewport data
+- `figma-output/responsive.json` — Viewport manifest with breakpoints
+- `figma-output/assets/` — Image fills from all viewports
 
 ### 0-3. Verify Output & Detect Mode
 
@@ -1459,12 +1499,15 @@ After generating code, output a brief correction report:
 
 | Tool | When |
 |------|------|
+| **MCP: get_design_context** | Primary extraction — 코드 + 스크린샷 + 메타데이터 (토큰 불필요) |
+| **MCP: get_metadata** | 레이어 구조 XML (노드 ID, 크기, 위치) |
+| **MCP: get_screenshot** | 프레임 이미지 렌더링 |
 | Read | Frame image, layers JSON, project config, existing components |
 | Glob | Find existing components, theme files, design tokens |
 | Grep | Search for existing color/spacing/typography definitions |
 | Write | Create new component files and style files |
 | Edit | Update existing theme/token files to add new tokens (default mode) |
-| Bash | `npx vibe figma extract` for data extraction, dependency checks |
+| Bash | `npx vibe figma extract` — CLI 폴백 (MCP 없을 때만) |
 
 ## Important
 
