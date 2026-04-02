@@ -1,6 +1,6 @@
 ---
 description: Figma design to code — extract + generate in one step
-argument-hint: "figma-url" ["figma-url-2"] [--new] [--component Name]
+argument-hint: "figma-url" ["figma-url-2"] [--new]
 ---
 
 # /vibe.figma
@@ -13,7 +13,6 @@ Extract Figma design data and generate production-ready component code, tailored
 /vibe.figma "url"                                    # Single design → project integrated (default)
 /vibe.figma "mobile-url" "desktop-url"               # Responsive — auto-detect viewport from frame width
 /vibe.figma "url" --new                          # New feature — self-contained tokens, no existing design system dependency
-/vibe.figma "url" --component LoginForm               # Name the root component
 /vibe.figma --local                                   # Skip extraction, use existing figma-output/
 ```
 
@@ -403,7 +402,7 @@ default (no flag):
 
 **Step 2: 피처명 기반 폴더 생성**
 
-`--component` 플래그 또는 Figma 파일명에서 피처명 추출 → kebab-case 변환.
+Figma 파일명에서 피처명 자동 추출 → kebab-case 변환.
 
 ```
 예: Figma 파일명 "PUBG 9주년 이벤트" → pubg-anniversary
