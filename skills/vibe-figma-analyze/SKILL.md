@@ -79,6 +79,10 @@ Error: 에러 페이지 구조
 
 ## Phase 4: PAGE 프레임 세밀 분석 (화면설계)
 
+> **⛔ 모든 PAGE 프레임을 빠짐없이 분석한다. 일부만 처리하고 넘어가면 안 됨.**
+> Phase 1에서 PAGE로 분류된 프레임 수 = Phase 5에서 생성하는 섹션 컴포넌트 수.
+> 분석 완료 후 "PAGE 프레임 N개 중 N개 분석 완료" 카운트를 출력하여 누락 확인.
+
 **각 PAGE 프레임**에 대해 get_screenshot + get_design_context:
 
 ```
@@ -270,8 +274,20 @@ function handleClaimReward(milestone: Milestone): void {
 ✅ 상태 변경 (체크, 선택, 비활성화)이 반영됨
 ✅ 모달/팝업 open/close가 v-if/ref로 연결됨
 ✅ emit으로 부모-자식 이벤트가 실제 연결됨
-✅ 리스트 렌더링 (v-for)이 더미 데이터로 동작
+✅ 리스트 렌더링 (v-for)이 더미 데이터로 동작 — ⚠️ 빈 배열 금지, 반드시 목 데이터 채움
 ✅ 조건부 렌더링 (v-if)이 상태에 따라 전환됨
+
+⚠️ 목 데이터 필수:
+  스토리보드 기능 정의서에서 아이템/보상/상품 정보를 추출하여 목 데이터로 사용.
+  빈 배열 = UI가 안 보임 = Step A 미완성.
+  예:
+    exchangeItems = [
+      { id: 1, name: '스노우 토큰 100', cost: 100, image: '' },
+      { id: 2, name: '스노우 토큰 500', cost: 500, image: '' },
+    ]
+    raffleItems = [
+      { id: 1, name: '1주차 경품', prize: 'PlayStation 5', entries: 0 },
+    ]
 
 → 브라우저에서 열면 스타일은 없지만 클릭/인터랙션은 동작하는 상태
 
