@@ -78,7 +78,18 @@ AskUserQuestion (options 사용 금지, 자유 텍스트만):
 for each (designFrame, component) in mappings:
 
   1. get_design_context(fileKey, designFrame.nodeId)
-     → 해당 섹션 전용 코드 + 스크린샷 + 에셋 URL
+     → 해당 섹션 전용 **참조 코드** + 스크린샷 + 에셋 URL
+
+     ⚠️ 참조 코드가 핵심:
+       get_design_context는 React+Tailwind 기반 참조 코드를 반환함.
+       이 코드에 이미지 URL, 레이아웃 구조, 색상값, 폰트 정보가 모두 포함됨.
+       → 이 참조 코드를 **기반으로** 프로젝트 스택에 맞게 변환해야 함.
+       → 참조 코드를 무시하고 스크린샷만 보고 자체 해석하면 안 됨.
+       → 참조 코드의 이미지 URL, 색상 hex, 폰트 크기를 그대로 가져온 후 스케일 적용.
+
+     ⚠️ 스크린샷은 보조:
+       참조 코드와 스크린샷이 다르면 → 스크린샷(디자인 의도) 우선
+       참조 코드에 없는 시각적 요소가 스크린샷에 보이면 → 추가 구현
 
   2. ⛔ 이미지 에셋 다운로드 (BLOCKING — 코드 반영 전 필수 완료):
 
@@ -147,12 +158,34 @@ for each (designFrame, component) in mappings:
      배경이 없는 섹션은 Multi-Layer 불필요 — 일반 구조 사용.
 
   5. component 파일에 반영 (Edit 도구):
-     → <template> 안의 placeholder를 실제 마크업으로 교체
-     → 배경 이미지 있는 섹션은 Multi-Layer 구조 적용
-     → <style> 블록에 스케일 적용된 스타일 작성
-     → 이미지 src를 매핑 테이블의 로컬 경로로 설정
-     → Step A의 기능 주석과 핸들러는 보존
-     → ⚠️ Figma 임시 URL(figma.com/api/mcp/asset/)이 코드에 남으면 안 됨
+
+     ⚠️ 변환 순서 (참조 코드 → 프로젝트 코드):
+       a. get_design_context 참조 코드에서 추출:
+          - HTML 구조 (div 계층, 이미지 배치, 텍스트 위치)
+          - 이미지 URL (const xxxImage = '...')
+          - 인라인 스타일/Tailwind 클래스 → 색상, 폰트, 간격 값
+          - 배경 이미지 패턴 (background-image가 있으면 Multi-Layer 적용)
+
+       b. 프로젝트 스택으로 변환:
+          - React+Tailwind → Vue/Nuxt SFC + SCSS (또는 프로젝트 스택)
+          - className → :class
+          - style={{ }} → SCSS 변수/클래스
+          - Tailwind 값 → SCSS 토큰 변수
+
+       c. 스케일 팩터 적용:
+          - 참조 코드의 px 값 × scaleFactor = 코드 값
+          - 색상 hex는 그대로 (스케일 불필요)
+
+       d. 이미지 경로 교체:
+          - figma.com/api/mcp/asset/xxx → /images/{feature}/xxx.webp (매핑 테이블)
+
+       e. Step A 코드와 병합:
+          - Step A의 기능 주석/핸들러/인터페이스 보존
+          - template의 placeholder → 참조 코드 기반 실제 마크업으로 교체
+          - style 블록 → 참조 코드에서 추출한 스타일 작성
+
+     ⛔ 참조 코드에 이미지가 있는데 생성 코드에 없으면 → 누락, 반드시 포함
+     ⛔ Figma 임시 URL이 코드에 남으면 안 됨
 ```
 
 ## Phase 4: 뷰포트 모드에 따른 스타일 적용
