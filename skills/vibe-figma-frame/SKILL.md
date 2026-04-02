@@ -80,30 +80,79 @@ for each (designFrame, component) in mappings:
   1. get_design_context(fileKey, designFrame.nodeId)
      → 해당 섹션 전용 코드 + 스크린샷 + 에셋 URL
 
-  2. 이미지 에셋 다운로드 (BLOCKING):
-     → 응답에서 figma.com/api/mcp/asset/ URL 전부 추출
-     → WebFetch로 다운로드 → static/images/{feature}/ 저장
-     → URL→로컬경로 매핑 테이블에 추가
+  2. ⛔ 이미지 에셋 다운로드 (BLOCKING — 코드 반영 전 필수 완료):
+
+     Step 2-a: get_design_context 응답에서 에셋 URL 추출
+       응답 코드에 아래 패턴이 포함됨:
+         const heroImage = 'https://www.figma.com/api/mcp/asset/xxxx'
+         const bgImage = 'https://www.figma.com/api/mcp/asset/yyyy'
+       → 모든 https://www.figma.com/api/mcp/asset/ URL을 수집
+
+     Step 2-b: 각 URL을 WebFetch로 다운로드 → Bash로 파일 저장
+       다운로드 명령 예시:
+         Bash: curl -L "https://www.figma.com/api/mcp/asset/xxxx" -o static/images/{feature}/hero-bg.webp
+       또는 WebFetch 후 Write로 저장
+       파일명: 변수명/레이어명 기반 kebab-case (heroImage → hero-bg.webp)
+
+     Step 2-c: URL→로컬경로 매핑 테이블 생성
+       | 변수명 | Figma URL | 로컬 경로 |
+       |--------|-----------|----------|
+       | heroImage | https://figma.com/api/mcp/asset/xxxx | /images/{feature}/hero-bg.webp |
+       | bgImage | https://figma.com/api/mcp/asset/yyyy | /images/{feature}/section-bg.webp |
+
+     Step 2-d: 다운로드 검증
+       → 파일이 실제로 존재하는지 Bash: ls -la static/images/{feature}/
+       → 누락된 파일이 있으면 재다운로드
+       → 0byte 파일 체크 (다운로드 실패)
 
   3. 스크린샷 분석 + ⚠️ 스케일 팩터 적용:
      → 레이아웃 (flex/grid 방향, 정렬)
      → 색상 (배경, 텍스트, 보더) — 스케일 불필요
      → 타이포 (크기, 굵기, 줄간격) — ⚠️ 스케일 팩터 적용
      → 간격 (padding, gap, margin) — ⚠️ 스케일 팩터 적용
-     → 배경 이미지 구조 (Multi-Layer: Bg/Overlay/Content)
+     → ⚠️ 배경 이미지 분류 (아래 참조)
 
-     ⚠️ Figma 값을 코드에 넣을 때 반드시 scaleFactor 적용:
+     스케일 팩터:
        코드 값 = Figma 추출 값 × scaleFactor
-       예: Figma font-size 48px × 0.75 (PC) = 36px
-       예: Figma padding 60px × 0.667 (Mobile) = 40px
        scaleFactor는 Step A의 storyboardSpec.scaleFactor에서 참조
-       스토리보드 없으면 디폴트: PC 0.75 (1920/2560), Mobile 0.667 (480/720)
+       디폴트: PC 0.75 (1920/2560), Mobile 0.667 (480/720)
 
-  4. component 파일에 반영 (Edit 도구):
+  4. ⛔ 배경 이미지 분류 + Multi-Layer 패턴 적용:
+
+     섹션에 배경 이미지가 있으면 반드시 Multi-Layer 구조로 작성:
+
+     <template>:
+       <section class="{section}Section">
+         <div class="{section}Bg" />               ← 배경 이미지 (z-index: 0)
+         <div class="{section}BgOverlay" />         ← 오버레이 (z-index: 1, 선택)
+         <div class="{section}Content">             ← 콘텐츠 (z-index: 최상위)
+           ...실제 UI...
+         </div>
+       </section>
+
+     <style> (layout/{section}.scss):
+       .{section}Section { position: relative; overflow: hidden; }
+       .{section}Bg {
+         position: absolute; inset: 0; z-index: 0;
+         background-image: url('/images/{feature}/{image-name}.webp');
+         background-size: cover;
+         background-position: center;
+       }
+       .{section}BgOverlay {
+         position: absolute; inset: 0; z-index: 1;
+         background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+       }
+       .{section}Content { position: relative; z-index: 2; }
+
+     배경이 없는 섹션은 Multi-Layer 불필요 — 일반 구조 사용.
+
+  5. component 파일에 반영 (Edit 도구):
      → <template> 안의 placeholder를 실제 마크업으로 교체
+     → 배경 이미지 있는 섹션은 Multi-Layer 구조 적용
      → <style> 블록에 스케일 적용된 스타일 작성
-     → 이미지 경로를 로컬 경로로 교체
+     → 이미지 src를 매핑 테이블의 로컬 경로로 설정
      → Step A의 기능 주석과 핸들러는 보존
+     → ⚠️ Figma 임시 URL(figma.com/api/mcp/asset/)이 코드에 남으면 안 됨
 ```
 
 ## Phase 4: 뷰포트 모드에 따른 스타일 적용
