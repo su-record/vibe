@@ -278,6 +278,55 @@ Additional: `llm-orchestrate.js`, `codex-review-gate.js`, `codex-detect.js`, `se
 
 ---
 
+## Figma → Code Pipeline
+
+Design-to-code with responsive support and design skill integration.
+
+```bash
+# Single design
+vibe figma setup <token>
+vibe figma extract "https://figma.com/design/ABC/Project?node-id=1-2"
+# then in Claude Code:
+/vibe.figma "url"
+
+# Responsive (mobile + desktop)
+vibe figma extract "mobile-url" "desktop-url"
+/vibe.figma "mobile-url" "desktop-url"
+```
+
+### What It Does
+
+| Phase | Description |
+|-------|-------------|
+| **Extract** | Figma API → `layers.json` + `frame.png` + `assets/` (background images) |
+| **Analyze** | Image-first analysis → viewport diff table (responsive mode) |
+| **Generate** | Stack-aware code (React/Vue/Svelte/SCSS/Tailwind) + design tokens |
+| **Integrate** | Maps to project's existing design system (MASTER.md, design-context.json) |
+
+### Responsive Design
+
+Auto-detected when 2+ URLs provided. Generates fluid scaling with `clamp()` for typography/spacing, `@media` only for layout structure changes.
+
+| Config | Default | Description |
+|--------|---------|-------------|
+| `breakpoint` | 1024px | PC↔Mobile boundary |
+| `pcTarget` | 1920px | PC main target resolution |
+| `mobileMinimum` | 360px | Minimum mobile viewport |
+| `designPc` | 2560px | Figma PC artboard (2x) |
+| `designMobile` | 720px | Figma Mobile artboard (2x) |
+
+Customize: `vibe figma breakpoints --set breakpoint=768`
+
+### Design Skill Pipeline
+
+After code generation, chain design skills for quality assurance:
+
+```
+/vibe.figma → /design-normalize → /design-audit → /design-polish
+```
+
+---
+
 ## Quality Gates
 
 | Guard | Mechanism |
@@ -308,6 +357,7 @@ Additional: `llm-orchestrate.js`, `codex-review-gate.js`, `codex-detect.js`, `se
 | `/vibe.reason "problem"` | Systematic reasoning framework |
 | `/vibe.analyze` | Project analysis |
 | `/vibe.event` | Event automation |
+| `/vibe.figma "url"` | Figma design → production code (responsive, multi-URL) |
 | `/vibe.utils` | Utilities (E2E, diagrams, UI, session restore) |
 
 ---
@@ -342,6 +392,12 @@ vibe claude key|status|logout
 
 # External Skills
 vibe skills add <owner/repo>   # Install skills from skills.sh
+
+# Figma
+vibe figma setup <token>              # Set Figma access token
+vibe figma extract <url> [url...]     # Extract layers + images from Figma
+vibe figma breakpoints                # Show/set responsive breakpoints
+vibe figma status|logout
 
 # Channels
 vibe telegram setup|chat|status
