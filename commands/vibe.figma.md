@@ -57,6 +57,19 @@ When multiple URLs are provided:
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
+## Model Routing
+
+| Phase | Model | 이유 |
+|-------|-------|------|
+| Phase 0 (추출) | **Haiku / Sonnet** | MCP 호출 + 데이터 수집, 판단 불필요 |
+| Phase 1-2 (분석) | **Sonnet** | 이미지 비교 + 구조 파악 |
+| Phase 3 (감지) | **Haiku / Sonnet** | 파일 읽기 + 패턴 매칭 |
+| Phase 4-5 (토큰/마크업) | **Sonnet** | 토큰 매핑 + 시맨틱 판단 |
+| Phase 6 (코드 생성) | **Sonnet / Opus** | 스택 적응 + 반응형 로직, 복잡도에 따라 |
+| Phase 7-8 (매핑/리포트) | **Sonnet** | 토큰 매핑 + 보고서 |
+
+빠른 모델로 시작하고, 코드 생성 단계에서만 필요 시 상위 모델 사용.
+
 ## Phase 0: Figma Data Extraction
 
 **Skip this phase if `--local` flag is provided and `figma-output/` already exists.**
