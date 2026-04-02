@@ -125,20 +125,31 @@ Codex 미설치 시 자동 스킵 — Claude만으로 순차 생성.
 
 ### 0-0. 사용자 입력 수집
 
-아래 순서로 사용자에게 질문 (AskUserQuestion 사용):
+**AskUserQuestion을 사용하지 않는다.** 텍스트 메시지로 아래 양식을 출력하고, 사용자가 채팅으로 직접 입력하도록 안내:
 
 ```
-Step 1:
-  "📋 스토리보드 URL이 있나요? (없으면 Enter)"
-  → 입력됨: storyboardUrl 저장
-  → 빈 입력: storyboardUrl = null
+아래 형식으로 URL을 입력해주세요.
 
-Step 2:
-  "🎨 디자인 URL을 입력해주세요. (복수 입력 시 반응형 처리됩니다)"
-  → 1개: designUrls = [url]
-  → 2개+: designUrls = [url1, url2, ...] → responsive mode
+📋 스토리보드 (선택): 스토리보드 Figma URL (없으면 생략)
+🎨 디자인 (필수): 디자인 Figma URL (반응형이면 여러 줄)
 
-Step 3 (--new 미지정 시):
+입력 예시:
+📋 https://www.figma.com/design/ABC/Storyboard?node-id=1-109
+🎨 https://www.figma.com/design/ABC/Design?node-id=10-200
+🎨 https://www.figma.com/design/ABC/Design?node-id=10-500
+```
+
+**사용자 응답 파싱:**
+
+```
+응답에서 URL 추출 (figma.com/design/ 패턴 매칭):
+  - 📋 뒤 또는 "스토리보드" 키워드와 함께 있는 URL → storyboardUrl
+  - 🎨 뒤 또는 "디자인" 키워드와 함께 있는 URL → designUrls[]
+  - 키워드 없이 URL만 있으면 → 전부 designUrls[] (첫 번째가 디자인)
+  - URL이 1개면: single mode
+  - URL이 2개+ (📋 제외): responsive mode
+
+--new 미지정 시:
   프로젝트에 기존 디자인 시스템이 있는지 자동 감지
   → 있으면: default mode (기존 토큰 활용)
   → 없으면: 자동으로 --new mode
