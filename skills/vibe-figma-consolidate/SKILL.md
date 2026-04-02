@@ -5,7 +5,13 @@ triggers: []
 tier: standard
 ---
 
-# Skill: vibe-figma-consolidate — Step D: 최종 공통화 리팩토링
+# Skill: vibe-figma-consolidate — Step C: 최종 공통화 리팩토링
+
+> **⛔ 실행 지시: Edit 도구로 기존 파일을 실제 수정한다.**
+> - 토큰 통합: Edit으로 _tokens.scss 수정
+> - 중복 제거: Edit으로 중복 스타일/코드 통합
+> - variant 통합: Edit으로 유사 컴포넌트 합침
+> 분석만 보여주고 끝내면 안 됨.
 
 ## D-1. 스타일 공통화
 

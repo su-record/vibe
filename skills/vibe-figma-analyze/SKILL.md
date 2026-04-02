@@ -10,6 +10,10 @@ triggers: []
 스토리보드 URL 하나로 **실제 동작하는 레이아웃 코드**를 생성.
 빈 shell이 아니라, 스토리보드에서 파악 가능한 모든 정보를 코드에 반영.
 
+> **⛔ 실행 지시: 이 스킬은 분석만 하는 게 아님. 반드시 Write 도구로 파일을 생성해야 함.**
+> Phase 1~4에서 분석 → Phase 5에서 **Write 도구로 실제 파일 생성** → Phase 6에서 인터랙션 테이블 출력.
+> 분석 결과를 텍스트로 보여주기만 하면 안 됨. 파일이 디스크에 생성되어야 Step A 완료.
+
 ## 입력
 
 - 스토리보드 URL의 get_metadata 결과 (전체 프레임 목록)
@@ -107,10 +111,23 @@ Error: 에러 페이지 구조
   }
 ```
 
-## Phase 5: 실제 코드 생성 (빈 shell 아님)
+## Phase 5: 파일 생성 (Write 도구 사용 — 필수)
 
-스토리보드 분석 결과로 **실제 동작하는 레이아웃 코드** 생성.
+> **⛔ Write 도구로 아래 파일들을 실제로 생성한다. 코드를 보여주기만 하면 안 됨.**
+
+스토리보드 분석 결과로 **실제 동작하는 레이아웃 코드** 파일을 Write.
 스타일은 Step B에서 채우지만, **구조/로직/주석은 이 단계에서 완성**.
+
+### 생성할 파일 목록
+
+```
+필수 생성 (Write 도구):
+  1. pages/{feature-name}.vue (또는 .tsx)     ← 루트 페이지
+  2. components/{feature-name}/각섹션.vue      ← 섹션별 컴포넌트 (Phase 4에서 파악한 수만큼)
+  3. components/{feature-name}/popups/각팝업.vue ← 팝업 컴포넌트
+  4. styles/{feature-name}/index.scss          ← 스타일 진입점 (빈 import 목록)
+  5. styles/{feature-name}/_tokens.scss        ← 빈 토큰 파일 (Step B에서 채움)
+```
 
 ### 루트 페이지
 
