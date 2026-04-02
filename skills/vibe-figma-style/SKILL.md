@@ -48,38 +48,130 @@ tier: standard
   Tailwind → tailwind.config.* (extend)
 ```
 
-**Step 2: 피처명 기반 폴더 생성**
+**Step 2: 스타일 구조 — 모드별 분리**
 
 Figma 파일명에서 피처명 자동 추출 → kebab-case 변환.
 
+### 기본 모드 (기존 프로젝트에 추가)
+
 ```
-예: Figma 파일명 "PUBG 9주년 이벤트" → pubg-anniversary
+⚠️ 기존 스타일 구조를 먼저 분석하고 그대로 따른다.
+  1. Glob/Grep으로 기존 스타일 파일 패턴 탐색:
+     - 디렉토리 구조 (styles/, scss/, css/)
+     - 파일 네이밍 (BEM, camelCase, kebab-case)
+     - import 방식 (@use, @import, CSS Modules)
+     - 기존 변수/mixin 파일 위치
+  2. 기존 토큰/변수/mixin을 최대한 재사용
+  3. 새 컴포넌트 스타일만 기존 패턴대로 추가
+  4. 기존 스타일 파일을 수정하지 않음 (사이드이펙트 방지)
 
-Nuxt 프로젝트:
-  pages/pubg-anniversary.vue                      ← 루트 페이지
-  components/pubg-anniversary/
-    HeroSection.vue                                ← 섹션 컴포넌트
-    EventSection.vue
-    RewardSection.vue
-    ...
-  assets/scss/_pubg-anniversary-tokens.scss        ← 피처별 토큰
+예: 기존 프로젝트가 assets/scss/ 구조를 쓰면:
+  assets/scss/_variables.scss          ← 기존 (수정 안 함)
+  assets/scss/_mixins.scss             ← 기존 (재사용)
+  assets/scss/pages/
+    _winter-pcbang.scss                ← 새 피처 스타일 (기존 패턴 따름)
 
-React + Next.js 프로젝트:
-  app/pubg-anniversary/page.tsx                    ← 루트 페이지
-  components/pubg-anniversary/
-    HeroSection.tsx
-    HeroSection.module.css (or .module.scss)
-    EventSection.tsx
-    ...
-  styles/pubg-anniversary-tokens.css               ← 피처별 토큰
+예: 기존 프로젝트가 CSS Modules를 쓰면:
+  components/winter-pcbang/
+    HeroSection.module.scss            ← 기존 패턴대로
+    DailyCheckIn.module.scss
+```
 
-Default mode 차이점:
-  → 토큰 파일에서 기존 MASTER.md / 프로젝트 토큰 참조
-  → 새 토큰만 추가
+### --new 모드 (새 피처, 자체 완결)
 
---new mode 차이점:
-  → 토큰 파일이 자체 완결 (외부 의존 없음)
-  → 다른 프로젝트에 폴더째 복사 가능
+```
+피처 전용 스타일 폴더를 생성하고, 글로벌 + 컴포넌트별 2-tier 구조:
+
+styles/{feature-name}/
+  index.scss                  ← 진입점 (아래 파일 전부 import)
+  _tokens.scss                ← 피처 전용 토큰 (색상, 타이포, 간격)
+  _mixins.scss                ← 피처 전용 mixin (breakpoint, fluid)
+  _base.scss                  ← 피처 공통 (reset, 폰트, 기본 레이아웃)
+
+  // 섹션별 스타일
+  _hero.scss                  ← HeroSection 전용
+  _daily-checkin.scss         ← DailyCheckInSection 전용
+  _play-time-mission.scss     ← PlayTimeMissionSection 전용
+  _token-exchange.scss        ← TokenExchangeSection 전용
+  _token-raffle.scss          ← TokenRaffleSection 전용
+  _caution.scss               ← CautionSection 전용
+
+  // 재사용 컴포넌트별 스타일
+  _card.scss                  ← 보상 카드, 상품 카드 등 공통 카드
+  _button.scss                ← CTA 버튼, 출석 버튼, 교환 버튼
+  _badge.scss                 ← 상태 배지 (완료, 진행중, 잠금)
+  _progress.scss              ← 프로그레스 바, 타임 게이지
+  _popups.scss                ← 팝업/모달 공통 (오버레이, 컨텐츠)
+  _tooltip.scss               ← 툴팁, 안내 말풍선
+
+index.scss 내용:
+  // 기반
+  @use 'tokens';
+  @use 'mixins';
+  @use 'base';
+
+  // 재사용 컴포넌트
+  @use 'card';
+  @use 'button';
+  @use 'badge';
+  @use 'progress';
+  @use 'popups';
+  @use 'tooltip';
+
+  // 섹션
+  @use 'hero';
+  @use 'daily-checkin';
+  @use 'play-time-mission';
+  @use 'token-exchange';
+  @use 'token-raffle';
+  @use 'caution';
+
+각 컴포넌트 스타일 파일 규칙:
+  - @use '../tokens' as t; 로 토큰 참조
+  - @use '../mixins' as m; 로 mixin 참조
+  - 해당 섹션의 클래스만 정의 (다른 섹션 스타일 금지)
+  - 역할 기반 클래스 네이밍 (Phase 4-4 규칙 적용)
+  - 배경 이미지는 별도 클래스 (Multi-Layer 패턴)
+
+_tokens.scss 내용:
+  $feature-primary: #xxx;
+  $feature-text: #xxx;
+  $feature-bp: 1024px;
+  @function fluid($min, $max) { ... }
+  // 자체 완결 — 외부 의존 없음
+
+이 폴더째 다른 프로젝트에 복사 가능.
+```
+
+### 컴포넌트 ↔ 스타일 파일 매핑 규칙
+
+```
+두 종류의 스타일 파일이 필요:
+
+1. 섹션 스타일 — 페이지의 각 영역
+   | 컴포넌트 | --new 모드 | 기본 모드 |
+   |---------|-----------|---------|
+   | HeroSection.vue | _hero.scss | 기존 패턴 따름 |
+   | DailyCheckIn.vue | _daily-checkin.scss | 기존 패턴 따름 |
+   | CautionSection.vue | _caution.scss | 기존 패턴 따름 |
+
+2. 재사용 컴포넌트 스타일 — 여러 섹션에서 공통 사용
+   | 패턴 | --new 모드 | 용도 |
+   |------|-----------|------|
+   | 카드 (보상, 상품, 아이템) | _card.scss | 그리드 아이템, 리스트 아이템 |
+   | 버튼 (CTA, 출석, 교환) | _button.scss | 액션 트리거 |
+   | 배지 (상태 표시) | _badge.scss | 완료/진행중/잠금 표시 |
+   | 프로그레스 | _progress.scss | 게이지, 달성도 |
+   | 팝업/모달 | _popups.scss | 확인, 상세, 입력 |
+
+재사용 컴포넌트 감지 방법:
+  → 디자인 프레임에서 2회 이상 반복되는 시각 패턴
+  → 같은 구조 + 다른 데이터 → 하나의 스타일 파일 + variant
+
+vibe-figma-frame에서 프레임별 추출 시:
+  → 섹션 스타일 파일에 해당 섹션 스타일 작성
+  → 반복 패턴 발견 시 재사용 컴포넌트 스타일 파일로 분리
+  → 토큰에 새 값 추가 (중복 시 기존 토큰 재사용)
 ```
 
 ### 4-2. Token File Format
