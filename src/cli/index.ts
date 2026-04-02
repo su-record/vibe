@@ -27,7 +27,7 @@ import {
   telegramSetup, telegramChat, telegramStatus, telegramHelp,
   slackSetup, slackChannel, slackStatus, slackHelp,
   skillsAdd,
-  figmaSetup, figmaExtract, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp,
+  figmaSetup, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -308,20 +308,6 @@ Example: vibe skills add vercel-labs/skills
     switch (figmaSub) {
       case 'setup':
         figmaSetup(positionalArgs[2]);
-        break;
-      case 'extract':
-        (async () => {
-          const outputFlag = args.indexOf('--output');
-          const outputDir = outputFlag >= 0 ? args[outputFlag + 1] : undefined;
-          // Collect all URL args (positionalArgs[2..N], excluding --output and its value)
-          const extractUrls = positionalArgs.slice(2).filter(
-            (a) => a !== '--output' && a !== outputDir,
-          );
-          await figmaExtract(
-            extractUrls.length > 0 ? extractUrls : undefined,
-            outputDir,
-          );
-        })();
         break;
       case 'breakpoints': {
         const setFlag = args.indexOf('--set');

@@ -283,14 +283,10 @@ Additional: `llm-orchestrate.js`, `codex-review-gate.js`, `codex-detect.js`, `se
 Design-to-code with responsive support and design skill integration.
 
 ```bash
-# Single design
-vibe figma setup <token>
-vibe figma extract "https://figma.com/design/ABC/Project?node-id=1-2"
-# then in Claude Code:
-/vibe.figma "url"
+# Single design (MCP plugin handles auth — no token setup needed)
+/vibe.figma "https://figma.com/design/ABC/Project?node-id=1-2"
 
 # Responsive (mobile + desktop)
-vibe figma extract "mobile-url" "desktop-url"
 /vibe.figma "mobile-url" "desktop-url"
 ```
 
@@ -298,7 +294,7 @@ vibe figma extract "mobile-url" "desktop-url"
 
 | Phase | Description |
 |-------|-------------|
-| **Extract** | Figma API → `layers.json` + `frame.png` + `assets/` (background images) |
+| **Extract** | MCP plugin → design context + screenshot + metadata (no token needed) |
 | **Analyze** | Image-first analysis → viewport diff table (responsive mode) |
 | **Generate** | Stack-aware code (React/Vue/Svelte/SCSS/Tailwind) + design tokens |
 | **Integrate** | Maps to project's existing design system (MASTER.md, design-context.json) |
@@ -394,10 +390,8 @@ vibe claude key|status|logout
 vibe skills add <owner/repo>   # Install skills from skills.sh
 
 # Figma
-vibe figma setup <token>              # Set Figma access token
-vibe figma extract <url> [url...]     # Extract layers + images from Figma
 vibe figma breakpoints                # Show/set responsive breakpoints
-vibe figma status|logout
+vibe figma status|logout              # Token management (MCP fallback only)
 
 # Channels
 vibe telegram setup|chat|status
