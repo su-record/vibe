@@ -1,57 +1,84 @@
 ---
 description: Figma design to code — extract + generate in one step
-argument-hint: "figma-url" ["figma-url-2"] [--new]
+argument-hint: ""
 ---
 
 # /vibe.figma
 
-Extract Figma design data and generate production-ready component code, tailored to the project's tech stack.
+Figma 디자인 + 스토리보드 → 프로덕션 코드. 인터랙티브 방식으로 URL을 입력받아 처리.
 
 ## Usage
 
 ```
-/vibe.figma "url"                                    # Single design → project integrated (default)
-/vibe.figma "mobile-url" "desktop-url"               # Responsive — auto-detect viewport from frame width
-/vibe.figma "url" --new                          # New feature — self-contained tokens, no existing design system dependency
-/vibe.figma --local                                   # Skip extraction, use existing figma-output/
+/vibe.figma                  # 인터랙티브 모드 (URL 입력 프롬프트)
+/vibe.figma --new            # 새 피처 모드 (기존 디자인 시스템 무시)
+```
+
+커맨드 실행 시 아래 순서로 사용자에게 질문:
+
+```
+1. 📋 스토리보드 URL이 있나요? (선택)
+   → 브레이크포인트, 인터랙션, 애니메이션 스펙 추출
+   → 없으면 Enter (디폴트 브레이크포인트 사용)
+
+2. 🎨 디자인 URL을 입력해주세요. (필수, 복수 가능)
+   → 1개: 단일 디자인
+   → 2개 이상: 반응형 (프레임 width로 mobile/desktop 자동 감지)
+   → 각 URL은 줄바꿈 또는 공백으로 구분
+```
+
+### 입력 예시
+
+```
+📋 스토리보드 URL (선택, 없으면 Enter):
+> https://www.figma.com/design/ABC/Storyboard?node-id=1-109
+
+🎨 디자인 URL (필수, 복수 시 줄바꿈):
+> https://www.figma.com/design/ABC/Design?node-id=10-200
+> https://www.figma.com/design/ABC/Design?node-id=10-500
 ```
 
 ### Generation Mode
 
-| Flag | Behavior |
-|------|----------|
-| _(default)_ | **Project integration.** Use project's design system, existing tokens, component patterns. Place files in project's component directory. |
-| `--new` | **New feature.** Self-contained tokens + components in project structure. No dependency on existing design system. Portable across projects. |
-| _(multi URL)_ | **Responsive mode.** Auto-detected when 2+ URLs provided. Compares designs across viewports and generates responsive code with fluid scaling. |
+| Mode | 조건 | 동작 |
+|------|------|------|
+| **Project integration** | 기본값 | 기존 디자인 시스템/토큰 활용, 프로젝트 컨벤션 준수 |
+| **--new** | 플래그 지정 시 | 자체 완결 토큰 + 컴포넌트, 기존 디자인 시스템 무관 |
+| **Responsive** | 디자인 URL 2개 이상 | 자동 감지, fluid clamp() + @media 생성 |
 
-### Responsive Mode
+### 스토리보드에서 추출하는 정보
 
-When multiple URLs are provided:
-1. CLI extracts each URL → `figma-output/` with numbered files (`layers.1.json`, `frame.1.png`, etc.)
-2. Frame width auto-detects viewport: ≤480px = mobile, ≤1024px = tablet, >1024px = desktop
-3. `responsive.json` manifest maps each viewport to its files
-4. Code generation produces a **single component** with breakpoint-aware styles
+| 항목 | 활용 Phase |
+|------|-----------|
+| 브레이크포인트 / 해상도 가이드 | Phase 3 (breakpoints 오버라이드) |
+| 인터랙션 스펙 (호버, 클릭, 스크롤) | Phase 6 (이벤트 핸들러 + CSS states) |
+| 애니메이션 스펙 (타이밍, 이징) | Phase 6 (transition/animation) |
+| 상태별 UI (로딩, 에러, 성공, 빈 상태) | Phase 6 (조건부 렌더링) |
+| 반응형 동작 설명 | Phase 6-3 (responsive 코드) |
+| 컬러/타이포 가이드 | Phase 4 (토큰 생성) |
+| 컴포넌트 명세 | Phase 5 (마크업 구조) |
 
-## File Reading Policy (Mandatory)
+### File Reading Policy
 
-### Single design
-- **Screenshot first**: `get_design_context` 결과의 스크린샷을 먼저 분석
-- **Then metadata**: `get_metadata` 결과로 레이어 구조 파악
+**스토리보드 있을 때:**
+1. 스토리보드 `get_metadata` → 전체 프레임 목록 파악
+2. 관련 섹션별 `get_design_context` → 스펙 정보 추출
+3. 디자인 URL별 `get_design_context` + `get_screenshot` → 비주얼 + 코드
 
-### Responsive mode (multiple URLs)
-- **All screenshots**: 각 URL의 `get_screenshot` 결과를 side-by-side 비교
-- **All metadata**: 각 URL의 `get_metadata` 결과에서 per-viewport 토큰 추출
+**스토리보드 없을 때:**
+1. 디자인 URL별 `get_design_context` + `get_screenshot` → 비주얼 + 코드
+2. 디폴트 브레이크포인트 적용
 
-### Always
-- **Project config**: Read `.claude/vibe/config.json` to determine tech stack
-- **Design context**: Read `.claude/vibe/design-context.json` if it exists (brand, tokens, theme)
-- **Existing code**: Scan project for existing component patterns, theme config, design system
+**항상:**
+- `.claude/vibe/config.json` → 프로젝트 스택
+- `.claude/vibe/design-context.json` → 브랜드, 토큰, 테마
+- 기존 코드 스캔 → 컴포넌트 패턴, 디자인 시스템
 
 ## Context Reset
 
-**When this command runs, previous conversation is ignored.**
-- Start fresh from the extracted Figma data
-- Base all decisions on the design image + layer data + project stack
+**이 커맨드 실행 시 이전 대화 무시.**
+- Figma 데이터 + 프로젝트 스택 기반으로 판단
+- 스토리보드 스펙이 디자인과 충돌 시 → 스토리보드 우선
 
 ---
 
@@ -94,34 +121,72 @@ Post — 코드 리뷰:
 Codex 미설치 시 자동 스킵 — Claude만으로 순차 생성.
 ```
 
-## Phase 0: Figma Data Extraction
+## Phase 0: URL 입력 + Figma Data Extraction
 
-**Skip this phase if `--local` flag is provided and `figma-output/` already exists.**
+### 0-0. 사용자 입력 수집
 
-### 0-1. Extract via MCP (토큰 불필요)
-
-Figma MCP 플러그인이 자체 인증을 처리하므로 별도 토큰 설정이 필요 없음.
-
-**URL에서 fileKey와 nodeId 추출:**
+아래 순서로 사용자에게 질문 (AskUserQuestion 사용):
 
 ```
-https://www.figma.com/design/:fileKey/:fileName?node-id=:nodeId
-  → fileKey, nodeId (하이픈을 콜론으로: "110-6231" → "110:6231")
+Step 1:
+  "📋 스토리보드 URL이 있나요? (없으면 Enter)"
+  → 입력됨: storyboardUrl 저장
+  → 빈 입력: storyboardUrl = null
+
+Step 2:
+  "🎨 디자인 URL을 입력해주세요. (복수 입력 시 반응형 처리됩니다)"
+  → 1개: designUrls = [url]
+  → 2개+: designUrls = [url1, url2, ...] → responsive mode
+
+Step 3 (--new 미지정 시):
+  프로젝트에 기존 디자인 시스템이 있는지 자동 감지
+  → 있으면: default mode (기존 토큰 활용)
+  → 없으면: 자동으로 --new mode
 ```
 
-**Single URL:**
+### 0-1. 스토리보드 추출 (storyboardUrl이 있을 때)
+
+스토리보드에서 **구현 스펙**을 먼저 추출. 이후 Phase에서 참조.
 
 ```
-1. get_design_context(fileKey, nodeId) → 코드 + 스크린샷 + 메타데이터 + 에셋 URL
-2. get_metadata(fileKey, nodeId) → 레이어 구조 (XML)
-3. get_screenshot(fileKey, nodeId) → 프레임 이미지
+URL에서 fileKey, nodeId 추출:
+  https://www.figma.com/design/:fileKey/:fileName?node-id=:nodeId
+  → nodeId: 하이픈을 콜론으로 ("1-109" → "1:109")
+
+1. get_metadata(fileKey, nodeId) → 전체 프레임 목록 (섹션 파악)
+2. 관련 섹션별 get_design_context:
+   - "해상도 대응" / "Media Query" → 브레이크포인트
+   - "인터랙션" / "Interaction" → 호버/클릭/스크롤 스펙
+   - "애니메이션" / "Animation" / "Motion" → 트랜지션 스펙
+   - "상태" / "State" → 로딩/에러/성공 UI
+   - "컬러" / "Color" / "타이포" / "Typography" → 디자인 가이드
+
+결과 → storyboardSpec 객체에 저장:
+  {
+    breakpoints: { ... },       // 브레이크포인트 오버라이드
+    interactions: [ ... ],      // 인터랙션 목록
+    animations: [ ... ],        // 애니메이션 스펙
+    states: [ ... ],            // UI 상태 목록
+    colorGuide: { ... },        // 컬러 가이드
+    typographyGuide: { ... }    // 타이포 가이드
+  }
 ```
 
-**Multiple URLs (responsive mode):**
+### 0-2. 디자인 추출 (MCP)
+
+각 디자인 URL에 대해 MCP로 추출:
 
 ```
-각 URL에 대해 위 과정 반복, 결과를 뷰포트별로 구분하여 분석.
-프레임 width로 mobile/tablet/desktop 자동 감지.
+URL에서 fileKey, nodeId 추출 (동일 방식)
+
+각 URL에 대해:
+  1. get_design_context(fileKey, nodeId) → 코드 + 스크린샷 + 메타데이터 + 에셋 URL
+  2. get_metadata(fileKey, nodeId) → 레이어 구조 (XML)
+  3. get_screenshot(fileKey, nodeId) → 프레임 이미지
+
+디자인 URL이 2개 이상이면:
+  → 프레임 width로 viewport 자동 감지 (mobile/tablet/desktop)
+  → responsive mode 진입
 ```
 
 ### 0-2. Image Asset Extraction (필수)
@@ -333,9 +398,9 @@ Breakpoints are loaded from multiple sources in priority order:
 
 | Priority | Source | How |
 |----------|--------|-----|
-| 1 | **`~/.vibe/config.json`** | `figma.breakpoints` — user-customized via `vibe figma breakpoints --set` |
-| 2 | **Project CSS/Tailwind** | Grep `tailwind.config.*` → `theme.screens`, or `@media.*min-width` patterns in codebase |
-| 3 | **`responsive.json`** | Breakpoints embedded by CLI extract (from config at extraction time) |
+| 1 | **Storyboard** | Phase 0-1에서 추출한 `storyboardSpec.breakpoints` |
+| 2 | **`~/.vibe/config.json`** | `figma.breakpoints` — user-customized via `vibe figma breakpoints --set` |
+| 3 | **Project CSS/Tailwind** | Grep `tailwind.config.*` → `theme.screens`, or `@media.*min-width` patterns in codebase |
 | 4 | **Defaults** | Built-in values (breakpoint: 1024px, etc.) |
 
 #### Default Breakpoints (built-in)
@@ -1030,9 +1095,20 @@ Max props: 5 per component
 
 ## Phase 6: Code Generation
 
-### 6-0. Apply Design Context (from Phase 3-2)
+### 6-0. Apply Storyboard Spec + Design Context
 
-If `design-context.json` was loaded, apply these rules to ALL generated code:
+**스토리보드 스펙 (Phase 0-1)이 있으면 우선 적용:**
+
+| storyboardSpec | Effect on Code Generation |
+|----------------|--------------------------|
+| `interactions` | 호버/클릭/스크롤 이벤트 → CSS `:hover`/`:active`/`:focus` + JS 핸들러 |
+| `animations` | 트랜지션/애니메이션 → `transition`, `@keyframes`, timing/easing 스펙대로 |
+| `states` | 로딩/에러/성공/빈 상태 → 조건부 렌더링 + 상태별 UI 컴포넌트 |
+| `breakpoints` | Phase 3-3에서 이미 적용됨 |
+| `colorGuide` | 스토리보드 컬러 가이드 → 토큰 검증 |
+| `typographyGuide` | 스토리보드 타이포 가이드 → 토큰 검증 |
+
+**design-context.json이 있으면 추가 적용:**
 
 | Context Field | Effect on Code Generation |
 |---------------|--------------------------|
