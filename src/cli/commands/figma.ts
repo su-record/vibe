@@ -11,12 +11,27 @@ import {
   readGlobalConfig,
   patchGlobalConfig,
 } from '../../infra/lib/config/GlobalConfigManager.js';
-import type { FigmaCredentials } from '../types.js';
+import type { FigmaBreakpoints, FigmaCredentials } from '../types.js';
 
 const FIGMA_API_BASE = 'https://api.figma.com/v1';
 
+const DEFAULT_BREAKPOINTS: FigmaBreakpoints = {
+  breakpoint: 1024,
+  pcTarget: 1920,
+  mobilePortrait: 480,
+  mobileMinimum: 360,
+  designPc: 2560,
+  designMobile: 720,
+};
+
 function loadFigmaConfig(): FigmaCredentials | null {
   return readGlobalConfig().credentials?.figma ?? null;
+}
+
+function loadBreakpoints(): FigmaBreakpoints {
+  const userBp = readGlobalConfig().figma?.breakpoints;
+  if (!userBp) return DEFAULT_BREAKPOINTS;
+  return { ...DEFAULT_BREAKPOINTS, ...userBp };
 }
 
 function getFigmaToken(): string | null {
@@ -62,15 +77,16 @@ async function extractLayers(
   nodeId: string | null,
   token: string,
 ): Promise<unknown> {
-  const endpoint = nodeId
-    ? `/files/${fileKey}/nodes?ids=${nodeId.replace('-', ':')}`
+  const canonicalId = nodeId?.replaceAll('-', ':') ?? null;
+  const endpoint = canonicalId
+    ? `/files/${fileKey}/nodes?ids=${canonicalId}`
     : `/files/${fileKey}`;
 
   const data = await figmaFetch(endpoint, token) as Record<string, unknown>;
 
-  if (nodeId) {
+  if (canonicalId) {
     const nodes = data.nodes as Record<string, unknown> | undefined;
-    return nodes?.[nodeId.replace('-', ':')] ?? data;
+    return nodes?.[canonicalId] ?? data;
   }
   return (data as Record<string, unknown>).document ?? data;
 }
@@ -83,10 +99,11 @@ async function renderImage(
   nodeId: string | null,
   token: string,
   outputDir: string,
+  filename: string = 'frame.png',
 ): Promise<string | null> {
   if (!nodeId) return null;
 
-  const id = nodeId.replace('-', ':');
+  const id = nodeId.replaceAll('-', ':');
   const data = await figmaFetch(
     `/images/${fileKey}?ids=${id}&format=png&scale=2`,
     token,
@@ -102,10 +119,101 @@ async function renderImage(
   }
 
   const buffer = Buffer.from(await imgRes.arrayBuffer());
-  const imgPath = path.join(outputDir, 'frame.png');
+  const imgPath = path.join(outputDir, filename);
   fs.writeFileSync(imgPath, buffer);
 
   return imgPath;
+}
+
+/**
+ * Collect all imageRef values from Figma layer data recursively.
+ */
+function collectImageRefs(node: unknown, refs: Set<string> = new Set<string>()): Set<string> {
+  if (!node || typeof node !== 'object') return refs;
+  const obj = node as Record<string, unknown>;
+
+  const fills = obj.fills as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(fills)) {
+    for (const fill of fills) {
+      if (fill.type === 'IMAGE' && typeof fill.imageRef === 'string') {
+        refs.add(fill.imageRef);
+      }
+    }
+  }
+
+  const children = obj.children as unknown[] | undefined;
+  if (Array.isArray(children)) {
+    for (const child of children) {
+      collectImageRefs(child, refs);
+    }
+  }
+  return refs;
+}
+
+/**
+ * Download image fills from Figma file and save to assets/ directory.
+ */
+async function extractImageFills(
+  fileKey: string,
+  imageRefs: Set<string>,
+  token: string,
+  outputDir: string,
+): Promise<number> {
+  if (imageRefs.size === 0) return 0;
+
+  const data = await figmaFetch(
+    `/files/${fileKey}/images`,
+    token,
+  ) as Record<string, unknown>;
+
+  const meta = data.meta as Record<string, string> | undefined;
+  if (!meta) return 0;
+
+  const assetsDir = path.join(outputDir, 'assets');
+  if (!fs.existsSync(assetsDir)) {
+    fs.mkdirSync(assetsDir, { recursive: true });
+  }
+
+  let count = 0;
+  for (const ref of imageRefs) {
+    const imageUrl = meta[ref];
+    if (!imageUrl) continue;
+
+    try {
+      const res = await fetch(imageUrl);
+      if (!res.ok) continue;
+
+      const contentType = res.headers.get('content-type') ?? '';
+      const buffer = Buffer.from(await res.arrayBuffer());
+      const ext = contentType.includes('png') ? 'png'
+        : contentType.includes('svg') ? 'svg'
+        : contentType.includes('webp') ? 'webp'
+        : 'jpg';
+      const filePath = path.join(assetsDir, `${ref}.${ext}`);
+      fs.writeFileSync(filePath, buffer);
+      count++;
+    } catch {
+      // Skip failed downloads silently
+    }
+  }
+  return count;
+}
+
+/**
+ * Detect viewport class from Figma layer data.
+ * Uses the root frame's absoluteBoundingBox width and project breakpoints.
+ */
+function detectViewport(layers: unknown): { width: number; label: string } {
+  const node = layers as Record<string, unknown>;
+  const doc = (node.document ?? node) as Record<string, unknown>;
+  const bbox = doc.absoluteBoundingBox as { width?: number } | undefined;
+  const width = bbox?.width ?? 0;
+  const bp = loadBreakpoints();
+
+  if (width > 0 && width <= bp.mobilePortrait) return { width, label: 'mobile' };
+  if (width > bp.mobilePortrait && width <= bp.breakpoint) return { width, label: 'tablet' };
+  if (width > bp.breakpoint) return { width, label: 'desktop' };
+  return { width, label: 'unknown' };
 }
 
 /**
@@ -173,12 +281,74 @@ export function figmaLogout(): void {
 }
 
 /**
- * vibe figma extract <url> [--output <dir>]
+ * Extract a single Figma URL into the given directory.
+ * Returns the detected viewport info.
  */
-export async function figmaExtract(url?: string, outputDir?: string): Promise<void> {
-  if (!url) {
-    console.log('Usage: vibe figma extract <figma-url> [--output <dir>]');
-    console.log('  Example: vibe figma extract "https://www.figma.com/design/ABC123/MyProject?node-id=1-2"');
+async function extractSingle(
+  url: string,
+  token: string,
+  outputDir: string,
+  prefix: string = '',
+): Promise<{ viewport: { width: number; label: string } }> {
+  const { fileKey, nodeId } = parseFigmaUrl(url);
+  console.log(`File key: ${fileKey}, Node ID: ${nodeId ?? 'entire file'}`);
+
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  console.log('Extracting layer data...');
+  const layers = await extractLayers(fileKey, nodeId, token);
+  const layersFile = prefix ? `layers.${prefix}.json` : 'layers.json';
+  const layersPath = path.join(outputDir, layersFile);
+  fs.writeFileSync(layersPath, JSON.stringify(layers, null, 2));
+  console.log(`Layers saved: ${layersPath}`);
+
+  const viewport = detectViewport(layers);
+
+  if (nodeId) {
+    console.log('Rendering frame image...');
+    const imgFile = prefix ? `frame.${prefix}.png` : 'frame.png';
+    const imgPath = await renderImage(fileKey, nodeId, token, outputDir, imgFile);
+    if (imgPath) {
+      console.log(`Image saved: ${imgPath}`);
+    } else {
+      console.log('Image rendering skipped (no image URL returned)');
+    }
+  } else {
+    console.log('Image rendering skipped (specify node-id for frame image)');
+  }
+
+  // Extract image fills (background images, content images, etc.)
+  const imageRefs = collectImageRefs(layers);
+  if (imageRefs.size > 0) {
+    console.log(`Extracting ${imageRefs.size} image fill(s)...`);
+    const downloaded = await extractImageFills(fileKey, imageRefs, token, outputDir);
+    console.log(`Image assets saved: ${downloaded}/${imageRefs.size} → ${outputDir}/assets/`);
+  }
+
+  return { viewport };
+}
+
+interface ViewportEntry {
+  url: string;
+  label: string;
+  width: number;
+  layersFile: string;
+  frameFile: string;
+}
+
+/**
+ * vibe figma extract <url...> [--output <dir>]
+ *
+ * Single URL:   vibe figma extract "url"
+ * Multi URL:    vibe figma extract "mobile-url" "desktop-url"
+ */
+export async function figmaExtract(urls?: string[], outputDir?: string): Promise<void> {
+  if (!urls || urls.length === 0) {
+    console.log('Usage: vibe figma extract <figma-url> [figma-url...] [--output <dir>]');
+    console.log('  Single:  vibe figma extract "url"');
+    console.log('  Multi:   vibe figma extract "mobile-url" "desktop-url"');
     return;
   }
 
@@ -194,39 +364,102 @@ export async function figmaExtract(url?: string, outputDir?: string): Promise<vo
   const resolvedOutput = outputDir ?? path.join(process.cwd(), 'figma-output');
 
   try {
-    const { fileKey, nodeId } = parseFigmaUrl(url);
-    console.log(`File key: ${fileKey}, Node ID: ${nodeId ?? 'entire file'}`);
-
-    if (!fs.existsSync(resolvedOutput)) {
-      fs.mkdirSync(resolvedOutput, { recursive: true });
+    if (urls.length === 1) {
+      // Single URL — backward compatible
+      const { viewport } = await extractSingle(urls[0], token, resolvedOutput);
+      console.log(`Viewport detected: ${viewport.label} (${viewport.width}px)`);
+      console.log(`\nDone! Output: ${resolvedOutput}`);
+      console.log('Next: Run /vibe.figma in Claude Code to generate components');
+      return;
     }
 
-    // Extract layers
-    console.log('Extracting layer data...');
-    const layers = await extractLayers(fileKey, nodeId, token);
-    const layersPath = path.join(resolvedOutput, 'layers.json');
-    fs.writeFileSync(layersPath, JSON.stringify(layers, null, 2));
-    console.log(`Layers saved: ${layersPath}`);
+    // Multiple URLs — responsive mode
+    console.log(`Extracting ${urls.length} designs for responsive mode...\n`);
+    const viewports: ViewportEntry[] = [];
 
-    // Render image
-    if (nodeId) {
-      console.log('Rendering frame image...');
-      const imgPath = await renderImage(fileKey, nodeId, token, resolvedOutput);
-      if (imgPath) {
-        console.log(`Image saved: ${imgPath}`);
-      } else {
-        console.log('Image rendering skipped (no image URL returned)');
-      }
-    } else {
-      console.log('Image rendering skipped (specify node-id for frame image)');
+    for (let i = 0; i < urls.length; i++) {
+      const tag = String(i + 1);
+      console.log(`--- Design ${tag} ---`);
+      const { viewport } = await extractSingle(urls[i], token, resolvedOutput, tag);
+      viewports.push({
+        url: urls[i],
+        label: viewport.label,
+        width: viewport.width,
+        layersFile: `layers.${tag}.json`,
+        frameFile: `frame.${tag}.png`,
+      });
+      console.log(`Viewport: ${viewport.label} (${viewport.width}px)\n`);
     }
 
+    // Sort by width ascending and assign canonical labels
+    viewports.sort((a, b) => a.width - b.width);
+
+    // Write responsive manifest with project breakpoints
+    const bp = loadBreakpoints();
+    const manifest = {
+      responsive: true,
+      breakpoints: bp,
+      viewports: viewports.map((v) => ({
+        label: v.label,
+        width: v.width,
+        layersFile: v.layersFile,
+        frameFile: v.frameFile,
+        url: v.url,
+      })),
+      extractedAt: new Date().toISOString(),
+    };
+    const manifestPath = path.join(resolvedOutput, 'responsive.json');
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+    console.log('Responsive manifest saved: responsive.json');
+    console.log('Viewports:');
+    for (const v of viewports) {
+      console.log(`  ${v.label} (${v.width}px) → ${v.layersFile}, ${v.frameFile}`);
+    }
     console.log(`\nDone! Output: ${resolvedOutput}`);
-    console.log('Next: Run /vibe.figma in Claude Code to generate components');
+    console.log('Next: Run /vibe.figma in Claude Code to generate responsive components');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`Extract failed: ${message}`);
     process.exit(1);
+  }
+}
+
+/**
+ * vibe figma breakpoints [--set key=value]
+ * Show or update responsive breakpoint defaults.
+ */
+export function figmaBreakpoints(setArg?: string): void {
+  if (setArg) {
+    const [key, val] = setArg.split('=');
+    const num = Number(val);
+    if (!key || Number.isNaN(num)) {
+      console.error('Usage: vibe figma breakpoints --set <key>=<value>');
+      console.error('  Keys: breakpoint, pcTarget, mobilePortrait, mobileMinimum, designPc, designMobile');
+      return;
+    }
+    const validKeys = Object.keys(DEFAULT_BREAKPOINTS);
+    if (!validKeys.includes(key)) {
+      console.error(`Unknown key: ${key}. Valid keys: ${validKeys.join(', ')}`);
+      return;
+    }
+    patchGlobalConfig({
+      figma: { breakpoints: { [key]: num } },
+    });
+    console.log(`Breakpoint updated: ${key} = ${num}px`);
+  }
+
+  const bp = loadBreakpoints();
+  const isCustom = readGlobalConfig().figma?.breakpoints;
+  console.log(`Figma Breakpoints${isCustom ? ' (customized)' : ' (defaults)'}:`);
+  console.log(`  breakpoint:     ${bp.breakpoint}px  (PC↔Mobile boundary)`);
+  console.log(`  pcTarget:       ${bp.pcTarget}px  (PC main target)`);
+  console.log(`  mobilePortrait: ${bp.mobilePortrait}px  (Mobile portrait max)`);
+  console.log(`  mobileMinimum:  ${bp.mobileMinimum}px  (Mobile minimum)`);
+  console.log(`  designPc:       ${bp.designPc}px  (Figma PC artboard)`);
+  console.log(`  designMobile:   ${bp.designMobile}px  (Figma Mobile artboard)`);
+  if (!isCustom) {
+    console.log('\n  Customize: vibe figma breakpoints --set breakpoint=768');
   }
 }
 
@@ -236,18 +469,33 @@ export async function figmaExtract(url?: string, outputDir?: string): Promise<vo
 export function figmaHelp(): void {
   console.log(`
 Figma Commands:
-  vibe figma setup <token>       Set Figma access token
-  vibe figma extract <url>       Extract layers + image from Figma URL
-  vibe figma status              Show configuration
-  vibe figma logout              Remove access token
-  vibe figma help                Show this help
+  vibe figma setup <token>                Set Figma access token
+  vibe figma extract <url> [url...]       Extract layers + image from Figma URL(s)
+  vibe figma breakpoints                  Show current breakpoint defaults
+  vibe figma breakpoints --set key=value  Customize a breakpoint value
+  vibe figma status                       Show configuration
+  vibe figma logout                       Remove access token
+  vibe figma help                         Show this help
 
 Extract options:
-  --output <dir>                 Output directory (default: ./figma-output)
+  --output <dir>                          Output directory (default: ./figma-output)
 
-Workflow:
+Breakpoint keys:
+  breakpoint      PC↔Mobile boundary (default: 1024px)
+  pcTarget        PC main target resolution (default: 1920px)
+  mobilePortrait  Mobile portrait max width (default: 480px)
+  mobileMinimum   Mobile minimum width (default: 360px)
+  designPc        Figma PC artboard width (default: 2560px)
+  designMobile    Figma Mobile artboard width (default: 720px)
+
+Workflow (single design):
   1. vibe figma setup <token>
   2. vibe figma extract "https://www.figma.com/design/ABC/Project?node-id=1-2"
+  3. claude /vibe.figma
+
+Workflow (responsive — mobile + desktop):
+  1. vibe figma setup <token>
+  2. vibe figma extract "mobile-url" "desktop-url"
   3. claude /vibe.figma
 
 Get a token from: Figma > Settings > Personal access tokens

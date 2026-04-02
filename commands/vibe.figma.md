@@ -1,6 +1,6 @@
 ---
 description: Figma design to code — extract + generate in one step
-argument-hint: "figma-url" [--standalone]
+argument-hint: "figma-url" ["figma-url-2"] [--standalone]
 ---
 
 # /vibe.figma
@@ -10,10 +10,11 @@ Extract Figma design data and generate production-ready component code, tailored
 ## Usage
 
 ```
-/vibe.figma "https://www.figma.com/design/ABC123/Project?node-id=1-2"                # Project integrated (default)
-/vibe.figma "url" --standalone                                                        # Self-contained output folder
-/vibe.figma "url" --component LoginForm                                               # Name the root component
-/vibe.figma --local                                                                   # Skip extraction, use existing figma-output/
+/vibe.figma "url"                                    # Single design → project integrated (default)
+/vibe.figma "mobile-url" "desktop-url"               # Responsive — auto-detect viewport from frame width
+/vibe.figma "url" --standalone                        # Self-contained output folder
+/vibe.figma "url" --component LoginForm               # Name the root component
+/vibe.figma --local                                   # Skip extraction, use existing figma-output/
 ```
 
 ### Generation Mode
@@ -22,11 +23,28 @@ Extract Figma design data and generate production-ready component code, tailored
 |------|----------|
 | _(default)_ | **Project integration.** Use project's design system, existing tokens, component patterns. Place files in project's component directory. |
 | `--standalone` | **Independent folder.** Create self-contained folder with own global styles, tokens, and components. No dependency on project's existing styles. Ready to copy-paste into any project. |
+| _(multi URL)_ | **Responsive mode.** Auto-detected when 2+ URLs provided. Compares designs across viewports and generates responsive code with fluid scaling. |
+
+### Responsive Mode
+
+When multiple URLs are provided:
+1. CLI extracts each URL → `figma-output/` with numbered files (`layers.1.json`, `frame.1.png`, etc.)
+2. Frame width auto-detects viewport: ≤480px = mobile, ≤1024px = tablet, >1024px = desktop
+3. `responsive.json` manifest maps each viewport to its files
+4. Code generation produces a **single component** with breakpoint-aware styles
 
 ## File Reading Policy (Mandatory)
 
+### Single design mode
 - **Image first**: ALWAYS read `figma-output/frame.png` with the Read tool before anything else
 - **Then JSON**: Read `figma-output/layers.json` to extract structural data and tokens
+
+### Responsive mode (responsive.json exists)
+- **Manifest first**: Read `figma-output/responsive.json` to identify viewports
+- **All images**: Read each `frame.{N}.png` — compare visual differences across viewports
+- **All layers**: Read each `layers.{N}.json` — extract per-viewport tokens and layout
+
+### Always
 - **Project config**: Read `.claude/vibe/config.json` to determine tech stack
 - **Design context**: Read `.claude/vibe/design-context.json` if it exists (brand, tokens, theme)
 - **Existing code**: Scan project for existing component patterns, theme config, design system
@@ -57,27 +75,45 @@ Check Figma access token availability:
 
 ### 0-2. Extract via CLI
 
-Run extraction using the Bash tool:
+Parse all URLs from the argument. URLs are space-separated, each quoted.
 
+**Single URL:**
 ```bash
-npx vibe figma extract "$argument"
+npx vibe figma extract "$url"
 ```
 
-This produces:
+**Multiple URLs (responsive mode):**
+```bash
+npx vibe figma extract "$url1" "$url2"
+```
+
+Single URL produces:
 - `figma-output/layers.json` — Figma layer structure with design tokens
 - `figma-output/frame.png` — Rendered frame image (when node-id present in URL)
 
-### 0-3. Verify Output
+Multiple URLs produce:
+- `figma-output/layers.1.json`, `figma-output/layers.2.json`, ... — Per-viewport layer data
+- `figma-output/frame.1.png`, `figma-output/frame.2.png`, ... — Per-viewport frame images
+- `figma-output/responsive.json` — Viewport manifest with width/label/file mapping
+
+### 0-3. Verify Output & Detect Mode
 
 ```
-1. Check figma-output/layers.json exists → if not, report error and stop
-2. Check figma-output/frame.png exists → optional (only with node-id)
-3. Validate layers.json has children array → warn if empty
+1. Check figma-output/responsive.json exists → if yes, enter RESPONSIVE MODE
+2. If responsive mode:
+   - Read responsive.json → verify all listed files exist
+   - Confirm at least 2 viewports with different width classes
+3. If single mode:
+   - Check figma-output/layers.json exists → if not, report error and stop
+   - Check figma-output/frame.png exists → optional (only with node-id)
+4. Validate all layers JSON files have children array → warn if empty
 ```
 
 ---
 
 ## Phase 1: Design Analysis (Image-First)
+
+### Single mode
 
 Read `figma-output/frame.png` and analyze:
 
@@ -91,7 +127,35 @@ Read `figma-output/frame.png` and analyze:
 | States | Hover/active/disabled indicators if visible |
 | Responsive hints | Breakpoint indicators, fluid vs fixed widths |
 
+### Responsive mode
+
+Read **ALL** frame images and analyze **side-by-side**:
+
+| Aspect | What to Compare |
+|--------|-----------------|
+| Layout shift | Which elements reflow? (e.g., horizontal → vertical stack) |
+| Visibility | Which elements hide/show per viewport? |
+| Typography scale | Font size ratio between viewports |
+| Spacing scale | Padding/gap ratio between viewports |
+| Component shape | Does the component change form? (e.g., drawer → sidebar) |
+| Navigation | Does nav change? (e.g., hamburger ↔ full nav bar) |
+
+Build a **viewport diff table**:
+
+```
+| Element        | Mobile (375px)         | Desktop (1440px)       | Strategy          |
+|---------------|------------------------|------------------------|-------------------|
+| Nav           | hamburger + drawer     | horizontal bar         | component swap    |
+| Hero title    | 24px                   | 48px                   | fluid: clamp()    |
+| Card grid     | 1 column               | 3 columns              | grid auto-fit     |
+| Sidebar       | hidden                 | visible                | display toggle    |
+| Body text     | 14px                   | 16px                   | fluid: clamp()    |
+| Padding       | 16px                   | 48px                   | fluid: clamp()    |
+```
+
 ## Phase 2: Layer Data Extraction
+
+### Single mode
 
 Read `figma-output/layers.json` and extract:
 
@@ -100,6 +164,64 @@ Read `figma-output/layers.json` and extract:
 3. **Auto-layout** — Direction, gap, padding (maps directly to flex/grid)
 4. **Constraints** — Fixed vs fluid sizing
 5. **Component instances** — Identify reusable patterns
+6. **Image fills** — Identify layers with `type: "IMAGE"` fills (see Phase 2-A)
+
+### Responsive mode
+
+Read **ALL** `layers.{N}.json` files and extract **per-viewport**:
+
+1. **Per-viewport tokens** — Record exact values for each viewport:
+   ```
+   { "mobile": { "h1": 24, "body": 14, "padding": 16 },
+     "desktop": { "h1": 48, "body": 16, "padding": 48 } }
+   ```
+2. **Layout differences** — Auto-layout direction changes (e.g., HORIZONTAL → VERTICAL)
+3. **Visibility map** — Which layers exist in one viewport but not the other
+4. **Shared tokens** — Values identical across all viewports (colors, border-radius, shadows are usually shared)
+
+### Phase 2-A: Image Fill Classification
+
+Figma에서 이미지는 레이어의 `fills` 배열에 `type: "IMAGE"`로 들어옴. 이를 **용도별로 분류**해야 코드에서 올바른 패턴을 생성할 수 있음.
+
+#### 감지 방법
+
+`layers.json`에서 아래 패턴을 탐색:
+
+```
+fills: [{ type: "IMAGE", scaleMode: "FILL" | "FIT" | "CROP" | "TILE", imageRef: "..." }]
+```
+
+#### 분류 기준
+
+| 판별 조건 | 분류 | 코드 패턴 |
+|----------|------|----------|
+| 레이어가 프레임/섹션의 **직계 배경**이고, 위에 텍스트/UI 요소가 겹침 | **Background Image** | `background-image` + `background-size` |
+| 레이어가 독립적이고, 위에 겹치는 요소 없음 | **Content Image** | `<img>` 또는 `<picture>` |
+| 레이어 이름에 `icon`, `logo`, `avatar` 포함 | **Inline Asset** | `<img>` (작은 크기) |
+| 레이어가 반복 패턴(`scaleMode: "TILE"`) | **Pattern/Texture** | `background-image` + `background-repeat` |
+| 레이어가 전체 프레임을 덮고 opacity < 1 또는 blendMode 적용 | **Overlay Image** | `background-image` + overlay `::before`/`::after` |
+
+#### 이미지-텍스트 겹침 판별 (Background vs Content)
+
+```
+frame의 fills에 IMAGE가 있고, children에 TEXT 레이어가 있으면:
+  → Background Image (텍스트 아래 깔리는 배경)
+
+독립 레이어의 fills에 IMAGE가 있고, 형제 레이어와 겹치지 않으면:
+  → Content Image
+```
+
+#### 이미지 소스 추출
+
+- `imageRef` 값으로 Figma API의 이미지 렌더링 사용 (`/images/{fileKey}`)
+- 추출된 이미지는 `figma-output/assets/` 디렉토리에 저장
+- 파일명은 레이어 이름 기반: `hero-bg.png`, `product-photo.jpg`
+
+### Responsive Scaling Calculation
+
+Per-viewport 토큰 쌍에서 clamp() 값을 계산. 공식은 **Phase 4-3** 참조.
+
+핵심: Figma 디자인이 2x 스케일(2560px/720px)이므로, 반드시 타겟 해상도(1920px/480px)로 환산 후 clamp를 계산해야 함.
 
 **Correction rule**: When image and JSON disagree, **image wins**. The image shows designer intent; JSON may have structural artifacts.
 
@@ -114,10 +236,82 @@ Read `figma-output/layers.json` and extract:
    - `next.config.*` → Next.js
    - `nuxt.config.*` → Nuxt
    - `*.module.css` → CSS Modules pattern
+   - `*.scss` / `sass` in deps → SCSS
    - `styled-components` / `@emotion` in deps → CSS-in-JS
-3. Read `.claude/vibe/design-context.json` if available → brand tokens, theme preferences
 
-### 3-2. Resolve Generation Mode
+### 3-2. Load Design Context (Design Skill Integration)
+
+Read these files **in order** — later sources override earlier ones:
+
+1. **`.claude/vibe/design-context.json`** — brand personality, aesthetic direction, constraints
+   - `aesthetic.style` → guides visual weight (minimal vs bold)
+   - `aesthetic.colorMood` → warm/cool/vibrant tone for token selection
+   - `brand.personality` → preserve brand-expressive elements
+   - `constraints.accessibility` → AA or AAA level (affects contrast, focus, ARIA depth)
+   - `constraints.devices` → responsive breakpoints priority
+2. **`.claude/vibe/design-system/{project}/MASTER.md`** — authoritative token definitions
+   - If MASTER.md exists: **map Figma tokens to MASTER.md tokens first**, only create new tokens for values with no match
+   - If no MASTER.md: generate `figma-tokens.css` as standalone token source
+
+**Decision rule**: When Figma token ≈ existing MASTER.md token (within 10% color distance or ±2px spacing), **use the existing token** — do not duplicate.
+
+### 3-3. Load Breakpoints
+
+Breakpoints are loaded from multiple sources in priority order:
+
+#### Source Priority
+
+| Priority | Source | How |
+|----------|--------|-----|
+| 1 | **`~/.vibe/config.json`** | `figma.breakpoints` — user-customized via `vibe figma breakpoints --set` |
+| 2 | **Project CSS/Tailwind** | Grep `tailwind.config.*` → `theme.screens`, or `@media.*min-width` patterns in codebase |
+| 3 | **`responsive.json`** | Breakpoints embedded by CLI extract (from config at extraction time) |
+| 4 | **Defaults** | Built-in values (breakpoint: 1024px, etc.) |
+
+#### Default Breakpoints (built-in)
+
+Based on game industry responsive storyboard standards:
+
+```
+breakpoint:     1024px    ← PC↔Mobile boundary (@media min-width)
+pcTarget:       1920px    ← PC main target resolution
+mobilePortrait:  480px    ← Mobile portrait max width
+mobileMinimum:   360px    ← Mobile minimum supported width
+designPc:       2560px    ← Figma PC artboard width (design is 2x scale)
+designMobile:    720px    ← Figma Mobile artboard width (design is 2x scale)
+```
+
+#### How to use in code generation
+
+```
+@media breakpoint:
+  - Single breakpoint model: @media (min-width: {breakpoint}px)
+  - Mobile-first: styles below breakpoint = mobile, above = PC
+
+clamp() range:
+  - minVw = mobileMinimum (360px) — smallest supported viewport
+  - maxVw = pcTarget (1920px) — largest target viewport
+  - Values scale linearly between these bounds
+
+Design scale factor:
+  - PC design at {designPc}px targets {pcTarget}px → scale = pcTarget/designPc
+  - Mobile design at {designMobile}px targets {mobilePortrait}px → scale = mobilePortrait/designMobile
+  - Apply scale to convert Figma pixel values to target pixel values
+```
+
+#### User customization
+
+Users can override any value via CLI:
+
+```bash
+vibe figma breakpoints                          # Show current values
+vibe figma breakpoints --set breakpoint=768     # Change PC↔Mobile boundary
+vibe figma breakpoints --set mobileMinimum=320  # Change mobile minimum
+```
+
+Stored in `~/.vibe/config.json` → `figma.breakpoints`. Partial overrides merge with defaults.
+
+### 3-4. Resolve Generation Mode
 
 ```
 if --standalone flag:
@@ -137,7 +331,13 @@ default (no flag):
 
 ### 4-1. Global Styles File
 
-**Always generate a global token/style file.** This is the single source of truth for design tokens extracted from Figma.
+**Token resolution priority** (default mode):
+
+1. **MASTER.md tokens** — if `.claude/vibe/design-system/{project}/MASTER.md` exists, map Figma values to these tokens
+2. **design-context.json tokens** — if `detectedStack.fonts`, `aesthetic.colorMood` exist, align with these
+3. **New figma-tokens** — only for values that have no existing match
+
+**Standalone mode**: Always generate a self-contained token file (no MASTER.md dependency).
 
 #### --standalone mode output:
 
@@ -233,38 +433,276 @@ export const figmaTokens = {
 };
 ```
 
-### 4-3. Component Style Separation
+**SCSS (if `*.scss` or `sass` detected):**
 
-Every component gets its own style file. **Never inline styles exceeding 3 properties.**
+```scss
+// _figma-tokens.scss — Auto-generated from Figma. Do not edit manually.
 
-| Styling Method | When to Use | Component Style File |
-|----------------|-------------|---------------------|
-| CSS Modules | Default for React/Vue/Svelte (non-Tailwind) | `Component.module.css` |
-| Tailwind | `tailwind.config.*` detected | Classes in JSX (no separate file) |
-| CSS-in-JS | `styled-components`/`@emotion` in deps | `Component.styles.ts` |
-| Scoped CSS | Vue SFC / Svelte | `<style scoped>` block within component |
-| StyleSheet | React Native | `styles` const at bottom of component file |
-| ThemeData | Flutter | Theme extension or inline `Theme.of(context)` |
+// ── Variables ──
+$figma-primary: #3B82F6;
+$figma-primary-hover: #2563EB;
+$figma-surface: #FFFFFF;
+$figma-text-primary: #111827;
+$figma-text-secondary: #6B7280;
+$figma-border: #E5E7EB;
+
+$figma-font-family: 'Inter', system-ui, sans-serif;
+$figma-text-xs: 0.75rem;
+$figma-text-sm: 0.875rem;
+$figma-text-base: 1rem;
+$figma-text-lg: 1.125rem;
+$figma-text-xl: 1.25rem;
+
+$figma-space-1: 0.25rem;
+$figma-space-2: 0.5rem;
+$figma-space-4: 1rem;
+$figma-space-6: 1.5rem;
+$figma-space-8: 2rem;
+
+$figma-radius-sm: 0.25rem;
+$figma-radius-md: 0.5rem;
+$figma-radius-lg: 0.75rem;
+
+$figma-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$figma-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+
+// ── Breakpoints ──
+$figma-bp: 1024px;
+$figma-bp-mobile-min: 360px;
+$figma-bp-pc-target: 1920px;
+
+// ── Mixins ──
+@mixin figma-pc {
+  @media (min-width: $figma-bp) { @content; }
+}
+
+@mixin figma-mobile-only {
+  @media (max-width: $figma-bp - 1px) { @content; }
+}
+
+// ── Functions ──
+@function figma-fluid($mobile, $desktop, $min-vw: $figma-bp-mobile-min, $max-vw: $figma-bp-pc-target) {
+  $slope: ($desktop - $mobile) / ($max-vw - $min-vw);
+  $intercept: $mobile - $slope * $min-vw;
+  @return clamp(#{$mobile}, #{$intercept} + #{$slope * 100}vw, #{$desktop});
+}
+
+// Usage: font-size: figma-fluid(1rem, 2rem);
+```
+
+**SCSS 사용 시 추가 규칙:**
+- CSS custom properties 대신 `$변수` 사용 (프로젝트 컨벤션에 따라 둘 다 가능)
+- `@mixin figma-pc` 로 breakpoint 일관성 유지 — `@media` 직접 사용 금지
+- `figma-fluid()` 함수로 clamp() 계산 자동화 — 수동 계산 금지
+- 파일명: `_figma-tokens.scss` (partial, `_` prefix)
+- `@use 'figma-tokens' as figma;` 로 네임스페이스 import
+
+### 4-3. Responsive Token Format (responsive mode only)
+
+When `responsive.json` exists, tokens that **differ across viewports** use `clamp()` for fluid scaling.
+Tokens that are **identical** across viewports remain static.
+
+**clamp() range uses breakpoints from Phase 3-3:**
+
+```
+minVw = mobileMinimum (default: 360px)
+maxVw = pcTarget (default: 1920px)
+breakpoint = breakpoint (default: 1024px) ← used for @media
+
+Design values must be scaled before clamp:
+  PC Figma value × (pcTarget / designPc) = target PC value
+  Mobile Figma value × (mobilePortrait / designMobile) = target mobile value
+```
+
+**CSS Custom Properties (responsive):**
+
+```css
+/* figma-tokens.css — Responsive tokens from Figma */
+/* clamp range: {mobileMinimum}px → {pcTarget}px */
+/* Breakpoint: {breakpoint}px (PC↔Mobile) */
+/* Design scale: PC {designPc}→{pcTarget}, Mobile {designMobile}→{mobilePortrait} */
+
+:root {
+  /* === Shared (same across all viewports) === */
+  --figma-primary: #3B82F6;
+  --figma-font-family: 'Inter', system-ui, sans-serif;
+  --figma-radius-md: 0.5rem;
+  --figma-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+
+  /* === Fluid Typography (scales with viewport) === */
+  /* Figma PC 96px → target 36px, Figma Mobile 48px → target 32px */
+  --figma-text-h1: clamp(2rem, {intercept}rem + {slope}vw, 2.25rem);
+  --figma-text-body: clamp(0.875rem, {intercept}rem + {slope}vw, 1rem);
+
+  /* === Fluid Spacing (scales with viewport) === */
+  --figma-space-section: clamp(1rem, {intercept}rem + {slope}vw, 3rem);
+  --figma-space-content: clamp(0.75rem, {intercept}rem + {slope}vw, 1.5rem);
+
+  /* === Breakpoint (from config, user-customizable) === */
+  --figma-bp: 1024px;
+}
+```
+
+**clamp() calculation formula:**
+
+```
+Step 1: Scale Figma values to target viewport
+  targetMobile = figmaMobileValue × (mobilePortrait / designMobile)
+  targetPc     = figmaPcValue × (pcTarget / designPc)
+
+  Example (defaults): Figma PC h1=96px, Figma Mobile h1=48px
+    targetPc     = 96 × (1920 / 2560) = 72px
+    targetMobile = 48 × (480 / 720)   = 32px
+
+Step 2: Calculate clamp()
+  minVw = mobileMinimum (360)
+  maxVw = pcTarget (1920)
+  min = targetMobile, max = targetPc
+
+  slope = (max - min) / (maxVw - minVw)
+  intercept = min - slope * minVw
+  → clamp({min/16}rem, {intercept/16}rem + {slope*100}vw, {max/16}rem)
+
+  Example:
+    slope = (72 - 32) / (1920 - 360) = 0.02564
+    intercept = 32 - 0.02564 × 360 = 22.77
+    → clamp(2rem, 1.423rem + 2.564vw, 4.5rem)
+```
+
+**Tailwind (responsive — if Tailwind detected):**
+
+Use Tailwind's responsive prefixes instead of clamp() for layout, clamp() for typography/spacing:
+
+```js
+export const figmaTokens = {
+  fontSize: {
+    'figma-h1': ['clamp(1.5rem, 1.076rem + 1.878vw, 3rem)', { lineHeight: '1.2' }],
+    'figma-body': ['clamp(0.875rem, 0.828rem + 0.188vw, 1rem)', { lineHeight: '1.5' }],
+  },
+  spacing: {
+    'figma-section': 'clamp(1rem, 0.248rem + 3.286vw, 3rem)',
+  },
+};
+```
+
+**SCSS (responsive):**
+
+```scss
+// _figma-tokens.scss — figma-fluid() 함수로 자동 계산
+@use 'sass:math';
+
+$figma-bp: 1024px;
+$figma-bp-mobile-min: 360px;
+$figma-bp-pc-target: 1920px;
+
+@function figma-fluid($mobile, $desktop, $min-vw: $figma-bp-mobile-min, $max-vw: $figma-bp-pc-target) {
+  $slope: math.div($desktop - $mobile, $max-vw - $min-vw);
+  $intercept: $mobile - $slope * $min-vw;
+  @return clamp(#{$mobile}, #{$intercept} + #{$slope * 100}vw, #{$desktop});
+}
+
+@mixin figma-pc { @media (min-width: $figma-bp) { @content; } }
+
+// Token 사용
+$figma-text-h1: figma-fluid(2rem, 4.5rem);
+$figma-text-body: figma-fluid(0.875rem, 1rem);
+$figma-space-section: figma-fluid(1rem, 3rem);
+```
+
+```scss
+// Component.module.scss — 사용 예시
+@use 'figma-tokens' as figma;
+
+.heroSection {
+  padding: figma.$figma-space-section;
+}
+
+.heroTitle {
+  font-size: figma.$figma-text-h1;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+
+  @include figma.figma-pc {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+```
+
+### 4-4. Class Naming Rules
+
+클래스 이름은 **역할(role)**을 드러내야 하며, 구조나 스타일 속성을 이름에 넣지 않는다.
+
+#### 네이밍 원칙
+
+| 원칙 | 좋은 예 | 나쁜 예 |
+|------|--------|--------|
+| **역할 기반** | `.heroSection`, `.productCard`, `.navPrimary` | `.section1`, `.card`, `.nav` |
+| **용도 명시** | `.heroBg`, `.cardThumbnail`, `.avatarImg` | `.bg`, `.img`, `.image1` |
+| **상태 포함** | `.buttonPrimary`, `.inputError` | `.blueButton`, `.redBorder` |
+| **관계 표현** | `.heroTitle`, `.heroDescription` | `.title`, `.text` |
+| **축약 금지** | `.navigationMenu`, `.backgroundImage` | `.navMnu`, `.bgImg` |
+
+#### 구체적 규칙
+
+```
+1. 컴포넌트 루트: 섹션/컴포넌트 이름 그대로
+   .loginForm, .heroSection, .productGrid
+
+2. 자식 요소: 부모이름 + 역할
+   .heroTitle, .heroDescription, .heroCta
+   .loginFormInput, .loginFormSubmit
+
+3. 이미지 클래스: 반드시 용도를 명시
+   .heroBg          ← 히어로 배경 이미지
+   .heroBgOverlay   ← 배경 위 오버레이
+   .productPhoto    ← 상품 사진
+   .brandLogo       ← 브랜드 로고
+
+4. 상태 변형: variant/state 접미사
+   .buttonPrimary, .buttonDisabled
+   .cardHighlight, .cardCompact
+```
+
+#### Anti-Patterns
+
+```css
+/* WRONG: 의미 없는 이름 */
+.wrapper { }
+.inner { }
+.box { }
+.item { }
+.text1 { }
+
+/* CORRECT: 역할이 드러나는 이름 */
+.eventSection { }
+.eventContent { }
+.rewardCard { }
+.rewardItem { }
+.eventDescription { }
+```
 
 **Component style file MUST reference global tokens:**
 
 ```css
 /* LoginForm.module.css */
-.container {
+.loginForm {
   padding: var(--figma-space-6);
   background: var(--figma-surface);
   border-radius: var(--figma-radius-lg);
   box-shadow: var(--figma-shadow-md);
 }
 
-.title {
+.loginFormTitle {
   font-size: var(--figma-text-xl);
   font-weight: 600;
   color: var(--figma-text-primary);
   line-height: var(--figma-leading-tight);
 }
 
-.submitButton {
+.loginFormSubmit {
   background: var(--figma-primary);
   color: var(--figma-surface);
   border-radius: var(--figma-radius-md);
@@ -272,7 +710,7 @@ Every component gets its own style file. **Never inline styles exceeding 3 prope
   transition: background 150ms ease;
 }
 
-.submitButton:hover {
+.loginFormSubmit:hover {
   background: var(--figma-primary-hover);
 }
 ```
@@ -318,7 +756,102 @@ Every generated component MUST pass:
 - [ ] Heading hierarchy is sequential (no h1 → h3 skip)
 - [ ] `<ul>`/`<ol>` for any visually listed items
 
-### 5-3. Component Structure Rules
+### 5-3. Wrapper Elimination (Fragment / template)
+
+**불필요한 래핑 태그를 제거**하고 프레임워크가 제공하는 투명 래퍼를 사용:
+
+| Stack | 투명 래퍼 | 사용 시점 |
+|-------|----------|----------|
+| React / Next.js | `<>...</>` 또는 `<React.Fragment>` | 형제 요소를 그룹핑할 때 (DOM에 노드 추가 안 함) |
+| Vue / Nuxt | `<template>` (컴포넌트 루트 이외) | `v-if`, `v-for` 로 여러 요소를 조건부 렌더링할 때 |
+| Svelte | `{#if}`, `{#each}` 블록 | 자체적으로 래핑 불필요 |
+
+```tsx
+// WRONG: 불필요한 div 래핑
+<div>
+  <Header />
+  <Main />
+  <Footer />
+</div>
+
+// CORRECT: React Fragment
+<>
+  <Header />
+  <Main />
+  <Footer />
+</>
+```
+
+```vue
+<!-- WRONG: 불필요한 div 래핑 -->
+<div v-if="showGroup">
+  <ItemA />
+  <ItemB />
+</div>
+
+<!-- CORRECT: Vue template (DOM에 렌더링 안 됨) -->
+<template v-if="showGroup">
+  <ItemA />
+  <ItemB />
+</template>
+```
+
+**규칙**: 래핑 요소에 스타일이나 이벤트가 없으면 → Fragment/template 사용. 스타일이 있으면 → semantic 태그 사용.
+
+### 5-4. Similar UI Consolidation (80% Rule)
+
+디자인에서 **유사도 80% 이상**인 UI 패턴이 발견되면, 별도 컴포넌트로 분리하지 말고 **하나의 컴포넌트 + variant props/slots**으로 통합:
+
+```
+유사도 판단 기준:
+  - 레이아웃 구조 동일
+  - 색상/크기/텍스트만 다름
+  → 하나의 컴포넌트 + props로 변형
+
+  - 구조 자체가 다름 (요소 추가/제거, 레이아웃 방향 변경)
+  → 별도 컴포넌트
+```
+
+| Stack | 변형 방법 |
+|-------|----------|
+| React | `variant` prop + 조건부 className / style |
+| Vue | `variant` prop + `<slot>` for 커스텀 영역 |
+| Svelte | `variant` prop + `<slot>` |
+| React Native | `variant` prop + StyleSheet 조건 선택 |
+
+```tsx
+// React — 하나의 Card 컴포넌트가 3가지 변형 처리
+interface CardProps {
+  variant: 'default' | 'highlight' | 'compact';
+  title: string;
+  children: React.ReactNode;
+}
+
+export function Card({ variant, title, children }: CardProps): JSX.Element {
+  return (
+    <article className={styles[variant]}>
+      <h3 className={styles.title}>{title}</h3>
+      {children}
+    </article>
+  );
+}
+```
+
+```vue
+<!-- Vue — slot으로 커스텀 영역 제공 -->
+<template>
+  <article :class="$style[variant]">
+    <h3 :class="$style.title">{{ title }}</h3>
+    <slot />
+  </article>
+</template>
+
+<script setup lang="ts">
+defineProps<{ variant: 'default' | 'highlight' | 'compact'; title: string }>();
+</script>
+```
+
+### 5-5. Component Structure Rules
 
 ```
 Max nesting depth: 3 levels (container > group > element)
@@ -332,10 +865,11 @@ Max props: 5 per component
 |--------|--------|
 | Component > 50 lines | Split into sub-components |
 | Repeated visual pattern (2+ times) | Extract shared component |
+| **Similar pattern (80%+ match)** | **Single component + variant prop** |
 | Distinct visual boundary (card, modal, form) | Own component + own style file |
 | 3+ related props | Group into object prop or extract sub-component |
 
-### 5-4. Markup Anti-Patterns (NEVER Generate)
+### 5-6. Markup Anti-Patterns (NEVER Generate)
 
 ```tsx
 // WRONG: div soup
@@ -365,30 +899,82 @@ Max props: 5 per component
 </article>
 ```
 
+```tsx
+// WRONG: 불필요한 래핑
+<div>
+  <ComponentA />
+  <ComponentB />
+</div>
+
+// CORRECT: Fragment
+<>
+  <ComponentA />
+  <ComponentB />
+</>
+```
+
+```tsx
+// WRONG: 유사한 UI를 별도 컴포넌트로
+<DefaultCard />   // 구조 동일, 색상만 다름
+<HighlightCard /> // 구조 동일, 색상만 다름
+
+// CORRECT: 단일 컴포넌트 + variant
+<Card variant="default" />
+<Card variant="highlight" />
+```
+
 ---
 
 ## Phase 6: Code Generation
 
+### 6-0. Apply Design Context (from Phase 3-2)
+
+If `design-context.json` was loaded, apply these rules to ALL generated code:
+
+| Context Field | Effect on Code Generation |
+|---------------|--------------------------|
+| `constraints.accessibility = "AAA"` | Use `aria-describedby` on all form fields, `prefers-reduced-motion` media query, `prefers-contrast` support |
+| `constraints.devices = ["mobile"]` | Mobile-only layout, no desktop breakpoints, touch target ≥ 44px |
+| `constraints.devices = ["mobile","desktop"]` | Mobile-first with `md:` breakpoint |
+| `aesthetic.style = "minimal"` | Reduce visual weight — fewer shadows, thinner borders, more whitespace |
+| `aesthetic.style = "bold"` | Stronger shadows, thicker borders, larger typography scale |
+| `brand.personality` | Preserve brand-unique visual patterns (do NOT distill these away) |
+| `detectedStack.fonts` | Use project's existing font stack instead of Figma's font family |
+
+### 6-1. Stack-Specific Rules
+
 Generate code following these rules per stack:
 
-#### React + TypeScript (default for TS web projects)
+#### React / Next.js + TypeScript
 
 ```
 - Functional components with explicit return types
 - Props interface defined above component
 - Named exports (not default)
-- CSS Modules import: import styles from './Component.module.css'
+- <></> Fragment for sibling grouping (no unnecessary wrapper div)
+- CSS Modules: import styles from './Component.module.css'
 - Tailwind: classes in JSX, extract repeated patterns to @apply
 - Responsive: mobile-first breakpoints
+- Variant pattern: discriminated union props for similar UI
+- useMemo/useCallback only when measurably needed (not by default)
+- Next.js: use 'use client' only when client interactivity needed
+- Next.js: Image component for images, Link for navigation
 ```
 
-#### Vue 3
+#### Vue 3 / Nuxt
 
 ```
 - <script setup lang="ts"> composition API
-- defineProps with TypeScript interface
-- <style scoped> with CSS custom property references
+- defineProps with TypeScript interface (with defaults via withDefaults)
+- <template> for invisible grouping (v-if, v-for on multiple elements)
+- <style scoped> (or <style module>) with CSS custom property references
+- v-bind in <style> for dynamic values: color: v-bind(themeColor)
+- <slot> + named slots for composable variant patterns
+- <Teleport> for modals/overlays
 - Or Tailwind classes in template
+- Nuxt: <NuxtLink> for navigation, <NuxtImg> for images
+- Nuxt: definePageMeta for page-level config
+- computed() for derived state (not methods for template expressions)
 ```
 
 #### Svelte
@@ -396,16 +982,66 @@ Generate code following these rules per stack:
 ```
 - TypeScript in <script lang="ts">
 - Export let for props with types
+- {#if}/{#each}/{#await} blocks — inherently wrapper-free
+- <slot> for composable patterns
 - <style> block with CSS custom property references
 - Or Tailwind classes in markup
+- Reactive declarations ($:) for derived values
+- transition: directive for animations
+```
+
+#### SCSS (any framework with SCSS)
+
+```
+- @use 'figma-tokens' as figma — namespaced import (not @import)
+- $변수 for tokens: figma.$figma-primary, figma.$figma-space-4
+- @include figma.figma-pc { } for breakpoint — @media 직접 사용 금지
+- figma-fluid($mobile, $desktop) for responsive values — 수동 clamp() 금지
+- Nesting max 3 levels: .section { .title { .icon { } } } ← 한계
+- & for BEM-like modifiers: &--active, &__title
+- @each for variant generation from map
+- Partials: _figma-tokens.scss, _figma-mixins.scss
+- Vue: <style lang="scss" scoped> with @use
+```
+
+```scss
+// Component usage example
+@use 'figma-tokens' as figma;
+
+.heroSection {
+  position: relative;
+  padding: figma.figma-fluid(1rem, 3rem);
+
+  &Title {
+    font-size: figma.figma-fluid(1.5rem, 3rem);
+    color: figma.$figma-text-primary;
+  }
+
+  &Cta {
+    background: figma.$figma-primary;
+    border-radius: figma.$figma-radius-md;
+
+    &:hover { background: figma.$figma-primary-hover; }
+  }
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+
+  @include figma.figma-pc {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 ```
 
 #### React Native
 
 ```
 - StyleSheet.create at bottom of file
+- <></> Fragment for sibling grouping
 - Dimensions-aware responsive layout
-- Platform-specific handling if needed
+- Platform.select / Platform.OS for platform-specific styles
 - Extract shared style constants to styles/tokens.ts
 ```
 
@@ -418,31 +1054,355 @@ Generate code following these rules per stack:
 - Proper widget composition
 ```
 
+### 6-2. Image Code Patterns (from Phase 2-A classification)
+
+Phase 2-A에서 분류된 이미지 유형별 코드 생성 규칙:
+
+#### Background Image Class Separation (핵심 원칙)
+
+배경 이미지 관련 요소는 **용도별로 별도 클래스**로 분리한다. 레이아웃과 이미지를 합치지 않는다.
+
+##### 별도 클래스로 분리해야 하는 유형
+
+| 유형 | 클래스 예시 | 분리 이유 |
+|------|-----------|----------|
+| **섹션 전면 배경** | `.heroBg`, `.eventBg`, `.rewardsBg` | 이벤트 기간/시즌별 이미지 교체 |
+| **오버레이** | `.heroBgOverlay`, `.eventBgOverlay` | 투명도/그라데이션 독립 조절 |
+| **패턴/텍스처** | `.sectionPattern`, `.headerTexture` | `background-repeat`/`size` 별도 제어 |
+| **파티클/장식 효과** | `.heroParticle`, `.sparkleEffect` | 애니메이션 on/off, 성능 이슈 시 제거 |
+| **캐릭터/일러스트** | `.heroCharacter`, `.eventIllust` | 콜라보/캐릭터별 교체, position 조절 |
+| **그라데이션** | `.sectionGradient`, `.fadeBottom` | 테마별 색상 변경 |
+| **비디오 포스터** | `.videoPoster` | 비디오 로드 전 폴백, JS에서 교체 |
+
+##### Multi-Layer Pattern (섹션 배경 기본 구조)
+
+Figma에서 배경 이미지가 있는 섹션은 다음 레이어 구조로 생성:
+
+```
+.{section}Section          ← 레이아웃 (position, size, padding, overflow)
+  .{section}Bg             ← 배경 이미지 (URL, size, position) — z-index: 0
+  .{section}BgOverlay      ← 오버레이 (gradient, opacity) — z-index: 1
+  .{section}Character      ← 캐릭터/일러스트 (선택) — z-index: 2
+  .{section}Pattern        ← 패턴/텍스처 (선택) — z-index: 1
+  .{section}Content        ← 텍스트/버튼/UI — z-index: 최상위
+```
+
+```tsx
+// 실제 마크업 예시 — 게임 이벤트 히어로 섹션
+<section className={styles.heroSection}>
+  <div className={styles.heroBg} />
+  <div className={styles.heroBgOverlay} />
+  <div className={styles.heroCharacter} />
+  <div className={styles.heroContent}>
+    <h1 className={styles.heroTitle}>Stellar Blade × PUBG</h1>
+    <p className={styles.heroDescription}>기간한정 콜라보 이벤트</p>
+    <a href="#rewards" className={styles.heroCta}>보상 확인하기</a>
+  </div>
+</section>
+```
+
+```css
+/* heroSection.module.css */
+.heroSection { position: relative; overflow: hidden; min-height: 100vh; }
+
+.heroBg {
+  position: absolute; inset: 0; z-index: 0;
+  background-image: url('/assets/hero-bg.webp');
+  background-size: cover;
+  background-position: center;
+}
+
+.heroBgOverlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+}
+
+.heroCharacter {
+  position: absolute; bottom: 0; right: 5%; z-index: 2;
+  width: 40%; height: 80%;
+  background-image: url('/assets/hero-character.webp');
+  background-size: contain;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+}
+
+.heroContent { position: relative; z-index: 3; }
+```
+
+**모든 배경 관련 이미지가 독립 클래스**이므로:
+- JS에서 `.heroBg`만 교체하면 배경만 바뀜
+- `.heroCharacter`만 교체하면 캐릭터만 바뀜
+- `.heroBgOverlay`의 opacity를 조절하면 텍스트 가독성만 조절 가능
+- 성능 이슈 시 `.heroParticle`만 `display: none`
+
+#### Responsive Background Image (반응형 배경 — PC/Mobile 분기)
+
+```css
+/* 배경 이미지 클래스 안에서만 반응형 처리 */
+.heroBg {
+  background-image: url('/assets/hero-mobile.webp');
+  background-size: cover;
+  background-position: center;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+@media (min-width: 1024px) {  /* {breakpoint}px */
+  .heroBg {
+    background-image: url('/assets/hero-pc.webp');
+  }
+}
+```
+
+**섹션별 배경 이미지가 여러 개인 경우** — 각각 고유 클래스:
+
+```css
+.heroBg     { background-image: url('/assets/hero-bg.webp'); /* ... */ }
+.eventBg    { background-image: url('/assets/event-bg.webp'); /* ... */ }
+.rewardsBg  { background-image: url('/assets/rewards-bg.webp'); /* ... */ }
+```
+
+**Figma 오버레이 감지**: 레이어에 `opacity < 1` 또는 `fills`에 반투명 색상이 IMAGE 위에 있으면 → `{section}BgOverlay` 클래스로 처리.
+
+#### Content Image (독립적인 이미지 콘텐츠)
+
+```tsx
+// React / Next.js
+<img
+  src="/assets/product.webp"
+  alt="상품 설명"              // Figma 레이어 이름 기반
+  width={600}                  // Figma 레이어 width (scaled)
+  height={400}                 // Figma 레이어 height (scaled)
+  loading="lazy"               // 뷰포트 밖이면 lazy
+/>
+
+// Next.js — Image 컴포넌트 우선
+import Image from 'next/image';
+<Image
+  src="/assets/product.webp"
+  alt="상품 설명"
+  width={600}
+  height={400}
+  priority={false}             // hero 이미지만 priority={true}
+/>
+```
+
+```vue
+<!-- Nuxt — NuxtImg 우선 -->
+<NuxtImg
+  src="/assets/product.webp"
+  alt="상품 설명"
+  width="600"
+  height="400"
+  loading="lazy"
+/>
+```
+
+#### Responsive Content Image (뷰포트별 다른 이미지)
+
+```html
+<picture>
+  <source media="(min-width: 1024px)" srcset="/assets/hero-pc.webp" />
+  <img src="/assets/hero-mobile.webp" alt="히어로 이미지" loading="eager" />
+</picture>
+```
+
+#### 이미지 공통 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **format** | `.webp` 우선 (fallback: `.png`/`.jpg`) |
+| **alt** | Figma 레이어 이름에서 파생, 장식 이미지는 `alt=""` + `aria-hidden="true"` |
+| **width/height** | 항상 명시 (CLS 방지), Figma 레이어 크기를 스케일 팩터 적용 후 사용 |
+| **loading** | 뷰포트 상단(hero, header) → `eager`, 나머지 → `lazy` |
+| **object-fit** | `cover` (배경/히어로), `contain` (로고/아이콘), `fill` 사용 금지 |
+| **반응형 크기** | Content image는 `max-width: 100%; height: auto;` 기본 |
+| **배경 이미지 + 텍스트** | 반드시 오버레이(`::before` 또는 gradient)로 텍스트 가독성 확보 |
+| **장식 패턴** | `background-repeat: repeat` + `background-size` 조절 |
+
+#### Anti-Patterns
+
+```tsx
+// WRONG: 레이아웃 클래스에 background-image를 합침
+<section className={styles.hero} />  /* .hero에 bg-image + padding + flex 등 다 섞임 */
+
+// CORRECT: 배경 이미지는 별도 클래스
+<section className={styles.heroSection}>
+  <div className={styles.heroBg} />
+  <div className={styles.heroContent}>...</div>
+</section>
+```
+
+```tsx
+// WRONG: inline style로 배경 이미지
+<div style={{ backgroundImage: `url(${bg})` }} />
+
+// CORRECT: 전용 클래스에 이미지 URL
+<div className={styles.heroBg} />
+/* JS 동적 교체 시: element.style.backgroundImage = url(...) on .heroBg만 */
+```
+
+```css
+/* WRONG: 배경 + 텍스트, 오버레이 없음 */
+.hero { background-image: url(...); color: white; }
+
+/* CORRECT: 3-layer 분리 (bg / overlay / content) */
+.heroSection { position: relative; }
+.heroBg { background-image: url(...); position: absolute; inset: 0; z-index: 0; }
+.heroBgOverlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 1; }
+.heroContent { position: relative; z-index: 2; color: white; }
+```
+
+```css
+/* WRONG: 의미 없는 이름 */
+.bg { }
+.bgImg { }
+.overlay { }
+
+/* CORRECT: 섹션별 명시적 이름 */
+.heroBg { }
+.heroBgOverlay { }
+.eventBg { }
+.rewardsBg { }
+```
+
+### 6-3. Responsive Code Generation (responsive mode only)
+
+When `responsive.json` exists, apply these rules on top of stack-specific rules:
+
+#### Principle: Fluid First, Breakpoint Second
+
+```
+1. Typography & Spacing → clamp() fluid tokens (no breakpoints needed)
+2. Layout direction changes → @media at project breakpoint (flex-direction, grid-template)
+3. Visibility toggles → @media at project breakpoint (display: none/block)
+4. Component swaps → conditional render with useMediaQuery or CSS
+```
+
+**Breakpoint selection**: Use `{breakpoints}` from Phase 3-3. Pick the breakpoint closest to where the layout structurally changes between Figma viewports. For example:
+- Figma mobile=375px, desktop=1440px → use project's `md` (typically 768px) as primary breakpoint
+- If project has `tablet: 1024px` → use that instead
+- If 3 viewports (mobile/tablet/desktop) → use 2 breakpoints (e.g., `sm` and `lg`)
+
+#### CSS Modules (responsive example)
+
+```css
+/* Component.module.css */
+/* Breakpoints from project: {breakpoints} */
+
+.container {
+  display: flex;
+  flex-direction: column;                          /* mobile-first */
+  gap: var(--figma-space-content);                 /* fluid: clamp() */
+  padding: var(--figma-space-section);             /* fluid: clamp() */
+}
+
+.title {
+  font-size: var(--figma-text-h1);                 /* fluid: clamp() */
+  line-height: 1.2;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: 1fr;                      /* mobile: single column */
+  gap: var(--figma-space-content);
+}
+
+/* Layout breakpoint — use project's breakpoint, NOT hardcoded */
+@media (min-width: 1024px) {              /* {breakpoint}px from Phase 3-3 */           /* or project's md value */
+  .container {
+    flex-direction: row;
+  }
+  .cardGrid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+/* Visibility toggle — same breakpoint */
+.mobileOnly { display: block; }
+.desktopOnly { display: none; }
+
+@media (min-width: 1024px) {              /* {breakpoint}px from Phase 3-3 */
+  .mobileOnly { display: none; }
+  .desktopOnly { display: block; }
+}
+```
+
+#### Tailwind (responsive example)
+
+Use project's Tailwind screen prefixes (e.g., `sm:`, `md:`, `lg:`) — NOT hardcoded pixel values.
+
+```tsx
+{/* Uses project's Tailwind breakpoints — md: maps to project's screens.md */}
+<div className="flex flex-col md:flex-row gap-[--figma-space-content] p-[--figma-space-section]">
+  <h1 className="text-[length:--figma-text-h1] leading-tight">Title</h1>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-[--figma-space-content]">
+    {/* cards */}
+  </div>
+  <nav className="md:hidden">Mobile Nav</nav>
+  <nav className="hidden md:flex">Desktop Nav</nav>
+</div>
+```
+
+#### Anti-Patterns (NEVER do in responsive mode)
+
+| Wrong | Right |
+|-------|-------|
+| Separate mobile/desktop component files | Single component with responsive CSS |
+| `@media` for font-size/spacing | `clamp()` via fluid tokens |
+| Hardcoded `@media (min-width: 768px)` | Use project breakpoint from Phase 3-3 or Tailwind prefix |
+| Pixel values in responsive styles | Token variables everywhere |
+| Duplicated markup for each viewport | Visibility toggles or conditional sections |
+| `window.innerWidth` checks in JS | CSS-only responsive (`@media`, `clamp()`, `auto-fit`) |
+| Inventing new breakpoints | Use project's existing breakpoint system |
+
 ---
 
 ## Phase 7: Token Mapping (default mode)
 
 **Only in default (project integration) mode.** Map extracted Figma tokens to the project's existing token system.
 
-1. **If design system exists** (e.g., shadcn, MUI theme, Tailwind config):
-   - Map Figma colors → existing theme tokens
-   - Map Figma typography → existing text styles
-   - Map Figma spacing → existing spacing scale
-   - **Only add new tokens** that don't exist yet
+### Token Source Priority
 
-2. **If no design system**:
+```
+1. MASTER.md (.claude/vibe/design-system/{project}/MASTER.md)  ← 최우선
+2. design-context.json (.claude/vibe/design-context.json)       ← 보조
+3. Project theme files (tailwind.config, CSS variables, etc.)   ← 폴백
+4. Generate new figma-tokens                                     ← 마지막 수단
+```
+
+### Mapping Rules
+
+1. **MASTER.md exists** → authoritative token source
+   - Figma color ≈ MASTER.md color (ΔE < 5) → use MASTER.md token name
+   - Figma spacing ≈ MASTER.md spacing (±2px) → use MASTER.md token name
+   - Figma font ≈ MASTER.md font → use MASTER.md token name
+   - Unmatched Figma values → add to `figma-tokens.css` as supplementary tokens
+
+2. **No MASTER.md, but design-context.json exists** →
+   - Use `detectedStack` info for naming convention
+   - Use `aesthetic.colorMood` to validate token naming (e.g., warm palette → warm- prefix)
+   - Generate `figma-tokens.css` grouped by category
+
+3. **No design system at all** →
    - Generate `figma-tokens.css` (or Tailwind extend)
    - Group tokens by category (color, typography, spacing, shadow)
 
-3. **Output token mapping** as a comment block at the top of the token file:
-   ```
-   /* Figma Token Mapping:
-    * Figma "Primary/Default" → var(--figma-primary) = #3B82F6
-    * Figma "Text/Body" → var(--figma-text-base) = 1rem / 1.5
-    * Figma "Spacing/L" → var(--figma-space-6) = 1.5rem
-    * Existing match: var(--figma-primary) ≈ var(--color-blue-500)
-    */
-   ```
+### Output Mapping Comment
+
+Always output token mapping as a comment block at the top of the token file:
+
+```
+/* Figma Token Mapping:
+ * Figma "Primary/Default" → var(--figma-primary) = #3B82F6
+ *   ✅ Matched: var(--color-blue-500) from MASTER.md
+ * Figma "Text/Body" → var(--figma-text-base) = 1rem / 1.5
+ *   ✅ Matched: var(--text-base) from MASTER.md
+ * Figma "Accent/Glow" → var(--figma-accent-glow) = #7C3AED
+ *   ⚠️ New token: no existing match
+ */
+```
 
 ---
 
@@ -454,8 +1414,9 @@ After generating code, output a brief correction report:
 ## Correction Notes
 
 ### Generation Mode
-- Mode: default (project integration) / --standalone
+- Mode: default / --standalone / responsive
 - Output directory: {path}
+- Viewports: {list of viewport labels + widths, if responsive}
 
 ### Files Generated
 | File | Type | Description |
@@ -464,6 +1425,18 @@ After generating code, output a brief correction report:
 | styles/global.css | Base styles | Reset + typography + layout |
 | ComponentName/ComponentName.tsx | Component | Root component |
 | ComponentName/ComponentName.module.css | Styles | Component-specific styles |
+
+### Responsive Summary (responsive mode only)
+| Token | Mobile | Desktop | Strategy |
+|-------|--------|---------|----------|
+| --figma-text-h1 | 24px | 48px | clamp() |
+| --figma-space-section | 16px | 48px | clamp() |
+| Card grid | 1col | 3col | @media grid |
+| Sidebar | hidden | visible | @media display |
+
+- Fluid tokens generated: {N}
+- Layout breakpoints used: {list}
+- Component swaps: {list or "none"}
 
 ### Layer Issues Found
 - [Layer name] was ambiguous → interpreted as [component] based on image
@@ -477,6 +1450,7 @@ After generating code, output a brief correction report:
 - Use Auto Layout for [specific frame] to improve extraction accuracy
 - Name layers semantically (e.g., "login-form" not "Frame 47")
 - Use consistent spacing tokens
+- (responsive) Keep same component names across mobile/desktop frames for easier mapping
 ```
 
 ---
@@ -505,10 +1479,42 @@ After generating code, output a brief correction report:
 - **Component size limit** — split components exceeding 50 lines
 - **Style separation** — global tokens file + per-component style files, always
 
-## Next Steps
+## Next Steps: Design Quality Pipeline
 
-After generating code, suggest:
-1. `/design-audit` — Review the generated component for design quality
-2. `/design-normalize` — Align tokens with project design system
-3. `/design-critique` — Get detailed design feedback
-4. `/design-polish` — Fine-tune visual details before shipping
+After generating code, present the following pipeline to the user:
+
+### Quick (default recommendation)
+```
+/design-normalize → /design-audit
+```
+- Normalize: 하드코딩 값 → MASTER.md 토큰으로 치환
+- Audit: A11Y + 성능 + 반응형 + AI Slop 검출
+
+### Thorough (recommended for production)
+```
+/design-normalize → /design-audit → /design-critique → /design-polish
+```
+- + Critique: Nielsen 10 휴리스틱 + 5 페르소나 분석
+- + Polish: 인터랙션 상태 보완 (hover/focus/loading/error)
+
+### Pre-requisite check
+If `.claude/vibe/design-context.json` does NOT exist:
+```
+⚠️ 디자인 컨텍스트가 없습니다. /design-teach 를 먼저 실행하면
+   브랜드, 접근성, 타겟 디바이스에 맞춘 더 정확한 코드를 생성할 수 있습니다.
+```
+
+### Output format
+```
+## 🎨 Design Quality Pipeline
+
+생성된 파일: {file list}
+
+추천 다음 단계:
+  1. /design-normalize  — 토큰 정렬 (하드코딩 제거)
+  2. /design-audit      — 기술 품질 검사
+  3. /design-critique    — UX 휴리스틱 리뷰
+  4. /design-polish      — 최종 인터랙션 보완
+
+💡 /design-teach 가 아직 설정되지 않았다면 먼저 실행하세요.
+```

@@ -27,7 +27,7 @@ import {
   telegramSetup, telegramChat, telegramStatus, telegramHelp,
   slackSetup, slackChannel, slackStatus, slackHelp,
   skillsAdd,
-  figmaSetup, figmaExtract, figmaStatus, figmaLogout, figmaHelp,
+  figmaSetup, figmaExtract, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -313,9 +313,21 @@ Example: vibe skills add vercel-labs/skills
         (async () => {
           const outputFlag = args.indexOf('--output');
           const outputDir = outputFlag >= 0 ? args[outputFlag + 1] : undefined;
-          await figmaExtract(positionalArgs[2], outputDir);
+          // Collect all URL args (positionalArgs[2..N], excluding --output and its value)
+          const extractUrls = positionalArgs.slice(2).filter(
+            (a) => a !== '--output' && a !== outputDir,
+          );
+          await figmaExtract(
+            extractUrls.length > 0 ? extractUrls : undefined,
+            outputDir,
+          );
         })();
         break;
+      case 'breakpoints': {
+        const setFlag = args.indexOf('--set');
+        figmaBreakpoints(setFlag >= 0 ? args[setFlag + 1] : undefined);
+        break;
+      }
       case 'status':
         figmaStatus();
         break;

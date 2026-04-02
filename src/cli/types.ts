@@ -122,6 +122,21 @@ export interface ModelOverrides {
   geminiEmbedding: string;
 }
 
+export interface FigmaBreakpoints {
+  /** PC↔Mobile boundary (default: 1024) */
+  breakpoint: number;
+  /** PC main target resolution width (default: 1920) */
+  pcTarget: number;
+  /** Mobile portrait max width (default: 480) */
+  mobilePortrait: number;
+  /** Mobile minimum supported width (default: 360) */
+  mobileMinimum: number;
+  /** Figma design artboard width for PC (default: 2560) */
+  designPc: number;
+  /** Figma design artboard width for Mobile (default: 720) */
+  designMobile: number;
+}
+
 export interface FigmaCredentials {
   accessToken?: string;
   createdAt?: string;
@@ -140,6 +155,9 @@ export interface GlobalVibeConfig {
     discord?: DiscordChannelConfig;
   };
   models?: Partial<ModelOverrides>;
+  figma?: {
+    breakpoints?: Partial<FigmaBreakpoints>;
+  };
   settings?: {
     workspaceDir?: string;
   };
