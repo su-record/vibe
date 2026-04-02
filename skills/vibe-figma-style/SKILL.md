@@ -83,48 +83,62 @@ Figma 파일명에서 피처명 자동 추출 → kebab-case 변환.
 피처 전용 스타일 폴더를 생성하고, 글로벌 + 컴포넌트별 2-tier 구조:
 
 styles/{feature-name}/
-  index.scss                  ← 진입점 (아래 파일 전부 import)
-  _tokens.scss                ← 피처 전용 토큰 (색상, 타이포, 간격)
-  _mixins.scss                ← 피처 전용 mixin (breakpoint, fluid)
-  _base.scss                  ← 피처 공통 (reset, 폰트, 기본 레이아웃)
+  index.scss                        ← 진입점
 
-  // 섹션별 스타일
-  _hero.scss                  ← HeroSection 전용
-  _daily-checkin.scss         ← DailyCheckInSection 전용
-  _play-time-mission.scss     ← PlayTimeMissionSection 전용
-  _token-exchange.scss        ← TokenExchangeSection 전용
-  _token-raffle.scss          ← TokenRaffleSection 전용
-  _caution.scss               ← CautionSection 전용
+  // ── foundation (토큰, mixin, 기반) ──
+  _tokens.scss                      ← 피처 전용 토큰
+  _mixins.scss                      ← 피처 전용 mixin
+  _base.scss                        ← 피처 공통 reset/폰트
 
-  // 재사용 컴포넌트별 스타일
-  _card.scss                  ← 보상 카드, 상품 카드 등 공통 카드
-  _button.scss                ← CTA 버튼, 출석 버튼, 교환 버튼
-  _badge.scss                 ← 상태 배지 (완료, 진행중, 잠금)
-  _progress.scss              ← 프로그레스 바, 타임 게이지
-  _popups.scss                ← 팝업/모달 공통 (오버레이, 컨텐츠)
-  _tooltip.scss               ← 툴팁, 안내 말풍선
+  // ── layout (섹션 배치, 구조) ──
+  layout/
+    _page.scss                      ← 페이지 전체 레이아웃
+    _hero.scss                      ← HeroSection 배치/구조
+    _daily-checkin.scss             ← DailyCheckInSection 배치/구조
+    _play-time-mission.scss         ← PlayTimeMissionSection 배치/구조
+    _token-exchange.scss            ← TokenExchangeSection 배치/구조
+    _token-raffle.scss              ← TokenRaffleSection 배치/구조
+    _caution.scss                   ← CautionSection 배치/구조
+
+  // ── components (재사용 UI 디자인) ──
+  components/
+    _card.scss                      ← 카드 디자인 (보상, 상품, 아이템)
+    _button.scss                    ← 버튼 디자인 (CTA, 출석, 교환)
+    _badge.scss                     ← 배지 디자인 (완료, 진행중, 잠금)
+    _progress.scss                  ← 프로그레스 바, 게이지
+    _popups.scss                    ← 팝업/모달 디자인
+    _tooltip.scss                   ← 툴팁, 안내 말풍선
+    _form.scss                      ← 입력 폼 (이메일, 검색)
 
 index.scss 내용:
-  // 기반
+  // foundation
   @use 'tokens';
   @use 'mixins';
   @use 'base';
 
-  // 재사용 컴포넌트
-  @use 'card';
-  @use 'button';
-  @use 'badge';
-  @use 'progress';
-  @use 'popups';
-  @use 'tooltip';
+  // layout
+  @use 'layout/page';
+  @use 'layout/hero';
+  @use 'layout/daily-checkin';
+  @use 'layout/play-time-mission';
+  @use 'layout/token-exchange';
+  @use 'layout/token-raffle';
+  @use 'layout/caution';
 
-  // 섹션
-  @use 'hero';
-  @use 'daily-checkin';
-  @use 'play-time-mission';
-  @use 'token-exchange';
-  @use 'token-raffle';
-  @use 'caution';
+  // components
+  @use 'components/card';
+  @use 'components/button';
+  @use 'components/badge';
+  @use 'components/progress';
+  @use 'components/popups';
+  @use 'components/tooltip';
+  @use 'components/form';
+
+layout vs components 구분 기준:
+  layout/  → 섹션의 위치, 크기, 배치, 간격, 배경
+            (position, display, flex/grid, padding, margin, background-image)
+  components/ → UI 요소의 모양, 색상, 타이포, 인터랙션 상태
+               (color, font, border, border-radius, shadow, hover, focus)
 
 각 컴포넌트 스타일 파일 규칙:
   - @use '../tokens' as t; 로 토큰 참조
