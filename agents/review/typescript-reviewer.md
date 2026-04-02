@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Checklist
 
@@ -120,7 +120,7 @@
 
 ```
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "TypeScript review for [files]. Check type safety, React patterns."
 )

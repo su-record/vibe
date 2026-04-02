@@ -1,5 +1,6 @@
 ---
 name: arch-guard
+tier: core
 description: "Generate architecture boundary tests that mechanically enforce layer constraints. Use when adding new modules, refactoring layers, or after detecting circular dependencies. Creates import-rule tests (e.g., 'UI must not import DB') that fail CI on violation. Must use this skill when user mentions layer enforcement, dependency rules, or architectural boundaries — even casually like 'make sure services don't import controllers'."
 triggers: [arch guard, architecture test, layer test, boundary test, structural test, arch validation]
 priority: 60

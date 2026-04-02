@@ -1,5 +1,6 @@
 ---
 name: design-normalize
+tier: standard
 description: "Normalize hardcoded values to design system tokens — colors, typography, spacing, shadows aligned to MASTER.md. Use when design-normalize, design-system, token-align."
 triggers: [design-normalize, design-system, token-align]
 priority: 50

@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Checklist
 
@@ -73,7 +73,7 @@
 
 ```
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "Security review for changes in [files]. Check OWASP Top 10."
 )

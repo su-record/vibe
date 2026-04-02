@@ -64,11 +64,15 @@ function loadConstants(): {
   const constantsPath = path.join(ROOT, 'src', 'cli', 'postinstall', 'constants.ts');
   const content = fs.readFileSync(constantsPath, 'utf-8');
 
-  // Parse GLOBAL_SKILLS array
-  const globalMatch = content.match(/GLOBAL_SKILLS[^[]*\[([\s\S]*?)\]/);
-  const globalSkills = globalMatch
-    ? globalMatch[1].match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) ?? []
-    : [];
+  // Parse GLOBAL_SKILLS (core + standard + optional tiers)
+  const globalSkills: string[] = [];
+  for (const tier of ['GLOBAL_SKILLS_CORE', 'GLOBAL_SKILLS_STANDARD', 'GLOBAL_SKILLS_OPTIONAL']) {
+    const tierMatch = content.match(new RegExp(`${tier}[^[]*\\[([\\s\\S]*?)\\]`));
+    if (tierMatch) {
+      const names = tierMatch[1].match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) ?? [];
+      globalSkills.push(...names);
+    }
+  }
 
   // Parse STACK_TO_SKILLS
   const stackToSkills = parseRecordBlock(content, 'STACK_TO_SKILLS');

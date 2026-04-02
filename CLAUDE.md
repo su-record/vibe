@@ -98,7 +98,7 @@
 
 - `better-sqlite3` WAL mode — DB module uses synchronous API
 - `crypto.timingSafeEqual` requires same-length buffers — check length first
-- `STACK_TO_LANGUAGE_FILE`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts` — single source of truth for stack→asset mapping
+- `GLOBAL_SKILLS_CORE`, `GLOBAL_SKILLS_STANDARD`, `GLOBAL_SKILLS_OPTIONAL`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts` — single source of truth for stack→asset mapping
 - Hook dispatch chain: `prompt-dispatcher.js` → `keyword-detector.js` → `llm-orchestrate.js` (order matters)
 - Pre-existing test failures in `prdParser.test.ts` (7) and `traceabilityMatrix.test.ts` (1) — unrelated to current work
 
@@ -123,25 +123,36 @@
 | `verify` | Strict verification mode |
 | `quick` | Fast mode, minimal verification |
 
+## Skill Tier System
+
+Skills are classified into 3 tiers to prevent context overload (Curse of Instructions):
+
+| Tier | Loading | Purpose | Count |
+|------|---------|---------|-------|
+| **core** | Always active | Bug/mistake prevention safety nets | ~9 |
+| **standard** | Project setup selects | Workflow support by stack/capability | ~21 |
+| **optional** | Explicit `/skill` only | Reference/wrapper — not auto-loaded | ~4 |
+
+**Constants**: `GLOBAL_SKILLS_CORE` + `GLOBAL_SKILLS_STANDARD` in `src/cli/postinstall/constants.ts`
+
 ## Proactive Skill Suggestions
 
 When the user's context matches a pattern below, suggest the relevant skill **once** per session. If the user says "stop suggesting", disable for the rest of the session.
 
-| User Context | Suggested Skill | Signal |
-|-------------|-----------------|--------|
-| Writing a new SPEC / planning | `/vibe.spec` | "let's build", "new feature", "requirements" |
-| SPEC exists, ready to implement | `/vibe.run` | SPEC file present, no implementation started |
-| Implementation done, verifying | `/vibe.trace` | Code changes match SPEC phases |
-| Complex feature, unknown tech | `/parallel-research` | "how should we", "which library", architecture questions |
-| Debugging errors repeatedly | `/vibe.trace` | 3+ error cycles without resolution |
-| Pre-merge / PR preparation | `/commit-push-pr` | "ready to merge", "create PR" |
-| Session ending, work incomplete | `/handoff` | 70%+ context, incomplete tasks |
-| Technical debt accumulating | `/techdebt` | Multiple `any` types, console.log, unused imports |
-| Multi-file refactoring planned | `/exec-plan` | 3+ files to change, complex dependencies |
-| Building new UI/UX | `/design-teach` | "new page", "landing", "dashboard", Figma URL |
-| UI code review | `/design-audit` | After implementing UI components |
-| New project setup / CLAUDE.md | `/claude-md-guide` | "new project", "write CLAUDE.md", "project instructions" |
-| Before shipping UI | `/design-polish` | "ready to deploy", "final check" |
+| User Context | Suggested Skill | Tier | Signal |
+|-------------|-----------------|------|--------|
+| Writing a new SPEC / planning | `/vibe.spec` | core | "let's build", "new feature", "requirements" |
+| SPEC exists, ready to implement | `/vibe.run` | core | SPEC file present, no implementation started |
+| Implementation done, verifying | `/vibe.trace` | core | Code changes match SPEC phases |
+| Technical debt accumulating | `/techdebt` | core | Multiple `any` types, console.log, unused imports |
+| Multi-file refactoring planned | `/exec-plan` | core | 3+ files to change, complex dependencies |
+| Complex feature, unknown tech | `/parallel-research` | standard | "how should we", "which library", architecture questions |
+| Debugging errors repeatedly | `/vibe.trace` | core | 3+ error cycles without resolution |
+| Session ending, work incomplete | `/handoff` | standard | 70%+ context, incomplete tasks |
+| Building new UI/UX | `/design-teach` | standard | "new page", "landing", "dashboard", Figma URL |
+| UI code review | `/design-audit` | standard | After implementing UI components |
+| New project setup / CLAUDE.md | `/claude-md-guide` | standard | "new project", "write CLAUDE.md" |
+| Before shipping UI | `/design-polish` | standard | "ready to deploy", "final check" |
 
 ## Context Management
 

@@ -1,5 +1,6 @@
 ---
 name: create-prd
+tier: standard
 description: "Create a Product Requirements Document using a comprehensive 8-section template covering problem, objectives, segments, value propositions, solution, and release planning."
 triggers: [prd, product requirements, feature spec, requirements document]
 priority: 60

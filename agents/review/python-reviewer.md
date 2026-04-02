@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Checklist
 
@@ -121,7 +121,7 @@
 
 ```text
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "Python review for [files]. Check PEP8, type hints, async patterns."
 )
@@ -132,7 +132,7 @@ Task(
 **When GPT Codex is enabled**, get Python expert 2nd opinion:
 
 ```text
-Primary: Task(Haiku) Python review
+Primary: Task(Sonnet) Python review
       ↓
 [GPT enabled?]
       ↓ YES

@@ -1,5 +1,6 @@
 ---
 name: design-distill
+tier: standard
 description: "Remove unnecessary visual complexity — strip decorative clutter, apply progressive disclosure, simplify UI to essentials. Use when design-distill, simplify-ui, ui-simplify, strip-ui."
 triggers: [design-distill, simplify-ui, ui-simplify, strip-ui]
 priority: 50

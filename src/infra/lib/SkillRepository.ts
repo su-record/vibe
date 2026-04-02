@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { parseSkillFrontmatter, ParsedSkill, SkillMetadata } from './SkillFrontmatter.js';
+import { parseSkillFrontmatter, ParsedSkill, SkillMetadata, SkillTier } from './SkillFrontmatter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -284,6 +284,25 @@ export class SkillRepository {
       return true;
     }
     return false;
+  }
+
+  /**
+   * 티어 기반 스킬 필터링
+   */
+  listSkillsByTier(tier: SkillTier): SkillInfo[] {
+    return this.listSkills().filter(skill =>
+      (skill.metadata?.tier ?? 'standard') === tier
+    );
+  }
+
+  /**
+   * core + standard 스킬만 반환 (optional 제외)
+   */
+  listActiveSkills(): SkillInfo[] {
+    return this.listSkills().filter(skill => {
+      const t = skill.metadata?.tier ?? 'standard';
+      return t === 'core' || t === 'standard';
+    });
   }
 
   /**

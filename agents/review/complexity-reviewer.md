@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Metrics & Thresholds
 
@@ -99,7 +99,7 @@ Functions by Cyclomatic Complexity:
 
 ```
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "Complexity review for [files]. Check function length, nesting, cyclomatic."
 )

@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Philosophy
 
@@ -133,7 +133,7 @@ def process_data(data):
 
 ```
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "Simplicity review for [files]. Find over-engineering, dead code."
 )

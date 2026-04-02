@@ -1,5 +1,6 @@
 ---
 name: prioritization-frameworks
+tier: standard
 description: "Reference guide to 9 prioritization frameworks with formulas, when-to-use guidance, and templates — RICE, ICE, Kano, MoSCoW, Opportunity Score, and more."
 triggers: [prioritize, prioritization, rice, ice, kano, moscow, opportunity score]
 priority: 50

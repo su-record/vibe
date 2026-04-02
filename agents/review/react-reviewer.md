@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Checklist
 
@@ -137,7 +137,7 @@ const handleButtonClick = useCallback(() => {
 
 ```
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "React review for [files]. Check hooks, re-renders, a11y."
 )

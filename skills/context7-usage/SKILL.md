@@ -1,5 +1,6 @@
 ---
 name: context7-usage
+tier: optional
 description: "Context7 plugin for latest library documentation. Auto-activates when docs, documentation, latest version, official docs, API reference, or library help is needed."
 triggers: [docs, documentation, latest version, official docs, API reference, library help, context7]
 priority: 60

@@ -8,9 +8,12 @@ export interface SkillSectionMeta {
   triggers?: string[];
 }
 
+export type SkillTier = 'core' | 'standard' | 'optional';
+
 export interface SkillMetadata {
   name: string;
   description: string;
+  tier?: SkillTier;
   model?: 'haiku' | 'sonnet' | 'opus';
   agent?: string;
   argumentHint?: string;
@@ -117,6 +120,10 @@ export function generateSkillFrontmatter(metadata: SkillMetadata): string {
   lines.push(`name: ${metadata.name}`);
   lines.push(`description: "${metadata.description}"`);
 
+  if (metadata.tier) {
+    lines.push(`tier: ${metadata.tier}`);
+  }
+
   if (metadata.model) {
     lines.push(`model: ${metadata.model}`);
   }
@@ -183,6 +190,10 @@ export function validateSkillMetadata(metadata: Partial<SkillMetadata>): {
     errors.push('Missing required field: description');
   }
 
+  if (metadata.tier && !['core', 'standard', 'optional'].includes(metadata.tier)) {
+    errors.push(`Invalid tier: ${metadata.tier}. Must be core, standard, or optional`);
+  }
+
   if (metadata.model && !['haiku', 'sonnet', 'opus'].includes(metadata.model)) {
     errors.push(`Invalid model: ${metadata.model}. Must be haiku, sonnet, or opus`);
   }
@@ -204,6 +215,7 @@ export function mergeWithDefaults(metadata: Partial<SkillMetadata>): SkillMetada
   return {
     name: metadata.name || 'unnamed-skill',
     description: metadata.description || 'No description',
+    tier: metadata.tier ?? 'standard',
     model: metadata.model,
     agent: metadata.agent,
     argumentHint: metadata.argumentHint,

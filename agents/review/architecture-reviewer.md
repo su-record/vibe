@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Checklist
 
@@ -100,7 +100,7 @@ Generate dependency graph when needed:
 
 ```
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "Architecture review for [files]. Check layers, dependencies, SOLID."
 )

@@ -1,5 +1,6 @@
 ---
 name: typescript-advanced-types
+tier: core
 description: "TypeScript advanced type system master guide. Covers Generics, Conditional Types, Mapped Types, Template Literals, Utility Types. Activates for complex type logic, reusable type utilities, and compile-time type safety."
 sections:
   - name: "Core Concepts"

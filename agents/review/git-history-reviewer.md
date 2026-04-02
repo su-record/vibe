@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Analysis Areas
 
@@ -96,7 +96,7 @@ git log --grep="revert" --oneline
 
 ```
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "Git history review for this PR. Find hotspots, risk patterns."
 )

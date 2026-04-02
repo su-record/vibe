@@ -1,5 +1,6 @@
 ---
 name: priority-todos
+tier: standard
 description: "Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority."
 triggers: [todo, priority, P1, P2, P3, task management, issue, organize]
 priority: 60

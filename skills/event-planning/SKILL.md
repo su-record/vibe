@@ -1,5 +1,6 @@
 ---
 name: event-planning
+tier: standard
 description: "Community event automation — D-Day timeline, community patterns, proactive task execution. Auto-activates for event planning, meetup/webinar/conference management."
 triggers: [event planning, meetup, webinar, conference, 행사, 밋업, 웨비나, D-Day, 이벤트 준비]
 priority: 70

@@ -1,5 +1,6 @@
 ---
 name: agents-md
+tier: standard
 description: "Optimize AGENTS.md / CLAUDE.md by removing discoverable info and keeping only gotchas. Based on Addy Osmani's AGENTS.md principles. Activates on agents.md, claude.md, context file optimization."
 triggers: [agents.md, claude.md, context file, optimize agents, optimize claude]
 priority: 50

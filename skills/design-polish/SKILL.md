@@ -1,5 +1,6 @@
 ---
 name: design-polish
+tier: standard
 description: "Pre-ship final polish pass — pixel alignment, interaction states, micro-details check and auto-fix. Use when design-polish, ui-polish, final-pass, ship-ready."
 triggers: [design-polish, ui-polish, final-pass, ship-ready]
 priority: 50

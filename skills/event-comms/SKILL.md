@@ -1,5 +1,6 @@
 ---
 name: event-comms
+tier: standard
 description: "Event communication automation — SMS via Aligo, email via Gmail OAuth, SNS posts for LinkedIn/Threads. Handles templates, BCC rules, and confirmation protocol."
 triggers: [sms, aligo, gmail, event email, event sms, 문자 발송, 메일 발송, SNS 홍보]
 priority: 65

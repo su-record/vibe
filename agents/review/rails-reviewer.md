@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel execution
+**Sonnet** — Accurate code analysis for quality gates
 
 ## Philosophy (DHH Style)
 
@@ -132,7 +132,7 @@ end
 
 ```
 Task(
-  model: "haiku",
+  model: "sonnet",
   subagent_type: "Explore",
   prompt: "Rails review for [files]. Check N+1, Rails Way, DHH style."
 )

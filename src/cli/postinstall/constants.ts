@@ -4,23 +4,43 @@
 
 // ─── 스킬 설치 범위 분류 ───
 
-/** 전역 설치 스킬 (postinstall → ~/.claude/skills/) — 모든 프로젝트에 공통 */
-export const GLOBAL_SKILLS: ReadonlyArray<string> = [
-  'parallel-research',
-  'commit-push-pr',
-  'git-worktree',
-  'handoff',
-  'priority-todos',
-  'tool-fallback',
-  'context7-usage',
+/**
+ * 전역 설치 스킬 (postinstall → ~/.claude/skills/) — 티어 기반 분류
+ *
+ * core: 실제 버그/실수를 방지하는 안전망 — 항상 활성
+ * standard: 워크플로우 지원 — 프로젝트 설정 시 선택 활성
+ * optional: 참고/래퍼 — 명시적 호출 시에만 로드 (전역 설치에서 제외)
+ */
+export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
   'techdebt',
   'characterization-test',
+  'arch-guard',
+  'exec-plan',
+];
+
+export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
+  'parallel-research',
+  'handoff',
+  'priority-todos',
   'agents-md',
   'claude-md-guide',
-  'exec-plan',
-  'arch-guard',
   'capability-loop',
   'design-teach',
+];
+
+/** 전역 설치에서 제외된 스킬 (명시적 /skill-name 호출 시에만 활성)
+ *  사유: 표준 도구 래퍼이거나 구체성 부족 — 직접 프롬프트가 더 효과적 */
+export const GLOBAL_SKILLS_OPTIONAL: ReadonlyArray<string> = [
+  'commit-push-pr',
+  'git-worktree',
+  'tool-fallback',
+  'context7-usage',
+];
+
+/** 전역 설치 스킬 전체 (하위 호환용) */
+export const GLOBAL_SKILLS: ReadonlyArray<string> = [
+  ...GLOBAL_SKILLS_CORE,
+  ...GLOBAL_SKILLS_STANDARD,
 ];
 
 /** 스택 → 로컬 스킬 매핑 (vibe init/update → .claude/skills/) */

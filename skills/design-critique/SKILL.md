@@ -1,5 +1,6 @@
 ---
 name: design-critique
+tier: standard
 description: "UX design review — Nielsen heuristics scoring, 5-persona red flag analysis. Use when design-critique, ux-review, design-review."
 triggers: [design-critique, ux-review, design-review]
 priority: 50

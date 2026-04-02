@@ -1,5 +1,6 @@
 ---
 name: e2e-commerce
+tier: core
 description: "E2E test scenarios for commerce checkout and payment flows. Provides ready-made Playwright test templates for cart→checkout→payment→confirmation flows, including PG sandbox testing (Toss/Stripe), error scenarios (payment failure, timeout, stock exhaustion), and idempotency verification. Use when writing E2E tests for any e-commerce feature — checkout, payment, order status, or refund flows."
 triggers: [e2e commerce, checkout test, payment test, order flow test]
 priority: 65

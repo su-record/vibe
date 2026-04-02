@@ -1,5 +1,6 @@
 ---
 name: claude-md-guide
+tier: standard
 description: "Guide for writing effective CLAUDE.md files from scratch. Evidence-based methodology from 40+ sources including research papers, official docs, and real-world examples. Covers 3-layer architecture, Curse of Instructions mitigation, progressive disclosure, and maintenance. Use when creating new CLAUDE.md, improving existing ones, or teaching team members how to write project instructions for AI agents."
 triggers: [claude-md guide, write claude.md, create claude.md, claude.md 작성, 클로드 문서, project instructions, claude-md]
 priority: 55

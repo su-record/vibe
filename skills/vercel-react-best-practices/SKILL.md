@@ -1,5 +1,6 @@
 ---
 name: vercel-react-best-practices
+tier: core
 description: "React/Next.js performance gotchas from Vercel engineering. Non-intuitive pitfalls that LLMs commonly miss."
 triggers: [react, next.js, performance, optimization, vercel, component, rendering]
 priority: 60

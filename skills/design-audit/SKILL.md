@@ -1,5 +1,6 @@
 ---
 name: design-audit
+tier: standard
 description: "Design technical quality audit — a11y, performance, responsive, theming, AI slop detection with 5-dimension scoring. Use when design-audit, ui-audit, a11y-check, design-check."
 triggers: [design-audit, ui-audit, a11y-check, design-check]
 priority: 50
