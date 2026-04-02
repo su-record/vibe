@@ -1,6 +1,6 @@
 ---
 description: Figma design to code — extract + generate in one step
-argument-hint: "figma-url" ["figma-url-2"] [--standalone]
+argument-hint: "figma-url" ["figma-url-2"] [--new] [--component Name]
 ---
 
 # /vibe.figma
@@ -12,7 +12,7 @@ Extract Figma design data and generate production-ready component code, tailored
 ```
 /vibe.figma "url"                                    # Single design → project integrated (default)
 /vibe.figma "mobile-url" "desktop-url"               # Responsive — auto-detect viewport from frame width
-/vibe.figma "url" --standalone                        # Self-contained output folder
+/vibe.figma "url" --new                          # New feature — self-contained tokens, no existing design system dependency
 /vibe.figma "url" --component LoginForm               # Name the root component
 /vibe.figma --local                                   # Skip extraction, use existing figma-output/
 ```
@@ -22,7 +22,7 @@ Extract Figma design data and generate production-ready component code, tailored
 | Flag | Behavior |
 |------|----------|
 | _(default)_ | **Project integration.** Use project's design system, existing tokens, component patterns. Place files in project's component directory. |
-| `--standalone` | **Independent folder.** Create self-contained folder with own global styles, tokens, and components. No dependency on project's existing styles. Ready to copy-paste into any project. |
+| `--new` | **New feature.** Self-contained tokens + components in project structure. No dependency on existing design system. Portable across projects. |
 | _(multi URL)_ | **Responsive mode.** Auto-detected when 2+ URLs provided. Compares designs across viewports and generates responsive code with fluid scaling. |
 
 ### Responsive Mode
@@ -305,11 +305,14 @@ Stored in `~/.vibe/config.json` → `figma.breakpoints`. Partial overrides merge
 
 ### 3-4. Resolve Generation Mode
 
+**Both modes use the project's existing directory structure.** Never create `figma-output/generated/`.
+
 ```
-if --standalone flag:
-  → create isolated output folder (default: figma-output/generated/)
-  → generate self-contained global styles + component styles
-  → no dependency on project's existing code
+if --new flag:
+  → detect project's page/component/style directories (same as default)
+  → generate self-contained token file (no MASTER.md dependency)
+  → components are self-contained (own tokens, no external design system imports)
+  → placed in project's standard directories with feature-named subfolder
 
 default (no flag):
   → scan existing component directories, theme files, token definitions
@@ -329,35 +332,65 @@ default (no flag):
 2. **design-context.json tokens** — if `detectedStack.fonts`, `aesthetic.colorMood` exist, align with these
 3. **New figma-tokens** — only for values that have no existing match
 
-**Standalone mode**: Always generate a self-contained token file (no MASTER.md dependency).
+**--new mode**: Generate self-contained token file (no MASTER.md dependency), in project's standard directories.
 
-#### --standalone mode output:
+#### Output Structure (both modes — project structure 준수)
 
-```
-figma-output/generated/
-├── styles/
-│   ├── tokens.css              ← CSS custom properties (colors, spacing, typography, shadows)
-│   ├── global.css              ← Reset + base typography + global layout
-│   └── index.css               ← Re-exports tokens.css + global.css
-├── components/
-│   ├── ComponentName/
-│   │   ├── ComponentName.tsx   ← Component code
-│   │   └── ComponentName.module.css (or .styles.ts)
-│   └── ...
-└── index.ts                    ← Barrel export
-```
+프로젝트의 기존 디렉토리 구조를 감지하여 올바른 위치에 파일 생성.
 
-#### Default (project integration) mode output:
+**Step 1: 디렉토리 감지**
 
 ```
-{project-component-dir}/       ← e.g., src/components/
-├── ComponentName/
-│   ├── ComponentName.tsx
-│   └── ComponentName.module.css (or .styles.ts)
-└── ...
+페이지 디렉토리:
+  Next.js → pages/ or app/
+  Nuxt    → pages/
+  React   → src/pages/ or src/views/
+  Vue     → src/views/
 
-{project-style-dir}/           ← e.g., src/styles/ or extend existing
-└── figma-tokens.css            ← Only NEW tokens not already in project
+컴포넌트 디렉토리:
+  Next.js → components/ or src/components/
+  Nuxt    → components/
+  React   → src/components/
+  Vue     → src/components/
+
+스타일 디렉토리:
+  SCSS    → assets/scss/ or src/scss/ or src/styles/
+  CSS     → src/styles/ or styles/
+  Tailwind → tailwind.config.* (extend)
+```
+
+**Step 2: 피처명 기반 폴더 생성**
+
+`--component` 플래그 또는 Figma 파일명에서 피처명 추출 → kebab-case 변환.
+
+```
+예: Figma 파일명 "PUBG 9주년 이벤트" → pubg-anniversary
+
+Nuxt 프로젝트:
+  pages/pubg-anniversary.vue                      ← 루트 페이지
+  components/pubg-anniversary/
+    HeroSection.vue                                ← 섹션 컴포넌트
+    EventSection.vue
+    RewardSection.vue
+    ...
+  assets/scss/_pubg-anniversary-tokens.scss        ← 피처별 토큰
+
+React + Next.js 프로젝트:
+  app/pubg-anniversary/page.tsx                    ← 루트 페이지
+  components/pubg-anniversary/
+    HeroSection.tsx
+    HeroSection.module.css (or .module.scss)
+    EventSection.tsx
+    ...
+  styles/pubg-anniversary-tokens.css               ← 피처별 토큰
+
+Default mode 차이점:
+  → 토큰 파일에서 기존 MASTER.md / 프로젝트 토큰 참조
+  → 새 토큰만 추가
+
+--new mode 차이점:
+  → 토큰 파일이 자체 완결 (외부 의존 없음)
+  → 다른 프로젝트에 폴더째 복사 가능
 ```
 
 ### 4-2. Token File Format
@@ -1406,7 +1439,7 @@ After generating code, output a brief correction report:
 ## Correction Notes
 
 ### Generation Mode
-- Mode: default / --standalone / responsive
+- Mode: default / --new / responsive
 - Output directory: {path}
 - Viewports: {list of viewport labels + widths, if responsive}
 
