@@ -67,6 +67,7 @@ When multiple URLs are provided:
 | Phase 4-5 (토큰/마크업) | **Sonnet** | — | 토큰 매핑 + 시맨틱 판단 |
 | Phase 6 (코드 생성) | **Sonnet** | **gpt-5.3-codex-spark** (병렬) | 섹션별 컴포넌트 병렬 생성 |
 | Phase 7-8 (매핑/리포트) | **Sonnet** | — | 토큰 매핑 + 보고서 |
+| Phase 9 (검증 루프) | **Sonnet** | — | 이미지 비교 + diff 판단 + auto-fix |
 | Post (코드 리뷰) | — | **gpt-5.3-codex** | 생성 코드 품질 검증 |
 
 ### GPT 모델 선택 기준
@@ -1553,6 +1554,74 @@ After generating code, output a brief correction report:
 - Name layers semantically (e.g., "login-form" not "Frame 47")
 - Use consistent spacing tokens
 - (responsive) Keep same component names across mobile/desktop frames for easier mapping
+```
+
+---
+
+## Phase 9: Visual Verification Loop
+
+코드 생성 완료 후, **Figma 원본 디자인과 생성된 UI를 비교**하여 완성도를 높이는 검증 루프.
+
+### 9-1. 스크린샷 비교
+
+```
+1. Figma 원본 스크린샷: Phase 0에서 get_screenshot으로 획득한 이미지
+2. 생성된 UI 스크린샷: /vibe.utils --preview 또는 브라우저 스크린샷
+3. 두 이미지를 side-by-side로 비교
+```
+
+### 9-2. 차이점 검출
+
+이미지를 비교하여 다음 항목 체크:
+
+| 검증 항목 | 비교 방법 |
+|----------|----------|
+| **레이아웃** | 요소 배치, 정렬, 간격이 원본과 일치하는가 |
+| **타이포그래피** | 폰트 크기, 굵기, 줄간격이 원본과 일치하는가 |
+| **색상** | 배경, 텍스트, 버튼 색상이 원본과 일치하는가 |
+| **이미지** | 배경 이미지, 에셋이 올바르게 표시되는가 |
+| **간격/여백** | padding, margin, gap이 원본과 일치하는가 |
+| **반응형** | (responsive mode) 모바일/데스크탑 각각 원본과 일치하는가 |
+| **누락 요소** | 원본에 있는데 생성 코드에 없는 요소가 있는가 |
+
+### 9-3. Diff Report 출력
+
+```markdown
+## Visual Diff Report
+
+### Match Score: {N}% (목표: 95%+)
+
+### 불일치 항목
+| # | 섹션 | 항목 | Figma 원본 | 생성 코드 | 심각도 |
+|---|------|------|-----------|----------|--------|
+| 1 | Hero | 제목 font-size | 48px | 36px | P1 |
+| 2 | Hero | 배경 이미지 | 표시됨 | 누락 | P1 |
+| 3 | Card | border-radius | 12px | 8px | P2 |
+
+### 수정 필요
+- P1: {count}건 (반드시 수정)
+- P2: {count}건 (권장 수정)
+```
+
+### 9-4. Auto-Fix Loop
+
+```
+P1 불일치가 있으면:
+  1. 해당 컴포넌트/스타일 파일을 수정
+  2. 다시 스크린샷 비교
+  3. P1이 0이 될 때까지 반복 (최대 3회)
+
+3회 반복 후에도 P1 > 0:
+  → 수동 확인 필요 항목으로 보고하고 중단
+```
+
+### 9-5. 검증 완료 조건
+
+```
+✅ Match Score 95% 이상
+✅ P1 불일치 0건
+✅ 모든 이미지 에셋 표시 확인
+✅ (responsive) 모바일 + 데스크탑 각각 95% 이상
 ```
 
 ---
