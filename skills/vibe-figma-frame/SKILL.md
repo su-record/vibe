@@ -85,16 +85,23 @@ for each (designFrame, component) in mappings:
      → WebFetch로 다운로드 → static/images/{feature}/ 저장
      → URL→로컬경로 매핑 테이블에 추가
 
-  3. 스크린샷 분석:
+  3. 스크린샷 분석 + ⚠️ 스케일 팩터 적용:
      → 레이아웃 (flex/grid 방향, 정렬)
-     → 색상 (배경, 텍스트, 보더)
-     → 타이포 (크기, 굵기, 줄간격)
-     → 간격 (padding, gap, margin)
+     → 색상 (배경, 텍스트, 보더) — 스케일 불필요
+     → 타이포 (크기, 굵기, 줄간격) — ⚠️ 스케일 팩터 적용
+     → 간격 (padding, gap, margin) — ⚠️ 스케일 팩터 적용
      → 배경 이미지 구조 (Multi-Layer: Bg/Overlay/Content)
 
-  4. component 파일에 반영:
+     ⚠️ Figma 값을 코드에 넣을 때 반드시 scaleFactor 적용:
+       코드 값 = Figma 추출 값 × scaleFactor
+       예: Figma font-size 48px × 0.75 (PC) = 36px
+       예: Figma padding 60px × 0.667 (Mobile) = 40px
+       scaleFactor는 Step A의 storyboardSpec.scaleFactor에서 참조
+       스토리보드 없으면 디폴트: PC 0.75 (1920/2560), Mobile 0.667 (480/720)
+
+  4. component 파일에 반영 (Edit 도구):
      → <template> 안의 placeholder를 실제 마크업으로 교체
-     → <style> 블록에 추출한 스타일 작성
+     → <style> 블록에 스케일 적용된 스타일 작성
      → 이미지 경로를 로컬 경로로 교체
      → Step A의 기능 주석과 핸들러는 보존
 ```

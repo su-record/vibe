@@ -38,18 +38,46 @@ URL에서 fileKey, nodeId 추출:
   → nodeId: 하이픈을 콜론으로 ("1-109" → "1:109")
 
 1. get_metadata(fileKey, nodeId) → 전체 프레임 목록
-2. 관련 섹션별 get_design_context:
-   - "해상도 대응" / "Media Query" → 브레이크포인트
+2. 관련 섹션별 get_design_context 또는 get_screenshot:
+   - "해상도 대응" / "Media Query" → 브레이크포인트 + ⚠️ 디자인 시안 사이즈
    - "인터랙션" / "Interaction" → 호버/클릭/스크롤 스펙
    - "애니메이션" / "Animation" / "Motion" → 트랜지션 스펙
    - "상태" / "State" → 로딩/에러/성공 UI
    - "컬러" / "Color" / "타이포" / "Typography" → 디자인 가이드
 ```
 
+### ⚠️ 해상도 대응 프레임에서 반드시 추출해야 하는 값
+
+```
+Media Query Guide에서 추출:
+  1. PC Main Target: 1920px (실제 타겟 해상도)
+  2. Breakpoint: 1024px (PC↔Mobile 경계)
+  3. Mobile Portrait: ~480px
+  4. Mobile Minimum: 360px~
+  5. ⚠️ 디자인 시안 PC: 2560px (Figma 아트보드 크기)
+  6. ⚠️ 디자인 시안 Mobile: 720px (Figma 아트보드 크기)
+
+디자인 시안 사이즈가 없으면 Step B에서 스케일 팩터를 계산할 수 없음:
+  Figma 값 × (타겟 / 시안) = 실제 코드 값
+  예: Figma PC font-size 48px × (1920/2560) = 36px
+  예: Figma Mobile font-size 28px × (480/720) = 18.67px → 19px
+```
+
 추출 결과를 `storyboardSpec`으로 저장:
 ```
 storyboardSpec = {
-  breakpoints: { ... },
+  breakpoints: {
+    pcTarget: 1920,          // PC 타겟 해상도
+    breakpoint: 1024,        // PC↔Mobile 경계
+    mobilePortrait: 480,     // Mobile portrait max
+    mobileMinimum: 360,      // Mobile minimum
+    designPc: 2560,          // ⚠️ Figma PC 시안 사이즈
+    designMobile: 720,       // ⚠️ Figma Mobile 시안 사이즈
+  },
+  scaleFactor: {
+    pc: 1920 / 2560,         // = 0.75 (PC 스케일)
+    mobile: 480 / 720,       // = 0.667 (Mobile 스케일)
+  },
   interactions: [ ... ],
   animations: [ ... ],
   states: { ... },
