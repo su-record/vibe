@@ -59,22 +59,39 @@ When multiple URLs are provided:
 
 ## Model Routing
 
-| Phase | Model | Codex | 이유 |
-|-------|-------|-------|------|
-| Phase 0 (추출) | **Haiku / Sonnet** | — | MCP 호출 + 데이터 수집, 판단 불필요 |
+| Phase | Claude | GPT (Codex) | 이유 |
+|-------|--------|-------------|------|
+| Phase 0 (추출) | **Haiku** | — | MCP 호출 + 데이터 수집 |
 | Phase 1-2 (분석) | **Sonnet** | — | 이미지 비교 + 구조 파악 |
-| Phase 3 (감지) | **Haiku / Sonnet** | — | 파일 읽기 + 패턴 매칭 |
+| Phase 3 (감지) | **Haiku** | — | 파일 읽기 + 패턴 매칭 |
 | Phase 4-5 (토큰/마크업) | **Sonnet** | — | 토큰 매핑 + 시맨틱 판단 |
-| Phase 6 (코드 생성) | **Sonnet / Opus** | `/codex:rescue --background` | 복잡한 컴포넌트를 Codex에 병렬 위임 |
+| Phase 6 (코드 생성) | **Sonnet** | **gpt-5.3-codex-spark** (병렬) | 섹션별 컴포넌트 병렬 생성 |
 | Phase 7-8 (매핑/리포트) | **Sonnet** | — | 토큰 매핑 + 보고서 |
-| Post (코드 리뷰) | — | `/codex:review` | 생성된 코드 크로스 검증 |
+| Post (코드 리뷰) | — | **gpt-5.3-codex** | 생성 코드 품질 검증 |
 
-빠른 모델로 시작하고, 코드 생성에서만 상위 모델 또는 Codex 병렬 사용.
+### GPT 모델 선택 기준
 
-**Codex 활용 조건** (codex-plugin-cc 설치 시):
-- Phase 6에서 섹션 컴포넌트가 3개 이상이면 → `/codex:rescue --background`로 일부 컴포넌트 병렬 생성
-- 코드 생성 완료 후 → `/codex:review`로 생성 품질 검증 (design fidelity + 코드 품질)
-- Codex 미설치 시 자동 스킵
+| 모델 | config key | 용도 |
+|------|-----------|------|
+| `gpt-5.4` | `models.gpt` | 아키텍처 판단, 복잡한 추론 |
+| `gpt-5.3-codex` | `models.gptCodex` | 코드 리뷰, 분석 (정확도 우선) |
+| `gpt-5.3-codex-spark` | `models.gptCodexSpark` | 코드 생성 (속도 우선) |
+
+`~/.vibe/config.json`의 `models` 에서 오버라이드 가능.
+
+### Codex 병렬 활용 (codex-plugin-cc 설치 시)
+
+```
+Phase 6 — 컴포넌트 생성:
+  섹션 3개 이상 → /codex:rescue --background (gpt-5.3-codex-spark)
+  각 섹션 컴포넌트를 Codex에 병렬 위임, Claude는 루트 페이지 + 토큰 담당
+
+Post — 코드 리뷰:
+  /codex:review (gpt-5.3-codex)
+  생성된 코드의 design fidelity + 코드 품질 크로스 검증
+
+Codex 미설치 시 자동 스킵 — Claude만으로 순차 생성.
+```
 
 ## Phase 0: Figma Data Extraction
 
