@@ -125,23 +125,27 @@ Codex 미설치 시 자동 스킵 — Claude만으로 순차 생성.
 
 ### 0-0. 사용자 입력 수집
 
-AskUserQuestion으로 하나씩 순서대로 질문. **question 파라미터에 URL 입력 안내를 명확히 포함.**
+AskUserQuestion으로 하나씩 순서대로 질문.
+**각 질문 후 반드시 사용자 응답을 받은 다음에만 다음 Step으로 진행한다. 응답을 기다리지 않고 넘어가면 안 된다.**
 
 ```
 Step 1: 스토리보드 URL (선택)
-  AskUserQuestion:
-    question: "📋 스토리보드 Figma URL을 입력해주세요. (없으면 '없음'이라고 입력)"
+  → AskUserQuestion 호출:
+      question: "📋 스토리보드 Figma URL을 입력해주세요. (없으면 '없음'이라고 입력)"
+  → ⏸️ 사용자 응답 대기 (반드시 응답을 받은 후 진행)
   → URL 입력됨: storyboardUrl 저장
   → "없음" 또는 빈 응답: storyboardUrl = null
 
 Step 2: 디자인 URL (필수)
-  AskUserQuestion:
-    question: "🎨 디자인 Figma URL을 입력해주세요."
+  → AskUserQuestion 호출:
+      question: "🎨 디자인 Figma URL을 입력해주세요."
+  → ⏸️ 사용자 응답 대기 (반드시 응답을 받은 후 진행)
   → URL 저장: designUrls = [url]
 
 Step 3: 추가 디자인 URL (반응형)
-  AskUserQuestion:
-    question: "🎨 반응형용 추가 디자인 URL이 있나요? (없으면 '없음'이라고 입력)"
+  → AskUserQuestion 호출:
+      question: "🎨 반응형용 추가 디자인 URL이 있나요? (없으면 '없음'이라고 입력)"
+  → ⏸️ 사용자 응답 대기 (반드시 응답을 받은 후 진행)
   → URL 입력됨: designUrls에 추가 → responsive mode
   → "없음" 또는 빈 응답: single mode
 
@@ -149,6 +153,9 @@ Step 4 (--new 미지정 시):
   프로젝트에 기존 디자인 시스템이 있는지 자동 감지
   → 있으면: default mode (기존 토큰 활용)
   → 없으면: 자동으로 --new mode
+
+⚠️ 절대 Step 1~3을 한 번에 호출하지 않는다.
+   Step 1 응답 → Step 2 호출 → Step 2 응답 → Step 3 호출 순서 엄수.
 ```
 
 ### 0-1. 스토리보드 추출 (storyboardUrl이 있을 때)
