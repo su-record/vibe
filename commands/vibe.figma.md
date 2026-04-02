@@ -189,59 +189,71 @@ URL에서 fileKey, nodeId 추출 (동일 방식)
   → responsive mode 진입
 ```
 
-### 0-2. Image Asset Extraction (필수)
+### 0-3. Image Asset Download (BLOCKING — 코드 생성 전 반드시 완료)
 
-`get_design_context` 응답에 포함된 이미지 에셋 URL을 **반드시 다운로드**하여 프로젝트에 저장해야 함.
-MCP가 반환하는 URL은 **7일 후 만료**되므로 임시 URL을 코드에 직접 넣으면 안 됨.
+> **⛔ 이 단계를 건너뛰면 안 됨.** 이미지 다운로드가 완료되지 않으면 Phase 6 코드 생성으로 진행하지 않는다.
 
-**에셋 URL 감지:**
+`get_design_context` 응답에 포함된 이미지 에셋 URL은 **7일 후 만료**되는 임시 URL.
+**즉시 다운로드**하여 프로젝트에 저장해야 함.
 
-`get_design_context` 응답의 코드에 다음 패턴이 포함됨:
+**Step 1: 에셋 URL 수집**
+
+`get_design_context` 응답에서 모든 이미지 URL 추출:
 ```
-const image = 'https://www.figma.com/api/mcp/asset/...'
-```
-
-**다운로드 및 저장:**
-
-```
-1. 응답에서 모든 이미지 URL 추출 (https://www.figma.com/api/mcp/asset/...)
-2. WebFetch로 각 URL 다운로드
-3. 프로젝트의 에셋 디렉토리에 저장:
-   - Nuxt: public/images/{feature}/ 또는 assets/images/{feature}/
-   - Next.js: public/images/{feature}/
-   - React: public/images/{feature}/ 또는 src/assets/{feature}/
-4. 파일명은 레이어 이름 기반 (kebab-case):
-   - "Hero Background" → hero-background.webp
-   - "Product Photo 1" → product-photo-1.webp
-5. 생성된 코드에서 임시 URL을 로컬 경로로 교체:
-   - 'https://www.figma.com/api/mcp/asset/...' → '/images/{feature}/hero-background.webp'
+패턴: https://www.figma.com/api/mcp/asset/...
+코드에 const xxxImage = 'https://...' 형태로 포함됨
 ```
 
-**SVG 처리:**
+**Step 2: 다운로드 + 저장**
 
 ```
-- 아이콘/로고 등 벡터 에셋은 SVG로 추출
-- SVG는 인라인 컴포넌트로 변환하거나 파일로 저장
-  - 작은 아이콘 (< 1KB) → 인라인 SVG 컴포넌트
-  - 큰 SVG → 파일로 저장 후 <img> 또는 import
+각 URL에 대해:
+  1. WebFetch로 다운로드
+  2. 프로젝트 에셋 디렉토리에 저장:
+     - Nuxt: static/images/{feature}/ 또는 public/images/{feature}/
+     - Next.js: public/images/{feature}/
+     - React: public/images/{feature}/
+  3. 파일명은 레이어 이름 기반 (kebab-case):
+     - "Hero Background" → hero-background.webp
+     - "Product Photo 1" → product-photo-1.webp
 ```
 
-**에셋 미추출 시 경고:**
-
-코드 생성 완료 후, MCP 임시 URL이 코드에 남아있으면 경고:
-```
-⚠️ 임시 Figma URL이 코드에 남아있습니다. 7일 후 만료됩니다:
-   - src/components/Hero.vue: line 12 (hero-bg)
-   → WebFetch로 다운로드 후 로컬 경로로 교체하세요.
-```
-
-### 0-3. Verify Extraction
+**Step 3: URL → 로컬 경로 매핑 테이블 생성**
 
 ```
-1. 모든 MCP 호출 성공 확인
-2. 이미지 에셋 다운로드 완료 확인
-3. 임시 URL이 코드에 남아있지 않은지 확인
-4. Responsive mode: 최소 2개 뷰포트 확인
+다운로드 완료 후, 매핑 테이블을 메모리에 보관:
+
+| Figma 임시 URL | 로컬 경로 | 레이어 이름 |
+|---------------|----------|-----------|
+| https://figma.com/api/mcp/asset/abc... | /images/winter-pcbang/hero-bg.webp | Hero Background |
+| https://figma.com/api/mcp/asset/def... | /images/winter-pcbang/hero-title.webp | Hero Title |
+
+→ Phase 6 코드 생성 시 이 매핑 테이블로 임시 URL을 로컬 경로로 교체
+```
+
+**Step 4: SVG 처리**
+
+```
+- 벡터 에셋 (아이콘, 로고) → SVG로 다운로드
+- 작은 아이콘 (< 1KB) → 인라인 SVG 컴포넌트
+- 큰 SVG → 파일로 저장
+```
+
+### 0-4. Extraction Gate (코드 생성 진행 조건)
+
+> **다음 조건을 모두 만족해야 Phase 1로 진행:**
+
+```
+✅ 디자인 URL 최소 1개의 get_design_context 성공
+✅ 디자인 스크린샷 최소 1개 획득
+✅ 이미지 에셋 전부 다운로드 완료 (0개 남은 미다운로드)
+✅ URL→로컬경로 매핑 테이블 생성 완료
+✅ (responsive) 최소 2개 뷰포트의 스크린샷 획득
+
+❌ 하나라도 실패 시:
+  → 실패 항목 보고 + 재시도
+  → 이미지 다운로드 실패 시: 해당 URL 재시도 (최대 3회)
+  → 재시도 후에도 실패: 사용자에게 수동 다운로드 요청 후 계속
 ```
 
 ---
