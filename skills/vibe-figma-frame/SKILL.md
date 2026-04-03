@@ -233,107 +233,211 @@ Step f: 최종 인벤토리 체크
 }
 ```
 
-### 3-5. 외부 스타일 파일 생성 (Write 도구)
+### 3-5. 글로벌 스타일 파일 구조 생성 (BLOCKING — 컴포넌트 수정 전 필수)
 
-> **스타일은 컴포넌트 파일이 아닌 외부 파일에 작성한다. (HARD RULE 6)**
+> **이 단계를 건너뛰면 Step B 미완성. 컴포넌트를 수정하기 전에 스타일 파일을 먼저 만든다.**
 
-```
-섹션별로 2개 파일 생성:
-
-1. layout 파일 — 섹션 배치/구조/배경
-   Write: styles/{feature}/layout/_{section}.scss
-
-   포함 내용:
-     - 섹션 position, display, flex/grid, padding, margin
-     - Multi-Layer 배경 (.{section}Bg, .{section}BgOverlay, .{section}Content)
-     - 섹션 min-height, overflow
-
-2. components 파일 — UI 요소 모양/텍스트
-   Write: styles/{feature}/components/_{section}-elements.scss
-
-   포함 내용:
-     - 모든 텍스트 스타일 (아래 텍스트 스타일 추출 참조)
-     - 버튼/카드/배지 모양 (color, border, border-radius, shadow)
-     - hover/focus/active 상태
-     - 아이콘/로고 크기
-```
-
-### 3-6. 텍스트 스타일 추출 + 적용
-
-> **참조 코드의 스타일 값을 그대로 사용한다. 스크린샷에서 추정하지 않는다.**
+첫 번째 섹션 처리 시 전체 구조를 Write로 생성. 이후 섹션에서는 해당 파일에 Edit으로 추가.
 
 ```
-참조 코드에서 텍스트 요소별 Figma 토큰 값을 추출:
+styles/{feature}/
+  index.scss                         ← [1] 진입점 (모든 파일 import)
+  _tokens.scss                       ← [2] 토큰 (색상, 폰트, 간격 변수)
+  _mixins.scss                       ← [3] mixin (breakpoint, fluid 함수)
+  _base.scss                         ← [4] 공통 (reset, font-face, 전역 규칙)
+  layout/
+    _page.scss                       ← [5] 페이지 전체 레이아웃
+    _{section}.scss                   ← [6] 각 섹션별 배치/구조/배경
+  components/
+    _{element}.scss                   ← [7] 재사용 UI 요소 (card, button, badge 등)
+```
 
-  예: 참조 코드가 이렇게 돌아왔으면:
-    <h1 className="text-[48px] font-black text-[#1B3A1D] leading-[1.2]">제목</h1>
-    <p className="text-[24px] text-[#333333] leading-[1.6]">설명</p>
+#### [1] index.scss — Write로 생성
 
-  textStyles = [
-    {
-      selector: ".heroTitle",
-      fontSize: 48px × scaleFactor,     // Figma 토큰 값 × 스케일
-      fontWeight: 900,                  // font-black = 900
-      color: "#1B3A1D",                 // Figma 토큰 값 그대로
-      lineHeight: 1.2,                  // Figma 토큰 값 그대로
-      textAlign: "center",              // 스크린샷에서 판단
-    },
-    {
-      selector: ".heroDescription",
-      fontSize: 24px × scaleFactor,
-      fontWeight: 400,
-      color: "#333333",
-      lineHeight: 1.6,
-    },
-    // 참조 코드의 모든 텍스트 요소
-  ]
+```scss
+// Foundation
+@use 'tokens';
+@use 'mixins';
+@use 'base';
 
-적용 위치: styles/{feature}/components/_{section}-elements.scss
+// Layout
+@use 'layout/page';
+@use 'layout/hero';
+@use 'layout/daily-checkin';
+// ... Step A의 모든 섹션
 
-  .heroTitle {
-    font-size: figma.$figma-text-hero;    // 48px × 0.75 = 36px → 토큰
-    font-weight: 900;                     // 참조 코드에서 그대로
-    color: #1B3A1D;                       // 참조 코드에서 그대로
-    line-height: 1.2;                     // 참조 코드에서 그대로
-    text-align: center;                   // 스크린샷에서 판단
-  }
+// Components
+@use 'components/card';
+@use 'components/button';
+// ... 반복 패턴에서 추출된 재사용 요소
+```
 
-  .heroDescription {
-    font-size: figma.$figma-text-sub;     // 24px × 0.75 = 18px → 토큰
-    font-weight: 400;
-    color: #333333;
-    line-height: 1.6;
-    text-align: center;
-  }
+#### [2] _tokens.scss — 참조 코드에서 추출한 값으로 Write
 
-텍스트 스타일 누락 검증:
-  → 스크린샷의 텍스트 요소 수 = 스타일 파일의 font-size 선언 수
-  → 브라우저 기본 스타일(검은색 16px serif)로 보이는 텍스트 = P1
+```scss
+@use 'sass:math';
+
+// ── Colors (참조 코드 hex 그대로) ──
+$figma-bg-primary: #0A1628;
+$figma-bg-section: #1A2B4A;
+$figma-text-heading: #1B3A1D;
+$figma-text-body: #333333;
+$figma-text-light: #FFFFFF;
+$figma-accent: #FFD700;
+
+// ── Typography (참조 코드 px × scaleFactor) ──
+$figma-text-hero: 36px;       // Figma 48px × 0.75
+$figma-text-sub: 18px;        // Figma 24px × 0.75
+$figma-text-body: 14px;       // Figma 18px × 0.75
+$figma-text-caption: 12px;    // Figma 16px × 0.75
+$figma-font-family: 'Noto Sans KR', sans-serif;
+
+// ── Spacing (참조 코드 px × scaleFactor) ──
+$figma-space-section: 60px;   // Figma 80px × 0.75
+$figma-space-content: 24px;   // Figma 32px × 0.75
+$figma-space-element: 12px;   // Figma 16px × 0.75
+
+// ── Decorations ──
+$figma-radius-card: 12px;
+$figma-shadow-card: 0 4px 12px rgba(0,0,0,0.15);
+
+// ── Breakpoints ──
+$figma-bp: 1024px;
+$figma-bp-mobile-min: 360px;
+$figma-bp-pc-target: 1920px;
+```
+
+#### [3] _mixins.scss — Write로 생성
+
+```scss
+@use 'tokens' as t;
+
+@mixin figma-pc { @media (min-width: t.$figma-bp) { @content; } }
+
+@function figma-fluid($mobile, $desktop) {
+  // clamp 계산 (vibe-figma-rules R-3)
+}
+```
+
+#### [4] _base.scss — Write로 생성
+
+```scss
+@use 'tokens' as t;
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: t.$figma-font-family; }
+img { max-width: 100%; height: auto; }
+```
+
+#### [6] layout/_{section}.scss — 섹션별 Write
+
+```scss
+@use '../tokens' as t;
+@use '../mixins' as m;
+
+// 참조 코드의 레이아웃 관련 값 + 스크린샷의 구조를 적용
+.heroSection {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  padding: t.$figma-space-section 0;
+}
+
+// Multi-Layer 배경 (이미지가 있는 섹션)
+.heroBg {
+  position: absolute; inset: 0; z-index: 0;
+  background-image: url('/images/{feature}/hero-bg.webp');
+  background-size: cover;
+  background-position: center;
+}
+.heroBgOverlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+}
+.heroContent {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 t.$figma-space-content;
+}
+```
+
+#### [7] components/_{element}.scss — 텍스트 + UI 요소
+
+```scss
+@use '../tokens' as t;
+
+// 참조 코드의 Figma 토큰 값을 그대로 사용
+.heroTitle {
+  font-size: t.$figma-text-hero;
+  font-weight: 900;
+  color: t.$figma-text-heading;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.heroDescription {
+  font-size: t.$figma-text-sub;
+  font-weight: 400;
+  color: t.$figma-text-body;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.heroCta {
+  font-size: t.$figma-text-body;
+  font-weight: 700;
+  color: t.$figma-text-light;
+  background: t.$figma-accent;
+  border-radius: t.$figma-radius-card;
+  padding: t.$figma-space-element t.$figma-space-content;
+}
+```
+
+### 3-6. 생성 확인 (BLOCKING)
+
+```
+스타일 파일 생성 후 반드시 확인:
+
+  Glob: styles/{feature}/index.scss        → 존재
+  Glob: styles/{feature}/_tokens.scss      → 존재
+  Glob: styles/{feature}/_mixins.scss      → 존재
+  Glob: styles/{feature}/_base.scss        → 존재
+  Glob: styles/{feature}/layout/*.scss     → 섹션 수만큼 존재
+  Glob: styles/{feature}/components/*.scss → 1개 이상 존재
+
+  Grep: "font-size" in styles/{feature}/   → 0건이면 P1 (텍스트 스타일 미작성)
+  Grep: "color:" in styles/{feature}/      → 0건이면 P1
+  Grep: "background-image" in styles/{feature}/ → 배경 이미지 섹션 수만큼
+
+하나라도 실패 → Write/Edit으로 보완 → 재확인
+파일이 모두 존재하고 내용이 있어야 → 3-7로 진행
 ```
 
 ### 3-7. 컴포넌트 파일에 반영 (Edit 도구)
 
 ```
 컴포넌트 파일에는 template + script만 수정한다.
-스타일은 3-5에서 생성한 외부 파일에만 존재.
+모든 스타일은 3-5에서 생성한 외부 파일에만 존재.
 
 a. template 수정:
    - placeholder → 실제 마크업으로 교체
-   - 클래스명 추가 (외부 스타일 파일의 셀렉터와 매칭)
+   - 클래스명 추가 (layout/*.scss, components/*.scss의 셀렉터와 매칭)
    - 이미지 태그에 로컬 경로 설정
+   - Multi-Layer 구조 적용 (.{section}Bg + .{section}Content)
 
 b. Step A 코드 보존:
    - 기능 주석/핸들러/인터페이스 유지
    - 목 데이터/이벤트 바인딩 유지
 
 c. 스타일 import 설정:
-   - 루트 페이지 또는 설정 파일에서 외부 스타일 파일 import
-   - 컴포넌트 파일 안에 <style> 블록 작성 금지
+   - 루트 페이지 또는 설정 파일에서 styles/{feature}/index.scss import
+   - Nuxt: nuxt.config의 css 배열에 추가
+   - Next.js: _app 또는 layout에서 import
 
-주의:
-  - 스크린샷에 보이는 이미지가 코드에 없으면 → 누락
-  - Figma 임시 URL이 코드에 남으면 안 됨
-  - 컴포넌트에 style="" 인라인 스타일 금지 (동적 바인딩 제외)
+d. 컴포넌트 안에 스타일 작성 금지:
+   - <style> 블록 금지
+   - style="" 인라인 금지 (동적 바인딩 제외)
+   - 스타일이 필요하면 → 외부 파일에 추가 → 클래스명으로 연결
 ```
 
 ## B-4. 뷰포트 모드에 따른 스타일 적용
