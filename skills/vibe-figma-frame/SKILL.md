@@ -105,18 +105,38 @@ AskUserQuestion (options 사용 금지, 자유 텍스트만):
 
 **각 매핑된 섹션에 대해 순서대로:**
 
-### 3-1. 스크린샷 시각 분석 + 이미지 인벤토리 (1순위)
+### 3-1. 참조 코드에서 스타일 값 + 에셋 추출
+
+```
+get_design_context(fileKey, designFrame.nodeId)
+→ 참조 코드 (React+Tailwind) + 에셋 URL
+
+참조 코드에서 추출하는 것 (Figma 토큰 = 정확한 값):
+  ✅ 색상: hex 값 (text-[#1B3A1D], bg-[#0A1628] 등)
+  ✅ 폰트: font-size(px), font-weight, line-height, font-family
+  ✅ 간격: padding, margin, gap (px)
+  ✅ 장식: border-radius, box-shadow, opacity
+  ✅ 에셋 URL: https://figma.com/api/mcp/asset/...
+
+이 값들은 디자이너가 Figma UI에서 보는 것과 동일한 토큰 값.
+스크린샷에서 추정하지 않고 이 값을 그대로 사용한다.
+px 값에만 스케일 팩터(R-3)를 적용.
+
+⚠️ HTML 구조는 레이어가 비정형이면 부정확할 수 있음.
+  → 구조는 3-2 스크린샷에서 판단.
+```
+
+### 3-2. 스크린샷으로 구조 + 이미지 인벤토리
 
 ```
 get_screenshot(fileKey, designFrame.nodeId)
-→ 원본 디자인 이미지 확보 — 이것이 코드 생성의 1차 소스
+→ 원본 디자인 이미지 확보
 
-스크린샷에서 읽는 항목 (vibe-figma-rules R-7 참조):
-  → 레이아웃 구조 (섹션 경계, flex/grid 방향, 요소 배치)
-  → 색상 (배경, 텍스트, 버튼, 보더)
-  → 타이포 (크기 비율, 굵기, 줄간격) — 스케일 팩터 적용 (R-3)
-  → 간격 (패딩, gap, 마진) — 스케일 팩터 적용 (R-3)
-  → z-index 관계 (겹침 구조, 투명도)
+스크린샷에서 판단하는 것 (구조):
+  → 레이아웃 구조 (섹션 경계, flex/grid 방향, 요소 배치 순서)
+  → 이미지 배치 분류 (Background/Content/Overlay, R-4 참조)
+  → z-index 관계 (겹침 구조, 오버레이 유무)
+  → 참조 코드에 없는 시각 요소 발견 → 추가 구현 대상
 ```
 
 **이미지 인벤토리 작성 (필수):**
@@ -129,26 +149,11 @@ get_screenshot(fileKey, designFrame.nodeId)
     { name: "hero-character", type: "overlay", description: "캐릭터 일러스트 우하단" },
     { name: "hero-vehicle", type: "content", description: "차량 이미지 중앙" },
     { name: "hero-logo", type: "content", description: "이벤트 로고 상단" },
-    { name: "hero-particle", type: "overlay", description: "눈 파티클 효과" },
   ]
 
 → 이 인벤토리가 B-3.3 다운로드의 체크리스트가 됨
 → B-5 검증에서 인벤토리 vs 코드의 이미지를 1:1 대조
 → 인벤토리에 있는데 코드에 없으면 = P1
-```
-
-### 3-2. 참조 코드 + 에셋 추출 (2순위)
-
-```
-get_design_context(fileKey, designFrame.nodeId)
-→ 참조 코드 + 에셋 URL
-
-참조 코드에서 가져오는 것:
-  ✅ 이미지 에셋 URL (https://figma.com/api/mcp/asset/...)
-  ✅ 정확한 hex 색상값 (스크린샷 추정보다 정확할 때)
-  ✅ 폰트 패밀리명, border-radius, shadow 값
-  ⚠️ 레이아웃/구조 — 스크린샷과 대조 후 채택
-  ❌ px 값 그대로 사용 금지 — 반드시 스케일 팩터 적용
 ```
 
 ### 3-3. 이미지 에셋 다운로드 (BLOCKING — 코드 반영 전 필수)
@@ -255,42 +260,48 @@ Step f: 최종 인벤토리 체크
 
 ### 3-6. 텍스트 스타일 추출 + 적용
 
-> **스크린샷에 보이는 모든 텍스트 요소에 스타일을 적용해야 한다.**
+> **참조 코드의 스타일 값을 그대로 사용한다. 스크린샷에서 추정하지 않는다.**
 
 ```
-스크린샷에서 텍스트 요소별로 추출:
+참조 코드에서 텍스트 요소별 Figma 토큰 값을 추출:
+
+  예: 참조 코드가 이렇게 돌아왔으면:
+    <h1 className="text-[48px] font-black text-[#1B3A1D] leading-[1.2]">제목</h1>
+    <p className="text-[24px] text-[#333333] leading-[1.6]">설명</p>
 
   textStyles = [
     {
       selector: ".heroTitle",
-      fontSize: "스크린샷에서 읽은 값 × scaleFactor",
-      fontWeight: "스크린샷에서 판단 (bold/semibold/normal)",
-      color: "참조 코드 hex 또는 스크린샷 추정",
-      lineHeight: "스크린샷에서 판단",
-      textAlign: "center/left/right",
+      fontSize: 48px × scaleFactor,     // Figma 토큰 값 × 스케일
+      fontWeight: 900,                  // font-black = 900
+      color: "#1B3A1D",                 // Figma 토큰 값 그대로
+      lineHeight: 1.2,                  // Figma 토큰 값 그대로
+      textAlign: "center",              // 스크린샷에서 판단
     },
     {
       selector: ".heroDescription",
-      fontSize: "...",
-      ...
+      fontSize: 24px × scaleFactor,
+      fontWeight: 400,
+      color: "#333333",
+      lineHeight: 1.6,
     },
-    // 섹션 내 모든 텍스트 요소
+    // 참조 코드의 모든 텍스트 요소
   ]
 
 적용 위치: styles/{feature}/components/_{section}-elements.scss
 
   .heroTitle {
-    font-size: figma.$figma-text-hero;    // 토큰으로 정의
-    font-weight: 900;
-    color: #1B3A1D;                       // 참조 코드에서 정확한 hex
-    line-height: 1.2;
-    text-align: center;
+    font-size: figma.$figma-text-hero;    // 48px × 0.75 = 36px → 토큰
+    font-weight: 900;                     // 참조 코드에서 그대로
+    color: #1B3A1D;                       // 참조 코드에서 그대로
+    line-height: 1.2;                     // 참조 코드에서 그대로
+    text-align: center;                   // 스크린샷에서 판단
   }
 
   .heroDescription {
-    font-size: figma.$figma-text-sub;
+    font-size: figma.$figma-text-sub;     // 24px × 0.75 = 18px → 토큰
     font-weight: 400;
-    color: #333;
+    color: #333333;
     line-height: 1.6;
     text-align: center;
   }
