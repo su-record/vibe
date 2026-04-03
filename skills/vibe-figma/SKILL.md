@@ -24,7 +24,7 @@ tier: standard
 /vibe.figma
   → Phase 0: Setup (스택 감지, 디렉토리 생성)
   → Phase 1: Storyboard (선택 — 레이아웃+컴포넌트 구성 + 기능 주석)
-  → Phase 2: Design (핵심 — 디자인 URL들로 이미지+스타일 적용)
+  → Phase 2: Design (모바일 퍼스트 → 추가 뷰포트 반복)
   → Phase 3: Verification (Grep 체크 + 스크린샷 비교)
 ```
 
@@ -168,15 +168,17 @@ Phase 1에서 컴포넌트가 이미 존재 (레이아웃 + 기능 주석 + 목 
 Phase 2에서는 이 컴포넌트에 **디자인(이미지 + 스타일)**을 입힌다.
 
 ```
-디자인 URL 루프:
-  AskUserQuestion: "디자인 Figma URL을 입력해주세요. (없으면 '없음')"
-  → URL 입력 → 2-2 섹션별 처리
-  → 처리 완료 후 다시 질문: "디자인 Figma URL을 입력해주세요. (없으면 '없음')"
-  → URL 입력 → 2-2 섹션별 처리
-  → ...
-  → "없음" → Phase 3으로
+모바일 퍼스트 강제. CSS base = 모바일, @media (min-width:)로 확장.
 
-각 URL은 동등하게 처리. 뷰포트 구분은 프레임 width로 자동 판별.
+1. AskUserQuestion: "모바일 디자인 Figma URL을 입력해주세요."
+   → 반드시 모바일 먼저. base 스타일로 처리.
+
+2. 처리 완료 후:
+   AskUserQuestion: "추가 디자인 URL을 입력해주세요. (없으면 '없음')"
+   → URL 입력 → 반응형 레이어 추가 (@media min-width)
+   → 처리 완료 후 다시: "추가 디자인 URL을 입력해주세요. (없으면 '없음')"
+   → ...
+   → "없음" → Phase 3으로
 ```
 
 ### 2-1. 스타일 파일 내용 작성 (첫 섹션 전)
