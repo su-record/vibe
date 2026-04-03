@@ -59,7 +59,7 @@ AskUserQuestion (options 사용 금지, 자유 텍스트만):
 
 **각 매핑된 섹션에 대해 순서대로:**
 
-### 3-1. 스크린샷 시각 분석 (1순위)
+### 3-1. 스크린샷 시각 분석 + 이미지 인벤토리 (1순위)
 
 ```
 get_screenshot(fileKey, designFrame.nodeId)
@@ -67,12 +67,28 @@ get_screenshot(fileKey, designFrame.nodeId)
 
 스크린샷에서 읽는 항목 (vibe-figma-rules R-7 참조):
   → 레이아웃 구조 (섹션 경계, flex/grid 방향, 요소 배치)
-  → 배경 (이미지/단색/그라데이션, 오버레이 유무)
   → 색상 (배경, 텍스트, 버튼, 보더)
   → 타이포 (크기 비율, 굵기, 줄간격) — 스케일 팩터 적용 (R-3)
   → 간격 (패딩, gap, 마진) — 스케일 팩터 적용 (R-3)
-  → 이미지 분류 (Background/Content/Overlay, R-4 참조)
   → z-index 관계 (겹침 구조, 투명도)
+```
+
+**이미지 인벤토리 작성 (필수):**
+
+```
+스크린샷을 보고 해당 섹션에 보이는 모든 이미지를 목록화:
+
+  imageInventory = [
+    { name: "hero-bg", type: "background", description: "눈 테마 풀스크린 배경" },
+    { name: "hero-character", type: "overlay", description: "캐릭터 일러스트 우하단" },
+    { name: "hero-vehicle", type: "content", description: "차량 이미지 중앙" },
+    { name: "hero-logo", type: "content", description: "이벤트 로고 상단" },
+    { name: "hero-particle", type: "overlay", description: "눈 파티클 효과" },
+  ]
+
+→ 이 인벤토리가 B-3.3 다운로드의 체크리스트가 됨
+→ B-5 검증에서 인벤토리 vs 코드의 이미지를 1:1 대조
+→ 인벤토리에 있는데 코드에 없으면 = P1
 ```
 
 ### 3-2. 참조 코드 + 에셋 추출 (2순위)
@@ -82,31 +98,57 @@ get_design_context(fileKey, designFrame.nodeId)
 → 참조 코드 + 에셋 URL
 
 참조 코드에서 가져오는 것:
-  ✅ 이미지 에셋 URL (https://figma.com/api/mcp/asset/...) — 핵심 가치
+  ✅ 이미지 에셋 URL (https://figma.com/api/mcp/asset/...)
   ✅ 정확한 hex 색상값 (스크린샷 추정보다 정확할 때)
   ✅ 폰트 패밀리명, border-radius, shadow 값
   ⚠️ 레이아웃/구조 — 스크린샷과 대조 후 채택
   ❌ px 값 그대로 사용 금지 — 반드시 스케일 팩터 적용
-
-⚠️ 레이어가 "Frame 633372" 같은 비정형일 때:
-  참조 코드가 부정확할 수 있음 → 스크린샷 분석 결과를 기준으로 코드 생성
 ```
 
 ### 3-3. 이미지 에셋 다운로드 (BLOCKING — 코드 반영 전 필수)
 
+> **인벤토리의 모든 이미지가 로컬에 존재해야 다음 단계로 넘어갈 수 있다.**
+
 ```
 Step a: 참조 코드에서 에셋 URL 추출
   → 모든 https://www.figma.com/api/mcp/asset/ URL 수집
+  → 각 URL을 imageInventory 항목과 매칭
 
-Step b: 각 URL을 다운로드 → 파일 저장
+Step b: 인벤토리 vs 에셋 URL 대조
+  → 인벤토리에 있는데 에셋 URL이 없는 이미지 = 누락 후보
+  → 누락 후보에 대해 대체 추출 실행 (Step e)
+
+Step c: 매칭된 에셋 다운로드
   Bash: curl -L "{url}" -o static/images/{feature}/{name}.webp
-  파일명: 변수명/레이어명 기반 kebab-case
-
-Step c: URL→로컬경로 매핑 테이블 생성
+  파일명: 인벤토리 name 기반 kebab-case
 
 Step d: 다운로드 검증
   → 파일 존재 + 0byte 아닌지 확인
   → 누락/실패 시 재다운로드
+
+Step e: 대체 추출 (참조 코드에 에셋 URL이 없는 이미지)
+  레이어가 비정형("Frame 633372")이면 참조 코드에 이미지가 누락될 수 있음.
+  이 경우 다음 순서로 시도:
+
+  1. 하위 노드 탐색:
+     get_metadata로 섹션 하위 프레임 목록 확보
+     → 이미지로 의심되는 하위 nodeId에 대해 get_design_context 재호출
+     → 에셋 URL 확보되면 다운로드
+
+  2. 하위 노드 개별 스크린샷:
+     이미지로 의심되는 하위 nodeId에 대해 get_screenshot
+     → 해당 스크린샷 자체를 이미지 에셋으로 저장
+     → 배경 이미지: 스크린샷을 background-image로 사용
+     → 콘텐츠 이미지: 스크린샷을 <img>로 사용
+
+  3. 섹션 전체 스크린샷 크롭:
+     위 방법이 다 실패하면, 섹션 스크린샷에서 해당 영역을 잘라서 사용
+     → 최후 수단이지만 이미지 누락보다는 낫다
+
+Step f: 최종 인벤토리 체크
+  인벤토리 항목 수 = 다운로드된 파일 수
+  하나라도 빠지면 → Step e 재시도
+  모든 이미지가 로컬에 있어야 → 3-4로 진행
 ```
 
 ### 3-4. 이미지 코드 패턴 적용
@@ -207,11 +249,31 @@ for each section in mappings:
 ### Step B 추가 검증 항목
 
 ```
-1. 이미지 에셋: 전부 다운로드 + 로컬 파일 존재 + 0byte 아님
-2. Figma 임시 URL: Grep으로 figma.com/api/mcp/asset 잔존 0건 확인
-3. 배경 이미지: 스크린샷에 보이는 배경이 코드에도 있는지
-4. 오버레이: 배경 위 텍스트 가독성 확보 (스크린샷 대조)
-5. (responsive) 이전 뷰포트 섹션들 재비교 — 깨진 곳 없는지
+1. 이미지 인벤토리 대조 (가장 중요):
+   for each item in imageInventory:
+     □ 로컬 파일 존재 (Glob)
+     □ 0byte 아님 (ls -la)
+     □ 코드에서 참조됨 (Grep: 파일명으로 검색)
+     □ 올바른 패턴 적용됨:
+       - background → .{section}Bg { background-image: url(...) }
+       - content → <img src="..." /> 또는 <Image />
+       - overlay → .{section}Character { background-image: url(...) }
+   하나라도 실패 → P1 → 수정 → 재검증
+
+2. Figma 임시 URL 잔존 체크:
+   Grep: "figma.com/api/mcp/asset" in components/{feature}/
+   → 0건이어야 함. 남아있으면 → 로컬 경로로 교체
+
+3. 배경 이미지 Multi-Layer 검증:
+   스크린샷에 배경 이미지가 보이는 섹션:
+     □ .{section}Bg 클래스 존재 (Grep)
+     □ .{section}Content 클래스 존재 (z-index 최상위)
+     □ 배경 위 텍스트 가독성 확보 (오버레이 유무)
+   누락 → P1
+
+4. (responsive) 뷰포트별 이미지:
+   □ 뷰포트별 다른 배경 이미지 → @media 분기 있는지
+   □ 이전 뷰포트 이미지가 깨지지 않았는지
 ```
 
 ## 참조 스킬
