@@ -132,25 +132,129 @@ Popup: 패턴 분류 (확인/취소, 상세 모달, 알림, 입력 폼)
 - 개요 JSDoc 주석 (A-2에서 추출한 overview)
 ```
 
-### 섹션 컴포넌트 필수 포함 사항
+### HARD RULE: 빈 template 금지
 
 ```
-각 섹션 컴포넌트에 반드시 포함:
+브라우저에서 열었을 때 화면에 텍스트가 보여야 한다.
+빈 컴포넌트 shell은 Step A 미완성.
 
-1. JSDoc 주석:
-   - [기능 정의] — A-2에서 추출한 기능 설명
-   - [인터랙션] — ①②③ 번호 + 동작 설명
-   - [상태] — 해당 섹션의 상태 목록
+<template> 안에 반드시:
+  - 스토리보드에서 추출한 실제 텍스트 (제목, 설명, 버튼 라벨)
+  - 목 데이터가 렌더링되는 리스트 (v-for / .map)
+  - 클릭 가능한 버튼/링크
+  - 조건부 렌더링 (v-if / &&)
+```
 
-2. TypeScript 인터페이스:
-   - 섹션에서 사용하는 데이터 구조 정의
+### 섹션 컴포넌트 — 실제 코드 예시 (Vue)
 
-3. 이벤트 핸들러:
-   - 인터랙션 스펙에 맞는 함수 (body는 // TODO:)
+```vue
+<template>
+  <section class="dailyCheckInSection">
+    <h2 class="dailyCheckInSection__title">일일 출석 미션</h2>
+    <p class="dailyCheckInSection__description">매일 출석하고 스노우 토큰을 받으세요!</p>
 
-4. 목 데이터 (빈 배열 금지):
-   - 기능 정의서에서 추출한 아이템/보상/상품 정보로 채움
-   - 빈 배열 = UI가 안 보임 = Step A 미완성
+    <div class="dailyCheckInSection__calendar">
+      <div
+        v-for="day in checkInDays"
+        :key="day.date"
+        class="dailyCheckInSection__day"
+        :class="{ 'is-checked': day.checked, 'is-today': day.isToday }"
+        @click="handleCheckIn(day)"
+      >
+        <span class="dailyCheckInSection__dayLabel">{{ day.date }}</span>
+        <span class="dailyCheckInSection__dayReward">{{ day.reward }} 토큰</span>
+      </div>
+    </div>
+
+    <div class="dailyCheckInSection__milestones">
+      <div
+        v-for="milestone in milestones"
+        :key="milestone.days"
+        class="dailyCheckInSection__milestone"
+        :class="{ 'is-claimable': milestone.claimable, 'is-claimed': milestone.claimed }"
+        @click="handleClaimReward(milestone)"
+      >
+        <span>{{ milestone.days }}일 달성</span>
+        <span>{{ milestone.reward }}</span>
+        <button v-if="milestone.claimable && !milestone.claimed">받기</button>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script setup lang="ts">
+/**
+ * 일일 출석 미션 섹션
+ *
+ * [기능 정의]
+ * - 매일 출석 시 스노우 토큰 즉시 지급
+ * - 누적 3/5/7일 달성 시 추가 보상
+ *
+ * [인터랙션]
+ * ① 출석하기 클릭 → 출석 처리 → 토큰 지급 표시
+ * ② 누적 보상 클릭 → 보상 수령
+ *
+ * [상태] default, checked, reward-claimed
+ */
+
+interface CheckInDay {
+  date: string
+  checked: boolean
+  isToday: boolean
+  reward: number
+}
+
+interface Milestone {
+  days: number
+  claimable: boolean
+  claimed: boolean
+  reward: string
+}
+
+// 목 데이터 — 빈 배열 금지!
+const checkInDays = ref<CheckInDay[]>([
+  { date: 'Day 1', checked: true, isToday: false, reward: 10 },
+  { date: 'Day 2', checked: true, isToday: false, reward: 10 },
+  { date: 'Day 3', checked: false, isToday: true, reward: 10 },
+  { date: 'Day 4', checked: false, isToday: false, reward: 10 },
+  { date: 'Day 5', checked: false, isToday: false, reward: 10 },
+  { date: 'Day 6', checked: false, isToday: false, reward: 15 },
+  { date: 'Day 7', checked: false, isToday: false, reward: 20 },
+])
+
+const milestones = ref<Milestone[]>([
+  { days: 3, claimable: false, claimed: false, reward: '보상 상자 1개' },
+  { days: 5, claimable: false, claimed: false, reward: '보상 상자 2개' },
+  { days: 7, claimable: false, claimed: false, reward: '스페셜 보상' },
+])
+
+function handleCheckIn(day: CheckInDay): void {
+  // TODO: 출석 API 호출
+}
+
+function handleClaimReward(milestone: Milestone): void {
+  // TODO: 누적 보상 수령 API 호출
+}
+</script>
+<!-- 스타일은 외부 파일: styles/{feature}/components/_daily-checkin.scss -->
+```
+
+### 필수 포함 사항 체크리스트
+
+```
+<template> 안에:
+  □ 섹션 제목 <h2> (스토리보드에서 추출한 실제 텍스트)
+  □ 설명 텍스트 <p> (스토리보드에서 추출)
+  □ 리스트 렌더링 (v-for + 목 데이터, 빈 배열 금지)
+  □ 버튼/CTA (실제 라벨 텍스트 + @click 핸들러)
+  □ 조건부 렌더링 (상태에 따른 v-if)
+  □ 클래스명 (Step B에서 외부 스타일과 매칭)
+
+<script> 안에:
+  □ JSDoc: [기능 정의] + [인터랙션] + [상태]
+  □ TypeScript interface
+  □ 목 데이터 (기능 정의서에서 추출, 3~7개 아이템)
+  □ 이벤트 핸들러 함수 (body는 // TODO:)
 ```
 
 ### 스타일 분리 규칙
@@ -158,23 +262,21 @@ Popup: 패턴 분류 (확인/취소, 상세 모달, 알림, 입력 폼)
 ```
 컴포넌트 파일에 <style> 블록을 작성하지 않는다.
 스타일은 Step B에서 외부 파일로 생성.
-컴포넌트는 template + script 만 포함.
+컴포넌트는 <template> + <script setup> 만 포함.
 ```
 
-### 핵심 원칙: 스타일 없이 동작하는 코드
+### Step A 완료 기준
 
 ```
-✅ 클릭/탭/아코디언 등 인터랙션이 실제로 동작
-✅ 모달/팝업 open/close가 연결됨
-✅ 리스트 렌더링이 목 데이터로 동작
-✅ 조건부 렌더링이 상태에 따라 전환
-✅ emit으로 부모-자식 이벤트 연결
-→ 브라우저에서 열면 스타일은 없지만 인터랙션은 동작하는 상태
+브라우저에서 열었을 때:
+  ✅ 각 섹션의 제목/설명 텍스트가 화면에 보인다
+  ✅ 리스트 아이템이 렌더링된다 (목 데이터)
+  ✅ 버튼을 클릭하면 핸들러가 실행된다
+  ✅ 탭/아코디언/모달이 동작한다
+  ❌ 스타일은 없다 (Step B에서)
+  ❌ 이미지는 없다 (Step B에서)
 
-Step A에서는 이미지 자리에 빈 영역이 있을 수 있다.
-→ Step B에서 반드시 실제 이미지로 교체해야 함.
-→ Step B 완료 후 "placeholder", "Key Visual Image", 빈 dashed box가
-   코드에 남아있으면 = 미완성 (vibe-figma-frame HARD RULES 참조)
+빈 화면 = Step A 미완성. 다음 단계로 넘어가지 않는다.
 ```
 
 ## A-6. 인터랙션 매핑 테이블
@@ -197,37 +299,46 @@ Step A에서는 이미지 자리에 빈 영역이 있을 수 있다.
 ### 검증 항목
 
 ```
+0. 빈 화면 검사 (가장 중요 — 먼저 실행):
+   각 컴포넌트 파일을 Read로 열어서 <template> 안에 확인:
+     □ <h2> 또는 <h3> 섹션 제목 텍스트 존재
+     □ <p> 설명 텍스트 존재
+     □ v-for 또는 .map 렌더링 존재 (리스트 있는 섹션)
+     □ @click 또는 onClick 이벤트 존재 (인터랙션 있는 섹션)
+   <template> 안에 실제 HTML 태그가 없으면 → 빈 컴포넌트 → 재작성
+   Grep: "<template>" 다음 줄이 "</template>"이면 → 빈 template
+
 1. 파일 존재 확인 (Glob 도구):
    □ 루트 페이지 파일 존재
    □ PAGE 프레임 수 = 컴포넌트 파일 수
    □ styles 디렉토리 존재
-   □ 팝업 컴포넌트 존재 (스토리보드에 팝업이 있었으면)
-   → 누락 시 Write로 생성
 
-2. 기능 주석 확인 (Read 도구):
-   □ 모든 컴포넌트에 [기능 정의] + [인터랙션] + [상태] JSDoc
-   → 누락 시 Edit으로 추가
-
-3. 목 데이터 확인 (Grep 도구):
+2. 목 데이터 확인 (Grep 도구):
    □ 빈 배열 (ref([]) 패턴) 검색 → 0건
    → 발견 시 목 데이터 채움
 
-4. 스타일 분리 확인 (Grep 도구):
+3. 스타일 분리 확인 (Grep 도구):
    □ 컴포넌트 내 <style> 블록 0건
-   → 발견 시 제거
 
-5. 빌드 확인 (Bash 도구):
+4. 빌드 확인 (Bash 도구):
    □ npm run build 성공
-   → 에러 시 수정 후 재빌드
+
+5. 브라우저 확인:
+   □ dev 서버 열어서 실제 화면 확인
+   □ 각 섹션에 텍스트가 보이는지
+   □ 빈 화면이면 → 해당 컴포넌트 재작성
 ```
 
 ### 완료 조건
 
 ```
+✅ 빈 template 0개 — 모든 컴포넌트에 실제 HTML 마크업 존재
+✅ 브라우저에서 텍스트/리스트/버튼이 보인다
 ✅ 파일 수 = PAGE 프레임 수
-✅ 모든 JSDoc 주석 완비
 ✅ 빈 배열 0개
 ✅ <style> 블록 0개
 ✅ 빌드 성공
+
+빈 화면 = Step A 미완성. Step B로 넘어가지 않는다.
 → Step B 진행 가능
 ```
