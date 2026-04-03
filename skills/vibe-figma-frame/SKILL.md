@@ -37,6 +37,29 @@ triggers: []
    인벤토리의 이미지 중 하나라도 확보 못하면 Step B를 완료로 마킹하지 않는다.
    대체 추출 경로(하위 노드 탐색 → 개별 스크린샷 → 크롭)를 전부 시도한 후,
    그래도 실패하면 사용자에게 해당 이미지를 직접 제공해달라고 요청한다.
+
+5. 텍스트 스타일 미적용 = 미완성
+   스크린샷에서 읽은 모든 텍스트 스타일을 코드에 반영해야 한다:
+     - font-size (스케일 팩터 적용)
+     - font-weight
+     - color
+     - line-height
+     - letter-spacing (있으면)
+     - text-align
+   제목, 본문, 버튼 텍스트, 설명 등 스크린샷에 보이는 모든 텍스트 요소에 적용.
+   스타일이 적용되지 않은 텍스트 요소가 있으면 → P1.
+   브라우저 기본 스타일(검은색 16px)로 보이는 텍스트가 있으면 → 미완성.
+
+6. 스타일은 반드시 외부 파일에 작성
+   컴포넌트 파일(.vue/.tsx) 안에 <style> 블록이나 인라인 스타일을 작성하지 않는다.
+   모든 스타일은 외부 파일에 작성:
+     --new 모드: styles/{feature}/layout/_섹션.scss, components/_요소.scss
+     기본 모드: 프로젝트 기존 스타일 패턴에 따름
+
+   작성 후 검증:
+     Grep: "<style" in components/{feature}/ → 0건
+     Grep: "style=" in components/{feature}/ → 0건 (동적 바인딩 제외)
+   위반 시 → 해당 스타일을 외부 파일로 이동 후 재검증.
 ```
 
 ## 입력
@@ -205,29 +228,101 @@ Step f: 최종 인벤토리 체크
 }
 ```
 
-### 3-5. 컴포넌트 파일에 반영 (Edit 도구)
+### 3-5. 외부 스타일 파일 생성 (Write 도구)
+
+> **스타일은 컴포넌트 파일이 아닌 외부 파일에 작성한다. (HARD RULE 6)**
 
 ```
-변환 순서 (스크린샷 분석 → 코드):
+섹션별로 2개 파일 생성:
 
-a. 스크린샷 분석 결과로 코드 작성:
-   - 레이아웃 구조 (스크린샷에서 읽은 flex/grid, 배치)
-   - 스타일 값 (스크린샷에서 읽은 색상, 간격, 폰트 × 스케일 팩터)
-   - 배경 이미지 Multi-Layer 구조 (스크린샷에서 판단한 z-index)
+1. layout 파일 — 섹션 배치/구조/배경
+   Write: styles/{feature}/layout/_{section}.scss
 
-b. 참조 코드에서 보강:
-   - 에셋 URL → 다운로드된 로컬 경로로 교체
-   - 정확한 hex 색상값, border-radius, shadow (스크린샷 추정보다 정확할 때)
+   포함 내용:
+     - 섹션 position, display, flex/grid, padding, margin
+     - Multi-Layer 배경 (.{section}Bg, .{section}BgOverlay, .{section}Content)
+     - 섹션 min-height, overflow
 
-c. 프로젝트 스택으로 변환 (React→Vue 등)
+2. components 파일 — UI 요소 모양/텍스트
+   Write: styles/{feature}/components/_{section}-elements.scss
 
-d. Step A 코드와 병합:
-   - 기능 주석/핸들러/인터페이스 보존
-   - template의 placeholder → 실제 마크업으로 교체
+   포함 내용:
+     - 모든 텍스트 스타일 (아래 텍스트 스타일 추출 참조)
+     - 버튼/카드/배지 모양 (color, border, border-radius, shadow)
+     - hover/focus/active 상태
+     - 아이콘/로고 크기
+```
+
+### 3-6. 텍스트 스타일 추출 + 적용
+
+> **스크린샷에 보이는 모든 텍스트 요소에 스타일을 적용해야 한다.**
+
+```
+스크린샷에서 텍스트 요소별로 추출:
+
+  textStyles = [
+    {
+      selector: ".heroTitle",
+      fontSize: "스크린샷에서 읽은 값 × scaleFactor",
+      fontWeight: "스크린샷에서 판단 (bold/semibold/normal)",
+      color: "참조 코드 hex 또는 스크린샷 추정",
+      lineHeight: "스크린샷에서 판단",
+      textAlign: "center/left/right",
+    },
+    {
+      selector: ".heroDescription",
+      fontSize: "...",
+      ...
+    },
+    // 섹션 내 모든 텍스트 요소
+  ]
+
+적용 위치: styles/{feature}/components/_{section}-elements.scss
+
+  .heroTitle {
+    font-size: figma.$figma-text-hero;    // 토큰으로 정의
+    font-weight: 900;
+    color: #1B3A1D;                       // 참조 코드에서 정확한 hex
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .heroDescription {
+    font-size: figma.$figma-text-sub;
+    font-weight: 400;
+    color: #333;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+텍스트 스타일 누락 검증:
+  → 스크린샷의 텍스트 요소 수 = 스타일 파일의 font-size 선언 수
+  → 브라우저 기본 스타일(검은색 16px serif)로 보이는 텍스트 = P1
+```
+
+### 3-7. 컴포넌트 파일에 반영 (Edit 도구)
+
+```
+컴포넌트 파일에는 template + script만 수정한다.
+스타일은 3-5에서 생성한 외부 파일에만 존재.
+
+a. template 수정:
+   - placeholder → 실제 마크업으로 교체
+   - 클래스명 추가 (외부 스타일 파일의 셀렉터와 매칭)
+   - 이미지 태그에 로컬 경로 설정
+
+b. Step A 코드 보존:
+   - 기능 주석/핸들러/인터페이스 유지
+   - 목 데이터/이벤트 바인딩 유지
+
+c. 스타일 import 설정:
+   - 루트 페이지 또는 설정 파일에서 외부 스타일 파일 import
+   - 컴포넌트 파일 안에 <style> 블록 작성 금지
 
 주의:
   - 스크린샷에 보이는 이미지가 코드에 없으면 → 누락
   - Figma 임시 URL이 코드에 남으면 안 됨
+  - 컴포넌트에 style="" 인라인 스타일 금지 (동적 바인딩 제외)
 ```
 
 ## B-4. 뷰포트 모드에 따른 스타일 적용
@@ -272,7 +367,7 @@ for each section in mappings:
 ### Step B 추가 검증 항목
 
 ```
-1. 이미지 인벤토리 대조 (가장 중요):
+1. 이미지 인벤토리 대조:
    for each item in imageInventory:
      □ 로컬 파일 존재 (Glob)
      □ 0byte 아님 (ls -la)
@@ -283,20 +378,37 @@ for each section in mappings:
        - overlay → .{section}Character { background-image: url(...) }
    하나라도 실패 → P1 → 수정 → 재검증
 
-2. Figma 임시 URL 잔존 체크:
-   Grep: "figma.com/api/mcp/asset" in components/{feature}/
-   → 0건이어야 함. 남아있으면 → 로컬 경로로 교체
+2. 텍스트 스타일 검증:
+   for each section:
+     □ 외부 스타일 파일 존재 (Glob: styles/{feature}/**/*.scss)
+     □ 스크린샷의 텍스트 요소 수 ≈ font-size 선언 수
+       Grep: "font-size" in styles/{feature}/
+     □ 브라우저 기본 스타일로 보이는 텍스트 0건
+       → 모든 텍스트에 font-size, color, font-weight 지정 확인
+     □ color 값이 적용됨 (원본 스크린샷 색상과 매칭)
+   미적용 텍스트 발견 → P1
 
-3. 배경 이미지 Multi-Layer 검증:
+3. 스타일 분리 검증:
+   □ Grep: "<style" in components/{feature}/**/*.vue → 0건
+   □ Grep: "<style" in components/{feature}/**/*.tsx → 0건
+   □ Grep: 'style="' in components/{feature}/ → 0건 (v-bind:style 동적 바인딩 제외)
+   위반 → 외부 파일로 이동 → 재검증
+
+4. Figma 임시 URL + placeholder 잔존 체크:
+   □ Grep: "figma.com/api/mcp/asset" → 0건
+   □ Grep: "placeholder" (대소문자 무시) → 0건
+   □ Grep: "Key Visual" → 0건
+
+5. 배경 이미지 Multi-Layer 검증:
    스크린샷에 배경 이미지가 보이는 섹션:
      □ .{section}Bg 클래스 존재 (Grep)
      □ .{section}Content 클래스 존재 (z-index 최상위)
      □ 배경 위 텍스트 가독성 확보 (오버레이 유무)
    누락 → P1
 
-4. (responsive) 뷰포트별 이미지:
+6. (responsive) 뷰포트별:
    □ 뷰포트별 다른 배경 이미지 → @media 분기 있는지
-   □ 이전 뷰포트 이미지가 깨지지 않았는지
+   □ 이전 뷰포트 스타일/이미지 깨지지 않았는지
 ```
 
 ## 참조 스킬

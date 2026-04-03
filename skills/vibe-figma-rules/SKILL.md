@@ -376,6 +376,8 @@ P1이 있으면:
 ✅ placeholder 0건 — "placeholder", "Key Visual Image", 빈 dashed box,
    alt="placeholder", src="" 등이 코드에 남아있으면 미완성
 ✅ 단색/gradient 대체 0건 — 원본에 이미지 배경인 곳이 CSS 단색으로 처리되면 미완성
+✅ 텍스트 스타일 전수 적용 — 브라우저 기본 스타일(검은색 16px)로 보이는 텍스트 0건
+✅ 스타일 외부 파일 — 컴포넌트 내 <style> 블록 0건, 인라인 style="" 0건
 ```
 
 ---
