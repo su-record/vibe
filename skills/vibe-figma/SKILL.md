@@ -170,7 +170,7 @@ Phase 2에서는 이 컴포넌트에 **디자인(이미지 + 스타일)**을 입
 ```
 모바일 퍼스트 강제. CSS base = 최소 뷰포트, @media (min-width:)로 확장.
 
-1. AskUserQuestion: "가장 작은 뷰포트의 디자인 Figma URL을 입력해주세요."
+1. AskUserQuestion: "베이스 디자인(모바일) Figma URL을 입력해주세요."
    → base 스타일로 처리.
 
 2. 처리 완료 후:
