@@ -373,6 +373,9 @@ P1이 있으면:
 ✅ P1 = 0 (전 섹션)
 ✅ 모든 이미지 에셋 표시 + Figma 임시 URL 잔존 0건
 ✅ (반응형) 각 뷰포트 독립 검증 통과
+✅ placeholder 0건 — "placeholder", "Key Visual Image", 빈 dashed box,
+   alt="placeholder", src="" 등이 코드에 남아있으면 미완성
+✅ 단색/gradient 대체 0건 — 원본에 이미지 배경인 곳이 CSS 단색으로 처리되면 미완성
 ```
 
 ---

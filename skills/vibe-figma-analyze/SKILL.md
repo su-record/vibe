@@ -170,6 +170,11 @@ Popup: 패턴 분류 (확인/취소, 상세 모달, 알림, 입력 폼)
 ✅ 조건부 렌더링이 상태에 따라 전환
 ✅ emit으로 부모-자식 이벤트 연결
 → 브라우저에서 열면 스타일은 없지만 인터랙션은 동작하는 상태
+
+Step A에서는 이미지 자리에 빈 영역이 있을 수 있다.
+→ Step B에서 반드시 실제 이미지로 교체해야 함.
+→ Step B 완료 후 "placeholder", "Key Visual Image", 빈 dashed box가
+   코드에 남아있으면 = 미완성 (vibe-figma-frame HARD RULES 참조)
 ```
 
 ## A-6. 인터랙션 매핑 테이블
