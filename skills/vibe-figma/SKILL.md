@@ -24,7 +24,7 @@ tier: standard
 /vibe.figma
   → Phase 0: Setup (스택 감지, 디렉토리 생성)
   → Phase 1: Storyboard (선택 — 레이아웃+컴포넌트 구성 + 기능 주석)
-  → Phase 2: Design (모바일 퍼스트 → 추가 뷰포트 반복)
+  → Phase 2: Design (최소 뷰포트 퍼스트 → 브레이크포인트별 반복)
   → Phase 3: Verification (Grep 체크 + 스크린샷 비교)
 ```
 
@@ -168,17 +168,20 @@ Phase 1에서 컴포넌트가 이미 존재 (레이아웃 + 기능 주석 + 목 
 Phase 2에서는 이 컴포넌트에 **디자인(이미지 + 스타일)**을 입힌다.
 
 ```
-모바일 퍼스트 강제. CSS base = 모바일, @media (min-width:)로 확장.
+모바일 퍼스트 강제. CSS base = 최소 뷰포트, @media (min-width:)로 확장.
 
-1. AskUserQuestion: "모바일 디자인 Figma URL을 입력해주세요."
-   → 반드시 모바일 먼저. base 스타일로 처리.
+1. AskUserQuestion: "가장 작은 뷰포트의 디자인 Figma URL을 입력해주세요."
+   → base 스타일로 처리.
 
 2. 처리 완료 후:
-   AskUserQuestion: "추가 디자인 URL을 입력해주세요. (없으면 '없음')"
-   → URL 입력 → 반응형 레이어 추가 (@media min-width)
-   → 처리 완료 후 다시: "추가 디자인 URL을 입력해주세요. (없으면 '없음')"
+   AskUserQuestion: "다음 브레이크포인트 디자인 URL을 입력해주세요. (없으면 '없음')"
+   → URL 입력 → @media (min-width:) 레이어 추가
+   → 처리 완료 후 다시: "다음 브레이크포인트 디자인 URL을 입력해주세요. (없으면 '없음')"
    → ...
    → "없음" → Phase 3으로
+
+브레이크포인트는 프레임 width에서 자동 산출.
+예: 720px → 480px(스케일), 2560px → 1920px(스케일) → @media (min-width: 1024px)
 ```
 
 ### 2-1. 스타일 파일 내용 작성 (첫 섹션 전)
