@@ -19,21 +19,39 @@ triggers: []
 ## HARD RULES (위반 시 Step B 미완성)
 
 ```
-1. PLACEHOLDER 금지
+1. CSS ART 금지 (가장 중요)
+   디자인의 이미지 에셋을 CSS/SVG/HTML로 재현하지 않는다.
+   원본이 3D 렌더 눈사람이면 → 원 2개로 그리지 말고 이미지를 다운로드한다.
+   원본이 사진 소나무이면 → CSS 삼각형으로 그리지 말고 이미지를 다운로드한다.
+   원본이 파티클 효과이면 → CSS dots로 대체하지 말고 이미지를 다운로드한다.
+
+   절대 하면 안 되는 것:
+     ❌ CSS border/border-radius로 도형 그리기 (원, 삼각형, 별)
+     ❌ CSS gradient로 이미지 배경 대체
+     ❌ CSS ::before/::after로 장식 요소 재현
+     ❌ SVG path로 일러스트 재현
+     ❌ emoji/unicode로 아이콘 대체
+     ❌ div + CSS로 캐릭터/오브젝트 재현
+
+   해야 하는 것:
+     ✅ get_design_context에서 에셋 URL 추출 → 다운로드 → <img> 또는 background-image
+     ✅ 에셋 URL이 없으면 → 하위 노드 탐색 → get_screenshot으로 이미지 확보
+     ✅ 모든 시각 요소는 실제 이미지 파일이어야 한다
+
+2. PLACEHOLDER 금지
    코드에 "placeholder", "Key Visual Image", 빈 dashed box,
    alt="placeholder", src="" 등이 남아있으면 → Step B 미완성.
-   이미지를 추출 못하면 placeholder가 아니라 대체 추출(B-3.3 Step e)을 실행한다.
 
-2. 이미지 없는 섹션은 완료가 아니다
+3. 이미지 없는 섹션은 완료가 아니다
    스크린샷에 이미지(배경/캐릭터/일러스트/아이콘)가 보이는 섹션에서
    생성 코드에 실제 이미지 파일이 없으면 → 해당 섹션 미완성.
    다음 섹션으로 넘어가지 않고 현재 섹션의 이미지를 확보할 때까지 머문다.
 
-3. 단색 배경으로 대체 금지
+4. 단색/gradient 배경으로 대체 금지
    원본에 이미지 배경이 있는데 생성 코드가 CSS gradient/단색으로 대체하면 → P1.
    이미지를 반드시 다운로드하여 background-image로 적용해야 한다.
 
-4. 이미지 추출 실패 = 전체 실패
+5. 이미지 추출 실패 = 전체 실패
    인벤토리의 이미지 중 하나라도 확보 못하면 Step B를 완료로 마킹하지 않는다.
    대체 추출 경로(하위 노드 탐색 → 개별 스크린샷 → 크롭)를 전부 시도한 후,
    그래도 실패하면 사용자에게 해당 이미지를 직접 제공해달라고 요청한다.

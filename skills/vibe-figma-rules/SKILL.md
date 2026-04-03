@@ -50,6 +50,12 @@ tier: standard
 ### 핵심 원칙
 
 ```
+0. 디자인 에셋은 다운로드한다 — CSS로 그리지 않는다
+   — 3D 렌더 눈사람을 CSS 원 2개로 그리면 안 된다
+   — 사진 소나무를 CSS 삼각형으로 그리면 안 된다
+   — 배경 이미지를 CSS gradient로 대체하면 안 된다
+   — 모든 시각 에셋은 Figma에서 이미지 파일로 다운로드하여 사용한다
+
 1. 참조 코드의 스타일 값을 반드시 사용한다
    — get_design_context가 반환하는 색상/폰트/간격 값은 Figma 토큰에서 온 정확한 값
    — 스크린샷에서 색상을 추정하거나 폰트 크기를 눈대중으로 읽지 않는다
@@ -391,9 +397,10 @@ P1이 있으면:
 ✅ P1 = 0 (전 섹션)
 ✅ 모든 이미지 에셋 표시 + Figma 임시 URL 잔존 0건
 ✅ (반응형) 각 뷰포트 독립 검증 통과
-✅ placeholder 0건 — "placeholder", "Key Visual Image", 빈 dashed box,
-   alt="placeholder", src="" 등이 코드에 남아있으면 미완성
-✅ 단색/gradient 대체 0건 — 원본에 이미지 배경인 곳이 CSS 단색으로 처리되면 미완성
+✅ CSS art 0건 — 디자인 이미지를 CSS 도형/SVG/emoji로 재현한 곳 0건
+   (원/삼각형/gradient로 눈사람/나무/배경을 그리면 미완성)
+✅ placeholder 0건 — "placeholder", "Key Visual Image", 빈 dashed box 0건
+✅ 단색/gradient 대체 0건 — 원본에 이미지 배경인 곳이 CSS로 처리되면 미완성
 ✅ 텍스트 스타일 전수 적용 — 브라우저 기본 스타일(검은색 16px)로 보이는 텍스트 0건
 ✅ 스타일 외부 파일 — 컴포넌트 내 <style> 블록 0건, 인라인 style="" 0건
 ```
