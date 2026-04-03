@@ -90,15 +90,39 @@ function guard(toolName, toolInput) {
   return undefined;
 }
 
-// Main execution
-const toolName = process.argv[2] || '';
-const toolInput = process.argv[3] || process.env.TOOL_INPUT || '';
+import fs from 'fs';
+
+/**
+ * stdin에서 JSON 페이로드 읽기 (Claude Code 하네스 호환)
+ */
+function readStdinSync() {
+  try {
+    if (process.stdin.isTTY) return null;
+    const fd = fs.openSync('/dev/stdin', 'r');
+    const buf = Buffer.alloc(65536);
+    const bytesRead = fs.readSync(fd, buf, 0, buf.length, null);
+    fs.closeSync(fd);
+    if (bytesRead > 0) {
+      return JSON.parse(buf.toString('utf-8', 0, bytesRead));
+    }
+  } catch { /* 폴백 */ }
+  return null;
+}
+
+// Main execution: stdin JSON 우선, argv 폴백
+const stdinPayload = readStdinSync();
+const toolName = stdinPayload?.tool_name || process.argv[2] || '';
+const toolInput = stdinPayload?.tool_input
+  ? (typeof stdinPayload.tool_input === 'string'
+    ? stdinPayload.tool_input
+    : JSON.stringify(stdinPayload.tool_input))
+  : (process.argv[3] || process.env.TOOL_INPUT || '');
 
 const result = guard(toolName, toolInput);
 
 if (result) {
   console.log(JSON.stringify(result));
-  process.exit(1);
+  process.exit(2); // deny 규약
 }
 
 process.exit(0);

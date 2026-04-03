@@ -37,6 +37,54 @@ export function readVibeConfig() {
 }
 
 /**
+ * 프로젝트 설정(.claude/vibe/config.json) 읽기
+ * @returns {object} 파싱된 config 또는 빈 객체
+ */
+export function readProjectConfig() {
+  const configPath = path.join(PROJECT_DIR, '.claude', 'vibe', 'config.json');
+  try {
+    if (fs.existsSync(configPath)) {
+      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    }
+  } catch { /* ignore */ }
+  return {};
+}
+
+/**
+ * Deep merge: source의 값이 target을 덮어씀 (배열은 교체)
+ */
+function deepMerge(target, source) {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    const srcVal = source[key];
+    if (srcVal === undefined) continue;
+    const tgtVal = target[key];
+    if (
+      tgtVal && typeof tgtVal === 'object' && !Array.isArray(tgtVal) &&
+      srcVal && typeof srcVal === 'object' && !Array.isArray(srcVal)
+    ) {
+      result[key] = deepMerge(tgtVal, srcVal);
+    } else {
+      result[key] = srcVal;
+    }
+  }
+  return result;
+}
+
+/**
+ * 다중 계층 설정 병합: 글로벌 + 프로젝트
+ * 우선순위: 프로젝트 > 글로벌 (credentials는 글로벌 전용)
+ * @returns {object} 병합된 config
+ */
+export function resolveVibeConfig() {
+  const global = readVibeConfig();
+  const project = readProjectConfig();
+  if (Object.keys(project).length === 0) return global;
+  const { credentials: _ignored, ...projectWithoutCreds } = project;
+  return deepMerge(global, projectWithoutCreds);
+}
+
+/**
  * 파일 시스템 경로를 file:// URL로 변환 (크로스 플랫폼)
  * - macOS/Linux: /Users/grove/... → file:///Users/grove/...
  * - Windows: C:\Users\grove\... → file:///C:/Users/grove/...

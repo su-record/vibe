@@ -2,8 +2,14 @@
  * Notification Hook - 컨텍스트 자동 저장 (80/90/95%) + 세션 요약 + Reflection
  * Usage: node context-save.js <urgency>
  *   urgency: medium | high | critical
+ *
+ * 구조적 메타데이터를 자동 추출하여 세션 복원 품질을 높임.
+ * (claw-code compact.rs 패턴 참조)
  */
 import { getToolsBaseUrl, getLibBaseUrl, PROJECT_DIR } from './utils.js';
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 const BASE_URL = getToolsBaseUrl();
 const LIB_URL = getLibBaseUrl();
@@ -18,13 +24,94 @@ const summaryMap = {
 // Debounce: track last reflection level per session to avoid duplicates
 let lastReflectionLevel = null;
 
+/**
+ * 프로젝트 환경에서 구조적 메타데이터를 추출.
+ * 실패 시 빈 객체 반환 (non-blocking).
+ */
+function extractStructuredMetadata() {
+  const metadata = {
+    recentFiles: [],
+    gitBranch: null,
+    pendingWork: [],
+    toolsUsed: [],
+    timestamp: new Date().toISOString(),
+  };
+
+  try {
+    // 최근 수정 파일 (최대 8개, 확장자 기반 필터)
+    const gitDiff = execSync('git diff --name-only HEAD 2>/dev/null || true', {
+      cwd: PROJECT_DIR, encoding: 'utf-8', timeout: 3000,
+    }).trim();
+    const staged = execSync('git diff --cached --name-only 2>/dev/null || true', {
+      cwd: PROJECT_DIR, encoding: 'utf-8', timeout: 3000,
+    }).trim();
+
+    const allFiles = [...new Set([...gitDiff.split('\n'), ...staged.split('\n')])]
+      .filter(f => f && /\.(ts|tsx|js|jsx|py|rs|go|java|json|md|css|html|vue|svelte)$/.test(f))
+      .slice(0, 8);
+    metadata.recentFiles = allFiles;
+
+    // 현재 브랜치
+    const branch = execSync('git branch --show-current 2>/dev/null || true', {
+      cwd: PROJECT_DIR, encoding: 'utf-8', timeout: 2000,
+    }).trim();
+    if (branch) metadata.gitBranch = branch;
+  } catch { /* git 없는 환경 무시 */ }
+
+  try {
+    // SPEC/TODO에서 진행 중 작업 추출
+    const specDir = path.join(PROJECT_DIR, '.claude', 'vibe', 'specs');
+    if (fs.existsSync(specDir)) {
+      const specs = fs.readdirSync(specDir).filter(f => f.endsWith('.md')).slice(0, 3);
+      for (const spec of specs) {
+        metadata.pendingWork.push(`SPEC: ${spec.replace('.md', '')}`);
+      }
+    }
+    const todoDir = path.join(PROJECT_DIR, '.claude', 'vibe', 'todos');
+    if (fs.existsSync(todoDir)) {
+      const todos = fs.readdirSync(todoDir).filter(f => f.endsWith('.md')).slice(0, 3);
+      for (const todo of todos) {
+        metadata.pendingWork.push(`TODO: ${todo.replace('.md', '')}`);
+      }
+    }
+  } catch { /* 파일 시스템 접근 실패 무시 */ }
+
+  return metadata;
+}
+
+/**
+ * 구조적 요약 텍스트 생성 (claw-code compact.rs 패턴)
+ */
+function buildStructuredSummary(baseMessage, metadata) {
+  const sections = [baseMessage];
+
+  if (metadata.gitBranch) {
+    sections.push(`Branch: ${metadata.gitBranch}`);
+  }
+  if (metadata.recentFiles.length > 0) {
+    sections.push(`Key files: ${metadata.recentFiles.join(', ')}`);
+  }
+  if (metadata.pendingWork.length > 0) {
+    sections.push(`Pending work: ${metadata.pendingWork.join('; ')}`);
+  }
+  if (metadata.toolsUsed.length > 0) {
+    sections.push(`Tools used: ${metadata.toolsUsed.join(', ')}`);
+  }
+
+  return sections.join('\n');
+}
+
 async function main() {
   try {
+    const metadata = extractStructuredMetadata();
+    const baseMessage = summaryMap[urgency] || summaryMap.medium;
+    const structuredSummary = buildStructuredSummary(baseMessage, metadata);
+
     const module = await import(`${BASE_URL}memory/index.js`);
     const result = await module.autoSaveContext({
       urgency,
       contextType: 'progress',
-      summary: summaryMap[urgency] || summaryMap.medium,
+      summary: structuredSummary,
       projectPath: PROJECT_DIR,
     });
     const percent = urgency === 'critical' ? '95' : urgency === 'high' ? '90' : '80';

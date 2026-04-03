@@ -110,9 +110,34 @@ function formatOutput(toolName, validation) {
   return lines.join('\n');
 }
 
-// 메인 실행
-const toolName = process.argv[2] || 'Bash';
-const toolInput = process.argv[3] || process.env.TOOL_INPUT || '';
+/**
+ * stdin에서 JSON 페이로드 읽기 (Claude Code 하네스 호환)
+ * stdin이 없거나 파싱 실패 시 argv/env 폴백
+ */
+function readStdinSync() {
+  try {
+    if (process.stdin.isTTY) return null;
+    const fd = fs.openSync('/dev/stdin', 'r');
+    const buf = Buffer.alloc(65536);
+    const bytesRead = fs.readSync(fd, buf, 0, buf.length, null);
+    fs.closeSync(fd);
+    if (bytesRead > 0) {
+      return JSON.parse(buf.toString('utf-8', 0, bytesRead));
+    }
+  } catch { /* 파싱 실패 시 폴백 */ }
+  return null;
+}
+
+import fs from 'fs';
+
+// 메인 실행: stdin JSON 우선, argv 폴백
+const stdinPayload = readStdinSync();
+const toolName = stdinPayload?.tool_name || process.argv[2] || 'Bash';
+const toolInput = stdinPayload?.tool_input
+  ? (typeof stdinPayload.tool_input === 'string'
+    ? stdinPayload.tool_input
+    : JSON.stringify(stdinPayload.tool_input))
+  : (process.argv[3] || process.env.TOOL_INPUT || '');
 
 const validation = validateCommand(toolName, toolInput);
 const output = formatOutput(toolName, validation);
@@ -121,5 +146,5 @@ if (output) {
   console.log(output);
 }
 
-// Exit code: 0 = allowed, 1 = blocked
-process.exit(validation.allowed ? 0 : 1);
+// Exit code: 0 = allowed, 2 = denied (claw-code 규약), 1 = 레거시 호환
+process.exit(validation.allowed ? 0 : 2);

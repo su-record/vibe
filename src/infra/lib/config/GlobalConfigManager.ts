@@ -122,6 +122,50 @@ export function patchGlobalConfig(patch: DeepPartial<GlobalVibeConfig>): void {
   writeGlobalConfig(merged as unknown as GlobalVibeConfig);
 }
 
+// ─── Project config + layered merge ────────────────────────────────
+
+/** .claude/vibe/config.json (프로젝트별 설정) */
+export function getProjectConfigPath(projectDir: string): string {
+  return path.join(projectDir, '.claude', 'vibe', 'config.json');
+}
+
+function readProjectConfig(projectDir: string): Record<string, unknown> {
+  const configPath = getProjectConfigPath(projectDir);
+  try {
+    if (!fs.existsSync(configPath)) return {};
+    const content = fs.readFileSync(configPath, 'utf-8');
+    const parsed: unknown = JSON.parse(content);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * 다중 계층 설정 병합: 글로벌(~/.vibe) + 프로젝트(.claude/vibe)
+ * 우선순위: 프로젝트 > 글로벌 (프로젝트 설정이 글로벌을 덮어씀)
+ * credentials는 글로벌 전용 — 프로젝트에서 덮어쓰지 않음.
+ */
+export function resolveConfig(projectDir: string): GlobalVibeConfig {
+  const global = readGlobalConfig() as unknown as Record<string, unknown>;
+  const project = readProjectConfig(projectDir);
+
+  if (Object.keys(project).length === 0) {
+    return global as unknown as GlobalVibeConfig;
+  }
+
+  // credentials는 글로벌 전용이므로 프로젝트에서 제거 후 병합
+  const { credentials: _ignored, ...projectWithoutCreds } = project;
+
+  const merged = deepMerge(
+    global,
+    projectWithoutCreds as DeepPartial<Record<string, unknown>>,
+  );
+  merged.version = '1';
+  return merged as unknown as GlobalVibeConfig;
+}
+
 // ─── Credential helpers ─────────────────────────────────────────────
 
 export function getGptApiKey(): string | null {
