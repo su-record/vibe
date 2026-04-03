@@ -23,10 +23,9 @@ tier: standard
 ```
 /vibe.figma
   → Phase 0: Setup (스택 감지, 디렉토리 생성)
-  → Phase 1: Storyboard (선택 — 기능/인터랙션/상태 추출)
-  → Phase 2: Design (핵심 — 섹션별 이미지 다운로드 + CSS 추출 + 코드 생성)
-  → Phase 3: Responsive (선택 — 데스크탑 디자인 추가)
-  → Phase 4: Verification (Grep 체크 + 스크린샷 비교)
+  → Phase 1: Storyboard (선택 — 레이아웃+컴포넌트 구성 + 기능 주석)
+  → Phase 2: Design (핵심 — 모바일 + 데스크탑 반응형까지)
+  → Phase 3: Verification (Grep 체크 + 스크린샷 비교)
 ```
 
 ---
@@ -272,25 +271,27 @@ Glob로 확인:
 실패 시 → 해당 항목 수정 → 재검증
 ```
 
----
-
-## Phase 3: Responsive (선택)
+### 2-3. 반응형 (데스크탑 디자인)
 
 ```
+모바일 섹션 루프 완료 후:
+
 AskUserQuestion: "데스크탑 디자인 URL이 있나요? (없으면 '없음')"
 
-URL 입력 시 → Phase 2와 동일한 섹션별 루프 실행.
-단, 기존 코드에 반응형만 추가:
-  - 같은 값 → 유지
-  - 다른 px 값 → clamp(모바일스케일, calc, 데스크탑스케일)
-  - 다른 레이아웃 → @media (min-width: $breakpoint) 추가
-  - 다른 배경 이미지 → @media 분기
-  - 기존 코드 삭제 금지
+URL 입력 시 → 같은 섹션별 루프(a~e) 실행.
+단, 기존 모바일 코드를 수정하지 않고 반응형 레이어만 추가:
+
+  같은 값 → 유지
+  다른 px 값 → clamp(모바일스케일, calc, 데스크탑스케일) 또는 @media 오버라이드
+  다른 레이아웃 (flex-direction 등) → @media (min-width: $breakpoint) 추가
+  다른 배경 이미지 → @media 이미지 분기
+  추가 이미지 에셋 → 다운로드 (기존과 동일하면 스킵)
+  기존 모바일 코드/스타일 삭제 금지
 ```
 
 ---
 
-## Phase 4: Final Verification
+## Phase 3: Verification
 
 ```
 자동 Grep 체크:
