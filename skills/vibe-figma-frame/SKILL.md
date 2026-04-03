@@ -10,12 +10,11 @@ triggers: []
 디자인 URL 하나를 받아서 **프레임별로 쪼개서 추출**하고, Step A에서 만든 컴포넌트에 스타일/이미지를 채움.
 어떤 뷰포트든 동일한 프로세스. 두 번째 호출 시 반응형 레이어만 추가.
 
-> **⛔ 실행 지시: 분석만 하지 말 것.**
-> - 이미지: WebFetch로 다운로드 → Write 도구로 파일 저장
-> - 스타일: Write 도구로 SCSS/CSS 파일 생성 (layout/ + components/)
+> **실행 지시: 분석만 하지 말 것.**
+> - 이미지: WebFetch로 다운로드 → 파일 저장
+> - 스타일: Write 도구로 SCSS/CSS 파일 생성
 > - 코드: Edit 도구로 Step A 컴포넌트의 template/style 채움
-> - 토큰: Edit 도구로 _tokens.scss에 추출한 값 추가
-> 모든 Phase가 끝나면 디스크에 실제 파일이 변경되어 있어야 함.
+> - 토큰: Edit 도구로 _tokens 파일에 추출한 값 추가
 
 ## 입력
 
@@ -23,44 +22,30 @@ triggers: []
 - Step A에서 생성된 컴포넌트 파일들
 - 호출 횟수 (첫 번째 = base, 두 번째 이후 = responsive 추가)
 
-## Phase 1: 디자인 URL 입력
+## B-1. 디자인 URL 입력
 
 AskUserQuestion (options 사용 금지, 자유 텍스트만):
 
 ```
 첫 번째 호출:
-  question: "🎨 디자인 Figma URL을 입력해주세요."
-  → ⏸️ 응답 대기 (응답 전 다음 진행 금지)
-  → URL 저장 → Phase 2~5 실행
+  question: "디자인 Figma URL을 입력해주세요."
+  → 응답 대기 → URL 저장 → B-2~B-5 실행
 
 검증 완료 후:
-  question: "🎨 추가 디자인 URL이 있나요? (없으면 '없음')"
-  → ⏸️ 응답 대기
-  → URL 입력 → responsive 모드로 Phase 2~5 재실행
-  → "없음" → Step C(공통화)로 진행
+  question: "추가 디자인 URL이 있나요? (없으면 '없음')"
+  → URL 입력 → responsive 모드로 B-2~B-5 재실행
+  → "없음" → Step D(공통화)로 진행
 
 모바일/PC 순서를 강제하지 않음. 어떤 뷰포트든 먼저 입력 가능.
 첫 번째 URL = base 스타일, 추가 URL = 반응형 레이어 추가.
 ```
 
-## Phase 2: 전체 → 섹션 프레임 매핑
+## B-2. 전체 → 섹션 프레임 매핑
 
 ```
 1. get_metadata(fileKey, nodeId) → 전체 페이지 하위 프레임 목록
 
 2. 프레임 이름으로 Step A 컴포넌트와 매핑:
-   | 디자인 프레임 이름 | Step A 컴포넌트 |
-   |------------------|----------------|
-   | "키 비주얼" / "Hero" / "KV" | HeroSection.vue |
-   | "출석" / "Check" / "Mission 01" | DailyCheckInSection.vue |
-   | "플레이타임" / "Mission 02" | PlayTimeMissionSection.vue |
-   | "교환" / "Exchange" / "Shop" | TokenExchangeSection.vue |
-   | "응모" / "Raffle" / "Prize" | TokenRaffleSection.vue |
-   | "유의사항" / "Caution" / "Notice" | CautionSection.vue |
-   | "GNB" / "Header" / "Nav" | GnbHeader.vue |
-   | "Footer" | EventFooter.vue |
-
-   매핑 방법:
    - 프레임 이름 키워드 매칭
    - 매칭 안 되면 순서(위→아래)로 Step A 섹션과 1:1 대응
    - 그래도 안 되면 get_screenshot으로 비주얼 비교
@@ -70,125 +55,117 @@ AskUserQuestion (options 사용 금지, 자유 텍스트만):
    매핑 안 된 프레임이 있으면 사용자에게 확인
 ```
 
-## Phase 3: 섹션별 개별 추출
+## B-3. 섹션별 개별 추출
 
 **각 매핑된 섹션에 대해 순서대로:**
 
+### 3-1. 스크린샷 시각 분석 (1순위)
+
 ```
-for each (designFrame, component) in mappings:
+get_screenshot(fileKey, designFrame.nodeId)
+→ 원본 디자인 이미지 확보 — 이것이 코드 생성의 1차 소스
 
-  1. get_design_context(fileKey, designFrame.nodeId)
-     → 해당 섹션 전용 **참조 코드** + 스크린샷 + 에셋 URL
-
-     ⚠️ 참조 코드가 핵심:
-       get_design_context는 React+Tailwind 기반 참조 코드를 반환함.
-       이 코드에 이미지 URL, 레이아웃 구조, 색상값, 폰트 정보가 모두 포함됨.
-       → 이 참조 코드를 **기반으로** 프로젝트 스택에 맞게 변환해야 함.
-       → 참조 코드를 무시하고 스크린샷만 보고 자체 해석하면 안 됨.
-       → 참조 코드의 이미지 URL, 색상 hex, 폰트 크기를 그대로 가져온 후 스케일 적용.
-
-     ⚠️ 스크린샷은 보조:
-       참조 코드와 스크린샷이 다르면 → 스크린샷(디자인 의도) 우선
-       참조 코드에 없는 시각적 요소가 스크린샷에 보이면 → 추가 구현
-
-  2. ⛔ 이미지 에셋 다운로드 (BLOCKING — 코드 반영 전 필수 완료):
-
-     Step 2-a: get_design_context 응답에서 에셋 URL 추출
-       응답 코드에 아래 패턴이 포함됨:
-         const heroImage = 'https://www.figma.com/api/mcp/asset/xxxx'
-         const bgImage = 'https://www.figma.com/api/mcp/asset/yyyy'
-       → 모든 https://www.figma.com/api/mcp/asset/ URL을 수집
-
-     Step 2-b: 각 URL을 WebFetch로 다운로드 → Bash로 파일 저장
-       다운로드 명령 예시:
-         Bash: curl -L "https://www.figma.com/api/mcp/asset/xxxx" -o static/images/{feature}/hero-bg.webp
-       또는 WebFetch 후 Write로 저장
-       파일명: 변수명/레이어명 기반 kebab-case (heroImage → hero-bg.webp)
-
-     Step 2-c: URL→로컬경로 매핑 테이블 생성
-       | 변수명 | Figma URL | 로컬 경로 |
-       |--------|-----------|----------|
-       | heroImage | https://figma.com/api/mcp/asset/xxxx | /images/{feature}/hero-bg.webp |
-       | bgImage | https://figma.com/api/mcp/asset/yyyy | /images/{feature}/section-bg.webp |
-
-     Step 2-d: 다운로드 검증
-       → 파일이 실제로 존재하는지 Bash: ls -la static/images/{feature}/
-       → 누락된 파일이 있으면 재다운로드
-       → 0byte 파일 체크 (다운로드 실패)
-
-  3. 스크린샷 분석 + ⚠️ 스케일 팩터 적용:
-     → 레이아웃 (flex/grid 방향, 정렬)
-     → 색상 (배경, 텍스트, 보더) — 스케일 불필요
-     → 타이포 (크기, 굵기, 줄간격) — ⚠️ 스케일 팩터 적용
-     → 간격 (padding, gap, margin) — ⚠️ 스케일 팩터 적용
-     → ⚠️ 배경 이미지 분류 (아래 참조)
-
-     스케일 팩터:
-       코드 값 = Figma 추출 값 × scaleFactor
-       scaleFactor는 Step A의 storyboardSpec.scaleFactor에서 참조
-       디폴트: PC 0.75 (1920/2560), Mobile 0.667 (480/720)
-
-  4. ⛔ 배경 이미지 분류 + Multi-Layer 패턴 적용:
-
-     섹션에 배경 이미지가 있으면 반드시 Multi-Layer 구조로 작성:
-
-     <template>:
-       <section class="{section}Section">
-         <div class="{section}Bg" />               ← 배경 이미지 (z-index: 0)
-         <div class="{section}BgOverlay" />         ← 오버레이 (z-index: 1, 선택)
-         <div class="{section}Content">             ← 콘텐츠 (z-index: 최상위)
-           ...실제 UI...
-         </div>
-       </section>
-
-     <style> (layout/{section}.scss):
-       .{section}Section { position: relative; overflow: hidden; }
-       .{section}Bg {
-         position: absolute; inset: 0; z-index: 0;
-         background-image: url('/images/{feature}/{image-name}.webp');
-         background-size: cover;
-         background-position: center;
-       }
-       .{section}BgOverlay {
-         position: absolute; inset: 0; z-index: 1;
-         background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
-       }
-       .{section}Content { position: relative; z-index: 2; }
-
-     배경이 없는 섹션은 Multi-Layer 불필요 — 일반 구조 사용.
-
-  5. component 파일에 반영 (Edit 도구):
-
-     ⚠️ 변환 순서 (참조 코드 → 프로젝트 코드):
-       a. get_design_context 참조 코드에서 추출:
-          - HTML 구조 (div 계층, 이미지 배치, 텍스트 위치)
-          - 이미지 URL (const xxxImage = '...')
-          - 인라인 스타일/Tailwind 클래스 → 색상, 폰트, 간격 값
-          - 배경 이미지 패턴 (background-image가 있으면 Multi-Layer 적용)
-
-       b. 프로젝트 스택으로 변환:
-          - React+Tailwind → Vue/Nuxt SFC + SCSS (또는 프로젝트 스택)
-          - className → :class
-          - style={{ }} → SCSS 변수/클래스
-          - Tailwind 값 → SCSS 토큰 변수
-
-       c. 스케일 팩터 적용:
-          - 참조 코드의 px 값 × scaleFactor = 코드 값
-          - 색상 hex는 그대로 (스케일 불필요)
-
-       d. 이미지 경로 교체:
-          - figma.com/api/mcp/asset/xxx → /images/{feature}/xxx.webp (매핑 테이블)
-
-       e. Step A 코드와 병합:
-          - Step A의 기능 주석/핸들러/인터페이스 보존
-          - template의 placeholder → 참조 코드 기반 실제 마크업으로 교체
-          - style 블록 → 참조 코드에서 추출한 스타일 작성
-
-     ⛔ 참조 코드에 이미지가 있는데 생성 코드에 없으면 → 누락, 반드시 포함
-     ⛔ Figma 임시 URL이 코드에 남으면 안 됨
+스크린샷에서 읽는 항목 (vibe-figma-rules R-7 참조):
+  → 레이아웃 구조 (섹션 경계, flex/grid 방향, 요소 배치)
+  → 배경 (이미지/단색/그라데이션, 오버레이 유무)
+  → 색상 (배경, 텍스트, 버튼, 보더)
+  → 타이포 (크기 비율, 굵기, 줄간격) — 스케일 팩터 적용 (R-3)
+  → 간격 (패딩, gap, 마진) — 스케일 팩터 적용 (R-3)
+  → 이미지 분류 (Background/Content/Overlay, R-4 참조)
+  → z-index 관계 (겹침 구조, 투명도)
 ```
 
-## Phase 4: 뷰포트 모드에 따른 스타일 적용
+### 3-2. 참조 코드 + 에셋 추출 (2순위)
+
+```
+get_design_context(fileKey, designFrame.nodeId)
+→ 참조 코드 + 에셋 URL
+
+참조 코드에서 가져오는 것:
+  ✅ 이미지 에셋 URL (https://figma.com/api/mcp/asset/...) — 핵심 가치
+  ✅ 정확한 hex 색상값 (스크린샷 추정보다 정확할 때)
+  ✅ 폰트 패밀리명, border-radius, shadow 값
+  ⚠️ 레이아웃/구조 — 스크린샷과 대조 후 채택
+  ❌ px 값 그대로 사용 금지 — 반드시 스케일 팩터 적용
+
+⚠️ 레이어가 "Frame 633372" 같은 비정형일 때:
+  참조 코드가 부정확할 수 있음 → 스크린샷 분석 결과를 기준으로 코드 생성
+```
+
+### 3-3. 이미지 에셋 다운로드 (BLOCKING — 코드 반영 전 필수)
+
+```
+Step a: 참조 코드에서 에셋 URL 추출
+  → 모든 https://www.figma.com/api/mcp/asset/ URL 수집
+
+Step b: 각 URL을 다운로드 → 파일 저장
+  Bash: curl -L "{url}" -o static/images/{feature}/{name}.webp
+  파일명: 변수명/레이어명 기반 kebab-case
+
+Step c: URL→로컬경로 매핑 테이블 생성
+
+Step d: 다운로드 검증
+  → 파일 존재 + 0byte 아닌지 확인
+  → 누락/실패 시 재다운로드
+```
+
+### 3-4. 이미지 코드 패턴 적용
+
+이미지 분류 결과에 따라 코드 생성:
+
+**Background Image → Multi-Layer 패턴 (vibe-figma-rules R-4 참조)**
+
+**Content Image:**
+```tsx
+// React / Next.js — Image 컴포넌트 우선
+<Image src="/images/{feature}/product.webp" alt="설명" width={600} height={400} />
+
+// Vue / Nuxt — NuxtImg 우선
+<NuxtImg src="/images/{feature}/product.webp" alt="설명" width="600" height="400" loading="lazy" />
+```
+
+**반응형 Content Image:**
+```html
+<picture>
+  <source media="(min-width: {breakpoint}px)" srcset="/images/{feature}/hero-pc.webp" />
+  <img src="/images/{feature}/hero-mobile.webp" alt="설명" loading="eager" />
+</picture>
+```
+
+**반응형 Background Image:**
+```css
+.heroBg { background-image: url('/images/{feature}/hero-mobile.webp'); }
+@media (min-width: {breakpoint}px) {
+  .heroBg { background-image: url('/images/{feature}/hero-pc.webp'); }
+}
+```
+
+### 3-5. 컴포넌트 파일에 반영 (Edit 도구)
+
+```
+변환 순서 (스크린샷 분석 → 코드):
+
+a. 스크린샷 분석 결과로 코드 작성:
+   - 레이아웃 구조 (스크린샷에서 읽은 flex/grid, 배치)
+   - 스타일 값 (스크린샷에서 읽은 색상, 간격, 폰트 × 스케일 팩터)
+   - 배경 이미지 Multi-Layer 구조 (스크린샷에서 판단한 z-index)
+
+b. 참조 코드에서 보강:
+   - 에셋 URL → 다운로드된 로컬 경로로 교체
+   - 정확한 hex 색상값, border-radius, shadow (스크린샷 추정보다 정확할 때)
+
+c. 프로젝트 스택으로 변환 (React→Vue 등)
+
+d. Step A 코드와 병합:
+   - 기능 주석/핸들러/인터페이스 보존
+   - template의 placeholder → 실제 마크업으로 교체
+
+주의:
+  - 스크린샷에 보이는 이미지가 코드에 없으면 → 누락
+  - Figma 임시 URL이 코드에 남으면 안 됨
+```
+
+## B-4. 뷰포트 모드에 따른 스타일 적용
 
 ### 첫 번째 URL (base)
 
@@ -203,59 +180,43 @@ for each (designFrame, component) in mappings:
 ```
 기존 코드를 수정하지 않고 반응형 레이어만 추가:
 
-1. 프레임 width 비교 → 어떤 뷰포트인지 자동 판별
-   (base보다 크면 desktop 방향, 작으면 mobile 방향)
-
-2. 값이 다른 속성 → clamp() fluid 토큰으로 변환
-   - SCSS: figma-fluid($min, $max) 함수 사용
-   - CSS: clamp(min, preferred, max)
-
+1. 프레임 width로 뷰포트 자동 판별
+2. 값이 다른 속성 → clamp() fluid 토큰 (계산: vibe-figma-rules R-3)
 3. 레이아웃 구조가 다른 부분 → @media (min-width: {breakpoint}px)
-   - flex-direction 변경
-   - grid-template-columns 변경
-   - display toggle (baseOnly/responsiveOnly)
-
 4. 뷰포트별 배경 이미지 → @media 분기
-   .heroBg { background-image: url(base.webp); }
-   @media (min-width: {breakpoint}px) { .heroBg { background-image: url(alt.webp); } }
-
 5. 추가 이미지 에셋 다운로드 (base와 동일하면 스킵)
-
 6. 기존 base 코드/주석/핸들러는 절대 삭제하지 않음
 ```
 
-## Phase 5: 검증 루프
+## B-5. 검증 루프
+
+공통 프로세스: **vibe-figma-rules R-6** (6-1 ~ 6-7) 전체 적용.
+
+### Step B 검증 흐름
 
 ```
-🔄 Figma 원본 스크린샷 vs 생성된 코드 비교:
+for each section in mappings:
 
-  1. get_screenshot으로 Figma 원본 획득 (이미 Phase 3에서 있음)
-  2. 생성된 코드의 렌더링 결과와 비교
-  3. 비교 항목:
-     - 레이아웃 (배치, 정렬, 간격)
-     - 타이포 (크기, 굵기, 색상)
-     - 색상 (배경, 텍스트, 보더)
-     - 이미지 (배경/에셋 표시 여부)
-     - 누락 요소
+  1. 원본 확보: B-3.1에서 이미 get_screenshot한 섹션 이미지
+  2. 생성 결과 확보: /vibe.utils --preview 또는 dev 서버 스크린샷 (R-6.2)
+  3. 섹션별 비교: 레이아웃, 배경, 색상, 타이포, 간격, 이미지 (R-6.3~4)
+  4. Diff Report 출력 (R-6.5)
+  5. P1 → 해당 섹션 수정 → 재비교 (R-6.6)
+```
 
-  4. Diff Report:
-     | 섹션 | 항목 | Figma | 코드 | 심각도 |
-     |------|------|-------|------|--------|
-     | Hero | 배경 이미지 | 있음 | 누락 | P1 |
-     | 출석 | font-size | 24px | 20px | P2 |
+### Step B 추가 검증 항목
 
-  5. P1 불일치 → 수정 → 재비교 (횟수 제한 없음)
-     동일 항목 3회 연속 미해결 → 해당 항목만 사용자 확인 후 계속
-
-  6. 완료 조건:
-     ✅ P1 = 0
-     ✅ 모든 이미지 에셋 표시
-     ✅ (두 번째 호출 시) 이전 뷰포트도 깨지지 않았는지 재확인
+```
+1. 이미지 에셋: 전부 다운로드 + 로컬 파일 존재 + 0byte 아님
+2. Figma 임시 URL: Grep으로 figma.com/api/mcp/asset 잔존 0건 확인
+3. 배경 이미지: 스크린샷에 보이는 배경이 코드에도 있는지
+4. 오버레이: 배경 위 텍스트 가독성 확보 (스크린샷 대조)
+5. (responsive) 이전 뷰포트 섹션들 재비교 — 깨진 곳 없는지
 ```
 
 ## 참조 스킬
 
 코드 생성 시 다음 스킬의 규칙을 적용:
-- `vibe-figma-rules` — 분석/감지 (Phase 1-3)
-- `vibe-figma-style` — 토큰/스타일 (Phase 4, 클래스 네이밍, SCSS)
-- `vibe-figma-codegen` — 마크업/코드 생성 (Phase 5-6, 이미지 패턴, 반응형)
+- `vibe-figma-rules` — 공통 규칙 (R-1~R-7)
+- `vibe-figma-style` — 토큰/스타일 아키텍처
+- `vibe-figma-codegen` — 마크업/코드 생성 규칙

@@ -1,28 +1,76 @@
 ---
 name: vibe-figma-rules
-description: Figma to Code 분석 및 감지 규칙 — Model Routing, 디자인 분석, 레이어 추출, 스택 감지
+description: Figma to Code 공통 규칙 — Model Routing, 스택 감지, 브레이크포인트, 이미지 분류, 컴포넌트 통합
 triggers: []
 tier: standard
 ---
 
-# Skill: vibe-figma-rules — 분석 및 감지 규칙
+# Skill: vibe-figma-rules — 공통 규칙 (Single Source of Truth)
 
-항상 이 skill을 참조하여 코드를 생성한다.
+모든 vibe-figma-* 스킬이 참조하는 공통 규칙 정의.
+중복 방지를 위해 **이 파일에만 정의**하고, 다른 스킬에서는 "vibe-figma-rules R-N 참조"로 사용.
 
 ---
 
-## Model Routing
+## R-0. 설계 철학
+
+> **스크린샷 시각 분석이 핵심이다. 레이어 구조/참조 코드는 보조 수단.**
+
+실무 Figma 파일의 현실:
+```
+"Frame 633372"           ← 의미 없는 자동 이름
+  "Frame 633371"         ← 중첩된 의미 없는 프레임
+    "Frame 633370"       ← AI가 구조를 파악할 수 없음
+```
+
+레이어명이 "Frame 47", "Group 12"이고, Auto Layout 없이 절대 배치된 프레임이 대부분.
+`get_design_context`가 깔끔한 참조 코드를 돌려주지 못하는 것이 **기본 전제**.
+
+이 스킬은 **스토리보드에서 기능/인터랙션/상태를 추출**하고,
+**디자인 프레임 스크린샷에서 스타일/이미지를 시각 분석**하여,
+**원본 디자인 이미지 수준의 완성도**를 달성하는 것이 목적이다.
+
+### 핵심 원칙
+
+```
+1. 스크린샷이 1차 소스다
+   — 모든 시각적 판단(레이아웃, 색상, 간격, 폰트, 이미지 배치)은 스크린샷에서 읽는다
+   — get_screenshot으로 섹션별 원본 이미지를 먼저 확보한다
+
+2. 참조 코드는 2차 소스다
+   — get_design_context의 참조 코드는 이미지 에셋 URL 추출 + 구조 힌트 용도
+   — 참조 코드의 레이아웃/스타일 값은 스크린샷과 대조 후에만 신뢰한다
+   — 참조 코드가 부정확해도 스크린샷만으로 코드를 생성할 수 있어야 한다
+
+3. 레이어 구조에 의존하지 않는다
+   — 구조화된 레이어는 보너스, 없어도 결과물 품질은 동일해야 한다
+   — "Frame 633372" 같은 무의미한 이름이 와도 스크린샷에서 섹션 경계를 파악한다
+
+4. 검증은 항상 시각적 비교로
+   — 완료 기준: 원본 스크린샷 vs 생성 코드의 Match Score 95%+, P1=0
+   — 코드의 "정확성"이 아니라 "보이는 결과"가 기준이다
+```
+
+### 분석 우선순위
+
+```
+[1순위] get_screenshot   → 시각 분석 (레이아웃, 색상, 간격, 폰트, 배경 이미지)
+[2순위] get_design_context → 에셋 URL 추출 + 구조 힌트 (스크린샷과 대조 필수)
+[3순위] get_metadata     → 프레임 목록 + nodeId 확보 (구조 파악이 아닌 탐색 용도)
+```
+
+---
+
+## R-1. Model Routing
 
 | Step | Claude | GPT (Codex) | 이유 |
 |------|--------|-------------|------|
 | Step A (스토리보드 + 구조) | **Haiku → Sonnet** | — | MCP 추출 → 구조 설계 |
-| Step B (모바일 추출) | **Haiku** | — | MCP + 이미지 다운로드 |
-| Step B (모바일 코드 생성) | **Sonnet** | **gpt-5.3-codex-spark** (병렬) | 섹션별 컴포넌트 생성 |
-| Step B (모바일 검증) | **Sonnet** | — | 이미지 비교 + auto-fix |
-| Step C (PC 추출) | **Haiku** | — | MCP + 이미지 다운로드 |
-| Step C (PC 반응형 반영) | **Sonnet** | — | 기존 코드에 반응형 레이어 추가 |
-| Step C (PC 검증) | **Sonnet** | — | 양쪽 뷰포트 비교 |
-| Step D (공통화) | **Sonnet** | — | 리팩토링 + 최종 검증 |
+| Step B (디자인 추출) | **Haiku** | — | MCP + 이미지 다운로드 |
+| Step B (코드 생성) | **Sonnet** | **gpt-5.3-codex-spark** (병렬) | 섹션별 컴포넌트 생성 |
+| Step B (검증) | **Sonnet** | — | 이미지 비교 + auto-fix |
+| Step C (추가 뷰포트) | **Haiku → Sonnet** | — | 반응형 레이어 추가 |
+| Step D (공통화 + 검증) | **Sonnet** | — | 리팩토링 + 최종 검증 |
 | Post (코드 리뷰) | — | **gpt-5.3-codex** | 전체 코드 품질 검증 |
 
 ### GPT 모델 선택 기준
@@ -33,227 +81,340 @@ tier: standard
 | `gpt-5.3-codex` | `models.gptCodex` | 코드 리뷰, 분석 (정확도 우선) |
 | `gpt-5.3-codex-spark` | `models.gptCodexSpark` | 코드 생성 (속도 우선) |
 
-`~/.vibe/config.json`의 `models` 에서 오버라이드 가능.
+`~/.vibe/config.json`의 `models`에서 오버라이드 가능.
 
 ---
 
-## Phase 1: Design Analysis (Image-First)
+## R-2. 프로젝트 스택 감지
 
-### Single mode
+### 2-1. Detect Stack
 
-Read `figma-output/frame.png` and analyze:
+1. Read `.claude/vibe/config.json` → `stacks` 필드
+2. config 없으면 프로젝트 파일에서 감지:
 
-| Aspect | What to Extract |
-|--------|-----------------|
-| Layout | Flex/Grid direction, alignment, wrapping |
-| Components | Visual boundaries (cards, buttons, inputs, modals) |
-| Spacing | Padding, margins, gaps between elements |
-| Typography | Font sizes, weights, line heights, hierarchy |
-| Colors | Background, text, border, accent colors |
-| States | Hover/active/disabled indicators if visible |
-| Responsive hints | Breakpoint indicators, fluid vs fixed widths |
+| 감지 대상 | 파일 패턴 |
+|-----------|----------|
+| React | `package.json` → `react` in deps |
+| Vue | `package.json` → `vue` in deps |
+| Next.js | `next.config.*` |
+| Nuxt | `nuxt.config.*` |
+| Svelte | `svelte.config.*` |
+| Tailwind | `tailwind.config.*` |
+| CSS Modules | `*.module.css` 패턴 |
+| SCSS | `*.scss` 또는 `sass` in deps |
+| CSS-in-JS | `styled-components` / `@emotion` in deps |
 
-### Responsive mode
+### 2-2. 디렉토리 감지
 
-Read **ALL** frame images and analyze **side-by-side**:
+| 용도 | Next.js | Nuxt | React | Vue |
+|------|---------|------|-------|-----|
+| 페이지 | `pages/` or `app/` | `pages/` | `src/pages/` or `src/views/` | `src/views/` |
+| 컴포넌트 | `components/` or `src/components/` | `components/` | `src/components/` | `src/components/` |
+| 스타일 | SCSS: `assets/scss/` or `src/styles/`, CSS: `src/styles/`, Tailwind: `tailwind.config.*` |
 
-| Aspect | What to Compare |
-|--------|-----------------|
-| Layout shift | Which elements reflow? (e.g., horizontal → vertical stack) |
-| Visibility | Which elements hide/show per viewport? |
-| Typography scale | Font size ratio between viewports |
-| Spacing scale | Padding/gap ratio between viewports |
-| Component shape | Does the component change form? (e.g., drawer → sidebar) |
-| Navigation | Does nav change? (e.g., hamburger ↔ full nav bar) |
+### 2-3. Design Context 로드
 
-Build a **viewport diff table**:
+순서대로 읽음 (나중 소스가 우선):
+
+1. **`.claude/vibe/design-context.json`** — 브랜드, 접근성, 디바이스 제약
+2. **`.claude/vibe/design-system/{project}/MASTER.md`** — 토큰 정의
+
+**결정 규칙**: Figma 토큰 ≈ 기존 MASTER.md 토큰 (색상 ΔE < 5 또는 간격 ±2px) → 기존 토큰 사용, 중복 생성 금지.
+
+---
+
+## R-3. 브레이크포인트 + 스케일 팩터
+
+### 소스 우선순위
+
+| 순위 | 소스 | 방법 |
+|------|------|------|
+| 1 | **스토리보드** | Step A에서 추출한 `storyboardSpec.breakpoints` |
+| 2 | **`~/.vibe/config.json`** | `figma.breakpoints` (CLI로 커스터마이즈) |
+| 3 | **프로젝트 CSS/Tailwind** | `tailwind.config.*` → `theme.screens`, 또는 `@media` 패턴 |
+| 4 | **기본값** | 아래 테이블 |
+
+### 기본 브레이크포인트
 
 ```
-| Element        | Mobile (375px)         | Desktop (1440px)       | Strategy          |
-|---------------|------------------------|------------------------|-------------------|
-| Nav           | hamburger + drawer     | horizontal bar         | component swap    |
-| Hero title    | 24px                   | 48px                   | fluid: clamp()    |
-| Card grid     | 1 column               | 3 columns              | grid auto-fit     |
-| Sidebar       | hidden                 | visible                | display toggle    |
-| Body text     | 14px                   | 16px                   | fluid: clamp()    |
-| Padding       | 16px                   | 48px                   | fluid: clamp()    |
+breakpoint:      1024px    ← PC↔Mobile 경계 (@media min-width)
+pcTarget:        1920px    ← PC 메인 타겟
+mobilePortrait:   480px    ← Mobile portrait max
+mobileMinimum:    360px    ← Mobile 최소 지원
+designPc:        2560px    ← Figma PC 아트보드 (디자인 2x 스케일)
+designMobile:     720px    ← Figma Mobile 아트보드 (디자인 2x 스케일)
+```
+
+### 스케일 팩터 계산
+
+```
+PC:     scaleFactor.pc     = pcTarget / designPc         (기본: 1920/2560 = 0.75)
+Mobile: scaleFactor.mobile = mobilePortrait / designMobile (기본: 480/720 = 0.667)
+
+적용: 코드 값 = Figma 추출 값 × scaleFactor
+  - 색상 hex → 스케일 불필요
+  - 타이포 (font-size, line-height) → 스케일 적용
+  - 간격 (padding, gap, margin) → 스케일 적용
+```
+
+### clamp() 계산 공식
+
+```
+Step 1: Figma 값 → 타겟 값
+  targetMobile = figmaMobileValue × scaleFactor.mobile
+  targetPc     = figmaPcValue × scaleFactor.pc
+
+Step 2: clamp() 생성
+  minVw = mobileMinimum (360px)
+  maxVw = pcTarget (1920px)
+  slope = (targetPc - targetMobile) / (maxVw - minVw)
+  intercept = targetMobile - slope × minVw
+  → clamp({targetMobile/16}rem, {intercept/16}rem + {slope×100}vw, {targetPc/16}rem)
+```
+
+### CLI 커스터마이즈
+
+```bash
+vibe figma breakpoints                        # 현재 값 확인
+vibe figma breakpoints --set breakpoint=768   # PC↔Mobile 경계 변경
 ```
 
 ---
 
-## Phase 2: Layer Data Extraction
+## R-4. 이미지 분류 + Multi-Layer 패턴
 
-### Single mode
-
-Read `figma-output/layers.json` and extract:
-
-1. **Component hierarchy** — Map nested layers to component tree
-2. **Design tokens** — Colors (fill, stroke), font properties, spacing values, border radius, shadows
-3. **Auto-layout** — Direction, gap, padding (maps directly to flex/grid)
-4. **Constraints** — Fixed vs fluid sizing
-5. **Component instances** — Identify reusable patterns
-6. **Image fills** — Identify layers with `type: "IMAGE"` fills (see Phase 2-A)
-
-### Responsive mode
-
-Read **ALL** `layers.{N}.json` files and extract **per-viewport**:
-
-1. **Per-viewport tokens** — Record exact values for each viewport:
-   ```
-   { "mobile": { "h1": 24, "body": 14, "padding": 16 },
-     "desktop": { "h1": 48, "body": 16, "padding": 48 } }
-   ```
-2. **Layout differences** — Auto-layout direction changes (e.g., HORIZONTAL → VERTICAL)
-3. **Visibility map** — Which layers exist in one viewport but not the other
-4. **Shared tokens** — Values identical across all viewports (colors, border-radius, shadows are usually shared)
-
-### Phase 2-A: Image Fill Classification
-
-Figma에서 이미지는 레이어의 `fills` 배열에 `type: "IMAGE"`로 들어옴. 이를 **용도별로 분류**해야 코드에서 올바른 패턴을 생성할 수 있음.
-
-#### 감지 방법
-
-`layers.json`에서 아래 패턴을 탐색:
-
-```
-fills: [{ type: "IMAGE", scaleMode: "FILL" | "FIT" | "CROP" | "TILE", imageRef: "..." }]
-```
-
-#### 분류 기준
+### 분류 기준
 
 | 판별 조건 | 분류 | 코드 패턴 |
 |----------|------|----------|
-| 레이어가 프레임/섹션의 **직계 배경**이고, 위에 텍스트/UI 요소가 겹침 | **Background Image** | `background-image` + `background-size` |
-| 레이어가 독립적이고, 위에 겹치는 요소 없음 | **Content Image** | `<img>` 또는 `<picture>` |
-| 레이어 이름에 `icon`, `logo`, `avatar` 포함 | **Inline Asset** | `<img>` (작은 크기) |
-| 레이어가 반복 패턴(`scaleMode: "TILE"`) | **Pattern/Texture** | `background-image` + `background-repeat` |
-| 레이어가 전체 프레임을 덮고 opacity < 1 또는 blendMode 적용 | **Overlay Image** | `background-image` + overlay `::before`/`::after` |
+| 프레임 배경이고 위에 텍스트/UI 겹침 | **Background** | `background-image` + `background-size` |
+| 독립 레이어, 겹치는 요소 없음 | **Content** | `<img>` 또는 `<picture>` |
+| 이름에 `icon`/`logo`/`avatar` | **Inline Asset** | `<img>` (작은 크기) |
+| `scaleMode: "TILE"` 반복 패턴 | **Pattern** | `background-repeat` |
+| 전체 덮음 + opacity < 1 또는 blendMode | **Overlay** | `background-image` + overlay |
 
-#### 이미지-텍스트 겹침 판별 (Background vs Content)
+### Multi-Layer 패턴 (배경 이미지 섹션 필수 구조)
 
 ```
-frame의 fills에 IMAGE가 있고, children에 TEXT 레이어가 있으면:
-  → Background Image (텍스트 아래 깔리는 배경)
-
-독립 레이어의 fills에 IMAGE가 있고, 형제 레이어와 겹치지 않으면:
-  → Content Image
+.{section}Section          ← 레이아웃 (position: relative, overflow: hidden)
+  .{section}Bg             ← 배경 이미지 — z-index: 0
+  .{section}BgOverlay      ← 오버레이 (선택) — z-index: 1
+  .{section}Character      ← 캐릭터/일러스트 (선택) — z-index: 2
+  .{section}Content        ← 텍스트/버튼/UI — z-index: 최상위
 ```
 
-#### 이미지 소스 추출
+```css
+.{section}Section { position: relative; overflow: hidden; }
+.{section}Bg {
+  position: absolute; inset: 0; z-index: 0;
+  background-image: url('/images/{feature}/{name}.webp');
+  background-size: cover; background-position: center;
+}
+.{section}BgOverlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+}
+.{section}Content { position: relative; z-index: 2; }
+```
 
-- `imageRef` 값으로 Figma API의 이미지 렌더링 사용 (`/images/{fileKey}`)
-- 추출된 이미지는 `figma-output/assets/` 디렉토리에 저장
-- 파일명은 레이어 이름 기반: `hero-bg.png`, `product-photo.jpg`
+### 배경 이미지 클래스 분리 원칙
 
-### Responsive Scaling Calculation
+| 유형 | 클래스 예시 | 분리 이유 |
+|------|-----------|----------|
+| 섹션 전면 배경 | `.heroBg` | 시즌/이벤트별 이미지 교체 |
+| 오버레이 | `.heroBgOverlay` | 투명도/그라데이션 독립 조절 |
+| 패턴/텍스처 | `.sectionPattern` | repeat/size 별도 제어 |
+| 캐릭터/일러스트 | `.heroCharacter` | 콜라보별 교체, position 조절 |
+| 그라데이션 | `.sectionGradient` | 테마별 색상 변경 |
 
-Per-viewport 토큰 쌍에서 clamp() 값을 계산. 공식은 **Phase 4-3** 참조.
+### 반응형 배경 이미지
 
-핵심: Figma 디자인이 2x 스케일(2560px/720px)이므로, 반드시 타겟 해상도(1920px/480px)로 환산 후 clamp를 계산해야 함.
+```css
+.heroBg { background-image: url('/images/hero-mobile.webp'); }
+@media (min-width: var(--breakpoint)) {
+  .heroBg { background-image: url('/images/hero-pc.webp'); }
+}
+```
 
-**Correction rule**: When image and JSON disagree, **image wins**. The image shows designer intent; JSON may have structural artifacts.
+### 이미지 공통 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| format | `.webp` 우선 (fallback: `.png`/`.jpg`) |
+| alt | 레이어 이름에서 파생, 장식은 `alt=""` + `aria-hidden="true"` |
+| width/height | 항상 명시 (CLS 방지), 스케일 팩터 적용 |
+| loading | 뷰포트 상단 → `eager`, 나머지 → `lazy` |
+| object-fit | `cover` (배경), `contain` (로고/아이콘), `fill` 금지 |
 
 ---
 
-## Phase 3: Project Stack Detection + Mode Resolution
+## R-5. 컴포넌트 통합 규칙 (80% Rule)
 
-### 3-1. Detect Stack
-
-1. Read `.claude/vibe/config.json` → check `stacks` field
-2. If no config, detect from project files:
-   - `package.json` → React, Vue, Svelte, Angular, etc.
-   - `tailwind.config.*` → Tailwind CSS
-   - `next.config.*` → Next.js
-   - `nuxt.config.*` → Nuxt
-   - `*.module.css` → CSS Modules pattern
-   - `*.scss` / `sass` in deps → SCSS
-   - `styled-components` / `@emotion` in deps → CSS-in-JS
-
-### 3-2. Load Design Context (Design Skill Integration)
-
-Read these files **in order** — later sources override earlier ones:
-
-1. **`.claude/vibe/design-context.json`** — brand personality, aesthetic direction, constraints
-   - `aesthetic.style` → guides visual weight (minimal vs bold)
-   - `aesthetic.colorMood` → warm/cool/vibrant tone for token selection
-   - `brand.personality` → preserve brand-expressive elements
-   - `constraints.accessibility` → AA or AAA level (affects contrast, focus, ARIA depth)
-   - `constraints.devices` → responsive breakpoints priority
-2. **`.claude/vibe/design-system/{project}/MASTER.md`** — authoritative token definitions
-   - If MASTER.md exists: **map Figma tokens to MASTER.md tokens first**, only create new tokens for values with no match
-   - If no MASTER.md: generate `figma-tokens.css` as standalone token source
-
-**Decision rule**: When Figma token ≈ existing MASTER.md token (within 10% color distance or ±2px spacing), **use the existing token** — do not duplicate.
-
-### 3-3. Load Breakpoints
-
-Breakpoints are loaded from multiple sources in priority order:
-
-#### Source Priority
-
-| Priority | Source | How |
-|----------|--------|-----|
-| 1 | **Storyboard** | Phase 0-1에서 추출한 `storyboardSpec.breakpoints` |
-| 2 | **`~/.vibe/config.json`** | `figma.breakpoints` — user-customized via `vibe figma breakpoints --set` |
-| 3 | **Project CSS/Tailwind** | Grep `tailwind.config.*` → `theme.screens`, or `@media.*min-width` patterns in codebase |
-| 4 | **Defaults** | Built-in values (breakpoint: 1024px, etc.) |
-
-#### Default Breakpoints (built-in)
-
-Based on game industry responsive storyboard standards:
+### 유사도 판단
 
 ```
-breakpoint:     1024px    ← PC↔Mobile boundary (@media min-width)
-pcTarget:       1920px    ← PC main target resolution
-mobilePortrait:  480px    ← Mobile portrait max width
-mobileMinimum:   360px    ← Mobile minimum supported width
-designPc:       2560px    ← Figma PC artboard width (design is 2x scale)
-designMobile:    720px    ← Figma Mobile artboard width (design is 2x scale)
+구조 80%+ 동일 (색상/크기/텍스트만 다름)
+  → 하나의 컴포넌트 + variant prop으로 통합
+
+구조 자체가 다름 (요소 추가/제거, 레이아웃 방향 변경)
+  → 별도 컴포넌트 유지
 ```
 
-#### How to use in code generation
+### 스택별 variant 구현
+
+| Stack | 방법 |
+|-------|------|
+| React / Next.js | `variant` prop + 조건부 className |
+| Vue / Nuxt | `variant` prop + `<slot>` |
+| Svelte | `variant` prop + `<slot>` |
+| React Native | `variant` prop + StyleSheet 조건 |
+
+### Fragment / 래퍼 제거
+
+스타일이나 이벤트가 없는 래핑 요소 → 프레임워크 제공 투명 래퍼 사용:
+
+| Stack | 투명 래퍼 |
+|-------|----------|
+| React / Next.js | `<>...</>` |
+| Vue / Nuxt | `<template>` (컴포넌트 루트 이외) |
+| Svelte | `{#if}`, `{#each}` 블록 |
+
+---
+
+## R-6. 검증 루프 공통 규칙
+
+모든 Step에서 사용하는 스크린샷 기반 검증 프로세스.
+
+### 6-1. 원본 스크린샷 확보
 
 ```
-@media breakpoint:
-  - Single breakpoint model: @media (min-width: {breakpoint}px)
-  - Mobile-first: styles below breakpoint = mobile, above = PC
+Step A에서 get_screenshot으로 확보한 섹션별 원본 이미지를 기준으로 사용.
+없으면 해당 섹션의 nodeId로 get_screenshot 재호출.
 
-clamp() range:
-  - minVw = mobileMinimum (360px) — smallest supported viewport
-  - maxVw = pcTarget (1920px) — largest target viewport
-  - Values scale linearly between these bounds
-
-Design scale factor:
-  - PC design at {designPc}px targets {pcTarget}px → scale = pcTarget/designPc
-  - Mobile design at {designMobile}px targets {mobilePortrait}px → scale = mobilePortrait/designMobile
-  - Apply scale to convert Figma pixel values to target pixel values
+원본 = Figma 디자인 스크린샷 (디자이너 의도)
 ```
 
-#### User customization
-
-Users can override any value via CLI:
-
-```bash
-vibe figma breakpoints                          # Show current values
-vibe figma breakpoints --set breakpoint=768     # Change PC↔Mobile boundary
-vibe figma breakpoints --set mobileMinimum=320  # Change mobile minimum
-```
-
-Stored in `~/.vibe/config.json` → `figma.breakpoints`. Partial overrides merge with defaults.
-
-### 3-4. Resolve Generation Mode
-
-**Both modes use the project's existing directory structure.** Never create `figma-output/generated/`.
+### 6-2. 생성 코드 렌더링 확보
 
 ```
-if --new flag:
-  → detect project's page/component/style directories (same as default)
-  → generate self-contained token file (no MASTER.md dependency)
-  → components are self-contained (own tokens, no external design system imports)
-  → placed in project's standard directories with feature-named subfolder
+방법 (우선순위):
+  1. /vibe.utils --preview → 브라우저 렌더링 스크린샷 자동 생성
+  2. dev 서버 실행 중이면 → 해당 페이지 스크린샷 (Playwright/Puppeteer)
+  3. 둘 다 불가능하면 → 생성된 코드를 직접 읽고 시각적 결과를 추론
 
-default (no flag):
-  → scan existing component directories, theme files, token definitions
-  → map output to project's conventions (file location, naming, imports)
-  → add only NEW tokens that don't exist yet
+⚠️ 방법 3(코드 읽기 추론)은 최후 수단.
+   가능한 한 실제 렌더링 결과를 확보해야 정확한 비교 가능.
+```
+
+### 6-3. 섹션별 비교 (전체 페이지가 아닌 섹션 단위)
+
+```
+각 섹션 컴포넌트를 개별로 비교:
+  원본: Figma 섹션 스크린샷 (get_screenshot per section)
+  생성: 렌더링된 섹션 스크린샷 (또는 코드 추론)
+
+섹션별로 비교해야 하는 이유:
+  - 전체 페이지 비교는 스크롤 길이 차이로 오차가 큼
+  - 섹션 단위가 수정 범위를 좁힐 수 있음
+  - P1 발견 시 해당 섹션만 수정 → 재비교
+```
+
+### 6-4. 비교 항목 + P1/P2 분류
+
+| 비교 항목 | P1 (필수 수정) | P2 (권장 수정) |
+|----------|---------------|---------------|
+| **레이아웃** | 요소 배치 방향 다름, 섹션 순서 다름 | 미세 정렬 차이 |
+| **배경 이미지** | 누락, 완전히 다른 이미지 | 크기/위치 미세 차이 |
+| **색상** | 배경/텍스트색 완전히 다름 | 미세한 톤 차이 (ΔE < 10) |
+| **타이포** | 제목/본문 크기 비율 다름, 굵기 다름 | ±2px 차이 |
+| **간격** | 섹션 간 간격 크게 다름, 요소 겹침 | ±4px 차이 |
+| **이미지 에셋** | 다운로드 실패, 경로 깨짐 | 크기/비율 미세 차이 |
+| **누락 요소** | 스크린샷에 보이는 요소가 코드에 없음 | — |
+| **오버레이** | 배경 위 텍스트 가독성 확보 안 됨 | 투명도 미세 차이 |
+
+### 6-5. Diff Report 출력
+
+```markdown
+## Visual Diff Report — {섹션명}
+
+원본: Figma {섹션} 스크린샷
+생성: 렌더링 결과 (또는 코드 추론)
+
+### Match Score: {N}%
+
+| # | 항목 | 원본 | 생성 코드 | 심각도 |
+|---|------|------|----------|--------|
+| 1 | 배경 이미지 | 눈 테마 + 그라데이션 | 누락 | P1 |
+| 2 | 제목 font-size | ~36px (스케일 후) | 24px | P1 |
+| 3 | 카드 border-radius | ~12px | 8px | P2 |
+```
+
+### 6-6. Auto-Fix Loop
+
+```
+P1이 있으면:
+  1. 해당 섹션의 컴포넌트/스타일 파일 수정
+  2. 수정 후 렌더링 재확보 (가능하면)
+  3. 원본 스크린샷과 재비교
+  4. P1=0 될 때까지 반복 — 횟수 제한 없음
+
+같은 P1이 반복될 때:
+  - 이전과 동일한 수정을 반복하지 않는다
+  - 접근 방식을 바꿔서 시도한다 (다른 CSS 속성, 다른 레이아웃 전략)
+  - 접근을 바꿔도 해결 안 되면 → 사용자에게 해당 항목을 보여주고 방향 확인
+  - 사용자 확인 후에도 루프는 계속된다 — P1=0이 될 때까지 멈추지 않음
+```
+
+### 6-7. 완료 조건
+
+```
+✅ 모든 섹션 Match Score 95%+
+✅ P1 = 0 (전 섹션)
+✅ 모든 이미지 에셋 표시 + Figma 임시 URL 잔존 0건
+✅ (반응형) 각 뷰포트 독립 검증 통과
+```
+
+---
+
+## R-7. 스크린샷 중심 분석 프로세스
+
+### 섹션별 분석 순서
+
+```
+Step 1: get_screenshot(섹션 nodeId)
+  → 원본 디자인 이미지 확보
+  → 시각 분석: 레이아웃 구조, 색상 팔레트, 폰트 크기/굵기, 간격, 배경 이미지 유무
+
+Step 2: get_design_context(섹션 nodeId)
+  → 이미지 에셋 URL 추출 (const xxxImage = 'https://figma.com/api/mcp/asset/...')
+  → 참조 코드에서 구조 힌트 확인 (HTML 계층, 컴포넌트 분리 방식)
+  → ⚠️ 참조 코드의 스타일 값은 스크린샷과 대조 후에만 채택
+
+Step 3: 스크린샷 기반 코드 생성
+  → 스크린샷에서 읽은 시각 정보로 스타일 작성
+  → 참조 코드의 에셋 URL을 로컬 경로로 교체
+  → 참조 코드 구조가 스크린샷과 다르면 → 스크린샷 기준으로 재구성
+```
+
+### 스크린샷에서 읽어야 하는 것
+
+| 항목 | 읽는 방법 |
+|------|----------|
+| 레이아웃 | 섹션 경계, flex/grid 방향, 요소 배치, 중첩 관계 |
+| 배경 | 이미지 배경 vs 단색 vs 그라데이션, 오버레이 유무 |
+| 색상 | 배경색, 텍스트색, 버튼색, 보더색 (hex 추정) |
+| 타이포 | 제목/본문 크기 비율, 굵기, 줄간격 (스케일 팩터 적용) |
+| 간격 | 섹션 패딩, 요소 간 gap, 마진 (스케일 팩터 적용) |
+| 이미지 배치 | Background vs Content vs Overlay (R-4 분류) |
+| 시각적 계층 | z-index 관계, 겹침 구조, 투명도 |
+
+### 참조 코드에서 읽어야 하는 것 (보조)
+
+```
+✅ 이미지 에셋 URL (다운로드용) — 이것이 참조 코드의 핵심 가치
+✅ 정확한 hex 색상값 (스크린샷 추정보다 정확할 때)
+✅ 폰트 패밀리명
+✅ 정확한 border-radius, shadow 값
+⚠️ 레이아웃 구조 — 스크린샷과 대조 후 채택
+❌ px 값 그대로 사용 — 반드시 스케일 팩터 적용
 ```
