@@ -26,6 +26,9 @@ export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
   'claude-md-guide',
   'capability-loop',
   'design-teach',
+  'vibe-figma',
+  'vibe-figma-extract',
+  'vibe-figma-convert',
 ];
 
 /** 전역 설치에서 제외된 스킬 (명시적 /skill-name 호출 시에만 활성)
