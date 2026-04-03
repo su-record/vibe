@@ -12,10 +12,23 @@ tier: standard
 ```
 ❌ CSS로 이미지 재현 (삼각형/원/gradient로 나무/눈사람/배경 그리기)
 ❌ 이미지 다운로드 없이 코드 생성 진행
-❌ 컴포넌트 파일 안에 <style> 블록 / 인라인 style=""
 ❌ placeholder / 빈 template / 빈 src="" 남기기
 ❌ CSS 값을 추정 (참조 코드에 정확한 값이 있음)
 ❌ 브라우저 기본 스타일(검은색 16px)로 보이는 텍스트
+❌ 핵심 에셋만 다운로드 (참조 코드의 모든 에셋을 빠짐없이 다운로드)
+```
+
+### 스타일 배치 규칙 (모드별)
+
+```
+일반 모드:
+  ❌ 컴포넌트 파일 안에 <style> 블록 / 인라인 style=""
+  ✅ 외부 SCSS 파일에만 스타일 작성
+
+직역 모드:
+  ✅ <style scoped> 블록 허용 (Tailwind→CSS 1:1 변환)
+  ✅ 인라인 :style="" 허용 (maskImage 등 동적 값)
+  ❌ 외부 SCSS 파일에 추상화된 스타일 작성 (원본 좌표 손실)
 ```
 
 ## 전체 플로우
@@ -48,8 +61,8 @@ tier: standard
 
 4. 디렉토리 생성:
    - components/{feature}/
-   - styles/{feature}/ (layout/, components/ 하위)
    - public/images/{feature}/ (또는 static/images/{feature}/)
+   - styles/{feature}/ (layout/, components/ 하위) — Phase 2에서 일반 모드 섹션이 있을 때만
 ```
 
 ---
@@ -68,11 +81,25 @@ tier: standard
 URL에서 fileKey, nodeId 추출
 get_metadata(fileKey, nodeId) → 프레임 목록
 
-프레임 분류:
-  SPEC — 기능 정의서 → get_design_context로 텍스트 추출
-  CONFIG — 해상도/브레이크포인트 → 스케일 팩터 계산
-  SHARED — GNB/Footer/Popup → 공통 컴포넌트 파악
-  PAGE — 화면설계 → 섹션 목록 + 인터랙션 스펙
+⚠️ 메타데이터가 클 수 있음 (실전: 291K chars → 파일 저장됨)
+  → 파일 저장 시 Python/Bash로 파싱하여 프레임 목록 추출
+
+프레임 분류 (이름 패턴 기반, get_design_context 호출 전에 분류):
+  SPEC   — "기능 정의서", "정책" → get_design_context로 텍스트 추출
+  CONFIG — "해상도", "브라우저" → get_design_context로 스케일 팩터 계산
+  SHARED — "공통", "GNB", "Footer", "Popup" → 공통 컴포넌트 파악
+  PAGE   — "화면설계", "메인 -" → 섹션 목록 + 인터랙션 스펙
+
+핵심 프레임 선별 (전부 읽지 않음):
+  1순위: SPEC (기능 정의서) — 1개
+  2순위: CONFIG (해상도) — 1개
+  3순위: PAGE 중 메인 섹션만 (3.1, 3.2, 3.3, 3.4, 3.5, 3.6)
+         하위 케이스(3.1.1, 3.2.1 등)는 건너뜀 — Phase 2에서 필요 시 참조
+  4순위: SHARED (공통 요소, Popup) — 필요 시
+
+높이 1500px 이상 프레임:
+  → get_design_context 대신 get_screenshot으로 시각 파악
+  → 또는 get_metadata로 하위 분할 후 호출
 ```
 
 ### 1-2. 레이아웃 + 컴포넌트 구성 (코드 생성)
@@ -197,7 +224,67 @@ Phase 1에서 빈 파일로 만든 스타일 구조에 기본 내용 Write:
   styles/{feature}/components/     ← 디렉토리
 ```
 
-### 2-2. 섹션별 루프
+### 2-2. 비정형 레이어 감지 (섹션별)
+
+```
+각 섹션의 get_design_context 응답을 받을 때마다 개별 판정.
+한 페이지 내에서 섹션마다 모드가 다를 수 있음.
+
+비정형 지표 (하나라도 해당 → 해당 섹션 직역 모드):
+  □ 에셋 URL 15개 이상
+  □ 소수점 좌표 사용 (left-[117.13px], top-[373.65px])
+  □ mix-blend-mode 사용 (mix-blend-lighten, mix-blend-multiply, mix-blend-hue)
+  □ rotate/scale 변환 사용 (rotate-[149.7deg], -scale-y-100)
+  □ mask-image 사용
+  □ blur 필터 사용 (blur-[3.5px])
+  □ 2560px 이상 원본 해상도에서 트리밍된 BG 구조
+
+정형 지표 (전부 해당 → 해당 섹션 일반 모드):
+  □ flex/grid 기반 정형 레이아웃
+  □ 에셋 URL 10개 미만
+  □ absolute 좌표 없거나 정수값만
+  □ mix-blend/rotate/mask/blur 미사용
+
+섹션별 판정 결과 테이블 출력:
+  ┌──────────┬──────────┐
+  │   섹션   │   모드   │
+  ├──────────┼──────────┤
+  │ Hero     │ 직역     │
+  │ KID      │ 직역     │
+  │ Daily    │ 직역     │
+  │ Caution  │ 일반     │
+  │ ...      │ ...      │
+  └──────────┴──────────┘
+
+혼합 섹션 (배경=비정형, 콘텐츠=정형):
+  → 직역 모드 적용 (비정형이 하나라도 있으면 직역)
+  → 콘텐츠 영역의 반복 패턴(v-for 등)은 직역 내에서 유지
+```
+
+### 2-3. 큰 섹션 분할
+
+```
+get_design_context 타임아웃 방지:
+
+섹션 높이가 1500px 이상이면 (모바일/PC 무관):
+  사전 분할: get_design_context 호출 전에 먼저 분할
+  1. get_metadata(섹션 nodeId)로 하위 노드 목록 확보
+  2. 하위 노드별로 get_design_context 호출 (분할)
+  3. 결과를 합쳐서 하나의 섹션으로 처리
+
+타임아웃 발생 시 (분할 없이 호출한 경우):
+  1회 재시도 (excludeScreenshot: true)
+  → 실패 시 즉시 분할 전략으로 전환 (3회 반복 금지)
+  → 분할도 불가하면 get_screenshot + 스크린샷 기반 구현
+     (이 경우 CSS 값은 스크린샷에서 추정 — 품질 하락 감수)
+
+실전 데이터 (PUBG 겨울 PC방 기준):
+  정상 응답: ~900px 이하 (KID 238px, Caution 880px, Anchor 652px)
+  타임아웃: 2000px+ (Daily 2372~3604, PlayTime 2000~2613, Exchange 2832~4342)
+  파일 저장: Hero 1280px (92K~130K chars — 에셋 40개로 크기 큼)
+```
+
+### 2-4. 섹션별 루프
 
 **각 섹션에 대해 순서대로, 한 섹션을 완전히 완료한 후 다음으로:**
 
@@ -220,61 +307,92 @@ get_design_context(fileKey, 섹션.nodeId)
 ```
 vibe-figma-extract 스킬 참조.
 
-참조 코드에서 모든 에셋 URL 추출 → 다운로드 → 검증.
+참조 코드에서 모든 에셋 URL을 빠짐없이 추출 → 다운로드 → 검증.
+"핵심 에셋만" 금지. const img... 로 시작하는 모든 URL을 다운로드.
 이미지가 모두 로컬에 있어야 c 단계로 진행.
 하나라도 실패하면 코드 생성하지 않음.
 ```
 
-#### c. 참조 코드 → 외부 스타일 파일
+#### c. 코드 변환 (모드별 분기)
 
 ```
-vibe-figma-convert 스킬 참조.
+■ 직역 모드 (비정형 레이어):
+  vibe-figma-convert 스킬의 "직역 모드" 참조.
 
-참조 코드의 Tailwind 클래스에서 CSS 값 추출:
-  text-[48px] → font-size: 36px (48 × 0.75)
-  text-[#1B3A1D] → color: #1B3A1D
-  bg-[#0A1628] → background-color: #0A1628
-  pt-[120px] → padding-top: 90px (120 × 0.75)
+  참조 코드의 JSX 구조 + Tailwind 클래스를 1:1로 변환:
+    - React JSX → Vue/Nuxt template (className→class 등)
+    - Tailwind 클래스 → <style scoped> 내 CSS 클래스 (값 그대로 유지)
+    - src={변수} → 로컬 이미지 경로
+    - style={{ maskImage: ... }} → :style="{ maskImage: ... }"
+    - 소수점 좌표, rotate, mix-blend-mode 전부 보존
+    - scaleFactor 적용: px 값만 스케일링, 나머지(색상, opacity, blend) 유지
+  
+  외부 SCSS 파일 생성하지 않음.
+  컴포넌트에 <style scoped> 블록으로 스타일 포함.
 
-Write/Edit:
-  styles/{feature}/layout/_{section}.scss   ← 배치/구조/배경이미지
-  styles/{feature}/components/_{section}.scss ← 텍스트/버튼/카드 스타일
-  styles/{feature}/_tokens.scss             ← 새 토큰 추가
+■ 일반 모드 (정형 레이어):
+  vibe-figma-convert 스킬의 기존 방식 참조.
+
+  참조 코드의 Tailwind 클래스에서 CSS 값 추출:
+    text-[48px] → font-size: 36px (48 × 0.75)
+    text-[#1B3A1D] → color: #1B3A1D
+    bg-[#0A1628] → background-color: #0A1628
+    pt-[120px] → padding-top: 90px (120 × 0.75)
+
+  Write/Edit:
+    styles/{feature}/layout/_{section}.scss   ← 배치/구조/배경이미지
+    styles/{feature}/components/_{section}.scss ← 텍스트/버튼/카드 스타일
+    styles/{feature}/_tokens.scss             ← 새 토큰 추가
 ```
 
 #### d. Phase 1 컴포넌트 template 리팩토링
 
 ```
-vibe-figma-convert 스킬 참조.
+■ 직역 모드:
+  Phase 1 컴포넌트의 template을 참조 코드의 HTML 구조로 교체.
+  script(JSDoc, 인터페이스, 목 데이터, 핸들러)는 보존.
+  
+  변환 핵심:
+    - 참조 코드의 div/img 구조를 거의 그대로 유지
+    - 모든 이미지 경로를 로컬 경로로 교체
+    - Phase 1의 기능 요소(v-for, @click, v-if)를 적절한 위치에 재배치
+    - <style scoped>에 Tailwind→CSS 변환 결과 포함
+    - 장식 이미지에 alt="" aria-hidden="true"
 
-Phase 1에서 만든 컴포넌트의 template을 참조 코드 기반으로 리팩토링.
-script(JSDoc 주석, 인터페이스, 목 데이터, 핸들러)는 보존.
+■ 일반 모드:
+  vibe-figma-convert 스킬 참조.
 
-template 변경 사항:
-  - 참조 코드의 HTML 구조를 프로젝트 스택으로 변환
-  - 이미지 경로를 다운로드된 로컬 경로로 설정
-  - 배경 이미지 섹션은 Multi-Layer 구조 (.{section}Bg + .{section}Content)
-  - 클래스명을 외부 스타일 파일의 셀렉터와 매칭
-  - Phase 1의 기능 요소(v-for, @click, v-if)를 새 구조에 재배치
+  Phase 1에서 만든 컴포넌트의 template을 참조 코드 기반으로 리팩토링.
+  script(JSDoc 주석, 인터페이스, 목 데이터, 핸들러)는 보존.
 
-컴포넌트에 <style> 블록 없음. 스타일은 전부 외부 파일.
+  template 변경 사항:
+    - 참조 코드의 HTML 구조를 프로젝트 스택으로 변환
+    - 이미지 경로를 다운로드된 로컬 경로로 설정
+    - 배경 이미지 섹션은 Multi-Layer 구조 (.{section}Bg + .{section}Content)
+    - 클래스명을 외부 스타일 파일의 셀렉터와 매칭
+    - Phase 1의 기능 요소(v-for, @click, v-if)를 새 구조에 재배치
+  
+  컴포넌트에 <style> 블록 없음. 스타일은 전부 외부 파일.
 ```
 
 #### e. 섹션 검증
 
 ```
-Grep으로 확인:
-  □ "figma.com/api" in 생성 파일 → 0건
-  □ "<style" in 컴포넌트 파일 → 0건
-  □ "placeholder" in 컴포넌트 파일 → 0건
-  □ 'src=""' in 컴포넌트 파일 → 0건
+공통 체크:
+  □ Grep: "figma.com/api" in 생성 파일 → 0건
+  □ Grep: "placeholder" in 컴포넌트 파일 → 0건
+  □ Grep: 'src=""' in 컴포넌트 파일 → 0건
+  □ Glob: images/{feature}/*.webp → 이미지 파일 존재
+  □ Read: 컴포넌트 template에 실제 HTML 태그 존재 (빈 template 아님)
 
-Read로 확인:
-  □ 컴포넌트 template에 실제 HTML 태그 존재 (빈 template 아님)
-  □ 외부 스타일 파일에 font-size, color, background-image 존재
+일반 모드 추가 체크:
+  □ Grep: "<style" in 컴포넌트 파일 → 0건
+  □ Grep: 'style="' in 컴포넌트 파일 → 0건
+  □ Read: 외부 스타일 파일에 font-size, color, background-image 존재
 
-Glob로 확인:
-  □ 이미지 파일 존재 (public/images/{feature}/*.webp)
+직역 모드 추가 체크:
+  □ Read: <style scoped> 블록에 position, transform, mix-blend-mode 존재
+  □ 에셋 수 = 다운로드된 이미지 수 (누락 0)
 
 실패 시 → 해당 항목 수정 → 재검증
 ```

@@ -58,11 +58,11 @@ Load skill `vibe-figma` — Phase 0 Setup + Phase 1 Storyboard
 
 ## Phase 2: Design
 
-Load skill `vibe-figma` — Phase 2 Design
+Load skill `vibe-figma` — Phase 2 Design (비정형 레이어 감지 + 큰 섹션 분할 포함)
 
 섹션별 처리 시 참조:
 - Load skill `vibe-figma-extract` — 이미지 다운로드 + CSS 값 추출 방법
-- Load skill `vibe-figma-convert` — 참조 코드 → 프로젝트 코드 + 외부 스타일 변환
+- Load skill `vibe-figma-convert` — 참조 코드 → 프로젝트 코드 변환 (직역 모드 / 일반 모드)
 
 ## Phase 3: Verification
 
