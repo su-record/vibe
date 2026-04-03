@@ -24,7 +24,7 @@ tier: standard
 /vibe.figma
   → Phase 0: Setup (스택 감지, 디렉토리 생성)
   → Phase 1: Storyboard (선택 — 레이아웃+컴포넌트 구성 + 기능 주석)
-  → Phase 2: Design (핵심 — 모바일 + 데스크탑 반응형까지)
+  → Phase 2: Design (핵심 — 디자인 URL들로 이미지+스타일 적용)
   → Phase 3: Verification (Grep 체크 + 스크린샷 비교)
 ```
 
@@ -168,12 +168,13 @@ Phase 1에서 컴포넌트가 이미 존재 (레이아웃 + 기능 주석 + 목 
 Phase 2에서는 이 컴포넌트에 **디자인(이미지 + 스타일)**을 입힌다.
 
 ```
-AskUserQuestion: "모바일 디자인 Figma URL을 입력해주세요."
+AskUserQuestion: "디자인 Figma URL을 입력해주세요. (여러 개면 모두 입력)"
 
-URL에서 fileKey, nodeId 추출
-get_metadata(fileKey, nodeId) → 섹션 프레임 목록
+URL이 여러 개면 전부 수집. 순서/역할 구분 없음.
+각 URL에서 fileKey, nodeId 추출 → get_metadata → 프레임 width 확인
+→ 뷰포트별 자동 분류 (width로 판별)
 
-섹션 프레임을 Phase 1에서 만든 컴포넌트와 매핑:
+모든 URL의 섹션을 Phase 1 컴포넌트와 매핑:
   이름 키워드 매칭 → 순서 매칭 → 스크린샷 비교
 ```
 
@@ -271,22 +272,21 @@ Glob로 확인:
 실패 시 → 해당 항목 수정 → 재검증
 ```
 
-### 2-3. 반응형 (데스크탑 디자인)
+### 2-3. 반응형 통합
 
 ```
-모바일 섹션 루프 완료 후:
+URL이 2개 이상이면 (뷰포트가 다른 디자인):
 
-AskUserQuestion: "데스크탑 디자인 URL이 있나요? (없으면 '없음')"
-
-URL 입력 시 → 같은 섹션별 루프(a~e) 실행.
-단, 기존 모바일 코드를 수정하지 않고 반응형 레이어만 추가:
+모든 URL의 섹션별 루프(a~e)를 처리한 후,
+뷰포트 간 값을 비교하여 반응형 스타일을 통합:
 
   같은 값 → 유지
-  다른 px 값 → clamp(모바일스케일, calc, 데스크탑스케일) 또는 @media 오버라이드
-  다른 레이아웃 (flex-direction 등) → @media (min-width: $breakpoint) 추가
+  다른 px 값 → clamp(작은뷰포트, calc, 큰뷰포트)
+  다른 레이아웃 → @media (min-width: $breakpoint)
   다른 배경 이미지 → @media 이미지 분기
-  추가 이미지 에셋 → 다운로드 (기존과 동일하면 스킵)
-  기존 모바일 코드/스타일 삭제 금지
+  뷰포트별 고유 이미지 → 각각 다운로드
+
+URL이 1개면 → 이 단계 스킵, 단일 뷰포트로 완료
 ```
 
 ---
