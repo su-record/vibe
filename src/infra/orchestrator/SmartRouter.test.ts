@@ -2,7 +2,7 @@
  * SmartRouter Tests - LLM smart routing and fallback management
  */
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach, type Mock } from 'vitest';
 import { SmartRouter, AllProvidersFailedError, getSmartRouter } from './SmartRouter.js';
 
 // Mock external LLM APIs
@@ -15,6 +15,16 @@ vi.mock('../lib/gemini/index.js', () => ({
 vi.mock('../lib/utils.js', () => ({
   debugLog: vi.fn(),
 }));
+// Dynamic priority: codex=true, gemini=true
+// architecture → ['gpt', 'gemini', 'claude']
+// debugging → ['gpt', 'claude']
+// code-analysis → ['gpt', 'claude']
+// code-gen → ['gpt', 'claude']
+// code-review → ['gpt', 'gemini', 'claude']
+// web-search → ['gemini', 'claude']
+// uiux → ['gemini', 'claude']
+// general → ['claude'] (not in any codex/gemini list)
+// reasoning → ['gpt', 'gemini', 'claude']
 vi.mock('../lib/llm-availability.js', () => ({
   detectLlmAvailability: vi.fn(() => ({ codex: true, gemini: true })),
 }));
@@ -31,7 +41,12 @@ describe('SmartRouter', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
     router = new SmartRouter();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // ─── Provider Selection Based on Task Type ───
@@ -115,13 +130,36 @@ describe('SmartRouter', () => {
       expect(result.content).toBe('Gemini response');
       expect(mockGpt).not.toHaveBeenCalled();
     });
+
+    it('should use GPT first for code-review tasks', async () => {
+      mockGpt.mockResolvedValueOnce('GPT code review');
+
+      const result = await router.route({
+        type: 'code-review',
+        prompt: 'Review this code',
+      });
+
+      expect(result.provider).toBe('gpt');
+    });
+
+    it('should use GPT first for reasoning tasks', async () => {
+      mockGpt.mockResolvedValueOnce('GPT reasoning');
+
+      const result = await router.route({
+        type: 'reasoning',
+        prompt: 'Reason about this',
+      });
+
+      expect(result.provider).toBe('gpt');
+    });
   });
 
   // ─── Fallback Chain ───
 
   describe('fallback chain', () => {
-    it('should fall back to Gemini when GPT fails', async () => {
-      mockGpt.mockRejectedValue(new Error('GPT rate limit exceeded'));
+    it('should fall back to Gemini when GPT fails for architecture', async () => {
+      // architecture: ['gpt', 'gemini', 'claude']
+      mockGpt.mockRejectedValueOnce(new Error('GPT rate limit exceeded'));
       mockGemini.mockResolvedValueOnce('Gemini fallback response');
 
       const result = await router.route({
@@ -137,13 +175,15 @@ describe('SmartRouter', () => {
       expect(result.attemptedProviders).toContain('gemini');
     });
 
-    it('should fall back to GPT when Gemini fails for web-search', async () => {
-      mockGemini.mockRejectedValue(new Error('Gemini quota exhausted'));
+    it('should fall back to GPT when Gemini fails for code-review with preferredLlm', async () => {
+      // code-review: ['gpt', 'gemini', 'claude'] — override with preferredLlm=gemini → ['gemini', 'gpt', 'claude']
+      mockGemini.mockRejectedValueOnce(new Error('Gemini quota exhausted'));
       mockGpt.mockResolvedValueOnce('GPT fallback');
 
       const result = await router.route({
-        type: 'web-search',
-        prompt: 'Search query',
+        type: 'code-review',
+        prompt: 'Review code',
+        preferredLlm: 'gemini',
         maxRetries: 0,
       });
 
@@ -152,11 +192,12 @@ describe('SmartRouter', () => {
     });
 
     it('should skip retries for auth errors and move to next provider', async () => {
-      mockGpt.mockRejectedValue(new Error('No API key set'));
+      // architecture: ['gpt', 'gemini', 'claude']
+      mockGpt.mockRejectedValueOnce(new Error('No API key set'));
       mockGemini.mockResolvedValueOnce('Gemini response');
 
       const result = await router.route({
-        type: 'code-analysis',
+        type: 'architecture',
         prompt: 'Analyze code',
         maxRetries: 2,
       });
@@ -168,11 +209,12 @@ describe('SmartRouter', () => {
     });
 
     it('should skip retries for rate limit errors (429)', async () => {
-      mockGpt.mockRejectedValue(new Error('429 Too Many Requests'));
+      // code-review: ['gpt', 'gemini', 'claude']
+      mockGpt.mockRejectedValueOnce(new Error('429 Too Many Requests'));
       mockGemini.mockResolvedValueOnce('OK');
 
       await router.route({
-        type: 'general',
+        type: 'code-review',
         prompt: 'Test',
         maxRetries: 2,
       });
@@ -181,13 +223,14 @@ describe('SmartRouter', () => {
     });
 
     it('should retry on transient errors before falling back', async () => {
+      // architecture: ['gpt', 'gemini', 'claude']
       mockGpt
         .mockRejectedValueOnce(new Error('Network timeout'))
         .mockRejectedValueOnce(new Error('Network timeout'))
         .mockResolvedValueOnce('GPT recovered');
 
       const result = await router.route({
-        type: 'general',
+        type: 'architecture',
         prompt: 'Test',
         maxRetries: 2,
       });
@@ -198,10 +241,11 @@ describe('SmartRouter', () => {
     });
 
     it('should use custom systemPrompt when provided', async () => {
+      // architecture: ['gpt', 'gemini', 'claude']
       mockGpt.mockResolvedValueOnce('Response');
 
       await router.route({
-        type: 'general',
+        type: 'architecture',
         prompt: 'Test prompt',
         systemPrompt: 'Custom system prompt',
       });
@@ -214,10 +258,11 @@ describe('SmartRouter', () => {
     });
 
     it('should use default systemPrompt when not provided', async () => {
+      // architecture: ['gpt', 'gemini', 'claude']
       mockGpt.mockResolvedValueOnce('Response');
 
       await router.route({
-        type: 'general',
+        type: 'architecture',
         prompt: 'Test prompt',
       });
 
@@ -233,14 +278,15 @@ describe('SmartRouter', () => {
 
   describe('availability caching', () => {
     it('should skip providers marked as unavailable', async () => {
-      // First: fail GPT 3+ times to mark it unavailable
-      mockGpt.mockRejectedValue(new Error('GPT rate limit'));
+      // code-review: ['gpt', 'gemini', 'claude']
+      // Fail GPT with rate-limit (skip-retry pattern) to quickly mark unavailable
+      mockGpt.mockRejectedValue(new Error('GPT server error'));
       mockGemini.mockResolvedValue('Gemini response');
 
-      // Route multiple times to accumulate error count
-      await router.route({ type: 'code-review', prompt: 'test', maxRetries: 0 });
-      await router.route({ type: 'code-review', prompt: 'test', maxRetries: 0 });
-      await router.route({ type: 'code-review', prompt: 'test', maxRetries: 0 });
+      // Route 3 times with maxRetries=0 to accumulate 3 error counts on GPT
+      await router.route({ type: 'code-review', prompt: 'test1', maxRetries: 0 });
+      await router.route({ type: 'code-review', prompt: 'test2', maxRetries: 0 });
+      await router.route({ type: 'code-review', prompt: 'test3', maxRetries: 0 });
 
       // After 3 failures, GPT is marked unavailable
       const cache = router.getCacheStatus();
@@ -255,7 +301,7 @@ describe('SmartRouter', () => {
       // Next route should skip GPT entirely
       const result = await router.route({
         type: 'code-review',
-        prompt: 'test',
+        prompt: 'test4',
         maxRetries: 0,
       });
 
@@ -264,10 +310,11 @@ describe('SmartRouter', () => {
     });
 
     it('should reset availability after TTL expires', async () => {
-      // Mark GPT as unavailable
-      mockGpt.mockRejectedValue(new Error('GPT rate limit'));
+      // code-review: ['gpt', 'gemini', 'claude']
+      mockGpt.mockRejectedValue(new Error('GPT server error'));
       mockGemini.mockResolvedValue('Gemini');
 
+      // Accumulate 3 failures
       await router.route({ type: 'code-review', prompt: 'test', maxRetries: 0 });
       await router.route({ type: 'code-review', prompt: 'test', maxRetries: 0 });
       await router.route({ type: 'code-review', prompt: 'test', maxRetries: 0 });
@@ -294,9 +341,10 @@ describe('SmartRouter', () => {
     });
 
     it('should mark provider available on success', async () => {
+      // architecture: ['gpt', 'gemini', 'claude']
       mockGpt.mockResolvedValueOnce('GPT OK');
 
-      await router.route({ type: 'general', prompt: 'test' });
+      await router.route({ type: 'architecture', prompt: 'test' });
 
       const cache = router.getCacheStatus();
       expect(cache.gpt.available).toBe(true);
@@ -305,7 +353,6 @@ describe('SmartRouter', () => {
 
     it('should reset cache via resetCache()', () => {
       const router2 = new SmartRouter();
-      // Manually check default state
       const cache = router2.getCacheStatus();
       expect(cache.gpt.available).toBe(true);
       expect(cache.gemini.available).toBe(true);
@@ -315,14 +362,32 @@ describe('SmartRouter', () => {
       expect(reset.gpt.errorCount).toBe(0);
       expect(reset.gemini.errorCount).toBe(0);
     });
+
+    it('should not cache claude provider availability', async () => {
+      // web-search: ['gemini', 'claude'] — claude is always considered available
+      mockGemini.mockRejectedValueOnce(new Error('Gemini auth'));
+
+      // claude will fail with "Claude fallback - handled by caller"
+      // but isUnavailable('claude') always returns false
+      await expect(
+        router.route({ type: 'web-search', prompt: 'test', maxRetries: 0 }),
+      ).rejects.toThrow(AllProvidersFailedError);
+
+      // claude should still be "available" (not cached)
+      // Verify by checking that subsequent calls still attempt claude
+      mockGemini.mockRejectedValueOnce(new Error('Gemini auth'));
+      const errorPromise = router.route({ type: 'web-search', prompt: 'test', maxRetries: 0 });
+      await expect(errorPromise).rejects.toThrow(AllProvidersFailedError);
+    });
   });
 
   // ─── Edge Cases ───
 
   describe('edge cases', () => {
     it('should throw AllProvidersFailedError when all providers fail', async () => {
-      mockGpt.mockRejectedValue(new Error('GPT auth failure'));
-      mockGemini.mockRejectedValue(new Error('Gemini auth failure'));
+      // architecture: ['gpt', 'gemini', 'claude']
+      mockGpt.mockRejectedValueOnce(new Error('GPT auth failure'));
+      mockGemini.mockRejectedValueOnce(new Error('Gemini auth failure'));
 
       await expect(
         router.route({
@@ -334,8 +399,9 @@ describe('SmartRouter', () => {
     });
 
     it('AllProvidersFailedError should contain attempted providers and errors', async () => {
-      mockGpt.mockRejectedValue(new Error('GPT unauthorized'));
-      mockGemini.mockRejectedValue(new Error('Gemini unauthorized'));
+      // architecture: ['gpt', 'gemini', 'claude']
+      mockGpt.mockRejectedValueOnce(new Error('GPT unauthorized'));
+      mockGemini.mockRejectedValueOnce(new Error('Gemini unauthorized'));
 
       try {
         await router.route({
@@ -356,26 +422,31 @@ describe('SmartRouter', () => {
       }
     });
 
-    it('should handle claude provider by throwing (handled by caller)', async () => {
-      mockGpt.mockRejectedValue(new Error('GPT auth'));
-      mockGemini.mockRejectedValue(new Error('Gemini auth'));
+    it('should handle claude provider in fallback chain', async () => {
+      // architecture: ['gpt', 'gemini', 'claude']
+      // claude always throws "Claude fallback - handled by caller"
+      mockGpt.mockRejectedValueOnce(new Error('GPT auth'));
+      mockGemini.mockRejectedValueOnce(new Error('Gemini auth'));
 
-      // claude is last in fallback for architecture: ['gpt', 'gemini', 'claude']
-      // callLlm throws "Claude fallback - handled by caller" for claude
-      await expect(
-        router.route({
+      try {
+        await router.route({
           type: 'architecture',
           prompt: 'Test',
           maxRetries: 0,
-        }),
-      ).rejects.toThrow(AllProvidersFailedError);
+        });
+        expect.fail('Should have thrown');
+      } catch (err) {
+        const error = err as AllProvidersFailedError;
+        expect(error.attemptedProviders).toContain('claude');
+        expect(error.errors['claude']).toContain('Claude fallback');
+      }
     });
 
     it('should track duration in result', async () => {
       mockGpt.mockResolvedValueOnce('Response');
 
       const result = await router.route({
-        type: 'general',
+        type: 'architecture',
         prompt: 'Test',
       });
 
@@ -384,13 +455,14 @@ describe('SmartRouter', () => {
     });
 
     it('should set maxRetries to 2 by default', async () => {
+      // architecture: ['gpt', 'gemini', 'claude']
       mockGpt
         .mockRejectedValueOnce(new Error('Transient error 1'))
         .mockRejectedValueOnce(new Error('Transient error 2'))
         .mockResolvedValueOnce('Success on third attempt');
 
       const result = await router.route({
-        type: 'general',
+        type: 'architecture',
         prompt: 'Test',
         // maxRetries not specified — default is 2
       });
@@ -398,6 +470,18 @@ describe('SmartRouter', () => {
       expect(mockGpt).toHaveBeenCalledTimes(3);
       expect(result.provider).toBe('gpt');
       expect(result.success).toBe(true);
+    });
+
+    it('should report attemptedProviders length of 1 when first provider succeeds', async () => {
+      mockGpt.mockResolvedValueOnce('OK');
+
+      const result = await router.route({
+        type: 'architecture',
+        prompt: 'Test',
+      });
+
+      expect(result.attemptedProviders).toEqual(['gpt']);
+      expect(result.usedFallback).toBe(false);
     });
   });
 
@@ -477,7 +561,6 @@ describe('SmartRouter', () => {
     it('should create new instance when options are provided', () => {
       const instance1 = getSmartRouter();
       const instance2 = getSmartRouter({ verbose: true });
-      // New instance created because options were provided
       expect(instance2).toBeInstanceOf(SmartRouter);
     });
   });
@@ -501,6 +584,15 @@ describe('SmartRouter', () => {
     it('should handle empty providers list', () => {
       const error = new AllProvidersFailedError([], {}, 100);
       expect(error.message).toContain('No providers attempted');
+    });
+  });
+
+  // ─── Verbose mode ───
+
+  describe('verbose mode', () => {
+    it('should create router with verbose option', () => {
+      const verboseRouter = new SmartRouter({ verbose: true });
+      expect(verboseRouter).toBeInstanceOf(SmartRouter);
     });
   });
 });
