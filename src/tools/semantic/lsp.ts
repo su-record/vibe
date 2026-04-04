@@ -321,7 +321,7 @@ export async function lspDocumentSymbols(args: { file: string }): Promise<ToolRe
 
   try {
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const sourceFile = project.getSourceFile(file);
 
     if (!sourceFile) {
@@ -377,7 +377,7 @@ export async function lspWorkspaceSymbols(args: { query: string; projectPath: st
   const { query, projectPath, maxResults = 50 } = args;
 
   try {
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const symbols: Array<{ name: string; kind: string; file: string; line: number }> = [];
 
     for (const sourceFile of project.getSourceFiles()) {
@@ -428,8 +428,9 @@ export async function lspDiagnostics(args: { file: string }): Promise<ToolResult
   const { file } = args;
 
   try {
+    const { ts } = await loadTsMorph();
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const sourceFile = project.getSourceFile(file);
 
     if (!sourceFile) {
