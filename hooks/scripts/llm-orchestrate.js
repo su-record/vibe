@@ -43,6 +43,55 @@ const mode = process.argv[3] || 'orchestrate';
 const MAX_RETRIES = 3;
 const INITIAL_DELAY_MS = 2000;
 
+// ============================================
+// Response Cache (TTL-based, in-memory)
+// ============================================
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX_ENTRIES = 50;
+const responseCache = new Map();
+
+function getCacheKey(providerName, prompt, sysPrompt, jsonMode) {
+  const hash = crypto.createHash('sha256')
+    .update(`${providerName}|${sysPrompt}|${prompt}|${jsonMode}`)
+    .digest('hex')
+    .slice(0, 16);
+  return hash;
+}
+
+function getCachedResponse(key) {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    responseCache.delete(key);
+    return null;
+  }
+  return entry.result;
+}
+
+function setCachedResponse(key, result) {
+  // Evict oldest entries when cache is full
+  if (responseCache.size >= CACHE_MAX_ENTRIES) {
+    const oldestKey = responseCache.keys().next().value;
+    responseCache.delete(oldestKey);
+  }
+  responseCache.set(key, { result, timestamp: Date.now() });
+}
+
+// ============================================
+// Simple Prompt Detection (early exit)
+// ============================================
+const SIMPLE_PROMPT_MAX_LEN = 20;
+const SIMPLE_PROMPT_PATTERNS = [
+  /^(hi|hello|hey|thanks|thank you|ok|yes|no|y|n)\.?$/i,
+  /^(help|version|status)$/i,
+];
+
+function isSimplePrompt(prompt) {
+  const trimmed = prompt.trim();
+  if (trimmed.length > SIMPLE_PROMPT_MAX_LEN) return false;
+  return SIMPLE_PROMPT_PATTERNS.some(p => p.test(trimmed));
+}
+
 // Errors that should skip retry and go to fallback immediately
 const SKIP_RETRY_PATTERNS = [
   /rate.?limit/i,
@@ -123,7 +172,8 @@ function parseAnalyzeImageArgs(args) {
 // CLI Provider Functions
 // ============================================
 
-const CLI_TIMEOUT_MS = 120000;
+const CLI_TIMEOUT_MS = 60000;
+const CLI_FALLBACK_TIMEOUT_MS = 30000;
 const IS_WINDOWS = os.platform() === 'win32';
 
 function spawnCli(cmd, args, options) {
@@ -145,7 +195,7 @@ function buildCliPrompt(prompt, sysPrompt, jsonMode) {
 }
 
 
-function callCodexCli(prompt, sysPrompt, jsonMode, model) {
+function callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
   const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
   const outputFile = path.join(os.tmpdir(), `vibe-codex-${crypto.randomUUID()}.txt`);
   // stdin pipe로 프롬프트 전달 (shell escaping 이슈 회피)
@@ -155,11 +205,12 @@ function callCodexCli(prompt, sysPrompt, jsonMode, model) {
   const vibeConfig = readVibeConfig();
   const apiKey = vibeConfig.credentials?.gpt?.apiKey || process.env.OPENAI_API_KEY;
   const env = apiKey ? { ...process.env, OPENAI_API_KEY: apiKey } : process.env;
+  const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
 
   return new Promise((resolve, reject) => {
     const proc = spawnCli('codex', args, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: CLI_TIMEOUT_MS,
+      timeout: effectiveTimeout,
       env,
     });
     proc.stdin.write(fullPrompt);
@@ -186,16 +237,17 @@ function callCodexCli(prompt, sysPrompt, jsonMode, model) {
   });
 }
 
-function callGeminiCli(prompt, sysPrompt, jsonMode, model) {
+function callGeminiCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
   const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
   // -p 로 headless 모드, stdin으로 프롬프트 전달 (stdin is appended to -p value)
   const args = ['-p', '.', '-o', 'text'];
   if (model) args.push('-m', model);
+  const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
 
   return new Promise((resolve, reject) => {
     const proc = spawnCli('gemini', args, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: CLI_TIMEOUT_MS,
+      timeout: effectiveTimeout,
     });
     proc.stdin.write(fullPrompt);
     proc.stdin.end();
@@ -219,7 +271,7 @@ function callGeminiCli(prompt, sysPrompt, jsonMode, model) {
   });
 }
 
-async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
+async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs) {
   const vibeConfig = readVibeConfig();
 
   if (providerName === 'gpt' || providerName === 'gpt-codex' || providerName === 'gpt-spark') {
@@ -231,23 +283,23 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode) {
     } else {
       model = vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.4';
     }
-    return await callCodexCli(prompt, sysPrompt, jsonMode, model);
+    return await callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs);
   }
 
   if (providerName === 'gemini') {
     const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview';
-    return await callGeminiCli(prompt, sysPrompt, jsonMode, model);
+    return await callGeminiCli(prompt, sysPrompt, jsonMode, model, timeoutMs);
   }
 
   throw new Error(`Unknown provider: ${providerName}`);
 }
 
-async function callWithRetry(providerName, prompt, sysPrompt, jsonMode) {
+async function callWithRetry(providerName, prompt, sysPrompt, jsonMode, timeoutMs) {
   let lastError;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      return { success: true, result: await callProvider(providerName, prompt, sysPrompt, jsonMode) };
+      return { success: true, result: await callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs) };
     } catch (e) {
       lastError = e;
       const errorMsg = e.message || String(e);
@@ -447,6 +499,19 @@ async function main() {
   const cleanPrompt = prompt.replace(prefixPatterns[provider] || /^/, '').trim();
   const jsonMode = mode === 'orchestrate-json';
 
+  // Early exit: simple prompts don't need LLM orchestration
+  if (isSimplePrompt(cleanPrompt)) {
+    return;
+  }
+
+  // Check cache for identical prompts
+  const cacheKey = getCacheKey(provider, cleanPrompt, systemPrompt, jsonMode);
+  const cached = getCachedResponse(cacheKey);
+  if (cached) {
+    console.log(cached);
+    return;
+  }
+
   // Provider chain: primary → cross fallback
   // gpt-codex fallback: gpt-codex → gemini (codex는 full gpt로 fallback하지 않음)
   const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', gemini: 'Gemini' };
@@ -455,18 +520,23 @@ async function main() {
     ? [provider, 'gemini']
     : ['gemini', 'gpt'];
 
-  for (const currentProvider of providerChain) {
+  for (let i = 0; i < providerChain.length; i++) {
+    const currentProvider = providerChain[i];
     const label = providerLabels[currentProvider] || currentProvider.toUpperCase();
-    const result = await callWithRetry(currentProvider, cleanPrompt, systemPrompt, jsonMode);
+    // Use shorter timeout for fallback providers
+    const timeoutMs = i === 0 ? CLI_TIMEOUT_MS : CLI_FALLBACK_TIMEOUT_MS;
+    const result = await callWithRetry(currentProvider, cleanPrompt, systemPrompt, jsonMode, timeoutMs);
 
     if (result.success) {
-      console.log(`${label} response: ${result.result}`);
+      const output = `${label} response: ${result.result}`;
+      setCachedResponse(cacheKey, output);
+      console.log(output);
       return;
     }
 
     // Log failure and try fallback
-    if (currentProvider !== providerChain[providerChain.length - 1]) {
-      const nextProvider = providerChain[providerChain.indexOf(currentProvider) + 1];
+    if (i < providerChain.length - 1) {
+      const nextProvider = providerChain[i + 1];
       const nextLabel = providerLabels[nextProvider] || nextProvider.toUpperCase();
       console.error(`[${currentProvider.toUpperCase()}] Failed: ${result.error}. Falling back to ${nextLabel}...`);
     } else {

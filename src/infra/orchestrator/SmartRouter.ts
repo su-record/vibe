@@ -16,9 +16,13 @@ import * as geminiApi from '../lib/gemini/index.js';
 import { debugLog } from '../lib/utils.js';
 
 // LLM 가용성 캐시 (5분 TTL)
+// WHY 5min: Long enough to avoid hammering a down provider, short enough to
+// recover quickly when a transient outage resolves (most LLM 503s clear in <3min).
 const LLM_CACHE_TTL = 5 * 60 * 1000;
 
 // 프로바이더별 timeout (30초)
+// WHY 30s: LLM responses can legitimately take 10-20s for long prompts; 30s
+// balances patience against blocking the fallback chain too long.
 const PROVIDER_TIMEOUT_MS = 30_000;
 
 /**
@@ -85,7 +89,8 @@ export class SmartRouter {
     const attemptedProviders: LLMProvider[] = [];
     const errors: Record<string, string> = {};
 
-    // 각 LLM 순차 시도 (fallback chain)
+    // WHY sequential fallback: Parallel calls waste tokens/quota on the slower
+    // provider. Sequential tries the best-fit first, only falling back on failure.
     for (const provider of providers) {
       if (this.isUnavailable(provider)) {
         if (this.verbose) {
@@ -142,6 +147,9 @@ export class SmartRouter {
 
   /**
    * LLM 우선순위 결정
+   * WHY task-based routing: GPT excels at code/reasoning tasks; Gemini excels
+   * at web search and multimodal (UI/UX). Routing by task type maximizes
+   * quality while keeping Claude as the last-resort fallback (expensive).
    */
   private getProviderPriority(type: TaskType, preferredLlm?: LLMProvider): LLMProvider[] {
     const basePriority = getTaskLlmPriority(type);
@@ -253,6 +261,8 @@ export class SmartRouter {
     cache.errorCount++;
     cache.checkedAt = Date.now();
 
+    // WHY 3 errors: A single timeout is often transient; 3 consecutive failures
+    // strongly indicate the provider is genuinely down, so skip it until TTL expires.
     if (cache.errorCount >= 3) {
       cache.available = false;
     }

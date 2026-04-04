@@ -54,6 +54,65 @@ export function errorLog(message: string, error?: unknown): void {
   }
 }
 
+// ─── Error Categorization ───────────────────────────────────
+
+/**
+ * Error severity levels for consistent error handling across the codebase.
+ * - fatal: must stop execution, user needs to know
+ * - recoverable: can continue, but warn user
+ * - ignorable: truly safe to ignore (e.g., legacy cleanup, optional features)
+ */
+export type ErrorSeverity = 'fatal' | 'recoverable' | 'ignorable';
+
+/**
+ * Extract a human-readable message from an unknown caught value.
+ */
+export function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+/**
+ * Handle a caught error according to its severity.
+ *
+ * - fatal: logs to stderr and re-throws
+ * - recoverable: logs a user-visible warning (via warnFn) and continues
+ * - ignorable: logs only in debug mode
+ *
+ * @param severity - how critical the error is
+ * @param context - short description of what was being attempted
+ * @param error - the caught value
+ * @param warnFn - optional callback for user-visible warnings (defaults to stderr)
+ */
+export function handleCaughtError(
+  severity: ErrorSeverity,
+  context: string,
+  error: unknown,
+  warnFn?: (msg: string) => void,
+): void {
+  const message = extractErrorMessage(error);
+
+  switch (severity) {
+    case 'fatal':
+      process.stderr.write(`[VIBE FATAL] ${context}: ${message}\n`);
+      throw error;
+
+    case 'recoverable': {
+      const warning = `   ⚠️  ${context}: ${message}`;
+      if (warnFn) {
+        warnFn(warning);
+      } else {
+        process.stderr.write(warning + '\n');
+      }
+      break;
+    }
+
+    case 'ignorable':
+      debugLog(`[ignorable] ${context}: ${message}`);
+      break;
+  }
+}
+
 /**
  * 안전한 JSON 파싱
  * @param jsonString 파싱할 JSON 문자열

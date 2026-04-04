@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { log, ensureDir, copyDirRecursive, removeDirRecursive, getPackageJson } from '../utils.js';
 import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
+import { handleCaughtError } from '../../infra/lib/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,7 +37,9 @@ export function installGlobalCorePackage(isUpdate = false): void {
       if (installed.version === currentVersion && !isUpdate) {
         return;
       }
-    } catch { /* ignore: reinstall if can't read */ }
+    } catch (e: unknown) {
+      handleCaughtError('ignorable', 'Reading installed package version (will reinstall)', e);
+    }
   }
 
   // 디렉토리 생성
@@ -62,8 +65,7 @@ export function installGlobalCorePackage(isUpdate = false): void {
       });
     }
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    log('   ⚠️  Package install failed: ' + message + '\n');
+    handleCaughtError('recoverable', 'Package install failed', e, log);
   }
 
   // 2. 훅 스크립트 복사 (패키지 복사 실패해도 실행)
@@ -91,8 +93,7 @@ function copyHookScripts(corePackageDir: string, globalCoreDir: string): void {
       log('   ⚠️  Hook scripts source not found: ' + hooksScriptsSource + '\n');
     }
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    log('   ⚠️  Hook scripts copy failed: ' + message + '\n');
+    handleCaughtError('recoverable', 'Hook scripts copy failed', e, log);
   }
 }
 
@@ -128,7 +129,6 @@ export function cleanupGlobalSettingsHooks(): void {
       log('   ✓ Cleaned up legacy hooks from global settings\n');
     }
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    log('   ⚠️  Failed to cleanup global settings hooks: ' + message + '\n');
+    handleCaughtError('recoverable', 'Failed to cleanup global settings hooks', e, log);
   }
 }
