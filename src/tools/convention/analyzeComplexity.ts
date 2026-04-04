@@ -1,17 +1,24 @@
 // Convention management tool - completely independent
 
-import { Project, ScriptKind } from "ts-morph";
+import type { Project } from "ts-morph";
 import { PythonParser } from '../../infra/lib/PythonParser.js';
 import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, extname } from 'path';
 import { CODE_QUALITY_METRICS } from './validateCodeQuality.js';
 
-// Reusable in-memory project to avoid re-parsing standard lib every call
-const AST_PROJECT = new Project({
-  useInMemoryFileSystem: true,
-  compilerOptions: { allowJs: true, skipLibCheck: true }
-});
+// Lazy-initialized in-memory project to avoid loading ts-morph at startup
+let _astProject: Project | null = null;
+async function getAstProject(): Promise<Project> {
+  if (!_astProject) {
+    const { Project: TsMorphProject } = await import('ts-morph');
+    _astProject = new TsMorphProject({
+      useInMemoryFileSystem: true,
+      compilerOptions: { allowJs: true, skipLibCheck: true }
+    });
+  }
+  return _astProject;
+}
 
 export const analyzeComplexityDefinition: ToolDefinition = {
   name: 'analyze_complexity',
@@ -74,7 +81,12 @@ function calculateCognitiveComplexity(code: string) {
 /**
  * Calculate AST-based cyclomatic complexity
  */
-function calculateAstComplexity(code: string) {
+async function calculateAstComplexity(code: string): Promise<{
+  value: number | null;
+  threshold?: number;
+  status: string;
+  description: string;
+}> {
   const CONTROL_FLOW_NODES = [
     'IfStatement', 'ForStatement', 'ForOfStatement', 'ForInStatement',
     'WhileStatement', 'CaseClause', 'ConditionalExpression',
@@ -83,7 +95,9 @@ function calculateAstComplexity(code: string) {
 
   let astCyclomatic = 1;
   try {
-    const sourceFile = AST_PROJECT.createSourceFile('temp.ts', code, {
+    const { ScriptKind } = await import('ts-morph');
+    const astProject = await getAstProject();
+    const sourceFile = astProject.createSourceFile('temp.ts', code, {
       overwrite: true,
       scriptKind: ScriptKind.TS
     });
@@ -202,7 +216,7 @@ async function analyzeDirectoryComplexity(targetPath: string, projectPath?: stri
   for (const file of files) {
     try {
       const code = readFileSync(file, 'utf-8');
-      const astResult = calculateAstComplexity(code);
+      const astResult = await calculateAstComplexity(code);
       const complexity = astResult.value ?? 0;
       const score = complexity <= CODE_QUALITY_METRICS.COMPLEXITY.maxCyclomaticComplexity ? 100 : Math.max(0, 100 - (complexity - 10) * 5);
 
@@ -306,7 +320,7 @@ export async function analyzeComplexity(args: { code?: string; metrics?: string;
   };
 
   // AST 기반 cyclomatic complexity 분석
-  complexityAnalysis.results.astCyclomaticComplexity = calculateAstComplexity(complexityCode);
+  complexityAnalysis.results.astCyclomaticComplexity = await calculateAstComplexity(complexityCode);
   
   if (complexityMetrics === 'cyclomatic' || complexityMetrics === 'all') {
     const cyclomaticComplexityScore = (complexityCode.match(/\bif\b|\bfor\b|\bwhile\b|\bcase\b|\b&&\b|\b\|\|\b/g) || []).length + 1;
