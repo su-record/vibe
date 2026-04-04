@@ -465,7 +465,8 @@ export async function lspDiagnosticsDirectory(args: { projectPath: string; inclu
   const { projectPath, includeWarnings = true } = args;
 
   try {
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const { ts } = await loadTsMorph();
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const allDiagnostics: Array<{ file: string; line: number; severity: string; message: string }> = [];
 
     for (const sourceFile of project.getSourceFiles()) {
@@ -512,15 +513,16 @@ export async function lspRename(args: { file: string; line: number; column: numb
   const { file, line, column, newName } = args;
 
   try {
+    const { Node } = await loadTsMorph();
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const node = getNodeAtPosition(project, file, line, column);
 
     if (!node) {
       return { content: [{ type: 'text', text: 'No symbol found at position' }] };
     }
 
-    const identNode = findIdentifierNode(node);
+    const identNode = await findIdentifierNode(node);
     if (!identNode || !Node.isIdentifier(identNode)) {
       return { content: [{ type: 'text', text: 'No identifier found at position' }] };
     }
