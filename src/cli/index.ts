@@ -29,6 +29,7 @@ import {
   skillsAdd,
   figmaSetup, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp,
   configShow, configHelp,
+  statsDefault, statsWeek, statsQuality, statsHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -419,6 +420,20 @@ Env Commands:
         break;
       default:
         configShow();
+    }
+    break;
+  }
+
+  // vibe stats [--week|--quality|--help]
+  case 'stats': {
+    if (args.includes('--week')) {
+      statsWeek();
+    } else if (args.includes('--quality')) {
+      statsQuality();
+    } else if (args.includes('--help') || args.includes('-h')) {
+      statsHelp();
+    } else {
+      statsDefault();
     }
     break;
   }

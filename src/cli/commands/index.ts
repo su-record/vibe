@@ -13,3 +13,4 @@ export { slackSetup, slackChannel, slackStatus, slackHelp } from './slack.js';
 export { skillsAdd, installExternalSkills } from './skills.js';
 export { figmaSetup, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp } from './figma.js';
 export { configShow, configHelp } from './config.js';
+export { statsDefault, statsWeek, statsQuality, statsHelp } from './stats.js';
