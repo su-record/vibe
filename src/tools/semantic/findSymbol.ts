@@ -144,72 +144,71 @@ export async function findSymbol(args: {
 }
 
 function extractSymbolInfo(
-  node: Node, 
-  symbolName: string, 
+  NodeClass: typeof import('ts-morph').Node,
+  node: Node,
+  symbolName: string,
   symbolType: string
 ): { name: string; kind: string } | null {
-  const kind = node.getKind();
-  
   // Function declarations and expressions
   if (symbolType === 'all' || symbolType === 'function') {
-    if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
+    if (NodeClass.isFunctionDeclaration(node) || NodeClass.isMethodDeclaration(node)) {
       const name = node.getName();
       if (name && name.includes(symbolName)) {
         return { name, kind: 'function' };
       }
     }
-    if (Node.isVariableDeclaration(node)) {
+    if (NodeClass.isVariableDeclaration(node)) {
       const name = node.getName();
       const initializer = node.getInitializer();
-      if (name && name.includes(symbolName) && 
-          (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) {
+      if (name && name.includes(symbolName) &&
+          (NodeClass.isArrowFunction(initializer) || NodeClass.isFunctionExpression(initializer))) {
         return { name, kind: 'function' };
       }
     }
   }
-  
+
   // Class declarations
   if (symbolType === 'all' || symbolType === 'class') {
-    if (Node.isClassDeclaration(node)) {
+    if (NodeClass.isClassDeclaration(node)) {
       const name = node.getName();
       if (name && name.includes(symbolName)) {
         return { name, kind: 'class' };
       }
     }
   }
-  
+
   // Interface declarations
   if (symbolType === 'all' || symbolType === 'interface') {
-    if (Node.isInterfaceDeclaration(node)) {
+    if (NodeClass.isInterfaceDeclaration(node)) {
       const name = node.getName();
       if (name && name.includes(symbolName)) {
         return { name, kind: 'interface' };
       }
     }
   }
-  
+
   // Type aliases
   if (symbolType === 'all' || symbolType === 'type') {
-    if (Node.isTypeAliasDeclaration(node)) {
+    if (NodeClass.isTypeAliasDeclaration(node)) {
       const name = node.getName();
       if (name && name.includes(symbolName)) {
         return { name, kind: 'type' };
       }
     }
   }
-  
+
   // Variables
   if (symbolType === 'all' || symbolType === 'variable') {
-    if (Node.isVariableDeclaration(node)) {
+    if (NodeClass.isVariableDeclaration(node)) {
       const name = node.getName();
       const initializer = node.getInitializer();
-      if (name && name.includes(symbolName) && 
-          !Node.isArrowFunction(initializer) && !Node.isFunctionExpression(initializer)) {
+      if (name && name.includes(symbolName) &&
+          !NodeClass.isArrowFunction(initializer) && !NodeClass.isFunctionExpression(initializer)) {
         return { name, kind: 'variable' };
       }
     }
   }
-  
+
   return null;
 }
 

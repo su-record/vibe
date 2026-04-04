@@ -120,6 +120,14 @@ describe('pre-tool-guard', () => {
       });
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Force push detected');
+    });
+
+    it('should suggest force-with-lease when input contains exact substring', () => {
+      const result = runGuard({
+        args: ['Bash', 'git push --force origin main'],
+      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Force push detected');
       expect(result.stdout).toContain('force-with-lease');
     });
 

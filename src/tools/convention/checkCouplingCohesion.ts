@@ -25,13 +25,20 @@ export const checkCouplingCohesionDefinition: ToolDefinition = {
   }
 };
 
-import { Project, ScriptKind, SyntaxKind, CallExpression } from "ts-morph";
+import type { Project, CallExpression } from "ts-morph";
 import * as ts from "typescript";
 
-const AST_PROJECT = new Project({
-  useInMemoryFileSystem: true,
-  compilerOptions: { allowJs: true, skipLibCheck: true }
-});
+let _astProject: Project | null = null;
+async function getAstProject(): Promise<Project> {
+  if (!_astProject) {
+    const { Project: TsMorphProject } = await import('ts-morph');
+    _astProject = new TsMorphProject({
+      useInMemoryFileSystem: true,
+      compilerOptions: { allowJs: true, skipLibCheck: true }
+    });
+  }
+  return _astProject;
+}
 
 export async function checkCouplingCohesion(args: { code: string; type?: string; checkDependencies?: boolean }): Promise<ToolResult> {
   const { code: couplingCode, type: couplingType = 'function', checkDependencies = false } = args;
@@ -92,7 +99,9 @@ export async function checkCouplingCohesion(args: { code: string; type?: string;
 
   // AST 기반 의존성/구조 분석
   try {
-    const sourceFile = AST_PROJECT.createSourceFile('temp.ts', couplingCode, {
+    const { ScriptKind, SyntaxKind } = await import('ts-morph');
+    const astProject = await getAstProject();
+    const sourceFile = astProject.createSourceFile('temp.ts', couplingCode, {
       overwrite: true,
       scriptKind: ScriptKind.TS
     });

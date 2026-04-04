@@ -1,6 +1,6 @@
 // Semantic code analysis tool - Find References
 
-import { Node, ReferencedSymbol } from 'ts-morph';
+import type { Node } from 'ts-morph';
 import * as path from 'path';
 import { PythonParser } from '../../infra/lib/PythonParser.js';
 import { ProjectCache } from '../../infra/lib/ProjectCache.js';
@@ -49,8 +49,9 @@ export async function findReferences(args: {
   
   try {
     // Use cached project for performance
+    const { Node: TsNode } = await import('ts-morph');
     const projectCache = ProjectCache.getInstance();
-    const project = projectCache.getOrCreate(projectPath);
+    const project = await projectCache.getOrCreate(projectPath);
 
     const allReferences: ReferenceInfo[] = [];
 
@@ -128,13 +129,13 @@ export async function findReferences(args: {
         
         // Find all identifiers matching the symbol name
         sourceFile.forEachDescendant((node) => {
-          if (Node.isIdentifier(node) && node.getText() === symbolName) {
+          if (TsNode.isIdentifier(node) && node.getText() === symbolName) {
             const start = node.getStartLinePos();
             const pos = sourceFile.getLineAndColumnAtPos(start);
             const parent = node.getParent();
             
             // Determine if this is a definition
-            const isDefinition = isSymbolDefinition(node);
+            const isDefinition = isSymbolDefinition(TsNode, node);
             
             allReferences.push({
               filePath: filePath,
@@ -169,19 +170,22 @@ export async function findReferences(args: {
   }
 }
 
-function isSymbolDefinition(node: Node): boolean {
+function isSymbolDefinition(
+  NodeClass: typeof import('ts-morph').Node,
+  node: Node
+): boolean {
   const parent = node.getParent();
   if (!parent) return false;
-  
+
   // Check if this is a declaration
-  return Node.isFunctionDeclaration(parent) ||
-         Node.isClassDeclaration(parent) ||
-         Node.isInterfaceDeclaration(parent) ||
-         Node.isTypeAliasDeclaration(parent) ||
-         Node.isVariableDeclaration(parent) ||
-         Node.isMethodDeclaration(parent) ||
-         Node.isPropertyDeclaration(parent) ||
-         Node.isParameterDeclaration(parent);
+  return NodeClass.isFunctionDeclaration(parent) ||
+         NodeClass.isClassDeclaration(parent) ||
+         NodeClass.isInterfaceDeclaration(parent) ||
+         NodeClass.isTypeAliasDeclaration(parent) ||
+         NodeClass.isVariableDeclaration(parent) ||
+         NodeClass.isMethodDeclaration(parent) ||
+         NodeClass.isPropertyDeclaration(parent) ||
+         NodeClass.isParameterDeclaration(parent);
 }
 
 function groupReferencesByFile(references: ReferenceInfo[]): Record<string, ReferenceInfo[]> {

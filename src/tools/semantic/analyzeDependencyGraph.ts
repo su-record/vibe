@@ -2,7 +2,6 @@
 
 import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import { ProjectCache } from '../../infra/lib/ProjectCache.js';
-import { Node, SyntaxKind } from 'ts-morph';
 
 export const analyzeDependencyGraphDefinition: ToolDefinition = {
   name: 'analyze_dependency_graph',
@@ -87,7 +86,7 @@ export async function analyzeDependencyGraph(args: AnalyzeDependencyGraphArgs): 
       detectCircular = true
     } = args;
 
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const sourceFiles = project.getSourceFiles();
 
     if (sourceFiles.length === 0) {
