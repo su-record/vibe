@@ -39,8 +39,12 @@ const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant.';
 const provider = process.argv[2] || 'gemini';
 const mode = process.argv[3] || 'orchestrate';
 
-// Retry configuration
+// WHY 3 retries: Enough to ride out brief 503/overload blips (typically 1-2
+// consecutive), but not so many that a genuinely down provider delays the
+// fallback chain for minutes.
 const MAX_RETRIES = 3;
+// WHY 2000ms initial delay: LLM rate-limit windows are typically 1-5s;
+// starting at 2s with exponential backoff (2s, 4s, 8s) covers most reset intervals.
 const INITIAL_DELAY_MS = 2000;
 
 // ============================================
@@ -79,6 +83,8 @@ function setCachedResponse(key, result) {
 
 // ============================================
 // Simple Prompt Detection (early exit)
+// WHY skip orchestration for simple prompts: Sending greetings/acks to an
+// external LLM wastes latency and tokens — Claude handles these natively.
 // ============================================
 const SIMPLE_PROMPT_MAX_LEN = 20;
 const SIMPLE_PROMPT_PATTERNS = [
@@ -513,7 +519,9 @@ async function main() {
   }
 
   // Provider chain: primary → cross fallback
-  // gpt-codex fallback: gpt-codex → gemini (codex는 full gpt로 fallback하지 않음)
+  // WHY GPT → Gemini (not reverse): GPT is the primary code/reasoning model;
+  // Gemini serves as cross-vendor fallback so a single vendor outage never
+  // blocks the user. When Gemini is primary (e.g. web-search), GPT is fallback.
   const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', gemini: 'Gemini' };
   const isGpt = provider === 'gpt' || provider === 'gpt-codex';
   const providerChain = isGpt

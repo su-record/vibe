@@ -12,6 +12,11 @@ import os from 'os';
 const STATE_DIR = path.join(os.homedir(), '.claude', '.vibe-hud');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
 
+// Write debounce configuration
+const WRITE_DEBOUNCE_MS = 500;
+let pendingState = null;
+let writeTimer = null;
+
 // 기본 상태
 const DEFAULT_STATE = {
   mode: 'idle',           // idle | ultrawork | spec | review
@@ -65,12 +70,29 @@ function loadState() {
 }
 
 /**
- * 상태 저장
+ * 상태를 디스크에 즉시 기록
  */
-function saveState(state) {
+function flushState(state) {
   ensureStateDir();
   state.lastUpdate = new Date().toISOString();
   fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+}
+
+/**
+ * 상태 저장 (debounced - 빈번한 호출을 병합)
+ * CLI 종료 전 pending write가 있으면 flush 됨
+ */
+function saveState(state) {
+  state.lastUpdate = new Date().toISOString();
+  pendingState = state;
+  if (writeTimer) clearTimeout(writeTimer);
+  writeTimer = setTimeout(() => {
+    if (pendingState) {
+      flushState(pendingState);
+      pendingState = null;
+      writeTimer = null;
+    }
+  }, WRITE_DEBOUNCE_MS);
 }
 
 /**
@@ -285,6 +307,14 @@ Examples:
       `);
   }
 }
+
+// Flush pending state on process exit to avoid data loss
+process.on('exit', () => {
+  if (pendingState) {
+    flushState(pendingState);
+    pendingState = null;
+  }
+});
 
 // 메인 실행
 const args = process.argv.slice(2);

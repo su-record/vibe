@@ -28,6 +28,7 @@ import {
   slackSetup, slackChannel, slackStatus, slackHelp,
   skillsAdd,
   figmaSetup, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp,
+  configShow, configHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -406,6 +407,22 @@ Env Commands:
     break;
   }
 
+  // vibe config <subcommand>
+  case 'config': {
+    const configSub = positionalArgs[1];
+    switch (configSub) {
+      case 'show':
+        configShow();
+        break;
+      case 'help':
+        configHelp();
+        break;
+      default:
+        configShow();
+    }
+    break;
+  }
+
   case 'version':
   case '-v':
   case '--version':
@@ -428,6 +445,7 @@ Available commands:
   vibe upgrade            최신 버전으로 업그레이드
   vibe update             프로젝트 설정 업데이트
   vibe status             전체 상태 확인
+  vibe config show        설정 통합 보기
   vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (auth, key, status, logout)
   vibe gemini <cmd>       Gemini (auth, key, status, logout)
