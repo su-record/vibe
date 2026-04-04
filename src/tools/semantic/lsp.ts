@@ -566,8 +566,9 @@ export async function lspCodeActions(args: { file: string; line: number; column:
   const { file, line, column } = args;
 
   try {
+    const { Node } = await loadTsMorph();
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const sourceFile = project.getSourceFile(file);
 
     if (!sourceFile) {

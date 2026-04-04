@@ -1,6 +1,6 @@
 // Semantic code analysis tool - Find Symbol
 
-import { Node } from 'ts-morph';
+import type { Node } from 'ts-morph';
 import * as path from 'path';
 import { PythonParser } from '../../infra/lib/PythonParser.js';
 import { ProjectCache } from '../../infra/lib/ProjectCache.js';
@@ -53,7 +53,7 @@ export async function findSymbol(args: {
   try {
     // Use cached project for performance
     const projectCache = ProjectCache.getInstance();
-    const project = projectCache.getOrCreate(projectPath);
+    const project = await projectCache.getOrCreate(projectPath);
 
     const symbols: SymbolInfo[] = [];
 
@@ -88,18 +88,20 @@ export async function findSymbol(args: {
       }
     }
 
+    const { Node: TsNode } = await import('ts-morph');
+
     // Search through all source files
     for (const sourceFile of project.getSourceFiles()) {
       const filePath = sourceFile.getFilePath();
-      
+
       // Skip node_modules and other irrelevant paths
       if (filePath.includes('node_modules') || filePath.includes('.git')) {
         continue;
       }
-      
+
       // Find matching symbols based on type
       sourceFile.forEachDescendant((node) => {
-        const nodeSymbol = extractSymbolInfo(node, symbolName, symbolType);
+        const nodeSymbol = extractSymbolInfo(TsNode, node, symbolName, symbolType);
         if (nodeSymbol) {
           const start = node.getStartLinePos();
           const pos = sourceFile.getLineAndColumnAtPos(start);

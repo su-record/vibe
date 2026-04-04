@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { execFileSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,16 +7,32 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.resolve(__dirname, '..', 'pre-tool-guard.js');
 
 /**
- * Run pre-tool-guard.js with given args or stdin payload.
+ * Run pre-tool-guard.js with argv arguments.
  * Returns { stdout, exitCode }.
  */
-function runGuard({ args = [], stdin = null } = {}) {
+function runGuard({ args = [] } = {}) {
   try {
-    const opts = { encoding: 'utf-8', timeout: 5000 };
-    if (stdin) {
-      opts.input = typeof stdin === 'string' ? stdin : JSON.stringify(stdin);
-    }
-    const stdout = execFileSync('node', [SCRIPT, ...args], opts);
+    const stdout = execFileSync('node', [SCRIPT, ...args], {
+      encoding: 'utf-8',
+      timeout: 5000,
+    });
+    return { stdout: stdout.trim(), exitCode: 0 };
+  } catch (err) {
+    return { stdout: (err.stdout || '').trim(), exitCode: err.status };
+  }
+}
+
+/**
+ * Run pre-tool-guard.js with stdin JSON payload (using shell pipe).
+ */
+function runGuardWithStdin(payload) {
+  const json = typeof payload === 'string' ? payload : JSON.stringify(payload);
+  const escaped = json.replace(/'/g, "'\\''");
+  try {
+    const stdout = execSync(`echo '${escaped}' | node ${SCRIPT}`, {
+      encoding: 'utf-8',
+      timeout: 5000,
+    });
     return { stdout: stdout.trim(), exitCode: 0 };
   } catch (err) {
     return { stdout: (err.stdout || '').trim(), exitCode: err.status };
@@ -242,24 +258,20 @@ describe('pre-tool-guard', () => {
   // ══════════════════════════════════════════════════
   describe('stdin payload', () => {
     it('should read tool_name and tool_input from stdin', () => {
-      const result = runGuard({
-        stdin: {
-          tool_name: 'Bash',
-          tool_input: 'rm -rf /',
-        },
+      const result = runGuardWithStdin({
+        tool_name: 'Bash',
+        tool_input: 'rm -rf /',
       });
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toContain('BLOCKED');
     });
 
     it('should handle object tool_input from stdin', () => {
-      const result = runGuard({
-        stdin: {
-          tool_name: 'Bash',
-          tool_input: { command: 'DROP TABLE users' },
-        },
+      const result = runGuardWithStdin({
+        tool_name: 'Bash',
+        tool_input: { command: 'DROP TABLE users' },
       });
-      // tool_input is stringified, pattern checks against stringified JSON
+      // tool_input is stringified — pattern matches against the JSON string
       expect(result.exitCode).toBe(2);
     });
   });
