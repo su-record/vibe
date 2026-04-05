@@ -28,6 +28,19 @@
           {
             "type": "command",
             "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Bash"
+          },
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/command-log.js"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__github__create_pull_request",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pr-test-gate.js"
           }
         ]
       },
@@ -58,13 +71,22 @@
         ]
       }
     ],
+    "_comment_PostToolUse": "WHY ordering: format first (normalize style), then lint/check (catch issues on clean code), then test (verify behavior). This chain ensures review-ready code on every edit.",
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/auto-format.js"
+          },
+          {
+            "type": "command",
             "command": "node {{VIBE_PATH}}/hooks/scripts/code-check.js"
+          },
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/auto-test.js"
           }
         ]
       },
@@ -136,6 +158,10 @@
           {
             "type": "command",
             "command": "node {{VIBE_PATH}}/hooks/scripts/stop-notify.js"
+          },
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/auto-commit.js"
           }
         ]
       }
