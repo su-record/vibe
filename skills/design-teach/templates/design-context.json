@@ -1,0 +1,36 @@
+{
+  "$schema": "design-context-v1",
+  "createdAt": "{{ISO_DATE}}",
+  "updatedAt": "{{ISO_DATE}}",
+  "audience": {
+    "primary": "B2B SaaS — product managers and engineers at mid-size tech companies",
+    "context": "desktop",
+    "expertise": "intermediate"
+  },
+  "brand": {
+    "personality": ["professional", "clean", "trustworthy", "efficient"],
+    "tone": "professional",
+    "existingAssets": ".claude/vibe/brand/brand-guide.pdf"
+  },
+  "aesthetic": {
+    "style": "minimal",
+    "colorMood": "cool",
+    "typographyMood": "modern",
+    "references": [
+      "https://linear.app",
+      "https://vercel.com"
+    ]
+  },
+  "constraints": {
+    "accessibility": "AA",
+    "performance": "core-web-vitals",
+    "browsers": ["chrome", "safari", "firefox", "edge"],
+    "devices": ["desktop", "tablet"]
+  },
+  "detectedStack": {
+    "framework": "Next.js 15",
+    "componentLibrary": "shadcn/ui",
+    "styling": "Tailwind CSS",
+    "fonts": ["Inter"]
+  }
+}
