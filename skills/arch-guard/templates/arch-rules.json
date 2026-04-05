@@ -1,0 +1,47 @@
+{
+  "_comment": "Architecture boundary rules for arch-guard. Copy to .claude/vibe/arch-rules.json and customize.",
+  "rules": [
+    {
+      "name": "services-no-ui",
+      "from": "src/services/**",
+      "cannotImport": ["src/components/**", "src/pages/**", "src/app/**"],
+      "canImport": ["src/models/**", "src/utils/**", "src/types/**"],
+      "reason": "Services must be UI-agnostic for testability and reuse"
+    },
+    {
+      "name": "domain-no-infra",
+      "from": "src/domain/**",
+      "cannotImport": ["src/infra/**", "src/db/**", "src/adapters/**"],
+      "canImport": ["src/domain/**", "src/types/**"],
+      "reason": "Domain layer must not depend on infrastructure (Clean Architecture)"
+    },
+    {
+      "name": "components-no-pages",
+      "from": "src/components/**",
+      "cannotImport": ["src/pages/**", "src/app/**"],
+      "canImport": ["src/components/**", "src/hooks/**", "src/utils/**", "src/types/**"],
+      "reason": "Shared components must not import from page-level modules"
+    },
+    {
+      "name": "lib-no-components",
+      "from": "src/lib/**",
+      "cannotImport": ["src/components/**", "src/pages/**"],
+      "canImport": ["src/lib/**", "src/types/**"],
+      "reason": "Library utilities must be framework-agnostic"
+    },
+    {
+      "name": "models-no-controllers",
+      "from": "src/models/**",
+      "cannotImport": ["src/controllers/**", "src/handlers/**", "src/routes/**"],
+      "canImport": ["src/models/**", "src/types/**"],
+      "reason": "Models must not depend on request/response layer (MVC)"
+    },
+    {
+      "name": "no-direct-db-in-handlers",
+      "from": "src/handlers/**",
+      "cannotImport": ["src/db/**", "src/repositories/**"],
+      "canImport": ["src/services/**", "src/types/**"],
+      "reason": "Handlers must use services, not access the database directly"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 // Project caching utility for ts-morph (v1.3)
 // Implements LRU cache to avoid re-parsing on every request
 
-import { Project } from 'ts-morph';
+import type { Project } from 'ts-morph';
 import path from 'path';
 import { warnLog } from './utils.js';
 
@@ -30,7 +30,7 @@ export class ProjectCache {
     return ProjectCache.instance;
   }
 
-  public getOrCreate(projectPath: string): Project {
+  public async getOrCreate(projectPath: string): Promise<Project> {
     // Normalize path and remove trailing slashes
     let normalizedPath = path.normalize(projectPath);
     if (normalizedPath.endsWith(path.sep) && normalizedPath.length > 1) {
@@ -53,8 +53,11 @@ export class ProjectCache {
       this.evictLRU();
     }
 
+    // Lazy-load ts-morph at point of use
+    const { Project: TsMorphProject } = await import('ts-morph');
+
     // Create new project
-    const project = new Project({
+    const project = new TsMorphProject({
       useInMemoryFileSystem: false,
       compilerOptions: {
         allowJs: true,

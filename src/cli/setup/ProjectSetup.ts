@@ -7,11 +7,12 @@ import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { VibeConfig, VibeReferences, TechStack, StackDetails } from '../types.js';
-import { ensureDir, removeDirRecursive } from '../utils.js';
+import { ensureDir, removeDirRecursive, log } from '../utils.js';
 import { STACK_NAMES, getLanguageRulesContent } from '../detect.js';
 import { STACK_TO_LANGUAGE_FILE } from '../postinstall.js';
 import { detectOsLanguage, getLanguageInstruction } from './LanguageDetector.js';
 import { getCoreConfigDir } from './GlobalInstaller.js';
+import { handleCaughtError } from '../../infra/lib/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -224,8 +225,8 @@ export function installProjectHooks(projectRoot: string): void {
       const existingSettings = JSON.parse(fs.readFileSync(settingsLocalPath, 'utf-8'));
       existingSettings.hooks = coreHooks.hooks;
       fs.writeFileSync(settingsLocalPath, JSON.stringify(existingSettings, null, 2));
-    } catch {
-      // 파싱 실패시 새로 생성
+    } catch (e: unknown) {
+      handleCaughtError('recoverable', 'Parsing existing settings.local.json failed, recreating', e, log);
       fs.writeFileSync(settingsLocalPath, JSON.stringify(coreHooks, null, 2));
     }
   } else {
@@ -341,7 +342,9 @@ export function updateConfig(
       config.details = stackDetails;
       config.references = references;
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-    } catch { /* ignore: optional operation */ }
+    } catch (e: unknown) {
+      handleCaughtError('recoverable', 'Config update failed, using defaults', e, log);
+    }
   } else {
     const config: VibeConfig = {
       language: detectOsLanguage(),
@@ -397,7 +400,9 @@ export function installCursorRules(projectRoot: string, detectedStacks: string[]
   for (const legacyFile of LEGACY_RULE_FILES) {
     const legacyPath = path.join(projectCursorRules, legacyFile);
     if (fs.existsSync(legacyPath)) {
-      try { fs.unlinkSync(legacyPath); } catch { /* 무시 */ }
+      try { fs.unlinkSync(legacyPath); } catch (e: unknown) {
+        handleCaughtError('ignorable', `Removing legacy rule file ${legacyFile}`, e);
+      }
     }
   }
 
@@ -423,16 +428,16 @@ export function installCursorRules(projectRoot: string, detectedStacks: string[]
           } else {
             installed++;
           }
-        } catch {
-          // 권한 문제 등 무시
+        } catch (e: unknown) {
+          handleCaughtError('ignorable', `Copying cursor language rule ${file}`, e);
         }
       } else if (exists) {
         // 현재 프로젝트에 해당하지 않는 언어 룰 제거
         try {
           fs.unlinkSync(destPath);
           removed++;
-        } catch {
-          // 무시
+        } catch (e: unknown) {
+          handleCaughtError('ignorable', `Removing outdated cursor rule ${file}`, e);
         }
       }
     } else if (!exists) {
@@ -440,8 +445,8 @@ export function installCursorRules(projectRoot: string, detectedStacks: string[]
       try {
         fs.copyFileSync(srcPath, destPath);
         installed++;
-      } catch {
-        // 권한 문제 등 무시
+      } catch (e: unknown) {
+        handleCaughtError('ignorable', `Copying cursor common rule ${file}`, e);
       }
     }
   }
@@ -614,7 +619,8 @@ export function installGeminiHooks(projectRoot: string): void {
       const existingSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
       existingSettings.hooks = coreHooks.hooks;
       fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
-    } catch {
+    } catch (e: unknown) {
+      handleCaughtError('recoverable', 'Parsing existing Gemini settings failed, recreating', e, log);
       fs.writeFileSync(settingsPath, JSON.stringify(coreHooks, null, 2));
     }
   } else {

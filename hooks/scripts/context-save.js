@@ -24,6 +24,43 @@ const summaryMap = {
 // Debounce: track last reflection level per session to avoid duplicates
 let lastReflectionLevel = null;
 
+// Guard against recursive reflection and rapid threshold crossings
+let reflectionInProgress = false;
+const DEBOUNCE_LOCKFILE = path.join(
+  process.env.HOME || process.env.USERPROFILE || '/tmp',
+  '.claude', '.vibe-hud', '.context-save-lock'
+);
+const DEBOUNCE_INTERVAL_MS = 30000; // 30 seconds between saves at same urgency
+
+/**
+ * Check if a recent save at the same urgency already happened (cross-process debounce)
+ */
+function isDebounceLocked(level) {
+  try {
+    const lockFile = `${DEBOUNCE_LOCKFILE}-${level}`;
+    if (fs.existsSync(lockFile)) {
+      const stat = fs.statSync(lockFile);
+      const ageMs = Date.now() - stat.mtimeMs;
+      if (ageMs < DEBOUNCE_INTERVAL_MS) return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
+ * Set debounce lock for a given urgency level
+ */
+function setDebounceLock(level) {
+  try {
+    const lockFile = `${DEBOUNCE_LOCKFILE}-${level}`;
+    const lockDir = path.dirname(lockFile);
+    if (!fs.existsSync(lockDir)) {
+      fs.mkdirSync(lockDir, { recursive: true });
+    }
+    fs.writeFileSync(lockFile, String(Date.now()));
+  } catch { /* ignore */ }
+}
+
 /**
  * 프로젝트 환경에서 구조적 메타데이터를 추출.
  * 실패 시 빈 객체 반환 (non-blocking).
@@ -102,6 +139,11 @@ function buildStructuredSummary(baseMessage, metadata) {
 }
 
 async function main() {
+  // Cross-process debounce: skip if recently saved at same urgency
+  if (isDebounceLocked(urgency)) {
+    return;
+  }
+
   try {
     const metadata = extractStructuredMetadata();
     const baseMessage = summaryMap[urgency] || summaryMap.medium;
@@ -116,6 +158,9 @@ async function main() {
     });
     const percent = urgency === 'critical' ? '95' : urgency === 'high' ? '90' : '80';
     console.log(`[CONTEXT ${percent}%]`, result.content[0].text);
+
+    // Mark this urgency level as recently saved
+    setDebounceLock(urgency);
 
     // Sync TokenBudgetTracker with current context usage
     try {
@@ -132,14 +177,20 @@ async function main() {
     // 무시
   }
 
+  // Guard against recursive reflection (setImmediate can re-enter)
+  if (reflectionInProgress) return;
+
   // Minor Reflection (80% = medium): 컨텍스트 압력 시 자동 성찰
   if (urgency === 'medium' && lastReflectionLevel !== 'medium') {
     lastReflectionLevel = 'medium';
+    reflectionInProgress = true;
     // Fire-and-forget: 기존 context-save에 영향 없음
     setImmediate(() => {
-      triggerMinorReflection().catch(e => {
-        process.stderr.write(`[REFLECTION] minor reflection failed: ${e.message}\n`);
-      });
+      triggerMinorReflection()
+        .catch(e => {
+          process.stderr.write(`[REFLECTION] minor reflection failed: ${e.message}\n`);
+        })
+        .finally(() => { reflectionInProgress = false; });
     });
   }
 
@@ -165,10 +216,13 @@ async function main() {
     // Major Reflection: 세션 종료 시 전체 성찰
     if (lastReflectionLevel !== 'critical') {
       lastReflectionLevel = 'critical';
+      reflectionInProgress = true;
       setImmediate(() => {
-        triggerMajorReflection().catch(e => {
-          process.stderr.write(`[REFLECTION] major reflection failed: ${e.message}\n`);
-        });
+        triggerMajorReflection()
+          .catch(e => {
+            process.stderr.write(`[REFLECTION] major reflection failed: ${e.message}\n`);
+          })
+          .finally(() => { reflectionInProgress = false; });
       });
     }
   }

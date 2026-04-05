@@ -14,11 +14,15 @@
  * 현재는 ts-morph 기반으로 TypeScript/JavaScript 지원
  */
 
-import { Project, Node, ts, ReferencedSymbol, ReferenceEntry } from 'ts-morph';
+import type { Project, Node as TsMorphNode, ReferencedSymbol, ReferenceEntry } from 'ts-morph';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
 import { ProjectCache } from '../../infra/lib/ProjectCache.js';
+
+async function loadTsMorph(): Promise<typeof import('ts-morph')> {
+  return import('ts-morph');
+}
 
 // Tool Definitions
 export const lspHoverDefinition: ToolDefinition = {
@@ -167,7 +171,7 @@ function getProjectPath(filePath: string): string {
 }
 
 // Get node at position
-function getNodeAtPosition(project: Project, filePath: string, line: number, column: number): Node | undefined {
+function getNodeAtPosition(project: Project, filePath: string, line: number, column: number): TsMorphNode | undefined {
   const sourceFile = project.getSourceFile(filePath);
   if (!sourceFile) return undefined;
 
@@ -176,7 +180,8 @@ function getNodeAtPosition(project: Project, filePath: string, line: number, col
 }
 
 // Find identifier node for references/definitions
-function findIdentifierNode(node: Node): Node | undefined {
+async function findIdentifierNode(node: TsMorphNode): Promise<TsMorphNode | undefined> {
+  const { Node } = await loadTsMorph();
   if (Node.isIdentifier(node)) return node;
   if (Node.isPropertyAccessExpression(node)) return node.getNameNode();
   if (Node.isCallExpression(node)) {
@@ -196,7 +201,7 @@ export async function lspHover(args: { file: string; line: number; column: numbe
 
   try {
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const node = getNodeAtPosition(project, file, line, column);
 
     if (!node) {
@@ -224,14 +229,14 @@ export async function lspGotoDefinition(args: { file: string; line: number; colu
 
   try {
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const node = getNodeAtPosition(project, file, line, column);
 
     if (!node) {
       return { content: [{ type: 'text', text: 'No symbol found at position' }] };
     }
 
-    const identNode = findIdentifierNode(node);
+    const identNode = await findIdentifierNode(node);
     if (!identNode) {
       return { content: [{ type: 'text', text: 'No identifier found at position' }] };
     }
@@ -268,15 +273,16 @@ export async function lspFindReferences(args: { file: string; line: number; colu
   const { file, line, column, includeDeclaration = true } = args;
 
   try {
+    const { Node } = await loadTsMorph();
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const node = getNodeAtPosition(project, file, line, column);
 
     if (!node) {
       return { content: [{ type: 'text', text: 'No symbol found at position' }] };
     }
 
-    const identNode = findIdentifierNode(node);
+    const identNode = await findIdentifierNode(node);
     if (!identNode || !Node.isIdentifier(identNode)) {
       return { content: [{ type: 'text', text: 'No identifier found at position' }] };
     }
@@ -315,7 +321,7 @@ export async function lspDocumentSymbols(args: { file: string }): Promise<ToolRe
 
   try {
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const sourceFile = project.getSourceFile(file);
 
     if (!sourceFile) {
@@ -371,7 +377,7 @@ export async function lspWorkspaceSymbols(args: { query: string; projectPath: st
   const { query, projectPath, maxResults = 50 } = args;
 
   try {
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const symbols: Array<{ name: string; kind: string; file: string; line: number }> = [];
 
     for (const sourceFile of project.getSourceFiles()) {
@@ -422,8 +428,9 @@ export async function lspDiagnostics(args: { file: string }): Promise<ToolResult
   const { file } = args;
 
   try {
+    const { ts } = await loadTsMorph();
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const sourceFile = project.getSourceFile(file);
 
     if (!sourceFile) {
@@ -458,7 +465,8 @@ export async function lspDiagnosticsDirectory(args: { projectPath: string; inclu
   const { projectPath, includeWarnings = true } = args;
 
   try {
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const { ts } = await loadTsMorph();
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const allDiagnostics: Array<{ file: string; line: number; severity: string; message: string }> = [];
 
     for (const sourceFile of project.getSourceFiles()) {
@@ -505,15 +513,16 @@ export async function lspRename(args: { file: string; line: number; column: numb
   const { file, line, column, newName } = args;
 
   try {
+    const { Node } = await loadTsMorph();
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const node = getNodeAtPosition(project, file, line, column);
 
     if (!node) {
       return { content: [{ type: 'text', text: 'No symbol found at position' }] };
     }
 
-    const identNode = findIdentifierNode(node);
+    const identNode = await findIdentifierNode(node);
     if (!identNode || !Node.isIdentifier(identNode)) {
       return { content: [{ type: 'text', text: 'No identifier found at position' }] };
     }
@@ -557,8 +566,9 @@ export async function lspCodeActions(args: { file: string; line: number; column:
   const { file, line, column } = args;
 
   try {
+    const { Node } = await loadTsMorph();
     const projectPath = getProjectPath(file);
-    const project = ProjectCache.getInstance().getOrCreate(projectPath);
+    const project = await ProjectCache.getInstance().getOrCreate(projectPath);
     const sourceFile = project.getSourceFile(file);
 
     if (!sourceFile) {

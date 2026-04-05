@@ -23,8 +23,13 @@ export interface ChunkScore {
 }
 
 export class ContextCompressor {
+  // WHY 500 chars: Small enough to score and discard at fine granularity, but
+  // large enough to keep related lines together (a typical function is ~300-600 chars).
   private static readonly MAX_CHUNK_SIZE = 500; // characters
   private static readonly DEFAULT_TARGET_TOKENS = 4000;
+  // WHY 0.25: GPT-family tokenizers average ~4 chars per token for English/code.
+  // 1 char * 0.25 = 0.25 tokens, so 4 chars = 1 token. Intentionally conservative
+  // to avoid exceeding context windows (overestimating tokens = safer truncation).
   private static readonly TOKENS_PER_CHAR_ESTIMATE = 0.25;
   private static readonly MAX_SCORE = 100;
   private static readonly MIN_SCORE = 0;
@@ -63,9 +68,9 @@ export class ContextCompressor {
     const chunks = this.splitIntoChunks(context);
     const scoredChunks = chunks.map(chunk => this.scoreChunk(chunk));
 
-    // If content is already smaller than target, return as-is
-    // Only skip compression if content is very small (use 1.2x instead of 4x)
-    // This ensures compression activates more aggressively
+    // WHY 1.2x threshold (not 1.0x): Avoids wasteful compression when the content
+    // is only marginally over the target — the scoring/reordering overhead would
+    // degrade readability for negligible size savings. 1.2x (not 4x) keeps it aggressive.
     if (context.length <= targetTokens * 1.2) {
       return {
         compressed: context,
@@ -227,7 +232,8 @@ export class ContextCompressor {
   private static calculateBaseScore(text: string, lowerText: string, type: ChunkScore['type']): number {
     let score = 0;
 
-    // Type-based scoring
+    // WHY type-based scoring: Answers/code carry the highest signal density;
+    // metadata (timestamps, authors) is almost always reconstructible and expendable.
     score += this.getTypeScore(type);
 
     // Keyword bonus

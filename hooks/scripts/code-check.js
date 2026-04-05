@@ -2,6 +2,7 @@
  * PostToolUse Hook - Write/Edit 후 코드 품질 검사 + 관찰 자동 캡처
  */
 import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
+import { readFileSync } from 'fs';
 
 const BASE_URL = getToolsBaseUrl();
 
@@ -34,6 +35,143 @@ function classifyObservation(files) {
   return { type: 'feature', title: 'Code modified' };
 }
 
+/**
+ * Detect `any` type usage and return line-level findings
+ */
+function detectAnyType(lines) {
+  const findings = [];
+  lines.forEach((line, i) => {
+    if (/:\s*any\b|<any>|as\s+any\b/.test(line)) {
+      findings.push({
+        line: i + 1,
+        match: line.trim(),
+        suggestion: 'Replace with: unknown + type guard pattern: if (typeof x === \'string\') { ... }'
+      });
+    }
+  });
+  return findings;
+}
+
+/**
+ * Detect functions exceeding 50 lines
+ */
+function detectLongFunctions(lines) {
+  const findings = [];
+  let fnStart = -1;
+  let fnName = '';
+  let depth = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const fnMatch = line.match(/(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\()/);
+    if (fnMatch && depth === 0) {
+      fnStart = i;
+      fnName = fnMatch[1] || fnMatch[2] || 'anonymous';
+    }
+    depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+    if (fnStart !== -1 && depth <= 0) {
+      const length = i - fnStart + 1;
+      if (length > 50) {
+        findings.push({
+          line: fnStart + 1,
+          match: `function '${fnName}' is ${length} lines`,
+          suggestion: `Extract lines ${fnStart + 20}–${i + 1} into a separate helper function`
+        });
+      }
+      fnStart = -1;
+      depth = 0;
+    }
+  }
+  return findings;
+}
+
+/**
+ * Detect nesting depth exceeding 3 levels
+ */
+function detectDeepNesting(lines) {
+  const findings = [];
+  let depth = 0;
+  let reported = false;
+
+  lines.forEach((line, i) => {
+    depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+    if (depth > 3 && !reported) {
+      findings.push({
+        line: i + 1,
+        match: `nesting depth ${depth} at line ${i + 1}`,
+        suggestion: 'Use early return pattern: if (!condition) return; — instead of wrapping in else'
+      });
+      reported = true;
+    }
+    if (depth <= 3) reported = false;
+  });
+  return findings;
+}
+
+/**
+ * Detect console.log statements
+ */
+function detectConsoleLogs(lines) {
+  const findings = [];
+  lines.forEach((line, i) => {
+    if (/console\.log\(/.test(line)) {
+      findings.push({
+        line: i + 1,
+        match: line.trim(),
+        suggestion: 'Remove or replace with debugLog utility'
+      });
+    }
+  });
+  return findings;
+}
+
+/**
+ * Detect magic numbers (bare numeric literals ≥2 digits, outside comments/strings)
+ */
+function detectMagicNumbers(lines) {
+  const findings = [];
+  lines.forEach((line, i) => {
+    const stripped = line.replace(/\/\/.*$/, '').replace(/(['"`]).*?\1/g, '""');
+    const nums = stripped.match(/\b\d{2,}\b/g) || [];
+    if (nums.length > 0) {
+      findings.push({
+        line: i + 1,
+        match: `magic number(s): ${nums.join(', ')}`,
+        suggestion: `Extract to named constant: const LIMIT = ${nums[0]};`
+      });
+    }
+  });
+  return findings;
+}
+
+/**
+ * Run all self-heal detectors and emit [SELF-HEAL] messages
+ */
+function emitSelfHealMessages(filePath) {
+  let content;
+  try {
+    content = readFileSync(filePath, 'utf-8');
+  } catch {
+    return;
+  }
+
+  const lines = content.split('\n');
+  const detectors = [
+    { label: 'any type detected', fn: detectAnyType },
+    { label: 'function too long', fn: detectLongFunctions },
+    { label: 'nesting too deep', fn: detectDeepNesting },
+    { label: 'console.log found', fn: detectConsoleLogs },
+    { label: 'magic number', fn: detectMagicNumbers },
+  ];
+
+  for (const { label, fn } of detectors) {
+    const findings = fn(lines).slice(0, 2);
+    for (const f of findings) {
+      console.log(`[SELF-HEAL] ${label} at line ${f.line} → ${f.suggestion}`);
+    }
+  }
+}
+
 async function main() {
   // 1. Code quality check (changed files only — never scan entire project)
   try {
@@ -50,6 +188,7 @@ async function main() {
       if (critical.length > 0) {
         console.log('[CODE CHECK]', critical.join(' | '));
       }
+      emitSelfHealMessages(files[0]);
     }
   } catch {
     // Silently continue on check failure — never block progress

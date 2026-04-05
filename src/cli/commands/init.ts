@@ -8,7 +8,7 @@ import os from 'os';
 import { CliOptions } from '../types.js';
 import { log, ensureDir, getPackageJson } from '../utils.js';
 import { detectTechStacks } from '../detect.js';
-import { formatLLMStatus, getLLMAuthStatus, getClaudeCodeStatus } from '../auth.js';
+import { formatLLMStatus, getClaudeCodeStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
 import {
   updateConstitution,
@@ -203,6 +203,23 @@ export function installLanguageRules(
 }
 
 /**
+ * Run a named init step, logging warning and continuing on non-critical failure.
+ */
+function runStep(
+  s: { message(msg: string): void },
+  name: string,
+  fn: () => void,
+): void {
+  s.message(name);
+  try {
+    fn();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    p.log.warn(`${name} - skipped: ${msg}`);
+  }
+}
+
+/**
  * init 명령어 실행
  */
 export async function init(projectName?: string): Promise<void> {
@@ -232,18 +249,22 @@ export async function init(projectName?: string): Promise<void> {
 
     ensureDir(coreDir);
 
-    // 레거시 마이그레이션
-    migrateLegacyCore(projectRoot, coreDir);
+    // ── Phase 1: Detection ──────────────────────────────────
+    p.log.step('Phase 1/3: Detection');
+    const s = p.spinner();
 
-    // .gitignore 업데이트
-    updateGitignore(projectRoot);
+    s.start('Migrating legacy config');
+    runStep(s, 'Legacy migration', () => migrateLegacyCore(projectRoot, coreDir));
+    runStep(s, 'Updating .gitignore', () => updateGitignore(projectRoot));
 
-    // 기술 스택 감지
+    s.message('Detecting tech stacks');
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
+    s.stop('Stack detection complete');
+
     if (detectedStacks.length > 0) {
       log(`   🔍 Detected stacks:\n`);
-      detectedStacks.forEach(s => {
-        log(`      - ${s.type}${s.path ? ` (${s.path}/)` : ''}\n`);
+      detectedStacks.forEach(st => {
+        log(`      - ${st.type}${st.path ? ` (${st.path}/)` : ''}\n`);
       });
       if (stackDetails.databases.length > 0) {
         log(`      - DB: ${stackDetails.databases.join(', ')}\n`);
@@ -253,7 +274,7 @@ export async function init(projectName?: string): Promise<void> {
       }
     }
 
-    // Capability 인터랙티브 선택 (자동 감지 결과가 없을 때만)
+    // Capability interactive selection
     if (stackDetails.capabilities.length === 0 && !process.env.CI && AVAILABLE_CAPABILITIES.length > 0) {
       const selected = await p.multiselect({
         message: 'Select project capabilities (Space to toggle, Enter to skip/confirm):',
@@ -269,70 +290,78 @@ export async function init(projectName?: string): Promise<void> {
       }
     }
 
-    // constitution.md 생성
-    updateConstitution(coreDir, detectedStacks, stackDetails);
+    // ── Phase 2: Configuration ──────────────────────────────
+    p.log.step('Phase 2/3: Configuration');
+    const s2 = p.spinner();
+    s2.start('Generating project config');
 
-    // config.json 생성
-    updateConfig(coreDir, detectedStacks, stackDetails, false);
+    runStep(s2, 'Creating constitution.md', () => updateConstitution(coreDir, detectedStacks, stackDetails));
+    runStep(s2, 'Creating config.json', () => updateConfig(coreDir, detectedStacks, stackDetails, false));
+    runStep(s2, 'Copying rules', () => updateRules(coreDir, detectedStacks, false));
+    runStep(s2, 'Setting up collaborator auto-install', () => setupCollaboratorAutoInstall(projectRoot));
 
-    // 규칙 복사
-    updateRules(coreDir, detectedStacks, false);
+    s2.stop('Configuration complete');
 
-    // 협업자 자동 설치 설정
-    setupCollaboratorAutoInstall(projectRoot);
+    // ── Phase 3: Installation ───────────────────────────────
+    p.log.step('Phase 3/3: Installation');
+    const s3 = p.spinner();
+    s3.start('Installing project hooks');
 
-    // 프로젝트 레벨 훅 설치
-    installProjectHooks(projectRoot);
+    const stackTypes = detectedStacks.map(st => st.type);
 
-    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template) - 먼저 실행!
-    const stackTypes = detectedStacks.map(s => s.type);
-    updateCursorGlobalAssets(stackTypes);
+    runStep(s3, 'Installing project hooks', () => installProjectHooks(projectRoot));
+    runStep(s3, 'Updating Cursor global assets', () => updateCursorGlobalAssets(stackTypes));
+    runStep(s3, 'Installing Cursor rules', () => installCursorRules(projectRoot, stackTypes));
+    runStep(s3, 'Installing language rules', () => installLanguageRules(projectRoot, stackTypes));
 
-    // Cursor IDE 룰 설치 (프로젝트 레벨) - rules-template 생성 후 현재 스택에 해당하는 룰만 복사
-    installCursorRules(projectRoot, stackTypes);
+    // Codex CLI
+    runStep(s3, 'Checking Codex CLI', () => {
+      const codexStatus = detectCodexCli();
+      if (codexStatus.installed) {
+        updateCodexGlobalAssets(stackTypes);
+        updateCodexAgentsMd(projectRoot, detectedStacks);
+        log(`   📝 AGENTS.md generated (Codex)\n`);
+      }
+    });
 
-    // 감지된 스택 언어 룰 설치 (.claude/vibe/languages/)
-    installLanguageRules(projectRoot, stackTypes);
+    // Gemini CLI
+    runStep(s3, 'Checking Gemini CLI', () => {
+      const geminiStatus = detectGeminiCli();
+      if (geminiStatus.installed) {
+        updateGeminiGlobalAssets(stackTypes);
+        updateGeminiMd(projectRoot, detectedStacks);
+        installGeminiHooks(projectRoot);
+        log(`   📝 GEMINI.md + hooks generated (Gemini)\n`);
+      }
+    });
 
-    // Codex CLI 프로젝트 설정
-    const codexStatus = detectCodexCli();
-    if (codexStatus.installed) {
-      updateCodexGlobalAssets(stackTypes);
-      updateCodexAgentsMd(projectRoot, detectedStacks);
-      log(`   📝 AGENTS.md generated (Codex)\n`);
-    }
+    runStep(s3, 'Installing local skills', () => {
+      installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
+    });
 
-    // Gemini CLI 프로젝트 설정
-    const geminiStatus = detectGeminiCli();
-    if (geminiStatus.installed) {
-      updateGeminiGlobalAssets(stackTypes);
-      updateGeminiMd(projectRoot, detectedStacks);
-      installGeminiHooks(projectRoot);
-      log(`   📝 GEMINI.md + hooks generated (Gemini)\n`);
-    }
+    runStep(s3, 'Installing external skills', () => {
+      installExternalSkills(projectRoot, stackTypes, stackDetails.capabilities);
+    });
 
-    // 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)
-    installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
-
-    // 스택 기반 외부 스킬 자동 설치 (skills.sh)
-    installExternalSkills(projectRoot, stackTypes, stackDetails.capabilities);
     if (stackDetails.capabilities.length > 0) {
       log(`      - Capabilities: ${stackDetails.capabilities.join(', ')}\n`);
     }
 
-    // Provisioner: 추천 에이전트 + SPEC 템플릿 생성
-    const provisionResult = Provisioner.provision(projectRoot, detectedStacks, stackDetails);
-    if (provisionResult.agentsGenerated) {
-      log(`   🤖 Recommended agents generated\n`);
-    }
-    if (provisionResult.specTemplateGenerated) {
-      log(`   📋 SPEC template generated\n`);
-    }
+    runStep(s3, 'Provisioning agents & templates', () => {
+      const provisionResult = Provisioner.provision(projectRoot, detectedStacks, stackDetails);
+      if (provisionResult.agentsGenerated) {
+        log(`   🤖 Recommended agents generated\n`);
+      }
+      if (provisionResult.specTemplateGenerated) {
+        log(`   📋 SPEC template generated\n`);
+      }
+    });
+
+    s3.stop('Installation complete');
 
     // 완료 메시지
     const packageJson = getPackageJson();
 
-    const authStatus = getLLMAuthStatus();
     const claudeStatus = getClaudeCodeStatus(true);
     log(`✅ vibe initialized (v${packageJson.version})
 ${formatLLMStatus(claudeStatus)}

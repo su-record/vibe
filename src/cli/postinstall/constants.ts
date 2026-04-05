@@ -29,6 +29,7 @@ export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
   'vibe-figma',
   'vibe-figma-extract',
   'vibe-figma-convert',
+  'vibe-docs',
 ];
 
 /** 전역 설치에서 제외된 스킬 (명시적 /skill-name 호출 시에만 활성)

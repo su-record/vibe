@@ -1,6 +1,6 @@
 // Semantic code analysis tool - Find Symbol
 
-import { Node } from 'ts-morph';
+import type { Node } from 'ts-morph';
 import * as path from 'path';
 import { PythonParser } from '../../infra/lib/PythonParser.js';
 import { ProjectCache } from '../../infra/lib/ProjectCache.js';
@@ -53,7 +53,7 @@ export async function findSymbol(args: {
   try {
     // Use cached project for performance
     const projectCache = ProjectCache.getInstance();
-    const project = projectCache.getOrCreate(projectPath);
+    const project = await projectCache.getOrCreate(projectPath);
 
     const symbols: SymbolInfo[] = [];
 
@@ -88,18 +88,20 @@ export async function findSymbol(args: {
       }
     }
 
+    const { Node: TsNode } = await import('ts-morph');
+
     // Search through all source files
     for (const sourceFile of project.getSourceFiles()) {
       const filePath = sourceFile.getFilePath();
-      
+
       // Skip node_modules and other irrelevant paths
       if (filePath.includes('node_modules') || filePath.includes('.git')) {
         continue;
       }
-      
+
       // Find matching symbols based on type
       sourceFile.forEachDescendant((node) => {
-        const nodeSymbol = extractSymbolInfo(node, symbolName, symbolType);
+        const nodeSymbol = extractSymbolInfo(TsNode, node, symbolName, symbolType);
         if (nodeSymbol) {
           const start = node.getStartLinePos();
           const pos = sourceFile.getLineAndColumnAtPos(start);
@@ -142,72 +144,71 @@ export async function findSymbol(args: {
 }
 
 function extractSymbolInfo(
-  node: Node, 
-  symbolName: string, 
+  NodeClass: typeof import('ts-morph').Node,
+  node: Node,
+  symbolName: string,
   symbolType: string
 ): { name: string; kind: string } | null {
-  const kind = node.getKind();
-  
   // Function declarations and expressions
   if (symbolType === 'all' || symbolType === 'function') {
-    if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
+    if (NodeClass.isFunctionDeclaration(node) || NodeClass.isMethodDeclaration(node)) {
       const name = node.getName();
       if (name && name.includes(symbolName)) {
         return { name, kind: 'function' };
       }
     }
-    if (Node.isVariableDeclaration(node)) {
+    if (NodeClass.isVariableDeclaration(node)) {
       const name = node.getName();
       const initializer = node.getInitializer();
-      if (name && name.includes(symbolName) && 
-          (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) {
+      if (name && name.includes(symbolName) &&
+          (NodeClass.isArrowFunction(initializer) || NodeClass.isFunctionExpression(initializer))) {
         return { name, kind: 'function' };
       }
     }
   }
-  
+
   // Class declarations
   if (symbolType === 'all' || symbolType === 'class') {
-    if (Node.isClassDeclaration(node)) {
+    if (NodeClass.isClassDeclaration(node)) {
       const name = node.getName();
       if (name && name.includes(symbolName)) {
         return { name, kind: 'class' };
       }
     }
   }
-  
+
   // Interface declarations
   if (symbolType === 'all' || symbolType === 'interface') {
-    if (Node.isInterfaceDeclaration(node)) {
+    if (NodeClass.isInterfaceDeclaration(node)) {
       const name = node.getName();
       if (name && name.includes(symbolName)) {
         return { name, kind: 'interface' };
       }
     }
   }
-  
+
   // Type aliases
   if (symbolType === 'all' || symbolType === 'type') {
-    if (Node.isTypeAliasDeclaration(node)) {
+    if (NodeClass.isTypeAliasDeclaration(node)) {
       const name = node.getName();
       if (name && name.includes(symbolName)) {
         return { name, kind: 'type' };
       }
     }
   }
-  
+
   // Variables
   if (symbolType === 'all' || symbolType === 'variable') {
-    if (Node.isVariableDeclaration(node)) {
+    if (NodeClass.isVariableDeclaration(node)) {
       const name = node.getName();
       const initializer = node.getInitializer();
-      if (name && name.includes(symbolName) && 
-          !Node.isArrowFunction(initializer) && !Node.isFunctionExpression(initializer)) {
+      if (name && name.includes(symbolName) &&
+          !NodeClass.isArrowFunction(initializer) && !NodeClass.isFunctionExpression(initializer)) {
         return { name, kind: 'variable' };
       }
     }
   }
-  
+
   return null;
 }
 

@@ -23,6 +23,8 @@ Commands:
   vibe upgrade            최신 버전으로 업그레이드
   vibe remove             프로젝트에서 제거
   vibe status             전체 상태 확인
+  vibe config show        설정 통합 보기 (모든 소스)
+  vibe stats              세션 통계 및 품질 트렌드
 
 LLM:
   vibe claude <cmd>       Claude (key, status, logout)
