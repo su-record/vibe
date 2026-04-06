@@ -255,10 +255,39 @@ get_design_context(fileKey, 섹션.nodeId)
 전부 완료해야 c 단계로 진행. 하나라도 실패 → 코드 생성 금지.
 ```
 
-#### c. SCSS 작성
+#### c. 클래스 매핑 테이블 생성
 
 ```
-참조 코드의 Tailwind 클래스에서 CSS 값을 추출하여 외부 SCSS에 작성.
+SCSS 작성 전에 반드시 매핑 테이블을 먼저 출력한다.
+이 테이블 없이 SCSS를 작성하지 않는다.
+
+1. Phase 1 컴포넌트의 클래스 목록을 Read로 수집
+2. 참조 코드의 data-name + HTML 구조를 분석
+3. 매핑 테이블 출력:
+
+  ┌─────────────────────┬──────────────────┬────────────────────────────┐
+  │ Phase 1 클래스       │ 참조 data-name   │ 핵심 Tailwind 값            │
+  ├─────────────────────┼──────────────────┼────────────────────────────┤
+  │ .kidSection         │ (root)           │ flex flex-col gap-[32px]   │
+  │ .kidBg              │ BG               │ absolute mix-blend-multiply│
+  │ .kidLoginBtn        │ Btn_Login        │ border shadow h-[120px]    │
+  │ .kidLoginBtnText    │ (텍스트 노드)     │ text-[36px] text-white     │
+  │ .kidDivider         │ Divider          │ h-px w-full                │
+  │ .kidSteamLink       │ steam_account    │ text-[24px] font-semibold  │
+  │ .kidSteamNote       │ (하위 텍스트)     │ text-[20px] #dadce3        │
+  └─────────────────────┴──────────────────┴────────────────────────────┘
+
+매핑 기준:
+  data-name 일치 → 직접 매핑
+  data-name 없음 → HTML 위치/텍스트 내용으로 판단
+  Phase 1에 없는 요소 → 클래스 신규 추가 (template에도 반영)
+  참조 코드에 없는 클래스 → 스타일 없이 유지
+```
+
+#### d. SCSS 작성
+
+```
+매핑 테이블의 각 행을 순서대로 CSS로 변환하여 SCSS에 작성.
 vibe-figma-extract의 Tailwind→CSS 변환표 참조.
 
 CSS 변수 패턴 처리:
@@ -286,7 +315,7 @@ BG 레이어 패턴 (참조 코드에서 absolute + inset-0 + object-cover):
 index.scss에 새 섹션 @import 추가.
 ```
 
-#### d. template 업데이트
+#### e. template 업데이트
 
 ```
 Phase 1 컴포넌트의 template을 참조 코드 기반으로 리팩토링.
@@ -311,7 +340,7 @@ script(JSDoc, 인터페이스, 목 데이터, 핸들러)는 보존.
 컴포넌트에 <style> 블록 없음. 스타일은 전부 외부 SCSS.
 ```
 
-#### e. 섹션 검증
+#### f. 섹션 검증
 
 ```
 Grep 체크:
