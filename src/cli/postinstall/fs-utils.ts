@@ -94,6 +94,21 @@ export function copySkillsIfMissing(src: string, dest: string): void {
 }
 
 /**
+ * 레거시 스킬 디렉토리 삭제 (이름 변경된 구 디렉토리 정리)
+ */
+export function removeLegacySkills(
+  skillsDir: string,
+  legacyDirs: ReadonlyArray<string>,
+): void {
+  for (const name of legacyDirs) {
+    const dir = path.join(skillsDir, name);
+    if (fs.existsSync(dir)) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+}
+
+/**
  * 스킬 필터링 복사 — 허용 목록에 있는 스킬 디렉토리만 복사
  * @param src - 스킬 소스 디렉토리 (skills/)
  * @param dest - 설치 대상 디렉토리

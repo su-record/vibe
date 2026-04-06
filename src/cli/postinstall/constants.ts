@@ -241,6 +241,21 @@ export const LEGACY_RULE_FILES = [
   'react-patterns.mdc', 'typescript-standards.mdc', 'python-standards.mdc'
 ];
 
+/** 이전 네이밍(vibe-*)에서 vibe.* 으로 변경된 스킬 — postinstall 시 구 디렉토리 삭제 */
+export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
+  'vibe-docs',
+  'vibe-figma',
+  'vibe-figma-analyze',
+  'vibe-figma-codegen',
+  'vibe-figma-consolidate',
+  'vibe-figma-convert',
+  'vibe-figma-extract',
+  'vibe-figma-frame',
+  'vibe-figma-pipeline',
+  'vibe-figma-rules',
+  'vibe-figma-style',
+];
+
 // ─── Claude Code 네이티브 서브에이전트 매핑 ───
 
 // Claude Code 모델 매핑 (사용 가능: sonnet, opus, haiku, inherit)

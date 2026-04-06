@@ -13,9 +13,10 @@ import {
   copyDirRecursive,
   removeDirRecursive,
   copySkillsFiltered,
+  removeLegacySkills,
   replaceTemplatesInDir,
 } from './fs-utils.js';
-import { GLOBAL_SKILLS } from './constants.js';
+import { GLOBAL_SKILLS, LEGACY_SKILL_DIRS } from './constants.js';
 import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
 import { seedInlineSkills } from './inline-skills.js';
 import { generateCursorRules } from './cursor-rules.js';
@@ -92,6 +93,7 @@ export function main(): void {
     const globalSkillsDir = path.join(globalClaudeDir, 'skills');
     if (fs.existsSync(skillsSource)) {
       ensureDir(globalSkillsDir);
+      removeLegacySkills(globalSkillsDir, LEGACY_SKILL_DIRS);
       copySkillsFiltered(skillsSource, globalSkillsDir, GLOBAL_SKILLS);
       replaceTemplatesInDir(globalSkillsDir);
     }
@@ -105,6 +107,7 @@ export function main(): void {
     const coreSkillsDir = path.join(globalCoreAssetsDir, 'skills');
     ensureDir(coreSkillsDir);
     if (fs.existsSync(skillsSource)) {
+      removeLegacySkills(coreSkillsDir, LEGACY_SKILL_DIRS);
       copySkillsFiltered(skillsSource, coreSkillsDir, GLOBAL_SKILLS);
       replaceTemplatesInDir(coreSkillsDir);
     }
@@ -201,7 +204,9 @@ export function main(): void {
       if (geminiStatus.installed) {
         const geminiAgentsDir = path.join(geminiStatus.configDir, 'agents');
         installGeminiAgents(agentsSource, geminiAgentsDir);
-        copySkillsFiltered(skillsSource, path.join(geminiStatus.configDir, 'skills'), GLOBAL_SKILLS);
+        const geminiSkillsDir = path.join(geminiStatus.configDir, 'skills');
+        removeLegacySkills(geminiSkillsDir, LEGACY_SKILL_DIRS);
+        copySkillsFiltered(skillsSource, geminiSkillsDir, GLOBAL_SKILLS);
         generateGeminiMd(geminiStatus.configDir, packageRoot);
         console.log(`✅ gemini agents/skills installed: ${geminiStatus.configDir}`);
       }

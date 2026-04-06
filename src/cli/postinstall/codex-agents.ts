@@ -14,8 +14,8 @@
 
 import path from 'path';
 import fs from 'fs';
-import { ensureDir, removeDirRecursive, copySkillsFiltered } from './fs-utils.js';
-import { GLOBAL_SKILLS } from './constants.js';
+import { ensureDir, removeDirRecursive, copySkillsFiltered, removeLegacySkills } from './fs-utils.js';
+import { GLOBAL_SKILLS, LEGACY_SKILL_DIRS } from './constants.js';
 import { generateCodexAgentsMd } from './codex-instruction.js';
 
 /**
@@ -126,6 +126,7 @@ export function installCodexPlugin(
   const pluginSkillsDir = path.join(pluginDir, 'skills');
   if (fs.existsSync(skillsSource)) {
     ensureDir(pluginSkillsDir);
+    removeLegacySkills(pluginSkillsDir, LEGACY_SKILL_DIRS);
     copySkillsFiltered(skillsSource, pluginSkillsDir, GLOBAL_SKILLS);
   }
 
