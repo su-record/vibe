@@ -8,181 +8,7 @@ tier: standard
 # vibe-figma-convert — 코드 변환
 
 `get_design_context` 참조 코드를 프로젝트 스택 코드로 변환.
-**두 가지 모드**: 일반 모드(외부 SCSS) / 직역 모드(scoped CSS).
-
----
-
-## 0. 직역 모드 (비정형 레이어)
-
-비정형 레이어 감지 시 사용. 참조 코드의 구조와 좌표를 **거의 그대로** 보존.
-
-### 핵심 원칙
-
-```
-1. 참조 코드의 HTML 중첩 구조를 1:1로 유지
-2. absolute 좌표, rotate, mix-blend-mode, blur 등 시각 속성 전부 보존
-3. scaleFactor는 px 값에만 적용 (색상, opacity, blend-mode, z-index 미적용)
-4. 에셋 URL → 로컬 경로로만 교체
-5. 의미론적 재구성(BG+Content 분리) 시도하지 않음
-```
-
-### Tailwind → CSS 클래스 직역
-
-```
-참조 코드의 각 요소에 고유 클래스명을 부여하고,
-Tailwind 클래스를 CSS로 1:1 변환하여 <style scoped>에 작성.
-
-클래스명 규칙: data-name 또는 data-node-id 기반
-  data-name="BG"           → .bg
-  data-name="Period"       → .period
-  data-name="Title"        → .title
-  data-name="Light"        → .light
-  이름 없으면              → .node-{nodeId} (콜론→하이픈)
-
-변환 예시:
-  className="absolute h-[1280px] left-0 overflow-clip top-0 w-[720px]"
-  →
-  .bg {
-    position: absolute;
-    height: 853px;       /* 1280 × 0.667 */
-    left: 0;
-    overflow: clip;
-    top: 0;
-    width: 100%;         /* 720px = 뷰포트 전체폭 → 100% */
-  }
-
-  className="-translate-x-1/2 absolute h-[174px] left-1/2 top-1/2 w-[620px]"
-  →
-  .title-img {
-    position: absolute;
-    height: 116px;       /* 174 × 0.667 */
-    left: 50%;
-    top: 50%;
-    transform: translateX(-50%);
-    width: 413px;        /* 620 × 0.667 */
-  }
-```
-
-### 특수 패턴 직역
-
-```
-mix-blend:
-  className="mix-blend-lighten"
-  → mix-blend-mode: lighten;
-
-rotate + scale:
-  className="-scale-y-100 rotate-[149.7deg]"
-  → transform: scaleY(-1) rotate(149.7deg);
-
-mask-image:
-  style={{ maskImage: `url('${imgVar}')` }}
-  → :style="{ maskImage: `url('/images/{feature}/파일.webp')` }"
-  (Vue 동적 바인딩으로 변환)
-
-blur:
-  className="blur-[3.5px]"
-  → filter: blur(3.5px);
-
-소수점 좌표:
-  className="absolute h-[141.67px] left-[380.52px] top-[528.95px]"
-  → position: absolute;
-    height: 94px;        /* 141.67 × 0.667 반올림 */
-    left: 254px;         /* 380.52 × 0.667 반올림 */
-    top: 353px;          /* 528.95 × 0.667 반올림 */
-
-inset-[-18.13%]:
-  → inset: -18.13%; (% 값은 스케일링 안 함)
-
-overflow-hidden + 스프라이트:
-  className="absolute h-full left-[-129.09%] max-w-none top-0 w-[229.09%]"
-  → position: absolute;
-    height: 100%;
-    left: -129.09%;      /* % 값 그대로 */
-    max-width: none;
-    top: 0;
-    width: 229.09%;      /* % 값 그대로 */
-```
-
-### Vue SFC 출력 형태
-
-```vue
-<template>
-  <section class="heroSection">
-    <!-- 참조 코드의 HTML 구조를 1:1 유지 -->
-    <div class="bg">
-      <div class="bgInner">
-        <div class="bgImage1">
-          <img src="/images/{feature}/bg.webp" alt="" aria-hidden="true" />
-        </div>
-        <div class="tree4">
-          <img src="/images/{feature}/tree-4.webp" alt="" aria-hidden="true" />
-        </div>
-        <!-- ... 모든 서브 레이어 유지 -->
-      </div>
-      <!-- ... -->
-    </div>
-
-    <!-- 콘텐츠 영역 (참조 코드의 Title, Period 등) -->
-    <div class="titleArea">
-      <div class="titleImg">
-        <img src="/images/{feature}/title.webp" alt="추운 겨울, 따뜻한 보상이 펑펑" />
-      </div>
-    </div>
-  </section>
-</template>
-
-<script setup lang="ts">
-// Phase 1의 script 보존
-</script>
-
-<style scoped>
-.heroSection {
-  position: relative;
-  width: 100%;
-  height: 853px; /* 1280 × 0.667 */
-  overflow: hidden;
-}
-.bg {
-  position: absolute;
-  height: 853px;
-  left: 0;
-  overflow: clip;
-  top: 0;
-  width: 100%;
-}
-.tree4 {
-  position: absolute;
-  bottom: 215px;
-  height: 453px;
-  left: 50%;
-  transform: translateX(calc(-50% + 599px));
-  opacity: 0.4;
-  width: 1727px;
-}
-.tree4 img {
-  position: absolute;
-  inset: 0;
-  max-width: none;
-  object-fit: cover;
-  pointer-events: none;
-  width: 100%;
-  height: 100%;
-}
-/* ... 모든 레이어의 CSS */
-</style>
-```
-
-### 직역 모드에서의 반응형
-
-```
-첫 번째 URL → <style scoped>에 base 스타일
-두 번째 URL → 같은 <style scoped> 안에 @media (min-width:) 추가
-기존 스타일 삭제 금지
-```
-
----
-
-## 이하: 일반 모드 (정형 레이어)
+항상 외부 SCSS 파일에 스타일 작성.
 
 ---
 
@@ -294,6 +120,18 @@ $space-content: 18px;        // 24 × 0.75
 
 // Breakpoints
 $bp-pc: 1024px;
+```
+
+### CSS 변수 패턴 처리
+
+```
+참조 코드에 Figma 디자인 토큰이 CSS 변수로 포함될 수 있음:
+  font-[family-name:var(--font/family/pretendard,...)]
+  text-[length:var(--font/size/heading/24,24px)]
+  text-[color:var(--color/grayscale/950,#171716)]
+
+→ var() 안의 fallback 값(24px, #171716)을 사용.
+→ CSS 변수명은 프로젝트 토큰 네이밍에 참고.
 ```
 
 ---
