@@ -356,37 +356,136 @@ URL 있으면:
 
 ## Phase 4: 검증 루프
 
+**Puppeteer + CDP로 실제 렌더링 결과를 확인하며 자동 수정한다.**
+**사람이 브라우저 보면서 고치는 것과 동일한 루프.**
+**인프라: `src/infra/lib/browser/` (범용 UI 검증 도구)**
+
 ```
-자동 반복: P1=0 될 때까지.
+자동 반복: P1=0 될 때까지. 최대 3라운드.
+```
 
-1. 빌드 체크:
-   npm run build (또는 프로젝트 빌드 명령)
-   → 에러 있으면 수정
+### 4-0. 환경 준비
 
-2. Grep 체크:
-   □ "<style" in components/{feature}/ → 0건
-   □ 'src=""' in components/{feature}/ → 0건
-   □ Glob: images/{feature}/ → 이미지 파일 존재, 0byte 없음
+```
+1. dev 서버 시작:
+   npm run dev (또는 프로젝트 dev 명령)
+   → localhost:3000 (또는 해당 포트) 확인
 
-3. 시각 검증:
-   각 섹션의 Figma 스크린샷을 다시 Read:
-     /tmp/{feature}/sections/{section}.png
+2. Puppeteer 브라우저 시작:
+   import { launchBrowser, openPage } from 'src/infra/lib/browser'
+   const browser = await launchBrowser({ headless: true })
+   const page = await openPage(browser, 'http://localhost:3000/{feature}', {
+     width: 480,   // 모바일 퍼스트 (또는 타겟 뷰포트)
+     height: 960,
+   })
+```
 
-   현재 코드를 읽고 스크린샷과 비교:
-     P1 (필수 수정):
-       - 이미지 누락 또는 잘못된 이미지
-       - 레이아웃 구조 다름 (가로↔세로, 정렬 방향)
-       - 텍스트 누락 또는 잘못된 텍스트
-       - 배경 없음 또는 잘못된 배경
-     P2 (권장):
-       - 미세 간격 차이
-       - 미세 색상 차이
-       - 폰트 크기 미세 차이
+### 4-1. 렌더링 스크린샷 vs Figma 스크린샷
 
-4. P1 수정 → 재검증 (최대 3라운드):
-   수정할 때 반드시 재료함(tree.json, images/)의 정확한 값 참조.
-   추정으로 수정하지 않는다.
+```
+import { captureScreenshot, compareScreenshots } from 'src/infra/lib/browser'
 
-5. 3라운드 후에도 P1 남아있으면:
-   남은 이슈를 TODO 목록으로 사용자에게 보고.
+각 섹션에 대해:
+  1. 렌더링 결과 스크린샷 캡처:
+     await captureScreenshot(page, {
+       outPath: '/tmp/{feature}/rendered-{section}.png',
+       selector: '.{section}Section',   // Phase 1에서 만든 클래스
+     })
+
+  2. Figma 원본과 픽셀 비교:
+     const diff = await compareScreenshots(
+       '/tmp/{feature}/sections/{section}.png',    // Figma 원본
+       '/tmp/{feature}/rendered-{section}.png',    // 렌더링 결과
+       '/tmp/{feature}/diff-{section}.png',        // 차이 시각화
+     )
+
+  3. diff 이미지를 Read로 확인:
+     → 빨간색 영역 = 차이 나는 부분
+     → diffRatio > 0.1 이면 P1 이슈
+```
+
+### 4-2. CSS 수치 정밀 비교
+
+```
+import { getComputedStyles, compareStyles, diffsToIssues } from 'src/infra/lib/browser'
+
+각 섹션의 주요 요소에 대해:
+  1. 렌더링된 computed CSS 추출:
+     const actual = await getComputedStyles(page, '.heroTitle', [
+       'font-size', 'color', 'width', 'height', 'padding', 'margin',
+       'background-color', 'border-radius', 'gap',
+     ])
+
+  2. Figma 재료함의 기대값과 비교:
+     // tree.json에서 해당 노드의 CSS 수치 (scaleFactor 적용 후)
+     const expected = { 'font-size': '16px', 'color': '#ffffff', 'width': '465px' }
+     const diffs = compareStyles(expected, actual)
+
+  3. 차이 → 이슈 변환:
+     const issues = diffsToIssues(diffs)
+     → delta > 4px: P1 (레이아웃 영향)
+     → delta ≤ 4px: P2 (미세 차이)
+```
+
+### 4-3. 이미지·텍스트 누락 체크
+
+```
+import { extractImages, extractTextContent } from 'src/infra/lib/browser'
+
+1. 이미지 로드 상태 확인:
+   const images = await extractImages(page)
+   images.filter(img => !img.loaded)
+   → 로드 실패 이미지 = P1 (이미지 누락)
+   → src="" 이미지 = P1 (빈 경로)
+
+2. 텍스트 콘텐츠 확인:
+   const texts = await extractTextContent(page)
+   → 재료함의 TEXT 노드 characters와 대조
+   → 누락된 텍스트 = P1
+```
+
+### 4-4. 자동 수정 루프
+
+```
+라운드 1~3:
+  1. 4-1 ~ 4-3 실행 → 이슈 목록 수집
+  2. P1 이슈 우선 수정:
+     - 이미지 누락 → 이미지 경로 확인, static/ 에 파일 존재 확인
+     - 레이아웃 다름 → 스크린샷 diff 이미지 + computed CSS로 원인 파악
+     - 텍스트 누락 → 재료함의 정확한 텍스트 삽입
+     - CSS 수치 틀림 → 재료함(tree.json)의 정확한 값으로 교체
+     ⚠️ 추정으로 수정하지 않는다. 반드시 재료함 참조.
+  3. 수정 후 페이지 리로드 → 다시 캡처 → 비교
+  4. P1=0 이면 종료
+
+라운드 종료 조건:
+  - P1=0: 성공 → 브라우저 종료, 결과 보고
+  - 3라운드 후 P1 남음: TODO 목록으로 사용자에게 보고
+  - 같은 이슈가 반복: 해당 이슈 스킵, 다음 이슈로
+
+결과 보고:
+  - 수정한 파일 목록
+  - 남은 P2 이슈 목록 (선택적 수정)
+  - 최종 diff 스크린샷 경로
+```
+
+### 4-5. 반응형 검증 (추가 뷰포트)
+
+```
+모바일 검증 완료 후, 추가 브레이크포인트가 있으면:
+
+  await page.setViewport({ width: 1920, height: 1080 })
+  await page.reload({ waitUntil: 'networkidle0' })
+
+  → 데스크탑 Figma 스크린샷과 동일한 4-1 ~ 4-4 루프 반복
+```
+
+### 4-6. 브라우저 정리
+
+```
+import { closeBrowser } from 'src/infra/lib/browser'
+
+검증 완료 후:
+  await closeBrowser()
+  dev 서버 종료 (필요 시)
 ```
