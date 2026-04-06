@@ -191,14 +191,23 @@ async function cmdImages(token, fk, nid, outDir, depth) {
 
 async function cmdScreenshot(token, fk, nid, outPath) {
   if (!outPath) fail('--out required');
-  const data = await apiFetch(`/images/${fk}?ids=${nid}&format=png&scale=2`, token);
-  const url = data.images?.[nid];
-  if (!url) fail(`No image for ${nid}`);
   const dir = path.dirname(outPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-  fs.writeFileSync(outPath, buf);
-  console.log(JSON.stringify({ path: outPath, size: buf.length }));
+  // scale=2 시도 → 400 에러 시 scale=1 폴백
+  for (const scale of [2, 1]) {
+    try {
+      const data = await apiFetch(`/images/${fk}?ids=${nid}&format=png&scale=${scale}`, token);
+      const url = data.images?.[nid];
+      if (!url) continue;
+      const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+      fs.writeFileSync(outPath, buf);
+      console.log(JSON.stringify({ path: outPath, size: buf.length, scale }));
+      return;
+    } catch (e) {
+      if (scale === 1) fail(`Screenshot failed: ${e.message}`);
+    }
+  }
+  fail('Screenshot failed at all scales');
 }
 
 // ─── CLI ────────────────────────────────────────────────────────────

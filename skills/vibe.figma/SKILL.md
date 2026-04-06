@@ -68,16 +68,15 @@ tier: standard
 
 ```
 URL에서 fileKey, nodeId 추출
-getTree(fileKey, nodeId, depth=2) → 프레임 목록
 
-Bash:
-  node -e "
-    import { getTree } from './dist/infra/lib/figma/index.js';
-    const tree = await getTree({ fileKey: '{fileKey}', nodeId: '{nodeId}', depth: 2 });
-    console.log(JSON.stringify(tree));
-  "
+1단계 (BLOCKING): 루트 depth=2로 전체 프레임 + nodeId 수집
+  # [FIGMA_SCRIPT] = ~/.vibe/hooks/scripts/figma-extract.js
+  node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId} --depth=2
 
-프레임 분류 (name 패턴 기반):
+  → 모든 자식 프레임의 name + nodeId + size 를 테이블로 출력
+  → nodeId가 빠진 프레임이 있으면 안 됨
+
+2단계: name 패턴으로 프레임 분류
   SPEC   — "기능 정의서", "정책" → depth 높여서 텍스트 추출
   CONFIG — "해상도", "브라우저" → 스케일 팩터 계산
   SHARED — "공통", "GNB", "Footer", "Popup" → 공통 컴포넌트 파악
@@ -91,7 +90,7 @@ Bash:
   4순위: SHARED (공통 요소, Popup) — 필요 시
 
 높이 1500px 이상 프레임:
-  → getScreenshot으로 시각 파악
+  → node "[FIGMA_SCRIPT]" screenshot으로 시각 파악
   → 또는 depth 높여서 하위 분할 조회
 ```
 
@@ -226,7 +225,8 @@ SCSS 파일 기본 내용 Write:
 
 ### 2-2. 섹션 루프
 
-**각 섹션을 순서대로, 한 섹션을 완전히 완료한 후 다음으로.**
+**섹션별로 a→f 순서는 지키되, 섹션 간 병렬 처리 허용.**
+**단, 첫 번째 섹션(Hero)은 단독 완료 후 나머지를 병렬로.**
 
 #### a. 노드 트리 + CSS 추출
 
