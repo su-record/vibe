@@ -68,14 +68,18 @@ tier: standard
 
 ```
 URL에서 fileKey, nodeId 추출
-get_metadata(fileKey, nodeId) → 프레임 목록
+getTree(fileKey, nodeId, depth=2) → 프레임 목록
 
-⚠️ 메타데이터가 클 수 있음 (실전: 291K chars → 파일 저장됨)
-  → 파일 저장 시 Python/Bash로 파싱하여 프레임 목록 추출
+Bash:
+  node -e "
+    import { getTree } from './dist/infra/lib/figma/index.js';
+    const tree = await getTree({ fileKey: '{fileKey}', nodeId: '{nodeId}', depth: 2 });
+    console.log(JSON.stringify(tree));
+  "
 
-프레임 분류 (이름 패턴 기반, get_design_context 호출 전에 분류):
-  SPEC   — "기능 정의서", "정책" → get_design_context로 텍스트 추출
-  CONFIG — "해상도", "브라우저" → get_design_context로 스케일 팩터 계산
+프레임 분류 (name 패턴 기반):
+  SPEC   — "기능 정의서", "정책" → depth 높여서 텍스트 추출
+  CONFIG — "해상도", "브라우저" → 스케일 팩터 계산
   SHARED — "공통", "GNB", "Footer", "Popup" → 공통 컴포넌트 파악
   PAGE   — "화면설계", "메인 -" → 섹션 목록 + 인터랙션 스펙
 
@@ -87,8 +91,8 @@ get_metadata(fileKey, nodeId) → 프레임 목록
   4순위: SHARED (공통 요소, Popup) — 필요 시
 
 높이 1500px 이상 프레임:
-  → get_design_context 대신 get_screenshot으로 시각 파악
-  → 또는 get_metadata로 하위 분할 후 호출
+  → getScreenshot으로 시각 파악
+  → 또는 depth 높여서 하위 분할 조회
 ```
 
 ### 1-2. 레이아웃 + 컴포넌트 구성 (코드 생성)
@@ -224,35 +228,55 @@ SCSS 파일 기본 내용 Write:
 
 **각 섹션을 순서대로, 한 섹션을 완전히 완료한 후 다음으로.**
 
-#### a. 참조 코드 획득
+#### a. 노드 트리 + CSS 추출
 
 ```
-get_design_context(fileKey, 섹션.nodeId)
+Figma REST API로 노드 트리와 CSS 속성을 직접 추출한다.
+MCP 플러그인(get_design_context/get_metadata)은 사용하지 않는다.
 
-반환:
-  - const img변수명 = 'URL' (이미지 에셋)
-  - React+Tailwind JSX (HTML 구조 + CSS 값)
-  - 스크린샷 (시각 기준점)
-  - data-name 속성 (레이어 이름: "BG", "Title" 등)
+Bash:
+  node -e "
+    import { getTree } from './dist/infra/lib/figma/index.js';
+    const tree = await getTree({ fileKey: '{fileKey}', nodeId: '{섹션.nodeId}', depth: 10 });
+    console.log(JSON.stringify(tree));
+  "
 
-큰 섹션 (높이 1500px+):
-  get_metadata로 하위 노드 목록 → 하위 단위로 get_design_context 분할 호출
-  타임아웃 시: 1회 재시도 (excludeScreenshot: true) → 실패 시 분할
+반환 (JSON):
+  {
+    nodeId, name, type, size: {width, height},
+    css: { display, flexDirection, gap, fontSize, color, ... },
+    text: "텍스트 내용" (TEXT 노드),
+    imageRef: "abc123" (이미지 fill),
+    children: [...]
+  }
+
+CSS는 Figma 노드 속성에서 직접 추출 — Tailwind 역변환 불필요:
+  fills → background-color     effects → box-shadow, filter
+  strokes → border             style → font-family, font-size, color
+  layoutMode → display:flex     itemSpacing → gap
+  padding* → padding            cornerRadius → border-radius
+
+인스턴스 내부 자식도 depth로 전부 조회 가능 (MCP 한계 해결).
 ```
 
 #### b. 이미지 다운로드 (BLOCKING)
 
 ```
-참조 코드의 모든 const img... URL을 추출 → 다운로드 → 검증.
+트리에서 imageRef가 있는 노드를 수집 → Figma API로 다운로드.
 
-변수명 → 파일명: imgSnowParticle12 → snow-particle-12.webp
-다운로드: curl -sL "{url}" -o images/{feature}/{파일명}
-검증: ls -la → 모든 파일 존재 + 0byte 아닌지
+Bash:
+  node -e "
+    import { getTree, getImages, collectImageRefs } from './dist/infra/lib/figma/index.js';
+    const tree = await getTree({ fileKey: '{fileKey}', nodeId: '{섹션.nodeId}', depth: 10 });
+    const refs = collectImageRefs(tree);
+    const result = await getImages({
+      fileKey: '{fileKey}', imageRefs: refs, outDir: 'images/{feature}/'
+    });
+    console.log(JSON.stringify(result));
+  "
 
-이미지 매핑 생성:
-  imageMap = { imgTitle: '/images/{feature}/title.webp', ... }
-
-전부 완료해야 c 단계로 진행. 하나라도 실패 → 코드 생성 금지.
+검증: result.total = refs.size (누락 0)
+전부 완료해야 c 단계로 진행.
 ```
 
 #### c. 클래스 매핑 테이블 생성
@@ -262,38 +286,33 @@ SCSS 작성 전에 반드시 매핑 테이블을 먼저 출력한다.
 이 테이블 없이 SCSS를 작성하지 않는다.
 
 1. Phase 1 컴포넌트의 클래스 목록을 Read로 수집
-2. 참조 코드의 data-name + HTML 구조를 분석
+2. 트리의 name + css 속성을 분석
 3. 매핑 테이블 출력:
 
-  ┌─────────────────────┬──────────────────┬────────────────────────────┐
-  │ Phase 1 클래스       │ 참조 data-name   │ 핵심 Tailwind 값            │
-  ├─────────────────────┼──────────────────┼────────────────────────────┤
-  │ .kidSection         │ (root)           │ flex flex-col gap-[32px]   │
-  │ .kidBg              │ BG               │ absolute mix-blend-multiply│
-  │ .kidLoginBtn        │ Btn_Login        │ border shadow h-[120px]    │
-  │ .kidLoginBtnText    │ (텍스트 노드)     │ text-[36px] text-white     │
-  │ .kidDivider         │ Divider          │ h-px w-full                │
-  │ .kidSteamLink       │ steam_account    │ text-[24px] font-semibold  │
-  │ .kidSteamNote       │ (하위 텍스트)     │ text-[20px] #dadce3        │
-  └─────────────────────┴──────────────────┴────────────────────────────┘
+  ┌─────────────────────┬──────────────────┬────────────────────────────────────┐
+  │ Phase 1 클래스       │ 트리 노드 name   │ 추출된 CSS 값                      │
+  ├─────────────────────┼──────────────────┼────────────────────────────────────┤
+  │ .kidSection         │ KID (root)       │ flex, column, gap:32px, pad:48px   │
+  │ .kidBg              │ BG               │ absolute, 720x800                  │
+  │ .kidLoginBtn        │ Btn_Login        │ flex, border, shadow, 640x148      │
+  │ .kidLoginBtnText    │ (TEXT 노드)       │ fontSize:36px, color:#fff, w:700   │
+  │ .kidDivider         │ Divider          │ 640x1                              │
+  │ .kidSteamLink       │ steam_account    │ fontSize:24px, w:600               │
+  │ .kidSteamNote       │ (하위 TEXT)       │ fontSize:20px, color:#dadce3       │
+  └─────────────────────┴──────────────────┴────────────────────────────────────┘
 
 매핑 기준:
-  data-name 일치 → 직접 매핑
-  data-name 없음 → HTML 위치/텍스트 내용으로 판단
+  name 일치 → 직접 매핑
+  name 없음 → 트리 위치/text 내용으로 판단
   Phase 1에 없는 요소 → 클래스 신규 추가 (template에도 반영)
-  참조 코드에 없는 클래스 → 스타일 없이 유지
+  트리에 없는 클래스 → 스타일 없이 유지
 ```
 
 #### d. SCSS 작성
 
 ```
-매핑 테이블의 각 행을 순서대로 CSS로 변환하여 SCSS에 작성.
-vibe.figma.extract의 Tailwind→CSS 변환표 참조.
-
-CSS 변수 패턴 처리:
-  font-[family-name:var(--font/family/pretendard,...)] → fallback 값 사용
-  text-[length:var(--font/size/heading/24,24px)]      → 24px
-  text-[color:var(--color/grayscale/300,#dadce3)]      → #dadce3
+매핑 테이블의 각 행에 대해, 트리의 css 속성을 SCSS로 작성.
+CSS 값은 트리에서 이미 추출되어 있으므로 변환 불필요 — 그대로 사용.
 
 scaleFactor 적용:
   px 값 → × scaleFactor (font-size, padding, margin, gap, width, height, border-radius)
@@ -308,7 +327,7 @@ scaleFactor 적용:
   styles/{feature}/_tokens.scss
     → 새로 발견된 색상/폰트/스페이싱 토큰 추가
 
-BG 레이어 패턴 (참조 코드에서 absolute + inset-0 + object-cover):
+BG 레이어 패턴 (트리에서 position:absolute + 이미지 fill):
   .{section}Bg   → position: absolute; inset: 0; z-index: 0;
   .{section}Content → position: relative; z-index: 1;
 
@@ -318,14 +337,14 @@ index.scss에 새 섹션 @import 추가.
 #### e. template 업데이트
 
 ```
-Phase 1 컴포넌트의 template을 참조 코드 기반으로 리팩토링.
+Phase 1 컴포넌트의 template을 트리 구조 기반으로 리팩토링.
 script(JSDoc, 인터페이스, 목 데이터, 핸들러)는 보존.
 
-1. 참조 코드의 HTML 구조를 프로젝트 스택으로 변환:
-   className → class, onClick → @click, {조건 && <X/>} → v-if 등
+1. 트리의 HTML 구조를 프로젝트 스택으로 변환:
+   FRAME → <div>, TEXT → <p>/<span>, VECTOR/RECTANGLE with imageRef → <img>
 
 2. 이미지 경로를 imageMap으로 교체:
-   src={imgTitle} → src="/images/{feature}/title.webp"
+   imageRef "abc123" → src="/images/{feature}/abc123.png"
 
 3. BG 레이어 구조 적용:
    .{section}Bg div (배경) + .{section}Content div (콘텐츠)
@@ -334,7 +353,7 @@ script(JSDoc, 인터페이스, 목 데이터, 핸들러)는 보존.
    v-for, @click, v-if, $emit 등을 새 구조의 적절한 위치에 배치
 
 5. 접근성:
-   장식 이미지 → alt="" aria-hidden="true"
+   장식 이미지 (BG 내) → alt="" aria-hidden="true"
    콘텐츠 이미지 → alt="설명적 텍스트"
 
 컴포넌트에 <style> 블록 없음. 스타일은 전부 외부 SCSS.
@@ -344,13 +363,12 @@ script(JSDoc, 인터페이스, 목 데이터, 핸들러)는 보존.
 
 ```
 Grep 체크:
-  □ "figma.com/api" in 생성 파일 → 0건
   □ 'src=""' in 컴포넌트 파일 → 0건
   □ "<style" in 컴포넌트 파일 → 0건
 
 Read 체크:
   □ 외부 SCSS 파일에 font-size, color 존재 (브라우저 기본 스타일 방지)
-  □ 이미지 파일 수 = const img... 수 (누락 0)
+  □ 이미지 파일 수 = imageRef 수 (누락 0)
 
 실패 → 수정 → 재검증
 ```
@@ -373,13 +391,15 @@ Read 체크:
 
 ```
 Grep 체크:
-  □ "figma.com/api" in 모든 생성 파일 → 0건
   □ "<style" in components/{feature}/ → 0건
   □ 'src=""' in components/{feature}/ → 0건
   □ Glob: images/{feature}/ → 이미지 파일 존재
 
 시각 검증:
-  각 섹션: get_screenshot(nodeId) vs dev 서버/preview 비교
+  각 섹션 스크린샷:
+    node -e "import { getScreenshot } from './dist/infra/lib/figma/index.js';
+      await getScreenshot({ fileKey: '{fileKey}', nodeId: '{nodeId}', outPath: '/tmp/{section}.png' });"
+  → dev 서버/preview와 비교
   P1 (필수): 이미지 누락, 레이아웃 구조 다름, 텍스트 스타일 미적용
   P2 (권장): 미세 간격, 미세 색상 차이
   → P1 수정 → 재검증 (P1=0 될 때까지)

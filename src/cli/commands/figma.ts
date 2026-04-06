@@ -2,8 +2,8 @@
  * CLI Commands: vibe figma <subcommand>
  *
  * Figma configuration management.
- * Extraction is handled by MCP plugin (get_design_context, get_metadata, get_screenshot).
- * Token stored in ~/.vibe/config.json is only needed as MCP fallback.
+ * Extraction is handled by src/infra/lib/figma/ (Figma REST API direct).
+ * Token stored in ~/.vibe/config.json is required for API access.
  */
 
 import {
@@ -139,7 +139,7 @@ export function figmaBreakpoints(setArg?: string): void {
 export function figmaHelp(): void {
   console.log(`
 Figma Commands:
-  vibe figma setup <token>                Set Figma access token (MCP fallback only)
+  vibe figma setup <token>                Set Figma access token
   vibe figma breakpoints                  Show current breakpoint defaults
   vibe figma breakpoints --set key=value  Customize a breakpoint value
   vibe figma status                       Show configuration
@@ -155,10 +155,6 @@ Breakpoint keys:
   designMobile    Figma Mobile artboard width (default: 720px)
 
 Workflow:
-  1. claude /vibe.figma "figma-url"
-     (Figma MCP plugin handles extraction — no token setup needed)
-
-  If MCP plugin is not available:
   1. vibe figma setup <token>
   2. claude /vibe.figma "figma-url"
   `);
