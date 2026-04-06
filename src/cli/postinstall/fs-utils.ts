@@ -76,18 +76,17 @@ export function removeDirRecursive(dir: string): void {
 }
 
 /**
- * 스킬 복사 (이미 존재하는 파일은 건너뜀 - 유저 수정 보존)
+ * 스킬 복사 (항상 덮어쓰기 — 패키지 업데이트 시 최신 버전 반영)
  */
-export function copySkillsIfMissing(src: string, dest: string): void {
+export function copySkillsOverwrite(src: string, dest: string): void {
   ensureDir(dest);
   const entries = fs.readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
-      copySkillsIfMissing(srcPath, destPath);
-    } else if (!fs.existsSync(destPath)) {
-      // 파일이 없을 때만 복사
+      copySkillsOverwrite(srcPath, destPath);
+    } else {
       fs.copyFileSync(srcPath, destPath);
     }
   }
@@ -126,6 +125,6 @@ export function copySkillsFiltered(
     if (!allowedSkills.includes(entry.name)) continue;
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
-    copySkillsIfMissing(srcPath, destPath);
+    copySkillsOverwrite(srcPath, destPath);
   }
 }
