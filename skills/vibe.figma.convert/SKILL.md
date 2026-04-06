@@ -74,8 +74,8 @@ tier: standard
 }
 
 .heroParticipation {
-  font-size: t.$text-sub;     // 24px × 0.75 = 18px
-  color: t.$color-white;
+  font-size: t.$font-size-md;      // 24px × 0.667 = 16px
+  color: t.$color-text-primary;    // semantic → $color-white
   line-height: 1.4;
   text-align: center;
   white-space: nowrap;
@@ -91,35 +91,58 @@ components/ → font-size, font-weight, color, line-height, letter-spacing,
               text-align, border, border-radius, box-shadow, opacity
 ```
 
-### _tokens.scss 업데이트
+### _tokens.scss 구조 (primitive/semantic 분리)
 
 ```
-섹션을 처리할 때마다 새로운 고유값을 토큰에 추가:
-
+// ─── Primitive (Figma 원시 값) ────────────────
 // Colors
-$color-white: #FFFFFF;
-$color-bg-dark: #0A1628;
-$color-heading: #1B3A1D;
-$color-text-body: #333333;
-$color-period-label: #003879;
-$color-grayscale-950: #171716;
-
-// Typography (Figma px × scaleFactor)
-$text-hero: 36px;            // 48 × 0.75
-$text-sub: 18px;             // 24 × 0.75
-$text-body: 16px;            // 21 × 0.75
-$text-period: 21px;          // 28 × 0.75
+$color-white: #ffffff;
+$color-black: #000000;
+$color-navy-dark: #0a1628;
+$color-navy-medium: #00264a;
 
 // Font families
 $font-pretendard: 'Pretendard', sans-serif;
 $font-roboto-condensed: 'Roboto Condensed', sans-serif;
 
-// Spacing
-$space-section: 98px;        // 130 × 0.75
-$space-content: 18px;        // 24 × 0.75
+// Font sizes (scaled)
+$font-size-xs: 11px;   // 16 × 0.667
+$font-size-sm: 13px;   // 20 × 0.667
+$font-size-md: 16px;   // 24 × 0.667
+$font-size-lg: 19px;   // 28 × 0.667
 
-// Breakpoints
-$bp-pc: 1024px;
+// Font weights
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-bold: 700;
+
+// Spacing (scaled)
+$space-xs: 5px;
+$space-sm: 11px;
+$space-md: 16px;
+$space-lg: 21px;
+
+// ─── Semantic (용도별) ────────────────────────
+// Text
+$color-text-primary: $color-white;
+$color-text-secondary: #dadce3;
+$color-text-label: #003879;
+$color-text-link: #419bd3;
+
+// Background
+$color-bg-primary: $color-navy-dark;
+$color-bg-section: $color-navy-medium;
+
+// Border
+$color-border-primary: #203f6c;
+
+// Breakpoint
+$bp-desktop: 1024px;
+
+규칙:
+  - primitive: 고유 값 (hex, 폰트명, px)
+  - semantic: primitive 참조로 용도별 이름 ($color-text-primary: $color-white)
+  - 같은 값 중복 금지 — 기존 토큰 재사용
 ```
 
 ### CSS 변수 패턴 처리

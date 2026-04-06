@@ -314,7 +314,58 @@ scaleFactor 적용:
     → font-size, font-weight, color, line-height, letter-spacing, text-align,
       border, border-radius, box-shadow, opacity
   styles/{feature}/_tokens.scss
-    → 새로 발견된 색상/폰트/스페이싱 토큰 추가
+    → primitive/semantic 구조로 토큰 관리 (아래 참조)
+
+_tokens.scss 구조 (primitive/semantic 분리):
+  // ─── Primitive (Figma 원시 값) ────────────────
+  // Colors
+  $color-white: #ffffff;
+  $color-navy-dark: #0a1628;
+  $color-purple-500: #604fed;
+
+  // Font families
+  $font-pretendard: 'Pretendard', sans-serif;
+  $font-roboto-condensed: 'Roboto Condensed', sans-serif;
+
+  // Font sizes (scaled)
+  $font-size-xs: 11px;   // 16 × 0.667
+  $font-size-sm: 13px;   // 20 × 0.667
+  $font-size-md: 16px;   // 24 × 0.667
+  $font-size-lg: 19px;   // 28 × 0.667
+
+  // Font weights
+  $font-weight-regular: 400;
+  $font-weight-bold: 700;
+
+  // Spacing (scaled)
+  $space-xs: 5px;
+  $space-sm: 11px;
+  $space-md: 16px;
+  $space-lg: 21px;
+
+  // ─── Semantic (용도별) ────────────────────────
+  // Text
+  $color-text-primary: $color-white;
+  $color-text-secondary: #dadce3;
+  $color-text-label: #003879;
+  $color-text-link: #419bd3;
+
+  // Background
+  $color-bg-primary: $color-navy-dark;
+  $color-bg-section: #00264a;
+  $color-bg-login: rgba(14, 35, 62, 0.8);
+
+  // Border
+  $color-border-primary: #203f6c;
+
+  // Breakpoint
+  $bp-desktop: 1024px;
+
+규칙:
+  - primitive: Figma에서 추출한 고유 값 (색상 hex, 폰트, 크기)
+  - semantic: primitive를 참조하여 용도별 이름 부여 ($color-text-primary: $color-white)
+  - 섹션 처리할 때마다 새 값 발견 시 적절한 카테고리에 추가
+  - 같은 값이 이미 있으면 기존 토큰 재사용 (중복 금지)
 
 BG 레이어 패턴 (트리에서 position:absolute + 이미지 fill):
   .{section}Bg   → position: absolute; inset: 0; z-index: 0;
