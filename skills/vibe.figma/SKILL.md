@@ -225,181 +225,58 @@ SCSS 파일 기본 내용 Write:
 
 ### 2-2. 섹션 루프
 
-**섹션별로 a→f 순서는 지키되, 섹션 간 병렬 처리 허용.**
+**섹션별로 a→d 순서는 지키되, 섹션 간 병렬 처리 허용.**
 **단, 첫 번째 섹션(Hero)은 단독 완료 후 나머지를 병렬로.**
 
-#### a. 노드 트리 + CSS 추출
+#### a. render 실행 (BLOCKING)
 
 ```
-Figma REST API로 노드 트리와 CSS 속성을 직접 추출한다.
-MCP 플러그인(get_design_context/get_metadata)은 사용하지 않는다.
+# [FIGMA_SCRIPT] = ~/.vibe/hooks/scripts/figma-extract.js
+node "[FIGMA_SCRIPT]" render {fileKey} {섹션.nodeId} --out=/tmp/{feature}-{section}/ --depth=10
 
-Bash:
-  # [FIGMA_SCRIPT] = ~/.vibe/hooks/scripts/figma-extract.js
-node "[FIGMA_SCRIPT]" tree {fileKey} {섹션.nodeId} --depth=10
+한 번 호출로 아래 파일이 생성됨:
+  /tmp/{feature}-{section}/
+  ├── {section}.html          ← HTML 구조 (class명 포함)
+  ├── {section}.scss          ← 전체 SCSS (모든 CSS 속성)
+  ├── {section}.json          ← 원본 트리 JSON
+  ├── {section}-screenshot.png ← 섹션 스크린샷 (시각 기준점)
+  └── images/
+      ├── {section}-bg-composite.png  ← 복합 BG 합성 이미지
+      ├── {section}-title.png         ← 이름 있는 이미지
+      └── ...
 
-반환 (JSON):
-  {
-    nodeId, name, type, size: {width, height},
-    css: { display, flexDirection, gap, fontSize, color, ... },
-    text: "텍스트 내용" (TEXT 노드),
-    imageRef: "abc123" (이미지 fill),
-    children: [...]
-  }
-
-CSS는 Figma 노드 속성에서 직접 추출 — Tailwind 역변환 불필요:
-  fills → background-color     effects → box-shadow, filter
-  strokes → border             style → font-family, font-size, color
-  layoutMode → display:flex     itemSpacing → gap
-  padding* → padding            cornerRadius → border-radius
-
-인스턴스 내부 자식도 depth로 전부 조회 가능 (MCP 한계 해결).
+이미지는 노드 name 기반 파일명 (해시 아님).
+복합 BG(3개+ 하위 레이어)는 자동으로 합성 스크린샷 생성.
+인스턴스 내부 자식도 depth로 전부 조회.
 ```
 
-#### b. 이미지 다운로드 (BLOCKING)
+#### b. 생성물 적용
 
 ```
-트리에서 imageRef가 있는 노드를 수집 → Figma API로 다운로드.
+render 출력물을 프로젝트에 적용:
 
-Bash:
-  node "[FIGMA_SCRIPT]" images {fileKey} {섹션.nodeId} --out=images/{feature}/ --depth=10
+1. 이미지 복사:
+   /tmp/{feature}-{section}/images/* → static/images/{feature}/
 
-검증: result.total = refs.size (누락 0)
-전부 완료해야 c 단계로 진행.
+2. SCSS 적용:
+   {section}.scss를 읽고 scaleFactor 적용하여 프로젝트 SCSS에 Write:
+     styles/{feature}/layout/_{section}.scss ← position, display, flex, width, height
+     styles/{feature}/components/_{section}.scss ← font, color, border, shadow
+     styles/{feature}/_tokens.scss ← 새 값 추가 (primitive/semantic, vibe.figma.convert 참조)
+   index.scss에 새 섹션 @import 추가.
+
+3. template 업데이트:
+   {section}.html을 읽고 Phase 1 컴포넌트에 반영:
+     - HTML 구조를 프로젝트 스택으로 변환 (class 유지)
+     - 이미지 경로를 static/images/{feature}/ 로 교체
+     - Phase 1 기능 요소(v-for, @click, v-if, $emit) 재배치
+     - script(JSDoc, 인터페이스, 핸들러) 보존
+
+4. 스크린샷 참조:
+   {section}-screenshot.png과 비교하면서 작업
 ```
 
-#### c. 클래스 매핑 테이블 생성
-
-```
-SCSS 작성 전에 반드시 매핑 테이블을 먼저 출력한다.
-이 테이블 없이 SCSS를 작성하지 않는다.
-
-1. Phase 1 컴포넌트의 클래스 목록을 Read로 수집
-2. 트리의 name + css 속성을 분석
-3. 매핑 테이블 출력:
-
-  ┌─────────────────────┬──────────────────┬────────────────────────────────────┐
-  │ Phase 1 클래스       │ 트리 노드 name   │ 추출된 CSS 값                      │
-  ├─────────────────────┼──────────────────┼────────────────────────────────────┤
-  │ .kidSection         │ KID (root)       │ flex, column, gap:32px, pad:48px   │
-  │ .kidBg              │ BG               │ absolute, 720x800                  │
-  │ .kidLoginBtn        │ Btn_Login        │ flex, border, shadow, 640x148      │
-  │ .kidLoginBtnText    │ (TEXT 노드)       │ fontSize:36px, color:#fff, w:700   │
-  │ .kidDivider         │ Divider          │ 640x1                              │
-  │ .kidSteamLink       │ steam_account    │ fontSize:24px, w:600               │
-  │ .kidSteamNote       │ (하위 TEXT)       │ fontSize:20px, color:#dadce3       │
-  └─────────────────────┴──────────────────┴────────────────────────────────────┘
-
-매핑 기준:
-  name 일치 → 직접 매핑
-  name 없음 → 트리 위치/text 내용으로 판단
-  Phase 1에 없는 요소 → 클래스 신규 추가 (template에도 반영)
-  트리에 없는 클래스 → 스타일 없이 유지
-```
-
-#### d. SCSS 작성
-
-```
-매핑 테이블의 각 행에 대해, 트리의 css 속성을 SCSS로 작성.
-CSS 값은 트리에서 이미 추출되어 있으므로 변환 불필요 — 그대로 사용.
-
-scaleFactor 적용:
-  px 값 → × scaleFactor (font-size, padding, margin, gap, width, height, border-radius)
-  적용 안 함 → color, opacity, font-weight, z-index, line-height(단위 없음), % 값
-
-출력 파일:
-  styles/{feature}/layout/_{section}.scss
-    → position, display, flex, width, height, padding, overflow, z-index, background-image
-  styles/{feature}/components/_{section}.scss
-    → font-size, font-weight, color, line-height, letter-spacing, text-align,
-      border, border-radius, box-shadow, opacity
-  styles/{feature}/_tokens.scss
-    → primitive/semantic 구조로 토큰 관리 (아래 참조)
-
-_tokens.scss 구조 (primitive/semantic 분리):
-  // ─── Primitive (Figma 원시 값) ────────────────
-  // Colors
-  $color-white: #ffffff;
-  $color-navy-dark: #0a1628;
-  $color-purple-500: #604fed;
-
-  // Font families
-  $font-pretendard: 'Pretendard', sans-serif;
-  $font-roboto-condensed: 'Roboto Condensed', sans-serif;
-
-  // Font sizes (scaled)
-  $font-size-xs: 11px;   // 16 × 0.667
-  $font-size-sm: 13px;   // 20 × 0.667
-  $font-size-md: 16px;   // 24 × 0.667
-  $font-size-lg: 19px;   // 28 × 0.667
-
-  // Font weights
-  $font-weight-regular: 400;
-  $font-weight-bold: 700;
-
-  // Spacing (scaled)
-  $space-xs: 5px;
-  $space-sm: 11px;
-  $space-md: 16px;
-  $space-lg: 21px;
-
-  // ─── Semantic (용도별) ────────────────────────
-  // Text
-  $color-text-primary: $color-white;
-  $color-text-secondary: #dadce3;
-  $color-text-label: #003879;
-  $color-text-link: #419bd3;
-
-  // Background
-  $color-bg-primary: $color-navy-dark;
-  $color-bg-section: #00264a;
-  $color-bg-login: rgba(14, 35, 62, 0.8);
-
-  // Border
-  $color-border-primary: #203f6c;
-
-  // Breakpoint
-  $bp-desktop: 1024px;
-
-규칙:
-  - primitive: Figma에서 추출한 고유 값 (색상 hex, 폰트, 크기)
-  - semantic: primitive를 참조하여 용도별 이름 부여 ($color-text-primary: $color-white)
-  - 섹션 처리할 때마다 새 값 발견 시 적절한 카테고리에 추가
-  - 같은 값이 이미 있으면 기존 토큰 재사용 (중복 금지)
-
-BG 레이어 패턴 (트리에서 position:absolute + 이미지 fill):
-  .{section}Bg   → position: absolute; inset: 0; z-index: 0;
-  .{section}Content → position: relative; z-index: 1;
-
-index.scss에 새 섹션 @import 추가.
-```
-
-#### e. template 업데이트
-
-```
-Phase 1 컴포넌트의 template을 트리 구조 기반으로 리팩토링.
-script(JSDoc, 인터페이스, 목 데이터, 핸들러)는 보존.
-
-1. 트리의 HTML 구조를 프로젝트 스택으로 변환:
-   FRAME → <div>, TEXT → <p>/<span>, VECTOR/RECTANGLE with imageRef → <img>
-
-2. 이미지 경로를 imageMap으로 교체:
-   imageRef "abc123" → src="/images/{feature}/abc123.png"
-
-3. BG 레이어 구조 적용:
-   .{section}Bg div (배경) + .{section}Content div (콘텐츠)
-
-4. Phase 1 기능 요소 재배치:
-   v-for, @click, v-if, $emit 등을 새 구조의 적절한 위치에 배치
-
-5. 접근성:
-   장식 이미지 (BG 내) → alt="" aria-hidden="true"
-   콘텐츠 이미지 → alt="설명적 텍스트"
-
-컴포넌트에 <style> 블록 없음. 스타일은 전부 외부 SCSS.
-```
-
-#### f. 섹션 검증
+#### c. 섹션 검증
 
 ```
 Grep 체크:
@@ -407,8 +284,11 @@ Grep 체크:
   □ "<style" in 컴포넌트 파일 → 0건
 
 Read 체크:
-  □ 외부 SCSS 파일에 font-size, color 존재 (브라우저 기본 스타일 방지)
-  □ 이미지 파일 수 = imageRef 수 (누락 0)
+  □ 외부 SCSS 파일에 font-size, color 존재
+  □ 이미지 파일 존재 + 0byte 없음
+
+스크린샷 비교:
+  □ {section}-screenshot.png vs dev 서버 → 주요 차이 없음
 
 실패 → 수정 → 재검증
 ```
