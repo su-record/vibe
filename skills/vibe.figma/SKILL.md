@@ -35,9 +35,9 @@ tier: standard
 ```
 /vibe.figma
   → Phase 0: Setup (스택 감지, 디렉토리 생성)
-  → Phase 1: 재료 확보 (Figma API → 스크린샷 + 이미지 + CSS + 트리 + 텍스트)
-  → Phase 2: 시각 분석 (스크린샷 보고 섹션 분할 + 컴포넌트 설계)
-  → Phase 3: 퍼즐 조립 (스크린샷 = 정답, 재료 = 조각 → 코드 생성)
+  → Phase 1: Storyboard (스토리보드 → 레이아웃 + 컴포넌트 + 기능 정의)
+  → Phase 2: 재료 확보 (디자인 URL → 스크린샷 + 이미지 + CSS + 텍스트)
+  → Phase 3: 퍼즐 조립 (스크린샷 보면서 Phase 1 컴포넌트에 디자인 입히기)
   → Phase 4: 검증 루프 (빌드 → 스크린샷 → 비교 → 수정 → 반복)
 ```
 
@@ -71,11 +71,129 @@ tier: standard
 
 ---
 
-## Phase 1: 재료 확보
+## Phase 1: Storyboard
 
-입력: 디자인 URL + 스토리보드 URL (선택)
+사용자에게 질문한다:
+- question: "스토리보드 Figma URL을 입력해주세요. (없으면 '없음')"
+- options 제공 금지 — 자유 텍스트 입력만 허용
 
-### 1-1. 디자인 재료 추출
+"없음" 응답 시 → Phase 2로 건너뜀
+
+### 1-1. 스토리보드 분석
+
+```
+URL에서 fileKey, nodeId 추출
+
+1단계 (BLOCKING): 루트 depth=2로 전체 프레임 + nodeId 수집
+  # [FIGMA_SCRIPT] = ~/.vibe/hooks/scripts/figma-extract.js
+  node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId} --depth=2
+
+  → 모든 자식 프레임의 name + nodeId + size 를 테이블로 출력
+  → nodeId가 빠진 프레임이 있으면 안 됨
+
+2단계: name 패턴으로 프레임 분류
+  SPEC   — "기능 정의서", "정책" → depth 높여서 텍스트 추출
+  CONFIG — "해상도", "브라우저" → 스케일 팩터 계산
+  SHARED — "공통", "GNB", "Footer", "Popup" → 공통 컴포넌트 파악
+  PAGE   — "화면설계", "메인 -" → 섹션 목록 + 인터랙션 스펙
+
+핵심 프레임 선별 (전부 읽지 않음):
+  1순위: SPEC (기능 정의서) — 1개
+  2순위: CONFIG (해상도) — 1개
+  3순위: PAGE 중 메인 섹션만 (3.1, 3.2, 3.3, 3.4, 3.5, 3.6)
+         하위 케이스(3.1.1, 3.2.1 등)는 건너뜀
+  4순위: SHARED (공통 요소, Popup) — 필요 시
+
+높이 1500px 이상 프레임:
+  → node "[FIGMA_SCRIPT]" screenshot으로 시각 파악
+  → 또는 depth 높여서 하위 분할 조회
+```
+
+### 1-2. 레이아웃 + 컴포넌트 구성 (코드 생성)
+
+```
+스토리보드에서 파악한 섹션 구조로 실제 파일을 생성한다.
+
+1. 루트 페이지 파일 생성 (Write):
+   pages/{feature}.vue (또는 app/{feature}/page.tsx)
+   → 모든 섹션 컴포넌트 import + 순서대로 배치
+   → 팝업/모달 조건부 렌더링
+
+2. 섹션 컴포넌트 파일 생성 (Write):
+   components/{feature}/HeroSection.vue
+   components/{feature}/DailyCheckInSection.vue
+   components/{feature}/PlayTimeMissionSection.vue
+   ...PAGE 프레임 수만큼
+
+   각 컴포넌트에 반드시 포함:
+
+   <template>:
+     - 섹션 제목 <h2> (스토리보드에서 추출한 실제 텍스트)
+     - 설명 텍스트 <p>
+     - 리스트 렌더링 (v-for + 목 데이터)
+     - 버튼/CTA (실제 라벨 + @click 핸들러)
+     - 조건부 렌더링 (상태에 따른 v-if)
+     → 빈 template 금지. 브라우저에서 텍스트가 보여야 함.
+
+   <script setup>:
+     - JSDoc 주석으로 기능 요구사항 작성:
+       /**
+        * 일일 출석 미션 섹션
+        *
+        * [기능 정의]
+        * - 매일 출석 시 스노우 토큰 즉시 지급
+        * - 누적 3/5/7일 달성 시 추가 보상
+        *
+        * [인터랙션]
+        * ① 출석하기 클릭 → API호출 → 토큰지급 표시
+        * ② 누적 보상 클릭 → 보상 수령
+        *
+        * [상태] default, checked, reward-claimed
+        */
+     - TypeScript 인터페이스
+     - 목 데이터 (빈 배열 금지, 3~7개 아이템)
+     - 이벤트 핸들러 stub (body는 // TODO:)
+
+   <style> 블록 없음 — 스타일은 Phase 3에서 외부 파일로.
+
+3. 공통 컴포넌트 (SHARED에서 파악):
+   → 프로젝트에 이미 있으면 import 재사용
+   → 없으면 새로 생성 (GNB, Footer, Popup)
+
+4. 스타일 디렉토리 구조 생성 (빈 파일):
+   styles/{feature}/index.scss
+   styles/{feature}/_tokens.scss
+   styles/{feature}/_mixins.scss
+   styles/{feature}/_base.scss
+   styles/{feature}/layout/
+   styles/{feature}/components/
+```
+
+### 1-3. 검증
+
+```
+Phase 1 완료 조건:
+  □ 브라우저에서 열면 각 섹션의 텍스트/리스트/버튼이 보인다
+  □ 클릭하면 핸들러가 실행된다
+  □ 모든 컴포넌트에 [기능 정의] + [인터랙션] + [상태] JSDoc
+  □ 빈 배열 0개, 빈 template 0개, <style> 블록 0개
+  □ 빌드 성공
+
+빈 화면 = Phase 1 미완성. Phase 2로 넘어가지 않는다.
+스타일/이미지는 없어도 됨 — Phase 3에서 채움.
+```
+
+---
+
+## Phase 2: 재료 확보
+
+Phase 1 컴포넌트가 준비된 상태에서, 디자인 URL로 시각 재료를 수집한다.
+
+사용자에게 질문한다:
+- question: "베이스 디자인(모바일) Figma URL을 입력해주세요."
+- options 제공 금지 — 자유 텍스트 입력만 허용
+
+### 2-1. 디자인 재료 추출
 
 ```
 URL에서 fileKey, nodeId 추출
@@ -83,39 +201,23 @@ URL에서 fileKey, nodeId 추출
 1단계 — 전체 스크린샷 (정답 사진):
   node "[FIGMA_SCRIPT]" screenshot {fileKey} {nodeId} --out=/tmp/{feature}/full-screenshot.png
 
-2단계 — 전체 트리 + CSS (재료 데이터):
+2단계 — 전체 트리 + CSS (수치 재료):
   node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId} --depth=10
   → /tmp/{feature}/tree.json 에 저장
 
-3단계 — 전체 이미지 다운로드 (재료 에셋):
+3단계 — 전체 이미지 다운로드 (시각 재료):
   node "[FIGMA_SCRIPT]" images {fileKey} {nodeId} --out=/tmp/{feature}/images/ --depth=10
   → 모든 이미지 에셋 확보. 누락 0건, 0byte 0건.
 
 4단계 — 섹션별 스크린샷 (부분 정답):
   트리의 1depth 자식 프레임 각각:
-    node "[FIGMA_SCRIPT]" screenshot {fileKey} {child.nodeId} --out=/tmp/{feature}/{child.name}.png
+    node "[FIGMA_SCRIPT]" screenshot {fileKey} {child.nodeId} --out=/tmp/{feature}/sections/{child.name}.png
 ```
 
-### 1-2. 스토리보드 재료 추출 (선택)
+### 2-2. 재료함 정리
 
 ```
-사용자에게 질문: "스토리보드 URL이 있으면 입력해주세요. (없으면 '없음')"
-
-"없음" → 건너뜀
-
-URL 있으면:
-  node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId} --depth=2
-  → 프레임 분류:
-    SPEC   — "기능 정의서", "정책" → 기능 요구사항 텍스트 추출
-    CONFIG — "해상도", "브라우저" → 스케일 팩터 계산
-    SHARED — "공통", "GNB", "Footer", "Popup" → 공통 컴포넌트 목록
-    PAGE   — "화면설계", "메인 -" → 섹션별 인터랙션 스펙
-```
-
-### 1-3. 재료함 정리
-
-```
-Phase 1 완료 시 /tmp/{feature}/ 에 다음이 준비되어야 함:
+Phase 2 완료 시 /tmp/{feature}/ 에 다음이 준비되어야 함:
 
 /tmp/{feature}/
 ├── full-screenshot.png          ← 전체 정답 사진
@@ -125,12 +227,11 @@ Phase 1 완료 시 /tmp/{feature}/ 에 다음이 준비되어야 함:
 │   ├── hero-title.png
 │   ├── card-item-1.png
 │   └── ...
-├── sections/                    ← 섹션별 정답 사진
-│   ├── hero.png
-│   ├── daily-checkin.png
-│   ├── playtime-mission.png
-│   └── ...
-└── spec.md (선택)               ← 스토리보드에서 추출한 기능 정의
+└── sections/                    ← 섹션별 정답 사진
+    ├── hero.png
+    ├── daily-checkin.png
+    ├── playtime-mission.png
+    └── ...
 
 재료 목록 (material-inventory):
   - 이미지: 파일명 + 크기 + 용도 추정 (BG/icon/title/decoration)
@@ -153,65 +254,20 @@ Phase 1 완료 시 /tmp/{feature}/ 에 다음이 준비되어야 함:
 
 ---
 
-## Phase 2: 시각 분석
+## Phase 3: 퍼즐 조립
 
-**스크린샷을 보고** 무엇을 만들어야 하는지 파악한다.
-Figma 트리는 참고만 한다 — HTML 구조를 결정하는 건 시각 분석이다.
+**Phase 1에서 만든 컴포넌트에 Phase 2의 재료로 디자인을 입힌다.**
+**스크린샷을 보면서 퍼즐을 맞추듯 조립한다.**
+**첫 섹션(Hero) 단독 완료 후 나머지 섹션 병렬 진행.**
 
-### 2-1. 전체 스크린샷 → 섹션 분할
-
-```
-full-screenshot.png를 Read로 확인한다.
-
-시각적으로 구분되는 영역을 파악:
-  "히어로 배경 + 타이틀 + CTA"
-  "일일 출석 카드 그리드"
-  "플레이타임 미션 리스트"
-  "보상 교환소"
-  "푸터"
-
-각 영역 = 1 섹션 = 1 컴포넌트.
-섹션별 screenshot(/tmp/{feature}/sections/*.png)과 대조하여 확인.
-
-tree.json에서 해당 영역의 텍스트·이미지 목록을 매핑:
-  섹션 "히어로" → images: [hero-bg.png, hero-title.png], texts: ["겨울 이벤트", "12.1~12.31"]
-```
-
-### 2-2. 컴포넌트 설계
+### 3-0. SCSS Setup + 등록 (첫 섹션 전)
 
 ```
-각 섹션에 대해:
-
-1. 시각적 역할 판단 (스크린샷 기반):
-   - "전면 배경 위에 텍스트" → 히어로 패턴
-   - "카드 N개 반복" → 그리드/리스트 패턴
-   - "탭 + 콘텐츠" → 탭 패턴
-   - "버튼 + 상태 변화" → 인터랙티브 패턴
-
-2. HTML 구조 결정 (시각 기반, 트리 구조 아님):
-   - 스크린샷에서 보이는 대로 시맨틱 HTML 설계
-   - <section>, <h2>, <ul>, <button> 등 의미에 맞게
-   - Figma 레이어 그룹핑은 무시
-
-3. 필요한 재료 매핑:
-   - 이 섹션에 쓸 이미지 목록
-   - 이 섹션의 색상·폰트·간격 (tree.json에서)
-   - 이 섹션의 텍스트 콘텐츠
-
-4. 스토리보드 기능 매핑 (있으면):
-   - 인터랙션 스펙, 상태 정의, API 연동 포인트
-```
-
-### 2-3. SCSS 구조 설계
-
-```
-SCSS 파일 생성:
+Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
   styles/{feature}/index.scss      ← @import 진입점
   styles/{feature}/_tokens.scss    ← 재료함에서 추출한 디자인 토큰
   styles/{feature}/_mixins.scss    ← breakpoint mixin
   styles/{feature}/_base.scss      ← 루트 클래스
-  styles/{feature}/layout/         ← 섹션별 레이아웃
-  styles/{feature}/components/     ← 섹션별 스타일
 
 토큰 추출 (tree.json의 CSS 수치에서):
   - 색상 → primitive ($color-navy: #0a1628) + semantic ($color-bg-primary)
@@ -223,59 +279,57 @@ SCSS 파일 생성:
   없으면 프로젝트 방식에 맞게 등록.
 ```
 
----
-
-## Phase 3: 퍼즐 조립
-
-**섹션별로 스크린샷을 보면서 코드를 작성한다.**
-**첫 섹션(Hero) 단독 완료 후 나머지 섹션 병렬 진행.**
-
-### 섹션 조립 프로세스
+### 3-1. 섹션 조립 프로세스
 
 ```
 각 섹션에 대해:
 
 1. 정답 확인 — 섹션 스크린샷을 Read로 본다
-   → "이 화면을 만들어야 한다"
+   /tmp/{feature}/sections/{section}.png
+   → "이 화면처럼 만들어야 한다"
 
-2. 재료 확인 — 이 섹션에 매핑된 재료 목록 확인
+2. 재료 확인 — 이 섹션에 필요한 재료 목록 확인
    - 이미지: /tmp/{feature}/images/ 에서 해당 파일들
    - CSS 수치: tree.json에서 해당 노드의 정확한 값
    - 텍스트: TEXT 노드의 characters
 
-3. 코드 작성 — 스크린샷처럼 보이도록 코드 생성
+3. Phase 1 컴포넌트에 디자인 입히기
    a. 이미지 복사: images/ → static/images/{feature}/
-   b. 컴포넌트 작성: 스크린샷의 시각 구조대로 HTML 생성
-      - Figma 트리를 HTML로 변환하지 않음
-      - 스크린샷에서 보이는 레이아웃을 직접 구현
+   b. template 업데이트:
+      - Phase 1의 기능 요소(v-for, @click, v-if, $emit) 보존
+      - 스크린샷을 보고 시각 구조에 맞게 HTML 재구성
+      - Figma 레이어 구조를 HTML로 변환하지 않음 (시각 기반)
       - 재료함의 정확한 이미지 경로 사용
       - 재료함의 정확한 텍스트 사용
-   c. SCSS 작성: 재료함의 정확한 CSS 수치 사용 (scaleFactor 적용)
+   c. script 보존:
+      - Phase 1의 JSDoc, 인터페이스, 핸들러 유지
+   d. SCSS 작성: 재료함의 정확한 CSS 수치 사용 (scaleFactor 적용)
       - layout/_{section}.scss ← 포지션, 사이즈, 플렉스
       - components/_{section}.scss ← 폰트, 색상, 보더
       - _tokens.scss에 새 토큰 추가
 
-4. 즉시 검증 — 작성한 코드를 다시 스크린샷과 비교
+4. 즉시 검증 — 스크린샷과 비교
    - 이미지 빠진 거 없나?
    - 텍스트 빠진 거 없나?
    - 레이아웃 구조가 스크린샷과 맞나?
+   - Phase 1의 기능 요소가 보존되었나?
 ```
 
-### 코드 작성 규칙
+### 3-2. 코드 작성 규칙
 
 ```
 컴포넌트 (Vue 예시):
   <template>
     스크린샷에서 보이는 시각 구조대로 작성.
     Figma 레이어 구조 무시.
+    Phase 1의 기능 요소(v-for, @click, v-if) 보존.
     시맨틱 HTML 사용 (<section>, <h2>, <ul>, <button>).
     이미지 경로: /images/{feature}/파일명.png
     텍스트: tree.json의 TEXT 노드 characters 값 그대로.
 
   <script setup>
-    스토리보드 기능 정의가 있으면 JSDoc으로 포함.
-    TypeScript 인터페이스.
-    목 데이터 + 이벤트 핸들러 stub.
+    Phase 1의 JSDoc + 인터페이스 + 핸들러 보존.
+    새로운 데이터/상태 추가 시 기존과 병합.
 
   <style> 블록 없음 — 외부 SCSS만.
 
