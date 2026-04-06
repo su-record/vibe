@@ -93,7 +93,6 @@
     "skills/",
     "hooks/",
     ".env.example",
-    ".env",
     "CLAUDE.md",
     "README.md",
     "LICENSE"

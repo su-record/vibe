@@ -9,6 +9,11 @@ import { log } from '../utils.js';
 import { resolveExternalSkills } from '../postinstall/constants.js';
 import { VibeConfig } from '../types.js';
 
+/** skills.sh 패키지 이름 검증 (owner/repo 형식만 허용) */
+function isValidSkillTarget(target: string): boolean {
+  return /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(target);
+}
+
 /**
  * skills.sh 에코시스템에서 스킬 설치
  */
@@ -21,6 +26,11 @@ Install skills from skills.sh ecosystem.
 Example: vibe skills add vercel-labs/skills
     `);
     return;
+  }
+
+  if (!isValidSkillTarget(target)) {
+    console.error(`❌ Invalid skill target: "${target}" (expected: owner/repo)`);
+    process.exit(1);
   }
 
   console.log(`\nInstalling skill: ${target}...\n`);
@@ -64,6 +74,7 @@ export function installExternalSkills(
   const newlyInstalled: string[] = [];
 
   for (const pkg of toInstall) {
+    if (!isValidSkillTarget(pkg)) continue;
     try {
       log(`   📦 Installing external skill: ${pkg}...\n`);
       execSync(`npx skills add ${pkg} --agent claude-code`, {

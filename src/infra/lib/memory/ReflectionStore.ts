@@ -121,13 +121,9 @@ export class ReflectionStore {
     } catch (error) {
       const sqliteError = error as { code?: string };
       if (sqliteError.code === 'SQLITE_BUSY') {
-        // Retry once after 100ms
-        try {
-          const { execSync } = require('child_process');
-          execSync('sleep 0.1 2>nul || timeout /t 0 >nul 2>&1', { timeout: 200 });
-        } catch {
-          // sleep not available, just continue
-        }
+        // Retry once after 100ms (synchronous busy-wait for better-sqlite3 sync API)
+        const end = Date.now() + 100;
+        while (Date.now() < end) { /* busy wait */ }
         try {
           this.db.prepare(`
             INSERT INTO reflections (id, sessionId, type, trigger, insights, decisions, patterns, filesContext, score, createdAt)

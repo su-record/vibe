@@ -19,6 +19,7 @@ let cached: LlmAvailability | null = null;
 
 function checkCliInstalled(binName: string, configDir: string): boolean {
   const hasDir = fs.existsSync(configDir);
+  if (!/^[a-z]+$/.test(binName)) return hasDir;
   let hasBin = false;
   try {
     execSync(`which ${binName}`, { stdio: 'ignore' });
