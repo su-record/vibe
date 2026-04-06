@@ -68,14 +68,18 @@ tier: standard
 
 ```
 URL에서 fileKey, nodeId 추출
-get_metadata(fileKey, nodeId) → 프레임 목록
+getTree(fileKey, nodeId, depth=2) → 프레임 목록
 
-⚠️ 메타데이터가 클 수 있음 (실전: 291K chars → 파일 저장됨)
-  → 파일 저장 시 Python/Bash로 파싱하여 프레임 목록 추출
+Bash:
+  node -e "
+    import { getTree } from './dist/infra/lib/figma/index.js';
+    const tree = await getTree({ fileKey: '{fileKey}', nodeId: '{nodeId}', depth: 2 });
+    console.log(JSON.stringify(tree));
+  "
 
-프레임 분류 (이름 패턴 기반, get_design_context 호출 전에 분류):
-  SPEC   — "기능 정의서", "정책" → get_design_context로 텍스트 추출
-  CONFIG — "해상도", "브라우저" → get_design_context로 스케일 팩터 계산
+프레임 분류 (name 패턴 기반):
+  SPEC   — "기능 정의서", "정책" → depth 높여서 텍스트 추출
+  CONFIG — "해상도", "브라우저" → 스케일 팩터 계산
   SHARED — "공통", "GNB", "Footer", "Popup" → 공통 컴포넌트 파악
   PAGE   — "화면설계", "메인 -" → 섹션 목록 + 인터랙션 스펙
 
@@ -87,8 +91,8 @@ get_metadata(fileKey, nodeId) → 프레임 목록
   4순위: SHARED (공통 요소, Popup) — 필요 시
 
 높이 1500px 이상 프레임:
-  → get_design_context 대신 get_screenshot으로 시각 파악
-  → 또는 get_metadata로 하위 분할 후 호출
+  → getScreenshot으로 시각 파악
+  → 또는 depth 높여서 하위 분할 조회
 ```
 
 ### 1-2. 레이아웃 + 컴포넌트 구성 (코드 생성)

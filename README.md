@@ -283,7 +283,7 @@ Additional: `llm-orchestrate.js`, `codex-review-gate.js`, `codex-detect.js`, `se
 Design-to-code with responsive support and design skill integration.
 
 ```bash
-# Single design (MCP plugin handles auth — no token setup needed)
+# Setup: vibe figma setup <token>
 /vibe.figma "https://figma.com/design/ABC/Project?node-id=1-2"
 
 # Responsive (mobile + desktop)
@@ -294,7 +294,7 @@ Design-to-code with responsive support and design skill integration.
 
 | Phase | Description |
 |-------|-------------|
-| **Extract** | MCP plugin → design context + screenshot + metadata (no token needed) |
+| **Extract** | Figma REST API → node tree + CSS + images (token required) |
 | **Analyze** | Image-first analysis → viewport diff table (responsive mode) |
 | **Generate** | Stack-aware code (React/Vue/Svelte/SCSS/Tailwind) + design tokens |
 | **Integrate** | Maps to project's existing design system (MASTER.md, design-context.json) |
@@ -391,7 +391,7 @@ vibe skills add <owner/repo>   # Install skills from skills.sh
 
 # Figma
 vibe figma breakpoints                # Show/set responsive breakpoints
-vibe figma status|logout              # Token management (MCP fallback only)
+vibe figma status|logout              # Token management
 
 # Channels
 vibe telegram setup|chat|status
