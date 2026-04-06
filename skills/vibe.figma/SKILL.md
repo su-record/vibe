@@ -235,11 +235,8 @@ Figma REST API로 노드 트리와 CSS 속성을 직접 추출한다.
 MCP 플러그인(get_design_context/get_metadata)은 사용하지 않는다.
 
 Bash:
-  node -e "
-    import { getTree } from './dist/infra/lib/figma/index.js';
-    const tree = await getTree({ fileKey: '{fileKey}', nodeId: '{섹션.nodeId}', depth: 10 });
-    console.log(JSON.stringify(tree));
-  "
+  # [FIGMA_SCRIPT] = ~/.vibe/hooks/scripts/figma-extract.js
+node "[FIGMA_SCRIPT]" tree {fileKey} {섹션.nodeId} --depth=10
 
 반환 (JSON):
   {
@@ -265,15 +262,7 @@ CSS는 Figma 노드 속성에서 직접 추출 — Tailwind 역변환 불필요:
 트리에서 imageRef가 있는 노드를 수집 → Figma API로 다운로드.
 
 Bash:
-  node -e "
-    import { getTree, getImages, collectImageRefs } from './dist/infra/lib/figma/index.js';
-    const tree = await getTree({ fileKey: '{fileKey}', nodeId: '{섹션.nodeId}', depth: 10 });
-    const refs = collectImageRefs(tree);
-    const result = await getImages({
-      fileKey: '{fileKey}', imageRefs: refs, outDir: 'images/{feature}/'
-    });
-    console.log(JSON.stringify(result));
-  "
+  node "[FIGMA_SCRIPT]" images {fileKey} {섹션.nodeId} --out=images/{feature}/ --depth=10
 
 검증: result.total = refs.size (누락 0)
 전부 완료해야 c 단계로 진행.
@@ -397,8 +386,7 @@ Grep 체크:
 
 시각 검증:
   각 섹션 스크린샷:
-    node -e "import { getScreenshot } from './dist/infra/lib/figma/index.js';
-      await getScreenshot({ fileKey: '{fileKey}', nodeId: '{nodeId}', outPath: '/tmp/{section}.png' });"
+    node "[FIGMA_SCRIPT]" screenshot {fileKey} {nodeId} --out=/tmp/{section}.png
   → dev 서버/preview와 비교
   P1 (필수): 이미지 누락, 레이아웃 구조 다름, 텍스트 스타일 미적용
   P2 (권장): 미세 간격, 미세 색상 차이
