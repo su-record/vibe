@@ -210,6 +210,208 @@ async function cmdScreenshot(token, fk, nid, outPath) {
   fail('Screenshot failed at all scales');
 }
 
+// ─── Render: HTML + SCSS + Images + Screenshot ─────────────────────
+
+function kebab(str) {
+  return str
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/[\s_/\\:]+/g, '-')
+    .replace(/[^a-zA-Z0-9-]/g, '')  // 한글 제거 — 클래스명은 영문만
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase()
+    .slice(0, 30);  // 최대 30자
+}
+
+function nodeName(node, parentPrefix) {
+  let raw = node.name || '';
+  // TEXT 노드: 텍스트 대신 부모 컨텍스트 + 'text' 사용
+  if (node.type === 'TEXT') raw = raw.slice(0, 20) || 'text';
+  // 의미 없는 이름 정리
+  raw = raw.replace(/^(Frame|Group|Rectangle|Vector|Ellipse)\s*/i, '');
+  if (!raw || /^\d+$/.test(raw)) raw = node.type?.toLowerCase() || 'node';
+  const k = kebab(raw);
+  return parentPrefix ? `${parentPrefix}-${k}` : k;
+}
+
+/** 노드 트리 → HTML 문자열 생성 */
+function toHTML(node, prefix, imgMap, indent = 0) {
+  const pad = '  '.repeat(indent);
+  const cls = nodeName(node, prefix);
+  const lines = [];
+
+  // 이미지 노드
+  if (node.imageRef && imgMap[node.imageRef]) {
+    const isDecorative = node.name?.match(/^(BG|bg|배경|Shadow|Glow|Light|snow|눈|얼음|빙판|트리|Particle)/i);
+    const alt = isDecorative ? '' : (node.name || '');
+    const ariaHidden = isDecorative ? ' aria-hidden="true"' : '';
+    lines.push(`${pad}<img class="${cls}" src="${imgMap[node.imageRef]}" alt="${alt}"${ariaHidden} />`);
+    return lines.join('\n');
+  }
+
+  // 텍스트 노드
+  if (node.type === 'TEXT' && node.text) {
+    const tag = node.text.length > 100 ? 'p' : 'span';
+    lines.push(`${pad}<${tag} class="${cls}">${node.text}</${tag}>`);
+    return lines.join('\n');
+  }
+
+  // 컨테이너 노드
+  const tag = node.type === 'TEXT' ? 'p' : 'div';
+  if (!node.children?.length) {
+    lines.push(`${pad}<${tag} class="${cls}" />`);
+    return lines.join('\n');
+  }
+
+  lines.push(`${pad}<${tag} class="${cls}">`);
+  for (const child of node.children) {
+    lines.push(toHTML(child, cls, imgMap, indent + 1));
+  }
+  lines.push(`${pad}</${tag}>`);
+  return lines.join('\n');
+}
+
+/** 노드 트리 → SCSS 문자열 생성 */
+function toSCSS(node, prefix, indent = 0) {
+  const cls = nodeName(node, prefix);
+  const lines = [];
+  const css = node.css || {};
+  const props = Object.entries(css);
+
+  if (props.length) {
+    lines.push(`.${cls} {`);
+    for (const [k, v] of props) {
+      // camelCase → kebab-case
+      const prop = k.replace(/([A-Z])/g, '-$1').toLowerCase();
+      lines.push(`  ${prop}: ${v};`);
+    }
+    lines.push('}');
+    lines.push('');
+  }
+
+  if (node.children?.length) {
+    for (const child of node.children) {
+      lines.push(toSCSS(child, cls));
+    }
+  }
+  return lines.join('\n');
+}
+
+/** imageRef → 이름 기반 매핑 (해시 아닌 노드 name 사용) */
+function buildImageNames(node, prefix, result = {}) {
+  if (node.imageRef) {
+    const name = nodeName(node, prefix);
+    result[node.imageRef] = name + '.png';
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      buildImageNames(child, nodeName(node, prefix) || prefix, result);
+    }
+  }
+  return result;
+}
+
+async function cmdRender(token, fk, nid, outDir, depth, scale) {
+  if (!outDir) fail('--out=<dir> required');
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+  const imgDir = path.join(outDir, 'images');
+  if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+
+  // 1. 트리 가져오기
+  const dp = depth ? `&depth=${depth}` : '';
+  const treeData = await apiFetch(`/files/${fk}/nodes?ids=${nid}${dp}`, token);
+  const nd = treeData.nodes?.[nid];
+  if (!nd?.document) fail(`Node ${nid} not found`);
+  const tree = walk(nd.document);
+
+  // 2. 이미지 이름 매핑 (노드 name 기반)
+  const sectionPrefix = kebab(tree.name);
+  const imageNames = buildImageNames(tree, sectionPrefix);
+  const refs = collectRefs(tree);
+
+  // 3. fill 이미지 다운로드 (이름 기반)
+  let imageMap = {};
+  if (refs.size) {
+    const allImg = await apiFetch(`/files/${fk}/images`, token);
+    const urls = allImg.meta?.images || {};
+    const dl = [];
+    for (const ref of refs) {
+      const url = urls[ref];
+      if (!url) continue;
+      const fileName = imageNames[ref] || ref.slice(0, 16) + '.png';
+      const filePath = path.join(imgDir, fileName);
+      const publicPath = `images/${fileName}`;
+      dl.push(fetch(url).then(r => r.arrayBuffer()).then(b => {
+        fs.writeFileSync(filePath, Buffer.from(b));
+        if (fs.statSync(filePath).size > 0) imageMap[ref] = publicPath;
+      }).catch(() => {}));
+    }
+    await Promise.all(dl);
+  }
+
+  // 4. 복합 BG 노드 → 스크린샷으로 렌더링
+  for (const child of tree.children || []) {
+    if (/^(BG|bg|배경)$/i.test(child.name) && child.children?.length > 3) {
+      const bgName = `${sectionPrefix}-bg-composite.png`;
+      const bgPath = path.join(imgDir, bgName);
+      try {
+        for (const s of [2, 1]) {
+          const sData = await apiFetch(`/images/${fk}?ids=${child.nodeId}&format=png&scale=${s}`, token);
+          const sUrl = sData.images?.[child.nodeId];
+          if (!sUrl) continue;
+          const buf = Buffer.from(await (await fetch(sUrl)).arrayBuffer());
+          fs.writeFileSync(bgPath, buf);
+          if (buf.length > 0) {
+            imageMap[`__bg_${child.nodeId}`] = `images/${bgName}`;
+            // BG 노드의 imageRef를 합성 이미지로 교체
+            child.imageRef = `__bg_${child.nodeId}`;
+            child.children = []; // 하위 제거 (합성됨)
+            break;
+          }
+        }
+      } catch { /* BG screenshot failed, keep original structure */ }
+    }
+  }
+
+  // 5. 스크린샷
+  const screenshotPath = path.join(outDir, `${sectionPrefix}-screenshot.png`);
+  try {
+    for (const s of [2, 1]) {
+      const sData = await apiFetch(`/images/${fk}?ids=${nid}&format=png&scale=${s}`, token);
+      const sUrl = sData.images?.[nid];
+      if (!sUrl) continue;
+      const buf = Buffer.from(await (await fetch(sUrl)).arrayBuffer());
+      fs.writeFileSync(screenshotPath, buf);
+      break;
+    }
+  } catch { /* screenshot failed */ }
+
+  // 6. HTML 생성
+  const html = toHTML(tree, '', imageMap);
+  fs.writeFileSync(path.join(outDir, `${sectionPrefix}.html`), html);
+
+  // 7. SCSS 생성
+  const scss = toSCSS(tree, '');
+  fs.writeFileSync(path.join(outDir, `${sectionPrefix}.scss`), scss);
+
+  // 8. 트리 JSON 저장
+  fs.writeFileSync(path.join(outDir, `${sectionPrefix}.json`), JSON.stringify(tree, null, 2));
+
+  // 출력 요약
+  console.log(JSON.stringify({
+    section: sectionPrefix,
+    files: {
+      html: `${sectionPrefix}.html`,
+      scss: `${sectionPrefix}.scss`,
+      json: `${sectionPrefix}.json`,
+      screenshot: `${sectionPrefix}-screenshot.png`,
+    },
+    images: imageMap,
+    imageCount: Object.keys(imageMap).length,
+  }, null, 2));
+}
+
 // ─── CLI ────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -230,5 +432,6 @@ switch (cmd) {
   case 'tree': await cmdTree(token, fk, nid, flags.depth ? +flags.depth : undefined); break;
   case 'images': await cmdImages(token, fk, nid, flags.out, flags.depth ? +flags.depth : 10); break;
   case 'screenshot': await cmdScreenshot(token, fk, nid, flags.out); break;
-  default: console.log('Usage: node figma-extract.js <tree|images|screenshot> <fileKey> <nodeId> [flags]');
+  case 'render': await cmdRender(token, fk, nid, flags.out, flags.depth ? +flags.depth : 10, flags.scale ? +flags.scale : 0.667); break;
+  default: console.log('Usage: node figma-extract.js <tree|images|screenshot|render> <fileKey> <nodeId> [flags]');
 }
