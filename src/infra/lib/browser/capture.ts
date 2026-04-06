@@ -51,7 +51,9 @@ export async function getComputedStyles(
   };
 
   const result = await p.evaluate(
-    (sel: string, props: string[]) => {
+    (...args: unknown[]) => {
+      const sel = args[0] as string;
+      const props = args[1] as string[];
       const el = document.querySelector(sel);
       if (!el) return null;
 
@@ -91,7 +93,9 @@ export async function getComputedStylesBatch(
   };
 
   const results = await p.evaluate(
-    (sel: string, props: string[]) => {
+    (...args: unknown[]) => {
+      const sel = args[0] as string;
+      const props = args[1] as string[];
       const elements = document.querySelectorAll(sel);
       return Array.from(elements).map((el, idx) => {
         const computed = window.getComputedStyle(el);
@@ -129,7 +133,8 @@ export async function extractTextContent(
   };
 
   const results = await p.evaluate(
-    (sel: string) => {
+    (...args: unknown[]) => {
+      const sel = args[0] as string;
       const elements = document.querySelectorAll(sel);
       return Array.from(elements)
         .filter(el => el.textContent?.trim())

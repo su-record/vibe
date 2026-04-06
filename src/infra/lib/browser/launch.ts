@@ -12,9 +12,11 @@ const DEFAULT_VIEWPORT = { width: 1920, height: 1080 };
 let browserInstance: unknown = null;
 
 /** Puppeteer 동적 import (optional dependency) */
-async function loadPuppeteer(): Promise<typeof import('puppeteer')> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- puppeteer is optional peer dep
+async function loadPuppeteer(): Promise<Record<string, any>> {
   try {
-    return await import('puppeteer');
+    // @ts-expect-error -- puppeteer is optional peer dependency, may not have type declarations
+    return await import('puppeteer') as Record<string, any>;
   } catch {
     throw new Error(
       'puppeteer is not installed. Run: npm install puppeteer\n' +
