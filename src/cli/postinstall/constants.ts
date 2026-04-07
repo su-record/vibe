@@ -39,6 +39,7 @@ export const GLOBAL_SKILLS_OPTIONAL: ReadonlyArray<string> = [
   'git-worktree',
   'tool-fallback',
   'context7-usage',
+  'chub-usage',
 ];
 
 /** 전역 설치 스킬 전체 (하위 호환용) */
