@@ -576,7 +576,44 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
   ❌ 90% 유사한데 새로 만들기 금지
 ```
 
-### 3-1. 트리 기반 구조적 코드 생성
+### 3-1. 순차 블록 빌딩 (병렬 금지)
+
+```
+❌ 여러 섹션을 동시에 생성하지 않는다
+   → 병렬 생성 시 컨텍스트 분산 → 매핑 정확도 저하 → 품질 하락
+   → 앞 섹션 결과를 확인하지 않으면 실수가 누적됨
+
+✅ 한 섹션씩 순차적으로 블록을 쌓듯 만든다:
+
+  작업 폴더: ROOT name에서 추출 (Phase 2에서 결정)
+    "MO_Main ..." → /tmp/{feature}/mo-main/
+    코드 출력도 이 폴더 안에:
+      /tmp/{feature}/mo-main/components/{feature}/
+      /tmp/{feature}/mo-main/styles/{feature}/
+    Phase 5에서 최종 프로젝트 디렉토리에 배치
+
+  섹션 1 (Hero):
+    1. tree.json에서 Hero 노드 Read
+    2. 코드 생성 (컴포넌트 + SCSS)
+    3. 브라우저에서 확인 (dev 서버)
+    4. OK → 다음 섹션으로
+    NG → 수정 후 재확인
+
+  섹션 2 (KID):
+    1. tree.json에서 KID 노드 Read
+    2. 코드 생성
+    3. 브라우저에서 확인 (이전 섹션도 함께)
+    4. OK → 다음 섹션으로
+
+  섹션 3 (Daily) → ... 반복
+
+각 섹션 완료 시:
+  - 해당 섹션의 컴포넌트 + SCSS가 동작하는 상태
+  - pages/{feature}.vue에 해당 섹션이 추가된 상태
+  - 브라우저에서 이전 섹션 + 현재 섹션이 모두 보이는 상태
+```
+
+### 3-2. 트리 기반 구조적 코드 생성
 
 ```
 각 섹션에 대해 (vibe.figma.convert 참조):
@@ -586,18 +623,19 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
    → 스크린샷은 검증용으로만 참조
 
 2. 기계적 매핑 (추정 없음):
-   a. 이미지 복사: images/ → static/images/{feature}/
+   a. 이미지: 노드 렌더링된 이미지를 static/images/{feature}/에 배치
    b. 노드 → HTML 매핑:
+      - BG 프레임 → CSS background-image (img 태그 아님)
       - Auto Layout 있음 → <div> + flex (direction/gap/padding 직접)
       - Auto Layout 없음 → <div> + position:relative (자식 absolute)
       - TEXT 노드 → <span> (Claude가 h2/p/button으로 승격)
-      - imageRef 있음 → <img src="다운로드된 파일">
+      - 콘텐츠 이미지 → <img src="렌더링된 파일">
       - 반복 패턴 (동일 구조 3+) → v-for
    c. CSS 직접 매핑:
       - node.css의 모든 속성을 SCSS에 1:1 매핑
       - vw/clamp 반응형 단위 변환 (vibe.figma.convert 참조)
       - tree.json에 없는 CSS 값은 작성하지 않음
-   d. Phase 1의 JSDoc, 인터페이스, 핸들러 보존
+   d. Phase 1의 JSDoc, 인터페이스, 핸들러 삽입
 
 3. Claude 시맨틱 보강:
    - div → section/h2/p/button 태그 승격
@@ -605,14 +643,14 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
    - 접근성 (alt, aria)
    - 인터랙션 (클릭, 상태)
 
-4. 자가 검증:
-   - template 클래스 ↔ SCSS 클래스 1:1 일치
-   - 모든 img src가 static/에 실제 존재
-   - Auto Layout 노드 → SCSS에 flex 속성 존재
-   - 스크린샷과 비교 (시각 확인)
+4. 브라우저 확인 (섹션별 게이트):
+   - dev 서버에서 현재까지 만든 섹션이 모두 보이는지 확인
+   - 이미지 로드, 레이아웃, 텍스트 확인
+   - OK → 다음 섹션 진행
+   - NG → 수정 후 재확인 (다음 섹션으로 넘어가지 않음)
 ```
 
-### 3-2. 코드 작성 규칙
+### 3-3. 코드 작성 규칙
 
 ```
 컴포넌트 (Vue 예시):
