@@ -37,11 +37,43 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 ```
 /vibe.figma
   → Phase 0: Setup (스택 감지, 디렉토리 생성, 기존 자산 인덱싱)
-  → Phase 1: Storyboard (스토리보드 → 레이아웃 + 컴포넌트 + 기능 정의)
-  → Phase 2: 재료 확보 (디자인 URL → 트리 + 이미지 + 스크린샷)
+  → Phase 1: Storyboard (스토리보드 → 기능 스펙 문서 작성, 파일 생성 없음)
+  → Phase 2: 재료 확보 (디자인 URL → 트리 + 노드 렌더링 이미지 + 스크린샷)
   → Phase 3: 구조적 코드 생성 (트리 → HTML+SCSS 매핑 + 시맨틱 보강)
   → Phase 3.5: 컴파일 게이트 (tsc → build → dev 확인)
   → Phase 4: 시각 검증 루프 (렌더링 vs 스크린샷 비교 → 수정)
+  ─── 추가 브레이크포인트가 있으면 Phase 2~4 반복 ───
+  → Phase 5: 공통화 (브레이크포인트별 작업 병합 → 최종 프로젝트 구조)
+
+브레이크포인트별 작업 구조:
+  각 Figma URL의 ROOT name에서 폴더명 추출 (kebab-case):
+    "MO_Main ..."  → /tmp/{feature}/mo-main/
+    "PC_Main ..."  → /tmp/{feature}/pc-main/
+
+  /tmp/{feature}/
+  ├── mo-main/              ← 첫 번째 URL (모바일)
+  │   ├── tree.json
+  │   ├── bg/
+  │   ├── content/
+  │   └── sections/
+  ├── pc-main/              ← 두 번째 URL (데스크탑)
+  │   ├── tree.json
+  │   ├── bg/
+  │   ├── content/
+  │   └── sections/
+  └── final/                ← Phase 5 공통화 결과
+      ├── components/{feature}/
+      └── styles/{feature}/
+
+Phase 5 공통화:
+  1. 각 브레이크포인트의 컴포넌트 diff
+     → 구조 동일: 1개로 병합
+     → 구조 다름: props로 분기 또는 별도 유지
+  2. SCSS diff
+     → 같은 값: 기본 스타일
+     → 다른 값: @media 오버라이드
+  3. 토큰 diff → 합집합 정리
+  4. /tmp/ 임시 폴더 → 프로젝트 디렉토리에 최종 배치
 ```
 
 ---
