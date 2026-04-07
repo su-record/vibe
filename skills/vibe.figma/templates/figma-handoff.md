@@ -40,11 +40,11 @@ Breakpoint threshold: `@media (min-width: {{BP_PC}}px)`
 
 ## Sections
 
-| # | Section Name | Component File | Mode | Height (design) |
-|---|-------------|---------------|------|----------------|
-| 1 | {{SECTION_NAME}} | `components/{{FEATURE_KEY}}/{{ComponentName}}.vue` | {{MODE}} | {{HEIGHT}}px |
+| # | Section Name | Component File | Tree Nodes | Height (design) |
+|---|-------------|---------------|-----------|----------------|
+| 1 | {{SECTION_NAME}} | `components/{{FEATURE_KEY}}/{{ComponentName}}.vue` | {{NODE_COUNT}} | {{HEIGHT}}px |
 
-**Mode key:** `normal` = external SCSS | `literal` = scoped CSS (non-standard layout)
+**Generation:** tree.json → HTML+SCSS 구조적 매핑 (external SCSS)
 
 ---
 

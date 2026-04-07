@@ -1,83 +1,74 @@
-# React+Tailwind → Project Stack Conversion Rules
+# Tree → Code Conversion Rules
 
-## Mode Selection (Do This First)
+## Core Principle
 
-Classify each section before writing any code. Literal mode if ANY of:
-- 15+ asset URLs in the section
-- Fractional coordinates (`left-[117.13px]`)
-- `mix-blend-*` on any layer
-- `rotate-[Ndeg]` or `-scale-y-100`
-- `mask-image` usage
-- `blur-[Npx]` filter
-- BG cropped from 2560px+ source
+모든 CSS 값은 tree.json에서 직접 매핑한다. 추정하지 않는다.
 
-Normal mode only when ALL of:
-- Flex/grid layout, no absolute coordinates (or integer-only)
-- Fewer than 10 asset URLs
-- No blend/rotate/mask/blur
+## Node → HTML Mapping (Do This First)
 
-## Normal Mode Rules
+각 노드를 순서대로 분류:
 
-- Extract CSS values from Tailwind classes — never estimate
-- Apply `scaleFactor` to all `px` values; never to colors, opacity, z-index, line-height (unitless)
-- Put layout properties in `layout/_section.scss`, visual/text properties in `components/_section.scss`
-- No `<style>` block in the component file
-- No inline `style=""` attribute in the template
+| 노드 조건 | HTML 매핑 |
+|-----------|----------|
+| FRAME + Auto Layout | `<div>` + flex (direction/gap/padding 직접) |
+| FRAME + no Auto Layout | `<div>` + position:relative (자식 absolute) |
+| TEXT | `<span>` → Claude가 `<h2>/<p>/<button>` 승격 |
+| RECTANGLE/VECTOR + imageRef | `<img src="다운로드된 파일">` |
+| VECTOR/GROUP ≤ 64px | 아이콘 → `<img>` (렌더링 이미지) |
+| INSTANCE 반복 3+ | v-for (Vue) 또는 .map() (React) |
+| 크기 0px | 스킵 |
+| VECTOR 장식선 (w/h ≤ 2px) | 스킵 |
 
-## Literal Mode Rules
+## 배경 레이어 판별
 
-- Preserve the full HTML nesting structure 1:1
-- Keep all absolute coordinates, fractional px values (rounded after scaling)
-- Keep all `mix-blend-mode`, `rotate`, `mask-image`, `blur` values unchanged
-- Put all styles in `<style scoped>` inside the component
-- Do not create external SCSS files for literal sections
+부모와 동일 크기(±5%) + imageRef + 형제 중 첫 위치:
+  → `position: absolute; inset: 0; z-index: 0; object-fit: cover`
+  → 부모에 `position: relative; overflow: hidden` 추가
 
-## Tailwind Class Gotchas
+## CSS 직접 매핑 규칙
 
-| Tailwind | Correct CSS | Common Mistake |
-|----------|------------|----------------|
-| `size-full` | `width: 100%; height: 100%` | Only setting `width: 100%` |
-| `inset-0` | `inset: 0` (shorthand) | Expanding to 4 properties |
-| `inset-[-18.13%]` | `inset: -18.13%` | Scaling the % value |
-| `overflow-clip` | `overflow: clip` | Using `overflow: hidden` |
-| `leading-[1.4]` | `line-height: 1.4` | Applying scaleFactor |
-| `max-w-none` | `max-width: none` | Omitting entirely |
-| `object-cover` on `<img>` | `object-fit: cover` + parent `overflow: hidden` | Forgetting parent clip |
-| `pointer-events-none` | `pointer-events: none` | Omitting for decorative layers |
-| `text-white` | `color: #FFFFFF` | Using `color: white` |
-| `font-black` | `font-weight: 900` | Using `font-weight: bold` |
+tree.json의 css 객체를 SCSS에 1:1 매핑한다:
 
-## Scale Application
-
-Apply `× scaleFactor` to:
-- `px` sizes: font-size, padding, margin, gap, border-radius, width, height, top, left, bottom, right
-- `px` in box-shadow, blur filter, letter-spacing
-
-Do NOT scale:
-- Color values
-- Opacity values
-- `%` values
-- Unitless line-height
-- z-index
-- `mix-blend-mode` values
-- `rotate` degree values
-
-## Sprite / Overflow Image Pattern
-
-When `left` is a large negative %, it is a sprite crop — do NOT scale:
-```css
-/* Correct */
-left: -129.09%;
-width: 229.09%;
-
-/* Wrong — do not scale % values */
-left: -86.09%; /* -129.09 × 0.667 — incorrect */
+### layout/ 파일에 넣는 속성
+```
+display, flex-direction, justify-content, align-items,
+gap, padding, width, height, position, overflow, z-index, inset
 ```
 
-## Class Naming (Literal Mode)
+### components/ 파일에 넣는 속성
+```
+background-color, color, font-family, font-size, font-weight,
+line-height, letter-spacing, text-align, border, border-radius,
+box-shadow, opacity, mix-blend-mode, filter, backdrop-filter
+```
 
-Source priority: `data-name` attribute → `data-node-id`
-- `data-name="BG"` → `.bg`
-- `data-name="Light"` → `.light`
-- No `data-name` → `.node-{nodeId}` (replace `:` with `-`)
-- Conflicts: append parent name prefix (`.heroLight`, `.kidLight`)
+## Scale Factor 적용
+
+**적용 (px 값):**
+  font-size, padding, margin, gap, width, height, border-radius,
+  border-width, box-shadow px, filter px, letter-spacing
+
+**미적용:**
+  color, opacity, font-weight, font-family, z-index,
+  line-height(단위 없을 때), text-align, mix-blend-mode,
+  rotate, % 값
+
+## 장식 레이어 최적화
+
+BG 그룹 내 장식 요소가 10개 이상:
+  → 배경 이미지 1장 + 핵심 장식 2~3개만 유지
+  → 나머지 생략 (Phase 4 스크린샷 검증에서 확인)
+
+## Class Naming
+
+BEM 패턴: `.sectionName__childName`
+  - 부모: `.heroSection`
+  - 자식: `.heroSection__bg`, `.heroSection__title`, `.heroSection__shareBtn`
+  - template에서 사용한 모든 클래스가 SCSS에 정의되어야 함
+
+## 자가 검증 (코드 작성 후)
+
+- [ ] template 클래스 ↔ SCSS 클래스 1:1 일치
+- [ ] 모든 img src가 static/에 실제 존재
+- [ ] Auto Layout 노드 → SCSS에 flex 속성 존재
+- [ ] tree.json에 없는 CSS 값이 SCSS에 없음

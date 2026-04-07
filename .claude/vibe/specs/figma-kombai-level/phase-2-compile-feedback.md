@@ -83,6 +83,25 @@ Phase 3 완료 후, Phase 4 시작 전에 컴파일 게이트 추가:
       - TS7006 (암시적 any): 타입 어노테이션 추가
       - 기타: Read로 해당 파일+줄 확인 → 컨텍스트 기반 수정
 
+   ### 3.5-1.5. 정적 자원 + 클래스 일관성 체크
+
+   1. 이미지 존재 확인:
+      컴포넌트/페이지 파일에서 src="/images/..." 또는 :src="..." 패턴 추출
+      → 각 경로가 static/ (또는 public/) 에 실제 존재하는지 확인
+      → 없는 파일 = P1 (브라우저에서 404)
+      → 목 데이터의 image 필드도 포함
+
+   2. SCSS ↔ 템플릿 클래스명 일관성 체크:
+      컴포넌트 template의 class="xxx" / :class="xxx" 에서 클래스명 추출
+      → 해당 컴포넌트의 SCSS 파일에서 해당 클래스 정의 존재 확인
+      → SCSS에 정의된 클래스가 template에서 사용되지 않음 = P2 (미사용 스타일)
+      → template에서 사용된 클래스가 SCSS에 없음 = P1 (스타일 미적용)
+
+   3. SSR 호환성 체크:
+      Nuxt 프로젝트에서 <client-only> 래핑 검사:
+      → <client-only> 안에 전체 페이지 콘텐츠 래핑 = P1 (hydration 실패 위험)
+      → <client-only>는 브라우저 전용 API(window, document)를 사용하는 컴포넌트에만 허용
+
    ### 3.5-2. 빌드 체크
 
    1. npm run build 실행:

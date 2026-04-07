@@ -50,7 +50,7 @@ If a file exceeds the warn threshold, log it. Never block the download — size 
 - [ ] Use `curl -sL "{url}" -o {dest}` — silent, follow redirects
 - [ ] After download: `ls -la {dir}` — verify file exists and size > 0
 - [ ] On 0-byte file: retry once. On second failure: log and continue (do not block code gen for a single failed decorative image)
-- [ ] On missing asset (visible in screenshot but no URL): use `get_metadata` → sub-node `get_design_context` → `get_screenshot` fallback chain
+- [ ] On missing asset (in tree.json but no download URL): use node render fallback (`--render --nodeIds={id}`) to capture as PNG
 
 ## Image Mapping Table
 

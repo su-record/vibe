@@ -1,32 +1,34 @@
 ---
 name: vibe.figma
-description: Figma design to code — 시각 기반 퍼즐 조립 방식
+description: Figma design to code — 트리 기반 구조적 코드 생성
 triggers: []
 tier: standard
 ---
 
-# vibe.figma — Visual Puzzle Assembly
+# vibe.figma — Structural Code Generation
 
 ## 핵심 원칙
 
 ```
-스크린샷이 정답이다. Figma 데이터는 재료일 뿐이다.
+Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 
-❌ Figma 트리 구조를 HTML로 변환하지 않는다 (이 방식은 실패한다)
-✅ 스크린샷을 보고 "무엇을 만들어야 하는지" 파악한다
-✅ Figma 데이터(이미지, 색상, 수치)를 정확한 재료로 사용한다
-✅ 사람 개발자처럼: 디자인 보고 → 에셋 받고 → 만들면서 비교
+✅ Figma Auto Layout → CSS Flexbox 1:1 기계적 매핑
+✅ Figma CSS 속성 → SCSS 직접 변환 (추정 없음)
+✅ Claude는 시맨틱 판단만: 태그 선택, 컴포넌트 분리, 인터랙션
+✅ 스크린샷은 생성이 아닌 검증에만 사용
 ```
 
 ## 금지 사항
 
 ```
-❌ Figma 레이어 트리를 그대로 div 구조로 변환
+❌ 스크린샷을 보고 CSS 추정 (범용 LLM의 약점)
+❌ Figma 레이어를 무분별하게 div soup로 변환
 ❌ CSS로 이미지 재현 (gradient/shape으로 그림 그리기)
 ❌ 이미지 다운로드 없이 코드 생성 진행
 ❌ placeholder / 빈 src="" 남기기
-❌ 색상·크기를 추정 (재료함에 정확한 값이 있음)
+❌ tree.json에 없는 CSS 값을 추정하여 작성
 ❌ 컴포넌트 파일 안에 <style> 블록 / 인라인 style=""
+✅ tree.json의 CSS 속성을 SCSS에 직접 매핑
 ✅ 외부 SCSS 파일에만 스타일 작성
 ```
 
@@ -34,11 +36,12 @@ tier: standard
 
 ```
 /vibe.figma
-  → Phase 0: Setup (스택 감지, 디렉토리 생성)
+  → Phase 0: Setup (스택 감지, 디렉토리 생성, 기존 자산 인덱싱)
   → Phase 1: Storyboard (스토리보드 → 레이아웃 + 컴포넌트 + 기능 정의)
-  → Phase 2: 재료 확보 (디자인 URL → 스크린샷 + 이미지 + CSS + 텍스트)
-  → Phase 3: 퍼즐 조립 (스크린샷 보면서 Phase 1 컴포넌트에 디자인 입히기)
-  → Phase 4: 검증 루프 (빌드 → 스크린샷 → 비교 → 수정 → 반복)
+  → Phase 2: 재료 확보 (디자인 URL → 트리 + 이미지 + 스크린샷)
+  → Phase 3: 구조적 코드 생성 (트리 → HTML+SCSS 매핑 + 시맨틱 보강)
+  → Phase 3.5: 컴파일 게이트 (tsc → build → dev 확인)
+  → Phase 4: 시각 검증 루프 (렌더링 vs 스크린샷 비교 → 수정)
 ```
 
 ---
@@ -242,8 +245,14 @@ URL에서 fileKey, nodeId 추출
         */
      - TypeScript 인터페이스
      - 목 데이터 (빈 배열 금지, 3~7개 아이템)
+     - 목 데이터의 image 필드: 실제 다운로드할 이미지 경로 사용 금지
+       → Phase 1에서는 이미지 경로를 '' (빈 문자열) 또는 placeholder 텍스트로 설정
+       → Phase 2에서 실제 이미지 다운로드 후 경로를 업데이트
+       → ❌ '/images/{feature}/token-100.png' (존재하지 않는 파일 참조 금지)
      - 이벤트 핸들러 stub (body는 // TODO:)
 
+   ❌ <client-only> 래핑 금지 — SSR hydration 실패 위험
+      (<client-only>는 window/document 직접 접근하는 컴포넌트에만 사용)
    <style> 블록 없음 — 스타일은 Phase 3에서 외부 파일로.
 
 3. 공통 컴포넌트 (SHARED에서 파악):
@@ -267,6 +276,8 @@ Phase 1 완료 조건:
   □ 클릭하면 핸들러가 실행된다
   □ 모든 컴포넌트에 [기능 정의] + [인터랙션] + [상태] JSDoc
   □ 빈 배열 0개, 빈 template 0개, <style> 블록 0개
+  □ <client-only> 전체 래핑 0개
+  □ 목 데이터의 image 필드에 존재하지 않는 파일 경로 0개
   □ 빌드 성공
 
 빈 화면 = Phase 1 미완성. Phase 2로 넘어가지 않는다.
@@ -312,6 +323,16 @@ URL에서 fileKey, nodeId 추출
 3단계 — 전체 이미지 다운로드 (시각 재료):
   node "[FIGMA_SCRIPT]" images {fileKey} {nodeId} --out=/tmp/{feature}/images/ --depth=10
   → 모든 이미지 에셋 확보. 누락 0건, 0byte 0건.
+
+3.5단계 — 아이템/아이콘 노드 렌더링 (추가 시각 재료):
+  tree.json에서 INSTANCE/COMPONENT 타입 중 아이템 후보를 식별:
+    - name에 "item", "icon", "reward", "token", "coin", "badge" 포함
+    - 크기 50~300px 범위의 독립 요소
+    - fill 이미지가 없지만 시각적으로 의미 있는 노드
+  해당 노드를 개별 렌더링:
+    node "[FIGMA_SCRIPT]" images {fileKey} {nodeId} --render --nodeIds={id1},{id2},... --out=/tmp/{feature}/images/
+  → 이미지 fill이 아닌 벡터/인스턴스 에셋도 PNG로 확보
+  → Phase 3에서 목 데이터의 image 경로에 연결
 
 4단계 — 섹션별 스크린샷 (부분 정답):
   트리의 1depth 자식 프레임 각각:
@@ -542,40 +563,40 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
   ❌ 90% 유사한데 새로 만들기 금지
 ```
 
-### 3-1. 섹션 조립 프로세스
+### 3-1. 트리 기반 구조적 코드 생성
 
 ```
-각 섹션에 대해:
+각 섹션에 대해 (vibe.figma.convert 참조):
 
-1. 정답 확인 — 섹션 스크린샷을 Read로 본다
-   /tmp/{feature}/sections/{section}.png
-   → "이 화면처럼 만들어야 한다"
+1. 트리 구조 읽기 — tree.json에서 해당 섹션 노드를 Read
+   → Auto Layout 속성(flex, gap, padding)이 코드의 기반
+   → 스크린샷은 검증용으로만 참조
 
-2. 재료 확인 — 이 섹션에 필요한 재료 목록 확인
-   - 이미지: /tmp/{feature}/images/ 에서 해당 파일들
-   - CSS 수치: tree.json에서 해당 노드의 정확한 값
-   - 텍스트: TEXT 노드의 characters
-
-3. Phase 1 컴포넌트에 디자인 입히기
+2. 기계적 매핑 (추정 없음):
    a. 이미지 복사: images/ → static/images/{feature}/
-   b. template 업데이트:
-      - Phase 1의 기능 요소(v-for, @click, v-if, $emit) 보존
-      - 스크린샷을 보고 시각 구조에 맞게 HTML 재구성
-      - Figma 레이어 구조를 HTML로 변환하지 않음 (시각 기반)
-      - 재료함의 정확한 이미지 경로 사용
-      - 재료함의 정확한 텍스트 사용
-   c. script 보존:
-      - Phase 1의 JSDoc, 인터페이스, 핸들러 유지
-   d. SCSS 작성: 재료함의 정확한 CSS 수치 사용 (scaleFactor 적용)
-      - layout/_{section}.scss ← 포지션, 사이즈, 플렉스
-      - components/_{section}.scss ← 폰트, 색상, 보더
-      - _tokens.scss에 새 토큰 추가
+   b. 노드 → HTML 매핑:
+      - Auto Layout 있음 → <div> + flex (direction/gap/padding 직접)
+      - Auto Layout 없음 → <div> + position:relative (자식 absolute)
+      - TEXT 노드 → <span> (Claude가 h2/p/button으로 승격)
+      - imageRef 있음 → <img src="다운로드된 파일">
+      - 반복 패턴 (동일 구조 3+) → v-for
+   c. CSS 직접 매핑:
+      - node.css의 모든 속성을 SCSS에 1:1 매핑
+      - scaleFactor 적용 (px 값만)
+      - tree.json에 없는 CSS 값은 작성하지 않음
+   d. Phase 1의 JSDoc, 인터페이스, 핸들러 보존
 
-4. 즉시 검증 — 스크린샷과 비교
-   - 이미지 빠진 거 없나?
-   - 텍스트 빠진 거 없나?
-   - 레이아웃 구조가 스크린샷과 맞나?
-   - Phase 1의 기능 요소가 보존되었나?
+3. Claude 시맨틱 보강:
+   - div → section/h2/p/button 태그 승격
+   - 컴포넌트 분리 + props 설계
+   - 접근성 (alt, aria)
+   - 인터랙션 (클릭, 상태)
+
+4. 자가 검증:
+   - template 클래스 ↔ SCSS 클래스 1:1 일치
+   - 모든 img src가 static/에 실제 존재
+   - Auto Layout 노드 → SCSS에 flex 속성 존재
+   - 스크린샷과 비교 (시각 확인)
 ```
 
 ### 3-2. 코드 작성 규칙
@@ -583,11 +604,10 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
 ```
 컴포넌트 (Vue 예시):
   <template>
-    스크린샷에서 보이는 시각 구조대로 작성.
-    Figma 레이어 구조 무시.
+    tree.json의 Auto Layout 구조를 HTML flex 레이아웃으로 직접 매핑.
+    Claude가 시맨틱 태그로 승격 (div → section/h2/p/button).
     Phase 1의 기능 요소(v-for, @click, v-if) 보존.
-    시맨틱 HTML 사용 (<section>, <h2>, <ul>, <button>).
-    이미지 경로: /images/{feature}/파일명.png
+    이미지 경로: /images/{feature}/파일명.png (실제 파일 존재 확인)
     텍스트: tree.json의 TEXT 노드 characters 값 그대로.
 
   <script setup>

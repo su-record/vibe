@@ -1,49 +1,28 @@
 ---
 name: vibe.figma.extract
-description: Figma REST API로 재료 확보 — 스크린샷, 이미지, CSS, 트리, 텍스트
+description: Figma REST API로 코드 생성 데이터 확보 — 트리(primary), 이미지, 스크린샷(검증용)
 triggers: []
 tier: standard
 ---
 
-# vibe.figma.extract — 재료 확보
+# vibe.figma.extract — 코드 생성 데이터 확보
 
-Figma REST API(`src/infra/lib/figma/`)를 사용하여 **퍼즐 조립에 필요한 모든 재료**를 추출.
-추출한 데이터는 코드 변환용이 아닌 **재료함(material inventory)**으로 사용된다.
-
----
-
-## 1. 스크린샷 — 정답 사진
+Figma REST API(`src/infra/lib/figma/`)를 사용하여 **구조적 코드 생성에 필요한 모든 데이터**를 추출.
 
 ```
-가장 먼저 확보. 이것이 "만들어야 할 결과물"의 기준.
-
-전체 스크린샷:
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {nodeId} --out=/tmp/{feature}/full-screenshot.png
-
-섹션별 스크린샷 (1depth 자식 프레임 각각):
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {child.nodeId} --out=/tmp/{feature}/sections/{name}.png
+추출 우선순위:
+  1순위: 노드 트리 + CSS (코드 생성의 PRIMARY 소스)
+  2순위: 이미지 에셋 (fill 이미지 + 아이템 노드 렌더링)
+  3순위: 스크린샷 (Phase 4 시각 검증용 — 코드 생성에 사용하지 않음)
 ```
 
 ---
 
-## 2. 이미지 에셋 — 시각 재료
+## 1. 노드 트리 + CSS — 코드 생성의 원천
 
 ```
-트리에서 imageRef 수집 → Figma API로 다운로드:
+가장 먼저 확보. 이것이 HTML + SCSS 코드의 직접적 소스.
 
-Bash:
-  node "[FIGMA_SCRIPT]" images {fileKey} {nodeId} --out=/tmp/{feature}/images/ --depth=10
-
-반환: { total: N, images: { "imageRef": "/path/to/file.png", ... } }
-
-검증: total = refs.size (누락 0), 0byte 파일 없음
-```
-
----
-
-## 3. 노드 트리 + CSS — 수치 재료
-
-```
 Bash:
   node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId} --depth=10
 
@@ -59,22 +38,35 @@ Bash:
     children: [...]
   }
 
-⚠️ 주의: 이 트리는 HTML 구조로 변환하지 않는다.
-용도는 오직:
-  - 정확한 CSS 수치 참조 (색상, 크기, 간격)
-  - 텍스트 콘텐츠 추출
-  - 이미지 참조 매핑
-  - 디자인 토큰 추출
+→ /tmp/{feature}/tree.json 에 저장
+
+트리 데이터의 용도 (vibe.figma.convert에서 직접 매핑):
+  - Auto Layout → CSS Flexbox (direction, gap, padding, align 1:1)
+  - absoluteBoundingBox → width, height (× scaleFactor)
+  - fills/strokes/effects → background, border, shadow 등
+  - TEXT 노드 → 텍스트 콘텐츠 + 타이포그래피 CSS
+  - imageRef → 이미지 에셋 매핑
+  - name/type → 시맨틱 태그 판단 힌트 (Claude 사용)
 ```
 
-### Figma 속성 → CSS 변환표
+### Figma 속성 → CSS 직접 매핑표
 
-도구가 자동으로 변환하는 속성 (재료로 활용):
+트리 추출 도구가 자동 변환하는 속성. **이 값들이 SCSS에 직접 매핑된다:**
 
-| Figma 속성 | CSS | 스케일 적용 |
-|-----------|-----|-----------|
+| Figma 속성 | CSS | scaleFactor 적용 |
+|-----------|-----|-----------------|
+| `layoutMode=VERTICAL` | `display:flex; flex-direction:column` | ❌ |
+| `layoutMode=HORIZONTAL` | `display:flex; flex-direction:row` | ❌ |
+| `primaryAxisAlignItems` | `justify-content` | ❌ |
+| `counterAxisAlignItems` | `align-items` | ❌ |
+| `itemSpacing` | `gap` | ✅ |
+| `padding*` | `padding` | ✅ |
+| `absoluteBoundingBox.width/height` | `width/height` | ✅ |
+| `layoutPositioning=ABSOLUTE` | `position: absolute` | ❌ |
+| `clipsContent` | `overflow: hidden` | ❌ |
 | `fills[].color` | `background-color` | ❌ |
 | `fills[].type=IMAGE` | `imageRef` (다운로드 대상) | — |
+| `fills[].color` (TEXT) | `color` | ❌ |
 | `strokes[].color` + `strokeWeight` | `border` | ✅ (width만) |
 | `effects[].DROP_SHADOW` | `box-shadow` | ✅ (px만) |
 | `effects[].LAYER_BLUR` | `filter: blur()` | ✅ |
@@ -88,71 +80,129 @@ Bash:
 | `style.lineHeightPx` | `line-height` | ❌ |
 | `style.letterSpacing` | `letter-spacing` | ✅ |
 | `style.textAlignHorizontal` | `text-align` | ❌ |
-| `fills[].color` (TEXT) | `color` | ❌ |
 | `characters` | 텍스트 내용 | — |
-| `absoluteBoundingBox.width/height` | `width/height` | ✅ |
-| `layoutMode=VERTICAL` | `display:flex; flex-direction:column` | ❌ |
-| `layoutMode=HORIZONTAL` | `display:flex; flex-direction:row` | ❌ |
-| `primaryAxisAlignItems` | `justify-content` | ❌ |
-| `counterAxisAlignItems` | `align-items` | ❌ |
-| `itemSpacing` | `gap` | ✅ |
-| `padding*` | `padding` | ✅ |
-| `clipsContent` | `overflow: hidden` | ❌ |
-| `layoutPositioning=ABSOLUTE` | `position: absolute` | ❌ |
 
 ---
 
-## 4. 재료함 정리 (material-inventory)
+## 2. 이미지 에셋
+
+### 2-1. Fill 이미지 다운로드
 
 ```
-추출 완료 후 재료를 카테고리별로 정리:
+트리에서 imageRef 수집 → Figma API로 다운로드:
+
+Bash:
+  node "[FIGMA_SCRIPT]" images {fileKey} {nodeId} --out=/tmp/{feature}/images/ --depth=10
+
+반환: { total: N, images: { "imageRef": "/path/to/file.png", ... } }
+
+검증: total = refs.size (누락 0), 0byte 파일 없음
+```
+
+### 2-2. 아이템/아이콘 노드 렌더링
+
+```
+fill 이미지가 없지만 시각적으로 의미 있는 노드를 PNG로 렌더링:
+
+대상 식별 (tree.json에서):
+  - INSTANCE/COMPONENT 타입 중 크기 50~300px
+  - name에 "item", "icon", "reward", "token", "coin", "badge" 포함
+  - VECTOR/GROUP 중 크기 ≤ 64px (아이콘 후보)
+
+렌더링:
+  node "[FIGMA_SCRIPT]" images {fileKey} {nodeId} --render --nodeIds={id1},{id2},... --out=/tmp/{feature}/images/
+
+→ 벡터/인스턴스 에셋도 PNG로 확보
+→ Phase 3에서 목 데이터의 image 경로에 연결 가능
+```
+
+---
+
+## 3. 스크린샷 — 검증 참조용
+
+```
+코드 생성에는 사용하지 않는다. Phase 4 시각 검증에서만 사용.
+
+전체 스크린샷:
+  node "[FIGMA_SCRIPT]" screenshot {fileKey} {nodeId} --out=/tmp/{feature}/full-screenshot.png
+
+섹션별 스크린샷 (1depth 자식 프레임 각각):
+  node "[FIGMA_SCRIPT]" screenshot {fileKey} {child.nodeId} --out=/tmp/{feature}/sections/{name}.png
+
+용도:
+  ✅ Phase 4에서 렌더링 결과와 pixelmatch 비교
+  ✅ 시각 diff > 임계값 → 수정 판단 참고
+  ❌ Phase 3 코드 생성의 입력으로 사용하지 않음
+```
+
+---
+
+## 4. 추출 데이터 정리
+
+```
+추출 완료 후 /tmp/{feature}/ 구조:
+
+/tmp/{feature}/
+├── tree.json                    ← 코드 생성의 PRIMARY 소스
+├── images/                      ← 이미지 에셋 (fill + 노드 렌더링)
+│   ├── {imageRef}.png           ← fill 이미지
+│   ├── {nodeId}.png             ← 렌더링된 아이템/아이콘
+│   └── ...
+├── full-screenshot.png          ← Phase 4 검증용
+└── sections/                    ← Phase 4 섹션별 검증용
+    ├── hero.png
+    └── ...
 
 이미지 목록:
-  파일명 | 크기 | 용도 추정
-  hero-bg.png | 720×1280 | 배경 (큰 사이즈, BG 레이어)
-  title.png | 620×174 | 타이틀 이미지
-  btn-share.png | 48×48 | 아이콘 (작은 사이즈)
+  파일명 | 크기 | 용도 (트리 기반 판별)
+  {ref}.png | 720×1280 | 배경 (부모와 동일 크기 + z-index 낮음)
+  {ref}.png | 620×174 | 콘텐츠 이미지 (독립적 크기)
+  {ref}.png | 48×48 | 아이콘 (≤64px)
+  {nodeId}.png | 200×200 | 렌더링된 아이템 (INSTANCE)
 
-색상 팔레트 (tree.json에서 고유값 추출 + 토큰 매핑 힌트):
-  #0a1628, #00264a, #ffffff, #dadce3, #003879, #419bd3, ...
+색상 팔레트 (tree.json의 backgroundColor/color 고유값):
+  #0a1628, #00264a, #ffffff, ...
 
   토큰 매핑 테이블 (project-tokens.json 존재 시):
     | Figma 값 | 기존 토큰 | 상태 |
     |----------|-----------|------|
     | #0a1628 | $color-navy | ✅ 재사용 |
     | #ffd700 | — | 🆕 생성 |
-    | #3b82f6 | $color-primary | ✅ 재사용 |
 
-폰트 목록:
+폰트 목록 (tree.json의 fontFamily/fontSize/fontWeight):
   Pretendard: 400/500/700, 16px~48px
-  Roboto Condensed: 700, 24px~36px
 
-텍스트 콘텐츠 (모든 TEXT 노드):
+텍스트 콘텐츠 (모든 TEXT 노드의 characters):
   "겨울 이벤트", "12.1 ~ 12.31", "참여 대상 : PC 유저", ...
 
-간격 패턴 (빈도 높은 값):
+간격 패턴 (tree.json의 gap/padding 빈도 분석):
   gap: 8px, 16px, 24px, 32px
   padding: 16px, 24px, 32px
 ```
 
 ---
 
-## 5. 노드 참조 (보조)
+## 5. 노드 참조 (시맨틱 판단 힌트)
 
 ```
-트리의 name/type은 재료 분류에만 사용:
+트리의 name/type은 Claude의 시맨틱 판단에 힌트로 사용:
 
-name 패턴 → 용도 힌트:
-  "BG" → 배경 이미지 (스크린샷에서 확인)
-  "Title", "Txt_*" → 텍스트 영역
-  "Btn_*", "CTA" → 버튼/인터랙티브
-  "Icon_*" → 아이콘
-  "Step1", "Item_*" → 반복 요소
+name 패턴 → HTML 태그 힌트:
+  "BG" → 배경 레이어 (position:absolute + z-index:0)
+  "Title", "Txt_*" → 제목/텍스트 (<h2>, <p>)
+  "Btn_*", "CTA" → 버튼 (<button>)
+  "Icon_*" → 아이콘 (<img>)
+  "Step1", "Item_*" → 반복 요소 (v-for 후보)
+  "Period", "Info" → 정보 영역 (<div>)
 
-type → 재료 종류:
-  TEXT → 텍스트 콘텐츠 제공
-  RECTANGLE/VECTOR + imageRef → 다운로드 대상 이미지
-  INSTANCE → 반복 사용 가능성 (컴포넌트 후보)
+type → 코드 매핑 기준:
+  TEXT → <span> (Claude가 h2/p/button으로 승격)
+  RECTANGLE/VECTOR + imageRef → <img src="다운로드된 파일">
+  FRAME + Auto Layout → <div> + CSS flex
+  FRAME + no Auto Layout → <div> + position:relative
+  INSTANCE 반복 → 컴포넌트 후보 (v-for)
+  GROUP → 논리적 래퍼 (보통 <div>)
 
-⚠️ 이 정보로 HTML을 생성하지 않는다. 스크린샷을 보고 판단한다.
+이 정보는 트리→HTML 매핑의 보조 힌트이다.
+레이아웃과 스타일은 tree.json의 css 객체에서 직접 매핑한다.
 ```

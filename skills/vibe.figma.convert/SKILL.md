@@ -1,17 +1,22 @@
 ---
 name: vibe.figma.convert
-description: 스크린샷 + 재료함 → 프로젝트 코드 + 외부 스타일 파일
+description: Figma 트리 → 구조적 코드 생성 + 스크린샷 검증
 triggers: []
 tier: standard
 ---
 
-# vibe.figma.convert — 시각 기반 코드 생성
+# vibe.figma.convert — 트리 기반 구조적 코드 생성
 
-**스크린샷을 보고** 코드를 작성한다. Figma 데이터는 정확한 수치/에셋 재료로만 사용.
+**Figma 트리 데이터를 기계적으로 HTML+CSS에 매핑한다. 추정하지 않는다.**
+**Claude는 시맨틱 판단(태그 선택, 컴포넌트 분리, 인터랙션)만 담당한다.**
 
 ```
-❌ Figma 트리를 HTML로 변환 (실패하는 방식)
-✅ 스크린샷을 보고 → 시맨틱 HTML 설계 → 재료함에서 정확한 값 가져다 적용
+❌ 스크린샷을 보고 CSS 추정 (범용 LLM의 약점)
+❌ Figma 레이어를 무분별하게 div soup로 변환
+✅ Figma Auto Layout → CSS Flexbox 1:1 매핑 (기계적)
+✅ Figma CSS 속성 → SCSS 직접 변환 (추정 없음)
+✅ Claude → 시맨틱 태그 선택 + 컴포넌트 설계 + 인터랙션
+✅ 스크린샷 → 생성이 아닌 검증용
 ```
 
 ---
@@ -27,44 +32,131 @@ component-index (/tmp/{feature}/component-index.json) 에서 매칭되는 컴포
   ❌ 기존 컴포넌트 내부 수정
   ❌ 90% 유사한데 새로 만들기
 
-매칭 안 되면 → 섹션 1 프로세스로 새로 생성 (기존 방식)
+매칭 안 되면 → 섹션 1 프로세스로 새로 생성
 ```
 
 ---
 
-## 1. 코드 생성 프로세스
+## 1. 트리 기반 코드 생성 프로세스
 
 ```
 입력:
-  - 섹션 스크린샷 (정답 사진)
-  - 재료함: 이미지 목록, 색상 팔레트, 폰트 목록, 텍스트 콘텐츠, CSS 수치
+  - tree.json (노드 트리 + CSS 속성 — 코드 생성의 PRIMARY 소스)
+  - /tmp/{feature}/images/ (다운로드된 이미지 에셋)
+  - 섹션 스크린샷 (검증용 — 생성에 사용하지 않음)
+  - scaleFactor (모바일: 480/720=0.667, PC: 1920/2560=0.75)
 
 출력:
   - 컴포넌트 파일 (Vue SFC / React TSX)
   - SCSS 파일 (layout/ + components/ + _tokens.scss)
+```
 
-프로세스:
-  1. 스크린샷을 본다 → "무엇이 보이는가?" 판단
-     - 전면 배경 위 콘텐츠? → 히어로 패턴
-     - 카드 N개 반복? → 그리드 패턴
-     - 탭 + 내용? → 탭 패턴
-     - 리스트 + 버튼? → 인터랙티브 리스트 패턴
+### 1-1. 노드 → HTML 매핑 규칙 (기계적)
 
-  2. 시맨틱 HTML 구조를 설계한다 (Figma 레이어 구조 무시)
-     - 스크린샷에서 보이는 시각적 관계를 HTML로 표현
-     - <section>, <h2>, <ul>, <button> 등 의미에 맞게
+```
+각 노드에 대해 아래 규칙을 순서대로 적용:
 
-  3. 재료함에서 정확한 값을 가져온다
-     - 이미지: /tmp/{feature}/images/ 에서 해당 파일
-     - 색상: tree.json CSS의 정확한 hex/rgba
-     - 폰트: 정확한 font-family, size, weight
-     - 텍스트: TEXT 노드의 characters 값 그대로
-     - 간격: 정확한 padding, gap, margin 값
+1. 타입별 기본 매핑:
+   TEXT 노드     → <span> (Claude가 <h1>~<h6>, <p>, <button> 등으로 승격)
+   IMAGE fill    → <img src="다운로드된 경로" />
+   VECTOR/GROUP  → 크기가 작으면(≤64px) 아이콘 후보 → <img> (렌더링 이미지)
+                   크기가 크면 장식 요소 → <div> + background
+   FRAME/INSTANCE:
+     Auto Layout 있음 → <div> + flex (direction/gap/padding 직접 매핑)
+     Auto Layout 없음 → <div> + position:relative (자식은 absolute)
+     children 없음    → 빈 div 또는 스킵
 
-  4. 코드를 작성한다
-     - 컴포넌트: 스크린샷처럼 보이도록
-     - SCSS: 재료함의 정확한 수치 (× scaleFactor)
-     - 추정 금지 — 값이 없으면 tree.json에서 다시 찾는다
+2. 배경 레이어 판별:
+   부모와 동일 크기(±5%) + imageRef 있음 + z-index 낮음
+     → position:absolute + inset:0 + object-fit:cover
+     → 부모에 position:relative + overflow:hidden 추가
+
+3. 반복 패턴 감지:
+   같은 부모 아래 동일 타입 + 유사 구조(children 수 동일) 노드 3개 이상
+     → v-for (Vue) 또는 .map() (React)
+     → 첫 번째 노드를 기준으로 템플릿 생성
+
+4. 스킵 대상:
+   크기 0px 노드
+   visible=false 노드 (트리에 포함되지 않으므로 해당 없음)
+   VECTOR 장식선 (width 또는 height ≤ 2px)
+```
+
+### 1-2. CSS 속성 직접 매핑 (추정 없음)
+
+```
+tree.json의 css 객체를 SCSS로 직접 변환한다. 추정하지 않는다.
+
+레이아웃 (layout/ 파일):
+  node.css.display         → display
+  node.css.flexDirection   → flex-direction
+  node.css.justifyContent  → justify-content
+  node.css.alignItems      → align-items
+  node.css.gap             → gap (× scaleFactor)
+  node.css.padding         → padding (× scaleFactor)
+  node.css.width           → width (× scaleFactor)
+  node.css.height          → height (× scaleFactor)
+  node.css.overflow        → overflow
+  node.css.position        → position
+
+비주얼 (components/ 파일):
+  node.css.backgroundColor → background-color
+  node.css.color           → color
+  node.css.fontFamily      → font-family
+  node.css.fontSize        → font-size (× scaleFactor)
+  node.css.fontWeight      → font-weight
+  node.css.lineHeight      → line-height
+  node.css.letterSpacing   → letter-spacing (× scaleFactor)
+  node.css.textAlign       → text-align
+  node.css.borderRadius    → border-radius (× scaleFactor)
+  node.css.border          → border (width만 × scaleFactor)
+  node.css.boxShadow       → box-shadow (px값만 × scaleFactor)
+  node.css.opacity         → opacity
+  node.css.mixBlendMode    → mix-blend-mode
+  node.css.filter          → filter (px값만 × scaleFactor)
+  node.css.backdropFilter  → backdrop-filter (px값만 × scaleFactor)
+
+scaleFactor 적용:
+  ✅ 적용: width, height, padding, gap, margin, font-size, letter-spacing,
+           border-radius, border-width, box-shadow px, filter px
+  ❌ 미적용: color, opacity, font-weight, font-family, z-index,
+            line-height(단위 없을 때), text-align, mix-blend-mode
+
+값이 없으면:
+  → 해당 속성 생략 (추정 금지)
+  → tree.json에 없는 속성은 CSS에 쓰지 않는다
+```
+
+### 1-3. Claude의 시맨틱 판단 (유일한 추정 영역)
+
+```
+기계적 매핑 후 Claude가 판단하는 것:
+
+1. HTML 태그 승격:
+   <span> "MISSION 02"  → <span> (장식 배지)
+   <span> "플레이 타임 달성" → <h2> (섹션 제목)
+   <span> "참여 대상 : PC..."  → <p> (설명 텍스트)
+   <span> "보상 받기"  → <button> 내부 텍스트
+
+2. 컴포넌트 분리:
+   tree.json 1depth 자식 = 섹션 컴포넌트 후보
+   INSTANCE 타입 반복 = 공유 컴포넌트 후보
+   → 컴포넌트 경계, 파일명, props interface 설계
+
+3. 인터랙션 판단:
+   name에 "btn", "CTA", "link" 포함 → 클릭 이벤트
+   name에 "tab", "toggle" 포함 → 상태 전환
+   → @click 핸들러, 상태 변수, 조건부 렌더링
+
+4. 접근성:
+   배경/장식 이미지 → alt="" aria-hidden="true"
+   콘텐츠 이미지 → TEXT 노드에서 가장 가까운 텍스트를 alt로
+   인터랙티브 요소 → role, aria-label
+
+5. 노드 생략 판단:
+   BG 그룹 내 장식 요소가 너무 많으면 (10개+)
+   → 배경 이미지 1장 + 핵심 장식 2~3개만 유지
+   → 나머지는 성능상 생략 가능 (스크린샷으로 검증)
 ```
 
 ---
@@ -75,156 +167,186 @@ component-index (/tmp/{feature}/component-index.json) 에서 매칭되는 컴포
 
 ```
 layout/  → position, display, flex/grid, width, height, padding, margin,
-           gap, overflow, z-index, background-image, inset
+           gap, overflow, z-index, inset
 components/ → font-size, font-weight, color, line-height, letter-spacing,
-              text-align, border, border-radius, box-shadow, opacity
+              text-align, border, border-radius, box-shadow, opacity,
+              background-color, background-image, mix-blend-mode, filter
 ```
 
-### layout 예시 (스크린샷 기반으로 작성)
+### layout 예시 (트리 기반 — 추정 없음)
 
 ```scss
-// 스크린샷에서 보이는 구조:
-// - 전면 배경 이미지 위에 중앙 정렬된 콘텐츠
-// 재료함에서 가져온 값: width=720, height=1280 (→ ×0.75)
+// tree.json 데이터:
+// Hero: { width:720, height:1280 }
+// Title: { display:flex, flexDirection:column, alignItems:center, gap:24px, width:620, height:230 }
+// Period: { display:flex, flexDirection:column, gap:10px, padding:"22px 14px", width:600, height:220 }
+// scaleFactor = 0.667
 
 @use '../tokens' as t;
 
 .heroSection {
   position: relative;
-  height: 960px;              // 재료: 1280 × 0.75
   width: 100%;
-  overflow: clip;
+  height: 854px;              // 1280 × 0.667
+  overflow: hidden;           // tree: overflow:hidden
 }
 
-.heroBg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  img { width: 100%; height: 100%; object-fit: cover; }
+.heroTitle {
+  display: flex;              // tree: display:flex
+  flex-direction: column;     // tree: flexDirection:column
+  align-items: center;        // tree: alignItems:center
+  gap: 16px;                  // tree: 24 × 0.667
+  width: 414px;               // tree: 620 × 0.667
 }
 
-.heroContent {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 98px;          // 재료: 130 × 0.75
+.heroPeriod {
+  display: flex;              // tree: display:flex
+  flex-direction: column;     // tree: flexDirection:column
+  gap: 7px;                   // tree: 10 × 0.667
+  padding: 15px 9px;          // tree: "22px 14px" × 0.667
+  width: 400px;               // tree: 600 × 0.667
 }
 ```
 
-### components 예시
+### components 예시 (트리 기반)
 
 ```scss
-// 스크린샷에서 보이는 요소:
-// - 큰 타이틀 이미지, 그 아래 흰색 텍스트
-// 재료함: fontSize=24, color=#ffffff, width=620, height=174
+// tree.json 데이터:
+// TEXT "참여 대상": { fontSize:24px, fontWeight:600, color:#ffffff, fontFamily:Pretendard }
+// BTN_Share: { borderRadius:500px, backgroundColor:rgba(13,40,61,0.5), border:"1px solid #ffffff" }
 
 @use '../tokens' as t;
 
-.heroTitle {
-  width: 465px;               // 재료: 620 × 0.75
-  height: 131px;              // 재료: 174 × 0.75
-  img { width: 100%; height: 100%; object-fit: cover; }
+.heroTarget {
+  font-size: 16px;            // tree: 24 × 0.667
+  font-weight: 600;           // tree: fontWeight:600
+  color: #ffffff;             // tree: color:#ffffff
+  font-family: t.$font-pretendard;
+  text-align: center;         // tree: textAlign:center
 }
 
-.heroText {
-  font-size: t.$font-size-md;      // 재료: 24px × 0.667 = 16px
-  color: t.$color-text-primary;    // 재료: #ffffff
-  line-height: 1.4;
-  text-align: center;
+.heroShareBtn {
+  border-radius: 500px;       // tree: borderRadius:500px (비율이므로 scaleFactor 미적용)
+  background-color: rgba(13, 40, 61, 0.5);  // tree 그대로
+  border: 1px solid #ffffff;  // tree 그대로
+  width: 48px;                // tree: 72 × 0.667
+  height: 48px;               // tree: 72 × 0.667
+  display: flex;              // tree: display:flex
+  justify-content: center;    // tree: justifyContent:center
+  align-items: center;        // tree: alignItems:center
 }
 ```
 
-### _tokens.scss 구조 (기존 토큰 참조 + 새 토큰)
+### _tokens.scss (기존 토큰 참조 + 트리에서 추출)
 
 ```scss
 // ─── 기존 토큰 참조 (프로젝트에 이미 있는 경우) ───
-// project-tokens.json 매칭 결과에 따라 @use로 참조
 @use '../../styles/variables' as v;
 
 // ─── 매핑 (기존 토큰 → 피처 시맨틱 별칭) ────────
-$color-bg-primary: v.$color-navy;          // 기존 토큰 재사용
-$color-text-primary: v.$color-white;       // 기존 토큰 재사용
+$color-bg-primary: v.$color-navy;
+$color-text-primary: v.$color-white;
 
-// ─── 새 토큰 (매칭 안 된 값만 생성) ─────────────
-// 기존 토큰이 없는 프로젝트에서는 아래처럼 전체 생성 (기존 방식)
+// ─── 새 토큰 (tree.json에서 추출, 기존에 없는 값만) ───
+$color-accent-gold: #ffd700;
 
-// ─── Primitive (재료함의 원시 값) ────────────────
-$color-white: #ffffff;
-$color-black: #000000;
-$color-navy-dark: #0a1628;
-$color-navy-medium: #00264a;
-
+// ─── 폰트 ─────────────────────────────────────
 $font-pretendard: 'Pretendard', sans-serif;
 
-$font-size-xs: 11px;   // 재료: 16 × 0.667
-$font-size-sm: 13px;   // 재료: 20 × 0.667
-$font-size-md: 16px;   // 재료: 24 × 0.667
-$font-size-lg: 19px;   // 재료: 28 × 0.667
+// ─── 간격 (tree.json의 빈번한 gap/padding 값) ──
+$space-xs: 5px;    // tree에서 빈도 높은 값
+$space-sm: 7px;
+$space-md: 11px;
+$space-lg: 16px;
 
-$font-weight-regular: 400;
-$font-weight-medium: 500;
-$font-weight-bold: 700;
-
-$space-xs: 5px;
-$space-sm: 11px;
-$space-md: 16px;
-$space-lg: 21px;
-
-// ─── Semantic (용도별) ────────────────────────
-$color-text-primary: $color-white;
-$color-text-secondary: #dadce3;
-$color-bg-primary: $color-navy-dark;
-$color-bg-section: $color-navy-medium;
-$color-border-primary: #203f6c;
 $bp-desktop: 1024px;
-
-// 규칙:
-//   - primitive: 재료함의 고유 값 (hex, 폰트명, px)
-//   - semantic: primitive 참조로 용도별 이름
-//   - 같은 값 중복 금지 — 기존 토큰 재사용
 ```
 
 ---
 
 ## 3. 컴포넌트 작성
 
-### Vue / Nuxt 예시
+### Vue / Nuxt 예시 (트리 기반)
 
 ```vue
-<!-- 스크린샷 기반: 전면 배경 + 중앙 타이틀 + 기간 정보 + 공유 버튼 -->
+<!--
+  tree.json 구조:
+  Hero (INSTANCE 720x1280)
+  ├── BG (FRAME — 배경 레이어)
+  ├── Title (FRAME — flex-column, gap:24px)
+  │   ├── Title (RECTANGLE — imageRef → title.png)
+  │   └── Sub Title (VECTOR — imageRef → subtitle.png)
+  ├── Period (FRAME — flex-column, gap:10px, padding)
+  │   └── Period (FRAME — flex-column, gap:22px)
+  │       ├── Period_Left (FRAME — flex-column, gap:4px)
+  │       │   ├── TEXT "이벤트 기간 (이벤트 참여 및 미션 수행)"
+  │       │   └── TEXT "2025.12.22 11:00 ~ 2026.01.18 11:00 [KST]"
+  │       └── Period_Right (FRAME — flex-column, gap:4px)
+  │           ├── TEXT "교환/응모 종료일"
+  │           └── TEXT "2026.01.25. 11:00 [KST]"
+  └── BTN_Share (FRAME — flex, borderRadius:500px)
+-->
 <template>
   <section class="heroSection">
+    <!-- BG: 부모와 동일 크기 + imageRef → 배경 레이어 -->
     <div class="heroBg">
-      <img src="/images/{feature}/bg.webp" alt="" aria-hidden="true" />
+      <img src="/images/{feature}/hero-bg.png" alt="" aria-hidden="true" />
     </div>
 
-    <div class="heroContent">
-      <div class="heroTitle">
-        <img src="/images/{feature}/title.webp" alt="추운 겨울, 따뜻한 보상이 펑펑" />
-      </div>
+    <!-- Title: flex-column, gap:24px → 직접 매핑 -->
+    <div class="heroTitle">
+      <img src="/images/{feature}/title.png"
+           alt="추운 겨울, 따뜻한 보상이 펑펑"
+           class="heroTitleImg" />
+      <img src="/images/{feature}/subtitle.png"
+           alt="겨울을 녹일 보상, 지금 PC방에서 획득하세요!"
+           class="heroSubtitleImg" />
+    </div>
 
-      <div class="heroPeriod">
-        <p class="heroPeriodTarget">참여 대상 : PC 유저 (Steam, Kakao)</p>
-        <div class="heroPeriodDetails">
-          <div class="heroPeriodItem">
-            <p class="heroPeriodLabel">이벤트 기간</p>
-            <p class="heroPeriodValue">{{ eventPeriod }}</p>
-          </div>
+    <!-- Period: flex-column, gap:10px, padding → 직접 매핑 -->
+    <div class="heroPeriod">
+      <div class="heroPeriodInner">
+        <!-- Period_Left: flex-column, gap:4px -->
+        <div class="heroPeriodGroup">
+          <!-- TEXT 노드에서 characters 직접 삽입 -->
+          <span class="heroPeriodLabel">이벤트 기간 (이벤트 참여 및 미션 수행)</span>
+          <span class="heroPeriodValue">{{ eventPeriod.start }} ~ {{ eventPeriod.end }} [{{ eventPeriod.timezone }}]</span>
+        </div>
+        <!-- Period_Right: 동일 구조 -->
+        <div class="heroPeriodGroup">
+          <span class="heroPeriodLabel">교환/응모 종료일</span>
+          <span class="heroPeriodValue">2026.01.25. 11:00 [KST]</span>
         </div>
       </div>
     </div>
 
+    <!-- BTN_Share: flex, borderRadius:500px → 버튼으로 승격 -->
     <button class="heroShareBtn" @click="handleShare">
-      <img src="/images/{feature}/share.webp" alt="공유하기" />
+      <img src="/images/{feature}/share-icon.png" alt="공유하기" class="heroShareIcon" />
     </button>
   </section>
 </template>
 
 <script setup lang="ts">
+/**
+ * 히어로 섹션
+ * tree.json: Hero (INSTANCE 720x1280)
+ *
+ * [기능 정의]
+ * - 키비주얼 + 이벤트 기간 정보 + 공유 버튼
+ *
+ * [인터랙션]
+ * ① 공유 버튼 클릭 → 공유 다이얼로그
+ */
+
+interface EventPeriod {
+  start: string
+  end: string
+  timezone: string
+}
+
 defineProps<{
-  eventPeriod: string
+  eventPeriod: EventPeriod
 }>()
 
 const emit = defineEmits<{ share: [] }>()
@@ -248,21 +370,30 @@ function handleShare(): void {
 
 ---
 
-## 4. 이미지 배치 패턴 (스크린샷에서 판단)
+## 4. 이미지 처리 (트리 기반 판별)
 
 ```
-스크린샷에서 판단하는 패턴:
+트리 노드의 속성으로 이미지 유형을 판별한다:
 
-배경 이미지 (화면 전체를 덮는 큰 이미지):
-  → absolute + inset-0 + object-cover
-  → .{section}Bg (z-index: 0) + .{section}Content (z-index: 10)
+배경 이미지:
+  조건: imageRef 있음 + 부모와 크기 동일(±5%) + 형제 중 가장 먼저 위치
+  매핑: position:absolute + inset:0 + z-index:0 + object-fit:cover
+  태그: <img alt="" aria-hidden="true" />
 
-콘텐츠 이미지 (독립적 요소):
-  → <img src="..." alt="설명" /> + 고정 width/height
+콘텐츠 이미지:
+  조건: imageRef 있음 + 독립적 크기 + TEXT 형제 없음
+  매핑: width/height tree 값 × scaleFactor
+  태그: <img alt="가장 가까운 TEXT 노드의 characters" />
 
-장식 이미지 (분위기용, 반투명, 블러):
-  → <img ... alt="" aria-hidden="true" />
-  → mix-blend-mode, opacity 등 재료함 값 적용
+장식 이미지:
+  조건: opacity < 1 또는 mixBlendMode 있음 또는 filter:blur 있음
+  매핑: tree의 opacity/mixBlendMode/filter 직접 적용
+  태그: <img alt="" aria-hidden="true" />
+
+아이콘:
+  조건: VECTOR/GROUP + 크기 ≤ 64px
+  매핑: width/height × scaleFactor
+  태그: <img alt="기능 설명" /> 또는 인라인 SVG
 ```
 
 ---
@@ -270,16 +401,18 @@ function handleShare(): void {
 ## 5. 반응형 추가 (데스크탑 URL)
 
 ```
-두 번째 URL의 재료를 확보한 후:
+두 번째 URL의 tree.json을 확보한 후:
 
-기존 모바일 코드 유지 + @media 오버라이드만 추가.
+모바일 tree vs 데스크탑 tree 비교:
+  동일한 name의 노드를 매칭
+  CSS 속성 차이만 @media 오버라이드로 추가
 
 같은 값 → 유지
-다른 px 값 → @include pc { ... } 오버라이드
+다른 px 값 → @include pc { width: {desktop값 × pcScaleFactor}px; }
 다른 레이아웃 → @include pc { flex-direction: row; }
-다른 배경 이미지 → @include pc { content: url(...) }
+다른 이미지 → @include pc { content: url(/images/{feature}/desktop-xxx.png); }
 
-기존 코드 삭제 금지.
+기존 모바일 코드 삭제 금지.
 ```
 
 ---
@@ -287,12 +420,36 @@ function handleShare(): void {
 ## 6. Semantic HTML 규칙
 
 ```
-- 섹션 래퍼: <section>
-- 제목: <h1>~<h6> (순차, 건너뛰기 금지)
-- 텍스트: <p>
-- 버튼: <button>
-- 링크: <a>
-- 리스트: <ul>/<ol> + <li> (반복 패턴)
+Claude가 태그를 승격할 때의 규칙:
+
+- 최상위 래퍼: <section>
+- 섹션 제목 (name에 "title", 가장 큰 fontSize): <h2>
+- 설명 텍스트: <p>
+- 클릭 가능 (name에 "btn", "CTA", "link"): <button> 또는 <a>
+- 반복 리스트: <ul>/<ol> + <li>
+- 네비게이션: <nav>
+- 제목 순서: <h1>~<h6> (순차, 건너뛰기 금지)
 - 장식 이미지: alt="" + aria-hidden="true"
 - 콘텐츠 이미지: alt="설명적 텍스트"
+```
+
+---
+
+## 7. 생성 후 자가 검증
+
+```
+코드 작성 완료 후, Phase 4 (브라우저 검증) 전에:
+
+1. 클래스명 일관성:
+   template의 모든 class가 SCSS에 정의됨 → OK
+   SCSS에 정의된 클래스가 template에 없음 → 경고 (미사용)
+   template에 사용된 클래스가 SCSS에 없음 → P1 (스타일 미적용)
+
+2. 이미지 경로:
+   모든 src="/images/..." 경로가 static/ 에 실제 존재 → OK
+   존재하지 않는 경로 → P1
+
+3. 트리 매핑 완전성:
+   tree.json의 Auto Layout 노드 → SCSS에 flex 속성 존재 → OK
+   Auto Layout인데 SCSS에 flex 없음 → P1 (레이아웃 깨짐)
 ```
