@@ -178,7 +178,7 @@ function parseAnalyzeImageArgs(args) {
 // CLI Provider Functions
 // ============================================
 
-const CLI_TIMEOUT_MS = 60000;
+const CLI_TIMEOUT_MS = 120000;
 const CLI_FALLBACK_TIMEOUT_MS = 30000;
 const IS_WINDOWS = os.platform() === 'win32';
 
@@ -205,7 +205,7 @@ function callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
   const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
   const outputFile = path.join(os.tmpdir(), `vibe-codex-${crypto.randomUUID()}.txt`);
   // stdin pipe로 프롬프트 전달 (shell escaping 이슈 회피)
-  const args = ['exec', '-m', model, '--sandbox', 'read-only', '--ephemeral', '-o', outputFile, '-'];
+  const args = ['exec', '-m', model, '--sandbox', 'read-only', '--ephemeral', '-c', 'model_reasoning_effort="medium"', '-o', outputFile, '-'];
 
   // config에 저장된 API key를 환경변수로 전달 (임베딩과 동일한 키 사용)
   const vibeConfig = readVibeConfig();
@@ -219,8 +219,7 @@ function callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
       timeout: effectiveTimeout,
       env,
     });
-    proc.stdin.write(fullPrompt);
-    proc.stdin.end();
+    proc.stdin.end(fullPrompt);
 
     let stderr = '';
     proc.stderr.on('data', (d) => { stderr += d.toString(); });
@@ -255,8 +254,7 @@ function callGeminiCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: effectiveTimeout,
     });
-    proc.stdin.write(fullPrompt);
-    proc.stdin.end();
+    proc.stdin.end(fullPrompt);
 
     let stdout = '';
     let stderr = '';
