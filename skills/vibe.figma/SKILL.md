@@ -202,86 +202,56 @@ URL에서 fileKey, nodeId 추출
   → 또는 depth 높여서 하위 분할 조회
 ```
 
-### 1-2. 레이아웃 + 컴포넌트 구성 (코드 생성)
+### 1-2. 기능 스펙 문서 작성 (파일 생성 없음)
 
 ```
-스토리보드에서 파악한 섹션 구조로 실제 파일을 생성한다.
+❌ Phase 1에서 코드 파일을 생성하지 않는다.
+   → Phase 1 HTML 구조와 Phase 3 트리 매핑이 충돌하면 이중 작업
+   → Phase 3에서 tree.json 기반으로 코드를 생성
 
-1. 루트 페이지 파일 생성 (Write):
-   pages/{feature}.vue (또는 app/{feature}/page.tsx)
-   → 모든 섹션 컴포넌트 import + 순서대로 배치
-   → 팝업/모달 조건부 렌더링
+✅ Phase 1의 출력물은 기능 스펙 문서 (텍스트):
 
-2. 섹션 컴포넌트 파일 생성 (Write):
-   components/{feature}/HeroSection.vue
-   components/{feature}/DailyCheckInSection.vue
-   components/{feature}/PlayTimeMissionSection.vue
-   ...PAGE 프레임 수만큼
+1. 섹션 목록:
+   | # | 섹션 이름 | Figma 프레임 name | 높이 | 설명 |
+   |---|----------|------------------|------|------|
+   | 1 | Hero | Hero | 1280px | 키비주얼 + 이벤트 정보 |
+   | 2 | DailyCheckIn | Daily | 3604px | 출석 미션 |
+   | 3 | PlayTime | Frame 633371 | 11363px | 플레이타임 미션 |
 
-   각 컴포넌트에 반드시 포함:
+2. 각 섹션의 기능 정의:
+   /**
+    * 일일 출석 미션 섹션
+    *
+    * [기능 정의]
+    * - 매일 출석 시 스노우 토큰 즉시 지급
+    * - 누적 3/5/7일 달성 시 추가 보상
+    *
+    * [인터랙션]
+    * ① 출석하기 클릭 → API호출 → 토큰지급 표시
+    * ② 누적 보상 클릭 → 보상 수령
+    *
+    * [상태] default, checked, reward-claimed
+    */
 
-   <template>:
-     - 섹션 제목 <h2> (스토리보드에서 추출한 실제 텍스트)
-     - 설명 텍스트 <p>
-     - 리스트 렌더링 (v-for + 목 데이터)
-     - 버튼/CTA (실제 라벨 + @click 핸들러)
-     - 조건부 렌더링 (상태에 따른 v-if)
-     → 빈 template 금지. 브라우저에서 텍스트가 보여야 함.
+3. 공통 컴포넌트 목록:
+   → 프로젝트에 이미 있는 컴포넌트 (GNB, Footer 등)
+   → 새로 만들 공통 컴포넌트
 
-   <script setup>:
-     - JSDoc 주석으로 기능 요구사항 작성:
-       /**
-        * 일일 출석 미션 섹션
-        *
-        * [기능 정의]
-        * - 매일 출석 시 스노우 토큰 즉시 지급
-        * - 누적 3/5/7일 달성 시 추가 보상
-        *
-        * [인터랙션]
-        * ① 출석하기 클릭 → API호출 → 토큰지급 표시
-        * ② 누적 보상 클릭 → 보상 수령
-        *
-        * [상태] default, checked, reward-claimed
-        */
-     - TypeScript 인터페이스
-     - 목 데이터 (빈 배열 금지, 3~7개 아이템)
-     - 목 데이터의 image 필드: 실제 다운로드할 이미지 경로 사용 금지
-       → Phase 1에서는 이미지 경로를 '' (빈 문자열) 또는 placeholder 텍스트로 설정
-       → Phase 2에서 실제 이미지 다운로드 후 경로를 업데이트
-       → ❌ '/images/{feature}/token-100.png' (존재하지 않는 파일 참조 금지)
-     - 이벤트 핸들러 stub (body는 // TODO:)
-
-   ❌ <client-only> 래핑 금지 — SSR hydration 실패 위험
-      (<client-only>는 window/document 직접 접근하는 컴포넌트에만 사용)
-   <style> 블록 없음 — 스타일은 Phase 3에서 외부 파일로.
-
-3. 공통 컴포넌트 (SHARED에서 파악):
-   → 프로젝트에 이미 있으면 import 재사용
-   → 없으면 새로 생성 (GNB, Footer, Popup)
-
-4. 스타일 디렉토리 구조 생성 (빈 파일):
-   styles/{feature}/index.scss
-   styles/{feature}/_tokens.scss
-   styles/{feature}/_mixins.scss
-   styles/{feature}/_base.scss
-   styles/{feature}/layout/
-   styles/{feature}/components/
+4. TypeScript 인터페이스 초안:
+   interface RewardItem { id: string; name: string; tokenAmount: number; status: 'locked'|'available'|'claimed' }
 ```
 
 ### 1-3. 검증
 
 ```
 Phase 1 완료 조건:
-  □ 브라우저에서 열면 각 섹션의 텍스트/리스트/버튼이 보인다
-  □ 클릭하면 핸들러가 실행된다
-  □ 모든 컴포넌트에 [기능 정의] + [인터랙션] + [상태] JSDoc
-  □ 빈 배열 0개, 빈 template 0개, <style> 블록 0개
-  □ <client-only> 전체 래핑 0개
-  □ 목 데이터의 image 필드에 존재하지 않는 파일 경로 0개
-  □ 빌드 성공
+  □ 모든 섹션이 목록에 포함되어 있다
+  □ 각 섹션에 [기능 정의] + [인터랙션] + [상태] 가 정의되어 있다
+  □ TypeScript 인터페이스 초안이 작성되어 있다
+  □ 공통 컴포넌트가 식별되어 있다
+  □ 파일을 하나도 생성하지 않았다
 
-빈 화면 = Phase 1 미완성. Phase 2로 넘어가지 않는다.
-스타일/이미지는 없어도 됨 — Phase 3에서 채움.
+Phase 3에서 이 스펙 + tree.json을 합쳐서 코드를 생성한다.
 ```
 
 ---
