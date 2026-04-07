@@ -6,10 +6,10 @@
 
 | Order | Feature File | SPEC File | Status |
 |-------|--------------|-----------|--------|
-| 1 | phase-1-component-reuse.feature | phase-1-component-reuse.md | ⬜ |
-| 2 | phase-2-compile-feedback.feature | phase-2-compile-feedback.md | ⬜ |
-| 3 | phase-3-design-token-mapping.feature | phase-3-design-token-mapping.md | ⬜ |
-| 4 | phase-4-multi-frame.feature | phase-4-multi-frame.md | ⬜ |
+| 1 | phase-1-component-reuse.feature | phase-1-component-reuse.md | ✅ |
+| 2 | phase-2-compile-feedback.feature | phase-2-compile-feedback.md | ✅ |
+| 3 | phase-3-design-token-mapping.feature | phase-3-design-token-mapping.md | ✅ |
+| 4 | phase-4-multi-frame.feature | phase-4-multi-frame.md | ✅ |
 
 ## Overall User Story
 **As a** vibe.figma 사용자

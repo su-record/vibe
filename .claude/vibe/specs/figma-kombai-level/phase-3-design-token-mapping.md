@@ -180,6 +180,7 @@ Phase 3-0 "SCSS Setup" (line 263~279) 수정:
 - 색상 매칭은 hex 완전 일치만 (유사색 매칭 없음)
 - 기존 토큰 파일 수정 금지 — 참조만 함
 - Tailwind 프로젝트에서는 SCSS 토큰 대신 Tailwind 클래스 우선
+- 토큰 소스 우선순위 (복수 시스템 공존 시): Tailwind > CSS Variables > SCSS > CSS-in-JS (프로젝트 주 스택 기준, Tailwind 프로젝트면 Tailwind 최우선)
 - 토큰 스캔 성능: 100개 파일 기준 5초 이내 완료
 - 토큰 파일 파싱 실패 시 해당 파일 스킵 후 경고 로그 (전체 중단하지 않음)
 </constraints>

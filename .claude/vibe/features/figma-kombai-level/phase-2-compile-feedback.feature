@@ -76,9 +76,9 @@ Scenario: dev 서버가 정상 시작됨을 확인
 ## Coverage
 | Scenario | SPEC AC | Status |
 |----------|---------|--------|
-| 1 | AC-1: Phase 3.5 추가, AC-3: 에러 유형별 전략 | ⬜ |
-| 2 | AC-3: 자동 수정 전략 | ⬜ |
-| 3 | AC-2: tsc→build→dev 3단계 | ⬜ |
-| 4 | AC-4: 3라운드 반복, AC-7: 게이트 원칙 | ⬜ |
-| 5 | AC-5: Phase 4 tsc 재검증 | ⬜ |
-| 6 | AC-2: dev 서버 확인 | ⬜ |
+| 1 | AC-1: Phase 3.5 추가, AC-3: 에러 유형별 전략 | ✅ |
+| 2 | AC-3: 자동 수정 전략 | ✅ |
+| 3 | AC-2: tsc→build→dev 3단계 | ✅ |
+| 4 | AC-4: 3라운드 반복, AC-7: 게이트 원칙 | ✅ |
+| 5 | AC-5: Phase 4 tsc 재검증 | ✅ |
+| 6 | AC-2: dev 서버 확인 | ✅ |

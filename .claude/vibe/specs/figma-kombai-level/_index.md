@@ -1,6 +1,6 @@
 ---
-status: pending
-currentPhase: 0
+status: completed
+currentPhase: 4
 totalPhases: 4
 createdAt: 2026-04-07T00:00:00Z
 lastUpdated: 2026-04-07T00:00:00Z
@@ -20,10 +20,10 @@ lastUpdated: 2026-04-07T00:00:00Z
 
 | Order | SPEC File | Feature File | Status |
 |-------|-----------|--------------|--------|
-| 1 | phase-1-component-reuse.md | phase-1-component-reuse.feature | ⬜ |
-| 2 | phase-2-compile-feedback.md | phase-2-compile-feedback.feature | ⬜ |
-| 3 | phase-3-design-token-mapping.md | phase-3-design-token-mapping.feature | ⬜ |
-| 4 | phase-4-multi-frame.md | phase-4-multi-frame.feature | ⬜ |
+| 1 | phase-1-component-reuse.md | phase-1-component-reuse.feature | ✅ |
+| 2 | phase-2-compile-feedback.md | phase-2-compile-feedback.feature | ✅ |
+| 3 | phase-3-design-token-mapping.md | phase-3-design-token-mapping.feature | ✅ |
+| 4 | phase-4-multi-frame.md | phase-4-multi-frame.feature | ✅ |
 
 ## Shared Context
 
@@ -41,6 +41,7 @@ lastUpdated: 2026-04-07T00:00:00Z
 - ESM import에 `.js` 확장자 필수
 - No `any` — `unknown` + type guards
 - 함수 50줄, 중첩 3단계, 파라미터 5개 이하
+- `/tmp/{feature}/` 경로 보안 (전 Phase 공통): feature명에서 `/`, `..`, 특수문자 제거, 최대 64자, resolved path가 `/tmp/` 하위인지 검증, 기존 파일 덮어쓰기 허용 (symlink은 거부)
 
 ### Architecture Decision
 - Kombai의 Context Graphs 개념 참고하되, vector DB 없이 Grep + Glob + Read 기반 경량 인덱싱 (AST 파서 라이브러리 없음)

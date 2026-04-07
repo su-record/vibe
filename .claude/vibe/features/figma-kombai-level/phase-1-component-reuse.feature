@@ -99,11 +99,11 @@ Scenario: 대규모 프로젝트에서 인덱싱 범위가 제한됨
 ## Coverage
 | Scenario | SPEC AC | Status |
 |----------|---------|--------|
-| 1 | AC-1: props/slots/클래스/용도 추출 | ⬜ |
-| 2 | AC-2: hooks/types/constants 인덱싱 | ⬜ |
-| 3 | AC-4: Phase 3 매칭 단계 | ⬜ |
-| 4 | AC-7: 강제 재사용 금지 | ⬜ |
-| 5 | AC-5: 스타일 충돌 방지 | ⬜ |
-| 6 | AC-3: component-index 포맷 | ⬜ |
-| 7 | AC-6: convert 재사용 우선 | ⬜ |
-| 8 | Constraints: 대규모 프로젝트 제한 | ⬜ |
+| 1 | AC-1: props/slots/클래스/용도 추출 | ✅ |
+| 2 | AC-2: hooks/types/constants 인덱싱 | ✅ |
+| 3 | AC-4: Phase 3 매칭 단계 | ✅ |
+| 4 | AC-7: 강제 재사용 금지 | ✅ |
+| 5 | AC-5: 스타일 충돌 방지 | ✅ |
+| 6 | AC-3: component-index 포맷 | ✅ |
+| 7 | AC-6: convert 재사용 우선 | ✅ |
+| 8 | Constraints: 대규모 프로젝트 제한 | ✅ |

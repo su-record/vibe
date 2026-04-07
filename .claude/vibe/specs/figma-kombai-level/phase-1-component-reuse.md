@@ -92,7 +92,11 @@ Phase 3 "섹션 조립 프로세스" (line 285~316) 확장:
         - 카드 패턴 → 기존 Card 컴포넌트
         - 모달/팝업 → 기존 Modal 컴포넌트
      3. 매칭된 컴포넌트: import하여 props 전달
-     4. 매칭 안 됨: 새로 생성 (기존 방식)
+     4. 매칭 판정 기준:
+        - 필수: name/role 유사성 (버튼, 카드, 네비게이션 등 시각적 역할 일치)
+        - 보조: props 호환성 (필요 props가 기존 컴포넌트에 존재)
+        - 보조: slots 호환성 (필요 slot이 존재)
+        - 불일치 시: 새로 생성 (기존 방식) — props/slots 50% 미만 호환이면 매칭 거부
    ```
    - File: `skills/vibe.figma/SKILL.md` Phase 3 섹션
    - Verify: 매칭 로직이 스킬 문서에 명시됨
@@ -127,6 +131,10 @@ Phase 3 "섹션 조립 프로세스" (line 285~316) 확장:
    저장: /tmp/{feature}/context-index.json에 hooks, types, constants 인덱스 저장
    (component-index.json과 별도 파일, Phase 3에서 Read로 로드)
 
+   컨텍스트 관리 (context-index):
+     - 항목 30개 이하: 전체 인덱스를 프롬프트에 포함
+     - 항목 30개 초과: 이름 + 핵심 시그니처(파라미터명, 반환 타입)만 요약 포함, 상세 필요 시 파일 Read로 지연 조회
+
 ### 1-4. convert 스킬 재사용 지침 추가 (`skills/vibe.figma.convert/SKILL.md`)
 
 1. [ ] 코드 생성 프로세스에 재사용 우선 규칙 추가:
@@ -147,7 +155,7 @@ Phase 3 "섹션 조립 프로세스" (line 285~316) 확장:
 <constraints>
 - 스킬 파일(`.md`)만 수정 — TypeScript 인프라 코드 변경 없음
 - 인덱싱은 Glob + Read 기반 (AST 파서 라이브러리 추가 없음)
-- 인덱싱 대상 파일이 50개 초과 시 최대 50개 파일 스캔 (우선순위: barrel file index.ts → components/ui/ → components/common/ → components/shared/ → 나머지)
+- 인덱싱 대상 파일이 50개 초과 시 최대 50개 파일 스캔: 우선순위 디렉토리 순서대로 수집 (barrel file index.ts → components/ui/ → components/common/ → components/shared/ → 나머지), 각 디렉토리 내에서는 1-depth 파일만 (하위 디렉토리 재귀 탐색 안 함)
 - 인덱싱 타임아웃: 파일당 Read 최대 300줄 (barrel file index.ts는 전체 Read), 전체 인덱싱 2분 이내 완료
 - component-index는 /tmp/{feature}/component-index.json에 임시 저장 후 Phase 3에서 Read로 로드 (Phase 간 컨텍스트 유실 방지)
 - 기존 Phase 0~4 흐름 변경 최소화

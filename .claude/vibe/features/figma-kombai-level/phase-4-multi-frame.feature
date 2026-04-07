@@ -20,13 +20,13 @@ Scenario: 여러 Figma URL을 줄바꿈으로 입력
 ```
 **Verification**: SPEC AC #1
 
-### Scenario 2: 병렬 재료 확보
+### Scenario 2: 순차 추출 + 병렬 후처리 재료 확보
 ```gherkin
-Scenario: 여러 프레임의 재료가 병렬로 확보됨
+Scenario: 여러 프레임의 재료가 순차 추출 후 병렬 후처리됨
   Given 3개 Figma URL이 입력됨
   When Phase 2 재료 확보가 실행됨
-  Then 3개 프레임의 스크린샷/트리/이미지가 병렬 추출됨
-  And Figma API rate limit (500ms 간격)이 준수됨
+  Then 3개 프레임이 순차 추출됨 (Figma API rate limit 500ms 간격 준수)
+  And 추출 완료 후 섹션 분할 등 후처리는 병렬 실행
 ```
 **Verification**: SPEC AC #2, #8
 
@@ -83,13 +83,26 @@ Scenario: URL 1개일 때 기존 동작 그대로
 ```
 **Verification**: SPEC AC #7
 
+### Scenario 8: 멀티 URL 부분 실패 처리
+```gherkin
+Scenario: 일부 URL 추출 실패 시 나머지 계속 진행
+  Given 3개 Figma URL이 입력됨
+  And frame-2 URL의 Figma API 호출이 실패
+  When Phase 2 재료 확보가 실행됨
+  Then frame-2는 건너뛰고 frame-1, frame-3 재료만 확보
+  And 성공한 프레임이 2개이므로 Phase 2.5 계속 진행
+  And 사용자에게 frame-2 실패 사유 보고
+```
+**Verification**: SPEC Constraints — 멀티 URL 부분 실패 처리
+
 ## Coverage
 | Scenario | SPEC AC | Status |
 |----------|---------|--------|
-| 1 | AC-1: 멀티 URL 입력 방식 | ⬜ |
-| 2 | AC-2: 병렬 확보, AC-8: rate limit | ⬜ |
-| 3 | AC-3: 공통 패턴 분석 3단계 | ⬜ |
-| 4 | AC-4: 공통 토큰 합집합 | ⬜ |
-| 5 | AC-5: 공유→개별 순서 | ⬜ |
-| 6 | AC-6: 스타일 디렉토리 구조 | ⬜ |
-| 7 | AC-7: 단일 URL 역호환 | ⬜ |
+| 1 | AC-1: 멀티 URL 입력 방식 | ✅ |
+| 2 | AC-2: 병렬 확보, AC-8: rate limit | ✅ |
+| 3 | AC-3: 공통 패턴 분석 3단계 | ✅ |
+| 4 | AC-4: 공통 토큰 합집합 | ✅ |
+| 5 | AC-5: 공유→개별 순서 | ✅ |
+| 6 | AC-6: 스타일 디렉토리 구조 | ✅ |
+| 7 | AC-7: 단일 URL 역호환 | ✅ |
+| 8 | Constraint: 부분 실패 처리 | ✅ |

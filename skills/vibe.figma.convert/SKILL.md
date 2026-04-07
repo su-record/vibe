@@ -16,6 +16,22 @@ tier: standard
 
 ---
 
+## 0. 재사용 확인 (코드 작성 전)
+
+```
+component-index (/tmp/{feature}/component-index.json) 에서 매칭되는 컴포넌트가 있으면:
+
+  ✅ import하여 사용 (새로 만들지 않음)
+  ✅ props로 커스터마이즈 (variant, size 등)
+  ✅ 래퍼 클래스로 위치/크기만 조정
+  ❌ 기존 컴포넌트 내부 수정
+  ❌ 90% 유사한데 새로 만들기
+
+매칭 안 되면 → 섹션 1 프로세스로 새로 생성 (기존 방식)
+```
+
+---
+
 ## 1. 코드 생성 프로세스
 
 ```
@@ -120,9 +136,20 @@ components/ → font-size, font-weight, color, line-height, letter-spacing,
 }
 ```
 
-### _tokens.scss 구조 (primitive/semantic 분리)
+### _tokens.scss 구조 (기존 토큰 참조 + 새 토큰)
 
 ```scss
+// ─── 기존 토큰 참조 (프로젝트에 이미 있는 경우) ───
+// project-tokens.json 매칭 결과에 따라 @use로 참조
+@use '../../styles/variables' as v;
+
+// ─── 매핑 (기존 토큰 → 피처 시맨틱 별칭) ────────
+$color-bg-primary: v.$color-navy;          // 기존 토큰 재사용
+$color-text-primary: v.$color-white;       // 기존 토큰 재사용
+
+// ─── 새 토큰 (매칭 안 된 값만 생성) ─────────────
+// 기존 토큰이 없는 프로젝트에서는 아래처럼 전체 생성 (기존 방식)
+
 // ─── Primitive (재료함의 원시 값) ────────────────
 $color-white: #ffffff;
 $color-black: #000000;

@@ -53,6 +53,11 @@ Phase 2 "재료 확보" (line 188~253) 수정:
        https://figma.com/file/xxx?node-id=100:2  (서브1)
        https://figma.com/file/xxx?node-id=100:3  (서브2)
 
+   URL 유효성 검증:
+     - 모든 URL에서 fileKey 추출 → 동일한 fileKey인지 확인
+     - 서로 다른 fileKey 발견 시 즉시 에러: "멀티 프레임은 동일 Figma 파일 내 다른 프레임만 지원합니다"
+     - node-id 파라미터 누락 시 해당 URL 에러 보고
+
    URL 개수에 따른 처리:
      1개: 기존 방식 (변경 없음)
      2개 이상: 멀티 프레임 모드 활성화
@@ -104,7 +109,7 @@ Phase 2 완료 후, Phase 3 시작 전에 공통 분석 단계 추가:
 
    2. 구조 비교 — 각 tree.json의 1depth 자식 비교:
       - 동일한 name 또는 prefix 일치 (예: "GNB", "Header", "Footer", "Nav")
-      - 동일한 size (±10% 이내): 같은 컴포넌트 후보
+      - 동일한 size (width와 height 모두 ±10% 이내): 같은 컴포넌트 후보
       - 동일한 CSS 패턴: 같은 스타일 사용 (색상, 폰트, 레이아웃)
 
    3. 공통 컴포넌트 후보 목록:
@@ -141,7 +146,7 @@ Phase 3 수정:
 
    1단계: 공유 컴포넌트 먼저 생성
      - shared-components 목록의 컴포넌트를 components/shared/에 생성
-     - 가장 일관적인 프레임의 스크린샷을 기준으로 조립
+     - 가장 일관적인 프레임(shared-components 매칭 수가 가장 많은 프레임)의 스크린샷을 기준으로 조립
      - 프레임별 변형은 props로 처리
 
    2단계: 프레임별 고유 섹션 조립
@@ -187,6 +192,7 @@ Phase 3 수정:
 - 병렬 추출 시 Figma API rate limit 고려 (요청 간 500ms 간격)
 - /tmp/{feature}/ 경로에 path traversal 방지: feature명에서 `/`, `..`, 특수문자 제거 후 사용
 - URL 유효성 검증: figma.com 도메인 + node-id 파라미터 존재 확인 후 추출 시작
+- 멀티 URL 부분 실패 처리: 개별 URL 추출 실패 시 해당 frame만 건너뛰고 나머지 진행; 성공한 frame이 2개 이상이면 Phase 2.5 계속, 정확히 1개만 성공이면 단일 프레임 모드로 폴백 (Phase 2.5 스킵), 0개면 전체 실패 보고
 </constraints>
 
 ## Output Format
@@ -206,7 +212,7 @@ Phase 3 수정:
 ## Acceptance Criteria
 <acceptance>
 - [ ] Phase 2에서 여러 URL을 줄바꿈으로 입력받는 방식이 명시됨
-- [ ] URL별 병렬 재료 확보 (frame-N/ 구조)가 정의됨
+- [ ] URL별 순차 추출 + 후처리 병렬 재료 확보 (frame-N/ 구조)가 정의됨
 - [ ] Phase 2.5 공통 패턴 분석이 3단계로 명시됨 (시각 비교, 구조 비교, 후보 목록)
 - [ ] 공통 토큰 추출 (합집합 → 공유 + 프레임별 로컬) 방식이 정의됨
 - [ ] Phase 3 조립 순서가 공유→개별 순서로 변경됨

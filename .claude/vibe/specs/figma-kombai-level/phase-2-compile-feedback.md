@@ -54,10 +54,21 @@ Phase 3 완료 후, Phase 4 시작 전에 컴파일 게이트 추가:
 
    자동 반복: 컴파일 성공까지. 최대 3라운드.
 
+   ### 3.5-0. 베이스라인 캡처 (Phase 3 변경 전)
+   Phase 3 시작 전에 기존 프로젝트의 tsc/build 에러를 캡처:
+     1. 타입 체크 베이스라인: (3.5-1에서 선택한 동일 명령 사용) > /tmp/{feature}/baseline-typecheck.txt 2>&1
+     2. 빌드 베이스라인: npm run build > /tmp/{feature}/baseline-build.txt 2>&1
+   → Phase 3.5에서는 baseline에 없는 **새로 발생한 에러만** 수정 대상
+   → baseline에 존재하던 에러는 무시하고 별도 보고 ("기존 에러 {N}개 유지")
+   → vibe.figma가 생성/수정한 파일 외의 에러는 자동 수정 금지
+
    ### 3.5-1. TypeScript 컴파일 체크
 
-   1. tsc --noEmit 실행 (또는 프로젝트의 type-check 명령):
-      Bash: npx tsc --noEmit 2>&1
+   1. 프로젝트 타입 체커 감지 → 실행:
+      - package.json scripts에 `type-check` 또는 `typecheck` 존재 → `npm run type-check` 사용
+      - `vue-tsc` 설치 확인 (Vue 프로젝트) → `npx vue-tsc --noEmit 2>&1`
+      - `svelte-check` 설치 확인 (Svelte 프로젝트) → `npx svelte-check 2>&1`
+      - 위 해당 없음 → fallback: `npx tsc --noEmit 2>&1`
       → 에러 0개: PASS → 다음 단계
       → 에러 있음: 에러 메시지 파싱 → 자동 수정
 
@@ -88,10 +99,15 @@ Phase 3 완료 후, Phase 4 시작 전에 컴파일 게이트 추가:
 
    1. dev 서버 시작 + PID 캡처:
       Bash: npm run dev & echo $!  → DEV_PID 저장
-      → localhost 포트 폴링 (3초 간격, 최대 30초 대기)
+      → localhost 포트 자동 감지: `npm run dev` stdout에서 `localhost:\d+` 또는 `port \d+` 패턴 파싱 (감지 실패 시 기본값 3000, 5173, 4173 순서 시도)
+      → 포트 폴링 (3초 간격, 최대 30초 대기)
       → 성공: Phase 4 진행 (Phase 4 완료 후 kill $DEV_PID로 정리)
       → 실패: kill $DEV_PID → 에러 로그 확인 → 수정 → 재시도
-      ※ Phase 4 완료 또는 3라운드 실패 시 반드시 pkill -P $DEV_PID && kill $DEV_PID 실행 (자식 프로세스 포함 정리)
+      ※ 프로세스 정리 규칙:
+        - Phase 4 완료 또는 3라운드 실패 시 반드시 정리 실행
+        - 정리 순서: kill $DEV_PID → 3초 대기 → kill -9 $DEV_PID (응답 없으면)
+        - lsof -i :{port} -t 로 포트 점유 프로세스 확인 후 추가 정리
+        - interrupt (Ctrl+C) 시에도 cleanup 보장: 수정 루프 시작 전 DEV_PID 기록, 루프 탈출 시 항상 정리
 
    ### 3.5-4. 수정 루프
 
@@ -159,6 +175,7 @@ Phase 4-4 자동 수정 루프 (line 449~464) 확장:
 - 컴파일 에러는 스킵 불가 (시각 P2와 다름) — 반드시 수정 또는 사용자 보고
 - Phase 3.5 실패 시 Phase 4 진행 불가 (게이트)
 - dev 서버 시작 대기: 최대 30초 (localhost 포트 폴링, 3초 간격)
+- npm run build 타임아웃: 최대 120초 (초과 시 해당 라운드 실패 처리)
 </constraints>
 
 ## Output Format
