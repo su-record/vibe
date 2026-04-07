@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**One install adds 56 agents, 36 skills, multi-LLM orchestration, and automated quality gates to your AI coding workflow.**
+**One install adds 56 agents, 45 skills, multi-LLM orchestration, and automated quality gates to your AI coding workflow.**
 
 Works with Claude Code, Codex, Cursor, and Gemini CLI.
 
@@ -131,13 +131,17 @@ Event Content, Event Image, Event Speaker, Event Ops, Event Comms, Event Schedul
 
 ---
 
-## Skills (36)
+## Skills (45)
 
-Domain-specific skill modules auto-installed based on detected stack.
+Domain-specific skill modules auto-installed based on detected stack. Classified into 3 tiers to prevent context overload.
 
-**Core (15):** Core Capabilities, Parallel Research, Commit Push PR, Git Worktree, Handoff, Priority Todos, Tool Fallback, Context7, Tech Debt, Characterization Test, Agents MD, Claude MD Guide, Exec Plan, Arch Guard, Capability Loop
+**Core (4):** Tech Debt, Characterization Test, Arch Guard, Exec Plan
 
-**Design (7):** Frontend Design, UI/UX Pro Max, Design Teach, Design Audit, Design Critique, Design Polish, Design Normalize
+**Standard (11):** Parallel Research, Handoff, Priority Todos, Agents MD, Claude MD Guide, Capability Loop, Design Teach, Vibe Figma, Vibe Figma Extract, Vibe Figma Convert, Vibe Docs
+
+**Optional (4):** Commit Push PR, Git Worktree, Tool Fallback, Context7
+
+**Design (8):** UI/UX Pro Max, Design Audit, Design Critique, Design Polish, Design Normalize, Design Distill, Brand Assets, SEO Checklist
 
 **Domain (3):** Commerce Patterns, E2E Commerce, Video Production
 
@@ -145,7 +149,9 @@ Domain-specific skill modules auto-installed based on detected stack.
 
 **Event (3):** Event Planning, Event Comms, Event Ops
 
-**Stack-Specific (5):** TypeScript Advanced Types, Vercel React Best Practices, SEO Checklist, Brand Assets, Design Distill
+**Stack-Specific (2):** TypeScript Advanced Types, Vercel React Best Practices
+
+**Figma Pipeline (7):** Figma Rules, Figma Pipeline, Figma Frame, Figma Style, Figma Analyze, Figma Consolidate, Figma Codegen
 
 ### External Skills (skills.sh)
 
@@ -262,7 +268,7 @@ const runner = skills.resolve('review');
 
 ---
 
-## Hooks (16 scripts)
+## Hooks (21 scripts)
 
 | Event | Script | Role |
 |-------|--------|------|
@@ -272,9 +278,11 @@ const runner = skills.resolve('review');
 | PostToolUse | `post-edit.js` | Git index update |
 | UserPromptSubmit | `prompt-dispatcher.js` | Command routing |
 | UserPromptSubmit | `keyword-detector.js` | Magic keyword detection |
+| UserPromptSubmit | `llm-orchestrate.js` | Multi-LLM dispatch |
 | Notification | `context-save.js` | Auto-save at 80/90/95% context |
+| Notification | `stop-notify.js` | Session end notification |
 
-Additional: `llm-orchestrate.js`, `codex-review-gate.js`, `codex-detect.js`, `sentinel-guard.js`, `skill-injector.js`, `evolution-engine.js`, `hud-status.js`, `stop-notify.js`
+Additional: `codex-review-gate.js`, `codex-detect.js`, `sentinel-guard.js`, `skill-injector.js`, `evolution-engine.js`, `hud-status.js`, `auto-commit.js`, `auto-format.js`, `auto-test.js`, `command-log.js`, `pr-test-gate.js`, `figma-extract.js`
 
 ---
 
@@ -396,6 +404,10 @@ vibe figma status|logout              # Token management
 # Channels
 vibe telegram setup|chat|status
 vibe slack setup|channel|status
+
+# Diagnostics
+vibe config show          # Unified config view (global + project)
+vibe stats [--week|--quality]  # Usage telemetry summary
 
 # Other
 vibe env import [path]    # Migrate .env → config.json

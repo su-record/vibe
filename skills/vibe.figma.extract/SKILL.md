@@ -113,8 +113,15 @@ Bash:
   title.png | 620×174 | 타이틀 이미지
   btn-share.png | 48×48 | 아이콘 (작은 사이즈)
 
-색상 팔레트 (tree.json에서 고유값 추출):
+색상 팔레트 (tree.json에서 고유값 추출 + 토큰 매핑 힌트):
   #0a1628, #00264a, #ffffff, #dadce3, #003879, #419bd3, ...
+
+  토큰 매핑 테이블 (project-tokens.json 존재 시):
+    | Figma 값 | 기존 토큰 | 상태 |
+    |----------|-----------|------|
+    | #0a1628 | $color-navy | ✅ 재사용 |
+    | #ffd700 | — | 🆕 생성 |
+    | #3b82f6 | $color-primary | ✅ 재사용 |
 
 폰트 목록:
   Pretendard: 400/500/700, 16px~48px
