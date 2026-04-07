@@ -178,7 +178,7 @@ function parseAnalyzeImageArgs(args) {
 // CLI Provider Functions
 // ============================================
 
-const CLI_TIMEOUT_MS = 120000;
+const CLI_TIMEOUT_MS = 180000;
 const CLI_FALLBACK_TIMEOUT_MS = 30000;
 const IS_WINDOWS = os.platform() === 'win32';
 
