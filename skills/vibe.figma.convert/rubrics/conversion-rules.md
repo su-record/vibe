@@ -42,13 +42,22 @@ line-height, letter-spacing, text-align, border, border-radius,
 box-shadow, opacity, mix-blend-mode, filter, backdrop-filter
 ```
 
-## Scale Factor 적용
+## 반응형 단위 변환 (scaleFactor 사용하지 않음)
 
-**적용 (px 값):**
-  font-size, padding, margin, gap, width, height, border-radius,
-  border-width, box-shadow px, filter px, letter-spacing
+스토리보드 CONFIG에서 designWidth, minWidth 확보.
 
-**미적용:**
+**UI 요소 → vw 비례:**
+  vw값 = (Figma px / designWidth) × 100
+  적용: width, height, padding, gap, margin, border-radius,
+        border-width, box-shadow px, filter px, letter-spacing
+
+**폰트 → clamp(최소, vw, 최대):**
+  vw값 = (Figma px / designWidth) × 100
+  최소값 = 역할에 따라 결정:
+    h1~h2: 16px, h3~h4: 14px, 본문: 12px, 캡션: 10px, 버튼: 12px
+  최대값 = Figma 원본 px
+
+**변환하지 않는 속성:**
   color, opacity, font-weight, font-family, z-index,
   line-height(단위 없을 때), text-align, mix-blend-mode,
   rotate, % 값

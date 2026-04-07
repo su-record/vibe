@@ -92,10 +92,10 @@ tree.json의 css 객체를 SCSS로 직접 변환한다. 추정하지 않는다.
   node.css.flexDirection   → flex-direction
   node.css.justifyContent  → justify-content
   node.css.alignItems      → align-items
-  node.css.gap             → gap (× scaleFactor)
-  node.css.padding         → padding (× scaleFactor)
-  node.css.width           → width (× scaleFactor)
-  node.css.height          → height (× scaleFactor)
+  node.css.gap             → gap (→ vw 변환)
+  node.css.padding         → padding (→ vw 변환)
+  node.css.width           → width (→ vw 또는 % 변환)
+  node.css.height          → height (→ vw 변환, 또는 auto)
   node.css.overflow        → overflow
   node.css.position        → position
 
@@ -103,24 +103,52 @@ tree.json의 css 객체를 SCSS로 직접 변환한다. 추정하지 않는다.
   node.css.backgroundColor → background-color
   node.css.color           → color
   node.css.fontFamily      → font-family
-  node.css.fontSize        → font-size (× scaleFactor)
+  node.css.fontSize        → font-size (→ clamp 변환)
   node.css.fontWeight      → font-weight
   node.css.lineHeight      → line-height
-  node.css.letterSpacing   → letter-spacing (× scaleFactor)
+  node.css.letterSpacing   → letter-spacing (→ vw 변환)
   node.css.textAlign       → text-align
-  node.css.borderRadius    → border-radius (× scaleFactor)
-  node.css.border          → border (width만 × scaleFactor)
-  node.css.boxShadow       → box-shadow (px값만 × scaleFactor)
+  node.css.borderRadius    → border-radius (→ vw 변환)
+  node.css.border          → border (width → vw 변환)
+  node.css.boxShadow       → box-shadow (px → vw 변환)
   node.css.opacity         → opacity
   node.css.mixBlendMode    → mix-blend-mode
-  node.css.filter          → filter (px값만 × scaleFactor)
-  node.css.backdropFilter  → backdrop-filter (px값만 × scaleFactor)
+  node.css.filter          → filter (px → vw 변환)
+  node.css.backdropFilter  → backdrop-filter (px → vw 변환)
 
-scaleFactor 적용:
-  ✅ 적용: width, height, padding, gap, margin, font-size, letter-spacing,
-           border-radius, border-width, box-shadow px, filter px
-  ❌ 미적용: color, opacity, font-weight, font-family, z-index,
-            line-height(단위 없을 때), text-align, mix-blend-mode
+반응형 단위 변환 (scaleFactor 사용하지 않음):
+  스토리보드 CONFIG에서 확보:
+    designWidth: 디자인 너비 (예: 720px 모바일, 2560px PC)
+    minWidth: 최소 지원 너비 (예: 340px)
+    breakpoint: PC/모바일 분계 (예: 1025px)
+
+  UI 요소 (width, height, padding, gap, border-radius, shadow 등):
+    → vw 비례: vw값 = (Figma px / designWidth) × 100
+    → 예: gap: 24px / 720 × 100 = 3.33vw
+    → width: 부모 대비 %도 가능 (620/720 = 86%)
+
+  폰트 (font-size):
+    → clamp(최소, vw, 최대): 가독성 최소값 보장
+    → vw값 = (Figma px / designWidth) × 100
+    → 최소값 = 역할(role)에 따라 결정 (Claude 시맨틱 판단)
+    → 최대값 = Figma 원본 px
+
+    | 역할 | 최소 | 판단 기준 |
+    |------|------|----------|
+    | h1~h2 제목 | 16px | name에 "title", 가장 큰 fontSize |
+    | h3~h4 소제목 | 14px | 중간 크기 fontSize |
+    | 본문 p | 12px | TEXT 노드, 긴 텍스트 |
+    | 캡션/라벨 | 10px | 작은 fontSize, 짧은 텍스트 |
+    | 버튼 | 12px | name에 "btn" |
+
+    예시:
+      디자인 24px, 본문 → font-size: clamp(12px, 3.33vw, 24px);
+      디자인 48px, 제목 → font-size: clamp(16px, 6.67vw, 48px);
+      디자인 16px, 캡션 → font-size: clamp(10px, 2.22vw, 16px);
+
+  변환하지 않는 속성:
+    color, opacity, font-weight, font-family, z-index,
+    line-height(단위 없을 때), text-align, mix-blend-mode
 
 값이 없으면:
   → 해당 속성 생략 (추정 금지)
@@ -173,21 +201,21 @@ components/ → font-size, font-weight, color, line-height, letter-spacing,
               background-color, background-image, mix-blend-mode, filter
 ```
 
-### layout 예시 (트리 기반 — 추정 없음)
+### layout 예시 (트리 기반 — vw 반응형)
 
 ```scss
 // tree.json 데이터:
 // Hero: { width:720, height:1280 }
 // Title: { display:flex, flexDirection:column, alignItems:center, gap:24px, width:620, height:230 }
 // Period: { display:flex, flexDirection:column, gap:10px, padding:"22px 14px", width:600, height:220 }
-// scaleFactor = 0.667
+// designWidth = 720px → vw = (px / 720) × 100
 
 @use '../tokens' as t;
 
 .heroSection {
   position: relative;
   width: 100%;
-  height: 854px;              // 1280 × 0.667
+  height: 177.78vw;           // 1280 / 720 × 100
   overflow: hidden;           // tree: overflow:hidden
 }
 
@@ -195,30 +223,32 @@ components/ → font-size, font-weight, color, line-height, letter-spacing,
   display: flex;              // tree: display:flex
   flex-direction: column;     // tree: flexDirection:column
   align-items: center;        // tree: alignItems:center
-  gap: 16px;                  // tree: 24 × 0.667
-  width: 414px;               // tree: 620 × 0.667
+  gap: 3.33vw;                // tree: 24 / 720 × 100
+  width: 86.11%;              // tree: 620 / 720 (부모 대비 %)
 }
 
 .heroPeriod {
   display: flex;              // tree: display:flex
   flex-direction: column;     // tree: flexDirection:column
-  gap: 7px;                   // tree: 10 × 0.667
-  padding: 15px 9px;          // tree: "22px 14px" × 0.667
+  gap: 1.39vw;                // tree: 10 / 720 × 100
+  padding: 3.06vw 1.94vw;    // tree: "22px 14px" / 720 × 100
   width: 400px;               // tree: 600 × 0.667
 }
 ```
 
-### components 예시 (트리 기반)
+### components 예시 (트리 기반 — clamp 폰트)
 
 ```scss
 // tree.json 데이터:
 // TEXT "참여 대상": { fontSize:24px, fontWeight:600, color:#ffffff, fontFamily:Pretendard }
 // BTN_Share: { borderRadius:500px, backgroundColor:rgba(13,40,61,0.5), border:"1px solid #ffffff" }
+// designWidth = 720px, minWidth = 340px
 
 @use '../tokens' as t;
 
 .heroTarget {
-  font-size: 16px;            // tree: 24 × 0.667
+  // 본문 역할 → 최소 12px
+  font-size: clamp(12px, 3.33vw, 24px);  // tree: 24 / 720 × 100 = 3.33vw
   font-weight: 600;           // tree: fontWeight:600
   color: #ffffff;             // tree: color:#ffffff
   font-family: t.$font-pretendard;
@@ -226,11 +256,11 @@ components/ → font-size, font-weight, color, line-height, letter-spacing,
 }
 
 .heroShareBtn {
-  border-radius: 500px;       // tree: borderRadius:500px (비율이므로 scaleFactor 미적용)
+  border-radius: 69.44vw;     // tree: 500 / 720 × 100 (원형 유지)
   background-color: rgba(13, 40, 61, 0.5);  // tree 그대로
-  border: 1px solid #ffffff;  // tree 그대로
-  width: 48px;                // tree: 72 × 0.667
-  height: 48px;               // tree: 72 × 0.667
+  border: 0.14vw solid #ffffff; // tree: 1 / 720 × 100
+  width: 10vw;                // tree: 72 / 720 × 100
+  height: 10vw;               // 정사각형 유지
   display: flex;              // tree: display:flex
   justify-content: center;    // tree: justifyContent:center
   align-items: center;        // tree: alignItems:center

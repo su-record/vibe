@@ -218,7 +218,7 @@ URL에서 fileKey, nodeId 추출
 
 2단계: name 패턴으로 프레임 분류
   SPEC   — "기능 정의서", "정책" → depth 높여서 텍스트 추출
-  CONFIG — "해상도", "브라우저" → 스케일 팩터 계산
+  CONFIG — "해상도", "브라우저" → designWidth, minWidth, breakpoint 확보
   SHARED — "공통", "GNB", "Footer", "Popup" → 공통 컴포넌트 파악
   PAGE   — "화면설계", "메인 -" → 섹션 목록 + 인터랙션 스펙
 
@@ -401,15 +401,26 @@ Phase 2 완료 시 /tmp/{feature}/ 에 다음이 준비되어야 함:
   - 간격: padding, gap, margin 사용 빈도 높은 값
 ```
 
-### 스케일 팩터
+### 반응형 단위 (scaleFactor 사용하지 않음)
 
 ```
-스토리보드 CONFIG 또는 기본값에서:
-  모바일: scaleFactor = 480 / 720 = 0.667 (또는 targetMobile / designMobile)
-  PC:     scaleFactor = 1920 / 2560 = 0.75 (또는 targetPc / designPc)
+스토리보드 CONFIG에서 확보:
+  designWidth: 디자인 너비 (예: 모바일 720px, PC 2560px)
+  minWidth: 최소 지원 너비 (예: 340px)
+  breakpoint: PC/모바일 분계 (예: 1025px)
 
-적용 대상: font-size, padding, margin, gap, border-radius, width, height
-적용 안 함: color, opacity, font-weight, z-index, line-height(단위 없을 때)
+UI 요소 → vw 비례:
+  vw값 = (Figma px / designWidth) × 100
+  예: gap: 24px → 24/720 × 100 = 3.33vw
+  예: width: 620px → 620/720 = 86.11% (부모 대비)
+
+폰트 → clamp(최소, vw, 최대):
+  최소값 = 역할별 가독성 기준 (h1:16px, 본문:12px, 캡션:10px)
+  vw값 = (Figma px / designWidth) × 100
+  최대값 = Figma 원본 px
+  예: 24px 본문 → clamp(12px, 3.33vw, 24px)
+
+변환 안 함: color, opacity, font-weight, z-index, line-height(단위 없을 때)
 ```
 
 ---
@@ -584,7 +595,7 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
       - 반복 패턴 (동일 구조 3+) → v-for
    c. CSS 직접 매핑:
       - node.css의 모든 속성을 SCSS에 1:1 매핑
-      - scaleFactor 적용 (px 값만)
+      - vw/clamp 반응형 단위 변환 (vibe.figma.convert 참조)
       - tree.json에 없는 CSS 값은 작성하지 않음
    d. Phase 1의 JSDoc, 인터페이스, 핸들러 보존
 
@@ -621,7 +632,7 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
 SCSS (vibe.figma.convert 참조):
   layout/ → position, display, flex, width, height, padding, gap
   components/ → font, color, border, shadow, opacity
-  모든 수치는 재료함의 정확한 값 × scaleFactor.
+  모든 수치는 tree.json의 정확한 값 → vw/clamp 변환 (vibe.figma.convert 참조).
   추정 금지 — 값이 없으면 tree.json에서 다시 찾는다.
 ```
 
@@ -812,7 +823,7 @@ import { getComputedStyles, compareStyles, diffsToIssues } from 'src/infra/lib/b
      ])
 
   2. Figma 재료함의 기대값과 비교:
-     // tree.json에서 해당 노드의 CSS 수치 (scaleFactor 적용 후)
+     // tree.json에서 해당 노드의 CSS 수치 (vw/clamp 변환 후)
      const expected = { 'font-size': '16px', 'color': '#ffffff', 'width': '465px' }
      const diffs = compareStyles(expected, actual)
 
