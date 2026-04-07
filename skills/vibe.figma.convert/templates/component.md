@@ -75,48 +75,46 @@ defineProps<{
 
 ---
 
-## SCSS Layout (tree.json 직접 매핑)
+## SCSS Layout (tree.json → vw 반응형)
 
 ```scss
 // tree.json 데이터:
 // {{SECTION_NAME}}: { width:{{WIDTH}}, height:{{HEIGHT}}, overflow:hidden }
 // {{CHILD_1}}: { display:flex, flexDirection:column, gap:{{GAP}}px, padding:"{{PADDING}}" }
-// scaleFactor = {{SCALE_FACTOR}}
+// designWidth = {{DESIGN_WIDTH}}px → vw = (px / designWidth) × 100
 
 .{{sectionName}} {
   position: relative;
   width: 100%;
-  height: {{HEIGHT_SCALED}}px;           // tree: {{HEIGHT}} × {{SCALE_FACTOR}}
+  height: {{HEIGHT_VW}}vw;               // tree: {{HEIGHT}} / {{DESIGN_WIDTH}} × 100
   overflow: hidden;                       // tree: overflow:hidden
-}
-
-.{{sectionName}}__bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  img { width: 100%; height: 100%; object-fit: cover; }
+  background-image: url('/images/{{FEATURE_KEY}}/{{section}}-bg.png');
+  background-size: cover;
+  background-position: center top;
 }
 
 .{{sectionName}}__{{child1Name}} {
   display: flex;                          // tree: display:flex
   flex-direction: column;                 // tree: flexDirection:column
-  gap: {{GAP_SCALED}}px;                  // tree: {{GAP}} × {{SCALE_FACTOR}}
-  padding: {{PADDING_SCALED}};            // tree: "{{PADDING}}" × {{SCALE_FACTOR}}
+  gap: {{GAP_VW}}vw;                      // tree: {{GAP}} / {{DESIGN_WIDTH}} × 100
+  padding: {{PADDING_VW}};               // tree: "{{PADDING}}" / {{DESIGN_WIDTH}} × 100
 }
 ```
 
 ---
 
-## SCSS Components (tree.json 직접 매핑)
+## SCSS Components (tree.json → clamp 폰트)
 
 ```scss
 // tree.json 데이터:
 // TEXT "{{TEXT_1}}": { fontSize:{{FONT_SIZE}}px, fontWeight:{{FONT_WEIGHT}}, color:{{COLOR}} }
+// designWidth = {{DESIGN_WIDTH}}px
 
 .{{sectionName}}__title {
-  font-size: {{FONT_SIZE_SCALED}}px;      // tree: {{FONT_SIZE}} × {{SCALE_FACTOR}}
-  font-weight: {{FONT_WEIGHT}};           // tree: 직접 (scaleFactor 미적용)
-  color: {{COLOR}};                       // tree: 직접 (scaleFactor 미적용)
+  // 역할: 제목 → 최소 16px
+  font-size: clamp(16px, {{FONT_SIZE_VW}}vw, {{FONT_SIZE}}px); // tree: {{FONT_SIZE}} / {{DESIGN_WIDTH}} × 100
+  font-weight: {{FONT_WEIGHT}};           // tree: 직접 (변환 안 함)
+  color: {{COLOR}};                       // tree: 직접 (변환 안 함)
 }
 ```
 

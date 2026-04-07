@@ -9,14 +9,15 @@
 
 ## Design Specs
 
-### Viewport / Scale
+### Viewport / Responsive
 
-| Breakpoint | Design Width | Target Width | Scale Factor |
-|-----------|-------------|-------------|-------------|
-| Mobile (base) | {{DESIGN_MOBILE_PX}}px | {{TARGET_MOBILE_PX}}px | {{SCALE_MOBILE}} |
-| Desktop | {{DESIGN_PC_PX}}px | {{TARGET_PC_PX}}px | {{SCALE_PC}} |
+| Breakpoint | Design Width | Min Width | CSS 단위 |
+|-----------|-------------|-----------|---------|
+| Mobile (base) | {{DESIGN_MOBILE_PX}}px | {{MIN_WIDTH}}px | vw + clamp |
+| Desktop | {{DESIGN_PC_PX}}px | — | vw + clamp |
 
 Breakpoint threshold: `@media (min-width: {{BP_PC}}px)`
+ROOT folder: `{{MO_FOLDER}}/`, `{{PC_FOLDER}}/`
 
 ### Color Tokens
 
@@ -26,15 +27,15 @@ Breakpoint threshold: `@media (min-width: {{BP_PC}}px)`
 
 ### Typography Tokens
 
-| Token | Figma px | Scaled px | Weight | Role |
-|-------|---------|----------|--------|------|
-| `$text-{{ROLE}}` | {{FIGMA_PX}}px | {{SCALED_PX}}px | {{WEIGHT}} | {{ROLE}} |
+| Token | Figma px | vw | clamp 최소 | Role |
+|-------|---------|-----|----------|------|
+| `$text-{{ROLE}}` | {{FIGMA_PX}}px | {{VW}}vw | {{MIN_PX}}px | {{ROLE}} |
 
 ### Spacing Tokens
 
-| Token | Figma px | Scaled px | Usage |
-|-------|---------|----------|-------|
-| `$space-{{NAME}}` | {{FIGMA_PX}}px | {{SCALED_PX}}px | {{USAGE}} |
+| Token | Figma px | vw | Usage |
+|-------|---------|-----|-------|
+| `$space-{{NAME}}` | {{FIGMA_PX}}px | {{VW}}vw | {{USAGE}} |
 
 ---
 
@@ -44,38 +45,40 @@ Breakpoint threshold: `@media (min-width: {{BP_PC}}px)`
 |---|-------------|---------------|-----------|----------------|
 | 1 | {{SECTION_NAME}} | `components/{{FEATURE_KEY}}/{{ComponentName}}.vue` | {{NODE_COUNT}} | {{HEIGHT}}px |
 
-**Generation:** tree.json → HTML+SCSS 구조적 매핑 (external SCSS)
+**Generation:** tree.json → HTML+SCSS 구조적 매핑 (vw/clamp 반응형)
 
 ---
 
 ## Asset Manifest
 
-| Variable | Local Path | Type | Alt Text |
-|----------|-----------|------|----------|
-| `{{IMG_VAR}}` | `/images/{{FEATURE_KEY}}/{{FILE_NAME}}.webp` | {{bg\|content\|decorative}} | {{ALT}} |
+| Image | Local Path | Type | Render Method |
+|-------|-----------|------|--------------|
+| {{NAME}} | `/images/{{FEATURE_KEY}}/{{FILE_NAME}}.png` | {{bg\|content\|vector-text}} | {{frame-render\|node-render\|group-render}} |
 
-Total assets: {{ASSET_COUNT}}
+Total assets: {{ASSET_COUNT}} (BG 렌더링 {{BG_COUNT}}장 + 콘텐츠 {{CONTENT_COUNT}}장)
 
 ---
 
 ## File Structure
 
 ```
-components/{{FEATURE_KEY}}/
-  {{ComponentName}}.vue
-
-public/images/{{FEATURE_KEY}}/
-  {{FILE_NAME}}.webp
-
-styles/{{FEATURE_KEY}}/
-  index.scss
-  _tokens.scss
-  _mixins.scss
-  _base.scss
-  layout/
-    _{{section}}.scss
-  components/
-    _{{section}}.scss
+/tmp/{{FEATURE_KEY}}/
+  {{MO_FOLDER}}/                ← 모바일 작업
+    tree.json
+    bg/
+    content/
+    sections/
+  {{PC_FOLDER}}/                ← 데스크탑 작업
+    ...
+  final/                        ← Phase 5 공통화 결과
+    components/{{FEATURE_KEY}}/
+    styles/{{FEATURE_KEY}}/
+      index.scss
+      _tokens.scss
+      _mixins.scss
+      _base.scss
+      layout/
+      components/
 ```
 
 ---
@@ -84,8 +87,9 @@ styles/{{FEATURE_KEY}}/
 
 - [ ] No `figma.com/api` URLs in any generated file
 - [ ] No `placeholder` or empty `src=""` in components
-- [ ] No `<style>` blocks in components (normal mode)
-- [ ] All assets downloaded and non-zero bytes
+- [ ] No `<style>` blocks in components
+- [ ] All images are node-rendered (no imageRef direct download)
+- [ ] No image file > 5MB (텍스처 fill 의심)
 - [ ] Build passes without errors
 - [ ] Screenshot comparison: P1 issues = 0
 

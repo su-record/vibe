@@ -42,7 +42,7 @@ Bash:
 
 트리 데이터의 용도 (vibe.figma.convert에서 직접 매핑):
   - Auto Layout → CSS Flexbox (direction, gap, padding, align 1:1)
-  - absoluteBoundingBox → width, height (× scaleFactor)
+  - absoluteBoundingBox → width, height (→ vw 변환)
   - fills/strokes/effects → background, border, shadow 등
   - TEXT 노드 → 텍스트 콘텐츠 + 타이포그래피 CSS
   - imageRef → 이미지 에셋 매핑
@@ -53,7 +53,7 @@ Bash:
 
 트리 추출 도구가 자동 변환하는 속성. **이 값들이 SCSS에 직접 매핑된다:**
 
-| Figma 속성 | CSS | scaleFactor 적용 |
+| Figma 속성 | CSS | vw 변환 |
 |-----------|-----|-----------------|
 | `layoutMode=VERTICAL` | `display:flex; flex-direction:column` | ❌ |
 | `layoutMode=HORIZONTAL` | `display:flex; flex-direction:row` | ❌ |

@@ -44,7 +44,8 @@ component-index (/tmp/{feature}/component-index.json) 에서 매칭되는 컴포
   - tree.json (노드 트리 + CSS 속성 — 코드 생성의 PRIMARY 소스)
   - /tmp/{feature}/images/ (다운로드된 이미지 에셋)
   - 섹션 스크린샷 (검증용 — 생성에 사용하지 않음)
-  - scaleFactor (모바일: 480/720=0.667, PC: 1920/2560=0.75)
+  - designWidth (스토리보드 CONFIG: 모바일 720px, PC 2560px)
+  - minWidth (최소 지원: 340px)
 
 출력:
   - 컴포넌트 파일 (Vue SFC / React TSX)
@@ -232,7 +233,7 @@ components/ → font-size, font-weight, color, line-height, letter-spacing,
   flex-direction: column;     // tree: flexDirection:column
   gap: 1.39vw;                // tree: 10 / 720 × 100
   padding: 3.06vw 1.94vw;    // tree: "22px 14px" / 720 × 100
-  width: 400px;               // tree: 600 × 0.667
+  width: 83.33%;              // tree: 600 / 720
 }
 ```
 
@@ -412,7 +413,7 @@ function handleShare(): void {
 
 콘텐츠 이미지:
   조건: imageRef 있음 + 독립적 크기 + TEXT 형제 없음
-  매핑: width/height tree 값 × scaleFactor
+  매핑: width/height → vw 변환
   태그: <img alt="가장 가까운 TEXT 노드의 characters" />
 
 장식 이미지:
@@ -422,7 +423,7 @@ function handleShare(): void {
 
 아이콘:
   조건: VECTOR/GROUP + 크기 ≤ 64px
-  매핑: width/height × scaleFactor
+  매핑: width/height → vw 변환
   태그: <img alt="기능 설명" /> 또는 인라인 SVG
 ```
 

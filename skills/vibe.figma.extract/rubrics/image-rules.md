@@ -1,67 +1,89 @@
-# Image Extraction Rules
+# Image Extraction Rules — Node Rendering Based
+
+## Core Principle
+
+```
+❌ imageRef 개별 다운로드 금지 (텍스처 fill 공유 문제)
+✅ 모든 이미지는 Figma screenshot API로 노드 렌더링
+```
+
+## Render Methods
+
+| 이미지 유형 | 렌더링 방법 | 출력 위치 |
+|-----------|-----------|---------|
+| BG 프레임 (합성 배경) | `screenshot {fileKey} {bg.nodeId}` | `bg/{section}-bg.png` |
+| 콘텐츠 (타이틀, 버튼) | `screenshot {fileKey} {node.nodeId}` | `content/{name}.png` |
+| 벡터 글자 그룹 | `screenshot {fileKey} {group.nodeId}` | `content/{name}.png` |
+
+## BG 프레임 판별
+
+```
+BG 프레임 = 다음 중 하나:
+  - name에 "BG", "bg" 포함
+  - 부모와 크기 동일(±10%) + 자식 이미지 3개 이상
+  - 1depth 첫 번째 자식이면서 이미지 노드 다수 보유
+
+→ 프레임 렌더링 1장 → CSS background-image
+→ 하위 개별 레이어 다운로드하지 않음
+```
+
+## 벡터 글자 판별
+
+```
+벡터 글자 그룹 = 다음 모두 충족:
+  - 부모 GROUP/FRAME 아래 VECTOR 타입 3개 이상
+  - 각 VECTOR 크기 < 60x60
+  - 같은 imageRef 공유 (텍스처 fill)
+
+→ 부모 GROUP 통째로 렌더링 (개별 글자 다운로드 금지)
+→ 커스텀 폰트 텍스트 = 웹폰트 없음 → 이미지로 사용
+```
 
 ## Format
 
-- Output format: `.webp` always — never `.png`, `.jpg`, `.svg` from MCP asset URLs
-- Exception: SVG icons referenced as inline code (not MCP URLs) stay as `.svg`
-- Do not convert or re-encode after download — use the raw bytes from `curl`
+- Output format: `.png` (Figma screenshot API 기본)
+- 최적화 필요 시 빌드 단계에서 webp 변환 (추출 단계에서는 png)
 
 ## Naming
 
-Convert the JavaScript variable name to kebab-case:
-
-| Variable | File Name |
-|----------|-----------|
-| `img21` | `img-21.webp` |
-| `imgTitle` | `title.webp` (strip leading `img` prefix) |
-| `imgSnowParticle12` | `snow-particle-12.webp` |
-| `imgImgBannerStatic` | `banner-static.webp` (collapse double `img`) |
-| `imgBtnShare` | `btn-share.webp` |
+렌더링된 이미지의 파일명 = Figma 노드 name을 kebab-case로:
+  - `"Hero"` BG frame → `hero-bg.png`
+  - `"Mission 01"` vector group → `mission-01.png`
+  - `"Title"` content → `hero-title.png` (섹션명 prefix)
+  - `"Btn_Login"` → `btn-login.png`
 
 Rules:
-- Strip leading `img` prefix before converting to kebab-case
-- Numbers stay as-is: `item11` → `item-11`
-- Acronyms lowercased: `BTN` → `btn`, `BG` → `bg`
+  - 공백 → 하이픈
+  - 언더스코어 → 하이픈
+  - 숫자 유지: `item11` → `item-11`
+  - 대문자 → 소문자
 
 ## Destination
 
 ```
-public/images/{feature}/    ← Vue/Nuxt
-static/images/{feature}/    ← Nuxt 2 legacy
-public/{feature}/           ← Next.js (under /public)
+/tmp/{feature}/{bp-folder}/
+  bg/                    ← BG 프레임 렌더링
+  content/               ← 콘텐츠 + 벡터 글자 렌더링
+  sections/              ← Phase 4 검증용 스크린샷
 ```
 
-Always use the directory confirmed in Phase 0 setup.
+최종 배치 (Phase 5):
+```
+static/images/{feature}/  ← Nuxt 2
+public/images/{feature}/  ← Vue/Nuxt 3
+public/{feature}/         ← Next.js
+```
 
 ## Size Limits
 
-| Type | Warn threshold | Block threshold |
-|------|---------------|----------------|
-| Background image | 500 KB | 2 MB |
-| Content image | 200 KB | 1 MB |
-| Decorative image | 100 KB | 500 KB |
-| Total per section | 3 MB | 10 MB |
+| Type | Warn threshold | Action |
+|------|---------------|--------|
+| BG 렌더링 | 5 MB | 정상 (합성 이미지라 큰 게 정상) |
+| 콘텐츠 렌더링 | 1 MB | 경고 |
+| 단일 이미지 > 5 MB | — | ⚠️ 텍스처 fill 의심 → imageRef 다운로드 실수 확인 |
 
-If a file exceeds the warn threshold, log it. Never block the download — size checks are advisory.
+## Fallback
 
-## Download Rules
-
-- [ ] Download ALL `const img...` variables — zero omissions ("core assets only" is forbidden)
-- [ ] Use `curl -sL "{url}" -o {dest}` — silent, follow redirects
-- [ ] After download: `ls -la {dir}` — verify file exists and size > 0
-- [ ] On 0-byte file: retry once. On second failure: log and continue (do not block code gen for a single failed decorative image)
-- [ ] On missing asset (in tree.json but no download URL): use node render fallback (`--render --nodeIds={id}`) to capture as PNG
-
-## Image Mapping Table
-
-After all downloads, produce a mapping before writing any component code:
-
-```js
-const imageMap = {
-  imgTitle: '/images/{feature}/title.webp',
-  img21:    '/images/{feature}/img-21.webp',
-  // ...every variable
-}
-```
-
-This map is the only source for `src` values in generated components. No raw Figma URLs in output code.
+노드 렌더링 불가 시에만 imageRef 다운로드:
+  - Figma screenshot API 실패 (rate limit, 권한)
+  - 다운로드 후 파일 크기 5MB 초과 → 텍스처 fill 가능성 → 경고 로그
