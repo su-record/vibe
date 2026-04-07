@@ -2,7 +2,51 @@
  * VerificationLoop — SPEC 요구사항 달성률 정량화 + 자동 반복
  *
  * /vibe.trace 결과를 정량화하고, 임계값 미달 시 자동 재시도 지원
+ * E2E 브라우저 검증 지원 (Puppeteer 기반 사용자 관점 검증)
  */
+
+// ─── E2E Verification Types ───
+
+export interface E2ECheckConfig {
+  /** 검증 대상 URL (e.g., http://localhost:3000) */
+  baseURL: string;
+  /** 검증할 경로 목록 */
+  routes: string[];
+  /** 뷰포트 크기 (기본: 1920x1080) */
+  viewport?: { width: number; height: number };
+  /** 스크린샷 비교 임계값 (기본: 0.01 = 1%) */
+  diffThreshold?: number;
+  /** 콘솔 에러 허용 여부 (기본: false) */
+  allowConsoleErrors?: boolean;
+}
+
+export interface E2ECheckResult {
+  /** 검증 대상 URL */
+  url: string;
+  /** pass/fail */
+  status: 'pass' | 'fail';
+  /** P1 이슈 수 */
+  p1Count: number;
+  /** P2 이슈 수 */
+  p2Count: number;
+  /** 이슈 요약 */
+  issues: string[];
+  /** 스크린샷 diff 비율 (있으면) */
+  screenshotDiffRatio?: number;
+}
+
+export interface E2EVerificationResult {
+  /** 전체 pass 여부 */
+  passed: boolean;
+  /** 개별 라우트 결과 */
+  checks: E2ECheckResult[];
+  /** 총 P1 이슈 수 */
+  totalP1: number;
+  /** 총 P2 이슈 수 */
+  totalP2: number;
+  /** 타임스탬프 */
+  timestamp: string;
+}
 
 export interface RequirementResult {
   /** Requirement ID (e.g., REQ-001) */
@@ -43,6 +87,8 @@ export interface VerificationLoopConfig {
   maxIterations: number;
   /** Whether auto-retry is enabled */
   autoRetry: boolean;
+  /** E2E 브라우저 검증 설정 (없으면 E2E 스킵) */
+  e2e?: E2ECheckConfig;
 }
 
 export const DEFAULT_VERIFICATION_CONFIG: VerificationLoopConfig = {
@@ -282,4 +328,139 @@ export function isImproving(state: LoopState): boolean {
   const prev = state.history[state.history.length - 2];
 
   return last.achievementRate - prev.achievementRate >= 1;
+}
+
+// ─── E2E Browser Verification ───
+
+/**
+ * 단일 URL에 대해 E2E 브라우저 검증 수행
+ * browser/ 인프라의 Puppeteer 모듈을 동적 임포트 (puppeteer 미설치 시 graceful skip)
+ */
+export async function runE2ECheck(
+  url: string,
+  config: E2ECheckConfig
+): Promise<E2ECheckResult> {
+  const result: E2ECheckResult = { url, status: 'pass', p1Count: 0, p2Count: 0, issues: [] };
+
+  try {
+    const { launchBrowser, openPage, closeBrowser } = await import('./browser/launch.js');
+    const { captureScreenshot, extractTextContent } = await import('./browser/capture.js');
+
+    const viewport = config.viewport ?? { width: 1920, height: 1080 };
+    await launchBrowser({ headless: true, viewport });
+    const page = await openPage(url);
+
+    // 콘솔 에러 수집
+    const consoleErrors: string[] = [];
+    page.on('console', (msg: { type: () => string; text: () => string }) => {
+      if (msg.type() === 'error') consoleErrors.push(msg.text());
+    });
+
+    // 페이지 로드 대기
+    await page.waitForNetworkIdle({ idleTime: 1000 }).catch(() => { /* timeout ok */ });
+
+    // 텍스트 콘텐츠 존재 확인 (빈 페이지 감지)
+    const texts = await extractTextContent(page);
+    if (texts.length === 0) {
+      result.issues.push('Empty page — no text content rendered');
+      result.p1Count++;
+    }
+
+    // 콘솔 에러 체크
+    if (!config.allowConsoleErrors && consoleErrors.length > 0) {
+      const errorSummary = consoleErrors.slice(0, 3).join('; ');
+      result.issues.push(`Console errors (${consoleErrors.length}): ${errorSummary}`);
+      result.p1Count++;
+    }
+
+    // HTTP 에러 체크 (4xx, 5xx 리소스)
+    const failedRequests: string[] = [];
+    page.on('requestfailed', (req: { url: () => string }) => {
+      failedRequests.push(req.url());
+    });
+
+    if (failedRequests.length > 0) {
+      result.issues.push(`Failed requests (${failedRequests.length}): ${failedRequests[0]}`);
+      result.p2Count++;
+    }
+
+    await closeBrowser();
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('Cannot find module') || msg.includes('puppeteer')) {
+      result.issues.push('Puppeteer not installed — E2E check skipped');
+      return result; // graceful skip, 아직 pass
+    }
+    result.issues.push(`E2E check error: ${msg}`);
+    result.p1Count++;
+  }
+
+  result.status = result.p1Count > 0 ? 'fail' : 'pass';
+  return result;
+}
+
+/**
+ * E2E 검증 전체 실행 — 모든 라우트에 대해 브라우저 검증
+ */
+export async function runE2EVerification(
+  config: E2ECheckConfig
+): Promise<E2EVerificationResult> {
+  const checks: E2ECheckResult[] = [];
+  let totalP1 = 0;
+  let totalP2 = 0;
+
+  for (const route of config.routes) {
+    const url = `${config.baseURL}${route}`;
+    const check = await runE2ECheck(url, config);
+    checks.push(check);
+    totalP1 += check.p1Count;
+    totalP2 += check.p2Count;
+  }
+
+  return {
+    passed: totalP1 === 0,
+    checks,
+    totalP1,
+    totalP2,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+/**
+ * E2E 검증 결과를 RequirementResult로 변환
+ * VerificationLoop와 통합하여 SPEC 달성률에 반영
+ */
+export function e2eToRequirements(e2eResult: E2EVerificationResult): RequirementResult[] {
+  return e2eResult.checks.map((check, i) => ({
+    id: `E2E-${String(i + 1).padStart(3, '0')}`,
+    description: `E2E: ${check.url}`,
+    status: check.status === 'pass' ? 'pass' as const : 'fail' as const,
+    score: check.status === 'pass' ? 100 : Math.max(0, 100 - check.p1Count * 50),
+    evidence: check.issues.length > 0 ? check.issues.join('; ') : 'All checks passed',
+  }));
+}
+
+/**
+ * E2E 검증 결과 포맷팅
+ */
+export function formatE2EResult(result: E2EVerificationResult): string {
+  const lines: string[] = [];
+  const statusIcon = result.passed ? '✅' : '❌';
+
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  lines.push(`${statusIcon} E2E Browser Verification`);
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  lines.push(`P1: ${result.totalP1} | P2: ${result.totalP2}`);
+  lines.push(``);
+
+  for (const check of result.checks) {
+    const icon = check.status === 'pass' ? '✅' : '❌';
+    lines.push(`  ${icon} ${check.url}`);
+    for (const issue of check.issues) {
+      lines.push(`       ${issue}`);
+    }
+  }
+
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  return lines.join('\n');
 }

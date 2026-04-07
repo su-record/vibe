@@ -139,11 +139,20 @@ const toolInput = stdinPayload?.tool_input
     : JSON.stringify(stdinPayload.tool_input))
   : (process.argv[3] || process.env.TOOL_INPUT || '');
 
+import { logHookDecision } from './utils.js';
+
 const validation = validateCommand(toolName, toolInput);
 const output = formatOutput(toolName, validation);
 
 if (output) {
   console.log(output);
+}
+
+// Hook trace logging
+if (!validation.allowed) {
+  logHookDecision('pre-tool-guard', toolName, 'block', validation.warnings.join('; '));
+} else if (validation.warnings.length > 0) {
+  logHookDecision('pre-tool-guard', toolName, 'warn', validation.warnings.join('; '));
 }
 
 // Exit code: 0 = allowed, 2 = denied (claw-code 규약), 1 = 레거시 호환

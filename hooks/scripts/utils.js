@@ -146,3 +146,41 @@ export function getToolsBaseUrl() {
 export function getLibBaseUrl() {
   return getPackageUrl(path.join('dist', 'infra', 'lib'), 'gpt-api.js');
 }
+
+// ─── Hook Trace Logging ───
+
+const HOOK_TRACE_PATH = path.join(VIBE_HOME_DIR, 'hook-traces.jsonl');
+const MAX_TRACE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB rotation
+
+/**
+ * Guard/Hook 결정 사항을 JSONL로 로깅
+ * evolution GuardAnalyzer가 이 로그를 분석해 하네스 자기 개선에 활용
+ *
+ * @param {string} hookName - 훅 이름 (e.g., 'sentinel-guard', 'pre-tool-guard')
+ * @param {string} toolName - 대상 도구 (e.g., 'Bash', 'Write')
+ * @param {'allow'|'block'|'warn'} decision - 판정 결과
+ * @param {string} reason - 판정 사유
+ */
+export function logHookDecision(hookName, toolName, decision, reason) {
+  try {
+    // 로그 로테이션: 5MB 초과 시 이전 파일 교체
+    if (fs.existsSync(HOOK_TRACE_PATH)) {
+      const stat = fs.statSync(HOOK_TRACE_PATH);
+      if (stat.size > MAX_TRACE_SIZE_BYTES) {
+        const rotated = HOOK_TRACE_PATH + '.prev';
+        try { fs.unlinkSync(rotated); } catch { /* ignore */ }
+        fs.renameSync(HOOK_TRACE_PATH, rotated);
+      }
+    }
+
+    const entry = JSON.stringify({
+      ts: new Date().toISOString(),
+      hook: hookName,
+      tool: toolName,
+      decision,
+      reason,
+      project: PROJECT_DIR,
+    });
+    fs.appendFileSync(HOOK_TRACE_PATH, entry + '\n');
+  } catch { /* 트레이스 실패가 훅 실행을 방해해선 안 됨 */ }
+}
