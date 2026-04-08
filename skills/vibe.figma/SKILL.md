@@ -199,21 +199,41 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 ## Phase 1: 디자인 리소스
 
 사용자에게 질문한다:
-- question: "스토리보드, 디자인 Figma URL을 줄바꿈으로 입력해주세요. (순서 무관)"
+- question: "스토리보드, 디자인 리소스를 줄바꿈으로 입력해주세요. (순서 무관)"
 - 예시:
     https://figma.com/design/xxx/...?node-id=20-4964
     https://figma.com/design/yyy/...?node-id=641-78147
     https://figma.com/design/yyy/...?node-id=641-78200
+  또는:
+    docs/storyboard.pdf
+    https://figma.com/design/yyy/...?node-id=641-78147
 - options 제공 금지 — 자유 텍스트 입력만 허용
-- 최소 1개 URL 필수
-- URL 분류는 자동: 각 URL의 ROOT name으로 스토리보드/MO/PC 판별
-  → fileKey가 다르면 스토리보드 vs 디자인 구분
-  → ROOT name에 "MO" → 모바일, "PC" → 데스크탑
+- 디자인 URL 최소 1개 필수
+
+### 입력 분류 (자동)
+
+```
+각 줄을 파싱하여 분류:
+
+1. figma.com URL → Figma 리소스
+   → ROOT name으로 스토리보드/MO/PC 판별
+   → fileKey가 다르면 스토리보드 vs 디자인 구분
+   → ROOT name에 "MO" → 모바일, "PC" → 데스크탑
+
+2. .pdf 파일 경로 → PDF 스토리보드
+   → Read 도구로 페이지별 분석
+
+3. .png/.jpg/.webp 파일 경로 → 이미지 스토리보드
+   → Read 도구로 시각 분석
+```
 
 ### 1-1. 스토리보드 분석
 
 ```
-URL에서 fileKey, nodeId 추출
+입력 타입에 따라 분기:
+
+■ Figma URL인 경우:
+  URL에서 fileKey, nodeId 추출
 
 1단계 (BLOCKING): 루트 depth=2로 전체 프레임 + nodeId 수집
   # [FIGMA_SCRIPT] = ~/.vibe/hooks/scripts/figma-extract.js
@@ -238,6 +258,23 @@ URL에서 fileKey, nodeId 추출
 높이 1500px 이상 프레임:
   → node "[FIGMA_SCRIPT]" screenshot으로 시각 파악
   → 또는 depth 높여서 하위 분할 조회
+
+■ PDF 파일인 경우:
+  Read 도구로 페이지별 분석 (pages: "1-5" → "6-10" → ...)
+  각 페이지에서 추출:
+    - 섹션 목록 + 기능 정의
+    - 해상도/브레이크포인트 정보 (CONFIG)
+    - 인터랙션 흐름
+    - 상태 정의
+  → Figma 스토리보드와 동일한 기능 스펙 문서 생성
+
+■ 이미지 파일인 경우:
+  Read 도구로 시각 분석
+  → 와이어프레임/목업에서 섹션 구조 + 기능 추출
+
+■ 스토리보드 없음:
+  디자인 URL의 tree.json에서 섹션 목록만 추출
+  → 기능 정의는 디자인 name/구조에서 추정 (정확도 낮음)
 ```
 
 ### 1-2. 기능 스펙 문서 작성 (파일 생성 없음)
