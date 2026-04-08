@@ -36,44 +36,43 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 
 ```
 /vibe.figma
+  입력: 모든 브레이크포인트 Figma URL을 한번에 받는다
+    MO: https://figma.com/...?node-id=xxx
+    PC: https://figma.com/...?node-id=yyy (있으면)
+
   → Phase 0: Setup (스택 감지, 디렉토리 생성, 기존 자산 인덱싱)
   → Phase 1: Storyboard (스토리보드 → 기능 스펙 문서 작성, 파일 생성 없음)
-  → Phase 2: 재료 확보 (디자인 URL → 트리 + 노드 렌더링 이미지 + 스크린샷)
-  → Phase 3: 구조적 코드 생성 (트리 → HTML+SCSS 매핑 + 시맨틱 보강)
+  → Phase 2: 재료 확보 (모든 BP의 트리 + 노드 렌더링 이미지 + 스크린샷)
+  → Phase 2.5: 리매핑 (tree.json → remapped.json, BP 간 노드 매칭 + CSS diff)
+  → Phase 3: 순차 코드 생성 (remapped.json → 섹션별 HTML+SCSS)
   → Phase 3.5: 컴파일 게이트 (tsc → build → dev 확인)
   → Phase 4: 시각 검증 루프 (렌더링 vs 스크린샷 비교 → 수정)
-  ─── 추가 브레이크포인트가 있으면 Phase 2~4 반복 ───
-  → Phase 5: 공통화 (브레이크포인트별 작업 병합 → 최종 프로젝트 구조)
 
-브레이크포인트별 작업 구조:
+작업 디렉토리 구조:
   각 Figma URL의 ROOT name에서 폴더명 추출 (kebab-case):
     "MO_Main ..."  → /tmp/{feature}/mo-main/
     "PC_Main ..."  → /tmp/{feature}/pc-main/
 
   /tmp/{feature}/
-  ├── mo-main/              ← 첫 번째 URL (모바일)
+  ├── mo-main/              ← 모바일 Phase 2 추출 결과
   │   ├── tree.json
-  │   ├── bg/
-  │   ├── content/
-  │   └── sections/
-  ├── pc-main/              ← 두 번째 URL (데스크탑)
-  │   ├── tree.json
-  │   ├── bg/
-  │   ├── content/
-  │   └── sections/
-  └── final/                ← Phase 5 공통화 결과
-      ├── components/{feature}/
-      └── styles/{feature}/
+  │   ├── bg/               ← BG 프레임 렌더링
+  │   ├── content/          ← 콘텐츠 노드 렌더링
+  │   └── sections/         ← Phase 4 검증용 스크린샷
+  ├── pc-main/              ← 데스크탑 Phase 2 추출 결과
+  │   └── (동일 구조)
+  └── remapped.json         ← Phase 2.5 리매핑 결과 (모든 BP 통합)
 
-Phase 5 공통화:
-  1. 각 브레이크포인트의 컴포넌트 diff
-     → 구조 동일: 1개로 병합
-     → 구조 다름: props로 분기 또는 별도 유지
-  2. SCSS diff
-     → 같은 값: 기본 스타일
-     → 다른 값: @media 오버라이드
-  3. 토큰 diff → 합집합 정리
-  4. /tmp/ 임시 폴더 → 프로젝트 디렉토리에 최종 배치
+  remapped.json이 Phase 3의 유일한 입력.
+  → BP 간 노드 매칭 완료
+  → CSS diff (mo/pc) 포함
+  → 이미지 렌더링 파일 경로 포함
+  → Phase 3에서 바로 코드 생성 가능
+
+  코드 출력: 프로젝트 디렉토리에 직접 배치
+    components/{feature}/HeroSection.vue
+    styles/{feature}/layout/_hero.scss (모바일 기본 + @media PC)
+    styles/{feature}/components/_hero.scss
 ```
 
 ---
