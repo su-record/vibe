@@ -11,8 +11,15 @@ tier: standard
 **Claude는 시맨틱 판단(태그 선택, 컴포넌트 분리, 인터랙션)만 담당한다.**
 
 ```
+⛔ 불변 규칙 — 복잡한 UI도 반드시 HTML로 구현한다:
+  "복잡하니까 이미지로 처리하자" → 이 사고방식 자체가 금지.
+  카드 그리드, 보상 목록, 교환소, 가격 표시 → 전부 HTML+CSS.
+  <img>는 순수 이미지 에셋(아이콘, 썸네일, 벡터 글자)에만 사용.
+  BG는 CSS background-image만 사용. <img> 태그 금지.
+
 ❌ 스크린샷을 보고 CSS 추정 (범용 LLM의 약점)
 ❌ Figma 레이어를 무분별하게 div soup로 변환
+❌ 복잡한 섹션을 screenshot으로 이미지화 (코드 생성 중 screenshot 호출 금지)
 ✅ Figma Auto Layout → CSS Flexbox 1:1 매핑 (기계적)
 ✅ Figma CSS 속성 → SCSS 직접 변환 (추정 없음)
 ✅ Claude → 시맨틱 태그 선택 + 컴포넌트 설계 + 인터랙션

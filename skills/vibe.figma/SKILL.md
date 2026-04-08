@@ -18,6 +18,37 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 ✅ 스크린샷은 생성이 아닌 검증에만 사용
 ```
 
+## ⛔ 불변 규칙 (이 규칙을 위반하면 전체 결과물이 무효)
+
+```
+이 규칙들은 어떤 상황에서도 예외 없이 적용된다.
+"복잡해서", "시간이 없어서", "렌더링이 안 돼서" 등의 이유로 우회할 수 없다.
+
+1. screenshot 명령으로 콘텐츠를 이미지화하는 것은 금지한다.
+   screenshot 명령의 허용 범위:
+     ✅ BG 프레임 렌더링 (TEXT 자식이 없는 순수 배경)
+     ✅ 벡터 글자 GROUP 렌더링 (웹폰트 없는 장식 타이틀)
+     ✅ 섹션별 스크린샷 → sections/ 폴더 (Phase 6 검증용)
+   screenshot 명령의 금지 범위:
+     ❌ TEXT 자식이 있는 프레임 → HTML로 구현
+     ❌ INSTANCE 반복 패턴이 있는 프레임 → HTML v-for로 구현
+     ❌ 버튼/가격/수량이 있는 프레임 → HTML로 구현
+     ❌ "섹션 콘텐츠"를 통째 렌더링 → HTML로 구현
+
+   위반 시 발생하는 문제:
+     exchange-section1.webp (카드 4개를 이미지 1장으로) → 가격 수정 불가, 버튼 클릭 불가
+     daily-step2-list.webp (보상 목록을 이미지로) → 수량 변경 불가, 접근성 불가
+
+2. BG를 <img> 태그로 넣는 것은 금지한다.
+   ❌ <img src="bg.webp"> 또는 <div class="bg"><img src="bg.webp"></div>
+   ✅ .section { background-image: url('bg.webp'); background-size: cover; }
+
+3. Phase 4 코드 생성 중 새로운 screenshot 호출은 금지한다.
+   Phase 2에서 확보한 재료만 사용한다.
+   "이 부분이 복잡하니 screenshot으로 이미지화하자"는 금지된 사고방식이다.
+   복잡한 UI도 tree.json의 구조를 따라 HTML+CSS로 구현한다.
+```
+
 ## 금지 사항
 
 ```
@@ -381,15 +412,22 @@ URL에서 fileKey, nodeId 추출
   node "[FIGMA_SCRIPT]" images {fileKey} {nodeId} --out=/tmp/{feature}/images/ --depth=10
   → 모든 이미지 에셋 확보. 누락 0건, 0byte 0건.
 
-3.5단계 — 아이템/아이콘 노드 렌더링 (추가 시각 재료):
-  tree.json에서 INSTANCE/COMPONENT 타입 중 아이템 후보를 식별:
-    - name에 "item", "icon", "reward", "token", "coin", "badge" 포함
+3.5단계 — 개별 에셋 노드 렌더링 (추가 시각 재료):
+  tree.json에서 이미지 에셋 후보를 식별:
+    - 아이콘: VECTOR/GROUP 크기 ≤ 64px
+    - 아이템 썸네일: name에 "item", "icon", "reward", "token", "coin", "badge"
     - 크기 50~300px 범위의 독립 요소
     - fill 이미지가 없지만 시각적으로 의미 있는 노드
+
+  ⛔ 렌더링 전 TEXT 자식 검증 (BLOCKING):
+    후보 노드의 자식 트리에 TEXT 노드가 있으면 → 렌더링 대상에서 제외
+    후보 노드가 INSTANCE 반복 패턴의 부모이면 → 렌더링 대상에서 제외
+    "카드", "리스트", "그리드" 등 복합 UI를 통째 렌더링하지 않는다
+
   해당 노드를 개별 렌더링:
     node "[FIGMA_SCRIPT]" images {fileKey} {nodeId} --render --nodeIds={id1},{id2},... --out=/tmp/{feature}/images/
-  → 이미지 fill이 아닌 벡터/인스턴스 에셋도 PNG로 확보
-  → Phase 3에서 목 데이터의 image 경로에 연결
+  → 이미지 fill이 아닌 벡터/인스턴스 에셋도 webp로 확보
+  → Phase 4에서 카드 내부의 아이콘/썸네일로 사용
 
 4단계 — 섹션별 스크린샷 (부분 정답):
   트리의 1depth 자식 프레임 각각:
@@ -660,6 +698,14 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
     4. OK → 다음 섹션으로
 
   섹션 3 (Daily) → ... 반복
+
+⛔ Phase 4에서 screenshot/render 호출 금지:
+  Phase 2에서 확보한 이미지만 사용한다.
+  "이 섹션이 복잡하니 screenshot으로 이미지화하자" → 금지된 접근.
+  복잡한 섹션도 tree.json 구조를 따라 HTML+CSS로 구현한다.
+  섹션 내부에 카드 그리드/보상 목록이 있으면:
+    → 카드 내부의 아이콘/썸네일(Phase 2에서 확보)만 <img>
+    → 가격, 수량, 버튼 텍스트, 제목은 모두 HTML
 
 각 섹션 완료 시:
   - 해당 섹션의 컴포넌트 + SCSS가 동작하는 상태
