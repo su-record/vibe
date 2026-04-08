@@ -26,7 +26,7 @@
  *
  * Input: JSON from stdin with { prompt: string } (when no CLI args)
  */
-import { getLibBaseUrl, readVibeConfig } from './utils.js';
+import { getLibBaseUrl, readVibeConfig, logLlmCost } from './utils.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -96,6 +96,14 @@ function isSimplePrompt(prompt) {
   const trimmed = prompt.trim();
   if (trimmed.length > SIMPLE_PROMPT_MAX_LEN) return false;
   return SIMPLE_PROMPT_PATTERNS.some(p => p.test(trimmed));
+}
+
+function resolveModel(providerName, config) {
+  if (providerName === 'gpt-spark') return config.models?.gptCodexSpark || 'gpt-5.3-codex-spark';
+  if (providerName === 'gpt-codex') return config.models?.gptCodex || 'gpt-5.3-codex';
+  if (providerName === 'gpt') return config.models?.gpt || 'gpt-5.4';
+  if (providerName === 'gemini') return config.models?.gemini || 'gemini-3.1-pro-preview';
+  return providerName;
 }
 
 // Errors that should skip retry and go to fallback immediately
@@ -512,6 +520,7 @@ async function main() {
   const cacheKey = getCacheKey(provider, cleanPrompt, systemPrompt, jsonMode);
   const cached = getCachedResponse(cacheKey);
   if (cached) {
+    logLlmCost(provider, 'cache', cleanPrompt.length, cached.length, 0, true);
     console.log(cached);
     return;
   }
@@ -526,16 +535,24 @@ async function main() {
     ? [provider, 'gemini']
     : ['gemini', 'gpt'];
 
+  const vibeConfig = readVibeConfig();
+
   for (let i = 0; i < providerChain.length; i++) {
     const currentProvider = providerChain[i];
     const label = providerLabels[currentProvider] || currentProvider.toUpperCase();
     // Use shorter timeout for fallback providers
     const timeoutMs = i === 0 ? CLI_TIMEOUT_MS : CLI_FALLBACK_TIMEOUT_MS;
+    const startTime = Date.now();
     const result = await callWithRetry(currentProvider, cleanPrompt, systemPrompt, jsonMode, timeoutMs);
 
     if (result.success) {
       const output = `${label} response: ${result.result}`;
       setCachedResponse(cacheKey, output);
+
+      // 비용 추적
+      const model = resolveModel(currentProvider, vibeConfig);
+      logLlmCost(currentProvider, model, cleanPrompt.length, result.result.length, Date.now() - startTime, false);
+
       console.log(output);
       return;
     }

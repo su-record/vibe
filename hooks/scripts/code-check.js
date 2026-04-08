@@ -2,7 +2,9 @@
  * PostToolUse Hook - Write/Edit 후 코드 품질 검사 + 관찰 자동 캡처
  */
 import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync } from 'fs';
+import path from 'path';
+import os from 'os';
 
 const BASE_URL = getToolsBaseUrl();
 
@@ -172,6 +174,53 @@ function emitSelfHealMessages(filePath) {
   }
 }
 
+// ─── Failure Escalation Tracking ───
+
+const ESCALATION_THRESHOLD = 3;
+const ESCALATION_FILE = path.join(os.homedir(), '.vibe', 'failure-tracker.json');
+
+function loadFailureTracker() {
+  try {
+    if (existsSync(ESCALATION_FILE)) {
+      return JSON.parse(readFileSync(ESCALATION_FILE, 'utf8'));
+    }
+  } catch { /* ignore */ }
+  return {};
+}
+
+function saveFailureTracker(tracker) {
+  try {
+    writeFileSync(ESCALATION_FILE, JSON.stringify(tracker));
+  } catch { /* ignore */ }
+}
+
+function trackFailure(filePath, issues) {
+  const tracker = loadFailureTracker();
+  const key = filePath;
+  const entry = tracker[key] || { count: 0, issues: [] };
+  entry.count += 1;
+  entry.issues = issues.slice(0, 3);
+  entry.lastSeen = new Date().toISOString();
+  tracker[key] = entry;
+  saveFailureTracker(tracker);
+
+  if (entry.count >= ESCALATION_THRESHOLD) {
+    console.log(`\n🚨 [ESCALATION] ${path.basename(filePath)}: 동일 이슈 ${entry.count}회 반복`);
+    console.log(`   이슈: ${entry.issues.join(' | ')}`);
+    console.log('   → 사용자 개입 필요 — 자동 수정이 수렴하지 않고 있습니다.');
+    console.log('   → 방향을 바꾸거나, 접근 방식을 재검토하세요.');
+    // 카운터 리셋 (다음 에스컬레이션까지 다시 3회)
+    entry.count = 0;
+    saveFailureTracker(tracker);
+  }
+}
+
+function clearFailure(filePath) {
+  const tracker = loadFailureTracker();
+  delete tracker[filePath];
+  saveFailureTracker(tracker);
+}
+
 async function main() {
   // 1. Code quality check (changed files only — never scan entire project)
   try {
@@ -187,6 +236,9 @@ async function main() {
       const critical = text.split('\n').filter(l => /\b(error|critical|P1|P2)\b/i.test(l)).slice(0, 3);
       if (critical.length > 0) {
         console.log('[CODE CHECK]', critical.join(' | '));
+        trackFailure(files[0], critical);
+      } else {
+        clearFailure(files[0]);
       }
       emitSelfHealMessages(files[0]);
     }

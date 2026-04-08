@@ -543,6 +543,146 @@ flowchart TD
 
 ---
 
+## 하네스 시스템 (Harness System)
+
+> **Agent = Model + Harness**
+
+하네스는 AI 에이전트에서 **모델을 제외한 모든 것** — AI가 일하는 환경 전체입니다.
+`vibe init` 한 번으로 가이드(Guides)와 센서(Sensors)가 설치되어, AI가 올바른 방향으로 일하고 스스로 교정하는 구조를 만듭니다.
+
+| 축 | 역할 | 구성 요소 |
+|---|------|----------|
+| **Guides** (피드포워드) | 행동 **전에** 방향 설정 | CLAUDE.md, 규칙, 에이전트 56개, 스킬 45개, 커맨드 |
+| **Sensors** (피드백) | 행동 **후에** 관찰·교정 | 훅 21개 (품질 게이트, 자동 테스트), 이볼루션 엔진 |
+
+### 구성 요소
+
+| 구성 요소 | 분류 | 역할 |
+|-----------|------|------|
+| **CLAUDE.md / 규칙** | Guide | 프로젝트 지침, 코딩 표준 — AI가 읽고 따르는 컨텍스트 |
+| **에이전트 (56개)** | Guide | 탐색·구현·아키텍처·리뷰·QA·UI/UX 전문 페르소나 |
+| **스킬 (45개, 3티어)** | Guide | 도메인별 재사용 워크플로우 모듈 |
+| **커맨드** | Guide | 구조화된 작업 인터페이스 (/vibe.spec, /vibe.run 등) |
+| **훅 (21개)** | Sensor | 라이프사이클 이벤트 인터셉트 — 위험 차단, 품질 검증 |
+| **품질 게이트 (3계층)** | Sensor | 센티넬 가드 → 프리툴 가드 → 코드 체크 |
+| **LLM 비용 추적** | Sensor | llm-costs.jsonl — 프로바이더별 토큰·비용·지연 시간 기록 |
+| **롤백 체크포인트** | Sensor | 자동 커밋마다 `vibe-checkpoint-N` 태그 생성 (최근 5개 유지) |
+| **에스컬레이션** | Sensor | 동일 파일 P1/P2 이슈 3회 반복 → 사용자 개입 요청 |
+| **Session RAG / 메모리** | Both | 세션 간 컨텍스트 지속 + 자동 복원 |
+| **이볼루션 엔진** | Sensor | 훅 실행 패턴 분석 → 규칙/스킬 자기 개선 |
+| **텔레메트리** | Sensor | hook-traces.jsonl, spans.jsonl — 관찰 가능성 |
+
+### 훅 실행 흐름
+
+```
+사용자 액션 (Bash / Edit / Write / Prompt)
+    ↓
+SessionStart ─── session-start.js
+    세션 메모리 복원, 컨텍스트 로드, 하네스 버전 체크
+    ↓
+PreToolUse ──── sentinel-guard.js → pre-tool-guard.js
+    파괴적 명령 차단 (rm -rf, force push, DB drop 등)
+    ↓
+[도구 실행]
+    ↓
+PostToolUse ─── auto-format.js → code-check.js → auto-test.js
+    자동 포맷 → 타입 안전성·복잡도 검증 → 테스트 실행
+    ↓
+UserPromptSubmit ── prompt-dispatcher.js → keyword-detector.js → llm-orchestrate.js
+    커맨드 라우팅 → 매직 키워드 감지 → 외부 LLM 디스패치
+    ↓
+Notification ─── context-save.js
+    컨텍스트 80/90/95%에서 자동 저장
+    ↓
+Stop ──────── codex-review-gate.js → stop-notify.js → auto-commit.js
+    리뷰 게이트 → 세션 종료 알림 → 자동 커밋 + 롤백 체크포인트
+```
+
+### 3계층 품질 게이트
+
+| 계층 | 스크립트 | 검증 내용 |
+|------|---------|----------|
+| **1. 센티넬 가드** | `sentinel-guard.js` | `rm -rf /`, `git reset --hard`, DB drop, fork bomb 등 치명적 명령 원천 차단 |
+| **2. 프리툴 가드** | `pre-tool-guard.js` | 위험 패턴 경고 — force push, .env 수정, 시스템 디렉토리 쓰기 |
+| **3. 코드 체크** | `code-check.js` | `any` 타입 차단, `@ts-ignore` 차단, 함수 ≤50줄, 중첩 ≤3, 파라미터 ≤5, 순환복잡도 ≤10 |
+
+### 스킬 티어 시스템
+
+컨텍스트 과부하(Curse of Instructions)를 방지하기 위해 스킬을 3단계로 분류합니다.
+
+| 티어 | 로딩 방식 | 목적 | 예시 |
+|------|----------|------|------|
+| **Core** | 항상 활성 | 버그·실수 방지 안전망 | techdebt, arch-guard, exec-plan |
+| **Standard** | 프로젝트 스택에 따라 선택 | 워크플로우 지원 | parallel-research, handoff, design-teach |
+| **Optional** | 명시적 `/skill`로만 호출 | 래퍼/참조용 | commit-push-pr, git-worktree, context7 |
+
+### 이볼루션 엔진 (자기 개선)
+
+```
+훅 실행 추적 (spans.jsonl)
+    ↓
+패턴 분석 — 반복 차단 패턴 클러스터링 (7일 히스토리)
+    ↓
+인사이트 생성 — 최적화/경고/갭 분류 + 신뢰도 점수
+    ↓
+규칙·스킬 자동 생성 (suggest 또는 auto 모드)
+    ↓
+서킷 브레이커 — 회귀 발생 시 롤백
+```
+
+### LLM 비용 추적
+
+외부 LLM(GPT, Gemini) 호출마다 토큰, 비용, 지연 시간을 `~/.vibe/llm-costs.jsonl`에 기록합니다.
+캐시 히트 시 비용 0으로 기록. 프로바이더별 모델 단가 자동 적용.
+
+```jsonl
+{"ts":"...","provider":"gpt","model":"gpt-5.4","inputTokens":150,"outputTokens":420,"cost":0.0069,"durationMs":2340,"cached":false}
+```
+
+`vibe stats --quality`로 누적 비용 확인 가능.
+
+### 롤백 체크포인트
+
+에이전트 자동 커밋마다 `vibe-checkpoint-N` git 태그를 생성합니다.
+문제 발생 시 한 줄로 롤백:
+
+```bash
+git reset --hard vibe-checkpoint-3
+```
+
+최근 5개만 유지, 오래된 체크포인트는 자동 정리.
+
+### 에스컬레이션 (Human-in-the-loop)
+
+동일 파일에서 P1/P2 이슈가 3회 반복되면 자동 수정을 멈추고 사용자에게 개입을 요청합니다.
+
+```
+🚨 [ESCALATION] auth.ts: 동일 이슈 3회 반복
+   → 사용자 개입 필요 — 자동 수정이 수렴하지 않고 있습니다.
+```
+
+AI가 같은 실수를 반복하며 맴도는 것을 방지하는 센서입니다.
+
+### 설치 흐름
+
+```bash
+npm install -g @su-record/vibe   # postinstall → 글로벌 에셋 배포
+vibe init                         # 프로젝트 하네스 설치
+```
+
+**postinstall** (글로벌):
+- `~/.claude/agents/` — 56개 에이전트 정의
+- `~/.claude/skills/` — 글로벌 스킬
+- `~/.claude/commands/` — 슬래시 커맨드
+
+**vibe init** (프로젝트):
+- 24개 프레임워크 자동 감지
+- `.claude/settings.local.json`에 훅 등록
+- 스택별 스킬·규칙 설치
+- `CLAUDE.md` 생성 (프레임워크별 코딩 규칙)
+
+---
+
 ## Requirements
 
 - **Node.js** >= 18.0.0
