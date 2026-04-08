@@ -68,9 +68,14 @@ component-index (/tmp/{feature}/component-index.json) 에서 매칭되는 컴포
      children 없음    → 빈 div 또는 스킵
 
 2. 배경 레이어 판별:
-   부모와 동일 크기(±5%) + imageRef 있음 + z-index 낮음
-     → position:absolute + inset:0 + object-fit:cover
-     → 부모에 position:relative + overflow:hidden 추가
+   BG 프레임 (name에 "BG"/"bg" 또는 부모와 동일 크기)
+     ❌ <img> 태그로 배경 처리 금지
+     ❌ position:absolute + inset:0 으로 이미지 배치 금지
+     ✅ 부모 요소에 CSS background-image로 처리:
+        background-image: url('/images/{feature}/{section}-bg.png');
+        background-size: cover;
+        background-position: center top;
+     ✅ BG 프레임은 HTML에 아무것도 렌더링하지 않음 (CSS만)
 
 3. 반복 패턴 감지:
    같은 부모 아래 동일 타입 + 유사 구조(children 수 동일) 노드 3개 이상
@@ -340,10 +345,8 @@ $bp-desktop: 1024px;
 -->
 <template>
   <section class="heroSection">
-    <!-- BG: 부모와 동일 크기 + imageRef → 배경 레이어 -->
-    <div class="heroBg">
-      <img src="/images/{feature}/hero-bg.png" alt="" aria-hidden="true" />
-    </div>
+    <!-- BG: CSS background-image로 처리 (img 태그 아님!) -->
+    <!-- .heroSection { background-image: url('/images/{feature}/hero-bg.png'); background-size: cover; } -->
 
     <!-- Title: flex-column, gap:24px → 직접 매핑 -->
     <div class="heroTitle">
@@ -428,9 +431,10 @@ function handleShare(): void {
 트리 노드의 속성으로 이미지 유형을 판별한다:
 
 배경 이미지:
-  조건: imageRef 있음 + 부모와 크기 동일(±5%) + 형제 중 가장 먼저 위치
-  매핑: position:absolute + inset:0 + z-index:0 + object-fit:cover
-  태그: <img alt="" aria-hidden="true" />
+  조건: BG 프레임 (name에 BG/bg 또는 부모와 크기 동일)
+  ❌ <img> 태그 금지
+  ✅ CSS background-image로만 처리:
+     부모 { background-image: url('...'); background-size: cover; }
 
 콘텐츠 이미지:
   조건: imageRef 있음 + 독립적 크기 + TEXT 형제 없음

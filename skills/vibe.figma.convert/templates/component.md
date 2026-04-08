@@ -20,10 +20,8 @@ tree.json 노드를 기반으로 컴포넌트를 생성할 때 이 템플릿을 
 -->
 <template>
   <section class="{{sectionName}}">
-    <!-- BG: 부모와 동일 크기 + imageRef → 배경 레이어 -->
-    <div class="{{sectionName}}__bg">
-      <img src="/images/{{FEATURE_KEY}}/{{bg-file}}.png" alt="" aria-hidden="true" />
-    </div>
+    <!-- BG: CSS background-image로 처리. img 태그 사용 금지! -->
+    <!-- SCSS: .{{sectionName}} { background-image: url('/images/{{FEATURE_KEY}}/{{bg-file}}.png'); background-size: cover; } -->
 
     <!-- {{CHILD_1}}: tree flex-column, gap:{{GAP}}px → 직접 매핑 -->
     <div class="{{sectionName}}__{{child1Name}}">
