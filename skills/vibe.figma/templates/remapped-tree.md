@@ -43,8 +43,8 @@ tree.json을 코드 생성에 최적화된 구조로 리매핑한다.
         "states": ["default"]
       },
       "bg": {
-        "mo": { "nodeId": "...", "file": "mo-main/bg/hero-bg.png" },
-        "pc": { "nodeId": "...", "file": "pc-main/bg/hero-bg.png" }
+        "mo": { "nodeId": "...", "file": "mo-main/bg/hero-bg.webp" },
+        "pc": { "nodeId": "...", "file": "pc-main/bg/hero-bg.webp" }
       },
       "size": {
         "mo": { "w": 720, "h": 1280 },
@@ -63,8 +63,8 @@ tree.json을 코드 생성에 최적화된 구조로 리매핑한다.
               "role": "title-image",
               "type": "node-render",
               "render": {
-                "mo": { "nodeId": "...", "file": "mo-main/content/hero-title.png", "size": { "w": 620, "h": 174 } },
-                "pc": { "nodeId": "...", "file": "pc-main/content/hero-title.png", "size": { "w": 1200, "h": 340 } }
+                "mo": { "nodeId": "...", "file": "mo-main/content/hero-title.webp", "size": { "w": 620, "h": 174 } },
+                "pc": { "nodeId": "...", "file": "pc-main/content/hero-title.webp", "size": { "w": 1200, "h": 340 } }
               },
               "alt": "추운 겨울, 따뜻한 보상이 펑펑"
             },
@@ -72,8 +72,8 @@ tree.json을 코드 생성에 최적화된 구조로 리매핑한다.
               "role": "subtitle-image",
               "type": "node-render",
               "render": {
-                "mo": { "nodeId": "...", "file": "mo-main/content/hero-subtitle.png", "size": { "w": 586, "h": 32 } },
-                "pc": { "nodeId": "...", "file": "pc-main/content/hero-subtitle.png", "size": { "w": 1100, "h": 60 } }
+                "mo": { "nodeId": "...", "file": "mo-main/content/hero-subtitle.webp", "size": { "w": 586, "h": 32 } },
+                "pc": { "nodeId": "...", "file": "pc-main/content/hero-subtitle.webp", "size": { "w": 1100, "h": 60 } }
               },
               "alt": "겨울을 녹일 보상, 지금 PC방에서 획득하세요!"
             }
@@ -93,8 +93,8 @@ tree.json을 코드 생성에 최적화된 구조로 리매핑한다.
           "role": "period-panel",
           "type": "content-with-bg",
           "bg": {
-            "mo": { "nodeId": "...", "file": "mo-main/bg/period-bg.png" },
-            "pc": { "nodeId": "...", "file": "pc-main/bg/period-bg.png" }
+            "mo": { "nodeId": "...", "file": "mo-main/bg/period-bg.webp" },
+            "pc": { "nodeId": "...", "file": "pc-main/bg/period-bg.webp" }
           },
           "size": {
             "mo": { "w": 720, "h": 500 },

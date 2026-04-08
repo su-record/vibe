@@ -25,7 +25,7 @@ BG 프레임 (name에 "BG"/"bg" 또는 부모와 동일 크기 ±5%):
   ❌ <img> 태그로 배경 처리 금지
   ❌ position:absolute + inset:0 으로 이미지 배치 금지
   ✅ 부모 요소에 CSS background-image로만 처리:
-     background-image: url('/images/{feature}/{section}-bg.png');
+     background-image: url('/images/{feature}/{section}-bg.webp');
      background-size: cover;
      background-position: center top;
   ✅ BG 프레임은 HTML에 아무것도 렌더링하지 않음 (CSS만)

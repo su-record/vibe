@@ -11,9 +11,9 @@
 
 | 이미지 유형 | 렌더링 방법 | 출력 위치 |
 |-----------|-----------|---------|
-| BG 프레임 (합성 배경) | `screenshot {fileKey} {bg.nodeId}` | `bg/{section}-bg.png` |
-| 콘텐츠 (타이틀, 버튼) | `screenshot {fileKey} {node.nodeId}` | `content/{name}.png` |
-| 벡터 글자 그룹 | `screenshot {fileKey} {group.nodeId}` | `content/{name}.png` |
+| BG 프레임 (합성 배경) | `screenshot {fileKey} {bg.nodeId}` | `bg/{section}-bg.webp` |
+| 콘텐츠 (타이틀, 버튼) | `screenshot {fileKey} {node.nodeId}` | `content/{name}.webp` |
+| 벡터 글자 그룹 | `screenshot {fileKey} {group.nodeId}` | `content/{name}.webp` |
 
 ## BG 프레임 판별
 
@@ -89,16 +89,16 @@ BG 프레임 = 다음 중 하나:
 
 ## Format
 
-- Output format: `.png` (Figma screenshot API 기본)
-- 최적화 필요 시 빌드 단계에서 webp 변환 (추출 단계에서는 png)
+- Output format: `.webp` (Figma API에서 png 수신 → cwebp로 webp 변환)
+- cwebp 미설치 시 `.png` 폴백
 
 ## Naming
 
 렌더링된 이미지의 파일명 = Figma 노드 name을 kebab-case로:
-  - `"Hero"` BG frame → `hero-bg.png`
-  - `"Mission 01"` vector group → `mission-01.png`
-  - `"Title"` content → `hero-title.png` (섹션명 prefix)
-  - `"Btn_Login"` → `btn-login.png`
+  - `"Hero"` BG frame → `hero-bg.webp`
+  - `"Mission 01"` vector group → `mission-01.webp`
+  - `"Title"` content → `hero-title.webp` (섹션명 prefix)
+  - `"Btn_Login"` → `btn-login.webp`
 
 Rules:
   - 공백 → 하이픈

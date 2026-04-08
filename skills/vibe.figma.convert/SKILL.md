@@ -72,7 +72,7 @@ component-index (/tmp/{feature}/component-index.json) 에서 매칭되는 컴포
      ❌ <img> 태그로 배경 처리 금지
      ❌ position:absolute + inset:0 으로 이미지 배치 금지
      ✅ 부모 요소에 CSS background-image로 처리:
-        background-image: url('/images/{feature}/{section}-bg.png');
+        background-image: url('/images/{feature}/{section}-bg.webp');
         background-size: cover;
         background-position: center top;
      ✅ BG 프레임은 HTML에 아무것도 렌더링하지 않음 (CSS만)
@@ -331,8 +331,8 @@ $bp-desktop: 1024px;
   Hero (INSTANCE 720x1280)
   ├── BG (FRAME — 배경 레이어)
   ├── Title (FRAME — flex-column, gap:24px)
-  │   ├── Title (RECTANGLE — imageRef → title.png)
-  │   └── Sub Title (VECTOR — imageRef → subtitle.png)
+  │   ├── Title (RECTANGLE — imageRef → title.webp)
+  │   └── Sub Title (VECTOR — imageRef → subtitle.webp)
   ├── Period (FRAME — flex-column, gap:10px, padding)
   │   └── Period (FRAME — flex-column, gap:22px)
   │       ├── Period_Left (FRAME — flex-column, gap:4px)
@@ -346,14 +346,14 @@ $bp-desktop: 1024px;
 <template>
   <section class="heroSection">
     <!-- BG: CSS background-image로 처리 (img 태그 아님!) -->
-    <!-- .heroSection { background-image: url('/images/{feature}/hero-bg.png'); background-size: cover; } -->
+    <!-- .heroSection { background-image: url('/images/{feature}/hero-bg.webp'); background-size: cover; } -->
 
     <!-- Title: flex-column, gap:24px → 직접 매핑 -->
     <div class="heroTitle">
-      <img src="/images/{feature}/title.png"
+      <img src="/images/{feature}/title.webp"
            alt="추운 겨울, 따뜻한 보상이 펑펑"
            class="heroTitleImg" />
-      <img src="/images/{feature}/subtitle.png"
+      <img src="/images/{feature}/subtitle.webp"
            alt="겨울을 녹일 보상, 지금 PC방에서 획득하세요!"
            class="heroSubtitleImg" />
     </div>
@@ -377,7 +377,7 @@ $bp-desktop: 1024px;
 
     <!-- BTN_Share: flex, borderRadius:500px → 버튼으로 승격 -->
     <button class="heroShareBtn" @click="handleShare">
-      <img src="/images/{feature}/share-icon.png" alt="공유하기" class="heroShareIcon" />
+      <img src="/images/{feature}/share-icon.webp" alt="공유하기" class="heroShareIcon" />
     </button>
   </section>
 </template>
@@ -466,7 +466,7 @@ function handleShare(): void {
 같은 값 → 유지
 다른 px 값 → @include pc { width: {desktop값 × pcScaleFactor}px; }
 다른 레이아웃 → @include pc { flex-direction: row; }
-다른 이미지 → @include pc { content: url(/images/{feature}/desktop-xxx.png); }
+다른 이미지 → @include pc { content: url(/images/{feature}/desktop-xxx.webp); }
 
 기존 모바일 코드 삭제 금지.
 ```

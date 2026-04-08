@@ -53,7 +53,7 @@ ROOT folder: `{{MO_FOLDER}}/`, `{{PC_FOLDER}}/`
 
 | Image | Local Path | Type | Render Method |
 |-------|-----------|------|--------------|
-| {{NAME}} | `/images/{{FEATURE_KEY}}/{{FILE_NAME}}.png` | {{bg\|content\|vector-text}} | {{frame-render\|node-render\|group-render}} |
+| {{NAME}} | `/images/{{FEATURE_KEY}}/{{FILE_NAME}}.webp` | {{bg\|content\|vector-text}} | {{frame-render\|node-render\|group-render}} |
 
 Total assets: {{ASSET_COUNT}} (BG 렌더링 {{BG_COUNT}}장 + 콘텐츠 {{CONTENT_COUNT}}장)
 

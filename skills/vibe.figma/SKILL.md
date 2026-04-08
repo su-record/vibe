@@ -355,7 +355,7 @@ URL 개수에 따른 처리:
 URL에서 fileKey, nodeId 추출
 
 1단계 — 전체 스크린샷 (정답 사진):
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {nodeId} --out=/tmp/{feature}/full-screenshot.png
+  node "[FIGMA_SCRIPT]" screenshot {fileKey} {nodeId} --out=/tmp/{feature}/full-screenshot.webp
 
 2단계 — 전체 트리 + CSS (수치 재료):
   node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId} --depth=10
@@ -377,7 +377,7 @@ URL에서 fileKey, nodeId 추출
 
 4단계 — 섹션별 스크린샷 (부분 정답):
   트리의 1depth 자식 프레임 각각:
-    node "[FIGMA_SCRIPT]" screenshot {fileKey} {child.nodeId} --out=/tmp/{feature}/sections/{child.name}.png
+    node "[FIGMA_SCRIPT]" screenshot {fileKey} {child.nodeId} --out=/tmp/{feature}/sections/{child.name}.webp
 ```
 
 ### 2-1-multi. 멀티 프레임 재료 확보 (2개 이상 URL)
@@ -399,7 +399,7 @@ URL에서 fileKey, nodeId 추출
 결과:
   /tmp/{feature}/
   ├── frame-1/           ← 메인 페이지
-  │   ├── full-screenshot.png
+  │   ├── full-screenshot.webp
   │   ├── tree.json
   │   ├── images/
   │   └── sections/
@@ -417,17 +417,17 @@ Phase 2 완료 시 /tmp/{feature}/ 에 다음이 준비되어야 함:
 
 단일 URL:
 /tmp/{feature}/
-├── full-screenshot.png          ← 전체 정답 사진
+├── full-screenshot.webp          ← 전체 정답 사진
 ├── tree.json                    ← 노드 트리 + CSS 수치
 ├── images/                      ← 모든 이미지 에셋
-│   ├── hero-bg.png
-│   ├── hero-title.png
-│   ├── card-item-1.png
+│   ├── hero-bg.webp
+│   ├── hero-title.webp
+│   ├── card-item-1.webp
 │   └── ...
 └── sections/                    ← 섹션별 정답 사진
-    ├── hero.png
-    ├── daily-checkin.png
-    ├── playtime-mission.png
+    ├── hero.webp
+    ├── daily-checkin.webp
+    ├── playtime-mission.webp
     └── ...
 
 멀티 URL: 위 2-1-multi 결과 구조 참조
@@ -471,7 +471,7 @@ UI 요소 → vw 비례:
 
 ```
 1. 시각 비교 — 각 프레임의 스크린샷을 순차 Read:
-   - frame-1/full-screenshot.png → frame-2/full-screenshot.png → ...
+   - frame-1/full-screenshot.webp → frame-2/full-screenshot.webp → ...
    - 시각적으로 반복되는 요소 식별:
      상단 영역 (GNB/Header), 하단 영역 (Footer),
      카드 패턴, 버튼 스타일, 섹션 레이아웃
@@ -702,7 +702,7 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
     tree.json의 Auto Layout 구조를 HTML flex 레이아웃으로 직접 매핑.
     Claude가 시맨틱 태그로 승격 (div → section/h2/p/button).
     Phase 1의 기능 요소(v-for, @click, v-if) 보존.
-    이미지 경로: /images/{feature}/파일명.png (실제 파일 존재 확인)
+    이미지 경로: /images/{feature}/파일명.webp (실제 파일 존재 확인)
     텍스트: tree.json의 TEXT 노드 characters 값 그대로.
 
   <script setup>
@@ -876,15 +876,15 @@ import { captureScreenshot, compareScreenshots } from 'src/infra/lib/browser'
 각 섹션에 대해:
   1. 렌더링 결과 스크린샷 캡처:
      await captureScreenshot(page, {
-       outPath: '/tmp/{feature}/rendered-{section}.png',
+       outPath: '/tmp/{feature}/rendered-{section}.webp',
        selector: '.{section}Section',   // Phase 1에서 만든 클래스
      })
 
   2. Figma 원본과 픽셀 비교:
      const diff = await compareScreenshots(
-       '/tmp/{feature}/sections/{section}.png',    // Figma 원본
-       '/tmp/{feature}/rendered-{section}.png',    // 렌더링 결과
-       '/tmp/{feature}/diff-{section}.png',        // 차이 시각화
+       '/tmp/{feature}/sections/{section}.webp',    // Figma 원본
+       '/tmp/{feature}/rendered-{section}.webp',    // 렌더링 결과
+       '/tmp/{feature}/diff-{section}.webp',        // 차이 시각화
      )
 
   3. diff 이미지를 Read로 확인:

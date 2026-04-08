@@ -118,7 +118,7 @@ BG 프레임 판별 기준:
   - 또는 1depth 첫 번째 자식이면서 이미지 노드 다수 보유
 
 렌더링:
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {bg.nodeId} --out=/tmp/{feature}/bg/{section}-bg.png
+  node "[FIGMA_SCRIPT]" screenshot {fileKey} {bg.nodeId} --out=/tmp/{feature}/bg/{section}-bg.webp
 
 → BG 하위 20+ 레이어가 합성된 1장
 → CSS background-image로 처리
@@ -164,7 +164,7 @@ BG가 아닌 콘텐츠 이미지를 개별 노드 렌더링:
   - 아이템/보상 썸네일 (name에 "item", "reward", "token", "coin") — 이미지 에셋만
 
 렌더링 (imageRef 다운로드 아님!):
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {node.nodeId} --out=/tmp/{feature}/content/{name}.png
+  node "[FIGMA_SCRIPT]" screenshot {fileKey} {node.nodeId} --out=/tmp/{feature}/content/{name}.webp
 
 → 텍스처 fill이 적용된 최종 결과물이 나옴
 → 22.7MB 텍스처 대신 364KB 렌더링 이미지
@@ -182,7 +182,7 @@ BG가 아닌 콘텐츠 이미지를 개별 노드 렌더링:
 
 렌더링:
   부모 GROUP을 통째로 렌더링 (개별 글자 다운로드 금지)
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {group.nodeId} --out=/tmp/{feature}/content/{name}.png
+  node "[FIGMA_SCRIPT]" screenshot {fileKey} {group.nodeId} --out=/tmp/{feature}/content/{name}.webp
 
 예시:
   "MISSION 01" GROUP (174x42, 벡터 9개) → 렌더링 1장 (58KB)
@@ -208,10 +208,10 @@ BG가 아닌 콘텐츠 이미지를 개별 노드 렌더링:
 코드 생성에는 사용하지 않는다. Phase 4 시각 검증에서만 사용.
 
 전체 스크린샷:
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {nodeId} --out=/tmp/{feature}/full-screenshot.png
+  node "[FIGMA_SCRIPT]" screenshot {fileKey} {nodeId} --out=/tmp/{feature}/full-screenshot.webp
 
 섹션별 스크린샷 (1depth 자식 프레임 각각):
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {child.nodeId} --out=/tmp/{feature}/sections/{name}.png
+  node "[FIGMA_SCRIPT]" screenshot {fileKey} {child.nodeId} --out=/tmp/{feature}/sections/{name}.webp
 
 용도:
   ✅ Phase 4에서 렌더링 결과와 pixelmatch 비교
@@ -229,26 +229,26 @@ BG가 아닌 콘텐츠 이미지를 개별 노드 렌더링:
 /tmp/{feature}/
 ├── tree.json                    ← 코드 생성의 PRIMARY 소스
 ├── bg/                          ← BG 프레임 렌더링 (섹션당 1장)
-│   ├── hero-bg.png
-│   ├── daily-bg.png
+│   ├── hero-bg.webp
+│   ├── daily-bg.webp
 │   └── ...
 ├── content/                     ← 콘텐츠 노드 렌더링
-│   ├── hero-title.png
-│   ├── hero-subtitle.png
-│   ├── mission-01.png           ← 벡터 글자 그룹 렌더링
-│   ├── btn-login.png
+│   ├── hero-title.webp
+│   ├── hero-subtitle.webp
+│   ├── mission-01.webp           ← 벡터 글자 그룹 렌더링
+│   ├── btn-login.webp
 │   └── ...
-├── full-screenshot.png          ← Phase 4 검증용
+├── full-screenshot.webp          ← Phase 4 검증용
 └── sections/                    ← Phase 4 섹션별 검증용
-    ├── hero.png
+    ├── hero.webp
     └── ...
 
 이미지 분류 (실제 테스트 기준):
   | 분류 | 처리 | 예시 |
   |------|------|------|
-  | BG 프레임 (89개) | 프레임 렌더링 → bg/ | hero-bg.png (4.2MB) |
-  | 벡터 글자 (33개) | GROUP 렌더링 → content/ | mission-01.png (58KB) |
-  | 콘텐츠 (8개) | 노드 렌더링 → content/ | hero-title.png (364KB) |
+  | BG 프레임 (89개) | 프레임 렌더링 → bg/ | hero-bg.webp (4.2MB) |
+  | 벡터 글자 (33개) | GROUP 렌더링 → content/ | mission-01.webp (58KB) |
+  | 콘텐츠 (8개) | 노드 렌더링 → content/ | hero-title.webp (364KB) |
   | 장식 (29개) | BG 렌더링에 포함 | — |
   → 전체 159개 → 실제 파일 약 18장
 

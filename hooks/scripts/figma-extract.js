@@ -15,12 +15,46 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { execFileSync } from 'child_process';
 
 // ─── Config ─────────────────────────────────────────────────────────
 
 const FIGMA_API = 'https://api.figma.com/v1';
 const MAX_RETRIES = 3;
 const INITIAL_DELAY_MS = 2000;
+
+// ─── WebP 변환 ──────────────────────────────────────────────────────
+
+let _cwebpAvailable;
+function hasCwebp() {
+  if (_cwebpAvailable === undefined) {
+    try { execFileSync('cwebp', ['-version'], { stdio: 'ignore' }); _cwebpAvailable = true; }
+    catch { _cwebpAvailable = false; }
+  }
+  return _cwebpAvailable;
+}
+
+/** PNG 버퍼를 webp 파일로 저장. cwebp 없으면 png 폴백. */
+function writeAsWebp(pngBuf, outPath) {
+  if (!hasCwebp()) {
+    // cwebp 없으면 png 폴백
+    const fallback = outPath.replace(/\.webp$/, '.png');
+    fs.writeFileSync(fallback, pngBuf);
+    return fallback;
+  }
+  const tmpPng = outPath + '.tmp.png';
+  fs.writeFileSync(tmpPng, pngBuf);
+  try {
+    execFileSync('cwebp', ['-q', '85', tmpPng, '-o', outPath], { stdio: 'ignore' });
+    fs.unlinkSync(tmpPng);
+    return outPath;
+  } catch {
+    // 변환 실패 시 png 폴백
+    const fallback = outPath.replace(/\.webp$/, '.png');
+    fs.renameSync(tmpPng, fallback);
+    return fallback;
+  }
+}
 
 function loadToken() {
   if (process.env.FIGMA_ACCESS_TOKEN) return process.env.FIGMA_ACCESS_TOKEN;
@@ -178,11 +212,10 @@ async function cmdImages(token, fk, nid, outDir, depth) {
   for (const ref of refs) {
     const url = urls[ref];
     if (!url) continue;
-    const out = path.join(outDir, ref.slice(0,16) + '.png');
+    const outWebp = path.join(outDir, ref.slice(0,16) + '.webp');
     dl.push(fetch(url).then(r=>r.arrayBuffer()).then(b=>{
-      fs.writeFileSync(out, Buffer.from(b));
-      const sz = fs.statSync(out).size;
-      if (sz > 0) imageMap[ref] = out;
+      const actual = writeAsWebp(Buffer.from(b), outWebp);
+      if (fs.statSync(actual).size > 0) imageMap[ref] = actual;
     }).catch(()=>{}));
   }
   await Promise.all(dl);
@@ -200,8 +233,14 @@ async function cmdScreenshot(token, fk, nid, outPath) {
       const url = data.images?.[nid];
       if (!url) continue;
       const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-      fs.writeFileSync(outPath, buf);
-      console.log(JSON.stringify({ path: outPath, size: buf.length, scale }));
+      let finalPath = outPath;
+      if (outPath.endsWith('.webp')) {
+        finalPath = writeAsWebp(buf, outPath);
+      } else {
+        fs.writeFileSync(outPath, buf);
+      }
+      const sz = fs.statSync(finalPath).size;
+      console.log(JSON.stringify({ path: finalPath, size: sz, scale }));
       return;
     } catch (e) {
       if (scale === 1) fail(`Screenshot failed: ${e.message}`);
@@ -301,7 +340,7 @@ function toSCSS(node, prefix, indent = 0) {
 function buildImageNames(node, prefix, result = {}) {
   if (node.imageRef) {
     const name = nodeName(node, prefix);
-    result[node.imageRef] = name + '.png';
+    result[node.imageRef] = name + '.webp';
   }
   if (node.children) {
     for (const child of node.children) {
@@ -339,12 +378,12 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
     for (const ref of refs) {
       const url = urls[ref];
       if (!url) continue;
-      const fileName = imageNames[ref] || ref.slice(0, 16) + '.png';
+      const fileName = imageNames[ref] || ref.slice(0, 16) + '.webp';
       const filePath = path.join(imgDir, fileName);
-      const publicPath = `images/${fileName}`;
       dl.push(fetch(url).then(r => r.arrayBuffer()).then(b => {
-        fs.writeFileSync(filePath, Buffer.from(b));
-        if (fs.statSync(filePath).size > 0) imageMap[ref] = publicPath;
+        const actual = writeAsWebp(Buffer.from(b), filePath);
+        const actualName = path.basename(actual);
+        if (fs.statSync(actual).size > 0) imageMap[ref] = `images/${actualName}`;
       }).catch(() => {}));
     }
     await Promise.all(dl);
@@ -353,7 +392,7 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
   // 4. 복합 BG 노드 → 스크린샷으로 렌더링
   for (const child of tree.children || []) {
     if (/^(BG|bg|배경)$/i.test(child.name) && child.children?.length > 3) {
-      const bgName = `${sectionPrefix}-bg-composite.png`;
+      const bgName = `${sectionPrefix}-bg-composite.webp`;
       const bgPath = path.join(imgDir, bgName);
       try {
         for (const s of [2, 1]) {
@@ -361,12 +400,12 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
           const sUrl = sData.images?.[child.nodeId];
           if (!sUrl) continue;
           const buf = Buffer.from(await (await fetch(sUrl)).arrayBuffer());
-          fs.writeFileSync(bgPath, buf);
-          if (buf.length > 0) {
-            imageMap[`__bg_${child.nodeId}`] = `images/${bgName}`;
-            // BG 노드의 imageRef를 합성 이미지로 교체
+          const actual = writeAsWebp(buf, bgPath);
+          const actualName = path.basename(actual);
+          if (fs.statSync(actual).size > 0) {
+            imageMap[`__bg_${child.nodeId}`] = `images/${actualName}`;
             child.imageRef = `__bg_${child.nodeId}`;
-            child.children = []; // 하위 제거 (합성됨)
+            child.children = [];
             break;
           }
         }
@@ -375,14 +414,15 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
   }
 
   // 5. 스크린샷
-  const screenshotPath = path.join(outDir, `${sectionPrefix}-screenshot.png`);
+  const screenshotPath = path.join(outDir, `${sectionPrefix}-screenshot.webp`);
+  let actualScreenshot = screenshotPath;
   try {
     for (const s of [2, 1]) {
       const sData = await apiFetch(`/images/${fk}?ids=${nid}&format=png&scale=${s}`, token);
       const sUrl = sData.images?.[nid];
       if (!sUrl) continue;
       const buf = Buffer.from(await (await fetch(sUrl)).arrayBuffer());
-      fs.writeFileSync(screenshotPath, buf);
+      actualScreenshot = writeAsWebp(buf, screenshotPath);
       break;
     }
   } catch { /* screenshot failed */ }
@@ -405,7 +445,7 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
       html: `${sectionPrefix}.html`,
       scss: `${sectionPrefix}.scss`,
       json: `${sectionPrefix}.json`,
-      screenshot: `${sectionPrefix}-screenshot.png`,
+      screenshot: path.basename(actualScreenshot),
     },
     images: imageMap,
     imageCount: Object.keys(imageMap).length,

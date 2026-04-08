@@ -21,7 +21,7 @@ tree.json 노드를 기반으로 컴포넌트를 생성할 때 이 템플릿을 
 <template>
   <section class="{{sectionName}}">
     <!-- BG: CSS background-image로 처리. img 태그 사용 금지! -->
-    <!-- SCSS: .{{sectionName}} { background-image: url('/images/{{FEATURE_KEY}}/{{bg-file}}.png'); background-size: cover; } -->
+    <!-- SCSS: .{{sectionName}} { background-image: url('/images/{{FEATURE_KEY}}/{{bg-file}}.webp'); background-size: cover; } -->
 
     <!-- {{CHILD_1}}: tree flex-column, gap:{{GAP}}px → 직접 매핑 -->
     <div class="{{sectionName}}__{{child1Name}}">
@@ -86,7 +86,7 @@ defineProps<{
   width: 100%;
   height: {{HEIGHT_VW}}vw;               // tree: {{HEIGHT}} / {{DESIGN_WIDTH}} × 100
   overflow: hidden;                       // tree: overflow:hidden
-  background-image: url('/images/{{FEATURE_KEY}}/{{section}}-bg.png');
+  background-image: url('/images/{{FEATURE_KEY}}/{{section}}-bg.webp');
   background-size: cover;
   background-position: center top;
 }
