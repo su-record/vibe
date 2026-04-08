@@ -42,7 +42,7 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
     PC Design: https://figma.com/...?node-id=yyy (있으면)
 
   → Phase 0: Setup (스택 감지, 디렉토리 생성, 기존 자산 인덱싱)
-  → Phase 1: Storyboard (스토리보드 → 기능 스펙 문서 작성, 파일 생성 없음)
+  → Phase 1: 디자인 리소스 (URL 입력 → 스토리보드 분석 → 기능 스펙 문서)
   → Phase 2: 재료 확보 (모든 BP의 트리 + 노드 렌더링 이미지 + 스크린샷)
   → Phase 3: 리매핑 (tree.json → remapped.json, BP 간 노드 매칭 + CSS diff)
   → Phase 4: 순차 코드 생성 (remapped.json → 섹션별 HTML+SCSS)
@@ -196,13 +196,16 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 
 ---
 
-## Phase 1: Storyboard
+## Phase 1: 디자인 리소스
 
 사용자에게 질문한다:
-- question: "스토리보드 Figma URL을 입력해주세요. (없으면 '없음')"
+- question: "스토리보드, 디자인 Figma URL을 입력해주세요."
+- 예시:
+    스토리보드: https://figma.com/...?node-id=20-4964
+    MO 디자인: https://figma.com/...?node-id=641-78147
+    PC 디자인: https://figma.com/...?node-id=641-78200
 - options 제공 금지 — 자유 텍스트 입력만 허용
-
-"없음" 응답 시 → 스토리보드 분석 스킵
+- 스토리보드는 선택, 디자인은 최소 1개 필수
 
 ### 1-1. 스토리보드 분석
 
