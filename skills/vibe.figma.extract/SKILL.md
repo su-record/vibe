@@ -65,27 +65,53 @@ Bash:
 
 트리 추출 도구가 자동 변환하는 속성. **이 값들이 SCSS에 직접 매핑된다:**
 
+**레이아웃:**
+
 | Figma 속성 | CSS | vw 변환 |
-|-----------|-----|-----------------|
+|-----------|-----|---------|
 | `layoutMode=VERTICAL` | `display:flex; flex-direction:column` | ❌ |
 | `layoutMode=HORIZONTAL` | `display:flex; flex-direction:row` | ❌ |
 | `primaryAxisAlignItems` | `justify-content` | ❌ |
 | `counterAxisAlignItems` | `align-items` | ❌ |
 | `itemSpacing` | `gap` | ✅ |
+| `layoutGrow=1` | `flex-grow: 1` | ❌ |
 | `padding*` | `padding` | ✅ |
 | `absoluteBoundingBox.width/height` | `width/height` | ✅ |
-| `layoutPositioning=ABSOLUTE` | `position: absolute` | ❌ |
+| `layoutPositioning=ABSOLUTE` | `position: absolute` + `top/left` (부모 상대 좌표) | ✅ |
+| `layoutSizingHorizontal=HUG` | width 삭제 (auto) | — |
+| `layoutSizingHorizontal=FILL` | 메타데이터 `layoutSizingH` (converter가 flex:1/100% 결정) | — |
+| `layoutSizingVertical=HUG` | height 삭제 (auto) | — |
+| `layoutSizingVertical=FILL` | 메타데이터 `layoutSizingV` (converter가 결정) | — |
 | `clipsContent` | `overflow: hidden` | ❌ |
-| `fills[].color` | `background-color` | ❌ |
-| `fills[].type=IMAGE` | `imageRef` (다운로드 대상) | — |
+
+**비주얼:**
+
+| Figma 속성 | CSS | vw 변환 |
+|-----------|-----|---------|
+| `fills[].SOLID` | `background-color` | ❌ |
+| `fills[].IMAGE` | `imageRef` + `imageScaleMode` (FILL/FIT/CROP/TILE) | — |
+| `fills[].GRADIENT_LINEAR` | `background-image: linear-gradient(...)` | ❌ |
+| `fills[].GRADIENT_RADIAL` | `background-image: radial-gradient(...)` | ❌ |
+| `fills[] (2개 이상)` | `fills` 배열 (type, color, imageRef, gradient, blendMode, filters) | — |
+| `fills[].blendMode` | `background-blend-mode` | ❌ |
+| `fills[].filters.saturation` | `filter: grayscale(X%)` / `saturate(X%)` | ❌ |
 | `fills[].color` (TEXT) | `color` | ❌ |
-| `strokes[].color` + `strokeWeight` | `border` | ✅ (width만) |
+| `strokes[] + strokeAlign=INSIDE` | `border` + `box-sizing: border-box` | ✅ (width만) |
+| `strokes[] + strokeAlign=OUTSIDE` | `outline` | ✅ (width만) |
+| `strokes[] + strokeAlign=CENTER` | `border` | ✅ (width만) |
 | `effects[].DROP_SHADOW` | `box-shadow` | ✅ (px만) |
-| `effects[].LAYER_BLUR` | `filter: blur()` | ✅ |
+| `effects[].INNER_SHADOW` | `box-shadow` (inset) | ✅ (px만) |
+| `effects[].LAYER_BLUR` | `filter: blur()` (누적) | ✅ |
 | `effects[].BACKGROUND_BLUR` | `backdrop-filter: blur()` | ✅ |
 | `cornerRadius` | `border-radius` | ✅ |
 | `opacity` | `opacity` | ❌ |
-| `blendMode` | `mix-blend-mode` | ❌ |
+| `rotation` | `transform: rotate(Xdeg)` | ❌ |
+| `blendMode` (노드 레벨) | `mix-blend-mode` | ❌ |
+
+**텍스트:**
+
+| Figma 속성 | CSS | vw 변환 |
+|-----------|-----|---------|
 | `style.fontFamily` | `font-family` | ❌ |
 | `style.fontSize` | `font-size` | ✅ |
 | `style.fontWeight` | `font-weight` | ❌ |
@@ -93,6 +119,17 @@ Bash:
 | `style.letterSpacing` | `letter-spacing` | ✅ |
 | `style.textAlignHorizontal` | `text-align` | ❌ |
 | `characters` | 텍스트 내용 | — |
+
+### FigmaNode 메타데이터 필드 (css 외)
+
+converter가 의사결정에 사용하는 추가 필드:
+
+| 필드 | 타입 | 용도 |
+|------|------|------|
+| `layoutSizingH` | `'FIXED'\|'HUG'\|'FILL'` | 부모 context로 width 결정 |
+| `layoutSizingV` | `'FIXED'\|'HUG'\|'FILL'` | 부모 context로 height 결정 |
+| `imageScaleMode` | `'FILL'\|'FIT'\|'CROP'\|'TILE'` | background-size 결정 |
+| `fills` | `array` | 다중 fill 레이어 상세 (2개 이상일 때만) |
 
 ---
 

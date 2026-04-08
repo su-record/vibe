@@ -103,6 +103,34 @@ function toCSS(c) {
   return `rgba(${r}, ${g}, ${b}, ${+a.toFixed(2)})`;
 }
 
+// ─── Gradient Helpers ───────────────────────────────────────────────
+
+function toLinearGradient(f) {
+  if (!f.gradientHandlePositions || !f.gradientStops) return null;
+  const [p0, p1] = f.gradientHandlePositions;
+  const angle = Math.round(Math.atan2(p1.y - p0.y, p1.x - p0.x) * 180 / Math.PI + 90);
+  const opacity = f.opacity ?? 1;
+  const stops = f.gradientStops.map(s => {
+    const c = opacity < 1 ? { ...s.color, a: (s.color.a ?? 1) * opacity } : s.color;
+    return `${toCSS(c)} ${Math.round(s.position * 100)}%`;
+  }).join(', ');
+  return `linear-gradient(${angle}deg, ${stops})`;
+}
+
+function toRadialGradient(f) {
+  if (!f.gradientStops) return null;
+  const opacity = f.opacity ?? 1;
+  const stops = f.gradientStops.map(s => {
+    const c = opacity < 1 ? { ...s.color, a: (s.color.a ?? 1) * opacity } : s.color;
+    return `${toCSS(c)} ${Math.round(s.position * 100)}%`;
+  }).join(', ');
+  return `radial-gradient(circle, ${stops})`;
+}
+
+// ─── Blend Mode Map ─────────────────────────────────────────────────
+
+const BLEND_MODES = { MULTIPLY:'multiply', SCREEN:'screen', OVERLAY:'overlay', DARKEN:'darken', LIGHTEN:'lighten', COLOR_DODGE:'color-dodge', COLOR_BURN:'color-burn', HARD_LIGHT:'hard-light', SOFT_LIGHT:'soft-light', DIFFERENCE:'difference', EXCLUSION:'exclusion', HUE:'hue', SATURATION:'saturation', COLOR:'color', LUMINOSITY:'luminosity' };
+
 // ─── CSS Extraction ─────────────────────────────────────────────────
 
 function extractCSS(n) {
@@ -115,38 +143,96 @@ function extractCSS(n) {
   if (n.primaryAxisAlignItems && axM[n.primaryAxisAlignItems]) css.justifyContent = axM[n.primaryAxisAlignItems];
   if (n.counterAxisAlignItems && crM[n.counterAxisAlignItems]) css.alignItems = crM[n.counterAxisAlignItems];
   if (n.itemSpacing > 0) css.gap = `${n.itemSpacing}px`;
+  // layoutGrow
+  if (n.layoutGrow === 1) css.flexGrow = '1';
   // Padding
   const pt=n.paddingTop||0, pr=n.paddingRight||0, pb=n.paddingBottom||0, pl=n.paddingLeft||0;
   if (pt||pr||pb||pl) css.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
   // Size
   if (n.absoluteBoundingBox) { css.width = `${Math.round(n.absoluteBoundingBox.width)}px`; css.height = `${Math.round(n.absoluteBoundingBox.height)}px`; }
+  // layoutSizing — HUG removes fixed dimensions, FILL handled by converter with parent context
+  if (n.layoutSizingHorizontal === 'HUG') delete css.width;
+  if (n.layoutSizingVertical === 'HUG') delete css.height;
   // Position / overflow / opacity
   if (n.layoutPositioning === 'ABSOLUTE') css.position = 'absolute';
   if (n.clipsContent) css.overflow = 'hidden';
   if (n.opacity != null && n.opacity < 1) css.opacity = n.opacity.toFixed(2);
-  // Blend
-  const bm = { MULTIPLY:'multiply', SCREEN:'screen', OVERLAY:'overlay', DARKEN:'darken', LIGHTEN:'lighten', COLOR_DODGE:'color-dodge', COLOR_BURN:'color-burn', HARD_LIGHT:'hard-light', SOFT_LIGHT:'soft-light', DIFFERENCE:'difference', EXCLUSION:'exclusion', HUE:'hue', SATURATION:'saturation', COLOR:'color', LUMINOSITY:'luminosity' };
-  if (n.blendMode && bm[n.blendMode]) css.mixBlendMode = bm[n.blendMode];
+  // Rotation
+  if (n.rotation != null && Math.abs(n.rotation) > 0.05) {
+    const deg = +((-n.rotation) % 360).toFixed(2);
+    css.transform = `rotate(${deg}deg)`;
+  }
+  // Node-level blend mode
+  if (n.blendMode && BLEND_MODES[n.blendMode]) css.mixBlendMode = BLEND_MODES[n.blendMode];
   // Radius
   if (n.cornerRadius > 0) css.borderRadius = `${n.cornerRadius}px`;
   else if (n.rectangleCornerRadii) { const [a,b,c,d] = n.rectangleCornerRadii; css.borderRadius = `${a}px ${b}px ${c}px ${d}px`; }
-  // Fills
-  let imgRef;
-  for (const f of (n.fills||[]).filter(f=>f.visible!==false)) {
-    if (f.type === 'SOLID') css.backgroundColor = toCSS({ ...f.color, a: f.opacity ?? f.color?.a ?? 1 });
-    else if (f.type === 'IMAGE') imgRef = f.imageRef;
+  // Fills — multi-fill aware
+  let imgRef, imgScaleMode;
+  const visibleFills = (n.fills||[]).filter(f=>f.visible!==false);
+  // Backward compat: single-fill css properties
+  const firstSolid = visibleFills.find(f=>f.type==='SOLID');
+  if (firstSolid) css.backgroundColor = toCSS({ ...firstSolid.color, a: firstSolid.opacity ?? firstSolid.color?.a ?? 1 });
+  const firstImage = visibleFills.find(f=>f.type==='IMAGE');
+  if (firstImage) { imgRef = firstImage.imageRef; imgScaleMode = firstImage.scaleMode; }
+  // Gradient → backgroundImage
+  const gradients = [];
+  for (const f of visibleFills) {
+    if (f.type === 'GRADIENT_LINEAR') { const g = toLinearGradient(f); if (g) gradients.push(g); }
+    else if (f.type === 'GRADIENT_RADIAL' || f.type === 'GRADIENT_ANGULAR' || f.type === 'GRADIENT_DIAMOND') {
+      const g = toRadialGradient(f); if (g) gradients.push(g);
+    }
   }
-  // Strokes
+  if (gradients.length) css.backgroundImage = gradients.join(', ');
+  // Per-fill blendMode → backgroundBlendMode
+  for (const f of visibleFills) {
+    if (f.blendMode && f.blendMode !== 'NORMAL' && BLEND_MODES[f.blendMode]) {
+      css.backgroundBlendMode = BLEND_MODES[f.blendMode]; break;
+    }
+  }
+  // Fill filters (saturation → grayscale/saturate)
+  for (const f of visibleFills) {
+    if (f.filters?.saturation != null && f.filters.saturation !== 0) {
+      const sat = f.filters.saturation;
+      const filterVal = sat < 0 ? `grayscale(${Math.round(Math.abs(sat) * 100)}%)` : `saturate(${Math.round((1 + sat) * 100)}%)`;
+      css.filter = (css.filter ? css.filter + ' ' : '') + filterVal;
+    }
+  }
+  // Multi-fill structured array (when 2+ visible fills — for converter)
+  let _fills;
+  if (visibleFills.length > 1) {
+    _fills = visibleFills.map(f => {
+      const entry = { type: f.type };
+      if (f.type === 'SOLID') entry.color = toCSS({ ...f.color, a: f.opacity ?? f.color?.a ?? 1 });
+      if (f.type === 'IMAGE') { entry.imageRef = f.imageRef; if (f.scaleMode) entry.scaleMode = f.scaleMode; }
+      if (f.type?.startsWith('GRADIENT_')) {
+        entry.gradient = f.type === 'GRADIENT_LINEAR' ? toLinearGradient(f) : toRadialGradient(f);
+      }
+      if (f.blendMode && f.blendMode !== 'NORMAL' && BLEND_MODES[f.blendMode]) entry.blendMode = BLEND_MODES[f.blendMode];
+      if (f.filters?.saturation != null && f.filters.saturation !== 0) entry.filters = f.filters;
+      return entry;
+    });
+  }
+  // Strokes — strokeAlign aware
   const stroke = (n.strokes||[]).find(s=>s.visible!==false&&s.type==='SOLID');
-  if (stroke && n.strokeWeight) css.border = `${n.strokeWeight}px solid ${toCSS(stroke.color)}`;
+  if (stroke && n.strokeWeight) {
+    const strokeColor = toCSS({ ...stroke.color, a: stroke.opacity ?? stroke.color?.a ?? 1 });
+    if (n.strokeAlign === 'OUTSIDE') {
+      css.outline = `${n.strokeWeight}px solid ${strokeColor}`;
+    } else {
+      css.border = `${n.strokeWeight}px solid ${strokeColor}`;
+      if (n.strokeAlign === 'INSIDE') css.boxSizing = 'border-box';
+    }
+  }
   // Effects
   const shadows = [];
   for (const e of (n.effects||[]).filter(e=>e.visible!==false)) {
     if (e.type==='DROP_SHADOW'||e.type==='INNER_SHADOW') {
       const ins = e.type==='INNER_SHADOW'?'inset ':'';
       shadows.push(`${ins}${e.offset?.x||0}px ${e.offset?.y||0}px ${e.radius||0}px ${e.spread||0}px ${toCSS(e.color)}`);
-    } else if (e.type==='LAYER_BLUR') css.filter = `blur(${e.radius}px)`;
-    else if (e.type==='BACKGROUND_BLUR') css.backdropFilter = `blur(${e.radius}px)`;
+    } else if (e.type==='LAYER_BLUR') {
+      css.filter = (css.filter ? css.filter + ' ' : '') + `blur(${e.radius}px)`;
+    } else if (e.type==='BACKGROUND_BLUR') css.backdropFilter = `blur(${e.radius}px)`;
   }
   if (shadows.length) css.boxShadow = shadows.join(', ');
   // Text
@@ -159,26 +245,42 @@ function extractCSS(n) {
     if (s.letterSpacing) css.letterSpacing = `${s.letterSpacing}px`;
     const ta = { LEFT:'left', CENTER:'center', RIGHT:'right', JUSTIFIED:'justify' };
     if (s.textAlignHorizontal && ta[s.textAlignHorizontal]) css.textAlign = ta[s.textAlignHorizontal];
-    const tf = (n.fills||[]).find(f=>f.visible!==false&&f.type==='SOLID');
+    const tf = visibleFills.find(f=>f.type==='SOLID');
     if (tf) css.color = toCSS(tf.color);
   }
-  return imgRef ? { ...css, _imageRef: imgRef } : css;
+  const result = { ...css };
+  if (imgRef) result._imageRef = imgRef;
+  if (imgScaleMode) result._imageScaleMode = imgScaleMode;
+  if (_fills) result._fills = _fills;
+  return result;
 }
 
 // ─── Tree ───────────────────────────────────────────────────────────
 
-function walk(node) {
+function walk(node, parentAbsBBox) {
   const css = extractCSS(node);
   const r = { nodeId: node.id, name: node.name||'', type: node.type, size: null, css: {...css}, children: [] };
   if (node.type==='TEXT' && node.characters) r.text = node.characters;
   if (node.absoluteBoundingBox) r.size = { width: Math.round(node.absoluteBoundingBox.width), height: Math.round(node.absoluteBoundingBox.height) };
+  // Unpack internal fields → top-level metadata
   if (css._imageRef) { r.imageRef = css._imageRef; delete r.css._imageRef; }
-  if (node.children?.length) r.children = node.children.map(walk);
+  if (css._imageScaleMode) { r.imageScaleMode = css._imageScaleMode; delete r.css._imageScaleMode; }
+  if (css._fills) { r.fills = css._fills; delete r.css._fills; }
+  // layoutSizing metadata (converter uses with parent context)
+  if (node.layoutSizingHorizontal) r.layoutSizingH = node.layoutSizingHorizontal;
+  if (node.layoutSizingVertical) r.layoutSizingV = node.layoutSizingVertical;
+  // Absolute positioning: parent-relative top/left
+  if (node.layoutPositioning === 'ABSOLUTE' && node.absoluteBoundingBox && parentAbsBBox) {
+    r.css.top = `${Math.round(node.absoluteBoundingBox.y - parentAbsBBox.y)}px`;
+    r.css.left = `${Math.round(node.absoluteBoundingBox.x - parentAbsBBox.x)}px`;
+  }
+  if (node.children?.length) r.children = node.children.map(c => walk(c, node.absoluteBoundingBox));
   return r;
 }
 
 function collectRefs(node, set = new Set()) {
   if (node.imageRef) set.add(node.imageRef);
+  if (node.fills) { for (const f of node.fills) { if (f.imageRef) set.add(f.imageRef); } }
   (node.children||[]).forEach(c => collectRefs(c, set));
   return set;
 }

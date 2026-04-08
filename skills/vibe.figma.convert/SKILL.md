@@ -141,14 +141,29 @@ tree.json의 css 객체를 SCSS로 직접 변환한다. 추정하지 않는다.
   node.css.justifyContent  → justify-content
   node.css.alignItems      → align-items
   node.css.gap             → gap (→ vw 변환)
+  node.css.flexGrow        → flex-grow (값 그대로)
   node.css.padding         → padding (→ vw 변환)
   node.css.width           → width (→ vw 또는 % 변환)
   node.css.height          → height (→ vw 변환, 또는 auto)
   node.css.overflow        → overflow
   node.css.position        → position
+  node.css.top             → top (→ vw 변환, absolute 노드만)
+  node.css.left            → left (→ vw 변환, absolute 노드만)
+  node.css.transform       → transform (rotate — 값 그대로)
+
+  layoutSizing 처리 (node.layoutSizingH / node.layoutSizingV):
+    HUG → css에 width/height 없음 (auto). SCSS에서 생략하면 auto 동작.
+    FILL → 부모 flex-direction 확인 후 결정:
+      부모 row + 자식 FILL-H → flex: 1 0 0 (또는 width: 100%)
+      부모 column + 자식 FILL-V → flex: 1 0 0 (또는 height: 100%)
+      부모 row + 자식 FILL-V → align-self: stretch
+      부모 column + 자식 FILL-H → align-self: stretch
+    FIXED → css.width/height의 px 값을 vw로 변환 (기존 방식)
 
 비주얼 (components/ 파일):
   node.css.backgroundColor → background-color
+  node.css.backgroundImage → background-image (gradient — 값 그대로)
+  node.css.backgroundBlendMode → background-blend-mode (값 그대로)
   node.css.color           → color
   node.css.fontFamily      → font-family
   node.css.fontSize        → font-size (→ clamp 변환)
@@ -157,12 +172,27 @@ tree.json의 css 객체를 SCSS로 직접 변환한다. 추정하지 않는다.
   node.css.letterSpacing   → letter-spacing (→ vw 변환)
   node.css.textAlign       → text-align
   node.css.borderRadius    → border-radius (→ vw 변환)
-  node.css.border          → border (width → vw 변환)
+  node.css.border          → border (width → vw 변환, strokeAlign=INSIDE)
+  node.css.outline         → outline (width → vw 변환, strokeAlign=OUTSIDE)
+  node.css.boxSizing       → box-sizing (INSIDE stroke → border-box)
   node.css.boxShadow       → box-shadow (px → vw 변환)
   node.css.opacity         → opacity
   node.css.mixBlendMode    → mix-blend-mode
-  node.css.filter          → filter (px → vw 변환)
+  node.css.filter          → filter (blur px → vw 변환, grayscale/saturate → 값 그대로)
   node.css.backdropFilter  → backdrop-filter (px → vw 변환)
+
+  이미지 처리 (node.imageScaleMode):
+    FILL  → background-size: cover
+    FIT   → background-size: contain
+    CROP  → background-size: cover; background-position: center
+    TILE  → background-size: auto; background-repeat: repeat
+
+  다중 fill (node.fills 배열, 2개 이상일 때):
+    예: [IMAGE(grayscale) + GRADIENT_LINEAR] → 겹침 배경
+    CSS: background: url('img.webp'), linear-gradient(...);
+         background-blend-mode: multiply;
+         filter: grayscale(100%);
+    converter는 fills 배열 순서대로 CSS background 레이어링
 
 반응형 단위 변환 (scaleFactor 사용하지 않음):
   스토리보드 CONFIG에서 확보:
@@ -170,7 +200,7 @@ tree.json의 css 객체를 SCSS로 직접 변환한다. 추정하지 않는다.
     minWidth: 최소 지원 너비 (예: 340px)
     breakpoint: PC/모바일 분계 (예: 1025px)
 
-  UI 요소 (width, height, padding, gap, border-radius, shadow 등):
+  UI 요소 (width, height, padding, gap, border-radius, shadow, top, left 등):
     → vw 비례: vw값 = (Figma px / designWidth) × 100
     → 예: gap: 24px / 720 × 100 = 3.33vw
     → width: 부모 대비 %도 가능 (620/720 = 86%)
@@ -196,7 +226,9 @@ tree.json의 css 객체를 SCSS로 직접 변환한다. 추정하지 않는다.
 
   변환하지 않는 속성:
     color, opacity, font-weight, font-family, z-index,
-    line-height(단위 없을 때), text-align, mix-blend-mode
+    line-height(단위 없을 때), text-align, mix-blend-mode,
+    transform(rotate), background-blend-mode, flex-grow,
+    box-sizing, grayscale/saturate(filter 내)
 
 값이 없으면:
   → 해당 속성 생략 (추정 금지)
@@ -476,7 +508,15 @@ function handleShare(): void {
   조건: BG 프레임 (name에 BG/bg 또는 부모와 크기 동일)
   ❌ <img> 태그 금지
   ✅ CSS background-image로만 처리:
-     부모 { background-image: url('...'); background-size: cover; }
+     부모 { background-image: url('...'); }
+     imageScaleMode에 따라:
+       FILL → background-size: cover (기본)
+       FIT  → background-size: contain
+       CROP → background-size: cover; background-position: center
+       TILE → background-size: auto; background-repeat: repeat
+     다중 fill (node.fills 배열):
+       background: url('img.webp'), linear-gradient(...);
+       background-blend-mode: multiply;
 
 콘텐츠 이미지:
   조건: imageRef 있음 + 독립적 크기 + TEXT 형제 없음
@@ -496,21 +536,58 @@ function handleShare(): void {
 
 ---
 
-## 5. 반응형 추가 (데스크탑 URL)
+## 5. 반응형 추가 (MO↔PC 매칭)
 
 ```
-두 번째 URL의 tree.json을 확보한 후:
+remapped.json의 pcDiff를 사용하여 @media 오버라이드 추가.
+MO 기본 코드 삭제 금지. PC는 항상 @media 블록 안에만 작성.
 
-모바일 tree vs 데스크탑 tree 비교:
-  동일한 name의 노드를 매칭
-  CSS 속성 차이만 @media 오버라이드로 추가
+SCSS 구조:
+  .heroSection {
+    // MO 기본 (vw = px / 720 × 100)
+    width: 100%;
+    height: 177.78vw;
+    background-image: url('/images/{feature}/hero-bg.webp');
 
-같은 값 → 유지
-다른 px 값 → @include pc { width: {desktop값 × pcScaleFactor}px; }
-다른 레이아웃 → @include pc { flex-direction: row; }
-다른 이미지 → @include pc { content: url(/images/{feature}/desktop-xxx.webp); }
+    @media (min-width: #{$bp-desktop}) {
+      // PC 오버라이드 (vw = px / 2560 × 100, 또는 고정 px)
+      height: 32.66vw;  // 836 / 2560 × 100
+      background-image: url('/images/{feature}/hero-bg-pc.webp');
+    }
+  }
+
+CSS diff 처리 규칙:
+
+  같은 값 → MO만 유지 (PC에 쓰지 않음)
+
+  다른 px 값:
+    → @media { 속성: PC값/pcDesignWidth × 100 vw; }
+    → 예: MO gap:24px → 3.33vw, PC gap:60px → @media { gap: 2.34vw; }
+
+  다른 레이아웃:
+    → @media { flex-direction: row; }
+    → @media { justify-content: space-between; }
+
+  다른 이미지:
+    → @media { background-image: url('/images/{feature}/pc-xxx.webp'); }
+
+  layoutSizing diff:
+    MO: HUG → PC: FIXED → @media { width: Xvw; }
+    MO: FILL → PC: FIXED → @media { width: Xvw; flex: initial; }
+    MO: FIXED → PC: FILL → @media { flex: 1 0 0; width: auto; }
+
+  MO에만 있는 속성 → MO 기본값 유지
+  PC에만 있는 속성 → @media에서 추가
+  PC에서 사라진 속성 → @media { display: none; } 또는 생략
+
+  absolute 위치 diff:
+    → @media { top: PC값/pcDesignWidth × 100 vw; left: ...; }
+
+  rotation diff:
+    → @media { transform: rotate(PC각도deg); }
 
 기존 모바일 코드 삭제 금지.
+PC 오버라이드는 항상 @media 블록 안에만.
 ```
 
 ---
