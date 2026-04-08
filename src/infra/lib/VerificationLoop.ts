@@ -347,13 +347,17 @@ export async function runE2ECheck(
     const { captureScreenshot, extractTextContent } = await import('./browser/capture.js');
 
     const viewport = config.viewport ?? { width: 1920, height: 1080 };
-    await launchBrowser({ headless: true, viewport });
-    const page = await openPage(url);
+    const browser = await launchBrowser({ headless: true, viewport });
+    const page = await openPage(browser, url, viewport) as {
+      on: (event: string, handler: (...args: unknown[]) => void) => void;
+      waitForNetworkIdle: (opts: { idleTime: number }) => Promise<void>;
+    };
 
     // 콘솔 에러 수집
     const consoleErrors: string[] = [];
-    page.on('console', (msg: { type: () => string; text: () => string }) => {
-      if (msg.type() === 'error') consoleErrors.push(msg.text());
+    page.on('console', (msg: unknown) => {
+      const m = msg as { type: () => string; text: () => string };
+      if (m.type() === 'error') consoleErrors.push(m.text());
     });
 
     // 페이지 로드 대기
@@ -375,8 +379,9 @@ export async function runE2ECheck(
 
     // HTTP 에러 체크 (4xx, 5xx 리소스)
     const failedRequests: string[] = [];
-    page.on('requestfailed', (req: { url: () => string }) => {
-      failedRequests.push(req.url());
+    page.on('requestfailed', (req: unknown) => {
+      const r = req as { url: () => string };
+      failedRequests.push(r.url());
     });
 
     if (failedRequests.length > 0) {
