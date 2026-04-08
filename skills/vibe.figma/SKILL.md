@@ -661,14 +661,20 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
    → 스크린샷은 검증용으로만 참조
 
 2. 기계적 매핑 (추정 없음):
-   a. 이미지: 노드 렌더링된 이미지를 static/images/{feature}/에 배치
-   b. 노드 → HTML 매핑:
+   a. 이미지 vs HTML 판별 (각 노드마다 — vibe.figma.convert 체크리스트 참조):
+      - TEXT 자식 있음 → HTML (이미지에 텍스트 포함 금지)
+      - INSTANCE 반복 패턴 → HTML 반복 구조 (내부 이미지 에셋만 추출)
+      - 인터랙티브 요소 (btn, CTA) → HTML <button>
+      - 동적 데이터 (가격, 기간, 수량) → HTML 텍스트
+      - 위 모두 아님 → 이미지 렌더링 가능
+   b. 이미지: 판별 통과한 노드만 static/images/{feature}/에 배치
+   c. 노드 → HTML 매핑:
       - BG 프레임 → CSS background-image (img 태그 아님)
       - Auto Layout 있음 → <div> + flex (direction/gap/padding 직접)
       - Auto Layout 없음 → <div> + position:relative (자식 absolute)
       - TEXT 노드 → <span> (Claude가 h2/p/button으로 승격)
-      - 콘텐츠 이미지 → <img src="렌더링된 파일">
-      - 반복 패턴 (동일 구조 3+) → v-for
+      - 순수 이미지 에셋 → <img src="렌더링된 파일">
+      - 반복 패턴 (동일 구조 2+) → v-for (카드 내 이미지만 <img>, 나머지 HTML)
    c. CSS 직접 매핑:
       - node.css의 모든 속성을 SCSS에 1:1 매핑
       - vw/clamp 반응형 단위 변환 (vibe.figma.convert 참조)

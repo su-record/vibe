@@ -21,9 +21,39 @@
 
 ## 배경 레이어 판별
 
-부모와 동일 크기(±5%) + imageRef + 형제 중 첫 위치:
-  → `position: absolute; inset: 0; z-index: 0; object-fit: cover`
-  → 부모에 `position: relative; overflow: hidden` 추가
+BG 프레임 (name에 "BG"/"bg" 또는 부모와 동일 크기 ±5%):
+  ❌ <img> 태그로 배경 처리 금지
+  ❌ position:absolute + inset:0 으로 이미지 배치 금지
+  ✅ 부모 요소에 CSS background-image로만 처리:
+     background-image: url('/images/{feature}/{section}-bg.png');
+     background-size: cover;
+     background-position: center top;
+  ✅ BG 프레임은 HTML에 아무것도 렌더링하지 않음 (CSS만)
+
+## 이미지 vs HTML 판별 (각 노드마다 확인)
+
+```
+노드를 이미지로 처리하기 전에 반드시 확인:
+
+Q1. 이 노드에 TEXT 자식이 있는가?
+  YES → HTML로 구현 (텍스트는 이미지에 넣지 않는다)
+  NO → Q2로
+
+Q2. 이 노드가 INSTANCE 반복 패턴의 일부인가?
+  YES → HTML 반복 구조 (v-for/.map()) — 내부 이미지 에셋만 개별 추출
+  NO → Q3로
+
+Q3. 이 노드에 클릭/인터랙션이 필요한가? (btn, CTA, link, tab)
+  YES → HTML <button>/<a> — 이미지 금지
+  NO → Q4로
+
+Q4. 이 노드의 콘텐츠가 동적 데이터인가? (가격, 수량, 기간, 상태)
+  YES → HTML 텍스트 — 이미지 금지
+  NO → 이미지 렌더링 가능
+
+위 체크에서 하나라도 YES → HTML로 구현
+모두 NO → 이미지(벡터 글자, BG, 래스터, 복잡 그래픽)로 렌더링
+```
 
 ## CSS 직접 매핑 규칙
 
