@@ -36,6 +36,12 @@ tree.json을 코드 생성에 최적화된 구조로 리매핑한다.
     {
       "section": "hero",
       "tag": "section",
+      "storyboard": {
+        "name": "Hero (키비주얼)",
+        "features": ["키비주얼 + 이벤트 정보 + 공유 버튼"],
+        "interactions": ["공유 버튼 클릭 → 공유 다이얼로그"],
+        "states": ["default"]
+      },
       "bg": {
         "mo": { "nodeId": "...", "file": "mo-main/bg/hero-bg.png" },
         "pc": { "nodeId": "...", "file": "pc-main/bg/hero-bg.png" }
@@ -221,17 +227,51 @@ remapped.json의 mo/pc CSS를 비교:
 ## 리매핑 프로세스
 
 ```
-Phase 2 완료 후, Phase 3 시작 전에 실행:
+입력:
+  - Phase 1 스토리보드 스펙 (섹션 목록 + 기능 정의 + 인터랙션)
+  - Phase 2 추출 데이터 (모든 BP의 tree.json + 렌더링 이미지)
 
-1. 모든 BP의 tree.json 로드
-2. 1depth 자식으로 섹션 목록 생성
-3. BP 간 섹션 name 매칭
+1. 스토리보드 × tree.json 섹션 매칭
+   스토리보드에서 정의한 섹션 목록을 tree.json 1depth 자식과 매칭:
+
+   | 스토리보드 섹션 | tree.json name | 매칭 방법 |
+   |---------------|---------------|----------|
+   | Hero (키비주얼) | "Hero" | name 일치 |
+   | KID (로그인) | "KID" | name 일치 |
+   | Daily (출석 미션) | "Daily" | name 일치 |
+   | PlayTime (플레이타임) | "Frame 633371" | name 불일치 → 순서 기반 |
+
+   name이 "Frame 633372" 같은 무의미한 이름이면:
+   → 스토리보드의 섹션 순서로 매칭
+   → 매칭 후 스토리보드의 role/기능을 remapped.json에 기록
+
+2. 스토리보드 기능 정의 → 노드 역할 확정
+   스토리보드에서 정의한 기능/인터랙션으로 tree 노드의 role을 확정:
+
+   스토리보드: "STEP 1. 일일 출석 - 출석하기 버튼"
+   tree.json: Daily > Contents > FRAME > children 중 name="Btn_CheckIn"
+   → role: "interactive", event: "check-in", tag: "button"
+
+   스토리보드: "누적 출석 보상 - DAY2, DAY3, DAY5, DAY10"
+   tree.json: Daily > Contents > FRAME > INSTANCE × 4
+   → role: "repeat", items: 4, template: first INSTANCE
+
+   스토리보드가 없는 노드:
+   → name/type 기반 추정 (기존 방식 유지)
+   → 장식/BG는 스토리보드에 없으므로 자동 분류
+
+3. BP 간 섹션 매칭
+   모든 BP의 tree.json에서 같은 섹션 찾기:
+   → name 일치 또는 스토리보드 매칭 결과로 연결
+   → MO Hero ↔ PC Hero
+
 4. 각 섹션에 대해 재귀적으로:
-   a. 노드 타입 분류 (위 테이블)
+   a. 노드 타입 분류 (위 테이블) — 스토리보드로 확정된 role 우선
    b. BG 프레임 식별 → frame-render로 마킹
    c. 콘텐츠 이미지/벡터 그룹 → node-render로 마킹
    d. TEXT 노드 → content + css 추출
    e. skip 대상 제거
    f. 각 BP의 CSS 값을 mo/pc로 분리 저장
+
 5. remapped.json 출력
 ```
