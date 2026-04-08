@@ -17,7 +17,7 @@ Auto-generate app icons and favicons based on SPEC brand information.
 
 ## Prerequisites
 
-- Gemini API key configured (`vibe gemini auth`)
+- Gemini API key configured (`vibe gemini key <key>`)
 - SPEC with brand context (app name, colors, style)
 
 ## Generated Assets

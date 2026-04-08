@@ -158,7 +158,7 @@ node "[LLM_SCRIPT]" gemini image "App icon for MyApp, primary color #2F6BFF, squ
 
 ### Prerequisites
 
-- Gemini API key configured (`vibe gemini auth` or `vibe gemini key <key>`)
+- Gemini API key configured (`vibe gemini key <key>`)
 
 ---
 

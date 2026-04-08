@@ -14,7 +14,6 @@ import {
   removeExternalLLM,
   gptStatus,
   gptLogout,
-  geminiAuth,
   geminiStatus,
   geminiLogout,
   claudeStatus,
@@ -201,9 +200,6 @@ Codex auth: codex auth
   case 'gemini': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
-      case 'auth':
-        await geminiAuth();
-        break;
       case 'key': {
         const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'gemini' && a !== 'key');
         if (apiKey) {
@@ -225,14 +221,12 @@ Codex auth: codex auth
       default:
         console.log(`
 Gemini Commands:
-  vibe gemini auth                 Detect Gemini CLI credentials
   vibe gemini key <key>            Set API key
   vibe gemini status               Check status
   vibe gemini logout               Clear config
   vibe gemini remove               Remove config
 
-Auth order: gemini-cli → apikey
-Requires: npm i -g @google/gemini-cli && gemini
+gemini-cli is auto-detected if installed.
         `);
     }
     break;

@@ -19,12 +19,6 @@ Training data의 지식 컷오프 문제를 해결합니다.
 | 웹 검색 → 노이즈 섞인 결과 | chub search → 큐레이션된 문서만 |
 | 세션마다 같은 실수 반복 | chub annotate → 학습 누적 |
 
-## Prerequisites
-
-```bash
-npm install -g @aisuite/chub
-```
-
 ## When to Use
 
 | Situation | Example |
@@ -39,6 +33,8 @@ npm install -g @aisuite/chub
 ```
 외부 API/SDK 코드 작성 요청
     ↓
+Step 0: chub 설치 확인 (없으면 자동 설치)
+    ↓
 Step 1: chub search "<라이브러리명>"
     ↓
 Step 2: chub get <id> --lang ts
@@ -47,6 +43,32 @@ Step 3: 문서 기반 코드 작성
     ↓
 Step 4: gotcha 발견 시 chub annotate
 ```
+
+## Step 0 — 자동 설치 (Auto-install)
+
+**스킬 실행 전 반드시 먼저 수행한다.**
+
+```bash
+# 1. chub 존재 여부 확인
+which chub || command -v chub
+```
+
+chub이 없으면 자동 설치를 시도한다:
+
+```bash
+npm install -g @aisuite/chub
+```
+
+설치 실패 시 `npx @aisuite/chub`로 대체 실행한다:
+
+```bash
+# search 예시
+npx @aisuite/chub search "stripe"
+# get 예시
+npx @aisuite/chub get stripe/api --lang ts
+```
+
+`npx`도 실패하면 context7 또는 Web Search로 폴백한다 (Fallback Chain 참조).
 
 ## Usage
 
@@ -107,9 +129,11 @@ chub search    # 인자 없이 실행하면 전체 목록 확인 가능
 ## Fallback Chain
 
 ```
-chub 설치 안 됨
+which chub 실패
     ↓
-Prompt: npm install -g @aisuite/chub
+npm install -g @aisuite/chub (자동 시도)
     ↓
-If still unavailable: context7 또는 Web Search fallback
+실패 시 npx @aisuite/chub <command> (임시 실행)
+    ↓
+npx도 실패 시 context7 또는 Web Search fallback
 ```

@@ -1785,7 +1785,7 @@ Brand:
 **Trigger Conditions:**
 - First `/vibe.run` execution (no existing icons)
 - SPEC contains brand/design context
-- Gemini API key configured (`vibe gemini auth`)
+- Gemini API key configured (`vibe gemini key <key>`)
 
 **Manual Generation:**
 ```bash

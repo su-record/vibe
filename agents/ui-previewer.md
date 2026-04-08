@@ -241,7 +241,7 @@ Claude: Gemini not configured. Using ASCII preview...
 - Main: grid (3 columns)
 - Responsive: Changes to 1 column on mobile
 
-💡 Tip: Run `vibe gemini auth` for actual UI image generation
+💡 Tip: Run `vibe gemini key <key>` for actual UI image generation
 
 Next step: /vibe.spec "dashboard page"
 ```

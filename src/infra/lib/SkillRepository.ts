@@ -364,8 +364,8 @@ node hooks/scripts/llm-orchestrate.js gemini "your prompt"
 ## Setup
 
 \`\`\`bash
-vibe gpt auth     # Configure GPT API key
-vibe gemini auth  # Configure Gemini API key
+vibe gpt key <key>     # Configure GPT API key
+vibe gemini key <key>  # Configure Gemini API key
 vibe status       # Check current configuration
 \`\`\`
 

@@ -166,8 +166,8 @@ When GPT/Gemini are enabled, they are automatically utilized during SPEC creatio
 
 **Setup:**
 ```bash
-vibe gpt auth       # Enable GPT (OAuth)
-vibe gemini auth    # Enable Gemini (OAuth)
+vibe gpt key <key>      # Enable GPT
+vibe gemini key <key>   # Enable Gemini
 vibe status         # Check current settings
 ```
 
