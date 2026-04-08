@@ -47,7 +47,8 @@
     "memory-management",
     "knowledge-graph",
     "code-analysis",
-    "code-quality"
+    "code-quality",
+    "harness"
   ],
   "author": "Su",
   "license": "MIT",

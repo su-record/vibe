@@ -543,6 +543,99 @@ flowchart TD
 
 ---
 
+## 하네스 시스템 (Harness System)
+
+하네스는 Claude Code와 사용자 사이에서 동작하는 **자동화된 품질/워크플로우 시스템**입니다.
+`vibe init` 한 번으로 훅, 에이전트, 스킬, 가드가 설치되어 코딩 품질의 최소 기준선을 자동으로 보장합니다.
+
+### 구성 요소
+
+| 구성 요소 | 수량 | 역할 |
+|-----------|------|------|
+| **훅 (Hooks)** | 21개 스크립트 | 라이프사이클 이벤트 인터셉트 — 위험 차단, 품질 검증, 컨텍스트 보호 |
+| **에이전트 (Agents)** | 56개 | 탐색·구현·아키텍처·리뷰·QA·UI/UX 전문 LLM 페르소나 |
+| **스킬 (Skills)** | 45개 (3 티어) | 도메인별 재사용 워크플로우 모듈 |
+| **품질 게이트 (Guards)** | 3계층 | 센티넬 가드 → 프리툴 가드 → 코드 체크 |
+| **이볼루션 엔진** | 자동 | 훅 실행 패턴을 분석해 스스로 규칙/스킬 개선 |
+
+### 훅 실행 흐름
+
+```
+사용자 액션 (Bash / Edit / Write / Prompt)
+    ↓
+SessionStart ─── session-start.js
+    세션 메모리 복원, 컨텍스트 로드
+    ↓
+PreToolUse ──── sentinel-guard.js → pre-tool-guard.js
+    파괴적 명령 차단 (rm -rf, force push, DB drop 등)
+    ↓
+[도구 실행]
+    ↓
+PostToolUse ─── auto-format.js → code-check.js → auto-test.js
+    자동 포맷 → 타입 안전성·복잡도 검증 → 테스트 실행
+    ↓
+UserPromptSubmit ── prompt-dispatcher.js → keyword-detector.js → llm-orchestrate.js
+    커맨드 라우팅 → 매직 키워드 감지 → 외부 LLM 디스패치
+    ↓
+Notification ─── context-save.js
+    컨텍스트 80/90/95%에서 자동 저장
+    ↓
+Stop ──────── codex-review-gate.js → stop-notify.js → auto-commit.js
+    리뷰 게이트 → 세션 종료 알림 → 자동 커밋
+```
+
+### 3계층 품질 게이트
+
+| 계층 | 스크립트 | 검증 내용 |
+|------|---------|----------|
+| **1. 센티넬 가드** | `sentinel-guard.js` | `rm -rf /`, `git reset --hard`, DB drop, fork bomb 등 치명적 명령 원천 차단 |
+| **2. 프리툴 가드** | `pre-tool-guard.js` | 위험 패턴 경고 — force push, .env 수정, 시스템 디렉토리 쓰기 |
+| **3. 코드 체크** | `code-check.js` | `any` 타입 차단, `@ts-ignore` 차단, 함수 ≤50줄, 중첩 ≤3, 파라미터 ≤5, 순환복잡도 ≤10 |
+
+### 스킬 티어 시스템
+
+컨텍스트 과부하(Curse of Instructions)를 방지하기 위해 스킬을 3단계로 분류합니다.
+
+| 티어 | 로딩 방식 | 목적 | 예시 |
+|------|----------|------|------|
+| **Core** | 항상 활성 | 버그·실수 방지 안전망 | techdebt, arch-guard, exec-plan |
+| **Standard** | 프로젝트 스택에 따라 선택 | 워크플로우 지원 | parallel-research, handoff, design-teach |
+| **Optional** | 명시적 `/skill`로만 호출 | 래퍼/참조용 | commit-push-pr, git-worktree, context7 |
+
+### 이볼루션 엔진 (자기 개선)
+
+```
+훅 실행 추적 (spans.jsonl)
+    ↓
+패턴 분석 — 반복 차단 패턴 클러스터링 (7일 히스토리)
+    ↓
+인사이트 생성 — 최적화/경고/갭 분류 + 신뢰도 점수
+    ↓
+규칙·스킬 자동 생성 (suggest 또는 auto 모드)
+    ↓
+서킷 브레이커 — 회귀 발생 시 롤백
+```
+
+### 설치 흐름
+
+```bash
+npm install -g @su-record/vibe   # postinstall → 글로벌 에셋 배포
+vibe init                         # 프로젝트 하네스 설치
+```
+
+**postinstall** (글로벌):
+- `~/.claude/agents/` — 56개 에이전트 정의
+- `~/.claude/skills/` — 글로벌 스킬
+- `~/.claude/commands/` — 슬래시 커맨드
+
+**vibe init** (프로젝트):
+- 24개 프레임워크 자동 감지
+- `.claude/settings.local.json`에 훅 등록
+- 스택별 스킬·규칙 설치
+- `CLAUDE.md` 생성 (프레임워크별 코딩 규칙)
+
+---
+
 ## Requirements
 
 - **Node.js** >= 18.0.0
