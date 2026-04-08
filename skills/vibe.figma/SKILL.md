@@ -30,6 +30,22 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 ❌ 컴포넌트 파일 안에 <style> 블록 / 인라인 style=""
 ✅ tree.json의 CSS 속성을 SCSS에 직접 매핑
 ✅ 외부 SCSS 파일에만 스타일 작성
+
+━━━ 이미지 vs HTML 판별 (가장 흔한 실수) ━━━
+
+❌ BG를 <img> 태그로 처리 → 반드시 CSS background-image
+   잘못된 예: <img src="hero-bg.webp" class="bg-img" />
+   올바른 예: .section { background-image: url('hero-bg.webp'); background-size: cover; }
+
+❌ 카드/아이템 그리드를 통째 이미지 1장으로 렌더링
+   잘못된 예: <img src="exchange-section1.webp" /> (카드 4개가 한 이미지)
+   올바른 예: v-for로 개별 카드 HTML 생성 + 내부 아이콘만 <img>
+
+❌ TEXT 자식이 있는 프레임을 이미지로 렌더링
+   잘못된 예: <img src="daily-step2-list.webp" /> (텍스트+카드 포함)
+   올바른 예: HTML로 텍스트/레이아웃 구현 + 순수 이미지 에셋만 <img>
+
+✅ 이미지로 렌더링 가능한 것: 벡터 글자, 합성 BG(텍스트 미포함), 래스터 에셋, 복잡 벡터
 ```
 
 ## 전체 플로우
@@ -660,22 +676,42 @@ Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
    → Auto Layout 속성(flex, gap, padding)이 코드의 기반
    → 스크린샷은 검증용으로만 참조
 
-2. 기계적 매핑 (추정 없음):
-   a. 이미지 vs HTML 판별 (각 노드마다 — vibe.figma.convert 체크리스트 참조):
-      - TEXT 자식 있음 → HTML (이미지에 텍스트 포함 금지)
-      - INSTANCE 반복 패턴 → HTML 반복 구조 (내부 이미지 에셋만 추출)
-      - 인터랙티브 요소 (btn, CTA) → HTML <button>
-      - 동적 데이터 (가격, 기간, 수량) → HTML 텍스트
-      - 위 모두 아님 → 이미지 렌더링 가능
-   b. 이미지: 판별 통과한 노드만 static/images/{feature}/에 배치
+2. ⛔ 이미지 vs HTML 판별 (BLOCKING — 코드 작성 전 반드시 실행):
+   섹션의 모든 노드를 순회하여 각 노드가 이미지인지 HTML인지 판별한다.
+   판별하지 않고 코드를 작성하면 안 된다.
+
+   판별 결과 테이블을 먼저 작성한 후 코드 생성:
+   | 노드 name | 타입 | 판별 | 근거 |
+   |-----------|------|------|------|
+   | BG | FRAME | CSS background-image | BG 프레임 |
+   | Title | TEXT 포함 FRAME | HTML | TEXT 자식 보유 |
+   | CardGrid | INSTANCE ×4 | HTML v-for | 반복 패턴 |
+   | CoinIcon | RECTANGLE+imageRef | <img> | 순수 에셋 |
+
+   판별 규칙 (하나라도 YES → HTML):
+   Q1. TEXT 자식 있는가? → YES → HTML (텍스트를 이미지에 넣지 않는다)
+   Q2. INSTANCE 반복 패턴인가? → YES → HTML v-for (내부 이미지 에셋만 <img>)
+   Q3. 인터랙티브 요소인가? (btn, CTA) → YES → HTML <button>
+   Q4. 동적 데이터인가? (가격, 수량, 기간) → YES → HTML 텍스트
+   모두 NO → 이미지 렌더링 가능
+
+   ⚠️ 특히 주의: 섹션을 통째로 이미지 렌더링하는 것은 절대 금지.
+   섹션 안의 개별 요소를 판별하여 이미지/HTML을 분리해야 한다.
+
+3. 기계적 매핑 (추정 없음):
+   a. 이미지: 판별에서 "이미지"로 확정된 노드만 static/images/{feature}/에 배치
+   b. BG 프레임 처리:
+      ❌ <img src="bg.webp"> 또는 <div><img src="bg.webp" class="bg"></div> 금지
+      ✅ 부모에 CSS background-image만 사용:
+         .section { background-image: url('/images/{feature}/bg.webp'); background-size: cover; }
+      ✅ BG 프레임은 HTML에 아무 요소도 렌더링하지 않음
    c. 노드 → HTML 매핑:
-      - BG 프레임 → CSS background-image (img 태그 아님)
       - Auto Layout 있음 → <div> + flex (direction/gap/padding 직접)
       - Auto Layout 없음 → <div> + position:relative (자식 absolute)
       - TEXT 노드 → <span> (Claude가 h2/p/button으로 승격)
       - 순수 이미지 에셋 → <img src="렌더링된 파일">
       - 반복 패턴 (동일 구조 2+) → v-for (카드 내 이미지만 <img>, 나머지 HTML)
-   c. CSS 직접 매핑:
+   d. CSS 직접 매핑:
       - node.css의 모든 속성을 SCSS에 1:1 매핑
       - vw/clamp 반응형 단위 변환 (vibe.figma.convert 참조)
       - tree.json에 없는 CSS 값은 작성하지 않음

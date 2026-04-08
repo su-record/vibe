@@ -4,7 +4,15 @@
 
 ```
 ❌ imageRef 개별 다운로드 금지 (텍스처 fill 공유 문제)
+❌ 섹션/그룹을 통째 이미지로 렌더링 금지 (내부 TEXT/INSTANCE 포함 시)
 ✅ 모든 이미지는 Figma screenshot API로 노드 렌더링
+✅ 렌더링 전 반드시 2-1.5 판별 규칙 확인 → HTML 대상은 렌더링하지 않음
+
+실제 테스트에서 발생한 잘못된 렌더링:
+  ❌ exchange-section1.webp (카드 4개 그리드를 이미지 1장으로)
+  ❌ daily-step2-list.webp (보상 목록을 텍스트 포함하여 통째로)
+  ❌ prize-section1.webp (응모 아이템을 텍스트 포함하여 통째로)
+  ✅ 올바른 접근: 카드 내부의 아이콘/썸네일만 개별 렌더링
 ```
 
 ## Render Methods

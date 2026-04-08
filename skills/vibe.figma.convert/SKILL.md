@@ -55,11 +55,45 @@ component-index (/tmp/{feature}/component-index.json) 에서 매칭되는 컴포
 ### 1-1. 노드 → HTML 매핑 규칙 (기계적)
 
 ```
+⛔ 코드 작성 전: 이미지 vs HTML 판별 테이블을 먼저 작성한다 (BLOCKING).
+   섹션의 모든 1~2depth 노드를 순회하여 각각의 처리 방법을 결정.
+   판별 없이 코드를 작성하면 안 된다.
+
+   판별 규칙 (순서대로 적용, 하나라도 YES → HTML):
+   Q1. 이 노드의 자식 트리에 TEXT 노드가 있는가?
+       YES → HTML로 구현 (이미지에 텍스트를 넣지 않는다)
+       ※ "가격 1,000", "보상 교환하기", "이벤트 기간" 등이 있으면 무조건 HTML
+   Q2. 같은 부모 아래 동일 구조 INSTANCE가 2개 이상인가?
+       YES → HTML 반복 구조 (v-for/.map) — 내부 아이콘/썸네일만 <img>
+       ※ 카드 4개 그리드를 이미지 1장으로 렌더링하면 절대 안 됨
+   Q3. 클릭/인터랙션이 필요한가? (btn, CTA, link, tab)
+       YES → HTML <button>/<a>
+   Q4. 동적으로 변경되는 데이터인가? (가격, 수량, 기간, 상태)
+       YES → HTML 텍스트
+   모두 NO → 이미지 렌더링 가능 (벡터 글자, 래스터 에셋, 합성 BG 등)
+
 각 노드에 대해 아래 규칙을 순서대로 적용:
 
-1. 타입별 기본 매핑:
+1. 배경 레이어 (BG 프레임 — 가장 먼저 처리):
+   BG 프레임 (name에 "BG"/"bg" 또는 부모와 동일 크기)
+
+     ❌ 절대 금지 패턴 (이렇게 쓰면 안 됨):
+        <img src="hero-bg.webp" class="bg-img" />
+        <div class="bg"><img src="bg.webp" /></div>
+        position: absolute; inset: 0; → 이미지 배치
+
+     ✅ 유일하게 허용되는 패턴:
+        부모 요소의 SCSS에 background-image로 처리:
+          .heroSection {
+            background-image: url('/images/{feature}/hero-bg.webp');
+            background-size: cover;
+            background-position: center top;
+          }
+        HTML에는 BG 관련 요소를 아무것도 넣지 않음.
+
+2. 타입별 기본 매핑:
    TEXT 노드     → <span> (Claude가 <h1>~<h6>, <p>, <button> 등으로 승격)
-   IMAGE fill    → <img src="다운로드된 경로" />
+   IMAGE fill    → <img src="다운로드된 경로" /> (판별 통과한 순수 에셋만)
    VECTOR/GROUP  → 크기가 작으면(≤64px) 아이콘 후보 → <img> (렌더링 이미지)
                    크기가 크면 장식 요소 → <div> + background
    FRAME/INSTANCE:
@@ -67,20 +101,21 @@ component-index (/tmp/{feature}/component-index.json) 에서 매칭되는 컴포
      Auto Layout 없음 → <div> + position:relative (자식은 absolute)
      children 없음    → 빈 div 또는 스킵
 
-2. 배경 레이어 판별:
-   BG 프레임 (name에 "BG"/"bg" 또는 부모와 동일 크기)
-     ❌ <img> 태그로 배경 처리 금지
-     ❌ position:absolute + inset:0 으로 이미지 배치 금지
-     ✅ 부모 요소에 CSS background-image로 처리:
-        background-image: url('/images/{feature}/{section}-bg.webp');
-        background-size: cover;
-        background-position: center top;
-     ✅ BG 프레임은 HTML에 아무것도 렌더링하지 않음 (CSS만)
-
 3. 반복 패턴 감지:
-   같은 부모 아래 동일 타입 + 유사 구조(children 수 동일) 노드 3개 이상
+   같은 부모 아래 동일 타입 + 유사 구조(children 수 동일) INSTANCE 2개 이상
      → v-for (Vue) 또는 .map() (React)
      → 첫 번째 노드를 기준으로 템플릿 생성
+     → 카드 내부의 이미지 에셋(아이콘, 썸네일)만 <img>
+     → 카드 레이아웃, 텍스트, 버튼, 가격은 HTML로 구현
+
+     ❌ 잘못된 예: <img src="exchange-section1.webp" /> (카드 4개가 한 이미지)
+     ✅ 올바른 예:
+        <div v-for="card in weeklyCards" :key="card.id" class="card">
+          <img :src="card.icon" :alt="card.name" class="card__icon" />
+          <span class="card__name">{{ card.name }}</span>
+          <span class="card__price">{{ card.price }}</span>
+          <button class="card__btn">보상 교환하기</button>
+        </div>
 
 4. 스킵 대상:
    크기 0px 노드

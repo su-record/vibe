@@ -53,6 +53,19 @@ Q4. 이 노드의 콘텐츠가 동적 데이터인가? (가격, 수량, 기간, 
 
 위 체크에서 하나라도 YES → HTML로 구현
 모두 NO → 이미지(벡터 글자, BG, 래스터, 복잡 그래픽)로 렌더링
+
+실제 테스트에서 발생한 잘못된 패턴:
+
+  ❌ <img src="hero-bg.webp" class="bg-img" />           → BG를 img 태그로
+  ❌ <img src="exchange-section1.webp" />                 → 카드 4개를 이미지 1장으로
+  ❌ <img src="daily-step2-list.webp" />                  → 보상 목록을 통째 이미지로
+  ❌ <img src="hero-period-bg-mo.webp" class="period-bg"> → Period BG를 img로
+
+  ✅ .heroSection { background-image: url('hero-bg.webp'); background-size: cover; }
+  ✅ <div v-for="card in cards" :key="card.id">
+       <img :src="card.icon" /> <span>{{ card.price }}</span>
+       <button>보상 교환하기</button>
+     </div>
 ```
 
 ## CSS 직접 매핑 규칙
@@ -107,6 +120,9 @@ BEM 패턴: `.sectionName__childName`
 
 ## 자가 검증 (코드 작성 후)
 
+- [ ] ⛔ BG 프레임이 <img> 태그로 처리되지 않았는가? (CSS background-image만 허용)
+- [ ] ⛔ TEXT 자식이 있는 프레임이 통째 이미지로 처리되지 않았는가?
+- [ ] ⛔ INSTANCE 반복 패턴(카드/아이템)이 이미지 1장으로 처리되지 않았는가?
 - [ ] template 클래스 ↔ SCSS 클래스 1:1 일치
 - [ ] 모든 img src가 static/에 실제 존재
 - [ ] Auto Layout 노드 → SCSS에 flex 속성 존재
