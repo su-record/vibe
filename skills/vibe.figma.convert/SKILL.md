@@ -192,6 +192,27 @@ tree.json의 css 객체를 SCSS로 직접 변환한다. 추정하지 않는다.
 
 ## 2. 외부 SCSS 파일 구조
 
+### _base.scss (필수 — 래퍼 컨테이너)
+
+```scss
+// 모바일 퍼스트: vw 단위가 PC에서 거대해지는 것을 방지
+// designWidth(720px)를 max-width로 제한
+
+.{feature} {
+  width: 100%;
+  max-width: 720px;    // designWidth — PC에서 모바일 레이아웃 유지
+  margin: 0 auto;      // 중앙 정렬
+  overflow-x: hidden;
+
+  // PC 브레이크포인트에서 max-width 확장 (PC 디자인이 있을 때)
+  @media (min-width: 1025px) {
+    max-width: 100%;   // PC 디자인이 있으면 전체 너비
+  }
+}
+```
+
+이 파일이 없으면 vw 단위가 PC 뷰포트에서 비례 확대되어 레이아웃이 깨진다.
+
 ### layout vs components 구분
 
 ```
