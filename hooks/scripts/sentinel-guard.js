@@ -118,9 +118,12 @@ const toolInput = stdinPayload?.tool_input
     : JSON.stringify(stdinPayload.tool_input))
   : (process.argv[3] || process.env.TOOL_INPUT || '');
 
+import { logHookDecision } from './utils.js';
+
 const result = guard(toolName, toolInput);
 
 if (result) {
+  logHookDecision('sentinel-guard', toolName, 'block', result.reason);
   console.log(JSON.stringify(result));
   process.exit(2); // deny 규약
 }

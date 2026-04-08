@@ -52,3 +52,9 @@ export type { DeprecationCandidate, DeprecationReport } from './DeprecationDetec
 // Phase 5b: Model Parity Testing
 export { ParityTester, PARITY_THRESHOLDS } from './ParityTester.js';
 export type { ParityTestResult, ModelVersion, EvalComparison } from './ParityTester.js';
+
+// Phase 6: Harness Self-Improvement (Hook Trace Analysis)
+export { readTraces, clusterTraces, analyzeTraces } from './HookTraceReader.js';
+export type { HookTrace, TraceCluster, TraceStats } from './HookTraceReader.js';
+export { GuardAnalyzer } from './GuardAnalyzer.js';
+export type { GuardAnalysisResult } from './GuardAnalyzer.js';

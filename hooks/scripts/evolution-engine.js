@@ -39,7 +39,29 @@ async function main() {
       const extractor = new extractorMod.InsightExtractor(storage);
       const extractResult = extractor.extractFromRecent(20);
 
-      if (extractResult.newInsights.length === 0 && extractResult.mergedInsights.length === 0) {
+      // Phase 2b: Guard trace 분석 (하네스 자기 개선)
+      let guardInsightCount = 0;
+      try {
+        const guardMod = await import(`${LIB_BASE}evolution/GuardAnalyzer.js`);
+        const insightMod = await import(`${LIB_BASE}evolution/InsightStore.js`);
+        const insightStore = new insightMod.InsightStore(storage);
+        const guardAnalyzer = new guardMod.GuardAnalyzer(insightStore);
+        const guardResult = guardAnalyzer.analyze(7);
+        guardInsightCount = guardResult.newInsights.length;
+        if (guardInsightCount > 0) {
+          process.stderr.write(
+            `[Evolution] Guard analysis: ${guardInsightCount} new insights from hook traces\n`
+          );
+        }
+      } catch (e) {
+        process.stderr.write(`[Evolution] Guard analysis skipped: ${e.message}\n`);
+      }
+
+      if (
+        extractResult.newInsights.length === 0 &&
+        extractResult.mergedInsights.length === 0 &&
+        guardInsightCount === 0
+      ) {
         storage.close();
         return;
       }

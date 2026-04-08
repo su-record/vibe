@@ -153,6 +153,7 @@ When the user's context matches a pattern below, suggest the relevant skill **on
 | UI code review | `/design-audit` | standard | After implementing UI components |
 | New project setup / CLAUDE.md | `/claude-md-guide` | standard | "new project", "write CLAUDE.md" |
 | Before shipping UI | `/design-polish` | standard | "ready to deploy", "final check" |
+| External API/SDK code needed | `/chub-usage` | optional | "Stripe 연동", "OpenAI API", SDK/API code request |
 
 ## Context Management
 
