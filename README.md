@@ -565,6 +565,9 @@ flowchart TD
 | **커맨드** | Guide | 구조화된 작업 인터페이스 (/vibe.spec, /vibe.run 등) |
 | **훅 (21개)** | Sensor | 라이프사이클 이벤트 인터셉트 — 위험 차단, 품질 검증 |
 | **품질 게이트 (3계층)** | Sensor | 센티넬 가드 → 프리툴 가드 → 코드 체크 |
+| **LLM 비용 추적** | Sensor | llm-costs.jsonl — 프로바이더별 토큰·비용·지연 시간 기록 |
+| **롤백 체크포인트** | Sensor | 자동 커밋마다 `vibe-checkpoint-N` 태그 생성 (최근 5개 유지) |
+| **에스컬레이션** | Sensor | 동일 파일 P1/P2 이슈 3회 반복 → 사용자 개입 요청 |
 | **Session RAG / 메모리** | Both | 세션 간 컨텍스트 지속 + 자동 복원 |
 | **이볼루션 엔진** | Sensor | 훅 실행 패턴 분석 → 규칙/스킬 자기 개선 |
 | **텔레메트리** | Sensor | hook-traces.jsonl, spans.jsonl — 관찰 가능성 |
@@ -592,7 +595,7 @@ Notification ─── context-save.js
     컨텍스트 80/90/95%에서 자동 저장
     ↓
 Stop ──────── codex-review-gate.js → stop-notify.js → auto-commit.js
-    리뷰 게이트 → 세션 종료 알림 → 자동 커밋
+    리뷰 게이트 → 세션 종료 알림 → 자동 커밋 + 롤백 체크포인트
 ```
 
 ### 3계층 품질 게이트
@@ -626,6 +629,39 @@ Stop ──────── codex-review-gate.js → stop-notify.js → auto-c
     ↓
 서킷 브레이커 — 회귀 발생 시 롤백
 ```
+
+### LLM 비용 추적
+
+외부 LLM(GPT, Gemini) 호출마다 토큰, 비용, 지연 시간을 `~/.vibe/llm-costs.jsonl`에 기록합니다.
+캐시 히트 시 비용 0으로 기록. 프로바이더별 모델 단가 자동 적용.
+
+```jsonl
+{"ts":"...","provider":"gpt","model":"gpt-5.4","inputTokens":150,"outputTokens":420,"cost":0.0069,"durationMs":2340,"cached":false}
+```
+
+`vibe stats --quality`로 누적 비용 확인 가능.
+
+### 롤백 체크포인트
+
+에이전트 자동 커밋마다 `vibe-checkpoint-N` git 태그를 생성합니다.
+문제 발생 시 한 줄로 롤백:
+
+```bash
+git reset --hard vibe-checkpoint-3
+```
+
+최근 5개만 유지, 오래된 체크포인트는 자동 정리.
+
+### 에스컬레이션 (Human-in-the-loop)
+
+동일 파일에서 P1/P2 이슈가 3회 반복되면 자동 수정을 멈추고 사용자에게 개입을 요청합니다.
+
+```
+🚨 [ESCALATION] auth.ts: 동일 이슈 3회 반복
+   → 사용자 개입 필요 — 자동 수정이 수렴하지 않고 있습니다.
+```
+
+AI가 같은 실수를 반복하며 맴도는 것을 방지하는 센서입니다.
 
 ### 설치 흐름
 

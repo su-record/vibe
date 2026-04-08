@@ -184,3 +184,60 @@ export function logHookDecision(hookName, toolName, decision, reason) {
     fs.appendFileSync(HOOK_TRACE_PATH, entry + '\n');
   } catch { /* 트레이스 실패가 훅 실행을 방해해선 안 됨 */ }
 }
+
+// ─── LLM Cost Tracking ───
+
+const LLM_COST_PATH = path.join(VIBE_HOME_DIR, 'llm-costs.jsonl');
+const MAX_COST_SIZE_BYTES = 5 * 1024 * 1024; // 5MB rotation
+
+// 1K 토큰당 USD (추정치, 2026-04 기준)
+const COST_PER_1K_TOKENS = {
+  'gpt-5.4': { input: 0.005, output: 0.015 },
+  'gpt-5.3-codex': { input: 0.003, output: 0.010 },
+  'gpt-5.3-codex-spark': { input: 0.001, output: 0.005 },
+  'gemini-3.1-pro-preview': { input: 0.00125, output: 0.005 },
+};
+const DEFAULT_COST = { input: 0.003, output: 0.010 };
+
+/**
+ * LLM 호출 비용을 JSONL로 로깅
+ *
+ * @param {string} provider - 프로바이더 (gpt, gemini)
+ * @param {string} model - 모델명
+ * @param {number} inputLen - 입력 문자 수
+ * @param {number} outputLen - 출력 문자 수
+ * @param {number} durationMs - 호출 소요 시간
+ * @param {boolean} cached - 캐시 히트 여부
+ */
+export function logLlmCost(provider, model, inputLen, outputLen, durationMs, cached) {
+  try {
+    if (fs.existsSync(LLM_COST_PATH)) {
+      const stat = fs.statSync(LLM_COST_PATH);
+      if (stat.size > MAX_COST_SIZE_BYTES) {
+        const rotated = LLM_COST_PATH + '.prev';
+        try { fs.unlinkSync(rotated); } catch { /* ignore */ }
+        fs.renameSync(LLM_COST_PATH, rotated);
+      }
+    }
+
+    // 문자 수 → 토큰 추정 (영어 ~4자/토큰, 한글 ~2자/토큰 평균 3자)
+    const inputTokens = Math.ceil(inputLen / 3);
+    const outputTokens = Math.ceil(outputLen / 3);
+    const rates = COST_PER_1K_TOKENS[model] || DEFAULT_COST;
+    const cost = cached ? 0
+      : (inputTokens / 1000) * rates.input + (outputTokens / 1000) * rates.output;
+
+    const entry = JSON.stringify({
+      ts: new Date().toISOString(),
+      provider,
+      model,
+      inputTokens,
+      outputTokens,
+      cost: Math.round(cost * 1_000_000) / 1_000_000, // 소수점 6자리
+      durationMs,
+      cached,
+      project: PROJECT_DIR,
+    });
+    fs.appendFileSync(LLM_COST_PATH, entry + '\n');
+  } catch { /* 비용 추적 실패가 호출을 방해해선 안 됨 */ }
+}
