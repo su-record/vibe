@@ -392,8 +392,8 @@ URL에서 fileKey, nodeId 추출
 부분 실패 처리:
   - 개별 URL 추출 실패 시 해당 frame만 건너뛰고 나머지 진행
   - 실패한 frame은 사용자에게 즉시 보고: "frame-{N} 추출 실패: {에러 사유}" (API 에러, 권한 부족, 잘못된 nodeId 등)
-  - 성공한 frame ≥ 2: Phase 2.5 계속 진행
-  - 정확히 1개만 성공: 단일 프레임 모드로 폴백 (Phase 2.5 스킵)
+  - 성공한 frame ≥ 2: Phase 3 계속 진행
+  - 정확히 1개만 성공: 단일 프레임 모드로 폴백 (Phase 3 스킵)
   - 0개 성공: 전체 실패 보고
 
 결과:
@@ -407,10 +407,10 @@ URL에서 fileKey, nodeId 추출
   │   └── ...
   ├── frame-3/           ← 서브 페이지 2
   │   └── ...
-  └── shared/            ← 공통 분석 결과 (Phase 2.5에서 생성)
+  └── sections/          ← Phase 6 검증용 스크린샷
 ```
 
-### 2-2. 재료함 정리
+### 2-2. 추출 데이터 정리
 
 ```
 Phase 2 완료 시 /tmp/{feature}/ 에 다음이 준비되어야 함:
@@ -507,9 +507,8 @@ UI 요소 → vw 비례:
 
 ## Phase 4: 순차 코드 생성
 
-**Phase 1에서 만든 컴포넌트에 Phase 2의 재료로 디자인을 입힌다.**
-**스크린샷을 보면서 퍼즐을 맞추듯 조립한다.**
-**첫 섹션(Hero) 단독 완료 후 나머지 섹션 병렬 진행.**
+**remapped.json 기반으로 섹션별 순차 코드 생성.**
+**한 섹션 완료 → 브라우저 확인 → 다음 섹션. 병렬 금지.**
 
 **멀티 프레임 모드 시 조립 순서 변경:**
 ```
@@ -544,13 +543,13 @@ UI 요소 → vw 비례:
 ```
 Phase 1에서 생성한 빈 SCSS 파일에 기본 내용 Write:
   styles/{feature}/index.scss      ← @import 진입점
-  styles/{feature}/_tokens.scss    ← 재료함에서 추출한 디자인 토큰
+  styles/{feature}/_tokens.scss    ← tree.json에서 추출한 디자인 토큰
   styles/{feature}/_mixins.scss    ← breakpoint mixin
   styles/{feature}/_base.scss      ← 루트 클래스
 
 토큰 매핑 (기존 토큰 우선 사용):
   1. /tmp/{feature}/project-tokens.json 을 Read로 로드
-  2. Figma 재료함의 각 값에 대해 project-tokens에서 동일 값 검색:
+  2. Figma tree.json의 각 값에 대해 project-tokens에서 동일 값 검색:
      - 색상: hex 정규화 후 완전 일치 (Figma RGBA 0-1 → hex, 3자리→6자리, 대소문자 무시)
        ※ alpha < 1: 8자리 hex (#RRGGBBAA) 또는 rgba() 함수로 변환
      - 간격: px 값 완전 일치 (rem→px: 1rem=16px)
@@ -729,7 +728,7 @@ URL 있으면:
 
 ## Phase 5: 컴파일 게이트
 
-**Phase 3 퍼즐 조립 완료 후, 브라우저 검증 전에 컴파일 성공을 보장한다.**
+**Phase 3 코드 생성 완료 후, 브라우저 검증 전에 컴파일 성공을 보장한다.**
 **컴파일 에러는 스킵 불가 — 반드시 수정 또는 사용자 보고.**
 **Phase 5 실패 시 Phase 4 진행 불가 (hard gate).**
 
@@ -899,7 +898,7 @@ import { getComputedStyles, compareStyles, diffsToIssues } from 'src/infra/lib/b
        'background-color', 'border-radius', 'gap',
      ])
 
-  2. Figma 재료함의 기대값과 비교:
+  2. Figma tree.json의 기대값과 비교:
      // tree.json에서 해당 노드의 CSS 수치 (vw/clamp 변환 후)
      const expected = { 'font-size': '16px', 'color': '#ffffff', 'width': '465px' }
      const diffs = compareStyles(expected, actual)
@@ -923,7 +922,7 @@ import { extractImages, extractTextContent } from 'src/infra/lib/browser'
 
 2. 텍스트 콘텐츠 확인:
    const texts = await extractTextContent(page)
-   → 재료함의 TEXT 노드 characters와 대조
+   → tree.json의 TEXT 노드 characters와 대조
    → 누락된 텍스트 = P1
 ```
 
@@ -935,9 +934,9 @@ import { extractImages, extractTextContent } from 'src/infra/lib/browser'
   2. P1 이슈 우선 수정:
      - 이미지 누락 → 이미지 경로 확인, static/ 에 파일 존재 확인
      - 레이아웃 다름 → 스크린샷 diff 이미지 + computed CSS로 원인 파악
-     - 텍스트 누락 → 재료함의 정확한 텍스트 삽입
-     - CSS 수치 틀림 → 재료함(tree.json)의 정확한 값으로 교체
-     ⚠️ 추정으로 수정하지 않는다. 반드시 재료함 참조.
+     - 텍스트 누락 → tree.json의 정확한 텍스트 삽입
+     - CSS 수치 틀림 → tree.json(tree.json)의 정확한 값으로 교체
+     ⚠️ 추정으로 수정하지 않는다. 반드시 tree.json 참조.
   3. 수정 후 컴파일 재검증:
      Bash: npx tsc --noEmit 2>&1 (또는 3.5-1에서 선택한 타입 체커)
      → 시각 수정이 타입 에러를 유발하면 즉시 타입 에러 수정 후 진행
