@@ -36,17 +36,18 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 
 ```
 /vibe.figma
-  입력: 모든 브레이크포인트 Figma URL을 한번에 받는다
-    MO: https://figma.com/...?node-id=xxx
-    PC: https://figma.com/...?node-id=yyy (있으면)
+  입력: 모든 URL을 한번에 받는다
+    Storyboard: https://figma.com/...?node-id=aaa (있으면)
+    MO Design: https://figma.com/...?node-id=xxx
+    PC Design: https://figma.com/...?node-id=yyy (있으면)
 
   → Phase 0: Setup (스택 감지, 디렉토리 생성, 기존 자산 인덱싱)
   → Phase 1: Storyboard (스토리보드 → 기능 스펙 문서 작성, 파일 생성 없음)
   → Phase 2: 재료 확보 (모든 BP의 트리 + 노드 렌더링 이미지 + 스크린샷)
-  → Phase 2.5: 리매핑 (tree.json → remapped.json, BP 간 노드 매칭 + CSS diff)
-  → Phase 3: 순차 코드 생성 (remapped.json → 섹션별 HTML+SCSS)
-  → Phase 3.5: 컴파일 게이트 (tsc → build → dev 확인)
-  → Phase 4: 시각 검증 루프 (렌더링 vs 스크린샷 비교 → 수정)
+  → Phase 3: 리매핑 (tree.json → remapped.json, BP 간 노드 매칭 + CSS diff)
+  → Phase 4: 순차 코드 생성 (remapped.json → 섹션별 HTML+SCSS)
+  → Phase 5: 컴파일 게이트 (tsc → build → dev 확인)
+  → Phase 6: 시각 검증 루프 (렌더링 vs 스크린샷 비교 → 수정)
 
 작업 디렉토리 구조:
   각 Figma URL의 ROOT name에서 폴더명 추출 (kebab-case):
@@ -61,13 +62,13 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
   │   └── sections/         ← Phase 4 검증용 스크린샷
   ├── pc-main/              ← 데스크탑 Phase 2 추출 결과
   │   └── (동일 구조)
-  └── remapped.json         ← Phase 2.5 리매핑 결과 (모든 BP 통합)
+  └── remapped.json         ← Phase 3 리매핑 결과 (모든 BP 통합)
 
-  remapped.json이 Phase 3의 유일한 입력.
+  remapped.json이 Phase 4의 유일한 입력.
   → BP 간 노드 매칭 완료
   → CSS diff (mo/pc) 포함
   → 이미지 렌더링 파일 경로 포함
-  → Phase 3에서 바로 코드 생성 가능
+  → Phase 4에서 바로 코드 생성 가능
 
   코드 출력: 프로젝트 디렉토리에 직접 배치
     components/{feature}/HeroSection.vue
@@ -201,7 +202,7 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 - question: "스토리보드 Figma URL을 입력해주세요. (없으면 '없음')"
 - options 제공 금지 — 자유 텍스트 입력만 허용
 
-"없음" 응답 시 → Phase 2로 건너뜀
+"없음" 응답 시 → 스토리보드 분석 스킵
 
 ### 1-1. 스토리보드 분석
 
@@ -237,8 +238,8 @@ URL에서 fileKey, nodeId 추출
 
 ```
 ❌ Phase 1에서 코드 파일을 생성하지 않는다.
-   → Phase 1 HTML 구조와 Phase 3 트리 매핑이 충돌하면 이중 작업
-   → Phase 3에서 tree.json 기반으로 코드를 생성
+   → Phase 1 HTML 구조와 Phase 4 트리 매핑이 충돌하면 이중 작업
+   → Phase 4에서 remapped.json 기반으로 코드를 생성
 
 ✅ Phase 1의 출력물은 기능 스펙 문서 (텍스트):
 
@@ -282,7 +283,7 @@ Phase 1 완료 조건:
   □ 공통 컴포넌트가 식별되어 있다
   □ 파일을 하나도 생성하지 않았다
 
-Phase 3에서 이 스펙 + tree.json을 합쳐서 코드를 생성한다.
+Phase 4에서 이 스펙 + remapped.json을 합쳐서 코드를 생성한다.
 ```
 
 ---
@@ -424,7 +425,7 @@ UI 요소 → vw 비례:
 
 ---
 
-## Phase 2.5: 공통 패턴 분석 (멀티 프레임 전용)
+## Phase 3: 리매핑 (tree.json → remapped.json)
 
 **URL 2개 이상일 때만 실행. 단일 URL이면 Phase 3으로 건너뜀.**
 **프레임 간 공통 요소를 식별하여 공유 컴포넌트로 추출한다.**
@@ -465,7 +466,7 @@ UI 요소 → vw 비례:
 
 ---
 
-## Phase 3: 퍼즐 조립
+## Phase 4: 순차 코드 생성
 
 **Phase 1에서 만든 컴포넌트에 Phase 2의 재료로 디자인을 입힌다.**
 **스크린샷을 보면서 퍼즐을 맞추듯 조립한다.**
@@ -687,11 +688,11 @@ URL 있으면:
 
 ---
 
-## Phase 3.5: 컴파일 게이트
+## Phase 5: 컴파일 게이트
 
 **Phase 3 퍼즐 조립 완료 후, 브라우저 검증 전에 컴파일 성공을 보장한다.**
 **컴파일 에러는 스킵 불가 — 반드시 수정 또는 사용자 보고.**
-**Phase 3.5 실패 시 Phase 4 진행 불가 (hard gate).**
+**Phase 5 실패 시 Phase 4 진행 불가 (hard gate).**
 
 ```
 자동 반복: 컴파일 성공까지. 최대 3라운드.
@@ -704,7 +705,7 @@ Phase 3 시작 전에 기존 프로젝트의 에러를 캡처:
   1. 타입 체크 베이스라인: (3.5-1에서 선택한 동일 명령 사용) > /tmp/{feature}/baseline-typecheck.txt 2>&1
   2. 빌드 베이스라인: npm run build > /tmp/{feature}/baseline-build.txt 2>&1
 
-Phase 3.5에서는 baseline에 없는 **새로 발생한 에러만** 수정 대상.
+Phase 5에서는 baseline에 없는 **새로 발생한 에러만** 수정 대상.
 baseline에 존재하던 에러는 무시하고 별도 보고 ("기존 에러 {N}개 유지").
 vibe.figma가 생성/수정한 파일 외의 에러는 자동 수정 금지.
 ```
@@ -782,13 +783,13 @@ vibe.figma가 생성/수정한 파일 외의 에러는 자동 수정 금지.
 컴파일 게이트 결과 보고:
 
   ✅ 통과:
-    "Phase 3.5: 컴파일 게이트 PASS (라운드 {N})"
+    "Phase 5: 컴파일 게이트 PASS (라운드 {N})"
     - tsc: 0 errors
     - build: success
     - dev server: running on localhost:{port}
 
   ❌ 실패 (3라운드 후):
-    "Phase 3.5: 컴파일 게이트 FAIL"
+    "Phase 5: 컴파일 게이트 FAIL"
     - 남은 에러 목록 (파일, 줄, 메시지)
     - 시도한 수정 내역
     - 사용자 수동 수정 필요
@@ -797,7 +798,7 @@ vibe.figma가 생성/수정한 파일 외의 에러는 자동 수정 금지.
 
 ---
 
-## Phase 4: 검증 루프
+## Phase 6: 시각 검증 루프
 
 **Puppeteer + CDP로 실제 렌더링 결과를 확인하며 자동 수정한다.**
 **사람이 브라우저 보면서 고치는 것과 동일한 루프.**
@@ -811,7 +812,7 @@ vibe.figma가 생성/수정한 파일 외의 에러는 자동 수정 금지.
 
 ```
 1. dev 서버 시작:
-   Phase 3.5에서 이미 시작된 dev 서버 사용 (재시작 불필요)
+   Phase 5에서 이미 시작된 dev 서버 사용 (재시작 불필요)
    → localhost:{port} 확인
 
 2. Puppeteer 브라우저 시작:
