@@ -199,13 +199,16 @@ Figma 트리가 코드의 원천이다. 스크린샷은 검증용이다.
 ## Phase 1: 디자인 리소스
 
 사용자에게 질문한다:
-- question: "스토리보드, 디자인 Figma URL을 입력해주세요."
+- question: "스토리보드, 디자인 Figma URL을 줄바꿈으로 입력해주세요. (순서 무관)"
 - 예시:
-    스토리보드: https://figma.com/...?node-id=20-4964
-    MO 디자인: https://figma.com/...?node-id=641-78147
-    PC 디자인: https://figma.com/...?node-id=641-78200
+    https://figma.com/design/xxx/...?node-id=20-4964
+    https://figma.com/design/yyy/...?node-id=641-78147
+    https://figma.com/design/yyy/...?node-id=641-78200
 - options 제공 금지 — 자유 텍스트 입력만 허용
-- 스토리보드는 선택, 디자인은 최소 1개 필수
+- 최소 1개 URL 필수
+- URL 분류는 자동: 각 URL의 ROOT name으로 스토리보드/MO/PC 판별
+  → fileKey가 다르면 스토리보드 vs 디자인 구분
+  → ROOT name에 "MO" → 모바일, "PC" → 데스크탑
 
 ### 1-1. 스토리보드 분석
 
