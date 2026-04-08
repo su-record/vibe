@@ -1,10 +1,12 @@
 /**
  * SessionStart Hook - 세션 시작 시 메모리/시간 로드 + 버전 체크
  */
-import { getToolsBaseUrl, PROJECT_DIR, VIBE_PATH } from './utils.js';
+import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import https from 'https';
+import { execSync } from 'child_process';
 
 const BASE_URL = getToolsBaseUrl();
 
@@ -44,17 +46,23 @@ function compareVersions(a, b) {
 }
 
 function getCurrentVersion() {
-  const candidates = [
-    path.join(VIBE_PATH, 'package.json'),
-    path.join(VIBE_PATH, '..', '..', 'package.json'),
-  ];
-  for (const p of candidates) {
+  try {
+    let globalNpmPath;
     try {
-      if (fs.existsSync(p)) {
-        return JSON.parse(fs.readFileSync(p, 'utf8')).version || null;
-      }
-    } catch { /* ignore */ }
-  }
+      globalNpmPath = execSync('npm root -g', { encoding: 'utf8', timeout: 3000 }).trim();
+    } catch {
+      const homeDir = os.homedir();
+      const fallbacks = [
+        '/usr/local/lib/node_modules',
+        path.join(homeDir, '.npm-global', 'lib', 'node_modules'),
+      ];
+      globalNpmPath = fallbacks.find(p => fs.existsSync(p)) || fallbacks[0];
+    }
+    const pkgPath = path.join(globalNpmPath, '@su-record', 'vibe', 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      return JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version || null;
+    }
+  } catch { /* ignore */ }
   return null;
 }
 
