@@ -127,13 +127,12 @@ vibe gemini key <your-api-key>
 트리 기반 구조적 매핑으로 디자인을 코드로 변환 (스크린샷 추정이 아님).
 
 ```bash
-/vibe.figma "https://figma.com/design/ABC/Project?node-id=1-2"
-
-# 반응형 (모바일 + 데스크탑)
-/vibe.figma "mobile-url" "desktop-url"
+/vibe.figma              # 모든 URL 한번에 입력 (스토리보드 + 모바일 + 데스크탑)
+/vibe.figma --new        # 새 피처 모드 (독립 스타일 생성)
+/vibe.figma --refine     # 보완 모드 (기존 코드 + Figma 재비교 → 수정)
 ```
 
-Figma REST API로 추출 → 스택 인식 코드 생성 (React/Vue/Svelte/SCSS/Tailwind) → 기존 디자인 시스템에 매핑.
+스토리보드·모바일·데스크탑 Figma URL을 한번에 전달. Figma REST API로 트리 + 노드 이미지 추출 → 브레이크포인트 간 리매핑 → 스택 인식 코드 생성 (React/Vue/Svelte/SCSS/Tailwind) → 시각 검증 루프.
 
 ---
 

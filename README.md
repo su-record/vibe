@@ -127,13 +127,12 @@ vibe gemini key <your-api-key>
 Design-to-code pipeline with tree-based structural mapping (not screenshot guessing).
 
 ```bash
-/vibe.figma "https://figma.com/design/ABC/Project?node-id=1-2"
-
-# Responsive (mobile + desktop)
-/vibe.figma "mobile-url" "desktop-url"
+/vibe.figma              # All URLs at once (storyboard + mobile + desktop)
+/vibe.figma --new        # New feature mode (create standalone styles)
+/vibe.figma --refine     # Refine mode (compare existing code with Figma → fix)
 ```
 
-Extracts via Figma REST API → generates stack-aware code (React/Vue/Svelte/SCSS/Tailwind) → maps to your existing design system.
+Pass storyboard, mobile, and desktop Figma URLs together. Extracts tree + node images via Figma REST API → remaps across breakpoints → generates stack-aware code (React/Vue/Svelte/SCSS/Tailwind) → visual verification loop.
 
 ---
 
