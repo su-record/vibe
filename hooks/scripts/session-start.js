@@ -1,9 +1,62 @@
 /**
- * SessionStart Hook - 세션 시작 시 메모리/시간 로드
+ * SessionStart Hook - 세션 시작 시 메모리/시간 로드 + 버전 체크
  */
-import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
+import { getToolsBaseUrl, PROJECT_DIR, VIBE_PATH } from './utils.js';
+import fs from 'fs';
+import path from 'path';
+import https from 'https';
 
 const BASE_URL = getToolsBaseUrl();
+
+/**
+ * npm 레지스트리에서 최신 버전 조회 (타임아웃 3초)
+ */
+function fetchLatestVersion() {
+  return new Promise((resolve) => {
+    const req = https.get(
+      'https://registry.npmjs.org/@su-record/vibe/latest',
+      { timeout: 3000, headers: { 'Accept': 'application/json' } },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data).version || null);
+          } catch { resolve(null); }
+        });
+      },
+    );
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
+}
+
+function compareVersions(a, b) {
+  const partsA = a.replace(/^v/, '').split('.').map(Number);
+  const partsB = b.replace(/^v/, '').split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const numA = partsA[i] || 0;
+    const numB = partsB[i] || 0;
+    if (numA > numB) return 1;
+    if (numA < numB) return -1;
+  }
+  return 0;
+}
+
+function getCurrentVersion() {
+  const candidates = [
+    path.join(VIBE_PATH, 'package.json'),
+    path.join(VIBE_PATH, '..', '..', 'package.json'),
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        return JSON.parse(fs.readFileSync(p, 'utf8')).version || null;
+      }
+    } catch { /* ignore */ }
+  }
+  return null;
+}
 
 async function main() {
   try {
@@ -12,16 +65,26 @@ async function main() {
       import(`${BASE_URL}time/index.js`),
     ]);
 
-    const [session, time, memories] = await Promise.all([
+    const [session, time, memories, latestVersion] = await Promise.all([
       memoryModule.startSession({ projectPath: PROJECT_DIR }),
       timeModule.getCurrentTime({ format: 'human', timezone: 'Asia/Seoul' }),
       memoryModule.listMemories({ limit: 5, projectPath: PROJECT_DIR }),
+      fetchLatestVersion(),
     ]);
 
     console.log(session.content[0].text);
     console.log('\n' + time.content[0].text);
     console.log('\n[Recent Memories]');
     console.log(memories.content[0].text);
+
+    // Version check
+    if (latestVersion) {
+      const currentVersion = getCurrentVersion();
+      if (currentVersion && compareVersions(latestVersion, currentVersion) > 0) {
+        console.log(`\n⬆️ Harness update available: v${currentVersion} → v${latestVersion}`);
+        console.log('   Run: vibe upgrade');
+      }
+    }
 
     // Autonomy status summary
     try {

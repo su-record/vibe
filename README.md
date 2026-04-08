@@ -564,7 +564,7 @@ flowchart TD
 사용자 액션 (Bash / Edit / Write / Prompt)
     ↓
 SessionStart ─── session-start.js
-    세션 메모리 복원, 컨텍스트 로드
+    세션 메모리 복원, 컨텍스트 로드, 하네스 버전 체크
     ↓
 PreToolUse ──── sentinel-guard.js → pre-tool-guard.js
     파괴적 명령 차단 (rm -rf, force push, DB drop 등)
