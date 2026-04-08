@@ -213,15 +213,27 @@ function extractCSS(n) {
       return entry;
     });
   }
-  // Strokes — strokeAlign aware
+  // Strokes — strokeAlign aware + individual strokes + dashes
   const stroke = (n.strokes||[]).find(s=>s.visible!==false&&s.type==='SOLID');
-  if (stroke && n.strokeWeight) {
+  const isw = n.individualStrokeWeights;
+  const hasStroke = stroke && (n.strokeWeight || isw);
+  if (hasStroke) {
     const strokeColor = toCSS({ ...stroke.color, a: stroke.opacity ?? stroke.color?.a ?? 1 });
-    if (n.strokeAlign === 'OUTSIDE') {
+    // Individual stroke weights (different per side)
+    if (isw && (isw.top !== isw.bottom || isw.left !== isw.right || isw.top !== isw.left)) {
+      if (isw.top) css.borderTop = `${isw.top}px solid ${strokeColor}`;
+      if (isw.right) css.borderRight = `${isw.right}px solid ${strokeColor}`;
+      if (isw.bottom) css.borderBottom = `${isw.bottom}px solid ${strokeColor}`;
+      if (isw.left) css.borderLeft = `${isw.left}px solid ${strokeColor}`;
+    } else if (n.strokeAlign === 'OUTSIDE') {
       css.outline = `${n.strokeWeight}px solid ${strokeColor}`;
     } else {
       css.border = `${n.strokeWeight}px solid ${strokeColor}`;
       if (n.strokeAlign === 'INSIDE') css.boxSizing = 'border-box';
+    }
+    // Dashed strokes
+    if (n.strokeDashes?.length) {
+      css.borderStyle = 'dashed';
     }
   }
   // Effects
@@ -245,6 +257,15 @@ function extractCSS(n) {
     if (s.letterSpacing) css.letterSpacing = `${s.letterSpacing}px`;
     const ta = { LEFT:'left', CENTER:'center', RIGHT:'right', JUSTIFIED:'justify' };
     if (s.textAlignHorizontal && ta[s.textAlignHorizontal]) css.textAlign = ta[s.textAlignHorizontal];
+    // textCase → text-transform
+    const tc = { UPPER:'uppercase', LOWER:'lowercase', TITLE:'capitalize' };
+    if (s.textCase && tc[s.textCase]) css.textTransform = tc[s.textCase];
+    // textTruncation → ellipsis
+    if (s.textTruncation === 'ENDING') {
+      css.overflow = 'hidden'; css.textOverflow = 'ellipsis'; css.whiteSpace = 'nowrap';
+    }
+    // paragraphSpacing
+    if (s.paragraphSpacing > 0) css.marginBottom = `${s.paragraphSpacing}px`;
     const tf = visibleFills.find(f=>f.type==='SOLID');
     if (tf) css.color = toCSS(tf.color);
   }
@@ -266,6 +287,8 @@ function walk(node, parentAbsBBox) {
   if (css._imageRef) { r.imageRef = css._imageRef; delete r.css._imageRef; }
   if (css._imageScaleMode) { r.imageScaleMode = css._imageScaleMode; delete r.css._imageScaleMode; }
   if (css._fills) { r.fills = css._fills; delete r.css._fills; }
+  // Mask flag (converter skips or applies clip-path)
+  if (node.isMask) r.isMask = true;
   // layoutSizing metadata (converter uses with parent context)
   if (node.layoutSizingHorizontal) r.layoutSizingH = node.layoutSizingHorizontal;
   if (node.layoutSizingVertical) r.layoutSizingV = node.layoutSizingVertical;
