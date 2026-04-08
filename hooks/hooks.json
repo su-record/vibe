@@ -162,6 +162,10 @@
           {
             "type": "command",
             "command": "node {{VIBE_PATH}}/hooks/scripts/auto-commit.js"
+          },
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/devlog-gen.js"
           }
         ]
       }

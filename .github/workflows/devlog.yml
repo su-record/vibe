@@ -1,0 +1,73 @@
+name: Auto Dev Log Post
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  generate-log:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 태그 push 권한
+
+    steps:
+      - name: Checkout vibe repo
+        uses: actions/checkout@v4
+        with:
+          repository: su-record/vibe
+          fetch-depth: 0
+
+      - name: Check commit count since last log
+        id: check
+        run: |
+          LAST_LOG_TAG=$(git tag -l "log-*" | sort -V | tail -1)
+
+          if [ -z "$LAST_LOG_TAG" ]; then
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+          else
+            COMMIT_COUNT=$(git rev-list --count ${LAST_LOG_TAG}..HEAD)
+          fi
+
+          echo "커밋 개수: $COMMIT_COUNT"
+          echo "count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+
+          if [ $COMMIT_COUNT -ge 10 ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏳ 커밋 $COMMIT_COUNT개 누적 중 (10개 필요)"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js
+        if: steps.check.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        if: steps.check.outputs.should_run == 'true'
+        run: |
+          cd dev-log
+          npm install
+
+      - name: Generate log post
+        if: steps.check.outputs.should_run == 'true'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEV_LOG_TOKEN: ${{ secrets.DEV_LOG_TOKEN }}
+          DEV_LOG_REPO: su-record/stories
+        run: |
+          cd dev-log
+          node generate-log.js
+
+      - name: Create log tag
+        if: steps.check.outputs.should_run == 'true'
+        run: |
+          TAG_NAME="log-$(date +%Y%m%d-%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+          echo "✅ 태그 생성: $TAG_NAME"

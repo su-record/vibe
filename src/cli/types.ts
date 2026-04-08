@@ -76,6 +76,18 @@ export interface VibeConfig {
   };
   uiUxAnalysis?: boolean;
   installedExternalSkills?: string[];
+  devlog?: {
+    enabled: boolean;
+    targetRepo: string;
+    targetDir?: string;
+    prefix?: string;
+    interval?: number;
+    autoPush?: boolean;
+    lang?: string;
+    author?: string;
+    category?: string;
+    tags?: string[];
+  };
 }
 
 // ─── Global Config (~/.vibe/config.json) ────────────────────────────

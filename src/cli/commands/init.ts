@@ -21,6 +21,7 @@ import {
   updateCodexAgentsMd,
   updateGeminiMd,
   installGeminiHooks,
+  detectOsLanguage,
 } from '../setup.js';
 import * as p from '@clack/prompts';
 import {
@@ -277,16 +278,73 @@ export async function init(projectName?: string): Promise<void> {
     // Capability interactive selection
     if (stackDetails.capabilities.length === 0 && !process.env.CI && AVAILABLE_CAPABILITIES.length > 0) {
       const selected = await p.multiselect({
-        message: 'Select project capabilities (Space to toggle, Enter to skip/confirm):',
-        options: AVAILABLE_CAPABILITIES.map(c => ({
-          value: c.value,
-          label: c.label,
-          hint: c.hint,
-        })),
+        message: 'Select project capabilities (Space to toggle, Enter to confirm):',
+        options: [
+          { value: '__none__', label: 'None', hint: 'Skip capability selection' },
+          ...AVAILABLE_CAPABILITIES.map(c => ({
+            value: c.value,
+            label: c.label,
+            hint: c.hint,
+          })),
+        ],
         required: false,
       });
-      if (!p.isCancel(selected) && Array.isArray(selected) && selected.length > 0) {
-        stackDetails.capabilities.push(...selected as string[]);
+      if (!p.isCancel(selected) && Array.isArray(selected)) {
+        const filtered = (selected as string[]).filter(v => v !== '__none__');
+        if (filtered.length > 0) {
+          stackDetails.capabilities.push(...filtered);
+        }
+      }
+    }
+
+    // Devlog capability: collect config interactively
+    let devlogConfig: Record<string, unknown> | undefined;
+    if (stackDetails.capabilities.includes('devlog') && !process.env.CI) {
+      const targetRepo = await p.text({
+        message: 'Blog repo path (absolute):',
+        placeholder: '/path/to/blog-repo',
+        validate: (v) => {
+          if (!v) return 'Required';
+          if (!path.isAbsolute(v)) return 'Must be absolute path';
+          if (!fs.existsSync(v)) return 'Directory not found';
+          return undefined;
+        },
+      });
+      if (!p.isCancel(targetRepo)) {
+        const targetDir = await p.text({
+          message: 'Posts directory:',
+          defaultValue: 'posts',
+          placeholder: 'posts',
+        });
+        const prefix = await p.text({
+          message: 'File prefix:',
+          defaultValue: 'devlog',
+          placeholder: 'devlog',
+        });
+        const interval = await p.text({
+          message: 'Commits per devlog:',
+          defaultValue: '10',
+          placeholder: '10',
+          validate: (v) => {
+            const n = Number(v);
+            if (isNaN(n) || n < 1) return 'Must be a positive number';
+            return undefined;
+          },
+        });
+        const autoPush = await p.confirm({
+          message: 'Auto commit+push to blog repo?',
+          initialValue: false,
+        });
+
+        devlogConfig = {
+          enabled: true,
+          targetRepo: targetRepo as string,
+          targetDir: p.isCancel(targetDir) ? 'posts' : (targetDir as string || 'posts'),
+          prefix: p.isCancel(prefix) ? 'devlog' : (prefix as string || 'devlog'),
+          interval: p.isCancel(interval) ? 10 : Number(interval) || 10,
+          autoPush: p.isCancel(autoPush) ? false : autoPush,
+          lang: detectOsLanguage(),
+        };
       }
     }
 
@@ -296,7 +354,15 @@ export async function init(projectName?: string): Promise<void> {
     s2.start('Generating project config');
 
     runStep(s2, 'Creating constitution.md', () => updateConstitution(coreDir, detectedStacks, stackDetails));
-    runStep(s2, 'Creating config.json', () => updateConfig(coreDir, detectedStacks, stackDetails, false));
+    runStep(s2, 'Creating config.json', () => {
+      updateConfig(coreDir, detectedStacks, stackDetails, false);
+      if (devlogConfig) {
+        const configPath = path.join(coreDir, 'config.json');
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        config.devlog = devlogConfig;
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      }
+    });
     runStep(s2, 'Copying rules', () => updateRules(coreDir, detectedStacks, false));
     runStep(s2, 'Setting up collaborator auto-install', () => setupCollaboratorAutoInstall(projectRoot));
 

@@ -1,0 +1,13 @@
+{
+  "name": "vibe-dev-log-automation",
+  "version": "1.0.0",
+  "description": "Dev log post generator from commit history",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate-log.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "node-fetch": "^3.3.2"
+  }
+}

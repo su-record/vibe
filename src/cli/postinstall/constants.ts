@@ -73,6 +73,7 @@ export const CAPABILITY_SKILLS: Record<string, ReadonlyArray<string>> = {
   'video': ['video-production'],
   'event-automation': ['event-planning', 'event-comms', 'event-ops'],
   'pm': ['create-prd', 'prioritization-frameworks', 'user-personas'],
+  'devlog': ['devlog'],
 };
 
 /** 스택 → 외부 스킬(skills.sh) 매핑 (vibe init/update → npx skills add) */
@@ -94,6 +95,7 @@ export const AVAILABLE_CAPABILITIES: ReadonlyArray<{
   { value: 'video', label: 'Video Production', hint: 'FFmpeg, 트랜스코딩, 스트리밍 등' },
   { value: 'event-automation', label: 'Event Automation', hint: '커뮤니티 행사 자동화 (밋업, 웨비나, 컨퍼런스)' },
   { value: 'pm', label: 'Product Management', hint: 'PRD, 우선순위, 페르소나 등' },
+  { value: 'devlog', label: 'Dev Log Automation', hint: '커밋 기반 개발일지 자동 생성 + 블로그 레포 연동' },
 ];
 
 /**
