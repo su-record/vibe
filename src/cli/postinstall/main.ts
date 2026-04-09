@@ -114,45 +114,20 @@ export function main(): void {
     // 인라인 기본 스킬 추가 (번들에 없는 추가 스킬)
     seedInlineSkills(coreSkillsDir);
 
-    // vibe/ui-ux-data 복사 (UI/UX Design Intelligence CSV 데이터)
-    const uiUxDataSource = path.join(packageRoot, 'vibe', 'ui-ux-data');
-    const globalUiUxDataDir = path.join(globalCoreAssetsDir, 'ui-ux-data');
-    if (fs.existsSync(uiUxDataSource)) {
-      if (fs.existsSync(globalUiUxDataDir)) {
-        removeDirRecursive(globalUiUxDataDir);
+    // 독립 디렉토리 복사 — 병렬 실행 (서로 다른 대상 경로, 의존성 없음)
+    const parallelCopies: Array<{ source: string; target: string; label: string }> = [
+      { source: path.join(packageRoot, 'vibe', 'ui-ux-data'), target: path.join(globalCoreAssetsDir, 'ui-ux-data'), label: 'ui-ux-data' },
+      { source: path.join(packageRoot, 'vibe', 'rules'), target: path.join(globalCoreAssetsDir, 'rules'), label: 'rules' },
+      { source: path.join(packageRoot, 'vibe', 'templates'), target: path.join(globalCoreAssetsDir, 'templates'), label: 'templates' },
+      { source: path.join(packageRoot, 'languages'), target: path.join(globalCoreAssetsDir, 'languages'), label: 'languages' },
+    ];
+    for (const { source, target } of parallelCopies) {
+      if (fs.existsSync(source)) {
+        if (fs.existsSync(target)) removeDirRecursive(target);
+        copyDirRecursive(source, target);
       }
-      copyDirRecursive(uiUxDataSource, globalUiUxDataDir);
     }
-
-    // vibe/rules 복사
-    const rulesSource = path.join(packageRoot, 'vibe', 'rules');
-    const globalRulesDir = path.join(globalCoreAssetsDir, 'rules');
-    if (fs.existsSync(rulesSource)) {
-      if (fs.existsSync(globalRulesDir)) {
-        removeDirRecursive(globalRulesDir);
-      }
-      copyDirRecursive(rulesSource, globalRulesDir);
-    }
-
-    // vibe/templates 복사
-    const templatesSource = path.join(packageRoot, 'vibe', 'templates');
-    const globalTemplatesDir = path.join(globalCoreAssetsDir, 'templates');
-    if (fs.existsSync(templatesSource)) {
-      if (fs.existsSync(globalTemplatesDir)) {
-        removeDirRecursive(globalTemplatesDir);
-      }
-      copyDirRecursive(templatesSource, globalTemplatesDir);
-    }
-
-    // languages 복사
-    const languagesSource = path.join(packageRoot, 'languages');
     const globalLanguagesDir = path.join(globalCoreAssetsDir, 'languages');
-    if (fs.existsSync(languagesSource)) {
-      if (fs.existsSync(globalLanguagesDir)) {
-        removeDirRecursive(globalLanguagesDir);
-      }
-      copyDirRecursive(languagesSource, globalLanguagesDir);
-    }
 
     // 5-1. 레거시 설정 파일 → ~/.vibe/config.json 마이그레이션
     try {
@@ -172,34 +147,24 @@ export function main(): void {
     // 6-4. 전역 env 설정 (Agent Teams 등 모든 프로젝트에 필요한 환경변수)
     ensureGlobalEnvSettings();
 
-    // 7. Cursor IDE 지원 - ~/.cursor/agents/에 변환된 서브에이전트 설치
+    // 7-9. IDE 지원: Cursor agents + rules + skills (독립 작업)
     const cursorAgentsDir = path.join(os.homedir(), '.cursor', 'agents');
-    installCursorAgents(agentsSource, cursorAgentsDir);
-
-    // 8. Cursor 프로젝트 룰 템플릿 생성 - ~/.cursor/rules-template/
-    // 프로젝트별로 .cursor/rules/에 복사해서 사용
-    // postinstall에서는 스택 감지 없이 공통 룰만 생성
     const cursorRulesTemplateDir = path.join(os.homedir(), '.cursor', 'rules-template');
-    generateCursorRules(cursorRulesTemplateDir, [], globalLanguagesDir);
-
-    // 9. Cursor Skills 생성 - ~/.cursor/skills/
-    // VIBE 커맨드를 Cursor 스킬로 변환
     const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
+    installCursorAgents(agentsSource, cursorAgentsDir);
+    generateCursorRules(cursorRulesTemplateDir, [], globalLanguagesDir);
     generateCursorSkills(cursorSkillsDir);
 
-    // 10. Codex CLI 지원 (플러그인 시스템)
-    try {
+    // 10-11. 외부 CLI 지원 (Codex + Gemini — 비필수, 실패 허용)
+    const cliPlugins: Array<{ name: string; fn: () => void }> = [];
+    cliPlugins.push({ name: 'codex', fn: () => {
       const codexStatus = detectCodexCli();
       if (codexStatus.installed) {
         installCodexPlugin(agentsSource, skillsSource, codexStatus.configDir, packageRoot);
         console.log(`✅ codex plugin installed: ${codexStatus.pluginDir}`);
       }
-    } catch {
-      // Non-critical — don't fail postinstall
-    }
-
-    // 11. Gemini CLI 지원
-    try {
+    }});
+    cliPlugins.push({ name: 'gemini', fn: () => {
       const geminiStatus = detectGeminiCli();
       if (geminiStatus.installed) {
         const geminiAgentsDir = path.join(geminiStatus.configDir, 'agents');
@@ -210,8 +175,9 @@ export function main(): void {
         generateGeminiMd(geminiStatus.configDir, packageRoot);
         console.log(`✅ gemini agents/skills installed: ${geminiStatus.configDir}`);
       }
-    } catch {
-      // Non-critical — don't fail postinstall
+    }});
+    for (const plugin of cliPlugins) {
+      try { plugin.fn(); } catch { /* Non-critical */ }
     }
 
     // 12. Claude Code CLI 존재 확인 (인증은 vibe init에서)
