@@ -307,6 +307,7 @@ function generateReferences(detectedStacks: TechStack[]): VibeReferences {
   );
 
   const templates = [
+    `${globalCoreDir}/templates/plan-template.md`,
     `${globalCoreDir}/templates/spec-template.md`,
     `${globalCoreDir}/templates/feature-template.md`,
     `${globalCoreDir}/templates/constitution-template.md`,

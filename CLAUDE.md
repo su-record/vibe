@@ -106,8 +106,10 @@
 ## Workflow
 
 ```text
-/vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → Done
+(optional) /vibe.plan → /vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → Done
 ```
+
+`/vibe.plan` is the upstream planning hub — conversational requirements gathering → markdown 기획서 that feeds both `/vibe.spec` (code) and `/vibe.figma` (UI design).
 
 | Task Size | Approach |
 |-----------|----------|
@@ -163,7 +165,7 @@ When the user's context matches a pattern below, suggest the relevant skill **on
 
 ## Git Commit Rules
 
-**Must include:** `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Must include:** `.claude/vibe/plans/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/`, `.claude/vibe/config.json`, `CLAUDE.md`
 
 **Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
 
