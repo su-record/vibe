@@ -7,57 +7,50 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-> One install. 56 agents, 45 skills, multi-LLM orchestration, and automated quality gates — added to your existing AI coding workflow.
+Vibe is a quality harness for AI coding tools. It wraps around Claude Code, Codex, Cursor, or Gemini CLI and automatically enforces type safety, code quality, and security — before, during, and after code generation.
 
 ```bash
 npm install -g @su-record/vibe
 vibe init
 ```
 
-Works with **Claude Code**, **Codex**, **Cursor**, and **Gemini CLI**.
-
----
-
-## The Problem
-
-AI coding tools generate working code, but:
-
-- Types are `any`, reviews are skipped, tests are forgotten
-- You catch issues manually — after the damage is done
-- Context vanishes between sessions
-- Complex tasks spiral without structure
-
-**Vibe is a harness.** It wraps around your AI coding tool and enforces quality automatically — before, during, and after code generation.
-
 ---
 
 ## How It Works
 
 ```
-Agent = Model + Harness
+You: "Add user authentication"
+
+  /vibe.spec        → GPT + Gemini research in parallel → SPEC document
+  /vibe.run         → Implement from SPEC → 12 agents review in parallel
+  Quality gates     → Block any types, long functions, dangerous commands
+  Done              → Only reviewed, type-safe code remains
+
+Every step is automatic. You type one prompt.
 ```
 
-| | Role | What's Inside |
-|---|------|--------------|
-| **Guides** (feedforward) | Set direction *before* action | CLAUDE.md, 56 agents, 45 skills, coding rules |
-| **Sensors** (feedback) | Observe and correct *after* action | 21 hooks, quality gates, evolution engine |
+---
 
-### Workflow
+## Quick Start
 
-```mermaid
-flowchart LR
-    A["/vibe.spec"] --> B["/vibe.spec.review"]
-    B --> C["/vibe.run"]
-    C --> D["Auto Review"]
-    D --> E["Done"]
+```bash
+# 1. Install
+npm install -g @su-record/vibe
+
+# 2. Initialize your project (auto-detects stack)
+cd your-project
+vibe init
+
+# 3. Use with your AI coding tool
+claude                              # Claude Code
+# or codex, cursor, gemini — all supported
+
+# 4. Try the workflow
+/vibe.spec "add user authentication"   # Write requirements
+/vibe.run                              # Implement from SPEC
 ```
 
-1. **Define** — `/vibe.spec` writes requirements with GPT + Gemini parallel research
-2. **Review** — `/vibe.spec.review` runs triple cross-validation (Claude + GPT + Gemini)
-3. **Implement** — `/vibe.run` builds from SPEC with parallel code review
-4. **Verify** — 12 agents review in parallel, P1/P2 issues auto-fixed
-
-Add `ultrawork` to run the entire pipeline hands-free:
+Add `ultrawork` to any command for full automation:
 
 ```bash
 /vibe.run "add user authentication" ultrawork
@@ -65,112 +58,39 @@ Add `ultrawork` to run the entire pipeline hands-free:
 
 ---
 
-## Key Features
+## What It Does
 
-**Quality Gates** — Blocks `any` types, `@ts-ignore`, functions > 50 lines. Three-layer defense: sentinel guard → pre-tool guard → code check.
+**Quality gates** — Blocks `any` types, `@ts-ignore`, functions over 50 lines. Three-layer defense runs on every tool call.
 
-**56 Specialized Agents** — Exploration, implementation, architecture, 12 parallel reviewers, 8 UI/UX agents, QA coordination. Each agent is purpose-built, not a generic wrapper.
+**Specialized agents** — 56 purpose-built agents for exploration, implementation, architecture, code review (12 in parallel), and UI/UX analysis.
 
-**Multi-LLM Orchestration** — Claude for orchestration, GPT for reasoning, Gemini for research. Auto-routes based on available models. Works Claude-only by default.
+**Multi-LLM** — Claude orchestrates, GPT reasons, Gemini researches. Auto-routes by availability. Works Claude-only by default.
 
-**Session RAG** — SQLite + FTS5 hybrid search persists decisions, constraints, and goals across sessions. Context is restored automatically on session start.
+**Session memory** — Decisions, constraints, and goals persist across sessions via SQLite + FTS5 hybrid search.
 
-**24 Framework Detection** — Auto-detects your stack (Next.js, React, Django, Spring Boot, Rails, Go, Rust, and 17 more) and applies framework-specific rules. Monorepo-aware.
+**Stack detection** — Auto-detects 24 frameworks (Next.js, Django, Rails, Go, Rust, Flutter, and more) and applies framework-specific rules.
 
-**Self-Improvement** — Evolution engine analyzes hook execution patterns, detects skill gaps, and generates new rules. Circuit breaker rolls back on regression.
-
----
-
-## What's Included
-
-| Category | Count | Examples |
-|----------|-------|---------|
-| **Agents** | 56 | Explorer, Implementer, Architect (3 depth levels each), 12 review specialists, 8 UI/UX, QA coordinator |
-| **Skills** | 45 | 3-tier system (core/standard/optional) to prevent context overload |
-| **Hooks** | 21 | Session restore, destructive command blocking, auto-format, quality check, context auto-save |
-| **Frameworks** | 24 | TypeScript (12), Python (2), Java/Kotlin (2), Rails, Go, Rust, Swift, Flutter, Unity, Godot |
-| **Slash Commands** | 11 | `/vibe.spec`, `/vibe.run`, `/vibe.review`, `/vibe.trace`, `/vibe.figma`, and more |
+**Figma → Code** — Tree-based structural mapping targeting 90% design fidelity. Extracts 30+ CSS properties from Figma REST API, remaps across breakpoints, generates responsive code.
 
 ---
 
-## Multi-CLI Support
+## Supported Tools
 
-| CLI | Agents | Skills | Instructions |
-|-----|--------|--------|-------------|
-| Claude Code | `~/.claude/agents/` | `~/.claude/skills/` | `CLAUDE.md` |
-| Codex | `~/.codex/plugins/vibe/` | Plugin built-in | `AGENTS.md` |
-| Cursor | `~/.cursor/agents/` | `~/.cursor/skills/` | `.cursorrules` |
-| Gemini CLI | `~/.gemini/agents/` | `~/.gemini/skills/` | `GEMINI.md` |
-
----
-
-## Multi-LLM Routing
-
-| Provider | Role | Required |
-|----------|------|----------|
-| **Claude** | Orchestration, SPEC, review | Yes (via Claude Code) |
-| **GPT** | Reasoning, architecture, edge cases | Optional (Codex CLI or API key) |
-| **Gemini** | Research, cross-validation, UI/UX | Optional (gemini-cli or API key) |
-
-Auto-switches based on model availability. Claude-only is the default — GPT and Gemini enhance but aren't required.
-
-Codex CLI or gemini-cli are auto-detected if installed. To set API keys manually:
-
-```bash
-vibe gpt key <your-api-key>
-vibe gemini key <your-api-key>
-```
+| CLI | Status |
+|-----|--------|
+| [Claude Code](https://claude.ai/code) | Full support |
+| [Codex](https://github.com/openai/codex) | Plugin |
+| [Cursor](https://cursor.sh) | Agents + Rules |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | Agents + Skills |
 
 ---
 
-## Figma → Code
+## Documentation
 
-Design-to-code pipeline with tree-based structural mapping (not screenshot guessing).
+Full guides, skill reference, and configuration details are in the [Wiki](https://github.com/su-record/vibe/wiki).
 
-```bash
-/vibe.figma              # All URLs at once (storyboard + mobile + desktop)
-/vibe.figma --new        # New feature mode (create standalone styles)
-/vibe.figma --refine     # Refine mode (compare existing code with Figma → fix)
-```
-
-Pass storyboard, mobile, and desktop Figma URLs together. Extracts tree + node images via Figma REST API → remaps across breakpoints → generates stack-aware code (React/Vue/Svelte/SCSS/Tailwind) → visual verification loop.
-
----
-
-## CLI Reference
-
-```bash
-vibe init                      # Initialize project (detect stack, install harness)
-vibe update                    # Re-detect stacks, refresh config
-vibe upgrade                   # Upgrade to latest version
-vibe status                    # Show current status
-vibe config show               # Unified config view
-vibe stats [--week|--quality]  # Usage telemetry
-
-vibe gpt key|status            # GPT API key setup
-vibe gemini key|status         # Gemini API key setup
-vibe figma breakpoints         # Responsive breakpoints
-vibe skills add <owner/repo>   # Install skills from skills.sh
-```
-
----
-
-## Configuration
-
-| File | Purpose |
-|------|---------|
-| `~/.vibe/config.json` | Global — credentials, channels, models (0o600) |
-| `.claude/vibe/config.json` | Project — stacks, capabilities, quality settings |
-
----
-
-## Magic Keywords
-
-| Keyword | Effect |
-|---------|--------|
-| `ultrawork` | Full automation — parallel agents + auto-continue + quality loop |
-| `ralph` | Iterate until 100% complete (no scope reduction) |
-| `quick` | Fast mode, minimal verification |
+- [README (Korean)](README.ko.md)
+- [Release Notes](RELEASE_NOTES.md)
 
 ---
 
@@ -178,12 +98,7 @@ vibe skills add <owner/repo>   # Install skills from skills.sh
 
 - Node.js >= 18.0.0
 - Claude Code (required)
-- GPT, Gemini (optional — for multi-LLM features)
-
-## Documentation
-
-- [README (Korean)](README.ko.md)
-- [Release Notes](RELEASE_NOTES.md)
+- GPT, Gemini (optional)
 
 ## License
 
