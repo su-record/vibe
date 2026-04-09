@@ -12,6 +12,10 @@
  * optional: 참고/래퍼 — 명시적 호출 시에만 로드 (전역 설치에서 제외)
  */
 export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
+  'vibe.discover',
+  'vibe.plan',
+  'vibe.spec',
+  'vibe.spec.review',
   'techdebt',
   'characterization-test',
   'arch-guard',

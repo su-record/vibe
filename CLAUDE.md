@@ -106,13 +106,29 @@
 ## Workflow
 
 ```text
-/vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → Done
+/vibe.spec  →  vibe.discover (skill)  →  vibe.plan (skill)  →  vibe.spec (skill) → vibe.spec.review (skill)  →  ┬→  /vibe.run → /vibe.verify → /vibe.trace → Done
+                                                                                                                  │    (Logic Track)
+                                                                                                                  └→  /vibe.figma → FE UI 코드
+                                                                                                                       (UI Track — type ∈ {website,webapp,mobile}만)
 ```
+
+**단일 진입점**: `/vibe.spec`은 "무엇을 개발할지" 질문으로 시작해서 전체 흐름을 오케스트레이션한다. 사용자는 `/vibe.*` 커맨드 이름을 외울 필요 없음. **Smart Resume**: 기존 discovery/plan/spec 파일 존재 여부로 어느 단계부터 시작할지 자동 판단.
+
+**커맨드 `/vibe.spec` vs 스킬 `vibe.spec`**: 커맨드는 **전체 워크플로 오케스트레이터**, 스킬은 그 안의 **SPEC 작성 단계**. `/vibe.figma` 커맨드와 `vibe.figma` 스킬 관계와 동일한 패턴.
+
+**스킬 기반 workflow**:
+- `vibe.discover` — 반복 인터뷰로 요구사항 수집 (사용자 "그만"까지). 타입별 체크리스트(`skills/vibe.discover/checklists/{type}.md`).
+- `vibe.plan` — discovery → 마크다운 기획서 정제 (`.claude/vibe/plans/{feature}.md`).
+- `vibe.spec` — 기획서 → PTCF SPEC + Feature(BDD) 파일.
+- `vibe.spec.review` — GPT/Gemini Race Review + 품질 게이트.
+- 모두 자연어 트리거(만들자/개발하자/신규/아이디어)로도 자동 활성화.
+
+**UI/Logic 분기**: 기획서의 `type` 필드로 자동 판단. UI 포함 프로젝트(website/webapp/mobile)는 Logic + UI 트랙 병렬, 비-UI(api/library)는 Logic만.
 
 | Task Size | Approach |
 |-----------|----------|
 | 1-2 files | Plan Mode |
-| 3+ files | `/vibe.spec` |
+| 3+ files | `/vibe.spec` (전체 워크플로 오케스트레이션) |
 
 ## Magic Keywords
 
@@ -130,7 +146,7 @@ Skills are classified into 3 tiers to prevent context overload (Curse of Instruc
 
 | Tier | Loading | Purpose | Count |
 |------|---------|---------|-------|
-| **core** | Always active | Bug/mistake prevention safety nets | ~9 |
+| **core** | Always active | Bug/mistake prevention + workflow entry (discover/plan) | ~11 |
 | **standard** | Project setup selects | Workflow support by stack/capability | ~21 |
 | **optional** | Explicit `/skill` only | Reference/wrapper — not auto-loaded | ~4 |
 
@@ -142,7 +158,10 @@ When the user's context matches a pattern below, suggest the relevant skill **on
 
 | User Context | Suggested Skill | Tier | Signal |
 |-------------|-----------------|------|--------|
-| Writing a new SPEC / planning | `/vibe.spec` | core | "let's build", "new feature", "requirements" |
+| New project/feature idea, no plan yet | `/vibe.spec` | command | "만들자", "개발하자", "신규", "아이디어", "무엇을 만들", "let's build", "new feature" |
+| Discovery 완료, 기획서 필요 | `/vibe.spec` | command | `.claude/vibe/discovery/*.md` 존재, 기획서 없음 (Smart Resume으로 Phase 2부터) |
+| 전체 워크플로 진입 | `/vibe.spec` | command | "어디서부터 시작", "전체 워크플로", 커맨드 이름 모를 때 |
+| 기획서 → 코드 명세 | `/vibe.spec` | command | `.claude/vibe/plans/*.md` 존재, SPEC 없음 (Smart Resume으로 Phase 3부터) |
 | SPEC exists, ready to implement | `/vibe.run` | core | SPEC file present, no implementation started |
 | Implementation done, verifying | `/vibe.trace` | core | Code changes match SPEC phases |
 | Technical debt accumulating | `/techdebt` | core | Multiple `any` types, console.log, unused imports |
@@ -163,7 +182,7 @@ When the user's context matches a pattern below, suggest the relevant skill **on
 
 ## Git Commit Rules
 
-**Must include:** `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Must include:** `.claude/vibe/plans/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/`, `.claude/vibe/config.json`, `CLAUDE.md`
 
 **Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
 
