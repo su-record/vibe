@@ -355,70 +355,8 @@ P3 NICE-TO-HAVE (Enhancement) - N issues
 
 ### Phase 4.5: Agent Teams — Review Debate
 
-> **Agent Teams**: 개별 리뷰어의 발견을 팀으로 토론하여 우선순위를 검증하고 오탐을 제거합니다.
+> **팀 정의**: `agents/teams/review-debate-team.md` 참조 (Code Review 컨텍스트)
 > 설정: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
-
-**팀 구성:**
-
-| 팀원 | 역할 |
-|------|------|
-| security-reviewer (리더) | P1/P2 이슈 종합, 보안 이슈 최종 판정, 합의 주도 |
-| architecture-reviewer | 구조적 영향 평가, 숨겨진 결합도 식별 |
-| performance-reviewer | 성능 영향 평가, 부하 시나리오 검증 |
-| simplicity-reviewer | 과잉 설계 지적, 더 단순한 대안 제시 |
-
-**실행 순서:**
-
-1. `TeamCreate(team_name="review-debate-{feature}")` — 팀 + 공유 태스크 리스트 생성
-2. 4개 팀원 병렬 생성 — 각각 `Task(team_name=..., name=..., subagent_type=...)` 으로 spawn
-3. 팀원들이 공유 TaskList에서 이슈를 claim하고, SendMessage로 교차 검증
-4. 리더(security-reviewer)가 팀 합의 결과 종합 → 검증된 P1/P2 목록 출력
-5. 모든 팀원 shutdown_request → TeamDelete로 정리
-
-**팀원 spawn 패턴:**
-
-```text
-TeamCreate(team_name="review-debate-{feature}", description="Review debate for {feature}")
-
-# 4개 병렬 spawn
-Task(team_name="review-debate-{feature}", name="security-reviewer", subagent_type="security-reviewer",
-  mode="bypassPermissions",
-  prompt="리뷰 토론 팀 리더. Phase 2에서 발견된 P1/P2 이슈를 팀과 함께 검증하세요.
-  Phase 2 결과: {phase2_findings}
-  역할: 보안 이슈 최종 판정, 팀원 간 우선순위 충돌 해결, 최종 합의 요약 작성.
-  TaskList를 확인하고 이슈를 claim하세요. 각 이슈에 대해 팀원에게 SendMessage로 검증을 요청하세요.
-  모든 이슈 검증 완료 후 최종 합의 결과를 작성하세요.")
-
-Task(team_name="review-debate-{feature}", name="architecture-reviewer", subagent_type="architecture-reviewer",
-  mode="bypassPermissions",
-  prompt="리뷰 토론 팀 아키텍처 담당. Phase 2 결과: {phase2_findings}
-  역할: 각 이슈의 구조적 영향 평가, 숨겨진 결합도/의존성 식별.
-  아키텍처 관점에서 우선순위 변경이 필요하면 security-reviewer에게 SendMessage로 알리세요.
-  TaskList에서 아키텍처 관련 이슈를 claim하세요.")
-
-Task(team_name="review-debate-{feature}", name="performance-reviewer", subagent_type="performance-reviewer",
-  mode="bypassPermissions",
-  prompt="리뷰 토론 팀 성능 담당. Phase 2 결과: {phase2_findings}
-  역할: 성능 영향 평가, 부하 시 cascading failure 가능성 검증.
-  성능 관점에서 P2→P1 승격이 필요하면 security-reviewer에게 SendMessage로 알리세요.
-  TaskList에서 성능 관련 이슈를 claim하세요.")
-
-Task(team_name="review-debate-{feature}", name="simplicity-reviewer", subagent_type="simplicity-reviewer",
-  mode="bypassPermissions",
-  prompt="리뷰 토론 팀 복잡도 담당. Phase 2 결과: {phase2_findings}
-  역할: 과잉 진단(오탐) 식별, 더 단순한 수정 방안 제시.
-  오탐이나 P1→P2 강등이 필요하면 security-reviewer에게 SendMessage로 알리세요.
-  TaskList에서 복잡도/단순화 관련 이슈를 claim하세요.")
-```
-
-**팀원 간 통신 예시:**
-
-```text
-architecture-reviewer → security-reviewer: "Unbounded query는 부하 시 cascading failure 가능. P2→P1 승격 제안"
-simplicity-reviewer → security-reviewer: "CSRF on read-only endpoint는 side effect 없음. P1→P2 강등 제안"
-performance-reviewer → architecture-reviewer: "N+1 query가 현재 데이터 규모에서는 영향 없으나 확장 시 문제. 의견?"
-security-reviewer → broadcast: "최종 합의: SQL Injection P1 유지, Unbounded query P1 승격, CSRF P2 강등, Circular dep 오탐 제거"
-```
 
 **토론 결과 예시:**
 

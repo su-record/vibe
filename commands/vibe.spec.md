@@ -458,66 +458,8 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey aut
 
 #### 3.0.1 Agent Teams — Research Collaboration
 
-> **Agent Teams**: 개별 리서치 결과를 실제 팀으로 교차 검증하여 더 깊은 인사이트를 도출합니다.
+> **팀 정의**: `agents/teams/research-team.md` 참조
 > 설정: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
-
-**팀 구성:**
-
-| 팀원 | 역할 |
-|------|------|
-| best-practices (리더) | 패턴/안티패턴 종합, 충돌 해결, 최종 요약 |
-| security-advisory | 보안 관점 검증, 보안 리스크 식별 |
-| codebase-patterns | 기존 코드와의 일관성 검증 |
-| framework-docs | 최신 문서/API 변경사항 확인 |
-
-**실행 순서:**
-
-1. `TeamCreate(team_name="research-{feature}")` — 팀 + 공유 태스크 리스트 생성
-2. 4개 팀원 병렬 생성 — 각각 `Task(team_name=..., name=..., subagent_type=...)` 으로 spawn
-3. 팀원들이 공유 TaskList에서 작업을 claim하고, SendMessage로 상호 검증
-4. 리더(best-practices)가 최종 통합 요약 작성 → SPEC Context에 반영
-5. 모든 팀원 shutdown_request → TeamDelete로 정리
-
-**팀원 spawn 패턴:**
-
-```text
-TeamCreate(team_name="research-{feature}", description="Research collaboration for {feature}")
-
-# 4개 병렬 spawn
-Task(team_name="research-{feature}", name="best-practices", subagent_type="best-practices-agent",
-  prompt="리서치 팀 리더. 10개 병렬 리서치 결과를 종합하세요.
-  리서치 결과: {all_research_results}
-  역할: 패턴/안티패턴 종합, 팀원 간 충돌 해결, 최종 통합 요약 작성.
-  TaskList를 확인하고 작업을 claim하세요. 팀원에게 SendMessage로 검증을 요청하세요.
-  모든 작업 완료 후 최종 요약을 작성하세요.")
-
-Task(team_name="research-{feature}", name="security-advisory", subagent_type="security-advisory-agent",
-  prompt="리서치 팀 보안 담당. 리서치 결과: {all_research_results}
-  역할: 보안 관점에서 모든 권장사항 검증.
-  보안 리스크 발견 시 best-practices에게 SendMessage로 알리세요.
-  TaskList에서 보안 관련 작업을 claim하세요.")
-
-Task(team_name="research-{feature}", name="codebase-patterns", subagent_type="codebase-patterns-agent",
-  prompt="리서치 팀 코드베이스 담당. 리서치 결과: {all_research_results}
-  역할: 권장사항이 기존 코드 패턴과 호환되는지 검증.
-  비호환 발견 시 best-practices에게 SendMessage로 알리세요.
-  TaskList에서 호환성 관련 작업을 claim하세요.")
-
-Task(team_name="research-{feature}", name="framework-docs", subagent_type="framework-docs-agent",
-  prompt="리서치 팀 문서 담당. 리서치 결과: {all_research_results}
-  역할: 최신 API/문서와 권장사항 대조 검증.
-  폐기/변경된 API 발견 시 best-practices에게 SendMessage로 알리세요.
-  TaskList에서 문서 검증 관련 작업을 claim하세요.")
-```
-
-**팀원 간 통신 예시:**
-
-```text
-security-advisory → best-practices: "JWT 라이브러리 권장사항에 CVE-2024-xxxx 취약점. 대안 필요"
-codebase-patterns → best-practices: "기존 코드가 class 패턴인데 함수형 권장은 비호환. 점진적 마이그레이션 제안"
-framework-docs → best-practices: "React 19에서 useEffect 패턴 변경됨. 리서치 결과의 패턴은 구버전"
-best-practices → broadcast: "최종 합의: JWT는 jose 라이브러리로 교체, 함수형 전환은 신규 파일만 적용"
-```
 
 **토론 결과는 SPEC의 Context 섹션에 반영됩니다.**
 

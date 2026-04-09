@@ -382,17 +382,8 @@ Codex adversarial review는 SPEC의 **설계 결정에 도전**합니다:
 
 ## Step 3.5: Review Debate Team (Agent Teams)
 
+> **팀 정의**: `agents/teams/review-debate-team.md` 참조 (SPEC Review 컨텍스트)
 > **조건**: Agent Teams 활성화 + 3라운드 완료 후 P1/P2 이슈 2개 이상 발견 시
-> 여러 관점에서 교차 검증하여 오탐 제거 및 우선순위 조정
-
-**팀 구성:**
-
-| 팀원 | 역할 |
-|------|------|
-| security-reviewer (리더) | 보안 관점 우선순위 결정, 교차 검증 주도 |
-| architecture-reviewer | 구조적 영향 평가, 설계 일관성 확인 |
-| performance-reviewer | 성능 영향 평가, 불필요한 최적화 식별 |
-| simplicity-reviewer | 과잉 설계 여부, YAGNI 위반 식별 |
 
 **활성화 조건:**
 
@@ -401,41 +392,6 @@ Codex adversarial review는 SPEC의 **설계 결정에 도전**합니다:
 | P1/P2 이슈 2개 이상 | 자동 활성화 |
 | P1/P2 이슈 1개 이하 | 스킵 → Step 4로 진행 |
 | Agent Teams 비활성화 | 스킵 → Step 4로 진행 |
-
-**spawn 패턴:**
-
-```text
-TeamCreate(team_name="spec-debate-{feature}", description="SPEC review debate for {feature}")
-
-Task(team_name="spec-debate-{feature}", name="security-reviewer", subagent_type="security-reviewer",
-  mode="bypassPermissions",
-  prompt="SPEC 리뷰 팀 리더. GPT/Gemini가 발견한 P1/P2 이슈를 교차 검증하세요.
-  SPEC: {spec_content}
-  발견된 이슈: {p1_p2_issues}
-  역할: 각 이슈가 진짜인지(오탐 아닌지) 검증. 실제 영향도 기준으로 우선순위 조정.
-  분쟁이 있는 이슈는 해당 리뷰어에게 SendMessage로 확인 요청하세요.")
-
-Task(team_name="spec-debate-{feature}", name="architecture-reviewer", subagent_type="architecture-reviewer",
-  mode="bypassPermissions",
-  prompt="SPEC 리뷰 팀 아키텍처 전문가. 아키텍처 관련 이슈를 검증하세요.
-  SPEC: {spec_content}
-  역할: 구조적 일관성, SOLID 원칙, 레이어 경계 검증.
-  우선순위 변경 필요 시 security-reviewer에게 SendMessage로 알리세요.")
-
-Task(team_name="spec-debate-{feature}", name="performance-reviewer", subagent_type="performance-reviewer",
-  mode="bypassPermissions",
-  prompt="SPEC 리뷰 팀 성능 전문가. 성능 관련 이슈를 검증하세요.
-  SPEC: {spec_content}
-  역할: 성능 요구사항 현실성 평가, 불필요한 최적화 식별.
-  P2→P1 승격이 필요하면 security-reviewer에게 SendMessage로 알리세요.")
-
-Task(team_name="spec-debate-{feature}", name="simplicity-reviewer", subagent_type="simplicity-reviewer",
-  mode="bypassPermissions",
-  prompt="SPEC 리뷰 팀 단순성 전문가. 과잉 설계 여부를 검증하세요.
-  SPEC: {spec_content}
-  역할: YAGNI 위반, 불필요한 복잡성 식별.
-  P1→P2 강등이 필요하면 security-reviewer에게 SendMessage로 알리세요.")
-```
 
 **결과 통합:**
 - 팀 합의 결과를 SPEC에 반영 (P1 즉시 적용, P2 노트 추가)

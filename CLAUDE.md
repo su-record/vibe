@@ -86,6 +86,7 @@
 | Setup helpers | `src/cli/setup.ts`, `src/cli/setup/` |
 | Hooks scripts | `hooks/scripts/` |
 | Agent definitions | `agents/` |
+| Team definitions | `agents/teams/` |
 | Skill definitions | `skills/` |
 | Language rules | `languages/` |
 | SPEC/rule templates | `vibe/rules/`, `vibe/templates/` |
