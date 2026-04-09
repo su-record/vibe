@@ -14,6 +14,8 @@
 export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
   'vibe.discover',
   'vibe.plan',
+  'vibe.spec',
+  'vibe.spec.review',
   'techdebt',
   'characterization-test',
   'arch-guard',
