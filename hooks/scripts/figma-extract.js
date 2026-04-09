@@ -22,6 +22,8 @@ import { execFileSync } from 'child_process';
 const FIGMA_API = 'https://api.figma.com/v1';
 const MAX_RETRIES = 3;
 const INITIAL_DELAY_MS = 2000;
+const SCREENSHOT_INTERVAL_MS = 500; // rate limit 보호: screenshot 간 최소 간격
+const DOWNLOAD_CONCURRENCY = 8;     // 이미지 다운로드 최대 동시 수
 
 // ─── WebP 변환 ──────────────────────────────────────────────────────
 
@@ -70,19 +72,46 @@ function loadToken() {
 function fail(msg) { console.error(JSON.stringify({ error: msg })); process.exit(1); }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ─── HTTP ───────────────────────────────────────────────────────────
+// ─── Concurrency Helpers ────────────────────────────────────────────
 
-async function apiFetch(endpoint, token) {
+/** 병렬 다운로드 풀: 최대 N개 동시 실행 (이미지 다운로드용) */
+async function parallelPool(tasks, concurrency = DOWNLOAD_CONCURRENCY) {
+  const results = [];
+  let idx = 0;
+  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, async () => {
+    while (idx < tasks.length) {
+      const i = idx++;
+      try { results[i] = await tasks[i](); } catch (e) { results[i] = e; }
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+/** 순차 큐: screenshot API용 (rate limit 보호, 간격 보장) */
+async function sequentialQueue(tasks, intervalMs = SCREENSHOT_INTERVAL_MS) {
+  const results = [];
+  for (let i = 0; i < tasks.length; i++) {
+    if (i > 0) await sleep(intervalMs);
+    try { results.push(await tasks[i]()); } catch (e) { results.push({ error: e.message }); }
+  }
+  return results;
+}
+
+// ─── HTTP (에러 보류 & 복구) ────────────────────────────────────────
+
+async function apiFetch(endpoint, token, { silent = false } = {}) {
   let lastErr = '';
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const res = await fetch(`${FIGMA_API}${endpoint}`, { headers: { 'X-Figma-Token': token } });
       if (res.status === 429) { await sleep(INITIAL_DELAY_MS * 2 ** i); continue; }
-      if (res.status === 403) fail('403 Forbidden — check token permissions');
-      if (res.status === 404) fail('404 — check fileKey/nodeId');
+      if (res.status === 403) { if (silent) return null; fail('403 Forbidden — check token permissions'); }
+      if (res.status === 404) { if (silent) return null; fail('404 — check fileKey/nodeId'); }
       if (!res.ok) {
         lastErr = `HTTP ${res.status}`;
         if (res.status >= 500) { await sleep(INITIAL_DELAY_MS * 2 ** i); continue; }
+        if (silent) return null;
         fail(lastErr);
       }
       return await res.json();
@@ -91,6 +120,7 @@ async function apiFetch(endpoint, token) {
       if (i < MAX_RETRIES - 1) await sleep(INITIAL_DELAY_MS * 2 ** i);
     }
   }
+  if (silent) return null;
   fail(`Failed after ${MAX_RETRIES} retries: ${lastErr}`);
 }
 
@@ -329,21 +359,21 @@ async function cmdImages(token, fk, nid, outDir, depth) {
   const tree = walk(nd.document);
   const refs = collectRefs(tree);
   if (!refs.size) { console.log(JSON.stringify({ total: 0, images: {} })); return; }
-  // download
+  // download — 병렬 풀 (최대 DOWNLOAD_CONCURRENCY 동시)
   const allImg = await apiFetch(`/files/${fk}/images`, token);
   const urls = allImg.meta?.images || {};
   const imageMap = {};
-  const dl = [];
+  const dlTasks = [];
   for (const ref of refs) {
     const url = urls[ref];
     if (!url) continue;
     const outWebp = path.join(outDir, ref.slice(0,16) + '.webp');
-    dl.push(fetch(url).then(r=>r.arrayBuffer()).then(b=>{
+    dlTasks.push(() => fetch(url).then(r=>r.arrayBuffer()).then(b=>{
       const actual = writeAsWebp(Buffer.from(b), outWebp);
       if (fs.statSync(actual).size > 0) imageMap[ref] = actual;
-    }).catch(()=>{}));
+    }));
   }
-  await Promise.all(dl);
+  await parallelPool(dlTasks);
   console.log(JSON.stringify({ total: Object.keys(imageMap).length, images: imageMap }, null, 2));
 }
 
@@ -351,12 +381,19 @@ async function cmdScreenshot(token, fk, nid, outPath) {
   if (!outPath) fail('--out required');
   const dir = path.dirname(outPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  // scale=2 시도 → 400 에러 시 scale=1 폴백
+  const result = await screenshotWithRecovery(token, fk, nid, outPath);
+  if (!result) fail('Screenshot failed at all scales');
+  console.log(JSON.stringify(result));
+}
+
+/** 에러 보류 & scale 다운 복구: scale=2 → scale=1 → null */
+async function screenshotWithRecovery(token, fk, nid, outPath) {
   for (const scale of [2, 1]) {
+    const data = await apiFetch(`/images/${fk}?ids=${nid}&format=png&scale=${scale}`, token, { silent: true });
+    if (!data) continue;
+    const url = data.images?.[nid];
+    if (!url) continue;
     try {
-      const data = await apiFetch(`/images/${fk}?ids=${nid}&format=png&scale=${scale}`, token);
-      const url = data.images?.[nid];
-      if (!url) continue;
       const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
       let finalPath = outPath;
       if (outPath.endsWith('.webp')) {
@@ -365,13 +402,10 @@ async function cmdScreenshot(token, fk, nid, outPath) {
         fs.writeFileSync(outPath, buf);
       }
       const sz = fs.statSync(finalPath).size;
-      console.log(JSON.stringify({ path: finalPath, size: sz, scale }));
-      return;
-    } catch (e) {
-      if (scale === 1) fail(`Screenshot failed: ${e.message}`);
-    }
+      if (sz > 0) return { path: finalPath, size: sz, scale };
+    } catch { /* 보류 — 다음 scale로 */ }
   }
-  fail('Screenshot failed at all scales');
+  return null;
 }
 
 // ─── Render: HTML + SCSS + Images + Screenshot ─────────────────────
@@ -482,9 +516,12 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
   const imgDir = path.join(outDir, 'images');
   if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
 
-  // 1. 트리 가져오기
+  // 1. 트리 + 이미지 URL을 동시에 가져오기 (스트리밍 겹침)
   const dp = depth ? `&depth=${depth}` : '';
-  const treeData = await apiFetch(`/files/${fk}/nodes?ids=${nid}${dp}`, token);
+  const [treeData, allImg] = await Promise.all([
+    apiFetch(`/files/${fk}/nodes?ids=${nid}${dp}`, token),
+    apiFetch(`/files/${fk}/images`, token, { silent: true }),
+  ]);
   const nd = treeData.nodes?.[nid];
   if (!nd?.document) fail(`Node ${nid} not found`);
   const tree = walk(nd.document);
@@ -494,73 +531,69 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
   const imageNames = buildImageNames(tree, sectionPrefix);
   const refs = collectRefs(tree);
 
-  // 3. fill 이미지 다운로드 (이름 기반)
+  // 3. fill 이미지 다운로드 — 병렬 풀 (safe: 파일 다운로드)
   let imageMap = {};
+  const urls = allImg?.meta?.images || {};
   if (refs.size) {
-    const allImg = await apiFetch(`/files/${fk}/images`, token);
-    const urls = allImg.meta?.images || {};
-    const dl = [];
+    const dlTasks = [];
     for (const ref of refs) {
       const url = urls[ref];
       if (!url) continue;
       const fileName = imageNames[ref] || ref.slice(0, 16) + '.webp';
       const filePath = path.join(imgDir, fileName);
-      dl.push(fetch(url).then(r => r.arrayBuffer()).then(b => {
+      dlTasks.push(() => fetch(url).then(r => r.arrayBuffer()).then(b => {
         const actual = writeAsWebp(Buffer.from(b), filePath);
         const actualName = path.basename(actual);
         if (fs.statSync(actual).size > 0) imageMap[ref] = `images/${actualName}`;
-      }).catch(() => {}));
+      }));
     }
-    await Promise.all(dl);
+    // 다운로드 시작 (병렬) — BG screenshot 수집과 동시 진행
+    var downloadPromise = parallelPool(dlTasks);
   }
 
-  // 4. 복합 BG 노드 → 스크린샷으로 렌더링
+  // 4. 복합 BG 노드 → 순차 큐 (unsafe: Figma render API rate limit)
+  const bgTasks = [];
   for (const child of tree.children || []) {
     if (/^(BG|bg|배경)$/i.test(child.name) && child.children?.length > 3) {
       const bgName = `${sectionPrefix}-bg-composite.webp`;
       const bgPath = path.join(imgDir, bgName);
-      try {
-        for (const s of [2, 1]) {
-          const sData = await apiFetch(`/images/${fk}?ids=${child.nodeId}&format=png&scale=${s}`, token);
-          const sUrl = sData.images?.[child.nodeId];
-          if (!sUrl) continue;
-          const buf = Buffer.from(await (await fetch(sUrl)).arrayBuffer());
-          const actual = writeAsWebp(buf, bgPath);
-          const actualName = path.basename(actual);
-          if (fs.statSync(actual).size > 0) {
-            imageMap[`__bg_${child.nodeId}`] = `images/${actualName}`;
-            child.imageRef = `__bg_${child.nodeId}`;
-            child.children = [];
-            break;
-          }
+      bgTasks.push(async () => {
+        const result = await screenshotWithRecovery(token, fk, child.nodeId, bgPath);
+        if (result) {
+          const actualName = path.basename(result.path);
+          imageMap[`__bg_${child.nodeId}`] = `images/${actualName}`;
+          child.imageRef = `__bg_${child.nodeId}`;
+          child.children = [];
         }
-      } catch { /* BG screenshot failed, keep original structure */ }
+        return result;
+      });
     }
   }
 
-  // 5. 스크린샷
+  // 5. 섹션 스크린샷도 순차 큐에 추가
   const screenshotPath = path.join(outDir, `${sectionPrefix}-screenshot.webp`);
   let actualScreenshot = screenshotPath;
-  try {
-    for (const s of [2, 1]) {
-      const sData = await apiFetch(`/images/${fk}?ids=${nid}&format=png&scale=${s}`, token);
-      const sUrl = sData.images?.[nid];
-      if (!sUrl) continue;
-      const buf = Buffer.from(await (await fetch(sUrl)).arrayBuffer());
-      actualScreenshot = writeAsWebp(buf, screenshotPath);
-      break;
-    }
-  } catch { /* screenshot failed */ }
+  bgTasks.push(async () => {
+    const result = await screenshotWithRecovery(token, fk, nid, screenshotPath);
+    if (result) actualScreenshot = result.path;
+    return result;
+  });
 
-  // 6. HTML 생성
+  // 6. 병렬 다운로드 + 순차 스크린샷을 동시 실행 (스트리밍 겹침)
+  await Promise.all([
+    downloadPromise || Promise.resolve(),
+    sequentialQueue(bgTasks),
+  ]);
+
+  // 7. HTML 생성
   const html = toHTML(tree, '', imageMap);
   fs.writeFileSync(path.join(outDir, `${sectionPrefix}.html`), html);
 
-  // 7. SCSS 생성
+  // 8. SCSS 생성
   const scss = toSCSS(tree, '');
   fs.writeFileSync(path.join(outDir, `${sectionPrefix}.scss`), scss);
 
-  // 8. 트리 JSON 저장
+  // 9. 트리 JSON 저장
   fs.writeFileSync(path.join(outDir, `${sectionPrefix}.json`), JSON.stringify(tree, null, 2));
 
   // 출력 요약
