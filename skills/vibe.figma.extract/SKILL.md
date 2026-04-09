@@ -22,7 +22,7 @@ Figma REST API(`src/infra/lib/figma/`)를 사용하여 **구조적 코드 생성
 
 ```
 Bash:
-  node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId} --depth=10
+  node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId}
 
 반환 (FigmaNode JSON):
   {
@@ -134,6 +134,14 @@ BG 프레임 판별 기준:
   - 아이콘 (VECTOR/GROUP 크기 ≤ 64px)
   - 아이템/보상 썸네일 (name에 "item", "reward", "token", "coin")
   - 벡터 글자 GROUP (부모 아래 VECTOR 3개 이상, 각 <60px)
+  - ⛔ 디자인 텍스트 (다음 중 하나):
+    · TEXT 노드 fills 2개 이상 (그래디언트+솔리드 중첩)
+    · TEXT 노드에 effects 있음 (DROP_SHADOW, stroke)
+    · TEXT 노드 fills에 GRADIENT 타입 포함
+    · 프로젝트 웹폰트에 없는 fontFamily
+    → 반드시 렌더링 대상에 포함
+  - 장식 패널 (목재 간판, 금속 플레이트 등 텍스처 배경)
+    → BG 프레임과 동일하게 렌더링
 
 렌더링:
   node "[FIGMA_SCRIPT]" screenshot {fileKey} {node.nodeId} --out=/tmp/{feature}/content/{name}.webp
@@ -173,7 +181,27 @@ BG 프레임 판별 기준:
   | 분류 | 처리 |
   |------|------|
   | BG 프레임 | 프레임 렌더링 → bg/ |
+  | 디자인 텍스트 | 노드 렌더링 → content/ |
   | 벡터 글자 | GROUP 렌더링 → content/ |
   | 콘텐츠 | 노드 렌더링 → content/ |
+  | 장식 패널 | 프레임 렌더링 → content/ |
   | 장식 | BG 렌더링에 포함 |
+```
+
+---
+
+## 5. 추출 완료 검증 (Phase 3 진입 전 필수)
+
+```
+⛔ 하나라도 누락 → 재추출 (Phase 3 진행 금지)
+
+1. tree.json 존재 + 루트 노드 children > 0
+2. 각 섹션별 BG → bg/ 에 파일 존재
+3. 디자인 텍스트 체크:
+   tree.json 순회 → fills 2개 이상 또는 effects 있는 TEXT 노드 목록 생성
+   → 해당 노드 전부 content/ 에 렌더링 파일 존재
+4. 벡터 글자 체크:
+   GROUP 아래 VECTOR 3개 이상 → content/ 에 렌더링 파일 존재
+5. 섹션별 검증용 스크린샷 → sections/ 에 파일 존재
+6. 파일명 규칙: 모두 kebab-case (해시 파일명 없음)
 ```

@@ -36,6 +36,18 @@ component-index.json에서 매칭되는 컴포넌트가 있으면:
   Q4. 동적 데이터인가? (가격, 수량, 기간) → HTML 텍스트
   모두 NO → 이미지 렌더링 가능
 
+⛔ 디자인 텍스트 판별 (Q1 예외 — 이미지로 처리해야 하는 텍스트):
+  다음 조건 중 하나라도 충족 → 이미지 렌더링 (HTML 텍스트 금지):
+  D1. TEXT 노드의 fills가 2개 이상 (그래디언트 + 솔리드 중첩)
+  D2. TEXT 노드에 effects가 있음 (DROP_SHADOW, stroke 등)
+  D3. TEXT 노드의 fills에 GRADIENT 타입이 있음
+  D4. 부모 GROUP/FRAME 아래 VECTOR 3개 이상 (벡터 글자)
+  D5. TEXT 노드의 fontFamily가 프로젝트 웹폰트에 없음
+
+  → content/{section}-{name}.webp 로 노드 렌더링
+  → <img src="..." alt="텍스트 내용"> 으로 HTML 배치
+  → CSS text로 구현 시도 금지 (시각 품질 보장 불가)
+
 BG 프레임:
   ❌ <img> 태그 금지
   ✅ 부모 SCSS에 background-image만:
@@ -61,8 +73,11 @@ INSTANCE 반복 2+ → v-for / .map()
 ## 3. CSS 속성 직접 매핑
 
 ```
-tree.json의 css 객체를 SCSS로 직접 변환. 추정하지 않는다.
-CSS 매핑표는 → vibe.figma.extract 참조.
+⛔ 불변 규칙: tree.json에 없는 CSS 속성을 만들지 않는다.
+⛔ 커스텀 함수/믹스인 생성 금지: wp-fluid(), wp-bg-layer 등 자체 추상화 금지.
+⛔ aspect-ratio, container query 등 tree.json에 없는 CSS 속성 사용 금지.
+✅ tree.json의 css 객체 → SCSS에 1:1 직접 매핑만 허용.
+✅ 유일한 변환: px → vw (공식대로 기계적으로).
 
 레이아웃 (layout/ 파일):
   display, flex-direction, justify-content, align-items, gap,
@@ -76,14 +91,26 @@ CSS 매핑표는 → vibe.figma.extract 참조.
   opacity, mix-blend-mode, filter, backdrop-filter
 
 값이 없으면 → 해당 속성 생략 (추정 금지)
+
+❌ 금지 패턴:
+  aspect-ratio: 720 / 1280;          → ❌ (tree.json엔 width+height)
+  @function wp-fluid(...) { ... }    → ❌ (자체 함수)
+  @include wp-bg-layer;              → ❌ (자체 믹스인)
+  clamp(12px, 2.5vw, 18px);          → ❌ (tree.json에 없는 값 추정)
+
+✅ 올바른 패턴:
+  width: 100vw; height: 177.78vw;    → ✅ (720px/720×100, 1280px/720×100)
+  background-image: url('hero-bg.webp'); background-size: cover;  → ✅
+  font-size: 5.56vw;                 → ✅ (40px/720×100)
 ```
 
 ### 반응형 단위 변환
 
 ```
-vw 변환:
+vw 변환 (기계적 공식만 사용):
   width, height, padding, gap, border-radius, box-shadow, top, left, border-width
   vw값 = (Figma px / designWidth) × 100
+  ⛔ clamp, min(), max() 등은 font-size에만 허용
 
 폰트 → clamp(최소, vw, 최대):
   | 역할 | 최소 | 판단 기준 |
@@ -93,6 +120,7 @@ vw 변환:
   | 본문 | 12px | 긴 텍스트 |
   | 캡션 | 10px | 작은 fontSize |
   | 버튼 | 12px | name에 "btn" |
+  최대값 = Figma 원본 px 그대로
 
 변환하지 않는 속성:
   color, opacity, font-weight, font-family, z-index, text-align,
@@ -182,7 +210,15 @@ diff 처리:
 ## 7. 자가 검증
 
 ```
+⛔ 하나라도 실패 → 해당 섹션 코드 재작성 (다음 섹션 진행 금지)
+
 1. 클래스명: template 모든 class가 SCSS에 정의 → OK
 2. 이미지 경로: src가 실제 파일 존재 → OK
 3. 트리 매핑: Auto Layout 노드 → SCSS에 flex 있음 → OK
+4. ⛔ 추상화 금지: SCSS에 @function, @mixin 자체 정의가 없음 → OK
+   (프로젝트 기존 토큰 @use는 허용, 새 함수/믹스인 생성은 금지)
+5. ⛔ 속성 매핑: SCSS의 모든 속성이 tree.json css 객체에 근거 → OK
+   (aspect-ratio, container, custom property 등 tree.json에 없는 속성 → FAIL)
+6. ⛔ 이미지 파일명: kebab-case 네이밍 → OK
+   (해시 파일명 68ad470b.webp 등 → FAIL)
 ```

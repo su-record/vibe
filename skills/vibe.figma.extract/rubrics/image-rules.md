@@ -82,17 +82,29 @@ BG 프레임 = 다음 중 하나:
    - 웹폰트 없는 장식 타이틀 ("MISSION 01" 등)
    - VECTOR 타입으로 분해된 글자 → GROUP 렌더링
 
-2. 합성 배경 (BG 프레임):
+2. ⛔ 디자인 텍스트 (NEW — 그래디언트/스트로크/다중 효과 텍스트):
+   - TEXT 노드의 fills 2개 이상 (그래디언트+솔리드 중첩)
+   - TEXT 노드에 effects 있음 (DROP_SHADOW, stroke)
+   - TEXT 노드의 fills에 GRADIENT 타입 포함
+   - → 해당 TEXT 노드(또는 감싸는 GROUP)를 통째 렌더링
+   - → content/{section}-title.webp 등으로 저장
+   - ❌ CSS text-shadow/gradient로 근사치 구현 금지
+
+3. 합성 배경 (BG 프레임):
    - 눈, 나무, 파티클 등 장식 레이어 합성물
    - 텍스트 미포함 확인 필수
 
-3. 래스터 이미지 에셋:
+4. 래스터 이미지 에셋:
    - 게임 아이템 썸네일, 코인 아이콘 등
    - imageRef가 있는 개별 RECTANGLE/노드
 
-4. 복잡한 벡터 그래픽:
+5. 복잡한 벡터 그래픽:
    - CSS로 재현 불가능한 일러스트/아이콘
    - VECTOR/GROUP 조합의 복잡한 그래픽
+
+6. 장식 패널 배경 (목재 간판, 금속 플레이트 등):
+   - CSS로 재현 불가능한 텍스처/질감 배경
+   - → BG 프레임과 동일하게 렌더링 → background-image로 적용
 ```
 
 ## Format

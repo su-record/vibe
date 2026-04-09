@@ -84,7 +84,7 @@ URL 분류 (자동):
   ROOT name에 "MO" → 모바일, "PC" → 데스크탑
 
 스토리보드 분석:
-  depth=2로 프레임 수집 → name 패턴으로 분류
+  depth=3으로 프레임 수집 → name 패턴으로 분류
   SPEC(기능정의서) → CONFIG(해상도) → PAGE(메인 섹션) → SHARED(공통)
   PDF/이미지도 동일 구조 추출
 
@@ -120,25 +120,63 @@ MO/PC 동시 추출 (각각 독립 워커):
 
 ---
 
-## Phase 3: 리매핑 ← Synthesis (순차, 리더 필수)
+## Phase 3: 데이터 정제 ← Synthesis (BP별 독립)
 
-**MO + PC 있을 때만 실행. 단일 BP면 스킵.**
-**코디네이터 패턴: 리더가 직접 MO↔PC 매칭. 워커 위임 금지.**
-**리더가 두 tree를 모두 이해한 상태에서 diff를 추출해야 품질 보장.**
+**각 BP의 tree.json을 섹션별로 분할 + 정제한다.**
+**MO↔PC 매칭(반응형)은 이 단계에서 하지 않는다.**
 
-### MO↔PC 반응형 매칭
+### 핵심 원칙
 
 ```
-1. 섹션 매칭: 1depth name 기준 (완전일치 → prefix → 순서)
-2. 노드 매칭: 재귀적 name 매칭 → CSS diff 추출
-3. diff: 같은 값 유지, 다른 값만 @media 오버라이드
+⛔ BP별 독립 정제. MO와 PC를 섞지 않는다.
+⛔ 정제된 JSON은 Phase 4의 유일한 입력이다.
+⛔ 섹션별 전체 하위 트리(children 재귀)를 반드시 포함해야 한다.
+```
 
-출력 → /tmp/{feature}/remapped.json:
-  sections:
-    - name: Hero
-      mo: { nodeId, css, children }
-      pcDiff: { css: { 차이만 }, children }
-      images: { mo: 'bg/hero-bg.webp', pc: 'bg/hero-bg-pc.webp' }
+### 출력
+
+```
+/tmp/{feature}/
+  mo-main/
+    sections.json    ← MO 정제 결과
+  pc-main/
+    sections.json    ← PC 정제 결과
+
+sections.json 구조:
+  {
+    meta: { feature, designWidth, bp(해당 BP) },
+    sections: [
+      {
+        name: "Hero",
+        nodeId, name, type, size, css,
+        text,          // TEXT 노드만
+        imageRef,      // 이미지 fill
+        fills,         // 다중 fill (2개 이상)
+        layoutSizingH, // HUG/FILL/FIXED
+        layoutSizingV,
+        children: [    // ⛔ 전체 하위 트리 재귀 — 잎 노드까지
+          { nodeId, name, type, size, css, children: [...] }
+        ],
+        images: {
+          bg: "bg/hero-bg.webp",
+          content: ["content/hero-title.webp"]
+        }
+      }
+    ]
+  }
+```
+
+### 노드 정제 규칙
+
+```
+tree.json → sections.json 변환 시 정제:
+  1. 크기 0px 노드 → 제거
+  2. VECTOR 장식선 (w/h ≤ 2px) → 제거
+  3. isMask 노드 → 제거
+  4. BG 프레임 → children에서 분리, images.bg로 이동
+  5. 벡터 글자 GROUP → children에서 분리, images.content에 추가
+  6. 디자인 텍스트 (fills 다중/gradient, effects 있는 TEXT) → images.content에 추가
+  7. 나머지 노드 → children에 유지 (CSS 포함, 재귀)
 ```
 
 ### 멀티 프레임 (같은 BP, 다른 페이지)
@@ -150,20 +188,43 @@ MO/PC 동시 추출 (각각 독립 워커):
 
 ---
 
-## Phase 4: 순차 코드 생성 ← Implement (영역별)
+## Phase 4: BP별 스태틱 구현 ← Implement (BP별 순차)
 
 **→ vibe.figma.convert 스킬의 규칙을 따른다.**
-**코디네이터 패턴: 섹션 = 영역. 한 영역에 한 워커만. 충돌 방지.**
+**⛔ MO 먼저 전체 구현 → 검증 통과 → PC 구현. 반응형 변환은 하지 않는다.**
+**⛔ CSS 값은 Figma 원본 px 그대로. vw 변환, clamp, @media 금지.**
 
 ```
-⛔ 병렬 금지. 한 섹션씩 순차:
-  1. tree.json에서 섹션 노드 Read
-  2. 이미지 vs HTML 판별 테이블 작성 (BLOCKING)
-  3. 기계적 매핑 + Claude 시맨틱 보강
-  4. 브라우저 확인 → OK → 다음 섹션
+Phase 4A: MO 스태틱 구현
+  입력: /tmp/{feature}/mo-main/sections.json
+  ⛔ 병렬 금지. 한 섹션씩 순차:
+    1. sections.json에서 해당 섹션 Read
+    2. 이미지 vs HTML 판별 테이블 작성 (BLOCKING)
+    3. figma-to-scss.js → SCSS 골격 자동 생성 (px 그대로)
+    4. Claude: HTML 구조 + 시맨틱 태그 + 레이아웃 + 인터랙션
+    5. figma-validate.js → SCSS vs sections.json 대조
+       ├─ PASS → 다음 섹션
+       └─ FAIL → 불일치 수정 → 5번 재실행 (P1=0 까지, 횟수 제한 없음)
+  → Phase 5 (MO 컴파일) → Phase 6 (MO 시각 검증)
+
+Phase 4B: PC 스태틱 구현
+  입력: /tmp/{feature}/pc-main/sections.json
+  MO와 동일한 프로세스
+  → Phase 5 (PC 컴파일) → Phase 6 (PC 시각 검증)
+
+Phase 4C: 반응형 통합 (MO+PC 모두 검증 통과 후)
+  → 별도 플로우로 수립 (TODO)
+
+Claude의 역할 (제한적):
+  ✅ 이미지 분류: BG / 콘텐츠 / 장식 / 벡터 글자
+  ✅ HTML 시맨틱: section/h1/p/button 태그 선택
+  ✅ 컴포넌트 분리: v-for 반복, 공유 컴포넌트
+  ✅ 인터랙션: @click, 상태 변수, 조건부 렌더링
+  ❌ SCSS CSS 값 수정 금지 (figma-to-scss.js 출력 그대로 사용)
+  ❌ vw 변환, clamp, @media, 커스텀 함수/믹스인 생성 금지
 
 SCSS Setup (첫 섹션 전):
-  index.scss, _tokens.scss, _mixins.scss, _base.scss
+  index.scss, _tokens.scss, _base.scss
   토큰 매핑: project-tokens.json에서 기존 토큰 참조 → 매칭 안 되면 새 생성
 
 컴포넌트 매칭 (각 섹션 전):
@@ -191,12 +252,17 @@ SCSS Setup (첫 섹션 전):
 에러 시: 파싱 → 자동 수정 → 재체크
 3라운드 실패: 에러 목록을 사용자에게 보고 (Phase 6 진행 불가)
 완료 시: dev 서버 PID 보존 → Phase 6에서 사용
+
+⛔ Phase 5 통과 후 반드시 Phase 6 진입. "완료 요약" 출력 금지.
+⛔ Phase 6 없이 작업 완료 선언 금지.
 ```
 
 ---
 
-## Phase 6: 시각 검증 루프 ← Verify (병렬)
+## Phase 6: 시각 검증 루프 ← Verify (병렬) ⛔ MANDATORY
 
+**⛔ Phase 6은 선택이 아닌 필수. Phase 5 통과 즉시 자동 진입.**
+**⛔ Phase 6 미실행 시 전체 작업은 "미완료" 상태.**
 **코디네이터 패턴: 독립 섹션별 검증을 워커로 병렬 실행 가능.**
 
 ```
@@ -212,4 +278,6 @@ SCSS Setup (첫 섹션 전):
 
 반응형: MO 검증 후 viewport 변경 → PC 스크린샷과 동일 루프
 종료: 브라우저 + dev 서버 정리
+
+⛔ Phase 6 완료 후에만 "완료 요약" 출력 허용.
 ```

@@ -89,6 +89,12 @@ box-shadow, opacity, mix-blend-mode, filter, backdrop-filter
 
 스토리보드 CONFIG에서 designWidth, minWidth 확보.
 
+⛔ **커스텀 함수 생성 금지:**
+  ❌ @function wp-fluid(...) { ... }
+  ❌ @mixin wp-bg-layer { ... }
+  ❌ 자체 추상화 (aspect-ratio, clamp 남용)
+  ✅ vw 변환은 인라인 계산값을 직접 기입
+
 **UI 요소 → vw 비례:**
   vw값 = (Figma px / designWidth) × 100
   적용: width, height, padding, gap, margin, border-radius,
@@ -120,9 +126,15 @@ BEM 패턴: `.sectionName__childName`
 
 ## 자가 검증 (코드 작성 후)
 
+⛔ 하나라도 실패 → 코드 재작성 (다음 섹션 진행 금지)
+
 - [ ] ⛔ BG 프레임이 <img> 태그로 처리되지 않았는가? (CSS background-image만 허용)
 - [ ] ⛔ TEXT 자식이 있는 프레임이 통째 이미지로 처리되지 않았는가?
 - [ ] ⛔ INSTANCE 반복 패턴(카드/아이템)이 이미지 1장으로 처리되지 않았는가?
+- [ ] ⛔ SCSS에 @function 또는 @mixin 자체 정의가 없는가? (기존 토큰 @use만 허용)
+- [ ] ⛔ aspect-ratio 등 tree.json에 없는 CSS 속성이 없는가?
+- [ ] ⛔ 이미지 파일명이 kebab-case인가? (해시 파일명 금지)
+- [ ] ⛔ 디자인 텍스트(그래디언트/스트로크 효과)가 이미지로 처리되었는가?
 - [ ] template 클래스 ↔ SCSS 클래스 1:1 일치
 - [ ] 모든 img src가 static/에 실제 존재
 - [ ] Auto Layout 노드 → SCSS에 flex 속성 존재
