@@ -106,15 +106,25 @@
 ## Workflow
 
 ```text
-(optional) /vibe.plan → /vibe.spec → /new → /vibe.spec.review → /vibe.run → /vibe.trace → (auto) code review → Done
+/vibe.go  →  vibe.discover (skill)  →  vibe.plan (skill)  →  ┬→  /vibe.spec → /vibe.run → /vibe.verify → /vibe.trace → Done
+                                                              │    (Logic Track)
+                                                              └→  /vibe.figma → FE UI 코드
+                                                                   (UI Track — type ∈ {website,webapp,mobile}만)
 ```
 
-`/vibe.plan` is the upstream planning hub — conversational requirements gathering → markdown 기획서 that feeds both `/vibe.spec` (code) and `/vibe.figma` (UI design).
+**단일 진입점**: `/vibe.go`는 "무엇을 개발할지" 질문으로 시작해서 전체 흐름을 오케스트레이션한다. 사용자는 `/vibe.*` 커맨드 이름을 외울 필요 없음.
+
+**스킬 기반 workflow**:
+- `vibe.discover` — 반복 인터뷰로 요구사항 수집 (사용자 "그만"까지). 타입별 체크리스트(`skills/vibe.discover/checklists/{type}.md`).
+- `vibe.plan` — discovery → 마크다운 기획서 정제 (`.claude/vibe/plans/{feature}.md`).
+- 두 스킬 모두 자연어 트리거(만들자/개발하자/신규/아이디어)로도 자동 활성화.
+
+**UI/Logic 분기**: 기획서의 `type` 필드로 자동 판단. UI 포함 프로젝트(website/webapp/mobile)는 Logic + UI 트랙 병렬, 비-UI(api/library)는 Logic만.
 
 | Task Size | Approach |
 |-----------|----------|
 | 1-2 files | Plan Mode |
-| 3+ files | `/vibe.spec` |
+| 3+ files | `/vibe.go` (전체 워크플로) or `/vibe.spec` (기존 방식) |
 
 ## Magic Keywords
 
@@ -132,7 +142,7 @@ Skills are classified into 3 tiers to prevent context overload (Curse of Instruc
 
 | Tier | Loading | Purpose | Count |
 |------|---------|---------|-------|
-| **core** | Always active | Bug/mistake prevention safety nets | ~9 |
+| **core** | Always active | Bug/mistake prevention + workflow entry (discover/plan) | ~11 |
 | **standard** | Project setup selects | Workflow support by stack/capability | ~21 |
 | **optional** | Explicit `/skill` only | Reference/wrapper — not auto-loaded | ~4 |
 
@@ -144,7 +154,10 @@ When the user's context matches a pattern below, suggest the relevant skill **on
 
 | User Context | Suggested Skill | Tier | Signal |
 |-------------|-----------------|------|--------|
-| Writing a new SPEC / planning | `/vibe.spec` | core | "let's build", "new feature", "requirements" |
+| New project/feature idea, no plan yet | `vibe.discover` | core | "만들자", "개발하자", "신규", "아이디어", "무엇을 만들", "let's build", "new feature" |
+| Discovery 완료, 기획서 필요 | `vibe.plan` | core | `.claude/vibe/discovery/*.md` 존재, 기획서 없음 |
+| 전체 워크플로 진입 | `/vibe.go` | command | "어디서부터 시작", "전체 워크플로", 커맨드 이름 모를 때 |
+| 기획서 → 코드 명세 | `/vibe.spec` | core | `.claude/vibe/plans/*.md` 존재, SPEC 없음 |
 | SPEC exists, ready to implement | `/vibe.run` | core | SPEC file present, no implementation started |
 | Implementation done, verifying | `/vibe.trace` | core | Code changes match SPEC phases |
 | Technical debt accumulating | `/techdebt` | core | Multiple `any` types, console.log, unused imports |
