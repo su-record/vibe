@@ -1,30 +1,30 @@
 ---
 name: vibe.plan
 tier: core
-description: "Refine a vibe.discover interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after vibe.discover completes, or when the user has raw discovery notes and wants a structured plan document."
-triggers: [기획서, 기획서 작성, plan document, 기획 정리, "discovery 정리", refine plan]
+description: "Refine a vibe.interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after vibe.interview completes, or when the user has raw interview notes and wants a structured plan document."
+triggers: [기획서, 기획서 작성, plan document, 기획 정리, "interview 정리", refine plan]
 priority: 90
 chain-next: [vibe.spec, vibe.figma]
 ---
 
-# vibe.plan — Discovery → 기획서 정제
+# vibe.plan — Interview → 기획서 정제
 
-> **Principle**: discovery의 raw 문답을 **사람이 읽는 비전 문서**로 정제한다. PTCF/EARS/Phase 같은 AI 실행 구조는 `/vibe.spec`의 역할이다.
+> **Principle**: interview의 raw 문답을 **사람이 읽는 비전 문서**로 정제한다. PTCF/EARS/Phase 같은 AI 실행 구조는 `/vibe.spec`의 역할이다.
 
 ## When to Use
 
-- `vibe.discover`가 방금 완료되어 `.claude/vibe/discovery/{feature}.md`가 존재
-- 사용자가 "기획서 써줘", "discovery 정리해줘"라고 요청
+- `vibe.interview`가 방금 완료되어 `.claude/vibe/interviews/{feature}.md`가 존재
+- 사용자가 "기획서 써줘", "interview 정리해줘"라고 요청
 - 외부 PRD/와이어프레임을 기반으로 vibe 기획서 포맷으로 변환 필요
 
 **건너뛰기**:
-- discovery 없이 이 스킬을 직접 호출하면 → `vibe.discover` 먼저 체인 (chain-prev 없음, 사용자에게 안내)
+- interview 없이 이 스킬을 직접 호출하면 → `vibe.interview` 먼저 체인 (chain-prev 없음, 사용자에게 안내)
 
 ## Core Flow
 
 ```
-1. discovery 파일 읽기
-   .claude/vibe/discovery/{feature}.md
+1. interview 파일 읽기
+   .claude/vibe/interviews/{feature}.md
      ↓
 2. 템플릿 로드
    ~/.claude/vibe/templates/plan-template.md
@@ -46,10 +46,10 @@ chain-next: [vibe.spec, vibe.figma]
    다음 단계: /vibe.spec, /vibe.figma, 병렬
 ```
 
-## Step 1: Discovery 파일 읽기
+## Step 1: Interview 파일 읽기
 
 ```
-Read .claude/vibe/discovery/{feature-name}.md
+Read .claude/vibe/interviews/{feature-name}.md
 ```
 
 프런트매터에서 `type`, `status`, `requiredCollected`, `optionalCollected` 등을 추출.
@@ -57,11 +57,11 @@ Read .claude/vibe/discovery/{feature-name}.md
 **검증**:
 - `status: partial` + Required 미완료 → 사용자에게 경고:
   ```
-  ⚠️ Discovery가 부분 완료입니다 (Required N개 미수집).
+  ⚠️ Interview가 부분 완료입니다 (Required N개 미수집).
   기획서에는 해당 항목이 "TBD"로 표시됩니다.
   계속할까요? (y/N)
   ```
-- 파일이 없으면 → `vibe.discover` 먼저 실행하도록 안내.
+- 파일이 없으면 → `vibe.interview` 먼저 실행하도록 안내.
 
 ## Step 2: 템플릿 로드
 
@@ -88,11 +88,11 @@ Read ~/.claude/vibe/templates/plan-template.md
 
 ## Step 3: 섹션별 정제 매핑
 
-Discovery 항목 → 기획서 섹션 매핑 규칙:
+Interview 항목 → 기획서 섹션 매핑 규칙:
 
 ### 공통 매핑
 
-| Discovery 항목 | 기획서 섹션 |
+| Interview 항목 | 기획서 섹션 |
 |--------------|----------|
 | `R1. purpose` | §2 배경 (Why) |
 | `R2. target-users` | §3 타깃 사용자 |
@@ -103,7 +103,7 @@ Discovery 항목 → 기획서 섹션 매핑 규칙:
 
 ### UI 타입 (website/webapp/mobile) 추가 매핑
 
-| Discovery 항목 | 기획서 섹션 |
+| Interview 항목 | 기획서 섹션 |
 |--------------|----------|
 | `R5. brand-tone` + `O1. reference-sites` + `O2. color-direction` + `O3. typography-preference` + `O4. animation-level` | §7 Look & Feel |
 | `R4. required-sections` (website) / `R4. core-features` (webapp) | §8 레이아웃/섹션 구성 |
@@ -111,14 +111,14 @@ Discovery 항목 → 기획서 섹션 매핑 규칙:
 
 ### 공통 Post-처리
 
-- `discovery.TBD[]` → §11 "가정 & 리스크" 또는 문서 끝 "Open Questions"
-- `discovery.discovered[]` → 관련 섹션에 통합 + "Discovered during interview" 주석
+- `interview.TBD[]` → §11 "가정 & 리스크" 또는 문서 끝 "Open Questions"
+- `interview.discovered[]` → 관련 섹션에 통합 + "Discovered during interview" 주석
 - 모든 Optional 미수집 항목 → §11 "가정"에 기본값으로 기록 (예: "접근성: WCAG AA 가정")
 
 ## Step 4: UI 섹션 조건부 포함
 
 ```python
-if discovery.type in {"website", "webapp", "mobile"}:
+if interview.type in {"website", "webapp", "mobile"}:
     include_sections = [1..12]  # 전체
 else:  # api, library, feature-data
     include_sections = [1..6, 10..12]  # §7-9 (Look&Feel/레이아웃/반응형) 생략
@@ -138,7 +138,7 @@ type: {website | webapp | mobile | api | library | feature}
 status: draft
 createdAt: {ISO-timestamp}
 lastUpdated: {ISO-timestamp}
-source: .claude/vibe/discovery/{feature-name}.md
+source: .claude/vibe/interviews/{feature-name}.md
 downstream: [spec, figma]  # or [spec] for non-UI
 ---
 ```
@@ -191,11 +191,11 @@ Type: {type}
 - ❌ 파일 목록, Phase 분할, Acceptance Criteria 포함
 - ❌ Tech Stack을 과하게 상세히 — 상위 수준만
 - ❌ TBD를 숨기기 — 명시적으로 드러내야 다음 단계에서 결정
-- ❌ Discovery 없이 이 스킬만 실행 (raw 정보 부재)
+- ❌ Interview 없이 이 스킬만 실행 (raw 정보 부재)
 - ❌ 비-UI 프로젝트에 Look&Feel 섹션을 억지로 채우기
 
 ## Related
 
-- **Prev**: `vibe.discover` — 요구사항 수집 (chain-prev 암묵)
+- **Prev**: `vibe.interview` — 요구사항 수집 (chain-prev 암묵)
 - **Next**: `/vibe.spec` (코드 명세), `/vibe.figma` (UI 디자인)
 - **Template**: `~/.claude/vibe/templates/plan-template.md`

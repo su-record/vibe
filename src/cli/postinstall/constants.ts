@@ -12,7 +12,7 @@
  * optional: 참고/래퍼 — 명시적 호출 시에만 로드 (전역 설치에서 제외)
  */
 export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
-  'vibe.discover',
+  'vibe.interview',
   'vibe.plan',
   'vibe.spec',
   'vibe.spec.review',
@@ -248,7 +248,7 @@ export const LEGACY_RULE_FILES = [
   'react-patterns.mdc', 'typescript-standards.mdc', 'python-standards.mdc'
 ];
 
-/** 이전 네이밍(vibe-*)에서 vibe.* 으로 변경된 스킬 — postinstall 시 구 디렉토리 삭제 */
+/** 이전 네이밍에서 변경된 스킬 — postinstall 시 구 디렉토리 삭제 */
 export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
   'vibe-docs',
   'vibe-figma',
@@ -261,6 +261,7 @@ export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
   'vibe-figma-pipeline',
   'vibe-figma-rules',
   'vibe-figma-style',
+  'vibe.discover',
 ];
 
 // ─── Claude Code 네이티브 서브에이전트 매핑 ───
