@@ -65,6 +65,8 @@ const ORDERED_LEVELS: ThresholdLevel[] = [
 // TokenBudgetTracker
 // ============================================================================
 
+export type ThresholdCallback = (level: ThresholdLevel, snapshot: BudgetSnapshot) => void | Promise<void>;
+
 export class TokenBudgetTracker {
   private static instances: Map<string, TokenBudgetTracker> = new Map();
   private static defaultInstance: TokenBudgetTracker | null = null;
@@ -74,6 +76,9 @@ export class TokenBudgetTracker {
   private bySource: Record<TokenSource, number>;
   private crossings: ThresholdCrossing[];
   private lastLevel: ThresholdLevel;
+  private thresholdCallbacks: Map<ThresholdLevel, ThresholdCallback[]>;
+  private circuitBreakerFailures: number;
+  private static readonly MAX_CIRCUIT_FAILURES = 3;
 
   private constructor(totalBudget: number) {
     this.totalBudget = totalBudget;
@@ -81,6 +86,8 @@ export class TokenBudgetTracker {
     this.bySource = this.createEmptySourceMap();
     this.crossings = [];
     this.lastLevel = 'none';
+    this.thresholdCallbacks = new Map();
+    this.circuitBreakerFailures = 0;
   }
 
   static getInstance(
@@ -110,9 +117,48 @@ export class TokenBudgetTracker {
         crossedAt: this.consumed,
         timestamp: new Date().toISOString(),
       });
+      // 자동 콜백 실행 (회로 차단기 적용)
+      this.fireCallbacks(newLevel);
     }
     this.lastLevel = newLevel;
     return newLevel;
+  }
+
+  /**
+   * 특정 threshold 도달 시 자동 실행할 콜백 등록.
+   * 예: medium(75%) → 자동 압축, hard(85%) → 경고, critical(95%) → 중단
+   */
+  onThreshold(level: ThresholdLevel, callback: ThresholdCallback): void {
+    const cbs = this.thresholdCallbacks.get(level) || [];
+    cbs.push(callback);
+    this.thresholdCallbacks.set(level, cbs);
+  }
+
+  /** 회로 차단기: 연속 실패 시 콜백 실행 중단 */
+  isCircuitOpen(): boolean {
+    return this.circuitBreakerFailures >= TokenBudgetTracker.MAX_CIRCUIT_FAILURES;
+  }
+
+  resetCircuitBreaker(): void {
+    this.circuitBreakerFailures = 0;
+  }
+
+  private fireCallbacks(level: ThresholdLevel): void {
+    if (this.isCircuitOpen()) return;
+    const callbacks = this.thresholdCallbacks.get(level);
+    if (!callbacks?.length) return;
+    const snapshot = this.getSnapshot();
+    for (const cb of callbacks) {
+      try {
+        const result = cb(level, snapshot);
+        if (result instanceof Promise) {
+          result.catch(() => { this.circuitBreakerFailures++; });
+        }
+        this.circuitBreakerFailures = 0; // 성공 시 리셋
+      } catch {
+        this.circuitBreakerFailures++;
+      }
+    }
   }
 
   syncToPercent(percent: number): void {
@@ -180,6 +226,7 @@ export class TokenBudgetTracker {
     this.bySource = this.createEmptySourceMap();
     this.crossings = [];
     this.lastLevel = 'none';
+    this.circuitBreakerFailures = 0;
   }
 
   static resetInstance(): void {

@@ -99,19 +99,20 @@ URL 분류 (자동):
 
 ---
 
-## Phase 2: 재료 확보
+## Phase 2: 재료 확보 ← Research (병렬)
 
 **→ vibe.figma.extract 스킬의 규칙을 따른다.**
+**코디네이터 패턴: MO/PC 추출을 워커로 병렬 실행.**
 
 ```
 # [FIGMA_SCRIPT] = ~/.vibe/hooks/scripts/figma-extract.js
 
-각 BP(MO, PC)에 대해:
-  1. 전체 스크린샷: screenshot → full-screenshot.webp
-  2. 트리 + CSS: tree --depth=10 → tree.json
-  3. 이미지 다운로드: images → images/
-  4. 에셋 렌더링: 아이콘/썸네일 노드 개별 렌더링 (TEXT 자식 검증 BLOCKING)
-  5. 섹션 스크린샷: 1depth 자식 각각 → sections/
+MO/PC 동시 추출 (각각 독립 워커):
+  워커-MO: screenshot → tree → images → 에셋 렌더링 → sections/
+  워커-PC: screenshot → tree → images → 에셋 렌더링 → sections/
+  → 두 워커의 결과가 모두 도달한 후 Phase 3 진행
+
+단일 BP: 워커 1개로 순차 실행
 
 멀티 프레임 (같은 BP, 다른 페이지):
   순차 추출 (500ms 간격), 부분 실패 허용
@@ -119,9 +120,11 @@ URL 분류 (자동):
 
 ---
 
-## Phase 3: 리매핑
+## Phase 3: 리매핑 ← Synthesis (순차, 리더 필수)
 
 **MO + PC 있을 때만 실행. 단일 BP면 스킵.**
+**코디네이터 패턴: 리더가 직접 MO↔PC 매칭. 워커 위임 금지.**
+**리더가 두 tree를 모두 이해한 상태에서 diff를 추출해야 품질 보장.**
 
 ### MO↔PC 반응형 매칭
 
@@ -147,9 +150,10 @@ URL 분류 (자동):
 
 ---
 
-## Phase 4: 순차 코드 생성
+## Phase 4: 순차 코드 생성 ← Implement (영역별)
 
 **→ vibe.figma.convert 스킬의 규칙을 따른다.**
+**코디네이터 패턴: 섹션 = 영역. 한 영역에 한 워커만. 충돌 방지.**
 
 ```
 ⛔ 병렬 금지. 한 섹션씩 순차:
@@ -191,7 +195,9 @@ SCSS Setup (첫 섹션 전):
 
 ---
 
-## Phase 6: 시각 검증 루프
+## Phase 6: 시각 검증 루프 ← Verify (병렬)
+
+**코디네이터 패턴: 독립 섹션별 검증을 워커로 병렬 실행 가능.**
 
 ```
 최대 3라운드. P1=0 될 때까지.

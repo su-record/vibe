@@ -30,6 +30,49 @@ const DANGEROUS_PATTERNS = {
   ],
 };
 
+// 도구 입력 스키마 검증 (경량 — 외부 의존성 없음)
+const TOOL_INPUT_SCHEMAS = {
+  Bash: { required: ['command'], types: { command: 'string', timeout: 'number' } },
+  Read: { required: ['file_path'], types: { file_path: 'string', offset: 'number', limit: 'number' } },
+  Edit: { required: ['file_path', 'old_string', 'new_string'], types: { file_path: 'string', old_string: 'string', new_string: 'string' } },
+  Write: { required: ['file_path', 'content'], types: { file_path: 'string', content: 'string' } },
+  Glob: { required: ['pattern'], types: { pattern: 'string', path: 'string' } },
+  Grep: { required: ['pattern'], types: { pattern: 'string', path: 'string' } },
+};
+
+function validateInputSchema(toolName, rawInput) {
+  const schema = TOOL_INPUT_SCHEMAS[toolName];
+  if (!schema) return { valid: true, errors: [] }; // 스키마 없으면 통과
+
+  let input;
+  try {
+    input = typeof rawInput === 'string' ? JSON.parse(rawInput) : rawInput;
+  } catch {
+    return { valid: true, errors: [] }; // JSON 아니면 레거시 모드 — 통과
+  }
+  if (typeof input !== 'object' || !input) return { valid: true, errors: [] };
+
+  const errors = [];
+  // 필수 필드 검증
+  for (const field of schema.required || []) {
+    if (input[field] === undefined || input[field] === null) {
+      errors.push(`Missing required field: ${field}`);
+    }
+  }
+  // 타입 검증
+  for (const [field, expectedType] of Object.entries(schema.types || {})) {
+    if (input[field] !== undefined && typeof input[field] !== expectedType) {
+      errors.push(`Field '${field}' expected ${expectedType}, got ${typeof input[field]}`);
+    }
+  }
+  // 경로 검증 (path traversal 기본 방어)
+  if (input.file_path && typeof input.file_path === 'string') {
+    if (input.file_path.includes('\0')) errors.push('Null byte in file_path');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 // 안전한 대안 제안
 const SAFE_ALTERNATIVES = {
   'rm -rf': 'Use trash-cli (trash-put) or move to a backup directory first',
@@ -141,6 +184,18 @@ const toolInput = stdinPayload?.tool_input
 
 import { logHookDecision } from './utils.js';
 
+// 1단계: 입력 스키마 검증 (구조적 오류 탐지)
+const schemaResult = validateInputSchema(toolName, stdinPayload?.tool_input || toolInput);
+if (!schemaResult.valid) {
+  console.log(`⚠️ INPUT VALIDATION: ${toolName}`);
+  for (const err of schemaResult.errors) {
+    console.log(`  [SCHEMA] ${err}`);
+  }
+  logHookDecision('pre-tool-guard', toolName, 'warn', `schema: ${schemaResult.errors.join('; ')}`);
+  // 스키마 오류는 경고만 (차단하지 않음 — 레거시 호환)
+}
+
+// 2단계: 위험 패턴 검증 (보안 탐지)
 const validation = validateCommand(toolName, toolInput);
 const output = formatOutput(toolName, validation);
 
