@@ -107,6 +107,92 @@ Based on classification, build the appropriate artifact:
 4. If the capability is a test, verify it FAILS without the fix
 ```
 
+**Termination branches:**
+- ✅ **Capability prevents the failure** → Step 5 PERSIST
+- ❌ **Capability does NOT prevent the failure** → Step 4.5 ESCALATE (re-diagnose or ask user)
+
+### Step 4.5: ESCALATE — When VERIFY Fails
+
+> **Problem**: The built capability didn't actually prevent the failure. This usually means the initial diagnosis was wrong (picked `Tool` when it needed `Guardrail`), or the failure has multiple missing capabilities.
+>
+> **Do NOT silently proceed** — a sub-standard capability log pollutes `.claude/vibe/capabilities-log.md` and the failure will recur.
+
+**Escalation loop:**
+
+```python
+tried = [current_diagnosis.category]  # e.g., ["Tool"]
+
+while True:
+    # Re-diagnose excluding already-tried categories
+    next_diagnosis = diagnose(failure, exclude=tried)
+
+    if next_diagnosis is None:
+        # All 5 categories (Tool/Guardrail/Abstraction/Documentation/Feedback) exhausted
+        escalate_to_user(failure, tried)
+        break
+
+    if next_diagnosis.category in tried:
+        # Stuck: diagnose keeps returning the same category
+        escalate_to_user(failure, tried)
+        break
+
+    tried.append(next_diagnosis.category)
+    capability = build(next_diagnosis)
+
+    if verify(capability, failure):
+        persist(capability)
+        return  # Success — go to Step 5
+
+    # Still failing — next iteration
+```
+
+**User escalation prompt (interactive mode):**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ CAPABILITY LOOP STUCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Failure: {original failure description}
+
+Tried capabilities (all failed to prevent the failure):
+  ❌ Tool: {what was built, why it didn't work}
+  ❌ Guardrail: {what was built, why it didn't work}
+  ❌ Documentation: {what was built, why it didn't work}
+
+Automated diagnosis has run out of angles. This failure may require
+human judgment (process issue, cross-category solution, or external factor).
+
+어떻게 진행할까요?
+  1. 다른 각도 제안 (예: "이건 프로세스 문제야", "Tool+Guardrail 조합이 필요해")
+     → 사용자 지시에 따라 custom 접근 시도, 다음 verify로 진입
+  2. "manual" — 이 실패는 수동 개입으로 해결, capability loop 종료
+     (capabilities-log.md에 "escalated to manual" 기록)
+  3. "abort" — 포기, 실패만 기록
+     (capabilities-log.md에 "diagnosis exhausted" 기록, 나머지 워크플로 중단 안 함)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**ultrawork 모드 예외:**
+
+```python
+if ultrawork_mode:
+    # Skip user prompt: try all 5 categories in sequence, record final state
+    all_tried_exhausted = exhaust_all_categories(failure, tried)
+    record_failure_to_log(
+        status="diagnosis_exhausted",
+        tried=all_tried_exhausted,
+        failure=failure
+    )
+    return  # Proceed without blocking downstream workflow
+```
+
+**Rollback of failed builds:**
+
+- Each failed capability build should be rolled back before trying the next category (unless it's non-destructive documentation).
+- For code additions (tool/guardrail/abstraction): `git checkout -- {files}` or delete created files.
+- For docs-only additions: leave in place (low risk) but note in escalation prompt.
+
 ### Step 5: PERSIST — Record for Future Reference
 
 Save the capability-building decision:
@@ -126,11 +212,14 @@ Update `.claude/vibe/capabilities-log.md`:
 ```markdown
 ## {date} — {capability-name}
 
+**Status**: resolved | escalated_to_manual | diagnosis_exhausted
 **Failure**: {what happened}
 **Missing**: {what capability was absent}
-**Built**: {what was created}
+**Tried**: {list of categories attempted, e.g., [Tool, Guardrail]}
+**Built**: {what was created (if resolved)}
 **Files**: {list}
-**Prevents**: {what class of failures this prevents}
+**Prevents**: {what class of failures this prevents (if resolved)}
+**Notes**: {for escalated/exhausted — what the user decided or what remains unsolved}
 ```
 
 ## Decision Tree
@@ -152,6 +241,21 @@ Agent failed
     │
     └─ Did the agent not KNOW it was wrong?
         YES → Build feedback (types/errors/tests)
+
+    ↓
+VERIFY: Does the built capability actually prevent the failure?
+    │
+    ├─ YES → PERSIST (log as "resolved")
+    │
+    └─ NO  → ESCALATE (Step 4.5)
+              │
+              ├─ Other categories untried? → Re-diagnose with exclusion list
+              │                              → BUILD next category → VERIFY
+              │
+              └─ All categories tried OR same diagnosis loops:
+                   │
+                   ├─ Interactive: Ask user (custom angle / manual / abort)
+                   └─ ultrawork: Auto-record "diagnosis_exhausted" → continue
 ```
 
 ## Anti-patterns
