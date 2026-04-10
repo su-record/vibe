@@ -29,7 +29,7 @@ import {
   figmaSetup, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp,
   configShow, configHelp,
   statsDefault, statsWeek, statsQuality, statsHelp,
-  codexStart, codexStop, codexStatus, codexShell, codexHelp,
+  codexLaunch, codexStatus, codexShell, codexHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -100,14 +100,6 @@ export { applyQualityRules } from '../tools/convention/applyQualityRules.js';
 
 export { previewUiAscii } from '../tools/ui/previewUiAscii.js';
 export { getCurrentTime } from '../tools/time/getCurrentTime.js';
-
-// ============================================================================
-// Daemon Mode: Codex Proxy 서버 진입점
-// ============================================================================
-
-if (process.env.VIBE_CODEX_PROXY_MODE === '1') {
-  import('../infra/lib/codex-proxy.js').then(mod => { mod.runProxyServer(); });
-}
 
 // ============================================================================
 // Main Router
@@ -259,36 +251,23 @@ Example: vibe skills add vercel-labs/skills
     break;
   }
 
-  // vibe codex <subcommand>
+  // vibe codex — Claude Code + OpenAI/Gemini 호환 모델
   case 'codex': {
     const codexSub = positionalArgs[1];
-    switch (codexSub) {
-      case 'start': {
-        const portIdx = args.indexOf('--port');
-        const portArg = portIdx >= 0 ? args[portIdx + 1] : undefined;
-        codexStart(portArg, args.includes('--daemon'));
-        break;
-      }
-      case 'stop':
-        codexStop();
-        break;
-      case 'status':
-        codexStatus();
-        break;
-      case 'shell': {
-        const shellPortIdx = args.indexOf('--port');
-        const shellModelIdx = args.indexOf('--model');
-        codexShell(
-          shellPortIdx >= 0 ? args[shellPortIdx + 1] : undefined,
-          shellModelIdx >= 0 ? args[shellModelIdx + 1] : undefined,
-        );
-        break;
-      }
-      case 'help':
-        codexHelp();
-        break;
-      default:
-        codexHelp();
+    if (codexSub === 'shell') {
+      const mIdx = args.indexOf('--model');
+      codexShell(mIdx >= 0 ? args[mIdx + 1] : undefined);
+    } else if (codexSub === 'status') {
+      codexStatus();
+    } else if (codexSub === 'help') {
+      codexHelp();
+    } else {
+      // vibe codex [--model MODEL] [claude args...] — 프록시 + Claude Code 원샷
+      const mIdx = args.indexOf('--model');
+      const model = mIdx >= 0 ? args[mIdx + 1] : undefined;
+      const claudeArgs = args.slice(1)
+        .filter((a, i) => a !== 'codex' && a !== '--model' && !(mIdx >= 0 && i === mIdx));
+      codexLaunch(model, claudeArgs);
     }
     break;
   }

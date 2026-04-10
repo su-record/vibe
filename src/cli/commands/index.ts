@@ -14,4 +14,4 @@ export { skillsAdd, installExternalSkills } from './skills.js';
 export { figmaSetup, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp } from './figma.js';
 export { configShow, configHelp } from './config.js';
 export { statsDefault, statsWeek, statsQuality, statsHelp } from './stats.js';
-export { codexStart, codexStop, codexStatus, codexShell, codexHelp } from './codex-proxy.js';
+export { codexLaunch, codexStatus, codexShell, codexHelp } from './codex-proxy.js';

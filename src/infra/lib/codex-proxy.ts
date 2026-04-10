@@ -5,22 +5,12 @@
 
 import http from 'http';
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
-import { getVibeDir } from './config/GlobalConfigManager.js';
 import { getApiKeyFromConfig, findCodexCredentials, getAuthInfo } from './gpt/auth.js';
 
 // ─── Constants ───────────────────────────────────────────────
 
-const PID_FILE = 'codex-proxy.pid';
-const PORT_FILE = 'codex-proxy.port';
-const LOG_FILE = 'codex-proxy.log';
-const DEFAULT_PORT = 8317;
 const DEFAULT_TARGET_URL = 'https://api.openai.com';
-const __curFilename = fileURLToPath(import.meta.url);
-const CLI_ENTRY = path.resolve(path.dirname(__curFilename), '../../cli/index.js');
 
 // ─── Anthropic Types (incoming from Claude Code) ─────────────
 
@@ -82,12 +72,6 @@ interface OStreamChunk {
 interface ProxyConfig {
   port: number;
   defaultModel?: string;
-}
-
-export interface ProxyStatus {
-  running: boolean;
-  pid?: number;
-  port?: number;
 }
 
 export interface AuthSource {
@@ -558,124 +542,70 @@ export function createProxyServer(config: ProxyConfig): http.Server {
   });
 }
 
-// ─── PID File Management ─────────────────────────────────────
+// ─── 세션 실행 (프록시 + Claude Code 원샷) ──────────────────
 
-function savePidFiles(port: number, pid: number): void {
-  const dir = getVibeDir();
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, PID_FILE), String(pid));
-  fs.writeFileSync(path.join(dir, PORT_FILE), String(port));
-}
-
-function cleanupPidFiles(): void {
-  const dir = getVibeDir();
-  try { fs.unlinkSync(path.join(dir, PID_FILE)); } catch { /* ignore */ }
-  try { fs.unlinkSync(path.join(dir, PORT_FILE)); } catch { /* ignore */ }
-}
-
-// ─── Start Proxy (Foreground) ────────────────────────────────
-
-export function startProxy(port: number, daemon: boolean): void {
+export function launchSession(
+  model?: string,
+  claudeArgs: string[] = [],
+): void {
   const authSource = checkAuthSource();
   if (!authSource) {
     console.error('인증 정보 없음.');
-    console.error('  ChatGPT Pro: codex login');
-    console.error('  API Key:     vibe gpt key <key> 또는 OPENAI_API_KEY 설정');
+    console.error('  ChatGPT Pro: npm i -g @openai/codex && codex login');
+    console.error('  Gemini:      GEMINI_API_KEY 또는 CODEX_PROXY_API_KEY 설정');
+    console.error('  OpenAI:      vibe gpt key <key> 또는 OPENAI_API_KEY 설정');
     process.exit(1);
   }
 
-  if (daemon) { startDaemon(port); return; }
-
-  const config: ProxyConfig = { port, defaultModel: process.env.CODEX_PROXY_MODEL };
-  const authLabel = authSource.source === 'codex-cli' ? 'Codex CLI (ChatGPT Pro)' : 'API Key';
-  const baseUrl = process.env.CODEX_PROXY_TARGET_URL || DEFAULT_TARGET_URL;
+  const defaultModel = model || process.env.CODEX_PROXY_MODEL || 'gpt-4o';
+  const config: ProxyConfig = { port: 0, defaultModel };
   const server = createProxyServer(config);
-  server.listen(port, () => {
-    console.log(`\n  Codex Proxy listening on http://localhost:${port}`);
-    console.log(`  인증: ${authLabel}`);
-    console.log(`  Target: ${baseUrl}`);
-    console.log(`  Model: ${config.defaultModel || '(pass-through)'}\n`);
-    savePidFiles(port, process.pid);
+
+  server.listen(0, '127.0.0.1', () => {
+    const addr = server.address() as { port: number };
+    const port = addr.port;
+    const authLabel = AUTH_SOURCE_LABELS[authSource.source];
+    console.log(`Codex Proxy :${port} | ${authLabel} | ${defaultModel}`);
+
+    const child = spawn('claude', claudeArgs, {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        ANTHROPIC_BASE_URL: `http://localhost:${port}`,
+        ANTHROPIC_API_KEY: 'codex-proxy',
+        ANTHROPIC_DEFAULT_SONNET_MODEL: defaultModel,
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: defaultModel,
+      },
+    });
+
+    child.on('error', (err) => {
+      console.error(`claude 실행 실패: ${err.message}`);
+      console.error('Claude Code 설치: npm i -g @anthropic-ai/claude-code');
+      server.close();
+      process.exit(1);
+    });
+
+    child.on('exit', (code) => {
+      server.close();
+      process.exit(code ?? 0);
+    });
   });
-  process.on('SIGINT', () => { cleanupPidFiles(); process.exit(0); });
-  process.on('SIGTERM', () => { cleanupPidFiles(); process.exit(0); });
+
+  process.on('SIGINT', () => { server.close(); });
+  process.on('SIGTERM', () => { server.close(); process.exit(0); });
 }
 
-// ─── Start Proxy (Daemon) ────────────────────────────────────
+const AUTH_SOURCE_LABELS: Record<string, string> = {
+  'codex-cli': 'Codex CLI (ChatGPT Pro)',
+  'apikey': 'API Key',
+  'env': 'CODEX_PROXY_API_KEY',
+};
 
-function startDaemon(port: number): void {
-  const dir = getVibeDir();
-  fs.mkdirSync(dir, { recursive: true });
-  const logPath = path.join(dir, LOG_FILE);
-  const logFd = fs.openSync(logPath, 'a');
+// ─── 셸 함수 생성 ───────────────────────────────────────────
 
-  const child = spawn(process.execPath, [CLI_ENTRY], {
-    detached: true,
-    stdio: ['ignore', logFd, logFd],
-    env: {
-      ...process.env,
-      VIBE_CODEX_PROXY_MODE: '1',
-      VIBE_CODEX_PROXY_PORT: String(port),
-    },
-  });
-  child.unref();
-  fs.closeSync(logFd);
-
-  savePidFiles(port, child.pid!);
-  console.log(`\n  Codex Proxy started (daemon)`);
-  console.log(`  PID: ${child.pid}`);
-  console.log(`  Port: ${port}`);
-  console.log(`  Log: ${logPath}\n`);
-}
-
-// ─── Stop Proxy ──────────────────────────────────────────────
-
-export function stopProxy(): boolean {
-  const dir = getVibeDir();
-  const pidPath = path.join(dir, PID_FILE);
-  try {
-    const pid = parseInt(fs.readFileSync(pidPath, 'utf-8').trim(), 10);
-    process.kill(pid, 'SIGTERM');
-    cleanupPidFiles();
-    console.log(`Codex Proxy stopped (PID: ${pid})`);
-    return true;
-  } catch {
-    console.log('Codex Proxy is not running');
-    cleanupPidFiles();
-    return false;
-  }
-}
-
-// ─── Proxy Status ────────────────────────────────────────────
-
-export function getProxyStatus(): ProxyStatus {
-  const dir = getVibeDir();
-  try {
-    const pid = parseInt(fs.readFileSync(path.join(dir, PID_FILE), 'utf-8').trim(), 10);
-    const port = parseInt(fs.readFileSync(path.join(dir, PORT_FILE), 'utf-8').trim(), 10);
-    process.kill(pid, 0);
-    return { running: true, pid, port };
-  } catch {
-    return { running: false };
-  }
-}
-
-// ─── Shell Function Generator ────────────────────────────────
-
-export function generateShellFunction(port: number, model: string): string {
-  return `# Add to ~/.zshrc or ~/.bashrc
+export function generateShellFunction(model: string): string {
+  return `# ~/.zshrc 또는 ~/.bashrc에 추가
 codex-cc() {
-    export ANTHROPIC_BASE_URL="http://localhost:${port}"
-    export ANTHROPIC_API_KEY="codex-proxy"
-    export ANTHROPIC_DEFAULT_SONNET_MODEL="${model}"
-    export ANTHROPIC_DEFAULT_HAIKU_MODEL="${model}"
-    claude "$@"
+    CODEX_PROXY_MODEL="${model}" vibe codex "$@"
 }`;
-}
-
-// ─── Daemon Entry Point ──────────────────────────────────────
-
-export function runProxyServer(): void {
-  const port = parseInt(process.env.VIBE_CODEX_PROXY_PORT || String(DEFAULT_PORT), 10);
-  startProxy(port, false);
 }
