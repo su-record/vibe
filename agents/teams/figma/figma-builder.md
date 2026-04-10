@@ -37,12 +37,25 @@ BP별 스태틱 코드 구현 전문 에이전트.
 ## ⛔ 불변 규칙
 
 ```
+0. SCSS는 절대 직접 작성하지 않는다 (가장 중요)
+   ⛔ figma-to-scss.js 호출 없이 SCSS 파일 생성 절대 금지
+   ⛔ Vue/React 파일의 <style> 블록에 CSS 값 작성 금지 (@import만 허용)
+   ⛔ 자체 정제/생성 스크립트 작성 절대 금지:
+      ❌ refine-sections.mjs, refine.js, refine.mjs
+      ❌ to-scss.mjs, generate-scss.js
+      ❌ analyze-tree.mjs, analyze-section.mjs
+      ❌ Python/Node로 sections.json 또는 SCSS 직접 생성
+   ⛔ "스킬 규칙을 읽고 직접 구현" 금지 — 스킬은 figma-*.js 호출을 명시함
+   ✅ Bash로 figma-refine.js, figma-to-scss.js, figma-validate.js만 호출
+   ✅ 스크립트 결과가 마음에 안 들면 ~/.vibe/hooks/scripts/figma-*.js 자체를 수정 요청
+
 1. SCSS CSS 값 수정 금지
    ❌ figma-to-scss.js 출력값 변경
    ❌ 커스텀 함수/믹스인 생성 (wp-fluid, wp-bg-layer 등)
    ❌ aspect-ratio 등 tree.json에 없는 CSS 속성
    ❌ vw 변환, clamp, @media (스태틱 구현이므로)
-   ✅ figma-to-scss.js 출력 그대로 import
+   ❌ 프로젝트 토큰 ($pw-blue, $wp-radius 등) 사용 금지 — figma-to-scss.js가 자체 토큰 생성
+   ✅ figma-to-scss.js 출력 그대로 @import / @use
 
 2. CSS 값은 Figma 원본 px 그대로
    ✅ width: 720px; height: 1280px;
@@ -63,6 +76,19 @@ BP별 스태틱 코드 구현 전문 에이전트.
    ❌ <img> 태그로 BG 처리
 ```
 
+## ⛔ 자가 점검 (각 작업 전 필수)
+
+```
+[ ] /tmp/{feature}/{bp}-main/sections.json이 존재하는가?
+    → 없으면 figma-refine.js 먼저 실행 (자체 작성 금지)
+[ ] assets/scss/{feature}/_*.scss 파일이 figma-to-scss.js로 생성되었는가?
+    → Bash 히스토리에 figma-to-scss.js 호출 흔적 있어야 함
+[ ] Vue/React 파일의 <style> 블록이 비어있거나 @import만 있는가?
+    → CSS 값 직접 작성 금지
+[ ] /tmp/{feature}/ 하위에 .mjs/.js 자체 작성 스크립트가 없는가?
+    → 발견 즉시 삭제, ~/.vibe/hooks/scripts/figma-*.js만 사용
+```
+
 ## 자가 검증 (각 섹션 완료 후)
 
 - [ ] figma-validate.js PASS
@@ -70,3 +96,5 @@ BP별 스태틱 코드 구현 전문 에이전트.
 - [ ] 모든 img src가 static/에 실제 존재
 - [ ] SCSS에 @function/@mixin 자체 정의 없음
 - [ ] tree.json에 없는 CSS 속성 없음
+- [ ] Vue/React `<style>` 블록에 CSS 값 직접 작성 없음 (@import만)
+- [ ] /tmp/{feature}/ 하위에 자체 작성 .mjs/.js 없음

@@ -125,6 +125,29 @@ MO/PC 동시 추출 (각각 독립 워커):
 **각 BP의 tree.json을 섹션별로 분할 + 정제한다.**
 **MO↔PC 매칭(반응형)은 이 단계에서 하지 않는다.**
 
+### ⛔ BLOCKING 명령 — 자체 스크립트 작성 절대 금지
+
+```bash
+# MO
+node ~/.vibe/hooks/scripts/figma-refine.js \
+  /tmp/{feature}/mo-main/tree.json \
+  --out=/tmp/{feature}/mo-main/sections.json \
+  --design-width=720 \
+  --bp=mo
+
+# PC
+node ~/.vibe/hooks/scripts/figma-refine.js \
+  /tmp/{feature}/pc-main/tree.json \
+  --out=/tmp/{feature}/pc-main/sections.json \
+  --design-width=2560 \
+  --bp=pc
+```
+
+⛔ **이 명령을 실행하지 않으면 Phase 4 진행 금지.**
+⛔ **자체 정제 스크립트 작성 금지** (refine-sections.mjs, refine.js 등 일체 금지)
+⛔ **Python/Node로 tree.json을 직접 파싱하여 sections.json 만들지 말 것**
+✅ figma-refine.js의 출력만 사용. 결과가 마음에 안 들면 figma-refine.js를 수정.
+
 ### 핵심 원칙
 
 ```
@@ -194,15 +217,37 @@ tree.json → sections.json 변환 시 정제:
 **⛔ MO 먼저 전체 구현 → 검증 통과 → PC 구현. 반응형 변환은 하지 않는다.**
 **⛔ CSS 값은 Figma 원본 px 그대로. vw 변환, clamp, @media 금지.**
 
+### ⛔ BLOCKING 명령 — SCSS는 스크립트 출력만 사용
+
+```bash
+# Step A: SCSS 골격 자동 생성 (BP별 1회만 실행)
+node ~/.vibe/hooks/scripts/figma-to-scss.js \
+  /tmp/{feature}/{bp}-main/sections.json \
+  --out=/path/to/project/assets/scss/{feature}/
+
+# Step B: 섹션 단위 검증 (각 섹션 코드 작성 후)
+node ~/.vibe/hooks/scripts/figma-validate.js \
+  /path/to/project/assets/scss/{feature}/ \
+  /tmp/{feature}/{bp}-main/sections.json \
+  --section={SectionName}
+```
+
+⛔ **figma-to-scss.js를 호출하지 않고 SCSS 파일을 직접 작성하면 Phase 4 무효.**
+⛔ **자체 SCSS 생성 스크립트 작성 금지** (to-scss.mjs, generate-scss.js 등 일체)
+⛔ **figma-validate.js PASS 없이 다음 섹션 진행 금지.**
+⛔ **scoped style 블록 안에 CSS 값을 직접 쓰지 말 것** — 외부 SCSS 파일 import만 허용.
+✅ figma-to-scss.js 출력 그대로 사용. 마음에 안 들면 figma-to-scss.js를 수정.
+
 ```
 Phase 4A: MO 스태틱 구현
   입력: /tmp/{feature}/mo-main/sections.json
   ⛔ 병렬 금지. 한 섹션씩 순차:
     1. sections.json에서 해당 섹션 Read
     2. 이미지 vs HTML 판별 테이블 작성 (BLOCKING)
-    3. figma-to-scss.js → SCSS 골격 자동 생성 (px 그대로)
-    4. Claude: HTML 구조 + 시맨틱 태그 + 레이아웃 + 인터랙션
-    5. figma-validate.js → SCSS vs sections.json 대조
+    3. figma-to-scss.js → SCSS 골격 자동 생성 (px 그대로) — Step A 1회
+    4. Claude: HTML 구조 + 시맨틱 태그 + 레이아웃 + 인터랙션 (Vue/React 파일만)
+       ⛔ <style> 블록에 CSS 직접 작성 금지 — @import 또는 @use만 허용
+    5. figma-validate.js → SCSS vs sections.json 대조 — Step B
        ├─ PASS → 다음 섹션
        └─ FAIL → 불일치 수정 → 5번 재실행 (P1=0 까지, 횟수 제한 없음)
   → Phase 5 (MO 컴파일) → Phase 6 (MO 시각 검증)
@@ -220,8 +265,11 @@ Claude의 역할 (제한적):
   ✅ HTML 시맨틱: section/h1/p/button 태그 선택
   ✅ 컴포넌트 분리: v-for 반복, 공유 컴포넌트
   ✅ 인터랙션: @click, 상태 변수, 조건부 렌더링
+  ✅ figma-to-scss.js / figma-validate.js 명령 실행
   ❌ SCSS CSS 값 수정 금지 (figma-to-scss.js 출력 그대로 사용)
+  ❌ <style> 블록에 CSS 직접 작성 금지
   ❌ vw 변환, clamp, @media, 커스텀 함수/믹스인 생성 금지
+  ❌ 자체 정제/생성 스크립트 작성 금지 (refine.mjs, to-scss.mjs 등)
 
 SCSS Setup (첫 섹션 전):
   index.scss, _tokens.scss, _base.scss
