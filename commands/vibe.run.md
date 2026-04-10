@@ -132,7 +132,7 @@ After implementing each scenario, **automatic verification**:
 │              → Fix code (Read full file first)                   │
 │              → Re-run failed scenario only                       │
 │              → PASS? → Next scenario                             │
-│              → FAIL? → Retry (max 3)                             │
+│              → FAIL (same as prev)? → STUCK → Ask user           │
 │                                                                  │
 │  핵심: 검증이 가벼울수록 루프는 더 많이 돈다                       │
 │  - 접근성 트리: button "Sign In" = 15 chars                      │
@@ -171,8 +171,16 @@ Scenario verification failed (코드 분석 또는 E2E)
       ↓
 [Re-verify] - Re-run ONLY failed scenario (save tokens)
       ↓
-Repeat until pass (max 3 times)
+Repeat until pass (라운드 수 캡 없음 — stuck 감지로 종료)
 ```
+
+**Termination conditions:**
+- ✅ PASS → 다음 scenario
+- ⚠️ Stuck (같은 failure가 이전 라운드와 동일) → 사용자 질문:
+    1. 직접 수정 방법 제공 (예: "LoginForm.tsx 42줄 수정") → 재시도
+    2. "proceed" — 남은 실패 TODO 기록 후 다음 scenario
+    3. "abort" — 구현 중단
+- `ultrawork` 모드: stuck 시 프롬프트 없이 TODO 기록 후 다음 scenario
 
 ---
 
@@ -191,7 +199,7 @@ When you include `ultrawork` (or `ulw`), ALL of these activate automatically:
 | **Context Compression** | Aggressive auto-save at 70%+ context |
 | **No Pause** | Doesn't wait for confirmation between phases |
 | **External LLMs** | Auto-consults GPT/Gemini if enabled |
-| **Error Recovery** | Auto-retries on failure (up to 3 times) |
+| **Error Recovery** | Loops until 100% or stuck; on stuck auto-records TODO and proceeds (no user prompt) |
 | **Race Review (v2.6.9)** | Multi-LLM review (GPT+Gemini) with cross-validation |
 
 ### Boulder Loop (Inspired by Sisyphus)
@@ -258,7 +266,7 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 │   └──────────────────────────────────────────────────────────┘  │
 │                              │                                   │
 │                   ┌──────────┴──────────┐                       │
-│                   │  Coverage ≥ 95%?    │                       │
+│                   │  Coverage == 100%?  │                       │
 │                   └──────────┬──────────┘                       │
 │                       │              │                          │
 │                      NO            YES                          │
@@ -273,9 +281,18 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 │                      │                                          │
 │                      └──────────→ [Re-generate RTM]             │
 │                                                                  │
-│   MAX_ITERATIONS: 5 (prevent infinite loops)                    │
-│   COVERAGE_THRESHOLD: 95% (quality gate)                        │
-│   ZERO TOLERANCE for scope reduction                            │
+│                      │                                          │
+│                      ↓                                          │
+│              Stuck? (coverage unchanged from prev iteration)    │
+│                      │                                          │
+│                      ├─ Interactive: Ask user                   │
+│                      │     1. Provide resolution → retry        │
+│                      │     2. "proceed" → TODO + done           │
+│                      │     3. "abort" → stop                    │
+│                      └─ ultrawork: TODO + done                  │
+│                                                                  │
+│   NO iteration cap — loop until 100% OR stuck                   │
+│   ZERO TOLERANCE for silent scope reduction                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -302,18 +319,18 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 | Rule | Description |
 |------|-------------|
 | **No Scope Reduction** | Never say "simplified" or "basic version" - implement FULL request |
-| **Iteration Tracking** | Display `[{{ITER}}/{{MAX}}]` to show progress |
+| **Iteration Tracking** | Display `[{{ITER}}]` to show progress (no max — loop until done) |
 | **RTM-Based Gap List** | Use `uncoveredRequirements` array - no manual comparison |
-| **Coverage Threshold** | Must reach 95% coverage to complete |
-| **Max Iterations** | Stop at 5 iterations (report remaining gaps as TODO) |
-| **Convergence Detection** | If coverage % unchanged between iterations → STOP (converged) |
-| **Diminishing Returns** | Iteration 3+ → only implement unmet core requirements (REQ-*-001~003), rest goes to TODO |
+| **Coverage Threshold** | Must reach 100% coverage to complete |
+| **No Iteration Cap** | Loop until 100% coverage OR stuck (convergence detected) |
+| **Stuck Handling** | If coverage % unchanged between iterations → ask user (proceed/abort/fix), or ultrawork → TODO + done |
+| **Diminishing Returns (Narrowing)** | Iteration 3+ → focus on core requirements (REQ-*-001~003) first; P2/P3 requirements continue to loop but lower priority |
 
 **Ralph Loop Output Format:**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔄 RALPH VERIFICATION [Iteration 1/5]
+🔄 RALPH VERIFICATION [Iteration 1]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📊 RTM Coverage Report: login
@@ -334,7 +351,7 @@ Requirements Traceability:
   ❌ REQ-login-008: Error toast → NOT IMPLEMENTED
   ✅ REQ-login-009: Session storage → Scenario 4 → (no test)
 
-Overall Coverage: 55% ⚠️ BELOW 95% THRESHOLD
+Overall Coverage: 55% ⚠️ BELOW 100% TARGET
 
 UNCOVERED REQUIREMENTS (auto-extracted from RTM):
   1. REQ-login-004: Remember me checkbox
@@ -345,7 +362,7 @@ UNCOVERED REQUIREMENTS (auto-extracted from RTM):
 ⚠️ NOT COMPLETE - Implementing uncovered requirements...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔄 RALPH VERIFICATION [Iteration 2/5]
+🔄 RALPH VERIFICATION [Iteration 2]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📊 RTM Coverage Report: login
@@ -356,7 +373,7 @@ Requirements Traceability:
   Feature Covered: 9/9 (100%)
   Test Covered: 9/9 (100%)
 
-Overall Coverage: 100% ✅ ABOVE 95% THRESHOLD
+Overall Coverage: 100% ✅ TARGET REACHED
 
 Build: ✅ Passed
 Tests: ✅ 12/12 Passed
@@ -396,7 +413,7 @@ Claude:
 📄 SPEC: .claude/vibe/specs/brick-game.md
 🎯 4 Phases detected
 ⚡ Boulder Loop: ENABLED (will continue until all phases complete)
-🔄 Auto-retry: ON (max 3 per phase)
+🔄 Auto-retry: ON (loop until 100% or stuck → auto-TODO)
 💾 Context compression: AGGRESSIVE
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -416,7 +433,7 @@ Claude:
 ✅ Exploration complete (6.8s)
 🔨 Implementing...
 ❌ Test failed: collision detection
-🔄 Auto-retry 1/3...
+🔄 Auto-retry [iteration 1]...
 🔨 Fixing...
 ✅ Phase 2 complete
 
@@ -454,13 +471,13 @@ Magic keywords in the user input automatically set the **AutomationLevel**, whic
 
 ### Level Definitions
 
-| Level | Name | Keyword(s) | Auto-advance | Auto-retry | Max Retries | Parallel Agents | Checkpoints |
-|-------|------|------------|--------------|------------|-------------|-----------------|-------------|
-| L0 | Manual | `manual` | No | No | 0 | No | All |
-| L1 | Guided | `guided`, `verify` | No | No | 0 | No | All |
-| L2 | Semi-auto | `quick` (default) | Yes | Yes | 2 | No | Key points |
-| L3 | Auto | `ultrawork`, `ulw` | Yes | Yes | 3 | Yes | Checkpoint-only |
-| L4 | Full-auto | `ralph`, `ralplan` | Yes | Yes | 5 | Yes | None |
+| Level | Name | Keyword(s) | Auto-advance | Auto-retry | Stuck Behavior | Parallel Agents | Checkpoints |
+|-------|------|------------|--------------|------------|----------------|-----------------|-------------|
+| L0 | Manual | `manual` | No | No | Ask user every step | No | All |
+| L1 | Guided | `guided`, `verify` | No | No | Ask user on stuck | No | All |
+| L2 | Semi-auto | `quick` (default) | Yes | Yes (low cap: 2) | Ask user after 2 retries | No | Key points |
+| L3 | Auto | `ultrawork`, `ulw` | Yes | Yes (no cap) | Auto-TODO + proceed | Yes | Checkpoint-only |
+| L4 | Full-auto | `ralph`, `ralplan` | Yes | Yes (no cap) | Auto-TODO + proceed | Yes | None |
 
 ### Detection Rule
 
@@ -1043,7 +1060,7 @@ Then: Login success + JWT token returned
   ❌ Then: "Invalid credentials" error message
      Actual: "Error occurred" returned
 
-[Auto-fix 1/3]
+[Auto-fix iteration 1]
   Cause: Error message not properly set
   Fix: auth.service.ts line 42
 
@@ -1675,7 +1692,7 @@ Then: Login success + JWT token returned
   ❌ Then: "Invalid credentials" error message
      Actual: "Error" returned
 
-🔄 Auto-fix 1/3...
+🔄 Auto-fix [iteration 1]...
   Fix: auth.service.ts line 42
 
 🔍 Re-verifying...

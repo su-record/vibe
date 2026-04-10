@@ -240,7 +240,7 @@ SCSS Setup (첫 섹션 전):
 ## Phase 5: 컴파일 게이트
 
 ```
-최대 3라운드 자동 반복.
+라운드 수 캡 없음. 컴파일 성공까지 루프 (또는 stuck → 사용자 질문).
 
 0. 베이스라인 캡처 (Phase 4 전): tsc + build 기존 에러 기록
    → Phase 5에서는 새 에러만 수정 대상
@@ -250,10 +250,17 @@ SCSS Setup (첫 섹션 전):
 3. Dev 서버: npm run dev → 포트 감지 → 폴링
 
 에러 시: 파싱 → 자동 수정 → 재체크
-3라운드 실패: 에러 목록을 사용자에게 보고 (Phase 6 진행 불가)
+종료 조건:
+  ✅ 성공: 모든 체크 통과 → Phase 6 진입
+  ⚠️ Stuck: 같은 에러가 이전 라운드와 동일 → 사용자 질문
+      1. 직접 수정 방법 제공 → 다음 라운드 재시도
+      2. "proceed" — 남은 에러 TODO 기록 후 Phase 6 진행
+      3. "abort" — 워크플로 중단
+  ultrawork 모드: stuck 시 프롬프트 없이 TODO 기록 후 Phase 6 진행
+
 완료 시: dev 서버 PID 보존 → Phase 6에서 사용
 
-⛔ Phase 5 통과 후 반드시 Phase 6 진입. "완료 요약" 출력 금지.
+⛔ Phase 5 통과(또는 사용자 proceed) 후 반드시 Phase 6 진입. "완료 요약" 출력 금지.
 ⛔ Phase 6 없이 작업 완료 선언 금지.
 ```
 
@@ -266,7 +273,7 @@ SCSS Setup (첫 섹션 전):
 **코디네이터 패턴: 독립 섹션별 검증을 워커로 병렬 실행 가능.**
 
 ```
-최대 3라운드. P1=0 될 때까지.
+라운드 수 캡 없음. P1=0 될 때까지 루프 (또는 stuck → 사용자 질문).
 인프라: src/infra/lib/browser/ (Puppeteer + CDP)
 
 1. 렌더링 스크린샷 캡처 → Figma 스크린샷과 pixelmatch 비교
@@ -276,8 +283,21 @@ SCSS Setup (첫 섹션 전):
 3. 이미지·텍스트 누락 체크
 4. P1 우선 수정 (tree.json 참조, 추정 금지) → 컴파일 재검증 → 리로드
 
-반응형: MO 검증 후 viewport 변경 → PC 스크린샷과 동일 루프
-종료: 브라우저 + dev 서버 정리
+Narrowing scope (노이즈 감소):
+  Round 1: P1+P2+P3 전체
+  Round 2: P1+P2
+  Round 3+: P1 only (P1=0까지 계속)
 
-⛔ Phase 6 완료 후에만 "완료 요약" 출력 허용.
+종료 조건:
+  ✅ 성공: P1 = 0 AND 새 findings 없음 → 완료
+  ⚠️ Stuck: 같은 findings가 이전 라운드와 동일 → 사용자 질문
+      1. 직접 해결책 제공 → 다음 라운드 재시도
+      2. "proceed" — 남은 이슈 TODO 기록 후 완료
+      3. "abort" — 워크플로 중단
+  ultrawork 모드: stuck 시 프롬프트 없이 TODO 기록 후 완료
+
+반응형: MO 검증 후 viewport 변경 → PC 스크린샷과 동일 루프
+정리: 브라우저 + dev 서버 정리
+
+⛔ Phase 6 완료(또는 사용자 proceed) 후에만 "완료 요약" 출력 허용.
 ```

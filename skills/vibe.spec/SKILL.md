@@ -1,7 +1,7 @@
 ---
 name: vibe.spec
 tier: core
-description: "Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 95-point quality gate. Produces .claude/vibe/specs/{feature}.md + matching .claude/vibe/features/{feature}.feature (BDD). Must use this skill when the user says 'write spec', 'create spec', '/vibe.spec', or when a plan document exists and is ready for code specification."
+description: "Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 100-point quality gate (loops until perfect or stuck). Produces .claude/vibe/specs/{feature}.md + matching .claude/vibe/features/{feature}.feature (BDD). Must use this skill when the user says 'write spec', 'create spec', '/vibe.spec', or when a plan document exists and is ready for code specification."
 triggers: [spec, SPEC, 명세, "코드 명세", "구현 명세", "write spec", "create spec", PTCF]
 priority: 85
 chain-next: [vibe.spec.review]
@@ -893,21 +893,25 @@ Grades:
 
 #### 7.3 Quality Gate (Auto-verification)
 
-**Minimum 95 points required to complete SPEC draft**
+**100 points required to complete SPEC draft. Loop until perfect — ask user if auto-fixer hits a wall.**
 
 ```
 SPEC writing complete
       ↓
 [Calculate Quality Score]
       ↓
-Score < 95? → Show missing items → Attempt auto-fix → Re-evaluate
+Score < 100? → Show missing items → Auto-fix → Re-evaluate
       ↓
-Score ≥ 95 → SPEC Draft Complete → Handoff to /vibe.spec.review
+Stuck? (score == prev_score)
+  ├─ Interactive: ask user → fill values OR "proceed" OR "abort"
+  └─ ultrawork: record gaps as TODO → proceed
+      ↓
+Score == 100 (or user-approved) → SPEC Draft Complete → Handoff to /vibe.spec.review
 ```
 
 #### 7.4 Auto-Fix for Low Score
 
-If score is below 95, attempt automatic fixes:
+If score is below 100, attempt automatic fixes:
 
 | Missing Item | Auto-Fix Method |
 |--------------|-----------------|
@@ -1092,7 +1096,7 @@ Claude: Thank you. SPEC has been refined.
 
 📄 .claude/vibe/specs/brick-game.md (PTCF structure)
 📄 .claude/vibe/features/brick-game.feature
-📊 Quality score: 95/100 (A) ← Improved after review
+📊 Quality score: 100/100 ← Loop converged (no remaining gaps)
 ```
 
 ## Core Tools (Semantic Analysis & Memory)
