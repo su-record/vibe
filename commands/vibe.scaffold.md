@@ -1,130 +1,130 @@
 ---
-description: Generate project folder structure optimized for AI-assisted development
+description: Generate or audit project folder structure optimized for AI-assisted development
 argument-hint: --check (audit existing) or project-type
 ---
 
 # /vibe.scaffold
 
-AI가 잘 일하는 프로젝트 구조를 설계한다.
+Design and generate a project structure where AI works effectively on its own.
 
-> "프로젝트 구조를 잘 설계하면, AI는 그 구조에 맞춰 따라간다"
+> "A well-designed project structure trains AI to follow it naturally."
 
 ## Usage
 
 ```
-/scaffold                  # 현재 프로젝트에 구조 생성 (스택 자동 감지)
-/scaffold --check          # 기존 프로젝트 구조 점검 + 개선 제안
-/scaffold webapp           # webapp 타입으로 구조 생성
-/scaffold api              # api 타입으로 구조 생성
+/vibe.scaffold                 # Generate structure (auto-detect stack)
+/vibe.scaffold --check         # Audit existing structure + suggest improvements
+/vibe.scaffold webapp          # Generate webapp-type structure
+/vibe.scaffold api             # Generate api-type structure
 ```
 
 ---
 
 ## Process
 
-### 1. 현재 상태 파악
+### 1. Assess Current State
 
-1. `CLAUDE.md`, `package.json`, `pyproject.toml`, `pubspec.yaml` 등 읽기
-2. 기존 폴더 구조 확인 (`ls` or `Glob`)
-3. `.claude/vibe/config.json` 에서 감지된 스택 확인
+1. Read `CLAUDE.md`, `package.json`, `pyproject.toml`, `pubspec.yaml`
+2. Scan existing folder structure via `Glob`
+3. Read `.claude/vibe/config.json` for detected stacks
 
-### 2. 프로젝트 타입 결정
+### 2. Determine Project Type
 
-| 타입 | 구조 특성 |
-|------|----------|
+| Type | Structure |
+|------|-----------|
 | `webapp` | src/ + pages/ + components/ + hooks/ + styles/ |
 | `api` | src/ + routes/ + services/ + models/ + middleware/ |
-| `fullstack` | src/client/ + src/server/ 또는 apps/ monorepo |
+| `fullstack` | src/client/ + src/server/ or apps/ monorepo |
 | `library` | src/ + examples/ + benchmarks/ |
-| `mobile` | lib/ (Flutter) 또는 src/ (React Native) |
+| `mobile` | lib/ (Flutter) or src/ (React Native) |
 
-### 3. 기본 구조 생성
+### 3. Generate Base Structure
 
-모든 프로젝트에 공통으로 생성하는 폴더:
+Common directories for all projects:
 
 ```
 my-project/
-├── src/              # 비즈니스 로직
-├── docs/             # 사람이 관리하는 비즈니스 문서 (AI의 참고서)
-│   ├── README.md     # "이 폴더는 비즈니스 룰, 도메인 정의, ADR 등을 보관합니다"
+├── src/              # Business logic
+├── docs/             # Human-maintained business documents (AI reference)
+│   ├── README.md     # Explains purpose: business rules, domain defs, ADR
 │   └── adr/          # Architecture Decision Records
-├── tests/            # 검증 인프라
-├── .dev/             # AI가 남기는 작업 기록
-│   ├── README.md     # "이 폴더는 AI가 자동 생성하는 learnings, 디버깅 로그 등을 보관합니다"
-│   ├── learnings/    # troubleshooting 기록
-│   └── scratch/      # 실험, 스크래치패드
-├── .claude/          # AI 설정 (vibe init이 관리)
-├── out/              # 빌드 산출물 (.gitignore 대상)
-└── CLAUDE.md         # 프로젝트 지도
+├── tests/            # Test infrastructure
+├── .dev/             # AI-generated work logs
+│   ├── README.md     # Explains purpose: learnings, debug logs, scratch
+│   ├── learnings/    # Troubleshooting records
+│   └── scratch/      # Experiments, scratchpad (gitignored)
+├── .claude/          # AI configuration (managed by vibe init)
+├── out/              # Build artifacts (gitignored)
+└── CLAUDE.md         # Project map
 ```
 
-### 4. 스택별 src/ 하위 구조
+### 4. Stack-Specific src/ Layout
 
 **React/Next.js (webapp):**
 ```
 src/
-├── components/       # 재사용 UI 컴포넌트
-│   ├── ui/           # 기본 UI (Button, Input, Modal)
-│   └── features/     # 기능별 컴포넌트
-├── pages/ or app/    # 라우트 (Next.js 버전에 따라)
-├── hooks/            # 커스텀 훅
-├── lib/              # 유틸리티, 헬퍼
-├── services/         # API 호출, 외부 서비스
-├── stores/           # 상태 관리 (zustand, jotai 등)
-├── types/            # 타입 정의
-└── styles/           # 글로벌 스타일
+├── components/       # Reusable UI components
+│   ├── ui/           # Primitives (Button, Input, Modal)
+│   └── features/     # Feature-specific components
+├── pages/ or app/    # Routes (varies by Next.js version)
+├── hooks/            # Custom hooks
+├── lib/              # Utilities, helpers
+├── services/         # API calls, external services
+├── stores/           # State management (zustand, jotai, etc.)
+├── types/            # Type definitions
+└── styles/           # Global styles
 ```
 
 **Express/NestJS/FastAPI (api):**
 ```
 src/
-├── routes/           # API 라우트 (또는 controllers/)
-├── services/         # 비즈니스 로직
-├── models/           # 데이터 모델, 스키마
-├── middleware/       # 인증, 로깅, 에러 핸들링
-├── lib/              # 유틸리티
-├── types/            # 타입 정의
-└── config/           # 설정 관리
+├── routes/           # API routes (or controllers/)
+├── services/         # Business logic
+├── models/           # Data models, schemas
+├── middleware/       # Auth, logging, error handling
+├── lib/              # Utilities
+├── types/            # Type definitions
+└── config/           # Configuration management
 ```
 
 **Flutter (mobile):**
 ```
 lib/
-├── screens/          # 화면별 위젯
-├── widgets/          # 재사용 위젯
-├── services/         # API, 로컬 저장소
-├── providers/        # 상태 관리
-├── models/           # 데이터 모델
-├── utils/            # 유틸리티
-└── config/           # 설정, 상수
+├── screens/          # Screen widgets
+├── widgets/          # Reusable widgets
+├── services/         # API, local storage
+├── providers/        # State management
+├── models/           # Data models
+├── utils/            # Utilities
+└── config/           # Configuration, constants
 ```
 
-### 5. 클린 아키텍처 레이어 제안 (선택)
+### 5. Clean Architecture Layers (Optional)
 
 ```
 src/
-├── domain/           # 비즈니스 룰 (순수 로직, 외부 의존 없음)
-├── application/      # 유스케이스 (도메인 조합)
-├── infrastructure/   # 외부 연동 (DB, API, 파일)
-└── presentation/     # UI 또는 API 엔드포인트
+├── domain/           # Business rules (pure logic, no external deps)
+├── application/      # Use cases (domain composition)
+├── infrastructure/   # External integrations (DB, API, files)
+└── presentation/     # UI or API endpoints
 ```
 
-레이어 원칙:
-- 의존성 방향: presentation → application → domain (역방향 금지)
-- domain은 외부 패키지 import 금지
-- infrastructure는 domain의 인터페이스를 구현
+Layer rules:
+- Dependency direction: presentation → application → domain (reverse forbidden)
+- domain must not import external packages
+- infrastructure implements domain interfaces
 
-### 6. 보조 파일 생성
+### 6. Generate Supporting Files
 
-| 파일 | 내용 |
-|------|------|
-| `docs/README.md` | docs/ 폴더 용도 설명 |
-| `.dev/README.md` | .dev/ 폴더 용도 설명 |
-| `.gitignore` 추가 | `out/`, `.dev/scratch/` 항목 추가 |
+| File | Content |
+|------|---------|
+| `docs/README.md` | Purpose of docs/ directory |
+| `.dev/README.md` | Purpose of .dev/ directory |
+| `.gitignore` additions | `out/`, `.dev/scratch/` entries |
 
-### 7. CLAUDE.md에 구조 반영
+### 7. Update CLAUDE.md
 
-생성된 구조를 CLAUDE.md에 포인터로 추가:
+Add generated structure as pointers in CLAUDE.md:
 
 ```markdown
 ## Project Structure
@@ -137,51 +137,58 @@ src/
 
 ---
 
-## --check 모드: 기존 구조 점검
+## --check Mode: Audit Existing Structure
 
-### 점검 항목
+### Checklist
 
-| 항목 | 권장 | 점수 |
-|------|------|------|
-| `docs/` 존재 | 비즈니스 문서 분리 | /15 |
-| `.dev/` 존재 | AI 작업 기록 분리 | /10 |
-| src/ 하위 구조 | 역할별 폴더링 | /20 |
-| tests/ 분리 | 소스 옆이 아닌 별도 폴더 | /15 |
-| CLAUDE.md 구조 설명 | 폴더 역할 명시 | /10 |
-| .gitignore 완성 | out/, .dev/scratch/ 포함 | /5 |
-| 레이어 분리 | 도메인/서비스/인프라 구분 | /15 |
-| 의존성 방향 일관성 | 역방향 import 없음 | /10 |
+| Item | Criteria | Points |
+|------|----------|--------|
+| `docs/` exists | Business documents separated | /15 |
+| `.dev/` exists | AI work logs separated | /10 |
+| src/ sub-structure | Role-based folder organization | /20 |
+| tests/ separated | Not co-located with source | /15 |
+| CLAUDE.md describes structure | Folder purposes documented | /10 |
+| .gitignore complete | Includes out/, .dev/scratch/ | /5 |
+| Layer separation | Domain/service/infra distinction | /15 |
+| Dependency direction consistency | No reverse imports | /10 |
 
 ### Output
 
 ```markdown
-## Scaffold 점검 결과 (N/100)
+## Scaffold Audit Result (N/100)
 
-### 현재 구조
-[트리 출력]
+### Current Structure
+[tree output]
 
-### 점검 결과
-| 항목 | 상태 | 권장사항 |
-|------|------|---------|
-| docs/ | 없음 | `mkdir docs && echo "..." > docs/README.md` |
+### Findings
+| Item | Status | Recommendation |
+|------|--------|----------------|
+| docs/ | Missing | `mkdir docs && echo "..." > docs/README.md` |
 | ... | ... | ... |
 
-### 자동 수정 가능 항목
-1. [ ] docs/ 생성
-2. [ ] .dev/ 생성
-3. [ ] .gitignore 업데이트
+### Auto-Fixable Items
+1. [ ] Create docs/
+2. [ ] Create .dev/
+3. [ ] Update .gitignore
 
-자동 수정을 진행할까요? (y/n)
+Proceed with auto-fix? (y/n)
 ```
+
+### Self-Repair
+
+If audit score < 60, automatically suggest:
+1. Run `/vibe.scaffold` to generate missing directories
+2. Run `vibe update` to regenerate CLAUDE.md with structure info
+3. Run `/vibe.harness` for full maturity assessment
 
 ---
 
-## 핵심 원칙
+## Principles
 
-1. **절대 기존 파일 삭제/이동 안 함** — 새 폴더만 추가
-2. **빈 폴더에는 README.md** — 용도 설명으로 AI가 맥락 파악
-3. **구조 없음 < 나쁜 구조 < 좋은 구조** — 뭐라도 깔아두면 AI가 따라감
-4. **사람 문서(docs/) vs AI 기록(.dev/) 분리** — 관리 주체가 다르면 폴더도 분리
+1. **Never delete or move existing files** — only add new directories
+2. **Empty directories get a README.md** — purpose description helps AI understand context
+3. **No structure < bad structure < good structure** — any scaffolding improves AI output
+4. **Separate by ownership** — human docs (docs/) vs AI logs (.dev/) in different directories
 
 ---
 

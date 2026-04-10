@@ -5,145 +5,158 @@ argument-hint: (no arguments)
 
 # /vibe.harness
 
-프로젝트의 Harness Engineering 성숙도를 6축 기준으로 진단한다.
+Diagnose project Harness Engineering maturity across 6 axes and suggest targeted improvements.
 
-> Harness = AI가 혼자서도 잘 일할 수 있는 작업 환경
-> 맥락, 제한, 작업 환경, 작업 흐름, 검증 — 이 모든 것을 포괄하는 개념
+> Harness = the working environment that enables AI to operate effectively on its own.
+> Encompasses context, constraints, workflows, verification, and compounding — not just guardrails.
 
 ## Process
 
-### 1. 프로젝트 상태 수집
+### 1. Collect Project State (Parallel Agents)
 
-다음 항목을 병렬로 탐색:
+Dispatch 3 explorer agents in a single message:
 
 ```text
-# 3 agents in parallel
 Agent(subagent_type="explorer-low", model="haiku",
-  prompt="Check project scaffolding: 1) Does docs/ exist with business docs? 2) Does .dev/ exist for AI logs? 3) Is src/ organized by role (not flat)? 4) Is tests/ separate from src/? 5) List top-level directory structure.")
+  prompt="Check project scaffolding: 1) Does docs/ exist with business documents? 2) Does .dev/ exist for AI logs? 3) Is src/ organized by role (not flat)? 4) Is tests/ separate from src/? 5) List top-level directory structure.")
 
 Agent(subagent_type="explorer-low", model="haiku",
-  prompt="Check project context & boundaries: 1) Does CLAUDE.md exist and how many lines? 2) Does .claude/rules/ exist and how many rules? 3) Does .claude/settings.local.json exist with hooks? 4) Does .claude/vibe/config.json exist? 5) Are there any .claude/skills/?")
+  prompt="Check project context and boundaries: 1) Does CLAUDE.md exist? How many lines? 2) Does .claude/rules/ or .claude/vibe/ exist? How many rule files? 3) Does .claude/settings.local.json exist with hooks? 4) Does .claude/vibe/config.json exist? 5) Are there any .claude/skills/ directories?")
 
 Agent(subagent_type="explorer-low", model="haiku",
-  prompt="Check project planning, execution, verification: 1) Are there any SPEC files in .claude/vibe/specs/? 2) Are there any Feature (BDD) files in .claude/vibe/features/? 3) Are there test files? How many? 4) Is there a CI config (.github/workflows, etc.)? 5) Are there any .dev/learnings/ files?")
+  prompt="Check project planning, execution, and verification: 1) Are there SPEC files in .claude/vibe/specs/? 2) Are there Feature (BDD) files in .claude/vibe/features/? 3) Are there test files? How many? 4) Is there CI config (.github/workflows, etc.)? 5) Are there .dev/learnings/ files?")
 ```
 
-### 2. 6축 평가
+### 2. Score Each Axis
 
-#### 축 1: 구조 (Scaffolding) — /20
+#### Axis 1: Scaffolding — /20
 
-| 항목 | 기준 | 점수 |
-|------|------|------|
-| 역할별 폴더링 | src/ 하위가 역할별로 분리됨 (components/, services/, models/ 등) | /5 |
-| docs/ 존재 | 비즈니스 문서 폴더 존재 + 내용 있음 | /4 |
-| .dev/ 존재 | AI 작업 기록 폴더 존재 | /3 |
-| tests/ 분리 | 테스트가 소스 옆이 아닌 별도 구조 | /3 |
-| .gitignore 완성 | out/, .dev/scratch/, settings.local.json 포함 | /2 |
-| 레이어 분리 | domain/service/infra 또는 유사한 구분 존재 | /3 |
+| Item | Criteria | Points |
+|------|----------|--------|
+| Role-based folders | src/ subdivided by role (components/, services/, models/, etc.) | /5 |
+| docs/ exists | Business document directory with content | /4 |
+| .dev/ exists | AI work log directory | /3 |
+| tests/ separated | Tests not co-located with source files | /3 |
+| .gitignore complete | Includes out/, .dev/scratch/, settings.local.json | /2 |
+| Layer separation | Domain/service/infra or similar architectural layers | /3 |
 
-#### 축 2: 맥락 (Context) — /20
+#### Axis 2: Context — /20
 
-| 항목 | 기준 | 점수 |
-|------|------|------|
-| CLAUDE.md 존재 | 프로젝트 지도 역할 | /5 |
-| CLAUDE.md 적정 길이 | ~100줄 이하, 포인터 중심 | /3 |
-| rules/ 존재 | 코딩 규칙, 테스트 컨벤션 정의 | /4 |
-| 점진적 노출 | 스킬 tier 분리 또는 rules glob 패턴 | /3 |
-| docs/ 참조 | CLAUDE.md에서 docs/ 참조 여부 | /3 |
-| 언어 룰 | 스택별 코딩 표준 정의 | /2 |
+| Item | Criteria | Points |
+|------|----------|--------|
+| CLAUDE.md exists | Serves as project map | /5 |
+| CLAUDE.md is concise | ~100 lines or fewer, pointer-based | /3 |
+| Rules defined | Coding rules and test conventions in .claude/rules/ or similar | /4 |
+| Progressive disclosure | Skill tier separation or rules loaded via glob patterns | /3 |
+| docs/ referenced | CLAUDE.md references docs/ for business context | /3 |
+| Language rules | Stack-specific coding standards defined | /2 |
 
-#### 축 3: 계획 (Planning) — /15
+#### Axis 3: Planning — /15
 
-| 항목 | 기준 | 점수 |
-|------|------|------|
-| SPEC 워크플로 | spec/feature 파일 생성 체계 존재 | /5 |
-| 기획서/인터뷰 | 요구사항 수집 프로세스 존재 | /4 |
-| 승인 게이트 | 계획 → 구현 사이 확인 단계 존재 | /3 |
-| 템플릿 | SPEC/Feature 템플릿 존재 | /3 |
+| Item | Criteria | Points |
+|------|----------|--------|
+| SPEC workflow | System for generating spec/feature files | /5 |
+| Requirements gathering | Interview or requirements collection process exists | /4 |
+| Approval gates | Confirmation step between planning and implementation | /3 |
+| Templates | SPEC/Feature templates available | /3 |
 
-#### 축 4: 실행 (Orchestration) — /15
+#### Axis 4: Orchestration — /15
 
-| 항목 | 기준 | 점수 |
-|------|------|------|
-| 에이전트/스킬 | 전문 에이전트 또는 스킬 정의 | /5 |
-| 팀 구성 | 에이전트 팀 (architect + implementer + tester 등) | /4 |
-| Permission 모델 | 에이전트별 권한 분리 (read-only vs write) | /3 |
-| 비개발 워크플로 | 코드 외 작업 (문서, 리서치 등) 지원 | /3 |
+| Item | Criteria | Points |
+|------|----------|--------|
+| Agents or skills | Specialized agents or skills defined | /5 |
+| Team composition | Agent teams (architect + implementer + tester, etc.) | /4 |
+| Permission model | Per-agent permission separation (read-only vs write) | /3 |
+| Non-code workflows | Support for documentation, research, and other non-code tasks | /3 |
 
-#### 축 5: 검증 (Verification) — /15
+#### Axis 5: Verification — /15
 
-| 항목 | 기준 | 점수 |
-|------|------|------|
-| 자동 품질 검사 | PostToolUse hook으로 코드 검사 | /4 |
-| 테스트 존재 | 테스트 파일 존재 + 실행 가능 | /4 |
-| CI/CD | 자동 빌드/테스트 파이프라인 | /4 |
-| 추적성 (Traceability) | SPEC → 코드 → 테스트 매핑 | /3 |
+| Item | Criteria | Points |
+|------|----------|--------|
+| Automated quality checks | PostToolUse hooks for code inspection | /4 |
+| Tests exist | Test files present and executable | /4 |
+| CI/CD | Automated build/test pipeline configured | /4 |
+| Traceability | SPEC → code → test mapping (RTM) | /3 |
 
-#### 축 6: 개선 (Compound) — /15
+#### Axis 6: Compounding — /15
 
-| 항목 | 기준 | 점수 |
-|------|------|------|
-| learnings 기록 | .dev/learnings/ 에 트러블슈팅 기록 | /4 |
-| 패턴 축적 | 반복 작업이 스킬/룰로 정착 | /4 |
-| 자동 개선 | Evolution Engine 또는 유사 메커니즘 | /4 |
-| 메모리 | 세션 간 학습 유지 메커니즘 | /3 |
+| Item | Criteria | Points |
+|------|----------|--------|
+| Learnings recorded | Troubleshooting records in .dev/learnings/ | /4 |
+| Pattern accumulation | Repeated tasks codified as skills or rules | /4 |
+| Auto-improvement | Evolution Engine or similar self-improvement mechanism | /4 |
+| Memory | Cross-session learning persistence mechanism | /3 |
 
-### 3. 종합 리포트 출력
+### 3. Generate Report
 
 ```markdown
-## Harness 진단 결과 (N/100)
+## Harness Diagnosis (N/100)
 
-### 총점 및 등급
-- **점수**: N/100
-- **등급**: [S / A / B / C / D]
+### Score and Grade
+- **Score**: N/100
+- **Grade**: [S / A / B / C / D]
 
-| 등급 | 점수 | 설명 |
-|------|------|------|
+| Grade | Range | Description |
+|-------|-------|-------------|
 | S | 90-100 | Production-ready Harness |
 | A | 75-89 | Well-structured, minor gaps |
 | B | 60-74 | Functional but missing key elements |
 | C | 40-59 | Basic setup, significant gaps |
 | D | 0-39 | Minimal or no Harness |
 
-### 축별 점수
+### Axis Scores
 
-| 축 | 점수 | 상태 |
-|---|---|---|
-| 구조 (Scaffolding) | /20 | [상세] |
-| 맥락 (Context) | /20 | [상세] |
-| 계획 (Planning) | /15 | [상세] |
-| 실행 (Orchestration) | /15 | [상세] |
-| 검증 (Verification) | /15 | [상세] |
-| 개선 (Compound) | /15 | [상세] |
+| Axis | Score | Details |
+|------|-------|---------|
+| Scaffolding | /20 | [findings] |
+| Context | /20 | [findings] |
+| Planning | /15 | [findings] |
+| Orchestration | /15 | [findings] |
+| Verification | /15 | [findings] |
+| Compounding | /15 | [findings] |
 
-### 상위 3 개선 포인트
+### Top 3 Improvements
 
-1. **[가장 낮은 축]**: [구체적 액션]
-2. **[두 번째 축]**: [구체적 액션]
-3. **[세 번째 축]**: [구체적 액션]
+1. **[lowest axis]**: [specific action with command]
+2. **[second lowest]**: [specific action with command]
+3. **[third lowest]**: [specific action with command]
 
-### 자동 수정 가능 항목
+### Auto-Fixable Items
 
-다음 항목은 지금 바로 개선할 수 있습니다:
-1. [ ] `/scaffold` — 프로젝트 구조 생성
-2. [ ] `vibe init` — AI 설정 초기화
-3. [ ] CLAUDE.md 경량화 — 포인터 중심으로 리팩터
+The following can be improved immediately:
+1. [ ] `/vibe.scaffold` — generate missing project directories
+2. [ ] `vibe init` — initialize AI configuration
+3. [ ] `vibe update` — regenerate CLAUDE.md from project analysis
 
-자동 수정을 진행할까요? (y/n)
+Proceed with auto-fix? (y/n)
 ```
 
-### 4. 리포트 저장
+### 4. Save Report
 
-결과를 `.claude/vibe/reports/harness-{date}.md`에 저장.
+Save results to `.claude/vibe/reports/harness-{date}.md` for historical tracking.
+
+### 5. Self-Repair Chain
+
+After scoring, if actionable gaps are detected:
+
+| Condition | Auto-Suggestion |
+|-----------|-----------------|
+| Scaffolding < 10/20 | Suggest `/vibe.scaffold` to generate missing directories |
+| Context < 10/20 | Suggest `vibe update` to regenerate CLAUDE.md |
+| Planning < 8/15 | Suggest `/vibe.spec` to establish SPEC workflow |
+| Verification < 8/15 | Suggest `vibe init` to install quality hooks |
+| Compounding < 8/15 | Suggest creating `.dev/learnings/` and enabling evolution engine |
+
+If user approves auto-fix, execute the suggested commands in sequence, then re-run `/vibe.harness` to verify improvement.
 
 ---
 
-## 핵심 원칙
+## Principles
 
-1. **있는 그대로 평가** — 점수를 부풀리지 않는다
-2. **구체적 액션 제안** — "개선 필요" 대신 실행 가능한 명령어 제시
-3. **점진적 개선** — 한 번에 모든 걸 고치려 하지 않고, 상위 3개에 집중
-4. **반복 측정** — 시간 경과에 따른 점수 변화 추적 가능
+1. **Score honestly** — never inflate scores
+2. **Suggest specific actions** — executable commands, not vague advice like "improve structure"
+3. **Focus on top 3** — don't try to fix everything at once
+4. **Track over time** — enable score comparison across runs via saved reports
 
 ---
 
