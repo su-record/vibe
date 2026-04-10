@@ -288,9 +288,66 @@ Auto-fixer hit a wall. These items need human input:
 
 ### Termination Rules
 
-- **P1 = 0 AND no new findings this round** → converged, stop
-- **Round N findings == Round N-1 findings** → no progress, stop immediately (prevents runaway)
-- **Round 1 with P1 = 0 AND no P2/P3** → perfect on first try, stop
+- **P1 = 0 AND no new findings this round** → converged, stop (primary success)
+- **Round 1 with P1 = 0 AND no P2/P3** → perfect on first try, stop (early success)
+- **Round N findings == Round N-1 findings** → **stuck**: LLMs keep flagging same issues that auto-applier can't resolve → **ask the user** (see 3.2.1)
+
+### Stuck Handling (3.2.1)
+
+When the same findings repeat across rounds, the auto-apply loop has hit a wall. This typically means:
+- The fix requires human judgment (architectural trade-off, domain rule, etc.)
+- The LLMs are producing a false positive that the auto-applier can't dismiss
+- The suggested fix conflicts with an existing constraint
+
+**Interactive mode** — prompt the user:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ RACE REVIEW STUCK at Round {N}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Same findings repeated from Round {N-1}. Auto-applier cannot resolve:
+
+| # | Issue | Severity | GPT | Gemini | Reason it's stuck |
+|---|-------|----------|-----|--------|-------------------|
+| 1 | {issue title} | P1 | ✅ | ✅ | {e.g., "fix requires domain decision"} |
+| 2 | {issue title} | P2 | ✅ | ❌ | {e.g., "conflicts with existing constraint"} |
+
+어떻게 진행할까요?
+  1. 직접 해결책을 알려주세요 (예: "이슈 1은 retry 5회로, 이슈 2는 무시")
+     → 반영 후 다음 라운드 재실행
+  2. "proceed" — 현재 이슈를 TODO로 기록하고 Step 4로 진행
+  3. "abort" — 워크플로 중단
+
+(ultrawork 모드에서는 이 프롬프트 없이 자동으로 TODO 기록 + 진행)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Pseudocode:**
+
+```python
+if current_findings == prev_findings:
+    if ultrawork_mode:
+        print("ℹ️ ultrawork mode — recording stuck issues to TODO and proceeding")
+        record_todo(current_findings)
+        break
+
+    user_input = ask_user(
+        "Race Review stuck. Please either:\n"
+        "  1. Provide resolution for the listed issues\n"
+        "  2. Type 'proceed' to record as TODO and continue to Step 4\n"
+        "  3. Type 'abort' to stop the workflow"
+    )
+
+    if user_input == "abort":
+        raise WorkflowAborted("User aborted at Race Review")
+    if user_input == "proceed":
+        record_todo(current_findings)
+        break
+    # otherwise: apply user-provided resolutions → next round
+    apply_user_resolutions(user_input)
+    continue  # re-run the round with updated SPEC
+```
 
 ### Narrowing Scope (Noise Reduction)
 
