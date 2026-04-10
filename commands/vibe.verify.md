@@ -172,8 +172,9 @@ For each UI scenario in Feature file:
   3. FAIL → Collect evidence (screenshot, console errors)
        → Root cause analysis
        → Fix code (Read full file first, then edit)
-       → Re-run ONLY failed scenario (max 3 retries)
-  4. 3x FAIL → Report as manual fix needed
+       → Re-run ONLY failed scenario (loop until pass or stuck)
+  4. STUCK (same failure as previous iteration) → Ask user
+       (ultrawork 모드: 프롬프트 없이 TODO 기록 후 다음 scenario)
 ```
 
 **핵심 원칙: 검증이 가벼워야 루프가 충분히 돈다.**
@@ -465,19 +466,27 @@ For each scenario, verify at THREE levels:
 | Build error | Show error location |
 | Type error | Suggest type annotations |
 
-### Failure Escalation (max 3 retries)
+### Failure Escalation (convergence-based, no retry cap)
 
 ```
 Auto-fix attempt 1 → Re-verify
   ❌ Still failing?
 Auto-fix attempt 2 → Re-verify
-  ❌ Still failing?
-Auto-fix attempt 3 → Re-verify
-  ❌ Still failing?
-    → STOP. Do NOT retry further.
-    → Record failure in .claude/vibe/todos/verify-failure-{scenario}.md
-    → Report to user: "Scenario X failed after 3 attempts. Manual review needed."
-    → Continue to next scenario (don't block entire verification)
+  ❌ Still failing?  ← same error as prev? STUCK
+  ✓ different error? Continue (progress made)
+  ...
+Stuck detected (same error as previous attempt):
+  → Interactive mode: Ask user
+      1. Provide a fix hint (e.g., "check LoginForm.tsx line 42")
+         → Apply → Re-verify → Continue loop
+      2. Type "proceed" → Record failure in
+         .claude/vibe/todos/verify-failure-{scenario}.md,
+         continue to next scenario
+      3. Type "abort" → Stop entire verification
+  → ultrawork mode: auto-record TODO + continue to next scenario
+
+No retry cap — loop continues as long as the auto-fixer makes progress.
+Only "same error twice" (stuck) triggers escalation.
 ```
 
 ### Verification Report Requirements
