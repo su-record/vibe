@@ -196,3 +196,12 @@ Free — no settlement needed
 - DM draft (short, 5-line version) + email draft (formal)
 - Auto-reference existing contact history (for re-outreach)
 - Business card image + LinkedIn URL → `data/speakers/{name}.json` accumulation
+
+## Error Recovery
+
+| Failure | Recovery |
+|---------|----------|
+| Gemini image API unavailable | Skip image generation, use text-only placeholder slide with community colors |
+| Gemini image quality too low | Retry with simplified prompt (remove detail, keep core subject) |
+| PPTX generation error | Output slide content as markdown with speaker notes for manual assembly |
+| Nametag HTML render issue | Simplify to basic table layout, remove custom fonts |

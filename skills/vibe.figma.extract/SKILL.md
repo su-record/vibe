@@ -22,7 +22,7 @@ Extraction priority:
 
 ```
 Bash:
-  node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId}
+  node "{{VIBE_PATH}}/hooks/scripts/figma-extract.js" tree {fileKey} {nodeId}
 
 Returns (FigmaNode JSON):
   {
@@ -124,7 +124,7 @@ BG frame identification criteria:
   - OR same size as parent (±10%) + 3 or more child images
 
 Rendering:
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {bg.nodeId} --out=/tmp/{feature}/bg/{section}-bg.webp
+  node "{{VIBE_PATH}}/hooks/scripts/figma-extract.js" screenshot {fileKey} {bg.nodeId} --out=/tmp/{feature}/bg/{section}-bg.webp
 ```
 
 ### 2-2. Content Node Rendering
@@ -144,7 +144,7 @@ Targets (identified from tree.json):
     → Render the same way as BG frames
 
 Rendering:
-  node "[FIGMA_SCRIPT]" screenshot {fileKey} {node.nodeId} --out=/tmp/{feature}/content/{name}.webp
+  node "{{VIBE_PATH}}/hooks/scripts/figma-extract.js" screenshot {fileKey} {node.nodeId} --out=/tmp/{feature}/content/{name}.webp
 ```
 
 ### 2-3. imageRef Download (Fallback)
@@ -205,3 +205,15 @@ If any item is missing → re-extract (do NOT proceed to Phase 3)
 5. Per-section validation screenshots → files exist in sections/
 6. File naming convention: all kebab-case (no hash filenames)
 ```
+
+---
+
+## Error Recovery
+
+| Failure | Recovery |
+|---------|----------|
+| Figma API 401 (unauthorized) | Prompt user to set FIGMA_ACCESS_TOKEN in environment or ~/.vibe/config.json |
+| Figma API 404 (file not found) | Verify fileKey extracted from URL. Check if file is shared/accessible. |
+| Figma API 429 (rate limit) | Wait 60s, retry with reduced node scope (single page instead of full file) |
+| API timeout on large file | Split request by page — fetch one page at a time via nodeId parameter |
+| Screenshot download failure | Skip screenshot, proceed with tree.json only (mark visual verification as manual) |

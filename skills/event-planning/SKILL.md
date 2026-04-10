@@ -88,6 +88,18 @@ When user says "MDC 준비해줘" or similar:
 }
 ```
 
+## State Management
+
+**Location**: `.claude/vibe/.event_state.json` (project-local, gitignored)
+
+### Error Recovery
+
+| Failure | Recovery |
+|---------|----------|
+| State file missing | Regenerate from scratch by re-reading event config and completed artifacts |
+| State file corrupted (invalid JSON) | Delete corrupted file, regenerate from current directory state |
+| State phase mismatch | Trust directory artifacts over state file — scan for completed outputs and infer current phase |
+
 ## Community Tone Guide
 
 | | MDC | Webinar | DWK |

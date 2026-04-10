@@ -222,3 +222,14 @@ diff handling:
 6. ⛔ Image filenames: kebab-case naming → OK
    (hash filenames like 68ad470b.webp etc. → FAIL)
 ```
+
+---
+
+## Error Recovery
+
+| Failure | Recovery |
+|---------|----------|
+| tree.json missing | Prompt user to run extract phase first: load `vibe.figma.extract` skill |
+| component-index.json missing | Generate minimal index from tree.json section names |
+| sections.json malformed | Re-read tree.json and regenerate sections.json from scratch |
+| SCSS output empty | Check tree.json for valid style nodes. If none found, use default reset styles. |

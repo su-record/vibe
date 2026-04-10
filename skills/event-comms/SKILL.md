@@ -152,6 +152,16 @@ This session's topic: {topic}
 3. Next event preview
 4. Thank you + community link
 
+## Error Recovery
+
+| Failure | Recovery |
+|---------|----------|
+| Aligo API timeout/error | Retry once after 5s. If still failing, output the SMS text as plain text for manual sending |
+| Aligo auth error | Prompt user to verify API key in `~/.vibe/config.json` |
+| Gmail auth expired | Prompt user to re-authenticate: `! gemini auth login` or refresh OAuth token |
+| Gmail quota exceeded | Save email as `.eml` file for manual sending later |
+| SNS post generation fails | Output post text as markdown for manual copy-paste |
+
 ## API Keys Required
 
 | Key | Service | Required |

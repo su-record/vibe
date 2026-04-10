@@ -105,7 +105,7 @@ Output (text only):
 **Coordinator pattern: run MO/PC extraction as parallel workers.**
 
 ```
-# [FIGMA_SCRIPT] = ~/.vibe/hooks/scripts/figma-extract.js
+# [FIGMA_SCRIPT] = {{VIBE_PATH}}/hooks/scripts/figma-extract.js
 
 Simultaneous MO/PC extraction (each as an independent worker):
   Worker-MO: screenshot → tree → images → asset rendering → sections/
@@ -129,14 +129,14 @@ Multi-frame (same BP, different pages):
 
 ```bash
 # MO
-node ~/.vibe/hooks/scripts/figma-refine.js \
+node {{VIBE_PATH}}/hooks/scripts/figma-refine.js \
   /tmp/{feature}/mo-main/tree.json \
   --out=/tmp/{feature}/mo-main/sections.json \
   --design-width=720 \
   --bp=mo
 
 # PC
-node ~/.vibe/hooks/scripts/figma-refine.js \
+node {{VIBE_PATH}}/hooks/scripts/figma-refine.js \
   /tmp/{feature}/pc-main/tree.json \
   --out=/tmp/{feature}/pc-main/sections.json \
   --design-width=2560 \
@@ -221,12 +221,12 @@ Union of common tokens → shared _tokens.scss
 
 ```bash
 # Step A: Auto-generate SCSS skeleton (run once per BP)
-node ~/.vibe/hooks/scripts/figma-to-scss.js \
+node {{VIBE_PATH}}/hooks/scripts/figma-to-scss.js \
   /tmp/{feature}/{bp}-main/sections.json \
   --out=/path/to/project/assets/scss/{feature}/
 
 # Step B: Per-section validation (after writing each section's code)
-node ~/.vibe/hooks/scripts/figma-validate.js \
+node {{VIBE_PATH}}/hooks/scripts/figma-validate.js \
   /path/to/project/assets/scss/{feature}/ \
   /tmp/{feature}/{bp}-main/sections.json \
   --section={SectionName}
@@ -349,3 +349,15 @@ Cleanup: shut down browser + dev server
 
 ⛔ "Completion summary" output is only allowed after Phase 6 is complete (or user proceeds).
 ```
+
+---
+
+## Error Recovery
+
+| Failure | Recovery |
+|---------|----------|
+| figma-extract.js script error | Check Node.js version (>=18 required). Verify Figma API token in config. Retry once. |
+| figma-to-scss.js parse failure | Validate input tree.json structure. If malformed, re-run extract phase. |
+| figma-validate.js comparison failure | Skip automated validation, present screenshot side-by-side for manual review |
+| Puppeteer/CDP not available | Skip visual verification phase, rely on manual browser check |
+| Figma API rate limit (429) | Wait 60s and retry. If persistent, reduce node scope. |

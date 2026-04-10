@@ -353,6 +353,6 @@ Claude: ⚠️ All required items complete. 10 optional items will be marked as 
 ## Related
 
 - **Next**: `vibe.plan` — refine interview results into a structured plan
-- **After plan**: `/vibe.figma` (UI track) + `/vibe.spec` (logic track) in parallel
+- **After plan**: `vibe.spec` (skill) → generates SPEC → then `/vibe.run` (logic) + `/vibe.figma` (UI track) in parallel
 - **Templates**: `~/.claude/vibe/templates/plan-template.md`
 - **Checklists**: `skills/vibe.interview/checklists/{type}.md`

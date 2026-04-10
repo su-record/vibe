@@ -94,6 +94,13 @@ The template has a 12-section structure:
 | 11 | Assumptions & Risks | ✅ | |
 | 12 | Next Steps (Handoff) | ✅ | |
 
+### Template Fallback
+
+If `~/.claude/vibe/templates/plan-template.md` is not found:
+1. Check `{{VIBE_PATH}}/vibe/templates/plan-template.md` (package source)
+2. If neither exists, use the built-in section list from this skill as the template structure
+3. Never fail silently — always inform the user which template source was used
+
 ## Step 3: Per-Section Refinement Mapping
 
 Interview items → plan document section mapping rules:
