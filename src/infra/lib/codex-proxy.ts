@@ -7,6 +7,8 @@ import http from 'http';
 import crypto from 'crypto';
 import { spawn } from 'child_process';
 import { getApiKeyFromConfig, findCodexCredentials, getAuthInfo } from './gpt/auth.js';
+import { readGlobalConfig, getGeminiApiKey } from './config/GlobalConfigManager.js';
+import type { CodexProxyConfig } from '../../cli/types.js';
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -447,10 +449,20 @@ function sendError(res: http.ServerResponse, status: number, message: string): v
   res.end(JSON.stringify({ type: 'error', error: { type: 'api_error', message } }));
 }
 
+// ─── Config 읽기 ─────────────────────────────────────────────
+
+export function getProxySettings(): CodexProxyConfig {
+  const config = readGlobalConfig();
+  return config.codexProxy || {};
+}
+
 // ─── 인증 소스 확인 (동기, 시작/상태 표시용) ────────────────
 
 export function checkAuthSource(): AuthSource | null {
   if (process.env.CODEX_PROXY_API_KEY) return { source: 'env' };
+  const settings = getProxySettings();
+  if (settings.apiKey) return { source: 'apikey' };
+  if (settings.provider === 'gemini' && getGeminiApiKey()) return { source: 'apikey' };
   const codex = findCodexCredentials();
   if (codex) return { source: 'codex-cli' };
   const apiKey = process.env.OPENAI_API_KEY || getApiKeyFromConfig();
@@ -461,18 +473,28 @@ export function checkAuthSource(): AuthSource | null {
 // ─── 요청별 인증 해석 (비동기, 토큰 갱신 포함) ──────────────
 
 async function resolveRequestAuth(): Promise<{ token: string; baseUrl: string }> {
-  const baseUrl = process.env.CODEX_PROXY_TARGET_URL || DEFAULT_TARGET_URL;
+  const settings = getProxySettings();
+  const baseUrl = process.env.CODEX_PROXY_TARGET_URL || settings.targetUrl || DEFAULT_TARGET_URL;
 
-  // 1. 프록시 전용 env var (최우선)
+  // 1. 환경변수 최우선
   const proxyKey = process.env.CODEX_PROXY_API_KEY;
   if (proxyKey) return { token: proxyKey, baseUrl };
 
-  // 2. GPT 인증 시스템 (codex-cli OAuth → apikey 순서, 토큰 자동 갱신)
+  // 2. Config의 커스텀 API key
+  if (settings.apiKey) return { token: settings.apiKey, baseUrl };
+
+  // 3. Gemini provider → credentials.gemini.apiKey
+  if (settings.provider === 'gemini') {
+    const geminiKey = getGeminiApiKey();
+    if (geminiKey) return { token: geminiKey, baseUrl };
+  }
+
+  // 4. GPT 인증 (codex-cli OAuth → apikey 순서, 토큰 자동 갱신)
   const auth = await getAuthInfo();
   const token = auth.accessToken || auth.apiKey;
   if (token) return { token, baseUrl };
 
-  throw new Error('인증 정보 없음. codex login 또는 vibe gpt key <key> 필요');
+  throw new Error('인증 정보 없음. vibe codex --setup 실행 필요');
 }
 
 // ─── Messages Endpoint Handler ───────────────────────────────
@@ -557,7 +579,8 @@ export function launchSession(
     process.exit(1);
   }
 
-  const defaultModel = model || process.env.CODEX_PROXY_MODEL || 'gpt-4o';
+  const settings = getProxySettings();
+  const defaultModel = model || process.env.CODEX_PROXY_MODEL || settings.model || 'gpt-4o';
   const config: ProxyConfig = { port: 0, defaultModel };
   const server = createProxyServer(config);
 

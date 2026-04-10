@@ -254,7 +254,12 @@ Example: vibe skills add vercel-labs/skills
   // vibe codex — Claude Code + OpenAI/Gemini 호환 모델
   case 'codex': {
     const codexSub = positionalArgs[1];
-    if (codexSub === 'shell') {
+    if (args.includes('--setup')) {
+      (async () => {
+        const { codexSetup } = await import('./commands/codex-proxy.js');
+        await codexSetup();
+      })();
+    } else if (codexSub === 'shell') {
       const mIdx = args.indexOf('--model');
       codexShell(mIdx >= 0 ? args[mIdx + 1] : undefined);
     } else if (codexSub === 'status') {
@@ -262,11 +267,15 @@ Example: vibe skills add vercel-labs/skills
     } else if (codexSub === 'help') {
       codexHelp();
     } else {
-      // vibe codex [--model MODEL] [claude args...] — 프록시 + Claude Code 원샷
+      // 모델: --model MODEL 또는 /MODEL shorthand
+      let model: string | undefined;
       const mIdx = args.indexOf('--model');
-      const model = mIdx >= 0 ? args[mIdx + 1] : undefined;
-      const claudeArgs = args.slice(1)
-        .filter((a, i) => a !== 'codex' && a !== '--model' && !(mIdx >= 0 && i === mIdx));
+      if (mIdx >= 0) model = args[mIdx + 1];
+      if (codexSub?.startsWith('/')) model = codexSub.slice(1);
+
+      const claudeArgs = args.slice(1).filter(a =>
+        a !== 'codex' && a !== '--model' && a !== model && !a.startsWith('/'),
+      );
       codexLaunch(model, claudeArgs);
     }
     break;
