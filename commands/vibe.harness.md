@@ -10,6 +10,20 @@ Diagnose project Harness Engineering maturity across 6 axes and suggest targeted
 > Harness = the working environment that enables AI to operate effectively on its own.
 > Encompasses context, constraints, workflows, verification, and compounding — not just guardrails.
 
+## Step 0: Detect Project Type
+
+Before scoring, read `CLAUDE.md` and `package.json` to determine project type:
+
+| Type | Signal | Effect |
+|------|--------|--------|
+| **Application** (webapp, api, fullstack, mobile) | `type` in config, app-like structure | Full rubric applies |
+| **Package/Library** | `"main"` or `"exports"` in package.json, "npm package" in CLAUDE.md | Skip docs/, .dev/ items (mark N/A), adjust total denominator |
+| **Monorepo** | `workspaces` in package.json, `apps/` or `packages/` dirs | Score each workspace separately |
+
+When items are N/A, **remove their points from the total** rather than scoring 0. A library scoring 65/80 (N/A items excluded) = 81%, not 65%.
+
+---
+
 ## Process
 
 ### 1. Collect Project State (Parallel Agents)
@@ -34,8 +48,8 @@ Agent(subagent_type="explorer-low", model="haiku",
 | Item | Criteria | Points |
 |------|----------|--------|
 | Role-based folders | src/ subdivided by role (components/, services/, models/, etc.) | /5 |
-| docs/ exists | Business document directory with content | /4 |
-| .dev/ exists | AI work log directory | /3 |
+| docs/ exists | Business document directory with content (N/A for packages/libraries) | /4 |
+| .dev/ exists | AI work log directory (N/A for packages/libraries) | /3 |
 | tests/ separated | Tests not co-located with source files | /3 |
 | .gitignore complete | Includes out/, .dev/scratch/, settings.local.json | /2 |
 | Layer separation | Domain/service/infra or similar architectural layers | /3 |
@@ -82,7 +96,7 @@ Agent(subagent_type="explorer-low", model="haiku",
 
 | Item | Criteria | Points |
 |------|----------|--------|
-| Learnings recorded | Troubleshooting records in .dev/learnings/ | /4 |
+| Learnings recorded | Troubleshooting records in .dev/learnings/ (N/A for packages/libraries) | /4 |
 | Pattern accumulation | Repeated tasks codified as skills or rules | /4 |
 | Auto-improvement | Evolution Engine or similar self-improvement mechanism | /4 |
 | Memory | Cross-session learning persistence mechanism | /3 |
