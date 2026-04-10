@@ -1,7 +1,7 @@
 ---
 name: vibe.spec.review
 tier: core
-description: "Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe.spec completes, or when the user says 'review spec', '/vibe.spec.review'."
+description: "Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe.spec completes, or when the user says 'review spec', '스펙 리뷰'."
 triggers: ["spec review", "review spec", "SPEC 리뷰", "명세 리뷰", race review]
 priority: 80
 chain-next: []
@@ -17,9 +17,13 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 
 ## Usage
 
-```bash
-/vibe.spec.review "feature-name"
+이 스킬은 `/vibe.spec` 오케스트레이터의 Phase 4에서 자동 호출된다. 직접 호출이 필요한 경우:
+
 ```
+Load skill `vibe.spec.review` with feature: "feature-name"
+```
+
+또는 자연어 트리거: "스펙 리뷰", "review spec", "명세 리뷰".
 
 **Prerequisites:**
 - SPEC file exists: `.claude/vibe/specs/{feature-name}.md` (single) or `.claude/vibe/specs/{feature-name}/_index.md` (split)
@@ -44,14 +48,14 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 ## Workflow
 
 ```
-/vibe.spec "feature" → SPEC created
+/vibe.spec "feature" → SPEC created (Phase 3)
         ↓
-    /new (new session)
-        ↓
-/vibe.spec.review "feature" → Quality validation + GPT/Gemini review
+Phase 4: vibe.spec.review skill (this) → Quality validation + GPT/Gemini review
         ↓
     /vibe.run "feature"
 ```
+
+**대용량 컨텍스트인 경우**: `/new` 후 `/vibe.spec "feature"` 재진입 → Smart Resume이 Phase 4부터 시작.
 
 ---
 
@@ -696,11 +700,7 @@ Continuing with {other model} results only...
 
 ## Quick Mode
 
-For faster iteration (1 round only):
-
-```bash
-/vibe.spec.review "feature-name" --quick
-```
+For faster iteration (1 round only): pass `--quick` flag when invoking the skill (or via `/vibe.spec "feature-name" --quick` orchestrator).
 
 ---
 

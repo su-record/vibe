@@ -20,7 +20,7 @@
 ## 사용 스킬
 
 - `/vibe.review` (Phase 4.5: Review Debate)
-- `/vibe.spec.review` (Step 3.5: SPEC Debate)
+- `vibe.spec.review` skill (Step 3.5: SPEC Debate)
 - `/vibe.run` (Review Team: 구현 후 리뷰)
 
 ## 워크플로우

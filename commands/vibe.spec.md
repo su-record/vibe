@@ -382,7 +382,7 @@ Claude: 🔍 Input 분석
           ✅ feature: .claude/vibe/features/bean-landing.feature
 
         이미 SPEC이 존재합니다. 어떻게 진행할까요?
-        1. /vibe.spec.review 실행 (리뷰)
+        1. SPEC 리뷰 (Phase 4: vibe.spec.review 스킬 로드)
         2. /vibe.run 실행 (구현)
         3. SPEC 재작성 (기존 백업 후 새로 작성)
         4. 종료

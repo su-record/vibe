@@ -29,7 +29,7 @@ When `ultrawork` (or `ulw`) is included, automatically chains:
     ↓
 [1] SPEC Creation (this command)
     ↓
-[2] Auto: /vibe.spec.review "{feature}"
+[2] Auto: Load skill `vibe.spec.review` (chain-next from this skill)
     ↓
 [3] Auto: /vibe.run "{feature}" ultrawork
 ```
@@ -906,7 +906,7 @@ Stuck? (score == prev_score)
   ├─ Interactive: ask user → fill values OR "proceed" OR "abort"
   └─ ultrawork: record gaps as TODO → proceed
       ↓
-Score == 100 (or user-approved) → SPEC Draft Complete → Handoff to /vibe.spec.review
+Score == 100 (or user-approved) → SPEC Draft Complete → Handoff to vibe.spec.review skill
 ```
 
 #### 7.4 Auto-Fix for Low Score
@@ -929,7 +929,7 @@ After SPEC draft is complete (score ≥ 95):
 **If `ultrawork` mode:**
 - ❌ DO NOT show handoff message
 - ❌ DO NOT ask for confirmation
-- ✅ Immediately proceed to `/vibe.spec.review "{feature-name}"`
+- ✅ Immediately load skill `vibe.spec.review` with feature `{feature-name}` (chain-next)
 - ✅ After review passes, immediately proceed to `/vibe.run "{feature-name}" ultrawork`
 
 **If normal mode:**
@@ -947,13 +947,15 @@ Output the handoff message:
 ⏱️ Completed: {getCurrentTime 결과}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ NEXT STEP: Run SPEC review
+⚠️ NEXT STEP: Run SPEC review (vibe.spec.review skill)
 
 Option 1 (same session):
-  /vibe.spec.review "{feature-name}"
+  Load skill `vibe.spec.review` with feature `{feature-name}`
+  (또는 자연어: "스펙 리뷰")
 
 Option 2 (recommended for large context):
-  /new → /vibe.spec.review "{feature-name}"
+  /new → /vibe.spec "{feature-name}"
+  (Smart Resume이 Phase 4부터 시작)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
