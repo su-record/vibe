@@ -163,17 +163,17 @@ Tried capabilities (all failed to prevent the failure):
 Automated diagnosis has run out of angles. This failure may require
 human judgment (process issue, cross-category solution, or external factor).
 
-어떻게 진행할까요?
-  1. 다른 각도 제안 (예: "이건 프로세스 문제야", "Tool+Guardrail 조합이 필요해")
-     → 사용자 지시에 따라 custom 접근 시도, 다음 verify로 진입
-  2. "manual" — 이 실패는 수동 개입으로 해결, capability loop 종료
-     (capabilities-log.md에 "escalated to manual" 기록)
-  3. "abort" — 포기, 실패만 기록
-     (capabilities-log.md에 "diagnosis exhausted" 기록, 나머지 워크플로 중단 안 함)
+How would you like to proceed?
+  1. Suggest a different angle (e.g., "this is a process issue", "needs Tool+Guardrail combination")
+     → Attempt custom approach per user instruction, then enter next verify
+  2. "manual" — resolve this failure via manual intervention, end capability loop
+     (record "escalated to manual" in capabilities-log.md)
+  3. "abort" — give up, record failure only
+     (record "diagnosis exhausted" in capabilities-log.md, do not halt the rest of the workflow)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**ultrawork 모드 예외:**
+**ultrawork mode exception:**
 
 ```python
 if ultrawork_mode:

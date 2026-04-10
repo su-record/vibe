@@ -1,86 +1,86 @@
 ---
 name: chub-usage
 tier: optional
-description: "Context Hub (chub) — 검수된 최신 API 문서 조회. 외부 API/SDK 코드 작성 시 training data 대신 최신 문서를 기반으로 정확한 코드 작성."
+description: "Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs."
 triggers: [chub, context hub, API docs, latest API, deprecated API, SDK documentation, api reference, 최신 문서]
 priority: 65
 ---
 
 # Context Hub (chub) Usage
 
-외부 API/SDK 코드 작성 전 검수된 최신 문서를 가져오는 스킬.
-Training data의 지식 컷오프 문제를 해결합니다.
+A skill for fetching vetted, up-to-date documentation before writing external API/SDK code.
+Solves the knowledge cutoff problem inherent in training data.
 
 ## Why?
 
 | Problem | Solution |
 |---------|----------|
-| Training data에 의존 → deprecated API 사용 | chub get → 검수된 최신 문서 기반 코드 |
-| 웹 검색 → 노이즈 섞인 결과 | chub search → 큐레이션된 문서만 |
-| 세션마다 같은 실수 반복 | chub annotate → 학습 누적 |
+| Relying on training data → using deprecated APIs | chub get → code based on vetted latest docs |
+| Web search → noisy results | chub search → curated docs only |
+| Repeating the same mistakes every session | chub annotate → accumulated learnings |
 
 ## When to Use
 
 | Situation | Example |
 |-----------|---------|
-| 외부 API 코드 작성 | "Stripe 결제 연동해줘" |
-| SDK 최신 버전 확인 | "OpenAI 최신 모델 호출" |
-| 공식 문서 필요 | "Supabase auth 설정" |
-| Deprecated 패턴 방지 | "Firebase v10 마이그레이션" |
+| Writing external API code | "Integrate Stripe payments" |
+| Checking latest SDK version | "Call the latest OpenAI model" |
+| Need official documentation | "Set up Supabase auth" |
+| Preventing deprecated patterns | "Firebase v10 migration" |
 
 ## Workflow
 
 ```
-외부 API/SDK 코드 작성 요청
+Request to write external API/SDK code
     ↓
-Step 0: chub 설치 확인 (없으면 자동 설치)
+Step 0: Check if chub is installed (auto-install if not)
     ↓
-Step 1: chub search "<라이브러리명>"
+Step 1: chub search "<library name>"
     ↓
 Step 2: chub get <id> --lang ts
     ↓
-Step 3: 문서 기반 코드 작성
+Step 3: Write code based on the docs
     ↓
-Step 4: gotcha 발견 시 chub annotate
+Step 4: chub annotate when a gotcha is discovered
 ```
 
-## Step 0 — 자동 설치 (Auto-install)
+## Step 0 — Auto-install
 
-**스킬 실행 전 반드시 먼저 수행한다.**
+**Always perform this step before running the skill.**
 
 ```bash
-# 1. chub 존재 여부 확인
+# 1. Check if chub exists
 which chub || command -v chub
 ```
 
-chub이 없으면 자동 설치를 시도한다:
+If chub is not found, attempt automatic installation:
 
 ```bash
 npm install -g @aisuite/chub
 ```
 
-설치 실패 시 `npx @aisuite/chub`로 대체 실행한다:
+If installation fails, fall back to running via `npx @aisuite/chub`:
 
 ```bash
-# search 예시
+# search example
 npx @aisuite/chub search "stripe"
-# get 예시
+# get example
 npx @aisuite/chub get stripe/api --lang ts
 ```
 
-`npx`도 실패하면 context7 또는 Web Search로 폴백한다 (Fallback Chain 참조).
+If `npx` also fails, fall back to context7 or Web Search (see Fallback Chain).
 
 ## Usage
 
-### Step 1 — 문서 검색
+### Step 1 — Search for docs
 
 ```bash
 chub search "stripe"
 chub search "openai"
-chub search ""           # 전체 목록 확인
+chub search ""           # View full list
 ```
 
-### Step 2 — 최신 문서 fetch
+### Step 2 — Fetch latest docs
 
 ```bash
 chub get stripe/api --lang ts
@@ -88,26 +88,26 @@ chub get openai/chat --lang py
 chub get supabase/auth --lang js
 ```
 
-### Step 3 — 문서 기반 코드 작성
+### Step 3 — Write code based on the docs
 
-fetch한 문서 내용을 기반으로 정확한 코드 작성.
-**절대 training data에 의존하지 않는다. 문서 먼저, 코드 나중.**
+Write accurate code based on the fetched documentation.
+**Never rely on training data. Docs first, code second.**
 
-### Step 4 — 학습 내용 기록
+### Step 4 — Record learnings
 
-작업 중 발견한 gotcha, workaround, 버전 이슈:
+Gotchas, workarounds, and version issues discovered during work:
 
 ```bash
-chub annotate stripe/api "한국 결제는 pg 파라미터 필수"
-chub annotate openai/chat "streaming에서 tool_calls는 delta로 옴"
-chub annotate firebase/auth "v10에서 getAuth() import 경로 변경"
+chub annotate stripe/api "pg parameter is required for Korean payments"
+chub annotate openai/chat "tool_calls in streaming comes as delta"
+chub annotate firebase/auth "getAuth() import path changed in v10"
 ```
 
-Annotation은 로컬 저장, 다음 세션에서 `chub get` 시 자동으로 같이 나옴.
+Annotations are stored locally and automatically included the next time you run `chub get`.
 
 ## Implementation Pattern (Subagent)
 
-컨텍스트 블로트 방지를 위해 서브에이전트에서 실행:
+Run via subagent to prevent context bloat:
 
 ```
 Task tool call:
@@ -116,24 +116,24 @@ Task tool call:
 - prompt: "Run `chub search <library>` then `chub get <id> --lang <lang>` to fetch latest API documentation for [topic]. Return only the relevant API usage examples, key changes from previous versions, and any annotations."
 ```
 
-서브에이전트가 chub 호출을 처리하고 요약만 반환 → 메인 컨텍스트 깨끗하게 유지.
+The subagent handles the chub calls and returns only a summary — keeping the main context clean.
 
 ## Supported APIs (1,000+)
 
-OpenAI, Anthropic, Stripe, Firebase, Supabase, Vercel, AWS S3, Cloudflare Workers, Auth0, Clerk 등.
+OpenAI, Anthropic, Stripe, Firebase, Supabase, Vercel, AWS S3, Cloudflare Workers, Auth0, Clerk, and more.
 
 ```bash
-chub search    # 인자 없이 실행하면 전체 목록 확인 가능
+chub search    # Run without arguments to view the full list
 ```
 
 ## Fallback Chain
 
 ```
-which chub 실패
+which chub fails
     ↓
-npm install -g @aisuite/chub (자동 시도)
+npm install -g @aisuite/chub (auto attempt)
     ↓
-실패 시 npx @aisuite/chub <command> (임시 실행)
+On failure: npx @aisuite/chub <command> (temporary execution)
     ↓
-npx도 실패 시 context7 또는 Web Search fallback
+If npx also fails: context7 or Web Search fallback
 ```

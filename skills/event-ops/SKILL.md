@@ -64,12 +64,12 @@ Nametags, checklists, operational slides, Slido configuration, image generation,
 Fixed 4 items for all offline events:
 
 ```markdown
-## D-1 체크리스트
+## D-1 Checklist
 
-- [ ] 생수/간식/식사 주문
-- [ ] 이름표 출력
-- [ ] 행사 운영 슬라이드
-- [ ] 스크린/카메라/삼각대 준비
+- [ ] Order water/snacks/meals
+- [ ] Print nametags
+- [ ] Prepare event operational slides
+- [ ] Set up screen/camera/tripod
 ```
 
 ## Operational Slides
@@ -96,30 +96,30 @@ N+2. Thank you + community links
 
 **MDC (3 speakers)**
 ```
-19:00-19:10  오프닝 + 네트워킹
-19:10-19:35  세션 1: {speaker1_name} — {topic1}
-19:35-20:00  세션 2: {speaker2_name} — {topic2}
-20:00-20:25  세션 3: {speaker3_name} — {topic3}
+19:00-19:10  Opening + Networking
+19:10-19:35  Session 1: {speaker1_name} — {topic1}
+19:35-20:00  Session 2: {speaker2_name} — {topic2}
+20:00-20:25  Session 3: {speaker3_name} — {topic3}
 20:25-20:40  Q&A + Slido
-20:40-21:00  네트워킹
+20:40-21:00  Networking
 ```
 
 **Webinar (1-2 speakers)**
 ```
-19:30-19:35  오프닝
-19:35-20:30  세션: {speaker_name} — {topic}
+19:30-19:35  Opening
+19:35-20:30  Session: {speaker_name} — {topic}
 20:30-20:50  Q&A
-20:50-21:00  마무리
+20:50-21:00  Closing
 ```
 
 **DWK (1-3 speakers + discussion)**
 ```
-14:00-14:10  오프닝 + 아이스브레이커
-14:10-14:40  세션 1: {speaker1_name} — {topic1}
-14:40-15:10  세션 2: {speaker2_name} — {topic2}
-15:10-15:30  쉬는 시간
-15:30-16:00  토론 세션
-16:00-16:30  네트워킹
+14:00-14:10  Opening + Icebreaker
+14:10-14:40  Session 1: {speaker1_name} — {topic1}
+14:40-15:10  Session 2: {speaker2_name} — {topic2}
+15:10-15:30  Break
+15:30-16:00  Discussion session
+16:00-16:30  Networking
 ```
 
 ## Slido Configuration

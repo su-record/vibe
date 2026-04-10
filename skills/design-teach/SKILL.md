@@ -69,20 +69,20 @@ Write gathered context to `.claude/vibe/design-context.json` using the Write too
   "createdAt": "ISO-8601",
   "updatedAt": "ISO-8601",
   "audience": {
-    "primary": "대상 사용자 설명",
-    "context": "사용 환경 (desktop/mobile/mixed)",
-    "expertise": "기술 수준 (beginner/intermediate/expert)"
+    "primary": "Description of target users",
+    "context": "Usage environment (desktop/mobile/mixed)",
+    "expertise": "Technical level (beginner/intermediate/expert)"
   },
   "brand": {
-    "personality": ["형용사 3-5개"],
-    "tone": "formal | casual | playful | professional (가이드라인, 자유 입력 가능)",
-    "existingAssets": "기존 브랜드 가이드라인 경로 (선택)"
+    "personality": ["3-5 adjectives"],
+    "tone": "formal | casual | playful | professional (guideline, free text allowed)",
+    "existingAssets": "Path to existing brand guidelines (optional)"
   },
   "aesthetic": {
-    "style": "minimal | bold | elegant | playful | corporate (가이드라인, 자유 입력 가능)",
-    "colorMood": "warm | cool | neutral | vibrant | muted (가이드라인, 자유 입력 가능)",
-    "typographyMood": "modern | classic | geometric | humanist (가이드라인, 자유 입력 가능)",
-    "references": ["참조 사이트/앱 URL"]
+    "style": "minimal | bold | elegant | playful | corporate (guideline, free text allowed)",
+    "colorMood": "warm | cool | neutral | vibrant | muted (guideline, free text allowed)",
+    "typographyMood": "modern | classic | geometric | humanist (guideline, free text allowed)",
+    "references": ["Reference site/app URLs"]
   },
   "constraints": {
     "accessibility": "AA | AAA",
@@ -91,56 +91,56 @@ Write gathered context to `.claude/vibe/design-context.json` using the Write too
     "devices": ["mobile", "tablet", "desktop"]
   },
   "detectedStack": {
-    "framework": "감지된 프레임워크",
-    "componentLibrary": "감지된 컴포넌트 라이브러리",
-    "styling": "감지된 스타일링 방식",
-    "fonts": ["감지된 폰트"]
+    "framework": "Detected framework",
+    "componentLibrary": "Detected component library",
+    "styling": "Detected styling approach",
+    "fonts": ["Detected fonts"]
   }
 }
 ```
 
-> **Note**: `tone`, `style`, `colorMood`, `typographyMood` 값은 제안 값이며 closed enum이 아닙니다. 사용자가 자유 텍스트로 입력할 수 있습니다.
+> **Note**: `tone`, `style`, `colorMood`, `typographyMood` values are suggestions, not closed enums. Users can enter free text.
 
-> **Size limit**: design-context.json은 10KB를 초과하지 않도록 합니다. `references` 배열은 최대 5개로 제한합니다.
+> **Size limit**: design-context.json should not exceed 10KB. The `references` array is capped at 5 items.
 
 ### Step 4: Rerun Semantics
 
-`design-context.json`이 이미 존재할 때 `/design-teach`를 다시 실행하면:
+When `/design-teach` is run again and `design-context.json` already exists:
 
-1. 기존 파일을 Read 도구로 읽음
-2. 각 질문에 **기존 값을 기본값으로 표시** ("현재: professional, clean — 변경하시겠습니까?")
-3. 사용자가 "keep" 또는 빈 답변 → 해당 필드 유지
-4. 새 값 입력 → 해당 필드만 교체 (병합이 아닌 **필드 단위 교체**)
-5. `createdAt`은 항상 보존, `updatedAt`만 현재 시각으로 갱신
+1. Read the existing file with the Read tool
+2. **Show existing values as defaults** for each question ("Current: professional, clean — do you want to change this?")
+3. User replies "keep" or leaves blank → that field is preserved
+4. New value entered → only that field is replaced (**field-level replacement, not merge**)
+5. `createdAt` is always preserved; only `updatedAt` is updated to the current time
 
 ### Step 5: Other Skills Reference This Context
 
-각 design-* skill은 실행 시 다음을 수행:
+Each design-* skill does the following when it runs:
 
 ```
 1. Read `.claude/vibe/design-context.json`
-2. 파일 없음 → "Run /design-teach first for better results" 안내 출력 → 기본값으로 계속 실행
-3. 파싱 실패 (잘못된 JSON) → "design-context.json 파싱 실패" 경고 + 기본값으로 계속 → /design-teach 재실행 권장
-4. 정상 → context를 분석 기준에 반영
+2. File not found → print "Run /design-teach first for better results" → continue with defaults
+3. Parse failure (invalid JSON) → warn "design-context.json parse failed" + continue with defaults → recommend re-running /design-teach
+4. Success → apply context to analysis criteria
 ```
 
 ## Design Workflow Integration
 
-디자인 스킬은 vibe 워크플로우의 3개 Phase에 통합됩니다:
+Design skills are integrated into 3 phases of the vibe workflow:
 
 ```
 SPEC Phase:
-  ① design-context.json 확인 (없으면 /design-teach 권장)
+  ① Check design-context.json (recommend /design-teach if missing)
   ② ui-industry-analyzer → ui-design-system-gen → ui-layout-architect
 
 REVIEW Phase:
-  ③ /design-audit (기술 품질 점검)
-  ④ /design-critique (UX 리뷰)
-  ⑤ ui-antipattern-detector (AI slop + 패턴 탐지)
+  ③ /design-audit (technical quality check)
+  ④ /design-critique (UX review)
+  ⑤ ui-antipattern-detector (AI slop + pattern detection)
 
 PRE-SHIP Phase:
-  ⑥ /design-normalize (디자인 시스템 정렬)
-  ⑦ /design-polish (최종 패스)
+  ⑥ /design-normalize (design system alignment)
+  ⑦ /design-polish (final pass)
 ```
 
 ## How Other Skills Use This

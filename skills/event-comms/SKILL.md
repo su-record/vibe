@@ -80,21 +80,21 @@ SMS, email, and SNS content generation for community events.
 
 ### Confirmation Email Template (D-3)
 ```
-Subject: [{event_name}] 참가 확정 안내
+Subject: [{event_name}] Attendance Confirmation
 
-{attendee_name}님 안녕하세요.
+Hello {attendee_name},
 
-{event_name} {edition}회 참가가 확정되었습니다.
+Your attendance for {event_name} edition {edition} has been confirmed.
 
-■ 일시: {date} {time}
-■ 장소: {venue_detail}
-■ 프로그램:
+■ Date & Time: {date} {time}
+■ Venue: {venue_detail}
+■ Program:
 {timetable}
 
-■ 실시간 질문: {slido_link}
+■ Live Q&A: {slido_link}
 
-당일 뵙겠습니다.
-감사합니다.
+We look forward to seeing you on the day.
+Thank you.
 
 {community_name}
 ```
@@ -106,7 +106,7 @@ Subject: [{event_name}] 참가 확정 안내
 | Platform | Tone | Length | Style |
 |----------|------|--------|-------|
 | LinkedIn | Professional, formal | 300+ chars | Expert participation encouragement |
-| Threads | Casual, hooking | 150-200 chars | "아직 안 봤어?" style |
+| Threads | Casual, hooking | 150-200 chars | "Haven't seen this yet?" style |
 
 ### Post Types
 
@@ -120,12 +120,12 @@ Subject: [{event_name}] 참가 확정 안내
 ```
 {hook_sentence}
 
-{event_name} {edition}회를 소개합니다.
+Introducing {event_name} edition {edition}.
 
 📅 {date} {time}
 📍 {venue}
 
-이번 주제: {topic}
+This session's topic: {topic}
 
 {speaker_intro}
 
@@ -136,7 +136,7 @@ Subject: [{event_name}] 참가 확정 안내
 ```
 {hook_casual}
 
-{event_name} {edition}회 열린다!
+{event_name} edition {edition} is happening!
 
 {date} {time}
 {venue_short}

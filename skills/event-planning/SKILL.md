@@ -93,7 +93,7 @@ When user says "MDC 준비해줘" or similar:
 | | MDC | Webinar | DWK |
 |---|---|---|---|
 | Tone | Professional, practical, formal | Friendly, casual, emoji-ok | Warm, inclusive, "together" |
-| Example | "실무에서 바로 적용" | "퇴근 후 편하게" | "데이터를 좋아하는 여성들" |
+| Example | "Apply directly in your work" | "Relax after work" | "Women who love data" |
 | Brand color | #ff6b35 (orange) | #a78bfa (purple) | #34d399 (mint) |
 
 ## Community Brand Names

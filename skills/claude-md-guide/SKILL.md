@@ -7,189 +7,189 @@ priority: 55
 chain-next: [agents-md]
 ---
 
-# claude-md-guide — CLAUDE.md 작성 가이드
+# claude-md-guide — CLAUDE.md Writing Guide
 
-> **원칙**: "에이전트가 이걸 모르면 실수할까?" → No면 삭제. Yes면 유지.
+> **Principle**: "Would the agent make a mistake without this?" → If No, delete it. If Yes, keep it.
 
 ## Why This Matters
 
-연구 결과에 따르면 지시사항이 많아질수록 LLM의 준수율이 **지수적으로** 하락합니다 (Curse of Instructions):
+Research shows that LLM compliance drops **exponentially** as the number of instructions increases (Curse of Instructions):
 
-| 지시 수 | GPT-4o 준수율 | Claude Sonnet 준수율 |
-|---------|--------------|---------------------|
-| 1개 | ~85% | ~90% |
-| 5개 | ~44% | ~59% |
-| 10개 | ~15% | ~44% |
-| 15개+ | ~5% | ~15% |
+| Instructions | GPT-4o Compliance | Claude Sonnet Compliance |
+|-------------|------------------|--------------------------|
+| 1 | ~85% | ~90% |
+| 5 | ~44% | ~59% |
+| 10 | ~15% | ~44% |
+| 15+ | ~5% | ~15% |
 
-**결론**: 모든 줄이 비용. 짧고 정확한 CLAUDE.md가 길고 포괄적인 것보다 낫습니다.
+**Conclusion**: Every line has a cost. A short, precise CLAUDE.md is better than a long, comprehensive one.
 
 ---
 
-## Step 1: 프로젝트 탐색 — 자동 수집
+## Step 1: Project Exploration — Auto-Collect
 
-CLAUDE.md를 작성하기 전에 먼저 프로젝트를 탐색합니다:
+Explore the project before writing CLAUDE.md:
 
 ```
-Glob: pattern="package.json"       → 스택, 스크립트 확인
-Glob: pattern="*.config.*"         → 빌드/린트 설정
-Glob: pattern="tsconfig.json"      → TypeScript 설정
-Glob: pattern=".env.example"       → 환경변수 구조
-Glob: pattern="Makefile"           → 빌드 시스템
-Glob: pattern="docker-compose.*"   → 인프라 구조
-Glob: pattern="CLAUDE.md"          → 기존 파일 확인
-Glob: pattern="AGENTS.md"          → 호환 파일 확인
+Glob: pattern="package.json"       → Check stack and scripts
+Glob: pattern="*.config.*"         → Build/lint configuration
+Glob: pattern="tsconfig.json"      → TypeScript configuration
+Glob: pattern=".env.example"       → Environment variable structure
+Glob: pattern="Makefile"           → Build system
+Glob: pattern="docker-compose.*"   → Infrastructure structure
+Glob: pattern="CLAUDE.md"          → Check for existing file
+Glob: pattern="AGENTS.md"          → Check for compatible file
 ```
 
-수집한 정보를 사용자에게 요약 제시하고, 빠진 컨텍스트를 질문합니다.
+Summarize the collected information for the user, then ask about any missing context.
 
-## Step 2: 인터뷰 — 비발견적 정보 추출
+## Step 2: Interview — Extract Non-Discoverable Information
 
-자동 탐색으로 알 수 없는 정보만 질문합니다. **한 번에 질문 하나, 가능하면 객관식**으로:
+Only ask about information that cannot be found through auto-exploration. **One question at a time, multiple-choice when possible:**
 
-### 질문 카테고리
+### Question Categories
 
-**1. 런타임 함정 (Runtime Traps)**
-- 코드에서 보이지 않는 런타임 차이가 있나요? (예: Bun vs Node, ESM vs CJS)
-- 특정 환경에서만 발생하는 버그가 있나요?
+**1. Runtime Traps**
+- Are there runtime differences not visible in the code? (e.g., Bun vs Node, ESM vs CJS)
+- Are there bugs that only occur in certain environments?
 
-**2. 금지 패턴 (Forbidden Patterns)**
-- 절대 사용하면 안 되는 라이브러리/패턴이 있나요?
-- 과거에 문제를 일으킨 접근법이 있나요?
+**2. Forbidden Patterns**
+- Are there libraries/patterns that must never be used?
+- Are there approaches that caused problems in the past?
 
-**3. 비표준 관례 (Non-standard Conventions)**
-- 표준과 다른 네이밍/구조 규칙이 있나요?
-- 팀에서 합의한 특수한 워크플로우가 있나요?
+**3. Non-standard Conventions**
+- Are there naming/structure rules that differ from standards?
+- Are there special workflows agreed upon by the team?
 
-**4. 아키텍처 결정 (Architecture Decisions)**
-- 코드만 봐서는 알 수 없는 설계 이유가 있나요?
-- 특정 패턴을 선택한 비즈니스 맥락이 있나요?
+**4. Architecture Decisions**
+- Are there design reasons that can't be inferred from the code alone?
+- Is there business context behind why certain patterns were chosen?
 
-**5. 경계선 (Boundaries)**
-- 에이전트가 절대 건드리면 안 되는 파일/디렉토리가 있나요?
-- 변경 전 반드시 확인받아야 하는 영역이 있나요?
+**5. Boundaries**
+- Are there files/directories the agent must never touch?
+- Are there areas that require approval before changes are made?
 
-## Step 3: 구조 설계 — 3-Layer Architecture
+## Step 3: Structure Design — 3-Layer Architecture
 
-수집한 정보를 3개 레이어로 분리합니다:
+Separate the collected information into 3 layers:
 
-### Layer 1: CLAUDE.md (프로젝트 헌법)
+### Layer 1: CLAUDE.md (Project Constitution)
 
-**모든 세션에 자동 로드** → 보편적이고 안정적인 정보만.
+**Auto-loaded every session** → only universal, stable information.
 
 ```markdown
-# {프로젝트명}
+# {Project Name}
 
-{프로젝트가 뭔지 1-2문장. 코드에서 목적이 불분명할 때만.}
+{1-2 sentences on what the project is. Only if the purpose isn't clear from the code.}
 
 ## Tech Stack
-{package.json에서 바로 알 수 없는 것만. 예: "Bun runtime (not Node)"}
+{Only what can't be inferred immediately from package.json. e.g., "Bun runtime (not Node)"}
 
 ## Commands
-{package.json scripts에 없거나 비직관적인 것만}
-- `npm run build && npx vitest run` — 빌드 후 테스트 (순서 중요)
+{Only what's missing from package.json scripts or non-intuitive}
+- `npm run build && npx vitest run` — build then test (order matters)
 
 ## Conventions
-{린터가 잡지 못하는 것만}
+{Only what the linter can't catch}
 - ESM only — imports need `.js` extension
-- {비표준 네이밍 규칙이 있다면}
+- {Any non-standard naming rules}
 
 ## Gotchas
-{에이전트가 반복적으로 실수할 것들}
-- **{함정 제목}.** {구체적인 do/don't 설명}
+{Things the agent will repeatedly get wrong}
+- **{Trap title}.** {Specific do/don't explanation}
 
 ## Boundaries
-✅ Always: {항상 해야 하는 것}
-⚠️ Ask first: {먼저 확인받아야 하는 것}
-🚫 Never: {절대 하면 안 되는 것}
+✅ Always: {things to always do}
+⚠️ Ask first: {things requiring approval first}
+🚫 Never: {absolute prohibitions}
 ```
 
-### Layer 2: SPEC.md (기능별 설계 문서)
+### Layer 2: SPEC.md (Per-Feature Design Document)
 
-**특정 기능 작업 시에만 로드** → what과 why에 집중, how는 에이전트에게.
+**Loaded only when working on a specific feature** → focus on what and why, leave how to the agent.
 
-저장 위치: `.claude/vibe/specs/YYYY-MM-DD-{주제}.md`
+Storage location: `.claude/vibe/specs/YYYY-MM-DD-{topic}.md`
 
 ```markdown
-# {기능명} SPEC
+# {Feature Name} SPEC
 
-## 목적 (Why)
-## 요구사항 (What)
-## 성공 기준 (Acceptance Criteria)
-## 기술적 제약 (Constraints)
-## 경계선 (Out of Scope)
+## Purpose (Why)
+## Requirements (What)
+## Success Criteria (Acceptance Criteria)
+## Technical Constraints (Constraints)
+## Boundaries (Out of Scope)
 ```
 
-### Layer 3: plan.md (실행 계획)
+### Layer 3: plan.md (Execution Plan)
 
-**세션별 태스크 리스트** → 2-5분 단위, 파일 경로 명시.
+**Per-session task list** → 2-5 minute units, with file paths specified.
 
-저장 위치: `.claude/vibe/specs/{name}-execplan.md`
+Storage location: `.claude/vibe/specs/{name}-execplan.md`
 
 ```markdown
 # Execution Plan
 
-## Task 1: {제목}
+## Task 1: {Title}
 - Files: `src/foo.ts`, `src/foo.test.ts`
-- Action: {구체적 변경 내용}
+- Action: {Specific change}
 - Verify: `npm test src/foo.test.ts`
 
 ## Task 2: ...
 ```
 
-## Step 4: 작성 — 증거 기반 원칙 적용
+## Step 4: Writing — Apply Evidence-Based Principles
 
-### 크기 제한
+### Size Limits
 
-| 등급 | 줄 수 | 적합한 경우 |
-|------|-------|------------|
-| 최적 | 60-150줄 | 대부분의 프로젝트 |
-| 허용 | 150-200줄 | 복잡한 모노레포 |
-| 경고 | 200-300줄 | 분리 필요 |
-| 위험 | 300줄+ | 에이전트가 절반 무시 |
+| Grade | Lines | When Appropriate |
+|-------|-------|-----------------|
+| Optimal | 60-150 | Most projects |
+| Acceptable | 150-200 | Complex monorepos |
+| Warning | 200-300 | Separation needed |
+| Danger | 300+ | Agent ignores half of it |
 
-### 위치별 주의력 분포 (Lost in the Middle 효과)
+### Attention Distribution by Position (Lost in the Middle Effect)
 
-LLM은 문서의 **처음과 끝**에 집중하고 **중간을 무시**합니다:
+LLMs focus on the **beginning and end** of a document and **ignore the middle**:
 
 ```
-주의력: ████████░░░░░░░░████████
-        ^시작     ^중간(↓20-40%)  ^끝
+Attention: ████████░░░░░░░░████████
+           ^start    ^middle(↓20-40%)  ^end
 ```
 
-**대응**:
-- **가장 중요한 규칙** → 문서 상단에 배치
-- **자주 위반되는 규칙** → 문서 하단(끝)에 배치
-- **배경 정보** → 중간에 배치 (무시되어도 괜찮은 것)
+**Countermeasures**:
+- **Most important rules** → place at the top of the document
+- **Frequently violated rules** → place at the bottom (end) of the document
+- **Background information** → place in the middle (OK if ignored)
 
-### 포함 vs 제외 체크리스트
+### Include vs Exclude Checklist
 
-**✅ 포함 (비발견적, 운영상 중요)**
+**✅ Include (non-discoverable, operationally important)**
 
-| 유형 | 예시 |
-|------|------|
-| 런타임 함정 | "Bun runtime, not Node" |
-| 금지 패턴 | "Never use `any`, use `unknown` + type guards" |
-| SSOT 위치 | "Only edit `constants.ts` for stack mapping" |
-| 순서 불변 규칙 | "Build before test, always" |
-| 비표준 커맨드 | 복합 명령어, 특수 플래그 |
-| 보안 규칙 | 인증, 경로 순회 방지 등 |
+| Type | Example |
+|------|---------|
+| Runtime traps | "Bun runtime, not Node" |
+| Forbidden patterns | "Never use `any`, use `unknown` + type guards" |
+| SSOT location | "Only edit `constants.ts` for stack mapping" |
+| Order invariants | "Build before test, always" |
+| Non-standard commands | Compound commands, special flags |
+| Security rules | Auth, path traversal prevention, etc. |
 
-**❌ 제외 (발견 가능하거나 다른 도구에 맡길 것)**
+**❌ Exclude (discoverable or delegate to other tools)**
 
-| 유형 | 이유 | 대안 |
-|------|------|------|
-| 디렉토리 구조 | `ls`로 발견 가능 | 코드 자체 |
-| 기술 스택 목록 | `package.json`에 있음 | 코드 자체 |
-| 코드 스타일 (들여쓰기, 세미콜론) | 린터가 잡음 | ESLint, Prettier |
-| API 문서 | 코드에서 읽을 수 있음 | Swagger, JSDoc |
-| 일반적 Best Practice | LLM이 이미 앎 | 불필요 |
-| API 키, 시크릿 | 빠르게 구식이 됨 | `.env`, vault |
-| 기능별 상세 지시 | Layer 2로 분리 | SPEC.md |
+| Type | Reason | Alternative |
+|------|--------|-------------|
+| Directory structure | Discoverable via `ls` | The code itself |
+| Tech stack list | In `package.json` | The code itself |
+| Code style (indentation, semicolons) | Linter catches it | ESLint, Prettier |
+| API documentation | Readable from code | Swagger, JSDoc |
+| General best practices | LLM already knows | Unnecessary |
+| API keys, secrets | Goes stale quickly | `.env`, vault |
+| Per-feature detailed instructions | Move to Layer 2 | SPEC.md |
 
-### 강조 기법
+### Emphasis Techniques
 
-중요한 규칙이 무시될 때 사용:
+Use these when important rules keep getting ignored:
 
 ```markdown
 **IMPORTANT**: {critical rule}
@@ -197,11 +197,11 @@ LLM은 문서의 **처음과 끝**에 집중하고 **중간을 무시**합니다
 **NEVER**: {absolute prohibition}
 ```
 
-단, 모든 줄에 강조를 넣으면 **강조가 무효화**됩니다. P1 규칙에만 사용하세요.
+However, adding emphasis to every line **nullifies the emphasis**. Use only for P1 rules.
 
-### Progressive Disclosure (점진적 공개)
+### Progressive Disclosure
 
-CLAUDE.md에 모든 것을 넣지 말고 참조하세요:
+Don't put everything in CLAUDE.md — reference it:
 
 ```markdown
 # Architecture
@@ -211,124 +211,124 @@ See @docs/ARCHITECTURE.md for design decisions.
 @.claude/rules/security.md
 ```
 
-Claude Code는 `@` 참조를 따라가서 필요할 때만 로드합니다.
+Claude Code follows `@` references and loads them only when needed.
 
-## Step 5: 검증 — 작성 품질 체크
+## Step 5: Validation — Writing Quality Check
 
-작성된 CLAUDE.md를 검증합니다:
+Validate the written CLAUDE.md:
 
-### 줄별 검증
+### Line-by-Line Validation
 
-모든 줄에 대해 4가지 질문:
+4 questions for every line:
 
-1. **이걸 빼면 에이전트가 실수할까?** → No면 삭제
-2. **모든 세션에 필요한가?** → No면 Layer 2/3으로 이동
-3. **린터/훅이 대신할 수 있나?** → Yes면 린터/훅으로 이동
-4. **코드에서 발견 가능한가?** → Yes면 삭제
+1. **Would the agent make a mistake without this?** → If No, delete
+2. **Is it needed in every session?** → If No, move to Layer 2/3
+3. **Can a linter/hook replace it?** → If Yes, move to linter/hook
+4. **Is it discoverable from code?** → If Yes, delete
 
-### 앵커링 경고
+### Anchoring Warning
 
-기술명을 언급하면 에이전트가 그쪽으로 편향됩니다:
-- ❌ "We use React" → 불필요 (package.json에 있음)
-- ✅ "Never use jQuery, even for legacy code" → 유용 (함정 방지)
+Mentioning a technology name biases the agent toward it:
+- ❌ "We use React" → unnecessary (it's in package.json)
+- ✅ "Never use jQuery, even for legacy code" → useful (prevents a trap)
 
-### 토큰 효율성
+### Token Efficiency
 
-| 문제 | 예시 | 개선 |
-|------|------|------|
-| 장황한 설명 | "Please always make sure to..." | "Always:" |
-| 중복 | 같은 규칙을 다른 표현으로 반복 | 한 번만 |
-| 불필요한 맥락 | "As we discussed..." | 삭제 |
+| Problem | Example | Improvement |
+|---------|---------|-------------|
+| Verbose explanation | "Please always make sure to..." | "Always:" |
+| Duplication | Same rule repeated in different wording | State it once |
+| Unnecessary context | "As we discussed..." | Delete |
 
-## Step 6: 유지보수 — 살아있는 문서
+## Step 6: Maintenance — A Living Document
 
-### 점진적 추가 패턴
+### Incremental Addition Pattern
 
-처음부터 완벽하게 쓰지 마세요:
-
-```
-1. 최소한의 CLAUDE.md로 시작 (30-50줄)
-2. 에이전트가 실수하는 걸 관찰
-3. 반복되는 실수만 규칙으로 추가
-4. 2-3주마다 불필요한 줄 정리
-```
-
-### Reflection Loop (Addy Osmani 패턴)
+Don't try to write it perfectly from the start:
 
 ```
-에이전트 작업 완료
-  → "무엇이 예상과 달랐나?" 자문
-  → 반복되는 패턴 발견 시 CLAUDE.md에 1줄 추가
-  → 근본 원인이 코드 구조면 코드를 고치고 규칙은 추가하지 않음
+1. Start with a minimal CLAUDE.md (30-50 lines)
+2. Observe where the agent makes mistakes
+3. Only add rules for recurring mistakes
+4. Clean up unnecessary lines every 2-3 weeks
 ```
 
-### 위험 신호
+### Reflection Loop (Addy Osmani Pattern)
 
-| 신호 | 의미 | 대응 |
-|------|------|------|
-| 300줄 초과 | 정보 과부하 | 분리 또는 정리 |
-| 같은 실수 반복 | 규칙이 노이즈에 묻힘 | 강조 또는 통합 |
-| 규칙 추가해도 변화 없음 | 파일이 너무 김 | 근본 원인 수정 |
-| 팀원이 규칙 무시 | 발견 가능한 정보 | 삭제 |
+```
+Agent task complete
+  → Ask "What was different from expectations?"
+  → When a recurring pattern is found, add 1 line to CLAUDE.md
+  → If the root cause is code structure, fix the code and don't add a rule
+```
+
+### Warning Signs
+
+| Signal | Meaning | Response |
+|--------|---------|----------|
+| Over 300 lines | Information overload | Split or trim |
+| Same mistake repeats | Rule is lost in noise | Emphasize or consolidate |
+| Adding rules has no effect | File is too long | Fix root cause |
+| Team ignores rules | Discoverable information | Delete |
 
 ---
 
-## Quick Reference: 프로젝트 규모별 가이드
+## Quick Reference: Guide by Project Scale
 
-### 소규모 (파일 10개 미만)
+### Small (fewer than 10 files)
 
 ```markdown
-# {프로젝트명}
+# {Project Name}
 
 ## Commands
-- `{build}` — {설명}
-- `{test}` — {설명}
+- `{build}` — {description}
+- `{test}` — {description}
 
 ## Gotchas
-- **{함정 1}.** {설명}
-- **{함정 2}.** {설명}
+- **{Trap 1}.** {description}
+- **{Trap 2}.** {description}
 
 ## Never
-- 🚫 {금지 사항}
+- 🚫 {prohibited item}
 ```
 
-**목표: 20-30줄**
+**Target: 20-30 lines**
 
-### 중규모 (파일 10-50개)
+### Medium (10-50 files)
 
-위 + Conventions, Boundaries 섹션 추가.
+Above + add Conventions and Boundaries sections.
 
-**목표: 60-150줄**
+**Target: 60-150 lines**
 
-### 대규모 (파일 50개+, 모노레포)
+### Large (50+ files, monorepo)
 
-루트 CLAUDE.md (공통 규칙) + 하위 디렉토리별 CLAUDE.md.
+Root CLAUDE.md (shared rules) + CLAUDE.md per subdirectory.
 
 ```
 project/
-├── CLAUDE.md              ← 공통 (60줄)
-├── packages/api/CLAUDE.md ← API 전용 (30줄)
-├── packages/web/CLAUDE.md ← 웹 전용 (30줄)
-└── .claude/rules/         ← 경로별 규칙
+├── CLAUDE.md              ← shared (60 lines)
+├── packages/api/CLAUDE.md ← API-specific (30 lines)
+├── packages/web/CLAUDE.md ← web-specific (30 lines)
+└── .claude/rules/         ← path-specific rules
     ├── security.md
     └── testing.md
 ```
 
-**목표: 루트 100줄 + 하위 각 30줄**
+**Target: root 100 lines + each subdirectory 30 lines**
 
 ---
 
-## 세션 분리 원칙
+## Session Separation Principle
 
-CLAUDE.md 작성도 세션을 분리하면 품질이 올라갑니다:
+Splitting CLAUDE.md writing into separate sessions improves quality:
 
-| 세션 | 목표 | 산출물 |
-|------|------|--------|
-| 세션 1 | 프로젝트 탐색 + 인터뷰 | 초안 |
-| 세션 2 | 검증 + 최적화 | 최종본 |
-| 이후 | 점진적 유지보수 | 지속 개선 |
+| Session | Goal | Output |
+|---------|------|--------|
+| Session 1 | Project exploration + interview | Draft |
+| Session 2 | Validation + optimization | Final version |
+| Ongoing | Incremental maintenance | Continuous improvement |
 
-작성 완료 후: `→ /agents-md` 스킬로 최적화 검증을 실행하세요.
+After writing: run `→ /agents-md` skill for optimization validation.
 
 ---
 
