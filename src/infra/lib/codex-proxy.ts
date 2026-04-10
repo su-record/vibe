@@ -10,7 +10,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import { getVibeDir } from './config/GlobalConfigManager.js';
-import { getApiKeyFromConfig } from './gpt/auth.js';
+import { getApiKeyFromConfig, findCodexCredentials, getAuthInfo } from './gpt/auth.js';
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -81,8 +81,6 @@ interface OStreamChunk {
 
 interface ProxyConfig {
   port: number;
-  targetUrl: string;
-  apiKey: string;
   defaultModel?: string;
 }
 
@@ -90,6 +88,11 @@ export interface ProxyStatus {
   running: boolean;
   pid?: number;
   port?: number;
+}
+
+export interface AuthSource {
+  source: 'codex-cli' | 'apikey' | 'env';
+  email?: string;
 }
 
 // ─── System Prompt Extraction ────────────────────────────────
@@ -460,14 +463,32 @@ function sendError(res: http.ServerResponse, status: number, message: string): v
   res.end(JSON.stringify({ type: 'error', error: { type: 'api_error', message } }));
 }
 
-// ─── API Config Resolution ──────────────────────────────────
+// ─── 인증 소스 확인 (동기, 시작/상태 표시용) ────────────────
 
-export function resolveApiConfig(): { apiKey: string; baseUrl: string } | null {
-  const apiKey = process.env.CODEX_PROXY_API_KEY
-    || process.env.OPENAI_API_KEY
-    || getApiKeyFromConfig();
-  if (!apiKey) return null;
-  return { apiKey, baseUrl: process.env.CODEX_PROXY_TARGET_URL || DEFAULT_TARGET_URL };
+export function checkAuthSource(): AuthSource | null {
+  if (process.env.CODEX_PROXY_API_KEY) return { source: 'env' };
+  const codex = findCodexCredentials();
+  if (codex) return { source: 'codex-cli' };
+  const apiKey = process.env.OPENAI_API_KEY || getApiKeyFromConfig();
+  if (apiKey) return { source: 'apikey' };
+  return null;
+}
+
+// ─── 요청별 인증 해석 (비동기, 토큰 갱신 포함) ──────────────
+
+async function resolveRequestAuth(): Promise<{ token: string; baseUrl: string }> {
+  const baseUrl = process.env.CODEX_PROXY_TARGET_URL || DEFAULT_TARGET_URL;
+
+  // 1. 프록시 전용 env var (최우선)
+  const proxyKey = process.env.CODEX_PROXY_API_KEY;
+  if (proxyKey) return { token: proxyKey, baseUrl };
+
+  // 2. GPT 인증 시스템 (codex-cli OAuth → apikey 순서, 토큰 자동 갱신)
+  const auth = await getAuthInfo();
+  const token = auth.accessToken || auth.apiKey;
+  if (token) return { token, baseUrl };
+
+  throw new Error('인증 정보 없음. codex login 또는 vibe gpt key <key> 필요');
 }
 
 // ─── Messages Endpoint Handler ───────────────────────────────
@@ -482,13 +503,18 @@ async function handleMessages(
   try { aReq = JSON.parse(body) as ARequest; }
   catch { sendError(res, 400, 'Invalid JSON'); return; }
 
+  // 요청마다 인증 해석 (Codex CLI 토큰 갱신 포함)
+  let auth: { token: string; baseUrl: string };
+  try { auth = await resolveRequestAuth(); }
+  catch (err) { sendError(res, 401, (err as Error).message); return; }
+
   const oBody = buildORequest(aReq, config.defaultModel);
-  const targetUrl = `${config.targetUrl}/v1/chat/completions`;
+  const targetUrl = `${auth.baseUrl}/v1/chat/completions`;
 
   const fetchRes = await fetch(targetUrl, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${config.apiKey}`,
+      'Authorization': `Bearer ${auth.token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(oBody),
@@ -550,23 +576,24 @@ function cleanupPidFiles(): void {
 // ─── Start Proxy (Foreground) ────────────────────────────────
 
 export function startProxy(port: number, daemon: boolean): void {
-  const apiConfig = resolveApiConfig();
-  if (!apiConfig) {
-    console.error('No OpenAI API key found.');
-    console.error('Set OPENAI_API_KEY env var or run: vibe gpt key <key>');
+  const authSource = checkAuthSource();
+  if (!authSource) {
+    console.error('인증 정보 없음.');
+    console.error('  ChatGPT Pro: codex login');
+    console.error('  API Key:     vibe gpt key <key> 또는 OPENAI_API_KEY 설정');
     process.exit(1);
   }
 
   if (daemon) { startDaemon(port); return; }
 
-  const config: ProxyConfig = {
-    port, targetUrl: apiConfig.baseUrl, apiKey: apiConfig.apiKey,
-    defaultModel: process.env.CODEX_PROXY_MODEL,
-  };
+  const config: ProxyConfig = { port, defaultModel: process.env.CODEX_PROXY_MODEL };
+  const authLabel = authSource.source === 'codex-cli' ? 'Codex CLI (ChatGPT Pro)' : 'API Key';
+  const baseUrl = process.env.CODEX_PROXY_TARGET_URL || DEFAULT_TARGET_URL;
   const server = createProxyServer(config);
   server.listen(port, () => {
     console.log(`\n  Codex Proxy listening on http://localhost:${port}`);
-    console.log(`  Target: ${config.targetUrl}`);
+    console.log(`  인증: ${authLabel}`);
+    console.log(`  Target: ${baseUrl}`);
     console.log(`  Model: ${config.defaultModel || '(pass-through)'}\n`);
     savePidFiles(port, process.pid);
   });
