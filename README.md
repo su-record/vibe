@@ -57,7 +57,7 @@ One entry point. Everything else is automatic.
 # Install
 npm install -g @su-record/vibe
 
-# Initialize (auto-detects your stack)
+# Initialize (auto-detects your stack, generates project-aware CLAUDE.md)
 cd your-project
 vibe init
 
@@ -67,6 +67,47 @@ claude
 # Run the workflow
 /vibe.spec "add user authentication"
 ```
+
+---
+
+## Harness Engineering
+
+Vibe is built on the [Harness Engineering](https://anthropic.com/engineering/harness-design) principle — designing the working environment so AI operates effectively on its own.
+
+### The 6 Axes
+
+| Axis | What it covers | Vibe implementation |
+|------|---------------|---------------------|
+| **Scaffolding** | Project structure, tools, boundaries | `/vibe.scaffold` generates optimized folder structure (docs/, .dev/, layered src/) |
+| **Context** | What AI knows | `vibe init` generates project-aware CLAUDE.md from actual structure analysis |
+| **Planning** | What to build | `/vibe.spec` → interview → plan → SPEC → review pipeline |
+| **Orchestration** | How to execute | 40+ agents, 12 teams, skill-based dispatch |
+| **Verification** | How to trust | Hooks, convergence loops, RTM traceability |
+| **Compounding** | How to improve | Evolution engine, session memory, auto-generated skills |
+
+### Diagnose Your Project
+
+```bash
+/vibe.harness    # Score your project across all 6 axes (0-100)
+```
+
+Produces a detailed report with per-axis scores, grade (S/A/B/C/D), and auto-fixable improvement suggestions. Detects project type (app vs package/library) and adjusts scoring accordingly.
+
+---
+
+## Analyze Anything
+
+`/vibe.analyze` works on more than just source code:
+
+```bash
+/vibe.analyze "login"              # Feature/module code exploration
+/vibe.analyze --code               # Code quality analysis
+/vibe.analyze report.pdf           # Document analysis (PDF, slides, markdown)
+/vibe.analyze https://example.com  # Website analysis (UX, tech, SEO, a11y)
+/vibe.analyze https://figma.com/…  # Figma design analysis
+```
+
+Auto-detects input type (file extension → URL pattern → flag → string) and routes to the appropriate analysis mode with mode-specific quality gates.
 
 ---
 
@@ -121,9 +162,13 @@ Three layers of defense on every tool call:
 
 **Stack detection** — Auto-detects 24 frameworks (Next.js, Django, Rails, Go, Rust, Flutter, and more) and applies framework-specific rules and skills.
 
+**Project-aware CLAUDE.md** — `vibe init` and `vibe update` analyze your project's actual structure (folders, tech stack, build commands) and generate a tailored CLAUDE.md — not a static template.
+
 **Session memory** — Decisions, constraints, and goals persist across sessions via SQLite + FTS5 hybrid search.
 
 **Smart Resume** — `.last-feature` pointer tracks your latest work. `/vibe.spec` without arguments shows where you left off or lists all in-progress features.
+
+**Self-repair** — Skills include error recovery tables. `/vibe.harness` diagnoses gaps and chains to `/vibe.scaffold` → `vibe update` for automated fixes.
 
 ---
 
@@ -147,6 +192,10 @@ Three layers of defense on every tool call:
 | `/vibe.figma` | Figma ↔ Code (read or write, 3 modes) |
 | `/vibe.verify` | Verify implementation against SPEC |
 | `/vibe.trace` | Requirements traceability matrix |
+| `/vibe.analyze` | Analyze any target — code, documents, websites, Figma |
+| `/vibe.scaffold` | Generate or audit project folder structure |
+| `/vibe.harness` | Diagnose Harness Engineering maturity (6-axis scoring) |
+| `/vibe.docs` | Generate project documentation |
 
 ---
 
