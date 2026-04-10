@@ -893,7 +893,7 @@ Grades:
 
 #### 7.3 Quality Gate (Auto-verification)
 
-**100 points required to complete SPEC draft. Loop until perfect or stuck.**
+**100 points required to complete SPEC draft. Loop until perfect — ask user if auto-fixer hits a wall.**
 
 ```
 SPEC writing complete
@@ -902,9 +902,11 @@ SPEC writing complete
       ↓
 Score < 100? → Show missing items → Auto-fix → Re-evaluate
       ↓
-(Convergence safety: if score == prev_score → record gaps as TODO and proceed)
+Stuck? (score == prev_score)
+  ├─ Interactive: ask user → fill values OR "proceed" OR "abort"
+  └─ ultrawork: record gaps as TODO → proceed
       ↓
-Score == 100 → SPEC Draft Complete → Handoff to /vibe.spec.review
+Score == 100 (or user-approved) → SPEC Draft Complete → Handoff to /vibe.spec.review
 ```
 
 #### 7.4 Auto-Fix for Low Score

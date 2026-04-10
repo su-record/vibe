@@ -147,10 +147,36 @@ while True:
         print("✅ Quality Gate PASSED (100/100)")
         break
 
-    # Convergence detection: no progress → stop (prevents runaway)
+    # Auto-fixer hit a wall → ask the user (prevents runaway AND respects 100 target)
     if score == prev_score:
-        print(f"⚠️ No progress — score stuck at {score}. Recording remaining gaps to TODO.")
-        break
+        missing_items = identify_missing_items(spec)
+        print(f"⚠️ Auto-fixer limit reached: stuck at {score}/100")
+        print(f"Remaining items require human input:")
+        for item in missing_items:
+            print(f"  ❌ {item}")
+
+        if ultrawork_mode:
+            # ultrawork: no user intervention, record TODO and proceed
+            print("ℹ️ ultrawork mode — recording gaps to TODO and proceeding")
+            record_todo(missing_items)
+            break
+
+        # Interactive: ask the user to fill in or explicitly approve
+        user_input = ask_user(
+            "Please either:\n"
+            "  1. Provide values for the remaining items (I'll apply them)\n"
+            "  2. Type 'proceed' to accept current score and continue\n"
+            "  3. Type 'abort' to stop the workflow"
+        )
+
+        if user_input == "abort":
+            raise WorkflowAborted("User aborted at Quality Gate")
+        if user_input == "proceed":
+            record_todo(missing_items)
+            break
+        # otherwise: apply user-provided values → re-evaluate
+        apply_user_values(user_input)
+        continue
 
     prev_score = score
 
@@ -165,9 +191,13 @@ while True:
 ```
 
 **Termination conditions:**
-- `score == 100` → pass
-- `score == prev_score` → stuck (no progress), record gaps as TODO and proceed
-- No explicit iteration cap — convergence detection handles runaway.
+- `score == 100` → pass (primary success)
+- `score == prev_score` (auto-fixer stuck) → **ask the user**:
+  - User provides values → re-evaluate (loop continues, may reach 100)
+  - User says "proceed" → record gaps as TODO and continue to Step 3
+  - User says "abort" → stop entire workflow
+  - `ultrawork` mode → skip prompt, auto-record TODO and continue
+- No iteration cap — the only way to exit without 100 is explicit user approval or ultrawork.
 
 **Output format:**
 ```
@@ -207,6 +237,28 @@ Re-evaluating...
 Score: 100/100 ✅ PASSED
 
 ✅ Quality Gate PASSED - proceeding to GPT/Gemini review
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Stuck case (auto-fixer limit reached):**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 QUALITY GATE [4]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Score: 87/100 ⚠️ STUCK (same as previous iteration)
+
+Auto-fixer hit a wall. These items need human input:
+  ❌ Business rule: monthly subscription renewal grace period (days?)
+  ❌ Target latency for search API (<?ms)
+  ❌ Data retention policy for audit logs (how many days?)
+
+어떻게 진행할까요?
+  1. 직접 값을 알려주세요 (예: "grace period 7일, 검색 500ms, 감사로그 90일")
+     → 반영 후 재평가 (100 도달 가능)
+  2. "proceed" — 현재 점수로 수락, 남은 항목은 TODO로 기록 후 Step 3 진행
+  3. "abort" — 워크플로 중단
+
+(ultrawork 모드에서는 이 프롬프트 없이 자동으로 TODO 기록 + 진행)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 

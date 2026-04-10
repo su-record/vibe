@@ -43,7 +43,8 @@
 - **Loop until quality = 100** — no hard round cap on review/auto-fix loops
 - **P1 = 0 AND no new findings** → done (the natural termination signal)
 - **Narrowing scope per round (noise reduction)** — Round 1: full scope, Round 2: P1+P2, Round 3+: P1 only — keeps looping until P1=0
-- **Convergence detection (runaway safety)** — Same findings (or same score) as previous round → stop immediately, record remaining gaps as TODO
+- **Stuck detection → ask the user** — Same findings (or same score) as previous round means auto-fixer hit a wall. Prompt the user to fill in values, explicitly approve sub-100, or abort. Never silently proceed with sub-100 quality.
+- **ultrawork exception** — In `ultrawork` mode, skip the user prompt and record remaining gaps as TODO to keep the loop non-interactive.
 - **Changed files only** — Never scan the entire project
 
 ### Forbidden Patterns
