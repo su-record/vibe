@@ -1,7 +1,7 @@
 ---
 name: vibe.spec.review
 tier: core
-description: "Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 95-point quality gate, Race Review (max 3 rounds) with convergence detection, optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe.spec completes, or when the user says 'review spec', '/vibe.spec.review'."
+description: "Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe.spec completes, or when the user says 'review spec', '/vibe.spec.review'."
 triggers: ["spec review", "review spec", "SPEC 리뷰", "명세 리뷰", race review]
 priority: 80
 chain-next: []
@@ -112,9 +112,9 @@ Extracted info:
 
 ---
 
-## Step 2: Quality Validation (95-Point Gate)
+## Step 2: Quality Validation (100-Point Gate)
 
-**🚨 MANDATORY: Score must be ≥ 95 to proceed**
+**🚨 MANDATORY: Score must reach 100 to proceed. Loop until perfect or stuck.**
 
 ### 2.1 Quality Checklist
 
@@ -130,22 +130,29 @@ Extracted info:
 | **Security** | Auth/permission requirements specified | 10% |
 | **Performance** | Response time/load requirements specified | 10% |
 
-### 2.2 Quality Gate Loop
+### 2.2 Quality Gate Loop (No Round Cap)
 
 ```python
-max_iterations = 3
 iteration = 0
+prev_score = -1
 
-while iteration < max_iterations:
+while True:
     iteration += 1
     score = calculate_quality_score(spec, feature)
 
-    print(f"━━━ Quality Check [{iteration}/{max_iterations}] ━━━")
+    print(f"━━━ Quality Check [{iteration}] ━━━")
     print(f"Score: {score}/100")
 
-    if score >= 95:
-        print("✅ Quality Gate PASSED")
+    if score >= 100:
+        print("✅ Quality Gate PASSED (100/100)")
         break
+
+    # Convergence detection: no progress → stop (prevents runaway)
+    if score == prev_score:
+        print(f"⚠️ No progress — score stuck at {score}. Recording remaining gaps to TODO.")
+        break
+
+    prev_score = score
 
     # Auto-fix missing items
     missing_items = identify_missing_items(spec)
@@ -155,18 +162,19 @@ while iteration < max_iterations:
         update_feature()
 
     print(f"✅ Applied {len(missing_items)} fixes - Re-evaluating...")
-
-if score < 95:
-    print(f"⚠️ Score {score} < 95 after {max_iterations} iterations")
-    print("Remaining gaps added to TODO. Proceeding with current quality.")
 ```
+
+**Termination conditions:**
+- `score == 100` → pass
+- `score == prev_score` → stuck (no progress), record gaps as TODO and proceed
+- No explicit iteration cap — convergence detection handles runaway.
 
 **Output format:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 QUALITY GATE [1/3]
+📊 QUALITY GATE [1]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Score: 87/100 ⚠️ BELOW THRESHOLD (95)
+Score: 87/100 ⚠️ BELOW 100
 
 Missing items:
   ❌ Error handling scenarios (10%)
@@ -180,9 +188,23 @@ Re-evaluating...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 QUALITY GATE [2/3]
+📊 QUALITY GATE [2]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Score: 96/100 ✅ PASSED
+Score: 96/100 ⚠️ BELOW 100
+
+Missing items:
+  ❌ Concurrent session policy (4%)
+
+Auto-fixing...
+  ✅ Added concurrent session policy
+
+Re-evaluating...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 QUALITY GATE [3]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Score: 100/100 ✅ PASSED
 
 ✅ Quality Gate PASSED - proceeding to GPT/Gemini review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -201,25 +223,36 @@ Score: 96/100 ✅ PASSED
 
 ---
 
-## Step 3: Race Review (GPT + Gemini Cross-Validation) - Max 3 Rounds (v2.6.9)
+## Step 3: Race Review (GPT + Gemini Cross-Validation) - Convergence-Based (No Round Cap)
 
 **RULES FOR RACE REVIEW:**
 
 1. **YOU MUST** use the Bash tool to call `llm-orchestrate.js` directly
 2. **DO NOT** simulate or fake review results
 3. Run rounds sequentially (each round uses updated SPEC)
+4. **No hard round cap** — loop until P1=0 AND no new findings (convergence)
 
-> Race Mode reviews SPEC with GPT and Gemini in parallel, then cross-validates findings for higher confidence.
+> Race Mode reviews SPEC with GPT and Gemini in parallel, then cross-validates findings for higher confidence. The loop continues until quality converges naturally.
 
-### Convergence Rule (Early Exit)
+### Termination Rules
 
-- **Round N findings == Round N-1 findings** → converged, stop immediately (no need to reach Round 3)
-- **Round 1 with P1 = 0** → skip Round 2 and stop
-- **Max 3 rounds** — if new P1s still appear after 3 rounds, record as TODO and stop
+- **P1 = 0 AND no new findings this round** → converged, stop
+- **Round N findings == Round N-1 findings** → no progress, stop immediately (prevents runaway)
+- **Round 1 with P1 = 0 AND no P2/P3** → perfect on first try, stop
 
-### 3.1 Review Loop (Max 3 Rounds)
+### Narrowing Scope (Noise Reduction)
 
-**For EACH round (1, 2, 3), run GPT + Gemini in PARALLEL via Bash tool. Stop early if converged.**
+To prevent LLM cosmetic noise from causing infinite loops while still reaching 100% quality:
+
+| Round | Scope |
+|-------|-------|
+| 1 | Full scope (P1 + P2 + P3) |
+| 2 | P1 + P2 only |
+| 3+ | P1 only (until P1=0 or convergence) |
+
+### 3.1 Review Loop (No Round Cap)
+
+**Run GPT + Gemini in PARALLEL via Bash tool for each round. Stop when termination rules trigger.**
 
 **🚨 IMPORTANT: SPEC content is too large for CLI arguments. Use --input file method (no pipe needed).**
 
@@ -228,9 +261,10 @@ Score: 96/100 ✅ PASSED
 **Step A: Save SPEC content + prompt as JSON to scratchpad temp file (using Write tool):**
 - Write JSON to `[SCRATCHPAD]/spec-review-input.json` with content:
 ```json
-{"prompt": "Review this SPEC for completeness, specificity, testability, security, and performance. Round [N]/3. Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"}
+{"prompt": "Review this SPEC for completeness, specificity, testability, security, and performance. Round [N] (scope: [SCOPE]). Find issues and improvements. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. SPEC content: [SPEC_CONTENT]"}
 ```
 - Where `[SPEC_CONTENT]` is the full SPEC text (properly JSON-escaped inside the prompt string)
+- `[SCOPE]` is `P1+P2+P3` for round 1, `P1+P2` for round 2, `P1` for rounds 3+
 
 **Step B: Script path:**
 - `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
@@ -248,13 +282,13 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/spec-review-in
 ```
 
 **🚨 MANDATORY: Replace `[SCRATCHPAD]` with the actual scratchpad directory path.**
-**🚨 Replace `[N]` with the current round number (1, 2, or 3).**
+**🚨 Replace `[N]` with the current round number (1, 2, 3, ...).**
 **🚨 Replace `[LLM_SCRIPT]` with the resolved absolute path from Step B.**
 **🚨 Run GPT and Gemini calls in PARALLEL (two separate Bash tool calls at once).**
 
-- Round 1: Write SPEC → Run GPT + Gemini in parallel → Cross-validate → Apply fixes → Update SPEC file
-- Round 2: Write updated SPEC → Run → Cross-validate → Apply fixes → Update SPEC file
-- Round 3: Write final SPEC → Run → Cross-validate → Confirm no issues remain
+- Round 1: Write SPEC → Run GPT + Gemini in parallel (full scope) → Cross-validate → Apply fixes → Update SPEC file
+- Round 2: Write updated SPEC → Run (P1+P2 scope) → Cross-validate → Apply fixes → Update SPEC file
+- Round 3+: Write updated SPEC → Run (P1-only scope) → Cross-validate → Apply fixes → Continue until P1=0 AND no new findings (or convergence detected)
 
 ### 3.2 Cross-Validation Rules
 
@@ -270,9 +304,9 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/spec-review-in
 3. Auto-apply P1/P2 improvements to SPEC and Feature files (use Edit tool)
 4. Continue to next round with updated SPEC content
 
-### 3.3 User Decision Checkpoint (Round 3 이후)
+### 3.3 User Decision Checkpoint (수렴 후)
 
-**🚨 MANDATORY: 3라운드 완료 후 사용자 판단 체크포인트 실행**
+**🚨 MANDATORY: 리뷰 루프가 수렴(convergence)에 도달하면 사용자 판단 체크포인트 실행**
 
 > Type 6 (Iterative-Reasoning) 패턴: AI가 혼자 결정하지 않고, 사용자와 함께 판단
 
@@ -281,7 +315,7 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/spec-review-in
 🔍 USER CHECKPOINT: 리뷰 결과 검토
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-3라운드 리뷰에서 발견된 주요 변경사항:
+{N}라운드 리뷰에서 발견된 주요 변경사항:
 
 | # | 변경 내용 | 출처 | 신뢰도 |
 |---|----------|------|--------|
@@ -309,7 +343,7 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/spec-review-in
 **Output format:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏁 SPEC RACE REVIEW - Round 1/3
+🏁 SPEC RACE REVIEW - Round 1 (scope: P1+P2+P3)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Model Results:
@@ -334,7 +368,7 @@ Auto-applying...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏁 SPEC RACE REVIEW - Round 2/3
+🏁 SPEC RACE REVIEW - Round 2 (scope: P1+P2)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Cross-Validated Issues:
@@ -349,15 +383,17 @@ Auto-applying...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏁 SPEC RACE REVIEW - Round 3/3
+🏁 SPEC RACE REVIEW - Round 3 (scope: P1)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Cross-Validated Issues: None
 
-✅ No changes needed - SPEC is complete
+✅ Converged: P1 = 0 AND no new findings
 ✅ Consensus Rate: 100%
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+> If new P1s appear at round 3, the loop continues to round 4, 5, ... until convergence.
 
 ### Step 3.1: Codex Adversarial Review (Codex 플러그인 활성화 시)
 
@@ -392,7 +428,7 @@ Codex adversarial review는 SPEC의 **설계 결정에 도전**합니다:
 ## Step 3.5: Review Debate Team (Agent Teams)
 
 > **팀 정의**: `agents/teams/review-debate-team.md` 참조 (SPEC Review 컨텍스트)
-> **조건**: Agent Teams 활성화 + 3라운드 완료 후 P1/P2 이슈 2개 이상 발견 시
+> **조건**: Agent Teams 활성화 + 리뷰 루프 수렴 후 P1/P2 이슈 2개 이상 발견 시
 
 **활성화 조건:**
 
@@ -416,9 +452,9 @@ Codex adversarial review는 SPEC의 **설계 결정에 도전**합니다:
 ✅ SPEC REVIEW COMPLETE: {feature-name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Quality Score: 96/100 ✅
-Review Rounds: 3/3 ✅
-Total Improvements: 4
+Quality Score: 100/100 ✅
+Review Rounds: {N} (converged: P1=0, no new findings) ✅
+Total Improvements: {M}
 ⏱️ Started: {start_time}
 ⏱️ Completed: {getCurrentTime 결과}
 

@@ -38,12 +38,12 @@
 - No `@ts-ignore` — fix type issues at root
 - Explicit return types on all functions
 
-### Convergence Principle (Over-Diagnosis Prevention)
+### Convergence Principle (Quality-First, No Round Cap)
 
-- **P1 only is mandatory, P2/P3 are best-effort** — P1=0 means done
-- **Repeated reviews narrow scope** — Round 2: P1+P2 only, Round 3+: P1 only
-- **Convergence detection** — Same results as previous round → stop immediately
-- **3 failures = escalation** — No more retries, move to TODO
+- **Loop until quality = 100** — no hard round cap on review/auto-fix loops
+- **P1 = 0 AND no new findings** → done (the natural termination signal)
+- **Narrowing scope per round (noise reduction)** — Round 1: full scope, Round 2: P1+P2, Round 3+: P1 only — keeps looping until P1=0
+- **Convergence detection (runaway safety)** — Same findings (or same score) as previous round → stop immediately, record remaining gaps as TODO
 - **Changed files only** — Never scan the entire project
 
 ### Forbidden Patterns

@@ -62,11 +62,11 @@ Phase 3: SPEC 작성 (skill: vibe.spec)
     - PTCF 구조 SPEC 문서 + Feature(BDD) 파일
     - Parallel research (GPT/Gemini/Claude agents)
     - Large scope 자동 분할
-    - Ambiguity scan + 품질 게이트(95점)
+    - Ambiguity scan + 품질 게이트(100점, 수렴까지 루프)
     - 출력: .claude/vibe/specs/{feature}.md + .claude/vibe/features/{feature}.feature
     ↓
 Phase 4: SPEC Review (skill: vibe.spec.review)
-    - Race Review (GPT + Gemini, max 3 라운드, 수렴 감지)
+    - Race Review (GPT + Gemini, 라운드 수 캡 없음, 수렴까지 루프)
     - (옵션) Codex adversarial review
     - 사용자 최종 체크포인트
     ↓
@@ -251,7 +251,7 @@ Load skill `vibe.spec` with input: .claude/vibe/plans/{feature}.md
 5. PTCF SPEC 작성 (Large scope 자동 분할)
 6. Feature file (BDD) 생성
 7. Ambiguity scan
-8. Quality gate (95점)
+8. Quality gate (100점, 수렴까지 루프)
 
 **출력:**
 
@@ -269,8 +269,8 @@ Load skill `vibe.spec.review` with feature: {feature-name}
 **핵심 단계** (상세는 `skills/vibe.spec.review/SKILL.md` 참조):
 
 1. SPEC/Feature 파일 로드 (single/split 자동 감지)
-2. Quality Validation (95점 게이트, max 3 auto-fix)
-3. Race Review (GPT + Gemini parallel, max 3 라운드, 수렴 early-exit)
+2. Quality Validation (100점 게이트, 수렴까지 auto-fix 루프)
+3. Race Review (GPT + Gemini parallel, 라운드 수 캡 없음, P1=0 + 수렴 시 종료)
 4. (옵션) Codex adversarial review
 5. Review Debate Team (2+ P1/P2 이슈 시)
 6. 사용자 최종 체크포인트
