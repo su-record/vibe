@@ -603,9 +603,9 @@ const AUTH_SOURCE_LABELS: Record<string, string> = {
 
 // ─── 셸 함수 생성 ───────────────────────────────────────────
 
-export function generateShellFunction(model: string): string {
-  return `# ~/.zshrc 또는 ~/.bashrc에 추가
-codex-cc() {
-    CODEX_PROXY_MODEL="${model}" vibe codex "$@"
-}`;
+export function generateShellFunction(model?: string): string {
+  if (model) {
+    return `codex-cc() { CODEX_PROXY_MODEL="${model}" vibe codex "$@"; }`;
+  }
+  return `codex-cc() { vibe codex "$@"; }`;
 }
