@@ -1,11 +1,11 @@
 ---
-description: Analyze project or specific feature/module
-argument-hint: "feature-name" or --code or --deps or --arch
+description: Analyze any target — code, document, website, or Figma design
+argument-hint: "feature-name" or file.pdf or https://... or --code or --deps or --arch
 ---
 
 # /vibe.analyze
 
-Analyze project or specific feature/module.
+Analyze any target: source code, documents, websites, or Figma designs.
 
 ## Usage
 
@@ -15,7 +15,25 @@ Analyze project or specific feature/module.
 /vibe.analyze --code           # Code quality analysis only
 /vibe.analyze --deps           # Dependency analysis only
 /vibe.analyze --arch           # Architecture analysis only
+/vibe.analyze report.pdf       # Document analysis (PDF, markdown, etc.)
+/vibe.analyze https://example.com  # Website analysis (UX, tech, SEO, accessibility)
+/vibe.analyze https://figma.com/design/...  # Figma design analysis
 ```
+
+## Input Type Auto-Detection
+
+Determine analysis mode from the argument:
+
+| Pattern | Mode | Description |
+|---------|------|-------------|
+| `*.pdf`, `*.docx`, `*.pptx`, `*.md` (external) | **Document** | 문서 구조, 내용, 품질 분석 |
+| `http(s)://figma.com/*` | **Figma** | 디자인 구조, 컴포넌트, 토큰 분석 |
+| `http(s)://*` | **Website** | UX, 기술 스택, SEO, 접근성 분석 |
+| `--code`, `--deps`, `--arch` | **Project Quality** | 기존 프로젝트 품질 분석 |
+| 문자열 (feature name) | **Feature/Module** | 소스코드 탐색 + 흐름 분석 |
+| 없음 | **Project Quality** | 전체 프로젝트 분석 |
+
+**Detection logic**: 파일 확장자 → URL 패턴 → 플래그 → 문자열 순으로 판단.
 
 ## File Reading Policy (Mandatory)
 
@@ -154,22 +172,35 @@ Task(subagent_type="explorer-low", model="haiku",
 
 After analysis:
 1. Output analysis summary (include `⏱️ Started: {start_time}` and `⏱️ Completed: {getCurrentTime 결과}`)
-2. **Ask user to choose workflow** when development is requested:
+2. **모드별 후속 액션 제안**:
 
+**Code/Feature 분석 후:**
 ```
 ## Next Steps
-
-Choose a workflow to proceed with development:
-
 | Task Scope | Recommended Approach |
 |----------|----------|
 | Simple fix (1-2 files) | Plan Mode |
-| Complex feature (3+ files, research/verification needed) | /vibe.spec |
+| Complex feature (3+ files) | /vibe.spec |
+```
 
-1. `/vibe.spec "feature-name"` - VIBE workflow (parallel research + SPEC verification)
-2. Plan Mode - Quick implementation (for simple tasks)
+**Document 분석 후:**
+```
+## Next Steps
+| 목적 | Recommended Approach |
+|------|----------|
+| 문서 내용을 프로젝트에 적용 | /vibe.spec "feature-name" |
+| 문서 기반 개선 방향 도출 | Plan Mode |
+| 추가 문서/웹사이트와 비교 분석 | /vibe.analyze [다른 대상] |
+```
 
-Which approach would you like to use?
+**Website 분석 후:**
+```
+## Next Steps
+| 목적 | Recommended Approach |
+|------|----------|
+| 벤치마킹 기반 신규 개발 | /vibe.spec |
+| 기존 프로젝트 UI 개선 | /vibe.figma |
+| 추가 사이트와 비교 분석 | /vibe.analyze [다른 URL] |
 ```
 
 3. Wait for user's choice before proceeding
@@ -178,14 +209,169 @@ Which approach would you like to use?
 
 ---
 
-## Mode 2: Project Quality Analysis (--code/--deps/--arch)
+## Mode 2: Document Analysis (PDF, Markdown, Slides, etc.)
+
+### Goal
+
+문서의 **구조, 핵심 내용, 품질, 활용 방향**을 분석하여:
+1. 문서가 담고 있는 정보를 구조화
+2. 현재 프로젝트와의 관련성 파악
+3. 후속 액션(개발, 개선, 적용) 제안
+
+### Process
+
+#### 1. 문서 읽기
+
+- **PDF**: `Read` 도구로 전체 페이지 읽기 (대용량은 `pages` 파라미터로 분할)
+- **Markdown/Text**: `Read` 도구로 전체 읽기
+- **이미지 포함 문서**: 시각적 요소도 함께 분석 (슬라이드, 다이어그램 등)
+
+#### 2. 문서 유형 판별
+
+| 유형 | 분석 방향 |
+|------|----------|
+| 기술 문서/스펙 | API 명세, 데이터 모델, 시퀀스 다이어그램 추출 |
+| 발표 자료 | 핵심 주장, 프레임워크, 사례 정리 |
+| 기획서/PRD | 요구사항, 유저 스토리, 수용 기준 추출 |
+| 비즈니스 문서 | 전략, 의사결정 포인트, 액션 아이템 추출 |
+| 학술/리서치 | 방법론, 결론, 적용 가능성 분석 |
+
+#### 3. 구조 분석 (Parallel Sub-Agents)
+
+```text
+# 2 agents in parallel
+Agent(subagent_type="explorer-low", model="haiku",
+  prompt="Read the document and extract: 1) Table of Contents / section structure 2) Key concepts and definitions 3) Main arguments or claims")
+
+Agent(subagent_type="explorer-low", model="haiku",
+  prompt="Read the document and extract: 1) Actionable items or recommendations 2) Data points, metrics, examples 3) References to external resources")
+```
+
+#### 4. 현재 프로젝트 연관성 분석
+
+- 문서 내용이 현재 프로젝트에 어떻게 적용 가능한지 매핑
+- 문서에서 언급된 패턴/도구/기법이 프로젝트에 이미 구현되어 있는지 확인
+- Gap 분석: 문서 권장사항 vs 프로젝트 현재 상태
+
+#### 5. Output
+
+```markdown
+## [문서명] 분석 결과
+
+### Overview
+- **문서 유형**: [발표 자료 / 기술 스펙 / 기획서 / ...]
+- **핵심 주제**: [한 줄 요약]
+- **페이지/섹션 수**: N
+- **대상 독자**: [개발자 / 기획자 / 경영진 / ...]
+
+### 핵심 내용
+1. **[주요 개념 1]**: 설명
+2. **[주요 개념 2]**: 설명
+3. ...
+
+### 프레임워크/모델 (있는 경우)
+- [문서가 제시하는 체계적 구조]
+
+### 현재 프로젝트 적용 분석
+| 문서 권장사항 | 현재 상태 | Gap |
+|---|---|---|
+| ... | ... | ... |
+
+### 핵심 인사이트
+- [문서에서 가장 중요한 takeaway]
+
+### 후속 액션 제안
+1. ...
+```
+
+---
+
+## Mode 3: Website Analysis (URL)
+
+### Goal
+
+웹사이트의 **기술 스택, UX/UI, SEO, 접근성, 성능**을 분석하여:
+1. 기술적 구현 상태 파악
+2. 개선 포인트 도출
+3. 벤치마킹 인사이트 수집
+
+### Process
+
+#### 1. 웹사이트 수집
+
+- `WebFetch` 도구로 HTML 수집
+- 주요 페이지 탐색 (홈, 주요 기능 페이지, 로그인 등)
+
+#### 2. 분석 (Parallel Sub-Agents)
+
+```text
+# 3 agents in parallel
+Agent(subagent_type="explorer-low", model="haiku",
+  prompt="Analyze the fetched HTML for: 1) Tech stack detection (framework, meta tags, scripts) 2) Page structure (header, nav, main sections, footer) 3) SEO elements (title, meta description, OG tags, structured data)")
+
+Agent(subagent_type="explorer-low", model="haiku",
+  prompt="Analyze the fetched HTML for: 1) Accessibility (ARIA labels, semantic HTML, alt texts, heading hierarchy) 2) Performance hints (script loading, image optimization, critical CSS) 3) Mobile responsiveness (viewport meta, media queries)")
+
+Agent(subagent_type="explorer-low", model="haiku",
+  prompt="Analyze the fetched HTML for: 1) UX patterns (navigation, CTA placement, form design) 2) Design system hints (CSS variables, component patterns, consistent spacing) 3) Content strategy (copywriting tone, information hierarchy)")
+```
+
+#### 3. Figma URL인 경우
+
+Figma URL이 감지되면 **Figma 전용 분석**으로 전환:
+- `get_design_context` 또는 `get_screenshot`으로 디자인 데이터 수집
+- 컴포넌트 구조, 디자인 토큰, 레이아웃 패턴 분석
+- 현재 프로젝트 코드와 디자인 일치도 비교
+
+#### 4. Output
+
+```markdown
+## [웹사이트 URL] 분석 결과
+
+### Overview
+- **사이트 유형**: [SaaS / 커머스 / 포트폴리오 / ...]
+- **기술 스택**: [Next.js, Tailwind, ...]
+- **전체 평가**: N/100
+
+### 기술 분석
+| 항목 | 상태 | 세부사항 |
+|------|------|---------|
+| Framework | React/Next.js | SSR 적용 |
+| CSS | Tailwind CSS | v3.4 |
+| ... | ... | ... |
+
+### UX/UI 분석
+- **네비게이션**: [평가]
+- **CTA 배치**: [평가]
+- **반응형**: [평가]
+
+### SEO 분석 (N/100)
+| 항목 | 상태 | 권장사항 |
+|------|------|---------|
+| Title | 있음 | 적절한 길이 |
+| Meta Description | 없음 | 추가 필요 |
+| ... | ... | ... |
+
+### 접근성 분석 (WCAG 2.1 AA)
+- **시맨틱 HTML**: [평가]
+- **키보드 네비게이션**: [평가]
+- **스크린 리더**: [평가]
+
+### 개선 제안
+1. [우선순위 높은 개선사항]
+2. ...
+```
+
+---
+
+## Mode 4: Project Quality Analysis (--code/--deps/--arch)
 
 ### Analysis Scope
 
 - **Default** (`/vibe.analyze`): Full analysis (code + dependencies + architecture)
-- **--code**: Code quality analysis only
-- **--deps**: Dependency analysis only
-- **--arch**: Architecture analysis only
+- `--code`: Code quality analysis only
+- `--deps`: Dependency analysis only
+- `--arch`: Architecture analysis only
 
 ### Code Quality Analysis (--code)
 
@@ -284,7 +470,9 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 ### Analysis Quality Checklist
 
-Before completing analysis, ALL items must be checked:
+Before completing analysis, ALL items must be checked (mode-specific):
+
+**Code/Feature Analysis:**
 
 | Category | Check Item | Weight |
 |----------|------------|--------|
@@ -296,6 +484,29 @@ Before completing analysis, ALL items must be checked:
 | **Depth** | Business logic explained | 10% |
 | **Depth** | Dependencies mapped | 10% |
 | **Actionability** | Next steps clearly defined | 10% |
+
+**Document Analysis:**
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Completeness** | 전체 문서 읽기 완료 | 20% |
+| **Completeness** | 핵심 개념/주장 모두 추출 | 20% |
+| **Structure** | 문서 구조 (목차/섹션) 파악 | 15% |
+| **Depth** | 프로젝트 연관성 분석 | 15% |
+| **Depth** | Gap 분석 (권장 vs 현재) | 15% |
+| **Actionability** | 구체적 후속 액션 제안 | 15% |
+
+**Website Analysis:**
+
+| Category | Check Item | Weight |
+|----------|------------|--------|
+| **Completeness** | HTML 수집 및 파싱 완료 | 15% |
+| **Tech** | 기술 스택 식별 | 15% |
+| **UX** | UX/UI 패턴 분석 | 15% |
+| **SEO** | SEO 요소 점검 | 15% |
+| **A11y** | 접근성 검사 | 15% |
+| **Performance** | 성능 힌트 분석 | 10% |
+| **Actionability** | 개선 제안 | 15% |
 
 ### Analysis Score Calculation
 

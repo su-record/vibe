@@ -30,6 +30,8 @@ import {
   updateCodexAgentsMd,
   updateGeminiMd,
   installGeminiHooks,
+  generateProjectClaudeMd,
+  generateProjectAgentsMd,
 } from '../setup.js';
 import {
   updateCursorGlobalAssets,
@@ -136,10 +138,13 @@ export function update(options: CliOptions = { silent: false }): void {
     // Gemini CLI 글로벌 에셋 업데이트
     updateGeminiGlobalAssets(stackTypes, options);
 
+    // CLAUDE.md 갱신 (프로젝트 분석 기반)
+    generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
+
     // Codex/Gemini 프로젝트 레벨 설정
     const codexStatus = detectCodexCli();
     if (codexStatus.installed) {
-      updateCodexAgentsMd(projectRoot, detectedStacks);
+      generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
     }
     const geminiStatus = detectGeminiCli();
     if (geminiStatus.installed) {

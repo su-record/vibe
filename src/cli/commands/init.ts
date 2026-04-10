@@ -22,6 +22,8 @@ import {
   updateGeminiMd,
   installGeminiHooks,
   detectOsLanguage,
+  generateProjectClaudeMd,
+  generateProjectAgentsMd,
 } from '../setup.js';
 import * as p from '@clack/prompts';
 import {
@@ -353,6 +355,31 @@ export async function init(projectName?: string): Promise<void> {
     const s2 = p.spinner();
     s2.start('Generating project config');
 
+    // docs/ and .dev/ scaffolding (only for new or empty projects)
+    runStep(s2, 'Creating docs/ and .dev/ directories', () => {
+      const docsDir = path.join(projectRoot, 'docs');
+      const devDir = path.join(projectRoot, '.dev');
+
+      if (!fs.existsSync(docsDir)) {
+        ensureDir(docsDir);
+        ensureDir(path.join(docsDir, 'adr'));
+        fs.writeFileSync(
+          path.join(docsDir, 'README.md'),
+          '# docs/\n\nBusiness documents maintained by humans.\nAI reads these before starting work.\n\n- Business rules & domain definitions\n- Checklists & onboarding guides\n- ADR (Architecture Decision Records)\n- API specs & external integration specs\n',
+        );
+      }
+
+      if (!fs.existsSync(devDir)) {
+        ensureDir(devDir);
+        ensureDir(path.join(devDir, 'learnings'));
+        ensureDir(path.join(devDir, 'scratch'));
+        fs.writeFileSync(
+          path.join(devDir, 'README.md'),
+          '# .dev/\n\nAI-generated work logs and scratch files.\n\n- `learnings/` — Troubleshooting records, debugging history\n- `scratch/` — Experiments, scratchpad (gitignored)\n',
+        );
+      }
+    });
+
     runStep(s2, 'Creating constitution.md', () => updateConstitution(coreDir, detectedStacks, stackDetails));
     runStep(s2, 'Creating config.json', () => {
       updateConfig(coreDir, detectedStacks, stackDetails, false);
@@ -420,6 +447,20 @@ export async function init(projectName?: string): Promise<void> {
       }
       if (provisionResult.specTemplateGenerated) {
         log(`   📋 SPEC template generated\n`);
+      }
+    });
+
+    // CLAUDE.md / AGENTS.md 생성 (프로젝트 분석 기반)
+    runStep(s3, 'Generating CLAUDE.md', () => {
+      generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
+      log(`   📄 CLAUDE.md generated (project-aware)\n`);
+    });
+
+    runStep(s3, 'Generating AGENTS.md', () => {
+      const codexStatus = detectCodexCli();
+      if (codexStatus.installed) {
+        generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
+        log(`   📄 AGENTS.md generated (Codex)\n`);
       }
     });
 

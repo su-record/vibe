@@ -10,7 +10,7 @@ import { VibeConfig, VibeReferences, TechStack, StackDetails } from '../types.js
 import { ensureDir, removeDirRecursive, log } from '../utils.js';
 import { STACK_NAMES, getLanguageRulesContent } from '../detect.js';
 import { STACK_TO_LANGUAGE_FILE } from '../postinstall.js';
-import { detectOsLanguage, getLanguageInstruction } from './LanguageDetector.js';
+import { detectOsLanguage } from './LanguageDetector.js';
 import { getCoreConfigDir } from './GlobalInstaller.js';
 import { handleCaughtError } from '../../infra/lib/utils.js';
 
@@ -75,106 +75,295 @@ export function updateConstitution(
 /**
  * CLAUDE.md 업데이트 (core 섹션 추가/교체)
  */
-// VIBE 섹션 마커
-const CORE_START_MARKER = '# VIBE';
-const CORE_END_MARKER = '<!-- VIBE:END -->';
 
-export function updateClaudeMd(
+/**
+ * 프로젝트 분석 → CLAUDE.md 생성/갱신
+ * 정적 템플릿이 아닌, 실제 프로젝트 구조를 분석해서 맞춤 생성
+ */
+export function generateProjectClaudeMd(
   projectRoot: string,
   detectedStacks: TechStack[],
-  isUpdate = false
+  stackDetails: StackDetails,
 ): void {
-  const coreClaudeMd = path.join(__dirname, '../../../CLAUDE.md');
-  const projectClaudeMd = path.join(projectRoot, 'CLAUDE.md');
+  const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
 
-  if (!fs.existsSync(coreClaudeMd)) return;
+  // 프로젝트 구조 분석
+  const dirs = analyzeProjectStructure(projectRoot);
+  const stackNames = detectedStacks.map(s => STACK_NAMES[s.type]?.name || s.type);
+  const language = detectOsLanguage();
 
-  let coreContent = fs.readFileSync(coreClaudeMd, 'utf-8').replace(/\r\n/g, '\n');
+  // VIBE 섹션 생성
+  const vibeSection = buildVibeSection(projectRoot, dirs, stackNames, stackDetails, language);
 
-  // OS 언어 감지하여 응답 언어 설정 추가/교체
-  const osLanguage = detectOsLanguage();
-  const languageInstruction = getLanguageInstruction(osLanguage);
+  if (fs.existsSync(claudeMdPath)) {
+    const existing = fs.readFileSync(claudeMdPath, 'utf-8');
+    const startIdx = existing.indexOf('# VIBE');
+    const endIdx = existing.indexOf('<!-- VIBE:END -->');
 
-  // 기존 Response Language 섹션 제거 (중복 방지)
-  coreContent = coreContent.replace(
-    /\n*## Response Language\n+\*\*IMPORTANT: Always respond in (?:English|Korean \(한국어\)) unless the user explicitly requests otherwise\.\*\*/g,
-    ''
-  );
-
-  // # VIBE 헤더 바로 다음에 언어 설정 추가
-  coreContent = coreContent.replace(
-    '# VIBE\n\nSPEC-driven AI Coding Framework (Claude Code Exclusive)',
-    '# VIBE\n\nSPEC-driven AI Coding Framework (Claude Code Exclusive)' + languageInstruction
-  );
-
-  // 감지된 기술 스택에 따라 언어별 규칙 추가
-  const languageRules = getLanguageRulesContent(detectedStacks);
-  if (languageRules) {
-    coreContent = coreContent.replace(
-      '### Error Handling Required',
-      languageRules + '\n\n### Error Handling Required'
-    );
-  }
-
-  if (fs.existsSync(projectClaudeMd)) {
-    const existingContent = fs.readFileSync(projectClaudeMd, 'utf-8');
-
-    // VIBE 섹션 교체 (마커 기반)
-    const coreStartIdx = existingContent.indexOf(CORE_START_MARKER);
-    const coreEndIdx = existingContent.indexOf(CORE_END_MARKER);
-
-    if (coreStartIdx !== -1 && coreEndIdx !== -1) {
-      // 마커 기반 정확한 교체
-      // 누적된 --- 구분선 정리
-      const beforeCore = existingContent.substring(0, coreStartIdx).trimEnd().replace(/(\n---\s*)+$/g, '').trimEnd();
-      let afterCore = existingContent.substring(coreEndIdx + CORE_END_MARKER.length).trimStart();
-
-      // afterCore가 CORE 중복 내용인지 확인
-      // 사용자 커스텀 섹션은 보통 # 으로 시작하는 새로운 헤더로 시작함 (## 가 아닌 # 레벨)
-      // --- 구분자와 빈 줄을 모두 제거하고 실제 내용 확인
-      const cleanedAfterCore = afterCore.replace(/^(-{3,}\s*\n*)+/g, '').trimStart();
-
-      // VIBE 관련 키워드가 있으면 중복으로 판단하여 버림
-      const isCoreContent = cleanedAfterCore.startsWith('# VIBE') ||
-                           cleanedAfterCore.startsWith('# CORE') ||
-                           cleanedAfterCore.startsWith('## Rule Title') ||
-                           cleanedAfterCore.startsWith('## Response Language') ||
-                           cleanedAfterCore.startsWith('## Code Quality') ||
-                           cleanedAfterCore.startsWith('title:') ||
-                           cleanedAfterCore.includes('SPEC-driven AI Coding Framework') ||
-                           cleanedAfterCore.includes('/vibe.spec') ||
-                           cleanedAfterCore.includes('ULTRAWORK');
-
-      if (isCoreContent) {
-        afterCore = '';  // 중복 CORE 내용 - 버림
-      }
-
-      let newContent = '';
-      if (beforeCore) {
-        newContent = beforeCore + '\n\n' + coreContent;
-      } else {
-        newContent = coreContent;
-      }
-      if (afterCore) {
-        newContent += '\n\n' + afterCore;
-      }
-      fs.writeFileSync(projectClaudeMd, newContent);
-    } else if (coreStartIdx !== -1) {
-      // 구버전: # VIBE는 있지만 END 마커 없음
-      // VIBE 앞의 사용자 섹션만 보존하고, VIBE 이후는 전체 교체
-      // (VIBE 뒤의 내용은 대부분 누적된 중복 VIBE 섹션임)
-      const beforeCore = existingContent.substring(0, coreStartIdx).trimEnd();
-      const newContent = (beforeCore ? beforeCore + '\n\n' : '') + coreContent;
-      fs.writeFileSync(projectClaudeMd, newContent);
-    } else if (!existingContent.includes('/vibe.spec')) {
-      // VIBE 섹션 없음 - 추가
-      const mergedContent = existingContent.trim() + '\n\n' + coreContent;
-      fs.writeFileSync(projectClaudeMd, mergedContent);
+    if (startIdx !== -1 && endIdx !== -1) {
+      // 마커 기반 교체
+      const before = existing.substring(0, startIdx).trimEnd();
+      const after = existing.substring(endIdx + '<!-- VIBE:END -->'.length).trimStart();
+      const newContent = (before ? before + '\n\n' : '') + vibeSection + (after ? '\n\n' + after : '');
+      fs.writeFileSync(claudeMdPath, newContent);
+    } else if (startIdx !== -1) {
+      // # VIBE는 있지만 END 마커 없음 — 이후 전체 교체
+      const before = existing.substring(0, startIdx).trimEnd();
+      fs.writeFileSync(claudeMdPath, (before ? before + '\n\n' : '') + vibeSection);
+    } else {
+      // VIBE 섹션 없음 — 추가
+      fs.writeFileSync(claudeMdPath, existing.trimEnd() + '\n\n' + vibeSection);
     }
-    // else: 이미 VIBE 관련 내용이 있지만 마커가 없는 경우 - 건드리지 않음
   } else {
-    fs.writeFileSync(projectClaudeMd, coreContent);
+    fs.writeFileSync(claudeMdPath, vibeSection);
   }
+}
+
+/**
+ * 프로젝트 분석 → AGENTS.md 생성/갱신 (Codex CLI용)
+ */
+export function generateProjectAgentsMd(
+  projectRoot: string,
+  detectedStacks: TechStack[],
+  stackDetails: StackDetails,
+): void {
+  const agentsMdPath = path.join(projectRoot, 'AGENTS.md');
+  const dirs = analyzeProjectStructure(projectRoot);
+  const stackNames = detectedStacks.map(s => STACK_NAMES[s.type]?.name || s.type);
+  const language = detectOsLanguage();
+
+  let vibeSection = buildVibeSection(projectRoot, dirs, stackNames, stackDetails, language);
+  // Codex 적응: Claude Code → Codex CLI, .claude/ → .codex/
+  vibeSection = vibeSection.replace(/Claude Code/g, 'Codex CLI');
+  vibeSection = vibeSection.replace(/~\/\.claude\//g, '~/.codex/');
+  vibeSection = vibeSection.replace(/\.claude\//g, '.codex/');
+
+  const wrapped = `${VIBE_START}\n${vibeSection}\n${VIBE_END_TAG}`;
+
+  if (fs.existsSync(agentsMdPath)) {
+    const existing = fs.readFileSync(agentsMdPath, 'utf-8');
+    const startIdx = existing.indexOf(VIBE_START);
+    const endIdx = existing.indexOf(VIBE_END_TAG);
+
+    if (startIdx !== -1 && endIdx !== -1) {
+      const before = existing.substring(0, startIdx).trimEnd();
+      const after = existing.substring(endIdx + VIBE_END_TAG.length).trimStart();
+      fs.writeFileSync(agentsMdPath, (before ? before + '\n\n' : '') + wrapped + (after ? '\n\n' + after : ''));
+    } else if (!existing.includes('/vibe.spec')) {
+      fs.writeFileSync(agentsMdPath, existing.trimEnd() + '\n\n' + wrapped + '\n');
+    }
+  } else {
+    fs.writeFileSync(agentsMdPath, wrapped + '\n');
+  }
+}
+
+/** 프로젝트 디렉토리 구조 분석 */
+interface ProjectDirs {
+  hasSrc: boolean;
+  hasDocs: boolean;
+  hasDev: boolean;
+  hasTests: boolean;
+  hasOut: boolean;
+  topLevel: string[];
+  srcChildren: string[];
+  buildCommand: string;
+  testCommand: string;
+  packageManager: string;
+}
+
+function analyzeProjectStructure(projectRoot: string): ProjectDirs {
+  const topLevel = fs.readdirSync(projectRoot)
+    .filter(f => !f.startsWith('.') || f === '.dev' || f === '.claude')
+    .filter(f => {
+      try { return fs.statSync(path.join(projectRoot, f)).isDirectory(); }
+      catch { return false; }
+    });
+
+  const srcDir = path.join(projectRoot, 'src');
+  const libDir = path.join(projectRoot, 'lib');
+  const appDir = path.join(projectRoot, 'app');
+  const mainSrc = fs.existsSync(srcDir) ? srcDir : fs.existsSync(libDir) ? libDir : fs.existsSync(appDir) ? appDir : null;
+
+  let srcChildren: string[] = [];
+  if (mainSrc) {
+    srcChildren = fs.readdirSync(mainSrc)
+      .filter(f => {
+        try { return fs.statSync(path.join(mainSrc, f)).isDirectory(); }
+        catch { return false; }
+      })
+      .slice(0, 15);
+  }
+
+  // 빌드/테스트 커맨드 감지
+  let buildCommand = '';
+  let testCommand = '';
+  let packageManager = 'npm';
+  const pkgPath = path.join(projectRoot, 'package.json');
+  const pyprojectPath = path.join(projectRoot, 'pyproject.toml');
+
+  if (fs.existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+      buildCommand = pkg.scripts?.build ? `${packageManager} run build` : '';
+      testCommand = pkg.scripts?.test ? `${packageManager} test` : '';
+      if (fs.existsSync(path.join(projectRoot, 'pnpm-lock.yaml'))) packageManager = 'pnpm';
+      else if (fs.existsSync(path.join(projectRoot, 'yarn.lock'))) packageManager = 'yarn';
+      else if (fs.existsSync(path.join(projectRoot, 'bun.lockb'))) packageManager = 'bun';
+    } catch { /* ignore */ }
+  } else if (fs.existsSync(pyprojectPath)) {
+    buildCommand = 'python -m build';
+    testCommand = 'pytest';
+    packageManager = 'pip';
+  }
+
+  return {
+    hasSrc: mainSrc !== null,
+    hasDocs: fs.existsSync(path.join(projectRoot, 'docs')),
+    hasDev: fs.existsSync(path.join(projectRoot, '.dev')),
+    hasTests: fs.existsSync(path.join(projectRoot, 'tests')) || fs.existsSync(path.join(projectRoot, '__tests__')),
+    hasOut: fs.existsSync(path.join(projectRoot, 'dist')) || fs.existsSync(path.join(projectRoot, 'out')) || fs.existsSync(path.join(projectRoot, 'build')),
+    topLevel,
+    srcChildren,
+    buildCommand,
+    testCommand,
+    packageManager,
+  };
+}
+
+/** 분석 결과 기반 VIBE 섹션 조립 */
+function buildVibeSection(
+  projectRoot: string,
+  dirs: ProjectDirs,
+  stackNames: string[],
+  stackDetails: StackDetails,
+  language: string,
+): string {
+  const lines: string[] = [];
+
+  lines.push('# VIBE');
+  lines.push('');
+  if (language === 'ko') {
+    lines.push('**IMPORTANT: Always respond in Korean (한국어) unless the user explicitly requests otherwise.**');
+    lines.push('');
+  }
+
+  // Constraints
+  lines.push('## Constraints');
+  lines.push('');
+  lines.push('- Modify only requested scope');
+  lines.push('- Preserve existing style');
+  lines.push('- Edit existing files, never create new ones');
+  lines.push('- Function ≤50 lines, nesting ≤3, params ≤5, complexity ≤10');
+  lines.push('- No `any`, no `console.log` in commits, no commented-out code');
+  lines.push('');
+
+  // Tech Stack
+  if (stackNames.length > 0) {
+    lines.push('## Tech Stack');
+    lines.push('');
+    lines.push(stackNames.join(', '));
+    if (stackDetails.databases.length > 0) {
+      lines.push(`DB: ${stackDetails.databases.join(', ')}`);
+    }
+    if (stackDetails.stateManagement.length > 0) {
+      lines.push(`State: ${stackDetails.stateManagement.join(', ')}`);
+    }
+    lines.push('');
+  }
+
+  // Project Structure (실제 분석 결과)
+  lines.push('## Project Structure');
+  lines.push('');
+  const structureRows: string[] = [];
+  for (const dir of dirs.topLevel) {
+    switch (dir) {
+      case 'src': case 'lib': case 'app':
+        structureRows.push(`| \`${dir}/\` | Business logic |`);
+        break;
+      case 'docs':
+        structureRows.push('| `docs/` | Human-maintained business docs — **read before work** |');
+        break;
+      case '.dev':
+        structureRows.push('| `.dev/` | AI work logs, learnings, scratch |');
+        break;
+      case 'tests': case '__tests__': case 'test':
+        structureRows.push(`| \`${dir}/\` | Test infrastructure |`);
+        break;
+      case '.claude':
+        structureRows.push('| `.claude/` | AI configuration, rules, skills |');
+        break;
+      case 'dist': case 'out': case 'build':
+        structureRows.push(`| \`${dir}/\` | Build output |`);
+        break;
+      default:
+        structureRows.push(`| \`${dir}/\` | |`);
+    }
+  }
+  if (structureRows.length > 0) {
+    lines.push('| Folder | Purpose |');
+    lines.push('|--------|---------|');
+    lines.push(...structureRows);
+    lines.push('');
+  }
+
+  // src/ 하위 구조
+  if (dirs.srcChildren.length > 0) {
+    lines.push(`### Source layout: ${dirs.srcChildren.map(d => `${d}/`).join(', ')}`);
+    lines.push('');
+  }
+
+  // Build & Test
+  if (dirs.buildCommand || dirs.testCommand) {
+    lines.push('## Commands');
+    lines.push('');
+    if (dirs.buildCommand) lines.push(`- Build: \`${dirs.buildCommand}\``);
+    if (dirs.testCommand) lines.push(`- Test: \`${dirs.testCommand}\``);
+    lines.push('');
+  }
+
+  // References (포인터)
+  lines.push('## References');
+  lines.push('');
+  lines.push('- Rules: `.claude/vibe/config.json` → `references.rules[]`');
+  lines.push('- Languages: `.claude/vibe/languages/`');
+  lines.push('- Constitution: `.claude/vibe/constitution.md`');
+  if (dirs.hasDocs) lines.push('- Business docs: `docs/`');
+  lines.push('');
+
+  // Workflow (간결하게)
+  lines.push('## Workflow');
+  lines.push('');
+  lines.push('| Task | Command |');
+  lines.push('|------|---------|');
+  lines.push('| 1-2 files | Plan Mode |');
+  lines.push('| 3+ files | `/vibe.spec` |');
+  lines.push('| Analyze | `/vibe.analyze` (code, docs, web, Figma) |');
+  lines.push('| Harness check | `/vibe.harness` |');
+  lines.push('| Project structure | `/vibe.scaffold` |');
+  lines.push('');
+
+  // Magic Keywords
+  lines.push('## Keywords');
+  lines.push('');
+  lines.push('`ultrawork` parallel+auto | `ralph` loop until 100% | `quick` fast mode');
+  lines.push('');
+
+  // Quality + Context
+  lines.push('## Quality');
+  lines.push('');
+  lines.push('Convergence: loop until P1=0. Changed files only.');
+  lines.push('At 70%+ context: save_memory → /new → /vibe.utils --continue');
+  lines.push('');
+
+  // Git
+  lines.push('## Git');
+  lines.push('');
+  lines.push('Include: `.claude/vibe/{plans,specs,features,todos}/`, `CLAUDE.md`');
+  lines.push('Exclude: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`');
+  lines.push('');
+  lines.push('<!-- VIBE:END -->');
+
+  return lines.join('\n');
 }
 
 /**
@@ -268,6 +457,12 @@ export function updateGitignore(projectRoot: string): void {
   if (gitignore.includes('.claude/vibe/mcp/')) {
     gitignore = gitignore.replace(/# core MCP\n\.claude\/vibe\/mcp\/\n?/g, '');
     gitignore = gitignore.replace(/\.claude\/vibe\/mcp\/\n?/g, '');
+    modified = true;
+  }
+
+  // .dev/scratch/ (AI experiment files, not committed)
+  if (!gitignore.includes('.dev/scratch/')) {
+    gitignore = gitignore.trimEnd() + '\n\n# AI scratch files (ephemeral)\n.dev/scratch/\n';
     modified = true;
   }
 

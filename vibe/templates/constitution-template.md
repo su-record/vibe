@@ -60,6 +60,21 @@ All reference documents are stored globally and specified in `.claude/vibe/confi
 
 ---
 
+## Project Structure
+
+### Human vs AI Document Separation
+
+| Folder | Owner | Purpose |
+|--------|-------|---------|
+| `docs/` | **Human** | Business rules, domain definitions, ADR, API specs |
+| `.dev/` | **AI** | Learnings, troubleshooting logs, scratch/experiments |
+
+- **Before starting work**: Always check `docs/` for business context
+- **After solving issues**: Record learnings in `.dev/learnings/`
+- **Experiments**: Use `.dev/scratch/` (gitignored)
+
+---
+
 ## 1. Project Principles
 
 ### Values

@@ -23,6 +23,8 @@ export {
   updateCodexAgentsMd,
   updateGeminiMd,
   installGeminiHooks,
+  generateProjectClaudeMd,
+  generateProjectAgentsMd,
 } from './setup/ProjectSetup.js';
 
 export {
