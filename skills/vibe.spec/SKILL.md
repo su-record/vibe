@@ -222,12 +222,12 @@ $ git checkout -b feature/login-page
 - Prefix with `feature/`
 - Example: `feature/passkey-auth`, `feature/dark-mode`
 
-**`.last-feature` 포인터 갱신** (Git branch setup 직후):
+**`.last-feature` pointer update** (immediately after Git branch setup):
 
 ```
-Write ".claude/vibe/.last-feature" ← feature-name (한 줄)
-feature name이 확정되는 시점에 실행한다.
-이미 같은 값이면 no-op.
+Write ".claude/vibe/.last-feature" ← feature-name (single line)
+Execute at the point when the feature name is finalized.
+No-op if the value is already the same.
 ```
 
 ### 1. Project Analysis
@@ -470,10 +470,10 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey aut
 
 #### 3.0.1 Agent Teams — Research Collaboration
 
-> **팀 정의**: `agents/teams/research-team.md` 참조
-> 설정: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
+> **Team definition**: See `agents/teams/research-team.md`
+> Settings: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` global — auto-configured by postinstall)
 
-**토론 결과는 SPEC의 Context 섹션에 반영됩니다.**
+**Discussion results are reflected in the SPEC's Context section.**
 
 #### 3.1 Result Merge Rules
 
@@ -495,48 +495,48 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey aut
 
 ### 3.2 UI/UX Design Intelligence (Auto-triggered)
 
-> **조건**: SPEC 컨텍스트에 UI/UX 키워드 포함 시 자동 실행 (website, landing, dashboard, app, e-commerce, portfolio, SaaS, mobile app, web app, UI, UX, frontend, 디자인)
-> **비활성화**: `.claude/vibe/config.json`에 `"uiUxAnalysis": false` 설정
+> **Condition**: Auto-executes when UI/UX keywords are present in the SPEC context (website, landing, dashboard, app, e-commerce, portfolio, SaaS, mobile app, web app, UI, UX, frontend, design)
+> **Disable**: Set `"uiUxAnalysis": false` in `.claude/vibe/config.json`
 
-**UI/UX 키워드 감지 시, 리서치와 병렬로 3개 에이전트 순차 실행:**
+**When UI/UX keywords are detected, run 3 agents sequentially in parallel with research:**
 
 ```
 [Parallel Research] GPT + Gemini + Claude agents
-        ↓ (동시 실행)
+        ↓ (concurrent execution)
 [UI/UX Intelligence]
-  ① ui-industry-analyzer (Haiku) → 산업 분석 + 디자인 전략
+  ① ui-industry-analyzer (Haiku) → industry analysis + design strategy
         ↓
-  ②③ 병렬 실행:
-    ② ui-design-system-gen (Sonnet) → MASTER.md 생성
-    ③ ui-layout-architect (Haiku) → 레이아웃 설계
+  ②③ parallel execution:
+    ② ui-design-system-gen (Sonnet) → generate MASTER.md
+    ③ ui-layout-architect (Haiku) → layout design
 ```
 
-**실행 방법:**
+**How to execute:**
 
-1. **① ui-industry-analyzer** — Task(haiku) 에이전트로 실행:
+1. **① ui-industry-analyzer** — Run as Task(haiku) agent:
 ```text
 Task(subagent_type="ui-industry-analyzer",
   prompt="Analyze product: [USER_DESCRIPTION]. Use core_ui_search to detect category, style priority, color mood, typography mood. Save result to .claude/vibe/design-system/{project}/analysis-result.json")
 ```
 
-2. **②③ 병렬 실행** — ①의 결과를 입력으로:
+2. **②③ parallel execution** — Using ①'s result as input:
 ```text
-# ② 디자인 시스템 생성 (Sonnet)
+# ② Generate design system (Sonnet)
 Task(subagent_type="ui-design-system-gen",
   prompt="Generate design system from analysis-result.json for project '{project}'. Use core_ui_search for style/color/typography, then core_ui_generate_design_system and core_ui_persist_design_system.")
 
-# ③ 레이아웃 설계 (Haiku) — 병렬 실행
+# ③ Layout design (Haiku) — parallel execution
 Task(subagent_type="ui-layout-architect",
   prompt="Design layout from analysis-result.json for project '{project}'. Use core_ui_search for landing patterns and dashboard layout.")
 ```
 
-3. **결과를 SPEC Context에 주입:**
+3. **Inject results into SPEC Context:**
 ```markdown
 ### Design System (Auto-generated)
-- Category: {①의 category}
-- Style: {①의 style_priority}
+- Category: {① category}
+- Style: {① style_priority}
 - MASTER.md: .claude/vibe/design-system/{project}/MASTER.md
-- Layout: {③의 pattern + sections}
+- Layout: {③ pattern + sections}
 ```
 
 ### 4. Write SPEC Document (PTCF Structure)
@@ -952,18 +952,18 @@ Output the handoff message:
 📋 Feature: .claude/vibe/features/{feature-name}.feature
 📊 Quality Score: {score}/100
 ⏱️ Started: {start_time}
-⏱️ Completed: {getCurrentTime 결과}
+⏱️ Completed: {getCurrentTime result}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ NEXT STEP: Run SPEC review (vibe.spec.review skill)
 
 Option 1 (same session):
   Load skill `vibe.spec.review` with feature `{feature-name}`
-  (또는 자연어: "스펙 리뷰")
+  (or natural language: "spec review")
 
 Option 2 (recommended for large context):
   /new → /vibe.spec "{feature-name}"
-  (Smart Resume이 Phase 4부터 시작)
+  (Smart Resume will start from Phase 4)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 

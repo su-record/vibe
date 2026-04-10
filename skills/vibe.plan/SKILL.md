@@ -7,137 +7,137 @@ priority: 90
 chain-next: [vibe.spec, vibe.figma]
 ---
 
-# vibe.plan — Interview → 기획서 정제
+# vibe.plan — Interview → Plan Document Refinement
 
-> **Principle**: interview의 raw 문답을 **사람이 읽는 비전 문서**로 정제한다. PTCF/EARS/Phase 같은 AI 실행 구조는 `/vibe.spec`의 역할이다.
+> **Principle**: Refine the raw Q&A from the interview into a **human-readable vision document**. AI execution structures like PTCF/EARS/Phase are the responsibility of `/vibe.spec`.
 
 ## When to Use
 
-- `vibe.interview`가 방금 완료되어 `.claude/vibe/interviews/{feature}.md`가 존재
-- 사용자가 "기획서 써줘", "interview 정리해줘"라고 요청
-- 외부 PRD/와이어프레임을 기반으로 vibe 기획서 포맷으로 변환 필요
+- `vibe.interview` has just completed and `.claude/vibe/interviews/{feature}.md` exists
+- The user requests "write me a plan document" or "clean up the interview"
+- Need to convert an external PRD/wireframe into the vibe plan document format
 
-**건너뛰기**:
-- interview 없이 이 스킬을 직접 호출하면 → `vibe.interview` 먼저 체인 (chain-prev 없음, 사용자에게 안내)
+**Skip condition**:
+- If this skill is called directly without an interview → chain to `vibe.interview` first (no chain-prev; inform the user)
 
 ## Core Flow
 
 ```
-1. interview 파일 읽기
+1. Read interview file
    .claude/vibe/interviews/{feature}.md
      ↓
-2. 템플릿 로드
+2. Load template
    ~/.claude/vibe/templates/plan-template.md
      ↓
-3. 섹션별 정제
-   - Required 응답 → 본문 섹션
-   - Optional 응답 → 본문 + "Assumptions"
-   - TBD 항목 → "Open Questions"
-   - Discovered → 해당 섹션에 통합
+3. Refine per section
+   - Required responses → body sections
+   - Optional responses → body + "Assumptions"
+   - TBD items → "Open Questions"
+   - Discovered → merged into relevant sections
      ↓
-4. UI 섹션 조건부 포함
-   type ∈ {website, webapp, mobile} → Look&Feel/레이아웃/반응형 포함
-   type ∈ {api, library, feature-data} → 생략
+4. Conditionally include UI sections
+   type ∈ {website, webapp, mobile} → include Look&Feel / layout / responsive
+   type ∈ {api, library, feature-data} → omit
      ↓
-5. 기획서 저장
+5. Save plan document
    .claude/vibe/plans/{feature}.md
      ↓
-6. Handoff 안내
-   다음 단계: /vibe.spec, /vibe.figma, 병렬
+6. Handoff guidance
+   Next steps: /vibe.spec, /vibe.figma, parallel
 ```
 
-## Step 1: Interview 파일 읽기
+## Step 1: Read Interview File
 
 ```
 Read .claude/vibe/interviews/{feature-name}.md
 ```
 
-프런트매터에서 `type`, `status`, `requiredCollected`, `optionalCollected` 등을 추출.
+Extract `type`, `status`, `requiredCollected`, `optionalCollected`, etc. from the frontmatter.
 
-**검증**:
-- `status: partial` + Required 미완료 → 사용자에게 경고:
+**Validation**:
+- `status: partial` + Required items incomplete → warn the user:
   ```
-  ⚠️ Interview가 부분 완료입니다 (Required N개 미수집).
-  기획서에는 해당 항목이 "TBD"로 표시됩니다.
-  계속할까요? (y/N)
+  ⚠️ Interview is partially complete (N Required items not collected).
+  Those items will appear as "TBD" in the plan document.
+  Continue? (y/N)
   ```
-- 파일이 없으면 → `vibe.interview` 먼저 실행하도록 안내.
+- If the file does not exist → guide the user to run `vibe.interview` first.
 
-### `.last-feature` 포인터 갱신
+### `.last-feature` Pointer Update
 
 ```
-Write ".claude/vibe/.last-feature" ← feature-name (한 줄)
-interview 파일에서 feature name을 추출한 직후 실행한다.
-이미 같은 값이면 no-op.
+Write ".claude/vibe/.last-feature" ← feature-name (one line)
+Run immediately after extracting the feature name from the interview file.
+No-op if the value is already the same.
 ```
 
-## Step 2: 템플릿 로드
+## Step 2: Load Template
 
 ```
 Read ~/.claude/vibe/templates/plan-template.md
 ```
 
-템플릿은 12개 섹션 구조:
+The template has a 12-section structure:
 
-| # | 섹션 | 모든 타입 | UI 타입만 |
-|---|-----|---------|---------|
-| 1 | 개요 (Overview) | ✅ | |
-| 2 | 배경 (Why) | ✅ | |
-| 3 | 타깃 사용자 (Who) | ✅ | |
-| 4 | 목표 & 성공 기준 | ✅ | |
-| 5 | 핵심 기능/섹션 | ✅ | |
-| 6 | 범위 & 비범위 | ✅ | |
+| # | Section | All Types | UI Types Only |
+|---|---------|-----------|---------------|
+| 1 | Overview | ✅ | |
+| 2 | Background (Why) | ✅ | |
+| 3 | Target Users (Who) | ✅ | |
+| 4 | Goals & Success Criteria | ✅ | |
+| 5 | Core Features/Sections | ✅ | |
+| 6 | Scope & Out-of-Scope | ✅ | |
 | 7 | Look & Feel | | ✅ |
-| 8 | 레이아웃/섹션 구성 | | ✅ |
-| 9 | 반응형 전략 | | ✅ |
-| 10 | 기술 스택 & 제약 | ✅ | |
-| 11 | 가정 & 리스크 | ✅ | |
-| 12 | 다음 단계 (Handoff) | ✅ | |
+| 8 | Layout/Section Structure | | ✅ |
+| 9 | Responsive Strategy | | ✅ |
+| 10 | Tech Stack & Constraints | ✅ | |
+| 11 | Assumptions & Risks | ✅ | |
+| 12 | Next Steps (Handoff) | ✅ | |
 
-## Step 3: 섹션별 정제 매핑
+## Step 3: Per-Section Refinement Mapping
 
-Interview 항목 → 기획서 섹션 매핑 규칙:
+Interview items → plan document section mapping rules:
 
-### 공통 매핑
+### Common Mapping
 
-| Interview 항목 | 기획서 섹션 |
-|--------------|----------|
-| `R1. purpose` | §2 배경 (Why) |
-| `R2. target-users` | §3 타깃 사용자 |
-| `R3. core-message` / `R3. core-features` / `R3. core-endpoints` | §5 핵심 기능/섹션 |
-| `R4. required-sections` / `R4. data-model` / `R4. core-api` | §5 핵심 기능/섹션 |
-| `R7/R8. success-metric` | §4 목표 & 성공 기준 |
-| `R6/R7. tech-constraints` / `tech-stack` | §10 기술 스택 & 제약 |
+| Interview Item | Plan Section |
+|----------------|--------------|
+| `R1. purpose` | §2 Background (Why) |
+| `R2. target-users` | §3 Target Users |
+| `R3. core-message` / `R3. core-features` / `R3. core-endpoints` | §5 Core Features/Sections |
+| `R4. required-sections` / `R4. data-model` / `R4. core-api` | §5 Core Features/Sections |
+| `R7/R8. success-metric` | §4 Goals & Success Criteria |
+| `R6/R7. tech-constraints` / `tech-stack` | §10 Tech Stack & Constraints |
 
-### UI 타입 (website/webapp/mobile) 추가 매핑
+### UI Types (website/webapp/mobile) Additional Mapping
 
-| Interview 항목 | 기획서 섹션 |
-|--------------|----------|
+| Interview Item | Plan Section |
+|----------------|--------------|
 | `R5. brand-tone` + `O1. reference-sites` + `O2. color-direction` + `O3. typography-preference` + `O4. animation-level` | §7 Look & Feel |
-| `R4. required-sections` (website) / `R4. core-features` (webapp) | §8 레이아웃/섹션 구성 |
-| `O5. responsive-strategy` + `O6/O8. accessibility-level` | §9 반응형 전략 |
+| `R4. required-sections` (website) / `R4. core-features` (webapp) | §8 Layout/Section Structure |
+| `O5. responsive-strategy` + `O6/O8. accessibility-level` | §9 Responsive Strategy |
 
-### 공통 Post-처리
+### Common Post-Processing
 
-- `interview.TBD[]` → §11 "가정 & 리스크" 또는 문서 끝 "Open Questions"
-- `interview.discovered[]` → 관련 섹션에 통합 + "Discovered during interview" 주석
-- 모든 Optional 미수집 항목 → §11 "가정"에 기본값으로 기록 (예: "접근성: WCAG AA 가정")
+- `interview.TBD[]` → §11 "Assumptions & Risks" or "Open Questions" at the end of the document
+- `interview.discovered[]` → merged into relevant sections + "Discovered during interview" note
+- All uncollected Optional items → recorded as defaults in §11 "Assumptions" (e.g., "Accessibility: WCAG AA assumed")
 
-## Step 4: UI 섹션 조건부 포함
+## Step 4: Conditionally Include UI Sections
 
 ```python
 if interview.type in {"website", "webapp", "mobile"}:
-    include_sections = [1..12]  # 전체
+    include_sections = [1..12]  # all sections
 else:  # api, library, feature-data
-    include_sections = [1..6, 10..12]  # §7-9 (Look&Feel/레이아웃/반응형) 생략
-    # §5에 "UI 없음 — API/라이브러리 프로젝트" 명시
+    include_sections = [1..6, 10..12]  # omit §7-9 (Look&Feel/Layout/Responsive)
+    # note in §5: "No UI — API/Library project"
 ```
 
-## Step 5: 기획서 저장
+## Step 5: Save Plan Document
 
-**출력 경로**: `.claude/vibe/plans/{feature-name}.md`
+**Output path**: `.claude/vibe/plans/{feature-name}.md`
 
-**프런트매터**:
+**Frontmatter**:
 
 ```yaml
 ---
@@ -151,59 +151,59 @@ downstream: [spec, figma]  # or [spec] for non-UI
 ---
 ```
 
-**본문**: 템플릿 구조 + 정제된 내용.
+**Body**: Template structure + refined content.
 
-**품질 기준**:
-- 한 섹션 = 읽는 데 30초 이하
-- 불릿 3-7개 수준으로 압축
-- 기술 용어 최소화 (사람이 읽는 비전 문서)
-- "TBD"는 굵게 표시해서 후속 결정이 필요함을 명확히
+**Quality criteria**:
+- Each section takes 30 seconds or less to read
+- Compressed to 3-7 bullets per section
+- Minimize technical jargon (this is a human-readable vision document)
+- Mark "TBD" in bold to make it clear that a follow-up decision is needed
 
-## Step 6: Handoff 안내
+## Step 6: Handoff Guidance
 
-기획서 저장 후 사용자에게 다음 단계 안내:
+After saving the plan document, guide the user on next steps:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ 기획서 완성!
+✅ Plan document complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📄 .claude/vibe/plans/{feature-name}.md
-   섹션: {N}개 작성
-   TBD: {M}개 (추후 결정)
+   Sections: {N} written
+   TBD: {M} (to be decided later)
 
 Type: {type}
 
-다음 단계:
+Next steps:
 
-  [UI 프로젝트: website/webapp/mobile]
+  [UI project: website/webapp/mobile]
   1. /vibe.spec ".claude/vibe/plans/{feature-name}.md"
-     → 코드 명세 작성 → /vibe.run 구현
+     → Write code spec → /vibe.run implementation
   2. /vibe.figma
-     → Figma 디자인 → FE UI 코드
-  3. 병렬 실행 (권장)
-     → 기능 + 디자인 → 웹사이트 프로토타입
+     → Figma design → FE UI code
+  3. Run in parallel (recommended)
+     → Feature + Design → website prototype
 
-  [비-UI: api/library]
+  [Non-UI: api/library]
   1. /vibe.spec ".claude/vibe/plans/{feature-name}.md"
-     → 코드 명세 → /vibe.run 구현
+     → Code spec → /vibe.run implementation
 
-어떤 것부터 시작할까요?
+Where would you like to start?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## Anti-Patterns
 
-- ❌ PTCF 구조로 작성 (그건 /vibe.spec의 역할)
-- ❌ EARS 포맷 (WHEN/THEN) 사용
-- ❌ 파일 목록, Phase 분할, Acceptance Criteria 포함
-- ❌ Tech Stack을 과하게 상세히 — 상위 수준만
-- ❌ TBD를 숨기기 — 명시적으로 드러내야 다음 단계에서 결정
-- ❌ Interview 없이 이 스킬만 실행 (raw 정보 부재)
-- ❌ 비-UI 프로젝트에 Look&Feel 섹션을 억지로 채우기
+- Do not write in PTCF structure (that is /vibe.spec's responsibility)
+- Do not use EARS format (WHEN/THEN)
+- Do not include file lists, Phase splits, or Acceptance Criteria
+- Do not over-specify the Tech Stack — high-level only
+- Do not hide TBD items — they must be surfaced explicitly so they can be decided in the next step
+- Do not run this skill without an interview (no raw information)
+- Do not force-fill a Look&Feel section for non-UI projects
 
 ## Related
 
-- **Prev**: `vibe.interview` — 요구사항 수집 (chain-prev 암묵)
-- **Next**: `/vibe.spec` (코드 명세), `/vibe.figma` (UI 디자인)
+- **Prev**: `vibe.interview` — requirements collection (implicit chain-prev)
+- **Next**: `/vibe.spec` (code spec), `/vibe.figma` (UI design)
 - **Template**: `~/.claude/vibe/templates/plan-template.md`

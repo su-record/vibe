@@ -17,13 +17,13 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 
 ## Usage
 
-이 스킬은 `/vibe.spec` 오케스트레이터의 Phase 4에서 자동 호출된다. 직접 호출이 필요한 경우:
+This skill is automatically called in Phase 4 of the `/vibe.spec` orchestrator. If direct invocation is needed:
 
 ```
 Load skill `vibe.spec.review` with feature: "feature-name"
 ```
 
-또는 자연어 트리거: "스펙 리뷰", "review spec", "명세 리뷰".
+Or via natural language trigger: "스펙 리뷰", "review spec", "명세 리뷰".
 
 **Prerequisites:**
 - SPEC file exists: `.claude/vibe/specs/{feature-name}.md` (single) or `.claude/vibe/specs/{feature-name}/_index.md` (split)
@@ -33,23 +33,23 @@ Load skill `vibe.spec.review` with feature: "feature-name"
 
 ## Codex Plugin Integration
 
-> **Codex 플러그인 감지**: 워크플로우 시작 시 아래 명령으로 자동 감지.
+> **Codex plugin detection**: Auto-detected at workflow start with the command below.
 >
 > ```bash
 > CODEX_AVAILABLE=$(node "{{VIBE_PATH}}/hooks/scripts/codex-detect.js" 2>/dev/null || echo "unavailable")
 > ```
 >
-> `available`이면 `/codex:adversarial-review` 자동 호출. `unavailable`이면 기존 GPT+Gemini 워크플로우로 동작.
+> If `available`, `/codex:adversarial-review` is automatically invoked. If `unavailable`, falls back to the existing GPT+Gemini workflow.
 
 ---
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
-**`.last-feature` 포인터 갱신** (Timer 직후):
+**`.last-feature` pointer update** (immediately after Timer):
 
 ```
-Write ".claude/vibe/.last-feature" ← feature-name (한 줄)
-이미 같은 값이면 no-op.
+Write ".claude/vibe/.last-feature" ← feature-name (one line)
+If the value is already the same, no-op.
 ```
 
 ## Workflow
@@ -62,7 +62,7 @@ Phase 4: vibe.spec.review skill (this) → Quality validation + GPT/Gemini revie
     /vibe.run "feature"
 ```
 
-**대용량 컨텍스트인 경우**: `/new` 후 `/vibe.spec "feature"` 재진입 → Smart Resume이 Phase 4부터 시작.
+**For large contexts**: After `/new`, re-enter `/vibe.spec "feature"` → Smart Resume will start from Phase 4.
 
 ---
 
@@ -263,13 +263,13 @@ Auto-fixer hit a wall. These items need human input:
   ❌ Target latency for search API (<?ms)
   ❌ Data retention policy for audit logs (how many days?)
 
-어떻게 진행할까요?
-  1. 직접 값을 알려주세요 (예: "grace period 7일, 검색 500ms, 감사로그 90일")
-     → 반영 후 재평가 (100 도달 가능)
-  2. "proceed" — 현재 점수로 수락, 남은 항목은 TODO로 기록 후 Step 3 진행
-  3. "abort" — 워크플로 중단
+How would you like to proceed?
+  1. Provide the values directly (e.g., "grace period 7 days, search 500ms, audit logs 90 days")
+     → Values will be applied and the score re-evaluated (100 may be reachable)
+  2. "proceed" — Accept the current score, record remaining items as TODO, then continue to Step 3
+  3. "abort" — Stop the workflow
 
-(ultrawork 모드에서는 이 프롬프트 없이 자동으로 TODO 기록 + 진행)
+(In ultrawork mode, this prompt is skipped — TODO is auto-recorded and execution continues)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -324,13 +324,13 @@ Same findings repeated from Round {N-1}. Auto-applier cannot resolve:
 | 1 | {issue title} | P1 | ✅ | ✅ | {e.g., "fix requires domain decision"} |
 | 2 | {issue title} | P2 | ✅ | ❌ | {e.g., "conflicts with existing constraint"} |
 
-어떻게 진행할까요?
-  1. 직접 해결책을 알려주세요 (예: "이슈 1은 retry 5회로, 이슈 2는 무시")
-     → 반영 후 다음 라운드 재실행
-  2. "proceed" — 현재 이슈를 TODO로 기록하고 Step 4로 진행
-  3. "abort" — 워크플로 중단
+How would you like to proceed?
+  1. Provide a resolution directly (e.g., "issue 1: retry 5 times, issue 2: ignore")
+     → Changes will be applied and the next round re-run
+  2. "proceed" — Record current issues as TODO and continue to Step 4
+  3. "abort" — Stop the workflow
 
-(ultrawork 모드에서는 이 프롬프트 없이 자동으로 TODO 기록 + 진행)
+(In ultrawork mode, this prompt is skipped — TODO is auto-recorded and execution continues)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -424,41 +424,41 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/spec-review-in
 3. Auto-apply P1/P2 improvements to SPEC and Feature files (use Edit tool)
 4. Continue to next round with updated SPEC content
 
-### 3.3 User Decision Checkpoint (수렴 후)
+### 3.3 User Decision Checkpoint (After Convergence)
 
-**🚨 MANDATORY: 리뷰 루프가 수렴(convergence)에 도달하면 사용자 판단 체크포인트 실행**
+**🚨 MANDATORY: Run user judgment checkpoint when the review loop reaches convergence**
 
-> Type 6 (Iterative-Reasoning) 패턴: AI가 혼자 결정하지 않고, 사용자와 함께 판단
+> Type 6 (Iterative-Reasoning) pattern: AI does not decide alone — judges together with the user
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 USER CHECKPOINT: 리뷰 결과 검토
+🔍 USER CHECKPOINT: Review Results
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-{N}라운드 리뷰에서 발견된 주요 변경사항:
+Key changes found across {N} review rounds:
 
-| # | 변경 내용 | 출처 | 신뢰도 |
-|---|----------|------|--------|
-| 1 | {변경1} | GPT+Gemini | 100% |
-| 2 | {변경2} | GPT only | 50% |
+| # | Change | Source | Confidence |
+|---|--------|--------|------------|
+| 1 | {change1} | GPT+Gemini | 100% |
+| 2 | {change2} | GPT only | 50% |
 | ... | ... | ... | ... |
 
-질문:
-1. 위 변경사항 중 제외하고 싶은 항목이 있나요?
-2. 추가로 명시해야 할 요구사항이 있나요?
-3. 기술적 접근 방식에 동의하시나요?
+Questions:
+1. Are there any changes above you'd like to exclude?
+2. Are there any additional requirements that should be specified?
+3. Do you agree with the technical approach?
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Checkpoint 행동 규칙:**
+**Checkpoint action rules:**
 
-| 상황 | 행동 |
-|------|------|
-| `ultrawork` 모드 | 체크포인트 스킵, 자동 진행 |
-| 일반 모드 | 반드시 사용자 응답 대기 |
-| 사용자가 변경 요청 | 수정 후 다시 체크포인트 |
-| 사용자가 승인 | Step 4로 진행 |
+| Situation | Action |
+|-----------|--------|
+| `ultrawork` mode | Skip checkpoint, auto-proceed |
+| Normal mode | Must wait for user response |
+| User requests changes | Apply changes, then re-run checkpoint |
+| User approves | Proceed to Step 4 |
 
 **Output format:**
 ```
@@ -515,53 +515,53 @@ Cross-Validated Issues: None
 
 > If new P1s appear at round 3, the loop continues to round 4, 5, ... until convergence.
 
-### Step 3.1: Codex Adversarial Review (Codex 플러그인 활성화 시)
+### Step 3.1: Codex Adversarial Review (When Codex Plugin Is Active)
 
-> **활성화 조건**: Codex 플러그인 설치 시 자동 실행. 미설치 시 스킵.
-> GPT+Gemini Race Review와 **동시에** 실행하여 3중 교차 검증.
+> **Activation condition**: Automatically runs when Codex plugin is installed. Skipped if not installed.
+> Runs **simultaneously** with GPT+Gemini Race Review for triple cross-validation.
 
-Codex adversarial review는 SPEC의 **설계 결정에 도전**합니다:
-- 대안적 아키텍처가 더 나은지 검증
-- 오버엔지니어링 또는 과소 설계 여부
-- 누락된 엣지케이스 및 비기능 요구사항
+Codex adversarial review **challenges the design decisions** in the SPEC:
+- Validates whether an alternative architecture would be better
+- Checks for over-engineering or under-engineering
+- Identifies missing edge cases and non-functional requirements
 
-**실행 (GPT+Gemini Race와 병렬):**
+**Execution (parallel with GPT+Gemini Race):**
 
 ```
 /codex:adversarial-review
 ```
 
-**결과 통합**: Race Review 교차 검증 테이블에 Codex 열 추가:
+**Result integration**: Add Codex column to the Race Review cross-validation table:
 
 ```markdown
 | Issue | GPT | Gemini | Codex | Confidence |
 |-------|-----|--------|-------|------------|
-| {이슈} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
+| {issue} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
 ```
 
-- 3개 모델 중 2개 이상 동의 → **High Confidence**
-- Codex만 발견한 이슈 → **P2** (설계 관점 검토 필요)
-- 3개 모두 동의 → **P1** (즉시 수정)
+- 2 or more of 3 models agree → **High Confidence**
+- Issue found only by Codex → **P2** (requires design perspective review)
+- All 3 models agree → **P1** (fix immediately)
 
 ---
 
 ## Step 3.5: Review Debate Team (Agent Teams)
 
-> **팀 정의**: `agents/teams/review-debate-team.md` 참조 (SPEC Review 컨텍스트)
-> **조건**: Agent Teams 활성화 + 리뷰 루프 수렴 후 P1/P2 이슈 2개 이상 발견 시
+> **Team definition**: See `agents/teams/review-debate-team.md` (SPEC Review context)
+> **Condition**: Agent Teams enabled + 2 or more P1/P2 issues found after review loop convergence
 
-**활성화 조건:**
+**Activation conditions:**
 
-| 상황 | 행동 |
-|------|------|
-| P1/P2 이슈 2개 이상 | 자동 활성화 |
-| P1/P2 이슈 1개 이하 | 스킵 → Step 4로 진행 |
-| Agent Teams 비활성화 | 스킵 → Step 4로 진행 |
+| Situation | Action |
+|-----------|--------|
+| 2 or more P1/P2 issues | Auto-activate |
+| 1 or fewer P1/P2 issues | Skip → proceed to Step 4 |
+| Agent Teams disabled | Skip → proceed to Step 4 |
 
-**결과 통합:**
-- 팀 합의 결과를 SPEC에 반영 (P1 즉시 적용, P2 노트 추가)
-- 팀원 shutdown_request → TeamDelete로 정리
-- Step 4 (Final Summary)로 진행
+**Result integration:**
+- Apply team consensus results to SPEC (P1 applied immediately, P2 added as notes)
+- Team member shutdown_request → clean up with TeamDelete
+- Proceed to Step 4 (Final Summary)
 
 ---
 
@@ -576,7 +576,7 @@ Quality Score: 100/100 ✅
 Review Rounds: {N} (converged: P1=0, no new findings) ✅
 Total Improvements: {M}
 ⏱️ Started: {start_time}
-⏱️ Completed: {getCurrentTime 결과}
+⏱️ Completed: {getCurrentTime result}
 
 Updated files:
   📋 .claude/vibe/specs/{feature-name}.md (or split folder)
@@ -637,30 +637,30 @@ If no issues, proceed with /vibe.run "{feature-name}".
 
 ### 5.1 Final User Checkpoint
 
-**🚨 MANDATORY: `/vibe.run` 진행 전 최종 사용자 확인**
+**🚨 MANDATORY: Final user confirmation before proceeding to `/vibe.run`**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ SPEC 리뷰 완료 - 최종 확인
+✅ SPEC Review Complete - Final Confirmation
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-다음 질문에 답변해 주세요:
+Please answer the following questions:
 
-1. **요구사항 정확성**: 위 SPEC이 원래 의도한 기능을 정확히 설명하고 있나요?
-2. **범위 적절성**: 구현 범위가 너무 크거나 작지 않나요?
-3. **기술 스택**: 선택된 기술 스택에 동의하시나요?
-4. **우선순위**: Phase 순서와 우선순위가 맞나요?
+1. **Requirements accuracy**: Does the SPEC above accurately describe the originally intended feature?
+2. **Scope appropriateness**: Is the implementation scope neither too large nor too small?
+3. **Tech stack**: Do you agree with the chosen tech stack?
+4. **Priority**: Is the Phase order and priority correct?
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 "ok" 또는 "진행"으로 승인 / 수정 사항이 있으면 말씀해 주세요
+💡 Type "ok" or "proceed" to approve / share any changes you'd like made
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Why This Checkpoint Matters:**
 
-> AI가 더 많이 해준다고 좋은 게 아닙니다.
-> 사용자가 AI와 함께 생각하고 판단할 때 최고의 결과가 나옵니다.
-> 이 체크포인트는 Type 6 (Iterative-Reasoning) 패턴을 유도합니다.
+> More AI doing more is not always better.
+> The best results come when the user thinks and judges together with AI.
+> This checkpoint induces the Type 6 (Iterative-Reasoning) pattern.
 
 ---
 
