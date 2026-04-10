@@ -178,4 +178,4 @@ The test generator reads this file and adds custom rules to the test suite.
 - `vibe init` → auto-detect and generate initial arch-guard tests
 - `vibe update` → refresh rules if directory structure changed
 - Pre-commit hook → run arch-guard tests before commit
-- `/vibe.review` → architecture-reviewer checks against arch-rules.json
+- `vibe.review` (skill) → architecture-reviewer checks against arch-rules.json

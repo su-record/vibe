@@ -34,7 +34,7 @@ priority: 60
 ## Workflow
 
 ```
-/vibe.review → Creates P1/P2/P3 todo files + updates index.md
+vibe.review (skill) → Creates P1/P2/P3 todo files + updates index.md
      ↓
 Fix P1 first (blocks merge)
      ↓

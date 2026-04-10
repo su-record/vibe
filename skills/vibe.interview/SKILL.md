@@ -16,7 +16,7 @@ chain-next: [vibe.plan]
 - 사용자가 새 프로젝트/기능 개발을 시작하려 함
 - 기획서가 없는 상태에서 `/vibe.spec` 바로 가면 요구사항 누락 위험
 - "만들자", "개발하자", "신규", "아이디어" 같은 자연어 트리거
-- `/vibe.go` 또는 interview 관련 커맨드의 진입점으로 호출됨
+- `/vibe.spec` orchestrator calls this as Phase 1 (interview step)
 
 **건너뛰기**:
 - 기존 프로젝트의 작은 버그 수정
