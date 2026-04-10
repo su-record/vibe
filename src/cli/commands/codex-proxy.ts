@@ -54,7 +54,7 @@ export async function codexSetup(): Promise<void> {
 
   const provider = await selectProvider();
   const apiKey = await configureAuth(provider);
-  const model = await selectModel(provider);
+  const model = await selectModel(provider, apiKey);
   const alias = await selectAlias();
 
   saveConfig(provider, apiKey, model, alias);
@@ -100,33 +100,60 @@ async function configureAuth(provider: string): Promise<{ key?: string; url?: st
   }
 }
 
-async function selectModel(provider: string): Promise<string> {
-  const presets: Record<string, Array<{ value: string; label: string }>> = {
-    'chatgpt-pro': [
-      { value: 'gpt-4o', label: 'gpt-4o' },
-      { value: 'gpt-5-codex', label: 'gpt-5-codex (코딩 특화)' },
-      { value: 'o3', label: 'o3 (추론)' },
-    ],
-    'openai': [
-      { value: 'gpt-4o', label: 'gpt-4o' },
-      { value: 'o3', label: 'o3' },
-    ],
-    'gemini': [
-      { value: 'gemini-2.5-flash', label: 'gemini-2.5-flash' },
-      { value: 'gemini-2.5-pro', label: 'gemini-2.5-pro' },
-    ],
-  };
+async function selectModel(
+  provider: string,
+  auth: { key?: string; url?: string },
+): Promise<string> {
+  const baseUrl = auth.url || 'https://api.openai.com';
+  let token = auth.key;
 
-  const options = presets[provider];
-  if (options) {
-    const result = await p.select({
-      message: '기본 모델',
-      options: [...options, { value: '_custom', label: '직접 입력' }],
-    });
+  // ChatGPT Pro: Codex CLI OAuth 토큰으로 시도
+  if (!token && provider === 'chatgpt-pro') {
+    try {
+      const { getAuthInfo } = await import('../../infra/lib/gpt/auth.js');
+      const info = await getAuthInfo();
+      token = info.accessToken || info.apiKey;
+    } catch { /* codex login 아직 안 한 경우 */ }
+  }
+
+  // API에서 모델 목록 조회
+  const models = token ? await fetchModels(baseUrl, token) : [];
+
+  if (models.length > 0) {
+    const options = models.map(m => ({ value: m, label: m }));
+    options.push({ value: '_custom', label: '직접 입력' });
+    const result = await p.select({ message: '기본 모델', options });
     if (p.isCancel(result)) { p.cancel('취소'); process.exit(0); }
     if (result !== '_custom') return result as string;
   }
+
   return textOrCancel('모델 이름');
+}
+
+// ─── 모델 목록 조회 ──────────────────────────────────────────
+
+const EXCLUDE_PATTERNS = ['embedding', 'tts', 'whisper', 'dall-e', 'moderation', 'davinci', 'babbage'];
+
+async function fetchModels(baseUrl: string, token: string): Promise<string[]> {
+  const spin = p.spinner();
+  spin.start('사용 가능한 모델 조회 중...');
+  try {
+    const res = await fetch(`${baseUrl}/v1/models`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!res.ok) { spin.stop('모델 조회 실패, 직접 입력'); return []; }
+    const data = await res.json() as { data?: Array<{ id: string }> };
+    const all = (data.data || []).map(m => m.id);
+    const filtered = all
+      .filter(m => !EXCLUDE_PATTERNS.some(e => m.includes(e)))
+      .filter(m => !m.includes(':'))
+      .sort();
+    spin.stop(`${filtered.length}개 모델 발견`);
+    return filtered;
+  } catch {
+    spin.stop('모델 조회 실패, 직접 입력');
+    return [];
+  }
 }
 
 async function selectAlias(): Promise<string> {
