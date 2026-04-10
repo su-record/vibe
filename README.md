@@ -109,7 +109,13 @@ Three layers of defense on every tool call:
 
 **40+ agents** — Exploration, implementation, architecture, parallel code review, UI/UX analysis, security audit, Figma analysis/building.
 
-**44 skills** — 3-tier system (core / standard / optional) to prevent context overload. Auto-selected by stack and capability.
+**44 skills** — Not all loaded at once. 3-tier system prevents context overload:
+
+| Tier | When loaded | Purpose | Examples |
+|------|-------------|---------|----------|
+| **Core** | Always active | Bug prevention, workflow entry | quality gates, interview, plan |
+| **Standard** | `vibe init` selects by stack | Stack/capability support | figma, design-audit, techdebt |
+| **Optional** | Explicit `/skill` only | Reference, wrappers | chub-usage, context7 |
 
 **Multi-LLM** — Claude orchestrates, GPT reasons, Gemini researches. Auto-routes by availability. Works Claude-only by default.
 
