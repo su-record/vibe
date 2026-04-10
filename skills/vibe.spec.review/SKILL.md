@@ -45,6 +45,13 @@ Load skill `vibe.spec.review` with feature: "feature-name"
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
+**`.last-feature` 포인터 갱신** (Timer 직후):
+
+```
+Write ".claude/vibe/.last-feature" ← feature-name (한 줄)
+이미 같은 값이면 no-op.
+```
+
 ## Workflow
 
 ```

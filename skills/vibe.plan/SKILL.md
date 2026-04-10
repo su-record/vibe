@@ -63,6 +63,14 @@ Read .claude/vibe/interviews/{feature-name}.md
   ```
 - 파일이 없으면 → `vibe.interview` 먼저 실행하도록 안내.
 
+### `.last-feature` 포인터 갱신
+
+```
+Write ".claude/vibe/.last-feature" ← feature-name (한 줄)
+interview 파일에서 feature name을 추출한 직후 실행한다.
+이미 같은 값이면 no-op.
+```
+
 ## Step 2: 템플릿 로드
 
 ```

@@ -258,6 +258,16 @@ stoppedBy: user | auto
 - [ ] `maintenance-plan` — optional, 사용자가 skip
 ```
 
+### `.last-feature` 포인터 갱신
+
+```
+Write ".claude/vibe/.last-feature" ← feature-name (한 줄)
+
+Step 4에서 interview 파일을 저장한 직후 실행한다.
+이 포인터는 /vibe.spec (인자 없음) 호출 시 Smart Resume에 사용된다.
+이미 같은 값이면 no-op.
+```
+
 ## Step 5: Chain to vibe.plan
 
 Interview 완료 후 자동으로 `vibe.plan` 스킬이 활성화되어 이 결과를 정제된 기획서로 변환한다.

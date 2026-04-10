@@ -256,4 +256,21 @@ If the achievement rate does not improve between iterations (`isImproving` retur
 
 ---
 
+## `.last-feature` 포인터 삭제 (워크플로 완주)
+
+```
+/vibe.trace가 정상 완료되면 (RTM 출력 + 사용자 확인 후):
+  Delete ".claude/vibe/.last-feature"
+
+이유: /vibe.trace는 vibe 워크플로의 마지막 Phase (Phase 7).
+     완주 후에는 다음 /vibe.spec 호출 시 "빈 시작" 또는 진행 중 목록에서 다른 feature를 시작해야 한다.
+     삭제하지 않으면 완료된 feature가 계속 "이어서?" 로 뜬다.
+
+예외:
+  - /vibe.trace가 에러로 중단된 경우 → 삭제하지 않음 (재시도 가능)
+  - --save 또는 --html 플래그와 무관하게 항상 삭제
+```
+
+---
+
 ARGUMENTS: {feature-name}

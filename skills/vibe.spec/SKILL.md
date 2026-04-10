@@ -222,6 +222,14 @@ $ git checkout -b feature/login-page
 - Prefix with `feature/`
 - Example: `feature/passkey-auth`, `feature/dark-mode`
 
+**`.last-feature` 포인터 갱신** (Git branch setup 직후):
+
+```
+Write ".claude/vibe/.last-feature" ← feature-name (한 줄)
+feature name이 확정되는 시점에 실행한다.
+이미 같은 값이면 no-op.
+```
+
 ### 1. Project Analysis
 
 **Existing project** (`vibe init`):

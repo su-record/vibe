@@ -119,7 +119,98 @@ git branch --show-current
      existing plan → Phase 3 (spec)
      existing interview → Phase 2 (plan)
      아무것도 없음 → Phase 1 (interview)
-4. 인자 없음 → "무엇을 만들고 싶으신가요?" 질문 → Phase 1 (interview)
+4. 인자 없음 → Smart Resume Fallback 알고리즘 실행 (아래 참조)
+```
+
+#### Smart Resume Fallback (인자 없는 `/vibe.spec` 호출 시)
+
+**목적**: feature 이름을 기억하지 못해도 진행 중 작업을 자동 발견해서 이어서 진행할 수 있게 한다.
+
+```
+알고리즘:
+
+Step 1) .claude/vibe/.last-feature 확인 (pointer 파일)
+  - 파일 없음 → Step 2로
+  - 존재 → 해당 feature의 상태 요약 출력 + 확인 질문:
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       🔄 마지막 작업: {feature-name}
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       ✅ interview: .claude/vibe/interviews/{feature}.md  (status: complete, N일 전)
+       ✅ plan:      .claude/vibe/plans/{feature}.md       (N일 전)
+       ❌ spec:      없음
+       → 다음 단계: Phase 3 (vibe.spec 스킬 — SPEC 작성)
+
+       이어서 진행할까요?
+         Enter / yes → 이어서 진행
+         list        → 다른 진행 중 작업 목록 보기
+         new         → 새 아이디어로 시작
+         abort       → 종료"
+
+  - yes → Phase 0.5의 인자 분석 경로 3번 (feature name)으로 진입
+  - list → Step 2로
+  - new → Step 3으로
+  - abort → 종료
+
+Step 2) 진행 중 작업 목록 표시 (.claude/vibe/ 디렉토리 스캔)
+  수집:
+    features = {} (feature name → {hasInterview, hasPlan, hasSpec, mtime})
+    for each file in .claude/vibe/interviews/*.md:
+      feature = basename without .md
+      features[feature].hasInterview = true
+      features[feature].interviewMtime = file.mtime
+      features[feature].interviewStatus = frontmatter의 status (complete/partial)
+    동일하게 plans/*.md, specs/*.md 스캔
+
+  정렬: 가장 최근 작업 (max mtime) 순
+  최대 10개까지 표시
+
+  진행 중 작업 0개 → Step 3으로
+  1개 이상 → 목록 출력 + 선택 질문:
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     🔍 진행 중인 작업
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+     1. bean-landing      [interview: partial]        2일 전
+     2. todo-app          [plan: complete]            어제
+     3. payment-api       [spec: complete]            방금 전
+     ─────────────────────────────────────────────
+     n. ➕ 새로 시작
+     a. 종료
+
+     선택 번호 또는 feature 이름을 입력하세요:"
+
+  사용자 응답 처리:
+    - 숫자 (1~N) → 해당 feature 선택 → 인자 분석 경로 3번으로
+    - 정확한 feature 이름 → 인자 분석 경로 3번으로
+    - "n" 또는 "new" → Step 3으로
+    - "a" 또는 "abort" → 종료
+    - 자유 텍스트 (매칭 없음) → "{입력}은 기존 feature가 아닙니다. 새로 시작할까요? (y/n)" 확인
+
+Step 3) 빈 시작 (기존 동작)
+  "👋 무엇을 만들고 싶으신가요?" 질문 → Phase 1 (interview)
+```
+
+#### `.last-feature` 포인터 파일 갱신 규칙
+
+```
+경로: .claude/vibe/.last-feature
+형식: 한 줄, feature name만 저장
+     예: "bean-landing\n"
+
+⚠ 이 파일은 **개인 작업 포인터**이므로 git에 커밋하지 않는다.
+   `.gitignore` 에 `.claude/vibe/.last-feature` 엔트리 필수.
+
+갱신 시점:
+  - Phase 1 (interview) 진입 시 → feature name 결정되면 즉시 기록
+  - Phase 2 (plan) 진입 시 → 기록 (이미 맞으면 no-op)
+  - Phase 3 (spec) 진입 시 → 기록
+  - Phase 4 (review) 진입 시 → 기록
+
+즉, 어느 Phase에서 멈추든 다음 /vibe.spec 호출 시 이 feature가 1순위로 제안된다.
+
+삭제 시점:
+  - Phase 7 (trace) 완료 시 → 파일 삭제 (워크플로 완주)
+  - 사용자가 명시적으로 종료/abort 선택 시 → 삭제하지 않음 (재개 가능하게)
 ```
 
 **출력 예시:**
@@ -147,7 +238,11 @@ git branch --show-current
    → `vibe.interview` 스킬 로드 + 아이디어 전달
 
 2. **인자 없음** (`/vibe.spec`)
-   → 먼저 질문:
+   → **Smart Resume Fallback 먼저** (Phase 0.5 참조):
+     - `.last-feature` 있고 사용자가 "이어서" 선택 → 해당 feature로 진입 (이 Phase 1 건너뛸 수 있음)
+     - 진행 중 작업 목록에서 선택 → 해당 feature로 진입
+     - "new" 선택 or 진행 중 작업 없음 → 아래 질문으로 빈 시작
+   → 빈 시작 질문:
    ```
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    👋 무엇을 만들고 싶으신가요?
@@ -168,6 +263,8 @@ git branch --show-current
 ```
 Load skill `vibe.interview` with input: {user_idea}
 ```
+
+> **`.last-feature` 갱신**: vibe.interview 스킬이 feature name을 확정하는 즉시 `.claude/vibe/.last-feature` 에 한 줄로 기록. 이후 Phase 2/3/4 진입 시에도 동일 기록 유지 (값이 같으면 no-op).
 
 `vibe.interview` 스킬이 자체적으로:
 - 프로젝트 타입 감지 (website/webapp/mobile/api/library/feature)
@@ -312,6 +409,8 @@ UI + 로직 + 연결 검증 (후속 PR에서 3축 확장 예정).
 
 SPEC ↔ 구현 추적.
 
+> **Phase 7 완료 시**: `.claude/vibe/.last-feature` 삭제 (워크플로 완주 — 다음 `/vibe.spec` 호출은 빈 시작 또는 진행 중 작업 목록에서 시작).
+
 ## ultrawork 모드
 
 `ultrawork` (또는 `ulw`)가 인자에 포함되면:
@@ -388,10 +487,64 @@ Claude: 🔍 Input 분석
         4. 종료
 ```
 
+### 예시 5: feature 이름을 잊고 인자 없이 호출 (Smart Resume Fallback)
+```
+User: /vibe.spec
+
+Claude: (.last-feature 읽기 → "bean-landing" 발견)
+
+        🔄 마지막 작업: bean-landing
+        ✅ interview: .claude/vibe/interviews/bean-landing.md  (status: partial, 2일 전)
+        ❌ plan:      없음
+        ❌ spec:      없음
+        → 다음 단계: Phase 2 (vibe.plan — 기획서 작성)
+
+        이어서 진행할까요?
+          Enter / yes → 이어서 진행
+          list        → 다른 진행 중 작업 목록 보기
+          new         → 새 아이디어로 시작
+          abort       → 종료
+
+User: yes
+
+Claude: [Phase 2 진입]
+        .last-feature = bean-landing
+        [vibe.plan 스킬 로드]
+        ...
+```
+
+### 예시 6: 여러 feature 중 선택 (Fallback list 모드)
+```
+User: /vibe.spec
+
+Claude: (.last-feature 없음 → 디렉토리 스캔)
+
+        🔍 진행 중인 작업
+
+        1. bean-landing      [interview: partial]        2일 전
+        2. todo-app          [plan: complete]            어제
+        3. payment-api       [spec: complete]            방금 전
+        ─────────────────────────────────────────────
+        n. ➕ 새로 시작
+        a. 종료
+
+        선택 번호 또는 feature 이름을 입력하세요:
+
+User: 2
+
+Claude: Feature: todo-app 선택
+        ✅ plan 완성 → Phase 3 (vibe.spec) 진입
+        .last-feature = todo-app
+        ...
+```
+
 ## Rollback / Resume
 
 - 각 Phase 종료 시 상태가 `.claude/vibe/{interviews,plans,specs,features}/`에 저장됨
-- 중단 시 다시 `/vibe.spec`으로 돌아오면 Smart Resume으로 이어서 진행
+- **`.claude/vibe/.last-feature` pointer**가 각 Phase 진입 시 갱신되어 "가장 최근에 작업한 feature" 추적 (Phase 7 완주 시 삭제)
+- 중단 시 다시 `/vibe.spec`으로 돌아오면 Smart Resume Fallback 동작:
+  - 인자 있음 (`/vibe.spec "feature-name"` 또는 파일 경로) → 해당 feature의 가장 진행된 단계 다음으로 바로 진입
+  - 인자 없음 → `.last-feature` 우선 제안 → 거부하면 진행 중 작업 목록 제시 → 또 거부하면 빈 시작
 - 수동 개입 필요시 스킬 직접 호출 가능 (`Load skill vibe.interview` 등)
 
 ## Next Step
