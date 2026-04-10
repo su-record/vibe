@@ -55,13 +55,44 @@ Read .claude/vibe/interviews/{feature-name}.md
 Extract `type`, `status`, `requiredCollected`, `optionalCollected`, etc. from the frontmatter.
 
 **Validation**:
-- `status: partial` + Required items incomplete → warn the user:
-  ```
-  ⚠️ Interview is partially complete (N Required items not collected).
-  Those items will appear as "TBD" in the plan document.
-  Continue? (y/N)
-  ```
 - If the file does not exist → guide the user to run `vibe.interview` first.
+- `status: partial` + Required items incomplete → apply the **Minimum Viable Plan** gate:
+
+### Minimum Viable Plan Gate
+
+Count Required items collected vs total. Apply threshold:
+
+| Required Coverage | Action |
+|-------------------|--------|
+| **≥ 70%** | Proceed. TBD items noted in §11. |
+| **50–69%** | Warn + offer choices (see below) |
+| **< 50%** | Block plan generation. Resume interview. |
+
+**When 50–69% coverage:**
+
+```
+⚠️ Interview is {N}% complete ({M} of {T} required items collected).
+A plan with this many unknowns may produce a low-quality SPEC downstream.
+
+1. Resume interview — fill in the gaps (recommended)
+2. Proceed anyway — TBD items will be marked in the plan
+3. Fill in now — I'll ask the missing {M} questions right here
+
+Choose (1/2/3):
+```
+
+Option 3 is a **mini-interview**: ask only the missing Required items inline, without re-entering the full interview loop. Save answers back to the interview file before proceeding.
+
+**When < 50% coverage:**
+
+```
+❌ Only {N}% of required items collected ({M} of {T}).
+Cannot generate a meaningful plan document.
+
+Resuming interview to collect the remaining items...
+```
+
+Automatically chain back to `vibe.interview` with the existing interview file (append mode, not restart).
 
 ### `.last-feature` Pointer Update
 
