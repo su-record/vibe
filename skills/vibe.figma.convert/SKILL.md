@@ -1,138 +1,138 @@
 ---
 name: vibe.figma.convert
-description: Figma 트리 → 구조적 코드 생성 + 스크린샷 검증
+description: Figma tree → structured code generation + screenshot validation
 triggers: []
 tier: standard
 ---
 
-# vibe.figma.convert — 트리 기반 구조적 코드 생성
+# vibe.figma.convert — Tree-Based Structured Code Generation
 
-**tree.json을 기계적으로 HTML+CSS에 매핑한다. 추정하지 않는다.**
-**Claude는 시맨틱 판단(태그 선택, 컴포넌트 분리, 인터랙션)만 담당한다.**
-
----
-
-## 0. 재사용 확인 (코드 작성 전)
-
-```
-component-index.json에서 매칭되는 컴포넌트가 있으면:
-  ✅ import하여 사용 (새로 만들지 않음)
-  ✅ props로 커스터마이즈
-  ❌ 기존 컴포넌트 내부 수정
-  ❌ 90% 유사한데 새로 만들기
-```
+**Mechanically map tree.json to HTML+CSS. Do not guess.**
+**Claude handles only semantic decisions (tag selection, component separation, interactions).**
 
 ---
 
-## 1. 이미지 vs HTML 판별 (BLOCKING)
+## 0. Reuse Check (Before Writing Code)
 
 ```
-⛔ 코드 작성 전: 판별 테이블을 먼저 작성한다.
+If there is a matching component in component-index.json:
+  ✅ Import and use it (do not create a new one)
+  ✅ Customize via props
+  ❌ Modify the internals of an existing component
+  ❌ Create a new one when 90% similar already exists
+```
 
-판별 규칙 (하나라도 YES → HTML):
-  Q1. TEXT 자식 있는가? → HTML
-  Q2. INSTANCE 반복 패턴인가? → HTML v-for (내부 에셋만 <img>)
-  Q3. 인터랙티브 요소인가? (btn, CTA) → HTML <button>
-  Q4. 동적 데이터인가? (가격, 수량, 기간) → HTML 텍스트
-  모두 NO → 이미지 렌더링 가능
+---
 
-⛔ 디자인 텍스트 판별 (Q1 예외 — 이미지로 처리해야 하는 텍스트):
-  다음 조건 중 하나라도 충족 → 이미지 렌더링 (HTML 텍스트 금지):
-  D1. TEXT 노드의 fills가 2개 이상 (그래디언트 + 솔리드 중첩)
-  D2. TEXT 노드에 effects가 있음 (DROP_SHADOW, stroke 등)
-  D3. TEXT 노드의 fills에 GRADIENT 타입이 있음
-  D4. 부모 GROUP/FRAME 아래 VECTOR 3개 이상 (벡터 글자)
-  D5. TEXT 노드의 fontFamily가 프로젝트 웹폰트에 없음
+## 1. Image vs HTML Determination (BLOCKING)
 
-  → content/{section}-{name}.webp 로 노드 렌더링
-  → <img src="..." alt="텍스트 내용"> 으로 HTML 배치
-  → CSS text로 구현 시도 금지 (시각 품질 보장 불가)
+```
+⛔ Before writing code: write the determination table first.
 
-BG 프레임:
-  ❌ <img> 태그 금지
-  ✅ 부모 SCSS에 background-image만:
+Determination rules (YES on any one → HTML):
+  Q1. Does it have TEXT children? → HTML
+  Q2. Is it a repeating INSTANCE pattern? → HTML v-for (inner assets only as <img>)
+  Q3. Is it an interactive element? (btn, CTA) → HTML <button>
+  Q4. Is it dynamic data? (price, quantity, duration) → HTML text
+  All NO → image rendering is acceptable
+
+⛔ Design text determination (Q1 exception — text that must be rendered as image):
+  If any of the following conditions are met → image rendering (HTML text forbidden):
+  D1. TEXT node has 2 or more fills (gradient + solid overlap)
+  D2. TEXT node has effects (DROP_SHADOW, stroke, etc.)
+  D3. TEXT node fills contain a GRADIENT type
+  D4. Parent GROUP/FRAME has 3 or more VECTORs (vector text)
+  D5. TEXT node fontFamily is not in the project's web fonts
+
+  → Render node as content/{section}-{name}.webp
+  → Place in HTML as <img src="..." alt="text content">
+  → Do not attempt CSS text implementation (visual quality cannot be guaranteed)
+
+BG frames:
+  ❌ No <img> tags
+  ✅ Parent SCSS background-image only:
      .section { background-image: url('bg.webp'); background-size: cover; }
 ```
 
 ---
 
-## 2. 노드 → HTML 매핑 (기계적)
+## 2. Node → HTML Mapping (Mechanical)
 
 ```
-FRAME + Auto Layout → <div> + flex (direction/gap/padding 직접 매핑)
-FRAME + no Auto Layout → <div> + position:relative (자식 absolute)
-TEXT → <span> (Claude가 h2/p/button 승격)
-IMAGE fill (판별 통과) → <img>
-VECTOR/GROUP ≤64px → 아이콘 <img>
-INSTANCE 반복 2+ → v-for / .map()
-크기 0px, VECTOR ≤2px → 스킵
+FRAME + Auto Layout → <div> + flex (direction/gap/padding directly mapped)
+FRAME + no Auto Layout → <div> + position:relative (children absolute)
+TEXT → <span> (Claude promotes to h2/p/button)
+IMAGE fill (passed determination) → <img>
+VECTOR/GROUP ≤64px → icon <img>
+INSTANCE repeated 2+ → v-for / .map()
+Size 0px, VECTOR ≤2px → skip
 ```
 
 ---
 
-## 3. CSS 속성 직접 매핑
+## 3. CSS Property Direct Mapping
 
 ```
-⛔ 불변 규칙: tree.json에 없는 CSS 속성을 만들지 않는다.
-⛔ 커스텀 함수/믹스인 생성 금지: wp-fluid(), wp-bg-layer 등 자체 추상화 금지.
-⛔ aspect-ratio, container query 등 tree.json에 없는 CSS 속성 사용 금지.
-✅ tree.json의 css 객체 → SCSS에 1:1 직접 매핑만 허용.
-✅ 유일한 변환: px → vw (공식대로 기계적으로).
+⛔ Immutable rule: do not create CSS properties not present in tree.json.
+⛔ No custom functions/mixins: no self-defined abstractions like wp-fluid(), wp-bg-layer, etc.
+⛔ No CSS properties not in tree.json such as aspect-ratio, container query, etc.
+✅ Only direct 1:1 mapping from tree.json css object → SCSS is allowed.
+✅ The only transformation: px → vw (mechanically, using the formula).
 
-레이아웃 (layout/ 파일):
+Layout (layout/ files):
   display, flex-direction, justify-content, align-items, gap,
   flex-grow, padding, width, height, overflow, position, top, left, transform
 
-비주얼 (components/ 파일):
+Visual (components/ files):
   background-color, background-image, background-blend-mode, color,
   font-family, font-size, font-weight, line-height, letter-spacing,
   text-align, text-transform, text-overflow,
   border-radius, border, outline, box-sizing, box-shadow,
   opacity, mix-blend-mode, filter, backdrop-filter
 
-값이 없으면 → 해당 속성 생략 (추정 금지)
+If a value is absent → omit that property (no guessing)
 
-❌ 금지 패턴:
-  aspect-ratio: 720 / 1280;          → ❌ (tree.json엔 width+height)
-  @function wp-fluid(...) { ... }    → ❌ (자체 함수)
-  @include wp-bg-layer;              → ❌ (자체 믹스인)
-  clamp(12px, 2.5vw, 18px);          → ❌ (tree.json에 없는 값 추정)
+❌ Forbidden patterns:
+  aspect-ratio: 720 / 1280;          → ❌ (tree.json has width+height)
+  @function wp-fluid(...) { ... }    → ❌ (custom function)
+  @include wp-bg-layer;              → ❌ (custom mixin)
+  clamp(12px, 2.5vw, 18px);          → ❌ (guessing values not in tree.json)
 
-✅ 올바른 패턴:
+✅ Correct patterns:
   width: 100vw; height: 177.78vw;    → ✅ (720px/720×100, 1280px/720×100)
   background-image: url('hero-bg.webp'); background-size: cover;  → ✅
   font-size: 5.56vw;                 → ✅ (40px/720×100)
 ```
 
-### 반응형 단위 변환
+### Responsive Unit Conversion
 
 ```
-vw 변환 (기계적 공식만 사용):
+vw conversion (use only the mechanical formula):
   width, height, padding, gap, border-radius, box-shadow, top, left, border-width
-  vw값 = (Figma px / designWidth) × 100
-  ⛔ clamp, min(), max() 등은 font-size에만 허용
+  vw value = (Figma px / designWidth) × 100
+  ⛔ clamp, min(), max() etc. are allowed only for font-size
 
-폰트 → clamp(최소, vw, 최대):
-  | 역할 | 최소 | 판단 기준 |
-  |------|------|----------|
-  | h1~h2 | 16px | name에 "title" |
-  | h3~h4 | 14px | 중간 크기 |
-  | 본문 | 12px | 긴 텍스트 |
-  | 캡션 | 10px | 작은 fontSize |
-  | 버튼 | 12px | name에 "btn" |
-  최대값 = Figma 원본 px 그대로
+Font → clamp(min, vw, max):
+  | Role    | Min   | Determination Basis         |
+  |---------|-------|-----------------------------|
+  | h1~h2   | 16px  | name contains "title"       |
+  | h3~h4   | 14px  | medium size                 |
+  | Body    | 12px  | long text                   |
+  | Caption | 10px  | small fontSize              |
+  | Button  | 12px  | name contains "btn"         |
+  max value = original Figma px as-is
 
-변환하지 않는 속성:
+Properties not converted:
   color, opacity, font-weight, font-family, z-index, text-align,
   mix-blend-mode, transform(rotate), background-blend-mode,
   flex-grow, box-sizing, grayscale/saturate, background-image(gradient)
 
-layoutSizing 처리:
-  HUG → width/height 생략 (auto)
-  FILL → 부모 direction 확인:
-    같은 방향 FILL → flex: 1 0 0
-    교차축 FILL → align-self: stretch
-  FIXED → vw 변환
+layoutSizing handling:
+  HUG → omit width/height (auto)
+  FILL → check parent direction:
+    FILL in same direction → flex: 1 0 0
+    FILL on cross axis → align-self: stretch
+  FIXED → vw conversion
 
 imageScaleMode:
   FILL → background-size: cover
@@ -143,29 +143,29 @@ imageScaleMode:
 
 ---
 
-## 4. Claude 시맨틱 판단 (유일한 추정 영역)
+## 4. Claude Semantic Decisions (The Only Inference Area)
 
 ```
-1. HTML 태그 승격:
-   <span> → <h2> (섹션 제목), <p> (설명), <button> (클릭 가능)
+1. HTML tag promotion:
+   <span> → <h2> (section title), <p> (description), <button> (clickable)
 
-2. 컴포넌트 분리:
-   1depth 자식 = 섹션 컴포넌트, INSTANCE 반복 = 공유 컴포넌트
+2. Component separation:
+   1st-depth children = section components, INSTANCE repetition = shared components
 
-3. 인터랙션: @click 핸들러, 상태 변수, 조건부 렌더링
+3. Interactions: @click handlers, state variables, conditional rendering
 
-4. 접근성:
-   배경/장식 → alt="" aria-hidden="true"
-   콘텐츠 → alt="설명"
-   인터랙티브 → role, aria-label
+4. Accessibility:
+   Background/decorative → alt="" aria-hidden="true"
+   Content → alt="description"
+   Interactive → role, aria-label
 
 5. Semantic HTML:
-   최상위 <section>, 제목 순서 h1~h6, 리스트 <ul>/<ol>
+   Top-level <section>, heading order h1~h6, lists <ul>/<ol>
 ```
 
 ---
 
-## 5. SCSS 파일 구조
+## 5. SCSS File Structure
 
 ```
 layout/     → position, display, flex, width, height, padding, gap, overflow, z-index
@@ -175,50 +175,50 @@ _base.scss:
   .{feature} { width: 100%; max-width: 720px; margin: 0 auto; overflow-x: hidden; }
 
 _tokens.scss:
-  기존 토큰 참조 (@use) → 매핑 안 되면 새 토큰 생성
-  피처 스코프 네이밍 ($feature-color-xxx)
+  Reference existing tokens (@use) → if no mapping, create a new token
+  Feature-scoped naming ($feature-color-xxx)
 ```
 
 ---
 
-## 6. 반응형 (MO↔PC)
+## 6. Responsive (MO↔PC)
 
 ```
-remapped.json의 pcDiff를 사용하여 @media 오버라이드 추가.
-MO 기본 코드 삭제 금지.
+Use remapped.json's pcDiff to add @media overrides.
+Do not delete the base MO code.
 
 .section {
-  // MO 기본 (vw = px / 720 × 100)
+  // MO base (vw = px / 720 × 100)
   height: 177.78vw;
 
   @media (min-width: #{$bp-desktop}) {
-    // PC 차이만 (vw = px / 2560 × 100)
+    // PC diff only (vw = px / 2560 × 100)
     height: 32.66vw;
   }
 }
 
-diff 처리:
-  같은 값 → MO만 유지
-  다른 px → @media { PC vw }
-  다른 레이아웃 → @media { flex-direction: row }
-  다른 이미지 → @media { background-image: url(pc-xxx.webp) }
-  layoutSizing diff → @media { flex/width 변경 }
+diff handling:
+  Same value → keep MO only
+  Different px → @media { PC vw }
+  Different layout → @media { flex-direction: row }
+  Different image → @media { background-image: url(pc-xxx.webp) }
+  layoutSizing diff → @media { flex/width change }
 ```
 
 ---
 
-## 7. 자가 검증
+## 7. Self-Validation
 
 ```
-⛔ 하나라도 실패 → 해당 섹션 코드 재작성 (다음 섹션 진행 금지)
+⛔ Any failure → rewrite that section's code (do not proceed to the next section)
 
-1. 클래스명: template 모든 class가 SCSS에 정의 → OK
-2. 이미지 경로: src가 실제 파일 존재 → OK
-3. 트리 매핑: Auto Layout 노드 → SCSS에 flex 있음 → OK
-4. ⛔ 추상화 금지: SCSS에 @function, @mixin 자체 정의가 없음 → OK
-   (프로젝트 기존 토큰 @use는 허용, 새 함수/믹스인 생성은 금지)
-5. ⛔ 속성 매핑: SCSS의 모든 속성이 tree.json css 객체에 근거 → OK
-   (aspect-ratio, container, custom property 등 tree.json에 없는 속성 → FAIL)
-6. ⛔ 이미지 파일명: kebab-case 네이밍 → OK
-   (해시 파일명 68ad470b.webp 등 → FAIL)
+1. Class names: all classes in template are defined in SCSS → OK
+2. Image paths: src file actually exists → OK
+3. Tree mapping: Auto Layout node → flex present in SCSS → OK
+4. ⛔ No abstractions: no @function or @mixin defined in SCSS → OK
+   (project existing token @use is allowed; creating new functions/mixins is forbidden)
+5. ⛔ Property mapping: all SCSS properties are grounded in tree.json css object → OK
+   (aspect-ratio, container, custom properties etc. not in tree.json → FAIL)
+6. ⛔ Image filenames: kebab-case naming → OK
+   (hash filenames like 68ad470b.webp etc. → FAIL)
 ```

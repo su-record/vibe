@@ -1,207 +1,207 @@
 ---
 name: vibe.figma.extract
-description: Figma REST API로 코드 생성 데이터 확보 — 트리(primary), 이미지, 스크린샷(검증용)
+description: Acquire code generation data via Figma REST API — tree (primary), images, screenshots (for validation)
 triggers: []
 tier: standard
 ---
 
-# vibe.figma.extract — 코드 생성 데이터 확보
+# vibe.figma.extract — Acquire Code Generation Data
 
-Figma REST API(`src/infra/lib/figma/`)를 사용하여 **구조적 코드 생성에 필요한 모든 데이터**를 추출.
+Uses the Figma REST API (`src/infra/lib/figma/`) to extract **all data needed for structural code generation**.
 
 ```
-추출 우선순위:
-  1순위: 노드 트리 + CSS (코드 생성의 PRIMARY 소스)
-  2순위: 이미지 에셋 (fill 이미지 + 아이템 노드 렌더링)
-  3순위: 스크린샷 (Phase 6 시각 검증용 — 코드 생성에 사용하지 않음)
+Extraction priority:
+  1st: Node tree + CSS (PRIMARY source for code generation)
+  2nd: Image assets (fill images + item node rendering)
+  3rd: Screenshots (for Phase 6 visual validation — not used for code generation)
 ```
 
 ---
 
-## 1. 노드 트리 + CSS — 코드 생성의 원천
+## 1. Node Tree + CSS — Source of Truth for Code Generation
 
 ```
 Bash:
   node "[FIGMA_SCRIPT]" tree {fileKey} {nodeId}
 
-반환 (FigmaNode JSON):
+Returns (FigmaNode JSON):
   {
     nodeId, name, type, size: { width, height },
     css: { display, flexDirection, gap, ... },
-    text: "텍스트 내용" (TEXT 노드만),
-    imageRef: "abc123" (이미지 fill),
+    text: "text content" (TEXT nodes only),
+    imageRef: "abc123" (image fill),
     imageScaleMode: "FILL" (FILL/FIT/CROP/TILE),
     layoutSizingH: "HUG" (FIXED/HUG/FILL),
     layoutSizingV: "FILL",
-    fills: [...] (2개 이상일 때만),
-    isMask: true (마스크 노드만),
+    fills: [...] (only when 2 or more),
+    isMask: true (mask nodes only),
     children: [...]
   }
 
-→ /tmp/{feature}/tree.json 에 저장
+→ Save to /tmp/{feature}/tree.json
 ```
 
-### Figma 속성 → CSS 직접 매핑표
+### Figma Property → CSS Direct Mapping Table
 
-트리 추출 도구가 자동 변환하는 속성. **이 값들이 SCSS에 직접 매핑된다:**
+Properties automatically converted by the tree extraction tool. **These values map directly to SCSS:**
 
-**레이아웃:**
+**Layout:**
 
-| Figma 속성 | CSS | vw 변환 |
+| Figma Property | CSS | vw conversion |
 |-----------|-----|---------|
-| `layoutMode=VERTICAL` | `display:flex; flex-direction:column` | ❌ |
-| `layoutMode=HORIZONTAL` | `display:flex; flex-direction:row` | ❌ |
-| `primaryAxisAlignItems` | `justify-content` | ❌ |
-| `counterAxisAlignItems` | `align-items` | ❌ |
-| `itemSpacing` | `gap` | ✅ |
-| `layoutGrow=1` | `flex-grow: 1` | ❌ |
-| `padding*` | `padding` | ✅ |
-| `absoluteBoundingBox.width/height` | `width/height` | ✅ |
-| `layoutPositioning=ABSOLUTE` | `position: absolute` + `top/left` (부모 상대 좌표) | ✅ |
-| `layoutSizingHorizontal=HUG` | width 삭제 (auto) | — |
-| `layoutSizingHorizontal=FILL` | 메타데이터 `layoutSizingH` (converter가 flex:1/100% 결정) | — |
-| `layoutSizingVertical=HUG` | height 삭제 (auto) | — |
-| `layoutSizingVertical=FILL` | 메타데이터 `layoutSizingV` (converter가 결정) | — |
-| `clipsContent` | `overflow: hidden` | ❌ |
+| `layoutMode=VERTICAL` | `display:flex; flex-direction:column` | No |
+| `layoutMode=HORIZONTAL` | `display:flex; flex-direction:row` | No |
+| `primaryAxisAlignItems` | `justify-content` | No |
+| `counterAxisAlignItems` | `align-items` | No |
+| `itemSpacing` | `gap` | Yes |
+| `layoutGrow=1` | `flex-grow: 1` | No |
+| `padding*` | `padding` | Yes |
+| `absoluteBoundingBox.width/height` | `width/height` | Yes |
+| `layoutPositioning=ABSOLUTE` | `position: absolute` + `top/left` (relative to parent) | Yes |
+| `layoutSizingHorizontal=HUG` | remove width (auto) | — |
+| `layoutSizingHorizontal=FILL` | metadata `layoutSizingH` (converter decides flex:1/100%) | — |
+| `layoutSizingVertical=HUG` | remove height (auto) | — |
+| `layoutSizingVertical=FILL` | metadata `layoutSizingV` (converter decides) | — |
+| `clipsContent` | `overflow: hidden` | No |
 
-**비주얼:**
+**Visual:**
 
-| Figma 속성 | CSS | vw 변환 |
+| Figma Property | CSS | vw conversion |
 |-----------|-----|---------|
-| `fills[].SOLID` | `background-color` | ❌ |
+| `fills[].SOLID` | `background-color` | No |
 | `fills[].IMAGE` | `imageRef` + `imageScaleMode` (FILL/FIT/CROP/TILE) | — |
-| `fills[].GRADIENT_LINEAR` | `background-image: linear-gradient(...)` | ❌ |
-| `fills[].GRADIENT_RADIAL` | `background-image: radial-gradient(...)` | ❌ |
-| `fills[] (2개 이상)` | `fills` 배열 (type, color, imageRef, gradient, blendMode, filters) | — |
-| `fills[].blendMode` | `background-blend-mode` | ❌ |
-| `fills[].filters.saturation` | `filter: grayscale(X%)` / `saturate(X%)` | ❌ |
-| `fills[].color` (TEXT) | `color` | ❌ |
-| `strokes[] + strokeAlign=INSIDE` | `border` + `box-sizing: border-box` | ✅ (width만) |
-| `strokes[] + strokeAlign=OUTSIDE` | `outline` | ✅ (width만) |
-| `individualStrokeWeights` | `border-top/right/bottom/left` 개별 | ✅ (width만) |
-| `strokeDashes` | `border-style: dashed` | ❌ |
-| `effects[].DROP_SHADOW` | `box-shadow` | ✅ (px만) |
-| `effects[].INNER_SHADOW` | `box-shadow` (inset) | ✅ (px만) |
-| `effects[].LAYER_BLUR` | `filter: blur()` (누적) | ✅ |
-| `effects[].BACKGROUND_BLUR` | `backdrop-filter: blur()` | ✅ |
-| `cornerRadius` | `border-radius` | ✅ |
-| `opacity` | `opacity` | ❌ |
-| `rotation` | `transform: rotate(Xdeg)` | ❌ |
-| `blendMode` (노드 레벨) | `mix-blend-mode` | ❌ |
+| `fills[].GRADIENT_LINEAR` | `background-image: linear-gradient(...)` | No |
+| `fills[].GRADIENT_RADIAL` | `background-image: radial-gradient(...)` | No |
+| `fills[] (2 or more)` | `fills` array (type, color, imageRef, gradient, blendMode, filters) | — |
+| `fills[].blendMode` | `background-blend-mode` | No |
+| `fills[].filters.saturation` | `filter: grayscale(X%)` / `saturate(X%)` | No |
+| `fills[].color` (TEXT) | `color` | No |
+| `strokes[] + strokeAlign=INSIDE` | `border` + `box-sizing: border-box` | Yes (width only) |
+| `strokes[] + strokeAlign=OUTSIDE` | `outline` | Yes (width only) |
+| `individualStrokeWeights` | `border-top/right/bottom/left` individually | Yes (width only) |
+| `strokeDashes` | `border-style: dashed` | No |
+| `effects[].DROP_SHADOW` | `box-shadow` | Yes (px only) |
+| `effects[].INNER_SHADOW` | `box-shadow` (inset) | Yes (px only) |
+| `effects[].LAYER_BLUR` | `filter: blur()` (accumulated) | Yes |
+| `effects[].BACKGROUND_BLUR` | `backdrop-filter: blur()` | Yes |
+| `cornerRadius` | `border-radius` | Yes |
+| `opacity` | `opacity` | No |
+| `rotation` | `transform: rotate(Xdeg)` | No |
+| `blendMode` (node level) | `mix-blend-mode` | No |
 
-**텍스트:**
+**Text:**
 
-| Figma 속성 | CSS | vw 변환 |
+| Figma Property | CSS | vw conversion |
 |-----------|-----|---------|
-| `style.fontFamily` | `font-family` | ❌ |
-| `style.fontSize` | `font-size` | ✅ |
-| `style.fontWeight` | `font-weight` | ❌ |
-| `style.lineHeightPx` | `line-height` | ❌ |
-| `style.letterSpacing` | `letter-spacing` | ✅ |
-| `style.textAlignHorizontal` | `text-align` | ❌ |
-| `style.textCase` | `text-transform` | ❌ |
-| `style.textTruncation` | `overflow: hidden; text-overflow: ellipsis` | ❌ |
-| `style.paragraphSpacing` | `margin-bottom` | ✅ |
-| `characters` | 텍스트 내용 | — |
+| `style.fontFamily` | `font-family` | No |
+| `style.fontSize` | `font-size` | Yes |
+| `style.fontWeight` | `font-weight` | No |
+| `style.lineHeightPx` | `line-height` | No |
+| `style.letterSpacing` | `letter-spacing` | Yes |
+| `style.textAlignHorizontal` | `text-align` | No |
+| `style.textCase` | `text-transform` | No |
+| `style.textTruncation` | `overflow: hidden; text-overflow: ellipsis` | No |
+| `style.paragraphSpacing` | `margin-bottom` | Yes |
+| `characters` | text content | — |
 
 ---
 
-## 2. 이미지 에셋 — 노드 렌더링 기반
+## 2. Image Assets — Node Rendering Based
 
 ```
-❌ imageRef 개별 다운로드 금지
-   → 텍스처 fill을 공유하는 경우 원본 텍스처(22.7MB)가 다운됨
-   → 노드 렌더링하면 해당 노드에 적용된 최종 결과물(364KB)이 나옴
+Do NOT download imageRef individually
+   → If a texture fill is shared, the original texture (22.7MB) will be downloaded
+   → Rendering the node produces the final result as applied to that node (364KB)
 
-✅ 모든 이미지는 Figma screenshot API로 노드 렌더링
+All images must be rendered as nodes via the Figma screenshot API
 ```
 
-### 2-1. BG 프레임 렌더링
+### 2-1. BG Frame Rendering
 
 ```
-BG 프레임 판별 기준:
-  - name에 "BG", "bg" 포함
-  - 또는 부모와 크기 동일(±10%) + 자식 이미지 3개 이상
+BG frame identification criteria:
+  - name contains "BG" or "bg"
+  - OR same size as parent (±10%) + 3 or more child images
 
-렌더링:
+Rendering:
   node "[FIGMA_SCRIPT]" screenshot {fileKey} {bg.nodeId} --out=/tmp/{feature}/bg/{section}-bg.webp
 ```
 
-### 2-2. 콘텐츠 노드 렌더링
+### 2-2. Content Node Rendering
 
 ```
-대상 (tree.json에서 식별):
-  - 아이콘 (VECTOR/GROUP 크기 ≤ 64px)
-  - 아이템/보상 썸네일 (name에 "item", "reward", "token", "coin")
-  - 벡터 글자 GROUP (부모 아래 VECTOR 3개 이상, 각 <60px)
-  - ⛔ 디자인 텍스트 (다음 중 하나):
-    · TEXT 노드 fills 2개 이상 (그래디언트+솔리드 중첩)
-    · TEXT 노드에 effects 있음 (DROP_SHADOW, stroke)
-    · TEXT 노드 fills에 GRADIENT 타입 포함
-    · 프로젝트 웹폰트에 없는 fontFamily
-    → 반드시 렌더링 대상에 포함
-  - 장식 패널 (목재 간판, 금속 플레이트 등 텍스처 배경)
-    → BG 프레임과 동일하게 렌더링
+Targets (identified from tree.json):
+  - Icons (VECTOR/GROUP size ≤ 64px)
+  - Item/reward thumbnails (name contains "item", "reward", "token", "coin")
+  - Vector text GROUPs (3 or more VECTORs under parent, each <60px)
+  - Design text (any of the following):
+    · TEXT node with 2 or more fills (gradient + solid overlap)
+    · TEXT node has effects (DROP_SHADOW, stroke)
+    · TEXT node fills contain GRADIENT type
+    · fontFamily not in project web fonts
+    → Must be included in rendering targets
+  - Decorative panels (wooden signs, metal plates, and other textured backgrounds)
+    → Render the same way as BG frames
 
-렌더링:
+Rendering:
   node "[FIGMA_SCRIPT]" screenshot {fileKey} {node.nodeId} --out=/tmp/{feature}/content/{name}.webp
 ```
 
-### 2-3. imageRef 다운로드 (폴백)
+### 2-3. imageRef Download (Fallback)
 
 ```
-노드 렌더링 불가 시에만 (API 실패, DOCUMENT 레벨):
-  파일 크기 5MB 초과 → 텍스처 fill 경고
-```
-
----
-
-## 3. 스크린샷 — Phase 6 검증 참조용
-
-```
-코드 생성에 사용하지 않는다.
-
-전체: screenshot → /tmp/{feature}/full-screenshot.webp
-섹션별: 1depth 자식 각각 → /tmp/{feature}/sections/{name}.webp
+Only when node rendering is not possible (API failure, DOCUMENT level):
+  File size exceeds 5MB → texture fill warning
 ```
 
 ---
 
-## 4. 추출 데이터 정리
+## 3. Screenshots — Reference for Phase 6 Validation
+
+```
+Not used for code generation.
+
+Full: screenshot → /tmp/{feature}/full-screenshot.webp
+Per section: each 1-depth child → /tmp/{feature}/sections/{name}.webp
+```
+
+---
+
+## 4. Extracted Data Summary
 
 ```
 /tmp/{feature}/
-├── tree.json                    ← PRIMARY 소스
-├── bg/                          ← BG 프레임 렌더링
-├── content/                     ← 콘텐츠 노드 렌더링
-├── full-screenshot.webp          ← 검증용
-└── sections/                    ← 섹션별 검증용
+├── tree.json                    ← PRIMARY source
+├── bg/                          ← BG frame rendering
+├── content/                     ← Content node rendering
+├── full-screenshot.webp          ← For validation
+└── sections/                    ← Per-section validation
 
-이미지 분류 요약:
-  | 분류 | 처리 |
+Image classification summary:
+  | Category | Handling |
   |------|------|
-  | BG 프레임 | 프레임 렌더링 → bg/ |
-  | 디자인 텍스트 | 노드 렌더링 → content/ |
-  | 벡터 글자 | GROUP 렌더링 → content/ |
-  | 콘텐츠 | 노드 렌더링 → content/ |
-  | 장식 패널 | 프레임 렌더링 → content/ |
-  | 장식 | BG 렌더링에 포함 |
+  | BG frames | Frame rendering → bg/ |
+  | Design text | Node rendering → content/ |
+  | Vector text | GROUP rendering → content/ |
+  | Content | Node rendering → content/ |
+  | Decorative panels | Frame rendering → content/ |
+  | Decorations | Included in BG rendering |
 ```
 
 ---
 
-## 5. 추출 완료 검증 (Phase 3 진입 전 필수)
+## 5. Extraction Completion Validation (Required Before Entering Phase 3)
 
 ```
-⛔ 하나라도 누락 → 재추출 (Phase 3 진행 금지)
+If any item is missing → re-extract (do NOT proceed to Phase 3)
 
-1. tree.json 존재 + 루트 노드 children > 0
-2. 각 섹션별 BG → bg/ 에 파일 존재
-3. 디자인 텍스트 체크:
-   tree.json 순회 → fills 2개 이상 또는 effects 있는 TEXT 노드 목록 생성
-   → 해당 노드 전부 content/ 에 렌더링 파일 존재
-4. 벡터 글자 체크:
-   GROUP 아래 VECTOR 3개 이상 → content/ 에 렌더링 파일 존재
-5. 섹션별 검증용 스크린샷 → sections/ 에 파일 존재
-6. 파일명 규칙: 모두 kebab-case (해시 파일명 없음)
+1. tree.json exists + root node children > 0
+2. BG for each section → file exists in bg/
+3. Design text check:
+   Traverse tree.json → generate list of TEXT nodes with 2 or more fills or effects
+   → All such nodes must have rendering files in content/
+4. Vector text check:
+   GROUP with 3 or more VECTORs → rendering file exists in content/
+5. Per-section validation screenshots → files exist in sections/
+6. File naming convention: all kebab-case (no hash filenames)
 ```
