@@ -56,43 +56,50 @@ Extract `type`, `status`, `requiredCollected`, `optionalCollected`, etc. from th
 
 **Validation**:
 - If the file does not exist → guide the user to run `vibe.interview` first.
-- `status: partial` + Required items incomplete → apply the **Minimum Viable Plan** gate:
+- `status: partial` + Required items incomplete → apply **AI-Driven Gap Filling**:
 
-### Minimum Viable Plan Gate
+### AI-Driven Gap Filling
 
-Count Required items collected vs total. Apply threshold:
+When the user stops the interview early, they are **delegating the rest to AI** — not refusing to answer. The plan phase must fill in the gaps autonomously.
 
-| Required Coverage | Action |
-|-------------------|--------|
-| **≥ 70%** | Proceed. TBD items noted in §11. |
-| **50–69%** | Warn + offer choices (see below) |
-| **< 50%** | Block plan generation. Resume interview. |
+**Process for missing Required items:**
 
-**When 50–69% coverage:**
+1. **Analyze the project** — Read `package.json`, existing code, `CLAUDE.md`, `docs/` for context clues
+2. **Research similar products** — Use the collected answers (purpose, target users) to infer reasonable defaults
+3. **Fill with best-guess + rationale** — For each missing item, write the AI's best inference with a `[AI-inferred]` tag and a one-line rationale
 
-```
-⚠️ Interview is {N}% complete ({M} of {T} required items collected).
-A plan with this many unknowns may produce a low-quality SPEC downstream.
+**Example:**
 
-1. Resume interview — fill in the gaps (recommended)
-2. Proceed anyway — TBD items will be marked in the plan
-3. Fill in now — I'll ask the missing {M} questions right here
-
-Choose (1/2/3):
+```markdown
+### Success Metrics
+[AI-inferred] Based on the project type (landing page for coffee brand):
+- Conversion rate: visitor → purchase click-through > 3%
+- Page load: FCP < 1.5s on mobile
+- Bounce rate: < 50%
 ```
 
-Option 3 is a **mini-interview**: ask only the missing Required items inline, without re-entering the full interview loop. Save answers back to the interview file before proceeding.
-
-**When < 50% coverage:**
+4. **Present filled plan for review** — Show the user which items were AI-filled:
 
 ```
-❌ Only {N}% of required items collected ({M} of {T}).
-Cannot generate a meaningful plan document.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 Plan document generated
 
-Resuming interview to collect the remaining items...
+  Collected from interview: {N} items
+  AI-inferred: {M} items (marked [AI-inferred])
+
+Please review the [AI-inferred] sections.
+Edit anything that doesn't match your intent.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Automatically chain back to `vibe.interview` with the existing interview file (append mode, not restart).
+5. **User can correct inline** — If the user says "change X to Y", update the plan and remove the `[AI-inferred]` tag from that item.
+
+**Rules for AI inference:**
+- Always choose the most common/safe default for the project type
+- Never invent business requirements (e.g., pricing, brand name) — mark these as `[Needs user input]` instead
+- Technical decisions (framework, DB, hosting) can be inferred from existing project setup
+- UX decisions (color, tone, layout) can be inferred from reference sites or stated brand direction
+- If fewer than 2 answers were collected (user barely started), ask 3 essential questions before proceeding: purpose, target users, and project type
 
 ### `.last-feature` Pointer Update
 
