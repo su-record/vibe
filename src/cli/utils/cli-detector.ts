@@ -41,6 +41,21 @@ export function detectClaudeCli(): AiCliStatus {
 }
 
 /**
+ * Coco 설치 여부 감지
+ * - `COCO_HOME` 환경변수
+ * - `~/.coco/` 디렉토리 존재 여부
+ */
+export function detectCocoCli(): AiCliStatus {
+  const configDir = process.env.COCO_HOME || path.join(os.homedir(), '.coco');
+  const hasDir = fs.existsSync(configDir);
+
+  return {
+    installed: hasDir,
+    configDir,
+  };
+}
+
+/**
  * Codex CLI 설치 여부 감지
  * - `which codex` 실행 가능 여부
  * - `~/.codex/` 디렉토리 존재 여부

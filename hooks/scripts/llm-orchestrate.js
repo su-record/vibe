@@ -108,13 +108,24 @@ function resolveModel(providerName, config) {
 }
 
 /**
- * 주관 LLM 자동 감지
- * - ANTHROPIC_BASE_URL이 localhost → 프록시 모드 (주관=GPT) → 보조=claude
- * - 그 외 → 직접 모드 (주관=Claude) → 보조=gpt/gemini
+ * 주관 LLM 자동 감지 — Claude가 보조로 사용되어야 하는 환경인지 판별
+ *
+ * true인 경우:
+ * - vibe-codex: ANTHROPIC_BASE_URL이 localhost (프록시 모드)
+ * - coco: ~/.coco/ 존재 또는 COCO_HOME 설정
+ * - 명시적: VIBE_SECONDARY_LLM=claude
  */
-function isProxyMode() {
+function useClaudeAsSecondary() {
+  // 1. 명시적 환경변수
+  if (process.env.VIBE_SECONDARY_LLM === 'claude') return true;
+  // 2. vibe-codex 프록시 모드
   const baseUrl = process.env.ANTHROPIC_BASE_URL || '';
-  return baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+  if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) return true;
+  // 3. coco 환경
+  if (process.env.COCO_HOME) return true;
+  const cocoDir = path.join(os.homedir(), '.coco');
+  if (fs.existsSync(cocoDir)) return true;
+  return false;
 }
 
 // Errors that should skip retry and go to fallback immediately
@@ -577,18 +588,18 @@ async function main() {
   const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', gemini: 'Gemini', claude: 'Claude' };
   const isGpt = provider === 'gpt' || provider === 'gpt-codex' || provider === 'gpt-spark';
   const isClaude = provider === 'claude';
-  const proxy = isProxyMode();
+  const claudeSecondary = useClaudeAsSecondary();
 
   let providerChain;
   if (isClaude) {
     // 명시적 claude 호출
     providerChain = ['claude', 'gemini'];
   } else if (isGpt) {
-    // GPT 주관 → claude fallback (프록시 모드), gemini fallback (직접 모드)
-    providerChain = proxy ? [provider, 'claude'] : [provider, 'gemini'];
+    // GPT 주관 → claude fallback (vibe-codex/coco), gemini fallback (직접 모드)
+    providerChain = claudeSecondary ? [provider, 'claude'] : [provider, 'gemini'];
   } else {
-    // gemini 주관 → claude fallback (프록시 모드), gpt fallback (직접 모드)
-    providerChain = proxy ? ['gemini', 'claude'] : ['gemini', 'gpt'];
+    // gemini 주관 → claude fallback (vibe-codex/coco), gpt fallback (직접 모드)
+    providerChain = claudeSecondary ? ['gemini', 'claude'] : ['gemini', 'gpt'];
   }
 
   const vibeConfig = readVibeConfig();
