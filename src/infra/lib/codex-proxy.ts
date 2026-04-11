@@ -595,7 +595,10 @@ export function launchSession(
       env: {
         ...process.env,
         ANTHROPIC_BASE_URL: `http://localhost:${port}`,
+        ANTHROPIC_AUTH_TOKEN: 'codex-proxy',
         ANTHROPIC_API_KEY: 'codex-proxy',
+        API_TIMEOUT_MS: '3000000',
+        ANTHROPIC_DEFAULT_OPUS_MODEL: defaultModel,
         ANTHROPIC_DEFAULT_SONNET_MODEL: defaultModel,
         ANTHROPIC_DEFAULT_HAIKU_MODEL: defaultModel,
       },
