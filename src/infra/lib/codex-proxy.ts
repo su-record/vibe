@@ -1017,6 +1017,24 @@ export function createProxyServer(config: ProxyConfig): http.Server {
   });
 }
 
+// ─── 기본 모델 결정 ────────────────────────────────────────
+
+function resolveDefaultModel(configModel?: string): string {
+  // config에 모델이 지정되어 있고 'latest'가 아니면 그대로 사용
+  if (configModel && configModel !== 'latest') return configModel;
+
+  // models_cache.json에서 최신(첫 번째) 모델 자동 선택
+  const codexHome = process.env.CODEX_HOME || `${process.env.HOME || process.env.USERPROFILE}/.codex`;
+  try {
+    const raw = fs.readFileSync(`${codexHome}/models_cache.json`, 'utf-8');
+    const cache = JSON.parse(raw) as { models?: Array<{ slug: string }> };
+    const first = cache.models?.[0]?.slug;
+    if (first) return first;
+  } catch { /* no cache */ }
+
+  return 'gpt-4o';
+}
+
 // ─── 모델 슬롯 매핑 (Opus/Sonnet/Haiku) ────────────────────
 
 interface ModelSlots { opus: string; sonnet: string; haiku: string }
@@ -1064,7 +1082,7 @@ export function launchSession(
   }
 
   const settings = getProxySettings();
-  const defaultModel = model || process.env.CODEX_PROXY_MODEL || settings.model || 'gpt-4o';
+  const defaultModel = model || process.env.CODEX_PROXY_MODEL || resolveDefaultModel(settings.model);
   const modelSlots = resolveModelSlots(defaultModel);
   const config: ProxyConfig = { port: 0, defaultModel };
   const server = createProxyServer(config);
