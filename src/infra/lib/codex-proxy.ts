@@ -1052,15 +1052,14 @@ function resolveModelSlots(defaultModel: string): ModelSlots {
   // Opus → 선택된 모델 (최상위)
   const opus = defaultModel;
 
-  // Sonnet → codex 코딩 모델 (선택 모델과 다른 것 우선)
+  // Sonnet → codex 코딩 모델 (spark 제외, 정확도 우선)
   const codexModel = models.find(m => m.includes('codex') && !m.includes('mini') && !m.includes('spark') && m !== defaultModel)
-    || models.find(m => m.includes('codex') && !m.includes('mini'))
+    || models.find(m => m.includes('codex') && !m.includes('mini') && !m.includes('spark'))
     || defaultModel;
 
-  // Haiku → mini/경량 모델
-  const miniModel = models.find(m => m.includes('mini') && !m.includes('codex'))
+  // Haiku → codex-spark (고속), 없으면 mini
+  const miniModel = models.find(m => m.includes('codex-spark'))
     || models.find(m => m.includes('mini'))
-    || models.find(m => m.includes('spark'))
     || defaultModel;
 
   return { opus, sonnet: codexModel, haiku: miniModel };
