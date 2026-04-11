@@ -256,6 +256,21 @@ function buildVibeSection(
   lines.push('- Function ≤50 lines, nesting ≤3, params ≤5, complexity ≤10');
   lines.push('- No `any`, no `console.log` in commits, no commented-out code');
   lines.push('');
+  lines.push('### Optimization Rules (Rob Pike)');
+  lines.push('');
+  lines.push('- Never optimize without measuring first');
+  lines.push('- Don\'t tune unless one part overwhelms the rest');
+  lines.push('- Fancy algorithms are slow when n is small — and n is usually small');
+  lines.push('- Simple code beats clever code. Data dominates.');
+  lines.push('');
+  lines.push('### Debugging Rules');
+  lines.push('');
+  lines.push('- Never fix before reproducing the failure');
+  lines.push('- State a root-cause hypothesis before changing code');
+  lines.push('- Write a failing test before fixing');
+  lines.push('- One hypothesis at a time. No "while I\'m here" refactoring.');
+  lines.push('- 3 failed fixes → suspect structural issue, stop patching');
+  lines.push('');
 
   // Tech Stack
   if (stackNames.length > 0) {

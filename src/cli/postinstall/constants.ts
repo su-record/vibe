@@ -20,6 +20,8 @@ export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
   'characterization-test',
   'arch-guard',
   'exec-plan',
+  'rob-pike',
+  'systematic-debugging',
 ];
 
 export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
