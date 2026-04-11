@@ -5,6 +5,7 @@
 
 import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import * as p from '@clack/prompts';
 import {
   launchSession,
@@ -12,6 +13,7 @@ import {
   checkAuthSource,
   getProxySettings,
 } from '../../infra/lib/codex-proxy.js';
+import { findCodexCredentials } from '../../infra/lib/gpt/auth.js';
 import { patchGlobalConfig } from '../../infra/lib/config/GlobalConfigManager.js';
 import type { GlobalVibeConfig } from '../types.js';
 
@@ -79,9 +81,15 @@ async function selectProvider(): Promise<string> {
 
 async function configureAuth(provider: string): Promise<{ key?: string; url?: string }> {
   switch (provider) {
-    case 'chatgpt-pro':
-      p.log.info('codex login 으로 ChatGPT Pro 인증 필요 (이미 완료했다면 스킵)');
+    case 'chatgpt-pro': {
+      const creds = findCodexCredentials();
+      if (creds) {
+        p.log.success('Codex CLI 인증 확인됨');
+      } else {
+        p.log.warn('codex login 으로 ChatGPT Pro 인증 필요');
+      }
       return {};
+    }
     case 'openai': {
       const key = await textOrCancel('OpenAI API Key', 'sk-...');
       return { key };
@@ -104,20 +112,19 @@ async function selectModel(
   provider: string,
   auth: { key?: string; url?: string },
 ): Promise<string> {
-  const baseUrl = auth.url || 'https://api.openai.com';
-  let token = auth.key;
+  let models: string[] = [];
 
-  // ChatGPT Pro: Codex CLI OAuth 토큰으로 시도
-  if (!token && provider === 'chatgpt-pro') {
-    try {
-      const { getAuthInfo } = await import('../../infra/lib/gpt/auth.js');
-      const info = await getAuthInfo();
-      token = info.accessToken || info.apiKey;
-    } catch { /* codex login 아직 안 한 경우 */ }
+  if (provider === 'chatgpt-pro') {
+    // ChatGPT Pro OAuth 토큰은 /v1/models 권한 없음 → models_cache.json 사용
+    models = readCodexModelsCache();
+  } else {
+    // 다른 provider: API로 모델 목록 조회
+    const baseUrl = auth.url || 'https://api.openai.com';
+    const token = auth.key;
+    if (token) {
+      models = await fetchModels(baseUrl, token);
+    }
   }
-
-  // API에서 모델 목록 조회
-  const models = token ? await fetchModels(baseUrl, token) : [];
 
   if (models.length > 0) {
     const options = models.map(m => ({ value: m, label: m }));
@@ -128,6 +135,23 @@ async function selectModel(
   }
 
   return textOrCancel('모델 이름');
+}
+
+// ─── Codex CLI 모델 캐시 ────────────────────────────────────
+
+interface CodexModelsCache {
+  models?: Array<{ slug: string; display_name?: string }>;
+}
+
+function readCodexModelsCache(): string[] {
+  const codexHome = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
+  const cachePath = path.join(codexHome, 'models_cache.json');
+  try {
+    const data = JSON.parse(fs.readFileSync(cachePath, 'utf-8')) as CodexModelsCache;
+    return (data.models || []).map(m => m.slug).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 // ─── 모델 목록 조회 ──────────────────────────────────────────
