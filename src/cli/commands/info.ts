@@ -30,6 +30,7 @@ LLM:
   vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (auth, key, status, logout)
   vibe gemini <cmd>       Gemini (auth, key, status, logout)
+  vibe codex <cmd>        Codex Proxy (start, stop, status, shell)
   vibe env import [path]  .env → ~/.vibe/config.json 가져오기
 
 Figma:

@@ -29,6 +29,7 @@ import {
   figmaSetup, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp,
   configShow, configHelp,
   statsDefault, statsWeek, statsQuality, statsHelp,
+  codexLaunch, codexStatus, codexShell, codexHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -250,6 +251,36 @@ Example: vibe skills add vercel-labs/skills
     break;
   }
 
+  // vibe codex — Claude Code + OpenAI/Gemini 호환 모델
+  case 'codex': {
+    const codexSub = positionalArgs[1];
+    if (args.includes('--setup')) {
+      (async () => {
+        const { codexSetup } = await import('./commands/codex-proxy.js');
+        await codexSetup();
+      })();
+    } else if (codexSub === 'shell') {
+      const mIdx = args.indexOf('--model');
+      codexShell(mIdx >= 0 ? args[mIdx + 1] : undefined);
+    } else if (codexSub === 'status') {
+      codexStatus();
+    } else if (codexSub === 'help') {
+      codexHelp();
+    } else {
+      // 모델: --model MODEL 또는 /MODEL shorthand
+      let model: string | undefined;
+      const mIdx = args.indexOf('--model');
+      if (mIdx >= 0) model = args[mIdx + 1];
+      if (codexSub?.startsWith('/')) model = codexSub.slice(1);
+
+      const claudeArgs = args.slice(1).filter(a =>
+        a !== 'codex' && a !== '--model' && a !== model && !a.startsWith('/'),
+      );
+      codexLaunch(model, claudeArgs);
+    }
+    break;
+  }
+
   case 'status':
     showStatus();
     break;
@@ -458,6 +489,7 @@ Available commands:
   vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (auth, key, status, logout)
   vibe gemini <cmd>       Gemini (auth, key, status, logout)
+  vibe codex <cmd>        Codex Proxy (start, stop, status, shell)
 
   vibe figma <cmd>        Figma (setup, extract, status, logout)
   vibe telegram <cmd>     Telegram (setup, status) - notification only

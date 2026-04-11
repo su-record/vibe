@@ -154,6 +154,14 @@ export interface FigmaCredentials {
   createdAt?: string;
 }
 
+export interface CodexProxyConfig {
+  provider?: string;
+  targetUrl?: string;
+  apiKey?: string;
+  model?: string;
+  alias?: string;
+}
+
 export interface GlobalVibeConfig {
   version: '1';
   credentials?: {
@@ -173,5 +181,6 @@ export interface GlobalVibeConfig {
   settings?: {
     workspaceDir?: string;
   };
+  codexProxy?: CodexProxyConfig;
 }
 
