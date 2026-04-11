@@ -79,13 +79,27 @@ export function findCodexCredentials(): CodexAuthFile | null {
   return null;
 }
 
+/** JWT payload에서 exp claim 추출 (초 단위 → ms) */
+function getJwtExpiry(token: string): number {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    return (payload.exp as number) * 1000;
+  } catch {
+    return NaN;
+  }
+}
+
 /** Codex CLI credential로 인증 시도 */
 async function tryCodexCliAuth(): Promise<AuthInfo | null> {
   const creds = findCodexCredentials();
   if (!creds) return null;
 
   try {
-    const expiresAt = new Date(creds.tokens.expires_at).getTime();
+    // expires_at 필드가 없으면 JWT exp claim으로 폴백
+    let expiresAt = new Date(creds.tokens.expires_at).getTime();
+    if (isNaN(expiresAt)) {
+      expiresAt = getJwtExpiry(creds.tokens.access_token);
+    }
     let accessToken = creds.tokens.access_token;
 
     if (isNaN(expiresAt) || expiresAt <= Date.now() + 5 * 60 * 1000) {
