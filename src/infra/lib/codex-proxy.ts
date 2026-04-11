@@ -6,6 +6,7 @@
  * openai/gemini/custom: Chat Completions API (api.openai.com/v1/chat/completions)
  */
 
+import fs from 'fs';
 import http from 'http';
 import crypto from 'crypto';
 import { spawn } from 'child_process';
@@ -986,21 +987,65 @@ async function handleMessages(
 export function createProxyServer(config: ProxyConfig): http.Server {
   return http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
     res.setHeader('Access-Control-Allow-Headers', '*');
     if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
     const url = req.url || '';
-    if (url === '/v1/messages' && req.method === 'POST') {
+
+    if (url.startsWith('/v1/messages') && req.method === 'POST') {
       try { await handleMessages(req, res, config); }
       catch (err) { sendError(res, 500, (err as Error).message); }
     } else if (url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ status: 'ok', port: config.port }));
+    } else if (url === '/v1/models' && req.method === 'GET') {
+      // Claude Code 모델 검증용 — 설정된 모델을 반환
+      const model = config.defaultModel || 'gpt-5.4';
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        object: 'list',
+        data: [
+          { id: model, object: 'model', created: Date.now(), owned_by: 'codex-proxy' },
+        ],
+      }));
     } else {
+      // 알 수 없는 엔드포인트 로그
+      console.error(`[proxy] unhandled: ${req.method} ${url}`);
       sendError(res, 404, `Unknown endpoint: ${url}`);
     }
   });
+}
+
+// ─── 모델 슬롯 매핑 (Opus/Sonnet/Haiku) ────────────────────
+
+interface ModelSlots { opus: string; sonnet: string; haiku: string }
+
+function resolveModelSlots(defaultModel: string): ModelSlots {
+  // models_cache.json에서 사용 가능한 모델 목록 조회
+  const codexHome = process.env.CODEX_HOME || `${process.env.HOME || process.env.USERPROFILE}/.codex`;
+  let models: string[] = [];
+  try {
+    const raw = fs.readFileSync(`${codexHome}/models_cache.json`, 'utf-8');
+    const cache = JSON.parse(raw) as { models?: Array<{ slug: string }> };
+    models = (cache.models || []).map(m => m.slug).filter(Boolean);
+  } catch { /* no cache */ }
+
+  // Opus → 선택된 모델 (최상위)
+  const opus = defaultModel;
+
+  // Sonnet → codex 코딩 모델 (선택 모델과 다른 것 우선)
+  const codexModel = models.find(m => m.includes('codex') && !m.includes('mini') && !m.includes('spark') && m !== defaultModel)
+    || models.find(m => m.includes('codex') && !m.includes('mini'))
+    || defaultModel;
+
+  // Haiku → mini/경량 모델
+  const miniModel = models.find(m => m.includes('mini') && !m.includes('codex'))
+    || models.find(m => m.includes('mini'))
+    || models.find(m => m.includes('spark'))
+    || defaultModel;
+
+  return { opus, sonnet: codexModel, haiku: miniModel };
 }
 
 // ─── 세션 실행 (프록시 + Claude Code 원샷) ──────────────────
@@ -1020,6 +1065,7 @@ export function launchSession(
 
   const settings = getProxySettings();
   const defaultModel = model || process.env.CODEX_PROXY_MODEL || settings.model || 'gpt-4o';
+  const modelSlots = resolveModelSlots(defaultModel);
   const config: ProxyConfig = { port: 0, defaultModel };
   const server = createProxyServer(config);
 
@@ -1027,7 +1073,7 @@ export function launchSession(
     const addr = server.address() as { port: number };
     const port = addr.port;
     const authLabel = AUTH_SOURCE_LABELS[authSource.source];
-    console.log(`Codex Proxy :${port} | ${authLabel} | ${defaultModel}`);
+    console.log(`Codex Proxy :${port} | ${authLabel} | opus=${modelSlots.opus} sonnet=${modelSlots.sonnet} haiku=${modelSlots.haiku}`);
 
     const child = spawn('claude', ['--dangerously-skip-permissions', ...claudeArgs], {
       stdio: 'inherit',
@@ -1037,9 +1083,9 @@ export function launchSession(
         ANTHROPIC_AUTH_TOKEN: 'codex-proxy',
         ANTHROPIC_API_KEY: 'codex-proxy',
         API_TIMEOUT_MS: '3000000',
-        ANTHROPIC_DEFAULT_OPUS_MODEL: defaultModel,
-        ANTHROPIC_DEFAULT_SONNET_MODEL: defaultModel,
-        ANTHROPIC_DEFAULT_HAIKU_MODEL: defaultModel,
+        ANTHROPIC_DEFAULT_OPUS_MODEL: modelSlots.opus,
+        ANTHROPIC_DEFAULT_SONNET_MODEL: modelSlots.sonnet,
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: modelSlots.haiku,
       },
     });
 
