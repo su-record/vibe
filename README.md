@@ -172,6 +172,24 @@ Three layers of defense on every tool call:
 
 ---
 
+## Codex Proxy
+
+Use ChatGPT Pro models (gpt-5.4, gpt-5.3-codex, etc.) as Claude Code's backend. Routes through the Codex Responses API using your ChatGPT Pro subscription — no API billing.
+
+```bash
+# One-time setup (auto-detects codex login credentials)
+vibe codex --setup
+
+# Run Claude Code with ChatGPT Pro model
+vibe-codex
+```
+
+**How it works**: Local proxy translates Anthropic Messages API ↔ Codex Responses API. Claude Code sends requests to the proxy, which forwards them to `chatgpt.com/backend-api/codex/responses` using your ChatGPT Pro OAuth token.
+
+**Supported providers**: ChatGPT Pro (auto-detect from `codex login`), OpenAI API Key, Gemini API Key, Custom OpenAI-compatible endpoints.
+
+---
+
 ## Supported Tools
 
 | CLI | Status |

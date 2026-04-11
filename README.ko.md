@@ -127,6 +127,24 @@ claude
 
 ---
 
+## Codex Proxy
+
+ChatGPT Pro 모델(gpt-5.4, gpt-5.3-codex 등)을 Claude Code의 백엔드로 사용합니다. Codex Responses API를 통해 ChatGPT Pro 구독으로 과금 — API 토큰 과금 없음.
+
+```bash
+# 최초 설정 (codex login 인증 자동 감지)
+vibe codex --setup
+
+# ChatGPT Pro 모델로 Claude Code 실행
+vibe-codex
+```
+
+**동작 원리**: 로컬 프록시가 Anthropic Messages API ↔ Codex Responses API를 변환합니다. Claude Code가 프록시에 요청하면, 프록시가 ChatGPT Pro OAuth 토큰으로 `chatgpt.com/backend-api/codex/responses`에 전달합니다.
+
+**지원 프로바이더**: ChatGPT Pro (`codex login` 자동 감지), OpenAI API Key, Gemini API Key, 커스텀 OpenAI 호환 엔드포인트.
+
+---
+
 ## 지원 도구
 
 | CLI | 상태 |
