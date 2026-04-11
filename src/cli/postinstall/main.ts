@@ -15,6 +15,7 @@ import {
   copySkillsFiltered,
   removeLegacySkills,
   replaceTemplatesInDir,
+  cleanupDuplicateSkillDirs,
 } from './fs-utils.js';
 import { GLOBAL_SKILLS, LEGACY_SKILL_DIRS } from './constants.js';
 import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
@@ -103,15 +104,15 @@ export function main(): void {
     const globalCoreAssetsDir = path.join(globalClaudeDir, 'vibe');
     ensureDir(globalCoreAssetsDir);
 
-    // ~/.claude/vibe/skills/ 전역 vibe 스킬 설치 (공통 스킬만)
+    // ~/.claude/vibe/skills/ — 인라인 스킬 전용 (flat .md 파일)
+    // 주의: 디렉토리 기반 스킬({name}/SKILL.md)은 ~/.claude/skills/에만 설치.
+    // ~/.claude/vibe/skills/에 복사하면 Claude Code가 ~/.claude/ 재귀 스캔 시 중복 발견.
     const coreSkillsDir = path.join(globalCoreAssetsDir, 'skills');
     ensureDir(coreSkillsDir);
-    if (fs.existsSync(skillsSource)) {
-      removeLegacySkills(coreSkillsDir, LEGACY_SKILL_DIRS);
-      copySkillsFiltered(skillsSource, coreSkillsDir, GLOBAL_SKILLS);
-      replaceTemplatesInDir(coreSkillsDir);
-    }
-    // 인라인 기본 스킬 추가 (번들에 없는 추가 스킬)
+    // 레거시 디렉토리 기반 스킬 정리 (이전 버전에서 복사된 것)
+    removeLegacySkills(coreSkillsDir, LEGACY_SKILL_DIRS);
+    cleanupDuplicateSkillDirs(coreSkillsDir);
+    // 인라인 기본 스킬만 추가 (flat .md 파일 — Claude Code에서 중복 안 됨)
     seedInlineSkills(coreSkillsDir);
 
     // 독립 디렉토리 복사 — 병렬 실행 (서로 다른 대상 경로, 의존성 없음)

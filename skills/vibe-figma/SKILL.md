@@ -1,5 +1,5 @@
 ---
-name: vibe.figma
+name: vibe-figma
 description: Figma design to code — tree-based structural code generation
 triggers: []
 tier: standard

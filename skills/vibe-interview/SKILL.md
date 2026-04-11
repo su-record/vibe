@@ -1,10 +1,10 @@
 ---
-name: vibe.interview
+name: vibe-interview
 tier: core
 description: "Iteratively interview the user to gather ALL required and optional requirements for a new project or feature. Loops until the user explicitly stops. Uses type-specific domain checklists (website, webapp, mobile, api, library, feature) so nothing is missed. Must use this skill when the user says '만들자', '개발하자', '신규 기능', '무엇을 만들', 'let's build', 'new feature', or starts describing a product idea without a plan yet."
 triggers: [만들자, 개발하자, 기획하자, 신규 기능, 새 프로젝트, "무엇을 만들", "무엇을 개발", 아이디어, 인터뷰, interview, requirements, "let's build", "new feature", "new project"]
 priority: 95
-chain-next: [vibe.plan]
+chain-next: [vibe-plan]
 ---
 
 # vibe.interview — Domain Requirements Interview
@@ -20,7 +20,7 @@ chain-next: [vibe.plan]
 
 **Skip when**:
 - Small bug fix on an existing project
-- `.claude/vibe/plans/{feature}.md` already exists (→ only update via `vibe.plan`)
+- `.claude/vibe/plans/{feature}.md` already exists (→ only update via `vibe-plan`)
 
 ## Core Loop
 
@@ -53,7 +53,7 @@ chain-next: [vibe.plan]
 4. Save collected results
    .claude/vibe/interviews/{feature}.md
      ↓
-5. chain-next: vibe.plan
+5. chain-next: vibe-plan
 ```
 
 ## Step 0: Git Branch (MANDATORY)
@@ -101,7 +101,7 @@ What kind of project is this?
 Read the checklist file for the detected type:
 
 ```
-Read skills/vibe.interview/checklists/{type}.md
+Read skills/vibe-interview/checklists/{type}.md
 ```
 
 The checklist is divided into a **Required** section and an **Optional** section. Each item has the following structure:
@@ -269,9 +269,9 @@ This pointer is used by /vibe.spec (no args) for Smart Resume.
 No-op if the value is already the same.
 ```
 
-## Step 5: Chain to vibe.plan
+## Step 5: Chain to vibe-plan
 
-After the interview is complete, the `vibe.plan` skill is automatically activated to refine the results into a structured plan.
+After the interview is complete, the `vibe-plan` skill is automatically activated to refine the results into a structured plan.
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -283,7 +283,7 @@ After the interview is complete, the `vibe.plan` skill is automatically activate
    Optional: 12/14
    Discovered: 3
 
-→ vibe.plan skill is starting plan creation...
+→ vibe-plan skill is starting plan creation...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -293,7 +293,7 @@ After the interview is complete, the `vibe.plan` skill is automatically activate
 - Prompting the user to stop before Required items are complete
 - Ignoring a user's answer and moving on to the next question
 - Missing areas not in the checklist (use `discovered`)
-- Writing the plan in PTCF/EARS/Phase structure here (that is refined by vibe.plan; the actual spec is written by /vibe.spec)
+- Writing the plan in PTCF/EARS/Phase structure here (that is refined by vibe-plan; the actual spec is written by /vibe.spec)
 - Ending with 10 shallow questions (keep going until the user explicitly stops)
 - Providing only multiple-choice options without allowing free input
 
@@ -347,12 +347,12 @@ Claude: ⚠️ All required items complete. 10 optional items will be marked as 
         ✅ Interview complete!
         📄 .claude/vibe/interviews/parallax-website.md
 
-        → vibe.plan skill is starting plan creation...
+        → vibe-plan skill is starting plan creation...
 ```
 
 ## Related
 
-- **Next**: `vibe.plan` — refine interview results into a structured plan
-- **After plan**: `vibe.spec` (skill) → generates SPEC → then `/vibe.run` (logic) + `/vibe.figma` (UI track) in parallel
+- **Next**: `vibe-plan` — refine interview results into a structured plan
+- **After plan**: `vibe-spec` (skill) → generates SPEC → then `/vibe.run` (logic) + `/vibe.figma` (UI track) in parallel
 - **Templates**: `~/.claude/vibe/templates/plan-template.md`
-- **Checklists**: `skills/vibe.interview/checklists/{type}.md`
+- **Checklists**: `skills/vibe-interview/checklists/{type}.md`

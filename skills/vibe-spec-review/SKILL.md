@@ -1,17 +1,17 @@
 ---
-name: vibe.spec.review
+name: vibe-spec-review
 tier: core
-description: "Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe.spec completes, or when the user says 'review spec', '스펙 리뷰'."
+description: "Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe-spec completes, or when the user says 'review spec', '스펙 리뷰'."
 triggers: ["spec review", "review spec", "SPEC 리뷰", "명세 리뷰", race review]
 priority: 80
 chain-next: []
 ---
 
-# vibe.spec.review — SPEC Quality Review
+# vibe-spec-review — SPEC Quality Review
 
 Review and enhance SPEC with GPT/Gemini cross-validation.
 
-**Purpose:** Run this skill after `vibe.spec` to ensure accurate review execution. For large contexts, invoke in a new session.
+**Purpose:** Run this skill after `vibe-spec` to ensure accurate review execution. For large contexts, invoke in a new session.
 
 ---
 
@@ -20,7 +20,7 @@ Review and enhance SPEC with GPT/Gemini cross-validation.
 This skill is automatically called in Phase 4 of the `/vibe.spec` orchestrator. If direct invocation is needed:
 
 ```
-Load skill `vibe.spec.review` with feature: "feature-name"
+Load skill `vibe-spec-review` with feature: "feature-name"
 ```
 
 Or via natural language trigger: "스펙 리뷰", "review spec", "명세 리뷰".
@@ -57,7 +57,7 @@ If the value is already the same, no-op.
 ```
 /vibe.spec "feature" → SPEC created (Phase 3)
         ↓
-Phase 4: vibe.spec.review skill (this) → Quality validation + GPT/Gemini review
+Phase 4: vibe-spec-review skill (this) → Quality validation + GPT/Gemini review
         ↓
     /vibe.run "feature"
 ```

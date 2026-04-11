@@ -12,10 +12,10 @@
  * optional: 참고/래퍼 — 명시적 호출 시에만 로드 (전역 설치에서 제외)
  */
 export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
-  'vibe.interview',
-  'vibe.plan',
-  'vibe.spec',
-  'vibe.spec.review',
+  'vibe-interview',
+  'vibe-plan',
+  'vibe-spec',
+  'vibe-spec-review',
   'techdebt',
   'characterization-test',
   'arch-guard',
@@ -30,10 +30,10 @@ export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
   'claude-md-guide',
   'capability-loop',
   'design-teach',
-  'vibe.figma',
-  'vibe.figma.extract',
-  'vibe.figma.convert',
-  'vibe.docs',
+  'vibe-figma',
+  'vibe-figma-extract',
+  'vibe-figma-convert',
+  'vibe-docs',
 ];
 
 /** 전역 설치에서 제외된 스킬 (명시적 /skill-name 호출 시에만 활성)
@@ -250,18 +250,22 @@ export const LEGACY_RULE_FILES = [
 
 /** 이전 네이밍에서 변경된 스킬 — postinstall 시 구 디렉토리 삭제 */
 export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
-  'vibe-docs',
-  'vibe-figma',
+  'vibe.spec',
+  'vibe.spec.review',
+  'vibe.docs',
+  'vibe.figma',
+  'vibe.figma.convert',
+  'vibe.figma.extract',
+  'vibe.interview',
+  'vibe.plan',
+  'vibe.discover',
   'vibe-figma-analyze',
   'vibe-figma-codegen',
   'vibe-figma-consolidate',
-  'vibe-figma-convert',
-  'vibe-figma-extract',
   'vibe-figma-frame',
   'vibe-figma-pipeline',
   'vibe-figma-rules',
   'vibe-figma-style',
-  'vibe.discover',
 ];
 
 // ─── Claude Code 네이티브 서브에이전트 매핑 ───

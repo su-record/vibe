@@ -1,5 +1,5 @@
 ---
-name: vibe.figma.extract
+name: vibe-figma-extract
 description: Acquire code generation data via Figma REST API — tree (primary), images, screenshots (for validation)
 triggers: []
 tier: standard

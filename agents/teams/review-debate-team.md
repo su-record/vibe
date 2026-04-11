@@ -20,7 +20,7 @@
 ## 사용 스킬
 
 - `/vibe.review` (Phase 4.5: Review Debate)
-- `vibe.spec.review` skill (Step 3.5: SPEC Debate)
+- `vibe-spec-review` skill (Step 3.5: SPEC Debate)
 - `/vibe.run` (Review Team: 구현 후 리뷰)
 
 ## 워크플로우
@@ -75,7 +75,7 @@ Task(team_name="review-debate-{feature}", name="simplicity-reviewer", subagent_t
   TaskList에서 복잡도/단순화 관련 이슈를 claim하세요.")
 ```
 
-### SPEC Review 컨텍스트 (vibe.spec.review)
+### SPEC Review 컨텍스트 (vibe-spec-review)
 
 spawn 패턴은 동일하되, prompt의 입력이 다름:
 

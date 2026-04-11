@@ -48,5 +48,5 @@ Figma 디자인 데이터 수집 + 정제 전문 에이전트.
 
 ## 스킬 참조
 
-- vibe.figma.extract/SKILL.md
-- vibe.figma.extract/rubrics/image-rules.md
+- vibe-figma-extract/SKILL.md
+- vibe-figma-extract/rubrics/image-rules.md

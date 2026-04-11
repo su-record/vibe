@@ -17,7 +17,7 @@ export function showHelp(): void {
 VIBE - Personalized AI Agent (Claude Code exclusive)
 
 Commands:
-  vibe setup              셋업 위자드 (인증, 채널, 설정 한번에)
+  vibe setup              셋업 위자드 (인증, 설정 한번에)
   vibe init [project]     프로젝트 초기화
   vibe update             설정 업데이트
   vibe upgrade            최신 버전으로 업그레이드
@@ -25,25 +25,21 @@ Commands:
   vibe status             전체 상태 확인
   vibe config show        설정 통합 보기 (모든 소스)
   vibe stats              세션 통계 및 품질 트렌드
+  vibe env import [path]  .env → ~/.vibe/config.json 가져오기
 
 LLM:
   vibe claude <cmd>       Claude (key, status, logout)
-  vibe gpt <cmd>          GPT (auth, key, status, logout)
-  vibe gemini <cmd>       Gemini (auth, key, status, logout)
-  vibe codex <cmd>        Codex Proxy (start, stop, status, shell)
-  vibe env import [path]  .env → ~/.vibe/config.json 가져오기
+  vibe gpt <cmd>          GPT (key, status, logout)
+  vibe gemini <cmd>       Gemini (key, status, logout)
+  vibe codex <cmd>        Codex Proxy (status, shell, --setup)
 
 Figma:
   vibe figma setup <token>  Set Figma access token
-  vibe figma extract <url>  Extract layers + image from Figma URL
+  vibe figma breakpoints    Show/set responsive breakpoints
   vibe figma status         Check configuration
 
 Skills:
   vibe skills add <pkg>   Install skill from skills.sh
-
-Channels:
-  vibe telegram <cmd>     Telegram (setup, chat, status)
-  vibe slack <cmd>        Slack (setup, channel, status)
 
 Slash Commands (Claude Code):
   /vibe.spec "feature"    SPEC 작성 + 리서치

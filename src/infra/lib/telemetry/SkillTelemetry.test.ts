@@ -26,7 +26,7 @@ describe('SkillTelemetry', () => {
 
     it('should append events as JSONL', () => {
       telemetry.logSuccess('vibe.run', 12.5, '2.7.17');
-      telemetry.logError('vibe.spec', 3.2, '2.7.17');
+      telemetry.logError('vibe-spec', 3.2, '2.7.17');
 
       const content = readFileSync(telemetry.getLogPath(), 'utf-8');
       const events = parseJsonl<SkillEvent>(content);
@@ -36,7 +36,7 @@ describe('SkillTelemetry', () => {
       expect(events[0].outcome).toBe('success');
       expect(events[0].v).toBe(1);
       expect(events[0].os).toBe(process.platform);
-      expect(events[1].skill).toBe('vibe.spec');
+      expect(events[1].skill).toBe('vibe-spec');
       expect(events[1].outcome).toBe('error');
     });
 
@@ -69,7 +69,7 @@ describe('SkillTelemetry', () => {
       telemetry.logSuccess('vibe.run', 10, '1.0.0');
       telemetry.logSuccess('vibe.run', 20, '1.0.0');
       telemetry.logError('vibe.run', 5, '1.0.0');
-      telemetry.logSuccess('vibe.spec', 3, '1.0.0');
+      telemetry.logSuccess('vibe-spec', 3, '1.0.0');
 
       const summary = telemetry.summarize();
 
@@ -81,7 +81,7 @@ describe('SkillTelemetry', () => {
       expect(vibeRun?.errorCount).toBe(1);
       expect(vibeRun?.avgDurationS).toBeCloseTo(11.7, 0);
 
-      const vibeSpec = summary.find(s => s.skill === 'vibe.spec');
+      const vibeSpec = summary.find(s => s.skill === 'vibe-spec');
       expect(vibeSpec?.count).toBe(1);
     });
 

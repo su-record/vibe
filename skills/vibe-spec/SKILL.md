@@ -1,10 +1,10 @@
 ---
-name: vibe.spec
+name: vibe-spec
 tier: core
 description: "Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 100-point quality gate (loops until perfect or stuck). Produces .claude/vibe/specs/{feature}.md + matching .claude/vibe/features/{feature}.feature (BDD). Must use this skill when the user says 'write spec', 'create spec', '/vibe.spec', or when a plan document exists and is ready for code specification."
 triggers: [spec, SPEC, 명세, "코드 명세", "구현 명세", "write spec", "create spec", PTCF]
 priority: 85
-chain-next: [vibe.spec.review]
+chain-next: [vibe-spec-review]
 ---
 
 # vibe.spec — Specification Agent
@@ -29,7 +29,7 @@ When `ultrawork` (or `ulw`) is included, automatically chains:
     ↓
 [1] SPEC Creation (this command)
     ↓
-[2] Auto: Load skill `vibe.spec.review` (chain-next from this skill)
+[2] Auto: Load skill `vibe-spec-review` (chain-next from this skill)
     ↓
 [3] Auto: /vibe.run "{feature}" ultrawork
 ```
@@ -914,7 +914,7 @@ Stuck? (score == prev_score)
   ├─ Interactive: ask user → fill values OR "proceed" OR "abort"
   └─ ultrawork: record gaps as TODO → proceed
       ↓
-Score == 100 (or user-approved) → SPEC Draft Complete → Handoff to vibe.spec.review skill
+Score == 100 (or user-approved) → SPEC Draft Complete → Handoff to vibe-spec-review skill
 ```
 
 #### 7.4 Auto-Fix for Low Score
@@ -937,7 +937,7 @@ After SPEC draft is complete (score ≥ 95):
 **If `ultrawork` mode:**
 - ❌ DO NOT show handoff message
 - ❌ DO NOT ask for confirmation
-- ✅ Immediately load skill `vibe.spec.review` with feature `{feature-name}` (chain-next)
+- ✅ Immediately load skill `vibe-spec-review` with feature `{feature-name}` (chain-next)
 - ✅ After review passes, immediately proceed to `/vibe.run "{feature-name}" ultrawork`
 
 **If normal mode:**
@@ -955,10 +955,10 @@ Output the handoff message:
 ⏱️ Completed: {getCurrentTime result}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ NEXT STEP: Run SPEC review (vibe.spec.review skill)
+⚠️ NEXT STEP: Run SPEC review (vibe-spec-review skill)
 
 Option 1 (same session):
-  Load skill `vibe.spec.review` with feature `{feature-name}`
+  Load skill `vibe-spec-review` with feature `{feature-name}`
   (or natural language: "spec review")
 
 Option 2 (recommended for large context):

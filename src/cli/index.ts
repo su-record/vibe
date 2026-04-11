@@ -477,25 +477,6 @@ Env Commands:
     break;
 
   default:
-    console.log(`
-❌ Unknown command: ${command}
-
-Available commands:
-  vibe setup              셋업 위자드
-  vibe upgrade            최신 버전으로 업그레이드
-  vibe update             프로젝트 설정 업데이트
-  vibe status             전체 상태 확인
-  vibe config show        설정 통합 보기
-  vibe claude <cmd>       Claude (key, status, logout)
-  vibe gpt <cmd>          GPT (auth, key, status, logout)
-  vibe gemini <cmd>       Gemini (auth, key, status, logout)
-  vibe codex <cmd>        Codex Proxy (start, stop, status, shell)
-
-  vibe figma <cmd>        Figma (setup, extract, status, logout)
-  vibe telegram <cmd>     Telegram (setup, status) - notification only
-  vibe slack <cmd>        Slack (setup, status) - notification only
-
-Usage: vibe help
-    `);
+    console.log(`\n❌ Unknown command: ${command}\n\nRun 'vibe help' for available commands.\n`);
     process.exit(1);
 }

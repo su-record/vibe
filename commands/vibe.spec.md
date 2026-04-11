@@ -25,7 +25,7 @@ argument-hint: "(선택) feature name, plan/interview file path, or idea"
 
 - **단일 진입점**: `/vibe.spec` 하나로 전체 워크플로 시작. 다른 `/vibe.*` 커맨드 이름 외울 필요 없음.
 - **Smart resume**: 기존 interview/plan/spec 파일 존재 여부로 어느 단계부터 시작할지 자동 판단.
-- **자동 체이닝**: 스킬 `chain-next` 메타데이터 따라 vibe.interview → vibe.plan → vibe.spec → vibe.spec.review 진행.
+- **자동 체이닝**: 스킬 `chain-next` 메타데이터 따라 vibe-interview → vibe-plan → vibe-spec → vibe-spec-review 진행.
 - **분기 판단**: 기획서의 `type` 필드로 UI 트랙/로직 트랙 여부 결정.
 - **사용자 제어**: 각 단계 사이에 사용자 확인 지점(stop gate) 제공 (ultrawork 모드는 스킵).
 
@@ -41,14 +41,14 @@ Phase 0.5: Input 분석 + Smart resume 결정
     - 기존 .claude/vibe/{interviews,plans,specs}/ 확인
     - 시작 단계 결정: interview | plan | spec | review
     ↓
-Phase 1: Interview (skill: vibe.interview)
+Phase 1: Interview (skill: vibe-interview)
     - 조건: interview 파일 없음
     - 사용자 "그만"까지 반복 인터뷰
     - 출력: .claude/vibe/interviews/{feature}.md
     ↓
     [Stop Gate 1] — ultrawork 모드에서는 스킵
     ↓
-Phase 2: Plan (skill: vibe.plan)
+Phase 2: Plan (skill: vibe-plan)
     - 조건: plan 파일 없음
     - interview → 마크다운 기획서 정제
     - 출력: .claude/vibe/plans/{feature}.md
@@ -58,14 +58,14 @@ Phase 2: Plan (skill: vibe.plan)
       - website/webapp/mobile → UI + Logic 병렬
       - api/library/feature-data → Logic만
     ↓
-Phase 3: SPEC 작성 (skill: vibe.spec)
+Phase 3: SPEC 작성 (skill: vibe-spec)
     - PTCF 구조 SPEC 문서 + Feature(BDD) 파일
     - Parallel research (GPT/Gemini/Claude agents)
     - Large scope 자동 분할
     - Ambiguity scan + 품질 게이트(100점, 수렴까지 루프)
     - 출력: .claude/vibe/specs/{feature}.md + .claude/vibe/features/{feature}.feature
     ↓
-Phase 4: SPEC Review (skill: vibe.spec.review)
+Phase 4: SPEC Review (skill: vibe-spec-review)
     - Race Review (GPT + Gemini, 라운드 수 캡 없음, 수렴까지 루프)
     - (옵션) Codex adversarial review
     - 사용자 최종 체크포인트
@@ -138,7 +138,7 @@ Step 1) .claude/vibe/.last-feature 확인 (pointer 파일)
        ✅ interview: .claude/vibe/interviews/{feature}.md  (status: complete, N일 전)
        ✅ plan:      .claude/vibe/plans/{feature}.md       (N일 전)
        ❌ spec:      없음
-       → 다음 단계: Phase 3 (vibe.spec 스킬 — SPEC 작성)
+       → 다음 단계: Phase 3 (vibe-spec 스킬 — SPEC 작성)
 
        이어서 진행할까요?
          Enter / yes → 이어서 진행
@@ -224,7 +224,7 @@ Step 3) 빈 시작 (기존 동작)
 분류: 신규 아이디어
 기존 파일: 없음
 
-→ 시작 단계: Phase 1 (vibe.interview)
+→ 시작 단계: Phase 1 (vibe-interview)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -235,7 +235,7 @@ Step 3) 빈 시작 (기존 동작)
 **진입 방식:**
 
 1. **인자 있음** (`/vibe.spec "아이디어"`)
-   → `vibe.interview` 스킬 로드 + 아이디어 전달
+   → `vibe-interview` 스킬 로드 + 아이디어 전달
 
 2. **인자 없음** (`/vibe.spec`)
    → **Smart Resume Fallback 먼저** (Phase 0.5 참조):
@@ -256,19 +256,19 @@ Step 3) 빈 시작 (기존 동작)
 
    (파일/이미지 첨부도 가능)
    ```
-   → 사용자 응답 → `vibe.interview` 스킬 로드
+   → 사용자 응답 → `vibe-interview` 스킬 로드
 
 **스킬 로드:**
 
 ```
-Load skill `vibe.interview` with input: {user_idea}
+Load skill `vibe-interview` with input: {user_idea}
 ```
 
-> **`.last-feature` 갱신**: vibe.interview 스킬이 feature name을 확정하는 즉시 `.claude/vibe/.last-feature` 에 한 줄로 기록. 이후 Phase 2/3/4 진입 시에도 동일 기록 유지 (값이 같으면 no-op).
+> **`.last-feature` 갱신**: vibe-interview 스킬이 feature name을 확정하는 즉시 `.claude/vibe/.last-feature` 에 한 줄로 기록. 이후 Phase 2/3/4 진입 시에도 동일 기록 유지 (값이 같으면 no-op).
 
-`vibe.interview` 스킬이 자체적으로:
+`vibe-interview` 스킬이 자체적으로:
 - 프로젝트 타입 감지 (website/webapp/mobile/api/library/feature)
-- 타입별 체크리스트 로드 (`skills/vibe.interview/checklists/{type}.md`)
+- 타입별 체크리스트 로드 (`skills/vibe-interview/checklists/{type}.md`)
 - 반복 인터뷰 실행 (사용자 "그만"까지)
 - `.claude/vibe/interviews/{feature-name}.md` 저장
 
@@ -285,7 +285,7 @@ Load skill `vibe.interview` with input: {user_idea}
 다음 단계: 기획서 작성
   1. 계속 진행 (기본)
   2. Interview만 저장하고 종료
-  3. Interview 수정 후 다시 (vibe.interview 재실행)
+  3. Interview 수정 후 다시 (vibe-interview 재실행)
 
 Enter → 계속
 ```
@@ -295,10 +295,10 @@ Enter → 계속
 **진입 조건:** plan 파일이 아직 없음
 
 ```
-Load skill `vibe.plan` with input: .claude/vibe/interviews/{feature}.md
+Load skill `vibe-plan` with input: .claude/vibe/interviews/{feature}.md
 ```
 
-`vibe.plan` 스킬이 자체적으로:
+`vibe-plan` 스킬이 자체적으로:
 - 템플릿 로드 (`~/.claude/vibe/templates/plan-template.md`)
 - Interview 섹션별 정제
 - UI 섹션 조건부 포함 (type 기반)
@@ -334,12 +334,12 @@ Enter → 계속
 **진입 조건:** spec 파일이 아직 없음 (또는 재작성 요청)
 
 ```
-Load skill `vibe.spec` with input: .claude/vibe/plans/{feature}.md
+Load skill `vibe-spec` with input: .claude/vibe/plans/{feature}.md
 ```
 
-`vibe.spec` 스킬이 PTCF 구조 SPEC 문서 + Feature(BDD) 파일 생성.
+`vibe-spec` 스킬이 PTCF 구조 SPEC 문서 + Feature(BDD) 파일 생성.
 
-**핵심 단계** (상세는 `skills/vibe.spec/SKILL.md` 참조):
+**핵심 단계** (상세는 `skills/vibe-spec/SKILL.md` 참조):
 
 1. Project analysis (explorer agent)
 2. config.json references 로드
@@ -358,12 +358,12 @@ Load skill `vibe.spec` with input: .claude/vibe/plans/{feature}.md
 ### Phase 4: SPEC Review
 
 ```
-Load skill `vibe.spec.review` with feature: {feature-name}
+Load skill `vibe-spec-review` with feature: {feature-name}
 ```
 
-`vibe.spec.review` 스킬이 Race Review + 품질 검증 + 사용자 체크포인트 실행.
+`vibe-spec-review` 스킬이 Race Review + 품질 검증 + 사용자 체크포인트 실행.
 
-**핵심 단계** (상세는 `skills/vibe.spec.review/SKILL.md` 참조):
+**핵심 단계** (상세는 `skills/vibe-spec-review/SKILL.md` 참조):
 
 1. SPEC/Feature 파일 로드 (single/split 자동 감지)
 2. Quality Validation (100점 게이트, 수렴까지 auto-fix 루프)
@@ -434,9 +434,9 @@ Claude: 🔍 Input 분석
         입력: "원두 브랜드 랜딩"
         분류: 신규 아이디어
         기존 파일: 없음
-        → 시작 단계: Phase 1 (vibe.interview)
+        → 시작 단계: Phase 1 (vibe-interview)
 
-        [vibe.interview 스킬 로드]
+        [vibe-interview 스킬 로드]
         Type: website 감지 → checklists/website.md 로드
         ...
 ```
@@ -449,9 +449,9 @@ Claude: 🔍 Input 분석
         입력: plan 파일 경로
         분류: 기존 기획서
         Feature: bean-landing
-        → 시작 단계: Phase 3 (vibe.spec)
+        → 시작 단계: Phase 3 (vibe-spec)
 
-        [vibe.spec 스킬 로드]
+        [vibe-spec 스킬 로드]
         기획서 읽기 → research → PTCF 작성 ...
 ```
 
@@ -465,9 +465,9 @@ Claude: 🔍 Input 분석
           ✅ interview: .claude/vibe/interviews/bean-landing.md
           ✅ plan: .claude/vibe/plans/bean-landing.md
           ❌ spec: 없음
-        → 시작 단계: Phase 3 (vibe.spec)
+        → 시작 단계: Phase 3 (vibe-spec)
 
-        [vibe.spec 스킬 로드]
+        [vibe-spec 스킬 로드]
         ...
 ```
 
@@ -481,7 +481,7 @@ Claude: 🔍 Input 분석
           ✅ feature: .claude/vibe/features/bean-landing.feature
 
         이미 SPEC이 존재합니다. 어떻게 진행할까요?
-        1. SPEC 리뷰 (Phase 4: vibe.spec.review 스킬 로드)
+        1. SPEC 리뷰 (Phase 4: vibe-spec-review 스킬 로드)
         2. /vibe.run 실행 (구현)
         3. SPEC 재작성 (기존 백업 후 새로 작성)
         4. 종료
@@ -497,7 +497,7 @@ Claude: (.last-feature 읽기 → "bean-landing" 발견)
         ✅ interview: .claude/vibe/interviews/bean-landing.md  (status: partial, 2일 전)
         ❌ plan:      없음
         ❌ spec:      없음
-        → 다음 단계: Phase 2 (vibe.plan — 기획서 작성)
+        → 다음 단계: Phase 2 (vibe-plan — 기획서 작성)
 
         이어서 진행할까요?
           Enter / yes → 이어서 진행
@@ -509,7 +509,7 @@ User: yes
 
 Claude: [Phase 2 진입]
         .last-feature = bean-landing
-        [vibe.plan 스킬 로드]
+        [vibe-plan 스킬 로드]
         ...
 ```
 
@@ -533,7 +533,7 @@ Claude: (.last-feature 없음 → 디렉토리 스캔)
 User: 2
 
 Claude: Feature: todo-app 선택
-        ✅ plan 완성 → Phase 3 (vibe.spec) 진입
+        ✅ plan 완성 → Phase 3 (vibe-spec) 진입
         .last-feature = todo-app
         ...
 ```
@@ -545,7 +545,7 @@ Claude: Feature: todo-app 선택
 - 중단 시 다시 `/vibe.spec`으로 돌아오면 Smart Resume Fallback 동작:
   - 인자 있음 (`/vibe.spec "feature-name"` 또는 파일 경로) → 해당 feature의 가장 진행된 단계 다음으로 바로 진입
   - 인자 없음 → `.last-feature` 우선 제안 → 거부하면 진행 중 작업 목록 제시 → 또 거부하면 빈 시작
-- 수동 개입 필요시 스킬 직접 호출 가능 (`Load skill vibe.interview` 등)
+- 수동 개입 필요시 스킬 직접 호출 가능 (`Load skill vibe-interview` 등)
 
 ## Next Step
 

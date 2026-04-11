@@ -108,6 +108,20 @@ export function removeLegacySkills(
 }
 
 /**
+ * 디렉토리 기반 스킬 모두 정리 — ~/.claude/vibe/skills/ 에 남아있는 {name}/ 디렉토리 제거
+ * Claude Code가 ~/.claude/ 재귀 스캔 시 ~/.claude/skills/와 중복 발견되므로 제거 필요
+ * flat .md 파일(인라인 스킬)은 유지
+ */
+export function cleanupDuplicateSkillDirs(skillsDir: string): void {
+  if (!fs.existsSync(skillsDir)) return;
+  const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    fs.rmSync(path.join(skillsDir, entry.name), { recursive: true, force: true });
+  }
+}
+
+/**
  * 스킬 필터링 복사 — 허용 목록에 있는 스킬 디렉토리만 복사
  * @param src - 스킬 소스 디렉토리 (skills/)
  * @param dest - 설치 대상 디렉토리

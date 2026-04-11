@@ -1,10 +1,10 @@
 ---
-name: vibe.plan
+name: vibe-plan
 tier: core
-description: "Refine a vibe.interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after vibe.interview completes, or when the user has raw interview notes and wants a structured plan document."
+description: "Refine a vibe-interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after vibe-interview completes, or when the user has raw interview notes and wants a structured plan document."
 triggers: [기획서, 기획서 작성, plan document, 기획 정리, "interview 정리", refine plan]
 priority: 90
-chain-next: [vibe.spec, vibe.figma]
+chain-next: [vibe-spec, vibe-figma]
 ---
 
 # vibe.plan — Interview → Plan Document Refinement
@@ -13,12 +13,12 @@ chain-next: [vibe.spec, vibe.figma]
 
 ## When to Use
 
-- `vibe.interview` has just completed and `.claude/vibe/interviews/{feature}.md` exists
+- `vibe-interview` has just completed and `.claude/vibe/interviews/{feature}.md` exists
 - The user requests "write me a plan document" or "clean up the interview"
 - Need to convert an external PRD/wireframe into the vibe plan document format
 
 **Skip condition**:
-- If this skill is called directly without an interview → chain to `vibe.interview` first (no chain-prev; inform the user)
+- If this skill is called directly without an interview → chain to `vibe-interview` first (no chain-prev; inform the user)
 
 ## Core Flow
 
@@ -55,7 +55,7 @@ Read .claude/vibe/interviews/{feature-name}.md
 Extract `type`, `status`, `requiredCollected`, `optionalCollected`, etc. from the frontmatter.
 
 **Validation**:
-- If the file does not exist → guide the user to run `vibe.interview` first.
+- If the file does not exist → guide the user to run `vibe-interview` first.
 - `status: partial` + Required items incomplete → apply **AI-Driven Gap Filling**:
 
 ### AI-Driven Gap Filling
@@ -249,6 +249,6 @@ Where would you like to start?
 
 ## Related
 
-- **Prev**: `vibe.interview` — requirements collection (implicit chain-prev)
+- **Prev**: `vibe-interview` — requirements collection (implicit chain-prev)
 - **Next**: `/vibe.spec` (code spec), `/vibe.figma` (UI design)
 - **Template**: `~/.claude/vibe/templates/plan-template.md`

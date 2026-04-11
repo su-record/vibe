@@ -27,6 +27,6 @@ Generate or update project documentation by analyzing the actual codebase.
 
 ---
 
-Load skill `vibe.docs` — subcommand에 따라 해당 섹션 실행
+Load skill `vibe-docs` — subcommand에 따라 해당 섹션 실행
 
 ARGUMENTS: $ARGUMENTS
