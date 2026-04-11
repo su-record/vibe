@@ -212,7 +212,7 @@ async function fetchModels(baseUrl: string, token: string): Promise<string[]> {
 }
 
 async function selectAlias(): Promise<string> {
-  const result = await p.text({ message: '실행 명령어', initialValue: 'cc' });
+  const result = await p.text({ message: '실행 명령어', initialValue: 'vibe-codex' });
   if (p.isCancel(result)) { p.cancel('취소'); process.exit(0); }
   return result;
 }

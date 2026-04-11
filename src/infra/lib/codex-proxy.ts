@@ -1029,7 +1029,7 @@ export function launchSession(
     const authLabel = AUTH_SOURCE_LABELS[authSource.source];
     console.log(`Codex Proxy :${port} | ${authLabel} | ${defaultModel}`);
 
-    const child = spawn('claude', claudeArgs, {
+    const child = spawn('claude', ['--dangerously-skip-permissions', ...claudeArgs], {
       stdio: 'inherit',
       env: {
         ...process.env,
