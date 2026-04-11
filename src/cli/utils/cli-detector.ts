@@ -1,7 +1,7 @@
 /**
  * AI CLI 감지 유틸리티
  *
- * Codex CLI, Gemini CLI 설치 여부를 자동 감지하여
+ * Claude Code, Codex CLI, Gemini CLI 설치 여부를 자동 감지하여
  * 설치된 CLI에만 설정을 적용
  */
 
@@ -14,6 +14,30 @@ export interface AiCliStatus {
   installed: boolean;
   configDir: string;
   pluginDir?: string;
+}
+
+/**
+ * Claude Code 설치 여부 감지
+ * - `which claude` 실행 가능 여부
+ * - `~/.claude/` 디렉토리 존재 여부
+ * 둘 중 하나만 true면 installed: true
+ */
+export function detectClaudeCli(): AiCliStatus {
+  const configDir = path.join(os.homedir(), '.claude');
+  const hasDir = fs.existsSync(configDir);
+
+  let hasBin = false;
+  try {
+    execSync('which claude', { stdio: 'ignore' });
+    hasBin = true;
+  } catch {
+    // not found
+  }
+
+  return {
+    installed: hasBin || hasDir,
+    configDir,
+  };
 }
 
 /**

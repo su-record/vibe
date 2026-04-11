@@ -7,7 +7,7 @@ import fs from 'fs';
 import { VibeConfig } from '../types.js';
 import { getPackageJson } from '../utils.js';
 import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
-import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectClaudeCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 
 /**
  * 도움말 표시
@@ -74,10 +74,11 @@ export function showStatus(): void {
 
   const authStatus = getLLMAuthStatus();
 
+  const claudeCli = detectClaudeCli();
   const codexCli = detectCodexCli();
   const geminiCli = detectGeminiCli();
 
-  const claudeStatusText = formatAuthMethods(authStatus.claude);
+  const claudeStatusText = formatAuthMethods(authStatus.claude, claudeCli.installed);
   const gptStatusText = formatAuthMethods(authStatus.gpt, codexCli.installed);
   const geminiStatusText = formatAuthMethods(authStatus.gemini, geminiCli.installed);
 
