@@ -1,11 +1,11 @@
 /**
- * UserPromptSubmit Hook - LLM 오케스트레이션 (GPT/Gemini)
+ * UserPromptSubmit Hook - LLM 오케스트레이션 (GPT/Gemini/Claude)
  *
  * Usage:
  *   node llm-orchestrate.js <provider> <mode> "prompt"
  *   node llm-orchestrate.js <provider> <mode> "systemPrompt" "prompt"
  *
- *   provider: gpt | gemini
+ *   provider: gpt | gemini | claude
  *   mode: orchestrate | orchestrate-json | image | analyze-image
  *
  * Image Mode:
@@ -13,7 +13,7 @@
  *   node llm-orchestrate.js gemini image "prompt" --output "./image.png" --size "1920x1080"
  *
  * Features:
- *   - CLI-based: GPT → codex exec, Gemini → gemini -p
+ *   - CLI-based: GPT → codex exec, Gemini → gemini -p, Claude → claude --print
  *   - Exponential backoff retry (3 attempts)
  *   - Auto fallback: gpt ↔ gemini
  *   - Overload/rate-limit detection
@@ -103,7 +103,18 @@ function resolveModel(providerName, config) {
   if (providerName === 'gpt-codex') return config.models?.gptCodex || 'gpt-5.3-codex';
   if (providerName === 'gpt') return config.models?.gpt || 'gpt-5.4';
   if (providerName === 'gemini') return config.models?.gemini || 'gemini-3.1-pro-preview';
+  if (providerName === 'claude') return 'claude';
   return providerName;
+}
+
+/**
+ * 주관 LLM 자동 감지
+ * - ANTHROPIC_BASE_URL이 localhost → 프록시 모드 (주관=GPT) → 보조=claude
+ * - 그 외 → 직접 모드 (주관=Claude) → 보조=gpt/gemini
+ */
+function isProxyMode() {
+  const baseUrl = process.env.ANTHROPIC_BASE_URL || '';
+  return baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
 }
 
 // Errors that should skip retry and go to fallback immediately
@@ -283,6 +294,37 @@ function callGeminiCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
   });
 }
 
+function callClaudeCli(prompt, sysPrompt, jsonMode, timeoutMs) {
+  const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
+  const args = ['--print', '--dangerously-skip-permissions'];
+  const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
+
+  return new Promise((resolve, reject) => {
+    const proc = spawnCli('claude', args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: effectiveTimeout,
+    });
+    proc.stdin.end(fullPrompt);
+
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+    proc.on('close', (code) => {
+      if (code === 0 && stdout.trim()) {
+        resolve(stdout.trim());
+      } else {
+        reject(new Error(`claude cli failed (code ${code}): ${(stderr || stdout).slice(0, 500)}`));
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(new Error(`claude cli spawn error: ${err.message}`));
+    });
+  });
+}
+
 async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs) {
   const vibeConfig = readVibeConfig();
 
@@ -301,6 +343,10 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs
   if (providerName === 'gemini') {
     const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview';
     return await callGeminiCli(prompt, sysPrompt, jsonMode, model, timeoutMs);
+  }
+
+  if (providerName === 'claude') {
+    return await callClaudeCli(prompt, sysPrompt, jsonMode, timeoutMs);
   }
 
   throw new Error(`Unknown provider: ${providerName}`);
@@ -526,14 +572,24 @@ async function main() {
   }
 
   // Provider chain: primary → cross fallback
-  // WHY GPT → Gemini (not reverse): GPT is the primary code/reasoning model;
-  // Gemini serves as cross-vendor fallback so a single vendor outage never
-  // blocks the user. When Gemini is primary (e.g. web-search), GPT is fallback.
-  const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', gemini: 'Gemini' };
-  const isGpt = provider === 'gpt' || provider === 'gpt-codex';
-  const providerChain = isGpt
-    ? [provider, 'gemini']
-    : ['gemini', 'gpt'];
+  // 프록시 모드 (주관=GPT): 보조로 Claude CLI 사용
+  // 직접 모드 (주관=Claude): 보조로 GPT/Gemini 사용
+  const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', gemini: 'Gemini', claude: 'Claude' };
+  const isGpt = provider === 'gpt' || provider === 'gpt-codex' || provider === 'gpt-spark';
+  const isClaude = provider === 'claude';
+  const proxy = isProxyMode();
+
+  let providerChain;
+  if (isClaude) {
+    // 명시적 claude 호출
+    providerChain = ['claude', 'gemini'];
+  } else if (isGpt) {
+    // GPT 주관 → claude fallback (프록시 모드), gemini fallback (직접 모드)
+    providerChain = proxy ? [provider, 'claude'] : [provider, 'gemini'];
+  } else {
+    // gemini 주관 → claude fallback (프록시 모드), gpt fallback (직접 모드)
+    providerChain = proxy ? ['gemini', 'claude'] : ['gemini', 'gpt'];
+  }
 
   const vibeConfig = readVibeConfig();
 

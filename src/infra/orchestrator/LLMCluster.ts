@@ -1,8 +1,9 @@
 /**
  * LLMCluster - Multi-LLM 병렬 쿼리 및 상태 관리
- * GPT와 Gemini만 지원
+ * GPT, Gemini, Claude 지원
  */
 
+import { execSync } from 'child_process';
 import * as gptApi from '../lib/gpt/index.js';
 import * as geminiApi from '../lib/gemini/index.js';
 import { warnLog } from '../lib/utils.js';
@@ -13,6 +14,7 @@ import { warnLog } from '../lib/utils.js';
 export interface MultiLlmQueryResult {
   gpt?: string;
   gemini?: string;
+  claude?: string;
 }
 
 /**
@@ -21,6 +23,7 @@ export interface MultiLlmQueryResult {
 export interface LlmStatusResult {
   gpt: { available: boolean };
   gemini: { available: boolean };
+  claude: { available: boolean };
 }
 
 /**
@@ -31,13 +34,29 @@ export interface LLMClusterOptions {
 }
 
 /**
- * LLMCluster - GPT / Gemini 병렬 쿼리 및 상태 관리
+ * LLMCluster - GPT / Gemini / Claude 병렬 쿼리 및 상태 관리
  */
 export class LLMCluster {
   private defaultSystemPrompt: string;
 
   constructor(options: LLMClusterOptions = {}) {
     this.defaultSystemPrompt = options.defaultSystemPrompt ?? 'You are a helpful assistant.';
+  }
+
+  /**
+   * Claude CLI 오케스트레이션 (claude --print)
+   */
+  async claudeOrchestrate(
+    prompt: string,
+    systemPrompt?: string,
+  ): Promise<string> {
+    const sys = systemPrompt ?? this.defaultSystemPrompt;
+    const fullPrompt = `[System]\n${sys}\n\n[User]\n${prompt}`;
+    const result = execSync(
+      `claude --print --dangerously-skip-permissions`,
+      { input: fullPrompt, timeout: 180000, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
+    );
+    return result.trim();
   }
 
   /**
@@ -90,9 +109,9 @@ export class LLMCluster {
    */
   async multiQuery(
     prompt: string,
-    options?: { useGpt?: boolean; useGemini?: boolean }
+    options?: { useGpt?: boolean; useGemini?: boolean; useClaude?: boolean }
   ): Promise<MultiLlmQueryResult> {
-    const { useGpt = true, useGemini = true } = options || {};
+    const { useGpt = true, useGemini = true, useClaude = false } = options || {};
     const results: MultiLlmQueryResult = {};
 
     const promises: Promise<void>[] = [];
@@ -113,6 +132,14 @@ export class LLMCluster {
       );
     }
 
+    if (useClaude) {
+      promises.push(
+        this.claudeOrchestrate(prompt)
+          .then(r => { results.claude = r; })
+          .catch(e => { warnLog('Claude query failed in multiLlm', e); })
+      );
+    }
+
     await Promise.all(promises);
     return results;
   }
@@ -123,6 +150,7 @@ export class LLMCluster {
   async checkStatus(): Promise<LlmStatusResult> {
     let gptAvailable = false;
     let geminiAvailable = false;
+    let claudeAvailable = false;
 
     const promises: Promise<void>[] = [
       this.gptOrchestrate('ping', 'Reply with pong')
@@ -130,14 +158,18 @@ export class LLMCluster {
         .catch(e => { warnLog('GPT status check failed', e); }),
       this.geminiOrchestrate('ping', 'Reply with pong')
         .then(() => { geminiAvailable = true; })
-        .catch(e => { warnLog('Gemini status check failed', e); })
+        .catch(e => { warnLog('Gemini status check failed', e); }),
+      this.claudeOrchestrate('ping', 'Reply with pong')
+        .then(() => { claudeAvailable = true; })
+        .catch(e => { warnLog('Claude status check failed', e); }),
     ];
 
     await Promise.all(promises);
 
     return {
       gpt: { available: gptAvailable },
-      gemini: { available: geminiAvailable }
+      gemini: { available: geminiAvailable },
+      claude: { available: claudeAvailable },
     };
   }
 }

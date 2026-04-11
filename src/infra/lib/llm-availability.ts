@@ -1,7 +1,7 @@
 /**
  * LLM 가용성 감지 유틸
  *
- * Codex/Gemini CLI 활성화 여부를 런타임에 판단.
+ * Claude/Codex/Gemini CLI 활성화 여부를 런타임에 판단.
  * 결과는 프로세스당 1회 캐시.
  */
 
@@ -11,6 +11,7 @@ import fs from 'fs';
 import os from 'os';
 
 export interface LlmAvailability {
+  claude: boolean;
   codex: boolean;
   gemini: boolean;
 }
@@ -36,26 +37,34 @@ function checkAuthExists(configDir: string, authFileName: string): boolean {
 }
 
 /**
- * Codex/Gemini CLI 가용성 감지 (캐시)
+ * Claude/Codex/Gemini CLI 가용성 감지 (캐시)
  */
 export function detectLlmAvailability(): LlmAvailability {
   if (cached) return cached;
 
+  const claudeDir = path.join(os.homedir(), '.claude');
   const codexDir = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
   const geminiDir = path.join(os.homedir(), '.gemini');
 
+  const claudeInstalled = checkCliInstalled('claude', claudeDir);
   const codexInstalled = checkCliInstalled('codex', codexDir);
   const geminiInstalled = checkCliInstalled('gemini', geminiDir);
 
-  // 설치 + 인증 파일 존재 시 활성화로 판단
+  // 설치 + 인증 존재 시 활성화로 판단
+  const claude = claudeInstalled;
   const codex = codexInstalled && checkAuthExists(codexDir, 'auth.json');
   const gemini = geminiInstalled && (
     checkAuthExists(geminiDir, 'auth.json') ||
     !!process.env.GEMINI_API_KEY
   );
 
-  cached = { codex, gemini };
+  cached = { claude, codex, gemini };
   return cached;
+}
+
+/** Claude CLI 활성화 여부 */
+export function isClaudeAvailable(): boolean {
+  return detectLlmAvailability().claude;
 }
 
 /** Codex CLI 활성화 여부 */
