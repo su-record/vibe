@@ -186,6 +186,16 @@ vibe-codex
 
 **How it works**: Local proxy translates Anthropic Messages API ↔ Codex Responses API. Claude Code sends requests to the proxy, which forwards them to `chatgpt.com/backend-api/codex/responses` using your ChatGPT Pro OAuth token.
 
+**Auto model selection**: Always uses the latest model from Codex CLI's model cache. When OpenAI releases new models, they're automatically available on next launch — no reconfiguration needed.
+
+**Model slots**: Claude Code's `/model` selector maps to different ChatGPT Pro models automatically:
+
+| Slot | Mapped to | Purpose |
+|------|-----------|---------|
+| Opus | Latest flagship (e.g. gpt-5.4) | Most capable |
+| Sonnet | Latest codex (e.g. gpt-5.3-codex) | Coding-optimized |
+| Haiku | Latest mini (e.g. gpt-5.4-mini) | Fast & lightweight |
+
 **Supported providers**: ChatGPT Pro (auto-detect from `codex login`), OpenAI API Key, Gemini API Key, Custom OpenAI-compatible endpoints.
 
 ---

@@ -141,6 +141,16 @@ vibe-codex
 
 **동작 원리**: 로컬 프록시가 Anthropic Messages API ↔ Codex Responses API를 변환합니다. Claude Code가 프록시에 요청하면, 프록시가 ChatGPT Pro OAuth 토큰으로 `chatgpt.com/backend-api/codex/responses`에 전달합니다.
 
+**모델 자동 선택**: Codex CLI의 모델 캐시에서 항상 최신 모델을 사용합니다. OpenAI가 새 모델을 출시하면 다음 실행 시 자동 반영 — 재설정 불필요.
+
+**모델 슬롯**: Claude Code의 `/model` 선택기가 각각 다른 ChatGPT Pro 모델에 자동 매핑됩니다:
+
+| 슬롯 | 매핑 대상 | 용도 |
+|------|-----------|------|
+| Opus | 최신 플래그십 (예: gpt-5.4) | 최고 성능 |
+| Sonnet | 최신 codex (예: gpt-5.3-codex) | 코딩 특화 |
+| Haiku | 최신 mini (예: gpt-5.4-mini) | 빠르고 가벼운 |
+
 **지원 프로바이더**: ChatGPT Pro (`codex login` 자동 감지), OpenAI API Key, Gemini API Key, 커스텀 OpenAI 호환 엔드포인트.
 
 ---
