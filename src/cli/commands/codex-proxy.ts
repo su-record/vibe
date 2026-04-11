@@ -208,10 +208,15 @@ async function registerShell(alias: string): Promise<void> {
 
 function detectShellProfile(): string | null {
   const home = os.homedir();
+  const shell = process.env.SHELL ?? '';
   const zshrc = `${home}/.zshrc`;
   const bashrc = `${home}/.bashrc`;
-  if (fs.existsSync(zshrc)) return zshrc;
+  // 실제 사용 중인 셸 기준으로 우선 판단
+  if (shell.endsWith('/zsh') && fs.existsSync(zshrc)) return zshrc;
+  if (shell.endsWith('/bash') && fs.existsSync(bashrc)) return bashrc;
+  // fallback: 파일 존재 여부 (SHELL 미설정 시)
   if (fs.existsSync(bashrc)) return bashrc;
+  if (fs.existsSync(zshrc)) return zshrc;
   return null;
 }
 
