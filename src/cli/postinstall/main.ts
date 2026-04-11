@@ -27,7 +27,7 @@ import { generateCursorSkills } from './cursor-skills.js';
 import { installCodexPlugin } from './codex-agents.js';
 import { installGeminiAgents } from './gemini-agents.js';
 import { generateGeminiMd } from './gemini-instruction.js';
-import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectClaudeCli, detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { getClaudeCodeStatus, formatClaudeCodeStatus } from '../auth.js';
 import { migrateLegacyFiles } from '../../infra/lib/config/GlobalConfigManager.js';
 
@@ -68,67 +68,82 @@ export function main(): void {
       copyDirRecursive(hooksSource, hooksTarget);
     }
 
-    // 4. ~/.claude/ 전역 assets 설치 (commands, agents, skills)
-    const globalClaudeDir = path.join(os.homedir(), '.claude');
-    ensureDir(globalClaudeDir);
-
-    // commands 복사 (이전 파일 정리 후 복사)
-    const commandsSource = path.join(packageRoot, 'commands');
-    const globalCommandsDir = path.join(globalClaudeDir, 'commands');
-    if (fs.existsSync(commandsSource)) {
-      if (fs.existsSync(globalCommandsDir)) {
-        removeDirRecursive(globalCommandsDir);
-      }
-      ensureDir(globalCommandsDir);
-      copyDirRecursive(commandsSource, globalCommandsDir);
-      replaceTemplatesInDir(globalCommandsDir);
-    }
-
-    // agents 변환 및 설치 (Claude Code 네이티브 서브에이전트 형식)
+    // 4. CLI 호환 디렉토리에 전역 assets 설치 (commands, agents, skills)
+    //    ~/.claude/ (필수) + ~/.coco/ (감지 시)
     const agentsSource = path.join(packageRoot, 'agents');
-    const globalAgentsDir = path.join(globalClaudeDir, 'agents');
-    installClaudeAgents(agentsSource, globalAgentsDir);
-
-    // skills 복사 (전역 공통 스킬만 설치, 스택별 스킬은 vibe init/update에서 로컬 설치)
     const skillsSource = path.join(packageRoot, 'skills');
-    const globalSkillsDir = path.join(globalClaudeDir, 'skills');
-    if (fs.existsSync(skillsSource)) {
-      ensureDir(globalSkillsDir);
-      removeLegacySkills(globalSkillsDir, LEGACY_SKILL_DIRS);
-      copySkillsFiltered(skillsSource, globalSkillsDir, GLOBAL_SKILLS);
-      replaceTemplatesInDir(globalSkillsDir);
-    }
+    const commandsSource = path.join(packageRoot, 'commands');
 
-    // 5. ~/.claude/vibe/ 전역 문서 설치 (rules, languages, templates)
-    // 프로젝트별로 복사하지 않고 전역에서 참조
-    const globalCoreAssetsDir = path.join(globalClaudeDir, 'vibe');
-    ensureDir(globalCoreAssetsDir);
+    function installCliAssets(targetDir: string, label: string): void {
+      ensureDir(targetDir);
 
-    // ~/.claude/vibe/skills/ — 인라인 스킬 전용 (flat .md 파일)
-    // 주의: 디렉토리 기반 스킬({name}/SKILL.md)은 ~/.claude/skills/에만 설치.
-    // ~/.claude/vibe/skills/에 복사하면 Claude Code가 ~/.claude/ 재귀 스캔 시 중복 발견.
-    const coreSkillsDir = path.join(globalCoreAssetsDir, 'skills');
-    ensureDir(coreSkillsDir);
-    // 레거시 디렉토리 기반 스킬 정리 (이전 버전에서 복사된 것)
-    removeLegacySkills(coreSkillsDir, LEGACY_SKILL_DIRS);
-    cleanupDuplicateSkillDirs(coreSkillsDir);
-    // 인라인 기본 스킬만 추가 (flat .md 파일 — Claude Code에서 중복 안 됨)
-    seedInlineSkills(coreSkillsDir);
-
-    // 독립 디렉토리 복사 — 병렬 실행 (서로 다른 대상 경로, 의존성 없음)
-    const parallelCopies: Array<{ source: string; target: string; label: string }> = [
-      { source: path.join(packageRoot, 'vibe', 'ui-ux-data'), target: path.join(globalCoreAssetsDir, 'ui-ux-data'), label: 'ui-ux-data' },
-      { source: path.join(packageRoot, 'vibe', 'rules'), target: path.join(globalCoreAssetsDir, 'rules'), label: 'rules' },
-      { source: path.join(packageRoot, 'vibe', 'templates'), target: path.join(globalCoreAssetsDir, 'templates'), label: 'templates' },
-      { source: path.join(packageRoot, 'languages'), target: path.join(globalCoreAssetsDir, 'languages'), label: 'languages' },
-    ];
-    for (const { source, target } of parallelCopies) {
-      if (fs.existsSync(source)) {
-        if (fs.existsSync(target)) removeDirRecursive(target);
-        copyDirRecursive(source, target);
+      // commands
+      const cmdsDir = path.join(targetDir, 'commands');
+      if (fs.existsSync(commandsSource)) {
+        if (fs.existsSync(cmdsDir)) removeDirRecursive(cmdsDir);
+        ensureDir(cmdsDir);
+        copyDirRecursive(commandsSource, cmdsDir);
+        replaceTemplatesInDir(cmdsDir);
       }
+
+      // agents
+      const agtsDir = path.join(targetDir, 'agents');
+      installClaudeAgents(agentsSource, agtsDir);
+
+      // skills
+      const sklsDir = path.join(targetDir, 'skills');
+      if (fs.existsSync(skillsSource)) {
+        ensureDir(sklsDir);
+        removeLegacySkills(sklsDir, LEGACY_SKILL_DIRS);
+        copySkillsFiltered(skillsSource, sklsDir, GLOBAL_SKILLS);
+        replaceTemplatesInDir(sklsDir);
+      }
+
+      console.log(`✅ ${label} assets installed: ${targetDir}`);
     }
-    const globalLanguagesDir = path.join(globalCoreAssetsDir, 'languages');
+
+    // ~/.claude/ (필수)
+    const globalClaudeDir = path.join(os.homedir(), '.claude');
+    installCliAssets(globalClaudeDir, 'claude');
+
+    // ~/.coco/ (감지 시)
+    const cocoStatus = detectCocoCli();
+    if (cocoStatus.installed) {
+      installCliAssets(cocoStatus.configDir, 'coco');
+    }
+
+    // 5. ~/.<cli>/vibe/ 전역 문서 설치 (rules, languages, templates, 인라인 스킬)
+    function installCoreAssets(targetDir: string): string {
+      const coreAssetsDir = path.join(targetDir, 'vibe');
+      ensureDir(coreAssetsDir);
+
+      // 인라인 스킬 전용 (flat .md 파일)
+      const sklDir = path.join(coreAssetsDir, 'skills');
+      ensureDir(sklDir);
+      removeLegacySkills(sklDir, LEGACY_SKILL_DIRS);
+      cleanupDuplicateSkillDirs(sklDir);
+      seedInlineSkills(sklDir);
+
+      // 독립 디렉토리 복사
+      const copies = [
+        { source: path.join(packageRoot, 'vibe', 'ui-ux-data'), target: path.join(coreAssetsDir, 'ui-ux-data') },
+        { source: path.join(packageRoot, 'vibe', 'rules'), target: path.join(coreAssetsDir, 'rules') },
+        { source: path.join(packageRoot, 'vibe', 'templates'), target: path.join(coreAssetsDir, 'templates') },
+        { source: path.join(packageRoot, 'languages'), target: path.join(coreAssetsDir, 'languages') },
+      ];
+      for (const { source, target } of copies) {
+        if (fs.existsSync(source)) {
+          if (fs.existsSync(target)) removeDirRecursive(target);
+          copyDirRecursive(source, target);
+        }
+      }
+      return path.join(coreAssetsDir, 'languages');
+    }
+
+    const globalLanguagesDir = installCoreAssets(globalClaudeDir);
+    if (cocoStatus.installed) {
+      installCoreAssets(cocoStatus.configDir);
+    }
 
     // 5-1. 레거시 설정 파일 → ~/.vibe/config.json 마이그레이션
     try {
@@ -186,7 +201,6 @@ export function main(): void {
     const claudeStatusMsg = formatClaudeCodeStatus(claudeStatus);
 
     console.log(`✅ core global setup complete: ${globalCoreDir}`);
-    console.log(`✅ claude agents installed: ${globalAgentsDir}`);
     console.log(`✅ cursor agents installed: ${cursorAgentsDir}`);
     console.log(`✅ cursor rules template: ${cursorRulesTemplateDir}`);
     console.log(`✅ cursor skills installed: ${cursorSkillsDir}`);
