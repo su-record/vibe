@@ -258,7 +258,8 @@ async function registerShell(alias: string): Promise<void> {
     return;
   }
   fs.appendFileSync(profile, `\n# Codex Proxy (vibe)\n${funcLine}\n`);
-  p.log.success(`${profile}에 등록 완료. source ${profile} 실행 필요`);
+  p.log.success(`${profile}에 등록 완료`);
+  p.log.info('새 터미널에서 사용 가능. 현재 터미널: source ' + profile);
 }
 
 function detectShellProfile(): string | null {
