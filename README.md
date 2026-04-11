@@ -194,7 +194,7 @@ vibe-codex
 |------|-----------|---------|
 | Opus | Latest flagship (e.g. gpt-5.4) | Most capable |
 | Sonnet | Latest codex (e.g. gpt-5.3-codex) | Coding-optimized |
-| Haiku | Latest mini (e.g. gpt-5.4-mini) | Fast & lightweight |
+| Haiku | Latest codex-spark (e.g. gpt-5.3-codex-spark) | Fast & lightweight (1000+ tok/s) |
 
 **Supported providers**: ChatGPT Pro (auto-detect from `codex login`), OpenAI API Key, Gemini API Key, Custom OpenAI-compatible endpoints.
 

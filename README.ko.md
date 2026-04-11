@@ -149,7 +149,7 @@ vibe-codex
 |------|-----------|------|
 | Opus | 최신 플래그십 (예: gpt-5.4) | 최고 성능 |
 | Sonnet | 최신 codex (예: gpt-5.3-codex) | 코딩 특화 |
-| Haiku | 최신 mini (예: gpt-5.4-mini) | 빠르고 가벼운 |
+| Haiku | 최신 codex-spark (예: gpt-5.3-codex-spark) | 고속 응답 (1000+ tok/s) |
 
 **지원 프로바이더**: ChatGPT Pro (`codex login` 자동 감지), OpenAI API Key, Gemini API Key, 커스텀 OpenAI 호환 엔드포인트.
 
