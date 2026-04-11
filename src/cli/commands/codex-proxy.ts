@@ -49,27 +49,80 @@ export function codexStatus(): void {
   console.log(`  명령어:   ${settings.alias || 'vibe codex'}\n`);
 }
 
-// ─── Setup 위자드 ────────────────────────────────────────────
+// ─── Setup ──────────────────────────────────────────────────
 
 export async function codexSetup(): Promise<void> {
   p.intro('Codex Proxy 설정');
 
-  const provider = await selectProvider();
-  const apiKey = await configureAuth(provider);
-  const model = await selectModel(provider, apiKey);
-  const alias = await selectAlias();
+  // 1. 인증 자동 감지
+  const detected = detectAuth();
 
-  saveConfig(provider, apiKey, model, alias);
-  await registerShell(alias);
+  if (detected) {
+    p.log.success(`${detected.label} 인증 확인됨`);
+    // 2. 모델 자동 조회
+    const models = detected.provider === 'chatgpt-pro'
+      ? readCodexModelsCache()
+      : detected.key ? await fetchModels(detected.url || 'https://api.openai.com', detected.key) : [];
 
-  p.outro(`설정 완료! ${alias} 로 실행하세요`);
+    const model = await selectModel(models);
+    const alias = await selectAlias();
+
+    saveConfig(detected.provider, { key: detected.key, url: detected.url }, model, alias);
+    await registerShell(alias);
+    p.outro(`설정 완료! ${alias} 로 실행하세요`);
+  } else {
+    // 감지 실패 → 수동 설정
+    p.log.warn('인증 정보를 찾을 수 없습니다');
+    const provider = await selectProvider();
+    const auth = await configureAuth(provider);
+    const models = auth.key
+      ? await fetchModels(auth.url || 'https://api.openai.com', auth.key)
+      : [];
+    const model = await selectModel(models);
+    const alias = await selectAlias();
+
+    saveConfig(provider, auth, model, alias);
+    await registerShell(alias);
+    p.outro(`설정 완료! ${alias} 로 실행하세요`);
+  }
 }
+
+// ─── 인증 자동 감지 ─────────────────────────────────────────
+
+interface DetectedAuth {
+  provider: string;
+  label: string;
+  key?: string;
+  url?: string;
+}
+
+function detectAuth(): DetectedAuth | null {
+  // 1. Codex CLI (ChatGPT Pro)
+  const codexCreds = findCodexCredentials();
+  if (codexCreds) {
+    return { provider: 'chatgpt-pro', label: 'Codex CLI (ChatGPT Pro)' };
+  }
+  // 2. 환경변수
+  if (process.env.OPENAI_API_KEY) {
+    return { provider: 'openai', label: 'OpenAI (OPENAI_API_KEY)', key: process.env.OPENAI_API_KEY };
+  }
+  if (process.env.GEMINI_API_KEY) {
+    return {
+      provider: 'gemini', label: 'Gemini (GEMINI_API_KEY)',
+      key: process.env.GEMINI_API_KEY,
+      url: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    };
+  }
+  return null;
+}
+
+// ─── 수동 설정 (감지 실패 시) ───────────────────────────────
 
 async function selectProvider(): Promise<string> {
   const result = await p.select({
     message: 'Provider 선택',
     options: [
-      { value: 'chatgpt-pro', label: 'ChatGPT Pro (codex login)', hint: 'ChatGPT Pro 구독' },
+      { value: 'chatgpt-pro', label: 'ChatGPT Pro', hint: 'codex login 필요' },
       { value: 'openai', label: 'OpenAI API Key' },
       { value: 'gemini', label: 'Gemini API Key' },
       { value: 'custom', label: '커스텀 (OpenAI 호환)', hint: 'Groq, Together, Ollama 등' },
@@ -81,15 +134,9 @@ async function selectProvider(): Promise<string> {
 
 async function configureAuth(provider: string): Promise<{ key?: string; url?: string }> {
   switch (provider) {
-    case 'chatgpt-pro': {
-      const creds = findCodexCredentials();
-      if (creds) {
-        p.log.success('Codex CLI 인증 확인됨');
-      } else {
-        p.log.warn('codex login 으로 ChatGPT Pro 인증 필요');
-      }
+    case 'chatgpt-pro':
+      p.log.warn('codex login 으로 ChatGPT Pro 인증 후 다시 실행하세요');
       return {};
-    }
     case 'openai': {
       const key = await textOrCancel('OpenAI API Key', 'sk-...');
       return { key };
@@ -108,24 +155,9 @@ async function configureAuth(provider: string): Promise<{ key?: string; url?: st
   }
 }
 
-async function selectModel(
-  provider: string,
-  auth: { key?: string; url?: string },
-): Promise<string> {
-  let models: string[] = [];
+// ─── 모델 선택 ──────────────────────────────────────────────
 
-  if (provider === 'chatgpt-pro') {
-    // ChatGPT Pro OAuth 토큰은 /v1/models 권한 없음 → models_cache.json 사용
-    models = readCodexModelsCache();
-  } else {
-    // 다른 provider: API로 모델 목록 조회
-    const baseUrl = auth.url || 'https://api.openai.com';
-    const token = auth.key;
-    if (token) {
-      models = await fetchModels(baseUrl, token);
-    }
-  }
-
+async function selectModel(models: string[]): Promise<string> {
   if (models.length > 0) {
     const options = models.map(m => ({ value: m, label: m }));
     options.push({ value: '_custom', label: '직접 입력' });
@@ -133,7 +165,6 @@ async function selectModel(
     if (p.isCancel(result)) { p.cancel('취소'); process.exit(0); }
     if (result !== '_custom') return result as string;
   }
-
   return textOrCancel('모델 이름');
 }
 
@@ -154,7 +185,7 @@ function readCodexModelsCache(): string[] {
   }
 }
 
-// ─── 모델 목록 조회 ──────────────────────────────────────────
+// ─── API 모델 목록 조회 ─────────────────────────────────────
 
 const EXCLUDE_PATTERNS = ['embedding', 'tts', 'whisper', 'dall-e', 'moderation', 'davinci', 'babbage'];
 
@@ -165,7 +196,7 @@ async function fetchModels(baseUrl: string, token: string): Promise<string[]> {
     const res = await fetch(`${baseUrl}/v1/models`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
-    if (!res.ok) { spin.stop('모델 조회 실패, 직접 입력'); return []; }
+    if (!res.ok) { spin.stop('모델 조회 실패'); return []; }
     const data = await res.json() as { data?: Array<{ id: string }> };
     const all = (data.data || []).map(m => m.id);
     const filtered = all
@@ -175,7 +206,7 @@ async function fetchModels(baseUrl: string, token: string): Promise<string[]> {
     spin.stop(`${filtered.length}개 모델 발견`);
     return filtered;
   } catch {
-    spin.stop('모델 조회 실패, 직접 입력');
+    spin.stop('모델 조회 실패');
     return [];
   }
 }
