@@ -31,7 +31,6 @@ LLM:
   vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (key, status, logout)
   vibe gemini <cmd>       Gemini (key, status, logout)
-  vibe codex <cmd>        Codex Proxy (status, shell, --setup)
 
 Figma:
   vibe figma setup <token>  Set Figma access token

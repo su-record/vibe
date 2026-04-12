@@ -158,7 +158,7 @@ Three layers of defense on every tool call:
 | **Standard** | `vibe init` selects by stack | Stack/capability support | figma, design-audit, techdebt |
 | **Optional** | Explicit `/skill` only | Reference, wrappers | chub-usage, context7 |
 
-**Multi-LLM** — Claude orchestrates, GPT reasons, Gemini researches. Auto-routes by availability. Works Claude-only by default. When running under vibe-codex or Coco (GPT as primary), Claude CLI becomes the secondary for cross-validation — roles automatically reverse based on `ANTHROPIC_BASE_URL` or `~/.coco/` detection.
+**Multi-LLM** — Claude orchestrates, GPT reasons, Gemini researches. Auto-routes by availability. Works Claude-only by default. When running under Coco (GPT as primary), Claude CLI becomes the secondary for cross-validation — roles automatically reverse based on `~/.coco/` detection.
 
 **Stack detection** — Auto-detects 24 frameworks (Next.js, Django, Rails, Go, Rust, Flutter, and more) and applies framework-specific rules and skills.
 
@@ -169,34 +169,6 @@ Three layers of defense on every tool call:
 **Smart Resume** — `.last-feature` pointer tracks your latest work. `/vibe.spec` without arguments shows where you left off or lists all in-progress features.
 
 **Self-repair** — Skills include error recovery tables. `/vibe.harness` diagnoses gaps and chains to `/vibe.scaffold` → `vibe update` for automated fixes.
-
----
-
-## Codex Proxy
-
-Use ChatGPT Pro models (gpt-5.4, gpt-5.3-codex, etc.) as Claude Code's backend. Routes through the Codex Responses API using your ChatGPT Pro subscription — no API billing.
-
-```bash
-# One-time setup (auto-detects codex login credentials)
-vibe codex --setup
-
-# Run Claude Code with ChatGPT Pro model
-vibe-codex
-```
-
-**How it works**: Local proxy translates Anthropic Messages API ↔ Codex Responses API. Claude Code sends requests to the proxy, which forwards them to `chatgpt.com/backend-api/codex/responses` using your ChatGPT Pro OAuth token.
-
-**Auto model selection**: Always uses the latest model from Codex CLI's model cache. When OpenAI releases new models, they're automatically available on next launch — no reconfiguration needed.
-
-**Model slots**: Claude Code's `/model` selector maps to different ChatGPT Pro models automatically:
-
-| Slot | Mapped to | Purpose |
-|------|-----------|---------|
-| Opus | Latest flagship (e.g. gpt-5.4) | Most capable |
-| Sonnet | Latest codex (e.g. gpt-5.3-codex) | Coding-optimized |
-| Haiku | Latest codex-spark (e.g. gpt-5.3-codex-spark) | Fast & lightweight (1000+ tok/s) |
-
-**Supported providers**: ChatGPT Pro (auto-detect from `codex login`), OpenAI API Key, Gemini API Key, Custom OpenAI-compatible endpoints.
 
 ---
 

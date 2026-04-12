@@ -117,41 +117,13 @@ claude
 | **Standard** | `vibe init`이 스택별 선택 | 스택/역할 지원 | figma, design-audit, techdebt |
 | **Optional** | 명시적 `/skill` 호출만 | 레퍼런스, 래퍼 | chub-usage, context7 |
 
-**멀티 LLM** — Claude가 오케스트레이션, GPT가 추론, Gemini가 리서치. 가용 모델에 따라 자동 라우팅. 기본값은 Claude 단독. vibe-codex 또는 Coco 환경(GPT 주관)에서는 Claude CLI가 보조로 전환되어 cross-validation 수행 — `ANTHROPIC_BASE_URL` 또는 `~/.coco/` 감지로 역할 자동 역전.
+**멀티 LLM** — Claude가 오케스트레이션, GPT가 추론, Gemini가 리서치. 가용 모델에 따라 자동 라우팅. 기본값은 Claude 단독. Coco 환경(GPT 주관)에서는 Claude CLI가 보조로 전환되어 cross-validation 수행 — `~/.coco/` 감지로 역할 자동 역전.
 
 **스택 감지** — 24개 프레임워크 자동 감지 (Next.js, Django, Rails, Go, Rust, Flutter 등) 후 프레임워크별 규칙과 스킬 적용.
 
 **세션 메모리** — 결정, 제약, 목표가 SQLite + FTS5 검색으로 세션 간 유지.
 
 **Smart Resume** — `.last-feature` 포인터가 마지막 작업을 추적. 인자 없이 `/vibe.spec`을 호출하면 중단된 위치를 보여주거나 진행 중 feature 목록을 제시.
-
----
-
-## Codex Proxy
-
-ChatGPT Pro 모델(gpt-5.4, gpt-5.3-codex 등)을 Claude Code의 백엔드로 사용합니다. Codex Responses API를 통해 ChatGPT Pro 구독으로 과금 — API 토큰 과금 없음.
-
-```bash
-# 최초 설정 (codex login 인증 자동 감지)
-vibe codex --setup
-
-# ChatGPT Pro 모델로 Claude Code 실행
-vibe-codex
-```
-
-**동작 원리**: 로컬 프록시가 Anthropic Messages API ↔ Codex Responses API를 변환합니다. Claude Code가 프록시에 요청하면, 프록시가 ChatGPT Pro OAuth 토큰으로 `chatgpt.com/backend-api/codex/responses`에 전달합니다.
-
-**모델 자동 선택**: Codex CLI의 모델 캐시에서 항상 최신 모델을 사용합니다. OpenAI가 새 모델을 출시하면 다음 실행 시 자동 반영 — 재설정 불필요.
-
-**모델 슬롯**: Claude Code의 `/model` 선택기가 각각 다른 ChatGPT Pro 모델에 자동 매핑됩니다:
-
-| 슬롯 | 매핑 대상 | 용도 |
-|------|-----------|------|
-| Opus | 최신 플래그십 (예: gpt-5.4) | 최고 성능 |
-| Sonnet | 최신 codex (예: gpt-5.3-codex) | 코딩 특화 |
-| Haiku | 최신 codex-spark (예: gpt-5.3-codex-spark) | 고속 응답 (1000+ tok/s) |
-
-**지원 프로바이더**: ChatGPT Pro (`codex login` 자동 감지), OpenAI API Key, Gemini API Key, 커스텀 OpenAI 호환 엔드포인트.
 
 ---
 
