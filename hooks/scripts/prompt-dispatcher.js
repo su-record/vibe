@@ -16,6 +16,11 @@ import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// 재귀 가드 — 자식 Claude 세션에서 이 hook이 다시 실행되는 것 차단.
+// llm-orchestrate.js의 callClaudeCli가 VIBE_HOOK_DEPTH=1을 주입하므로,
+// 값이 있으면 즉시 종료해 프로세스 폭탄을 막는다.
+if (process.env.VIBE_HOOK_DEPTH) process.exit(0);
+
 // stdin에서 prompt 읽기
 let inputData = '';
 for await (const chunk of process.stdin) {

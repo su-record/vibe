@@ -310,10 +310,16 @@ function callClaudeCli(prompt, sysPrompt, jsonMode, timeoutMs) {
   const args = ['--print', '--dangerously-skip-permissions'];
   const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
 
+  // 재귀 가드 — 자식 Claude 세션의 UserPromptSubmit hook이 또 claude CLI를
+  // spawn하는 포크 폭탄을 차단 (prompt-dispatcher.js가 이 env를 보고 즉시 종료).
+  const currentDepth = parseInt(process.env.VIBE_HOOK_DEPTH || '0', 10);
+  const childEnv = { ...process.env, VIBE_HOOK_DEPTH: String(currentDepth + 1) };
+
   return new Promise((resolve, reject) => {
     const proc = spawnCli('claude', args, {
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: effectiveTimeout,
+      env: childEnv,
     });
     proc.stdin.end(fullPrompt);
 

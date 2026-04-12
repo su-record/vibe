@@ -23,13 +23,14 @@ function runGuard({ args = [] } = {}) {
 }
 
 /**
- * Run pre-tool-guard.js with stdin JSON payload (using shell pipe).
+ * Run pre-tool-guard.js with stdin JSON payload.
+ * 스크립트가 fs.readSync(0, ...)로 stdin을 읽으므로 execFileSync input 옵션이 동작.
  */
 function runGuardWithStdin(payload) {
   const json = typeof payload === 'string' ? payload : JSON.stringify(payload);
-  const escaped = json.replace(/'/g, "'\\''");
   try {
-    const stdout = execSync(`echo '${escaped}' | node ${SCRIPT}`, {
+    const stdout = execFileSync('node', [SCRIPT], {
+      input: json,
       encoding: 'utf-8',
       timeout: 5000,
     });

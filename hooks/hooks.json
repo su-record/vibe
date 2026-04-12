@@ -1,5 +1,5 @@
 {
-  "_comment": "Hook ordering rationale — SessionStart: init state. PreToolUse: sentinel-guard (catastrophic command blocker) BEFORE pre-tool-guard (project-specific). PostToolUse: format → lint → test (normalize style, then catch issues, then verify behavior). UserPromptSubmit: interrupt echo FIRST to inject cancellation signal BEFORE dispatcher processes new prompt. Notification: 80/90/95% thresholds trigger progressively urgent context saves.",
+  "_comment": "Dispatcher pattern — PreToolUse/PostToolUse/Stop는 단일 디스패처가 stdin을 한 번 읽어 순차 실행 (병렬 spawn 폭주 제거, cascade 격리, config.hooks.{name}.enabled 토글 지원). UserPromptSubmit은 VIBE_HOOK_DEPTH 재귀 가드 탑재된 prompt-dispatcher 사용.",
   "permissions": {
     "allow": [],
     "deny": [],
@@ -22,15 +22,25 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Bash"
-          },
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-dispatcher.js Bash"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Bash"
-          },
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-dispatcher.js Edit"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/command-log.js"
+            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-dispatcher.js Write"
           }
         ]
       },
@@ -42,32 +52,6 @@
             "command": "node {{VIBE_PATH}}/hooks/scripts/pr-test-gate.js"
           }
         ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Edit"
-          },
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Edit"
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/sentinel-guard.js Write"
-          },
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/pre-tool-guard.js Write"
-          }
-        ]
       }
     ],
     "PostToolUse": [
@@ -76,24 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/auto-format.js"
-          },
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/code-check.js"
-          },
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/auto-test.js"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/post-edit.js"
+            "command": "node {{VIBE_PATH}}/hooks/scripts/post-edit-dispatcher.js"
           }
         ]
       }
@@ -150,19 +117,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/codex-review-gate.js"
-          },
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/stop-notify.js"
-          },
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/auto-commit.js"
-          },
-          {
-            "type": "command",
-            "command": "node {{VIBE_PATH}}/hooks/scripts/devlog-gen.js"
+            "command": "node {{VIBE_PATH}}/hooks/scripts/stop-dispatcher.js"
           }
         ]
       }

@@ -23,16 +23,14 @@ function runGuard(args = []) {
 }
 
 /**
- * Run sentinel-guard.js with stdin JSON payload (using shell pipe).
- * The script reads stdin via fs.openSync('/dev/stdin'), which requires
- * a real pipe — execFileSync input option does not work.
+ * Run sentinel-guard.js with stdin JSON payload.
+ * 스크립트가 fs.readSync(0, ...)로 stdin을 읽으므로 execFileSync input 옵션이 동작.
  */
 function runGuardWithStdin(payload) {
   const json = typeof payload === 'string' ? payload : JSON.stringify(payload);
-  // Escape single quotes in JSON for shell safety
-  const escaped = json.replace(/'/g, "'\\''");
   try {
-    const stdout = execSync(`echo '${escaped}' | node ${SCRIPT}`, {
+    const stdout = execFileSync('node', [SCRIPT], {
+      input: json,
       encoding: 'utf-8',
       timeout: 5000,
     });
@@ -194,9 +192,9 @@ describe('sentinel-guard', () => {
         tool_name: 'Write',
         tool_input: { file_path: 'src/infra/lib/autonomy/x.ts' },
       });
-      const escaped = payload.replace(/'/g, "'\\''");
       try {
-        execSync(`echo '${escaped}' | node ${SCRIPT} Read '{}'`, {
+        execFileSync('node', [SCRIPT, 'Read', '{}'], {
+          input: payload,
           encoding: 'utf-8',
           timeout: 5000,
         });

@@ -98,10 +98,9 @@ import fs from 'fs';
 function readStdinSync() {
   try {
     if (process.stdin.isTTY) return null;
-    const fd = fs.openSync('/dev/stdin', 'r');
+    // fd 0을 직접 사용 (Windows는 '/dev/stdin'이 없음)
     const buf = Buffer.alloc(65536);
-    const bytesRead = fs.readSync(fd, buf, 0, buf.length, null);
-    fs.closeSync(fd);
+    const bytesRead = fs.readSync(0, buf, 0, buf.length, null);
     if (bytesRead > 0) {
       return JSON.parse(buf.toString('utf-8', 0, bytesRead));
     }
