@@ -41,7 +41,7 @@ export function detectClaudeCli(): AiCliStatus {
 }
 
 /**
- * Coco 설치 여부 감지
+ * coco 설치 여부 감지
  * - `COCO_HOME` 환경변수
  * - `~/.coco/` 디렉토리 존재 여부
  */

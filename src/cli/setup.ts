@@ -20,9 +20,6 @@ export {
   updateGitignore,
   updateConfig,
   installCursorRules,
-  updateCodexAgentsMd,
-  updateGeminiMd,
-  installGeminiHooks,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
 } from './setup/ProjectSetup.js';

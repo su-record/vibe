@@ -99,52 +99,64 @@ graph TD
     Infra --> API[External APIs]
 ```
 
-### `/vibe.docs agent` — Agent Instruction Files
+### `/vibe.docs agent` — Agent Instruction Files (CLAUDE.md / AGENTS.md / GEMINI.md)
 
-Inject or refresh the **Behavioral Principles** block (Karpathy-inspired) into agent instruction files:
+**CLI ↔ file mapping:**
 
-- `CLAUDE.md` (Claude Code)
-- `AGENTS.md` (Codex CLI)
-- `GEMINI.md` (Gemini CLI)
+| CLI | File | Support |
+|---|---|---|
+| Claude Code | `CLAUDE.md` | 100% (Primary) |
+| coco | `AGENTS.md` | 100% (Primary) |
+| Codex CLI | `AGENTS.md` (shared with coco) | Best-effort |
+| Gemini CLI | `GEMINI.md` | Best-effort |
+| Cursor | (none yet) | Best-effort |
 
-**Source of truth:** `skills/vibe-docs/templates/behavioral-principles.md` — contains 4 principles (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution).
+Note: `AGENTS.md` is coco's **primary** file AND Codex's compat file — treat edits with coco-level care.
 
-**Procedure:**
+**Source of truth:**
+- **`CLAUDE.md` is the content SSOT.** Always edit it first; `AGENTS.md` and `GEMINI.md` are regenerated derivatives.
+- Behavioral block: `skills/vibe-docs/templates/behavioral-principles.md` (4 Karpathy principles, wrapped in `<!-- VIBE-BEHAVIORAL:START/END -->` markers).
 
-1. Read `templates/behavioral-principles.md` (the canonical block, already wrapped in `<!-- VIBE-BEHAVIORAL:START -->` … `<!-- VIBE-BEHAVIORAL:END -->` markers).
-2. For each existing target file (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`) in the project root:
-   - If markers present → replace content between them.
-   - If markers absent → append the block at end of file.
-   - If file does not exist → **skip** (don't create; only update what already exists).
-3. Per-file adaptation (apply to the copy being written):
-   - `AGENTS.md`: replace `Claude Code` → `Codex CLI`.
-   - `GEMINI.md`: replace `Claude Code` → `Gemini CLI`.
-   - `CLAUDE.md`: no substitution.
-4. Report which files were created/updated/skipped.
+**Procedure (applies to both creation and modification):**
 
-**Idempotent:** Re-running `/vibe.docs agent` re-syncs the block from the template without duplicating it.
+1. **Detect state** — enumerate which of `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` exist in project root. **`CLAUDE.md` is always the SSOT**; if missing, create it first (never derive from AGENTS.md/GEMINI.md).
+2. **Per derivative file (`AGENTS.md`, `GEMINI.md`)**:
+   - **If missing** → create by cloning `CLAUDE.md` + applying CLI substitution (below).
+   - **If exists** → regenerate from current `CLAUDE.md` + substitution, preserving user-specific additions outside the VIBE block.
+   - Each derivative must include a **compatibility-file notice** in the header stating that `CLAUDE.md` is the SSOT and this CLI is best-effort (not 100% supported).
+3. **CLI substitution (apply to derived copies, not the SSOT)**:
 
-**Post-update validation — invoke `claude-md-guide` → `agents-md` chain:**
+   | Target | Swap |
+   |---|---|
+   | `AGENTS.md` (Codex) | `Claude Code` → `Codex CLI` · `~/.claude/` → `~/.codex/` · `.claude/` → `.codex/` · `CLAUDE.md` → `AGENTS.md` |
+   | `GEMINI.md` (Gemini) | `Claude Code` → `Gemini CLI` · `~/.claude/` → `~/.gemini/` · `.claude/` → `.gemini/` · `CLAUDE.md` → `GEMINI.md` · `PreToolUse`→`BeforeTool` · `PostToolUse`→`AfterTool` · `UserPromptSubmit`→`BeforeAgent` |
+   | `CLAUDE.md` | no substitution |
 
-The same LLM attention/compliance rules apply to **all three** agent instruction files (CLAUDE.md / AGENTS.md / GEMINI.md — they are the same artifact for different CLIs). Run the chain on every touched file:
+4. **Validate every touched file (whether newly created or modified)** via the `claude-md-guide` → `agents-md` skill chain — see validation block below. **Never write or save without running this step.**
+5. Report per file: created / updated / skipped / validation warnings.
 
-1. **`claude-md-guide`** — size & structure check:
-   - Target 60–150 lines (Optimal). Warn at 200+, force split/trim at 300+.
-   - 4-question validation for every line outside the `VIBE-BEHAVIORAL` block:
+**Idempotent:** Re-running re-syncs the behavioral block and re-applies substitutions without duplication.
+
+**Mandatory validation (every create & every update) — invoke `claude-md-guide` → `agents-md`:**
+
+1. **`claude-md-guide`**:
+   - Size target 60–150 lines (Optimal). Warn at 200+, force split/trim at 300+.
+   - 4-question check per line (outside `VIBE-BEHAVIORAL` block):
      - Would the agent make a mistake without this? (No → delete)
      - Needed every session? (No → move to SPEC/plan)
      - Can a linter/hook replace it? (Yes → move)
      - Discoverable from code? (Yes → delete)
-   - Lost-in-the-Middle: critical rules top, frequently-violated rules bottom.
-2. **`agents-md`** — discoverability filter (Addy Osmani):
-   - One-line test: "Can the agent discover this by reading the code?" → Yes = delete.
-   - Strip tech-stack name-drops that `package.json` already states.
+   - Lost-in-the-Middle: critical rules at top, frequently-violated rules at bottom.
+2. **`agents-md`**:
+   - Addy Osmani test: "Can the agent discover this by reading the code?" → Yes = delete.
+   - Strip tech-stack name-drops already stated in `package.json`.
 
-Report specific line ranges to trim for each file. Do not auto-delete; surface findings for user approval.
+Report line ranges to trim per file. Do not auto-delete; surface findings for user approval before finalizing.
 
 **When to run:**
-- After `vibe init` / `vibe update` if behavioral guidance is missing.
-- After upgrading `@su-record/vibe` when the template changes.
+- After `vibe init` / `vibe update` if any of the three files are missing or out of sync.
+- After upgrading `@su-record/vibe` when the behavioral template changes.
+- Whenever the SSOT file is edited — re-sync derivatives.
 - User explicitly asks to refresh agent instructions.
 
 ### `/vibe.docs release` — Release Notes

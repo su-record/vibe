@@ -24,10 +24,7 @@ import { generateCursorRules } from './cursor-rules.js';
 import { installCursorAgents } from './cursor-agents.js';
 import { installClaudeAgents } from './claude-agents.js';
 import { generateCursorSkills } from './cursor-skills.js';
-import { installCodexPlugin } from './codex-agents.js';
-import { installGeminiAgents } from './gemini-agents.js';
-import { generateGeminiMd } from './gemini-instruction.js';
-import { detectClaudeCli, detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectClaudeCli, detectCocoCli } from '../utils/cli-detector.js';
 import { getClaudeCodeStatus, formatClaudeCodeStatus } from '../auth.js';
 import { migrateLegacyFiles } from '../../infra/lib/config/GlobalConfigManager.js';
 
@@ -171,32 +168,7 @@ export function main(): void {
     generateCursorRules(cursorRulesTemplateDir, [], globalLanguagesDir);
     generateCursorSkills(cursorSkillsDir);
 
-    // 10-11. 외부 CLI 지원 (Codex + Gemini — 비필수, 실패 허용)
-    const cliPlugins: Array<{ name: string; fn: () => void }> = [];
-    cliPlugins.push({ name: 'codex', fn: () => {
-      const codexStatus = detectCodexCli();
-      if (codexStatus.installed) {
-        installCodexPlugin(agentsSource, skillsSource, codexStatus.configDir, packageRoot);
-        console.log(`✅ codex plugin installed: ${codexStatus.pluginDir}`);
-      }
-    }});
-    cliPlugins.push({ name: 'gemini', fn: () => {
-      const geminiStatus = detectGeminiCli();
-      if (geminiStatus.installed) {
-        const geminiAgentsDir = path.join(geminiStatus.configDir, 'agents');
-        installGeminiAgents(agentsSource, geminiAgentsDir);
-        const geminiSkillsDir = path.join(geminiStatus.configDir, 'skills');
-        removeLegacySkills(geminiSkillsDir, LEGACY_SKILL_DIRS);
-        copySkillsFiltered(skillsSource, geminiSkillsDir, GLOBAL_SKILLS);
-        generateGeminiMd(geminiStatus.configDir, packageRoot);
-        console.log(`✅ gemini agents/skills installed: ${geminiStatus.configDir}`);
-      }
-    }});
-    for (const plugin of cliPlugins) {
-      try { plugin.fn(); } catch { /* Non-critical */ }
-    }
-
-    // 12. Claude Code CLI 존재 확인 (인증은 vibe init에서)
+    // Claude Code CLI 존재 확인 (인증은 vibe init에서)
     const claudeStatus = getClaudeCodeStatus(false);
     const claudeStatusMsg = formatClaudeCodeStatus(claudeStatus);
 

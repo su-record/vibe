@@ -2,12 +2,7 @@
 
 > Source code for `@su-record/vibe` npm package. Modify files in THIS repository only — never the installed copies (`~/.claude/`, `~/.codex/`, `~/.gemini/`, `~/.coco/`, `~/.vibe/`).
 >
-> **File-to-CLI mapping:**
-> - `CLAUDE.md` — **Claude Code** (100% supported) · **content SSOT**
-> - `AGENTS.md` — **coco** (100% supported, primary) · Codex CLI (best-effort)
-> - `GEMINI.md` — Gemini CLI (best-effort)
->
-> `AGENTS.md` and `GEMINI.md` are regenerated from this file via `/vibe.docs agent`. Edit here first.
+> **Compatibility file (best-effort).** `@su-record/vibe` is guaranteed on Claude Code + coco only; Gemini CLI support is partial (some hooks/commands/skills may not run). Content SSOT is `CLAUDE.md` — this file is regenerated from it via `/vibe.docs agent`. Edit `CLAUDE.md` first.
 
 ## Hard Rules
 
@@ -56,18 +51,18 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 | Path | Purpose |
 |---|---|
 | `~/.vibe/config.json` | Global credentials, models (0o600) |
-| `.claude/vibe/config.json` | Project stacks, capabilities |
-| `.claude/settings.local.json` | Project hooks (auto-generated, don't commit) |
+| `.gemini/vibe/config.json` | Project stacks, capabilities |
+| `.gemini/settings.local.json` | Project hooks (auto-generated, don't commit) |
 
 ### Gotchas
 - `better-sqlite3` WAL mode — synchronous API
 - `crypto.timingSafeEqual` requires same-length buffers — check length first
 - **Stack → asset SSOT**: `GLOBAL_SKILLS_*`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts`
-- **Hook dispatch order**: `prompt-dispatcher.js` → `keyword-detector.js` → `llm-orchestrate.js`
+- **Hook dispatch order** (BeforeAgent → BeforeTool → AfterTool): `prompt-dispatcher.js` → `keyword-detector.js` → `llm-orchestrate.js`
 
 ## Workflow
 
-`/vibe.spec` is the single entry point — orchestrates interview → plan → spec → review → `/vibe.run` → `/vibe.verify` → `/vibe.trace`. For UI types (website/webapp/mobile), `/vibe.figma` branches in parallel. Smart Resume detects existing `.claude/vibe/{interviews,plans,specs}/*.md` to skip phases.
+`/vibe.spec` is the single entry point — orchestrates interview → plan → spec → review → `/vibe.run` → `/vibe.verify` → `/vibe.trace`. For UI types (website/webapp/mobile), `/vibe.figma` branches in parallel. Smart Resume detects existing `.gemini/vibe/{interviews,plans,specs}/*.md` to skip phases.
 
 | Task Size | Approach |
 |---|---|
@@ -95,7 +90,7 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Git
 
-**Include**: `.claude/vibe/{plans,specs,features,todos}/`, `.claude/vibe/config.json`, `CLAUDE.md`
-**Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`
+**Include**: `.gemini/vibe/{plans,specs,features,todos}/`, `.gemini/vibe/config.json`, `GEMINI.md`
+**Exclude**: `~/.gemini/{rules,commands,agents,skills}/`, `.gemini/settings.local.json`
 
 <!-- VIBE:END -->

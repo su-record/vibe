@@ -18,9 +18,6 @@ import {
   updateConfig,
   installProjectHooks,
   installCursorRules,
-  updateCodexAgentsMd,
-  updateGeminiMd,
-  installGeminiHooks,
   detectOsLanguage,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
@@ -30,16 +27,12 @@ import {
   installCursorAgents,
   generateCursorRules,
   generateCursorSkills,
-  installCodexPlugin,
-  installGeminiAgents,
-  generateGeminiMd,
   resolveLocalSkills,
   copySkillsFiltered,
   AVAILABLE_CAPABILITIES,
   STACK_TO_LANGUAGE_FILE,
-  GLOBAL_SKILLS,
 } from '../postinstall.js';
-import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectCocoCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 import { installExternalSkills } from './skills.js';
 
@@ -80,68 +73,6 @@ export function updateCursorGlobalAssets(
     // Non-critical - don't fail init/update
     if (!options.silent) {
       console.warn(`   ⚠️ Cursor assets update warning: ${(err as Error).message}`);
-    }
-  }
-}
-
-/**
- * Update global Codex CLI assets (agents, skills, AGENTS.md)
- * Called by both init and update
- */
-export function updateCodexGlobalAssets(
-  detectedStacks: string[] = [],
-  options: CliOptions = { silent: false }
-): void {
-  try {
-    const codexStatus = detectCodexCli();
-    if (!codexStatus.installed) return;
-
-    const __dir = path.dirname(new URL(import.meta.url).pathname);
-    const packageRoot = path.resolve(__dir, '..', '..', '..');
-    const agentsSource = path.join(packageRoot, 'agents');
-    const skillsSource = path.join(packageRoot, 'skills');
-
-    // Codex 플러그인 설치 (agents + skills + manifest + AGENTS.md)
-    installCodexPlugin(agentsSource, skillsSource, codexStatus.configDir, packageRoot);
-  } catch (err) {
-    if (!options.silent) {
-      console.warn(`   ⚠️ Codex plugin update warning: ${(err as Error).message}`);
-    }
-  }
-}
-
-/**
- * Update global Gemini CLI assets (agents, skills, GEMINI.md)
- * Called by both init and update
- */
-export function updateGeminiGlobalAssets(
-  detectedStacks: string[] = [],
-  options: CliOptions = { silent: false }
-): void {
-  try {
-    const geminiStatus = detectGeminiCli();
-    if (!geminiStatus.installed) return;
-
-    const __dir = path.dirname(new URL(import.meta.url).pathname);
-    const packageRoot = path.resolve(__dir, '..', '..', '..');
-    const agentsSource = path.join(packageRoot, 'agents');
-    const skillsSource = path.join(packageRoot, 'skills');
-
-    // Gemini agents (전체)
-    if (fs.existsSync(agentsSource)) {
-      installGeminiAgents(agentsSource, path.join(geminiStatus.configDir, 'agents'));
-    }
-
-    // Gemini skills (전역 공통)
-    if (fs.existsSync(skillsSource)) {
-      copySkillsFiltered(skillsSource, path.join(geminiStatus.configDir, 'skills'), GLOBAL_SKILLS);
-    }
-
-    // Gemini GEMINI.md (전역)
-    generateGeminiMd(geminiStatus.configDir, packageRoot);
-  } catch (err) {
-    if (!options.silent) {
-      console.warn(`   ⚠️ Gemini assets update warning: ${(err as Error).message}`);
     }
   }
 }
@@ -407,27 +338,6 @@ export async function init(projectName?: string): Promise<void> {
     runStep(s3, 'Installing Cursor rules', () => installCursorRules(projectRoot, stackTypes));
     runStep(s3, 'Installing language rules', () => installLanguageRules(projectRoot, stackTypes));
 
-    // Codex CLI
-    runStep(s3, 'Checking Codex CLI', () => {
-      const codexStatus = detectCodexCli();
-      if (codexStatus.installed) {
-        updateCodexGlobalAssets(stackTypes);
-        updateCodexAgentsMd(projectRoot, detectedStacks);
-        log(`   📝 AGENTS.md generated (Codex)\n`);
-      }
-    });
-
-    // Gemini CLI
-    runStep(s3, 'Checking Gemini CLI', () => {
-      const geminiStatus = detectGeminiCli();
-      if (geminiStatus.installed) {
-        updateGeminiGlobalAssets(stackTypes);
-        updateGeminiMd(projectRoot, detectedStacks);
-        installGeminiHooks(projectRoot);
-        log(`   📝 GEMINI.md + hooks generated (Gemini)\n`);
-      }
-    });
-
     runStep(s3, 'Installing local skills', () => {
       installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
     });
@@ -457,10 +367,10 @@ export async function init(projectName?: string): Promise<void> {
     });
 
     runStep(s3, 'Generating AGENTS.md', () => {
-      const codexStatus = detectCodexCli();
-      if (codexStatus.installed) {
+      const cocoStatus = detectCocoCli();
+      if (cocoStatus.installed) {
         generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
-        log(`   📄 AGENTS.md generated (Codex)\n`);
+        log(`   📄 AGENTS.md generated (coco)\n`);
       }
     });
 

@@ -5,7 +5,7 @@
 import { execSync } from 'child_process';
 import { LLMAuthStatus, LLMStatusMap, ClaudeCodeStatus } from './types.js';
 import { readGlobalConfig } from '../infra/lib/config/GlobalConfigManager.js';
-import { detectCodexCli, detectGeminiCli } from './utils/cli-detector.js';
+import { detectCocoCli, detectCodexCli, detectGeminiCli } from './utils/cli-detector.js';
 
 /**
  * LLM 인증 상태 확인 (config.json 우선, process.env fallback)
@@ -110,6 +110,7 @@ export function formatAuthMethods(auths: LLMAuthStatus[], cliInstalled?: boolean
 
 export function formatLLMStatus(claudeStatus?: ClaudeCodeStatus): string {
   const status = getLLMAuthStatus();
+  const cocoCli = detectCocoCli();
   const codexCli = detectCodexCli();
   const geminiCli = detectGeminiCli();
   const lines: string[] = [];
@@ -117,6 +118,7 @@ export function formatLLMStatus(claudeStatus?: ClaudeCodeStatus): string {
   if (claudeStatus) {
     lines.push(`🧠 Claude Code: ${formatClaudeCodeStatus(claudeStatus)}`);
   }
+  lines.push(`🥥 coco: ${cocoCli.installed ? '✓ Installed' : '✗ Not installed'}`);
   lines.push('🤖 External LLM:');
   lines.push(`  GPT: ${formatAuthMethods(status.gpt, codexCli.installed)}`);
   lines.push(`  Gemini: ${formatAuthMethods(status.gemini, geminiCli.installed)}`);

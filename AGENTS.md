@@ -2,12 +2,9 @@
 
 > Source code for `@su-record/vibe` npm package. Modify files in THIS repository only — never the installed copies (`~/.claude/`, `~/.codex/`, `~/.gemini/`, `~/.coco/`, `~/.vibe/`).
 >
-> **File-to-CLI mapping:**
-> - `CLAUDE.md` — **Claude Code** (100% supported) · **content SSOT**
-> - `AGENTS.md` — **coco** (100% supported, primary) · Codex CLI (best-effort)
-> - `GEMINI.md` — Gemini CLI (best-effort)
+> **Primary file for coco (100% supported).** Also consumed by Codex CLI (best-effort — some hooks/commands/skills may not run).
 >
-> `AGENTS.md` and `GEMINI.md` are regenerated from this file via `/vibe.docs agent`. Edit here first.
+> Content SSOT is `CLAUDE.md` — this file is regenerated from it via `/vibe.docs agent`. Edit `CLAUDE.md` first; do not hand-edit this file.
 
 ## Hard Rules
 
@@ -56,8 +53,8 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 | Path | Purpose |
 |---|---|
 | `~/.vibe/config.json` | Global credentials, models (0o600) |
-| `.claude/vibe/config.json` | Project stacks, capabilities |
-| `.claude/settings.local.json` | Project hooks (auto-generated, don't commit) |
+| `.codex/vibe/config.json` | Project stacks, capabilities |
+| `.codex/settings.local.json` | Project hooks (auto-generated, don't commit) |
 
 ### Gotchas
 - `better-sqlite3` WAL mode — synchronous API
@@ -67,7 +64,7 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Workflow
 
-`/vibe.spec` is the single entry point — orchestrates interview → plan → spec → review → `/vibe.run` → `/vibe.verify` → `/vibe.trace`. For UI types (website/webapp/mobile), `/vibe.figma` branches in parallel. Smart Resume detects existing `.claude/vibe/{interviews,plans,specs}/*.md` to skip phases.
+`/vibe.spec` is the single entry point — orchestrates interview → plan → spec → review → `/vibe.run` → `/vibe.verify` → `/vibe.trace`. For UI types (website/webapp/mobile), `/vibe.figma` branches in parallel. Smart Resume detects existing `.codex/vibe/{interviews,plans,specs}/*.md` to skip phases.
 
 | Task Size | Approach |
 |---|---|
@@ -95,7 +92,7 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Git
 
-**Include**: `.claude/vibe/{plans,specs,features,todos}/`, `.claude/vibe/config.json`, `CLAUDE.md`
-**Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`
+**Include**: `.codex/vibe/{plans,specs,features,todos}/`, `.codex/vibe/config.json`, `AGENTS.md`
+**Exclude**: `~/.codex/{rules,commands,agents,skills}/`, `.codex/settings.local.json`
 
 <!-- VIBE:END -->

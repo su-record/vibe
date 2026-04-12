@@ -158,7 +158,7 @@ Three layers of defense on every tool call:
 | **Standard** | `vibe init` selects by stack | Stack/capability support | figma, design-audit, techdebt |
 | **Optional** | Explicit `/skill` only | Reference, wrappers | chub-usage, context7 |
 
-**Multi-LLM** — Claude orchestrates, GPT reasons, Gemini researches. Auto-routes by availability. Works Claude-only by default. When running under Coco (GPT as primary), Claude CLI becomes the secondary for cross-validation — roles automatically reverse based on `~/.coco/` detection.
+**Multi-LLM** — Claude orchestrates, GPT reasons, Gemini researches. Auto-routes by availability. Works Claude-only by default. When running under coco (GPT as primary), Claude CLI becomes the secondary for cross-validation — roles automatically reverse based on `~/.coco/` detection.
 
 **Stack detection** — Auto-detects 24 frameworks (Next.js, Django, Rails, Go, Rust, Flutter, and more) and applies framework-specific rules and skills.
 
@@ -177,7 +177,7 @@ Three layers of defense on every tool call:
 | CLI | Status |
 |-----|--------|
 | [Claude Code](https://claude.ai/code) | Full support |
-| Coco (`~/.coco/`) | Full support (auto-detect) |
+| coco (`~/.coco/`) | Full support (auto-detect) |
 | [Codex](https://github.com/openai/codex) | Plugin |
 | [Cursor](https://cursor.sh) | Agents + Rules |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) | Agents + Skills |
