@@ -1,190 +1,94 @@
 # VIBE
 
-## Project Nature
+> Source code for `@su-record/vibe` npm package. Modify files in THIS repository only — never the installed copies (`~/.claude/`, `~/.vibe/`).
 
-> **This is the source code for `@su-record/vibe` npm package.**
-> Modify files in THIS repository only — never the installed copy (`~/.claude/`, `~/.vibe/`).
+## Hard Rules
 
-## Philosophy
+### Behavior
+- **Modify only requested scope** — Every changed line traces to the user's request
+- **Edit existing files over creating new** — Fix at source
+- **Preserve existing style** — Match conventions even if you'd do it differently
+- **Respect Ctrl+C / Escape** — Previous task CANCELLED
+- **State assumptions, ask when uncertain** — Don't pick silently when ambiguity exists; push back if a simpler approach exists
 
-> **vibe = Easy vibe coding + Minimum quality guaranteed**
+### Goal-Driven Execution
+Transform imperative tasks into verifiable goals **before** coding:
 
-- **Easy Vibe Coding** — Fast flow, think collaboratively with AI
-- **Minimum Quality Guaranteed** — Type safety, code quality, security — automatic baseline
-- **Iterative Reasoning** — Break down problems, ask questions, reason together (don't delegate)
+| Instead of | Transform to |
+|---|---|
+| "Add validation" | "Tests for invalid inputs pass" |
+| "Fix the bug" | "A test reproducing it passes" |
+| "Refactor X" | "Tests pass before and after" |
 
-## Constraints (Hard Rules)
+Weak criteria ("make it work") require constant clarification. Strong criteria let the loop run independently.
 
-### Code Behavior
-
-- **Modify only requested scope** — Don't touch unrelated code
-- **Preserve existing style** — Follow project conventions
-- **Edit existing files, never create new ones** — Fix problems at source
-- **Respect user interrupts** — Ctrl+C/Escape = previous task CANCELLED
-
-### Complexity Limits
-
-| Metric | Limit |
-|--------|-------|
-| Function length | ≤50 lines |
-| Nesting depth | ≤3 levels |
-| Parameters | ≤5 |
-| Cyclomatic complexity | ≤10 |
-
-### TypeScript (Enforced by Quality Gate hooks)
-
-- No `any` — use `unknown` + type guards
-- No `as any` — define proper interfaces
-- No `@ts-ignore` — fix type issues at root
+### TypeScript (enforced by Quality Gate hooks)
+- No `any` / `as any` / `@ts-ignore` — use `unknown` + type guards; fix at root
 - Explicit return types on all functions
 
-### Convergence Principle (Quality-First, No Round Cap)
-
-- **Loop until quality = 100** — no hard round cap on review/auto-fix loops
-- **P1 = 0 AND no new findings** → done (the natural termination signal)
-- **Narrowing scope per round (noise reduction)** — Round 1: full scope, Round 2: P1+P2, Round 3+: P1 only — keeps looping until P1=0
-- **Stuck detection → ask the user** — Same findings (or same score) as previous round means auto-fixer hit a wall. Prompt the user to fill in values, explicitly approve sub-100, or abort. Never silently proceed with sub-100 quality.
-- **ultrawork exception** — In `ultrawork` mode, skip the user prompt and record remaining gaps as TODO to keep the loop non-interactive.
-- **Changed files only** — Never scan the entire project
+### Complexity Limits
+Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10
 
 ### Forbidden Patterns
+No `console.log` in commits · No hardcoded strings/numbers · No commented-out code · No incomplete code without TODO
 
-- No `console.log` in commits
-- No hardcoded strings/numbers (use constants)
-- No commented-out code
-- No incomplete code without TODO
+### Convergence (review / auto-fix loops)
+- **Loop until P1 = 0 AND no new findings** — no round cap
+- **Narrowing scope**: Round 1 full → Round 2 P1+P2 → Round 3+ P1 only
+- **Stuck detection** (same findings/score 2 rounds in a row) → ask user (fill values / approve sub-100 / abort). Never silently proceed sub-100
+- **`ultrawork` exception** — skip user prompt; record gaps as TODO to stay non-interactive
+- **Changed files only** — never full-project scan
 
-## Architecture (What's NOT Obvious)
+## Architecture (Non-Obvious)
 
 ### Module System
-
 - ESM only (`"type": "module"`) — imports need `.js` extension
-- TypeScript strict mode → `dist/` via `tsc`
 - Build before test: `npm run build && npx vitest run`
 
-### Config Locations (Don't Confuse)
-
+### Config Locations
 | Path | Purpose |
-|------|---------|
-| `~/.vibe/config.json` | Global credentials, channels, models (0o600) |
-| `.claude/vibe/config.json` | Project stacks, capabilities, details |
+|---|---|
+| `~/.vibe/config.json` | Global credentials, models (0o600) |
+| `.claude/vibe/config.json` | Project stacks, capabilities |
 | `.claude/settings.local.json` | Project hooks (auto-generated, don't commit) |
 
-### Installation Flow
-
-- `postinstall` → global assets (`~/.claude/agents/`, `~/.claude/skills/`, `~/.claude/commands/`)
-- `vibe init` → project setup (detect stacks → config → constitution → rules → hooks → local skills + languages)
-- `vibe update` → re-detect stacks, refresh project config (preserves user capabilities)
-
-### Key Directories (Where to Find Things)
-
-| What | Where |
-|------|-------|
-| CLI commands | `src/cli/commands/` |
-| Postinstall modules | `src/cli/postinstall/` |
-| Stack detection | `src/cli/detect.ts` |
-| Auth (all LLMs) | `src/cli/auth.ts` |
-| Setup helpers | `src/cli/setup.ts`, `src/cli/setup/` |
-| Hooks scripts | `hooks/scripts/` |
-| Agent definitions | `agents/` |
-| Team definitions | `agents/teams/` |
-| Skill definitions | `skills/` |
-| Language rules | `languages/` |
-| SPEC/rule templates | `vibe/rules/`, `vibe/templates/` |
-| Infra (daemon, memory, policy) | `src/infra/` |
-| Telemetry (local JSONL) | `src/infra/lib/telemetry/` |
-| Test helpers (shared) | `src/test-helpers/` |
-| Skill catalog generator | `scripts/gen-skill-docs.ts` |
-
 ### Gotchas
-
-- `better-sqlite3` WAL mode — DB module uses synchronous API
+- `better-sqlite3` WAL mode — synchronous API
 - `crypto.timingSafeEqual` requires same-length buffers — check length first
-- `GLOBAL_SKILLS_CORE`, `GLOBAL_SKILLS_STANDARD`, `GLOBAL_SKILLS_OPTIONAL`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts` — single source of truth for stack→asset mapping
-- Hook dispatch chain: `prompt-dispatcher.js` → `keyword-detector.js` → `llm-orchestrate.js` (order matters)
-- Pre-existing test failures in `prdParser.test.ts` (7) and `traceabilityMatrix.test.ts` (1) — unrelated to current work
+- **Stack → asset SSOT**: `GLOBAL_SKILLS_*`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts`
+- **Hook dispatch order**: `prompt-dispatcher.js` → `keyword-detector.js` → `llm-orchestrate.js`
 
 ## Workflow
 
-```text
-/vibe.spec  →  vibe.interview (skill)  →  vibe.plan (skill)  →  vibe.spec (skill) → vibe.spec.review (skill)  →  ┬→  /vibe.run → /vibe.verify → /vibe.trace → Done
-                                                                                                                   │    (Logic Track)
-                                                                                                                   └→  /vibe.figma → FE UI 코드
-                                                                                                                        (UI Track — type ∈ {website,webapp,mobile}만)
-```
-
-**단일 진입점**: `/vibe.spec`은 "무엇을 개발할지" 질문으로 시작해서 전체 흐름을 오케스트레이션한다. 사용자는 `/vibe.*` 커맨드 이름을 외울 필요 없음. **Smart Resume**: 기존 interview/plan/spec 파일 존재 여부로 어느 단계부터 시작할지 자동 판단.
-
-**커맨드 `/vibe.spec` vs 스킬 `vibe.spec`**: 커맨드는 **전체 워크플로 오케스트레이터**, 스킬은 그 안의 **SPEC 작성 단계**. `/vibe.figma` 커맨드와 `vibe.figma` 스킬 관계와 동일한 패턴.
-
-**스킬 기반 workflow**:
-- `vibe.interview` — 반복 인터뷰로 요구사항 수집 (사용자 "그만"까지). 타입별 체크리스트(`skills/vibe.interview/checklists/{type}.md`).
-- `vibe.plan` — interview → 마크다운 기획서 정제 (`.claude/vibe/plans/{feature}.md`).
-- `vibe.spec` — 기획서 → PTCF SPEC + Feature(BDD) 파일.
-- `vibe.spec.review` — GPT/Gemini Race Review + 품질 게이트.
-- 모두 자연어 트리거(만들자/개발하자/신규/아이디어)로도 자동 활성화.
-
-**UI/Logic 분기**: 기획서의 `type` 필드로 자동 판단. UI 포함 프로젝트(website/webapp/mobile)는 Logic + UI 트랙 병렬, 비-UI(api/library)는 Logic만.
+`/vibe.spec` is the single entry point — orchestrates interview → plan → spec → review → `/vibe.run` → `/vibe.verify` → `/vibe.trace`. For UI types (website/webapp/mobile), `/vibe.figma` branches in parallel. Smart Resume detects existing `.claude/vibe/{interviews,plans,specs}/*.md` to skip phases.
 
 | Task Size | Approach |
-|-----------|----------|
-| 1-2 files | Plan Mode |
-| 3+ files | `/vibe.spec` (전체 워크플로 오케스트레이션) |
+|---|---|
+| 1–2 files | Plan Mode |
+| 3+ files | `/vibe.spec` |
 
 ## Magic Keywords
 
 | Keyword | Effect |
-|---------|--------|
+|---|---|
 | `ultrawork` / `ulw` | Parallel agents + auto-continue + Ralph Loop |
-| `ralph` | Iterate until 100% complete (no scope reduction) |
+| `ralph` | Iterate to 100% (no scope reduction) |
 | `ralplan` | Iterative planning + persistence |
 | `verify` | Strict verification mode |
 | `quick` | Fast mode, minimal verification |
 
-## Skill Tier System
+## Skill Tiers
 
-Skills are classified into 3 tiers to prevent context overload (Curse of Instructions):
-
-| Tier | Loading | Purpose | Count |
-|------|---------|---------|-------|
-| **core** | Always active | Bug/mistake prevention + workflow entry (interview/plan) | ~11 |
-| **standard** | Project setup selects | Workflow support by stack/capability | ~21 |
-| **optional** | Explicit `/skill` only | Reference/wrapper — not auto-loaded | ~4 |
-
-**Constants**: `GLOBAL_SKILLS_CORE` + `GLOBAL_SKILLS_STANDARD` in `src/cli/postinstall/constants.ts`
-
-## Proactive Skill Suggestions
-
-When the user's context matches a pattern below, suggest the relevant skill **once** per session. If the user says "stop suggesting", disable for the rest of the session.
-
-| User Context | Suggested Skill | Tier | Signal |
-|-------------|-----------------|------|--------|
-| New project/feature idea, no plan yet | `/vibe.spec` | command | "만들자", "개발하자", "신규", "아이디어", "무엇을 만들", "let's build", "new feature" |
-| Interview 완료, 기획서 필요 | `/vibe.spec` | command | `.claude/vibe/interviews/*.md` 존재, 기획서 없음 (Smart Resume으로 Phase 2부터) |
-| 전체 워크플로 진입 | `/vibe.spec` | command | "어디서부터 시작", "전체 워크플로", 커맨드 이름 모를 때 |
-| 기획서 → 코드 명세 | `/vibe.spec` | command | `.claude/vibe/plans/*.md` 존재, SPEC 없음 (Smart Resume으로 Phase 3부터) |
-| SPEC exists, ready to implement | `/vibe.run` | core | SPEC file present, no implementation started |
-| Implementation done, verifying | `/vibe.trace` | core | Code changes match SPEC phases |
-| Technical debt accumulating | `/techdebt` | core | Multiple `any` types, console.log, unused imports |
-| Multi-file refactoring planned | `/exec-plan` | core | 3+ files to change, complex dependencies |
-| Complex feature, unknown tech | `/parallel-research` | standard | "how should we", "which library", architecture questions |
-| Debugging errors repeatedly | `/vibe.trace` | core | 3+ error cycles without resolution |
-| Session ending, work incomplete | `/handoff` | standard | 70%+ context, incomplete tasks |
-| Building new UI/UX | `/design-teach` | standard | "new page", "landing", "dashboard", Figma URL |
-| UI code review | `/design-audit` | standard | After implementing UI components |
-| New project setup / CLAUDE.md | `/claude-md-guide` | standard | "new project", "write CLAUDE.md" |
-| Before shipping UI | `/design-polish` | standard | "ready to deploy", "final check" |
-| External API/SDK code needed | `/chub-usage` | optional | "Stripe 연동", "OpenAI API", SDK/API code request |
+3 tiers prevent context overload: **core** (always active) / **standard** (project-setup selected) / **optional** (explicit `/skill` only). SSOT: `GLOBAL_SKILLS_CORE` + `GLOBAL_SKILLS_STANDARD` in `src/cli/postinstall/constants.ts`. Proactive triggers live in each skill's frontmatter.
 
 ## Context Management
 
-- **Exploration/Search**: Haiku | **Implementation**: Sonnet | **Architecture**: Opus
+- Exploration → Haiku · Implementation → Sonnet · Architecture → Opus
 - At 70%+ context: `save_memory` → `/new` → `/vibe.utils --continue`
 
-## Git Commit Rules
+## Git
 
-**Must include:** `.claude/vibe/plans/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/todos/`, `.claude/vibe/config.json`, `CLAUDE.md`
-
-**Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
+**Include**: `.claude/vibe/{plans,specs,features,todos}/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`
 
 <!-- VIBE:END -->

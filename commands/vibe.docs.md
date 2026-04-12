@@ -14,6 +14,7 @@ Generate or update project documentation by analyzing the actual codebase.
 /vibe.docs guide      # 사용자 가이드 (docs/GUIDE.md)
 /vibe.docs arch       # 아키텍처 문서 + Mermaid 다이어그램 (docs/ARCHITECTURE.md)
 /vibe.docs release    # 릴리즈 노트 (git history 기반)
+/vibe.docs agent      # CLAUDE.md / AGENTS.md / GEMINI.md 행동 원칙 주입·갱신
 ```
 
 ## Pipeline Position

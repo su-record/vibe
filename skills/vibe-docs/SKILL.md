@@ -99,6 +99,54 @@ graph TD
     Infra --> API[External APIs]
 ```
 
+### `/vibe.docs agent` — Agent Instruction Files
+
+Inject or refresh the **Behavioral Principles** block (Karpathy-inspired) into agent instruction files:
+
+- `CLAUDE.md` (Claude Code)
+- `AGENTS.md` (Codex CLI)
+- `GEMINI.md` (Gemini CLI)
+
+**Source of truth:** `skills/vibe-docs/templates/behavioral-principles.md` — contains 4 principles (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution).
+
+**Procedure:**
+
+1. Read `templates/behavioral-principles.md` (the canonical block, already wrapped in `<!-- VIBE-BEHAVIORAL:START -->` … `<!-- VIBE-BEHAVIORAL:END -->` markers).
+2. For each existing target file (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`) in the project root:
+   - If markers present → replace content between them.
+   - If markers absent → append the block at end of file.
+   - If file does not exist → **skip** (don't create; only update what already exists).
+3. Per-file adaptation (apply to the copy being written):
+   - `AGENTS.md`: replace `Claude Code` → `Codex CLI`.
+   - `GEMINI.md`: replace `Claude Code` → `Gemini CLI`.
+   - `CLAUDE.md`: no substitution.
+4. Report which files were created/updated/skipped.
+
+**Idempotent:** Re-running `/vibe.docs agent` re-syncs the block from the template without duplicating it.
+
+**Post-update validation — invoke `claude-md-guide` → `agents-md` chain:**
+
+The same LLM attention/compliance rules apply to **all three** agent instruction files (CLAUDE.md / AGENTS.md / GEMINI.md — they are the same artifact for different CLIs). Run the chain on every touched file:
+
+1. **`claude-md-guide`** — size & structure check:
+   - Target 60–150 lines (Optimal). Warn at 200+, force split/trim at 300+.
+   - 4-question validation for every line outside the `VIBE-BEHAVIORAL` block:
+     - Would the agent make a mistake without this? (No → delete)
+     - Needed every session? (No → move to SPEC/plan)
+     - Can a linter/hook replace it? (Yes → move)
+     - Discoverable from code? (Yes → delete)
+   - Lost-in-the-Middle: critical rules top, frequently-violated rules bottom.
+2. **`agents-md`** — discoverability filter (Addy Osmani):
+   - One-line test: "Can the agent discover this by reading the code?" → Yes = delete.
+   - Strip tech-stack name-drops that `package.json` already states.
+
+Report specific line ranges to trim for each file. Do not auto-delete; surface findings for user approval.
+
+**When to run:**
+- After `vibe init` / `vibe update` if behavioral guidance is missing.
+- After upgrading `@su-record/vibe` when the template changes.
+- User explicitly asks to refresh agent instructions.
+
 ### `/vibe.docs release` — Release Notes
 
 Generate release notes from git history:
@@ -153,6 +201,7 @@ When `/vibe.trace` completes with all scenarios passing, suggest:
 - Use changelog-writer agent for `/vibe.docs release`
 - Use api-documenter agent for API-heavy projects
 - Use diagrammer agent for `/vibe.docs arch` Mermaid generation
+- Use `claude-md-guide` → `agents-md` chain for `/vibe.docs agent` — applies equally to CLAUDE.md, AGENTS.md, GEMINI.md
 
 ### DON'T
 - Don't generate placeholder text ("Lorem ipsum", "TODO: fill in")
