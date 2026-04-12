@@ -1,13 +1,12 @@
 # VIBE
 
-> Source code for `@su-record/vibe` npm package. Modify files in THIS repository only — never the installed copies (`~/.claude/`, `~/.codex/`, `~/.gemini/`, `~/.coco/`, `~/.vibe/`).
+> Source code for `@su-record/vibe` npm package. Modify files in THIS repository only — never the installed copies (`~/.claude/`, `~/.coco/`, `~/.vibe/`).
 >
 > **File-to-CLI mapping:**
 > - `CLAUDE.md` — **Claude Code** (100% supported) · **content SSOT**
-> - `AGENTS.md` — **coco** (100% supported, primary) · Codex CLI (best-effort)
-> - `GEMINI.md` — Gemini CLI (best-effort)
+> - `AGENTS.md` — **coco** (100% supported)
 >
-> `AGENTS.md` and `GEMINI.md` are regenerated from this file via `/vibe.docs agent`. Edit here first.
+> `AGENTS.md` is regenerated from this file via `/vibe.docs agent`. Edit here first.
 
 ## Hard Rules
 

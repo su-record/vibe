@@ -99,7 +99,7 @@ graph TD
     Infra --> API[External APIs]
 ```
 
-### `/vibe.docs agent` — Agent Instruction Files (CLAUDE.md / AGENTS.md / GEMINI.md)
+### `/vibe.docs agent` — Agent Instruction Files (CLAUDE.md / AGENTS.md)
 
 **CLI ↔ file mapping:**
 
@@ -107,31 +107,20 @@ graph TD
 |---|---|---|
 | Claude Code | `CLAUDE.md` | 100% (Primary) |
 | coco | `AGENTS.md` | 100% (Primary) |
-| Codex CLI | `AGENTS.md` (shared with coco) | Best-effort |
-| Gemini CLI | `GEMINI.md` | Best-effort |
-| Cursor | (none yet) | Best-effort |
 
-Note: `AGENTS.md` is coco's **primary** file AND Codex's compat file — treat edits with coco-level care.
+Gemini CLI / Codex CLI / Cursor are not supported — do not generate or check `GEMINI.md`.
 
 **Source of truth:**
-- **`CLAUDE.md` is the content SSOT.** Always edit it first; `AGENTS.md` and `GEMINI.md` are regenerated derivatives.
+- **`CLAUDE.md` is the content SSOT.** Always edit it first; `AGENTS.md` is a regenerated derivative.
 - Behavioral block: `skills/vibe-docs/templates/behavioral-principles.md` (4 Karpathy principles, wrapped in `<!-- VIBE-BEHAVIORAL:START/END -->` markers).
 
 **Procedure (applies to both creation and modification):**
 
-1. **Detect state** — enumerate which of `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` exist in project root. **`CLAUDE.md` is always the SSOT**; if missing, create it first (never derive from AGENTS.md/GEMINI.md).
-2. **Per derivative file (`AGENTS.md`, `GEMINI.md`)**:
+1. **Detect state** — check which of `CLAUDE.md` / `AGENTS.md` exist in project root. **`CLAUDE.md` is always the SSOT**; if missing, create it first (never derive from AGENTS.md).
+2. **For `AGENTS.md`**:
    - **If missing** → create by cloning `CLAUDE.md` + applying CLI substitution (below).
    - **If exists** → regenerate from current `CLAUDE.md` + substitution, preserving user-specific additions outside the VIBE block.
-   - Each derivative must include a **compatibility-file notice** in the header stating that `CLAUDE.md` is the SSOT and this CLI is best-effort (not 100% supported).
-3. **CLI substitution (apply to derived copies, not the SSOT)**:
-
-   | Target | Swap |
-   |---|---|
-   | `AGENTS.md` (Codex) | `Claude Code` → `Codex CLI` · `~/.claude/` → `~/.codex/` · `.claude/` → `.codex/` · `CLAUDE.md` → `AGENTS.md` |
-   | `GEMINI.md` (Gemini) | `Claude Code` → `Gemini CLI` · `~/.claude/` → `~/.gemini/` · `.claude/` → `.gemini/` · `CLAUDE.md` → `GEMINI.md` · `PreToolUse`→`BeforeTool` · `PostToolUse`→`AfterTool` · `UserPromptSubmit`→`BeforeAgent` |
-   | `CLAUDE.md` | no substitution |
-
+3. **CLI substitution for `AGENTS.md`** (coco): `Claude Code` → `coco` · `~/.claude/` → `~/.coco/` · `.claude/` → `.coco/` · `CLAUDE.md` → `AGENTS.md`. `CLAUDE.md` itself gets no substitution.
 4. **Validate every touched file (whether newly created or modified)** via the `claude-md-guide` → `agents-md` skill chain — see validation block below. **Never write or save without running this step.**
 5. Report per file: created / updated / skipped / validation warnings.
 
@@ -154,9 +143,9 @@ Note: `AGENTS.md` is coco's **primary** file AND Codex's compat file — treat e
 Report line ranges to trim per file. Do not auto-delete; surface findings for user approval before finalizing.
 
 **When to run:**
-- After `vibe init` / `vibe update` if any of the three files are missing or out of sync.
+- After `vibe init` / `vibe update` if `CLAUDE.md` or `AGENTS.md` is missing or out of sync.
 - After upgrading `@su-record/vibe` when the behavioral template changes.
-- Whenever the SSOT file is edited — re-sync derivatives.
+- Whenever the SSOT file is edited — re-sync `AGENTS.md`.
 - User explicitly asks to refresh agent instructions.
 
 ### `/vibe.docs release` — Release Notes
@@ -213,7 +202,7 @@ When `/vibe.trace` completes with all scenarios passing, suggest:
 - Use changelog-writer agent for `/vibe.docs release`
 - Use api-documenter agent for API-heavy projects
 - Use diagrammer agent for `/vibe.docs arch` Mermaid generation
-- Use `claude-md-guide` → `agents-md` chain for `/vibe.docs agent` — applies equally to CLAUDE.md, AGENTS.md, GEMINI.md
+- Use `claude-md-guide` → `agents-md` chain for `/vibe.docs agent` — applies equally to CLAUDE.md and AGENTS.md
 
 ### DON'T
 - Don't generate placeholder text ("Lorem ipsum", "TODO: fill in")
