@@ -117,7 +117,7 @@ claude
 | **Standard** | `vibe init`이 스택별 선택 | 스택/역할 지원 | figma, design-audit, techdebt |
 | **Optional** | 명시적 `/skill` 호출만 | 레퍼런스, 래퍼 | chub-usage, context7 |
 
-**멀티 LLM** — Claude가 오케스트레이션, GPT가 추론, Gemini가 리서치. 가용 모델에 따라 자동 라우팅. 기본값은 Claude 단독.
+**멀티 LLM** — Claude가 오케스트레이션, GPT가 추론, Gemini가 리서치. 가용 모델에 따라 자동 라우팅. 기본값은 Claude 단독. vibe-codex 또는 Coco 환경(GPT 주관)에서는 Claude CLI가 보조로 전환되어 cross-validation 수행 — `ANTHROPIC_BASE_URL` 또는 `~/.coco/` 감지로 역할 자동 역전.
 
 **스택 감지** — 24개 프레임워크 자동 감지 (Next.js, Django, Rails, Go, Rust, Flutter 등) 후 프레임워크별 규칙과 스킬 적용.
 
@@ -160,6 +160,7 @@ vibe-codex
 | CLI | 상태 |
 |-----|------|
 | [Claude Code](https://claude.ai/code) | 전체 지원 |
+| Coco (`~/.coco/`) | 전체 지원 (자동 감지) |
 | [Codex](https://github.com/openai/codex) | 플러그인 |
 | [Cursor](https://cursor.sh) | 에이전트 + 룰 |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) | 에이전트 + 스킬 |
