@@ -1,5 +1,5 @@
 {
-  "_comment": "WHY this hook ordering: SessionStart initializes state; PreToolUse runs sentinel-guard BEFORE pre-tool-guard because sentinel blocks dangerous commands while pre-tool-guard does finer-grained checks; UserPromptSubmit interrupt echo MUST precede prompt-dispatcher so cancelled tasks are not resumed; Notification thresholds (80/90/95%) trigger progressively urgent context saves.",
+  "_comment": "Hook ordering rationale — SessionStart: init state. PreToolUse: sentinel-guard (catastrophic command blocker) BEFORE pre-tool-guard (project-specific). PostToolUse: format → lint → test (normalize style, then catch issues, then verify behavior). UserPromptSubmit: interrupt echo FIRST to inject cancellation signal BEFORE dispatcher processes new prompt. Notification: 80/90/95% thresholds trigger progressively urgent context saves.",
   "permissions": {
     "allow": [],
     "deny": [],
@@ -16,7 +16,6 @@
         ]
       }
     ],
-    "_comment_PreToolUse": "WHY sentinel-guard runs before pre-tool-guard: sentinel blocks catastrophic commands (rm -rf, etc.) early; pre-tool-guard handles project-specific restrictions. Order matters — fail fast on danger.",
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -71,7 +70,6 @@
         ]
       }
     ],
-    "_comment_PostToolUse": "WHY ordering: format first (normalize style), then lint/check (catch issues on clean code), then test (verify behavior). This chain ensures review-ready code on every edit.",
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
@@ -100,7 +98,6 @@
         ]
       }
     ],
-    "_comment_UserPromptSubmit": "WHY interrupt echo is first: It injects a cancellation signal into the context BEFORE the dispatcher processes the new prompt, preventing the LLM from resuming cancelled work.",
     "UserPromptSubmit": [
       {
         "hooks": [
