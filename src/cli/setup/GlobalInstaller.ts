@@ -64,6 +64,16 @@ export function installGlobalCorePackage(isUpdate = false): void {
         stdio: 'pipe',
       });
     }
+
+    // 런타임 deps가 누락된 경우 (예: 글로벌 복사본이 dist-only) 명시적으로 설치
+    // hooks/scripts/utils.js의 resolver가 better-sqlite3 해석 가능성을 확인하므로 필수
+    const nestedNodeModules = path.join(corePackageDir, 'node_modules', 'better-sqlite3');
+    if (!fs.existsSync(nestedNodeModules)) {
+      execSync('npm install --omit=dev --no-save', {
+        cwd: corePackageDir,
+        stdio: 'pipe',
+      });
+    }
   } catch (e: unknown) {
     handleCaughtError('recoverable', 'Package install failed', e, log);
   }

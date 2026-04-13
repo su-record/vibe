@@ -126,17 +126,31 @@ function getGlobalNpmPath() {
 }
 
 /**
+ * 패키지 루트에 런타임 의존성(node_modules)이 설치되어 있는지 확인
+ * dist/ 만 복사되고 node_modules/ 가 없으면 better-sqlite3 등 네이티브 모듈 import 실패
+ */
+function hasRuntimeDeps(packageRoot) {
+  return fs.existsSync(path.join(packageRoot, 'node_modules', 'better-sqlite3'));
+}
+
+/**
  * 패키지 하위 경로의 file:// URL 반환 (크로스 플랫폼)
  * 우선순위: 로컬 빌드 → ~/.vibe/ → 전역 npm
+ * 각 후보는 probeFile 존재 + 런타임 deps 해석 가능해야 채택 (dist-only 복사본 회피)
  */
 function getPackageUrl(subpath, probeFile) {
-  const localDist = path.join(VIBE_PATH, subpath);
-  const vibePackage = path.join(VIBE_HOME_DIR, 'node_modules', '@su-record', 'vibe', subpath);
-  const globalPackage = path.join(getGlobalNpmPath(), '@su-record', 'vibe', subpath);
+  const localRoot = VIBE_PATH;
+  const vibeRoot = path.join(VIBE_HOME_DIR, 'node_modules', '@su-record', 'vibe');
+  const globalRoot = path.join(getGlobalNpmPath(), '@su-record', 'vibe');
 
-  if (fs.existsSync(path.join(localDist, probeFile))) return toFileUrl(localDist);
-  if (fs.existsSync(path.join(vibePackage, probeFile))) return toFileUrl(vibePackage);
-  return toFileUrl(globalPackage);
+  const candidates = [localRoot, vibeRoot, globalRoot];
+  for (const root of candidates) {
+    const target = path.join(root, subpath);
+    if (fs.existsSync(path.join(target, probeFile)) && hasRuntimeDeps(root)) {
+      return toFileUrl(target);
+    }
+  }
+  return toFileUrl(path.join(globalRoot, subpath));
 }
 
 export function getToolsBaseUrl() {
