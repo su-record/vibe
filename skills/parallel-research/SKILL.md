@@ -63,10 +63,23 @@ Parallel research complete
     ↓
 Synthesize results
     ↓
+Persist to .claude/vibe/research/<topic-slug>/
+    ├── synthesis.md      (conversational report)
+    ├── awesome-list.md   (curated links/repos)
+    └── paper.md          (structured survey for /vibe.spec Context)
+    ↓
 Reflect in SPEC Context section
 OR
 Reference during implementation
 ```
+
+### Output Location (SSOT)
+
+All research artifacts live under `.claude/vibe/research/<topic-slug>/`. Reference `paper.md` explicitly when writing a SPEC (e.g. paste its path into the Context section). Re-running research on the same topic overwrites unless the slug collides across dates (then `-YYYYMMDD` suffix).
+
+> Wire-up note: `/vibe.spec` does **not** yet auto-scan this directory — that integration is a follow-up. For now, cite the path manually.
+
+Pass `--ephemeral` to skip persistence when exploring throwaway questions.
 
 ## When Research is NOT Needed
 
@@ -85,5 +98,7 @@ Reference during implementation
 
 - [ ] All 4 research agents returned results (or documented why not)
 - [ ] Results synthesized into actionable recommendations
+- [ ] Three artifacts written to `.claude/vibe/research/<slug>/` (synthesis / awesome-list / paper) — unless `--ephemeral`
+- [ ] Every awesome-list entry has a one-line "why"
 - [ ] Key findings reflected in SPEC Context section or implementation notes
 - [ ] Conflicting recommendations resolved with reasoning

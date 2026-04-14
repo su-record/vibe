@@ -12,10 +12,15 @@ Receives outputs from all parallel research agents and produces a unified, opini
 ## Responsibilities
 - Collect and read all findings from best-practices, framework-docs, codebase-patterns, and security-advisory agents
 - Identify agreements and conflicts across sources; resolve with explicit reasoning
-- Weight findings: official docs > community consensus > codebase patterns > blog posts
+- Weight findings: security > official docs > codebase patterns > community consensus > blog posts
 - Produce a ranked recommendation: primary approach + acceptable alternatives
 - Flag blockers — security issues or fundamental incompatibilities that must be resolved first
 - Summarize key trade-offs so the user can make an informed decision
+- Emit **three** persisted artifacts (unless ephemeral mode):
+  1. `synthesis.md` — conversational report (schema below)
+  2. `awesome-list.md` — curated links, repos, internal patterns, anti-patterns (from `templates/awesome-list.md`)
+  3. `paper.md` — structured survey with Abstract/Background/Method/Findings/Recommendation/References (from `templates/paper.md`)
+- Drop entries without a one-line "why". No bare link dumps.
 
 ## Input
 Markdown findings documents from all four research agents (best-practices, framework-docs, codebase-patterns, security-advisory).

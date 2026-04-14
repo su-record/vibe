@@ -94,7 +94,7 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Git
 
-**Include**: `.claude/vibe/{plans,specs,features,todos}/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Include**: `.claude/vibe/{plans,specs,features,todos,research}/`, `.claude/vibe/config.json`, `CLAUDE.md`
 **Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`
 
 <!-- VIBE:END -->

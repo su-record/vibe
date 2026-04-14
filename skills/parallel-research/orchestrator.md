@@ -33,6 +33,17 @@ agents: [best-practices, framework-docs, codebase-patterns, security-advisory, s
 - **Output**: Ranked recommendations ordered by confidence and relevance
 - **Parallel**: no
 
+### Phase 5: Persist as Reusable Dataset
+- **Agent**: orchestrator (self)
+- **Input**: Synthesis (Phase 3) + ranked output (Phase 4)
+- **Output**: Three files under `.claude/vibe/research/<topic-slug>/`:
+  - `synthesis.md` — conversational synthesis (from `templates/synthesis.md`)
+  - `awesome-list.md` — curated links/repos by category (from `templates/awesome-list.md`)
+  - `paper.md` — structured survey for `/vibe.spec` Context injection (from `templates/paper.md`)
+- **Parallel**: no — write after Phase 4 completes
+- **Slug rule**: kebab-case of topic, max 50 chars, deduped with `-YYYYMMDD` suffix on collision
+- **Skip condition**: user passed `--ephemeral` or running inside `ultrawork` dry-run
+
 ## DAG (Dependency Graph)
 
 ```mermaid
@@ -43,6 +54,7 @@ graph TD
     E[Phase 1d: security-advisory] --> C
     C --> F[Phase 3: Synthesizer]
     F --> G[Phase 4: Ranked Output]
+    G --> H[Phase 5: Persist dataset]
 ```
 
 ## Error Handling
@@ -55,6 +67,8 @@ graph TD
 | Phase 2 | <2 agents return results | Warn user, proceed with partial synthesis |
 | Phase 3 | Conflicting recommendations | Flag conflict explicitly, present both sides |
 | Phase 4 | 0 actionable recommendations | Fallback — return raw findings without ranking |
+| Phase 5 | Write fails (permission, disk) | Warn user, return synthesis in-conversation without persisting |
+| Phase 5 | Slug collision | Append `-YYYYMMDD`; if still colliding, append `-<hhmm>` |
 
 ## Scalability Modes
 
