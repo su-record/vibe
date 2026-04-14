@@ -47,7 +47,7 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Context Portability
 
-Vibe's thesis: **the harness can be closed — the context layer must not be**. Every piece of context is a plain file you own, version in git, and carry to another harness. Claude Code happens to be one runtime; coco is another; future harnesses follow the same contract.
+Context lives in plain files, git-tracked, readable without vibe installed. Claude Code and coco are supported runtimes; other harnesses work if they honor the contract below.
 
 ### Portable artifacts (all plain markdown/JSON, git-tracked)
 | Artifact | Path | Consumed by |
