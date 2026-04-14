@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 import { CliOptions, VibeConfig } from '../types.js';
 import { log, ensureDir, getPackageJson } from '../utils.js';
 
@@ -38,6 +39,18 @@ import {
 import { installExternalSkills } from './skills.js';
 import { detectCocoCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
+
+/**
+ * scope.json을 활성 SPEC 기반으로 자동 동기화.
+ * 수동 관리(auto != true) 중이거나 SPEC이 없으면 no-op.
+ */
+function syncProjectScope(projectRoot: string, packageRoot: string): void {
+  try {
+    const scriptPath = path.join(packageRoot, 'hooks', 'scripts', 'lib', 'scope-from-spec.js');
+    if (!fs.existsSync(scriptPath)) return;
+    execSync(`node "${scriptPath}" "${projectRoot}"`, { stdio: 'inherit', timeout: 5000 });
+  } catch { /* best-effort */ }
+}
 
 /**
  * update 명령어 실행 — 프로젝트 설정만 업데이트
@@ -150,6 +163,9 @@ export function update(options: CliOptions = { silent: false }): void {
 
     // 레거시 mcp 폴더 정리
     cleanupLegacyMcp(coreDir);
+
+    // scope.json 자동 동기화 (활성 SPEC 기반)
+    syncProjectScope(projectRoot, packageRoot);
 
     const packageJson = getPackageJson();
 

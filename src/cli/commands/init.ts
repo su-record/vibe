@@ -5,6 +5,7 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { execSync } from 'child_process';
 import { CliOptions } from '../types.js';
 import { log, ensureDir, getPackageJson } from '../utils.js';
 import { detectTechStacks } from '../detect.js';
@@ -375,6 +376,16 @@ export async function init(projectName?: string): Promise<void> {
     });
 
     s3.stop('Installation complete');
+
+    // scope.json 자동 동기화 (init 시점엔 보통 SPEC 없음 → no-op)
+    try {
+      const __dir = path.dirname(new URL(import.meta.url).pathname);
+      const packageRoot = path.resolve(__dir, '..', '..', '..');
+      const scopeScript = path.join(packageRoot, 'hooks', 'scripts', 'lib', 'scope-from-spec.js');
+      if (fs.existsSync(scopeScript)) {
+        execSync(`node "${scopeScript}" "${projectRoot}"`, { stdio: 'inherit', timeout: 5000 });
+      }
+    } catch { /* best-effort */ }
 
     // 완료 메시지
     const packageJson = getPackageJson();

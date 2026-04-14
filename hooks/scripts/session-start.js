@@ -94,6 +94,15 @@ async function main() {
       }
     }
 
+    // Scope sync — 활성 SPEC 기반으로 scope.json 자동 갱신 (수동 관리면 스킵)
+    try {
+      const { syncScopeFile } = await import('./lib/scope-from-spec.js');
+      const result = syncScopeFile(PROJECT_DIR);
+      if (result.action === 'created' || result.action === 'updated' || result.action === 'removed') {
+        console.log(`\n🚧 Scope ${result.action} from active SPECs (.claude/vibe/scope.json)`);
+      }
+    } catch { /* scope sync is best-effort */ }
+
     // Autonomy status summary
     try {
       const fs = await import('fs');
