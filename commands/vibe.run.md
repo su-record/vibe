@@ -48,18 +48,18 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 
 ### Pre-Run Regression Check (MANDATORY, before implementation starts)
 
-시작 직후 필수 실행:
+Run immediately after start:
 
 ```
 Load skill `vibe-regress` with: list --feature "{feature-name}"
 ```
 
-- 미해결 회귀 항목 있으면:
-  - interactive 모드: 사용자에게 "먼저 회귀 테스트 생성 후 진행?" 묻기
-  - ultrawork 모드: 자동 `/vibe.regress generate <slug>`로 예방 테스트 생성 후 진행
-- 미해결 없으면 조용히 통과
+- If any open regressions exist:
+  - interactive mode: ask the user "generate preventive tests first, then proceed?"
+  - ultrawork mode: auto-invoke `/vibe.regress generate <slug>` for each, then proceed
+- No open regressions → silently continue
 
-또한 `.claude/vibe/contracts/{feature-name}.md`이 있으면 로드 — 구현 시 계약 준수 기준으로 사용.
+Also load `.claude/vibe/contracts/{feature-name}.md` if present — use it as the contract reference during implementation.
 
 ### Core Flow
 

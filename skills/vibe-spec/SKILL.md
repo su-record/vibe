@@ -400,21 +400,21 @@ Read ~/.claude/vibe/languages/typescript-react.md
 Before spawning any research agents, check for a prior persisted dataset:
 
 ```bash
-# Slug = kebab-case of feature/topic, max 50 chars
+# Slug = kebab-case of the feature/topic, max 50 chars
 ls .claude/vibe/research/<slug>/paper.md 2>/dev/null
 ```
 
 **If `paper.md` exists:**
 1. Read `.claude/vibe/research/<slug>/paper.md`
 2. Read `.claude/vibe/research/<slug>/awesome-list.md` (if present)
-3. Inject the **Findings**, **Recommendation**, and **Security considerations** sections into SPEC Context verbatim, prefixed with `> Source: .claude/vibe/research/<slug>/paper.md (cached {{FILE_MTIME}})`
+3. Inject the **Findings**, **Recommendation**, and **Security considerations** sections verbatim into SPEC Context, prefixed with `> Source: .claude/vibe/research/<slug>/paper.md (cached {{FILE_MTIME}})`
 4. **Skip step 3** (parallel research) entirely — do not re-run GPT/Gemini/Claude agents
-5. Show message: `✅ Research cache hit: <slug> (saved ~30s of LLM calls)`
+5. Print: `✅ Research cache hit: <slug> (saved ~30s of LLM calls)`
 
 **Cache invalidation:**
-- User passes `--refresh-research` → delete dir, run step 3 fresh
-- `paper.md` mtime older than 30 days → warn user, ask to refresh or reuse
-- Stack in `paper.md` header differs from current stack → auto-refresh
+- User passes `--refresh-research` → delete dir, rerun step 3 from scratch
+- `paper.md` mtime older than 30 days → warn the user, ask to refresh or reuse
+- `stack` in `paper.md` frontmatter differs from current stack → auto-refresh
 
 **If `paper.md` does NOT exist:**
 Proceed to step 3. After step 3 completes, the synthesizer **must** write the 3 artifacts (see `parallel-research/orchestrator.md` Phase 5) so the next `/vibe.spec` run on this topic hits the cache.
@@ -565,19 +565,19 @@ Task(subagent_type="ui-layout-architect",
 
 ### 3.9 Persist Research Cache (AFTER research completes, BEFORE SPEC write)
 
-> The "no Write during research" rule (step 3) does **not** apply here — research is done, artifacts are safe to persist.
+> The "no Write during research" rule from step 3 does **not** apply here — research is done; artifacts are safe to persist.
 
-After parallel research + UI/UX intelligence complete and before writing the SPEC, save the merged research into `.claude/vibe/research/<slug>/`:
+After parallel research + UI/UX intelligence complete, before writing the SPEC, save the merged research to `.claude/vibe/research/<slug>/`:
 
 1. Compute slug: kebab-case of feature name, max 50 chars
 2. Write **three files** using templates from `parallel-research/templates/`:
    - `.claude/vibe/research/<slug>/synthesis.md` — raw merged findings (all agent outputs)
-   - `.claude/vibe/research/<slug>/awesome-list.md` — curated links/repos/patterns (each entry needs a one-line "why"; drop entries without it)
+   - `.claude/vibe/research/<slug>/awesome-list.md` — curated links/repos/patterns (every entry needs a one-line "why"; drop entries without one)
    - `.claude/vibe/research/<slug>/paper.md` — structured survey (Abstract → Background → Method → Findings → Recommendation → Security → References)
-3. Include a frontmatter header in `paper.md` with `stack:` field so step 2.9 can detect stack drift
-4. If the directory already exists (user ran `--refresh-research`), overwrite
+3. Include a frontmatter header in `paper.md` with a `stack:` field so step 2.9 can detect stack drift
+4. If the directory already exists (user passed `--refresh-research`), overwrite
 
-This makes the next `/vibe.spec` or `/vibe.research` invocation on the same topic hit the cache at step 2.9.
+This makes the next `/vibe.spec` (or future `/vibe.research`) invocation on the same topic hit the cache at step 2.9.
 
 ### 4. Write SPEC Document (PTCF Structure)
 

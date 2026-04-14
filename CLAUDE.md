@@ -69,8 +69,9 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 `/vibe.spec` is the single entry point — orchestrates interview → plan → spec → review → `/vibe.run` → `/vibe.verify` → `/vibe.contract` → `/vibe.trace`. For UI types (website/webapp/mobile), `/vibe.figma` branches in parallel. Smart Resume detects existing `.claude/vibe/{interviews,plans,specs}/*.md` to skip phases.
 
 **Quality-loop commands** (bug → prevention):
-- `/vibe.regress` — 회귀 테스트 자동 진화. `/vibe.verify` 실패 시 자동 register, `generate`로 예방 테스트 생성, `cluster`로 반복 패턴 승격.
-- `/vibe.contract` — API 계약 드리프트 감지. SPEC에서 추출한 계약과 구현 비교, P1 drift는 `/vibe.regress`로 자동 전파.
+- `/vibe.regress` — Regression test auto-evolution. Auto-registers on `/vibe.verify` failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
+- `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to `/vibe.regress`.
+- `/vibe.test` — vibe self-test across the CC ↔ coco harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to `/vibe.regress`. Recommended before every release.
 
 | Task Size | Approach |
 |---|---|
@@ -98,7 +99,7 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Git
 
-**Include**: `.claude/vibe/{plans,specs,features,todos,research,regressions,contracts}/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Include**: `.claude/vibe/{plans,specs,features,todos,research,regressions,contracts,test-reports}/`, `.claude/vibe/config.json`, `CLAUDE.md`
 **Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`
 
 <!-- VIBE:END -->

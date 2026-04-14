@@ -372,15 +372,15 @@ Load skill `vibe-spec-review` with feature: {feature-name}
 5. Review Debate Team (2+ P1/P2 이슈 시)
 6. 사용자 최종 체크포인트
 
-### Phase 4.5: Contract Extract (자동, API 있는 feature만)
+### Phase 4.5: Contract Extract (auto, only for features with an API)
 
 ```
 Load skill `vibe-contract` with: extract "{feature-name}"
 ```
 
-SPEC에 `## API` / `## Endpoints` / `## Interface` 섹션이 있으면 계약을 `.claude/vibe/contracts/{feature-name}.md`로 추출. 섹션이 없으면 에러 없이 스킵 (모든 feature가 API를 갖지 않음).
+If the SPEC has a `## API` / `## Endpoints` / `## Interface` section, extract the contract to `.claude/vibe/contracts/{feature-name}.md`. If the section is absent, exit cleanly (not every feature has an API).
 
-이 계약은 Phase 5a 구현 시 참조되고, `/vibe.verify` 종료 시 drift 검사에 사용됨.
+The contract is referenced during Phase 5a implementation, and used by `/vibe.verify` for drift detection.
 
 ### Phase 5a: Logic Track
 
@@ -388,9 +388,9 @@ SPEC에 `## API` / `## Endpoints` / `## Interface` 섹션이 있으면 계약을
 /vibe.run "{feature-name}"
 ```
 
-SPEC → 코드 구현. 시작 시 자동 체크:
-- `/vibe.regress list --feature {feature-name}` — 미해결 회귀 항목 있으면 경고
-- `.claude/vibe/contracts/{feature-name}.md` — 있으면 로드하여 구현 가이드
+SPEC → code. Auto-checks at start:
+- `/vibe.regress list --feature {feature-name}` — warn if any open regressions exist
+- `.claude/vibe/contracts/{feature-name}.md` — load if present, use as implementation guide
 
 ### Phase 5b: UI Track (type ∈ {website, webapp, mobile}일 때만)
 

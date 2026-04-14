@@ -235,9 +235,9 @@ For each failed scenario:
     location: {file:line}
 ```
 
-- `--from-verify` 모드는 사용자 확인 없이 등록 (verify 실패 컨텍스트에서 마찰 최소화)
-- 등록된 bug의 slug를 Failure Report의 "Fix" 섹션에 링크로 노출
-- 이후 `/vibe.regress generate <slug>`로 예방 테스트 생성 가능
+- `--from-verify` mode skips user confirmation (the user is already attentive in a verify-failure context; minimize friction)
+- The registered bug's slug appears as a link in the Failure Report's "Fix" section
+- Follow up with `/vibe.regress generate <slug>` to produce a preventive test
 
 ### Failure Report
 
@@ -402,18 +402,18 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 **Codex P2 발견 시:**
 - TODO 파일에 기록 후 완료 처리
 
-## Post-Verify Contract Check (자동, contract 파일 있을 때만)
+## Post-Verify Contract Check (auto, only when a contract file exists)
 
-모든 시나리오 통과 후 자동 호출:
+After all scenarios pass, auto-invoke:
 
 ```
 Load skill `vibe-contract` with: check "{feature-name}"
 ```
 
-- `.claude/vibe/contracts/{feature-name}.md`이 없으면 스킵
-- drift 없음 → verify 통과 유지
-- **P1 drift** → verify 실패로 강등 + `/vibe.regress register --from-contract` 자동 호출
-- P2/P3 drift → 경고만, 통과 유지
+- Skip if `.claude/vibe/contracts/{feature-name}.md` does not exist
+- No drift → verify still passes
+- **P1 drift** → demote verify to fail; auto-call `/vibe.regress register --from-contract`
+- P2 / P3 drift → warning only; verify still passes
 
 ## Next Step
 
