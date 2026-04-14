@@ -280,8 +280,89 @@ describe('pre-tool-guard', () => {
         tool_name: 'Bash',
         tool_input: { command: 'DROP TABLE users' },
       });
-      // tool_input is stringified — pattern matches against the JSON string
       expect(result.exitCode).toBe(2);
+      expect(result.stdout).toContain('Database drop detected');
+    });
+  });
+
+  // ══════════════════════════════════════════════════
+  // Regression: file content false positives (issue: machine-key.ts blocked)
+  //   .claude/vibe/regressions/pre-tool-guard-content-false-positive.md
+  //
+  // 이전 구현은 tool_input 전체를 JSON.stringify해서 패턴 매칭했기 때문에
+  // 파일 내용에 '/etc/', '.env', 'secret' 같은 리터럴이 있으면 차단됐음.
+  // write/edit 패턴은 file_path만 봐야 한다.
+  // ══════════════════════════════════════════════════
+  describe('regression: write/edit content must not trigger path patterns', () => {
+    it('should ALLOW writing safe path even when content contains "/etc/" literal', () => {
+      const result = runGuardWithStdin({
+        tool_name: 'Write',
+        tool_input: {
+          file_path: 'src/machine-key.ts',
+          content: "for (const path of ['/etc/machine-id', '/var/lib/dbus/machine-id']) {}",
+        },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).not.toContain('Writing to system directory');
+    });
+
+    it('should ALLOW writing safe path even when content contains "/usr/" literal', () => {
+      const result = runGuardWithStdin({
+        tool_name: 'Write',
+        tool_input: {
+          file_path: 'src/cli-detect.ts',
+          content: "const IOREG = '/usr/sbin/ioreg';",
+        },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).not.toContain('Writing to system directory');
+    });
+
+    it('should ALLOW writing safe path even when content mentions ".env" / "secret"', () => {
+      const result = runGuardWithStdin({
+        tool_name: 'Write',
+        tool_input: {
+          file_path: 'src/config.ts',
+          content: "// loads from .env, never log secret values",
+        },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).not.toContain('Writing to sensitive file');
+    });
+
+    it('should ALLOW editing safe path even when new_string contains ".env" literal', () => {
+      const result = runGuardWithStdin({
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: 'src/index.ts',
+          old_string: 'const x = 1',
+          new_string: '// reads .env at startup',
+        },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).not.toContain('Editing sensitive file');
+    });
+
+    it('should still BLOCK Write when file_path itself targets /etc/', () => {
+      const result = runGuardWithStdin({
+        tool_name: 'Write',
+        tool_input: { file_path: '/etc/passwd', content: 'root:x:0:0' },
+      });
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toContain('Writing to system directory');
+    });
+
+    it('should still WARN Edit when file_path itself is a credentials file', () => {
+      const result = runGuardWithStdin({
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: 'config/credentials.json',
+          old_string: 'a',
+          new_string: 'b',
+        },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Editing sensitive file');
     });
   });
 });

@@ -7,26 +7,35 @@
 import { VIBE_PATH, PROJECT_DIR } from './utils.js';
 
 // 위험한 명령어 패턴
+//
+// 각 엔트리의 `target`은 매칭 대상 필드:
+//   - 'command'   → tool_input.command (Bash)
+//   - 'file_path' → tool_input.file_path (Write, Edit)
+//   - 'raw'       → 전체 문자열 (스키마 모를 때 폴백)
+//
+// 예전 버전은 항상 stringify된 tool_input 전체에 매칭하여 file content가
+// 패턴(예: /etc/, .env)과 일치하면 false positive로 차단되는 버그가 있었음.
+// 회귀: .claude/vibe/regressions/pre-tool-guard-content-false-positive.md
 const DANGEROUS_PATTERNS = {
   bash: [
-    { pattern: /rm\s+-rf?\s+[\/~]/, severity: 'critical', message: 'Deleting root or home directory' },
-    { pattern: /rm\s+-rf?\s+\*/, severity: 'high', message: 'Wildcard deletion detected' },
-    { pattern: /git\s+push\s+.*--force/, severity: 'high', message: 'Force push detected' },
-    { pattern: /git\s+reset\s+--hard/, severity: 'medium', message: 'Hard reset will discard changes' },
-    { pattern: /drop\s+(table|database)/i, severity: 'critical', message: 'Database drop detected' },
-    { pattern: /truncate\s+table/i, severity: 'high', message: 'Table truncate detected' },
-    { pattern: /:(){ :|:& };:/, severity: 'critical', message: 'Fork bomb detected' },
-    { pattern: /mkfs|fdisk|dd\s+if=/, severity: 'critical', message: 'Disk operation detected' },
-    { pattern: /chmod\s+-R\s+777/, severity: 'medium', message: 'Insecure permission change' },
-    { pattern: /curl.*\|\s*(ba)?sh/, severity: 'high', message: 'Piping curl to shell' },
+    { pattern: /rm\s+-rf?\s+[\/~]/, target: 'command', severity: 'critical', message: 'Deleting root or home directory' },
+    { pattern: /rm\s+-rf?\s+\*/, target: 'command', severity: 'high', message: 'Wildcard deletion detected' },
+    { pattern: /git\s+push\s+.*--force/, target: 'command', severity: 'high', message: 'Force push detected' },
+    { pattern: /git\s+reset\s+--hard/, target: 'command', severity: 'medium', message: 'Hard reset will discard changes' },
+    { pattern: /drop\s+(table|database)/i, target: 'command', severity: 'critical', message: 'Database drop detected' },
+    { pattern: /truncate\s+table/i, target: 'command', severity: 'high', message: 'Table truncate detected' },
+    { pattern: /:(){ :|:& };:/, target: 'command', severity: 'critical', message: 'Fork bomb detected' },
+    { pattern: /mkfs|fdisk|dd\s+if=/, target: 'command', severity: 'critical', message: 'Disk operation detected' },
+    { pattern: /chmod\s+-R\s+777/, target: 'command', severity: 'medium', message: 'Insecure permission change' },
+    { pattern: /curl.*\|\s*(ba)?sh/, target: 'command', severity: 'high', message: 'Piping curl to shell' },
   ],
   edit: [
-    { pattern: /\.env|credentials|secret|password|api[_-]?key/i, severity: 'medium', message: 'Editing sensitive file' },
-    { pattern: /package-lock\.json|yarn\.lock|pnpm-lock/, severity: 'low', message: 'Editing lock file directly' },
+    { pattern: /\.env|credentials|secret|password|api[_-]?key/i, target: 'file_path', severity: 'medium', message: 'Editing sensitive file' },
+    { pattern: /package-lock\.json|yarn\.lock|pnpm-lock/, target: 'file_path', severity: 'low', message: 'Editing lock file directly' },
   ],
   write: [
-    { pattern: /\.env|credentials|secret/i, severity: 'medium', message: 'Writing to sensitive file' },
-    { pattern: /\/etc\/|\/usr\/|C:\\Windows/i, severity: 'critical', message: 'Writing to system directory' },
+    { pattern: /\.env|credentials|secret/i, target: 'file_path', severity: 'medium', message: 'Writing to sensitive file' },
+    { pattern: /\/etc\/|\/usr\/|C:\\Windows/i, target: 'file_path', severity: 'critical', message: 'Writing to system directory' },
   ],
 };
 
@@ -83,9 +92,38 @@ const SAFE_ALTERNATIVES = {
 };
 
 /**
+ * 패턴 매칭 대상 추출
+ *
+ * tool_input이 객체이면 target 필드만 뽑아 반환. 객체가 아니거나(레거시 argv 모드)
+ * target='raw'이면 입력 전체를 그대로 반환.
+ *
+ * 핵심: write/edit 패턴은 file_path만 봐야 한다. content에 우연히 들어간
+ * 리터럴(예: 코드 안의 '/etc/machine-id' 문자열)이 차단을 일으키지 않도록.
+ */
+function extractTarget(rawInput, target) {
+  if (target === 'raw') return typeof rawInput === 'string' ? rawInput : JSON.stringify(rawInput);
+
+  // 객체로 파싱 시도
+  let obj = rawInput;
+  if (typeof rawInput === 'string') {
+    try {
+      obj = JSON.parse(rawInput);
+    } catch {
+      // JSON 아님 → 레거시 argv 모드. argv[3]은 보통 file_path 또는 command 단일 문자열.
+      // 안전하게 그 문자열을 target 값으로 간주.
+      return rawInput;
+    }
+  }
+
+  if (typeof obj !== 'object' || obj === null) return '';
+  const value = obj[target];
+  return typeof value === 'string' ? value : '';
+}
+
+/**
  * 명령어 검증
  */
-function validateCommand(toolName, input) {
+function validateCommand(toolName, rawInput) {
   const results = {
     allowed: true,
     severity: 'none',
@@ -95,8 +133,11 @@ function validateCommand(toolName, input) {
 
   const patterns = DANGEROUS_PATTERNS[toolName.toLowerCase()] || [];
 
-  for (const { pattern, severity, message } of patterns) {
-    if (pattern.test(input)) {
+  for (const { pattern, target, severity, message } of patterns) {
+    const haystack = extractTarget(rawInput, target || 'raw');
+    if (!haystack) continue;
+
+    if (pattern.test(haystack)) {
       results.warnings.push(`[${severity.toUpperCase()}] ${message}`);
 
       // 심각도에 따른 처리
@@ -109,9 +150,9 @@ function validateCommand(toolName, input) {
         results.severity = severity;
       }
 
-      // 대안 제안
+      // 대안 제안 — 매칭된 target 필드에서만 검색
       for (const [dangerous, safe] of Object.entries(SAFE_ALTERNATIVES)) {
-        if (input.includes(dangerous)) {
+        if (haystack.includes(dangerous)) {
           results.suggestions.push(safe);
         }
       }
