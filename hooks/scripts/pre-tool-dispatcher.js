@@ -23,6 +23,11 @@ const steps = [
   { name: 'pre-tool-guard', script: 'pre-tool-guard.js', args: [toolName], denyOnExit2: true },
 ];
 
+// scope-guard는 Edit/Write에만 의미 있음 — 불필요한 spawn 회피
+if (toolName === 'Edit' || toolName === 'Write') {
+  steps.push({ name: 'scope-guard', script: 'scope-guard.js', args: [toolName], denyOnExit2: true });
+}
+
 // command-log은 Bash 전용
 if (toolName === 'Bash') {
   steps.push({ name: 'command-log', script: 'command-log.js' });
