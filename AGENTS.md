@@ -64,7 +64,11 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Workflow
 
-`/vibe.spec` is the single entry point — orchestrates interview → plan → spec → review → `/vibe.run` → `/vibe.verify` → `/vibe.trace`. For UI types (website/webapp/mobile), `/vibe.figma` branches in parallel. Smart Resume detects existing `.codex/vibe/{interviews,plans,specs}/*.md` to skip phases.
+`/vibe.spec` is the single entry point — orchestrates interview → plan → spec → review → `/vibe.run` → `/vibe.verify` → `/vibe.contract` → `/vibe.trace`. For UI types (website/webapp/mobile), `/vibe.figma` branches in parallel. Smart Resume detects existing `.codex/vibe/{interviews,plans,specs}/*.md` to skip phases.
+
+**Quality-loop commands** (bug → prevention):
+- `/vibe.regress` — 회귀 테스트 자동 진화. `/vibe.verify` 실패 시 자동 register, `generate`로 예방 테스트 생성, `cluster`로 반복 패턴 승격.
+- `/vibe.contract` — API 계약 드리프트 감지. SPEC에서 추출한 계약과 구현 비교, P1 drift는 `/vibe.regress`로 자동 전파.
 
 | Task Size | Approach |
 |---|---|
@@ -92,7 +96,7 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Git
 
-**Include**: `.codex/vibe/{plans,specs,features,todos}/`, `.codex/vibe/config.json`, `AGENTS.md`
+**Include**: `.codex/vibe/{plans,specs,features,todos,research,regressions,contracts}/`, `.codex/vibe/config.json`, `AGENTS.md`
 **Exclude**: `~/.codex/{rules,commands,agents,skills}/`, `.codex/settings.local.json`
 
 <!-- VIBE:END -->

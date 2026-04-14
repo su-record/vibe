@@ -221,6 +221,24 @@ For each UI scenario in Feature file:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Failure Auto-Register (MANDATORY on any scenario failure)
+
+Before printing the failure report, **auto-register each failed scenario as a regression bug** so the same failure cannot silently slip through next time:
+
+```
+For each failed scenario:
+  Load skill `vibe-regress` with:
+    subcommand: register --from-verify
+    feature: {feature-name}
+    scenario: {scenario-name}
+    error: {error-summary}
+    location: {file:line}
+```
+
+- `--from-verify` 모드는 사용자 확인 없이 등록 (verify 실패 컨텍스트에서 마찰 최소화)
+- 등록된 bug의 slug를 Failure Report의 "Fix" 섹션에 링크로 노출
+- 이후 `/vibe.regress generate <slug>`로 예방 테스트 생성 가능
+
 ### Failure Report
 
 ```
@@ -383,6 +401,19 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 **Codex P2 발견 시:**
 - TODO 파일에 기록 후 완료 처리
+
+## Post-Verify Contract Check (자동, contract 파일 있을 때만)
+
+모든 시나리오 통과 후 자동 호출:
+
+```
+Load skill `vibe-contract` with: check "{feature-name}"
+```
+
+- `.claude/vibe/contracts/{feature-name}.md`이 없으면 스킵
+- drift 없음 → verify 통과 유지
+- **P1 drift** → verify 실패로 강등 + `/vibe.regress register --from-contract` 자동 호출
+- P2/P3 drift → 경고만, 통과 유지
 
 ## Next Step
 
