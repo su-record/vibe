@@ -45,9 +45,19 @@ This stage alone catches:
 - AGENTS.md holding stale paths (e.g. `.codex/` references after a coco rename)
 - CLAUDE.md ↔ AGENTS.md body drift
 
-## Subcommand: report (runtime invocation, stage 2 — TODO)
+## Subcommand: report (runtime invocation)
 
-Calls each feature and captures responses. Build after stage 1 stabilizes.
+Probes every shipped feature in the current harness and writes a JSON+MD report.
+
+| Category | Probe |
+|---|---|
+| commands | frontmatter validity, body delegates to a skill |
+| skills | frontmatter validity, triggers non-empty |
+| hooks | run matching vitest suite |
+| agents | frontmatter validity, declared tools exist in harness |
+| tools | run matching vitest suite or smoke-call with minimal input |
+
+No external LLM calls. Interactive commands are not actually invoked — structural validation only. See `skills/vibe-test/SKILL.md` for full probe spec and failure-handling rules.
 
 ## Subcommand: compare (diff two reports)
 

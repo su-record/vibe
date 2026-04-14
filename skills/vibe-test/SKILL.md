@@ -103,12 +103,92 @@ No harness execution. Only file system + body inspection. Fast and deterministic
    - symptom: `"Parity drift: <category> missing in <harness>"`
    - root-cause-tag: `integration`
 
-## Subcommand: `report` — runtime invocation (stage 2, TODO)
+## Subcommand: `report` — runtime invocation
 
-Invoke each feature and capture responses. Build after stage 1 stabilizes. v1 design must define:
-- Probe shape per category for "successful invocation"
-- Dry-run mode for interactive commands (e.g. `/vibe.spec`)
-- Cost control for LLM-dependent features (mock vs real)
+Inspect every shipped feature in the current harness, capture pass/fail, and emit the JSON+MD report defined above.
+
+### Probe philosophy
+
+- **No external LLM calls.** The probe is structural + execution-based, not generative. Cost ≈ a few file reads plus running `vitest`.
+- **Interactive commands are NOT actually invoked.** Calling `/vibe.spec` would block on the interview loop. Probe checks structural validity only and records `invocable: true` if the file is well-formed.
+- **Hooks and tools have real unit tests** in the repo — run them, do not simulate.
+- A probe failure never stops the run. Each entry's `error` field captures the cause; the report keeps going.
+
+### Steps
+
+1. **Resolve install dir for current harness**:
+   - CC: `~/.claude/`
+   - coco: `~/.coco/` (`COCO_HOME` overrides)
+   - Detect via `process.env.COCO_HOME` first, then which one is currently being read from. If both present, use the harness this skill was invoked from.
+
+2. **Probe `commands`** — for each `<install>/commands/*.md`:
+   - `loaded`: file exists and is non-empty
+   - `frontmatter-valid`: YAML frontmatter parses; required keys present (`description`)
+   - `argument-hint-present`: optional but recorded
+   - `body-references-skill`: body contains `Load skill ` or `## Process` (signal that the command delegates correctly)
+   - Result: `{ name, loaded, frontmatter-valid, body-references-skill, error }`
+
+3. **Probe `skills`** — for each `<install>/skills/*/SKILL.md`:
+   - `loaded`: file exists
+   - `frontmatter-valid`: YAML parses with required keys: `name`, `tier`, `description`, `triggers`
+   - `triggers-non-empty`: triggers array has ≥1 entry
+   - `description-mentions-trigger-conditions`: heuristic — description contains `Must use this skill when` or equivalent (vibe convention)
+   - Result: `{ name, loaded, frontmatter-valid, triggers-count, error }`
+
+4. **Probe `hooks`** — for each `<install>/hooks/scripts/*.js` (or repo `hooks/scripts/` if testing the source):
+   - If a matching `__tests__/<hook-name>.test.js` exists → run `npx vitest run hooks/scripts/__tests__/<hook>.test.js --reporter=json` and parse the result
+   - If no test exists → mark `test-suite: "no-tests"` (warn, not fail)
+   - Result: `{ name, test-suite: "passed" | "failed" | "no-tests", tests: "<passed>/<total>", error }`
+
+5. **Probe `agents`** — for each `<install>/agents/*.md`:
+   - `loaded`, `frontmatter-valid` (required: `name`, `description`, `tools`)
+   - `tools-list-valid`: every tool in the `tools` array matches a known harness tool (Read, Glob, Grep, Bash, Edit, Write, WebSearch, WebFetch, Task, plus the agent-specific Skill etc.)
+   - Result: `{ name, loaded, frontmatter-valid, tools-list-valid, error }`
+
+6. **Probe `tools`** — for each tool exported from `dist/tools/index.js`:
+   - If a matching test file exists in `src/tools/__tests__/` → run vitest and capture pass/fail
+   - If no test → call the tool with a minimal known-safe input (e.g. `validateCodeQuality` against a tiny fixture) and verify the response is well-shaped JSON
+   - Result: `{ name, test-suite | smoke-call, status, error }`
+
+7. **Compile JSON + Markdown reports** to `<project-vibe-dir>/test-reports/<YYYYMMDD-HHmm>-<harness>.{json,md}` per the schema above.
+
+8. **Print summary**:
+   ```
+   📊 RUNTIME REPORT (cc)
+     commands: 14/14 loaded, 14/14 frontmatter-valid
+     skills:   28/28 loaded, 1 missing description-mentions-trigger-conditions
+     hooks:    7/7 test suites passed (118/118 tests)
+     agents:   42/42 loaded, 0 with invalid tools
+     tools:    9/9 passing
+   📈 Score: 99/100
+   📁 .claude/vibe/test-reports/20260414-1845-cc.json
+   ```
+
+### Failure handling
+
+| Probe failure | Action |
+|---|---|
+| frontmatter parse error | record + continue |
+| missing required key | record + continue |
+| vitest run failure | capture stderr summary into `error` field, continue |
+| tool smoke-call exception | record exception type + continue |
+| install dir not found | abort with clear message — cannot probe what is not installed |
+
+### What this catches
+
+- A new command added in source but missed by `postinstall` (file present in repo, absent from `~/.claude/commands/`)
+- Skill with malformed frontmatter (would fail to register at runtime)
+- Agent listing a tool that does not exist in the harness
+- Hook unit test regression (matches existing CI guard but locally observable)
+- Tool that broke between the test fixture and the shipped build
+
+### What this does NOT catch
+
+- LLM behavioral drift (interactive command actually behaving differently)
+- Race conditions in agent orchestration
+- Real-world failures that depend on user input
+
+These belong to higher-effort future work (functional e2e, currently not in scope).
 
 ## Subcommand: `compare` — diff two reports
 
@@ -148,10 +228,20 @@ Load skill `vibe-regress` with:
   root-cause-tag: integration
 ```
 
-## Done Criteria (v1: parity only)
+## Done Criteria
 
-- [ ] `parity` works without any external calls
+### Subcommand: parity
+- [ ] Works without any external calls
 - [ ] Missing one install dir → clean exit with guidance (not an error)
-- [ ] `install-set-diff`, `content-drift`, `path-error` are reported as separate categories
+- [ ] `install-set-diff`, `content-drift`, `path-error` reported as separate categories
 - [ ] P1 findings invoke `/vibe.regress` automatically
 - [ ] `compare` handles timing-skew warning correctly
+
+### Subcommand: report
+- [ ] No external LLM calls (cost = file reads + vitest runs only)
+- [ ] Interactive commands probed structurally, never actually invoked
+- [ ] Hook and tool tests run via real vitest, not simulated
+- [ ] A probe failure on one entry never stops the run
+- [ ] JSON report matches the schema in "Storage Contract"
+- [ ] Markdown summary printed to console after run completes
+- [ ] Install dir absent → abort with clear message (not silent)
