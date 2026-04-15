@@ -6,6 +6,9 @@ import { readFileSync, existsSync, writeFileSync } from 'fs';
 import path from 'path';
 import os from 'os';
 
+process.on('uncaughtException', () => {});
+process.on('unhandledRejection', () => {});
+
 const BASE_URL = getToolsBaseUrl();
 
 /**

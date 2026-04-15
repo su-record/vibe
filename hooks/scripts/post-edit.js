@@ -7,6 +7,9 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 
+process.on('uncaughtException', () => {});
+process.on('unhandledRejection', () => {});
+
 const CONSOLE_LOG_RE = /console\.log/;
 const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
 
