@@ -9,7 +9,7 @@ import { execSync } from 'child_process';
 import { CliOptions } from '../types.js';
 import { log, ensureDir, getPackageJson } from '../utils.js';
 import { detectTechStacks } from '../detect.js';
-import { formatLLMStatus, getClaudeCodeStatus } from '../auth.js';
+import { formatLLMStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
 import {
   updateConstitution,
@@ -418,9 +418,8 @@ export async function init(
     // 완료 메시지
     const packageJson = getPackageJson();
 
-    const claudeStatus = getClaudeCodeStatus(true);
     log(`✅ vibe initialized (v${packageJson.version})
-${formatLLMStatus(claudeStatus)}
+${formatLLMStatus()}
 📦 Context7 plugin (recommended): /plugin install context7
 
 Next: ${isNewProject ? `cd ${projectName} && ` : ''}/vibe.spec "feature"

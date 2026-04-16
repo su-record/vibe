@@ -14,6 +14,40 @@ export interface AiCliStatus {
   installed: boolean;
   configDir: string;
   pluginDir?: string;
+  /** 현재 인증 세션이 감지되는지 (파일/Keychain 기반, API 호출 없음). installed=false면 undefined. */
+  authenticated?: boolean;
+}
+
+/**
+ * Claude Code CLI 인증 감지 (파일/Keychain 기반, 빠름)
+ * - macOS: `security` 커맨드로 "Claude Code-credentials" Keychain 항목 확인
+ * - 그 외: `~/.claude/.credentials.json` 존재 여부
+ */
+function detectClaudeAuth(configDir: string): boolean {
+  if (process.platform === 'darwin') {
+    try {
+      execSync('security find-generic-password -s "Claude Code-credentials"', { stdio: 'ignore' });
+      return true;
+    } catch {
+      // fall through to file check
+    }
+  }
+  return fs.existsSync(path.join(configDir, '.credentials.json'));
+}
+
+/**
+ * Codex CLI 인증 감지 (`~/.codex/auth.json` 존재)
+ */
+function detectCodexAuth(configDir: string): boolean {
+  return fs.existsSync(path.join(configDir, 'auth.json'));
+}
+
+/**
+ * Gemini CLI 인증 감지 (`~/.gemini/oauth_creds.json` 존재 또는 GEMINI_API_KEY 환경변수)
+ */
+function detectGeminiAuth(configDir: string): boolean {
+  if (process.env.GEMINI_API_KEY) return true;
+  return fs.existsSync(path.join(configDir, 'oauth_creds.json'));
 }
 
 /**
@@ -34,9 +68,11 @@ export function detectClaudeCli(): AiCliStatus {
     // not found
   }
 
+  const installed = hasBin || hasDir;
   return {
-    installed: hasBin || hasDir,
+    installed,
     configDir,
+    authenticated: installed ? detectClaudeAuth(configDir) : undefined,
   };
 }
 
@@ -73,10 +109,12 @@ export function detectCodexCli(): AiCliStatus {
     // not found
   }
 
+  const installed = hasBin || hasDir;
   return {
-    installed: hasBin || hasDir,
+    installed,
     configDir,
     pluginDir: path.join(configDir, 'plugins', 'vibe'),
+    authenticated: installed ? detectCodexAuth(configDir) : undefined,
   };
 }
 
@@ -98,8 +136,10 @@ export function detectGeminiCli(): AiCliStatus {
     // not found
   }
 
+  const installed = hasBin || hasDir;
   return {
-    installed: hasBin || hasDir,
+    installed,
     configDir,
+    authenticated: installed ? detectGeminiAuth(configDir) : undefined,
   };
 }

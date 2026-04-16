@@ -5,7 +5,7 @@
 import { execSync } from 'child_process';
 import { LLMAuthStatus, LLMStatusMap, ClaudeCodeStatus } from './types.js';
 import { readGlobalConfig } from '../infra/lib/config/GlobalConfigManager.js';
-import { detectCocoCli, detectCodexCli, detectGeminiCli } from './utils/cli-detector.js';
+import { detectClaudeCli, detectCocoCli, detectCodexCli, detectGeminiCli } from './utils/cli-detector.js';
 
 /**
  * LLM 인증 상태 확인 (config.json 우선, process.env fallback)
@@ -108,20 +108,49 @@ export function formatAuthMethods(auths: LLMAuthStatus[], cliInstalled?: boolean
   return parts.join(', ');
 }
 
-export function formatLLMStatus(claudeStatus?: ClaudeCodeStatus): string {
-  const status = getLLMAuthStatus();
+/**
+ * LLM CLI 한 줄 포맷 (설치 + 인증 상태)
+ * @param installed CLI 설치 여부
+ * @param authenticated 인증 세션 감지 여부 (undefined=미설치, true=인증됨, false=미인증)
+ */
+function formatLlmCliRow(installed: boolean, authenticated: boolean | undefined): string {
+  if (!installed) return '⬚ Not installed';
+  if (authenticated === undefined) return '✓ Installed';
+  return authenticated ? '✓ Installed, ✓ Auth' : '✓ Installed, ⚠ Not auth';
+}
+
+/**
+ * 통합 LLM/CLI 상태 포맷터 (status / init / update / upgrade 공용)
+ * - Coding Agent: coco
+ * - LLM CLI (vibe 멀티-오케스트레이션에서 호출 가능): Claude Code, Codex, Gemini
+ * - LLM API Key (직접 호출용): GPT, Gemini
+ */
+export function formatLLMStatus(): string {
+  const claudeCli = detectClaudeCli();
   const cocoCli = detectCocoCli();
   const codexCli = detectCodexCli();
   const geminiCli = detectGeminiCli();
-  const lines: string[] = [];
+  const apiStatus = getLLMAuthStatus();
 
-  if (claudeStatus) {
-    lines.push(`🧠 Claude Code: ${formatClaudeCodeStatus(claudeStatus)}`);
-  }
-  lines.push(`🥥 coco: ${cocoCli.installed ? '✓ Installed' : '✗ Not installed'}`);
-  lines.push('🤖 External LLM:');
-  lines.push(`  GPT: ${formatAuthMethods(status.gpt, codexCli.installed)}`);
-  lines.push(`  Gemini: ${formatAuthMethods(status.gemini, geminiCli.installed)}`);
+  const cocoRow = cocoCli.installed ? '✓ Installed' : '⬚ Not installed';
+  const claudeRow = formatLlmCliRow(claudeCli.installed, claudeCli.authenticated);
+  const codexRow = formatLlmCliRow(codexCli.installed, codexCli.authenticated);
+  const geminiRow = formatLlmCliRow(geminiCli.installed, geminiCli.authenticated);
 
-  return lines.join('\n');
+  const gptKey = apiStatus.gpt.length > 0 ? '✓ Key' : '⬚ —';
+  const geminiKey = apiStatus.gemini.length > 0 ? '✓ Key' : '⬚ —';
+
+  return [
+    'Coding Agent:',
+    `  coco                ${cocoRow}`,
+    '',
+    'LLM CLI (orchestration):',
+    `  Claude Code         ${claudeRow}`,
+    `  Codex (GPT)         ${codexRow}`,
+    `  Gemini              ${geminiRow}`,
+    '',
+    'LLM API Key (direct):',
+    `  GPT                 ${gptKey}`,
+    `  Gemini              ${geminiKey}`,
+  ].join('\n');
 }

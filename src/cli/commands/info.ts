@@ -6,8 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { VibeConfig } from '../types.js';
 import { getPackageJson } from '../utils.js';
-import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
-import { detectClaudeCli, detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { formatLLMStatus } from '../auth.js';
 
 /**
  * 도움말 표시
@@ -72,18 +71,6 @@ export function showStatus(): void {
     config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   }
 
-  const authStatus = getLLMAuthStatus();
-
-  const claudeCli = detectClaudeCli();
-  const cocoCli = detectCocoCli();
-  const codexCli = detectCodexCli();
-  const geminiCli = detectGeminiCli();
-
-  const claudeStatusText = formatAuthMethods(authStatus.claude, claudeCli.installed);
-  const cocoStatusText = cocoCli.installed ? '✓ CLI' : '⬚ Not installed';
-  const gptStatusText = formatAuthMethods(authStatus.gpt, codexCli.installed);
-  const geminiStatusText = formatAuthMethods(authStatus.gemini, geminiCli.installed);
-
   // 프로젝트 상태
   const projectStatus = isCoreProject
     ? `✅ ${projectRoot}`
@@ -93,15 +80,8 @@ export function showStatus(): void {
 VIBE Status (v${packageJson.version})
 
 Project: ${projectStatus}
-${isCoreProject ? `Language: ${config.language || 'ko'}` : ''}
-
-CLI:
-  Claude Code     ${claudeStatusText}
-  coco            ${cocoStatusText}
-
-LLM:
-  GPT             ${gptStatusText}
-  Gemini          ${geminiStatusText}
+${isCoreProject ? `Language: ${config.language || 'ko'}\n` : ''}
+${formatLLMStatus()}
   `);
 }
 
