@@ -99,7 +99,8 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Git
 
-**Include**: `.claude/vibe/{plans,specs,features,todos,research,regressions,contracts,test-reports}/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Include**: `.claude/vibe/{plans,specs,features,todos,research,regressions,contracts}/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `/vibe.test` artifacts live with the vibe install, not with the project
 **Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`
 
 <!-- VIBE:END -->

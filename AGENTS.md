@@ -97,7 +97,8 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Git
 
-**Include**: `.coco/vibe/{plans,specs,features,todos,research,regressions,contracts,test-reports}/`, `.coco/vibe/config.json`, `AGENTS.md`
+**Include**: `.coco/vibe/{plans,specs,features,todos,research,regressions,contracts}/`, `.coco/vibe/config.json`, `AGENTS.md`
+**Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `/vibe.test` artifacts live with the vibe install, not with the project
 **Exclude**: `~/.coco/{rules,commands,agents,skills}/`, `.coco/settings.local.json`
 
 <!-- VIBE:END -->
