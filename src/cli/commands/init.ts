@@ -79,13 +79,16 @@ export function updateCursorGlobalAssets(
 }
 
 /**
- * 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)
+ * 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/ 또는 .coco/skills/)
  * init, update 공용
+ *
+ * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
  */
 export function installLocalSkills(
   projectRoot: string,
   stackTypes: string[],
   capabilities: string[] = [],
+  harnessDir: string = '.claude',
 ): void {
   const localSkills = resolveLocalSkills(stackTypes, capabilities);
   if (localSkills.length === 0) return;
@@ -95,20 +98,25 @@ export function installLocalSkills(
   const skillsSource = path.join(packageRoot, 'skills');
   if (!fs.existsSync(skillsSource)) return;
 
-  const localSkillsDir = path.join(projectRoot, '.claude', 'skills');
+  const localSkillsDir = path.join(projectRoot, harnessDir, 'skills');
   copySkillsFiltered(skillsSource, localSkillsDir, localSkills);
   log(`   📦 Local skills installed: ${localSkills.join(', ')}\n`);
 }
 
 /**
  * 감지된 스택에 해당하는 언어 룰 파일을 프로젝트 로컬에 설치
- * 전역 ~/.claude/vibe/languages/ → 프로젝트 .claude/vibe/languages/
+ * 전역 ~/.<harness>/vibe/languages/ (fallback: ~/.claude/vibe/languages/) → 프로젝트 <harnessDir>/vibe/languages/
+ *
+ * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
  */
 export function installLanguageRules(
   projectRoot: string,
   stackTypes: string[],
+  harnessDir: string = '.claude',
 ): void {
-  const globalLanguagesDir = path.join(os.homedir(), '.claude', 'vibe', 'languages');
+  const harnessGlobalDir = path.join(os.homedir(), harnessDir, 'vibe', 'languages');
+  const claudeGlobalDir = path.join(os.homedir(), '.claude', 'vibe', 'languages');
+  const globalLanguagesDir = fs.existsSync(harnessGlobalDir) ? harnessGlobalDir : claudeGlobalDir;
   if (!fs.existsSync(globalLanguagesDir)) return;
 
   // 감지된 스택에 해당하는 언어 파일만 선별
@@ -119,7 +127,7 @@ export function installLanguageRules(
   }
   if (languageFiles.size === 0) return;
 
-  const localLanguagesDir = path.join(projectRoot, '.claude', 'vibe', 'languages');
+  const localLanguagesDir = path.join(projectRoot, harnessDir, 'vibe', 'languages');
   ensureDir(localLanguagesDir);
 
   const installed: string[] = [];
@@ -156,9 +164,19 @@ function runStep(
 
 /**
  * init 명령어 실행
+ *
+ * @param projectName 새 프로젝트 디렉토리 이름 (생략 시 cwd 사용)
+ * @param target 초기화 대상 하네스. 'cc' → `.claude/vibe/` (기본), 'coco' → `.coco/vibe/`.
+ *               CLAUDE.md ↔ AGENTS.md 피어 구조의 project 쪽 대응. 양쪽 다 원하면 두 번 실행.
  */
-export async function init(projectName?: string): Promise<void> {
+export async function init(
+  projectName?: string,
+  target: 'cc' | 'coco' = 'cc',
+): Promise<void> {
   try {
+    const harnessDir = target === 'coco' ? '.coco' : '.claude';
+    const harnessLabel = target === 'coco' ? 'coco' : 'Claude Code';
+
     let projectRoot = process.cwd();
     let isNewProject = false;
 
@@ -175,14 +193,15 @@ export async function init(projectName?: string): Promise<void> {
       isNewProject = true;
     }
 
-    const claudeDir = path.join(projectRoot, '.claude');
+    const claudeDir = path.join(projectRoot, harnessDir);
     const coreDir = path.join(claudeDir, 'vibe');
     if (fs.existsSync(coreDir)) {
-      log('❌ .claude/vibe/ already exists.');
+      log(`❌ ${harnessDir}/vibe/ already exists.`);
       return;
     }
 
     ensureDir(coreDir);
+    log(`🎯 Target harness: ${harnessLabel} (${harnessDir}/)\n`);
 
     // ── Phase 1: Detection ──────────────────────────────────
     p.log.step('Phase 1/3: Detection');
@@ -190,7 +209,7 @@ export async function init(projectName?: string): Promise<void> {
 
     s.start('Migrating legacy config');
     runStep(s, 'Legacy migration', () => migrateLegacyCore(projectRoot, coreDir));
-    runStep(s, 'Updating .gitignore', () => updateGitignore(projectRoot));
+    runStep(s, 'Updating .gitignore', () => updateGitignore(projectRoot, harnessDir));
 
     s.message('Detecting tech stacks');
     const { stacks: detectedStacks, details: stackDetails } = detectTechStacks(projectRoot);
@@ -323,7 +342,7 @@ export async function init(projectName?: string): Promise<void> {
       }
     });
     runStep(s2, 'Copying rules', () => updateRules(coreDir, detectedStacks, false));
-    runStep(s2, 'Setting up collaborator auto-install', () => setupCollaboratorAutoInstall(projectRoot));
+    runStep(s2, 'Setting up collaborator auto-install', () => setupCollaboratorAutoInstall(projectRoot, harnessDir));
 
     s2.stop('Configuration complete');
 
@@ -334,13 +353,13 @@ export async function init(projectName?: string): Promise<void> {
 
     const stackTypes = detectedStacks.map(st => st.type);
 
-    runStep(s3, 'Installing project hooks', () => installProjectHooks(projectRoot));
+    runStep(s3, 'Installing project hooks', () => installProjectHooks(projectRoot, harnessDir));
     runStep(s3, 'Updating Cursor global assets', () => updateCursorGlobalAssets(stackTypes));
     runStep(s3, 'Installing Cursor rules', () => installCursorRules(projectRoot, stackTypes));
-    runStep(s3, 'Installing language rules', () => installLanguageRules(projectRoot, stackTypes));
+    runStep(s3, 'Installing language rules', () => installLanguageRules(projectRoot, stackTypes, harnessDir));
 
     runStep(s3, 'Installing local skills', () => {
-      installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
+      installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities, harnessDir);
     });
 
     runStep(s3, 'Installing external skills', () => {
@@ -352,7 +371,7 @@ export async function init(projectName?: string): Promise<void> {
     }
 
     runStep(s3, 'Provisioning agents & templates', () => {
-      const provisionResult = Provisioner.provision(projectRoot, detectedStacks, stackDetails);
+      const provisionResult = Provisioner.provision(projectRoot, detectedStacks, stackDetails, harnessDir);
       if (provisionResult.agentsGenerated) {
         log(`   🤖 Recommended agents generated\n`);
       }
@@ -362,18 +381,27 @@ export async function init(projectName?: string): Promise<void> {
     });
 
     // CLAUDE.md / AGENTS.md 생성 (프로젝트 분석 기반)
-    runStep(s3, 'Generating CLAUDE.md', () => {
-      generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
-      log(`   📄 CLAUDE.md generated (project-aware)\n`);
-    });
+    // target=cc:   CLAUDE.md 생성 (+ coco CLI 감지 시 AGENTS.md도)
+    // target=coco: AGENTS.md 만 생성 (coco 전용 init이므로 CLAUDE.md 건너뜀)
+    if (target === 'cc') {
+      runStep(s3, 'Generating CLAUDE.md', () => {
+        generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
+        log(`   📄 CLAUDE.md generated (project-aware)\n`);
+      });
 
-    runStep(s3, 'Generating AGENTS.md', () => {
-      const cocoStatus = detectCocoCli();
-      if (cocoStatus.installed) {
+      runStep(s3, 'Generating AGENTS.md', () => {
+        const cocoStatus = detectCocoCli();
+        if (cocoStatus.installed) {
+          generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
+          log(`   📄 AGENTS.md generated (coco)\n`);
+        }
+      });
+    } else {
+      runStep(s3, 'Generating AGENTS.md', () => {
         generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
         log(`   📄 AGENTS.md generated (coco)\n`);
-      }
-    });
+      });
+    }
 
     s3.stop('Installation complete');
 

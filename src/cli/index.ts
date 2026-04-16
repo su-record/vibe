@@ -106,9 +106,11 @@ export { getCurrentTime } from '../tools/time/getCurrentTime.js';
 // ============================================================================
 
 switch (command) {
-  case 'init':
-    init(positionalArgs[1]);
+  case 'init': {
+    const target: 'cc' | 'coco' = args.includes('--coco') ? 'coco' : 'cc';
+    init(positionalArgs[1], target);
     break;
+  }
 
   case 'setup':
     (async () => {

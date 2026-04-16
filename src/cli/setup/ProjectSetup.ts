@@ -404,10 +404,13 @@ export function updateRules(coreDir: string, detectedStacks: TechStack[], isUpda
 }
 
 /**
- * 프로젝트 레벨 훅 설치 (.claude/settings.local.json)
+ * 프로젝트 레벨 훅 설치 (.claude/settings.local.json 또는 .coco/settings.local.json)
+ *
+ * @param projectRoot 프로젝트 루트
+ * @param harnessDir 하네스 디렉토리 이름 ('.claude' | '.coco', 기본값: '.claude')
  */
-export function installProjectHooks(projectRoot: string): void {
-  const claudeDir = path.join(projectRoot, '.claude');
+export function installProjectHooks(projectRoot: string, harnessDir: string = '.claude'): void {
+  const claudeDir = path.join(projectRoot, harnessDir);
   const settingsLocalPath = path.join(claudeDir, 'settings.local.json');
   const packageRoot = path.resolve(__dirname, '..', '..', '..');
   const hooksTemplate = path.join(packageRoot, 'hooks', 'hooks.json');
@@ -444,8 +447,11 @@ export function installProjectHooks(projectRoot: string): void {
 
 /**
  * .gitignore 업데이트
+ *
+ * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
+ *   하네스-특정 경로(settings.local.json, checkpoints/)는 해당 디렉토리에 쓰기 위해 사용.
  */
-export function updateGitignore(projectRoot: string): void {
+export function updateGitignore(projectRoot: string, harnessDir: string = '.claude'): void {
   const gitignorePath = path.join(projectRoot, '.gitignore');
 
   if (!fs.existsSync(gitignorePath)) return;
@@ -454,8 +460,9 @@ export function updateGitignore(projectRoot: string): void {
   let modified = false;
 
   // settings.local.json 추가
-  if (!gitignore.includes('.claude/settings.local.json')) {
-    gitignore = gitignore.trimEnd() + '\n\n# core project hooks (personal)\n.claude/settings.local.json\n';
+  const settingsPath = `${harnessDir}/settings.local.json`;
+  if (!gitignore.includes(settingsPath)) {
+    gitignore = gitignore.trimEnd() + `\n\n# core project hooks (personal)\n${settingsPath}\n`;
     modified = true;
   }
 
@@ -466,8 +473,9 @@ export function updateGitignore(projectRoot: string): void {
   }
 
   // checkpoints 디렉토리 제외 (Phase Isolation Protocol 임시 파일)
-  if (!gitignore.includes('.claude/vibe/checkpoints/')) {
-    gitignore = gitignore.trimEnd() + '\n\n# Phase checkpoints (ephemeral)\n.claude/vibe/checkpoints/\n';
+  const checkpointsPath = `${harnessDir}/vibe/checkpoints/`;
+  if (!gitignore.includes(checkpointsPath)) {
+    gitignore = gitignore.trimEnd() + `\n\n# Phase checkpoints (ephemeral)\n${checkpointsPath}\n`;
     modified = true;
   }
 

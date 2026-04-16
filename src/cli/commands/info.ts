@@ -18,7 +18,8 @@ VIBE - Personalized AI Agent (Claude Code exclusive)
 
 Commands:
   vibe setup              셋업 위자드 (인증, 설정 한번에)
-  vibe init [project]     프로젝트 초기화
+  vibe init [project]     프로젝트 초기화 (.claude/ 대상)
+  vibe init --coco        프로젝트 초기화 (.coco/ 대상)
   vibe update             설정 업데이트
   vibe upgrade            최신 버전으로 업그레이드
   vibe remove             프로젝트에서 제거

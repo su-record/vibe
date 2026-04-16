@@ -8,10 +8,16 @@ import { log, getPackageJson } from './utils.js';
 
 /**
  * 협업자 자동 설치 설정
+ *
+ * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
+ *   setup.sh 위치 및 README 안내 경로가 하네스에 따라 달라짐.
  */
-export function setupCollaboratorAutoInstall(projectRoot: string): void {
+export function setupCollaboratorAutoInstall(
+  projectRoot: string,
+  harnessDir: string = '.claude',
+): void {
   const packageJsonPath = path.join(projectRoot, 'package.json');
-  const coreDir = path.join(projectRoot, '.claude', 'vibe');
+  const coreDir = path.join(projectRoot, harnessDir, 'vibe');
 
   // 1. Node.js 프로젝트: package.json 정리
   if (fs.existsSync(packageJsonPath)) {
@@ -57,7 +63,7 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
     } catch { /* ignore: optional operation */ }
   }
 
-  // 2. .claude/vibe/setup.sh 생성
+  // 2. <harness>/vibe/setup.sh 생성
   const setupShPath = path.join(coreDir, 'setup.sh');
   if (!fs.existsSync(coreDir)) {
     fs.mkdirSync(coreDir, { recursive: true });
@@ -65,7 +71,7 @@ export function setupCollaboratorAutoInstall(projectRoot: string): void {
   if (!fs.existsSync(setupShPath)) {
     const setupScript = `#!/bin/bash
 # Core collaborator auto-install script
-# Usage: ./.claude/vibe/setup.sh
+# Usage: ./${harnessDir}/vibe/setup.sh
 
 set -e
 
