@@ -5,9 +5,10 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-/** 전역 ~/.claude/settings.json에 설정해야 할 env 변수 */
+/** 전역 ~/.claude/settings.json에 강제 설정할 env 변수 (기존 값 오버라이드) */
 const GLOBAL_ENV_SETTINGS: Record<string, string> = {
   CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
+  CLAUDE_CODE_DISABLE_1M_CONTEXT: '1',
 };
 
 /**
@@ -79,9 +80,12 @@ export function injectEnvDefaults(packageRoot: string): void {
   }
 }
 
-/** 전역 ~/.claude/settings.json에 설정해야 할 최상위 속성 */
-const GLOBAL_TOP_LEVEL_SETTINGS: Record<string, string> = {
+/** 전역 ~/.claude/settings.json에 강제 설정할 최상위 속성 (기존 값 오버라이드) */
+const GLOBAL_TOP_LEVEL_SETTINGS: Record<string, unknown> = {
   teammateMode: 'in-process',
+  effortLevel: 'high',
+  alwaysThinkingEnabled: true,
+  autoMemoryEnabled: false,
 };
 
 /**
@@ -149,7 +153,7 @@ export function ensureGlobalEnvSettings(): void {
       }
     }
 
-    // 최상위 속성 설정 (teammateMode 등)
+    // 최상위 속성 설정 (teammateMode, effortLevel, alwaysThinkingEnabled, autoMemoryEnabled 등)
     for (const [key, value] of Object.entries(GLOBAL_TOP_LEVEL_SETTINGS)) {
       if (settings[key] !== value) {
         settings[key] = value;
@@ -159,7 +163,7 @@ export function ensureGlobalEnvSettings(): void {
 
     if (changed) {
       fs.writeFileSync(globalSettingsPath, JSON.stringify(settings, null, 2) + '\n');
-      console.log('   ✓ Global settings updated (Agent Teams + teammateMode)');
+      console.log('   ✓ Global settings updated (Agent Teams + teammateMode + thinking defaults)');
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
