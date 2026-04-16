@@ -18,7 +18,10 @@ import { VIBE_PATH, PROJECT_DIR } from './utils.js';
 // 회귀: .claude/vibe/regressions/pre-tool-guard-content-false-positive.md
 const DANGEROUS_PATTERNS = {
   bash: [
-    { pattern: /rm\s+-rf?\s+[\/~]/, target: 'command', severity: 'critical', message: 'Deleting root or home directory' },
+    // `/` or `~` must be the *entire* argument (optionally followed by `*`, `/`, or `/*`).
+    // Prevents false positives on safe absolute paths like `/tmp/foo` or `/Users/me/proj`.
+    // The lookahead requires an arg boundary (whitespace, shell separator, or end-of-string).
+    { pattern: /rm\s+-rf?\s+(\/|\/\*|~|~\/|~\/\*)(?=\s|[;&|]|$)/, target: 'command', severity: 'critical', message: 'Deleting root or home directory' },
     { pattern: /rm\s+-rf?\s+\*/, target: 'command', severity: 'high', message: 'Wildcard deletion detected' },
     { pattern: /git\s+push\s+.*--force/, target: 'command', severity: 'high', message: 'Force push detected' },
     { pattern: /git\s+reset\s+--hard/, target: 'command', severity: 'medium', message: 'Hard reset will discard changes' },
@@ -227,9 +230,11 @@ import { logHookDecision } from './utils.js';
 // 1단계: 입력 스키마 검증 (구조적 오류 탐지)
 const schemaResult = validateInputSchema(toolName, stdinPayload?.tool_input || toolInput);
 if (!schemaResult.valid) {
-  console.log(`⚠️ INPUT VALIDATION: ${toolName}`);
+  // stderr: Claude Code surfaces stderr in hook-error notifications; stdout is injected
+  // into the assistant's context and never shown to the user. Guard messages target the user.
+  console.error(`⚠️ INPUT VALIDATION: ${toolName}`);
   for (const err of schemaResult.errors) {
-    console.log(`  [SCHEMA] ${err}`);
+    console.error(`  [SCHEMA] ${err}`);
   }
   logHookDecision('pre-tool-guard', toolName, 'warn', `schema: ${schemaResult.errors.join('; ')}`);
   // 스키마 오류는 경고만 (차단하지 않음 — 레거시 호환)
@@ -240,7 +245,7 @@ const validation = validateCommand(toolName, toolInput);
 const output = formatOutput(toolName, validation);
 
 if (output) {
-  console.log(output);
+  console.error(output);
 }
 
 // Hook trace logging

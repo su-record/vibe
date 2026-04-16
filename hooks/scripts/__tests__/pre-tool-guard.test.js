@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { execFileSync, execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,36 +8,34 @@ const SCRIPT = path.resolve(__dirname, '..', 'pre-tool-guard.js');
 
 /**
  * Run pre-tool-guard.js with argv arguments.
- * Returns { stdout, exitCode }.
+ *
+ * Guard output is on stderr (so Claude Code's hook-error notifications surface
+ * the block reason). Tests preserve the original `stdout` field as the combined
+ * channel to keep existing assertions working — any output, stdout or stderr,
+ * is what callers want to see.
  */
 function runGuard({ args = [] } = {}) {
-  try {
-    const stdout = execFileSync('node', [SCRIPT, ...args], {
-      encoding: 'utf-8',
-      timeout: 5000,
-    });
-    return { stdout: stdout.trim(), exitCode: 0 };
-  } catch (err) {
-    return { stdout: (err.stdout || '').trim(), exitCode: err.status };
-  }
+  const result = spawnSync('node', [SCRIPT, ...args], {
+    encoding: 'utf-8',
+    timeout: 5000,
+  });
+  const combined = `${result.stdout || ''}${result.stderr || ''}`.trim();
+  return { stdout: combined, exitCode: result.status };
 }
 
 /**
  * Run pre-tool-guard.js with stdin JSON payload.
- * 스크립트가 fs.readSync(0, ...)로 stdin을 읽으므로 execFileSync input 옵션이 동작.
+ * 스크립트가 fs.readSync(0, ...)로 stdin을 읽으므로 spawnSync input 옵션이 동작.
  */
 function runGuardWithStdin(payload) {
   const json = typeof payload === 'string' ? payload : JSON.stringify(payload);
-  try {
-    const stdout = execFileSync('node', [SCRIPT], {
-      input: json,
-      encoding: 'utf-8',
-      timeout: 5000,
-    });
-    return { stdout: stdout.trim(), exitCode: 0 };
-  } catch (err) {
-    return { stdout: (err.stdout || '').trim(), exitCode: err.status };
-  }
+  const result = spawnSync('node', [SCRIPT], {
+    input: json,
+    encoding: 'utf-8',
+    timeout: 5000,
+  });
+  const combined = `${result.stdout || ''}${result.stderr || ''}`.trim();
+  return { stdout: combined, exitCode: result.status };
 }
 
 // ══════════════════════════════════════════════════
@@ -259,6 +257,49 @@ describe('pre-tool-guard', () => {
       });
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toBe('');
+    });
+  });
+
+  // ══════════════════════════════════════════════════
+  // Regression: `rm -rf /<path>` false positive
+  //   The original pattern /rm\s+-rf?\s+[\/~]/ matched any absolute path.
+  //   Only actual root/home targets (/ /* ~ ~/ ~/*) should be blocked.
+  // ══════════════════════════════════════════════════
+  describe('regression: rm -rf must not block safe absolute paths', () => {
+    it('should ALLOW rm -rf /tmp/<scratch>', () => {
+      const result = runGuard({ args: ['Bash', 'rm -rf /tmp/coco-local-test'] });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe('');
+    });
+
+    it('should ALLOW rm -rf /Users/me/proj/node_modules', () => {
+      const result = runGuard({ args: ['Bash', 'rm -rf /Users/grove/workspace/vibe/node_modules'] });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe('');
+    });
+
+    it('should ALLOW rm -rf ~/scratch/foo (home subpath)', () => {
+      const result = runGuard({ args: ['Bash', 'rm -rf ~/scratch/foo'] });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe('');
+    });
+
+    it('should still BLOCK rm -rf /* (root wildcard)', () => {
+      const result = runGuard({ args: ['Bash', 'rm -rf /*'] });
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toContain('BLOCKED');
+    });
+
+    it('should still BLOCK rm -rf ~ (bare home)', () => {
+      const result = runGuard({ args: ['Bash', 'rm -rf ~'] });
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toContain('BLOCKED');
+    });
+
+    it('should still BLOCK rm -rf / followed by shell separator', () => {
+      const result = runGuard({ args: ['Bash', 'rm -rf / && echo done'] });
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toContain('BLOCKED');
     });
   });
 
