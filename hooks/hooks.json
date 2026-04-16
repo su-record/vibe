@@ -63,6 +63,14 @@
             "command": "node {{VIBE_PATH}}/hooks/scripts/post-edit-dispatcher.js"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/step-counter.js"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

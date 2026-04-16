@@ -34,6 +34,12 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 
 > **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
 
+> **📊 Step Counter Reset (MANDATORY at START)**: Run this Bash command once at the very start to reset the tool-call counter so `/vibe.verify` can report "how many steps to reach the goal":
+>
+> ```bash
+> mkdir -p .claude/vibe/metrics && printf '{"feature":"%s","startedAt":"%s","steps":0}\n' "{feature-name}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .claude/vibe/metrics/current-run.json
+> ```
+
 ## File Reading Policy (Mandatory)
 
 - **SPEC/Feature 파일**: 반드시 `Read` 도구로 전체 파일을 읽을 것 (Grep 금지)

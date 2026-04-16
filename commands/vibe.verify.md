@@ -182,6 +182,27 @@ For each UI scenario in Feature file:
 - DOM 기반: `div class="nav-wrapper mx-4 flex..."` = 200+ chars
 - 전자를 사용해야 시나리오 50개도 한 세션에서 검증 가능
 
+### 3.5 Step Count (MANDATORY before Quality Report)
+
+Read `.claude/vibe/metrics/current-run.json` to obtain the tool-call count from the preceding `/vibe.run` (and any follow-up work in this session). Then append a record to `.claude/vibe/metrics/history.jsonl` and include the count in the Quality Report below.
+
+```bash
+# Read step count (ok if file missing — treat as 0)
+STEPS=$(node -e "try{const d=JSON.parse(require('fs').readFileSync('.claude/vibe/metrics/current-run.json','utf-8'));console.log(d.steps||0)}catch{console.log(0)}")
+
+# Append history record
+node -e "
+const fs=require('fs'),path=require('path');
+const dir='.claude/vibe/metrics';
+try{
+  const cur=JSON.parse(fs.readFileSync(path.join(dir,'current-run.json'),'utf-8'));
+  const rec={verifiedAt:new Date().toISOString(),feature:cur.feature,startedAt:cur.startedAt,steps:cur.steps||0};
+  fs.appendFileSync(path.join(dir,'history.jsonl'),JSON.stringify(rec)+'\n');
+}catch{}"
+```
+
+Record the value as `{step_count}` and include it in the report below.
+
 ### 4. Quality Report (Auto-generated)
 
 ```
@@ -217,6 +238,7 @@ For each UI scenario in Feature file:
 │                                                                 │
 │  ⏱️ Started: {start_time}                                        │
 │  ⏱️ Completed: {getCurrentTime 결과}                             │
+│  🧮 Tool calls: {step_count}                                     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
