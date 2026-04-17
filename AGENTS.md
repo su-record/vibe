@@ -53,8 +53,11 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 | Path | Purpose |
 |---|---|
 | `~/.vibe/config.json` | Global credentials, models (0o600) |
-| `.coco/vibe/config.json` | Project stacks, capabilities |
-| `.coco/settings.local.json` | Project hooks (auto-generated, don't commit) |
+| `.vibe/config.json` | Project stacks, capabilities — Claude/coco 공용 SSOT |
+| `.claude/settings.local.json` | Claude Code hooks (auto-generated, don't commit) |
+| `.coco/settings.local.json` | coco hooks (auto-generated, don't commit) |
+
+Legacy: 기존 `.claude/vibe/`·`.coco/vibe/` 는 런타임에 자동 인식되며 `vibe init`/`update` 시 `.vibe/` 로 이동한다.
 
 ### Gotchas
 - `better-sqlite3` WAL mode — synchronous API
@@ -97,8 +100,8 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 
 ## Git
 
-**Include**: `.coco/vibe/{plans,specs,features,todos,research,regressions,contracts}/`, `.coco/vibe/config.json`, `AGENTS.md`
+**Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,config.json,constitution.md}`, `AGENTS.md`
 **Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `/vibe.test` artifacts live with the vibe install, not with the project
-**Exclude**: `~/.coco/{rules,commands,agents,skills}/`, `.coco/settings.local.json`
+**Exclude**: `~/.coco/{rules,commands,agents,skills}/`, `.coco/settings.local.json`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`
 
 <!-- VIBE:END -->

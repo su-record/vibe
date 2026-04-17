@@ -2,13 +2,13 @@
  * PostToolUse Hook - Evolution Engine
  * Write/Edit 이벤트 후 인사이트 추출 및 자동 생성 파이프라인 트리거
  */
-import { getLibBaseUrl, PROJECT_DIR } from './utils.js';
+import { getLibBaseUrl, PROJECT_DIR, projectVibePath } from './utils.js';
 import fs from 'fs';
 import path from 'path';
 
 async function main() {
   // Evolution 활성화 여부 확인
-  const configPath = path.join(PROJECT_DIR, '.claude', 'vibe', 'config.json');
+  const configPath = projectVibePath(PROJECT_DIR, 'config.json');
   let config = { mode: 'suggest', enabled: false };
 
   try {

@@ -1,14 +1,14 @@
 /**
  * PreToolUse Hook - 모든 Bash 명령어를 타임스탬프와 함께 로깅
  *
- * 로그 위치: .claude/command-log.txt
+ * 로그 위치: .vibe/command-log.txt (legacy .claude/vibe/ 또는 .coco/vibe/ 사용 중이면 그쪽)
  * exit 0 항상 통과 (로깅만 수행, 차단하지 않음)
  */
 import { appendFileSync, mkdirSync, existsSync } from 'fs';
 import path from 'path';
-import { PROJECT_DIR } from './utils.js';
+import { PROJECT_DIR, projectVibeRoot } from './utils.js';
 
-const LOG_DIR = path.join(PROJECT_DIR, '.claude');
+const LOG_DIR = projectVibeRoot(PROJECT_DIR);
 const LOG_FILE = path.join(LOG_DIR, 'command-log.txt');
 const MAX_CMD_LENGTH = 500;
 

@@ -162,7 +162,9 @@ const matched = DISPATCH_RULES.some(r =>
 if (!matched) {
   setImmediate(async () => {
     try {
-      const configPath = path.join(process.env.CLAUDE_PROJECT_DIR || '.', '.claude', 'vibe', 'config.json');
+      const utils = await import('./utils.js');
+      const projectDir = process.env.CLAUDE_PROJECT_DIR || process.env.COCO_PROJECT_DIR || '.';
+      const configPath = utils.projectVibePath(projectDir, 'config.json');
       let gapEnabled = true;
       try {
         const fs = await import('fs');
@@ -173,12 +175,12 @@ if (!matched) {
       } catch { /* ignore */ }
 
       if (gapEnabled) {
-        const LIB_BASE = (await import('./utils.js')).getLibBaseUrl();
+        const LIB_BASE = utils.getLibBaseUrl();
         const [memMod, gapMod] = await Promise.all([
           import(`${LIB_BASE}memory/MemoryStorage.js`),
           import(`${LIB_BASE}evolution/SkillGapDetector.js`),
         ]);
-        const storage = new memMod.MemoryStorage(process.env.CLAUDE_PROJECT_DIR || '.');
+        const storage = new memMod.MemoryStorage(projectDir);
         const detector = new gapMod.SkillGapDetector(storage);
         detector.logMiss(prompt.slice(0, 200));
         storage.close();

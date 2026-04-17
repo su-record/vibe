@@ -176,7 +176,7 @@ interface ProjectDirs {
 
 function analyzeProjectStructure(projectRoot: string): ProjectDirs {
   const topLevel = fs.readdirSync(projectRoot)
-    .filter(f => !f.startsWith('.') || f === '.dev' || f === '.claude')
+    .filter(f => !f.startsWith('.') || f === '.dev' || f === '.vibe' || f === '.claude' || f === '.coco')
     .filter(f => {
       try { return fs.statSync(path.join(projectRoot, f)).isDirectory(); }
       catch { return false; }
@@ -304,11 +304,17 @@ function buildVibeSection(
       case '.dev':
         structureRows.push('| `.dev/` | AI work logs, learnings, scratch |');
         break;
+      case '.vibe':
+        structureRows.push('| `.vibe/` | Vibe SSOT (specs, plans, memories) — Claude/coco 공용 |');
+        break;
       case 'tests': case '__tests__': case 'test':
         structureRows.push(`| \`${dir}/\` | Test infrastructure |`);
         break;
       case '.claude':
-        structureRows.push('| `.claude/` | AI configuration, rules, skills |');
+        structureRows.push('| `.claude/` | Claude Code CLI 설정 |');
+        break;
+      case '.coco':
+        structureRows.push('| `.coco/` | coco CLI 설정 |');
         break;
       case 'dist': case 'out': case 'build':
         structureRows.push(`| \`${dir}/\` | Build output |`);
@@ -342,9 +348,9 @@ function buildVibeSection(
   // References (포인터)
   lines.push('## References');
   lines.push('');
-  lines.push('- Rules: `.claude/vibe/config.json` → `references.rules[]`');
-  lines.push('- Languages: `.claude/vibe/languages/`');
-  lines.push('- Constitution: `.claude/vibe/constitution.md`');
+  lines.push('- Rules: `.vibe/config.json` → `references.rules[]`');
+  lines.push('- Languages: `~/.claude/vibe/languages/` (global)');
+  lines.push('- Constitution: `.vibe/constitution.md`');
   if (dirs.hasDocs) lines.push('- Business docs: `docs/`');
   lines.push('');
 
@@ -376,8 +382,8 @@ function buildVibeSection(
   // Git
   lines.push('## Git');
   lines.push('');
-  lines.push('Include: `.claude/vibe/{plans,specs,features,todos}/`, `CLAUDE.md`');
-  lines.push('Exclude: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`');
+  lines.push('Include: `.vibe/{plans,specs,features,todos,config.json,constitution.md}`, `CLAUDE.md`');
+  lines.push('Exclude: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`');
   lines.push('');
   lines.push('<!-- VIBE:END -->');
 
@@ -472,10 +478,16 @@ export function updateGitignore(projectRoot: string, harnessDir: string = '.clau
     modified = true;
   }
 
-  // checkpoints 디렉토리 제외 (Phase Isolation Protocol 임시 파일)
-  const checkpointsPath = `${harnessDir}/vibe/checkpoints/`;
+  // checkpoints 디렉토리 제외 (Phase Isolation Protocol 임시 파일) — .vibe/ SSOT
+  const checkpointsPath = `.vibe/checkpoints/`;
   if (!gitignore.includes(checkpointsPath)) {
     gitignore = gitignore.trimEnd() + `\n\n# Phase checkpoints (ephemeral)\n${checkpointsPath}\n`;
+    modified = true;
+  }
+
+  // 메모리 DB 제외 — 바이너리 SQLite 파일, 프로젝트마다 다름
+  if (!gitignore.includes('.vibe/memories/')) {
+    gitignore = gitignore.trimEnd() + '\n\n# Project memory DB (local)\n.vibe/memories/\n';
     modified = true;
   }
 

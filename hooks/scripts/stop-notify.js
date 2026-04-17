@@ -23,7 +23,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { PROJECT_DIR, VIBE_PATH, readVibeConfig } from './utils.js';
+import { PROJECT_DIR, VIBE_PATH, readVibeConfig, projectVibePath } from './utils.js';
 
 // Read hook input from stdin
 let input = '';
@@ -148,7 +148,7 @@ async function main() {
 
   // Load config
   let config = { notifications: { onStop: true, channels: ['discord', 'telegram', 'slack'] } };
-  const configPath = path.join(PROJECT_DIR, '.claude/vibe/config.json');
+  const configPath = projectVibePath(PROJECT_DIR, 'config.json');
 
   try {
     if (fs.existsSync(configPath)) {

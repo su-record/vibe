@@ -194,14 +194,26 @@ export async function init(
     }
 
     const claudeDir = path.join(projectRoot, harnessDir);
-    const coreDir = path.join(claudeDir, 'vibe');
+    const coreDir = path.join(projectRoot, '.vibe');
     if (fs.existsSync(coreDir)) {
-      log(`❌ ${harnessDir}/vibe/ already exists.`);
+      log(`❌ .vibe/ already exists.`);
       return;
     }
 
-    ensureDir(coreDir);
-    log(`🎯 Target harness: ${harnessLabel} (${harnessDir}/)\n`);
+    // Legacy SSOT 마이그레이션 — 기존 `.claude/vibe/` 또는 `.coco/vibe/` 가 있으면 `.vibe/` 로 이동.
+    const legacyVibePaths = [
+      path.join(projectRoot, '.claude', 'vibe'),
+      path.join(projectRoot, '.coco', 'vibe'),
+    ];
+    const legacyVibe = legacyVibePaths.find(p => fs.existsSync(p));
+    if (legacyVibe) {
+      log(`📦 Migrating ${path.relative(projectRoot, legacyVibe)}/ → .vibe/\n`);
+      fs.renameSync(legacyVibe, coreDir);
+    } else {
+      ensureDir(coreDir);
+    }
+    log(`🎯 Target harness: ${harnessLabel} (${harnessDir}/ — CLI 설정)\n`);
+    log(`   Vibe SSOT: .vibe/ (공용)\n`);
 
     // ── Phase 1: Detection ──────────────────────────────────
     p.log.step('Phase 1/3: Detection');
@@ -306,8 +318,8 @@ export async function init(
     const s2 = p.spinner();
     s2.start('Generating project config');
 
-    // docs/ and .dev/ scaffolding (only for new or empty projects)
-    runStep(s2, 'Creating docs/ and .dev/ directories', () => {
+    // docs/, .dev/, .vibe/ scaffolding (only for new or empty projects)
+    runStep(s2, 'Creating docs/, .dev/, .vibe/ directories', () => {
       const docsDir = path.join(projectRoot, 'docs');
       const devDir = path.join(projectRoot, '.dev');
 
@@ -327,6 +339,18 @@ export async function init(
         fs.writeFileSync(
           path.join(devDir, 'README.md'),
           '# .dev/\n\nAI-generated work logs and scratch files.\n\n- `learnings/` — Troubleshooting records, debugging history\n- `scratch/` — Experiments, scratchpad (gitignored)\n',
+        );
+      }
+
+      // .vibe/ 표준 하위 디렉토리 (SSOT — Claude/coco 공용)
+      for (const sub of ['specs', 'features', 'plans', 'todos', 'memories', 'metrics']) {
+        ensureDir(path.join(coreDir, sub));
+      }
+      const vibeReadme = path.join(coreDir, 'README.md');
+      if (!fs.existsSync(vibeReadme)) {
+        fs.writeFileSync(
+          vibeReadme,
+          '# .vibe/\n\nVibe SSOT — Claude Code / coco CLI 공용 프로젝트 에셋.\n\n- `config.json` — 프로젝트 스택/capabilities\n- `constitution.md` — 하드 룰\n- `specs/`, `plans/`, `features/`, `todos/` — 워크플로우 문서\n- `memories/` — 프로젝트 메모리 DB\n- `metrics/` — 세션/스텝 카운터\n- `scope.json` — SPEC 기반 자동 스코프 (auto=true)\n',
         );
       }
     });

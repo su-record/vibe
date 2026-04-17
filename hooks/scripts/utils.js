@@ -17,10 +17,68 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DETECTED_VIBE_PATH = path.resolve(__dirname, '..', '..');
 
 export const VIBE_PATH = process.env.VIBE_PATH || DETECTED_VIBE_PATH;
-export const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || '.';
+export const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || process.env.COCO_PROJECT_DIR || '.';
 
 // ~/.vibe/ 디렉토리 경로
 const VIBE_HOME_DIR = path.join(os.homedir(), '.vibe');
+
+/**
+ * 프로젝트 내 Vibe 에셋 루트 해석.
+ *
+ * 신규 SSOT: `<project>/.vibe/` — CLI(Claude/coco)와 무관한 공용 디렉토리.
+ * Legacy fallback:
+ *   - `<project>/.claude/vibe/`  (Claude Code 프로젝트 초기화 흔적)
+ *   - `<project>/.coco/vibe/`    (coco 프로젝트 초기화 흔적)
+ *
+ * 해석 규칙 — **읽기**(lookup) 시:
+ *   1) `.vibe/` 가 존재하면 그 경로
+ *   2) `.claude/vibe/` 가 존재하면 그 경로
+ *   3) `.coco/vibe/` 가 존재하면 그 경로
+ *   4) 아무것도 없으면 기본값 `.vibe/` (생성 대상)
+ *
+ * **쓰기**(write) 시에는 항상 새 SSOT 인 `.vibe/` 로 수렴시키는 것이 원칙이지만,
+ * 기존 프로젝트의 legacy 파일이 있으면 해당 위치에 쓰는 것이 덜 파괴적이다.
+ * → `projectVibePath(projectDir)` 는 기본적으로 "존재하는 경로 우선".
+ * 새로 생성하려는 파일은 호출자가 존재 여부를 점검해 `.vibe/` 경로를 선택하거나
+ * `projectVibePathPreferred(projectDir)` 로 항상 `.vibe/` 를 얻어 쓸 수 있다.
+ */
+export function projectVibeRoot(projectDir = PROJECT_DIR) {
+  try {
+    const vibeRoot = path.join(projectDir, '.vibe');
+    if (fs.existsSync(vibeRoot)) return vibeRoot;
+    const claudeVibe = path.join(projectDir, '.claude', 'vibe');
+    if (fs.existsSync(claudeVibe)) return claudeVibe;
+    const cocoVibe = path.join(projectDir, '.coco', 'vibe');
+    if (fs.existsSync(cocoVibe)) return cocoVibe;
+  } catch { /* ignore */ }
+  return path.join(projectDir, '.vibe');
+}
+
+/** `<project>/.vibe/` 를 무조건 반환 (신규 파일 생성용). */
+export function projectVibePathPreferred(projectDir = PROJECT_DIR, ...sub) {
+  return path.join(projectDir, '.vibe', ...sub);
+}
+
+/** 읽기 우선 — 존재하는 legacy 경로를 반환, 없으면 새 `.vibe/`. */
+export function projectVibePath(projectDir = PROJECT_DIR, ...sub) {
+  return path.join(projectVibeRoot(projectDir), ...sub);
+}
+
+/**
+ * 프로젝트 메모리 DB 디렉토리 해석.
+ * `.vibe/memories/` (신규) → `.claude/memories/` (legacy Claude) → `.coco/memories/` (legacy coco) → 기본 `.vibe/memories/`
+ */
+export function projectMemoryDir(projectDir = PROJECT_DIR) {
+  try {
+    const candidates = [
+      path.join(projectDir, '.vibe', 'memories'),
+      path.join(projectDir, '.claude', 'memories'),
+      path.join(projectDir, '.coco', 'memories'),
+    ];
+    for (const c of candidates) if (fs.existsSync(c)) return c;
+  } catch { /* ignore */ }
+  return path.join(projectDir, '.vibe', 'memories');
+}
 
 /**
  * ~/.vibe/config.json 읽기
@@ -37,11 +95,11 @@ export function readVibeConfig() {
 }
 
 /**
- * 프로젝트 설정(.claude/vibe/config.json) 읽기
+ * 프로젝트 설정(.vibe/config.json) 읽기 — legacy `.claude/vibe/`, `.coco/vibe/` fallback 포함
  * @returns {object} 파싱된 config 또는 빈 객체
  */
 export function readProjectConfig() {
-  const configPath = path.join(PROJECT_DIR, '.claude', 'vibe', 'config.json');
+  const configPath = projectVibePath(PROJECT_DIR, 'config.json');
   try {
     if (fs.existsSync(configPath)) {
       return JSON.parse(fs.readFileSync(configPath, 'utf-8'));

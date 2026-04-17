@@ -29,12 +29,29 @@ export class MemoryStorage implements IMemoryStorage {
   private vectorStore: VectorStore | null = null;
   private embeddingProvider: EmbeddingProvider | null = null;
 
+  /**
+   * 프로젝트 메모리 디렉토리 해석 — `utils.js:projectMemoryDir` 와 동일한 규칙.
+   * `.vibe/memories/` (SSOT) 우선, legacy `.claude/memories/`, `.coco/memories/` fallback.
+   */
+  private static resolveMemoryDir(projectPath: string): string {
+    try {
+      const candidates = [
+        path.join(projectPath, '.vibe', 'memories'),
+        path.join(projectPath, '.claude', 'memories'),
+        path.join(projectPath, '.coco', 'memories'),
+      ];
+      for (const c of candidates) if (existsSync(c)) return c;
+    } catch { /* ignore */ }
+    return path.join(projectPath, '.vibe', 'memories');
+  }
+
   constructor(projectPath: string, embeddingPriority?: EmbeddingProviderType[]) {
     // Normalize path
     const resolvedPath = path.resolve(projectPath);
 
-    // Project-based memory: store in {projectPath}/.claude/memories/
-    const memoryDir = path.join(resolvedPath, '.claude', 'memories');
+    // Project-based memory: `.vibe/memories/` (새 SSOT) 를 기본으로,
+    // 기존 `.claude/memories/` 또는 `.coco/memories/` 가 있으면 거기에 기록.
+    const memoryDir = MemoryStorage.resolveMemoryDir(resolvedPath);
     this.dbPath = path.join(memoryDir, 'memories.db');
 
     try {

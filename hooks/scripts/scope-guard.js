@@ -21,9 +21,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import { PROJECT_DIR, logHookDecision } from './utils.js';
+import { PROJECT_DIR, logHookDecision, projectVibePath, projectVibeRoot } from './utils.js';
 
-const SCOPE_PATH = path.join(PROJECT_DIR, '.claude', 'vibe', 'scope.json');
+const SCOPE_PATH = projectVibePath(PROJECT_DIR, 'scope.json');
 
 function readScope() {
   try {
@@ -131,7 +131,7 @@ lines.push(`  file: ${rel}`);
 if (denied) lines.push(`  reason: matches deny pattern`);
 else if (!allowed) lines.push(`  reason: not in allow list`);
 if (scope.reason) lines.push(`  declared scope: ${scope.reason}`);
-lines.push(`  declared in: .claude/vibe/scope.json (mode=${scope.mode})`);
+lines.push(`  declared in: ${path.relative(PROJECT_DIR, SCOPE_PATH)} (mode=${scope.mode})`);
 
 const blocking = scope.mode === 'block';
 if (blocking) {

@@ -6,7 +6,7 @@
  * 구조적 메타데이터를 자동 추출하여 세션 복원 품질을 높임.
  * (claw-code compact.rs 패턴 참조)
  */
-import { getToolsBaseUrl, getLibBaseUrl, PROJECT_DIR } from './utils.js';
+import { getToolsBaseUrl, getLibBaseUrl, PROJECT_DIR, projectVibePath } from './utils.js';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -97,14 +97,14 @@ function extractStructuredMetadata() {
 
   try {
     // SPEC/TODO에서 진행 중 작업 추출
-    const specDir = path.join(PROJECT_DIR, '.claude', 'vibe', 'specs');
+    const specDir = projectVibePath(PROJECT_DIR, 'specs');
     if (fs.existsSync(specDir)) {
       const specs = fs.readdirSync(specDir).filter(f => f.endsWith('.md')).slice(0, 3);
       for (const spec of specs) {
         metadata.pendingWork.push(`SPEC: ${spec.replace('.md', '')}`);
       }
     }
-    const todoDir = path.join(PROJECT_DIR, '.claude', 'vibe', 'todos');
+    const todoDir = projectVibePath(PROJECT_DIR, 'todos');
     if (fs.existsSync(todoDir)) {
       const todos = fs.readdirSync(todoDir).filter(f => f.endsWith('.md')).slice(0, 3);
       for (const todo of todos) {

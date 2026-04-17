@@ -12,8 +12,23 @@ import path from 'path';
 
 const ACTIVE_STATUSES = new Set(['pending', 'in-progress', 'in_progress', 'active', 'running']);
 
+/**
+ * Vibe 에셋 루트 해석 — `.vibe/` (SSOT) 우선, legacy `.claude/vibe/`, `.coco/vibe/` fallback.
+ * 반환값은 projectDir 기준 상대 경로 문자열 (예: `.vibe`, `.claude/vibe`).
+ */
+function detectVibeRoot(projectDir) {
+  try {
+    if (fs.existsSync(path.join(projectDir, '.vibe'))) return '.vibe';
+    if (fs.existsSync(path.join(projectDir, '.claude', 'vibe'))) return '.claude/vibe';
+    if (fs.existsSync(path.join(projectDir, '.coco', 'vibe'))) return '.coco/vibe';
+  } catch { /* ignore */ }
+  return '.vibe';
+}
+
 // 항상 허용: SPEC/plan/TODO 등 메타 문서는 구현 중에도 갱신 가능해야 함
-const DEFAULT_ALLOW = ['.claude/vibe/**', 'CLAUDE.md', 'AGENTS.md'];
+function defaultAllow(projectDir) {
+  return [`${detectVibeRoot(projectDir)}/**`, 'CLAUDE.md', 'AGENTS.md'];
+}
 
 function readFrontmatter(content) {
   if (!content.startsWith('---')) return {};
@@ -67,7 +82,7 @@ function extractPaths(markdown) {
     // 명백한 비경로 제외
     if (/^[A-Z_]+$/.test(raw)) continue; // 상수
     if (/^\d+$/.test(raw)) continue; // 숫자
-    if (raw.startsWith('.') && !raw.startsWith('./') && !raw.startsWith('.claude')) continue;
+    if (raw.startsWith('.') && !raw.startsWith('./') && !raw.startsWith('.vibe') && !raw.startsWith('.claude') && !raw.startsWith('.coco')) continue;
 
     const normalized = raw.replace(/^\.\//, '').replace(/\\/g, '/');
     // 각 세그먼트 안전성 재검증 — "a.b.c" 같은 필드 경로 제거
@@ -126,7 +141,7 @@ function collapseDominated(globs) {
  * 프로젝트의 활성 SPEC 목록 수집.
  */
 export function findActiveSpecs(projectDir) {
-  const specsDir = path.join(projectDir, '.claude', 'vibe', 'specs');
+  const specsDir = path.join(projectDir, detectVibeRoot(projectDir), 'specs');
   if (!fs.existsSync(specsDir)) return [];
   const results = [];
   const walk = (dir) => {
@@ -172,7 +187,7 @@ export function synthesizeScope(specFiles, { projectDir } = {}) {
       catch { return false; }
     })
     : derived;
-  const allow = collapseDominated([...DEFAULT_ALLOW, ...verified]);
+  const allow = collapseDominated([...defaultAllow(projectDir || '.'), ...verified]);
   return {
     auto: true,
     mode: 'warn',
@@ -195,7 +210,7 @@ export function synthesizeScope(specFiles, { projectDir } = {}) {
  * @returns {{ action: 'created'|'updated'|'skipped-manual'|'skipped-no-specs'|'unchanged', path: string }}
  */
 export function syncScopeFile(projectDir) {
-  const scopePath = path.join(projectDir, '.claude', 'vibe', 'scope.json');
+  const scopePath = path.join(projectDir, detectVibeRoot(projectDir), 'scope.json');
   const specs = findActiveSpecs(projectDir);
 
   // 기존 파일이 수동 관리면 스킵

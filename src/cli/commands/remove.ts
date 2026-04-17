@@ -12,22 +12,35 @@ import { removeDirRecursive } from '../utils.js';
  */
 export function remove(): void {
   const projectRoot = process.cwd();
-  const coreDir = path.join(projectRoot, '.claude', 'vibe');
+  const vibeDir = path.join(projectRoot, '.vibe');
+  const legacyClaudeVibe = path.join(projectRoot, '.claude', 'vibe');
+  const legacyCocoVibe = path.join(projectRoot, '.coco', 'vibe');
   const legacyCoreDir = path.join(projectRoot, '.core');
   const claudeDir = path.join(projectRoot, '.claude');
 
-  if (!fs.existsSync(coreDir) && !fs.existsSync(legacyCoreDir)) {
-    console.log('❌ Not a core project.');
+  const hasAny = fs.existsSync(vibeDir) || fs.existsSync(legacyClaudeVibe) ||
+                 fs.existsSync(legacyCocoVibe) || fs.existsSync(legacyCoreDir);
+  if (!hasAny) {
+    console.log('❌ Not a vibe project.');
     return;
   }
 
-  console.log('🗑️  Removing core...\n');
+  console.log('🗑️  Removing vibe...\n');
 
+  // .vibe 폴더 제거 (SSOT)
+  if (fs.existsSync(vibeDir)) {
+    removeDirRecursive(vibeDir);
+    console.log('   ✅ .vibe/ removed\n');
+  }
 
-  // .claude/vibe 폴더 제거
-  if (fs.existsSync(coreDir)) {
-    removeDirRecursive(coreDir);
-    console.log('   ✅ .claude/vibe/ removed\n');
+  // 레거시 `.claude/vibe/`, `.coco/vibe/` 제거
+  if (fs.existsSync(legacyClaudeVibe)) {
+    removeDirRecursive(legacyClaudeVibe);
+    console.log('   ✅ .claude/vibe/ removed (legacy)\n');
+  }
+  if (fs.existsSync(legacyCocoVibe)) {
+    removeDirRecursive(legacyCocoVibe);
+    console.log('   ✅ .coco/vibe/ removed (legacy)\n');
   }
 
   // 레거시 .core 폴더도 제거

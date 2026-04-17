@@ -14,9 +14,9 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { PROJECT_DIR } from './utils.js';
+import { PROJECT_DIR, projectVibePath } from './utils.js';
 
-const METRICS_DIR = path.join(PROJECT_DIR, '.claude', 'vibe', 'metrics');
+const METRICS_DIR = projectVibePath(PROJECT_DIR, 'metrics');
 const CURRENT_RUN = path.join(METRICS_DIR, 'current-run.json');
 
 try {

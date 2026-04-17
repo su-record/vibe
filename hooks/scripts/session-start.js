@@ -1,7 +1,7 @@
 /**
  * SessionStart Hook - 세션 시작 시 메모리/시간 로드 + 버전 체크
  */
-import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
+import { getToolsBaseUrl, PROJECT_DIR, projectVibePath, projectVibeRoot } from './utils.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -99,14 +99,14 @@ async function main() {
       const { syncScopeFile } = await import('./lib/scope-from-spec.js');
       const result = syncScopeFile(PROJECT_DIR);
       if (result.action === 'created' || result.action === 'updated' || result.action === 'removed') {
-        console.log(`\n🚧 Scope ${result.action} from active SPECs (.claude/vibe/scope.json)`);
+        console.log(`\n🚧 Scope ${result.action} from active SPECs (${path.relative(PROJECT_DIR, path.join(projectVibeRoot(PROJECT_DIR), 'scope.json'))})`);
       }
     } catch { /* scope sync is best-effort */ }
 
     // Autonomy status summary
     try {
       const fs = await import('fs');
-      const configPath = `${PROJECT_DIR}/.claude/vibe/config.json`;
+      const configPath = projectVibePath(PROJECT_DIR, 'config.json');
       let autonomyMode = 'suggest';
       let sentinelEnabled = true;
 

@@ -58,23 +58,33 @@ function syncProjectScope(projectRoot: string, packageRoot: string): void {
 export function update(options: CliOptions = { silent: false }): void {
   try {
     const projectRoot = process.cwd();
-    const coreDir = path.join(projectRoot, '.claude', 'vibe');
+    const coreDir = path.join(projectRoot, '.vibe');
     const claudeDir = path.join(projectRoot, '.claude');
     const legacyCoreDir = path.join(projectRoot, '.core');
+    const legacyClaudeVibe = path.join(projectRoot, '.claude', 'vibe');
+    const legacyCocoVibe = path.join(projectRoot, '.coco', 'vibe');
 
     // CI/프로덕션 환경에서는 스킵
     if (process.env.NODE_ENV === 'production' || process.env.CI === 'true') {
       return;
     }
 
-    // 레거시 마이그레이션
+    // SSOT 마이그레이션 — 기존 `.claude/vibe/` 또는 `.coco/vibe/` 가 있고 `.vibe/` 가 없으면 이동
+    if (!fs.existsSync(coreDir)) {
+      const legacyVibe = fs.existsSync(legacyClaudeVibe) ? legacyClaudeVibe
+        : fs.existsSync(legacyCocoVibe) ? legacyCocoVibe : null;
+      if (legacyVibe) {
+        log(`📦 Migrating ${path.relative(projectRoot, legacyVibe)}/ → .vibe/\n`);
+        fs.renameSync(legacyVibe, coreDir);
+      }
+    }
+
+    // 레거시 `.core/` 마이그레이션
     if (fs.existsSync(legacyCoreDir) && !fs.existsSync(coreDir)) {
       migrateLegacyCore(projectRoot, coreDir);
     }
 
-    // 프로젝트 감지: 홈 디렉토리이거나 프로젝트 마커(.git, package.json)가 없으면
-    // 전역 업그레이드만 수행하고 프로젝트 설정 업데이트는 건너뜀
-    // (홈의 ~/.claude/vibe/는 postinstall이 만든 전역 디렉토리)
+    // 프로젝트 감지
     const isHome = path.resolve(projectRoot) === path.resolve(os.homedir());
     const hasProjectMarker = fs.existsSync(path.join(projectRoot, '.git'))
       || fs.existsSync(path.join(projectRoot, 'package.json'));

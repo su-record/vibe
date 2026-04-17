@@ -18,11 +18,15 @@ const SCRIPTS_DIR = path.resolve(__dirname, '..');
 
 function loadHookConfig() {
   try {
-    const configPath = path.join(
-      process.env.CLAUDE_PROJECT_DIR || process.cwd(),
-      '.claude', 'vibe', 'config.json'
-    );
-    if (!fs.existsSync(configPath)) return {};
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.env.COCO_PROJECT_DIR || process.cwd();
+    // Vibe config 탐색 — `.vibe/` 를 SSOT 로 삼고, legacy `.claude/vibe/`, `.coco/vibe/` fallback
+    const candidates = [
+      path.join(projectDir, '.vibe', 'config.json'),
+      path.join(projectDir, '.claude', 'vibe', 'config.json'),
+      path.join(projectDir, '.coco', 'vibe', 'config.json'),
+    ];
+    const configPath = candidates.find(p => fs.existsSync(p));
+    if (!configPath) return {};
     return JSON.parse(fs.readFileSync(configPath, 'utf-8')).hooks || {};
   } catch {
     return {};
