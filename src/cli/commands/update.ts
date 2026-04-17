@@ -20,6 +20,7 @@ import {
   updateConstitution,
   updateRules,
   migrateLegacyCore,
+  consolidateLegacyVibe,
   updateGitignore,
   updateConfig,
   cleanupLegacy,
@@ -61,22 +62,17 @@ export function update(options: CliOptions = { silent: false }): void {
     const coreDir = path.join(projectRoot, '.vibe');
     const claudeDir = path.join(projectRoot, '.claude');
     const legacyCoreDir = path.join(projectRoot, '.core');
-    const legacyClaudeVibe = path.join(projectRoot, '.claude', 'vibe');
-    const legacyCocoVibe = path.join(projectRoot, '.coco', 'vibe');
 
     // CI/프로덕션 환경에서는 스킵
     if (process.env.NODE_ENV === 'production' || process.env.CI === 'true') {
       return;
     }
 
-    // SSOT 마이그레이션 — 기존 `.claude/vibe/` 또는 `.coco/vibe/` 가 있고 `.vibe/` 가 없으면 이동
-    if (!fs.existsSync(coreDir)) {
-      const legacyVibe = fs.existsSync(legacyClaudeVibe) ? legacyClaudeVibe
-        : fs.existsSync(legacyCocoVibe) ? legacyCocoVibe : null;
-      if (legacyVibe) {
-        log(`📦 Migrating ${path.relative(projectRoot, legacyVibe)}/ → .vibe/\n`);
-        fs.renameSync(legacyVibe, coreDir);
-      }
+    // SSOT 통합 — `.claude/vibe/`, `.coco/vibe/`, `.claude/memories/`, `.coco/memories/` → `.vibe/`
+    // (legacy 와 `.vibe/` 가 공존해도 안전하게 병합)
+    const consolidated = consolidateLegacyVibe(projectRoot);
+    if (consolidated.length > 0) {
+      log(`📦 Consolidated into .vibe/: ${consolidated.join(', ')}\n`);
     }
 
     // 레거시 `.core/` 마이그레이션

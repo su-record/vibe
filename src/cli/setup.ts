@@ -26,6 +26,7 @@ export {
 
 export {
   migrateLegacyCore,
+  consolidateLegacyVibe,
   cleanupLegacy,
   removeLocalAssets,
   cleanupClaudeConfig,

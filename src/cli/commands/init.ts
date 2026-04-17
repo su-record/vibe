@@ -22,6 +22,7 @@ import {
   detectOsLanguage,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
+  consolidateLegacyVibe,
 } from '../setup.js';
 import * as p from '@clack/prompts';
 import {
@@ -105,9 +106,9 @@ export function installLocalSkills(
 
 /**
  * 감지된 스택에 해당하는 언어 룰 파일을 프로젝트 로컬에 설치
- * 전역 ~/.<harness>/vibe/languages/ (fallback: ~/.claude/vibe/languages/) → 프로젝트 <harnessDir>/vibe/languages/
+ * 전역 ~/.<harness>/vibe/languages/ (fallback: ~/.claude/vibe/languages/) → 프로젝트 `.vibe/languages/`
  *
- * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
+ * @param harnessDir 전역 소스 탐색용 하네스. 설치 대상은 항상 `.vibe/`.
  */
 export function installLanguageRules(
   projectRoot: string,
@@ -127,7 +128,7 @@ export function installLanguageRules(
   }
   if (languageFiles.size === 0) return;
 
-  const localLanguagesDir = path.join(projectRoot, harnessDir, 'vibe', 'languages');
+  const localLanguagesDir = path.join(projectRoot, '.vibe', 'languages');
   ensureDir(localLanguagesDir);
 
   const installed: string[] = [];
@@ -200,17 +201,11 @@ export async function init(
       return;
     }
 
-    // Legacy SSOT 마이그레이션 — 기존 `.claude/vibe/` 또는 `.coco/vibe/` 가 있으면 `.vibe/` 로 이동.
-    const legacyVibePaths = [
-      path.join(projectRoot, '.claude', 'vibe'),
-      path.join(projectRoot, '.coco', 'vibe'),
-    ];
-    const legacyVibe = legacyVibePaths.find(p => fs.existsSync(p));
-    if (legacyVibe) {
-      log(`📦 Migrating ${path.relative(projectRoot, legacyVibe)}/ → .vibe/\n`);
-      fs.renameSync(legacyVibe, coreDir);
-    } else {
-      ensureDir(coreDir);
+    // Legacy SSOT 통합 — `.claude/vibe/`, `.coco/vibe/`, `.claude/memories/`, `.coco/memories/` → `.vibe/`
+    ensureDir(coreDir);
+    const consolidated = consolidateLegacyVibe(projectRoot);
+    if (consolidated.length > 0) {
+      log(`📦 Consolidated into .vibe/: ${consolidated.join(', ')}\n`);
     }
     log(`🎯 Target harness: ${harnessLabel} (${harnessDir}/ — CLI 설정)\n`);
     log(`   Vibe SSOT: .vibe/ (공용)\n`);
@@ -395,7 +390,7 @@ export async function init(
     }
 
     runStep(s3, 'Provisioning agents & templates', () => {
-      const provisionResult = Provisioner.provision(projectRoot, detectedStacks, stackDetails, harnessDir);
+      const provisionResult = Provisioner.provision(projectRoot, detectedStacks, stackDetails);
       if (provisionResult.agentsGenerated) {
         log(`   🤖 Recommended agents generated\n`);
       }

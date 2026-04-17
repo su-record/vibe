@@ -8,6 +8,66 @@ import os from 'os';
 import { ensureDir, copyDirRecursive, removeDirRecursive, log } from '../utils.js';
 
 /**
+ * Legacy `.claude/vibe/`, `.coco/vibe/`, `.claude/memories/`, `.coco/memories/` 를
+ * 새 SSOT `.vibe/` 로 통합.
+ *
+ * 동작:
+ *  - `.vibe/` 가 없으면 legacy 경로를 그대로 rename (기존 init/update 가 하던 동작).
+ *  - `.vibe/` 가 있으면 legacy 파일을 병합: target 에 없는 것만 복사하고 legacy 는 제거.
+ *  - `.claude/memories/`, `.coco/memories/` → `.vibe/memories/` (같은 로직).
+ *  - legacy 디렉토리가 비게 되면 자동 정리 (상위의 `.claude`, `.coco` 자체는 건드리지 않음).
+ *
+ * 이미 통합된 프로젝트는 no-op.
+ * @returns 이동/제거한 legacy 경로 목록 (user-facing 로그용)
+ */
+export function consolidateLegacyVibe(projectRoot: string): string[] {
+  const vibeRoot = path.join(projectRoot, '.vibe');
+  const moved: string[] = [];
+
+  const plans: Array<{ src: string; dst: string }> = [
+    { src: path.join(projectRoot, '.claude', 'vibe'), dst: vibeRoot },
+    { src: path.join(projectRoot, '.coco', 'vibe'), dst: vibeRoot },
+    { src: path.join(projectRoot, '.claude', 'memories'), dst: path.join(vibeRoot, 'memories') },
+    { src: path.join(projectRoot, '.coco', 'memories'), dst: path.join(vibeRoot, 'memories') },
+  ];
+
+  for (const { src, dst } of plans) {
+    if (!fs.existsSync(src)) continue;
+    try {
+      if (!fs.existsSync(dst)) {
+        // target 없음 → 통째로 rename
+        ensureDir(path.dirname(dst));
+        fs.renameSync(src, dst);
+      } else {
+        // 병합 — target 에 없는 파일만 복사
+        mergeDirInto(src, dst);
+        removeDirRecursive(src);
+      }
+      moved.push(path.relative(projectRoot, src));
+    } catch {
+      // 권한 등으로 실패 시 조용히 스킵 — 사용자가 수동으로 정리
+    }
+  }
+
+  return moved;
+}
+
+/** src 의 각 파일을 dst 에 복사 — 이미 존재하면 건드리지 않는다. */
+function mergeDirInto(src: string, dst: string): void {
+  ensureDir(dst);
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const dstPath = path.join(dst, entry.name);
+    if (entry.isDirectory()) {
+      if (fs.existsSync(dstPath)) mergeDirInto(srcPath, dstPath);
+      else copyDirRecursive(srcPath, dstPath);
+    } else if (!fs.existsSync(dstPath)) {
+      fs.copyFileSync(srcPath, dstPath);
+    }
+  }
+}
+
+/**
  * .core/ → .claude/vibe/ 마이그레이션
  */
 export function migrateLegacyCore(projectRoot: string, coreDir: string): boolean {

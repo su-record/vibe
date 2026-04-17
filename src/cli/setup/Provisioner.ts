@@ -123,7 +123,6 @@ export class Provisioner {
     projectRoot: string,
     detectedStacks: DetectedStack[],
     stackDetails: StackDetails,
-    harnessDir: string = '.claude',
   ): ProvisionResult {
     const result: ProvisionResult = {
       configEnhanced: false,
@@ -135,7 +134,7 @@ export class Provisioner {
 
     // Generate recommended agents config
     const agentsPath = path.join(
-      projectRoot, harnessDir, 'vibe', 'recommended-agents.json',
+      projectRoot, '.vibe', 'recommended-agents.json',
     );
     if (!fs.existsSync(agentsPath)) {
       const agents = Provisioner.generateRecommendedAgents(stackTypes);
@@ -152,7 +151,7 @@ export class Provisioner {
 
     // Generate SPEC template
     const specPath = path.join(
-      projectRoot, harnessDir, 'vibe', 'specs', 'project-spec-template.md',
+      projectRoot, '.vibe', 'specs', 'project-spec-template.md',
     );
     if (!fs.existsSync(specPath)) {
       const template = Provisioner.generateSpecTemplate(
