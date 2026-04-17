@@ -10,14 +10,16 @@ import { log, getPackageJson } from './utils.js';
  * 협업자 자동 설치 설정
  *
  * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
- *   setup.sh 위치 및 README 안내 경로가 하네스에 따라 달라짐.
+ *   Claude/coco 공통 setup.sh 는 `.vibe/` (SSOT) 에 저장.
+ *   harnessDir 은 README/안내 문구에서 CLI 이름(Claude Code vs coco) 결정용.
  */
 export function setupCollaboratorAutoInstall(
   projectRoot: string,
   harnessDir: string = '.claude',
 ): void {
   const packageJsonPath = path.join(projectRoot, 'package.json');
-  const coreDir = path.join(projectRoot, harnessDir, 'vibe');
+  const coreDir = path.join(projectRoot, '.vibe');
+  const cliLabel = harnessDir === '.coco' ? 'coco' : 'Claude Code';
 
   // 1. Node.js 프로젝트: package.json 정리
   if (fs.existsSync(packageJsonPath)) {
@@ -71,7 +73,7 @@ export function setupCollaboratorAutoInstall(
   if (!fs.existsSync(setupShPath)) {
     const setupScript = `#!/bin/bash
 # Core collaborator auto-install script
-# Usage: ./${harnessDir}/vibe/setup.sh
+# Usage: ./.vibe/setup.sh
 
 set -e
 
@@ -125,7 +127,7 @@ vibe init
 
 ### Usage
 
-Use slash commands in Claude Code:
+Use slash commands in ${cliLabel}:
 - \`/vibe.spec "feature"\` - Create SPEC document
 - \`/vibe.run "feature"\` - Execute implementation
 `;

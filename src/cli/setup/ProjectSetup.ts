@@ -17,6 +17,10 @@ import { handleCaughtError } from '../../infra/lib/utils.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// VIBE 섹션 감싸는 마커 — CLAUDE.md/AGENTS.md 둘 다 이 마커 사이를 재생성.
+const VIBE_START = '<!-- VIBE:START -->';
+const VIBE_END_TAG = '<!-- VIBE:END -->';
+
 /**
  * constitution.md 생성 또는 업데이트
  */
@@ -92,35 +96,36 @@ export function generateProjectClaudeMd(
   const stackNames = detectedStacks.map(s => STACK_NAMES[s.type]?.name || s.type);
   const language = detectOsLanguage();
 
-  // VIBE 섹션 생성
+  // VIBE 섹션 생성 — START/END 마커로 감싸서 재생성 구간을 명확히
   const vibeSection = buildVibeSection(projectRoot, dirs, stackNames, stackDetails, language);
+  const wrapped = `${VIBE_START}\n${vibeSection}\n${VIBE_END_TAG}`;
 
   if (fs.existsSync(claudeMdPath)) {
     const existing = fs.readFileSync(claudeMdPath, 'utf-8');
-    const startIdx = existing.indexOf('# VIBE');
-    const endIdx = existing.indexOf('<!-- VIBE:END -->');
+    const startIdx = existing.indexOf(VIBE_START);
+    const legacyStartIdx = existing.indexOf('# VIBE');
+    const endIdx = existing.indexOf(VIBE_END_TAG);
 
-    if (startIdx !== -1 && endIdx !== -1) {
-      // 마커 기반 교체
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      // START/END 마커 교체
       const before = existing.substring(0, startIdx).trimEnd();
-      const after = existing.substring(endIdx + '<!-- VIBE:END -->'.length).trimStart();
-      const newContent = (before ? before + '\n\n' : '') + vibeSection + (after ? '\n\n' + after : '');
-      fs.writeFileSync(claudeMdPath, newContent);
-    } else if (startIdx !== -1) {
-      // # VIBE는 있지만 END 마커 없음 — 이후 전체 교체
-      const before = existing.substring(0, startIdx).trimEnd();
-      fs.writeFileSync(claudeMdPath, (before ? before + '\n\n' : '') + vibeSection);
+      const after = existing.substring(endIdx + VIBE_END_TAG.length).trimStart();
+      fs.writeFileSync(claudeMdPath, (before ? before + '\n\n' : '') + wrapped + (after ? '\n\n' + after : ''));
+    } else if (legacyStartIdx !== -1 && endIdx !== -1) {
+      // legacy: START 마커 없이 `# VIBE` + END 만 있던 포맷
+      const before = existing.substring(0, legacyStartIdx).trimEnd();
+      const after = existing.substring(endIdx + VIBE_END_TAG.length).trimStart();
+      fs.writeFileSync(claudeMdPath, (before ? before + '\n\n' : '') + wrapped + (after ? '\n\n' + after : ''));
+    } else if (legacyStartIdx !== -1) {
+      const before = existing.substring(0, legacyStartIdx).trimEnd();
+      fs.writeFileSync(claudeMdPath, (before ? before + '\n\n' : '') + wrapped);
     } else {
-      // VIBE 섹션 없음 — 추가
-      fs.writeFileSync(claudeMdPath, existing.trimEnd() + '\n\n' + vibeSection);
+      fs.writeFileSync(claudeMdPath, existing.trimEnd() + '\n\n' + wrapped + '\n');
     }
   } else {
-    fs.writeFileSync(claudeMdPath, vibeSection);
+    fs.writeFileSync(claudeMdPath, wrapped + '\n');
   }
 }
-
-const VIBE_START = '<!-- VIBE:START -->';
-const VIBE_END_TAG = '<!-- VIBE:END -->';
 
 /**
  * 프로젝트 분석 → AGENTS.md 생성/갱신 (coco 용)
@@ -384,8 +389,6 @@ function buildVibeSection(
   lines.push('');
   lines.push('Include: `.vibe/{plans,specs,features,todos,config.json,constitution.md}`, `CLAUDE.md`');
   lines.push('Exclude: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`');
-  lines.push('');
-  lines.push('<!-- VIBE:END -->');
 
   return lines.join('\n');
 }
