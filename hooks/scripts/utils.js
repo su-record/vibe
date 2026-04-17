@@ -158,7 +158,7 @@ export function getToolsBaseUrl() {
 }
 
 export function getLibBaseUrl() {
-  return getPackageUrl(path.join('dist', 'infra', 'lib'), 'gpt-api.js');
+  return getPackageUrl(path.join('dist', 'infra', 'lib'), 'constants.js');
 }
 
 // ─── Hook Trace Logging ───
