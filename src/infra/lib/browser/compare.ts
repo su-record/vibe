@@ -154,6 +154,95 @@ function normalizeCSS(property: string, value: string): string {
   return v;
 }
 
+/**
+ * Raw Figma numeric values → browser getComputedStyle reconciliation.
+ *
+ * This is the "end of pipe" check the post argues for: bypass the
+ * CSS-translation black box and diff the original Figma numbers directly
+ * against what the browser's CSS engine actually computed. Tolerance
+ * defaults to 1px for layout, 0.5px for typography — below that the
+ * compare step gets noisy on sub-pixel rounding.
+ */
+export interface RawComparisonInput {
+  selector: string;
+  /** raw numeric values from Figma (FigmaRawProps). */
+  raw: Record<string, number | number[] | string | undefined>;
+  /** getComputedStyle output for the same element. */
+  computed: Record<string, string>;
+}
+
+export interface RawDiff {
+  selector: string;
+  property: string;
+  expected: string;
+  actual: string;
+  delta?: number;
+  severity: 'P1' | 'P2';
+}
+
+const RAW_TO_CSS: Array<{
+  raw: string;
+  css: string;
+  tolerance: number;
+  severity: 'P1' | 'P2';
+}> = [
+  { raw: 'itemSpacing',     css: 'gap',           tolerance: 0.5, severity: 'P1' },
+  { raw: 'paddingTop',      css: 'padding-top',   tolerance: 0.5, severity: 'P1' },
+  { raw: 'paddingRight',    css: 'padding-right', tolerance: 0.5, severity: 'P1' },
+  { raw: 'paddingBottom',   css: 'padding-bottom',tolerance: 0.5, severity: 'P1' },
+  { raw: 'paddingLeft',     css: 'padding-left',  tolerance: 0.5, severity: 'P1' },
+  { raw: 'cornerRadius',    css: 'border-radius', tolerance: 0.5, severity: 'P2' },
+  { raw: 'strokeWeight',    css: 'border-top-width', tolerance: 0.5, severity: 'P1' },
+  { raw: 'fontSize',        css: 'font-size',     tolerance: 0.25, severity: 'P1' },
+  { raw: 'lineHeightPx',    css: 'line-height',   tolerance: 0.5, severity: 'P1' },
+  { raw: 'letterSpacing',   css: 'letter-spacing', tolerance: 0.1, severity: 'P2' },
+  { raw: 'fontWeight',      css: 'font-weight',   tolerance: 0,   severity: 'P2' },
+];
+
+function parsePx(v: string | undefined): number | null {
+  if (!v) return null;
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function compareRaw(input: RawComparisonInput): RawDiff[] {
+  const diffs: RawDiff[] = [];
+  for (const mapping of RAW_TO_CSS) {
+    const rawVal = input.raw[mapping.raw];
+    if (rawVal == null || typeof rawVal !== 'number') continue;
+
+    const computedRaw = input.computed[mapping.css];
+    const actualNum = parsePx(computedRaw);
+    if (actualNum === null) continue;
+
+    const delta = Math.abs(actualNum - rawVal);
+    if (delta > mapping.tolerance) {
+      diffs.push({
+        selector: input.selector,
+        property: mapping.css,
+        expected: `${rawVal}px (Figma raw: ${mapping.raw})`,
+        actual: computedRaw ?? '',
+        delta,
+        severity: mapping.severity,
+      });
+    }
+  }
+  return diffs;
+}
+
+/** RawDiff → VerificationIssue. */
+export function rawDiffsToIssues(diffs: RawDiff[]): VerificationIssue[] {
+  return diffs.map((d) => ({
+    severity: d.severity,
+    type: 'style-diff' as const,
+    target: d.selector,
+    message: `${d.property}: Figma=${d.expected}, browser=${d.actual}` +
+      (d.delta !== undefined ? ` (Δ ${d.delta.toFixed(2)}px)` : ''),
+    expected: d.expected,
+    actual: d.actual,
+  }));
+}
+
 /** StyleDiff → VerificationIssue 변환 */
 export function diffsToIssues(diffs: StyleDiff[]): VerificationIssue[] {
   return diffs.map(diff => {

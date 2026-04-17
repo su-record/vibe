@@ -161,6 +161,114 @@ function toRadialGradient(f) {
 
 const BLEND_MODES = { MULTIPLY:'multiply', SCREEN:'screen', OVERLAY:'overlay', DARKEN:'darken', LIGHTEN:'lighten', COLOR_DODGE:'color-dodge', COLOR_BURN:'color-burn', HARD_LIGHT:'hard-light', SOFT_LIGHT:'soft-light', DIFFERENCE:'difference', EXCLUSION:'exclusion', HUE:'hue', SATURATION:'saturation', COLOR:'color', LUMINOSITY:'luminosity' };
 
+// Figma-only blend modes with no CSS equivalent (silent-drop hazards)
+const UNSUPPORTED_BLEND_MODES = new Set(['LINEAR_BURN', 'LINEAR_DODGE', 'PLUS_DARKER', 'PLUS_LIGHTER']);
+
+// ─── Raw extraction & Audit (Figma→CSS translation-loss detection) ──
+
+/** Pull raw numeric Figma properties for later raw-vs-computed reconciliation. */
+function extractRaw(n) {
+  const raw = {};
+  if (n.itemSpacing != null) raw.itemSpacing = n.itemSpacing;
+  if (n.paddingTop != null) raw.paddingTop = n.paddingTop;
+  if (n.paddingRight != null) raw.paddingRight = n.paddingRight;
+  if (n.paddingBottom != null) raw.paddingBottom = n.paddingBottom;
+  if (n.paddingLeft != null) raw.paddingLeft = n.paddingLeft;
+  if (n.cornerRadius != null) raw.cornerRadius = n.cornerRadius;
+  if (n.rectangleCornerRadii) raw.rectangleCornerRadii = n.rectangleCornerRadii;
+  if (n.strokeWeight != null) raw.strokeWeight = n.strokeWeight;
+  if (n.strokeAlign) raw.strokeAlign = n.strokeAlign;
+  if (n.blendMode) raw.blendMode = n.blendMode;
+  if (n.opacity != null) raw.opacity = n.opacity;
+  if (n.type === 'TEXT' && n.style) {
+    const s = n.style;
+    if (s.fontSize != null) raw.fontSize = s.fontSize;
+    if (s.lineHeightPx != null) raw.lineHeightPx = s.lineHeightPx;
+    if (s.letterSpacing != null) raw.letterSpacing = s.letterSpacing;
+    if (s.fontWeight != null) raw.fontWeight = s.fontWeight;
+    if (s.leadingTrim) raw.leadingTrim = s.leadingTrim;
+    if (s.textBoxTrim) raw.textBoxTrim = s.textBoxTrim;
+  }
+  return raw;
+}
+
+/** Detect Figma properties that do not cross the CSS boundary cleanly. */
+function auditNode(n) {
+  const warnings = [];
+  // Stroke alignment — only CENTER maps to CSS border
+  if (n.strokeAlign && n.strokeAlign !== 'CENTER' && (n.strokes || []).some(s => s.visible !== false)) {
+    warnings.push({
+      property: 'strokeAlign',
+      value: n.strokeAlign,
+      severity: 'P1',
+      reason: `CSS border renders stroke centered; Figma ${n.strokeAlign} cannot be matched without box-sizing trade-offs.`,
+    });
+  }
+  // Node-level blend mode
+  if (n.blendMode && UNSUPPORTED_BLEND_MODES.has(n.blendMode)) {
+    warnings.push({
+      property: 'blendMode',
+      value: n.blendMode,
+      severity: 'P1',
+      reason: `mix-blend-mode has no equivalent for ${n.blendMode}.`,
+    });
+  }
+  // Per-fill blend mode
+  for (const f of n.fills || []) {
+    if (f.visible !== false && f.blendMode && UNSUPPORTED_BLEND_MODES.has(f.blendMode)) {
+      warnings.push({
+        property: 'fill.blendMode',
+        value: f.blendMode,
+        severity: 'P1',
+        reason: `background-blend-mode has no equivalent for ${f.blendMode}.`,
+      });
+    }
+  }
+  // leadingTrim / textBoxTrim (text-box-trim is Firefox-unsupported)
+  if (n.type === 'TEXT' && n.style) {
+    if (n.style.leadingTrim && n.style.leadingTrim !== 'NONE') {
+      warnings.push({
+        property: 'leadingTrim',
+        value: n.style.leadingTrim,
+        severity: 'P2',
+        reason: 'text-box-trim is not supported in Firefox; visual vertical alignment will drift.',
+      });
+    }
+    if (n.style.textBoxTrim && n.style.textBoxTrim !== 'NONE') {
+      warnings.push({
+        property: 'textBoxTrim',
+        value: n.style.textBoxTrim,
+        severity: 'P2',
+        reason: 'text-box-trim browser support is limited.',
+      });
+    }
+  }
+  // Constraints SCALE/CENTER — no CSS layout equivalent
+  if (n.constraints) {
+    const { horizontal, vertical } = n.constraints;
+    for (const [axis, val] of [['horizontal', horizontal], ['vertical', vertical]]) {
+      if (val === 'SCALE' || val === 'CENTER') {
+        warnings.push({
+          property: `constraints.${axis}`,
+          value: val,
+          severity: 'P2',
+          reason: `Figma ${val} constraint has no direct CSS mapping; responsive behavior will diverge.`,
+        });
+      }
+    }
+  }
+  // Individual stroke weights combined with non-center align
+  if (n.individualStrokeWeights && n.strokeAlign && n.strokeAlign !== 'CENTER') {
+    warnings.push({
+      property: 'individualStrokeWeights',
+      value: n.strokeAlign,
+      severity: 'P2',
+      reason: 'Per-side border widths only align cleanly when strokeAlign=CENTER.',
+    });
+  }
+  return warnings;
+}
+
 // ─── CSS Extraction ─────────────────────────────────────────────────
 
 function extractCSS(n) {
@@ -327,8 +435,29 @@ function walk(node, parentAbsBBox) {
     r.css.top = `${Math.round(node.absoluteBoundingBox.y - parentAbsBBox.y)}px`;
     r.css.left = `${Math.round(node.absoluteBoundingBox.x - parentAbsBBox.x)}px`;
   }
+  // Raw Figma values (for raw-vs-computed reconciliation in verification phase)
+  const raw = extractRaw(node);
+  if (Object.keys(raw).length) r.raw = raw;
+  // Translation-loss warnings (Figma → CSS incompatibilities)
+  const warnings = auditNode(node);
+  if (warnings.length) r.warnings = warnings;
   if (node.children?.length) r.children = node.children.map(c => walk(c, node.absoluteBoundingBox));
   return r;
+}
+
+/** Aggregate all warnings in a tree into a rollup keyed by severity. */
+function rollupWarnings(tree) {
+  const all = [];
+  function visit(n) {
+    if (n.warnings?.length) {
+      for (const w of n.warnings) all.push({ nodeId: n.nodeId, name: n.name, ...w });
+    }
+    (n.children || []).forEach(visit);
+  }
+  visit(tree);
+  const p1 = all.filter(w => w.severity === 'P1').length;
+  const p2 = all.filter(w => w.severity === 'P2').length;
+  return { total: all.length, p1, p2, items: all };
 }
 
 function collectRefs(node, set = new Set()) {
@@ -345,7 +474,9 @@ async function cmdTree(token, fk, nid, depth) {
   const data = await apiFetch(`/files/${fk}/nodes?ids=${nid}${dp}`, token);
   const nd = data.nodes?.[nid];
   if (!nd?.document) fail(`Node ${nid} not found`);
-  console.log(JSON.stringify(walk(nd.document), null, 2));
+  const tree = walk(nd.document);
+  tree.auditSummary = rollupWarnings(tree);
+  console.log(JSON.stringify(tree, null, 2));
 }
 
 async function cmdImages(token, fk, nid, outDir, depth) {
@@ -525,6 +656,7 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
   const nd = treeData.nodes?.[nid];
   if (!nd?.document) fail(`Node ${nid} not found`);
   const tree = walk(nd.document);
+  tree.auditSummary = rollupWarnings(tree);
 
   // 2. 이미지 이름 매핑 (노드 name 기반)
   const sectionPrefix = kebab(tree.name);
@@ -607,6 +739,7 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
     },
     images: imageMap,
     imageCount: Object.keys(imageMap).length,
+    auditSummary: tree.auditSummary,
   }, null, 2));
 }
 

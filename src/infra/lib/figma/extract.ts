@@ -7,6 +7,8 @@ import path from 'path';
 import { figmaFetch, loadToken } from './api.js';
 import type {
   FigmaNode,
+  FigmaRawProps,
+  FigmaWarning,
   FigmaImageMap,
   FigmaTreeOptions,
   FigmaImageOptions,
@@ -28,9 +30,17 @@ function figmaColorToCSS(color: { r: number; g: number; b: number; a?: number })
 
 // ─── Node → CSS ─────────────────────────────────────────────────────
 
+interface ExtractResult {
+  css: Record<string, string>;
+  raw: FigmaRawProps;
+  warnings: FigmaWarning[];
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
-function extractCSS(node: any): Record<string, string> {
+function extractCSS(node: any): ExtractResult {
   const css: Record<string, string> = {};
+  const raw: FigmaRawProps = {};
+  const warnings: FigmaWarning[] = [];
 
   // Layout
   if (node.layoutMode === 'VERTICAL') {
@@ -55,6 +65,7 @@ function extractCSS(node: any): Record<string, string> {
   }
   if (node.itemSpacing != null && node.itemSpacing > 0) {
     css.gap = `${node.itemSpacing}px`;
+    raw.itemSpacing = node.itemSpacing;
   }
 
   // Padding
@@ -64,6 +75,10 @@ function extractCSS(node: any): Record<string, string> {
   const pl = node.paddingLeft || 0;
   if (pt || pr || pb || pl) {
     css.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
+    raw.paddingTop = pt;
+    raw.paddingRight = pr;
+    raw.paddingBottom = pb;
+    raw.paddingLeft = pl;
   }
 
   // Size
@@ -85,9 +100,13 @@ function extractCSS(node: any): Record<string, string> {
   // Opacity
   if (node.opacity != null && node.opacity < 1) {
     css.opacity = node.opacity.toFixed(2);
+    raw.opacity = node.opacity;
   }
 
-  // Blend mode
+  // Blend mode — supported CSS values get mapped, everything else is
+  // recorded as a warning instead of silently dropped (which was the
+  // behaviour that let LINEAR_BURN / LINEAR_DODGE disappear without
+  // the implementer noticing).
   const blendMap: Record<string, string> = {
     MULTIPLY: 'multiply', SCREEN: 'screen', OVERLAY: 'overlay',
     DARKEN: 'darken', LIGHTEN: 'lighten', COLOR_DODGE: 'color-dodge',
@@ -96,15 +115,26 @@ function extractCSS(node: any): Record<string, string> {
     SATURATION: 'saturation', COLOR: 'color', LUMINOSITY: 'luminosity',
   };
   if (node.blendMode && node.blendMode !== 'NORMAL' && node.blendMode !== 'PASS_THROUGH') {
-    if (blendMap[node.blendMode]) css.mixBlendMode = blendMap[node.blendMode];
+    raw.blendMode = node.blendMode;
+    if (blendMap[node.blendMode]) {
+      css.mixBlendMode = blendMap[node.blendMode];
+    } else {
+      warnings.push({
+        property: 'blendMode',
+        value: node.blendMode,
+        reason: 'no CSS mix-blend-mode equivalent — bake into asset or replace in Figma',
+      });
+    }
   }
 
   // Corner radius
   if (node.cornerRadius != null && node.cornerRadius > 0) {
     css.borderRadius = `${node.cornerRadius}px`;
+    raw.cornerRadius = node.cornerRadius;
   } else if (node.rectangleCornerRadii) {
     const [tl, tr, br, bl] = node.rectangleCornerRadii as number[];
     css.borderRadius = `${tl}px ${tr}px ${br}px ${bl}px`;
+    raw.rectangleCornerRadii = [tl, tr, br, bl];
   }
 
   // Fills
@@ -121,11 +151,24 @@ function extractCSS(node: any): Record<string, string> {
     }
   }
 
-  // Strokes
+  // Strokes — CSS border is always centered on the edge. If Figma uses
+  // INSIDE/OUTSIDE, recording a warning lets the audit pipeline flag
+  // the visual shift rather than pretending the border matches.
   if (node.strokes?.length && node.strokeWeight) {
     const stroke = node.strokes.find((s: any) => s.visible !== false && s.type === 'SOLID');
     if (stroke) {
       css.border = `${node.strokeWeight}px solid ${figmaColorToCSS(stroke.color)}`;
+      raw.strokeWeight = node.strokeWeight;
+      if (node.strokeAlign) {
+        raw.strokeAlign = node.strokeAlign;
+        if (node.strokeAlign !== 'CENTER') {
+          warnings.push({
+            property: 'strokeAlign',
+            value: node.strokeAlign,
+            reason: 'CSS border is always centered — INSIDE/OUTSIDE shifts the visual box',
+          });
+        }
+      }
     }
   }
 
@@ -154,15 +197,25 @@ function extractCSS(node: any): Record<string, string> {
   if (node.type === 'TEXT' && node.style) {
     const s = node.style;
     if (s.fontFamily) css.fontFamily = `'${s.fontFamily}', sans-serif`;
-    if (s.fontSize) css.fontSize = `${s.fontSize}px`;
-    if (s.fontWeight) css.fontWeight = String(s.fontWeight);
-    if (s.lineHeightPx) css.lineHeight = `${s.lineHeightPx}px`;
-    if (s.letterSpacing) css.letterSpacing = `${s.letterSpacing}px`;
+    if (s.fontSize) { css.fontSize = `${s.fontSize}px`; raw.fontSize = s.fontSize; }
+    if (s.fontWeight) { css.fontWeight = String(s.fontWeight); raw.fontWeight = s.fontWeight; }
+    if (s.lineHeightPx) { css.lineHeight = `${s.lineHeightPx}px`; raw.lineHeightPx = s.lineHeightPx; }
+    if (s.letterSpacing) { css.letterSpacing = `${s.letterSpacing}px`; raw.letterSpacing = s.letterSpacing; }
     const textAlignMap: Record<string, string> = {
       LEFT: 'left', CENTER: 'center', RIGHT: 'right', JUSTIFIED: 'justify',
     };
     if (s.textAlignHorizontal && textAlignMap[s.textAlignHorizontal]) {
       css.textAlign = textAlignMap[s.textAlignHorizontal];
+    }
+    // leadingTrim / textBoxTrim → CSS text-box-trim. Firefox unsupported
+    // as of 2026-04, so record a warning rather than emit a rule that
+    // will behave inconsistently across browsers.
+    if (s.leadingTrim || s.textBoxTrim) {
+      warnings.push({
+        property: 'style.leadingTrim',
+        value: String(s.leadingTrim ?? s.textBoxTrim),
+        reason: 'maps to text-box-trim — inconsistent browser support, rely on explicit line-height instead',
+      });
     }
     if (node.fills?.length) {
       const textFill = node.fills.find((f: any) => f.visible !== false && f.type === 'SOLID');
@@ -170,13 +223,14 @@ function extractCSS(node: any): Record<string, string> {
     }
   }
 
-  return imageRef ? { ...css, _imageRef: imageRef } : css;
+  const cssOut = imageRef ? { ...css, _imageRef: imageRef } : css;
+  return { css: cssOut, raw, warnings };
 }
 
 // ─── Tree Walker ────────────────────────────────────────────────────
 
 function walkNode(node: any): FigmaNode {
-  const css = extractCSS(node);
+  const { css, raw, warnings } = extractCSS(node);
   const result: FigmaNode = {
     nodeId: node.id,
     name: node.name || '',
@@ -185,14 +239,16 @@ function walkNode(node: any): FigmaNode {
       ? { width: Math.round(node.absoluteBoundingBox.width), height: Math.round(node.absoluteBoundingBox.height) }
       : null,
     css: { ...css },
+    raw,
+    warnings,
     children: [],
   };
 
   if (node.type === 'TEXT' && node.characters) {
     result.text = node.characters;
   }
-  if (css._imageRef) {
-    result.imageRef = css._imageRef;
+  if (result.css._imageRef) {
+    result.imageRef = result.css._imageRef;
     delete result.css._imageRef;
   }
   if (node.children?.length) {
@@ -225,6 +281,28 @@ export function collectImageRefs(node: FigmaNode, refs: Set<string> = new Set())
   if (node.imageRef) refs.add(node.imageRef);
   for (const child of node.children) collectImageRefs(child, refs);
   return refs;
+}
+
+/** Flat list of nodes with their raw numeric values — input for compareRaw. */
+export function collectRawNodes(
+  node: FigmaNode,
+  out: Array<{ nodeId: string; name: string; raw: FigmaRawProps }> = [],
+): Array<{ nodeId: string; name: string; raw: FigmaRawProps }> {
+  if (Object.keys(node.raw).length > 0) {
+    out.push({ nodeId: node.nodeId, name: node.name, raw: node.raw });
+  }
+  for (const child of node.children) collectRawNodes(child, out);
+  return out;
+}
+
+/** Flat list of every extraction warning in the tree (silent-drop replacement). */
+export function collectWarnings(
+  node: FigmaNode,
+  out: Array<{ nodeId: string; name: string; warning: FigmaWarning }> = [],
+): Array<{ nodeId: string; name: string; warning: FigmaWarning }> {
+  for (const w of node.warnings) out.push({ nodeId: node.nodeId, name: node.name, warning: w });
+  for (const child of node.children) collectWarnings(child, out);
+  return out;
 }
 
 export async function getImages(options: FigmaImageOptions): Promise<FigmaImageMap> {

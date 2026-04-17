@@ -35,11 +35,33 @@ Returns (FigmaNode JSON):
     layoutSizingV: "FILL",
     fills: [...] (only when 2 or more),
     isMask: true (mask nodes only),
+    raw: { itemSpacing, paddingTop/..., cornerRadius, strokeWeight, strokeAlign,
+           blendMode, opacity, fontSize, lineHeightPx, letterSpacing, fontWeight,
+           leadingTrim, textBoxTrim },   ← numeric Figma values for Phase 6 raw-vs-computed reconciliation
+    warnings: [ { property, value, severity: "P1"|"P2", reason } ],  ← translation-loss only
     children: [...]
   }
 
+Root node also carries:
+  auditSummary: { total, p1, p2, items: [{ nodeId, name, property, value, severity, reason }] }
+
 → Save to /tmp/{feature}/tree.json
 ```
+
+### Translation-loss Audit (Figma → CSS Incompatibilities)
+
+The extractor flags properties Figma's native renderer supports but CSS cannot reproduce cleanly. These appear in each node's `warnings[]` and are rolled up at the root as `auditSummary`.
+
+**P1 (block Phase 3 until resolved or waived):**
+- `strokeAlign` ≠ `CENTER` — CSS border only renders centered strokes; INSIDE/OUTSIDE cannot match without box-sizing trade-offs.
+- `blendMode` ∈ { `LINEAR_BURN`, `LINEAR_DODGE`, `PLUS_DARKER`, `PLUS_LIGHTER` } — no CSS equivalent for `mix-blend-mode` / `background-blend-mode`.
+
+**P2 (record + proceed):**
+- `leadingTrim` / `textBoxTrim` ≠ `NONE` — `text-box-trim` has limited browser support (Firefox lacks it).
+- `constraints.horizontal|vertical` ∈ { `SCALE`, `CENTER` } — no direct CSS layout mapping; responsive behavior diverges.
+- `individualStrokeWeights` with `strokeAlign` ≠ `CENTER` — per-side border widths only align cleanly when stroke is centered.
+
+**Phase 2 gate rule:** if `auditSummary.p1 > 0`, resolve each item (replace layer in Figma, accept approximation with user sign-off, or mark as known deviation) before Phase 3. P2 items should be logged into the feature notes for Phase 6 reviewer attention.
 
 ### Figma Property → CSS Direct Mapping Table
 

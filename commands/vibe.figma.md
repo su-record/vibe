@@ -159,6 +159,11 @@ Load skill `vibe-figma` — Phase 2 (코디네이터: MO/PC 병렬 워커)
 
    Phase 0에서 수집한 URL 중 "design"으로 자동 분류된 항목 (MO/PC)을 사용.
    → tree.json + bg/ + content/ + sections/ (검증용)
+
+   🚦 Audit gate (tree.json 루트 `auditSummary` 사용):
+     - `auditSummary.p1 > 0` → Phase 3 진입 금지. 각 항목을 해결(디자인 레이어 교체,
+       근사치 수용 승인, 알려진 편차로 기록) 후 재추출.
+     - P2 항목은 피처 노트에 기록 → Phase 6 리뷰 대상.
 ```
 
 ### Phase 3 — 데이터 정제
@@ -198,6 +203,13 @@ Load skill `vibe-figma` — Phase 5
 
 ```
 Load skill `vibe-figma` — Phase 6 (시각 검증 루프, P1=0까지)
+
+   Raw-vs-computed 재조정:
+     - tree.json 각 노드의 `raw` 필드(itemSpacing, padding*, fontSize, lineHeightPx,
+       letterSpacing, strokeWeight, cornerRadius 등 Figma 원본 수치)를
+       브라우저 `getComputedStyle`과 비교한다.
+     - 허용 오차 초과 시 P1 issue (gap/padding 0.5px, fontSize 0.25px, lineHeight 0.5px).
+     - Figma MCP/변환기가 삼킨 값이 여기서 드러난다.
 
 ⤵ Phase 6 후처리
 Load skill `design-audit`
@@ -241,6 +253,8 @@ Load skill `vibe-figma` — Phase 1
 Load skill `vibe-figma-extract`
 Load skill `vibe-figma` — Phase 2
    → Branch 1 Phase 2와 동일 (design URL로 추출)
+
+   🚦 Audit gate: Branch 1과 동일하게 `auditSummary.p1 > 0` 이면 Phase 3 진입 금지.
 ```
 
 ### Phase 3 — 데이터 정제
@@ -272,6 +286,8 @@ Load skill `vibe-figma` — Phase 5
 
 ```
 Load skill `vibe-figma` — Phase 6 (시각 검증 루프, P1=0까지)
+
+   Raw-vs-computed 재조정: Branch 1과 동일 — tree.json `raw` ↔ getComputedStyle 비교.
 
 ⤵ Phase 6 후처리
 Load skill `design-audit`
