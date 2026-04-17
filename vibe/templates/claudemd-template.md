@@ -6,7 +6,7 @@
 
 - **Modify only requested scope** — Don't touch unrelated code
 - **Preserve existing style** — Follow project conventions
-- **Edit existing files, never create new ones** — Fix problems at source
+- **Prefer editing existing files** — Fix problems at source. Create new files when the task explicitly requires them (user-requested feature, new module, scaffolding). An explicit user request overrides this default.
 
 ### Complexity Limits
 

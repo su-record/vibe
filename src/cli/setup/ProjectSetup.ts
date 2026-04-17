@@ -260,7 +260,8 @@ function buildVibeSection(
   lines.push('');
   lines.push('- Modify only requested scope');
   lines.push('- Preserve existing style');
-  lines.push('- Edit existing files, never create new ones');
+  lines.push('- Prefer editing existing files for modifications');
+  lines.push('- Create new files when the task requires them (user asks for a feature/module/scaffold) — an explicit user request overrides this default');
   lines.push('- Function ≤50 lines, nesting ≤3, params ≤5, complexity ≤10');
   lines.push('- No `any`, no `console.log` in commits, no commented-out code');
   lines.push('');
