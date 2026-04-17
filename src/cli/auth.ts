@@ -132,7 +132,6 @@ export function formatLLMStatus(): string {
   const geminiCli = detectGeminiCli();
   const apiStatus = getLLMAuthStatus();
 
-  const cocoRow = cocoCli.installed ? '✓ Installed' : '⬚ Not installed';
   const claudeRow = formatLlmCliRow(claudeCli.installed, claudeCli.authenticated);
   const codexRow = formatLlmCliRow(codexCli.installed, codexCli.authenticated);
   const geminiRow = formatLlmCliRow(geminiCli.installed, geminiCli.authenticated);
@@ -140,9 +139,20 @@ export function formatLLMStatus(): string {
   const gptKey = apiStatus.gpt.length > 0 ? '✓ Key' : '⬚ —';
   const geminiKey = apiStatus.gemini.length > 0 ? '✓ Key' : '⬚ —';
 
+  const cocoLines: string[] = ['Coding Agent:'];
+  if (!cocoCli.installed) {
+    cocoLines.push('  coco                ⬚ Not installed');
+  } else if (!cocoCli.authenticated) {
+    cocoLines.push('  coco                ✓ Installed, ⚠ No auth (run: coco auth)');
+  } else {
+    cocoLines.push(`  coco                ✓ Usable · active: ${cocoCli.activeVendor}`);
+    if (cocoCli.methods && cocoCli.methods.length > 0) {
+      cocoLines.push(`                      methods: ${cocoCli.methods.join(', ')}`);
+    }
+  }
+
   return [
-    'Coding Agent:',
-    `  coco                ${cocoRow}`,
+    ...cocoLines,
     '',
     'LLM CLI (orchestration):',
     `  Claude Code         ${claudeRow}`,

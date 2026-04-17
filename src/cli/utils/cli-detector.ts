@@ -18,6 +18,13 @@ export interface AiCliStatus {
   authenticated?: boolean;
 }
 
+export interface CocoStatus extends AiCliStatus {
+  /** Human label of the active vendor (openai-oauth / openai-apikey / gemini / anthropic-apikey / local). Undefined when not installed or no auth. */
+  activeVendor?: string;
+  /** Available auth methods — short labels like "OAuth", "OpenAI key", "Anthropic key", "Gemini key", "Local". */
+  methods?: string[];
+}
+
 /**
  * Claude Code CLI 인증 감지 (파일/Keychain 기반, 빠름)
  * - macOS: `security` 커맨드로 "Claude Code-credentials" Keychain 항목 확인
@@ -77,17 +84,92 @@ export function detectClaudeCli(): AiCliStatus {
 }
 
 /**
- * coco 설치 여부 감지
- * - `COCO_HOME` 환경변수
- * - `~/.coco/` 디렉토리 존재 여부
+ * coco 설치 및 인증 감지
+ * - 설치: `which coco` · `~/.bun/bin/coco` · `~/.coco/` · `COCO_HOME` 중 하나라도 있으면 installed
+ * - 인증: `~/.config/coco/{auth.json,api-keys.json,active-vendor.json}` + env vars
+ *   (api-keys.json은 encrypted envelope이라 내용은 못 읽고 "has any" 까지만 판단)
+ * - 활성 vendor: COCO_VENDOR env > active-vendor.json > OAuth 우선순위
  */
-export function detectCocoCli(): AiCliStatus {
+const COCO_VENDOR_LABELS: Record<string, string> = {
+  'openai-oauth': 'OpenAI (ChatGPT)',
+  'openai-apikey': 'OpenAI (API key)',
+  'gemini': 'Google Gemini',
+  'anthropic-apikey': 'Anthropic Claude',
+  'local': 'Local (Ollama)',
+};
+
+export function detectCocoCli(): CocoStatus {
   const configDir = process.env.COCO_HOME || path.join(os.homedir(), '.coco');
-  const hasDir = fs.existsSync(configDir);
+  const hasConfigDir = fs.existsSync(configDir);
+
+  let hasBin = false;
+  try {
+    execSync('which coco', { stdio: 'ignore' });
+    hasBin = true;
+  } catch {
+    // which failed — try known install locations directly.
+    const candidates = [
+      path.join(configDir, 'bin', 'coco'),     // native install (coco install)
+      path.join(os.homedir(), '.bun', 'bin', 'coco'), // bun link (dev)
+    ];
+    if (candidates.some((p) => fs.existsSync(p))) hasBin = true;
+  }
+
+  const installed = hasBin || hasConfigDir;
+  if (!installed) {
+    return { installed: false, configDir };
+  }
+
+  // Auth detection — XDG path, same as coco's auth-storage.ts
+  const xdg = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config');
+  const cocoConfigDir = path.join(xdg, 'coco');
+  const authFile = path.join(cocoConfigDir, 'auth.json');
+  const apiKeysFile = path.join(cocoConfigDir, 'api-keys.json');
+  const activeVendorFile = path.join(cocoConfigDir, 'active-vendor.json');
+
+  const hasOAuth = fs.existsSync(authFile);
+  const hasApiKeysFile = fs.existsSync(apiKeysFile);
+  const envOpenai = !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim());
+  const envGemini = !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim());
+  const envAnthropic = !!(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim());
+
+  const methods: string[] = [];
+  if (hasOAuth) methods.push('OAuth');
+  // api-keys.json is encrypted — we can't enumerate slots. If env vars for specific keys
+  // are set, show those explicitly; also note "disk" if the file exists with no env fallback.
+  if (envOpenai) methods.push('OpenAI key');
+  if (envAnthropic) methods.push('Anthropic key');
+  if (envGemini) methods.push('Gemini key');
+  if (hasApiKeysFile) methods.push('API keys (disk)');
+  methods.push('Local'); // Ollama fallback always available
+
+  const authenticated = hasOAuth || hasApiKeysFile || envOpenai || envGemini || envAnthropic;
+
+  // Active vendor resolution
+  let activeVendorKey: string | null = null;
+  const envVendor = process.env.COCO_VENDOR;
+  if (envVendor && COCO_VENDOR_LABELS[envVendor]) {
+    activeVendorKey = envVendor;
+  } else if (fs.existsSync(activeVendorFile)) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(activeVendorFile, 'utf-8')) as { vendor?: string };
+      if (raw.vendor && COCO_VENDOR_LABELS[raw.vendor]) activeVendorKey = raw.vendor;
+    } catch { /* ignore */ }
+  }
+  if (!activeVendorKey) {
+    if (hasOAuth) activeVendorKey = 'openai-oauth';
+    else if (envOpenai || hasApiKeysFile) activeVendorKey = 'openai-apikey';
+    else if (envGemini) activeVendorKey = 'gemini';
+    else if (envAnthropic) activeVendorKey = 'anthropic-apikey';
+    else activeVendorKey = 'local';
+  }
 
   return {
-    installed: hasDir,
+    installed: true,
     configDir,
+    authenticated,
+    activeVendor: COCO_VENDOR_LABELS[activeVendorKey],
+    methods,
   };
 }
 
