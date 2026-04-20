@@ -119,8 +119,11 @@ export function update(options: CliOptions = { silent: false }): void {
       } catch { /* ignore: optional operation */ }
     }
 
-    // config.json 업데이트
-    updateConfig(coreDir, detectedStacks, stackDetails, true);
+    // config.json 업데이트 — 현재 프로젝트의 주 harness 감지 (우선순위: coco > codex > gemini > claude)
+    const HARNESS_PRIORITY = ['.coco', '.codex', '.gemini', '.claude'];
+    const primaryHarness =
+      HARNESS_PRIORITY.find(d => fs.existsSync(path.join(projectRoot, d))) || '.claude';
+    updateConfig(coreDir, detectedStacks, stackDetails, true, primaryHarness);
 
     // constitution.md 업데이트
     updateConstitution(coreDir, detectedStacks, stackDetails);

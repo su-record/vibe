@@ -589,10 +589,18 @@ export function updateGitignore(projectRoot: string, harnessDir: string = '.clau
 }
 
 /**
+ * harnessDir(.claude/.coco/.codex/.gemini) → 글로벌 vibe 에셋 경로 접두사
+ */
+function resolveGlobalCoreDir(harnessDir: string): string {
+  const name = harnessDir.startsWith('.') ? harnessDir : `.${harnessDir}`;
+  return `~/${name}/vibe`;
+}
+
+/**
  * 스택 기반 references 생성
  */
-function generateReferences(detectedStacks: TechStack[]): VibeReferences {
-  const globalCoreDir = '~/.claude/vibe';
+function generateReferences(detectedStacks: TechStack[], harnessDir = '.claude'): VibeReferences {
+  const globalCoreDir = resolveGlobalCoreDir(harnessDir);
 
   const rules = [
     `${globalCoreDir}/rules/principles/quick-start.md`,
@@ -630,10 +638,11 @@ export function updateConfig(
   coreDir: string,
   detectedStacks: TechStack[],
   stackDetails: StackDetails,
-  isUpdate = false
+  isUpdate = false,
+  harnessDir = '.claude'
 ): void {
   const configPath = path.join(coreDir, 'config.json');
-  const references = generateReferences(detectedStacks);
+  const references = generateReferences(detectedStacks, harnessDir);
 
   if (isUpdate && fs.existsSync(configPath)) {
     try {

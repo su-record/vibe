@@ -333,10 +333,9 @@ export async function init(
 
       if (!fs.existsSync(docsDir)) {
         ensureDir(docsDir);
-        ensureDir(path.join(docsDir, 'adr'));
         fs.writeFileSync(
           path.join(docsDir, 'README.md'),
-          '# docs/\n\nBusiness documents maintained by humans.\nAI reads these before starting work.\n\n- Business rules & domain definitions\n- Checklists & onboarding guides\n- ADR (Architecture Decision Records)\n- API specs & external integration specs\n',
+          '# docs/\n\nBusiness documents maintained by humans.\nAI reads these before starting work.\n\n- Business rules & domain definitions\n- Checklists & onboarding guides\n- ADR (Architecture Decision Records) — create `adr/` when needed\n- API specs & external integration specs\n',
         );
       }
 
@@ -365,7 +364,7 @@ export async function init(
 
     runStep(s2, 'Creating constitution.md', () => updateConstitution(coreDir, detectedStacks, stackDetails));
     runStep(s2, 'Creating config.json', () => {
-      updateConfig(coreDir, detectedStacks, stackDetails, false);
+      updateConfig(coreDir, detectedStacks, stackDetails, false, harnessDir);
       if (devlogConfig) {
         const configPath = path.join(coreDir, 'config.json');
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
