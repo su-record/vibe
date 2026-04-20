@@ -227,6 +227,47 @@ function extractCSS(node: any): ExtractResult {
   return { css: cssOut, raw, warnings };
 }
 
+// ─── Determination (image-vs-HTML) Helpers ──────────────────────────
+
+const VECTOR_TYPE_RE = /^(VECTOR|LINE|BOOLEAN_OPERATION|STAR|REGULAR_POLYGON)$/;
+
+/** D1-D3: TEXT whose visual fidelity cannot be preserved by HTML text. */
+function isDesignTextNode(n: any): boolean {
+  if (n.type !== 'TEXT') return false;
+  const fills = (n.fills || []).filter((f: any) => f.visible !== false);
+  if (fills.length >= 2) return true;
+  if (fills.some((f: any) => typeof f.type === 'string' && f.type.startsWith('GRADIENT_'))) return true;
+  if ((n.effects || []).some((e: any) => e.visible !== false && (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW'))) return true;
+  if ((n.strokes || []).some((s: any) => s.visible !== false)) return true;
+  return false;
+}
+
+/** Q1: any descendant carries meaningful text content. */
+function hasTextDescendantRaw(n: any): boolean {
+  if (n.type === 'TEXT' && typeof n.characters === 'string' && n.characters.trim().length) return true;
+  return (n.children || []).some(hasTextDescendantRaw);
+}
+
+/** Q2: 2+ direct children sharing the same componentId / name stem. */
+function hasRepeatingInstancesRaw(n: any): boolean {
+  const kids = n.children || [];
+  if (kids.length < 2) return false;
+  const keyCount: Record<string, number> = {};
+  for (const c of kids) {
+    if (c.type !== 'INSTANCE' && c.type !== 'COMPONENT') continue;
+    const key = c.componentId || (c.name || '').replace(/\s*\d+\s*$/, '').trim();
+    if (!key) continue;
+    keyCount[key] = (keyCount[key] || 0) + 1;
+    if (keyCount[key] >= 2) return true;
+  }
+  return false;
+}
+
+/** D4 helper: direct VECTOR-family children count. */
+function vectorChildCountRaw(n: any): number {
+  return (n.children || []).filter((c: any) => VECTOR_TYPE_RE.test(c.type || '')).length;
+}
+
 // ─── Tree Walker ────────────────────────────────────────────────────
 
 function walkNode(node: any): FigmaNode {
@@ -251,6 +292,12 @@ function walkNode(node: any): FigmaNode {
     result.imageRef = result.css._imageRef;
     delete result.css._imageRef;
   }
+  // Determination metadata (Q1, Q2, D1-D3)
+  if (hasTextDescendantRaw(node)) result.hasTextChildren = true;
+  if (hasRepeatingInstancesRaw(node)) result.hasInstanceRepeat = true;
+  if (node.type === 'TEXT' && isDesignTextNode(node)) result.isDesignText = true;
+  const vcnt = vectorChildCountRaw(node);
+  if (vcnt > 0) result.vectorChildCount = vcnt;
   if (node.children?.length) {
     result.children = node.children.map(walkNode);
   }

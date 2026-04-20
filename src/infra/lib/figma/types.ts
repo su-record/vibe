@@ -43,6 +43,14 @@ export interface FigmaNode {
   warnings: FigmaWarning[];
   text?: string;
   imageRef?: string;
+  /** Q1: any descendant carries meaningful TEXT (non-empty characters). */
+  hasTextChildren?: boolean;
+  /** Q2: 2+ direct children share the same componentId / name stem. */
+  hasInstanceRepeat?: boolean;
+  /** D1-D3: TEXT node whose visual fidelity cannot be preserved by HTML text. */
+  isDesignText?: boolean;
+  /** D4 helper: direct VECTOR-family children count. */
+  vectorChildCount?: number;
   children: FigmaNode[];
 }
 
