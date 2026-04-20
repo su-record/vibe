@@ -414,6 +414,50 @@ function extractCSS(n) {
   return result;
 }
 
+// ─── Determination (image-vs-HTML) Helpers ──────────────────────────
+
+const BG_NAME_RE = /^(BG|bg|배경|background)$/i;
+const VECTOR_TYPE_RE = /^(VECTOR|LINE|BOOLEAN_OPERATION|STAR|REGULAR_POLYGON)$/;
+const FOREGROUND_IMG_NAME_RE = /(^|[-_\s])(image|photo|thumb|thumbnail|avatar|icon|logo|img|picture|banner|poster)([-_\s]|\d|$)/i;
+
+/** D1-D3: TEXT whose visual fidelity cannot be preserved by HTML text.
+ *  D4/D5 (vector siblings, non-web font) need project context and are left to the converter. */
+function isDesignTextNode(n) {
+  if (n.type !== 'TEXT') return false;
+  const fills = (n.fills || []).filter(f => f.visible !== false);
+  if (fills.length >= 2) return true; // D1
+  if (fills.some(f => typeof f.type === 'string' && f.type.startsWith('GRADIENT_'))) return true; // D3
+  if ((n.effects || []).some(e => e.visible !== false && (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW'))) return true; // D2
+  if ((n.strokes || []).some(s => s.visible !== false)) return true; // D2 (text stroke)
+  return false;
+}
+
+/** Q1: any descendant carries meaningful text content. */
+function hasTextDescendantRaw(n) {
+  if (n.type === 'TEXT' && typeof n.characters === 'string' && n.characters.trim().length) return true;
+  return (n.children || []).some(hasTextDescendantRaw);
+}
+
+/** Q2: 2+ direct children sharing the same componentId (or normalized name stem). */
+function hasRepeatingInstancesRaw(n) {
+  const kids = n.children || [];
+  if (kids.length < 2) return false;
+  const keyCount = {};
+  for (const c of kids) {
+    if (c.type !== 'INSTANCE' && c.type !== 'COMPONENT') continue;
+    const key = c.componentId || (c.name || '').replace(/\s*\d+\s*$/, '').trim();
+    if (!key) continue;
+    keyCount[key] = (keyCount[key] || 0) + 1;
+    if (keyCount[key] >= 2) return true;
+  }
+  return false;
+}
+
+/** D4 helper: direct VECTOR-family children count. */
+function vectorChildCountRaw(n) {
+  return (n.children || []).filter(c => VECTOR_TYPE_RE.test(c.type || '')).length;
+}
+
 // ─── Tree ───────────────────────────────────────────────────────────
 
 function walk(node, parentAbsBBox) {
@@ -441,6 +485,12 @@ function walk(node, parentAbsBBox) {
   // Translation-loss warnings (Figma → CSS incompatibilities)
   const warnings = auditNode(node);
   if (warnings.length) r.warnings = warnings;
+  // Determination metadata (Q1, Q2, D1-D3) — used downstream to decide <img> vs CSS bg vs composite
+  if (hasTextDescendantRaw(node)) r.hasTextChildren = true;
+  if (hasRepeatingInstancesRaw(node)) r.hasInstanceRepeat = true;
+  if (node.type === 'TEXT' && isDesignTextNode(node)) r.isDesignText = true;
+  const vcnt = vectorChildCountRaw(node);
+  if (vcnt > 0) r.vectorChildCount = vcnt;
   if (node.children?.length) r.children = node.children.map(c => walk(c, node.absoluteBoundingBox));
   return r;
 }
@@ -640,6 +690,45 @@ function buildImageNames(node, prefix, result = {}) {
   return result;
 }
 
+/** Decide how an IMAGE-fill node should render: CSS background vs <img> tag.
+ *  Rules (first match wins):
+ *    1. Has TEXT descendants → CSS bg (text would be baked into <img>)
+ *    2. Has repeating instance children → CSS bg (repeats need HTML structure)
+ *    3. Named BG/background → CSS bg
+ *    4. Has non-decorative children (type not in VECTOR-family) → CSS bg
+ *    5. Leaf named image/photo/thumb/etc → <img>
+ *    6. Leaf otherwise → <img> (standalone asset)
+ */
+function shouldRenderImageAsBg(node) {
+  if (node.hasTextChildren) return true;
+  if (node.hasInstanceRepeat) return true;
+  if (BG_NAME_RE.test(node.name || '')) return true;
+  const kids = node.children || [];
+  const contentKids = kids.filter(c => !VECTOR_TYPE_RE.test(c.type || '') && c.type !== 'RECTANGLE');
+  if (contentKids.length > 0) return true;
+  if (kids.length > 0) return true; // any non-leaf with fills is a container → bg
+  if (FOREGROUND_IMG_NAME_RE.test(node.name || '')) return false;
+  return false; // leaf fallback: <img>
+}
+
+/** Walk tree and convert IMAGE-fill nodes that are actually backgrounds into CSS background-image.
+ *  Mutates node.css and removes node.imageRef so downstream toHTML emits a container <div>. */
+function resolveImageFills(node, imgMap) {
+  if (node.imageRef && imgMap[node.imageRef] && shouldRenderImageAsBg(node)) {
+    const url = imgMap[node.imageRef];
+    const scaleMode = node.imageScaleMode;
+    const bgSize = scaleMode === 'FIT' ? 'contain' : scaleMode === 'TILE' ? 'auto' : 'cover';
+    const bgRepeat = scaleMode === 'TILE' ? 'repeat' : 'no-repeat';
+    node.css.backgroundImage = `url('${url}')`;
+    node.css.backgroundSize = bgSize;
+    node.css.backgroundRepeat = bgRepeat;
+    node.css.backgroundPosition = 'center';
+    node.renderAsBg = true;
+    delete node.imageRef;
+  }
+  for (const c of node.children || []) resolveImageFills(c, imgMap);
+}
+
 async function cmdRender(token, fk, nid, outDir, depth, scale) {
   if (!outDir) fail('--out=<dir> required');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
@@ -684,22 +773,26 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
   }
 
   // 4. 복합 BG 노드 → 순차 큐 (unsafe: Figma render API rate limit)
+  //    텍스트/반복 인스턴스가 섞인 BG는 composite 캡처 금지 — 이미지에 TEXT가 굽혀
+  //    HTML 레이어와 중복되거나, 리스트/카드를 한 장으로 뭉개버리는 회귀가 있음
+  //    (exchange-section1, daily-step2-list, prize-section1 케이스)
   const bgTasks = [];
   for (const child of tree.children || []) {
-    if (/^(BG|bg|배경)$/i.test(child.name) && child.children?.length > 3) {
-      const bgName = `${sectionPrefix}-bg-composite.webp`;
-      const bgPath = path.join(imgDir, bgName);
-      bgTasks.push(async () => {
-        const result = await screenshotWithRecovery(token, fk, child.nodeId, bgPath);
-        if (result) {
-          const actualName = path.basename(result.path);
-          imageMap[`__bg_${child.nodeId}`] = `images/${actualName}`;
-          child.imageRef = `__bg_${child.nodeId}`;
-          child.children = [];
-        }
-        return result;
-      });
-    }
+    if (!BG_NAME_RE.test(child.name) || !(child.children?.length > 3)) continue;
+    if (child.hasTextChildren) continue; // TEXT 포함 → HTML로 분리 처리
+    if (child.hasInstanceRepeat) continue; // 반복 인스턴스 → v-for로 처리
+    const bgName = `${sectionPrefix}-bg-composite.webp`;
+    const bgPath = path.join(imgDir, bgName);
+    bgTasks.push(async () => {
+      const result = await screenshotWithRecovery(token, fk, child.nodeId, bgPath);
+      if (result) {
+        const actualName = path.basename(result.path);
+        imageMap[`__bg_${child.nodeId}`] = `images/${actualName}`;
+        child.imageRef = `__bg_${child.nodeId}`;
+        child.children = [];
+      }
+      return result;
+    });
   }
 
   // 5. 섹션 스크린샷도 순차 큐에 추가
@@ -716,6 +809,9 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
     downloadPromise || Promise.resolve(),
     sequentialQueue(bgTasks),
   ]);
+
+  // 6b. IMAGE-fill 노드를 CSS background 로 변환 (배경성이면 <img> 금지)
+  resolveImageFills(tree, imageMap);
 
   // 7. HTML 생성
   const html = toHTML(tree, '', imageMap);
@@ -743,26 +839,43 @@ async function cmdRender(token, fk, nid, outDir, depth, scale) {
   }, null, 2));
 }
 
+// ─── Exports (for tests) ────────────────────────────────────────────
+
+export {
+  walk,
+  extractCSS,
+  isDesignTextNode,
+  hasTextDescendantRaw,
+  hasRepeatingInstancesRaw,
+  vectorChildCountRaw,
+  shouldRenderImageAsBg,
+  resolveImageFills,
+  toHTML,
+};
+
 // ─── CLI ────────────────────────────────────────────────────────────
 
-const args = process.argv.slice(2);
-const flags = {};
-const pos = [];
-for (const a of args) {
-  if (a.startsWith('--')) { const [k,v] = a.slice(2).split('='); flags[k] = v ?? ''; }
-  else pos.push(a);
-}
+const invokedDirectly = import.meta.url === `file://${process.argv[1]}`;
+if (invokedDirectly) {
+  const args = process.argv.slice(2);
+  const flags = {};
+  const pos = [];
+  for (const a of args) {
+    if (a.startsWith('--')) { const [k,v] = a.slice(2).split('='); flags[k] = v ?? ''; }
+    else pos.push(a);
+  }
 
-const token = loadToken();
-if (!token) fail('Figma token not found. Run: vibe figma setup <token>');
+  const token = loadToken();
+  if (!token) fail('Figma token not found. Run: vibe figma setup <token>');
 
-const [cmd, fk, nidRaw] = pos;
-const nid = nidRaw?.replace(/-/g, ':');
+  const [cmd, fk, nidRaw] = pos;
+  const nid = nidRaw?.replace(/-/g, ':');
 
-switch (cmd) {
-  case 'tree': await cmdTree(token, fk, nid, flags.depth ? +flags.depth : undefined); break;
-  case 'images': await cmdImages(token, fk, nid, flags.out, flags.depth ? +flags.depth : 10); break;
-  case 'screenshot': await cmdScreenshot(token, fk, nid, flags.out); break;
-  case 'render': await cmdRender(token, fk, nid, flags.out, flags.depth ? +flags.depth : 10, flags.scale ? +flags.scale : 0.667); break;
-  default: console.log('Usage: node figma-extract.js <tree|images|screenshot|render> <fileKey> <nodeId> [flags]');
+  switch (cmd) {
+    case 'tree': await cmdTree(token, fk, nid, flags.depth ? +flags.depth : undefined); break;
+    case 'images': await cmdImages(token, fk, nid, flags.out, flags.depth ? +flags.depth : 10); break;
+    case 'screenshot': await cmdScreenshot(token, fk, nid, flags.out); break;
+    case 'render': await cmdRender(token, fk, nid, flags.out, flags.depth ? +flags.depth : 10, flags.scale ? +flags.scale : 0.667); break;
+    default: console.log('Usage: node figma-extract.js <tree|images|screenshot|render> <fileKey> <nodeId> [flags]');
+  }
 }
