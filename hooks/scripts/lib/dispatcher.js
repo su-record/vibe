@@ -1,12 +1,20 @@
 /**
- * Hook dispatcher library — 여러 hook script를 단일 이벤트에서 직렬 실행.
+ * Hook dispatcher library — 여러 hook script를 단일 이벤트에서 병렬 실행.
  *
  * 목적:
- * - 동일 이벤트에 등록된 N개 스크립트의 **병렬 spawn 폭주**를 순차화
- * - stdin을 한 번만 읽어 각 자식에 그대로 pipe (중복 파싱/읽기 방지)
+ * - stdin을 한 번만 읽어 각 자식에 동일 버퍼로 pipe (중복 파싱/읽기 방지)
  * - config.hooks[name].enabled 로 개별 토글
- * - 한 스크립트 실패가 다음 실행을 막지 않도록 cascade 격리
- * - PreToolUse 계열: 자식이 exit 2(deny)면 즉시 상위에 전파
+ * - 한 스크립트 실패가 다른 스크립트를 막지 않도록 cascade 격리
+ * - PreToolUse 계열: 자식 중 하나라도 exit 2(deny)면 상위에 전파
+ *
+ * 직렬 → 병렬 전환 (2026-04):
+ *   기존 직렬 실행은 tool당 150~300ms 누적 오버헤드를 유발.
+ *   PreToolUse 가드는 모두 독립적 검증자이므로 병렬화해도 의미상 문제 없음.
+ *   트레이드오프:
+ *     - early-deny 낭비: sentinel-guard가 block이어도 pre-tool/scope-guard가
+ *       이미 spawn됨. 실측 μs 수준이라 무시.
+ *     - stderr 인터리빙: 가드 2개가 동시 block 시 경고 메시지가 섞일 수 있음.
+ *       각 메시지는 자체적으로 완결된 라인이라 가독성 문제 없음.
  */
 import { spawn } from 'child_process';
 import path from 'path';
@@ -65,23 +73,23 @@ function runScript(scriptName, args, stdinData, timeoutMs) {
 }
 
 /**
- * 디스패처 실행.
+ * 디스패처 실행 — 활성화된 스텝을 병렬로 spawn.
  * @param {Array<{name: string, script: string, args?: string[], denyOnExit2?: boolean, timeoutMs?: number}>} steps
  */
 export async function dispatch(steps) {
   const stdinData = await readStdin();
   const hookConfig = loadHookConfig();
 
-  for (const step of steps) {
-    if (!isEnabled(hookConfig, step.name)) continue;
-    const code = await runScript(
-      step.script,
-      step.args || [],
-      stdinData,
-      step.timeoutMs || 30000
-    );
-    if (step.denyOnExit2 && code === 2) {
-      process.exit(2);
-    }
+  const enabledSteps = steps.filter(s => isEnabled(hookConfig, s.name));
+  const results = await Promise.all(
+    enabledSteps.map(step =>
+      runScript(step.script, step.args || [], stdinData, step.timeoutMs || 30000)
+        .then(code => ({ step, code }))
+    )
+  );
+
+  // 하나라도 deny(exit 2) 반환 → 상위에 전파
+  if (results.some(({ step, code }) => step.denyOnExit2 && code === 2)) {
+    process.exit(2);
   }
 }

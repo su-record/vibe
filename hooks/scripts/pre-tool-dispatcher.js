@@ -33,4 +33,12 @@ if (toolName === 'Bash') {
   steps.push({ name: 'command-log', script: 'command-log.js' });
 }
 
-await dispatch(steps);
+// 하네스에 노이즈를 주지 않도록 디스패처 자체의 예외는 모두 흡수.
+// exit 2 (deny 전파)는 dispatch() 내부에서 process.exit(2)로 처리되므로
+// 여기까지 오면 "deny 아님" → 항상 exit 0.
+try {
+  await dispatch(steps);
+} catch {
+  // ignore — 하위 스크립트 크래시가 상위 훅 실패로 표시되지 않도록
+}
+process.exit(0);

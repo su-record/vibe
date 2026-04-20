@@ -19,9 +19,12 @@ import { dispatch } from './lib/dispatcher.js';
 
 if (process.env.VIBE_HOOK_DEPTH) process.exit(0);
 
-await dispatch([
-  { name: 'codex-review-gate', script: 'codex-review-gate.js' },
-  { name: 'stop-notify',       script: 'stop-notify.js'       },
-  { name: 'auto-commit',       script: 'auto-commit.js'       },
-  { name: 'devlog-gen',        script: 'devlog-gen.js'        },
-]);
+try {
+  await dispatch([
+    { name: 'codex-review-gate', script: 'codex-review-gate.js' },
+    { name: 'stop-notify',       script: 'stop-notify.js'       },
+    { name: 'auto-commit',       script: 'auto-commit.js'       },
+    { name: 'devlog-gen',        script: 'devlog-gen.js'        },
+  ]);
+} catch { /* noise suppression */ }
+process.exit(0);

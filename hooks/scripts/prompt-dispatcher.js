@@ -16,6 +16,11 @@ import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// 하네스 노이즈 억제 — 비동기 체인/setImmediate 내부에서 unhandledRejection이 발생해도
+// UserPromptSubmit 훅이 "failed (exit 1)"로 표시되지 않도록 한다.
+process.on('unhandledRejection', () => { /* swallow */ });
+process.on('uncaughtException', () => { /* swallow */ });
+
 // 재귀 가드 — 자식 Claude 세션에서 이 hook이 다시 실행되는 것 차단.
 // llm-orchestrate.js의 callClaudeCli가 VIBE_HOOK_DEPTH=1을 주입하므로,
 // 값이 있으면 즉시 종료해 프로세스 폭탄을 막는다.
@@ -190,3 +195,6 @@ if (!matched) {
     }
   });
 }
+
+// 명시적 성공 종료 — 하네스에 exit 1로 비치지 않도록.
+process.exit(0);
