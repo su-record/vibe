@@ -174,28 +174,33 @@ export function generateProjectClaudeMd(
   projectRoot: string,
   detectedStacks: TechStack[],
   stackDetails: StackDetails,
+  createIfMissing: boolean = true,
 ): void {
   const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
+  if (!createIfMissing && !fs.existsSync(claudeMdPath)) return;
   const dirs = analyzeProjectStructure(projectRoot);
   const stackNames = detectedStacks.map(s => STACK_NAMES[s.type]?.name || s.type);
   const section = buildProjectSection(dirs, stackNames, stackDetails);
-  writeVibeMarkedFile(claudeMdPath, section);
+  writeVibeMarkedFile(claudeMdPath, section, createIfMissing);
 }
 
 /**
- * 프로젝트 분석 → AGENTS.md 생성/갱신 (coco 용, 프로젝트별 섹션만)
+ * 프로젝트 분석 → AGENTS.md 생성/갱신 (coco / codex 용, 프로젝트별 섹션만)
+ * @param createIfMissing false 시 존재하는 파일만 갱신 (update --dynamic 용)
  */
 export function generateProjectAgentsMd(
   projectRoot: string,
   detectedStacks: TechStack[],
   stackDetails: StackDetails,
+  createIfMissing: boolean = true,
 ): void {
   const agentsMdPath = path.join(projectRoot, 'AGENTS.md');
+  if (!createIfMissing && !fs.existsSync(agentsMdPath)) return;
+
   const dirs = analyzeProjectStructure(projectRoot);
   const stackNames = detectedStacks.map(s => STACK_NAMES[s.type]?.name || s.type);
   const section = adaptToCoco(buildProjectSection(dirs, stackNames, stackDetails));
 
-  // 기존 동작 보존: AGENTS.md가 없고 `/vibe.spec` 마커도 없을 때만 신규 생성
   if (!fs.existsSync(agentsMdPath)) {
     writeVibeMarkedFile(agentsMdPath, section);
     return;
@@ -205,6 +210,25 @@ export function generateProjectAgentsMd(
   if (hasMarker || !existing.includes('/vibe.spec')) {
     writeVibeMarkedFile(agentsMdPath, section);
   }
+}
+
+/**
+ * 프로젝트 분석 → GEMINI.md 생성/갱신 (Gemini CLI 용)
+ * @param createIfMissing false 시 존재하는 파일만 갱신
+ */
+export function generateProjectGeminiMd(
+  projectRoot: string,
+  detectedStacks: TechStack[],
+  stackDetails: StackDetails,
+  createIfMissing: boolean = true,
+): void {
+  const geminiMdPath = path.join(projectRoot, 'GEMINI.md');
+  if (!createIfMissing && !fs.existsSync(geminiMdPath)) return;
+
+  const dirs = analyzeProjectStructure(projectRoot);
+  const stackNames = detectedStacks.map(s => STACK_NAMES[s.type]?.name || s.type);
+  const section = adaptToGemini(buildProjectSection(dirs, stackNames, stackDetails));
+  writeVibeMarkedFile(geminiMdPath, section, createIfMissing);
 }
 
 /** 프로젝트 디렉토리 구조 분석 */

@@ -22,6 +22,7 @@ import {
   detectOsLanguage,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
+  generateProjectGeminiMd,
   generateGlobalClaudeMd,
   generateGlobalAgentsMd,
   generateGlobalCodexAgentsMd,
@@ -171,16 +172,24 @@ function runStep(
  * init 명령어 실행
  *
  * @param projectName 새 프로젝트 디렉토리 이름 (생략 시 cwd 사용)
- * @param target 초기화 대상 하네스. 'cc' → `.claude/vibe/` (기본), 'coco' → `.coco/vibe/`.
- *               CLAUDE.md ↔ AGENTS.md 피어 구조의 project 쪽 대응. 양쪽 다 원하면 두 번 실행.
+ * @param target 초기화 대상 하네스.
+ *   - 'cc'     → `.claude/` + CLAUDE.md (기본)
+ *   - 'coco'   → `.coco/`   + AGENTS.md
+ *   - 'codex'  → `.codex/`  + AGENTS.md
+ *   - 'gemini' → `.gemini/` + GEMINI.md
  */
 export async function init(
   projectName?: string,
-  target: 'cc' | 'coco' = 'cc',
+  target: 'cc' | 'coco' | 'codex' | 'gemini' = 'cc',
 ): Promise<void> {
   try {
-    const harnessDir = target === 'coco' ? '.coco' : '.claude';
-    const harnessLabel = target === 'coco' ? 'coco' : 'Claude Code';
+    const HARNESS_MAP: Record<typeof target, { dir: string; label: string }> = {
+      cc: { dir: '.claude', label: 'Claude Code' },
+      coco: { dir: '.coco', label: 'coco' },
+      codex: { dir: '.codex', label: 'Codex' },
+      gemini: { dir: '.gemini', label: 'Gemini' },
+    };
+    const { dir: harnessDir, label: harnessLabel } = HARNESS_MAP[target];
 
     let projectRoot = process.cwd();
     let isNewProject = false;
@@ -376,7 +385,10 @@ export async function init(
 
     const stackTypes = detectedStacks.map(st => st.type);
 
-    runStep(s3, 'Installing project hooks', () => installProjectHooks(projectRoot, harnessDir));
+    // Gemini CLI는 다른 hook 스키마 사용 — Claude-Code 포맷의 settings.local.json 스킵
+    if (target !== 'gemini') {
+      runStep(s3, 'Installing project hooks', () => installProjectHooks(projectRoot, harnessDir));
+    }
     runStep(s3, 'Updating Cursor global assets', () => updateCursorGlobalAssets(stackTypes));
     runStep(s3, 'Installing Cursor rules', () => installCursorRules(projectRoot, stackTypes));
     runStep(s3, 'Installing language rules', () => installLanguageRules(projectRoot, stackTypes, harnessDir));
@@ -403,47 +415,44 @@ export async function init(
       }
     });
 
-    // CLAUDE.md / AGENTS.md / GEMINI.md 생성
-    //   전역 규약: ~/.claude/CLAUDE.md, ~/.coco/AGENTS.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md
-    //   프로젝트별: {projectRoot}/CLAUDE.md, AGENTS.md (스택·구조·커맨드)
-    // target=cc:   CLAUDE.md 쌍 + 감지된 CLI 전역 파일
-    // target=coco: AGENTS.md 만 생성
+    // 전역 규약 주입: ~/.claude/CLAUDE.md, ~/.coco/AGENTS.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md
+    // 프로젝트 파일: target에 따라 CLAUDE.md / AGENTS.md / GEMINI.md 중 해당되는 것 생성
     const cocoStatus = detectCocoCli();
     const codexStatus = detectCodexCli();
     const geminiStatus = detectGeminiCli();
 
-    if (target === 'cc') {
-      runStep(s3, 'Generating CLAUDE.md', () => {
-        generateGlobalClaudeMd();
+    // 1) 전역 규약 — 감지된 모든 CLI에 주입 (target 무관)
+    runStep(s3, 'Writing global vibe conventions', () => {
+      generateGlobalClaudeMd();
+      if (cocoStatus.installed) generateGlobalAgentsMd();
+      if (codexStatus.installed) generateGlobalCodexAgentsMd();
+      if (geminiStatus.installed) generateGlobalGeminiMd();
+      const cliLabels = ['claude',
+        cocoStatus.installed && 'coco',
+        codexStatus.installed && 'codex',
+        geminiStatus.installed && 'gemini'
+      ].filter(Boolean).join(', ');
+      log(`   🌐 Global rules updated: ${cliLabels}\n`);
+    });
+
+    // 2) 프로젝트 엔트리 파일 — target에 따라 1개 또는 복수
+    runStep(s3, 'Generating project entry file', () => {
+      if (target === 'cc') {
         generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
-        log(`   📄 CLAUDE.md generated (global rules + project)\n`);
-      });
-
-      runStep(s3, 'Generating AGENTS.md', () => {
-        const hasAgentsMdCli = cocoStatus.installed || codexStatus.installed;
-        if (cocoStatus.installed) generateGlobalAgentsMd();
-        if (codexStatus.installed) generateGlobalCodexAgentsMd();
-        if (hasAgentsMdCli) {
+        log(`   📄 CLAUDE.md generated\n`);
+        // cc 타겟이어도 coco/codex가 전역 감지되면 프로젝트 AGENTS.md도 생성
+        if (cocoStatus.installed || codexStatus.installed) {
           generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
-          const labels = [cocoStatus.installed && 'coco', codexStatus.installed && 'codex'].filter(Boolean).join(', ');
-          log(`   📄 AGENTS.md generated (${labels})\n`);
+          log(`   📄 AGENTS.md generated (shared with coco/codex)\n`);
         }
-      });
-
-      if (geminiStatus.installed) {
-        runStep(s3, 'Generating GEMINI.md', () => {
-          generateGlobalGeminiMd();
-          log(`   📄 ~/.gemini/GEMINI.md updated\n`);
-        });
-      }
-    } else {
-      runStep(s3, 'Generating AGENTS.md', () => {
-        generateGlobalAgentsMd();
-        if (codexStatus.installed) generateGlobalCodexAgentsMd();
+      } else if (target === 'coco' || target === 'codex') {
         generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
-        log(`   📄 AGENTS.md generated (coco)\n`);
-      });
-    }
+        log(`   📄 AGENTS.md generated (${target})\n`);
+      } else if (target === 'gemini') {
+        generateProjectGeminiMd(projectRoot, detectedStacks, stackDetails);
+        log(`   📄 GEMINI.md generated\n`);
+      }
+    });
 
     s3.stop('Installation complete');
 

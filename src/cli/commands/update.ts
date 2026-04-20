@@ -31,6 +31,7 @@ import {
   installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
+  generateProjectGeminiMd,
   generateGlobalClaudeMd,
   generateGlobalAgentsMd,
   generateGlobalCodexAgentsMd,
@@ -137,8 +138,16 @@ export function update(options: CliOptions = { silent: false }): void {
     // 협업자 자동 설치 설정
     setupCollaboratorAutoInstall(projectRoot);
 
-    // 프로젝트 레벨 훅 설치
-    installProjectHooks(projectRoot);
+    // 프로젝트 레벨 훅 설치 — 존재하는 하네스 디렉토리 모두 대응
+    //   .gemini/는 hook 스키마 다름 → 스킵
+    const PROJECT_HARNESS_DIRS = ['.claude', '.coco', '.codex'];
+    const presentHarnesses = PROJECT_HARNESS_DIRS.filter(d =>
+      fs.existsSync(path.join(projectRoot, d))
+    );
+    const hookTargets = presentHarnesses.length > 0 ? presentHarnesses : ['.claude'];
+    for (const hd of hookTargets) {
+      installProjectHooks(projectRoot, hd);
+    }
 
     // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template) - 먼저 실행!
     const stackTypes = detectedStacks.map(s => s.type);
@@ -150,26 +159,26 @@ export function update(options: CliOptions = { silent: false }): void {
     // 감지된 스택 언어 룰 설치/업데이트 (.claude/vibe/languages/)
     installLanguageRules(projectRoot, stackTypes);
 
-    // CLAUDE.md 갱신 — 전역 규약(~/.claude/CLAUDE.md) + 프로젝트 섹션(루트)
-    generateGlobalClaudeMd();
-    generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
-
-    // AGENTS.md 갱신 — coco/codex 감지 시 전역 각각 + 프로젝트 1회
+    // ── 전역 규약 갱신 ── 감지된 CLI 모두
     const cocoStatus = detectCocoCli();
     const codexStatus = detectCodexCli();
+    const geminiStatus = detectGeminiCli();
+    generateGlobalClaudeMd();
     if (cocoStatus.installed) generateGlobalAgentsMd();
     if (codexStatus.installed) generateGlobalCodexAgentsMd();
-    if (cocoStatus.installed || codexStatus.installed) {
-      generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
-    }
+    if (geminiStatus.installed) generateGlobalGeminiMd();
 
-    // GEMINI.md 갱신 — Gemini 감지 시 전역만
-    if (detectGeminiCli().installed) {
-      generateGlobalGeminiMd();
-    }
+    // ── 프로젝트 엔트리 갱신 ── 로컬 폴더 구성에 맞춰 동적으로
+    //   - 이미 존재하는 CLAUDE.md / AGENTS.md / GEMINI.md 만 갱신 (createIfMissing=false)
+    //   - 존재하지 않는 파일은 건드리지 않음 (init에서만 생성)
+    generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails, false);
+    generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails, false);
+    generateProjectGeminiMd(projectRoot, detectedStacks, stackDetails, false);
 
-    // 스택 + capability 기반 로컬 스킬 업데이트 (.claude/skills/)
-    installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities);
+    // 스택 + capability 기반 로컬 스킬 업데이트 — 존재하는 하네스 디렉토리 모두 대응
+    for (const hd of hookTargets) {
+      installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities, hd);
+    }
 
     // 스택 기반 외부 스킬 자동 설치 (skills.sh)
     installExternalSkills(projectRoot, stackTypes, stackDetails.capabilities);

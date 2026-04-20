@@ -22,6 +22,7 @@ export {
   installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
+  generateProjectGeminiMd,
   generateGlobalClaudeMd,
   generateGlobalAgentsMd,
   generateGlobalCodexAgentsMd,
