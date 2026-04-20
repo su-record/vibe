@@ -24,6 +24,8 @@ export {
   generateProjectAgentsMd,
   generateGlobalClaudeMd,
   generateGlobalAgentsMd,
+  generateGlobalCodexAgentsMd,
+  generateGlobalGeminiMd,
 } from './setup/ProjectSetup.js';
 
 export {

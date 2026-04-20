@@ -33,6 +33,8 @@ import {
   generateProjectAgentsMd,
   generateGlobalClaudeMd,
   generateGlobalAgentsMd,
+  generateGlobalCodexAgentsMd,
+  generateGlobalGeminiMd,
 } from '../setup.js';
 import {
   updateCursorGlobalAssets,
@@ -40,7 +42,7 @@ import {
   installLanguageRules,
 } from './init.js';
 import { installExternalSkills } from './skills.js';
-import { detectCocoCli } from '../utils/cli-detector.js';
+import { detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 
 /**
@@ -152,11 +154,18 @@ export function update(options: CliOptions = { silent: false }): void {
     generateGlobalClaudeMd();
     generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
 
-    // coco AGENTS.md 갱신 (감지 시) — 전역(~/.coco/AGENTS.md) + 프로젝트
+    // AGENTS.md 갱신 — coco/codex 감지 시 전역 각각 + 프로젝트 1회
     const cocoStatus = detectCocoCli();
-    if (cocoStatus.installed) {
-      generateGlobalAgentsMd();
+    const codexStatus = detectCodexCli();
+    if (cocoStatus.installed) generateGlobalAgentsMd();
+    if (codexStatus.installed) generateGlobalCodexAgentsMd();
+    if (cocoStatus.installed || codexStatus.installed) {
       generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
+    }
+
+    // GEMINI.md 갱신 — Gemini 감지 시 전역만
+    if (detectGeminiCli().installed) {
+      generateGlobalGeminiMd();
     }
 
     // 스택 + capability 기반 로컬 스킬 업데이트 (.claude/skills/)

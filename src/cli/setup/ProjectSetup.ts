@@ -116,15 +116,19 @@ function writeVibeMarkedFile(
   }
 }
 
-/** coco 변환 (Claude Code → coco, .claude/ → .coco/, CLAUDE.md → AGENTS.md) */
-function adaptToCoco(section: string): string {
+/** CLI 변환 공용 헬퍼 (Claude Code → {label}, .claude/ → {dirName}/, CLAUDE.md → {targetFile}) */
+function adaptSection(section: string, label: string, dirName: string, targetFile: string): string {
   return section
-    .replace(/Claude Code/g, 'coco')
-    .replace(/~\/\.claude\//g, '~/.coco/')
-    .replace(/\.claude\//g, '.coco/')
-    .replace(/`CLAUDE\.md`/g, '`AGENTS.md`')
-    .replace(/\.coco\/CLAUDE\.md/g, '.coco/AGENTS.md');
+    .replace(/Claude Code/g, label)
+    .replace(/~\/\.claude\//g, `~/${dirName}/`)
+    .replace(/\.claude\//g, `${dirName}/`)
+    .replace(/`CLAUDE\.md`/g, `\`${targetFile}\``)
+    .replace(new RegExp(`${dirName.replace('.', '\\.')}\\/CLAUDE\\.md`, 'g'), `${dirName}/${targetFile}`);
 }
+
+const adaptToCoco = (section: string): string => adaptSection(section, 'coco', '.coco', 'AGENTS.md');
+const adaptToCodex = (section: string): string => adaptSection(section, 'Codex', '.codex', 'AGENTS.md');
+const adaptToGemini = (section: string): string => adaptSection(section, 'Gemini', '.gemini', 'GEMINI.md');
 
 /**
  * 전역 ~/.claude/CLAUDE.md 생성/갱신 — vibe 규약(룰·키워드·워크플로) 전역 주입
@@ -141,6 +145,24 @@ export function generateGlobalClaudeMd(): void {
 export function generateGlobalAgentsMd(): void {
   const globalPath = path.join(os.homedir(), '.coco', 'AGENTS.md');
   const section = adaptToCoco(buildGlobalSection(detectOsLanguage()));
+  writeVibeMarkedFile(globalPath, section);
+}
+
+/**
+ * 전역 ~/.codex/AGENTS.md 생성/갱신 (Codex CLI 감지 시에만 호출)
+ */
+export function generateGlobalCodexAgentsMd(): void {
+  const globalPath = path.join(os.homedir(), '.codex', 'AGENTS.md');
+  const section = adaptToCodex(buildGlobalSection(detectOsLanguage()));
+  writeVibeMarkedFile(globalPath, section);
+}
+
+/**
+ * 전역 ~/.gemini/GEMINI.md 생성/갱신 (Gemini CLI 감지 시에만 호출)
+ */
+export function generateGlobalGeminiMd(): void {
+  const globalPath = path.join(os.homedir(), '.gemini', 'GEMINI.md');
+  const section = adaptToGemini(buildGlobalSection(detectOsLanguage()));
   writeVibeMarkedFile(globalPath, section);
 }
 

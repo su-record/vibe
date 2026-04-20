@@ -24,6 +24,8 @@ import {
   generateProjectAgentsMd,
   generateGlobalClaudeMd,
   generateGlobalAgentsMd,
+  generateGlobalCodexAgentsMd,
+  generateGlobalGeminiMd,
   consolidateLegacyVibe,
 } from '../setup.js';
 import * as p from '@clack/prompts';
@@ -36,7 +38,7 @@ import {
   AVAILABLE_CAPABILITIES,
   STACK_TO_LANGUAGE_FILE,
 } from '../postinstall.js';
-import { detectCocoCli } from '../utils/cli-detector.js';
+import { detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 import { installExternalSkills } from './skills.js';
 
@@ -401,11 +403,15 @@ export async function init(
       }
     });
 
-    // CLAUDE.md / AGENTS.md 생성
-    //   전역 규약: ~/.claude/CLAUDE.md, ~/.coco/AGENTS.md (vibe 공용 룰)
+    // CLAUDE.md / AGENTS.md / GEMINI.md 생성
+    //   전역 규약: ~/.claude/CLAUDE.md, ~/.coco/AGENTS.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md
     //   프로젝트별: {projectRoot}/CLAUDE.md, AGENTS.md (스택·구조·커맨드)
-    // target=cc:   CLAUDE.md 쌍 생성 (+ coco CLI 감지 시 AGENTS.md도)
+    // target=cc:   CLAUDE.md 쌍 + 감지된 CLI 전역 파일
     // target=coco: AGENTS.md 만 생성
+    const cocoStatus = detectCocoCli();
+    const codexStatus = detectCodexCli();
+    const geminiStatus = detectGeminiCli();
+
     if (target === 'cc') {
       runStep(s3, 'Generating CLAUDE.md', () => {
         generateGlobalClaudeMd();
@@ -414,16 +420,26 @@ export async function init(
       });
 
       runStep(s3, 'Generating AGENTS.md', () => {
-        const cocoStatus = detectCocoCli();
-        if (cocoStatus.installed) {
-          generateGlobalAgentsMd();
+        const hasAgentsMdCli = cocoStatus.installed || codexStatus.installed;
+        if (cocoStatus.installed) generateGlobalAgentsMd();
+        if (codexStatus.installed) generateGlobalCodexAgentsMd();
+        if (hasAgentsMdCli) {
           generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
-          log(`   📄 AGENTS.md generated (coco)\n`);
+          const labels = [cocoStatus.installed && 'coco', codexStatus.installed && 'codex'].filter(Boolean).join(', ');
+          log(`   📄 AGENTS.md generated (${labels})\n`);
         }
       });
+
+      if (geminiStatus.installed) {
+        runStep(s3, 'Generating GEMINI.md', () => {
+          generateGlobalGeminiMd();
+          log(`   📄 ~/.gemini/GEMINI.md updated\n`);
+        });
+      }
     } else {
       runStep(s3, 'Generating AGENTS.md', () => {
         generateGlobalAgentsMd();
+        if (codexStatus.installed) generateGlobalCodexAgentsMd();
         generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
         log(`   📄 AGENTS.md generated (coco)\n`);
       });
