@@ -31,6 +31,8 @@ import {
   installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
+  generateGlobalClaudeMd,
+  generateGlobalAgentsMd,
 } from '../setup.js';
 import {
   updateCursorGlobalAssets,
@@ -146,12 +148,14 @@ export function update(options: CliOptions = { silent: false }): void {
     // 감지된 스택 언어 룰 설치/업데이트 (.claude/vibe/languages/)
     installLanguageRules(projectRoot, stackTypes);
 
-    // CLAUDE.md 갱신 (프로젝트 분석 기반)
+    // CLAUDE.md 갱신 — 전역 규약(~/.claude/CLAUDE.md) + 프로젝트 섹션(루트)
+    generateGlobalClaudeMd();
     generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
 
-    // coco AGENTS.md 갱신 (감지 시)
+    // coco AGENTS.md 갱신 (감지 시) — 전역(~/.coco/AGENTS.md) + 프로젝트
     const cocoStatus = detectCocoCli();
     if (cocoStatus.installed) {
+      generateGlobalAgentsMd();
       generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
     }
 

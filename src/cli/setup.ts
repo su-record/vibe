@@ -22,6 +22,8 @@ export {
   installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
+  generateGlobalClaudeMd,
+  generateGlobalAgentsMd,
 } from './setup/ProjectSetup.js';
 
 export {

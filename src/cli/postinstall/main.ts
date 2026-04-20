@@ -27,6 +27,7 @@ import { generateCursorSkills } from './cursor-skills.js';
 import { detectClaudeCli, detectCocoCli } from '../utils/cli-detector.js';
 import { getClaudeCodeStatus, formatClaudeCodeStatus } from '../auth.js';
 import { migrateLegacyFiles } from '../../infra/lib/config/GlobalConfigManager.js';
+import { generateGlobalClaudeMd, generateGlobalAgentsMd } from '../setup/ProjectSetup.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,6 +141,16 @@ export function main(): void {
     const globalLanguagesDir = installCoreAssets(globalClaudeDir);
     if (cocoStatus.installed) {
       installCoreAssets(cocoStatus.configDir);
+    }
+
+    // 5-0. 전역 CLAUDE.md / AGENTS.md 에 vibe 규약 섹션 주입 (idempotent)
+    try {
+      generateGlobalClaudeMd();
+      if (cocoStatus.installed) {
+        generateGlobalAgentsMd();
+      }
+    } catch (e) {
+      console.warn('⚠️  global CLAUDE.md/AGENTS.md 갱신 실패:', (e as Error).message);
     }
 
     // 5-1. 레거시 설정 파일 → ~/.vibe/config.json 마이그레이션

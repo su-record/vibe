@@ -22,6 +22,8 @@ import {
   detectOsLanguage,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
+  generateGlobalClaudeMd,
+  generateGlobalAgentsMd,
   consolidateLegacyVibe,
 } from '../setup.js';
 import * as p from '@clack/prompts';
@@ -399,24 +401,29 @@ export async function init(
       }
     });
 
-    // CLAUDE.md / AGENTS.md 생성 (프로젝트 분석 기반)
-    // target=cc:   CLAUDE.md 생성 (+ coco CLI 감지 시 AGENTS.md도)
-    // target=coco: AGENTS.md 만 생성 (coco 전용 init이므로 CLAUDE.md 건너뜀)
+    // CLAUDE.md / AGENTS.md 생성
+    //   전역 규약: ~/.claude/CLAUDE.md, ~/.coco/AGENTS.md (vibe 공용 룰)
+    //   프로젝트별: {projectRoot}/CLAUDE.md, AGENTS.md (스택·구조·커맨드)
+    // target=cc:   CLAUDE.md 쌍 생성 (+ coco CLI 감지 시 AGENTS.md도)
+    // target=coco: AGENTS.md 만 생성
     if (target === 'cc') {
       runStep(s3, 'Generating CLAUDE.md', () => {
+        generateGlobalClaudeMd();
         generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
-        log(`   📄 CLAUDE.md generated (project-aware)\n`);
+        log(`   📄 CLAUDE.md generated (global rules + project)\n`);
       });
 
       runStep(s3, 'Generating AGENTS.md', () => {
         const cocoStatus = detectCocoCli();
         if (cocoStatus.installed) {
+          generateGlobalAgentsMd();
           generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
           log(`   📄 AGENTS.md generated (coco)\n`);
         }
       });
     } else {
       runStep(s3, 'Generating AGENTS.md', () => {
+        generateGlobalAgentsMd();
         generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
         log(`   📄 AGENTS.md generated (coco)\n`);
       });
