@@ -1,8 +1,34 @@
 {
   "_comment": "Dispatcher pattern — PreToolUse/PostToolUse/Stop는 단일 디스패처가 stdin을 한 번 읽어 순차 실행 (병렬 spawn 폭주 제거, cascade 격리, config.hooks.{name}.enabled 토글 지원). UserPromptSubmit은 VIBE_HOOK_DEPTH 재귀 가드 탑재된 prompt-dispatcher 사용.",
+  "_permissions_comment": "deny = runtime에 absolutely 차단되는 고위험 패턴. pre-tool-guard.js 패턴과 중복이지만, harness 레벨에서 재차 방어해 훅 실패 시에도 안전. 프로젝트별로 .claude/settings.local.json 에서 덮어쓸 수 있음.",
   "permissions": {
     "allow": [],
-    "deny": [],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(rm -rf $HOME*)",
+      "Bash(sudo *)",
+      "Bash(chmod -R 777 *)",
+      "Bash(curl * | sh)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(wget * | bash)",
+      "Bash(dd if=*)",
+      "Bash(mkfs *)",
+      "Bash(fdisk *)",
+      "Bash(shutdown *)",
+      "Bash(reboot *)",
+      "Bash(:() { :|:& };:*)",
+      "Write(**/.env)",
+      "Write(**/.env.*)",
+      "Write(**/id_rsa)",
+      "Write(**/id_ed25519)",
+      "Write(/etc/**)",
+      "Write(/usr/**)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Edit(/etc/**)"
+    ],
     "ask": []
   },
   "hooks": {

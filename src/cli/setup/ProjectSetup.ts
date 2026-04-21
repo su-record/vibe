@@ -508,10 +508,11 @@ export function installProjectHooks(projectRoot: string, harnessDir: string = '.
   const coreHooks = JSON.parse(hooksContent);
 
   if (fs.existsSync(settingsLocalPath)) {
-    // 기존 settings.local.json에 hooks 병합
+    // 기존 settings.local.json에 hooks + permissions 병합
     try {
       const existingSettings = JSON.parse(fs.readFileSync(settingsLocalPath, 'utf-8'));
       existingSettings.hooks = coreHooks.hooks;
+      existingSettings.permissions = mergePermissions(existingSettings.permissions, coreHooks.permissions);
       fs.writeFileSync(settingsLocalPath, JSON.stringify(existingSettings, null, 2));
     } catch (e: unknown) {
       handleCaughtError('recoverable', 'Parsing existing settings.local.json failed, recreating', e, log);
@@ -521,6 +522,27 @@ export function installProjectHooks(projectRoot: string, harnessDir: string = '.
     // 새로 생성
     fs.writeFileSync(settingsLocalPath, JSON.stringify(coreHooks, null, 2));
   }
+}
+
+/**
+ * 기존 settings.local.json 의 permissions 와 vibe 기본 permissions 를 병합.
+ *  - deny: 합집합 (vibe 의 deny 는 최소 안전장치 — 사용자가 지우지 않는 한 유지)
+ *  - allow / ask: 기존 사용자 설정 우선 (vibe 는 비어 있음, 덮어쓰면 사용자 설정 손실)
+ */
+function mergePermissions(
+  existing: unknown,
+  vibeDefaults: { allow?: string[]; deny?: string[]; ask?: string[] } | undefined,
+): { allow: string[]; deny: string[]; ask: string[] } {
+  const ex = (existing && typeof existing === 'object')
+    ? existing as { allow?: unknown; deny?: unknown; ask?: unknown }
+    : {};
+  const toArr = (v: unknown): string[] => Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  const dedupe = (arr: string[]): string[] => Array.from(new Set(arr));
+  return {
+    allow: toArr(ex.allow),
+    deny: dedupe([...toArr(ex.deny), ...toArr(vibeDefaults?.deny)]),
+    ask: toArr(ex.ask),
+  };
 }
 
 /**
