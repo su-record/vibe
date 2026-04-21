@@ -1,7 +1,10 @@
 /**
- * Notification Hook - 컨텍스트 자동 저장 (80/90/95%) + 세션 요약 + Reflection
+ * Notification Hook - 컨텍스트 자동 저장 (70/80/90/95%) + 세션 요약 + Reflection
  * Usage: node context-save.js <urgency>
- *   urgency: medium | high | critical
+ *   urgency: low | medium | high | critical
+ *
+ * 70% (low): CLAUDE.md 의 "70% context → save_memory → /new → /vibe.utils --continue"
+ *            플로우의 조기 경고 단계. 디바운스만 수행하고 Reflection 은 medium 부터.
  *
  * 구조적 메타데이터를 자동 추출하여 세션 복원 품질을 높임.
  * (claw-code compact.rs 패턴 참조)
@@ -16,6 +19,7 @@ const LIB_URL = getLibBaseUrl();
 
 const urgency = process.argv[2] || 'medium';
 const summaryMap = {
+  low: 'Context at 70% - early checkpoint (prepare /new)',
   medium: 'Context at 80% - auto checkpoint',
   high: 'Context at 90% - save before overflow',
   critical: 'Context at 95% - CRITICAL save before session end',
@@ -156,7 +160,7 @@ async function main() {
       summary: structuredSummary,
       projectPath: PROJECT_DIR,
     });
-    const percent = urgency === 'critical' ? '95' : urgency === 'high' ? '90' : '80';
+    const percent = urgency === 'critical' ? '95' : urgency === 'high' ? '90' : urgency === 'low' ? '70' : '80';
     console.log(`[CONTEXT ${percent}%]`, result.content[0].text);
 
     // Mark this urgency level as recently saved

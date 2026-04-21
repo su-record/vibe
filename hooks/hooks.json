@@ -128,6 +128,15 @@
     ],
     "Notification": [
       {
+        "matcher": "context_window_70",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/context-save.js low"
+          }
+        ]
+      },
+      {
         "matcher": "context_window_80",
         "hooks": [
           {
