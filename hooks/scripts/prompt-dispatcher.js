@@ -13,6 +13,7 @@
 import { execFile } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { emitUserPromptOutput } from './lib/hook-output.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -120,8 +121,9 @@ const DISPATCH_RULES = [
   },
 ];
 
-// 매칭된 스크립트 실행
+// 매칭된 스크립트 실행 — stdout 은 버퍼에 모았다가 마지막에 단일 JSON 으로 찍음
 const execPromises = [];
+const collectedOutputs = [];
 
 for (const rule of DISPATCH_RULES) {
   if (rule.label === 'skip') continue;
@@ -129,9 +131,9 @@ for (const rule of DISPATCH_RULES) {
   // pattern이 null이면 항상 실행, 아니면 매칭 확인
   if (rule.pattern !== null && !rule.pattern.test(prompt)) continue;
 
-  // echo 규칙: 직접 stdout 출력
+  // echo 규칙: 수집 버퍼에 추가
   if (rule.echo) {
-    process.stdout.write(rule.echo + '\n');
+    collectedOutputs.push(rule.echo);
     continue;
   }
 
@@ -147,7 +149,7 @@ for (const rule of DISPATCH_RULES) {
         env: { ...process.env },
       }, (error, stdout, stderr) => {
         if (stdout?.trim()) {
-          process.stdout.write(stdout);
+          collectedOutputs.push(stdout.trim());
         }
         resolve();
       });
@@ -156,6 +158,11 @@ for (const rule of DISPATCH_RULES) {
 }
 
 await Promise.all(execPromises);
+
+// 구조화된 UserPromptSubmit 출력 (additionalContext 로 assistant 컨텍스트에 주입)
+if (collectedOutputs.length) {
+  emitUserPromptOutput({ additionalContext: collectedOutputs.join('\n\n') });
+}
 
 // Evolution: Gap detection — log unmatched prompts for skill gap analysis
 const matched = DISPATCH_RULES.some(r =>

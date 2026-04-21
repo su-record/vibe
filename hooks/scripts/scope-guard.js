@@ -22,6 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import { PROJECT_DIR, logHookDecision, projectVibePath, projectVibeRoot } from './utils.js';
+import { emitPreToolDecision } from './lib/hook-output.js';
 
 const SCOPE_PATH = projectVibePath(PROJECT_DIR, 'scope.json');
 
@@ -139,7 +140,14 @@ if (blocking) {
   lines.push('🚫 BLOCKED. Edit scope.json or justify to the user before proceeding.');
 }
 
-console.log(lines.join('\n'));
+// stderr 로 사용자 경고, stdout JSON 으로 assistant 구조화 신호
+console.error(lines.join('\n'));
 logHookDecision('scope-guard', toolName, blocking ? 'block' : 'warn', `${rel} ${denied ? '(deny)' : '(out-of-allow)'}`);
+
+if (blocking) {
+  emitPreToolDecision('block', `Out of declared scope: ${rel} ${denied ? '(deny)' : '(not in allow list)'}`, {
+    systemMessage: scope.reason ? `Declared scope: ${scope.reason}` : undefined,
+  });
+}
 
 process.exit(blocking ? 2 : 0);

@@ -197,6 +197,10 @@ function formatOutput(toolName, validation) {
   return lines.join('\n');
 }
 
+import fs from 'fs';
+import { logHookDecision } from './utils.js';
+import { emitPreToolDecision } from './lib/hook-output.js';
+
 /**
  * stdin에서 JSON 페이로드 읽기 (Claude Code 하네스 호환)
  * stdin이 없거나 파싱 실패 시 argv/env 폴백
@@ -214,8 +218,6 @@ function readStdinSync() {
   return null;
 }
 
-import fs from 'fs';
-
 // 메인 실행: stdin JSON 우선, argv 폴백
 const stdinPayload = readStdinSync();
 const toolName = stdinPayload?.tool_name || process.argv[2] || 'Bash';
@@ -224,8 +226,6 @@ const toolInput = stdinPayload?.tool_input
     ? stdinPayload.tool_input
     : JSON.stringify(stdinPayload.tool_input))
   : (process.argv[3] || process.env.TOOL_INPUT || '');
-
-import { logHookDecision } from './utils.js';
 
 // 1단계: 입력 스키마 검증 (구조적 오류 탐지)
 const schemaResult = validateInputSchema(toolName, stdinPayload?.tool_input || toolInput);
@@ -255,5 +255,15 @@ if (!validation.allowed) {
   logHookDecision('pre-tool-guard', toolName, 'warn', validation.warnings.join('; '));
 }
 
-// Exit code: 0 = allowed, 2 = denied (claw-code 규약), 1 = 레거시 호환
+// JSON 출력: Claude Code / coco 신식 훅 응답 (assistant 에 구조화 신호)
+// stderr 는 사용자용, JSON stdout 은 assistant 용으로 분리.
+if (!validation.allowed) {
+  emitPreToolDecision('block', validation.warnings.join('; ') || 'dangerous command blocked', {
+    systemMessage: validation.suggestions.length
+      ? `Suggested alternatives: ${validation.suggestions.join(' | ')}`
+      : undefined,
+  });
+}
+
+// Exit code: 0 = allowed, 2 = denied (Claude Code 규약 — stderr 를 assistant 에 주입)
 process.exit(validation.allowed ? 0 : 2);

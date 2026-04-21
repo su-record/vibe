@@ -118,12 +118,15 @@ const toolInput = stdinPayload?.tool_input
   : (process.argv[3] || process.env.TOOL_INPUT || '');
 
 import { logHookDecision } from './utils.js';
+import { emitPreToolDecision } from './lib/hook-output.js';
 
 const result = guard(toolName, toolInput);
 
 if (result) {
   logHookDecision('sentinel-guard', toolName, 'block', result.reason);
-  console.log(JSON.stringify(result));
+  // 사용자용 경고 (stderr) + assistant 용 구조화 신호 (stdout JSON)
+  console.error(`🚫 SENTINEL GUARD: ${result.reason}`);
+  emitPreToolDecision('block', result.reason);
   process.exit(2); // deny 규약
 }
 
