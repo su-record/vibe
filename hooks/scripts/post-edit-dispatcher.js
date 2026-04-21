@@ -18,10 +18,11 @@ import { dispatch } from './lib/dispatcher.js';
 
 try {
   await dispatch([
-    { name: 'auto-format', script: 'auto-format.js' },
-    { name: 'code-check',  script: 'code-check.js'  },
-    { name: 'auto-test',   script: 'auto-test.js'   },
-    { name: 'post-edit',   script: 'post-edit.js'   },
+    { name: 'auto-format',       script: 'auto-format.js'       },
+    { name: 'code-check',        script: 'code-check.js'        },
+    { name: 'auto-test',         script: 'auto-test.js'         },
+    { name: 'post-edit',         script: 'post-edit.js'         },
+    { name: 'post-tool-failure', script: 'post-tool-failure.js' },
   ]);
 } catch { /* noise suppression */ }
 process.exit(0);

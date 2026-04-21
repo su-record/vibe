@@ -65,6 +65,15 @@
         ]
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{VIBE_PATH}}/hooks/scripts/post-tool-failure.js"
+          }
+        ]
+      },
+      {
         "hooks": [
           {
             "type": "command",
