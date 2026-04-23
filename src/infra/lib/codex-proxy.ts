@@ -1001,7 +1001,7 @@ export function createProxyServer(config: ProxyConfig): http.Server {
       res.end(JSON.stringify({ status: 'ok', port: config.port }));
     } else if (url === '/v1/models' && req.method === 'GET') {
       // Claude Code 모델 검증용 — 설정된 모델을 반환
-      const model = config.defaultModel || 'gpt-5.4';
+      const model = config.defaultModel || 'gpt-5.5';
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         object: 'list',

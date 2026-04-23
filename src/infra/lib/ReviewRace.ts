@@ -516,7 +516,7 @@ export function formatRaceResult(result: RaceReviewResult): string {
   lines.push(`## ${result.reviewType.toUpperCase()} Review (Race Mode)`);
   lines.push('');
   lines.push(`**Duration**: ${result.duration}ms`);
-  lines.push(`**Models**: GPT-5.2-Codex, Gemini-3-Flash`);
+  lines.push(`**Models**: GPT-5.3-Codex, Gemini-3-Flash`);
   lines.push('');
 
   // LLM별 결과 요약

@@ -264,7 +264,8 @@ const MAX_COST_SIZE_BYTES = 5 * 1024 * 1024; // 5MB rotation
 
 // 1K 토큰당 USD (추정치, 2026-04 기준)
 const COST_PER_1K_TOKENS = {
-  'gpt-5.4': { input: 0.005, output: 0.015 },
+  'gpt-5.5': { input: 0.005, output: 0.030 },
+  'gpt-5.5-pro': { input: 0.030, output: 0.180 },
   'gpt-5.3-codex': { input: 0.003, output: 0.010 },
   'gpt-5.3-codex-spark': { input: 0.001, output: 0.005 },
   'gemini-3.1-pro-preview': { input: 0.00125, output: 0.005 },

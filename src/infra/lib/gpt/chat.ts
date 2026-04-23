@@ -27,20 +27,20 @@ const INSTRUCTIONS_CACHE_TTL = 15 * 60 * 1000; // 15분
 
 // 사용 가능한 모델 목록
 export const GPT_MODELS: Record<string, GptModelInfo> = {
-  // GPT-5.4 Pro (Pro plan — highest quality, complex tasks)
-  'gpt-5.4-pro': {
-    id: 'gpt-5.4-pro',
-    name: 'GPT-5.4 Pro',
-    description: 'Pro plan, smarter and more precise responses',
-    maxTokens: 128000,
+  // GPT-5.5 Pro (Pro plan — highest accuracy, complex tasks)
+  'gpt-5.5-pro': {
+    id: 'gpt-5.5-pro',
+    name: 'GPT-5.5 Pro',
+    description: 'Pro plan, highest accuracy for complex reasoning',
+    maxTokens: 1_000_000,
     reasoning: { effort: 'high', summary: 'auto' },
   },
-  // GPT-5.4 (Plus plan, frontier model for professional work)
-  'gpt-5.4': {
-    id: 'gpt-5.4',
-    name: 'GPT-5.4',
-    description: 'Plus plan, frontier model for professional work',
-    maxTokens: 128000,
+  // GPT-5.5 (Plus plan, frontier model — faster, sharper thinker for fewer tokens)
+  'gpt-5.5': {
+    id: 'gpt-5.5',
+    name: 'GPT-5.5',
+    description: 'Plus plan, frontier model with 1M context and autonomous multi-step workflows',
+    maxTokens: 1_000_000,
     reasoning: { effort: 'high', summary: 'auto' },
   },
   // GPT-5.3 Codex (코딩 특화)
@@ -75,8 +75,8 @@ const ENV_MODEL = resolveGptModelOverride();
 
 // 플랜별 기본 모델 매핑
 const PLAN_MODEL_MAP: Record<ChatGptPlan, string> = {
-  pro: 'gpt-5.4-pro',
-  plus: 'gpt-5.4',
+  pro: 'gpt-5.5-pro',
+  plus: 'gpt-5.5',
   free: 'gpt-5.3-codex',
 };
 
@@ -86,16 +86,16 @@ const PLAN_MODEL_MAP: Record<ChatGptPlan, string> = {
 export function getDefaultModel(plan?: ChatGptPlan): string {
   if (ENV_MODEL) return ENV_MODEL;
   if (plan) return PLAN_MODEL_MAP[plan];
-  return 'gpt-5.4';
+  return 'gpt-5.5';
 }
 
 // 하위 호환용
-export const DEFAULT_MODEL = ENV_MODEL || 'gpt-5.4';
+export const DEFAULT_MODEL = ENV_MODEL || 'gpt-5.5';
 
 /**
  * GitHub에서 Codex instructions 가져오기
  */
-export async function getCodexInstructions(model: string = 'gpt-5.4'): Promise<string> {
+export async function getCodexInstructions(model: string = 'gpt-5.5'): Promise<string> {
   // 캐시 확인
   if (cachedInstructions && Date.now() - instructionsCacheTime < INSTRUCTIONS_CACHE_TTL) {
     return cachedInstructions;
@@ -186,14 +186,14 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     systemPrompt = '',
   } = options;
 
-  // API Key 방식은 OpenAI 모델 사용 (5.4 계열 + 5.3-codex만 지원)
+  // API Key 방식은 OpenAI 모델 사용 (5.5 계열 + 5.3-codex만 지원)
   const apiKeyModelMap: Record<string, string> = {
-    'gpt-5.4': 'gpt-5.4',
-    'gpt-5.4-pro': 'gpt-5.4',
+    'gpt-5.5': 'gpt-5.5',
+    'gpt-5.5-pro': 'gpt-5.5',
     'gpt-5.3-codex': 'gpt-5.3-codex',
   };
 
-  const actualModel = apiKeyModelMap[model] || 'gpt-5.4';
+  const actualModel = apiKeyModelMap[model] || 'gpt-5.5';
 
   // 메시지 구성
   const apiMessages: Array<{ role: string; content: string | null }> = [];
@@ -211,7 +211,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
     const requestBody: Record<string, unknown> = {
       model: actualModel,
       messages: apiMessages,
-      max_completion_tokens: maxTokens,  // GPT-5.2 uses max_completion_tokens instead of max_tokens
+      max_completion_tokens: maxTokens,  // GPT-5 family uses max_completion_tokens instead of max_tokens
       temperature,
     };
 
@@ -564,11 +564,11 @@ export async function ask(prompt: string, options: Omit<ChatOptions, 'messages'>
 }
 
 /**
- * 빠른 질문 (GPT-5.4 사용)
+ * 빠른 질문 (GPT-5.5 사용)
  */
 export async function quickAsk(prompt: string): Promise<string> {
   return ask(prompt, {
-    model: 'gpt-5.4',
+    model: 'gpt-5.5',
     maxTokens: 2048,
     temperature: 0.3,
   });
