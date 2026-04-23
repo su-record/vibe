@@ -101,7 +101,7 @@ function isSimplePrompt(prompt) {
 function resolveModel(providerName, config) {
   if (providerName === 'gpt-spark') return config.models?.gptCodexSpark || 'gpt-5.3-codex-spark';
   if (providerName === 'gpt-codex') return config.models?.gptCodex || 'gpt-5.3-codex';
-  if (providerName === 'gpt') return config.models?.gpt || 'gpt-5.4';
+  if (providerName === 'gpt') return config.models?.gpt || 'gpt-5.5';
   if (providerName === 'gemini') return config.models?.gemini || 'gemini-3.1-pro-preview';
   if (providerName === 'claude') return 'claude';
   return providerName;
@@ -352,7 +352,7 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs
     } else if (providerName === 'gpt-codex') {
       model = vibeConfig.models?.gptCodex || process.env.GPT_CODEX_MODEL || 'gpt-5.3-codex';
     } else {
-      model = vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.4';
+      model = vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.5';
     }
     return await callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs);
   }

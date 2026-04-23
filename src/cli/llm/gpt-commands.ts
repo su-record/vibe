@@ -42,7 +42,7 @@ export function gptStatus(): void {
       : `detected (expires ${expiresAt.toLocaleString()})`;
   }
 
-  const modelGpt = config.models?.gpt || 'gpt-5.4 (default)';
+  const modelGpt = config.models?.gpt || 'gpt-5.5 (default)';
   const modelCodex = config.models?.gptCodex || 'gpt-5.3-codex (default)';
 
   console.log(`
