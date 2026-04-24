@@ -24,7 +24,7 @@
 ## Process
 
 1. Detect project tech stack from package.json or project files
-2. Load MASTER.md from `.claude/vibe/design-system/{project}/MASTER.md` if exists
+2. Load MASTER.md from `.vibe/design-system/{project}/MASTER.md` if exists
 3. Use `core_ui_stack_search` with detected stack for framework patterns
 4. Use `core_ui_search` with domain `react` for performance patterns (if React/Next.js)
 5. Generate implementation guidelines mapping design system to framework

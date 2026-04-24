@@ -33,14 +33,14 @@ The `vibe-regress` skill performs registration, generation, and clustering.
 **Core steps** (see `skills/vibe-regress/SKILL.md` for details):
 
 1. Parse subcommand
-2. Read/write `.claude/vibe/regressions/<slug>.md` (frontmatter schema enforced)
+2. Read/write `.vibe/regressions/<slug>.md` (frontmatter schema enforced)
 3. On `generate`, detect the project's test stack → choose template (vitest / jest)
 4. On `cluster`, group by `root-cause-tag`; ≥3 entries → propose a shared test
 5. On `import`, parse `git log --grep='^fix:'`; skip duplicates by commit hash
 
 ## Output
 
-- `.claude/vibe/regressions/<slug>.md` — bug record (frontmatter + reproduction / root cause)
+- `.vibe/regressions/<slug>.md` — bug record (frontmatter + reproduction / root cause)
 - Project test dir — generated vitest file (`*.regression.test.ts`)
 - `list` prints a terminal table
 

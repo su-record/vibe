@@ -14,7 +14,7 @@ chain-next: [vibe-spec, vibe-figma]
 
 ## When to Use
 
-- `vibe-interview` has just completed and `.claude/vibe/interviews/{feature}.md` exists
+- `vibe-interview` has just completed and `.vibe/interviews/{feature}.md` exists
 - The user requests "write me a plan document" or "clean up the interview"
 - Need to convert an external PRD/wireframe into the vibe plan document format
 
@@ -25,7 +25,7 @@ chain-next: [vibe-spec, vibe-figma]
 
 ```
 1. Read interview file
-   .claude/vibe/interviews/{feature}.md
+   .vibe/interviews/{feature}.md
      ↓
 2. Load template
    ~/.claude/vibe/templates/plan-template.md
@@ -41,7 +41,7 @@ chain-next: [vibe-spec, vibe-figma]
    type ∈ {api, library, feature-data} → omit
      ↓
 5. Save plan document
-   .claude/vibe/plans/{feature}.md
+   .vibe/plans/{feature}.md
      ↓
 6. Handoff guidance
    Next steps: /vibe.spec, /vibe.figma, parallel
@@ -50,7 +50,7 @@ chain-next: [vibe-spec, vibe-figma]
 ## Step 1: Read Interview File
 
 ```
-Read .claude/vibe/interviews/{feature-name}.md
+Read .vibe/interviews/{feature-name}.md
 ```
 
 Extract `type`, `status`, `requiredCollected`, `optionalCollected`, etc. from the frontmatter.
@@ -105,7 +105,7 @@ Edit anything that doesn't match your intent.
 ### `.last-feature` Pointer Update
 
 ```
-Write ".claude/vibe/.last-feature" ← feature-name (one line)
+Write ".vibe/.last-feature" ← feature-name (one line)
 Run immediately after extracting the feature name from the interview file.
 No-op if the value is already the same.
 ```
@@ -181,7 +181,7 @@ else:  # api, library, feature-data
 
 ## Step 5: Save Plan Document
 
-**Output path**: `.claude/vibe/plans/{feature-name}.md`
+**Output path**: `.vibe/plans/{feature-name}.md`
 
 **Frontmatter**:
 
@@ -192,7 +192,7 @@ type: {website | webapp | mobile | api | library | feature}
 status: draft
 createdAt: {ISO-timestamp}
 lastUpdated: {ISO-timestamp}
-source: .claude/vibe/interviews/{feature-name}.md
+source: .vibe/interviews/{feature-name}.md
 downstream: [spec, figma]  # or [spec] for non-UI
 ---
 ```
@@ -214,7 +214,7 @@ After saving the plan document, guide the user on next steps:
 ✅ Plan document complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 .claude/vibe/plans/{feature-name}.md
+📄 .vibe/plans/{feature-name}.md
    Sections: {N} written
    TBD: {M} (to be decided later)
 
@@ -223,7 +223,7 @@ Type: {type}
 Next steps:
 
   [UI project: website/webapp/mobile]
-  1. /vibe.spec ".claude/vibe/plans/{feature-name}.md"
+  1. /vibe.spec ".vibe/plans/{feature-name}.md"
      → Write code spec → /vibe.run implementation
   2. /vibe.figma
      → Figma design → FE UI code
@@ -231,7 +231,7 @@ Next steps:
      → Feature + Design → website prototype
 
   [Non-UI: api/library]
-  1. /vibe.spec ".claude/vibe/plans/{feature-name}.md"
+  1. /vibe.spec ".vibe/plans/{feature-name}.md"
      → Code spec → /vibe.run implementation
 
 Where would you like to start?

@@ -28,24 +28,24 @@ Requirements Traceability Matrix (RTM) tracks the relationship between:
 
 ```
 Step 1: Check if SPLIT structure exists (folder)
-  📁 .claude/vibe/specs/{feature-name}/        → Folder with _index.md + phase files
-  📁 .claude/vibe/features/{feature-name}/      → Folder with _index.feature + phase files
+  📁 .vibe/specs/{feature-name}/        → Folder with _index.md + phase files
+  📁 .vibe/features/{feature-name}/      → Folder with _index.feature + phase files
 
 Step 2: If no folder, check single file
-  📄 .claude/vibe/specs/{feature-name}.md       → Single SPEC file
-  📄 .claude/vibe/features/{feature-name}.feature → Single Feature file
+  📄 .vibe/specs/{feature-name}.md       → Single SPEC file
+  📄 .vibe/features/{feature-name}.feature → Single Feature file
 
 Step 3: If neither exists → Error
 ```
 
 **Split structure (folder) detected:**
 ```
-📁 .claude/vibe/specs/{feature-name}/
+📁 .vibe/specs/{feature-name}/
 ├── _index.md              → Master SPEC (read first)
 ├── phase-1-{name}.md      → Phase 1 SPEC
 └── ...
 
-📁 .claude/vibe/features/{feature-name}/
+📁 .vibe/features/{feature-name}/
 ├── _index.feature         → Master Feature (read first)
 ├── phase-1-{name}.feature → Phase 1 scenarios
 └── ...
@@ -55,8 +55,8 @@ Step 3: If neither exists → Error
 
 **Single file detected:**
 ```
-📄 .claude/vibe/specs/{feature-name}.md      → SPEC
-📄 .claude/vibe/features/{feature-name}.feature → Feature
+📄 .vibe/specs/{feature-name}.md      → SPEC
+📄 .vibe/features/{feature-name}.feature → Feature
 ```
 
 **Additional (auto-detect):**
@@ -67,8 +67,8 @@ Step 3: If neither exists → Error
 **Error if NEITHER file NOR folder found:**
 ```
 ❌ SPEC not found. Searched:
-   - .claude/vibe/specs/{feature-name}/  (folder)
-   - .claude/vibe/specs/{feature-name}.md (file)
+   - .vibe/specs/{feature-name}/  (folder)
+   - .vibe/specs/{feature-name}.md (file)
 
    Run /vibe.spec "{feature-name}" first.
 ```
@@ -145,8 +145,8 @@ Claude:
 📊 Generating RTM for "login"...
 
 Loading files:
-  ✅ SPEC: .claude/vibe/specs/login.md (5 requirements)
-  ✅ Feature: .claude/vibe/features/login.feature (4 scenarios)
+  ✅ SPEC: .vibe/specs/login.md (5 requirements)
+  ✅ Feature: .vibe/features/login.feature (4 scenarios)
   ✅ Tests: 3 test files found
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -242,7 +242,7 @@ If the achievement rate does not improve between iterations (`isImproving` retur
 | Option | Description |
 |--------|-------------|
 | `--html` | Output as HTML file |
-| `--save` | Save to `.claude/vibe/reports/{feature}-rtm.md` |
+| `--save` | Save to `.vibe/reports/{feature}-rtm.md` |
 | `--json` | Output as JSON |
 
 ## Coverage Targets
@@ -260,7 +260,7 @@ If the achievement rate does not improve between iterations (`isImproving` retur
 
 ```
 /vibe.trace가 정상 완료되면 (RTM 출력 + 사용자 확인 후):
-  Delete ".claude/vibe/.last-feature"
+  Delete ".vibe/.last-feature"
 
 이유: /vibe.trace는 vibe 워크플로의 마지막 Phase (Phase 7).
      완주 후에는 다음 /vibe.spec 호출 시 "빈 시작" 또는 진행 중 목록에서 다른 feature를 시작해야 한다.

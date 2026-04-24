@@ -2,7 +2,7 @@
 
 > This file is **the core of quality assurance**. All scenarios passing = feature complete.
 
-**SPEC**: `.claude/vibe/specs/{feature-name}.md`
+**SPEC**: `.vibe/specs/{feature-name}.md`
 **Last verified**: -
 **Quality score**: -
 

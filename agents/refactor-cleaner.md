@@ -64,7 +64,7 @@ Task(model: "sonnet", prompt: "Find and remove dead code, maintain DELETION_LOG"
 
 ## DELETION_LOG Format
 
-Create/update `.claude/vibe/DELETION_LOG.md`:
+Create/update `.vibe/DELETION_LOG.md`:
 
 ```markdown
 # Deletion Log
@@ -112,7 +112,7 @@ Create/update `.claude/vibe/DELETION_LOG.md`:
 
 ### DELETION_LOG Updated
 - Added 18 entries
-- Location: .claude/vibe/DELETION_LOG.md
+- Location: .vibe/DELETION_LOG.md
 ```
 
 ## Anti-Patterns

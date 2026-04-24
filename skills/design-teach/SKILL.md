@@ -9,7 +9,7 @@ priority: 50
 
 # Design Teach — Project Design Context Gathering
 
-Collect project-specific design context so all design-* skills produce tailored, brand-aware results. Saves to `.claude/vibe/design-context.json`.
+Collect project-specific design context so all design-* skills produce tailored, brand-aware results. Saves to `.vibe/design-context.json`.
 
 ## Usage
 
@@ -30,8 +30,8 @@ Before asking questions, automatically gather existing signals:
 | Color palette | Existing color definitions, brand assets |
 | Typography | Font imports, font-family declarations |
 | Component library | `package.json` dependencies (MUI, Chakra, shadcn, etc.) |
-| Design system | `.claude/vibe/design-system/*/MASTER.md` |
-| Existing context | `.claude/vibe/design-context.json` (if updating) |
+| Design system | `.vibe/design-system/*/MASTER.md` |
+| Existing context | `.vibe/design-context.json` (if updating) |
 
 ### Step 2: Ask Clarifying Questions
 
@@ -60,7 +60,7 @@ Present findings from Step 1, then ask what's missing:
 
 ### Step 3: Save Context
 
-Write gathered context to `.claude/vibe/design-context.json` using the Write tool.
+Write gathered context to `.vibe/design-context.json` using the Write tool.
 
 **Schema (v1):**
 
@@ -119,7 +119,7 @@ When `/design-teach` is run again and `design-context.json` already exists:
 Each design-* skill does the following when it runs:
 
 ```
-1. Read `.claude/vibe/design-context.json`
+1. Read `.vibe/design-context.json`
 2. File not found → print "Run /design-teach first for better results" → continue with defaults
 3. Parse failure (invalid JSON) → warn "design-context.json parse failed" + continue with defaults → recommend re-running /design-teach
 4. Success → apply context to analysis criteria
@@ -173,7 +173,7 @@ PRE-SHIP Phase:
 - Dark mode: Required
 
 ### Saved
-✅ .claude/vibe/design-context.json updated
+✅ .vibe/design-context.json updated
 ```
 
 ## Important

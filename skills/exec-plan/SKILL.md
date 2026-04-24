@@ -62,14 +62,14 @@ For every decision point in the SPEC, resolve it NOW:
 
 ### Step 3: GENERATE — Write the ExecPlan
 
-Output format: `.claude/vibe/specs/{feature-name}-execplan.md`
+Output format: `.vibe/specs/{feature-name}-execplan.md`
 
 ```markdown
 # ExecPlan: {feature-name}
 
 ## Meta
-- SPEC: .claude/vibe/specs/{name}.md
-- Feature: .claude/vibe/features/{name}.feature
+- SPEC: .vibe/specs/{name}.md
+- Feature: .vibe/features/{name}.feature
 - Generated: {timestamp}
 - Phases: {count}
 - Scenarios: {count}
@@ -119,7 +119,7 @@ Output format: `.claude/vibe/specs/{feature-name}-execplan.md`
 
 ### Step 4: PERSIST — Save and Link
 
-1. Save ExecPlan to `.claude/vibe/specs/{feature-name}-execplan.md`
+1. Save ExecPlan to `.vibe/specs/{feature-name}-execplan.md`
 2. Save session context: `save_memory("execplan-{feature}", {summary})`
 3. Output execution command:
 
@@ -129,7 +129,7 @@ Ready to execute:
 
 Or hand off to new session:
   /vibe.utils --continue
-  → Load: .claude/vibe/specs/{feature-name}-execplan.md
+  → Load: .vibe/specs/{feature-name}-execplan.md
 ```
 
 ## Quality Checks

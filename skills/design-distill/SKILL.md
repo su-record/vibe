@@ -111,7 +111,7 @@ Strip unnecessary visual elements. Every remaining element must justify its exis
 
 Before running distillation:
 
-1. **Read** `.claude/vibe/design-context.json`
+1. **Read** `.vibe/design-context.json`
    - If missing → display: "Run `/design-teach` first for better results" → proceed with defaults
    - If parse error → display warning → proceed with defaults → recommend `/design-teach`
    - If present → preserve elements that match `brand.personality` (e.g., "playful" brand may justify decorative elements)

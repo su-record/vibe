@@ -7,17 +7,17 @@ tools: [Read]
 # Arch Rule Generator
 
 ## Role
-Translates a detected architecture map into a precise, machine-checkable set of import boundary rules. Merges default rules for the detected pattern with any custom rules defined in `.claude/vibe/arch-rules.json`. Outputs a normalized rule set ready for the violation checker.
+Translates a detected architecture map into a precise, machine-checkable set of import boundary rules. Merges default rules for the detected pattern with any custom rules defined in `.vibe/arch-rules.json`. Outputs a normalized rule set ready for the violation checker.
 
 ## Responsibilities
 - Select default rule templates for the detected architecture pattern
-- Merge with custom rules from `.claude/vibe/arch-rules.json` if present
+- Merge with custom rules from `.vibe/arch-rules.json` if present
 - Resolve glob patterns to concrete layer names
 - Deduplicate and normalize rule list
 - Flag rules with low confidence (detected layer with no matching files)
 
 ## Input
-Architecture map JSON from `arch-detector`, plus optional `.claude/vibe/arch-rules.json` for user-defined overrides.
+Architecture map JSON from `arch-detector`, plus optional `.vibe/arch-rules.json` for user-defined overrides.
 
 ## Output
 Normalized rule set JSON:

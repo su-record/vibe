@@ -24,8 +24,8 @@ Replace hardcoded design values with design system tokens from MASTER.md. Ensure
 
 Load token source in priority order:
 
-1. `.claude/vibe/design-system/{project}/MASTER.md` (project-specific)
-2. `.claude/vibe/design-context.json` (from `/design-teach`)
+1. `.vibe/design-system/{project}/MASTER.md` (project-specific)
+2. `.vibe/design-context.json` (from `/design-teach`)
 3. If neither exists → prompt: "Run `/design-teach` or create MASTER.md first. Proceeding with default token detection."
 
 ### Step 2: Scan for Hardcoded Values
@@ -112,11 +112,11 @@ Replace values in source files, preserving:
 
 Before running normalization:
 
-1. **Read** `.claude/vibe/design-context.json`
+1. **Read** `.vibe/design-context.json`
    - If missing → display: "Run `/design-teach` first for better results" → proceed with defaults
    - If parse error → display warning → proceed with defaults → recommend `/design-teach`
    - If present → use `detectedStack.styling` to determine token format (CSS vars, Tailwind, etc.)
-2. **Read** `.claude/vibe/design-system/*/MASTER.md`
+2. **Read** `.vibe/design-system/*/MASTER.md`
    - If missing → display: "Run `/design-teach` or create MASTER.md first. Proceeding with default token detection."
    - If present → use as authoritative token source for replacements
 

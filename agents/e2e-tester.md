@@ -81,8 +81,8 @@ AI에게 필요한 건 후자다.
 
 ```
 Scenario Detection
-├── .claude/vibe/features/{feature}.feature → Extract BDD scenarios
-├── .claude/vibe/specs/{feature}.md → Check acceptance criteria
+├── .vibe/features/{feature}.feature → Extract BDD scenarios
+├── .vibe/specs/{feature}.md → Check acceptance criteria
 └── Analyze existing e2e/*.spec.ts
 ```
 
@@ -189,8 +189,8 @@ E2E scenario FAILED
 ```
 Comparing screenshots:
 ├── login-page.png
-│   ├── Baseline: .claude/vibe/e2e/baseline/login-page.png
-│   ├── Current:  .claude/vibe/e2e/current/login-page.png
+│   ├── Baseline: .vibe/e2e/baseline/login-page.png
+│   ├── Current:  .vibe/e2e/current/login-page.png
 │   └── Diff: 0.02% (threshold: 1%) → PASS
 ├── dashboard.png
 │   └── Diff: 5.3% (threshold: 1%) → FAIL → auto-fix loop
@@ -240,7 +240,7 @@ Token Usage: ~2,400 chars (vs ~96,000 with DOM-based approach)
 
 ## Configuration
 
-`.claude/vibe/e2e/config.json`:
+`.vibe/e2e/config.json`:
 
 ```json
 {

@@ -94,7 +94,7 @@
 
 ## Persistence
 
-After building, record in `.claude/vibe/capabilities-log.md`:
+After building, record in `.vibe/capabilities-log.md`:
 
 ```markdown
 ## {{DATE}} — {{CAPABILITY_NAME}}

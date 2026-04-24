@@ -11,7 +11,7 @@
 
 ### R2. existing-project-context
 **Q**: 기존 프로젝트의 기술 스택을 확인했나요?
-**힌트**: CLAUDE.md, package.json, .claude/vibe/config.json 읽어서 자동 파악.
+**힌트**: CLAUDE.md, package.json, .vibe/config.json 읽어서 자동 파악.
 **follow-up**: 파악 결과를 사용자에게 요약해 확인 받기.
 
 ### R3. affected-areas

@@ -59,25 +59,25 @@ argument-hint: "feature name"
 
 ```
 Step 1: Check if SPLIT structure exists (folder)
-  📁 .claude/vibe/features/{feature-name}/     → Folder with _index.feature + phase files
-  📁 .claude/vibe/specs/{feature-name}/         → Folder with _index.md + phase files
+  📁 .vibe/features/{feature-name}/     → Folder with _index.feature + phase files
+  📁 .vibe/specs/{feature-name}/         → Folder with _index.md + phase files
 
 Step 2: If no folder, check single file
-  📄 .claude/vibe/features/{feature-name}.feature → Single Feature file
-  📄 .claude/vibe/specs/{feature-name}.md         → Single SPEC file
+  📄 .vibe/features/{feature-name}.feature → Single Feature file
+  📄 .vibe/specs/{feature-name}.md         → Single SPEC file
 
 Step 3: If neither exists → Error
 ```
 
 **Split structure (folder) detected:**
 ```
-📁 .claude/vibe/features/{feature-name}/
+📁 .vibe/features/{feature-name}/
 ├── _index.feature         → Master Feature (read first for scenario overview)
 ├── phase-1-{name}.feature → Phase 1 scenarios
 ├── phase-2-{name}.feature → Phase 2 scenarios
 └── ...
 
-📁 .claude/vibe/specs/{feature-name}/
+📁 .vibe/specs/{feature-name}/
 ├── _index.md              → Master SPEC (read first for overview)
 ├── phase-1-{name}.md      → Phase 1 SPEC
 └── ...
@@ -87,15 +87,15 @@ Step 3: If neither exists → Error
 
 **Single file detected:**
 ```
-📄 .claude/vibe/features/{feature-name}.feature → Scenario list
-📄 .claude/vibe/specs/{feature-name}.md → Verification criteria (reference)
+📄 .vibe/features/{feature-name}.feature → Scenario list
+📄 .vibe/specs/{feature-name}.md → Verification criteria (reference)
 ```
 
 **Error if NEITHER file NOR folder found:**
 ```
 ❌ Feature file not found. Searched:
-   - .claude/vibe/features/{feature-name}/  (folder)
-   - .claude/vibe/features/{feature-name}.feature (file)
+   - .vibe/features/{feature-name}/  (folder)
+   - .vibe/features/{feature-name}.feature (file)
 
    Run /vibe.spec "{feature-name}" first.
 ```
@@ -184,16 +184,16 @@ For each UI scenario in Feature file:
 
 ### 3.5 Step Count (MANDATORY before Quality Report)
 
-Read `.claude/vibe/metrics/current-run.json` to obtain the tool-call count from the preceding `/vibe.run` (and any follow-up work in this session). Then append a record to `.claude/vibe/metrics/history.jsonl` and include the count in the Quality Report below.
+Read `.vibe/metrics/current-run.json` to obtain the tool-call count from the preceding `/vibe.run` (and any follow-up work in this session). Then append a record to `.vibe/metrics/history.jsonl` and include the count in the Quality Report below.
 
 ```bash
 # Read step count (ok if file missing — treat as 0)
-STEPS=$(node -e "try{const d=JSON.parse(require('fs').readFileSync('.claude/vibe/metrics/current-run.json','utf-8'));console.log(d.steps||0)}catch{console.log(0)}")
+STEPS=$(node -e "try{const d=JSON.parse(require('fs').readFileSync('.vibe/metrics/current-run.json','utf-8'));console.log(d.steps||0)}catch{console.log(0)}")
 
 # Append history record
 node -e "
 const fs=require('fs'),path=require('path');
-const dir='.claude/vibe/metrics';
+const dir='.vibe/metrics';
 try{
   const cur=JSON.parse(fs.readFileSync(path.join(dir,'current-run.json'),'utf-8'));
   const rec={verifiedAt:new Date().toISOString(),feature:cur.feature,startedAt:cur.startedAt,steps:cur.steps||0};
@@ -295,8 +295,8 @@ For each failed scenario:
 
 ## Input
 
-- `.claude/vibe/features/{feature-name}.feature` or `.claude/vibe/features/{feature-name}/` - BDD scenarios
-- `.claude/vibe/specs/{feature-name}.md` or `.claude/vibe/specs/{feature-name}/` - SPEC document (reference)
+- `.vibe/features/{feature-name}.feature` or `.vibe/features/{feature-name}/` - BDD scenarios
+- `.vibe/specs/{feature-name}.md` or `.vibe/specs/{feature-name}/` - SPEC document (reference)
 - Implemented source code
 
 ## Output
@@ -311,7 +311,7 @@ For each failed scenario:
 User: /vibe.verify "login"
 
 Claude:
-📄 Loading Feature: .claude/vibe/features/login.feature
+📄 Loading Feature: .vibe/features/login.feature
 🔍 Starting verification...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -432,7 +432,7 @@ After all scenarios pass, auto-invoke:
 Load skill `vibe-contract` with: check "{feature-name}"
 ```
 
-- Skip if `.claude/vibe/contracts/{feature-name}.md` does not exist
+- Skip if `.vibe/contracts/{feature-name}.md` does not exist
 - No drift → verify still passes
 - **P1 drift** → demote verify to fail; auto-call `/vibe.regress register --from-contract`
 - P2 / P3 drift → warning only; verify still passes
@@ -533,7 +533,7 @@ Stuck detected (same error as previous attempt):
       1. Provide a fix hint (e.g., "check LoginForm.tsx line 42")
          → Apply → Re-verify → Continue loop
       2. Type "proceed" → Record failure in
-         .claude/vibe/todos/verify-failure-{scenario}.md,
+         .vibe/todos/verify-failure-{scenario}.md,
          continue to next scenario
       3. Type "abort" → Stop entire verification
   → ultrawork mode: auto-record TODO + continue to next scenario

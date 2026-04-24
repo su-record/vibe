@@ -137,6 +137,6 @@ If `failed` is empty, replace the Failures section with `_All probes passed._`.
 - [ ] Target install dir missing → clean exit with guidance (not an error)
 - [ ] JSON report matches the template above exactly (fields, types, naming)
 - [ ] Markdown summary printed to console after the run
-- [ ] Reports land in `~/.vibe/test-reports/`, never in project-local `.claude/vibe/`
+- [ ] Reports land in `~/.vibe/test-reports/`, never in project-local `.vibe/`
 - [ ] `failed.length > 0` → auto-invokes `/vibe.regress register --from-test`
 - [ ] `invocation` field invariants enforced per skill (`command` / `auto` / `chain` validity)

@@ -112,11 +112,11 @@ Every interactive element must have ALL applicable states:
 
 Before running polish:
 
-1. **Read** `.claude/vibe/design-context.json`
+1. **Read** `.vibe/design-context.json`
    - If missing → display: "Run `/design-teach` first for better results" → proceed with defaults
    - If parse error → display warning → proceed with defaults → recommend `/design-teach`
    - If present → apply brand-appropriate micro-interaction styles from `aesthetic.style`
-2. **Read** `.claude/vibe/design-system/*/MASTER.md` (if exists) for token references
+2. **Read** `.vibe/design-system/*/MASTER.md` (if exists) for token references
 
 ## Next Steps
 

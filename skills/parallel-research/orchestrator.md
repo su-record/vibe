@@ -36,7 +36,7 @@ agents: [best-practices, framework-docs, codebase-patterns, security-advisory, s
 ### Phase 5: Persist as Reusable Dataset
 - **Agent**: orchestrator (self)
 - **Input**: Synthesis (Phase 3) + ranked output (Phase 4)
-- **Output**: Three files under `.claude/vibe/research/<topic-slug>/`:
+- **Output**: Three files under `.vibe/research/<topic-slug>/`:
   - `synthesis.md` — conversational synthesis (from `templates/synthesis.md`)
   - `awesome-list.md` — curated links/repos by category (from `templates/awesome-list.md`)
   - `paper.md` — structured survey for `/vibe.spec` Context injection (from `templates/paper.md`)

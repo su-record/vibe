@@ -22,7 +22,7 @@
 
 ## Process
 
-1. Read `.claude/vibe/design-system/{project}/analysis-result.json` from ①
+1. Read `.vibe/design-system/{project}/analysis-result.json` from ①
 2. Use `core_ui_search` with domain `landing` for page patterns
 3. Use `core_ui_search` with domain `product` for product-specific layouts
 4. Design section structure with component hierarchy

@@ -11,7 +11,7 @@ This document defines the core principles and coding standards for the project.
 This setting controls **conversation language with user only**.
 All generated documents (SPEC, Feature, etc.) are **always in English**.
 
-To change, modify in `.claude/vibe/config.json`:
+To change, modify in `.vibe/config.json`:
 
 ```json
 {
@@ -23,7 +23,7 @@ To change, modify in `.claude/vibe/config.json`:
 
 ## Document References
 
-All reference documents are stored globally and specified in `.claude/vibe/config.json`:
+All reference documents are stored globally and specified in `.vibe/config.json`:
 
 ```json
 {

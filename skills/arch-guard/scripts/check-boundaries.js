@@ -53,7 +53,7 @@ function resolveImport(fromFile, imp, baseDir) {
   return path.resolve(path.dirname(fromFile), imp).replace(baseDir + path.sep, '').replace(/\\/g, '/');
 }
 
-const rulesPath = process.argv[2] || '.claude/vibe/arch-rules.json';
+const rulesPath = process.argv[2] || '.vibe/arch-rules.json';
 const srcDir = path.resolve(process.argv[3] || 'src');
 const baseDir = path.resolve('.');
 

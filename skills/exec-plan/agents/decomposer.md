@@ -18,7 +18,7 @@ Reads a SPEC document and breaks it into a structured hierarchy of phases and ta
 - Produce a flat numbered task list with parent-phase references
 
 ## Input
-- SPEC document path (e.g., `.claude/vibe/specs/my-feature.spec.md`)
+- SPEC document path (e.g., `.vibe/specs/my-feature.spec.md`)
 - Optional: existing codebase context to detect which files already exist
 
 ## Output

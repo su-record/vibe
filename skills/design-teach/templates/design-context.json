@@ -10,7 +10,7 @@
   "brand": {
     "personality": ["professional", "clean", "trustworthy", "efficient"],
     "tone": "professional",
-    "existingAssets": ".claude/vibe/brand/brand-guide.pdf"
+    "existingAssets": ".vibe/brand/brand-guide.pdf"
   },
   "aesthetic": {
     "style": "minimal",

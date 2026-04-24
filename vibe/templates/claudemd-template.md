@@ -36,9 +36,9 @@
 
 ## References
 
-- **Rules**: See `.claude/vibe/config.json` → `references.rules[]`
-- **Language standards**: See `.claude/vibe/languages/`
-- **Constitution**: See `.claude/vibe/constitution.md`
+- **Rules**: See `.vibe/config.json` → `references.rules[]`
+- **Language standards**: See `.vibe/languages/`
+- **Constitution**: See `.vibe/constitution.md`
 
 ## Workflow
 
@@ -68,7 +68,7 @@ At 70%+ context: `save_memory` → `/new` → `/vibe.utils --continue`
 
 ## Git Commit Rules
 
-**Include:** `.claude/vibe/plans/`, `.claude/vibe/specs/`, `.claude/vibe/features/`, `.claude/vibe/config.json`, `CLAUDE.md`
+**Include:** `.vibe/plans/`, `.vibe/specs/`, `.vibe/features/`, `.vibe/config.json`, `CLAUDE.md`
 **Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
 
 <!-- VIBE:END -->
