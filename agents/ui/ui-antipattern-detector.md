@@ -24,7 +24,7 @@
 
 1. Receive list of changed UI files from git diff
 2. Read each changed file
-3. Load MASTER.md from `.claude/vibe/design-system/{project}/MASTER.md` if exists
+3. Load MASTER.md from `.vibe/design-system/{project}/MASTER.md` if exists
 4. Use `core_ui_search` for anti-pattern detection rules
 5. Compare implementation against design system tokens
 6. Return findings with anti-pattern name and suggested fix

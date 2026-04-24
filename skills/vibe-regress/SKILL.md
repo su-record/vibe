@@ -1,7 +1,7 @@
 ---
 name: vibe-regress
 tier: core
-description: "Regression test auto-evolution. Registers bugs (auto from /vibe.verify failures or manual), generates preventive vitest/jest files from bug records, clusters repeated patterns (3+ same root-cause-tag) into shared tests, and imports historical `fix:` commits from git log. Storage: .claude/vibe/regressions/<slug>.md. Must use this skill when user runs /vibe.regress, when /vibe.verify produces a failure, or when the user says 'don't let this happen again' / 'regression test' / '회귀 테스트'."
+description: "Regression test auto-evolution. Registers bugs (auto from /vibe.verify failures or manual), generates preventive vitest/jest files from bug records, clusters repeated patterns (3+ same root-cause-tag) into shared tests, and imports historical `fix:` commits from git log. Storage: .vibe/regressions/<slug>.md. Must use this skill when user runs /vibe.regress, when /vibe.verify produces a failure, or when the user says 'don't let this happen again' / 'regression test' / '회귀 테스트'."
 triggers: [regress, regression, "회귀", "다시는", "반복 버그", "fix commit"]
 priority: 70
 chain-next: []
@@ -18,7 +18,7 @@ A classic vibe-coding weakness: LLMs reintroduce bugs of the same class. Regress
 ## Storage Contract
 
 ```
-.claude/vibe/regressions/
+.vibe/regressions/
   <bug-slug>.md       # one file per bug
   _cluster-<tag>.md   # shared-test design produced by `cluster`
 ```
@@ -69,7 +69,7 @@ Most calls are automatic; manual use is rare (bugs found outside `/vibe.verify`,
    - Fix description
 4. `root-cause-tag` is **inferred from the allowed set, then confirmed with the user**. If unclear → `other`.
 5. Generate slug: kebab-case keywords from the symptom; on collision append `-2`
-6. Write `.claude/vibe/regressions/<slug>.md` (status: `open`)
+6. Write `.vibe/regressions/<slug>.md` (status: `open`)
 
 ### 2. `generate <slug>` — generate preventive test
 
@@ -106,7 +106,7 @@ cart-stock-race-double-deduct     cart      concurrency open             1d
 
 **Steps**:
 1. `git log --grep='^fix:' --format='%H|%s|%ci' --since=<last-import-date>`
-   - `last-import-date` lives in `.claude/vibe/regressions/.import-cursor` (defaults to 90 days ago)
+   - `last-import-date` lives in `.vibe/regressions/.import-cursor` (defaults to 90 days ago)
 2. For each commit:
    - If a bug file with the same `fix-commit` already exists → **skip**
    - Otherwise infer symptom + root-cause-tag from message/diff (LLM call)
@@ -152,7 +152,7 @@ Load skill `vibe-regress` with: register --from-verify
 
 At the start of `/vibe.run "<feature>"`:
 
-1. Filter `.claude/vibe/regressions/*.md` for `feature: <feature-name>` + `status != resolved`
+1. Filter `.vibe/regressions/*.md` for `feature: <feature-name>` + `status != resolved`
 2. If any open items:
    ```
    ⚠️  Open regressions for this feature:

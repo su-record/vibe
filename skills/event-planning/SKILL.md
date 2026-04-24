@@ -90,7 +90,7 @@ When user says "MDC 준비해줘" or similar:
 
 ## State Management
 
-**Location**: `.claude/vibe/.event_state.json` (project-local, gitignored)
+**Location**: `.vibe/.event_state.json` (project-local, gitignored)
 
 ### Error Recovery
 

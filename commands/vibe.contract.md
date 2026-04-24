@@ -12,7 +12,7 @@ argument-hint: "extract | check | diff [feature-name]"
 ## Usage
 
 ```
-/vibe.contract extract <feature>       # SPEC → contract record at .claude/vibe/contracts/<feature>.md
+/vibe.contract extract <feature>       # SPEC → contract record at .vibe/contracts/<feature>.md
 /vibe.contract check <feature>         # contract vs implementation, drift report
 /vibe.contract diff <feature>          # changed fields since last check
 ```
@@ -53,7 +53,7 @@ Load skill `vibe-contract` with subcommand: `$ARGUMENTS`
 ## Storage Format
 
 ```
-.claude/vibe/contracts/
+.vibe/contracts/
   <feature>.md           # extracted contract (SSOT)
   <feature>.snapshot.md  # implementation snapshot at last check (for diff)
 ```

@@ -389,7 +389,7 @@ If `WebFetch` fails:
 
 ### Report
 
-Save to `.claude/vibe/reports/analysis-{date}.md`:
+Save to `.vibe/reports/analysis-{date}.md`:
 
 ```markdown
 # Project Analysis Report

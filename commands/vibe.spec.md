@@ -12,8 +12,8 @@ argument-hint: "(선택) feature name, plan/interview file path, or idea"
 ```
 /vibe.spec                                       # 빈 시작 — "무엇을 만들까요?"부터
 /vibe.spec "패럴랙스 웹사이트"                     # 아이디어/피처명 지정 시작
-/vibe.spec ".claude/vibe/plans/{feature}.md"     # 기획서 입력 (plan 단계 스킵)
-/vibe.spec ".claude/vibe/interviews/{feature}.md" # interview 입력 (interview 단계 스킵)
+/vibe.spec ".vibe/plans/{feature}.md"     # 기획서 입력 (plan 단계 스킵)
+/vibe.spec ".vibe/interviews/{feature}.md" # interview 입력 (interview 단계 스킵)
 /vibe.spec "docs/prd.md"                         # 외부 PRD/아이디어 파일 입력
 /vibe.spec + 📎 첨부                              # 첨부 기반 시작
 /vibe.spec "feature-name" ultrawork              # 중단 게이트 없이 자동 전 흐름 실행
@@ -38,20 +38,20 @@ Phase 0: Git branch setup
     ↓
 Phase 0.5: Input 분석 + Smart resume 결정
     - 첨부/파일/아이디어 감지
-    - 기존 .claude/vibe/{interviews,plans,specs}/ 확인
+    - 기존 .vibe/{interviews,plans,specs}/ 확인
     - 시작 단계 결정: interview | plan | spec | review
     ↓
 Phase 1: Interview (skill: vibe-interview)
     - 조건: interview 파일 없음
     - 사용자 "그만"까지 반복 인터뷰
-    - 출력: .claude/vibe/interviews/{feature}.md
+    - 출력: .vibe/interviews/{feature}.md
     ↓
     [Stop Gate 1] — ultrawork 모드에서는 스킵
     ↓
 Phase 2: Plan (skill: vibe-plan)
     - 조건: plan 파일 없음
     - interview → 마크다운 기획서 정제
-    - 출력: .claude/vibe/plans/{feature}.md
+    - 출력: .vibe/plans/{feature}.md
     ↓
     [Stop Gate 2 + 분기 판단]
     기획서 type 읽고 경로 결정:
@@ -63,7 +63,7 @@ Phase 3: SPEC 작성 (skill: vibe-spec)
     - Parallel research (GPT/Gemini/Claude agents)
     - Large scope 자동 분할
     - Ambiguity scan + 품질 게이트(100점, 수렴까지 루프)
-    - 출력: .claude/vibe/specs/{feature}.md + .claude/vibe/features/{feature}.feature
+    - 출력: .vibe/specs/{feature}.md + .vibe/features/{feature}.feature
     ↓
 Phase 4: SPEC Review (skill: vibe-spec-review)
     - Race Review (GPT + Gemini, 라운드 수 캡 없음, 수렴까지 루프)
@@ -110,11 +110,11 @@ git branch --show-current
 ```
 1. 📎 첨부 파일 있음? → 첨부 분석 → feature name 추출
 2. 인자가 파일 경로? → 파일 위치로 시작 단계 결정:
-     .claude/vibe/interviews/*.md → Phase 2 (plan)
-     .claude/vibe/plans/*.md      → Phase 3 (spec)
-     .claude/vibe/specs/*.md      → Phase 4 (review)
+     .vibe/interviews/*.md → Phase 2 (plan)
+     .vibe/plans/*.md      → Phase 3 (spec)
+     .vibe/specs/*.md      → Phase 4 (review)
      기타 (.md/.txt/.pdf)         → Phase 2 (plan, 외부 PRD 흡수)
-3. 인자가 feature name? → .claude/vibe/에서 기존 파일 검색
+3. 인자가 feature name? → .vibe/에서 기존 파일 검색
      existing spec → "리뷰 재실행? 이어서? 재작성?" 물음
      existing plan → Phase 3 (spec)
      existing interview → Phase 2 (plan)
@@ -129,14 +129,14 @@ git branch --show-current
 ```
 알고리즘:
 
-Step 1) .claude/vibe/.last-feature 확인 (pointer 파일)
+Step 1) .vibe/.last-feature 확인 (pointer 파일)
   - 파일 없음 → Step 2로
   - 존재 → 해당 feature의 상태 요약 출력 + 확인 질문:
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
        🔄 마지막 작업: {feature-name}
        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       ✅ interview: .claude/vibe/interviews/{feature}.md  (status: complete, N일 전)
-       ✅ plan:      .claude/vibe/plans/{feature}.md       (N일 전)
+       ✅ interview: .vibe/interviews/{feature}.md  (status: complete, N일 전)
+       ✅ plan:      .vibe/plans/{feature}.md       (N일 전)
        ❌ spec:      없음
        → 다음 단계: Phase 3 (vibe-spec 스킬 — SPEC 작성)
 
@@ -151,10 +151,10 @@ Step 1) .claude/vibe/.last-feature 확인 (pointer 파일)
   - new → Step 3으로
   - abort → 종료
 
-Step 2) 진행 중 작업 목록 표시 (.claude/vibe/ 디렉토리 스캔)
+Step 2) 진행 중 작업 목록 표시 (.vibe/ 디렉토리 스캔)
   수집:
     features = {} (feature name → {hasInterview, hasPlan, hasSpec, mtime})
-    for each file in .claude/vibe/interviews/*.md:
+    for each file in .vibe/interviews/*.md:
       feature = basename without .md
       features[feature].hasInterview = true
       features[feature].interviewMtime = file.mtime
@@ -193,12 +193,12 @@ Step 3) 빈 시작 (기존 동작)
 #### `.last-feature` 포인터 파일 갱신 규칙
 
 ```
-경로: .claude/vibe/.last-feature
+경로: .vibe/.last-feature
 형식: 한 줄, feature name만 저장
      예: "bean-landing\n"
 
 ⚠ 이 파일은 **개인 작업 포인터**이므로 git에 커밋하지 않는다.
-   `.gitignore` 에 `.claude/vibe/.last-feature` 엔트리 필수.
+   `.gitignore` 에 `.vibe/.last-feature` 엔트리 필수.
 
 갱신 시점:
   - Phase 1 (interview) 진입 시 → feature name 결정되면 즉시 기록
@@ -264,13 +264,13 @@ Step 3) 빈 시작 (기존 동작)
 Load skill `vibe-interview` with input: {user_idea}
 ```
 
-> **`.last-feature` 갱신**: vibe-interview 스킬이 feature name을 확정하는 즉시 `.claude/vibe/.last-feature` 에 한 줄로 기록. 이후 Phase 2/3/4 진입 시에도 동일 기록 유지 (값이 같으면 no-op).
+> **`.last-feature` 갱신**: vibe-interview 스킬이 feature name을 확정하는 즉시 `.vibe/.last-feature` 에 한 줄로 기록. 이후 Phase 2/3/4 진입 시에도 동일 기록 유지 (값이 같으면 no-op).
 
 `vibe-interview` 스킬이 자체적으로:
 - 프로젝트 타입 감지 (website/webapp/mobile/api/library/feature)
 - 타입별 체크리스트 로드 (`skills/vibe-interview/checklists/{type}.md`)
 - 반복 인터뷰 실행 (사용자 "그만"까지)
-- `.claude/vibe/interviews/{feature-name}.md` 저장
+- `.vibe/interviews/{feature-name}.md` 저장
 
 **Stop Gate 1**: Interview 완료 후 (ultrawork 모드 스킵)
 
@@ -279,7 +279,7 @@ Load skill `vibe-interview` with input: {user_idea}
 ✅ Interview 완료
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 .claude/vibe/interviews/{feature}.md
+📄 .vibe/interviews/{feature}.md
    Required: N/M | Optional: K/L | Discovered: X
 
 다음 단계: 기획서 작성
@@ -295,14 +295,14 @@ Enter → 계속
 **진입 조건:** plan 파일이 아직 없음
 
 ```
-Load skill `vibe-plan` with input: .claude/vibe/interviews/{feature}.md
+Load skill `vibe-plan` with input: .vibe/interviews/{feature}.md
 ```
 
 `vibe-plan` 스킬이 자체적으로:
 - 템플릿 로드 (`~/.claude/vibe/templates/plan-template.md`)
 - Interview 섹션별 정제
 - UI 섹션 조건부 포함 (type 기반)
-- `.claude/vibe/plans/{feature}.md` 저장
+- `.vibe/plans/{feature}.md` 저장
 
 **Stop Gate 2**: 기획서 완료 후 + 분기 판단 (ultrawork 모드 스킵)
 
@@ -311,7 +311,7 @@ Load skill `vibe-plan` with input: .claude/vibe/interviews/{feature}.md
 ✅ 기획서 완성
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 .claude/vibe/plans/{feature}.md
+📄 .vibe/plans/{feature}.md
 Type: {type}
 
 {type ∈ UI}:
@@ -334,7 +334,7 @@ Enter → 계속
 **진입 조건:** spec 파일이 아직 없음 (또는 재작성 요청)
 
 ```
-Load skill `vibe-spec` with input: .claude/vibe/plans/{feature}.md
+Load skill `vibe-spec` with input: .vibe/plans/{feature}.md
 ```
 
 `vibe-spec` 스킬이 PTCF 구조 SPEC 문서 + Feature(BDD) 파일 생성.
@@ -352,8 +352,8 @@ Load skill `vibe-spec` with input: .claude/vibe/plans/{feature}.md
 
 **출력:**
 
-- `.claude/vibe/specs/{feature-name}.md` (또는 split folder)
-- `.claude/vibe/features/{feature-name}.feature` (또는 split folder)
+- `.vibe/specs/{feature-name}.md` (또는 split folder)
+- `.vibe/features/{feature-name}.feature` (또는 split folder)
 
 ### Phase 4: SPEC Review
 
@@ -378,7 +378,7 @@ Load skill `vibe-spec-review` with feature: {feature-name}
 Load skill `vibe-contract` with: extract "{feature-name}"
 ```
 
-If the SPEC has a `## API` / `## Endpoints` / `## Interface` section, extract the contract to `.claude/vibe/contracts/{feature-name}.md`. If the section is absent, exit cleanly (not every feature has an API).
+If the SPEC has a `## API` / `## Endpoints` / `## Interface` section, extract the contract to `.vibe/contracts/{feature-name}.md`. If the section is absent, exit cleanly (not every feature has an API).
 
 The contract is referenced during Phase 5a implementation, and used by `/vibe.verify` for drift detection.
 
@@ -390,7 +390,7 @@ The contract is referenced during Phase 5a implementation, and used by `/vibe.ve
 
 SPEC → code. Auto-checks at start:
 - `/vibe.regress list --feature {feature-name}` — warn if any open regressions exist
-- `.claude/vibe/contracts/{feature-name}.md` — load if present, use as implementation guide
+- `.vibe/contracts/{feature-name}.md` — load if present, use as implementation guide
 
 ### Phase 5b: UI Track (type ∈ {website, webapp, mobile}일 때만)
 
@@ -402,7 +402,7 @@ SPEC → code. Auto-checks at start:
 
 **`/vibe.figma`에 전달할 컨텍스트:**
 
-- `.claude/vibe/plans/{feature}.md` 경로
+- `.vibe/plans/{feature}.md` 경로
 - 기획서의 §7 Look & Feel, §8 레이아웃, §9 반응형 섹션을 Phase 1 스토리보드 입력으로 사용
 
 ### Phase 6: Verify
@@ -421,7 +421,7 @@ UI + 로직 + 연결 검증 (후속 PR에서 3축 확장 예정).
 
 SPEC ↔ 구현 추적.
 
-> **Phase 7 완료 시**: `.claude/vibe/.last-feature` 삭제 (워크플로 완주 — 다음 `/vibe.spec` 호출은 빈 시작 또는 진행 중 작업 목록에서 시작).
+> **Phase 7 완료 시**: `.vibe/.last-feature` 삭제 (워크플로 완주 — 다음 `/vibe.spec` 호출은 빈 시작 또는 진행 중 작업 목록에서 시작).
 
 ## ultrawork 모드
 
@@ -455,7 +455,7 @@ Claude: 🔍 Input 분석
 
 ### 예시 2: 기획서에서 시작
 ```
-User: /vibe.spec ".claude/vibe/plans/bean-landing.md"
+User: /vibe.spec ".vibe/plans/bean-landing.md"
 
 Claude: 🔍 Input 분석
         입력: plan 파일 경로
@@ -474,8 +474,8 @@ User: /vibe.spec "bean-landing"
 Claude: 🔍 Input 분석
         입력: feature name
         기존 파일 검색...
-          ✅ interview: .claude/vibe/interviews/bean-landing.md
-          ✅ plan: .claude/vibe/plans/bean-landing.md
+          ✅ interview: .vibe/interviews/bean-landing.md
+          ✅ plan: .vibe/plans/bean-landing.md
           ❌ spec: 없음
         → 시작 단계: Phase 3 (vibe-spec)
 
@@ -489,8 +489,8 @@ User: /vibe.spec "bean-landing"
 
 Claude: 🔍 Input 분석
         기존 파일:
-          ✅ spec: .claude/vibe/specs/bean-landing.md
-          ✅ feature: .claude/vibe/features/bean-landing.feature
+          ✅ spec: .vibe/specs/bean-landing.md
+          ✅ feature: .vibe/features/bean-landing.feature
 
         이미 SPEC이 존재합니다. 어떻게 진행할까요?
         1. SPEC 리뷰 (Phase 4: vibe-spec-review 스킬 로드)
@@ -506,7 +506,7 @@ User: /vibe.spec
 Claude: (.last-feature 읽기 → "bean-landing" 발견)
 
         🔄 마지막 작업: bean-landing
-        ✅ interview: .claude/vibe/interviews/bean-landing.md  (status: partial, 2일 전)
+        ✅ interview: .vibe/interviews/bean-landing.md  (status: partial, 2일 전)
         ❌ plan:      없음
         ❌ spec:      없음
         → 다음 단계: Phase 2 (vibe-plan — 기획서 작성)
@@ -552,8 +552,8 @@ Claude: Feature: todo-app 선택
 
 ## Rollback / Resume
 
-- 각 Phase 종료 시 상태가 `.claude/vibe/{interviews,plans,specs,features}/`에 저장됨
-- **`.claude/vibe/.last-feature` pointer**가 각 Phase 진입 시 갱신되어 "가장 최근에 작업한 feature" 추적 (Phase 7 완주 시 삭제)
+- 각 Phase 종료 시 상태가 `.vibe/{interviews,plans,specs,features}/`에 저장됨
+- **`.vibe/.last-feature` pointer**가 각 Phase 진입 시 갱신되어 "가장 최근에 작업한 feature" 추적 (Phase 7 완주 시 삭제)
 - 중단 시 다시 `/vibe.spec`으로 돌아오면 Smart Resume Fallback 동작:
   - 인자 있음 (`/vibe.spec "feature-name"` 또는 파일 경로) → 해당 feature의 가장 진행된 단계 다음으로 바로 진입
   - 인자 없음 → `.last-feature` 우선 제안 → 거부하면 진행 중 작업 목록 제시 → 또 거부하면 빈 시작

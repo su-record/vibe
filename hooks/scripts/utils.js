@@ -219,6 +219,10 @@ export function getLibBaseUrl() {
   return getPackageUrl(path.join('dist', 'infra', 'lib'), 'constants.js');
 }
 
+export function getCliBaseUrl() {
+  return getPackageUrl(path.join('dist', 'cli'), 'index.js');
+}
+
 // ─── Hook Trace Logging ───
 
 const HOOK_TRACE_PATH = path.join(VIBE_HOME_DIR, 'hook-traces.jsonl');

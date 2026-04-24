@@ -1,7 +1,7 @@
 ---
 name: vibe-spec
 tier: core
-description: "Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 100-point quality gate (loops until perfect or stuck). Produces .claude/vibe/specs/{feature}.md + matching .claude/vibe/features/{feature}.feature (BDD). Must use this skill when the user says 'write spec', 'create spec', '/vibe.spec', or when a plan document exists and is ready for code specification."
+description: "Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 100-point quality gate (loops until perfect or stuck). Produces .vibe/specs/{feature}.md + matching .vibe/features/{feature}.feature (BDD). Must use this skill when the user says 'write spec', 'create spec', '/vibe.spec', or when a plan document exists and is ready for code specification."
 triggers: [spec, SPEC, 명세, "코드 명세", "구현 명세", "write spec", "create spec", PTCF]
 priority: 85
 chain-next: [vibe-spec-review]
@@ -225,7 +225,7 @@ $ git checkout -b feature/login-page
 **`.last-feature` pointer update** (immediately after Git branch setup):
 
 ```
-Write ".claude/vibe/.last-feature" ← feature-name (single line)
+Write ".vibe/.last-feature" ← feature-name (single line)
 Execute at the point when the feature name is finalized.
 No-op if the value is already the same.
 ```
@@ -350,7 +350,7 @@ const response = parseUserResponse(question, "1, 2, 4");
 Reference documents are automatically generated in `config.json` based on the stack detected during `vibe init`:
 
 ```json
-// .claude/vibe/config.json
+// .vibe/config.json
 {
   "language": "ko",
   "stacks": [
@@ -376,14 +376,14 @@ Reference documents are automatically generated in `config.json` based on the st
 
 **Workflow:**
 
-1. Read `.claude/vibe/config.json`
+1. Read `.vibe/config.json`
 2. Extract `references.languages[]` paths
 3. Read each language document for stack-specific guidelines
 
 **Example:**
 ```bash
 # 1. Check references in config.json
-Read .claude/vibe/config.json
+Read .vibe/config.json
 
 # 2. Reference documents specified in references.languages
 Read ~/.claude/vibe/languages/typescript-react.md
@@ -401,13 +401,13 @@ Before spawning any research agents, check for a prior persisted dataset:
 
 ```bash
 # Slug = kebab-case of the feature/topic, max 50 chars
-ls .claude/vibe/research/<slug>/paper.md 2>/dev/null
+ls .vibe/research/<slug>/paper.md 2>/dev/null
 ```
 
 **If `paper.md` exists:**
-1. Read `.claude/vibe/research/<slug>/paper.md`
-2. Read `.claude/vibe/research/<slug>/awesome-list.md` (if present)
-3. Inject the **Findings**, **Recommendation**, and **Security considerations** sections verbatim into SPEC Context, prefixed with `> Source: .claude/vibe/research/<slug>/paper.md (cached {{FILE_MTIME}})`
+1. Read `.vibe/research/<slug>/paper.md`
+2. Read `.vibe/research/<slug>/awesome-list.md` (if present)
+3. Inject the **Findings**, **Recommendation**, and **Security considerations** sections verbatim into SPEC Context, prefixed with `> Source: .vibe/research/<slug>/paper.md (cached {{FILE_MTIME}})`
 4. **Skip step 3** (parallel research) entirely — do not re-run GPT/Gemini/Claude agents
 5. Print: `✅ Research cache hit: <slug> (saved ~30s of LLM calls)`
 
@@ -436,7 +436,7 @@ Proceed to step 3. After step 3 completes, the synthesizer **must** write the 3 
 6. **DO NOT** create SECURITY_*.md, RESEARCH_*.md, SUMMARY_*.md files
 7. **DO NOT** use Write tool during research phase
 8. **ALL research results** must be returned as text output only
-9. **Files are ONLY created** in Step 4 (SPEC) and Step 5 (Feature) in `.claude/vibe/` directory
+9. **Files are ONLY created** in Step 4 (SPEC) and Step 5 (Feature) in `.vibe/` directory
 
 **When to trigger:**
 1. ✅ Feature type decided (e.g., "passkey authentication")
@@ -520,7 +520,7 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey aut
 ### 3.2 UI/UX Design Intelligence (Auto-triggered)
 
 > **Condition**: Auto-executes when UI/UX keywords are present in the SPEC context (website, landing, dashboard, app, e-commerce, portfolio, SaaS, mobile app, web app, UI, UX, frontend, design)
-> **Disable**: Set `"uiUxAnalysis": false` in `.claude/vibe/config.json`
+> **Disable**: Set `"uiUxAnalysis": false` in `.vibe/config.json`
 
 **When UI/UX keywords are detected, run 3 agents sequentially in parallel with research:**
 
@@ -540,7 +540,7 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey aut
 1. **① ui-industry-analyzer** — Run as Task(haiku) agent:
 ```text
 Task(subagent_type="ui-industry-analyzer",
-  prompt="Analyze product: [USER_DESCRIPTION]. Use core_ui_search to detect category, style priority, color mood, typography mood. Save result to .claude/vibe/design-system/{project}/analysis-result.json")
+  prompt="Analyze product: [USER_DESCRIPTION]. Use core_ui_search to detect category, style priority, color mood, typography mood. Save result to .vibe/design-system/{project}/analysis-result.json")
 ```
 
 2. **②③ parallel execution** — Using ①'s result as input:
@@ -559,7 +559,7 @@ Task(subagent_type="ui-layout-architect",
 ### Design System (Auto-generated)
 - Category: {① category}
 - Style: {① style_priority}
-- MASTER.md: .claude/vibe/design-system/{project}/MASTER.md
+- MASTER.md: .vibe/design-system/{project}/MASTER.md
 - Layout: {③ pattern + sections}
 ```
 
@@ -567,13 +567,13 @@ Task(subagent_type="ui-layout-architect",
 
 > The "no Write during research" rule from step 3 does **not** apply here — research is done; artifacts are safe to persist.
 
-After parallel research + UI/UX intelligence complete, before writing the SPEC, save the merged research to `.claude/vibe/research/<slug>/`:
+After parallel research + UI/UX intelligence complete, before writing the SPEC, save the merged research to `.vibe/research/<slug>/`:
 
 1. Compute slug: kebab-case of feature name, max 50 chars
 2. Write **three files** using templates from `parallel-research/templates/`:
-   - `.claude/vibe/research/<slug>/synthesis.md` — raw merged findings (all agent outputs)
-   - `.claude/vibe/research/<slug>/awesome-list.md` — curated links/repos/patterns (every entry needs a one-line "why"; drop entries without one)
-   - `.claude/vibe/research/<slug>/paper.md` — structured survey (Abstract → Background → Method → Findings → Recommendation → Security → References)
+   - `.vibe/research/<slug>/synthesis.md` — raw merged findings (all agent outputs)
+   - `.vibe/research/<slug>/awesome-list.md` — curated links/repos/patterns (every entry needs a one-line "why"; drop entries without one)
+   - `.vibe/research/<slug>/paper.md` — structured survey (Abstract → Background → Method → Findings → Recommendation → Security → References)
 3. Include a frontmatter header in `paper.md` with a `stack:` field so step 2.9 can detect stack drift
 4. If the directory already exists (user passed `--refresh-research`), overwrite
 
@@ -599,13 +599,13 @@ This makes the next `/vibe.spec` (or future `/vibe.research`) invocation on the 
 **Auto-split output (SPEC + Feature files must match):**
 
 ```
-.claude/vibe/specs/{feature-name}/
+.vibe/specs/{feature-name}/
 ├── _index.md           # Master SPEC
 ├── phase-1-setup.md
 ├── phase-2-core.md
 └── ...
 
-.claude/vibe/features/{feature-name}/
+.vibe/features/{feature-name}/
 ├── _index.feature      # Master Feature
 ├── phase-1-setup.feature
 ├── phase-2-core.feature
@@ -640,7 +640,7 @@ This makes the next `/vibe.spec` (or future `/vibe.research`) invocation on the 
 ```markdown
 # Feature: {feature-name} (Master)
 
-**Master SPEC**: `.claude/vibe/specs/{feature-name}/_index.md`
+**Master SPEC**: `.vibe/specs/{feature-name}/_index.md`
 
 ## Sub-Features
 
@@ -657,7 +657,7 @@ This makes the next `/vibe.spec` (or future `/vibe.research`) invocation on the 
 
 **Small scope (default):**
 
-Create `.claude/vibe/specs/{feature-name}.md`:
+Create `.vibe/specs/{feature-name}.md`:
 
 ```markdown
 ---
@@ -756,7 +756,7 @@ Define AI role and expertise for implementation
 
 #### 5.1 Single File (Small Scope)
 
-Create `.claude/vibe/features/{feature-name}.feature`:
+Create `.vibe/features/{feature-name}.feature`:
 
 **Creation rules:**
 1. Convert each SPEC Acceptance Criteria → one Scenario
@@ -766,7 +766,7 @@ Create `.claude/vibe/features/{feature-name}.feature`:
 ```markdown
 # Feature: {feature-name}
 
-**SPEC**: `.claude/vibe/specs/{feature-name}.md`
+**SPEC**: `.vibe/specs/{feature-name}.md`
 
 ## User Story
 **As a** {user}
@@ -798,7 +798,7 @@ Scenario: {title}
 When SPEC is split into phases, Feature files MUST also be split:
 
 ```
-.claude/vibe/features/{feature-name}/
+.vibe/features/{feature-name}/
 ├── _index.feature        # Master: links to all phase features
 ├── phase-1-setup.feature # Scenarios for phase-1-setup.md
 ├── phase-2-core.feature  # Scenarios for phase-2-core.md
@@ -810,8 +810,8 @@ When SPEC is split into phases, Feature files MUST also be split:
 ```markdown
 # Feature: {feature-name} - Phase {N}: {phase-name}
 
-**SPEC**: `.claude/vibe/specs/{feature-name}/phase-{N}-{name}.md`
-**Master Feature**: `.claude/vibe/features/{feature-name}/_index.feature`
+**SPEC**: `.vibe/specs/{feature-name}/phase-{N}-{name}.md`
+**Master Feature**: `.vibe/features/{feature-name}/_index.feature`
 
 ## User Story (Phase Scope)
 **As a** {user}
@@ -988,8 +988,8 @@ Output the handoff message:
 ✅ SPEC DRAFT COMPLETE: {feature-name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 SPEC: .claude/vibe/specs/{feature-name}.md
-📋 Feature: .claude/vibe/features/{feature-name}.feature
+📋 SPEC: .vibe/specs/{feature-name}.md
+📋 Feature: .vibe/features/{feature-name}.feature
 📊 Quality Score: {score}/100
 ⏱️ Started: {start_time}
 ⏱️ Completed: {getCurrentTime result}
@@ -1017,22 +1017,22 @@ Option 2 (recommended for large context):
 
 | File | Path | When |
 |------|------|------|
-| SPEC | `.claude/vibe/specs/{feature-name}.md` | After quality validation (Step 7) |
-| Feature | `.claude/vibe/features/{feature-name}.feature` | Immediately after SPEC |
+| SPEC | `.vibe/specs/{feature-name}.md` | After quality validation (Step 7) |
+| Feature | `.vibe/features/{feature-name}.feature` | Immediately after SPEC |
 
 ### Large Scope (Split Files)
 
 | File | Path | When |
 |------|------|------|
-| Master SPEC | `.claude/vibe/specs/{feature-name}/_index.md` | After quality validation |
-| Phase SPEC | `.claude/vibe/specs/{feature-name}/phase-{N}-{name}.md` | Per phase |
-| Master Feature | `.claude/vibe/features/{feature-name}/_index.feature` | After Master SPEC |
-| Phase Feature | `.claude/vibe/features/{feature-name}/phase-{N}-{name}.feature` | Per phase SPEC |
+| Master SPEC | `.vibe/specs/{feature-name}/_index.md` | After quality validation |
+| Phase SPEC | `.vibe/specs/{feature-name}/phase-{N}-{name}.md` | Per phase |
+| Master Feature | `.vibe/features/{feature-name}/_index.feature` | After Master SPEC |
+| Phase Feature | `.vibe/features/{feature-name}/phase-{N}-{name}.feature` | Per phase SPEC |
 
 **❌ FORBIDDEN:**
 
 - Creating files in project root (e.g., `feature-name.md`)
-- Creating files outside `.claude/vibe/` directory
+- Creating files outside `.vibe/` directory
 - Skipping file creation
 - Using different file names than feature-name
 - Creating split SPEC without matching split Feature files
@@ -1048,19 +1048,19 @@ Option 2 (recommended for large context):
 
 **Single file:**
 ```
-1. Write .claude/vibe/specs/{feature-name}.md
-2. Write .claude/vibe/features/{feature-name}.feature
+1. Write .vibe/specs/{feature-name}.md
+2. Write .vibe/features/{feature-name}.feature
 3. Confirm: "✅ Created: specs/{feature-name}.md + features/{feature-name}.feature"
 ```
 
 **Split files:**
 ```
-1. Write .claude/vibe/specs/{feature-name}/_index.md
-2. Write .claude/vibe/specs/{feature-name}/phase-1-setup.md
-3. Write .claude/vibe/specs/{feature-name}/phase-2-core.md
-4. Write .claude/vibe/features/{feature-name}/_index.feature
-5. Write .claude/vibe/features/{feature-name}/phase-1-setup.feature
-6. Write .claude/vibe/features/{feature-name}/phase-2-core.feature
+1. Write .vibe/specs/{feature-name}/_index.md
+2. Write .vibe/specs/{feature-name}/phase-1-setup.md
+3. Write .vibe/specs/{feature-name}/phase-2-core.md
+4. Write .vibe/features/{feature-name}/_index.feature
+5. Write .vibe/features/{feature-name}/phase-1-setup.feature
+6. Write .vibe/features/{feature-name}/phase-2-core.feature
 7. Confirm: "✅ Created: {N} SPEC files + {N} Feature files"
 ```
 
@@ -1144,8 +1144,8 @@ Claude: Thank you. SPEC has been refined.
 ✅ SPEC Complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 .claude/vibe/specs/brick-game.md (PTCF structure)
-📄 .claude/vibe/features/brick-game.feature
+📄 .vibe/specs/brick-game.md (PTCF structure)
+📄 .vibe/features/brick-game.feature
 📊 Quality score: 100/100 ← Loop converged (no remaining gaps)
 ```
 

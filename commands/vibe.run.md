@@ -37,7 +37,7 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 > **📊 Step Counter Reset (MANDATORY at START)**: Run this Bash command once at the very start to reset the tool-call counter so `/vibe.verify` can report "how many steps to reach the goal":
 >
 > ```bash
-> mkdir -p .claude/vibe/metrics && printf '{"feature":"%s","startedAt":"%s","steps":0}\n' "{feature-name}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .claude/vibe/metrics/current-run.json
+> mkdir -p .vibe/metrics && printf '{"feature":"%s","startedAt":"%s","steps":0}\n' "{feature-name}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .vibe/metrics/current-run.json
 > ```
 
 ## File Reading Policy (Mandatory)
@@ -65,7 +65,7 @@ Load skill `vibe-regress` with: list --feature "{feature-name}"
   - ultrawork mode: auto-invoke `/vibe.regress generate <slug>` for each, then proceed
 - No open regressions → silently continue
 
-Also load `.claude/vibe/contracts/{feature-name}.md` if present — use it as the contract reference during implementation.
+Also load `.vibe/contracts/{feature-name}.md` if present — use it as the contract reference during implementation.
 
 ### Core Flow
 
@@ -172,7 +172,7 @@ After implementing each scenario, **automatic verification**:
 
 **활성화 조건:**
 - Feature 파일에 UI 관련 시나리오 존재 (form, button, page, navigate 등)
-- `.claude/vibe/e2e/config.json`의 `closedLoop.enabled: true` (기본값)
+- `.vibe/e2e/config.json`의 `closedLoop.enabled: true` (기본값)
 - dev server가 실행 중 (`baseURL` 접근 가능)
 
 ### Auto-Fix on Failure
@@ -402,7 +402,7 @@ Type Check: ✅ No errors
 
 ✅ RALPH VERIFIED COMPLETE!
 
-📄 RTM saved: .claude/vibe/rtm/login-rtm.md
+📄 RTM saved: .vibe/rtm/login-rtm.md
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -431,7 +431,7 @@ Claude:
 🚀 ULTRAWORK MODE ACTIVATED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 SPEC: .claude/vibe/specs/brick-game.md
+📄 SPEC: .vibe/specs/brick-game.md
 🎯 4 Phases detected
 ⚡ Boulder Loop: ENABLED (will continue until all phases complete)
 🔄 Auto-retry: ON (loop until 100% or stuck → auto-TODO)
@@ -757,7 +757,7 @@ Each agent has tier variants for cost optimization:
 
 ### External LLM Usage (When Enabled)
 
-When external LLMs are enabled in `.claude/vibe/config.json`:
+When external LLMs are enabled in `.vibe/config.json`:
 
 | Role | Method | Condition |
 |------|--------|-----------|
@@ -851,25 +851,25 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 ```
 Step 1: Check if SPLIT structure exists (folder)
-  📁 .claude/vibe/specs/{feature-name}/        → Folder with _index.md + phase files
-  📁 .claude/vibe/features/{feature-name}/      → Folder with _index.feature + phase files
+  📁 .vibe/specs/{feature-name}/        → Folder with _index.md + phase files
+  📁 .vibe/features/{feature-name}/      → Folder with _index.feature + phase files
 
 Step 2: If no folder, check single file
-  📄 .claude/vibe/specs/{feature-name}.md       → Single SPEC file
-  📄 .claude/vibe/features/{feature-name}.feature → Single Feature file
+  📄 .vibe/specs/{feature-name}.md       → Single SPEC file
+  📄 .vibe/features/{feature-name}.feature → Single Feature file
 
 Step 3: If neither exists → Error
 ```
 
 **Split structure (folder) detected:**
 ```
-📁 .claude/vibe/specs/{feature-name}/
+📁 .vibe/specs/{feature-name}/
 ├── _index.md              → Master SPEC (read first for overview)
 ├── phase-1-{name}.md      → Phase 1 SPEC
 ├── phase-2-{name}.md      → Phase 2 SPEC
 └── ...
 
-📁 .claude/vibe/features/{feature-name}/
+📁 .vibe/features/{feature-name}/
 ├── _index.feature         → Master Feature (read first for scenario overview)
 ├── phase-1-{name}.feature → Phase 1 scenarios
 ├── phase-2-{name}.feature → Phase 2 scenarios
@@ -881,15 +881,15 @@ Step 3: If neither exists → Error
 
 **Single file detected:**
 ```
-📄 .claude/vibe/specs/{feature-name}.md      → SPEC (structure, constraints, context)
-📄 .claude/vibe/features/{feature-name}.feature → Feature (scenario = implementation unit)
+📄 .vibe/specs/{feature-name}.md      → SPEC (structure, constraints, context)
+📄 .vibe/features/{feature-name}.feature → Feature (scenario = implementation unit)
 ```
 
 **Error if NEITHER file NOR folder found:**
 ```
 ❌ SPEC not found. Searched:
-   - .claude/vibe/specs/{feature-name}/  (folder)
-   - .claude/vibe/specs/{feature-name}.md (file)
+   - .vibe/specs/{feature-name}/  (folder)
+   - .vibe/specs/{feature-name}.md (file)
 
    Run /vibe.spec "{feature-name}" first.
 ```
@@ -915,13 +915,13 @@ Step 3: If neither exists → Error
 │    3. Extract Phase N scope: files, scenarios, requirements      │
 │    4. Implement Phase N scenarios                                 │
 │    5. Verify Phase N                                             │
-│    6. Write Phase Checkpoint → .claude/vibe/checkpoints/         │
+│    6. Write Phase Checkpoint → .vibe/checkpoints/         │
 │    7. DISCARD Phase N details from working memory                │
 │  Step C: Next Phase — go to Step B                               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Phase Checkpoint Format** (`.claude/vibe/checkpoints/{feature}-phase-{N}.md`):
+**Phase Checkpoint Format** (`.vibe/checkpoints/{feature}-phase-{N}.md`):
 
 ```markdown
 # Checkpoint: {feature} Phase {N}
@@ -996,7 +996,7 @@ Discovery during implementation: "An API endpoint not in SPEC is needed"
     │
     └─ Outside SPEC scope?
         YES → Record as TODO and exclude from current scope
-              .claude/vibe/todos/out-of-scope-{item}.md
+              .vibe/todos/out-of-scope-{item}.md
 ```
 
 **Required when changing SPEC:**
@@ -1245,7 +1245,7 @@ core ProjectCache (LRU) caches ts-morph parsing results. Parallel calls share th
 ### UI/UX Design Intelligence (Auto-triggered before Phase 1)
 
 > **조건**: SPEC 또는 Feature에 UI/UX 키워드 포함 시 자동 실행
-> **비활성화**: `.claude/vibe/config.json`에 `"uiUxAnalysis": false` 설정
+> **비활성화**: `.vibe/config.json`에 `"uiUxAnalysis": false` 설정
 
 **Phase 1 시작 전, 2개 에이전트 자동 실행:**
 
@@ -1267,7 +1267,7 @@ Task(subagent_type="ui-dataviz-advisor",
 ```
 
 **디자인 시스템 자동 참조:**
-- `.claude/vibe/design-system/{project}/MASTER.md` 존재 시 자동 로드
+- `.vibe/design-system/{project}/MASTER.md` 존재 시 자동 로드
 - 구현 에이전트가 CSS 변수, 폰트, 색상 팔레트를 직접 참조
 - 페이지별 오버라이드 `pages/{page}.md` 존재 시 우선 적용
 
@@ -1646,8 +1646,8 @@ Follow during implementation:
 
 ## Input
 
-- `.claude/vibe/specs/{feature-name}.md` (PTCF SPEC)
-- `.claude/vibe/features/{feature-name}.feature` (BDD)
+- `.vibe/specs/{feature-name}.md` (PTCF SPEC)
+- `.vibe/features/{feature-name}.feature` (BDD)
 - `CLAUDE.md` (project context)
 
 ## Output
@@ -1662,8 +1662,8 @@ Follow during implementation:
 User: /vibe.run "login"
 
 Claude:
-📄 Loading SPEC: .claude/vibe/specs/login.md
-📄 Loading Feature: .claude/vibe/features/login.feature
+📄 Loading SPEC: .vibe/specs/login.md
+📄 Loading Feature: .vibe/features/login.feature
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 Scenarios to Implement
@@ -1799,7 +1799,7 @@ Then: Login success + JWT token returned
 User: /vibe.run "brick-game" --phase 2
 
 Claude:
-📄 Reading SPEC: .claude/vibe/specs/brick-game.md
+📄 Reading SPEC: .vibe/specs/brick-game.md
 🎯 Executing Phase 2 only.
 
 Phase 2: Game Logic
@@ -1923,7 +1923,7 @@ After ALL phases complete successfully, **automatically** perform a brief retros
 ### Execution Steps
 
 1. Generate retrospective based on the implementation session
-2. Save to `.claude/vibe/retros/{feature-name}.md`
+2. Save to `.vibe/retros/{feature-name}.md`
 3. Save key lessons via `core_save_memory` (for cross-session recall)
 4. Update `claude-progress.txt` with final status
 

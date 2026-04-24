@@ -85,4 +85,4 @@ Parallel research across four specialized agents (best-practices, framework-docs
 
 ---
 
-**Reuse**: cite this file by path (`.claude/vibe/research/{{SLUG}}/paper.md`) when writing a SPEC — paste the Findings and Recommendation sections into the SPEC's Context block.
+**Reuse**: cite this file by path (`.vibe/research/{{SLUG}}/paper.md`) when writing a SPEC — paste the Findings and Recommendation sections into the SPEC's Context block.

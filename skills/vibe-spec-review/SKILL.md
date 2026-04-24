@@ -26,8 +26,8 @@ Load skill `vibe-spec-review` with feature: "feature-name"
 Or via natural language trigger: "스펙 리뷰", "review spec", "명세 리뷰".
 
 **Prerequisites:**
-- SPEC file exists: `.claude/vibe/specs/{feature-name}.md` (single) or `.claude/vibe/specs/{feature-name}/_index.md` (split)
-- Feature file exists: `.claude/vibe/features/{feature-name}.feature` (single) or `.claude/vibe/features/{feature-name}/_index.feature` (split)
+- SPEC file exists: `.vibe/specs/{feature-name}.md` (single) or `.vibe/specs/{feature-name}/_index.md` (split)
+- Feature file exists: `.vibe/features/{feature-name}.feature` (single) or `.vibe/features/{feature-name}/_index.feature` (split)
 
 ---
 
@@ -48,7 +48,7 @@ Or via natural language trigger: "스펙 리뷰", "review spec", "명세 리뷰"
 **`.last-feature` pointer update** (immediately after Timer):
 
 ```
-Write ".claude/vibe/.last-feature" ← feature-name (one line)
+Write ".vibe/.last-feature" ← feature-name (one line)
 If the value is already the same, no-op.
 ```
 
@@ -80,21 +80,21 @@ Detect SPEC structure (single file or split folder) and read files:
 
 **Single file structure:**
 ```
-.claude/vibe/specs/{feature-name}.md
-.claude/vibe/features/{feature-name}.feature
+.vibe/specs/{feature-name}.md
+.vibe/features/{feature-name}.feature
 ```
 
 **Split folder structure:**
 ```
-.claude/vibe/specs/{feature-name}/_index.md      (+ phase files)
-.claude/vibe/specs/{feature-name}/phase-*.md     (phase-1-xxx.md, phase-2-xxx.md, ...)
-.claude/vibe/features/{feature-name}/_index.feature (+ phase files)
-.claude/vibe/features/{feature-name}/phase-*.feature
+.vibe/specs/{feature-name}/_index.md      (+ phase files)
+.vibe/specs/{feature-name}/phase-*.md     (phase-1-xxx.md, phase-2-xxx.md, ...)
+.vibe/features/{feature-name}/_index.feature (+ phase files)
+.vibe/features/{feature-name}/phase-*.feature
 ```
 
 **Detection logic:**
-1. Check if `.claude/vibe/specs/{feature-name}/` directory exists → Split mode
-2. Otherwise check `.claude/vibe/specs/{feature-name}.md` → Single mode
+1. Check if `.vibe/specs/{feature-name}/` directory exists → Split mode
+2. Otherwise check `.vibe/specs/{feature-name}.md` → Single mode
 3. If neither exists → Error
 
 **Split mode file loading:**
@@ -110,8 +110,8 @@ Detect SPEC structure (single file or split folder) and read files:
 
 Loading files...
   Mode: {single|split}
-  ✅ SPEC: .claude/vibe/specs/{feature-name}.md (or _index.md + N phase files)
-  ✅ Feature: .claude/vibe/features/{feature-name}.feature (or _index.feature + N phase files)
+  ✅ SPEC: .vibe/specs/{feature-name}.md (or _index.md + N phase files)
+  ✅ Feature: .vibe/features/{feature-name}.feature (or _index.feature + N phase files)
 
 Extracted info:
   - Feature: {feature description}
@@ -579,8 +579,8 @@ Total Improvements: {M}
 ⏱️ Completed: {getCurrentTime result}
 
 Updated files:
-  📋 .claude/vibe/specs/{feature-name}.md (or split folder)
-  📋 .claude/vibe/features/{feature-name}.feature (or split folder)
+  📋 .vibe/specs/{feature-name}.md (or split folder)
+  📋 .vibe/features/{feature-name}.feature (or split folder)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -678,8 +678,8 @@ Please answer the following questions:
 ```
 ❌ ERROR: SPEC file not found
 
-Expected (single): .claude/vibe/specs/{feature-name}.md
-Expected (split):  .claude/vibe/specs/{feature-name}/_index.md
+Expected (single): .vibe/specs/{feature-name}.md
+Expected (split):  .vibe/specs/{feature-name}/_index.md
 
 Please run /vibe.spec "{feature-name}" first to create the SPEC.
 ```
@@ -688,8 +688,8 @@ Please run /vibe.spec "{feature-name}" first to create the SPEC.
 ```
 ❌ ERROR: Feature file not found
 
-Expected (single): .claude/vibe/features/{feature-name}.feature
-Expected (split):  .claude/vibe/features/{feature-name}/_index.feature
+Expected (single): .vibe/features/{feature-name}.feature
+Expected (split):  .vibe/features/{feature-name}/_index.feature
 
 Please run /vibe.spec "{feature-name}" first to create the Feature file.
 ```
@@ -718,9 +718,9 @@ ARGUMENTS: $ARGUMENTS
 ```
 Feature name: $ARGUMENTS
 
-1. Check split folder: .claude/vibe/specs/$ARGUMENTS/_index.md
+1. Check split folder: .vibe/specs/$ARGUMENTS/_index.md
    - If exists → Split mode (read all files in folder)
-2. Check single file: .claude/vibe/specs/$ARGUMENTS.md
+2. Check single file: .vibe/specs/$ARGUMENTS.md
    - If exists → Single mode
 3. Neither exists → Show error with both expected paths
 ```

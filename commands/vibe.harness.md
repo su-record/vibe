@@ -35,10 +35,10 @@ Agent(subagent_type="explorer-low", model="haiku",
   prompt="Check project scaffolding: 1) Does docs/ exist with business documents? 2) Does .dev/ exist for AI logs? 3) Is src/ organized by role (not flat)? 4) Is tests/ separate from src/? 5) List top-level directory structure.")
 
 Agent(subagent_type="explorer-low", model="haiku",
-  prompt="Check project context and boundaries: 1) Does CLAUDE.md exist? How many lines? 2) Does .claude/rules/ or .claude/vibe/ exist? How many rule files? 3) Does .claude/settings.local.json exist with hooks? 4) Does .claude/vibe/config.json exist? 5) Are there any .claude/skills/ directories?")
+  prompt="Check project context and boundaries: 1) Does CLAUDE.md exist? How many lines? 2) Does .claude/rules/ or .vibe/ exist? How many rule files? 3) Does .claude/settings.local.json exist with hooks? 4) Does .vibe/config.json exist? 5) Are there any .claude/skills/ directories?")
 
 Agent(subagent_type="explorer-low", model="haiku",
-  prompt="Check project planning, execution, and verification: 1) Are there SPEC files in .claude/vibe/specs/? 2) Are there Feature (BDD) files in .claude/vibe/features/? 3) Are there test files? How many? 4) Is there CI config (.github/workflows, etc.)? 5) Are there .dev/learnings/ files?")
+  prompt="Check project planning, execution, and verification: 1) Are there SPEC files in .vibe/specs/? 2) Are there Feature (BDD) files in .vibe/features/? 3) Are there test files? How many? 4) Is there CI config (.github/workflows, etc.)? 5) Are there .dev/learnings/ files?")
 ```
 
 ### 2. Score Each Axis
@@ -147,7 +147,7 @@ Proceed with auto-fix? (y/n)
 
 ### 4. Save Report
 
-Save results to `.claude/vibe/reports/harness-{date}.md` for historical tracking.
+Save results to `.vibe/reports/harness-{date}.md` for historical tracking.
 
 ### 5. Self-Repair Chain
 

@@ -27,7 +27,7 @@ One entry point. Everything else is automatic.
   Interview  ─── "Who's the audience?" "What sections?" "Dark mode?" ───
      |                     (loops until you say stop)
      v
-  Plan       ─── Structured planning document (.claude/vibe/plans/)
+  Plan       ─── Structured planning document (.vibe/plans/)
      |
      v
   SPEC       ─── PTCF spec + BDD features, GPT+Gemini parallel research

@@ -24,7 +24,7 @@
 
 ## Process
 
-1. Read `.claude/vibe/design-system/{project}/analysis-result.json` from ①
+1. Read `.vibe/design-system/{project}/analysis-result.json` from ①
 2. Use `core_ui_search` to retrieve detailed style, color, typography data
 3. Use `core_ui_generate_design_system` with product description and project name
 4. Use `core_ui_persist_design_system` to write MASTER.md
@@ -32,8 +32,8 @@
 
 ## Output
 
-- **Primary**: `.claude/vibe/design-system/{project}/MASTER.md`
-- **Optional**: `.claude/vibe/design-system/{project}/pages/{page}.md`
+- **Primary**: `.vibe/design-system/{project}/MASTER.md`
+- **Optional**: `.vibe/design-system/{project}/pages/{page}.md`
 
 ## MASTER.md Structure
 

@@ -131,11 +131,11 @@ When running on mobile stacks (React Native, Flutter, iOS, Android):
 
 Before running the audit:
 
-1. **Read** `.claude/vibe/design-context.json`
+1. **Read** `.vibe/design-context.json`
    - If missing → display: "Run `/design-teach` first for better results" → proceed with defaults
    - If parse error → display warning → proceed with defaults → recommend `/design-teach`
    - If present → weight findings by `audience.context`, `constraints.accessibility`, `brand.personality`
-2. **Read** `.claude/vibe/design-system/*/MASTER.md` (if exists) for token reference
+2. **Read** `.vibe/design-system/*/MASTER.md` (if exists) for token reference
 
 ## Next Steps
 
@@ -148,5 +148,5 @@ Before running the audit:
 ## Important
 
 - **Read-only**: This skill produces a report. It does NOT modify code.
-- **Context-aware**: If `.claude/vibe/design-context.json` exists, findings are weighted by project brand and audience.
+- **Context-aware**: If `.vibe/design-context.json` exists, findings are weighted by project brand and audience.
 - **Incremental**: When run on `.` (changed files), only audits files in current diff.

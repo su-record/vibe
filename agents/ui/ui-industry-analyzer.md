@@ -27,7 +27,7 @@
 3. Use `core_ui_search` with domain `style` to determine style priority
 4. Use `core_ui_search` with domain `color` to determine color mood
 5. Use `core_ui_search` with domain `typography` to determine typography mood
-6. Save result to `.claude/vibe/design-system/{project}/analysis-result.json`
+6. Save result to `.vibe/design-system/{project}/analysis-result.json`
 
 ## Output Format
 

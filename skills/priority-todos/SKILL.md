@@ -23,7 +23,7 @@ priority: 60
 ## Directory Structure
 
 ```
-.claude/vibe/todos/
+.vibe/todos/
 ├── P1-security-sql-injection.md
 ├── P2-perf-n1-query.md
 ├── P3-style-extract-helper.md

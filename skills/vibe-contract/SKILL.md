@@ -1,7 +1,7 @@
 ---
 name: vibe-contract
 tier: core
-description: "API contract drift detection. Extracts HTTP/GraphQL/event/public-function contracts from SPEC into .claude/vibe/contracts/<feature>.md, compares to implementation, and fails loudly on breaking drift (missing endpoints, removed required fields, type changes). P1 drifts auto-register as regressions via vibe-regress. Must use this skill when user runs /vibe.contract, when /vibe.spec completes, when /vibe.verify passes scenarios, or when the user says 'contract', 'API schema', 'breaking change', 'drift', '계약', '스키마 바뀜'."
+description: "API contract drift detection. Extracts HTTP/GraphQL/event/public-function contracts from SPEC into .vibe/contracts/<feature>.md, compares to implementation, and fails loudly on breaking drift (missing endpoints, removed required fields, type changes). P1 drifts auto-register as regressions via vibe-regress. Must use this skill when user runs /vibe.contract, when /vibe.spec completes, when /vibe.verify passes scenarios, or when the user says 'contract', 'API schema', 'breaking change', 'drift', '계약', '스키마 바뀜'."
 triggers: [contract, drift, "계약", "API 변경", "breaking change", "schema drift"]
 priority: 70
 chain-next: []
@@ -18,7 +18,7 @@ Hidden vibe-coding weakness: as the implementation grows, response shapes drift 
 ## Storage Contract
 
 ```
-.claude/vibe/contracts/
+.vibe/contracts/
   <feature>.md             # contract SSOT (extracted from SPEC)
   <feature>.snapshot.md    # implementation snapshot (last check)
 ```
@@ -28,7 +28,7 @@ Hidden vibe-coding weakness: as the implementation grows, response shapes drift 
 ```yaml
 ---
 feature: string
-extracted-from: .claude/vibe/specs/<feature>.md
+extracted-from: .vibe/specs/<feature>.md
 extracted-at: ISO-8601
 source-spec-hash: sha256  # for change detection
 endpoints:
@@ -75,14 +75,14 @@ endpoints:
 3. Extraction failure (no such section) → **exit cleanly with `no-contract` state**. Not every feature has an API.
 4. Success → convert to the frontmatter structure
 5. `source-spec-hash`: sha256 of SPEC content (for next extract to detect change)
-6. Save to `.claude/vibe/contracts/<feature>.md` (no-op if file exists with the same hash)
+6. Save to `.vibe/contracts/<feature>.md` (no-op if file exists with the same hash)
 
 **Caveat**: extraction is LLM-driven. Mark low-confidence fields with `# unconfirmed` so the user can review.
 
 ### 2. `check <feature>` — contract vs implementation
 
 **Steps**:
-1. Load `.claude/vibe/contracts/<feature>.md`. If missing → **suggest extract first**.
+1. Load `.vibe/contracts/<feature>.md`. If missing → **suggest extract first**.
 2. For each endpoint, find implementation:
    - http: detect framework (Express, Fastify, Next.js API routes, Hono, ...)
    - graphql: locate resolver files
@@ -90,7 +90,7 @@ endpoints:
    - function: module export
 3. Extract implementation signature/schema → compare against contract
 4. Classify drift (severity table in command file)
-5. Persist snapshot at `.claude/vibe/contracts/<feature>.snapshot.md` (current implementation state)
+5. Persist snapshot at `.vibe/contracts/<feature>.snapshot.md` (current implementation state)
 
 ### 3. `diff <feature>` — changes since last snapshot
 

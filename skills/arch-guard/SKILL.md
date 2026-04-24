@@ -152,11 +152,11 @@ describe('Architecture Boundaries', () => {
 | File | Purpose |
 |------|---------|
 | `tests/arch-guard.test.ts` | Executable boundary tests |
-| `.claude/vibe/arch-rules.json` | Machine-readable rules (for CI) |
+| `.vibe/arch-rules.json` | Machine-readable rules (for CI) |
 
 ## Customization
 
-Users can add custom rules to `.claude/vibe/arch-rules.json`:
+Users can add custom rules to `.vibe/arch-rules.json`:
 
 ```json
 {

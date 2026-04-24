@@ -4,7 +4,7 @@
  * Symptom: {{SYMPTOM}}
  * Root cause tag: {{ROOT_CAUSE_TAG}}
  * Fix commit: {{FIX_COMMIT}}
- * Source record: .claude/vibe/regressions/{{SLUG}}.md
+ * Source record: .vibe/regressions/{{SLUG}}.md
  *
  * DO NOT delete this test when the bug is fixed — it exists to prevent the
  * same bug from being reintroduced. Update only if the reproduction steps

@@ -20,7 +20,7 @@ chain-next: [vibe-plan]
 
 **Skip when**:
 - Small bug fix on an existing project
-- `.claude/vibe/plans/{feature}.md` already exists (→ only update via `vibe-plan`)
+- `.vibe/plans/{feature}.md` already exists (→ only update via `vibe-plan`)
 
 ## Core Loop
 
@@ -51,7 +51,7 @@ chain-next: [vibe-plan]
    └──────────────────────┘
      ↓
 4. Save collected results
-   .claude/vibe/interviews/{feature}.md
+   .vibe/interviews/{feature}.md
      ↓
 5. chain-next: vibe-plan
 ```
@@ -206,7 +206,7 @@ Incomplete items will be marked as "TBD" in the plan.
 
 ## Step 4: Save Collected Results
 
-**Output file**: `.claude/vibe/interviews/{feature-name}.md`
+**Output file**: `.vibe/interviews/{feature-name}.md`
 
 **Structure**:
 
@@ -262,7 +262,7 @@ stoppedBy: user | auto
 ### Update `.last-feature` pointer
 
 ```
-Write ".claude/vibe/.last-feature" ← feature-name (single line)
+Write ".vibe/.last-feature" ← feature-name (single line)
 
 Run immediately after saving the interview file in Step 4.
 This pointer is used by /vibe.spec (no args) for Smart Resume.
@@ -278,7 +278,7 @@ After the interview is complete, the `vibe-plan` skill is automatically activate
 ✅ Interview complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📄 .claude/vibe/interviews/{feature-name}.md
+📄 .vibe/interviews/{feature-name}.md
    Required: 8/8
    Optional: 12/14
    Discovered: 3
@@ -345,7 +345,7 @@ User: 3
 Claude: ⚠️ All required items complete. 10 optional items will be marked as TBD.
 
         ✅ Interview complete!
-        📄 .claude/vibe/interviews/parallax-website.md
+        📄 .vibe/interviews/parallax-website.md
 
         → vibe-plan skill is starting plan creation...
 ```

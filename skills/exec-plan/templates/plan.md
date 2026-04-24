@@ -4,8 +4,8 @@
 
 | Field | Value |
 |-------|-------|
-| SPEC | `.claude/vibe/specs/{{FEATURE_NAME}}.md` |
-| Feature | `.claude/vibe/features/{{FEATURE_NAME}}.feature` |
+| SPEC | `.vibe/specs/{{FEATURE_NAME}}.md` |
+| Feature | `.vibe/features/{{FEATURE_NAME}}.feature` |
 | Generated | {{GENERATED_DATE}} |
 | Phases | {{PHASE_COUNT}} |
 | Scenarios | {{SCENARIO_COUNT}} |

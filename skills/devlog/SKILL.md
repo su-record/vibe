@@ -11,7 +11,7 @@ Analyzes git commit history to automatically generate development logs and saves
 
 ## Config
 
-`devlog` section in `.claude/vibe/config.json`:
+`devlog` section in `.vibe/config.json`:
 
 ```json
 {

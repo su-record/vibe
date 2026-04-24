@@ -26,7 +26,7 @@ Design and generate a project structure where AI works effectively on its own.
 
 1. Read `CLAUDE.md`, `package.json`, `pyproject.toml`, `pubspec.yaml`
 2. Scan existing folder structure via `Glob`
-3. Read `.claude/vibe/config.json` for detected stacks
+3. Read `.vibe/config.json` for detected stacks
 
 ### 2. Determine Project Type
 

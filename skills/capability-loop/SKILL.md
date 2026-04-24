@@ -115,7 +115,7 @@ Based on classification, build the appropriate artifact:
 
 > **Problem**: The built capability didn't actually prevent the failure. This usually means the initial diagnosis was wrong (picked `Tool` when it needed `Guardrail`), or the failure has multiple missing capabilities.
 >
-> **Do NOT silently proceed** — a sub-standard capability log pollutes `.claude/vibe/capabilities-log.md` and the failure will recur.
+> **Do NOT silently proceed** — a sub-standard capability log pollutes `.vibe/capabilities-log.md` and the failure will recur.
 
 **Escalation loop:**
 
@@ -207,7 +207,7 @@ save_memory("capability-{name}", {
 })
 ```
 
-Update `.claude/vibe/capabilities-log.md`:
+Update `.vibe/capabilities-log.md`:
 
 ```markdown
 ## {date} — {capability-name}

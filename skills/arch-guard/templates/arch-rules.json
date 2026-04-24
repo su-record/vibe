@@ -1,5 +1,5 @@
 {
-  "_comment": "Architecture boundary rules for arch-guard. Copy to .claude/vibe/arch-rules.json and customize.",
+  "_comment": "Architecture boundary rules for arch-guard. Copy to .vibe/arch-rules.json and customize.",
   "rules": [
     {
       "name": "services-no-ui",

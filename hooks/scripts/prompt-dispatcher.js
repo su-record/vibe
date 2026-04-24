@@ -42,6 +42,21 @@ try {
 
 if (!prompt) process.exit(0);
 
+// 레거시 SSOT 통합 — `/vibe.*` 진입 시 `.claude/vibe/`·`.coco/vibe/` → `.vibe/` 자동 이동.
+// `vibe init`/`update` 와 동일한 `consolidateLegacyVibe` (dist/cli/setup/LegacyMigration.js) 를 직접 재사용. Idempotent.
+if (/^\s*\/vibe\b/i.test(prompt)) {
+  try {
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.env.COCO_PROJECT_DIR || process.cwd();
+    const utils = await import('./utils.js');
+    const CLI_BASE = utils.getCliBaseUrl();
+    const { consolidateLegacyVibe } = await import(`${CLI_BASE}setup/LegacyMigration.js`);
+    const moved = consolidateLegacyVibe(projectDir);
+    if (moved.length > 0) {
+      process.stdout.write(`[vibe] Migrated legacy dirs → .vibe/ (${moved.join(', ')})\n`);
+    }
+  } catch { /* migration is best-effort */ }
+}
+
 // 패턴 → 실행할 스크립트 매핑
 // 각 항목: { pattern, script, args, label }
 const DISPATCH_RULES = [

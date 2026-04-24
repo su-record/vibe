@@ -213,7 +213,7 @@ Read CLAUDE.md         -> Explicit tech stack declaration
 > When SPEC files exist, verify that code changes align with the SPEC
 
 ```
-1. Search .claude/vibe/specs/ for related SPEC files (based on git diff filenames)
+1. Search .vibe/specs/ for related SPEC files (based on git diff filenames)
 2. Compare SPEC REQ-* list against functionality in changed code
 3. If functionality added that's not in SPEC → P2 finding: "Feature added without SPEC"
 4. If implementation differs from SPEC → P1 finding: "SPEC ↔ code mismatch"
@@ -256,7 +256,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orche
 ### Phase 2.5: UI/UX Review Agents (Auto-triggered)
 
 > **활성화 조건**: 변경된 파일 중 UI 파일 존재 (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.css`, `.scss`)
-> **비활성화**: `.claude/vibe/config.json`에 `"uiUxAnalysis": false` 설정
+> **비활성화**: `.vibe/config.json`에 `"uiUxAnalysis": false` 설정
 
 **기존 12+ 리뷰 에이전트와 병렬 실행:**
 
@@ -279,7 +279,7 @@ Task(subagent_type="ui-a11y-auditor",
 
 # ⑧ 안티패턴 검출 (Haiku)
 Task(subagent_type="ui-antipattern-detector",
-  prompt="Detect UI anti-patterns in: {changed_ui_files}. Check against MASTER.md if exists at .claude/vibe/design-system/{project}/MASTER.md.")
+  prompt="Detect UI anti-patterns in: {changed_ui_files}. Check against MASTER.md if exists at .vibe/design-system/{project}/MASTER.md.")
 ```
 
 **findings 통합**: ⑥⑦⑧ findings를 기존 findings[]와 병합 → P1/P2/P3 통합 정렬
@@ -427,7 +427,7 @@ Codex 수정 완료 후 해당 리뷰 에이전트가 재검증.
 
 ### Phase 6: Todo File Creation (Items Requiring Manual Handling)
 
-Save **remaining** findings to `.claude/vibe/todos/`:
+Save **remaining** findings to `.vibe/todos/`:
 
 ```
 {priority}-{category}-{short-desc}.md

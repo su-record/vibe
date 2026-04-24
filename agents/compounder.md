@@ -75,7 +75,7 @@ Parallel agents analyze the solution:
 ### Phase 2: Category Classification
 
 ```
-.claude/vibe/solutions/
+.vibe/solutions/
 ├── security/           # Security related
 │   ├── sql-injection-prevention.md
 │   └── xss-sanitization.md
@@ -161,7 +161,7 @@ cache_key = f"user:{user_id}:v{updated_at.timestamp()}"
 
 ### Phase 4: Index Update
 
-Auto-update `.claude/vibe/solutions/index.md`:
+Auto-update `.vibe/solutions/index.md`:
 
 ```markdown
 # Solution Index
@@ -196,7 +196,7 @@ When similar problem detected:
 │  You're working on: "Cache not updating"                        │
 │                                                                 │
 │  Related solution (85% match):                                  │
-│  📄 .claude/vibe/solutions/performance/redis-cache-invalidation.md     │
+│  📄 .vibe/solutions/performance/redis-cache-invalidation.md     │
 │                                                                 │
 │  Key insight: Add version suffix to cache key                   │
 │                                                                 │
@@ -212,7 +212,7 @@ When similar problem detected:
 │  📚 SOLUTION DOCUMENTED                                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ✅ Created: .claude/vibe/solutions/performance/redis-cache-invalid... │
+│  ✅ Created: .vibe/solutions/performance/redis-cache-invalid... │
 │                                                                 │
 │  📊 Knowledge Base Stats:                                        │
 │  ├── Total Solutions: 42                                        │
@@ -239,7 +239,7 @@ Auto-invoke `core_save_memory`:
   "category": "performance",
   "title": "Redis cache invalidation",
   "keywords": ["redis", "cache", "invalidation"],
-  "file": ".claude/vibe/solutions/performance/redis-cache-invalidation.md"
+  "file": ".vibe/solutions/performance/redis-cache-invalidation.md"
 }
 ```
 
@@ -249,7 +249,7 @@ Auto-invoke `core_save_memory`:
 /vibe.spec → /vibe.run → /vibe.verify → /vibe.compound
                                               │
                                               ▼
-                                    .claude/vibe/solutions/
+                                    .vibe/solutions/
                                               │
                                               ▼
                                     Future problem?

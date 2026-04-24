@@ -35,7 +35,7 @@ feature: {{FEATURE}}
 
 ## Related
 
-- Feature: [.claude/vibe/features/{{FEATURE}}.feature](../../features/{{FEATURE}}.feature)
+- Feature: [.vibe/features/{{FEATURE}}.feature](../../features/{{FEATURE}}.feature)
 - Fix commit: `{{FIX_COMMIT}}`
 - Regression test: `{{TEST_PATH}}`
 

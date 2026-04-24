@@ -108,7 +108,7 @@ Separate the collected information into 3 layers:
 
 **Loaded only when working on a specific feature** → focus on what and why, leave how to the agent.
 
-Storage location: `.claude/vibe/specs/YYYY-MM-DD-{topic}.md`
+Storage location: `.vibe/specs/YYYY-MM-DD-{topic}.md`
 
 ```markdown
 # {Feature Name} SPEC
@@ -124,7 +124,7 @@ Storage location: `.claude/vibe/specs/YYYY-MM-DD-{topic}.md`
 
 **Per-session task list** → 2-5 minute units, with file paths specified.
 
-Storage location: `.claude/vibe/specs/{name}-execplan.md`
+Storage location: `.vibe/specs/{name}-execplan.md`
 
 ```markdown
 # Execution Plan

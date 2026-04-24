@@ -118,7 +118,7 @@ When running on mobile stacks (React Native, Flutter, iOS, Android):
 
 Before running the critique:
 
-1. **Read** `.claude/vibe/design-context.json`
+1. **Read** `.vibe/design-context.json`
    - If missing → display: "Run `/design-teach` first for better results" → proceed with defaults
    - If parse error → display warning → proceed with defaults → recommend `/design-teach`
    - If present → adjust persona priorities by `audience.primary` and `audience.expertise`
@@ -135,5 +135,5 @@ Before running the critique:
 ## Important
 
 - **Read-only**: Produces design critique report. No code modifications.
-- **Context-aware**: Uses `.claude/vibe/design-context.json` for brand/audience context if available.
+- **Context-aware**: Uses `.vibe/design-context.json` for brand/audience context if available.
 - **Complementary**: Pairs with `/design-audit` (technical) — critique focuses on UX quality.
