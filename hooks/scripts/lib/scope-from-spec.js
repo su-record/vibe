@@ -13,6 +13,32 @@ import path from 'path';
 const ACTIVE_STATUSES = new Set(['pending', 'in-progress', 'in_progress', 'active', 'running']);
 
 /**
+ * scope-guard auto-derive 활성 여부.
+ *
+ * 기본값은 **off**. 사용자가 `.vibe/config.json` 의 `scopeGuard.enabled = true` 로
+ * 명시적으로 켤 때만 SPEC → scope.json 자동 합성을 수행한다. 이전 동작(자동 ON)은
+ * SPEC 외부 파일 편집에 매번 경고를 띄워 다수 사용자에게 노이즈가 됐기 때문.
+ *
+ * 이미 `auto: false` scope.json 을 직접 만들어 둔 사용자는 영향 없음 — scope-guard.js
+ * 자체는 scope.json 존재 여부만 본다.
+ */
+export function isScopeGuardEnabled(projectDir) {
+  try {
+    const candidates = [
+      path.join(projectDir, '.vibe', 'config.json'),
+      path.join(projectDir, '.claude', 'vibe', 'config.json'),
+      path.join(projectDir, '.coco', 'vibe', 'config.json'),
+    ];
+    for (const p of candidates) {
+      if (!fs.existsSync(p)) continue;
+      const cfg = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      if (cfg && cfg.scopeGuard && cfg.scopeGuard.enabled === true) return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
  * Vibe 에셋 루트 해석 — `.vibe/` (SSOT) 우선, legacy `.claude/vibe/`, `.coco/vibe/` fallback.
  * 반환값은 projectDir 기준 상대 경로 문자열 (예: `.vibe`, `.claude/vibe`).
  */
@@ -263,6 +289,10 @@ export function syncScopeFile(projectDir) {
 import { fileURLToPath } from 'url';
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const dir = process.argv[2] || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  if (!isScopeGuardEnabled(dir)) {
+    console.log('[scope-sync] · scopeGuard.enabled !== true — skipping (set in .vibe/config.json to opt in)');
+    process.exit(0);
+  }
   const result = syncScopeFile(dir);
   const label = {
     created: '✓ scope.json created',

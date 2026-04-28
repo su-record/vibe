@@ -121,3 +121,24 @@ export function getCliDir(): string {
   return __dirname;
 }
 
+/**
+ * scope-guard 자동 동기화 opt-in 여부.
+ * `.vibe/config.json` (또는 legacy `.claude/vibe/`, `.coco/vibe/`) 의
+ * `scopeGuard.enabled === true` 일 때만 활성. 기본 off.
+ */
+export function isScopeGuardOptedIn(projectRoot: string): boolean {
+  const candidates = [
+    path.join(projectRoot, '.vibe', 'config.json'),
+    path.join(projectRoot, '.claude', 'vibe', 'config.json'),
+    path.join(projectRoot, '.coco', 'vibe', 'config.json'),
+  ];
+  for (const p of candidates) {
+    try {
+      if (!fs.existsSync(p)) continue;
+      const cfg = JSON.parse(fs.readFileSync(p, 'utf-8')) as { scopeGuard?: { enabled?: boolean } };
+      if (cfg?.scopeGuard?.enabled === true) return true;
+    } catch { /* ignore parse errors */ }
+  }
+  return false;
+}
+
