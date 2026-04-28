@@ -94,12 +94,14 @@ async function main() {
       }
     }
 
-    // Scope sync — 활성 SPEC 기반으로 scope.json 자동 갱신 (수동 관리면 스킵)
+    // Scope sync — 사용자가 .vibe/config.json scopeGuard.enabled=true 로 켰을 때만 동작.
     try {
-      const { syncScopeFile } = await import('./lib/scope-from-spec.js');
-      const result = syncScopeFile(PROJECT_DIR);
-      if (result.action === 'created' || result.action === 'updated' || result.action === 'removed') {
-        console.log(`\n🚧 Scope ${result.action} from active SPECs (${path.relative(PROJECT_DIR, path.join(projectVibeRoot(PROJECT_DIR), 'scope.json'))})`);
+      const { syncScopeFile, isScopeGuardEnabled } = await import('./lib/scope-from-spec.js');
+      if (isScopeGuardEnabled(PROJECT_DIR)) {
+        const result = syncScopeFile(PROJECT_DIR);
+        if (result.action === 'created' || result.action === 'updated' || result.action === 'removed') {
+          console.log(`\n🚧 Scope ${result.action} from active SPECs (${path.relative(PROJECT_DIR, path.join(projectVibeRoot(PROJECT_DIR), 'scope.json'))})`);
+        }
       }
     } catch { /* scope sync is best-effort */ }
 

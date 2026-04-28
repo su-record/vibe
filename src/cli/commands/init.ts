@@ -7,7 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import { execSync } from 'child_process';
 import { CliOptions } from '../types.js';
-import { log, ensureDir, getPackageJson } from '../utils.js';
+import { log, ensureDir, getPackageJson, isScopeGuardOptedIn } from '../utils.js';
 import { detectTechStacks } from '../detect.js';
 import { formatLLMStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
@@ -455,15 +455,18 @@ export async function init(
 
     s3.stop('Installation complete');
 
-    // scope.json 자동 동기화 (init 시점엔 보통 SPEC 없음 → no-op)
-    try {
-      const __dir = path.dirname(new URL(import.meta.url).pathname);
-      const packageRoot = path.resolve(__dir, '..', '..', '..');
-      const scopeScript = path.join(packageRoot, 'hooks', 'scripts', 'lib', 'scope-from-spec.js');
-      if (fs.existsSync(scopeScript)) {
-        execSync(`node "${scopeScript}" "${projectRoot}"`, { stdio: 'inherit', timeout: 5000 });
-      }
-    } catch { /* best-effort */ }
+    // scope.json 자동 동기화 — `.vibe/config.json` 의 scopeGuard.enabled=true 일 때만.
+    // 기본은 off (이전 자동 ON 동작이 SPEC 외 편집에 노이즈 경고를 띄워 회귀 발생).
+    if (isScopeGuardOptedIn(projectRoot)) {
+      try {
+        const __dir = path.dirname(new URL(import.meta.url).pathname);
+        const packageRoot = path.resolve(__dir, '..', '..', '..');
+        const scopeScript = path.join(packageRoot, 'hooks', 'scripts', 'lib', 'scope-from-spec.js');
+        if (fs.existsSync(scopeScript)) {
+          execSync(`node "${scopeScript}" "${projectRoot}"`, { stdio: 'inherit', timeout: 5000 });
+        }
+      } catch { /* best-effort */ }
+    }
 
     // 완료 메시지
     const packageJson = getPackageJson();

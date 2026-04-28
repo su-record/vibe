@@ -5,10 +5,14 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-/** 전역 ~/.claude/settings.json에 강제 설정할 env 변수 (기존 값 오버라이드) */
-const GLOBAL_ENV_SETTINGS: Record<string, string> = {
+/**
+ * 전역 ~/.claude/settings.json env 기본값. 키가 없을 때만 설정 — 사용자 값 보존.
+ *
+ * `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 만 vibe 동작에 필수다.
+ * `CLAUDE_CODE_DISABLE_1M_CONTEXT` 는 사용자 선택 사항이므로 강제하지 않는다.
+ */
+const GLOBAL_ENV_DEFAULTS: Record<string, string> = {
   CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-  CLAUDE_CODE_DISABLE_1M_CONTEXT: '1',
 };
 
 /**
@@ -80,12 +84,15 @@ export function injectEnvDefaults(packageRoot: string): void {
   }
 }
 
-/** 전역 ~/.claude/settings.json에 강제 설정할 최상위 속성 (기존 값 오버라이드) */
-const GLOBAL_TOP_LEVEL_SETTINGS: Record<string, unknown> = {
+/**
+ * 전역 ~/.claude/settings.json 최상위 기본값. 키가 없을 때만 설정 — 사용자 값 보존.
+ *
+ * `teammateMode: 'in-process'` 만 vibe 의 멀티 에이전트 동작에 필요하다.
+ * `effortLevel`, `alwaysThinkingEnabled`, `autoMemoryEnabled` 는 사용자 선호 영역이라
+ * 강제하지 않는다 (이전 버전에서 강제 덮어쓰기로 사용자 설정이 날아가던 회귀 수정).
+ */
+const GLOBAL_TOP_LEVEL_DEFAULTS: Record<string, unknown> = {
   teammateMode: 'in-process',
-  effortLevel: 'high',
-  alwaysThinkingEnabled: true,
-  autoMemoryEnabled: false,
 };
 
 /**
@@ -144,18 +151,16 @@ export function ensureGlobalEnvSettings(): void {
     }
     const env = settings.env as Record<string, string>;
 
-    // env 변수 설정 (이미 동일 값이면 스킵)
+    // env / 최상위 속성: 키가 없을 때만 채운다 — 사용자 값은 보존.
     let changed = false;
-    for (const [key, value] of Object.entries(GLOBAL_ENV_SETTINGS)) {
-      if (env[key] !== value) {
+    for (const [key, value] of Object.entries(GLOBAL_ENV_DEFAULTS)) {
+      if (env[key] === undefined || env[key] === '') {
         env[key] = value;
         changed = true;
       }
     }
-
-    // 최상위 속성 설정 (teammateMode, effortLevel, alwaysThinkingEnabled, autoMemoryEnabled 등)
-    for (const [key, value] of Object.entries(GLOBAL_TOP_LEVEL_SETTINGS)) {
-      if (settings[key] !== value) {
+    for (const [key, value] of Object.entries(GLOBAL_TOP_LEVEL_DEFAULTS)) {
+      if (settings[key] === undefined) {
         settings[key] = value;
         changed = true;
       }
@@ -163,7 +168,7 @@ export function ensureGlobalEnvSettings(): void {
 
     if (changed) {
       fs.writeFileSync(globalSettingsPath, JSON.stringify(settings, null, 2) + '\n');
-      console.log('   ✓ Global settings updated (Agent Teams + teammateMode + thinking defaults)');
+      console.log('   ✓ Global settings: filled missing defaults (Agent Teams + teammateMode)');
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);

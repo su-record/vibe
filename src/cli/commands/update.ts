@@ -9,7 +9,7 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 import { CliOptions, VibeConfig } from '../types.js';
-import { log, ensureDir, getPackageJson } from '../utils.js';
+import { log, ensureDir, getPackageJson, isScopeGuardOptedIn } from '../utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,11 +47,12 @@ import { detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-det
 import { Provisioner } from '../setup/Provisioner.js';
 
 /**
- * scope.json을 활성 SPEC 기반으로 자동 동기화.
- * 수동 관리(auto != true) 중이거나 SPEC이 없으면 no-op.
+ * scope.json 자동 동기화 — `.vibe/config.json` 의 scopeGuard.enabled=true 일 때만 실행.
+ * 기본 off. 수동 관리(auto != true) scope.json 은 그대로 보존된다.
  */
 function syncProjectScope(projectRoot: string, packageRoot: string): void {
   try {
+    if (!isScopeGuardOptedIn(projectRoot)) return;
     const scriptPath = path.join(packageRoot, 'hooks', 'scripts', 'lib', 'scope-from-spec.js');
     if (!fs.existsSync(scriptPath)) return;
     execSync(`node "${scriptPath}" "${projectRoot}"`, { stdio: 'inherit', timeout: 5000 });

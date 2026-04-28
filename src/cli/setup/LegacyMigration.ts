@@ -31,6 +31,8 @@ export function consolidateLegacyVibe(projectRoot: string): string[] {
     { src: path.join(projectRoot, '.coco', 'memories'), dst: path.join(vibeRoot, 'memories') },
   ];
 
+  const conflicts: string[] = [];
+
   for (const { src, dst } of plans) {
     if (!fs.existsSync(src)) continue;
     try {
@@ -39,9 +41,15 @@ export function consolidateLegacyVibe(projectRoot: string): string[] {
         ensureDir(path.dirname(dst));
         fs.renameSync(src, dst);
       } else {
-        // 병합 — target 에 없는 파일만 복사
-        mergeDirInto(src, dst);
-        removeDirRecursive(src);
+        // 병합 — target 에 없는 파일만 복사. 충돌 파일은 src 에 그대로 두고 알림.
+        const localConflicts: string[] = [];
+        mergeDirInto(src, dst, src, localConflicts);
+        if (localConflicts.length === 0) {
+          removeDirRecursive(src);
+        } else {
+          // 충돌 있으면 legacy 디렉토리를 보존 — 사용자가 수동 비교 후 처리
+          conflicts.push(...localConflicts.map(p => path.relative(projectRoot, p)));
+        }
       }
       moved.push(path.relative(projectRoot, src));
     } catch {
@@ -49,20 +57,32 @@ export function consolidateLegacyVibe(projectRoot: string): string[] {
     }
   }
 
+  if (conflicts.length > 0) {
+    log(`⚠️  Legacy migration: ${conflicts.length} file(s) skipped (already exist in .vibe/, legacy preserved):`);
+    for (const c of conflicts.slice(0, 10)) log(`     - ${c}`);
+    if (conflicts.length > 10) log(`     ... and ${conflicts.length - 10} more`);
+    log('   Resolve manually, then delete the legacy directory.\n');
+  }
+
   return moved;
 }
 
-/** src 의 각 파일을 dst 에 복사 — 이미 존재하면 건드리지 않는다. */
-function mergeDirInto(src: string, dst: string): void {
+/**
+ * src 의 각 파일을 dst 에 복사 — 이미 존재하면 건드리지 않고 충돌 목록에 기록.
+ * srcRoot 는 충돌 보고를 위한 원본 경로 (legacy 디렉토리 루트).
+ */
+function mergeDirInto(src: string, dst: string, srcRoot: string, conflicts: string[]): void {
   ensureDir(dst);
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
     const srcPath = path.join(src, entry.name);
     const dstPath = path.join(dst, entry.name);
     if (entry.isDirectory()) {
-      if (fs.existsSync(dstPath)) mergeDirInto(srcPath, dstPath);
+      if (fs.existsSync(dstPath)) mergeDirInto(srcPath, dstPath, srcRoot, conflicts);
       else copyDirRecursive(srcPath, dstPath);
     } else if (!fs.existsSync(dstPath)) {
       fs.copyFileSync(srcPath, dstPath);
+    } else {
+      conflicts.push(srcPath);
     }
   }
 }
