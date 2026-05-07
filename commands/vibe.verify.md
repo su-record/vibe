@@ -199,6 +199,12 @@ try{
   const rec={verifiedAt:new Date().toISOString(),feature:cur.feature,startedAt:cur.startedAt,steps:cur.steps||0};
   fs.appendFileSync(path.join(dir,'history.jsonl'),JSON.stringify(rec)+'\n');
 }catch{}"
+
+# Phase 3 — Recipe extraction (post-task curation, best-effort silent)
+# 휴리스틱 게이트 (total≥8 AND fails≥3) 통과 시만 LLM 호출.
+# .vibe/recipes/<slug>.md 자동 생성 → 다음 세션의 session-start 가 prepend.
+HOOKS_DIR="${VIBE_PATH:-$(npm root -g 2>/dev/null)/@su-record/vibe}/hooks/scripts"
+[ -f "$HOOKS_DIR/recipe-extractor.js" ] && node "$HOOKS_DIR/recipe-extractor.js" 2>/dev/null || true
 ```
 
 Record the value as `{step_count}` and include it in the report below.

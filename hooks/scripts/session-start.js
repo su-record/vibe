@@ -85,6 +85,25 @@ async function main() {
     console.log('\n[Recent Memories]');
     console.log(memories.content[0].text);
 
+    // Phase 3 — Recipes + anti-patterns 인덱스 (post-task curation)
+    // 본문이 아닌 1줄 요약만. session-context 가 비대해지지 않도록 N=5 상한.
+    try {
+      const { loadCurationIndex } = await import('./lib/curation-index.js');
+      const index = loadCurationIndex(PROJECT_DIR, { recipeLimit: 5, antiPatternLimit: 5 });
+      if (index.recipes.length > 0) {
+        console.log('\n[Recipes — succeeded patterns]');
+        for (const r of index.recipes) {
+          console.log(`  • ${r.slug} — ${r.summary}`);
+        }
+      }
+      if (index.antiPatterns.length > 0) {
+        console.log('\n[Anti-patterns — known pitfalls]');
+        for (const a of index.antiPatterns) {
+          console.log(`  ⚠ ${a.tag}: ${a.summary}`);
+        }
+      }
+    } catch { /* curation is best-effort */ }
+
     // Version check
     if (latestVersion) {
       const currentVersion = getCurrentVersion();
