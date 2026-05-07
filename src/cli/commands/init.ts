@@ -350,14 +350,14 @@ export async function init(
       }
 
       // .vibe/ 표준 하위 디렉토리 (SSOT — Claude/coco 공용)
-      for (const sub of ['specs', 'features', 'plans', 'todos', 'memories', 'metrics']) {
+      for (const sub of ['specs', 'features', 'plans', 'todos', 'memories', 'metrics', 'recipes', 'anti-patterns']) {
         ensureDir(path.join(coreDir, sub));
       }
       const vibeReadme = path.join(coreDir, 'README.md');
       if (!fs.existsSync(vibeReadme)) {
         fs.writeFileSync(
           vibeReadme,
-          '# .vibe/\n\nVibe SSOT — Claude Code / coco CLI 공용 프로젝트 에셋.\n\n- `config.json` — 프로젝트 스택/capabilities\n- `constitution.md` — 하드 룰\n- `specs/`, `plans/`, `features/`, `todos/` — 워크플로우 문서\n- `memories/` — 프로젝트 메모리 DB\n- `metrics/` — 세션/스텝 카운터\n- `scope.json` — SPEC 기반 자동 스코프 (auto=true)\n',
+          '# .vibe/\n\nVibe SSOT — Claude Code / coco CLI 공용 프로젝트 에셋.\n\n- `config.json` — 프로젝트 스택/capabilities\n- `constitution.md` — 하드 룰\n- `specs/`, `plans/`, `features/`, `todos/` — 워크플로우 문서\n- `memories/` — 프로젝트 메모리 DB\n- `metrics/` — 세션/스텝 카운터\n- `recipes/` — 성공한 task 의 압축 경로 (post-task curation, frontmatter 강제)\n- `anti-patterns/` — 같은 카테고리 3회 실패 시 자동 기록 (frontmatter 강제)\n- `scope.json` — SPEC 기반 자동 스코프 (auto=true)\n',
         );
       }
     });
