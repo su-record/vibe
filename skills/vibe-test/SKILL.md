@@ -1,5 +1,6 @@
 ---
 name: vibe-test
+invocation: [command, auto]
 tier: core
 description: "Self-test vibe by probing every command/skill/hook/agent in a target harness install dir (~/.claude or ~/.coco) and writing a pass/fail report to ~/.vibe/test-reports/. Takes an optional harness argument (cc|coco); empty = current harness. Must use this skill when user runs /vibe.test, when verifying a vibe install before release, or when the user says 'self-test', 'harness 점검', 'vibe 건강'."
 triggers: [test, self-test, "vibe 건강", "harness 점검", "자가검진"]
@@ -39,7 +40,7 @@ All probes are **structural or test-based** — no interactive command is ever a
 | Category | Source | Check |
 |---|---|---|
 | commands | `<install>/commands/*.md` | file readable · frontmatter parses · `description` present · body references a skill (`Load skill \`...\``) if it delegates |
-| skills | `<install>/skills/*/SKILL.md` | frontmatter parses · required fields (`name`, `description`) · `triggers` array non-empty · body non-empty |
+| skills | `<install>/skills/*/SKILL.md` | frontmatter parses · required fields (`name`, `description`, `invocation`) · `invocation` ⊆ `{command, auto, chain}` and non-empty · if `invocation` includes `auto` then `triggers` non-empty · if includes `command` then matching `commands/{vibe.X}.md` or `Load skill <name>` reference exists · if includes `chain` then another skill lists it in `chain-next` · body non-empty |
 | hooks | repo `hooks/scripts/*.js` | for each script with a matching `__tests__/<name>.test.js`, run `npx vitest run <test> --reporter=json` and parse pass/fail counts |
 | agents | `<install>/agents/*.md` | file readable · frontmatter parses · required fields (`name`, `description`) |
 
@@ -69,7 +70,7 @@ Written to `~/.vibe/test-reports/<YYYYMMDD-HHmm>-<harness>.{json,md}`. Exact sch
     ],
     "skills": [
       { "name": "vibe-test", "status": "pass" },
-      { "name": "vibe-spec", "status": "fail", "error": "frontmatter: triggers array is empty" }
+      { "name": "vibe-spec", "status": "fail", "error": "invocation includes `auto` but triggers array is empty" }
     ],
     "hooks": [
       { "name": "pre-tool-guard", "status": "pass", "tests": "38/38" },
@@ -111,7 +112,7 @@ Written to `~/.vibe/test-reports/<YYYYMMDD-HHmm>-<harness>.{json,md}`. Exact sch
 
 ## Failures
 
-- **skills / vibe-spec** — frontmatter: triggers array is empty
+- **skills / vibe-spec** — invocation includes `auto` but triggers array is empty
 - **agents / explorer** — agent file not found
 ```
 
@@ -138,3 +139,4 @@ If `failed` is empty, replace the Failures section with `_All probes passed._`.
 - [ ] Markdown summary printed to console after the run
 - [ ] Reports land in `~/.vibe/test-reports/`, never in project-local `.claude/vibe/`
 - [ ] `failed.length > 0` → auto-invokes `/vibe.regress register --from-test`
+- [ ] `invocation` field invariants enforced per skill (`command` / `auto` / `chain` validity)

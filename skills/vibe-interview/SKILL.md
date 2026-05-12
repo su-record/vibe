@@ -1,5 +1,6 @@
 ---
 name: vibe-interview
+invocation: [command, auto]
 tier: core
 description: "Iteratively interview the user to gather ALL required and optional requirements for a new project or feature. Loops until the user explicitly stops. Uses type-specific domain checklists (website, webapp, mobile, api, library, feature) so nothing is missed. Must use this skill when the user says '만들자', '개발하자', '신규 기능', '무엇을 만들', 'let's build', 'new feature', or starts describing a product idea without a plan yet."
 triggers: [만들자, 개발하자, 기획하자, 신규 기능, 새 프로젝트, "무엇을 만들", "무엇을 개발", 아이디어, 인터뷰, interview, requirements, "let's build", "new feature", "new project"]

@@ -1,5 +1,6 @@
 ---
 name: vibe-docs
+invocation: [command, auto]
 tier: standard
 description: "Generate project documentation — README, architecture docs, user guide, release notes. Activates on docs, readme, documentation keywords."
 triggers: [vibe-docs, docs, documentation, readme, release notes, architecture doc]

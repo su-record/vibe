@@ -1,5 +1,6 @@
 ---
 name: vibe-contract
+invocation: [command, auto]
 tier: core
 description: "API contract drift detection. Extracts HTTP/GraphQL/event/public-function contracts from SPEC into .claude/vibe/contracts/<feature>.md, compares to implementation, and fails loudly on breaking drift (missing endpoints, removed required fields, type changes). P1 drifts auto-register as regressions via vibe-regress. Must use this skill when user runs /vibe.contract, when /vibe.spec completes, when /vibe.verify passes scenarios, or when the user says 'contract', 'API schema', 'breaking change', 'drift', '계약', '스키마 바뀜'."
 triggers: [contract, drift, "계약", "API 변경", "breaking change", "schema drift"]

@@ -1,5 +1,6 @@
 ---
 name: vibe-spec-review
+invocation: [command, auto, chain]
 tier: core
 description: "Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe-spec completes, or when the user says 'review spec', '스펙 리뷰'."
 triggers: ["spec review", "review spec", "SPEC 리뷰", "명세 리뷰", race review]

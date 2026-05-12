@@ -1,5 +1,6 @@
 ---
 name: user-personas
+invocation: [auto, chain]
 tier: standard
 description: "Create refined user personas from research data — 3 personas with JTBD, pains, gains, and unexpected insights."
 triggers: [persona, user persona, user profile, user segment, user research]

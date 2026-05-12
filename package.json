@@ -27,6 +27,7 @@
     "dev": "tsc --watch",
     "gen:skill-docs": "npx tsx scripts/gen-skill-docs.ts",
     "gen:skill-docs:check": "npx tsx scripts/gen-skill-docs.ts --check",
+    "validate:skill-invocation": "npx tsx scripts/validate-skill-invocation.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "pnpm build",

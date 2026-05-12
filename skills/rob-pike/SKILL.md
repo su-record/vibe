@@ -1,5 +1,6 @@
 ---
 name: rob-pike
+invocation: [auto]
 tier: core
 description: "Rob Pike's 5 Rules — block premature optimization. Auto-activates on optimize, slow, performance, cache, parallelize keywords."
 triggers: [optimize, slow, performance, cache, parallelize, bottleneck, speed up, faster, latency, benchmark]

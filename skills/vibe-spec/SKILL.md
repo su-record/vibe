@@ -1,5 +1,6 @@
 ---
 name: vibe-spec
+invocation: [command, auto, chain]
 tier: core
 description: "Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 100-point quality gate (loops until perfect or stuck). Produces .claude/vibe/specs/{feature}.md + matching .claude/vibe/features/{feature}.feature (BDD). Must use this skill when the user says 'write spec', 'create spec', '/vibe.spec', or when a plan document exists and is ready for code specification."
 triggers: [spec, SPEC, 명세, "코드 명세", "구현 명세", "write spec", "create spec", PTCF]

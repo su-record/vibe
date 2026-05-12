@@ -27,6 +27,7 @@ interface SkillFrontmatter {
   description: string;
   triggers?: string[];
   priority?: number;
+  invocation?: string[];
 }
 
 function parseSkillFrontmatter(filePath: string): SkillFrontmatter | null {
@@ -48,7 +49,12 @@ function parseSkillFrontmatter(filePath: string): SkillFrontmatter | null {
     const priorityMatch = yaml.match(/priority:\s*(\d+)/);
     const priority = priorityMatch ? parseInt(priorityMatch[1], 10) : undefined;
 
-    return { name, description, triggers, priority };
+    const invocationMatch = yaml.match(/^invocation:\s*\[([^\]]*)\]/m);
+    const invocation = invocationMatch
+      ? invocationMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+      : undefined;
+
+    return { name, description, triggers, priority, invocation };
   } catch {
     return null;
   }
@@ -139,14 +145,15 @@ function generateCatalog(): string {
   // ─── Global Skills ───
   lines.push('## Global Skills (postinstall → ~/.claude/skills/)');
   lines.push('');
-  lines.push('| Skill | Description | Triggers | Priority |');
-  lines.push('|-------|-------------|----------|----------|');
+  lines.push('| Skill | Invocation | Description | Triggers | Priority |');
+  lines.push('|-------|------------|-------------|----------|----------|');
   for (const name of globalSkills) {
     const fm = allSkills.get(name);
     const desc = fm?.description ?? '—';
     const triggers = fm?.triggers?.join(', ') ?? '—';
     const priority = fm?.priority ?? '—';
-    lines.push(`| \`${name}\` | ${desc} | ${triggers} | ${priority} |`);
+    const invocation = fm?.invocation?.join(', ') ?? '—';
+    lines.push(`| \`${name}\` | ${invocation} | ${desc} | ${triggers} | ${priority} |`);
   }
   lines.push('');
 
@@ -207,7 +214,8 @@ function generateCatalog(): string {
     lines.push(`### \`${name}\` (${scope})`);
     lines.push('');
     lines.push(`- **Description**: ${fm.description}`);
-    if (fm.triggers) lines.push(`- **Triggers**: ${fm.triggers.join(', ')}`);
+    if (fm.invocation && fm.invocation.length > 0) lines.push(`- **Invocation**: ${fm.invocation.join(', ')}`);
+    if (fm.triggers && fm.triggers.length > 0) lines.push(`- **Triggers**: ${fm.triggers.join(', ')}`);
     if (fm.priority) lines.push(`- **Priority**: ${fm.priority}`);
     lines.push('');
   }

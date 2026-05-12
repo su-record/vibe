@@ -1,5 +1,6 @@
 ---
 name: vibe-figma
+invocation: [command, chain]
 description: Figma design to code — tree-based structural code generation
 triggers: []
 tier: standard

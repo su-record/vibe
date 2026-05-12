@@ -1,5 +1,6 @@
 ---
 name: tool-fallback
+invocation: [auto]
 tier: optional
 description: "Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors."
 triggers: [API error, search failure, timeout, 429, 5xx, overloaded, fallback, circuit breaker]

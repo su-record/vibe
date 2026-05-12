@@ -1,5 +1,6 @@
 ---
 name: vibe-figma-convert
+invocation: [command]
 description: Figma tree → structured code generation + screenshot validation
 triggers: []
 tier: standard

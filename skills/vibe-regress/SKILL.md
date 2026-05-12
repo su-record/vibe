@@ -1,5 +1,6 @@
 ---
 name: vibe-regress
+invocation: [command, auto]
 tier: core
 description: "Regression test auto-evolution. Registers bugs (auto from /vibe.verify failures or manual), generates preventive vitest/jest files from bug records, clusters repeated patterns (3+ same root-cause-tag) into shared tests, and imports historical `fix:` commits from git log. Storage: .claude/vibe/regressions/<slug>.md. Must use this skill when user runs /vibe.regress, when /vibe.verify produces a failure, or when the user says 'don't let this happen again' / 'regression test' / '회귀 테스트'."
 triggers: [regress, regression, "회귀", "다시는", "반복 버그", "fix commit"]

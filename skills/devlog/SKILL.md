@@ -1,5 +1,6 @@
 ---
 name: devlog
+invocation: [auto]
 tier: standard
 description: "Auto-generate devlog posts from git commit history. Triggers every N commits, writes markdown to configured target repo."
 triggers: [devlog, 개발일지, dev log, devlog 작성, 개발일지 작성]

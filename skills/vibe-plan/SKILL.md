@@ -1,5 +1,6 @@
 ---
 name: vibe-plan
+invocation: [command, auto, chain]
 tier: core
 description: "Refine a vibe-interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after vibe-interview completes, or when the user has raw interview notes and wants a structured plan document."
 triggers: [기획서, 기획서 작성, plan document, 기획 정리, "interview 정리", refine plan]
