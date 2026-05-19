@@ -32,7 +32,7 @@ export function createResearchTasks(feature: string, techStack: string[] = []): 
 
   return [
     {
-      name: 'best-practices-agent',
+      name: 'best-practices',
       category: 'best-practices',
       prompt: `Research best practices for implementing "${feature}" with ${stackStr}. Focus on:
 1. Industry-standard patterns
@@ -43,7 +43,7 @@ export function createResearchTasks(feature: string, techStack: string[] = []): 
 Provide actionable recommendations.`
     },
     {
-      name: 'framework-docs-agent',
+      name: 'framework-docs',
       category: 'framework-docs',
       prompt: `Find the latest documentation for ${stackStr} related to "${feature}". Include:
 1. Official API references
@@ -54,7 +54,7 @@ Provide actionable recommendations.`
 Use context7 MCP if available for up-to-date documentation.`
     },
     {
-      name: 'codebase-patterns-agent',
+      name: 'codebase-patterns',
       category: 'codebase-patterns',
       prompt: `Analyze the current codebase for patterns related to "${feature}". Look for:
 1. Similar existing implementations
@@ -65,7 +65,7 @@ Use context7 MCP if available for up-to-date documentation.`
 Use Glob and Grep to search the codebase.`
     },
     {
-      name: 'security-advisory-agent',
+      name: 'security-advisory',
       category: 'security-advisory',
       prompt: `Review security considerations for "${feature}" with ${stackStr}. Check:
 1. OWASP Top 10 relevance

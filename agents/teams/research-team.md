@@ -36,26 +36,26 @@
 ```text
 TeamCreate(team_name="research-{feature}", description="Research collaboration for {feature}")
 
-Task(team_name="research-{feature}", name="best-practices", subagent_type="best-practices-agent",
+Task(team_name="research-{feature}", name="best-practices", subagent_type="best-practices",
   prompt="리서치 팀 리더. 10개 병렬 리서치 결과를 종합하세요.
   리서치 결과: {all_research_results}
   역할: 패턴/안티패턴 종합, 팀원 간 충돌 해결, 최종 통합 요약 작성.
   TaskList를 확인하고 작업을 claim하세요. 팀원에게 SendMessage로 검증을 요청하세요.
   모든 작업 완료 후 최종 요약을 작성하세요.")
 
-Task(team_name="research-{feature}", name="security-advisory", subagent_type="security-advisory-agent",
+Task(team_name="research-{feature}", name="security-advisory", subagent_type="security-advisory",
   prompt="리서치 팀 보안 담당. 리서치 결과: {all_research_results}
   역할: 보안 관점에서 모든 권장사항 검증.
   보안 리스크 발견 시 best-practices에게 SendMessage로 알리세요.
   TaskList에서 보안 관련 작업을 claim하세요.")
 
-Task(team_name="research-{feature}", name="codebase-patterns", subagent_type="codebase-patterns-agent",
+Task(team_name="research-{feature}", name="codebase-patterns", subagent_type="codebase-patterns",
   prompt="리서치 팀 코드베이스 담당. 리서치 결과: {all_research_results}
   역할: 권장사항이 기존 코드 패턴과 호환되는지 검증.
   비호환 발견 시 best-practices에게 SendMessage로 알리세요.
   TaskList에서 호환성 관련 작업을 claim하세요.")
 
-Task(team_name="research-{feature}", name="framework-docs", subagent_type="framework-docs-agent",
+Task(team_name="research-{feature}", name="framework-docs", subagent_type="framework-docs",
   prompt="리서치 팀 문서 담당. 리서치 결과: {all_research_results}
   역할: 최신 API/문서와 권장사항 대조 검증.
   폐기/변경된 API 발견 시 best-practices에게 SendMessage로 알리세요.

@@ -1,5 +1,6 @@
 ---
 name: rob-pike
+user-invocable: false
 invocation: [auto]
 tier: core
 description: "Rob Pike's 5 Rules — block premature optimization. Auto-activates on optimize, slow, performance, cache, parallelize keywords."

@@ -18,36 +18,42 @@ vibe init
 
 ## 워크플로우
 
-진입점 하나. 나머지는 자동.
+**진입점 하나.** 자연어 요구사항만 던지세요. vibe가 의도를 분석해서 파이프라인을 설계하고, 한 번만 승인받고, 자동 실행합니다.
 
 ```
-/vibe.spec "커피 브랜드 랜딩 페이지"
+/vibe "커피 브랜드 랜딩 페이지" [+ 📎 figma URL / 이미지 / PDF / 파일]
      |
      v
-  인터뷰    ─── "타깃은 누구?" "어떤 섹션?" "다크 모드?" ───
-     |                   (사용자가 "그만"할 때까지 반복)
-     v
-  기획서    ─── 구조화된 마크다운 기획서 (.vibe/plans/)
+  Intent 분류  ─── new feature? figma-driven? clone? resume? review? regress? ...
      |
      v
-  SPEC     ─── PTCF 명세 + BDD 피처, GPT+Gemini 병렬 리서치
+  Smart Resume ─── .vibe/{interviews,plans,specs,features}/ 감지
      |
      v
-  리뷰     ─── Race Review (GPT vs Gemini), 품질 게이트 (100점, 수렴까지 루프)
+  파이프라인 설계 ─── /vibe.spec → /vibe.figma → /vibe.run → /vibe.verify → /vibe.trace
      |
-     +──────────────────────────────┐
-     v                              v
-  /vibe.run (로직)             /vibe.figma (UI)
-  SPEC 기반 구현               Figma 디자인 ↔ 코드
-  12개 에이전트 리뷰            읽기 또는 쓰기
-     |                              |
-     v                              v
-  /vibe.verify ──── /vibe.trace ──── 완료
+     v
+  1회 승인 게이트 (ultrawork 키워드 있으면 skip)
+     |
+     v
+  순차 실행 ─── 각 phase 완료 시 다음으로
 ```
 
-**Smart Resume** — 아무 단계에서나 멈추고, 세션을 닫고, 나중에 돌아오세요. `/vibe.spec`이 중단된 위치를 자동 감지하고 이어서 진행합니다. feature 이름을 외울 필요 없음.
+**예시:**
 
-**ultrawork** — 어느 명령이든 `ultrawork`를 붙이면 모든 확인 게이트를 건너뛰고 전체 파이프라인을 자동 실행합니다.
+```bash
+/vibe "패럴랙스 웹사이트 만들어줘"
+/vibe "https://figma.com/file/abc 로 로그인 페이지"
+/vibe "로그인 회귀 테스트 다시 통과시켜줘"
+/vibe "이 SPEC 리뷰만" + 📎 .vibe/specs/login.md
+/vibe "결제 API" ultrawork           # 승인 게이트 skip
+```
+
+**Smart Resume** — 아무 단계에서나 멈추고 나중에 돌아오세요. `/vibe`는 `.vibe/` 디렉토리에서 진행 상황을 감지하고 "이어서?" 제안합니다.
+
+**ultrawork** — `ultrawork` 키워드를 붙이면 승인 게이트와 모든 중단점을 skip하고 자동 실행합니다.
+
+**Advanced** — 정확히 어느 phase 실행할지 알면 `/vibe.spec`, `/vibe.figma`, `/vibe.run`, `/vibe.verify`, `/vibe.trace` 등을 직접 호출할 수 있습니다.
 
 ---
 
@@ -65,7 +71,7 @@ vibe init
 claude
 
 # 워크플로우 실행
-/vibe.spec "사용자 인증 추가"
+/vibe "사용자 인증 추가"
 ```
 
 ---
@@ -123,7 +129,7 @@ claude
 
 **세션 메모리** — 결정, 제약, 목표가 SQLite + FTS5 검색으로 세션 간 유지.
 
-**Smart Resume** — `.last-feature` 포인터가 마지막 작업을 추적. 인자 없이 `/vibe.spec`을 호출하면 중단된 위치를 보여주거나 진행 중 feature 목록을 제시.
+**Smart Resume** — `.last-feature` 포인터가 마지막 작업을 추적. 인자 없이 `/vibe`를 호출하면 중단된 위치를 보여주거나 진행 중 feature 목록을 제시.
 
 ---
 
@@ -143,11 +149,12 @@ claude
 
 | 명령어 | 용도 |
 |--------|------|
-| `/vibe.spec` | 단일 진입점 — 인터뷰, 기획, SPEC, 리뷰, 그리고 구현까지 |
-| `/vibe.run` | SPEC 기반 구현 |
-| `/vibe.figma` | Figma ↔ 코드 (읽기 또는 쓰기, 3가지 모드) |
-| `/vibe.verify` | 구현이 SPEC에 맞는지 검증 |
-| `/vibe.trace` | 요구사항 추적 매트릭스 |
+| `/vibe` | **메인 진입점** — 자연어 요구사항 → 동적 파이프라인 설계 → 1회 승인 → 자동 체인 실행 |
+| `/vibe.spec` | (advanced) 인터뷰, 기획, SPEC, 리뷰 phase 명시적 호출 |
+| `/vibe.run` | (advanced) SPEC 기반 구현 |
+| `/vibe.figma` | (advanced) Figma ↔ 코드 (읽기 또는 쓰기, 3가지 모드) |
+| `/vibe.verify` | (advanced) 구현이 SPEC에 맞는지 검증 |
+| `/vibe.trace` | (advanced) 요구사항 추적 매트릭스 |
 
 ---
 

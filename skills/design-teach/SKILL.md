@@ -1,5 +1,6 @@
 ---
 name: design-teach
+user-invocable: false
 invocation: [command, auto]
 tier: standard
 description: "Gather and store project design context — target audience, brand personality, aesthetic direction, constraints. Used by other design-* skills. Use when design-teach, design-setup, design-context."

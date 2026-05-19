@@ -50,10 +50,10 @@ function generateDescription(name: string, title: string, roleLines: string[]): 
     'rails-reviewer': `Rails framework expert. ${roleDesc}. MVC patterns, ActiveRecord best practices.`,
     'react-reviewer': `React framework expert. ${roleDesc}. Hooks, component patterns. Use proactively for React components.`,
     // Research agents
-    'best-practices-agent': `Industry best practices researcher. ${roleDesc}. Use when starting feature design to gather recommended patterns.`,
-    'framework-docs-agent': `Framework documentation researcher. ${roleDesc}. Use to verify latest API usage and migration guides.`,
-    'codebase-patterns-agent': `Codebase pattern analyzer. ${roleDesc}. Use to discover existing patterns and conventions before implementation.`,
-    'security-advisory-agent': `Security advisory researcher. ${roleDesc}. Use to check CVEs and security advisories for project dependencies.`,
+    'best-practices': `Industry best practices researcher. ${roleDesc}. Use when starting feature design to gather recommended patterns.`,
+    'framework-docs': `Framework documentation researcher. ${roleDesc}. Use to verify latest API usage and migration guides.`,
+    'codebase-patterns': `Codebase pattern analyzer. ${roleDesc}. Use to discover existing patterns and conventions before implementation.`,
+    'security-advisory': `Security advisory researcher. ${roleDesc}. Use to check CVEs and security advisories for project dependencies.`,
     // Utility agents
     'searcher': `Web search specialist. ${roleDesc}. Use to find latest tech information, error solutions, and library documentation.`,
     'tester': `Test writing specialist. ${roleDesc}. Use proactively after implementing new features to generate comprehensive tests.`,
@@ -75,6 +75,32 @@ function generateDescription(name: string, title: string, roleLines: string[]): 
     // Docs agents
     'api-documenter': `API documentation generator. ${roleDesc}. Extracts endpoints and generates structured API docs with schemas and examples.`,
     'changelog-writer': `Changelog generator from git diff. ${roleDesc}. Classifies changes and suggests semantic version bumps.`,
+    // Figma agents (teams/figma)
+    'figma-analyst': `Figma data collector & pattern analyst. ${roleDesc}. Phase 2-3: REST API로 tree.json 수집, 디자인 의도 해석, 반복 패턴 → 공통 컴포넌트 후보 추출.`,
+    'figma-architect': `Figma component tree designer. ${roleDesc}. Phase 3.5: sections.json → 컴포넌트 설계서, Props/Slots 인터페이스, 공유 vs 고유 컴포넌트 결정.`,
+    'figma-builder': `Figma → code assembler. ${roleDesc}. Phase 4: component-spec.json + figma-to-scss.js 출력으로 HTML 구조 + 인터랙션 로직 작성. SCSS는 수정 금지.`,
+    'figma-auditor': `Figma rendering validator. ${roleDesc}. Phase 5-6: tsc + build gate, 렌더링 vs 스크린샷 시각 검증, CSS 수치 대조 → builder에 불일치 리포트.`,
+    // UI agents
+    'ui-a11y-auditor': `UI accessibility auditor. ${roleDesc}. WCAG 2.1 AA 준수 검사, 색 대비, 키보드 네비, 스크린 리더. P1은 Review Debate Team으로 에스컬레이션.`,
+    'ui-antipattern-detector': `UI anti-pattern detector. ${roleDesc}. design system MASTER.md 대비 일관성 위반, dark pattern, 디자인 시스템 이탈 식별.`,
+    'ui-dataviz-advisor': `Data visualization advisor. ${roleDesc}. 제품 타입별 시각화 접근법, 차트 라이브러리 성능 고려, 접근성 가이드라인 제시.`,
+    'ui-design-system-gen': `Design system generator. ${roleDesc}. 산업 분석 → 전체 디자인 시스템 생성, MASTER.md(CSS 변수/팔레트/타이포/스페이싱) 작성·저장.`,
+    'ui-industry-analyzer': `Product → industry/style analyzer. ${roleDesc}. 제품 설명으로 산업 카테고리 감지, 스타일 우선순위·컬러·타이포 무드 결정. 다운스트림 agent 입력.`,
+    'ui-layout-architect': `UI layout architect. ${roleDesc}. 산업 분석 → 페이지 레이아웃 구조 설계, 섹션/계층/CTA 배치, 랜딩·대시보드 패턴 추천.`,
+    'ui-stack-implementer': `Stack-specific implementation guide. ${roleDesc}. 감지된 tech stack에 맞춘 구현 가이드라인, 컴포넌트 라이브러리·훅·상태관리 추천.`,
+    'ux-compliance-reviewer': `UX guideline compliance reviewer. ${roleDesc}. 99 UX 가이드라인 대비 검토, 인터랙션 상태·네비게이션·피드백 패턴 검증.`,
+    // Team coordinators (multi-agent orchestration meta-docs)
+    'debug-team': `Debug team coordinator. ${roleDesc}. Reproduce→hypothesize→fix 워크플로를 다중 agent로 분담.`,
+    'dev-team': `Dev team coordinator. ${roleDesc}. Implementer + Tester + Reviewer를 묶어 SPEC → 코드 → 검증 사이클 진행.`,
+    'docs-team': `Docs team coordinator. ${roleDesc}. api-documenter + changelog-writer 협업으로 문서·릴리즈 노트 생성.`,
+    'figma-team': `Figma pipeline coordinator. ${roleDesc}. figma-analyst → architect → builder → auditor 6-phase 파이프라인 오케스트레이션.`,
+    'fullstack-team': `Fullstack team coordinator. ${roleDesc}. Frontend + Backend + DB 변경을 동시 진행하는 다중 agent 팀.`,
+    'lite-team': `Lite team coordinator. ${roleDesc}. 단일 agent로 처리 가능한 소형 변경에 가벼운 implementer + reviewer 조합.`,
+    'migration-team': `Migration team coordinator. ${roleDesc}. 데이터/스키마/프레임워크 마이그레이션 multi-step orchestration.`,
+    'refactor-team': `Refactor team coordinator. ${roleDesc}. characterization-test → refactor-cleaner → simplifier 사이클 오케스트레이션.`,
+    'research-team': `Research team coordinator. ${roleDesc}. best-practices + framework-docs + codebase-patterns + security-advisory 병렬 리서치 종합.`,
+    'review-debate-team': `Multi-reviewer debate coordinator. ${roleDesc}. P1/P2 이슈를 security/architecture/performance/simplicity reviewer가 토론하여 합의·오탐 제거.`,
+    'security-team': `Security team coordinator. ${roleDesc}. security-reviewer + security-advisory + edge-case-finder 협업으로 OWASP 종합 검증.`,
   };
 
   return descriptions[name] || `${title}. ${roleDesc}. Use proactively when relevant.`;
@@ -146,7 +172,9 @@ function convertAgentToClaude(content: string, filename: string): string {
 /**
  * Claude Code 네이티브 서브에이전트 설치
  *
- * agents/ 디렉토리를 재귀 순회하여 모든 .md 파일을 변환 후 설치
+ * agents/ 디렉토리를 재귀 순회하여 모든 .md 파일을 변환 후 설치.
+ * `agents/teams/` 는 단일 sub-agent가 아닌 다중 agent 메타 문서이므로
+ * 별도 위치(vibe core)에 보관하며 Claude Code sub-agent로는 등록하지 않는다.
  */
 export function installClaudeAgents(agentsSource: string, claudeAgentsDir: string): void {
   if (!fs.existsSync(agentsSource)) {
@@ -162,17 +190,27 @@ export function installClaudeAgents(agentsSource: string, claudeAgentsDir: strin
 
   let installed = 0;
   let total = 0;
+  let teamsSkipped = 0;
 
-  function processDirectory(srcDir: string, destDir: string): void {
+  function processDirectory(srcDir: string, destDir: string, relPath: string): void {
     ensureDir(destDir);
     const entries = fs.readdirSync(srcDir, { withFileTypes: true });
 
     for (const entry of entries) {
       const srcPath = path.join(srcDir, entry.name);
       const destPath = path.join(destDir, entry.name);
+      const childRel = relPath ? `${relPath}/${entry.name}` : entry.name;
+
+      // teams/ 는 메타 문서 — sub-agent 등록에서 제외
+      if (entry.isDirectory() && entry.name === 'teams' && relPath === '') {
+        const teamCount = fs.readdirSync(srcPath, { recursive: true } as { recursive: true })
+          .filter((f): f is string => typeof f === 'string' && f.endsWith('.md')).length;
+        teamsSkipped = teamCount;
+        continue;
+      }
 
       if (entry.isDirectory()) {
-        processDirectory(srcPath, destPath);
+        processDirectory(srcPath, destPath, childRel);
       } else if (entry.name.endsWith('.md')) {
         total++;
         try {
@@ -187,6 +225,7 @@ export function installClaudeAgents(agentsSource: string, claudeAgentsDir: strin
     }
   }
 
-  processDirectory(agentsSource, claudeAgentsDir);
-  console.log(`   📦 Claude agents: ${installed}/${total} installed`);
+  processDirectory(agentsSource, claudeAgentsDir, '');
+  const skipNote = teamsSkipped > 0 ? ` (+${teamsSkipped} teams skipped — meta docs)` : '';
+  console.log(`   📦 Claude agents: ${installed}/${total} installed${skipNote}`);
 }

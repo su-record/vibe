@@ -1,5 +1,6 @@
 ---
 name: systematic-debugging
+user-invocable: false
 invocation: [auto]
 tier: core
 description: "Enforce reproduce-first, root-cause-first, failing-test-first debugging. Auto-activates on bug, error, fail, broken, crash, flaky keywords."

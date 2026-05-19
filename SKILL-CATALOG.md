@@ -9,11 +9,11 @@
 
 | Skill | Invocation | Description | Triggers | Priority |
 |-------|------------|-------------|----------|----------|
-| `vibe-interview` | command, auto | Iteratively interview the user to gather ALL required and optional requirements for a new project or feature. Loops until the user explicitly stops. Uses type-specific domain checklists (website, webapp, mobile, api, library, feature) so nothing is missed. Must use this skill when the user says  | 만들자, 개발하자, 기획하자, 신규 기능, 새 프로젝트, 무엇을 만들, 무엇을 개발, 아이디어, 인터뷰, interview, requirements, let's build, new feature, new project | 95 |
-| `vibe-plan` | command, auto, chain | Refine a vibe-interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after vibe-interview completes, or when the user has raw interview notes and wants a structured plan document. | 기획서, 기획서 작성, plan document, 기획 정리, interview 정리, refine plan | 90 |
-| `vibe-spec` | command, auto, chain | Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 100-point quality gate (loops until perfect or stuck). Produces .claude/vibe/specs/{feature}.md + matching .claude/vibe/features/{feature}.feature (BDD). Must use this skill when the user says  | spec, SPEC, 명세, 코드 명세, 구현 명세, write spec, create spec, PTCF | 85 |
-| `vibe-spec-review` | command, auto, chain | Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe-spec completes, or when the user says  | spec review, review spec, SPEC 리뷰, 명세 리뷰, race review | 80 |
-| `vibe-test` | command, auto | Self-test vibe by probing every command/skill/hook/agent in a target harness install dir (~/.claude or ~/.coco) and writing a pass/fail report to ~/.vibe/test-reports/. Takes an optional harness argument (cc|coco); empty = current harness. Must use this skill when user runs /vibe.test, when verifying a vibe install before release, or when the user says  | test, self-test, vibe 건강, harness 점검, 자가검진 | 70 |
+| `interview` | command, auto | Iteratively interview the user to gather ALL required and optional requirements for a new project or feature. Loops until the user explicitly stops. Uses type-specific domain checklists (website, webapp, mobile, api, library, feature) so nothing is missed. Must use this skill when the user says  | 만들자, 개발하자, 기획하자, 신규 기능, 새 프로젝트, 무엇을 만들, 무엇을 개발, 아이디어, 인터뷰, interview, requirements, let's build, new feature, new project | 95 |
+| `plan` | command, auto, chain | Refine a interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after interview completes, or when the user has raw interview notes and wants a structured plan document. | 기획서, 기획서 작성, plan document, 기획 정리, interview 정리, refine plan | 90 |
+| `spec` | command, auto, chain | Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 100-point quality gate (loops until perfect or stuck). Produces .claude/vibe/specs/{feature}.md + matching .claude/vibe/features/{feature}.feature (BDD). Must use this skill when the user says  | spec, SPEC, 명세, 코드 명세, 구현 명세, write spec, create spec, PTCF | 85 |
+| `spec-review` | command, auto, chain | Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after spec completes, or when the user says  | spec review, review spec, SPEC 리뷰, 명세 리뷰, race review | 80 |
+| `test` | command, auto | Self-test vibe by probing every command/skill/hook/agent in a target harness install dir (~/.claude or ~/.coco) and writing a pass/fail report to ~/.vibe/test-reports/. Takes an optional harness argument (cc|coco); empty = current harness. Must use this skill when user runs /vibe.test, when verifying a vibe install before release, or when the user says  | test, self-test, vibe 건강, harness 점검, 자가검진 | 70 |
 | `techdebt` | auto, chain | Technical debt cleanup — detect and fix duplicate code, console.log, unused imports, any types, etc. Recommended before session end. Activates on techdebt, cleanup, debt keywords. | techdebt, cleanup, debt, unused imports, console.log, dead code | 60 |
 | `characterization-test` | auto | Lock existing behavior with characterization tests before modifying code. Use BEFORE any refactor, rewrite, or large-scale modification of existing code — especially legacy code without tests. Captures current input/output behavior as test cases so regressions are caught immediately. Must use this skill when touching files >200 lines with no existing tests, when user says  | legacy, characterization test, lock behavior, regression prevention, before refactor, large file | 65 |
 | `arch-guard` | auto | Generate architecture boundary tests that mechanically enforce layer constraints. Use when adding new modules, refactoring layers, or after detecting circular dependencies. Creates import-rule tests (e.g.,  | arch guard, architecture test, layer test, boundary test, structural test, arch validation | 60 |
@@ -27,10 +27,10 @@
 | `claude-md-guide` | auto | Guide for writing effective CLAUDE.md files from scratch. Evidence-based methodology from 40+ sources including research papers, official docs, and real-world examples. Covers 3-layer architecture, Curse of Instructions mitigation, progressive disclosure, and maintenance. Use when creating new CLAUDE.md, improving existing ones, or teaching team members how to write project instructions for AI agents. | claude-md guide, write claude.md, create claude.md, claude.md 작성, 클로드 문서, project instructions, claude-md | 55 |
 | `capability-loop` | auto | When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking  | capability loop, failure loop, build capability, missing capability, agent failed, why did it fail | 75 |
 | `design-teach` | command, auto | Gather and store project design context — target audience, brand personality, aesthetic direction, constraints. Used by other design-* skills. Use when design-teach, design-setup, design-context. | design-teach, design-setup, design-context | 50 |
-| `vibe-figma` | command, chain | Figma design to code — tree-based structural code generation |  | — |
-| `vibe-figma-extract` | command | Acquire code generation data via Figma REST API — tree (primary), images, screenshots (for validation) |  | — |
-| `vibe-figma-convert` | command | Figma tree → structured code generation + screenshot validation |  | — |
-| `vibe-docs` | command, auto | Generate project documentation — README, architecture docs, user guide, release notes. Activates on docs, readme, documentation keywords. | vibe-docs, docs, documentation, readme, release notes, architecture doc | 50 |
+| `figma` | command, chain | Figma design to code — tree-based structural code generation |  | — |
+| `figma-extract` | command | Acquire code generation data via Figma REST API — tree (primary), images, screenshots (for validation) |  | — |
+| `figma-convert` | command | Figma tree → structured code generation + screenshot validation |  | — |
+| `docs` | command, auto | Generate project documentation — README, architecture docs, user guide, release notes. Activates on docs, readme, documentation keywords. | docs, docs, documentation, readme, release notes, architecture doc | 50 |
 | `commit-push-pr` | auto, chain | Commit, push, and create PR in one go. Auto-activates on commit, PR, push keywords. | commit, push, PR, pull request, merge | 70 |
 | `git-worktree` | auto | Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously. | worktree, PR review, hotfix, parallel branch, multiple branches | 50 |
 | `tool-fallback` | auto | Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors. | API error, search failure, timeout, 429, 5xx, overloaded, fallback, circuit breaker | 80 |
@@ -360,74 +360,74 @@
 - **Triggers**: react, next.js, performance, optimization, vercel, component, rendering
 - **Priority**: 60
 
-### `vibe-contract` (unrouted)
+### `contract` (unrouted)
 
-- **Description**: API contract drift detection. Extracts HTTP/GraphQL/event/public-function contracts from SPEC into .claude/vibe/contracts/<feature>.md, compares to implementation, and fails loudly on breaking drift (missing endpoints, removed required fields, type changes). P1 drifts auto-register as regressions via vibe-regress. Must use this skill when user runs /vibe.contract, when /vibe.spec completes, when /vibe.verify passes scenarios, or when the user says 
+- **Description**: API contract drift detection. Extracts HTTP/GraphQL/event/public-function contracts from SPEC into .claude/vibe/contracts/<feature>.md, compares to implementation, and fails loudly on breaking drift (missing endpoints, removed required fields, type changes). P1 drifts auto-register as regressions via regress. Must use this skill when user runs /vibe.contract, when /vibe.spec completes, when /vibe.verify passes scenarios, or when the user says 
 - **Invocation**: command, auto
 - **Triggers**: contract, drift, 계약, API 변경, breaking change, schema drift
 - **Priority**: 70
 
-### `vibe-docs` (global)
+### `docs` (global)
 
 - **Description**: Generate project documentation — README, architecture docs, user guide, release notes. Activates on docs, readme, documentation keywords.
 - **Invocation**: command, auto
-- **Triggers**: vibe-docs, docs, documentation, readme, release notes, architecture doc
+- **Triggers**: docs, docs, documentation, readme, release notes, architecture doc
 - **Priority**: 50
 
-### `vibe-figma` (global)
+### `figma` (global)
 
 - **Description**: Figma design to code — tree-based structural code generation
 - **Invocation**: command, chain
 - **Triggers**: 
 
-### `vibe-figma-convert` (global)
+### `figma-convert` (global)
 
 - **Description**: Figma tree → structured code generation + screenshot validation
 - **Invocation**: command
 - **Triggers**: 
 
-### `vibe-figma-extract` (global)
+### `figma-extract` (global)
 
 - **Description**: Acquire code generation data via Figma REST API — tree (primary), images, screenshots (for validation)
 - **Invocation**: command
 - **Triggers**: 
 
-### `vibe-interview` (global)
+### `interview` (global)
 
 - **Description**: Iteratively interview the user to gather ALL required and optional requirements for a new project or feature. Loops until the user explicitly stops. Uses type-specific domain checklists (website, webapp, mobile, api, library, feature) so nothing is missed. Must use this skill when the user says 
 - **Invocation**: command, auto
 - **Triggers**: 만들자, 개발하자, 기획하자, 신규 기능, 새 프로젝트, 무엇을 만들, 무엇을 개발, 아이디어, 인터뷰, interview, requirements, let's build, new feature, new project
 - **Priority**: 95
 
-### `vibe-plan` (global)
+### `plan` (global)
 
-- **Description**: Refine a vibe-interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after vibe-interview completes, or when the user has raw interview notes and wants a structured plan document.
+- **Description**: Refine a interview result into a human-readable markdown 기획서 (planning document). The plan is a vision document that downstream skills/commands use: /vibe.spec consumes it for code implementation, /vibe.figma uses it for UI storyboards. Must use this skill after interview completes, or when the user has raw interview notes and wants a structured plan document.
 - **Invocation**: command, auto, chain
 - **Triggers**: 기획서, 기획서 작성, plan document, 기획 정리, interview 정리, refine plan
 - **Priority**: 90
 
-### `vibe-regress` (unrouted)
+### `regress` (unrouted)
 
 - **Description**: Regression test auto-evolution. Registers bugs (auto from /vibe.verify failures or manual), generates preventive vitest/jest files from bug records, clusters repeated patterns (3+ same root-cause-tag) into shared tests, and imports historical `fix:` commits from git log. Storage: .claude/vibe/regressions/<slug>.md. Must use this skill when user runs /vibe.regress, when /vibe.verify produces a failure, or when the user says 
 - **Invocation**: command, auto
 - **Triggers**: regress, regression, 회귀, 다시는, 반복 버그, fix commit
 - **Priority**: 70
 
-### `vibe-spec` (global)
+### `spec` (global)
 
 - **Description**: Create an AI-executable PTCF-structured SPEC document through conversational requirements gathering, parallel research (GPT/Gemini/Claude agents), PTCF writing, ambiguity scan, and 100-point quality gate (loops until perfect or stuck). Produces .claude/vibe/specs/{feature}.md + matching .claude/vibe/features/{feature}.feature (BDD). Must use this skill when the user says 
 - **Invocation**: command, auto, chain
 - **Triggers**: spec, SPEC, 명세, 코드 명세, 구현 명세, write spec, create spec, PTCF
 - **Priority**: 85
 
-### `vibe-spec-review` (global)
+### `spec-review` (global)
 
-- **Description**: Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after vibe-spec completes, or when the user says 
+- **Description**: Review and enhance an existing SPEC with GPT/Gemini cross-validation. Runs 100-point quality gate (loop until perfect or stuck), Race Review with convergence-based termination (no round cap), optional Codex adversarial review, Review Debate Team, and final user checkpoint. Must use this skill after spec completes, or when the user says 
 - **Invocation**: command, auto, chain
 - **Triggers**: spec review, review spec, SPEC 리뷰, 명세 리뷰, race review
 - **Priority**: 80
 
-### `vibe-test` (global)
+### `test` (global)
 
 - **Description**: Self-test vibe by probing every command/skill/hook/agent in a target harness install dir (~/.claude or ~/.coco) and writing a pass/fail report to ~/.vibe/test-reports/. Takes an optional harness argument (cc|coco); empty = current harness. Must use this skill when user runs /vibe.test, when verifying a vibe install before release, or when the user says 
 - **Invocation**: command, auto

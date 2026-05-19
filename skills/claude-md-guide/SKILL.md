@@ -1,5 +1,6 @@
 ---
 name: claude-md-guide
+user-invocable: false
 invocation: [auto]
 tier: standard
 description: "Guide for writing effective CLAUDE.md files from scratch. Evidence-based methodology from 40+ sources including research papers, official docs, and real-world examples. Covers 3-layer architecture, Curse of Instructions mitigation, progressive disclosure, and maintenance. Use when creating new CLAUDE.md, improving existing ones, or teaching team members how to write project instructions for AI agents."

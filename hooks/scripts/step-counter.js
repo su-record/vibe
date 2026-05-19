@@ -68,7 +68,7 @@ function isResponseError(toolResponse) {
 }
 
 // ─────────────────────────────────────────────────────
-// 책임 3a: error_category 분류 (regex 만 — vibe-regress tag enum 일부)
+// 책임 3a: error_category 분류 (regex 만 — regress tag enum 일부)
 // ─────────────────────────────────────────────────────
 const ERROR_CATEGORIES = [
   { tag: 'nullability', re: /Cannot read propert(?:y|ies) of (?:undefined|null)|TypeError[^\n]*(?:undefined|null)/i },

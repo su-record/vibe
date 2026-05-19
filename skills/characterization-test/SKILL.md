@@ -1,5 +1,6 @@
 ---
 name: characterization-test
+user-invocable: false
 invocation: [auto]
 tier: core
 description: "Lock existing behavior with characterization tests before modifying code. Use BEFORE any refactor, rewrite, or large-scale modification of existing code — especially legacy code without tests. Captures current input/output behavior as test cases so regressions are caught immediately. Must use this skill when touching files >200 lines with no existing tests, when user says 'refactor', 'rewrite', 'modernize', or 'clean up' existing code."

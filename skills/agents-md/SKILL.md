@@ -1,5 +1,6 @@
 ---
 name: agents-md
+user-invocable: false
 invocation: [auto, chain]
 tier: standard
 description: "Optimize AGENTS.md / CLAUDE.md by removing discoverable info and keeping only gotchas. Based on Addy Osmani's AGENTS.md principles. Activates on agents.md, claude.md, context file optimization."

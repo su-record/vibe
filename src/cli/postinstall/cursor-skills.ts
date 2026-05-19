@@ -43,8 +43,8 @@ User says: "vibe spec [feature-name]" or "Create SPEC for [feature-name]"
 
 ### Phase 2: Parallel Research (Manual)
 Run these in parallel:
-- "Use best-practices-agent for [feature]"
-- "Use security-advisory-agent for [feature]"
+- "Use best-practices for [feature]"
+- "Use security-advisory for [feature]"
 - Search framework docs with context7
 
 ### Phase 3: SPEC Document Generation

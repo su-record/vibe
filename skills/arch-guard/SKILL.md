@@ -1,5 +1,6 @@
 ---
 name: arch-guard
+user-invocable: false
 invocation: [auto]
 tier: core
 description: "Generate architecture boundary tests that mechanically enforce layer constraints. Use when adding new modules, refactoring layers, or after detecting circular dependencies. Creates import-rule tests (e.g., 'UI must not import DB') that fail CI on violation. Must use this skill when user mentions layer enforcement, dependency rules, or architectural boundaries — even casually like 'make sure services don't import controllers'."

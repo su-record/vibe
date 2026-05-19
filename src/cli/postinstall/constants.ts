@@ -11,12 +11,37 @@
  * standard: 워크플로우 지원 — 프로젝트 설정 시 선택 활성
  * optional: 참고/래퍼 — 명시적 호출 시에만 로드 (전역 설치에서 제외)
  */
+/**
+ * 도트 진입점 스킬 (예: vibe.spec) — `/vibe.spec` 슬래시 명령으로 노출
+ * 이전엔 commands/*.md 였지만, CC가 skills/*.md 도 슬래시로 노출하므로 통합됨
+ */
+export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
+  'vibe',
+  'vibe.analyze',
+  'vibe.clone',
+  'vibe.contract',
+  'vibe.docs',
+  'vibe.event',
+  'vibe.figma',
+  'vibe.harness',
+  'vibe.reason',
+  'vibe.regress',
+  'vibe.review',
+  'vibe.run',
+  'vibe.scaffold',
+  'vibe.spec',
+  'vibe.test',
+  'vibe.trace',
+  'vibe.utils',
+  'vibe.verify',
+];
+
 export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
-  'vibe-interview',
-  'vibe-plan',
-  'vibe-spec',
-  'vibe-spec-review',
-  'vibe-test',
+  'interview',
+  'plan',
+  'spec',
+  'spec-review',
+  'test',
   'techdebt',
   'characterization-test',
   'arch-guard',
@@ -33,10 +58,11 @@ export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
   'claude-md-guide',
   'capability-loop',
   'design-teach',
-  'vibe-figma',
-  'vibe-figma-extract',
-  'vibe-figma-convert',
-  'vibe-docs',
+  'figma',
+  'figma-extract',
+  'figma-convert',
+  'clone',
+  'docs',
 ];
 
 /** 전역 설치에서 제외된 스킬 (명시적 /skill-name 호출 시에만 활성)
@@ -51,6 +77,7 @@ export const GLOBAL_SKILLS_OPTIONAL: ReadonlyArray<string> = [
 
 /** 전역 설치 스킬 전체 (하위 호환용) */
 export const GLOBAL_SKILLS: ReadonlyArray<string> = [
+  ...GLOBAL_SKILLS_ENTRY,
   ...GLOBAL_SKILLS_CORE,
   ...GLOBAL_SKILLS_STANDARD,
 ];
@@ -253,6 +280,7 @@ export const LEGACY_RULE_FILES = [
 
 /** 이전 네이밍에서 변경된 스킬 — postinstall 시 구 디렉토리 삭제 */
 export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
+  // 도트 네이밍 (v1)
   'vibe.spec',
   'vibe.spec.review',
   'vibe.docs',
@@ -262,6 +290,7 @@ export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
   'vibe.interview',
   'vibe.plan',
   'vibe.discover',
+  // 대시 네이밍 (v2 figma 분기)
   'vibe-figma-analyze',
   'vibe-figma-codegen',
   'vibe-figma-consolidate',
@@ -269,6 +298,19 @@ export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
   'vibe-figma-pipeline',
   'vibe-figma-rules',
   'vibe-figma-style',
+  // 대시 네이밍 (v3 vibe- prefix 제거 → plain name)
+  'vibe-clone',
+  'vibe-contract',
+  'vibe-docs',
+  'vibe-figma',
+  'vibe-figma-convert',
+  'vibe-figma-extract',
+  'vibe-interview',
+  'vibe-plan',
+  'vibe-regress',
+  'vibe-spec',
+  'vibe-spec-review',
+  'vibe-test',
 ];
 
 // ─── Claude Code 네이티브 서브에이전트 매핑 ───
@@ -301,10 +343,10 @@ export const CLAUDE_MODEL_MAPPING: Record<string, string> = {
   'rails-reviewer': 'sonnet',
   'react-reviewer': 'sonnet',
   // Research agents
-  'best-practices-agent': 'haiku',
-  'framework-docs-agent': 'haiku',
-  'codebase-patterns-agent': 'haiku',
-  'security-advisory-agent': 'haiku',
+  'best-practices': 'haiku',
+  'framework-docs': 'haiku',
+  'codebase-patterns': 'haiku',
+  'security-advisory': 'haiku',
   // Utility agents
   'searcher': 'haiku',
   'tester': 'haiku',
@@ -333,6 +375,32 @@ export const CLAUDE_MODEL_MAPPING: Record<string, string> = {
   'event-comms': 'sonnet',
   'event-ops': 'sonnet',
   'event-image': 'haiku',
+  // Figma agents (teams/figma)
+  'figma-analyst': 'sonnet',
+  'figma-architect': 'sonnet',
+  'figma-builder': 'sonnet',
+  'figma-auditor': 'sonnet',
+  // UI agents
+  'ui-a11y-auditor': 'sonnet',
+  'ui-antipattern-detector': 'sonnet',
+  'ui-dataviz-advisor': 'haiku',
+  'ui-design-system-gen': 'sonnet',
+  'ui-industry-analyzer': 'haiku',
+  'ui-layout-architect': 'sonnet',
+  'ui-stack-implementer': 'sonnet',
+  'ux-compliance-reviewer': 'sonnet',
+  // Team coordinators
+  'debug-team': 'sonnet',
+  'dev-team': 'sonnet',
+  'docs-team': 'sonnet',
+  'figma-team': 'sonnet',
+  'fullstack-team': 'sonnet',
+  'lite-team': 'sonnet',
+  'migration-team': 'sonnet',
+  'refactor-team': 'sonnet',
+  'research-team': 'sonnet',
+  'review-debate-team': 'sonnet',
+  'security-team': 'sonnet',
 };
 
 // Claude Code 에이전트 도구 세트 정의
@@ -371,10 +439,10 @@ export const CLAUDE_AGENT_TOOL_CATEGORY: Record<string, string> = {
   'rails-reviewer': 'read-only',
   'react-reviewer': 'read-only',
   // Research agents
-  'best-practices-agent': 'web-search',
-  'framework-docs-agent': 'web-search',
-  'codebase-patterns-agent': 'read-only',
-  'security-advisory-agent': 'web-search',
+  'best-practices': 'web-search',
+  'framework-docs': 'web-search',
+  'codebase-patterns': 'read-only',
+  'security-advisory': 'web-search',
   // Utility agents
   'searcher': 'web-search',
   'tester': 'write-capable',
@@ -403,6 +471,32 @@ export const CLAUDE_AGENT_TOOL_CATEGORY: Record<string, string> = {
   'event-comms': 'write-capable',
   'event-ops': 'write-capable',
   'event-image': 'write-capable',
+  // Figma agents
+  'figma-analyst': 'read-only',
+  'figma-architect': 'read-only',
+  'figma-builder': 'write-capable',
+  'figma-auditor': 'read-only-git',
+  // UI agents
+  'ui-a11y-auditor': 'read-only',
+  'ui-antipattern-detector': 'read-only',
+  'ui-dataviz-advisor': 'read-only',
+  'ui-design-system-gen': 'write-capable',
+  'ui-industry-analyzer': 'read-only',
+  'ui-layout-architect': 'read-only',
+  'ui-stack-implementer': 'read-only',
+  'ux-compliance-reviewer': 'read-only',
+  // Team coordinators (read-only — 호출만 하고 코드 수정은 멤버 agent에 위임)
+  'debug-team': 'read-only',
+  'dev-team': 'read-only',
+  'docs-team': 'read-only',
+  'figma-team': 'read-only',
+  'fullstack-team': 'read-only',
+  'lite-team': 'read-only',
+  'migration-team': 'read-only',
+  'refactor-team': 'read-only',
+  'research-team': 'read-only',
+  'review-debate-team': 'read-only',
+  'security-team': 'read-only',
 };
 
 // 에이전트 → 권한 모드 매핑
@@ -416,8 +510,8 @@ export const CLAUDE_AGENT_PERMISSION_MODE: Record<string, string> = {
   'test-coverage-reviewer': 'plan', 'git-history-reviewer': 'plan',
   'python-reviewer': 'plan', 'typescript-reviewer': 'plan',
   'rails-reviewer': 'plan', 'react-reviewer': 'plan',
-  'best-practices-agent': 'plan', 'framework-docs-agent': 'plan',
-  'codebase-patterns-agent': 'plan', 'security-advisory-agent': 'plan',
+  'best-practices': 'plan', 'framework-docs': 'plan',
+  'codebase-patterns': 'plan', 'security-advisory': 'plan',
   'qa-coordinator': 'plan', 'edge-case-finder': 'plan', 'acceptance-tester': 'plan',
   'requirements-analyst': 'plan', 'ux-advisor': 'plan',
   'api-documenter': 'plan', 'changelog-writer': 'plan',
@@ -436,6 +530,32 @@ export const CLAUDE_AGENT_PERMISSION_MODE: Record<string, string> = {
   'event-comms': 'acceptEdits',
   'event-ops': 'acceptEdits',
   'event-image': 'acceptEdits',
+  // Figma agents
+  'figma-analyst': 'plan',
+  'figma-architect': 'plan',
+  'figma-builder': 'acceptEdits',
+  'figma-auditor': 'plan',
+  // UI agents
+  'ui-a11y-auditor': 'plan',
+  'ui-antipattern-detector': 'plan',
+  'ui-dataviz-advisor': 'plan',
+  'ui-design-system-gen': 'acceptEdits',
+  'ui-industry-analyzer': 'plan',
+  'ui-layout-architect': 'plan',
+  'ui-stack-implementer': 'plan',
+  'ux-compliance-reviewer': 'plan',
+  // Team coordinators
+  'debug-team': 'plan',
+  'dev-team': 'plan',
+  'docs-team': 'plan',
+  'figma-team': 'plan',
+  'fullstack-team': 'plan',
+  'lite-team': 'plan',
+  'migration-team': 'plan',
+  'refactor-team': 'plan',
+  'research-team': 'plan',
+  'review-debate-team': 'plan',
+  'security-team': 'plan',
 };
 
 // NO FILE CREATION 에이전트 → Write, Edit 차단
@@ -445,13 +565,36 @@ export const CLAUDE_AGENT_DISALLOWED_TOOLS: Record<string, string[]> = {
   'qa-coordinator': ['Write', 'Edit'],
   'edge-case-finder': ['Write', 'Edit'],
   'acceptance-tester': ['Write', 'Edit'],
-  'best-practices-agent': ['Write', 'Edit'],
-  'framework-docs-agent': ['Write', 'Edit'],
-  'codebase-patterns-agent': ['Write', 'Edit'],
-  'security-advisory-agent': ['Write', 'Edit'],
+  'best-practices': ['Write', 'Edit'],
+  'framework-docs': ['Write', 'Edit'],
+  'codebase-patterns': ['Write', 'Edit'],
+  'security-advisory': ['Write', 'Edit'],
   'api-documenter': ['Write', 'Edit'],
   'changelog-writer': ['Write', 'Edit'],
   'event-speaker': ['Write', 'Edit'],
+  // Read-only analysts (자문/감지/분석 — 코드 수정 금지)
+  'ui-a11y-auditor': ['Write', 'Edit'],
+  'ui-antipattern-detector': ['Write', 'Edit'],
+  'ui-dataviz-advisor': ['Write', 'Edit'],
+  'ui-industry-analyzer': ['Write', 'Edit'],
+  'ui-layout-architect': ['Write', 'Edit'],
+  'ui-stack-implementer': ['Write', 'Edit'],
+  'ux-compliance-reviewer': ['Write', 'Edit'],
+  'figma-analyst': ['Write', 'Edit'],
+  'figma-architect': ['Write', 'Edit'],
+  'figma-auditor': ['Write', 'Edit'],
+  // Team coordinators — read-only orchestration
+  'debug-team': ['Write', 'Edit'],
+  'dev-team': ['Write', 'Edit'],
+  'docs-team': ['Write', 'Edit'],
+  'figma-team': ['Write', 'Edit'],
+  'fullstack-team': ['Write', 'Edit'],
+  'lite-team': ['Write', 'Edit'],
+  'migration-team': ['Write', 'Edit'],
+  'refactor-team': ['Write', 'Edit'],
+  'research-team': ['Write', 'Edit'],
+  'review-debate-team': ['Write', 'Edit'],
+  'security-team': ['Write', 'Edit'],
 };
 
 // 지속 메모리 설정 (세션 간 패턴 축적)

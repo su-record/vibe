@@ -1,5 +1,6 @@
 ---
 name: priority-todos
+user-invocable: false
 invocation: [auto]
 tier: standard
 description: "Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority."

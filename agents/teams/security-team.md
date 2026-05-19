@@ -8,7 +8,7 @@
 |------|------|-------|
 | security-reviewer (리더) | OWASP Top 10 검증, 보안 이슈 우선순위 결정 | Sonnet |
 | data-integrity-reviewer | 데이터 무결성, 트랜잭션 관리, 입력 검증 | Sonnet |
-| security-advisory-agent | 사용 라이브러리 CVE 확인, 보안 패치 확인 | Haiku |
+| security-advisory | 사용 라이브러리 CVE 확인, 보안 패치 확인 | Haiku |
 | tester | 보안 테스트 케이스 작성, 침투 테스트 시나리오 검증 | Haiku |
 
 ## 활성화 조건
@@ -23,7 +23,7 @@
     |
     ├──→ security-reviewer: OWASP Top 10 검증 + 합의 주도
     ├──→ data-integrity-reviewer: 데이터 흐름 + 입력 검증
-    ├──→ security-advisory-agent: CVE 스캔 + 의존성 검사
+    ├──→ security-advisory: CVE 스캔 + 의존성 검사
     └──→ tester: 보안 테스트 케이스 작성
          |
     [SendMessage 교차 보고]
@@ -51,7 +51,7 @@ Task(team_name="security-{feature}", name="data-integrity-reviewer", subagent_ty
   Role: Check transaction management, input validation, data sanitization.
   Report findings to security-reviewer.")
 
-Task(team_name="security-{feature}", name="security-advisory-agent", subagent_type="security-advisory-agent",
+Task(team_name="security-{feature}", name="security-advisory", subagent_type="security-advisory",
   prompt="Security team advisory specialist. Check dependencies for {feature}.
   Role: Scan for known CVEs in project dependencies. Check security advisories.
   Report critical findings to security-reviewer.")
@@ -69,7 +69,7 @@ Task(team_name="security-{feature}", name="tester", subagent_type="tester",
 ```text
 security-reviewer → data-integrity-reviewer: "POST /users에서 입력 검증 확인 요청. SQL injection 가능성"
 data-integrity-reviewer → security-reviewer: "입력 검증 없음 확인. parameterized query도 미사용. P1"
-security-advisory-agent → security-reviewer: "jsonwebtoken@8.x에 CVE-2024-xxxxx. jose로 마이그레이션 필요"
+security-advisory → security-reviewer: "jsonwebtoken@8.x에 CVE-2024-xxxxx. jose로 마이그레이션 필요"
 tester → security-reviewer: "auth bypass 테스트: admin 엔드포인트에 일반 토큰으로 접근 성공. P1"
 security-reviewer → broadcast: "P1 3건 발견. merge 차단. 수정 후 재검증 필요"
 ```

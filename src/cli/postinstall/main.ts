@@ -71,23 +71,30 @@ export function main(): void {
       copyDirRecursive(hooksSource, hooksTarget);
     }
 
-    // 4. CLI 호환 디렉토리에 전역 assets 설치 (commands, agents, skills)
+    // 4. CLI 호환 디렉토리에 전역 assets 설치 (agents, skills)
     //    ~/.claude/ (필수) + ~/.coco/ (감지 시)
+    //    NOTE: commands/ 폴더는 더 이상 사용하지 않음 — 도트 스킬(vibe.spec 등)이 슬래시 진입점 역할
     const agentsSource = path.join(packageRoot, 'agents');
     const skillsSource = path.join(packageRoot, 'skills');
-    const commandsSource = path.join(packageRoot, 'commands');
+
+    /** 레거시 vibe.*.md 커맨드 파일을 ~/.claude/commands/ 에서 제거 (도트 스킬로 마이그레이션됨) */
+    function removeLegacyVibeCommands(cmdsDir: string): void {
+      if (!fs.existsSync(cmdsDir)) return;
+      const entries = fs.readdirSync(cmdsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isFile()) continue;
+        if (/^vibe\..+\.md$/.test(entry.name)) {
+          fs.rmSync(path.join(cmdsDir, entry.name), { force: true });
+        }
+      }
+    }
 
     function installCliAssets(targetDir: string, label: string): void {
       ensureDir(targetDir);
 
-      // commands
+      // commands — 레거시 vibe.*.md 정리 (도트 스킬로 마이그레이션)
       const cmdsDir = path.join(targetDir, 'commands');
-      if (fs.existsSync(commandsSource)) {
-        if (fs.existsSync(cmdsDir)) removeDirRecursive(cmdsDir);
-        ensureDir(cmdsDir);
-        copyDirRecursive(commandsSource, cmdsDir);
-        replaceTemplatesInDir(cmdsDir);
-      }
+      removeLegacyVibeCommands(cmdsDir);
 
       // agents
       const agtsDir = path.join(targetDir, 'agents');
@@ -133,6 +140,8 @@ export function main(): void {
         { source: path.join(packageRoot, 'vibe', 'rules'), target: path.join(coreAssetsDir, 'rules') },
         { source: path.join(packageRoot, 'vibe', 'templates'), target: path.join(coreAssetsDir, 'templates') },
         { source: path.join(packageRoot, 'languages'), target: path.join(coreAssetsDir, 'languages') },
+        // teams/ 메타 문서 — sub-agent가 아닌 다중 agent orchestration 가이드. vibe core에 보관.
+        { source: path.join(packageRoot, 'agents', 'teams'), target: path.join(coreAssetsDir, 'teams') },
       ];
       for (const { source, target } of copies) {
         if (fs.existsSync(source)) {
