@@ -124,6 +124,8 @@ Scenario 3 → Implement → Verify ❌ → Fix → ✅
 All pass = Quality guaranteed
 ```
 
+> **하네스-안전 증분 (Dual-Harness Doctrine)**: 시나리오는 **가장 작은 검증 단위**다. 한 시나리오 구현 → 즉시 검증 → 다음. 여러 시나리오를 묶어 빅뱅으로 구현하지 않는다 — Codex(직역) 에서 성공률이 급락하고 CC 에서도 디버깅 비용만 늘린다. `ultrawork` 모드라도 이 단위는 무너뜨리지 않는다 (병렬은 시나리오 간, 검증은 시나리오별). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
+
 ### Automated Verification (Closed Loop)
 
 **자율적 AI 코딩 = 구현 + 검증 + 반복. 검증을 AI에게 맡기는 순간 루프가 닫힌다.**

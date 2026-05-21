@@ -5,7 +5,7 @@
 import { execSync } from 'child_process';
 import { LLMAuthStatus, LLMStatusMap, ClaudeCodeStatus } from './types.js';
 import { readGlobalConfig } from '../infra/lib/config/GlobalConfigManager.js';
-import { detectClaudeCli, detectCocoCli, detectCodexCli, detectGeminiCli } from './utils/cli-detector.js';
+import { detectClaudeCli, detectCodexCli, detectGeminiCli } from './utils/cli-detector.js';
 
 /**
  * LLM 인증 상태 확인 (config.json 우선, process.env fallback)
@@ -121,13 +121,11 @@ function formatLlmCliRow(installed: boolean, authenticated: boolean | undefined)
 
 /**
  * 통합 LLM/CLI 상태 포맷터 (status / init / update / upgrade 공용)
- * - Coding Agent: coco
  * - LLM CLI (vibe 멀티-오케스트레이션에서 호출 가능): Claude Code, Codex, Gemini
  * - LLM API Key (직접 호출용): GPT, Gemini
  */
 export function formatLLMStatus(): string {
   const claudeCli = detectClaudeCli();
-  const cocoCli = detectCocoCli();
   const codexCli = detectCodexCli();
   const geminiCli = detectGeminiCli();
   const apiStatus = getLLMAuthStatus();
@@ -139,21 +137,7 @@ export function formatLLMStatus(): string {
   const gptKey = apiStatus.gpt.length > 0 ? '✓ Key' : '⬚ —';
   const geminiKey = apiStatus.gemini.length > 0 ? '✓ Key' : '⬚ —';
 
-  const cocoLines: string[] = ['Coding Agent:'];
-  if (!cocoCli.installed) {
-    cocoLines.push('  coco                ⬚ Not installed');
-  } else if (!cocoCli.authenticated) {
-    cocoLines.push('  coco                ✓ Installed, ⚠ No auth (run: coco auth)');
-  } else {
-    cocoLines.push(`  coco                ✓ Usable · active: ${cocoCli.activeVendor}`);
-    if (cocoCli.methods && cocoCli.methods.length > 0) {
-      cocoLines.push(`                      methods: ${cocoCli.methods.join(', ')}`);
-    }
-  }
-
   return [
-    ...cocoLines,
-    '',
     'LLM CLI (orchestration):',
     `  Claude Code         ${claudeRow}`,
     `  Codex (GPT)         ${codexRow}`,

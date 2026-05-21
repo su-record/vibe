@@ -27,7 +27,6 @@ export function isScopeGuardEnabled(projectDir) {
     const candidates = [
       path.join(projectDir, '.vibe', 'config.json'),
       path.join(projectDir, '.claude', 'vibe', 'config.json'),
-      path.join(projectDir, '.coco', 'vibe', 'config.json'),
     ];
     for (const p of candidates) {
       if (!fs.existsSync(p)) continue;
@@ -39,14 +38,13 @@ export function isScopeGuardEnabled(projectDir) {
 }
 
 /**
- * Vibe 에셋 루트 해석 — `.vibe/` (SSOT) 우선, legacy `.claude/vibe/`, `.coco/vibe/` fallback.
+ * Vibe 에셋 루트 해석 — `.vibe/` (SSOT) 우선, legacy `.claude/vibe/` fallback.
  * 반환값은 projectDir 기준 상대 경로 문자열 (예: `.vibe`, `.claude/vibe`).
  */
 function detectVibeRoot(projectDir) {
   try {
     if (fs.existsSync(path.join(projectDir, '.vibe'))) return '.vibe';
     if (fs.existsSync(path.join(projectDir, '.claude', 'vibe'))) return '.claude/vibe';
-    if (fs.existsSync(path.join(projectDir, '.coco', 'vibe'))) return '.coco/vibe';
   } catch { /* ignore */ }
   return '.vibe';
 }
@@ -108,7 +106,7 @@ function extractPaths(markdown) {
     // 명백한 비경로 제외
     if (/^[A-Z_]+$/.test(raw)) continue; // 상수
     if (/^\d+$/.test(raw)) continue; // 숫자
-    if (raw.startsWith('.') && !raw.startsWith('./') && !raw.startsWith('.vibe') && !raw.startsWith('.claude') && !raw.startsWith('.coco')) continue;
+    if (raw.startsWith('.') && !raw.startsWith('./') && !raw.startsWith('.vibe') && !raw.startsWith('.claude')) continue;
 
     const normalized = raw.replace(/^\.\//, '').replace(/\\/g, '/');
     // 각 세그먼트 안전성 재검증 — "a.b.c" 같은 필드 경로 제거

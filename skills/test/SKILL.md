@@ -1,6 +1,6 @@
 ---
 name: test
-description: vibe 자가검진 본체 — 대상 harness(~/.claude/~/.coco)의 모든 command/skill/hook/agent 프로빙 → pass/fail 리포트 → ~/.vibe/test-reports/.
+description: vibe 자가검진 본체 — 대상 harness(~/.claude/~/.codex)의 모든 command/skill/hook/agent 프로빙 → pass/fail 리포트 → ~/.vibe/test-reports/.
 when_to_use: /vibe.test 진입점에서 체인 호출. 직접 호출 금지.
 user-invocable: false
 tier: core
@@ -12,7 +12,7 @@ Probe every shipped vibe surface in one install dir and emit a pass/fail report.
 
 ## Why this exists
 
-When vibe ships new commands, skills, hooks, or agents, one side (CC or coco) can end up out of sync with the other, frontmatter can drift, and hook tests can silently break. `/vibe.test` is the single mechanical check: does every surface in the target install actually load and pass its own tests?
+When vibe ships new commands, skills, hooks, or agents, one side (CC or Codex) can end up out of sync with the other, frontmatter can drift, and hook tests can silently break. `/vibe.test` is the single mechanical check: does every surface in the target install actually load and pass its own tests?
 
 ## Target harness
 
@@ -20,15 +20,15 @@ The argument selects which install dir to probe:
 
 | Arg | Probed dir |
 |---|---|
-| (empty) | current harness — CC: `~/.claude/`, coco: `~/.coco/` |
+| (empty) | current harness — CC: `~/.claude/`, Codex: `~/.codex/` |
 | `cc` | `~/.claude/` |
-| `coco` | `~/.coco/` |
+| `codex` | `~/.codex/` |
 
 If the target dir does not exist, print a clear message and exit with guidance (not an error). Example:
 
 ```
-~/.coco/ not found — coco isn't installed on this machine.
-  To install: pnpm add -g @su-record/vibe-coco
+~/.codex/ not found — Codex isn't installed on this machine.
+  To install: npm i -g @openai/codex
 ```
 
 ## Probes
@@ -118,8 +118,8 @@ If `failed` is empty, replace the Failures section with `_All probes passed._`.
 
 ## Steps
 
-1. **Resolve target**: argument (`cc` / `coco` / empty). Empty → detect current harness (`$CLAUDE_PROJECT_DIR` set → `cc`; else fall back to `cc`).
-2. **Resolve install dir**: `cc` → `~/.claude`, `coco` → `~/.coco`. If missing → print guidance + exit.
+1. **Resolve target**: argument (`cc` / `codex` / empty). Empty → detect current harness (`$CLAUDE_PROJECT_DIR` set → `cc`; else fall back to `cc`).
+2. **Resolve install dir**: `cc` → `~/.claude`, `codex` → `~/.codex`. If missing → print guidance + exit.
 3. **Read `vibe_version`** from `package.json` in the current repo.
 4. **Walk each category**, run its check, append `{ name, status, error? }` to `probes.<category>`.
 5. **Compute** `summary` counts and the flat `failed[]` list.

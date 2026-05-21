@@ -182,7 +182,7 @@ created: YYYY-MM-DD
 
 4. **Cross-session contamination** — 다른 feature 의 learning 이 현재 세션에 prepend 되면 노이즈. → `feature` 필드로 필터, 같은 feature 또는 cross-cutting (`feature: '*'`) 만.
 
-5. **SessionEnd hook 존재 여부** — Claude Code harness 가 native SessionEnd 를 쏘는지 미확인. 없다면 `/vibe.run` 의 마지막 phase 에서 명시 호출 (현재 매핑 결과). coco harness 도 확인 필요.
+5. **SessionEnd hook 존재 여부** — Claude Code harness 가 native SessionEnd 를 쏘는지 미확인. 없다면 `/vibe.run` 의 마지막 phase 에서 명시 호출 (현재 매핑 결과). Codex harness 는 config.toml notify 의 agent-turn-complete 가 등가물.
 
 6. **글로벌 승격 경로** — Phase 3 까지는 project-local. 향후 confidence=high + 다수 프로젝트 등장 시 `~/.claude/skills/` 승격 — 별 SPEC.
 

@@ -126,7 +126,6 @@ function adaptSection(section: string, label: string, dirName: string, targetFil
     .replace(new RegExp(`${dirName.replace('.', '\\.')}\\/CLAUDE\\.md`, 'g'), `${dirName}/${targetFile}`);
 }
 
-const adaptToCoco = (section: string): string => adaptSection(section, 'coco', '.coco', 'AGENTS.md');
 const adaptToCodex = (section: string): string => adaptSection(section, 'Codex', '.codex', 'AGENTS.md');
 const adaptToGemini = (section: string): string => adaptSection(section, 'Gemini', '.gemini', 'GEMINI.md');
 
@@ -140,20 +139,27 @@ export function generateGlobalClaudeMd(): void {
 }
 
 /**
- * 전역 ~/.coco/AGENTS.md 생성/갱신 (coco CLI 감지 시에만 호출)
+ * Codex soft-hook 운영 규칙 — Codex 는 PreToolUse 같은 동기 hook 이 없다.
+ * 직역 성향상 AGENTS.md 에 적힌 규칙을 그대로 실행하므로, CC 가 hook 으로 강제하던
+ * 행동 가드를 운영 규칙으로 명문화한다. (라이프사이클은 config.toml notify 가 담당)
  */
-export function generateGlobalAgentsMd(): void {
-  const globalPath = path.join(os.homedir(), '.coco', 'AGENTS.md');
-  const section = adaptToCoco(buildGlobalSection(detectOsLanguage()));
-  writeVibeMarkedFile(globalPath, section);
-}
+const CODEX_SOFT_HOOK_RULES = `## Operating Rules (vibe soft-hooks)
+
+> Codex 에는 동기 hook 이 없다. 아래 규칙을 매 작업마다 직접 지킨다.
+
+- **Scope guard**: 변경하는 모든 라인은 사용자의 요청으로 추적 가능해야 한다. 요청 범위 밖 파일은 수정하지 않는다.
+- **Forbidden patterns**: 커밋 전 \`console.log\`, \`any\`/\`as any\`/\`@ts-ignore\`, 주석 처리된 코드, 하드코딩된 문자열/숫자를 남기지 않는다.
+- **Read before edit**: 수정 대상 파일은 부분 grep 이 아니라 전체를 읽은 뒤 수정한다.
+- **Keyword dispatch**: 요청에 \`ralph\`/\`ultrawork\`/\`verify\`/\`quick\` 가 있으면 해당 모드로 동작한다.
+- **Smallest unit**: 가장 작은 검증 단위로 구현 → 검증 → 다음. 여러 단위를 묶어 빅뱅으로 만들지 않는다.
+- **Turn 완료 후처리**(auto-commit·devlog)는 \`~/.codex/config.toml\` 의 \`notify\` 가 자동 수행한다.`;
 
 /**
  * 전역 ~/.codex/AGENTS.md 생성/갱신 (Codex CLI 감지 시에만 호출)
  */
 export function generateGlobalCodexAgentsMd(): void {
   const globalPath = path.join(os.homedir(), '.codex', 'AGENTS.md');
-  const section = adaptToCodex(buildGlobalSection(detectOsLanguage()));
+  const section = adaptToCodex(buildGlobalSection(detectOsLanguage())) + '\n\n' + CODEX_SOFT_HOOK_RULES;
   writeVibeMarkedFile(globalPath, section);
 }
 
@@ -185,7 +191,7 @@ export function generateProjectClaudeMd(
 }
 
 /**
- * 프로젝트 분석 → AGENTS.md 생성/갱신 (coco / codex 용, 프로젝트별 섹션만)
+ * 프로젝트 분석 → AGENTS.md 생성/갱신 (Codex 용, 프로젝트별 섹션만)
  * @param createIfMissing false 시 존재하는 파일만 갱신 (update --dynamic 용)
  */
 export function generateProjectAgentsMd(
@@ -199,7 +205,7 @@ export function generateProjectAgentsMd(
 
   const dirs = analyzeProjectStructure(projectRoot);
   const stackNames = detectedStacks.map(s => STACK_NAMES[s.type]?.name || s.type);
-  const section = adaptToCoco(buildProjectSection(dirs, stackNames, stackDetails));
+  const section = adaptToCodex(buildProjectSection(dirs, stackNames, stackDetails));
 
   if (!fs.existsSync(agentsMdPath)) {
     writeVibeMarkedFile(agentsMdPath, section);
@@ -247,7 +253,7 @@ interface ProjectDirs {
 
 function analyzeProjectStructure(projectRoot: string): ProjectDirs {
   const topLevel = fs.readdirSync(projectRoot)
-    .filter(f => !f.startsWith('.') || f === '.dev' || f === '.vibe' || f === '.claude' || f === '.coco')
+    .filter(f => !f.startsWith('.') || f === '.dev' || f === '.vibe' || f === '.claude' || f === '.codex')
     .filter(f => {
       try { return fs.statSync(path.join(projectRoot, f)).isDirectory(); }
       catch { return false; }
@@ -304,7 +310,7 @@ function analyzeProjectStructure(projectRoot: string): ProjectDirs {
   };
 }
 
-/** 전역 VIBE 규약 섹션 (프로젝트 독립) — ~/.claude/CLAUDE.md, ~/.coco/AGENTS.md */
+/** 전역 VIBE 규약 섹션 (프로젝트 독립) — ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md */
 function buildGlobalSection(language: string): string {
   const lines: string[] = [];
 
@@ -414,7 +420,7 @@ function buildProjectSection(
         structureRows.push('| `.dev/` | AI work logs, learnings, scratch |');
         break;
       case '.vibe':
-        structureRows.push('| `.vibe/` | Vibe SSOT (specs, plans, memories) — Claude/coco 공용 |');
+        structureRows.push('| `.vibe/` | Vibe SSOT (specs, plans, memories) — Claude/Codex 공용 |');
         break;
       case 'tests': case '__tests__': case 'test':
         structureRows.push(`| \`${dir}/\` | Test infrastructure |`);
@@ -422,8 +428,8 @@ function buildProjectSection(
       case '.claude':
         structureRows.push('| `.claude/` | Claude Code CLI 설정 |');
         break;
-      case '.coco':
-        structureRows.push('| `.coco/` | coco CLI 설정 |');
+      case '.codex':
+        structureRows.push('| `.codex/` | Codex CLI 설정 |');
         break;
       case 'dist': case 'out': case 'build':
         structureRows.push(`| \`${dir}/\` | Build output |`);
@@ -482,10 +488,10 @@ export function updateRules(coreDir: string, detectedStacks: TechStack[], isUpda
 }
 
 /**
- * 프로젝트 레벨 훅 설치 (.claude/settings.local.json 또는 .coco/settings.local.json)
+ * 프로젝트 레벨 훅 설치 (.claude/settings.local.json)
  *
  * @param projectRoot 프로젝트 루트
- * @param harnessDir 하네스 디렉토리 이름 ('.claude' | '.coco', 기본값: '.claude')
+ * @param harnessDir 하네스 디렉토리 이름 ('.claude', 기본값: '.claude')
  */
 export function installProjectHooks(projectRoot: string, harnessDir: string = '.claude'): void {
   const claudeDir = path.join(projectRoot, harnessDir);
@@ -523,10 +529,62 @@ export function installProjectHooks(projectRoot: string, harnessDir: string = '.
   }
 }
 
+// Codex config.toml 의 vibe 관리 블록 마커
+const CODEX_NOTIFY_START = '# >>> vibe notify (managed) — do not edit >>>';
+const CODEX_NOTIFY_END = '# <<< vibe notify (managed) <<<';
+
+/**
+ * Codex notify 설치 — `~/.codex/config.toml` 에 `notify` 프로그램을 등록한다.
+ *
+ * Codex 는 Claude Code 의 settings.local.json hook 을 읽지 않는다. 대신 lifecycle
+ * 이벤트를 `notify` 배열에 등록된 프로그램으로 발화하므로, 이를 vibe 의 codex-notify
+ * 어댑터에 연결해 turn 완료 시 auto-commit/devlog 를 돌린다.
+ *
+ * - 관리 블록(마커)으로 idempotent 갱신
+ * - 사용자가 이미 자체 `notify` 키를 둔 경우 덮어쓰지 않고 건너뛴다(경고)
+ * - TOML 루트 키는 테이블 헤더 이전에 와야 하므로 관리 블록을 파일 최상단에 둔다
+ *
+ * @param configDir Codex 설정 디렉토리 (보통 `~/.codex`)
+ */
+export function installCodexNotify(configDir: string): void {
+  const configPath = path.join(configDir, 'config.toml');
+  const corePath = getCoreConfigDir().replace(/\\/g, '/');
+  const notifyScript = `${corePath}/hooks/scripts/codex-notify.js`;
+  const block = `${CODEX_NOTIFY_START}\nnotify = ["node", ${JSON.stringify(notifyScript)}]\n${CODEX_NOTIFY_END}`;
+
+  if (!fs.existsSync(configPath)) {
+    ensureDir(configDir);
+    fs.writeFileSync(configPath, block + '\n');
+    return;
+  }
+
+  const existing = fs.readFileSync(configPath, 'utf-8');
+  const startIdx = existing.indexOf(CODEX_NOTIFY_START);
+  const endIdx = existing.indexOf(CODEX_NOTIFY_END);
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    // 기존 관리 블록 교체
+    const before = existing.substring(0, startIdx).trimEnd();
+    const after = existing.substring(endIdx + CODEX_NOTIFY_END.length).trimStart();
+    const next = (before ? before + '\n\n' : '') + block + (after ? '\n\n' + after : '') + '\n';
+    fs.writeFileSync(configPath, next);
+    return;
+  }
+
+  // 사용자가 자체 notify 키를 가진 경우 — 덮어쓰지 않는다
+  if (/^\s*notify\s*=/m.test(existing)) {
+    log(`⚠️  Codex config.toml already defines 'notify'; skipping vibe notify install (${configPath})`);
+    return;
+  }
+
+  // 루트 키는 테이블 헤더 이전이어야 하므로 최상단에 prepend
+  fs.writeFileSync(configPath, block + '\n\n' + existing.trimStart());
+}
+
 /**
  * .gitignore 업데이트
  *
- * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
+ * @param harnessDir '.claude' | '.codex' (기본값: '.claude')
  *   하네스-특정 경로(settings.local.json, checkpoints/)는 해당 디렉토리에 쓰기 위해 사용.
  */
 export function updateGitignore(projectRoot: string, harnessDir: string = '.claude'): void {
@@ -589,7 +647,7 @@ export function updateGitignore(projectRoot: string, harnessDir: string = '.clau
 }
 
 /**
- * harnessDir(.claude/.coco/.codex/.gemini) → 글로벌 vibe 에셋 경로 접두사
+ * harnessDir(.claude/.codex/.gemini) → 글로벌 vibe 에셋 경로 접두사
  */
 function resolveGlobalCoreDir(harnessDir: string): string {
   const name = harnessDir.startsWith('.') ? harnessDir : `.${harnessDir}`;

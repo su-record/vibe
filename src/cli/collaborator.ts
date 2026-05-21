@@ -9,9 +9,9 @@ import { log, getPackageJson } from './utils.js';
 /**
  * 협업자 자동 설치 설정
  *
- * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
- *   Claude/coco 공통 setup.sh 는 `.vibe/` (SSOT) 에 저장.
- *   harnessDir 은 README/안내 문구에서 CLI 이름(Claude Code vs coco) 결정용.
+ * @param harnessDir '.claude' | '.codex' (기본값: '.claude')
+ *   공통 setup.sh 는 `.vibe/` (SSOT) 에 저장.
+ *   harnessDir 은 README/안내 문구에서 CLI 이름(Claude Code vs Codex) 결정용.
  */
 export function setupCollaboratorAutoInstall(
   projectRoot: string,
@@ -19,7 +19,7 @@ export function setupCollaboratorAutoInstall(
 ): void {
   const packageJsonPath = path.join(projectRoot, 'package.json');
   const coreDir = path.join(projectRoot, '.vibe');
-  const cliLabel = harnessDir === '.coco' ? 'coco' : 'Claude Code';
+  const cliLabel = harnessDir === '.codex' ? 'Codex' : 'Claude Code';
 
   // 1. Node.js 프로젝트: package.json 정리
   if (fs.existsSync(packageJsonPath)) {

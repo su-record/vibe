@@ -8,14 +8,14 @@ import os from 'os';
 import { ensureDir, copyDirRecursive, removeDirRecursive, log } from '../utils.js';
 
 /**
- * Legacy `.claude/vibe/`, `.coco/vibe/`, `.claude/memories/`, `.coco/memories/` 를
+ * Legacy `.claude/vibe/`, `.claude/memories/` 를
  * 새 SSOT `.vibe/` 로 통합.
  *
  * 동작:
  *  - `.vibe/` 가 없으면 legacy 경로를 그대로 rename (기존 init/update 가 하던 동작).
  *  - `.vibe/` 가 있으면 legacy 파일을 병합: target 에 없는 것만 복사하고 legacy 는 제거.
- *  - `.claude/memories/`, `.coco/memories/` → `.vibe/memories/` (같은 로직).
- *  - legacy 디렉토리가 비게 되면 자동 정리 (상위의 `.claude`, `.coco` 자체는 건드리지 않음).
+ *  - `.claude/memories/` → `.vibe/memories/` (같은 로직).
+ *  - legacy 디렉토리가 비게 되면 자동 정리 (상위의 `.claude` 자체는 건드리지 않음).
  *
  * 이미 통합된 프로젝트는 no-op.
  * @returns 이동/제거한 legacy 경로 목록 (user-facing 로그용)
@@ -26,9 +26,7 @@ export function consolidateLegacyVibe(projectRoot: string): string[] {
 
   const plans: Array<{ src: string; dst: string }> = [
     { src: path.join(projectRoot, '.claude', 'vibe'), dst: vibeRoot },
-    { src: path.join(projectRoot, '.coco', 'vibe'), dst: vibeRoot },
     { src: path.join(projectRoot, '.claude', 'memories'), dst: path.join(vibeRoot, 'memories') },
-    { src: path.join(projectRoot, '.coco', 'memories'), dst: path.join(vibeRoot, 'memories') },
   ];
 
   const conflicts: string[] = [];

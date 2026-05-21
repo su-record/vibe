@@ -24,14 +24,14 @@ import { generateCursorRules } from './cursor-rules.js';
 import { installCursorAgents } from './cursor-agents.js';
 import { installClaudeAgents } from './claude-agents.js';
 import { generateCursorSkills } from './cursor-skills.js';
-import { detectClaudeCli, detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectClaudeCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { getClaudeCodeStatus, formatClaudeCodeStatus } from '../auth.js';
 import { migrateLegacyFiles } from '../../infra/lib/config/GlobalConfigManager.js';
 import {
   generateGlobalClaudeMd,
-  generateGlobalAgentsMd,
   generateGlobalCodexAgentsMd,
   generateGlobalGeminiMd,
+  installCodexNotify,
 } from '../setup/ProjectSetup.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -72,7 +72,7 @@ export function main(): void {
     }
 
     // 4. CLI 호환 디렉토리에 전역 assets 설치 (agents, skills)
-    //    ~/.claude/ (필수) + ~/.coco/ (감지 시)
+    //    ~/.claude/ (필수)
     //    NOTE: commands/ 폴더는 더 이상 사용하지 않음 — 도트 스킬(vibe.spec 등)이 슬래시 진입점 역할
     const agentsSource = path.join(packageRoot, 'agents');
     const skillsSource = path.join(packageRoot, 'skills');
@@ -116,12 +116,6 @@ export function main(): void {
     const globalClaudeDir = path.join(os.homedir(), '.claude');
     installCliAssets(globalClaudeDir, 'claude');
 
-    // ~/.coco/ (감지 시)
-    const cocoStatus = detectCocoCli();
-    if (cocoStatus.installed) {
-      installCliAssets(cocoStatus.configDir, 'coco');
-    }
-
     // 5. ~/.<cli>/vibe/ 전역 문서 설치 (rules, languages, templates, 인라인 스킬)
     function installCoreAssets(targetDir: string): string {
       const coreAssetsDir = path.join(targetDir, 'vibe');
@@ -153,15 +147,15 @@ export function main(): void {
     }
 
     const globalLanguagesDir = installCoreAssets(globalClaudeDir);
-    if (cocoStatus.installed) {
-      installCoreAssets(cocoStatus.configDir);
-    }
 
     // 5-0. 전역 CLAUDE.md / AGENTS.md / GEMINI.md 에 vibe 규약 섹션 주입 (idempotent)
     try {
       generateGlobalClaudeMd();
-      if (cocoStatus.installed) generateGlobalAgentsMd();
-      if (detectCodexCli().installed) generateGlobalCodexAgentsMd();
+      const codexStatus = detectCodexCli();
+      if (codexStatus.installed) {
+        generateGlobalCodexAgentsMd();
+        installCodexNotify(codexStatus.configDir);
+      }
       if (detectGeminiCli().installed) generateGlobalGeminiMd();
     } catch (e) {
       console.warn('⚠️  global CLAUDE.md/AGENTS.md/GEMINI.md 갱신 실패:', (e as Error).message);

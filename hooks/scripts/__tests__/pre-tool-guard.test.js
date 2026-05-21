@@ -267,7 +267,7 @@ describe('pre-tool-guard', () => {
   // ══════════════════════════════════════════════════
   describe('regression: rm -rf must not block safe absolute paths', () => {
     it('should ALLOW rm -rf /tmp/<scratch>', () => {
-      const result = runGuard({ args: ['Bash', 'rm -rf /tmp/coco-local-test'] });
+      const result = runGuard({ args: ['Bash', 'rm -rf /tmp/vibe-local-test'] });
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toBe('');
     });

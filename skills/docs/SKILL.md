@@ -106,9 +106,9 @@ graph TD
 | CLI | File | Support |
 |---|---|---|
 | Claude Code | `CLAUDE.md` | 100% (Primary) |
-| coco | `AGENTS.md` | 100% (Primary) |
+| Codex | `AGENTS.md` | 100% (Primary) |
 
-Gemini CLI / Codex CLI / Cursor are not supported — do not generate or check `GEMINI.md`.
+Gemini CLI / Cursor are not supported — do not generate or check `GEMINI.md`.
 
 **Source of truth:**
 - **`CLAUDE.md` is the content SSOT.** Always edit it first; `AGENTS.md` is a regenerated derivative.
@@ -120,7 +120,7 @@ Gemini CLI / Codex CLI / Cursor are not supported — do not generate or check `
 2. **For `AGENTS.md`**:
    - **If missing** → create by cloning `CLAUDE.md` + applying CLI substitution (below).
    - **If exists** → regenerate from current `CLAUDE.md` + substitution, preserving user-specific additions outside the VIBE block.
-3. **CLI substitution for `AGENTS.md`** (coco): `Claude Code` → `coco` · `~/.claude/` → `~/.coco/` · `.claude/` → `.coco/` · `CLAUDE.md` → `AGENTS.md`. `CLAUDE.md` itself gets no substitution.
+3. **CLI substitution for `AGENTS.md`** (Codex): `Claude Code` → `Codex` · `~/.claude/` → `~/.codex/` · `.claude/` → `.codex/` · `CLAUDE.md` → `AGENTS.md`. `CLAUDE.md` itself gets no substitution.
 4. **Validate every touched file (whether newly created or modified)** via the `claude-md-guide` → `agents-md` skill chain — see validation block below. **Never write or save without running this step.**
 5. Report per file: created / updated / skipped / validation warnings.
 

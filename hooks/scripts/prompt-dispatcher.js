@@ -42,11 +42,11 @@ try {
 
 if (!prompt) process.exit(0);
 
-// 레거시 SSOT 통합 — `/vibe.*` 진입 시 `.claude/vibe/`·`.coco/vibe/` → `.vibe/` 자동 이동.
+// 레거시 SSOT 통합 — `/vibe.*` 진입 시 `.claude/vibe/` → `.vibe/` 자동 이동.
 // `vibe init`/`update` 와 동일한 `consolidateLegacyVibe` (dist/cli/setup/LegacyMigration.js) 를 직접 재사용. Idempotent.
 if (/^\s*\/vibe\b/i.test(prompt)) {
   try {
-    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.env.COCO_PROJECT_DIR || process.cwd();
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
     const utils = await import('./utils.js');
     const CLI_BASE = utils.getCliBaseUrl();
     const { consolidateLegacyVibe } = await import(`${CLI_BASE}setup/LegacyMigration.js`);
@@ -183,7 +183,7 @@ if (!matched) {
   setImmediate(async () => {
     try {
       const utils = await import('./utils.js');
-      const projectDir = process.env.CLAUDE_PROJECT_DIR || process.env.COCO_PROJECT_DIR || '.';
+      const projectDir = process.env.CLAUDE_PROJECT_DIR || '.';
       const configPath = utils.projectVibePath(projectDir, 'config.json');
       let gapEnabled = true;
       try {

@@ -1,7 +1,7 @@
 /**
  * PreToolUse Hook - 모든 Bash 명령어를 타임스탬프와 함께 로깅
  *
- * 로그 위치: .vibe/command-log.txt (legacy .claude/vibe/ 또는 .coco/vibe/ 사용 중이면 그쪽)
+ * 로그 위치: .vibe/command-log.txt (legacy .claude/vibe/ 사용 중이면 그쪽)
  * exit 0 항상 통과 (로깅만 수행, 차단하지 않음)
  */
 import { appendFileSync, mkdirSync, existsSync } from 'fs';

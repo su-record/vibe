@@ -28,12 +28,12 @@ import {
   cleanupClaudeConfig,
   cleanupLegacyMcp,
   installProjectHooks,
+  installCodexNotify,
   installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
   generateProjectGeminiMd,
   generateGlobalClaudeMd,
-  generateGlobalAgentsMd,
   generateGlobalCodexAgentsMd,
   generateGlobalGeminiMd,
 } from '../setup.js';
@@ -43,7 +43,7 @@ import {
   installLanguageRules,
 } from './init.js';
 import { installExternalSkills } from './skills.js';
-import { detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 
 /**
@@ -74,7 +74,7 @@ export function update(options: CliOptions = { silent: false }): void {
       return;
     }
 
-    // SSOT 통합 — `.claude/vibe/`, `.coco/vibe/`, `.claude/memories/`, `.coco/memories/` → `.vibe/`
+    // SSOT 통합 — `.claude/vibe/`, `.claude/memories/` → `.vibe/`
     // (legacy 와 `.vibe/` 가 공존해도 안전하게 병합)
     const consolidated = consolidateLegacyVibe(projectRoot);
     if (consolidated.length > 0) {
@@ -120,8 +120,8 @@ export function update(options: CliOptions = { silent: false }): void {
       } catch { /* ignore: optional operation */ }
     }
 
-    // config.json 업데이트 — 현재 프로젝트의 주 harness 감지 (우선순위: coco > codex > gemini > claude)
-    const HARNESS_PRIORITY = ['.coco', '.codex', '.gemini', '.claude'];
+    // config.json 업데이트 — 현재 프로젝트의 주 harness 감지 (우선순위: codex > gemini > claude)
+    const HARNESS_PRIORITY = ['.codex', '.gemini', '.claude'];
     const primaryHarness =
       HARNESS_PRIORITY.find(d => fs.existsSync(path.join(projectRoot, d))) || '.claude';
     updateConfig(coreDir, detectedStacks, stackDetails, true, primaryHarness);
@@ -144,7 +144,8 @@ export function update(options: CliOptions = { silent: false }): void {
 
     // 프로젝트 레벨 훅 설치 — 존재하는 하네스 디렉토리 모두 대응
     //   .gemini/는 hook 스키마 다름 → 스킵
-    const PROJECT_HARNESS_DIRS = ['.claude', '.coco', '.codex'];
+    //   .codex/는 settings.local.json hook 을 읽지 않음 → 죽은 설정 대신 config.toml notify + AGENTS.md (별도 처리)
+    const PROJECT_HARNESS_DIRS = ['.claude'];
     const presentHarnesses = PROJECT_HARNESS_DIRS.filter(d =>
       fs.existsSync(path.join(projectRoot, d))
     );
@@ -164,12 +165,13 @@ export function update(options: CliOptions = { silent: false }): void {
     installLanguageRules(projectRoot, stackTypes);
 
     // ── 전역 규약 갱신 ── 감지된 CLI 모두
-    const cocoStatus = detectCocoCli();
     const codexStatus = detectCodexCli();
     const geminiStatus = detectGeminiCli();
     generateGlobalClaudeMd();
-    if (cocoStatus.installed) generateGlobalAgentsMd();
-    if (codexStatus.installed) generateGlobalCodexAgentsMd();
+    if (codexStatus.installed) {
+      generateGlobalCodexAgentsMd();
+      installCodexNotify(codexStatus.configDir);
+    }
     if (geminiStatus.installed) generateGlobalGeminiMd();
 
     // ── 프로젝트 엔트리 갱신 ── 로컬 폴더 구성에 맞춰 동적으로

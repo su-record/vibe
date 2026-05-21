@@ -107,9 +107,8 @@ export { getCurrentTime } from '../tools/time/getCurrentTime.js';
 
 switch (command) {
   case 'init': {
-    let target: 'cc' | 'coco' | 'codex' | 'gemini' = 'cc';
-    if (args.includes('--coco')) target = 'coco';
-    else if (args.includes('--codex')) target = 'codex';
+    let target: 'cc' | 'codex' | 'gemini' = 'cc';
+    if (args.includes('--codex')) target = 'codex';
     else if (args.includes('--gemini')) target = 'gemini';
     init(positionalArgs[1], target);
     break;

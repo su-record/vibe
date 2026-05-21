@@ -24,7 +24,6 @@ import {
   generateProjectAgentsMd,
   generateProjectGeminiMd,
   generateGlobalClaudeMd,
-  generateGlobalAgentsMd,
   generateGlobalCodexAgentsMd,
   generateGlobalGeminiMd,
   consolidateLegacyVibe,
@@ -39,7 +38,7 @@ import {
   AVAILABLE_CAPABILITIES,
   STACK_TO_LANGUAGE_FILE,
 } from '../postinstall.js';
-import { detectCocoCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 import { installExternalSkills } from './skills.js';
 
@@ -85,10 +84,10 @@ export function updateCursorGlobalAssets(
 }
 
 /**
- * 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/ 또는 .coco/skills/)
+ * 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)
  * init, update 공용
  *
- * @param harnessDir '.claude' | '.coco' (기본값: '.claude')
+ * @param harnessDir '.claude' (기본값: '.claude')
  */
 export function installLocalSkills(
   projectRoot: string,
@@ -174,18 +173,16 @@ function runStep(
  * @param projectName 새 프로젝트 디렉토리 이름 (생략 시 cwd 사용)
  * @param target 초기화 대상 하네스.
  *   - 'cc'     → `.claude/` + CLAUDE.md (기본)
- *   - 'coco'   → `.coco/`   + AGENTS.md
  *   - 'codex'  → `.codex/`  + AGENTS.md
  *   - 'gemini' → `.gemini/` + GEMINI.md
  */
 export async function init(
   projectName?: string,
-  target: 'cc' | 'coco' | 'codex' | 'gemini' = 'cc',
+  target: 'cc' | 'codex' | 'gemini' = 'cc',
 ): Promise<void> {
   try {
     const HARNESS_MAP: Record<typeof target, { dir: string; label: string }> = {
       cc: { dir: '.claude', label: 'Claude Code' },
-      coco: { dir: '.coco', label: 'coco' },
       codex: { dir: '.codex', label: 'Codex' },
       gemini: { dir: '.gemini', label: 'Gemini' },
     };
@@ -214,7 +211,7 @@ export async function init(
       return;
     }
 
-    // Legacy SSOT 통합 — `.claude/vibe/`, `.coco/vibe/`, `.claude/memories/`, `.coco/memories/` → `.vibe/`
+    // Legacy SSOT 통합 — `.claude/vibe/`, `.claude/memories/` → `.vibe/`
     ensureDir(coreDir);
     const consolidated = consolidateLegacyVibe(projectRoot);
     if (consolidated.length > 0) {
@@ -349,7 +346,7 @@ export async function init(
         );
       }
 
-      // .vibe/ 표준 하위 디렉토리 (SSOT — Claude/coco 공용)
+      // .vibe/ 표준 하위 디렉토리 (SSOT — Claude/Codex 공용)
       for (const sub of ['specs', 'features', 'plans', 'todos', 'memories', 'metrics', 'recipes', 'anti-patterns']) {
         ensureDir(path.join(coreDir, sub));
       }
@@ -357,7 +354,7 @@ export async function init(
       if (!fs.existsSync(vibeReadme)) {
         fs.writeFileSync(
           vibeReadme,
-          '# .vibe/\n\nVibe SSOT — Claude Code / coco CLI 공용 프로젝트 에셋.\n\n- `config.json` — 프로젝트 스택/capabilities\n- `constitution.md` — 하드 룰\n- `specs/`, `plans/`, `features/`, `todos/` — 워크플로우 문서\n- `memories/` — 프로젝트 메모리 DB\n- `metrics/` — 세션/스텝 카운터\n- `recipes/` — 성공한 task 의 압축 경로 (post-task curation, frontmatter 강제)\n- `anti-patterns/` — 같은 카테고리 3회 실패 시 자동 기록 (frontmatter 강제)\n- `scope.json` — SPEC 기반 자동 스코프 (auto=true)\n',
+          '# .vibe/\n\nVibe SSOT — Claude Code / Codex CLI 공용 프로젝트 에셋.\n\n- `config.json` — 프로젝트 스택/capabilities\n- `constitution.md` — 하드 룰\n- `specs/`, `plans/`, `features/`, `todos/` — 워크플로우 문서\n- `memories/` — 프로젝트 메모리 DB\n- `metrics/` — 세션/스텝 카운터\n- `recipes/` — 성공한 task 의 압축 경로 (post-task curation, frontmatter 강제)\n- `anti-patterns/` — 같은 카테고리 3회 실패 시 자동 기록 (frontmatter 강제)\n- `scope.json` — SPEC 기반 자동 스코프 (auto=true)\n',
         );
       }
     });
@@ -384,8 +381,9 @@ export async function init(
 
     const stackTypes = detectedStacks.map(st => st.type);
 
-    // Gemini CLI는 다른 hook 스키마 사용 — Claude-Code 포맷의 settings.local.json 스킵
-    if (target !== 'gemini') {
+    // Gemini CLI는 다른 hook 스키마 사용 — settings.local.json 스킵
+    // Codex 는 settings.local.json hook 을 읽지 않음 — config.toml notify(전역) + AGENTS.md 로 대체
+    if (target !== 'gemini' && target !== 'codex') {
       runStep(s3, 'Installing project hooks', () => installProjectHooks(projectRoot, harnessDir));
     }
     runStep(s3, 'Updating Cursor global assets', () => updateCursorGlobalAssets(stackTypes));
@@ -414,20 +412,17 @@ export async function init(
       }
     });
 
-    // 전역 규약 주입: ~/.claude/CLAUDE.md, ~/.coco/AGENTS.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md
+    // 전역 규약 주입: ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md
     // 프로젝트 파일: target에 따라 CLAUDE.md / AGENTS.md / GEMINI.md 중 해당되는 것 생성
-    const cocoStatus = detectCocoCli();
     const codexStatus = detectCodexCli();
     const geminiStatus = detectGeminiCli();
 
     // 1) 전역 규약 — 감지된 모든 CLI에 주입 (target 무관)
     runStep(s3, 'Writing global vibe conventions', () => {
       generateGlobalClaudeMd();
-      if (cocoStatus.installed) generateGlobalAgentsMd();
       if (codexStatus.installed) generateGlobalCodexAgentsMd();
       if (geminiStatus.installed) generateGlobalGeminiMd();
       const cliLabels = ['claude',
-        cocoStatus.installed && 'coco',
         codexStatus.installed && 'codex',
         geminiStatus.installed && 'gemini'
       ].filter(Boolean).join(', ');
@@ -439,12 +434,12 @@ export async function init(
       if (target === 'cc') {
         generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails);
         log(`   📄 CLAUDE.md generated\n`);
-        // cc 타겟이어도 coco/codex가 전역 감지되면 프로젝트 AGENTS.md도 생성
-        if (cocoStatus.installed || codexStatus.installed) {
+        // cc 타겟이어도 codex가 전역 감지되면 프로젝트 AGENTS.md도 생성
+        if (codexStatus.installed) {
           generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
-          log(`   📄 AGENTS.md generated (shared with coco/codex)\n`);
+          log(`   📄 AGENTS.md generated (shared with codex)\n`);
         }
-      } else if (target === 'coco' || target === 'codex') {
+      } else if (target === 'codex') {
         generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
         log(`   📄 AGENTS.md generated (${target})\n`);
       } else if (target === 'gemini') {

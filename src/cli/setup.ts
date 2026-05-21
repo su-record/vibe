@@ -17,6 +17,7 @@ export {
   updateConstitution,
   updateRules,
   installProjectHooks,
+  installCodexNotify,
   updateGitignore,
   updateConfig,
   installCursorRules,
@@ -24,7 +25,6 @@ export {
   generateProjectAgentsMd,
   generateProjectGeminiMd,
   generateGlobalClaudeMd,
-  generateGlobalAgentsMd,
   generateGlobalCodexAgentsMd,
   generateGlobalGeminiMd,
 } from './setup/ProjectSetup.js';

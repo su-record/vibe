@@ -1,7 +1,7 @@
 ---
 name: vibe.test
 description: Self-test vibe — probe every command/skill/hook/agent in the target harness install dir and write a pass/fail report
-argument-hint: "[cc|coco]  (empty = current harness)"
+argument-hint: "[cc|codex]  (empty = current harness)"
 user-invocable: true
 ---
 
@@ -14,10 +14,10 @@ user-invocable: true
 ```
 /vibe.test         # Test current harness (auto-detect)
 /vibe.test cc      # Force-test ~/.claude/
-/vibe.test coco    # Force-test ~/.coco/
+/vibe.test codex   # Force-test ~/.codex/
 ```
 
-No subcommands. No CC-vs-coco comparison semantics. One command, one report.
+No subcommands. No CC-vs-Codex comparison semantics. One command, one report.
 
 ## Report
 
@@ -34,7 +34,7 @@ Markdown summary is also printed to the console when the run finishes.
 
 Load skill `test` with target harness: `$ARGUMENTS`
 
-- If `$ARGUMENTS` is empty, detect the current harness (CC vs coco) and use that.
+- If `$ARGUMENTS` is empty, detect the current harness (CC vs Codex) and use that.
 - If the target install dir is missing, exit cleanly with guidance (not an error).
 
 See `skills/test/SKILL.md` for the probe spec and the report template.

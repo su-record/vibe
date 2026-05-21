@@ -112,7 +112,6 @@ function resolveModel(providerName, config) {
  *
  * true인 경우:
  * - vibe-codex: ANTHROPIC_BASE_URL이 localhost (프록시 모드)
- * - coco: ~/.coco/ 존재 또는 COCO_HOME 설정
  * - 명시적: VIBE_SECONDARY_LLM=claude
  */
 function useClaudeAsSecondary() {
@@ -121,10 +120,6 @@ function useClaudeAsSecondary() {
   // 2. vibe-codex 프록시 모드
   const baseUrl = process.env.ANTHROPIC_BASE_URL || '';
   if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) return true;
-  // 3. coco 환경
-  if (process.env.COCO_HOME) return true;
-  const cocoDir = path.join(os.homedir(), '.coco');
-  if (fs.existsSync(cocoDir)) return true;
   return false;
 }
 
@@ -601,10 +596,10 @@ async function main() {
     // 명시적 claude 호출
     providerChain = ['claude', 'gemini'];
   } else if (isGpt) {
-    // GPT 주관 → claude fallback (vibe-codex/coco), gemini fallback (직접 모드)
+    // GPT 주관 → claude fallback (vibe-codex), gemini fallback (직접 모드)
     providerChain = claudeSecondary ? [provider, 'claude'] : [provider, 'gemini'];
   } else {
-    // gemini 주관 → claude fallback (vibe-codex/coco), gpt fallback (직접 모드)
+    // gemini 주관 → claude fallback (vibe-codex), gpt fallback (직접 모드)
     providerChain = claudeSecondary ? ['gemini', 'claude'] : ['gemini', 'gpt'];
   }
 
