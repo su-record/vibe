@@ -47,12 +47,15 @@ Scenario: styled-components theme
 
 ### Scenario 3: 레퍼런스 카탈로그 선택
 ```gherkin
-Scenario: awesome-design-md 시드 1개 선택해 시작
+Scenario: awesome-design-md 시드 1개 선택해 시작 (네트워크 차단 환경)
   Given 프로젝트 루트에 DESIGN.md 가 없다
   And `skills/vibe.design/references/README.md` 시드 카탈로그에 `linear` 가 있다
+  And `linear` 시드의 `style-preset` 컬럼이 채워져 있다
+  And 네트워크가 차단되어 있다
   When 사용자가 `/vibe.design init --from=reference --reference=linear` 를 실행한다
-  Then DESIGN.md 가 Linear 스타일 시드로 채워진다
-  And 네트워크 차단 환경에서도 동작한다 (시드 메타데이터만 사용)
+  Then `style-preset` 값으로 §1 Visual Theme / §2 Color Palette / §3 Typography 기본값이 시드된다
+  And 단축 인터뷰(≤ 3 질문)로 나머지 6 섹션(§4–§9)이 채워진다
+  And 생성된 DESIGN.md 는 9 섹션을 모두 포함한다
 ```
 **Verification**: SPEC AC-3
 

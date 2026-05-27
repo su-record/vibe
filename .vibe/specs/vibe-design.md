@@ -61,7 +61,8 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 | `skills/vibe.design/templates/DESIGN.md.template` | Stitch 9-섹션 빈 템플릿 |
 | `skills/vibe.design/references/README.md` | awesome-design-md 시드 카탈로그 (인덱스, URL+한줄 설명) |
 | `skills/vibe.design/heuristics/code-extract.md` | 기존 코드(Tailwind/CSS-vars/styled) → DESIGN.md 토큰 추출 휴리스틱 |
-| `tests/vibe-design.spec.ts` | 4 init 경로·lint·verify 픽스처 테스트 |
+| `src/cli/design/design-md-parser.ts` | DESIGN.md 파서·lint·verify 정적 검증 헬퍼 (테스트 대상) |
+| `tests/vibe-design.spec.ts` | 정적 자산 검증 + design-md-parser 단위 테스트 |
 
 ### Design Reference
 
@@ -121,11 +122,13 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 
 3. [ ] **`skills/vibe.design/references/README.md` 작성**
    - File: `skills/vibe.design/references/README.md`
-   - awesome-design-md에서 인기 사이트 **최소 12개** 시드 (slug + 한 줄 설명):
+   - awesome-design-md에서 인기 사이트 **최소 12개** 시드 (slug + 한 줄 설명 + style preset):
      - Claude, Linear, Stripe, Vercel, Supabase, Notion, Cursor, Figma, Airbnb, Apple, Spotify, Resend
-   - 형식: `| slug | tagline | source URL |`
-   - 네트워크 없이 `/vibe.design init --from=reference --reference=<slug>`가 동작하도록 시드 정보만 포함 (실제 DESIGN.md 본문은 fetch가 가능하면 fetch, 실패 시 인터뷰로 폴백)
-   - Verify: 시드 12개 이상
+   - 형식: `| slug | tagline | source URL | style-preset (one-line) |`
+   - 각 시드는 **`style-preset` 컬럼에 한 줄짜리 톤·팔레트·타이포 프리셋**을 포함 (예: `linear` → `"minimal, neutral grays + electric purple accent, Inter Display"`). 이 프리셋이 인터뷰의 §1·§2·§3 **기본값**으로 사용됨.
+   - **네트워크 없이 동작하는 방식 (VD-003 정정)**: 시드 선택 시 — ① `style-preset` 으로 톤·팔레트·타이포 기본값 자동 시드, ② 나머지 6개 섹션(§4 Components, §5 Layout, §6 Depth, §7 Do/Don't, §8 Responsive, §9 Agent Prompt Guide)은 **인터뷰 단축본 (≤ 3 질문)** 으로 채움. 결과: 네트워크 없이 9 섹션 DESIGN.md 완성.
+   - 네트워크가 사용 가능하면 awesome-design-md 원본 fetch 시도 → 성공 시 그대로 사용, 실패 시 위 폴백.
+   - Verify: 시드 12개 이상 + 모든 시드에 `style-preset` 컬럼 채워짐
 
 4. [ ] **`skills/vibe.design/heuristics/code-extract.md` 작성**
    - File: `skills/vibe.design/heuristics/code-extract.md`
@@ -142,8 +145,19 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 5. [ ] **`src/cli/postinstall/constants.ts` 수정**
    - File: `src/cli/postinstall/constants.ts`
    - `GLOBAL_SKILLS_ENTRY` 배열에 `'vibe.design'` 추가 (알파벳 순으로 `vibe.contract` 다음)
-   - `STACK_TO_SKILLS` 의 8개 UI 스택 (typescript-react/nextjs/vue/nuxt/svelte/angular/astro + typescript-react-native, dart-flutter, swift-ios, kotlin-android)에 `'vibe.design'` 추가
-   - Verify: `grep -c "vibe.design" src/cli/postinstall/constants.ts` ≥ 13 (1 entry + 12 stack 매핑)
+   - `STACK_TO_SKILLS` 의 **11개** UI 스택에 `'vibe.design'` 추가. 정확한 키 목록:
+     1. `typescript-react`
+     2. `typescript-nextjs`
+     3. `typescript-vue`
+     4. `typescript-nuxt`
+     5. `typescript-svelte`
+     6. `typescript-angular`
+     7. `typescript-astro`
+     8. `typescript-react-native`
+     9. `dart-flutter`
+     10. `swift-ios`
+     11. `kotlin-android`
+   - Verify: `grep -c "vibe.design" src/cli/postinstall/constants.ts` ≥ 12 (1 entry + 11 stack 매핑)
 
 6. [ ] **`skills/vibe.run/SKILL.md` 수정 — DESIGN.md 게이트**
    - File: `skills/vibe.run/SKILL.md`
@@ -205,16 +219,22 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 
 12. [ ] **`tests/vibe-design.spec.ts` 작성**
     - File: `tests/vibe-design.spec.ts`
-    - 픽스처 테스트:
-      - `init --from=interview` (mock 응답 5개) → 출력 DESIGN.md에 9 섹션 존재
-      - `init --from=code` 픽스처 3종:
-        - Tailwind config (`theme.colors`) → DESIGN.md `## 2. Color Palette` 토큰 ≥ 3
-        - CSS-vars (`:root`) → `## 2. Color Palette` 토큰 ≥ 3
-        - styled-components theme 객체 → 토큰 ≥ 3
-      - `init --from=reference --reference=linear` → 시드 12개 안에 존재 확인
-      - `lint` — 8개 섹션만 있는 DESIGN.md → P1 (섹션 1개 누락) 1건 finding
-      - `verify` — 하드코딩 hex `#FF0000` 가 DESIGN.md 토큰에 없을 때 P1 drift 1건
-      - `verify` — DESIGN.md 없는 프로젝트 → no-op (exit 0)
+    - **테스트 범위 (정정 — VD-001)**: `vibe.design` 은 **markdown-driven 스킬**이며 TypeScript 런타임 모듈이 아니다. 따라서 init/lint/verify 의 "동작"은 AI 에이전트가 SKILL.md 지시를 실행해 발현되므로, vitest 픽스처 테스트는 **두 가지 정적 검증으로 한정**한다:
+      1. **스킬 자산 정합성 (static asset tests)** — `SKILL.md`/template/references/heuristics 파일이 SPEC 명세대로 작성됐는지
+      2. **DESIGN.md 파서/검증 헬퍼 단위 테스트** — `lint`/`verify` 의 정적 검증 로직을 재사용 가능하게 추출한 **신규 헬퍼** `src/cli/design/design-md-parser.ts` (export: `parseSections`, `lintMissingSections`, `extractHexTokens`, `findHardcodedColors`) 에 대한 단위 테스트
+    - 테스트 케이스 (≥ 6):
+      - `parseSections(template)` → 정확히 9 H2 섹션 반환 + `<!-- design-md-version: 1 -->` 프론트매터 감지
+      - `lintMissingSections(eightSectionFixture)` → 1개 누락 P1 finding 반환
+      - `lintMissingSections(nineSectionFixture)` → 0 finding (pass)
+      - `extractHexTokens('## 2. Color Palette\\n- primary: #5b5bd6\\n')` → `['#5b5bd6']`
+      - `findHardcodedColors(sourceFixture, designMdTokens)` → 토큰 외 hex(`#FF0000`) 1건 검출
+      - `findHardcodedColors(sourceFixture, allowAll)` → 0건 (DESIGN.md 부재 = no-op)
+      - 정적 자산 검사: `skills/vibe.design/SKILL.md` 가 4 서브커맨드 키워드(`init`/`lint`/`verify`/`sync`) 모두 포함
+      - 정적 자산 검사: `skills/vibe.design/references/README.md` 가 12개 이상 slug 행 포함
+    - **헬퍼 모듈 추가** (Phase 1 작업 5의 일부로 함께 작성):
+      - File: `src/cli/design/design-md-parser.ts`
+      - Export: `parseSections(md: string): SectionMap`, `lintMissingSections(md: string): Finding[]`, `extractHexTokens(md: string): string[]`, `findHardcodedColors(source: string, allowedHexes: Set<string>): Finding[]`
+      - ESM, `.js` import 확장자, TypeScript strict
     - 빌드+테스트: `npm run build && npx vitest run tests/vibe-design.spec.ts`
     - Verify: 6+ 테스트 케이스 통과
 
@@ -259,12 +279,13 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 ## Output Format
 <output_format>
 
-### Files to Create (5)
+### Files to Create (6)
 
 - `skills/vibe.design/SKILL.md`
 - `skills/vibe.design/templates/DESIGN.md.template`
 - `skills/vibe.design/references/README.md`
 - `skills/vibe.design/heuristics/code-extract.md`
+- `src/cli/design/design-md-parser.ts`
 - `tests/vibe-design.spec.ts`
 
 ### Files to Modify (6)
@@ -285,7 +306,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 - `npm run build`
 - `npx vitest run tests/vibe-design.spec.ts`
 - `npx vitest run` (전체 regression — 회귀 0)
-- `grep -c "vibe.design" src/cli/postinstall/constants.ts` → ≥ 13
+- `grep -c "vibe.design" src/cli/postinstall/constants.ts` → ≥ 12 (1 entry + 11 stack 매핑)
 - `grep -c "DESIGN.md" CLAUDE.md AGENTS.md` → 각각 ≥ 2
 - `ls skills/vibe.design/` → 4 항목 (SKILL.md + 3 디렉토리)
 
@@ -296,7 +317,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 
 - [ ] **AC-1**: `/vibe.design init --from=interview` 실행 시 사용자에게 5개 이상 질문 → 응답으로 9 섹션 DESIGN.md 생성 (프로젝트 루트)
 - [ ] **AC-2**: `/vibe.design init --from=code` 가 Tailwind/CSS-vars/styled-components 3 패턴에서 색·간격·폰트 토큰을 추출해 DESIGN.md 생성. 추출 실패 시 인터뷰 폴백 안내
-- [ ] **AC-3**: `/vibe.design init --from=reference --reference=<slug>` 가 시드 카탈로그 12개 이상 중 1개를 골라 DESIGN.md 생성 (네트워크 없이도 동작)
+- [ ] **AC-3**: `/vibe.design init --from=reference --reference=<slug>` 가 시드 카탈로그 12개 이상 중 1개를 골라 DESIGN.md 생성. 네트워크 없이도 동작 — 시드의 `style-preset` 으로 §1·§2·§3 기본값 + 단축 인터뷰(≤3 질문)로 나머지 6 섹션 채움
 - [ ] **AC-4**: `/vibe.design init --from=figma` 가 `/vibe.figma --emit-design-md` 로 위임 — Figma 미설정 시 명확한 에러 메시지
 - [ ] **AC-5**: `/vibe.design lint` 가 9 섹션 중 1개라도 누락 시 P1 finding 반환. 모두 존재하면 pass
 - [ ] **AC-6**: `/vibe.design verify` 가 DESIGN.md 토큰에 없는 hex 컬러가 코드에 하드코딩되어 있으면 P1 drift, 없으면 pass. DESIGN.md 없는 프로젝트에서는 no-op (exit 0)
@@ -304,7 +325,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 - [ ] **AC-8**: `/vibe.verify` 가 UI 변경 시 `vibe.design verify`를 호출 — P1 drift 발견 시 `/vibe.regress register --from-design-md` 자동 호출
 - [ ] **AC-9**: `/vibe.review` 가 DESIGN.md 존재 시 시각 P1 판정에 그 기준 사용. 없으면 일반 휴리스틱 폴백
 - [ ] **AC-10**: `/vibe.figma` 가 DESIGN.md 있으면 WRITE 입력으로 우선 사용. `--emit-design-md` 플래그로 READ 결과를 DESIGN.md로도 출력. DESIGN.md 부재가 실행 차단 안 함
-- [ ] **AC-11**: `constants.ts` 의 `GLOBAL_SKILLS_ENTRY` 에 `vibe.design` 등록. UI 스택 12개 `STACK_TO_SKILLS` 에 `vibe.design` 매핑
+- [ ] **AC-11**: `constants.ts` 의 `GLOBAL_SKILLS_ENTRY` 에 `vibe.design` 등록. UI 스택 11개 (`typescript-react`, `typescript-nextjs`, `typescript-vue`, `typescript-nuxt`, `typescript-svelte`, `typescript-angular`, `typescript-astro`, `typescript-react-native`, `dart-flutter`, `swift-ios`, `kotlin-android`) `STACK_TO_SKILLS` 에 `vibe.design` 매핑. `grep -c "vibe.design" src/cli/postinstall/constants.ts` ≥ 12
 - [ ] **AC-12**: `CLAUDE.md` 와 `AGENTS.md` 에 DESIGN.md 역할 표 또는 1줄 명시 (동일 내용)
 - [ ] **AC-13**: 신규 `tests/vibe-design.spec.ts` 6+ 케이스 통과 + 기존 vibe 테스트 회귀 0
 - [ ] **AC-14**: `npm run build` 성공 (TypeScript 에러 0)
