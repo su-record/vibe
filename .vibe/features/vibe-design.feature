@@ -146,11 +146,12 @@ Scenario: UI 변경에 vibe.design verify 자동 호출
 
 ### Scenario 9: 통합 — /vibe.review 시각 P1
 ```gherkin
-Scenario: DESIGN.md 기준 시각 P1
+Scenario: DESIGN.md 기준 시각 P1 (v1: hex-only)
   Given 프로젝트 루트에 DESIGN.md 가 있다
   When `/vibe.review` 가 실행된다
   Then 시각 카테고리 P1 판정은 DESIGN.md 토큰을 기준으로 한다
-  And DESIGN.md 토큰에 없는 hex/spacing/font 사용은 P1 후보가 된다
+  And DESIGN.md 토큰에 없는 **hex 컬러** 하드코딩은 P1 후보가 된다 (v1 범위)
+  And spacing/font 드리프트는 v1 에서 P1 으로 판정하지 않는다 (Phase 2+)
 
 Scenario: DESIGN.md 없는 프로젝트 — 폴백
   Given DESIGN.md 가 없다

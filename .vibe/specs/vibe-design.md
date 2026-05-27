@@ -341,7 +341,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 - `[MANUAL]` → markdown-driven 슬래시 명령 동작이라 수동 transcript 검증. 검증 방법: SKILL.md 정적 자산 검사 + 실제 슬래시 명령 1회 dry-run transcript 캡처 (`.vibe/manual-checks/vibe-design.md` 에 저장)
 
 - [ ] **AC-1 [MANUAL]**: `/vibe.design init --from=interview` 실행 시 사용자에게 5개 이상 질문 → 응답으로 9 섹션 DESIGN.md 생성 (프로젝트 루트). 정적 검증: `SKILL.md` 에 "≥ 5 질문" + "9 섹션 출력" 문구 포함
-- [ ] **AC-2 [AUTO]**: `/vibe.design init --from=code` 가 v1 필수 3 패턴(Tailwind/CSS-vars/styled-components)에서 색·간격·폰트 토큰을 추출해 DESIGN.md 생성. 추출 실패 시 인터뷰 폴백 안내. 검증: `design-md-parser` 헬퍼 픽스처 테스트 3종
+- [ ] **AC-2 [MANUAL + AUTO-static]**: `/vibe.design init --from=code` 가 v1 필수 3 패턴(Tailwind/CSS-vars/styled-components)에서 색·간격·폰트 토큰을 추출해 DESIGN.md 생성. 추출 실패 시 인터뷰 폴백 안내. **AUTO 정적 검증**: `heuristics/code-extract.md` 가 v1 필수 3 패턴 + 폴백 동작 모두 명시 + `SKILL.md` 에 `--from=code` 분기 존재. **MANUAL**: Tailwind/CSS-vars/styled-components 각 1개 fixture 프로젝트에서 dry-run transcript 캡처 (`.vibe/manual-checks/vibe-design.md`). 코드 추출 자체의 런타임 자동화는 Phase 2+ (helper 모듈 확장 시)
 - [ ] **AC-3 [AUTO + MANUAL]**: `/vibe.design init --from=reference --reference=<slug>` 가 시드 카탈로그 12개 이상 중 1개를 골라 DESIGN.md 생성. 네트워크 없이도 동작 — 시드의 `style-preset` 으로 §1·§2·§3 기본값 + 단축 인터뷰(≤3 질문)로 나머지 6 섹션 채움. AUTO: references/README.md 시드 ≥ 12 + 모든 행에 `style-preset` 채워짐. MANUAL: 1개 slug dry-run transcript
 - [ ] **AC-4 [MANUAL]**: `/vibe.design init --from=figma` 가 `/vibe.figma --emit-design-md` 로 위임 — Figma 미설정 시 정확히 다음 메시지: "Figma 미설정 — 다른 from 옵션을 사용하거나 `vibe figma key` 설정 필요" 출력 후 exit 1. 정적 검증: SKILL.md 에 위 문자열 그대로 포함
 - [ ] **AC-5 [AUTO]**: `/vibe.design lint` 가 9 섹션 중 1개라도 누락 시 P1 finding 반환. 모두 존재하면 pass. 검증: `lintMissingSections` 헬퍼 단위 테스트
