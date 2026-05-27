@@ -20,6 +20,7 @@ export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
   'vibe.analyze',
   'vibe.clone',
   'vibe.contract',
+  'vibe.design',
   'vibe.docs',
   'vibe.event',
   'vibe.figma',
@@ -87,18 +88,18 @@ export const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>> = {
   // TypeScript 공통
   'typescript': ['typescript-advanced-types'],
   // Web frontend → UI/UX + SEO + Design steering + React best practices
-  'typescript-react': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
-  'typescript-nextjs': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
-  'typescript-vue': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
-  'typescript-nuxt': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
-  'typescript-svelte': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
-  'typescript-angular': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
-  'typescript-astro': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill'],
+  'typescript-react': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
+  'typescript-nextjs': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
+  'typescript-vue': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
+  'typescript-nuxt': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
+  'typescript-svelte': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
+  'typescript-angular': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
+  'typescript-astro': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
   // Mobile → UI + design-audit/critique only (polish/normalize/distill are CSS-based)
-  'typescript-react-native': ['ui-ux-pro-max', 'design-audit', 'design-critique'],
-  'dart-flutter': ['ui-ux-pro-max', 'design-audit', 'design-critique'],
-  'swift-ios': ['ui-ux-pro-max', 'design-audit', 'design-critique'],
-  'kotlin-android': ['ui-ux-pro-max', 'design-audit', 'design-critique'],
+  'typescript-react-native': ['ui-ux-pro-max', 'design-audit', 'design-critique', 'vibe.design'],
+  'dart-flutter': ['ui-ux-pro-max', 'design-audit', 'design-critique', 'vibe.design'],
+  'swift-ios': ['ui-ux-pro-max', 'design-audit', 'design-critique', 'vibe.design'],
+  'kotlin-android': ['ui-ux-pro-max', 'design-audit', 'design-critique', 'vibe.design'],
 };
 
 /** Capability → 로컬 스킬 매핑 (의존성 감지 기반 자동 설치) */

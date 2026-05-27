@@ -1,0 +1,100 @@
+<!-- design-md-version: 1 -->
+<!-- generated-by: vibe.design -->
+<!-- format: Google Stitch 9-section standard -->
+
+# DESIGN.md — Visual Quality SSOT
+
+> 이 문서는 프로젝트의 시각 규약 단일 출처(SSOT)입니다.
+> `CLAUDE.md`(코드) · `AGENTS.md`(빌드) 와 동급으로 외부 AI 에이전트가 직접 읽습니다.
+> 수정 시 `/vibe.design lint` 로 9 섹션 완전성을 검증하세요.
+
+## Visual Theme
+
+> §1 — 브랜드 톤 한 문단 (분위기, 무드, 핵심 정서).
+
+예시: "Minimal · neutral grays + single accent · 도구처럼 정확하고 조용한 인상."
+
+## Color Palette
+
+> §2 — hex 토큰 리스트 (이 섹션의 hex 만 verify 통과). semantic 이름 우선.
+
+- Primary: `#000000`
+- Background: `#FFFFFF`
+- Text: `#1A1A1A`
+- Border: `#E5E5E5`
+- Accent: `#5E6AD2`
+- Success: `#10B981`
+- Warning: `#F59E0B`
+- Error: `#EF4444`
+
+## Typography
+
+> §3 — 폰트 패밀리, 사이즈 스케일, 행간/자간.
+
+- Family: `"Inter", -apple-system, system-ui, sans-serif`
+- Display: 48 / 56 (weight 600)
+- H1: 32 / 40 (weight 600)
+- H2: 24 / 32 (weight 600)
+- Body: 16 / 24 (weight 400)
+- Caption: 14 / 20 (weight 400)
+- Code: `"JetBrains Mono", monospace`
+
+## Components
+
+> §4 — 공용 컴포넌트의 시각 규약 (Button / Input / Card / Modal …).
+
+- **Button**: radius 8px, padding 12px 20px, transition 150ms ease
+- **Input**: radius 6px, border 1px solid Border, focus ring 2px Accent
+- **Card**: radius 12px, padding 24px, background Background, border 1px solid Border
+- **Modal**: max-width 480px, backdrop blur 8px, radius 16px
+
+## Layout
+
+> §5 — 그리드, 간격 스케일, 컨테이너 최대폭.
+
+- Spacing scale: `4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96`
+- Container max-width: 1200px
+- Section vertical rhythm: 96px (desktop) / 64px (mobile)
+- Grid: 12-col, gutter 24px
+
+## Depth
+
+> §6 — 그림자, elevation, z-index 계층.
+
+- elevation-0: none (flat)
+- elevation-1: `0 1px 2px rgba(0,0,0,0.05)`
+- elevation-2: `0 4px 8px rgba(0,0,0,0.08)`
+- elevation-3: `0 12px 24px rgba(0,0,0,0.12)`
+- z-index: base 0, dropdown 10, modal 100, toast 1000
+
+## Do's & Don'ts
+
+> §7 — 금기와 권장 사항 (visual P1 의 시드).
+
+**DO**
+- 색은 §2 Color Palette 의 토큰만 사용
+- 모든 인터랙티브 요소에 focus ring (2px Accent)
+- spacing 은 §5 scale 에서만 선택
+
+**DON'T**
+- hex 하드코딩 (`bg: #FF0000` 금지 — 토큰으로 §2 에 등록)
+- 임의 그림자값 (반드시 §6 elevation 사용)
+- 폰트 패밀리 임시 변경
+
+## Responsive
+
+> §8 — 브레이크포인트와 적응 규칙.
+
+- Breakpoints: `sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`, `2xl: 1536px`
+- Mobile-first 작성, `min-width` 미디어쿼리만 사용
+- Section vertical rhythm: 96px (lg+) / 64px (sm/md)
+- Touch target 최소 44×44px (mobile)
+
+## Agent Prompt Guide
+
+> §9 — UI 코드 생성 AI 에이전트를 위한 한 문단 가이드.
+
+"UI 코드를 생성/수정할 때 §2 Color Palette · §3 Typography · §5 Layout spacing scale 의 토큰만 사용한다.
+hex 하드코딩 시 §2 에 토큰을 추가하거나 기존 토큰으로 치환한다.
+신규 컴포넌트는 §4 의 radius · padding 규칙을 따른다.
+브레이크포인트는 §8 만 사용한다."

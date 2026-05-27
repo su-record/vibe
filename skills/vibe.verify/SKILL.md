@@ -184,6 +184,26 @@ For each UI scenario in Feature file:
 - DOM 기반: `div class="nav-wrapper mx-4 flex..."` = 200+ chars
 - 전자를 사용해야 시나리오 50개도 한 세션에서 검증 가능
 
+### 3.2 Visual Drift Detection (--from-design-md)
+
+**활성 조건**: 프로젝트 루트에 `DESIGN.md` 존재 + UI 스택. 또는 `--from-design-md` 플래그 명시.
+
+**동작**:
+
+```
+Load skill `vibe.design` with: verify --files=<changed-ui-files>
+```
+
+`vibe.design verify` 는 `DESIGN.md §2 Color Palette` 의 hex 토큰 셋을 추출(`extractHexTokens`)하고,
+변경 파일에서 토큰 밖 hex 하드코딩을 검출(`findHardcodedColors`) 한다.
+
+**판정**:
+- P1 drift (토큰 밖 hex) → `/vibe.verify` 실패
+- DESIGN.md 부재 → 안내 후 silent skip (블록하지 않음)
+- v1 범위: hex only. spacing / font 드리프트는 Phase 2+
+
+**성능 목표**: <1s / 100 파일 (변경 파일만 스캔 — `/vibe.verify` 기존 정책 일치).
+
 ### 3.5 Step Count (MANDATORY before Quality Report)
 
 Read `.vibe/metrics/current-run.json` to obtain the tool-call count from the preceding `/vibe.run` (and any follow-up work in this session). Then append a record to `.vibe/metrics/history.jsonl` and include the count in the Quality Report below.

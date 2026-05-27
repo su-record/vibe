@@ -45,6 +45,8 @@ Step 1) 플래그 수집
   hasNew              = args에 "--new" 포함
   hasTeach            = args에 "--teach" 포함
   hasNewState         = args에 "--new-state" 포함 (Branch 3 전용: state 파일 무시하고 새로 그림)
+  hasEmitDesignMd     = args에 "--emit-design-md" 포함 (Branch 1/2 전용: READ 완료 후 DESIGN.md 출력)
+  hasReadDesignMd     = 프로젝트 루트에 DESIGN.md 존재 (Branch 3 전용: WRITE 시 톤·팔레트 우선 입력)
 
 Step 2) 위치 인자 분류
   positional  = 모든 비-플래그 인자
@@ -218,6 +220,12 @@ Load skill `design-audit`
    → 5-dimension 점검 (a11y, performance, responsive, theming, AI slop)
    → P1 finding은 review 큐에 기록 (read-only)
 
+⤵ Phase 6.5 (hasEmitDesignMd == true 시)
+   → resolved tokens (Color/Typography/Spacing) + design-audit 산출물을
+     DESIGN.md (Stitch 9 섹션) 으로 정제해 프로젝트 루트에 저장
+   → 첫 줄: `<!-- design-md-version: 1 -->`
+   → `vibe.design lint` 자동 통과 확인
+
 ⛔ Phase 6 + design-audit 완료 전까지 "완료 요약" 출력 금지.
 ```
 
@@ -295,6 +303,11 @@ Load skill `figma` — Phase 6 (시각 검증 루프, P1=0까지)
 Load skill `design-audit`
    → a11y는 항상 검증. 컨벤션 무시 모드여도 접근성은 양보 불가.
 
+⤵ Phase 6.5 (hasEmitDesignMd == true 시)
+   → resolved tokens + design-audit 산출물을
+     DESIGN.md (Stitch 9 섹션) 으로 정제해 프로젝트 루트에 저장
+   → 첫 줄: `<!-- design-md-version: 1 -->`
+
 ⛔ Phase 6 + design-audit 완료 전까지 "완료 요약" 출력 금지.
 ```
 
@@ -353,8 +366,11 @@ Load skill `design-audit`
    ✅ 피처명 결정: mdArg 파일명에서 .md 제거한 값을 {feature}로 사용
 
 2. Design context 로드 (non-interactive 기본)
+   - hasReadDesignMd == true (프로젝트 루트에 DESIGN.md 존재):
+     · §1 Visual Theme / §2 Color Palette / §3 Typography 를 톤·팔레트의
+       **1 차 입력**으로 사용 (`design-context.json` · plan.md 보다 우선)
    - Read .vibe/design-context.json
-     · 존재 → 톤/팔레트 보강용으로 binding
+     · 존재 → 톤/팔레트 보강용으로 binding (DESIGN.md 가 있으면 보조)
      · 없음 → plan.md의 "## 7. Look & Feel" 값으로 임시 컨텍스트 구성
    - hasTeach == true 인 경우에만 Load skill `design-teach`로 인터랙티브 보강
 

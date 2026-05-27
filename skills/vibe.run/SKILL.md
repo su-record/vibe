@@ -69,6 +69,23 @@ Load skill `regress` with: list --feature "{feature-name}"
 
 Also load `.vibe/contracts/{feature-name}.md` if present — use it as the contract reference during implementation.
 
+### DESIGN.md Gate (UI stack only, before Phase 1)
+
+Run immediately after the contract load:
+
+```bash
+# UI stack 감지: .vibe/config.json 의 stacks[].type 중 STACK_TO_SKILLS 가 vibe.design 을 포함하는 것
+# DESIGN.md 존재: 프로젝트 루트
+test -f DESIGN.md
+```
+
+- **DESIGN.md present OR no UI stack** → silently continue
+- **DESIGN.md absent AND UI stack present**:
+  - interactive mode: 한 줄 안내 — "💡 UI 작업에 `DESIGN.md` 시각 SSOT 가 없습니다. `/vibe.design init` 으로 생성하면 시각 드리프트가 자동 검출됩니다. (생략 가능 — 1 회만 안내)"
+  - ultrawork mode: 무음 스킵 (gate 가 막지 않음)
+
+> **권유 > 강제**. DESIGN.md 부재는 절대 vibe.run 을 블록하지 않는다.
+
 ### Core Flow
 
 ```

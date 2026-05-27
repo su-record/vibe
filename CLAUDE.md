@@ -59,6 +59,12 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 | `.claude/settings.local.json` | Claude Code hooks (auto-generated, don't commit) |
 | `~/.codex/config.toml` | Codex `notify` (turn-complete lifecycle hook, auto-installed) |
 
+### Quality SSOT (3-tier)
+| Path | Purpose |
+|---|---|
+| `CLAUDE.md` / `AGENTS.md` | Code quality + build quality (existing) |
+| `DESIGN.md` | **Visual quality** — Stitch 9-section format, project root, managed by `/vibe.design` (init/lint/verify/sync). Figma 독립. UI stack 에서만 권유 — 부재해도 워크플로 블록하지 않음. |
+
 Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/`update` 시 `.vibe/` 로 이동한다.
 
 ### Dual-Harness Doctrine

@@ -284,6 +284,13 @@ Task(subagent_type="ui-antipattern-detector",
   prompt="Detect UI anti-patterns in: {changed_ui_files}. Check against MASTER.md if exists at .vibe/design-system/{project}/MASTER.md.")
 ```
 
+#### Visual P1 Baseline
+
+- 프로젝트 루트에 `DESIGN.md` 가 존재하면 **시각 P1 의 1 차 baseline** 으로 사용한다 (§2 Color Palette / §7 Do's & Don'ts).
+- `DESIGN.md` 부재 시 기존 폴백을 사용 (WCAG 2.1 AA + `MASTER.md` + design-audit 기본 5 차원).
+- v1 범위: hex 컬러 드리프트만 P1 후보. spacing / font 드리프트는 Phase 2+ 에서 추가.
+- 안티패턴 검출(⑧) 은 `DESIGN.md §7` 의 "DON'T" 항목을 우선 규칙으로 사용한다.
+
 **findings 통합**: ⑥⑦⑧ findings를 기존 findings[]와 병합 → P1/P2/P3 통합 정렬
 
 **⑦ Critical finding 에스컬레이션**: ui-a11y-auditor의 P1 finding은 Review Debate Team(Phase 4.5)에 자동 포함
