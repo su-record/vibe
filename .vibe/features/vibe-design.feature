@@ -186,7 +186,7 @@ Scenario: constants.ts 에 vibe.design 등록
   Given `src/cli/postinstall/constants.ts` 수정 후 빌드
   When `node -e "import('./dist/cli/postinstall/constants.js').then(m => console.log(m.GLOBAL_SKILLS_ENTRY))"`
   Then 출력에 `vibe.design` 이 포함된다
-  And UI 스택 12개(`typescript-react`, `typescript-nextjs`, …, `kotlin-android`)의 STACK_TO_SKILLS 매핑에도 포함된다
+  And UI 스택 11개(`typescript-react`, `typescript-nextjs`, `typescript-vue`, `typescript-nuxt`, `typescript-svelte`, `typescript-angular`, `typescript-astro`, `typescript-react-native`, `dart-flutter`, `swift-ios`, `kotlin-android`)의 STACK_TO_SKILLS 매핑에도 포함된다
 ```
 **Verification**: SPEC AC-11
 

@@ -132,13 +132,16 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 
 4. [ ] **`skills/vibe.design/heuristics/code-extract.md` 작성**
    - File: `skills/vibe.design/heuristics/code-extract.md`
-   - 코드 → DESIGN.md 추출 휴리스틱 명세:
-     - Tailwind: `tailwind.config.{js,ts}` 의 `theme.colors`/`theme.fontFamily`/`theme.spacing` 추출
-     - CSS-vars: `:root { --color-* }` 패턴 스캔
-     - PostCSS/SCSS: `$color-*` `$font-*` `$spacing-*` 변수 스캔
-     - styled-components/Emotion: `theme.colors.*` 객체 추출
+   - 코드 → DESIGN.md 추출 휴리스틱 명세 (v1 우선순위 명시):
+     - **v1 필수 (AC-2 범위)**:
+       - Tailwind: `tailwind.config.{js,ts}` 의 `theme.colors`/`theme.fontFamily`/`theme.spacing` 추출
+       - CSS-vars: `:root { --color-* }` 패턴 스캔
+       - styled-components: `theme.colors.*` 객체 추출
+     - **v1 documented-only (best-effort 휴리스틱, AC 미적용)**:
+       - PostCSS/SCSS: `$color-*` `$font-*` `$spacing-*` 변수 스캔 (Phase 2+ AC 확장 예정)
+       - Emotion: `theme.colors.*` 객체 추출 (styled-components 와 동일 형식이면 자동 처리)
      - 추출 실패 시 → 인터뷰 폴백
-   - Verify: 4가지 패턴 모두 명시 + 폴백 동작 명시
+   - Verify: v1 필수 3 패턴 + documented-only 2 패턴 + 폴백 동작 모두 명시
 
 ### Phase 2: Integration — 기존 vibe 워크플로 통합
 
@@ -265,6 +268,21 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 - 기존 `vibe.*` 스킬의 frontmatter/구조 그대로 미러링.
 - 메시지/문서에서 awesome-design-md를 출처로 명시 (Stitch DESIGN.md 표준 + voltagent 컬렉션).
 
+### Performance Targets (VD-R2-005)
+
+- `vibe.design lint` (헬퍼 단위 호출, 단일 DESIGN.md ≤ 50KB): **< 200ms**
+- `vibe.design verify --changed-files-only` (변경 파일 ≤ 100): **< 1s**
+- `vibe.design verify` 풀스캔 파일 상한: 5MB 초과 파일은 스킵 + warning
+- `init --from=reference` 네트워크 fetch 타임아웃: **5s**. 초과 시 offline 폴백 (style-preset + 단축 인터뷰)
+
+### Figma Credential Handling (VD-R2-006)
+
+- Figma 토큰 출처: `~/.vibe/config.json` 의 `figma.token` 키 (vibe 기존 패턴, `0o600` 권한). 다른 곳 읽기 금지.
+- 로그·에러 메시지에 토큰 노출 금지 (마스킹: 마지막 4자만 표시).
+- `init --from=figma` / `sync` 외 어떤 서브커맨드도 Figma 토큰을 읽거나 요구하지 않는다.
+- `init --from=figma` 토큰 부재 시: AC-4 의 에러 메시지("Figma 미설정 — 다른 from 옵션을 사용하거나 `vibe figma key` 설정 필요") 출력 후 exit 1. `sync` 도 동일.
+- `verify` / `lint` / `--from=interview` / `--from=code` / `--from=reference` 는 Figma 토큰 부재와 무관하게 정상 동작.
+
 ### Non-Goals (이번 버전 제외)
 
 - DESIGN.md 자동 동기화 (코드 변경 시 자동 토큰 업데이트)
@@ -273,6 +291,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 - DESIGN.md WYSIWYG 에디터
 - Mobile/Web 별도 DESIGN.md 변형
 - `/vibe.design sync` 의 실제 Figma API 구현 (Phase 1 SPEC 통과 후 별도 PR)
+- **spacing/font 드리프트 자동 검출**: v1 은 hex 컬러 드리프트만 P1. spacing/font 토큰 드리프트는 Phase 2+ (헬퍼 모듈에 stub 만 둠)
 
 </constraints>
 
@@ -315,21 +334,27 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 ## Acceptance Criteria
 <acceptance>
 
-- [ ] **AC-1**: `/vibe.design init --from=interview` 실행 시 사용자에게 5개 이상 질문 → 응답으로 9 섹션 DESIGN.md 생성 (프로젝트 루트)
-- [ ] **AC-2**: `/vibe.design init --from=code` 가 Tailwind/CSS-vars/styled-components 3 패턴에서 색·간격·폰트 토큰을 추출해 DESIGN.md 생성. 추출 실패 시 인터뷰 폴백 안내
-- [ ] **AC-3**: `/vibe.design init --from=reference --reference=<slug>` 가 시드 카탈로그 12개 이상 중 1개를 골라 DESIGN.md 생성. 네트워크 없이도 동작 — 시드의 `style-preset` 으로 §1·§2·§3 기본값 + 단축 인터뷰(≤3 질문)로 나머지 6 섹션 채움
-- [ ] **AC-4**: `/vibe.design init --from=figma` 가 `/vibe.figma --emit-design-md` 로 위임 — Figma 미설정 시 명확한 에러 메시지
-- [ ] **AC-5**: `/vibe.design lint` 가 9 섹션 중 1개라도 누락 시 P1 finding 반환. 모두 존재하면 pass
-- [ ] **AC-6**: `/vibe.design verify` 가 DESIGN.md 토큰에 없는 hex 컬러가 코드에 하드코딩되어 있으면 P1 drift, 없으면 pass. DESIGN.md 없는 프로젝트에서는 no-op (exit 0)
-- [ ] **AC-7**: `/vibe.run` 이 UI 키워드 SPEC 진입 시 DESIGN.md 부재면 1회 안내 출력, 존재면 컨텍스트에 로드. 부재가 실행을 막지 않음
-- [ ] **AC-8**: `/vibe.verify` 가 UI 변경 시 `vibe.design verify`를 호출 — P1 drift 발견 시 `/vibe.regress register --from-design-md` 자동 호출
-- [ ] **AC-9**: `/vibe.review` 가 DESIGN.md 존재 시 시각 P1 판정에 그 기준 사용. 없으면 일반 휴리스틱 폴백
-- [ ] **AC-10**: `/vibe.figma` 가 DESIGN.md 있으면 WRITE 입력으로 우선 사용. `--emit-design-md` 플래그로 READ 결과를 DESIGN.md로도 출력. DESIGN.md 부재가 실행 차단 안 함
-- [ ] **AC-11**: `constants.ts` 의 `GLOBAL_SKILLS_ENTRY` 에 `vibe.design` 등록. UI 스택 11개 (`typescript-react`, `typescript-nextjs`, `typescript-vue`, `typescript-nuxt`, `typescript-svelte`, `typescript-angular`, `typescript-astro`, `typescript-react-native`, `dart-flutter`, `swift-ios`, `kotlin-android`) `STACK_TO_SKILLS` 에 `vibe.design` 매핑. `grep -c "vibe.design" src/cli/postinstall/constants.ts` ≥ 12
-- [ ] **AC-12**: `CLAUDE.md` 와 `AGENTS.md` 에 DESIGN.md 역할 표 또는 1줄 명시 (동일 내용)
-- [ ] **AC-13**: 신규 `tests/vibe-design.spec.ts` 6+ 케이스 통과 + 기존 vibe 테스트 회귀 0
-- [ ] **AC-14**: `npm run build` 성공 (TypeScript 에러 0)
-- [ ] **AC-15**: vibe `ultrawork` 모드에서 DESIGN.md 안내가 자동 스킵되어 비대화 실행 유지
+### Verification Mode 라벨링 (VD-R2-004)
+
+각 AC 옆 라벨:
+- `[AUTO]` → vitest 또는 grep/build 등 자동 검증 가능 (CI 통과 기준)
+- `[MANUAL]` → markdown-driven 슬래시 명령 동작이라 수동 transcript 검증. 검증 방법: SKILL.md 정적 자산 검사 + 실제 슬래시 명령 1회 dry-run transcript 캡처 (`.vibe/manual-checks/vibe-design.md` 에 저장)
+
+- [ ] **AC-1 [MANUAL]**: `/vibe.design init --from=interview` 실행 시 사용자에게 5개 이상 질문 → 응답으로 9 섹션 DESIGN.md 생성 (프로젝트 루트). 정적 검증: `SKILL.md` 에 "≥ 5 질문" + "9 섹션 출력" 문구 포함
+- [ ] **AC-2 [AUTO]**: `/vibe.design init --from=code` 가 v1 필수 3 패턴(Tailwind/CSS-vars/styled-components)에서 색·간격·폰트 토큰을 추출해 DESIGN.md 생성. 추출 실패 시 인터뷰 폴백 안내. 검증: `design-md-parser` 헬퍼 픽스처 테스트 3종
+- [ ] **AC-3 [AUTO + MANUAL]**: `/vibe.design init --from=reference --reference=<slug>` 가 시드 카탈로그 12개 이상 중 1개를 골라 DESIGN.md 생성. 네트워크 없이도 동작 — 시드의 `style-preset` 으로 §1·§2·§3 기본값 + 단축 인터뷰(≤3 질문)로 나머지 6 섹션 채움. AUTO: references/README.md 시드 ≥ 12 + 모든 행에 `style-preset` 채워짐. MANUAL: 1개 slug dry-run transcript
+- [ ] **AC-4 [MANUAL]**: `/vibe.design init --from=figma` 가 `/vibe.figma --emit-design-md` 로 위임 — Figma 미설정 시 정확히 다음 메시지: "Figma 미설정 — 다른 from 옵션을 사용하거나 `vibe figma key` 설정 필요" 출력 후 exit 1. 정적 검증: SKILL.md 에 위 문자열 그대로 포함
+- [ ] **AC-5 [AUTO]**: `/vibe.design lint` 가 9 섹션 중 1개라도 누락 시 P1 finding 반환. 모두 존재하면 pass. 검증: `lintMissingSections` 헬퍼 단위 테스트
+- [ ] **AC-6 [AUTO]**: `/vibe.design verify` 가 DESIGN.md 토큰에 없는 **hex 컬러**(v1 범위)가 코드에 하드코딩되어 있으면 P1 drift, 없으면 pass. DESIGN.md 없는 프로젝트에서는 no-op (exit 0). 검증: `findHardcodedColors` 헬퍼 단위 테스트
+- [ ] **AC-7 [MANUAL]**: `/vibe.run` 이 UI 키워드 SPEC 진입 시 DESIGN.md 부재면 1회 안내 출력, 존재면 컨텍스트에 로드. 부재가 실행을 막지 않음. 정적 검증: `vibe.run/SKILL.md` 에 `### DESIGN.md Gate` 섹션 + "1회 안내" / "스킵 가능" 문구
+- [ ] **AC-8 [MANUAL]**: `/vibe.verify` 가 UI 변경 시 `vibe.design verify`를 호출 — P1 drift 발견 시 `/vibe.regress register --from-design-md` 자동 호출. 정적 검증: `vibe.verify/SKILL.md` 에 `### Visual Drift Detection` 섹션 + `--from-design-md` 키워드 포함
+- [ ] **AC-9 [MANUAL]**: `/vibe.review` 가 DESIGN.md 존재 시 시각 P1 판정에 그 기준 사용. 없으면 일반 휴리스틱 폴백. 정적 검증: `vibe.review/SKILL.md` 에 `DESIGN.md` 키워드 ≥ 2회 + "폴백" 문구
+- [ ] **AC-10 [MANUAL]**: `/vibe.figma` 가 DESIGN.md 있으면 WRITE 입력으로 우선 사용. `--emit-design-md` 플래그로 READ 결과를 DESIGN.md로도 출력. DESIGN.md 부재가 실행 차단 안 함. 정적 검증: `vibe.figma/SKILL.md` argument-hint 에 `--emit-design-md` + WRITE 섹션에 "DESIGN.md 우선" 명시
+- [ ] **AC-11 [AUTO]**: `constants.ts` 의 `GLOBAL_SKILLS_ENTRY` 에 `vibe.design` 등록. UI 스택 11개 (`typescript-react`, `typescript-nextjs`, `typescript-vue`, `typescript-nuxt`, `typescript-svelte`, `typescript-angular`, `typescript-astro`, `typescript-react-native`, `dart-flutter`, `swift-ios`, `kotlin-android`) `STACK_TO_SKILLS` 에 `vibe.design` 매핑. `grep -c "vibe.design" src/cli/postinstall/constants.ts` ≥ 12
+- [ ] **AC-12 [AUTO]**: `CLAUDE.md` 와 `AGENTS.md` 에 DESIGN.md 역할 표 또는 1줄 명시 (동일 내용). `grep -c "DESIGN.md" CLAUDE.md` ≥ 2 AND `grep -c "DESIGN.md" AGENTS.md` ≥ 2
+- [ ] **AC-13 [AUTO]**: 신규 `tests/vibe-design.spec.ts` 6+ 케이스 통과 + 기존 vibe 테스트 회귀 0
+- [ ] **AC-14 [AUTO]**: `npm run build` 성공 (TypeScript 에러 0)
+- [ ] **AC-15 [MANUAL]**: vibe `ultrawork` 모드에서 DESIGN.md 안내가 자동 스킵되어 비대화 실행 유지. 정적 검증: `vibe.run/SKILL.md` 의 `### DESIGN.md Gate` 섹션에 "ultrawork 모드 스킵" 명시
 
 </acceptance>
 
@@ -340,7 +365,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 #### Auto-fixed:
 - ⚠️ DESIGN.md 폴백 위치 미정 → `.vibe/DESIGN.md` 폴백은 Phase 2+ 으로 이번 SPEC scope에서 제외 (제약 명시)
 - ⚠️ `sync` 서브커맨드 Figma API 구현 범위 → 이번 SPEC은 stub + 별도 PR 명시 (Non-Goals)
-- ⚠️ "시각 P1 카테고리" 의 의미 → DESIGN.md 토큰 외 하드코딩 hex/spacing/font 발견 시 P1 (AC-6 명시)
+- ⚠️ "시각 P1 카테고리" 의 의미 → v1 은 DESIGN.md 토큰 외 **하드코딩 hex** 발견 시 P1 (AC-6 명시). spacing/font 는 Phase 2+ (Non-Goals 명시)
 - ⚠️ 시드 레퍼런스 개수 → "최소 12개" 로 수치 확정 (Phase 1 Task 3)
 - ⚠️ "1회 안내" 의 추적 방법 → 워크플로(=`/vibe.run` 1회 실행)당 1회. 세션/feature 단위 영속 추적은 Phase 2+
 
