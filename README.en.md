@@ -134,6 +134,32 @@ Bidirectional. Read designs from Figma, or write designs to Figma from a plan.
 
 ---
 
+## DESIGN.md — Visual Quality SSOT
+
+The **third SSOT** alongside `CLAUDE.md` (code) and `AGENTS.md` (build). Google Stitch 9-section format, lives at project root, human-readable so any AI agent can read it. **Figma-independent** — Figma is just one of 4 input paths.
+
+```bash
+# 4 init paths (start without Figma)
+/vibe.design init                                  # Interview (default)
+/vibe.design init --from=code                      # Reverse-extract tokens (Tailwind / CSS vars / styled-components)
+/vibe.design init --from=reference --reference=linear   # 12 awesome-design-md seeds
+/vibe.design init --from=figma --file=<key>        # Delegate to /vibe.figma (optional)
+
+# Lifecycle
+/vibe.design lint                                  # Verify Stitch 9-section completeness
+/vibe.design verify                                # Implementation ↔ DESIGN.md hex token drift (<1s / 100 files)
+```
+
+**Auto-integrated**:
+- `/vibe.run` — On UI work, suggests DESIGN.md once if missing (silent skip in ultrawork, never blocks)
+- `/vibe.verify` — `### 3.2 Visual Drift Detection` flags hardcoded hex as P1
+- `/vibe.review` — `#### Visual P1 Baseline` — DESIGN.md first, WCAG AA fallback
+- `/vibe.figma` — `--emit-design-md` outputs DESIGN.md from READ; WRITE uses DESIGN.md tone/palette as primary input
+
+> v1 scope: hex color drift. Spacing / font drift in Phase 2+
+
+---
+
 ## Quality Gates
 
 Three layers of defense on every tool call:
@@ -190,6 +216,7 @@ Three layers of defense on every tool call:
 | `/vibe.spec` | Single entry point — interview, plan, spec, review, then run |
 | `/vibe.run` | Implement from SPEC |
 | `/vibe.figma` | Figma ↔ Code (read or write, 3 modes) |
+| `/vibe.design` | DESIGN.md visual quality SSOT — init / lint / verify / sync |
 | `/vibe.verify` | Verify implementation against SPEC |
 | `/vibe.trace` | Requirements traceability matrix |
 | `/vibe.analyze` | Analyze any target — code, documents, websites, Figma |

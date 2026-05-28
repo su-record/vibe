@@ -99,6 +99,32 @@ claude
 
 ---
 
+## DESIGN.md — 시각 품질 SSOT
+
+`CLAUDE.md`(코드)·`AGENTS.md`(빌드) 에 이은 **세 번째 SSOT**. Google Stitch 9-섹션 표준으로 프로젝트 루트에 위치하며, 외부 AI 에이전트가 직접 읽을 수 있는 휴먼-리더블 시각 규약입니다. **Figma 종속 X** — Figma 는 4 입력 경로 중 하나일 뿐.
+
+```bash
+# 4 가지 init 경로 (Figma 없이도 시작 가능)
+/vibe.design init                                  # 인터뷰 (디폴트)
+/vibe.design init --from=code                      # 기존 코드 토큰 역추출 (Tailwind/CSS-vars/styled-components)
+/vibe.design init --from=reference --reference=linear   # awesome-design-md 시드 12 종
+/vibe.design init --from=figma --file=<key>        # /vibe.figma 위임 (옵션)
+
+# 라이프사이클
+/vibe.design lint                                  # Stitch 9-섹션 완전성 검증
+/vibe.design verify                                # 구현 ↔ DESIGN.md hex 토큰 드리프트 (<1s/100 파일)
+```
+
+**자동 통합**:
+- `/vibe.run` — UI 작업 진입 시 DESIGN.md 없으면 1 회 권유 (ultrawork silent skip, 절대 블록 X)
+- `/vibe.verify` — `### 3.2 Visual Drift Detection` 으로 hex 하드코딩 P1 검출
+- `/vibe.review` — `#### Visual P1 Baseline` — DESIGN.md 우선, 없으면 WCAG AA 폴백
+- `/vibe.figma` — `--emit-design-md` 로 READ 산출물을 DESIGN.md 로 출력, WRITE 는 DESIGN.md 톤·팔레트 1 차 입력
+
+> v1 범위: hex 컬러 드리프트. spacing / font 드리프트는 Phase 2+
+
+---
+
 ## 품질 게이트
 
 모든 도구 호출마다 3계층 방어:
@@ -152,6 +178,7 @@ claude
 | `/vibe.spec` | (advanced) 인터뷰, 기획, SPEC, 리뷰 phase 명시적 호출 |
 | `/vibe.run` | (advanced) SPEC 기반 구현 |
 | `/vibe.figma` | (advanced) Figma ↔ 코드 (읽기 또는 쓰기, 3가지 모드) |
+| `/vibe.design` | (advanced) DESIGN.md 시각 품질 SSOT — init / lint / verify / sync |
 | `/vibe.verify` | (advanced) 구현이 SPEC에 맞는지 검증 |
 | `/vibe.trace` | (advanced) 요구사항 추적 매트릭스 |
 
