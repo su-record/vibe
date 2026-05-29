@@ -13,7 +13,7 @@ import { formatLLMStatus } from '../auth.js';
  */
 export function showHelp(): void {
   console.log(`
-VIBE - Personalized AI Agent (Claude Code exclusive)
+VIBE - AI Coding Harness (Claude Code / Codex / Antigravity)
 
 Commands:
   vibe setup              셋업 위자드 (인증, 설정 한번에)
@@ -41,7 +41,7 @@ Figma:
 Skills:
   vibe skills add <pkg>   Install skill from skills.sh
 
-Slash Commands (Claude Code):
+Slash Commands (Claude Code / Codex):
   /vibe.spec "feature"    SPEC 작성 + 리서치
   /vibe.run "feature"     구현 실행
   /vibe.verify "feature"  BDD 검증
@@ -61,11 +61,13 @@ Docs: https://github.com/su-record/vibe
  */
 export function showStatus(): void {
   const projectRoot = process.cwd();
-  const coreDir = path.join(projectRoot, '.claude', 'vibe');
-  const configPath = path.join(coreDir, 'config.json');
+  const coreDir = path.join(projectRoot, '.vibe');
+  const legacyCoreDir = path.join(projectRoot, '.claude', 'vibe');
+  const activeCoreDir = fs.existsSync(coreDir) ? coreDir : legacyCoreDir;
+  const configPath = path.join(activeCoreDir, 'config.json');
 
   const packageJson = getPackageJson();
-  const isCoreProject = fs.existsSync(coreDir);
+  const isCoreProject = fs.existsSync(activeCoreDir);
 
   let config: VibeConfig & Record<string, unknown> = { language: 'ko', models: {} };
   if (isCoreProject && fs.existsSync(configPath)) {

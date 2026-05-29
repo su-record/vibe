@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * core CLI — SPEC-driven AI coding framework (Claude Code exclusive)
+ * core CLI — SPEC-driven AI coding framework for Claude Code, Codex, and Antigravity
  */
 
 import fs from 'fs';
