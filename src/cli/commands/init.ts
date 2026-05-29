@@ -24,10 +24,10 @@ import {
   detectOsLanguage,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
-  generateProjectGeminiMd,
+  generateProjectAntigravityMd,
   generateGlobalClaudeMd,
   generateGlobalCodexAgentsMd,
-  generateGlobalGeminiMd,
+  generateGlobalAntigravityMd,
   consolidateLegacyVibe,
 } from '../setup.js';
 import * as p from '@clack/prompts';
@@ -40,7 +40,7 @@ import {
   AVAILABLE_CAPABILITIES,
   STACK_TO_LANGUAGE_FILE,
 } from '../postinstall.js';
-import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectAntigravityCli, detectCodexCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 import { installExternalSkills } from './skills.js';
 
@@ -176,17 +176,17 @@ function runStep(
  * @param target 초기화 대상 하네스.
  *   - 'cc'     → `.claude/` + CLAUDE.md (기본)
  *   - 'codex'  → `.codex/`  + AGENTS.md
- *   - 'gemini' → `.gemini/` + GEMINI.md
+ *   - 'antigravity' → `.gemini/` + GEMINI.md (Antigravity context file)
  */
 export async function init(
   projectName?: string,
-  target: 'cc' | 'codex' | 'gemini' = 'cc',
+  target: 'cc' | 'codex' | 'antigravity' = 'cc',
 ): Promise<void> {
   try {
     const HARNESS_MAP: Record<typeof target, { dir: string; label: string }> = {
       cc: { dir: '.claude', label: 'Claude Code' },
       codex: { dir: '.codex', label: 'Codex' },
-      gemini: { dir: '.gemini', label: 'Gemini' },
+      antigravity: { dir: '.gemini', label: 'Antigravity' },
     };
     const { dir: harnessDir, label: harnessLabel } = HARNESS_MAP[target];
 
@@ -383,10 +383,10 @@ export async function init(
 
     const stackTypes = detectedStacks.map(st => st.type);
     const codexStatus = detectCodexCli();
-    const geminiStatus = detectGeminiCli();
+    const antigravityStatus = detectAntigravityCli();
 
-    // Gemini CLI는 다른 hook 스키마 사용 — settings.local.json 스킵
-    if (target !== 'gemini' && target !== 'codex') {
+    // Antigravity는 다른 hook 스키마 사용 — settings.local.json 스킵
+    if (target !== 'antigravity' && target !== 'codex') {
       runStep(s3, 'Installing project hooks', () => installProjectHooks(projectRoot, harnessDir));
     }
     if (target === 'codex' || codexStatus.installed) {
@@ -427,10 +427,10 @@ export async function init(
         generateGlobalCodexAgentsMd();
         installCodexNotify(codexStatus.configDir);
       }
-      if (geminiStatus.installed) generateGlobalGeminiMd();
+      if (antigravityStatus.installed) generateGlobalAntigravityMd();
       const cliLabels = ['claude',
         codexStatus.installed && 'codex',
-        geminiStatus.installed && 'gemini'
+        antigravityStatus.installed && 'antigravity'
       ].filter(Boolean).join(', ');
       log(`   🌐 Global rules updated: ${cliLabels}\n`);
     });
@@ -448,9 +448,9 @@ export async function init(
       } else if (target === 'codex') {
         generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails);
         log(`   📄 AGENTS.md generated (${target})\n`);
-      } else if (target === 'gemini') {
-        generateProjectGeminiMd(projectRoot, detectedStacks, stackDetails);
-        log(`   📄 GEMINI.md generated\n`);
+      } else if (target === 'antigravity') {
+        generateProjectAntigravityMd(projectRoot, detectedStacks, stackDetails);
+        log(`   📄 GEMINI.md generated (Antigravity context)\n`);
       }
     });
 

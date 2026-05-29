@@ -1,6 +1,6 @@
 /**
- * Gemini Vision / Chat 기능 테스트
- * 실행: npx tsx tests/gemini-capabilities.test.ts
+ * Antigravity Vision / Chat 기능 테스트
+ * 실행: npx tsx tests/antigravity-capabilities.test.ts
  */
 
 import fs from 'fs';
@@ -23,13 +23,21 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-import { chat, ask, quickAsk } from '../dist/infra/lib/gemini/chat.js';
-import { analyzeImage, webSearch } from '../dist/infra/lib/gemini/capabilities.js';
-import { getAuthInfo } from '../dist/infra/lib/gemini/auth.js';
+import { chat, ask, quickAsk } from '../dist/infra/lib/antigravity/chat.js';
+import { analyzeImage, webSearch } from '../dist/infra/lib/antigravity/capabilities.js';
+import { getAuthInfo } from '../dist/infra/lib/antigravity/auth.js';
 
 const TEMP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
 
 // ── Helpers ──
+
+function out(message = ''): void {
+  process.stdout.write(`${message}\n`);
+}
+
+function err(message: string): void {
+  process.stderr.write(`${message}\n`);
+}
 
 function createTestImage(): string {
   // 100x100 red PNG (zlib compressed, no external dependency)
@@ -99,62 +107,62 @@ function createTestImage(): string {
 // ── Tests ──
 
 async function testAuth(): Promise<boolean> {
-  console.log('\n=== 1. Auth Check ===');
+  out('\n=== 1. Auth Check ===');
   try {
     const auth = await getAuthInfo();
-    console.log(`  Type: ${auth.type}`);
-    console.log(`  Email: ${auth.email || '(none)'}`);
-    console.log(`  Token: ${auth.accessToken ? 'present' : 'missing'}`);
-    console.log(`  API Key: ${auth.apiKey ? 'present' : 'missing'}`);
-    console.log('  PASS');
+    out(`  Type: ${auth.type}`);
+    out(`  Email: ${auth.email || '(none)'}`);
+    out(`  Token: ${auth.accessToken ? 'present' : 'missing'}`);
+    out(`  API Key: ${auth.apiKey ? 'present' : 'missing'}`);
+    out('  PASS');
     return true;
   } catch (e) {
-    console.error(`  FAIL: ${(e as Error).message}`);
+    err(`  FAIL: ${(e as Error).message}`);
     return false;
   }
 }
 
 async function testChat(): Promise<boolean> {
-  console.log('\n=== 2. Chat (basic) ===');
+  out('\n=== 2. Chat (basic) ===');
   try {
     const result = await ask('Say "hello" in Korean. Reply with just the word.', {
-      model: 'gemini-flash',
+      model: 'antigravity-fast',
       maxTokens: 50,
       temperature: 0,
     });
-    console.log(`  Response: ${result}`);
-    console.log('  PASS');
+    out(`  Response: ${result}`);
+    out('  PASS');
     return true;
   } catch (e) {
-    console.error(`  FAIL: ${(e as Error).message}`);
+    err(`  FAIL: ${(e as Error).message}`);
     return false;
   }
 }
 
 async function testVision(): Promise<boolean> {
-  console.log('\n=== 3. Vision (Image Analysis) ===');
+  out('\n=== 3. Vision (Image Analysis) ===');
   try {
     const imagePath = createTestImage();
-    console.log(`  Test image: ${imagePath}`);
+    out(`  Test image: ${imagePath}`);
     const result = await analyzeImage(imagePath, 'Describe this image. What color is it?');
-    console.log(`  Response: ${result.substring(0, 200)}`);
-    console.log('  PASS');
+    out(`  Response: ${result.substring(0, 200)}`);
+    out('  PASS');
     return true;
   } catch (e) {
-    console.error(`  FAIL: ${(e as Error).message}`);
+    err(`  FAIL: ${(e as Error).message}`);
     return false;
   }
 }
 
 async function testWebSearch(): Promise<boolean> {
-  console.log('\n=== 5. Web Search ===');
+  out('\n=== 5. Web Search ===');
   try {
     const result = await webSearch('What is the current date today?');
-    console.log(`  Response: ${result.substring(0, 200)}`);
-    console.log('  PASS');
+    out(`  Response: ${result.substring(0, 200)}`);
+    out('  PASS');
     return true;
   } catch (e) {
-    console.error(`  FAIL: ${(e as Error).message}`);
+    err(`  FAIL: ${(e as Error).message}`);
     return false;
   }
 }
@@ -162,8 +170,8 @@ async function testWebSearch(): Promise<boolean> {
 // ── Main ──
 
 async function main(): Promise<void> {
-  console.log('Gemini Capabilities Test');
-  console.log('========================');
+  out('Antigravity Capabilities Test');
+  out('========================');
 
   const results: Array<[string, boolean]> = [];
 
@@ -172,14 +180,14 @@ async function main(): Promise<void> {
   results.push(['Vision', await testVision()]);
   results.push(['WebSearch', await testWebSearch()]);
 
-  console.log('\n========================');
-  console.log('Results:');
+  out('\n========================');
+  out('Results:');
   for (const [name, passed] of results) {
-    console.log(`  ${passed ? 'PASS' : 'FAIL'} ${name}`);
+    out(`  ${passed ? 'PASS' : 'FAIL'} ${name}`);
   }
 
   const allPassed = results.every(([, p]) => p);
-  console.log(`\n${allPassed ? 'All tests passed!' : 'Some tests failed.'}`);
+  out(`\n${allPassed ? 'All tests passed!' : 'Some tests failed.'}`);
 
   // cleanup
   try {

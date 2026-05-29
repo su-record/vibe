@@ -186,8 +186,8 @@ export function getGptApiKey(): string | null {
   return readGlobalConfig().credentials?.gpt?.apiKey ?? null;
 }
 
-export function getGeminiApiKey(): string | null {
-  return readGlobalConfig().credentials?.gemini?.apiKey ?? null;
+export function getAntigravityApiKey(): string | null {
+  return readGlobalConfig().credentials?.antigravity?.apiKey ?? null;
 }
 
 // ─── Model helpers ──────────────────────────────────────────────────
@@ -276,25 +276,23 @@ export function migrateLegacyFiles(): void {
       config.credentials.gpt.apiKey = envVars.OPENAI_API_KEY;
       changed = true;
     }
-    // Gemini credentials
-    if (envVars.GEMINI_API_KEY && !config.credentials.gemini?.apiKey) {
-      if (!config.credentials.gemini) config.credentials.gemini = {};
-      config.credentials.gemini.apiKey = envVars.GEMINI_API_KEY;
+    // Antigravity credentials
+    if (envVars.ANTIGRAVITY_API_KEY && !config.credentials.antigravity?.apiKey) {
+      if (!config.credentials.antigravity) config.credentials.antigravity = {};
+      config.credentials.antigravity.apiKey = envVars.ANTIGRAVITY_API_KEY;
       changed = true;
     }
     // Model overrides
     if (!config.models) config.models = {};
     const modelMap: Record<string, keyof NonNullable<GlobalVibeConfig['models']>> = {
       GPT_MODEL: 'gpt',
-      GEMINI_MODEL: 'gemini',
-      GEMINI_FLASH_MODEL: 'geminiFlash',
-      GEMINI_SEARCH_MODEL: 'geminiSearch',
+      ANTIGRAVITY_MODEL: 'antigravity',
       CLAUDE_ARCHITECTURE_MODEL: 'claudeArchitecture',
       CLAUDE_RESEARCH_MODEL: 'claudeResearch',
       CLAUDE_REVIEW_MODEL: 'claudeReview',
       CLAUDE_BACKGROUND_MODEL: 'claudeBackground',
       EMBEDDING_MODEL: 'embedding',
-      GEMINI_EMBEDDING_MODEL: 'geminiEmbedding',
+      ANTIGRAVITY_EMBEDDING_MODEL: 'antigravityEmbedding',
     };
     for (const [envKey, modelKey] of Object.entries(modelMap)) {
       if (envVars[envKey] && !config.models[modelKey]) {
@@ -381,15 +379,15 @@ export function migrateLegacyFiles(): void {
     }
     deleteFileSafe(path.join(legacyDir, 'gpt-apikey.json'));
 
-    // gemini-apikey.json
-    const geminiKey = readJsonSafe<{ apiKey: string }>(path.join(legacyDir, 'gemini-apikey.json'));
-    if (geminiKey?.apiKey && !config.credentials?.gemini?.apiKey) {
+    // antigravity-apikey.json
+    const antigravityKey = readJsonSafe<{ apiKey: string }>(path.join(legacyDir, 'antigravity-apikey.json'));
+    if (antigravityKey?.apiKey && !config.credentials?.antigravity?.apiKey) {
       if (!config.credentials) config.credentials = {};
-      if (!config.credentials.gemini) config.credentials.gemini = {};
-      config.credentials.gemini.apiKey = geminiKey.apiKey;
+      if (!config.credentials.antigravity) config.credentials.antigravity = {};
+      config.credentials.antigravity.apiKey = antigravityKey.apiKey;
       changed = true;
     }
-    deleteFileSafe(path.join(legacyDir, 'gemini-apikey.json'));
+    deleteFileSafe(path.join(legacyDir, 'antigravity-apikey.json'));
 
     // gpt-auth.json
     deleteFileSafe(path.join(legacyDir, 'gpt-auth.json'));
@@ -416,14 +414,14 @@ export function migrateLegacyFiles(): void {
   }
   deleteFileSafe(path.join(vibeDir, 'gpt-apikey.json'));
 
-  const geminiKeyInVibe = readJsonSafe<{ apiKey: string }>(path.join(vibeDir, 'gemini-apikey.json'));
-  if (geminiKeyInVibe?.apiKey && !config.credentials?.gemini?.apiKey) {
+  const antigravityKeyInVibe = readJsonSafe<{ apiKey: string }>(path.join(vibeDir, 'antigravity-apikey.json'));
+  if (antigravityKeyInVibe?.apiKey && !config.credentials?.antigravity?.apiKey) {
     if (!config.credentials) config.credentials = {};
-    if (!config.credentials.gemini) config.credentials.gemini = {};
-    config.credentials.gemini.apiKey = geminiKeyInVibe.apiKey;
+    if (!config.credentials.antigravity) config.credentials.antigravity = {};
+    config.credentials.antigravity.apiKey = antigravityKeyInVibe.apiKey;
     changed = true;
   }
-  deleteFileSafe(path.join(vibeDir, 'gemini-apikey.json'));
+  deleteFileSafe(path.join(vibeDir, 'antigravity-apikey.json'));
   deleteFileSafe(path.join(vibeDir, 'gpt-auth.json'));
 
   if (changed) {

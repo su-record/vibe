@@ -240,9 +240,9 @@ When you include `ultrawork` (or `ulw`), ALL of these activate automatically:
 | **Boulder Loop** | Auto-continues until ALL phases complete |
 | **Context Compression** | Aggressive auto-save at 70%+ context |
 | **No Pause** | Doesn't wait for confirmation between phases |
-| **External LLMs** | Auto-consults GPT/Gemini if enabled |
+| **External LLMs** | Auto-consults GPT/Antigravity if enabled |
 | **Error Recovery** | Loops until 100% or stuck; on stuck auto-records TODO and proceeds (no user prompt) |
-| **Race Review (v2.6.9)** | Multi-LLM review (GPT+Gemini) with cross-validation |
+| **Race Review (v2.6.9)** | Multi-LLM review (GPT+Antigravity) with cross-validation |
 
 ### Boulder Loop (Inspired by Sisyphus)
 
@@ -782,12 +782,12 @@ When external LLMs are enabled in `.vibe/config.json`:
 
 | Role | Method | Condition |
 |------|--------|-----------|
-| User direct query | `gpt.question`, `gemini.question` | Hook auto-handles |
+| User direct query | `gpt.question`, `antigravity.question` | Hook auto-handles |
 | Internal orchestration | Call global script via Bash | Claude calls directly |
 
 **User questions (Hook auto-handles):**
 - `gpt.question` - GPT architecture consultation
-- `gemini.question` - Gemini Q&A/consultation
+- `antigravity.question` - Antigravity Q&A/consultation
 
 **Claude internal calls (directly via Bash):**
 ```bash
@@ -800,8 +800,8 @@ When external LLMs are enabled in `.vibe/config.json`:
 # GPT call (short prompt - CLI arg)
 node "[LLM_SCRIPT]" gpt orchestrate-json "[question content]"
 
-# Gemini call
-node "[LLM_SCRIPT]" gemini orchestrate-json "[question content]"
+# Antigravity call
+node "[LLM_SCRIPT]" antigravity orchestrate-json "[question content]"
 
 # Custom system prompt usage
 node "[LLM_SCRIPT]" gpt orchestrate-json "You are a code reviewer" "[question content]"
@@ -813,7 +813,7 @@ node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/input.json"
 
 ### External LLM Fallback
 
-**IMPORTANT**: When GPT/Gemini hook fails, Claude MUST handle the task directly:
+**IMPORTANT**: When GPT/Antigravity hook fails, Claude MUST handle the task directly:
 
 **Fallback behavior**:
 - Do NOT retry the external LLM call
@@ -1157,7 +1157,7 @@ Then: Login success + JWT token returned
 │  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
 │                                                                 │
 │  [If GPT enabled] Bash: node "[LLM_SCRIPT]" gpt-codex orchestrate-json "[question]"
-│  [If Gemini enabled] Bash: node "[LLM_SCRIPT]" gemini orchestrate-json "[question]"
+│  [If Antigravity enabled] Bash: node "[LLM_SCRIPT]" antigravity orchestrate-json "[question]"
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ↓ (wait for all to complete)
@@ -1440,10 +1440,10 @@ When starting a **new project** with brand context in SPEC, auto-generate app ic
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [Check] Brand assets exist? → Skip if favicon.ico exists
-[Check] Gemini API configured? → Required for image generation
+[Check] Antigravity API configured? → Required for image generation
 [Check] SPEC has brand context? → Extract app name, colors, style
 
-[Generate] Creating app icon with Gemini Image API...
+[Generate] Creating app icon with Antigravity Image API...
   - Prompt: "App icon for [AppName], [style], [color]..."
   - Generated: 512x512 master icon
 
@@ -1476,34 +1476,34 @@ Brand:
 **Trigger Conditions:**
 - First `/vibe.run` execution (no existing icons)
 - SPEC contains brand/design context
-- Gemini API key configured (`vibe gemini key <key>`)
+- Antigravity API key configured (`vibe antigravity key <key>`)
 
 **Manual Generation:**
 ```bash
 # [LLM_SCRIPT] = {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js
-node "[LLM_SCRIPT]" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "[LLM_SCRIPT]" antigravity image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ---
 
-### 5. Race Code Review (GPT + Gemini) + Auto-Fix (v2.6.9)
+### 5. Race Code Review (GPT + Antigravity) + Auto-Fix (v2.6.9)
 
-After all scenarios are implemented, **GPT and Gemini review in parallel with cross-validation**:
+After all scenarios are implemented, **GPT and Antigravity review in parallel with cross-validation**:
 
 > **ULTRAWORK Default**: In ULTRAWORK mode, race review is automatically enabled.
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏁 RACE CODE REVIEW (GPT + Gemini)
+🏁 RACE CODE REVIEW (GPT + Antigravity)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [Step 1] Parallel review execution...
   ├─ GPT Codex: Reviewing...
-  └─ Gemini: Reviewing...
+  └─ Antigravity: Reviewing...
 
 [Step 2] Cross-validation results:
   ┌──────────────────────────────────────────────────────────────────┐
-  │ Issue                          │ GPT │ Gemini │ Codex │ Confidence│
+  │ Issue                          │ GPT │ Antigravity │ Codex │ Confidence│
   │────────────────────────────────│─────│────────│───────│───────────│
   │ Timing attack in password      │ ✅  │ ✅     │ ✅    │ 100% → P1 │
   │ Rate limiting missing          │ ✅  │ ✅     │ ✅    │ 100% → P1 │
@@ -1526,7 +1526,7 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Race Review Invocation (GPT + Gemini in parallel via Bash):**
+**Race Review Invocation (GPT + Antigravity in parallel via Bash):**
 
 **🚨 Use --input file to avoid CLI argument length limits and Windows pipe issues.**
 
@@ -1535,7 +1535,7 @@ After all scenarios are implemented, **GPT and Gemini review in parallel with cr
    - `{"prompt": "Review this code for security, performance, and best practices. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE_CONTENT]"}`
    - Where `[CODE_CONTENT]` is the code text (properly JSON-escaped inside the prompt string)
 3. Script path: `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
-4. Run GPT + Gemini in PARALLEL (two Bash tool calls at once):
+4. Run GPT + Antigravity in PARALLEL (two Bash tool calls at once):
 
 ```bash
 # GPT review (Bash tool call 1)
@@ -1543,8 +1543,8 @@ node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/review-input.json
 ```
 
 ```bash
-# Gemini review (Bash tool call 2 - run in parallel)
-node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.json"
+# Antigravity review (Bash tool call 2 - run in parallel)
+node "[LLM_SCRIPT]" antigravity orchestrate-json --input "[SCRATCHPAD]/review-input.json"
 ```
 
 **Confidence-based Priority:**
@@ -1575,7 +1575,7 @@ node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.j
 
 ### Codex Code Review (Codex 플러그인 활성화 시)
 
-GPT+Gemini race와 **동시에** Codex review 실행:
+GPT+Antigravity race와 **동시에** Codex review 실행:
 
 ```
 /codex:review
@@ -1584,14 +1584,14 @@ GPT+Gemini race와 **동시에** Codex review 실행:
 결과를 race review 교차 검증에 포함 — 3중 리뷰:
 
 ```markdown
-| Issue | GPT | Gemini | Codex | Confidence |
+| Issue | GPT | Antigravity | Codex | Confidence |
 |-------|-----|--------|-------|------------|
 | {이슈} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
 ```
 
 ### 6. Quality Report (Auto-generated)
 
-After all scenarios complete + Gemini review, **quality report is auto-generated**:
+After all scenarios complete + Antigravity review, **quality report is auto-generated**:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1759,11 +1759,11 @@ Then: Login success + JWT token returned
 ✅ Scenario 4 passed!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 GEMINI CODE REVIEW
+🔍 ANTIGRAVITY CODE REVIEW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📤 Sending code to Gemini...
-📝 Gemini feedback:
+📤 Sending code to Antigravity...
+📝 Antigravity feedback:
   1. [Security] Need timing attack prevention → Fixing...
   2. [Performance] Unnecessary DB call → Fixing...
 
@@ -1784,13 +1784,13 @@ Then: Login success + JWT token returned
 │  | 4 | Password reset link   | ✅    | 0       |               │
 │                                                                 │
 │  📈 Quality score: 94/100                                       │
-│  Build: ✅ | Tests: ✅ | Types: ✅ | Gemini: ✅ (2 applied)     │
+│  Build: ✅ | Tests: ✅ | Types: ✅ | Antigravity: ✅ (2 applied)     │
 │                                                                 │
 │  ⏱️ Started: {start_time}                                        │
 │  ⏱️ Completed: {getCurrentTime 결과}                             │
 └─────────────────────────────────────────────────────────────────┘
 
-🎉 Implementation complete! All scenarios passed + Gemini review applied.
+🎉 Implementation complete! All scenarios passed + Antigravity review applied.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔍 AUTO REVIEW (13+ Agents)
@@ -1884,7 +1884,7 @@ Grades:
 |------|---------------|-----------|
 | **Scenario Complete** | 95 | Each scenario must score ≥95 |
 | **Phase Complete** | 95 | Average of all scenarios ≥95 |
-| **Feature Complete** | 95 | All phases complete + Gemini review |
+| **Feature Complete** | 95 | All phases complete + Antigravity review |
 
 ### Auto-Fix Triggers
 

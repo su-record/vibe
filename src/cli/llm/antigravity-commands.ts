@@ -1,9 +1,9 @@
 /**
- * Gemini CLI 명령어
+ * Antigravity CLI 명령어
  *
- * - vibe gemini key: API Key 설정
- * - vibe gemini status: 상태 확인
- * - vibe gemini logout: 설정 제거
+ * - vibe antigravity key: API Key 설정
+ * - vibe antigravity status: 상태 확인
+ * - vibe antigravity logout: 설정 제거
  */
 
 import path from 'path';
@@ -19,83 +19,82 @@ import {
 } from '../../infra/lib/config/GlobalConfigManager.js';
 
 /**
- * Gemini 인증 핵심 로직 (process.exit 없음)
+ * Antigravity 인증 핵심 로직 (process.exit 없음)
  * API Key 확인
  */
-export function geminiAuthCore(): boolean {
+export function antigravityAuthCore(): boolean {
   const config = readGlobalConfig();
-  const apiKey = config.credentials?.gemini?.apiKey || process.env.GEMINI_API_KEY;
+  const apiKey = config.credentials?.antigravity?.apiKey || process.env.ANTIGRAVITY_API_KEY;
 
   if (apiKey) {
     updateConfigOnAuth('apikey');
-    console.log('Gemini API Key configured.');
+    console.log('Antigravity API Key configured.');
     return true;
   }
 
-  console.log('No API key found. Run "vibe gemini key <key>" to set up.');
+  console.log('No API key found. Run "vibe antigravity key <key>" to set up.');
   return false;
 }
 
 /**
- * Gemini 인증 (CLI 명령어용)
+ * Antigravity 인증 (CLI 명령어용)
  */
-export async function geminiAuth(): Promise<void> {
+export async function antigravityAuth(): Promise<void> {
   console.log(`
-Gemini Authentication
+Antigravity Authentication
 
-API Key (Google AI Studio):
-  vibe gemini key <your-api-key>
+API Key:
+  vibe antigravity key <your-api-key>
 
-Get your API key from:
-  https://aistudio.google.com/apikey
+Antigravity CLI:
+  agy
   `);
 
   const config = readGlobalConfig();
-  const apiKey = config.credentials?.gemini?.apiKey;
+  const apiKey = config.credentials?.antigravity?.apiKey;
 
   if (apiKey) {
     console.log('API Key: configured');
-    console.log('\nStatus: vibe gemini status');
-    console.log('Logout: vibe gemini logout');
+    console.log('\nStatus: vibe antigravity status');
+    console.log('Logout: vibe antigravity logout');
     process.exit(0);
   }
 
   console.log('No API key configured.');
-  console.log('Run: vibe gemini key <your-api-key>');
+  console.log('Run: vibe antigravity key <your-api-key>');
   process.exit(1);
 }
 
 /**
- * Gemini 상태 확인
+ * Antigravity 상태 확인
  */
-export function geminiStatus(): void {
+export function antigravityStatus(): void {
   try {
     const config = readGlobalConfig();
-    const geminiCreds = config.credentials?.gemini;
-    const hasApiKey = Boolean(geminiCreds?.apiKey) || Boolean(process.env.GEMINI_API_KEY);
+    const antigravityCreds = config.credentials?.antigravity;
+    const hasApiKey = Boolean(antigravityCreds?.apiKey) || Boolean(process.env.ANTIGRAVITY_API_KEY);
 
     if (hasApiKey) {
       const modelOverrides = config.models;
       const lines = [
-        '\nGemini Status\n',
+        '\nAntigravity Status\n',
         'Auth: API Key',
-        `Source: ${geminiCreds?.apiKey ? '~/.vibe/config.json' : 'GEMINI_API_KEY env'}`,
+        `Source: ${antigravityCreds?.apiKey ? '~/.vibe/config.json' : 'ANTIGRAVITY_API_KEY env'}`,
       ];
       lines.push('\nModels:');
-      lines.push(`  gemini=${modelOverrides?.gemini || process.env.GEMINI_MODEL || '(default)'}`);
-      lines.push(`  geminiFlash=${modelOverrides?.geminiFlash || process.env.GEMINI_FLASH_MODEL || '(default)'}\n`);
+      lines.push(`  antigravity=${modelOverrides?.antigravity || process.env.ANTIGRAVITY_MODEL || '(default)'}\n`);
       console.log(lines.join('\n'));
       return;
     }
 
     console.log(`
-Gemini Status
+Antigravity Status
 
 No credentials found.
 
 Set up:
-  vibe gemini key <your-api-key>
-  or set GEMINI_API_KEY env var
+  vibe antigravity key <your-api-key>
+  or set ANTIGRAVITY_API_KEY env var
     `);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -104,15 +103,15 @@ Set up:
 }
 
 /**
- * Gemini 로그아웃
+ * Antigravity 로그아웃
  */
-export function geminiLogout(): void {
+export function antigravityLogout(): void {
   try {
     const config = readGlobalConfig();
-    if (config.credentials?.gemini) {
-      delete config.credentials.gemini;
+    if (config.credentials?.antigravity) {
+      delete config.credentials.antigravity;
       writeGlobalConfig(config);
-      console.log('Gemini credentials removed from ~/.vibe/config.json');
+      console.log('Antigravity credentials removed from ~/.vibe/config.json');
     }
 
     const projectRoot = process.cwd();
@@ -121,16 +120,16 @@ export function geminiLogout(): void {
     if (fs.existsSync(configPath)) {
       try {
         const projConfig: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        if (projConfig.models?.gemini) {
-          projConfig.models.gemini.enabled = false;
-          projConfig.models.gemini.authType = undefined;
-          projConfig.models.gemini.email = undefined;
+        if (projConfig.models?.antigravity) {
+          projConfig.models.antigravity.enabled = false;
+          projConfig.models.antigravity.authType = undefined;
+          projConfig.models.antigravity.email = undefined;
           fs.writeFileSync(configPath, JSON.stringify(projConfig, null, 2));
         }
       } catch { /* ignore */ }
     }
 
-    console.log('Gemini credentials cleared.');
+    console.log('Antigravity credentials cleared.');
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Logout failed:', message);
@@ -138,7 +137,7 @@ export function geminiLogout(): void {
 }
 
 /**
- * config.json에 Gemini 활성화 기록
+ * config.json에 Antigravity 활성화 기록
  */
 function updateConfigOnAuth(method: string): void {
   const configPath = findExistingProjectConfig(process.cwd());
@@ -147,11 +146,11 @@ function updateConfigOnAuth(method: string): void {
   try {
     const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     if (!config.models) config.models = {};
-    config.models.gemini = {
+    config.models.antigravity = {
       enabled: true,
       authType: method,
       role: 'exploration',
-      description: 'Gemini (API Key)',
+      description: 'Antigravity (API Key)',
     };
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
   } catch { /* ignore */ }

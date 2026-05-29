@@ -9,32 +9,32 @@ import { SmartRouter, AllProvidersFailedError, getSmartRouter } from './SmartRou
 vi.mock('../lib/gpt/index.js', () => ({
   coreGptOrchestrate: vi.fn(),
 }));
-vi.mock('../lib/gemini/index.js', () => ({
-  coreGeminiOrchestrate: vi.fn(),
+vi.mock('../lib/antigravity/index.js', () => ({
+  coreAntigravityOrchestrate: vi.fn(),
 }));
 vi.mock('../lib/utils.js', () => ({
   debugLog: vi.fn(),
 }));
-// Dynamic priority: codex=true, gemini=true
-// architecture → ['gpt', 'gemini', 'claude']
+// Dynamic priority: codex=true, antigravity=true
+// architecture → ['gpt', 'antigravity', 'claude']
 // debugging → ['gpt', 'claude']
 // code-analysis → ['gpt', 'claude']
 // code-gen → ['gpt', 'claude']
-// code-review → ['gpt', 'gemini', 'claude']
-// web-search → ['gemini', 'claude']
-// uiux → ['gemini', 'claude']
-// general → ['claude'] (not in any codex/gemini list)
-// reasoning → ['gpt', 'gemini', 'claude']
+// code-review → ['gpt', 'antigravity', 'claude']
+// web-search → ['antigravity', 'claude']
+// uiux → ['antigravity', 'claude']
+// general → ['claude'] (not in any codex/antigravity list)
+// reasoning → ['gpt', 'antigravity', 'claude']
 vi.mock('../lib/llm-availability.js', () => ({
-  detectLlmAvailability: vi.fn(() => ({ codex: true, gemini: true })),
+  detectLlmAvailability: vi.fn(() => ({ codex: true, antigravity: true })),
 }));
 
 // Import mocked modules
 import { coreGptOrchestrate } from '../lib/gpt/index.js';
-import { coreGeminiOrchestrate } from '../lib/gemini/index.js';
+import { coreAntigravityOrchestrate } from '../lib/antigravity/index.js';
 
 const mockGpt = coreGptOrchestrate as Mock;
-const mockGemini = coreGeminiOrchestrate as Mock;
+const mockAntigravity = coreAntigravityOrchestrate as Mock;
 
 describe('SmartRouter', () => {
   let router: SmartRouter;
@@ -65,7 +65,7 @@ describe('SmartRouter', () => {
       expect(result.success).toBe(true);
       expect(result.usedFallback).toBe(false);
       expect(mockGpt).toHaveBeenCalledOnce();
-      expect(mockGemini).not.toHaveBeenCalled();
+      expect(mockAntigravity).not.toHaveBeenCalled();
     });
 
     it('should use GPT first for debugging tasks', async () => {
@@ -91,43 +91,43 @@ describe('SmartRouter', () => {
       expect(result.provider).toBe('gpt');
     });
 
-    it('should use Gemini first for web-search tasks', async () => {
-      mockGemini.mockResolvedValueOnce('Gemini search result');
+    it('should use Antigravity first for web-search tasks', async () => {
+      mockAntigravity.mockResolvedValueOnce('Antigravity search result');
 
       const result = await router.route({
         type: 'web-search',
         prompt: 'Search for something',
       });
 
-      expect(result.provider).toBe('gemini');
-      expect(result.content).toBe('Gemini search result');
-      expect(mockGemini).toHaveBeenCalledOnce();
+      expect(result.provider).toBe('antigravity');
+      expect(result.content).toBe('Antigravity search result');
+      expect(mockAntigravity).toHaveBeenCalledOnce();
       expect(mockGpt).not.toHaveBeenCalled();
     });
 
-    it('should use Gemini first for uiux tasks', async () => {
-      mockGemini.mockResolvedValueOnce('Gemini UI feedback');
+    it('should use Antigravity first for uiux tasks', async () => {
+      mockAntigravity.mockResolvedValueOnce('Antigravity UI feedback');
 
       const result = await router.route({
         type: 'uiux',
         prompt: 'Review this UI',
       });
 
-      expect(result.provider).toBe('gemini');
-      expect(result.content).toBe('Gemini UI feedback');
+      expect(result.provider).toBe('antigravity');
+      expect(result.content).toBe('Antigravity UI feedback');
     });
 
     it('should respect preferredLlm override', async () => {
-      mockGemini.mockResolvedValueOnce('Gemini response');
+      mockAntigravity.mockResolvedValueOnce('Antigravity response');
 
       const result = await router.route({
         type: 'architecture', // normally GPT-first
         prompt: 'Review this',
-        preferredLlm: 'gemini',
+        preferredLlm: 'antigravity',
       });
 
-      expect(result.provider).toBe('gemini');
-      expect(result.content).toBe('Gemini response');
+      expect(result.provider).toBe('antigravity');
+      expect(result.content).toBe('Antigravity response');
       expect(mockGpt).not.toHaveBeenCalled();
     });
 
@@ -157,10 +157,10 @@ describe('SmartRouter', () => {
   // ─── Fallback Chain ───
 
   describe('fallback chain', () => {
-    it('should fall back to Gemini when GPT fails for architecture', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+    it('should fall back to Antigravity when GPT fails for architecture', async () => {
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt.mockRejectedValueOnce(new Error('GPT rate limit exceeded'));
-      mockGemini.mockResolvedValueOnce('Gemini fallback response');
+      mockAntigravity.mockResolvedValueOnce('Antigravity fallback response');
 
       const result = await router.route({
         type: 'architecture',
@@ -168,22 +168,22 @@ describe('SmartRouter', () => {
         maxRetries: 0,
       });
 
-      expect(result.provider).toBe('gemini');
-      expect(result.content).toBe('Gemini fallback response');
+      expect(result.provider).toBe('antigravity');
+      expect(result.content).toBe('Antigravity fallback response');
       expect(result.usedFallback).toBe(true);
       expect(result.attemptedProviders).toContain('gpt');
-      expect(result.attemptedProviders).toContain('gemini');
+      expect(result.attemptedProviders).toContain('antigravity');
     });
 
-    it('should fall back to GPT when Gemini fails for code-review with preferredLlm', async () => {
-      // code-review: ['gpt', 'gemini', 'claude'] — override with preferredLlm=gemini → ['gemini', 'gpt', 'claude']
-      mockGemini.mockRejectedValueOnce(new Error('Gemini quota exhausted'));
+    it('should fall back to GPT when Antigravity fails for code-review with preferredLlm', async () => {
+      // code-review: ['gpt', 'antigravity', 'claude'] — override with preferredLlm=antigravity → ['antigravity', 'gpt', 'claude']
+      mockAntigravity.mockRejectedValueOnce(new Error('Antigravity quota exhausted'));
       mockGpt.mockResolvedValueOnce('GPT fallback');
 
       const result = await router.route({
         type: 'code-review',
         prompt: 'Review code',
-        preferredLlm: 'gemini',
+        preferredLlm: 'antigravity',
         maxRetries: 0,
       });
 
@@ -192,9 +192,9 @@ describe('SmartRouter', () => {
     });
 
     it('should skip retries for auth errors and move to next provider', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt.mockRejectedValueOnce(new Error('No API key set'));
-      mockGemini.mockResolvedValueOnce('Gemini response');
+      mockAntigravity.mockResolvedValueOnce('Antigravity response');
 
       const result = await router.route({
         type: 'architecture',
@@ -204,14 +204,14 @@ describe('SmartRouter', () => {
 
       // GPT should only be called once (no retries for auth errors)
       expect(mockGpt).toHaveBeenCalledTimes(1);
-      expect(result.provider).toBe('gemini');
+      expect(result.provider).toBe('antigravity');
       expect(result.usedFallback).toBe(true);
     });
 
     it('should skip retries for rate limit errors (429)', async () => {
-      // code-review: ['gpt', 'gemini', 'claude']
+      // code-review: ['gpt', 'antigravity', 'claude']
       mockGpt.mockRejectedValueOnce(new Error('429 Too Many Requests'));
-      mockGemini.mockResolvedValueOnce('OK');
+      mockAntigravity.mockResolvedValueOnce('OK');
 
       await router.route({
         type: 'code-review',
@@ -223,7 +223,7 @@ describe('SmartRouter', () => {
     });
 
     it('should retry on transient errors before falling back', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt
         .mockRejectedValueOnce(new Error('Network timeout'))
         .mockRejectedValueOnce(new Error('Network timeout'))
@@ -241,7 +241,7 @@ describe('SmartRouter', () => {
     });
 
     it('should use custom systemPrompt when provided', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt.mockResolvedValueOnce('Response');
 
       await router.route({
@@ -258,7 +258,7 @@ describe('SmartRouter', () => {
     });
 
     it('should use default systemPrompt when not provided', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt.mockResolvedValueOnce('Response');
 
       await router.route({
@@ -278,10 +278,10 @@ describe('SmartRouter', () => {
 
   describe('availability caching', () => {
     it('should skip providers marked as unavailable', async () => {
-      // code-review: ['gpt', 'gemini', 'claude']
+      // code-review: ['gpt', 'antigravity', 'claude']
       // Fail GPT with rate-limit (skip-retry pattern) to quickly mark unavailable
       mockGpt.mockRejectedValue(new Error('GPT server error'));
-      mockGemini.mockResolvedValue('Gemini response');
+      mockAntigravity.mockResolvedValue('Antigravity response');
 
       // Route 3 times with maxRetries=0 to accumulate 3 error counts on GPT
       await router.route({ type: 'code-review', prompt: 'test1', maxRetries: 0 });
@@ -295,8 +295,8 @@ describe('SmartRouter', () => {
 
       // Reset call counts
       mockGpt.mockClear();
-      mockGemini.mockClear();
-      mockGemini.mockResolvedValueOnce('Gemini from cache');
+      mockAntigravity.mockClear();
+      mockAntigravity.mockResolvedValueOnce('Antigravity from cache');
 
       // Next route should skip GPT entirely
       const result = await router.route({
@@ -306,13 +306,13 @@ describe('SmartRouter', () => {
       });
 
       expect(mockGpt).not.toHaveBeenCalled();
-      expect(result.provider).toBe('gemini');
+      expect(result.provider).toBe('antigravity');
     });
 
     it('should reset availability after TTL expires', async () => {
-      // code-review: ['gpt', 'gemini', 'claude']
+      // code-review: ['gpt', 'antigravity', 'claude']
       mockGpt.mockRejectedValue(new Error('GPT server error'));
-      mockGemini.mockResolvedValue('Gemini');
+      mockAntigravity.mockResolvedValue('Antigravity');
 
       // Accumulate 3 failures
       await router.route({ type: 'code-review', prompt: 'test', maxRetries: 0 });
@@ -341,7 +341,7 @@ describe('SmartRouter', () => {
     });
 
     it('should mark provider available on success', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt.mockResolvedValueOnce('GPT OK');
 
       await router.route({ type: 'architecture', prompt: 'test' });
@@ -355,17 +355,17 @@ describe('SmartRouter', () => {
       const router2 = new SmartRouter();
       const cache = router2.getCacheStatus();
       expect(cache.gpt.available).toBe(true);
-      expect(cache.gemini.available).toBe(true);
+      expect(cache.antigravity.available).toBe(true);
 
       router2.resetCache();
       const reset = router2.getCacheStatus();
       expect(reset.gpt.errorCount).toBe(0);
-      expect(reset.gemini.errorCount).toBe(0);
+      expect(reset.antigravity.errorCount).toBe(0);
     });
 
     it('should not cache claude provider availability', async () => {
-      // web-search: ['gemini', 'claude'] — claude is always considered available
-      mockGemini.mockRejectedValueOnce(new Error('Gemini auth'));
+      // web-search: ['antigravity', 'claude'] — claude is always considered available
+      mockAntigravity.mockRejectedValueOnce(new Error('Antigravity auth'));
 
       // claude will fail with "Claude fallback - handled by caller"
       // but isUnavailable('claude') always returns false
@@ -375,7 +375,7 @@ describe('SmartRouter', () => {
 
       // claude should still be "available" (not cached)
       // Verify by checking that subsequent calls still attempt claude
-      mockGemini.mockRejectedValueOnce(new Error('Gemini auth'));
+      mockAntigravity.mockRejectedValueOnce(new Error('Antigravity auth'));
       const errorPromise = router.route({ type: 'web-search', prompt: 'test', maxRetries: 0 });
       await expect(errorPromise).rejects.toThrow(AllProvidersFailedError);
     });
@@ -385,9 +385,9 @@ describe('SmartRouter', () => {
 
   describe('edge cases', () => {
     it('should throw AllProvidersFailedError when all providers fail', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt.mockRejectedValueOnce(new Error('GPT auth failure'));
-      mockGemini.mockRejectedValueOnce(new Error('Gemini auth failure'));
+      mockAntigravity.mockRejectedValueOnce(new Error('Antigravity auth failure'));
 
       await expect(
         router.route({
@@ -399,9 +399,9 @@ describe('SmartRouter', () => {
     });
 
     it('AllProvidersFailedError should contain attempted providers and errors', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt.mockRejectedValueOnce(new Error('GPT unauthorized'));
-      mockGemini.mockRejectedValueOnce(new Error('Gemini unauthorized'));
+      mockAntigravity.mockRejectedValueOnce(new Error('Antigravity unauthorized'));
 
       try {
         await router.route({
@@ -414,19 +414,19 @@ describe('SmartRouter', () => {
         const error = err as AllProvidersFailedError;
         expect(error).toBeInstanceOf(AllProvidersFailedError);
         expect(error.attemptedProviders).toContain('gpt');
-        expect(error.attemptedProviders).toContain('gemini');
+        expect(error.attemptedProviders).toContain('antigravity');
         expect(error.errors['gpt']).toContain('GPT unauthorized');
-        expect(error.errors['gemini']).toContain('Gemini unauthorized');
+        expect(error.errors['antigravity']).toContain('Antigravity unauthorized');
         expect(error.duration).toBeGreaterThanOrEqual(0);
         expect(error.name).toBe('AllProvidersFailedError');
       }
     });
 
     it('should handle claude provider in fallback chain', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       // claude always throws "Claude fallback - handled by caller"
       mockGpt.mockRejectedValueOnce(new Error('GPT auth'));
-      mockGemini.mockRejectedValueOnce(new Error('Gemini auth'));
+      mockAntigravity.mockRejectedValueOnce(new Error('Antigravity auth'));
 
       try {
         await router.route({
@@ -455,7 +455,7 @@ describe('SmartRouter', () => {
     });
 
     it('should set maxRetries to 2 by default', async () => {
-      // architecture: ['gpt', 'gemini', 'claude']
+      // architecture: ['gpt', 'antigravity', 'claude']
       mockGpt
         .mockRejectedValueOnce(new Error('Transient error 1'))
         .mockRejectedValueOnce(new Error('Transient error 2'))
@@ -489,11 +489,11 @@ describe('SmartRouter', () => {
 
   describe('convenience methods', () => {
     it('webSearch should route with web-search type', async () => {
-      mockGemini.mockResolvedValueOnce('Search results');
+      mockAntigravity.mockResolvedValueOnce('Search results');
 
       const result = await router.webSearch('test query');
 
-      expect(result.provider).toBe('gemini');
+      expect(result.provider).toBe('antigravity');
       expect(result.content).toBe('Search results');
     });
 
@@ -506,11 +506,11 @@ describe('SmartRouter', () => {
     });
 
     it('uiuxReview should route with uiux type', async () => {
-      mockGemini.mockResolvedValueOnce('UI feedback');
+      mockAntigravity.mockResolvedValueOnce('UI feedback');
 
       const result = await router.uiuxReview('Review UI');
 
-      expect(result.provider).toBe('gemini');
+      expect(result.provider).toBe('antigravity');
     });
 
     it('codeAnalysis should route with code-analysis type', async () => {
@@ -570,14 +570,14 @@ describe('SmartRouter', () => {
   describe('AllProvidersFailedError', () => {
     it('should format message with last provider error', () => {
       const error = new AllProvidersFailedError(
-        ['gpt', 'gemini'],
-        { gpt: 'GPT failed', gemini: 'Gemini failed' },
+        ['gpt', 'antigravity'],
+        { gpt: 'GPT failed', antigravity: 'Antigravity failed' },
         1500,
       );
 
-      expect(error.message).toContain('gemini');
-      expect(error.message).toContain('Gemini failed');
-      expect(error.attemptedProviders).toEqual(['gpt', 'gemini']);
+      expect(error.message).toContain('antigravity');
+      expect(error.message).toContain('Antigravity failed');
+      expect(error.attemptedProviders).toEqual(['gpt', 'antigravity']);
       expect(error.duration).toBe(1500);
     });
 

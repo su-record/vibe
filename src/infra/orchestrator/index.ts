@@ -194,7 +194,7 @@ export async function research(
   projectPath: string = process.cwd()
 ): Promise<ToolResult> {
   const tasks = createResearchTasks(feature, techStack);
-  // Multi-LLM 리서치 (Claude 에이전트 + GPT + Gemini 병렬 실행)
+  // Multi-LLM 리서치 (Claude 에이전트 + GPT + Antigravity 병렬 실행)
   return _parallelResearchWithMultiLlm({ tasks, projectPath, feature, techStack });
 }
 
@@ -298,26 +298,26 @@ export function status(): ToolResult {
 }
 
 // ============================================
-// LLM Integration (GPT, Gemini)
+// LLM Integration (GPT, Antigravity)
 // ============================================
 
 import * as gptApi from '../lib/gpt/index.js';
-import * as geminiApi from '../lib/gemini/index.js';
+import * as antigravityApi from '../lib/antigravity/index.js';
 
 // ============================================
 // GPT Integration (웹 검색, 아키텍처 분석)
 // ============================================
 
 /**
- * GPT 질문 (간편 API) - 웹 검색 없음, Gemini로 위임
+ * GPT 질문 (간편 API) - 웹 검색 없음, Antigravity로 위임
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.gptSearch('React 19 features')).then(console.log)"
- * @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. geminiSearch를 사용하세요.
+ * @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. antigravitySearch를 사용하세요.
  */
 export async function gptSearch(query: string): Promise<ToolResult> {
-  // GPT Codex API는 웹 검색 미지원 → Gemini로 위임
-  return geminiSearch(query);
+  // GPT Codex API는 웹 검색 미지원 → Antigravity로 위임
+  return antigravitySearch(query);
 }
 
 /**
@@ -345,49 +345,49 @@ export async function gpt(
 }
 
 // ============================================
-// Gemini Integration (UI/UX 분석, 코드 분석)
+// Antigravity Integration (UI/UX 분석, 코드 분석)
 // ============================================
 
 /**
- * Gemini 웹 검색 (간편 API)
+ * Antigravity 웹 검색 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.geminiSearch('React 19 features')).then(console.log)"
+ * node -e "import('@su-record/vibe/orchestrator').then(o => o.antigravitySearch('React 19 features')).then(console.log)"
  */
-export async function geminiSearch(query: string): Promise<ToolResult> {
+export async function antigravitySearch(query: string): Promise<ToolResult> {
   try {
-    const result = await geminiApi.quickWebSearch(query);
+    const result = await antigravityApi.quickWebSearch(query);
     return {
       content: [{ type: 'text', text: result }],
       success: true
     } as ToolResult & { success: boolean };
   } catch (error) {
     return {
-      content: [{ type: 'text', text: `[Gemini Error] ${(error as Error).message}` }],
+      content: [{ type: 'text', text: `[Antigravity Error] ${(error as Error).message}` }],
       success: false
     } as ToolResult & { success: boolean };
   }
 }
 
 /**
- * Gemini 오케스트레이션 (간편 API)
+ * Antigravity 오케스트레이션 (간편 API)
  *
  * @example
- * node -e "import('@su-record/vibe/orchestrator').then(o => o.gemini('Review this UI')).then(console.log)"
+ * node -e "import('@su-record/vibe/orchestrator').then(o => o.antigravity('Review this UI')).then(console.log)"
  */
-export async function gemini(
+export async function antigravity(
   prompt: string,
   systemPrompt: string = 'You are a helpful assistant.'
 ): Promise<ToolResult> {
   try {
-    const result = await geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
+    const result = await antigravityApi.coreAntigravityOrchestrate(prompt, systemPrompt, { jsonMode: false });
     return {
       content: [{ type: 'text', text: result }],
       success: true
     } as ToolResult & { success: boolean };
   } catch (error) {
     return {
-      content: [{ type: 'text', text: `[Gemini Error] ${(error as Error).message}` }],
+      content: [{ type: 'text', text: `[Antigravity Error] ${(error as Error).message}` }],
       success: false
     } as ToolResult & { success: boolean };
   }
@@ -399,14 +399,14 @@ export async function gemini(
 
 /**
  * 멀티 LLM 병렬 쿼리 (간편 API)
- * GPT, Gemini 동시 호출
+ * GPT, Antigravity 동시 호출
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.multiLlm('Review this code')).then(console.log)"
  */
 export async function multiLlm(
   prompt: string,
-  options?: { useGpt?: boolean; useGemini?: boolean }
+  options?: { useGpt?: boolean; useAntigravity?: boolean }
 ): Promise<ToolResult> {
   const orchestrator = new CoreOrchestrator();
   const results = await orchestrator.multiLlmQuery(prompt, options);
@@ -416,8 +416,8 @@ export async function multiLlm(
   if (results.gpt) {
     summary += `### GPT\n${results.gpt}\n\n`;
   }
-  if (results.gemini) {
-    summary += `### Gemini\n${results.gemini}\n\n`;
+  if (results.antigravity) {
+    summary += `### Antigravity\n${results.antigravity}\n\n`;
   }
 
   return {
@@ -437,11 +437,11 @@ export async function llmStatus(): Promise<ToolResult> {
   const llmStatusResult = await orchestrator.checkLlmStatus();
 
   const gptIcon = llmStatusResult.gpt.available ? '✓' : '✗';
-  const geminiIcon = llmStatusResult.gemini.available ? '✓' : '✗';
+  const antigravityIcon = llmStatusResult.antigravity.available ? '✓' : '✗';
 
   let text = '## LLM Status\n\n';
   text += `- GPT: ${gptIcon} ${llmStatusResult.gpt.available ? 'Available' : 'Unavailable'}\n`;
-  text += `- Gemini: ${geminiIcon} ${llmStatusResult.gemini.available ? 'Available' : 'Unavailable'}\n`;
+  text += `- Antigravity: ${antigravityIcon} ${llmStatusResult.antigravity.available ? 'Available' : 'Unavailable'}\n`;
 
   return {
     content: [{ type: 'text', text }],
@@ -483,7 +483,7 @@ export async function smartRoute(
 }
 
 /**
- * 아키텍처 분석 with fallback (GPT → Gemini → Claude)
+ * 아키텍처 분석 with fallback (GPT → Antigravity → Claude)
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartArchitecture('Review this system design')).then(console.log)"
@@ -493,7 +493,7 @@ export async function smartArchitecture(prompt: string): Promise<ToolResult & { 
 }
 
 /**
- * UI/UX 분석 with fallback (Gemini → GPT → Claude)
+ * UI/UX 분석 with fallback (Antigravity → GPT → Claude)
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartUiux('Improve this form UX')).then(console.log)"
@@ -503,7 +503,7 @@ export async function smartUiux(prompt: string): Promise<ToolResult & { result: 
 }
 
 /**
- * 코드 분석 with fallback (Gemini → GPT → Claude)
+ * 코드 분석 with fallback (Antigravity → GPT → Claude)
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartCodeAnalysis('Analyze this code')).then(console.log)"
@@ -513,7 +513,7 @@ export async function smartCodeAnalysis(prompt: string): Promise<ToolResult & { 
 }
 
 /**
- * 디버깅 with fallback (GPT → Gemini → Claude)
+ * 디버깅 with fallback (GPT → Antigravity → Claude)
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartDebugging('Find bugs in this code')).then(console.log)"
@@ -523,7 +523,7 @@ export async function smartDebugging(prompt: string): Promise<ToolResult & { res
 }
 
 /**
- * 웹 검색 with fallback (GPT → Gemini → Claude)
+ * 웹 검색 with fallback (GPT → Antigravity → Claude)
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartWebSearch('React 19 new features')).then(console.log)"
@@ -544,7 +544,7 @@ export async function smartCodeGen(description: string, context?: string): Promi
 }
 
 /**
- * 코드 리뷰 with fallback (GPT → Gemini → Claude)
+ * 코드 리뷰 with fallback (GPT → Antigravity → Claude)
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartCodeReview('Review this PR')).then(console.log)"
@@ -554,7 +554,7 @@ export async function smartCodeReview(prompt: string): Promise<ToolResult & { re
 }
 
 /**
- * 추론/분석 with fallback (GPT → Gemini → Claude)
+ * 추론/분석 with fallback (GPT → Antigravity → Claude)
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartReasoning('Analyze this problem')).then(console.log)"

@@ -274,7 +274,7 @@ const DEFAULT_COST = { input: 0.003, output: 0.010 };
 /**
  * LLM 호출 비용을 JSONL로 로깅
  *
- * @param {string} provider - 프로바이더 (gpt, gemini)
+ * @param {string} provider - 프로바이더 (gpt, antigravity)
  * @param {string} model - 모델명
  * @param {number} inputLen - 입력 문자 수
  * @param {number} outputLen - 출력 문자 수

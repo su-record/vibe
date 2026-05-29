@@ -23,10 +23,10 @@ export {
   installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
-  generateProjectGeminiMd,
+  generateProjectAntigravityMd,
   generateGlobalClaudeMd,
   generateGlobalCodexAgentsMd,
-  generateGlobalGeminiMd,
+  generateGlobalAntigravityMd,
 } from './setup/ProjectSetup.js';
 
 export {

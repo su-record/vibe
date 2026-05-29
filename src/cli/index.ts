@@ -14,8 +14,8 @@ import {
   removeExternalLLM,
   gptStatus,
   gptLogout,
-  geminiStatus,
-  geminiLogout,
+  antigravityStatus,
+  antigravityLogout,
   claudeStatus,
   claudeLogout,
 } from './llm.js';
@@ -107,9 +107,9 @@ export { getCurrentTime } from '../tools/time/getCurrentTime.js';
 
 switch (command) {
   case 'init': {
-    let target: 'cc' | 'codex' | 'gemini' = 'cc';
+    let target: 'cc' | 'codex' | 'antigravity' = 'cc';
     if (args.includes('--codex')) target = 'codex';
-    else if (args.includes('--gemini')) target = 'gemini';
+    else if (args.includes('--antigravity')) target = 'antigravity';
     init(positionalArgs[1], target);
     break;
   }
@@ -201,37 +201,38 @@ Codex auth: codex auth
     break;
   }
 
-  // vibe gemini <subcommand>
-  case 'gemini': {
+  // vibe antigravity <subcommand>
+  case 'antigravity':
+  case 'agy': {
     const subCommand = positionalArgs[1];
     switch (subCommand) {
       case 'key': {
-        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'gemini' && a !== 'key');
+        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== command && a !== 'key');
         if (apiKey) {
-          setupExternalLLM('gemini', apiKey);
+          setupExternalLLM('antigravity', apiKey);
         } else {
-          console.log('Usage: vibe gemini key <API_KEY>');
+          console.log('Usage: vibe antigravity key <API_KEY>');
         }
         break;
       }
       case 'logout':
-        geminiLogout();
+        antigravityLogout();
         break;
       case 'remove':
-        removeExternalLLM('gemini');
+        removeExternalLLM('antigravity');
         break;
       case 'status':
-        geminiStatus();
+        antigravityStatus();
         break;
       default:
         console.log(`
-Gemini Commands:
-  vibe gemini key <key>            Set API key
-  vibe gemini status               Check status
-  vibe gemini logout               Clear config
-  vibe gemini remove               Remove config
+Antigravity Commands:
+  vibe antigravity key <key>       Set API key
+  vibe antigravity status          Check status
+  vibe antigravity logout          Clear config
+  vibe antigravity remove          Remove config
 
-gemini-cli is auto-detected if installed.
+Antigravity CLI is auto-detected through agy.
         `);
     }
     break;
@@ -255,7 +256,7 @@ Example: vibe skills add vercel-labs/skills
     break;
   }
 
-  // vibe codex — Claude Code + OpenAI/Gemini 호환 모델
+  // vibe codex — Claude Code + OpenAI/Antigravity 호환 모델
   case 'codex': {
     const codexSub = positionalArgs[1];
     if (args.includes('--setup')) {
@@ -374,22 +375,20 @@ Example: vibe skills add vercel-labs/skills
       const ENV_TO_CONFIG: Record<string, (v: string, p: Partial<GlobalVibeConfig>) => void> = {
         FIGMA_ACCESS_TOKEN: (v, p) => { (p.credentials ??= {}).figma = { ...(p.credentials.figma ?? {}), accessToken: v }; },
         OPENAI_API_KEY: (v, p) => { (p.credentials ??= {}).gpt = { ...(p.credentials.gpt ?? {}), apiKey: v }; },
-        GEMINI_API_KEY: (v, p) => { (p.credentials ??= {}).gemini = { ...(p.credentials.gemini ?? {}), apiKey: v }; },
+        ANTIGRAVITY_API_KEY: (v, p) => { (p.credentials ??= {}).antigravity = { ...(p.credentials.antigravity ?? {}), apiKey: v }; },
         TELEGRAM_BOT_TOKEN: (v, p) => { (p.channels ??= {}).telegram = { ...(p.channels.telegram ?? {}), botToken: v }; },
         TELEGRAM_ALLOWED_CHAT_IDS: (v, p) => { (p.channels ??= {}).telegram = { ...(p.channels.telegram ?? {}), allowedChatIds: v.split(',').map(s => s.trim()) }; },
         SLACK_BOT_TOKEN: (v, p) => { (p.channels ??= {}).slack = { ...(p.channels.slack ?? {}), botToken: v }; },
         SLACK_APP_TOKEN: (v, p) => { (p.channels ??= {}).slack = { ...(p.channels.slack ?? {}), appToken: v }; },
         SLACK_ALLOWED_CHANNELS: (v, p) => { (p.channels ??= {}).slack = { ...(p.channels.slack ?? {}), allowedChannelIds: v.split(',').map(s => s.trim()) }; },
         GPT_MODEL: (v, p) => { (p.models ??= {}).gpt = v; },
-        GEMINI_MODEL: (v, p) => { (p.models ??= {}).gemini = v; },
-        GEMINI_FLASH_MODEL: (v, p) => { (p.models ??= {}).geminiFlash = v; },
-        GEMINI_SEARCH_MODEL: (v, p) => { (p.models ??= {}).geminiSearch = v; },
+        ANTIGRAVITY_MODEL: (v, p) => { (p.models ??= {}).antigravity = v; },
         CLAUDE_BACKGROUND_MODEL: (v, p) => { (p.models ??= {}).claudeBackground = v; },
         CLAUDE_RESEARCH_MODEL: (v, p) => { (p.models ??= {}).claudeResearch = v; },
         CLAUDE_REVIEW_MODEL: (v, p) => { (p.models ??= {}).claudeReview = v; },
         CLAUDE_ARCHITECTURE_MODEL: (v, p) => { (p.models ??= {}).claudeArchitecture = v; },
         EMBEDDING_MODEL: (v, p) => { (p.models ??= {}).embedding = v; },
-        GEMINI_EMBEDDING_MODEL: (v, p) => { (p.models ??= {}).geminiEmbedding = v; },
+        ANTIGRAVITY_EMBEDDING_MODEL: (v, p) => { (p.models ??= {}).antigravityEmbedding = v; },
         WORKSPACE_DIR: (v, p) => { (p.settings ??= {}).workspaceDir = v; },
       };
       const patch: Partial<GlobalVibeConfig> = {};

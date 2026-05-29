@@ -29,21 +29,19 @@ const SENSITIVE_PATTERNS = [
 
 const ENV_KEY_MAP: Record<string, string> = {
   'credentials.gpt.apiKey': 'OPENAI_API_KEY',
-  'credentials.gemini.apiKey': 'GEMINI_API_KEY',
+  'credentials.antigravity.apiKey': 'ANTIGRAVITY_API_KEY',
   'credentials.figma.accessToken': 'FIGMA_ACCESS_TOKEN',
   'channels.telegram.botToken': 'TELEGRAM_BOT_TOKEN',
   'channels.slack.botToken': 'SLACK_BOT_TOKEN',
   'channels.slack.appToken': 'SLACK_APP_TOKEN',
   'models.gpt': 'GPT_MODEL',
-  'models.gemini': 'GEMINI_MODEL',
-  'models.geminiFlash': 'GEMINI_FLASH_MODEL',
-  'models.geminiSearch': 'GEMINI_SEARCH_MODEL',
+  'models.antigravity': 'ANTIGRAVITY_MODEL',
   'models.claudeBackground': 'CLAUDE_BACKGROUND_MODEL',
   'models.claudeResearch': 'CLAUDE_RESEARCH_MODEL',
   'models.claudeReview': 'CLAUDE_REVIEW_MODEL',
   'models.claudeArchitecture': 'CLAUDE_ARCHITECTURE_MODEL',
   'models.embedding': 'EMBEDDING_MODEL',
-  'models.geminiEmbedding': 'GEMINI_EMBEDDING_MODEL',
+  'models.antigravityEmbedding': 'ANTIGRAVITY_EMBEDDING_MODEL',
   'settings.workspaceDir': 'WORKSPACE_DIR',
 };
 

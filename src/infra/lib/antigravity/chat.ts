@@ -1,5 +1,5 @@
 /**
- * Gemini Chat API (generateContent)
+ * Antigravity Chat API (generateContent)
  *
  * API Key → Google AI Studio
  */
@@ -12,41 +12,40 @@ import {
   RETRY_BASE_DELAY_MS,
 } from './constants.js';
 import type {
-  GeminiModelInfo,
+  AntigravityModelInfo,
   ChatOptions,
   ChatResponse,
   StreamChunk,
-  GeminiApiResponse,
+  AntigravityApiResponse,
 } from './types.js';
 
 // =============================================
 // 모델 레지스트리
 // =============================================
 
-export function getGeminiModels(): Record<string, GeminiModelInfo> {
-  const proId = getModelOverride('gemini') ?? process.env.GEMINI_MODEL ?? 'gemini-3.1-pro-preview';
-  const flashId = getModelOverride('geminiFlash') ?? process.env.GEMINI_FLASH_MODEL ?? 'gemini-3.1-flash-lite-preview';
+export function getAntigravityModels(): Record<string, AntigravityModelInfo> {
+  const proId = getModelOverride('antigravity') ?? process.env.ANTIGRAVITY_MODEL ?? 'gemini-3.1-pro-preview';
+  const flashId = process.env.ANTIGRAVITY_FAST_MODEL ?? 'gemini-3.1-flash-lite-preview';
 
   return {
-    'gemini-pro': {
+    'antigravity-pro': {
       id: proId,
-      name: 'Gemini Pro',
+      name: 'Antigravity Pro',
       description: 'Pro model for complex tasks',
       maxTokens: 8192,
     },
-    'gemini-flash': {
+    'antigravity-fast': {
       id: flashId,
-      name: 'Gemini Flash',
-      description: 'Flash model, fastest',
+      name: 'Antigravity Fast',
+      description: 'Fast model for lightweight tasks',
       maxTokens: 8192,
     },
   };
 }
 
-/** @deprecated getGeminiModels() 사용 권장 */
-export const GEMINI_MODELS = getGeminiModels();
+export const ANTIGRAVITY_MODELS = getAntigravityModels();
 
-export const DEFAULT_MODEL = 'gemini-flash';
+export const DEFAULT_MODEL = 'antigravity-fast';
 
 // =============================================
 // API Key 방식 (Google AI Studio)
@@ -65,7 +64,7 @@ async function chatWithApiKey(
     jsonMode = false,
   } = options;
 
-  const models = getGeminiModels();
+  const models = getAntigravityModels();
   const modelInfo = models[model] || models[DEFAULT_MODEL];
   const actualModel = modelInfo.id;
 
@@ -117,9 +116,9 @@ async function chatWithApiKey(
       throw new Error(errorMessage);
     }
 
-    const result = await response.json() as GeminiApiResponse;
+    const result = await response.json() as AntigravityApiResponse;
     if (!result.candidates || result.candidates.length === 0) {
-      throw new Error('Gemini API response is empty.');
+      throw new Error('Antigravity API response is empty.');
     }
 
     const candidate = result.candidates[0];
@@ -143,7 +142,7 @@ async function chatWithApiKey(
 // =============================================
 
 /**
- * Gemini API 호출 (API Key)
+ * Antigravity API 호출 (API Key)
  */
 export async function chat(options: ChatOptions): Promise<ChatResponse> {
   const authInfo = await getAuthInfo();
@@ -152,7 +151,7 @@ export async function chat(options: ChatOptions): Promise<ChatResponse> {
     return chatWithApiKey(authInfo.apiKey, options);
   }
 
-  throw new Error('Gemini API key not found.');
+  throw new Error('Antigravity API key not found.');
 }
 
 /**
@@ -172,15 +171,15 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
 /**
  * 사용 가능한 모델 목록
  */
-export function getAvailableModels(): GeminiModelInfo[] {
-  return Object.values(getGeminiModels());
+export function getAvailableModels(): AntigravityModelInfo[] {
+  return Object.values(getAntigravityModels());
 }
 
 /**
  * 모델 정보 가져오기
  */
-export function getModelInfo(modelId: string): GeminiModelInfo | null {
-  return getGeminiModels()[modelId] || null;
+export function getModelInfo(modelId: string): AntigravityModelInfo | null {
+  return getAntigravityModels()[modelId] || null;
 }
 
 /**
@@ -198,11 +197,11 @@ export async function ask(
 }
 
 /**
- * 코드 탐색용 빠른 질문 (Gemini Flash)
+ * 코드 탐색용 빠른 질문 (Antigravity Fast)
  */
 export async function quickAsk(prompt: string): Promise<string> {
   return ask(prompt, {
-    model: 'gemini-flash',
+    model: 'antigravity-fast',
     maxTokens: 2048,
     temperature: 0.3,
   });

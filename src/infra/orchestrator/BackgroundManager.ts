@@ -675,7 +675,7 @@ class BackgroundManagerImpl {
     if (!model) return 'default';
     if (model.startsWith('claude')) return 'claude';
     if (model.startsWith('gpt')) return 'gpt';
-    if (model.startsWith('gemini')) return 'gemini';
+    if (model.startsWith('antigravity')) return 'antigravity';
     return 'default';
   }
 

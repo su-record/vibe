@@ -1,8 +1,8 @@
 /**
- * LLM Provider Types - Shared types for GPT and Gemini providers
+ * LLM Provider Types - Shared types for GPT and Antigravity providers
  */
 
-export type LLMProvider = 'gpt' | 'gemini';
+export type LLMProvider = 'gpt' | 'antigravity';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -35,7 +35,7 @@ export interface StreamChunk {
 }
 
 export interface AuthInfo {
-  type: 'codex-cli' | 'gemini-cli' | 'apikey';
+  type: 'codex-cli' | 'antigravity-cli' | 'apikey';
   accessToken?: string;
   apiKey?: string;
   email?: string;

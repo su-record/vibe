@@ -147,7 +147,7 @@ python output/serve.py
 # - Timeline view with D-Day progress
 # - Generate buttons per step
 # - File preview links
-# - API status (Gemini/Aligo key validity)
+# - API status (Antigravity/Aligo key validity)
 # - Dark theme with community color coding
 ```
 

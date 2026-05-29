@@ -1,7 +1,7 @@
 /**
  * Multi-LLM Race Review
  *
- * 같은 리뷰 작업을 Claude + GPT + Gemini가 병렬로 수행하고
+ * 같은 리뷰 작업을 Claude + GPT + Antigravity가 병렬로 수행하고
  * 교차 검증하여 신뢰도 기반 우선순위를 부여합니다.
  *
  * @example
@@ -19,14 +19,14 @@
  */
 
 import * as gptApi from './gpt/index.js';
-import * as geminiApi from './gemini/index.js';
-import { isCodexAvailable, isGeminiAvailable } from './llm-availability.js';
+import * as antigravityApi from './antigravity/index.js';
+import { isAntigravityAvailable, isCodexAvailable } from './llm-availability.js';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type LLMProvider = 'claude' | 'gpt' | 'gemini';
+export type LLMProvider = 'claude' | 'gpt' | 'antigravity';
 export type Priority = 'P1' | 'P2' | 'P3';
 export type ReviewType =
   | 'security'
@@ -328,9 +328,9 @@ Respond with JSON only.`;
 }
 
 /**
- * Gemini로 리뷰 수행
+ * Antigravity로 리뷰 수행
  */
-async function reviewWithGemini(
+async function reviewWithAntigravity(
   reviewType: ReviewType,
   code: string,
   context?: string
@@ -349,21 +349,21 @@ ${code}
 
 Respond with JSON only.`;
 
-    const response = await geminiApi.ask(prompt, {
-      model: 'gemini-flash',
+    const response = await antigravityApi.ask(prompt, {
+      model: 'antigravity-fast',
       temperature: 0.3,
     });
 
     const issues = parseIssuesFromResponse(response);
 
     return {
-      provider: 'gemini',
+      provider: 'antigravity',
       issues,
       duration: Date.now() - startTime,
     };
   } catch (error) {
     return {
-      provider: 'gemini',
+      provider: 'antigravity',
       issues: [],
       duration: Date.now() - startTime,
       error: (error as Error).message,
@@ -464,20 +464,20 @@ function crossValidateIssues(
 /**
  * Multi-LLM Race Review 수행
  *
- * GPT + Gemini를 병렬로 실행하고 결과를 교차 검증합니다.
+ * GPT + Antigravity를 병렬로 실행하고 결과를 교차 검증합니다.
  * Claude는 현재 세션에서 실행 중이므로 별도의 서브에이전트로 호출됩니다.
  */
 export async function raceReview(options: RaceReviewOptions): Promise<RaceReviewResult> {
   const { reviewType, code, context } = options;
   const startTime = Date.now();
 
-  // GPT + Gemini 병렬 실행 (가용성 체크)
+  // GPT + Antigravity 병렬 실행 (가용성 체크)
   const reviewPromises: Promise<LLMReviewResult>[] = [];
   if (isCodexAvailable()) {
     reviewPromises.push(reviewWithGPT(reviewType, code, context));
   }
-  if (isGeminiAvailable()) {
-    reviewPromises.push(reviewWithGemini(reviewType, code, context));
+  if (isAntigravityAvailable()) {
+    reviewPromises.push(reviewWithAntigravity(reviewType, code, context));
   }
 
   const llmResults = await Promise.all(reviewPromises);
@@ -516,7 +516,7 @@ export function formatRaceResult(result: RaceReviewResult): string {
   lines.push(`## ${result.reviewType.toUpperCase()} Review (Race Mode)`);
   lines.push('');
   lines.push(`**Duration**: ${result.duration}ms`);
-  lines.push(`**Models**: GPT-5.3-Codex, Gemini-3-Flash`);
+  lines.push(`**Models**: GPT-5.3-Codex, Antigravity`);
   lines.push('');
 
   // LLM별 결과 요약
@@ -567,16 +567,16 @@ export function formatRaceResult(result: RaceReviewResult): string {
  */
 export async function checkLLMAvailability(): Promise<{
   gpt: boolean;
-  gemini: boolean;
+  antigravity: boolean;
 }> {
   const results = await Promise.allSettled([
     gptApi.ask('ping', { maxTokens: 10 }),
-    geminiApi.ask('ping', { maxTokens: 10 }),
+    antigravityApi.ask('ping', { maxTokens: 10 }),
   ]);
 
   return {
     gpt: results[0].status === 'fulfilled',
-    gemini: results[1].status === 'fulfilled',
+    antigravity: results[1].status === 'fulfilled',
   };
 }
 

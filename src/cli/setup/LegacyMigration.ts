@@ -275,8 +275,8 @@ export function cleanupClaudeConfig(): void {
             }
           }
           if (projectConfig.mcpServers['core-gemini']) {
-            const geminiArgs = projectConfig.mcpServers['core-gemini'].args || [];
-            const isLocalPath = geminiArgs.some((arg: string) =>
+            const legacyArgs = projectConfig.mcpServers['core-gemini'].args || [];
+            const isLocalPath = legacyArgs.some((arg: string) =>
               arg.includes('.core/') || arg.includes('.core\\')
             );
             if (isLocalPath) {

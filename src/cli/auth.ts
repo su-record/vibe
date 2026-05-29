@@ -5,13 +5,13 @@
 import { execSync } from 'child_process';
 import { LLMAuthStatus, LLMStatusMap, ClaudeCodeStatus } from './types.js';
 import { readGlobalConfig } from '../infra/lib/config/GlobalConfigManager.js';
-import { detectClaudeCli, detectCodexCli, detectGeminiCli } from './utils/cli-detector.js';
+import { detectAntigravityCli, detectClaudeCli, detectCodexCli } from './utils/cli-detector.js';
 
 /**
  * LLM 인증 상태 확인 (config.json 우선, process.env fallback)
  */
 export function getLLMAuthStatus(): LLMStatusMap {
-  const status: LLMStatusMap = { claude: [], gpt: [], gemini: [] };
+  const status: LLMStatusMap = { claude: [], gpt: [], antigravity: [] };
   const config = readGlobalConfig();
 
   // GPT
@@ -19,9 +19,9 @@ export function getLLMAuthStatus(): LLMStatusMap {
     status.gpt.push({ type: 'apikey', valid: true });
   }
 
-  // Gemini
-  if (config.credentials?.gemini?.apiKey || process.env.GEMINI_API_KEY) {
-    status.gemini.push({ type: 'apikey', valid: true });
+  // Antigravity
+  if (config.credentials?.antigravity?.apiKey || process.env.ANTIGRAVITY_API_KEY) {
+    status.antigravity.push({ type: 'apikey', valid: true });
   }
 
   return status;
@@ -121,30 +121,30 @@ function formatLlmCliRow(installed: boolean, authenticated: boolean | undefined)
 
 /**
  * 통합 LLM/CLI 상태 포맷터 (status / init / update / upgrade 공용)
- * - LLM CLI (vibe 멀티-오케스트레이션에서 호출 가능): Claude Code, Codex, Gemini
- * - LLM API Key (직접 호출용): GPT, Gemini
+ * - LLM CLI (vibe 멀티-오케스트레이션에서 호출 가능): Claude Code, Codex, Antigravity
+ * - LLM API Key (직접 호출용): GPT, Antigravity
  */
 export function formatLLMStatus(): string {
   const claudeCli = detectClaudeCli();
   const codexCli = detectCodexCli();
-  const geminiCli = detectGeminiCli();
+  const antigravityCli = detectAntigravityCli();
   const apiStatus = getLLMAuthStatus();
 
   const claudeRow = formatLlmCliRow(claudeCli.installed, claudeCli.authenticated);
   const codexRow = formatLlmCliRow(codexCli.installed, codexCli.authenticated);
-  const geminiRow = formatLlmCliRow(geminiCli.installed, geminiCli.authenticated);
+  const antigravityRow = formatLlmCliRow(antigravityCli.installed, antigravityCli.authenticated);
 
   const gptKey = apiStatus.gpt.length > 0 ? '✓ Key' : '⬚ —';
-  const geminiKey = apiStatus.gemini.length > 0 ? '✓ Key' : '⬚ —';
+  const antigravityKey = apiStatus.antigravity.length > 0 ? '✓ Key' : '⬚ —';
 
   return [
     'LLM CLI (orchestration):',
     `  Claude Code         ${claudeRow}`,
     `  Codex (GPT)         ${codexRow}`,
-    `  Gemini              ${geminiRow}`,
+    `  Antigravity         ${antigravityRow}`,
     '',
     'LLM API Key (direct):',
     `  GPT                 ${gptKey}`,
-    `  Gemini              ${geminiKey}`,
+    `  Antigravity         ${antigravityKey}`,
   ].join('\n');
 }

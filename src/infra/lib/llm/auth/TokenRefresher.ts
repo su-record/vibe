@@ -162,7 +162,7 @@ class TokenRefresher {
   /**
    * Refresh a token with in-process deduplication and cross-process file locking.
    *
-   * @param provider - Provider identifier (e.g., 'gpt', 'gemini')
+   * @param provider - Provider identifier (e.g., 'gpt', 'antigravity')
    * @param refreshFn - The actual token refresh function
    * @param readCurrentToken - Optional callback to read current token from storage
    */

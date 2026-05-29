@@ -2,7 +2,7 @@
  * LLM Module - Unified LLM provider abstraction
  *
  * This module provides a unified interface for working with multiple LLM providers
- * (GPT and Gemini) with centralized authentication, retry logic, and streaming support.
+ * (GPT and Antigravity) with centralized authentication, retry logic, and streaming support.
  */
 
 export * from './types.js';

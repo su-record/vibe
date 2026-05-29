@@ -2,20 +2,15 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { detectAntigravityCli, detectCodexCli } from './cli-detector.js';
+import { detectLlmAvailability, resetLlmAvailabilityCache } from './llm-availability.js';
 
-describe('detectCodexCli', () => {
-  const originalCodexHome = process.env.CODEX_HOME;
+describe('detectLlmAvailability', () => {
   const originalAntigravityApiKey = process.env.ANTIGRAVITY_API_KEY;
   const originalPath = process.env.PATH;
   const tempDirs: string[] = [];
 
   afterEach(() => {
-    if (originalCodexHome === undefined) {
-      delete process.env.CODEX_HOME;
-    } else {
-      process.env.CODEX_HOME = originalCodexHome;
-    }
+    resetLlmAvailabilityCache();
     if (originalAntigravityApiKey === undefined) {
       delete process.env.ANTIGRAVITY_API_KEY;
     } else {
@@ -28,18 +23,7 @@ describe('detectCodexCli', () => {
     }
   });
 
-  it('uses CODEX_HOME when locating Codex config and plugins', () => {
-    const codexHome = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-codex-home-'));
-    tempDirs.push(codexHome);
-    process.env.CODEX_HOME = codexHome;
-
-    const status = detectCodexCli();
-
-    expect(status.configDir).toBe(codexHome);
-    expect(status.pluginDir).toBe(path.join(codexHome, 'plugins', 'vibe'));
-  });
-
-  it('detects Antigravity CLI as an installed orchestration CLI', () => {
+  it('reports Antigravity CLI availability', () => {
     const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-home-'));
     const binDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-bin-'));
     tempDirs.push(homeDir, binDir);
@@ -48,9 +32,8 @@ describe('detectCodexCli', () => {
     process.env.PATH = `${binDir}:/usr/bin:/bin`;
     process.env.ANTIGRAVITY_API_KEY = 'test-key';
 
-    const status = detectAntigravityCli();
+    const availability = detectLlmAvailability();
 
-    expect(status.installed).toBe(true);
-    expect(status.authenticated).toBe(true);
+    expect(availability.antigravity).toBe(true);
   });
 });

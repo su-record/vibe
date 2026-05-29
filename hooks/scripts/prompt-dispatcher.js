@@ -6,7 +6,7 @@
  * 이 디스패처가 stdin에서 prompt를 읽고, 패턴 매칭 후 해당 스크립트만 실행.
  *
  * 이점:
- * - 외부 LLM 호출(GPT/Gemini)이 패턴 매칭 없이 발동하지 않음
+ * - 외부 LLM 호출(GPT/Antigravity)이 패턴 매칭 없이 발동하지 않음
  * - context window에 불필요한 응답이 주입되지 않음
  * - 단일 프로세스에서 매칭 후 필요한 스크립트만 fork
  */
@@ -82,7 +82,7 @@ const DISPATCH_RULES = [
     label: 'e2e-echo',
   },
 
-  // 외부 LLM 호출 (GPT/Gemini) - 패턴 매칭 필수
+  // 외부 LLM 호출 (GPT/Antigravity) - 패턴 매칭 필수
   {
     pattern: /아키텍처.*(검토|리뷰|분석)|architecture.*(review|analyz)|설계.*검토|구조.*분석.*해/i,
     script: 'llm-orchestrate.js',
@@ -92,8 +92,8 @@ const DISPATCH_RULES = [
   {
     pattern: /(UI|UX).*(리뷰|검토|피드백|개선)|사용자.*경험.*검토|디자인.*리뷰|design.*feedback/i,
     script: 'llm-orchestrate.js',
-    args: ['gemini', 'orchestrate', 'You are a UI/UX expert. Analyze and provide feedback.'],
-    label: 'gemini-uiux',
+    args: ['antigravity', 'orchestrate', 'You are a UI/UX expert. Analyze and provide feedback.'],
+    label: 'antigravity-uiux',
   },
   {
     pattern: /디버깅.*해|버그.*찾아|find.*bug|debug.*this.*code/i,
@@ -104,8 +104,8 @@ const DISPATCH_RULES = [
   {
     pattern: /코드.*정적.*분석|코드.*분석.*해줘|analyze.*code.*quality/i,
     script: 'llm-orchestrate.js',
-    args: ['gemini', 'orchestrate', 'You are a code analysis expert. Review and analyze the code.'],
-    label: 'gemini-analysis',
+    args: ['antigravity', 'orchestrate', 'You are a code analysis expert. Review and analyze the code.'],
+    label: 'antigravity-analysis',
   },
   {
     pattern: /코드.*리뷰|code.*review|PR.*리뷰|리뷰.*해줘.*코드/i,
@@ -128,10 +128,10 @@ const DISPATCH_RULES = [
     label: 'test-gpt',
   },
   {
-    pattern: /^test-gemini/i,
+    pattern: /^test-(antigravity|agy)/i,
     script: 'llm-orchestrate.js',
-    args: ['gemini', 'orchestrate', 'You are a helpful assistant. Answer the user\'s question clearly and concisely.'],
-    label: 'test-gemini',
+    args: ['antigravity', 'orchestrate', 'You are a helpful assistant. Answer the user\'s question clearly and concisely.'],
+    label: 'test-antigravity',
   },
 ];
 

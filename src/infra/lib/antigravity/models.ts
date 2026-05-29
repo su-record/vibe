@@ -1,5 +1,5 @@
 /**
- * Gemini Model Discovery API
+ * Google Model Discovery API
  *
  * Google AI Studio (API Key) 전용
  */
@@ -36,7 +36,7 @@ function normalizeGoogleAI(raw: GoogleAIModel): AvailableModel {
 export async function fetchAvailableModels(): Promise<AvailableModel[]> {
   const apiKey = getApiKeyFromConfig();
   if (!apiKey) {
-    throw new Error('Gemini API key required. Run "vibe gemini key <key>".');
+    throw new Error('Antigravity API key required. Run "vibe antigravity key <key>".');
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;

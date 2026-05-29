@@ -107,8 +107,9 @@ graph TD
 |---|---|---|
 | Claude Code | `CLAUDE.md` | 100% (Primary) |
 | Codex | `AGENTS.md` | 100% (Primary) |
+| Antigravity CLI | `GEMINI.md` | 100% |
 
-Gemini CLI / Cursor are not supported — do not generate or check `GEMINI.md`.
+Cursor is not supported — do not generate or check Cursor-specific context files.
 
 **Source of truth:**
 - **`CLAUDE.md` is the content SSOT.** Always edit it first; `AGENTS.md` is a regenerated derivative.
@@ -116,13 +117,17 @@ Gemini CLI / Cursor are not supported — do not generate or check `GEMINI.md`.
 
 **Procedure (applies to both creation and modification):**
 
-1. **Detect state** — check which of `CLAUDE.md` / `AGENTS.md` exist in project root. **`CLAUDE.md` is always the SSOT**; if missing, create it first (never derive from AGENTS.md).
+1. **Detect state** — check which of `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` exist in project root. **`CLAUDE.md` is always the SSOT**; if missing, create it first (never derive from AGENTS.md).
 2. **For `AGENTS.md`**:
    - **If missing** → create by cloning `CLAUDE.md` + applying CLI substitution (below).
    - **If exists** → regenerate from current `CLAUDE.md` + substitution, preserving user-specific additions outside the VIBE block.
-3. **CLI substitution for `AGENTS.md`** (Codex): `Claude Code` → `Codex` · `~/.claude/` → `~/.codex/` · `.claude/` → `.codex/` · `CLAUDE.md` → `AGENTS.md`. `CLAUDE.md` itself gets no substitution.
-4. **Validate every touched file (whether newly created or modified)** via the `claude-md-guide` → `agents-md` skill chain — see validation block below. **Never write or save without running this step.**
-5. Report per file: created / updated / skipped / validation warnings.
+3. **For `GEMINI.md`**:
+   - **If missing** → create by cloning `CLAUDE.md` + applying Antigravity substitution.
+   - **If exists** → regenerate from current `CLAUDE.md` + substitution, preserving user-specific additions outside the VIBE block.
+4. **CLI substitution for `AGENTS.md`** (Codex): `Claude Code` → `Codex` · `~/.claude/` → `~/.codex/` · `.claude/` → `.codex/` · `CLAUDE.md` → `AGENTS.md`. `CLAUDE.md` itself gets no substitution.
+5. **CLI substitution for `GEMINI.md`** (Antigravity): `Claude Code` → `Antigravity CLI` · `~/.claude/` → `~/.gemini/` · `.claude/` → `.gemini/` · `CLAUDE.md` → `GEMINI.md`.
+6. **Validate every touched file (whether newly created or modified)** via the `claude-md-guide` → `agents-md` skill chain — see validation block below. **Never write or save without running this step.**
+7. Report per file: created / updated / skipped / validation warnings.
 
 **Idempotent:** Re-running re-syncs the behavioral block and re-applies substitutions without duplication.
 

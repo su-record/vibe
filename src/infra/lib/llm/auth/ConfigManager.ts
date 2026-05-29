@@ -22,7 +22,7 @@ export function getGlobalConfigDir(): string {
  */
 export function getProviderConfigPath(provider: LLMProvider): string {
   const configDir = getGlobalConfigDir();
-  const filename = provider === 'gpt' ? 'gpt-apikey.json' : 'gemini-apikey.json';
+  const filename = provider === 'gpt' ? 'gpt-apikey.json' : 'antigravity-apikey.json';
   return path.join(configDir, filename);
 }
 
@@ -31,7 +31,7 @@ export function getProviderConfigPath(provider: LLMProvider): string {
  */
 export function getOAuthTokenPath(provider: LLMProvider): string {
   const configDir = getGlobalConfigDir();
-  const filename = provider === 'gpt' ? 'gpt' : 'gemini';
+  const filename = provider === 'gpt' ? 'gpt' : 'antigravity';
   return path.join(configDir, filename, 'tokens.json');
 }
 

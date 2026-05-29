@@ -58,7 +58,7 @@ export interface ParallelResearchResult {
 
 /** Multi-LLM 단일 결과 */
 export interface MultiLlmResult {
-  provider: 'gpt' | 'gemini';
+  provider: 'gpt' | 'antigravity';
   category: 'best-practices' | 'security';
   result: string;
   success: boolean;
@@ -162,18 +162,18 @@ export interface OrchestratorToolResult extends ToolResult {
 
 /** 작업 유형 - LLM 선택에 사용 */
 export type TaskType =
-  | 'architecture'    // 아키텍처 분석/리뷰 → GPT 우선
-  | 'debugging'       // 디버깅 → GPT 우선
-  | 'uiux'           // UI/UX 분석 → Gemini 우선
-  | 'code-analysis'  // 코드 분석 → GPT 우선
-  | 'code-gen'       // 코드 생성 → GPT 우선
-  | 'web-search'     // 웹 검색 → Gemini 우선
-  | 'general'        // 일반 → GPT 우선
-  | 'code-review'    // 코드 리뷰 → GPT 우선
-  | 'reasoning';     // 추론 → GPT 우선
+  | 'architecture'
+  | 'debugging'
+  | 'uiux'
+  | 'code-analysis'
+  | 'code-gen'
+  | 'web-search'
+  | 'general'
+  | 'code-review'
+  | 'reasoning';
 
 /** LLM 제공자 */
-export type LLMProvider = 'gpt' | 'gemini' | 'claude';
+export type LLMProvider = 'gpt' | 'antigravity' | 'claude';
 
 /** 스마트 라우팅 요청 */
 export interface SmartRouteRequest {
@@ -203,39 +203,38 @@ export interface SmartRouteResult {
 /** LLM 가용성 캐시 */
 export interface LLMAvailabilityCache {
   gpt: { available: boolean; checkedAt: number; errorCount: number };
-  gemini: { available: boolean; checkedAt: number; errorCount: number };
+  antigravity: { available: boolean; checkedAt: number; errorCount: number };
 }
 
 /**
  * 작업 유형별 LLM 우선순위
- * - GPT/Gemini → Claude (fallback)
- * - GPT: 코드 분석, 리뷰, 추론, 아키텍처
- * - Gemini: UI/UX, 웹 검색
+ * - GPT/Antigravity → Claude (fallback)
+ * - Antigravity: UI/UX, 웹 검색
  */
 export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
-  'architecture': ['gpt', 'gemini', 'claude'],
-  'debugging': ['gpt', 'gemini', 'claude'],
-  'uiux': ['gemini', 'gpt', 'claude'],
-  'code-analysis': ['gpt', 'gemini', 'claude'],
+  'architecture': ['gpt', 'antigravity', 'claude'],
+  'debugging': ['gpt', 'antigravity', 'claude'],
+  'uiux': ['antigravity', 'gpt', 'claude'],
+  'code-analysis': ['gpt', 'antigravity', 'claude'],
   'code-gen': ['gpt', 'claude'],
-  'web-search': ['gemini', 'gpt', 'claude'],
+  'web-search': ['antigravity', 'gpt', 'claude'],
   'general': ['gpt', 'claude'],
-  'code-review': ['gpt', 'gemini', 'claude'],
-  'reasoning': ['gpt', 'gemini', 'claude'],
+  'code-review': ['gpt', 'antigravity', 'claude'],
+  'reasoning': ['gpt', 'antigravity', 'claude'],
 };
 
 /**
- * 동적 LLM 우선순위 — Codex/Gemini 활성화 상태에 따라 자동 조정
+ * 동적 LLM 우선순위 — Codex/Antigravity 활성화 상태에 따라 자동 조정
  *
  * 기본: Claude만 사용
  * +Codex: 추론/코딩/리뷰에 GPT 추가
- * +Gemini: 리서치/리뷰/UI에 Gemini 추가
+ * +Antigravity: 리서치/리뷰/UI에 Antigravity 추가
  */
 export function getTaskLlmPriority(type: TaskType): LLMProvider[] {
-  const { codex, gemini } = detectLlmAvailability();
+  const { codex, antigravity } = detectLlmAvailability();
 
   // 둘 다 비활성화 → Claude only
-  if (!codex && !gemini) {
+  if (!codex && !antigravity) {
     return ['claude'];
   }
 
@@ -249,13 +248,13 @@ export function getTaskLlmPriority(type: TaskType): LLMProvider[] {
     }
   }
 
-  if (gemini) {
-    // Gemini 우선 작업 유형
+  if (antigravity) {
+    // Antigravity 우선 작업 유형
     if (['web-search', 'uiux'].includes(type)) {
-      priority.unshift('gemini');
+      priority.unshift('antigravity');
     } else if (['code-review', 'architecture', 'reasoning'].includes(type)) {
       // 교차 검증용 — GPT 뒤에
-      priority.push('gemini');
+      priority.push('antigravity');
     }
   }
 

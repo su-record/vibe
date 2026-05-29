@@ -14,9 +14,9 @@ GPT Commands:
   vibe gpt status         Check status
   codex auth              Codex CLI authentication
 
-Gemini Commands:
-  vibe gemini key <KEY>   API key
-  vibe gemini status      Check status
+Antigravity Commands:
+  vibe antigravity key <KEY>   API key
+  vibe antigravity status      Check status
 
 Examples:
   codex auth              Codex CLI login
@@ -33,6 +33,6 @@ export function showLogoutHelp(): void {
 
 Usage:
   vibe gpt logout       GPT logout
-  vibe gemini logout    Gemini logout
+  vibe antigravity logout    Antigravity logout
   `);
 }

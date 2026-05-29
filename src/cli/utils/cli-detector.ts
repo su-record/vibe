@@ -1,7 +1,7 @@
 /**
  * AI CLI 감지 유틸리티
  *
- * Claude Code, Codex CLI, Gemini CLI 설치 여부를 자동 감지하여
+ * Claude Code, Codex CLI, Antigravity CLI 설치 여부를 자동 감지하여
  * 설치된 CLI에만 설정을 적용
  */
 
@@ -43,11 +43,14 @@ function detectCodexAuth(configDir: string): boolean {
 }
 
 /**
- * Gemini CLI 인증 감지 (`~/.gemini/oauth_creds.json` 존재 또는 GEMINI_API_KEY 환경변수)
+ * Antigravity CLI 인증 감지.
+ *
+ * Antigravity는 OS keyring을 우선 사용하므로 파일만으로 완전 검증할 수 없다.
+ * 여기서는 API key와 Antigravity 설정 존재 여부를 빠르게 감지한다.
  */
-function detectGeminiAuth(configDir: string): boolean {
-  if (process.env.GEMINI_API_KEY) return true;
-  return fs.existsSync(path.join(configDir, 'oauth_creds.json'));
+function detectAntigravityAuth(configDir: string): boolean {
+  if (process.env.ANTIGRAVITY_API_KEY) return true;
+  return fs.existsSync(path.join(configDir, 'settings.json'));
 }
 
 /**
@@ -104,18 +107,19 @@ export function detectCodexCli(): AiCliStatus {
 }
 
 /**
- * Gemini CLI 설치 여부 감지
- * - `which gemini` 실행 가능 여부
- * - `~/.gemini/` 디렉토리 존재 여부
+ * Antigravity CLI 설치 여부 감지
+ * - `which agy` 실행 가능 여부
+ * - `~/.gemini/antigravity-cli/` 또는 `~/.antigravity/` 디렉토리 존재 여부
  * 둘 중 하나만 true면 installed: true
  */
-export function detectGeminiCli(): AiCliStatus {
-  const configDir = path.join(os.homedir(), '.gemini');
-  const hasDir = fs.existsSync(configDir);
+export function detectAntigravityCli(): AiCliStatus {
+  const configDir = path.join(os.homedir(), '.gemini', 'antigravity-cli');
+  const legacyDir = path.join(os.homedir(), '.antigravity');
+  const hasDir = fs.existsSync(configDir) || fs.existsSync(legacyDir);
 
   let hasBin = false;
   try {
-    execSync('which gemini', { stdio: 'ignore' });
+    execSync('which agy', { stdio: 'ignore' });
     hasBin = true;
   } catch {
     // not found
@@ -125,6 +129,6 @@ export function detectGeminiCli(): AiCliStatus {
   return {
     installed,
     configDir,
-    authenticated: installed ? detectGeminiAuth(configDir) : undefined,
+    authenticated: installed ? detectAntigravityAuth(configDir) : undefined,
   };
 }

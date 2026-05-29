@@ -3,7 +3,7 @@
  * Claude Code에서 OpenAI 호환 모델을 백엔드로 사용하는 로컬 프록시
  *
  * chatgpt-pro: Codex Responses API (chatgpt.com/backend-api/codex/responses)
- * openai/gemini/custom: Chat Completions API (api.openai.com/v1/chat/completions)
+ * openai/antigravity/custom: Chat Completions API (api.openai.com/v1/chat/completions)
  */
 
 import fs from 'fs';
@@ -11,7 +11,7 @@ import http from 'http';
 import crypto from 'crypto';
 import { spawn } from 'child_process';
 import { getApiKeyFromConfig, findCodexCredentials, getAuthInfo } from './gpt/auth.js';
-import { readGlobalConfig, getGeminiApiKey } from './config/GlobalConfigManager.js';
+import { readGlobalConfig, getAntigravityApiKey } from './config/GlobalConfigManager.js';
 import { CHATGPT_BASE_URL } from './gpt/constants.js';
 import type { CodexProxyConfig } from '../../cli/types.js';
 
@@ -468,7 +468,7 @@ export function checkAuthSource(): AuthSource | null {
   if (process.env.CODEX_PROXY_API_KEY) return { source: 'env' };
   const settings = getProxySettings();
   if (settings.apiKey) return { source: 'apikey' };
-  if (settings.provider === 'gemini' && getGeminiApiKey()) return { source: 'apikey' };
+  if (settings.provider === 'antigravity' && getAntigravityApiKey()) return { source: 'apikey' };
   const codex = findCodexCredentials();
   if (codex) return { source: 'codex-cli' };
   const apiKey = process.env.OPENAI_API_KEY || getApiKeyFromConfig();
@@ -496,10 +496,10 @@ async function resolveRequestAuth(): Promise<ResolvedAuth> {
   // 2. Config의 커스텀 API key
   if (settings.apiKey) return { token: settings.apiKey, baseUrl, provider: 'openai-compat' };
 
-  // 3. Gemini provider → credentials.gemini.apiKey
-  if (settings.provider === 'gemini') {
-    const geminiKey = getGeminiApiKey();
-    if (geminiKey) return { token: geminiKey, baseUrl, provider: 'openai-compat' };
+  // 3. Antigravity provider → credentials.antigravity.apiKey
+  if (settings.provider === 'antigravity') {
+    const antigravityKey = getAntigravityApiKey();
+    if (antigravityKey) return { token: antigravityKey, baseUrl, provider: 'openai-compat' };
   }
 
   // 4. GPT 인증 (codex-cli OAuth → apikey 순서, 토큰 자동 갱신)
@@ -1075,7 +1075,7 @@ export function launchSession(
   if (!authSource) {
     console.error('인증 정보 없음.');
     console.error('  ChatGPT Pro: npm i -g @openai/codex && codex login');
-    console.error('  Gemini:      GEMINI_API_KEY 또는 CODEX_PROXY_API_KEY 설정');
+    console.error('  Antigravity: ANTIGRAVITY_API_KEY 또는 CODEX_PROXY_API_KEY 설정');
     console.error('  OpenAI:      vibe gpt key <key> 또는 OPENAI_API_KEY 설정');
     process.exit(1);
   }

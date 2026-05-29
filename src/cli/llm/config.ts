@@ -29,12 +29,12 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
     package: '@anthropics/openai-mcp',
     envKey: 'OPENAI_API_KEY'
   },
-  gemini: {
-    name: 'core-gemini',
+  antigravity: {
+    name: 'core-antigravity',
     role: 'ui-ux',
-    description: 'UI/UX Design (Gemini)',
-    package: '@anthropics/gemini-mcp',
-    envKey: 'GOOGLE_API_KEY'
+    description: 'UI/UX Design (Antigravity)',
+    package: '',
+    envKey: 'ANTIGRAVITY_API_KEY'
   },
 };
 
@@ -49,13 +49,13 @@ API key required.
 Usage:
   vibe ${llmType} key <api-key>
 
-${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : 'Google API key: https://aistudio.google.com/apikey'}
+${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : 'Antigravity CLI: agy'}
     `);
     return;
   }
 
   // config.json에 저장
-  const credentialKey = llmType === 'gpt' ? 'gpt' : 'gemini';
+  const credentialKey = llmType === 'gpt' ? 'gpt' : 'antigravity';
   patchGlobalConfig({
     credentials: {
       [credentialKey]: {
@@ -76,7 +76,7 @@ ${llmType === 'gpt' ? 'OpenAI API key: https://platform.openai.com/api-keys' : '
     try {
       const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       if (!config.models) config.models = {};
-      config.models[llmType as 'gpt' | 'gemini'] = {
+      config.models[llmType as 'gpt' | 'antigravity'] = {
         enabled: true,
         authType: 'apikey',
         role: llmConfig.role,
@@ -108,7 +108,7 @@ export function removeExternalLLM(llmType: string): void {
   const config = readGlobalConfig();
   let removed = false;
 
-  const credentialKey = llmType as 'gpt' | 'gemini';
+  const credentialKey = llmType as 'gpt' | 'antigravity';
   if (config.credentials?.[credentialKey]) {
     delete config.credentials[credentialKey];
     removed = true;
@@ -126,8 +126,8 @@ export function removeExternalLLM(llmType: string): void {
   if (fs.existsSync(configPath)) {
     try {
       const projConfig: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      if (projConfig.models?.[llmType as 'gpt' | 'gemini']) {
-        projConfig.models[llmType as 'gpt' | 'gemini']!.enabled = false;
+      if (projConfig.models?.[llmType as 'gpt' | 'antigravity']) {
+        projConfig.models[llmType as 'gpt' | 'antigravity']!.enabled = false;
         fs.writeFileSync(configPath, JSON.stringify(projConfig, null, 2));
       }
     } catch { /* ignore */ }

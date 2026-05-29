@@ -12,12 +12,12 @@ import { ProfileFileLock } from './ProfileFileLock.js';
 // Types
 // ============================================
 
-export type AuthProfileProvider = 'gpt' | 'gemini';
+export type AuthProfileProvider = 'gpt' | 'antigravity';
 
 export interface AuthProfile {
   id: string;
   provider: AuthProfileProvider;
-  type: 'codex-cli' | 'gemini-cli' | 'apikey';
+  type: 'codex-cli' | 'antigravity-cli' | 'apikey';
   identifier: string;       // email 또는 key last 4자리
   priority: number;          // 낮을수록 우선
   cooldownUntil: number;     // timestamp, 0 = 사용 가능
@@ -115,7 +115,7 @@ export class AuthProfileManager {
    */
   async addProfile(
     provider: AuthProfileProvider,
-    type: 'codex-cli' | 'gemini-cli' | 'apikey',
+    type: 'codex-cli' | 'antigravity-cli' | 'apikey',
     rawIdentifier: string,
     priority: number = 100
   ): Promise<AuthProfile> {

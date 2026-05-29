@@ -33,10 +33,10 @@ import {
   installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
-  generateProjectGeminiMd,
+  generateProjectAntigravityMd,
   generateGlobalClaudeMd,
   generateGlobalCodexAgentsMd,
-  generateGlobalGeminiMd,
+  generateGlobalAntigravityMd,
 } from '../setup.js';
 import {
   updateCursorGlobalAssets,
@@ -44,7 +44,7 @@ import {
   installLanguageRules,
 } from './init.js';
 import { installExternalSkills } from './skills.js';
-import { detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectAntigravityCli, detectCodexCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 
 /**
@@ -121,7 +121,7 @@ export function update(options: CliOptions = { silent: false }): void {
       } catch { /* ignore: optional operation */ }
     }
 
-    // config.json 업데이트 — 현재 프로젝트의 주 harness 감지 (우선순위: codex > gemini > claude)
+    // config.json 업데이트 — 현재 프로젝트의 주 harness 감지 (우선순위: codex > antigravity > claude)
     const HARNESS_PRIORITY = ['.codex', '.gemini', '.claude'];
     const primaryHarness =
       HARNESS_PRIORITY.find(d => fs.existsSync(path.join(projectRoot, d))) || '.claude';
@@ -147,10 +147,10 @@ export function update(options: CliOptions = { silent: false }): void {
     setupCollaboratorAutoInstall(projectRoot);
 
     const codexStatus = detectCodexCli();
-    const geminiStatus = detectGeminiCli();
+    const antigravityStatus = detectAntigravityCli();
 
     // 프로젝트 레벨 훅 설치 — 존재하는 하네스 디렉토리 모두 대응
-    //   .gemini/는 hook 스키마 다름 → 스킵
+    //   .gemini/는 Antigravity context 디렉토리 — Claude hook 스키마 스킵
     //   .codex/는 native hooks.json 사용
     const PROJECT_HARNESS_DIRS = ['.claude', '.codex'];
     const presentHarnesses = PROJECT_HARNESS_DIRS.filter(d =>
@@ -183,14 +183,14 @@ export function update(options: CliOptions = { silent: false }): void {
       generateGlobalCodexAgentsMd();
       installCodexNotify(codexStatus.configDir);
     }
-    if (geminiStatus.installed) generateGlobalGeminiMd();
+    if (antigravityStatus.installed) generateGlobalAntigravityMd();
 
     // ── 프로젝트 엔트리 갱신 ── 로컬 폴더 구성에 맞춰 동적으로
     //   - 이미 존재하는 CLAUDE.md / AGENTS.md / GEMINI.md 만 갱신 (createIfMissing=false)
     //   - 존재하지 않는 파일은 건드리지 않음 (init에서만 생성)
     generateProjectClaudeMd(projectRoot, detectedStacks, stackDetails, false);
     generateProjectAgentsMd(projectRoot, detectedStacks, stackDetails, false);
-    generateProjectGeminiMd(projectRoot, detectedStacks, stackDetails, false);
+    generateProjectAntigravityMd(projectRoot, detectedStacks, stackDetails, false);
 
     // 스택 + capability 기반 로컬 스킬 업데이트 — 존재하는 하네스 디렉토리 모두 대응
     const assetTargets = hasCodexProject

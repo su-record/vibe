@@ -1,5 +1,5 @@
 /**
- * Gemini 확장 기능
+ * Antigravity 확장 기능
  *
  * - 웹 검색, UI 분석, 이미지 생성, 이미지 분석
  * - API Key → Google AI Studio
@@ -9,12 +9,12 @@ import path from 'path';
 import fs from 'fs';
 
 import { getApiKeyFromConfig } from './auth.js';
-import { ask, getGeminiModels, DEFAULT_MODEL } from './chat.js';
+import { ask, getAntigravityModels, DEFAULT_MODEL } from './chat.js';
 import type {
   ImageGenerationOptions,
   ImageGenerationResult,
   ImageAnalysisOptions,
-  GeminiApiResponse,
+  AntigravityApiResponse,
   MultimodalContent,
 } from './types.js';
 
@@ -23,11 +23,11 @@ import type {
 // =============================================
 
 /**
- * 웹서치로 최신 정보 검색 (Gemini Pro + Google Search)
+ * 웹서치로 최신 정보 검색 (Antigravity Pro + Google Search)
  */
 export async function webSearch(prompt: string): Promise<string> {
   return ask(prompt, {
-    model: 'gemini-pro',
+    model: 'antigravity-pro',
     maxTokens: 4096,
     temperature: 0.3,
     webSearch: true,
@@ -36,11 +36,11 @@ export async function webSearch(prompt: string): Promise<string> {
 }
 
 /**
- * 빠른 웹서치 (Gemini Flash + Google Search)
+ * 빠른 웹서치 (Antigravity fast model + Google Search)
  */
 export async function quickWebSearch(prompt: string): Promise<string> {
   return ask(prompt, {
-    model: 'gemini-flash',
+    model: 'antigravity-fast',
     maxTokens: 2048,
     temperature: 0.3,
     webSearch: true,
@@ -52,11 +52,11 @@ export async function quickWebSearch(prompt: string): Promise<string> {
 // =============================================
 
 /**
- * UI/UX 분석용 (Gemini Pro)
+ * UI/UX 분석용 (Antigravity Pro)
  */
 export async function analyzeUI(prompt: string): Promise<string> {
   return ask(prompt, {
-    model: 'gemini-pro',
+    model: 'antigravity-pro',
     maxTokens: 4096,
     temperature: 0.5,
     systemPrompt: 'You are a UI/UX expert. Analyze the given design or component and provide detailed feedback.',
@@ -73,7 +73,7 @@ const IMAGE_MODELS = {
 } as const;
 
 /**
- * Gemini Image Generation (API Key only)
+ * Antigravity image generation (API Key only)
  */
 export async function generateImage(
   prompt: string,
@@ -81,7 +81,7 @@ export async function generateImage(
 ): Promise<ImageGenerationResult> {
   const apiKey = getApiKeyFromConfig();
   if (!apiKey) {
-    throw new Error('Gemini API key required for image generation. Run "vibe gemini key <key>".');
+    throw new Error('Antigravity API key required for image generation. Run "vibe antigravity key <key>".');
   }
 
   const size = options.size || '1024x1024';
@@ -110,7 +110,7 @@ export async function generateImage(
 
   if (!response.ok) {
     const errorText = await response.text();
-    let errorMessage = `Gemini Image API error (${response.status})`;
+    let errorMessage = `Antigravity image API error (${response.status})`;
     try {
       const errorJson = JSON.parse(errorText) as { error?: { message?: string } };
       if (errorJson.error?.message) errorMessage = errorJson.error.message;
@@ -139,7 +139,7 @@ export async function generateImage(
     }
   }
 
-  throw new Error('No image in Gemini response');
+  throw new Error('No image in Antigravity response');
 }
 
 // =============================================
@@ -164,7 +164,7 @@ async function analyzeImageWithApiKey(
   contents: MultimodalContent[],
   options: { model: string; maxTokens: number; temperature: number; systemPrompt?: string },
 ): Promise<string> {
-  const modelInfo = getGeminiModels()[options.model] || getGeminiModels()[DEFAULT_MODEL];
+  const modelInfo = getAntigravityModels()[options.model] || getAntigravityModels()[DEFAULT_MODEL];
   const actualModel = modelInfo.id;
 
   const requestBody: Record<string, unknown> = {
@@ -187,18 +187,18 @@ async function analyzeImageWithApiKey(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+    throw new Error(`Antigravity API error (${response.status}): ${errorText}`);
   }
 
-  const result = await response.json() as GeminiApiResponse;
+  const result = await response.json() as AntigravityApiResponse;
   if (!result.candidates || result.candidates.length === 0) {
-    throw new Error('Gemini API response is empty.');
+    throw new Error('Antigravity API response is empty.');
   }
   return result.candidates[0].content?.parts?.[0]?.text || '';
 }
 
 /**
- * Gemini 이미지 분석 (Multimodal)
+ * Antigravity 이미지 분석 (Multimodal)
  */
 export async function analyzeImage(
   imagePath: string,
@@ -206,7 +206,7 @@ export async function analyzeImage(
   options: ImageAnalysisOptions = {},
 ): Promise<string> {
   const {
-    model = 'gemini-flash',
+    model = 'antigravity-fast',
     maxTokens = 4096,
     temperature = 0.3,
     systemPrompt,
@@ -231,9 +231,8 @@ export async function analyzeImage(
 
   const apiKey = getApiKeyFromConfig();
   if (!apiKey) {
-    throw new Error('Gemini API key required for image analysis.');
+    throw new Error('Antigravity API key required for image analysis.');
   }
 
   return analyzeImageWithApiKey(apiKey, contents, { model, maxTokens, temperature, systemPrompt });
 }
-

@@ -1,28 +1,28 @@
 /**
- * UserPromptSubmit Hook - LLM 오케스트레이션 (GPT/Gemini/Claude)
+ * UserPromptSubmit Hook - LLM 오케스트레이션 (GPT/Antigravity/Claude)
  *
  * Usage:
  *   node llm-orchestrate.js <provider> <mode> "prompt"
  *   node llm-orchestrate.js <provider> <mode> "systemPrompt" "prompt"
  *
- *   provider: gpt | gemini | claude
+ *   provider: gpt | antigravity | claude
  *   mode: orchestrate | orchestrate-json | image | analyze-image
  *
  * Image Mode:
- *   node llm-orchestrate.js gemini image "prompt" --output "./image.png"
- *   node llm-orchestrate.js gemini image "prompt" --output "./image.png" --size "1920x1080"
+ *   node llm-orchestrate.js antigravity image "prompt" --output "./image.png"
+ *   node llm-orchestrate.js antigravity image "prompt" --output "./image.png" --size "1920x1080"
  *
  * Features:
- *   - CLI-based: GPT → codex exec, Gemini → gemini -p, Claude → claude --print
+ *   - CLI-based: GPT → codex exec, Antigravity → agy -p, Claude → claude --print
  *   - Exponential backoff retry (3 attempts)
- *   - Auto fallback: gpt ↔ gemini
+ *   - Auto fallback: gpt ↔ antigravity
  *   - Overload/rate-limit detection
- *   - Image generation (Gemini API, Gemini Flash Image model)
- *   - Image analysis (Gemini API multimodal)
+ *   - Image generation (Google image model)
+ *   - Image analysis (Google multimodal model)
  *
  * Analyze-Image Mode:
- *   node llm-orchestrate.js gemini analyze-image "./image.png" "Analyze this UI"
- *   node llm-orchestrate.js gemini analyze-image "./image.png" "prompt" --system "system prompt"
+ *   node llm-orchestrate.js antigravity analyze-image "./image.png" "Analyze this UI"
+ *   node llm-orchestrate.js antigravity analyze-image "./image.png" "prompt" --system "system prompt"
  *
  * Input: JSON from stdin with { prompt: string } (when no CLI args)
  */
@@ -36,7 +36,7 @@ import { execSync, spawn } from 'child_process';
 const LIB_URL = getLibBaseUrl();
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant.';
 
-const provider = process.argv[2] || 'gemini';
+const provider = process.argv[2] || 'antigravity';
 const mode = process.argv[3] || 'orchestrate';
 
 // WHY 3 retries: Enough to ride out brief 503/overload blips (typically 1-2
@@ -102,7 +102,7 @@ function resolveModel(providerName, config) {
   if (providerName === 'gpt-spark') return config.models?.gptCodexSpark || 'gpt-5.3-codex-spark';
   if (providerName === 'gpt-codex') return config.models?.gptCodex || 'gpt-5.3-codex';
   if (providerName === 'gpt') return config.models?.gpt || 'gpt-5.5';
-  if (providerName === 'gemini') return config.models?.gemini || 'gemini-3.1-pro-preview';
+  if (providerName === 'antigravity') return config.models?.antigravity || 'antigravity';
   if (providerName === 'claude') return 'claude';
   return providerName;
 }
@@ -160,7 +160,7 @@ function sleep(ms) {
 }
 
 // ============================================
-// Image Generation (delegates to gemini-api)
+// Image Generation (delegates to Google image API)
 // ============================================
 
 function parseImageArgs(args) {
@@ -180,7 +180,7 @@ function parseImageArgs(args) {
 }
 
 // ============================================
-// Image Analysis (delegates to gemini-api)
+// Image Analysis (delegates to Google image API)
 // ============================================
 
 function parseAnalyzeImageArgs(args) {
@@ -267,19 +267,16 @@ function callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
   });
 }
 
-function callGeminiCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
+function callAntigravityCli(prompt, sysPrompt, jsonMode, timeoutMs) {
   const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
-  // -p 로 headless 모드, stdin으로 프롬프트 전달 (stdin is appended to -p value)
-  const args = ['-p', '.', '-o', 'text'];
-  if (model) args.push('-m', model);
+  const args = ['-p', fullPrompt];
   const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
 
   return new Promise((resolve, reject) => {
-    const proc = spawnCli('gemini', args, {
-      stdio: ['pipe', 'pipe', 'pipe'],
+    const proc = spawnCli('agy', args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
       timeout: effectiveTimeout,
     });
-    proc.stdin.end(fullPrompt);
 
     let stdout = '';
     let stderr = '';
@@ -290,12 +287,12 @@ function callGeminiCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
       if (code === 0 && stdout.trim()) {
         resolve(stdout.trim());
       } else {
-        reject(new Error(`gemini cli failed (code ${code}): ${(stderr || stdout).slice(0, 500)}`));
+        reject(new Error(`antigravity cli failed (code ${code}): ${(stderr || stdout).slice(0, 500)}`));
       }
     });
 
     proc.on('error', (err) => {
-      reject(new Error(`gemini cli spawn error: ${err.message}`));
+      reject(new Error(`antigravity cli spawn error: ${err.message}`));
     });
   });
 }
@@ -352,9 +349,8 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs
     return await callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs);
   }
 
-  if (providerName === 'gemini') {
-    const model = vibeConfig.models?.gemini || process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview';
-    return await callGeminiCli(prompt, sysPrompt, jsonMode, model, timeoutMs);
+  if (providerName === 'antigravity') {
+    return await callAntigravityCli(prompt, sysPrompt, jsonMode, timeoutMs);
   }
 
   if (providerName === 'claude') {
@@ -398,8 +394,8 @@ async function callWithRetry(providerName, prompt, sysPrompt, jsonMode, timeoutM
 async function main() {
   // Image mode handling
   if (mode === 'image') {
-    if (provider !== 'gemini') {
-      console.log('[IMAGE] Error: Image generation only supports gemini provider');
+    if (provider !== 'antigravity') {
+      console.log('[IMAGE] Error: Image generation only supports antigravity provider');
       return;
     }
 
@@ -415,7 +411,7 @@ async function main() {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    const modelLabel = imageArgs.model === 'nano-banana-pro' ? 'Gemini Pro Image' : 'Gemini Flash Image';
+    const modelLabel = imageArgs.model === 'nano-banana-pro' ? 'Google Pro Image' : 'Google Flash Image';
     console.error(`[IMAGE] Generating with ${modelLabel}...`);
     console.error(`  Prompt: ${imageArgs.prompt}`);
     console.error(`  Size: ${imageArgs.size}`);
@@ -423,8 +419,8 @@ async function main() {
     console.error(`  Output: ${imageArgs.output}`);
 
     try {
-      const geminiApi = await import(`${LIB_URL}gemini-api.js`);
-      const image = await geminiApi.generateImage(imageArgs.prompt, { size: imageArgs.size, model: imageArgs.model });
+      const googleApi = await import(`${LIB_URL}gemini-api.js`);
+      const image = await googleApi.generateImage(imageArgs.prompt, { size: imageArgs.size, model: imageArgs.model });
       fs.writeFileSync(imageArgs.output, image.data);
       const stats = fs.statSync(imageArgs.output);
       const sizeKB = (stats.size / 1024).toFixed(1);
@@ -448,8 +444,8 @@ async function main() {
 
   // Analyze-image mode handling
   if (mode === 'analyze-image') {
-    if (provider !== 'gemini') {
-      console.log('[ANALYZE-IMAGE] Error: Image analysis only supports gemini provider');
+    if (provider !== 'antigravity') {
+      console.log('[ANALYZE-IMAGE] Error: Image analysis only supports antigravity provider');
       return;
     }
 
@@ -473,17 +469,17 @@ async function main() {
       return;
     }
 
-    console.error(`[ANALYZE-IMAGE] Analyzing image with Gemini...`);
+    console.error(`[ANALYZE-IMAGE] Analyzing image with Google multimodal model...`);
     console.error(`  Image: ${absolutePath}`);
     console.error(`  Prompt: ${analyzeArgs.prompt}`);
 
     try {
-      const geminiApi = await import(`${LIB_URL}gemini-api.js`);
+      const googleApi = await import(`${LIB_URL}gemini-api.js`);
       const options = {};
       if (analyzeArgs.systemPrompt) {
         options.systemPrompt = analyzeArgs.systemPrompt;
       }
-      const analysis = await geminiApi.analyzeImage(absolutePath, analyzeArgs.prompt, options);
+      const analysis = await googleApi.analyzeImage(absolutePath, analyzeArgs.prompt, options);
 
       console.log(JSON.stringify({
         success: true,
@@ -564,7 +560,7 @@ async function main() {
   const prefixPatterns = {
     gpt: /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
     'gpt-codex': /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
-    gemini: /^(gemini[-.\s]|제미나이-|vibe-gemini-)\s*/i,
+    antigravity: /^(antigravity[-.\s]|agy[-.\s]|안티그래비티-|vibe-antigravity-)\s*/i,
   };
   const cleanPrompt = prompt.replace(prefixPatterns[provider] || /^/, '').trim();
   const jsonMode = mode === 'orchestrate-json';
@@ -585,8 +581,8 @@ async function main() {
 
   // Provider chain: primary → cross fallback
   // 프록시 모드 (주관=GPT): 보조로 Claude CLI 사용
-  // 직접 모드 (주관=Claude): 보조로 GPT/Gemini 사용
-  const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', gemini: 'Gemini', claude: 'Claude' };
+  // 직접 모드 (주관=Claude): 보조로 GPT/Antigravity 사용
+  const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', antigravity: 'Antigravity', claude: 'Claude' };
   const isGpt = provider === 'gpt' || provider === 'gpt-codex' || provider === 'gpt-spark';
   const isClaude = provider === 'claude';
   const claudeSecondary = useClaudeAsSecondary();
@@ -594,13 +590,13 @@ async function main() {
   let providerChain;
   if (isClaude) {
     // 명시적 claude 호출
-    providerChain = ['claude', 'gemini'];
+    providerChain = ['claude', 'antigravity'];
   } else if (isGpt) {
-    // GPT 주관 → claude fallback (vibe-codex), gemini fallback (직접 모드)
-    providerChain = claudeSecondary ? [provider, 'claude'] : [provider, 'gemini'];
+    // GPT 주관 → claude fallback (vibe-codex), antigravity fallback (직접 모드)
+    providerChain = claudeSecondary ? [provider, 'claude'] : [provider, 'antigravity'];
   } else {
-    // gemini 주관 → claude fallback (vibe-codex), gpt fallback (직접 모드)
-    providerChain = claudeSecondary ? ['gemini', 'claude'] : ['gemini', 'gpt'];
+    // Antigravity 주관 → claude fallback (vibe-codex), gpt fallback (직접 모드)
+    providerChain = claudeSecondary ? ['antigravity', 'claude'] : ['antigravity', 'gpt'];
   }
 
   const vibeConfig = readVibeConfig();

@@ -38,7 +38,7 @@ export const CONCURRENCY = {
   PROVIDER_LIMITS: {
     'claude': 10,
     'gpt': 5,
-    'gemini': 5,
+    'antigravity': 5,
     'default': 10,
   } as Record<string, number>,
   /** 기본 동시 실행 제한 */

@@ -2,7 +2,7 @@
  * Code Completion (placeholder)
  *
  * completeCode는 v1internal OAuth 전용이었으므로 제거됨.
- * gemini-cli 직접 호출로 대체 가능.
+ * Antigravity CLI 직접 호출로 대체 가능.
  */
 
 import type { CompleteCodeOptions, CompleteCodeResponse } from './types.js';
@@ -14,6 +14,6 @@ export async function completeCode(
   _options: CompleteCodeOptions,
 ): Promise<CompleteCodeResponse> {
   throw new Error(
-    'completeCode is no longer supported. Use gemini-cli directly for code completion.'
+    'completeCode is no longer supported. Use Antigravity CLI directly for code completion.'
   );
 }

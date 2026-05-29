@@ -1,6 +1,6 @@
 /**
  * vibe codex 서브커맨드 핸들러
- * Claude Code + OpenAI/Gemini 호환 모델을 LLM으로 사용
+ * Claude Code + OpenAI/Antigravity 호환 모델을 LLM으로 사용
  */
 
 import fs from 'fs';
@@ -106,10 +106,10 @@ function detectAuth(): DetectedAuth | null {
   if (process.env.OPENAI_API_KEY) {
     return { provider: 'openai', label: 'OpenAI (OPENAI_API_KEY)', key: process.env.OPENAI_API_KEY };
   }
-  if (process.env.GEMINI_API_KEY) {
+  if (process.env.ANTIGRAVITY_API_KEY) {
     return {
-      provider: 'gemini', label: 'Gemini (GEMINI_API_KEY)',
-      key: process.env.GEMINI_API_KEY,
+      provider: 'antigravity', label: 'Antigravity (ANTIGRAVITY_API_KEY)',
+      key: process.env.ANTIGRAVITY_API_KEY,
       url: 'https://generativelanguage.googleapis.com/v1beta/openai',
     };
   }
@@ -124,7 +124,7 @@ async function selectProvider(): Promise<string> {
     options: [
       { value: 'chatgpt-pro', label: 'ChatGPT Pro', hint: 'codex login 필요' },
       { value: 'openai', label: 'OpenAI API Key' },
-      { value: 'gemini', label: 'Gemini API Key' },
+      { value: 'antigravity', label: 'Antigravity API Key' },
       { value: 'custom', label: '커스텀 (OpenAI 호환)', hint: 'Groq, Together, Ollama 등' },
     ],
   });
@@ -141,8 +141,8 @@ async function configureAuth(provider: string): Promise<{ key?: string; url?: st
       const key = await textOrCancel('OpenAI API Key', 'sk-...');
       return { key };
     }
-    case 'gemini': {
-      const key = await textOrCancel('Gemini API Key');
+    case 'antigravity': {
+      const key = await textOrCancel('Antigravity API Key');
       return { key, url: 'https://generativelanguage.googleapis.com/v1beta/openai' };
     }
     case 'custom': {
@@ -235,8 +235,8 @@ function saveConfig(
   if (auth.key && provider === 'openai') {
     patch.credentials = { gpt: { apiKey: auth.key, createdAt: new Date().toISOString() } };
   }
-  if (auth.key && provider === 'gemini') {
-    patch.credentials = { gemini: { apiKey: auth.key, createdAt: new Date().toISOString() } };
+  if (auth.key && provider === 'antigravity') {
+    patch.credentials = { antigravity: { apiKey: auth.key, createdAt: new Date().toISOString() } };
   }
   patchGlobalConfig(patch);
   p.log.success('설정 저장 완료');
@@ -288,7 +288,7 @@ async function textOrCancel(message: string, placeholder?: string): Promise<stri
 
 export function codexHelp(): void {
   console.log(`
-Codex Proxy — Claude Code + OpenAI/Gemini 호환 모델
+Codex Proxy — Claude Code + OpenAI/Antigravity 호환 모델
 
 사용법:
   vibe codex --setup          설정 위자드 (인증, 모델, 셸 등록)
@@ -301,6 +301,6 @@ Codex Proxy — Claude Code + OpenAI/Gemini 호환 모델
 
 설정 후:
   cc                          실행 (설정된 모델)
-  cc /gemini-2.5-flash        모델 바꿔서 실행
+  cc /antigravity-fast        모델 바꿔서 실행
   `);
 }

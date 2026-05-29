@@ -199,7 +199,7 @@ export class CoreOrchestrator {
   // LLM Integration (LLMCluster 위임)
   // ============================================
 
-  /** @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. geminiWebSearch를 사용하세요. */
+  /** @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. antigravityWebSearch를 사용하세요. */
   async gptWebSearch(query: string): Promise<string> {
     return this.llmCluster.gptWebSearch(query);
   }
@@ -212,21 +212,21 @@ export class CoreOrchestrator {
     return this.llmCluster.gptOrchestrate(prompt, systemPrompt, options);
   }
 
-  async geminiWebSearch(query: string): Promise<string> {
-    return this.llmCluster.geminiWebSearch(query);
+  async antigravityWebSearch(query: string): Promise<string> {
+    return this.llmCluster.antigravityWebSearch(query);
   }
 
-  async geminiOrchestrate(
+  async antigravityOrchestrate(
     prompt: string,
     systemPrompt?: string,
     options?: { jsonMode?: boolean }
   ): Promise<string> {
-    return this.llmCluster.geminiOrchestrate(prompt, systemPrompt, options);
+    return this.llmCluster.antigravityOrchestrate(prompt, systemPrompt, options);
   }
 
   async multiLlmQuery(
     prompt: string,
-    options?: { useGpt?: boolean; useGemini?: boolean }
+    options?: { useGpt?: boolean; useAntigravity?: boolean }
   ): Promise<MultiLlmQueryResult> {
     return this.llmCluster.multiQuery(prompt, options);
   }

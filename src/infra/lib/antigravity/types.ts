@@ -1,15 +1,15 @@
 /**
- * Gemini API 타입 정의
+ * Antigravity API 타입 정의
  */
 
 // =============================================
 // Auth
 // =============================================
 
-export type GeminiAuthMethod = 'apikey';
+export type AntigravityAuthMethod = 'apikey';
 
 export interface AuthInfo {
-  type: GeminiAuthMethod;
+  type: AntigravityAuthMethod;
   apiKey?: string;
 }
 
@@ -17,7 +17,7 @@ export interface AuthInfo {
 // Model
 // =============================================
 
-export interface GeminiModelInfo {
+export interface AntigravityModelInfo {
   id: string;
   name: string;
   description: string;
@@ -70,16 +70,16 @@ export interface StreamChunk {
   usage?: unknown;
 }
 
-export interface GeminiApiResponse {
+export interface AntigravityApiResponse {
   response?: {
-    candidates?: GeminiCandidate[];
+    candidates?: AntigravityCandidate[];
     usageMetadata?: unknown;
   };
-  candidates?: GeminiCandidate[];
+  candidates?: AntigravityCandidate[];
   usageMetadata?: unknown;
 }
 
-export interface GeminiCandidate {
+export interface AntigravityCandidate {
   content?: {
     parts?: Array<{ text?: string }>;
   };
@@ -145,7 +145,7 @@ export interface CompleteCodeResponse {
 // Orchestration
 // =============================================
 
-export interface VibeGeminiOptions {
+export interface VibeAntigravityOptions {
   maxTokens?: number;
   jsonMode?: boolean;
 }

@@ -138,7 +138,7 @@ API is read-only → Claude outputs plan → user manually configures.
 ## Image Generation
 
 ### Model
-Gemini (`gemini-3-pro-image-preview`)
+Antigravity image backend
 
 ### Specs by Community
 
@@ -162,7 +162,7 @@ Gemini (`gemini-3-pro-image-preview`)
 
 ### Smart Resizing
 - Same ratio → Pillow scale only (no API call)
-- Different ratio → Gemini re-generate (pass original as reference, no white margins)
+- Different ratio → Antigravity re-generate (pass original as reference, no white margins)
 
 ## Settlement
 
@@ -202,7 +202,7 @@ Free — no settlement needed
 
 | Failure | Recovery |
 |---------|----------|
-| Gemini image API unavailable | Skip image generation, use text-only placeholder slide with community colors |
-| Gemini image quality too low | Retry with simplified prompt (remove detail, keep core subject) |
+| Antigravity image API unavailable | Skip image generation, use text-only placeholder slide with community colors |
+| Antigravity image quality too low | Retry with simplified prompt (remove detail, keep core subject) |
 | PPTX generation error | Output slide content as markdown with speaker notes for manual assembly |
 | Nametag HTML render issue | Simplify to basic table layout, remove custom fonts |

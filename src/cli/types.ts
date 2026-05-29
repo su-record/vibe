@@ -7,7 +7,7 @@ export interface CliOptions {
 }
 
 export interface LLMAuthStatus {
-  type: 'codex-cli' | 'gemini-cli' | 'apikey';
+  type: 'codex-cli' | 'antigravity-cli' | 'apikey';
   email?: string;
   valid: boolean;
 }
@@ -15,7 +15,7 @@ export interface LLMAuthStatus {
 export interface LLMStatusMap {
   claude: LLMAuthStatus[];
   gpt: LLMAuthStatus[];
-  gemini: LLMAuthStatus[];
+  antigravity: LLMAuthStatus[];
 }
 
 export interface ClaudeCodeStatus {
@@ -68,7 +68,7 @@ export interface VibeConfig {
   models?: {
     claude?: { enabled: boolean; authType?: string; role?: string; description?: string };
     gpt?: { enabled: boolean; authType?: string; email?: string; role?: string; description?: string };
-    gemini?: { enabled: boolean; authType?: string; email?: string; role?: string; description?: string };
+    antigravity?: { enabled: boolean; authType?: string; email?: string; role?: string; description?: string };
   };
   modelOverrides?: Partial<ModelOverrides>;
   priority?: {
@@ -97,7 +97,7 @@ export interface GptCredentials {
   createdAt?: string;
 }
 
-export interface GeminiCredentials {
+export interface AntigravityCredentials {
   apiKey?: string;
   createdAt?: string;
 }
@@ -123,15 +123,13 @@ export interface ModelOverrides {
   gpt: string;
   gptCodex: string;
   gptCodexSpark: string;
-  gemini: string;
-  geminiFlash: string;
-  geminiSearch: string;
+  antigravity: string;
   claudeArchitecture: string;
   claudeResearch: string;
   claudeReview: string;
   claudeBackground: string;
   embedding: string;
-  geminiEmbedding: string;
+  antigravityEmbedding: string;
 }
 
 export interface FigmaBreakpoints {
@@ -166,7 +164,7 @@ export interface GlobalVibeConfig {
   version: '1';
   credentials?: {
     gpt?: GptCredentials;
-    gemini?: GeminiCredentials;
+    antigravity?: AntigravityCredentials;
     figma?: FigmaCredentials;
   };
   channels?: {
@@ -183,4 +181,3 @@ export interface GlobalVibeConfig {
   };
   codexProxy?: CodexProxyConfig;
 }
-

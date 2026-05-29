@@ -2,7 +2,7 @@
 name: brand-assets
 invocation: [auto]
 tier: standard
-description: "Auto-generate app icons (iOS/Android/PWA), favicons, and OG images from SPEC brand information using Gemini Image API. Use when the project needs visual brand assets, when user mentions 'icon', 'favicon', 'logo', or 'brand assets', or when a SPEC defines brand colors/identity but no assets exist yet. Outputs multiple sizes and formats ready for deployment. Not for complex illustration or marketing graphics — focused on app identity assets."
+description: "Auto-generate app icons (iOS/Android/PWA), favicons, and OG images from SPEC brand information using the Antigravity image backend. Use when the project needs visual brand assets, when user mentions 'icon', 'favicon', 'logo', or 'brand assets', or when a SPEC defines brand colors/identity but no assets exist yet. Outputs multiple sizes and formats ready for deployment. Not for complex illustration or marketing graphics — focused on app identity assets."
 triggers: [icon, favicon, brand, logo, app icon, branding, assets]
 priority: 65
 ---
@@ -14,11 +14,11 @@ Auto-generate app icons and favicons based on SPEC brand information.
 
 - First-time project setup with `/vibe.run`
 - When SPEC contains brand/design information
-- When Gemini API key is configured
+- When Antigravity API key is configured
 
 ## Prerequisites
 
-- Gemini API key configured (`vibe gemini key <key>`)
+- Antigravity API key configured (`vibe antigravity key <key>`)
 - SPEC with brand context (app name, colors, style)
 
 ## Generated Assets
@@ -61,7 +61,7 @@ Extract: name, colors, style keywords
 Generate Prompt: "App icon for [name], [style], [colors]..."
       |
       v
-Gemini Image API (gemini-2.5-flash-image)
+Antigravity image backend
       |
       v
 Resize & Convert: All platform sizes
@@ -74,14 +74,14 @@ Save to: public/ or assets/
 
 1. First `/vibe.run` execution (no existing icons)
 2. SPEC contains brand/design context
-3. Gemini API key is available
+3. Antigravity API key is available
 4. `--generate-icons` flag passed
 
 ## Skip Conditions
 
 - Icons already exist (unless `--regenerate-icons`)
 - No brand info in SPEC
-- Gemini API not configured
+- Antigravity API not configured
 
 ## Prompt Template
 
@@ -105,8 +105,8 @@ Requirements:
 
 ```bash
 # [LLM_SCRIPT] = {{CORE_PATH}}/hooks/scripts/llm-orchestrate.js
-# Generate via llm-orchestrate (when Gemini configured)
-node "[LLM_SCRIPT]" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+# Generate via llm-orchestrate (when Antigravity configured)
+node "[LLM_SCRIPT]" antigravity image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ## Integration with /vibe.run
@@ -114,14 +114,14 @@ node "[LLM_SCRIPT]" gemini image "App icon for MyApp, primary color #2F6BFF, squ
 During Phase 1 (Setup), if brand assets don't exist:
 
 1. Parse SPEC for brand context
-2. Generate icon via Gemini Image API
+2. Generate icon via Antigravity image backend
 3. Create all size variants
 4. Place in appropriate directories
 5. Update manifest files if needed
 
 ## Fallback Strategy
 
-If Gemini Image fails:
+If Antigravity image generation fails:
 1. Generate text-based monogram icon (first letter)
 2. Use project primary color as background
 3. Create simple geometric placeholder
@@ -145,4 +145,4 @@ public/
 - [ ] Icons work at small sizes (recognizable at 16x16)
 - [ ] No text/letters in icon (illegible at small sizes)
 - [ ] `site.webmanifest` updated with icon paths
-- [ ] Fallback generated if Gemini API unavailable
+- [ ] Fallback generated if Antigravity API unavailable

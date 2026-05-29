@@ -2,7 +2,7 @@
  * vibe setup - Interactive TUI Setup Wizard (@clack/prompts)
  *
  * 통합 설정 위자드 (Claude Code 전용으로 간소화)
- * - GPT/Gemini만 지원
+ * - GPT/Antigravity만 지원
  * - 알림 채널 (Telegram, Slack, Discord)
  */
 
@@ -11,7 +11,7 @@ import path from 'path';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
-import { geminiAuthCore } from '../llm/gemini-commands.js';
+import { antigravityAuthCore } from '../llm/antigravity-commands.js';
 import { setupExternalLLM } from '../llm/config.js';
 import type { LLMStatusMap } from '../types.js';
 import { init } from './init.js';
@@ -23,8 +23,8 @@ import { init } from './init.js';
 type AuthMethod =
   | 'claude-apikey'
   | 'gpt-apikey'
-  | 'gemini-cli'
-  | 'gemini-apikey';
+  | 'antigravity-cli'
+  | 'antigravity-apikey';
 
 // ============================================================================
 // Phase 1: Status Detection
@@ -33,7 +33,7 @@ type AuthMethod =
 function showCurrentStatus(status: LLMStatusMap): void {
   const lines = [
     `GPT:         ${formatAuthMethods(status.gpt)}`,
-    `Gemini:      ${formatAuthMethods(status.gemini)}`,
+    `Antigravity: ${formatAuthMethods(status.antigravity)}`,
   ];
   p.note(lines.join('\n'), 'Current Status');
 }
@@ -61,18 +61,18 @@ function buildAuthOptions(status: LLMStatusMap): Array<{
         : 'platform.openai.com/api-keys',
     },
     {
-      value: 'gemini-cli' as const,
-      label: 'Gemini CLI',
-      hint: status.gemini.some(a => a.type === 'gemini-cli')
+      value: 'antigravity-cli' as const,
+      label: 'Antigravity CLI',
+      hint: status.antigravity.some(a => a.type === 'antigravity-cli')
         ? 'configured'
-        : 'requires @google/gemini-cli',
+        : 'requires agy',
     },
     {
-      value: 'gemini-apikey' as const,
-      label: 'Gemini API Key',
-      hint: status.gemini.some(a => a.type === 'apikey')
+      value: 'antigravity-apikey' as const,
+      label: 'Antigravity API Key',
+      hint: status.antigravity.some(a => a.type === 'apikey')
         ? 'configured'
-        : 'aistudio.google.com/apikey',
+        : 'antigravity.google',
     },
   ];
 }
@@ -104,29 +104,29 @@ async function executeAuthMethod(method: AuthMethod): Promise<boolean> {
       return true;
     }
 
-    case 'gemini-cli': {
+    case 'antigravity-cli': {
       const s = p.spinner();
-      s.start('Checking Gemini CLI credentials...');
+      s.start('Checking Antigravity CLI credentials...');
       try {
-        const success = geminiAuthCore();
+        const success = antigravityAuthCore();
         if (success) {
-          s.stop('Gemini CLI credentials detected');
+          s.stop('Antigravity CLI credentials detected');
           return true;
         }
-        s.stop('Gemini CLI not found — install: npm i -g @google/gemini-cli && gemini');
+        s.stop('Antigravity CLI not found — install from antigravity.google and run agy');
       } catch {
-        s.stop('Gemini CLI check failed');
+        s.stop('Antigravity CLI check failed');
       }
       return false;
     }
 
-    case 'gemini-apikey': {
+    case 'antigravity-apikey': {
       const key = await p.text({
-        message: 'Enter Gemini API key:',
+        message: 'Enter Antigravity API key:',
         validate: (v) => (!(v ?? '').trim() ? 'API key cannot be empty' : undefined),
       });
       if (p.isCancel(key)) return false;
-      setupExternalLLM('gemini', key as string);
+      setupExternalLLM('antigravity', key as string);
       return true;
     }
 
@@ -140,12 +140,12 @@ async function executeAuthMethod(method: AuthMethod): Promise<boolean> {
 // ============================================================================
 
 /**
- * 활성화 조건 검증: Claude/GPT/Gemini 중 최소 1개 필요
+ * 활성화 조건 검증: GPT/Antigravity 중 최소 1개 필요
  */
 function validateActivation(status: LLMStatusMap): boolean {
   return (
     status.gpt.length > 0 ||
-    status.gemini.length > 0
+    status.antigravity.length > 0
   );
 }
 
@@ -156,7 +156,7 @@ function validateActivation(status: LLMStatusMap): boolean {
 function showSummary(status: LLMStatusMap): void {
   const lines = [
     `GPT:         ${formatAuthMethods(status.gpt)}`,
-    `Gemini:      ${formatAuthMethods(status.gemini)}`,
+    `Antigravity: ${formatAuthMethods(status.antigravity)}`,
     '',
     'Run /vibe.spec "feature" to start!',
   ];
@@ -206,7 +206,7 @@ export async function setup(): Promise<void> {
   // 활성화 검증
   if (!validateActivation(finalStatus)) {
     p.log.warn(
-      'No providers active. At least one of Claude, GPT, or Gemini must be configured.'
+      'No providers active. At least one of Claude, GPT, or Antigravity must be configured.'
     );
     p.log.info('Run vibe setup again or use individual commands (vibe gpt key, vibe claude key, etc.)');
   }

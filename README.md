@@ -7,7 +7,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-Vibe는 AI 코딩 도구를 위한 품질 하네스입니다. Claude Code, Codex, Cursor, Gemini CLI를 감싸고, 타입 안전성, 코드 품질, 보안을 자동으로 강제합니다. 빠르게 바이브 코딩하되, 엉망인 코드가 나가지 않게.
+Vibe는 AI 코딩 도구를 위한 품질 하네스입니다. Claude Code, Codex, Cursor, Antigravity CLI를 감싸고, 타입 안전성, 코드 품질, 보안을 자동으로 강제합니다. 빠르게 바이브 코딩하되, 엉망인 코드가 나가지 않게.
 
 ```bash
 npm install -g @su-record/vibe
@@ -150,7 +150,7 @@ codex
 | **Standard** | `vibe init`이 스택별 선택 | 스택/역할 지원 | figma, design-audit, techdebt |
 | **Optional** | 명시적 `/skill` 호출만 | 레퍼런스, 래퍼 | chub-usage, context7 |
 
-**멀티 LLM** — Claude Code 또는 Codex가 하네스를 실행하고, GPT가 추론, Gemini가 리서치. 가용 모델에 따라 자동 라우팅.
+**멀티 LLM** — Claude Code 또는 Codex가 하네스를 실행하고, GPT가 추론, Antigravity가 리서치. 가용 모델에 따라 자동 라우팅.
 
 **스택 감지** — 24개 프레임워크 자동 감지 (Next.js, Django, Rails, Go, Rust, Flutter 등) 후 프레임워크별 규칙과 스킬 적용.
 
@@ -167,7 +167,7 @@ codex
 | [Claude Code](https://claude.ai/code) | 전체 지원 |
 | [Codex](https://github.com/openai/codex) | 전체 지원 (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
 | [Cursor](https://cursor.sh) | 에이전트 + 룰 |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | 에이전트 + 스킬 |
+| Antigravity CLI (`agy`) | 에이전트 + 스킬 |
 
 ---
 
@@ -198,7 +198,7 @@ codex
 
 - Node.js >= 18.0.0
 - Claude Code 또는 Codex CLI 중 하나
-- GPT, Gemini (선택)
+- GPT, Antigravity (선택)
 
 ## 라이선스
 

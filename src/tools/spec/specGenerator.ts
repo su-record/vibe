@@ -1,7 +1,7 @@
 /**
  * SPEC Generator - PRD에서 PTCF 구조 SPEC 자동 생성
  *
- * PTCF: Persona, Task, Context, Format (Gemini 프롬프트 최적화)
+ * PTCF: Persona, Task, Context, Format (LLM 프롬프트 최적화)
  */
 
 import { ParsedPRD, Requirement } from './prdParser.js';

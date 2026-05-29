@@ -1,19 +1,19 @@
 /**
- * MultiLlmResearch - GPT/Gemini 기반 Multi-LLM 리서치
+ * MultiLlmResearch - GPT/Antigravity 기반 Multi-LLM 리서치
  */
 
 import { MultiLlmResult } from './types.js';
 import { warnLog } from '../lib/utils.js';
 import * as gptApi from '../lib/gpt/index.js';
-import * as geminiApi from '../lib/gemini/index.js';
-import { isCodexAvailable, isGeminiAvailable } from '../lib/llm-availability.js';
+import * as antigravityApi from '../lib/antigravity/index.js';
+import { isAntigravityAvailable, isCodexAvailable } from '../lib/llm-availability.js';
 
 /**
  * Multi-LLM 리서치 프롬프트 생성
  */
 export function createMultiLlmPrompts(feature: string, techStack: string[]): {
-  bestPractices: { gpt: string; gemini: string };
-  security: { gpt: string; gemini: string };
+  bestPractices: { gpt: string; antigravity: string };
+  security: { gpt: string; antigravity: string };
 } {
   const stackStr = techStack.length > 0 ? techStack.join(', ') : 'the project';
 
@@ -22,7 +22,7 @@ export function createMultiLlmPrompts(feature: string, techStack: string[]): {
       gpt: `Best practices for implementing "${feature}" with ${stackStr}.
 Focus on: architecture patterns, code conventions, design patterns.
 Return JSON: { patterns: string[], antiPatterns: string[], libraries: string[] }`,
-      gemini: `Best practices for implementing "${feature}" with ${stackStr}.
+      antigravity: `Best practices for implementing "${feature}" with ${stackStr}.
 Focus on: latest trends, framework updates, modern approaches.
 Return JSON: { patterns: string[], antiPatterns: string[], libraries: string[] }`
     },
@@ -30,7 +30,7 @@ Return JSON: { patterns: string[], antiPatterns: string[], libraries: string[] }
       gpt: `Security considerations for "${feature}" with ${stackStr}.
 Focus on: CVE database, known vulnerabilities, exploit patterns.
 Return JSON: { vulnerabilities: string[], mitigations: string[], checklist: string[] }`,
-      gemini: `Security advisories for "${feature}" with ${stackStr}.
+      antigravity: `Security advisories for "${feature}" with ${stackStr}.
 Focus on: latest patches, recent incidents, security best practices.
 Return JSON: { advisories: string[], patches: string[], incidents: string[] }`
     }
@@ -56,19 +56,19 @@ async function callGptSafe(
 }
 
 /**
- * Gemini API 호출 (에러 처리 포함)
+ * Antigravity 호출 (에러 처리 포함)
  */
-async function callGeminiSafe(
+async function callAntigravitySafe(
   prompt: string,
   systemPrompt: string,
   jsonMode: boolean = true
 ): Promise<{ result: string; success: boolean; error?: string }> {
   try {
-    const result = await geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode });
+    const result = await antigravityApi.coreAntigravityOrchestrate(prompt, systemPrompt, { jsonMode });
     return { result, success: true };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    warnLog('[Multi-LLM] Gemini call failed:', errorMsg);
+    warnLog('[Multi-LLM] Antigravity call failed:', errorMsg);
     return { result: '', success: false, error: errorMsg };
   }
 }
@@ -103,17 +103,17 @@ export async function executeMultiLlmResearch(
     );
   }
 
-  // Best Practices - Gemini
-  if (isGeminiAvailable()) {
+  // Best Practices - Antigravity
+  if (isAntigravityAvailable()) {
     promises.push(
       (async () => {
         const taskStart = Date.now();
-        const { result, success, error } = await callGeminiSafe(
-          prompts.bestPractices.gemini,
+        const { result, success, error } = await callAntigravitySafe(
+          prompts.bestPractices.antigravity,
           'You are an expert in modern development trends. Provide best practices in JSON format.'
         );
         results.push({
-          provider: 'gemini',
+          provider: 'antigravity',
           category: 'best-practices',
           result, success, error,
           duration: Date.now() - taskStart
@@ -141,17 +141,17 @@ export async function executeMultiLlmResearch(
     );
   }
 
-  // Security - Gemini
-  if (isGeminiAvailable()) {
+  // Security - Antigravity
+  if (isAntigravityAvailable()) {
     promises.push(
       (async () => {
         const taskStart = Date.now();
-        const { result, success, error } = await callGeminiSafe(
-          prompts.security.gemini,
+        const { result, success, error } = await callAntigravitySafe(
+          prompts.security.antigravity,
           'You are a security advisor. Focus on latest advisories and patches. Return JSON format.'
         );
         results.push({
-          provider: 'gemini',
+          provider: 'antigravity',
           category: 'security',
           result, success, error,
           duration: Date.now() - taskStart

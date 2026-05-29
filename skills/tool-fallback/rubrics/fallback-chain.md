@@ -23,8 +23,8 @@
 
 | Task Type | Primary | Secondary | Fallback |
 |-----------|---------|-----------|----------|
-| Architecture, debugging | GPT | Gemini | Claude direct |
-| UI/UX, code analysis | Gemini | GPT | Claude direct |
+| Architecture, debugging | GPT | Antigravity | Claude direct |
+| UI/UX, code analysis | Antigravity | GPT | Claude direct |
 | Code generation, general | Claude | — | — |
 
 **On 429 / rate limit**: skip to secondary immediately — no retry on rate-limited primary.

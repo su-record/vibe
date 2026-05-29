@@ -1,25 +1,25 @@
 /**
- * Gemini API 모듈
+ * Antigravity API 모듈
  *
- * Auth: gemini-cli / codex-cli (hooks) + API Key (library)
+ * Auth: Antigravity CLI / Codex CLI (hooks) + API Key (library)
  */
 
 export type {
   AuthInfo,
-  GeminiAuthMethod,
-  GeminiModelInfo,
+  AntigravityAuthMethod,
+  AntigravityModelInfo,
   AvailableModel,
   ChatMessage,
   ChatOptions,
   ChatResponse,
   StreamChunk,
-  GeminiApiResponse,
-  GeminiCandidate,
+  AntigravityApiResponse,
+  AntigravityCandidate,
   ImageGenerationOptions,
   ImageGenerationResult,
   ImageAnalysisOptions,
   MultimodalContent,
-  VibeGeminiOptions,
+  VibeAntigravityOptions,
 } from './types.js';
 
 export {
@@ -30,8 +30,8 @@ export {
 export { getGlobalConfigDir } from '../llm/auth/ConfigManager.js';
 
 export {
-  GEMINI_MODELS,
-  getGeminiModels,
+  ANTIGRAVITY_MODELS,
+  getAntigravityModels,
   DEFAULT_MODEL,
   chat,
   chatStream,
@@ -50,12 +50,12 @@ export {
 } from './capabilities.js';
 
 export {
-  coreGeminiOrchestrate,
-  coreGeminiParseSpec,
-  coreGeminiPlanExecution,
-  coreGeminiAnalyze,
-  coreGeminiDecideNextAction,
-  coreGeminiAnalyzeUX,
+  coreAntigravityOrchestrate,
+  coreAntigravityParseSpec,
+  coreAntigravityPlanExecution,
+  coreAntigravityAnalyze,
+  coreAntigravityDecideNextAction,
+  coreAntigravityAnalyzeUX,
 } from './orchestration.js';
 
 export { fetchAvailableModels } from './models.js';

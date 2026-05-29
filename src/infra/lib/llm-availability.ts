@@ -1,7 +1,7 @@
 /**
  * LLM 가용성 감지 유틸
  *
- * Claude/Codex/Gemini CLI 활성화 여부를 런타임에 판단.
+ * Claude/Codex/Antigravity CLI 활성화 여부를 런타임에 판단.
  * 결과는 프로세스당 1회 캐시.
  */
 
@@ -13,7 +13,7 @@ import os from 'os';
 export interface LlmAvailability {
   claude: boolean;
   codex: boolean;
-  gemini: boolean;
+  antigravity: boolean;
 }
 
 let cached: LlmAvailability | null = null;
@@ -37,28 +37,30 @@ function checkAuthExists(configDir: string, authFileName: string): boolean {
 }
 
 /**
- * Claude/Codex/Gemini CLI 가용성 감지 (캐시)
+ * Claude/Codex/Antigravity CLI 가용성 감지 (캐시)
  */
 export function detectLlmAvailability(): LlmAvailability {
   if (cached) return cached;
 
   const claudeDir = path.join(os.homedir(), '.claude');
   const codexDir = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
-  const geminiDir = path.join(os.homedir(), '.gemini');
+  const antigravityRoot = path.join(os.homedir(), '.gemini');
+  const antigravityDir = path.join(antigravityRoot, 'antigravity-cli');
+  const legacyAntigravityDir = path.join(os.homedir(), '.antigravity');
 
   const claudeInstalled = checkCliInstalled('claude', claudeDir);
   const codexInstalled = checkCliInstalled('codex', codexDir);
-  const geminiInstalled = checkCliInstalled('gemini', geminiDir);
+  const antigravityInstalled = checkCliInstalled('agy', antigravityDir) ||
+    fs.existsSync(legacyAntigravityDir);
 
   // 설치 + 인증 존재 시 활성화로 판단
   const claude = claudeInstalled;
   const codex = codexInstalled && checkAuthExists(codexDir, 'auth.json');
-  const gemini = geminiInstalled && (
-    checkAuthExists(geminiDir, 'auth.json') ||
-    !!process.env.GEMINI_API_KEY
+  const antigravity = antigravityInstalled && (
+    checkAuthExists(antigravityDir, 'settings.json') ||
+    !!process.env.ANTIGRAVITY_API_KEY
   );
-
-  cached = { claude, codex, gemini };
+  cached = { claude, codex, antigravity };
   return cached;
 }
 
@@ -72,9 +74,9 @@ export function isCodexAvailable(): boolean {
   return detectLlmAvailability().codex;
 }
 
-/** Gemini CLI 활성화 여부 */
-export function isGeminiAvailable(): boolean {
-  return detectLlmAvailability().gemini;
+/** Antigravity CLI 활성화 여부 */
+export function isAntigravityAvailable(): boolean {
+  return detectLlmAvailability().antigravity;
 }
 
 /** 캐시 초기화 (테스트용) */

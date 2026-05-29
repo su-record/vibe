@@ -16,7 +16,7 @@ user-invocable: true
 /vibe.review PR#123                  # Review specific PR
 /vibe.review feature/login           # Review specific branch
 /vibe.review src/api/                # Review specific path
-/vibe.review --race                  # Multi-LLM race mode (GPT + Gemini)
+/vibe.review --race                  # Multi-LLM race mode (GPT + Antigravity)
 /vibe.review --race security         # Race mode for specific review type
 ```
 
@@ -30,11 +30,11 @@ user-invocable: true
 > CODEX_AVAILABLE=$(node "{{VIBE_PATH}}/hooks/scripts/codex-detect.js" 2>/dev/null || echo "unavailable")
 > ```
 >
-> `available`이면 `/codex:review`, `/codex:rescue` 자동 호출. `unavailable`이면 기존 GPT+Gemini Race 모드로 동작.
+> `available`이면 `/codex:review`, `/codex:rescue` 자동 호출. `unavailable`이면 기존 GPT+Antigravity Race 모드로 동작.
 
 ## Race Mode (v2.6.9)
 
-**Multi-LLM competitive review** - Same review task runs on GPT + Gemini in parallel, results are cross-validated.
+**Multi-LLM competitive review** - Same review task runs on GPT + Antigravity in parallel, results are cross-validated.
 
 ### How It Works
 
@@ -43,7 +43,7 @@ user-invocable: true
 
 security-review:
 ├─ GPT Codex  → [SQL injection, XSS]
-└─ Gemini     → [SQL injection, CSRF]
+└─ Antigravity     → [SQL injection, CSRF]
          ↓
    Cross-validation:
    - SQL injection (2/2) → 🔴 P1 (100% confidence)
@@ -73,14 +73,14 @@ security-review:
 ## SECURITY Review (Race Mode)
 
 **Duration**: 3420ms
-**Models**: GPT Codex, Gemini
+**Models**: GPT Codex, Antigravity
 
 ### Model Results
 
 | Model | Issues Found | Duration | Status |
 |-------|--------------|----------|--------|
 | gpt | 3 | 1823ms | OK |
-| gemini | 2 | 2156ms | OK |
+| antigravity | 2 | 2156ms | OK |
 
 ### Cross-Validated Issues
 
@@ -89,7 +89,7 @@ security-review:
 
 #### 🔴 P1 - SQL Injection in user query
 
-- **Confidence**: 100% (gpt, gemini)
+- **Confidence**: 100% (gpt, antigravity)
 - **Severity**: critical
 - **Location**: `src/api/users.ts:42`
 - **Suggestion**: Use parameterized queries
@@ -103,7 +103,7 @@ security-review:
 
 ### Codex Review (Codex 플러그인 활성화 시)
 
-Race Mode에서 GPT+Gemini와 **동시에** Codex review 실행하여 3중 교차 검증:
+Race Mode에서 GPT+Antigravity와 **동시에** Codex review 실행하여 3중 교차 검증:
 
 ```
 /codex:review
@@ -112,7 +112,7 @@ Race Mode에서 GPT+Gemini와 **동시에** Codex review 실행하여 3중 교�
 교차 검증 테이블:
 
 ```markdown
-| Issue | GPT | Gemini | Codex | Confidence |
+| Issue | GPT | Antigravity | Codex | Confidence |
 |-------|-----|--------|-------|------------|
 | {이슈} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
 ```
@@ -129,7 +129,7 @@ Race Mode에서 GPT+Gemini와 **동시에** Codex review 실행하여 3중 교�
 | Quick iteration | ❌ Standard review |
 | API cost concerns | ❌ Standard review |
 
-### Tool Invocation (Race Mode - GPT + Gemini in parallel via Bash)
+### Tool Invocation (Race Mode - GPT + Antigravity in parallel via Bash)
 
 **🚨 Use --input file to avoid CLI argument length limits and Windows pipe issues.**
 
@@ -138,7 +138,7 @@ Race Mode에서 GPT+Gemini와 **동시에** Codex review 실행하여 3중 교�
    - `{"prompt": "Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE_CONTENT]"}`
    - Where `[CODE_CONTENT]` is the code text (properly JSON-escaped inside the prompt string)
 3. Script path: `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
-4. Run GPT + Gemini in PARALLEL (two Bash tool calls at once):
+4. Run GPT + Antigravity in PARALLEL (two Bash tool calls at once):
 
 ```bash
 # GPT review (Bash tool call 1)
@@ -146,8 +146,8 @@ node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/review-input.json
 ```
 
 ```bash
-# Gemini review (Bash tool call 2 - run in parallel)
-node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/review-input.json"
+# Antigravity review (Bash tool call 2 - run in parallel)
+node "[LLM_SCRIPT]" antigravity orchestrate-json --input "[SCRATCHPAD]/review-input.json"
 ```
 
 ## File Reading Policy (Mandatory)

@@ -19,7 +19,7 @@ Collection of utility tools. Use with options.
 /vibe.utils --e2e "scenario"         # E2E browser test (Playwright)
 /vibe.utils --e2e --visual           # Visual regression test
 /vibe.utils --e2e --record           # Video recording
-/vibe.utils --image "description"    # Generate image with Gemini (icon, banner, etc.)
+/vibe.utils --image "description"    # Generate image with Antigravity (icon, banner, etc.)
 /vibe.utils --image --icon "AppName" # Generate app icon/favicon
 /vibe.utils --build-fix              # Fix build errors (minimal diff)
 /vibe.utils --clean                  # Remove dead code + DELETION_LOG
@@ -35,8 +35,8 @@ Read and follow `agents/ui-previewer.md` for UI preview generation.
 
 Generate UI preview from description or design folder.
 
-- **Gemini enabled**: UI mockup image + component code generation (via `llm-orchestrate.js` → `gemini-api`)
-- **Gemini disabled**: ASCII art fallback
+- **Antigravity enabled**: UI mockup image + component code generation
+- **Antigravity disabled**: ASCII art fallback
 
 **Input types:**
 
@@ -86,10 +86,10 @@ Generate Mermaid diagrams for architecture visualization.
 
 ## --image (Image Generation)
 
-Generate images using Gemini Image API.
+Generate images using the Antigravity image backend.
 
-- **Default**: Gemini Flash Image (`gemini-2.5-flash-image`) - 빠르고 가벼운 이미지 생성
-- **--pro**: Gemini Pro Image (`gemini-3-pro-image-preview`) - 고품질 이미지 생성
+- **Default**: Antigravity fast image - 빠르고 가벼운 이미지 생성
+- **--pro**: Antigravity pro image - 고품질 이미지 생성
 
 ### MANDATORY Tool Invocation
 
@@ -98,19 +98,19 @@ Generate images using Gemini Image API.
 **Step 0: Script path:**
 - `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
 
-**General image generation (Gemini Flash Image):**
+**General image generation (Antigravity fast image):**
 ```bash
-node "[LLM_SCRIPT]" gemini image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
+node "[LLM_SCRIPT]" antigravity image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"
 ```
 
-**Pro quality (Gemini Pro Image):**
+**Pro quality (Antigravity pro image):**
 ```bash
-node "[LLM_SCRIPT]" gemini image "IMAGE_DESCRIPTION" --pro --output "OUTPUT_PATH"
+node "[LLM_SCRIPT]" antigravity image "IMAGE_DESCRIPTION" --pro --output "OUTPUT_PATH"
 ```
 
 **With size option:**
 ```bash
-node "[LLM_SCRIPT]" gemini image "IMAGE_DESCRIPTION" --size "1920x1080" --output "OUTPUT_PATH"
+node "[LLM_SCRIPT]" antigravity image "IMAGE_DESCRIPTION" --size "1920x1080" --output "OUTPUT_PATH"
 ```
 
 ### How to Parse User Request
@@ -125,11 +125,11 @@ node "[LLM_SCRIPT]" gemini image "IMAGE_DESCRIPTION" --size "1920x1080" --output
 ### Examples
 
 ```bash
-node "[LLM_SCRIPT]" gemini image "A cute Gemini AI character mascot, colorful, friendly" --output "./gemini-character.png"
+node "[LLM_SCRIPT]" antigravity image "A friendly AI character mascot, colorful, approachable" --output "./ai-character.png"
 
-node "[LLM_SCRIPT]" gemini image "Professional website banner, modern design" --pro --size "1920x400" --output "./banner.png"
+node "[LLM_SCRIPT]" antigravity image "Professional website banner, modern design" --pro --size "1920x400" --output "./banner.png"
 
-node "[LLM_SCRIPT]" gemini image "Modern minimal logo design" --output "./public/logo.png"
+node "[LLM_SCRIPT]" antigravity image "Modern minimal logo design" --output "./public/logo.png"
 ```
 
 ### Output Format
@@ -152,15 +152,15 @@ Use the same command with a pre-built icon prompt template:
 
 ```bash
 # --icon "MyApp"
-node "[LLM_SCRIPT]" gemini image "App icon for MyApp, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "[LLM_SCRIPT]" antigravity image "App icon for MyApp, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 
 # --icon "MyApp" --color "#2F6BFF"
-node "[LLM_SCRIPT]" gemini image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
+node "[LLM_SCRIPT]" antigravity image "App icon for MyApp, primary color #2F6BFF, square format 1:1, simple recognizable design, works well at small sizes, no text or letters, solid or gradient background, modern minimalist" --output "./public/app-icon.png"
 ```
 
 ### Prerequisites
 
-- Gemini API key configured (`vibe gemini key <key>`)
+- Antigravity API key configured (`vibe antigravity key <key>`)
 
 ---
 

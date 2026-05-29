@@ -247,7 +247,7 @@ export const LANGUAGE_GLOBS: Record<string, string> = {
 // Cursor 모델 매핑 (각 리뷰어 유형에 최적의 모델)
 // 사용 가능: composer-1, claude-4.5-opus-high, claude-4.5-opus-high-thinking,
 //           claude-4.5-sonnet-thinking, gpt-5.5, gpt-5.5-pro, gpt-5.3-codex,
-//           gemini-3-pro, gemini-3-flash
+//           antigravity-pro, antigravity-fast
 export const CURSOR_MODEL_MAPPING: Record<string, string> = {
   // 보안/아키텍처: 깊은 추론 필요 → thinking 모델
   'security-reviewer': 'claude-4.5-sonnet-thinking',
@@ -261,11 +261,11 @@ export const CURSOR_MODEL_MAPPING: Record<string, string> = {
   'rails-reviewer': 'gpt-5.3-codex',
 
   // 빠른 패턴 체크: 경량 모델
-  'performance-reviewer': 'gemini-flash',
-  'complexity-reviewer': 'gemini-flash',
-  'simplicity-reviewer': 'gemini-flash',
-  'test-coverage-reviewer': 'gemini-flash',
-  'git-history-reviewer': 'gemini-flash',
+  'performance-reviewer': 'antigravity-fast',
+  'complexity-reviewer': 'antigravity-fast',
+  'simplicity-reviewer': 'antigravity-fast',
+  'test-coverage-reviewer': 'antigravity-fast',
+  'git-history-reviewer': 'antigravity-fast',
 };
 
 // 언어 룰 파일 접두사 (이 접두사로 시작하는 .mdc는 core에서 관리)

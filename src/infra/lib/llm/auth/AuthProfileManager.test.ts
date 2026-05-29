@@ -46,10 +46,10 @@ describe('AuthProfileManager', () => {
   });
 
   it('should return active profile by priority', async () => {
-    await manager.addProfile('gemini', 'apikey', 'key-high', 10);
-    await manager.addProfile('gemini', 'apikey', 'key-low', 1);
+    await manager.addProfile('antigravity', 'apikey', 'key-high', 10);
+    await manager.addProfile('antigravity', 'apikey', 'key-low', 1);
 
-    const active = manager.getActiveProfile('gemini');
+    const active = manager.getActiveProfile('antigravity');
     expect(active).not.toBeNull();
     expect(active!.priority).toBe(1);
   });
@@ -102,26 +102,26 @@ describe('AuthProfileManager', () => {
   });
 
   it('should reset on markSuccess', async () => {
-    const profile = await manager.addProfile('gemini', 'apikey', 'key-abcd1234', 1);
+    const profile = await manager.addProfile('antigravity', 'apikey', 'key-abcd1234', 1);
     await manager.markFailure(profile.id);
     await manager.markFailure(profile.id);
     await manager.markFailure(profile.id);
 
     await manager.markSuccess(profile.id);
 
-    const profiles = manager.listProfiles('gemini');
+    const profiles = manager.listProfiles('antigravity');
     const updated = profiles.find(p => p.id === profile.id);
     expect(updated!.errorCount).toBe(0);
     expect(updated!.cooldownUntil).toBe(0);
   });
 
   it('should remove profiles', async () => {
-    const profile = await manager.addProfile('gemini', 'apikey', 'key-1234', 1);
-    expect(manager.listProfiles('gemini')).toHaveLength(1);
+    const profile = await manager.addProfile('antigravity', 'apikey', 'key-1234', 1);
+    expect(manager.listProfiles('antigravity')).toHaveLength(1);
 
     const removed = await manager.removeProfile(profile.id);
     expect(removed).toBe(true);
-    expect(manager.listProfiles('gemini')).toHaveLength(0);
+    expect(manager.listProfiles('antigravity')).toHaveLength(0);
   });
 
   it('should enforce max profiles per provider', async () => {

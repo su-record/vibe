@@ -1,14 +1,14 @@
 /**
- * Gemini 인증 관리
+ * Antigravity API 인증 관리
  *
- * Auth: API Key 전용 (gemini-cli / codex-cli 는 hooks에서 직접 호출)
+ * Auth: API Key 전용 (Antigravity CLI / Codex CLI 는 hooks에서 직접 호출)
  *
  * 환경변수:
- *   - GEMINI_API_KEY → API Key
+ *   - ANTIGRAVITY_API_KEY → API Key
  */
 
 import {
-  getGeminiApiKey as getGeminiApiKeyFromConfig,
+  getAntigravityApiKey,
 } from '../config/GlobalConfigManager.js';
 import type { AuthInfo } from './types.js';
 
@@ -16,9 +16,9 @@ import type { AuthInfo } from './types.js';
  * API Key 가져오기 (config.json 우선 → 환경변수 fallback)
  */
 export function getApiKeyFromConfig(): string | null {
-  const configKey = getGeminiApiKeyFromConfig();
+  const configKey = getAntigravityApiKey();
   if (configKey) return configKey;
-  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+  if (process.env.ANTIGRAVITY_API_KEY) return process.env.ANTIGRAVITY_API_KEY;
   return null;
 }
 
@@ -32,7 +32,7 @@ export async function getAuthInfo(): Promise<AuthInfo> {
   }
 
   throw new Error(
-    'Gemini API key not found. ' +
-    'Run: vibe gemini key <key> or set GEMINI_API_KEY env var.'
+    'Antigravity API key not found. ' +
+    'Run: vibe antigravity key <key> or set ANTIGRAVITY_API_KEY env var.'
   );
 }

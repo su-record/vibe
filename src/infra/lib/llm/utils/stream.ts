@@ -37,7 +37,7 @@ export async function parseSSEStream(stream: ReadableStream<Uint8Array>): Promis
             if (parsed.type === 'response.output_text.delta' && parsed.delta) {
               result += parsed.delta;
             }
-            // Handle Gemini format
+            // Handle Google generateContent format
             if (parsed.candidates?.[0]?.content?.parts?.[0]?.text) {
               result += parsed.candidates[0].content.parts[0].text;
             }

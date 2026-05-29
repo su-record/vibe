@@ -1,11 +1,11 @@
 /**
  * LLMCluster - Multi-LLM 병렬 쿼리 및 상태 관리
- * GPT, Gemini, Claude 지원
+ * GPT, Antigravity, Claude 지원
  */
 
 import { execSync } from 'child_process';
 import * as gptApi from '../lib/gpt/index.js';
-import * as geminiApi from '../lib/gemini/index.js';
+import * as antigravityApi from '../lib/antigravity/index.js';
 import { warnLog } from '../lib/utils.js';
 
 /**
@@ -13,7 +13,7 @@ import { warnLog } from '../lib/utils.js';
  */
 export interface MultiLlmQueryResult {
   gpt?: string;
-  gemini?: string;
+  antigravity?: string;
   claude?: string;
 }
 
@@ -22,7 +22,7 @@ export interface MultiLlmQueryResult {
  */
 export interface LlmStatusResult {
   gpt: { available: boolean };
-  gemini: { available: boolean };
+  antigravity: { available: boolean };
   claude: { available: boolean };
 }
 
@@ -34,7 +34,7 @@ export interface LLMClusterOptions {
 }
 
 /**
- * LLMCluster - GPT / Gemini / Claude 병렬 쿼리 및 상태 관리
+ * LLMCluster - GPT / Antigravity / Claude 병렬 쿼리 및 상태 관리
  */
 export class LLMCluster {
   private defaultSystemPrompt: string;
@@ -75,14 +75,14 @@ export class LLMCluster {
   }
 
   /**
-   * Gemini 오케스트레이션
+   * Antigravity 오케스트레이션
    */
-  async geminiOrchestrate(
+  async antigravityOrchestrate(
     prompt: string,
     systemPrompt?: string,
     options?: { jsonMode?: boolean }
   ): Promise<string> {
-    return geminiApi.coreGeminiOrchestrate(
+    return antigravityApi.coreAntigravityOrchestrate(
       prompt,
       systemPrompt ?? this.defaultSystemPrompt,
       options
@@ -90,18 +90,18 @@ export class LLMCluster {
   }
 
   /**
-   * Gemini 웹 검색
+   * Antigravity 웹 검색
    */
-  async geminiWebSearch(query: string): Promise<string> {
-    return geminiApi.quickWebSearch(query);
+  async antigravityWebSearch(query: string): Promise<string> {
+    return antigravityApi.quickWebSearch(query);
   }
 
   /**
-   * GPT 웹 검색 (Gemini로 위임)
-   * @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. geminiWebSearch를 사용하세요.
+   * GPT 웹 검색 (Antigravity로 위임)
+   * @deprecated GPT Codex API는 웹 검색을 지원하지 않습니다. antigravityWebSearch를 사용하세요.
    */
   async gptWebSearch(query: string): Promise<string> {
-    return this.geminiWebSearch(query);
+    return this.antigravityWebSearch(query);
   }
 
   /**
@@ -109,9 +109,9 @@ export class LLMCluster {
    */
   async multiQuery(
     prompt: string,
-    options?: { useGpt?: boolean; useGemini?: boolean; useClaude?: boolean }
+    options?: { useGpt?: boolean; useAntigravity?: boolean; useClaude?: boolean }
   ): Promise<MultiLlmQueryResult> {
-    const { useGpt = true, useGemini = true, useClaude = false } = options || {};
+    const { useGpt = true, useAntigravity = true, useClaude = false } = options || {};
     const results: MultiLlmQueryResult = {};
 
     const promises: Promise<void>[] = [];
@@ -124,11 +124,11 @@ export class LLMCluster {
       );
     }
 
-    if (useGemini) {
+    if (useAntigravity) {
       promises.push(
-        this.geminiOrchestrate(prompt)
-          .then(r => { results.gemini = r; })
-          .catch(e => { warnLog('Gemini query failed in multiLlm', e); })
+        this.antigravityOrchestrate(prompt)
+          .then(r => { results.antigravity = r; })
+          .catch(e => { warnLog('Antigravity query failed in multiLlm', e); })
       );
     }
 
@@ -149,16 +149,16 @@ export class LLMCluster {
    */
   async checkStatus(): Promise<LlmStatusResult> {
     let gptAvailable = false;
-    let geminiAvailable = false;
+    let antigravityAvailable = false;
     let claudeAvailable = false;
 
     const promises: Promise<void>[] = [
       this.gptOrchestrate('ping', 'Reply with pong')
         .then(() => { gptAvailable = true; })
         .catch(e => { warnLog('GPT status check failed', e); }),
-      this.geminiOrchestrate('ping', 'Reply with pong')
-        .then(() => { geminiAvailable = true; })
-        .catch(e => { warnLog('Gemini status check failed', e); }),
+      this.antigravityOrchestrate('ping', 'Reply with pong')
+        .then(() => { antigravityAvailable = true; })
+        .catch(e => { warnLog('Antigravity status check failed', e); }),
       this.claudeOrchestrate('ping', 'Reply with pong')
         .then(() => { claudeAvailable = true; })
         .catch(e => { warnLog('Claude status check failed', e); }),
@@ -168,7 +168,7 @@ export class LLMCluster {
 
     return {
       gpt: { available: gptAvailable },
-      gemini: { available: geminiAvailable },
+      antigravity: { available: antigravityAvailable },
       claude: { available: claudeAvailable },
     };
   }

@@ -1,7 +1,7 @@
 /**
- * Gemini API 상수
+ * Antigravity API 상수
  *
- * Auth: gemini-cli / codex-cli / API Key 만 지원
+ * Auth: Antigravity CLI / Codex CLI / API Key 만 지원
  */
 
 // =============================================

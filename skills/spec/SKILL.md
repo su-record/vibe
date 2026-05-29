@@ -1,6 +1,6 @@
 ---
 name: spec
-description: PTCF 구조 SPEC 한 문서 작성 — parallel research (GPT/Gemini/Claude agents), ambiguity scan, 100-point quality gate. plan 파일 입력 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 생성.
+description: PTCF 구조 SPEC 한 문서 작성 — parallel research (GPT/Antigravity/Claude agents), ambiguity scan, 100-point quality gate. plan 파일 입력 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 생성.
 when_to_use: vibe.spec orchestrator의 Phase 3에서 호출. 직접 호출 금지 — /vibe.spec 사용.
 user-invocable: false
 tier: core
@@ -100,21 +100,21 @@ User: 1 hour, disallow, confirm
 
 When image files (`.png`, `.jpg`, `.jpeg`, `.webp`) are provided as input, analyze them using the best available method:
 
-- **Gemini Enabled**: `llm-orchestrate.js gemini analyze-image` (Gemini Flash - best image recognition)
-- **Gemini Disabled**: Claude Opus Read tool (built-in multimodal, existing behavior)
+- **Antigravity Enabled**: `llm-orchestrate.js antigravity analyze-image` (Antigravity Flash - best image recognition)
+- **Antigravity Disabled**: Claude Opus Read tool (built-in multimodal, existing behavior)
 
-**Gemini enabled - analyze via llm-orchestrate.js:**
+**Antigravity enabled - analyze via llm-orchestrate.js:**
 
 ```bash
 # [LLM_SCRIPT] = {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js
-node "[LLM_SCRIPT]" gemini analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
+node "[LLM_SCRIPT]" antigravity analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
 ```
 
 Parse the JSON result: `{ success: true, analysis: "..." }` → use `analysis` field content.
 
 If `success: false`, fall back to Claude Read tool.
 
-**Gemini disabled - analyze via Claude Read tool:**
+**Antigravity disabled - analyze via Claude Read tool:**
 
 Use the Read tool directly on the image file. Claude can read images natively.
 
@@ -123,7 +123,7 @@ Use the Read tool directly on the image file. Claude can read images natively.
 /vibe.spec "designs/login-wireframe.png"
 
 🖼️ Image analysis: designs/login-wireframe.png
-   (via Gemini Flash / Claude Opus)
+   (via Antigravity Flash / Claude Opus)
 
 📋 Detected UI elements:
   - Email input field
@@ -150,20 +150,20 @@ Use the Read tool directly on the image file. Claude can read images natively.
 
 Collect requirements through conversation with the user and create an **AI-executable PTCF structured SPEC document**.
 
-> **PTCF**: Persona, Task, Context, Format - Google Gemini prompt optimization framework
+> **PTCF**: Persona, Task, Context, Format - Google Antigravity prompt optimization framework
 
-## External LLM Integration (GPT/Gemini)
+## External LLM Integration (GPT/Antigravity)
 
-When GPT/Gemini are enabled, they are automatically utilized during SPEC creation:
+When GPT/Antigravity are enabled, they are automatically utilized during SPEC creation:
 
 ```
 /vibe.spec "feature"
       ↓
 [Claude] Draft SPEC
       ↓
-[Parallel Research] GPT + Gemini + Claude agents (8 parallel)
+[Parallel Research] GPT + Antigravity + Claude agents (8 parallel)
       ↓
-[SPEC Review] GPT + Gemini parallel review
+[SPEC Review] GPT + Antigravity parallel review
       ↓
 [Claude] Finalize SPEC
 ```
@@ -171,7 +171,7 @@ When GPT/Gemini are enabled, they are automatically utilized during SPEC creatio
 **Setup:**
 ```bash
 vibe gpt key <key>      # Enable GPT
-vibe gemini key <key>   # Enable Gemini
+vibe antigravity key <key>   # Enable Antigravity
 vibe status         # Check current settings
 ```
 
@@ -408,7 +408,7 @@ ls .vibe/research/<slug>/paper.md 2>/dev/null
 1. Read `.vibe/research/<slug>/paper.md`
 2. Read `.vibe/research/<slug>/awesome-list.md` (if present)
 3. Inject the **Findings**, **Recommendation**, and **Security considerations** sections verbatim into SPEC Context, prefixed with `> Source: .vibe/research/<slug>/paper.md (cached {{FILE_MTIME}})`
-4. **Skip step 3** (parallel research) entirely — do not re-run GPT/Gemini/Claude agents
+4. **Skip step 3** (parallel research) entirely — do not re-run GPT/Antigravity/Claude agents
 5. Print: `✅ Research cache hit: <slug> (saved ~30s of LLM calls)`
 
 **Cache invalidation:**
@@ -457,11 +457,11 @@ node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Best practices for [FEATURE] wit
 # 2. GPT: Security (codex — code review & analysis)
 node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
-# 3. Gemini: Best practices
-node "[LLM_SCRIPT]" gemini orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+# 3. Antigravity: Best practices
+node "[LLM_SCRIPT]" antigravity orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
-# 4. Gemini: Security
-node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+# 4. Antigravity: Security
+node "[LLM_SCRIPT]" antigravity orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 ```
 
 **Concrete example - run all 4 in parallel:**
@@ -472,11 +472,11 @@ node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Best practices for passkey authe
 # GPT security (codex — code review & analysis)
 node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
 
-# Gemini best practices
-node "[LLM_SCRIPT]" gemini orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
+# Antigravity best practices
+node "[LLM_SCRIPT]" antigravity orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
 
-# Gemini security
-node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
+# Antigravity security
+node "[LLM_SCRIPT]" antigravity orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
 ```
 
 **ALSO run Claude research agents in parallel using Task tool:**
@@ -488,9 +488,9 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey aut
 | `codebase-patterns` | Similar patterns in existing codebase | Glob, Grep |
 | `security-advisory` | Security advisories for [feature] | WebSearch |
 
-**Total: 4 GPT/Gemini calls (Bash) + 4 Claude agents (Task) = 8 parallel research tasks**
+**Total: 4 GPT/Antigravity calls (Bash) + 4 Claude agents (Task) = 8 parallel research tasks**
 
-**🚨 GPT/Gemini MUST be called via Bash with llm-orchestrate.js! 🚨**
+**🚨 GPT/Antigravity MUST be called via Bash with llm-orchestrate.js! 🚨**
 
 #### 3.0.1 Agent Teams — Research Collaboration
 
@@ -511,7 +511,7 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey aut
 - ❌ DO NOT skip research step
 - ❌ DO NOT ask user "should I run research?"
 - ✅ ALWAYS run after requirements confirmed
-- ✅ Show "Running parallel research (Claude + GPT + Gemini)..." message
+- ✅ Show "Running parallel research (Claude + GPT + Antigravity)..." message
 - ✅ Include all agent + LLM results in SPEC Context
 - ✅ Run all 4 Bash LLM calls in parallel + 4 Task agents in parallel
 
@@ -525,7 +525,7 @@ node "[LLM_SCRIPT]" gemini orchestrate-json "Security advisories for passkey aut
 **When UI/UX keywords are detected, run 3 agents sequentially in parallel with research:**
 
 ```
-[Parallel Research] GPT + Gemini + Claude agents
+[Parallel Research] GPT + Antigravity + Claude agents
         ↓ (concurrent execution)
 [UI/UX Intelligence]
   ① ui-industry-analyzer (Haiku) → industry analysis + design strategy
@@ -970,7 +970,7 @@ If score is below 100, attempt automatic fixes:
 
 ### 8. SPEC Draft Complete - Handoff to Review
 
-**🚨 IMPORTANT: GPT/Gemini review is now a SEPARATE command**
+**🚨 IMPORTANT: GPT/Antigravity review is now a SEPARATE command**
 
 After SPEC draft is complete (score ≥ 95):
 
@@ -1129,11 +1129,11 @@ Claude: Thank you. SPEC has been refined.
 📊 Quality score: 92/100 (A)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW (Gemini)
+🔍 SPEC REVIEW (Antigravity)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📤 Sending SPEC...
-📝 Gemini feedback:
+📝 Antigravity feedback:
   1. [Edge] Ball speed increase logic undefined
   2. [Security] Need score manipulation prevention
 

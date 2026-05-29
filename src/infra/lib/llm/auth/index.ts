@@ -22,7 +22,7 @@ export async function getAuthInfo(provider: LLMProvider): Promise<AuthInfo> {
     return { type: 'apikey', apiKey };
   }
 
-  const providerName = provider === 'gpt' ? 'GPT' : 'Gemini';
+  const providerName = provider === 'gpt' ? 'GPT' : 'Antigravity';
   throw new Error(
     `${providerName} not configured. Run 'vibe ${provider} key <key>' to set up authentication.`
   );

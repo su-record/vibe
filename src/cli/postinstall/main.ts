@@ -24,13 +24,13 @@ import { generateCursorRules } from './cursor-rules.js';
 import { installCursorAgents } from './cursor-agents.js';
 import { installClaudeAgents } from './claude-agents.js';
 import { generateCursorSkills } from './cursor-skills.js';
-import { detectClaudeCli, detectCodexCli, detectGeminiCli } from '../utils/cli-detector.js';
+import { detectAntigravityCli, detectClaudeCli, detectCodexCli } from '../utils/cli-detector.js';
 import { getClaudeCodeStatus, formatClaudeCodeStatus } from '../auth.js';
 import { migrateLegacyFiles } from '../../infra/lib/config/GlobalConfigManager.js';
 import {
   generateGlobalClaudeMd,
   generateGlobalCodexAgentsMd,
-  generateGlobalGeminiMd,
+  generateGlobalAntigravityMd,
   installCodexNotify,
 } from '../setup/ProjectSetup.js';
 
@@ -163,7 +163,7 @@ export function main(): void {
         generateGlobalCodexAgentsMd();
         installCodexNotify(codexStatus.configDir);
       }
-      if (detectGeminiCli().installed) generateGlobalGeminiMd();
+      if (detectAntigravityCli().installed) generateGlobalAntigravityMd();
     } catch (e) {
       console.warn('⚠️  global CLAUDE.md/AGENTS.md/GEMINI.md 갱신 실패:', (e as Error).message);
     }
@@ -181,7 +181,7 @@ export function main(): void {
     cleanupGlobalSettingsHooks();
 
     // 6-2. (제거됨) 패키지 .env 주입 금지 — 키 노출 위험
-    // 모든 설정은 ~/.vibe/config.json에서 관리 (vibe gpt key, vibe gemini key)
+    // 모든 설정은 ~/.vibe/config.json에서 관리 (vibe gpt key, vibe antigravity key)
 
     // 6-4. 전역 env 설정 (Agent Teams 등 모든 프로젝트에 필요한 환경변수)
     ensureGlobalEnvSettings();

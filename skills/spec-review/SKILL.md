@@ -1,6 +1,6 @@
 ---
 name: spec-review
-description: SPEC 품질 리뷰 본체 — GPT/Gemini 크로스 검증, 100-point gate, Race Review(수렴 종료), Codex 적대 리뷰, 사용자 체크포인트.
+description: SPEC 품질 리뷰 본체 — GPT/Antigravity 크로스 검증, 100-point gate, Race Review(수렴 종료), Codex 적대 리뷰, 사용자 체크포인트.
 when_to_use: spec 완료 후 또는 /vibe.spec Phase 4에서 체인. 직접 호출 금지.
 user-invocable: false
 tier: core
@@ -8,7 +8,7 @@ tier: core
 
 # spec-review — SPEC Quality Review
 
-Review and enhance SPEC with GPT/Gemini cross-validation.
+Review and enhance SPEC with GPT/Antigravity cross-validation.
 
 **Purpose:** Run this skill after `spec` to ensure accurate review execution. For large contexts, invoke in a new session.
 
@@ -38,7 +38,7 @@ Or via natural language trigger: "스펙 리뷰", "review spec", "명세 리뷰"
 > CODEX_AVAILABLE=$(node "{{VIBE_PATH}}/hooks/scripts/codex-detect.js" 2>/dev/null || echo "unavailable")
 > ```
 >
-> If `available`, `/codex:adversarial-review` is automatically invoked. If `unavailable`, falls back to the existing GPT+Gemini workflow.
+> If `available`, `/codex:adversarial-review` is automatically invoked. If `unavailable`, falls back to the existing GPT+Antigravity workflow.
 
 ---
 
@@ -56,7 +56,7 @@ If the value is already the same, no-op.
 ```
 /vibe.spec "feature" → SPEC created (Phase 3)
         ↓
-Phase 4: spec-review skill (this) → Quality validation + GPT/Gemini review
+Phase 4: spec-review skill (this) → Quality validation + GPT/Antigravity review
         ↓
     /vibe.run "feature"
 ```
@@ -246,7 +246,7 @@ Re-evaluating...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Score: 100/100 ✅ PASSED
 
-✅ Quality Gate PASSED - proceeding to GPT/Gemini review
+✅ Quality Gate PASSED - proceeding to GPT/Antigravity review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -285,7 +285,7 @@ How would you like to proceed?
 
 ---
 
-## Step 3: Race Review (GPT + Gemini Cross-Validation) - Convergence-Based (No Round Cap)
+## Step 3: Race Review (GPT + Antigravity Cross-Validation) - Convergence-Based (No Round Cap)
 
 **RULES FOR RACE REVIEW:**
 
@@ -294,7 +294,7 @@ How would you like to proceed?
 3. Run rounds sequentially (each round uses updated SPEC)
 4. **No hard round cap** — loop until P1=0 AND no new findings (convergence)
 
-> Race Mode reviews SPEC with GPT and Gemini in parallel, then cross-validates findings for higher confidence. The loop continues until quality converges naturally.
+> Race Mode reviews SPEC with GPT and Antigravity in parallel, then cross-validates findings for higher confidence. The loop continues until quality converges naturally.
 
 ### Termination Rules
 
@@ -318,7 +318,7 @@ When the same findings repeat across rounds, the auto-apply loop has hit a wall.
 
 Same findings repeated from Round {N-1}. Auto-applier cannot resolve:
 
-| # | Issue | Severity | GPT | Gemini | Reason it's stuck |
+| # | Issue | Severity | GPT | Antigravity | Reason it's stuck |
 |---|-------|----------|-----|--------|-------------------|
 | 1 | {issue title} | P1 | ✅ | ✅ | {e.g., "fix requires domain decision"} |
 | 2 | {issue title} | P2 | ✅ | ❌ | {e.g., "conflicts with existing constraint"} |
@@ -371,7 +371,7 @@ To prevent LLM cosmetic noise from causing infinite loops while still reaching 1
 
 ### 3.1 Review Loop (No Round Cap)
 
-**Run GPT + Gemini in PARALLEL via Bash tool for each round. Stop when termination rules trigger.**
+**Run GPT + Antigravity in PARALLEL via Bash tool for each round. Stop when termination rules trigger.**
 
 **🚨 IMPORTANT: SPEC content is too large for CLI arguments. Use --input file method (no pipe needed).**
 
@@ -388,7 +388,7 @@ To prevent LLM cosmetic noise from causing infinite loops while still reaching 1
 **Step B: Script path:**
 - `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
 
-**Step C: Run GPT + Gemini in PARALLEL (two separate Bash tool calls at once):**
+**Step C: Run GPT + Antigravity in PARALLEL (two separate Bash tool calls at once):**
 
 ```bash
 # GPT review (Bash tool call 1)
@@ -396,16 +396,16 @@ node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/spec-review-input
 ```
 
 ```bash
-# Gemini review (Bash tool call 2 - run in parallel with GPT)
-node "[LLM_SCRIPT]" gemini orchestrate-json --input "[SCRATCHPAD]/spec-review-input.json"
+# Antigravity review (Bash tool call 2 - run in parallel with GPT)
+node "[LLM_SCRIPT]" antigravity orchestrate-json --input "[SCRATCHPAD]/spec-review-input.json"
 ```
 
 **🚨 MANDATORY: Replace `[SCRATCHPAD]` with the actual scratchpad directory path.**
 **🚨 Replace `[N]` with the current round number (1, 2, 3, ...).**
 **🚨 Replace `[LLM_SCRIPT]` with the resolved absolute path from Step B.**
-**🚨 Run GPT and Gemini calls in PARALLEL (two separate Bash tool calls at once).**
+**🚨 Run GPT and Antigravity calls in PARALLEL (two separate Bash tool calls at once).**
 
-- Round 1: Write SPEC → Run GPT + Gemini in parallel (full scope) → Cross-validate → Apply fixes → Update SPEC file
+- Round 1: Write SPEC → Run GPT + Antigravity in parallel (full scope) → Cross-validate → Apply fixes → Update SPEC file
 - Round 2: Write updated SPEC → Run (P1+P2 scope) → Cross-validate → Apply fixes → Update SPEC file
 - Round 3+: Write updated SPEC → Run (P1-only scope) → Cross-validate → Apply fixes → Continue until P1=0 AND no new findings (or convergence detected)
 
@@ -438,7 +438,7 @@ Key changes found across {N} review rounds:
 
 | # | Change | Source | Confidence |
 |---|--------|--------|------------|
-| 1 | {change1} | GPT+Gemini | 100% |
+| 1 | {change1} | GPT+Antigravity | 100% |
 | 2 | {change2} | GPT only | 50% |
 | ... | ... | ... | ... |
 
@@ -469,10 +469,10 @@ Model Results:
 | Model  | Issues | Duration |
 |--------|--------|----------|
 | GPT    | 2      | 1823ms   |
-| Gemini | 2      | 2156ms   |
+| Antigravity | 2      | 2156ms   |
 
 Cross-Validated Issues:
-| Issue                    | GPT | Gemini | Codex | Confidence |
+| Issue                    | GPT | Antigravity | Codex | Confidence |
 |--------------------------|-----|--------|-------|------------|
 | Missing retry logic      | ✅  | ✅     | ✅    | 100% → P1  |
 | Missing rate limiting    | ✅  | ✅     | ✅    | 100% → P1  |
@@ -491,7 +491,7 @@ Auto-applying...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Cross-Validated Issues:
-| Issue                       | GPT | Gemini | Codex | Confidence |
+| Issue                       | GPT | Antigravity | Codex | Confidence |
 |-----------------------------|-----|--------|-------|------------|
 | Concurrent session unclear  | ✅  | ❌     | ❌    | 50% → P2   |
 
@@ -517,14 +517,14 @@ Cross-Validated Issues: None
 ### Step 3.1: Codex Adversarial Review (When Codex Plugin Is Active)
 
 > **Activation condition**: Automatically runs when Codex plugin is installed. Skipped if not installed.
-> Runs **simultaneously** with GPT+Gemini Race Review for triple cross-validation.
+> Runs **simultaneously** with GPT+Antigravity Race Review for triple cross-validation.
 
 Codex adversarial review **challenges the design decisions** in the SPEC:
 - Validates whether an alternative architecture would be better
 - Checks for over-engineering or under-engineering
 - Identifies missing edge cases and non-functional requirements
 
-**Execution (parallel with GPT+Gemini Race):**
+**Execution (parallel with GPT+Antigravity Race):**
 
 ```
 /codex:adversarial-review
@@ -533,7 +533,7 @@ Codex adversarial review **challenges the design decisions** in the SPEC:
 **Result integration**: Add Codex column to the Race Review cross-validation table:
 
 ```markdown
-| Issue | GPT | Gemini | Codex | Confidence |
+| Issue | GPT | Antigravity | Codex | Confidence |
 |-------|-----|--------|-------|------------|
 | {issue} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
 ```
@@ -693,9 +693,9 @@ Expected (split):  .vibe/features/{feature-name}/_index.feature
 Please run /vibe.spec "{feature-name}" first to create the Feature file.
 ```
 
-### GPT/Gemini Call Failed
+### GPT/Antigravity Call Failed
 ```
-⚠️ WARNING: {GPT|Gemini} call failed
+⚠️ WARNING: {GPT|Antigravity} call failed
 
 Error: {error message}
 

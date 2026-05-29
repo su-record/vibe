@@ -19,7 +19,7 @@ Commands:
   vibe setup              셋업 위자드 (인증, 설정 한번에)
   vibe init [project]     프로젝트 초기화 (.claude/ 대상)
   vibe init --codex       프로젝트 초기화 (.codex/ + AGENTS.md)
-  vibe init --gemini      프로젝트 초기화 (.gemini/ + GEMINI.md)
+  vibe init --antigravity 프로젝트 초기화 (.gemini/ + GEMINI.md)
   vibe update             설정 업데이트
   vibe upgrade            최신 버전으로 업그레이드
   vibe remove             프로젝트에서 제거
@@ -31,7 +31,7 @@ Commands:
 LLM:
   vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (key, status, logout)
-  vibe gemini <cmd>       Gemini (key, status, logout)
+  vibe antigravity <cmd>  Antigravity (key, status, logout)
 
 Figma:
   vibe figma setup <token>  Set Figma access token

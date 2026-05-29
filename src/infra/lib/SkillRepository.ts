@@ -345,8 +345,8 @@ export function getDefaultSkills(corePathUrl: string): Array<{ id: string; conte
       id: 'multi-llm-orchestration',
       content: `---
 name: multi-llm-orchestration
-description: "Multi-LLM research using GPT and Gemini for comprehensive analysis"
-triggers: [gpt, gemini, multi-llm, research, parallel research]
+description: "Multi-LLM research using GPT and Antigravity for comprehensive analysis"
+triggers: [gpt, antigravity, agy, multi-llm, research, parallel research]
 priority: 80
 ---
 # Multi-LLM Orchestration
@@ -358,21 +358,21 @@ Use multiple LLMs for comprehensive research and validation.
 \`\`\`bash
 # Via Bash hook (automatic in /vibe.spec)
 node hooks/scripts/llm-orchestrate.js gpt "your prompt"
-node hooks/scripts/llm-orchestrate.js gemini "your prompt"
+node hooks/scripts/llm-orchestrate.js antigravity "your prompt"
 \`\`\`
 
 ## Setup
 
 \`\`\`bash
-vibe gpt key <key>     # Configure GPT API key
-vibe gemini key <key>  # Configure Gemini API key
-vibe status       # Check current configuration
+vibe gpt key <key>           # Configure GPT API key
+vibe antigravity key <key>   # Configure Antigravity API key
+vibe status                  # Check current configuration
 \`\`\`
 
 ## Best Practices
 
 1. Use GPT for best practices and code review
-2. Use Gemini for documentation and security analysis
+2. Use Antigravity for documentation and security analysis
 3. Combine results for comprehensive coverage
 `,
     },

@@ -127,7 +127,7 @@ function adaptSection(section: string, label: string, dirName: string, targetFil
 }
 
 const adaptToCodex = (section: string): string => adaptSection(section, 'Codex', '.codex', 'AGENTS.md');
-const adaptToGemini = (section: string): string => adaptSection(section, 'Gemini', '.gemini', 'GEMINI.md');
+const adaptToAntigravity = (section: string): string => adaptSection(section, 'Antigravity', '.gemini', 'GEMINI.md');
 
 /**
  * 전역 ~/.claude/CLAUDE.md 생성/갱신 — vibe 규약(룰·키워드·워크플로) 전역 주입
@@ -167,11 +167,11 @@ export function generateGlobalCodexAgentsMd(): void {
 }
 
 /**
- * 전역 ~/.gemini/GEMINI.md 생성/갱신 (Gemini CLI 감지 시에만 호출)
+ * 전역 ~/.gemini/GEMINI.md 생성/갱신 (Antigravity CLI context file)
  */
-export function generateGlobalGeminiMd(): void {
+export function generateGlobalAntigravityMd(): void {
   const globalPath = path.join(os.homedir(), '.gemini', 'GEMINI.md');
-  const section = adaptToGemini(buildGlobalSection(detectOsLanguage()));
+  const section = adaptToAntigravity(buildGlobalSection(detectOsLanguage()));
   writeVibeMarkedFile(globalPath, section);
 }
 
@@ -222,22 +222,22 @@ export function generateProjectAgentsMd(
 }
 
 /**
- * 프로젝트 분석 → GEMINI.md 생성/갱신 (Gemini CLI 용)
+ * 프로젝트 분석 → GEMINI.md 생성/갱신 (Antigravity context file)
  * @param createIfMissing false 시 존재하는 파일만 갱신
  */
-export function generateProjectGeminiMd(
+export function generateProjectAntigravityMd(
   projectRoot: string,
   detectedStacks: TechStack[],
   stackDetails: StackDetails,
   createIfMissing: boolean = true,
 ): void {
-  const geminiMdPath = path.join(projectRoot, 'GEMINI.md');
-  if (!createIfMissing && !fs.existsSync(geminiMdPath)) return;
+  const antigravityMdPath = path.join(projectRoot, 'GEMINI.md');
+  if (!createIfMissing && !fs.existsSync(antigravityMdPath)) return;
 
   const dirs = analyzeProjectStructure(projectRoot);
   const stackNames = detectedStacks.map(s => STACK_NAMES[s.type]?.name || s.type);
-  const section = adaptToGemini(buildProjectSection(dirs, stackNames, stackDetails));
-  writeVibeMarkedFile(geminiMdPath, section, createIfMissing);
+  const section = adaptToAntigravity(buildProjectSection(dirs, stackNames, stackDetails));
+  writeVibeMarkedFile(antigravityMdPath, section, createIfMissing);
 }
 
 /** 프로젝트 디렉토리 구조 분석 */
@@ -605,9 +605,9 @@ export function updateGitignore(projectRoot: string, harnessDir: string = '.clau
     modified = true;
   }
 
-  // .gemini/settings.json 추가 (Gemini CLI hooks - 개인 설정)
+  // .gemini/settings.json 추가 (Antigravity 개인 설정)
   if (!gitignore.includes('.gemini/settings.json')) {
-    gitignore = gitignore.trimEnd() + '\n\n# Gemini CLI hooks (personal)\n.gemini/settings.json\n';
+    gitignore = gitignore.trimEnd() + '\n\n# Antigravity settings (personal)\n.gemini/settings.json\n';
     modified = true;
   }
 

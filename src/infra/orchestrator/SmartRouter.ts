@@ -12,7 +12,7 @@ import {
   getTaskLlmPriority
 } from './types.js';
 import * as gptApi from '../lib/gpt/index.js';
-import * as geminiApi from '../lib/gemini/index.js';
+import * as antigravityApi from '../lib/antigravity/index.js';
 import { debugLog } from '../lib/utils.js';
 
 // LLM 가용성 캐시 (5분 TTL)
@@ -57,7 +57,7 @@ export interface SmartRouterOptions {
 
 /**
  * SmartRouter - Task 유형별 최적 LLM 선택 + fallback chain
- * GPT와 Gemini만 지원
+ * GPT와 Antigravity를 지원
  */
 export class SmartRouter {
   private cache: LLMAvailabilityCache;
@@ -67,7 +67,7 @@ export class SmartRouter {
     this.verbose = options.verbose ?? false;
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
-      gemini: { available: true, checkedAt: 0, errorCount: 0 }
+      antigravity: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 
@@ -147,7 +147,7 @@ export class SmartRouter {
 
   /**
    * LLM 우선순위 결정
-   * WHY task-based routing: GPT excels at code/reasoning tasks; Gemini excels
+   * WHY task-based routing: GPT excels at code/reasoning tasks; Antigravity excels
    * at web search and multimodal (UI/UX). Routing by task type maximizes
    * quality while keeping Claude as the last-resort fallback (expensive).
    */
@@ -197,8 +197,8 @@ export class SmartRouter {
     switch (provider) {
       case 'gpt':
         return gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false });
-      case 'gemini':
-        return geminiApi.coreGeminiOrchestrate(prompt, systemPrompt, { jsonMode: false });
+      case 'antigravity':
+        return antigravityApi.coreAntigravityOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'claude':
         throw new Error('Claude fallback - handled by caller');
       default:
@@ -338,7 +338,7 @@ export class SmartRouter {
   resetCache(): void {
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
-      gemini: { available: true, checkedAt: 0, errorCount: 0 }
+      antigravity: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 }

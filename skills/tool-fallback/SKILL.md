@@ -87,8 +87,8 @@ Request → Check circuit
 
 | Task Type | Primary → Secondary → Fallback |
 |-----------|-------------------------------|
-| architecture, debugging | GPT → Gemini → Claude |
-| uiux, code-analysis | Gemini → GPT → Claude |
+| architecture, debugging | GPT → Antigravity → Claude |
+| uiux, code-analysis | Antigravity → GPT → Claude |
 | code-gen, general | Claude only |
 
 ## Principles
