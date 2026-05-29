@@ -12,7 +12,7 @@
  * - TELEGRAM_CHAT_ID: Telegram chat ID
  * - SLACK_WEBHOOK_URL: Slack webhook URL
  *
- * 설정 파일: .claude/vibe/config.json
+ * 설정 파일: .vibe/config.json
  * {
  *   "notifications": {
  *     "onStop": true,

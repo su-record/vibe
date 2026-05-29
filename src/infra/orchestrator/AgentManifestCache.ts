@@ -41,7 +41,7 @@ export interface AgentCacheStats {
 // Constants
 // ============================================================================
 
-const AGENTS_DIRS = ['.claude/agents', 'agents'];
+const AGENTS_DIRS = ['.codex/agents', '.claude/agents', 'agents'];
 const WARMUP_PREVIEW_LINES = 20;
 const DEFAULT_MAX_FULL_CACHE = 5;
 

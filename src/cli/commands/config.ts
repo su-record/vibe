@@ -3,7 +3,7 @@
  *
  * Sources (priority order):
  *   1. Environment variables (highest)
- *   2. Project config (.claude/vibe/config.json)
+ *   2. Project config (.vibe/config.json)
  *   3. Global config (~/.vibe/config.json)
  */
 
@@ -14,6 +14,7 @@ import {
   readGlobalConfig,
   getGlobalConfigPath,
   getProjectConfigPath,
+  getProjectConfigPaths,
 } from '../../infra/lib/config/GlobalConfigManager.js';
 import type { GlobalVibeConfig, VibeConfig } from '../types.js';
 
@@ -95,16 +96,18 @@ function flattenObject(
 // ============================================================================
 
 function readProjectConfigSafe(projectDir: string): Record<string, unknown> {
-  const configPath = getProjectConfigPath(projectDir);
-  try {
-    if (!fs.existsSync(configPath)) return {};
-    const content = fs.readFileSync(configPath, 'utf-8');
-    const parsed: unknown = JSON.parse(content);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-    return parsed as Record<string, unknown>;
-  } catch {
-    return {};
+  for (const configPath of getProjectConfigPaths(projectDir)) {
+    try {
+      if (!fs.existsSync(configPath)) continue;
+      const content = fs.readFileSync(configPath, 'utf-8');
+      const parsed: unknown = JSON.parse(content);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue;
+      return parsed as Record<string, unknown>;
+    } catch {
+      return {};
+    }
   }
+  return {};
 }
 
 function resolveEnvOverride(configKey: string): string | undefined {
@@ -185,7 +188,7 @@ function formatEntry(entry: ConfigEntry): string {
 function printSourceLegend(): void {
   console.log(chalk.dim('Sources:'));
   console.log(chalk.dim(`  ${chalk.blue('[global]')}  ~/.vibe/config.json`));
-  console.log(chalk.dim(`  ${chalk.green('[project]')} .claude/vibe/config.json`));
+  console.log(chalk.dim(`  ${chalk.green('[project]')} .vibe/config.json`));
   console.log(chalk.dim(`  ${chalk.yellow('[env]')}     Environment variable`));
   console.log('');
 }
@@ -201,9 +204,10 @@ export function configShow(): void {
   const projectDir = process.cwd();
   const globalPath = getGlobalConfigPath();
   const projectPath = getProjectConfigPath(projectDir);
+  const projectPaths = getProjectConfigPaths(projectDir);
 
   const globalExists = fs.existsSync(globalPath);
-  const projectExists = fs.existsSync(projectPath);
+  const projectExists = projectPaths.some(p => fs.existsSync(p));
 
   console.log('');
   console.log(chalk.bold('Vibe Configuration (merged)'));
@@ -253,7 +257,7 @@ Config Commands:
 
 Sources (priority high → low):
   1. Environment variables
-  2. Project config (.claude/vibe/config.json)
+  2. Project config (.vibe/config.json)
   3. Global config  (~/.vibe/config.json)
   `);
 }

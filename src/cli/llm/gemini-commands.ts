@@ -11,6 +11,8 @@ import fs from 'fs';
 import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
 import { VibeConfig } from '../types.js';
 import {
+  getProjectConfigPath,
+  getProjectConfigPaths,
   patchGlobalConfig,
   readGlobalConfig,
   writeGlobalConfig,
@@ -114,7 +116,7 @@ export function geminiLogout(): void {
     }
 
     const projectRoot = process.cwd();
-    const configPath = path.join(projectRoot, '.claude', 'vibe', 'config.json');
+    const configPath = findExistingProjectConfig(projectRoot);
 
     if (fs.existsSync(configPath)) {
       try {
@@ -139,7 +141,7 @@ export function geminiLogout(): void {
  * config.json에 Gemini 활성화 기록
  */
 function updateConfigOnAuth(method: string): void {
-  const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+  const configPath = findExistingProjectConfig(process.cwd());
   if (!fs.existsSync(configPath)) return;
 
   try {
@@ -153,4 +155,9 @@ function updateConfigOnAuth(method: string): void {
     };
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
   } catch { /* ignore */ }
+}
+
+function findExistingProjectConfig(projectRoot: string): string {
+  return getProjectConfigPaths(projectRoot).find(p => fs.existsSync(p))
+    || getProjectConfigPath(projectRoot);
 }

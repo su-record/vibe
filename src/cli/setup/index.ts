@@ -26,6 +26,11 @@ export {
 } from './ProjectSetup.js';
 
 export {
+  buildCodexHooksConfig,
+  installProjectCodexHooks
+} from './CodexHooks.js';
+
+export {
   migrateLegacyCore,
   cleanupLegacy,
   removeLocalAssets,

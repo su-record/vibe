@@ -13,6 +13,8 @@ import { ToolResult } from '../types/tool.js';
 import { getAgentSdkQuery } from '../lib/utils.js';
 import { AGENT } from '../lib/constants.js';
 import { sessionStore } from './SessionStore.js';
+import { isCodexAvailable } from '../lib/llm-availability.js';
+import { launchCodexBackgroundAgent } from './CodexAgentRuntime.js';
 
 /**
  * 시뮬레이션 핸들 생성 (Agent SDK 미설치 시)
@@ -53,8 +55,36 @@ export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<
 
   const query = await getAgentSdkQuery();
 
-  // Agent SDK가 없으면 시뮬레이션
   if (!query) {
+    if (isCodexAvailable()) {
+      const handle = launchCodexBackgroundAgent(args);
+      const resultPromise = handle.getResult();
+      sessionStore.add(handle.sessionId, {
+        handle,
+        resultPromise,
+        cancelController: new AbortController(),
+        createdAt: handle.startTime
+      });
+      resultPromise.then((agentResult) => {
+        sessionStore.addToHistory({
+          sessionId: agentResult.sessionId,
+          agentName: agentResult.agentName,
+          status: agentResult.success ? 'completed' : 'failed',
+          startTime: handle.startTime,
+          endTime: Date.now(),
+          prompt
+        });
+        sessionStore.delete(handle.sessionId);
+      });
+      return {
+        content: [{
+          type: 'text',
+          text: `Background agent "${agentName}" started via Codex\nSession ID: ${handle.sessionId}\n\nUse getBackgroundAgentResult("${handle.sessionId}") to check status.`
+        }],
+        handle
+      } as ToolResult & { handle: BackgroundAgentHandle };
+    }
+
     const handle = createSimulatedHandle(agentName, prompt);
     return {
       content: [{

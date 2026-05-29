@@ -14,6 +14,8 @@ import { ToolResult } from '../types/tool.js';
 import { getAgentSdkQuery, warnLog } from '../lib/utils.js';
 import { TIMEOUTS, AGENT } from '../lib/constants.js';
 import { getModelOverride } from '../lib/config/GlobalConfigManager.js';
+import { isCodexAvailable } from '../lib/llm-availability.js';
+import { runCodexAgentOnce } from './CodexAgentRuntime.js';
 
 // Multi-LLM Research (분리된 모듈)
 import {
@@ -112,6 +114,16 @@ async function executeResearchTask(
   const query = await getAgentSdkQuery();
 
   if (!query) {
+    if (isCodexAvailable()) {
+      return runCodexAgentOnce({
+        prompt: task.prompt,
+        agentName: task.name,
+        projectPath,
+        maxTurns: 3,
+        allowedTools: ['Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+      });
+    }
+
     return {
       agentName: task.name,
       sessionId: `simulated-${Date.now()}`,

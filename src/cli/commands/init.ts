@@ -18,6 +18,8 @@ import {
   updateGitignore,
   updateConfig,
   installProjectHooks,
+  installProjectCodexHooks,
+  installCodexNotify,
   installCursorRules,
   detectOsLanguage,
   generateProjectClaudeMd,
@@ -380,11 +382,15 @@ export async function init(
     s3.start('Installing project hooks');
 
     const stackTypes = detectedStacks.map(st => st.type);
+    const codexStatus = detectCodexCli();
+    const geminiStatus = detectGeminiCli();
 
     // Gemini CLI는 다른 hook 스키마 사용 — settings.local.json 스킵
-    // Codex 는 settings.local.json hook 을 읽지 않음 — config.toml notify(전역) + AGENTS.md 로 대체
     if (target !== 'gemini' && target !== 'codex') {
       runStep(s3, 'Installing project hooks', () => installProjectHooks(projectRoot, harnessDir));
+    }
+    if (target === 'codex' || codexStatus.installed) {
+      runStep(s3, 'Installing Codex project hooks', () => installProjectCodexHooks(projectRoot));
     }
     runStep(s3, 'Updating Cursor global assets', () => updateCursorGlobalAssets(stackTypes));
     runStep(s3, 'Installing Cursor rules', () => installCursorRules(projectRoot, stackTypes));
@@ -414,13 +420,13 @@ export async function init(
 
     // 전역 규약 주입: ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md
     // 프로젝트 파일: target에 따라 CLAUDE.md / AGENTS.md / GEMINI.md 중 해당되는 것 생성
-    const codexStatus = detectCodexCli();
-    const geminiStatus = detectGeminiCli();
-
     // 1) 전역 규약 — 감지된 모든 CLI에 주입 (target 무관)
     runStep(s3, 'Writing global vibe conventions', () => {
       generateGlobalClaudeMd();
-      if (codexStatus.installed) generateGlobalCodexAgentsMd();
+      if (codexStatus.installed) {
+        generateGlobalCodexAgentsMd();
+        installCodexNotify(codexStatus.configDir);
+      }
       if (geminiStatus.installed) generateGlobalGeminiMd();
       const cliLabels = ['claude',
         codexStatus.installed && 'codex',

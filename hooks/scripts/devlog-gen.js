@@ -4,7 +4,7 @@
  * 매 커밋 후 카운터를 확인하여 interval(기본 10)에 도달하면
  * LLM을 통해 개발일지를 생성하고 설정된 블로그 레포에 저장합니다.
  *
- * Config: .claude/vibe/config.json → devlog 섹션
+ * Config: .vibe/config.json → devlog 섹션
  */
 import { execSync } from 'child_process';
 import fs from 'fs';

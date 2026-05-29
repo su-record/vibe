@@ -94,7 +94,7 @@ export function loadDesignSystem(projectName: string, projectRoot?: string): str
   }
 
   const root = projectRoot ?? process.cwd();
-  const baseDir = resolve(root, '.claude', 'vibe', 'design-system');
+  const baseDir = resolve(projectVibeRoot(root), 'design-system');
   const masterPath = resolve(baseDir, projectName, 'MASTER.md');
 
   // resolve 후 경로가 baseDir 밖이면 거부
@@ -122,7 +122,7 @@ export function loadDesignSystem(projectName: string, projectRoot?: string): str
  */
 export function isUiUxAnalysisDisabled(projectRoot?: string): boolean {
   const root = projectRoot ?? process.cwd();
-  const configPath = join(root, '.claude', 'vibe', 'config.json');
+  const configPath = projectConfigPath(root);
 
   if (!existsSync(configPath)) {
     return false;
@@ -142,8 +142,9 @@ export function isUiUxAnalysisDisabled(projectRoot?: string): boolean {
  * @returns 데이터 디렉토리 존재 여부
  */
 export function isUiUxDataInstalled(): boolean {
-  const globalDataDir = join(homedir(), '.claude', 'vibe', 'ui-ux-data');
-  return existsSync(join(globalDataDir, 'version.json'));
+  return globalVibeRoots().some(root =>
+    existsSync(join(root, 'ui-ux-data', 'version.json')),
+  );
 }
 
 /**
@@ -164,7 +165,7 @@ export function loadPageOverride(
   }
 
   const root = projectRoot ?? process.cwd();
-  const baseDir = resolve(root, '.claude', 'vibe', 'design-system');
+  const baseDir = resolve(projectVibeRoot(root), 'design-system');
   const pagePath = resolve(baseDir, projectName, 'pages', `${page}.md`);
 
   // resolve 후 경로가 baseDir 밖이면 거부
@@ -182,4 +183,24 @@ export function loadPageOverride(
   } catch {
     return null;
   }
+}
+
+function projectVibeRoot(projectRoot: string): string {
+  const primary = resolve(projectRoot, '.vibe');
+  if (existsSync(primary)) return primary;
+  return resolve(projectRoot, '.claude', 'vibe');
+}
+
+function projectConfigPath(projectRoot: string): string {
+  const primary = join(projectRoot, '.vibe', 'config.json');
+  if (existsSync(primary)) return primary;
+  return join(projectRoot, '.claude', 'vibe', 'config.json');
+}
+
+function globalVibeRoots(): string[] {
+  const codexHome = process.env.CODEX_HOME || join(homedir(), '.codex');
+  return [
+    join(codexHome, 'vibe'),
+    join(homedir(), '.claude', 'vibe'),
+  ];
 }

@@ -138,27 +138,30 @@ export function generateGlobalClaudeMd(): void {
   writeVibeMarkedFile(globalPath, section);
 }
 
-/**
- * Codex soft-hook 운영 규칙 — Codex 는 PreToolUse 같은 동기 hook 이 없다.
- * 직역 성향상 AGENTS.md 에 적힌 규칙을 그대로 실행하므로, CC 가 hook 으로 강제하던
- * 행동 가드를 운영 규칙으로 명문화한다. (라이프사이클은 config.toml notify 가 담당)
- */
-const CODEX_SOFT_HOOK_RULES = `## Operating Rules (vibe soft-hooks)
+function getCodexConfigDir(): string {
+  return process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
+}
 
-> Codex 에는 동기 hook 이 없다. 아래 규칙을 매 작업마다 직접 지킨다.
+/**
+ * Codex 운영 규칙 — native hook이 설치되지 않았거나 trust가 꺼진 세션에서도
+ * AGENTS.md 규칙을 하네스 백업 가드로 유지한다.
+ */
+const CODEX_SOFT_HOOK_RULES = `## Operating Rules (vibe hooks)
+
+> vibe는 Codex native hooks와 notify lifecycle을 설치한다. hook이 실행되지 않는 환경에서는 아래 규칙을 직접 지킨다.
 
 - **Scope guard**: 변경하는 모든 라인은 사용자의 요청으로 추적 가능해야 한다. 요청 범위 밖 파일은 수정하지 않는다.
 - **Forbidden patterns**: 커밋 전 \`console.log\`, \`any\`/\`as any\`/\`@ts-ignore\`, 주석 처리된 코드, 하드코딩된 문자열/숫자를 남기지 않는다.
 - **Read before edit**: 수정 대상 파일은 부분 grep 이 아니라 전체를 읽은 뒤 수정한다.
 - **Keyword dispatch**: 요청에 \`ralph\`/\`ultrawork\`/\`verify\`/\`quick\` 가 있으면 해당 모드로 동작한다.
 - **Smallest unit**: 가장 작은 검증 단위로 구현 → 검증 → 다음. 여러 단위를 묶어 빅뱅으로 만들지 않는다.
-- **Turn 완료 후처리**(auto-commit·devlog)는 \`~/.codex/config.toml\` 의 \`notify\` 가 자동 수행한다.`;
+- **Turn 완료 후처리**(auto-commit·devlog)는 \`~/.codex/config.toml\` 의 \`notify\` 가 수행한다.`;
 
 /**
  * 전역 ~/.codex/AGENTS.md 생성/갱신 (Codex CLI 감지 시에만 호출)
  */
 export function generateGlobalCodexAgentsMd(): void {
-  const globalPath = path.join(os.homedir(), '.codex', 'AGENTS.md');
+  const globalPath = path.join(getCodexConfigDir(), 'AGENTS.md');
   const section = adaptToCodex(buildGlobalSection(detectOsLanguage())) + '\n\n' + CODEX_SOFT_HOOK_RULES;
   writeVibeMarkedFile(globalPath, section);
 }
@@ -832,4 +835,3 @@ export function installCursorRules(projectRoot: string, detectedStacks: string[]
     console.log(`   📏 Cursor rules: ${parts.join(', ')} in .cursor/rules/`);
   }
 }
-

@@ -8,6 +8,10 @@ import { execSync } from 'child_process';
 import { log } from '../utils.js';
 import { resolveExternalSkills } from '../postinstall/constants.js';
 import { VibeConfig } from '../types.js';
+import {
+  getProjectConfigPath,
+  getProjectConfigPaths,
+} from '../../infra/lib/config/GlobalConfigManager.js';
 
 /** skills.sh 패키지 이름 검증 (owner/repo 형식만 허용) */
 function isValidSkillTarget(target: string): boolean {
@@ -58,12 +62,13 @@ export function installExternalSkills(
   const packages = resolveExternalSkills(stackTypes, capabilities);
   if (packages.length === 0) return;
 
-  const configPath = path.join(projectRoot, '.claude', 'vibe', 'config.json');
+  const configPath = getProjectConfigPath(projectRoot);
+  const readConfigPath = getProjectConfigPaths(projectRoot).find(p => fs.existsSync(p)) || configPath;
   let installed: string[] = [];
 
-  if (fs.existsSync(configPath)) {
+  if (fs.existsSync(readConfigPath)) {
     try {
-      const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const config: VibeConfig = JSON.parse(fs.readFileSync(readConfigPath, 'utf-8'));
       installed = config.installedExternalSkills ?? [];
     } catch { /* ignore */ }
   }
@@ -91,12 +96,12 @@ export function installExternalSkills(
   if (newlyInstalled.length === 0) return;
 
   // config.json에 설치 기록 저장
-  if (fs.existsSync(configPath)) {
+  if (fs.existsSync(readConfigPath)) {
     try {
-      const config: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const config: VibeConfig = JSON.parse(fs.readFileSync(readConfigPath, 'utf-8'));
       const merged = new Set([...(config.installedExternalSkills ?? []), ...newlyInstalled]);
       config.installedExternalSkills = [...merged];
-      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      fs.writeFileSync(readConfigPath, JSON.stringify(config, null, 2));
     } catch { /* ignore */ }
   }
 

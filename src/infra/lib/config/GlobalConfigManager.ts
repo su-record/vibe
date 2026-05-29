@@ -124,26 +124,40 @@ export function patchGlobalConfig(patch: DeepPartial<GlobalVibeConfig>): void {
 
 // ─── Project config + layered merge ────────────────────────────────
 
-/** .claude/vibe/config.json (프로젝트별 설정) */
+/** .vibe/config.json (프로젝트별 설정 SSOT) */
 export function getProjectConfigPath(projectDir: string): string {
+  return path.join(projectDir, '.vibe', 'config.json');
+}
+
+/** legacy .claude/vibe/config.json (읽기 fallback 전용) */
+export function getLegacyProjectConfigPath(projectDir: string): string {
   return path.join(projectDir, '.claude', 'vibe', 'config.json');
 }
 
+export function getProjectConfigPaths(projectDir: string): string[] {
+  return [
+    getProjectConfigPath(projectDir),
+    getLegacyProjectConfigPath(projectDir),
+  ];
+}
+
 function readProjectConfig(projectDir: string): Record<string, unknown> {
-  const configPath = getProjectConfigPath(projectDir);
-  try {
-    if (!fs.existsSync(configPath)) return {};
-    const content = fs.readFileSync(configPath, 'utf-8');
-    const parsed: unknown = JSON.parse(content);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-    return parsed as Record<string, unknown>;
-  } catch {
-    return {};
+  for (const configPath of getProjectConfigPaths(projectDir)) {
+    try {
+      if (!fs.existsSync(configPath)) continue;
+      const content = fs.readFileSync(configPath, 'utf-8');
+      const parsed: unknown = JSON.parse(content);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue;
+      return parsed as Record<string, unknown>;
+    } catch {
+      return {};
+    }
   }
+  return {};
 }
 
 /**
- * 다중 계층 설정 병합: 글로벌(~/.vibe) + 프로젝트(.claude/vibe)
+ * 다중 계층 설정 병합: 글로벌(~/.vibe) + 프로젝트(.vibe)
  * 우선순위: 프로젝트 > 글로벌 (프로젝트 설정이 글로벌을 덮어씀)
  * credentials는 글로벌 전용 — 프로젝트에서 덮어쓰지 않음.
  */

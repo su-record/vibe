@@ -8,6 +8,8 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { VibeConfig } from '../types.js';
 import {
+  getProjectConfigPath,
+  getProjectConfigPaths,
   readGlobalConfig,
   writeGlobalConfig,
 } from '../../infra/lib/config/GlobalConfigManager.js';
@@ -81,7 +83,8 @@ export function gptLogout(): void {
     console.log('No GPT credentials found');
   }
 
-  const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
+  const configPath = getProjectConfigPaths(process.cwd()).find(p => fs.existsSync(p))
+    || getProjectConfigPath(process.cwd());
   if (fs.existsSync(configPath)) {
     try {
       const projConfig: VibeConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));

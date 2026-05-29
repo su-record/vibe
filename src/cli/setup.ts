@@ -30,6 +30,11 @@ export {
 } from './setup/ProjectSetup.js';
 
 export {
+  buildCodexHooksConfig,
+  installProjectCodexHooks,
+} from './setup/CodexHooks.js';
+
+export {
   migrateLegacyCore,
   consolidateLegacyVibe,
   cleanupLegacy,

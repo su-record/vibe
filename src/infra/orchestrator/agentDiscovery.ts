@@ -1,5 +1,5 @@
 /**
- * Agent Discovery - .claude/agents/ 폴더에서 에이전트 동적 탐색
+ * Agent Discovery - .codex/.claude/agents 폴더에서 에이전트 동적 탐색
  */
 
 import { promises as fs } from 'fs';
@@ -9,8 +9,8 @@ import { DiscoveredAgent, AgentDiscoveryArgs } from './types.js';
 import { ToolResult } from '../types/tool.js';
 import { errorLog } from '../lib/utils.js';
 
-// 에이전트 디렉토리 우선순위: .claude/agents > agents
-const AGENTS_DIRS = ['.claude/agents', 'agents'];
+// 에이전트 디렉토리 우선순위: .codex/agents > .claude/agents > agents
+const AGENTS_DIRS = ['.codex/agents', '.claude/agents', 'agents'];
 
 /**
  * 에이전트 마크다운 파일에서 메타데이터 추출
@@ -84,7 +84,7 @@ export async function discoverAgents(args: AgentDiscoveryArgs): Promise<ToolResu
       return {
         content: [{
           type: 'text',
-          text: `No agents directory found. Searched: ${AGENTS_DIRS.join(', ')}. Create agents in .claude/agents/ or agents/ folder.`
+          text: `No agents directory found. Searched: ${AGENTS_DIRS.join(', ')}. Create agents in .codex/agents/, .claude/agents/, or agents/ folder.`
         }]
       };
     }

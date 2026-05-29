@@ -83,7 +83,7 @@ export function detectClaudeCli(): AiCliStatus {
  * 둘 중 하나만 true면 installed: true
  */
 export function detectCodexCli(): AiCliStatus {
-  const configDir = path.join(os.homedir(), '.codex');
+  const configDir = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
   const hasDir = fs.existsSync(configDir);
 
   let hasBin = false;

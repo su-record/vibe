@@ -6,6 +6,10 @@ import path from 'path';
 import fs from 'fs';
 import { getGlobalConfigDir, removeExternalLLM } from './config.js';
 import type { VibeConfig } from '../types.js';
+import {
+  getProjectConfigPath,
+  getProjectConfigPaths,
+} from '../../infra/lib/config/GlobalConfigManager.js';
 
 /**
  * Claude API 상태 확인
@@ -66,7 +70,8 @@ export function claudeLogout(): void {
 
   // 프로젝트 config.json 업데이트
   const projectRoot = process.cwd();
-  const configPath = path.join(projectRoot, '.claude', 'vibe', 'config.json');
+  const configPath = getProjectConfigPaths(projectRoot).find(p => fs.existsSync(p))
+    || getProjectConfigPath(projectRoot);
 
   if (fs.existsSync(configPath)) {
     try {

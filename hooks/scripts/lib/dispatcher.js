@@ -60,15 +60,35 @@ async function readStdin() {
 function runScript(scriptName, args, stdinData, timeoutMs) {
   return new Promise((resolve) => {
     const scriptPath = path.join(SCRIPTS_DIR, scriptName);
+    const env = buildChildEnv(stdinData);
     const proc = spawn(process.execPath, [scriptPath, ...args], {
       stdio: ['pipe', 'inherit', 'inherit'],
       timeout: timeoutMs,
+      env,
     });
     if (stdinData) proc.stdin.end(stdinData);
     else proc.stdin.end();
     proc.on('close', (code) => resolve(code ?? 0));
     proc.on('error', () => resolve(1));
   });
+}
+
+function buildChildEnv(stdinData) {
+  const env = { ...process.env };
+  if (!stdinData) return env;
+
+  env.HOOK_INPUT = stdinData;
+  try {
+    const parsed = JSON.parse(stdinData);
+    if (parsed?.tool_input) {
+      env.TOOL_INPUT = typeof parsed.tool_input === 'string'
+        ? parsed.tool_input
+        : JSON.stringify(parsed.tool_input);
+    }
+  } catch {
+    // Leave legacy env untouched when stdin is not JSON.
+  }
+  return env;
 }
 
 /**

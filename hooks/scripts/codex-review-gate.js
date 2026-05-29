@@ -28,7 +28,7 @@ for await (const chunk of process.stdin) {
 
 // Codex CLI/플러그인 설치 여부 확인
 function isCodexAvailable() {
-  const codexDir = path.join(os.homedir(), '.codex');
+  const codexDir = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
   if (fs.existsSync(codexDir)) return true;
 
   try {
@@ -42,8 +42,12 @@ function isCodexAvailable() {
 // 프로젝트 config에서 codexReviewGate 설정 확인
 function isCodexReviewGateEnabled() {
   try {
-    const configPath = path.join(process.cwd(), '.claude', 'vibe', 'config.json');
-    if (!fs.existsSync(configPath)) return true; // 기본: 활성화
+    const candidates = [
+      path.join(process.cwd(), '.vibe', 'config.json'),
+      path.join(process.cwd(), '.claude', 'vibe', 'config.json'),
+    ];
+    const configPath = candidates.find(p => fs.existsSync(p));
+    if (!configPath) return true; // 기본: 활성화
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     // 명시적으로 false일 때만 비활성화
     return config.codexReviewGate !== false;

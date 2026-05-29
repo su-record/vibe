@@ -116,6 +116,11 @@ export function main(): void {
     const globalClaudeDir = path.join(os.homedir(), '.claude');
     installCliAssets(globalClaudeDir, 'claude');
 
+    const codexStatus = detectCodexCli();
+    if (codexStatus.installed) {
+      installCliAssets(codexStatus.configDir, 'codex');
+    }
+
     // 5. ~/.<cli>/vibe/ 전역 문서 설치 (rules, languages, templates, 인라인 스킬)
     function installCoreAssets(targetDir: string): string {
       const coreAssetsDir = path.join(targetDir, 'vibe');
@@ -147,11 +152,13 @@ export function main(): void {
     }
 
     const globalLanguagesDir = installCoreAssets(globalClaudeDir);
+    if (codexStatus.installed) {
+      installCoreAssets(codexStatus.configDir);
+    }
 
     // 5-0. 전역 CLAUDE.md / AGENTS.md / GEMINI.md 에 vibe 규약 섹션 주입 (idempotent)
     try {
       generateGlobalClaudeMd();
-      const codexStatus = detectCodexCli();
       if (codexStatus.installed) {
         generateGlobalCodexAgentsMd();
         installCodexNotify(codexStatus.configDir);
@@ -196,9 +203,8 @@ export function main(): void {
     console.log(`✅ cursor rules template: ${cursorRulesTemplateDir}`);
     console.log(`✅ cursor skills installed: ${cursorSkillsDir}`);
     console.log(`🧠 Claude Code: ${claudeStatusMsg}`);
-    if (!claudeStatus.installed) {
-      console.warn('⚠️  Claude Code is required for full VIBE features.');
-      console.warn('   Install: npm i -g @anthropic-ai/claude-code');
+    if (!claudeStatus.installed && !codexStatus.installed) {
+      console.warn('⚠️  Install Claude Code or Codex CLI to use VIBE harness features.');
     }
   } catch (error) {
     // postinstall 실패해도 설치는 계속 진행

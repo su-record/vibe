@@ -28,6 +28,7 @@ import {
   cleanupClaudeConfig,
   cleanupLegacyMcp,
   installProjectHooks,
+  installProjectCodexHooks,
   installCodexNotify,
   installCursorRules,
   generateProjectClaudeMd,
@@ -138,20 +139,32 @@ export function update(options: CliOptions = { silent: false }): void {
 
     // .gitignore 업데이트
     updateGitignore(projectRoot);
+    if (primaryHarness !== '.claude') {
+      updateGitignore(projectRoot, primaryHarness);
+    }
 
     // 협업자 자동 설치 설정
     setupCollaboratorAutoInstall(projectRoot);
 
+    const codexStatus = detectCodexCli();
+    const geminiStatus = detectGeminiCli();
+
     // 프로젝트 레벨 훅 설치 — 존재하는 하네스 디렉토리 모두 대응
     //   .gemini/는 hook 스키마 다름 → 스킵
-    //   .codex/는 settings.local.json hook 을 읽지 않음 → 죽은 설정 대신 config.toml notify + AGENTS.md (별도 처리)
-    const PROJECT_HARNESS_DIRS = ['.claude'];
+    //   .codex/는 native hooks.json 사용
+    const PROJECT_HARNESS_DIRS = ['.claude', '.codex'];
     const presentHarnesses = PROJECT_HARNESS_DIRS.filter(d =>
       fs.existsSync(path.join(projectRoot, d))
     );
-    const hookTargets = presentHarnesses.length > 0 ? presentHarnesses : ['.claude'];
-    for (const hd of hookTargets) {
+    const hasCodexProject = presentHarnesses.includes('.codex') || fs.existsSync(path.join(projectRoot, 'AGENTS.md'));
+    const claudeHookTargets = presentHarnesses.includes('.claude')
+      ? ['.claude']
+      : presentHarnesses.length === 0 ? ['.claude'] : [];
+    for (const hd of claudeHookTargets) {
       installProjectHooks(projectRoot, hd);
+    }
+    if (hasCodexProject) {
+      installProjectCodexHooks(projectRoot);
     }
 
     // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template) - 먼저 실행!
@@ -161,12 +174,10 @@ export function update(options: CliOptions = { silent: false }): void {
     // Cursor IDE 룰 설치/업데이트 (프로젝트 레벨) - rules-template 생성 후 현재 스택에 해당하는 룰만 복사
     installCursorRules(projectRoot, stackTypes);
 
-    // 감지된 스택 언어 룰 설치/업데이트 (.claude/vibe/languages/)
-    installLanguageRules(projectRoot, stackTypes);
+    // 감지된 스택 언어 룰 설치/업데이트 (~/.<harness>/vibe/languages/)
+    installLanguageRules(projectRoot, stackTypes, primaryHarness);
 
     // ── 전역 규약 갱신 ── 감지된 CLI 모두
-    const codexStatus = detectCodexCli();
-    const geminiStatus = detectGeminiCli();
     generateGlobalClaudeMd();
     if (codexStatus.installed) {
       generateGlobalCodexAgentsMd();
@@ -182,7 +193,10 @@ export function update(options: CliOptions = { silent: false }): void {
     generateProjectGeminiMd(projectRoot, detectedStacks, stackDetails, false);
 
     // 스택 + capability 기반 로컬 스킬 업데이트 — 존재하는 하네스 디렉토리 모두 대응
-    for (const hd of hookTargets) {
+    const assetTargets = hasCodexProject
+      ? [...new Set([...presentHarnesses, '.codex'])]
+      : presentHarnesses.length > 0 ? presentHarnesses : ['.claude'];
+    for (const hd of assetTargets) {
       installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities, hd);
     }
 
