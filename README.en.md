@@ -21,31 +21,24 @@ vibe init
 One entry point. Everything else is automatic.
 
 ```
-/vibe.spec "coffee brand landing page"
+/vibe "coffee brand landing page"
      |
      v
-  Interview  ─── "Who's the audience?" "What sections?" "Dark mode?" ───
-     |                     (loops until you say stop)
+  Intent classification ─── new feature? figma-driven? clone? resume? review? regress? ...
      v
-  Plan       ─── Structured planning document (.vibe/plans/)
+  Smart Resume ─── detect .vibe/{interviews,plans,specs,features}/ state
      |
      v
-  SPEC       ─── PTCF spec + BDD features, GPT+Gemini parallel research
+  Pipeline design ─── /vibe.spec → /vibe.figma → /vibe.run → /vibe.verify → /vibe.trace
      |
      v
-  Review     ─── Race review (GPT vs Gemini), quality gate (100-point, loop until perfect)
+  One approval gate (skipped with ultrawork)
      |
-     +──────────────────────────────┐
-     v                              v
-  /vibe.run (Logic)            /vibe.figma (UI)
-  Implement from SPEC          Figma design ↔ Code
-  12 agents review             Read or Write
-     |                              |
-     v                              v
-  /vibe.verify ──── /vibe.trace ──── Done
+     v
+  Sequential execution ─── each phase hands off to the next
 ```
 
-**Smart Resume** — Stop at any step, close the session, come back later. `/vibe.spec` auto-detects where you left off and picks up from there. No need to remember feature names.
+**Smart Resume** — Stop at any step, close the session, come back later. `/vibe` auto-detects where you left off and picks up from there. No need to remember feature names.
 
 **ultrawork** — Add `ultrawork` to skip all confirmation gates and run the full pipeline hands-free.
 
@@ -57,15 +50,16 @@ One entry point. Everything else is automatic.
 # Install
 npm install -g @su-record/vibe
 
-# Initialize (auto-detects your stack, generates project-aware CLAUDE.md)
+# Initialize (auto-detects your stack, generates project-aware harness files)
 cd your-project
 vibe init
 
-# Start your AI coding tool
+# Start either AI coding tool
 claude
+codex
 
 # Run the workflow
-/vibe.spec "add user authentication"
+/vibe "add user authentication"
 ```
 
 ---
@@ -79,8 +73,8 @@ Vibe is built on the [Harness Engineering](https://anthropic.com/engineering/har
 | Axis | What it covers | Vibe implementation |
 |------|---------------|---------------------|
 | **Scaffolding** | Project structure, tools, boundaries | `/vibe.scaffold` generates optimized folder structure (docs/, .dev/, layered src/) |
-| **Context** | What AI knows | `vibe init` generates project-aware CLAUDE.md from actual structure analysis |
-| **Planning** | What to build | `/vibe.spec` → interview → plan → SPEC → review pipeline |
+| **Context** | What AI knows | `vibe init` generates project-aware `CLAUDE.md` / `AGENTS.md` from actual structure analysis |
+| **Planning** | What to build | `/vibe` routes to interview → plan → SPEC → review pipeline |
 | **Orchestration** | How to execute | 40+ agents, 12 teams, skill-based dispatch |
 | **Verification** | How to trust | Hooks, convergence loops, RTM traceability |
 | **Compounding** | How to improve | Evolution engine, session memory, auto-generated skills |
@@ -166,7 +160,7 @@ Three layers of defense on every tool call:
 
 | Layer | What it blocks |
 |-------|----------------|
-| Pre-commit hooks | `any` types, `@ts-ignore`, `console.log`, functions > 50 lines |
+| Tool hooks / pre-commit checks | `any` types, `@ts-ignore`, `console.log`, functions > 50 lines |
 | Review agents | 12 specialized reviewers run in parallel (security, performance, a11y, complexity, ...) |
 | Convergence loop | Review findings loop until P1 = 0. No round cap. Stuck = ask user, never silently proceed. |
 
@@ -184,15 +178,15 @@ Three layers of defense on every tool call:
 | **Standard** | `vibe init` selects by stack | Stack/capability support | figma, design-audit, techdebt |
 | **Optional** | Explicit `/skill` only | Reference, wrappers | chub-usage, context7 |
 
-**Multi-LLM** — Claude orchestrates, GPT reasons, Gemini researches. Auto-routes by availability. Works Claude-only by default.
+**Multi-LLM** — Claude Code or Codex runs the harness, GPT reasons, and Gemini researches. Auto-routes by availability.
 
 **Stack detection** — Auto-detects 24 frameworks (Next.js, Django, Rails, Go, Rust, Flutter, and more) and applies framework-specific rules and skills.
 
-**Project-aware CLAUDE.md** — `vibe init` and `vibe update` analyze your project's actual structure (folders, tech stack, build commands) and generate a tailored CLAUDE.md — not a static template.
+**Project-aware harness docs** — `vibe init` and `vibe update` analyze your project's actual structure (folders, tech stack, build commands) and generate tailored `CLAUDE.md` / `AGENTS.md` files — not static templates.
 
 **Session memory** — Decisions, constraints, and goals persist across sessions via SQLite + FTS5 hybrid search.
 
-**Smart Resume** — `.last-feature` pointer tracks your latest work. `/vibe.spec` without arguments shows where you left off or lists all in-progress features.
+**Smart Resume** — `.last-feature` pointer tracks your latest work. `/vibe` without arguments shows where you left off or lists all in-progress features.
 
 **Self-repair** — Skills include error recovery tables. `/vibe.harness` diagnoses gaps and chains to `/vibe.scaffold` → `vibe update` for automated fixes.
 
@@ -203,7 +197,7 @@ Three layers of defense on every tool call:
 | CLI | Status |
 |-----|--------|
 | [Claude Code](https://claude.ai/code) | Full support |
-| [Codex](https://github.com/openai/codex) | Full support (`~/.codex/`, AGENTS.md + config.toml notify) |
+| [Codex](https://github.com/openai/codex) | Full support (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
 | [Cursor](https://cursor.sh) | Agents + Rules |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) | Agents + Skills |
 
@@ -213,7 +207,8 @@ Three layers of defense on every tool call:
 
 | Command | Purpose |
 |---------|---------|
-| `/vibe.spec` | Single entry point — interview, plan, spec, review, then run |
+| `/vibe` | Main entry point — natural language requirement → pipeline preview → chained execution |
+| `/vibe.spec` | Advanced phase command — interview, plan, spec, review |
 | `/vibe.run` | Implement from SPEC |
 | `/vibe.figma` | Figma ↔ Code (read or write, 3 modes) |
 | `/vibe.design` | DESIGN.md visual quality SSOT — init / lint / verify / sync |
@@ -230,7 +225,7 @@ Three layers of defense on every tool call:
 
 Full guides, skill reference, and configuration details are in the [Wiki](https://github.com/su-record/vibe/wiki).
 
-- [README (Korean)](README.ko.md)
+- [README (Korean)](README.md)
 - [Release Notes](RELEASE_NOTES.md)
 
 ---
@@ -238,7 +233,7 @@ Full guides, skill reference, and configuration details are in the [Wiki](https:
 ## Requirements
 
 - Node.js >= 18.0.0
-- Claude Code (required)
+- Claude Code or Codex CLI
 - GPT, Gemini (optional)
 
 ## License

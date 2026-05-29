@@ -67,8 +67,9 @@ npm install -g @su-record/vibe
 cd your-project
 vibe init
 
-# AI 코딩 도구 시작
+# AI 코딩 도구 시작 (둘 중 하나)
 claude
+codex
 
 # 워크플로우 실행
 /vibe "사용자 인증 추가"
@@ -131,7 +132,7 @@ claude
 
 | 계층 | 차단 대상 |
 |------|----------|
-| Pre-commit 훅 | `any` 타입, `@ts-ignore`, `console.log`, 50줄 초과 함수 |
+| 도구 훅 / 커밋 전 검사 | `any` 타입, `@ts-ignore`, `console.log`, 50줄 초과 함수 |
 | 리뷰 에이전트 | 12개 전문 리뷰어 병렬 실행 (보안, 성능, 접근성, 복잡도, ...) |
 | 수렴 루프 | 리뷰 findings P1=0까지 루프. 라운드 캡 없음. Stuck이면 사용자에게 질문, 절대 조용히 넘어가지 않음. |
 
@@ -149,7 +150,7 @@ claude
 | **Standard** | `vibe init`이 스택별 선택 | 스택/역할 지원 | figma, design-audit, techdebt |
 | **Optional** | 명시적 `/skill` 호출만 | 레퍼런스, 래퍼 | chub-usage, context7 |
 
-**멀티 LLM** — Claude가 오케스트레이션, GPT가 추론, Gemini가 리서치. 가용 모델에 따라 자동 라우팅. 기본값은 Claude 단독.
+**멀티 LLM** — Claude Code 또는 Codex가 하네스를 실행하고, GPT가 추론, Gemini가 리서치. 가용 모델에 따라 자동 라우팅.
 
 **스택 감지** — 24개 프레임워크 자동 감지 (Next.js, Django, Rails, Go, Rust, Flutter 등) 후 프레임워크별 규칙과 스킬 적용.
 
@@ -164,7 +165,7 @@ claude
 | CLI | 상태 |
 |-----|------|
 | [Claude Code](https://claude.ai/code) | 전체 지원 |
-| [Codex](https://github.com/openai/codex) | 전체 지원 (`~/.codex/`, AGENTS.md + config.toml notify) |
+| [Codex](https://github.com/openai/codex) | 전체 지원 (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
 | [Cursor](https://cursor.sh) | 에이전트 + 룰 |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) | 에이전트 + 스킬 |
 
@@ -188,7 +189,7 @@ claude
 
 상세 가이드, 스킬 레퍼런스, 설정 방법은 [Wiki](https://github.com/su-record/vibe/wiki)를 참고하세요.
 
-- [README (English)](README.md)
+- [README (English)](README.en.md)
 - [릴리스 노트](RELEASE_NOTES.md)
 
 ---
@@ -196,7 +197,7 @@ claude
 ## 요구사항
 
 - Node.js >= 18.0.0
-- Claude Code (필수)
+- Claude Code 또는 Codex CLI 중 하나
 - GPT, Gemini (선택)
 
 ## 라이선스
