@@ -1,7 +1,7 @@
 ---
 name: vibe.event
 description: Community event automation — D-Day based proactive task execution
-argument-hint: "MDC 12차 3/30" or "webinar AI에이전트 4/15" or "DWK 5차 5/20"
+argument-hint: '"MDC 12차 3/30" or "webinar AI에이전트 4/15" or "DWK 5차 5/20"'
 user-invocable: true
 ---
 

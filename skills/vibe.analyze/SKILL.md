@@ -1,7 +1,7 @@
 ---
 name: vibe.analyze
 description: Analyze any target — code, document, website, or Figma design
-argument-hint: "feature-name" or file.pdf or https://... or --code or --deps or --arch
+argument-hint: '"feature-name" or file.pdf or https://... or --code or --deps or --arch'
 user-invocable: true
 ---
 

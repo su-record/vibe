@@ -98,9 +98,14 @@ function parseSimpleYaml(yaml: string): Partial<SkillMetadata> {
         .split(',')
         .map(v => v.trim().replace(/^["']|["']$/g, ''))
         .filter(Boolean);
-    } else if ((value as string).startsWith('"') || (value as string).startsWith("'")) {
-      // Remove quotes
-      value = (value as string).slice(1, -1);
+    } else if ((value as string).startsWith('"') && (value as string).endsWith('"')) {
+      try {
+        value = JSON.parse(value as string) as string;
+      } catch {
+        value = (value as string).slice(1, -1);
+      }
+    } else if ((value as string).startsWith("'") && (value as string).endsWith("'")) {
+      value = (value as string).slice(1, -1).replace(/''/g, "'");
     }
 
     // Convert kebab-case to camelCase
@@ -118,7 +123,7 @@ export function generateSkillFrontmatter(metadata: SkillMetadata): string {
   const lines = ['---'];
 
   lines.push(`name: ${metadata.name}`);
-  lines.push(`description: "${metadata.description}"`);
+  lines.push(`description: ${quoteYamlString(metadata.description)}`);
 
   if (metadata.tier) {
     lines.push(`tier: ${metadata.tier}`);
@@ -133,7 +138,7 @@ export function generateSkillFrontmatter(metadata: SkillMetadata): string {
   }
 
   if (metadata.argumentHint) {
-    lines.push(`argument-hint: "${metadata.argumentHint}"`);
+    lines.push(`argument-hint: ${quoteYamlString(metadata.argumentHint)}`);
   }
 
   if (metadata.userInvocable !== undefined) {
@@ -163,6 +168,10 @@ export function generateSkillFrontmatter(metadata: SkillMetadata): string {
   lines.push('---');
 
   return lines.join('\n');
+}
+
+function quoteYamlString(value: string): string {
+  return JSON.stringify(value);
 }
 
 /**

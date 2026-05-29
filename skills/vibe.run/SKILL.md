@@ -1,7 +1,7 @@
 ---
 name: vibe.run
 description: Execute implementation from SPEC
-argument-hint: "feature name" or --phase N
+argument-hint: '"feature name" or --phase N'
 user-invocable: true
 ---
 
