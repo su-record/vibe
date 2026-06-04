@@ -242,8 +242,26 @@ B 긍정 항목 "pattern matching으로 불필요 호출 감소"(`prompt-dispatc
   - SmartRouter: `callLlmWithTimeout`이 AbortController로 timeout 시 진행 중 fetch 를 실제 취소
     (이전엔 Promise.race 로 로컬만 빠져나오고 원격 요청은 계속). 테스트 단언 갱신.
 
+## B 인프라 P2 — 완료
+
+- 2026-06-04: **B-5/B-6/B-7/B-8 + B-3 잔여 완료** (전체 1120/1120 통과):
+  - **B-5** gpt/auth.ts: codex 토큰 refresh 를 `tokenRefresher.refreshWithLock('gpt', ...)`로
+    감쌈. in-process dedupe(병렬 에이전트 동시 refresh storm 차단) + cross-process lock +
+    readCurrentToken(타 주체 갱신 토큰 재사용).
+  - **B-6** PhasePipeline: 미래 phase 전부 speculative prepare → **다음 phase 1개만** 준비.
+    StageContext.signal/prepare(signal) 로 AbortSignal 관통, 실패 시 abort 로 in-flight prep 취소.
+  - **B-7** parallelResearchWithMultiLlm: fan-out 전 **preflight**(Claude 에이전트 수·concurrency·
+    Multi-LLM 직접 호출 수·예산%) + `CostAccumulator.checkBudget` blocking 시 직접 Multi-LLM 차단.
+    `countPlannedMultiLlmCalls()` 추가.
+  - **B-8** `CostAccumulator.logCost` 신설(JS logLlmCost 와 동일 포맷·경로). coreGptOrchestrate·
+    coreAntigravityOrchestrate 에서 호출 → TS 직접 provider 호출도 같은 원장에 집계(과소집계 해소).
+  - **B-3 잔여** AgentExecutor·parallelResearch: SDK `query({ options.abortController })` 관통 →
+    cancel()/timeout 이 로컬 promise 뿐 아니라 실제 query stream/process 를 종료. claude-agent-sdk.d.ts
+    타입에 abortController 추가. timeout 타이머 누수도 정리.
+
 ## 후속 권고 (이번에 미처리)
 
 - **[근본원인] AGENTS.md 결정론적 생성기 부재**: 루트 `AGENTS.md`는 `/vibe.docs agent` LLM 스킬이 CLAUDE.md를 보고 *수동 작성* → 이번 Quality SSOT/Doctrine 누락처럼 drift 재발. doctrine("결정론은 결정론에게")에 따라 CLAUDE.md→AGENTS.md **1:1 결정론적 sync 스크립트**가 필요. (현재는 수동 동기화로 메움)
-- **B 인프라 P2 잔여**: Agent SDK/BackgroundManager abort 미전달(B-3 잔여), GPT token refresh lock 미사용(B-5), PhasePipeline speculative prepare(B-6), Multi-LLM fan-out budget gate(B-7), cost telemetry 부분 연결(B-8). C-3 완전 비동기화(파일 포인터)도 잔여.
+- **C-3 완전 비동기화**(외부 LLM 응답 파일 포인터)는 UX 변경이 커 별도 검토 대상으로 남김.
+- **A 미처리 P2/P3**: SessionStart 8블록 과적재, INTERRUPT echo 매턴 주입, code-check self-heal magic-number 오탐, getCurrentTime "tool" 표현(12스킬), vibe.run 1967줄 재배치, 고아 에이전트 4종.
 - **A 미처리 P2/P3**: SessionStart 8블록 과적재, INTERRUPT echo 매턴 주입, code-check self-heal magic-number 오탐, getCurrentTime "tool" 표현(12스킬), vibe.run 1967줄 재배치, 고아 에이전트 4종 — 즉시성 낮아 후속.

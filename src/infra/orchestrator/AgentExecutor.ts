@@ -124,9 +124,11 @@ export async function launchBackgroundAgent(args: BackgroundAgentArgs): Promise<
     });
 
     try {
+      // abortController 를 SDK 에 전달해, cancel()/timeout 시 로컬 promise 뿐 아니라
+      // 실제 query stream/process 가 종료되도록 한다 (B-3 잔여).
       const response = query({
         prompt,
-        options: { model, maxTurns, allowedTools, cwd: projectPath }
+        options: { model, maxTurns, allowedTools, cwd: projectPath, abortController: cancelController }
       });
 
       for await (const message of response) {

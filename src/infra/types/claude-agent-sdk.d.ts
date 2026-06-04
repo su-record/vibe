@@ -12,6 +12,8 @@ declare module '@anthropic-ai/claude-agent-sdk' {
     resume?: string;
     forkSession?: boolean;
     systemPrompt?: string;
+    /** abort 시 SDK 가 진행 중인 query stream/process 를 실제로 종료한다. */
+    abortController?: AbortController;
   }
 
   export interface QueryParams {

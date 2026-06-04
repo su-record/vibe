@@ -4,6 +4,7 @@
  */
 
 import { chat, DEFAULT_MODEL } from './chat.js';
+import { CostAccumulator } from '../CostAccumulator.js';
 import type { VibeAntigravityOptions } from './types.js';
 
 /**
@@ -19,6 +20,7 @@ export async function coreAntigravityOrchestrate(
 ): Promise<string> {
   const { maxTokens = 4096, jsonMode = true, signal, timeoutMs } = options;
 
+  const start = Date.now();
   const result = await chat({
     model: 'antigravity-pro',
     messages: [{ role: 'user', content: prompt }],
@@ -31,6 +33,14 @@ export async function coreAntigravityOrchestrate(
       : systemPrompt,
     signal,
     timeoutMs,
+  });
+  // TS 직접 호출 비용 집계 (B-8) — hook CLI 와 동일 원장에 기록
+  CostAccumulator.logCost({
+    provider: 'antigravity',
+    model: result.model || 'antigravity-pro',
+    inputLen: prompt.length + systemPrompt.length,
+    outputLen: result.content.length,
+    durationMs: Date.now() - start,
   });
   return result.content;
 }

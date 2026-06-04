@@ -141,6 +141,9 @@ async function executeResearchTask(
 
     const agentContent = await loadAgentFile(task.name, projectPath);
 
+    // timeout 시 SDK query stream/process 를 실제로 종료한다 (B-3 잔여).
+    // 이전에는 Promise.race 로 로컬만 빠져나오고 query 는 백그라운드에서 계속 돌았다.
+    const abortController = new AbortController();
     const response = query({
       prompt: task.prompt,
       options: {
@@ -148,12 +151,17 @@ async function executeResearchTask(
         maxTurns: 3,
         allowedTools: ['Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
         cwd: projectPath,
-        systemPrompt: agentContent || undefined
+        systemPrompt: agentContent || undefined,
+        abortController
       }
     });
 
+    let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Research task timeout')), timeout);
+      timeoutTimer = setTimeout(() => {
+        abortController.abort();
+        reject(new Error('Research task timeout'));
+      }, timeout);
     });
 
     const collectResult = async () => {
@@ -175,7 +183,11 @@ async function executeResearchTask(
       }
     };
 
-    await Promise.race([collectResult(), timeoutPromise]);
+    try {
+      await Promise.race([collectResult(), timeoutPromise]);
+    } finally {
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+    }
 
     return {
       agentName: task.name,
