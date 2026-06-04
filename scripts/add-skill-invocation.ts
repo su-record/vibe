@@ -3,7 +3,7 @@
  * add-skill-invocation.ts — 모든 SKILL.md frontmatter 에 `invocation: [...]` 필드 추가
  *
  * 분류 규칙:
- *   - command: commands/{vibe.X}.md 가 존재하거나, 어떤 command/skill 에서 `Load skill <name>` 으로 호출됨
+ *   - command: `user-invocable: true`
  *   - auto:    top-level `triggers` 가 비어있지 않거나, sections[].triggers 가 존재함
  *   - chain:   다른 skill 의 `chain-next:` 에 본 skill 이름이 등장
  *
@@ -29,6 +29,7 @@ interface SkillInfo {
   name: string;
   file: string;
   hasTriggers: boolean;
+  userInvocable: boolean | null;
   chainNext: string[];
   raw: string;
   frontmatter: string;
@@ -43,6 +44,8 @@ function readSkill(file: string): SkillInfo | null {
   const fm = m[1];
 
   const name = fm.match(/^name:\s*(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, '') ?? '';
+  const userInvocableMatch = fm.match(/^user-invocable:\s*(true|false)\s*$/m);
+  const userInvocable = userInvocableMatch ? userInvocableMatch[1] === 'true' : null;
 
   const trigMatch = fm.match(/^triggers:\s*\[([^\]]*)\]/m);
   const sectionTrigMatch = fm.match(/^\s+triggers:\s*\[([^\]]*)\]/m);
@@ -59,6 +62,7 @@ function readSkill(file: string): SkillInfo | null {
     name,
     file,
     hasTriggers: !!hasTriggers,
+    userInvocable,
     chainNext,
     raw,
     frontmatter: fm,
@@ -81,12 +85,14 @@ function collectSkills(): SkillInfo[] {
 
 function collectCommandLoadRefs(): Set<string> {
   const refs = new Set<string>();
-  // 1) skill loaded explicitly by any command via `Load skill <name>`
-  for (const entry of fs.readdirSync(COMMANDS_DIR)) {
-    if (!entry.endsWith('.md')) continue;
-    const txt = fs.readFileSync(path.join(COMMANDS_DIR, entry), 'utf-8');
-    for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w:-]*)`?/g)) {
-      refs.add(m[1]);
+  // 1) skill loaded explicitly by any legacy command via `Load skill <name>`
+  if (fs.existsSync(COMMANDS_DIR)) {
+    for (const entry of fs.readdirSync(COMMANDS_DIR)) {
+      if (!entry.endsWith('.md')) continue;
+      const txt = fs.readFileSync(path.join(COMMANDS_DIR, entry), 'utf-8');
+      for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w:-]*)`?/g)) {
+        refs.add(m[1]);
+      }
     }
   }
   // 2) skill loaded by another skill via `Load skill <name>` (cross-skill)
@@ -111,9 +117,9 @@ function classify(skills: SkillInfo[]) {
 
   return skills.map(s => {
     const modes: string[] = [];
-    if (loadedSet.has(s.name)) modes.push('command');
+    if (s.userInvocable === true) modes.push('command');
     if (s.hasTriggers) modes.push('auto');
-    if (chainedSet.has(s.name)) modes.push('chain');
+    if (chainedSet.has(s.name) || loadedSet.has(s.name)) modes.push('chain');
     if (modes.length === 0) {
       // fallback: passive reference skill — neither commanded, triggered, nor chained.
       // Treat as `auto` since Claude may still discover it via description.

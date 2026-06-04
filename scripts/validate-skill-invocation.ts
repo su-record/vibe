@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 /**
- * validate-skill-invocation.ts — SKILL.md frontmatter 의 `invocation` 필드 검증
+ * validate-skill-invocation.ts — SKILL.md frontmatter 의 호출 정책 검증
  *
  * 규칙:
- *   1. 모든 SKILL.md 는 `invocation: [...]` 필드를 가진다.
- *   2. 모드 값은 `command | auto | chain` 중에서만 선택한다.
- *   3. `command` 모드는 다음 중 하나를 만족해야 한다.
- *      a) commands/{vibe.X}.md 가 존재 (skill name `vibe-X` ↔ command `vibe.X`)
- *      b) 어떤 command 또는 다른 skill 의 본문에 `Load skill <name>` 으로 호출됨
- *   4. `auto` 모드는 top-level `triggers` 또는 sections[].triggers 가 비어있지 않아야 한다.
- *   5. `chain` 모드는 다른 skill 의 `chain-next:` 에 본 skill 이 등재되어 있어야 한다.
+ *   1. `user-invocable: false` 는 `invocation: [command]` 와 함께 쓸 수 없다.
+ *   2. `command` 모드는 `user-invocable: true` 이거나 레거시 command 파일이 있어야 한다.
+ *   3. `auto` 모드는 top-level `triggers` 또는 sections[].triggers 가 비어있지 않아야 한다.
+ *   4. `chain` 모드는 다른 skill 의 `chain-next:` 또는 `Load skill <name>` 에 등재되어 있어야 한다.
  *
  * 위반 시 exit code 1.
  *
@@ -32,6 +29,7 @@ interface Parsed {
   name: string;
   file: string;
   invocation: string[] | null;
+  userInvocable: boolean | null;
   hasTriggers: boolean;
   chainNext: string[];
 }
@@ -47,6 +45,8 @@ function parse(file: string): Parsed | null {
   const invocation = invMatch
     ? invMatch[1].split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
     : null;
+  const userInvocableMatch = fm.match(/^user-invocable:\s*(true|false)\s*$/m);
+  const userInvocable = userInvocableMatch ? userInvocableMatch[1] === 'true' : null;
 
   const trigMatch = fm.match(/^triggers:\s*\[([^\]]*)\]/m);
   const sectionTrigMatch = fm.match(/^\s+triggers:\s*\[([^\]]*)\]/m);
@@ -59,15 +59,17 @@ function parse(file: string): Parsed | null {
     ? chainMatch[1].split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
     : [];
 
-  return { name, file, invocation, hasTriggers, chainNext };
+  return { name, file, invocation, userInvocable, hasTriggers, chainNext };
 }
 
 function collectLoadRefs(): Set<string> {
   const refs = new Set<string>();
-  for (const e of fs.readdirSync(COMMANDS_DIR)) {
-    if (!e.endsWith('.md')) continue;
-    const txt = fs.readFileSync(path.join(COMMANDS_DIR, e), 'utf-8');
-    for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w:-]*)`?/g)) refs.add(m[1]);
+  if (fs.existsSync(COMMANDS_DIR)) {
+    for (const e of fs.readdirSync(COMMANDS_DIR)) {
+      if (!e.endsWith('.md')) continue;
+      const txt = fs.readFileSync(path.join(COMMANDS_DIR, e), 'utf-8');
+      for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w:-]*)`?/g)) refs.add(m[1]);
+    }
   }
   for (const dir of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
     if (!dir.isDirectory()) continue;
@@ -80,6 +82,7 @@ function collectLoadRefs(): Set<string> {
 }
 
 function hasMatchingCommandFile(skillName: string): boolean {
+  if (!fs.existsSync(COMMANDS_DIR)) return false;
   // skill `vibe-X` ↔ command `vibe.X.md` (dash → dot for vibe-* family)
   if (skillName.startsWith('vibe-')) {
     const candidate = path.join(COMMANDS_DIR, `vibe.${skillName.slice(5)}.md`);
@@ -109,7 +112,9 @@ function main() {
     const rel = path.relative(ROOT, s.file);
 
     if (!s.invocation || s.invocation.length === 0) {
-      errors.push(`${rel}: missing or empty \`invocation\` field`);
+      if (s.userInvocable === null) {
+        errors.push(`${rel}: missing both \`invocation\` and \`user-invocable\` policy`);
+      }
       continue;
     }
 
@@ -119,9 +124,13 @@ function main() {
       }
     }
 
+    if (s.userInvocable === false && s.invocation.includes('command')) {
+      errors.push(`${rel}: internal skill has \`user-invocable: false\` but declares \`command\` mode`);
+    }
+
     if (s.invocation.includes('command')) {
-      if (!hasMatchingCommandFile(s.name) && !loadRefs.has(s.name)) {
-        errors.push(`${rel}: \`command\` mode declared, but no matching commands/*.md nor \`Load skill ${s.name}\` reference`);
+      if (s.userInvocable !== true && !hasMatchingCommandFile(s.name)) {
+        errors.push(`${rel}: \`command\` mode declared, but neither \`user-invocable: true\` nor legacy command file exists`);
       }
     }
 
@@ -132,8 +141,8 @@ function main() {
     }
 
     if (s.invocation.includes('chain')) {
-      if (!chainedSet.has(s.name)) {
-        errors.push(`${rel}: \`chain\` mode declared, but no other skill lists ${s.name} in chain-next`);
+      if (!chainedSet.has(s.name) && !loadRefs.has(s.name)) {
+        errors.push(`${rel}: \`chain\` mode declared, but no other skill lists ${s.name} in chain-next or Load skill`);
       }
     }
   }

@@ -1,5 +1,6 @@
 ---
 name: design-normalize
+user-invocable: true
 invocation: [command, auto]
 tier: standard
 description: "Normalize hardcoded values to design system tokens — colors, typography, spacing, shadows aligned to MASTER.md. Use when design-normalize, design-system, token-align."

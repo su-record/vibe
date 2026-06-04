@@ -142,3 +142,55 @@ export function copySkillsFiltered(
     copySkillsOverwrite(srcPath, destPath);
   }
 }
+
+const CODEX_POLICY_MARKER = '# VIBE managed Codex skill policy';
+const CODEX_POLICY_CONTENT = `${CODEX_POLICY_MARKER}
+policy:
+  allow_implicit_invocation: false
+`;
+
+function readUserInvocableFalse(skillPath: string): boolean {
+  const raw = fs.readFileSync(skillPath, 'utf-8');
+  const match = raw.match(/^user-invocable:\s*(true|false)\s*$/m);
+  return match?.[1] === 'false';
+}
+
+function cleanupManagedCodexPolicy(skillDir: string): void {
+  const metadataPath = path.join(skillDir, 'agents', 'openai.yaml');
+  if (!fs.existsSync(metadataPath)) return;
+  const raw = fs.readFileSync(metadataPath, 'utf-8');
+  if (!raw.includes(CODEX_POLICY_MARKER)) return;
+  fs.rmSync(metadataPath, { force: true });
+  const agentsDir = path.dirname(metadataPath);
+  if (fs.existsSync(agentsDir) && fs.readdirSync(agentsDir).length === 0) {
+    fs.rmdirSync(agentsDir);
+  }
+}
+
+function writeManagedCodexPolicy(skillDir: string): void {
+  const agentsDir = path.join(skillDir, 'agents');
+  const metadataPath = path.join(agentsDir, 'openai.yaml');
+  if (fs.existsSync(metadataPath)) {
+    const raw = fs.readFileSync(metadataPath, 'utf-8');
+    if (!raw.includes(CODEX_POLICY_MARKER)) return;
+  }
+  ensureDir(agentsDir);
+  fs.writeFileSync(metadataPath, CODEX_POLICY_CONTENT);
+}
+
+/**
+ * Codex는 Vibe의 `user-invocable: false` 메타데이터를 직접 해석하지 않는다.
+ * 내부 체인 전용 스킬은 공식 Codex skill policy로 implicit invocation을 막는다.
+ */
+export function applyCodexSkillInvocationPolicies(skillsDir: string): void {
+  if (!fs.existsSync(skillsDir)) return;
+  const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const skillDir = path.join(skillsDir, entry.name);
+    const skillPath = path.join(skillDir, 'SKILL.md');
+    if (!fs.existsSync(skillPath)) continue;
+    if (readUserInvocableFalse(skillPath)) writeManagedCodexPolicy(skillDir);
+    else cleanupManagedCodexPolicy(skillDir);
+  }
+}

@@ -37,6 +37,7 @@ import {
   generateCursorSkills,
   resolveLocalSkills,
   copySkillsFiltered,
+  applyCodexSkillInvocationPolicies,
   AVAILABLE_CAPABILITIES,
   STACK_TO_LANGUAGE_FILE,
 } from '../postinstall.js';
@@ -107,6 +108,7 @@ export function installLocalSkills(
 
   const localSkillsDir = path.join(projectRoot, harnessDir, 'skills');
   copySkillsFiltered(skillsSource, localSkillsDir, localSkills);
+  if (harnessDir === '.codex') applyCodexSkillInvocationPolicies(localSkillsDir);
   log(`   📦 Local skills installed: ${localSkills.join(', ')}\n`);
 }
 

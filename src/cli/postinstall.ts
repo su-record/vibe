@@ -17,6 +17,7 @@ export {
   AVAILABLE_CAPABILITIES,
   resolveLocalSkills,
   copySkillsFiltered,
+  applyCodexSkillInvocationPolicies,
 } from './postinstall/index.js';
 
 // CLI 엔트리 포인트 - main.ts에서 직접 실행 감지 처리

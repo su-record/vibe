@@ -1,6 +1,6 @@
 ---
 name: vibe.test
-description: Self-test vibe — probe every command/skill/hook/agent in the target harness install dir and write a pass/fail report
+description: Self-test vibe — probe every entry skill/skill/hook/agent in the target harness install dir and write a pass/fail report
 argument-hint: "[cc|codex]  (empty = current harness)"
 user-invocable: true
 ---

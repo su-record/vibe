@@ -16,6 +16,7 @@ import {
   removeLegacySkills,
   replaceTemplatesInDir,
   cleanupDuplicateSkillDirs,
+  applyCodexSkillInvocationPolicies,
 } from './fs-utils.js';
 import { GLOBAL_SKILLS, LEGACY_SKILL_DIRS } from './constants.js';
 import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
@@ -107,6 +108,7 @@ export function main(): void {
         removeLegacySkills(sklsDir, LEGACY_SKILL_DIRS);
         copySkillsFiltered(skillsSource, sklsDir, GLOBAL_SKILLS);
         replaceTemplatesInDir(sklsDir);
+        if (label === 'codex') applyCodexSkillInvocationPolicies(sklsDir);
       }
 
       console.log(`✅ ${label} assets installed: ${targetDir}`);
