@@ -52,9 +52,18 @@ export class LLMCluster {
   ): Promise<string> {
     const sys = systemPrompt ?? this.defaultSystemPrompt;
     const fullPrompt = `[System]\n${sys}\n\n[User]\n${prompt}`;
+    // 재귀 가드 — spawn된 자식 claude 세션의 UserPromptSubmit/Stop hook이
+    // 다시 외부 LLM/오케스트레이션을 돌리는 fork 폭주를 차단한다.
+    // hook 스크립트는 VIBE_HOOK_DEPTH 가 존재하면 즉시 종료한다.
     const result = execSync(
       `claude --print --dangerously-skip-permissions`,
-      { input: fullPrompt, timeout: 180000, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
+      {
+        input: fullPrompt,
+        timeout: 180000,
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, VIBE_HOOK_DEPTH: process.env.VIBE_HOOK_DEPTH ?? '1' },
+      }
     );
     return result.trim();
   }

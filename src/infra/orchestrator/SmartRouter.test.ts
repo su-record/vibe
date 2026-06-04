@@ -42,7 +42,13 @@ describe('SmartRouter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
-    router = new SmartRouter();
+    // 기본 router 의 claude fallback 은 테스트에서 실패하도록 주입한다.
+    // (주입하지 않으면 "all providers fail" 테스트가 실제 claude CLI 를 spawn한다)
+    router = new SmartRouter({
+      claudeRunner: {
+        claudeOrchestrate: vi.fn().mockRejectedValue(new Error('claude unavailable in test')),
+      },
+    });
   });
 
   afterEach(() => {
@@ -422,24 +428,54 @@ describe('SmartRouter', () => {
       }
     });
 
-    it('should handle claude provider in fallback chain', async () => {
+    it('should fall back to claude when gpt and antigravity fail', async () => {
       // architecture: ['gpt', 'antigravity', 'claude']
-      // claude always throws "Claude fallback - handled by caller"
       mockGpt.mockRejectedValueOnce(new Error('GPT auth'));
       mockAntigravity.mockRejectedValueOnce(new Error('Antigravity auth'));
+      const claudeOrchestrate = vi.fn().mockResolvedValue('Claude fallback response');
+      const claudeRouter = new SmartRouter({ claudeRunner: { claudeOrchestrate } });
 
-      try {
-        await router.route({
-          type: 'architecture',
-          prompt: 'Test',
-          maxRetries: 0,
-        });
-        expect.fail('Should have thrown');
-      } catch (err) {
-        const error = err as AllProvidersFailedError;
-        expect(error.attemptedProviders).toContain('claude');
-        expect(error.errors['claude']).toContain('Claude fallback');
-      }
+      const result = await claudeRouter.route({
+        type: 'architecture',
+        prompt: 'Test',
+        maxRetries: 0,
+      });
+
+      expect(result.provider).toBe('claude');
+      expect(result.content).toBe('Claude fallback response');
+      expect(result.success).toBe(true);
+      expect(result.usedFallback).toBe(true);
+      expect(result.attemptedProviders).toContain('claude');
+      expect(claudeOrchestrate).toHaveBeenCalledOnce();
+    });
+
+    it('should use claude directly for a claude-only task (general)', async () => {
+      // general → ['claude']
+      const claudeOrchestrate = vi.fn().mockResolvedValue('Claude only response');
+      const claudeRouter = new SmartRouter({ claudeRunner: { claudeOrchestrate } });
+
+      const result = await claudeRouter.route({
+        type: 'general',
+        prompt: 'Test',
+        maxRetries: 0,
+      });
+
+      expect(result.provider).toBe('claude');
+      expect(result.content).toBe('Claude only response');
+      expect(result.usedFallback).toBe(false);
+      expect(mockGpt).not.toHaveBeenCalled();
+    });
+
+    it('should throw AllProvidersFailedError when claude fallback also fails', async () => {
+      mockGpt.mockRejectedValueOnce(new Error('GPT auth'));
+      mockAntigravity.mockRejectedValueOnce(new Error('Antigravity auth'));
+      const claudeOrchestrate = vi.fn().mockRejectedValue(new Error('claude CLI not found'));
+      const claudeRouter = new SmartRouter({ claudeRunner: { claudeOrchestrate } });
+
+      await expect(
+        claudeRouter.route({ type: 'architecture', prompt: 'Test', maxRetries: 0 })
+      ).rejects.toBeInstanceOf(AllProvidersFailedError);
+      expect(claudeOrchestrate).toHaveBeenCalled();
     });
 
     it('should track duration in result', async () => {

@@ -13,7 +13,19 @@ import {
 } from './types.js';
 import * as gptApi from '../lib/gpt/index.js';
 import * as antigravityApi from '../lib/antigravity/index.js';
+import { LLMCluster } from './LLMCluster.js';
 import { debugLog } from '../lib/utils.js';
+
+/**
+ * Claude 실행기 — SmartRouter 의 마지막 fallback(Claude)을 담당.
+ * 기본 구현은 LLMCluster(claude CLI). 테스트에서는 mock 을 주입한다.
+ */
+export interface ClaudeRunner {
+  claudeOrchestrate(prompt: string, systemPrompt?: string): Promise<string>;
+}
+
+// Claude CLI 는 로컬 spawn 이라 외부 API 보다 느릴 수 있어 더 긴 timeout 을 준다.
+const CLAUDE_TIMEOUT_MS = 180_000;
 
 // LLM 가용성 캐시 (5분 TTL)
 // WHY 5min: Long enough to avoid hammering a down provider, short enough to
@@ -53,6 +65,8 @@ export class AllProvidersFailedError extends Error {
  */
 export interface SmartRouterOptions {
   verbose?: boolean;
+  /** Claude fallback 실행기 (기본: LLMCluster). 테스트 주입용. */
+  claudeRunner?: ClaudeRunner;
 }
 
 /**
@@ -62,9 +76,11 @@ export interface SmartRouterOptions {
 export class SmartRouter {
   private cache: LLMAvailabilityCache;
   private verbose: boolean;
+  private claudeRunner: ClaudeRunner;
 
   constructor(options: SmartRouterOptions = {}) {
     this.verbose = options.verbose ?? false;
+    this.claudeRunner = options.claudeRunner ?? new LLMCluster();
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
       antigravity: { available: true, checkedAt: 0, errorCount: 0 }
@@ -170,9 +186,11 @@ export class SmartRouter {
     prompt: string,
     systemPrompt: string
   ): Promise<string> {
+    // Claude 는 로컬 CLI spawn 이라 외부 API 보다 더 긴 timeout 을 허용한다.
+    const timeoutMs = provider === 'claude' ? CLAUDE_TIMEOUT_MS : PROVIDER_TIMEOUT_MS;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`Provider ${provider} timeout (${PROVIDER_TIMEOUT_MS / 1000}s)`)), PROVIDER_TIMEOUT_MS);
+      timer = setTimeout(() => reject(new Error(`Provider ${provider} timeout (${timeoutMs / 1000}s)`)), timeoutMs);
     });
 
     try {
@@ -200,7 +218,10 @@ export class SmartRouter {
       case 'antigravity':
         return antigravityApi.coreAntigravityOrchestrate(prompt, systemPrompt, { jsonMode: false });
       case 'claude':
-        throw new Error('Claude fallback - handled by caller');
+        // 마지막 fallback — 로컬 claude CLI 실행 (LLMCluster 또는 주입된 runner).
+        // 이전에는 'handled by caller' 예외만 던져 claude-only 환경/외부 LLM 장애 시
+        // 항상 AllProvidersFailedError 로 끝났다.
+        return this.claudeRunner.claudeOrchestrate(prompt, systemPrompt);
       default:
         throw new Error(`Unknown provider: ${provider}`);
     }
