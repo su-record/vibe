@@ -126,7 +126,29 @@ function adaptSection(section: string, label: string, dirName: string, targetFil
     .replace(new RegExp(`${dirName.replace('.', '\\.')}\\/CLAUDE\\.md`, 'g'), `${dirName}/${targetFile}`);
 }
 
-const adaptToCodex = (section: string): string => adaptSection(section, 'Codex', '.codex', 'AGENTS.md');
+function adaptCodexInvocation(section: string): string {
+  return section
+    .replace(
+      '## Workflow\n\n| Task | Command |',
+      '## Workflow\n\nCodex exposes Vibe as skills, not top-level `/vibe.*` slash commands. Invoke with `$vibe`, `$vibe.spec`, or `/skills`.\n\n| Task | Codex invocation |',
+    )
+    .replace('| 3+ files | `/vibe.spec` |', '| 3+ files | `$vibe.spec` or `/skills` -> `vibe.spec` |')
+    .replace('| Analyze | `/vibe.analyze` (code, docs, web, Figma) |', '| Analyze | `$vibe.analyze` or `/skills` -> `vibe.analyze` |')
+    .replace('| Harness check | `/vibe.harness` |', '| Harness check | `$vibe.harness` or `/skills` -> `vibe.harness` |')
+    .replace('| Project structure | `/vibe.scaffold` |', '| Project structure | `$vibe.scaffold` or `/skills` -> `vibe.scaffold` |')
+    .replace(
+      'At 70%+ context: save_memory → /new → /vibe.utils --continue',
+      'At 70%+ context: save_memory → /new → invoke `$vibe.utils --continue` or choose `vibe.utils` from `/skills`.',
+    )
+    .replace(
+      'Exclude: `~/.codex/{rules,commands,agents,skills}/`, `.codex/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`',
+      'Exclude: `~/.codex/{rules,agents,skills}/`, `.codex/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`',
+    );
+}
+
+function adaptToCodex(section: string): string {
+  return adaptCodexInvocation(adaptSection(section, 'Codex', '.codex', 'AGENTS.md'));
+}
 const adaptToAntigravity = (section: string): string => adaptSection(section, 'Antigravity', '.gemini', 'GEMINI.md');
 
 /**

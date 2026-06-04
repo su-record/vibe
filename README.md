@@ -14,6 +14,8 @@ npm install -g @su-record/vibe
 vibe init
 ```
 
+> Codex CLI에서는 Vibe가 slash command가 아니라 skill로 노출됩니다. `/vibe`가 보이지 않으면 `$vibe`, `$vibe.spec`처럼 호출하거나 `/skills`에서 `vibe`를 선택하세요. Claude Code에서는 기존 `/vibe.*` slash command 흐름을 사용합니다.
+
 ---
 
 ## 워크플로우

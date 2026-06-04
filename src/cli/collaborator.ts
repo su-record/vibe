@@ -4,7 +4,30 @@
 
 import path from 'path';
 import fs from 'fs';
-import { log, getPackageJson } from './utils.js';
+
+interface HarnessUsage {
+  intro: string;
+  spec: string;
+  run: string;
+  note: string;
+}
+
+function usageForHarness(harnessDir: string): HarnessUsage {
+  if (harnessDir === '.codex') {
+    return {
+      intro: 'Invoke Vibe skills in Codex:',
+      spec: '$vibe.spec "feature"',
+      run: '$vibe.run "feature"',
+      note: 'Or type `/skills` and choose `vibe.spec` / `vibe.run`.',
+    };
+  }
+  return {
+    intro: 'Use slash commands in Claude Code:',
+    spec: '/vibe.spec "feature"',
+    run: '/vibe.run "feature"',
+    note: '',
+  };
+}
 
 /**
  * 협업자 자동 설치 설정
@@ -19,7 +42,7 @@ export function setupCollaboratorAutoInstall(
 ): void {
   const packageJsonPath = path.join(projectRoot, 'package.json');
   const coreDir = path.join(projectRoot, '.vibe');
-  const cliLabel = harnessDir === '.codex' ? 'Codex' : 'Claude Code';
+  const usage = usageForHarness(harnessDir);
 
   // 1. Node.js 프로젝트: package.json 정리
   if (fs.existsSync(packageJsonPath)) {
@@ -100,8 +123,8 @@ fi
 
 echo ""
 echo "Get started with:"
-echo "  /vibe.spec \\"feature\\"    Create SPEC"
-echo "  /vibe.run \\"feature\\"     Implement"
+echo '  ${usage.spec}    Create SPEC'
+echo '  ${usage.run}     Implement'
 `;
     fs.writeFileSync(setupShPath, setupScript);
     fs.chmodSync(setupShPath, '755');
@@ -127,9 +150,10 @@ vibe init
 
 ### Usage
 
-Use slash commands in ${cliLabel}:
-- \`/vibe.spec "feature"\` - Create SPEC document
-- \`/vibe.run "feature"\` - Execute implementation
+${usage.intro}
+- \`${usage.spec}\` - Create SPEC document
+- \`${usage.run}\` - Execute implementation
+${usage.note ? `- ${usage.note}` : ''}
 `;
 
   if (fs.existsSync(readmePath)) {

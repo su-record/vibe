@@ -1,7 +1,7 @@
 ---
 name: test
-description: vibe 자가검진 본체 — 대상 harness(~/.claude/~/.codex)의 모든 command/skill/hook/agent 프로빙 → pass/fail 리포트 → ~/.vibe/test-reports/.
-when_to_use: /vibe.test 진입점에서 체인 호출. 직접 호출 금지.
+description: vibe 자가검진 본체 — 대상 harness(~/.claude/~/.codex)의 모든 entry skill/skill/hook/agent 프로빙 → pass/fail 리포트 → ~/.vibe/test-reports/.
+when_to_use: vibe.test 진입점에서 체인 호출. 직접 호출 금지.
 user-invocable: false
 tier: core
 ---
@@ -12,7 +12,7 @@ Probe every shipped vibe surface in one install dir and emit a pass/fail report.
 
 ## Why this exists
 
-When vibe ships new commands, skills, hooks, or agents, one side (CC or Codex) can end up out of sync with the other, frontmatter can drift, and hook tests can silently break. `/vibe.test` is the single mechanical check: does every surface in the target install actually load and pass its own tests?
+When vibe ships new entry skills, skills, hooks, or agents, one side (CC or Codex) can end up out of sync with the other, frontmatter can drift, and hook tests can silently break. `vibe.test` is the single mechanical check: does every surface in the target install actually load and pass its own tests?
 
 ## Target harness
 
@@ -37,8 +37,8 @@ All probes are **structural or test-based** — no interactive command is ever a
 
 | Category | Source | Check |
 |---|---|---|
-| commands | `<install>/commands/*.md` | file readable · frontmatter parses · `description` present · body references a skill (`Load skill \`...\``) if it delegates |
-| skills | `<install>/skills/*/SKILL.md` | frontmatter parses · required fields (`name`, `description`, `invocation`) · `invocation` ⊆ `{command, auto, chain}` and non-empty · if `invocation` includes `auto` then `triggers` non-empty · if includes `command` then matching `commands/{vibe.X}.md` or `Load skill <name>` reference exists · if includes `chain` then another skill lists it in `chain-next` · body non-empty |
+| entry skills | `<install>/skills/vibe*/SKILL.md` | file readable · frontmatter parses · `name`, `description`, `user-invocable: true` present |
+| skills | `<install>/skills/*/SKILL.md` | frontmatter parses · required fields (`name`, `description`) · body non-empty |
 | hooks | repo `hooks/scripts/*.js` | for each script with a matching `__tests__/<name>.test.js`, run `npx vitest run <test> --reporter=json` and parse pass/fail counts |
 | agents | `<install>/agents/*.md` | file readable · frontmatter parses · required fields (`name`, `description`) |
 
@@ -62,7 +62,7 @@ Written to `~/.vibe/test-reports/<YYYYMMDD-HHmm>-<harness>.{json,md}`. Exact sch
     "failed": 2
   },
   "probes": {
-    "commands": [
+    "entrySkills": [
       { "name": "vibe.spec", "status": "pass" },
       { "name": "vibe.test", "status": "pass" }
     ],
@@ -102,7 +102,7 @@ Written to `~/.vibe/test-reports/<YYYYMMDD-HHmm>-<harness>.{json,md}`. Exact sch
 
 | Category | Pass | Fail |
 |---|---:|---:|
-| commands | 15 | 0 |
+| entry skills | 15 | 0 |
 | skills   | 17 | 1 |
 | hooks    |  6 | 0 |
 | agents   |  3 | 1 |
@@ -136,5 +136,5 @@ If `failed` is empty, replace the Failures section with `_All probes passed._`.
 - [ ] JSON report matches the template above exactly (fields, types, naming)
 - [ ] Markdown summary printed to console after the run
 - [ ] Reports land in `~/.vibe/test-reports/`, never in project-local `.vibe/`
-- [ ] `failed.length > 0` → auto-invokes `/vibe.regress register --from-test`
-- [ ] `invocation` field invariants enforced per skill (`command` / `auto` / `chain` validity)
+- [ ] `failed.length > 0` → auto-invokes `vibe.regress register --from-test`
+- [ ] Entry skills are verified as user-invocable skill surfaces, not deprecated command files

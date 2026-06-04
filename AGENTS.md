@@ -4,7 +4,7 @@
 >
 > **Primary file for Codex (100% supported).**
 >
-> Content SSOT is `CLAUDE.md` — this file is regenerated from it via `/vibe.docs agent`. Edit `CLAUDE.md` first; do not hand-edit this file.
+> Content SSOT is `CLAUDE.md` — this file is regenerated from it via `$vibe.docs agent`. Edit `CLAUDE.md` first; do not hand-edit this file.
 
 ## Hard Rules
 
@@ -76,30 +76,30 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 
 ## Workflow
 
-`/vibe` is the **single slash entry point**. Natural-language requirement (+ optional URL/image/PDF/file attachments) → vibe analyzes intent, designs a pipeline of `/vibe.*` skills, shows a preview, gets one approval, then chains them. `ultrawork` keyword skips the approval gate.
+Codex exposes Vibe entrypoints as skills. Use `$vibe`, `$vibe.spec`, or `/skills` instead of expecting top-level `/vibe.*` slash commands in the Codex popup. Natural-language requirement (+ optional URL/image/PDF/file attachments) → vibe analyzes intent, designs a pipeline of `vibe.*` skills, shows a preview, gets one approval, then chains them. `ultrawork` keyword skips the approval gate.
 
 ```
-/vibe "<requirement>" [+ 📎 attachments]
+$vibe "<requirement>" [+ 📎 attachments]
   → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
   → Smart Resume detection (.vibe/{interviews,plans,specs,features}/)
   → Pipeline preview + 1-time approval (skipped on `ultrawork`)
   → Sequential SlashCommand chain
 ```
 
-**Advanced (explicit phase) commands** — still available for power users when you know exactly which phase to run:
-- `/vibe.spec` — interview → plan → spec → review orchestration
-- `/vibe.figma` — Figma ↔ code (UI track)
-- `/vibe.run` — SPEC-driven implementation
-- `/vibe.verify` — implementation vs SPEC verification
-- `/vibe.regress` — regression test auto-evolution. Auto-registers on `/vibe.verify` failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
-- `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to `/vibe.regress`.
-- `/vibe.trace` — Requirements Traceability Matrix
-- `/vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to `/vibe.regress`. Recommended before every release.
+**Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
+- `$vibe.spec` — interview → plan → spec → review orchestration
+- `$vibe.figma` — Figma ↔ code (UI track)
+- `$vibe.run` — SPEC-driven implementation
+- `$vibe.verify` — implementation vs SPEC verification
+- `$vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
+- `$vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress.
+- `$vibe.trace` — Requirements Traceability Matrix
+- `$vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to regress. Recommended before every release.
 
 | Task Size | Approach |
 |---|---|
 | 1–2 files | Plan Mode |
-| 3+ files | `/vibe "<requirement>"` (or `/vibe.spec` if you want to start at SPEC phase explicitly) |
+| 3+ files | `$vibe "<requirement>"` (or `$vibe.spec` if you want to start at SPEC phase explicitly) |
 
 ## Magic Keywords
 
@@ -118,12 +118,12 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 ## Context Management
 
 - Exploration → Haiku · Implementation → Sonnet · Architecture → Opus
-- At 70%+ context: `save_memory` → `/new` → `/vibe.utils --continue`
+- At 70%+ context: `save_memory` → `/new` → `$vibe.utils --continue`
 
 ## Git
 
 **Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,config.json,constitution.md}`, `AGENTS.md`
-**Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `/vibe.test` artifacts live with the vibe install, not with the project
-**Exclude**: `~/.codex/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`
+**Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `vibe.test` artifacts live with the vibe install, not with the project
+**Exclude**: `~/.codex/{rules,agents,skills}/`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`
 
 <!-- VIBE:END -->

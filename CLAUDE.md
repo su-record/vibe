@@ -78,30 +78,31 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 
 ## Workflow
 
-`/vibe` is the **single slash entry point**. Natural-language requirement (+ optional URL/image/PDF/file attachments) → vibe analyzes intent, designs a pipeline of `/vibe.*` skills, shows a preview, gets one approval, then chains them. `ultrawork` keyword skips the approval gate.
+Claude Code uses `/vibe` as the **single slash entry point**. Codex exposes the same Vibe entrypoints as skills, so use `$vibe`, `$vibe.spec`, or `/skills` instead of expecting top-level `/vibe.*` slash commands in the Codex popup. Natural-language requirement (+ optional URL/image/PDF/file attachments) → vibe analyzes intent, designs a pipeline of `vibe.*` skills, shows a preview, gets one approval, then chains them. `ultrawork` keyword skips the approval gate.
 
 ```
-/vibe "<requirement>" [+ 📎 attachments]
+$vibe "<requirement>" [+ 📎 attachments]   # Codex
+/vibe "<requirement>" [+ 📎 attachments]   # Claude Code
   → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
   → Smart Resume detection (.vibe/{interviews,plans,specs,features}/)
   → Pipeline preview + 1-time approval (skipped on `ultrawork`)
   → Sequential SlashCommand chain
 ```
 
-**Advanced (explicit phase) commands** — still available for power users when you know exactly which phase to run:
-- `/vibe.spec` — interview → plan → spec → review orchestration
-- `/vibe.figma` — Figma ↔ code (UI track)
-- `/vibe.run` — SPEC-driven implementation
-- `/vibe.verify` — implementation vs SPEC verification
-- `/vibe.regress` — regression test auto-evolution. Auto-registers on `/vibe.verify` failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
-- `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to `/vibe.regress`.
-- `/vibe.trace` — Requirements Traceability Matrix
-- `/vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to `/vibe.regress`. Recommended before every release.
+**Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
+- Codex: `$vibe.spec` / Claude Code: `/vibe.spec` — interview → plan → spec → review orchestration
+- Codex: `$vibe.figma` / Claude Code: `/vibe.figma` — Figma ↔ code (UI track)
+- Codex: `$vibe.run` / Claude Code: `/vibe.run` — SPEC-driven implementation
+- Codex: `$vibe.verify` / Claude Code: `/vibe.verify` — implementation vs SPEC verification
+- Codex: `$vibe.regress` / Claude Code: `/vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
+- Codex: `$vibe.contract` / Claude Code: `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress.
+- Codex: `$vibe.trace` / Claude Code: `/vibe.trace` — Requirements Traceability Matrix
+- Codex: `$vibe.test` / Claude Code: `/vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to regress. Recommended before every release.
 
 | Task Size | Approach |
 |---|---|
 | 1–2 files | Plan Mode |
-| 3+ files | `/vibe "<requirement>"` (or `/vibe.spec` if you want to start at SPEC phase explicitly) |
+| 3+ files | `$vibe "<requirement>"` in Codex, `/vibe "<requirement>"` in Claude Code (or the explicit `vibe.spec` entrypoint) |
 
 ## Magic Keywords
 

@@ -12,8 +12,8 @@
  * optional: 참고/래퍼 — 명시적 호출 시에만 로드 (전역 설치에서 제외)
  */
 /**
- * 도트 진입점 스킬 (예: vibe.spec) — `/vibe.spec` 슬래시 명령으로 노출
- * 이전엔 commands/*.md 였지만, CC가 skills/*.md 도 슬래시로 노출하므로 통합됨
+ * 도트 진입점 스킬 (예: vibe.spec)
+ * Claude Code에서는 slash-style 진입점으로, Codex에서는 `/skills` 또는 `$vibe.spec`로 호출된다.
  */
 export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
   'vibe',

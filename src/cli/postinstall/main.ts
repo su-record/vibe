@@ -73,7 +73,7 @@ export function main(): void {
 
     // 4. CLI 호환 디렉토리에 전역 assets 설치 (agents, skills)
     //    ~/.claude/ (필수)
-    //    NOTE: commands/ 폴더는 더 이상 사용하지 않음 — 도트 스킬(vibe.spec 등)이 슬래시 진입점 역할
+    //    NOTE: commands/ 폴더는 더 이상 사용하지 않음 — Codex는 /skills 또는 $skill로 스킬을 명시 호출
     const agentsSource = path.join(packageRoot, 'agents');
     const skillsSource = path.join(packageRoot, 'skills');
 
@@ -92,7 +92,7 @@ export function main(): void {
     function installCliAssets(targetDir: string, label: string): void {
       ensureDir(targetDir);
 
-      // commands — 레거시 vibe.*.md 정리 (도트 스킬로 마이그레이션)
+      // commands — 레거시 vibe.*.md 정리 (스킬 기반 호출로 마이그레이션)
       const cmdsDir = path.join(targetDir, 'commands');
       removeLegacyVibeCommands(cmdsDir);
 
