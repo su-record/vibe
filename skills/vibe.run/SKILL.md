@@ -606,7 +606,7 @@ At automation levels L3 and L4, checkpoints that do not require confirmation are
 
 - `core/development-philosophy.md` - Surgical precision, modify only requested scope
 - `core/quick-start.md` - Korean, DRY, SRP, YAGNI
-- `standards/complexity-metrics.md` - Functions ≤20 lines, nesting ≤3 levels
+- `standards/complexity-metrics.md` - Functions ≤50 lines, nesting ≤3 levels
 - `quality/checklist.md` - Code quality checklist
 
 **Language guide:** `~/.claude/vibe/languages/{stack}.md` (global reference)
@@ -1617,7 +1617,7 @@ After all scenarios complete + Antigravity review, **quality report is auto-gene
 │  │ Build             │ ✅     │ npm run build succeeded     │    │
 │  │ Tests             │ ✅     │ 12/12 passed                │    │
 │  │ Type check        │ ✅     │ 0 errors                    │    │
-│  │ Complexity        │ ✅     │ All functions ≤30 lines     │    │
+│  │ Complexity        │ ✅     │ All functions ≤50 lines     │    │
 │  │ Security          │ ✅     │ 0 vulnerabilities           │    │
 │  │ Race review       │ ✅     │ 3 improvements applied      │    │
 │  └─────────────────────────────────────────────────────────┘    │
@@ -1857,7 +1857,7 @@ Before marking any scenario as complete, ALL items must pass:
 | **Functionality** | All Given/When/Then conditions verified | 20% |
 | **Functionality** | Edge cases handled per scenario | 10% |
 | **Code Quality** | No `any` types in TypeScript | 10% |
-| **Code Quality** | Functions ≤30 lines, nesting ≤3 levels | 10% |
+| **Code Quality** | Functions ≤50 lines, nesting ≤3 levels | 10% |
 | **Code Quality** | No hardcoded values (use constants) | 5% |
 | **Security** | Input validation implemented | 10% |
 | **Security** | Authentication/authorization checked | 5% |

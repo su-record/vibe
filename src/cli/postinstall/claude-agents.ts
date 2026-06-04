@@ -37,18 +37,21 @@ function generateDescription(name: string, title: string, roleLines: string[]): 
     'architect-low': `Quick architecture query agent. ${roleDesc}. Use for pattern lookups and simple structural questions.`,
     'architect-medium': `Module-level architecture designer. ${roleDesc}. Use for module design, API design, and component hierarchy decisions.`,
     // Review agents
-    'security-reviewer': `Security vulnerability expert. ${roleDesc}. OWASP Top 10 verification. Use proactively after code changes involving authentication, user input, or data handling.`,
-    'architecture-reviewer': `Architecture design expert. ${roleDesc}. Use proactively when modifying service layers, dependencies, or module structure.`,
-    'performance-reviewer': `Performance optimization expert. ${roleDesc}. Use proactively after adding loops, database queries, or API calls.`,
-    'complexity-reviewer': `Code complexity analyzer. ${roleDesc}. Use proactively to check function length, nesting depth, cyclomatic complexity.`,
-    'simplicity-reviewer': `Code simplicity advocate. ${roleDesc}. Detects over-engineering. Use proactively after refactoring.`,
-    'data-integrity-reviewer': `Data integrity expert. ${roleDesc}. Validates data flow and state management.`,
-    'test-coverage-reviewer': `Test coverage analyzer. ${roleDesc}. Identifies missing tests. Use proactively after implementing new features.`,
-    'git-history-reviewer': `Git history analyzer. ${roleDesc}. Reviews commit patterns and identifies risky changes.`,
-    'python-reviewer': `Python code expert. ${roleDesc}. Type hints, PEP8 compliance. Use proactively for Python files.`,
-    'typescript-reviewer': `TypeScript code expert. ${roleDesc}. Type safety, modern patterns. Use proactively for .ts/.tsx files.`,
-    'rails-reviewer': `Rails framework expert. ${roleDesc}. MVC patterns, ActiveRecord best practices.`,
-    'react-reviewer': `React framework expert. ${roleDesc}. Hooks, component patterns. Use proactively for React components.`,
+    // Review agents — invoked ONLY via the /vibe.review orchestrator (parallel dispatch).
+    // No standalone "Use proactively" triggers: individual auto-firing (e.g. typescript+react+security
+    // on a single .tsx edit) bypasses the orchestrator and causes duplicate/conflicting reviews.
+    'security-reviewer': `Security vulnerability expert. ${roleDesc}. OWASP Top 10 verification. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'architecture-reviewer': `Architecture design expert. ${roleDesc}. Layer/dependency/module-structure review. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'performance-reviewer': `Performance optimization expert. ${roleDesc}. Loops, queries, API calls. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'complexity-reviewer': `Code complexity analyzer. ${roleDesc}. Function length, nesting depth, cyclomatic complexity. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'simplicity-reviewer': `Code simplicity advocate. ${roleDesc}. Detects over-engineering. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'data-integrity-reviewer': `Data integrity expert. ${roleDesc}. Validates data flow and state management. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'test-coverage-reviewer': `Test coverage analyzer. ${roleDesc}. Identifies missing tests. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'git-history-reviewer': `Git history analyzer. ${roleDesc}. Reviews commit patterns and identifies risky changes. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'python-reviewer': `Python code expert. ${roleDesc}. Type hints, PEP8 compliance. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'typescript-reviewer': `TypeScript code expert. ${roleDesc}. Type safety, modern patterns. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'rails-reviewer': `Rails framework expert. ${roleDesc}. MVC patterns, ActiveRecord best practices. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
+    'react-reviewer': `React framework expert. ${roleDesc}. Hooks, component patterns. Invoked by the /vibe.review orchestrator (not a standalone auto-trigger).`,
     // Research agents
     'best-practices': `Industry best practices researcher. ${roleDesc}. Use when starting feature design to gather recommended patterns.`,
     'framework-docs': `Framework documentation researcher. ${roleDesc}. Use to verify latest API usage and migration guides.`,

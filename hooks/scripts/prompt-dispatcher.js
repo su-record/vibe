@@ -82,39 +82,47 @@ const DISPATCH_RULES = [
     label: 'e2e-echo',
   },
 
-  // 외부 LLM 호출 (GPT/Antigravity) - 패턴 매칭 필수
+  // 외부 LLM 호출 (GPT/Antigravity) — 명시적 provider 접두사 필수.
+  //
+  // 과거에는 "추론해", "코드 리뷰", "디버깅해" 같은 자연어 패턴이 prompt
+  // 어디서든 매칭되어, 평범한 한국어/영어 요청에도 외부 LLM이 동기로 spawn되고
+  // 그 응답이 컨텍스트에 주입되었다(컨텍스트 오염 + 최대 30s 블로킹).
+  // 이제는 prompt가 `gpt`/`agy`/`antigravity` 로 **시작**할 때만 발동한다.
+  // 즉 사용자가 외부 LLM을 콕 집어 부를 때만 동작하고, 일상 요청엔 걸리지 않는다.
+  // (참고: `/vibe.reason` 스킬이 일반 추론을 담당하므로 자연어 자동호출은 불필요)
+  // `s` 플래그(dotAll)로 여러 줄 prompt 의 역할 키워드도 매칭한다.
   {
-    pattern: /아키텍처.*(검토|리뷰|분석)|architecture.*(review|analyz)|설계.*검토|구조.*분석.*해/i,
+    pattern: /^\s*gpt\b.*(아키텍처|architecture|설계|구조)/is,
     script: 'llm-orchestrate.js',
     args: ['gpt', 'orchestrate', 'You are a software architect. Analyze and review the architecture.'],
     label: 'gpt-architecture',
   },
   {
-    pattern: /(UI|UX).*(리뷰|검토|피드백|개선)|사용자.*경험.*검토|디자인.*리뷰|design.*feedback/i,
+    pattern: /^\s*(agy|antigravity)\b.*(ui|ux|디자인|design|사용자.*경험)/is,
     script: 'llm-orchestrate.js',
     args: ['antigravity', 'orchestrate', 'You are a UI/UX expert. Analyze and provide feedback.'],
     label: 'antigravity-uiux',
   },
   {
-    pattern: /디버깅.*해|버그.*찾아|find.*bug|debug.*this.*code/i,
+    pattern: /^\s*gpt\b.*(디버깅|debug|버그|bug)/is,
     script: 'llm-orchestrate.js',
     args: ['gpt', 'orchestrate', 'You are a debugging expert. Find bugs and suggest fixes.'],
     label: 'gpt-debug',
   },
   {
-    pattern: /코드.*정적.*분석|코드.*분석.*해줘|analyze.*code.*quality/i,
+    pattern: /^\s*(agy|antigravity)\b.*(분석|analyz|코드.*품질|code.*quality)/is,
     script: 'llm-orchestrate.js',
     args: ['antigravity', 'orchestrate', 'You are a code analysis expert. Review and analyze the code.'],
     label: 'antigravity-analysis',
   },
   {
-    pattern: /코드.*리뷰|code.*review|PR.*리뷰|리뷰.*해줘.*코드/i,
+    pattern: /^\s*gpt\b.*(리뷰|review)/is,
     script: 'llm-orchestrate.js',
     args: ['gpt', 'orchestrate', 'You are a code review expert. Review the code for best practices, security, and performance.'],
     label: 'gpt-codereview',
   },
   {
-    pattern: /추론.*해|reasoning|복잡.*분석|deep.*analysis/i,
+    pattern: /^\s*gpt\b.*(추론|reasoning|복잡.*분석|deep.*analysis)/is,
     script: 'llm-orchestrate.js',
     args: ['gpt', 'orchestrate', 'You are a reasoning expert. Analyze the problem deeply and provide detailed reasoning.'],
     label: 'gpt-reasoning',
@@ -163,6 +171,12 @@ for (const rule of DISPATCH_RULES) {
       }, (error, stdout, stderr) => {
         if (stdout?.trim()) {
           process.stdout.write(stdout);
+        } else if (error) {
+          // 무음실패 방지 — 외부 LLM 호출이 timeout(30s) 또는 에러로 결과 없이
+          // 죽을 때, 사용자가 원인을 알 수 있도록 한 줄만 노출한다.
+          // (완전 비동기화는 후속: 리포트 B-2/C-3 참조)
+          const reason = error.killed ? 'timed out (30s)' : (error.message || 'failed');
+          process.stdout.write(`[${rule.label}] external LLM call ${reason} — no result injected.\n`);
         }
         resolve();
       });

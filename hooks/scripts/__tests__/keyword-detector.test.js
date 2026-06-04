@@ -71,35 +71,68 @@ describe('keyword-detector', () => {
     });
   });
 
-  describe('verify keyword', () => {
-    it('should detect verify keyword', () => {
-      const result = runDetector('verify the implementation is correct');
+  // strict 키워드(일상어): 명령 끝 위치 또는 --flag 에서만 발동.
+  // 일상 영어("please verify", "quick question")의 오탐을 막기 위함.
+  describe('verify keyword (strict)', () => {
+    it('should detect verify at command tail', () => {
+      const result = runDetector('make the implementation correct, verify');
       expect(result.stdout).toContain('[VERIFY MODE]');
       expect(result.stdout).toContain('verification');
     });
-  });
 
-  describe('quick keyword', () => {
-    it('should detect quick keyword', () => {
-      const result = runDetector('quick fix this typo');
-      expect(result.stdout).toContain('[QUICK MODE]');
-      expect(result.stdout).toContain('fast');
+    it('should detect --verify flag', () => {
+      const result = runDetector('fix the bug --verify');
+      expect(result.stdout).toContain('[VERIFY MODE]');
     });
   });
 
-  describe('explore keyword', () => {
-    it('should detect explore keyword', () => {
-      const result = runDetector('explore the codebase structure');
+  describe('quick keyword (strict)', () => {
+    it('should detect quick at command tail', () => {
+      const result = runDetector('fix this typo quick');
+      expect(result.stdout).toContain('[QUICK MODE]');
+      expect(result.stdout).toContain('fast');
+    });
+
+    it('should detect --quick flag', () => {
+      const result = runDetector('build the payment API --quick');
+      expect(result.stdout).toContain('[QUICK MODE]');
+    });
+  });
+
+  describe('explore keyword (strict)', () => {
+    it('should detect --explore flag', () => {
+      const result = runDetector('analyze the codebase --explore');
       expect(result.stdout).toContain('[EXPLORE MODE]');
       expect(result.stdout).toContain('exploration');
     });
   });
 
-  describe('plan keyword', () => {
-    it('should detect plan keyword', () => {
-      const result = runDetector('plan the new feature');
+  describe('plan keyword (strict)', () => {
+    it('should detect --plan flag', () => {
+      const result = runDetector('the new feature --plan');
       expect(result.stdout).toContain('[PLAN MODE]');
       expect(result.stdout).toContain('planning');
+    });
+  });
+
+  // ══════════════════════════════════════════════════
+  // 오탐 방지 회귀 테스트 — 일상어가 명령 중간/시작에 올 때 발동 금지
+  // ══════════════════════════════════════════════════
+  describe('strict keyword false-positive guard', () => {
+    it('should NOT trigger on "quick question on auth"', () => {
+      expect(runDetector('quick question on auth').stdout).toBe('');
+    });
+
+    it('should NOT trigger on "please verify the fix works"', () => {
+      expect(runDetector('please verify the fix works').stdout).toBe('');
+    });
+
+    it('should NOT trigger on "I plan to refactor later"', () => {
+      expect(runDetector('I plan to refactor later').stdout).toBe('');
+    });
+
+    it('should NOT trigger on "let me explore the options first"', () => {
+      expect(runDetector('let me explore the options first').stdout).toBe('');
     });
   });
 
@@ -115,15 +148,16 @@ describe('keyword-detector', () => {
     });
 
     it('should detect ralph+verify synergy', () => {
-      const result = runDetector('ralph verify each step carefully');
+      // verify is strict → use --verify flag (ralph stays bare)
+      const result = runDetector('ralph fix each step --verify');
       expect(result.stdout).toContain('[RALPH+VERIFY]');
     });
 
     it('should output both keywords when no synergy key matches sorted order', () => {
       // KEYWORD_SYNERGIES defines 'ultrawork+explore' but processCombinations
       // sorts keywords alphabetically → tries 'explore+ultrawork' which has no match.
-      // So individual outputs are emitted instead.
-      const result = runDetector('ultrawork explore the entire project');
+      // So individual outputs are emitted instead. explore is strict → --explore.
+      const result = runDetector('ultrawork analyze the entire project --explore');
       expect(result.stdout).toContain('[ULTRAWORK MODE]');
       expect(result.stdout).toContain('[EXPLORE MODE]');
       expect(result.stdout).toContain('[FLAGS]');
@@ -190,7 +224,8 @@ describe('keyword-detector', () => {
     });
 
     it('should merge flags from multiple keywords', () => {
-      const result = runDetector('ralph quick finish this');
+      // quick is strict → place at command tail
+      const result = runDetector('ralph finish this quick');
       expect(result.stdout).toContain('[FLAGS]');
       expect(result.stdout).toContain('persistence');
       expect(result.stdout).toContain('fast');

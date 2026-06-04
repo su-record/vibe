@@ -57,7 +57,16 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 | `.claude/settings.local.json` | Claude Code hooks (auto-generated, don't commit) |
 | `~/.codex/config.toml` | Codex `notify` (turn-complete lifecycle hook, auto-installed) |
 
+### Quality SSOT (3-tier)
+| Path | Purpose |
+|---|---|
+| `CLAUDE.md` / `AGENTS.md` | Code quality + build quality (existing) |
+| `DESIGN.md` | **Visual quality** — Stitch 9-section format, project root, managed by `/vibe.design` (init/lint/verify/sync). Figma 독립. UI stack 에서만 권유 — 부재해도 워크플로 블록하지 않음. |
+
 Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/`update` 시 `.vibe/` 로 이동한다.
+
+### Dual-Harness Doctrine
+하네스 차이는 경로가 아니라 **인지 방식**(CC=추론 / Codex=직역)에 있다. 원칙: **암묵적 동작에 의존하지 않는다 — 추론은 `/vibe` 디스패처가 앞단에서, skill 본문은 전부 명시적으로.** ("명시성 공통분모 + 추론 앞단"). Hook은 의도별 매핑: 라이프사이클 → Codex `config.toml notify`, 행동 가드 → AGENTS.md soft-hook(직역이라 신뢰성↑). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
 
 ### Gotchas
 - `better-sqlite3` WAL mode — synchronous API

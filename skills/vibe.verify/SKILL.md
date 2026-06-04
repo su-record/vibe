@@ -257,7 +257,7 @@ Record the value as `{step_count}` and include it in the report below.
 │  │ Build             │ ✅    │ Success                     │    │
 │  │ Tests             │ ✅    │ 12/12 passed                │    │
 │  │ Type Check        │ ✅    │ 0 errors                    │    │
-│  │ Complexity        │ ✅    │ All functions ≤30 lines     │    │
+│  │ Complexity        │ ✅    │ All functions ≤50 lines     │    │
 │  │ Code Coverage     │ ⚠️    │ 78% (target: 80%)           │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │

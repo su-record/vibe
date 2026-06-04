@@ -36,6 +36,7 @@ const MAGIC_KEYWORDS = {
     description: 'Planning interview mode',
     flags: ['planning', 'interview'],
     output: '[PLAN MODE] Enter planning interview mode. Gather requirements before implementation.',
+    strict: true, // 일상어 — 명령 끝 위치 또는 --plan 플래그에서만 (오탐 방지)
   },
 
   // Ralph + Plan 조합
@@ -52,6 +53,7 @@ const MAGIC_KEYWORDS = {
     description: 'Strict verification after each step',
     flags: ['verification', 'strict'],
     output: '[VERIFY MODE] Strict verification enabled. Every change must be verified before proceeding.',
+    strict: true, // 일상어 ("please verify the fix" 오탐 방지)
   },
 
   // 탐색 모드
@@ -60,6 +62,7 @@ const MAGIC_KEYWORDS = {
     description: 'Deep codebase exploration',
     flags: ['exploration', 'thorough'],
     output: '[EXPLORE MODE] Deep exploration enabled. Use multiple Explore agents for thorough codebase analysis.',
+    strict: true, // 일상어 ("let me explore the options" 오탐 방지)
   },
 
   // 빠른 모드
@@ -68,6 +71,7 @@ const MAGIC_KEYWORDS = {
     description: 'Fast execution, minimal verification',
     flags: ['fast', 'minimal_verification'],
     output: '[QUICK MODE] Fast execution mode. Minimal verification, single round reviews.',
+    strict: true, // 일상어 ("quick question on auth" 오탐 방지)
   },
 };
 
@@ -96,8 +100,16 @@ function detectKeywords(text) {
   const resolvedKeywords = new Map();
 
   for (const [keyword, config] of Object.entries(MAGIC_KEYWORDS)) {
-    // 키워드 매칭 (단어 경계)
-    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+    // alias는 본체의 strict 설정을 따른다.
+    const target = config.alias ? MAGIC_KEYWORDS[config.alias] : config;
+    // strict 키워드(일상어: quick/plan/verify/explore)는 단어경계만으로는
+    // "quick question", "please verify" 등에 오탐한다. 따라서
+    //   ① 명령 끝 위치의 독립 토큰 ("... 만들어줘 quick")  또는
+    //   ② 명시 플래그 ("--quick", "-quick", "/quick")
+    // 에서만 매칭한다. 조어(ralph/ultrawork)는 오탐이 거의 없어 단어경계 유지.
+    const regex = target.strict
+      ? new RegExp(`(?:(?:^|\\s)--?${keyword}\\b)|(?:(?:^|\\s)${keyword}\\s*$)`, 'i')
+      : new RegExp(`\\b${keyword}\\b`, 'i');
     if (regex.test(lowerText)) {
       // alias 해결
       const resolved = config.alias ? MAGIC_KEYWORDS[config.alias] : config;

@@ -1,16 +1,23 @@
 /**
  * Stop Hook - 에이전트 응답 완료 시 자동 커밋 + 롤백 체크포인트
  *
- * 변경사항이 있으면 자동으로 git add + commit.
- * 커밋 메시지는 변경 파일 목록 기반으로 생성.
- * feature branch에서만 동작 (main/master 보호).
+ * ⚠️ OPT-IN ONLY (기본 비활성).
+ *   매 턴 자동 커밋은 "사용자가 요청할 때만 커밋한다"는 원칙과 충돌하고,
+ *   `git add -A` 가 스코프 밖 파일(임시/미완성)까지 스테이징하는 부작용이 있다.
+ *   따라서 `.vibe/config.json` 에서 `hooks["auto-commit"].enabled === true`
+ *   로 명시적으로 켰을 때만 동작한다.
  *
- * 체크포인트: 커밋마다 vibe-checkpoint 태그를 생성해
- * 문제 발생 시 `git reset --hard vibe-checkpoint-N` 으로 롤백 가능.
- * 최근 5개만 유지, 오래된 체크포인트는 자동 정리.
+ * 동작 시: 변경사항이 있으면 git add -A + commit (커밋 메시지는 변경 파일 목록 기반),
+ *   feature branch 에서만 (main/master 보호).
+ * 체크포인트: 커밋마다 vibe-checkpoint 태그 생성 → `git reset --hard vibe-checkpoint-N`
+ *   으로 롤백 가능. 최근 5개만 유지.
  */
 import { execSync } from 'child_process';
-import { PROJECT_DIR } from './utils.js';
+import { PROJECT_DIR, readProjectConfig } from './utils.js';
+
+// Opt-in 가드 — 명시적으로 켜지 않았으면 아무것도 하지 않는다.
+const __autoCommitCfg = readProjectConfig();
+if (__autoCommitCfg?.hooks?.['auto-commit']?.enabled !== true) process.exit(0);
 
 const PROTECTED_BRANCHES = ['main', 'master', 'develop', 'production'];
 const MAX_FILES_IN_MSG = 5;

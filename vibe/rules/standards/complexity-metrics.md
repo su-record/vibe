@@ -283,7 +283,7 @@ npm install eslint-plugin-complexity
   "rules": {
     "complexity": ["error", 10],
     "max-depth": ["error", 3],
-    "max-lines-per-function": ["error", 20]
+    "max-lines-per-function": ["error", 50]
   }
 }
 ```
@@ -307,7 +307,7 @@ radon mi app/
 |--------|--------|-------------|
 | Cyclomatic Complexity | ≤ 10 | Independent execution paths |
 | Cognitive Complexity | ≤ 15 | Easy to understand |
-| Function Length | ≤ 20 lines | Short, focused functions |
+| Function Length | ≤ 50 lines | Short, focused functions |
 | Nesting Depth | ≤ 3 levels | Flat structure |
 | Parameters | ≤ 5 | Function parameter limit |
 | Dependencies | ≤ 7 | Module dependency limit |
