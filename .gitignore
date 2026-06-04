@@ -27,3 +27,9 @@ wiki/
 .claude/settings.local.json
 .claude/vibe/config.json
 .claude/vibe/.last-feature
+
+# vibe runtime artifacts (per CLAUDE.md Git Exclude)
+.vibe/metrics/
+.vibe/memories/
+.vibe/checkpoints/
+.claude/scheduled_tasks.lock
