@@ -52,6 +52,10 @@ export interface ChatOptions {
   jsonMode?: boolean;
   /** 내부 재시도 카운터 */
   _retryCount?: number;
+  /** 외부 취소 signal (SmartRouter 등). timeout 과 결합된다. */
+  signal?: AbortSignal;
+  /** fetch hard timeout (ms). 미지정 시 DEFAULT_LLM_TIMEOUT_MS. */
+  timeoutMs?: number;
 }
 
 export interface ChatResponse {
@@ -148,4 +152,8 @@ export interface CompleteCodeResponse {
 export interface VibeAntigravityOptions {
   maxTokens?: number;
   jsonMode?: boolean;
+  /** 외부 취소 signal (SmartRouter 등). chat 으로 관통된다. */
+  signal?: AbortSignal;
+  /** fetch hard timeout (ms). */
+  timeoutMs?: number;
 }

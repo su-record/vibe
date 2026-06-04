@@ -7,6 +7,7 @@
  */
 
 import { getApiKeyFromConfig } from './auth.js';
+import { createTimeoutSignal } from '../llm/timeout.js';
 import type { EmbeddingResponse } from './types.js';
 
 const API_TIMEOUT_MS = 30_000;
@@ -52,8 +53,7 @@ export async function embed(
   void inputType;
   const apiKey = getEmbeddingApiKey();
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const { signal, cleanup } = createTimeoutSignal(API_TIMEOUT_MS);
 
   try {
     const response = await fetch(`${GPT_EMBEDDING_BASE_URL}/embeddings`, {
@@ -66,7 +66,7 @@ export async function embed(
         input: texts,
         model: GPT_EMBEDDING_MODEL,
       }),
-      signal: controller.signal,
+      signal,
     });
 
     if (!response.ok) {
@@ -87,11 +87,12 @@ export async function embed(
       model: result.model,
     };
   } catch (error) {
-    if ((error as Error).name === 'AbortError') {
+    const name = (error as Error).name;
+    if (name === 'AbortError' || name === 'TimeoutError') {
       throw new Error(`GPT Embedding API timeout (${API_TIMEOUT_MS / 1000}s)`);
     }
     throw error;
   } finally {
-    clearTimeout(timeout);
+    cleanup();
   }
 }

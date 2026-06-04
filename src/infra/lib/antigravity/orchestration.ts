@@ -17,7 +17,7 @@ export async function coreAntigravityOrchestrate(
   systemPrompt: string,
   options: VibeAntigravityOptions = {}
 ): Promise<string> {
-  const { maxTokens = 4096, jsonMode = true } = options;
+  const { maxTokens = 4096, jsonMode = true, signal, timeoutMs } = options;
 
   const result = await chat({
     model: 'antigravity-pro',
@@ -29,6 +29,8 @@ export async function coreAntigravityOrchestrate(
     systemPrompt: jsonMode
       ? `${systemPrompt}\n\nRespond with valid JSON only.`
       : systemPrompt,
+    signal,
+    timeoutMs,
   });
   return result.content;
 }

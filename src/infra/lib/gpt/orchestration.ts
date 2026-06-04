@@ -16,7 +16,7 @@ export async function coreGptOrchestrate(
   systemPrompt: string,
   options: VibeGptOptions = {}
 ): Promise<string> {
-  const { maxTokens = 4096, jsonMode = true } = options;
+  const { maxTokens = 4096, jsonMode = true, signal, timeoutMs } = options;
 
   const result = await chat({
     model: 'gpt-5.5',
@@ -26,6 +26,8 @@ export async function coreGptOrchestrate(
     systemPrompt: jsonMode
       ? `${systemPrompt}\n\nIMPORTANT: You must respond with valid JSON only. No markdown, no explanation, just pure JSON.`
       : systemPrompt,
+    signal,
+    timeoutMs,
   });
   return result.content;
 }

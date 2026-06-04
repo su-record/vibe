@@ -5,6 +5,7 @@
 import crypto from 'crypto';
 import { CHATGPT_BASE_URL } from './constants.js';
 import { sleep } from '../utils.js';
+import { createTimeoutSignal } from '../llm/timeout.js';
 import { getAuthInfo, getApiKeyFromConfig } from './auth.js';
 import type {
   GptModelInfo,
@@ -206,6 +207,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
 
   const retryCount = options._retryCount || 0;
   const maxRetries = 3;
+  const { signal, cleanup } = createTimeoutSignal(options.timeoutMs, options.signal);
 
   try {
     const requestBody: Record<string, unknown> = {
@@ -222,6 +224,7 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
+      signal,
     });
 
     if (!response.ok) {
@@ -262,6 +265,8 @@ async function chatWithApiKey(apiKey: string, options: ChatOptions): Promise<Cha
       return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
     }
     throw error;
+  } finally {
+    cleanup();
   }
 }
 
@@ -311,6 +316,7 @@ async function chatWithCodex(accessToken: string, options: ChatOptions, accountI
   // API 호출 (재시도 로직 포함)
   const retryCount = options._retryCount || 0;
   const maxRetries = 3;
+  const { signal, cleanup } = createTimeoutSignal(options.timeoutMs, options.signal);
 
   try {
     const headers: Record<string, string> = {
@@ -328,6 +334,7 @@ async function chatWithCodex(accessToken: string, options: ChatOptions, accountI
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
+      signal,
     });
 
     if (!response.ok) {
@@ -373,6 +380,8 @@ async function chatWithCodex(accessToken: string, options: ChatOptions, accountI
       return chatWithCodex(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
     }
     throw error;
+  } finally {
+    cleanup();
   }
 }
 
@@ -496,45 +505,55 @@ export async function* chatStream(options: ChatOptions): AsyncGenerator<StreamCh
     streamHeaders['chatgpt-account-id'] = authInfo.accountId;
   }
 
-  const response = await fetch(CODEX_RESPONSES_URL, {
-    method: 'POST',
-    headers: streamHeaders,
-    body: JSON.stringify(requestBody),
-  });
+  // 스트리밍은 본질적으로 길 수 있어 total timeout 을 걸지 않는다. 대신 연결 수립까지만
+  // hard timeout(clearTimer)을 적용하고, 이후 read 는 외부 취소 signal 만 따른다.
+  const { signal, cleanup, clearTimer } = createTimeoutSignal(options.timeoutMs, options.signal);
+  try {
+    const response = await fetch(CODEX_RESPONSES_URL, {
+      method: 'POST',
+      headers: streamHeaders,
+      body: JSON.stringify(requestBody),
+      signal,
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`GPT API error (${response.status}): ${errorText}`);
-  }
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GPT API error (${response.status}): ${errorText}`);
+    }
 
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
+    clearTimer(); // 연결 수립 — total timeout 해제, caller 취소(외부 signal)는 유지
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
 
-    const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split('\n');
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
-        if (data === '[DONE]') {
-          yield { type: 'done' };
-          return;
-        }
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
 
-        try {
-          const json = JSON.parse(data) as { type: string; delta?: string };
-          if (json.type === 'response.output_text.delta') {
-            yield { type: 'delta', content: json.delta || '' };
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') {
+            yield { type: 'done' };
+            return;
           }
-        } catch { /* ignore: optional operation */
-          // JSON 파싱 실패 무시
+
+          try {
+            const json = JSON.parse(data) as { type: string; delta?: string };
+            if (json.type === 'response.output_text.delta') {
+              yield { type: 'delta', content: json.delta || '' };
+            }
+          } catch { /* ignore: optional operation */
+            // JSON 파싱 실패 무시
+          }
         }
       }
     }
+  } finally {
+    cleanup();
   }
 }
 

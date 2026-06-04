@@ -259,7 +259,7 @@ describe('SmartRouter', () => {
       expect(mockGpt).toHaveBeenCalledWith(
         'Test prompt',
         'Custom system prompt',
-        { jsonMode: false },
+        expect.objectContaining({ jsonMode: false, signal: expect.any(AbortSignal) }),
       );
     });
 
@@ -275,7 +275,7 @@ describe('SmartRouter', () => {
       expect(mockGpt).toHaveBeenCalledWith(
         'Test prompt',
         'You are a helpful assistant.',
-        { jsonMode: false },
+        expect.objectContaining({ jsonMode: false, signal: expect.any(AbortSignal) }),
       );
     });
   });
@@ -581,7 +581,7 @@ describe('SmartRouter', () => {
       expect(mockGpt).toHaveBeenCalledWith(
         'Generate a function\n\nContext:\nSome context',
         'Generate clean, well-documented code.',
-        { jsonMode: false },
+        expect.objectContaining({ jsonMode: false, signal: expect.any(AbortSignal) }),
       );
     });
   });

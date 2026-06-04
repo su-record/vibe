@@ -41,6 +41,10 @@ export interface ChatOptions {
   temperature?: number;
   systemPrompt?: string;
   _retryCount?: number;
+  /** 외부 취소 signal (SmartRouter 등 호출자). timeout 과 결합된다. */
+  signal?: AbortSignal;
+  /** fetch hard timeout (ms). 미지정 시 DEFAULT_LLM_TIMEOUT_MS. */
+  timeoutMs?: number;
 }
 
 // 채팅 응답
@@ -82,6 +86,10 @@ export interface OpenAIResponse {
 export interface VibeGptOptions {
   maxTokens?: number;
   jsonMode?: boolean;
+  /** 외부 취소 signal (SmartRouter 등). chat 으로 관통된다. */
+  signal?: AbortSignal;
+  /** fetch hard timeout (ms). */
+  timeoutMs?: number;
 }
 
 // 임베딩 응답

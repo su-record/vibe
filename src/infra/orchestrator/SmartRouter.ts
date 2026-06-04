@@ -188,14 +188,21 @@ export class SmartRouter {
   ): Promise<string> {
     // Claude 는 로컬 CLI spawn 이라 외부 API 보다 더 긴 timeout 을 허용한다.
     const timeoutMs = provider === 'claude' ? CLAUDE_TIMEOUT_MS : PROVIDER_TIMEOUT_MS;
+    // AbortController 로 timeout 시 진행 중인 fetch 를 실제로 취소한다.
+    // (이전에는 Promise.race 만으로 로컬에서 빠져나올 뿐 원격 요청은 계속됐다 — B-3)
+    const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`Provider ${provider} timeout (${timeoutMs / 1000}s)`)), timeoutMs);
+      timer = setTimeout(() => {
+        const err = new Error(`Provider ${provider} timeout (${timeoutMs / 1000}s)`);
+        controller.abort(err);
+        reject(err);
+      }, timeoutMs);
     });
 
     try {
       const result = await Promise.race([
-        this.callLlm(provider, prompt, systemPrompt),
+        this.callLlm(provider, prompt, systemPrompt, controller.signal, timeoutMs),
         timeoutPromise
       ]);
       return result;
@@ -210,17 +217,19 @@ export class SmartRouter {
   private async callLlm(
     provider: LLMProvider,
     prompt: string,
-    systemPrompt: string
+    systemPrompt: string,
+    signal?: AbortSignal,
+    timeoutMs?: number
   ): Promise<string> {
     switch (provider) {
       case 'gpt':
-        return gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false });
+        return gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false, signal, timeoutMs });
       case 'antigravity':
-        return antigravityApi.coreAntigravityOrchestrate(prompt, systemPrompt, { jsonMode: false });
+        return antigravityApi.coreAntigravityOrchestrate(prompt, systemPrompt, { jsonMode: false, signal, timeoutMs });
       case 'claude':
         // 마지막 fallback — 로컬 claude CLI 실행 (LLMCluster 또는 주입된 runner).
         // 이전에는 'handled by caller' 예외만 던져 claude-only 환경/외부 LLM 장애 시
-        // 항상 AllProvidersFailedError 로 끝났다.
+        // 항상 AllProvidersFailedError 로 끝났다. (execSync 라 signal abort 는 미적용)
         return this.claudeRunner.claudeOrchestrate(prompt, systemPrompt);
       default:
         throw new Error(`Unknown provider: ${provider}`);

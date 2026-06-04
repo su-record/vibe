@@ -5,6 +5,7 @@
  */
 
 import { sleep } from '../utils.js';
+import { createTimeoutSignal } from '../llm/timeout.js';
 import { getAuthInfo, getApiKeyFromConfig } from './auth.js';
 import { getModelOverride } from '../config/GlobalConfigManager.js';
 import {
@@ -90,6 +91,7 @@ async function chatWithApiKey(
   }
 
   const retryCount = options._retryCount || 0;
+  const { signal, cleanup } = createTimeoutSignal(options.timeoutMs, options.signal);
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${actualModel}:generateContent?key=${apiKey}`;
@@ -97,6 +99,7 @@ async function chatWithApiKey(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
+      signal,
     });
 
     if (!response.ok) {
@@ -134,6 +137,8 @@ async function chatWithApiKey(
       return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
     }
     throw error;
+  } finally {
+    cleanup();
   }
 }
 
