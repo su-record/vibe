@@ -9,6 +9,14 @@ import * as antigravityApi from '../lib/antigravity/index.js';
 import { isAntigravityAvailable, isCodexAvailable } from '../lib/llm-availability.js';
 
 /**
+ * executeMultiLlmResearch 가 이번 호출에서 실제로 보낼 직접 LLM 호출 수.
+ * 가용한 provider(GPT 2건 + Antigravity 2건) 기준. fan-out 전 preflight/budget gate 용.
+ */
+export function countPlannedMultiLlmCalls(): number {
+  return (isCodexAvailable() ? 2 : 0) + (isAntigravityAvailable() ? 2 : 0);
+}
+
+/**
  * Multi-LLM 리서치 프롬프트 생성
  */
 export function createMultiLlmPrompts(feature: string, techStack: string[]): {

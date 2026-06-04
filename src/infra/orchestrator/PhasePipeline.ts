@@ -40,8 +40,8 @@ import type { CheckpointGate } from './CheckpointManager.js';
 export interface PipelineStage {
   /** 스테이지 이름 */
   name: string;
-  /** 준비 작업 (백그라운드 실행 가능) */
-  prepare?: () => Promise<StageContext>;
+  /** 준비 작업 (백그라운드 실행 가능). signal 로 취소 가능. */
+  prepare?: (signal?: AbortSignal) => Promise<StageContext>;
   /** 메인 실행 */
   execute: (context: StageContext) => Promise<StageResult>;
   /** 정리 작업 */
@@ -57,6 +57,8 @@ export interface StageContext {
   previousResult?: StageResult;
   /** All previous phase results (available when using resultStore or resumeFrom) */
   allPreviousResults?: StageResult[];
+  /** 파이프라인 취소/타임아웃 signal — prepare·execute 가 길게 도는 작업을 중단할 때 사용. */
+  signal?: AbortSignal;
 }
 
 /** 스테이지 결과 */
@@ -210,10 +212,10 @@ export class PhasePipeline {
         } catch { /* progress 파일 실패는 무시 */ }
       }
 
-      // ULTRAWORK 모드: 백그라운드 준비 시작
-      if (this.options.ultrawork) {
-        this.startBackgroundPreparations();
-      }
+      // ULTRAWORK 모드: 다음 phase 1개만 미리 준비한다 (B-6).
+      // 이전에는 시작 시 미래 phase 전부를 speculative 실행해, 앞 phase 가 성공하기도
+      // 전에 token 을 소비하고 실패/취소 시에도 정리되지 않았다. 이제는 각 phase 실행 직전
+      // 다음 phase 만 준비하고, abortController.signal 로 취소 가능하다.
 
       // Phase 순차 실행 (startIndex부터)
       for (let i = startIndex; i < this.stages.length; i++) {
@@ -248,7 +250,14 @@ export class PhasePipeline {
           data: {},
           previousResult: results.length > 0 ? results[results.length - 1] : undefined,
           allPreviousResults: results.length > 0 ? [...results] : undefined,
+          signal: this.abortController.signal,
         };
+
+        // ULTRAWORK: 현재 phase 가 실행되는 동안 "다음 phase 하나"를 미리 준비한다.
+        // (한 단계만 앞서가므로 speculative token 소비를 최소화)
+        if (this.options.ultrawork) {
+          this.startBackgroundPreparation(phaseNumber + 1);
+        }
 
         // 백그라운드 준비 결과 병합
         if (this.options.ultrawork && this.backgroundPreparations.has(phaseNumber)) {
@@ -264,7 +273,7 @@ export class PhasePipeline {
 
         // 동기 준비 (백그라운드 준비가 없거나 실패한 경우)
         if (!context.preparedData && stage.prepare) {
-          const preparedContext = await stage.prepare();
+          const preparedContext = await stage.prepare(this.abortController.signal);
           context.preparedData = preparedContext.data;
         }
 
@@ -302,7 +311,8 @@ export class PhasePipeline {
             await stage.cleanup(context).catch(() => {});
           }
 
-          // 파이프라인 중단
+          // 파이프라인 중단 — 진행 중인 다음 phase 준비(speculative)를 취소한다 (B-6)
+          this.abortController.abort();
           completeIteration();
           clearTimeout(timeoutId);
 
@@ -422,16 +432,9 @@ export class PhasePipeline {
     this.abortController.abort();
   }
 
-  /** 백그라운드 준비 시작 (모든 Phase) */
-  private startBackgroundPreparations(): void {
-    // Phase 2부터 백그라운드 준비 시작 (Phase 1은 동기 실행)
-    for (let i = 1; i < this.stages.length; i++) {
-      this.startBackgroundPreparation(i + 1);
-    }
-  }
-
-  /** 특정 Phase 백그라운드 준비 시작 */
+  /** 특정 Phase 백그라운드 준비 시작 (다음 phase 1개만 — B-6) */
   private startBackgroundPreparation(phaseNumber: number): void {
+    if (this.abortController.signal.aborted) return;
     if (this.backgroundPreparations.has(phaseNumber)) return;
 
     const stageIndex = phaseNumber - 1;
@@ -440,15 +443,17 @@ export class PhasePipeline {
     const stage = this.stages[stageIndex];
     if (!stage.prepare) return;
 
+    const signal = this.abortController.signal;
     const preparation = (async (): Promise<StageContext> => {
       const context: StageContext = {
         phaseNumber,
         phaseName: stage.name,
         data: {},
+        signal,
       };
 
       try {
-        const prepared = await stage.prepare!();
+        const prepared = await stage.prepare!(signal);
         context.data = prepared.data;
         context.preparedData = prepared.data;
       } catch (error) {

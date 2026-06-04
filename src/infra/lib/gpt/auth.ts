@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { refreshAccessToken, extractEmailFromToken, extractAccountId, extractPlanFromToken } from './oauth.js';
+import { tokenRefresher } from '../llm/auth/index.js';
 import { getAuthProfileManager } from '../llm/auth/AuthProfileManager.js';
 import { getGptApiKey } from '../config/GlobalConfigManager.js';
 import type { AuthInfo, GptAuthMethod } from './types.js';
@@ -104,7 +105,20 @@ async function tryCodexCliAuth(): Promise<AuthInfo | null> {
 
     if (isNaN(expiresAt) || expiresAt <= Date.now() + 5 * 60 * 1000) {
       if (!creds.tokens.refresh_token) return null;
-      const refreshed = await refreshAccessToken(creds.tokens.refresh_token);
+      // 병렬 에이전트가 같은 Codex 토큰을 동시에 refresh 하는 storm 을 막는다 (B-5):
+      // refreshWithLock 의 in-process dedupe(같은 프로세스 내 동시 호출은 단일 promise 공유)
+      // + cross-process file lock. readCurrentToken 으로 다른 주체가 이미 갱신한 토큰을 재사용.
+      const refreshed = await tokenRefresher.refreshWithLock(
+        'gpt',
+        () => refreshAccessToken(creds.tokens.refresh_token),
+        () => {
+          const c = findCodexCredentials();
+          if (!c?.tokens?.access_token) return null;
+          let exp = new Date(c.tokens.expires_at).getTime();
+          if (isNaN(exp)) exp = getJwtExpiry(c.tokens.access_token);
+          return { accessToken: c.tokens.access_token, expires: isNaN(exp) ? 0 : exp };
+        }
+      );
       accessToken = refreshed.accessToken;
     }
 

@@ -11,16 +11,18 @@ import {
   MultiLlmResult
 } from './types.js';
 import { ToolResult } from '../types/tool.js';
-import { getAgentSdkQuery, warnLog } from '../lib/utils.js';
+import { getAgentSdkQuery, warnLog, debugLog } from '../lib/utils.js';
 import { TIMEOUTS, AGENT } from '../lib/constants.js';
 import { getModelOverride } from '../lib/config/GlobalConfigManager.js';
 import { isCodexAvailable } from '../lib/llm-availability.js';
+import { CostAccumulator } from '../lib/CostAccumulator.js';
 import { runCodexAgentOnce } from './CodexAgentRuntime.js';
 
 // Multi-LLM Research (분리된 모듈)
 import {
   executeMultiLlmResearch,
-  formatMultiLlmResults
+  formatMultiLlmResults,
+  countPlannedMultiLlmCalls
 } from './MultiLlmResearch.js';
 
 // Re-export for backward compatibility
@@ -280,12 +282,35 @@ export async function parallelResearchWithMultiLlm(args: ParallelResearchArgs & 
   const { feature, techStack, ...researchArgs } = args;
   const startTime = Date.now();
 
+  // ── Preflight (B-7): fan-out 규모를 먼저 보여주고, 예산 초과 시 직접 Multi-LLM 호출은 차단 ──
+  const projectPath = researchArgs.projectPath ?? process.cwd();
+  const concurrency = researchArgs.maxConcurrency ?? AGENT.MAX_CONCURRENCY;
+  const claudeCount = researchArgs.tasks.length;
+  const plannedMultiLlm = countPlannedMultiLlmCalls();
+  const budget = CostAccumulator.checkBudget(projectPath);
+  // 예산이 blocking 수준이면 비싼 직접 Multi-LLM fan-out 을 건너뛰고 Claude 에이전트만 실행한다.
+  const runMultiLlm = budget.allowed && plannedMultiLlm > 0;
+
+  debugLog(
+    `[Research] Preflight: Claude agents=${claudeCount} (concurrency ${concurrency}), ` +
+    `Multi-LLM direct calls=${plannedMultiLlm}` +
+    (budget.budget > 0 ? `, budget ${budget.usagePercent.toFixed(0)}% (${budget.level})` : '')
+  );
+  if (plannedMultiLlm > 0 && !runMultiLlm) {
+    warnLog(
+      `[Research] Multi-LLM fan-out skipped — budget ${budget.level} ` +
+      `($${budget.currentSpend.toFixed(2)}/$${budget.budget}). Running Claude agents only.`
+    );
+  }
+
   const [claudeResult, multiLlmResults] = await Promise.all([
     parallelResearch(researchArgs),
-    executeMultiLlmResearch(feature, techStack).catch(e => {
-      warnLog('[Multi-LLM] Research failed:', e);
-      return [] as MultiLlmResult[];
-    })
+    runMultiLlm
+      ? executeMultiLlmResearch(feature, techStack).catch(e => {
+          warnLog('[Multi-LLM] Research failed:', e);
+          return [] as MultiLlmResult[];
+        })
+      : Promise.resolve([] as MultiLlmResult[])
   ]);
 
   const totalDuration = Date.now() - startTime;
