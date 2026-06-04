@@ -163,19 +163,28 @@ for (const rule of DISPATCH_RULES) {
   const scriptPath = path.join(__dirname, rule.script);
   const args = rule.args || [];
 
+  // 외부 LLM 호출(llm-orchestrate)은 부모/자식 timeout 을 정합시킨다 (B-2):
+  // 자식은 hook 모드(primary 45s, fallback 없음, retry 없음)로 단일 시도 후 스스로
+  // 정리하고, 부모는 그보다 약간 긴 50s 로 감싸 hard-kill 을 피한다.
+  // 경량 스크립트(keyword-detector 등)는 기존 30s 유지.
+  const isLlm = rule.script === 'llm-orchestrate.js';
+  const execTimeout = isLlm ? 50000 : 30000;
+  const childEnv = isLlm
+    ? { ...process.env, VIBE_LLM_HOOK_MODE: '1', VIBE_LLM_PRIMARY_TIMEOUT_MS: '45000', VIBE_LLM_MAX_RETRIES: '1' }
+    : { ...process.env };
+
   execPromises.push(
     new Promise((resolve) => {
       execFile('node', [scriptPath, ...args], {
-        timeout: 30000,
-        env: { ...process.env },
+        timeout: execTimeout,
+        env: childEnv,
       }, (error, stdout, stderr) => {
         if (stdout?.trim()) {
           process.stdout.write(stdout);
         } else if (error) {
-          // 무음실패 방지 — 외부 LLM 호출이 timeout(30s) 또는 에러로 결과 없이
-          // 죽을 때, 사용자가 원인을 알 수 있도록 한 줄만 노출한다.
-          // (완전 비동기화는 후속: 리포트 B-2/C-3 참조)
-          const reason = error.killed ? 'timed out (30s)' : (error.message || 'failed');
+          // 무음실패 방지 — 외부 LLM 호출이 timeout 또는 에러로 결과 없이 죽을 때,
+          // 사용자가 원인을 알 수 있도록 한 줄만 노출한다.
+          const reason = error.killed ? `timed out (${execTimeout / 1000}s)` : (error.message || 'failed');
           process.stdout.write(`[${rule.label}] external LLM call ${reason} — no result injected.\n`);
         }
         resolve();

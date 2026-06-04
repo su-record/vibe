@@ -219,8 +219,20 @@ B 긍정 항목 "pattern matching으로 불필요 호출 감소"(`prompt-dispatc
   5. ✅ `claude-agents.ts` — review 에이전트 12종 description의 `"Use proactively"` → `"Invoked by the /vibe.review orchestrator (not a standalone auto-trigger)"`.
   6. ✅ `auto-commit.js` — opt-in 가드 추가. `hooks["auto-commit"].enabled === true` 일 때만 동작(기본 비활성).
 
+## B 인프라 P1 — 완료
+
+- 2026-06-04: **B-1 SmartRouter Claude fallback 구현** (orchestrator 84/84 통과):
+  `callLlm`의 claude case가 'handled by caller' 예외만 던지던 것을 실제 실행으로.
+  `ClaudeRunner` DI(기본 LLMCluster, 테스트 mock 주입), claude 전용 timeout(180s) 분리.
+  `LLMCluster.claudeOrchestrate`에 VIBE_HOOK_DEPTH 재귀 가드 주입. 테스트 3종 교체.
+- 2026-06-04: **B-2 dispatcher↔orchestration timeout 정합** (hook 166/166 통과):
+  hook 모드(`VIBE_LLM_HOOK_MODE`) 도입 — UserPromptSubmit 경유 외부 LLM 호출은 fallback
+  chain 단축(primary 1개) + primary 45s + retry 1회. timeout 계층 정합:
+  자식 45s → prompt-dispatcher 50s → codex-hook-adapter 55s. hard-kill/무음실패 해소.
+  (180s 전체 블로킹 회피 = C-2 충돌 해소. 외부 LLM은 A에서 이미 명시적 `gpt`/`agy` 트리거로 한정)
+
 ## 후속 권고 (이번에 미처리)
 
 - **[근본원인] AGENTS.md 결정론적 생성기 부재**: 루트 `AGENTS.md`는 `/vibe.docs agent` LLM 스킬이 CLAUDE.md를 보고 *수동 작성* → 이번 Quality SSOT/Doctrine 누락처럼 drift 재발. doctrine("결정론은 결정론에게")에 따라 CLAUDE.md→AGENTS.md **1:1 결정론적 sync 스크립트**가 필요. (현재는 수동 동기화로 메움)
-- **B 인프라 P1 미처리**: SmartRouter Claude fallback 미구현(B-1), prompt-dispatcher↔orchestration timeout 미스맵(B-2)은 코드·테스트 변경이 커 별도 작업으로 남김. C-3 화해안(외부 LLM 완전 비동기화 + 파일 포인터)과 함께 진행 권장.
+- **B 인프라 P2 미처리**: AbortSignal 미관통(B-3), 직접 provider hard timeout 부재(B-4), GPT token refresh lock 미사용(B-5), PhasePipeline speculative prepare(B-6), Multi-LLM fan-out budget gate(B-7), cost telemetry 부분 연결(B-8). C-3 완전 비동기화(파일 포인터)도 잔여.
 - **A 미처리 P2/P3**: SessionStart 8블록 과적재, INTERRUPT echo 매턴 주입, code-check self-heal magic-number 오탐, getCurrentTime "tool" 표현(12스킬), vibe.run 1967줄 재배치, 고아 에이전트 4종 — 즉시성 낮아 후속.

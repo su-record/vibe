@@ -42,7 +42,9 @@ const mode = process.argv[3] || 'orchestrate';
 // WHY 3 retries: Enough to ride out brief 503/overload blips (typically 1-2
 // consecutive), but not so many that a genuinely down provider delays the
 // fallback chain for minutes.
-const MAX_RETRIES = 3;
+// VIBE_LLM_MAX_RETRIES override: UserPromptSubmit(hook) 모드에서는 1(재시도 없음)로
+// 낮춰 부모 dispatcher timeout 안에 단일 시도로 끝낸다. (B-2: hard-kill/무음실패 방지)
+const MAX_RETRIES = Number(process.env.VIBE_LLM_MAX_RETRIES) || 3;
 // WHY 2000ms initial delay: LLM rate-limit windows are typically 1-5s;
 // starting at 2s with exponential backoff (2s, 4s, 8s) covers most reset intervals.
 const INITIAL_DELAY_MS = 2000;
@@ -203,7 +205,9 @@ function parseAnalyzeImageArgs(args) {
 // CLI Provider Functions
 // ============================================
 
-const CLI_TIMEOUT_MS = 180000;
+// VIBE_LLM_PRIMARY_TIMEOUT_MS override: hook 모드에서는 부모 dispatcher timeout 보다
+// 짧게 잡아(예: 45s) 자식이 스스로 정리하고 의미있는 메시지를 반환하게 한다.
+const CLI_TIMEOUT_MS = Number(process.env.VIBE_LLM_PRIMARY_TIMEOUT_MS) || 180000;
 const CLI_FALLBACK_TIMEOUT_MS = 30000;
 const IS_WINDOWS = os.platform() === 'win32';
 
@@ -597,6 +601,13 @@ async function main() {
   } else {
     // Antigravity 주관 → claude fallback (vibe-codex), gpt fallback (직접 모드)
     providerChain = claudeSecondary ? ['antigravity', 'claude'] : ['antigravity', 'gpt'];
+  }
+
+  // hook(UserPromptSubmit) 모드: 사용자가 `gpt`/`agy` 접두사로 명시적으로 부른 단발
+  // 보조 호출이라 cross-provider fallback 이 불필요하다. primary 1개로 단축해
+  // 부모 dispatcher timeout 안에 단일 시도로 끝낸다. (B-2)
+  if (process.env.VIBE_LLM_HOOK_MODE) {
+    providerChain = [providerChain[0]];
   }
 
   const vibeConfig = readVibeConfig();

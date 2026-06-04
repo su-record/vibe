@@ -37,11 +37,15 @@ function childEnv() {
 
 function runScript(scriptName, args = []) {
   const scriptPath = path.join(__dirname, scriptName);
+  // prompt-dispatcher 는 명시적 외부 LLM 호출(hook 모드 최대 ~50s)을 포함할 수 있어
+  // 그보다 약간 긴 timeout 으로 감싼다. 나머지 경량 스크립트는 30s. (B-2 정합 —
+  // 30s 고정이면 prompt-dispatcher 의 외부 LLM 호출을 다시 hard-kill 한다)
+  const timeout = scriptName.includes('prompt-dispatcher') ? 55000 : 30000;
   return spawnSync(process.execPath, [scriptPath, ...args], {
     input: stdinData || JSON.stringify(payload),
     encoding: 'utf-8',
     env: childEnv(),
-    timeout: 30000,
+    timeout,
   });
 }
 
