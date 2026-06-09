@@ -1,5 +1,5 @@
 {
-  "_comment": "Dispatcher pattern — PreToolUse/PostToolUse/Stop는 단일 디스패처가 stdin을 한 번 읽어 순차 실행 (병렬 spawn 폭주 제거, cascade 격리, config.hooks.{name}.enabled 토글 지원). UserPromptSubmit은 VIBE_HOOK_DEPTH 재귀 가드 탑재된 prompt-dispatcher 사용.",
+  "_comment": "Dispatcher pattern — PreToolUse/PostToolUse/Stop는 단일 디스패처가 stdin을 한 번 읽어 순차 실행 (병렬 spawn 폭주 제거, cascade 격리, config.hooks.{name}.enabled 토글 지원). UserPromptSubmit은 VIBE_HOOK_DEPTH 재귀 가드 탑재된 prompt-dispatcher 사용. SessionStart matcher가 compact를 제외하는 이유: session-start.js가 컨텍스트 앞단에 현재 시각/24h 카운트 등 동적 값을 주입하므로, compact마다 재발화하면 압축 후 프리픽스가 매번 달라져 prefix cache를 무효화한다.",
   "permissions": {
     "allow": [],
     "deny": [],
@@ -8,6 +8,7 @@
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "startup|resume|clear",
         "hooks": [
           {
             "type": "command",
@@ -74,14 +75,6 @@
       }
     ],
     "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[INTERRUPT RULE] If this message follows a user interrupt (Ctrl+C/Escape), the previous task is CANCELLED. Do NOT resume interrupted work. Respond ONLY to this new message.'"
-          }
-        ]
-      },
       {
         "hooks": [
           {

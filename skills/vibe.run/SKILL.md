@@ -994,8 +994,8 @@ If implementation requires files outside scope:
 | Context Level | Action |
 |---------------|--------|
 | < 50% | Normal execution |
-| 50-70% | Save checkpoint, trim exploration results |
-| 70%+ | Save checkpoint → `/new` → resume from checkpoint |
+| 50-85% | Save checkpoint, trim exploration results |
+| 85%+ | Save checkpoint → `/new` → resume from checkpoint (`/new` discards KV prefix cache; defer it as long as safe) |
 | Phase boundary | Always save checkpoint regardless of context level |
 
 ### 1-2. SPEC-First Gate (Level 3: Spec = Source of Truth)
