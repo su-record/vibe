@@ -20,6 +20,11 @@ export interface ChunkScore {
   score: number;
   type: 'code' | 'explanation' | 'question' | 'answer' | 'metadata';
   keywords: string[];
+  // Original position in the source document. Selection ranks by score, but the
+  // compressed output is emitted in this order so that recompressing a growing
+  // context yields a stable prefix (appended content stays at the tail instead of
+  // reshuffling everything by score/type) — preserving KV prefix-cache reuse.
+  index: number;
 }
 
 export class ContextCompressor {
@@ -66,7 +71,7 @@ export class ContextCompressor {
     }
 
     const chunks = this.splitIntoChunks(context);
-    const scoredChunks = chunks.map(chunk => this.scoreChunk(chunk));
+    const scoredChunks = chunks.map((chunk, i) => this.scoreChunk(chunk, i));
 
     // WHY 1.2x threshold (not 1.0x): Avoids wasteful compression when the content
     // is only marginally over the target — the scoring/reordering overhead would
@@ -108,6 +113,10 @@ export class ContextCompressor {
         removed.push(this.summarizeChunk(chunk));
       }
     }
+
+    // Emit in original document order (not score order) so a recompressed,
+    // grown context keeps a stable prefix — preserving KV prefix-cache reuse.
+    selected.sort((a, b) => a.index - b.index);
 
     // Reconstruct compressed context
     const compressed = this.reconstructContext(selected, removed);
@@ -185,9 +194,10 @@ export class ContextCompressor {
   /**
    * Score chunk importance (0-100)
    * @param text - Text chunk to score
-   * @returns Scored chunk with type and keywords
+   * @param index - Original position of the chunk in the source document
+   * @returns Scored chunk with type, keywords, and original index
    */
-  private static scoreChunk(text: string): ChunkScore {
+  private static scoreChunk(text: string, index: number): ChunkScore {
     const lowerText = text.toLowerCase();
     const type = this.detectChunkType(lowerText, text);
     const keywords = this.extractKeywords(lowerText);
@@ -198,7 +208,7 @@ export class ContextCompressor {
       Math.min(ContextCompressor.MAX_SCORE, baseScore)
     );
 
-    return { text, score: finalScore, type, keywords };
+    return { text, score: finalScore, type, keywords, index };
   }
 
   /**
@@ -306,59 +316,31 @@ export class ContextCompressor {
   }
 
   /**
-   * Reconstruct compressed context
+   * Reconstruct compressed context.
+   *
+   * Chunks are emitted in their original document order (the caller sorts
+   * `selected` by index before calling). We intentionally do NOT regroup by
+   * type: reordering by score/type means a small change to the input reshuffles
+   * the whole output, destroying the common prefix between successive
+   * compactions and forcing a full KV-cache recompute. Preserving order keeps
+   * appended content at the tail so the prefix stays stable.
    */
   private static reconstructContext(
     selected: ChunkScore[],
     removed: string[]
   ): string {
-    // Group by type for better organization
-    const byType: Record<string, ChunkScore[]> = {
-      code: [],
-      answer: [],
-      question: [],
-      explanation: [],
-      metadata: []
-    };
-
-    selected.forEach(chunk => {
-      byType[chunk.type].push(chunk);
-    });
-
     const sections: string[] = [];
 
     // Add header
     sections.push('[Compressed Context - High Priority Information]\n');
 
-    // Add answers first (most important)
-    if (byType.answer.length > 0) {
-      sections.push('## Key Answers & Solutions');
-      sections.push(byType.answer.map(c => c.text).join('\n\n'));
+    // Emit selected chunks in original order to keep the prefix stable.
+    if (selected.length > 0) {
+      sections.push(selected.map(c => c.text).join('\n\n'));
       sections.push('');
     }
 
-    // Add code blocks
-    if (byType.code.length > 0) {
-      sections.push('## Code Snippets');
-      sections.push(byType.code.map(c => c.text).join('\n\n'));
-      sections.push('');
-    }
-
-    // Add questions
-    if (byType.question.length > 0) {
-      sections.push('## Questions');
-      sections.push(byType.question.map(c => c.text).join('\n\n'));
-      sections.push('');
-    }
-
-    // Add explanations
-    if (byType.explanation.length > 0) {
-      sections.push('## Context');
-      sections.push(byType.explanation.map(c => c.text).join('\n\n'));
-      sections.push('');
-    }
-
-    // Add summary of removed sections
+    // Add summary of removed sections (low priority) at the tail
     if (removed.length > 0) {
       sections.push('## Removed Sections (Low Priority)');
       sections.push(removed.join('\n'));

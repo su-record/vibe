@@ -64,7 +64,7 @@ Convergence Principle: loop until P1 = 0. Changed files only.
 
 ## Context Management
 
-At 70%+ context: `save_memory` → `/new` → `/vibe.utils --continue`
+At 85%+ context: `save_memory` → `/new` → `/vibe.utils --continue` (raised from 70% — `/new` discards the entire KV prefix cache, so compacting less often preserves cache reuse)
 
 ## Git Commit Rules
 
