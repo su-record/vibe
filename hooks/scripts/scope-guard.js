@@ -22,6 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import { PROJECT_DIR, logHookDecision, projectVibePath, projectVibeRoot } from './utils.js';
+import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
 
 const SCOPE_PATH = projectVibePath(PROJECT_DIR, 'scope.json');
 
@@ -86,16 +87,6 @@ function toRelative(filePath) {
   return rel || path.basename(filePath).replace(/\\/g, '/');
 }
 
-function readStdinSync() {
-  try {
-    if (process.stdin.isTTY) return null;
-    const buf = Buffer.alloc(65536);
-    const bytesRead = fs.readSync(0, buf, 0, buf.length, null);
-    if (bytesRead > 0) return JSON.parse(buf.toString('utf-8', 0, bytesRead));
-  } catch { /* ignore */ }
-  return null;
-}
-
 function extractFilePath(toolInput) {
   if (!toolInput) return '';
   if (typeof toolInput === 'string') {
@@ -105,41 +96,51 @@ function extractFilePath(toolInput) {
   return typeof toolInput.file_path === 'string' ? toolInput.file_path : '';
 }
 
-const scope = readScope();
-if (!scope) process.exit(0); // no scope declared → no-op
+/**
+ * in-process 진입점 — 디스패처가 ctx를 전달해 직접 호출.
+ * @param {{ toolName: string, toolInput: string }} ctx
+ * @returns {Promise<number>} exit code (0 = allow/no-op, 2 = block)
+ */
+export async function run(ctx) {
+  const scope = readScope();
+  if (!scope) return 0; // no scope declared → no-op
 
-const stdinPayload = readStdinSync();
-const toolName = stdinPayload?.tool_name || process.argv[2] || '';
-if (toolName !== 'Edit' && toolName !== 'Write') process.exit(0);
+  const toolName = ctx.toolName;
+  if (toolName !== 'Edit' && toolName !== 'Write') return 0;
 
-const rawInput = stdinPayload?.tool_input ?? process.argv[3] ?? process.env.TOOL_INPUT ?? '';
-const filePath = extractFilePath(rawInput);
-if (!filePath) process.exit(0);
+  const filePath = extractFilePath(ctx.toolInput);
+  if (!filePath) return 0;
 
-const rel = toRelative(filePath);
+  const rel = toRelative(filePath);
 
-// 평가 순서: deny 우선 → allow 검증
-const denied = scope.deny.length > 0 && matchesAny(rel, scope.deny);
-const allowed = scope.allow.length === 0 || matchesAny(rel, scope.allow);
+  // 평가 순서: deny 우선 → allow 검증
+  const denied = scope.deny.length > 0 && matchesAny(rel, scope.deny);
+  const allowed = scope.allow.length === 0 || matchesAny(rel, scope.allow);
 
-const violated = denied || !allowed;
-if (!violated) process.exit(0);
+  const violated = denied || !allowed;
+  if (!violated) return 0;
 
-const lines = [];
-lines.push(`🚧 SCOPE GUARD: ${toolName} — out of declared scope`);
-lines.push(`  file: ${rel}`);
-if (denied) lines.push(`  reason: matches deny pattern`);
-else if (!allowed) lines.push(`  reason: not in allow list`);
-if (scope.reason) lines.push(`  declared scope: ${scope.reason}`);
-lines.push(`  declared in: ${path.relative(PROJECT_DIR, SCOPE_PATH)} (mode=${scope.mode})`);
+  const lines = [];
+  lines.push(`🚧 SCOPE GUARD: ${toolName} — out of declared scope`);
+  lines.push(`  file: ${rel}`);
+  if (denied) lines.push(`  reason: matches deny pattern`);
+  else if (!allowed) lines.push(`  reason: not in allow list`);
+  if (scope.reason) lines.push(`  declared scope: ${scope.reason}`);
+  lines.push(`  declared in: ${path.relative(PROJECT_DIR, SCOPE_PATH)} (mode=${scope.mode})`);
 
-const blocking = scope.mode === 'block';
-if (blocking) {
-  lines.push('');
-  lines.push('🚫 BLOCKED. Edit scope.json or justify to the user before proceeding.');
+  const blocking = scope.mode === 'block';
+  if (blocking) {
+    lines.push('');
+    lines.push('🚫 BLOCKED. Edit scope.json or justify to the user before proceeding.');
+  }
+
+  console.log(lines.join('\n'));
+  logHookDecision('scope-guard', toolName, blocking ? 'block' : 'warn', `${rel} ${denied ? '(deny)' : '(out-of-allow)'}`);
+
+  return blocking ? 2 : 0;
 }
 
-console.log(lines.join('\n'));
-logHookDecision('scope-guard', toolName, blocking ? 'block' : 'warn', `${rel} ${denied ? '(deny)' : '(out-of-allow)'}`);
-
-process.exit(blocking ? 2 : 0);
+// standalone CLI 모드: stdin JSON 우선, argv 폴백
+if (isDirectRun(import.meta.url)) {
+  process.exit(await run(buildCliCtx()));
+}

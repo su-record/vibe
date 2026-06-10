@@ -90,41 +90,25 @@ function guard(toolName, toolInput) {
   return undefined;
 }
 
-import fs from 'fs';
+import { logHookDecision } from './utils.js';
+import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
 
 /**
- * stdin에서 JSON 페이로드 읽기 (Claude Code 하네스 호환)
+ * in-process 진입점 — 디스패처가 ctx를 전달해 직접 호출.
+ * @param {{ toolName: string, toolInput: string }} ctx
+ * @returns {Promise<number>} exit code (2 = deny 규약, 0 = allow)
  */
-function readStdinSync() {
-  try {
-    if (process.stdin.isTTY) return null;
-    // fd 0을 직접 사용 (Windows는 '/dev/stdin'이 없음)
-    const buf = Buffer.alloc(65536);
-    const bytesRead = fs.readSync(0, buf, 0, buf.length, null);
-    if (bytesRead > 0) {
-      return JSON.parse(buf.toString('utf-8', 0, bytesRead));
-    }
-  } catch { /* 폴백 */ }
-  return null;
+export async function run(ctx) {
+  const result = guard(ctx.toolName, ctx.toolInput);
+  if (result) {
+    logHookDecision('sentinel-guard', ctx.toolName, 'block', result.reason);
+    console.log(JSON.stringify(result));
+    return 2;
+  }
+  return 0;
 }
 
-// Main execution: stdin JSON 우선, argv 폴백
-const stdinPayload = readStdinSync();
-const toolName = stdinPayload?.tool_name || process.argv[2] || '';
-const toolInput = stdinPayload?.tool_input
-  ? (typeof stdinPayload.tool_input === 'string'
-    ? stdinPayload.tool_input
-    : JSON.stringify(stdinPayload.tool_input))
-  : (process.argv[3] || process.env.TOOL_INPUT || '');
-
-import { logHookDecision } from './utils.js';
-
-const result = guard(toolName, toolInput);
-
-if (result) {
-  logHookDecision('sentinel-guard', toolName, 'block', result.reason);
-  console.log(JSON.stringify(result));
-  process.exit(2); // deny 규약
+// standalone CLI 모드 (antigravity-hooks.json / 기존 테스트): stdin JSON 우선, argv 폴백
+if (isDirectRun(import.meta.url)) {
+  process.exit(await run(buildCliCtx()));
 }
-
-process.exit(0);

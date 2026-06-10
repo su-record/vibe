@@ -5,23 +5,19 @@ import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
 import { readFileSync, existsSync, writeFileSync } from 'fs';
 import path from 'path';
 import os from 'os';
-
-process.on('uncaughtException', () => {});
-process.on('unhandledRejection', () => {});
+import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
 
 const BASE_URL = getToolsBaseUrl();
 
 /**
- * stdin에서 hook input JSON을 읽어 파일 경로 추출
+ * hook input에서 수정된 파일 경로 추출 — ctx.payload(파싱된 stdin) 우선,
+ * standalone CLI 모드에서는 buildCliCtx가 env.HOOK_INPUT 폴백을 채워준다.
  */
-function getModifiedFiles() {
+function getModifiedFiles(ctx) {
   try {
-    const input = process.env.HOOK_INPUT;
-    if (input) {
-      const parsed = JSON.parse(input);
-      const filePath = parsed.tool_input?.file_path || parsed.tool_input?.path;
-      return filePath ? [filePath] : [];
-    }
+    const parsed = ctx.payload || (ctx.hookInput ? JSON.parse(ctx.hookInput) : null);
+    const filePath = parsed?.tool_input?.file_path || parsed?.tool_input?.path;
+    return filePath ? [filePath] : [];
   } catch {
     // ignore
   }
@@ -224,9 +220,14 @@ function clearFailure(filePath) {
   saveFailureTracker(tracker);
 }
 
-async function main() {
-  const files = getModifiedFiles();
-  if (files.length === 0) return;
+/**
+ * in-process 진입점 — 품질 검사 + 관찰 캡처, 항상 0 반환 (차단하지 않음).
+ * @param {{ payload: object|null, hookInput: string|null }} ctx
+ * @returns {Promise<number>}
+ */
+export async function run(ctx) {
+  const files = getModifiedFiles(ctx);
+  if (files.length === 0) return 0;
 
   // 1. Code quality check (changed files only — never scan entire project)
   try {
@@ -263,6 +264,12 @@ async function main() {
   } catch {
     // 관찰 캡처 실패해도 무시 (non-critical)
   }
+  return 0;
 }
 
-main();
+// standalone CLI 모드 (antigravity-hooks.json) — 전역 예외 흡수는 단독 프로세스일 때만
+if (isDirectRun(import.meta.url)) {
+  process.on('uncaughtException', () => {});
+  process.on('unhandledRejection', () => {});
+  process.exit(await run(buildCliCtx()));
+}

@@ -1,27 +1,31 @@
 #!/usr/bin/env node
 /**
- * PostToolUse dispatcher — Write/Edit 이후 순차 실행.
+ * PostToolUse dispatcher — Write/Edit 이후 후처리.
  *
- * 기존: PostToolUse.Write|Edit 배열에 3개 스크립트가 병렬 spawn (프로세스 피크 3배)
- *       + PostToolUse.Edit 추가로 post-edit.js 1개 더
- * 현재: 단일 디스패처에서 순차 실행. config.hooks.{name}.enabled로 개별 토글.
+ * in-process 평탄화 (2026-06): 자식 node spawn 없이 import 실행.
+ * 실작업(prettier/vitest 등)은 각 step이 자체 timeout을 가진 비동기 자식으로
+ * 실행하므로 step 간 병렬성(Promise.all)은 spawn 시절과 동일하게 유지된다.
  *
- * 실행 순서:
- *   1. auto-format — 코드 스타일 정규화
- *   2. code-check — 린트/품질 검사
- *   3. auto-test — 관련 테스트 실행
- *   4. post-edit — Edit 전용 후처리 (Write에서는 스크립트 내부에서 스킵)
+ * 실행 step (모두 비차단, config.hooks.{name}.enabled로 개별 토글):
+ *   auto-format — 코드 스타일 정규화
+ *   code-check  — 린트/품질 검사 + 관찰 캡처
+ *   auto-test   — 관련 테스트 실행
+ *   post-edit   — console.log 감지
  *
- * 실패 격리: 한 스크립트 실패해도 다음은 계속 진행.
+ * 실패 격리: step별 try/catch — 한 step이 throw해도 나머지는 계속 진행.
  */
-import { dispatch } from './lib/dispatcher.js';
+import { dispatchInProcess } from './lib/dispatcher.js';
+import { run as autoFormat } from './auto-format.js';
+import { run as codeCheck } from './code-check.js';
+import { run as autoTest } from './auto-test.js';
+import { run as postEdit } from './post-edit.js';
 
 try {
-  await dispatch([
-    { name: 'auto-format', script: 'auto-format.js' },
-    { name: 'code-check',  script: 'code-check.js'  },
-    { name: 'auto-test',   script: 'auto-test.js'   },
-    { name: 'post-edit',   script: 'post-edit.js'   },
+  await dispatchInProcess([
+    { name: 'auto-format', run: autoFormat },
+    { name: 'code-check',  run: codeCheck  },
+    { name: 'auto-test',   run: autoTest   },
+    { name: 'post-edit',   run: postEdit   },
   ]);
 } catch { /* noise suppression */ }
 process.exit(0);

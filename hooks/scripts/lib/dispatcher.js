@@ -20,6 +20,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { readStdinSync, buildCtx } from './hook-context.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPTS_DIR = path.resolve(__dirname, '..');
@@ -105,6 +106,43 @@ export async function dispatch(steps) {
       runScript(step.script, step.args || [], stdinData, step.timeoutMs || 30000)
         .then(code => ({ step, code }))
     )
+  );
+
+  // 하나라도 deny(exit 2) 반환 → 상위에 전파
+  if (results.some(({ step, code }) => step.denyOnExit2 && code === 2)) {
+    process.exit(2);
+  }
+}
+
+/**
+ * in-process 디스패처 — 자식 spawn 없이 import된 run(ctx)들을 병렬 실행.
+ *
+ * spawn 대비:
+ *   - 자식 node VM 기동(~20ms × N)과 stdin 재읽기/재파싱 제거
+ *   - 크래시 격리는 step별 try/catch로 대체 (throw → exit 1 취급, fail-open)
+ *   - step별 강제 timeout은 없음 — 무거운 작업(포매터/테스트러너)은 모두
+ *     자체 timeout을 가진 비동기 자식 프로세스라 디스패처가 행 걸리지 않는다
+ *
+ * deny 시맨틱 보존: denyOnExit2 step이 2를 반환하면 process.exit(2)로 상위 전파.
+ *
+ * @param {Array<{name: string, run: (ctx: object) => Promise<number>, denyOnExit2?: boolean}>} steps
+ * @param {{ argvToolName?: string }} [options]
+ */
+export async function dispatchInProcess(steps, { argvToolName = '' } = {}) {
+  const { raw, parsed } = readStdinSync();
+  const ctx = buildCtx({ rawInput: raw, payload: parsed, argvToolName });
+  const hookConfig = loadHookConfig();
+
+  const enabledSteps = steps.filter(s => isEnabled(hookConfig, s.name));
+  const results = await Promise.all(
+    enabledSteps.map(async (step) => {
+      try {
+        return { step, code: await step.run(ctx) };
+      } catch {
+        // 크래시 격리 — 실패 step은 exit 1 취급, 나머지 step과 디스패처는 계속
+        return { step, code: 1 };
+      }
+    })
   );
 
   // 하나라도 deny(exit 2) 반환 → 상위에 전파

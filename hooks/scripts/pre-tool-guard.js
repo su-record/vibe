@@ -4,8 +4,6 @@
  * 위험한 도구 사용 전 검증 및 경고
  */
 
-import { VIBE_PATH, PROJECT_DIR } from './utils.js';
-
 // 위험한 명령어 패턴
 //
 // 각 엔트리의 `target`은 매칭 대상 필드:
@@ -197,63 +195,51 @@ function formatOutput(toolName, validation) {
   return lines.join('\n');
 }
 
-/**
- * stdin에서 JSON 페이로드 읽기 (Claude Code 하네스 호환)
- * stdin이 없거나 파싱 실패 시 argv/env 폴백
- */
-function readStdinSync() {
-  try {
-    if (process.stdin.isTTY) return null;
-    // fd 0을 직접 사용 (Windows는 '/dev/stdin'이 없음)
-    const buf = Buffer.alloc(65536);
-    const bytesRead = fs.readSync(0, buf, 0, buf.length, null);
-    if (bytesRead > 0) {
-      return JSON.parse(buf.toString('utf-8', 0, bytesRead));
-    }
-  } catch { /* 파싱 실패 시 폴백 */ }
-  return null;
-}
-
-import fs from 'fs';
-
-// 메인 실행: stdin JSON 우선, argv 폴백
-const stdinPayload = readStdinSync();
-const toolName = stdinPayload?.tool_name || process.argv[2] || 'Bash';
-const toolInput = stdinPayload?.tool_input
-  ? (typeof stdinPayload.tool_input === 'string'
-    ? stdinPayload.tool_input
-    : JSON.stringify(stdinPayload.tool_input))
-  : (process.argv[3] || process.env.TOOL_INPUT || '');
-
 import { logHookDecision } from './utils.js';
+import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
 
-// 1단계: 입력 스키마 검증 (구조적 오류 탐지)
-const schemaResult = validateInputSchema(toolName, stdinPayload?.tool_input || toolInput);
-if (!schemaResult.valid) {
-  // stderr: Claude Code surfaces stderr in hook-error notifications; stdout is injected
-  // into the assistant's context and never shown to the user. Guard messages target the user.
-  console.error(`⚠️ INPUT VALIDATION: ${toolName}`);
-  for (const err of schemaResult.errors) {
-    console.error(`  [SCHEMA] ${err}`);
+/**
+ * in-process 진입점 — 디스패처가 ctx를 전달해 직접 호출.
+ * @param {{ toolName: string, toolInput: string, payload: object|null }} ctx
+ * @returns {Promise<number>} exit code (0 = allowed, 2 = denied)
+ */
+export async function run(ctx) {
+  const toolName = ctx.toolName || 'Bash';
+  const toolInput = ctx.toolInput;
+
+  // 1단계: 입력 스키마 검증 (구조적 오류 탐지)
+  const schemaResult = validateInputSchema(toolName, ctx.payload?.tool_input || toolInput);
+  if (!schemaResult.valid) {
+    // stderr: Claude Code surfaces stderr in hook-error notifications; stdout is injected
+    // into the assistant's context and never shown to the user. Guard messages target the user.
+    console.error(`⚠️ INPUT VALIDATION: ${toolName}`);
+    for (const err of schemaResult.errors) {
+      console.error(`  [SCHEMA] ${err}`);
+    }
+    logHookDecision('pre-tool-guard', toolName, 'warn', `schema: ${schemaResult.errors.join('; ')}`);
+    // 스키마 오류는 경고만 (차단하지 않음 — 레거시 호환)
   }
-  logHookDecision('pre-tool-guard', toolName, 'warn', `schema: ${schemaResult.errors.join('; ')}`);
-  // 스키마 오류는 경고만 (차단하지 않음 — 레거시 호환)
+
+  // 2단계: 위험 패턴 검증 (보안 탐지)
+  const validation = validateCommand(toolName, toolInput);
+  const output = formatOutput(toolName, validation);
+
+  if (output) {
+    console.error(output);
+  }
+
+  // Hook trace logging
+  if (!validation.allowed) {
+    logHookDecision('pre-tool-guard', toolName, 'block', validation.warnings.join('; '));
+  } else if (validation.warnings.length > 0) {
+    logHookDecision('pre-tool-guard', toolName, 'warn', validation.warnings.join('; '));
+  }
+
+  // Exit code: 0 = allowed, 2 = denied (claw-code 규약)
+  return validation.allowed ? 0 : 2;
 }
 
-// 2단계: 위험 패턴 검증 (보안 탐지)
-const validation = validateCommand(toolName, toolInput);
-const output = formatOutput(toolName, validation);
-
-if (output) {
-  console.error(output);
+// standalone CLI 모드: stdin JSON 우선, argv 폴백
+if (isDirectRun(import.meta.url)) {
+  process.exit(await run(buildCliCtx()));
 }
-
-// Hook trace logging
-if (!validation.allowed) {
-  logHookDecision('pre-tool-guard', toolName, 'block', validation.warnings.join('; '));
-} else if (validation.warnings.length > 0) {
-  logHookDecision('pre-tool-guard', toolName, 'warn', validation.warnings.join('; '));
-}
-
-// Exit code: 0 = allowed, 2 = denied (claw-code 규약), 1 = 레거시 호환
-process.exit(validation.allowed ? 0 : 2);

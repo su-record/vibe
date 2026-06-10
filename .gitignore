@@ -32,4 +32,5 @@ wiki/
 .vibe/metrics/
 .vibe/memories/
 .vibe/checkpoints/
+.vibe/.last-feature
 .claude/scheduled_tasks.lock

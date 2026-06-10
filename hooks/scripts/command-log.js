@@ -7,26 +7,36 @@
 import { appendFileSync, mkdirSync, existsSync } from 'fs';
 import path from 'path';
 import { PROJECT_DIR, projectVibeRoot } from './utils.js';
+import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
 
-const LOG_DIR = projectVibeRoot(PROJECT_DIR);
-const LOG_FILE = path.join(LOG_DIR, 'command-log.txt');
 const MAX_CMD_LENGTH = 500;
 
-try {
-  const input = JSON.parse(process.env.TOOL_INPUT || '{}');
-  const command = input.command || '';
-  if (!command) process.exit(0);
+/**
+ * in-process 진입점 — 로깅만 수행, 항상 0 반환 (차단하지 않음).
+ * @param {{ toolInput: string }} ctx
+ * @returns {Promise<number>}
+ */
+export async function run(ctx) {
+  try {
+    const input = JSON.parse(ctx.toolInput || '{}');
+    const command = input.command || '';
+    if (!command) return 0;
 
-  const timestamp = new Date().toISOString();
-  const truncated = command.length > MAX_CMD_LENGTH
-    ? command.slice(0, MAX_CMD_LENGTH) + '...(truncated)'
-    : command;
+    const timestamp = new Date().toISOString();
+    const truncated = command.length > MAX_CMD_LENGTH
+      ? command.slice(0, MAX_CMD_LENGTH) + '...(truncated)'
+      : command;
 
-  const entry = `[${timestamp}] ${truncated}\n`;
-
-  if (!existsSync(LOG_DIR)) mkdirSync(LOG_DIR, { recursive: true });
-  appendFileSync(LOG_FILE, entry);
-} catch {
-  // Never block on logging failure
+    const logDir = projectVibeRoot(PROJECT_DIR);
+    if (!existsSync(logDir)) mkdirSync(logDir, { recursive: true });
+    appendFileSync(path.join(logDir, 'command-log.txt'), `[${timestamp}] ${truncated}\n`);
+  } catch {
+    // Never block on logging failure
+  }
+  return 0;
 }
-process.exit(0);
+
+// standalone CLI 모드
+if (isDirectRun(import.meta.url)) {
+  process.exit(await run(buildCliCtx()));
+}
