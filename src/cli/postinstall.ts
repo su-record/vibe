@@ -16,6 +16,8 @@ export {
   CAPABILITY_SKILLS,
   AVAILABLE_CAPABILITIES,
   resolveLocalSkills,
+  resolveLocalAgentGroups,
+  CONDITIONAL_AGENT_GROUPS,
   copySkillsFiltered,
   applyCodexSkillInvocationPolicies,
 } from './postinstall/index.js';

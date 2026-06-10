@@ -2,8 +2,9 @@
  * VectorStore — SQLite 기반 벡터 저장소
  *
  * 메모리/세션 엔티티의 임베딩 벡터를 BLOB으로 저장.
- * 검색: 전체 로드 → 앱 레벨 코사인 유사도 → 정렬.
- * (메모리 수 천~만 건 수준이므로 앱 레벨 충분)
+ * 검색: 행 단위 iterate → 코사인 유사도 → 스트리밍 top-k 선택.
+ * (메모리 수 천~만 건 수준이므로 인덱스 없는 선형 스캔으로 충분하나,
+ *  전량 적재+전체 정렬은 피해 메모리 O(limit)·정렬 비용 제거)
  */
 
 import Database from 'better-sqlite3';
@@ -89,6 +90,32 @@ export class VectorStore {
   }
 
   /**
+   * 스트리밍 top-k 선택 — 전 행을 배열로 적재해 전체 정렬(O(V log V) + O(V) 메모리)
+   * 하는 대신, iterate()로 한 행씩 스코어링하며 크기 limit의 정렬 배열만 유지한다.
+   * limit은 통상 ≤20이므로 선형 삽입으로 충분 (O(V·limit), 메모리 O(limit)).
+   */
+  private static topKBySimilarity<T extends { similarity: number }>(
+    rows: IterableIterator<unknown>,
+    limit: number,
+    score: (row: unknown) => T,
+  ): T[] {
+    const best: T[] = [];
+    for (const row of rows) {
+      const item = score(row);
+      if (best.length >= limit && item.similarity <= best[best.length - 1].similarity) {
+        continue;
+      }
+      let insertAt = best.length;
+      while (insertAt > 0 && best[insertAt - 1].similarity < item.similarity) {
+        insertAt--;
+      }
+      best.splice(insertAt, 0, item);
+      if (best.length > limit) best.pop();
+    }
+    return best;
+  }
+
+  /**
    * 메모리 벡터 코사인 유사도 검색
    */
   public searchMemoryVectors(
@@ -97,17 +124,17 @@ export class VectorStore {
   ): VectorSearchResult[] {
     const rows = this.db.prepare(
       'SELECT key, embedding FROM memory_vectors',
-    ).all() as Array<{ key: string; embedding: Buffer }>;
+    ).iterate();
 
     const queryFloat = new Float32Array(queryVec);
 
-    return rows
-      .map(row => ({
+    return VectorStore.topKBySimilarity(rows, limit, (raw) => {
+      const row = raw as { key: string; embedding: Buffer };
+      return {
         key: row.key,
         similarity: cosineSimilarity(queryFloat, deserializeVector(row.embedding)),
-      }))
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, limit);
+      };
+    });
   }
 
   /**
@@ -120,18 +147,18 @@ export class VectorStore {
   ): SessionVectorSearchResult[] {
     const rows = this.db.prepare(
       'SELECT entityId, embedding FROM session_vectors WHERE entityType = ?',
-    ).all(entityType) as Array<{ entityId: number; embedding: Buffer }>;
+    ).iterate(entityType);
 
     const queryFloat = new Float32Array(queryVec);
 
-    return rows
-      .map(row => ({
+    return VectorStore.topKBySimilarity(rows, limit, (raw) => {
+      const row = raw as { entityId: number; embedding: Buffer };
+      return {
         entityType,
         entityId: row.entityId,
         similarity: cosineSimilarity(queryFloat, deserializeVector(row.embedding)),
-      }))
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, limit);
+      };
+    });
   }
 
   /**

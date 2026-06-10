@@ -172,21 +172,43 @@ function convertAgentToClaude(content: string, filename: string): string {
   return `${frontmatter}\n${bodyContent}`;
 }
 
+export interface InstallClaudeAgentsOptions {
+  /** 최상위 디렉토리명 기준 제외 목록 (예: 조건부 그룹 'ui'/'figma'/'event') */
+  skipDirs?: ReadonlyArray<string>;
+  /** 지정 시 이 최상위 디렉토리들만 설치 (프로젝트 로컬 조건부 설치용) */
+  onlyDirs?: ReadonlyArray<string>;
+}
+
 /**
  * Claude Code 네이티브 서브에이전트 설치
  *
  * agents/ 디렉토리를 재귀 순회하여 모든 .md 파일을 변환 후 설치.
  * `agents/teams/` 는 단일 sub-agent가 아닌 다중 agent 메타 문서이므로
  * 별도 위치(vibe core)에 보관하며 Claude Code sub-agent로는 등록하지 않는다.
+ *
+ * options.skipDirs / options.onlyDirs 로 최상위 그룹 디렉토리를 선별한다 —
+ * 전역 설치는 조건부 그룹(ui/figma/event)을 제외하고, vibe init/update가
+ * 스택·capability 매칭 시 해당 그룹만 프로젝트 로컬에 설치한다.
  */
-export function installClaudeAgents(agentsSource: string, claudeAgentsDir: string): void {
+export function installClaudeAgents(
+  agentsSource: string,
+  claudeAgentsDir: string,
+  options: InstallClaudeAgentsOptions = {},
+): void {
   if (!fs.existsSync(agentsSource)) {
     console.log(`   ⚠️ agents directory not found: ${agentsSource}`);
     return;
   }
 
   // 클린 설치 (이전 버전 잔여 파일 방지)
-  if (fs.existsSync(claudeAgentsDir)) {
+  // onlyDirs(프로젝트 로컬 조건부 설치)일 때는 사용자 자작 에이전트를 보존해야
+  // 하므로 전체 wipe 대신 대상 그룹 디렉토리만 재설치한다.
+  if (options.onlyDirs) {
+    for (const dir of options.onlyDirs) {
+      const groupDir = path.join(claudeAgentsDir, dir);
+      if (fs.existsSync(groupDir)) removeDirRecursive(groupDir);
+    }
+  } else if (fs.existsSync(claudeAgentsDir)) {
     removeDirRecursive(claudeAgentsDir);
   }
   ensureDir(claudeAgentsDir);
@@ -210,6 +232,12 @@ export function installClaudeAgents(agentsSource: string, claudeAgentsDir: strin
           .filter((f): f is string => typeof f === 'string' && f.endsWith('.md')).length;
         teamsSkipped = teamCount;
         continue;
+      }
+
+      // 최상위 그룹 디렉토리 필터 (skipDirs / onlyDirs)
+      if (relPath === '') {
+        if (entry.isDirectory() && options.skipDirs?.includes(entry.name)) continue;
+        if (options.onlyDirs && (!entry.isDirectory() || !options.onlyDirs.includes(entry.name))) continue;
       }
 
       if (entry.isDirectory()) {

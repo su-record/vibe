@@ -33,9 +33,11 @@ import {
 import * as p from '@clack/prompts';
 import {
   installCursorAgents,
+  installClaudeAgents,
   generateCursorRules,
   generateCursorSkills,
   resolveLocalSkills,
+  resolveLocalAgentGroups,
   copySkillsFiltered,
   applyCodexSkillInvocationPolicies,
   AVAILABLE_CAPABILITIES,
@@ -110,6 +112,32 @@ export function installLocalSkills(
   copySkillsFiltered(skillsSource, localSkillsDir, localSkills);
   if (harnessDir === '.codex') applyCodexSkillInvocationPolicies(localSkillsDir);
   log(`   📦 Local skills installed: ${localSkills.join(', ')}\n`);
+}
+
+/**
+ * 스택 + capability 기반 로컬 에이전트 그룹 설치 (.claude/agents/)
+ * init, update 공용
+ *
+ * 조건부 그룹(ui/figma/event)은 전역 postinstall에서 제외되므로,
+ * 매칭되는 프로젝트에서만 여기서 로컬 설치된다.
+ */
+export function installLocalAgents(
+  projectRoot: string,
+  stackTypes: string[],
+  capabilities: string[] = [],
+  harnessDir: string = '.claude',
+): void {
+  const groups = resolveLocalAgentGroups(stackTypes, capabilities);
+  if (groups.length === 0) return;
+
+  const __dir = path.dirname(new URL(import.meta.url).pathname);
+  const packageRoot = path.resolve(__dir, '..', '..', '..');
+  const agentsSource = path.join(packageRoot, 'agents');
+  if (!fs.existsSync(agentsSource)) return;
+
+  const localAgentsDir = path.join(projectRoot, harnessDir, 'agents');
+  installClaudeAgents(agentsSource, localAgentsDir, { onlyDirs: groups });
+  log(`   📦 Local agent groups installed: ${groups.join(', ')}\n`);
 }
 
 /**
@@ -400,6 +428,10 @@ export async function init(
 
     runStep(s3, 'Installing local skills', () => {
       installLocalSkills(projectRoot, stackTypes, stackDetails.capabilities, harnessDir);
+    });
+
+    runStep(s3, 'Installing local agents', () => {
+      installLocalAgents(projectRoot, stackTypes, stackDetails.capabilities, harnessDir);
     });
 
     runStep(s3, 'Installing external skills', () => {

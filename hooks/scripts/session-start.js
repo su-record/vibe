@@ -1,12 +1,10 @@
 /**
  * SessionStart Hook - 세션 시작 시 메모리/시간 로드 + 버전 체크
  */
-import { getToolsBaseUrl, PROJECT_DIR, projectVibePath, projectVibeRoot } from './utils.js';
+import { getToolsBaseUrl, getGlobalNpmPath, PROJECT_DIR, projectVibePath, projectVibeRoot } from './utils.js';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import https from 'https';
-import { execSync } from 'child_process';
 
 const BASE_URL = getToolsBaseUrl();
 
@@ -47,18 +45,8 @@ function compareVersions(a, b) {
 
 function getCurrentVersion() {
   try {
-    let globalNpmPath;
-    try {
-      globalNpmPath = execSync('npm root -g', { encoding: 'utf8', timeout: 3000 }).trim();
-    } catch {
-      const homeDir = os.homedir();
-      const fallbacks = [
-        '/usr/local/lib/node_modules',
-        path.join(homeDir, '.npm-global', 'lib', 'node_modules'),
-      ];
-      globalNpmPath = fallbacks.find(p => fs.existsSync(p)) || fallbacks[0];
-    }
-    const pkgPath = path.join(globalNpmPath, '@su-record', 'vibe', 'package.json');
+    // getToolsBaseUrl()이 이미 `npm root -g` 결과를 캐싱하므로 재사용 — 중복 spawn 제거
+    const pkgPath = path.join(getGlobalNpmPath(), '@su-record', 'vibe', 'package.json');
     if (fs.existsSync(pkgPath)) {
       return JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version || null;
     }

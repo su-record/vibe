@@ -68,7 +68,73 @@ export class MemoryStorage implements IMemoryStorage {
     this.db.pragma('foreign_keys = ON');
     this.initializeDatabase();
     this.migrateFromJSON();
+    this.pruneOldRows();
     this.initializeEmbedding(embeddingPriority);
+  }
+
+  // ─── Retention prune ───
+  // WHY: observations/reflections/usage_events/session_* 테이블은 쓰기 전용으로만
+  // 누적되어 DB·WAL이 무한 성장한다. 세션 컨텍스트의 가치는 수 주 내에 소멸하므로
+  // TTL 후 삭제한다. 매 초기화마다 돌면 낭비이므로 24시간 게이트로 최대 1회/일 실행.
+  private static readonly DAY_MS = 24 * 60 * 60 * 1000;
+  private static readonly PRUNE_INTERVAL_MS = MemoryStorage.DAY_MS;
+  private static readonly SESSION_RETENTION_DAYS = 30;
+
+  /**
+   * 테이블별 보존 기간. session_* / conversation_history 는 SessionRAGStore가
+   * 같은 DB에 생성하므로 존재할 때만 prune (sqlite_master 확인).
+   * - 세션 산출물 30일: 세션 회고/관찰의 참조 빈도는 수 주 내 0에 수렴
+   * - session_summaries 90일: 장기 회고용으로 가장 오래 보존
+   * - conversation_history 2일: 기존 cleanupOldConversationHistory(48h)와 동일 정책
+   */
+  private static readonly PRUNE_TARGETS: ReadonlyArray<{ table: string; column: string; days: number }> = [
+    { table: 'observations', column: 'timestamp', days: 30 },
+    { table: 'reflections', column: 'createdAt', days: 30 },
+    { table: 'usage_events', column: 'createdAt', days: 30 },
+    { table: 'session_summaries', column: 'timestamp', days: 90 },
+    { table: 'session_decisions', column: 'timestamp', days: 30 },
+    { table: 'session_constraints', column: 'timestamp', days: 30 },
+    { table: 'session_evidence', column: 'timestamp', days: 30 },
+    { table: 'conversation_history', column: 'timestamp', days: 2 },
+  ];
+
+  private pruneOldRows(): void {
+    try {
+      this.db.exec(
+        `CREATE TABLE IF NOT EXISTS maintenance_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
+      );
+      const last = this.db
+        .prepare(`SELECT value FROM maintenance_meta WHERE key = 'lastPruneAt'`)
+        .get() as { value: string } | undefined;
+      const now = Date.now();
+      if (last && now - Date.parse(last.value) < MemoryStorage.PRUNE_INTERVAL_MS) return;
+
+      const tableExists = this.db.prepare(
+        `SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?`,
+      );
+      for (const { table, column, days } of MemoryStorage.PRUNE_TARGETS) {
+        try {
+          if (!tableExists.get(table)) continue;
+          const cutoff = new Date(now - days * MemoryStorage.DAY_MS).toISOString();
+          this.db.prepare(`DELETE FROM ${table} WHERE ${column} < ?`).run(cutoff);
+        } catch { /* 테이블 단위 실패(FK 등)는 건너뛰고 다음 prune 주기에 재시도 */ }
+      }
+
+      // session_goals는 self-FK(parentId)가 있어 자식이 남은 부모는 보존
+      try {
+        if (tableExists.get('session_goals')) {
+          const cutoff = new Date(now - MemoryStorage.SESSION_RETENTION_DAYS * MemoryStorage.DAY_MS).toISOString();
+          this.db.prepare(
+            `DELETE FROM session_goals WHERE timestamp < ?
+               AND id NOT IN (SELECT parentId FROM session_goals WHERE parentId IS NOT NULL)`,
+          ).run(cutoff);
+        }
+      } catch { /* 다음 주기에 재시도 */ }
+
+      this.db.prepare(
+        `INSERT OR REPLACE INTO maintenance_meta (key, value) VALUES ('lastPruneAt', ?)`,
+      ).run(new Date(now).toISOString());
+    } catch { /* prune 실패가 초기화를 막아선 안 됨 */ }
   }
 
   private initializeDatabase(): void {

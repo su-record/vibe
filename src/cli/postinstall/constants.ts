@@ -185,6 +185,61 @@ export function resolveExternalSkills(stackTypes: string[], capabilities: string
   return [...skills];
 }
 
+// ─── 에이전트 선택 설치 (그룹 = agents/ 하위 디렉토리명) ───
+
+/**
+ * 조건부 에이전트 그룹 — 전역 postinstall에서 제외하고,
+ * vibe init/update 시 스택/capability 매칭될 때만 프로젝트 로컬(.claude/agents/)에 설치.
+ *
+ * WHY: 에이전트 description은 매 턴 Agent tool schema에 열거되어 상시 컨텍스트를
+ * 점유한다. UI/Figma/Event 에이전트(18개)는 해당 스택·capability 프로젝트에서만
+ * 의미가 있으므로 전역에서 빼면 비해당 프로젝트의 세션당 수백 토큰이 절약된다.
+ */
+export const CONDITIONAL_AGENT_GROUPS: ReadonlyArray<string> = ['ui', 'figma', 'event'];
+
+/** 스택 → 에이전트 그룹 매핑 (vibe init/update → .claude/agents/) */
+export const STACK_TO_AGENT_GROUPS: Record<string, ReadonlyArray<string>> = {
+  'typescript-react': ['ui', 'figma'],
+  'typescript-nextjs': ['ui', 'figma'],
+  'typescript-vue': ['ui', 'figma'],
+  'typescript-nuxt': ['ui', 'figma'],
+  'typescript-svelte': ['ui', 'figma'],
+  'typescript-angular': ['ui', 'figma'],
+  'typescript-astro': ['ui', 'figma'],
+  'typescript-react-native': ['ui', 'figma'],
+  'dart-flutter': ['ui', 'figma'],
+};
+
+/** capability → 에이전트 그룹 매핑 */
+export const CAPABILITY_AGENT_GROUPS: Record<string, ReadonlyArray<string>> = {
+  'event-automation': ['event'],
+};
+
+/**
+ * 스택 타입 + capabilities → 로컬 설치할 에이전트 그룹 결정
+ * (resolveLocalSkills와 동일한 exact + prefix 매칭 규칙)
+ */
+export function resolveLocalAgentGroups(stackTypes: string[], capabilities: string[] = []): string[] {
+  const groups = new Set<string>();
+
+  for (const stack of stackTypes) {
+    const exact = STACK_TO_AGENT_GROUPS[stack];
+    if (exact) exact.forEach(g => groups.add(g));
+    const prefix = stack.split('-')[0];
+    if (prefix !== stack) {
+      const prefixGroups = STACK_TO_AGENT_GROUPS[prefix];
+      if (prefixGroups) prefixGroups.forEach(g => groups.add(g));
+    }
+  }
+
+  for (const cap of capabilities) {
+    const capGroups = CAPABILITY_AGENT_GROUPS[cap];
+    if (capGroups) capGroups.forEach(g => groups.add(g));
+  }
+
+  return [...groups];
+}
+
 // ─── 스택 타입 → 언어 룰 파일 매핑 ───
 
 // 스택 타입 → 언어 룰 파일 매핑

@@ -75,32 +75,44 @@ export function projectMemoryDir(projectDir = PROJECT_DIR) {
   return path.join(projectDir, '.vibe', 'memories');
 }
 
+// config 캐시 — 훅 스크립트는 단명 프로세스이므로 프로세스 생명주기 내에서
+// config 파일이 바뀌지 않는다고 가정한다 (llm-orchestrate처럼 한 프로세스에서
+// 3회 이상 읽는 경로의 중복 read+parse 제거).
+let _vibeConfigCache = null;
+let _projectConfigCache = null;
+
 /**
- * ~/.vibe/config.json 읽기
+ * ~/.vibe/config.json 읽기 (프로세스 내 캐시)
  * @returns {object} 파싱된 config 또는 빈 객체
  */
 export function readVibeConfig() {
+  if (_vibeConfigCache !== null) return _vibeConfigCache;
   const configPath = path.join(VIBE_HOME_DIR, 'config.json');
   try {
     if (fs.existsSync(configPath)) {
-      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      _vibeConfigCache = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      return _vibeConfigCache;
     }
   } catch { /* ignore */ }
-  return {};
+  _vibeConfigCache = {};
+  return _vibeConfigCache;
 }
 
 /**
- * 프로젝트 설정(.vibe/config.json) 읽기 — legacy `.claude/vibe/` fallback 포함
+ * 프로젝트 설정(.vibe/config.json) 읽기 — legacy `.claude/vibe/` fallback 포함 (프로세스 내 캐시)
  * @returns {object} 파싱된 config 또는 빈 객체
  */
 export function readProjectConfig() {
+  if (_projectConfigCache !== null) return _projectConfigCache;
   const configPath = projectVibePath(PROJECT_DIR, 'config.json');
   try {
     if (fs.existsSync(configPath)) {
-      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      _projectConfigCache = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      return _projectConfigCache;
     }
   } catch { /* ignore */ }
-  return {};
+  _projectConfigCache = {};
+  return _projectConfigCache;
 }
 
 /**
@@ -153,7 +165,7 @@ function toFileUrl(fsPath) {
 
 // 전역 npm 경로 캐시
 let _globalNpmPath = null;
-function getGlobalNpmPath() {
+export function getGlobalNpmPath() {
   if (_globalNpmPath === null) {
     try {
       _globalNpmPath = execSync('npm root -g', { encoding: 'utf8' }).trim();
@@ -190,20 +202,32 @@ function hasRuntimeDeps(packageRoot) {
  * 패키지 하위 경로의 file:// URL 반환 (크로스 플랫폼)
  * 우선순위: 로컬 빌드 → ~/.vibe/ → 전역 npm
  * 각 후보는 probeFile 존재 + 런타임 deps 해석 가능해야 채택 (dist-only 복사본 회피)
+ *
+ * 프로세스 내 메모이제이션: getToolsBaseUrl/getLibBaseUrl/getCliBaseUrl이 한 훅
+ * 프로세스에서 각각 호출되면 최악 6회 동기 stat이 반복되므로 결과를 캐싱한다.
  */
+const _packageUrlCache = new Map();
 function getPackageUrl(subpath, probeFile) {
+  const cacheKey = `${subpath}|${probeFile}`;
+  const cached = _packageUrlCache.get(cacheKey);
+  if (cached) return cached;
+
   const localRoot = VIBE_PATH;
   const vibeRoot = path.join(VIBE_HOME_DIR, 'node_modules', '@su-record', 'vibe');
   const globalRoot = path.join(getGlobalNpmPath(), '@su-record', 'vibe');
 
   const candidates = [localRoot, vibeRoot, globalRoot];
+  let result = null;
   for (const root of candidates) {
     const target = path.join(root, subpath);
     if (fs.existsSync(path.join(target, probeFile)) && hasRuntimeDeps(root)) {
-      return toFileUrl(target);
+      result = toFileUrl(target);
+      break;
     }
   }
-  return toFileUrl(path.join(globalRoot, subpath));
+  if (result === null) result = toFileUrl(path.join(globalRoot, subpath));
+  _packageUrlCache.set(cacheKey, result);
+  return result;
 }
 
 export function getToolsBaseUrl() {

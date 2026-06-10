@@ -18,7 +18,7 @@ import {
   cleanupDuplicateSkillDirs,
   applyCodexSkillInvocationPolicies,
 } from './fs-utils.js';
-import { GLOBAL_SKILLS, LEGACY_SKILL_DIRS } from './constants.js';
+import { GLOBAL_SKILLS, LEGACY_SKILL_DIRS, CONDITIONAL_AGENT_GROUPS } from './constants.js';
 import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
 import { seedInlineSkills } from './inline-skills.js';
 import { generateCursorRules } from './cursor-rules.js';
@@ -97,9 +97,10 @@ export function main(): void {
       const cmdsDir = path.join(targetDir, 'commands');
       removeLegacyVibeCommands(cmdsDir);
 
-      // agents
+      // agents — 조건부 그룹(ui/figma/event)은 전역 제외, vibe init/update가
+      // 스택·capability 매칭 시 프로젝트 로컬(.claude/agents/)에 설치
       const agtsDir = path.join(targetDir, 'agents');
-      installClaudeAgents(agentsSource, agtsDir);
+      installClaudeAgents(agentsSource, agtsDir, { skipDirs: CONDITIONAL_AGENT_GROUPS });
 
       // skills
       const sklsDir = path.join(targetDir, 'skills');

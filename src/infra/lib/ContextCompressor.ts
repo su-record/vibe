@@ -75,8 +75,12 @@ export class ContextCompressor {
 
     // WHY 1.2x threshold (not 1.0x): Avoids wasteful compression when the content
     // is only marginally over the target — the scoring/reordering overhead would
-    // degrade readability for negligible size savings. 1.2x (not 4x) keeps it aggressive.
-    if (context.length <= targetTokens * 1.2) {
+    // degrade readability for negligible size savings. context.length is in CHARS,
+    // targetTokens in tokens, so normalize via TOKENS_PER_CHAR_ESTIMATE (4 chars/token)
+    // before comparing — otherwise the early exit fires at ~30% of the real budget
+    // and in-budget content gets needlessly rechunked (breaking KV prefix-cache reuse).
+    const targetCharsWithMargin = (targetTokens / ContextCompressor.TOKENS_PER_CHAR_ESTIMATE) * 1.2;
+    if (context.length <= targetCharsWithMargin) {
       return {
         compressed: context,
         originalSize: context.length,
