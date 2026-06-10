@@ -101,53 +101,25 @@ export class ReflectionStore {
       ? Math.max(0, Math.min(1, input.score))
       : 0.5;
 
-    try {
-      this.db.prepare(`
-        INSERT INTO reflections (id, sessionId, type, trigger, insights, decisions, patterns, filesContext, score, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        id,
-        input.sessionId || null,
-        input.type,
-        input.trigger,
-        JSON.stringify(insights),
-        JSON.stringify(decisions),
-        JSON.stringify(patterns),
-        JSON.stringify(filesContext),
-        score,
-        createdAt
-      );
-      return id;
-    } catch (error) {
-      const sqliteError = error as { code?: string };
-      if (sqliteError.code === 'SQLITE_BUSY') {
-        // Retry once after 100ms (synchronous busy-wait for better-sqlite3 sync API)
-        const end = Date.now() + 100;
-        while (Date.now() < end) { /* busy wait */ }
-        try {
-          this.db.prepare(`
-            INSERT INTO reflections (id, sessionId, type, trigger, insights, decisions, patterns, filesContext, score, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(
-            id,
-            input.sessionId || null,
-            input.type,
-            input.trigger,
-            JSON.stringify(insights),
-            JSON.stringify(decisions),
-            JSON.stringify(patterns),
-            JSON.stringify(filesContext),
-            score,
-            createdAt
-          );
-          return id;
-        } catch {
-          process.stderr.write(`[ReflectionStore] SQLITE_BUSY retry failed\n`);
-          throw error;
-        }
-      }
-      throw error;
-    }
+    // SQLITE_BUSY 재시도는 SQLite 레벨에 위임 — MemoryStorage가 busy_timeout=5000
+    // pragma를 설정하므로 SQLite가 최대 5초간 자체 재시도한다. 그 후에도 BUSY면
+    // 즉시 1회 더 시도해도 의미가 없고, 수동 busy-wait 루프는 이벤트 루프만 블로킹한다.
+    this.db.prepare(`
+      INSERT INTO reflections (id, sessionId, type, trigger, insights, decisions, patterns, filesContext, score, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      input.sessionId || null,
+      input.type,
+      input.trigger,
+      JSON.stringify(insights),
+      JSON.stringify(decisions),
+      JSON.stringify(patterns),
+      JSON.stringify(filesContext),
+      score,
+      createdAt
+    );
+    return id;
   }
 
   /**

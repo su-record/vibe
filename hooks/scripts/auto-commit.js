@@ -31,14 +31,6 @@ function getCurrentBranch() {
   }).trim();
 }
 
-function hasChanges() {
-  const status = execSync('git status --porcelain', {
-    cwd: PROJECT_DIR,
-    encoding: 'utf-8',
-  }).trim();
-  return status.length > 0;
-}
-
 function getChangedFiles() {
   const status = execSync('git status --porcelain', {
     cwd: PROJECT_DIR,
@@ -88,9 +80,10 @@ try {
     process.exit(0);
   }
 
-  if (!hasChanges()) process.exit(0);
-
+  // 변경 유무와 파일 목록을 단일 `git status --porcelain` 호출로 처리
   const files = getChangedFiles();
+  if (files.length === 0) process.exit(0);
+
   const msg = buildCommitMessage(files);
 
   execSync('git add -A', { cwd: PROJECT_DIR, stdio: 'ignore' });

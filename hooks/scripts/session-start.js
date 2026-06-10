@@ -4,6 +4,7 @@
 import { getToolsBaseUrl, getGlobalNpmPath, PROJECT_DIR, projectVibePath, projectVibeRoot } from './utils.js';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import https from 'https';
 
 const BASE_URL = getToolsBaseUrl();
@@ -29,6 +30,30 @@ function fetchLatestVersion() {
     req.on('error', () => resolve(null));
     req.on('timeout', () => { req.destroy(); resolve(null); });
   });
+}
+
+// 버전 체크 결과 24시간 파일 캐시 — 매 SessionStart마다 npm registry에
+// HTTP 요청(타임아웃 시 3초 블로킹)을 보내지 않도록 한다. 릴리즈 주기 대비
+// 하루 1회 확인이면 충분하다.
+const VERSION_CACHE_PATH = path.join(os.homedir(), '.vibe', 'version-check.json');
+const VERSION_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+async function getLatestVersionCached() {
+  try {
+    const cached = JSON.parse(fs.readFileSync(VERSION_CACHE_PATH, 'utf8'));
+    if (cached.version && Date.now() - cached.checkedAt < VERSION_CACHE_TTL_MS) {
+      return cached.version;
+    }
+  } catch { /* 캐시 없음/손상 → 네트워크 조회 */ }
+
+  const version = await fetchLatestVersion();
+  if (version) {
+    try {
+      fs.mkdirSync(path.dirname(VERSION_CACHE_PATH), { recursive: true });
+      fs.writeFileSync(VERSION_CACHE_PATH, JSON.stringify({ version, checkedAt: Date.now() }));
+    } catch { /* 캐시 기록 실패는 무시 */ }
+  }
+  return version;
 }
 
 function compareVersions(a, b) {
@@ -65,7 +90,7 @@ async function main() {
       memoryModule.startSession({ projectPath: PROJECT_DIR }),
       timeModule.getCurrentTime({ format: 'human', timezone: 'Asia/Seoul' }),
       memoryModule.listMemories({ limit: 5, projectPath: PROJECT_DIR }),
-      fetchLatestVersion(),
+      getLatestVersionCached(),
     ]);
 
     console.log(session.content[0].text);

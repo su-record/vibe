@@ -225,35 +225,32 @@ function clearFailure(filePath) {
 }
 
 async function main() {
+  const files = getModifiedFiles();
+  if (files.length === 0) return;
+
   // 1. Code quality check (changed files only — never scan entire project)
   try {
-    const files = getModifiedFiles();
-    if (files.length > 0) {
-      const module = await import(`${BASE_URL}convention/index.js`);
-      const result = await module.validateCodeQuality({
-        targetPath: files[0],
-        projectPath: PROJECT_DIR,
-      });
-      const text = result.content[0].text;
-      // Output P1/P2 only — skip P3 (style)
-      const critical = text.split('\n').filter(l => /\b(error|critical|P1|P2)\b/i.test(l)).slice(0, 3);
-      if (critical.length > 0) {
-        console.log('[CODE CHECK]', critical.join(' | '));
-        trackFailure(files[0], critical);
-      } else {
-        clearFailure(files[0]);
-      }
-      emitSelfHealMessages(files[0]);
+    const module = await import(`${BASE_URL}convention/index.js`);
+    const result = await module.validateCodeQuality({
+      targetPath: files[0],
+      projectPath: PROJECT_DIR,
+    });
+    const text = result.content[0].text;
+    // Output P1/P2 only — skip P3 (style)
+    const critical = text.split('\n').filter(l => /\b(error|critical|P1|P2)\b/i.test(l)).slice(0, 3);
+    if (critical.length > 0) {
+      console.log('[CODE CHECK]', critical.join(' | '));
+      trackFailure(files[0], critical);
+    } else {
+      clearFailure(files[0]);
     }
+    emitSelfHealMessages(files[0]);
   } catch {
     // Silently continue on check failure — never block progress
   }
 
   // 2. 관찰 자동 캡처
   try {
-    const files = getModifiedFiles();
-    if (files.length === 0) return;
-
     const memModule = await import(`${BASE_URL}memory/index.js`);
     const { type, title } = classifyObservation(files);
 

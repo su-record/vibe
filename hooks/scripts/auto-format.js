@@ -19,13 +19,18 @@ function getFilePath() {
   return input.file_path || input.path || '';
 }
 
+// PATH 직접 스캔 — `which` execSync는 매 파일 저장마다 자식 프로세스를 동기
+// spawn하므로, fs.existsSync로 대체하고 프로세스 내 캐싱한다.
+const _binCache = new Map();
 function hasBin(name) {
-  try {
-    execSync(`which ${name}`, { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
+  const cached = _binCache.get(name);
+  if (cached !== undefined) return cached;
+  const candidates = process.platform === 'win32' ? [`${name}.exe`, `${name}.cmd`, name] : [name];
+  const found = (process.env.PATH || '').split(path.delimiter).some(
+    dir => dir && candidates.some(c => existsSync(path.join(dir, c))),
+  );
+  _binCache.set(name, found);
+  return found;
 }
 
 function hasPrettier() {

@@ -3,7 +3,7 @@
  * GPT, Antigravity, Claude 지원
  */
 
-import { execSync } from 'child_process';
+import { spawn } from 'child_process';
 import * as gptApi from '../lib/gpt/index.js';
 import * as antigravityApi from '../lib/antigravity/index.js';
 import { warnLog } from '../lib/utils.js';
@@ -43,8 +43,15 @@ export class LLMCluster {
     this.defaultSystemPrompt = options.defaultSystemPrompt ?? 'You are a helpful assistant.';
   }
 
+  // WHY 180s: claude --print는 긴 추론에서 수 분까지 걸릴 수 있으나,
+  // 그 이상은 행으로 간주하고 종료한다 (기존 execSync timeout과 동일).
+  private static readonly CLAUDE_CLI_TIMEOUT_MS = 180000;
+
   /**
    * Claude CLI 오케스트레이션 (claude --print)
+   *
+   * 비동기 spawn — execSync는 최대 180초 이벤트 루프를 블로킹해
+   * multiQuery의 GPT/Antigravity 병렬성을 무효화하므로 사용하지 않는다.
    */
   async claudeOrchestrate(
     prompt: string,
@@ -55,17 +62,37 @@ export class LLMCluster {
     // 재귀 가드 — spawn된 자식 claude 세션의 UserPromptSubmit/Stop hook이
     // 다시 외부 LLM/오케스트레이션을 돌리는 fork 폭주를 차단한다.
     // hook 스크립트는 VIBE_HOOK_DEPTH 가 존재하면 즉시 종료한다.
-    const result = execSync(
-      `claude --print --dangerously-skip-permissions`,
-      {
-        input: fullPrompt,
-        timeout: 180000,
-        encoding: 'utf-8',
+    return new Promise<string>((resolve, reject) => {
+      const child = spawn('claude', ['--print', '--dangerously-skip-permissions'], {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: { ...process.env, VIBE_HOOK_DEPTH: process.env.VIBE_HOOK_DEPTH ?? '1' },
-      }
-    );
-    return result.trim();
+      });
+
+      let stdout = '';
+      let stderr = '';
+      const timer = setTimeout(() => {
+        child.kill('SIGKILL');
+        reject(new Error(`claude --print timed out after ${LLMCluster.CLAUDE_CLI_TIMEOUT_MS}ms`));
+      }, LLMCluster.CLAUDE_CLI_TIMEOUT_MS);
+
+      child.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
+      child.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
+      child.on('error', (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        if (code === 0) {
+          resolve(stdout.trim());
+        } else {
+          reject(new Error(`claude --print failed (code ${code}): ${stderr.slice(0, 500)}`));
+        }
+      });
+
+      child.stdin.write(fullPrompt);
+      child.stdin.end();
+    });
   }
 
   /**

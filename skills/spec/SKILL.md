@@ -278,22 +278,7 @@ After initial conversation, use the structured `askUser` tool for:
 | **Critical** (auth, security, session) | `askUser` tool |
 | Optional (performance, integration) | Natural conversation |
 
-**Usage:**
-
-```typescript
-import { askUser, askUserQuick } from '@su-record/vibe/tools';
-
-// Quick helper for common scenarios
-const result = await askUserQuick.login('my-login-feature');
-console.log(result.content[0].text);
-
-// Custom categories
-const result = await askUser({
-  featureName: 'user-dashboard',
-  categories: ['authentication', 'security', 'session', 'data_model'],
-  context: 'Building a user dashboard with role-based access',
-});
-```
+**Usage**: read `references/askuser-examples.md` in this skill directory for `askUser`/`askUserQuick` invocation code, example output format, and `parseUserResponse` response parsing.
 
 **Available categories:**
 - `authentication`: Auth methods, MFA
@@ -303,41 +288,6 @@ const result = await askUser({
 - `performance`: Response time targets
 - `integration`: External service integration
 
-**Example output:**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Requirements Confirmation
-Feature: login
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-## 🔐 Authentication
-
-### 🔐 Q-AUTHENTICATION-001
-
-**Which authentication methods should be supported?**
-(Multiple selection allowed)
-
-1. **Email/Password** ✓
-2. **Google Social Login**
-3. **Apple Social Login**
-...
-
-**Required**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Total 6 questions (Required: 4)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Response parsing:**
-
-```typescript
-import { parseUserResponse } from '@su-record/vibe/tools';
-
-// User responds: "1, 2, 4" (selected option numbers)
-const response = parseUserResponse(question, "1, 2, 4");
-// { questionId: "Q-AUTH-001", value: ["email_password", "social_google", "passkey"], timestamp: "..." }
-```
 
 **ultrawork mode:**
 - askUser is **skipped** in ultrawork mode
@@ -614,136 +564,11 @@ This makes the next `/vibe.spec` (or future `/vibe.research`) invocation on the 
 
 **🚨 CRITICAL: Each SPEC phase file MUST have a matching Feature file**
 
-**Master SPEC (`_index.md`):**
-
-```markdown
-# SPEC: {feature-name} (Master)
-
-## Overview
-- Total phases: N
-- Dependencies: [list]
-
-## Sub-SPECs
-
-| Order | SPEC File | Feature File | Status |
-|-------|-----------|--------------|--------|
-| 1 | phase-1-setup.md | phase-1-setup.feature | ⬜ |
-| 2 | phase-2-core.md | phase-2-core.feature | ⬜ |
-
-## Shared Context
-- Tech Stack: [all phases]
-- Constraints: [all phases]
-```
-
-**Master Feature (`_index.feature`):**
-
-```markdown
-# Feature: {feature-name} (Master)
-
-**Master SPEC**: `.vibe/specs/{feature-name}/_index.md`
-
-## Sub-Features
-
-| Order | Feature File | SPEC File | Status |
-|-------|--------------|-----------|--------|
-| 1 | phase-1-setup.feature | phase-1-setup.md | ⬜ |
-| 2 | phase-2-core.feature | phase-2-core.md | ⬜ |
-
-## Overall User Story
-**As a** {user}
-**I want** {complete feature}
-**So that** {value}
-```
+**Master SPEC / Master Feature**: copy the `Master SPEC (_index.md)` and `Master Feature (_index.feature)` templates from `references/templates.md`.
 
 **Small scope (default):**
 
-Create `.vibe/specs/{feature-name}.md`:
-
-```markdown
----
-status: pending
-currentPhase: 0
-totalPhases: 3
-createdAt: {ISO-timestamp}
-lastUpdated: {ISO-timestamp}
----
-
-# SPEC: {feature-name}
-
-## Persona
-<role>
-Define AI role and expertise for implementation
-- Senior developer on the project
-- Follow existing code patterns
-- Write testable code
-</role>
-
-## Context
-<context>
-### Background
-- Why this feature is needed
-- Who will use it
-
-### Tech Stack
-- Backend: {technology}
-- Frontend: {technology}
-- Database: {technology}
-
-### Related Code
-- `src/xxx/`: Existing implementation to reference
-- `src/yyy/`: Files to modify
-
-### Design Reference
-- {Reference app/service}
-</context>
-
-## Task
-<task>
-### Phase 1: {phase-name}
-1. [ ] {specific task}
-   - File: `path/to/file`
-   - Verify: `command`
-2. [ ] {specific task}
-
-### Phase 2: {phase-name}
-1. [ ] {specific task}
-2. [ ] {specific task}
-
-### Phase 3: Testing and Verification
-1. [ ] Unit Tests
-2. [ ] Integration Tests
-</task>
-
-## Constraints
-<constraints>
-- Follow existing code patterns
-- Localize error messages
-- Separate configuration via environment variables
-- {other constraints}
-</constraints>
-
-## Output Format
-<output_format>
-### Files to Create
-- `path/to/new/file.ts`
-- `path/to/new/file.test.ts`
-
-### Files to Modify
-- `path/to/existing/file.ts`
-
-### Verification Commands
-- `npm test`
-- `npm run build`
-</output_format>
-
-## Acceptance Criteria
-<acceptance>
-- [ ] {verifiable criterion 1}
-- [ ] {verifiable criterion 2}
-- [ ] All tests pass
-- [ ] Build succeeds
-</acceptance>
-```
+Create `.vibe/specs/{feature-name}.md` with the **Single SPEC template** in `references/templates.md` — PTCF structure (Persona / Context / Task / Constraints / Output Format / Acceptance Criteria) + status frontmatter (status/currentPhase/totalPhases/createdAt/lastUpdated).
 
 ### 5. Create Feature File (BDD) - Required
 
@@ -763,35 +588,7 @@ Create `.vibe/features/{feature-name}.feature`:
 2. Include Happy Path (normal case) + Edge Case (exception case)
 3. Follow Given-When-Then format
 
-```markdown
-# Feature: {feature-name}
-
-**SPEC**: `.vibe/specs/{feature-name}.md`
-
-## User Story
-**As a** {user}
-**I want** {feature}
-**So that** {value}
-
-## Scenarios
-
-### Scenario 1: {Happy Path}
-\`\`\`gherkin
-Scenario: {title}
-  Given {precondition}
-  When {action}
-  Then {result}
-\`\`\`
-**Verification**: SPEC AC #1
-
-### Scenario 2: {Edge Case}
-...
-
-## Coverage
-| Scenario | SPEC AC | Status |
-|----------|---------|--------|
-| 1 | AC-1 | ⬜ |
-```
+Use the **Single Feature template** in `references/templates.md` — User Story + gherkin Given-When-Then scenarios + Coverage table mapping each scenario to a SPEC AC.
 
 #### 5.2 Split Files (Large Scope)
 
@@ -805,29 +602,7 @@ When SPEC is split into phases, Feature files MUST also be split:
 └── ...
 ```
 
-**Phase Feature file structure:**
-
-```markdown
-# Feature: {feature-name} - Phase {N}: {phase-name}
-
-**SPEC**: `.vibe/specs/{feature-name}/phase-{N}-{name}.md`
-**Master Feature**: `.vibe/features/{feature-name}/_index.feature`
-
-## User Story (Phase Scope)
-**As a** {user}
-**I want** {phase-specific feature}
-**So that** {phase-specific value}
-
-## Scenarios
-
-### Scenario 1: {Phase Happy Path}
-...
-
-## Coverage
-| Scenario | SPEC AC | Status |
-|----------|---------|--------|
-| 1 | Phase {N} AC-1 | ⬜ |
-```
+**Phase Feature file structure**: use the **Phase Feature template** in `references/templates.md`.
 
 ### 6. Ambiguity Scan - Required
 
@@ -1066,88 +841,7 @@ Option 2 (recommended for large context):
 
 ## Example
 
-```
-User: /vibe.spec "brick-game"
-
-Claude:
-You're making a brick game! What style are you thinking of?
-
-1. Classic Breakout style
-2. Arkanoid (with power-up items)
-3. Custom style with special gameplay
-
-Feel free to describe in your own words.
-
-User: 1
-
-Claude: What platform will it run on?
-
-1. Web (browser)
-2. Mobile (iOS/Android)
-3. Desktop
-
-User: 1
-
-Claude:
-Here are tech stack suggestions for web game development:
-
-1. **Phaser.js** (Recommended) - Game framework with built-in physics engine
-2. **Canvas + JavaScript** - Lightweight with fine control
-3. **PixiJS + Matter.js** - High-performance rendering
-
-User: 1
-
-Claude: What design style?
-
-1. Retro pixel (Atari Breakout)
-2. Neon graphics (Arkanoid)
-3. Modern 3D effects
-
-User: 2
-
-[Conversation continues...]
-
-Claude: SPEC draft created. Running ambiguity scan.
-
-## 🔍 Ambiguity Scan Results
-
-### Functional Scope
-- ⚠️ Game over condition not defined (ball drop vs lives system)
-- ⚠️ Stage clear condition unclear
-
-### Edge Cases
-- ⚠️ Ball reflection angle when hitting paddle edge
-- ⚠️ Multiple brick collision handling
-
-Please clarify the above items.
-
-User: 3 lives, clear when all bricks destroyed, edge reflects at 45 degrees
-
-Claude: Thank you. SPEC has been refined.
-
-🔍 Re-check result: 0 ambiguities
-📊 Quality score: 92/100 (A)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SPEC REVIEW (Antigravity)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📤 Sending SPEC...
-📝 Antigravity feedback:
-  1. [Edge] Ball speed increase logic undefined
-  2. [Security] Need score manipulation prevention
-
-✅ 2 improvements auto-applied
-🔍 Re-verifying... ✅ Passed
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ SPEC Complete!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📄 .vibe/specs/brick-game.md (PTCF structure)
-📄 .vibe/features/brick-game.feature
-📊 Quality score: 100/100 ← Loop converged (no remaining gaps)
-```
+Full interview → ambiguity scan → quality gate → review walkthrough: read `references/example-session.md` in this skill directory (load only when you need a concrete end-to-end example).
 
 ## Core Tools (Semantic Analysis & Memory)
 
