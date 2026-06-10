@@ -168,7 +168,7 @@ Three layers of defense on every tool call:
 
 ## Key Features
 
-**40+ agents** — Exploration, implementation, architecture, parallel code review, UI/UX analysis, security audit, Figma analysis/building.
+**40+ agents** — Exploration, implementation, architecture, parallel code review, UI/UX analysis, security audit, Figma analysis/building. The UI/Figma/Event groups (18 agents) are excluded from the global install — `vibe init` installs them project-locally (`.claude/agents/`) only when the stack/capability matches, so they never occupy context in unrelated projects.
 
 **44 skills** — Not all loaded at once. 3-tier system prevents context overload:
 
