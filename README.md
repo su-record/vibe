@@ -130,13 +130,13 @@ codex
 
 ## 품질 게이트
 
-모든 도구 호출마다 3계층 방어:
+탐지는 편집 시점에, 차단은 결정론적 게이트에서 — 3계층 방어:
 
-| 계층 | 차단 대상 |
-|------|----------|
-| 도구 훅 / 커밋 전 검사 | `any` 타입, `@ts-ignore`, `console.log`, 50줄 초과 함수 |
-| 리뷰 에이전트 | 12개 전문 리뷰어 병렬 실행 (보안, 성능, 접근성, 복잡도, ...) |
-| 수렴 루프 | 리뷰 findings P1=0까지 루프. 라운드 캡 없음. Stuck이면 사용자에게 질문, 절대 조용히 넘어가지 않음. |
+| 계층 | 동작 |
+|------|------|
+| 편집 훅 (Edit/Write) | `any` 타입, `@ts-ignore`, `console.log`, 50줄 초과 함수 **탐지** → 모델에 즉시 주입(additionalContext) + verify-required 상태 기록 |
+| 결정론 게이트 | **auto-commit verify 게이트**(verify 통과 전 커밋 거부) · **Stop 훅** verify-skip 경고/차단 · **PR 테스트 게이트**(`gh pr create` 포함) · **scope-guard**(SPEC 범위 밖 편집 감시) |
+| 리뷰 + 수렴 루프 | 12개 전문 리뷰어 병렬 실행 → findings P1=0까지 루프. 라운드 캡 없음. run/verify 상태는 `.vibe/metrics/run-ledger.json`에 추적. Stuck이면 사용자에게 질문, 절대 조용히 넘어가지 않음. |
 
 ---
 

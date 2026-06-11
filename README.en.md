@@ -156,13 +156,13 @@ The **third SSOT** alongside `CLAUDE.md` (code) and `AGENTS.md` (build). Google 
 
 ## Quality Gates
 
-Three layers of defense on every tool call:
+Detection at edit time, blocking at deterministic gates — three layers of defense:
 
-| Layer | What it blocks |
-|-------|----------------|
-| Tool hooks / pre-commit checks | `any` types, `@ts-ignore`, `console.log`, functions > 50 lines |
-| Review agents | 12 specialized reviewers run in parallel (security, performance, a11y, complexity, ...) |
-| Convergence loop | Review findings loop until P1 = 0. No round cap. Stuck = ask user, never silently proceed. |
+| Layer | What it does |
+|-------|--------------|
+| Edit hooks (Edit/Write) | **Detects** `any` types, `@ts-ignore`, `console.log`, functions > 50 lines → injects findings to the model (additionalContext) + records verify-required state |
+| Deterministic gates | **auto-commit verify gate** (refuses commits until verify passes) · **Stop hook** verify-skip warn/block · **PR test gate** (incl. `gh pr create`) · **scope-guard** (monitors edits outside SPEC scope) |
+| Review + convergence loop | 12 specialized reviewers in parallel → findings loop until P1 = 0. No round cap. Run/verify state tracked in `.vibe/metrics/run-ledger.json`. Stuck = ask user, never silently proceed. |
 
 ---
 
