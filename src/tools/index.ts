@@ -268,3 +268,14 @@ export type {
   ComponentSpec,
   ComponentEntry,
 } from '../infra/lib/ComponentRegistry.js';
+
+// ─── Loop Tools ───
+export { validateLoopDefinition } from './loop/index.js';
+export type {
+  ParsedLoopDefinition,
+  LoopValidationResult,
+  LoopTrigger,
+  LoopVerify,
+  LoopIsolation,
+  LoopStatus,
+} from './loop/index.js';

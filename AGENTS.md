@@ -101,6 +101,7 @@ $vibe "<requirement>" [+ 📎 attachments]
 - `$vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
 - `$vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress.
 - `$vibe.trace` — Requirements Traceability Matrix
+- `$vibe.loop` — loop engineering. Goal loops whose completion is judged by deterministic gates (run-ledger/tests), with stuck detection by discover-hash and a human triage inbox. Loops never push/release.
 - `$vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to regress. Recommended before every release.
 
 | Task Size | Approach |
@@ -129,7 +130,7 @@ $vibe "<requirement>" [+ 📎 attachments]
 
 ## Git
 
-**Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,config.json,constitution.md}`, `AGENTS.md`
+**Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `AGENTS.md`
 **Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `vibe.test` artifacts live with the vibe install, not with the project
 **Exclude**: `~/.codex/{rules,agents,skills}/`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`
 

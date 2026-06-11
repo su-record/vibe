@@ -42,6 +42,8 @@ One entry point. Everything else is automatic.
 
 **ultrawork** — Add `ultrawork` to skip all confirmation gates and run the full pipeline hands-free.
 
+**Loop engineering** — `/vibe.loop` designs and installs autonomous goal loops (triage → run/verify pipelines). Completion is judged by deterministic gates (run-ledger/tests), not self-report; results land in a human triage inbox — loops never push or release.
+
 ---
 
 ## Quick Start

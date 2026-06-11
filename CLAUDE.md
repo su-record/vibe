@@ -104,6 +104,7 @@ $vibe "<requirement>" [+ 📎 attachments]   # Codex
 - Codex: `$vibe.regress` / Claude Code: `/vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
 - Codex: `$vibe.contract` / Claude Code: `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress.
 - Codex: `$vibe.trace` / Claude Code: `/vibe.trace` — Requirements Traceability Matrix
+- Codex: `$vibe.loop` / Claude Code: `/vibe.loop` — loop engineering. Goal loops whose completion is judged by deterministic gates (run-ledger/tests), with stuck detection by discover-hash and a human triage inbox. Loops never push/release.
 - Codex: `$vibe.test` / Claude Code: `/vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to regress. Recommended before every release.
 
 | Task Size | Approach |
@@ -132,7 +133,7 @@ $vibe "<requirement>" [+ 📎 attachments]   # Codex
 
 ## Git
 
-**Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,config.json,constitution.md}`, `CLAUDE.md`
+**Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `CLAUDE.md`
 **Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `/vibe.test` artifacts live with the vibe install, not with the project
 **Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`
 
