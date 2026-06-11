@@ -14,10 +14,12 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 ## Usage
 
 ```
-/vibe.run "feature-name"              # Full implementation
+/vibe.run "feature-name"              # Full implementation (loops to convergence)
 /vibe.run "feature-name" --phase 1    # Specific Phase only
-/vibe.run "feature-name" ultrawork    # ULTRAWORK mode (recommended)
-/vibe.run "feature-name" ulw          # Short alias for ultrawork
+/vibe.run "feature-name" --interactive  # Step-by-step confirmation per iteration
+/vibe.run "feature-name" --max-iter 1   # Single-pass (no loop)
+/vibe.run "feature-name" ultrawork    # deprecated alias: automationLevel autonomous + parallel
+/vibe.run "feature-name" ulw          # deprecated alias: same as ultrawork
 ```
 
 ---
@@ -47,7 +49,7 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 Load skill `regress` with: list --feature "{feature-name}"
 ```
 
-- Open regressions exist → interactive: ask user; ultrawork: auto-invoke `/vibe.regress generate <slug>`
+- Open regressions exist → automationLevel confirm: ask user; autonomous: auto-invoke `/vibe.regress generate <slug>`
 - No open regressions → silently continue
 
 Also load `.vibe/contracts/{feature-name}.md` if present — use it as the contract reference during implementation.
@@ -60,8 +62,8 @@ test -f DESIGN.md
 
 - **DESIGN.md present OR no UI stack** → silently continue
 - **DESIGN.md absent AND UI stack present**:
-  - interactive: 한 줄 안내 — "UI 작업에 `DESIGN.md` 시각 SSOT 가 없습니다. `/vibe.design init` 으로 생성하면 시각 드리프트가 자동 검출됩니다. (생략 가능 — 1 회만 안내)"
-  - ultrawork: 무음 스킵
+  - automationLevel confirm: 한 줄 안내 — "UI 작업에 `DESIGN.md` 시각 SSOT 가 없습니다. `/vibe.design init` 으로 생성하면 시각 드리프트가 자동 검출됩니다. (생략 가능 — 1 회만 안내)"
+  - automationLevel autonomous: 무음 스킵
 
 > **권유 > 강제**. DESIGN.md 부재는 절대 vibe.run 을 블록하지 않는다.
 
@@ -89,7 +91,7 @@ test -f DESIGN.md
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-> **하네스-안전 증분 (Dual-Harness Doctrine)**: 시나리오는 **가장 작은 검증 단위**다. 한 시나리오 구현 → 즉시 검증 → 다음. `ultrawork` 모드라도 이 단위는 무너뜨리지 않는다 (병렬은 시나리오 간, 검증은 시나리오별). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
+> **하네스-안전 증분 (Dual-Harness Doctrine)**: 시나리오는 **가장 작은 검증 단위**다. 한 시나리오 구현 → 즉시 검증 → 다음. `automationLevel: autonomous`이라도 이 단위는 무너뜨리지 않는다 (병렬은 시나리오 간, 검증은 시나리오별). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
 
 ### Automated Verification (Closed Loop)
 
@@ -129,20 +131,22 @@ Scenario verification failed
       Repeat until pass (stuck 감지로 종료)
 ```
 
-**Termination conditions:**
+**Termination conditions (loop-contract JUDGE):**
 - PASS → 다음 scenario
-- Stuck (같은 failure가 이전 라운드와 동일) → ask user or ultrawork: TODO + next scenario
+- stuck (같은 failure가 이전 라운드와 동일, `loop-ledger.js check-stuck`) → automationLevel confirm: 사용자 질문; autonomous: TODO + next scenario
 
 ---
 
-## **ULTRAWORK Mode** (ulw)
+## **ULTRAWORK Mode** (ulw) — deprecated alias
 
-> Read `references/ultrawork-mode.md` for the full Boulder Loop diagram, automation level definitions, and confirmation matrix.
+> 루프 시맨틱은 `vibe/rules/loop-contract.md`를 따른다. `ultrawork`/`ulw`는 `automationLevel: autonomous` + 병렬 ACT의 deprecated 별칭이다.
+> 전체 Boulder Loop 다이어그램, automation level 정의, confirmation matrix: `references/ultrawork-mode.md`
 
-When `ultrawork` or `ulw` is included:
-- Parallel Exploration + Boulder Loop + No Pause + Error Recovery (auto-TODO on stuck)
-- Race Review (GPT+Antigravity) enabled by default
-- Ralph Loop runs after all phases
+`ultrawork` 또는 `ulw` 포함 시 vibe.run-specific 동작:
+- 병렬 탐색 (3+ Task agents 동시)
+- 비대화형 (중단점 없음)
+- Race Review (GPT+Antigravity) 기본 활성화
+- stuck 시 TODO 기록 후 다음 시나리오로 (사용자 질문 없음)
 
 ---
 
@@ -316,9 +320,9 @@ After all scenarios: GPT + Antigravity review in parallel. ULTRAWORK enables thi
 
 Auto-update scenario status with `Last verified` timestamp and quality score.
 
-### 8. Ralph Loop (Coverage Verification)
+### 8. Coverage Verification Loop (RTM)
 
-> Read `references/ralph-loop.md` for the full RTM loop diagram, output format, and iteration rules.
+> 루프 시맨틱은 `vibe/rules/loop-contract.md`를 따른다. 여기서의 exit 기준은 `coveragePercent === 100`. RTM 다이어그램, 출력 형식, 반복 규칙: `references/ralph-loop.md`
 
 After ALL phases complete:
 
@@ -329,7 +333,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 > Default SPEC path is `.vibe/specs/<feature>.md`. `status === 'empty'` must be treated as failed/not-applicable — never as 100% pass.
 
-Loop until `coveragePercent === 100` or stuck. Stuck → interactive: ask user; ultrawork → TODO + done.
+JUDGE: `coveragePercent === 100` → 루프 종료. stuck(연속 2회 동일 커버리지) → automationLevel confirm이면 사용자 질문; autonomous이면 TODO + done.
 
 ---
 

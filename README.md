@@ -35,10 +35,10 @@ vibe init
   파이프라인 설계 ─── /vibe.spec → /vibe.figma → /vibe.run → /vibe.verify → /vibe.trace
      |
      v
-  1회 승인 게이트 (ultrawork 키워드 있으면 skip)
+  SPEC 확정 1회 승인 ─── 유일한 의무 개입 (Done의 정의 확정)
      |
      v
-  순차 실행 ─── 각 phase 완료 시 다음으로
+  루프 ─── ANCHOR→ACT→JUDGE→RECORD (게이트 통과까지 자동 반복)
 ```
 
 **예시:**
@@ -48,12 +48,12 @@ vibe init
 /vibe "https://figma.com/file/abc 로 로그인 페이지"
 /vibe "로그인 회귀 테스트 다시 통과시켜줘"
 /vibe "이 SPEC 리뷰만" + 📎 .vibe/specs/login.md
-/vibe "결제 API" ultrawork           # 승인 게이트 skip
+/vibe "결제 API" ultrawork           # automationLevel: autonomous (deprecated alias)
 ```
 
 **Smart Resume** — 아무 단계에서나 멈추고 나중에 돌아오세요. `/vibe`는 `.vibe/` 디렉토리에서 진행 상황을 감지하고 "이어서?" 제안합니다.
 
-**ultrawork** — `ultrawork` 키워드를 붙이면 승인 게이트와 모든 중단점을 skip하고 자동 실행합니다.
+**루프 기본 실행** — SPEC 확정 1회 승인 후 게이트 통과까지 자동 루프합니다. `--interactive`로 단계별 확인 모드, `--max-iter N`으로 반복 상한 설정. `ultrawork`는 `automationLevel: autonomous` + 병렬 실행의 deprecated 별칭으로 동작합니다.
 
 **Advanced** — 정확히 어느 phase 실행할지 알면 `/vibe.spec`, `/vibe.figma`, `/vibe.run`, `/vibe.verify`, `/vibe.trace` 등을 직접 호출할 수 있습니다.
 

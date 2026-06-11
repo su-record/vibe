@@ -37,10 +37,10 @@ Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10
 No `console.log` in commits · No hardcoded strings/numbers · No commented-out code · No incomplete code without TODO
 
 ### Convergence (review / auto-fix loops)
-- **Loop until P1 = 0 AND no new findings** — no round cap; the model follows this protocol — run/verify state is tracked in `.vibe/metrics/run-ledger.json`
+Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECORD; exit = gates pass │ stuck │ max_iterations).
+- **Loop until P1 = 0 AND no new findings** — run/verify state is tracked in `.vibe/metrics/run-ledger.json`; stuck is judged by discover-hash (2 identical rounds), not by the model
 - **Narrowing scope**: Round 1 full → Round 2 P1+P2 → Round 3+ P1 only
-- **Stuck detection** (same findings/score 2 rounds in a row) → ask user (fill values / approve sub-100 / abort). Never silently proceed sub-100
-- **`ultrawork` exception** — skip user prompt; record gaps as TODO to stay non-interactive
+- **Stuck** → ask user (fill values / approve sub-100 / abort); `automationLevel: autonomous` records a TODO and continues non-interactively. Never silently proceed sub-100
 - **Changed files only** — never full-project scan
 
 ## Architecture (Non-Obvious)
@@ -83,14 +83,14 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 
 ## Workflow
 
-Codex exposes Vibe entrypoints as skills. Use `$vibe`, `$vibe.spec`, or `/skills` instead of expecting top-level `/vibe.*` slash commands in the Codex popup. Natural-language requirement (+ optional URL/image/PDF/file attachments) → vibe analyzes intent, designs a pipeline of `vibe.*` skills, shows a preview, gets one approval, then chains them. `ultrawork` keyword skips the approval gate.
+Codex exposes Vibe entrypoints as skills. Use `$vibe`, `$vibe.spec`, or `/skills` instead of expecting top-level `/vibe.*` slash commands in the Codex popup. Natural-language requirement (+ optional URL/image/PDF/file attachments) → vibe analyzes intent, confirms the SPEC once (the only mandatory human gate), then loops per `vibe/rules/loop-contract.md` until gates pass. `automationLevel: autonomous` skips the confirmation for non-interactive runs.
 
 ```
 $vibe "<requirement>" [+ 📎 attachments]
   → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
   → Smart Resume detection (.vibe/{interviews,plans,specs,features}/)
-  → Pipeline preview + 1-time approval (skipped on `ultrawork`)
-  → Sequential SlashCommand chain
+  → SPEC confirmation (1-time approval; skipped on automationLevel: autonomous)
+  → Loop: ANCHOR→ACT→JUDGE→RECORD until gates pass │ stuck │ max-iter
 ```
 
 **Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
@@ -109,15 +109,17 @@ $vibe "<requirement>" [+ 📎 attachments]
 | 1–2 files | Plan Mode |
 | 3+ files | `$vibe "<requirement>"` (or `$vibe.spec` if you want to start at SPEC phase explicitly) |
 
-## Magic Keywords
+## Loop Contract (default execution model)
 
-| Keyword | Effect |
-|---|---|
-| `ultrawork` / `ulw` | Parallel agents + auto-continue + Ralph Loop |
-| `ralph` | Iterate to 100% (no scope reduction) |
-| `ralplan` | Iterative planning + persistence |
-| `verify` | Strict verification mode |
-| `quick` | Fast mode, minimal verification |
+`$vibe {requirement}` = SPEC approval once (the only mandatory human gate) → loop ANCHOR→ACT→JUDGE→RECORD until gates pass. Completion is judged by deterministic gates (run-ledger `verifyPassed`, test exit codes), never by self-report. SSOT: `vibe/rules/loop-contract.md`.
+
+| Parameter | Default | Meaning |
+|---|---|---|
+| `--interactive` | off | Per-step confirmation (the old default) |
+| `--max-iter N` | 10 | Iteration cap |
+| `automationLevel` | `confirm` | `confirm` / `autonomous` (non-interactive; stuck → TODO) — `.vibe/config.json` |
+
+**Deprecated aliases** (mapped, not taught): `ralph`→default(no-op) · `verify`→default(no-op) · `quick`→`--max-iter 1` · `ralplan`→loop applied to planning · `ultrawork`/`ulw`→`automationLevel: autonomous` + parallel ACT
 
 ## Skill Tiers
 

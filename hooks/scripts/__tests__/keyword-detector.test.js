@@ -27,28 +27,30 @@ function runDetector(text) {
 // ══════════════════════════════════════════════════
 describe('keyword-detector', () => {
   describe('ralph keyword', () => {
-    it('should detect ralph keyword', () => {
+    it('should detect ralph keyword and emit deprecation hint', () => {
       const result = runDetector('implement the login feature ralph');
-      expect(result.stdout).toContain('[RALPH MODE]');
+      expect(result.stdout).toContain('[vibe]');
+      expect(result.stdout).toContain('deprecated');
       expect(result.stdout).toContain('persistence');
     });
 
     it('should detect ralph case-insensitively', () => {
       const result = runDetector('RALPH fix all the bugs');
-      expect(result.stdout).toContain('[RALPH MODE]');
+      expect(result.stdout).toContain('[vibe]');
+      expect(result.stdout).toContain('deprecated');
     });
   });
 
   describe('ultrawork keyword', () => {
-    it('should detect ultrawork keyword', () => {
+    it('should detect ultrawork keyword and emit automationLevel banner', () => {
       const result = runDetector('ultrawork build the entire app');
-      expect(result.stdout).toContain('[ULTRAWORK MODE]');
+      expect(result.stdout).toContain('[ULTRAWORK]');
       expect(result.stdout).toContain('parallel');
     });
 
     it('should detect ulw alias', () => {
       const result = runDetector('ulw refactor the codebase');
-      expect(result.stdout).toContain('[ULTRAWORK MODE]');
+      expect(result.stdout).toContain('[ULTRAWORK]');
     });
 
     it('should detect Korean alias when word boundary matches', () => {
@@ -74,28 +76,32 @@ describe('keyword-detector', () => {
   // strict 키워드(일상어): 명령 끝 위치 또는 --flag 에서만 발동.
   // 일상 영어("please verify", "quick question")의 오탐을 막기 위함.
   describe('verify keyword (strict)', () => {
-    it('should detect verify at command tail', () => {
+    it('should detect verify at command tail and emit deprecation hint', () => {
       const result = runDetector('make the implementation correct, verify');
-      expect(result.stdout).toContain('[VERIFY MODE]');
+      expect(result.stdout).toContain('[vibe]');
+      expect(result.stdout).toContain('deprecated');
       expect(result.stdout).toContain('verification');
     });
 
     it('should detect --verify flag', () => {
       const result = runDetector('fix the bug --verify');
-      expect(result.stdout).toContain('[VERIFY MODE]');
+      expect(result.stdout).toContain('[vibe]');
+      expect(result.stdout).toContain('deprecated');
     });
   });
 
   describe('quick keyword (strict)', () => {
-    it('should detect quick at command tail', () => {
+    it('should detect quick at command tail and emit --max-iter 1 hint', () => {
       const result = runDetector('fix this typo quick');
-      expect(result.stdout).toContain('[QUICK MODE]');
+      expect(result.stdout).toContain('[vibe]');
+      expect(result.stdout).toContain('--max-iter 1');
       expect(result.stdout).toContain('fast');
     });
 
     it('should detect --quick flag', () => {
       const result = runDetector('build the payment API --quick');
-      expect(result.stdout).toContain('[QUICK MODE]');
+      expect(result.stdout).toContain('[vibe]');
+      expect(result.stdout).toContain('--max-iter 1');
     });
   });
 
@@ -140,17 +146,19 @@ describe('keyword-detector', () => {
   // Keyword combinations / synergies
   // ══════════════════════════════════════════════════
   describe('keyword combinations', () => {
-    it('should detect ralph+ultrawork synergy', () => {
+    it('should detect ralph+ultrawork synergy and emit deprecation hint', () => {
       const result = runDetector('ralph ultrawork build everything from scratch');
-      expect(result.stdout).toContain('[RALPH+ULTRAWORK]');
+      expect(result.stdout).toContain('[vibe]');
+      expect(result.stdout).toContain('deprecated');
       expect(result.stdout).toContain('persistence');
       expect(result.stdout).toContain('parallel');
     });
 
-    it('should detect ralph+verify synergy', () => {
+    it('should detect ralph+verify synergy and emit deprecation hint', () => {
       // verify is strict → use --verify flag (ralph stays bare)
       const result = runDetector('ralph fix each step --verify');
-      expect(result.stdout).toContain('[RALPH+VERIFY]');
+      expect(result.stdout).toContain('[vibe]');
+      expect(result.stdout).toContain('deprecated');
     });
 
     it('should output both keywords when no synergy key matches sorted order', () => {
@@ -158,7 +166,7 @@ describe('keyword-detector', () => {
       // sorts keywords alphabetically → tries 'explore+ultrawork' which has no match.
       // So individual outputs are emitted instead. explore is strict → --explore.
       const result = runDetector('ultrawork analyze the entire project --explore');
-      expect(result.stdout).toContain('[ULTRAWORK MODE]');
+      expect(result.stdout).toContain('[ULTRAWORK]');
       expect(result.stdout).toContain('[EXPLORE MODE]');
       expect(result.stdout).toContain('[FLAGS]');
     });
@@ -224,7 +232,7 @@ describe('keyword-detector', () => {
     });
 
     it('should merge flags from multiple keywords', () => {
-      // quick is strict → place at command tail
+      // quick is strict → place at command tail; ralph stays bare
       const result = runDetector('ralph finish this quick');
       expect(result.stdout).toContain('[FLAGS]');
       expect(result.stdout).toContain('persistence');

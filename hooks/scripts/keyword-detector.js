@@ -8,20 +8,20 @@ import { VIBE_PATH, PROJECT_DIR } from './utils.js';
 
 // 매직 키워드 정의
 const MAGIC_KEYWORDS = {
-  // 지속성 모드 (완료까지 계속)
+  // Deprecated: 기본 루프 동작과 동일 (no-op). exit=coverage-100으로 해석.
   ralph: {
-    name: 'Ralph Loop',
-    description: 'Continue until task is verified complete',
+    name: 'Ralph (deprecated alias)',
+    description: '[deprecated] Looping to convergence is the default; alias mapped',
     flags: ['persistence', 'verification'],
-    output: '[RALPH MODE] Self-referential completion loop activated. Will continue until ALL tasks verified complete. NO early stopping.',
+    output: '[vibe] \'ralph\' is deprecated — looping to convergence is the default; alias mapped.',
   },
 
-  // 울트라워크 모드 (병렬 + 자동 계속)
+  // 울트라워크 모드 (automationLevel: autonomous + 병렬 ACT)
   ultrawork: {
     name: 'Ultrawork',
-    description: 'Maximum parallel execution, no pause',
+    description: 'automationLevel: autonomous + parallel ACT (deprecated alias)',
     flags: ['parallel', 'auto_continue', 'no_confirmation'],
-    output: '[ULTRAWORK MODE] Use PARALLEL Task calls. Auto-continue through ALL phases. Auto-retry on errors up to 3 times. Do NOT ask for confirmation between phases.',
+    output: '[ULTRAWORK] automationLevel: autonomous + parallel ACT. Loop runs to convergence; stuck → auto-TODO (no confirmation).',
   },
   ulw: {
     alias: 'ultrawork',
@@ -47,12 +47,12 @@ const MAGIC_KEYWORDS = {
     output: '[RALPLAN MODE] Iterative planning with consensus. Will refine plan until approved, then execute with Ralph persistence.',
   },
 
-  // 검증 모드
+  // Deprecated: 기본 JUDGE는 항상 결정론 검증 (no-op)
   verify: {
-    name: 'Verify Mode',
-    description: 'Strict verification after each step',
+    name: 'Verify (deprecated alias)',
+    description: '[deprecated] Deterministic verification is the default; alias mapped',
     flags: ['verification', 'strict'],
-    output: '[VERIFY MODE] Strict verification enabled. Every change must be verified before proceeding.',
+    output: '[vibe] \'verify\' is deprecated — deterministic JUDGE is the default; alias mapped.',
     strict: true, // 일상어 ("please verify the fix" 오탐 방지)
   },
 
@@ -65,29 +65,29 @@ const MAGIC_KEYWORDS = {
     strict: true, // 일상어 ("let me explore the options" 오탐 방지)
   },
 
-  // 빠른 모드
+  // Deprecated: --max-iter 1 매핑
   quick: {
-    name: 'Quick Mode',
-    description: 'Fast execution, minimal verification',
+    name: 'Quick (deprecated alias)',
+    description: '[deprecated] Maps to --max-iter 1; use --max-iter 1 explicitly',
     flags: ['fast', 'minimal_verification'],
-    output: '[QUICK MODE] Fast execution mode. Minimal verification, single round reviews.',
+    output: '[vibe] \'quick\' maps to --max-iter 1 (single-pass, minimal JUDGE).',
     strict: true, // 일상어 ("quick question on auth" 오탐 방지)
   },
 };
 
-// 키워드 조합 시너지
+// 키워드 조합 시너지 (deprecated alias 조합도 매핑 유지)
 const KEYWORD_SYNERGIES = {
   'ralph+ultrawork': {
-    name: 'Ralph Ultrawork',
-    output: '[RALPH+ULTRAWORK] Maximum persistence AND parallel execution. Will NOT stop until ALL phases complete with verification.',
+    name: 'Ralph+Ultrawork (deprecated)',
+    output: '[vibe] \'ralph\'+\'ultrawork\' deprecated: automationLevel: autonomous + parallel ACT, exit=coverage-100.',
   },
   'ralph+verify': {
-    name: 'Ralph Verify',
-    output: '[RALPH+VERIFY] Persistent completion with strict verification at each step.',
+    name: 'Ralph+Verify (deprecated)',
+    output: '[vibe] \'ralph\'+\'verify\' deprecated: both are default behavior; alias mapped.',
   },
   'ultrawork+explore': {
-    name: 'Ultrawork Explore',
-    output: '[ULTRAWORK+EXPLORE] Parallel exploration agents for maximum coverage.',
+    name: 'Ultrawork+Explore',
+    output: '[ULTRAWORK+EXPLORE] automationLevel: autonomous + parallel exploration agents.',
   },
 };
 

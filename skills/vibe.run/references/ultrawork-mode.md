@@ -1,24 +1,26 @@
-# ULTRAWORK Mode — Full Reference
+# ULTRAWORK Mode — Automation Level Reference
 
 > Loaded by vibe.run SKILL.md when user includes `ultrawork` or `ulw` keyword.
+>
+> **루프 시맨틱(ANCHOR/ACT/JUDGE/RECORD/stuck/max_iterations)의 SSOT는 `vibe/rules/loop-contract.md`다.** `ultrawork`/`ulw`는 `automationLevel: autonomous` + 병렬 ACT의 deprecated 별칭이다. 루프 자체는 모든 실행의 기본 동작이며, ultrawork는 그 루프를 자율(비대화형)·병렬 모드로 돌리는 축을 제어한다.
 
-## What ULTRAWORK Enables
+## What `automationLevel: autonomous` Enables
 
-When you include `ultrawork` (or `ulw`), ALL of these activate automatically:
+`ultrawork` (또는 `ulw`, `.vibe/config.json`의 `automationLevel: autonomous`) 설정 시 활성화:
 
 | Feature | Description |
 |---------|-------------|
-| **Parallel Exploration** | 3+ Task(haiku) agents run simultaneously |
-| **Boulder Loop** | Auto-continues until ALL phases complete |
+| **Parallel Exploration** | 3+ Task(haiku) agents run simultaneously (ACT 병렬화) |
+| **Loop (기본 동작)** | 모든 실행의 기본 — exit=게이트 통과 또는 stuck 또는 max_iterations |
 | **Context Compression** | Aggressive auto-save at 70%+ context |
-| **No Pause** | Doesn't wait for confirmation between phases |
+| **No Pause** | stuck·SPEC 게이트 외 확인 없음 (`automationLevel: autonomous`) |
 | **External LLMs** | Auto-consults GPT/Antigravity if enabled |
-| **Error Recovery** | Loops until 100% or stuck; on stuck auto-records TODO and proceeds (no user prompt) |
-| **Race Review (v2.6.9)** | Multi-LLM review (GPT+Antigravity) with cross-validation |
+| **Error Recovery** | stuck 시 TODO 기록 후 다음으로 (사용자 질문 없음) |
+| **Race Review** | Multi-LLM review (GPT+Antigravity) with cross-validation |
 
-## Boulder Loop (Inspired by Sisyphus)
+## Boulder Loop — Parallel ACT Visualization
 
-Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
+루프 자체는 loop-contract의 기본 동작이다. Boulder Loop는 `automationLevel: autonomous`에서 **병렬 ACT**가 어떻게 실행되는지를 보여주는 다이어그램이다:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -45,23 +47,24 @@ Like Sisyphus rolling the boulder, ULTRAWORK **keeps going until done**:
 │                       ↓         ↓                                │
 │                   [Continue]  [Complete!]                        │
 │                                                                  │
-│   NO STOPPING until acceptance criteria met or error limit hit   │
+│   loop-contract EXIT: 게이트 통과 │ stuck │ max_iterations       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## ULTRAWORK Example Session
+## Example Session (automationLevel: autonomous)
 
 ```
 User: /vibe.run "brick-game" ultrawork
 
 Claude:
-ULTRAWORK MODE ACTIVATED
+AUTONOMOUS MODE (automationLevel: autonomous)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 SPEC: .vibe/specs/brick-game.md
 4 Phases detected
-Boulder Loop: ENABLED (will continue until all phases complete)
-Auto-retry: ON (loop until 100% or stuck → auto-TODO)
+Loop: ENABLED (exit = 게이트 통과 | stuck | max_iterations=10)
+Parallel ACT: ON
+automationLevel: autonomous (stuck → auto-TODO, no confirmation)
 Context compression: AGGRESSIVE
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -101,37 +104,37 @@ Retries: 2
 Context saved: 3 checkpoints
 ```
 
-## Normal vs ULTRAWORK Comparison
+## confirm vs autonomous Comparison
 
-| Aspect | Normal | ULTRAWORK |
-|--------|--------|-----------|
-| Phase transition | May pause | Auto-continues |
-| On error | Reports and stops | Auto-retries (3x) |
+| Aspect | `automationLevel: confirm` (default) | `automationLevel: autonomous` (ultrawork) |
+|--------|--------------------------------------|-------------------------------------------|
+| Loop | ANCHOR→ACT→JUDGE→RECORD (기본 동작) | 동일 |
+| Confirmation gates | stuck·SPEC에서 질문 | stuck 포함 전부 skip → TODO |
+| On error | Reports, asks before retry | Auto-retries, auto-TODO on stuck |
 | Context 70%+ | Warning only | Auto-compress + save |
 | Exploration | Sequential possible | FORCED parallel |
-| Completion | Phase-by-phase | Until ALL done |
 
 ## Automation Level System
 
-Magic keywords in the user input automatically set the **AutomationLevel**, which controls how much the AI self-advances vs. pausing for confirmation.
+**automationLevel**은 루프가 사람 개입 없이 얼마나 자율적으로 진행하는지를 제어한다. `.vibe/config.json`에서 설정하거나, deprecated 별칭 키워드로 런타임 오버라이드 가능.
 
 ### Level Definitions
 
-| Level | Name | Keyword(s) | Auto-advance | Auto-retry | Stuck Behavior | Parallel Agents | Checkpoints |
-|-------|------|------------|--------------|------------|----------------|-----------------|-------------|
+| Level | Name | 설정 방법 | Auto-advance | Auto-retry | Stuck Behavior | Parallel Agents | Checkpoints |
+|-------|------|-----------|--------------|------------|----------------|-----------------|-------------|
 | L0 | Manual | `manual` | No | No | Ask user every step | No | All |
-| L1 | Guided | `guided`, `verify` | No | No | Ask user on stuck | No | All |
-| L2 | Semi-auto | `quick` (default) | Yes | Yes (low cap: 2) | Ask user after 2 retries | No | Key points |
-| L3 | Auto | `ultrawork`, `ulw` | Yes | Yes (no cap) | Auto-TODO + proceed | Yes | Checkpoint-only |
-| L4 | Full-auto | `ralph`, `ralplan` | Yes | Yes (no cap) | Auto-TODO + proceed | Yes | None |
+| L1 | Guided | `guided`, `verify`(deprecated) | No | No | Ask user on stuck | No | All |
+| L2 | confirm | default | Yes | Yes (low cap: 2) | Ask user after 2 retries | No | Key points |
+| L3 | autonomous | `automationLevel: autonomous` / `ultrawork`(dep) / `ulw`(dep) | Yes | Yes (no cap) | Auto-TODO + proceed | Yes | Checkpoint-only |
+| L4 | Full-auto | `ralph`(deprecated) / `ralplan`(deprecated) | Yes | Yes (no cap) | Auto-TODO + proceed | Yes | None |
 
-### Detection Rule
+### Detection Rule (deprecated aliases)
 
 ```
-/vibe.run "login"              → L2 Semi-auto (default)
-/vibe.run "login" ultrawork    → L3 Auto
-/vibe.run "login" ralph        → L4 Full-auto
-/vibe.run "login" verify       → L1 Guided
+/vibe.run "login"              → L2 confirm (default)
+/vibe.run "login" ultrawork    → L3 autonomous (deprecated alias)
+/vibe.run "login" ralph        → L4 Full-auto (deprecated alias, exit=coverage-100)
+/vibe.run "login" verify       → L1 Guided (deprecated alias)
 ```
 
 ### Confirmation Matrix

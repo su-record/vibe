@@ -19,6 +19,26 @@ import { pathToFileURL } from 'url';
 /** stdin을 EOF까지 읽을 때 허용하는 최대 바이트 수 (10MB). */
 const STDIN_MAX_BYTES = 10 * 1024 * 1024;
 
+/** EAGAIN 재시도 간격/데드라인 — non-blocking pipe에서 writer가 아직 flush 전일 수 있다. */
+const STDIN_EAGAIN_RETRY_MS = 5;
+const STDIN_EAGAIN_DEADLINE_MS = 500;
+
+/** 동기 sleep (Atomics.wait — 이벤트 루프 없이 대기). */
+const sleepBuf = new Int32Array(new SharedArrayBuffer(4));
+function sleepSync(ms) {
+  Atomics.wait(sleepBuf, 0, 0, ms);
+}
+
+/** 누적 청크가 완전한 JSON인지 검사 — EAGAIN 시 조기 종료 판단용. */
+function isCompleteJson(chunks) {
+  try {
+    JSON.parse(Buffer.concat(chunks).toString('utf-8'));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * stdin에서 JSON 페이로드 동기 읽기 (Claude Code 하네스 호환).
  * fd 0 직접 사용 — Windows는 '/dev/stdin'이 없음.
@@ -37,16 +57,25 @@ export function readStdinSync() {
     const chunkSize = 65536;
     const chunkBuf = Buffer.alloc(chunkSize);
 
+    let lastProgress = Date.now();
     while (true) {
       let bytesRead;
       try {
         bytesRead = fs.readSync(0, chunkBuf, 0, chunkSize, null);
       } catch (err) {
-        // EAGAIN: non-blocking stdin에 데이터 없음 → 루프 종료
-        if (err.code === 'EAGAIN') break;
+        // EAGAIN: 파이프가 *지금* 비었을 뿐 EOF가 아닐 수 있다 (writer가 flush 전).
+        // EOF로 취급하면 대용량 페이로드가 중간에 끊겨 가드가 fail-open된다 —
+        // 완전한 JSON이 모였거나 데드라인이 지나기 전까지 재시도한다.
+        if (err.code === 'EAGAIN') {
+          if (chunks.length > 0 && isCompleteJson(chunks)) break;
+          if (Date.now() - lastProgress > STDIN_EAGAIN_DEADLINE_MS) break;
+          sleepSync(STDIN_EAGAIN_RETRY_MS);
+          continue;
+        }
         throw err;
       }
       if (bytesRead === 0) break;
+      lastProgress = Date.now();
       totalBytes += bytesRead;
       if (totalBytes > STDIN_MAX_BYTES) {
         truncated = true;

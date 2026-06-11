@@ -1,18 +1,20 @@
-# Ralph Loop — Full Reference
+# Ralph Loop — Coverage Verification Reference
 
-> Loaded by vibe.run SKILL.md when Ralph Loop or ULTRAWORK is active (coverage verification).
+> Loaded by vibe.run SKILL.md for RTM/coverage verification. **루프 시맨틱(ANCHOR/ACT/JUDGE/RECORD/stuck/max_iterations)의 SSOT는 `vibe/rules/loop-contract.md`다.** 이 파일은 vibe.run-specific한 RTM 기반 커버리지 검증 메커니즘을 문서화한다.
+>
+> `ralph`는 loop-contract의 deprecated 별칭으로, "exit: coverage-100"이 설정된 기본 루프와 동일하다. 더 이상 별도 모드가 아니다.
 
-## Ralph Loop (Completion Verification)
+## Coverage Verification Loop
 
 > **Inspired by [ghuntley.com/ralph](https://ghuntley.com/ralph)**: "Deterministically bad in an undeterministic world" — Keep iterating until TRULY complete.
 
 **Problem**: AI often claims "complete" when implementation is partial.
 
-**Solution**: RTM-based automated coverage verification with iteration tracking.
+**Solution**: RTM-based automated coverage verification — loop-contract의 JUDGE 기준은 `coveragePercent === 100`.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    RALPH LOOP (Mandatory)                        │
+│           COVERAGE VERIFICATION LOOP (loop-contract + RTM)      │
 │                                                                  │
 │   After ALL phases complete:                                     │
 │                                                                  │
@@ -50,15 +52,15 @@
 │                                                                  │
 │                      │                                          │
 │                      ↓                                          │
-│              Stuck? (coverage unchanged from prev iteration)    │
+│       stuck? (loop-ledger.js check-stuck: 연속 2회 동일 커버리지) │
 │                      │                                          │
-│                      ├─ Interactive: Ask user                   │
+│                      ├─ automationLevel confirm: Ask user       │
 │                      │     1. Provide resolution → retry        │
 │                      │     2. "proceed" → TODO + done           │
 │                      │     3. "abort" → stop                    │
-│                      └─ ultrawork: TODO + done                  │
+│                      └─ automationLevel autonomous: TODO + done │
 │                                                                  │
-│   NO iteration cap — loop until 100% OR stuck                   │
+│   max_iterations 기본 10 — 도달 시 잔여 인박스 이월             │
 │   ZERO TOLERANCE for silent scope reduction                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -84,16 +86,15 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 | `coveragePercent` | Overall coverage percentage |
 | `uncoveredRequirements` | List of missing REQ-* IDs |
 
-## Ralph Loop Rules
+## Coverage Loop Rules
 
 | Rule | Description |
 |------|-------------|
 | **No Scope Reduction** | Never say "simplified" or "basic version" — implement FULL request |
-| **Iteration Tracking** | Display `[{{ITER}}]` to show progress (no max — loop until done) |
+| **Iteration Tracking** | Display `[{{ITER}}]` to show progress; max_iterations 기본 10 |
 | **RTM-Based Gap List** | Use `uncoveredRequirements` array — no manual comparison |
-| **Coverage Threshold** | Must reach 100% coverage to complete |
-| **No Iteration Cap** | Loop until 100% coverage OR stuck (convergence detected) |
-| **Stuck Handling** | If coverage % unchanged between iterations → ask user (proceed/abort/fix), or ultrawork → TODO + done |
+| **Coverage Threshold** | JUDGE: `coveragePercent === 100` → exit (loop-contract exit=coverage-100) |
+| **Stuck Handling** | `loop-ledger.js check-stuck`: 연속 2회 동일 커버리지 → confirm이면 질문; autonomous이면 TODO + done |
 | **Diminishing Returns** | Iteration 3+ → focus on core requirements (REQ-*-001~003) first; P2/P3 continue but lower priority |
 
 ## Ralph Loop Output Format
@@ -155,11 +156,11 @@ RTM saved: .vibe/rtm/login-rtm.md
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-## When to Trigger Ralph Loop
+## When to Trigger Coverage Loop
 
-1. After all phases complete
+1. After all phases complete (기본 동작 — 별도 키워드 불필요)
 2. Before final quality report
-3. Whenever user says "ultrawork" or "ralph"
+3. `ralph` 별칭 감지 시 — 기본 동작과 동일, exit=coverage-100으로 해석
 
 ## Forbidden Responses (VIOLATIONS)
 

@@ -32,15 +32,15 @@ One entry point. Everything else is automatic.
   Pipeline design ─── /vibe.spec → /vibe.figma → /vibe.run → /vibe.verify → /vibe.trace
      |
      v
-  One approval gate (skipped with ultrawork)
+  SPEC approval once ─── the only mandatory human gate (defines Done)
      |
      v
-  Sequential execution ─── each phase hands off to the next
+  Loop ─── ANCHOR→ACT→JUDGE→RECORD until gates pass (stuck/iteration guards)
 ```
 
 **Smart Resume** — Stop at any step, close the session, come back later. `/vibe` auto-detects where you left off and picks up from there. No need to remember feature names.
 
-**ultrawork** — Add `ultrawork` to skip all confirmation gates and run the full pipeline hands-free.
+**Loop-default** — After SPEC approval, vibe loops (ANCHOR→ACT→JUDGE→RECORD) until gates pass, with deterministic stuck/iteration guards. `--interactive` for step-by-step confirmation; `--max-iter N` to cap iterations. `ultrawork` is a deprecated alias for `automationLevel: autonomous` + parallel ACT.
 
 **Loop engineering** — `/vibe.loop` designs and installs autonomous goal loops (triage → run/verify pipelines). Completion is judged by deterministic gates (run-ledger/tests), not self-report; results land in a human triage inbox — loops never push or release.
 

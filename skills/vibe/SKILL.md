@@ -7,7 +7,9 @@ user-invocable: true
 
 # /vibe
 
-**vibe의 메인 진입점.** 사용자는 "무엇을 만들지 / 무엇을 할지"만 자연어로 말한다. vibe가 의도를 분석해 어떤 `/vibe.*` 스킬을 어떤 순서로 호출할지 파이프라인을 동적으로 설계하고, **1회 승인 후 실행**한다.
+**vibe의 메인 진입점.** 사용자는 "무엇을 만들지 / 무엇을 할지"만 자연어로 말한다. vibe가 의도를 분석해 어떤 `/vibe.*` 스킬을 어떤 순서로 호출할지 파이프라인을 동적으로 설계하고, **SPEC 확정 1회 승인 후 게이트 통과까지 루프 실행**한다.
+
+> **루프 시맨틱 SSOT**: `vibe/rules/loop-contract.md` — 이 문서가 ANCHOR→ACT→JUDGE→RECORD 계약과 모든 파라미터(exit, stuck, max_iterations, automationLevel)를 정의한다.
 
 ## Usage
 
@@ -17,7 +19,8 @@ user-invocable: true
 /vibe "로그인 회귀 테스트 다시 돌려서 통과시켜줘"
 /vibe "이 SPEC 리뷰만 한번 봐줘" + 📎 .vibe/specs/login.md
 /vibe "PRD 문서 기반으로 진행" + 📎 docs/prd.pdf
-/vibe "..." ultrawork    # 승인 게이트 없이 자동 전 흐름 실행
+/vibe "..." --interactive     # 단계별 확인 모드 (회전마다 승인)
+/vibe "..." --max-iter 1      # 1회 시도만
 ```
 
 ## Philosophy
@@ -29,7 +32,7 @@ user-invocable: true
 - **무제한 라우팅**: 라우팅 표는 빠른 경로일 뿐 닫힌 화이트리스트가 아니다. 설치된 모든 `vibe.*` 스킬이 라우팅 후보이며, 표에 없는 요구사항도 description 기반 의미 매칭으로 처리한다 (Catch-all).
 - **하네스 정규화 (추론 앞단)**: vibe는 CC(추론)·Codex(직역) 어느 하네스의 암묵적 동작에도 의존하지 않는다. `/vibe`가 모호한 NL을 **명시적·직역 가능한 지시로 먼저 전개**하고, 하위 skill은 모호한 입력을 받지 않는다. 이로써 모든 하네스에서 동일 결과 + CC급 편의를 제공한다. 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
 - **Smart Resume**: `.vibe/{interviews,plans,specs,features}/` 감지하여 "이어서 진행?" 자동 제안.
-- **1회 승인 게이트**: 파이프라인을 설계해서 사용자에게 보여주고 OK 받은 뒤 실행. `ultrawork` 키워드 있으면 skip.
+- **SPEC 확정 1회 승인 → 루프**: SPEC(Done의 정의 + 수용 기준)을 사용자와 확정하는 것이 유일한 의무적 사람 개입. 승인 후에는 `vibe/rules/loop-contract.md`의 ANCHOR→ACT→JUDGE→RECORD 루프를 게이트 전부 통과할 때까지 자동 반복한다. 루프 종료 = 게이트 통과 또는 stuck 또는 max_iterations 도달.
 - **위임자 역할**: `/vibe` 본인은 코드를 직접 쓰지 않는다. 라우팅·설계·실행 위임만 한다.
 
 ## Process
@@ -45,7 +48,7 @@ user-invocable: true
 | 자연어 텍스트 | 의도 추출 (요구 종류, 도메인, 키워드) |
 | 첨부 파일 (`📎 path`) | 확장자로 분류 (md/feature/pdf/png/jpg/...) |
 | URL | 도메인으로 분류 (figma.com / github.com / 기타) |
-| 키워드 | `ultrawork`, `ralph`, `quick`, `verify` 등 magic keyword 추출 |
+| 옵션 플래그 | `--interactive`, `--max-iter N` 등 루프 파라미터 추출; `ultrawork`/`ralph`/`quick` 등 deprecated 별칭은 loop-contract 매핑표로 변환 |
 
 ### Phase 1: Intent 분류
 
@@ -113,7 +116,7 @@ user-invocable: true
 - **research 명시**: 조사가 필요하면 파이프라인에 명시적 탐색 단계를 넣는다. planning mode 같은 하네스 스위치에 의존하지 않는다.
 - **도메인 지식 흡수**: 사용자가 준 라이브러리·함수·파일 위치를 SPEC 입력으로 전달한다.
 
-이어서 분류된 의도 + resume 상태 + magic keyword 를 종합해 실행 계획 작성:
+이어서 분류된 의도 + resume 상태 + 루프 파라미터(automationLevel, --max-iter 등)를 종합해 실행 계획 작성:
 
 ```
 📋 Pipeline Plan
@@ -143,9 +146,10 @@ Phase 6: /vibe.trace → RTM 출력
 ```
 
 **Skip 조건:**
-- 입력에 `ultrawork` 또는 `ulw` 키워드 → 자동 진행
-- `ralph` 키워드 → 자동 진행 + 100% 수렴까지 반복
-- `quick` 키워드 → 최소 phase 만 자동 진행 (review/verify/contract/trace skip)
+- `automationLevel: autonomous` 설정 (`.vibe/config.json`) 또는 `ultrawork`/`ulw` 별칭 → SPEC 승인 게이트만 skip, 루프는 정상 동작
+- `--max-iter 1` 또는 `quick` 별칭 → 1회 시도 후 종료
+
+> 참고: Phase 4의 승인 게이트는 **파이프라인 설계 승인**이다. SPEC 확정 시점의 승인(loop-contract의 "유일한 의무 개입")과 구별된다.
 
 ### Phase 5: 체인 실행
 
@@ -161,10 +165,11 @@ Phase 6: /vibe.trace → RTM 출력
 ...
 ```
 
-각 phase 종료 시:
-- 성공 → 다음 phase
-- 실패 → 중단하고 사용자에게 보고 (재시도 / skip / abort 선택)
-- `ultrawork` 모드 → 실패도 TODO로 기록하고 계속 진행 (non-interactive)
+각 phase 종료 후 JUDGE 단계:
+- 게이트 통과 (P1=0 ∧ verifyPassed) → 루프 종료, Phase 6 보고
+- 게이트 미통과 → RECORD(run-ledger + loop-history.jsonl) 후 다음 ANCHOR로
+- stuck(연속 2회 동일 findings 해시) → `automationLevel: confirm`이면 사용자 질문; `autonomous`이면 TODO 기록 후 루프 종료
+- max_iterations(기본 10) 도달 → 잔여를 인박스로 이월
 
 ### Phase 6: 종료 보고
 
@@ -228,31 +233,43 @@ Phase 6: /vibe.trace → RTM 출력
    1. /vibe.review (단일 phase)
 ```
 
-### 예시 4: ultrawork
+### 예시 4: automationLevel autonomous (ultrawork 별칭)
 
 ```
 입력: /vibe "결제 API 만들어줘" ultrawork
 
-→ Approval gate SKIP
-→ 자동 전 phase 실행
-→ 실패는 TODO 기록만 하고 계속
+→ automationLevel: autonomous 설정 → SPEC 승인 게이트 skip
+→ 병렬 ACT 활성화
+→ ANCHOR→ACT→JUDGE→RECORD 루프 (게이트 통과까지 자동 반복)
+→ stuck 시 TODO 기록 후 루프 종료 (사용자 질문 없음)
 ```
 
 ## ⛔ 하지 않는 것
 
 - 직접 코드 작성 / 파일 수정 (위임만)
-- 파이프라인 미리보기 없이 즉시 실행 (`ultrawork` 외)
+- SPEC 확정 없이 루프 진입 (SPEC = Done의 정의, 유일한 의무 승인 지점)
 - 사용자가 명시한 phase 를 임의로 추가/제거
 - Resume 상태를 무시하고 처음부터 다시 시작
 
-## Magic Keywords (재정의)
+## 루프 옵션
 
-| Keyword | Effect |
+| 옵션 | 효과 |
 |---|---|
-| `ultrawork` / `ulw` | 승인 게이트 skip + non-interactive |
-| `ralph` | 100% 수렴까지 자동 반복 |
-| `quick` | 최소 phase 만 (review/verify/contract/trace skip) |
-| `verify` | 강한 검증 (verify + contract + trace 강제 포함) |
+| `--interactive` | 매 회전마다 사람 승인 (과거 기본값) |
+| `--max-iter N` | 회전 상한 N 으로 설정 (N=1이면 1회 시도) |
+| `automationLevel: autonomous` (`.vibe/config.json`) | stuck/SPEC 게이트 외 모든 확인 skip |
+
+## Deprecated 별칭 (하위 호환 — 새 코드에서 사용하지 말 것)
+
+> 아래 키워드는 계속 동작하지만 loop-contract 파라미터로 환원된다. 새 문서나 예시에서 가르치지 않는다. 전문: `vibe/rules/loop-contract.md` Deprecated 별칭 매핑표.
+
+| 별칭 | 환원 |
+|---|---|
+| `ultrawork` / `ulw` | `automationLevel: autonomous` + 병렬 ACT |
+| `ralph` | 기본 동작과 동일 (no-op); exit=coverage-100으로 해석 가능 |
+| `quick` | `--max-iter 1` + 최소 JUDGE |
+| `verify` | 기본 동작과 동일 (no-op) — JUDGE는 항상 결정론 검증 |
+| `ralplan` | 동일 loop-contract를 계획 단계에 적용 |
 
 ## Output
 

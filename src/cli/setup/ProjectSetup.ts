@@ -175,7 +175,7 @@ const CODEX_SOFT_HOOK_RULES = `## Operating Rules (vibe hooks)
 - **Scope guard**: 변경하는 모든 라인은 사용자의 요청으로 추적 가능해야 한다. 요청 범위 밖 파일은 수정하지 않는다.
 - **Forbidden patterns**: 커밋 전 \`console.log\`, \`any\`/\`as any\`/\`@ts-ignore\`, 주석 처리된 코드, 하드코딩된 문자열/숫자를 남기지 않는다.
 - **Read before edit**: 수정 대상 파일은 부분 grep 이 아니라 전체를 읽은 뒤 수정한다.
-- **Keyword dispatch**: 요청에 \`ralph\`/\`ultrawork\`/\`verify\`/\`quick\` 가 있으면 해당 모드로 동작한다.
+- **Loop contract**: \`$vibe\` 는 SPEC 승인 1회 후 게이트 통과까지 루프가 기본이다 (\`vibe/rules/loop-contract.md\`). \`ralph\`/\`verify\` 는 기본 동작의 deprecated 별칭, \`quick\` → \`--max-iter 1\`, \`ultrawork\` → \`automationLevel: autonomous\` + 병렬.
 - **Smallest unit**: 가장 작은 검증 단위로 구현 → 검증 → 다음. 여러 단위를 묶어 빅뱅으로 만들지 않는다.
 - **Turn 완료 후처리**(auto-commit·devlog)는 \`~/.codex/config.toml\` 의 \`notify\` 가 수행한다.`;
 
@@ -385,9 +385,12 @@ function buildGlobalSection(language: string): string {
   lines.push('| Project structure | `/vibe.scaffold` |');
   lines.push('');
 
-  lines.push('## Keywords');
+  lines.push('## Loop Contract');
   lines.push('');
-  lines.push('`ultrawork` parallel+auto | `ralph` loop until 100% | `quick` fast mode');
+  lines.push(
+    '`/vibe` = SPEC approval once → loop until gates pass (deterministic JUDGE; stuck/max-iter guards). ' +
+    'Deprecated aliases: `ralph`/`verify`→default, `quick`→`--max-iter 1`, `ultrawork`→`automationLevel: autonomous`+parallel'
+  );
   lines.push('');
 
   lines.push('## Quality');
