@@ -14,7 +14,7 @@ describe('SearchService', () => {
   let service: SearchService;
 
   beforeEach(() => {
-    loader = new CsvDataLoader(fixturesPath);
+    loader = new CsvDataLoader(fixturesPath, { quiet: true });
     service = new SearchService(loader);
     service.initialize();
   });

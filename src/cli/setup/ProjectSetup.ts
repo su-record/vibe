@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import { VibeConfig, VibeReferences, TechStack, StackDetails } from '../types.js';
 import { ensureDir, removeDirRecursive, log } from '../utils.js';
 import { STACK_NAMES } from '../detect.js';
-import { STACK_TO_LANGUAGE_FILE } from '../postinstall.js';
+import { STACK_TO_LANGUAGE_FILE } from '../postinstall/constants.js';
 import { detectOsLanguage } from './LanguageDetector.js';
 import { getCoreConfigDir } from './GlobalInstaller.js';
 import { handleCaughtError } from '../../infra/lib/utils.js';

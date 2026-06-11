@@ -8,6 +8,15 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/** CsvDataLoader 생성자 옵션 */
+export interface CsvDataLoaderOptions {
+  /**
+   * true 로 설정하면 파일 미존재·파싱 오류 시 console.warn 을 출력하지 않습니다.
+   * 테스트에서 의도적으로 존재하지 않는 파일을 검사할 때 사용하세요.
+   */
+  quiet?: boolean;
+}
+
 /**
  * CSV 데이터 로더 - UI/UX Design Intelligence 시스템용
  *
@@ -15,8 +24,10 @@ const __dirname = dirname(__filename);
  */
 export class CsvDataLoader {
   private basePaths: string[];
+  private quiet: boolean;
 
-  constructor(customBasePath?: string) {
+  constructor(customBasePath?: string, options: CsvDataLoaderOptions = {}) {
+    this.quiet = options.quiet ?? false;
     if (customBasePath) {
       this.basePaths = [customBasePath];
     } else {
@@ -34,13 +45,13 @@ export class CsvDataLoader {
    */
   load<T extends Record<string, string>>(filename: string): T[] | null {
     if (!this.isValidFilename(filename)) {
-      console.warn(`[CsvDataLoader] Invalid filename: ${filename}`);
+      if (!this.quiet) console.warn(`[CsvDataLoader] Invalid filename: ${filename}`);
       return null;
     }
 
     const resolvedPath = this.resolveFilePath(filename);
     if (!resolvedPath) {
-      console.warn(`[CsvDataLoader] File not found: ${filename}`);
+      if (!this.quiet) console.warn(`[CsvDataLoader] File not found: ${filename}`);
       return null;
     }
 
@@ -55,13 +66,13 @@ export class CsvDataLoader {
       });
 
       if (parseResult.errors.length > 0) {
-        console.warn(`[CsvDataLoader] Parse errors in ${filename}:`, parseResult.errors);
+        if (!this.quiet) console.warn(`[CsvDataLoader] Parse errors in ${filename}:`, parseResult.errors);
         return null;
       }
 
       return parseResult.data;
     } catch (error) {
-      console.warn(`[CsvDataLoader] Error loading ${filename}:`, error);
+      if (!this.quiet) console.warn(`[CsvDataLoader] Error loading ${filename}:`, error);
       return null;
     }
   }

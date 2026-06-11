@@ -31,7 +31,7 @@ describe('CsvDataLoader', () => {
     });
 
     it('should return null for missing file', () => {
-      const loader = new CsvDataLoader(fixturesPath);
+      const loader = new CsvDataLoader(fixturesPath, { quiet: true });
       const data = loader.load('nonexistent.csv');
 
       expect(data).toBeNull();
@@ -75,7 +75,7 @@ describe('CsvDataLoader', () => {
     });
 
     it('should return null on parse errors', () => {
-      const loader = new CsvDataLoader(fixturesPath);
+      const loader = new CsvDataLoader(fixturesPath, { quiet: true });
       const data = loader.load('nonexistent-malformed.csv');
       expect(data).toBeNull();
     });
@@ -89,7 +89,7 @@ describe('CsvDataLoader', () => {
     });
 
     it('should return false for missing file', () => {
-      const loader = new CsvDataLoader(fixturesPath);
+      const loader = new CsvDataLoader(fixturesPath, { quiet: true });
       const exists = loader.exists('nonexistent.csv');
       expect(exists).toBe(false);
     });
@@ -103,28 +103,28 @@ describe('CsvDataLoader', () => {
 
   describe('path traversal prevention', () => {
     it('should reject filenames with ../', () => {
-      const loader = new CsvDataLoader(fixturesPath);
+      const loader = new CsvDataLoader(fixturesPath, { quiet: true });
       const data = loader.load('../../../etc/passwd');
 
       expect(data).toBeNull();
     });
 
     it('should reject filenames with ..\\ (Windows)', () => {
-      const loader = new CsvDataLoader(fixturesPath);
+      const loader = new CsvDataLoader(fixturesPath, { quiet: true });
       const data = loader.load('..\\..\\etc\\passwd');
 
       expect(data).toBeNull();
     });
 
     it('should reject absolute paths starting with /', () => {
-      const loader = new CsvDataLoader(fixturesPath);
+      const loader = new CsvDataLoader(fixturesPath, { quiet: true });
       const data = loader.load('/etc/passwd');
 
       expect(data).toBeNull();
     });
 
     it('should reject absolute paths starting with \\', () => {
-      const loader = new CsvDataLoader(fixturesPath);
+      const loader = new CsvDataLoader(fixturesPath, { quiet: true });
       const data = loader.load('\\windows\\system32\\file');
 
       expect(data).toBeNull();
@@ -146,7 +146,7 @@ describe('CsvDataLoader', () => {
     });
 
     it('should fall back when custom path does not contain file', () => {
-      const loader = new CsvDataLoader('/nonexistent/path');
+      const loader = new CsvDataLoader('/nonexistent/path', { quiet: true });
       const data = loader.load('products.csv');
       expect(data).toBeNull();
     });

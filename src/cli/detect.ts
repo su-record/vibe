@@ -5,474 +5,119 @@
 import path from 'path';
 import fs from 'fs';
 import { DetectedStack, StackDetails, DetectionResult } from './types.js';
+import { detectInDir, detectHosting, detectCicd } from './detect/matcher.js';
+import { detectWorkspacePaths } from './detect/workspace.js';
 
-/**
- * 모노레포 워크스페이스 경로 감지
- * 지원: pnpm-workspace.yaml, package.json workspaces, lerna.json, nx.json, turbo.json
- */
-function detectWorkspacePaths(projectRoot: string): string[] {
-  const workspacePaths: Set<string> = new Set();
+// ── conventional sub-directory names ──────────────────────────────────────
 
-  // 1. pnpm-workspace.yaml
-  const pnpmWorkspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
-  if (fs.existsSync(pnpmWorkspacePath)) {
-    try {
-      const content = fs.readFileSync(pnpmWorkspacePath, 'utf-8');
-      // 간단한 YAML 파싱 (packages: 배열)
-      const packagesMatch = content.match(/packages:\s*\n((?:\s*-\s*.+\n?)+)/);
-      if (packagesMatch) {
-        const lines = packagesMatch[1].split('\n');
-        for (const line of lines) {
-          const match = line.match(/^\s*-\s*['"]?([^'"#\n]+)['"]?\s*$/);
-          if (match) {
-            const pattern = match[1].trim();
-            // glob 패턴 확장 (예: packages/*)
-            expandGlobPattern(projectRoot, pattern, workspacePaths);
-          }
-        }
-      }
-    } catch { /* ignore */ }
-  }
+const CONVENTIONAL_SUBDIRS = ['backend', 'frontend', 'server', 'client', 'api', 'web', 'mobile', 'app'];
+const MONOREPO_FALLBACK_DIRS = ['packages', 'apps', 'libs'];
 
-  // 2. package.json workspaces
-  const packageJsonPath = path.join(projectRoot, 'package.json');
-  if (fs.existsSync(packageJsonPath)) {
-    try {
-      const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-      const workspaces = pkg.workspaces;
-      if (Array.isArray(workspaces)) {
-        for (const pattern of workspaces) {
-          expandGlobPattern(projectRoot, pattern, workspacePaths);
-        }
-      } else if (workspaces?.packages && Array.isArray(workspaces.packages)) {
-        // yarn workspaces 형식: { packages: [...] }
-        for (const pattern of workspaces.packages) {
-          expandGlobPattern(projectRoot, pattern, workspacePaths);
-        }
-      }
-    } catch { /* ignore */ }
-  }
+// ── helpers ────────────────────────────────────────────────────────────────
 
-  // 3. lerna.json
-  const lernaPath = path.join(projectRoot, 'lerna.json');
-  if (fs.existsSync(lernaPath)) {
-    try {
-      const lerna = JSON.parse(fs.readFileSync(lernaPath, 'utf-8'));
-      const packages = lerna.packages || ['packages/*'];
-      for (const pattern of packages) {
-        expandGlobPattern(projectRoot, pattern, workspacePaths);
-      }
-    } catch { /* ignore */ }
-  }
-
-  // 4. nx.json (projects 경로 확인)
-  const nxPath = path.join(projectRoot, 'nx.json');
-  if (fs.existsSync(nxPath)) {
-    // nx는 보통 apps/, libs/, packages/ 구조
-    for (const dir of ['apps', 'libs', 'packages']) {
-      expandGlobPattern(projectRoot, `${dir}/*`, workspacePaths);
-    }
-  }
-
-  // 5. turbo.json (pipeline이 있으면 모노레포)
-  const turboPath = path.join(projectRoot, 'turbo.json');
-  if (fs.existsSync(turboPath)) {
-    // turbo는 package.json workspaces를 따르므로 추가 처리 불필요
-    // 기본 폴더 검사
-    for (const dir of ['apps', 'packages']) {
-      expandGlobPattern(projectRoot, `${dir}/*`, workspacePaths);
-    }
-  }
-
-  return [...workspacePaths];
+function dedupeDetails(details: StackDetails): void {
+  details.databases = [...new Set(details.databases)];
+  details.stateManagement = [...new Set(details.stateManagement)];
+  details.hosting = [...new Set(details.hosting)];
+  details.cicd = [...new Set(details.cicd)];
+  details.capabilities = [...new Set(details.capabilities)];
 }
 
-/**
- * glob 패턴을 실제 디렉토리 경로로 확장
- */
-function expandGlobPattern(projectRoot: string, pattern: string, paths: Set<string>): void {
-  // 패턴 정규화
-  const cleanPattern = pattern.replace(/['"]/g, '').trim();
+function scanDir(
+  dir: string,
+  prefix: string,
+  details: StackDetails,
+  stacks: DetectedStack[],
+): void {
+  stacks.push(...detectInDir(dir, prefix, details));
+}
 
-  // ! 로 시작하면 제외 패턴 - 무시
-  if (cleanPattern.startsWith('!')) return;
-
-  // * 없으면 직접 경로
-  if (!cleanPattern.includes('*')) {
-    const fullPath = path.join(projectRoot, cleanPattern);
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
-      paths.add(cleanPattern);
-    }
-    return;
-  }
-
-  // 단일 레벨 glob 처리 (예: packages/*, apps/*)
-  if (cleanPattern.endsWith('/*') || cleanPattern.endsWith('/**/')) {
-    const baseDir = cleanPattern.replace(/\/\*+\/?$/, '');
-    const basePath = path.join(projectRoot, baseDir);
-
-    if (fs.existsSync(basePath) && fs.statSync(basePath).isDirectory()) {
-      try {
-        const entries = fs.readdirSync(basePath);
-        for (const entry of entries) {
-          if (entry.startsWith('.')) continue;
-          const entryPath = path.join(basePath, entry);
-          if (fs.statSync(entryPath).isDirectory()) {
-            paths.add(`${baseDir}/${entry}`);
-          }
-        }
-      } catch { /* ignore */ }
+function scanConventionalSubdirs(
+  projectRoot: string,
+  details: StackDetails,
+  stacks: DetectedStack[],
+): void {
+  for (const sub of CONVENTIONAL_SUBDIRS) {
+    const full = path.join(projectRoot, sub);
+    if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
+      scanDir(full, sub, details, stacks);
     }
   }
 }
+
+function scanWorkspacePaths(
+  projectRoot: string,
+  workspacePaths: string[],
+  scanned: Set<string>,
+  details: StackDetails,
+  stacks: DetectedStack[],
+): void {
+  for (const ws of workspacePaths) {
+    if (scanned.has(ws)) continue;
+    scanned.add(ws);
+    const full = path.join(projectRoot, ws);
+    if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
+      scanDir(full, ws, details, stacks);
+    }
+  }
+}
+
+function scanMonorepoFallback(
+  projectRoot: string,
+  scanned: Set<string>,
+  details: StackDetails,
+  stacks: DetectedStack[],
+): void {
+  for (const monoDir of MONOREPO_FALLBACK_DIRS) {
+    const monoPath = path.join(projectRoot, monoDir);
+    if (!fs.existsSync(monoPath) || !fs.statSync(monoPath).isDirectory()) continue;
+    try {
+      const entries = fs.readdirSync(monoPath).filter(f => {
+        const fp = path.join(monoPath, f);
+        return fs.statSync(fp).isDirectory() && !f.startsWith('.');
+      });
+      for (const entry of entries) {
+        const rel = `${monoDir}/${entry}`;
+        if (scanned.has(rel)) continue;
+        scanned.add(rel);
+        scanDir(path.join(monoPath, entry), rel, details, stacks);
+      }
+    } catch { /* ignore */ }
+  }
+}
+
+// ── public API ─────────────────────────────────────────────────────────────
 
 /**
  * 프로젝트 기술 스택 감지
  */
 export function detectTechStacks(projectRoot: string): DetectionResult {
   const stacks: DetectedStack[] = [];
-  const details: StackDetails = { databases: [], stateManagement: [], hosting: [], cicd: [], capabilities: [] };
-
-  const detectInDir = (dir: string, prefix = ''): DetectedStack[] => {
-    const detected: DetectedStack[] = [];
-
-    // Node.js / TypeScript
-    if (fs.existsSync(path.join(dir, 'package.json'))) {
-      try {
-        const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8'));
-        const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-
-        // 프레임워크 감지 (우선순위: 특수 프레임워크 → 범용 프레임워크)
-        // Desktop/Mobile 프레임워크 (최우선)
-        if (deps['@tauri-apps/cli'] || deps['@tauri-apps/api']) {
-          detected.push({ type: 'typescript-tauri', path: prefix });
-        } else if (deps['electron']) {
-          detected.push({ type: 'typescript-electron', path: prefix });
-        } else if (deps['react-native']) {
-          detected.push({ type: 'typescript-react-native', path: prefix });
-        }
-        // 풀스택/SSR 프레임워크
-        else if (deps['next']) {
-          detected.push({ type: 'typescript-nextjs', path: prefix });
-        } else if (deps['nuxt'] || deps['nuxt3']) {
-          detected.push({ type: 'typescript-nuxt', path: prefix });
-        } else if (deps['astro']) {
-          detected.push({ type: 'typescript-astro', path: prefix });
-        }
-        // 프론트엔드 프레임워크
-        else if (deps['@angular/core']) {
-          detected.push({ type: 'typescript-angular', path: prefix });
-        } else if (deps['svelte']) {
-          detected.push({ type: 'typescript-svelte', path: prefix });
-        } else if (deps['vue']) {
-          detected.push({ type: 'typescript-vue', path: prefix });
-        } else if (deps['react']) {
-          detected.push({ type: 'typescript-react', path: prefix });
-        }
-        // 백엔드 프레임워크
-        else if (deps['@nestjs/core']) {
-          detected.push({ type: 'typescript-nestjs', path: prefix });
-        } else if (deps['express'] || deps['fastify'] || deps['koa'] || deps['hono']) {
-          detected.push({ type: 'typescript-node', path: prefix });
-        }
-        // 기본 Node.js
-        else if (pkg.name) {
-          detected.push({ type: 'typescript-node', path: prefix });
-        }
-
-        // DB 감지
-        if (deps['pg'] || deps['postgres'] || deps['@prisma/client']) details.databases.push('PostgreSQL');
-        if (deps['mysql'] || deps['mysql2']) details.databases.push('MySQL');
-        if (deps['mongodb'] || deps['mongoose']) details.databases.push('MongoDB');
-        if (deps['redis'] || deps['ioredis']) details.databases.push('Redis');
-        if (deps['sqlite3'] || deps['better-sqlite3']) details.databases.push('SQLite');
-        if (deps['typeorm']) details.databases.push('TypeORM');
-        if (deps['prisma'] || deps['@prisma/client']) details.databases.push('Prisma');
-        if (deps['drizzle-orm']) details.databases.push('Drizzle');
-        if (deps['sequelize']) details.databases.push('Sequelize');
-
-        // 상태관리 감지
-        if (deps['redux'] || deps['@reduxjs/toolkit']) details.stateManagement.push('Redux');
-        if (deps['zustand']) details.stateManagement.push('Zustand');
-        if (deps['jotai']) details.stateManagement.push('Jotai');
-        if (deps['recoil']) details.stateManagement.push('Recoil');
-        if (deps['mobx']) details.stateManagement.push('MobX');
-        if (deps['@tanstack/react-query'] || deps['react-query']) details.stateManagement.push('React Query');
-        if (deps['swr']) details.stateManagement.push('SWR');
-        if (deps['pinia']) details.stateManagement.push('Pinia');
-        if (deps['vuex']) details.stateManagement.push('Vuex');
-
-        // Capability 감지: Commerce
-        if (deps['stripe'] || deps['@stripe/stripe-js'] || deps['@stripe/react-stripe-js']
-          || deps['@shopify/shopify-api'] || deps['shopify-api-node']
-          || deps['@medusajs/medusa'] || deps['@paypal/checkout-server-sdk']
-          || deps['toss-payments'] || deps['iamport-rest-client']) {
-          details.capabilities.push('commerce');
-        }
-
-        // Capability 감지: Video
-        if (deps['fluent-ffmpeg'] || deps['@ffmpeg/ffmpeg'] || deps['ffmpeg-static']
-          || deps['remotion'] || deps['video.js'] || deps['@mux/mux-node']) {
-          details.capabilities.push('video');
-        }
-
-        // Capability 감지: Event Automation
-        if (deps['@notionhq/client'] || deps['aligo-smartsms'] || deps['nodemailer']
-          || deps['python-pptx'] || deps['google-generativeai']) {
-          // Check for event-specific directory structures
-          if (fs.existsSync(path.join(dir, 'agents')) || fs.existsSync(path.join(dir, 'schedules'))
-            || fs.existsSync(path.join(dir, '.event_state.json')) || fs.existsSync(path.join(dir, 'prompts'))) {
-            details.capabilities.push('event-automation');
-          }
-        }
-      } catch { /* ignore: optional operation */ }
-    }
-
-    // Python
-    if (fs.existsSync(path.join(dir, 'pyproject.toml'))) {
-      try {
-        const content = fs.readFileSync(path.join(dir, 'pyproject.toml'), 'utf-8');
-        if (content.includes('fastapi')) detected.push({ type: 'python-fastapi', path: prefix });
-        else if (content.includes('django')) detected.push({ type: 'python-django', path: prefix });
-        else detected.push({ type: 'python', path: prefix });
-
-        if (content.includes('psycopg') || content.includes('asyncpg')) details.databases.push('PostgreSQL');
-        if (content.includes('pymongo')) details.databases.push('MongoDB');
-        if (content.includes('sqlalchemy')) details.databases.push('SQLAlchemy');
-        if (content.includes('prisma')) details.databases.push('Prisma');
-
-        // Python capability 감지
-        if (content.includes('stripe') || content.includes('shopify') || content.includes('saleor')) {
-          details.capabilities.push('commerce');
-        }
-        if (content.includes('moviepy') || content.includes('ffmpeg') || content.includes('opencv') || content.includes('vidgear')) {
-          details.capabilities.push('video');
-        }
-        if (content.includes('notion-client') || content.includes('python-pptx') || content.includes('google-generativeai')
-          || content.includes('aligo')) {
-          if (fs.existsSync(path.join(dir, 'agents')) || fs.existsSync(path.join(dir, 'schedules'))
-            || fs.existsSync(path.join(dir, '.event_state.json')) || fs.existsSync(path.join(dir, 'prompts'))) {
-            details.capabilities.push('event-automation');
-          }
-        }
-      } catch { /* ignore: optional operation */ }
-    } else if (fs.existsSync(path.join(dir, 'requirements.txt'))) {
-      try {
-        const content = fs.readFileSync(path.join(dir, 'requirements.txt'), 'utf-8');
-        if (content.includes('fastapi')) detected.push({ type: 'python-fastapi', path: prefix });
-        else if (content.includes('django')) detected.push({ type: 'python-django', path: prefix });
-        else detected.push({ type: 'python', path: prefix });
-
-        if (content.includes('psycopg') || content.includes('asyncpg')) details.databases.push('PostgreSQL');
-        if (content.includes('pymongo')) details.databases.push('MongoDB');
-        if (content.includes('sqlalchemy')) details.databases.push('SQLAlchemy');
-
-        // Python capability 감지
-        if (content.includes('stripe') || content.includes('shopify') || content.includes('saleor')) {
-          details.capabilities.push('commerce');
-        }
-        if (content.includes('moviepy') || content.includes('ffmpeg') || content.includes('opencv') || content.includes('vidgear')) {
-          details.capabilities.push('video');
-        }
-        if (content.includes('notion-client') || content.includes('python-pptx') || content.includes('google-generativeai')
-          || content.includes('aligo')) {
-          if (fs.existsSync(path.join(dir, 'agents')) || fs.existsSync(path.join(dir, 'schedules'))
-            || fs.existsSync(path.join(dir, '.event_state.json')) || fs.existsSync(path.join(dir, 'prompts'))) {
-            details.capabilities.push('event-automation');
-          }
-        }
-      } catch { /* ignore: optional operation */ }
-    }
-
-    // Flutter / Dart
-    if (fs.existsSync(path.join(dir, 'pubspec.yaml'))) {
-      detected.push({ type: 'dart-flutter', path: prefix });
-      try {
-        const content = fs.readFileSync(path.join(dir, 'pubspec.yaml'), 'utf-8');
-        if (content.includes('flutter_riverpod') || content.includes('riverpod')) details.stateManagement.push('Riverpod');
-        else if (content.includes('provider')) details.stateManagement.push('Provider');
-        if (content.includes('bloc')) details.stateManagement.push('BLoC');
-        if (content.includes('getx') || content.includes('get:')) details.stateManagement.push('GetX');
-      } catch { /* ignore: optional operation */ }
-    }
-
-    // Go
-    if (fs.existsSync(path.join(dir, 'go.mod'))) {
-      detected.push({ type: 'go', path: prefix });
-      try {
-        const content = fs.readFileSync(path.join(dir, 'go.mod'), 'utf-8');
-        if (content.includes('pgx') || content.includes('pq')) details.databases.push('PostgreSQL');
-        if (content.includes('go-redis')) details.databases.push('Redis');
-        if (content.includes('mongo-driver')) details.databases.push('MongoDB');
-      } catch { /* ignore: optional operation */ }
-    }
-
-    // Rust
-    if (fs.existsSync(path.join(dir, 'Cargo.toml'))) {
-      detected.push({ type: 'rust', path: prefix });
-      try {
-        const content = fs.readFileSync(path.join(dir, 'Cargo.toml'), 'utf-8');
-        if (content.includes('sqlx') || content.includes('diesel')) details.databases.push('PostgreSQL');
-        if (content.includes('mongodb')) details.databases.push('MongoDB');
-      } catch { /* ignore: optional operation */ }
-    }
-
-    // Java / Kotlin
-    if (fs.existsSync(path.join(dir, 'build.gradle')) || fs.existsSync(path.join(dir, 'build.gradle.kts'))) {
-      try {
-        const gradleFile = fs.existsSync(path.join(dir, 'build.gradle.kts'))
-          ? path.join(dir, 'build.gradle.kts')
-          : path.join(dir, 'build.gradle');
-        const content = fs.readFileSync(gradleFile, 'utf-8');
-        if (content.includes('com.android')) detected.push({ type: 'kotlin-android', path: prefix });
-        else if (content.includes('kotlin')) detected.push({ type: 'kotlin', path: prefix });
-        else if (content.includes('spring')) detected.push({ type: 'java-spring', path: prefix });
-        else detected.push({ type: 'java', path: prefix });
-
-        if (content.includes('postgresql')) details.databases.push('PostgreSQL');
-        if (content.includes('mysql')) details.databases.push('MySQL');
-        if (content.includes('jpa') || content.includes('hibernate')) details.databases.push('JPA/Hibernate');
-      } catch { /* ignore: optional operation */ }
-    } else if (fs.existsSync(path.join(dir, 'pom.xml'))) {
-      try {
-        const content = fs.readFileSync(path.join(dir, 'pom.xml'), 'utf-8');
-        if (content.includes('spring')) detected.push({ type: 'java-spring', path: prefix });
-        else detected.push({ type: 'java', path: prefix });
-
-        if (content.includes('postgresql')) details.databases.push('PostgreSQL');
-        if (content.includes('mysql')) details.databases.push('MySQL');
-      } catch { /* ignore: optional operation */ }
-    }
-
-    // Swift / iOS
-    if (fs.existsSync(path.join(dir, 'Package.swift')) ||
-        fs.readdirSync(dir).some(f => f.endsWith('.xcodeproj') || f.endsWith('.xcworkspace'))) {
-      detected.push({ type: 'swift-ios', path: prefix });
-    }
-
-    // Ruby / Rails
-    if (fs.existsSync(path.join(dir, 'Gemfile'))) {
-      try {
-        const content = fs.readFileSync(path.join(dir, 'Gemfile'), 'utf-8');
-        if (content.includes('rails')) {
-          detected.push({ type: 'ruby-rails', path: prefix });
-        }
-        if (content.includes('pg')) details.databases.push('PostgreSQL');
-        if (content.includes('mysql2')) details.databases.push('MySQL');
-        if (content.includes('sqlite3')) details.databases.push('SQLite');
-      } catch { /* ignore: optional operation */ }
-    }
-
-    // C# / Unity
-    if (fs.readdirSync(dir).some(f => f.endsWith('.csproj') || f.endsWith('.sln'))) {
-      // Unity 프로젝트 판별: ProjectSettings/ProjectVersion.txt 존재 여부
-      if (fs.existsSync(path.join(dir, 'ProjectSettings', 'ProjectVersion.txt')) ||
-          fs.existsSync(path.join(dir, 'Assets'))) {
-        detected.push({ type: 'csharp-unity', path: prefix });
-      }
-    }
-
-    // GDScript / Godot
-    if (fs.existsSync(path.join(dir, 'project.godot')) ||
-        fs.readdirSync(dir).some(f => f.endsWith('.gd'))) {
-      detected.push({ type: 'gdscript-godot', path: prefix });
-    }
-
-    return detected;
+  const details: StackDetails = {
+    databases: [], stateManagement: [], hosting: [], cicd: [], capabilities: [],
   };
 
-  // CI/CD 감지
-  if (fs.existsSync(path.join(projectRoot, '.github', 'workflows'))) {
-    details.cicd.push('GitHub Actions');
-  }
-  if (fs.existsSync(path.join(projectRoot, '.gitlab-ci.yml'))) {
-    details.cicd.push('GitLab CI');
-  }
-  if (fs.existsSync(path.join(projectRoot, 'Jenkinsfile'))) {
-    details.cicd.push('Jenkins');
-  }
-  if (fs.existsSync(path.join(projectRoot, '.circleci'))) {
-    details.cicd.push('CircleCI');
-  }
+  // Root
+  scanDir(projectRoot, '', details, stacks);
 
-  // Hosting 감지
-  if (fs.existsSync(path.join(projectRoot, 'vercel.json')) ||
-      fs.existsSync(path.join(projectRoot, '.vercel'))) {
-    details.hosting.push('Vercel');
-  }
-  if (fs.existsSync(path.join(projectRoot, 'netlify.toml'))) {
-    details.hosting.push('Netlify');
-  }
-  if (fs.existsSync(path.join(projectRoot, 'app.yaml')) ||
-      fs.existsSync(path.join(projectRoot, 'cloudbuild.yaml'))) {
-    details.hosting.push('Google Cloud');
-  }
-  if (fs.existsSync(path.join(projectRoot, 'Dockerfile')) ||
-      fs.existsSync(path.join(projectRoot, 'docker-compose.yml'))) {
-    details.hosting.push('Docker');
-  }
-  if (fs.existsSync(path.join(projectRoot, 'fly.toml'))) {
-    details.hosting.push('Fly.io');
-  }
-  if (fs.existsSync(path.join(projectRoot, 'railway.json'))) {
-    details.hosting.push('Railway');
-  }
+  // Conventional sub-directories (backend/, frontend/, …)
+  scanConventionalSubdirs(projectRoot, details, stacks);
 
-  // 루트 디렉토리 검사
-  stacks.push(...detectInDir(projectRoot));
-
-  // 1레벨 하위 폴더 검사 (전통적인 폴더 구조)
-  const subDirs = ['backend', 'frontend', 'server', 'client', 'api', 'web', 'mobile', 'app'];
-  for (const subDir of subDirs) {
-    const subPath = path.join(projectRoot, subDir);
-    if (fs.existsSync(subPath) && fs.statSync(subPath).isDirectory()) {
-      stacks.push(...detectInDir(subPath, subDir));
-    }
-  }
-
-  // 모노레포 워크스페이스 감지 및 검사
+  // Monorepo workspace paths
   const workspacePaths = detectWorkspacePaths(projectRoot);
-  const scannedPaths = new Set<string>();
+  const scanned = new Set<string>();
+  scanWorkspacePaths(projectRoot, workspacePaths, scanned, details, stacks);
 
-  for (const workspacePath of workspacePaths) {
-    // 이미 검사한 경로는 건너뛰기
-    if (scannedPaths.has(workspacePath)) continue;
-    scannedPaths.add(workspacePath);
-
-    const fullPath = path.join(projectRoot, workspacePath);
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
-      stacks.push(...detectInDir(fullPath, workspacePath));
-    }
-  }
-
-  // 워크스페이스 설정이 없으면 기본 폴더 검사 (fallback)
+  // Fallback: scan packages/, apps/, libs/ if no workspace config found
   if (workspacePaths.length === 0) {
-    for (const monoDir of ['packages', 'apps', 'libs']) {
-      const monoPath = path.join(projectRoot, monoDir);
-      if (fs.existsSync(monoPath) && fs.statSync(monoPath).isDirectory()) {
-        try {
-          const subPackages = fs.readdirSync(monoPath).filter(f => {
-            const fullPath = path.join(monoPath, f);
-            return fs.statSync(fullPath).isDirectory() && !f.startsWith('.');
-          });
-          for (const pkg of subPackages) {
-            const pkgPath = `${monoDir}/${pkg}`;
-            if (!scannedPaths.has(pkgPath)) {
-              scannedPaths.add(pkgPath);
-              stacks.push(...detectInDir(path.join(monoPath, pkg), pkgPath));
-            }
-          }
-        } catch { /* ignore */ }
-      }
-    }
+    scanMonorepoFallback(projectRoot, scanned, details, stacks);
   }
 
-  // 중복 제거
-  details.databases = [...new Set(details.databases)];
-  details.stateManagement = [...new Set(details.stateManagement)];
-  details.hosting = [...new Set(details.hosting)];
-  details.cicd = [...new Set(details.cicd)];
-  details.capabilities = [...new Set(details.capabilities)];
+  // Project-root-level details (hosting, CI/CD)
+  details.hosting.push(...detectHosting(projectRoot));
+  details.cicd.push(...detectCicd(projectRoot));
+
+  dedupeDetails(details);
 
   return { stacks, details };
 }
@@ -482,37 +127,37 @@ export function detectTechStacks(projectRoot: string): DetectionResult {
  */
 export const STACK_NAMES: Record<string, { name: string; lang: string; framework: string }> = {
   // Desktop/Mobile
-  'typescript-tauri': { name: 'Tauri', lang: 'TypeScript', framework: 'Tauri' },
-  'typescript-electron': { name: 'Electron', lang: 'TypeScript', framework: 'Electron' },
-  'typescript-react-native': { name: 'React Native', lang: 'TypeScript', framework: 'React Native' },
+  'typescript-tauri':         { name: 'Tauri',        lang: 'TypeScript',    framework: 'Tauri' },
+  'typescript-electron':      { name: 'Electron',     lang: 'TypeScript',    framework: 'Electron' },
+  'typescript-react-native':  { name: 'React Native', lang: 'TypeScript',    framework: 'React Native' },
   // Fullstack/SSR
-  'typescript-nextjs': { name: 'Next.js', lang: 'TypeScript', framework: 'Next.js' },
-  'typescript-nuxt': { name: 'Nuxt', lang: 'TypeScript', framework: 'Nuxt' },
-  'typescript-astro': { name: 'Astro', lang: 'TypeScript', framework: 'Astro' },
+  'typescript-nextjs':        { name: 'Next.js',      lang: 'TypeScript',    framework: 'Next.js' },
+  'typescript-nuxt':          { name: 'Nuxt',         lang: 'TypeScript',    framework: 'Nuxt' },
+  'typescript-astro':         { name: 'Astro',        lang: 'TypeScript',    framework: 'Astro' },
   // Frontend
-  'typescript-angular': { name: 'Angular', lang: 'TypeScript', framework: 'Angular' },
-  'typescript-svelte': { name: 'Svelte', lang: 'TypeScript', framework: 'Svelte/SvelteKit' },
-  'typescript-vue': { name: 'Vue', lang: 'TypeScript', framework: 'Vue' },
-  'typescript-react': { name: 'React', lang: 'TypeScript', framework: 'React' },
+  'typescript-angular':       { name: 'Angular',      lang: 'TypeScript',    framework: 'Angular' },
+  'typescript-svelte':        { name: 'Svelte',       lang: 'TypeScript',    framework: 'Svelte/SvelteKit' },
+  'typescript-vue':           { name: 'Vue',          lang: 'TypeScript',    framework: 'Vue' },
+  'typescript-react':         { name: 'React',        lang: 'TypeScript',    framework: 'React' },
   // Backend
-  'typescript-nestjs': { name: 'NestJS', lang: 'TypeScript', framework: 'NestJS' },
-  'typescript-node': { name: 'Node.js', lang: 'TypeScript', framework: 'Node.js' },
+  'typescript-nestjs':        { name: 'NestJS',       lang: 'TypeScript',    framework: 'NestJS' },
+  'typescript-node':          { name: 'Node.js',      lang: 'TypeScript',    framework: 'Node.js' },
   // Python
-  'python-fastapi': { name: 'FastAPI', lang: 'Python 3.11+', framework: 'FastAPI' },
-  'python-django': { name: 'Django', lang: 'Python 3.11+', framework: 'Django' },
-  'python': { name: 'Python', lang: 'Python 3.11+', framework: 'Python' },
+  'python-fastapi':           { name: 'FastAPI',      lang: 'Python 3.11+',  framework: 'FastAPI' },
+  'python-django':            { name: 'Django',       lang: 'Python 3.11+',  framework: 'Django' },
+  'python':                   { name: 'Python',       lang: 'Python 3.11+',  framework: 'Python' },
   // Other languages
-  'dart-flutter': { name: 'Flutter', lang: 'Dart', framework: 'Flutter' },
-  'go': { name: 'Go', lang: 'Go 1.21+', framework: 'Go' },
-  'rust': { name: 'Rust', lang: 'Rust', framework: 'Rust' },
-  'kotlin-android': { name: 'Android', lang: 'Kotlin', framework: 'Android' },
-  'kotlin': { name: 'Kotlin', lang: 'Kotlin', framework: 'Kotlin' },
-  'java-spring': { name: 'Spring', lang: 'Java 17+', framework: 'Spring Boot' },
-  'java': { name: 'Java', lang: 'Java 17+', framework: 'Java' },
-  'swift-ios': { name: 'iOS', lang: 'Swift', framework: 'SwiftUI/UIKit' },
-  'ruby-rails': { name: 'Rails', lang: 'Ruby', framework: 'Ruby on Rails' },
-  'csharp-unity': { name: 'Unity', lang: 'C#', framework: 'Unity' },
-  'gdscript-godot': { name: 'Godot', lang: 'GDScript', framework: 'Godot Engine' },
+  'dart-flutter':             { name: 'Flutter',      lang: 'Dart',          framework: 'Flutter' },
+  'go':                       { name: 'Go',           lang: 'Go 1.21+',      framework: 'Go' },
+  'rust':                     { name: 'Rust',         lang: 'Rust',          framework: 'Rust' },
+  'kotlin-android':           { name: 'Android',      lang: 'Kotlin',        framework: 'Android' },
+  'kotlin':                   { name: 'Kotlin',       lang: 'Kotlin',        framework: 'Kotlin' },
+  'java-spring':              { name: 'Spring',       lang: 'Java 17+',      framework: 'Spring Boot' },
+  'java':                     { name: 'Java',         lang: 'Java 17+',      framework: 'Java' },
+  'swift-ios':                { name: 'iOS',          lang: 'Swift',         framework: 'SwiftUI/UIKit' },
+  'ruby-rails':               { name: 'Rails',        lang: 'Ruby',          framework: 'Ruby on Rails' },
+  'csharp-unity':             { name: 'Unity',        lang: 'C#',            framework: 'Unity' },
+  'gdscript-godot':           { name: 'Godot',        lang: 'GDScript',      framework: 'Godot Engine' },
 };
 
 /**
@@ -520,13 +165,9 @@ export const STACK_NAMES: Record<string, { name: string; lang: string; framework
  */
 export function getLanguageRulesForStacks(stacks: Array<{ type: string; path: string }>): string {
   const ruleFiles: string[] = [];
-
   for (const stack of stacks) {
-    if (STACK_NAMES[stack.type]) {
-      ruleFiles.push(`${stack.type}.md`);
-    }
+    if (STACK_NAMES[stack.type]) ruleFiles.push(`${stack.type}.md`);
   }
-
   return [...new Set(ruleFiles)].join(', ');
 }
 
@@ -573,7 +214,7 @@ export const LANGUAGE_RULES: Record<string, string> = {
 - No force unwrapping → use guard let / if let
 - Prefer protocol-oriented programming
 - Prefer value types (struct)
-- Watch memory management with @escaping closures`
+- Watch memory management with @escaping closures`,
 };
 
 /**
