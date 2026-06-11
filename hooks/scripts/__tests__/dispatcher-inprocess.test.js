@@ -43,9 +43,10 @@ describe('pre-tool-dispatcher (in-process)', () => {
   });
 
   it('AC-2: sentinel 경로 Edit은 exit 2 + stdout에 block JSON 주입', () => {
+    // 실제 sentinel 경로: src/infra/lib/evolution/ (autonomy/ 는 팬텀 경로였음)
     const { stdout, exitCode } = runDispatcher(PRE_DISPATCHER, ['Edit'], {
       tool_name: 'Edit',
-      tool_input: { file_path: 'src/infra/lib/autonomy/core.ts', old_string: 'a', new_string: 'b' },
+      tool_input: { file_path: 'src/infra/lib/evolution/GuardAnalyzer.ts', old_string: 'a', new_string: 'b' },
     });
     expect(exitCode).toBe(2);
     expect(stdout).toContain('"decision":"block"');
@@ -68,9 +69,10 @@ describe('pre-tool-dispatcher (in-process)', () => {
   });
 
   it('AC-2 변형: 위험 명령이 sentinel 경로를 노리면 sentinel-guard가 차단', () => {
+    // 실제 sentinel 경로: src/infra/lib/evolution/
     const { exitCode } = runDispatcher(PRE_DISPATCHER, ['Bash'], {
       tool_name: 'Bash',
-      tool_input: { command: 'rm -rf src/infra/lib/autonomy/' },
+      tool_input: { command: 'rm -rf src/infra/lib/evolution/' },
     });
     expect(exitCode).toBe(2);
   });

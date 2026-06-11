@@ -143,6 +143,104 @@ export function copySkillsFiltered(
   }
 }
 
+/**
+ * optional 스킬 정리 결정 결과
+ */
+export type OptionalSkillAction = 'removed' | 'skipped-user-modified' | 'skipped-not-vibe' | 'notice';
+
+export interface OptionalSkillResult {
+  name: string;
+  action: OptionalSkillAction;
+  reason: string;
+}
+
+/**
+ * 설치된 스킬이 vibe 소유인지 판단한다.
+ *
+ * 판단 기준 (보수적): 배송된 스킬 이름 집합에 포함되고
+ * SKILL.md의 `name:` frontmatter가 디렉토리 이름과 일치하면 vibe 소유로 간주한다.
+ * 조건을 하나라도 충족하지 못하면 false를 반환한다.
+ */
+function isVibeOwnedSkill(
+  skillDir: string,
+  skillName: string,
+  vibeSkillNames: ReadonlySet<string>,
+): boolean {
+  if (!vibeSkillNames.has(skillName)) return false;
+  const skillMdPath = path.join(skillDir, 'SKILL.md');
+  if (!fs.existsSync(skillMdPath)) return false;
+  const content = fs.readFileSync(skillMdPath, 'utf-8');
+  const match = content.match(/^name:\s*(.+?)\s*$/m);
+  return match !== null && match[1] === skillName;
+}
+
+/**
+ * 설치된 스킬이 사용자에 의해 수정되었는지 판단한다.
+ *
+ * 배송된 스킬의 SKILL.md 내용과 설치된 것의 내용을 비교한다.
+ * 배송 소스를 찾을 수 없으면 안전하게 수정됨으로 간주한다.
+ */
+function isUserModified(
+  installedSkillDir: string,
+  shippedSkillsDir: string,
+  skillName: string,
+): boolean {
+  const installedPath = path.join(installedSkillDir, 'SKILL.md');
+  const shippedPath = path.join(shippedSkillsDir, skillName, 'SKILL.md');
+  if (!fs.existsSync(shippedPath)) return true; // 배송본 없음 → 보수적으로 수정됨 취급
+  if (!fs.existsSync(installedPath)) return false;
+  const installed = fs.readFileSync(installedPath, 'utf-8');
+  const shipped = fs.readFileSync(shippedPath, 'utf-8');
+  return installed !== shipped;
+}
+
+/**
+ * 전역 스킬 디렉토리에서 optional 스킬을 정리한다.
+ *
+ * 안전 규칙:
+ * - vibe 소유이고 (SKILL.md `name:` 매치)
+ * - 배송된 내용과 동일(사용자 미수정)인 경우에만 삭제
+ * - 그 외에는 notice 로그만 남기고 보존
+ *
+ * @param globalSkillsDir - 전역 CLI 스킬 디렉토리 (e.g. ~/.claude/skills)
+ * @param optionalSkills - 정리 대상 스킬 이름 목록
+ * @param shippedSkillsDir - 패키지 내 skills/ 디렉토리 (비교 기준)
+ * @param dryRun - true이면 실제 삭제 없이 결과만 반환
+ */
+export function cleanupOptionalSkills(
+  globalSkillsDir: string,
+  optionalSkills: ReadonlyArray<string>,
+  shippedSkillsDir: string,
+  dryRun = false,
+): OptionalSkillResult[] {
+  const results: OptionalSkillResult[] = [];
+  if (!fs.existsSync(globalSkillsDir)) return results;
+
+  const vibeSkillNames = new Set(optionalSkills);
+
+  for (const skillName of optionalSkills) {
+    const skillDir = path.join(globalSkillsDir, skillName);
+    if (!fs.existsSync(skillDir)) continue;
+
+    if (!isVibeOwnedSkill(skillDir, skillName, vibeSkillNames)) {
+      results.push({ name: skillName, action: 'skipped-not-vibe', reason: 'SKILL.md name mismatch — not vibe-owned' });
+      continue;
+    }
+
+    if (isUserModified(skillDir, shippedSkillsDir, skillName)) {
+      results.push({ name: skillName, action: 'skipped-user-modified', reason: 'SKILL.md differs from shipped — user-modified, preserved' });
+      continue;
+    }
+
+    if (!dryRun) {
+      fs.rmSync(skillDir, { recursive: true, force: true });
+    }
+    results.push({ name: skillName, action: 'removed', reason: 'vibe-owned optional skill, content unchanged' });
+  }
+
+  return results;
+}
+
 const CODEX_POLICY_MARKER = '# VIBE managed Codex skill policy';
 const CODEX_POLICY_CONTENT = `${CODEX_POLICY_MARKER}
 policy:

@@ -6,6 +6,10 @@
  * - maxAgentRecursion: limit agent recursive call depth
  * - maxConsecutiveErrors: stop after N consecutive errors
  * - cooldownMs: cooldown period after failures
+ *
+ * @deprecated Not wired into the vibe runtime (no hook/skill/CLI consumer).
+ * In-memory counter state does not survive vibe's per-event process model.
+ * Retained for API compatibility; may be removed in a future major.
  */
 
 // Constants

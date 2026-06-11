@@ -1,13 +1,31 @@
 #!/usr/bin/env node
 /**
  * Sentinel Guard — PreToolUse hook
- * Protects sentinel files and blocks dangerous operations.
- * Runs before pre-tool-guard.js.
+ * 핵심 자율 기계 경로를 Write/Edit/Bash 로부터 보호한다.
+ * pre-tool-guard.js 이전에 실행된다.
+ *
+ * 보호 경로 결정 근거:
+ *   src/infra/lib/autonomy/ 는 레포에 존재하지 않는 팬텀 경로였다.
+ *   git log 와 src/ 전수 조사 결과, 자율 기계(evolution machinery)의 실제
+ *   위치는 src/infra/lib/evolution/ 이다. GuardAnalyzer·HookTraceReader 등이
+ *   hook-traces.jsonl을 분석해 하네스 자기 개선 인사이트를 생성한다.
+ *   따라서 sentinel 대상을 이 실존 경로로 교체한다.
+ *
+ *   추가로 hooks/scripts/lib/ (디스패처 인프라)도 보호 — 이 디렉토리의
+ *   hook-context.js / dispatcher.js 가 손상되면 모든 pre-tool 게이트가
+ *   무력화된다.
+ *
+ * exit 2 = deny 규약 (PreToolUse 차단).
  */
 
-const SENTINEL_PATH_PREFIX = 'src/infra/lib/autonomy/';
+const SENTINEL_PREFIXES = [
+  'src/infra/lib/evolution/',
+  'hooks/scripts/lib/',
+];
 
-const SENTINEL_PATH_RE = /^(\.\/|\.\\)?src[\\/]infra[\\/]lib[\\/]autonomy[\\/]/;
+// 빠른 prefix 검사용 정규식 (backslash 포함)
+const SENTINEL_PATH_RE =
+  /^(?:\.[\\/])?(?:src[\\/]infra[\\/]lib[\\/]evolution|hooks[\\/]scripts[\\/]lib)[\\/]/;
 
 const DANGEROUS_BASH_RE =
   /\b(rm\s+-rf|kill\s+-9|drop\s+table|truncate|shutdown|reboot|mkfs|dd\s+if=)\b/i;
@@ -23,7 +41,6 @@ function extractFilePath(toolName, input) {
       return parsed.file_path || parsed.filePath || null;
     }
   } catch {
-    // Not JSON, try as plain string
     return typeof input === 'string' ? input : null;
   }
   return null;
@@ -48,7 +65,8 @@ function extractBashCommand(input) {
 function isSentinelPath(filePath) {
   if (!filePath) return false;
   const normalized = filePath.replace(/\\/g, '/').replace(/^\.\//, '');
-  return normalized.startsWith(SENTINEL_PATH_PREFIX) || SENTINEL_PATH_RE.test(filePath);
+  return SENTINEL_PREFIXES.some(p => normalized.startsWith(p)) ||
+    SENTINEL_PATH_RE.test(filePath);
 }
 
 /**
@@ -76,8 +94,7 @@ function guard(toolName, toolInput) {
       };
     }
     if (command && DANGEROUS_BASH_RE.test(command)) {
-      // Check if command targets sentinel files
-      if (command.includes(SENTINEL_PATH_PREFIX) || command.includes('src/infra/lib/autonomy')) {
+      if (SENTINEL_PREFIXES.some(p => command.includes(p))) {
         return {
           decision: 'block',
           reason: `Dangerous command targeting sentinel path: ${command}`,
@@ -86,7 +103,6 @@ function guard(toolName, toolInput) {
     }
   }
 
-  // Allow — return undefined for normal flow
   return undefined;
 }
 

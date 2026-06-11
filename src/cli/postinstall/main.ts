@@ -17,8 +17,9 @@ import {
   replaceTemplatesInDir,
   cleanupDuplicateSkillDirs,
   applyCodexSkillInvocationPolicies,
+  cleanupOptionalSkills,
 } from './fs-utils.js';
-import { GLOBAL_SKILLS, LEGACY_SKILL_DIRS, CONDITIONAL_AGENT_GROUPS } from './constants.js';
+import { GLOBAL_SKILLS, GLOBAL_SKILLS_OPTIONAL, LEGACY_SKILL_DIRS, CONDITIONAL_AGENT_GROUPS } from './constants.js';
 import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
 import { seedInlineSkills } from './inline-skills.js';
 import { generateCursorRules } from './cursor-rules.js';
@@ -107,6 +108,15 @@ export function main(): void {
       if (fs.existsSync(skillsSource)) {
         ensureDir(sklsDir);
         removeLegacySkills(sklsDir, LEGACY_SKILL_DIRS);
+        // optional 스킬 정리 — vibe 소유이고 사용자 미수정인 경우에만 삭제
+        const cleanupResults = cleanupOptionalSkills(sklsDir, GLOBAL_SKILLS_OPTIONAL, skillsSource);
+        for (const r of cleanupResults) {
+          if (r.action === 'removed') {
+            console.log(`   optional skill removed: ${r.name}`);
+          } else {
+            console.log(`   optional skill notice [${r.name}]: ${r.reason}`);
+          }
+        }
         copySkillsFiltered(skillsSource, sklsDir, GLOBAL_SKILLS);
         replaceTemplatesInDir(sklsDir);
         if (label === 'codex') applyCodexSkillInvocationPolicies(sklsDir);

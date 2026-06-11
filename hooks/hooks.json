@@ -66,6 +66,7 @@
         ]
       },
       {
+        "matcher": "Edit|Write|Bash|Task|SlashCommand|NotebookEdit",
         "hooks": [
           {
             "type": "command",

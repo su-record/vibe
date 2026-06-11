@@ -2,9 +2,19 @@
 /**
  * PostToolUse Hook — 툴콜 스텝 카운터 + 패턴 로거 + 3-fail 감지기
  *
- * 책임 1) 모든 성공 툴콜을 1 스텝으로 집계 → `current-run.json`
+ * hooks.json matcher: "Edit|Write|Bash|Task|SlashCommand|NotebookEdit"
+ * → Read/Grep/Glob/WebFetch/WebSearch/TodoWrite/ToolSearch/ListMcpResourcesTool
+ *   는 matcher 단에서 제외되어 이 프로세스 자체가 spawn 되지 않는다.
+ *   아래 READ_ONLY_TOOLS 는 defense-in-depth 용 추가 가드이다.
+ *
+ * 책임 1) 액션 툴콜을 1 스텝으로 집계 → `current-run.json`
  *        ↳ /vibe.verify 가 history.jsonl에 append 후 출력
- * 책임 2) 각 툴콜 한 줄을 `current-run.jsonl` 에 append (post-task-curation SPEC)
+ *        ↳ recipe-extractor 가 meta(startedAt, steps) 소비
+ *        [쓰기 스로틀] current-run.json 전체 재작성은 (a) 마지막 재작성 후
+ *        ≥2초 경과, 또는 (b) 10이벤트마다 1회로 제한.
+ *        액션 툴(Edit/Write/Bash) 호출 + ≥2초 조건을 동시 충족할 때도 재작성.
+ *        Stop 경로 등 최종 상태가 필요한 소비자는 staleness ≤10 이벤트를 허용.
+ * 책임 2) 각 툴콜 한 줄을 `current-run.jsonl` 에 append (항상 즉시 — 스로틀 없음)
  *        ↳ Phase 3 의 recipe extractor 가 소비
  * 책임 3) (Phase 2) 실패 메시지 분류 + 같은 (file, category) 3회 반복 감지 →
  *        `.vibe/anti-patterns/<slug>.md` 로 자동 저장.
@@ -23,6 +33,16 @@ const CURRENT_RUN_JSONL = path.join(METRICS_DIR, 'current-run.jsonl');
 const MAX_JSONL_LINES = 5000;
 const FAIL_WINDOW = 10;
 const FAIL_THRESHOLD = 3;
+
+// 스로틀 파라미터
+const REWRITE_INTERVAL_MS = 2000; // 최소 재작성 간격
+const REWRITE_EVERY_N = 10;       // N이벤트마다 강제 재작성
+
+// 읽기 전용 툴 — defense-in-depth (matcher 단에서 이미 제거됨)
+const READ_ONLY_TOOLS = new Set([
+  'Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch',
+  'TodoWrite', 'ToolSearch', 'ListMcpResourcesTool',
+]);
 
 // ─────────────────────────────────────────────────────
 // stdin / env 에서 PostToolUse payload 추출
@@ -97,9 +117,43 @@ function classifyError(toolResponse) {
 }
 
 // ─────────────────────────────────────────────────────
-// 책임 1: current-run.json 카운터
+// 스로틀: current-run.json 재작성 여부 결정
 // ─────────────────────────────────────────────────────
-function bumpCounter() {
+/**
+ * 재작성해야 하는지 판단.
+ * - jsonlLineCount: jsonl 에 추가한 후의 총 라인 수 (이벤트 카운터 대리)
+ * - toolName: Edit/Write/Bash 인 경우 mtime 조건 충족 시 강제 재작성
+ * @param {string} toolName
+ * @param {number} jsonlLineCount
+ * @returns {boolean}
+ */
+function shouldRewriteJson(toolName, jsonlLineCount) {
+  // N이벤트마다 강제 재작성 (race-tolerant — jsonl 줄 수가 카운터 역할)
+  if (jsonlLineCount % REWRITE_EVERY_N === 0) return true;
+
+  // 마지막 재작성 후 ≥2초 경과 여부 (mtime 기반)
+  try {
+    const stat = fs.statSync(CURRENT_RUN_JSON);
+    const elapsed = Date.now() - stat.mtimeMs;
+    if (elapsed >= REWRITE_INTERVAL_MS) return true;
+  } catch {
+    // 파일 없음 → 첫 쓰기, 허용
+    return true;
+  }
+
+  return false;
+}
+
+// ─────────────────────────────────────────────────────
+// 책임 1: current-run.json 카운터 (스로틀 적용)
+//
+// steps 는 current-run.jsonl 의 라인 수에서 파생한다.
+// 이렇게 하면 스로틀로 재작성을 건너뛰어도 재작성 시점에
+// 정확한 steps 가 보장되며, 프로세스간 누적도 자연스럽게 처리된다.
+// ─────────────────────────────────────────────────────
+function bumpCounter(toolName, currentLineCount) {
+  if (!shouldRewriteJson(toolName, currentLineCount)) return; // 스로틀 — 재작성 생략
+
   let data = { feature: null, startedAt: null, steps: 0 };
   if (fs.existsSync(CURRENT_RUN_JSON)) {
     try {
@@ -107,12 +161,24 @@ function bumpCounter() {
     } catch { /* 손상 → 새로 시작 */ }
   }
   if (!data.startedAt) data.startedAt = new Date().toISOString();
-  data.steps = (data.steps || 0) + 1;
-  fs.writeFileSync(CURRENT_RUN_JSON, JSON.stringify(data, null, 2));
+  // steps = jsonl 라인 수에서 파생 (매 재작성 시 최신값 보장)
+  data.steps = currentLineCount;
+
+  // 원자적 쓰기 (tmp → rename) — 동시 에이전트 파일 손상 방지
+  const tmp = CURRENT_RUN_JSON + '.tmp';
+  try {
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+    fs.renameSync(tmp, CURRENT_RUN_JSON);
+  } catch {
+    // rename 실패 시 직접 쓰기 (fail-open)
+    try { fs.writeFileSync(CURRENT_RUN_JSON, JSON.stringify(data, null, 2)); } catch { /* ignore */ }
+    try { fs.unlinkSync(tmp); } catch { /* ignore */ }
+  }
 }
 
 // ─────────────────────────────────────────────────────
 // 책임 2: current-run.jsonl append + error_category 채움
+// 항상 즉시 append — 스로틀 없음 (3-fail detector, recipe-extractor 가 소비)
 // ─────────────────────────────────────────────────────
 function appendJsonl(stdinPayload) {
   const toolName = stdinPayload?.tool_name || process.argv[2] || '';
@@ -145,6 +211,21 @@ function appendJsonl(stdinPayload) {
   } catch { /* 회전 실패는 무시 */ }
 
   return record;
+}
+
+/**
+ * jsonl 의 현재 라인 수를 반환 (stat 으로만 — 전체 파일 읽기 없음).
+ * 경합 안전 — 정확한 값이 아니어도 스로틀 판단에 충분하다.
+ */
+function jsonlLineCount() {
+  try {
+    // 라인 수 근사: 파일 크기 / 평균 라인 길이(100바이트) — 정확도 불필요
+    // 실제 라인 수는 appendJsonl 직후 여기서 읽으면 +1 반영됨
+    const content = fs.readFileSync(CURRENT_RUN_JSONL, 'utf-8');
+    return content.split('\n').filter(Boolean).length;
+  } catch {
+    return 1; // 파일 없음 → 첫 이벤트로 간주
+  }
 }
 
 // ─────────────────────────────────────────────────────
@@ -238,10 +319,22 @@ try {
   }
 
   const stdinPayload = readStdinSync();
+  const toolName = stdinPayload?.tool_name || process.argv[2] || '';
 
-  try { bumpCounter(); } catch { /* 카운터 실패 무시 */ }
+  // defense-in-depth: 읽기 전용 툴은 조기 종료 (matcher 단에서 이미 제거됨)
+  if (toolName && READ_ONLY_TOOLS.has(toolName)) {
+    process.exit(0);
+  }
+
+  // 책임 2를 먼저 실행 — jsonl 라인 수가 bumpCounter 스로틀 판단에 쓰임
   let lastRecord = null;
   try { lastRecord = appendJsonl(stdinPayload); } catch { /* 로깅 실패 무시 */ }
+
+  // 책임 1: jsonl append 후 라인 수로 스로틀 판단
+  const lineCount = jsonlLineCount();
+  try { bumpCounter(toolName, lineCount); } catch { /* 카운터 실패 무시 */ }
+
+  // 책임 3
   try {
     if (lastRecord && !lastRecord.ok && lastRecord.error_category) {
       const trip = detectThreeFail();

@@ -42,6 +42,16 @@ try {
 
 if (!prompt) process.exit(0);
 
+// vibe.run 감지 — runStarted 기록 및 verifyPassed 리셋 (in-process, stdout 없음).
+{
+  const { isVibeRunPrompt, extractRunFeature, recordRunStart } = await import('./lib/run-ledger.js');
+  if (isVibeRunPrompt(prompt)) {
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const feature = extractRunFeature(prompt);
+    recordRunStart(projectDir, feature);
+  }
+}
+
 // 레거시 SSOT 통합 — `/vibe.*` 진입 시 `.claude/vibe/` → `.vibe/` 자동 이동.
 // `vibe init`/`update` 와 동일한 `consolidateLegacyVibe` (dist/cli/setup/LegacyMigration.js) 를 직접 재사용. Idempotent.
 if (/^\s*\/vibe\b/i.test(prompt)) {

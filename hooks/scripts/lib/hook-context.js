@@ -16,26 +16,55 @@
 import fs from 'fs';
 import { pathToFileURL } from 'url';
 
+/** stdin을 EOF까지 읽을 때 허용하는 최대 바이트 수 (10MB). */
+const STDIN_MAX_BYTES = 10 * 1024 * 1024;
+
 /**
  * stdin에서 JSON 페이로드 동기 읽기 (Claude Code 하네스 호환).
  * fd 0 직접 사용 — Windows는 '/dev/stdin'이 없음.
- * @returns {{ raw: string|null, parsed: object|null }}
+ * 64KB 단일 버퍼 대신 EOF까지 청크 반복 읽기 (STDIN_MAX_BYTES 상한).
+ *
+ * @returns {{ raw: string|null, parsed: object|null, truncated: boolean }}
+ *   truncated=true: 페이로드가 STDIN_MAX_BYTES를 초과해 잘림
  */
 export function readStdinSync() {
   try {
-    if (process.stdin.isTTY) return { raw: null, parsed: null };
-    const buf = Buffer.alloc(65536);
-    const bytesRead = fs.readSync(0, buf, 0, buf.length, null);
-    if (bytesRead > 0) {
-      const raw = buf.toString('utf-8', 0, bytesRead);
+    if (process.stdin.isTTY) return { raw: null, parsed: null, truncated: false };
+
+    const chunks = [];
+    let totalBytes = 0;
+    let truncated = false;
+    const chunkSize = 65536;
+    const chunkBuf = Buffer.alloc(chunkSize);
+
+    while (true) {
+      let bytesRead;
       try {
-        return { raw, parsed: JSON.parse(raw) };
-      } catch {
-        return { raw, parsed: null };
+        bytesRead = fs.readSync(0, chunkBuf, 0, chunkSize, null);
+      } catch (err) {
+        // EAGAIN: non-blocking stdin에 데이터 없음 → 루프 종료
+        if (err.code === 'EAGAIN') break;
+        throw err;
       }
+      if (bytesRead === 0) break;
+      totalBytes += bytesRead;
+      if (totalBytes > STDIN_MAX_BYTES) {
+        truncated = true;
+        break;
+      }
+      chunks.push(Buffer.from(chunkBuf.subarray(0, bytesRead)));
+    }
+
+    if (chunks.length === 0) return { raw: null, parsed: null, truncated: false };
+
+    const raw = Buffer.concat(chunks).toString('utf-8');
+    try {
+      return { raw, parsed: JSON.parse(raw), truncated };
+    } catch {
+      return { raw, parsed: null, truncated };
     }
   } catch { /* stdin 없음 → 폴백 */ }
-  return { raw: null, parsed: null };
+  return { raw: null, parsed: null, truncated: false };
 }
 
 /**

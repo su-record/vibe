@@ -127,8 +127,8 @@ function validateSingleFile(code: string, validateType: string): { score: number
     issues++;
   }
 
-  // Anti-patterns
-  if (code.includes(': any') || code.includes('<any>')) {
+  // Anti-patterns — word-boundary regex (prevent false positives on "company", "anything")
+  if (/:\s*any\b|\bas\s+any\b|<any[\s,>]|@ts-ignore\b/.test(code)) {
     score -= 5;
     issues++;
   }
@@ -266,8 +266,9 @@ export async function validateCodeQuality(args: { code?: string; type?: string; 
     qualityScore.deductions.push({ reason: 'High cyclomatic complexity', points: 20 });
   }
   
-  // Anti-pattern checks
-  if (validateCode.includes('any')) {
+  // Anti-pattern checks — word-boundary regex to avoid false positives
+  // (e.g. "company", "anything" must not trigger)
+  if (/:\s*any\b|\bas\s+any\b|<any[\s,>]|@ts-ignore\b/.test(validateCode)) {
     qualityIssues.push({
       type: 'type-safety',
       severity: 'medium',

@@ -13,11 +13,37 @@
  *   으로 롤백 가능. 최근 5개만 유지.
  */
 import { execSync } from 'child_process';
-import { PROJECT_DIR, readProjectConfig } from './utils.js';
+import { PROJECT_DIR, readProjectConfig, logHookDecision } from './utils.js';
+import { readLedger } from './lib/run-ledger.js';
 
 // Opt-in 가드 — 명시적으로 켜지 않았으면 아무것도 하지 않는다.
 const __autoCommitCfg = readProjectConfig();
 if (__autoCommitCfg?.hooks?.['auto-commit']?.enabled !== true) process.exit(0);
+
+// verify 게이트 — vibe.run 세션이 시작됐으면 verifyPassed가 true이고
+// verifyAt > runStarted 인 경우에만 커밋을 허용한다.
+const __ledger = readLedger(PROJECT_DIR);
+if (__ledger && __ledger.runStarted) {
+  const verifyOk = __ledger.verifyPassed === true
+    && __ledger.verifyAt
+    && __ledger.verifyAt > __ledger.runStarted;
+  if (!verifyOk) {
+    const reason = !__ledger.verifyPassed
+      ? 'vibe.verify not passed — run /vibe.verify before committing'
+      : 'verifyAt is not after runStarted — re-run /vibe.verify';
+    logHookDecision('auto-commit', 'git-commit', 'block', reason);
+    process.stderr.write(`[auto-commit] SKIP: ${reason}\n`);
+    process.exit(0);
+  }
+}
+
+// verifyRequired 게이트 — PostToolUse에서 P1 이슈가 발견되어 verify가 요구됨.
+if (__ledger && __ledger.verifyRequired === true) {
+  const reason = `P1 issue requires verification: ${__ledger.verifyRequiredReason || 'see code-check findings'}`;
+  logHookDecision('auto-commit', 'git-commit', 'block', reason);
+  process.stderr.write(`[auto-commit] SKIP: ${reason}\n`);
+  process.exit(0);
+}
 
 const PROTECTED_BRANCHES = ['main', 'master', 'develop', 'production'];
 const MAX_FILES_IN_MSG = 5;

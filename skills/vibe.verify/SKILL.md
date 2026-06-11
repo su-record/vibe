@@ -465,6 +465,21 @@ Load skill `contract` with: check "{feature-name}"
 - **P1 drift** → demote verify to fail; auto-call `/vibe.regress register --from-contract`
 - P2 / P3 drift → warning only; verify still passes
 
+## Ledger Update (MANDATORY final step)
+
+After producing the verification report, record the result to the run ledger:
+
+```bash
+# pass 또는 fail — 시나리오 전체 통과 여부에 따라 선택
+HOOKS_DIR="${VIBE_PATH:-$(npm root -g 2>/dev/null)/@su-record/vibe}/hooks/scripts"
+if [ -f "$HOOKS_DIR/verify-ledger.js" ]; then
+  node "$HOOKS_DIR/verify-ledger.js" pass   # 전체 통과 시
+  # node "$HOOKS_DIR/verify-ledger.js" fail  # 실패 시
+fi
+```
+
+Replace `pass` with `fail` when any scenario fails. This step enables the Stop-hook verify-skip gate and auto-commit verify gate.
+
 ## Next Step
 
 On verification pass:

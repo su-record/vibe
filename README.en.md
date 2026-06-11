@@ -7,7 +7,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-Vibe is a quality harness for AI coding tools. It wraps around Claude Code, Codex, Cursor, or Gemini CLI and automatically enforces type safety, code quality, and security — so you can vibe-code fast without shipping garbage.
+Vibe is a quality harness for AI coding tools. It wraps around Claude Code, Codex, Cursor, or Antigravity CLI and automatically enforces type safety, code quality, and security — so you can vibe-code fast without shipping garbage.
 
 ```bash
 npm install -g @su-record/vibe
@@ -178,7 +178,7 @@ Three layers of defense on every tool call:
 | **Standard** | `vibe init` selects by stack | Stack/capability support | figma, design-audit, techdebt |
 | **Optional** | Explicit `/skill` only | Reference, wrappers | chub-usage, context7 |
 
-**Multi-LLM** — Claude Code or Codex runs the harness, GPT reasons, and Gemini researches. Auto-routes by availability.
+**Multi-LLM** — Claude Code or Codex runs the harness, GPT reasons, and Antigravity researches. Auto-routes by availability.
 
 **Stack detection** — Auto-detects 24 frameworks (Next.js, Django, Rails, Go, Rust, Flutter, and more) and applies framework-specific rules and skills.
 
@@ -199,7 +199,7 @@ Three layers of defense on every tool call:
 | [Claude Code](https://claude.ai/code) | Full support |
 | [Codex](https://github.com/openai/codex) | Full support (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
 | [Cursor](https://cursor.sh) | Agents + Rules |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | Agents + Skills |
+| [Antigravity CLI](https://github.com/google-gemini/gemini-cli) | Agents + Skills |
 
 ---
 
@@ -234,7 +234,7 @@ Full guides, skill reference, and configuration details are in the [Wiki](https:
 
 - Node.js >= 18.0.0
 - Claude Code or Codex CLI
-- GPT, Gemini (optional)
+- GPT, Antigravity (optional)
 
 ## License
 

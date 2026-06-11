@@ -86,19 +86,24 @@ Define AI role and expertise for implementation
 
 ## Task
 <task>
+<!-- ⚠️ MANDATORY: Every functional requirement item MUST carry a REQ-ID so the RTM can extract it.
+     Format: REQ-{feature-name}-NNN  (feature = SPEC file basename, NNN = 3-digit zero-padded number)
+     Example: REQ-auth-login-001
+     Regex the RTM uses: /\b(REQ-[a-z0-9-]+-\d{3})[:\s]/gi  — use uppercase REQ-, lowercase feature segment, exactly 3 digits.
+     status === 'empty' means the RTM gate MUST be treated as failed/not-applicable, never as 100% pass. -->
 ### Phase 1: {phase-name}
-1. [ ] {specific task}
+1. [ ] REQ-{feature-name}-001: {specific task}
    - File: `path/to/file`
    - Verify: `command`
-2. [ ] {specific task}
+2. [ ] REQ-{feature-name}-002: {specific task}
 
 ### Phase 2: {phase-name}
-1. [ ] {specific task}
-2. [ ] {specific task}
+1. [ ] REQ-{feature-name}-003: {specific task}
+2. [ ] REQ-{feature-name}-004: {specific task}
 
 ### Phase 3: Testing and Verification
-1. [ ] Unit Tests
-2. [ ] Integration Tests
+1. [ ] REQ-{feature-name}-005: Unit Tests
+2. [ ] REQ-{feature-name}-006: Integration Tests
 </task>
 
 ## Constraints

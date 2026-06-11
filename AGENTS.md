@@ -26,7 +26,7 @@ Transform imperative tasks into verifiable goals **before** coding:
 
 Weak criteria ("make it work") require constant clarification. Strong criteria let the loop run independently.
 
-### TypeScript (enforced by Quality Gate hooks)
+### TypeScript (detected by Quality Gate hooks — violations injected as additionalContext; blocked by auto-commit verify gate, Stop warning, and pr-test-gate)
 - No `any` / `as any` / `@ts-ignore` — use `unknown` + type guards; fix at root
 - Explicit return types on all functions
 
@@ -37,7 +37,7 @@ Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10
 No `console.log` in commits · No hardcoded strings/numbers · No commented-out code · No incomplete code without TODO
 
 ### Convergence (review / auto-fix loops)
-- **Loop until P1 = 0 AND no new findings** — no round cap
+- **Loop until P1 = 0 AND no new findings** — no round cap; the model follows this protocol — run/verify state is tracked in `.vibe/metrics/run-ledger.json`
 - **Narrowing scope**: Round 1 full → Round 2 P1+P2 → Round 3+ P1 only
 - **Stuck detection** (same findings/score 2 rounds in a row) → ask user (fill values / approve sub-100 / abort). Never silently proceed sub-100
 - **`ultrawork` exception** — skip user prompt; record gaps as TODO to stay non-interactive
@@ -56,6 +56,12 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 | `.vibe/config.json` | Project stacks, capabilities — Claude/Codex 공용 SSOT |
 | `.claude/settings.local.json` | Claude Code hooks (auto-generated, don't commit) |
 | `~/.codex/config.toml` | Codex `notify` (turn-complete lifecycle hook, auto-installed) |
+
+**`.vibe/config.json` behavior keys** (set per-project to tune gate behavior):
+- `scopeGuard.enabled` / `scopeGuard.mode` — scope fence on/off; `warn` (default) or `block`
+- `verifyGate.mode` — `warn` (default) or `block` (Stop hook blocks once if run started but verify not passed)
+- `autoTest.mode` — `debounce` (default, 120s cooldown per unchanged test file) / `always` / `off`
+- `qualityCheck.consoleAllow` — array of file globs where `console.log` is permitted
 
 ### Quality SSOT (3-tier)
 | Path | Purpose |

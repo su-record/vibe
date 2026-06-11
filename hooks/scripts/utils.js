@@ -163,29 +163,71 @@ function toFileUrl(fsPath) {
   return url.endsWith('/') ? url : url + '/';
 }
 
-// 전역 npm 경로 캐시
+// 전역 npm 경로 캐시 — L1: 인-프로세스, L2: 파일 캐시 (TTL 24h)
+// VIBE_NPM_ROOT_CACHE_FILE 환경 변수로 테스트 시 격리된 경로 주입 가능
+const NPM_ROOT_CACHE_FILE = process.env.VIBE_NPM_ROOT_CACHE_FILE ||
+  path.join(os.homedir(), '.vibe', 'cache', 'npm-root.json');
+const NPM_ROOT_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24시간
+
+/** npm root -g 결과를 파일로 캐시 (원자적 쓰기). 실패는 조용히 무시. */
+function saveNpmRootCache(npmRoot) {
+  try {
+    const dir = path.dirname(NPM_ROOT_CACHE_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const payload = JSON.stringify({ npmRoot, savedAt: Date.now() });
+    const tmp = NPM_ROOT_CACHE_FILE + '.tmp';
+    fs.writeFileSync(tmp, payload, { mode: 0o600 });
+    fs.renameSync(tmp, NPM_ROOT_CACHE_FILE);
+  } catch { /* 캐시 저장 실패는 무시 */ }
+}
+
+/** 파일 캐시에서 npm root 읽기. TTL 초과 또는 손상 시 null 반환. */
+function loadNpmRootCache() {
+  try {
+    const raw = fs.readFileSync(NPM_ROOT_CACHE_FILE, 'utf-8');
+    const { npmRoot, savedAt } = JSON.parse(raw);
+    if (typeof npmRoot === 'string' && typeof savedAt === 'number') {
+      if (Date.now() - savedAt < NPM_ROOT_CACHE_TTL_MS) return npmRoot;
+    }
+  } catch { /* 파일 없음 / 손상 / 권한 → null */ }
+  return null;
+}
+
+/** npm root -g 플랫폼 폴백 (execSync 실패 시 사용). */
+function npmRootFallback() {
+  if (IS_WINDOWS) {
+    const appData = process.env.APPDATA || process.env.LOCALAPPDATA || '';
+    return path.join(appData, 'npm', 'node_modules');
+  }
+  const homeDir = os.homedir();
+  const candidates = [
+    '/usr/local/lib/node_modules',
+    path.join(homeDir, '.npm-global', 'lib', 'node_modules'),
+    path.join(homeDir, '.nvm', 'versions', 'node', process.version, 'lib', 'node_modules'),
+  ];
+  return candidates.find(p => fs.existsSync(p)) || candidates[0];
+}
+
+// L1 인-프로세스 캐시
 let _globalNpmPath = null;
 export function getGlobalNpmPath() {
-  if (_globalNpmPath === null) {
-    try {
-      _globalNpmPath = execSync('npm root -g', { encoding: 'utf8' }).trim();
-    } catch {
-      // 폴백: 플랫폼별 기본 경로
-      if (IS_WINDOWS) {
-        // Windows: %APPDATA%\npm\node_modules 또는 %LOCALAPPDATA%\npm\node_modules
-        const appData = process.env.APPDATA || process.env.LOCALAPPDATA || '';
-        _globalNpmPath = path.join(appData, 'npm', 'node_modules');
-      } else {
-        // macOS/Linux: /usr/local/lib/node_modules 또는 ~/.npm-global/lib/node_modules
-        const homeDir = os.homedir();
-        const defaultPaths = [
-          '/usr/local/lib/node_modules',
-          path.join(homeDir, '.npm-global', 'lib', 'node_modules'),
-          path.join(homeDir, '.nvm', 'versions', 'node', process.version, 'lib', 'node_modules'),
-        ];
-        _globalNpmPath = defaultPaths.find(p => fs.existsSync(p)) || defaultPaths[0];
-      }
-    }
+  // L1: 인-프로세스 캐시 히트
+  if (_globalNpmPath !== null) return _globalNpmPath;
+
+  // L2: 파일 캐시 히트
+  const cached = loadNpmRootCache();
+  if (cached !== null) {
+    _globalNpmPath = cached;
+    return _globalNpmPath;
+  }
+
+  // L3: execSync 실행 후 파일 캐시에 저장
+  try {
+    _globalNpmPath = execSync('npm root -g', { encoding: 'utf8' }).trim();
+    saveNpmRootCache(_globalNpmPath);
+  } catch {
+    _globalNpmPath = npmRootFallback();
+    // 폴백은 캐시에 저장하지 않음 — 다음 프로세스에서 재시도
   }
   return _globalNpmPath;
 }

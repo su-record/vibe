@@ -126,7 +126,7 @@ async function main() {
       }
     }
 
-    // Scope sync — 사용자가 .vibe/config.json scopeGuard.enabled=true 로 켰을 때만 동작.
+    // Scope sync — 기본 ON. scopeGuard.enabled=false 로 명시적 opt-out 가능.
     try {
       const { syncScopeFile, isScopeGuardEnabled } = await import('./lib/scope-from-spec.js');
       if (isScopeGuardEnabled(PROJECT_DIR)) {
@@ -134,6 +134,18 @@ async function main() {
         if (result.action === 'created' || result.action === 'updated' || result.action === 'removed') {
           console.log(`\n🚧 Scope ${result.action} from active SPECs (${path.relative(PROJECT_DIR, path.join(projectVibeRoot(PROJECT_DIR), 'scope.json'))})`);
         }
+      }
+      // scope 상태 1줄 알림 — 컨텍스트에 주입되어 모델이 현재 scope 범위를 인지한다
+      const scopeJsonPath = path.join(projectVibeRoot(PROJECT_DIR), 'scope.json');
+      if (fs.existsSync(scopeJsonPath)) {
+        try {
+          const scopeData = JSON.parse(fs.readFileSync(scopeJsonPath, 'utf-8'));
+          const featureLabel = scopeData.reason || path.basename(scopeJsonPath);
+          const modeLabel = scopeData.mode || 'warn';
+          console.log(`\nscope-guard: ${featureLabel} (${modeLabel})`);
+        } catch { /* ignore */ }
+      } else {
+        console.log('\nscope-guard: no active scope (no active SPEC or no derivable paths) — out-of-scope edits are not monitored');
       }
     } catch { /* scope sync is best-effort */ }
 

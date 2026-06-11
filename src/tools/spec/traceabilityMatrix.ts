@@ -32,6 +32,8 @@ export interface TraceabilityMatrix {
   items: TraceItem[];
   summary: TraceSummary;
   generatedAt: string;
+  status: 'ok' | 'empty';
+  warnings: string[];
 }
 
 /** 추적 요약 */
@@ -58,18 +60,40 @@ export interface TraceMatrixOptions {
 // ============================================
 
 /**
+ * 경로 후보를 순서대로 시도하여 존재하는 첫 번째 경로(상대 경로)를 반환.
+ * 아무것도 없으면 candidates[0]을 기본값으로 반환.
+ */
+function resolveFirstExisting(projectPath: string, candidates: string[]): string {
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(projectPath, candidate))) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+}
+
+/**
  * 추적 매트릭스 생성 (메인 함수)
  */
 export function generateTraceabilityMatrix(
   featureName: string,
   options: TraceMatrixOptions = {}
 ): TraceabilityMatrix {
-  const {
-    projectPath = process.cwd(),
-    specPath = `.claude/specs/${featureName}.md`,
-    featurePath = `.claude/features/${featureName}.feature`,
-    testPath,
-  } = options;
+  const projectPath = options.projectPath ?? process.cwd();
+
+  const specPath = options.specPath ?? resolveFirstExisting(projectPath, [
+    `.vibe/specs/${featureName}.md`,
+    `.claude/vibe/specs/${featureName}.md`,
+    `.claude/specs/${featureName}.md`,
+  ]);
+
+  const featurePath = options.featurePath ?? resolveFirstExisting(projectPath, [
+    `.vibe/features/${featureName}.feature`,
+    `.claude/vibe/features/${featureName}.feature`,
+    `.claude/features/${featureName}.feature`,
+  ]);
+
+  const testPath = options.testPath;
 
   const items: TraceItem[] = [];
   const warnings: string[] = [];
@@ -87,6 +111,23 @@ export function generateTraceabilityMatrix(
     ? findTestFiles(path.join(projectPath, testPath))
     : findTestFilesForFeature(projectPath, featureName);
   const testMappings = extractTestMappings(testFiles);
+
+  // 빈 결과 감지
+  if (specRequirements.length === 0) {
+    warnings.push(
+      `SPEC has no REQ-* IDs — matrix cannot be used as a coverage gate. ` +
+      `Add REQ-${featureName}-NNN identifiers to every functional requirement heading.`
+    );
+    const summary = calculateSummary([]);
+    return {
+      featureName,
+      items: [],
+      summary,
+      generatedAt: new Date().toISOString(),
+      status: 'empty',
+      warnings,
+    };
+  }
 
   // 매트릭스 구축
   for (const req of specRequirements) {
@@ -125,6 +166,8 @@ export function generateTraceabilityMatrix(
     items,
     summary,
     generatedAt: new Date().toISOString(),
+    status: 'ok',
+    warnings,
   };
 }
 
@@ -134,6 +177,17 @@ export function generateTraceabilityMatrix(
 export function formatMatrixAsMarkdown(matrix: TraceabilityMatrix): string {
   let output = `# Requirements Traceability Matrix: ${matrix.featureName}\n\n`;
   output += `Generated: ${matrix.generatedAt}\n\n`;
+
+  if (matrix.status === 'empty') {
+    output += `> ⚠️ **NO REQUIREMENTS EXTRACTED — not usable as a coverage gate**\n`;
+    output += `>\n`;
+    output += `> The SPEC contains no \`REQ-*\` identifiers. `;
+    output += `Add \`REQ-${matrix.featureName}-NNN\` IDs to every functional requirement heading `;
+    output += `before using this matrix as a pass/fail gate.\n`;
+    output += `> \`status === 'empty'\` means this gate MUST be treated as failed/not-applicable, `;
+    output += `never as 100% pass.\n\n`;
+    return output;
+  }
 
   // 요약
   output += `## Summary\n\n`;

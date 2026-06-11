@@ -3,18 +3,27 @@
  * RTM generation, coverage calculation, output formatting
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import * as os from 'os';
+import * as nodefs from 'fs';
+import * as nodepath from 'path';
 import {
   generateTraceabilityMatrix,
   formatMatrixAsMarkdown,
   formatMatrixAsHtml,
   type TraceabilityMatrix,
   type TraceItem,
-  type TraceSummary,
 } from './traceabilityMatrix.js';
 
 // Mock fs module
 vi.mock('fs', () => ({
+  existsSync: vi.fn((filePath: string) => {
+    // Simulate: only .claude/specs/ and .claude/features/ exist in mock project
+    return (
+      filePath.includes('test-feature.md') ||
+      filePath.includes('test-feature.feature')
+    );
+  }),
   readFileSync: vi.fn((path: string) => {
     if (path.includes('test-feature.md')) {
       return `# SPEC: test-feature
@@ -143,6 +152,8 @@ describe('Traceability Matrix', () => {
     it('should format matrix as markdown', () => {
       const matrix: TraceabilityMatrix = {
         featureName: 'test-feature',
+        status: 'ok',
+        warnings: [],
         items: [
           {
             requirementId: 'REQ-test-001',
@@ -189,6 +200,8 @@ describe('Traceability Matrix', () => {
     it('should include recommendations section', () => {
       const matrix: TraceabilityMatrix = {
         featureName: 'test',
+        status: 'ok',
+        warnings: [],
         items: [],
         summary: {
           totalRequirements: 1,
@@ -209,6 +222,8 @@ describe('Traceability Matrix', () => {
     it('should show success message at 100% coverage', () => {
       const matrix: TraceabilityMatrix = {
         featureName: 'test',
+        status: 'ok',
+        warnings: [],
         items: [{
           requirementId: 'REQ-test-001',
           requirementDesc: 'Test',
@@ -235,6 +250,8 @@ describe('Traceability Matrix', () => {
     it('should format matrix as HTML', () => {
       const matrix: TraceabilityMatrix = {
         featureName: 'test-feature',
+        status: 'ok',
+        warnings: [],
         items: [
           {
             requirementId: 'REQ-test-001',
@@ -266,6 +283,8 @@ describe('Traceability Matrix', () => {
     it('should include CSS styles', () => {
       const matrix: TraceabilityMatrix = {
         featureName: 'test',
+        status: 'ok',
+        warnings: [],
         items: [],
         summary: {
           totalRequirements: 0,
@@ -289,6 +308,8 @@ describe('Traceability Matrix', () => {
     it('should include coverage bar', () => {
       const matrix: TraceabilityMatrix = {
         featureName: 'test',
+        status: 'ok',
+        warnings: [],
         items: [],
         summary: {
           totalRequirements: 2,
@@ -311,6 +332,8 @@ describe('Traceability Matrix', () => {
     it('should escape HTML in descriptions', () => {
       const matrix: TraceabilityMatrix = {
         featureName: 'test',
+        status: 'ok',
+        warnings: [],
         items: [{
           requirementId: 'REQ-test-001',
           requirementDesc: '<script>alert("xss")</script>',

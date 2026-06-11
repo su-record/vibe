@@ -3,6 +3,10 @@
  *
  * All data is stored locally only (JSONL).
  * File: ~/.vibe/analytics/decisions.jsonl
+ *
+ * @deprecated Not wired into the vibe runtime (no hook/skill/CLI consumer).
+ * In-memory instance state does not survive vibe's per-event process model.
+ * Retained for API compatibility; may be removed in a future major.
  */
 
 import fs from 'fs';

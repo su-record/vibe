@@ -195,8 +195,12 @@ function formatOutput(toolName, validation) {
   return lines.join('\n');
 }
 
-import { logHookDecision } from './utils.js';
+import { logHookDecision, PROJECT_DIR } from './utils.js';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
+import { runPrTestGate } from './lib/pr-gate-runner.js';
+
+/** gh pr create 감지 정규식 (단어 경계 기준, 플래그 허용). */
+const GH_PR_CREATE_RE = /\bgh\s+pr\s+create\b/;
 
 /**
  * in-process 진입점 — 디스패처가 ctx를 전달해 직접 호출.
@@ -220,7 +224,20 @@ export async function run(ctx) {
     // 스키마 오류는 경고만 (차단하지 않음 — 레거시 호환)
   }
 
-  // 2단계: 위험 패턴 검증 (보안 탐지)
+  // 2단계: gh pr create Bash 명령 → PR 테스트 게이트
+  if (toolName === 'Bash' || toolName === 'bash') {
+    const command = extractTarget(toolInput, 'command') || toolInput;
+    if (GH_PR_CREATE_RE.test(command)) {
+      const gateResult = runPrTestGate(PROJECT_DIR);
+      if (!gateResult.passed) {
+        console.error(`[PR-GATE] Tests failed — gh pr create blocked\n${gateResult.output}`);
+        logHookDecision('pre-tool-guard', 'Bash', 'block', 'gh pr create: test gate failed');
+        return 2;
+      }
+    }
+  }
+
+  // 3단계: 위험 패턴 검증 (보안 탐지)
   const validation = validateCommand(toolName, toolInput);
   const output = formatOutput(toolName, validation);
 

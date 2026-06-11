@@ -134,7 +134,7 @@ export async function run(ctx) {
     lines.push('🚫 BLOCKED. Edit scope.json or justify to the user before proceeding.');
   }
 
-  console.log(lines.join('\n'));
+  process.stderr.write(lines.join('\n') + '\n');
   logHookDecision('scope-guard', toolName, blocking ? 'block' : 'warn', `${rel} ${denied ? '(deny)' : '(out-of-allow)'}`);
 
   return blocking ? 2 : 0;

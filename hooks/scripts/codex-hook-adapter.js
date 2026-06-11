@@ -98,7 +98,18 @@ function handleUserPromptSubmit() {
 
 function handlePostToolUse() {
   const result = runScript('post-edit-dispatcher.js');
-  writeAdditionalContext(combinedOutput(result));
+  const output = combinedOutput(result);
+  if (!output) return;
+  // 디스패처가 이미 JSON hookSpecificOutput을 출력한 경우 그대로 전달 (이중 래핑 방지).
+  // 그 외(plain text)는 Codex 어댑터 표준 방식으로 래핑.
+  try {
+    const parsed = JSON.parse(output);
+    if (parsed?.hookSpecificOutput) {
+      writeJson(parsed);
+      return;
+    }
+  } catch { /* not JSON — fall through to text wrap */ }
+  writeAdditionalContext(output);
 }
 
 function handleStop() {

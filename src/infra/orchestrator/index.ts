@@ -265,8 +265,7 @@ export async function review(
     const status = result.success ? '✅' : '❌';
     summary += `### ${status} ${result.agentName}\n`;
     if (result.success) {
-      summary += result.result.slice(0, 500);
-      if (result.result.length > 500) summary += '...';
+      summary += result.result;
     } else {
       summary += `Error: ${result.error}`;
     }

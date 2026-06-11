@@ -1,6 +1,10 @@
 /**
  * Skill Quality Gate
  * 저장할 메모리/스킬의 품질을 검증
+ *
+ * @deprecated Not wired into the vibe runtime (no hook/skill/CLI consumer).
+ * No consumer in the shipped pipeline.
+ * Retained for API compatibility; may be removed in a future major.
  */
 
 export interface QualityCheckResult {

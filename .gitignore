@@ -25,6 +25,10 @@ wiki/
 
 # vibe project hooks (personal)
 .claude/settings.local.json
+.codex/hooks.json
+.claude/memories/
+.vibe/command-log.txt
+hooks/scripts/__tests__/.vibe/
 .claude/vibe/config.json
 .claude/vibe/.last-feature
 

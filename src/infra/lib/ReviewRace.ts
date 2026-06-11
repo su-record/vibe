@@ -4,6 +4,10 @@
  * 같은 리뷰 작업을 Claude + GPT + Antigravity가 병렬로 수행하고
  * 교차 검증하여 신뢰도 기반 우선순위를 부여합니다.
  *
+ * @deprecated Not wired into the vibe runtime (no hook/skill/CLI consumer).
+ * No consumer in the shipped pipeline.
+ * Retained for API compatibility; may be removed in a future major.
+ *
  * @example
  * ```typescript
  * import { raceReview, formatRaceResult } from '@su-record/vibe/lib/ReviewRace';

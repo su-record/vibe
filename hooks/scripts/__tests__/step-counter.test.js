@@ -75,27 +75,31 @@ describe('step-counter PostToolUse hook', () => {
       expect(data.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     });
 
-    it('연속 호출 시 steps 누적', () => {
-      for (let i = 0; i < 3; i++) {
+    it('연속 호출 시 steps 누적 (10이벤트 재작성 주기 고려)', () => {
+      // 10이벤트마다 재작성 — 10회 호출 후에는 steps=10 이 보장됨
+      for (let i = 0; i < 10; i++) {
         runCounter({
           payload: { tool_name: 'Bash', tool_input: { command: 'echo hi' }, tool_response: {} },
           projectDir,
         });
       }
       const data = readJson(runJson);
-      expect(data.steps).toBe(3);
+      expect(data.steps).toBe(10);
     });
 
-    it('손상된 JSON 이 있어도 새로 시작', () => {
+    it('손상된 JSON 이 있어도 새로 시작 (10회 후 재작성으로 확인)', () => {
       fs.mkdirSync(path.join(projectDir, '.vibe', 'metrics'), { recursive: true });
       fs.writeFileSync(runJson, '{ broken json');
-      const r = runCounter({
-        payload: { tool_name: 'Bash', tool_input: {}, tool_response: {} },
-        projectDir,
-      });
-      expect(r.status).toBe(0);
+      // 10회 호출해야 재작성 주기 도달
+      for (let i = 0; i < 10; i++) {
+        runCounter({
+          payload: { tool_name: 'Bash', tool_input: {}, tool_response: {} },
+          projectDir,
+        });
+      }
       const data = readJson(runJson);
-      expect(data.steps).toBe(1);
+      expect(data.steps).toBe(10);
+      expect(data.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     });
   });
 
@@ -149,7 +153,8 @@ describe('step-counter PostToolUse hook', () => {
       expect(readJson(runJson).steps).toBe(1);
     });
 
-    it('연속 호출 시 jsonl 누적', () => {
+    it('연속 호출 시 jsonl 누적 (Read는 조기 종료 — 기록 안 됨)', () => {
+      // Read 는 READ_ONLY_TOOLS 조기 종료 → jsonl 미기록
       runCounter({
         payload: { tool_name: 'Read', tool_input: { file_path: 'a.ts' }, tool_response: {} },
         projectDir,
@@ -159,8 +164,8 @@ describe('step-counter PostToolUse hook', () => {
         projectDir,
       });
       const lines = readJsonl(runJsonl);
-      expect(lines).toHaveLength(2);
-      expect(lines.map((l) => l.tool)).toEqual(['Read', 'Edit']);
+      expect(lines).toHaveLength(1);
+      expect(lines[0].tool).toBe('Edit');
     });
   });
 
@@ -322,10 +327,10 @@ describe('step-counter PostToolUse hook', () => {
       // 같은 카테고리 실패 2회
       failBash('a', err, projectDir);
       failBash('b', err, projectDir);
-      // 성공 툴콜로 윈도우 채움 (10줄 이상)
+      // 성공 툴콜로 윈도우 채움 (10줄 이상) — Bash 를 사용 (Read 는 조기 종료로 jsonl 미기록)
       for (let i = 0; i < 10; i++) {
         runCounter({
-          payload: { tool_name: 'Read', tool_input: { file_path: `f${i}.ts` }, tool_response: {} },
+          payload: { tool_name: 'Bash', tool_input: { command: `echo ${i}` }, tool_response: {} },
           projectDir,
         });
       }
@@ -353,6 +358,81 @@ describe('step-counter PostToolUse hook', () => {
         env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir },
       });
       expect(r.status).toBe(0);
+    });
+  });
+
+  // ───────── 읽기 전용 도구 조기 종료 (defense-in-depth) ─────────
+  describe('읽기 전용 도구 조기 종료', () => {
+    const READ_ONLY = ['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'TodoWrite', 'ToolSearch', 'ListMcpResourcesTool'];
+
+    it.each(READ_ONLY)('%s 호출 시 파일 미생성 + exit 0', (toolName) => {
+      const r = runCounter({
+        payload: { tool_name: toolName, tool_input: { file_path: 'src/foo.ts' }, tool_response: {} },
+        projectDir,
+      });
+      expect(r.status).toBe(0);
+      // jsonl에 기록하지 않아야 함
+      const jsonlPath = path.join(projectDir, '.vibe', 'metrics', 'current-run.jsonl');
+      expect(fs.existsSync(jsonlPath)).toBe(false);
+      // current-run.json 도 생성하지 않아야 함
+      const jsonPath = path.join(projectDir, '.vibe', 'metrics', 'current-run.json');
+      expect(fs.existsSync(jsonPath)).toBe(false);
+    });
+  });
+
+  // ───────── 쓰기 스로틀 ─────────
+  describe('쓰기 스로틀: jsonl 항상 append, json 조건부 재작성', () => {
+    it('첫 번째 이벤트는 current-run.json 생성 (파일 없음 → 스로틀 없음)', () => {
+      runCounter({
+        payload: { tool_name: 'Bash', tool_input: { command: 'x' }, tool_response: {} },
+        projectDir,
+      });
+      expect(fs.existsSync(runJson)).toBe(true);
+      expect(readJson(runJson).steps).toBe(1);
+    });
+
+    it('10이벤트마다 강제 재작성: 10회 후 steps=jsonl라인수=10', () => {
+      for (let i = 0; i < 10; i++) {
+        runCounter({
+          payload: { tool_name: 'Edit', tool_input: { file_path: 'a.ts' }, tool_response: {} },
+          projectDir,
+        });
+      }
+      // 10번째 이벤트에서 강제 재작성 (10%10===0) — steps = jsonl 라인 수 = 10
+      const data = readJson(runJson);
+      expect(data.steps).toBe(10);
+      // jsonl 도 10줄
+      const lines = readJsonl(runJsonl);
+      expect(lines).toHaveLength(10);
+    });
+
+    it('jsonl 은 스로틀 무관 항상 즉시 append', () => {
+      for (let i = 0; i < 5; i++) {
+        runCounter({
+          payload: { tool_name: 'Bash', tool_input: { command: `cmd-${i}` }, tool_response: {} },
+          projectDir,
+        });
+      }
+      const lines = readJsonl(runJsonl);
+      expect(lines).toHaveLength(5);
+    });
+
+    it('3-fail 감지는 jsonl 기반 — json 스로틀 후에도 동작', () => {
+      const err = "TypeError: Cannot read properties of undefined (reading 'x')";
+      // 3회 실패 (jsonl에 즉시 기록되므로 감지 가능)
+      for (let i = 0; i < 3; i++) {
+        runCounter({
+          payload: {
+            tool_name: 'Bash',
+            tool_input: { command: `run-${i}` },
+            tool_response: { is_error: true, error: err },
+          },
+          projectDir,
+        });
+      }
+      const apDir = path.join(projectDir, '.vibe', 'anti-patterns');
+      const files = fs.existsSync(apDir) ? fs.readdirSync(apDir).filter(f => f.endsWith('.md')) : [];
+      expect(files).toHaveLength(1);
     });
   });
 });

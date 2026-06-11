@@ -12,12 +12,26 @@ import path from 'path';
 
 const ACTIVE_STATUSES = new Set(['pending', 'in-progress', 'in_progress', 'active', 'running']);
 
+// status frontmatter 없는 SPEC을 활성으로 간주하는 최대 나이.
+// 오래된 status-없는 SPEC이 영구 활성으로 남아 stale scope를 만드는 것을 방지한다.
+const NO_STATUS_ACTIVE_MAX_AGE_DAYS = 14;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function isRecentlyModified(file) {
+  try {
+    return Date.now() - fs.statSync(file).mtimeMs <= NO_STATUS_ACTIVE_MAX_AGE_DAYS * DAY_MS;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * scope-guard auto-derive 활성 여부.
  *
- * 기본값은 **off**. 사용자가 `.vibe/config.json` 의 `scopeGuard.enabled = true` 로
- * 명시적으로 켤 때만 SPEC → scope.json 자동 합성을 수행한다. 이전 동작(자동 ON)은
- * SPEC 외부 파일 편집에 매번 경고를 띄워 다수 사용자에게 노이즈가 됐기 때문.
+ * 기본값은 **on**. `.vibe/config.json` 의 `scopeGuard.enabled = false` 로
+ * 명시적으로 끌 때만 SPEC → scope.json 자동 합성을 건너뛴다.
+ * 노이즈 가드: SPEC 파일이 존재할 때만 scope.json 을 생성하며,
+ * SPEC 없이 scope.json 생성이 필요한 경우 수동 작성(auto:false)을 사용한다.
  *
  * 이미 `auto: false` scope.json 을 직접 만들어 둔 사용자는 영향 없음 — scope-guard.js
  * 자체는 scope.json 존재 여부만 본다.
@@ -31,10 +45,10 @@ export function isScopeGuardEnabled(projectDir) {
     for (const p of candidates) {
       if (!fs.existsSync(p)) continue;
       const cfg = JSON.parse(fs.readFileSync(p, 'utf-8'));
-      if (cfg && cfg.scopeGuard && cfg.scopeGuard.enabled === true) return true;
+      if (cfg && cfg.scopeGuard && cfg.scopeGuard.enabled === false) return false;
     }
   } catch { /* ignore */ }
-  return false;
+  return true;
 }
 
 /**
@@ -181,7 +195,7 @@ export function findActiveSpecs(projectDir) {
       const content = fs.readFileSync(f, 'utf-8');
       const fm = readFrontmatter(content);
       const status = (fm.status || '').toLowerCase();
-      if (!fm.status) return true; // status 없으면 활성 간주
+      if (!fm.status) return isRecentlyModified(f); // status 없으면 최근 수정분만 활성 간주
       return ACTIVE_STATUSES.has(status);
     } catch { return false; }
   });
@@ -215,6 +229,7 @@ export function synthesizeScope(specFiles, { projectDir } = {}) {
   return {
     auto: true,
     mode: 'warn',
+    derivedCount: verified.length,
     allow,
     deny: [],
     reason: sourceNames.length > 0
@@ -262,6 +277,23 @@ export function syncScopeFile(projectDir) {
   }
 
   const next = synthesizeScope(specs, { projectDir });
+
+  // SPEC은 있으나 경로를 산출하지 못함 → defaultAllow만 남은 scope는
+  // 모든 소스 편집에 경고를 띄우는 노이즈가 된다. 생성하지 않고, 기존
+  // 자동 생성 파일이 있으면 제거한다.
+  if (next.derivedCount === 0) {
+    if (fs.existsSync(scopePath)) {
+      try {
+        const existing = JSON.parse(fs.readFileSync(scopePath, 'utf-8'));
+        if (existing.auto === true) {
+          fs.unlinkSync(scopePath);
+          return { action: 'removed', path: scopePath };
+        }
+      } catch { /* ignore */ }
+    }
+    return { action: 'skipped-no-paths', path: scopePath };
+  }
+
   const nextStr = JSON.stringify(next, null, 2);
 
   // 변경 없음 체크 (generatedAt 제외)
@@ -288,7 +320,7 @@ import { fileURLToPath } from 'url';
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const dir = process.argv[2] || process.env.CLAUDE_PROJECT_DIR || process.cwd();
   if (!isScopeGuardEnabled(dir)) {
-    console.log('[scope-sync] · scopeGuard.enabled !== true — skipping (set in .vibe/config.json to opt in)');
+    console.log('[scope-sync] · scopeGuard.enabled=false — skipping (explicitly opted out in .vibe/config.json)');
     process.exit(0);
   }
   const result = syncScopeFile(dir);
@@ -299,6 +331,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     removed: '✓ scope.json removed (no active SPECs)',
     'skipped-manual': '· scope.json is manually managed (auto=false)',
     'skipped-no-specs': '· no active SPECs — scope.json not generated',
+    'skipped-no-paths': '· active SPECs contain no derivable paths — scope.json not generated',
   }[result.action] || result.action;
   console.log(`[scope-sync] ${label}`);
 }

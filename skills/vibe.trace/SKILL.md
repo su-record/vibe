@@ -187,62 +187,49 @@ Loading files:
 The RTM generation uses core tools:
 
 ```bash
-# Generate RTM
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.generateTraceabilityMatrix('login').then(m => console.log(t.formatMatrixAsMarkdown(m))))"
+# Generate RTM (generateTraceabilityMatrix is synchronous — no .then())
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const m = t.generateTraceabilityMatrix('login', {projectPath: process.cwd()}); console.log(t.formatMatrixAsMarkdown(m)); })"
 
 # Generate HTML
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.generateTraceabilityMatrix('login').then(m => console.log(t.formatMatrixAsHtml(m))))"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const m = t.generateTraceabilityMatrix('login', {projectPath: process.cwd()}); console.log(t.formatMatrixAsHtml(m)); })"
 ```
 
-## VerificationLoop Integration
+> **Note:** Default SPEC path is `.vibe/specs/<feature>.md` (falls back to `.claude/vibe/specs/` then `.claude/specs/` for legacy projects).
+> `status === 'empty'` means the gate MUST be treated as failed/not-applicable, never as 100% pass.
 
-`/vibe.trace` results feed directly into the **VerificationLoop** module, which quantifies achievement rate and drives automatic re-iteration.
+## Post-Trace Gates
 
-### Key Functions
+After `/vibe.trace` completes and the RTM is displayed, two downstream mechanisms consume the result.
 
-| Function | Purpose |
-|----------|---------|
-| `createLoop(feature, config?)` | Initialize a new verification loop for a feature |
-| `recordVerification(state, requirements)` | Record RTM results and determine next action |
-| `formatVerificationResult(result, config)` | Format a single iteration result for display |
-| `formatLoopSummary(state)` | Format the full loop history as readable text |
-| `getUnmetRequirements(result)` | Extract failed/partial requirements for targeted fixing |
-| `isImproving(state)` | Detect whether achievement rate is increasing across iterations |
+### Empty-result gate
 
-### Loop Configuration
+`generateTraceabilityMatrix` returns `status: 'empty'` when no `REQ-<feature>-NNN` IDs are found in the SPEC. This state **must be treated as a gate failure**, not as 100% coverage. When the matrix status is `empty`, report it explicitly and do not proceed as if the feature is verified.
 
 ```
-threshold:      90    — Minimum achievement rate (%) to pass (default)
-maxIterations:  3     — Max re-verification attempts before stopping
-autoRetry:      false — Whether to auto-trigger re-implementation
+RTM status === 'empty'
+  → Coverage gate: FAILED (no requirements to trace)
+  → Action: run /vibe.spec to add REQ-IDs before re-running /vibe.trace
 ```
 
-### Action Types
+### Run-ledger flow
 
-After each `recordVerification` call, the loop returns one of:
+`/vibe.verify` records its outcome via `hooks/scripts/verify-ledger.js pass|fail`. This writes `verifyPassed` and `verifyAt` into `.vibe/metrics/run-ledger.json`. Downstream gates consume this record:
 
-| Action | Condition | Meaning |
-|--------|-----------|---------|
-| `passed` | rate >= threshold | All requirements met — done |
-| `retry` | rate < threshold AND iterations remaining | Fix unmet requirements and re-run |
-| `max_iterations` | rate < threshold AND no iterations left | Report remaining gaps as TODO |
+| Gate | Behavior |
+|------|----------|
+| `auto-commit` | Commits only when `verifyPassed === true` AND `verifyAt > runStarted` |
+| Stop hook | Warns when `runStarted && !verifyPassed`; blocks once if `verifyGate.mode === 'block'` |
 
-### Convergence Detection
-
-If the achievement rate does not improve between iterations (`isImproving` returns false), the loop stops early to avoid wasted cycles.
-
-### Example Flow
+**To register a passing trace as verified**, run `/vibe.verify` after `/vibe.trace` reports acceptable coverage. The verify skill calls `verify-ledger.js pass` internally — you do not invoke it manually.
 
 ```
-/vibe.trace "login"
-  → RTM generated: 7/9 requirements covered (78%)
-  → createLoop("login", { threshold: 90, maxIterations: 3 })
-  → recordVerification(...) → action: retry (iteration 1, 3 unmet)
-  → [fix unmet requirements]
-  → /vibe.trace "login"
-  → recordVerification(...) → action: passed (rate: 100%)
-  → formatVerificationResult → display final report
+/vibe.trace "login"         → RTM: 9/9 (100%)
+/vibe.verify "login"        → runs checks → calls verify-ledger.js pass
+                            → .vibe/metrics/run-ledger.json updated
+auto-commit / Stop gate     → verifyPassed=true, gate clears
 ```
+
+If `/vibe.verify` is skipped, `auto-commit` will log the skip reason and abort the commit.
 
 ## Options
 

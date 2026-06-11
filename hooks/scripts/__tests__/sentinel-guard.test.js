@@ -24,7 +24,6 @@ function runGuard(args = []) {
 
 /**
  * Run sentinel-guard.js with stdin JSON payload.
- * 스크립트가 fs.readSync(0, ...)로 stdin을 읽으므로 execFileSync input 옵션이 동작.
  */
 function runGuardWithStdin(payload) {
   const json = typeof payload === 'string' ? payload : JSON.stringify(payload);
@@ -41,24 +40,25 @@ function runGuardWithStdin(payload) {
 }
 
 // ══════════════════════════════════════════════════
-// Sentinel path protection
+// Sentinel path protection — evolution machinery
 // ══════════════════════════════════════════════════
 describe('sentinel-guard', () => {
-  describe('Write/Edit to sentinel paths via argv', () => {
-    it('should block Write to src/infra/lib/autonomy/', () => {
+  // ─── 실제 보호 경로: src/infra/lib/evolution/ ───
+  describe('Write/Edit to evolution sentinel path via argv', () => {
+    it('should block Write to src/infra/lib/evolution/', () => {
       const result = runGuard([
         'Write',
-        JSON.stringify({ file_path: 'src/infra/lib/autonomy/policy.ts' }),
+        JSON.stringify({ file_path: 'src/infra/lib/evolution/EvolutionOrchestrator.ts' }),
       ]);
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toContain('block');
       expect(result.stdout).toContain('Sentinel files are protected');
     });
 
-    it('should block Edit to sentinel path', () => {
+    it('should block Edit to evolution sentinel path', () => {
       const result = runGuard([
         'Edit',
-        JSON.stringify({ file_path: 'src/infra/lib/autonomy/config.ts' }),
+        JSON.stringify({ file_path: 'src/infra/lib/evolution/GuardAnalyzer.ts' }),
       ]);
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toContain('block');
@@ -67,7 +67,7 @@ describe('sentinel-guard', () => {
     it('should block Write with backslash path separators', () => {
       const result = runGuard([
         'Write',
-        JSON.stringify({ file_path: 'src\\infra\\lib\\autonomy\\file.ts' }),
+        JSON.stringify({ file_path: 'src\\infra\\lib\\evolution\\file.ts' }),
       ]);
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toContain('Sentinel files are protected');
@@ -76,32 +76,62 @@ describe('sentinel-guard', () => {
     it('should block Write with ./ prefix', () => {
       const result = runGuard([
         'Write',
-        JSON.stringify({ file_path: './src/infra/lib/autonomy/index.ts' }),
+        JSON.stringify({ file_path: './src/infra/lib/evolution/index.ts' }),
       ]);
       expect(result.exitCode).toBe(2);
     });
   });
 
+  // ─── 실제 보호 경로: hooks/scripts/lib/ ───
+  describe('Write/Edit to hooks/scripts/lib/ sentinel path', () => {
+    it('should block Write to hooks/scripts/lib/', () => {
+      const result = runGuard([
+        'Write',
+        JSON.stringify({ file_path: 'hooks/scripts/lib/dispatcher.js' }),
+      ]);
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toContain('Sentinel files are protected');
+    });
+
+    it('should block Edit to hook-context.js', () => {
+      const result = runGuard([
+        'Edit',
+        JSON.stringify({ file_path: 'hooks/scripts/lib/hook-context.js' }),
+      ]);
+      expect(result.exitCode).toBe(2);
+    });
+  });
+
+  // ─── stdin 경로 ───
   describe('Write/Edit to sentinel paths via stdin', () => {
-    it('should block Edit via stdin payload', () => {
+    it('should block Edit evolution path via stdin payload', () => {
       const result = runGuardWithStdin({
         tool_name: 'Edit',
-        tool_input: { file_path: './src/infra/lib/autonomy/config.ts' },
+        tool_input: { file_path: './src/infra/lib/evolution/InsightStore.ts' },
       });
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toContain('block');
     });
 
-    it('should block Write via stdin payload', () => {
+    it('should block Write evolution path via stdin payload', () => {
       const result = runGuardWithStdin({
         tool_name: 'Write',
-        tool_input: { file_path: 'src/infra/lib/autonomy/policy.ts' },
+        tool_input: { file_path: 'src/infra/lib/evolution/CircuitBreaker.ts' },
       });
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toContain('Sentinel files are protected');
     });
+
+    it('should block Write hooks/scripts/lib/ path via stdin', () => {
+      const result = runGuardWithStdin({
+        tool_name: 'Write',
+        tool_input: { file_path: 'hooks/scripts/lib/run-ledger.js' },
+      });
+      expect(result.exitCode).toBe(2);
+    });
   });
 
+  // ─── 허용 경로 ───
   describe('allowed operations', () => {
     it('should allow Write to non-sentinel paths', () => {
       const result = runGuard([
@@ -114,7 +144,7 @@ describe('sentinel-guard', () => {
     it('should allow Read to sentinel paths (read is not blocked)', () => {
       const result = runGuard([
         'Read',
-        JSON.stringify({ file_path: 'src/infra/lib/autonomy/policy.ts' }),
+        JSON.stringify({ file_path: 'src/infra/lib/evolution/GuardAnalyzer.ts' }),
       ]);
       expect(result.exitCode).toBe(0);
     });
@@ -126,23 +156,40 @@ describe('sentinel-guard', () => {
       ]);
       expect(result.exitCode).toBe(0);
     });
+
+    it('should allow Write to hooks/scripts/ top level (not lib/ subdir)', () => {
+      const result = runGuard([
+        'Write',
+        JSON.stringify({ file_path: 'hooks/scripts/step-counter.js' }),
+      ]);
+      expect(result.exitCode).toBe(0);
+    });
+
+    it('should allow Write to src/infra/lib/ parent (not evolution subdir)', () => {
+      const result = runGuard([
+        'Write',
+        JSON.stringify({ file_path: 'src/infra/lib/constants.ts' }),
+      ]);
+      expect(result.exitCode).toBe(0);
+    });
   });
 
+  // ─── 위험한 bash + sentinel 경로 ───
   describe('dangerous bash commands targeting sentinel paths', () => {
-    it('should block rm -rf targeting sentinel path', () => {
+    it('should block rm -rf targeting evolution path', () => {
       const result = runGuard([
         'Bash',
-        JSON.stringify({ command: 'rm -rf src/infra/lib/autonomy/' }),
+        JSON.stringify({ command: 'rm -rf src/infra/lib/evolution/' }),
       ]);
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toContain('block');
       expect(result.stdout).toContain('Dangerous command targeting sentinel path');
     });
 
-    it('should block kill -9 targeting sentinel path', () => {
+    it('should block rm -rf targeting hooks/scripts/lib/', () => {
       const result = runGuard([
         'Bash',
-        JSON.stringify({ command: 'kill -9 1234 && rm src/infra/lib/autonomy/x' }),
+        JSON.stringify({ command: 'rm -rf hooks/scripts/lib/' }),
       ]);
       expect(result.exitCode).toBe(2);
     });
@@ -164,33 +211,41 @@ describe('sentinel-guard', () => {
     });
   });
 
+  // ─── Bash 명령어 문자열이 sentinel 경로로 시작하는 경우 ───
   describe('Bash command containing sentinel path in command string', () => {
-    it('should block when command string itself starts with sentinel path', () => {
+    it('should block when command string itself starts with evolution sentinel path', () => {
       const result = runGuard([
         'Bash',
-        JSON.stringify({ command: 'src/infra/lib/autonomy/run.sh' }),
+        JSON.stringify({ command: 'src/infra/lib/evolution/run.sh' }),
       ]);
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toContain('Sentinel files are protected');
     });
 
-    it('should not block non-dangerous commands referencing sentinel path mid-string', () => {
-      // isSentinelPath only checks startsWith, and the DANGEROUS_BASH_RE +
-      // includes check requires both a dangerous command and sentinel path
+    it('should block when command string starts with hooks/scripts/lib/', () => {
       const result = runGuard([
         'Bash',
-        JSON.stringify({ command: 'cat src/infra/lib/autonomy/policy.ts | wc -l' }),
+        JSON.stringify({ command: 'hooks/scripts/lib/dispatcher.js' }),
+      ]);
+      expect(result.exitCode).toBe(2);
+    });
+
+    it('should not block non-dangerous commands referencing sentinel path mid-string', () => {
+      const result = runGuard([
+        'Bash',
+        JSON.stringify({ command: 'cat src/infra/lib/evolution/GuardAnalyzer.ts | wc -l' }),
       ]);
       // 'cat' is not a dangerous command, command does not start with sentinel path
       expect(result.exitCode).toBe(0);
     });
   });
 
+  // ─── stdin vs argv 우선순위 ───
   describe('stdin vs argv priority', () => {
     it('should prefer stdin payload over argv', () => {
       const payload = JSON.stringify({
         tool_name: 'Write',
-        tool_input: { file_path: 'src/infra/lib/autonomy/x.ts' },
+        tool_input: { file_path: 'src/infra/lib/evolution/x.ts' },
       });
       try {
         execFileSync('node', [SCRIPT, 'Read', '{}'], {

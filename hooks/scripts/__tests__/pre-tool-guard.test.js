@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { spawnSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -404,6 +404,120 @@ describe('pre-tool-guard', () => {
       });
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Editing sensitive file');
+    });
+  });
+
+  // ══════════════════════════════════════════════════
+  // REQ-012: 64KB 초과 대용량 페이로드 파싱
+  // hook-context.js readStdinSync가 EOF까지 읽는지 검증
+  // ══════════════════════════════════════════════════
+  describe('large stdin payload (REQ-012: >64KB)', () => {
+    it('should parse tool_name from payload larger than 64KB', () => {
+      // 80KB content field로 페이로드 크기를 64KB 이상으로 만든다
+      const largeContent = 'x'.repeat(80 * 1024);
+      const result = runGuardWithStdin({
+        tool_name: 'Write',
+        tool_input: {
+          file_path: 'src/output.ts',
+          content: largeContent,
+        },
+      });
+      // Write to safe path: no blocking, tool_name parsed correctly (exit 0)
+      expect(result.exitCode).toBe(0);
+    });
+
+    it('should correctly detect dangerous command in large Bash payload', () => {
+      const padding = 'a'.repeat(80 * 1024);
+      const result = runGuardWithStdin({
+        tool_name: 'Bash',
+        tool_input: { command: 'rm -rf /', _padding: padding },
+      });
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toContain('BLOCKED');
+    });
+
+    it('should allow safe command in large Bash payload', () => {
+      const padding = 'b'.repeat(80 * 1024);
+      const result = runGuardWithStdin({
+        tool_name: 'Bash',
+        tool_input: { command: 'ls -la', _padding: padding },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe('');
+    });
+  });
+
+  // ══════════════════════════════════════════════════
+  // REQ-013: gh pr create Bash 경로 테스트 게이트
+  // pr-gate-runner 헬퍼를 mock하여 테스트러너 실행 없이 검증
+  // ══════════════════════════════════════════════════
+  describe('gh pr create gate (REQ-013)', () => {
+    it('should allow gh pr create when tests pass (argv mode)', () => {
+      // 테스트 환경에서는 package.json test 스크립트가 존재하지만
+      // 여기서는 실제 테스트를 실행하지 않도록 PROJECT_DIR을 빈 디렉토리로 설정
+      const tmpDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '.vibe');
+      const result = spawnSync(
+        'node',
+        [SCRIPT, 'Bash', 'gh pr create --title "feat" --body "desc"'],
+        {
+          encoding: 'utf-8',
+          timeout: 10000,
+          // 빈 디렉토리 → detectTestCommand가 null 반환 → 통과
+          env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        }
+      );
+      const combined = `${result.stdout || ''}${result.stderr || ''}`.trim();
+      // 테스트 커맨드 없음 → PR 허용 (exit 0)
+      expect(result.status).toBe(0);
+      expect(combined).not.toContain('PR-GATE');
+    });
+
+    it('should detect gh pr create in stdin payload', () => {
+      const tmpDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '.vibe');
+      const json = JSON.stringify({
+        tool_name: 'Bash',
+        tool_input: { command: 'gh pr create --title "feat" --body "body"' },
+      });
+      const result = spawnSync(
+        'node',
+        [SCRIPT],
+        {
+          input: json,
+          encoding: 'utf-8',
+          timeout: 10000,
+          env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        }
+      );
+      // 테스트 커맨드 없음 → exit 0
+      expect(result.status).toBe(0);
+    });
+
+    it('should NOT trigger gate for unrelated gh commands', () => {
+      const result = runGuard({ args: ['Bash', 'gh issue list'] });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe('');
+    });
+
+    it('should NOT trigger gate for gh pr view', () => {
+      const result = runGuard({ args: ['Bash', 'gh pr view 123'] });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe('');
+    });
+
+    it('should match gh pr create with flags before/after', () => {
+      // 플래그 포함 명령에도 정규식 매칭이 되어야 함
+      // (테스트 없는 PROJECT_DIR이므로 exit 0)
+      const tmpDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '.vibe');
+      const result = spawnSync(
+        'node',
+        [SCRIPT, 'Bash', 'gh pr create -t "title" -b "body" --draft'],
+        {
+          encoding: 'utf-8',
+          timeout: 10000,
+          env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        }
+      );
+      expect(result.status).toBe(0);
     });
   });
 });

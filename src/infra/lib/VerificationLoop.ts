@@ -3,6 +3,10 @@
  *
  * /vibe.trace 결과를 정량화하고, 임계값 미달 시 자동 재시도 지원
  * E2E 브라우저 검증 지원 (Puppeteer 기반 사용자 관점 검증)
+ *
+ * @deprecated Not wired into the vibe runtime (no hook/skill/CLI consumer).
+ * In-memory loop state does not survive vibe's per-event process model.
+ * Retained for API compatibility; may be removed in a future major.
  */
 
 // ─── E2E Verification Types ───

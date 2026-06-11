@@ -1,6 +1,10 @@
 /**
  * UltraQA - 5-Cycle Autonomous QA Loop
  * Test/Build/Lint → Fail → Architect Diagnosis → Executor Fix → Repeat
+ *
+ * @deprecated Not wired into the vibe runtime (no hook/skill/CLI consumer).
+ * No consumer in the shipped pipeline.
+ * Retained for API compatibility; may be removed in a future major.
  */
 
 export type QAGoal = 'tests' | 'build' | 'lint' | 'typecheck' | 'custom' | 'all';

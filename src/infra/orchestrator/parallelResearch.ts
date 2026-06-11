@@ -248,10 +248,7 @@ export async function parallelResearch(args: ParallelResearchArgs): Promise<Tool
       summary += `### ${status} ${result.agentName}\n`;
       summary += `Duration: ${(result.duration / 1000).toFixed(1)}s\n`;
       if (result.success) {
-        const preview = result.result.length > 500
-          ? result.result.slice(0, 500) + '...'
-          : result.result;
-        summary += `\n${preview}\n`;
+        summary += `\n${result.result}\n`;
       } else {
         summary += `Error: ${result.error}\n`;
       }
