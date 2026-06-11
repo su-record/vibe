@@ -37,4 +37,5 @@ hooks/scripts/__tests__/.vibe/
 .vibe/memories/
 .vibe/checkpoints/
 .vibe/.last-feature
+.vibe/scope.json
 .claude/scheduled_tasks.lock
