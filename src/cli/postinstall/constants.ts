@@ -49,6 +49,7 @@ export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
   'arch-guard',
   'exec-plan',
   'rob-pike',
+  'yagni-ladder',
   'systematic-debugging',
 ];
 
