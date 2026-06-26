@@ -38,6 +38,7 @@
 | `tool-fallback` | auto | Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors. | API error, search failure, timeout, 429, 5xx, overloaded, fallback, circuit breaker | 80 |
 | `context7-usage` | auto | Context7 plugin for latest library documentation. Auto-activates when docs, documentation, latest version, official docs, API reference, or library help is needed. | docs, documentation, latest version, official docs, API reference, library help, context7 | 60 |
 | `chub-usage` | auto | Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs. | chub, context hub, API docs, latest API, deprecated API, SDK documentation, api reference, 최신 문서 | 65 |
+| `presentation` | auto | 소스 데이터 → 16:9 HTML 슬라이드덱 생성. 디자인 시스템(타이포·색·그리드·1슬라이드1메시지) 통째 적용 후 1920×1080 PDF 발행. 17종 스타일 프리셋. | presentation, ppt, slide, deck, 슬라이드, 프레젠테이션, 발표자료, 덱 | 50 |
 
 ## Stack → Skills Routing (vibe init/update → .claude/skills/)
 
@@ -319,6 +320,13 @@
 ### `plan` (global)
 
 - **Description**: 인터뷰 결과 → 사람이 읽는 기획서(vision document) 정제 본체. /vibe.spec → 코드, /vibe.figma → UI 스토리보드의 입력.
+
+### `presentation` (global)
+
+- **Description**: 소스 데이터(리서치/문서/지식그래프) → 16:9 HTML 슬라이드덱. 디자인 시스템(타이포·색·그리드·1슬라이드1메시지) 통째 적용 후 1920×1080 PDF 발행. 17종 스타일 프리셋(`references/style-presets.md`).
+- **Invocation**: auto
+- **Triggers**: presentation, ppt, slide, deck, 슬라이드, 프레젠테이션, 발표자료, 덱
+- **Priority**: 50
 
 ### `prioritization-frameworks` (capability)
 
