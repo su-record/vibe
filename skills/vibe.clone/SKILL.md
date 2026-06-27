@@ -52,18 +52,23 @@ Phase 0: Setup
 Phase 1: Capture (병렬 — scope에 따라 MO/PC 동시)
   - node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <url> \
       --out=/tmp/{feature}/{bp}/ --viewport={WxH} --bp={mo|pc}
-  - 출력: rendered.html, computed.json, screenshot.png, asset-map.json, assets/
+  - 출력: rendered.html, computed.json, screenshot.png, states.json, asset-map.json, assets/
 
 Phase 2: Refine (BP마다 독립)
   - node {{VIBE_PATH}}/hooks/scripts/clone-refine.js \
       /tmp/{feature}/{bp}/rendered.html /tmp/{feature}/{bp}/computed.json \
-      --out=/tmp/{feature}/{bp}/sections.json --bp={mo|pc}
+      --out=/tmp/{feature}/{bp}/sections.json --states=/tmp/{feature}/{bp}/states.json --bp={mo|pc}
+  - sections.json 에 section.interaction(인터랙션 모델 추정) + section.states(상태 규칙) 포함
 
 Phase 3: Scaffold (BP 순차 — MO 완료 후 PC)
+  - Step 0: node {{VIBE_PATH}}/hooks/scripts/clone-spec.js \
+      /tmp/{feature}/{bp}/sections.json \
+      --out=./components/{feature}/_specs/ --feature={feature}
+    → 섹션별 빌드 계약서(_specs/{Section}.spec.md). 빌드 전 TODO(인터랙션 모델 확정·상태 목록·텍스트 교체) 해결
   - Step A: node {{VIBE_PATH}}/hooks/scripts/clone-to-scss.js \
       /tmp/{feature}/{bp}/sections.json \
       --out=./styles/{feature}/ --feature={feature}
-  - Claude: 섹션별로 HTML/컴포넌트 작성 (스택별 .tsx/.vue/.svelte/.html)
+  - Claude: 섹션별로 HTML/컴포넌트 작성 (스택별 .tsx/.vue/.svelte/.html) — 확정된 인터랙션 모델 + 모든 상태 반영
   - Step B: node {{VIBE_PATH}}/hooks/scripts/clone-validate.js \
       ./styles/{feature}/ /tmp/{feature}/{bp}/sections.json --section={Name}
   - 섹션마다 PASS 받고 다음 섹션 진행
@@ -83,10 +88,11 @@ Phase 5: Pixel Verification (P1=0까지 루프 — clone SKILL.md 규칙)
 
 ```
 /tmp/{feature}/                  # 작업 디렉토리 (산출물 원본)
-  ├── mo/, pc/                   # rendered.html, computed.json, screenshot.png, sections.json, assets/
+  ├── mo/, pc/                   # rendered.html, computed.json, screenshot.png, states.json, sections.json, assets/
   └── project-tokens.json        # 기존 프로젝트 토큰 인덱스
 
 ./components/{feature}/          # Claude가 작성한 컴포넌트 (.tsx/.vue/.svelte/.html)
+./components/{feature}/_specs/   # clone-spec.js가 생성한 섹션별 빌드 계약서 (*.spec.md)
 ./styles/{feature}/              # clone-to-scss.js가 생성한 SCSS 파일
   ├── _tokens.scss               # CSS 변수
   ├── _base.scss                 # @font-face

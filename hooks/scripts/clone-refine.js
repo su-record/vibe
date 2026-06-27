@@ -29,6 +29,7 @@ function parseArgs(argv) {
     else if (a.startsWith('--bp=')) opts.bp = a.slice(5);
     else if (a.startsWith('--stylesheets=')) opts.stylesheets = a.slice(14);
     else if (a.startsWith('--asset-map=')) opts.assetMap = a.slice(12);
+    else if (a.startsWith('--states=')) opts.states = a.slice(9);
   }
   return { htmlPath, computedPath, opts };
 }
@@ -452,6 +453,131 @@ function applyTokens(nodes, tokens) {
   for (const n of nodes) walkAndApply(n);
 }
 
+// ─── Interaction model classification (static-DOM heuristic) ────────
+// The live interaction (#1 clone failure mode) cannot be fully known from a
+// static snapshot, so we surface ranked SIGNALS + a best-guess model that the
+// builder confirms against the live site in Phase 5 — never a silent decision.
+const CAROUSEL_RE = /slider|carousel|swiper|marquee|slick|embla|ticker|autoplay/;
+const SCROLL_RE = /parallax|reveal|animate-on-scroll|scroll-|sticky|fade-in|fade-up|slide-in|in-view|gsap|lenis|locomotive/;
+const TOGGLE_RE = /accordion|tabs?|dropdown|modal|toggle|menu|collaps|drawer|popover|expand|hamburger/;
+const INTERACTIVE_TAGS = new Set(['button', 'summary', 'details', 'input', 'select', 'textarea', 'label']);
+const TOGGLE_ROLES = new Set(['tab', 'tablist', 'switch', 'menuitem', 'menuitemcheckbox', 'button']);
+
+function firstClass(cls, re) {
+  return (cls || '').split(/\s+/).find((c) => re.test(c)) || null;
+}
+
+function collectInteractionSignals(root) {
+  const sig = {
+    sticky: null, anim: null, infinite: null, transition: false, pointer: false,
+    interactiveTag: null, toggleClass: null, scrollClass: null, carouselClass: null, toggleRole: null,
+  };
+  const visit = (n) => {
+    const css = n.css || {};
+    const cls = (n.classes || '').toLowerCase();
+    const role = ((n.attrs && n.attrs.role) || '').toLowerCase();
+    if (!sig.sticky && (css.position === 'sticky' || css.position === 'fixed')) sig.sticky = `${css.position} on <${n.tag}>`;
+    if (css.animation) { sig.anim = sig.anim || n.tag; if (/infinite/.test(css.animation)) sig.infinite = sig.infinite || `animation infinite on <${n.tag}>`; }
+    if (css.transition) sig.transition = true;
+    if (css.cursor === 'pointer') sig.pointer = true;
+    if (!sig.interactiveTag && (INTERACTIVE_TAGS.has(n.tag) || (n.tag === 'a' && n.attrs && n.attrs.href))) sig.interactiveTag = n.tag;
+    sig.carouselClass = sig.carouselClass || firstClass(cls, CAROUSEL_RE);
+    sig.scrollClass = sig.scrollClass || firstClass(cls, SCROLL_RE);
+    sig.toggleClass = sig.toggleClass || firstClass(cls, TOGGLE_RE);
+    if (!sig.toggleRole && TOGGLE_ROLES.has(role)) sig.toggleRole = role;
+    for (const c of (n.children || [])) visit(c);
+  };
+  visit(root);
+  return sig;
+}
+
+function interactionSignalList(sig) {
+  const s = [];
+  if (sig.infinite) s.push(sig.infinite);
+  if (sig.carouselClass) s.push(`carousel class ".${sig.carouselClass}"`);
+  if (sig.scrollClass) s.push(`scroll class ".${sig.scrollClass}"`);
+  if (sig.sticky) s.push(sig.sticky);
+  if (sig.toggleClass) s.push(`toggle class ".${sig.toggleClass}"`);
+  if (sig.toggleRole) s.push(`role="${sig.toggleRole}"`);
+  if (sig.interactiveTag) s.push(`<${sig.interactiveTag}>`);
+  if (sig.anim) s.push(`animation on <${sig.anim}>`);
+  if (sig.transition) s.push('css transition');
+  if (sig.pointer) s.push('cursor:pointer');
+  return s.slice(0, 8);
+}
+
+function decideInteraction(sig) {
+  let model = 'static';
+  let confidence = 'low';
+  if (sig.infinite || sig.carouselClass) {
+    model = 'time-driven';
+    confidence = (sig.infinite || /swiper|slick|embla|carousel/.test(sig.carouselClass || '')) ? 'high' : 'medium';
+  } else if (sig.scrollClass || (sig.sticky && (sig.anim || sig.transition))) {
+    model = 'scroll-driven';
+    confidence = sig.scrollClass ? 'medium' : 'low';
+  } else if (sig.interactiveTag === 'details' || sig.toggleRole === 'tab' || sig.toggleClass) {
+    model = 'click-driven';
+    confidence = (sig.interactiveTag === 'details' || sig.toggleRole === 'tab') ? 'high' : 'medium';
+  } else if (sig.interactiveTag || sig.toggleRole) {
+    model = 'click-driven';
+    confidence = 'medium';
+  } else if (sig.pointer && sig.transition) {
+    model = 'hover';
+    confidence = 'medium';
+  }
+  return {
+    model,
+    confidence,
+    signals: interactionSignalList(sig),
+    note: 'Static-DOM heuristic — confirm the real interaction on the live site (Phase 5).',
+  };
+}
+
+// ─── State rule matching: attach harvested state rules to their section ─────
+const LEAF_INTERACTIVE = ['button', 'a', 'input', 'summary', 'details', 'label', 'select'];
+
+// Match a bare tag at a selector boundary (so `a:hover` matches but `.cta:hover` does not)
+const _tagSelCache = {};
+function tagSelRe(t) {
+  return _tagSelCache[t] || (_tagSelCache[t] = new RegExp('(^|[\\s>+~,(])' + t + '(?=[:.\\[\\s>+~,)]|$)'));
+}
+
+function collectClassTagSets(root) {
+  const classSet = new Set();
+  const tagSet = new Set();
+  const visit = (n) => {
+    tagSet.add(n.tag);
+    for (const c of (n.classes || '').split(/\s+/)) if (c) classSet.add(c.toLowerCase());
+    for (const c of (n.children || [])) visit(c);
+  };
+  visit(root);
+  return { classArr: Array.from(classSet), tagSet };
+}
+
+function sectionStateRules(stateRules, classArr, tagSet, limit = 60) {
+  if (!stateRules || !stateRules.length) return [];
+  const picked = [];
+  for (const sr of stateRules) {
+    const sel = sr.selector.toLowerCase();
+    const classHit = classArr.some((c) => sel.includes('.' + c));
+    const tagHit = !classHit && LEAF_INTERACTIVE.some((t) => tagSet.has(t) && tagSelRe(t).test(sel));
+    if (classHit || tagHit) {
+      picked.push({ selector: sr.selector, media: sr.media || null, css: sr.css });
+      if (picked.length >= limit) break;
+    }
+  }
+  return picked;
+}
+
+function loadStateRules() {
+  const statesPath = opts.states || path.join(path.dirname(computedPath), 'states.json');
+  try {
+    return JSON.parse(fs.readFileSync(statesPath, 'utf8')).stateRules || [];
+  } catch {
+    return [];
+  }
+}
+
 // ─── Main ───────────────────────────────────────────────────────────
 function main() {
   const computed = JSON.parse(fs.readFileSync(computedPath, 'utf8'));
@@ -462,13 +588,17 @@ function main() {
 
   // Section detection
   const sectionEntries = findSections(roots);
-  console.log(`[clone-refine] detected ${sectionEntries.length} sections, ${tokens.colors.length} colors, ${tokens.typography.length} typo, ${tokens.spacing.length} spacings`);
+  const stateRules = loadStateRules();
+  console.log(`[clone-refine] detected ${sectionEntries.length} sections, ${tokens.colors.length} colors, ${tokens.typography.length} typo, ${tokens.spacing.length} spacings, ${stateRules.length} state rules`);
 
   // Build refined sections
   const sections = sectionEntries.map(({ node, label }) => {
     const subtree = trimSubtree(node);
     const components = detectComponents(node);
     const images = classifyImages(node);
+    const interaction = decideInteraction(collectInteractionSignals(node));
+    const { classArr, tagSet } = collectClassTagSets(node);
+    const states = sectionStateRules(stateRules, classArr, tagSet);
     return {
       name: label,
       nodeRef: node.id,
@@ -476,8 +606,10 @@ function main() {
       classes: node.classes,
       box: node.box,
       css: node.css || {},
+      interaction,
       components,
       images,
+      states,
       children: (subtree.children || []),
     };
   });
