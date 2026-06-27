@@ -11,6 +11,7 @@
  *   computed.json        — per-element computed CSS + box + pseudo-elements + shadow DOM
  *   screenshot.png       — full-page screenshot
  *   stylesheets.json     — @font-face + @keyframes harvested from all sheets
+ *   states.json          — non-default state rules (hover/focus/active/checked/tab/aria/data-state)
  *   asset-map.json       — remote URL → local path mapping
  *   assets/images/*, assets/fonts/*
  *
@@ -233,7 +234,31 @@ const PAGE_EXTRACT = `
 (function (props) {
   const out = [];
   const stylesheets = { fontFaces: [], keyframes: [], cssVars: {} };
+  const stateRules = [];
   const pathById = new Map();
+
+  // ── Non-default state rule harvesting (hover/focus/active/checked/tab/aria/data-state) ──
+  // Deterministic: read state-dependent declarations straight from the stylesheets
+  // (no scripted clicking/hovering, so the output stays reproducible).
+  const propSet = new Set(props);
+  const STATE_RE = /:hover|:focus(?:-visible|-within)?|:active|:checked|:target|\\[aria-(?:expanded|selected|current|pressed)|\\[data-(?:state|active|open|selected)|\\[open\\]|\\.is-[a-z-]+|\\.(?:active|open|selected|expanded|current|show|visible)(?![\\w-])/i;
+  const harvestStateRule = (rule, media) => {
+    if (rule.selectorText && STATE_RE.test(rule.selectorText)) {
+      const decl = {};
+      for (let i = 0; i < rule.style.length; i++) {
+        const p = rule.style[i];
+        if (propSet.has(p)) decl[p] = rule.style.getPropertyValue(p).trim();
+      }
+      if (Object.keys(decl).length && stateRules.length < 1200) {
+        stateRules.push({ selector: rule.selectorText.trim(), media: media || null, css: decl });
+      }
+    }
+    // Recurse @media / @supports blocks so state rules nested under them are not lost
+    if (rule.cssRules && (rule.media || rule.conditionText)) {
+      const mq = rule.media ? rule.media.mediaText : (media || null);
+      for (const r of rule.cssRules) harvestStateRule(r, mq);
+    }
+  };
 
   // Stable ID via DOM path (no attribute mutation)
   const pathFor = (el, parent) => {
@@ -469,6 +494,7 @@ const PAGE_EXTRACT = `
         stylesheets.keyframes.push({ name: rule.name, frames });
       }
     }
+    for (const rule of rules) harvestStateRule(rule, null);
   }
 
   // :root CSS vars
@@ -484,6 +510,7 @@ const PAGE_EXTRACT = `
     nodes: out,
     assets: { images: Array.from(images), fonts: Array.from(fonts) },
     stylesheets,
+    stateRules,
     title: document.title,
     html: document.documentElement.outerHTML,
     docSize: {
@@ -666,6 +693,14 @@ async function capture({ url, opts }) {
       });
     }
 
+    // Rewrite remote asset URLs inside harvested state rules (e.g. :hover background-image)
+    for (const sr of extracted.stateRules) {
+      if (!sr.css) continue;
+      for (const prop of ['background-image', 'mask-image', 'border-image']) {
+        if (sr.css[prop]) sr.css[prop] = rewriteCssValue(sr.css[prop]);
+      }
+    }
+
     // Write outputs
     fs.writeFileSync(path.join(opts.out, 'rendered.html'), html);
     fs.writeFileSync(
@@ -686,11 +721,18 @@ async function capture({ url, opts }) {
       path.join(opts.out, 'stylesheets.json'),
       JSON.stringify(extracted.stylesheets, null, 2),
     );
+    fs.writeFileSync(
+      path.join(opts.out, 'states.json'),
+      JSON.stringify({
+        meta: { url, bp: opts.bp || null, capturedAt: new Date().toISOString() },
+        stateRules: extracted.stateRules,
+      }, null, 2),
+    );
     fs.writeFileSync(path.join(opts.out, 'asset-map.json'), JSON.stringify(assetMap, null, 2));
 
     const okCount = Object.values(assetMap).filter((a) => a.status === 'ok').length;
     console.log(`[clone-extract] done → ${opts.out}`);
-    console.log(`  nodes: ${extracted.nodes.length}, fontFaces: ${extracted.stylesheets.fontFaces.length}`);
+    console.log(`  nodes: ${extracted.nodes.length}, fontFaces: ${extracted.stylesheets.fontFaces.length}, stateRules: ${extracted.stateRules.length}`);
     console.log(`  assets: ${okCount}/${Object.keys(assetMap).length} downloaded`);
   } finally {
     await browser.close();

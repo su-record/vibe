@@ -34,6 +34,13 @@ The rendered DOM is the source of truth for markup. Screenshots are for pixel ve
 4. Do NOT copy textual content verbatim from copyrighted sources for production use.
    This skill is for layout/markup learning ("클론 코딩"). Replace text with placeholders
    or user-provided copy when shipping a real product.
+
+5. Do NOT build a section without confirming its interaction model. The model in
+   sections.json is a static-DOM heuristic — verify scroll-driven vs click-driven vs
+   time-driven vs hover against the live site. Misidentifying it is the #1 clone failure mode.
+
+6. Do NOT ship default-state-only. Implement every harvested state (hover/focus/active/open/
+   tab-switch) from states.json / the section spec.
 ```
 
 ## Full Flow
@@ -43,8 +50,8 @@ Input: a URL (or multiple URLs for multi-page clones)
 
 → Phase 0: Setup (stack detection, feature naming, working dir)
 → Phase 1: Capture (Puppeteer → rendered HTML + computed CSS + screenshots + assets)
-→ Phase 2: Refine (DOM → sections.json per breakpoint)
-→ Phase 3: Scaffold (sections.json → SCSS auto-gen + Claude-authored HTML/components)
+→ Phase 2: Refine (DOM → sections.json per breakpoint; + interaction model + states)
+→ Phase 3: Scaffold (spec gate → SCSS auto-gen + Claude-authored HTML/components)
 → Phase 4: Compile gate
 → Phase 5: Pixel verification loop
 
@@ -55,7 +62,7 @@ Working directory:
   └── tokens.json    — extracted design tokens (colors/fonts/spacing)
 
 Code output: placed directly in the project directory per detected stack
-  components/{feature}/, styles/{feature}/, public/images/{feature}/
+  components/{feature}/, components/{feature}/_specs/, styles/{feature}/, public/images/{feature}/
 ```
 
 ---
@@ -111,6 +118,7 @@ node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <URL> \
   ├── rendered.html       — final DOM after JS execution
   ├── computed.json       — per-element computed CSS + bounding box
   ├── screenshot.png      — full-page screenshot
+  ├── states.json         — non-default state rules (hover/focus/active/checked/tab/aria/data-state)
   ├── assets/
   │   ├── images/         — all <img>, background-image, <picture> sources
   │   └── fonts/          — @font-face srcs
@@ -127,6 +135,9 @@ node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <URL> \
 5. Download assets in parallel (concurrency=8), preserve original extensions
 6. Rewrite asset URLs in rendered.html and computed.json to local paths
 7. Strip inline analytics/tracking scripts before saving rendered.html
+8. Harvest non-default state rules from all stylesheets → states.json
+   (deterministic: read :hover/:focus/:active/:checked/[aria-*]/[data-state]/.is-*/.active
+    declarations straight from CSS — NO scripted clicking, so output stays reproducible)
 ```
 
 ---
@@ -136,11 +147,12 @@ node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <URL> \
 ### BLOCKING Command — Writing custom refine scripts is forbidden
 
 ```bash
-# MO
+# MO  (--states is optional — auto-resolved as states.json next to computed.json)
 node {{VIBE_PATH}}/hooks/scripts/clone-refine.js \
   /tmp/{feature}/mo/rendered.html \
   /tmp/{feature}/mo/computed.json \
   --out=/tmp/{feature}/mo/sections.json \
+  --states=/tmp/{feature}/mo/states.json \
   --bp=mo
 
 # PC
@@ -148,6 +160,7 @@ node {{VIBE_PATH}}/hooks/scripts/clone-refine.js \
   /tmp/{feature}/pc/rendered.html \
   /tmp/{feature}/pc/computed.json \
   --out=/tmp/{feature}/pc/sections.json \
+  --states=/tmp/{feature}/pc/states.json \
   --bp=pc
 ```
 
@@ -175,6 +188,13 @@ Refinement applied when converting rendered.html + computed.json → sections.js
      typography (font-*, line-height, letter-spacing, text-*, color),
      decoration (background, border, border-radius, box-shadow, opacity),
      transform/transition
+  9. Classify interaction model per section (static-DOM heuristic) → section.interaction
+     = { model, confidence, signals[], note }. model ∈ static | click-driven | scroll-driven
+     | time-driven | hover. This is a best-guess + ranked SIGNALS, NOT a silent decision —
+     the builder confirms it against the live site (Phase 5). Misidentifying the interaction
+     model is the #1 clone failure mode (scroll-driven original built as a click UI, etc.).
+ 10. Attach matching state rules from states.json to each section → section.states
+     (rules whose selector references a class/leaf-tag inside that section's subtree)
 ```
 
 ### Output
@@ -188,8 +208,17 @@ Refinement applied when converting rendered.html + computed.json → sections.js
       {
         name: "Header" | "Hero" | "Features" | ...,
         nodeRef, tag, size, css,
+        interaction: {        // static-DOM heuristic — builder confirms in Phase 5
+          model: "static" | "click-driven" | "scroll-driven" | "time-driven" | "hover",
+          confidence: "high" | "medium" | "low",
+          signals: [...],     // ranked evidence (sticky, infinite animation, role=tab, …)
+          note
+        },
         text,                 // text content (placeholder candidates)
         components: [...],    // detected repeated patterns
+        states: [             // non-default state rules scoped to this section
+          { selector, media, css }
+        ],
         children: [...],      // full recursive subtree
         images: { bg, content: [...] }
       }
@@ -207,6 +236,12 @@ Refinement applied when converting rendered.html + computed.json → sections.js
 ### BLOCKING Command — SCSS must only use script output
 
 ```bash
+# Step 0: Generate per-section build-contract specs (run once per BP)
+node {{VIBE_PATH}}/hooks/scripts/clone-spec.js \
+  /tmp/{feature}/{bp}/sections.json \
+  --out=/path/to/project/components/{feature}/_specs/ \
+  --feature={feature}
+
 # Step A: Auto-generate SCSS skeleton (run once per BP)
 node {{VIBE_PATH}}/hooks/scripts/clone-to-scss.js \
   /tmp/{feature}/{bp}/sections.json \
@@ -220,22 +255,33 @@ node {{VIBE_PATH}}/hooks/scripts/clone-validate.js \
   --section={SectionName}
 ```
 
+⛔ **No section is built without a completed spec.** Step 0 emits `_specs/{Section}.spec.md`
+   (interaction model + states + computed CSS + assets + text + checklist). Before writing a
+   section's component, Claude reviews its spec and resolves every `TODO` (confirm interaction
+   model, list states to implement, choose tags, replace copyrighted text). The spec is the
+   contract AND the audit trail — it forces extraction rigor before any code is written.
 ⛔ **Writing SCSS files directly without calling clone-to-scss.js invalidates Phase 3.**
-⛔ **Do NOT write custom SCSS generation scripts.**
+⛔ **Do NOT write custom SCSS / spec generation scripts.**
 ⛔ **Do NOT proceed to the next section without a clone-validate.js PASS.**
-✅ Use clone-to-scss.js output as-is. If unsatisfactory, modify the script.
+✅ Use clone-spec.js / clone-to-scss.js output as-is. If unsatisfactory, modify the script.
 
 ```
 Phase 3A: MO Scaffold
   Input: /tmp/{feature}/mo/sections.json
+  Step 0 once: clone-spec.js → emit _specs/{Section}.spec.md for every section
   ⛔ No parallelism. Process one section at a time:
-    1. Read the target section from sections.json
+    1. Read the target section's spec → resolve every TODO:
+       ├─ Confirm the interaction model (spec.interaction is a heuristic guess)
+       ├─ List the states to implement (spec.states)
+       └─ Mark copyrighted text for placeholder replacement
     2. Map component candidates against component-index.json
        ├─ Match → import existing
        └─ No match → create new in components/{feature}/
     3. clone-to-scss.js → auto-generate SCSS skeleton (computed values as-is) — Step A once
     4. Claude: HTML structure + semantic tags + framework-specific component file
        ⛔ No CSS written directly in <style> blocks — only @import/@use allowed
+       ⛔ Build for the CONFIRMED interaction model (don't build a click UI for a
+          scroll-driven original); wire every state from the spec (hover/active/open/…)
        Framework mapping:
          - React/Next → .tsx with CSS Modules or styled-components per stack
          - Vue/Nuxt   → .vue with scoped <style lang="scss"> @import only
@@ -258,7 +304,8 @@ Claude's role (restricted):
   ✅ Component candidates: decide which patterns become reusable components
   ✅ HTML semantics: section/h1/p/button/nav tag selection
   ✅ Text replacement: substitute copyrighted copy with placeholders or user-supplied text
-  ✅ Interactions: hover/focus states, click handlers, conditional rendering
+  ✅ Interaction model: confirm the spec's heuristic guess, then build for the real model
+  ✅ Interactions: implement every state in the spec (hover/focus/active/open), click handlers
   ❌ Do NOT modify SCSS CSS values (use clone-to-scss.js output as-is)
   ❌ Do NOT write CSS directly in <style> blocks
   ❌ Do NOT use vw/clamp/@media or create custom mixins in Phase 3A/3B
@@ -359,3 +406,5 @@ Claude must:
 | robots.txt disallows path | Halt Phase 1. Inform user; require explicit `--ignore-robots` flag to proceed. |
 | clone-refine.js produces empty sections | Site likely uses Shadow DOM or canvas rendering. Report and ask whether to fall back to screenshot-only mode. |
 | Pixel diff stuck > 0.05 after 5 rounds | Likely font fallback or anti-aliasing. Report metric, allow user to accept threshold. |
+| Interaction model guess wrong (Phase 5) | section.interaction is a static-DOM heuristic. Re-observe the live site, correct the model in the spec, rebuild the section for the confirmed model. |
+| states.json empty but site has hover/tabs | States may be set via inline JS, not CSS rules. Note in the spec and capture them manually from the live site during Phase 5. |
