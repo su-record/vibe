@@ -619,7 +619,9 @@ async function capture({ url, opts }) {
 
     await freezeAnimations(page);
 
-    const extracted = await page.evaluate(PAGE_EXTRACT, CSS_PROPS);
+    // PAGE_EXTRACT is a parenthesized function-expression string. page.evaluate treats a
+    // string arg as an expression and ignores extra args, so build the call ourselves.
+    const extracted = await page.evaluate(`(${PAGE_EXTRACT})(${JSON.stringify(CSS_PROPS)})`);
 
     // Screenshot AFTER freezing animations
     const shotPath = path.join(opts.out, 'screenshot.png');
