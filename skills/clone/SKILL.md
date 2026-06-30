@@ -41,6 +41,11 @@ The rendered DOM is the source of truth for markup. Screenshots are for pixel ve
 
 6. Do NOT ship default-state-only. Implement every harvested state (hover/focus/active/open/
    tab-switch) from states.json / the section spec.
+
+7. Do NOT ignore behaviors.json. The ACTIVE interaction sweep (scroll-state diffs +
+   click-driven tab content-swap detection) catches JS-set state that static CSS harvesting
+   is blind to. When the spec's "Dynamic behaviors" block conflicts with the static
+   interaction heuristic, the active capture wins.
 ```
 
 ## Full Flow
@@ -119,6 +124,7 @@ node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <URL> \
   ├── computed.json       — per-element computed CSS + bounding box
   ├── screenshot.png      — full-page screenshot
   ├── states.json         — non-default state rules (hover/focus/active/checked/tab/aria/data-state)
+  ├── behaviors.json      — ACTIVE sweep: scroll-triggered header/nav diffs + click-driven tab groups
   ├── assets/
   │   ├── images/         — all <img>, background-image, <picture> sources
   │   └── fonts/          — @font-face srcs
@@ -136,8 +142,14 @@ node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <URL> \
 6. Rewrite asset URLs in rendered.html and computed.json to local paths
 7. Strip inline analytics/tracking scripts before saving rendered.html
 8. Harvest non-default state rules from all stylesheets → states.json
-   (deterministic: read :hover/:focus/:active/:checked/[aria-*]/[data-state]/.is-*/.active
-    declarations straight from CSS — NO scripted clicking, so output stays reproducible)
+   (deterministic: read :hover/:focus/:active/:checked/[aria-*]/[data-state]/.is-*/.active/
+    .scrolled/.sticky/.pinned/… declarations straight from CSS — NO scripted clicking)
+9. ACTIVE interaction sweep → behaviors.json (runs after lazy-load, before freeze).
+   Drives the live page to capture JS-set state that CSS harvesting can't see:
+   - Scroll-state diff: tag sticky/fixed/top-bar headers+nav, snapshot computed CSS at
+     scroll 0, scroll past threshold, re-snapshot, diff → {prop: {from, to}, triggerScrollY}
+   - Tab groups: click tab-like sibling sets, detect whether content swaps on click
+   Disable with --no-interact (restores the old fully-deterministic, screenshot-stable capture).
 ```
 
 ---
@@ -256,7 +268,9 @@ node {{VIBE_PATH}}/hooks/scripts/clone-validate.js \
 ```
 
 ⛔ **No section is built without a completed spec.** Step 0 emits `_specs/{Section}.spec.md`
-   (interaction model + states + computed CSS + assets + text + checklist). Before writing a
+   (interaction model + **active-capture Dynamic behaviors** + states + computed CSS + assets +
+   text + checklist). clone-spec.js auto-loads `behaviors.json` from the sections.json dir and
+   attaches matching scroll/tab behaviors per section. Before writing a
    section's component, Claude reviews its spec and resolves every `TODO` (confirm interaction
    model, list states to implement, choose tags, replace copyrighted text). The spec is the
    contract AND the audit trail — it forces extraction rigor before any code is written.
@@ -407,4 +421,5 @@ Claude must:
 | clone-refine.js produces empty sections | Site likely uses Shadow DOM or canvas rendering. Report and ask whether to fall back to screenshot-only mode. |
 | Pixel diff stuck > 0.05 after 5 rounds | Likely font fallback or anti-aliasing. Report metric, allow user to accept threshold. |
 | Interaction model guess wrong (Phase 5) | section.interaction is a static-DOM heuristic. Re-observe the live site, correct the model in the spec, rebuild the section for the confirmed model. |
-| states.json empty but site has hover/tabs | States may be set via inline JS, not CSS rules. Note in the spec and capture them manually from the live site during Phase 5. |
+| states.json empty but site has hover/tabs | States may be set via inline JS, not CSS rules. Check behaviors.json (active sweep captures scroll/tab JS state). If still missing, note in the spec and capture manually during Phase 5. |
+| behaviors.json missing or empty | Active sweep was disabled (--no-interact), hit no sticky/tab elements, or errored (logged, non-fatal). Falls back to static states.json. Re-run without --no-interact to retry. |

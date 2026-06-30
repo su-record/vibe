@@ -12,6 +12,9 @@
  *   screenshot.png       — full-page screenshot
  *   stylesheets.json     — @font-face + @keyframes harvested from all sheets
  *   states.json          — non-default state rules (hover/focus/active/checked/tab/aria/data-state)
+ *   behaviors.json       — ACTIVE interaction sweep: scroll-triggered header/nav diffs +
+ *                          click-driven tab groups (content-swap detection). Captures JS-set
+ *                          state that static CSS harvesting can't see. Skip with --no-interact.
  *   asset-map.json       — remote URL → local path mapping
  *   assets/images/*, assets/fonts/*
  *
@@ -78,7 +81,7 @@ const CSS_PROPS = [
 // ─── CLI parse ──────────────────────────────────────────────────────
 function parseArgs(argv) {
   const [, , cmd, urlArg, ...rest] = argv;
-  const opts = { stealth: false, ignoreRobots: false };
+  const opts = { stealth: false, ignoreRobots: false, interact: true };
   for (const arg of rest) {
     if (arg.startsWith('--out=')) opts.out = arg.slice(6);
     else if (arg.startsWith('--viewport=')) opts.viewport = arg.slice(11);
@@ -86,6 +89,7 @@ function parseArgs(argv) {
     else if (arg.startsWith('--wait=')) opts.wait = Number(arg.slice(7));
     else if (arg === '--stealth') opts.stealth = true;
     else if (arg === '--ignore-robots') opts.ignoreRobots = true;
+    else if (arg === '--no-interact') opts.interact = false;
   }
   return { cmd, url: urlArg, opts };
 }
@@ -241,7 +245,7 @@ const PAGE_EXTRACT = `
   // Deterministic: read state-dependent declarations straight from the stylesheets
   // (no scripted clicking/hovering, so the output stays reproducible).
   const propSet = new Set(props);
-  const STATE_RE = /:hover|:focus(?:-visible|-within)?|:active|:checked|:target|\\[aria-(?:expanded|selected|current|pressed)|\\[data-(?:state|active|open|selected)|\\[open\\]|\\.is-[a-z-]+|\\.(?:active|open|selected|expanded|current|show|visible)(?![\\w-])/i;
+  const STATE_RE = /:hover|:focus(?:-visible|-within)?|:active|:checked|:target|\\[aria-(?:expanded|selected|current|pressed)|\\[data-(?:state|active|open|selected)|\\[open\\]|\\.is-[a-z-]+|\\.has-[a-z-]+|\\.(?:active|open|selected|expanded|current|show|visible|scrolled|sticky|stuck|pinned|fixed|shrink|shrunk|compact|affix|headroom|scrolling)(?![\\w-])/i;
   const harvestStateRule = (rule, media) => {
     if (rule.selectorText && STATE_RE.test(rule.selectorText)) {
       const decl = {};
@@ -556,6 +560,155 @@ async function freezeAnimations(page) {
   });
 }
 
+// ─── Active interaction sweep ───────────────────────────────────────
+// Static CSS harvesting (states.json) only sees declared :hover/:active/[data-state]
+// rules. It is blind to JS-set state: a header that gains a class on scroll, a tab
+// group that swaps content on click, Framer/GSAP inline-style animations. This sweep
+// actually drives the page and diffs computed styles before/after — the #1 accuracy fix.
+
+// Subset of props worth diffing for scroll/click state changes (kept small on purpose).
+const BEHAVIOR_PROPS = [
+  'background-color', 'background-image', 'box-shadow', 'backdrop-filter',
+  'height', 'min-height', 'padding-top', 'padding-bottom',
+  'transform', 'opacity', 'position', 'top',
+  'border-bottom-width', 'border-bottom-color', 'color',
+];
+
+// Pure style differ — exported for testing. Returns { prop: { from, to } } for changed props.
+function diffStyles(a, b) {
+  const out = {};
+  if (!a || !b) return out;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const k of keys) {
+    const from = a[k] ?? null;
+    const to = b[k] ?? null;
+    if (from !== to && (from || to)) out[k] = { from, to };
+  }
+  return out;
+}
+
+// In-page: tag sticky/fixed/top-bar elements with a probe attr so we can re-find them.
+const TAG_SCROLL_CANDIDATES = `(function () {
+  const els = Array.from(document.querySelectorAll(
+    'header, nav, [class*="header" i], [class*="nav" i], [class*="sticky" i], [class*="fixed" i]'
+  ));
+  const out = []; let i = 0;
+  for (const el of els) {
+    if (i >= 6) break;
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    const sticky = cs.position === 'fixed' || cs.position === 'sticky';
+    const topBar = r.top >= 0 && r.top < 120 && r.width > window.innerWidth * 0.5;
+    if (!sticky && !topBar) continue;
+    if (el.closest('[data-clone-probe]')) continue;
+    el.setAttribute('data-clone-probe', 'sc' + i);
+    const cls = (el.getAttribute('class') || '').trim().split(/\\s+/).filter(Boolean)[0] || '';
+    out.push({ probe: 'sc' + i, tag: el.tagName.toLowerCase(), cls });
+    i++;
+  }
+  return out;
+})`;
+
+const SNAP_PROBES = `(function (props) {
+  const out = {};
+  document.querySelectorAll('[data-clone-probe]').forEach((el) => {
+    const cs = getComputedStyle(el); const o = {};
+    for (const p of props) { const v = cs.getPropertyValue(p); if (v) o[p] = v.trim(); }
+    out[el.getAttribute('data-clone-probe')] = o;
+  });
+  return out;
+})`;
+
+// In-page: tag tab-like groups (≥2 siblings) so we can click them.
+const TAG_TAB_GROUPS = `(function () {
+  const els = Array.from(document.querySelectorAll(
+    '[role="tab"], [aria-selected], button[class*="tab" i], li[class*="tab" i], [data-state="active"], [data-state="inactive"]'
+  ));
+  const groups = new Map();
+  for (const el of els) {
+    const p = el.parentElement; if (!p) continue;
+    if (!groups.has(p)) groups.set(p, []);
+    groups.get(p).push(el);
+  }
+  const out = []; let g = 0;
+  for (const [, items] of groups) {
+    if (g >= 4) break;
+    if (items.length < 2) continue;
+    items.forEach((el, idx) => el.setAttribute('data-clone-tab', g + '_' + idx));
+    out.push({ group: g, count: items.length, labels: items.map((el) => (el.textContent || '').trim().slice(0, 40)).filter(Boolean) });
+    g++;
+  }
+  return out;
+})`;
+
+// Fingerprint the visible text near a tab group, to detect content swaps on click.
+const TAB_CONTENT_FP = `(function (g) {
+  const first = document.querySelector('[data-clone-tab="' + g + '_0"]');
+  if (!first) return null;
+  const box = first.closest('section, main, div');
+  const root = box ? (box.parentElement || box) : document.body;
+  return (root.innerText || '').replace(/\\s+/g, ' ').trim().slice(0, 4000);
+})`;
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function runInteractionSweep(page) {
+  const behaviors = { scroll: [], interactive: [] };
+
+  // ── Scroll-triggered state (header/nav shrink, background, shadow on scroll) ──
+  const candidates = await page.evaluate(`(${TAG_SCROLL_CANDIDATES})()`);
+  if (candidates.length) {
+    const before = await page.evaluate(`(${SNAP_PROBES})(${JSON.stringify(BEHAVIOR_PROPS)})`);
+    const innerH = await page.evaluate('window.innerHeight');
+    const triggerY = Math.min(700, Math.max(200, Math.round(innerH * 0.9)));
+    await page.evaluate(`window.scrollTo(0, ${triggerY})`);
+    await wait(500);
+    const after = await page.evaluate(`(${SNAP_PROBES})(${JSON.stringify(BEHAVIOR_PROPS)})`);
+    await page.evaluate('window.scrollTo(0, 0)');
+    await wait(300);
+    for (const c of candidates) {
+      const changed = diffStyles(before[c.probe], after[c.probe]);
+      if (Object.keys(changed).length) {
+        behaviors.scroll.push({
+          label: c.cls ? `${c.tag}.${c.cls}` : c.tag,
+          tag: c.tag, cls: c.cls, triggerScrollY: triggerY, changed,
+        });
+      }
+    }
+  }
+
+  // ── Click-driven tab groups (content swap detection) ──
+  const groups = await page.evaluate(`(${TAG_TAB_GROUPS})()`);
+  for (const grp of groups) {
+    try {
+      const beforeFp = await page.evaluate(`(${TAB_CONTENT_FP})(${grp.group})`);
+      const clicked = await page.evaluate(
+        `(function (g) { const t = document.querySelector('[data-clone-tab="' + g + '_1"]'); if (!t) return false; t.click(); return true; })(${grp.group})`
+      );
+      if (!clicked) continue;
+      await wait(450);
+      const afterFp = await page.evaluate(`(${TAB_CONTENT_FP})(${grp.group})`);
+      // restore default state
+      await page.evaluate(
+        `(function (g) { const t = document.querySelector('[data-clone-tab="' + g + '_0"]'); if (t) t.click(); })(${grp.group})`
+      );
+      await wait(200);
+      behaviors.interactive.push({
+        kind: 'tab-group',
+        count: grp.count,
+        tabLabels: grp.labels,
+        contentSwapsOnClick: beforeFp != null && afterFp != null && beforeFp !== afterFp,
+      });
+    } catch { /* one bad group must not abort the whole sweep */ }
+  }
+
+  // Clean up probe attributes BEFORE static extraction so they don't pollute output.
+  await page.evaluate(
+    'document.querySelectorAll("[data-clone-probe],[data-clone-tab]").forEach((e) => { e.removeAttribute("data-clone-probe"); e.removeAttribute("data-clone-tab"); })'
+  );
+  return behaviors;
+}
+
 // HTML sanitization: strip scripts/analytics before saving
 function sanitizeHtml(html) {
   return html
@@ -616,6 +769,17 @@ async function capture({ url, opts }) {
     await scrollToBottom(page);
     if (opts.wait) await new Promise((r) => setTimeout(r, opts.wait));
     else await new Promise((r) => setTimeout(r, 1200));
+
+    // Active interaction sweep (before freezing — it observes real transitions/JS state).
+    let behaviors = null;
+    if (opts.interact) {
+      try {
+        behaviors = await runInteractionSweep(page);
+        console.log(`[clone-extract] interaction sweep: ${behaviors.scroll.length} scroll-state, ${behaviors.interactive.length} tab-group(s)`);
+      } catch (e) {
+        console.log(`[clone-extract] interaction sweep skipped: ${e.message}`);
+      }
+    }
 
     await freezeAnimations(page);
 
@@ -731,6 +895,22 @@ async function capture({ url, opts }) {
       }, null, 2),
     );
     fs.writeFileSync(path.join(opts.out, 'asset-map.json'), JSON.stringify(assetMap, null, 2));
+    if (behaviors) {
+      // Rewrite any remote asset URLs captured in scroll-state background-image diffs.
+      for (const s of behaviors.scroll) {
+        for (const ch of Object.values(s.changed)) {
+          if (typeof ch.from === 'string') ch.from = rewriteCssValue(ch.from);
+          if (typeof ch.to === 'string') ch.to = rewriteCssValue(ch.to);
+        }
+      }
+      fs.writeFileSync(
+        path.join(opts.out, 'behaviors.json'),
+        JSON.stringify({
+          meta: { url, bp: opts.bp || null, capturedAt: new Date().toISOString() },
+          ...behaviors,
+        }, null, 2),
+      );
+    }
 
     const okCount = Object.values(assetMap).filter((a) => a.status === 'ok').length;
     console.log(`[clone-extract] done → ${opts.out}`);
@@ -742,15 +922,20 @@ async function capture({ url, opts }) {
 }
 
 // ─── Entry ──────────────────────────────────────────────────────────
-const { cmd, url, opts } = parseArgs(process.argv);
+const isMain = process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('clone-extract.js');
+if (isMain) {
+  const { cmd, url, opts } = parseArgs(process.argv);
 
-if (cmd !== 'capture') {
-  console.error('Usage: node clone-extract.js capture <URL> --out=<dir> --viewport=WxH[@DPR] --bp=mo|pc [--stealth] [--ignore-robots] [--wait=ms]');
-  process.exit(1);
+  if (cmd !== 'capture') {
+    console.error('Usage: node clone-extract.js capture <URL> --out=<dir> --viewport=WxH[@DPR] --bp=mo|pc [--stealth] [--ignore-robots] [--no-interact] [--wait=ms]');
+    process.exit(1);
+  }
+
+  capture({ url, opts }).catch((err) => {
+    console.error(`[clone-extract] FAIL: ${err.message}`);
+    if (process.env.DEBUG) console.error(err.stack);
+    process.exit(1);
+  });
 }
 
-capture({ url, opts }).catch((err) => {
-  console.error(`[clone-extract] FAIL: ${err.message}`);
-  if (process.env.DEBUG) console.error(err.stack);
-  process.exit(1);
-});
+export { diffStyles };

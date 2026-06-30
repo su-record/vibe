@@ -27,15 +27,12 @@ function parseArgs(argv) {
     if (a.startsWith('--out=')) opts.out = a.slice(6);
     else if (a.startsWith('--section=')) opts.section = a.slice(10);
     else if (a.startsWith('--feature=')) opts.feature = a.slice(10);
+    else if (a.startsWith('--behaviors=')) opts.behaviors = a.slice(12);
   }
   return { sectionsPath, opts };
 }
 
 const { sectionsPath, opts } = parseArgs(process.argv);
-if (!sectionsPath || !opts.out) {
-  console.error('Usage: node clone-spec.js <sections.json> --out=<dir> [--section=Name] [--feature=name]');
-  process.exit(1);
-}
 
 // ─── Helpers ────────────────────────────────────────────────────────
 function safeName(name) {
@@ -95,6 +92,40 @@ function componentsBlock(components) {
   }).join('\n');
 }
 
+// True if any node in the section subtree matches a behavior's tag (+ optional class).
+function sectionHasNode(section, tag, cls) {
+  const hit = (n) => {
+    if (n.tag === tag && (!cls || (n.classes || '').split(/\s+/).includes(cls))) return true;
+    return (n.children || []).some(hit);
+  };
+  return (section.children || []).some(hit);
+}
+
+function behaviorsBlock(section, behaviors) {
+  if (!behaviors) return null;
+  const scroll = (behaviors.scroll || []).filter((b) => sectionHasNode(section, b.tag, b.cls));
+  // Tab groups aren't tag-keyed; attach to any section that contains a [role=tab]-ish node.
+  const tabs = (behaviors.interactive || []).filter(() =>
+    sectionHasNode(section, 'button') || sectionHasNode(section, 'li') || sectionHasNode(section, 'a'),
+  );
+  if (!scroll.length && !tabs.length) return null;
+
+  const lines = [];
+  for (const b of scroll) {
+    const diffs = Object.entries(b.changed)
+      .map(([k, v]) => `    - ${k}: \`${v.from}\` → \`${v.to}\``).join('\n');
+    lines.push(`- **Scroll-triggered** on \`${b.label}\` (past ~${b.triggerScrollY}px scroll):\n${diffs}`);
+  }
+  for (const t of tabs) {
+    const labels = (t.tabLabels || []).map((l) => `"${l}"`).join(', ') || '(unlabeled)';
+    const swap = t.contentSwapsOnClick
+      ? '**content SWAPS on click** → extract every tab\'s content/assets, build click-driven'
+      : 'no content swap detected (styling-only tabs)';
+    lines.push(`- **Tab group** ×${t.count} [${labels}]: ${swap}`);
+  }
+  return lines.join('\n');
+}
+
 function assetsBlock(images) {
   const bg = (images && images.bg) || [];
   const content = (images && images.content) || [];
@@ -105,12 +136,16 @@ function assetsBlock(images) {
 }
 
 // ─── Spec rendering ─────────────────────────────────────────────────
-function renderSpec(section, meta) {
+function renderSpec(section, meta, behaviors) {
   const box = section.box || {};
   const texts = collectText(section);
   const textBlock = texts.length
     ? texts.map((t) => `- "${t}"`).join('\n')
     : '- (no direct text — likely visual/asset-only section)';
+  const behavior = behaviorsBlock(section, behaviors);
+  const behaviorSection = behavior
+    ? `\n## Dynamic behaviors — observed by ACTIVE capture (not guesses)\n_Captured by driving the live page (scroll/click). These override the static heuristic above._\n${behavior}\n`
+    : '';
   return `# ${section.name} — Clone Spec (${meta.bp})
 
 > Auto-generated skeleton from sections.json by clone-spec.js. **This is a build contract.**
@@ -123,7 +158,7 @@ function renderSpec(section, meta) {
 
 ## Interaction model — ⚠ confirm before building
 ${interactionBlock(section.interaction)}
-
+${behaviorSection}
 ## States to reproduce
 _Harvested non-default state rules (hover/focus/active/checked/tab/aria/data-state). Implement each._
 ${statesBlock(section.states)}
@@ -162,6 +197,13 @@ function main() {
     viewport: data.meta && data.meta.viewport,
     bp: opts.section ? (data.meta && data.meta.bp) : (data.meta && data.meta.bp) || '?',
   };
+  // behaviors.json (active interaction sweep) lives next to the source computed.json.
+  const behaviorsPath = opts.behaviors || path.join(path.dirname(sectionsPath), 'behaviors.json');
+  let behaviors = null;
+  if (fs.existsSync(behaviorsPath)) {
+    try { behaviors = JSON.parse(fs.readFileSync(behaviorsPath, 'utf8')); } catch { behaviors = null; }
+  }
+
   let sections = data.sections || [];
   if (opts.section) sections = sections.filter((s) => s.name === opts.section);
   if (!sections.length) {
@@ -172,15 +214,24 @@ function main() {
   fs.mkdirSync(opts.out, { recursive: true });
   for (const section of sections) {
     const file = path.join(opts.out, `${safeName(section.name)}.spec.md`);
-    fs.writeFileSync(file, renderSpec(section, meta));
+    fs.writeFileSync(file, renderSpec(section, meta, behaviors));
     console.log(`[clone-spec] wrote ${file}`);
   }
   console.log(`[clone-spec] done → ${sections.length} spec(s) in ${opts.out}`);
 }
 
-try { main(); }
-catch (e) {
-  console.error(`[clone-spec] FAIL: ${e.message}`);
-  if (process.env.DEBUG) console.error(e.stack);
-  process.exit(1);
+const isMain = process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('clone-spec.js');
+if (isMain) {
+  if (!sectionsPath || !opts.out) {
+    console.error('Usage: node clone-spec.js <sections.json> --out=<dir> [--section=Name] [--feature=name] [--behaviors=path]');
+    process.exit(1);
+  }
+  try { main(); }
+  catch (e) {
+    console.error(`[clone-spec] FAIL: ${e.message}`);
+    if (process.env.DEBUG) console.error(e.stack);
+    process.exit(1);
+  }
 }
+
+export { sectionHasNode, behaviorsBlock };

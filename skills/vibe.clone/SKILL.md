@@ -1,7 +1,7 @@
 ---
 name: vibe.clone
 description: URL → 마크업 레벨 픽셀 완벽 클론 — 헤드리스 브라우저로 라이브 사이트 캡처 후 현재 프로젝트 스택에 맞게 스캐폴딩
-argument-hint: "<url> [<url2>...] [--name=<feature>] [--mo-only] [--pc-only] [--ignore-robots]"
+argument-hint: "<url> [<url2>...] [--name=<feature>] [--mo-only] [--pc-only] [--ignore-robots] [--no-interact]"
 user-invocable: true
 ---
 
@@ -20,6 +20,7 @@ URL을 받아 **마크업 수준으로 정밀 복제**하고 현재 프로젝트
 /vibe.clone <url> --name=stripe-clone          # 기능 이름 지정 (기본: 호스트명 kebab-case)
 /vibe.clone <url1> <url2> <url3>               # 다중 페이지 클론 (같은 사이트의 여러 경로)
 /vibe.clone <url> --ignore-robots              # robots.txt 무시 (사이트 소유자 허가 있을 때만)
+/vibe.clone <url> --no-interact                # 능동 인터랙션 스윕 끄기 (완전 결정론적·재현 가능 캡처)
 ```
 
 ## Argument Routing
@@ -52,7 +53,9 @@ Phase 0: Setup
 Phase 1: Capture (병렬 — scope에 따라 MO/PC 동시)
   - node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <url> \
       --out=/tmp/{feature}/{bp}/ --viewport={WxH} --bp={mo|pc}
-  - 출력: rendered.html, computed.json, screenshot.png, states.json, asset-map.json, assets/
+  - 출력: rendered.html, computed.json, screenshot.png, states.json, behaviors.json, asset-map.json, assets/
+  - behaviors.json = 능동 인터랙션 스윕(스크롤 시 헤더/내비 변화 diff + 탭 클릭 콘텐츠 스왑 감지).
+    JS로 세팅되는 상태(정적 CSS로는 안 잡힘)를 포착 — 클론 정확도의 핵심. --no-interact 로 비활성화.
 
 Phase 2: Refine (BP마다 독립)
   - node {{VIBE_PATH}}/hooks/scripts/clone-refine.js \
@@ -88,7 +91,7 @@ Phase 5: Pixel Verification (P1=0까지 루프 — clone SKILL.md 규칙)
 
 ```
 /tmp/{feature}/                  # 작업 디렉토리 (산출물 원본)
-  ├── mo/, pc/                   # rendered.html, computed.json, screenshot.png, states.json, sections.json, assets/
+  ├── mo/, pc/                   # rendered.html, computed.json, screenshot.png, states.json, behaviors.json, sections.json, assets/
   └── project-tokens.json        # 기존 프로젝트 토큰 인덱스
 
 ./components/{feature}/          # Claude가 작성한 컴포넌트 (.tsx/.vue/.svelte/.html)
