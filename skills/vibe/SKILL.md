@@ -31,7 +31,7 @@ user-invocable: true
 - **동적 파이프라인**: 의도/입력 종류에 따라 매번 다른 스킬 체인 구성. 미리 정해진 고정 흐름 아님.
 - **무제한 라우팅**: 라우팅 표는 빠른 경로일 뿐 닫힌 화이트리스트가 아니다. 설치된 모든 `vibe.*` 스킬이 라우팅 후보이며, 표에 없는 요구사항도 description 기반 의미 매칭으로 처리한다 (Catch-all).
 - **하네스 정규화 (추론 앞단)**: vibe는 CC(추론)·Codex(직역) 어느 하네스의 암묵적 동작에도 의존하지 않는다. `/vibe`가 모호한 NL을 **명시적·직역 가능한 지시로 먼저 전개**하고, 하위 skill은 모호한 입력을 받지 않는다. 이로써 모든 하네스에서 동일 결과 + CC급 편의를 제공한다. 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
-- **Smart Resume**: `.vibe/{interviews,plans,specs,features}/` 감지하여 "이어서 진행?" 자동 제안.
+- **Smart Resume**: `.vibe/{specs,features}/` 감지하여 "이어서 진행?" 자동 제안 (레거시 `.vibe/{interviews,plans}/` 는 입력 컨텍스트로만 인식).
 - **SPEC 확정 1회 승인 → 루프**: SPEC(Done의 정의 + 수용 기준)을 사용자와 확정하는 것이 유일한 의무적 사람 개입. 승인 후에는 `vibe/rules/loop-contract.md`의 ANCHOR→ACT→JUDGE→RECORD 루프를 게이트 전부 통과할 때까지 자동 반복한다. 루프 종료 = 게이트 통과 또는 stuck 또는 max_iterations 도달.
 - **위임자 역할**: `/vibe` 본인은 코드를 직접 쓰지 않는다. 라우팅·설계·실행 위임만 한다.
 
@@ -56,7 +56,7 @@ user-invocable: true
 
 | 의도 | 신호 | 기본 파이프라인 |
 |---|---|---|
-| **new feature** | "만들어줘", "추가", 신규 아이디어, 입력 없이 빈 호출 | interview → plan → spec → review → run → verify → contract → trace |
+| **new feature** | "만들어줘", "추가", 신규 아이디어, 입력 없이 빈 호출 | spec → run → verify (trace/contract 는 사용자 요청 또는 SPEC 에 API Contract 섹션이 있을 때만) |
 | **figma-driven UI** | figma.com URL, "디자인", 이미지/PDF + UI 단어 | figma-extract → figma-convert → run → verify |
 | **clone existing UI** | 일반 웹사이트 URL + "비슷한", "클론", "이런 느낌" | clone → run → verify |
 | **resume in-progress** | feature name + `.vibe/specs/{name}.md` 존재 | (resume 지점부터) |
@@ -92,18 +92,17 @@ user-invocable: true
 .vibe/.last-feature 존재 → 직전 feature 이름 추출
 .vibe/specs/{feature}/ 또는 .vibe/specs/{feature}.md 존재 → spec 단계 완료
 .vibe/features/{feature}/ 또는 .vibe/features/{feature}.feature 존재 → feature 단계 완료
-.vibe/plans/{feature}.md 존재 → plan 단계 완료
-.vibe/interviews/{feature}.md 존재 → interview 단계 완료
+.vibe/plans/{feature}.md · .vibe/interviews/{feature}.md 존재 → 레거시 아티팩트 (구버전) — spec 패스의 입력 컨텍스트로만 사용, 재생성 금지
 ```
 
 감지된 진행 상태가 있으면 사용자에게 명시:
 
 ```
 🔍 진행 중인 작업 감지: "login"
-   ✅ interview · ✅ plan · ✅ spec · ⏳ review
+   ✅ spec · ⏳ run
 
-이어서 review 부터 진행할까요? 아니면 새 작업?
-[1] 이어서 review
+이어서 run 부터 진행할까요? 아니면 새 작업?
+[1] 이어서 run
 [2] 새 작업 (위 요구사항으로)
 [3] 취소
 ```
@@ -126,32 +125,21 @@ Input: 자연어 ("패럴랙스 웹사이트 만들어줘")
 Resume: 없음 (신규)
 Keywords: 없음
 
-Phase 1: /vibe.spec → interview → plan → spec → review
+Phase 1: /vibe.spec → 단일 패스 SPEC + 승인 (유일한 의무 게이트)
 Phase 2: /vibe.figma → UI 디자인 트랙 (type=website 감지)
 Phase 3: /vibe.run  → 구현
 Phase 4: /vibe.verify → 검증
-Phase 5: /vibe.contract → API 계약 검증
-Phase 6: /vibe.trace → RTM 출력
 
-예상: 6 phase, 중단 게이트 2회 (interview 후, plan 후)
+예상: 4 phase, 사람 개입 1회 (SPEC 승인)
 ```
 
-### Phase 4: 승인 게이트
+설계된 파이프라인은 요약 출력 후 바로 실행한다 — **별도의 파이프라인 승인 게이트는 없다.** 유일한 의무적 사람 개입은 spec 단계 안의 SPEC 확정 승인이다 (loop-contract SSOT).
 
-```
-위 파이프라인으로 진행할까요?
-[1] 진행
-[2] 수정 (어느 phase 빼거나 추가)
-[3] 취소
-```
-
-**Skip 조건:**
-- `automationLevel: autonomous` 설정 (`.vibe/config.json`) 또는 `ultrawork`/`ulw` 별칭 → SPEC 승인 게이트만 skip, 루프는 정상 동작
+**SPEC 승인 skip 조건:**
+- `automationLevel: autonomous` 설정 (`.vibe/config.json`) 또는 `ultrawork`/`ulw` 별칭 → SPEC 승인 게이트 skip, 루프는 정상 동작
 - `--max-iter 1` 또는 `quick` 별칭 → 1회 시도 후 종료
 
-> 참고: Phase 4의 승인 게이트는 **파이프라인 설계 승인**이다. SPEC 확정 시점의 승인(loop-contract의 "유일한 의무 개입")과 구별된다.
-
-### Phase 5: 체인 실행
+### Phase 4: 체인 실행
 
 승인된 파이프라인을 순차 호출:
 
@@ -166,18 +154,18 @@ Phase 6: /vibe.trace → RTM 출력
 ```
 
 각 phase 종료 후 JUDGE 단계:
-- 게이트 통과 (P1=0 ∧ verifyPassed) → 루프 종료, Phase 6 보고
+- 게이트 통과 (P1=0 ∧ verifyPassed) → 루프 종료, Phase 5 보고
 - 게이트 미통과 → RECORD(run-ledger + loop-history.jsonl) 후 다음 ANCHOR로
 - stuck(연속 2회 동일 findings 해시) → `automationLevel: confirm`이면 사용자 질문; `autonomous`이면 TODO 기록 후 루프 종료
 - max_iterations(기본 10) 도달 → 잔여를 인박스로 이월
 
-### Phase 6: 종료 보고
+### Phase 5: 종료 보고
 
 ```
 ✅ /vibe 완료
 
 실행 파이프라인:
-  ✅ /vibe.spec   (interview + plan + spec + review)
+  ✅ /vibe.spec   (단일 패스 SPEC + 승인)
   ✅ /vibe.figma  (UI 디자인 트랙)
   ✅ /vibe.run    (구현)
   ✅ /vibe.verify (검증 — 9/9 통과)
@@ -290,13 +278,10 @@ Phase 6: /vibe.trace → RTM 출력
 [Phase 3: 파이프라인 설계]
 ...
 
-[Phase 4: 승인 게이트]
-사용자 응답 대기...
+[Phase 4: 실행]
+... (SPEC 승인은 spec 단계 내부의 1회 게이트)
 
-[Phase 5: 실행]
-...
-
-[Phase 6: 종료 보고]
+[Phase 5: 종료 보고]
 ...
 ```
 

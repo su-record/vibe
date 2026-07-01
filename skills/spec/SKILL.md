@@ -1,887 +1,116 @@
 ---
 name: spec
-description: PTCF 구조 SPEC 한 문서 작성 — parallel research (GPT/Antigravity/Claude agents), ambiguity scan, 100-point quality gate. plan 파일 입력 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 생성.
-when_to_use: vibe.spec orchestrator의 Phase 3에서 호출. 직접 호출 금지 — /vibe.spec 사용.
+description: 단일 패스 SPEC 작성 본체 — 자연어 요구사항(+첨부) → 필요할 때만 인라인 명확화 질문 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 를 한 번에 생성 → 1회 셀프 리뷰 → SPEC 승인(유일한 의무 게이트).
+when_to_use: /vibe.spec 진입점 또는 /vibe 파이프라인의 spec 단계에서 호출. 직접 호출 금지 — /vibe.spec 사용.
 user-invocable: false
 tier: core
-chain-next: [spec-review]
 ---
 
-# vibe.spec — Specification Agent
+# spec — Single-Pass SPEC
 
-Create a SPEC document (Specification Agent).
+자연어 요구사항 하나를 받아 **한 번의 패스로** 실행 가능한 SPEC을 만든다. 별도의 interview → plan → review 단계는 없다 — 질문이 필요하면 이 패스 안에서 인라인으로 묻고, 리뷰는 셀프 리뷰 1회로 끝낸다. 완성된 SPEC의 승인이 loop-contract 가 정의하는 **유일한 의무적 사람 개입 지점**이다.
 
-## Usage
+> 루프 시맨틱 SSOT: `vibe/rules/loop-contract.md`. SPEC = ANCHOR 아티팩트, Done Criteria = JUDGE 게이트.
 
-```
-/vibe.spec "feature-name"                    # Conversation mode (requirements gathering)
-/vibe.spec "feature-name" ultrawork          # Auto: SPEC → Review → Implementation
-/vibe.spec "docs/login-prd.md"               # File path input (auto-detected)
-/vibe.spec + 📎 file attachment              # Use attached file
-```
+## Input
 
-### ultrawork Mode
-
-When `ultrawork` (or `ulw`) is included, automatically chains:
-
-```
-/vibe.spec "feature" ultrawork
-    ↓
-[1] SPEC Creation (this command)
-    ↓
-[2] Auto: Load skill `spec-review` (chain-next from this skill)
-    ↓
-[3] Auto: /vibe.run "{feature}" ultrawork
-```
-
-**No manual intervention between steps.**
-
-> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
-
-## Input Mode Detection (Auto-detect)
-
-**Input priority:**
-
-```
-1. Attachment exists? → Use attached file
-2. Argument is file path? (existence check) → Read file
-3. Otherwise → Conversation mode (start with feature name)
-```
-
-| Input | Result |
-|-------|--------|
-| 📎 Attached file | → Analyze attached file |
-| File path (exists) | → Read file (Read tool) |
-| Feature name | → Start conversation mode |
-
-**All supported files:**
-- Text: `.md`, `.txt`, `.rst`, `.html`, `.json`, `.yaml`, etc.
-- Documents: `.pdf` (page-by-page analysis)
-- Images: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`, etc.
-- Notebooks: `.ipynb` (Jupyter)
-- **All formats Claude can read**
-
-**File input mode flow:**
-
-```
-/vibe.spec "docs/login-prd.md"
-
-📄 File loaded: docs/login-prd.md (2.3KB)
-
-📋 Parsed requirements:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Feature: Login
-  - Email/password login
-  - Social login (Google, Apple)
-  - Password recovery
-  - Auto login persistence
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-❓ Additional confirmation needed:
-  1. Session expiration time? (default: 24 hours)
-  2. Allow concurrent login?
-  3. Confirm tech stack? (current: React + Supabase)
-
-User: 1 hour, disallow, confirm
-
-✅ Requirements confirmed → Run research → Generate SPEC → Review
-```
-
-**Supported file formats:**
-
-| Format | Extension | Purpose |
-|--------|-----------|---------|
-| Markdown | `.md` | PRD, planning docs, README |
-| Text | `.txt` | Requirements list |
-| PDF | `.pdf` | Planning docs, design documents |
-| Image | `.png`, `.jpg`, `.jpeg`, `.webp` | Wireframes, UI design, screenshots |
-
-**Image input analysis:**
-
-When image files (`.png`, `.jpg`, `.jpeg`, `.webp`) are provided as input, analyze them using the best available method:
-
-- **Antigravity Enabled**: `llm-orchestrate.js antigravity analyze-image` (Antigravity Flash - best image recognition)
-- **Antigravity Disabled**: Claude Opus Read tool (built-in multimodal, existing behavior)
-
-**Antigravity enabled - analyze via llm-orchestrate.js:**
-
-```bash
-# [LLM_SCRIPT] = {{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js
-node "[LLM_SCRIPT]" antigravity analyze-image "./designs/login-wireframe.png" "Analyze this UI design image. Identify all UI elements, layout structure, colors, typography, and component hierarchy. Output a structured breakdown."
-```
-
-Parse the JSON result: `{ success: true, analysis: "..." }` → use `analysis` field content.
-
-If `success: false`, fall back to Claude Read tool.
-
-**Antigravity disabled - analyze via Claude Read tool:**
-
-Use the Read tool directly on the image file. Claude can read images natively.
-
-**Image input example:**
-```
-/vibe.spec "designs/login-wireframe.png"
-
-🖼️ Image analysis: designs/login-wireframe.png
-   (via Antigravity Flash / Claude Opus)
-
-📋 Detected UI elements:
-  - Email input field
-  - Password input field
-  - "Login" button
-  - "Forgot password" link
-  - Social login buttons (Google, Apple)
-
-❓ Confirmation needed:
-  1. Feature name? (e.g., "login")
-  2. Additional requirements?
-
-→ Generate SPEC
-```
-
-## Rules Reference
-
-**Must follow `~/.claude/vibe/rules/` (global):**
-- `core/development-philosophy.md` - Surgical precision, simplicity
-- `core/quick-start.md` - Korean first, DRY, SRP
-- `core/communication-guide.md` - Communication principles
-
-## Description
-
-Collect requirements through conversation with the user and create an **AI-executable PTCF structured SPEC document**.
-
-> **PTCF**: Persona, Task, Context, Format - Google Antigravity prompt optimization framework
-
-## External LLM Integration (GPT/Antigravity)
-
-When GPT/Antigravity are enabled, they are automatically utilized during SPEC creation:
-
-```
-/vibe.spec "feature"
-      ↓
-[Claude] Draft SPEC
-      ↓
-[Parallel Research] GPT + Antigravity + Claude agents (8 parallel)
-      ↓
-[SPEC Review] GPT + Antigravity parallel review
-      ↓
-[Claude] Finalize SPEC
-```
-
-**Setup:**
-```bash
-vibe gpt key <key>      # Enable GPT
-vibe antigravity key <key>   # Enable Antigravity
-vibe status         # Check current settings
-```
+| 입력 | 처리 |
+|---|---|
+| 자연어 요구사항 | 그대로 SPEC 패스의 주 입력 |
+| 📎 첨부 (md/txt/pdf/이미지 등) | Read 도구로 분석 후 요구사항에 병합 |
+| 파일 경로 인자 (PRD 등) | 존재 확인 후 Read — 첨부와 동일 취급 |
+| **레거시 아티팩트** `.vibe/interviews/{feature}.md`, `.vibe/plans/{feature}.md` | 존재하면 **입력 컨텍스트로만** 읽는다. 절대 요구하거나 재생성하지 않는다 — 없어도 정상 경로 |
 
 ## Process
 
-### 0. Git Branch Setup (MANDATORY - Execute First!)
+### 1. Git branch + pointer
 
-> ⚠️ **CRITICAL: You MUST execute this step FIRST before anything else!**
-> This is NOT optional documentation - you must RUN these git commands.
+- `git branch --show-current` — `main`/`master` 이면 `git checkout -b feature/{feature-name}` (소문자·하이픈). feature 브랜치면 그대로 진행.
+- feature 이름 확정 즉시 `.vibe/.last-feature` 에 이름 한 줄 기록 (값이 같으면 no-op).
 
-**Step 0 is BLOCKING - do not proceed to Step 1 until branch is ready.**
+### 2. Project context
 
-**Execute these commands using Bash tool:**
-
-```bash
-# 1. Check current branch
-git branch --show-current
-```
-
-**Then based on result:**
-
-| Current Branch | Action |
-|----------------|--------|
-| `main` or `master` | **MUST** create feature branch: `git checkout -b feature/{feature-name}` |
-| `feature/*` | Ask user: "Continue on this branch or create new?" |
-| Other | Ask user to confirm |
-
-**Example execution:**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌿 GIT BRANCH SETUP
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Current branch: main
-
-Creating feature branch...
-$ git checkout -b feature/login-page
-
-✅ Switched to new branch: feature/login-page
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Branch naming rules:**
-- Convert to lowercase: `Login Page` → `login-page`
-- Replace spaces with hyphens
-- Prefix with `feature/`
-- Example: `feature/passkey-auth`, `feature/dark-mode`
-
-**`.last-feature` pointer update** (immediately after Git branch setup):
-
-```
-Write ".vibe/.last-feature" ← feature-name (single line)
-Execute at the point when the feature name is finalized.
-No-op if the value is already the same.
-```
-
-### 1. Project Analysis
-
-**Existing project** (`vibe init`):
-- Reference `CLAUDE.md` file (tech stack)
-- **Delegate codebase analysis to explorer agent** — do NOT read project files in main session:
+- `.vibe/config.json` 읽기 — `references.languages[]` 의 스택 가이드, `stacks` 확인.
+- 기존 코드 파악이 필요하면 explorer agent 에 위임 (main session 에서 프로젝트 파일을 훑지 않는다):
 
 ```text
 Task(subagent_type="explorer-low",
-  prompt="Analyze project structure: package.json, pyproject.toml, pubspec.yaml, go.mod.
-  Find existing implementations related to [FEATURE]. Return: tech stack, relevant files, patterns used.
-  Keep summary under 200 tokens.")
+  prompt="Find existing implementations related to [FEATURE]. Return: tech stack, relevant files, patterns. Under 200 tokens.")
 ```
 
-**New project** (`vibe init <project-name>`):
-- Suggest tech stack (2-3 options)
+### 3. Clarify — 진짜 모호할 때만
 
-### 2. Collect Requirements via Conversation
+별도 인터뷰 단계가 아니다. 요구사항·첨부·레거시 아티팩트·코드베이스 컨텍스트로 답을 합리적으로 정할 수 있으면 **묻지 않는다**. 다음 조건을 모두 만족할 때만 질문한다:
 
-**Principles:**
-- Ask **one question at a time**
-- Present options **with numbers** + "Feel free to describe in your own words"
-- **Natural conversation** without fixed order
+- 답에 따라 Done Criteria 나 구현 방향이 실제로 갈라진다 (인증 방식, 데이터 모델의 필수 필드, 외부 연동 여부 등)
+- 합리적 기본값을 SPEC 의 Assumptions 로 명시하는 것으로 대체할 수 없다
 
-**Required confirmations:**
-- Purpose (Why): Why is it needed?
-- User (Who): Who will use it?
-- Feature scope (What): What features are needed?
-- Tech stack: Confirm existing stack or suggest new
-- Design reference: UI/UX to reference
+질문할 때는 **한 번에 묶어서** (번호 목록, 최대 5개), 각 질문에 제안 기본값을 붙인다. `automationLevel: autonomous` 면 질문 없이 기본값을 채택하고 전부 SPEC 의 Assumptions 섹션에 기록한다.
 
-### 2.1 Critical Requirements Confirmation (askUser) - v2.6.1
+사소한 값(타임아웃, 페이지 크기, 재시도 횟수 등)은 묻지 말고 상식적 기본값을 채택 + Assumptions 에 기록.
 
-**🚨 IMPORTANT: Use `askUser` tool for CRITICAL requirements that must not be missed**
+### 4. Write SPEC — one pass
 
-After initial conversation, use the structured `askUser` tool for:
-- 🔐 Authentication: method, MFA, password policy
-- 🛡️ Security: rate limiting, session management
-- ⏱️ Session: duration, concurrent login policy
-- 📊 Data Model: required fields, relationships
+`vibe/templates/spec-template.md` 구조로 `.vibe/specs/{feature-name}.md` 를 작성한다. 핵심 요건:
 
-**When to use askUser vs conversation:**
+- **Overview / Goal** — 무엇을, 왜. 1-3 문장.
+- **Done Criteria** — 결정론적 게이트만. 각 항목은 "명령/관찰로 pass·fail 판정 가능"해야 한다 (테스트 exit code, 빌드 성공, 특정 동작 관찰). "잘 동작한다" 류 서술 금지 — 이것이 루프의 JUDGE 입력이 된다.
+- **Scenarios** — Given-When-Then. Happy path + 주요 edge case. 각 시나리오는 Done Criteria 중 하나에 매핑.
+- **Out of Scope** — 이번에 하지 않는 것을 명시 (비어 있으면 스코프 팽창 신호).
+- **Assumptions** — 3단계에서 채택한 기본값 전부.
+- **API Contract** (해당 시에만) — 엔드포인트/요청/응답 형태. 이 섹션이 있으면 이후 `/vibe.contract` 가 drift 를 검사한다.
 
-| Scenario | Method |
-|----------|--------|
-| Exploratory (feature scope, style) | Natural conversation |
-| **Critical** (auth, security, session) | `askUser` tool |
-| Optional (performance, integration) | Natural conversation |
+이어서 `.vibe/features/{feature-name}.feature` 를 생성한다: 시나리오 섹션을 gherkin 으로 변환 (Done Criteria ↔ Scenario 매핑 유지). `/vibe.run` 이 이 파일을 구현·검증 단위로 사용한다.
 
-**Usage**: read `references/askuser-examples.md` in this skill directory for `askUser`/`askUserQuick` invocation code, example output format, and `parseUserResponse` response parsing.
+**Large scope** (5+ phases 또는 15+ 신규 파일 또는 4+ 독립 기능): 폴더 분할 — `.vibe/specs/{feature}/_index.md` + `phase-N-{name}.md`, feature 파일도 동일 구조로 매칭. 조용히 분할하고 결과만 보고한다.
 
-**Available categories:**
-- `authentication`: Auth methods, MFA
-- `security`: Password policy, rate limiting
-- `session`: Session expiry, concurrent login
-- `data_model`: User profile fields
-- `performance`: Response time targets
-- `integration`: External service integration
+**파일 규칙**: `.vibe/` 밖에 파일을 만들지 않는다. SPEC 파일마다 매칭되는 Feature 파일이 있어야 한다.
 
+### 5. Self-review — once
 
-**ultrawork mode:**
-- askUser is **skipped** in ultrawork mode
-- Uses default values from templates automatically
+작성 직후, 아래 체크리스트로 자기 SPEC 을 **1회** 점검하고 걸리는 항목을 즉시 고친다. 외부 LLM 리뷰 없음, 수렴 루프 없음 — 한 번 고치면 끝.
 
-### 2.5. Reference Documents via config.json (MANDATORY after tech stack confirmed)
+- [ ] 모든 Done Criteria 가 명령/관찰로 판정 가능한가 (모델 자기 보고가 아닌)
+- [ ] 모든 시나리오가 Done Criteria 에 매핑되는가 (고아 시나리오 없음)
+- [ ] 수치가 필요한 곳에 수치가 있는가 (제한·타임아웃·크기 — 없으면 기본값 + Assumptions)
+- [ ] Out of Scope 가 비어 있지 않은가
+- [ ] 요구사항에 있던 것 중 SPEC 에서 빠진 것이 없는가
 
-**🚨 CRITICAL: Read config.json references IMMEDIATELY after tech stack is confirmed**
+### 6. Approval — the single gate
 
-Reference documents are automatically generated in `config.json` based on the stack detected during `vibe init`:
-
-```json
-// .vibe/config.json
-{
-  "language": "ko",
-  "stacks": [
-    { "type": "typescript-react", "path": "package.json" }
-  ],
-  "references": {
-    "rules": [
-      "~/.claude/vibe/rules/code-quality.md",
-      "~/.claude/vibe/rules/error-handling.md",
-      "~/.claude/vibe/rules/security.md"
-    ],
-    "languages": [
-      "~/.claude/vibe/languages/typescript-react.md"
-    ],
-    "templates": [
-      "~/.claude/vibe/templates/spec-template.md",
-      "~/.claude/vibe/templates/feature-template.md",
-      "~/.claude/vibe/templates/constitution-template.md"
-    ]
-  }
-}
-```
-
-**Workflow:**
-
-1. Read `.vibe/config.json`
-2. Extract `references.languages[]` paths
-3. Read each language document for stack-specific guidelines
-
-**Example:**
-```bash
-# 1. Check references in config.json
-Read .vibe/config.json
-
-# 2. Reference documents specified in references.languages
-Read ~/.claude/vibe/languages/typescript-react.md
-```
-
-**Important:**
-
-- No manual mapping needed - config.json contains all reference paths
-- `config.json.references` is automatically referenced when running `/vibe.run`
-- Not copied to project (referenced from global package)
-
-### 2.9 Research Cache Check (BEFORE step 3)
-
-Before spawning any research agents, check for a prior persisted dataset:
-
-```bash
-# Slug = kebab-case of the feature/topic, max 50 chars
-ls .vibe/research/<slug>/paper.md 2>/dev/null
-```
-
-**If `paper.md` exists:**
-1. Read `.vibe/research/<slug>/paper.md`
-2. Read `.vibe/research/<slug>/awesome-list.md` (if present)
-3. Inject the **Findings**, **Recommendation**, and **Security considerations** sections verbatim into SPEC Context, prefixed with `> Source: .vibe/research/<slug>/paper.md (cached {{FILE_MTIME}})`
-4. **Skip step 3** (parallel research) entirely — do not re-run GPT/Antigravity/Claude agents
-5. Print: `✅ Research cache hit: <slug> (saved ~30s of LLM calls)`
-
-**Cache invalidation:**
-- User passes `--refresh-research` → delete dir, rerun step 3 from scratch
-- `paper.md` mtime older than 30 days → warn the user, ask to refresh or reuse
-- `stack` in `paper.md` frontmatter differs from current stack → auto-refresh
-
-**If `paper.md` does NOT exist:**
-Proceed to step 3. After step 3 completes, the synthesizer **must** write the 3 artifacts (see `parallel-research/orchestrator.md` Phase 5) so the next `/vibe.spec` run on this topic hits the cache.
-
-### 3. Parallel Research (v2.5.0) - MANDATORY AFTER requirements confirmed
-
-**🚨🚨🚨 ABSOLUTE RULES FOR RESEARCH PHASE 🚨🚨🚨**
-
-**STOP! Before doing ANY research, read this carefully:**
-
-1. **DO NOT** use Task tool to spawn research agents
-2. **DO NOT** use context7 MCP directly for research
-3. **DO NOT** use WebSearch tool directly for research
-4. **YOU MUST** use Bash tool to call llm-orchestrate.js directly
-
-**🚨🚨🚨 CRITICAL: NO FILE CREATION DURING RESEARCH 🚨🚨🚨**
-
-5. **DO NOT** create any files in project root during research
-6. **DO NOT** create SECURITY_*.md, RESEARCH_*.md, SUMMARY_*.md files
-7. **DO NOT** use Write tool during research phase
-8. **ALL research results** must be returned as text output only
-9. **Files are ONLY created** in Step 4 (SPEC) and Step 5 (Feature) in `.vibe/` directory
-
-**When to trigger:**
-1. ✅ Feature type decided (e.g., "passkey authentication")
-2. ✅ Tech stack confirmed (e.g., "React + Supabase")
-3. ✅ Language guide copied (step 2.5)
-4. ✅ Core requirements collected
-
-**→ IMMEDIATELY run these 6 Bash commands IN PARALLEL (all at once):**
-
-**Step 0: Script path:**
-- `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
-
-**Run all 4 in PARALLEL (each as separate Bash tool call):**
-```bash
-# 1. GPT: Best practices (codex — code review & analysis)
-node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
-
-# 2. GPT: Security (codex — code review & analysis)
-node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Security vulnerabilities for [FEATURE] with [STACK]. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
-
-# 3. Antigravity: Best practices
-node "[LLM_SCRIPT]" antigravity orchestrate-json "Best practices for [FEATURE] with [STACK]. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
-
-# 4. Antigravity: Security
-node "[LLM_SCRIPT]" antigravity orchestrate-json "Security advisories for [FEATURE] with [STACK]. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
-```
-
-**Concrete example - run all 4 in parallel:**
-```bash
-# GPT best practices (codex — code review & analysis)
-node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: architecture patterns, code conventions. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
-
-# GPT security (codex — code review & analysis)
-node "[LLM_SCRIPT]" gpt-codex orchestrate-json "Security vulnerabilities for passkey authentication with React, Supabase. Focus: CVE database, known exploits. Return JSON: {vulnerabilities: [], mitigations: [], checklist: []}"
-
-# Antigravity best practices
-node "[LLM_SCRIPT]" antigravity orchestrate-json "Best practices for passkey authentication with React, Supabase. Focus: latest trends, framework updates. Return JSON: {patterns: [], antiPatterns: [], libraries: []}"
-
-# Antigravity security
-node "[LLM_SCRIPT]" antigravity orchestrate-json "Security advisories for passkey authentication with React, Supabase. Focus: latest patches, recent incidents. Return JSON: {advisories: [], patches: [], incidents: []}"
-```
-
-**ALSO run Claude research agents in parallel using Task tool:**
-
-| Claude Agent | Role | Source |
-|--------------|------|--------|
-| `best-practices` | Best practices for [feature] + [stack] | WebSearch |
-| `framework-docs` | Latest docs via context7 | context7 MCP |
-| `codebase-patterns` | Similar patterns in existing codebase | Glob, Grep |
-| `security-advisory` | Security advisories for [feature] | WebSearch |
-
-**Total: 4 GPT/Antigravity calls (Bash) + 4 Claude agents (Task) = 8 parallel research tasks**
-
-**🚨 GPT/Antigravity MUST be called via Bash with llm-orchestrate.js! 🚨**
-
-#### 3.0.1 Agent Teams — Research Collaboration
-
-> **Team definition**: See `agents/teams/research-team.md`
-> Settings: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` global — auto-configured by postinstall)
-
-**Discussion results are reflected in the SPEC's Context section.**
-
-#### 3.1 Result Merge Rules
-
-| Area | Merge Strategy |
-|------|----------------|
-| Best Practices | Deduplicate, keep most detailed |
-| Security | ALL included (no dedup for safety) |
-| Libraries | Consensus recommendations |
-
-**IMPORTANT:**
-- ❌ DO NOT skip research step
-- ❌ DO NOT ask user "should I run research?"
-- ✅ ALWAYS run after requirements confirmed
-- ✅ Show "Running parallel research (Claude + GPT + Antigravity)..." message
-- ✅ Include all agent + LLM results in SPEC Context
-- ✅ Run all 4 Bash LLM calls in parallel + 4 Task agents in parallel
-
-**Research results are reflected in SPEC's Context section.**
-
-### 3.2 UI/UX Design Intelligence (Auto-triggered)
-
-> **Condition**: Auto-executes when UI/UX keywords are present in the SPEC context (website, landing, dashboard, app, e-commerce, portfolio, SaaS, mobile app, web app, UI, UX, frontend, design)
-> **Disable**: Set `"uiUxAnalysis": false` in `.vibe/config.json`
-
-**When UI/UX keywords are detected, run 3 agents sequentially in parallel with research:**
+SPEC 요약(Goal, Done Criteria, 시나리오 수, Out of Scope, 열린 Assumptions)을 제시하고 승인을 받는다:
 
 ```
-[Parallel Research] GPT + Antigravity + Claude agents
-        ↓ (concurrent execution)
-[UI/UX Intelligence]
-  ① ui-industry-analyzer (Haiku) → industry analysis + design strategy
-        ↓
-  ②③ parallel execution:
-    ② ui-design-system-gen (Sonnet) → generate MASTER.md
-    ③ ui-layout-architect (Haiku) → layout design
+📋 SPEC 준비 완료: {feature-name}
+   .vibe/specs/{feature-name}.md · .vibe/features/{feature-name}.feature
+
+   Goal: {1줄}
+   Done Criteria: {N}개 (전부 결정론 게이트)
+   Scenarios: {M}개 · Out of Scope: {K}항목
+   Assumptions: {요약 또는 "없음"}
+
+승인하면 이 SPEC 이 루프의 Done 정의가 됩니다.
+[1] 승인 → 구현 진행   [2] 수정 요청   [3] 중단
 ```
 
-**How to execute:**
-
-1. **① ui-industry-analyzer** — Run as Task(haiku) agent:
-```text
-Task(subagent_type="ui-industry-analyzer",
-  prompt="Analyze product: [USER_DESCRIPTION]. Use core_ui_search to detect category, style priority, color mood, typography mood. Save result to .vibe/design-system/{project}/analysis-result.json")
-```
-
-2. **②③ parallel execution** — Using ①'s result as input:
-```text
-# ② Generate design system (Sonnet)
-Task(subagent_type="ui-design-system-gen",
-  prompt="Generate design system from analysis-result.json for project '{project}'. Use core_ui_search for style/color/typography, then core_ui_generate_design_system and core_ui_persist_design_system.")
-
-# ③ Layout design (Haiku) — parallel execution
-Task(subagent_type="ui-layout-architect",
-  prompt="Design layout from analysis-result.json for project '{project}'. Use core_ui_search for landing patterns and dashboard layout.")
-```
-
-3. **Inject results into SPEC Context:**
-```markdown
-### Design System (Auto-generated)
-- Category: {① category}
-- Style: {① style_priority}
-- MASTER.md: .vibe/design-system/{project}/MASTER.md
-- Layout: {③ pattern + sections}
-```
-
-### 3.9 Persist Research Cache (AFTER research completes, BEFORE SPEC write)
-
-> The "no Write during research" rule from step 3 does **not** apply here — research is done; artifacts are safe to persist.
-
-After parallel research + UI/UX intelligence complete, before writing the SPEC, save the merged research to `.vibe/research/<slug>/`:
-
-1. Compute slug: kebab-case of feature name, max 50 chars
-2. Write **three files** using templates from `parallel-research/templates/`:
-   - `.vibe/research/<slug>/synthesis.md` — raw merged findings (all agent outputs)
-   - `.vibe/research/<slug>/awesome-list.md` — curated links/repos/patterns (every entry needs a one-line "why"; drop entries without one)
-   - `.vibe/research/<slug>/paper.md` — structured survey (Abstract → Background → Method → Findings → Recommendation → Security → References)
-3. Include a frontmatter header in `paper.md` with a `stack:` field so step 2.9 can detect stack drift
-4. If the directory already exists (user passed `--refresh-research`), overwrite
-
-This makes the next `/vibe.spec` (or future `/vibe.research`) invocation on the same topic hit the cache at step 2.9.
-
-### 4. Write SPEC Document (PTCF Structure)
-
-#### 4.0 Large Scope Detection & Auto-Split (MANDATORY)
-
-**🚨 CRITICAL: Automatically split SPEC when scope is large**
-
-**❌ DO NOT ask user for confirmation - auto-split silently**
-
-**Detection criteria (ANY triggers split):**
-
-| Criteria | Threshold |
-|----------|-----------|
-| Phases | 5+ phases |
-| Files to create | 15+ files |
-| Platforms | 2+ platforms |
-| Major features | 4+ distinct features |
-
-**Auto-split output (SPEC + Feature files must match):**
-
-```
-.vibe/specs/{feature-name}/
-├── _index.md           # Master SPEC
-├── phase-1-setup.md
-├── phase-2-core.md
-└── ...
-
-.vibe/features/{feature-name}/
-├── _index.feature      # Master Feature
-├── phase-1-setup.feature
-├── phase-2-core.feature
-└── ...
-```
-
-**🚨 CRITICAL: Each SPEC phase file MUST have a matching Feature file**
-
-**Master SPEC / Master Feature**: copy the `Master SPEC (_index.md)` and `Master Feature (_index.feature)` templates from `references/templates.md`.
-
-**Small scope (default):**
-
-Create `.vibe/specs/{feature-name}.md` with the **Single SPEC template** in `references/templates.md` — PTCF structure (Persona / Context / Task / Constraints / Output Format / Acceptance Criteria) + status frontmatter (status/currentPhase/totalPhases/createdAt/lastUpdated).
-
-### 5. Create Feature File (BDD) - Required
-
-**🚨 CRITICAL: Feature files MUST match SPEC file structure**
-
-| SPEC Structure | Feature Structure |
-|----------------|-------------------|
-| Single file (`{feature}.md`) | Single file (`{feature}.feature`) |
-| Split (`{feature}/_index.md` + phases) | Split (`{feature}/_index.feature` + phases) |
-
-#### 5.1 Single File (Small Scope)
-
-Create `.vibe/features/{feature-name}.feature`:
-
-**Creation rules:**
-1. Convert each SPEC Acceptance Criteria → one Scenario
-2. Include Happy Path (normal case) + Edge Case (exception case)
-3. Follow Given-When-Then format
-
-Use the **Single Feature template** in `references/templates.md` — User Story + gherkin Given-When-Then scenarios + Coverage table mapping each scenario to a SPEC AC.
-
-#### 5.2 Split Files (Large Scope)
-
-When SPEC is split into phases, Feature files MUST also be split:
-
-```
-.vibe/features/{feature-name}/
-├── _index.feature        # Master: links to all phase features
-├── phase-1-setup.feature # Scenarios for phase-1-setup.md
-├── phase-2-core.feature  # Scenarios for phase-2-core.md
-└── ...
-```
-
-**Phase Feature file structure**: use the **Phase Feature template** in `references/templates.md`.
-
-### 6. Ambiguity Scan - Required
-
-After creating SPEC draft, **must perform systematic ambiguity check**.
-
-#### 6.1 Mandatory Check Categories
-
-| Category | Check Items | Red Flags |
-|----------|-------------|-----------|
-| **Functional Scope** | Missing features, unclear behavior | "etc.", "other", "if needed" |
-| **Data Model** | Undefined entities, relationships | Undefined types, missing fields |
-| **Non-Functional** | Performance, security requirements | Performance requirements without numbers |
-| **Edge Cases** | Boundary conditions, errors | 0 failure scenarios |
-| **Integration Points** | External APIs, contracts | API version/endpoint undefined |
-| **User Input** | Validation rules, limits | Input limits not specified |
-| **State Management** | State transitions, persistence | Missing state diagram |
-
-#### 6.2 Forbidden Ambiguous Terms
-
-If the following terms exist in SPEC, **clarification is mandatory**:
-
-| Forbidden Term | Replacement Method |
-|----------------|-------------------|
-| "appropriately", "properly" | Provide specific criteria (e.g., "within 3 seconds") |
-| "quickly", "rapidly" | Specify with numbers (e.g., "under 100ms") |
-| "various", "multiple" | List specific items |
-| "etc.", "other" | Specify complete list or limit scope |
-| "if needed", "depending on situation" | Specify conditions (e.g., "when credits < 10") |
-| "later", "in the future" | Explicitly exclude from current scope |
-
-#### 6.3 Check Process
-
-```
-1. Write SPEC draft
-      ↓
-2. Auto-scan for forbidden terms
-      ↓
-3. Review checklist by category
-      ↓
-4. List discovered ambiguities
-      ↓
-5. Auto-fixable items → Fix immediately
-   Needs user confirmation → Ask question
-      ↓
-6. Re-verify (max 2 rounds — remaining ambiguities → user confirmation or TODO)
-```
-
-#### 6.4 Auto-Fix for Common Ambiguities
-
-| Ambiguity Type | Auto-Fix Method |
-|----------------|-----------------|
-| Timeout undefined | Apply default 30 seconds |
-| Retry count undefined | Apply default 3 retries |
-| Pagination undefined | Apply default 20 items/page |
-| Input length undefined | Text 500 chars, password 8-64 chars |
-| File size undefined | Image 5MB, video 100MB |
-
-#### 6.5 Ambiguity Output Format
-
-```markdown
-## 🔍 Ambiguity Scan Results
-
-### Found Issues: 3
-
-#### 1. Functional Scope
-- ⚠️ "Login failure behavior" not defined
-  → **Auto-fix**: Apply 5-minute lockout after 3 failures
-- ⚠️ "Session expiration handling" unclear
-  → **Question**: Session expiration time? (30min/1hour/24hours)
-
-#### 2. Edge Cases
-- ⚠️ Concurrent login permission undefined
-  → **Question**: Allow concurrent login? (Y/N)
-
-### Auto-fixed: 1
-### Needs clarification: 2
-```
-
-### 7. Quality Validation (Self-Check)
-
-**Must perform self-quality check after SPEC completion**
-
-#### 7.1 Quality Checklist (Required Items)
-
-| Category | Check Item | Weight |
-|----------|------------|--------|
-| **Completeness** | All user flows included in Task | 15% |
-| **Completeness** | All ACs converted to Feature scenarios | 10% |
-| **Clarity** | No ambiguous terms (e.g., "appropriately", "quickly") | 10% |
-| **Clarity** | All numbers/limits specified (e.g., "max 500 chars") | 10% |
-| **Testability** | All ACs are auto-testable | 10% |
-| **Security** | Authentication/authorization requirements defined | 10% |
-| **Security** | Sensitive data handling method specified | 5% |
-| **Error Handling** | Major failure scenarios defined | 10% |
-| **Error Handling** | User error messages specified | 5% |
-| **Performance** | Response time/throughput targets specified | 5% |
-| **Edge Cases** | Boundary condition handling defined | 5% |
-| **Dependencies** | External systems/APIs specified | 5% |
-
-#### 7.2 Quality Score Calculation
-
-```
-Score = Σ(Check item met × Weight) / 100
-
-Grades:
-- 95-100: ✅ EXCELLENT - Ready to start implementation
-- 90-94:  ⚠️ GOOD - Minor improvements required before implementation
-- 80-89:  ⚠️ FAIR - Significant improvements required
-- 0-79:   ❌ POOR - Rewrite required
-```
-
-#### 7.3 Quality Gate (Auto-verification)
-
-**100 points required to complete SPEC draft. Loop until perfect — ask user if auto-fixer hits a wall.**
-
-```
-SPEC writing complete
-      ↓
-[Calculate Quality Score]
-      ↓
-Score < 100? → Show missing items → Auto-fix → Re-evaluate
-      ↓
-Stuck? (score == prev_score)
-  ├─ Interactive: ask user → fill values OR "proceed" OR "abort"
-  └─ ultrawork: record gaps as TODO → proceed
-      ↓
-Score == 100 (or user-approved) → SPEC Draft Complete → Handoff to spec-review skill
-```
-
-#### 7.4 Auto-Fix for Low Score
-
-If score is below 100, attempt automatic fixes:
-
-| Missing Item | Auto-Fix Method |
-|--------------|-----------------|
-| Missing AC | Auto-generate AC based on Task |
-| Numbers not specified | Apply project defaults (e.g., timeout 30s) |
-| Missing error handling | Add common error scenarios |
-| Missing performance targets | Apply industry standard criteria |
-
-### 8. SPEC Draft Complete - Handoff to Review
-
-**🚨 IMPORTANT: GPT/Antigravity review is now a SEPARATE command**
-
-After SPEC draft is complete (score ≥ 95):
-
-**If `ultrawork` mode:**
-- ❌ DO NOT show handoff message
-- ❌ DO NOT ask for confirmation
-- ✅ Immediately load skill `spec-review` with feature `{feature-name}` (chain-next)
-- ✅ After review passes, immediately proceed to `/vibe.run "{feature-name}" ultrawork`
-
-**If normal mode:**
-Output the handoff message:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ SPEC DRAFT COMPLETE: {feature-name}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 SPEC: .vibe/specs/{feature-name}.md
-📋 Feature: .vibe/features/{feature-name}.feature
-📊 Quality Score: {score}/100
-⏱️ Started: {start_time}
-⏱️ Completed: {getCurrentTime result}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ NEXT STEP: Run SPEC review (spec-review skill)
-
-Option 1 (same session):
-  Load skill `spec-review` with feature `{feature-name}`
-  (or natural language: "spec review")
-
-Option 2 (recommended for large context):
-  /new → /vibe.spec "{feature-name}"
-  (Smart Resume will start from Phase 4)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Tip:** New session recommended when context > 50% to ensure review accuracy
-
-## Output (MANDATORY File Creation)
-
-**🚨 CRITICAL: Files MUST be created in these EXACT paths. NO exceptions.**
-
-### Small Scope (Single File)
-
-| File | Path | When |
-|------|------|------|
-| SPEC | `.vibe/specs/{feature-name}.md` | After quality validation (Step 7) |
-| Feature | `.vibe/features/{feature-name}.feature` | Immediately after SPEC |
-
-### Large Scope (Split Files)
-
-| File | Path | When |
-|------|------|------|
-| Master SPEC | `.vibe/specs/{feature-name}/_index.md` | After quality validation |
-| Phase SPEC | `.vibe/specs/{feature-name}/phase-{N}-{name}.md` | Per phase |
-| Master Feature | `.vibe/features/{feature-name}/_index.feature` | After Master SPEC |
-| Phase Feature | `.vibe/features/{feature-name}/phase-{N}-{name}.feature` | Per phase SPEC |
-
-**❌ FORBIDDEN:**
-
-- Creating files in project root (e.g., `feature-name.md`)
-- Creating files outside `.vibe/` directory
-- Skipping file creation
-- Using different file names than feature-name
-- Creating split SPEC without matching split Feature files
-
-**✅ REQUIRED:**
-
-- Use Write tool to create files
-- Verify directories exist (create if needed)
-- Confirm file creation in response
-- **Each SPEC file must have a matching Feature file**
-
-### File Creation Template
-
-**Single file:**
-```
-1. Write .vibe/specs/{feature-name}.md
-2. Write .vibe/features/{feature-name}.feature
-3. Confirm: "✅ Created: specs/{feature-name}.md + features/{feature-name}.feature"
-```
-
-**Split files:**
-```
-1. Write .vibe/specs/{feature-name}/_index.md
-2. Write .vibe/specs/{feature-name}/phase-1-setup.md
-3. Write .vibe/specs/{feature-name}/phase-2-core.md
-4. Write .vibe/features/{feature-name}/_index.feature
-5. Write .vibe/features/{feature-name}/phase-1-setup.feature
-6. Write .vibe/features/{feature-name}/phase-2-core.feature
-7. Confirm: "✅ Created: {N} SPEC files + {N} Feature files"
-```
-
-## Example
-
-Full interview → ambiguity scan → quality gate → review walkthrough: read `references/example-session.md` in this skill directory (load only when you need a concrete end-to-end example).
-
-## Core Tools (Semantic Analysis & Memory)
-
-### Tool Invocation
-All tools are called via:
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
-```
-
-### Recommended Tools for SPEC Creation
-
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| `findSymbol` | Find symbol definitions | Locate existing implementations to reference |
-| `findReferences` | Find all references | Understand how existing code is used |
-| `analyzeComplexity` | Code complexity analysis | Evaluate complexity of code to modify |
-| `saveMemory` | Save important decisions | Store confirmed requirements, design decisions |
-| `recallMemory` | Recall saved memory | Retrieve previous project decisions |
-
-### Example Tool Usage in SPEC Creation
-
-**1. Find existing auth implementation:**
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.findSymbol({symbolName: 'login', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
-```
-
-**2. Save confirmed requirements:**
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.saveMemory({key: 'brick-game-requirements', value: 'Platform: Web, Stack: Phaser.js, Style: Neon', category: 'spec', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
-```
-
-**3. Recall previous decisions:**
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.recallMemory({key: 'brick-game-requirements', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
-```
+- 수정 요청 → 반영 후 재제시 (사용자 주도 반복 — 자동 루프 아님).
+- `automationLevel: autonomous` → 승인 생략, 요약만 출력하고 진행.
+- 승인 후 SPEC 변경은 코드 변경과 같은 커밋으로 (SPEC-First — `vibe.run` 참조).
+
+## Output
+
+| 파일 | 경로 |
+|---|---|
+| SPEC | `.vibe/specs/{feature-name}.md` (또는 분할 폴더) |
+| Feature (BDD) | `.vibe/features/{feature-name}.feature` (또는 분할 폴더) |
+| Pointer | `.vibe/.last-feature` |
+
+승인된 SPEC 은 루프의 ANCHOR 로 쓰인다: `/vibe.run` 이 시나리오 단위로 구현·검증하고, `/vibe.verify` 가 Done Criteria 를 판정해 `.vibe/metrics/run-ledger.json` 의 `verifyPassed` 를 기록한다. 게이트 통과 여부는 항상 run-ledger·테스트 exit code 가 판정한다.
 
 ## Next Step
 
 ```
-/vibe.run "brick-game"
+/vibe.run "{feature-name}"
 ```
 
 ---

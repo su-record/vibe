@@ -88,13 +88,13 @@ Codex exposes Vibe entrypoints as skills. Use `$vibe`, `$vibe.spec`, or `/skills
 ```
 $vibe "<requirement>" [+ 📎 attachments]
   → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
-  → Smart Resume detection (.vibe/{interviews,plans,specs,features}/)
+  → Smart Resume detection (.vibe/{specs,features}/ — legacy interviews/plans 는 입력 컨텍스트로만 인식)
   → SPEC confirmation (1-time approval; skipped on automationLevel: autonomous)
   → Loop: ANCHOR→ACT→JUDGE→RECORD until gates pass │ stuck │ max-iter
 ```
 
 **Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
-- `$vibe.spec` — interview → plan → spec → review orchestration
+- `$vibe.spec` — single-pass SPEC (인라인 질문 → SPEC 1패스 → 승인 1회; 구 interview/plan/spec-review 4단계는 폐지)
 - `$vibe.figma` — Figma ↔ code (UI track)
 - `$vibe.run` — SPEC-driven implementation
 - `$vibe.verify` — implementation vs SPEC verification

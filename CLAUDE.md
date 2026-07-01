@@ -91,13 +91,13 @@ Claude Code uses `/vibe` as the **single slash entry point**. Codex exposes the 
 $vibe "<requirement>" [+ 📎 attachments]   # Codex
 /vibe "<requirement>" [+ 📎 attachments]   # Claude Code
   → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
-  → Smart Resume detection (.vibe/{interviews,plans,specs,features}/)
+  → Smart Resume detection (.vibe/{specs,features}/ — legacy interviews/plans 는 입력 컨텍스트로만 인식)
   → SPEC confirmation (1-time approval; skipped on automationLevel: autonomous)
   → Loop: ANCHOR→ACT→JUDGE→RECORD until gates pass │ stuck │ max-iter
 ```
 
 **Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
-- Codex: `$vibe.spec` / Claude Code: `/vibe.spec` — interview → plan → spec → review orchestration
+- Codex: `$vibe.spec` / Claude Code: `/vibe.spec` — single-pass SPEC (인라인 질문 → SPEC 1패스 → 승인 1회; 구 interview/plan/spec-review 4단계는 폐지)
 - Codex: `$vibe.figma` / Claude Code: `/vibe.figma` — Figma ↔ code (UI track)
 - Codex: `$vibe.run` / Claude Code: `/vibe.run` — SPEC-driven implementation
 - Codex: `$vibe.verify` / Claude Code: `/vibe.verify` — implementation vs SPEC verification
