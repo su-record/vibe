@@ -8,7 +8,6 @@ import {
   SmartRouteRequest,
   SmartRouteResult,
   LLMAvailabilityCache,
-  TASK_LLM_PRIORITY,
   TASK_SYSTEM_PROMPTS,
   getTaskLlmPriority
 } from './types.js';

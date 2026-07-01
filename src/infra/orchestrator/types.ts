@@ -211,21 +211,55 @@ export interface LLMAvailabilityCache {
 }
 
 /**
- * 작업 유형별 LLM 우선순위
- * - GPT/Antigravity → Claude (fallback)
- * - Antigravity: UI/UX, 웹 검색
+ * 작업 유형 목록 (런타임 SSOT — TaskType 유니온의 값 표현)
  */
-export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
-  'architecture': ['gpt', 'antigravity', 'claude'],
-  'debugging': ['gpt', 'antigravity', 'claude'],
-  'uiux': ['antigravity', 'gpt', 'claude'],
-  'code-analysis': ['gpt', 'antigravity', 'claude'],
-  'code-gen': ['gpt', 'claude'],
-  'web-search': ['antigravity', 'gpt', 'claude'],
-  'general': ['gpt', 'claude'],
-  'code-review': ['gpt', 'antigravity', 'claude'],
-  'reasoning': ['gpt', 'antigravity', 'claude'],
-};
+export const TASK_TYPES: TaskType[] = [
+  'architecture', 'debugging', 'uiux', 'code-analysis', 'code-gen',
+  'web-search', 'general', 'code-review', 'reasoning',
+];
+
+// ─── LLM 라우팅 정책 (단일 SSOT) ───
+// 아래 그룹 + computeLlmPriority 가 provider 우선순위의 유일 소스다.
+// 정적 맵(TASK_LLM_PRIORITY)과 동적 함수(getTaskLlmPriority) 둘 다 여기서 파생하므로
+// 구조적으로 어긋날 수 없다. (이전에는 두 정의가 서로 다른 정책을 인코딩해 드리프트했다)
+
+/** Codex(GPT) 를 우선 붙이는 작업 유형 */
+const GPT_TASK_TYPES: readonly TaskType[] = [
+  'architecture', 'reasoning', 'code-analysis', 'code-gen', 'debugging', 'code-review',
+];
+/** Antigravity 를 최우선(맨 앞)으로 두는 작업 유형 */
+const ANTIGRAVITY_FIRST_TASK_TYPES: readonly TaskType[] = ['web-search', 'uiux'];
+/** Antigravity 를 교차검증용(GPT 뒤)으로 붙이는 작업 유형 */
+const ANTIGRAVITY_CROSSCHECK_TASK_TYPES: readonly TaskType[] = ['code-review', 'architecture', 'reasoning'];
+
+/**
+ * 순수 LLM 우선순위 정책 — 가용성만 입력받아 provider 체인을 계산한다(I/O 없음).
+ * Claude 는 항상 최후 fallback.
+ */
+export function computeLlmPriority(
+  type: TaskType,
+  availability: { codex: boolean; antigravity: boolean }
+): LLMProvider[] {
+  const { codex, antigravity } = availability;
+  if (!codex && !antigravity) return ['claude'];
+
+  const priority: LLMProvider[] = [];
+  if (codex && GPT_TASK_TYPES.includes(type)) priority.push('gpt');
+  if (antigravity) {
+    if (ANTIGRAVITY_FIRST_TASK_TYPES.includes(type)) priority.unshift('antigravity');
+    else if (ANTIGRAVITY_CROSSCHECK_TASK_TYPES.includes(type)) priority.push('antigravity');
+  }
+  priority.push('claude');
+  return priority;
+}
+
+/**
+ * 작업 유형별 LLM 우선순위 (모든 provider 가용 시의 이상적 순서).
+ * computeLlmPriority 에서 파생 — getTaskLlmPriority(런타임) 와 절대 어긋나지 않는다.
+ */
+export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = Object.fromEntries(
+  TASK_TYPES.map((t) => [t, computeLlmPriority(t, { codex: true, antigravity: true })])
+) as Record<TaskType, LLMProvider[]>;
 
 /**
  * 작업 유형별 기본 system prompt (SSOT)
@@ -245,42 +279,10 @@ export const TASK_SYSTEM_PROMPTS: Record<TaskType, string> = {
 };
 
 /**
- * 동적 LLM 우선순위 — Codex/Antigravity 활성화 상태에 따라 자동 조정
+ * 동적 LLM 우선순위 — 런타임 Codex/Antigravity 가용성에 맞춰 computeLlmPriority 를 적용.
  *
- * 기본: Claude만 사용
- * +Codex: 추론/코딩/리뷰에 GPT 추가
- * +Antigravity: 리서치/리뷰/UI에 Antigravity 추가
+ * 기본: Claude만 사용 · +Codex: 추론/코딩/리뷰에 GPT 추가 · +Antigravity: 리서치/리뷰/UI에 추가
  */
 export function getTaskLlmPriority(type: TaskType): LLMProvider[] {
-  const { codex, antigravity } = detectLlmAvailability();
-
-  // 둘 다 비활성화 → Claude only
-  if (!codex && !antigravity) {
-    return ['claude'];
-  }
-
-  // 기본 Claude 베이스
-  const priority: LLMProvider[] = [];
-
-  if (codex) {
-    // GPT 우선 작업 유형
-    if (['architecture', 'reasoning', 'code-analysis', 'code-gen', 'debugging', 'code-review'].includes(type)) {
-      priority.push('gpt');
-    }
-  }
-
-  if (antigravity) {
-    // Antigravity 우선 작업 유형
-    if (['web-search', 'uiux'].includes(type)) {
-      priority.unshift('antigravity');
-    } else if (['code-review', 'architecture', 'reasoning'].includes(type)) {
-      // 교차 검증용 — GPT 뒤에
-      priority.push('antigravity');
-    }
-  }
-
-  // Claude는 항상 fallback
-  priority.push('claude');
-
-  return priority;
+  return computeLlmPriority(type, detectLlmAvailability());
 }
