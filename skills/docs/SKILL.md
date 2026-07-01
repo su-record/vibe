@@ -126,24 +126,22 @@ Cursor is not supported — do not generate or check Cursor-specific context fil
    - **If exists** → regenerate from current `CLAUDE.md` + substitution, preserving user-specific additions outside the VIBE block.
 4. **CLI substitution for `AGENTS.md`** (Codex): `Claude Code` → `Codex` · `~/.claude/` → `~/.codex/` · `.claude/` → `.codex/` · `CLAUDE.md` → `AGENTS.md`. `CLAUDE.md` itself gets no substitution.
 5. **CLI substitution for `GEMINI.md`** (Antigravity): `Claude Code` → `Antigravity CLI` · `~/.claude/` → `~/.gemini/` · `.claude/` → `.gemini/` · `CLAUDE.md` → `GEMINI.md`.
-6. **Validate every touched file (whether newly created or modified)** via the `claude-md-guide` → `agents-md` skill chain — see validation block below. **Never write or save without running this step.**
+6. **Validate every touched file (whether newly created or modified)** via the `agents-md` skill — see validation block below. **Never write or save without running this step.**
 7. Report per file: created / updated / skipped / validation warnings.
 
 **Idempotent:** Re-running re-syncs the behavioral block and re-applies substitutions without duplication.
 
-**Mandatory validation (every create & every update) — invoke `claude-md-guide` → `agents-md`:**
+**Mandatory validation (every create & every update) — Load skill `agents-md`:**
 
-1. **`claude-md-guide`**:
-   - Size target 60–150 lines (Optimal). Warn at 200+, force split/trim at 300+.
-   - 4-question check per line (outside `VIBE-BEHAVIORAL` block):
-     - Would the agent make a mistake without this? (No → delete)
-     - Needed every session? (No → move to SPEC/plan)
-     - Can a linter/hook replace it? (Yes → move)
-     - Discoverable from code? (Yes → delete)
-   - Lost-in-the-Middle: critical rules at top, frequently-violated rules at bottom.
-2. **`agents-md`**:
-   - Addy Osmani test: "Can the agent discover this by reading the code?" → Yes = delete.
-   - Strip tech-stack name-drops already stated in `package.json`.
+- Size target 60–150 lines (Optimal). Warn at 200+, force split/trim at 300+.
+- 4-question check per line (outside `VIBE-BEHAVIORAL` block):
+  - Would the agent make a mistake without this? (No → delete)
+  - Needed every session? (No → move to SPEC/plan)
+  - Can a linter/hook replace it? (Yes → move)
+  - Discoverable from code? (Yes → delete)
+- Lost-in-the-Middle: critical rules at top, frequently-violated rules at bottom.
+- Addy Osmani test: "Can the agent discover this by reading the code?" → Yes = delete.
+- Strip tech-stack name-drops already stated in `package.json`.
 
 Report line ranges to trim per file. Do not auto-delete; surface findings for user approval before finalizing.
 
@@ -207,7 +205,7 @@ When `/vibe.trace` completes with all scenarios passing, suggest:
 - Use changelog-writer agent for `/vibe.docs release`
 - Use api-documenter agent for API-heavy projects
 - Use diagrammer agent for `/vibe.docs arch` Mermaid generation
-- Use `claude-md-guide` → `agents-md` chain for `/vibe.docs agent` — applies equally to CLAUDE.md and AGENTS.md
+- Use the `agents-md` skill for `/vibe.docs agent` — applies equally to CLAUDE.md and AGENTS.md
 
 ### DON'T
 - Don't generate placeholder text ("Lorem ipsum", "TODO: fill in")

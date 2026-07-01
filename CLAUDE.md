@@ -130,7 +130,7 @@ $vibe "<requirement>" [+ 📎 attachments]   # Codex
 
 ## Context Management
 
-- Exploration → Haiku · Implementation → Sonnet · Architecture → Opus
+- **Model routing: inherit by default** — 서브에이전트는 세션 모델을 상속한다. 명시적 예외만 tier alias 로 지정 (아키텍처 심층 리뷰 → `opus`). 구세대 "탐색→Haiku·구현→Sonnet" 비용 라우팅은 폐기 — 강한 기본 모델에서 라우팅 우회가 절약보다 품질 손실이 크다
 - At 85%+ context: `save_memory` → `/new` → `/vibe.utils --continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
 
 ## Git
