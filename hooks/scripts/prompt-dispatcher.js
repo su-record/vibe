@@ -205,12 +205,14 @@ if (!matched) {
       const utils = await import('./utils.js');
       const projectDir = process.env.CLAUDE_PROJECT_DIR || '.';
       const configPath = utils.projectVibePath(projectDir, 'config.json');
-      let gapEnabled = true;
+      // Evolution 은 동결(opt-in) — evolution.enabled === true 로 명시했을 때만
+      // gap 로깅을 수행한다 (기본 OFF, P3-3).
+      let gapEnabled = false;
       try {
         const fs = await import('fs');
         if (fs.existsSync(configPath)) {
           const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-          gapEnabled = config.evolution?.gapDetection !== false && config.evolution?.enabled !== false;
+          gapEnabled = config.evolution?.enabled === true && config.evolution?.gapDetection !== false;
         }
       } catch { /* ignore */ }
 
