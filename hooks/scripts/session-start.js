@@ -86,16 +86,29 @@ async function main() {
       import(`${BASE_URL}time/index.js`),
     ]);
 
-    const [session, time, memories, latestVersion] = await Promise.all([
-      memoryModule.startSession({ projectPath: PROJECT_DIR }),
+    // 인덱스만 주입 (harness-review-2026-07-01 P1-5):
+    // 이전에는 startSession 전체 요약(git log·테스트 상태·관찰·리플렉션·RAG
+    // goals/constraints/decisions)을 매 세션 덤프했다. 이제는 1줄 인덱스만
+    // 주입하고, 전체 컨텍스트 복원은 명시적 `/vibe.utils --continue` 전용.
+    const [time, memories, latestVersion] = await Promise.all([
       timeModule.getCurrentTime({ format: 'human', timezone: 'Asia/Seoul' }),
       memoryModule.listMemories({ limit: 5, projectPath: PROJECT_DIR }),
       getLatestVersionCached(),
     ]);
 
-    console.log(session.content[0].text);
-    console.log('\n' + time.content[0].text);
-    console.log('\n[Recent Memories]');
+    console.log(time.content[0].text);
+
+    // Active feature 1줄 인덱스
+    try {
+      const LIB_BASE_P = (await import('./utils.js')).getLibBaseUrl();
+      const iterMod = await import(`${LIB_BASE_P}IterationTracker.js`);
+      const progressLine = iterMod.getProgressSummary(PROJECT_DIR);
+      if (progressLine) {
+        console.log(`\n📋 ${progressLine} — resume full context: /vibe.utils --continue`);
+      }
+    } catch { /* progress index is best-effort */ }
+
+    console.log('\n[Memory Index — bodies on demand via recall_memory]');
     console.log(memories.content[0].text);
 
     // Phase 3 — Recipes + anti-patterns 인덱스 (post-task curation)
