@@ -105,6 +105,7 @@ function resolveModel(providerName, config) {
   if (providerName === 'gpt-codex') return config.models?.gptCodex || 'gpt-5.3-codex';
   if (providerName === 'gpt') return config.models?.gpt || 'gpt-5.5';
   if (providerName === 'antigravity') return config.models?.antigravity || 'antigravity';
+  if (providerName === 'zai') return config.models?.zaiCoding || config.models?.zai || 'glm-4.6';
   if (providerName === 'claude') return 'claude';
   return providerName;
 }
@@ -271,6 +272,46 @@ function callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
   });
 }
 
+// ZAI (Z.ai / GLM) — OpenAI 호환 HTTP API (CLI 없음)
+const ZAI_BASE_GENERAL = 'https://api.z.ai/api/paas/v4';
+const ZAI_BASE_CODING = 'https://api.z.ai/api/coding/paas/v4';
+
+function callZaiApi(prompt, sysPrompt, jsonMode, model, timeoutMs) {
+  const vibeConfig = readVibeConfig();
+  const codingKey = vibeConfig.credentials?.zai?.codingApiKey || process.env.ZAI_CODING_API_KEY;
+  const generalKey = vibeConfig.credentials?.zai?.apiKey || process.env.ZAI_API_KEY;
+  const useCoding = Boolean(codingKey);
+  const apiKey = codingKey || generalKey;
+  if (!apiKey) return Promise.reject(new Error('ZAI API key not set (vibe zai coding-key <key>)'));
+
+  const base = useCoding ? ZAI_BASE_CODING : ZAI_BASE_GENERAL;
+  const system = sysPrompt && sysPrompt !== DEFAULT_SYSTEM_PROMPT ? sysPrompt : DEFAULT_SYSTEM_PROMPT;
+  const content = jsonMode ? `${prompt}\n\nRespond with valid JSON only.` : prompt;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs || CLI_TIMEOUT_MS);
+
+  return fetch(`${base}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: system }, { role: 'user', content }],
+      max_tokens: 4096,
+      temperature: 0,
+    }),
+    signal: controller.signal,
+  }).then(async (res) => {
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`zai api failed (code ${res.status}): ${body.slice(0, 500)}`);
+    }
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error('zai api returned empty response');
+    return text;
+  }).finally(() => clearTimeout(timer));
+}
+
 function callAntigravityCli(prompt, sysPrompt, jsonMode, timeoutMs) {
   const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
   const args = ['-p', fullPrompt];
@@ -355,6 +396,11 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs
 
   if (providerName === 'antigravity') {
     return await callAntigravityCli(prompt, sysPrompt, jsonMode, timeoutMs);
+  }
+
+  if (providerName === 'zai') {
+    const model = vibeConfig.models?.zaiCoding || vibeConfig.models?.zai || process.env.ZAI_MODEL || 'glm-4.6';
+    return await callZaiApi(prompt, sysPrompt, jsonMode, model, timeoutMs);
   }
 
   if (providerName === 'claude') {

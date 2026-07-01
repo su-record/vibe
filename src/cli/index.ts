@@ -18,6 +18,10 @@ import {
   antigravityLogout,
   claudeStatus,
   claudeLogout,
+  setZaiKey,
+  setZaiCodingKey,
+  zaiStatus,
+  zaiLogout,
 } from './llm.js';
 import { patchGlobalConfig, getVibeDir } from '../infra/lib/config/GlobalConfigManager.js';
 import type { GlobalVibeConfig } from './types.js';
@@ -233,6 +237,45 @@ Antigravity Commands:
   vibe antigravity remove          Remove config
 
 Antigravity CLI is auto-detected through agy.
+        `);
+    }
+    break;
+  }
+
+  // vibe zai <subcommand>
+  case 'zai':
+  case 'glm': {
+    const subCommand = positionalArgs[1];
+    const keyArg = (): string | undefined =>
+      positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== command && a !== subCommand);
+    switch (subCommand) {
+      case 'coding-key': {
+        const apiKey = keyArg();
+        if (apiKey) setZaiCodingKey(apiKey);
+        else console.log('Usage: vibe zai coding-key <API_KEY>');
+        break;
+      }
+      case 'key': {
+        const apiKey = keyArg();
+        if (apiKey) setZaiKey(apiKey);
+        else console.log('Usage: vibe zai key <API_KEY>');
+        break;
+      }
+      case 'logout':
+        zaiLogout();
+        break;
+      case 'status':
+        zaiStatus();
+        break;
+      default:
+        console.log(`
+ZAI (Z.ai / GLM) Commands:
+  vibe zai coding-key <key>   Set GLM Coding Plan key (UI/code — separate key)
+  vibe zai key <key>          Set general API key (pay-as-you-go)
+  vibe zai status             Check status
+  vibe zai logout             Clear config
+
+Get keys: https://z.ai  (Coding Plan has its own key)
         `);
     }
     break;
