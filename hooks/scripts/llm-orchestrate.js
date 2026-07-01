@@ -105,7 +105,7 @@ function resolveModel(providerName, config) {
   if (providerName === 'gpt-codex') return config.models?.gptCodex || 'gpt-5.3-codex';
   if (providerName === 'gpt') return config.models?.gpt || 'gpt-5.5';
   if (providerName === 'antigravity') return config.models?.antigravity || 'antigravity';
-  if (providerName === 'zai') return config.models?.zaiCoding || config.models?.zai || 'glm-4.6';
+  if (providerName === 'zai') return config.models?.zaiCoding || config.models?.zai || 'glm-5.2';
   if (providerName === 'claude') return 'claude';
   return providerName;
 }
@@ -399,7 +399,7 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs
   }
 
   if (providerName === 'zai') {
-    const model = vibeConfig.models?.zaiCoding || vibeConfig.models?.zai || process.env.ZAI_MODEL || 'glm-4.6';
+    const model = vibeConfig.models?.zaiCoding || vibeConfig.models?.zai || process.env.ZAI_MODEL || 'glm-5.2';
     return await callZaiApi(prompt, sysPrompt, jsonMode, model, timeoutMs);
   }
 

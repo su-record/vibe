@@ -59,8 +59,8 @@ Set up:
     `Coding Plan key: ${hasCoding ? '✓' : '⬚ —'}`,
     `General key:     ${hasGeneral ? '✓' : '⬚ —'}`,
     '\nModels:',
-    `  zai (general) = ${models?.zai || process.env.ZAI_MODEL || '(default glm-4.6)'}`,
-    `  zaiCoding     = ${models?.zaiCoding || '(default glm-4.6)'}\n`,
+    `  zai (general) = ${models?.zai || process.env.ZAI_MODEL || '(default glm-5.2)'}`,
+    `  zaiCoding     = ${models?.zaiCoding || '(default glm-5.2)'}\n`,
   ].join('\n'));
 }
 

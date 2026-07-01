@@ -19,16 +19,16 @@ export const ZAI_BASE_CODING = 'https://api.z.ai/api/coding/paas/v4';
 
 /** 큐레이션된 알려진 모델 (list-models 미지원/무네트워크 시 fallback) */
 export const ZAI_MODELS: Record<string, ZaiModelInfo> = {
-  'glm-4.6': { id: 'glm-4.6', name: 'GLM-4.6', description: 'Flagship — top reasoning & coding (200K context)', top: true },
-  'glm-4.5': { id: 'glm-4.5', name: 'GLM-4.5', description: 'High-capability general model' },
+  'glm-5.2': { id: 'glm-5.2', name: 'GLM-5.2', description: 'Flagship — latest, top reasoning & coding', top: true },
+  'glm-4.6': { id: 'glm-4.6', name: 'GLM-4.6', description: 'Prior flagship' },
+  'glm-4.5': { id: 'glm-4.5', name: 'GLM-4.5', description: 'Prior-gen general model' },
   'glm-4.5-air': { id: 'glm-4.5-air', name: 'GLM-4.5 Air', description: 'Lightweight, fast' },
-  'glm-4.5-flash': { id: 'glm-4.5-flash', name: 'GLM-4.5 Flash', description: 'Free, fast tier' },
   'glm-4.5v': { id: 'glm-4.5v', name: 'GLM-4.5V', description: 'Vision-language multimodal' },
 };
 
 /** flagship(최고) 모델 id — UI 개발 등 최고 품질이 필요한 작업에 사용 */
-export const ZAI_TOP_MODEL = 'glm-4.6';
-export const DEFAULT_MODEL = 'glm-4.6';
+export const ZAI_TOP_MODEL = 'glm-5.2';
+export const DEFAULT_MODEL = 'glm-5.2';
 
 export function resolveApiKey(plan: ZaiPlan): string | null {
   if (plan === 'coding') return getZaiCodingApiKey() ?? process.env.ZAI_CODING_API_KEY ?? null;

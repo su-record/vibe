@@ -52,8 +52,8 @@ const CURATED: Record<ProviderId, Curated> = {
   },
   zai: {
     label: 'ZAI (Z.ai / GLM)',
-    models: ['glm-4.6', 'glm-4.5', 'glm-4.5-air', 'glm-4.5-flash', 'glm-4.5v'],
-    recommended: 'glm-4.6',
+    models: ['glm-5.2', 'glm-4.6', 'glm-4.5', 'glm-4.5-air', 'glm-4.5v'],
+    recommended: 'glm-5.2',
     overrideKeys: ['zai', 'zaiCoding'],
   },
 };
