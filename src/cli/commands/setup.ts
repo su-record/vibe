@@ -13,6 +13,7 @@ import chalk from 'chalk';
 import { getLLMAuthStatus, formatAuthMethods } from '../auth.js';
 import { antigravityAuthCore } from '../llm/antigravity-commands.js';
 import { setupExternalLLM } from '../llm/config.js';
+import { setZaiKey, setZaiCodingKey } from '../llm/zai-commands.js';
 import type { LLMStatusMap } from '../types.js';
 import { init } from './init.js';
 
@@ -24,7 +25,9 @@ type AuthMethod =
   | 'claude-apikey'
   | 'gpt-apikey'
   | 'antigravity-cli'
-  | 'antigravity-apikey';
+  | 'antigravity-apikey'
+  | 'zai-coding-apikey'
+  | 'zai-apikey';
 
 // ============================================================================
 // Phase 1: Status Detection
@@ -34,6 +37,7 @@ function showCurrentStatus(status: LLMStatusMap): void {
   const lines = [
     `GPT:         ${formatAuthMethods(status.gpt)}`,
     `Antigravity: ${formatAuthMethods(status.antigravity)}`,
+    `ZAI (GLM):   ${formatAuthMethods(status.zai)}`,
   ];
   p.note(lines.join('\n'), 'Current Status');
 }
@@ -73,6 +77,16 @@ function buildAuthOptions(status: LLMStatusMap): Array<{
       hint: status.antigravity.some(a => a.type === 'apikey')
         ? 'configured'
         : 'antigravity.google',
+    },
+    {
+      value: 'zai-coding-apikey' as const,
+      label: 'ZAI GLM Coding Plan Key (UI/code)',
+      hint: status.zai.length > 0 ? 'configured' : 'z.ai — separate coding-plan key',
+    },
+    {
+      value: 'zai-apikey' as const,
+      label: 'ZAI API Key (general)',
+      hint: status.zai.length > 0 ? 'configured' : 'z.ai — pay-as-you-go',
     },
   ];
 }
@@ -130,6 +144,26 @@ async function executeAuthMethod(method: AuthMethod): Promise<boolean> {
       return true;
     }
 
+    case 'zai-coding-apikey': {
+      const key = await p.text({
+        message: 'Enter ZAI GLM Coding Plan key:',
+        validate: (v) => (!(v ?? '').trim() ? 'API key cannot be empty' : undefined),
+      });
+      if (p.isCancel(key)) return false;
+      setZaiCodingKey(key as string);
+      return true;
+    }
+
+    case 'zai-apikey': {
+      const key = await p.text({
+        message: 'Enter ZAI API key (general):',
+        validate: (v) => (!(v ?? '').trim() ? 'API key cannot be empty' : undefined),
+      });
+      if (p.isCancel(key)) return false;
+      setZaiKey(key as string);
+      return true;
+    }
+
     default:
       return false;
   }
@@ -145,7 +179,8 @@ async function executeAuthMethod(method: AuthMethod): Promise<boolean> {
 function validateActivation(status: LLMStatusMap): boolean {
   return (
     status.gpt.length > 0 ||
-    status.antigravity.length > 0
+    status.antigravity.length > 0 ||
+    status.zai.length > 0
   );
 }
 
@@ -157,6 +192,7 @@ function showSummary(status: LLMStatusMap): void {
   const lines = [
     `GPT:         ${formatAuthMethods(status.gpt)}`,
     `Antigravity: ${formatAuthMethods(status.antigravity)}`,
+    `ZAI (GLM):   ${formatAuthMethods(status.zai)}`,
     '',
     'Run /vibe.spec "feature" to start!',
   ];

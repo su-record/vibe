@@ -16,6 +16,7 @@ export interface LLMStatusMap {
   claude: LLMAuthStatus[];
   gpt: LLMAuthStatus[];
   antigravity: LLMAuthStatus[];
+  zai: LLMAuthStatus[];
 }
 
 export interface ClaudeCodeStatus {
