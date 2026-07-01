@@ -9,7 +9,6 @@
     "./tools": "./dist/tools/index.js",
     "./tools/memory": "./dist/tools/memory/index.js",
     "./tools/convention": "./dist/tools/convention/index.js",
-    "./tools/semantic": "./dist/tools/semantic/index.js",
     "./tools/ui": "./dist/tools/ui/index.js",
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/interaction": "./dist/tools/interaction/index.js",

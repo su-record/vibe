@@ -345,8 +345,6 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 | Tool | Purpose |
 |------|---------|
-| `findSymbol` | Find symbol definitions |
-| `findReferences` | Find all references |
 | `analyzeComplexity` | Analyze code complexity |
 | `validateCodeQuality` | Validate code quality |
 | `saveMemory` | Save important decisions |

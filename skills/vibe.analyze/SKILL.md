@@ -430,8 +430,6 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `findSymbol` | Find symbol definitions | Locate function/class implementations |
-| `findReferences` | Find all references | Track usage patterns |
 | `analyzeComplexity` | Complexity analysis | Measure complexity metrics |
 | `validateCodeQuality` | Quality validation | Check code quality standards |
 | `saveMemory` | Save analysis results | Persist findings for future sessions |

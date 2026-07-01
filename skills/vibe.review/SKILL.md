@@ -517,8 +517,6 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 |------|---------|-------------|
 | `validateCodeQuality` | Code quality check | Overall code quality scan |
 | `analyzeComplexity` | Complexity metrics | Check function complexity |
-| `findSymbol` | Find definitions | Locate implementations |
-| `findReferences` | Find all usages | Track symbol usage |
 | `saveMemory` | Save findings | Store important review findings |
 
 ### Example Tool Usage in Review

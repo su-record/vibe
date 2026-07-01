@@ -51,14 +51,5 @@ export type {
   ScopeFilter,
 } from '../TaskContext.js';
 
-// TokenBudgetTracker
-export { TokenBudgetTracker } from '../TokenBudgetTracker.js';
-export type {
-  TokenSource,
-  ThresholdLevel,
-  BudgetSnapshot,
-  ActionEstimate,
-} from '../TokenBudgetTracker.js';
-
 // Re-export MemoryManager facade from parent for backward compatibility
 // Note: MemoryManager is in parent directory, import it from there
