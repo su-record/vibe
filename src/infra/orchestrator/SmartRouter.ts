@@ -9,6 +9,7 @@ import {
   SmartRouteResult,
   LLMAvailabilityCache,
   TASK_LLM_PRIORITY,
+  TASK_SYSTEM_PROMPTS,
   getTaskLlmPriority
 } from './types.js';
 import * as gptApi from '../lib/gpt/index.js';
@@ -95,7 +96,7 @@ export class SmartRouter {
     const {
       type,
       prompt,
-      systemPrompt = 'You are a helpful assistant.',
+      systemPrompt = TASK_SYSTEM_PROMPTS.general,
       preferredLlm,
       maxRetries = 2
     } = request;
@@ -307,52 +308,28 @@ export class SmartRouter {
   // ============================================
 
   async webSearch(query: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'web-search',
-      prompt: query,
-      systemPrompt: 'Search the web and provide relevant information.'
-    });
+    return this.route({ type: 'web-search', prompt: query, systemPrompt: TASK_SYSTEM_PROMPTS['web-search'] });
   }
 
   async architectureReview(prompt: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'architecture',
-      prompt,
-      systemPrompt: 'You are a software architect. Analyze and review the architecture.'
-    });
+    return this.route({ type: 'architecture', prompt, systemPrompt: TASK_SYSTEM_PROMPTS.architecture });
   }
 
   async uiuxReview(prompt: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'uiux',
-      prompt,
-      systemPrompt: 'You are a UI/UX expert. Analyze and provide feedback.'
-    });
+    return this.route({ type: 'uiux', prompt, systemPrompt: TASK_SYSTEM_PROMPTS.uiux });
   }
 
   async codeAnalysis(prompt: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'code-analysis',
-      prompt,
-      systemPrompt: 'You are a code analysis expert. Review and analyze the code.'
-    });
+    return this.route({ type: 'code-analysis', prompt, systemPrompt: TASK_SYSTEM_PROMPTS['code-analysis'] });
   }
 
   async debugging(prompt: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'debugging',
-      prompt,
-      systemPrompt: 'You are a debugging expert. Find bugs and suggest fixes.'
-    });
+    return this.route({ type: 'debugging', prompt, systemPrompt: TASK_SYSTEM_PROMPTS.debugging });
   }
 
   async codeGen(description: string, context?: string): Promise<SmartRouteResult> {
     const prompt = context ? `${description}\n\nContext:\n${context}` : description;
-    return this.route({
-      type: 'code-gen',
-      prompt,
-      systemPrompt: 'Generate clean, well-documented code.'
-    });
+    return this.route({ type: 'code-gen', prompt, systemPrompt: TASK_SYSTEM_PROMPTS['code-gen'] });
   }
 
   /**

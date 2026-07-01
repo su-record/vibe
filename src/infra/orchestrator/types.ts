@@ -228,6 +228,23 @@ export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = {
 };
 
 /**
+ * 작업 유형별 기본 system prompt (SSOT)
+ * — SmartRouter 편의 메서드와 index.ts smart* 래퍼가 공유한다.
+ *   (이전에는 두 계층에 같은 문자열이 각각 하드코딩되어 있었다)
+ */
+export const TASK_SYSTEM_PROMPTS: Record<TaskType, string> = {
+  'architecture': 'You are a software architect. Analyze and review the architecture.',
+  'debugging': 'You are a debugging expert. Find bugs and suggest fixes.',
+  'uiux': 'You are a UI/UX expert. Analyze and provide feedback.',
+  'code-analysis': 'You are a code analysis expert. Review and analyze the code.',
+  'code-gen': 'Generate clean, well-documented code.',
+  'web-search': 'Search the web and provide relevant information.',
+  'general': 'You are a helpful assistant.',
+  'code-review': 'You are a code review expert. Review the code for bugs, style, and best practices.',
+  'reasoning': 'You are a reasoning expert. Analyze the problem step by step.',
+};
+
+/**
  * 동적 LLM 우선순위 — Codex/Antigravity 활성화 상태에 따라 자동 조정
  *
  * 기본: Claude만 사용
