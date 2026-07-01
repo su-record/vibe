@@ -28,12 +28,12 @@ Transform imperative tasks into verifiable goals **before** coding:
 
 Weak criteria ("make it work") require constant clarification. Strong criteria let the loop run independently.
 
-### TypeScript (detected by Quality Gate hooks — violations injected as additionalContext; blocked by auto-commit verify gate, Stop warning, and pr-test-gate)
+### TypeScript (hard rules — `any`/`console.log` detected by Quality Gate hooks and injected as additionalContext; deterministic gates are pr-test-gate + Stop verify warning)
 - No `any` / `as any` / `@ts-ignore` — use `unknown` + type guards; fix at root
 - Explicit return types on all functions
 
-### Complexity Limits
-Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10
+### Complexity Limits (model-judged, not hook-detected)
+Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10 — apply in-context judgement; no regex heuristics enforce these
 
 ### Forbidden Patterns
 No `console.log` in commits · No hardcoded strings/numbers · No commented-out code · No incomplete code without TODO
