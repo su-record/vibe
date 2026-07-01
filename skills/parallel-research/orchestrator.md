@@ -6,6 +6,8 @@ agents: [best-practices, framework-docs, codebase-patterns, security-advisory, s
 
 # Parallel Research Orchestrator
 
+> 구조·섹션·네이밍은 vibe/rules/orchestrator-contract.md (SSOT) 를 따른다.
+
 ## Workflow
 
 ### Phase 1: Launch Research Agents

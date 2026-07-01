@@ -1,5 +1,5 @@
 ---
-name: reviewer
+name: prd-reviewer
 role: Reviews PRD completeness and testability before sign-off
 tools: [Read]
 ---
@@ -18,8 +18,8 @@ Final quality gate for the PRD. Checks that every requirement is testable, every
 
 ## Input
 - Complete PRD draft assembled from all agents
-- Edge cases from edge-case-finder
-- Prioritized backlog from prioritizer
+- Edge cases from prd-edge-case-finder
+- Prioritized backlog from prd-prioritizer
 
 ## Output
 PRD review report:

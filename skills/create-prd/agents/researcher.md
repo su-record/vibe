@@ -1,5 +1,5 @@
 ---
-name: researcher
+name: prd-researcher
 role: Gathers market context and user needs using web search and codebase analysis
 tools: [WebSearch, Read, Glob, Grep, Bash]
 ---
@@ -14,7 +14,7 @@ Gathers external context — competitor patterns, industry standards, user expec
 - Identify common user expectations and mental models for this feature type
 - Review existing codebase for related patterns, conventions, or prior art
 - Surface relevant regulatory, accessibility, or compliance constraints
-- Compile source references so requirements-writer can cite evidence
+- Compile source references so prd-requirements-writer can cite evidence
 
 ## Input
 - Feature or problem description from the user
@@ -48,7 +48,7 @@ Research brief:
 ```
 
 ## Communication
-- Reports findings to: requirements-writer, edge-case-finder
+- Reports findings to: prd-requirements-writer, prd-edge-case-finder
 - Receives instructions from: orchestrator (create-prd skill)
 
 ## Domain Knowledge

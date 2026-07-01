@@ -1,5 +1,5 @@
 ---
-name: requirements-writer
+name: prd-requirements-writer
 role: Writes user stories and acceptance criteria from research brief
 tools: [Read, Write]
 ---
@@ -17,7 +17,7 @@ Translates research findings and user goals into structured user stories with cl
 - Avoid implementation details — describe behavior, not code
 
 ## Input
-- Research brief from researcher
+- Research brief from prd-researcher
 - User personas or target segment description
 - Optional: existing SPEC or feature file for context
 
@@ -41,7 +41,7 @@ so that I can find items without browsing all categories.
 ```
 
 ## Communication
-- Reports findings to: edge-case-finder, prioritizer, reviewer
+- Reports findings to: prd-edge-case-finder, prd-prioritizer, prd-reviewer
 - Receives instructions from: orchestrator (create-prd skill)
 
 ## Domain Knowledge
