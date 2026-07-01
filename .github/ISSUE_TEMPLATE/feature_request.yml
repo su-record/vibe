@@ -1,0 +1,40 @@
+name: "✨ 기능 요청 / Feature Request"
+description: "새 기능이나 개선 제안 / Propose a new feature or improvement"
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > v3의 방향은 **"지시하지 않고 검증한다"** 입니다 — 모델에게 일하는 법을 가르치는 기능보다,
+        > 모델이 스스로 증명할 수 없는 것을 기계가 판정하게 만드는 제안이 채택될 확률이 높습니다.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "해결하려는 문제 / Problem"
+      description: "어떤 상황에서 무엇이 불편한가요? 기능 이름이 아니라 문제 상황으로 적어주세요."
+      placeholder: "verify가 통과해도 E2E 깨짐을 못 잡는다. 브라우저 플로우까지 게이트에 넣고 싶다."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "제안 / Proposal"
+      description: "생각해둔 동작 방식이 있다면. 없어도 됩니다."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: harness
+    attributes:
+      label: "대상 하네스 / Target harness"
+      multiple: true
+      options:
+        - Claude Code
+        - Codex
+        - Cursor
+        - Antigravity CLI
+        - 공통 / All
+    validations:
+      required: false
