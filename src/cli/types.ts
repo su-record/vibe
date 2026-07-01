@@ -136,6 +136,8 @@ export interface ModelOverrides {
   zai: string;
   /** ZAI Coding Plan(최고 모델) — UI 개발 담당 */
   zaiCoding: string;
+  /** Gemini 기본 모델 */
+  gemini: string;
   claudeArchitecture: string;
   claudeResearch: string;
   claudeReview: string;

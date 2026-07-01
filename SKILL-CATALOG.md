@@ -3,7 +3,7 @@
 
 # Vibe Skill Catalog
 
-> Total: **72 skills** | Global: 30 | Stack-local: 11 | Capability: 10
+> Total: **73 skills** | Global: 30 | Stack-local: 11 | Capability: 10
 
 ## Global Skills (postinstall → ~/.claude/skills/)
 
@@ -453,6 +453,10 @@
 ### `vibe.harness` (unrouted)
 
 - **Description**: Diagnose project Harness Engineering maturity across 6 axes
+
+### `vibe.llm` (unrouted)
+
+- **Description**: Refresh available models for claude/openai(api+oauth)/gemini/zai as of now and update the vibe model SSOT
 
 ### `vibe.loop` (unrouted)
 

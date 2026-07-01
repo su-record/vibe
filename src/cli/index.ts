@@ -34,6 +34,7 @@ import {
   configShow, configHelp,
   statsDefault, statsWeek, statsQuality, statsHelp,
   codexLaunch, codexStatus, codexShell, codexHelp,
+  llmList, llmRefresh, llmHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -238,6 +239,23 @@ Antigravity Commands:
 
 Antigravity CLI is auto-detected through agy.
         `);
+    }
+    break;
+  }
+
+  // vibe llm <subcommand> — 모델 조회/최신화
+  case 'llm': {
+    const llmSub = positionalArgs[1];
+    switch (llmSub) {
+      case 'list':
+        await llmList();
+        break;
+      case 'refresh':
+      case 'sync':
+        await llmRefresh();
+        break;
+      default:
+        llmHelp();
     }
     break;
   }
