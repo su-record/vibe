@@ -10,7 +10,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel audit
+**Sonnet** — Fast parallel audit
 
 ## Phase
 

@@ -1,4 +1,4 @@
-# Explorer Agent (Haiku 4.5)
+# Explorer Agent (Haiku)
 
 Codebase exploration specialist sub-agent.
 
@@ -11,7 +11,7 @@ Codebase exploration specialist sub-agent.
 
 ## Model
 
-**Haiku 4.5** - Optimized for fast exploration
+**Haiku** — Optimized for fast exploration
 
 ## Usage
 

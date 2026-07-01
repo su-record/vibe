@@ -2,6 +2,10 @@
 
 리서치 결과를 팀으로 교차 검증하여 정확성과 호환성을 보장하는 리서치 협업 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

@@ -10,7 +10,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast recommendation
+**Haiku** — Fast recommendation
 
 ## Phase
 

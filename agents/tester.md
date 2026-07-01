@@ -1,4 +1,4 @@
-# Tester Agent (Haiku 4.5)
+# Tester Agent (Haiku)
 
 Test writing specialist sub-agent.
 
@@ -11,7 +11,7 @@ Test writing specialist sub-agent.
 
 ## Model
 
-**Haiku 4.5** - Fast test generation
+**Haiku** — Fast test generation
 
 ## Usage
 

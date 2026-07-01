@@ -2,6 +2,10 @@
 
 개별 리뷰어의 발견을 팀으로 토론하여 우선순위를 검증하고 오탐을 제거하는 교차 검증 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

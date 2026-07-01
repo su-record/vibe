@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast exploration
+**Haiku** — Fast exploration
 
 ## ⚠️ CRITICAL: NO FILE CREATION
 

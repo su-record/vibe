@@ -5,12 +5,16 @@
 import { ToolResult } from '../types/tool.js';
 import { detectLlmAvailability } from '../lib/llm-availability.js';
 
-// 모델 타입 정의
+// 모델 타입 정의 — 현행 모델 ID (레거시 별칭은 아래 tier alias 로 흡수)
 export type ClaudeModel =
-  | 'claude-sonnet-4-5'
-  | 'claude-opus-4'
-  | 'claude-haiku-3-5'
+  | 'claude-opus-4-8'
+  | 'claude-sonnet-5'
   | 'claude-haiku-4-5-20251001'
+  // tier alias — Claude Code Task(model:) / frontmatter 에서 그대로 쓰인다
+  | 'opus'
+  | 'sonnet'
+  | 'haiku'
+  | 'inherit'
   | string; // 새 모델 호환성
 
 // Agent 관련 타입

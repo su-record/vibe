@@ -11,7 +11,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast research
+**Haiku** — Fast research
 
 ## ⚠️ CRITICAL: NO FILE CREATION
 

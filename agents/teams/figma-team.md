@@ -2,6 +2,10 @@
 
 Figma 디자인 → 프로덕션 코드 변환 파이프라인 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

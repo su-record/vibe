@@ -11,7 +11,7 @@ Balanced codebase exploration with analysis.
 
 ## Model
 
-**Sonnet** - Balanced speed and depth
+**Sonnet** — Balanced speed and depth
 
 ## When to Use
 

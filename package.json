@@ -27,6 +27,8 @@
     "dev": "tsc --watch",
     "gen:skill-docs": "npx tsx scripts/gen-skill-docs.ts",
     "gen:skill-docs:check": "npx tsx scripts/gen-skill-docs.ts --check",
+    "sync:agent-models": "npx tsx scripts/sync-agent-models.ts",
+    "sync:agent-models:check": "npx tsx scripts/sync-agent-models.ts --check",
     "validate:skill-invocation": "npx tsx scripts/validate-skill-invocation.ts",
     "validate:counts": "npx tsx scripts/validate-counts.ts",
     "test": "vitest run",

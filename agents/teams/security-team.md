@@ -2,6 +2,10 @@
 
 보안 민감 코드 변경 시 전문 보안 검증 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

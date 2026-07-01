@@ -10,6 +10,10 @@ Preview UI from description or design guide folder.
 - **Gemini enabled**: Generate actual UI image
 - **Gemini disabled**: ASCII art fallback
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## Usage
 
 ```

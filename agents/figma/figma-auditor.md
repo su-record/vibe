@@ -9,6 +9,10 @@
 - CSS 수치 대조 (figma-validate.js)
 - 불일치 리포트 작성 → builder에게 반환
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## Tools
 
 - Read (생성된 코드, sections.json)

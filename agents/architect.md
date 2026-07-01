@@ -13,7 +13,7 @@ High-level architecture and system design specialist.
 
 ## Model
 
-**Opus** - Required for complex architectural reasoning
+**Opus** — Required for complex architectural reasoning
 
 ## When to Use
 

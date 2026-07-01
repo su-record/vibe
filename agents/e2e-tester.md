@@ -7,6 +7,10 @@ argument-hint: "test scenario or URL"
 
 **Closed Loop E2E Testing** - AI가 직접 브라우저를 조작하여 검증하고, 실패 시 자동 수정을 반복
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## Philosophy: Closed Loop
 
 ```

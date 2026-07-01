@@ -2,6 +2,10 @@
 
 빌드/테스트 실패 시 아키텍트 진단 → 구현자 수정 → 테스터 검증 사이클.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

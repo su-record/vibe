@@ -10,7 +10,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast implementation guidance
+**Sonnet** — Fast implementation guidance
 
 ## Phase
 
