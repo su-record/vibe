@@ -3,8 +3,8 @@ name: event-ops
 invocation: [auto]
 tier: standard
 description: "Event operations — nametags, checklists, operational slides, Slido plans, image generation specs, settlement reports."
-triggers: [nametag, checklist, event slide, slido, 이름표, 체크리스트, 운영 슬라이드, 정산]
-priority: 65
+triggers: [nametag, event checklist, event slide, slido, 이름표, 행사 체크리스트, 운영 슬라이드, 정산]
+priority: 60
 ---
 # Event Operations
 

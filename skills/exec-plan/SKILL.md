@@ -4,8 +4,8 @@ user-invocable: false
 invocation: [auto, chain]
 tier: core
 description: "Convert a SPEC (3+ phases or multi-file) into a self-contained execution plan — explicit file paths, interfaces, acceptance criteria — that agents can run autonomously."
-triggers: [exec plan, execution plan, autonomous plan, self-contained plan, long-running, execute this spec, run this plan, parallel implementation]
-priority: 70
+triggers: [exec plan, execution plan, autonomous plan, self-contained plan, execute this spec, run this plan, parallel implementation]
+priority: 60
 chain-next: [commit-push-pr]
 ---
 
