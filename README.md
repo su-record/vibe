@@ -156,7 +156,7 @@ codex
 
 ## 주요 기능
 
-**15개 목표 지향 에이전트** — 전역 10개(architect, implementer, tester, code-reviewer, security-reviewer 등) + 조건부 그룹 5개(UI/Figma/Event — 해당 스택 프로젝트에만 로컬 설치). 단계별 지시 스크립트가 아니라 목표+제약+Done 기준으로 위임하고, 탐색·계획·병렬 실행은 하네스의 네이티브 서브에이전트를 그대로 사용합니다.
+**10+ 에이전트** — 전역 10개(architect, implementer, tester, code-reviewer, security-reviewer 등) + 조건부 그룹 5개(UI/Figma/Event — 해당 스택 프로젝트에만 로컬 설치, 총 15개). 단계별 지시 스크립트가 아니라 목표+제약+Done 기준으로 위임하고, 탐색·계획·병렬 실행은 하네스의 네이티브 서브에이전트를 그대로 사용합니다.
 
 **59개 스킬** — 한 번에 다 로드되지 않음. 3-tier 시스템으로 컨텍스트 과부하 방지:
 

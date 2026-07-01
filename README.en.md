@@ -186,7 +186,7 @@ Detection at edit time, blocking at deterministic gates:
 
 ## Key Features
 
-**15 goal-oriented agents** — 10 global (architect, implementer, tester, code-reviewer, security-reviewer, …) + 5 conditional (UI/Figma/Event — installed project-locally only when the stack/capability matches). Agents are delegated by goal + constraints + Done criteria, not step scripts; exploration, planning, and parallelism use the harness's native subagents directly.
+**10+ agents** — 10 global goal-oriented agents (architect, implementer, tester, code-reviewer, security-reviewer, …) + 5 conditional (UI/Figma/Event — installed project-locally only when the stack/capability matches; 15 total). Agents are delegated by goal + constraints + Done criteria, not step scripts; exploration, planning, and parallelism use the harness's native subagents directly.
 
 **59 skills** — Not all loaded at once. 3-tier system prevents context overload:
 
