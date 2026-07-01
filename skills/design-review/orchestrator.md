@@ -1,10 +1,10 @@
 ---
-name: design-audit-orchestrator
+name: design-review-orchestrator
 type: orchestrator
 agents: [a11y-auditor, performance-auditor, responsive-auditor, slop-detector, scorer]
 ---
 
-# Design Audit Orchestrator
+# Design Review Orchestrator (audit mode)
 
 > 구조·섹션·네이밍은 vibe/rules/orchestrator-contract.md (SSOT) 를 따른다.
 
@@ -31,7 +31,7 @@ agents: [a11y-auditor, performance-auditor, responsive-auditor, slop-detector, s
 ### Phase 4: Suggest Next Skill
 - **Agent**: orchestrator (self)
 - **Input**: Overall score and dominant failure dimension from Phase 3
-- **Output**: Recommended next skill (`/design-normalize`, `/design-critique`, `/design-polish`)
+- **Output**: Recommended next skill (`/design-refine normalize`, `/design-review critique`, `/design-refine polish`)
 - **Parallel**: no
 
 ## DAG (Dependency Graph)

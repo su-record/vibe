@@ -60,5 +60,5 @@
 
 | Condition | Recommended Skill |
 |-----------|-------------------|
-| Design system gaps found | `/design-normalize` then re-run `/design-polish` |
+| Design system gaps found | `/design-refine normalize` then re-run `/design-refine polish` |
 | All items pass | Ship ready |

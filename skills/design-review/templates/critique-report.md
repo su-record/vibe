@@ -81,6 +81,6 @@
 
 | Condition | Recommended Skill |
 |-----------|-------------------|
-| Visual complexity / clutter noted | `/design-distill` |
-| Token inconsistencies noted | `/design-normalize` |
-| Good overall, minor polish needed | `/design-polish` |
+| Visual complexity / clutter noted | `/design-refine distill` |
+| Token inconsistencies noted | `/design-refine normalize` |
+| Good overall, minor polish needed | `/design-refine polish` |

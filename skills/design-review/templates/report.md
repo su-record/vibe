@@ -74,9 +74,9 @@ Grade scale: 4=Excellent, 3=Good, 2=Moderate, 1=Major Issues, 0=Critical
 
 | Condition | Recommended Skill |
 |-----------|-------------------|
-| Design system inconsistencies found | `/design-normalize` |
-| UX/usability concerns noted | `/design-critique` |
-| Score ≥ 16/20, minor polish only | `/design-polish` |
+| Design system inconsistencies found | `/design-refine normalize` |
+| UX/usability concerns noted | `/design-review critique` |
+| Score ≥ 16/20, minor polish only | `/design-refine polish` |
 
 ---
 

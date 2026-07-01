@@ -1,7 +1,7 @@
 ---
 name: core-web-vitals
 type: framework
-applies-to: [design-audit]
+applies-to: [design-review]
 ---
 
 # Core Web Vitals — Reference Card

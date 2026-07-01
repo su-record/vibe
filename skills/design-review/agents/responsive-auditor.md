@@ -40,7 +40,7 @@ Score: {passed}/{total} checks
 
 ## Communication
 - Reports findings to: `design-scorer`
-- Receives instructions from: design-audit orchestrator (SKILL.md)
+- Receives instructions from: design-review orchestrator (SKILL.md)
 
 ## Domain Knowledge
 Standard breakpoints (Tailwind reference): sm 640px, md 768px, lg 1024px, xl 1280px, 2xl 1536px. Mobile-first approach preferred. WCAG 2.5.5 (AA): pointer targets 44x44px. WCAG 2.5.8 (AA, 2.2): minimum 24x24px. Safe area insets required for notched devices. CSS logical properties preferred for RTL support.

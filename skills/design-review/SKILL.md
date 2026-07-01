@@ -106,10 +106,7 @@ Multi-agent orchestration (parallel dimension auditors): `orchestrator.md` + `ag
 
 ## Platform Adaptation
 
-On mobile stacks (React Native, Flutter, iOS, Android):
-- Skip web-specific items (CSS variables, `@container`, `srcset`, `font-display`, breadcrumbs/URLs)
-- Evaluate against platform HIG / Material Design; adapt responsive checks (safe areas, orientation)
-- Focus on visual hierarchy, cognitive load, accessibility, AI slop detection
+On mobile stacks (React Native, Flutter, iOS, Android): skip web-specific items (CSS variables, `@container`, `srcset`, `font-display`, breadcrumbs/URLs); evaluate against platform HIG / Material Design; adapt responsive checks (safe areas, orientation); focus on hierarchy, cognitive load, a11y, AI slop.
 
 ## Preparation
 
@@ -124,20 +121,12 @@ On mobile stacks (React Native, Flutter, iOS, Android):
 ```markdown
 ## Design Review: {target} (mode: {audit|critique|both})
 
-### Scores
-| Dimension / Heuristic | Score | Key Issue |
-|-----------------------|-------|-----------|
-| Accessibility | 3/4 | ... |
-| H1 Visibility of status | 2/4 | No loading state on submit |
-| **Overall** | **N/M** | **NN%** |
-
-### Findings (audit: P0→P3 with {file}:{line} · critique: persona red flags 🔴🟡🟢)
-
-### Top Recommendations
-1. {Priority-ordered actionable items}
+### Scores — | Dimension / Heuristic | Score | Key Issue | ... | **Overall N/M (NN%)** |
+### Findings — audit: P0→P3 with {file}:{line} · critique: persona red flags 🔴🟡🟢
+### Top Recommendations — priority-ordered actionable items
 ```
 
-Report templates: `templates/report.md` (audit) · `templates/critique-report.md` (critique).
+Full report templates: `templates/report.md` (audit) · `templates/critique-report.md` (critique).
 
 ## Next Steps
 

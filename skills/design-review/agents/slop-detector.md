@@ -41,7 +41,7 @@ Score: {passed}/{total} checks
 
 ## Communication
 - Reports findings to: `design-scorer`
-- Receives instructions from: design-audit orchestrator (SKILL.md)
+- Receives instructions from: design-review orchestrator (SKILL.md)
 
 ## Domain Knowledge
 AI-slop signals: purple-to-blue gradients, hero sections with "Transform your workflow" copy, cards with identical shadow/radius, no empty states, no loading skeletons, no error states. Nielsen's Heuristic 1 (visibility of system status) and Heuristic 8 (aesthetic and minimalist design) apply. Distinct design requires intentional deviation from framework defaults.

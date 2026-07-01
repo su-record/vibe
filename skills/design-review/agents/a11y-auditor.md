@@ -37,7 +37,7 @@ Score: {passed}/{total} criteria checked
 
 ## Communication
 - Reports findings to: `design-scorer`
-- Receives instructions from: design-audit orchestrator (SKILL.md)
+- Receives instructions from: design-review orchestrator (SKILL.md)
 
 ## Domain Knowledge
 WCAG 2.1 AA criteria (critical subset): 1.1.1 Non-text Content, 1.3.1 Info and Relationships, 1.4.3 Contrast (4.5:1 normal text / 3:1 large text), 1.4.11 Non-text Contrast (3:1), 2.1.1 Keyboard, 2.4.3 Focus Order, 2.4.7 Focus Visible, 3.3.2 Labels or Instructions, 4.1.2 Name Role Value. ARIA 1.1 authoring practices for widget patterns.

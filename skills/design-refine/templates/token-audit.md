@@ -84,6 +84,6 @@ These values appear 3+ times with no matching token. Candidates for addition to 
 
 ## Next Steps
 
-1. {{#HAS_SUGGESTED_TOKENS}}Add suggested tokens to MASTER.md, then re-run `/design-normalize`{{/HAS_SUGGESTED_TOKENS}}
-2. {{#HAS_HARDCODED}}Run `/design-normalize` to apply replacements{{/HAS_HARDCODED}}
-3. {{#ALL_TOKENIZED}}Token coverage complete — proceed to `/design-polish`{{/ALL_TOKENIZED}}
+1. {{#HAS_SUGGESTED_TOKENS}}Add suggested tokens to MASTER.md, then re-run `/design-refine normalize`{{/HAS_SUGGESTED_TOKENS}}
+2. {{#HAS_HARDCODED}}Run `/design-refine normalize` to apply replacements{{/HAS_HARDCODED}}
+3. {{#ALL_TOKENIZED}}Token coverage complete — proceed to `/design-refine polish`{{/ALL_TOKENIZED}}

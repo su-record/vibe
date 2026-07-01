@@ -40,7 +40,7 @@ Score: {passed}/{total} checks
 
 ## Communication
 - Reports findings to: `design-scorer`
-- Receives instructions from: design-audit orchestrator (SKILL.md)
+- Receives instructions from: design-review orchestrator (SKILL.md)
 
 ## Domain Knowledge
 Core Web Vitals targets: LCP < 2.5s (good), FID/INP < 100ms, CLS < 0.1. Image optimization: WebP/AVIF preferred, explicit dimensions prevent CLS, lazy loading below fold. Font loading: `font-display: swap` prevents FOIT, `preload` for critical fonts. Bundle: code splitting, tree shaking, dynamic imports for route-level splitting.

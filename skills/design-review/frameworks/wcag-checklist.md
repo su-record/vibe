@@ -1,7 +1,7 @@
 ---
 name: wcag-checklist
 type: framework
-applies-to: [design-audit]
+applies-to: [design-review]
 standard: WCAG 2.1 AA
 ---
 
