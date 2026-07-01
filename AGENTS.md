@@ -78,7 +78,7 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 - `better-sqlite3` WAL mode — synchronous API
 - `crypto.timingSafeEqual` requires same-length buffers — check length first
 - **Stack → asset SSOT**: `GLOBAL_SKILLS_*`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts`
-- **Hook dispatch order**: `prompt-dispatcher.js` → `keyword-detector.js` → `llm-orchestrate.js`
+- **Hook dispatch order**: `prompt-dispatcher.js` → `llm-orchestrate.js` (매직 키워드 배너 훅 없음 — deprecated 별칭은 "Deprecated aliases" 표가 SSOT, 모델이 직접 해석)
 - **Hook 실행 모델**: per-event process spawn 유지 — **daemon/IPC 지양** (무상태·크래시 격리·인프라 제로가 ~20ms VM 기동 절감보다 우선). 훅 레이턴시 최적화는 dispatcher in-process 평탄화(자식 spawn → `import` 실행)로만 접근한다
 
 ## Workflow

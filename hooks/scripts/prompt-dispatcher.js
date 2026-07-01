@@ -69,21 +69,9 @@ if (/^\s*\/vibe\b/i.test(prompt)) {
 
 // 패턴 → 실행할 스크립트 매핑
 // 각 항목: { pattern, script, args, label }
+// (참고: 매직 키워드 배너 주입(keyword-detector)은 제거됨 — deprecated 별칭
+//  매핑은 CLAUDE.md 의 "Deprecated aliases" 표가 SSOT이며 모델이 직접 해석한다.)
 const DISPATCH_RULES = [
-  // 항상 실행 (경량 스크립트)
-  {
-    pattern: null, // always
-    script: 'keyword-detector.js',
-    args: [prompt],
-    label: 'keyword',
-  },
-
-  // 패턴 매칭이 필요한 스크립트
-  {
-    pattern: /ultrawork|ulw|울트라워크|ralph|ralplan/i,
-    script: null, // keyword-detector가 이미 처리
-    label: 'skip',
-  },
   // echo 전용 (stdout으로 직접 출력)
   {
     pattern: /e2e.*테스트|e2e.*test|playwright|브라우저.*테스트|browser.*test/i,
@@ -176,7 +164,7 @@ for (const rule of DISPATCH_RULES) {
   // 외부 LLM 호출(llm-orchestrate)은 부모/자식 timeout 을 정합시킨다 (B-2):
   // 자식은 hook 모드(primary 45s, fallback 없음, retry 없음)로 단일 시도 후 스스로
   // 정리하고, 부모는 그보다 약간 긴 50s 로 감싸 hard-kill 을 피한다.
-  // 경량 스크립트(keyword-detector 등)는 기존 30s 유지.
+  // 경량 스크립트는 기존 30s 유지.
   const isLlm = rule.script === 'llm-orchestrate.js';
   const execTimeout = isLlm ? 50000 : 30000;
   const childEnv = isLlm
@@ -207,7 +195,6 @@ await Promise.all(execPromises);
 
 // Evolution: Gap detection — log unmatched prompts for skill gap analysis
 const matched = DISPATCH_RULES.some(r =>
-  r.label !== 'skip' && r.label !== 'keyword' &&
   r.pattern !== null && r.pattern.test(prompt) &&
   (r.script || r.echo)
 );

@@ -7,7 +7,7 @@
  *  - 책임 3) error_category 분류기 + 3-fail detector → anti-pattern md (Phase 2)
  *  - 책임 간 독립성, hot-path 안정성
  *
- * 패턴: keyword-detector.test.js 와 동일한 execFileSync 방식.
+ * 패턴: 훅 스크립트 공통의 execFileSync 방식.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { spawnSync } from 'child_process';

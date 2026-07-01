@@ -260,7 +260,7 @@ describe('prompt-dispatcher: vibe.run 감지 → ledger 파일 생성', () => {
         ...process.env,
         CLAUDE_PROJECT_DIR: tmpDir,
         VIBE_HOOK_DEPTH: undefined,
-        // keyword-detector 등 자식 프로세스 타임아웃 내 완료
+        // 자식 프로세스 타임아웃 내 완료
       },
     });
     expect(result.status).toBe(0);

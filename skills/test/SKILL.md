@@ -72,7 +72,7 @@ Written to `~/.vibe/test-reports/<YYYYMMDD-HHmm>-<harness>.{json,md}`. Exact sch
     ],
     "hooks": [
       { "name": "pre-tool-guard", "status": "pass", "tests": "38/38" },
-      { "name": "keyword-detector", "status": "pass", "tests": "12/12" }
+      { "name": "scope-guard", "status": "pass", "tests": "12/12" }
     ],
     "agents": [
       { "name": "explorer", "status": "pass" }
