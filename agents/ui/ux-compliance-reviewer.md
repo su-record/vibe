@@ -10,7 +10,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel review
+**Sonnet** — Fast parallel review
 
 ## Phase
 

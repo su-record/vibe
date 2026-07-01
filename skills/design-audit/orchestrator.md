@@ -6,6 +6,8 @@ agents: [a11y-auditor, performance-auditor, responsive-auditor, slop-detector, s
 
 # Design Audit Orchestrator
 
+> 구조·섹션·네이밍은 vibe/rules/orchestrator-contract.md (SSOT) 를 따른다.
+
 ## Workflow
 
 ### Phase 1: Launch Dimension Auditors

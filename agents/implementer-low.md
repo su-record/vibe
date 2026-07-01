@@ -11,7 +11,7 @@ Fast implementation for simple changes.
 
 ## Model
 
-**Haiku** - Optimized for fast, simple changes
+**Haiku** — Optimized for fast, simple changes
 
 ## When to Use
 

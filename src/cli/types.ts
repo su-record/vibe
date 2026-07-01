@@ -16,6 +16,7 @@ export interface LLMStatusMap {
   claude: LLMAuthStatus[];
   gpt: LLMAuthStatus[];
   antigravity: LLMAuthStatus[];
+  zai: LLMAuthStatus[];
 }
 
 export interface ClaudeCodeStatus {
@@ -102,6 +103,14 @@ export interface AntigravityCredentials {
   createdAt?: string;
 }
 
+export interface ZaiCredentials {
+  /** 일반 pay-as-you-go API 키 (OpenAI 호환 v4) */
+  apiKey?: string;
+  /** GLM Coding Plan 전용 키 (UI/코드 담당) — 일반 키와 별도 */
+  codingApiKey?: string;
+  createdAt?: string;
+}
+
 export interface TelegramChannelConfig {
   botToken?: string;
   allowedChatIds?: string[];
@@ -124,6 +133,12 @@ export interface ModelOverrides {
   gptCodex: string;
   gptCodexSpark: string;
   antigravity: string;
+  /** ZAI 일반 요금제 기본 모델 */
+  zai: string;
+  /** ZAI Coding Plan(최고 모델) — UI 개발 담당 */
+  zaiCoding: string;
+  /** Gemini 기본 모델 */
+  gemini: string;
   claudeArchitecture: string;
   claudeResearch: string;
   claudeReview: string;
@@ -165,6 +180,7 @@ export interface GlobalVibeConfig {
   credentials?: {
     gpt?: GptCredentials;
     antigravity?: AntigravityCredentials;
+    zai?: ZaiCredentials;
     figma?: FigmaCredentials;
   };
   channels?: {

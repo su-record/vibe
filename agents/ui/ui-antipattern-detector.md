@@ -10,7 +10,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast parallel detection
+**Sonnet** — Fast parallel detection
 
 ## Phase
 

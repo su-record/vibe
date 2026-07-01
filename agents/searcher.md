@@ -11,7 +11,7 @@ Web search specialist sub-agent.
 
 ## Model
 
-- **Default**: Haiku 4.5 + WebSearch
+**Haiku** — Fast, lightweight tasks
 - **Fallback**: GPT hook (`gpt- [query]`)
 
 ## Usage

@@ -25,6 +25,7 @@ export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
   'vibe.event',
   'vibe.figma',
   'vibe.harness',
+  'vibe.llm',
   'vibe.loop',
   'vibe.reason',
   'vibe.regress',

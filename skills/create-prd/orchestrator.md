@@ -6,6 +6,8 @@ agents: [researcher, edge-case-finder, requirements-writer, prioritizer, reviewe
 
 # Create-PRD Orchestrator
 
+> 구조·섹션·네이밍은 vibe/rules/orchestrator-contract.md (SSOT) 를 따른다.
+
 ## Workflow
 
 ### Phase 1: Gather Context

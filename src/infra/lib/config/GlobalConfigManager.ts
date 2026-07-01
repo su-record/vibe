@@ -190,6 +190,14 @@ export function getAntigravityApiKey(): string | null {
   return readGlobalConfig().credentials?.antigravity?.apiKey ?? null;
 }
 
+export function getZaiApiKey(): string | null {
+  return readGlobalConfig().credentials?.zai?.apiKey ?? null;
+}
+
+export function getZaiCodingApiKey(): string | null {
+  return readGlobalConfig().credentials?.zai?.codingApiKey ?? null;
+}
+
 // ─── Model helpers ──────────────────────────────────────────────────
 
 export function getModelOverride(key: string): string | undefined {

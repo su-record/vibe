@@ -1,4 +1,4 @@
-# Implementer Agent (Sonnet 4)
+# Implementer Agent (Sonnet)
 
 Core implementation specialist sub-agent.
 
@@ -11,7 +11,7 @@ Core implementation specialist sub-agent.
 
 ## Model
 
-**Sonnet 4** - Balance between implementation quality and speed
+**Sonnet** — Balance between implementation quality and speed
 
 ## Usage
 

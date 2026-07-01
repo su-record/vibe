@@ -7,6 +7,10 @@ argument-hint: --er or --flow (optional)
 
 Generate diagrams (architecture, ERD, flowchart).
 
+## Model
+
+**Haiku** — Fast, lightweight tasks
+
 ## Usage
 
 ```

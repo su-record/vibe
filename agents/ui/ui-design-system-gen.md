@@ -10,7 +10,7 @@
 
 ## Model
 
-**Sonnet** - Higher capacity for comprehensive design system generation
+**Sonnet** — Higher capacity for comprehensive design system generation
 
 ## Phase
 

@@ -2,6 +2,10 @@
 
 API 문서, 아키텍처 다이어그램, 변경로그를 통합 생성하는 문서화 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

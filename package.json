@@ -1,7 +1,7 @@
 {
   "name": "@su-record/vibe",
   "version": "2.16.2",
-  "description": "AI Coding Framework for Claude Code — 42+ agents, 70 skills, multi-LLM orchestration",
+  "description": "AI Coding Framework for Claude Code — 42+ agents, 73 skills, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
   "exports": {
@@ -27,6 +27,8 @@
     "dev": "tsc --watch",
     "gen:skill-docs": "npx tsx scripts/gen-skill-docs.ts",
     "gen:skill-docs:check": "npx tsx scripts/gen-skill-docs.ts --check",
+    "sync:agent-models": "npx tsx scripts/sync-agent-models.ts",
+    "sync:agent-models:check": "npx tsx scripts/sync-agent-models.ts --check",
     "validate:skill-invocation": "npx tsx scripts/validate-skill-invocation.ts",
     "validate:counts": "npx tsx scripts/validate-counts.ts",
     "test": "vitest run",

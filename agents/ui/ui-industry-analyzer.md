@@ -10,7 +10,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast analysis
+**Haiku** — Fast analysis
 
 ## Phase
 
