@@ -11,7 +11,7 @@ design system → layout and stack-specific implementation guidance.
 
 ## Model
 
-**sonnet** — comprehensive generation quality
+**Sonnet** — comprehensive generation quality
 
 ## Goal
 

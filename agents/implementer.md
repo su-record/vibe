@@ -10,7 +10,7 @@ Core implementation specialist — turns a SPEC or task description into working
 
 ## Model
 
-**sonnet** — implementation quality at loop speed
+**Sonnet** — implementation quality at loop speed
 
 ## Goal
 

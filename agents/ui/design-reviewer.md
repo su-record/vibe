@@ -11,7 +11,7 @@ anti-pattern detection in one pass.
 
 ## Model
 
-**sonnet** — parallel-review accuracy
+**Sonnet** — parallel-review accuracy
 
 ## Goal
 

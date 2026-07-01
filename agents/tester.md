@@ -11,7 +11,7 @@ test suite that would actually catch the bugs this code could have.
 
 ## Model
 
-**haiku** — fast test generation inside the run loop
+**Haiku** — fast test generation inside the run loop
 
 ## Goal
 

@@ -11,7 +11,7 @@ and pixel-verify — one agent owning the whole pipeline per breakpoint.
 
 ## Model
 
-**sonnet** — structured pipeline work with strict invariants
+**Sonnet** — structured pipeline work with strict invariants
 
 ## Goal
 

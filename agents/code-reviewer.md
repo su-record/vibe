@@ -11,7 +11,7 @@ applies the matching expert lens to the changed files.
 
 ## Model
 
-**sonnet** — accurate analysis for a quality gate
+**Sonnet** — accurate analysis for a quality gate
 
 ## Goal
 

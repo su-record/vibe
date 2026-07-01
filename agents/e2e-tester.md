@@ -11,7 +11,7 @@ scenario fails, fix and re-verify until it passes.
 
 ## Model
 
-**sonnet** — root-cause analysis inside the fix loop
+**Sonnet** — root-cause analysis inside the fix loop
 
 ## Goal
 

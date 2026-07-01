@@ -10,7 +10,7 @@ Security review through an attacker's lens — threat-model first, checklist sec
 
 ## Model
 
-**sonnet** — accurate analysis for a quality gate
+**Sonnet** — accurate analysis for a quality gate
 
 ## Goal
 

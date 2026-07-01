@@ -11,7 +11,7 @@ as Mermaid.
 
 ## Model
 
-**haiku** — fast, structured output
+**Haiku** — fast, structured output
 
 ## Goal
 

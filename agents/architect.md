@@ -10,7 +10,7 @@ System design specialist for decisions that are expensive to reverse.
 
 ## Model
 
-**opus** — deep architectural reasoning
+**Opus** — deep architectural reasoning
 
 ## Goal
 

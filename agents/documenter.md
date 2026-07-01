@@ -11,7 +11,7 @@ and changelogs.
 
 ## Model
 
-**haiku** — fast extraction and drafting
+**Haiku** — fast extraction and drafting
 
 ## Goal
 

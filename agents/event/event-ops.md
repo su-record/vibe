@@ -11,7 +11,7 @@ and confirmation-gated SMS/email sends.
 
 ## Model
 
-**sonnet** — structured document generation plus send-safety judgement
+**Sonnet** — structured document generation plus send-safety judgement
 
 ## Goal
 

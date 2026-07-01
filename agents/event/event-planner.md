@@ -11,7 +11,7 @@ written materials.
 
 ## Model
 
-**sonnet** — timeline reasoning plus tone-controlled writing
+**Sonnet** — timeline reasoning plus tone-controlled writing
 
 ## Goal
 

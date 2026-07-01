@@ -11,7 +11,7 @@ routes changed code to the right reviews, and synthesizes one QA verdict.
 
 ## Model
 
-**sonnet** — routing judgement plus criteria analysis
+**Sonnet** — routing judgement plus criteria analysis
 
 ## Goal
 
