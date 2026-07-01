@@ -399,7 +399,10 @@ async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs
   }
 
   if (providerName === 'zai') {
-    const model = vibeConfig.models?.zaiCoding || vibeConfig.models?.zai || process.env.ZAI_MODEL || 'glm-5.2';
+    // coding 키가 있으면 coding plan flagship(5.2), 아니면 일반 API 상한(5.1)
+    const hasCoding = Boolean(vibeConfig.credentials?.zai?.codingApiKey || process.env.ZAI_CODING_API_KEY);
+    const fallback = hasCoding ? 'glm-5.2' : 'glm-5.1';
+    const model = vibeConfig.models?.zaiCoding || vibeConfig.models?.zai || process.env.ZAI_MODEL || fallback;
     return await callZaiApi(prompt, sysPrompt, jsonMode, model, timeoutMs);
   }
 

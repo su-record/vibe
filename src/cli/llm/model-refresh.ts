@@ -52,9 +52,9 @@ const CURATED: Record<ProviderId, Curated> = {
   },
   zai: {
     label: 'ZAI (Z.ai / GLM)',
-    models: ['glm-5.2', 'glm-4.6', 'glm-4.5', 'glm-4.5-air', 'glm-4.5v'],
+    models: ['glm-5.2', 'glm-5-turbo', 'glm-5.1', 'glm-4.7'],
     recommended: 'glm-5.2',
-    overrideKeys: ['zai', 'zaiCoding'],
+    overrideKeys: ['zaiCoding'], // flagship 5.2 → coding(UI). general(zai)은 client 기본 5.1 유지
   },
 };
 

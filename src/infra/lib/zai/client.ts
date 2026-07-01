@@ -14,21 +14,30 @@ import {
 import { createTimeoutSignal, DEFAULT_LLM_TIMEOUT_MS } from '../llm/timeout.js';
 import type { ZaiPlan, ZaiModelInfo, ZaiChatOptions, ZaiChatResponse } from './types.js';
 
+// OpenAI 호환 엔드포인트 (POST {base}/chat/completions — base 에 /v1 을 붙이면 404)
 export const ZAI_BASE_GENERAL = 'https://api.z.ai/api/paas/v4';
 export const ZAI_BASE_CODING = 'https://api.z.ai/api/coding/paas/v4';
+// 참고: GLM Coding Plan 은 Anthropic 호환 엔드포인트(Claude Code 용)도 제공한다.
+//   ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic (요청 포맷은 /v1/messages)
+// 본 클라이언트는 OpenAI 호환 coding 엔드포인트를 사용한다.
+export const ZAI_BASE_CODING_ANTHROPIC = 'https://api.z.ai/api/anthropic';
 
 /** 큐레이션된 알려진 모델 (list-models 미지원/무네트워크 시 fallback) */
 export const ZAI_MODELS: Record<string, ZaiModelInfo> = {
-  'glm-5.2': { id: 'glm-5.2', name: 'GLM-5.2', description: 'Flagship — latest, top reasoning & coding', top: true },
-  'glm-4.6': { id: 'glm-4.6', name: 'GLM-4.6', description: 'Prior flagship' },
-  'glm-4.5': { id: 'glm-4.5', name: 'GLM-4.5', description: 'Prior-gen general model' },
-  'glm-4.5-air': { id: 'glm-4.5-air', name: 'GLM-4.5 Air', description: 'Lightweight, fast' },
-  'glm-4.5v': { id: 'glm-4.5v', name: 'GLM-4.5V', description: 'Vision-language multimodal' },
+  'glm-5.2': { id: 'glm-5.2', name: 'GLM-5.2', description: 'Flagship — latest, top coding (coding plan)', top: true },
+  'glm-5-turbo': { id: 'glm-5-turbo', name: 'GLM-5-Turbo', description: 'Fast agentic model' },
+  'glm-5.1': { id: 'glm-5.1', name: 'GLM-5.1', description: 'General API top model' },
+  'glm-4.7': { id: 'glm-4.7', name: 'GLM-4.7', description: 'Prior-gen coding model' },
 };
 
-/** flagship(최고) 모델 id — UI 개발 등 최고 품질이 필요한 작업에 사용 */
+/** flagship(최고) 모델 id — UI 개발 등 최고 품질이 필요한 작업에 사용 (coding plan) */
 export const ZAI_TOP_MODEL = 'glm-5.2';
-export const DEFAULT_MODEL = 'glm-5.2';
+/** coding plan 기본 모델 */
+export const DEFAULT_CODING_MODEL = 'glm-5.2';
+/** 일반 API 기본 모델 (일반 요금제는 현재 5.1 이 상한) */
+export const DEFAULT_GENERAL_MODEL = 'glm-5.1';
+/** 하위 호환용 기본값 */
+export const DEFAULT_MODEL = DEFAULT_CODING_MODEL;
 
 export function resolveApiKey(plan: ZaiPlan): string | null {
   if (plan === 'coding') return getZaiCodingApiKey() ?? process.env.ZAI_CODING_API_KEY ?? null;
@@ -53,7 +62,8 @@ function pickPlan(requested?: ZaiPlan): ZaiPlan {
 function resolveModel(plan: ZaiPlan, explicit?: string): string {
   if (explicit) return explicit;
   const key = plan === 'coding' ? 'zaiCoding' : 'zai';
-  return getModelOverride(key) || DEFAULT_MODEL;
+  const fallback = plan === 'coding' ? DEFAULT_CODING_MODEL : DEFAULT_GENERAL_MODEL;
+  return getModelOverride(key) || fallback;
 }
 
 interface OpenAiChatResponse {
