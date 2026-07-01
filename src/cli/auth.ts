@@ -11,7 +11,7 @@ import { detectAntigravityCli, detectClaudeCli, detectCodexCli } from './utils/c
  * LLM 인증 상태 확인 (config.json 우선, process.env fallback)
  */
 export function getLLMAuthStatus(): LLMStatusMap {
-  const status: LLMStatusMap = { claude: [], gpt: [], antigravity: [] };
+  const status: LLMStatusMap = { claude: [], gpt: [], antigravity: [], zai: [] };
   const config = readGlobalConfig();
 
   // GPT
@@ -22,6 +22,14 @@ export function getLLMAuthStatus(): LLMStatusMap {
   // Antigravity
   if (config.credentials?.antigravity?.apiKey || process.env.ANTIGRAVITY_API_KEY) {
     status.antigravity.push({ type: 'apikey', valid: true });
+  }
+
+  // ZAI (Z.ai / GLM) — coding plan 키 또는 일반 키
+  if (
+    config.credentials?.zai?.codingApiKey || config.credentials?.zai?.apiKey ||
+    process.env.ZAI_CODING_API_KEY || process.env.ZAI_API_KEY
+  ) {
+    status.zai.push({ type: 'apikey', valid: true });
   }
 
   return status;
@@ -136,6 +144,7 @@ export function formatLLMStatus(): string {
 
   const gptKey = apiStatus.gpt.length > 0 ? '✓ Key' : '⬚ —';
   const antigravityKey = apiStatus.antigravity.length > 0 ? '✓ Key' : '⬚ —';
+  const zaiKey = apiStatus.zai.length > 0 ? '✓ Key' : '⬚ —';
 
   return [
     'LLM CLI (orchestration):',
@@ -146,5 +155,6 @@ export function formatLLMStatus(): string {
     'LLM API Key (direct):',
     `  GPT                 ${gptKey}`,
     `  Antigravity         ${antigravityKey}`,
+    `  ZAI (GLM)           ${zaiKey}`,
   ].join('\n');
 }

@@ -32,6 +32,8 @@ LLM:
   vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (key, status, logout)
   vibe antigravity <cmd>  Antigravity (key, status, logout)
+  vibe zai <cmd>          ZAI / GLM (coding-key, key, status, logout)
+  vibe llm <cmd>          List / refresh available models (list, refresh)
 
 Figma:
   vibe figma setup <token>  Set Figma access token

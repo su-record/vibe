@@ -2,6 +2,10 @@
 
 Sub-agent that automatically validates and corrects code quality rules.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## Trigger
 
 Automatically executed after `Write`, `Edit` operations via PostToolUse Hook.

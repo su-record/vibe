@@ -11,7 +11,7 @@ Module-level architecture and design.
 
 ## Model
 
-**Sonnet** - Balanced for module-level decisions
+**Sonnet** — Balanced for module-level decisions
 
 ## When to Use
 

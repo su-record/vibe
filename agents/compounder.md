@@ -9,6 +9,10 @@ argument-hint: "solution description (optional)"
 
 > "Each solution documented makes future problems easier to solve."
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## Usage
 
 ```

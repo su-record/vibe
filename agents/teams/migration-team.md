@@ -2,6 +2,10 @@
 
 프레임워크/라이브러리 마이그레이션 전문 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

@@ -11,7 +11,7 @@ Minimal-diff specialist for fixing build and type errors.
 
 ## Model
 
-**Sonnet 4** - Fast, precise fixes
+**Sonnet** — Fast, precise fixes
 
 ## Philosophy
 

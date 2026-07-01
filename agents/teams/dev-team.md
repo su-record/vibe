@@ -2,6 +2,10 @@
 
 에이전트들이 팀을 이루어 서로 소통하며 구현하는 풀 구현 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

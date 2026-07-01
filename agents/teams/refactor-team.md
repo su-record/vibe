@@ -2,6 +2,10 @@
 
 안전한 멀티파일 리팩터링을 위한 팀. Characterization test로 현재 동작을 잠그고 변경 후 회귀를 검증한다.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

@@ -12,7 +12,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast analysis
+**Haiku** — Fast analysis
 
 ## CRITICAL: NO FILE CREATION
 

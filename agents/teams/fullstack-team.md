@@ -2,6 +2,10 @@
 
 Frontend + Backend 동시 변경이 필요한 풀스택 기능 구현 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

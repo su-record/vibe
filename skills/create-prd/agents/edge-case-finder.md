@@ -1,5 +1,5 @@
 ---
-name: edge-case-finder
+name: prd-edge-case-finder
 role: Identifies edge cases, constraints, and risks for each requirement
 tools: [Read, WebSearch]
 ---
@@ -17,8 +17,8 @@ Stress-tests the requirements by systematically exploring what happens at bounda
 - Flag security concerns: injection, over-fetching, authorization bypass
 
 ## Input
-- User stories and acceptance criteria from requirements-writer
-- Research brief from researcher (constraints section)
+- User stories and acceptance criteria from prd-requirements-writer
+- Research brief from prd-researcher (constraints section)
 
 ## Output
 Edge cases and risks appended to each user story, plus a global risks section:
@@ -41,7 +41,7 @@ Edge cases and risks appended to each user story, plus a global risks section:
 ```
 
 ## Communication
-- Reports findings to: prioritizer, reviewer
+- Reports findings to: prd-prioritizer, prd-reviewer
 - Receives instructions from: orchestrator (create-prd skill)
 
 ## Domain Knowledge

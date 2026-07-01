@@ -8,11 +8,12 @@ import {
   SmartRouteRequest,
   SmartRouteResult,
   LLMAvailabilityCache,
-  TASK_LLM_PRIORITY,
+  TASK_SYSTEM_PROMPTS,
   getTaskLlmPriority
 } from './types.js';
 import * as gptApi from '../lib/gpt/index.js';
 import * as antigravityApi from '../lib/antigravity/index.js';
+import * as zaiApi from '../lib/zai/index.js';
 import { LLMCluster } from './LLMCluster.js';
 import { debugLog } from '../lib/utils.js';
 
@@ -83,7 +84,8 @@ export class SmartRouter {
     this.claudeRunner = options.claudeRunner ?? new LLMCluster();
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
-      antigravity: { available: true, checkedAt: 0, errorCount: 0 }
+      antigravity: { available: true, checkedAt: 0, errorCount: 0 },
+      zai: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 
@@ -95,7 +97,7 @@ export class SmartRouter {
     const {
       type,
       prompt,
-      systemPrompt = 'You are a helpful assistant.',
+      systemPrompt = TASK_SYSTEM_PROMPTS.general,
       preferredLlm,
       maxRetries = 2
     } = request;
@@ -226,6 +228,9 @@ export class SmartRouter {
         return gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false, signal, timeoutMs });
       case 'antigravity':
         return antigravityApi.coreAntigravityOrchestrate(prompt, systemPrompt, { jsonMode: false, signal, timeoutMs });
+      case 'zai':
+        // GLM(coding plan 최고 모델). UI 작업의 최우선 provider.
+        return zaiApi.coreZaiOrchestrate(prompt, systemPrompt, { jsonMode: false, signal, timeoutMs });
       case 'claude':
         // 마지막 fallback — 로컬 claude CLI 실행 (LLMCluster 또는 주입된 runner).
         // 이전에는 'handled by caller' 예외만 던져 claude-only 환경/외부 LLM 장애 시
@@ -307,52 +312,28 @@ export class SmartRouter {
   // ============================================
 
   async webSearch(query: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'web-search',
-      prompt: query,
-      systemPrompt: 'Search the web and provide relevant information.'
-    });
+    return this.route({ type: 'web-search', prompt: query, systemPrompt: TASK_SYSTEM_PROMPTS['web-search'] });
   }
 
   async architectureReview(prompt: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'architecture',
-      prompt,
-      systemPrompt: 'You are a software architect. Analyze and review the architecture.'
-    });
+    return this.route({ type: 'architecture', prompt, systemPrompt: TASK_SYSTEM_PROMPTS.architecture });
   }
 
   async uiuxReview(prompt: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'uiux',
-      prompt,
-      systemPrompt: 'You are a UI/UX expert. Analyze and provide feedback.'
-    });
+    return this.route({ type: 'uiux', prompt, systemPrompt: TASK_SYSTEM_PROMPTS.uiux });
   }
 
   async codeAnalysis(prompt: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'code-analysis',
-      prompt,
-      systemPrompt: 'You are a code analysis expert. Review and analyze the code.'
-    });
+    return this.route({ type: 'code-analysis', prompt, systemPrompt: TASK_SYSTEM_PROMPTS['code-analysis'] });
   }
 
   async debugging(prompt: string): Promise<SmartRouteResult> {
-    return this.route({
-      type: 'debugging',
-      prompt,
-      systemPrompt: 'You are a debugging expert. Find bugs and suggest fixes.'
-    });
+    return this.route({ type: 'debugging', prompt, systemPrompt: TASK_SYSTEM_PROMPTS.debugging });
   }
 
   async codeGen(description: string, context?: string): Promise<SmartRouteResult> {
     const prompt = context ? `${description}\n\nContext:\n${context}` : description;
-    return this.route({
-      type: 'code-gen',
-      prompt,
-      systemPrompt: 'Generate clean, well-documented code.'
-    });
+    return this.route({ type: 'code-gen', prompt, systemPrompt: TASK_SYSTEM_PROMPTS['code-gen'] });
   }
 
   /**
@@ -368,7 +349,8 @@ export class SmartRouter {
   resetCache(): void {
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
-      antigravity: { available: true, checkedAt: 0, errorCount: 0 }
+      antigravity: { available: true, checkedAt: 0, errorCount: 0 },
+      zai: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 }

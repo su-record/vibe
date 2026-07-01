@@ -10,7 +10,7 @@ Fast codebase exploration for simple searches.
 
 ## Model
 
-**Haiku** - Optimized for fast, simple searches
+**Haiku** — Optimized for fast, simple searches
 
 ## When to Use
 

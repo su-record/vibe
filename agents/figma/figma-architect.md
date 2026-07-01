@@ -11,6 +11,10 @@
 - HTML 시맨틱 구조 확정
 - 이미지 분류: BG / 콘텐츠 / 장식 / 벡터 글자
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## Tools
 
 - Read (sections.json, component-index.json, project-tokens.json)

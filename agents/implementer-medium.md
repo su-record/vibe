@@ -11,7 +11,7 @@ Balanced implementation for standard features.
 
 ## Model
 
-**Sonnet** - Balanced speed and quality
+**Sonnet** — Balanced speed and quality
 
 ## When to Use
 

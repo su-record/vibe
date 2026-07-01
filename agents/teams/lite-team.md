@@ -2,6 +2,10 @@
 
 Dev Team의 축소 버전. 일반 모드에서도 팀 협업을 제공하는 3인 구현 팀.
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## 팀 구성
 
 | 팀원 | 역할 | Model |

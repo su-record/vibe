@@ -10,7 +10,7 @@ Dead code detection and safe removal specialist.
 
 ## Model
 
-**Sonnet 4** - Thorough analysis with safe execution
+**Sonnet** — Thorough analysis with safe execution
 
 ## Analysis Tools
 

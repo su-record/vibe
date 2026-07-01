@@ -10,7 +10,7 @@
 
 ## Model
 
-**Haiku** (inherit) - Fast layout design
+**Sonnet** — Fast layout design
 
 ## Phase
 

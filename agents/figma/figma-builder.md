@@ -9,6 +9,10 @@ BP별 스태틱 코드 구현 전문 에이전트.
 - SCSS는 figma-to-scss.js 출력 그대로 사용 (수정 금지)
 - 인터랙션 로직 (@click, v-for, 상태 변수)
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## Tools
 
 - Read (component-spec.json, sections.json)

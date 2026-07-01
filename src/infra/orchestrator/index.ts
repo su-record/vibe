@@ -453,9 +453,11 @@ export async function llmStatus(): Promise<ToolResult> {
 // ============================================
 
 import type { TaskType, SmartRouteResult } from './types.js';
+import { TASK_SYSTEM_PROMPTS } from './types.js';
 
 /**
  * 스마트 라우팅 - 작업 유형에 따라 최적의 LLM 선택 + 자동 fallback
+ * systemPrompt 미지정 시 작업 유형별 기본값(TASK_SYSTEM_PROMPTS SSOT)을 사용한다.
  *
  * @example
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartRoute({type:'architecture',prompt:'Review this design'})).then(console.log)"
@@ -463,7 +465,7 @@ import type { TaskType, SmartRouteResult } from './types.js';
 export async function smartRoute(
   type: TaskType,
   prompt: string,
-  systemPrompt?: string
+  systemPrompt: string = TASK_SYSTEM_PROMPTS[type]
 ): Promise<ToolResult & { result: SmartRouteResult }> {
   const orchestrator = new CoreOrchestrator();
   const result = await orchestrator.smartRoute({ type, prompt, systemPrompt });
@@ -488,7 +490,7 @@ export async function smartRoute(
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartArchitecture('Review this system design')).then(console.log)"
  */
 export async function smartArchitecture(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
-  return smartRoute('architecture', prompt, 'You are a software architect. Analyze and review the architecture.');
+  return smartRoute('architecture', prompt);
 }
 
 /**
@@ -498,7 +500,7 @@ export async function smartArchitecture(prompt: string): Promise<ToolResult & { 
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartUiux('Improve this form UX')).then(console.log)"
  */
 export async function smartUiux(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
-  return smartRoute('uiux', prompt, 'You are a UI/UX expert. Analyze and provide feedback.');
+  return smartRoute('uiux', prompt);
 }
 
 /**
@@ -508,7 +510,7 @@ export async function smartUiux(prompt: string): Promise<ToolResult & { result: 
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartCodeAnalysis('Analyze this code')).then(console.log)"
  */
 export async function smartCodeAnalysis(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
-  return smartRoute('code-analysis', prompt, 'You are a code analysis expert. Review and analyze the code.');
+  return smartRoute('code-analysis', prompt);
 }
 
 /**
@@ -518,7 +520,7 @@ export async function smartCodeAnalysis(prompt: string): Promise<ToolResult & { 
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartDebugging('Find bugs in this code')).then(console.log)"
  */
 export async function smartDebugging(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
-  return smartRoute('debugging', prompt, 'You are a debugging expert. Find bugs and suggest fixes.');
+  return smartRoute('debugging', prompt);
 }
 
 /**
@@ -528,7 +530,7 @@ export async function smartDebugging(prompt: string): Promise<ToolResult & { res
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartWebSearch('React 19 new features')).then(console.log)"
  */
 export async function smartWebSearch(query: string): Promise<ToolResult & { result: SmartRouteResult }> {
-  return smartRoute('web-search', query, 'Search the web and provide relevant information.');
+  return smartRoute('web-search', query);
 }
 
 /**
@@ -539,7 +541,7 @@ export async function smartWebSearch(query: string): Promise<ToolResult & { resu
  */
 export async function smartCodeGen(description: string, context?: string): Promise<ToolResult & { result: SmartRouteResult }> {
   const prompt = context ? `${description}\n\nContext:\n${context}` : description;
-  return smartRoute('code-gen', prompt, 'Generate clean, well-documented code.');
+  return smartRoute('code-gen', prompt);
 }
 
 /**
@@ -549,7 +551,7 @@ export async function smartCodeGen(description: string, context?: string): Promi
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartCodeReview('Review this PR')).then(console.log)"
  */
 export async function smartCodeReview(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
-  return smartRoute('code-review', prompt, 'You are a code review expert. Review the code for bugs, style, and best practices.');
+  return smartRoute('code-review', prompt);
 }
 
 /**
@@ -559,5 +561,5 @@ export async function smartCodeReview(prompt: string): Promise<ToolResult & { re
  * node -e "import('@su-record/vibe/orchestrator').then(o => o.smartReasoning('Analyze this problem')).then(console.log)"
  */
 export async function smartReasoning(prompt: string): Promise<ToolResult & { result: SmartRouteResult }> {
-  return smartRoute('reasoning', prompt, 'You are a reasoning expert. Analyze the problem step by step.');
+  return smartRoute('reasoning', prompt);
 }

@@ -10,7 +10,7 @@ Quick architecture queries and pattern matching.
 
 ## Model
 
-**Haiku** - Fast pattern matching
+**Haiku** — Fast pattern matching
 
 ## When to Use
 

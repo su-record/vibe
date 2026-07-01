@@ -10,6 +10,10 @@ Figma 디자인 데이터 수집 + 정제 전문 에이전트.
 - 공유 패턴 발견: 반복 INSTANCE → 공통 컴포넌트 후보 도출
 - 디자인 토큰 추출: 색상/간격/타이포 일관성 감지
 
+## Model
+
+**Sonnet** — Balanced reasoning and quality
+
 ## Tools
 
 - Bash (figma-extract.js 실행)
