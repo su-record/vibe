@@ -43,8 +43,8 @@ User says: "vibe spec [feature-name]" or "Create SPEC for [feature-name]"
 
 ### Phase 2: Parallel Research (Manual)
 Run these in parallel:
-- "Use best-practices for [feature]"
-- "Use security-advisory for [feature]"
+- Web search for best practices and security advisories for [feature]
+- Codebase search for existing patterns related to [feature]
 - Search framework docs with context7
 
 ### Phase 3: SPEC Document Generation
@@ -177,7 +177,7 @@ Per phase:
 ## Next Steps
 
 After implementation:
-- "vibe review" - Run 12+ agent code review
+- "vibe review" - Run parallel multi-focus code review
 - "vibe verify [feature-name]" - Verify against SPEC
 - "vibe trace [feature-name]" - Generate traceability matrix
 `,
@@ -187,12 +187,12 @@ After implementation:
       content: `---
 name: su-review
 model: auto
-description: "Parallel code review with 12+ specialized agents. Use after code changes."
+description: "Parallel code review with code-reviewer (multiple focuses) + security-reviewer. Use after code changes."
 ---
 
 # vibe review - Parallel Code Review Skill
 
-Orchestrates 12+ specialized review agents for comprehensive code review.
+Orchestrates the consolidated review agents — **code-reviewer** (invoked multiple times in parallel with different focus values) and **security-reviewer** — for comprehensive code review.
 
 ## When to Use
 
@@ -206,23 +206,18 @@ User says: "vibe review" or "Review my code"
 
 ## Available Review Agents
 
-### Security & Architecture (Thinking Models)
-- **security-reviewer** - OWASP Top 10, authentication, data handling
-- **architecture-reviewer** - Design patterns, dependencies, structure
-- **data-integrity-reviewer** - Data flow, state management, persistence
+### security-reviewer
+- OWASP Top 10, authentication, data handling
 
-### Language Specialists (Codex Models)
-- **typescript-reviewer** - Type safety, modern patterns
-- **python-reviewer** - Type hints, PEP8, async patterns
-- **react-reviewer** - Hooks, component patterns
-- **rails-reviewer** - MVC, ActiveRecord best practices
-
-### Pattern Checkers (Flash Models)
-- **performance-reviewer** - N+1 queries, loops, memory
-- **complexity-reviewer** - Function length, nesting, cyclomatic
-- **simplicity-reviewer** - Over-engineering detection
-- **test-coverage-reviewer** - Missing tests, edge cases
-- **git-history-reviewer** - Risk patterns, commit analysis
+### code-reviewer (focus parameter)
+- **correctness** - Logic errors, edge cases, error handling
+- **architecture** - Design patterns, dependencies, structure
+- **data-integrity** - Data flow, state management, persistence
+- **idioms** - Language/framework idioms (TypeScript, Python, React, Rails, ...)
+- **performance** - N+1 queries, loops, memory
+- **complexity** - Function length, nesting, cyclomatic; over-engineering
+- **test-coverage** - Missing tests, edge cases
+- **git-history** - Risk patterns, commit analysis
 
 ## Workflow
 
@@ -231,18 +226,19 @@ User says: "vibe review" or "Review my code"
 git diff HEAD~1
 \`\`\`
 
-### Step 2: Select Relevant Agents
+### Step 2: Select Relevant Focuses
 Based on changed files:
-- .ts/.tsx → typescript-reviewer, react-reviewer
-- .py → python-reviewer
+- .ts/.tsx/.py/.rb → code-reviewer (focus: idioms)
 - Security-related → security-reviewer
-- Architecture changes → architecture-reviewer
+- Architecture changes → code-reviewer (focus: architecture)
+- Always → code-reviewer (focus: correctness)
 
 ### Step 3: Run Reviews (Parallel)
-Invoke selected agents:
+Invoke the selected reviewers in parallel:
 - "Use security-reviewer"
-- "Use typescript-reviewer"
-- (etc.)
+- "Use code-reviewer with focus: correctness"
+- "Use code-reviewer with focus: architecture"
+- (etc. — one code-reviewer instance per focus)
 
 ### Step 4: Consolidate Findings
 
@@ -270,8 +266,8 @@ Invoke selected agents:
 
 ## Reviewed By
 - security-reviewer ✅
-- typescript-reviewer ✅
-- performance-reviewer ✅
+- code-reviewer (focus: idioms) ✅
+- code-reviewer (focus: performance) ✅
 \`\`\`
 
 ## Next Steps

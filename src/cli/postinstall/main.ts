@@ -152,8 +152,6 @@ export function main(): void {
         { source: path.join(packageRoot, 'vibe', 'rules'), target: path.join(coreAssetsDir, 'rules') },
         { source: path.join(packageRoot, 'vibe', 'templates'), target: path.join(coreAssetsDir, 'templates') },
         { source: path.join(packageRoot, 'languages'), target: path.join(coreAssetsDir, 'languages') },
-        // teams/ 메타 문서 — sub-agent가 아닌 다중 agent orchestration 가이드. vibe core에 보관.
-        { source: path.join(packageRoot, 'agents', 'teams'), target: path.join(coreAssetsDir, 'teams') },
       ];
       for (const { source, target } of copies) {
         if (fs.existsSync(source)) {

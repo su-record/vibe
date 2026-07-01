@@ -233,4 +233,4 @@ function findDuplicates(arr: string[]): string[] {
 - [ ] 대량 데이터 처리 시 스트리밍/청크 처리 적용
 - [ ] 메모리 누수 점검 (이벤트 리스너 해제, 타이머 정리)
 
-> **vibe 도구 연계**: `core_analyze_complexity`로 함수 복잡도 측정, `/vibe.review`의 performance-reviewer 에이전트로 자동 성능 리뷰
+> **vibe 도구 연계**: `core_analyze_complexity`로 함수 복잡도 측정, `/vibe.review`의 code-reviewer(focus: performance) 에이전트로 자동 성능 리뷰

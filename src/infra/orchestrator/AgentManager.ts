@@ -139,8 +139,9 @@ export class AgentManager {
     filePaths: string[],
     techStack: string[] = []
   ): Promise<AgentResult[]> {
-    const reviewAgents = await this.listByCategory('review');
-    const relevantAgents = this.filterRelevantAgents(reviewAgents, techStack);
+    // 통합 리뷰어(code-reviewer, security-reviewer)는 agents/ 최상위에 위치 — 전체 탐색 후 필터
+    const discoveredAgents = await this.discover();
+    const relevantAgents = this.filterRelevantAgents(discoveredAgents, techStack);
 
     const agentConfigs: BackgroundAgentArgs[] = relevantAgents.map(agent => ({
       agentName: agent.name,
@@ -166,35 +167,17 @@ export class AgentManager {
    */
   private filterRelevantAgents(
     agents: DiscoveredAgent[],
-    techStack: string[]
+    _techStack: string[]
   ): DiscoveredAgent[] {
+    // 통합 리뷰어 2종: code-reviewer(focus 파라미터로 correctness/architecture/performance/
+    // complexity/data-integrity/test-coverage/idioms/git-history 커버) + security-reviewer.
+    // 스택별 리뷰어는 code-reviewer(focus: idioms)로 통합되어 techStack 분기가 불필요하다.
     const coreReviewers = [
       'security-reviewer',
-      'performance-reviewer',
-      'architecture-reviewer',
-      'complexity-reviewer',
-      'simplicity-reviewer',
-      'data-integrity-reviewer',
-      'test-coverage-reviewer',
-      'git-history-reviewer'
+      'code-reviewer'
     ];
 
-    const stackReviewers: Record<string, string[]> = {
-      typescript: ['typescript-reviewer'],
-      python: ['python-reviewer'],
-      react: ['react-reviewer'],
-      rails: ['rails-reviewer'],
-      ruby: ['rails-reviewer']
-    };
-
     const relevantNames = new Set(coreReviewers);
-
-    for (const tech of techStack) {
-      const reviewers = stackReviewers[tech.toLowerCase()];
-      if (reviewers) {
-        reviewers.forEach(r => relevantNames.add(r));
-      }
-    }
 
     return agents.filter(agent => {
       const normalizedName = agent.name.toLowerCase().replace(/\s+/g, '-');

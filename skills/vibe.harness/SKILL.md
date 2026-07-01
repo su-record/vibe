@@ -30,16 +30,16 @@ When items are N/A, **remove their points from the total** rather than scoring 0
 
 ### 1. Collect Project State (Parallel Agents)
 
-Dispatch 3 explorer agents in a single message:
+Dispatch 3 native Explore agents in a single message:
 
 ```text
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Check project scaffolding: 1) Does docs/ exist with business documents? 2) Does .dev/ exist for AI logs? 3) Is src/ organized by role (not flat)? 4) Is tests/ separate from src/? 5) List top-level directory structure.")
 
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Check project context and boundaries: 1) Does CLAUDE.md exist? How many lines? 2) Does .claude/rules/ or .vibe/ exist? How many rule files? 3) Does .claude/settings.local.json exist with hooks? 4) Does .vibe/config.json exist? 5) Are there any .claude/skills/ directories?")
 
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Check project planning, execution, and verification: 1) Are there SPEC files in .vibe/specs/? 2) Are there Feature (BDD) files in .vibe/features/? 3) Are there test files? How many? 4) Is there CI config (.github/workflows, etc.)? 5) Are there .dev/learnings/ files?")
 ```
 
@@ -81,7 +81,7 @@ Agent(subagent_type="explorer-low", model="haiku",
 | Item | Criteria | Points |
 |------|----------|--------|
 | Agents or skills | Specialized agents or skills defined | /5 |
-| Team composition | Agent teams (architect + implementer + tester, etc.) | /4 |
+| Parallel composition | Parallel native subagents (architect + implementer + tester, etc.) | /4 |
 | Permission model | Per-agent permission separation (read-only vs write) | /3 |
 | Non-code workflows | Support for documentation, research, and other non-code tasks | /3 |
 

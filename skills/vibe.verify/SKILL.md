@@ -45,7 +45,7 @@ Run all applicable methods as parallel sub-agents in ONE message; each returns a
 |---|---|---|
 | Test execution | `npm test` (judge by exit code) | test files exist |
 | Build | `npm run build` | build script exists |
-| Type check | `tsc --noEmit` / typescript-reviewer agent | TypeScript project |
+| Type check | `tsc --noEmit` / code-reviewer agent (focus: idioms) | TypeScript project |
 | Code analysis | verify Given/When/Then logic against changed files | always |
 | E2E closed loop | e2e-tester agent drives browser scenarios | `--e2e` flag or UI scenarios |
 

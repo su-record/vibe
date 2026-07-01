@@ -133,12 +133,12 @@ Design skills are integrated into 3 phases of the vibe workflow:
 ```
 SPEC Phase:
   ① Check design-context.json (recommend /design-teach if missing)
-  ② ui-industry-analyzer → ui-design-system-gen → ui-layout-architect
+  ② design-system-gen (industry analysis → design system → layout)
 
 REVIEW Phase:
   ③ /design-review audit (technical quality check)
   ④ /design-review critique (UX review)
-  ⑤ ui-antipattern-detector (AI slop + pattern detection)
+  ⑤ design-reviewer (AI slop + anti-pattern detection)
 
 PRE-SHIP Phase:
   ⑥ /design-refine normalize (design system alignment)

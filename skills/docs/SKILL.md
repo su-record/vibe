@@ -202,8 +202,8 @@ When `/vibe.trace` completes with all scenarios passing, suggest:
 - Preserve existing documentation that's still accurate
 - Include concrete code examples from the actual project
 - Keep language consistent with project (Korean/English based on CLAUDE.md)
-- Use changelog-writer agent for `/vibe.docs release`
-- Use api-documenter agent for API-heavy projects
+- Use documenter agent (changelog mode) for `/vibe.docs release`
+- Use documenter agent (api-docs mode) for API-heavy projects
 - Use diagrammer agent for `/vibe.docs arch` Mermaid generation
 - Use the `agents-md` skill for `/vibe.docs agent` — applies equally to CLAUDE.md and AGENTS.md
 

@@ -57,7 +57,7 @@ user-invocable: true
 | 의도 | 신호 | 기본 파이프라인 |
 |---|---|---|
 | **new feature** | "만들어줘", "추가", 신규 아이디어, 입력 없이 빈 호출 | spec → run → verify (trace/contract 는 사용자 요청 또는 SPEC 에 API Contract 섹션이 있을 때만) |
-| **figma-driven UI** | figma.com URL, "디자인", 이미지/PDF + UI 단어 | figma-extract → figma-convert → run → verify |
+| **figma-driven UI** | figma.com URL, "디자인", 이미지/PDF + UI 단어 | figma (Extract → Convert Mode) → run → verify |
 | **clone existing UI** | 일반 웹사이트 URL + "비슷한", "클론", "이런 느낌" | clone → run → verify |
 | **resume in-progress** | feature name + `.vibe/specs/{name}.md` 존재 | (resume 지점부터) |
 | **review only** | "리뷰", "검토만", 코드/SPEC 첨부 + "확인" | review |
@@ -191,7 +191,7 @@ Phase 4: /vibe.verify → 검증
 → Intent: figma-driven UI
 → Resume: 없음
 → Pipeline:
-   1. /vibe.figma  (figma-extract + figma-convert)
+   1. /vibe.figma  (figma Extract + Convert Mode)
    2. /vibe.spec   (생성된 SPEC 자동 보정)
    3. /vibe.run
    4. /vibe.verify

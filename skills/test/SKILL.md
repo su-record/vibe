@@ -75,7 +75,7 @@ Written to `~/.vibe/test-reports/<YYYYMMDD-HHmm>-<harness>.{json,md}`. Exact sch
       { "name": "scope-guard", "status": "pass", "tests": "12/12" }
     ],
     "agents": [
-      { "name": "explorer", "status": "pass" }
+      { "name": "implementer", "status": "pass" }
     ]
   },
   "failed": [
@@ -111,7 +111,7 @@ Written to `~/.vibe/test-reports/<YYYYMMDD-HHmm>-<harness>.{json,md}`. Exact sch
 ## Failures
 
 - **skills / spec** — invocation includes `auto` but triggers array is empty
-- **agents / explorer** — agent file not found
+- **agents / implementer** — agent file not found
 ```
 
 If `failed` is empty, replace the Failures section with `_All probes passed._`.

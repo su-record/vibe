@@ -20,7 +20,7 @@ async function loadPuppeteer(): Promise<Record<string, any>> {
   } catch {
     throw new Error(
       'puppeteer is not installed. Run: npm install puppeteer\n' +
-      'Required for UI verification (vibe.figma Phase 4, design-audit, etc.)',
+      'Required for UI verification (vibe.figma Phase 4, design-review, etc.)',
     );
   }
 }

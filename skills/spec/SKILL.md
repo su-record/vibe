@@ -31,10 +31,10 @@ tier: core
 ### 2. Project context
 
 - `.vibe/config.json` 읽기 — `references.languages[]` 의 스택 가이드, `stacks` 확인.
-- 기존 코드 파악이 필요하면 explorer agent 에 위임 (main session 에서 프로젝트 파일을 훑지 않는다):
+- 기존 코드 파악이 필요하면 네이티브 Explore 서브에이전트에 위임 (main session 에서 프로젝트 파일을 훑지 않는다):
 
 ```text
-Task(subagent_type="explorer-low",
+Task(subagent_type="Explore",
   prompt="Find existing implementations related to [FEATURE]. Return: tech stack, relevant files, patterns. Under 200 tokens.")
 ```
 

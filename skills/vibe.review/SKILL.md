@@ -224,7 +224,7 @@ Read CLAUDE.md         -> Explicit tech stack declaration
 
 ### Phase 2: Parallel Agent Review (STACK-AWARE) via Orchestrator
 
-**Execution via Orchestrator (12+ agents in parallel):**
+**Execution via Orchestrator (code-reviewer instances + security-reviewer in parallel):**
 ```bash
 node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => o.review(['FILE_PATHS'], ['DETECTED_STACKS']).then(r => console.log(r.content[0].text)))"
 ```
@@ -235,65 +235,62 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orche
 node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => o.review(['src/api/users.ts', 'src/components/Login.tsx'], ['TypeScript', 'React']).then(r => console.log(r.content[0].text)))"
 ```
 
-**Core Reviewers (Always Run):**
-| Agent | Focus |
+**Core Reviewers (Always Run — parallel `code-reviewer` instances, one per focus, plus `security-reviewer`):**
+| Agent (focus) | Focus |
 |-------|-------|
 | security-reviewer | OWASP Top 10, vulnerabilities |
-| data-integrity-reviewer | Data validation, constraints |
-| performance-reviewer | N+1 queries, memory leaks |
-| architecture-reviewer | Layer violations, cycles |
-| complexity-reviewer | Cyclomatic complexity, length |
-| simplicity-reviewer | Over-abstraction, dead code |
-| git-history-reviewer | Churn files, risk patterns |
-| test-coverage-reviewer | Missing tests, edge cases |
+| code-reviewer (focus: correctness) | Logic errors, edge cases |
+| code-reviewer (focus: data-integrity) | Data validation, constraints |
+| code-reviewer (focus: performance) | N+1 queries, memory leaks |
+| code-reviewer (focus: architecture) | Layer violations, cycles |
+| code-reviewer (focus: complexity) | Cyclomatic complexity, length, over-abstraction, dead code |
+| code-reviewer (focus: git-history) | Churn files, risk patterns |
+| code-reviewer (focus: test-coverage) | Missing tests, edge cases |
 
-**Stack-Specific Reviewers (Conditional):**
-| Agent | Condition |
+**Stack-Specific Review (Conditional — one extra `code-reviewer` instance):**
+| Agent (focus) | Condition |
 |-------|-----------|
-| python-reviewer | .py files in diff |
-| typescript-reviewer | .ts/.tsx files OR tsconfig |
-| rails-reviewer | Gemfile has rails |
-| react-reviewer | package.json has react |
+| code-reviewer (focus: idioms) | Language/framework files in diff (.py / .ts / .tsx / Gemfile rails / package.json react) — prompt states the detected stack |
 
 ### Phase 2.5: UI/UX Review Agents (Auto-triggered)
 
 > **활성화 조건**: 변경된 파일 중 UI 파일 존재 (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.css`, `.scss`)
 > **비활성화**: `.vibe/config.json`에 `"uiUxAnalysis": false` 설정
 
-**기존 12+ 리뷰 에이전트와 병렬 실행:**
+**기존 Phase 2 리뷰 에이전트와 병렬 실행 — `design-reviewer` 인스턴스 3개 (관점별):**
 
-| Agent | Role | Output |
+| Agent (관점) | Role | Output |
 |-------|------|--------|
-| ⑥ ux-compliance-reviewer | UX 가이드라인 준수 검증 | P1/P2/P3 findings |
-| ⑦ ui-a11y-auditor | WCAG 2.1 AA 접근성 감사 | P1/P2/P3 findings |
-| ⑧ ui-antipattern-detector | UI 안티패턴 + 디자인 시스템 일관성 | P1/P2/P3 findings |
+| ⑥ design-reviewer (UX 준수) | UX 가이드라인 준수 검증 | P1/P2/P3 findings |
+| ⑦ design-reviewer (접근성) | WCAG 2.1 AA 접근성 감사 | P1/P2/P3 findings |
+| ⑧ design-reviewer (안티패턴) | UI 안티패턴 + 디자인 시스템 일관성 | P1/P2/P3 findings |
 
 **실행 방법 — 기존 Phase 2 에이전트와 병렬 실행:**
 
 ```text
 # ⑥ UX 준수 검증 (Haiku)
-Task(subagent_type="ux-compliance-reviewer",
+Task(subagent_type="design-reviewer",
   prompt="Review UI files for UX guideline compliance: {changed_ui_files}. Use core_ui_search against ux-guidelines and web-interface domains.")
 
 # ⑦ 접근성 감사 (Haiku)
-Task(subagent_type="ui-a11y-auditor",
+Task(subagent_type="design-reviewer",
   prompt="Audit UI files for WCAG 2.1 AA compliance: {changed_ui_files}.")
 
 # ⑧ 안티패턴 검출 (Haiku)
-Task(subagent_type="ui-antipattern-detector",
+Task(subagent_type="design-reviewer",
   prompt="Detect UI anti-patterns in: {changed_ui_files}. Check against MASTER.md if exists at .vibe/design-system/{project}/MASTER.md.")
 ```
 
 #### Visual P1 Baseline
 
 - 프로젝트 루트에 `DESIGN.md` 가 존재하면 **시각 P1 의 1 차 baseline** 으로 사용한다 (§2 Color Palette / §7 Do's & Don'ts).
-- `DESIGN.md` 부재 시 기존 폴백을 사용 (WCAG 2.1 AA + `MASTER.md` + design-audit 기본 5 차원).
+- `DESIGN.md` 부재 시 기존 폴백을 사용 (WCAG 2.1 AA + `MASTER.md` + design-review(audit 모드) 기본 5 차원).
 - v1 범위: hex 컬러 드리프트만 P1 후보. spacing / font 드리프트는 Phase 2+ 에서 추가.
 - 안티패턴 검출(⑧) 은 `DESIGN.md §7` 의 "DON'T" 항목을 우선 규칙으로 사용한다.
 
 **findings 통합**: ⑥⑦⑧ findings를 기존 findings[]와 병합 → P1/P2/P3 통합 정렬
 
-**⑦ Critical finding 에스컬레이션**: ui-a11y-auditor의 P1 finding은 Review Debate Team(Phase 4.5)에 자동 포함
+**⑦ Critical finding 에스컬레이션**: design-reviewer(접근성)의 P1 finding은 Review Debate(Phase 4.5)에 자동 포함
 
 ### Phase 2.7: Boundary Mismatch Detection (Integration Coherence)
 
@@ -362,36 +359,36 @@ P3 NICE-TO-HAVE (Enhancement) - N issues
 4. [STYLE] Consider extracting helper function
 ```
 
-### Phase 4.5: Agent Teams — Review Debate
+### Phase 4.5: Review Debate (parallel native subagents)
 
-> **팀 정의**: `agents/teams/review-debate-team.md` 참조 (Code Review 컨텍스트)
-> 설정: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process` (`~/.claude/settings.json` 전역 — postinstall 자동 설정)
+> P1/P2 findings 를 검증하기 위해 네이티브 서브에이전트를 병렬로 스폰한다 —
+> `security-reviewer` + `code-reviewer` 인스턴스(서로 다른 focus)가 각 finding 을 교차 검증(validate / upgrade / downgrade / remove)한다.
 
 **토론 결과 예시:**
 
 ```
 🤝 REVIEW DEBATE RESULTS
 
-Team Consensus (4 reviewers):
+Consensus (4 parallel reviewers):
 
 ✅ Validated P1 (unanimous):
   1. [SECURITY] SQL Injection — 4/4 agree critical
 
 ⬆️ Upgraded P2→P1 (debate result):
-  2. [PERF] Unbounded query — architecture-reviewer pointed out
-     cascading failure risk under load → team agreed P1
+  2. [PERF] Unbounded query — code-reviewer (focus: architecture) pointed out
+     cascading failure risk under load → agreed P1
 
 ⬇️ Downgraded P1→P2 (debate result):
-  3. [SECURITY] CSRF on read-only endpoint — simplicity-reviewer
-     noted endpoint has no side effects → team agreed P2
+  3. [SECURITY] CSRF on read-only endpoint — code-reviewer (focus: complexity)
+     noted endpoint has no side effects → agreed P2
 
 ❌ Removed (false positive):
-  4. [ARCH] "Circular dependency" — architecture-reviewer confirmed
+  4. [ARCH] "Circular dependency" — code-reviewer (focus: architecture) confirmed
      this is intentional bi-directional reference, not a cycle
 
-🆕 New findings (team discussion):
+🆕 New findings (cross-review discussion):
   5. [DATA] Race condition in concurrent updates — emerged from
-     security + performance discussion
+     security + performance cross-review
 ```
 
 ### Phase 5: Auto-Fix (P1/P2)
@@ -452,7 +449,7 @@ Examples:
 CODE REVIEW SUMMARY
 PR #123: Add user authentication
 
-Reviewers: 13 agents
+Reviewers: security-reviewer + 8 code-reviewer instances (per-focus) + 3 design-reviewer instances (UI)
 ⏱️ Started: {start_time}
 ⏱️ Completed: {getCurrentTime 결과}
 

@@ -52,8 +52,8 @@ export function extractCategory(filePath: string, basePath: string): string {
   const relativePath = path.relative(basePath, filePath);
   const parts = relativePath.split(path.sep);
 
-  // agents/review/xxx.md -> review
-  // agents/research/xxx.md -> research
+  // agents/figma/xxx.md -> figma
+  // agents/ui/xxx.md -> ui
   if (parts.length > 1) {
     return parts[0];
   }

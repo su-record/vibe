@@ -169,13 +169,13 @@ export function createDelegationPlan(
     name: 'Exploration',
     agents: [
       {
-        agentType: 'explorer',
+        agentType: 'Explore',
         model: 'haiku',
         prompt: `Explore codebase for: ${task}. Find related files, patterns, dependencies.`,
         background: false,
       },
       {
-        agentType: 'explorer',
+        agentType: 'Explore',
         model: 'haiku',
         prompt: `Search for existing similar implementations or patterns for: ${task}`,
         background: false,

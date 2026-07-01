@@ -2,7 +2,7 @@
  * Browser UI 검증 인프라 타입 정의
  *
  * Puppeteer + CDP 기반 범용 UI 검증 도구.
- * vibe.figma Phase 4, design-audit, design-polish 등에서 공통 사용.
+ * vibe.figma Phase 4, design-review, design-refine 등에서 공통 사용.
  */
 
 /** 브라우저 런치 옵션 */
