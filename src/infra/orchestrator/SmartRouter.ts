@@ -13,6 +13,7 @@ import {
 } from './types.js';
 import * as gptApi from '../lib/gpt/index.js';
 import * as antigravityApi from '../lib/antigravity/index.js';
+import * as zaiApi from '../lib/zai/index.js';
 import { LLMCluster } from './LLMCluster.js';
 import { debugLog } from '../lib/utils.js';
 
@@ -83,7 +84,8 @@ export class SmartRouter {
     this.claudeRunner = options.claudeRunner ?? new LLMCluster();
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
-      antigravity: { available: true, checkedAt: 0, errorCount: 0 }
+      antigravity: { available: true, checkedAt: 0, errorCount: 0 },
+      zai: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 
@@ -226,6 +228,9 @@ export class SmartRouter {
         return gptApi.coreGptOrchestrate(prompt, systemPrompt, { jsonMode: false, signal, timeoutMs });
       case 'antigravity':
         return antigravityApi.coreAntigravityOrchestrate(prompt, systemPrompt, { jsonMode: false, signal, timeoutMs });
+      case 'zai':
+        // GLM(coding plan 최고 모델). UI 작업의 최우선 provider.
+        return zaiApi.coreZaiOrchestrate(prompt, systemPrompt, { jsonMode: false, signal, timeoutMs });
       case 'claude':
         // 마지막 fallback — 로컬 claude CLI 실행 (LLMCluster 또는 주입된 runner).
         // 이전에는 'handled by caller' 예외만 던져 claude-only 환경/외부 LLM 장애 시
@@ -344,7 +349,8 @@ export class SmartRouter {
   resetCache(): void {
     this.cache = {
       gpt: { available: true, checkedAt: 0, errorCount: 0 },
-      antigravity: { available: true, checkedAt: 0, errorCount: 0 }
+      antigravity: { available: true, checkedAt: 0, errorCount: 0 },
+      zai: { available: true, checkedAt: 0, errorCount: 0 }
     };
   }
 }

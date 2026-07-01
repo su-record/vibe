@@ -44,7 +44,24 @@ describe('computeLlmPriority (routing policy SSOT)', () => {
 
   it('TASK_LLM_PRIORITY is derived from computeLlmPriority (all-available) — cannot drift', () => {
     for (const t of TASK_TYPES) {
-      expect(TASK_LLM_PRIORITY[t]).toEqual(computeLlmPriority(t, { codex: true, antigravity: true }));
+      expect(TASK_LLM_PRIORITY[t]).toEqual(
+        computeLlmPriority(t, { codex: true, antigravity: true, zai: true })
+      );
     }
+  });
+
+  it('routes UI (uiux) to zai(GLM) first when zai is available', () => {
+    expect(computeLlmPriority('uiux', { codex: true, antigravity: true, zai: true }))
+      .toEqual(['zai', 'antigravity', 'claude']);
+    // zai only → GLM then claude
+    expect(computeLlmPriority('uiux', { codex: false, antigravity: false, zai: true }))
+      .toEqual(['zai', 'claude']);
+  });
+
+  it('does not route non-UI tasks to zai', () => {
+    expect(computeLlmPriority('architecture', { codex: true, antigravity: true, zai: true }))
+      .toEqual(['gpt', 'antigravity', 'claude']);
+    expect(computeLlmPriority('code-gen', { codex: true, antigravity: true, zai: true }))
+      .toEqual(['gpt', 'claude']);
   });
 });

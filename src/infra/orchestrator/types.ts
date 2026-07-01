@@ -177,7 +177,7 @@ export type TaskType =
   | 'reasoning';
 
 /** LLM 제공자 */
-export type LLMProvider = 'gpt' | 'antigravity' | 'claude';
+export type LLMProvider = 'gpt' | 'antigravity' | 'zai' | 'claude';
 
 /** 스마트 라우팅 요청 */
 export interface SmartRouteRequest {
@@ -208,6 +208,7 @@ export interface SmartRouteResult {
 export interface LLMAvailabilityCache {
   gpt: { available: boolean; checkedAt: number; errorCount: number };
   antigravity: { available: boolean; checkedAt: number; errorCount: number };
+  zai: { available: boolean; checkedAt: number; errorCount: number };
 }
 
 /**
@@ -231,6 +232,18 @@ const GPT_TASK_TYPES: readonly TaskType[] = [
 const ANTIGRAVITY_FIRST_TASK_TYPES: readonly TaskType[] = ['web-search', 'uiux'];
 /** Antigravity 를 교차검증용(GPT 뒤)으로 붙이는 작업 유형 */
 const ANTIGRAVITY_CROSSCHECK_TASK_TYPES: readonly TaskType[] = ['code-review', 'architecture', 'reasoning'];
+/**
+ * ZAI(GLM 최고 모델)가 최우선으로 담당하는 UI 작업 유형.
+ * "zai 사용 가능 시 모든 UI 개발은 GLM 최고 모델이 담당" 정책.
+ */
+const ZAI_UI_TASK_TYPES: readonly TaskType[] = ['uiux'];
+
+/** LLM 가용성 입력 — provider 별 boolean (미지정은 비가용으로 취급) */
+export interface LlmAvailabilityInput {
+  codex?: boolean;
+  antigravity?: boolean;
+  zai?: boolean;
+}
 
 /**
  * 순수 LLM 우선순위 정책 — 가용성만 입력받아 provider 체인을 계산한다(I/O 없음).
@@ -238,16 +251,24 @@ const ANTIGRAVITY_CROSSCHECK_TASK_TYPES: readonly TaskType[] = ['code-review', '
  */
 export function computeLlmPriority(
   type: TaskType,
-  availability: { codex: boolean; antigravity: boolean }
+  availability: LlmAvailabilityInput
 ): LLMProvider[] {
-  const { codex, antigravity } = availability;
-  if (!codex && !antigravity) return ['claude'];
+  const { codex, antigravity, zai } = availability;
+  if (!codex && !antigravity && !zai) return ['claude'];
 
   const priority: LLMProvider[] = [];
+  // ZAI(GLM)가 가용하면 UI 작업을 최우선으로 담당
+  if (zai && ZAI_UI_TASK_TYPES.includes(type)) priority.push('zai');
+
   if (codex && GPT_TASK_TYPES.includes(type)) priority.push('gpt');
   if (antigravity) {
-    if (ANTIGRAVITY_FIRST_TASK_TYPES.includes(type)) priority.unshift('antigravity');
-    else if (ANTIGRAVITY_CROSSCHECK_TASK_TYPES.includes(type)) priority.push('antigravity');
+    if (ANTIGRAVITY_FIRST_TASK_TYPES.includes(type)) {
+      // zai 가 이미 선두면 그 뒤로, 아니면 맨 앞으로
+      if (priority[0] === 'zai') priority.push('antigravity');
+      else priority.unshift('antigravity');
+    } else if (ANTIGRAVITY_CROSSCHECK_TASK_TYPES.includes(type)) {
+      priority.push('antigravity');
+    }
   }
   priority.push('claude');
   return priority;
@@ -258,7 +279,7 @@ export function computeLlmPriority(
  * computeLlmPriority 에서 파생 — getTaskLlmPriority(런타임) 와 절대 어긋나지 않는다.
  */
 export const TASK_LLM_PRIORITY: Record<TaskType, LLMProvider[]> = Object.fromEntries(
-  TASK_TYPES.map((t) => [t, computeLlmPriority(t, { codex: true, antigravity: true })])
+  TASK_TYPES.map((t) => [t, computeLlmPriority(t, { codex: true, antigravity: true, zai: true })])
 ) as Record<TaskType, LLMProvider[]>;
 
 /**
