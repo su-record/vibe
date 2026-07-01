@@ -13,7 +13,6 @@
     "./tools/ui": "./dist/tools/ui/index.js",
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/interaction": "./dist/tools/interaction/index.js",
-    "./orchestrator": "./dist/infra/orchestrator/index.js",
     "./memory": {
       "types": "./dist/infra/lib/memory/index.d.ts",
       "default": "./dist/infra/lib/memory/index.js"

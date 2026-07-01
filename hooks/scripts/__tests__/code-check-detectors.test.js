@@ -149,7 +149,7 @@ describe('console.log 허용 경로 정책', () => {
     expect(isConsoleAllowed('src/tools/convention/validateCodeQuality.ts')).toBe(false);
   });
 
-  it('src/infra/orchestrator/index.ts → 차단', () => {
-    expect(isConsoleAllowed('src/infra/orchestrator/index.ts')).toBe(false);
+  it('src/infra/lib/MemoryManager.ts → 차단', () => {
+    expect(isConsoleAllowed('src/infra/lib/MemoryManager.ts')).toBe(false);
   });
 });

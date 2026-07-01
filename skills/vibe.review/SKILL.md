@@ -222,18 +222,19 @@ Read CLAUDE.md         -> Explicit tech stack declaration
 5. If no SPEC files exist → Skip (reviews work without SPEC too)
 ```
 
-### Phase 2: Parallel Agent Review (STACK-AWARE) via Orchestrator
+### Phase 2: Parallel Agent Review (STACK-AWARE)
 
-**Execution via Orchestrator (code-reviewer instances + security-reviewer in parallel):**
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => o.review(['FILE_PATHS'], ['DETECTED_STACKS']).then(r => console.log(r.content[0].text)))"
+**Spawn the reviewers as concurrent native subagents in ONE message** — one `code-reviewer` instance per focus plus `security-reviewer`, each scoped to the changed files:
+
+```
+Task (code-reviewer): "Review [FILES] — focus: correctness"      (concurrent)
+Task (code-reviewer): "Review [FILES] — focus: data-integrity"   (concurrent)
+Task (code-reviewer): "Review [FILES] — focus: performance"      (concurrent)
+Task (code-reviewer): "Review [FILES] — focus: architecture"     (concurrent)
+Task (security-reviewer): "Review [FILES] for vulnerabilities"   (concurrent)
 ```
 
-**Example:**
-```bash
-# Review changed files with TypeScript + React stack
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => o.review(['src/api/users.ts', 'src/components/Login.tsx'], ['TypeScript', 'React']).then(r => console.log(r.content[0].text)))"
-```
+Stack-specific focus (`idioms`) is added when the diff touches that stack's files. Collect all results, then dedupe/merge findings before Phase 3.
 
 **Core Reviewers (Always Run — parallel `code-reviewer` instances, one per focus, plus `security-reviewer`):**
 | Agent (focus) | Focus |

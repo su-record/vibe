@@ -124,32 +124,17 @@ Tier-variant agents were consolidated — the model is a Task parameter, not a s
 → 3x slower, wastes time
 ```
 
-### Background Agent Pattern (ULTRAWORK) via Orchestrator
+### Background Agent Pattern (autonomous + parallel ACT)
 
-```bash
-# Start background agent (doesn't block)
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep').then(r => console.log(r.content[0].text)))"
+Use the harness's native background subagents — spawn them in one message and continue working; completion notifications arrive automatically:
 
-# Multiple backgrounds in parallel
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(async o => {
-  await Promise.all([
-    o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep'),
-    o.runAgent('Pre-generate test cases for login form', 'test-prep'),
-    o.runAgent('Find existing validation patterns', 'pattern-finder')
-  ]);
-  console.log('All background agents started');
-})"
+```
+Task (Explore, background): "Phase 2 prep: Analyze auth API endpoints"
+Task (tester, background): "Pre-generate test cases for login form"
+Task (Explore, background): "Find existing validation patterns"
 ```
 
-**Check background agent status:**
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => console.log(o.status().content[0].text))"
-```
-
-**Get result when ready:**
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => o.getResult('SESSION_ID').then(r => console.log(r.content[0].text)))"
-```
+No status polling is needed — the harness re-invokes you when each background agent completes. (구 자체 오케스트레이터 runAgent/status/getResult 체계는 제거됨 — 네이티브 background subagent 가 대체.)
 
 ### Phase Execution Flow (ULTRAWORK Pipeline)
 
