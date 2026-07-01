@@ -77,7 +77,7 @@ Vibe is built on the [Harness Engineering](https://anthropic.com/engineering/har
 | **Scaffolding** | Project structure, tools, boundaries | `/vibe.scaffold` generates optimized folder structure (docs/, .dev/, layered src/) |
 | **Context** | What AI knows | `vibe init` generates project-aware `CLAUDE.md` / `AGENTS.md` from actual structure analysis |
 | **Planning** | What to build | `/vibe` routes to interview → plan → SPEC → review pipeline |
-| **Orchestration** | How to execute | 40+ agents, 12 teams, skill-based dispatch |
+| **Orchestration** | How to execute | 15 goal-oriented agents + native parallel subagents, skill-based dispatch |
 | **Verification** | How to trust | Hooks, convergence loops, RTM traceability |
 | **Compounding** | How to improve | Evolution engine, session memory, auto-generated skills |
 
@@ -170,9 +170,9 @@ Detection at edit time, blocking at deterministic gates — three layers of defe
 
 ## Key Features
 
-**42+ agents** — Exploration, implementation, architecture, parallel code review, UI/UX analysis, security audit, Figma analysis/building. The UI/Figma/Event groups (18 agents) are excluded from the global install — `vibe init` installs them project-locally (`.claude/agents/`) only when the stack/capability matches, so they never occupy context in unrelated projects.
+**10+ agents** — Exploration, implementation, architecture, parallel code review, UI/UX analysis, security audit, Figma analysis/building. The UI/Figma/Event groups (18 agents) are excluded from the global install — `vibe init` installs them project-locally (`.claude/agents/`) only when the stack/capability matches, so they never occupy context in unrelated projects.
 
-**73 skills** — Not all loaded at once. 3-tier system prevents context overload:
+**59 skills** — Not all loaded at once. 3-tier system prevents context overload:
 
 | Tier | When loaded | Purpose | Examples |
 |------|-------------|---------|----------|

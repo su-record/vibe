@@ -233,16 +233,16 @@ describe('Ultrawork auto mode override', () => {
   });
 });
 
-// Phase 5 Scenario 8: Session start evolution status
+// Phase 5 Scenario 8 (P3-3 동결 이후): SessionStart 는 evolution 요약을 주입하지 않는다.
+// evolution 상태 조회는 명시적 CLI(vibe evolution) 전용.
 describe('Session start evolution status', () => {
-  it('should display evolution status on session start', () => {
+  it('should NOT inject evolution status on session start (frozen, opt-in)', () => {
     const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'session-start.js');
     const content = readFileSync(hookPath, 'utf8');
-    expect(content).toContain('Evolution');
-    expect(content).toContain('GenerationRegistry');
-    expect(content).toContain('active skills');
-    expect(content).toContain('pending approval');
-    expect(content).toContain('gaps detected');
+    expect(content).not.toContain('GenerationRegistry');
+    expect(content).not.toContain('gaps detected');
+    // 동결 사실이 주석으로 문서화되어 있어야 한다
+    expect(content).toContain('동결');
   });
 });
 
