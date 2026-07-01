@@ -28,10 +28,13 @@ function isRecentlyModified(file) {
 /**
  * scope-guard auto-derive 활성 여부.
  *
- * 기본값은 **on**. `.vibe/config.json` 의 `scopeGuard.enabled = false` 로
- * 명시적으로 끌 때만 SPEC → scope.json 자동 합성을 건너뛴다.
- * 노이즈 가드: SPEC 파일이 존재할 때만 scope.json 을 생성하며,
- * SPEC 없이 scope.json 생성이 필요한 경우 수동 작성(auto:false)을 사용한다.
+ * 기본값은 **off** — `.vibe/config.json` 의 `scopeGuard.enabled = true` 로
+ * 명시적 opt-in 했을 때만 SPEC → scope.json 자동 합성을 실행한다.
+ * (자동 ON 은 SPEC 외 편집에 노이즈 경고 회귀를 유발해 CLI 쪽에서 이미
+ * 기본 off 로 수정됐다. 이 훅이 기본 on 으로 남아 init/update 와
+ * SessionStart 가 서로 다른 scope 상태를 만들던 불일치를 통일 —
+ * harness-review-2026-07-01 P1-6. SSOT: src/cli/utils.ts `isScopeGuardOptedIn`
+ * 과 반드시 같은 기본값 유지.)
  *
  * 이미 `auto: false` scope.json 을 직접 만들어 둔 사용자는 영향 없음 — scope-guard.js
  * 자체는 scope.json 존재 여부만 본다.
@@ -45,10 +48,10 @@ export function isScopeGuardEnabled(projectDir) {
     for (const p of candidates) {
       if (!fs.existsSync(p)) continue;
       const cfg = JSON.parse(fs.readFileSync(p, 'utf-8'));
-      if (cfg && cfg.scopeGuard && cfg.scopeGuard.enabled === false) return false;
+      if (cfg && cfg.scopeGuard && cfg.scopeGuard.enabled === true) return true;
     }
   } catch { /* ignore */ }
-  return true;
+  return false;
 }
 
 /**

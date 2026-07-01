@@ -60,7 +60,7 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 | `~/.codex/config.toml` | Codex `notify` (turn-complete lifecycle hook, auto-installed) |
 
 **`.vibe/config.json` behavior keys** (set per-project to tune gate behavior):
-- `scopeGuard.enabled` / `scopeGuard.mode` — scope fence on/off; `warn` (default) or `block`
+- `scopeGuard.enabled` / `scopeGuard.mode` — scope fence opt-in (default **off** everywhere — CLI and hooks share this default); mode `warn` (default) or `block`
 - `verifyGate.mode` — `warn` (default) or `block` (Stop hook blocks once if run started but verify not passed)
 - `autoTest.mode` — `debounce` (default, 120s cooldown per unchanged test file) / `always` / `off`
 - `qualityCheck.consoleAllow` — array of file globs where `console.log` is permitted

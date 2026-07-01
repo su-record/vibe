@@ -139,16 +139,17 @@ async function main() {
       }
     }
 
-    // Scope sync — 기본 ON. scopeGuard.enabled=false 로 명시적 opt-out 가능.
+    // Scope sync — 기본 OFF (opt-in: scopeGuard.enabled=true). SSOT: scope-from-spec.js.
     try {
       const { syncScopeFile, isScopeGuardEnabled } = await import('./lib/scope-from-spec.js');
-      if (isScopeGuardEnabled(PROJECT_DIR)) {
+      const guardOn = isScopeGuardEnabled(PROJECT_DIR);
+      if (guardOn) {
         const result = syncScopeFile(PROJECT_DIR);
         if (result.action === 'created' || result.action === 'updated' || result.action === 'removed') {
           console.log(`\n🚧 Scope ${result.action} from active SPECs (${path.relative(PROJECT_DIR, path.join(projectVibeRoot(PROJECT_DIR), 'scope.json'))})`);
         }
       }
-      // scope 상태 1줄 알림 — 컨텍스트에 주입되어 모델이 현재 scope 범위를 인지한다
+      // scope 상태 1줄 알림 — 활성 scope.json 이 있을 때만 (opt-out 사용자에게 노이즈 금지)
       const scopeJsonPath = path.join(projectVibeRoot(PROJECT_DIR), 'scope.json');
       if (fs.existsSync(scopeJsonPath)) {
         try {
@@ -157,7 +158,7 @@ async function main() {
           const modeLabel = scopeData.mode || 'warn';
           console.log(`\nscope-guard: ${featureLabel} (${modeLabel})`);
         } catch { /* ignore */ }
-      } else {
+      } else if (guardOn) {
         console.log('\nscope-guard: no active scope (no active SPEC or no derivable paths) — out-of-scope edits are not monitored');
       }
     } catch { /* scope sync is best-effort */ }
