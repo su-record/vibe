@@ -650,34 +650,139 @@ const TAB_CONTENT_FP = `(function (g) {
   return (root.innerText || '').replace(/\\s+/g, ' ').trim().slice(0, 4000);
 })`;
 
+// Hover diff props — 색/그림자/변형 등 호버에서 실제로 바뀌는 것들
+const HOVER_PROPS = [
+  'color', 'background-color', 'border-color', 'box-shadow',
+  'transform', 'opacity', 'text-decoration-line', 'filter', 'outline-width',
+];
+
+// In-view 등장 애니메이션 diff props
+const INVIEW_PROPS = ['opacity', 'transform', 'visibility', 'filter', 'clip-path'];
+
+// In-page: tag hover candidates. 같은 시그니처(tag+첫 클래스)는 1개만 샘플 — nav 링크 30개 → 1개.
+const TAG_HOVER_CANDIDATES = `(function () {
+  const els = Array.from(document.querySelectorAll('a, button, [role="button"], [class*="btn" i], [class*="card" i]'));
+  const seen = new Set(); const out = []; let i = 0;
+  for (const el of els) {
+    if (i >= 30) break;
+    const r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) continue;
+    const cls = (el.getAttribute('class') || '').trim().split(/\\s+/).filter(Boolean)[0] || '';
+    const sig = el.tagName + '.' + cls;
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    el.setAttribute('data-clone-hover', 'h' + i);
+    out.push({ probe: 'h' + i, tag: el.tagName.toLowerCase(), cls, transition: getComputedStyle(el).transition });
+    i++;
+  }
+  return out;
+})`;
+
+// In-page: snapshot computed props of all elements tagged with an attribute.
+const SNAP_ATTR = `(function (attr, props) {
+  const out = {};
+  document.querySelectorAll('[' + attr + ']').forEach((el) => {
+    const cs = getComputedStyle(el); const o = {};
+    for (const p of props) { const v = cs.getPropertyValue(p); if (v) o[p] = v.trim(); }
+    out[el.getAttribute(attr)] = o;
+  });
+  return out;
+})`;
+
+// In-page: tag below-the-fold elements that look "waiting to animate" (opacity 0 / transform offset).
+const TAG_INVIEW = `(function () {
+  const innerH = window.innerHeight;
+  const all = Array.from(document.querySelectorAll('body *')).slice(0, 3000);
+  const out = []; let i = 0;
+  for (const el of all) {
+    if (i >= 20) break;
+    const r = el.getBoundingClientRect();
+    if (r.width < 40 || r.height < 40) continue;
+    if (r.top < innerH) continue;
+    const cs = getComputedStyle(el);
+    const hidden = parseFloat(cs.opacity) < 0.05;
+    const shifted = cs.transform && cs.transform !== 'none';
+    if (!hidden && !shifted) continue;
+    if (el.parentElement && el.parentElement.closest('[data-clone-inview]')) continue;
+    el.setAttribute('data-clone-inview', 'v' + i);
+    const cls = (el.getAttribute('class') || '').trim().split(/\\s+/).filter(Boolean)[0] || '';
+    out.push({ probe: 'v' + i, tag: el.tagName.toLowerCase(), cls, top: Math.round(r.top + window.scrollY) });
+    i++;
+  }
+  return out;
+})`;
+
+// In-page: observe class/style mutations for N ms with no input → time-driven candidates (carousels, cycling).
+const OBSERVE_MUTATIONS = `(function (ms) {
+  return new Promise((resolve) => {
+    const counts = new Map();
+    const obs = new MutationObserver((muts) => {
+      for (const m of muts) {
+        const el = m.target;
+        if (!el || !el.tagName || el === document.body || el === document.documentElement) continue;
+        const tag = el.tagName.toLowerCase();
+        const cls = ((el.getAttribute && el.getAttribute('class')) || '').trim().split(/\\s+/).filter(Boolean)[0] || '';
+        const key = tag + (cls ? '.' + cls : '');
+        const e = counts.get(key) || { tag, cls, mutations: 0, kinds: new Set() };
+        e.mutations++; e.kinds.add(m.type === 'attributes' ? m.attributeName : m.type);
+        counts.set(key, e);
+      }
+    });
+    obs.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'], childList: true });
+    setTimeout(() => {
+      obs.disconnect();
+      resolve(Array.from(counts.entries())
+        .map(([label, e]) => ({ label, tag: e.tag, cls: e.cls, mutations: e.mutations, kinds: Array.from(e.kinds) }))
+        .sort((a, b) => b.mutations - a.mutations)
+        .slice(0, 10));
+    }, ms);
+  });
+})`;
+
+// In-page: smooth-scroll library detection (Lenis, Locomotive). 네이티브와 체감이 확연히 달라 놓치면 바로 티가 난다.
+const DETECT_SCROLL_LIB = `(function () {
+  const checks = [
+    ['lenis', 'html.lenis, .lenis, [data-lenis]'],
+    ['locomotive-scroll', '.locomotive-scroll, [data-scroll-container]'],
+  ];
+  for (const [name, sel] of checks) {
+    if (document.querySelector(sel)) return { name, evidence: sel };
+  }
+  if (window.Lenis) return { name: 'lenis', evidence: 'window.Lenis' };
+  if (window.LocomotiveScroll || window.locomotive) return { name: 'locomotive-scroll', evidence: 'window.LocomotiveScroll' };
+  return null;
+})`;
+
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function runInteractionSweep(page) {
-  const behaviors = { scroll: [], interactive: [] };
-
-  // ── Scroll-triggered state (header/nav shrink, background, shadow on scroll) ──
+// ── Scroll-triggered state (header/nav shrink, background, shadow on scroll) ──
+async function sweepScrollState(page) {
+  const out = [];
   const candidates = await page.evaluate(`(${TAG_SCROLL_CANDIDATES})()`);
-  if (candidates.length) {
-    const before = await page.evaluate(`(${SNAP_PROBES})(${JSON.stringify(BEHAVIOR_PROPS)})`);
-    const innerH = await page.evaluate('window.innerHeight');
-    const triggerY = Math.min(700, Math.max(200, Math.round(innerH * 0.9)));
-    await page.evaluate(`window.scrollTo(0, ${triggerY})`);
-    await wait(500);
-    const after = await page.evaluate(`(${SNAP_PROBES})(${JSON.stringify(BEHAVIOR_PROPS)})`);
-    await page.evaluate('window.scrollTo(0, 0)');
-    await wait(300);
-    for (const c of candidates) {
-      const changed = diffStyles(before[c.probe], after[c.probe]);
-      if (Object.keys(changed).length) {
-        behaviors.scroll.push({
-          label: c.cls ? `${c.tag}.${c.cls}` : c.tag,
-          tag: c.tag, cls: c.cls, triggerScrollY: triggerY, changed,
-        });
-      }
+  if (!candidates.length) return out;
+  const before = await page.evaluate(`(${SNAP_PROBES})(${JSON.stringify(BEHAVIOR_PROPS)})`);
+  const innerH = await page.evaluate('window.innerHeight');
+  const triggerY = Math.min(700, Math.max(200, Math.round(innerH * 0.9)));
+  await page.evaluate(`window.scrollTo(0, ${triggerY})`);
+  await wait(500);
+  const after = await page.evaluate(`(${SNAP_PROBES})(${JSON.stringify(BEHAVIOR_PROPS)})`);
+  await page.evaluate('window.scrollTo(0, 0)');
+  await wait(300);
+  for (const c of candidates) {
+    const changed = diffStyles(before[c.probe], after[c.probe]);
+    if (Object.keys(changed).length) {
+      out.push({
+        label: c.cls ? `${c.tag}.${c.cls}` : c.tag,
+        tag: c.tag, cls: c.cls, triggerScrollY: triggerY, changed,
+      });
     }
   }
+  return out;
+}
 
-  // ── Click-driven tab groups (content swap detection) ──
+// ── Click-driven tab groups (content swap detection) ──
+async function sweepTabGroups(page) {
+  const out = [];
   const groups = await page.evaluate(`(${TAG_TAB_GROUPS})()`);
   for (const grp of groups) {
     try {
@@ -693,7 +798,7 @@ async function runInteractionSweep(page) {
         `(function (g) { const t = document.querySelector('[data-clone-tab="' + g + '_0"]'); if (t) t.click(); })(${grp.group})`
       );
       await wait(200);
-      behaviors.interactive.push({
+      out.push({
         kind: 'tab-group',
         count: grp.count,
         tabLabels: grp.labels,
@@ -701,13 +806,104 @@ async function runInteractionSweep(page) {
       });
     } catch { /* one bad group must not abort the whole sweep */ }
   }
+  return out;
+}
+
+// ── Hover states set by JS (static :hover rules already land in states.json) ──
+async function sweepHover(page) {
+  const out = [];
+  const candidates = await page.evaluate(`(${TAG_HOVER_CANDIDATES})()`);
+  for (const c of candidates) {
+    try {
+      const sel = `[data-clone-hover="${c.probe}"]`;
+      await page.evaluate(`document.querySelector('${sel}')?.scrollIntoView({ block: 'center' })`);
+      await wait(150);
+      const snap = `(${SNAP_ATTR})('data-clone-hover', ${JSON.stringify(HOVER_PROPS)})`;
+      const before = (await page.evaluate(snap))[c.probe];
+      await page.hover(sel);
+      await wait(350);
+      const after = (await page.evaluate(snap))[c.probe];
+      await page.mouse.move(0, 0);
+      await wait(150);
+      const changed = diffStyles(before, after);
+      if (Object.keys(changed).length) {
+        out.push({
+          label: c.cls ? `${c.tag}.${c.cls}` : c.tag,
+          tag: c.tag, cls: c.cls, transition: c.transition, changed,
+        });
+      }
+    } catch { /* fail-open: 요소 하나가 스윕 전체를 죽이면 안 된다 */ }
+  }
+  await page.evaluate('window.scrollTo(0, 0)');
+  await wait(200);
+  return out;
+}
+
+// ── In-view entrance animations (fade-up, slide-in) ──
+// 1회성 등장 애니메이션은 lazy-load 스크롤에서 이미 발화했으므로 페이지를 새로 로드해 관찰한다.
+async function sweepInView(page) {
+  const out = [];
+  await page.goto(page.url(), { waitUntil: 'networkidle2', timeout: 90000 });
+  await wait(800);
+  const candidates = await page.evaluate(`(${TAG_INVIEW})()`);
+  if (!candidates.length) return out;
+  const snap = `(${SNAP_ATTR})('data-clone-inview', ${JSON.stringify(INVIEW_PROPS)})`;
+  const before = await page.evaluate(snap);
+  for (const c of candidates) {
+    try {
+      await page.evaluate(`document.querySelector('[data-clone-inview="${c.probe}"]')?.scrollIntoView({ block: 'center' })`);
+      await wait(600);
+    } catch { /* fail-open */ }
+  }
+  const after = await page.evaluate(snap);
+  await page.evaluate('window.scrollTo(0, 0)');
+  await wait(300);
+  for (const c of candidates) {
+    const changed = diffStyles(before[c.probe], after[c.probe]);
+    if (Object.keys(changed).length) {
+      out.push({
+        label: c.cls ? `${c.tag}.${c.cls}` : c.tag,
+        tag: c.tag, cls: c.cls, triggerY: c.top, changed,
+      });
+    }
+  }
+  await page.evaluate('document.querySelectorAll("[data-clone-inview]").forEach((e) => e.removeAttribute("data-clone-inview"))');
+  return out;
+}
+
+async function runInteractionSweep(page) {
+  const behaviors = { scroll: [], interactive: [], hover: [], inview: [], timeDriven: [], scrollLib: null };
+
+  behaviors.scroll = await sweepScrollState(page);
+  behaviors.interactive = await sweepTabGroups(page);
+  behaviors.hover = await sweepHover(page);
+  // 무입력 3초 관찰 — 캐러셀/자동 사이클 후보
+  try { behaviors.timeDriven = await page.evaluate(`(${OBSERVE_MUTATIONS})(3000)`); } catch { /* fail-open */ }
+  try { behaviors.scrollLib = await page.evaluate(`(${DETECT_SCROLL_LIB})()`); } catch { /* fail-open */ }
 
   // Clean up probe attributes BEFORE static extraction so they don't pollute output.
   await page.evaluate(
-    'document.querySelectorAll("[data-clone-probe],[data-clone-tab]").forEach((e) => { e.removeAttribute("data-clone-probe"); e.removeAttribute("data-clone-tab"); })'
+    'document.querySelectorAll("[data-clone-probe],[data-clone-tab],[data-clone-hover]").forEach((e) => { e.removeAttribute("data-clone-probe"); e.removeAttribute("data-clone-tab"); e.removeAttribute("data-clone-hover"); })'
   );
+
+  // 마지막: in-view 스윕은 리로드를 동반하므로 다른 스윕 뒤에 실행한다.
+  behaviors.inview = await sweepInView(page);
+  // 리로드로 lazy-load 상태가 초기화됐으니 정적 추출 전에 복원한다.
+  await scrollToBottom(page);
   return behaviors;
 }
+
+// In-page: favicon / OG image / webmanifest URLs (Foundation 단계 — public/seo/ 배선용)
+const SEO_EXTRACT = `(function () {
+  const abs = (u) => { try { return new URL(u, location.href).href; } catch { return null; } };
+  const icons = Array.from(document.querySelectorAll(
+    'link[rel*="icon" i], link[rel="apple-touch-icon"], link[rel="manifest"]'
+  )).map((l) => abs(l.getAttribute('href'))).filter(Boolean);
+  const og = Array.from(document.querySelectorAll(
+    'meta[property="og:image"], meta[name="twitter:image"]'
+  )).map((m) => abs(m.getAttribute('content'))).filter(Boolean);
+  return Array.from(new Set(icons.concat(og)));
+})`;
 
 // HTML sanitization: strip scripts/analytics before saving
 function sanitizeHtml(html) {
@@ -739,8 +935,10 @@ async function capture({ url, opts }) {
   const assetsDir = path.join(opts.out, 'assets');
   const imagesDir = path.join(assetsDir, 'images');
   const fontsDir = path.join(assetsDir, 'fonts');
+  const seoDir = path.join(assetsDir, 'seo');
   fs.mkdirSync(imagesDir, { recursive: true });
   fs.mkdirSync(fontsDir, { recursive: true });
+  fs.mkdirSync(seoDir, { recursive: true });
 
   console.log(`[clone-extract] ${opts.bp || ''} ${viewport.width}x${viewport.height}@${viewport.deviceScaleFactor} ${url}`);
 
@@ -775,7 +973,12 @@ async function capture({ url, opts }) {
     if (opts.interact) {
       try {
         behaviors = await runInteractionSweep(page);
-        console.log(`[clone-extract] interaction sweep: ${behaviors.scroll.length} scroll-state, ${behaviors.interactive.length} tab-group(s)`);
+        console.log(
+          `[clone-extract] interaction sweep: ${behaviors.scroll.length} scroll-state, ` +
+          `${behaviors.interactive.length} tab-group(s), ${behaviors.hover.length} hover, ` +
+          `${behaviors.inview.length} in-view, ${behaviors.timeDriven.length} time-driven` +
+          `${behaviors.scrollLib ? `, scroll-lib: ${behaviors.scrollLib.name}` : ''}`
+        );
       } catch (e) {
         console.log(`[clone-extract] interaction sweep skipped: ${e.message}`);
       }
@@ -805,9 +1008,14 @@ async function capture({ url, opts }) {
       if (sorted[1]) fontDownloadSet.add(sorted[1].url);
     }
 
-    console.log(`[clone-extract] downloading ${extracted.assets.images.length} images, ${fontDownloadSet.size} fonts (filtered from ${extracted.assets.fonts.length})`);
+    // Favicon / OG / webmanifest — Foundation 단계에서 public/seo/ 로 배선한다
+    let seoUrls = [];
+    try { seoUrls = await page.evaluate(`(${SEO_EXTRACT})()`); } catch { /* fail-open */ }
+
+    console.log(`[clone-extract] downloading ${extracted.assets.images.length} images, ${fontDownloadSet.size} fonts (filtered from ${extracted.assets.fonts.length}), ${seoUrls.length} seo assets`);
     const imageMap = await downloadAssets(extracted.assets.images, imagesDir, 8);
     const fontMap = await downloadAssets(Array.from(fontDownloadSet), fontsDir, 4);
+    const seoMap = await downloadAssets(seoUrls, seoDir, 4);
 
     const assetMap = {};
     for (const [u, info] of Object.entries(imageMap)) {
@@ -819,6 +1027,11 @@ async function capture({ url, opts }) {
       assetMap[u] = info.status === 'ok'
         ? { local: `assets/fonts/${info.local}`, status: 'ok', bytes: info.bytes, kind: 'font' }
         : { ...info, kind: 'font' };
+    }
+    for (const [u, info] of Object.entries(seoMap)) {
+      assetMap[u] = info.status === 'ok'
+        ? { local: `assets/seo/${info.local}`, status: 'ok', bytes: info.bytes, kind: 'seo' }
+        : { ...info, kind: 'seo' };
     }
 
     // Rewrite HTML — replace remote URLs with local paths
@@ -896,8 +1109,9 @@ async function capture({ url, opts }) {
     );
     fs.writeFileSync(path.join(opts.out, 'asset-map.json'), JSON.stringify(assetMap, null, 2));
     if (behaviors) {
-      // Rewrite any remote asset URLs captured in scroll-state background-image diffs.
-      for (const s of behaviors.scroll) {
+      // Rewrite any remote asset URLs captured in behavior diffs (scroll/hover/inview).
+      const diffed = [...behaviors.scroll, ...(behaviors.hover || []), ...(behaviors.inview || [])];
+      for (const s of diffed) {
         for (const ch of Object.values(s.changed)) {
           if (typeof ch.from === 'string') ch.from = rewriteCssValue(ch.from);
           if (typeof ch.to === 'string') ch.to = rewriteCssValue(ch.to);
