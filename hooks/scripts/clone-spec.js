@@ -28,6 +28,7 @@ function parseArgs(argv) {
     else if (a.startsWith('--section=')) opts.section = a.slice(10);
     else if (a.startsWith('--feature=')) opts.feature = a.slice(10);
     else if (a.startsWith('--behaviors=')) opts.behaviors = a.slice(12);
+    else if (a === '--real-content') opts.realContent = true;
   }
   return { sectionsPath, opts };
 }
@@ -101,20 +102,28 @@ function sectionHasNode(section, tag, cls) {
   return (section.children || []).some(hit);
 }
 
+function diffLines(changed) {
+  return Object.entries(changed)
+    .map(([k, v]) => `    - ${k}: \`${v.from}\` → \`${v.to}\``).join('\n');
+}
+
 function behaviorsBlock(section, behaviors) {
   if (!behaviors) return null;
-  const scroll = (behaviors.scroll || []).filter((b) => sectionHasNode(section, b.tag, b.cls));
+  const inSection = (list) => (list || []).filter((b) => sectionHasNode(section, b.tag, b.cls));
+  const scroll = inSection(behaviors.scroll);
+  const hover = inSection(behaviors.hover);
+  const inview = inSection(behaviors.inview);
+  const timed = inSection(behaviors.timeDriven);
   // Tab groups aren't tag-keyed; attach to any section that contains a [role=tab]-ish node.
   const tabs = (behaviors.interactive || []).filter(() =>
     sectionHasNode(section, 'button') || sectionHasNode(section, 'li') || sectionHasNode(section, 'a'),
   );
-  if (!scroll.length && !tabs.length) return null;
+  const lib = behaviors.scrollLib;
+  if (!scroll.length && !tabs.length && !hover.length && !inview.length && !timed.length && !lib) return null;
 
   const lines = [];
   for (const b of scroll) {
-    const diffs = Object.entries(b.changed)
-      .map(([k, v]) => `    - ${k}: \`${v.from}\` → \`${v.to}\``).join('\n');
-    lines.push(`- **Scroll-triggered** on \`${b.label}\` (past ~${b.triggerScrollY}px scroll):\n${diffs}`);
+    lines.push(`- **Scroll-triggered** on \`${b.label}\` (past ~${b.triggerScrollY}px scroll):\n${diffLines(b.changed)}`);
   }
   for (const t of tabs) {
     const labels = (t.tabLabels || []).map((l) => `"${l}"`).join(', ') || '(unlabeled)';
@@ -122,6 +131,19 @@ function behaviorsBlock(section, behaviors) {
       ? '**content SWAPS on click** → extract every tab\'s content/assets, build click-driven'
       : 'no content swap detected (styling-only tabs)';
     lines.push(`- **Tab group** ×${t.count} [${labels}]: ${swap}`);
+  }
+  for (const b of hover) {
+    const tr = b.transition && b.transition !== 'all 0s ease 0s' ? ` (transition: \`${b.transition}\`)` : '';
+    lines.push(`- **Hover** on \`${b.label}\`${tr}:\n${diffLines(b.changed)}`);
+  }
+  for (const b of inview) {
+    lines.push(`- **In-view entrance** on \`${b.label}\` (enters at ~${b.triggerY}px):\n${diffLines(b.changed)}`);
+  }
+  for (const b of timed) {
+    lines.push(`- **Time-driven** \`${b.label}\` — ${b.mutations} mutations/3s [${(b.kinds || []).join(', ')}] → carousel/auto-cycle candidate`);
+  }
+  if (lib) {
+    lines.push(`- **Smooth-scroll library (page-level):** ${lib.name} (evidence: \`${lib.evidence}\`) → wire in globals, not per-section`);
   }
   return lines.join('\n');
 }
@@ -171,7 +193,9 @@ ${cssBlock(section.css)}
 ## Assets (local paths only — never hotlink)
 ${assetsBlock(section.images)}
 
-## Text content (replace copyrighted copy with placeholders)
+## Text content ${meta.realContent
+    ? '(verbatim — user confirmed rights to reuse this copy)'
+    : '(replace copyrighted copy with placeholders)'}
 ${textBlock}
 
 ## Component candidates
@@ -179,7 +203,7 @@ ${componentsBlock(section.components)}
 
 ## Build checklist
 - [ ] HTML semantics + final tags chosen
-- [ ] SCSS via clone-to-scss.js (computed values as-is — no eyeballing)
+- [ ] SCSS started from the clone-to-scss.js draft — value edits only with evidence cited from computed.json/states.json/behaviors.json (no eyeballing); clone-validate.js is the judge
 - [ ] Every state above implemented
 - [ ] Interaction model confirmed on live site & wired
 - [ ] All assets local (public/images/${meta.feature}/) — no hotlinks
@@ -196,6 +220,7 @@ function main() {
     url: data.meta && data.meta.url,
     viewport: data.meta && data.meta.viewport,
     bp: opts.section ? (data.meta && data.meta.bp) : (data.meta && data.meta.bp) || '?',
+    realContent: !!opts.realContent,
   };
   // behaviors.json (active interaction sweep) lives next to the source computed.json.
   const behaviorsPath = opts.behaviors || path.join(path.dirname(sectionsPath), 'behaviors.json');
@@ -223,7 +248,7 @@ function main() {
 const isMain = process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('clone-spec.js');
 if (isMain) {
   if (!sectionsPath || !opts.out) {
-    console.error('Usage: node clone-spec.js <sections.json> --out=<dir> [--section=Name] [--feature=name] [--behaviors=path]');
+    console.error('Usage: node clone-spec.js <sections.json> --out=<dir> [--section=Name] [--feature=name] [--behaviors=path] [--real-content]');
     process.exit(1);
   }
   try { main(); }
