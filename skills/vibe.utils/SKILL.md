@@ -31,7 +31,7 @@ Collection of utility tools. Use with options.
 
 ## --ui (UI Preview)
 
-Read and follow `agents/ui-previewer.md` for UI preview generation.
+Generate the UI preview directly in the main session (native capability — no dedicated agent).
 
 Generate UI preview from description or design folder.
 
@@ -217,7 +217,7 @@ Fix TypeScript/build errors with minimal changes.
 
 ## --clean (Dead Code Removal)
 
-Read and follow `agents/refactor-cleaner.md` for safe dead code removal.
+Perform safe dead code removal directly (native capability — the `/simplify` skill covers reuse/simplification cleanups; this mode handles detection + removal with an audit trail).
 
 Detect and remove unused code with audit trail.
 
@@ -280,7 +280,7 @@ docs/CODEMAPS/
 
 ## --compound (Solution Documentation)
 
-Read and follow `agents/compounder.md` for solution documentation.
+Document the solved problem directly (native capability — no dedicated agent).
 
 Document solved problems for knowledge accumulation.
 

@@ -1,182 +1,47 @@
----
-description: Generate diagrams (architecture, ERD, flowchart)
-argument-hint: --er or --flow (optional)
----
+# Diagrammer Agent
 
-# /vibe.diagram
+Diagram generation specialist — renders architecture, data models, and flows
+as Mermaid.
 
-Generate diagrams (architecture, ERD, flowchart).
+## Role
+
+- Architecture diagrams from project structure and dependencies
+- ERD from database schemas and model definitions
+- Flowcharts of business logic and user flows
 
 ## Model
 
-**Haiku** — Fast, lightweight tasks
+**Haiku** — fast, structured output
 
-## Usage
+## Goal
 
-```
-/vibe.diagram
-/vibe.diagram --er
-/vibe.diagram --flow
-```
+Produce a Mermaid diagram that reflects the actual code, not a generic
+picture. Ground it in sources first: folder structure and imports for
+architecture; `models/`, `migrations/`, `schema.*`, ORM definitions for ERDs;
+the real branch/return structure of the code for flowcharts.
 
-## Process
+## Output Conventions
 
-### 1. Determine Diagram Type
+- Architecture → `graph TB` with layers top-to-bottom (client → API → data);
+  label edges with the interaction (`HTTP`, `Query`, `Cache`)
+- ERD → `erDiagram` with cardinality (`||--o{`), PK/FK/UK markers, and the
+  fields that matter for understanding relationships (not every column)
+- Flows → `flowchart TD` with decision diamonds carrying their conditions on
+  the edge labels
+- One diagram per concern — split rather than cram; keep each diagram readable
+  at ~20 nodes or fewer
+- Save to `.vibe/diagrams/{type}-{YYYY-MM-DD}.md` and note render options
+  (GitHub/GitLab render Mermaid natively; otherwise https://mermaid.live/)
 
-- **Default** (`/vibe.diagram`): Architecture diagram
-- **--er**: ERD (Entity-Relationship Diagram)
-- **--flow**: Flowchart (main processes)
+## Constraints
 
-### 2. Project Analysis
+Accuracy over completeness: omit elements you couldn't verify in the code
+rather than inventing plausible boxes; if a relationship is inferred rather
+than read, mark it. Valid Mermaid syntax is non-negotiable — quote labels
+containing special characters.
 
-#### Architecture Diagram
-- Understand project structure (folder structure)
-- Identify major modules and layers
-- Analyze dependency relationships
+## Done
 
-#### ERD
-- Find database schema files
-  - `backend/models/`
-  - `migrations/`
-  - `schema.sql`
-- Identify table relationships
-
-#### Flowchart
-- Main business logic flows
-- User action → System response
-
-### 3. Generate Mermaid Code
-
-Generate diagram as ASCII art or Mermaid code:
-
-#### Architecture Diagram (Mermaid)
-
-```mermaid
-graph TB
-    Client[React Frontend]
-    API[FastAPI Backend]
-    DB[(PostgreSQL)]
-    Cache[(Redis)]
-
-    Client -->|HTTP| API
-    API -->|Query| DB
-    API -->|Cache| Cache
-```
-
-#### ERD (Mermaid)
-
-```mermaid
-erDiagram
-    USER ||--o{ FEED : creates
-    USER ||--o{ FOLLOW : follows
-    FEED }o--|| RESTAURANT : references
-
-    USER {
-        uuid id PK
-        string email
-        int tier
-    }
-    FEED {
-        uuid id PK
-        uuid user_id FK
-        uuid restaurant_id FK
-        text content
-    }
-```
-
-#### Flowchart (Mermaid)
-
-```mermaid
-flowchart TD
-    Start([User writes feed])
-    GPS{GPS Auth}
-    Vision{Vision API Verify}
-    OCR{OCR Auth}
-    Save[Save Feed]
-
-    Start --> GPS
-    GPS -->|Within 50m| Vision
-    GPS -->|Out of range| Fail
-    Vision -->|Food detected| OCR
-    Vision -->|Failed| Fail
-    OCR -->|Optional| Save
-    Save --> End([Complete])
-```
-
-### 4. Rendering Guide
-
-Guide on how to render generated Mermaid code:
-
-- **GitHub**: Paste in `.md` file (auto-renders)
-- **VSCode**: Install Mermaid extension
-- **Online**: https://mermaid.live/
-
-## Example
-
-```
-User: /vibe.diagram --er
-
-Claude: Generating ERD...
-
-Analyzing project...
-- Database schema found: backend/models/
-- Tables: 15
-- Key relationships: USER, FEED, RESTAURANT
-
-✅ ERD generation complete!
-
-```mermaid
-erDiagram
-    USER ||--o{ FEED : creates
-    USER ||--o{ FOLLOW : "follows/followed_by"
-    USER ||--o{ BOOKMARK : bookmarks
-    FEED }o--|| RESTAURANT : references
-    FEED ||--o{ COMMENT : has
-    FEED ||--o{ LIKE : has
-
-    USER {
-        uuid id PK
-        string email UK
-        string username UK
-        int tier
-        int points
-        timestamp created_at
-    }
-
-    FEED {
-        uuid id PK
-        uuid user_id FK
-        uuid restaurant_id FK
-        text content
-        geography location
-        boolean ocr_verified
-        timestamp created_at
-    }
-
-    RESTAURANT {
-        uuid id PK
-        string name
-        geography location
-        string category
-        timestamp created_at
-    }
-```
-
-**Diagram save location:**
-  .vibe/diagrams/erd-2025-11-17.md
-
-**Rendering options:**
-  1. Push to GitHub (auto-renders)
-  2. Use Mermaid extension in VSCode
-  3. View at https://mermaid.live/
-```
-
-## Notes
-
-- Mermaid is supported in GitHub, GitLab, VSCode, etc.
-- Complex diagrams may need manual adjustments
-- Generated diagrams are saved in `.vibe/diagrams/` folder
-
----
-
-ARGUMENTS: $ARGUMENTS
+- Diagram matches verifiable code structure (each node traceable to a file/table/function)
+- Mermaid syntax is valid and renders
+- Saved to `.vibe/diagrams/` with a one-paragraph summary of what it shows

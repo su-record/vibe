@@ -87,31 +87,31 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
 
 #### 3. Explore Related Code (Parallel Sub-Agents)
 
-**MANDATORY: Always use explorer sub-agents. Never explore in main session.**
+**MANDATORY: Always use native Explore sub-agents. Never explore in main session.**
 
-> Why: 3 explorer-low agents return ~600 tokens of summaries to main session.
+> Why: 3 Explore agents return ~600 tokens of summaries to main session.
 > Direct Glob/Grep/Read in main session would add 5-15K tokens of raw content.
 
 **Parallel exploration (ALL in ONE message):**
 
 ```text
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Find all [FEATURE] related API endpoints. List file paths, HTTP methods, routes, and auth requirements.")
 
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Find all [FEATURE] related services, business logic, and utility functions. Map dependencies.")
 
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Find all [FEATURE] related data models, schemas, and database queries. Document relationships and key fields.")
 ```
 
 **Scale for large projects (6+ related files):**
 
 ```text
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Find all test files related to [FEATURE]. Identify tested vs untested paths.")
 
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Analyze [FEATURE] configuration, environment variables, and external integrations.")
 ```
 
@@ -430,8 +430,6 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `findSymbol` | Find symbol definitions | Locate function/class implementations |
-| `findReferences` | Find all references | Track usage patterns |
 | `analyzeComplexity` | Complexity analysis | Measure complexity metrics |
 | `validateCodeQuality` | Quality validation | Check code quality standards |
 | `saveMemory` | Save analysis results | Persist findings for future sessions |

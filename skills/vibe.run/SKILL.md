@@ -278,7 +278,7 @@ SPEC changes and code changes must be in the **same commit**.
 
 ### 3. Scenario-by-Scenario Implementation
 
-> Read `references/parallel-agents.md` for full parallel exploration patterns, background agents, agent team selection, and model routing.
+> Read `references/parallel-agents.md` for full parallel exploration patterns, background agents, parallel subagent group selection, and model routing.
 
 **For each scenario:**
 1. [Parallel exploration] Task(haiku) × 3 — related code, deps, patterns
@@ -287,8 +287,7 @@ SPEC changes and code changes must be in the **same commit**.
 4. [Auto-fix loop] On failure: collect evidence → root cause → fix → re-verify
 
 **UI/UX Design Intelligence (auto-triggered before Phase 1 if UI keywords in SPEC):**
-- Task(haiku, `ui-stack-implementer`): framework-specific component guidelines
-- Task(haiku, `ui-dataviz-advisor`): chart/viz library advice (conditional on chart keywords)
+- Task(haiku, `design-system-gen`): framework-specific component guidelines + chart/viz library advice (viz advice conditional on chart keywords)
 - Load `.vibe/design-system/{project}/MASTER.md` if present
 
 ### 4. Brand Assets (New project only)
@@ -346,8 +345,6 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 | Tool | Purpose |
 |------|---------|
-| `findSymbol` | Find symbol definitions |
-| `findReferences` | Find all references |
 | `analyzeComplexity` | Analyze code complexity |
 | `validateCodeQuality` | Validate code quality |
 | `saveMemory` | Save important decisions |

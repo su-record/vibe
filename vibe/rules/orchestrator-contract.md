@@ -4,7 +4,7 @@
 > **구조·스키마·네이밍 규칙**의 유일한 정의다. 각 orchestrator.md 는 이 스키마를 따르되
 > **내용(phase·실패모드·에이전트)은 스킬별로 고유**하다 — 내용을 공유 파일로 병합하지 않는다.
 >
-> 대상: `skills/{techdebt,parallel-research,exec-plan,design-audit,create-prd}/orchestrator.md`
+> 대상: `skills/{techdebt,parallel-research,exec-plan,design-review,create-prd}/orchestrator.md`
 
 ## Frontmatter
 
@@ -48,9 +48,10 @@ skill-local 에이전트는 접두사를 붙인다:
 |-------|--------|-----|
 | techdebt | `techdebt` | `techdebt-scanner` |
 | exec-plan | `plan` | `plan-decomposer` |
-| design-audit | `design` | `design-a11y-auditor` |
+| design-review | `design` | `design-a11y-auditor` |
 | parallel-research | `research` | `research-best-practices` |
 | create-prd | `prd` | `prd-requirements-writer` |
 
-> WHY: `edge-case-finder`, `reviewer`, `researcher` 등은 전역 에이전트/리뷰어와 basename 이
-> 겹친다. 접두사가 없으면 조율 LLM 이 전역 에이전트와 skill-local 에이전트를 혼동한다.
+> WHY: `reviewer`, `scorer`, `a11y-auditor` 등은 전역 에이전트/리뷰어(code-reviewer,
+> design-reviewer 등)와 basename 이 겹치거나 혼동된다. 접두사가 없으면 조율 LLM 이
+> 전역 에이전트와 skill-local 에이전트를 혼동한다.

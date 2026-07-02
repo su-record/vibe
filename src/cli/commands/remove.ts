@@ -60,7 +60,10 @@ export function remove(): void {
   // .claude/agents 제거
   const agentsDir = path.join(claudeDir, 'agents');
   if (fs.existsSync(agentsDir)) {
-    const coreAgents = ['simplifier.md', 'explorer.md', 'implementer.md', 'tester.md', 'searcher.md'];
+    const coreAgents = [
+      'architect.md', 'implementer.md', 'tester.md', 'acceptance-tester.md', 'e2e-tester.md',
+      'code-reviewer.md', 'security-reviewer.md', 'build-error-resolver.md', 'documenter.md', 'diagrammer.md'
+    ];
     coreAgents.forEach(agent => {
       const agentPath = path.join(agentsDir, agent);
       if (fs.existsSync(agentPath)) {
@@ -86,15 +89,10 @@ export function remove(): void {
   // Cursor 글로벌 에셋 제거
   const cursorDir = path.join(os.homedir(), '.cursor');
 
-  // Cursor agents 제거 (12 reviewers)
+  // Cursor agents 제거 (consolidated reviewers)
   const cursorAgentsDir = path.join(cursorDir, 'agents');
   if (fs.existsSync(cursorAgentsDir)) {
-    const coreReviewers = [
-      'security-reviewer.md', 'architecture-reviewer.md', 'data-integrity-reviewer.md',
-      'typescript-reviewer.md', 'python-reviewer.md', 'react-reviewer.md', 'rails-reviewer.md',
-      'performance-reviewer.md', 'complexity-reviewer.md', 'simplicity-reviewer.md',
-      'test-coverage-reviewer.md', 'git-history-reviewer.md'
-    ];
+    const coreReviewers = ['code-reviewer.md', 'security-reviewer.md'];
     let removedAgents = 0;
     coreReviewers.forEach(agent => {
       const agentPath = path.join(cursorAgentsDir, agent);
@@ -152,9 +150,9 @@ Removed:
   - MCP server (context7)
   - .claude/vibe/ folder
   - Slash commands (7)
-  - Subagents (5)
+  - Subagents (10)
   - Hooks settings
-  - Cursor agents (12)
+  - Cursor agents (2)
   - Cursor skills (7)
   - Cursor rules template (5)
 

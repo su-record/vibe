@@ -40,18 +40,11 @@ export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
 ];
 
 export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
-  'interview',
-  'plan',
   'spec',
-  'spec-review',
   'test',
-  'techdebt',
-  'characterization-test',
   'arch-guard',
   'exec-plan',
-  'rob-pike',
-  'yagni-ladder',
-  'systematic-debugging',
+  'restraint',
 ];
 
 export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
@@ -59,12 +52,9 @@ export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
   'handoff',
   'priority-todos',
   'agents-md',
-  'claude-md-guide',
   'capability-loop',
   'design-teach',
   'figma',
-  'figma-extract',
-  'figma-convert',
   'clone',
   'docs',
 ];
@@ -89,21 +79,19 @@ export const GLOBAL_SKILLS: ReadonlyArray<string> = [
 
 /** 스택 → 로컬 스킬 매핑 (vibe init/update → .claude/skills/) */
 export const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>> = {
-  // TypeScript 공통
-  'typescript': ['typescript-advanced-types'],
   // Web frontend → UI/UX + SEO + Design steering + React best practices
-  'typescript-react': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
-  'typescript-nextjs': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
-  'typescript-vue': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
-  'typescript-nuxt': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
-  'typescript-svelte': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
-  'typescript-angular': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
-  'typescript-astro': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-audit', 'design-critique', 'design-polish', 'design-normalize', 'design-distill', 'vibe.design'],
-  // Mobile → UI + design-audit/critique only (polish/normalize/distill are CSS-based)
-  'typescript-react-native': ['ui-ux-pro-max', 'design-audit', 'design-critique', 'vibe.design'],
-  'dart-flutter': ['ui-ux-pro-max', 'design-audit', 'design-critique', 'vibe.design'],
-  'swift-ios': ['ui-ux-pro-max', 'design-audit', 'design-critique', 'vibe.design'],
-  'kotlin-android': ['ui-ux-pro-max', 'design-audit', 'design-critique', 'vibe.design'],
+  'typescript-react': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-review', 'design-refine', 'vibe.design'],
+  'typescript-nextjs': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-review', 'design-refine', 'vibe.design'],
+  'typescript-vue': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
+  'typescript-nuxt': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
+  'typescript-svelte': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
+  'typescript-angular': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
+  'typescript-astro': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
+  // Mobile → UI + design-review only (refine 파이프라인은 CSS 기반)
+  'typescript-react-native': ['ui-ux-pro-max', 'design-review', 'vibe.design'],
+  'dart-flutter': ['ui-ux-pro-max', 'design-review', 'vibe.design'],
+  'swift-ios': ['ui-ux-pro-max', 'design-review', 'vibe.design'],
+  'kotlin-android': ['ui-ux-pro-max', 'design-review', 'vibe.design'],
 };
 
 /** Capability → 로컬 스킬 매핑 (의존성 감지 기반 자동 설치) */
@@ -303,28 +291,13 @@ export const LANGUAGE_GLOBS: Record<string, string> = {
   'gdscript-godot.md': '**/*.gd',
 };
 
-// Cursor 모델 매핑 (각 리뷰어 유형에 최적의 모델)
+// Cursor 모델 매핑 (리뷰어 → 모델)
 // 사용 가능: composer-1, claude-4.5-opus-high, claude-4.5-opus-high-thinking,
-//           claude-4.5-sonnet-thinking, gpt-5.5, gpt-5.5-pro, gpt-5.3-codex,
-//           antigravity-pro, antigravity-fast
+//           claude-4.5-sonnet-thinking, gpt-5.5, gpt-5.5-pro, antigravity-pro, antigravity-fast
 export const CURSOR_MODEL_MAPPING: Record<string, string> = {
-  // 보안/아키텍처: 깊은 추론 필요 → thinking 모델
+  // 통합 리뷰어 2종 — 깊은 추론 필요 → thinking 모델
+  'code-reviewer': 'claude-4.5-sonnet-thinking',
   'security-reviewer': 'claude-4.5-sonnet-thinking',
-  'architecture-reviewer': 'claude-4.5-sonnet-thinking',
-  'data-integrity-reviewer': 'claude-4.5-sonnet-thinking',
-
-  // 언어별 전문가: 코드 이해 필요 → codex
-  'typescript-reviewer': 'gpt-5.3-codex',
-  'python-reviewer': 'gpt-5.3-codex',
-  'react-reviewer': 'gpt-5.3-codex',
-  'rails-reviewer': 'gpt-5.3-codex',
-
-  // 빠른 패턴 체크: 경량 모델
-  'performance-reviewer': 'antigravity-fast',
-  'complexity-reviewer': 'antigravity-fast',
-  'simplicity-reviewer': 'antigravity-fast',
-  'test-coverage-reviewer': 'antigravity-fast',
-  'git-history-reviewer': 'antigravity-fast',
 };
 
 // 언어 룰 파일 접두사 (이 접두사로 시작하는 .mdc는 core에서 관리)
@@ -371,96 +344,50 @@ export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
   'vibe-spec',
   'vibe-spec-review',
   'vibe-test',
+  // v2.17 하네스 다이어트 (harness-review-2026-07-01) — 삭제/병합된 스킬
+  'interview',
+  'plan',
+  'spec-review',
+  'techdebt',
+  'systematic-debugging',
+  'typescript-advanced-types',
+  'rob-pike',
+  'yagni-ladder',
+  'claude-md-guide',
+  'characterization-test',
+  'design-audit',
+  'design-critique',
+  'design-polish',
+  'design-normalize',
+  'design-distill',
+  'figma-extract',
+  'figma-convert',
 ];
 
 // ─── Claude Code 네이티브 서브에이전트 매핑 ───
 
 // Claude Code 모델 매핑 (사용 가능: sonnet, opus, haiku, inherit)
+// 독트린: 기본은 세션 모델 상속 — 여기 명시된 tier 는 의도적 예외만
+// (아키텍처 심층 리뷰 → opus, 기계적 문서/다이어그램 → haiku).
 export const CLAUDE_MODEL_MAPPING: Record<string, string> = {
-  // Explorer tier
-  'explorer': 'haiku',
-  'explorer-low': 'haiku',
-  'explorer-medium': 'sonnet',
-  // Implementer tier
-  'implementer': 'sonnet',
-  'implementer-low': 'haiku',
-  'implementer-medium': 'sonnet',
-  // Architect tier
   'architect': 'opus',
-  'architect-low': 'haiku',
-  'architect-medium': 'sonnet',
-  // Review agents — sonnet for quality gate accuracy
-  'security-reviewer': 'sonnet',
-  'architecture-reviewer': 'sonnet',
-  'performance-reviewer': 'sonnet',
-  'complexity-reviewer': 'sonnet',
-  'simplicity-reviewer': 'sonnet',
-  'data-integrity-reviewer': 'sonnet',
-  'test-coverage-reviewer': 'sonnet',
-  'git-history-reviewer': 'sonnet',
-  'python-reviewer': 'sonnet',
-  'typescript-reviewer': 'sonnet',
-  'rails-reviewer': 'sonnet',
-  'react-reviewer': 'sonnet',
-  // Research agents
-  'best-practices': 'haiku',
-  'framework-docs': 'haiku',
-  'codebase-patterns': 'haiku',
-  'security-advisory': 'haiku',
-  // Utility agents
-  'searcher': 'haiku',
+  'implementer': 'sonnet',
   'tester': 'haiku',
-  'simplifier': 'sonnet',
-  'refactor-cleaner': 'sonnet',
-  'build-error-resolver': 'sonnet',
-  'compounder': 'sonnet',
-  'diagrammer': 'haiku',
   'e2e-tester': 'sonnet',
-  'ui-previewer': 'sonnet',
-  'junior-mentor': 'sonnet',
-  // QA agents
-  'qa-coordinator': 'sonnet',
-  'edge-case-finder': 'haiku',
-  'acceptance-tester': 'haiku',
-  // Planning agents
-  'requirements-analyst': 'haiku',
-  'ux-advisor': 'haiku',
-  // Docs agents
-  'api-documenter': 'haiku',
-  'changelog-writer': 'haiku',
-  // Event agents
-  'event-scheduler': 'sonnet',
-  'event-content': 'sonnet',
-  'event-speaker': 'haiku',
-  'event-comms': 'sonnet',
+  'acceptance-tester': 'sonnet',
+  'build-error-resolver': 'sonnet',
+  'code-reviewer': 'sonnet',
+  'security-reviewer': 'sonnet',
+  'documenter': 'haiku',
+  'diagrammer': 'haiku',
+  // Figma agents (conditional group)
+  'figma-engineer': 'sonnet',
+  // UI agents (conditional group)
+  'design-reviewer': 'sonnet',
+  'design-system-gen': 'sonnet',
+  // Event agents (conditional group)
+  'event-planner': 'sonnet',
   'event-ops': 'sonnet',
-  'event-image': 'haiku',
-  // Figma agents (teams/figma)
-  'figma-analyst': 'sonnet',
-  'figma-architect': 'sonnet',
-  'figma-builder': 'sonnet',
-  'figma-auditor': 'sonnet',
-  // UI agents
-  'ui-a11y-auditor': 'sonnet',
-  'ui-antipattern-detector': 'sonnet',
-  'ui-dataviz-advisor': 'haiku',
-  'ui-design-system-gen': 'sonnet',
-  'ui-industry-analyzer': 'haiku',
-  'ui-layout-architect': 'sonnet',
-  'ui-stack-implementer': 'sonnet',
-  'ux-compliance-reviewer': 'sonnet',
-  // Team coordinators
-  'debug-team': 'sonnet',
-  'dev-team': 'sonnet',
-  'docs-team': 'sonnet',
-  'figma-team': 'sonnet',
-  'fullstack-team': 'sonnet',
-  'lite-team': 'sonnet',
-  'migration-team': 'sonnet',
-  'refactor-team': 'sonnet',
-  'research-team': 'sonnet',
-  'review-debate-team': 'sonnet',
-  'security-team': 'sonnet',
 };
 
 // Claude Code 에이전트 도구 세트 정의
@@ -473,202 +400,57 @@ export const CLAUDE_AGENT_TOOLS: Record<string, string[]> = {
 
 // 에이전트 → 도구 카테고리 매핑
 export const CLAUDE_AGENT_TOOL_CATEGORY: Record<string, string> = {
-  // Explorer — read-only
-  'explorer': 'read-only',
-  'explorer-low': 'read-only',
-  'explorer-medium': 'read-only',
-  // Implementer — write-capable
-  'implementer': 'write-capable',
-  'implementer-low': 'write-capable',
-  'implementer-medium': 'write-capable',
-  // Architect — read-only
   'architect': 'read-only',
-  'architect-low': 'read-only',
-  'architect-medium': 'read-only',
-  // Review agents — read-only
-  'security-reviewer': 'read-only',
-  'architecture-reviewer': 'read-only',
-  'performance-reviewer': 'read-only',
-  'complexity-reviewer': 'read-only',
-  'simplicity-reviewer': 'read-only',
-  'data-integrity-reviewer': 'read-only',
-  'test-coverage-reviewer': 'read-only',
-  'git-history-reviewer': 'read-only-git',
-  'python-reviewer': 'read-only',
-  'typescript-reviewer': 'read-only',
-  'rails-reviewer': 'read-only',
-  'react-reviewer': 'read-only',
-  // Research agents
-  'best-practices': 'web-search',
-  'framework-docs': 'web-search',
-  'codebase-patterns': 'read-only',
-  'security-advisory': 'web-search',
-  // Utility agents
-  'searcher': 'web-search',
+  'implementer': 'write-capable',
   'tester': 'write-capable',
-  'simplifier': 'write-capable',
-  'refactor-cleaner': 'write-capable',
-  'build-error-resolver': 'write-capable',
-  'compounder': 'write-capable',
-  'diagrammer': 'write-capable',
   'e2e-tester': 'write-capable',
-  'ui-previewer': 'write-capable',
-  'junior-mentor': 'write-capable',
-  // QA agents — read-only
-  'qa-coordinator': 'read-only',
-  'edge-case-finder': 'read-only',
   'acceptance-tester': 'read-only',
-  // Planning agents — read-only
-  'requirements-analyst': 'read-only',
-  'ux-advisor': 'read-only',
-  // Docs agents
-  'api-documenter': 'read-only',
-  'changelog-writer': 'read-only-git',
-  // Event agents
-  'event-scheduler': 'write-capable',
-  'event-content': 'write-capable',
-  'event-speaker': 'web-search',
-  'event-comms': 'write-capable',
-  'event-ops': 'write-capable',
-  'event-image': 'write-capable',
+  'build-error-resolver': 'write-capable',
+  // 리뷰어 — git 이력/감사 명령이 필요해 Bash 포함 read-only
+  'code-reviewer': 'read-only-git',
+  'security-reviewer': 'read-only-git',
+  'documenter': 'read-only-git',
+  'diagrammer': 'write-capable',
   // Figma agents
-  'figma-analyst': 'read-only',
-  'figma-architect': 'read-only',
-  'figma-builder': 'write-capable',
-  'figma-auditor': 'read-only-git',
+  'figma-engineer': 'write-capable',
   // UI agents
-  'ui-a11y-auditor': 'read-only',
-  'ui-antipattern-detector': 'read-only',
-  'ui-dataviz-advisor': 'read-only',
-  'ui-design-system-gen': 'write-capable',
-  'ui-industry-analyzer': 'read-only',
-  'ui-layout-architect': 'read-only',
-  'ui-stack-implementer': 'read-only',
-  'ux-compliance-reviewer': 'read-only',
-  // Team coordinators (read-only — 호출만 하고 코드 수정은 멤버 agent에 위임)
-  'debug-team': 'read-only',
-  'dev-team': 'read-only',
-  'docs-team': 'read-only',
-  'figma-team': 'read-only',
-  'fullstack-team': 'read-only',
-  'lite-team': 'read-only',
-  'migration-team': 'read-only',
-  'refactor-team': 'read-only',
-  'research-team': 'read-only',
-  'review-debate-team': 'read-only',
-  'security-team': 'read-only',
+  'design-reviewer': 'read-only',
+  'design-system-gen': 'write-capable',
+  // Event agents
+  'event-planner': 'write-capable',
+  'event-ops': 'write-capable',
 };
 
 // 에이전트 → 권한 모드 매핑
 export const CLAUDE_AGENT_PERMISSION_MODE: Record<string, string> = {
   // 읽기 전용 에이전트 → plan
-  'explorer': 'plan', 'explorer-low': 'plan', 'explorer-medium': 'plan',
-  'architect': 'plan', 'architect-low': 'plan', 'architect-medium': 'plan',
-  'security-reviewer': 'plan', 'architecture-reviewer': 'plan',
-  'performance-reviewer': 'plan', 'complexity-reviewer': 'plan',
-  'simplicity-reviewer': 'plan', 'data-integrity-reviewer': 'plan',
-  'test-coverage-reviewer': 'plan', 'git-history-reviewer': 'plan',
-  'python-reviewer': 'plan', 'typescript-reviewer': 'plan',
-  'rails-reviewer': 'plan', 'react-reviewer': 'plan',
-  'best-practices': 'plan', 'framework-docs': 'plan',
-  'codebase-patterns': 'plan', 'security-advisory': 'plan',
-  'qa-coordinator': 'plan', 'edge-case-finder': 'plan', 'acceptance-tester': 'plan',
-  'requirements-analyst': 'plan', 'ux-advisor': 'plan',
-  'api-documenter': 'plan', 'changelog-writer': 'plan',
-  'searcher': 'plan',
+  'architect': 'plan',
+  'acceptance-tester': 'plan',
+  'code-reviewer': 'plan',
+  'security-reviewer': 'plan',
+  'documenter': 'plan',
+  'design-reviewer': 'plan',
   // 수정 가능 에이전트 → acceptEdits
-  'implementer': 'acceptEdits', 'implementer-low': 'acceptEdits', 'implementer-medium': 'acceptEdits',
-  'tester': 'acceptEdits', 'simplifier': 'acceptEdits',
-  'refactor-cleaner': 'acceptEdits', 'build-error-resolver': 'acceptEdits',
-  'compounder': 'acceptEdits', 'diagrammer': 'acceptEdits',
-  'e2e-tester': 'acceptEdits', 'ui-previewer': 'acceptEdits',
-  'junior-mentor': 'acceptEdits',
-  // Event agents
-  'event-scheduler': 'acceptEdits',
-  'event-content': 'acceptEdits',
-  'event-speaker': 'plan',
-  'event-comms': 'acceptEdits',
+  'implementer': 'acceptEdits',
+  'tester': 'acceptEdits',
+  'e2e-tester': 'acceptEdits',
+  'build-error-resolver': 'acceptEdits',
+  'diagrammer': 'acceptEdits',
+  'figma-engineer': 'acceptEdits',
+  'design-system-gen': 'acceptEdits',
+  'event-planner': 'acceptEdits',
   'event-ops': 'acceptEdits',
-  'event-image': 'acceptEdits',
-  // Figma agents
-  'figma-analyst': 'plan',
-  'figma-architect': 'plan',
-  'figma-builder': 'acceptEdits',
-  'figma-auditor': 'plan',
-  // UI agents
-  'ui-a11y-auditor': 'plan',
-  'ui-antipattern-detector': 'plan',
-  'ui-dataviz-advisor': 'plan',
-  'ui-design-system-gen': 'acceptEdits',
-  'ui-industry-analyzer': 'plan',
-  'ui-layout-architect': 'plan',
-  'ui-stack-implementer': 'plan',
-  'ux-compliance-reviewer': 'plan',
-  // Team coordinators
-  'debug-team': 'plan',
-  'dev-team': 'plan',
-  'docs-team': 'plan',
-  'figma-team': 'plan',
-  'fullstack-team': 'plan',
-  'lite-team': 'plan',
-  'migration-team': 'plan',
-  'refactor-team': 'plan',
-  'research-team': 'plan',
-  'review-debate-team': 'plan',
-  'security-team': 'plan',
 };
 
 // NO FILE CREATION 에이전트 → Write, Edit 차단
 export const CLAUDE_AGENT_DISALLOWED_TOOLS: Record<string, string[]> = {
-  'requirements-analyst': ['Write', 'Edit'],
-  'ux-advisor': ['Write', 'Edit'],
-  'qa-coordinator': ['Write', 'Edit'],
-  'edge-case-finder': ['Write', 'Edit'],
   'acceptance-tester': ['Write', 'Edit'],
-  'best-practices': ['Write', 'Edit'],
-  'framework-docs': ['Write', 'Edit'],
-  'codebase-patterns': ['Write', 'Edit'],
-  'security-advisory': ['Write', 'Edit'],
-  'api-documenter': ['Write', 'Edit'],
-  'changelog-writer': ['Write', 'Edit'],
-  'event-speaker': ['Write', 'Edit'],
-  // Read-only analysts (자문/감지/분석 — 코드 수정 금지)
-  'ui-a11y-auditor': ['Write', 'Edit'],
-  'ui-antipattern-detector': ['Write', 'Edit'],
-  'ui-dataviz-advisor': ['Write', 'Edit'],
-  'ui-industry-analyzer': ['Write', 'Edit'],
-  'ui-layout-architect': ['Write', 'Edit'],
-  'ui-stack-implementer': ['Write', 'Edit'],
-  'ux-compliance-reviewer': ['Write', 'Edit'],
-  'figma-analyst': ['Write', 'Edit'],
-  'figma-architect': ['Write', 'Edit'],
-  'figma-auditor': ['Write', 'Edit'],
-  // Team coordinators — read-only orchestration
-  'debug-team': ['Write', 'Edit'],
-  'dev-team': ['Write', 'Edit'],
-  'docs-team': ['Write', 'Edit'],
-  'figma-team': ['Write', 'Edit'],
-  'fullstack-team': ['Write', 'Edit'],
-  'lite-team': ['Write', 'Edit'],
-  'migration-team': ['Write', 'Edit'],
-  'refactor-team': ['Write', 'Edit'],
-  'research-team': ['Write', 'Edit'],
-  'review-debate-team': ['Write', 'Edit'],
-  'security-team': ['Write', 'Edit'],
+  'documenter': ['Write', 'Edit'],
+  'design-reviewer': ['Write', 'Edit'],
 };
 
 // 지속 메모리 설정 (세션 간 패턴 축적)
 export const CLAUDE_AGENT_MEMORY: Record<string, string> = {
+  'code-reviewer': 'user',
   'security-reviewer': 'user',
-  'architecture-reviewer': 'user',
-  'performance-reviewer': 'user',
-  'complexity-reviewer': 'user',
-  'simplicity-reviewer': 'user',
-  'data-integrity-reviewer': 'user',
-  'test-coverage-reviewer': 'user',
-  'git-history-reviewer': 'user',
-  'python-reviewer': 'user',
-  'typescript-reviewer': 'user',
-  'rails-reviewer': 'user',
-  'react-reviewer': 'user',
 };

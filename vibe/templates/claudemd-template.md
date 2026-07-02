@@ -68,7 +68,7 @@ At 85%+ context: `save_memory` → `/new` → `/vibe.utils --continue` (raised f
 
 ## Git Commit Rules
 
-**Include:** `.vibe/plans/`, `.vibe/specs/`, `.vibe/features/`, `.vibe/config.json`, `CLAUDE.md`
+**Include:** `.vibe/specs/`, `.vibe/features/`, `.vibe/config.json`, `CLAUDE.md` (legacy `.vibe/plans/` 는 있으면 유지)
 **Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
 
 <!-- VIBE:END -->

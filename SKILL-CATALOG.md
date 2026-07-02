@@ -3,59 +3,48 @@
 
 # Vibe Skill Catalog
 
-> Total: **73 skills** | Global: 30 | Stack-local: 11 | Capability: 10
+> Total: **59 skills** | Global: 20 | Stack-local: 7 | Capability: 10
 
 ## Global Skills (postinstall → ~/.claude/skills/)
 
 | Skill | Invocation | Description | Triggers | Priority |
 |-------|------------|-------------|----------|----------|
-| `interview` | — | 도메인 요구사항 인터뷰 본체 — type별 체크리스트(website/webapp/mobile/api/library/feature)로 사용자가 stop 할 때까지 루프. | — | — |
-| `plan` | — | 인터뷰 결과 → 사람이 읽는 기획서(vision document) 정제 본체. /vibe.spec → 코드, /vibe.figma → UI 스토리보드의 입력. | — | — |
-| `spec` | — | PTCF 구조 SPEC 한 문서 작성 — parallel research (GPT/Antigravity/Claude agents), ambiguity scan, 100-point quality gate. plan 파일 입력 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 생성. | — | — |
-| `spec-review` | — | SPEC 품질 리뷰 본체 — GPT/Antigravity 크로스 검증, 100-point gate, Race Review(수렴 종료), Codex 적대 리뷰, 사용자 체크포인트. | — | — |
+| `spec` | — | 단일 패스 SPEC 작성 본체 — 자연어 요구사항(+첨부) → 필요할 때만 인라인 명확화 질문 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 를 한 번에 생성 → 1회 셀프 리뷰 → SPEC 승인(유일한 의무 게이트). | — | — |
 | `test` | — | vibe 자가검진 본체 — 대상 harness(~/.claude/~/.codex)의 모든 entry skill/skill/hook/agent 프로빙 → pass/fail 리포트 → ~/.vibe/test-reports/. | — | — |
-| `techdebt` | auto, chain | Technical debt cleanup — detect and fix duplicate code, console.log, unused imports, any types, etc. Recommended before session end. Activates on techdebt, cleanup, debt keywords. | techdebt, cleanup, debt, unused imports, console.log, dead code | 60 |
-| `characterization-test` | auto | Lock existing behavior with characterization tests BEFORE refactoring or modifying legacy/untested code (files >200 lines without tests). | legacy, characterization test, lock behavior, regression prevention, before refactor, large file, refactor, rewrite, modernize, clean up | 65 |
 | `arch-guard` | auto | Generate import-rule tests that mechanically enforce architecture layer constraints (e.g.,  | arch guard, architecture test, layer test, boundary test, structural test, arch validation, layer enforcement, dependency rules, architectural boundaries, circular dependency | 60 |
-| `exec-plan` | auto, chain | Convert a SPEC (3+ phases or multi-file) into a self-contained execution plan — explicit file paths, interfaces, acceptance criteria — that agents can run autonomously. | exec plan, execution plan, autonomous plan, self-contained plan, long-running, execute this spec, run this plan, parallel implementation | 70 |
-| `rob-pike` | auto | Rob Pike | optimize, slow, performance, cache, parallelize, bottleneck, speed up, faster, latency, benchmark | 90 |
-| `yagni-ladder` | auto | YAGNI Ladder — block writing code before checking 5 cheaper rungs. Sibling of rob-pike: rob-pike blocks premature optimization, this blocks premature code. Auto-activates when about to write non-trivial implementation code. | add feature, implement, create a class, write a, build a, helper, utility, wrapper, abstraction, manager, handler, service for | 90 |
-| `systematic-debugging` | auto | Enforce reproduce-first, root-cause-first, failing-test-first debugging. Auto-activates on bug, error, fail, broken, crash, flaky keywords. | bug, error, fail, broken, crash, flaky, not working, regression, unexpected, stack trace, exception, debug | 90 |
+| `exec-plan` | auto, chain | Convert a SPEC (3+ phases or multi-file) into a self-contained execution plan — explicit file paths, interfaces, acceptance criteria — that agents can run autonomously. | exec plan, execution plan, autonomous plan, self-contained plan, execute this spec, run this plan, parallel implementation | 60 |
+| `restraint` | auto | Restraint gate — block premature abstraction and premature optimization. Escalate the YAGNI ladder only on demonstrated need; optimize only on measured evidence. Merges yagni-ladder + rob-pike. | premature optimization, premature abstraction, abstraction layer, helper module, utility class, wrapper class, manager class, config system, cache layer, parallelize, benchmark | 60 |
 | `parallel-research` | auto | Parallel research with 4 specialized agents (best-practices, framework-docs, codebase-patterns, security-advisory) running simultaneously. Use when facing unfamiliar technology, choosing between libraries/frameworks, designing architecture for a new feature, or investigating security implications. Must use this skill when user asks  | parallel research, complex feature, technology selection, architecture design, security critical | 60 |
-| `handoff` | auto | Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords. | handoff, handover, session cleanup, session end, context save | 70 |
-| `priority-todos` | auto | Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority. | todo, priority, P1, P2, P3, task management, issue, organize | 60 |
-| `agents-md` | auto, chain | Optimize AGENTS.md / CLAUDE.md by removing discoverable info and keeping only gotchas. Based on Addy Osmani | agents.md, claude.md, context file, optimize agents, optimize claude | 50 |
-| `claude-md-guide` | auto | Guide for writing effective CLAUDE.md files from scratch. Evidence-based methodology from 40+ sources including research papers, official docs, and real-world examples. Covers 3-layer architecture, Curse of Instructions mitigation, progressive disclosure, and maintenance. Use when creating new CLAUDE.md, improving existing ones, or teaching team members how to write project instructions for AI agents. | claude-md guide, write claude.md, create claude.md, claude.md 작성, 클로드 문서, project instructions, claude-md | 55 |
-| `capability-loop` | auto | When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking  | capability loop, failure loop, build capability, missing capability, agent failed, why did it fail | 75 |
+| `handoff` | auto | Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords. | handoff, handover, session cleanup, session end, context save | 60 |
+| `priority-todos` | auto | Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority. | todo list, task management, P1, P2, P3, priority todos, organize tasks | 60 |
+| `agents-md` | auto, chain | Author and optimize AGENTS.md / CLAUDE.md (same doctrine, different filenames): write new context files from scratch, or strip discoverable info and keep only gotchas. Based on Addy Osmani | agents.md, claude.md, context file, optimize agents, optimize claude, write claude.md, create claude.md, project instructions | 50 |
+| `capability-loop` | auto | When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking  | capability loop, failure loop, build capability, missing capability, agent failed, why did it fail | 60 |
 | `design-teach` | auto | Gather and store project design context — target audience, brand personality, aesthetic direction, constraints. Used by other design-* skills. Use when design-teach, design-setup, design-context. | design-teach, design-setup, design-context | 50 |
-| `figma` | — | Figma → 코드 본체 — tree 기반 구조적 코드 생성. | — | — |
-| `figma-extract` | — | Figma REST API로 코드 생성 데이터 수집 — tree(주) + 이미지 + 스크린샷(검증). | — | — |
-| `figma-convert` | — | Figma tree → 구조적 코드 변환 + 스크린샷 검증 본체. | — | — |
+| `figma` | — | Figma → 코드 본체 — tree 기반 구조적 코드 생성 (extract/convert 모드 통합). | — | — |
 | `clone` | — | URL → markup 수준 pixel-perfect 클론 본체 — headless browser로 라이브 사이트 캡처 후 현재 스택으로 스캐폴드. | — | — |
 | `docs` | — | 프로젝트 문서 생성 본체 — README / 아키텍처 / 사용자 가이드 / 릴리즈 노트. | — | — |
 | `commit-push-pr` | auto, chain | Commit, push, and create PR in one go. Auto-activates on commit, PR, push keywords. | commit, push, PR, pull request, merge | 70 |
-| `git-worktree` | auto | Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously. | worktree, PR review, hotfix, parallel branch, multiple branches | 50 |
-| `tool-fallback` | auto | Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors. | API error, search failure, timeout, 429, 5xx, overloaded, fallback, circuit breaker | 80 |
-| `context7-usage` | auto | Context7 plugin for latest library documentation. Auto-activates when docs, documentation, latest version, official docs, API reference, or library help is needed. | docs, documentation, latest version, official docs, API reference, library help, context7 | 60 |
-| `chub-usage` | auto | Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs. | chub, context hub, API docs, latest API, deprecated API, SDK documentation, api reference, 최신 문서 | 65 |
+| `git-worktree` | auto | Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously. | worktree, hotfix, parallel branch, multiple branches | 50 |
+| `tool-fallback` | auto | Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors. | search failure, 429, 5xx, overloaded, fallback, circuit breaker, rate limit | 60 |
+| `context7-usage` | auto | Context7 plugin for latest library documentation. Auto-activates when docs, documentation, latest version, official docs, API reference, or library help is needed. | latest version, official docs, API reference, library help, context7 | 60 |
+| `chub-usage` | auto | Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs. | chub, context hub, API docs, latest API, deprecated API, SDK documentation, api reference, 최신 문서 | 60 |
 | `presentation` | auto | 소스 데이터(리서치/문서/지식그래프)를 16:9 HTML 슬라이드덱으로 생성한다. 디자인 시스템(타이포·색·그리드·1슬라이드1메시지)을 통째로 적용해 전문가 수준 결과를 뽑고, 1920×1080 PDF 로 발행한다. 사용자가  | presentation, ppt, slide, deck, 슬라이드, 프레젠테이션, 발표자료, 덱 | 50 |
 
 ## Stack → Skills Routing (vibe init/update → .claude/skills/)
 
 | Stack Type | Skills |
 |------------|--------|
-| `typescript` | `typescript-advanced-types` |
-| `typescript-react` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `vercel-react-best-practices`, `design-audit`, `design-critique`, `design-polish`, `design-normalize`, `design-distill`, `vibe.design` |
-| `typescript-nextjs` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `vercel-react-best-practices`, `design-audit`, `design-critique`, `design-polish`, `design-normalize`, `design-distill`, `vibe.design` |
-| `typescript-vue` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-audit`, `design-critique`, `design-polish`, `design-normalize`, `design-distill`, `vibe.design` |
-| `typescript-nuxt` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-audit`, `design-critique`, `design-polish`, `design-normalize`, `design-distill`, `vibe.design` |
-| `typescript-svelte` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-audit`, `design-critique`, `design-polish`, `design-normalize`, `design-distill`, `vibe.design` |
-| `typescript-angular` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-audit`, `design-critique`, `design-polish`, `design-normalize`, `design-distill`, `vibe.design` |
-| `typescript-astro` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-audit`, `design-critique`, `design-polish`, `design-normalize`, `design-distill`, `vibe.design` |
-| `typescript-react-native` | `ui-ux-pro-max`, `design-audit`, `design-critique`, `vibe.design` |
-| `dart-flutter` | `ui-ux-pro-max`, `design-audit`, `design-critique`, `vibe.design` |
-| `swift-ios` | `ui-ux-pro-max`, `design-audit`, `design-critique`, `vibe.design` |
-| `kotlin-android` | `ui-ux-pro-max`, `design-audit`, `design-critique`, `vibe.design` |
+| `typescript-react` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `vercel-react-best-practices`, `design-review`, `design-refine`, `vibe.design` |
+| `typescript-nextjs` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `vercel-react-best-practices`, `design-review`, `design-refine`, `vibe.design` |
+| `typescript-vue` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
+| `typescript-nuxt` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
+| `typescript-svelte` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
+| `typescript-angular` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
+| `typescript-astro` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
+| `typescript-react-native` | `ui-ux-pro-max`, `design-review`, `vibe.design` |
+| `dart-flutter` | `ui-ux-pro-max`, `design-review`, `vibe.design` |
+| `swift-ios` | `ui-ux-pro-max`, `design-review`, `vibe.design` |
+| `kotlin-android` | `ui-ux-pro-max`, `design-review`, `vibe.design` |
 
 ## Capability → Skills Routing
 
@@ -109,9 +98,9 @@
 
 ### `agents-md` (global)
 
-- **Description**: Optimize AGENTS.md / CLAUDE.md by removing discoverable info and keeping only gotchas. Based on Addy Osmani
+- **Description**: Author and optimize AGENTS.md / CLAUDE.md (same doctrine, different filenames): write new context files from scratch, or strip discoverable info and keep only gotchas. Based on Addy Osmani
 - **Invocation**: auto, chain
-- **Triggers**: agents.md, claude.md, context file, optimize agents, optimize claude
+- **Triggers**: agents.md, claude.md, context file, optimize agents, optimize claude, write claude.md, create claude.md, project instructions
 - **Priority**: 50
 
 ### `arch-guard` (global)
@@ -125,36 +114,22 @@
 
 - **Description**: Auto-generate app icons (iOS/Android/PWA), favicons, and OG images from SPEC brand information using the Antigravity image backend. Use when the project needs visual brand assets, when user mentions 
 - **Invocation**: auto
-- **Triggers**: icon, favicon, brand, logo, app icon, branding, assets
-- **Priority**: 65
+- **Triggers**: favicon, logo, app icon, brand assets, branding, og image
+- **Priority**: 60
 
 ### `capability-loop` (global)
 
 - **Description**: When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking 
 - **Invocation**: auto
 - **Triggers**: capability loop, failure loop, build capability, missing capability, agent failed, why did it fail
-- **Priority**: 75
-
-### `characterization-test` (global)
-
-- **Description**: Lock existing behavior with characterization tests BEFORE refactoring or modifying legacy/untested code (files >200 lines without tests).
-- **Invocation**: auto
-- **Triggers**: legacy, characterization test, lock behavior, regression prevention, before refactor, large file, refactor, rewrite, modernize, clean up
-- **Priority**: 65
+- **Priority**: 60
 
 ### `chub-usage` (global)
 
 - **Description**: Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs.
 - **Invocation**: auto
 - **Triggers**: chub, context hub, API docs, latest API, deprecated API, SDK documentation, api reference, 최신 문서
-- **Priority**: 65
-
-### `claude-md-guide` (global)
-
-- **Description**: Guide for writing effective CLAUDE.md files from scratch. Evidence-based methodology from 40+ sources including research papers, official docs, and real-world examples. Covers 3-layer architecture, Curse of Instructions mitigation, progressive disclosure, and maintenance. Use when creating new CLAUDE.md, improving existing ones, or teaching team members how to write project instructions for AI agents.
-- **Invocation**: auto
-- **Triggers**: claude-md guide, write claude.md, create claude.md, claude.md 작성, 클로드 문서, project instructions, claude-md
-- **Priority**: 55
+- **Priority**: 60
 
 ### `clone` (global)
 
@@ -164,8 +139,8 @@
 
 - **Description**: E-commerce domain patterns — cart management, payment processing (Toss/Stripe/PG), inventory tracking, and order state machines with transaction safety. Use when implementing any shopping cart, checkout flow, payment integration, stock management, or order lifecycle. Covers idempotency keys, double-charge prevention, stock reservation, and refund flows. Must use this skill when the codebase involves e-commerce — even for seemingly simple 
 - **Invocation**: auto
-- **Triggers**: commerce, ecommerce, cart, payment, checkout, inventory, stock, order, pg, toss, stripe
-- **Priority**: 70
+- **Triggers**: commerce, ecommerce, cart, payment, checkout, inventory, toss, stripe, order flow
+- **Priority**: 60
 
 ### `commit-push-pr` (global)
 
@@ -178,7 +153,7 @@
 
 - **Description**: Context7 plugin for latest library documentation. Auto-activates when docs, documentation, latest version, official docs, API reference, or library help is needed.
 - **Invocation**: auto
-- **Triggers**: docs, documentation, latest version, official docs, API reference, library help, context7
+- **Triggers**: latest version, official docs, API reference, library help, context7
 - **Priority**: 60
 
 ### `contract` (unrouted)
@@ -192,39 +167,18 @@
 - **Triggers**: prd, product requirements, feature spec, requirements document
 - **Priority**: 60
 
-### `design-audit` (stack-local)
+### `design-refine` (stack-local)
 
-- **Description**: Design technical quality audit — a11y, performance, responsive, theming, AI slop detection with 5-dimension scoring. Use when design-audit, ui-audit, a11y-check, design-check.
+- **Description**: Design refinement — distill (remove visual complexity), normalize (hardcoded values → design tokens), polish (pre-ship micro-details). Modifying passes. Use when design-refine, design-polish, design-normalize, token-align, simplify-ui, ship-ready.
 - **Invocation**: command, auto
-- **Triggers**: design-audit, ui-audit, a11y-check, design-check
+- **Triggers**: design-refine, design-polish, design-normalize, token-align, design-distill, simplify-ui, ship-ready
 - **Priority**: 50
 
-### `design-critique` (stack-local)
+### `design-review` (stack-local)
 
-- **Description**: UX design review — Nielsen heuristics scoring, 5-persona red flag analysis. Use when design-critique, ux-review, design-review.
-- **Invocation**: auto
-- **Triggers**: design-critique, ux-review, design-review
-- **Priority**: 50
-
-### `design-distill` (stack-local)
-
-- **Description**: Remove unnecessary visual complexity — strip decorative clutter, apply progressive disclosure, simplify UI to essentials. Use when design-distill, simplify-ui, ui-simplify, strip-ui.
-- **Invocation**: auto
-- **Triggers**: design-distill, simplify-ui, ui-simplify, strip-ui
-- **Priority**: 50
-
-### `design-normalize` (stack-local)
-
-- **Description**: Normalize hardcoded values to design system tokens — colors, typography, spacing, shadows aligned to MASTER.md. Use when design-normalize, design-system, token-align.
+- **Description**: Design quality review — technical audit (a11y, performance, responsive, theming, AI slop) + UX critique (Nielsen heuristics, persona red flags). Read-only report. Use when design-review, design-audit, ui-audit, a11y-check, ux-review.
 - **Invocation**: command, auto
-- **Triggers**: design-normalize, design-system, token-align
-- **Priority**: 50
-
-### `design-polish` (stack-local)
-
-- **Description**: Pre-ship final polish pass — pixel alignment, interaction states, micro-details check and auto-fix. Use when design-polish, ui-polish, final-pass, ship-ready.
-- **Invocation**: auto
-- **Triggers**: design-polish, ui-polish, final-pass, ship-ready
+- **Triggers**: design-review, design-audit, ui-audit, a11y-check, design-critique, ux-review
 - **Priority**: 50
 
 ### `design-teach` (global)
@@ -250,53 +204,45 @@
 - **Description**: E2E test scenarios for commerce checkout and payment flows. Provides ready-made Playwright test templates for cart→checkout→payment→confirmation flows, including PG sandbox testing (Toss/Stripe), error scenarios (payment failure, timeout, stock exhaustion), and idempotency verification. Use when writing E2E tests for any e-commerce feature — checkout, payment, order status, or refund flows.
 - **Invocation**: auto
 - **Triggers**: e2e commerce, checkout test, payment test, order flow test
-- **Priority**: 65
+- **Priority**: 60
 
 ### `event-comms` (capability)
 
 - **Description**: Event communication automation — SMS via Aligo, email via Gmail OAuth, SNS posts for LinkedIn/Threads. Handles templates, BCC rules, and confirmation protocol.
 - **Invocation**: auto
 - **Triggers**: sms, aligo, gmail, event email, event sms, 문자 발송, 메일 발송, SNS 홍보
-- **Priority**: 65
+- **Priority**: 60
 
 ### `event-ops` (capability)
 
 - **Description**: Event operations — nametags, checklists, operational slides, Slido plans, image generation specs, settlement reports.
 - **Invocation**: auto
-- **Triggers**: nametag, checklist, event slide, slido, 이름표, 체크리스트, 운영 슬라이드, 정산
-- **Priority**: 65
+- **Triggers**: nametag, event checklist, event slide, slido, 이름표, 행사 체크리스트, 운영 슬라이드, 정산
+- **Priority**: 60
 
 ### `event-planning` (capability)
 
 - **Description**: Community event automation — D-Day timeline, community patterns, proactive task execution. Auto-activates for event planning, meetup/webinar/conference management.
 - **Invocation**: auto
 - **Triggers**: event planning, meetup, webinar, conference, 행사, 밋업, 웨비나, D-Day, 이벤트 준비
-- **Priority**: 70
+- **Priority**: 60
 
 ### `exec-plan` (global)
 
 - **Description**: Convert a SPEC (3+ phases or multi-file) into a self-contained execution plan — explicit file paths, interfaces, acceptance criteria — that agents can run autonomously.
 - **Invocation**: auto, chain
-- **Triggers**: exec plan, execution plan, autonomous plan, self-contained plan, long-running, execute this spec, run this plan, parallel implementation
-- **Priority**: 70
+- **Triggers**: exec plan, execution plan, autonomous plan, self-contained plan, execute this spec, run this plan, parallel implementation
+- **Priority**: 60
 
 ### `figma` (global)
 
-- **Description**: Figma → 코드 본체 — tree 기반 구조적 코드 생성.
-
-### `figma-convert` (global)
-
-- **Description**: Figma tree → 구조적 코드 변환 + 스크린샷 검증 본체.
-
-### `figma-extract` (global)
-
-- **Description**: Figma REST API로 코드 생성 데이터 수집 — tree(주) + 이미지 + 스크린샷(검증).
+- **Description**: Figma → 코드 본체 — tree 기반 구조적 코드 생성 (extract/convert 모드 통합).
 
 ### `git-worktree` (global)
 
 - **Description**: Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously.
 - **Invocation**: auto
-- **Triggers**: worktree, PR review, hotfix, parallel branch, multiple branches
+- **Triggers**: worktree, hotfix, parallel branch, multiple branches
 - **Priority**: 50
 
 ### `handoff` (global)
@@ -304,11 +250,7 @@
 - **Description**: Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords.
 - **Invocation**: auto
 - **Triggers**: handoff, handover, session cleanup, session end, context save
-- **Priority**: 70
-
-### `interview` (global)
-
-- **Description**: 도메인 요구사항 인터뷰 본체 — type별 체크리스트(website/webapp/mobile/api/library/feature)로 사용자가 stop 할 때까지 루프.
+- **Priority**: 60
 
 ### `parallel-research` (global)
 
@@ -316,10 +258,6 @@
 - **Invocation**: auto
 - **Triggers**: parallel research, complex feature, technology selection, architecture design, security critical
 - **Priority**: 60
-
-### `plan` (global)
-
-- **Description**: 인터뷰 결과 → 사람이 읽는 기획서(vision document) 정제 본체. /vibe.spec → 코드, /vibe.figma → UI 스토리보드의 입력.
 
 ### `presentation` (global)
 
@@ -339,48 +277,30 @@
 
 - **Description**: Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority.
 - **Invocation**: auto
-- **Triggers**: todo, priority, P1, P2, P3, task management, issue, organize
+- **Triggers**: todo list, task management, P1, P2, P3, priority todos, organize tasks
 - **Priority**: 60
 
 ### `regress` (unrouted)
 
 - **Description**: 회귀 테스트 자동 진화 본체 — 버그 등록 → 예방 테스트 생성 → 반복 패턴 클러스터 → git fix 커밋 import. 저장소 .vibe/regressions/.
 
-### `rob-pike` (global)
+### `restraint` (global)
 
-- **Description**: Rob Pike
+- **Description**: Restraint gate — block premature abstraction and premature optimization. Escalate the YAGNI ladder only on demonstrated need; optimize only on measured evidence. Merges yagni-ladder + rob-pike.
 - **Invocation**: auto
-- **Triggers**: optimize, slow, performance, cache, parallelize, bottleneck, speed up, faster, latency, benchmark
-- **Priority**: 90
+- **Triggers**: premature optimization, premature abstraction, abstraction layer, helper module, utility class, wrapper class, manager class, config system, cache layer, parallelize, benchmark
+- **Priority**: 60
 
 ### `seo-checklist` (stack-local)
 
 - **Description**: SEO gotchas for web development — easy-to-miss items that hurt search ranking. Covers meta tags, Open Graph, structured data (JSON-LD), sitemap, robots.txt, canonical URLs, and Naver/Google-specific requirements. Use when building or reviewing any public-facing web page, landing page, or marketing site. Must use this skill when user mentions SEO, search ranking, meta tags, or when deploying a web app that needs to be discoverable.
 - **Invocation**: auto
-- **Triggers**: seo, search, meta, sitemap, schema, structured data, og, opengraph, google, naver
-- **Priority**: 65
+- **Triggers**: seo, meta tags, sitemap, structured data, opengraph, search ranking, robots.txt, naver
+- **Priority**: 60
 
 ### `spec` (global)
 
-- **Description**: PTCF 구조 SPEC 한 문서 작성 — parallel research (GPT/Antigravity/Claude agents), ambiguity scan, 100-point quality gate. plan 파일 입력 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 생성.
-
-### `spec-review` (global)
-
-- **Description**: SPEC 품질 리뷰 본체 — GPT/Antigravity 크로스 검증, 100-point gate, Race Review(수렴 종료), Codex 적대 리뷰, 사용자 체크포인트.
-
-### `systematic-debugging` (global)
-
-- **Description**: Enforce reproduce-first, root-cause-first, failing-test-first debugging. Auto-activates on bug, error, fail, broken, crash, flaky keywords.
-- **Invocation**: auto
-- **Triggers**: bug, error, fail, broken, crash, flaky, not working, regression, unexpected, stack trace, exception, debug
-- **Priority**: 90
-
-### `techdebt` (global)
-
-- **Description**: Technical debt cleanup — detect and fix duplicate code, console.log, unused imports, any types, etc. Recommended before session end. Activates on techdebt, cleanup, debt keywords.
-- **Invocation**: auto, chain
-- **Triggers**: techdebt, cleanup, debt, unused imports, console.log, dead code
-- **Priority**: 60
+- **Description**: 단일 패스 SPEC 작성 본체 — 자연어 요구사항(+첨부) → 필요할 때만 인라인 명확화 질문 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 를 한 번에 생성 → 1회 셀프 리뷰 → SPEC 승인(유일한 의무 게이트).
 
 ### `test` (global)
 
@@ -390,14 +310,8 @@
 
 - **Description**: Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors.
 - **Invocation**: auto
-- **Triggers**: API error, search failure, timeout, 429, 5xx, overloaded, fallback, circuit breaker
-- **Priority**: 80
-
-### `typescript-advanced-types` (stack-local)
-
-- **Description**: TypeScript advanced type system master guide. Covers Generics, Conditional Types, Mapped Types, Template Literals, Utility Types. Activates for complex type logic, reusable type utilities, and compile-time type safety.
-- **Invocation**: auto
-- **Triggers**: generic, generics, constraint, conditional, infer, mapped, utility, Pick, Omit, Partial, Required, Record, Exclude, Extract, readonly
+- **Triggers**: search failure, 429, 5xx, overloaded, fallback, circuit breaker, rate limit
+- **Priority**: 60
 
 ### `ui-ux-pro-max` (stack-local)
 
@@ -415,7 +329,7 @@
 
 - **Description**: React/Next.js performance gotchas from Vercel engineering. Non-intuitive pitfalls that LLMs commonly miss.
 - **Invocation**: auto
-- **Triggers**: react, next.js, performance, optimization, vercel, component, rendering
+- **Triggers**: react, next.js, vercel, react performance, re-render, rendering waterfall
 - **Priority**: 60
 
 ### `vibe` (unrouted)
@@ -484,7 +398,7 @@
 
 ### `vibe.spec` (unrouted)
 
-- **Description**: 프로젝트 명세 통합 진입점 — interview → plan → spec → review → run/figma 전체 워크플로 오케스트레이션
+- **Description**: SPEC 진입점 — 자연어 요구사항(+첨부)을 받아 단일 패스 SPEC 작성 → 1회 승인 → /vibe.run 핸드오프
 
 ### `vibe.test` (unrouted)
 
@@ -506,12 +420,5 @@
 
 - **Description**: Video processing gotchas — FFmpeg commands, transcoding pipelines, HLS/DASH streaming setup, subtitle embedding (SRT/VTT), and thumbnail extraction. Use when the project involves any video manipulation, media processing, or streaming infrastructure. Covers codec selection, bitrate optimization, and common FFmpeg pitfalls. Must use this skill when user works with video files, mentions FFmpeg, or needs media processing — even for simple tasks like 
 - **Invocation**: auto
-- **Triggers**: video, ffmpeg, transcode, encode, stream, media, subtitle, thumbnail, hls, dash
+- **Triggers**: video, ffmpeg, transcode, subtitle, thumbnail, hls, video encoding, media processing
 - **Priority**: 60
-
-### `yagni-ladder` (global)
-
-- **Description**: YAGNI Ladder — block writing code before checking 5 cheaper rungs. Sibling of rob-pike: rob-pike blocks premature optimization, this blocks premature code. Auto-activates when about to write non-trivial implementation code.
-- **Invocation**: auto
-- **Triggers**: add feature, implement, create a class, write a, build a, helper, utility, wrapper, abstraction, manager, handler, service for
-- **Priority**: 90

@@ -7,608 +7,136 @@ user-invocable: true
 
 # /vibe.verify
 
-**Automated Quality Verification** - Making quality trustworthy even for non-developers.
-
-> All scenarios passed = Quality assured
+SPEC-driven verification. Check the implementation against the SPEC's **Done criteria** and Feature scenarios, record the result to the **run ledger** (`recordVerify`), and auto-register regressions on failure. The JUDGE gate is code-enforced by the ledger — a verification never counts as passed by self-report.
 
 ## Usage
 
 ```
-/vibe.verify "feature-name"              # SPEC-based verification
-/vibe.verify --e2e "feature-name"        # E2E browser test (agents/e2e-tester.md)
-/vibe.verify --e2e --visual              # Visual regression test
-/vibe.verify --e2e --record              # Video recording
+/vibe.verify "feature-name"           # SPEC-based verification
+/vibe.verify --e2e "feature-name"     # + E2E browser verification (agents/e2e-tester.md)
 ```
 
-> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+## Scope
 
-## Codex Plugin Integration
-
-> **Codex 플러그인 감지**: 워크플로우 시작 시 아래 명령으로 자동 감지.
->
-> ```bash
-> CODEX_AVAILABLE=$(node "{{VIBE_PATH}}/hooks/scripts/codex-detect.js" 2>/dev/null || echo "unavailable")
-> ```
->
-> `available`이면 `/codex:review` (최종 리뷰 게이트) 자동 호출. `unavailable`이면 스킵.
-
-## File Reading Policy (Mandatory)
-
-- **SPEC/Feature 파일**: 반드시 `Read` 도구로 전체 파일을 읽을 것 (Grep 금지)
-- **소스코드 파일**: 검증 대상 파일은 반드시 `Read` 도구로 전체 읽은 후 검증할 것
-- **Grep 사용 제한**: 파일 위치 탐색(어떤 파일에 있는지 찾기)에만 사용. 파일 내용 파악에는 반드시 Read 사용
-- **시나리오 검증 시**: Given/When/Then 각 단계의 구현 코드를 Read로 전체 읽어 확인할 것. Grep 매칭만으로 "구현됨"이라 판단 금지
-- **부분 읽기 금지**: Grep 결과의 주변 몇 줄만 보고 판단하지 말 것. 전체 맥락을 파악해야 정확한 검증 가능
-
-## Core Principles
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  What non-developers need to know                               │
-│                                                                 │
-│  ✅ Scenarios: 4/4 passed                                       │
-│  📈 Quality Score: 94/100                                       │
-│                                                                 │
-│  Just look at this. The system handles the rest.                │
-└─────────────────────────────────────────────────────────────────┘
-```
+- **Changed files only** — never full-project scan.
+- Verification target = the SPEC's Done criteria + Given/When/Then scenarios. Read whatever is needed to judge each criterion accurately; choose your own reading strategy, but never mark a criterion passed without concrete evidence (test exit code, build result, or a verified code location).
 
 ## Process
 
-### 1. Load Feature File
+### 1. Load SPEC / Feature
 
-**Search order (check BOTH file AND folder):**
+Search order (folder first, then single file):
 
-```
-Step 1: Check if SPLIT structure exists (folder)
-  📁 .vibe/features/{feature-name}/     → Folder with _index.feature + phase files
-  📁 .vibe/specs/{feature-name}/         → Folder with _index.md + phase files
-
-Step 2: If no folder, check single file
-  📄 .vibe/features/{feature-name}.feature → Single Feature file
-  📄 .vibe/specs/{feature-name}.md         → Single SPEC file
-
-Step 3: If neither exists → Error
-```
-
-**Split structure (folder) detected:**
-```
-📁 .vibe/features/{feature-name}/
-├── _index.feature         → Master Feature (read first for scenario overview)
-├── phase-1-{name}.feature → Phase 1 scenarios
-├── phase-2-{name}.feature → Phase 2 scenarios
-└── ...
-
-📁 .vibe/specs/{feature-name}/
-├── _index.md              → Master SPEC (read first for overview)
-├── phase-1-{name}.md      → Phase 1 SPEC
-└── ...
-
-→ Load _index files first, then verify phase by phase
-```
-
-**Single file detected:**
-```
-📄 .vibe/features/{feature-name}.feature → Scenario list
-📄 .vibe/specs/{feature-name}.md → Verification criteria (reference)
-```
-
-**Error if NEITHER file NOR folder found:**
-```
-❌ Feature file not found. Searched:
-   - .vibe/features/{feature-name}/  (folder)
-   - .vibe/features/{feature-name}.feature (file)
-
-   Run /vibe.spec "{feature-name}" first.
-```
-
-### 2. Scenario-by-Scenario Verification
-
-Automatic verification for each scenario:
+1. `.vibe/features/{feature}/` (split structure: `_index.feature` + `phase-N-*.feature`) or `.vibe/specs/{feature}/` (`_index.md` + phase files) — read `_index` first, then verify phase by phase
+2. `.vibe/features/{feature}.feature` or `.vibe/specs/{feature}.md`
+3. Neither exists → error:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 1/4: Valid login success
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Given: User is registered
-  → Verify: User creation API exists? ✅
-  → Verify: Test user data available? ✅
-
-When: Login with valid email and password
-  → Verify: POST /login endpoint exists? ✅
-  → Verify: Request handling logic exists? ✅
-
-Then: Login success + JWT token returned
-  → Verify: Success response code 200? ✅
-  → Verify: JWT token included? ✅
-
-✅ Scenario 1 passed!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ Feature file not found. Run /vibe.spec "{feature}" first.
 ```
 
-### 3. Verification Methods (PARALLEL — run all applicable at once)
+Extract the Done criteria / scenarios — this list is the verification checklist.
 
-> **Run these as parallel sub-agents, not sequentially in main session.**
-> Each method returns pass/fail summary (~200 tokens) instead of bloating main context.
+### 2. Verify each Done criterion (parallel, deterministic)
 
-| Method | Agent | Condition |
-|--------|-------|-----------|
-| **Test Execution** | `Task(Bash, "npm test")` | When test files exist |
-| **Build Verification** | `Task(Bash, "npm run build")` | When build script exists |
-| **Type Check** | `Task(subagent_type="typescript-reviewer")` | TypeScript projects |
-| **Code Analysis** | `Task(subagent_type="explorer-low")` | Always (verify logic against SPEC) |
-| **E2E Closed Loop** | `Task(subagent_type="e2e-tester")` | `--e2e` flag or UI scenarios |
+Run all applicable methods as parallel sub-agents in ONE message; each returns a short pass/fail summary instead of bloating main context:
 
-```text
-# Launch ALL applicable methods in ONE message (parallel)
-Task(Bash, command="npm run build && echo BUILD_OK || echo BUILD_FAIL")
-Task(Bash, command="npm test -- --reporter=verbose 2>&1 | tail -20")
-Task(subagent_type="explorer-low", prompt="Verify [scenario] Given/When/Then against code...")
-```
+| Method | How | Condition |
+|---|---|---|
+| Test execution | `npm test` (judge by exit code) | test files exist |
+| Build | `npm run build` | build script exists |
+| Type check | `tsc --noEmit` / code-reviewer agent (focus: idioms) | TypeScript project |
+| Code analysis | verify Given/When/Then logic against changed files | always |
+| E2E closed loop | e2e-tester agent drives browser scenarios | `--e2e` flag or UI scenarios |
 
-### 3.1. E2E Closed Loop Verification (`--e2e`)
+**E2E closed loop** (`--e2e`): per scenario — navigate → interact → assert. On fail: collect evidence (screenshot, console errors) → root-cause → fix → re-run **only the failed scenario**. Prefer accessibility-tree tools over raw DOM dumps to keep the loop cheap.
 
-**AI가 직접 브라우저를 조작하여 시나리오를 검증하고, 실패 시 자동 수정 후 재검증한다.**
-
-```
-구현 → E2E 검증 → 실패 → 수정 → 재검증 → ... → 통과
-       ↑_____________________________________↓
-       Closed Loop: 사람 개입 없이 AI가 완주
-```
-
-**Browser Tool Priority (토큰 효율 순):**
-
-| Priority | Tool | 토큰/액션 | 사용 조건 |
-|----------|------|----------|----------|
-| 1st | Agent Browser (접근성 트리) | ~6-20 chars | MCP 사용 가능 시 |
-| 2nd | Playwright Test Runner | pass/fail만 | 테스트 코드 실행 |
-| 3rd | Playwright MCP (DOM) | ~12,000+ chars | 최후 수단 |
-
-**Closed Loop 실행 흐름:**
-
-```
-For each UI scenario in Feature file:
-  1. [Browser] Navigate → Find elements → Interact → Assert
-  2. PASS → Next scenario
-  3. FAIL → Collect evidence (screenshot, console errors)
-       → Root cause analysis
-       → Fix code (Read full file first, then edit)
-       → Re-run ONLY failed scenario (loop until pass or stuck)
-  4. STUCK (same failure as previous iteration) → Ask user
-       (ultrawork 모드: 프롬프트 없이 TODO 기록 후 다음 scenario)
-```
-
-**핵심 원칙: 검증이 가벼워야 루프가 충분히 돈다.**
-- 접근성 트리 기반: `button "Sign In"` = 15 chars
-- DOM 기반: `div class="nav-wrapper mx-4 flex..."` = 200+ chars
-- 전자를 사용해야 시나리오 50개도 한 세션에서 검증 가능
-
-### 3.2 Visual Drift Detection (--from-design-md)
-
-**활성 조건**: 프로젝트 루트에 `DESIGN.md` 존재 + UI 스택. 또는 `--from-design-md` 플래그 명시.
-
-**동작**:
+### 3. Visual drift (auto, only if `DESIGN.md` exists + UI stack)
 
 ```
 Load skill `vibe.design` with: verify --files=<changed-ui-files>
 ```
 
-`vibe.design verify` 는 `DESIGN.md §2 Color Palette` 의 hex 토큰 셋을 추출(`extractHexTokens`)하고,
-변경 파일에서 토큰 밖 hex 하드코딩을 검출(`findHardcodedColors`) 한다.
+P1 drift (hex hardcoded outside the DESIGN.md token set) → verify fails. DESIGN.md absent → notify and silently skip (never block).
 
-**판정**:
-- P1 drift (토큰 밖 hex) → `/vibe.verify` 실패
-- DESIGN.md 부재 → 안내 후 silent skip (블록하지 않음)
-- v1 범위: hex only. spacing / font 드리프트는 Phase 2+
+### 4. Result summary (short markdown — no box art)
 
-**성능 목표**: <1s / 100 파일 (변경 파일만 스캔 — `/vibe.verify` 기존 정책 일치).
+```markdown
+## Verify: {feature} — PASS | FAIL (n/m criteria)
 
-### 3.5 Step Count (MANDATORY before Quality Report)
+| Done criterion | Result | Evidence |
+|---|---|---|
+| Valid login returns JWT | PASS | auth.test.ts 12/12; src/auth/login.ts:42 |
+| Forgot-password link | FAIL | LoginForm.tsx:42 — link not implemented |
 
-Read `.vibe/metrics/current-run.json` to obtain the tool-call count from the preceding `/vibe.run` (and any follow-up work in this session). Then append a record to `.vibe/metrics/history.jsonl` and include the count in the Quality Report below.
+Build: OK · Tests: 12/12 · Types: 0 errors
+Next: /vibe.run "{feature}" --fix   ← only when FAIL
+```
+
+One row per Done criterion: pass/fail + an evidence pointer (file:line, test name, or command result). Failure rows state expected vs actual and the exact location.
+
+**Pass condition**: ALL Done criteria pass AND build/tests/type check pass. Anything else = FAIL.
+
+### 5. Failure auto-register (MANDATORY on any failed criterion)
+
+Before printing the failure summary, register each failed scenario as a regression bug so the same failure cannot silently slip through again:
+
+```
+Load skill `regress` with:
+  subcommand: register --from-verify
+  feature: {feature}   scenario: {scenario}
+  error: {error-summary}   location: {file:line}
+```
+
+`--from-verify` skips user confirmation. The bug slug appears in the summary's Fix line. Follow up with `/vibe.regress generate <slug>` for a preventive test.
+
+### 6. Post-verify contract check (auto, only when a contract file exists)
+
+After all criteria pass, if `.vibe/contracts/{feature}.md` exists:
+
+```
+Load skill `contract` with: check "{feature}"
+```
+
+- No drift → verify still passes
+- **P1 drift** → demote verify to FAIL; auto-call `/vibe.regress register --from-contract`
+- P2/P3 drift → warning only
+
+### 7. Metrics + Ledger update (MANDATORY final step)
+
+Record run metrics, then write the verify result to the run ledger. This is the machine-readable JUDGE record consumed by the Stop-hook verify gate, auto-commit verify gate, and loop-contract gates.
 
 ```bash
-# Read step count (ok if file missing — treat as 0)
-STEPS=$(node -e "try{const d=JSON.parse(require('fs').readFileSync('.vibe/metrics/current-run.json','utf-8'));console.log(d.steps||0)}catch{console.log(0)}")
-
-# Append history record
+# Append step-count history (ok if current-run.json missing)
 node -e "
-const fs=require('fs'),path=require('path');
-const dir='.vibe/metrics';
-try{
-  const cur=JSON.parse(fs.readFileSync(path.join(dir,'current-run.json'),'utf-8'));
-  const rec={verifiedAt:new Date().toISOString(),feature:cur.feature,startedAt:cur.startedAt,steps:cur.steps||0};
-  fs.appendFileSync(path.join(dir,'history.jsonl'),JSON.stringify(rec)+'\n');
-}catch{}"
+const fs=require('fs'),p='.vibe/metrics';
+try{const c=JSON.parse(fs.readFileSync(p+'/current-run.json','utf-8'));
+fs.appendFileSync(p+'/history.jsonl',JSON.stringify({verifiedAt:new Date().toISOString(),feature:c.feature,startedAt:c.startedAt,steps:c.steps||0})+'\n');}catch{}"
 
-# Phase 3 — Recipe extraction (post-task curation, best-effort silent)
-# 휴리스틱 게이트 (total≥8 AND fails≥3) 통과 시만 LLM 호출.
-# .vibe/recipes/<slug>.md 자동 생성 → 다음 세션의 session-start 가 prepend.
+# Record verify result — pass | fail (calls recordVerify on the run ledger)
 HOOKS_DIR="${VIBE_PATH:-$(npm root -g 2>/dev/null)/@su-record/vibe}/hooks/scripts"
+[ -f "$HOOKS_DIR/verify-ledger.js" ] && node "$HOOKS_DIR/verify-ledger.js" pass   # or: fail
+
+# Recipe extraction (best-effort, silent)
 [ -f "$HOOKS_DIR/recipe-extractor.js" ] && node "$HOOKS_DIR/recipe-extractor.js" 2>/dev/null || true
 ```
 
-Record the value as `{step_count}` and include it in the report below.
+Use `pass` only when the summary in step 4 is PASS; otherwise `fail`. Skipping this step leaves `verifyPassed` unset and downstream gates will treat the run as unverified.
 
-### 4. Quality Report (Auto-generated)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  📊 VERIFICATION REPORT: login                                   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ✅ Scenarios: 4/4 passed (100%)                                │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ # │ Scenario              │ Given │ When │ Then │ Status │  │
-│  │───│───────────────────────│───────│──────│──────│────────│  │
-│  │ 1 │ Valid login success   │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 2 │ Invalid password error│ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 3 │ Email format validation│ ✅   │ ✅   │ ✅   │ ✅     │  │
-│  │ 4 │ Forgot password link  │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  📈 Quality Score: 94/100                                       │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │ Item              │ Result│ Details                     │    │
-│  │───────────────────│───────│─────────────────────────────│    │
-│  │ Build             │ ✅    │ Success                     │    │
-│  │ Tests             │ ✅    │ 12/12 passed                │    │
-│  │ Type Check        │ ✅    │ 0 errors                    │    │
-│  │ Complexity        │ ✅    │ All functions ≤50 lines     │    │
-│  │ Code Coverage     │ ⚠️    │ 78% (target: 80%)           │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                 │
-│  📋 Recommendations:                                             │
-│  - Need 2% more code coverage (auth.service.ts line 45-52)      │
-│                                                                 │
-│  ⏱️ Started: {start_time}                                        │
-│  ⏱️ Completed: {getCurrentTime 결과}                             │
-│  🧮 Tool calls: {step_count}                                     │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Failure Auto-Register (MANDATORY on any scenario failure)
-
-Before printing the failure report, **auto-register each failed scenario as a regression bug** so the same failure cannot silently slip through next time:
+## Failure escalation (convergence-based, no retry cap)
 
 ```
-For each failed scenario:
-  Load skill `regress` with:
-    subcommand: register --from-verify
-    feature: {feature-name}
-    scenario: {scenario-name}
-    error: {error-summary}
-    location: {file:line}
+fix → re-verify → still failing?
+  different error → progress, continue looping
+  same error as previous attempt → STUCK:
+    interactive: ask user (fix hint / "proceed" → record .vibe/todos/verify-failure-{scenario}.md / "abort")
+    autonomous (automationLevel: autonomous): record TODO, continue to next scenario
 ```
 
-- `--from-verify` mode skips user confirmation (the user is already attentive in a verify-failure context; minimize friction)
-- The registered bug's slug appears as a link in the Failure Report's "Fix" section
-- Follow up with `/vibe.regress generate <slug>` to produce a preventive test
+## Next step
 
-### Failure Report
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  📊 VERIFICATION REPORT: login                                   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ❌ Scenarios: 3/4 passed (75%)                                 │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ # │ Scenario              │ Given │ When │ Then │ Status │  │
-│  │───│───────────────────────│───────│──────│──────│────────│  │
-│  │ 1 │ Valid login success   │ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 2 │ Invalid password error│ ✅    │ ✅   │ ✅   │ ✅     │  │
-│  │ 3 │ Email format validation│ ✅   │ ✅   │ ✅   │ ✅     │  │
-│  │ 4 │ Forgot password link  │ ✅    │ ❌   │ -    │ ❌     │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  ❌ Failure Details:                                             │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
-│  Scenario 4: Forgot password link                               │
-│                                                                 │
-│  When: Click "Forgot password"                                  │
-│  ❌ Issue: Link not implemented                                 │
-│  📍 Location: LoginForm.tsx line 42                             │
-│  💡 Fix: Need to add "Forgot password" link                     │
-│                                                                 │
-│  🔧 Auto-fix command: /vibe.run "login" --fix                   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Input
-
-- `.vibe/features/{feature-name}.feature` or `.vibe/features/{feature-name}/` - BDD scenarios
-- `.vibe/specs/{feature-name}.md` or `.vibe/specs/{feature-name}/` - SPEC document (reference)
-- Implemented source code
-
-## Output
-
-- Verification result report (terminal output)
-- Passed/failed scenario list
-- Items needing fixes
-
-## Example
-
-```
-User: /vibe.verify "login"
-
-Claude:
-📄 Loading Feature: .vibe/features/login.feature
-🔍 Starting verification...
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 1/4: Valid login success
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✅ Given: User registered - OK
-  ✅ When: Login attempt - OK
-  ✅ Then: JWT token returned - OK
-✅ Passed!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 2/4: Invalid password error
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✅ Given: OK
-  ✅ When: OK
-  ✅ Then: OK
-✅ Passed!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 3/4: Email format validation
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✅ Given: OK
-  ✅ When: OK
-  ✅ Then: OK
-✅ Passed!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Scenario 4/4: Forgot password link
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✅ Given: OK
-  ❌ When: "Forgot password" link - missing
-  - Then: (skipped)
-❌ Failed!
-
-┌─────────────────────────────────────────────────────────────────┐
-│  📊 VERIFICATION REPORT: login                                   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ❌ Scenarios: 3/4 passed (75%)                                 │
-│                                                                 │
-│  | # | Scenario              | Status |                         │
-│  |---|───────────────────────|────────|                         │
-│  | 1 | Valid login success   | ✅     |                         │
-│  | 2 | Invalid password error| ✅     |                         │
-│  | 3 | Email format validation| ✅    |                         │
-│  | 4 | Forgot password link  | ❌     |                         │
-│                                                                 │
-│  📈 Quality Score: 75/100                                       │
-│                                                                 │
-│  ❌ Fixes needed:                                                │
-│  - Scenario 4: Add "Forgot password" link in LoginForm.tsx      │
-│                                                                 │
-│  🔧 Auto-fix: /vibe.run "login" --fix                           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Core Tools (Code Analysis & Quality)
-
-### Tool Invocation
-
-All tools are called via:
-
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.TOOL_NAME({...args}).then(r => console.log(r.content[0].text)))"
-```
-
-### Recommended Tools for Verification
-
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| `validateCodeQuality` | Code quality validation | Check complexity, style violations |
-| `analyzeComplexity` | Complexity analysis | Verify function length, nesting depth |
-| `findSymbol` | Find implementations | Verify feature implementation exists |
-| `findReferences` | Find usages | Check if all references are correct |
-
-### Example Tool Usage in Verification
-
-**1. Validate code quality:**
-
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.validateCodeQuality({targetPath: 'src/auth/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
-```
-
-**2. Analyze complexity of implementation:**
-
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.analyzeComplexity({targetPath: 'src/auth/login.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
-```
-
-**3. Find implemented feature:**
-
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.findSymbol({symbolName: 'handleLogin', searchPath: 'src/'}).then(r => console.log(r.content[0].text)))"
-```
-
-### Final Codex Review Gate (Codex 플러그인 활성화 시)
-
-> 모든 시나리오 검증 통과 후, 최종 안전망으로 Codex review 실행.
-
-```
-/codex:review
-```
-
-**Codex P1 발견 시:**
-1. 즉시 수정
-2. 해당 시나리오 재검증
-3. 재검증 통과 시 최종 완료
-
-**Codex P2 발견 시:**
-- TODO 파일에 기록 후 완료 처리
-
-## Post-Verify Contract Check (auto, only when a contract file exists)
-
-After all scenarios pass, auto-invoke:
-
-```
-Load skill `contract` with: check "{feature-name}"
-```
-
-- Skip if `.vibe/contracts/{feature-name}.md` does not exist
-- No drift → verify still passes
-- **P1 drift** → demote verify to fail; auto-call `/vibe.regress register --from-contract`
-- P2 / P3 drift → warning only; verify still passes
-
-## Ledger Update (MANDATORY final step)
-
-After producing the verification report, record the result to the run ledger:
-
-```bash
-# pass 또는 fail — 시나리오 전체 통과 여부에 따라 선택
-HOOKS_DIR="${VIBE_PATH:-$(npm root -g 2>/dev/null)/@su-record/vibe}/hooks/scripts"
-if [ -f "$HOOKS_DIR/verify-ledger.js" ]; then
-  node "$HOOKS_DIR/verify-ledger.js" pass   # 전체 통과 시
-  # node "$HOOKS_DIR/verify-ledger.js" fail  # 실패 시
-fi
-```
-
-Replace `pass` with `fail` when any scenario fails. This step enables the Stop-hook verify-skip gate and auto-commit verify gate.
-
-## Next Step
-
-On verification pass:
-
-```
-Complete! Proceed to next feature.
-```
-
-On verification fail:
-
-```
-/vibe.run "feature-name" --fix  # Fix failed scenarios
-```
-
----
-
-## Quality Gate (Mandatory)
-
-### Verification Quality Checklist
-
-Before marking verification complete, ALL items must pass:
-
-| Category | Check Item | Weight |
-|----------|------------|--------|
-| **Scenario Coverage** | All scenarios from feature file tested | 25% |
-| **Given Verification** | All preconditions validated | 15% |
-| **When Verification** | All actions executable | 15% |
-| **Then Verification** | All expected outcomes confirmed | 20% |
-| **Build Status** | Project builds without errors | 10% |
-| **Test Status** | All existing tests pass | 10% |
-| **Type Check** | No TypeScript/type errors | 5% |
-
-### Verification Score Calculation
-
-```
-Score = (passed_scenarios / total_scenarios) × 100
-
-Grades:
-- 100%:   ✅ PERFECT - All scenarios pass
-- 90-99%: ⚠️ ALMOST - Minor gaps, review needed
-- 70-89%: ❌ INCOMPLETE - Significant gaps
-- 0-69%:  ❌ FAILED - Major implementation missing
-```
-
-### Pass/Fail Criteria
-
-| Metric | Pass Threshold | Action on Fail |
-|--------|----------------|----------------|
-| Scenario pass rate | 100% | Run `/vibe.run --fix` |
-| Build status | Success | Fix build errors first |
-| Test pass rate | 100% | Fix failing tests |
-| Type check | 0 errors | Fix type errors |
-
-### Verification Methods Matrix
-
-| Method | Trigger Condition | What It Checks |
-|--------|-------------------|----------------|
-| **Code Analysis** | Always | Implementation exists |
-| **Test Execution** | Test files exist | Logic correctness |
-| **Build Verification** | Build script exists | Compilation success |
-| **Type Check** | tsconfig.json exists | Type safety |
-| **Lint Check** | ESLint config exists | Code style |
-
-### Scenario Verification Depth
-
-For each scenario, verify at THREE levels:
-
-| Level | Verification | Example |
-|-------|--------------|---------|
-| **L1: Existence** | Code/function exists | `login()` function defined |
-| **L2: Logic** | Implementation is correct | Validates email format |
-| **L3: Integration** | Works with other components | Returns valid JWT |
-
-### Auto-Fix Triggers
-
-| Verification Failure | Auto-Fix Action |
-|----------------------|-----------------|
-| Missing implementation | Generate skeleton from scenario |
-| Test failure | Analyze and suggest fix |
-| Build error | Show error location |
-| Type error | Suggest type annotations |
-
-### Failure Escalation (convergence-based, no retry cap)
-
-```
-Auto-fix attempt 1 → Re-verify
-  ❌ Still failing?
-Auto-fix attempt 2 → Re-verify
-  ❌ Still failing?  ← same error as prev? STUCK
-  ✓ different error? Continue (progress made)
-  ...
-Stuck detected (same error as previous attempt):
-  → Interactive mode: Ask user
-      1. Provide a fix hint (e.g., "check LoginForm.tsx line 42")
-         → Apply → Re-verify → Continue loop
-      2. Type "proceed" → Record failure in
-         .vibe/todos/verify-failure-{scenario}.md,
-         continue to next scenario
-      3. Type "abort" → Stop entire verification
-  → ultrawork mode: auto-record TODO + continue to next scenario
-
-No retry cap — loop continues as long as the auto-fixer makes progress.
-Only "same error twice" (stuck) triggers escalation.
-```
-
-### Verification Report Requirements
-
-Every verification MUST produce:
-
-1. **Scenario Summary Table**
-   - Scenario name
-   - Given/When/Then status (✅/❌)
-   - Overall status
-
-2. **Quality Metrics**
-   - Build status
-   - Test pass count
-   - Type error count
-   - Code coverage percentage
-
-3. **Failure Details** (if any)
-   - Exact failure point (Given/When/Then)
-   - Expected vs actual
-   - File path and line number
-   - Suggested fix command
-
-4. **Recommendations**
-   - Specific files to modify
-   - Auto-fix command if available
+- PASS → proceed to the next feature
+- FAIL → `/vibe.run "{feature}" --fix`
 
 ---
 

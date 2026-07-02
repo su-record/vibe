@@ -4,7 +4,7 @@ user-invocable: false
 invocation: [auto]
 tier: standard
 description: "Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority."
-triggers: [todo, priority, P1, P2, P3, task management, issue, organize]
+triggers: [todo list, task management, P1, P2, P3, priority todos, organize tasks]
 priority: 60
 ---
 

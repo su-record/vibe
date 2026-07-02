@@ -5,7 +5,7 @@ invocation: [auto]
 tier: standard
 description: "Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords."
 triggers: [handoff, handover, session cleanup, session end, context save]
-priority: 70
+priority: 60
 ---
 
 # Handoff — Session Handover Document

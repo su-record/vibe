@@ -47,9 +47,6 @@ export type {
 } from '../infra/lib/memory/SessionRAGRetriever.js';
 
 // Semantic tools
-export { findSymbol } from './semantic/findSymbol.js';
-export { findReferences } from './semantic/findReferences.js';
-export { analyzeDependencyGraph } from './semantic/analyzeDependencyGraph.js';
 
 // Convention tools
 export { analyzeComplexity } from './convention/analyzeComplexity.js';
@@ -95,7 +92,6 @@ export { getCurrentTime } from './time/getCurrentTime.js';
 // Lib exports (for advanced usage)
 export { MemoryManager } from '../infra/lib/MemoryManager.js';
 export { ProjectCache } from '../infra/lib/ProjectCache.js';
-export { ContextCompressor } from '../infra/lib/ContextCompressor.js';
 
 // UI/UX Design Intelligence
 export {

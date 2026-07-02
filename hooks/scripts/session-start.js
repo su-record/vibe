@@ -86,16 +86,29 @@ async function main() {
       import(`${BASE_URL}time/index.js`),
     ]);
 
-    const [session, time, memories, latestVersion] = await Promise.all([
-      memoryModule.startSession({ projectPath: PROJECT_DIR }),
+    // 인덱스만 주입 (harness-review-2026-07-01 P1-5):
+    // 이전에는 startSession 전체 요약(git log·테스트 상태·관찰·리플렉션·RAG
+    // goals/constraints/decisions)을 매 세션 덤프했다. 이제는 1줄 인덱스만
+    // 주입하고, 전체 컨텍스트 복원은 명시적 `/vibe.utils --continue` 전용.
+    const [time, memories, latestVersion] = await Promise.all([
       timeModule.getCurrentTime({ format: 'human', timezone: 'Asia/Seoul' }),
       memoryModule.listMemories({ limit: 5, projectPath: PROJECT_DIR }),
       getLatestVersionCached(),
     ]);
 
-    console.log(session.content[0].text);
-    console.log('\n' + time.content[0].text);
-    console.log('\n[Recent Memories]');
+    console.log(time.content[0].text);
+
+    // Active feature 1줄 인덱스
+    try {
+      const LIB_BASE_P = (await import('./utils.js')).getLibBaseUrl();
+      const iterMod = await import(`${LIB_BASE_P}IterationTracker.js`);
+      const progressLine = iterMod.getProgressSummary(PROJECT_DIR);
+      if (progressLine) {
+        console.log(`\n📋 ${progressLine} — resume full context: /vibe.utils --continue`);
+      }
+    } catch { /* progress index is best-effort */ }
+
+    console.log('\n[Memory Index — bodies on demand via recall_memory]');
     console.log(memories.content[0].text);
 
     // Phase 3 — Recipes + anti-patterns 인덱스 (post-task curation)
@@ -126,16 +139,17 @@ async function main() {
       }
     }
 
-    // Scope sync — 기본 ON. scopeGuard.enabled=false 로 명시적 opt-out 가능.
+    // Scope sync — 기본 OFF (opt-in: scopeGuard.enabled=true). SSOT: scope-from-spec.js.
     try {
       const { syncScopeFile, isScopeGuardEnabled } = await import('./lib/scope-from-spec.js');
-      if (isScopeGuardEnabled(PROJECT_DIR)) {
+      const guardOn = isScopeGuardEnabled(PROJECT_DIR);
+      if (guardOn) {
         const result = syncScopeFile(PROJECT_DIR);
         if (result.action === 'created' || result.action === 'updated' || result.action === 'removed') {
           console.log(`\n🚧 Scope ${result.action} from active SPECs (${path.relative(PROJECT_DIR, path.join(projectVibeRoot(PROJECT_DIR), 'scope.json'))})`);
         }
       }
-      // scope 상태 1줄 알림 — 컨텍스트에 주입되어 모델이 현재 scope 범위를 인지한다
+      // scope 상태 1줄 알림 — 활성 scope.json 이 있을 때만 (opt-out 사용자에게 노이즈 금지)
       const scopeJsonPath = path.join(projectVibeRoot(PROJECT_DIR), 'scope.json');
       if (fs.existsSync(scopeJsonPath)) {
         try {
@@ -144,7 +158,7 @@ async function main() {
           const modeLabel = scopeData.mode || 'warn';
           console.log(`\nscope-guard: ${featureLabel} (${modeLabel})`);
         } catch { /* ignore */ }
-      } else {
+      } else if (guardOn) {
         console.log('\nscope-guard: no active scope (no active SPEC or no derivable paths) — out-of-scope edits are not monitored');
       }
     } catch { /* scope sync is best-effort */ }
@@ -198,32 +212,8 @@ async function main() {
       storageA.close();
     } catch { /* autonomy not yet initialized, skip */ }
 
-    // Evolution status summary
-    try {
-      const LIB_BASE = (await import('./utils.js')).getLibBaseUrl();
-      const [memMod, regMod, insMod] = await Promise.all([
-        import(`${LIB_BASE}memory/MemoryStorage.js`),
-        import(`${LIB_BASE}evolution/GenerationRegistry.js`),
-        import(`${LIB_BASE}evolution/InsightStore.js`),
-      ]);
-      const storage = new memMod.MemoryStorage(PROJECT_DIR);
-      const registry = new regMod.GenerationRegistry(storage);
-      const insightStore = new insMod.InsightStore(storage);
-
-      const genStats = registry.getStats();
-      const active = genStats.byStatus?.active || 0;
-      const drafts = genStats.byStatus?.draft || 0;
-      const gaps = insightStore.getByType('skill_gap').length;
-
-      if (active > 0 || drafts > 0 || gaps > 0) {
-        const parts = [];
-        if (active > 0) parts.push(`${active} active skills`);
-        if (drafts > 0) parts.push(`${drafts} pending approval`);
-        if (gaps > 0) parts.push(`${gaps} gaps detected`);
-        console.log(`\n🧬 Evolution: ${parts.join(', ')}`);
-      }
-      storage.close();
-    } catch { /* evolution not yet initialized, skip */ }
+    // Evolution 상태 요약은 제거 — evolution 은 동결(opt-in) 상태이며
+    // 사용자는 `vibe evolution` CLI 로 명시적으로 조회한다 (P3-3).
   } catch (e) {
     console.log('[Session] Error:', e.message);
   }

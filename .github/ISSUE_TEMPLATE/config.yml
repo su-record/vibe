@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 질문 / 사용법 (Q&A)
+    url: https://github.com/su-record/vibe/discussions
+    about: 버그가 아닌 질문·사용법·아이디어 논의는 Discussions로 — 이슈는 버그/기능 요청 전용입니다.
+  - name: 문서 (Wiki)
+    url: https://github.com/su-record/vibe/wiki
+    about: 상세 가이드, 스킬 레퍼런스, 설정 방법.

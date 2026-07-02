@@ -162,17 +162,6 @@ async function main() {
     // Mark this urgency level as recently saved
     setDebounceLock(urgency);
 
-    // Sync TokenBudgetTracker with current context usage
-    try {
-      const { TokenBudgetTracker } = await import(`${LIB_URL}TokenBudgetTracker.js`);
-      const tracker = TokenBudgetTracker.getInstance(PROJECT_DIR);
-      const numPercent = Number(percent);
-      if (!isNaN(numPercent)) {
-        tracker.syncToPercent(numPercent);
-      }
-    } catch {
-      // TokenBudgetTracker sync is non-critical
-    }
   } catch {
     // 무시
   }

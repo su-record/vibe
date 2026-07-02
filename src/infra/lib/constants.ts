@@ -26,12 +26,11 @@ export const AGENT = {
 
 // Concurrency 설정
 export const CONCURRENCY = {
-  /** 모델별 동시 실행 제한 */
+  /** 모델별 동시 실행 제한 — 키는 orchestrator/types.ts ClaudeModel 과 동일해야 한다 */
   MODEL_LIMITS: {
-    'claude-opus-4-6': 3,
-    'claude-sonnet-4-5': 5,
-    'claude-haiku-3-5': 8,
-    'claude-haiku-4-5-20251001': 8,
+    'claude-opus-4-8': 3,
+    'claude-sonnet-5': 5,
+    'claude-haiku-4-5': 8,
     'default': 5,
   } as Record<string, number>,
   /** 프로바이더별 동시 실행 제한 */

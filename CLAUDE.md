@@ -28,12 +28,12 @@ Transform imperative tasks into verifiable goals **before** coding:
 
 Weak criteria ("make it work") require constant clarification. Strong criteria let the loop run independently.
 
-### TypeScript (detected by Quality Gate hooks — violations injected as additionalContext; blocked by auto-commit verify gate, Stop warning, and pr-test-gate)
+### TypeScript (hard rules — `any`/`console.log` detected by Quality Gate hooks and injected as additionalContext; deterministic gates are pr-test-gate + Stop verify warning)
 - No `any` / `as any` / `@ts-ignore` — use `unknown` + type guards; fix at root
 - Explicit return types on all functions
 
-### Complexity Limits
-Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10
+### Complexity Limits (model-judged, not hook-detected)
+Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10 — apply in-context judgement; no regex heuristics enforce these
 
 ### Forbidden Patterns
 No `console.log` in commits · No hardcoded strings/numbers · No commented-out code · No incomplete code without TODO
@@ -60,7 +60,7 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 | `~/.codex/config.toml` | Codex `notify` (turn-complete lifecycle hook, auto-installed) |
 
 **`.vibe/config.json` behavior keys** (set per-project to tune gate behavior):
-- `scopeGuard.enabled` / `scopeGuard.mode` — scope fence on/off; `warn` (default) or `block`
+- `scopeGuard.enabled` / `scopeGuard.mode` — scope fence opt-in (default **off** everywhere — CLI and hooks share this default); mode `warn` (default) or `block`
 - `verifyGate.mode` — `warn` (default) or `block` (Stop hook blocks once if run started but verify not passed)
 - `autoTest.mode` — `debounce` (default, 120s cooldown per unchanged test file) / `always` / `off`
 - `qualityCheck.consoleAllow` — array of file globs where `console.log` is permitted
@@ -80,7 +80,7 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 - `better-sqlite3` WAL mode — synchronous API
 - `crypto.timingSafeEqual` requires same-length buffers — check length first
 - **Stack → asset SSOT**: `GLOBAL_SKILLS_*`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts`
-- **Hook dispatch order**: `prompt-dispatcher.js` → `keyword-detector.js` → `llm-orchestrate.js`
+- **Hook dispatch order**: `prompt-dispatcher.js` → `llm-orchestrate.js` (매직 키워드 배너 훅 없음 — deprecated 별칭은 "Deprecated aliases" 표가 SSOT, 모델이 직접 해석)
 - **Hook 실행 모델**: per-event process spawn 유지 — **daemon/IPC 지양** (무상태·크래시 격리·인프라 제로가 ~20ms VM 기동 절감보다 우선). 훅 레이턴시 최적화는 dispatcher in-process 평탄화(자식 spawn → `import` 실행)로만 접근한다
 
 ## Workflow
@@ -91,13 +91,13 @@ Claude Code uses `/vibe` as the **single slash entry point**. Codex exposes the 
 $vibe "<requirement>" [+ 📎 attachments]   # Codex
 /vibe "<requirement>" [+ 📎 attachments]   # Claude Code
   → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
-  → Smart Resume detection (.vibe/{interviews,plans,specs,features}/)
+  → Smart Resume detection (.vibe/{specs,features}/ — legacy interviews/plans 는 입력 컨텍스트로만 인식)
   → SPEC confirmation (1-time approval; skipped on automationLevel: autonomous)
   → Loop: ANCHOR→ACT→JUDGE→RECORD until gates pass │ stuck │ max-iter
 ```
 
 **Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
-- Codex: `$vibe.spec` / Claude Code: `/vibe.spec` — interview → plan → spec → review orchestration
+- Codex: `$vibe.spec` / Claude Code: `/vibe.spec` — single-pass SPEC (인라인 질문 → SPEC 1패스 → 승인 1회; 구 interview/plan/spec-review 4단계는 폐지)
 - Codex: `$vibe.figma` / Claude Code: `/vibe.figma` — Figma ↔ code (UI track)
 - Codex: `$vibe.run` / Claude Code: `/vibe.run` — SPEC-driven implementation
 - Codex: `$vibe.verify` / Claude Code: `/vibe.verify` — implementation vs SPEC verification
@@ -130,7 +130,7 @@ $vibe "<requirement>" [+ 📎 attachments]   # Codex
 
 ## Context Management
 
-- Exploration → Haiku · Implementation → Sonnet · Architecture → Opus
+- **Model routing: inherit by default** — 서브에이전트는 세션 모델을 상속한다. 명시적 예외만 tier alias 로 지정 (아키텍처 심층 리뷰 → `opus`). 구세대 "탐색→Haiku·구현→Sonnet" 비용 라우팅은 폐기 — 강한 기본 모델에서 라우팅 우회가 절약보다 품질 손실이 크다
 - At 85%+ context: `save_memory` → `/new` → `/vibe.utils --continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
 
 ## Git

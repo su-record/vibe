@@ -1,7 +1,7 @@
 {
   "name": "@su-record/vibe",
   "version": "2.16.4",
-  "description": "AI Coding Framework for Claude Code — 42+ agents, 73 skills, multi-LLM orchestration",
+  "description": "AI Coding Framework for Claude Code — 10+ agents, 59 skills, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
   "exports": {
@@ -9,11 +9,9 @@
     "./tools": "./dist/tools/index.js",
     "./tools/memory": "./dist/tools/memory/index.js",
     "./tools/convention": "./dist/tools/convention/index.js",
-    "./tools/semantic": "./dist/tools/semantic/index.js",
     "./tools/ui": "./dist/tools/ui/index.js",
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/interaction": "./dist/tools/interaction/index.js",
-    "./orchestrator": "./dist/infra/orchestrator/index.js",
     "./memory": {
       "types": "./dist/infra/lib/memory/index.d.ts",
       "default": "./dist/infra/lib/memory/index.js"

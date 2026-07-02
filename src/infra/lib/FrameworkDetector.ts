@@ -272,9 +272,9 @@ export function getFrameworkRecommendations(framework: FrameworkInfo): {
   const rules: string[] = [];
   const features = framework.features || [];
 
-  // Add language-specific reviewers
+  // Add language/framework-specific review focuses (code-reviewer with focus parameter)
   if (['nextjs', 'gatsby', 'remix', 'create-react-app', 'astro'].includes(framework.id)) {
-    reviewers.push('react-reviewer', 'typescript-reviewer');
+    reviewers.push('code-reviewer (focus: idioms)');
     rules.push('react-*', 'async-*', 'bundle-*');
   }
 
@@ -291,7 +291,7 @@ export function getFrameworkRecommendations(framework: FrameworkInfo): {
   }
 
   if (['nestjs', 'express', 'fastify', 'hono'].includes(framework.id)) {
-    reviewers.push('typescript-reviewer');
+    reviewers.push('code-reviewer (focus: idioms)');
     rules.push('server-*', 'security-*');
   }
 
@@ -300,7 +300,7 @@ export function getFrameworkRecommendations(framework: FrameworkInfo): {
   }
 
   // Always include common reviewers
-  reviewers.push('security-reviewer', 'performance-reviewer');
+  reviewers.push('security-reviewer', 'code-reviewer (focus: performance)');
 
   return { reviewers, rules, features };
 }

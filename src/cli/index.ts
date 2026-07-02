@@ -60,7 +60,6 @@ setSilentMode(options.silent);
 
 export * from '../infra/lib/MemoryManager.js';
 export * from '../infra/lib/ProjectCache.js';
-export * from '../infra/lib/ContextCompressor.js';
 export {
   PhaseInfo,
   ProgressState,
@@ -93,9 +92,6 @@ export { restoreSessionContext } from '../tools/memory/restoreSessionContext.js'
 export { prioritizeMemory } from '../tools/memory/prioritizeMemory.js';
 export { getSessionContext } from '../tools/memory/getSessionContext.js';
 
-export { findSymbol } from '../tools/semantic/findSymbol.js';
-export { findReferences } from '../tools/semantic/findReferences.js';
-export { analyzeDependencyGraph } from '../tools/semantic/analyzeDependencyGraph.js';
 
 export { analyzeComplexity } from '../tools/convention/analyzeComplexity.js';
 export { validateCodeQuality } from '../tools/convention/validateCodeQuality.js';

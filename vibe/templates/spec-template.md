@@ -1,221 +1,71 @@
 # SPEC: {Feature Name}
 
-## Metadata
-
 - **Created**: {YYYY-MM-DD}
-- **Author**: {Name}
-- **Status**: DRAFT
-- **Priority**: {HIGH | MEDIUM | LOW}
-- **Language**: {en | ko}
-- **Assigned Agent**: {Agent Name}
-- **Tech Stack**: {Project Tech Stack Summary}
+- **Status**: DRAFT | APPROVED
+- **Tech Stack**: {Project tech stack summary}
 
 ---
 
-## 1. Feature Overview
+## 1. Overview / Goal
 
-{1-2 sentence summary}
+{What and why — 1-3 sentences.}
 
-### Background
+### Assumptions
 
-{Why is this feature needed}
-
-### Goals
-
-- Goal 1
-- Goal 2
-
-### Non-Goals
-
-- What we won't do this time 1
-- What we won't do this time 2
-
-### Tech Stack Context
-
-**Existing Technology:**
-
-- Backend: {FastAPI, Django, Express, etc.}
-- Frontend: {React, Flutter, Vue, etc.}
-- Database: {PostgreSQL, MySQL, MongoDB, etc.}
-- Infrastructure: {GCP, AWS, Azure, etc.}
-
-**New Technology Required for This Feature:**
-
-- {New library/service 1} - {Reason}
-- {New library/service 2} - {Reason}
-
-**External API/Service Integration:**
-
-- {Service name} - {Purpose}
-
-**Constraints:**
-
-- Cost limit: {Amount}
-- Performance requirements: {Target response time, throughput, etc.}
+- {Default adopted without asking — e.g., session expiry 24h}
 
 ---
 
-## 2. User Stories
+## 2. Done Criteria (deterministic gates)
 
-### Story 1: {Story Title}
+> Each criterion must be judgeable by a command or observable behavior — never by self-report.
+> These are the JUDGE inputs of the loop (`vibe/rules/loop-contract.md`); `/vibe.verify` records the result in `.vibe/metrics/run-ledger.json`.
 
-**As a** {User role}
-**I want** {Desired functionality}
-**So that** {Reason/Value}
-
-#### Acceptance Criteria
-
-- [ ] {Verifiable condition 1}
-- [ ] {Verifiable condition 2}
+| # | Criterion | Verified by |
+|---|-----------|-------------|
+| D1 | {e.g., all scenarios in the feature file pass} | {e.g., `npx vitest run` exit 0} |
+| D2 | {e.g., build succeeds with no type errors} | {e.g., `npm run build` exit 0} |
 
 ---
 
-## 3. Requirements (EARS Format)
+## 3. Scenarios
 
-### REQ-001: {Requirement Title}
-
-**WHEN** {Specific condition}
-**THEN** {System behavior} (SHALL | SHOULD | MAY)
-
-#### Acceptance Criteria
-
-- [ ] {Testable criterion 1}
-- [ ] {Testable criterion 2}
-
-#### Example
-
-```text
-Input: {...}
-Output: {...}
-```
-
----
-
-## 4. Non-Functional Requirements
-
-### Performance
-
-- Response time: {Target}
-- Throughput: {Target}
-
-### Security
-
-- Authentication: {Method}
-- Authorization: {Rules}
-
-### Scalability
-
-- Expected growth rate: {Value}
-
----
-
-## 5. Data Model (Draft)
-
-### Entity: {Name}
-
-```json
-{
-  "field1": "type",
-  "field2": "type"
-}
-```
-
----
-
-## 6. API Contract (Draft)
-
-### Endpoint: {Name}
-
-```text
-POST /api/v1/resource
-Request: {...}
-Response: {...}
-```
-
----
-
-## 7. Test Strategy
-
-### BDD Scenarios (Gherkin)
-
-**Generate Command**: `vibe feature "{feature name}"`
+> Mirrored to `.vibe/features/{feature}.feature` (gherkin). Every scenario maps to a Done criterion.
 
 ```gherkin
-Scenario: {Scenario title}
-  Given {Precondition}
-  When {User action}
-  Then {Expected result}
+Scenario: {Happy path title}          # → D1
+  Given {precondition}
+  When {action}
+  Then {expected result}
+
+Scenario: {Edge case title}           # → D1
+  Given {precondition}
+  When {action}
+  Then {expected result}
 ```
 
-**Mapping**:
+---
 
-- REQ-001 → Scenario 1, 2
-- REQ-002 → Scenario 3
+## 4. Out of Scope
 
-### Contract Tests (API Schema)
+- {Explicitly not doing this time — must not be empty}
 
-**Generate Command**: `vibe contract "{feature name}"`
+---
 
-**Backend Contract**:
+## 5. API Contract (only if the feature exposes an API)
 
-```json
-{
-  "request": {
-    "method": "POST",
-    "path": "/api/v1/{resource}",
-    "schema": {JSON Schema}
-  },
-  "response": {
-    "status": 201,
-    "schema": {JSON Schema}
-  }
-}
+> Presence of this section enables `/vibe.contract` drift detection.
+
+```text
+POST /api/v1/{resource}
+Request: {...}
+Response: 201 {...}
 ```
 
-**Frontend Contract**:
-
-- Independent testing with mock server
-- Response schema validation (Zod, JSON Schema)
-
-### Test Coverage Goals
-
-- [ ] BDD: Cover all Acceptance Criteria
-- [ ] Contract: Cover all API endpoints
-- [ ] Unit: 70%+ coverage
-- [ ] Integration: Cover critical paths
-
 ---
 
-## 8. Out of Scope
+## 6. Verification
 
-- ❌ {Excluded item 1}
-- ❌ {Excluded item 2}
-
----
-
-## 9. Verification Checklist
-
-### Requirements
-
-- [ ] Are all requirements testable?
-- [ ] Is SHALL/SHOULD/MAY clear?
-- [ ] Are Acceptance Criteria specific?
-- [ ] Are performance goals measurable?
-
-### Testing
-
-- [ ] BDD Feature file generation complete?
-- [ ] Contract tests defined?
-- [ ] Step Definitions written?
-- [ ] Test coverage goal achieved?
-
----
-
-## 10. Approval
-
-- [ ] User approval
-- [ ] Technical review complete
-- [ ] Test plan approved
-
-Approval Date: ____________
-Approver: ____________
+- `/vibe.run "{feature}"` implements scenario-by-scenario, verifying each immediately.
+- `/vibe.verify "{feature}"` judges the Done Criteria and sets `verifyPassed` in the run-ledger.
+- Gate = all Done Criteria pass (exit codes / observed behavior) — loop continues until gates pass, stuck, or max iterations.

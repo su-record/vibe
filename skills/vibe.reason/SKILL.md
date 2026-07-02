@@ -198,8 +198,6 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `findSymbol` | Find symbol definitions | Locate potential problem areas |
-| `findReferences` | Find all references | Trace data/control flow |
 | `analyzeComplexity` | Complexity analysis | Identify high-risk complex code |
 | `saveMemory` | Save reasoning progress | Store hypothesis verification results |
 | `recallMemory` | Recall saved memory | Retrieve previous reasoning context |

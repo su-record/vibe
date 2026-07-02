@@ -34,7 +34,7 @@ interface Curated {
 const CURATED: Record<ProviderId, Curated> = {
   claude: {
     label: 'Claude (Anthropic)',
-    models: ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5-20251001'],
+    models: ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'],
     recommended: 'claude-opus-4-8',
     overrideKeys: [], // Claude Code tier alias 로 관리 — 자동 덮어쓰지 않음
   },

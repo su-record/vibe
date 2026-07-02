@@ -22,41 +22,27 @@ Parallel research patterns for solving complex problems.
 | Technology selection | Comparison analysis needed |
 | Complex bugs | Explore multiple causes |
 
-## Research Agents (4 Parallel)
+## Research Lenses (4 Parallel)
 
-| Agent | Role | Tools |
-|-------|------|-------|
-| best-practices | Search best practices | Web Search, context7 |
-| framework-docs | Search official docs | context7 |
-| codebase-patterns | Analyze existing code patterns | Grep, Glob |
-| security-advisory | Search security advisories | Web Search |
+| Lens | Role | How |
+|-------|------|-----|
+| best-practices | Search best practices | native WebSearch (+context7) |
+| framework-docs | Search official docs | native WebFetch/context7 |
+| codebase-patterns | Analyze existing code patterns | native Explore subagent |
+| security-advisory | Search security advisories | native WebSearch |
 
-## Usage Methods
+## Usage
 
-### Method 1: Direct Orchestrator Call
-
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o =>
-  o.research('passkey authentication', ['React', 'Supabase'])
-  .then(r => console.log(r.content[0].text))
-)"
-```
-
-### Method 2: Use /vibe.spec
+**Spawn the four lenses as concurrent native subagents in a single message** — each lens is blind to the others; synthesize after all return:
 
 ```
-/vibe.spec "feature-name"
-→ Parallel research runs automatically after requirements confirmed
+Task 1 (Explore): "Analyze existing auth code patterns"          (concurrent)
+Task 2 (general-purpose): "Search React auth best practices"     (concurrent)
+Task 3 (general-purpose): "Search Supabase Auth official docs"   (concurrent)
+Task 4 (general-purpose): "Search auth security vulnerabilities" (concurrent)
 ```
 
-### Method 3: Parallel Task Tool Execution
-
-```
-Task 1: "Search React auth best practices"
-Task 2: "Search Supabase Auth official docs" (concurrent)
-Task 3: "Analyze existing auth code patterns" (concurrent)
-Task 4: "Search auth security vulnerabilities" (concurrent)
-```
+`/vibe.spec "feature-name"` runs this automatically when the SPEC pass needs unfamiliar-technology research.
 
 ## Using Research Results
 
