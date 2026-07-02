@@ -33,7 +33,7 @@
     "test:watch": "vitest",
     "prepublishOnly": "pnpm build",
     "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(()=>{})\"",
-    "release": "pnpm version patch && npm publish --access public"
+    "release": "pnpm version patch && git push origin main --follow-tags"
   },
   "keywords": [
     "ai",
