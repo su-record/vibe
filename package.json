@@ -58,6 +58,9 @@
     "type": "git",
     "url": "git+https://github.com/su-record/vibe.git"
   },
+  "bugs": {
+    "url": "https://github.com/su-record/vibe/issues"
+  },
   "homepage": "https://github.com/su-record/vibe#readme",
   "publishConfig": {
     "access": "public"
