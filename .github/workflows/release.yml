@@ -33,8 +33,10 @@ jobs:
       - name: Run vitest
         run: pnpm test -- --reporter=default
 
-      - name: Publish to npm (OIDC trusted publishing — 토큰 없음)
+      - name: Publish to npm
         run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release (auto notes from merged PRs)
         run: gh release create "$GITHUB_REF_NAME" --generate-notes
