@@ -137,8 +137,8 @@ function adaptCodexInvocation(section: string): string {
     .replace('| Harness check | `/vibe.harness` |', '| Harness check | `$vibe.harness` or `/skills` -> `vibe.harness` |')
     .replace('| Project structure | `/vibe.scaffold` |', '| Project structure | `$vibe.scaffold` or `/skills` -> `vibe.scaffold` |')
     .replace(
-      'At 85%+ context: save_memory → /new → /vibe.utils --continue (raised from 70% — /new discards KV prefix cache; compact less often to preserve cache reuse)',
-      'At 85%+ context: save_memory → /new → invoke `$vibe.utils --continue` or choose `vibe.utils` from `/skills`. (raised from 70% — /new discards KV prefix cache; compact less often to preserve cache reuse)',
+      'At 85%+ context: save_memory → /new → /vibe.continue (raised from 70% — /new discards KV prefix cache; compact less often to preserve cache reuse)',
+      'At 85%+ context: save_memory → /new → invoke `$vibe.continue` or choose `vibe.continue` from `/skills`. (raised from 70% — /new discards KV prefix cache; compact less often to preserve cache reuse)',
     )
     .replace(
       'Exclude: `~/.codex/{rules,commands,agents,skills}/`, `.codex/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`',
@@ -396,7 +396,7 @@ function buildGlobalSection(language: string): string {
   lines.push('## Quality');
   lines.push('');
   lines.push('Convergence: loop until P1=0. Changed files only.');
-  lines.push('At 85%+ context: save_memory → /new → /vibe.utils --continue (raised from 70% — /new discards KV prefix cache; compact less often to preserve cache reuse)');
+  lines.push('At 85%+ context: save_memory → /new → /vibe.continue (raised from 70% — /new discards KV prefix cache; compact less often to preserve cache reuse)');
   lines.push('');
 
   lines.push('## Git');

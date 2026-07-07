@@ -40,8 +40,10 @@ import {
   resolveLocalAgentGroups,
   copySkillsFiltered,
   applyCodexSkillInvocationPolicies,
+  removeLegacySkills,
   AVAILABLE_CAPABILITIES,
   STACK_TO_LANGUAGE_FILE,
+  LEGACY_AGENT_GROUPS,
 } from '../postinstall.js';
 import { detectAntigravityCli, detectCodexCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
@@ -127,6 +129,10 @@ export function installLocalAgents(
   capabilities: string[] = [],
   harnessDir: string = '.claude',
 ): void {
+  // 폐지된 조건부 그룹(예: figma)의 프로젝트 로컬 잔여 디렉토리 정리 — 매칭 그룹 유무와 무관하게 항상 실행
+  const localAgentsDir = path.join(projectRoot, harnessDir, 'agents');
+  removeLegacySkills(localAgentsDir, LEGACY_AGENT_GROUPS);
+
   const groups = resolveLocalAgentGroups(stackTypes, capabilities);
   if (groups.length === 0) return;
 
@@ -135,7 +141,6 @@ export function installLocalAgents(
   const agentsSource = path.join(packageRoot, 'agents');
   if (!fs.existsSync(agentsSource)) return;
 
-  const localAgentsDir = path.join(projectRoot, harnessDir, 'agents');
   installClaudeAgents(agentsSource, localAgentsDir, { onlyDirs: groups });
   log(`   📦 Local agent groups installed: ${groups.join(', ')}\n`);
 }

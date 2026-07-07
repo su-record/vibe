@@ -19,12 +19,14 @@ export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
   'vibe',
   'vibe.analyze',
   'vibe.clone',
+  'vibe.continue',
   'vibe.contract',
   'vibe.design',
   'vibe.docs',
   'vibe.event',
   'vibe.figma',
   'vibe.harness',
+  'vibe.image',
   'vibe.llm',
   'vibe.loop',
   'vibe.reason',
@@ -35,7 +37,6 @@ export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
   'vibe.spec',
   'vibe.test',
   'vibe.trace',
-  'vibe.utils',
   'vibe.verify',
 ];
 
@@ -45,6 +46,8 @@ export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
   'arch-guard',
   'exec-plan',
   'restraint',
+  'contract',
+  'regress',
 ];
 
 export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
@@ -126,23 +129,30 @@ export const AVAILABLE_CAPABILITIES: ReadonlyArray<{
 ];
 
 /**
- * 스택 타입 + capabilities → 로컬 설치할 스킬 목록 결정
+ * 스택 타입 배열 → 매핑 테이블에서 exact + prefix(예: 'typescript-react' → 'typescript') 매칭 값 목록.
+ * resolveLocalSkills / resolveExternalSkills / resolveLocalAgentGroups 공용 헬퍼 (D5).
  */
-export function resolveLocalSkills(stackTypes: string[], capabilities: string[] = []): string[] {
-  const skills = new Set<string>();
-
-  // 스택 기반 스킬
+function resolveByStack<T>(map: Record<string, ReadonlyArray<T>>, stackTypes: string[]): T[] {
+  const result = new Set<T>();
   for (const stack of stackTypes) {
     // exact match (e.g., 'typescript-react')
-    const exact = STACK_TO_SKILLS[stack];
-    if (exact) exact.forEach(s => skills.add(s));
+    const exact = map[stack];
+    if (exact) exact.forEach(v => result.add(v));
     // prefix match (e.g., 'typescript' from 'typescript-react')
     const prefix = stack.split('-')[0];
     if (prefix !== stack) {
-      const prefixSkills = STACK_TO_SKILLS[prefix];
-      if (prefixSkills) prefixSkills.forEach(s => skills.add(s));
+      const prefixValues = map[prefix];
+      if (prefixValues) prefixValues.forEach(v => result.add(v));
     }
   }
+  return [...result];
+}
+
+/**
+ * 스택 타입 + capabilities → 로컬 설치할 스킬 목록 결정
+ */
+export function resolveLocalSkills(stackTypes: string[], capabilities: string[] = []): string[] {
+  const skills = new Set<string>(resolveByStack(STACK_TO_SKILLS, stackTypes));
 
   // Capability 기반 스킬
   for (const cap of capabilities) {
@@ -157,17 +167,7 @@ export function resolveLocalSkills(stackTypes: string[], capabilities: string[] 
  * 스택 타입 + capabilities → 외부 스킬(skills.sh) 목록 결정
  */
 export function resolveExternalSkills(stackTypes: string[], capabilities: string[] = []): string[] {
-  const skills = new Set<string>();
-
-  for (const stack of stackTypes) {
-    const exact = STACK_TO_EXTERNAL_SKILLS[stack];
-    if (exact) exact.forEach(s => skills.add(s));
-    const prefix = stack.split('-')[0];
-    if (prefix !== stack) {
-      const prefixSkills = STACK_TO_EXTERNAL_SKILLS[prefix];
-      if (prefixSkills) prefixSkills.forEach(s => skills.add(s));
-    }
-  }
+  const skills = new Set<string>(resolveByStack(STACK_TO_EXTERNAL_SKILLS, stackTypes));
 
   for (const cap of capabilities) {
     const capSkills = CAPABILITY_EXTERNAL_SKILLS[cap];
@@ -187,19 +187,19 @@ export function resolveExternalSkills(stackTypes: string[], capabilities: string
  * 점유한다. UI/Figma/Event 에이전트(18개)는 해당 스택·capability 프로젝트에서만
  * 의미가 있으므로 전역에서 빼면 비해당 프로젝트의 세션당 수백 토큰이 절약된다.
  */
-export const CONDITIONAL_AGENT_GROUPS: ReadonlyArray<string> = ['ui', 'figma', 'event'];
+export const CONDITIONAL_AGENT_GROUPS: ReadonlyArray<string> = ['ui', 'event'];
 
 /** 스택 → 에이전트 그룹 매핑 (vibe init/update → .claude/agents/) */
 export const STACK_TO_AGENT_GROUPS: Record<string, ReadonlyArray<string>> = {
-  'typescript-react': ['ui', 'figma'],
-  'typescript-nextjs': ['ui', 'figma'],
-  'typescript-vue': ['ui', 'figma'],
-  'typescript-nuxt': ['ui', 'figma'],
-  'typescript-svelte': ['ui', 'figma'],
-  'typescript-angular': ['ui', 'figma'],
-  'typescript-astro': ['ui', 'figma'],
-  'typescript-react-native': ['ui', 'figma'],
-  'dart-flutter': ['ui', 'figma'],
+  'typescript-react': ['ui'],
+  'typescript-nextjs': ['ui'],
+  'typescript-vue': ['ui'],
+  'typescript-nuxt': ['ui'],
+  'typescript-svelte': ['ui'],
+  'typescript-angular': ['ui'],
+  'typescript-astro': ['ui'],
+  'typescript-react-native': ['ui'],
+  'dart-flutter': ['ui'],
 };
 
 /** capability → 에이전트 그룹 매핑 */
@@ -208,21 +208,20 @@ export const CAPABILITY_AGENT_GROUPS: Record<string, ReadonlyArray<string>> = {
 };
 
 /**
+ * 제거된 조건부 에이전트 그룹 — 프로젝트 로컬(.claude/agents/)에 남은 잔여 디렉토리 정리.
+ * vibe init/update 시 `removeLegacySkills`(범용 디렉토리 삭제)로 정리한다.
+ * (B6: figma 그룹 — 그룹 내 유일했던 에이전트 삭제로 그룹 자체 폐지)
+ */
+export const LEGACY_AGENT_GROUPS: ReadonlyArray<string> = [
+  'figma',
+];
+
+/**
  * 스택 타입 + capabilities → 로컬 설치할 에이전트 그룹 결정
  * (resolveLocalSkills와 동일한 exact + prefix 매칭 규칙)
  */
 export function resolveLocalAgentGroups(stackTypes: string[], capabilities: string[] = []): string[] {
-  const groups = new Set<string>();
-
-  for (const stack of stackTypes) {
-    const exact = STACK_TO_AGENT_GROUPS[stack];
-    if (exact) exact.forEach(g => groups.add(g));
-    const prefix = stack.split('-')[0];
-    if (prefix !== stack) {
-      const prefixGroups = STACK_TO_AGENT_GROUPS[prefix];
-      if (prefixGroups) prefixGroups.forEach(g => groups.add(g));
-    }
-  }
+  const groups = new Set<string>(resolveByStack(STACK_TO_AGENT_GROUPS, stackTypes));
 
   for (const cap of capabilities) {
     const capGroups = CAPABILITY_AGENT_GROUPS[cap];
@@ -362,6 +361,8 @@ export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
   'design-distill',
   'figma-extract',
   'figma-convert',
+  // v3.x utils-dissolution — vibe.utils 해체 (→ vibe.continue/vibe.image/docs/vibe.design/vibe.verify)
+  'vibe.utils',
 ];
 
 // ─── Claude Code 네이티브 서브에이전트 매핑 ───
@@ -374,14 +375,9 @@ export const CLAUDE_MODEL_MAPPING: Record<string, string> = {
   'implementer': 'sonnet',
   'tester': 'haiku',
   'e2e-tester': 'sonnet',
-  'acceptance-tester': 'sonnet',
   'build-error-resolver': 'sonnet',
   'code-reviewer': 'sonnet',
   'security-reviewer': 'sonnet',
-  'documenter': 'haiku',
-  'diagrammer': 'haiku',
-  // Figma agents (conditional group)
-  'figma-engineer': 'sonnet',
   // UI agents (conditional group)
   'design-reviewer': 'sonnet',
   'design-system-gen': 'sonnet',
@@ -404,15 +400,10 @@ export const CLAUDE_AGENT_TOOL_CATEGORY: Record<string, string> = {
   'implementer': 'write-capable',
   'tester': 'write-capable',
   'e2e-tester': 'write-capable',
-  'acceptance-tester': 'read-only',
   'build-error-resolver': 'write-capable',
   // 리뷰어 — git 이력/감사 명령이 필요해 Bash 포함 read-only
   'code-reviewer': 'read-only-git',
   'security-reviewer': 'read-only-git',
-  'documenter': 'read-only-git',
-  'diagrammer': 'write-capable',
-  // Figma agents
-  'figma-engineer': 'write-capable',
   // UI agents
   'design-reviewer': 'read-only',
   'design-system-gen': 'write-capable',
@@ -425,18 +416,14 @@ export const CLAUDE_AGENT_TOOL_CATEGORY: Record<string, string> = {
 export const CLAUDE_AGENT_PERMISSION_MODE: Record<string, string> = {
   // 읽기 전용 에이전트 → plan
   'architect': 'plan',
-  'acceptance-tester': 'plan',
   'code-reviewer': 'plan',
   'security-reviewer': 'plan',
-  'documenter': 'plan',
   'design-reviewer': 'plan',
   // 수정 가능 에이전트 → acceptEdits
   'implementer': 'acceptEdits',
   'tester': 'acceptEdits',
   'e2e-tester': 'acceptEdits',
   'build-error-resolver': 'acceptEdits',
-  'diagrammer': 'acceptEdits',
-  'figma-engineer': 'acceptEdits',
   'design-system-gen': 'acceptEdits',
   'event-planner': 'acceptEdits',
   'event-ops': 'acceptEdits',
@@ -444,8 +431,6 @@ export const CLAUDE_AGENT_PERMISSION_MODE: Record<string, string> = {
 
 // NO FILE CREATION 에이전트 → Write, Edit 차단
 export const CLAUDE_AGENT_DISALLOWED_TOOLS: Record<string, string[]> = {
-  'acceptance-tester': ['Write', 'Edit'],
-  'documenter': ['Write', 'Edit'],
   'design-reviewer': ['Write', 'Edit'],
 };
 

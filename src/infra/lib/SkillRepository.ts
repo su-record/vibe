@@ -510,7 +510,7 @@ At 70%+ context usage:
 ## Slash Command
 
 \`\`\`
-/vibe.utils --continue
+/vibe.continue
 \`\`\`
 
 Restores previous session context automatically.

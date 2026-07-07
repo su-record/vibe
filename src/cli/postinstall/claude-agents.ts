@@ -28,15 +28,10 @@ function generateDescription(name: string, title: string, roleLines: string[]): 
     'implementer': `Core implementation specialist. ${roleDesc}. Use for feature implementation, refactoring, and bug fixes.`,
     'tester': `Test writing specialist with edge-case heuristics (input/state/environment/data boundaries). ${roleDesc}. Use proactively after implementing new features to generate comprehensive tests.`,
     'e2e-tester': `E2E testing specialist with Playwright. ${roleDesc}. Use for browser-based testing, visual regression, and accessibility checks.`,
-    'acceptance-tester': `Acceptance readiness gate. ${roleDesc}. Validates SPEC acceptance criteria are measurable/automatable and routes cross-validation. Report-only.`,
     'build-error-resolver': `Minimal-diff build error fixer. ${roleDesc}. Use when TypeScript compilation or build fails.`,
     // 리뷰어 — /vibe.review 가 focus 파라미터로 호출 (개별 자동 발화 없음: 중복/상충 리뷰 방지)
     'code-reviewer': `Parameterized code reviewer — caller passes focus: correctness, architecture, performance, complexity, data-integrity, test-coverage, idioms, git-history. ${roleDesc}. Invoked by /vibe.review with a focus (not a standalone auto-trigger).`,
     'security-reviewer': `Threat-model-first security reviewer. ${roleDesc}. High-signal checks (injection, authz/IDOR, SSRF, secrets, timing-safe comparison) + dependency audit. Invoked by /vibe.review or on security-critical changes.`,
-    'documenter': `Documentation generator — API docs and changelog modes. ${roleDesc}. Extracts endpoints/schemas or classifies git diff into changelog + semver suggestion. Report-only.`,
-    'diagrammer': `Diagram generation specialist. ${roleDesc}. Generates architecture, ERD, and flowchart diagrams in Mermaid.`,
-    // Figma agents (conditional group)
-    'figma-engineer': `Figma → code engineer (extract/design/build/audit 전 단계). ${roleDesc}. sections.json 정제, 컴포넌트 설계, figma-*.js 스크립트 기반 조립, pixelmatch 시각 검증까지 단일 오너십.`,
     // UI agents (conditional group)
     'design-reviewer': `UI design reviewer — WCAG AA, interaction states, MASTER.md token drift, AI-slop/dark-pattern detection. ${roleDesc}. Report-only.`,
     'design-system-gen': `Design system generator. ${roleDesc}. 산업 분석 → MASTER.md(CSS 변수/팔레트/타이포/스페이싱) + 레이아웃/차트 가이드 생성·저장.`,
