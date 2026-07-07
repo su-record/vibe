@@ -90,7 +90,7 @@ Claude Code uses `/vibe` as the **single slash entry point**. Codex exposes the 
 ```
 $vibe "<requirement>" [+ 📎 attachments]   # Codex
 /vibe "<requirement>" [+ 📎 attachments]   # Claude Code
-  → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
+  → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / continue / image)
   → Smart Resume detection (.vibe/{specs,features}/ — legacy interviews/plans 는 입력 컨텍스트로만 인식)
   → SPEC confirmation (1-time approval; skipped on automationLevel: autonomous)
   → Loop: ANCHOR→ACT→JUDGE→RECORD until gates pass │ stuck │ max-iter
@@ -131,7 +131,7 @@ $vibe "<requirement>" [+ 📎 attachments]   # Codex
 ## Context Management
 
 - **Model routing: inherit by default** — 서브에이전트는 세션 모델을 상속한다. 명시적 예외만 tier alias 로 지정 (아키텍처 심층 리뷰 → `opus`). 구세대 "탐색→Haiku·구현→Sonnet" 비용 라우팅은 폐기 — 강한 기본 모델에서 라우팅 우회가 절약보다 품질 손실이 크다
-- At 85%+ context: `save_memory` → `/new` → `/vibe.utils --continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
+- At 85%+ context: `save_memory` → `/new` → `/vibe.continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
 
 ## Git
 

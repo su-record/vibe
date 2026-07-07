@@ -186,9 +186,9 @@ Detection at edit time, blocking at deterministic gates:
 
 ## Key Features
 
-**10+ agents** — 10 global goal-oriented agents (architect, implementer, tester, code-reviewer, security-reviewer, …) + 5 conditional (UI/Figma/Event — installed project-locally only when the stack/capability matches; 15 total). Agents are delegated by goal + constraints + Done criteria, not step scripts; exploration, planning, and parallelism use the harness's native subagents directly.
+**7+ agents** — 7 global goal-oriented agents (architect, implementer, tester, code-reviewer, security-reviewer, …) + 4 conditional (UI/Event — installed project-locally only when the stack/capability matches; 11 total). Agents are delegated by goal + constraints + Done criteria, not step scripts; exploration, planning, and parallelism use the harness's native subagents directly.
 
-**59 skills** — Not all loaded at once. 3-tier system prevents context overload:
+**60 skills** — Not all loaded at once. 3-tier system prevents context overload:
 
 | Tier | When loaded | Purpose | Examples |
 |------|-------------|---------|----------|
@@ -229,14 +229,16 @@ Skills teach only what the model doesn't know (domain gotchas, current APIs, pro
 | `/vibe.spec` | Advanced — explicit single-pass SPEC (inline questions → SPEC + BDD → approval) |
 | `/vibe.run` | Implement from SPEC |
 | `/vibe.figma` | Figma ↔ Code (read or write, 3 modes) |
-| `/vibe.design` | DESIGN.md visual quality SSOT — init / lint / verify / sync |
+| `/vibe.design` | DESIGN.md visual quality SSOT — init / lint / verify / sync / preview |
 | `/vibe.verify` | Verify implementation against SPEC Done criteria — result recorded in the run ledger |
 | `/vibe.regress` | Regression test auto-evolution — auto-registers on verify failure, promotes recurring patterns |
 | `/vibe.trace` | Requirements traceability matrix |
 | `/vibe.analyze` | Analyze any target — code, documents, websites, Figma |
 | `/vibe.scaffold` | Generate or audit project folder structure |
 | `/vibe.harness` | Diagnose Harness Engineering maturity (6-axis scoring) |
-| `/vibe.docs` | Generate project documentation |
+| `/vibe.docs` | Generate project documentation — plus diagram / codemaps modes |
+| `/vibe.continue` | Session restore — pick up where you left off after `save_memory` → `/new` at 85%+ context |
+| `/vibe.image` | Image generation (Antigravity) — icons, banners, mockups |
 
 ---
 

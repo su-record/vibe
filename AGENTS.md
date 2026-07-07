@@ -87,7 +87,7 @@ Codex exposes Vibe entrypoints as skills. Use `$vibe`, `$vibe.spec`, or `/skills
 
 ```
 $vibe "<requirement>" [+ 📎 attachments]
-  → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
+  → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / continue / image)
   → Smart Resume detection (.vibe/{specs,features}/ — legacy interviews/plans 는 입력 컨텍스트로만 인식)
   → SPEC confirmation (1-time approval; skipped on automationLevel: autonomous)
   → Loop: ANCHOR→ACT→JUDGE→RECORD until gates pass │ stuck │ max-iter
@@ -128,7 +128,7 @@ $vibe "<requirement>" [+ 📎 attachments]
 ## Context Management
 
 - Exploration → Haiku · Implementation → Sonnet · Architecture → Opus
-- At 85%+ context: `save_memory` → `/new` → `$vibe.utils --continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
+- At 85%+ context: `save_memory` → `/new` → `$vibe.continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
 
 ## Git
 

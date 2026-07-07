@@ -156,9 +156,9 @@ codex
 
 ## 주요 기능
 
-**10+ 에이전트** — 전역 10개(architect, implementer, tester, code-reviewer, security-reviewer 등) + 조건부 그룹 5개(UI/Figma/Event — 해당 스택 프로젝트에만 로컬 설치, 총 15개). 단계별 지시 스크립트가 아니라 목표+제약+Done 기준으로 위임하고, 탐색·계획·병렬 실행은 하네스의 네이티브 서브에이전트를 그대로 사용합니다.
+**7+ 에이전트** — 전역 7개(architect, implementer, tester, code-reviewer, security-reviewer 등) + 조건부 그룹 4개(UI/Event — 해당 스택 프로젝트에만 로컬 설치, 총 11개). 단계별 지시 스크립트가 아니라 목표+제약+Done 기준으로 위임하고, 탐색·계획·병렬 실행은 하네스의 네이티브 서브에이전트를 그대로 사용합니다.
 
-**59개 스킬** — 한 번에 다 로드되지 않음. 3-tier 시스템으로 컨텍스트 과부하 방지:
+**60개 스킬** — 한 번에 다 로드되지 않음. 3-tier 시스템으로 컨텍스트 과부하 방지:
 
 | 티어 | 로드 시점 | 용도 | 예시 |
 |------|----------|------|------|
@@ -199,10 +199,12 @@ codex
 | `/vibe.spec` | (advanced) SPEC 1패스 명시적 호출 — 인라인 질문 → SPEC + BDD → 승인 |
 | `/vibe.run` | (advanced) SPEC 기반 구현 |
 | `/vibe.figma` | (advanced) Figma ↔ 코드 (읽기 또는 쓰기, 3가지 모드) |
-| `/vibe.design` | (advanced) DESIGN.md 시각 품질 SSOT — init / lint / verify / sync |
+| `/vibe.design` | (advanced) DESIGN.md 시각 품질 SSOT — init / lint / verify / sync / preview |
 | `/vibe.verify` | (advanced) 구현이 SPEC Done 기준에 맞는지 검증 — 결과는 run-ledger에 기록 |
 | `/vibe.regress` | (advanced) 회귀 테스트 자동 진화 — verify 실패 자동 등록, 반복 패턴 승격 |
 | `/vibe.trace` | (advanced) 요구사항 추적 매트릭스 |
+| `/vibe.continue` | 세션 복원 — 85%+ 컨텍스트에서 `save_memory` → `/new` 후 이어서 작업 |
+| `/vibe.image` | 이미지 생성 (Antigravity) — 아이콘/배너/목업 |
 
 ---
 
