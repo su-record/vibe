@@ -89,7 +89,7 @@ async function main() {
     // 인덱스만 주입 (harness-review-2026-07-01 P1-5):
     // 이전에는 startSession 전체 요약(git log·테스트 상태·관찰·리플렉션·RAG
     // goals/constraints/decisions)을 매 세션 덤프했다. 이제는 1줄 인덱스만
-    // 주입하고, 전체 컨텍스트 복원은 명시적 `/vibe.utils --continue` 전용.
+    // 주입하고, 전체 컨텍스트 복원은 명시적 `/vibe.continue` 전용.
     const [time, memories, latestVersion] = await Promise.all([
       timeModule.getCurrentTime({ format: 'human', timezone: 'Asia/Seoul' }),
       memoryModule.listMemories({ limit: 5, projectPath: PROJECT_DIR }),
@@ -104,7 +104,7 @@ async function main() {
       const iterMod = await import(`${LIB_BASE_P}IterationTracker.js`);
       const progressLine = iterMod.getProgressSummary(PROJECT_DIR);
       if (progressLine) {
-        console.log(`\n📋 ${progressLine} — resume full context: /vibe.utils --continue`);
+        console.log(`\n📋 ${progressLine} — resume full context: /vibe.continue`);
       }
     } catch { /* progress index is best-effort */ }
 

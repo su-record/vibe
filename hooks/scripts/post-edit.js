@@ -17,14 +17,13 @@ const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
 /**
  * in-process 진입점 — console.log 감지만 수행.
  * findings 배열 반환 (디스패처가 수집해 additionalContext에 주입).
- * @param {{ toolInput: string }} ctx
+ * @param {{ filePath: string }} ctx
  * @returns {Promise<{ exitCode: number, findings: string[] }>}
  */
 export async function run(ctx) {
   const findings = [];
   try {
-    const input = JSON.parse(ctx.toolInput || '{}');
-    const filePath = input.file_path || input.path || '';
+    const filePath = ctx.filePath;
 
     if (filePath && CODE_EXT_RE.test(filePath)) {
       const resolved = path.resolve(filePath);

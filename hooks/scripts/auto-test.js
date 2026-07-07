@@ -33,15 +33,6 @@ const DEBOUNCE_COOLDOWN_MS = 120_000;
 /** debounce 상태 파일 경로 */
 const DEBOUNCE_STATE_FILE = path.join(PROJECT_DIR, '.vibe', 'metrics', 'auto-test-state.json');
 
-function getFilePath(ctx) {
-  try {
-    const input = JSON.parse(ctx.toolInput || '{}');
-    return input.file_path || input.path || '';
-  } catch {
-    return '';
-  }
-}
-
 function isTestFile(filePath) {
   return TEST_SUFFIXES.some(s => filePath.includes(s));
 }
@@ -163,13 +154,13 @@ function updateDebounceState(testFile, srcFile) {
 
 /**
  * in-process 진입점 — 테스트 실행. findings 반환.
- * @param {{ toolInput: string }} ctx
+ * @param {{ filePath: string }} ctx
  * @returns {Promise<{ exitCode: number, findings: string[] }>}
  */
 export async function run(ctx) {
   const findings = [];
   try {
-    const filePath = getFilePath(ctx);
+    const filePath = ctx.filePath;
     if (!filePath || !CODE_EXT_RE.test(filePath)) return { exitCode: 0, findings };
 
     const mode = getTestMode();

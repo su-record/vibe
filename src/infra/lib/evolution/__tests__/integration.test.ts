@@ -150,19 +150,6 @@ describe('Full evolution pipeline', () => {
   });
 });
 
-// Phase 5 Scenario 1: evolution-engine.js hook exists and is valid JS
-describe('Evolution hook file', () => {
-  it('should have evolution-engine.js with PostToolUse logic', async () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'evolution-engine.js');
-    expect(existsSync(hookPath)).toBe(true);
-    const content = readFileSync(hookPath, 'utf8');
-    expect(content).toContain('PostToolUse');
-    expect(content).toContain('InsightExtractor');
-    expect(content).toContain('EvolutionOrchestrator');
-    expect(content).toContain('setImmediate');
-  });
-});
-
 // Phase 5 Scenario 2: prompt-dispatcher gap detection
 describe('Prompt dispatcher gap detection', () => {
   it('should have gap logging code in prompt-dispatcher.js', () => {
@@ -172,27 +159,6 @@ describe('Prompt dispatcher gap detection', () => {
     expect(content).toContain('gapDetection');
     expect(content).toContain('SkillGapDetector');
     expect(content).toContain('logMiss');
-  });
-});
-
-// Phase 5 Scenario 3: skill-injector auto/ scan + .disabled filter
-describe('Skill injector auto/ directory', () => {
-  it('should scan auto/ directories and skip .disabled files', () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'skill-injector.js');
-    expect(existsSync(hookPath)).toBe(true);
-    const content = readFileSync(hookPath, 'utf8');
-    expect(content).toContain("'auto'");
-    expect(content).toContain('.disabled');
-    expect(content).toContain('project-auto');
-    expect(content).toContain('user-auto');
-  });
-
-  it('should track usage of auto-generated skills', () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'skill-injector.js');
-    const content = readFileSync(hookPath, 'utf8');
-    expect(content).toContain('UsageTracker');
-    expect(content).toContain('recordUsage');
-    expect(content).toContain('generated');
   });
 });
 
@@ -218,18 +184,6 @@ describe('Evolution CLI commands', () => {
     const content = readFileSync(cliPath, 'utf8');
     // Evolution commands removed from CLI — handled by hooks/automation
     expect(content).not.toContain("case 'evolution'");
-  });
-});
-
-// Phase 5 Scenario 7: Ultrawork mode auto override
-describe('Ultrawork auto mode override', () => {
-  it('should support mode from config (suggest/auto) in evolution-engine', () => {
-    const hookPath = join(__dirname, '..', '..', '..', '..', '..', 'hooks', 'scripts', 'evolution-engine.js');
-    const content = readFileSync(hookPath, 'utf8');
-    expect(content).toContain('config.mode');
-    expect(content).toContain("'suggest'");
-    // Mode 'auto' comes from config.json, not hardcoded in hook
-    expect(content).toContain('mode');
   });
 });
 

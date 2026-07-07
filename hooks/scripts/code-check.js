@@ -14,6 +14,7 @@ import { getToolsBaseUrl, PROJECT_DIR, readProjectConfig } from './utils.js';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
+import { globToRegExp } from './lib/glob.js';
 
 const BASE_URL = getToolsBaseUrl();
 
@@ -41,35 +42,6 @@ const DEFAULT_CONSOLE_ALLOW_GLOBS = [
   '**/*.spec.*',
   '**/__tests__/**',
 ];
-
-/**
- * 경량 glob → RegExp 변환 (scope-guard와 동일 알고리즘, 독립 복사본).
- * @param {string} glob
- * @returns {RegExp}
- */
-function globToRegExp(glob) {
-  const normalized = glob.replace(/\\/g, '/');
-  let out = '';
-  for (let i = 0; i < normalized.length; i++) {
-    const c = normalized[i];
-    if (c === '*') {
-      if (normalized[i + 1] === '*') {
-        out += '.*';
-        i++;
-        if (normalized[i + 1] === '/') i++;
-      } else {
-        out += '[^/]*';
-      }
-    } else if (c === '?') {
-      out += '[^/]';
-    } else if ('.+^$()|{}[]\\'.includes(c)) {
-      out += '\\' + c;
-    } else {
-      out += c;
-    }
-  }
-  return new RegExp('^' + out + '$');
-}
 
 /**
  * .vibe/config.json의 qualityCheck.consoleAllow 글로브 목록 로드.
@@ -105,19 +77,12 @@ function isConsoleAllowed(filePath) {
 }
 
 /**
- * hook input에서 수정된 파일 경로 추출.
+ * hook ctx에서 수정된 파일 경로 추출.
  * @param {object} ctx
  * @returns {string[]}
  */
 function getModifiedFiles(ctx) {
-  try {
-    const parsed = ctx.payload || (ctx.hookInput ? JSON.parse(ctx.hookInput) : null);
-    const filePath = parsed?.tool_input?.file_path || parsed?.tool_input?.path;
-    return filePath ? [filePath] : [];
-  } catch {
-    // ignore
-  }
-  return [];
+  return ctx.filePath ? [ctx.filePath] : [];
 }
 
 /**
@@ -217,7 +182,7 @@ function runDetectors(filePath) {
 /**
  * in-process 진입점 — 품질 검사 + 관찰 캡처.
  * findings 배열을 반환한다 (디스패처가 수집해 additionalContext에 주입).
- * @param {{ payload: object|null, hookInput: string|null }} ctx
+ * @param {{ filePath: string }} ctx
  * @returns {Promise<{ exitCode: number, findings: string[] }>}
  */
 export async function run(ctx) {
@@ -225,15 +190,20 @@ export async function run(ctx) {
   const files = getModifiedFiles(ctx);
   if (files.length === 0) return { exitCode: 0, findings };
 
-  // 1. 하드룰 탐지기 실행 (changed file only) — additionalContext 주입만.
-  //    커밋 게이트(verifyRequired)는 태우지 않는다: 정규식 오탐 하나가
-  //    auto-commit을 차단하는 결합은 제거됨 (harness-review-2026-07-01).
+  // 1. 하드룰 탐지기 실행 (changed file only, regex only — 동적 import 없음) —
+  //    additionalContext 주입만. 커밋 게이트(verifyRequired)는 태우지 않는다:
+  //    정규식 오탐 하나가 auto-commit을 차단하는 결합은 제거됨
+  //    (harness-review-2026-07-01).
   try {
     const { p1 } = runDetectors(files[0]);
     for (const msg of p1) findings.push(msg);
   } catch {
     // 탐지기 실패 → fail-open, 계속 진행
   }
+
+  // validateCodeQuality가 처리하지 않는 확장자는 무거운 동적 import
+  // (convention/index.js·memory/index.js — 모듈 그래프 + SQLite 오픈) 전에 조기 반환.
+  if (!CODE_EXT_RE.test(files[0])) return { exitCode: 0, findings };
 
   // 2. validateCodeQuality 호출 (P1/P2 필터)
   try {
@@ -249,19 +219,21 @@ export async function run(ctx) {
     // Silently continue on check failure
   }
 
-  // 3. 관찰 자동 캡처
-  try {
-    const memModule = await import(`${BASE_URL}memory/index.js`);
-    const { type, title } = classifyObservation(files);
+  // 3. 관찰 자동 캡처 — 위반(findings)이 실제로 있을 때만 SQLite 기록 (clean edit은 write 생략)
+  if (findings.length > 0) {
+    try {
+      const memModule = await import(`${BASE_URL}memory/index.js`);
+      const { type, title } = classifyObservation(files);
 
-    await memModule.addObservation({
-      type,
-      title: `${title}: ${files.map(f => f.split(/[\\/]/).pop()).join(', ')}`,
-      filesModified: files,
-      projectPath: PROJECT_DIR,
-    });
-  } catch {
-    // 관찰 캡처 실패해도 무시
+      await memModule.addObservation({
+        type,
+        title: `${title}: ${files.map(f => f.split(/[\\/]/).pop()).join(', ')}`,
+        filesModified: files,
+        projectPath: PROJECT_DIR,
+      });
+    } catch {
+      // 관찰 캡처 실패해도 무시
+    }
   }
 
   return { exitCode: 0, findings };

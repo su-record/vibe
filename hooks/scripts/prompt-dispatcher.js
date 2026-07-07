@@ -76,7 +76,7 @@ const DISPATCH_RULES = [
   {
     pattern: /e2e.*테스트|e2e.*test|playwright|브라우저.*테스트|browser.*test/i,
     script: null,
-    echo: '[E2E MODE] Use /vibe.utils --e2e for Playwright-based browser testing. Supports visual regression and video recording.',
+    echo: '[E2E MODE] Use /vibe.verify --e2e for Playwright-based browser testing. Supports visual regression and video recording.',
     label: 'e2e-echo',
   },
 
