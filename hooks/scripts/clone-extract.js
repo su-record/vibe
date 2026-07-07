@@ -78,6 +78,11 @@ const CSS_PROPS = [
   'mask-image', 'mask-size', 'mask-position', 'clip-path',
 ];
 
+const SUB_URL_LIMIT = 200;
+const SUB_EXCLUDE_TEXT_RE = /^(?:검색|search|top|home|kor|eng|chn|vtn|language|언어|개인정보|privacy|문의|제안|sitemap|사이트맵|youtube|뉴스룸|newsroom|cookie|닫기|partner|파트너)$/i;
+const SUB_EXCLUDE_PATH_RE = /\/(?:search|sitemap|privacy|contact|inquiry|cookie|login|auth|policy)(?:\/|$)/i;
+const SUB_EXCLUDE_EXT_RE = /\.(?:pdf|zip|jpe?g|png|gif|webp|svg|mp4|mov|avi|docx?|xlsx?|pptx?)$/i;
+
 // ─── CLI parse ──────────────────────────────────────────────────────
 function parseArgs(argv) {
   const [, , cmd, urlArg, ...rest] = argv;
@@ -102,6 +107,74 @@ function parseViewport(v) {
     height: Number(m[2]),
     deviceScaleFactor: m[3] ? Number(m[3]) : 1,
   };
+}
+
+function localePrefixOf(rawUrl) {
+  const first = new URL(rawUrl).pathname.split('/').filter(Boolean)[0];
+  if (!first || !/^[a-z]{2,3}(?:-[a-z]{2})?$/i.test(first)) return null;
+  return `/${first}`;
+}
+
+function normalizeSubUrl(startUrl, href) {
+  if (!href || typeof href !== 'string') return null;
+  try {
+    const target = new URL(href, startUrl);
+    if (target.protocol !== 'http:' && target.protocol !== 'https:') return null;
+    target.hash = '';
+    target.search = '';
+    target.pathname = target.pathname.replace(/\/+$/, '') || '/';
+    return target;
+  } catch {
+    return null;
+  }
+}
+
+function isSameMenuScope(target, start, localePrefix) {
+  if (target.origin !== start.origin) return false;
+  if (!localePrefix) return true;
+  return target.pathname === localePrefix || target.pathname.startsWith(`${localePrefix}/`);
+}
+
+function isExcludedSubLink(target, text) {
+  const label = String(text || '').trim();
+  if (SUB_EXCLUDE_TEXT_RE.test(label)) return true;
+  if (SUB_EXCLUDE_PATH_RE.test(target.pathname)) return true;
+  return SUB_EXCLUDE_EXT_RE.test(target.pathname);
+}
+
+function collectSubUrls(startUrl, links, limit = SUB_URL_LIMIT) {
+  const start = normalizeSubUrl(startUrl, startUrl);
+  if (!start) return [];
+  const localePrefix = localePrefixOf(start.href);
+  const urls = [start.href];
+  const seen = new Set(urls);
+
+  for (const link of links) {
+    if (urls.length >= limit) break;
+    const target = normalizeSubUrl(start.href, link.href);
+    if (!target || seen.has(target.href)) continue;
+    if (!isSameMenuScope(target, start, localePrefix)) continue;
+    if (isExcludedSubLink(target, link.text)) continue;
+    seen.add(target.href);
+    urls.push(target.href);
+  }
+
+  return urls;
+}
+
+function findSitemapUrl(startUrl, links) {
+  const start = normalizeSubUrl(startUrl, startUrl);
+  if (!start) return null;
+  const localePrefix = localePrefixOf(start.href);
+
+  for (const link of links) {
+    const label = String(link.text || '').trim();
+    if (!/sitemap|사이트맵/i.test(`${label} ${link.href}`)) continue;
+    const target = normalizeSubUrl(start.href, link.href);
+    if (target && isSameMenuScope(target, start, localePrefix)) return target.href;
+  }
+
+  return null;
 }
 
 // ─── Puppeteer dynamic loader (optional dep) ────────────────────────
@@ -905,6 +978,14 @@ const SEO_EXTRACT = `(function () {
   return Array.from(new Set(icons.concat(og)));
 })`;
 
+const SUB_LINK_EXTRACT = `(function () {
+  const links = Array.from(document.querySelectorAll('a[href]')).map((a) => ({
+    href: a.getAttribute('href'),
+    text: (a.innerText || a.textContent || '').replace(/\\s+/g, ' ').trim(),
+  }));
+  return { links };
+})`;
+
 // HTML sanitization: strip scripts/analytics before saving
 function sanitizeHtml(html) {
   return html
@@ -912,6 +993,65 @@ function sanitizeHtml(html) {
     .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, '')
     .replace(/\son[a-z]+="[^"]*"/gi, '')
     .replace(/\son[a-z]+='[^']*'/gi, '');
+}
+
+async function newClonePage(browser) {
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  await page.setUserAgent(
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+    '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  );
+  await page.setCacheEnabled(false);
+  return page;
+}
+
+async function discoverSubUrls({ url, opts }) {
+  if (!url) throw new Error('URL is required');
+  if (!opts.out) throw new Error('--out=<file> is required');
+
+  if (!opts.ignoreRobots) {
+    const blocked = await checkRobots(url);
+    if (blocked) {
+      throw new Error(
+        `robots.txt disallows ${url}. Pass --ignore-robots only with the site owner's permission.`,
+      );
+    }
+  }
+
+  const puppeteer = await loadPuppeteer();
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+  });
+
+  try {
+    const page = await newClonePage(browser);
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 90000 });
+    await wait(800);
+
+    let source = 'menu';
+    let sourceUrl = url;
+    let { links } = await page.evaluate(`(${SUB_LINK_EXTRACT})()`);
+    const sitemapUrl = findSitemapUrl(url, links);
+    if (sitemapUrl) {
+      await page.goto(sitemapUrl, { waitUntil: 'networkidle2', timeout: 90000 });
+      await wait(800);
+      source = 'sitemap';
+      sourceUrl = sitemapUrl;
+      ({ links } = await page.evaluate(`(${SUB_LINK_EXTRACT})()`));
+    }
+
+    const urls = collectSubUrls(url, links);
+    fs.mkdirSync(path.dirname(opts.out), { recursive: true });
+    fs.writeFileSync(
+      opts.out,
+      JSON.stringify({ meta: { url, source, sourceUrl, count: urls.length }, urls }, null, 2),
+    );
+    process.stdout.write(`[clone-extract] suburls ${urls.length} → ${opts.out}\n`);
+  } finally {
+    await browser.close();
+  }
 }
 
 // ─── Main capture flow ──────────────────────────────────────────────
@@ -954,14 +1094,8 @@ async function capture({ url, opts }) {
   });
 
   try {
-    const page = await browser.newPage();
+    const page = await newClonePage(browser);
     await page.setViewport(viewport);
-    await page.setUserAgent(
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
-      '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    );
-    // disable cache to get fresh assets
-    await page.setCacheEnabled(false);
 
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 90000 });
     await scrollToBottom(page);
@@ -1140,16 +1274,18 @@ const isMain = process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('
 if (isMain) {
   const { cmd, url, opts } = parseArgs(process.argv);
 
-  if (cmd !== 'capture') {
+  if (cmd !== 'capture' && cmd !== 'suburls') {
     console.error('Usage: node clone-extract.js capture <URL> --out=<dir> --viewport=WxH[@DPR] --bp=mo|pc [--stealth] [--ignore-robots] [--no-interact] [--wait=ms]');
+    console.error('       node clone-extract.js suburls <URL> --out=<file> [--ignore-robots]');
     process.exit(1);
   }
 
-  capture({ url, opts }).catch((err) => {
+  const run = cmd === 'suburls' ? discoverSubUrls : capture;
+  run({ url, opts }).catch((err) => {
     console.error(`[clone-extract] FAIL: ${err.message}`);
     if (process.env.DEBUG) console.error(err.stack);
     process.exit(1);
   });
 }
 
-export { diffStyles };
+export { collectSubUrls, diffStyles };

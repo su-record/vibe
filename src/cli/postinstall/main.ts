@@ -35,6 +35,7 @@ import {
   generateGlobalAntigravityMd,
   installCodexNotify,
 } from '../setup/ProjectSetup.js';
+import { writeHookPackageJson } from '../setup/GlobalInstaller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +52,7 @@ export function main(): void {
 
     // 1. 전역 vibe 디렉토리 구조 생성
     ensureDir(globalCoreDir);
+    writeHookPackageJson(globalCoreDir);
     ensureDir(nodeModulesDir);
     ensureDir(path.join(nodeModulesDir, '@su-record'));
 

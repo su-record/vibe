@@ -19,6 +19,31 @@ const __dirname = path.dirname(__filename);
  */
 export const getCoreConfigDir = getGlobalConfigDir;
 
+function readPackageJsonObject(packageJsonPath: string): Record<string, unknown> {
+  if (!fs.existsSync(packageJsonPath)) {
+    return {};
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    return {};
+  }
+
+  return {};
+}
+
+export function writeHookPackageJson(globalCoreDir: string): void {
+  ensureDir(globalCoreDir);
+  const packageJsonPath = path.join(globalCoreDir, 'package.json');
+  const packageJson = readPackageJsonObject(packageJsonPath);
+  packageJson.type = 'module';
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+}
+
 /**
  * 전역 core 패키지 설치
  */
@@ -28,6 +53,10 @@ export function installGlobalCorePackage(isUpdate = false): void {
   const corePackageDir = path.join(nodeModulesDir, '@su-record', 'vibe');
   const packageJson = getPackageJson();
   const currentVersion = packageJson.version;
+
+  // 디렉토리 생성
+  ensureDir(globalCoreDir);
+  writeHookPackageJson(globalCoreDir);
 
   // 이미 설치되어 있는지 확인
   const installedPackageJson = path.join(corePackageDir, 'package.json');
@@ -42,8 +71,6 @@ export function installGlobalCorePackage(isUpdate = false): void {
     }
   }
 
-  // 디렉토리 생성
-  ensureDir(globalCoreDir);
   ensureDir(nodeModulesDir);
   ensureDir(path.join(nodeModulesDir, '@su-record'));
 

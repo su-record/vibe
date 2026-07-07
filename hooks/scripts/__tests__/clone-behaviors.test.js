@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { diffStyles } from '../clone-extract.js';
+import { collectSubUrls, diffStyles } from '../clone-extract.js';
 import { sectionHasNode, behaviorsBlock } from '../clone-spec.js';
 
 describe('diffStyles', () => {
@@ -25,6 +25,38 @@ describe('diffStyles', () => {
   it('returns empty when nothing changed or a snapshot is missing', () => {
     expect(diffStyles({ color: 'red' }, { color: 'red' })).toEqual({});
     expect(diffStyles(null, { color: 'red' })).toEqual({});
+  });
+});
+
+describe('collectSubUrls', () => {
+  it('keeps same-origin locale menu links and drops footer/external links', () => {
+    const urls = collectSubUrls('https://www.lgdisplay.com/kor', [
+      { href: '/kor/company/info/outline/greeting', text: '기업개요' },
+      { href: '/kor/product/tv/oled', text: 'TV' },
+      { href: '/eng', text: 'ENG' },
+      { href: '/kor/privacy', text: '개인정보처리방침' },
+      { href: 'https://news.lgdisplay.com/news', text: 'Newsroom' },
+      { href: 'https://www.youtube.com/@lgdisplay', text: 'You Tube' },
+      { href: '#top', text: 'TOP' },
+    ]);
+
+    expect(urls).toEqual([
+      'https://www.lgdisplay.com/kor',
+      'https://www.lgdisplay.com/kor/company/info/outline/greeting',
+      'https://www.lgdisplay.com/kor/product/tv/oled',
+    ]);
+  });
+
+  it('deduplicates links after dropping query strings and hashes', () => {
+    const urls = collectSubUrls('https://example.com/kor', [
+      { href: '/kor/company?utm_source=x', text: 'Company' },
+      { href: '/kor/company#ceo', text: 'Company' },
+    ]);
+
+    expect(urls).toEqual([
+      'https://example.com/kor',
+      'https://example.com/kor/company',
+    ]);
   });
 });
 
