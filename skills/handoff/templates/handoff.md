@@ -86,7 +86,7 @@ Last commit: `{{LAST_COMMIT_HASH}}` — {{LAST_COMMIT_MESSAGE}}
 
 ```bash
 # 1. Load context
-/vibe.utils --continue
+/vibe.continue
 
 # 2. Read this file if context is missing
 # cat HANDOFF.md

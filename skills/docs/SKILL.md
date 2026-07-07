@@ -1,6 +1,6 @@
 ---
 name: docs
-description: 프로젝트 문서 생성 본체 — README / 아키텍처 / 사용자 가이드 / 릴리즈 노트.
+description: 프로젝트 문서 생성 본체 — README / 아키텍처 / 사용자 가이드 / 릴리즈 노트 / Mermaid 다이어그램 / codemaps.
 when_to_use: /vibe.docs 진입점에서 체인 호출. 직접 호출 금지.
 user-invocable: false
 tier: standard
@@ -179,6 +179,41 @@ Output: `RELEASE_NOTES.md` or append to `CHANGELOG.md`
 - refactor/docs/chore items
 ```
 
+### `/vibe.docs diagram` — Diagram Generation
+
+Generate Mermaid diagrams for architecture, ERD, flowchart, or sequence
+visualization directly (native capability — no dedicated agent). Ground the
+diagram in sources first: folder structure and imports for architecture;
+`models/`, `migrations/`, `schema.*`, ORM definitions for ERDs; the real
+branch/return structure of the code for flowcharts.
+
+**Options:**
+- `/vibe.docs diagram` (default): Architecture overview
+- `/vibe.docs diagram --er`: Entity-Relationship Diagram
+- `/vibe.docs diagram --flow`: Flowchart
+- `/vibe.docs diagram --seq`: Sequence Diagram
+
+> Read `references/diagram-spec.md` for the full output conventions (Mermaid syntax per diagram type, save location, accuracy constraints).
+
+**Example:**
+```
+/vibe.docs diagram --er
+```
+
+### `/vibe.docs codemaps` — Codemaps Generation
+
+Generate auto-documentation from codebase structure directly (native
+capability — no dedicated agent).
+
+**Output Location:** `docs/CODEMAPS/`
+
+> Read `references/codemaps-output.md` for the full generated-files tree, per-file contents, and tools used.
+
+**Example:**
+```
+/vibe.docs codemaps
+```
+
 ## Pipeline Integration
 
 `/vibe.docs` completes the development pipeline:
@@ -202,9 +237,9 @@ When `/vibe.trace` completes with all scenarios passing, suggest:
 - Preserve existing documentation that's still accurate
 - Include concrete code examples from the actual project
 - Keep language consistent with project (Korean/English based on CLAUDE.md)
-- Use documenter agent (changelog mode) for `/vibe.docs release`
-- Use documenter agent (api-docs mode) for API-heavy projects
-- Use diagrammer agent for `/vibe.docs arch` Mermaid generation
+- For `/vibe.docs release` (changelog mode), follow `references/api-docs-changelog.md` natively — no dedicated agent
+- For API-heavy projects (api-docs mode), follow `references/api-docs-changelog.md` natively
+- For `/vibe.docs arch` and `/vibe.docs diagram` Mermaid generation, follow `references/diagram-spec.md` natively
 - Use the `agents-md` skill for `/vibe.docs agent` — applies equally to CLAUDE.md and AGENTS.md
 
 ### DON'T

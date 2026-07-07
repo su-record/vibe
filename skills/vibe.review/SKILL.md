@@ -36,119 +36,7 @@ user-invocable: true
 
 **Multi-LLM competitive review** - Same review task runs on GPT + Antigravity in parallel, results are cross-validated.
 
-### How It Works
-
-```
-/vibe.review --race
-
-security-review:
-├─ GPT Codex  → [SQL injection, XSS]
-└─ Antigravity     → [SQL injection, CSRF]
-         ↓
-   Cross-validation:
-   - SQL injection (2/2) → 🔴 P1 (100% confidence)
-   - XSS (1/2) → 🟡 P2 (50% confidence)
-   - CSRF (1/2) → 🟡 P2 (50% confidence)
-```
-
-### Confidence-Based Priority
-
-| Confidence | Priority | Meaning |
-|------------|----------|---------|
-| 100% (2/2) | P1 | Both models agree - high confidence |
-| 50% (1/2) | P2 | One model found - needs verification |
-
-### Race Mode Options
-
-```
-/vibe.review --race                  # All review types
-/vibe.review --race security         # Security only
-/vibe.review --race performance      # Performance only
-/vibe.review --race architecture     # Architecture only
-```
-
-### Race Mode Output
-
-```
-## SECURITY Review (Race Mode)
-
-**Duration**: 3420ms
-**Models**: GPT Codex, Antigravity
-
-### Model Results
-
-| Model | Issues Found | Duration | Status |
-|-------|--------------|----------|--------|
-| gpt | 3 | 1823ms | OK |
-| antigravity | 2 | 2156ms | OK |
-
-### Cross-Validated Issues
-
-**Summary**: 3 issues (P1: 1, P2: 2)
-**Consensus Rate**: 67%
-
-#### 🔴 P1 - SQL Injection in user query
-
-- **Confidence**: 100% (gpt, antigravity)
-- **Severity**: critical
-- **Location**: `src/api/users.ts:42`
-- **Suggestion**: Use parameterized queries
-
-#### 🟡 P2 - XSS vulnerability in render
-
-- **Confidence**: 50% (gpt)
-- **Severity**: high
-- **Location**: `src/components/Comment.tsx:15`
-```
-
-### Codex Review (Codex 플러그인 활성화 시)
-
-Race Mode에서 GPT+Antigravity와 **동시에** Codex review 실행하여 3중 교차 검증:
-
-```
-/codex:review
-```
-
-교차 검증 테이블:
-
-```markdown
-| Issue | GPT | Antigravity | Codex | Confidence |
-|-------|-----|--------|-------|------------|
-| {이슈} | ✅/❌ | ✅/❌ | ✅/❌ | {%} |
-```
-
-- 3개 모델 중 2개 이상 동의 → **High Confidence** (P1 자동 수정)
-- Codex만 발견 → **Medium Confidence** (P2 수동 검토)
-
-### When to Use Race Mode
-
-| Scenario | Recommended |
-|----------|-------------|
-| Critical security review | ✅ `--race security` |
-| Pre-production audit | ✅ `--race` |
-| Quick iteration | ❌ Standard review |
-| API cost concerns | ❌ Standard review |
-
-### Tool Invocation (Race Mode - GPT + Antigravity in parallel via Bash)
-
-**🚨 Use --input file to avoid CLI argument length limits and Windows pipe issues.**
-
-1. Save code to review into `[SCRATCHPAD]/review-code.txt` (using Write tool)
-2. Write JSON input file `[SCRATCHPAD]/review-input.json` (using Write tool):
-   - `{"prompt": "Review this code for [REVIEW_TYPE]. Return JSON: {issues: [{id, title, description, severity, suggestion}]}. Code: [CODE_CONTENT]"}`
-   - Where `[CODE_CONTENT]` is the code text (properly JSON-escaped inside the prompt string)
-3. Script path: `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
-4. Run GPT + Antigravity in PARALLEL (two Bash tool calls at once):
-
-```bash
-# GPT review (Bash tool call 1)
-node "[LLM_SCRIPT]" gpt orchestrate-json --input "[SCRATCHPAD]/review-input.json"
-```
-
-```bash
-# Antigravity review (Bash tool call 2 - run in parallel)
-node "[LLM_SCRIPT]" antigravity orchestrate-json --input "[SCRATCHPAD]/review-input.json"
-```
+> Read `references/race-mode.md` for the full workflow diagram, confidence-based priority table, race mode options/output templates, Codex 3-way cross-validation, and tool invocation details.
 
 ## File Reading Policy (Mandatory)
 
@@ -199,16 +87,9 @@ node "[LLM_SCRIPT]" antigravity orchestrate-json --input "[SCRATCHPAD]/review-in
 
 ### Phase 1: Tech Stack Detection
 
-Detect project tech stack FIRST before launching reviewers:
+Detect project tech stack FIRST before launching reviewers.
 
-```
-Read package.json      -> TypeScript, React, Node.js
-Read pyproject.toml    -> Python, FastAPI, Django
-Read Gemfile           -> Ruby, Rails
-Read pubspec.yaml      -> Flutter, Dart
-Read go.mod            -> Go
-Read CLAUDE.md         -> Explicit tech stack declaration
-```
+> Read `references/worked-examples.md` for the full file-to-stack detection list (package.json, pyproject.toml, Gemfile, pubspec.yaml, go.mod, CLAUDE.md).
 
 ### Phase 1.5: SPEC ↔ Code Alignment Check
 
@@ -302,12 +183,7 @@ Task(subagent_type="design-reviewer",
 
 반드시 **생산자와 소비자 코드를 동시에** Read하여 교차 비교한다.
 
-| 검증 영역 | 생산자 (왼쪽) | 소비자 (오른쪽) | 검증 내용 |
-|----------|-------------|---------------|----------|
-| API ↔ 훅 타입 | route의 Response.json() shape | hooks의 fetch\<T\> 타입 | shape 일치, 래핑 unwrap, case 변환 |
-| 라우팅 정합성 | src/app/ page 파일 경로 | href, router.push 값 | 경로 매칭, route group 처리, 동적 세그먼트 |
-| 상태 전이 | STATE_TRANSITIONS 맵 | .update({ status }) 코드 | 죽은 전이, 무단 전이, 중간→최종 누락 |
-| 데이터 흐름 | DB 스키마 필드명 | API 응답 → 프론트 타입 | 필드명 일치, optional 처리 일관성 |
+> Read `references/boundary-check.md` for the full verification-area table and checklist.
 
 **실행 방식 — 변경 파일 기반 자동 판별:**
 
@@ -316,17 +192,6 @@ Task(subagent_type="design-reviewer",
 2. 짝이 있는 경우 → 아래 4개 검증 실행
 3. 짝이 없는 경우 (API만 또는 프론트만 변경) → "대응 파일 미변경" 경고 후 스킵
 ```
-
-**검증 체크리스트:**
-
-- [ ] API 응답 shape과 대응 훅의 제네릭 타입이 일치
-- [ ] 래핑된 응답(`{ items: [...] }`)은 훅에서 unwrap하는지 확인
-- [ ] snake_case ↔ camelCase 변환이 일관되게 적용
-- [ ] 모든 API 엔드포인트에 대응하는 프론트 훅이 존재하고 실제 호출됨
-- [ ] 코드 내 모든 href/router.push 값이 실제 page 파일 경로와 매칭
-- [ ] 정의된 모든 상태 전이가 코드에서 실행됨 (죽은 전이 없음)
-- [ ] 프론트에서 상태 기반 분기의 값이 실제 도달 가능한 상태
-- [ ] DB 필드명 → API 응답 필드명 → 프론트 타입 정의 간 매핑 일관
 
 **Findings 분류:**
 - 경계면 불일치 → **P1** (런타임 에러의 주요 원인)
@@ -344,76 +209,20 @@ After agent results:
 
 ### Phase 4: Findings Synthesis
 
-```
-REVIEW FINDINGS
-
-P1 CRITICAL (Blocks Merge) - N issues
-1. [SECURITY] SQL Injection in user query
-   Location: src/api/users.py:42
-   Fix: Use parameterized queries
-
-P2 IMPORTANT (Should Fix) - N issues
-2. [PERF] N+1 query in user list
-3. [ARCH] Circular dependency detected
-
-P3 NICE-TO-HAVE (Enhancement) - N issues
-4. [STYLE] Consider extracting helper function
-```
+> Read `references/output-template.md` for the full findings synthesis format.
 
 ### Phase 4.5: Review Debate (parallel native subagents)
 
 > P1/P2 findings 를 검증하기 위해 네이티브 서브에이전트를 병렬로 스폰한다 —
 > `security-reviewer` + `code-reviewer` 인스턴스(서로 다른 focus)가 각 finding 을 교차 검증(validate / upgrade / downgrade / remove)한다.
 
-**토론 결과 예시:**
-
-```
-🤝 REVIEW DEBATE RESULTS
-
-Consensus (4 parallel reviewers):
-
-✅ Validated P1 (unanimous):
-  1. [SECURITY] SQL Injection — 4/4 agree critical
-
-⬆️ Upgraded P2→P1 (debate result):
-  2. [PERF] Unbounded query — code-reviewer (focus: architecture) pointed out
-     cascading failure risk under load → agreed P1
-
-⬇️ Downgraded P1→P2 (debate result):
-  3. [SECURITY] CSRF on read-only endpoint — code-reviewer (focus: complexity)
-     noted endpoint has no side effects → agreed P2
-
-❌ Removed (false positive):
-  4. [ARCH] "Circular dependency" — code-reviewer (focus: architecture) confirmed
-     this is intentional bi-directional reference, not a cycle
-
-🆕 New findings (cross-review discussion):
-  5. [DATA] Race condition in concurrent updates — emerged from
-     security + performance cross-review
-```
+> Read `references/worked-examples.md` for the full Review Debate example output.
 
 ### Phase 5: Auto-Fix (P1/P2)
 
 **Auto-fixable issues are resolved immediately:**
 
-```
-🔧 AUTO-FIX Starting...
-
-P1 Critical:
-  1. [SECURITY] SQL Injection → Fixed with parameterized query ✅
-  2. [DATA] Missing transaction rollback → Added try-finally ✅
-
-P2 Important:
-  3. [PERF] N+1 query → Added select_related ✅
-  4. [ARCH] Circular dependency → Separated dependencies ✅
-  5. [TEST] Missing edge case → Added test ✅
-
-🔍 Re-validating...
-  ✅ Build successful
-  ✅ Tests passed
-
-✅ 5 issues auto-fixed!
-```
+> Read `references/worked-examples.md` for the full Auto-Fix example output.
 
 **Cases that cannot be auto-fixed:**
 - Requires large-scale architecture changes
@@ -436,66 +245,17 @@ Codex 수정 완료 후 해당 리뷰 에이전트가 재검증.
 
 Save **remaining** findings to `.vibe/todos/`:
 
-```
-{priority}-{category}-{short-desc}.md
-
-Examples:
-- P2-arch-large-refactor.md  (Cannot be auto-fixed)
-- P3-style-extract-helper.md (Backlog)
-```
+> Read `references/worked-examples.md` for the Todo file naming example.
 
 ## Output
 
-```
-CODE REVIEW SUMMARY
-PR #123: Add user authentication
-
-Reviewers: security-reviewer + 8 code-reviewer instances (per-focus) + 3 design-reviewer instances (UI)
-⏱️ Started: {start_time}
-⏱️ Completed: {getCurrentTime 결과}
-
-Score: 92/100 (Good) ← Score after auto-fix
-
-Issues Found:
-- P1 Critical: 2 → 0 (✅ Auto-fixed)
-- P2 Important: 5 → 1 (✅ 4 auto-fixed)
-- P3 Nice-to-have: 3 (Backlog)
-
-Auto-Fixed: 6 issues
-- [SECURITY] SQL Injection ✅
-- [DATA] Transaction rollback ✅
-- [PERF] N+1 query ✅
-- [ARCH] Circular dependency ✅
-- [PERF] Unnecessary loop ✅
-- [TEST] Missing edge case ✅
-
-Remaining (Manual handling required):
-- P2-arch-large-refactor.md (Architecture decision required)
-- P3-style-extract-helper.md (Backlog)
-- P3-docs-add-readme.md (Backlog)
-
-✅ MERGE READY (P1/P2 resolved)
-```
+> Read `references/output-template.md` for the full review summary output format.
 
 ### Phase 7: Guide to Fix Workflow (Manual Handling Items)
 
 **Choose workflow when handling remaining issues:**
 
-```
-## Fix Workflow
-
-Choose a workflow to fix the discovered issues:
-
-| Task Scale | Recommended Approach |
-|------------|---------------------|
-| Simple fix (1-2 files) | Plan Mode |
-| Complex fix (3+ files, validation needed) | /vibe.spec |
-
-1. `/vibe.spec "fix: issue-name"` - VIBE workflow (SPEC validation + re-review)
-2. Plan Mode - Quick fix (for simple tasks)
-
-Which approach would you like to proceed with?
-```
+> Read `references/output-template.md` for the full Fix Workflow prompt template.
 
 - Wait for user's choice before proceeding
 - If user chooses VIBE → wait for `/vibe.spec` command
@@ -519,110 +279,15 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 | `analyzeComplexity` | Complexity metrics | Check function complexity |
 | `saveMemory` | Save findings | Store important review findings |
 
-### Example Tool Usage in Review
-
-**1. Validate code quality before review:**
-
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
-```
-
-**2. Analyze complexity of changed files:**
-
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.analyzeComplexity({targetPath: 'src/api/users.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
-```
-
-**3. Save critical finding for reference:**
-
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.saveMemory({key: 'review-pr123-critical', value: 'SQL injection in users.py:42', category: 'review', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
-```
+> Read `references/worked-examples.md` for example tool usage in review (validateCodeQuality, analyzeComplexity, saveMemory).
 
 ---
 
 ## Quality Gate (Mandatory)
 
-### Review Quality Checklist
+Before completing review, check P1-critical items (P2/P3 are best-effort). Score = 100 - (P1 × 20) - (P2 × 5) - (P3 × 1). **P1 = 0 required for MERGE READY.**
 
-Before completing review, check P1-critical items. P2/P3 items are best-effort:
-
-| Category | Check Item | Weight |
-|----------|------------|--------|
-| **Security** | OWASP Top 10 vulnerabilities scanned | 20% |
-| **Security** | Authentication/authorization verified | 10% |
-| **Security** | Sensitive data exposure checked | 10% |
-| **Performance** | N+1 queries detected and flagged | 10% |
-| **Performance** | Memory leaks checked | 5% |
-| **Architecture** | Layer violations detected | 10% |
-| **Architecture** | Circular dependencies checked | 5% |
-| **Code Quality** | Complexity limits enforced | 10% |
-| **Code Quality** | Forbidden patterns detected | 10% |
-| **Testing** | Test coverage gaps identified | 5% |
-| **Documentation** | Public API documentation checked | 5% |
-
-### Review Score Calculation
-
-```
-Score = 100 - (P1 × 20) - (P2 × 5) - (P3 × 1)
-
-Grades:
-- 95-100: ✅ EXCELLENT - Merge ready
-- 90-94:  ⚠️ GOOD - Minor fixes required before merge
-- 80-89:  ⚠️ FAIR - Must fix P2 issues
-- 0-79:   ❌ POOR - Block merge, fix P1/P2
-```
-
-### Merge Decision Matrix
-
-| P1 Count | P2 Count | Decision |
-|----------|----------|----------|
-| 0 | 0-2 | ✅ MERGE READY |
-| 0 | 3+ | ⚠️ FIX P2 FIRST |
-| 1+ | Any | ❌ BLOCKED |
-
-### Auto-Fix Capability Matrix
-
-| Issue Type | Auto-Fixable | Method |
-|------------|--------------|--------|
-| SQL Injection | ✅ Yes | Parameterized query |
-| Missing transaction | ✅ Yes | Add try-finally |
-| N+1 query | ✅ Yes | Add eager loading |
-| Circular dependency | ⚠️ Partial | Suggest restructure |
-| Missing tests | ✅ Yes | Generate test skeleton |
-| Hardcoded secrets | ❌ No | Flag for manual review |
-| Architecture violation | ❌ No | Suggest refactoring plan |
-
-### Forbidden Patterns (P1 Critical)
-
-| Pattern | Risk Level | Detection Method |
-|---------|------------|------------------|
-| Hardcoded credentials | Critical | Regex + entropy scan |
-| SQL string concatenation | Critical | AST analysis |
-| `eval()` or `exec()` | Critical | AST analysis |
-| Disabled CSRF protection | Critical | Config scan |
-| Debug mode in production | Critical | Config scan |
-| Unvalidated redirects | High | URL pattern scan |
-
-### Review Output Requirements
-
-Every review MUST produce:
-
-1. **Summary Statistics**
-   - Total issues by priority (P1/P2/P3)
-   - Auto-fixed count
-   - Remaining manual fixes
-
-2. **Detailed Findings**
-   - File path and line number
-   - Issue description
-   - Recommended fix
-   - Auto-fix status (applied/pending/manual)
-
-3. **Quality Score**
-   - Numerical score (0-100)
-   - Grade (EXCELLENT/GOOD/FAIR/POOR)
-   - Merge recommendation
+> Read `references/quality-gate.md` for the full weighted checklist, score grades, merge decision matrix, auto-fix capability matrix, forbidden-patterns table, and output requirements.
 
 ---
 

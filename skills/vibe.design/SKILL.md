@@ -1,7 +1,7 @@
 ---
 name: vibe.design
 description: DESIGN.md(시각 품질 SSOT) 생성·검증·드리프트 검사·동기화. Figma 독립.
-argument-hint: "init [--from=interview|code|reference|figma] | lint | verify | sync"
+argument-hint: "init [--from=interview|code|reference|figma] | lint | verify | sync | preview"
 user-invocable: true
 ---
 
@@ -22,6 +22,7 @@ user-invocable: true
 /vibe.design lint                       # Stitch 9 섹션 완전성 검증
 /vibe.design verify [--files=<glob>]    # 구현 ↔ DESIGN.md hex 드리프트 (v1)
 /vibe.design sync                       # Figma 연결 시 양방향 동기화 (Should, Phase 2)
+/vibe.design preview "description"      # UI 프리뷰 (Antigravity 목업 또는 ASCII 폴백)
 ```
 
 ## Philosophy
@@ -152,6 +153,25 @@ user-invocable: true
 
 **v1 동작**: "Phase 2 에서 활성됩니다. 현재는 `/vibe.figma --emit-design-md` 를 사용하세요." 메시지 후 종료.
 
+### Subcommand: `preview`
+
+Generate the UI preview directly in the main session (native capability — no dedicated agent). DESIGN.md 와 독립적으로 동작 — 임시 프리뷰용.
+
+Generate UI preview from a text description, a design folder, or a single file.
+
+- **Antigravity enabled**: UI mockup image + component code generation
+- **Antigravity disabled**: ASCII art fallback
+
+**Input types:**
+
+| Input | Example |
+| ----- | ------- |
+| Text description | `"Login form with email, password"` |
+| Design folder | `./design/` |
+| Single file | `./mockups/login.html` |
+
+> Read `references/ui-preview.md` for the full supported file-format list and example invocations.
+
 ## Integration
 
 | Skill | 통합 지점 |
@@ -173,11 +193,13 @@ user-invocable: true
 |-----|---------|
 | `<root>/DESIGN.md` | `init` / `sync` |
 | 콘솔 리포트 | `lint` / `verify` |
+| ASCII 프리뷰 또는 목업 이미지 | `preview` |
 
 ## Heuristics & References
 
 - 코드 역추출 패턴: `heuristics/code-extract.md`
 - 시드 카탈로그: `references/README.md`
+- UI 프리뷰 포맷·예시: `references/ui-preview.md`
 - 템플릿: `templates/DESIGN.md.template`
 
 ARGUMENTS: $ARGUMENTS

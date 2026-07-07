@@ -129,7 +129,7 @@ Ready to execute:
   /vibe.run "{feature-name}" ultrawork
 
 Or hand off to new session:
-  /vibe.utils --continue
+  /vibe.continue
   → Load: .vibe/specs/{feature-name}-execplan.md
 ```
 

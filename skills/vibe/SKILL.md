@@ -64,13 +64,14 @@ user-invocable: true
 | **regression fix** | "회귀", "테스트 깨졌", "다시 통과" | regress → run → verify |
 | **contract drift** | "API 변경", "계약 깨졌", "스펙 불일치" | contract → regress (P1만) |
 | **scaffold** | "프로젝트 만들기", "셋업", "초기 구조" | scaffold |
-| **docs sync** | "문서 갱신", "README", "AGENTS.md" | docs |
+| **docs sync** | "문서 갱신", "README", "AGENTS.md", "다이어그램", "코드맵" | docs (diagram/codemaps 의도 포함) |
 | **analyze** | "분석", "조사", "이건 뭐야" + 파일/URL | analyze |
 | **reason** | "추론", "깊게 생각", "트레이드오프", "어떻게 접근" 등 복잡한 사고 요청 | reason |
 | **event** | "이벤트", "커뮤니티", "D-Day", "행사 자동화" | event |
 | **harness check** | "하네스", "환경 점검" | harness |
 | **test self** | "vibe 테스트", "CC ↔ Codex 비교" | test |
-| **utils** | "이어서", "메모리", "체크포인트" | utils |
+| **session continue** | "이어서", "메모리", "체크포인트" | continue |
+| **image generation** | "이미지 생성", "아이콘", "배너", "목업 이미지" | image |
 
 복수 의도면 우선순위: resume > figma-driven > new feature > 기타.
 

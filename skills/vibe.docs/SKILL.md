@@ -1,7 +1,7 @@
 ---
 name: vibe.docs
-description: Generate project documentation — README, architecture docs, user guide, release notes, agent instructions
-argument-hint: "readme, guide, arch, release, or agent"
+description: Generate project documentation — README, architecture docs, user guide, release notes, agent instructions, diagrams, codemaps
+argument-hint: "readme, guide, arch, release, agent, diagram, or codemaps"
 user-invocable: true
 ---
 
@@ -17,6 +17,8 @@ Generate or update project documentation by analyzing the actual codebase.
 /vibe.docs arch       # 아키텍처 문서 + Mermaid 다이어그램 (docs/ARCHITECTURE.md)
 /vibe.docs release    # 릴리즈 노트 (git history 기반)
 /vibe.docs agent      # CLAUDE.md / AGENTS.md 생성·동기화 (agents-md 검증 필수)
+/vibe.docs diagram    # Mermaid 다이어그램 (architecture/ER/flow/seq) → .vibe/diagrams/
+/vibe.docs codemaps   # 코드베이스 구조 자동 문서화 → docs/CODEMAPS/
 ```
 
 ## Pipeline Position
