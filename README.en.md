@@ -217,7 +217,7 @@ Skills teach only what the model doesn't know (domain gotchas, current APIs, pro
 | [Claude Code](https://claude.ai/code) | Full support |
 | [Codex](https://github.com/openai/codex) | Full support (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
 | [Cursor](https://cursor.sh) | Agents + Rules |
-| [Antigravity CLI](https://github.com/google-gemini/gemini-cli) | Agents + Skills |
+| Antigravity CLI (`agy`) | Agents + Skills |
 
 ---
 
