@@ -1,0 +1,56 @@
+name: Star Gate
+
+on:
+  issues:
+    types: [opened, reopened]
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  star-gate:
+    runs-on: ubuntu-latest
+    steps:
+      # 코드 체크아웃 없음 — pull_request_target에서도 포크 코드가 실행되지 않아 안전
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const item = context.payload.issue ?? context.payload.pull_request;
+            const author = item.user.login;
+            if (item.user.type === 'Bot') return;
+            if (['OWNER', 'MEMBER', 'COLLABORATOR'].includes(item.author_association)) return;
+
+            const stargazers = await github.paginate(github.rest.activity.listStargazersForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            if (stargazers.some((user) => user.login === author)) {
+              core.info(`@${author} starred the repo — gate passed`);
+              return;
+            }
+
+            const isIssue = Boolean(context.payload.issue);
+            const kind = isIssue ? 'issue' : 'PR';
+            const body = [
+              `안녕하세요 @${author}! 이 저장소는 ⭐ 스타를 누른 분들의 이슈/PR을 받고 있어요.`,
+              '',
+              `Hi @${author}! This repo accepts issues/PRs from stargazers.`,
+              `Please [star the repo](https://github.com/${context.repo.owner}/${context.repo.repo}/stargazers) and reopen this ${kind} — the gate will pass automatically on reopen. Thanks! 🙏`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: item.number,
+              body,
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: item.number,
+              state: 'closed',
+              ...(isIssue ? { state_reason: 'not_planned' } : {}),
+            });
