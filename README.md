@@ -7,6 +7,8 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
+**English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, Cursor, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*
+
 Vibe는 AI 코딩을 위한 **검증 하네스(verification harness)** 입니다. 모델은 이미 계획도 구현도 잘합니다 — 부족한 것은 "다 됐다"는 말을 믿을 근거입니다. Vibe는 Claude Code, Codex, Cursor, Antigravity CLI를 감싸고, **완료 판정을 모델의 자기 보고가 아니라 결정론적 게이트(테스트 exit code, run-ledger, 회귀 기억)에 맡깁니다.** 빠르게 바이브 코딩하되, 검증 안 된 코드가 나가지 않게.
 
 ```bash
