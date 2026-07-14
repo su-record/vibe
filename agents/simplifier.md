@@ -19,7 +19,7 @@ Automatically executed after `Write`, `Edit` operations via PostToolUse Hook.
 ### Complexity Standards
 - `standards/complexity-metrics.md`:
   - Cyclomatic complexity ≤ 10
-  - Function length ≤ 20 lines
+  - Function length ≤ 50 lines
   - Nesting depth ≤ 3 levels
   - Parameters ≤ 5
   - Component JSX ≤ 50 lines
@@ -42,7 +42,7 @@ Analyze changes in each file
 const checks = {
   // Complexity
   cyclomaticComplexity: '≤ 10',
-  functionLength: '≤ 20 lines',
+  functionLength: '≤ 50 lines',
   nestingDepth: '≤ 3 levels',
   parameterCount: '≤ 5',
 
@@ -71,7 +71,7 @@ const checks = {
 or
 
 ⚠️ Improvements needed:
-- src/utils/helper.ts:15 - Function 25 lines (limit: 20)
+- src/utils/helper.ts:15 - Function 62 lines (limit: 50)
 - src/components/Form.tsx:42 - Nesting 4 levels (limit: 3)
 
 🔧 Auto-corrected:
@@ -83,7 +83,7 @@ or
 ```
 ✅ Modified only requested scope?
 ✅ No any types?
-✅ Functions ≤ 20 lines?
+✅ Functions ≤ 50 lines?
 ✅ Nesting ≤ 3 levels?
 ✅ Error handling included?
 ✅ Magic numbers extracted to constants?

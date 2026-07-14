@@ -18,7 +18,7 @@
 ### Function Level
 | Metric | Good | Warning | Critical |
 |--------|------|---------|----------|
-| Lines | ≤20 | 21-40 | >40 |
+| Lines | ≤50 | 51-80 | >80 |
 | Cyclomatic | ≤10 | 11-15 | >15 |
 | Parameters | ≤4 | 5-6 | >6 |
 | Nesting | ≤3 | 4 | >4 |

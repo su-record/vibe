@@ -5,10 +5,10 @@
  * 결과는 프로세스당 1회 캐시.
  */
 
-import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { findExecutableInPath } from './utils.js';
 
 export interface LlmAvailability {
   claude: boolean;
@@ -21,14 +21,7 @@ let cached: LlmAvailability | null = null;
 function checkCliInstalled(binName: string, configDir: string): boolean {
   const hasDir = fs.existsSync(configDir);
   if (!/^[a-z]+$/.test(binName)) return hasDir;
-  let hasBin = false;
-  try {
-    execSync(`which ${binName}`, { stdio: 'ignore' });
-    hasBin = true;
-  } catch {
-    // not found
-  }
-  return hasBin || hasDir;
+  return findExecutableInPath(binName) || hasDir;
 }
 
 function checkAuthExists(configDir: string, authFileName: string): boolean {

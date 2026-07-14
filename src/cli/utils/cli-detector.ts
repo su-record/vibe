@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { findExecutableInPath } from '../../infra/lib/utils.js';
 
 export interface AiCliStatus {
   installed: boolean;
@@ -55,21 +56,14 @@ function detectAntigravityAuth(configDir: string): boolean {
 
 /**
  * Claude Code 설치 여부 감지
- * - `which claude` 실행 가능 여부
+ * - PATH에서 `claude` 실행 파일 존재 여부
  * - `~/.claude/` 디렉토리 존재 여부
  * 둘 중 하나만 true면 installed: true
  */
 export function detectClaudeCli(): AiCliStatus {
   const configDir = path.join(os.homedir(), '.claude');
   const hasDir = fs.existsSync(configDir);
-
-  let hasBin = false;
-  try {
-    execSync('which claude', { stdio: 'ignore' });
-    hasBin = true;
-  } catch {
-    // not found
-  }
+  const hasBin = findExecutableInPath('claude');
 
   const installed = hasBin || hasDir;
   return {
@@ -81,21 +75,14 @@ export function detectClaudeCli(): AiCliStatus {
 
 /**
  * Codex CLI 설치 여부 감지
- * - `which codex` 실행 가능 여부
+ * - PATH에서 `codex` 실행 파일 존재 여부
  * - `~/.codex/` 디렉토리 존재 여부
  * 둘 중 하나만 true면 installed: true
  */
 export function detectCodexCli(): AiCliStatus {
   const configDir = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
   const hasDir = fs.existsSync(configDir);
-
-  let hasBin = false;
-  try {
-    execSync('which codex', { stdio: 'ignore' });
-    hasBin = true;
-  } catch {
-    // not found
-  }
+  const hasBin = findExecutableInPath('codex');
 
   const installed = hasBin || hasDir;
   return {
@@ -108,7 +95,7 @@ export function detectCodexCli(): AiCliStatus {
 
 /**
  * Antigravity CLI 설치 여부 감지
- * - `which agy` 실행 가능 여부
+ * - PATH에서 `agy` 실행 파일 존재 여부
  * - `~/.gemini/antigravity-cli/` 또는 `~/.antigravity/` 디렉토리 존재 여부
  * 둘 중 하나만 true면 installed: true
  */
@@ -116,14 +103,7 @@ export function detectAntigravityCli(): AiCliStatus {
   const configDir = path.join(os.homedir(), '.gemini', 'antigravity-cli');
   const legacyDir = path.join(os.homedir(), '.antigravity');
   const hasDir = fs.existsSync(configDir) || fs.existsSync(legacyDir);
-
-  let hasBin = false;
-  try {
-    execSync('which agy', { stdio: 'ignore' });
-    hasBin = true;
-  } catch {
-    // not found
-  }
+  const hasBin = findExecutableInPath('agy');
 
   const installed = hasBin || hasDir;
   return {

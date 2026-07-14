@@ -25,7 +25,7 @@ Task(model: "sonnet", prompt: "Implement according to SPEC")
 Must follow `~/.claude/vibe/rules/` (global):
 
 - `core/development-philosophy.md` - Surgical precision
-- `standards/complexity-metrics.md` - Functions ≤20 lines, nesting ≤3 levels
+- `standards/complexity-metrics.md` - Functions ≤50 lines, nesting ≤3 levels
 - `quality/checklist.md` - Quality checklist
 
 ## Process
