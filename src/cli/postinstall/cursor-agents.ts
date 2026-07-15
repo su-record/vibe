@@ -1,11 +1,22 @@
 /**
  * Cursor 에이전트 변환 및 설치
+ *
+ * 통합 리뷰어 2종(code-reviewer, security-reviewer)을 Cursor 서브에이전트로 설치.
+ * (구 12종 리뷰어 매트릭스는 harness-review-2026-07-01 P2-1 에서 통합됨 —
+ *  survivor 에이전트는 goal+constraints 본문이라 Checklist/Output 섹션 파싱 대신
+ *  본문 전체를 그대로 싣는다.)
  */
 
 import path from 'path';
 import fs from 'fs';
 import { ensureDir } from './fs-utils.js';
 import { CURSOR_MODEL_MAPPING } from './constants.js';
+
+/** Cursor 로 내보낼 리뷰어 에이전트 (agents/ 최상위 파일명) */
+const CURSOR_REVIEWER_FILES: ReadonlyArray<string> = [
+  'code-reviewer.md',
+  'security-reviewer.md',
+];
 
 /**
  * VIBE 에이전트를 Cursor 서브에이전트 형식으로 변환
@@ -31,52 +42,16 @@ function convertAgentToCursor(content: string, filename: string): string {
         .slice(0, 3)
     : [];
 
-  // Checklist 섹션 추출 (## Checklist 다음 내용을 ## Output 전까지)
-  const checklistMatch = normalizedContent.match(/## Checklist\s*\n([\s\S]*?)(?=\n## Output)/);
-  const checklist = checklistMatch ? checklistMatch[1].trim() : '';
-
-  // Output Format 추출 (## Output Format 다음 내용을 끝 또는 ## 전까지)
-  const outputMatch = normalizedContent.match(/## Output Format\s*\n([\s\S]*?)(?=\n## |$)/);
-  const outputFormat = outputMatch ? outputMatch[1].trim() : '';
-
-  // Description 생성
   const roleDesc = roleLines.join(', ');
   const descriptions: Record<string, string> = {
-    'security-reviewer': `Security vulnerability expert. ${roleDesc}. OWASP Top 10 verification. Use proactively after code changes involving authentication, user input, or data handling.`,
-    'architecture-reviewer': `Architecture design expert. ${roleDesc}. Use proactively when modifying service layers, dependencies, or module structure.`,
-    'performance-reviewer': `Performance optimization expert. ${roleDesc}. Use proactively after adding loops, database queries, or API calls.`,
-    'complexity-reviewer': `Code complexity analyzer. ${roleDesc}. Use proactively to check function length, nesting depth, cyclomatic complexity.`,
-    'simplicity-reviewer': `Code simplicity advocate. ${roleDesc}. Detects over-engineering. Use proactively after refactoring.`,
-    'data-integrity-reviewer': `Data integrity expert. ${roleDesc}. Validates data flow and state management.`,
-    'test-coverage-reviewer': `Test coverage analyzer. ${roleDesc}. Identifies missing tests. Use proactively after implementing new features.`,
-    'git-history-reviewer': `Git history analyzer. ${roleDesc}. Reviews commit patterns and identifies risky changes.`,
-    'python-reviewer': `Python code expert. ${roleDesc}. Type hints, PEP8 compliance. Use proactively for Python files.`,
-    'typescript-reviewer': `TypeScript code expert. ${roleDesc}. Type safety, modern patterns. Use proactively for .ts/.tsx files.`,
-    'rails-reviewer': `Rails framework expert. ${roleDesc}. MVC patterns, ActiveRecord best practices.`,
-    'react-reviewer': `React framework expert. ${roleDesc}. Hooks, component patterns. Use proactively for React components.`,
+    'code-reviewer': `Parameterized code reviewer (focus: correctness, architecture, performance, complexity, data-integrity, test-coverage, idioms, git-history). ${roleDesc}. Use proactively after code edits with an explicit focus.`,
+    'security-reviewer': `Threat-model-first security reviewer. ${roleDesc}. Use proactively after changes involving authentication, user input, or data handling.`,
   };
   const description =
     descriptions[name] || `${title}. ${roleDesc}. Use proactively after code edits.`;
 
-  // Next Steps 생성
-  const recommendations: Record<string, string[]> = {
-    'security-reviewer': ['architecture-reviewer', 'data-integrity-reviewer'],
-    'architecture-reviewer': ['complexity-reviewer', 'performance-reviewer'],
-    'performance-reviewer': ['complexity-reviewer', 'test-coverage-reviewer'],
-    'complexity-reviewer': ['simplicity-reviewer', 'test-coverage-reviewer'],
-    'simplicity-reviewer': ['architecture-reviewer'],
-    'data-integrity-reviewer': ['security-reviewer', 'test-coverage-reviewer'],
-    'test-coverage-reviewer': ['security-reviewer'],
-    'git-history-reviewer': ['security-reviewer', 'architecture-reviewer'],
-    'python-reviewer': ['security-reviewer', 'test-coverage-reviewer'],
-    'typescript-reviewer': ['security-reviewer', 'react-reviewer', 'test-coverage-reviewer'],
-    'rails-reviewer': ['security-reviewer', 'performance-reviewer'],
-    'react-reviewer': ['typescript-reviewer', 'performance-reviewer'],
-  };
-  const nextAgents = recommendations[name] || ['security-reviewer', 'test-coverage-reviewer'];
-  const nextStepsSection = nextAgents
-    .map((a) => `- For ${a.replace('-reviewer', '')} review: "Use ${a}"`)
-    .join('\n');
+  // 기존 frontmatter 제거 후 본문 유지 (survivor 에이전트는 goal+constraints 본문)
+  const body = normalizedContent.replace(/^---\n[\s\S]*?\n---\n/, '').trim();
 
   return `---
 name: ${name}
@@ -84,32 +59,13 @@ model: ${model}
 description: ${description}
 ---
 
-# ${title}
-
 ## When Invoked
 
 1. Run \`git diff\` to see recent changes
-2. Focus on modified files relevant to this review type
+2. Focus on modified files relevant to this review
 3. Begin review immediately without asking questions
 
-## Role
-
-${roleLines.map((r) => `- ${r}`).join('\n')}
-
-## Checklist
-
-${checklist}
-
-## Output Format
-
-${outputFormat}
-
-## Next Steps
-
-Review complete. Consider these follow-up actions:
-
-${nextStepsSection}
-- All reviews done: Ready to commit
+${body}
 `;
 }
 
@@ -117,29 +73,29 @@ ${nextStepsSection}
  * Cursor 서브에이전트 설치
  */
 export function installCursorAgents(agentsSource: string, cursorAgentsDir: string): void {
-  const reviewDir = path.join(agentsSource, 'review');
-  if (!fs.existsSync(reviewDir)) {
-    console.log(`   ⚠️ agents/review not found: ${reviewDir}`);
+  if (!fs.existsSync(agentsSource)) {
+    console.log(`   ⚠️ agents directory not found: ${agentsSource}`);
     return;
   }
 
   ensureDir(cursorAgentsDir);
 
-  const files = fs.readdirSync(reviewDir).filter((f) => f.endsWith('.md'));
   let installed = 0;
-
-  for (const file of files) {
+  for (const file of CURSOR_REVIEWER_FILES) {
+    const sourcePath = path.join(agentsSource, file);
+    if (!fs.existsSync(sourcePath)) {
+      console.warn(`   ⚠️ Cursor reviewer source missing: ${file}`);
+      continue;
+    }
     try {
-      const sourcePath = path.join(reviewDir, file);
       const content = fs.readFileSync(sourcePath, 'utf-8');
       const cursorContent = convertAgentToCursor(content, file);
-      const destPath = path.join(cursorAgentsDir, file);
-      fs.writeFileSync(destPath, cursorContent, 'utf-8');
+      fs.writeFileSync(path.join(cursorAgentsDir, file), cursorContent, 'utf-8');
       installed++;
     } catch (err) {
       console.warn(`   ⚠️ Failed to convert ${file}: ${(err as Error).message}`);
     }
   }
 
-  console.log(`   📦 Cursor agents: ${installed}/${files.length} installed`);
+  console.log(`   📦 Cursor agents: ${installed}/${CURSOR_REVIEWER_FILES.length} installed`);
 }

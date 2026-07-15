@@ -42,60 +42,58 @@ interface AgentMapping {
 const STACK_AGENT_MAP: Record<string, AgentMapping> = {
   'typescript-react': {
     high: [
-      { name: 'react-reviewer', category: 'review', priority: 'high', rationale: 'React component patterns and hooks validation' },
-      { name: 'typescript-reviewer', category: 'review', priority: 'high', rationale: 'TypeScript type safety enforcement' },
+      { name: 'code-reviewer (focus: idioms)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: idioms — React component patterns, hooks, and TypeScript type safety' },
     ],
     medium: [
-      { name: 'performance-reviewer', category: 'review', priority: 'medium', rationale: 'React render optimization' },
+      { name: 'code-reviewer (focus: performance)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: performance — React render optimization' },
     ],
   },
   'typescript-nextjs': {
     high: [
-      { name: 'react-reviewer', category: 'review', priority: 'high', rationale: 'React/Next.js patterns and SSR validation' },
-      { name: 'typescript-reviewer', category: 'review', priority: 'high', rationale: 'TypeScript type safety enforcement' },
+      { name: 'code-reviewer (focus: idioms)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: idioms — React/Next.js patterns, SSR, and TypeScript type safety' },
     ],
     medium: [
-      { name: 'performance-reviewer', category: 'review', priority: 'medium', rationale: 'SSR/ISR performance optimization' },
+      { name: 'code-reviewer (focus: performance)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: performance — SSR/ISR performance optimization' },
     ],
   },
   'typescript-node': {
     high: [
-      { name: 'typescript-reviewer', category: 'review', priority: 'high', rationale: 'TypeScript type safety enforcement' },
-      { name: 'data-integrity-reviewer', category: 'review', priority: 'high', rationale: 'Data validation and transaction safety' },
+      { name: 'code-reviewer (focus: idioms)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: idioms — TypeScript type safety enforcement' },
+      { name: 'code-reviewer (focus: data-integrity)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: data-integrity — data validation and transaction safety' },
     ],
     medium: [
-      { name: 'test-coverage-reviewer', category: 'review', priority: 'medium', rationale: 'Backend test coverage assurance' },
+      { name: 'code-reviewer (focus: test-coverage)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: test-coverage — backend test coverage assurance' },
     ],
   },
   'typescript-nestjs': {
     high: [
-      { name: 'typescript-reviewer', category: 'review', priority: 'high', rationale: 'TypeScript type safety enforcement' },
-      { name: 'data-integrity-reviewer', category: 'review', priority: 'high', rationale: 'Data validation and transaction safety' },
+      { name: 'code-reviewer (focus: idioms)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: idioms — TypeScript type safety enforcement' },
+      { name: 'code-reviewer (focus: data-integrity)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: data-integrity — data validation and transaction safety' },
     ],
     medium: [
-      { name: 'test-coverage-reviewer', category: 'review', priority: 'medium', rationale: 'Backend test coverage assurance' },
+      { name: 'code-reviewer (focus: test-coverage)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: test-coverage — backend test coverage assurance' },
     ],
   },
   'python-fastapi': {
     high: [
-      { name: 'python-reviewer', category: 'review', priority: 'high', rationale: 'Python PEP 8 and type hints validation' },
+      { name: 'code-reviewer (focus: idioms)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: idioms — Python PEP 8 and type hints validation' },
     ],
     medium: [
-      { name: 'test-coverage-reviewer', category: 'review', priority: 'medium', rationale: 'API test coverage assurance' },
+      { name: 'code-reviewer (focus: test-coverage)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: test-coverage — API test coverage assurance' },
     ],
   },
   'python-django': {
     high: [
-      { name: 'python-reviewer', category: 'review', priority: 'high', rationale: 'Python PEP 8 and Django patterns validation' },
+      { name: 'code-reviewer (focus: idioms)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: idioms — Python PEP 8 and Django patterns validation' },
     ],
     medium: [
-      { name: 'test-coverage-reviewer', category: 'review', priority: 'medium', rationale: 'Django test coverage assurance' },
+      { name: 'code-reviewer (focus: test-coverage)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: test-coverage — Django test coverage assurance' },
     ],
   },
   'ruby-rails': {
     high: [
-      { name: 'rails-reviewer', category: 'review', priority: 'high', rationale: 'Rails Way compliance and ActiveRecord patterns' },
-      { name: 'data-integrity-reviewer', category: 'review', priority: 'high', rationale: 'Migration safety and transaction management' },
+      { name: 'code-reviewer (focus: idioms)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: idioms — Rails Way compliance and ActiveRecord patterns' },
+      { name: 'code-reviewer (focus: data-integrity)', category: 'review', priority: 'high', rationale: 'code-reviewer with focus: data-integrity — migration safety and transaction management' },
     ],
     medium: [
       { name: 'security-reviewer', category: 'review', priority: 'medium', rationale: 'Rails security best practices' },
@@ -105,9 +103,9 @@ const STACK_AGENT_MAP: Record<string, AgentMapping> = {
 
 const UNIVERSAL_AGENTS: RecommendedAgent[] = [
   { name: 'security-reviewer', category: 'review', priority: 'medium', rationale: 'OWASP Top 10 vulnerability detection' },
-  { name: 'architecture-reviewer', category: 'review', priority: 'medium', rationale: 'Layer violations and SOLID principles' },
-  { name: 'simplicity-reviewer', category: 'review', priority: 'medium', rationale: 'Over-abstraction and YAGNI detection' },
-  { name: 'git-history-reviewer', category: 'review', priority: 'medium', rationale: 'Risk pattern detection from commit history' },
+  { name: 'code-reviewer (focus: architecture)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: architecture — layer violations and SOLID principles' },
+  { name: 'code-reviewer (focus: complexity)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: complexity — over-abstraction and YAGNI detection' },
+  { name: 'code-reviewer (focus: git-history)', category: 'review', priority: 'medium', rationale: 'code-reviewer with focus: git-history — risk pattern detection from commit history' },
 ];
 
 // ============================================================================

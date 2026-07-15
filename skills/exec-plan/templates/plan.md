@@ -144,4 +144,4 @@ save_memory("execplan-{{FEATURE_NAME}}", {
 })
 ```
 
-Resume: `/vibe.utils --continue` → load this file.
+Resume: `/vibe.continue` → load this file.

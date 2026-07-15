@@ -24,8 +24,14 @@ The rendered DOM is the source of truth for markup. Screenshots are for pixel ve
 
 ```
 1. Do NOT generate CSS values by guessing or eyeballing screenshots.
-   ✅ Use clone-extract.js computed CSS output as-is.
-   ❌ Do NOT write CSS values directly inside scoped <style> blocks.
+   ✅ clone-to-scss.js output is a DRAFT (skeleton), not a frozen artifact. You MAY
+      rewrite SCSS values/selectors — but ONLY with evidence cited from computed.json /
+      states.json / behaviors.json (value correction, dedupe, selector restructuring).
+   ✅ clone-validate.js PASS is the sole judge of value correctness — not self-report.
+   ❌ Do NOT invent values with no extraction evidence ("looks like 18px" is forbidden).
+   ❌ Do NOT write CSS values directly inside scoped <style> blocks — style LOCATION
+      rule: all values live in styles/{feature}/ SCSS (value authority and style
+      location are separate rules; both hold).
 
 2. Do NOT hotlink remote assets. All images/fonts must be downloaded and rewritten.
 
@@ -34,6 +40,22 @@ The rendered DOM is the source of truth for markup. Screenshots are for pixel ve
 4. Do NOT copy textual content verbatim from copyrighted sources for production use.
    This skill is for layout/markup learning ("클론 코딩"). Replace text with placeholders
    or user-provided copy when shipping a real product.
+   Exception: `--real-content` — the user confirms (once, explicitly) they own the site
+   or have permission. Then keep text verbatim; clone-spec.js is invoked with
+   `--real-content` so specs mark copy as verbatim.
+
+5. Do NOT build a section without confirming its interaction model. The model in
+   sections.json is a static-DOM heuristic — verify scroll-driven vs click-driven vs
+   time-driven vs hover against the live site. Misidentifying it is the #1 clone failure mode.
+
+6. Do NOT ship default-state-only. Implement every harvested state (hover/focus/active/open/
+   tab-switch) from states.json / the section spec.
+
+7. Do NOT ignore behaviors.json. The ACTIVE interaction sweep (scroll-state diffs,
+   click-driven tab content-swap detection, hover diffs, in-view entrance animations,
+   time-driven mutation candidates, smooth-scroll-lib detection) catches JS-set state
+   that static CSS harvesting is blind to. When the spec's "Dynamic behaviors" block
+   conflicts with the static interaction heuristic, the active capture wins.
 ```
 
 ## Full Flow
@@ -43,38 +65,21 @@ Input: a URL (or multiple URLs for multi-page clones)
 
 → Phase 0: Setup (stack detection, feature naming, working dir)
 → Phase 1: Capture (Puppeteer → rendered HTML + computed CSS + screenshots + assets)
-→ Phase 2: Refine (DOM → sections.json per breakpoint)
-→ Phase 3: Scaffold (sections.json → SCSS auto-gen + Claude-authored HTML/components)
+→ Phase 2: Refine (DOM → sections.json per breakpoint; + interaction model + states)
+→ Phase 2.5: Foundation (fonts / favicon / OG / SVG icons — sequential, before any section)
+→ Phase 3: Scaffold (spec gate → SCSS draft + builder dispatch, parallel per section)
+→ Phase 3C: Responsive merge (clone-merge-responsive.js — mobile-first @media)
 → Phase 4: Compile gate
-→ Phase 5: Pixel verification loop
-
-Working directory:
-  /tmp/{feature}/
-  ├── mo/ (375×812)  — rendered.html, computed.json, screenshot.png, assets/, sections.json
-  ├── pc/ (1440×900) — rendered.html, computed.json, screenshot.png, assets/, sections.json
-  └── tokens.json    — extracted design tokens (colors/fonts/spacing)
-
-Code output: placed directly in the project directory per detected stack
-  components/{feature}/, styles/{feature}/, public/images/{feature}/
+→ Phase 5: Pixel verification loop (BOTH viewports after merge)
 ```
+
+> Read `references/setup-and-layout.md` for the working-directory layout and code-output paths.
 
 ---
 
 ## Phase 0: Setup
 
-```
-1. Stack detection:
-   - .vibe/config.json → stack (react/vue/next/svelte/vanilla, scss/tailwind/css-modules)
-   - Fallback: package.json deps
-2. Feature name: URL hostname → kebab-case (e.g. stripe.com → stripe-clone)
-   - User may override with --name=<custom>
-3. Directories:
-   - components/{feature}/, styles/{feature}/, public/images/{feature}/
-4. Component indexing → /tmp/{feature}/component-index.json
-   (scan up to 50 existing components, extract props/slots/classes, within 2 minutes)
-5. Design token scan → /tmp/{feature}/project-tokens.json
-   (SCSS > CSS Variables > Tailwind > CSS-in-JS)
-```
+> Read `references/setup-and-layout.md` for the full Phase 0 setup steps (stack detection, feature naming, directories, component indexing, design token scan).
 
 ---
 
@@ -104,30 +109,7 @@ node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <URL> \
 ⛔ **Do NOT use WebFetch or curl** — they cannot render JS-driven SPAs.
 ✅ Use clone-extract.js. If output is unsatisfactory, modify the script.
 
-### Output per breakpoint
-
-```
-/tmp/{feature}/{bp}/
-  ├── rendered.html       — final DOM after JS execution
-  ├── computed.json       — per-element computed CSS + bounding box
-  ├── screenshot.png      — full-page screenshot
-  ├── assets/
-  │   ├── images/         — all <img>, background-image, <picture> sources
-  │   └── fonts/          — @font-face srcs
-  └── asset-map.json      — remote URL → local path mapping
-```
-
-### Capture rules
-
-```
-1. Wait for `networkidle2` (no in-flight requests for 500ms) before snapshot
-2. Scroll to bottom slowly to trigger lazy-loaded content
-3. Resolve all <img src>, srcset, and computed background-image URLs
-4. Resolve @font-face src() URLs from all stylesheets
-5. Download assets in parallel (concurrency=8), preserve original extensions
-6. Rewrite asset URLs in rendered.html and computed.json to local paths
-7. Strip inline analytics/tracking scripts before saving rendered.html
-```
+> Read `references/capture-rules.md` for the full per-breakpoint output directory listing and the deterministic capture rule set (networkidle wait, asset resolution, states/behaviors harvesting, SEO asset harvest).
 
 ---
 
@@ -136,11 +118,12 @@ node {{VIBE_PATH}}/hooks/scripts/clone-extract.js capture <URL> \
 ### BLOCKING Command — Writing custom refine scripts is forbidden
 
 ```bash
-# MO
+# MO  (--states is optional — auto-resolved as states.json next to computed.json)
 node {{VIBE_PATH}}/hooks/scripts/clone-refine.js \
   /tmp/{feature}/mo/rendered.html \
   /tmp/{feature}/mo/computed.json \
   --out=/tmp/{feature}/mo/sections.json \
+  --states=/tmp/{feature}/mo/states.json \
   --bp=mo
 
 # PC
@@ -148,6 +131,7 @@ node {{VIBE_PATH}}/hooks/scripts/clone-refine.js \
   /tmp/{feature}/pc/rendered.html \
   /tmp/{feature}/pc/computed.json \
   --out=/tmp/{feature}/pc/sections.json \
+  --states=/tmp/{feature}/pc/states.json \
   --bp=pc
 ```
 
@@ -155,46 +139,26 @@ node {{VIBE_PATH}}/hooks/scripts/clone-refine.js \
 ⛔ **Do NOT parse rendered.html with custom Python/Node scripts.**
 ✅ Use clone-refine.js output as-is. If unsatisfactory, modify the script.
 
-### Refinement rules
+> Read `references/refine-rules.md` for the full refinement rule set and the sections.json output schema.
+
+---
+
+## Phase 2.5: Foundation ← sequential, BEFORE any section build
+
+Nothing renders right until the foundation exists. Do this yourself (not delegated) — it
+touches shared files:
 
 ```
-Refinement applied when converting rendered.html + computed.json → sections.json:
-  1. Strip <script>, <noscript>, <style>, tracking pixels
-  2. Strip nodes with display:none, visibility:hidden, opacity:0, size 0
-  3. Detect sections: <header>, <nav>, top-level <section>/<main> children, <footer>
-     Fallback: top-level children of <body> with height > 100px
-  4. Detect repeated patterns (sibling nodes with same tag+class signature, count >= 3)
-     → mark as component candidates
-  5. Extract design tokens:
-     - colors: unique color/background-color values, sorted by frequency
-     - typography: font-family/size/weight combinations
-     - spacing: padding/margin values (px), bucketed to nearest 4px
-  6. Background images (background-image: url) → images.bg
-  7. Inline <img> → images.content
-  8. Keep CSS subset: layout (display/flex/grid/position/inset/margin/padding/width/height/gap),
-     typography (font-*, line-height, letter-spacing, text-*, color),
-     decoration (background, border, border-radius, box-shadow, opacity),
-     transform/transition
-```
-
-### Output
-
-```
-/tmp/{feature}/{bp}/sections.json:
-  {
-    meta: { feature, url, viewport, bp },
-    tokens: { colors: [...], typography: [...], spacing: [...] },
-    sections: [
-      {
-        name: "Header" | "Hero" | "Features" | ...,
-        nodeRef, tag, size, css,
-        text,                 // text content (placeholder candidates)
-        components: [...],    // detected repeated patterns
-        children: [...],      // full recursive subtree
-        images: { bg, content: [...] }
-      }
-    ]
-  }
+1. Fonts: verify _base.scss @font-face srcs point at downloaded assets/fonts/ files.
+   Next.js stack → wire via next/font/local in the layout instead of raw @font-face.
+2. Favicon / OG / manifest: copy assets/seo/* → public/ (project convention path),
+   wire metadata (layout.tsx metadata / <head>) to the local files.
+3. SVG icons: collect inline <svg> from rendered.html, dedupe by path data,
+   emit one stack-appropriate icon module (e.g. components/{feature}/icons.tsx).
+   Name by visual function (SearchIcon, ArrowRightIcon, LogoIcon).
+4. Global behaviors from behaviors.json: scrollLib detected → install/wire page-level
+   (Lenis etc.); global keyframes/scroll-snap → styles/{feature}/_shared.scss.
+5. Verify: compile passes before moving on.
 ```
 
 ---
@@ -207,63 +171,59 @@ Refinement applied when converting rendered.html + computed.json → sections.js
 ### BLOCKING Command — SCSS must only use script output
 
 ```bash
-# Step A: Auto-generate SCSS skeleton (run once per BP)
+# Step 0: Generate per-section build-contract specs (run once per BP)
+node {{VIBE_PATH}}/hooks/scripts/clone-spec.js \
+  /tmp/{feature}/{bp}/sections.json \
+  --out=/path/to/project/components/{feature}/_specs/{bp}/ \
+  --feature={feature} [--real-content]
+
+# Step A: Auto-generate SCSS draft (run once per BP — note the per-BP out dir)
 node {{VIBE_PATH}}/hooks/scripts/clone-to-scss.js \
   /tmp/{feature}/{bp}/sections.json \
-  --out=/path/to/project/styles/{feature}/ \
+  --out=/path/to/project/styles/{feature}/{bp}/ \
   --token-file=/tmp/{feature}/project-tokens.json
 
 # Step B: Per-section validation (after writing each section's component code)
 node {{VIBE_PATH}}/hooks/scripts/clone-validate.js \
-  /path/to/project/styles/{feature}/ \
+  /path/to/project/styles/{feature}/{bp}/ \
   /tmp/{feature}/{bp}/sections.json \
   --section={SectionName}
 ```
 
-⛔ **Writing SCSS files directly without calling clone-to-scss.js invalidates Phase 3.**
-⛔ **Do NOT write custom SCSS generation scripts.**
-⛔ **Do NOT proceed to the next section without a clone-validate.js PASS.**
-✅ Use clone-to-scss.js output as-is. If unsatisfactory, modify the script.
+⛔ **No section is built without a completed spec.** Step 0 emits `_specs/{Section}.spec.md`
+   (interaction model + **active-capture Dynamic behaviors** (scroll/tab/hover/in-view/
+   time-driven/scroll-lib) + states + computed CSS + assets + text + checklist).
+   clone-spec.js auto-loads `behaviors.json` from the sections.json dir and attaches matching
+   behaviors per section. Before dispatching a section's builder, Claude reviews its spec and
+   resolves every `TODO` (confirm interaction model, list states to implement, choose tags,
+   replace copyrighted text — skipped with --real-content). The spec is the contract AND the
+   audit trail — it forces extraction rigor before any code is written.
+⛔ **clone-to-scss.js must run first (Step A) — its output is the DRAFT every section starts
+   from.** After that, SCSS edits are allowed per Immutable Rule 1 (evidence-cited only);
+   clone-validate.js PASS is the judge.
+⛔ **Do NOT write custom SCSS / spec generation scripts.**
+⛔ **Do NOT proceed past a section without a clone-validate.js PASS for it.**
 
-```
-Phase 3A: MO Scaffold
+Phase 3A: MO Scaffold — parallel builder dispatch
   Input: /tmp/{feature}/mo/sections.json
-  ⛔ No parallelism. Process one section at a time:
-    1. Read the target section from sections.json
-    2. Map component candidates against component-index.json
-       ├─ Match → import existing
-       └─ No match → create new in components/{feature}/
-    3. clone-to-scss.js → auto-generate SCSS skeleton (computed values as-is) — Step A once
-    4. Claude: HTML structure + semantic tags + framework-specific component file
-       ⛔ No CSS written directly in <style> blocks — only @import/@use allowed
-       Framework mapping:
-         - React/Next → .tsx with CSS Modules or styled-components per stack
-         - Vue/Nuxt   → .vue with scoped <style lang="scss"> @import only
-         - Svelte     → .svelte with <style> @import only
-         - Vanilla    → .html + linked .scss
-    5. Asset references → public/images/{feature}/ (already populated in Phase 1)
-    6. clone-validate.js → compare SCSS vs sections.json — Step B
-       ├─ PASS → next section
-       └─ FAIL → fix discrepancies → re-run step 6 (loop until P1=0, no round cap)
   → Phase 4 (MO compile) → Phase 5 (MO pixel verification)
 
 Phase 3B: PC Scaffold
-  Same process as MO, input /tmp/{feature}/pc/sections.json
+  Same process as MO, input /tmp/{feature}/pc/sections.json → styles/{feature}/pc/
   → Phase 4 (PC compile) → Phase 5 (PC pixel verification)
 
-Phase 3C: Responsive Integration (after both MO+PC pass verification)
-  → Merge MO+PC styles into @media-based responsive layout (separate flow, TODO)
-
-Claude's role (restricted):
-  ✅ Component candidates: decide which patterns become reusable components
-  ✅ HTML semantics: section/h1/p/button/nav tag selection
-  ✅ Text replacement: substitute copyrighted copy with placeholders or user-supplied text
-  ✅ Interactions: hover/focus states, click handlers, conditional rendering
-  ❌ Do NOT modify SCSS CSS values (use clone-to-scss.js output as-is)
-  ❌ Do NOT write CSS directly in <style> blocks
-  ❌ Do NOT use vw/clamp/@media or create custom mixins in Phase 3A/3B
-  ❌ Do NOT hotlink remote URLs — all assets must use local public/images/ paths
+Phase 3C: Responsive Integration (after both MO+PC pass Phase 5)
+  1. node {{VIBE_PATH}}/hooks/scripts/clone-merge-responsive.js \
+       --mo=/path/to/project/styles/{feature}/mo/ \
+       --pc=/path/to/project/styles/{feature}/pc/ \
+       --out=/path/to/project/styles/{feature}/ \
+       [--breakpoint=1024]
+     → mobile-first merge: MO declarations = base, PC diffs → @media (min-width) block
+  → Phase 4 (compile) → Phase 5 at BOTH viewports against each BP's screenshot.
+     ⛔ The clone is NOT complete until the MERGED build passes Phase 5 at both.
 ```
+
+> Read `references/scaffold-phases.md` for the full Phase 3A prep/dispatch/merge builder contract (framework mapping, 150-line split rule, clone-validate.js PASS/FAIL loop detail), Phase 3C steps 2–3 (import switch, pc-only/mo-only selector review), and Claude's role checklist.
 
 ---
 
@@ -321,6 +281,9 @@ Termination:
   ultrawork mode: on stuck, record TODO without prompting and complete
 
 Responsive: after MO verification → change viewport → repeat against PC screenshot
+Post-merge (Phase 3C): re-run at BOTH viewports (375×812 vs mo/screenshot.png,
+  1440×900 vs pc/screenshot.png) — either failing means the merge regressed; fix the
+  merged SCSS (evidence: the per-BP sections.json), never by re-guessing values
 Cleanup: shut down browser + dev server
 
 ⛔ "Completion summary" output only allowed after Phase 5 completes.
@@ -328,34 +291,6 @@ Cleanup: shut down browser + dev server
 
 ---
 
-## Legal & Ethical Notes
+## Legal, Ethical & Error Recovery Reference
 
-```
-This skill is intended for:
-  ✅ "Clone coding" learning exercises (markup/layout study)
-  ✅ Rebuilding the user's own previously-deployed sites
-  ✅ Authorized redesigns where the user has rights to the source
-
-NOT intended for:
-  ❌ Republishing copyrighted content (text, images, logos) without permission
-  ❌ Deceptive look-alike sites (phishing, brand impersonation)
-  ❌ Bypassing robots.txt or rate-limiting protections
-
-Claude must:
-  - Replace copyrighted text content with placeholders (e.g. "[Lorem ipsum]") by default
-  - Skip and warn when robots.txt disallows fetching the target path
-  - Refuse if the user's stated intent is brand impersonation or deception
-```
-
----
-
-## Error Recovery
-
-| Failure | Recovery |
-|---------|----------|
-| clone-extract.js Puppeteer launch failure | Verify Node ≥18 and that Chromium is installed (`npx puppeteer browsers install chrome`). Retry once. |
-| Target site blocks headless (403/Cloudflare) | Retry with `--stealth` flag (uses puppeteer-extra stealth plugin). If still blocked, report to user. |
-| Asset download 404 | Log to asset-map.json with `status: missing`. Use a 1×1 transparent placeholder. Continue. |
-| robots.txt disallows path | Halt Phase 1. Inform user; require explicit `--ignore-robots` flag to proceed. |
-| clone-refine.js produces empty sections | Site likely uses Shadow DOM or canvas rendering. Report and ask whether to fall back to screenshot-only mode. |
-| Pixel diff stuck > 0.05 after 5 rounds | Likely font fallback or anti-aliasing. Report metric, allow user to accept threshold. |
+> Read `references/legal-and-error-recovery.md` for the full legal/ethical usage notes (intended use, prohibited use, --real-content flow) and the Error Recovery troubleshooting table.

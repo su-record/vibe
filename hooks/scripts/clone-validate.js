@@ -34,10 +34,6 @@ function parseArgs(argv) {
 }
 
 const { stylesDir, sectionsPath, opts } = parseArgs(process.argv);
-if (!stylesDir || !sectionsPath) {
-  console.error('Usage: node clone-validate.js <styles-dir> <sections.json> [--section=<name>]');
-  process.exit(2);
-}
 
 // ─── Minimal SCSS parser ────────────────────────────────────────────
 // Strips comments, expands `&::pseudo` (one level), flattens nested rules.
@@ -272,9 +268,19 @@ function main() {
   process.exit(0);
 }
 
-try { main(); }
-catch (e) {
-  console.error(`[clone-validate] FAIL: ${e.message}`);
-  if (process.env.DEBUG) console.error(e.stack);
-  process.exit(2);
+// isMain 가드 — clone-merge-responsive.js가 parseScss를 import할 때 main()이 돌면 안 된다
+const isMain = process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('clone-validate.js');
+if (isMain) {
+  if (!stylesDir || !sectionsPath) {
+    console.error('Usage: node clone-validate.js <styles-dir> <sections.json> [--section=<name>]');
+    process.exit(2);
+  }
+  try { main(); }
+  catch (e) {
+    console.error(`[clone-validate] FAIL: ${e.message}`);
+    if (process.env.DEBUG) console.error(e.stack);
+    process.exit(2);
+  }
 }
+
+export { parseScss, normalize, compareValue };

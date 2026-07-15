@@ -3,7 +3,7 @@ name: git-worktree
 invocation: [auto]
 tier: optional
 description: "Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously."
-triggers: [worktree, PR review, hotfix, parallel branch, multiple branches]
+triggers: [worktree, hotfix, parallel branch, multiple branches]
 priority: 50
 ---
 

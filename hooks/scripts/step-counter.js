@@ -25,6 +25,7 @@
 import fs from 'fs';
 import path from 'path';
 import { PROJECT_DIR, projectVibePath } from './utils.js';
+import { buildCliCtx } from './lib/hook-context.js';
 
 const METRICS_DIR = projectVibePath(PROJECT_DIR, 'metrics');
 const ANTI_PATTERNS_DIR = projectVibePath(PROJECT_DIR, 'anti-patterns');
@@ -44,36 +45,14 @@ const READ_ONLY_TOOLS = new Set([
   'TodoWrite', 'ToolSearch', 'ListMcpResourcesTool',
 ]);
 
-// ─────────────────────────────────────────────────────
-// stdin / env 에서 PostToolUse payload 추출
-// ─────────────────────────────────────────────────────
-function readStdinSync() {
+function extractTargetFile(filePath) {
+  if (!filePath) return null;
   try {
-    if (process.stdin.isTTY) return null;
-    const buf = Buffer.alloc(65536);
-    const bytesRead = fs.readSync(0, buf, 0, buf.length, null);
-    if (bytesRead > 0) return JSON.parse(buf.toString('utf-8', 0, bytesRead));
-  } catch { /* ignore */ }
-  return null;
-}
-
-function parseToolInput(raw) {
-  if (!raw) return {};
-  if (typeof raw === 'string') {
-    try { return JSON.parse(raw); } catch { return {}; }
-  }
-  return raw;
-}
-
-function extractTargetFile(toolInput) {
-  const fp = toolInput.file_path || toolInput.notebook_path || toolInput.path || null;
-  if (!fp) return null;
-  try {
-    const abs = path.isAbsolute(fp) ? fp : path.resolve(PROJECT_DIR, fp);
+    const abs = path.isAbsolute(filePath) ? filePath : path.resolve(PROJECT_DIR, filePath);
     const rel = path.relative(path.resolve(PROJECT_DIR), abs).replace(/\\/g, '/');
-    return rel || path.basename(fp);
+    return rel || path.basename(filePath);
   } catch {
-    return fp;
+    return filePath;
   }
 }
 
@@ -180,19 +159,18 @@ function bumpCounter(toolName, currentLineCount) {
 // 책임 2: current-run.jsonl append + error_category 채움
 // 항상 즉시 append — 스로틀 없음 (3-fail detector, recipe-extractor 가 소비)
 // ─────────────────────────────────────────────────────
-function appendJsonl(stdinPayload) {
-  const toolName = stdinPayload?.tool_name || process.argv[2] || '';
+function appendJsonl(ctx) {
+  const toolName = ctx.toolName;
   if (!toolName) return null;
 
-  const toolInput = parseToolInput(stdinPayload?.tool_input ?? process.env.TOOL_INPUT);
-  const ok = !isResponseError(stdinPayload?.tool_response);
-  const errorCategory = ok ? null : classifyError(stdinPayload?.tool_response);
+  const ok = !isResponseError(ctx.payload?.tool_response);
+  const errorCategory = ok ? null : classifyError(ctx.payload?.tool_response);
 
   const record = {
     ts: new Date().toISOString(),
     tool: toolName,
     ok,
-    target_file: extractTargetFile(toolInput),
+    target_file: extractTargetFile(ctx.filePath),
     error_category: errorCategory,
   };
 
@@ -214,18 +192,27 @@ function appendJsonl(stdinPayload) {
 }
 
 /**
- * jsonl 의 현재 라인 수를 반환 (stat 으로만 — 전체 파일 읽기 없음).
- * 경합 안전 — 정확한 값이 아니어도 스로틀 판단에 충분하다.
+ * current-run.jsonl 을 1회만 읽어 (a) 스로틀 판단용 총 라인 수와
+ * (b) 3-fail detector 용 최근 FAIL_WINDOW 줄을 함께 파생한다.
+ *
+ * 이전에는 jsonlLineCount()·readTailWindow() 가 각자 파일 전체를 다시 읽어
+ * 실패 이벤트마다 이벤트당 최대 2회 풀리드가 발생했다 — 여기서 1회로 통합.
+ * 파일은 회전 상한(2MB / MAX_JSONL_LINES)을 벗어나지 않도록 유지되므로
+ * (appendJsonl의 회전 로직 참고) 이 read 로도 기존과 동일하게 정확한 라인 수를
+ * 얻는다 — 스로틀/3-fail 판정 결과는 회전 상한 이내 파일에서 이전과 동일하다.
+ * @returns {{ lineCount: number, tail: object[] }}
  */
-function jsonlLineCount() {
+function readJsonlState() {
+  let lines;
   try {
-    // 라인 수 근사: 파일 크기 / 평균 라인 길이(100바이트) — 정확도 불필요
-    // 실제 라인 수는 appendJsonl 직후 여기서 읽으면 +1 반영됨
-    const content = fs.readFileSync(CURRENT_RUN_JSONL, 'utf-8');
-    return content.split('\n').filter(Boolean).length;
+    lines = fs.readFileSync(CURRENT_RUN_JSONL, 'utf-8').split('\n').filter(Boolean);
   } catch {
-    return 1; // 파일 없음 → 첫 이벤트로 간주
+    return { lineCount: 1, tail: [] }; // 파일 없음 → 첫 이벤트로 간주
   }
+  const tail = lines.slice(-FAIL_WINDOW).map((l) => {
+    try { return JSON.parse(l); } catch { return null; }
+  }).filter(Boolean);
+  return { lineCount: lines.length, tail };
 }
 
 // ─────────────────────────────────────────────────────
@@ -248,16 +235,7 @@ function fileSlug(targetFile) {
   return targetFile.replace(/[\/\.]/g, '-');
 }
 
-function readTailWindow() {
-  if (!fs.existsSync(CURRENT_RUN_JSONL)) return [];
-  const raw = fs.readFileSync(CURRENT_RUN_JSONL, 'utf-8').split('\n').filter(Boolean);
-  return raw.slice(-FAIL_WINDOW).map((l) => {
-    try { return JSON.parse(l); } catch { return null; }
-  }).filter(Boolean);
-}
-
-function detectThreeFail() {
-  const window = readTailWindow();
+function detectThreeFail(window) {
   const groups = new Map();
   for (const r of window) {
     if (r.ok || !r.error_category) continue;
@@ -318,8 +296,8 @@ try {
     fs.mkdirSync(METRICS_DIR, { recursive: true });
   }
 
-  const stdinPayload = readStdinSync();
-  const toolName = stdinPayload?.tool_name || process.argv[2] || '';
+  const ctx = buildCliCtx();
+  const toolName = ctx.toolName;
 
   // defense-in-depth: 읽기 전용 툴은 조기 종료 (matcher 단에서 이미 제거됨)
   if (toolName && READ_ONLY_TOOLS.has(toolName)) {
@@ -328,16 +306,16 @@ try {
 
   // 책임 2를 먼저 실행 — jsonl 라인 수가 bumpCounter 스로틀 판단에 쓰임
   let lastRecord = null;
-  try { lastRecord = appendJsonl(stdinPayload); } catch { /* 로깅 실패 무시 */ }
+  try { lastRecord = appendJsonl(ctx); } catch { /* 로깅 실패 무시 */ }
 
-  // 책임 1: jsonl append 후 라인 수로 스로틀 판단
-  const lineCount = jsonlLineCount();
+  // 책임 1: jsonl append 후 라인 수로 스로틀 판단 (책임 3의 tail window 와 1회 읽기 공유)
+  const { lineCount, tail } = readJsonlState();
   try { bumpCounter(toolName, lineCount); } catch { /* 카운터 실패 무시 */ }
 
   // 책임 3
   try {
     if (lastRecord && !lastRecord.ok && lastRecord.error_category) {
-      const trip = detectThreeFail();
+      const trip = detectThreeFail(tail);
       if (trip) writeAntiPattern(trip);
     }
   } catch { /* anti-pattern 작성 실패 무시 */ }

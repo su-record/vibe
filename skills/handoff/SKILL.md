@@ -5,7 +5,7 @@ invocation: [auto]
 tier: standard
 description: "Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords."
 triggers: [handoff, handover, session cleanup, session end, context save]
-priority: 70
+priority: 60
 ---
 
 # Handoff — Session Handover Document
@@ -16,9 +16,9 @@ Record work status before session end so the next session can pick up immediatel
 
 A file that records the current work status before context reset. Reading this file in a new session allows immediate continuation.
 
-### Difference from `/vibe.utils --continue`
+### Difference from `/vibe.continue`
 
-| Item | `/vibe.utils --continue` | Handoff |
+| Item | `/vibe.continue` | Handoff |
 |------|--------------------------|---------|
 | Method | Automatic session context restore | Manual handover document |
 | Includes | Memory + session state | Work progress + notes + file list |
@@ -98,7 +98,7 @@ Read HANDOFF.md and continue working
 Or use alongside VIBE auto-restore:
 
 ```
-/vibe.utils --continue
+/vibe.continue
 ```
 
 In this case, saved decisions are also restored via `core_recall_memory`.

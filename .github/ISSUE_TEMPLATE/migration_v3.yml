@@ -1,0 +1,42 @@
+name: "🔀 v2 → v3 마이그레이션 문제 / Migration Issue"
+description: "v3 업그레이드 후 뭔가 사라졌거나 깨졌을 때 / Something broke or disappeared after upgrading to v3"
+labels: ["bug", "migration-v3"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        v3는 대규모 정리 릴리스입니다. 아래 변경은 **의도된 동작**입니다:
+        - `interview` / `plan` / `spec-review` 스킬 삭제 → `/vibe.spec` 단일 패스로 통합
+        - `techdebt` / `systematic-debugging` / `typescript-advanced-types` / `rob-pike` / `yagni-ladder` 등 삭제·병합 (→ `restraint`)
+        - 12종 리뷰어 에이전트 → `code-reviewer`(focus 파라미터) + `security-reviewer`
+        - teams / explorer 계열 에이전트 삭제 → 네이티브 병렬 서브에이전트 사용
+        - `./orchestrator`, `./tools/semantic` 패키지 export 제거
+        - 매직 키워드 배너(`ralph`, `ultrawork` 등) 제거 — 별칭은 여전히 해석되지만 배너는 안 뜹니다
+        - scope-guard 기본 off (opt-in: `.vibe/config.json`에 `scopeGuard.enabled: true`)
+
+        위 목록에 없는 파손이라면 아래를 채워주세요.
+
+  - type: input
+    id: versions
+    attributes:
+      label: "버전 / Versions"
+      placeholder: "v2.16.4 → v3.0.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-broke
+    attributes:
+      label: "무엇이 깨졌나 / What broke"
+      description: "업그레이드 방법(`vibe upgrade` / npm i -g)과 증상. `vibe update` 실행 여부도 적어주세요."
+    validations:
+      required: true
+
+  - type: textarea
+    id: selftest
+    attributes:
+      label: "self-test 리포트 / Self-test report"
+      description: "`/vibe.test` 실행 후 `~/.vibe/test-reports/` 최신 리포트 붙여넣기"
+      render: markdown
+    validations:
+      required: true

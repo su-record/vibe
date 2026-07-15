@@ -9,11 +9,14 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { findExecutableInPath } from './utils.js';
+import { getZaiApiKey, getZaiCodingApiKey } from './config/GlobalConfigManager.js';
 
 export interface LlmAvailability {
   claude: boolean;
   codex: boolean;
   antigravity: boolean;
+  /** Z.ai / GLM — API 키 기반(CLI 없음) */
+  zai: boolean;
 }
 
 let cached: LlmAvailability | null = null;
@@ -53,7 +56,12 @@ export function detectLlmAvailability(): LlmAvailability {
     checkAuthExists(antigravityDir, 'settings.json') ||
     !!process.env.ANTIGRAVITY_API_KEY
   );
-  cached = { claude, codex, antigravity };
+  // ZAI 는 CLI 가 없다 — coding/general 키 중 하나라도 있으면 활성화
+  const zai = Boolean(
+    getZaiCodingApiKey() || getZaiApiKey() ||
+    process.env.ZAI_CODING_API_KEY || process.env.ZAI_API_KEY
+  );
+  cached = { claude, codex, antigravity, zai };
   return cached;
 }
 
@@ -70,6 +78,11 @@ export function isCodexAvailable(): boolean {
 /** Antigravity CLI 활성화 여부 */
 export function isAntigravityAvailable(): boolean {
   return detectLlmAvailability().antigravity;
+}
+
+/** ZAI(Z.ai / GLM) 활성화 여부 */
+export function isZaiAvailable(): boolean {
+  return detectLlmAvailability().zai;
 }
 
 /** 캐시 초기화 (테스트용) */

@@ -1,5 +1,5 @@
 ---
-name: prioritizer
+name: prd-prioritizer
 role: Applies RICE and MoSCoW scoring to rank requirements for implementation
 tools: [Read]
 ---
@@ -17,8 +17,8 @@ Applies structured scoring frameworks to the full requirements list to produce a
 - Document prioritization rationale so it can be revisited
 
 ## Input
-- User stories from requirements-writer
-- Edge cases from edge-case-finder
+- User stories from prd-requirements-writer
+- Edge cases from prd-edge-case-finder
 - Optional: team velocity or sprint capacity
 
 ## Output
@@ -53,7 +53,7 @@ US-01 must ship before US-02 (filter requires results to exist)
 ```
 
 ## Communication
-- Reports findings to: reviewer
+- Reports findings to: prd-reviewer
 - Receives instructions from: orchestrator (create-prd skill)
 
 ## Domain Knowledge

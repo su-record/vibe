@@ -24,15 +24,6 @@ const PYTHON_EXT_RE = /\.py$/;
 const GO_EXT_RE = /\.go$/;
 const FORMAT_TIMEOUT_MS = 5000;
 
-function getFilePath(ctx) {
-  try {
-    const input = JSON.parse(ctx.toolInput || '{}');
-    return input.file_path || input.path || '';
-  } catch {
-    return '';
-  }
-}
-
 // PATH 직접 스캔 — `which` execSync는 매 파일 저장마다 자식 프로세스를 동기
 // spawn하므로, fs.existsSync로 대체하고 프로세스 내 캐싱한다.
 const _binCache = new Map();
@@ -109,13 +100,13 @@ async function formatFile(filePath) {
 
 /**
  * in-process 진입점 — 포맷 실행. finding 문자열 배열 반환.
- * @param {{ toolInput: string }} ctx
+ * @param {{ filePath: string }} ctx
  * @returns {Promise<{ exitCode: number, findings: string[] }>}
  */
 export async function run(ctx) {
   const findings = [];
   try {
-    const filePath = getFilePath(ctx);
+    const filePath = ctx.filePath;
     if (filePath) {
       const finding = await formatFile(filePath);
       if (finding) findings.push(finding);

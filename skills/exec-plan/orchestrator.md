@@ -6,6 +6,8 @@ agents: [decomposer, dependency-mapper, estimator, validator]
 
 # Exec-Plan Orchestrator
 
+> 구조·섹션·네이밍은 vibe/rules/orchestrator-contract.md (SSOT) 를 따른다.
+
 ## Workflow
 
 ### Phase 1: Decompose

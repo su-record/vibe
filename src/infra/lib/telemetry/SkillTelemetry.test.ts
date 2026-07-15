@@ -129,7 +129,7 @@ describe('SkillTelemetry', () => {
     });
 
     it('should support parent spans', () => {
-      const parent = createSpan('agent_run', 'explorer');
+      const parent = createSpan('agent_run', 'Explore');
       const child = createSpan('llm_call', 'claude-haiku', {}, parent.id);
       telemetry.logSpan(parent);
       telemetry.logSpan(child);

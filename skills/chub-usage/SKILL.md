@@ -4,7 +4,7 @@ invocation: [auto]
 tier: optional
 description: "Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs."
 triggers: [chub, context hub, API docs, latest API, deprecated API, SDK documentation, api reference, 최신 문서]
-priority: 65
+priority: 60
 ---
 
 # Context Hub (chub) Usage

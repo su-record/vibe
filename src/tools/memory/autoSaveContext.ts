@@ -1,12 +1,16 @@
-// Memory management tool - SQLite based with context compression
+// Memory management tool - SQLite based
+// (구 ContextCompressor 압축은 제거 — 네이티브 컨텍스트 컴팩션이 담당하며,
+//  저장 시에는 요약 우선 + 원문 상한 절단만 적용한다)
 
 import { MemoryManager } from '../../infra/lib/MemoryManager.js';
-import { ContextCompressor } from '../../infra/lib/ContextCompressor.js';
 import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+
+/** fullContext 저장 상한 (문자) — DB 행 비대 방지용 단순 절단 */
+const FULL_CONTEXT_MAX_CHARS = 24_000;
 
 export const autoSaveContextDefinition: ToolDefinition = {
   name: 'auto_save_context',
-  description: 'commit|save|checkpoint|backup|compress - Auto-save and compress context',
+  description: 'commit|save|checkpoint|backup - Auto-save context',
   inputSchema: {
     type: 'object',
     properties: {
@@ -14,8 +18,7 @@ export const autoSaveContextDefinition: ToolDefinition = {
       contextType: { type: 'string', description: 'Type of context to save', enum: ['progress', 'decisions', 'code-snippets', 'debugging', 'planning'] },
       sessionId: { type: 'string', description: 'Current session identifier' },
       summary: { type: 'string', description: 'Brief summary of current context' },
-      fullContext: { type: 'string', description: 'Full context to compress and save' },
-      compress: { type: 'boolean', description: 'Enable smart compression (default: true)' },
+      fullContext: { type: 'string', description: 'Full context to save (truncated beyond cap)' },
       projectPath: { type: 'string', description: 'Project directory path for project-specific memory' }
     },
     required: ['urgency', 'contextType']
@@ -36,31 +39,19 @@ export async function autoSaveContext(args: {
   sessionId?: string;
   summary?: string;
   fullContext?: string;
-  compress?: boolean;
   projectPath?: string;
 }): Promise<ToolResult> {
-  const { urgency, contextType, sessionId, summary, fullContext, compress = true, projectPath } = args;
+  const { urgency, contextType, sessionId, summary, fullContext, projectPath } = args;
 
   try {
     const memoryManager = MemoryManager.getInstance(projectPath);
 
     let contextToSave = summary || '';
-    let compressionStats = null;
 
-    // Apply smart compression if full context provided and compression enabled
-    if (fullContext && compress) {
-      const targetTokens = urgency === 'critical' ? 6000 : urgency === 'high' ? 4000 : 2000;
-      const compressionResult = ContextCompressor.compress(fullContext, targetTokens);
-
-      contextToSave = compressionResult.compressed;
-      compressionStats = {
-        originalTokens: ContextCompressor.estimateTokens(fullContext),
-        compressedTokens: ContextCompressor.estimateTokens(compressionResult.compressed),
-        ratio: Math.round(compressionResult.compressionRatio * 100),
-        removed: compressionResult.removedSections.length
-      };
-    } else if (fullContext) {
-      contextToSave = fullContext;
+    if (fullContext) {
+      contextToSave = fullContext.length > FULL_CONTEXT_MAX_CHARS
+        ? `${fullContext.slice(0, FULL_CONTEXT_MAX_CHARS)}\n…[truncated]`
+        : fullContext;
     }
 
     const contextData = {
@@ -70,8 +61,7 @@ export async function autoSaveContext(args: {
       sessionId,
       summary,
       context: contextToSave,
-      compressed: compress && !!fullContext,
-      compressionStats
+      compressed: false,
     };
 
     const priority = urgency === 'high' || urgency === 'critical' ? 2 : urgency === 'medium' ? 1 : 0;
@@ -81,10 +71,6 @@ export async function autoSaveContext(args: {
 
     let resultText = `✓ Context saved: ${contextType} (${urgency})`;
     if (sessionId) resultText += `\nSession: ${sessionId}`;
-    if (compressionStats) {
-      resultText += `\nCompressed: ${compressionStats.originalTokens} → ${compressionStats.compressedTokens} tokens (${compressionStats.ratio}%)`;
-      resultText += `\nRemoved: ${compressionStats.removed} low-priority sections`;
-    }
     if (summary) resultText += `\n${summary}`;
 
     return {

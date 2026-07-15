@@ -23,6 +23,7 @@ import fs from 'fs';
 import path from 'path';
 import { PROJECT_DIR, logHookDecision, projectVibePath, projectVibeRoot } from './utils.js';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
+import { globToRegExp } from './lib/glob.js';
 
 const SCOPE_PATH = projectVibePath(PROJECT_DIR, 'scope.json');
 
@@ -45,37 +46,6 @@ function readScope() {
   }
 }
 
-/**
- * 경량 glob → RegExp 변환.
- *  - `**` : 경로 구분자 포함 임의 문자열
- *  - `*`  : 구분자 제외 임의 문자열
- *  - `?`  : 구분자 제외 한 글자
- *  - 기타 정규식 메타문자는 이스케이프
- */
-function globToRegExp(glob) {
-  const normalized = glob.replace(/\\/g, '/');
-  let out = '';
-  for (let i = 0; i < normalized.length; i++) {
-    const c = normalized[i];
-    if (c === '*') {
-      if (normalized[i + 1] === '*') {
-        out += '.*';
-        i++;
-        if (normalized[i + 1] === '/') i++; // `**/` → `.*`
-      } else {
-        out += '[^/]*';
-      }
-    } else if (c === '?') {
-      out += '[^/]';
-    } else if ('.+^$()|{}[]\\'.includes(c)) {
-      out += '\\' + c;
-    } else {
-      out += c;
-    }
-  }
-  return new RegExp('^' + out + '$');
-}
-
 function matchesAny(relPath, patterns) {
   return patterns.some(p => globToRegExp(p).test(relPath));
 }
@@ -87,18 +57,9 @@ function toRelative(filePath) {
   return rel || path.basename(filePath).replace(/\\/g, '/');
 }
 
-function extractFilePath(toolInput) {
-  if (!toolInput) return '';
-  if (typeof toolInput === 'string') {
-    try { return JSON.parse(toolInput).file_path || ''; }
-    catch { return toolInput; }
-  }
-  return typeof toolInput.file_path === 'string' ? toolInput.file_path : '';
-}
-
 /**
  * in-process 진입점 — 디스패처가 ctx를 전달해 직접 호출.
- * @param {{ toolName: string, toolInput: string }} ctx
+ * @param {{ toolName: string, toolInput: string, filePath: string }} ctx
  * @returns {Promise<number>} exit code (0 = allow/no-op, 2 = block)
  */
 export async function run(ctx) {
@@ -108,7 +69,7 @@ export async function run(ctx) {
   const toolName = ctx.toolName;
   if (toolName !== 'Edit' && toolName !== 'Write') return 0;
 
-  const filePath = extractFilePath(ctx.toolInput);
+  const filePath = ctx.filePath;
   if (!filePath) return 0;
 
   const rel = toRelative(filePath);

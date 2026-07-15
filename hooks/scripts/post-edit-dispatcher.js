@@ -8,7 +8,7 @@
  *
  * 실행 step (모두 비차단, config.hooks.{name}.enabled로 개별 토글):
  *   auto-format — 코드 스타일 정규화 (변경 시 finding 반환)
- *   code-check  — 린트/품질 검사 + P1 이슈 verifyRequired 기록
+ *   code-check  — 하드룰(any/console.log) 탐지 (additionalContext 주입만, 커밋 게이트 미연동)
  *   auto-test   — 관련 테스트 실행 (debounce 지원)
  *   post-edit   — console.log 감지
  *

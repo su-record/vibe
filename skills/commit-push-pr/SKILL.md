@@ -5,7 +5,6 @@ tier: optional
 description: "Commit, push, and create PR in one go. Auto-activates on commit, PR, push keywords."
 triggers: [commit, push, PR, pull request, merge]
 priority: 70
-chain-next: [techdebt]
 ---
 
 # Commit-Push-PR

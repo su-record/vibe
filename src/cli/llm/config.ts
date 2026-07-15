@@ -36,6 +36,13 @@ export const EXTERNAL_LLMS: Record<string, ExternalLLMConfig> = {
     package: '',
     envKey: 'ANTIGRAVITY_API_KEY'
   },
+  zai: {
+    name: 'core-zai',
+    role: 'ui-ux',
+    description: 'UI Development (Z.ai GLM — top model)',
+    package: '',
+    envKey: 'ZAI_CODING_API_KEY'
+  },
 };
 
 /**

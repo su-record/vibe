@@ -2,14 +2,19 @@
  * PostToolUse Hook - Write/Edit 후 코드 품질 검사 + 관찰 자동 캡처
  *
  * findings를 console.log가 아닌 반환값으로 전달 — 디스패처가 수집해 additionalContext에 주입.
- * P1 이슈 발견 시 run-ledger에 verifyRequired 상태 기록.
+ *
+ * 범위 (harness-review-2026-07-01 P1-4):
+ * 오탐률이 낮은 결정론적 하드룰(any/@ts-ignore, console.log)만 탐지한다.
+ * 함수 길이·중첩 깊이·매직 넘버 같은 휴리스틱은 모델이 컨텍스트 안에서 더
+ * 정확히 판단하므로 주입하지 않으며, 정규식 발견은 커밋 게이트
+ * (run-ledger verifyRequired)를 태우지 않는다 — 그 게이트는 결정론적
+ * 검증 흐름(vibe.verify) 전용이다.
  */
 import { getToolsBaseUrl, PROJECT_DIR, readProjectConfig } from './utils.js';
-import { readFileSync, existsSync, writeFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import path from 'path';
-import os from 'os';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
-import { recordVerifyRequired } from './lib/run-ledger.js';
+import { globToRegExp } from './lib/glob.js';
 
 const BASE_URL = getToolsBaseUrl();
 
@@ -37,35 +42,6 @@ const DEFAULT_CONSOLE_ALLOW_GLOBS = [
   '**/*.spec.*',
   '**/__tests__/**',
 ];
-
-/**
- * 경량 glob → RegExp 변환 (scope-guard와 동일 알고리즘, 독립 복사본).
- * @param {string} glob
- * @returns {RegExp}
- */
-function globToRegExp(glob) {
-  const normalized = glob.replace(/\\/g, '/');
-  let out = '';
-  for (let i = 0; i < normalized.length; i++) {
-    const c = normalized[i];
-    if (c === '*') {
-      if (normalized[i + 1] === '*') {
-        out += '.*';
-        i++;
-        if (normalized[i + 1] === '/') i++;
-      } else {
-        out += '[^/]*';
-      }
-    } else if (c === '?') {
-      out += '[^/]';
-    } else if ('.+^$()|{}[]\\'.includes(c)) {
-      out += '\\' + c;
-    } else {
-      out += c;
-    }
-  }
-  return new RegExp('^' + out + '$');
-}
 
 /**
  * .vibe/config.json의 qualityCheck.consoleAllow 글로브 목록 로드.
@@ -101,19 +77,12 @@ function isConsoleAllowed(filePath) {
 }
 
 /**
- * hook input에서 수정된 파일 경로 추출.
+ * hook ctx에서 수정된 파일 경로 추출.
  * @param {object} ctx
  * @returns {string[]}
  */
 function getModifiedFiles(ctx) {
-  try {
-    const parsed = ctx.payload || (ctx.hookInput ? JSON.parse(ctx.hookInput) : null);
-    const filePath = parsed?.tool_input?.file_path || parsed?.tool_input?.path;
-    return filePath ? [filePath] : [];
-  } catch {
-    // ignore
-  }
-  return [];
+  return ctx.filePath ? [ctx.filePath] : [];
 }
 
 /**
@@ -176,180 +145,22 @@ function detectConsoleLogs(lines, filePath) {
 }
 
 /**
- * P2: 함수 길이 초과 탐지.
- * @param {string[]} lines
- * @returns {Array<{ line: number, match: string, severity: 'P2' }>}
- */
-function detectLongFunctions(lines) {
-  const findings = [];
-  let fnStart = -1;
-  let fnName = '';
-  let depth = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const fnMatch = line.match(/(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\()/);
-    if (fnMatch && depth === 0) {
-      fnStart = i;
-      fnName = fnMatch[1] || fnMatch[2] || 'anonymous';
-    }
-    depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
-    if (fnStart !== -1 && depth <= 0) {
-      const length = i - fnStart + 1;
-      if (length > 50) {
-        findings.push({
-          line: fnStart + 1,
-          match: `function '${fnName}' is ${length} lines`,
-          severity: 'P2',
-          suggestion: `Extract lines ${fnStart + 20}–${i + 1} into a separate helper function`,
-        });
-      }
-      fnStart = -1;
-      depth = 0;
-    }
-  }
-  return findings;
-}
-
-/**
- * P2: 중첩 깊이 초과 탐지.
- * @param {string[]} lines
- * @returns {Array<{ line: number, match: string, severity: 'P2' }>}
- */
-function detectDeepNesting(lines) {
-  const findings = [];
-  let depth = 0;
-  let reported = false;
-
-  lines.forEach((line, i) => {
-    depth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
-    if (depth > 3 && !reported) {
-      findings.push({
-        line: i + 1,
-        match: `nesting depth ${depth} at line ${i + 1}`,
-        severity: 'P2',
-        suggestion: 'Use early return pattern: if (!condition) return; — instead of wrapping in else',
-      });
-      reported = true;
-    }
-    if (depth <= 3) reported = false;
-  });
-  return findings;
-}
-
-// magic number 무시 값 목록 (0, 1, -1, 2, 10, 100, 1000)
-const MAGIC_NUMBER_IGNORE = new Set(['10', '100', '1000']);
-
-/**
- * advisory: 매직 넘버 탐지 (P3, 스팸 방지 적용).
- * 무시 조건: 0/1/-1/2 (단일 digit), ALLCAPS const 선언, 테스트 파일, 배열 인덱스
- * @param {string[]} lines
+ * 하드룰 탐지기 실행. findings 배열 반환.
  * @param {string} filePath
- * @returns {Array<{ line: number, match: string, severity: 'P3' }>}
- */
-function detectMagicNumbers(lines, filePath) {
-  // 테스트 파일은 스킵
-  if (/\.(test|spec)\.[jt]sx?$/.test(filePath) || /\/__tests__\//.test(filePath)) {
-    return [];
-  }
-
-  const findings = [];
-  lines.forEach((line, i) => {
-    // ALL_CAPS const 선언 줄은 스킵 (예: const LIMIT = 500)
-    if (/^\s*(?:export\s+)?const\s+[A-Z][A-Z0-9_]+\s*=/.test(line)) return;
-
-    const stripped = line.replace(/\/\/.*$/, '').replace(/(['"`]).*?\1/g, '""');
-    const nums = (stripped.match(/\b\d{2,}\b/g) || []).filter(n => MAGIC_NUMBER_IGNORE.has(n));
-    // 배열 인덱스: [NN] 패턴 제외
-    const nonIndexNums = (stripped.match(/\b\d{2,}\b/g) || []).filter(n => {
-      if (MAGIC_NUMBER_IGNORE.has(n)) return false;
-      // 배열 인덱스 [NN] 체크
-      const idx = stripped.indexOf(n);
-      if (idx > 0 && stripped[idx - 1] === '[') return false;
-      return true;
-    });
-
-    if (nonIndexNums.length > 0) {
-      findings.push({
-        line: i + 1,
-        match: `magic number(s): ${nonIndexNums.join(', ')}`,
-        severity: 'P3',
-        suggestion: `Extract to named constant: const LIMIT = ${nonIndexNums[0]};`,
-      });
-    }
-  });
-  return findings;
-}
-
-// ─── Failure Escalation Tracking ───
-
-const ESCALATION_THRESHOLD = 3;
-const ESCALATION_FILE = path.join(os.homedir(), '.vibe', 'failure-tracker.json');
-
-function loadFailureTracker() {
-  try {
-    if (existsSync(ESCALATION_FILE)) {
-      return JSON.parse(readFileSync(ESCALATION_FILE, 'utf8'));
-    }
-  } catch { /* ignore */ }
-  return {};
-}
-
-function saveFailureTracker(tracker) {
-  try {
-    writeFileSync(ESCALATION_FILE, JSON.stringify(tracker));
-  } catch { /* ignore */ }
-}
-
-/**
- * 실패 추적 — 동일 파일에 P1 이슈가 반복되면 에스컬레이션 메시지 반환.
- * @param {string} filePath
- * @param {string[]} issues
- * @returns {string|null} 에스컬레이션 메시지 (없으면 null)
- */
-function trackFailure(filePath, issues) {
-  const tracker = loadFailureTracker();
-  const key = filePath;
-  const entry = tracker[key] || { count: 0, issues: [] };
-  entry.count += 1;
-  entry.issues = issues.slice(0, 3);
-  entry.lastSeen = new Date().toISOString();
-  tracker[key] = entry;
-  saveFailureTracker(tracker);
-
-  if (entry.count >= ESCALATION_THRESHOLD) {
-    const msg = `[ESCALATION] ${path.basename(filePath)}: 동일 이슈 ${entry.count}회 반복 — 수동 개입 필요`;
-    entry.count = 0;
-    saveFailureTracker(tracker);
-    return msg;
-  }
-  return null;
-}
-
-function clearFailure(filePath) {
-  const tracker = loadFailureTracker();
-  delete tracker[filePath];
-  saveFailureTracker(tracker);
-}
-
-/**
- * 모든 self-heal 탐지기 실행. findings 배열 반환.
- * @param {string} filePath
- * @returns {{ p1: string[], advisory: string[], escalation: string|null }}
+ * @returns {{ p1: string[] }}
  */
 function runDetectors(filePath) {
   let content;
   try {
     content = readFileSync(filePath, 'utf-8');
   } catch {
-    return { p1: [], advisory: [], escalation: null };
+    return { p1: [] };
   }
 
   const lines = content.split('\n');
   const isTs = TS_EXT_RE.test(filePath);
 
   const p1Findings = [];
-  const advisoryFindings = [];
 
   // P1: any 탐지 — TS 파일만
   if (isTs) {
@@ -365,38 +176,13 @@ function runDetectors(filePath) {
     p1Findings.push(`P1 console.log line ${f.line}: ${f.match.substring(0, 60)}`);
   }
 
-  // P2: 함수 길이
-  const fnHits = detectLongFunctions(lines).slice(0, 1);
-  for (const f of fnHits) {
-    advisoryFindings.push(`P2 ${f.match}`);
-  }
-
-  // P2: 중첩 깊이
-  const nestHits = detectDeepNesting(lines).slice(0, 1);
-  for (const f of nestHits) {
-    advisoryFindings.push(`P2 ${f.match}`);
-  }
-
-  // P3: 매직 넘버 (advisory, 스팸 방지)
-  const magicHits = detectMagicNumbers(lines, filePath).slice(0, 1);
-  for (const f of magicHits) {
-    advisoryFindings.push(`P3 ${f.match}`);
-  }
-
-  let escalation = null;
-  if (p1Findings.length > 0) {
-    escalation = trackFailure(filePath, p1Findings);
-  } else {
-    clearFailure(filePath);
-  }
-
-  return { p1: p1Findings, advisory: advisoryFindings, escalation };
+  return { p1: p1Findings };
 }
 
 /**
  * in-process 진입점 — 품질 검사 + 관찰 캡처.
  * findings 배열을 반환한다 (디스패처가 수집해 additionalContext에 주입).
- * @param {{ payload: object|null, hookInput: string|null }} ctx
+ * @param {{ filePath: string }} ctx
  * @returns {Promise<{ exitCode: number, findings: string[] }>}
  */
 export async function run(ctx) {
@@ -404,23 +190,20 @@ export async function run(ctx) {
   const files = getModifiedFiles(ctx);
   if (files.length === 0) return { exitCode: 0, findings };
 
-  // 1. Self-heal 탐지기 실행 (changed file only)
+  // 1. 하드룰 탐지기 실행 (changed file only, regex only — 동적 import 없음) —
+  //    additionalContext 주입만. 커밋 게이트(verifyRequired)는 태우지 않는다:
+  //    정규식 오탐 하나가 auto-commit을 차단하는 결합은 제거됨
+  //    (harness-review-2026-07-01).
   try {
-    const { p1, advisory, escalation } = runDetectors(files[0]);
-
+    const { p1 } = runDetectors(files[0]);
     for (const msg of p1) findings.push(msg);
-    for (const msg of advisory) findings.push(msg);
-    if (escalation) findings.push(escalation);
-
-    // P1 이슈 → run-ledger에 verifyRequired 기록
-    if (p1.length > 0) {
-      try {
-        recordVerifyRequired(PROJECT_DIR, p1[0]);
-      } catch { /* fail-open */ }
-    }
   } catch {
     // 탐지기 실패 → fail-open, 계속 진행
   }
+
+  // validateCodeQuality가 처리하지 않는 확장자는 무거운 동적 import
+  // (convention/index.js·memory/index.js — 모듈 그래프 + SQLite 오픈) 전에 조기 반환.
+  if (!CODE_EXT_RE.test(files[0])) return { exitCode: 0, findings };
 
   // 2. validateCodeQuality 호출 (P1/P2 필터)
   try {
@@ -436,19 +219,21 @@ export async function run(ctx) {
     // Silently continue on check failure
   }
 
-  // 3. 관찰 자동 캡처
-  try {
-    const memModule = await import(`${BASE_URL}memory/index.js`);
-    const { type, title } = classifyObservation(files);
+  // 3. 관찰 자동 캡처 — 위반(findings)이 실제로 있을 때만 SQLite 기록 (clean edit은 write 생략)
+  if (findings.length > 0) {
+    try {
+      const memModule = await import(`${BASE_URL}memory/index.js`);
+      const { type, title } = classifyObservation(files);
 
-    await memModule.addObservation({
-      type,
-      title: `${title}: ${files.map(f => f.split(/[\\/]/).pop()).join(', ')}`,
-      filesModified: files,
-      projectPath: PROJECT_DIR,
-    });
-  } catch {
-    // 관찰 캡처 실패해도 무시
+      await memModule.addObservation({
+        type,
+        title: `${title}: ${files.map(f => f.split(/[\\/]/).pop()).join(', ')}`,
+        filesModified: files,
+        projectPath: PROJECT_DIR,
+      });
+    } catch {
+      // 관찰 캡처 실패해도 무시
+    }
   }
 
   return { exitCode: 0, findings };

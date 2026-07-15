@@ -75,45 +75,31 @@ Extract keywords from the user request:
 
 #### 2. Understand Project Structure
 
-Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack:
+Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack.
 
-**Backend:**
-- FastAPI/Django: `app/api/`, `app/services/`, `app/models/`
-- Express/NestJS: `src/controllers/`, `src/services/`, `src/models/`
-
-**Frontend:**
-- React/Next.js: `src/components/`, `src/pages/`, `src/hooks/`
-- Flutter: `lib/screens/`, `lib/services/`, `lib/providers/`
+> Read `references/output-templates.md` for the full backend/frontend stack → directory mapping.
 
 #### 3. Explore Related Code (Parallel Sub-Agents)
 
-**MANDATORY: Always use explorer sub-agents. Never explore in main session.**
+**MANDATORY: Always use native Explore sub-agents. Never explore in main session.**
 
-> Why: 3 explorer-low agents return ~600 tokens of summaries to main session.
+> Why: 3 Explore agents return ~600 tokens of summaries to main session.
 > Direct Glob/Grep/Read in main session would add 5-15K tokens of raw content.
 
 **Parallel exploration (ALL in ONE message):**
 
 ```text
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Find all [FEATURE] related API endpoints. List file paths, HTTP methods, routes, and auth requirements.")
 
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Find all [FEATURE] related services, business logic, and utility functions. Map dependencies.")
 
-Agent(subagent_type="explorer-low", model="haiku",
+Agent(subagent_type="Explore", model="haiku",
   prompt="Find all [FEATURE] related data models, schemas, and database queries. Document relationships and key fields.")
 ```
 
-**Scale for large projects (6+ related files):**
-
-```text
-Agent(subagent_type="explorer-low", model="haiku",
-  prompt="Find all test files related to [FEATURE]. Identify tested vs untested paths.")
-
-Agent(subagent_type="explorer-low", model="haiku",
-  prompt="Analyze [FEATURE] configuration, environment variables, and external integrations.")
-```
+> Read `references/output-templates.md` for the additional "Scale for large projects (6+ related files)" agent prompts.
 
 **After all agents return:**
 - Synthesize results → proceed to Flow Analysis
@@ -138,62 +124,13 @@ Agent(subagent_type="explorer-low", model="haiku",
 
 #### 5. Output
 
-```markdown
-## [feature-name] Analysis Results
-
-### Overview
-- **Feature**: [one-line summary]
-- **Status**: [Complete / In progress / Not implemented]
-- **Files**: N related files
-
-### Structure
-
-#### API Endpoints
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| POST | /api/v1/auth/login | User login | None |
-
-#### Core Services
-- `auth_service.py`: Authentication logic
-  - `login()`: Processes login
-  - `verify_token()`: Validates JWT
-
-#### Data Models
-- `User`: User table
-  - Key fields: id, email, password_hash
-  - Relationships: Session (1:N)
-
-### Reference Files
-- src/api/auth/router.py:L10-50
-- src/services/auth_service.py:L1-100
-```
+> Read `references/output-templates.md` for the full Mode 1 output format.
 
 #### 6. Next Steps
 
-After analysis, suggest mode-specific follow-up actions:
+After analysis, suggest mode-specific follow-up actions.
 
-**After code/feature analysis:**
-
-| Task Scope | Approach |
-|------------|----------|
-| Simple fix (1-2 files) | Plan Mode |
-| Complex feature (3+ files) | `/vibe.spec` |
-
-**After document analysis:**
-
-| Goal | Approach |
-|------|----------|
-| Apply findings to project | `/vibe.spec "feature-name"` |
-| Derive improvement direction | Plan Mode |
-| Compare with another source | `/vibe.analyze [other target]` |
-
-**After website analysis:**
-
-| Goal | Approach |
-|------|----------|
-| Build similar product | `/vibe.spec` |
-| Improve existing UI | `/vibe.figma` |
-| Compare with another site | `/vibe.analyze [other URL]` |
+> Read `references/output-templates.md` for the full Next Steps decision tables (code/feature, document, website).
 
 Wait for user's choice before proceeding.
 
@@ -218,13 +155,7 @@ Analyze document **structure, key content, quality, and applicability** to:
 
 #### 2. Classify Document Type
 
-| Type | Analysis Focus |
-|------|---------------|
-| Technical spec | API definitions, data models, sequence diagrams |
-| Presentation/slides | Key claims, frameworks, case studies |
-| PRD/requirements | User stories, acceptance criteria, scope |
-| Business document | Strategy, decision points, action items |
-| Research/academic | Methodology, conclusions, applicability |
+> Read `references/output-templates.md` for the full document-type → analysis-focus table.
 
 #### 3. Analyze Content (Parallel Sub-Agents)
 
@@ -244,33 +175,7 @@ Agent(subagent_type="general-purpose", model="haiku",
 
 #### 5. Output
 
-```markdown
-## [Document Name] Analysis
-
-### Overview
-- **Type**: [Presentation / Technical spec / PRD / ...]
-- **Topic**: [one-line summary]
-- **Pages/Sections**: N
-- **Audience**: [Developers / PMs / Executives / ...]
-
-### Key Content
-1. **[Concept 1]**: Description
-2. **[Concept 2]**: Description
-
-### Frameworks/Models (if any)
-- [Systematic structure presented in the document]
-
-### Project Relevance
-| Recommendation | Current State | Gap |
-|----------------|---------------|-----|
-| ... | ... | ... |
-
-### Key Insights
-- [Most important takeaway]
-
-### Suggested Actions
-1. ...
-```
+> Read `references/output-templates.md` for the full Mode 2 output format.
 
 #### Fallback
 
@@ -319,40 +224,7 @@ If a Figma URL is detected, switch to **Figma-specific analysis**:
 
 #### 4. Output
 
-```markdown
-## [URL] Analysis
-
-### Overview
-- **Site type**: [SaaS / E-commerce / Portfolio / ...]
-- **Tech stack**: [Next.js, Tailwind, ...]
-- **Overall score**: N/100
-
-### Technical Analysis
-| Area | Detection | Details |
-|------|-----------|---------|
-| Framework | React/Next.js | SSR enabled |
-| CSS | Tailwind CSS | v3.4 |
-
-### UX/UI Analysis
-- **Navigation**: [assessment]
-- **CTA placement**: [assessment]
-- **Responsive design**: [assessment]
-
-### SEO Analysis (N/100)
-| Element | Status | Recommendation |
-|---------|--------|----------------|
-| Title | Present | Appropriate length |
-| Meta Description | Missing | Add description |
-
-### Accessibility (WCAG 2.1 AA)
-- **Semantic HTML**: [assessment]
-- **Keyboard navigation**: [assessment]
-- **Screen reader support**: [assessment]
-
-### Improvement Suggestions
-1. [highest priority]
-2. ...
-```
+> Read `references/output-templates.md` for the full Mode 3 output format.
 
 #### Fallback
 
@@ -393,30 +265,7 @@ If `WebFetch` fails:
 
 Save to `.vibe/reports/analysis-{date}.md`:
 
-```markdown
-# Project Analysis Report
-
-## Overview
-- Analysis date: YYYY-MM-DD HH:MM
-- Scope: Full / Code / Deps / Arch
-
-## Code Quality (N/100)
-- Average complexity: N (good/warning/critical)
-- High complexity files: N
-
-## Dependencies (N/100)
-- Total packages: N
-- Updates needed: N
-- Security issues: N
-
-## Architecture (N/100)
-- Circular dependencies: N found
-- Layer violations: N
-
-## Improvement Suggestions
-1. ...
-2. ...
-```
+> Read `references/output-templates.md` for the full Mode 4 report format.
 
 ## Core Tools (Semantic Analysis)
 
@@ -430,8 +279,6 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `findSymbol` | Find symbol definitions | Locate function/class implementations |
-| `findReferences` | Find all references | Track usage patterns |
 | `analyzeComplexity` | Complexity analysis | Measure complexity metrics |
 | `validateCodeQuality` | Quality validation | Check code quality standards |
 | `saveMemory` | Save analysis results | Persist findings for future sessions |
@@ -440,95 +287,9 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 ## Quality Gate (Mandatory)
 
-### Mode-Specific Checklists
+Each mode has a weighted completeness checklist. Score = sum(checked items × weight) / 100. **Minimum depth: L3 for feature analysis, L2 for project overview.**
 
-**Code/Feature Analysis:**
-
-| Category | Check Item | Weight |
-|----------|------------|--------|
-| Completeness | All related files identified | 20% |
-| Completeness | All API endpoints documented | 15% |
-| Completeness | All data models mapped | 15% |
-| Accuracy | File paths verified to exist | 10% |
-| Accuracy | Line numbers accurate | 10% |
-| Depth | Business logic explained | 10% |
-| Depth | Dependencies mapped | 10% |
-| Actionability | Next steps clearly defined | 10% |
-
-**Document Analysis:**
-
-| Category | Check Item | Weight |
-|----------|------------|--------|
-| Completeness | Full document read | 20% |
-| Completeness | All key concepts extracted | 20% |
-| Structure | Section structure identified | 15% |
-| Depth | Project relevance analyzed | 15% |
-| Depth | Gap analysis performed | 15% |
-| Actionability | Specific follow-up actions suggested | 15% |
-
-**Website Analysis:**
-
-| Category | Check Item | Weight |
-|----------|------------|--------|
-| Completeness | HTML fetched and parsed | 15% |
-| Tech | Tech stack identified | 15% |
-| UX | UX/UI patterns analyzed | 15% |
-| SEO | SEO elements inspected | 15% |
-| A11y | Accessibility checked | 15% |
-| Performance | Performance hints analyzed | 10% |
-| Actionability | Improvements suggested | 15% |
-
-### Score Calculation
-
-```
-Score = sum(checked items * weight) / 100
-
-Grades:
-- 95-100: EXCELLENT — comprehensive analysis
-- 90-94:  GOOD — minor gaps, additional exploration recommended
-- 80-89:  FAIR — needs deeper exploration
-- 0-79:   POOR — incomplete, re-analyze
-```
-
-### Depth Levels
-
-| Level | Scope | Output |
-|-------|-------|--------|
-| L1: Surface | File names, basic structure | File list |
-| L2: Structure | Functions, classes, imports | Structure map |
-| L3: Logic | Business logic, data flow | Flow analysis |
-| L4: Deep | Edge cases, dependencies, risks | Full analysis |
-
-**Minimum**: L3 for feature analysis, L2 for project overview.
-
-### Forbidden Patterns
-
-| Pattern | Problem | Fix |
-|---------|---------|-----|
-| "and more..." | Incomplete | List all items |
-| "etc." | Vague | Be specific |
-| "related files" without paths | Missing detail | Provide file paths |
-| Missing line numbers | Hard to navigate | Use `:L10-50` format |
-| No auth info on endpoints | Security gap | Always specify auth |
-
-### Quality Thresholds
-
-**Code (`--code`):**
-
-| Metric | Good | Warning | Critical |
-|--------|------|---------|----------|
-| Avg Complexity | ≤10 | 11-15 | >15 |
-| Max Function Length | ≤30 | 31-50 | >50 |
-| High Complexity Files | 0 | 1-3 | >3 |
-| Circular Dependencies | 0 | 1 | >1 |
-
-**Dependencies (`--deps`):**
-
-| Metric | Good | Warning | Critical |
-|--------|------|---------|----------|
-| Outdated Packages | 0-3 | 4-10 | >10 |
-| Security Vulnerabilities | 0 | 1-2 (low) | Any high/critical |
-| Major Version Behind | 0 | 1-2 | >2 |
+> Read `references/quality-gate.md` for the full mode-specific weighted checklists, score grades, depth-level table, forbidden-patterns table, and quality thresholds (code/deps).
 
 ---
 

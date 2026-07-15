@@ -42,11 +42,11 @@ Automate community event planning with D-Day based proactive execution.
    └── DWK: 9 steps (D-30 → D+3)
 
 5. AUTO-EXECUTE pending deliverables
-   ├── Content drafts → event-content agent
-   ├── Image generation → event-image agent
-   ├── SMS/email drafts → event-comms agent
-   ├── Ops materials → event-ops agent
-   └── Speaker research → event-speaker agent
+   ├── Content drafts → event-planner agent
+   ├── Speaker research → event-planner agent
+   ├── Image generation → event-ops agent
+   ├── SMS/email drafts → event-ops agent
+   └── Ops materials → event-ops agent
 
 6. REQUEST confirmation for send actions
    ├── SMS actual send
@@ -73,41 +73,41 @@ Automate community event planning with D-Day based proactive execution.
 
 | Phase | Agents Triggered | Outputs |
 |-------|-----------------|---------|
-| D-60 | event-speaker | 3 topic suggestions + speaker research |
-| D-45 | event-speaker | DM + email outreach drafts |
-| D-40 | event-comms | Topic confirmation request email |
-| D-28 | event-content, event-image, event-comms | Intro + 2 images + 3 SMS + 1 email |
-| D-30 | event-content, event-comms | LinkedIn/Threads promo + SMS send(✅) |
-| D-14 | event-content | LinkedIn/Threads reminder |
-| D-3 | event-comms | BCC email + SMS send(✅) |
+| D-60 | event-planner | 3 topic suggestions + speaker research |
+| D-45 | event-planner | DM + email outreach drafts |
+| D-40 | event-ops | Topic confirmation request email |
+| D-28 | event-planner, event-ops | Intro + 2 images + 3 SMS + 1 email |
+| D-30 | event-planner, event-ops | LinkedIn/Threads promo + SMS send(✅) |
+| D-14 | event-planner | LinkedIn/Threads reminder |
+| D-3 | event-ops | BCC email + SMS send(✅) |
 | D-1 | event-ops | Nametags + checklist + PPTX + SMS(✅) |
-| D-Day | event-comms | Day-of SMS(✅) |
-| D+1 | event-content, event-ops | Review posts + settlement |
+| D-Day | event-ops | Day-of SMS(✅) |
+| D+1 | event-planner, event-ops | Review posts + settlement |
 | D+2 | — | Site update (manual) |
 
 ### Webinar Phases
 
 | Phase | Agents Triggered | Outputs |
 |-------|-----------------|---------|
-| Planning | event-content, event-image, event-comms | Intro + 3 images + SMS + email |
-| Planning | event-content | LinkedIn/Threads promo |
-| D-4 | event-comms | Zoom(manual) + BCC email + SMS(✅) |
-| D-Day | event-comms, event-ops | SMS(✅) + slides |
-| D+1 | event-content | Review posts |
+| Planning | event-planner, event-ops | Intro + 3 images + SMS + email |
+| Planning | event-planner | LinkedIn/Threads promo |
+| D-4 | event-ops | Zoom(manual) + BCC email + SMS(✅) |
+| D-Day | event-ops | SMS(✅) + slides |
+| D+1 | event-planner | Review posts |
 
 ### DWK Phases
 
 | Phase | Agents Triggered | Outputs |
 |-------|-----------------|---------|
-| D-30 | event-speaker | 3 topics + speaker research |
-| D-25 | event-speaker | DM + email outreach |
-| D-20 | event-comms | Topic confirmation email |
-| D-16 | event-content, event-image, event-comms | Intro + 2 images + SMS + email |
-| D-15 | event-content | LinkedIn/Threads promo |
-| D-3 | event-comms | BCC email + SMS(✅) |
+| D-30 | event-planner | 3 topics + speaker research |
+| D-25 | event-planner | DM + email outreach |
+| D-20 | event-ops | Topic confirmation email |
+| D-16 | event-planner, event-ops | Intro + 2 images + SMS + email |
+| D-15 | event-planner | LinkedIn/Threads promo |
+| D-3 | event-ops | BCC email + SMS(✅) |
 | D-1 | event-ops | Slido plan + PPTX + SNS remind(✅) |
-| D-Day | event-comms, event-ops | SMS(✅) + nametags(offline) |
-| D+3 | event-content, event-ops | Review + settlement |
+| D-Day | event-ops | SMS(✅) + nametags(offline) |
+| D+3 | event-planner, event-ops | Review + settlement |
 
 ## State File Format
 

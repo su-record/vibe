@@ -14,6 +14,17 @@ tier: core
 
 A classic vibe-coding weakness: LLMs reintroduce bugs of the same class. Regression tests are the only mechanical defense. But if the human has to write the test every time, it gets skipped — so automate.
 
+## Characterization — lock behavior first
+
+Before modifying legacy or untested code whose behavior is uncertain (large files without tests, complex branching, API contracts), **lock current behavior first, then change**:
+
+1. Generate characterization tests over the public surface — snapshot the **actual** output (`toMatchSnapshot()`), not what you think it should be. Do NOT fix bugs while locking: a wrong value gets locked as-is; the goal is regression detection, not correctness.
+2. Run them — all must pass against the unmodified code. A failure means the characterization is wrong: fix the test, never the code.
+3. Make the change incrementally, re-running after each step. Unexpected failure = regression, stop and investigate.
+4. Reconcile: update snapshots only for **intentionally** changed behavior, and add new tests for the new behavior.
+
+Skip this for code you just wrote, already-well-tested code, or trivial changes — write regular unit tests instead. Test file naming/stack detection follows `generate` (below).
+
 ## Storage Contract
 
 ```

@@ -64,11 +64,11 @@ Convergence Principle: loop until P1 = 0. Changed files only.
 
 ## Context Management
 
-At 85%+ context: `save_memory` → `/new` → `/vibe.utils --continue` (raised from 70% — `/new` discards the entire KV prefix cache, so compacting less often preserves cache reuse)
+At 85%+ context: `save_memory` → `/new` → `/vibe.continue` (raised from 70% — `/new` discards the entire KV prefix cache, so compacting less often preserves cache reuse)
 
 ## Git Commit Rules
 
-**Include:** `.vibe/plans/`, `.vibe/specs/`, `.vibe/features/`, `.vibe/config.json`, `CLAUDE.md`
+**Include:** `.vibe/specs/`, `.vibe/features/`, `.vibe/config.json`, `CLAUDE.md` (legacy `.vibe/plans/` 는 있으면 유지)
 **Exclude:** `~/.claude/vibe/rules/`, `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/skills/`, `.claude/settings.local.json`
 
 <!-- VIBE:END -->

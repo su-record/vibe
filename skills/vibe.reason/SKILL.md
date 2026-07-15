@@ -73,101 +73,9 @@ Apply 9-step reasoning framework to complex problems.
 - Document reasoning process for complex decisions
 - Ensure safety through step-by-step execution
 
-## Output Format
+> Read `references/output-format-template.md` for the full markdown report template.
 
-```markdown
-# Reasoning Framework Analysis
-
-**Problem**: [problem description]
-**Context**: [relevant information]
-**Steps Applied**: 9/9
-**⏱️ Started**: {start_time}
-**⏱️ Completed**: {getCurrentTime 결과}
-
----
-
-## 1. Logical Dependencies and Constraints
-
-**Constraint Analysis**:
-[analysis content]
-
----
-
-## 2. Risk Assessment
-
-**Risk Assessment**:
-- Task type: [risk level]
-- Rollback possibility: [assessment]
-- Compatibility/Security/Performance risks
-
----
-
-## 3. Inductive Reasoning and Hypothesis Exploration
-
-**Hypothesis Generation**:
-1. **Hypothesis 1**: [description] (Likelihood: High/Medium/Low)
-   - Evidence: [supporting evidence]
-   - Verification: [how to verify]
-
-2. **Hypothesis 2**: ...
-
----
-
-[Steps 4-9...]
-
----
-
-## Summary
-
-[Overall reasoning results summary and recommendations]
-
-**Recommended Actions**:
-1. Immediate: [low risk action]
-2. Short-term: [medium priority]
-3. Medium-term: [long-term fix]
-```
-
-## Example
-
-```
-User: /vibe.reason "After user login, profile page intermittently returns 500 error"
-
-AI: Analyzing with 9-step reasoning framework...
-
-# Reasoning Framework Analysis
-
-**Problem**: Intermittent 500 error on profile page after login
-**Context**: Intermittent occurrence, happens after successful login
-
-## 1. Logical Dependencies and Constraints
-
-**Constraint Analysis**:
-- Policy/Rules: Need to check auth/authz system policies
-- Task Order: Verify login -> session creation -> profile fetch order
-- Prerequisites: Need to identify error reproduction conditions
-
-## 3. Inductive Reasoning and Hypothesis Exploration
-
-**Hypothesis Generation**:
-1. **Hypothesis 1: Incomplete session data** (Likelihood: High)
-   - Evidence: Intermittent = timing issue or data consistency problem
-   - Verification: Add logging to session save logic
-
-2. **Hypothesis 2: Async processing order issue** (Likelihood: Medium)
-   - Evidence: undefined = accessing data before load
-   - Verification: Check Promise chain, missing await
-
-## Summary
-
-**Key Findings**:
-- Most likely cause: Incomplete session data
-- Verification priority: 1) Session logging -> 2) Async review -> 3) DB check
-
-**Recommended Actions**:
-1. Immediate: Add detailed logging to session save/fetch
-2. Short-term: Code review async processing
-3. Medium-term: Strengthen session store monitoring
-```
+> Read `references/worked-example.md` for a full worked example applying the 9-step framework to a debugging scenario.
 
 ## Best Practices
 
@@ -198,8 +106,6 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `findSymbol` | Find symbol definitions | Locate potential problem areas |
-| `findReferences` | Find all references | Trace data/control flow |
 | `analyzeComplexity` | Complexity analysis | Identify high-risk complex code |
 | `saveMemory` | Save reasoning progress | Store hypothesis verification results |
 | `recallMemory` | Recall saved memory | Retrieve previous reasoning context |
@@ -228,21 +134,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 ## Quality Gate (Mandatory)
 
-### Reasoning Quality Checklist
-
-Before completing reasoning analysis, ALL steps must be verified:
-
-| Step | Check Item | Weight |
-|------|------------|--------|
-| **Step 1** | Logical dependencies and constraints identified | 10% |
-| **Step 2** | Risk assessment completed with rollback plan | 10% |
-| **Step 3** | At least 3 hypotheses generated with likelihood | 15% |
-| **Step 4** | Verification method defined for each hypothesis | 10% |
-| **Step 5** | All available tools and resources listed | 10% |
-| **Step 6** | Evidence cited with exact sources | 15% |
-| **Step 7** | All alternatives explored | 10% |
-| **Step 8** | Error handling strategy defined | 10% |
-| **Step 9** | Action plan documented before execution | 10% |
+> Read `references/quality-rubrics.md` for the full reasoning quality checklist, hypothesis quality standards, minimum hypothesis count, evidence standards, risk assessment matrix, forbidden reasoning patterns, and reasoning output requirements.
 
 ### Reasoning Score Calculation
 
@@ -255,80 +147,6 @@ Grades:
 - 5-6/9 (56-67%): ❌ INCOMPLETE - More analysis needed
 - <5/9 (<56%): ❌ INSUFFICIENT - Start over
 ```
-
-### Hypothesis Quality Standards
-
-Each hypothesis MUST include:
-
-| Component | Requirement | Example |
-|-----------|-------------|---------|
-| **Description** | Clear, testable statement | "Session data is incomplete due to race condition" |
-| **Likelihood** | High/Medium/Low with justification | "High - intermittent = timing issue" |
-| **Evidence** | Supporting observations | "Error only on concurrent logins" |
-| **Verification** | Specific test method | "Add logging to session.save()" |
-| **Disproof criteria** | What would rule it out | "Logs show complete data every time" |
-
-### Minimum Hypothesis Count
-
-| Problem Complexity | Minimum Hypotheses |
-|--------------------|-------------------|
-| Simple (single component) | 2 |
-| Medium (cross-component) | 3 |
-| Complex (system-wide) | 5 |
-
-### Evidence Standards
-
-All claims MUST include:
-
-| Evidence Type | Required Format |
-|---------------|-----------------|
-| Code reference | `filename.ts:L42` |
-| Log/metric | Exact value with timestamp |
-| Documentation | Document name + section |
-| Prior knowledge | Memory key or conversation reference |
-
-### Risk Assessment Matrix
-
-| Risk Level | Rollback Required | Approval Required |
-|------------|-------------------|-------------------|
-| **Low** | Optional | No |
-| **Medium** | Yes, automated | No |
-| **High** | Yes, tested | User confirmation |
-| **Critical** | Yes, verified | User + backup plan |
-
-### Forbidden Reasoning Patterns
-
-| Pattern | Issue | Required Fix |
-|---------|-------|--------------|
-| "Probably X" without evidence | Unsubstantiated claim | Add supporting evidence |
-| Single hypothesis | Tunnel vision | Generate alternatives |
-| Skipping risk assessment | Dangerous changes | Always assess risk |
-| "I think" without verification | Assumption | Verify before claiming |
-| Acting before reasoning complete | Premature action | Complete all 9 steps |
-
-### Reasoning Output Requirements
-
-Every reasoning analysis MUST include:
-
-1. **Problem Statement**
-   - Clear description
-   - Context and constraints
-   - Steps applied count (X/9)
-
-2. **Hypothesis Table**
-   - Ranked by likelihood
-   - All 5 components per hypothesis
-   - Verification status
-
-3. **Risk Assessment**
-   - Risk level classification
-   - Rollback possibility
-   - Approval requirements
-
-4. **Recommended Actions**
-   - Immediate (low risk, high confidence)
-   - Short-term (medium priority)
-   - Long-term (systemic fix)
 
 ---
 

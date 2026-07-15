@@ -31,22 +31,6 @@ const DANGEROUS_BASH_RE =
   /\b(rm\s+-rf|kill\s+-9|drop\s+table|truncate|shutdown|reboot|mkfs|dd\s+if=)\b/i;
 
 /**
- * Extract file path from tool input
- */
-function extractFilePath(toolName, input) {
-  if (!input) return null;
-  try {
-    const parsed = typeof input === 'string' ? JSON.parse(input) : input;
-    if (toolName === 'Write' || toolName === 'Edit' || toolName === 'Read') {
-      return parsed.file_path || parsed.filePath || null;
-    }
-  } catch {
-    return typeof input === 'string' ? input : null;
-  }
-  return null;
-}
-
-/**
  * Extract command from Bash tool input
  */
 function extractBashCommand(input) {
@@ -72,10 +56,11 @@ function isSentinelPath(filePath) {
 /**
  * Main guard logic
  */
-function guard(toolName, toolInput) {
+function guard(ctx) {
+  const { toolName, toolInput } = ctx;
   // Write/Edit targeting sentinel files → block
   if (toolName === 'Write' || toolName === 'Edit') {
-    const filePath = extractFilePath(toolName, toolInput);
+    const filePath = ctx.filePath;
     if (isSentinelPath(filePath)) {
       return {
         decision: 'block',
@@ -111,11 +96,11 @@ import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
 
 /**
  * in-process 진입점 — 디스패처가 ctx를 전달해 직접 호출.
- * @param {{ toolName: string, toolInput: string }} ctx
+ * @param {{ toolName: string, toolInput: string, filePath: string }} ctx
  * @returns {Promise<number>} exit code (2 = deny 규약, 0 = allow)
  */
 export async function run(ctx) {
-  const result = guard(ctx.toolName, ctx.toolInput);
+  const result = guard(ctx);
   if (result) {
     logHookDecision('sentinel-guard', ctx.toolName, 'block', result.reason);
     console.log(JSON.stringify(result));

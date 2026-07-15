@@ -15,3 +15,4 @@ export { figmaSetup, figmaStatus, figmaLogout, figmaBreakpoints, figmaHelp } fro
 export { configShow, configHelp } from './config.js';
 export { statsDefault, statsWeek, statsQuality, statsHelp } from './stats.js';
 export { codexLaunch, codexStatus, codexShell, codexHelp } from './codex-proxy.js';
+export { llmList, llmRefresh, llmHelp } from './llm.js';

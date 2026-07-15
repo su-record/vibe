@@ -7,11 +7,13 @@
  *   2. standalone CLI: antigravity-hooks.json / 기존 테스트가 스크립트를
  *      직접 실행 — isDirectRun()으로 감지해 stdin/argv/env에서 ctx를 구성
  *
- * ctx 형태: { toolName, toolInput, payload, hookInput }
+ * ctx 형태: { toolName, toolInput, payload, hookInput, filePath }
  *   - toolName: payload.tool_name 우선, argv 폴백 (현행 각 스크립트와 동일 우선순위)
  *   - toolInput: 문자열 정규화된 tool_input (payload → argv[3] → env.TOOL_INPUT)
  *   - payload: 파싱된 stdin JSON 또는 null
  *   - hookInput: stdin 원문 문자열 (code-check의 HOOK_INPUT 사용처 대체)
+ *   - filePath: toolInput 에서 뽑은 대상 파일 경로 (file_path → notebook_path →
+ *     path 우선순위 — 각 스크립트의 인라인 추출 로직과 동일 규약)
  */
 import fs from 'fs';
 import { pathToFileURL } from 'url';
@@ -97,6 +99,21 @@ export function readStdinSync() {
 }
 
 /**
+ * toolInput(문자열화된 JSON)에서 대상 파일 경로 추출.
+ * 각 훅 스크립트의 인라인 추출과 동일 우선순위: file_path → notebook_path → path.
+ * @param {string} toolInput
+ * @returns {string}
+ */
+function extractFilePath(toolInput) {
+  try {
+    const parsed = JSON.parse(toolInput || '{}');
+    return parsed.file_path || parsed.notebook_path || parsed.path || '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * 실행 컨텍스트 구성. 우선순위는 현행 스크립트들과 동일:
  *   toolName: payload.tool_name → argvToolName
  *   toolInput: payload.tool_input(문자열화) → argv[3] → env.TOOL_INPUT
@@ -106,7 +123,7 @@ export function buildCtx({ rawInput = null, payload = null, argvToolName = '', a
   const toolInput = payload?.tool_input !== undefined && payload?.tool_input !== null
     ? (typeof payload.tool_input === 'string' ? payload.tool_input : JSON.stringify(payload.tool_input))
     : (argvToolInput || process.env.TOOL_INPUT || '');
-  return { toolName, toolInput, payload, hookInput: rawInput };
+  return { toolName, toolInput, payload, hookInput: rawInput, filePath: extractFilePath(toolInput) };
 }
 
 /** standalone CLI 모드용 ctx — stdin/argv/env에서 구성 */

@@ -18,6 +18,10 @@ import {
   antigravityLogout,
   claudeStatus,
   claudeLogout,
+  setZaiKey,
+  setZaiCodingKey,
+  zaiStatus,
+  zaiLogout,
 } from './llm.js';
 import { patchGlobalConfig, getVibeDir } from '../infra/lib/config/GlobalConfigManager.js';
 import type { GlobalVibeConfig } from './types.js';
@@ -30,6 +34,7 @@ import {
   configShow, configHelp,
   statsDefault, statsWeek, statsQuality, statsHelp,
   codexLaunch, codexStatus, codexShell, codexHelp,
+  llmList, llmRefresh, llmHelp,
 } from './commands/index.js';
 
 // ============================================================================
@@ -55,7 +60,6 @@ setSilentMode(options.silent);
 
 export * from '../infra/lib/MemoryManager.js';
 export * from '../infra/lib/ProjectCache.js';
-export * from '../infra/lib/ContextCompressor.js';
 export {
   PhaseInfo,
   ProgressState,
@@ -88,9 +92,6 @@ export { restoreSessionContext } from '../tools/memory/restoreSessionContext.js'
 export { prioritizeMemory } from '../tools/memory/prioritizeMemory.js';
 export { getSessionContext } from '../tools/memory/getSessionContext.js';
 
-export { findSymbol } from '../tools/semantic/findSymbol.js';
-export { findReferences } from '../tools/semantic/findReferences.js';
-export { analyzeDependencyGraph } from '../tools/semantic/analyzeDependencyGraph.js';
 
 export { analyzeComplexity } from '../tools/convention/analyzeComplexity.js';
 export { validateCodeQuality } from '../tools/convention/validateCodeQuality.js';
@@ -100,6 +101,126 @@ export { applyQualityRules } from '../tools/convention/applyQualityRules.js';
 
 export { previewUiAscii } from '../tools/ui/previewUiAscii.js';
 export { getCurrentTime } from '../tools/time/getCurrentTime.js';
+
+// ============================================================================
+// Provider commands (claude/gpt/antigravity/zai share the same shape) — D6
+// ============================================================================
+
+interface ProviderKeyAction {
+  subCommand: string;
+  usage: string;
+  handler: (apiKey: string) => void;
+}
+
+interface ProviderCommandConfig {
+  keyActions: ProviderKeyAction[];
+  logout: () => void;
+  removeAction?: () => void;
+  status: () => void;
+  help: string;
+}
+
+function extractApiKey(command: string | undefined, subCommand: string | undefined): string | undefined {
+  return positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== command && a !== subCommand);
+}
+
+function dispatchProviderCommand(
+  command: string | undefined,
+  subCommand: string | undefined,
+  cfg: ProviderCommandConfig,
+): void {
+  const keyAction = cfg.keyActions.find(k => k.subCommand === subCommand);
+  if (keyAction) {
+    const apiKey = extractApiKey(command, subCommand);
+    if (apiKey) {
+      keyAction.handler(apiKey);
+    } else {
+      console.log(keyAction.usage);
+    }
+    return;
+  }
+
+  if (subCommand === 'logout') {
+    cfg.logout();
+  } else if (subCommand === 'remove' && cfg.removeAction) {
+    cfg.removeAction();
+  } else if (subCommand === 'status') {
+    cfg.status();
+  } else {
+    console.log(cfg.help);
+  }
+}
+
+const PROVIDER_COMMANDS: Record<string, ProviderCommandConfig> = {
+  claude: {
+    keyActions: [
+      { subCommand: 'key', usage: 'Usage: vibe claude key <ANTHROPIC_API_KEY>', handler: (key) => setupExternalLLM('claude', key) },
+    ],
+    logout: claudeLogout,
+    removeAction: claudeLogout,
+    status: claudeStatus,
+    help: `
+Claude Commands:
+  vibe claude key <key>     Set Anthropic API key
+  vibe claude status        Check status
+  vibe claude logout        Remove key
+
+Get key: https://console.anthropic.com/settings/keys
+        `,
+  },
+  gpt: {
+    keyActions: [
+      { subCommand: 'key', usage: 'Usage: vibe gpt key <API_KEY>', handler: (key) => setupExternalLLM('gpt', key) },
+    ],
+    logout: gptLogout,
+    removeAction: gptLogout,
+    status: gptStatus,
+    help: `
+GPT Commands:
+  vibe gpt key <key>     Set OpenAI API key (for embeddings)
+  vibe gpt status        Check status (Codex CLI + API key)
+  vibe gpt logout        Remove API key
+
+Text generation: codex exec (via Codex CLI)
+Embeddings: OpenAI API (requires API key)
+Codex auth: codex auth
+        `,
+  },
+  antigravity: {
+    keyActions: [
+      { subCommand: 'key', usage: 'Usage: vibe antigravity key <API_KEY>', handler: (key) => setupExternalLLM('antigravity', key) },
+    ],
+    logout: antigravityLogout,
+    removeAction: () => removeExternalLLM('antigravity'),
+    status: antigravityStatus,
+    help: `
+Antigravity Commands:
+  vibe antigravity key <key>       Set API key
+  vibe antigravity status          Check status
+  vibe antigravity logout          Clear config
+  vibe antigravity remove          Remove config
+
+Antigravity CLI is auto-detected through agy.
+        `,
+  },
+  zai: {
+    keyActions: [
+      { subCommand: 'coding-key', usage: 'Usage: vibe zai coding-key <API_KEY>', handler: setZaiCodingKey },
+      { subCommand: 'key', usage: 'Usage: vibe zai key <API_KEY>', handler: setZaiKey },
+    ],
+    logout: zaiLogout,
+    status: zaiStatus,
+    help: `
+ZAI (Z.ai / GLM) Commands:
+  vibe zai coding-key <key>   Set GLM Coding Plan key (UI/code — separate key)
+  vibe zai key <key>          Set general API key (pay-as-you-go)
+  vibe zai status             Check status
+  vibe zai logout             Clear config
+
+Get keys: https://z.ai  (Coding Plan has its own key)
+        `,
+  },
+};
 
 // ============================================================================
 // Main Router
@@ -135,106 +256,44 @@ switch (command) {
 
   // vibe claude <subcommand>
   case 'claude': {
-    const subCommand = positionalArgs[1];
-    switch (subCommand) {
-      case 'key': {
-        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'claude' && a !== 'key');
-        if (apiKey) {
-          setupExternalLLM('claude', apiKey);
-        } else {
-          console.log('Usage: vibe claude key <ANTHROPIC_API_KEY>');
-        }
-        break;
-      }
-      case 'logout':
-      case 'remove':
-        claudeLogout();
-        break;
-      case 'status':
-        claudeStatus();
-        break;
-      default:
-        console.log(`
-Claude Commands:
-  vibe claude key <key>     Set Anthropic API key
-  vibe claude status        Check status
-  vibe claude logout        Remove key
-
-Get key: https://console.anthropic.com/settings/keys
-        `);
-    }
+    dispatchProviderCommand(command, positionalArgs[1], PROVIDER_COMMANDS.claude);
     break;
   }
 
   // vibe gpt <subcommand>
   case 'gpt': {
-    const subCommand = positionalArgs[1];
-    switch (subCommand) {
-      case 'key': {
-        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== 'gpt' && a !== 'key');
-        if (apiKey) {
-          setupExternalLLM('gpt', apiKey);
-        } else {
-          console.log('Usage: vibe gpt key <API_KEY>');
-        }
-        break;
-      }
-      case 'logout':
-      case 'remove':
-        gptLogout();
-        break;
-      case 'status':
-        gptStatus();
-        break;
-      default:
-        console.log(`
-GPT Commands:
-  vibe gpt key <key>     Set OpenAI API key (for embeddings)
-  vibe gpt status        Check status (Codex CLI + API key)
-  vibe gpt logout        Remove API key
-
-Text generation: codex exec (via Codex CLI)
-Embeddings: OpenAI API (requires API key)
-Codex auth: codex auth
-        `);
-    }
+    dispatchProviderCommand(command, positionalArgs[1], PROVIDER_COMMANDS.gpt);
     break;
   }
 
   // vibe antigravity <subcommand>
   case 'antigravity':
   case 'agy': {
-    const subCommand = positionalArgs[1];
-    switch (subCommand) {
-      case 'key': {
-        const apiKey = positionalArgs[2] || args.find(a => !a.startsWith('-') && a !== command && a !== 'key');
-        if (apiKey) {
-          setupExternalLLM('antigravity', apiKey);
-        } else {
-          console.log('Usage: vibe antigravity key <API_KEY>');
-        }
+    dispatchProviderCommand(command, positionalArgs[1], PROVIDER_COMMANDS.antigravity);
+    break;
+  }
+
+  // vibe llm <subcommand> — 모델 조회/최신화
+  case 'llm': {
+    const llmSub = positionalArgs[1];
+    switch (llmSub) {
+      case 'list':
+        await llmList();
         break;
-      }
-      case 'logout':
-        antigravityLogout();
-        break;
-      case 'remove':
-        removeExternalLLM('antigravity');
-        break;
-      case 'status':
-        antigravityStatus();
+      case 'refresh':
+      case 'sync':
+        await llmRefresh();
         break;
       default:
-        console.log(`
-Antigravity Commands:
-  vibe antigravity key <key>       Set API key
-  vibe antigravity status          Check status
-  vibe antigravity logout          Clear config
-  vibe antigravity remove          Remove config
-
-Antigravity CLI is auto-detected through agy.
-        `);
+        llmHelp();
     }
+    break;
+  }
+
+  // vibe zai <subcommand>
+  case 'zai':
+  case 'glm': {
+    dispatchProviderCommand(command, positionalArgs[1], PROVIDER_COMMANDS.zai);
     break;
   }
 

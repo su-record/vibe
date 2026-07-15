@@ -32,6 +32,8 @@ LLM:
   vibe claude <cmd>       Claude (key, status, logout)
   vibe gpt <cmd>          GPT (key, status, logout)
   vibe antigravity <cmd>  Antigravity (key, status, logout)
+  vibe zai <cmd>          ZAI / GLM (coding-key, key, status, logout)
+  vibe llm <cmd>          List / refresh available models (list, refresh)
 
 Figma:
   vibe figma setup <token>  Set Figma access token
@@ -49,7 +51,8 @@ Slash Commands (Claude Code / Codex):
   /vibe.reason "problem"  체계적 추론
   /vibe.analyze           프로젝트 분석
   /vibe.trace "feature"   요구사항 추적 매트릭스
-  /vibe.utils             유틸리티 (--e2e, --diagram, --continue)
+  /vibe.continue          세션 복원 (컨텍스트 이어가기)
+  /vibe.image             이미지 생성
   /vibe.figma             Figma 디자인 → 코드 변환
 
 Docs: https://github.com/su-record/vibe

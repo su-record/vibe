@@ -1,6 +1,6 @@
 ---
 name: docs
-description: 프로젝트 문서 생성 본체 — README / 아키텍처 / 사용자 가이드 / 릴리즈 노트.
+description: 프로젝트 문서 생성 본체 — README / 아키텍처 / 사용자 가이드 / 릴리즈 노트 / Mermaid 다이어그램 / codemaps.
 when_to_use: /vibe.docs 진입점에서 체인 호출. 직접 호출 금지.
 user-invocable: false
 tier: standard
@@ -126,24 +126,22 @@ Cursor is not supported — do not generate or check Cursor-specific context fil
    - **If exists** → regenerate from current `CLAUDE.md` + substitution, preserving user-specific additions outside the VIBE block.
 4. **CLI substitution for `AGENTS.md`** (Codex): `Claude Code` → `Codex` · `~/.claude/` → `~/.codex/` · `.claude/` → `.codex/` · `CLAUDE.md` → `AGENTS.md`. `CLAUDE.md` itself gets no substitution.
 5. **CLI substitution for `GEMINI.md`** (Antigravity): `Claude Code` → `Antigravity CLI` · `~/.claude/` → `~/.gemini/` · `.claude/` → `.gemini/` · `CLAUDE.md` → `GEMINI.md`.
-6. **Validate every touched file (whether newly created or modified)** via the `claude-md-guide` → `agents-md` skill chain — see validation block below. **Never write or save without running this step.**
+6. **Validate every touched file (whether newly created or modified)** via the `agents-md` skill — see validation block below. **Never write or save without running this step.**
 7. Report per file: created / updated / skipped / validation warnings.
 
 **Idempotent:** Re-running re-syncs the behavioral block and re-applies substitutions without duplication.
 
-**Mandatory validation (every create & every update) — invoke `claude-md-guide` → `agents-md`:**
+**Mandatory validation (every create & every update) — Load skill `agents-md`:**
 
-1. **`claude-md-guide`**:
-   - Size target 60–150 lines (Optimal). Warn at 200+, force split/trim at 300+.
-   - 4-question check per line (outside `VIBE-BEHAVIORAL` block):
-     - Would the agent make a mistake without this? (No → delete)
-     - Needed every session? (No → move to SPEC/plan)
-     - Can a linter/hook replace it? (Yes → move)
-     - Discoverable from code? (Yes → delete)
-   - Lost-in-the-Middle: critical rules at top, frequently-violated rules at bottom.
-2. **`agents-md`**:
-   - Addy Osmani test: "Can the agent discover this by reading the code?" → Yes = delete.
-   - Strip tech-stack name-drops already stated in `package.json`.
+- Size target 60–150 lines (Optimal). Warn at 200+, force split/trim at 300+.
+- 4-question check per line (outside `VIBE-BEHAVIORAL` block):
+  - Would the agent make a mistake without this? (No → delete)
+  - Needed every session? (No → move to SPEC/plan)
+  - Can a linter/hook replace it? (Yes → move)
+  - Discoverable from code? (Yes → delete)
+- Lost-in-the-Middle: critical rules at top, frequently-violated rules at bottom.
+- Addy Osmani test: "Can the agent discover this by reading the code?" → Yes = delete.
+- Strip tech-stack name-drops already stated in `package.json`.
 
 Report line ranges to trim per file. Do not auto-delete; surface findings for user approval before finalizing.
 
@@ -181,6 +179,41 @@ Output: `RELEASE_NOTES.md` or append to `CHANGELOG.md`
 - refactor/docs/chore items
 ```
 
+### `/vibe.docs diagram` — Diagram Generation
+
+Generate Mermaid diagrams for architecture, ERD, flowchart, or sequence
+visualization directly (native capability — no dedicated agent). Ground the
+diagram in sources first: folder structure and imports for architecture;
+`models/`, `migrations/`, `schema.*`, ORM definitions for ERDs; the real
+branch/return structure of the code for flowcharts.
+
+**Options:**
+- `/vibe.docs diagram` (default): Architecture overview
+- `/vibe.docs diagram --er`: Entity-Relationship Diagram
+- `/vibe.docs diagram --flow`: Flowchart
+- `/vibe.docs diagram --seq`: Sequence Diagram
+
+> Read `references/diagram-spec.md` for the full output conventions (Mermaid syntax per diagram type, save location, accuracy constraints).
+
+**Example:**
+```
+/vibe.docs diagram --er
+```
+
+### `/vibe.docs codemaps` — Codemaps Generation
+
+Generate auto-documentation from codebase structure directly (native
+capability — no dedicated agent).
+
+**Output Location:** `docs/CODEMAPS/`
+
+> Read `references/codemaps-output.md` for the full generated-files tree, per-file contents, and tools used.
+
+**Example:**
+```
+/vibe.docs codemaps
+```
+
 ## Pipeline Integration
 
 `/vibe.docs` completes the development pipeline:
@@ -204,10 +237,10 @@ When `/vibe.trace` completes with all scenarios passing, suggest:
 - Preserve existing documentation that's still accurate
 - Include concrete code examples from the actual project
 - Keep language consistent with project (Korean/English based on CLAUDE.md)
-- Use changelog-writer agent for `/vibe.docs release`
-- Use api-documenter agent for API-heavy projects
-- Use diagrammer agent for `/vibe.docs arch` Mermaid generation
-- Use `claude-md-guide` → `agents-md` chain for `/vibe.docs agent` — applies equally to CLAUDE.md and AGENTS.md
+- For `/vibe.docs release` (changelog mode), follow `references/api-docs-changelog.md` natively — no dedicated agent
+- For API-heavy projects (api-docs mode), follow `references/api-docs-changelog.md` natively
+- For `/vibe.docs arch` and `/vibe.docs diagram` Mermaid generation, follow `references/diagram-spec.md` natively
+- Use the `agents-md` skill for `/vibe.docs agent` — applies equally to CLAUDE.md and AGENTS.md
 
 ### DON'T
 - Don't generate placeholder text ("Lorem ipsum", "TODO: fill in")

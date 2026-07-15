@@ -8,8 +8,6 @@ export { detectOsLanguage } from './setup/LanguageDetector.js';
 // GlobalInstaller
 export {
   getCoreConfigDir,
-  installGlobalCorePackage,
-  registerMcpServers
 } from './setup/GlobalInstaller.js';
 
 // ProjectSetup

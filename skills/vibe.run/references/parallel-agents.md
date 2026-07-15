@@ -1,6 +1,6 @@
 # Parallel Agents & Model Orchestration — Full Reference
 
-> Loaded by vibe.run SKILL.md when parallel execution patterns, agent teams, or model selection details are needed.
+> Loaded by vibe.run SKILL.md when parallel execution patterns, parallel subagent groups, or model selection details are needed.
 
 ## Model Orchestration (Intelligent Routing)
 
@@ -28,13 +28,15 @@ Automatically select optimal model based on **task complexity analysis**.
 | Bug fix | -3 |
 | Documentation | -5 |
 
-### Agent Tier System
+### Agent × Model Selection
 
-| Agent | Low (Haiku) | Medium (Sonnet) | High (Opus) |
+Tier-variant agents were consolidated — the model is a Task parameter, not a separate agent:
+
+| Agent | Low | Medium | High |
 |-------|-------------|-----------------|-------------|
-| explorer | explorer-low | explorer-medium | explorer |
-| implementer | implementer-low | implementer-medium | implementer |
-| architect | architect-low | architect-medium | architect |
+| Explore (native) | `model: "haiku"` | `model: "sonnet"` | `model: "opus"` |
+| implementer | `model: "haiku"` | `model: "sonnet"` | `model: "opus"` |
+| architect | `model: "haiku"` | `model: "sonnet"` | `model: "opus"` |
 
 ### Task Calls by Role
 
@@ -122,32 +124,17 @@ Automatically select optimal model based on **task complexity analysis**.
 → 3x slower, wastes time
 ```
 
-### Background Agent Pattern (ULTRAWORK) via Orchestrator
+### Background Agent Pattern (autonomous + parallel ACT)
 
-```bash
-# Start background agent (doesn't block)
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep').then(r => console.log(r.content[0].text)))"
+Use the harness's native background subagents — spawn them in one message and continue working; completion notifications arrive automatically:
 
-# Multiple backgrounds in parallel
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(async o => {
-  await Promise.all([
-    o.runAgent('Phase 2 prep: Analyze auth API endpoints', 'phase2-prep'),
-    o.runAgent('Pre-generate test cases for login form', 'test-prep'),
-    o.runAgent('Find existing validation patterns', 'pattern-finder')
-  ]);
-  console.log('All background agents started');
-})"
+```
+Task (Explore, background): "Phase 2 prep: Analyze auth API endpoints"
+Task (tester, background): "Pre-generate test cases for login form"
+Task (Explore, background): "Find existing validation patterns"
 ```
 
-**Check background agent status:**
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => console.log(o.status().content[0].text))"
-```
-
-**Get result when ready:**
-```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/infra/orchestrator/index.js').then(o => o.getResult('SESSION_ID').then(r => console.log(r.content[0].text)))"
-```
+No status polling is needed — the harness re-invokes you when each background agent completes. (구 자체 오케스트레이터 runAgent/status/getResult 체계는 제거됨 — 네이티브 background subagent 가 대체.)
 
 ### Phase Execution Flow (ULTRAWORK Pipeline)
 
@@ -198,81 +185,29 @@ Phase N+1 Start (IMMEDIATE — exploration already done!)
 - Test cases pre-generated during implementation
 - Cache stays warm across parallel tasks
 
-## Agent Teams
+## Parallel Subagent Groups
 
-### Dev Team (Full)
+> 별도 "팀" 에이전트는 없다 — 상황별로 **네이티브 서브에이전트를 병렬 스폰**한다
+> (단일 메시지, 다중 Task 호출). 아래는 상황 → 병렬 구성 매핑.
 
-> **팀 정의**: `agents/teams/dev-team.md` 참조
-> 설정: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode: in-process`
+**병렬 구성 선택 기준:**
 
-**활성화 조건:**
-- ULTRAWORK 모드 + 3개 이상 시나리오
-- 또는 복잡도 점수 20+ (High)
+| 조건 | 병렬 구성 |
+|------|-----------|
+| 시나리오 1-2개, 파일 1-2개 | 기존 병렬 모드 (추가 구성 없음) |
+| 시나리오 3개+, 일반 모드 | implementer + tester + Explore (3 병렬) |
+| ULTRAWORK 또는 복잡도 20+ | architect + implementer + tester + code-reviewer (4 병렬) |
 
-### Lite Team (Normal Mode)
+**상황별 병렬 스폰:**
 
-> **팀 정의**: `agents/teams/lite-team.md` 참조
-
-**활성화 조건:**
-- 일반 모드 + 3개 이상 시나리오
-- 복잡도 점수 8-19 (Medium)
-- 단순 구현(1-2 파일, 시나리오 2개 이하)에서는 기존 병렬 모드 유지
-
-**팀 선택 기준:**
-
-| 조건 | 팀 |
-|------|-----|
-| 시나리오 1-2개, 파일 1-2개 | 기존 병렬 모드 (팀 없음) |
-| 시나리오 3개+, 일반 모드 | **Lite Team (3명)** |
-| ULTRAWORK 또는 복잡도 20+ | Dev Team Full (4명) |
-
-### Review Team
-
-> **팀 정의**: `agents/teams/review-debate-team.md` 참조
-
-**활성화 조건:**
-- `/vibe.review` 실행 후 P1 또는 P2 이슈 2개 이상 발견 시
-- Agent Teams 환경변수 활성화 상태
-
-### Debug Team
-
-> **팀 정의**: `agents/teams/debug-team.md` 참조
-
-**활성화 조건:**
-- 동일 빌드/테스트 실패 3회 이상
-- architecture-level uncertainty during review (stuck on root cause)
-
-### Research Team
-
-> **팀 정의**: `agents/teams/research-team.md` 참조
-
-**활성화 조건:**
-- `/vibe.spec` Step 3 리서치 단계
-- Agent Teams 환경변수 활성화 상태
-
-### Security Team
-
-> **팀 정의**: `agents/teams/security-team.md` 참조
-
-**활성화 조건:**
-- auth, payment, user-data, crypto 관련 파일 변경 감지 시
-- 또는 수동으로 `security` 키워드 지정 시
-
-### Migration Team
-
-> **팀 정의**: `agents/teams/migration-team.md` 참조
-
-**활성화 조건:**
-- package.json 주요 의존성 버전 변경 감지 시
-- 또는 수동으로 `migration` 키워드 지정 시
-
-### Fullstack Team
-
-> **팀 정의**: `agents/teams/fullstack-team.md` 참조
-
-**활성화 조건:**
-- SPEC에 frontend + backend 파일이 모두 포함된 경우
-- 또는 수동으로 `fullstack` 키워드 지정 시
+| 상황 | 활성화 조건 | 병렬 서브에이전트 |
+|------|------------|------------------|
+| Review Debate | `/vibe.review` 후 P1/P2 이슈 2개 이상 | security-reviewer + code-reviewer 인스턴스(focus별) |
+| Debug | 동일 빌드/테스트 실패 3회 이상, 또는 root cause stuck | build-error-resolver + Explore + code-reviewer (focus: correctness) |
+| Research | `/vibe.spec` Step 3 리서치 단계 | Explore × N + native WebSearch |
+| Security | auth/payment/user-data/crypto 파일 변경, 또는 `security` 키워드 | security-reviewer + code-reviewer (focus: data-integrity) |
+| Migration | package.json 주요 의존성 버전 변경, 또는 `migration` 키워드 | Explore(변경 영향 조사) + implementer + tester |
+| Fullstack | SPEC에 frontend + backend 파일 모두 포함, 또는 `fullstack` 키워드 | implementer(FE) + implementer(BE) + tester |
 
 ## External LLM Usage (When Enabled)
 

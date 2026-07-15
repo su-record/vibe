@@ -78,7 +78,7 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 - `better-sqlite3` WAL mode — synchronous API
 - `crypto.timingSafeEqual` requires same-length buffers — check length first
 - **Stack → asset SSOT**: `GLOBAL_SKILLS_*`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts`
-- **Hook dispatch order**: `prompt-dispatcher.js` → `keyword-detector.js` → `llm-orchestrate.js`
+- **Hook dispatch order**: `prompt-dispatcher.js` → `llm-orchestrate.js` (매직 키워드 배너 훅 없음 — deprecated 별칭은 "Deprecated aliases" 표가 SSOT, 모델이 직접 해석)
 - **Hook 실행 모델**: per-event process spawn 유지 — **daemon/IPC 지양** (무상태·크래시 격리·인프라 제로가 ~20ms VM 기동 절감보다 우선). 훅 레이턴시 최적화는 dispatcher in-process 평탄화(자식 spawn → `import` 실행)로만 접근한다
 
 ## Workflow
@@ -87,14 +87,14 @@ Codex exposes Vibe entrypoints as skills. Use `$vibe`, `$vibe.spec`, or `/skills
 
 ```
 $vibe "<requirement>" [+ 📎 attachments]
-  → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / utils)
-  → Smart Resume detection (.vibe/{interviews,plans,specs,features}/)
+  → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / continue / image)
+  → Smart Resume detection (.vibe/{specs,features}/ — legacy interviews/plans 는 입력 컨텍스트로만 인식)
   → SPEC confirmation (1-time approval; skipped on automationLevel: autonomous)
   → Loop: ANCHOR→ACT→JUDGE→RECORD until gates pass │ stuck │ max-iter
 ```
 
 **Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
-- `$vibe.spec` — interview → plan → spec → review orchestration
+- `$vibe.spec` — single-pass SPEC (인라인 질문 → SPEC 1패스 → 승인 1회; 구 interview/plan/spec-review 4단계는 폐지)
 - `$vibe.figma` — Figma ↔ code (UI track)
 - `$vibe.run` — SPEC-driven implementation
 - `$vibe.verify` — implementation vs SPEC verification
@@ -128,7 +128,7 @@ $vibe "<requirement>" [+ 📎 attachments]
 ## Context Management
 
 - Exploration → Haiku · Implementation → Sonnet · Architecture → Opus
-- At 85%+ context: `save_memory` → `/new` → `$vibe.utils --continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
+- At 85%+ context: `save_memory` → `/new` → `$vibe.continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
 
 ## Git
 

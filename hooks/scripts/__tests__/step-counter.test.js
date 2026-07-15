@@ -7,7 +7,7 @@
  *  - 책임 3) error_category 분류기 + 3-fail detector → anti-pattern md (Phase 2)
  *  - 책임 간 독립성, hot-path 안정성
  *
- * 패턴: keyword-detector.test.js 와 동일한 execFileSync 방식.
+ * 패턴: 훅 스크립트 공통의 execFileSync 방식.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { spawnSync } from 'child_process';
@@ -433,6 +433,27 @@ describe('step-counter PostToolUse hook', () => {
       const apDir = path.join(projectDir, '.vibe', 'anti-patterns');
       const files = fs.existsSync(apDir) ? fs.readdirSync(apDir).filter(f => f.endsWith('.md')) : [];
       expect(files).toHaveLength(1);
+    });
+  });
+
+  // ───────── A2/D2: 64KB 초과 stdin 페이로드 (구 단일 버퍼 리더 절단 버그 회귀) ─────────
+  describe('stdin 64KB 초과 페이로드 — 절단 없이 처리', () => {
+    it('페이로드가 64KB를 넘어도 JSON 전체를 읽어 target_file을 정확히 기록', () => {
+      // 구현이 64KB 단일 버퍼로 되돌아가면 JSON이 중간에 잘려 파싱 실패 →
+      // stdinPayload=null → jsonl 라인 자체가 기록되지 않는다.
+      const padding = 'x'.repeat(80000); // 총 페이로드 > 64KB 보장
+      runCounter({
+        payload: {
+          tool_name: 'Edit',
+          tool_input: { file_path: 'src/foo.ts', padding },
+          tool_response: {},
+        },
+        projectDir,
+      });
+      const lines = readJsonl(runJsonl);
+      expect(lines).toHaveLength(1);
+      expect(lines[0].target_file).toBe('src/foo.ts');
+      expect(lines[0].tool).toBe('Edit');
     });
   });
 });

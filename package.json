@@ -1,7 +1,7 @@
 {
   "name": "@su-record/vibe",
-  "version": "2.15.0",
-  "description": "AI Coding Framework for Claude Code — 42+ agents, 71 skills, multi-LLM orchestration",
+  "version": "3.2.0",
+  "description": "AI Coding Framework for Claude Code — 7+ agents, 60 skills, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
   "exports": {
@@ -9,11 +9,9 @@
     "./tools": "./dist/tools/index.js",
     "./tools/memory": "./dist/tools/memory/index.js",
     "./tools/convention": "./dist/tools/convention/index.js",
-    "./tools/semantic": "./dist/tools/semantic/index.js",
     "./tools/ui": "./dist/tools/ui/index.js",
     "./tools/time": "./dist/tools/time/index.js",
     "./tools/interaction": "./dist/tools/interaction/index.js",
-    "./orchestrator": "./dist/infra/orchestrator/index.js",
     "./memory": {
       "types": "./dist/infra/lib/memory/index.d.ts",
       "default": "./dist/infra/lib/memory/index.js"
@@ -27,13 +25,15 @@
     "dev": "tsc --watch",
     "gen:skill-docs": "npx tsx scripts/gen-skill-docs.ts",
     "gen:skill-docs:check": "npx tsx scripts/gen-skill-docs.ts --check",
+    "sync:agent-models": "npx tsx scripts/sync-agent-models.ts",
+    "sync:agent-models:check": "npx tsx scripts/sync-agent-models.ts --check",
     "validate:skill-invocation": "npx tsx scripts/validate-skill-invocation.ts",
     "validate:counts": "npx tsx scripts/validate-counts.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "pnpm build",
     "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(()=>{})\"",
-    "release": "pnpm version patch && npm publish --access public"
+    "release": "pnpm version patch && git push origin main --follow-tags"
   },
   "keywords": [
     "ai",
@@ -57,6 +57,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/su-record/vibe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/su-record/vibe/issues"
   },
   "homepage": "https://github.com/su-record/vibe#readme",
   "publishConfig": {
@@ -91,7 +94,6 @@
     "dist/",
     "vibe/",
     "languages/",
-    "commands/",
     "agents/",
     "skills/",
     "hooks/",

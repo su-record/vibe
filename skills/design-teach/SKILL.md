@@ -133,27 +133,27 @@ Design skills are integrated into 3 phases of the vibe workflow:
 ```
 SPEC Phase:
   ① Check design-context.json (recommend /design-teach if missing)
-  ② ui-industry-analyzer → ui-design-system-gen → ui-layout-architect
+  ② design-system-gen (industry analysis → design system → layout)
 
 REVIEW Phase:
-  ③ /design-audit (technical quality check)
-  ④ /design-critique (UX review)
-  ⑤ ui-antipattern-detector (AI slop + pattern detection)
+  ③ /design-review audit (technical quality check)
+  ④ /design-review critique (UX review)
+  ⑤ design-reviewer (AI slop + anti-pattern detection)
 
 PRE-SHIP Phase:
-  ⑥ /design-normalize (design system alignment)
-  ⑦ /design-polish (final pass)
+  ⑥ /design-refine normalize (design system alignment)
+  ⑦ /design-refine polish (final pass)
 ```
 
 ## How Other Skills Use This
 
 | Skill | Context Usage |
 |-------|---------------|
-| `/design-audit` | Weight findings by audience constraints (a11y level, devices) |
-| `/design-critique` | Adjust persona priorities by target audience |
-| `/design-polish` | Apply brand-appropriate micro-interactions |
-| `/design-normalize` | Use detected token system for replacement mapping |
-| `/design-distill` | Preserve brand-expressive elements based on personality |
+| `/design-review audit` | Weight findings by audience constraints (a11y level, devices) |
+| `/design-review critique` | Adjust persona priorities by target audience |
+| `/design-refine polish` | Apply brand-appropriate micro-interactions |
+| `/design-refine normalize` | Use detected token system for replacement mapping |
+| `/design-refine distill` | Preserve brand-expressive elements based on personality |
 
 ## Output Format
 

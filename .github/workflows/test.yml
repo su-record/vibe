@@ -48,5 +48,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile=false
 
+      - name: Build (tsc) # dist/ 필요 — 훅 테스트가 dist/tools 동적 import 를 검증 (code-check-memory-write)
+        run: pnpm build
+
       - name: Run vitest
         run: pnpm test -- --reporter=default

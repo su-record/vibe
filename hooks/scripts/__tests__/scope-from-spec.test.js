@@ -37,44 +37,44 @@ function writeSpec(dir, filename, content, status = 'in-progress') {
 }
 
 // ══════════════════════════════════════════════════
-// isScopeGuardEnabled — 기본 ON 동작
+// isScopeGuardEnabled — 기본 OFF (opt-in), CLI isScopeGuardOptedIn 과 동일 기본값
 // ══════════════════════════════════════════════════
 describe('isScopeGuardEnabled', () => {
   let tmpDir;
   beforeEach(() => { tmpDir = makeTempDir(); });
   afterEach(() => { cleanDir(tmpDir); });
 
-  it('config 없음 → true (기본 ON)', () => {
-    expect(isScopeGuardEnabled(tmpDir)).toBe(true);
+  it('config 없음 → false (기본 OFF)', () => {
+    expect(isScopeGuardEnabled(tmpDir)).toBe(false);
   });
 
-  it('scopeGuard 키 없는 config → true', () => {
+  it('scopeGuard 키 없는 config → false', () => {
     writeConfig(tmpDir, undefined);
-    expect(isScopeGuardEnabled(tmpDir)).toBe(true);
+    expect(isScopeGuardEnabled(tmpDir)).toBe(false);
   });
 
-  it('scopeGuard.enabled 없는 config → true', () => {
+  it('scopeGuard.enabled 없는 config → false', () => {
     const vibeDir = path.join(tmpDir, '.vibe');
     fs.mkdirSync(vibeDir, { recursive: true });
     fs.writeFileSync(path.join(vibeDir, 'config.json'), JSON.stringify({ scopeGuard: {} }));
-    expect(isScopeGuardEnabled(tmpDir)).toBe(true);
+    expect(isScopeGuardEnabled(tmpDir)).toBe(false);
   });
 
-  it('scopeGuard.enabled=true → true', () => {
+  it('scopeGuard.enabled=true → true (명시적 opt-in)', () => {
     writeConfig(tmpDir, { enabled: true });
     expect(isScopeGuardEnabled(tmpDir)).toBe(true);
   });
 
-  it('scopeGuard.enabled=false → false (명시적 opt-out)', () => {
+  it('scopeGuard.enabled=false → false', () => {
     writeConfig(tmpDir, { enabled: false });
     expect(isScopeGuardEnabled(tmpDir)).toBe(false);
   });
 
-  it('legacy .claude/vibe/config.json에서도 enabled=false 인식', () => {
+  it('legacy .claude/vibe/config.json에서도 enabled=true 인식', () => {
     const legacyDir = path.join(tmpDir, '.claude', 'vibe');
     fs.mkdirSync(legacyDir, { recursive: true });
-    fs.writeFileSync(path.join(legacyDir, 'config.json'), JSON.stringify({ scopeGuard: { enabled: false } }));
-    expect(isScopeGuardEnabled(tmpDir)).toBe(false);
+    fs.writeFileSync(path.join(legacyDir, 'config.json'), JSON.stringify({ scopeGuard: { enabled: true } }));
+    expect(isScopeGuardEnabled(tmpDir)).toBe(true);
   });
 });
 

@@ -124,7 +124,10 @@ export function getCliDir(): string {
 /**
  * scope-guard 자동 동기화 opt-in 여부.
  * `.vibe/config.json` (또는 legacy `.claude/vibe/`) 의
- * `scopeGuard.enabled === true` 일 때만 활성. 기본 off.
+ * `scopeGuard.enabled === true` 일 때만 활성. 기본 off
+ * (자동 ON 은 SPEC 외 편집에 노이즈 경고 회귀를 유발해 의도적으로 off).
+ * SSOT: 런타임 훅 hooks/scripts/lib/scope-from-spec.js `isScopeGuardEnabled` 와
+ * 반드시 같은 기본값을 유지할 것 (harness-review-2026-07-01 P1-6).
  */
 export function isScopeGuardOptedIn(projectRoot: string): boolean {
   const candidates = [
