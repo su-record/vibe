@@ -2,11 +2,43 @@
  * 공통 유틸리티 함수
  */
 
+import fs from 'fs';
+import path from 'path';
+
 /**
  * 지정된 시간만큼 대기
  */
 export function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * PATH에서 실행 파일 존재 여부를 탐색 (which/where 서브프로세스 없이 크로스 플랫폼)
+ * - POSIX: 실행 권한(X_OK)까지 확인
+ * - Windows: PATHEXT 확장자(.exe/.cmd 등)를 붙여 파일 존재 확인
+ */
+export function findExecutableInPath(name: string): boolean {
+  const dirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  const exts = process.platform === 'win32'
+    ? (process.env.PATHEXT || '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean)
+    : [''];
+  for (const dir of dirs) {
+    for (const ext of exts) {
+      if (isExecutableFile(path.join(dir, name + ext))) return true;
+    }
+  }
+  return false;
+}
+
+function isExecutableFile(candidate: string): boolean {
+  try {
+    const stat = fs.statSync(candidate, { throwIfNoEntry: false });
+    if (!stat?.isFile()) return false;
+    if (process.platform !== 'win32') fs.accessSync(candidate, fs.constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

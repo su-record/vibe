@@ -115,7 +115,7 @@ describe('design-md-parser: findHardcodedColors', () => {
 describe('vibe.design static assets', () => {
   it('SKILL.md has frontmatter with name: vibe.design', () => {
     const skill = readFileSync(SKILL_PATH, 'utf8');
-    expect(skill).toMatch(/^---\n[\s\S]+?\n---/);
+    expect(skill).toMatch(/^---\r?\n[\s\S]+?\r?\n---/);
     expect(skill).toMatch(/name:\s*vibe\.design/);
     expect(skill).toMatch(/user-invocable:\s*true/);
   });
@@ -129,7 +129,7 @@ describe('vibe.design static assets', () => {
   });
 
   it('template starts with version marker', () => {
-    expect(template.split('\n')[0]).toBe('<!-- design-md-version: 1 -->');
+    expect(template.split(/\r?\n/)[0]).toBe('<!-- design-md-version: 1 -->');
   });
 
   it('references catalog includes style-preset column and linear seed', () => {

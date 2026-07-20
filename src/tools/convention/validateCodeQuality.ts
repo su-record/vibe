@@ -9,7 +9,8 @@ export const CODE_QUALITY_METRICS = {
   COMPLEXITY: {
     maxCyclomaticComplexity: 10,
     maxCognitiveComplexity: 15,
-    maxFunctionLines: 20,
+    maxFunctionLines: 50,
+    maxFileLines: 200,
     maxNestingDepth: 3,
     maxParameters: 5
   },
@@ -102,7 +103,7 @@ function validateSingleFile(code: string, validateType: string): { score: number
   const lineCount = lines.length;
 
   // Line count check
-  if (lineCount > CODE_QUALITY_METRICS.COMPLEXITY.maxFunctionLines * 10) {
+  if (lineCount > CODE_QUALITY_METRICS.COMPLEXITY.maxFileLines) {
     score -= 10;
     issues++;
   }

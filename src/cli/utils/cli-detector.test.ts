@@ -44,8 +44,9 @@ describe('detectCodexCli', () => {
     const binDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-bin-'));
     tempDirs.push(homeDir, binDir);
     vi.spyOn(os, 'homedir').mockReturnValue(homeDir);
-    fs.writeFileSync(path.join(binDir, 'agy'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
-    process.env.PATH = `${binDir}:/usr/bin:/bin`;
+    const exeName = process.platform === 'win32' ? 'agy.cmd' : 'agy';
+    fs.writeFileSync(path.join(binDir, exeName), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+    process.env.PATH = binDir;
     process.env.ANTIGRAVITY_API_KEY = 'test-key';
 
     const status = detectAntigravityCli();

@@ -15,10 +15,11 @@ import { spawnSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UTILS_PATH = path.resolve(__dirname, '..', 'utils.js');
+// Windows 절대경로(C:\...)는 ESM import 지정자가 될 수 없으므로 file:// URL로 변환
+const UTILS_URL = pathToFileURL(path.resolve(__dirname, '..', 'utils.js')).href;
 
 function makeTempCacheFile() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-npm-root-test-'));
@@ -30,8 +31,8 @@ function makeTempCacheFile() {
  * VIBE_NPM_ROOT_CACHE_FILE 환경 변수로 캐시 파일 경로를 주입한다.
  */
 function runGetNpmRoot(cacheFilePath) {
-  return spawnSync('node', ['--input-type=module', '--eval',
-    `import { getGlobalNpmPath } from '${UTILS_PATH}';
+  return spawnSync(process.execPath, ['--input-type=module', '--eval',
+    `import { getGlobalNpmPath } from '${UTILS_URL}';
      process.stdout.write(getGlobalNpmPath() || '');`
   ], {
     encoding: 'utf-8',
