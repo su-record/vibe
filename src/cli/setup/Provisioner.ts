@@ -230,6 +230,12 @@ ${stackList}
 ## Problem Statement
 <!-- What problem does this solve? -->
 
+## Context Sources
+<!-- Files, documents, URLs, or observed system state used as input -->
+
+## Assumptions
+<!-- Defaults adopted without confirmation -->
+
 ## Proposed Solution
 <!-- High-level approach -->
 
@@ -254,6 +260,12 @@ ${stackList}
 
 ## Acceptance Criteria
 - [ ] <!-- Criterion 1 -->
+
+## Evidence Required
+- <!-- Command result, test report, log, screenshot, or verified code location -->
+
+## Human Taste (Non-Blocking)
+- <!-- UX, brand, or product-quality review reserved for release; never a completion gate -->
 
 ## References
 <!-- Links to relevant docs, designs, PRs -->

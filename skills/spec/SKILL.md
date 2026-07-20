@@ -54,7 +54,10 @@ Task(subagent_type="Explore",
 `vibe/templates/spec-template.md` 구조로 `.vibe/specs/{feature-name}.md` 를 작성한다. 핵심 요건:
 
 - **Overview / Goal** — 무엇을, 왜. 1-3 문장.
+- **Context Sources** — 입력으로 사용한 파일·문서·URL·관측 상태. 출처 없는 추정은 Assumptions 로 분리.
 - **Done Criteria** — 결정론적 게이트만. 각 항목은 "명령/관찰로 pass·fail 판정 가능"해야 한다 (테스트 exit code, 빌드 성공, 특정 동작 관찰). "잘 동작한다" 류 서술 금지 — 이것이 루프의 JUDGE 입력이 된다.
+- **Evidence Required** — Done 을 증명할 명령 결과·테스트 리포트·로그·스크린샷·코드 위치.
+- **Human Taste (Non-Blocking)** — UX·브랜드·제품 감각처럼 release 시 사람이 판단할 기준. 완료 게이트로 쓰지 않는다.
 - **Scenarios** — Given-When-Then. Happy path + 주요 edge case. 각 시나리오는 Done Criteria 중 하나에 매핑.
 - **Out of Scope** — 이번에 하지 않는 것을 명시 (비어 있으면 스코프 팽창 신호).
 - **Assumptions** — 3단계에서 채택한 기본값 전부.
@@ -71,6 +74,8 @@ Task(subagent_type="Explore",
 작성 직후, 아래 체크리스트로 자기 SPEC 을 **1회** 점검하고 걸리는 항목을 즉시 고친다. 외부 LLM 리뷰 없음, 수렴 루프 없음 — 한 번 고치면 끝.
 
 - [ ] 모든 Done Criteria 가 명령/관찰로 판정 가능한가 (모델 자기 보고가 아닌)
+- [ ] Context Sources 와 Assumptions 가 분리됐고, 각 Done Criteria 의 Evidence Required 가 있는가
+- [ ] Human Taste 가 결정론적 완료 게이트에 섞이지 않았는가
 - [ ] 모든 시나리오가 Done Criteria 에 매핑되는가 (고아 시나리오 없음)
 - [ ] 수치가 필요한 곳에 수치가 있는가 (제한·타임아웃·크기 — 없으면 기본값 + Assumptions)
 - [ ] Out of Scope 가 비어 있지 않은가

@@ -15,8 +15,12 @@ const arg = process.argv[2];
 const passed = arg === 'pass';
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
-recordVerify(projectDir, passed);
+const recorded = recordVerify(projectDir, passed);
 
 const status = passed ? 'pass' : 'fail';
-process.stdout.write(`[verify-ledger] recorded: verifyPassed=${passed} (${status})\n`);
+if (recorded) {
+  process.stdout.write(`[verify-ledger] recorded: verifyPassed=${passed} (${status})\n`);
+} else {
+  process.stderr.write('[verify-ledger] WARNING: run-ledger or evidence.json write failed\n');
+}
 process.exit(0);

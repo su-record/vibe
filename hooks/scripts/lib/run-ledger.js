@@ -2,7 +2,7 @@
  * Run Ledger — vibe.run 실행 및 vibe.verify 결과 추적.
  *
  * 파일 위치: <projectDir>/.vibe/metrics/run-ledger.json
- * 형식: { runStarted, runFeature, verifyPassed, verifyAt, stopWarned,
+ * 형식: { runId, runStarted, runFeature, verifyPassed, verifyAt, stopWarned,
  *         verifyRequired, verifyRequiredReason }
  *
  * 모든 함수는 fail-open (try/catch, 오류 시 null/false 반환).
@@ -10,12 +10,32 @@
  */
 
 import fs from 'fs';
-import os from 'os';
+import { randomUUID } from 'crypto';
 import path from 'path';
+
+const EVIDENCE_SCHEMA_VERSION = '1.0.0';
 
 /** 레저 파일 경로 */
 function ledgerPath(projectDir) {
   return path.join(projectDir, '.vibe', 'metrics', 'run-ledger.json');
+}
+
+function evidencePath(projectDir, runId) {
+  return path.join(projectDir, '.vibe', 'runs', runId, 'evidence.json');
+}
+
+function writeJsonAtomic(targetPath, data) {
+  const dir = path.dirname(targetPath);
+  fs.mkdirSync(dir, { recursive: true });
+  const tmp = path.join(dir, `.${path.basename(targetPath)}.${process.pid}.${Date.now()}.tmp`);
+  try {
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tmp, targetPath);
+    return true;
+  } catch {
+    try { fs.rmSync(tmp, { force: true }); } catch { /* fail-open */ }
+    return false;
+  }
 }
 
 /**
@@ -41,12 +61,54 @@ export function readLedger(projectDir) {
  */
 function writeLedger(projectDir, data) {
   try {
-    const p = ledgerPath(projectDir);
-    fs.mkdirSync(path.dirname(p), { recursive: true });
-    const tmp = path.join(os.tmpdir(), `run-ledger-${process.pid}-${Date.now()}.tmp`);
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
-    fs.renameSync(tmp, p);
-    return true;
+    return writeJsonAtomic(ledgerPath(projectDir), data);
+  } catch {
+    return false;
+  }
+}
+
+function verificationResults(ledger) {
+  if (Array.isArray(ledger.verificationResults)) {
+    return ledger.verificationResults
+      .filter(item => item && typeof item === 'object')
+      .map(item => ({
+        command: typeof item.command === 'string' ? item.command : null,
+        exitCode: Number.isInteger(item.exitCode) ? item.exitCode : null,
+      }));
+  }
+  if (Array.isArray(ledger.verificationCommands)) {
+    return ledger.verificationCommands
+      .filter(command => typeof command === 'string')
+      .map(command => ({ command, exitCode: null }));
+  }
+  return [];
+}
+
+function buildEvidence(ledger, passed, generatedAt) {
+  const feature = typeof ledger.runFeature === 'string' ? ledger.runFeature : null;
+  return {
+    schemaVersion: EVIDENCE_SCHEMA_VERSION,
+    runId: ledger.runId,
+    specPath: feature ? `.vibe/specs/${feature}.md` : null,
+    generatedAt,
+    judges: {
+      deterministic: {
+        authority: 'blocking',
+        verifyPassed: Boolean(passed),
+        verificationResults: verificationResults(ledger),
+      },
+      model: { authority: 'advisory-only', canComplete: false },
+      humanTaste: { authority: 'release-only', canComplete: false },
+    },
+  };
+}
+
+function writeEvidence(projectDir, ledger, passed, generatedAt) {
+  try {
+    return writeJsonAtomic(
+      evidencePath(projectDir, ledger.runId),
+      buildEvidence(ledger, passed, generatedAt),
+    );
   } catch {
     return false;
   }
@@ -63,6 +125,7 @@ export function recordRunStart(projectDir, feature) {
     const existing = readLedger(projectDir) || {};
     const next = {
       ...existing,
+      runId: randomUUID(),
       runStarted: new Date().toISOString(),
       runFeature: feature || null,
       verifyPassed: false,
@@ -85,17 +148,23 @@ export function recordRunStart(projectDir, feature) {
 export function recordVerify(projectDir, passed) {
   try {
     const existing = readLedger(projectDir) || {};
+    const generatedAt = new Date().toISOString();
     const next = {
       ...existing,
+      runId: typeof existing.runId === 'string' && existing.runId
+        ? existing.runId
+        : randomUUID(),
       verifyPassed: Boolean(passed),
-      verifyAt: new Date().toISOString(),
+      verifyAt: generatedAt,
     };
     // pass 시 verifyRequired 클리어
     if (passed) {
       next.verifyRequired = false;
       next.verifyRequiredReason = null;
     }
-    return writeLedger(projectDir, next);
+    const ledgerWritten = writeLedger(projectDir, next);
+    if (!ledgerWritten) return false;
+    return writeEvidence(projectDir, next, passed, generatedAt);
   } catch {
     return false;
   }
@@ -144,9 +213,9 @@ export function markStopWarned(projectDir) {
  */
 export function extractRunFeature(prompt) {
   try {
-    const m = prompt.match(/(?:\/|\$)vibe\.run\s+([^\s]+)/i);
+    const m = prompt.match(/(?:\/|\$)vibe\.run\s+(?:"([^"]+)"|'([^']+)'|([^\s]+))/i);
     if (!m) return null;
-    const token = m[1];
+    const token = m[1] || m[2] || m[3];
     // 플래그(-- 시작)나 키워드는 기능명이 아님
     if (token.startsWith('-')) return null;
     return token;

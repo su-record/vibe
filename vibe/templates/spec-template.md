@@ -10,6 +10,10 @@
 
 {What and why — 1-3 sentences.}
 
+### Context Sources
+
+- {File, document, URL, or observed system state used as input}
+
 ### Assumptions
 
 - {Default adopted without asking — e.g., session expiry 24h}
@@ -25,6 +29,14 @@
 |---|-----------|-------------|
 | D1 | {e.g., all scenarios in the feature file pass} | {e.g., `npx vitest run` exit 0} |
 | D2 | {e.g., build succeeds with no type errors} | {e.g., `npm run build` exit 0} |
+
+### Evidence Required
+
+- {Command result, test report, log, screenshot, or verified code location required to prove Done}
+
+### Human Taste (Non-Blocking)
+
+- {UX, brand, or product-quality review reserved for the release decision; never a loop completion gate}
 
 ---
 
@@ -68,4 +80,6 @@ Response: 201 {...}
 
 - `/vibe.run "{feature}"` implements scenario-by-scenario, verifying each immediately.
 - `/vibe.verify "{feature}"` judges the Done Criteria and sets `verifyPassed` in the run-ledger.
+- Verification writes `.vibe/runs/{run-id}/evidence.json`; only deterministic Judge results can complete the loop.
+- Model Judge findings are advisory-only. Human Taste is release-only.
 - Gate = all Done Criteria pass (exit codes / observed behavior) — loop continues until gates pass, stuck, or max iterations.

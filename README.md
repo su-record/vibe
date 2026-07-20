@@ -9,7 +9,7 @@
 
 **English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, Cursor, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*
 
-Vibe는 AI 코딩을 위한 **검증 하네스(verification harness)** 입니다. 모델은 이미 계획도 구현도 잘합니다 — 부족한 것은 "다 됐다"는 말을 믿을 근거입니다. Vibe는 Claude Code, Codex, Cursor, Antigravity CLI를 감싸고, **완료 판정을 모델의 자기 보고가 아니라 결정론적 게이트(테스트 exit code, run-ledger, 회귀 기억)에 맡깁니다.** 빠르게 바이브 코딩하되, 검증 안 된 코드가 나가지 않게.
+Vibe는 AI 코딩을 위한 **검증 하네스(verification harness)** 입니다. 출처가 있는 컨텍스트로 SPEC을 고정하고, **완료 판정을 모델의 자기 보고가 아니라 결정론적 게이트(테스트 exit code, run-ledger, 회귀 기억)에 맡긴 뒤 실행별 Evidence Bundle을 남깁니다.** Model Judge는 발견만 제안하고, Human Taste는 release에서만 판단합니다. 빠르게 바이브 코딩하되, 검증 안 된 코드가 나가지 않게.
 
 ```bash
 npm install -g @su-record/vibe
@@ -26,6 +26,7 @@ vibe init
 
 - **테스트가 실제로 통과했는가** — PR 게이트가 테스트 스위트를 직접 실행
 - **verify가 실제로 실행됐는가** — `.vibe/metrics/run-ledger.json`이 코드로 기록
+- **무엇으로 완료를 증명했는가** — `.vibe/runs/{run-id}/evidence.json`이 Judge 권한과 실행 증거를 기록
 - **리뷰 루프가 수렴하고 있는가** — discover-hash(2라운드 동일 → stuck)가 판정
 - **같은 실수가 반복되지 않는가** — verify 실패가 회귀 테스트로 자동 등록
 

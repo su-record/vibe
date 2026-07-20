@@ -104,7 +104,7 @@ Load skill `contract` with: check "{feature}"
 
 ### 7. Metrics + Ledger update (MANDATORY final step)
 
-Record run metrics, then write the verify result to the run ledger. This is the machine-readable JUDGE record consumed by the Stop-hook verify gate, auto-commit verify gate, and loop-contract gates.
+Record run metrics, then write the verify result to the run ledger. This is the machine-readable deterministic JUDGE record consumed by the Stop-hook verify gate, auto-commit verify gate, and loop-contract gates. `recordVerify` also writes `.vibe/runs/{run-id}/evidence.json`; Model Judge findings remain advisory-only and Human Taste remains release-only.
 
 ```bash
 # Append step-count history (ok if current-run.json missing)

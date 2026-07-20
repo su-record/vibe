@@ -25,6 +25,14 @@ export interface SpecGeneratorOptions {
   additionalConstraints?: string[];
   /** 출력 형식 추가 */
   additionalOutputs?: string[];
+  /** 컨텍스트 출처 */
+  contextSources?: string[];
+  /** 확인 없이 채택한 가정 */
+  assumptions?: string[];
+  /** 완료를 증명할 산출물 */
+  evidenceRequired?: string[];
+  /** 출시 시 사람이 판단할 비차단 기준 */
+  humanTaste?: string[];
 }
 
 /** 생성된 SPEC */
@@ -148,7 +156,11 @@ function buildSpecContent(
   phases: PhaseInfo[],
   options: SpecGeneratorOptions
 ): string {
-  const { techStack = [], relatedCodePaths = [], designReference, additionalConstraints = [], additionalOutputs = [] } = options;
+  const {
+    techStack = [], relatedCodePaths = [], designReference,
+    additionalConstraints = [], additionalOutputs = [],
+    contextSources = [], assumptions = [], evidenceRequired = [], humanTaste = [],
+  } = options;
   const now = new Date().toISOString();
 
   let content = `---
@@ -186,6 +198,12 @@ ${designReference || '- (None specified)'}
 ### Requirements Source
 - Parsed from PRD: ${prd.requirements.length} requirements
 - Format: ${prd.metadata.format}
+
+### Context Sources
+${contextSources.length > 0 ? contextSources.map(source => `- ${source}`).join('\n') : '- PRD input supplied to this generator'}
+
+### Assumptions
+${assumptions.length > 0 ? assumptions.map(assumption => `- ${assumption}`).join('\n') : '- None recorded'}
 </context>
 
 ## Task
@@ -241,6 +259,12 @@ ${generateFileList(phases, 'modify')}
 - \`npm test\` (tests pass)
 - \`tsc --noEmit\` (type check)
 ${additionalOutputs.map(o => `- ${o}`).join('\n')}
+
+### Evidence Required
+${evidenceRequired.length > 0 ? evidenceRequired.map(item => `- ${item}`).join('\n') : '- Command results and exit codes for every acceptance criterion'}
+
+### Human Taste (Non-Blocking)
+${humanTaste.length > 0 ? humanTaste.map(item => `- ${item}`).join('\n') : '- None recorded; release review remains a human decision'}
 </output_format>
 
 ## Acceptance Criteria
@@ -316,6 +340,12 @@ isMaster: true
 ### Tech Stack
 ${options.techStack?.map(t => `- ${t}`).join('\n') || '- (See project configuration)'}
 
+### Context Sources
+${options.contextSources?.map(source => `- ${source}`).join('\n') || '- PRD input supplied to this generator'}
+
+### Assumptions
+${options.assumptions?.map(assumption => `- ${assumption}`).join('\n') || '- None recorded'}
+
 ### Constraints (Apply to All Phases)
 - Follow existing code patterns
 - TypeScript strict mode
@@ -330,6 +360,12 @@ ${phases.map((p, i) => `Phase ${i + 1}: ${p.name}`).join(' → ')}
 
 ## Dependencies
 ${generateDependencyList(phases)}
+
+## Evidence Required
+${options.evidenceRequired?.map(item => `- ${item}`).join('\n') || '- Command results and exit codes for every phase'}
+
+## Human Taste (Non-Blocking)
+${options.humanTaste?.map(item => `- ${item}`).join('\n') || '- None recorded; release review remains a human decision'}
 `;
 
   return content;
@@ -377,6 +413,12 @@ ${phase.requirements.map(r => `- ${r.id}: ${truncateText(r.description, 50)}`).j
 
 ### Dependencies
 ${phaseNumber > 1 ? `- Requires Phase ${phaseNumber - 1} completion` : '- No dependencies (first phase)'}
+
+### Context Sources
+${options.contextSources?.map(source => `- ${source}`).join('\n') || '- Inherited from master SPEC and PRD input'}
+
+### Assumptions
+${options.assumptions?.map(assumption => `- ${assumption}`).join('\n') || '- None recorded'}
 </context>
 
 ## Task
@@ -400,6 +442,12 @@ ${phaseNumber > 1 ? `- Requires Phase ${phaseNumber - 1} completion` : '- No dep
   content += `- [ ] Phase ${phaseNumber} build succeeds
 - [ ] Phase ${phaseNumber} tests pass
 </acceptance>
+
+## Evidence Required
+${options.evidenceRequired?.map(item => `- ${item}`).join('\n') || '- Phase test and build command results with exit codes'}
+
+## Human Taste (Non-Blocking)
+${options.humanTaste?.map(item => `- ${item}`).join('\n') || '- None recorded; release review remains a human decision'}
 `;
 
   return content;

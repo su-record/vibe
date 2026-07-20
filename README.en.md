@@ -7,7 +7,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-Vibe is a **verification harness** for AI coding. Today's models already plan and implement well — what's missing is a reason to trust "it's done." Vibe wraps Claude Code, Codex, Cursor, or Antigravity CLI and hands the completion verdict to **deterministic gates (test exit codes, a run ledger, regression memory) instead of the model's self-report** — so you can vibe-code fast without shipping unverified code.
+Vibe is a **verification harness** for AI coding. It anchors a SPEC in sourced context, hands completion to **deterministic gates instead of the model's self-report**, and writes an Evidence Bundle for every verified run. Model Judges are advisory-only; Human Taste is release-only — so you can vibe-code fast without shipping unverified code.
 
 ```bash
 npm install -g @su-record/vibe
@@ -22,6 +22,7 @@ Scaffolding that teaches a 2026-era model *how to work* is pure overhead. Vibe v
 
 - **Did the tests actually pass?** — the PR gate runs the suite itself
 - **Did verification actually run?** — `.vibe/metrics/run-ledger.json` records it in code
+- **What proved completion?** — `.vibe/runs/{run-id}/evidence.json` records Judge authority and run evidence
 - **Is the review loop converging?** — a discover-hash (2 identical rounds → stuck) decides
 - **Are we repeating the same mistake?** — verify failures auto-register as regression tests
 

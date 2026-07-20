@@ -17,14 +17,18 @@
   → 루프:
       ANCHOR   디스크에서 재고정: SPEC + run-ledger + scope.json (+ 직전 인박스)
       ACT      파이프라인 실행 (스킬 체인)
-      JUDGE    결정론 판정만 인정: run-ledger verifyPassed │ 테스트 exit code │ RTM status
-               — 모델의 "완료했습니다" 자기 보고는 종료 조건이 될 수 없다
-      RECORD   run-ledger(현재 회전) + loop-history.jsonl(회전 이력, 스케줄 루프)
+      JUDGE    Deterministic Judge(blocking): run-ledger verifyPassed │ 테스트 exit code │ RTM status
+               Model Judge(advisory-only): 발견을 제안하지만 완료 권한 없음
+               Human Taste(release-only): UX·브랜드·제품 감각을 판단하지만 루프 완료 권한 없음
+      RECORD   run-ledger + `.vibe/runs/{run-id}/evidence.json` + loop-history.jsonl
   → 종료(EXIT): 게이트 전부 통과 │ stuck │ max_iterations │ 예산 상한
 ```
 
 ### ANCHOR가 컨텍스트 오염 방어인 이유
 루프 상태는 컨텍스트가 아니라 디스크에 산다. 매 회전이 아티팩트에서 다시 시작하므로 컨텍스트가 오염되거나 compact로 소실돼도 루프는 깨지지 않으며, 회전마다 fresh 컨텍스트(서브에이전트)로 돌려도 된다.
+
+### Judge 권한 경계
+종료 권한은 테스트 exit code·run-ledger·RTM 같은 **결정론적 Judge**에만 있다. Model Judge는 누락·모순·위험을 발견하는 보조 수단이며, 발견을 테스트나 관측 가능한 기준으로 내리기 전에는 차단 근거가 아니다. Human Taste는 공개·배포 시점의 사람 판단으로 남고 루프의 완료 상태를 변경하지 않는다.
 
 ### stuck (결정론)
 연속 2회 회전의 발견(discover/findings) 해시가 동일 → 중단하고 사람에게 (`loop-ledger.js check-stuck`이 판정·기록). "다시 해보면 될 것 같다"는 모델 판단으로 무시 금지.

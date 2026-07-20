@@ -86,6 +86,58 @@ describe('run-ledger: round-trip', () => {
     const ledger = readLedger(tmpDir);
     expect(ledger.verifyPassed).toBe(false);
   });
+
+  it('recordVerify → 안정된 runId 경로에 evidence.json 원자 기록', async () => {
+    const { recordRunStart, recordVerify, readLedger } = await importLedger();
+    recordRunStart(tmpDir, 'feat');
+    const started = readLedger(tmpDir);
+    expect(recordVerify(tmpDir, true)).toBe(true);
+
+    const after = readLedger(tmpDir);
+    expect(after.runId).toBe(started.runId);
+    const evidencePath = path.join(tmpDir, '.vibe', 'runs', after.runId, 'evidence.json');
+    expect(fs.existsSync(evidencePath)).toBe(true);
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
+    expect(evidence).toMatchObject({
+      schemaVersion: '1.0.0',
+      runId: after.runId,
+      specPath: '.vibe/specs/feat.md',
+      judges: {
+        deterministic: { authority: 'blocking', verifyPassed: true },
+        model: { authority: 'advisory-only', canComplete: false },
+        humanTaste: { authority: 'release-only', canComplete: false },
+      },
+    });
+  });
+
+  it('레거시 ledger도 runId를 보강하고 누락된 검증 결과는 빈 배열로 기록', async () => {
+    const p = path.join(tmpDir, '.vibe', 'metrics', 'run-ledger.json');
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, JSON.stringify({ runStarted: '2026-01-01T00:00:00.000Z' }));
+    const { recordVerify, readLedger } = await importLedger();
+    expect(recordVerify(tmpDir, false)).toBe(true);
+    const ledger = readLedger(tmpDir);
+    const evidencePath = path.join(tmpDir, '.vibe', 'runs', ledger.runId, 'evidence.json');
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
+    expect(evidence.specPath).toBeNull();
+    expect(evidence.judges.deterministic.verificationResults).toEqual([]);
+  });
+
+  it('기존 verificationResults의 command와 exitCode를 evidence에 보존', async () => {
+    const { recordRunStart, recordVerify, readLedger } = await importLedger();
+    recordRunStart(tmpDir, 'feat');
+    const p = path.join(tmpDir, '.vibe', 'metrics', 'run-ledger.json');
+    const ledger = readLedger(tmpDir);
+    fs.writeFileSync(p, JSON.stringify({
+      ...ledger,
+      verificationResults: [{ command: 'npm test', exitCode: 0 }],
+    }));
+    recordVerify(tmpDir, true);
+    const evidencePath = path.join(tmpDir, '.vibe', 'runs', ledger.runId, 'evidence.json');
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
+    expect(evidence.judges.deterministic.verificationResults)
+      .toEqual([{ command: 'npm test', exitCode: 0 }]);
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────
@@ -170,6 +222,12 @@ describe('run-ledger: vibe.run 감지 헬퍼', () => {
     expect(extractRunFeature('$vibe.run auth-login ultrawork')).toBe('auth-login');
   });
 
+  it('extractRunFeature: 따옴표를 제거해 SPEC 경로용 기능명을 반환', async () => {
+    const { extractRunFeature } = await importLedger();
+    expect(extractRunFeature('/vibe.run "auth-login"')).toBe('auth-login');
+    expect(extractRunFeature("$vibe.run 'auth-login'")).toBe('auth-login');
+  });
+
   it('extractRunFeature: 기능명 없으면 null', async () => {
     const { extractRunFeature } = await importLedger();
     expect(extractRunFeature('/vibe.run --phase 1')).toBeNull();
@@ -241,6 +299,19 @@ describe('verify-ledger CLI', () => {
       env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
     });
     expect(result.status).toBe(0);
+  });
+
+  it('기록 실패는 exit 0을 유지하되 stderr 경고로 노출', () => {
+    const projectFile = path.join(tmpDir, 'not-a-directory');
+    fs.writeFileSync(projectFile, 'occupied');
+    const result = spawnSync('node', [CLI, 'pass'], {
+      encoding: 'utf-8',
+      timeout: 5000,
+      env: { ...process.env, CLAUDE_PROJECT_DIR: projectFile },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain('evidence.json write failed');
+    expect(result.stdout).not.toContain('recorded:');
   });
 });
 
