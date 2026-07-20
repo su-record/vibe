@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 
 const EVIDENCE_SCHEMA_VERSION = '1.0.0';
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** 레저 파일 경로 */
 function ledgerPath(projectDir) {
@@ -21,10 +22,14 @@ function ledgerPath(projectDir) {
 }
 
 function evidencePath(projectDir, runId) {
-  return path.join(projectDir, '.vibe', 'runs', runId, 'evidence.json');
+  if (!UUID_PATTERN.test(runId)) return null;
+  const runsDir = path.resolve(projectDir, '.vibe', 'runs');
+  const target = path.resolve(runsDir, runId, 'evidence.json');
+  return target.startsWith(`${runsDir}${path.sep}`) ? target : null;
 }
 
 function writeJsonAtomic(targetPath, data) {
+  if (!targetPath) return false;
   const dir = path.dirname(targetPath);
   fs.mkdirSync(dir, { recursive: true });
   const tmp = path.join(dir, `.${path.basename(targetPath)}.${process.pid}.${Date.now()}.tmp`);
@@ -35,6 +40,23 @@ function writeJsonAtomic(targetPath, data) {
   } catch {
     try { fs.rmSync(tmp, { force: true }); } catch { /* fail-open */ }
     return false;
+  }
+}
+
+function withLedgerLock(projectDir, operation) {
+  const lockPath = path.join(projectDir, '.vibe', 'metrics', 'run-ledger.lock');
+  let descriptor;
+  try {
+    fs.mkdirSync(path.dirname(lockPath), { recursive: true });
+    descriptor = fs.openSync(lockPath, 'wx');
+    return operation();
+  } catch {
+    return false;
+  } finally {
+    if (descriptor !== undefined) {
+      fs.closeSync(descriptor);
+      try { fs.rmSync(lockPath, { force: true }); } catch { /* fail-open */ }
+    }
   }
 }
 
@@ -67,35 +89,42 @@ function writeLedger(projectDir, data) {
   }
 }
 
-function verificationResults(ledger) {
-  if (Array.isArray(ledger.verificationResults)) {
-    return ledger.verificationResults
-      .filter(item => item && typeof item === 'object')
+function verificationResults(results) {
+  if (Array.isArray(results)) {
+    return results
+      .filter(item => item
+        && typeof item === 'object'
+        && typeof item.command === 'string'
+        && Number.isInteger(item.exitCode))
       .map(item => ({
-        command: typeof item.command === 'string' ? item.command : null,
-        exitCode: Number.isInteger(item.exitCode) ? item.exitCode : null,
+        command: item.command,
+        exitCode: item.exitCode,
       }));
-  }
-  if (Array.isArray(ledger.verificationCommands)) {
-    return ledger.verificationCommands
-      .filter(command => typeof command === 'string')
-      .map(command => ({ command, exitCode: null }));
   }
   return [];
 }
 
-function buildEvidence(ledger, passed, generatedAt) {
-  const feature = typeof ledger.runFeature === 'string' ? ledger.runFeature : null;
+function resolveSpecPath(projectDir, feature) {
+  if (typeof feature !== 'string' || feature.includes('..') || /[\\/]/.test(feature)) {
+    return null;
+  }
+  const flatPath = `.vibe/specs/${feature}.md`;
+  if (fs.existsSync(path.join(projectDir, flatPath))) return flatPath;
+  const splitPath = `.vibe/specs/${feature}/_index.md`;
+  return fs.existsSync(path.join(projectDir, splitPath)) ? splitPath : null;
+}
+
+function buildEvidence(projectDir, ledger, passed, generatedAt) {
   return {
     schemaVersion: EVIDENCE_SCHEMA_VERSION,
     runId: ledger.runId,
-    specPath: feature ? `.vibe/specs/${feature}.md` : null,
+    specPath: resolveSpecPath(projectDir, ledger.runFeature),
     generatedAt,
     judges: {
       deterministic: {
         authority: 'blocking',
         verifyPassed: Boolean(passed),
-        verificationResults: verificationResults(ledger),
+        verificationResults: verificationResults(ledger.verificationResults),
       },
       model: { authority: 'advisory-only', canComplete: false },
       humanTaste: { authority: 'release-only', canComplete: false },
@@ -107,7 +136,7 @@ function writeEvidence(projectDir, ledger, passed, generatedAt) {
   try {
     return writeJsonAtomic(
       evidencePath(projectDir, ledger.runId),
-      buildEvidence(ledger, passed, generatedAt),
+      buildEvidence(projectDir, ledger, passed, generatedAt),
     );
   } catch {
     return false;
@@ -121,10 +150,11 @@ function writeEvidence(projectDir, ledger, passed, generatedAt) {
  * @returns {boolean} 성공 여부
  */
 export function recordRunStart(projectDir, feature) {
-  try {
+  return withLedgerLock(projectDir, () => {
     const existing = readLedger(projectDir) || {};
+    const { verificationResults: _results, verificationCommands: _commands, ...retained } = existing;
     const next = {
-      ...existing,
+      ...retained,
       runId: randomUUID(),
       runStarted: new Date().toISOString(),
       runFeature: feature || null,
@@ -133,9 +163,7 @@ export function recordRunStart(projectDir, feature) {
       stopWarned: false,
     };
     return writeLedger(projectDir, next);
-  } catch {
-    return false;
-  }
+  });
 }
 
 /**
@@ -143,31 +171,36 @@ export function recordRunStart(projectDir, feature) {
  * pass 시 verifyRequired 상태를 클리어한다.
  * @param {string} projectDir
  * @param {boolean} passed - 검증 통과 여부
+ * @param {{runId?: string, verificationResults?: object[]}} options
  * @returns {boolean} 성공 여부
  */
-export function recordVerify(projectDir, passed) {
-  try {
+export function recordVerify(projectDir, passed, options = {}) {
+  return withLedgerLock(projectDir, () => {
     const existing = readLedger(projectDir) || {};
+    const existingRunId = UUID_PATTERN.test(existing.runId || '') ? existing.runId : null;
+    if (existing.runId !== undefined && !existingRunId) return false;
+    if (existingRunId && options.runId !== existingRunId) return false;
+    const runId = existingRunId || randomUUID();
+    const results = verificationResults(options.verificationResults);
+    if (passed && (results.length === 0 || results.some(result => result.exitCode !== 0))) {
+      return false;
+    }
     const generatedAt = new Date().toISOString();
     const next = {
       ...existing,
-      runId: typeof existing.runId === 'string' && existing.runId
-        ? existing.runId
-        : randomUUID(),
+      runId,
       verifyPassed: Boolean(passed),
       verifyAt: generatedAt,
+      verificationResults: results,
     };
     // pass 시 verifyRequired 클리어
     if (passed) {
       next.verifyRequired = false;
       next.verifyRequiredReason = null;
     }
-    const ledgerWritten = writeLedger(projectDir, next);
-    if (!ledgerWritten) return false;
-    return writeEvidence(projectDir, next, passed, generatedAt);
-  } catch {
-    return false;
-  }
+    if (!writeEvidence(projectDir, next, passed, generatedAt)) return false;
+    return writeLedger(projectDir, next);
+  });
 }
 
 /**

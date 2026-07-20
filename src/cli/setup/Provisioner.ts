@@ -262,7 +262,7 @@ ${stackList}
 - [ ] <!-- Criterion 1 -->
 
 ## Evidence Required
-- <!-- Command result, test report, log, screenshot, or verified code location -->
+- <!-- Requirement/criterion ID → command result, test report, log, screenshot, or verified code location -->
 
 ## Human Taste (Non-Blocking)
 - <!-- UX, brand, or product-quality review reserved for release; never a completion gate -->

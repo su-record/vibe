@@ -30,9 +30,14 @@ export interface SpecGeneratorOptions {
   /** 확인 없이 채택한 가정 */
   assumptions?: string[];
   /** 완료를 증명할 산출물 */
-  evidenceRequired?: string[];
+  evidenceRequired?: EvidenceRequirement[];
   /** 출시 시 사람이 판단할 비차단 기준 */
   humanTaste?: string[];
+}
+
+export interface EvidenceRequirement {
+  criterionId: string;
+  evidence: string;
 }
 
 /** 생성된 SPEC */
@@ -159,7 +164,7 @@ function buildSpecContent(
   const {
     techStack = [], relatedCodePaths = [], designReference,
     additionalConstraints = [], additionalOutputs = [],
-    contextSources = [], assumptions = [], evidenceRequired = [], humanTaste = [],
+    contextSources = [], assumptions = [], humanTaste = [],
   } = options;
   const now = new Date().toISOString();
 
@@ -261,7 +266,7 @@ ${generateFileList(phases, 'modify')}
 ${additionalOutputs.map(o => `- ${o}`).join('\n')}
 
 ### Evidence Required
-${evidenceRequired.length > 0 ? evidenceRequired.map(item => `- ${item}`).join('\n') : '- Command results and exit codes for every acceptance criterion'}
+${renderEvidenceRequired(options.evidenceRequired, prd.requirements)}
 
 ### Human Taste (Non-Blocking)
 ${humanTaste.length > 0 ? humanTaste.map(item => `- ${item}`).join('\n') : '- None recorded; release review remains a human decision'}
@@ -362,7 +367,7 @@ ${phases.map((p, i) => `Phase ${i + 1}: ${p.name}`).join(' → ')}
 ${generateDependencyList(phases)}
 
 ## Evidence Required
-${options.evidenceRequired?.map(item => `- ${item}`).join('\n') || '- Command results and exit codes for every phase'}
+${renderEvidenceRequired(options.evidenceRequired, prd.requirements)}
 
 ## Human Taste (Non-Blocking)
 ${options.humanTaste?.map(item => `- ${item}`).join('\n') || '- None recorded; release review remains a human decision'}
@@ -444,7 +449,7 @@ ${options.assumptions?.map(assumption => `- ${assumption}`).join('\n') || '- Non
 </acceptance>
 
 ## Evidence Required
-${options.evidenceRequired?.map(item => `- ${item}`).join('\n') || '- Phase test and build command results with exit codes'}
+${renderEvidenceRequired(options.evidenceRequired, phase.requirements)}
 
 ## Human Taste (Non-Blocking)
 ${options.humanTaste?.map(item => `- ${item}`).join('\n') || '- None recorded; release review remains a human decision'}
@@ -456,6 +461,21 @@ ${options.humanTaste?.map(item => `- ${item}`).join('\n') || '- None recorded; r
 // ============================================
 // Helper Functions
 // ============================================
+
+function renderEvidenceRequired(
+  evidence: EvidenceRequirement[] | undefined,
+  requirements: Requirement[],
+): string {
+  const byCriterion = new Map(evidence?.map(item => [item.criterionId, item.evidence]) ?? []);
+  if (requirements.length === 0) {
+    return '- Build & Test → phase test and build command results with exit codes';
+  }
+  return requirements.map(requirement => {
+    const proof = byCriterion.get(requirement.id)
+      ?? 'Command results and exit codes for this criterion';
+    return `- ${requirement.id} → ${proof}`;
+  }).join('\n');
+}
 
 /**
  * 요구사항을 Phase로 그룹화

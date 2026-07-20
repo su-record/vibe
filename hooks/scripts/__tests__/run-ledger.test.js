@@ -18,6 +18,11 @@ import { execFileSync, spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PASS_RESULTS = [{ command: 'npm test', exitCode: 0 }];
+
+function verifyOptions(ledger, results = PASS_RESULTS) {
+  return { runId: ledger.runId, verificationResults: results };
+}
 
 // 테스트 격리용 임시 디렉토리
 let tmpDir;
@@ -59,7 +64,7 @@ describe('run-ledger: round-trip', () => {
   it('recordRunStart는 verifyPassed를 false로 리셋', async () => {
     const { recordRunStart, recordVerify, readLedger } = await importLedger();
     recordRunStart(tmpDir, 'f1');
-    recordVerify(tmpDir, true);
+    recordVerify(tmpDir, true, verifyOptions(readLedger(tmpDir)));
     // 두 번째 run — 리셋
     recordRunStart(tmpDir, 'f2');
     const ledger = readLedger(tmpDir);
@@ -72,7 +77,7 @@ describe('run-ledger: round-trip', () => {
     const { recordRunStart, recordVerify, readLedger } = await importLedger();
     recordRunStart(tmpDir, 'feat');
     const before = new Date().toISOString();
-    recordVerify(tmpDir, true);
+    recordVerify(tmpDir, true, verifyOptions(readLedger(tmpDir)));
     const ledger = readLedger(tmpDir);
     expect(ledger.verifyPassed).toBe(true);
     expect(ledger.verifyAt).toBeDefined();
@@ -82,7 +87,7 @@ describe('run-ledger: round-trip', () => {
   it('recordVerify(fail) → verifyPassed=false', async () => {
     const { recordRunStart, recordVerify, readLedger } = await importLedger();
     recordRunStart(tmpDir, 'feat');
-    recordVerify(tmpDir, false);
+    recordVerify(tmpDir, false, verifyOptions(readLedger(tmpDir), []));
     const ledger = readLedger(tmpDir);
     expect(ledger.verifyPassed).toBe(false);
   });
@@ -91,7 +96,9 @@ describe('run-ledger: round-trip', () => {
     const { recordRunStart, recordVerify, readLedger } = await importLedger();
     recordRunStart(tmpDir, 'feat');
     const started = readLedger(tmpDir);
-    expect(recordVerify(tmpDir, true)).toBe(true);
+    fs.mkdirSync(path.join(tmpDir, '.vibe', 'specs'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, '.vibe', 'specs', 'feat.md'), '# SPEC');
+    expect(recordVerify(tmpDir, true, verifyOptions(started))).toBe(true);
 
     const after = readLedger(tmpDir);
     expect(after.runId).toBe(started.runId);
@@ -132,11 +139,80 @@ describe('run-ledger: round-trip', () => {
       ...ledger,
       verificationResults: [{ command: 'npm test', exitCode: 0 }],
     }));
-    recordVerify(tmpDir, true);
+    recordVerify(tmpDir, true, verifyOptions(ledger, [
+      { command: 'npm test', exitCode: 0 },
+    ]));
     const evidencePath = path.join(tmpDir, '.vibe', 'runs', ledger.runId, 'evidence.json');
     const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
     expect(evidence.judges.deterministic.verificationResults)
       .toEqual([{ command: 'npm test', exitCode: 0 }]);
+  });
+
+  it('새 run은 이전 run의 검증 결과를 제거', async () => {
+    const { recordRunStart, recordVerify, readLedger } = await importLedger();
+    recordRunStart(tmpDir, 'first');
+    const first = readLedger(tmpDir);
+    recordVerify(tmpDir, true, verifyOptions(first, [{ command: 'old-test', exitCode: 0 }]));
+
+    recordRunStart(tmpDir, 'second');
+    const second = readLedger(tmpDir);
+    expect(second.verificationResults).toBeUndefined();
+    recordVerify(tmpDir, true, verifyOptions(second));
+    const evidencePath = path.join(tmpDir, '.vibe', 'runs', second.runId, 'evidence.json');
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
+    expect(evidence.judges.deterministic.verificationResults).toEqual(PASS_RESULTS);
+  });
+
+  it('조작된 runId는 프로젝트 밖에 evidence를 기록하지 않음', async () => {
+    const ledgerPath = path.join(tmpDir, '.vibe', 'metrics', 'run-ledger.json');
+    const escapedDir = path.join(path.dirname(tmpDir), `escaped-${path.basename(tmpDir)}`);
+    fs.mkdirSync(path.dirname(ledgerPath), { recursive: true });
+    fs.writeFileSync(ledgerPath, JSON.stringify({
+      runId: `../../../${path.basename(escapedDir)}`,
+      runStarted: new Date().toISOString(),
+      verifyPassed: false,
+    }));
+    const { recordVerify } = await importLedger();
+    expect(recordVerify(tmpDir, true, {
+      runId: `../../../${path.basename(escapedDir)}`,
+      verificationResults: PASS_RESULTS,
+    })).toBe(false);
+    expect(fs.existsSync(path.join(escapedDir, 'evidence.json'))).toBe(false);
+  });
+
+  it('evidence 기록 실패 시 ledger를 통과 상태로 바꾸지 않음', async () => {
+    const { recordRunStart, recordVerify, readLedger } = await importLedger();
+    recordRunStart(tmpDir, 'feat');
+    const ledger = readLedger(tmpDir);
+    const runPath = path.join(tmpDir, '.vibe', 'runs', ledger.runId);
+    fs.mkdirSync(path.dirname(runPath), { recursive: true });
+    fs.writeFileSync(runPath, 'occupied');
+
+    expect(recordVerify(tmpDir, true, verifyOptions(ledger))).toBe(false);
+    expect(readLedger(tmpDir).verifyPassed).toBe(false);
+  });
+
+  it('다른 runId의 verify 결과를 현재 run에 적용하지 않음', async () => {
+    const { recordRunStart, recordVerify, readLedger } = await importLedger();
+    recordRunStart(tmpDir, 'feat');
+    expect(recordVerify(tmpDir, true, {
+      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      verificationResults: PASS_RESULTS,
+    })).toBe(false);
+    expect(readLedger(tmpDir).verifyPassed).toBe(false);
+  });
+
+  it('분할 SPEC의 _index.md를 evidence 경로로 기록', async () => {
+    const { recordRunStart, recordVerify, readLedger } = await importLedger();
+    const specDir = path.join(tmpDir, '.vibe', 'specs', 'large-feature');
+    fs.mkdirSync(specDir, { recursive: true });
+    fs.writeFileSync(path.join(specDir, '_index.md'), '# Master SPEC');
+    recordRunStart(tmpDir, 'large-feature');
+    const ledger = readLedger(tmpDir);
+    recordVerify(tmpDir, true, verifyOptions(ledger));
+    const evidencePath = path.join(tmpDir, '.vibe', 'runs', ledger.runId, 'evidence.json');
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
+    expect(evidence.specPath).toBe('.vibe/specs/large-feature/_index.md');
   });
 });
 
@@ -153,7 +229,7 @@ describe('run-ledger: verifyAt > runStarted', () => {
     const patched = { ...ledger, runStarted: new Date(Date.now() - 1000).toISOString() };
     fs.writeFileSync(p, JSON.stringify(patched), 'utf-8');
 
-    recordVerify(tmpDir, true);
+    recordVerify(tmpDir, true, verifyOptions(readLedger(tmpDir)));
     const after = readLedger(tmpDir);
     expect(after.verifyAt > after.runStarted).toBe(true);
     expect(after.verifyPassed).toBe(true);
@@ -258,11 +334,17 @@ describe('run-ledger: stopWarned', () => {
 describe('verify-ledger CLI', () => {
   const CLI = path.resolve(__dirname, '..', 'verify-ledger.js');
 
+  function cliArgs(status, ledger, results = PASS_RESULTS) {
+    const resultsPath = path.join(tmpDir, 'verification-results.json');
+    fs.writeFileSync(resultsPath, JSON.stringify(results));
+    return [CLI, status, ledger.runId, resultsPath];
+  }
+
   it('pass 인자 → verifyPassed=true, exit 0', async () => {
-    const { recordRunStart } = await importLedger();
+    const { recordRunStart, readLedger } = await importLedger();
     recordRunStart(tmpDir, 'feat');
 
-    const result = spawnSync('node', [CLI, 'pass'], {
+    const result = spawnSync('node', cliArgs('pass', readLedger(tmpDir)), {
       encoding: 'utf-8',
       timeout: 5000,
       env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
@@ -270,16 +352,15 @@ describe('verify-ledger CLI', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('verifyPassed=true');
 
-    const { readLedger } = await importLedger();
     const ledger = readLedger(tmpDir);
     expect(ledger.verifyPassed).toBe(true);
   });
 
   it('fail 인자 → verifyPassed=false, exit 0', async () => {
-    const { recordRunStart } = await importLedger();
+    const { recordRunStart, readLedger } = await importLedger();
     recordRunStart(tmpDir, 'feat');
 
-    const result = spawnSync('node', [CLI, 'fail'], {
+    const result = spawnSync('node', cliArgs('fail', readLedger(tmpDir), []), {
       encoding: 'utf-8',
       timeout: 5000,
       env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
@@ -287,7 +368,6 @@ describe('verify-ledger CLI', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('verifyPassed=false');
 
-    const { readLedger } = await importLedger();
     const ledger = readLedger(tmpDir);
     expect(ledger.verifyPassed).toBe(false);
   });

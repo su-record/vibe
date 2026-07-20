@@ -32,7 +32,8 @@
 
 ### Evidence Required
 
-- {Command result, test report, log, screenshot, or verified code location required to prove Done}
+- D1 → {Command result, test report, log, screenshot, or verified code location}
+- D2 → {Evidence required for this specific criterion}
 
 ### Human Taste (Non-Blocking)
 

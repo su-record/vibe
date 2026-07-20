@@ -62,24 +62,40 @@ describe('Evidence Contract SPEC 생성 경로', () => {
     const generated = generateSpec(prd(), 'evidence-contract', {
       contextSources: ['docs/prd.md'],
       assumptions: ['Node 18+'],
-      evidenceRequired: ['npm test exit 0'],
+      evidenceRequired: [{
+        criterionId: 'REQ-evidence-001',
+        evidence: 'npm test exit 0',
+      }],
       humanTaste: ['Release copy review'],
     });
 
     expect(generated.content).toContain('- docs/prd.md');
     expect(generated.content).toContain('- Node 18+');
-    expect(generated.content).toContain('- npm test exit 0');
+    expect(generated.content).toContain('- REQ-evidence-001 → npm test exit 0');
     expect(generated.content).toContain('- Release copy review');
   });
 
   it('분할 SPEC의 master와 모든 phase에도 계약 섹션이 존재', () => {
-    const generated = generateSpec(prd(16), 'large-evidence-contract');
+    const generated = generateSpec(prd(16), 'large-evidence-contract', {
+      contextSources: ['docs/large-prd.md'],
+      assumptions: ['Node 18+'],
+      evidenceRequired: [{
+        criterionId: 'REQ-evidence-001',
+        evidence: 'npm test exit 0',
+      }],
+      humanTaste: ['Release copy review'],
+    });
     expect(generated.isSplit).toBe(true);
     expect(generated.splitFiles).toBeDefined();
     for (const file of generated.splitFiles ?? []) {
       for (const section of contractSections) {
         expect(file.content).toContain(section);
       }
+      expect(file.content).toContain('docs/large-prd.md');
+      expect(file.content).toContain('Node 18+');
+      expect(file.content).toContain('Release copy review');
     }
+    expect(generated.splitFiles?.[0].content)
+      .toContain('REQ-evidence-001 → npm test exit 0');
   });
 });

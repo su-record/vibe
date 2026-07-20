@@ -113,15 +113,21 @@ const fs=require('fs'),p='.vibe/metrics';
 try{const c=JSON.parse(fs.readFileSync(p+'/current-run.json','utf-8'));
 fs.appendFileSync(p+'/history.jsonl',JSON.stringify({verifiedAt:new Date().toISOString(),feature:c.feature,startedAt:c.startedAt,steps:c.steps||0})+'\n');}catch{}"
 
-# Record verify result — pass | fail (calls recordVerify on the run ledger)
+# Write the exact commands run in steps 2-3 and their exit codes.
+mkdir -p .vibe/metrics
+# Write `.vibe/metrics/verification-results.json` as:
+# [{"command":"npm test","exitCode":0}, ...]
+
+# Bind the result to the current run and its command evidence.
 HOOKS_DIR="${VIBE_PATH:-$(npm root -g 2>/dev/null)/@su-record/vibe}/hooks/scripts"
-[ -f "$HOOKS_DIR/verify-ledger.js" ] && node "$HOOKS_DIR/verify-ledger.js" pass   # or: fail
+RUN_ID=$(node -p "JSON.parse(require('fs').readFileSync('.vibe/metrics/run-ledger.json','utf8')).runId")
+[ -f "$HOOKS_DIR/verify-ledger.js" ] && node "$HOOKS_DIR/verify-ledger.js" pass "$RUN_ID" .vibe/metrics/verification-results.json   # or: fail
 
 # Recipe extraction (best-effort, silent)
 [ -f "$HOOKS_DIR/recipe-extractor.js" ] && node "$HOOKS_DIR/recipe-extractor.js" 2>/dev/null || true
 ```
 
-Use `pass` only when the summary in step 4 is PASS; otherwise `fail`. Skipping this step leaves `verifyPassed` unset and downstream gates will treat the run as unverified.
+Use `pass` only when the summary in step 4 is PASS; otherwise `fail`. A passing record requires at least one command result and every exit code must be zero. A stale run ID, missing evidence, or mismatched result leaves `verifyPassed` unset and downstream gates treat the run as unverified.
 
 ## Failure escalation (convergence-based, no retry cap)
 

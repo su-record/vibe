@@ -50,7 +50,11 @@ describe('run-ledger: verifyRequired', () => {
     const { recordRunStart, recordVerifyRequired, recordVerify, readLedger } = await importLedger();
     recordRunStart(tmpDir, 'feat');
     recordVerifyRequired(tmpDir, 'P1 console.log found');
-    recordVerify(tmpDir, true);
+    const started = readLedger(tmpDir);
+    recordVerify(tmpDir, true, {
+      runId: started.runId,
+      verificationResults: [{ command: 'npm test', exitCode: 0 }],
+    });
     const ledger = readLedger(tmpDir);
     expect(ledger.verifyRequired).toBe(false);
     expect(ledger.verifyRequiredReason).toBeNull();
@@ -61,7 +65,8 @@ describe('run-ledger: verifyRequired', () => {
     const { recordRunStart, recordVerifyRequired, recordVerify, readLedger } = await importLedger();
     recordRunStart(tmpDir, 'feat');
     recordVerifyRequired(tmpDir, 'P1 issue');
-    recordVerify(tmpDir, false);
+    const started = readLedger(tmpDir);
+    recordVerify(tmpDir, false, { runId: started.runId, verificationResults: [] });
     const ledger = readLedger(tmpDir);
     // fail 시 verifyRequired는 유지되어야 함
     expect(ledger.verifyRequired).toBe(true);

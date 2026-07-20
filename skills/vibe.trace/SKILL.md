@@ -213,18 +213,18 @@ RTM status === 'empty'
 
 ### Run-ledger flow
 
-`/vibe.verify` records its outcome via `hooks/scripts/verify-ledger.js pass|fail`. This writes `verifyPassed` and `verifyAt` into `.vibe/metrics/run-ledger.json`. Downstream gates consume this record:
+`/vibe.verify` records its outcome through `hooks/scripts/verify-ledger.js`, binding the current run ID and command-result evidence. This writes `verifyPassed` and `verifyAt` into `.vibe/metrics/run-ledger.json`. Downstream gates consume this record:
 
 | Gate | Behavior |
 |------|----------|
 | `auto-commit` | Commits only when `verifyPassed === true` AND `verifyAt > runStarted` |
 | Stop hook | Warns when `runStarted && !verifyPassed`; blocks once if `verifyGate.mode === 'block'` |
 
-**To register a passing trace as verified**, run `/vibe.verify` after `/vibe.trace` reports acceptable coverage. The verify skill calls `verify-ledger.js pass` internally — you do not invoke it manually.
+**To register a passing trace as verified**, run `/vibe.verify` after `/vibe.trace` reports acceptable coverage. The verify skill records the current run ID and command evidence internally — you do not invoke the ledger CLI manually.
 
 ```
 /vibe.trace "login"         → RTM: 9/9 (100%)
-/vibe.verify "login"        → runs checks → calls verify-ledger.js pass
+/vibe.verify "login"        → runs checks → records pass + run ID + command results
                             → .vibe/metrics/run-ledger.json updated
 auto-commit / Stop gate     → verifyPassed=true, gate clears
 ```
