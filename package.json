@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "AI Coding Framework for Claude Code — 7+ agents, 60 skills, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
