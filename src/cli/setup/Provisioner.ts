@@ -236,16 +236,17 @@ ${stackList}
 ## Assumptions
 <!-- Defaults adopted without confirmation -->
 
+## Constraints
+<!-- Implementation, security, and compatibility boundaries -->
+
 ## Proposed Solution
 <!-- High-level approach -->
 
 ## Requirements
 
-### Functional
-1. <!-- Requirement 1 -->
-
-### Non-Functional
-1. <!-- Performance, security, accessibility -->
+| ID | Requirement | Done Criteria |
+|----|-------------|---------------|
+| REQ-feature-001 | <!-- Observable requirement --> | D1 |
 
 ## API Design
 <!-- Endpoints, request/response schemas -->
@@ -258,11 +259,14 @@ ${stackList}
 - Integration tests: <!-- scope -->
 - E2E tests: <!-- scope -->
 
-## Acceptance Criteria
-- [ ] <!-- Criterion 1 -->
+## Done Criteria
+
+| # | Criterion | Verified by |
+|---|-----------|-------------|
+| D1 | <!-- Deterministic completion criterion --> | <!-- Command or observable result --> |
 
 ## Evidence Required
-- <!-- Requirement/criterion ID → command result, test report, log, screenshot, or verified code location -->
+- D1 → <!-- Command result, test report, log, screenshot, or verified code location -->
 
 ## Human Taste (Non-Blocking)
 - <!-- UX, brand, or product-quality review reserved for release; never a completion gate -->

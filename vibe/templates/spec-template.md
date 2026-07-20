@@ -18,9 +18,21 @@
 
 - {Default adopted without asking — e.g., session expiry 24h}
 
+### Constraints
+
+- {Invariant or implementation boundary that every execution packet must preserve}
+
 ---
 
-## 2. Done Criteria (deterministic gates)
+## 2. Requirements
+
+| ID | Requirement | Done Criteria |
+|----|-------------|---------------|
+| REQ-{feature}-001 | {Observable functional requirement} | D1, D2 |
+
+---
+
+## 3. Done Criteria (deterministic gates)
 
 > Each criterion must be judgeable by a command or observable behavior — never by self-report.
 > These are the JUDGE inputs of the loop (`vibe/rules/loop-contract.md`); `/vibe.verify` records the result in `.vibe/metrics/run-ledger.json`.
@@ -41,7 +53,7 @@
 
 ---
 
-## 3. Scenarios
+## 4. Scenarios
 
 > Mirrored to `.vibe/features/{feature}.feature` (gherkin). Every scenario maps to a Done criterion.
 
@@ -59,13 +71,13 @@ Scenario: {Edge case title}           # → D1
 
 ---
 
-## 4. Out of Scope
+## 5. Out of Scope
 
 - {Explicitly not doing this time — must not be empty}
 
 ---
 
-## 5. API Contract (only if the feature exposes an API)
+## 6. API Contract (only if the feature exposes an API)
 
 > Presence of this section enables `/vibe.contract` drift detection.
 
@@ -77,7 +89,7 @@ Response: 201 {...}
 
 ---
 
-## 6. Verification
+## 7. Verification
 
 - `/vibe.run "{feature}"` implements scenario-by-scenario, verifying each immediately.
 - `/vibe.verify "{feature}"` judges the Done Criteria and sets `verifyPassed` in the run-ledger.

@@ -201,18 +201,41 @@ Step 3: If neither → Error: "Run /vibe.spec first"
 
 **Split structure:** Load `_index.md` first, then phase files in order. Execute phases sequentially (or per `--phase` flag).
 
+### 1-0. Compile + validate execution packet (MANDATORY)
+
+For a monolithic SPEC, compile it after resolving the canonical path. For a split SPEC, do not compile `_index.md`; defer this step until each active phase file is loaded in Phase Isolation Step B. Compile with `writeExecutionPacket`, then immediately verify the saved artifact with `validateExecutionPacket`.
+
+```bash
+node -e "import('file://{{VIBE_PATH}}/dist/tools/index.js').then(t => {
+  const projectPath=process.cwd(), specPath='.vibe/specs/{feature-name}.md';
+  const profile='{codex-or-claude-code}';
+  const written=t.writeExecutionPacket({projectPath,specPath,profile});
+  if(!written.ok){console.error(JSON.stringify(written.errors));process.exit(1)}
+  const checked=t.validateExecutionPacket({projectPath,specPath,packetPath:written.packetPath});
+  if(!checked.valid){console.error(checked.code);process.exit(1)}
+  console.log(written.packetPath);
+})"
+```
+
+- Codex uses profile `codex`; Claude Code uses `claude-code`.
+- Split SPECs compile each active `phase-N-*.md` immediately before that phase runs; `_index.md` remains the overview ANCHOR and is not treated as a phase contract.
+- Use the packet only when validation returns `valid: true`.
+- `STALE_PACKET`, invalid packet, preservation-audit failure, or budget failure is blocking: recompile from the canonical SPEC and never silently fall back to an unvalidated packet.
+- The packet is a derived execution view. The canonical SPEC remains the ANCHOR and source of truth.
+
 ### 1-1. Phase Isolation Protocol (Large SPEC Guard, MANDATORY for 3+ phases)
 
 ```
 Step A: Read _index.md (overview only — phase list, REQ IDs)
 Step B: For each Phase N:
   1. RE-READ Phase N SPEC section (every time, no memory)
-  2. RE-READ Phase N Feature scenarios
-  3. Extract Phase N scope: files, scenarios, requirements
-  4. Implement Phase N scenarios
-  5. Verify Phase N
-  6. Write Phase Checkpoint → .vibe/checkpoints/
-  7. DISCARD Phase N details from working memory
+  2. Compile + validate Phase N execution packet using the phase file path
+  3. RE-READ Phase N Feature scenarios
+  4. Extract Phase N scope: files, scenarios, requirements
+  5. Implement Phase N scenarios
+  6. Verify Phase N
+  7. Write Phase Checkpoint → .vibe/checkpoints/
+  8. DISCARD Phase N details from working memory
 Step C: Next Phase
 ```
 

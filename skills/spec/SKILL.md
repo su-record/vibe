@@ -55,12 +55,14 @@ Task(subagent_type="Explore",
 
 - **Overview / Goal** — 무엇을, 왜. 1-3 문장.
 - **Context Sources** — 입력으로 사용한 파일·문서·URL·관측 상태. 출처 없는 추정은 Assumptions 로 분리.
+- **Requirements** — `REQ-{feature}-NNN` ID와 연결된 Done Criteria를 표로 명시.
 - **Done Criteria** — 결정론적 게이트만. 각 항목은 "명령/관찰로 pass·fail 판정 가능"해야 한다 (테스트 exit code, 빌드 성공, 특정 동작 관찰). "잘 동작한다" 류 서술 금지 — 이것이 루프의 JUDGE 입력이 된다.
 - **Evidence Required** — Done 을 증명할 명령 결과·테스트 리포트·로그·스크린샷·코드 위치.
 - **Human Taste (Non-Blocking)** — UX·브랜드·제품 감각처럼 release 시 사람이 판단할 기준. 완료 게이트로 쓰지 않는다.
 - **Scenarios** — Given-When-Then. Happy path + 주요 edge case. 각 시나리오는 Done Criteria 중 하나에 매핑.
 - **Out of Scope** — 이번에 하지 않는 것을 명시 (비어 있으면 스코프 팽창 신호).
 - **Assumptions** — 3단계에서 채택한 기본값 전부.
+- **Constraints** — 구현·보안·호환성 경계. execution packet으로 압축돼도 반드시 보존한다.
 - **API Contract** (해당 시에만) — 엔드포인트/요청/응답 형태. 이 섹션이 있으면 이후 `/vibe.contract` 가 drift 를 검사한다.
 
 이어서 `.vibe/features/{feature-name}.feature` 를 생성한다: 시나리오 섹션을 gherkin 으로 변환 (Done Criteria ↔ Scenario 매핑 유지). `/vibe.run` 이 이 파일을 구현·검증 단위로 사용한다.

@@ -134,6 +134,11 @@ export {
   parsePRDFile,
   // SPEC Generator
   generateSpec,
+  // Execution Packet Compiler
+  compileExecutionPacket,
+  getHarnessProfile,
+  validateExecutionPacket,
+  writeExecutionPacket,
   // Traceability Matrix
   generateTraceabilityMatrix,
   formatMatrixAsMarkdown,
@@ -146,6 +151,17 @@ export type {
   PRDMetadata,
   SpecGeneratorOptions,
   GeneratedSpec,
+  CompileExecutionPacketInput,
+  CompileExecutionPacketResult,
+  ExecutionPacket,
+  ExecutionPacketFileInput,
+  HarnessProfile,
+  HarnessProfileName,
+  PacketError,
+  PacketErrorCode,
+  ValidateExecutionPacketInput,
+  ValidateExecutionPacketResult,
+  WriteExecutionPacketResult,
   // Traceability Matrix types
   TraceItem,
   TraceabilityMatrix,

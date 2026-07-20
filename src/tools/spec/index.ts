@@ -39,6 +39,27 @@ export type {
   GeneratedSpec
 } from './specGenerator.js';
 
+// Execution Packet Compiler
+export {
+  compileExecutionPacket,
+  getHarnessProfile,
+  validateExecutionPacket,
+  writeExecutionPacket,
+} from './executionPacket.js';
+export type {
+  CompileExecutionPacketInput,
+  CompileExecutionPacketResult,
+  ExecutionPacket,
+  ExecutionPacketFileInput,
+  HarnessProfile,
+  HarnessProfileName,
+  PacketError,
+  PacketErrorCode,
+  ValidateExecutionPacketInput,
+  ValidateExecutionPacketResult,
+  WriteExecutionPacketResult,
+} from './executionPacket.js';
+
 // Traceability Matrix
 export {
   generateTraceabilityMatrix,
@@ -51,4 +72,3 @@ export type {
   TraceSummary,
   TraceMatrixOptions
 } from './traceabilityMatrix.js';
-

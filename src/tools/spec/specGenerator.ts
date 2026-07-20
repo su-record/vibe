@@ -211,6 +211,8 @@ ${contextSources.length > 0 ? contextSources.map(source => `- ${source}`).join('
 ${assumptions.length > 0 ? assumptions.map(assumption => `- ${assumption}`).join('\n') : '- None recorded'}
 </context>
 
+${renderContractTables(prd.requirements, featureName)}
+
 ## Task
 <task>
 `;
@@ -352,11 +354,7 @@ ${options.contextSources?.map(source => `- ${source}`).join('\n') || '- PRD inpu
 ${options.assumptions?.map(assumption => `- ${assumption}`).join('\n') || '- None recorded'}
 
 ### Constraints (Apply to All Phases)
-- Follow existing code patterns
-- TypeScript strict mode
-- No \`any\` type
-- Functions ≤50 lines max
-${options.additionalConstraints?.map(c => `- ${c}`).join('\n') || ''}
+${renderSharedConstraints(options.additionalConstraints)}
 
 ## Execution Order
 \`\`\`
@@ -413,8 +411,8 @@ Developer implementing Phase ${phaseNumber} of ${featureName}.
 ### Phase Goal
 ${getPhaseGoal(phase)}
 
-### Requirements (${phase.requirements.length})
-${phase.requirements.map(r => `- ${r.id}: ${truncateText(r.description, 50)}`).join('\n')}
+### Requirement Summary (${phase.requirements.length})
+${phase.requirements.map(r => `- ${r.id}: ${truncateText(r.description, 50)}`).join('\n') || '- Build and verification phase'}
 
 ### Dependencies
 ${phaseNumber > 1 ? `- Requires Phase ${phaseNumber - 1} completion` : '- No dependencies (first phase)'}
@@ -425,6 +423,11 @@ ${options.contextSources?.map(source => `- ${source}`).join('\n') || '- Inherite
 ### Assumptions
 ${options.assumptions?.map(assumption => `- ${assumption}`).join('\n') || '- None recorded'}
 </context>
+
+## Constraints
+${renderSharedConstraints(options.additionalConstraints)}
+
+${renderContractTables(phase.requirements, `${featureName}-phase-${phaseNumber}`)}
 
 ## Task
 <task>
@@ -467,14 +470,52 @@ function renderEvidenceRequired(
   requirements: Requirement[],
 ): string {
   const byCriterion = new Map(evidence?.map(item => [item.criterionId, item.evidence]) ?? []);
-  if (requirements.length === 0) {
-    return '- Build & Test → phase test and build command results with exit codes';
-  }
-  return requirements.map(requirement => {
-    const proof = byCriterion.get(requirement.id)
+  const targets = requirements.length > 0
+    ? requirements
+    : [fallbackRequirement('phase-build', 'Phase build and tests pass')];
+  return targets.map((requirement, index) => {
+    const proof = byCriterion.get(`D${index + 1}`) ?? byCriterion.get(requirement.id)
       ?? 'Command results and exit codes for this criterion';
-    return `- ${requirement.id} → ${proof}`;
+    return `- D${index + 1} → ${proof}`;
   }).join('\n');
+}
+
+function renderContractTables(requirements: Requirement[], featureName: string): string {
+  const targets = requirements.length > 0
+    ? requirements
+    : [fallbackRequirement(
+      `REQ-${normalizeFileName(featureName)}-001`,
+      'Build and tests pass for this phase',
+    )];
+  const requirementRows = targets.map((requirement, index) =>
+    `| ${requirement.id} | ${truncateText(requirement.description, 80)} | D${index + 1} |`).join('\n');
+  const criterionRows = targets.map((requirement, index) =>
+    `| D${index + 1} | ${truncateText(requirement.description, 80)} | Automated verification exits 0 |`).join('\n');
+  return `## Requirements
+
+| ID | Requirement | Done Criteria |
+|----|-------------|---------------|
+${requirementRows}
+
+## Done Criteria
+
+| # | Criterion | Verified by |
+|---|-----------|-------------|
+${criterionRows}`;
+}
+
+function fallbackRequirement(id: string, description: string): Requirement {
+  return { id, description, acceptanceCriteria: [], priority: 'high' };
+}
+
+function renderSharedConstraints(additional: string[] | undefined): string {
+  return [
+    'Follow existing code patterns',
+    'TypeScript strict mode',
+    'No `any` type',
+    'Functions ≤50 lines max',
+    ...(additional ?? []),
+  ].map(item => `- ${item}`).join('\n');
 }
 
 /**
@@ -510,11 +551,12 @@ function groupRequirementsIntoPhases(
   }
 
   // Phase 2+: 핵심 기능 (high priority)
-  if (high.length > 0) {
+  const remainingHigh = high.filter(requirement => !setupReqs.includes(requirement));
+  if (remainingHigh.length > 0) {
     phases.push({
       name: 'Core Features',
-      requirements: high,
-      tasks: high.map(r => generateTaskFromRequirement(r)),
+      requirements: remainingHigh,
+      tasks: remainingHigh.map(r => generateTaskFromRequirement(r)),
     });
   }
 
@@ -529,11 +571,12 @@ function groupRequirementsIntoPhases(
   }
 
   // Phase 4+: 부가 기능 (low priority)
-  if (low.length > 0) {
+  const remainingLow = low.filter(requirement => !setupReqs.includes(requirement));
+  if (remainingLow.length > 0) {
     phases.push({
       name: 'Enhancements',
-      requirements: low,
-      tasks: low.map(r => generateTaskFromRequirement(r)),
+      requirements: remainingLow,
+      tasks: remainingLow.map(r => generateTaskFromRequirement(r)),
     });
   }
 

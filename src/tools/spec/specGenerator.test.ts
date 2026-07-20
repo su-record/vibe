@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { generateSpec } from './specGenerator.js';
+import { compileExecutionPacket } from './executionPacket.js';
 import { Provisioner } from '../../cli/setup/Provisioner.js';
 import type { ParsedPRD, Requirement } from './prdParser.js';
 import type { StackDetails } from '../../cli/types.js';
@@ -63,7 +64,7 @@ describe('Evidence Contract SPEC 생성 경로', () => {
       contextSources: ['docs/prd.md'],
       assumptions: ['Node 18+'],
       evidenceRequired: [{
-        criterionId: 'REQ-evidence-001',
+        criterionId: 'D1',
         evidence: 'npm test exit 0',
       }],
       humanTaste: ['Release copy review'],
@@ -71,7 +72,7 @@ describe('Evidence Contract SPEC 생성 경로', () => {
 
     expect(generated.content).toContain('- docs/prd.md');
     expect(generated.content).toContain('- Node 18+');
-    expect(generated.content).toContain('- REQ-evidence-001 → npm test exit 0');
+    expect(generated.content).toContain('- D1 → npm test exit 0');
     expect(generated.content).toContain('- Release copy review');
   });
 
@@ -80,7 +81,7 @@ describe('Evidence Contract SPEC 생성 경로', () => {
       contextSources: ['docs/large-prd.md'],
       assumptions: ['Node 18+'],
       evidenceRequired: [{
-        criterionId: 'REQ-evidence-001',
+        criterionId: 'D1',
         evidence: 'npm test exit 0',
       }],
       humanTaste: ['Release copy review'],
@@ -96,6 +97,47 @@ describe('Evidence Contract SPEC 생성 경로', () => {
       expect(file.content).toContain('Release copy review');
     }
     expect(generated.splitFiles?.[0].content)
-      .toContain('REQ-evidence-001 → npm test exit 0');
+      .toContain('D1 → npm test exit 0');
+  });
+
+  it('단일 및 분할 phase SPEC이 execution packet으로 컴파일됨', () => {
+    const single = generateSpec(prd(), 'evidence-contract');
+    const split = generateSpec(prd(16), 'large-evidence-contract');
+    const singlePacket = compileExecutionPacket({
+      canonicalSpec: single.content,
+      canonicalSpecPath: '.vibe/specs/evidence-contract.md',
+      profile: 'codex',
+    });
+    expect(singlePacket.ok).toBe(true);
+
+    for (const file of split.splitFiles?.filter(item => item.path !== '_index.md') ?? []) {
+      const packet = compileExecutionPacket({
+        canonicalSpec: file.content,
+        canonicalSpecPath: `.vibe/specs/large-evidence-contract/${file.path}`,
+        profile: 'codex',
+      });
+      expect(packet.ok, file.path).toBe(true);
+    }
+  });
+
+  it('분할 phase는 master 제약을 materialize하고 REQ를 중복 배정하지 않음', () => {
+    const source = prd(16);
+    if (source.requirements[0]) source.requirements[0].priority = 'high';
+    const split = generateSpec(source, 'safe-split', {
+      additionalConstraints: ['Never delete data'],
+    });
+    const phases = split.splitFiles?.filter(item => item.path !== '_index.md') ?? [];
+    const packets = phases.map(file => compileExecutionPacket({
+      canonicalSpec: file.content,
+      canonicalSpecPath: `.vibe/specs/safe-split/${file.path}`,
+      profile: 'codex',
+    }));
+    expect(packets.every(packet => packet.ok)).toBe(true);
+    for (const packet of packets) {
+      if (!packet.ok) continue;
+      expect(packet.packet.constraints).toContain('Never delete data');
+    }
+    const phaseContents = phases.map(file => file.content).join('\n');
+    expect(phaseContents.match(/\| REQ-evidence-001 \|/g)).toHaveLength(1);
   });
 });
