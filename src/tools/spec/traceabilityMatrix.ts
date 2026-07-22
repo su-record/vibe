@@ -73,6 +73,29 @@ function resolveFirstExisting(projectPath: string, candidates: string[]): string
 }
 
 /**
+ * 경로가 분할 SPEC/Feature 디렉토리면 내부 파일들을 이름순으로 이어붙여 반환.
+ * 단일 파일이면 그대로 읽는다. 어느 쪽도 없으면 null.
+ */
+function readContentMaybeDir(fullPath: string, ext: string): string | null {
+  try {
+    const content = fs.readFileSync(fullPath, 'utf-8');
+    if (content != null) return content;
+  } catch {
+    // 파일이 아님 (EISDIR 포함) — 아래에서 분할 디렉토리로 시도
+  }
+  try {
+    const parts = fs
+      .readdirSync(fullPath)
+      .filter((name) => name.endsWith(ext))
+      .sort()
+      .map((name) => fs.readFileSync(path.join(fullPath, name), 'utf-8'));
+    return parts.length > 0 ? parts.join('\n\n') : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 추적 매트릭스 생성 (메인 함수)
  */
 export function generateTraceabilityMatrix(
@@ -83,13 +106,17 @@ export function generateTraceabilityMatrix(
 
   const specPath = options.specPath ?? resolveFirstExisting(projectPath, [
     `.vibe/specs/${featureName}.md`,
+    `.vibe/specs/${featureName}`,
     `.claude/vibe/specs/${featureName}.md`,
+    `.claude/vibe/specs/${featureName}`,
     `.claude/specs/${featureName}.md`,
   ]);
 
   const featurePath = options.featurePath ?? resolveFirstExisting(projectPath, [
     `.vibe/features/${featureName}.feature`,
+    `.vibe/features/${featureName}`,
     `.claude/vibe/features/${featureName}.feature`,
+    `.claude/vibe/features/${featureName}`,
     `.claude/features/${featureName}.feature`,
   ]);
 
@@ -98,12 +125,12 @@ export function generateTraceabilityMatrix(
   const items: TraceItem[] = [];
   const warnings: string[] = [];
 
-  // SPEC 파일 파싱
-  const specContent = readFileSafe(path.join(projectPath, specPath));
+  // SPEC 파일 파싱 (분할 SPEC 디렉토리면 phase 파일들을 이어붙여 파싱)
+  const specContent = readContentMaybeDir(path.join(projectPath, specPath), '.md');
   const specRequirements = specContent ? extractRequirementsFromSpec(specContent) : [];
 
-  // Feature 파일 파싱
-  const featureContent = readFileSafe(path.join(projectPath, featurePath));
+  // Feature 파일 파싱 (분할 디렉토리 지원)
+  const featureContent = readContentMaybeDir(path.join(projectPath, featurePath), '.feature');
   const featureScenarios = featureContent ? extractScenariosFromFeature(featureContent) : [];
 
   // 테스트 파일 파싱 (있으면)

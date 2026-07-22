@@ -112,3 +112,58 @@ describe('Path Resolution (real filesystem)', () => {
     expect(md).not.toContain('## Summary');
   });
 });
+
+// ── split-SPEC (directory) tests ───────────────────────────────────────────
+
+describe('Split SPEC directory resolution', () => {
+  const dirs: string[] = [];
+
+  afterEach(() => {
+    for (const dir of dirs) {
+      nodefs.rmSync(dir, { recursive: true, force: true });
+    }
+    dirs.length = 0;
+  });
+
+  it('reads requirements from .vibe/specs/{feature}/ phase files (table-based REQ IDs)', () => {
+    const tmp = makeTmpDir();
+    dirs.push(tmp);
+    writeFile(tmp, '.vibe/specs/split-feat/_index.md', '# SPEC: split-feat (index)\n\n분할 SPEC 인덱스.\n');
+    writeFile(
+      tmp,
+      '.vibe/specs/split-feat/phase-1-core.md',
+      '# Phase 1\n\n| ID | Requirement | Done |\n|---|---|---|\n| REQ-split-feat-001 | 코어 데이터 로딩 | D1 |\n'
+    );
+    writeFile(
+      tmp,
+      '.vibe/specs/split-feat/phase-2-ui.md',
+      '# Phase 2\n\n| ID | Requirement | Done |\n|---|---|---|\n| REQ-split-feat-002 | UI 렌더링 | D2 |\n'
+    );
+    writeFile(tmp, '.vibe/features/split-feat/phase-1-core.feature', 'Feature: core\n');
+
+    const matrix = generateTraceabilityMatrix('split-feat', { projectPath: tmp });
+
+    const ids = matrix.items.map((i) => i.requirementId).sort();
+    expect(ids).toEqual(['REQ-split-feat-001', 'REQ-split-feat-002']);
+    expect(matrix.status).not.toBe('empty');
+  });
+
+  it('reads scenarios from .vibe/features/{feature}/ directory', () => {
+    const tmp = makeTmpDir();
+    dirs.push(tmp);
+    writeFile(
+      tmp,
+      '.vibe/specs/dir-feat/phase-1.md',
+      'REQ-dir-feat-001: 데이터 저장\n'
+    );
+    writeFile(
+      tmp,
+      '.vibe/features/dir-feat/phase-1.feature',
+      '### Scenario 1: 데이터 저장 성공\n**Verification**: REQ-dir-feat-001\n'
+    );
+
+    const matrix = generateTraceabilityMatrix('dir-feat', { projectPath: tmp });
+    expect(matrix.items).toHaveLength(1);
+    expect(matrix.items[0].featureScenario).toBeTruthy();
+  });
+});

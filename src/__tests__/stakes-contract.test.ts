@@ -133,3 +133,32 @@ describe('D5 — vibe.review: 리뷰어 스케일링', () => {
     expect(doc).toMatch(/loop-contract\.md[^\n]*Stakes/);
   });
 });
+
+describe('강제화 — stakes 분류를 건너뛸 수 없다 (재테스트 발견 1 회귀 방지)', () => {
+  it('vibe 디스패처: Stakes 줄 없는 실행 계획은 무효', () => {
+    const doc = read('skills/vibe/SKILL.md');
+    expect(doc).toContain('생략 불가');
+    expect(doc).toMatch(/`Stakes:` 줄이 없는 실행 계획은 무효/);
+  });
+
+  it('spec-template: 헤더에 Stakes 필드가 존재한다', () => {
+    const doc = read('vibe/templates/spec-template.md');
+    expect(doc).toMatch(/\*\*Stakes\*\*[^\n]*demo \| prototype \| production/);
+  });
+
+  it('vibe.spec: SPEC 헤더 Stakes 필수 + 경량 SPEC 규칙(분할 금지)', () => {
+    const doc = read('skills/vibe.spec/SKILL.md');
+    expect(doc).toContain('Stakes (헤더 필수 필드)');
+    expect(doc).toMatch(/분할 금지/);
+  });
+
+  it('vibe.spec: 승인 요약에 Stakes 줄이 포함된다', () => {
+    const doc = read('skills/vibe.spec/SKILL.md');
+    expect(doc).toMatch(/Stakes: \{demo\|prototype\|production\}/);
+  });
+
+  it('vibe.spec: 셀프 리뷰 체크리스트에 stakes 항목이 있다', () => {
+    const doc = read('skills/vibe.spec/SKILL.md');
+    expect(doc).toMatch(/헤더에 `Stakes:` 필드가 있고/);
+  });
+});

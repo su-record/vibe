@@ -2,6 +2,7 @@
 
 - **Created**: {YYYY-MM-DD}
 - **Status**: DRAFT | APPROVED
+- **Stakes**: demo | prototype | production — {판정 근거 1구} (SSOT: vibe/rules/loop-contract.md)
 - **Tech Stack**: {Project tech stack summary}
 
 ---

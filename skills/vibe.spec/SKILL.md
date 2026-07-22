@@ -131,6 +131,7 @@ Task(subagent_type="Explore",
 
 `vibe/templates/spec-template.md` 구조로 `.vibe/specs/{feature-name}.md` 를 작성한다. 핵심 요건:
 
+- **Stakes (헤더 필수 필드)** — `demo | prototype | production` + 판정 근거 1구. 디스패처가 전달한 판정값을 기록하고, 직접 진입(`/vibe.spec`)이면 여기서 판정한다 (SSOT: `vibe/rules/loop-contract.md` Stakes 표, 불확실하면 production). demo/prototype 이면 SPEC 자체도 경량으로 — 분할 금지, Done Criteria 최소화.
 - **Overview / Goal** — 무엇을, 왜. 1-3 문장.
 - **Context Sources** — 입력으로 사용한 파일·문서·URL·관측 상태. 출처 없는 추정은 Assumptions 로 분리.
 - **Requirements** — `REQ-{feature}-NNN` ID와 연결된 Done Criteria를 표로 명시.
@@ -160,6 +161,7 @@ Task(subagent_type="Explore",
 - [ ] 수치가 필요한 곳에 수치가 있는가 (제한·타임아웃·크기 — 없으면 기본값 + Assumptions)
 - [ ] Out of Scope 가 비어 있지 않은가
 - [ ] 요구사항에 있던 것 중 SPEC 에서 빠진 것이 없는가
+- [ ] 헤더에 `Stakes:` 필드가 있고, demo/prototype 인데 SPEC 이 분할·대형화되지 않았는가
 
 ### 6. Approval — the single gate
 
@@ -170,6 +172,7 @@ SPEC 요약(Goal, Done Criteria, 시나리오 수, Out of Scope, 열린 Assumpti
    .vibe/specs/{feature-name}.md · .vibe/features/{feature-name}.feature
 
    Goal: {1줄}
+   Stakes: {demo|prototype|production} — {판정 근거 1구}
    Done Criteria: {N}개 (전부 결정론 게이트)
    Scenarios: {M}개 · Out of Scope: {K}항목
    Assumptions: {요약 또는 "없음"}
