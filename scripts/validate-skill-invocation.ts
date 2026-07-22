@@ -68,7 +68,7 @@ function collectLoadRefs(): Set<string> {
     for (const e of fs.readdirSync(COMMANDS_DIR)) {
       if (!e.endsWith('.md')) continue;
       const txt = fs.readFileSync(path.join(COMMANDS_DIR, e), 'utf-8');
-      for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w:-]*)`?/g)) refs.add(m[1]);
+      for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w.:-]*)`?/g)) refs.add(m[1]);
     }
   }
   for (const dir of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
@@ -76,7 +76,7 @@ function collectLoadRefs(): Set<string> {
     const f = path.join(SKILLS_DIR, dir.name, 'SKILL.md');
     if (!fs.existsSync(f)) continue;
     const txt = fs.readFileSync(f, 'utf-8');
-    for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w:-]*)`?/g)) refs.add(m[1]);
+    for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w.:-]*)`?/g)) refs.add(m[1]);
   }
   return refs;
 }

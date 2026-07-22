@@ -5,11 +5,8 @@
 // ─── 스킬 설치 범위 분류 ───
 
 /**
- * 전역 설치 스킬 (postinstall → ~/.claude/skills/) — 티어 기반 분류
- *
- * core: 실제 버그/실수를 방지하는 안전망 — 항상 활성
- * standard: 워크플로우 지원 — 프로젝트 설정 시 선택 활성
- * optional: 참고/래퍼 — 명시적 호출 시에만 로드 (전역 설치에서 제외)
+ * 전역 설치 스킬 (postinstall → ~/.claude/skills/) — 공개 분류
+ * 내부 core 동작은 관련 공개 스킬 본문에 통합하며 별도 discovery 항목으로 설치하지 않는다.
  */
 /**
  * 도트 진입점 스킬 (예: vibe.spec)
@@ -40,70 +37,57 @@ export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
   'vibe.verify',
 ];
 
-export const GLOBAL_SKILLS_CORE: ReadonlyArray<string> = [
-  'spec',
-  'test',
-  'arch-guard',
-  'exec-plan',
-  'restraint',
-  'contract',
-  'regress',
-];
-
 export const GLOBAL_SKILLS_STANDARD: ReadonlyArray<string> = [
-  'parallel-research',
-  'handoff',
-  'priority-todos',
-  'agents-md',
-  'capability-loop',
-  'design-teach',
-  'figma',
-  'clone',
-  'docs',
+  'vibe.parallel-research',
+  'vibe.educational-content',
+  'vibe.handoff',
+  'vibe.priority-todos',
+  'vibe.agents-md',
+  'vibe.capability-loop',
+  'vibe.design-teach',
 ];
 
 /** 전역 설치에서 제외된 스킬 (명시적 /skill-name 호출 시에만 활성)
  *  사유: 표준 도구 래퍼이거나 구체성 부족 — 직접 프롬프트가 더 효과적 */
 export const GLOBAL_SKILLS_OPTIONAL: ReadonlyArray<string> = [
-  'commit-push-pr',
-  'git-worktree',
-  'tool-fallback',
-  'context7-usage',
-  'chub-usage',
-  'presentation',
+  'vibe.commit-push-pr',
+  'vibe.git-worktree',
+  'vibe.tool-fallback',
+  'vibe.context7-usage',
+  'vibe.chub-usage',
+  'vibe.presentation',
 ];
 
 /** 전역 설치 스킬 전체 (하위 호환용) */
 export const GLOBAL_SKILLS: ReadonlyArray<string> = [
   ...GLOBAL_SKILLS_ENTRY,
-  ...GLOBAL_SKILLS_CORE,
   ...GLOBAL_SKILLS_STANDARD,
 ];
 
 /** 스택 → 로컬 스킬 매핑 (vibe init/update → .claude/skills/) */
 export const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>> = {
   // Web frontend → UI/UX + SEO + Design steering + React best practices
-  'typescript-react': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-review', 'design-refine', 'vibe.design'],
-  'typescript-nextjs': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'vercel-react-best-practices', 'design-review', 'design-refine', 'vibe.design'],
-  'typescript-vue': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
-  'typescript-nuxt': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
-  'typescript-svelte': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
-  'typescript-angular': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
-  'typescript-astro': ['ui-ux-pro-max', 'brand-assets', 'seo-checklist', 'design-review', 'design-refine', 'vibe.design'],
+  'typescript-react': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.react-best-practices', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-nextjs': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.react-best-practices', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-vue': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-nuxt': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-svelte': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-angular': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-astro': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
   // Mobile → UI + design-review only (refine 파이프라인은 CSS 기반)
-  'typescript-react-native': ['ui-ux-pro-max', 'design-review', 'vibe.design'],
-  'dart-flutter': ['ui-ux-pro-max', 'design-review', 'vibe.design'],
-  'swift-ios': ['ui-ux-pro-max', 'design-review', 'vibe.design'],
-  'kotlin-android': ['ui-ux-pro-max', 'design-review', 'vibe.design'],
+  'typescript-react-native': ['vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
+  'dart-flutter': ['vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
+  'swift-ios': ['vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
+  'kotlin-android': ['vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
 };
 
 /** Capability → 로컬 스킬 매핑 (의존성 감지 기반 자동 설치) */
 export const CAPABILITY_SKILLS: Record<string, ReadonlyArray<string>> = {
-  'commerce': ['commerce-patterns', 'e2e-commerce'],
-  'video': ['video-production'],
-  'event-automation': ['event-planning', 'event-comms', 'event-ops'],
-  'pm': ['create-prd', 'prioritization-frameworks', 'user-personas'],
-  'devlog': ['devlog'],
+  'commerce': ['vibe.commerce-patterns', 'vibe.e2e-commerce'],
+  'video': ['vibe.video-production'],
+  'event-automation': ['vibe.event-planning', 'vibe.event-comms', 'vibe.event-ops'],
+  'pm': ['vibe.create-prd', 'vibe.prioritization', 'vibe.user-personas'],
+  'devlog': ['vibe.devlog'],
 };
 
 /** 스택 → 외부 스킬(skills.sh) 매핑 (vibe init/update → npx skills add) */
@@ -309,6 +293,91 @@ export const LANGUAGE_RULE_PREFIXES = [
 export const LEGACY_RULE_FILES = [
   'react-patterns.mdc', 'typescript-standards.mdc', 'python-standards.mdc'
 ];
+
+/** v3.2 namespace 통합 — 설치된 bare 스킬을 배송본과 일치할 때만 제거한다. */
+export const LEGACY_SKILL_RENAMES: Readonly<Record<string, string>> = {
+  'spec': 'vibe.spec',
+  'test': 'vibe.test',
+  'contract': 'vibe.contract',
+  'regress': 'vibe.regress',
+  'figma': 'vibe.figma',
+  'clone': 'vibe.clone',
+  'docs': 'vibe.docs',
+  'arch-guard': 'vibe.run',
+  'exec-plan': 'vibe.run',
+  'restraint': 'vibe.run',
+  'agents-md': 'vibe.agents-md',
+  'brand-assets': 'vibe.brand-assets',
+  'capability-loop': 'vibe.capability-loop',
+  'chub-usage': 'vibe.chub-usage',
+  'commerce-patterns': 'vibe.commerce-patterns',
+  'commit-push-pr': 'vibe.commit-push-pr',
+  'context7-usage': 'vibe.context7-usage',
+  'create-educational-content': 'vibe.educational-content',
+  'create-prd': 'vibe.create-prd',
+  'design-refine': 'vibe.design-refine',
+  'design-review': 'vibe.design-review',
+  'design-teach': 'vibe.design-teach',
+  'devlog': 'vibe.devlog',
+  'e2e-commerce': 'vibe.e2e-commerce',
+  'event-comms': 'vibe.event-comms',
+  'event-ops': 'vibe.event-ops',
+  'event-planning': 'vibe.event-planning',
+  'git-worktree': 'vibe.git-worktree',
+  'handoff': 'vibe.handoff',
+  'parallel-research': 'vibe.parallel-research',
+  'presentation': 'vibe.presentation',
+  'prioritization-frameworks': 'vibe.prioritization',
+  'priority-todos': 'vibe.priority-todos',
+  'seo-checklist': 'vibe.seo-checklist',
+  'tool-fallback': 'vibe.tool-fallback',
+  'ui-ux-pro-max': 'vibe.ui-ux-pro-max',
+  'user-personas': 'vibe.user-personas',
+  'vercel-react-best-practices': 'vibe.react-best-practices',
+  'video-production': 'vibe.video-production',
+};
+
+/** v3.2에서 배송했던 bare SKILL.md의 SHA-256. 정확히 일치하는 설치본만 정리한다. */
+export const LEGACY_SKILL_HASHES: Readonly<Record<string, string>> = {
+  'spec': 'bb4669226994567ae65606baf5b03f18a8f7474d98147e325461f696e868a90b',
+  'test': 'f92283dccedfd2cc0907711edb2b7a36c8804d8fe1d0d29233a74d16ff5127',
+  'contract': '0e29f293748b6b0be66587cabef59db316495278eb33fa1bff6b97c77bc4b798',
+  'regress': '3217c64a8f144c6d06bd24a17ccbe47bb8d3a1d9f80cc6ca3459e9f801a34589',
+  'figma': 'e4c7a5b3dc6a918799f8dc4f3496e67b008613d6e2cb0ccc22dd5190e494ad7c',
+  'clone': '37a4ee0830fae51521c2b0be9884a67db8a3b682a53ed6d062e15179363da1af',
+  'docs': 'f18fa3ad586354c314b08925f15ca3d9630f33be6619fb4f87659ab2c19e54bb',
+  'arch-guard': '2bfd781664a625f5afdfadbb5697b73a3062fa21c5d43057a5796eda79d70642',
+  'exec-plan': '5394fcfd8fb0c7ce9923168a6b78d56c880159c10feb5667efa696f36a2ca12d',
+  'restraint': '6ac370ddd11a4cb56f51297bb582644402e15f77214fb32669510f156d6f9296',
+  'agents-md': 'f1a4ddf97755a02608058bf8c8668afe6953b47d628409bfa1ffc572a11c543a',
+  'brand-assets': 'af30b27f472706ebc372d8f9916c1816ae8bc50e157e6659cb2197a94f84d7b8',
+  'capability-loop': 'fb624b8d9f4c09b2e7d2bb7be0d77ff2eb06151a1ffb1ac720d103f8a4af38ce',
+  'chub-usage': '89d282979cac295bb3a7f9c9cce7d38ae769776e133f47d06695ccf6c5882487',
+  'commerce-patterns': 'ca5ce5d85e6bbae7f1147b3601a9afd4b7fc8ef4e97b5fb6eb5cf4e387a8a448',
+  'commit-push-pr': '232274ec0320a6408267013b44922756804180483dd2fca87411a9f1d44164fb',
+  'context7-usage': '82efa24624d3955b6cbdac3ccd46d1b9b1b7e36f7b7273717d77fd57b68fd053',
+  'create-prd': '407a9063929171805f34fec9caf0a42b9ae2a0902f74d8c6c6fbac6aa7592e19',
+  'design-refine': '67ef3f2be393b4c00c2a2a50264787207cd7ba77ad246b1bf763b17eea1a75a1',
+  'design-review': 'd5fb61d315b8fd81c7aa069c1802490ad7976859fcc7f99dfd53c290fedaca04',
+  'design-teach': 'af230a0fea9d1b2f9a057ab8733162fe9309c72f435e4d6ca6ede0d5725cc44f',
+  'devlog': '2a4c76e664247ae430a2780f3e875a2a201439996a755ea4a8c0cb523509c6a3',
+  'e2e-commerce': '27f7c2d2341d48eaa5288c2cc4a052632d3578bd49065ed1493c84f026c9db97',
+  'event-comms': 'ce0069bb41c68074944b8127a7e6164dd7247804ff2aceb3bf72995d30ae5af6',
+  'event-ops': '8d736102135e7e2aeda6fd5c6e73d4ab87bccbf65c3beb82016faca190b108d3',
+  'event-planning': '7c60fabe6d5b93709634fb2a1036159de8bb7a9c23e139e6d6b542f49ad12ba6',
+  'git-worktree': '9f85907052c305a32f4ab2c1632a7aa4f30b1e86733de739198d96e33077fdb0',
+  'handoff': '42b723f5d53e00c093f8f68347afd4242d026258df3f5d6e9831efeef5fde217',
+  'parallel-research': '8d7562ebaf4fe642122f88165a7bbea4c3280a954599dcf7c4d827c465ed0ffb',
+  'presentation': '38f6a09bbb1c6739f5cf93d74f9136a0537a42271bc4bcdf974203ebf34d6b09',
+  'prioritization-frameworks': 'fe7a09c3493e5c5badd4d82a079088a33bfaed9fea63c17bef30bdeba20ccf38',
+  'priority-todos': '482e9f19cf15e4b052b5c4abdfed1bf976940cd2a4acbe1ba74fc41d4f034a56',
+  'seo-checklist': '3b87d583df9243b98ac5fbe84d4427a7fc9b161219c746142940c15811a0ea1e',
+  'tool-fallback': 'd135cb53ace2db8eeaf359a57fd77c687397e6bc6e94b1773eae4ab2d9ae1d57',
+  'ui-ux-pro-max': '58234b04bf3c4080331423641de65b7e965e7f8098bb35af394a2bfa43bac21f',
+  'user-personas': 'cefea1faf1b8ad53a7e97c47f7c4c249e5b2ee58b8f14f00a90edcfc35e901b4',
+  'vercel-react-best-practices': 'c880fd8288ffeb029f99cd7cc65dbd129009873e7eef62f396f30817404525f8',
+  'video-production': 'f25449e655b207216557ef2b1787d268fe659e6a1a45c9f717c35a170991af5b',
+};
 
 /** 이전 네이밍에서 변경된 스킬 — postinstall 시 구 디렉토리 삭제 */
 export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [

@@ -82,7 +82,7 @@ One row per Done criterion: pass/fail + an evidence pointer (file:line, test nam
 Before printing the failure summary, register each failed scenario as a regression bug so the same failure cannot silently slip through again:
 
 ```
-Load skill `regress` with:
+Load skill `vibe.regress` with:
   subcommand: register --from-verify
   feature: {feature}   scenario: {scenario}
   error: {error-summary}   location: {file:line}
@@ -95,7 +95,7 @@ Load skill `regress` with:
 After all criteria pass, if `.vibe/contracts/{feature}.md` exists:
 
 ```
-Load skill `contract` with: check "{feature}"
+Load skill `vibe.contract` with: check "{feature}"
 ```
 
 - No drift → verify still passes

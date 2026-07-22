@@ -62,6 +62,7 @@ function parseSkillFrontmatter(filePath: string): SkillFrontmatter | null {
 
 function loadConstants(): {
   globalSkills: string[];
+  optionalSkills: string[];
   stackToSkills: Record<string, string[]>;
   capabilitySkills: Record<string, string[]>;
   stackToLanguage: Record<string, string>;
@@ -70,15 +71,17 @@ function loadConstants(): {
   const constantsPath = path.join(ROOT, 'src', 'cli', 'postinstall', 'constants.ts');
   const content = fs.readFileSync(constantsPath, 'utf-8');
 
-  // Parse GLOBAL_SKILLS (core + standard + optional tiers)
+  // Parse actual postinstall globals (entry + core + standard).
   const globalSkills: string[] = [];
-  for (const tier of ['GLOBAL_SKILLS_CORE', 'GLOBAL_SKILLS_STANDARD', 'GLOBAL_SKILLS_OPTIONAL']) {
+  for (const tier of ['GLOBAL_SKILLS_ENTRY', 'GLOBAL_SKILLS_STANDARD']) {
     const tierMatch = content.match(new RegExp(`${tier}[^[]*\\[([\\s\\S]*?)\\]`));
     if (tierMatch) {
       const names = tierMatch[1].match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) ?? [];
       globalSkills.push(...names);
     }
   }
+  const optionalMatch = content.match(/GLOBAL_SKILLS_OPTIONAL[^[]*\[([\s\S]*?)\]/);
+  const optionalSkills = optionalMatch?.[1].match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) ?? [];
 
   // Parse STACK_TO_SKILLS
   const stackToSkills = parseRecordBlock(content, 'STACK_TO_SKILLS');
@@ -95,7 +98,7 @@ function loadConstants(): {
     }
   }
 
-  return { globalSkills, stackToSkills, capabilitySkills, stackToLanguage, stackToExternal };
+  return { globalSkills, optionalSkills, stackToSkills, capabilitySkills, stackToLanguage, stackToExternal };
 }
 
 function parseRecordBlock(content: string, name: string): Record<string, string[]> {
@@ -128,7 +131,7 @@ function discoverAllSkills(): Map<string, SkillFrontmatter> {
 }
 
 function generateCatalog(): string {
-  const { globalSkills, stackToSkills, capabilitySkills, stackToLanguage, stackToExternal } = loadConstants();
+  const { globalSkills, optionalSkills, stackToSkills, capabilitySkills, stackToLanguage, stackToExternal } = loadConstants();
   const allSkills = discoverAllSkills();
 
   const lines: string[] = [];
@@ -139,7 +142,16 @@ function generateCatalog(): string {
   lines.push('');
   lines.push('# Vibe Skill Catalog');
   lines.push('');
-  lines.push(`> Total: **${allSkills.size} skills** | Global: ${globalSkills.length} | Stack-local: ${new Set(Object.values(stackToSkills).flat()).size} | Capability: ${new Set(Object.values(capabilitySkills).flat()).size}`);
+  lines.push(`> Total: **${allSkills.size} skills** | Global: ${globalSkills.length} | Optional: ${optionalSkills.length} | Stack-local: ${new Set(Object.values(stackToSkills).flat()).size} | Capability: ${new Set(Object.values(capabilitySkills).flat()).size}`);
+  lines.push('');
+
+  // ─── Optional Skills ───
+  lines.push('## Optional Skills (explicit invocation)');
+  lines.push('');
+  for (const name of optionalSkills) {
+    const fm = allSkills.get(name);
+    lines.push(`- \`${name}\` — ${fm?.description ?? '—'}`);
+  }
   lines.push('');
 
   // ─── Global Skills ───
@@ -206,6 +218,8 @@ function generateCatalog(): string {
   for (const [name, fm] of sorted) {
     const scope = globalSkills.includes(name)
       ? 'global'
+      : optionalSkills.includes(name)
+        ? 'optional'
       : Object.values(stackToSkills).flat().includes(name)
         ? 'stack-local'
         : Object.values(capabilitySkills).flat().includes(name)

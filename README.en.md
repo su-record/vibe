@@ -189,13 +189,13 @@ Detection at edit time, blocking at deterministic gates:
 
 **7+ agents** — 7 global goal-oriented agents (architect, implementer, tester, code-reviewer, security-reviewer, …) + 4 conditional (UI/Event — installed project-locally only when the stack/capability matches; 11 total). Agents are delegated by goal + constraints + Done criteria, not step scripts; exploration, planning, and parallelism use the harness's native subagents directly.
 
-**60 skills** — Not all loaded at once. 3-tier system prevents context overload:
+**51 skills** — Not all loaded at once. Every public skill uses the `vibe.*` namespace, while internal core behavior is bundled into the public skill body:
 
 | Tier | When loaded | Purpose | Examples |
 |------|-------------|---------|----------|
-| **Core** | Always active | Gate entry, restraint principles | spec, test, restraint, arch-guard |
-| **Standard** | `vibe init` selects by stack | Stack/capability support | figma, design-review, docs |
-| **Optional** | Explicit `/skill` only | Reference, wrappers | chub-usage, context7 |
+| **Entry** | Globally installed | Public workflow entry points | vibe.spec, vibe.test, vibe.docs |
+| **Standard** | Globally installed | Shared workflow support | vibe.handoff, vibe.agents-md |
+| **Optional/Local** | Explicit invocation or project install | Stack/capability support | vibe.chub-usage, vibe.design-review |
 
 Skills teach only what the model doesn't know (domain gotchas, current APIs, project conventions). Skills that re-taught basics like "how to debug" were deleted in v3.
 

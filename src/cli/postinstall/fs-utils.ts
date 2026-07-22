@@ -4,6 +4,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import { createHash } from 'node:crypto';
 import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
 
 /**
@@ -238,6 +239,34 @@ export function cleanupOptionalSkills(
     results.push({ name: skillName, action: 'removed', reason: 'vibe-owned optional skill, content unchanged' });
   }
 
+  return results;
+}
+
+export function cleanupRenamedSkills(
+  globalSkillsDir: string,
+  renames: Readonly<Record<string, string>>,
+  legacyHashes: Readonly<Record<string, string>>,
+): OptionalSkillResult[] {
+  const results: OptionalSkillResult[] = [];
+  for (const [legacyName, currentName] of Object.entries(renames)) {
+    const legacyDir = path.join(globalSkillsDir, legacyName);
+    if (!fs.existsSync(legacyDir)) continue;
+    const installedPath = path.join(legacyDir, 'SKILL.md');
+    const installed = fs.existsSync(installedPath) ? fs.readFileSync(installedPath, 'utf8') : '';
+    const name = installed.match(/^name:\s*(.+?)\s*$/m)?.[1];
+    const expectedHash = legacyHashes[legacyName];
+    if (name !== legacyName || !expectedHash) {
+      results.push({ name: legacyName, action: 'skipped-not-vibe', reason: 'ownership could not be verified' });
+      continue;
+    }
+    const installedHash = createHash('sha256').update(installed).digest('hex');
+    if (installedHash !== expectedHash) {
+      results.push({ name: legacyName, action: 'skipped-user-modified', reason: 'legacy content differs, preserved' });
+      continue;
+    }
+    fs.rmSync(legacyDir, { recursive: true, force: true });
+    results.push({ name: legacyName, action: 'removed', reason: `renamed to ${currentName}` });
+  }
   return results;
 }
 

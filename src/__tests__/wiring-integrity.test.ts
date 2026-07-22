@@ -31,8 +31,8 @@ const RULES_DIR = path.join(ROOT, 'vibe', 'rules');
 
 /**
  * SKILL.md 본문에서 체인 호출("Load skill `X`" 및 한국어 "`X` 스킬을 로드")로
- * 참조된 body 스킬 이름을 추출한다. `figma:figma-use` 처럼 subcommand 가
- * 붙은 경우 ':' 앞부분(실제 스킬 디렉토리명)만 취한다.
+ * 참조된 body 스킬 이름을 추출한다. `figma:figma-use` 처럼 ':' 가 포함된
+ * plugin-qualified 참조(외부 플러그인 스킬)는 vibe 설치 목록 대상이 아니므로 제외한다.
  */
 function extractChainedSkills(content: string): string[] {
   const names = new Set<string>();
@@ -41,8 +41,8 @@ function extractChainedSkills(content: string): string[] {
   for (const re of patterns) {
     let match: RegExpExecArray | null;
     while ((match = re.exec(content)) !== null) {
-      const base = match[1].trim().split(':')[0].trim();
-      if (base) names.add(base);
+      const name = match[1].trim();
+      if (name && !name.includes(':')) names.add(name);
     }
   }
 

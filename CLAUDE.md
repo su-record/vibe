@@ -126,7 +126,7 @@ $vibe "<requirement>" [+ 📎 attachments]   # Codex
 
 ## Skill Tiers
 
-3 tiers prevent context overload: **core** (always active) / **standard** (project-setup selected) / **optional** (explicit `/skill` only). SSOT: `GLOBAL_SKILLS_CORE` + `GLOBAL_SKILLS_STANDARD` in `src/cli/postinstall/constants.ts`. Proactive triggers live in each skill's frontmatter.
+Public skills use the `vibe.*` namespace and are classified as **entry** / **standard** / **optional or project-local**. Core behavior is bundled inside the relevant public skill and is never exposed as a separate discovery entry. SSOT: `GLOBAL_SKILLS_ENTRY`, `GLOBAL_SKILLS_STANDARD`, and the stack/capability mappings in `src/cli/postinstall/constants.ts`.
 
 ## Context Management
 

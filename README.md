@@ -161,13 +161,13 @@ codex
 
 **7+ 에이전트** — 전역 7개(architect, implementer, tester, code-reviewer, security-reviewer 등) + 조건부 그룹 4개(UI/Event — 해당 스택 프로젝트에만 로컬 설치, 총 11개). 단계별 지시 스크립트가 아니라 목표+제약+Done 기준으로 위임하고, 탐색·계획·병렬 실행은 하네스의 네이티브 서브에이전트를 그대로 사용합니다.
 
-**60개 스킬** — 한 번에 다 로드되지 않음. 3-tier 시스템으로 컨텍스트 과부하 방지:
+**51개 스킬** — 한 번에 다 로드되지 않음. 공개 스킬은 모두 `vibe.*` namespace를 사용하며, 내부 core 동작은 공개 스킬 본문에 통합됩니다:
 
 | 티어 | 로드 시점 | 용도 | 예시 |
 |------|----------|------|------|
-| **Core** | 항상 활성 | 게이트 진입, 절제 원칙 | spec, test, restraint, arch-guard |
-| **Standard** | `vibe init`이 스택별 선택 | 스택/역할 지원 | figma, design-review, docs |
-| **Optional** | 명시적 `/skill` 호출만 | 레퍼런스, 래퍼 | chub-usage, context7 |
+| **Entry** | 전역 설치 | 공개 워크플로 진입점 | vibe.spec, vibe.test, vibe.docs |
+| **Standard** | 전역 설치 | 공통 워크플로 지원 | vibe.handoff, vibe.agents-md |
+| **Optional/Local** | 명시 호출 또는 프로젝트별 설치 | 스택·capability 지원 | vibe.chub-usage, vibe.design-review |
 
 스킬이 가르치는 것은 모델이 모르는 것(도메인 gotcha, 최신 API, 프로젝트 규약)뿐입니다. 디버깅하는 법 같은 기본기 재교육 스킬은 v3에서 전부 삭제됐습니다.
 

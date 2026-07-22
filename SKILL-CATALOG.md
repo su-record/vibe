@@ -3,60 +3,76 @@
 
 # Vibe Skill Catalog
 
-> Total: **60 skills** | Global: 22 | Stack-local: 7 | Capability: 10
+> Total: **51 skills** | Global: 29 | Optional: 6 | Stack-local: 7 | Capability: 10
+
+## Optional Skills (explicit invocation)
+
+- `vibe.commit-push-pr` — Commit, push, and create PR in one go. Auto-activates on commit, PR, push keywords.
+- `vibe.git-worktree` — Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously.
+- `vibe.tool-fallback` — Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors.
+- `vibe.context7-usage` — Context7 plugin for latest library documentation. Auto-activates when docs, documentation, latest version, official docs, API reference, or library help is needed.
+- `vibe.chub-usage` — Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs.
+- `vibe.presentation` — 소스 데이터(리서치/문서/지식그래프)를 16:9 HTML 슬라이드덱으로 생성한다. 디자인 시스템(타이포·색·그리드·1슬라이드1메시지)을 통째로 적용해 전문가 수준 결과를 뽑고, 1920×1080 PDF 로 발행한다. 사용자가 
 
 ## Global Skills (postinstall → ~/.claude/skills/)
 
 | Skill | Invocation | Description | Triggers | Priority |
 |-------|------------|-------------|----------|----------|
-| `spec` | — | 단일 패스 SPEC 작성 본체 — 자연어 요구사항(+첨부) → 필요할 때만 인라인 명확화 질문 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 를 한 번에 생성 → 1회 셀프 리뷰 → SPEC 승인(유일한 의무 게이트). | — | — |
-| `test` | — | vibe 자가검진 본체 — 대상 harness(~/.claude/~/.codex)의 모든 entry skill/skill/hook/agent 프로빙 → pass/fail 리포트 → ~/.vibe/test-reports/. | — | — |
-| `arch-guard` | auto | Generate import-rule tests that mechanically enforce architecture layer constraints (e.g.,  | arch guard, architecture test, layer test, boundary test, structural test, arch validation, layer enforcement, dependency rules, architectural boundaries, circular dependency | 60 |
-| `exec-plan` | auto, chain | Convert a SPEC (3+ phases or multi-file) into a self-contained execution plan — explicit file paths, interfaces, acceptance criteria — that agents can run autonomously. | exec plan, execution plan, autonomous plan, self-contained plan, execute this spec, run this plan, parallel implementation | 60 |
-| `restraint` | auto | Restraint gate — block premature abstraction and premature optimization. Escalate the YAGNI ladder only on demonstrated need; optimize only on measured evidence. Merges yagni-ladder + rob-pike. | premature optimization, premature abstraction, abstraction layer, helper module, utility class, wrapper class, manager class, config system, cache layer, parallelize, benchmark | 60 |
-| `contract` | — | API contract drift 탐지 본체 — SPEC contract 추출 → 구현 비교 → breaking drift P1을 regress로 자동 등록. | — | — |
-| `regress` | — | 회귀 테스트 자동 진화 본체 — 버그 등록 → 예방 테스트 생성 → 반복 패턴 클러스터 → git fix 커밋 import. 저장소 .vibe/regressions/. | — | — |
-| `parallel-research` | auto | Parallel research with 4 specialized agents (best-practices, framework-docs, codebase-patterns, security-advisory) running simultaneously. Use when facing unfamiliar technology, choosing between libraries/frameworks, designing architecture for a new feature, or investigating security implications. Must use this skill when user asks  | parallel research, complex feature, technology selection, architecture design, security critical | 60 |
-| `handoff` | auto | Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords. | handoff, handover, session cleanup, session end, context save | 60 |
-| `priority-todos` | auto | Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority. | todo list, task management, P1, P2, P3, priority todos, organize tasks | 60 |
-| `agents-md` | auto, chain | Author and optimize AGENTS.md / CLAUDE.md (same doctrine, different filenames): write new context files from scratch, or strip discoverable info and keep only gotchas. Based on Addy Osmani | agents.md, claude.md, context file, optimize agents, optimize claude, write claude.md, create claude.md, project instructions | 50 |
-| `capability-loop` | auto | When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking  | capability loop, failure loop, build capability, missing capability, agent failed, why did it fail | 60 |
-| `design-teach` | auto | Gather and store project design context — target audience, brand personality, aesthetic direction, constraints. Used by other design-* skills. Use when design-teach, design-setup, design-context. | design-teach, design-setup, design-context | 50 |
-| `figma` | — | Figma → 코드 본체 — tree 기반 구조적 코드 생성 (extract/convert 모드 통합). | — | — |
-| `clone` | — | URL → markup 수준 pixel-perfect 클론 본체 — headless browser로 라이브 사이트 캡처 후 현재 스택으로 스캐폴드. | — | — |
-| `docs` | — | 프로젝트 문서 생성 본체 — README / 아키텍처 / 사용자 가이드 / 릴리즈 노트 / Mermaid 다이어그램 / codemaps. | — | — |
-| `commit-push-pr` | auto, chain | Commit, push, and create PR in one go. Auto-activates on commit, PR, push keywords. | commit, push, PR, pull request, merge | 70 |
-| `git-worktree` | auto | Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously. | worktree, hotfix, parallel branch, multiple branches | 50 |
-| `tool-fallback` | auto | Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors. | search failure, 429, 5xx, overloaded, fallback, circuit breaker, rate limit | 60 |
-| `context7-usage` | auto | Context7 plugin for latest library documentation. Auto-activates when docs, documentation, latest version, official docs, API reference, or library help is needed. | latest version, official docs, API reference, library help, context7 | 60 |
-| `chub-usage` | auto | Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs. | chub, context hub, API docs, latest API, deprecated API, SDK documentation, api reference, 최신 문서 | 60 |
-| `presentation` | auto | 소스 데이터(리서치/문서/지식그래프)를 16:9 HTML 슬라이드덱으로 생성한다. 디자인 시스템(타이포·색·그리드·1슬라이드1메시지)을 통째로 적용해 전문가 수준 결과를 뽑고, 1920×1080 PDF 로 발행한다. 사용자가  | presentation, ppt, slide, deck, 슬라이드, 프레젠테이션, 발표자료, 덱 | 50 |
+| `vibe` | — | Dynamic dispatcher — 자연어 요구사항 + 첨부(URL/이미지/PDF/파일)를 받아 적합한 vibe.* 파이프라인을 동적 설계하고 1회 승인 후 체인 실행 | — | — |
+| `vibe.analyze` | — | Analyze any target — code, document, website, or Figma design | — | — |
+| `vibe.clone` | — | URL → 마크업 레벨 픽셀 완벽 클론 — 헤드리스 브라우저로 라이브 사이트 캡처 후 현재 프로젝트 스택에 맞게 스캐폴딩 | — | — |
+| `vibe.continue` | — | Restore previous session context for continuity — memory load, context restore, resume from last checkpoint. | — | — |
+| `vibe.contract` | — | API contract drift detection — extract contracts from SPEC, compare to implementation, fail on drift | — | — |
+| `vibe.design` | — | DESIGN.md(시각 품질 SSOT) 생성·검증·드리프트 검사·동기화. Figma 독립. | — | — |
+| `vibe.docs` | — | Generate project documentation — README, architecture docs, user guide, release notes, agent instructions, diagrams, codemaps | — | — |
+| `vibe.event` | — | Community event automation — D-Day based proactive task execution | — | — |
+| `vibe.figma` | — | Figma ↔ Code 양방향 라우터 — READ(Figma→Code) / WRITE(plan→Figma) | — | — |
+| `vibe.harness` | — | Diagnose project Harness Engineering maturity across 6 axes | — | — |
+| `vibe.image` | — | Generate images (icons, banners, mockups) using the Antigravity image backend. | — | — |
+| `vibe.llm` | — | Refresh available models for claude/openai(api+oauth)/gemini/zai as of now and update the vibe model SSOT | — | — |
+| `vibe.loop` | — | Loop engineering — design, install, and run autonomous goal loops whose completion is judged by deterministic gates, not self-report | — | — |
+| `vibe.reason` | — | Apply systematic reasoning framework to complex problems | — | — |
+| `vibe.regress` | — | Regression test auto-evolution — register bugs, generate preventive tests, cluster patterns | — | — |
+| `vibe.review` | — | Multi-agent parallel code review with priority-based findings | — | — |
+| `vibe.run` | — | Execute implementation from SPEC | — | — |
+| `vibe.scaffold` | — | Generate or audit project folder structure optimized for AI-assisted development | — | — |
+| `vibe.spec` | — | SPEC 진입점 — 자연어 요구사항(+첨부)을 받아 단일 패스 SPEC 작성 → 1회 승인 → /vibe.run 핸드오프 | — | — |
+| `vibe.test` | — | Self-test vibe — probe every entry skill/skill/hook/agent in the target harness install dir and write a pass/fail report | — | — |
+| `vibe.trace` | — | Generate and display Requirements Traceability Matrix (RTM) — REQ → SPEC → Feature → Code 관계 추적 | — | — |
+| `vibe.verify` | — | Verify implementation against SPEC requirements | — | — |
+| `vibe.parallel-research` | auto | Parallel research with 4 specialized agents (best-practices, framework-docs, codebase-patterns, security-advisory) running simultaneously. Use when facing unfamiliar technology, choosing between libraries/frameworks, designing architecture for a new feature, or investigating security implications. Must use this skill when user asks  | parallel research, complex feature, technology selection, architecture design, security critical | 60 |
+| `vibe.educational-content` | — | Create evidence-backed educational content from a subject, curriculum, source document, repository, product, expert interview, or demonstration. Use when Codex needs to research, design, script, verify, assess, or repurpose a lesson, course, tutorial, workshop, explainer, screencast, teaching article, presentation, worksheet, microlearning unit, or educational social content for any domain, including development and technical education. Especially useful when content needs observable learning outcomes, audience-appropriate scaffolding, practice and feedback, valid assessment, source traceability, or clear separation between verified facts and inference. | — | — |
+| `vibe.handoff` | auto | Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords. | handoff, handover, session cleanup, session end, context save | 60 |
+| `vibe.priority-todos` | auto | Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority. | todo list, task management, P1, P2, P3, priority todos, organize tasks | 60 |
+| `vibe.agents-md` | auto, chain | Author and optimize AGENTS.md / CLAUDE.md (same doctrine, different filenames): write new context files from scratch, or strip discoverable info and keep only gotchas. Based on Addy Osmani | agents.md, claude.md, context file, optimize agents, optimize claude, write claude.md, create claude.md, project instructions | 50 |
+| `vibe.capability-loop` | auto | When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking  | capability loop, failure loop, build capability, missing capability, agent failed, why did it fail | 60 |
+| `vibe.design-teach` | auto | Gather and store project design context — target audience, brand personality, aesthetic direction, constraints. Used by other design-* skills. Use when design-teach, design-setup, design-context. | design-teach, design-setup, design-context | 50 |
 
 ## Stack → Skills Routing (vibe init/update → .claude/skills/)
 
 | Stack Type | Skills |
 |------------|--------|
-| `typescript-react` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `vercel-react-best-practices`, `design-review`, `design-refine`, `vibe.design` |
-| `typescript-nextjs` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `vercel-react-best-practices`, `design-review`, `design-refine`, `vibe.design` |
-| `typescript-vue` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
-| `typescript-nuxt` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
-| `typescript-svelte` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
-| `typescript-angular` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
-| `typescript-astro` | `ui-ux-pro-max`, `brand-assets`, `seo-checklist`, `design-review`, `design-refine`, `vibe.design` |
-| `typescript-react-native` | `ui-ux-pro-max`, `design-review`, `vibe.design` |
-| `dart-flutter` | `ui-ux-pro-max`, `design-review`, `vibe.design` |
-| `swift-ios` | `ui-ux-pro-max`, `design-review`, `vibe.design` |
-| `kotlin-android` | `ui-ux-pro-max`, `design-review`, `vibe.design` |
+| `typescript-react` | `vibe.ui-ux-pro-max`, `vibe.brand-assets`, `vibe.seo-checklist`, `vibe.react-best-practices`, `vibe.design-review`, `vibe.design-refine`, `vibe.design` |
+| `typescript-nextjs` | `vibe.ui-ux-pro-max`, `vibe.brand-assets`, `vibe.seo-checklist`, `vibe.react-best-practices`, `vibe.design-review`, `vibe.design-refine`, `vibe.design` |
+| `typescript-vue` | `vibe.ui-ux-pro-max`, `vibe.brand-assets`, `vibe.seo-checklist`, `vibe.design-review`, `vibe.design-refine`, `vibe.design` |
+| `typescript-nuxt` | `vibe.ui-ux-pro-max`, `vibe.brand-assets`, `vibe.seo-checklist`, `vibe.design-review`, `vibe.design-refine`, `vibe.design` |
+| `typescript-svelte` | `vibe.ui-ux-pro-max`, `vibe.brand-assets`, `vibe.seo-checklist`, `vibe.design-review`, `vibe.design-refine`, `vibe.design` |
+| `typescript-angular` | `vibe.ui-ux-pro-max`, `vibe.brand-assets`, `vibe.seo-checklist`, `vibe.design-review`, `vibe.design-refine`, `vibe.design` |
+| `typescript-astro` | `vibe.ui-ux-pro-max`, `vibe.brand-assets`, `vibe.seo-checklist`, `vibe.design-review`, `vibe.design-refine`, `vibe.design` |
+| `typescript-react-native` | `vibe.ui-ux-pro-max`, `vibe.design-review`, `vibe.design` |
+| `dart-flutter` | `vibe.ui-ux-pro-max`, `vibe.design-review`, `vibe.design` |
+| `swift-ios` | `vibe.ui-ux-pro-max`, `vibe.design-review`, `vibe.design` |
+| `kotlin-android` | `vibe.ui-ux-pro-max`, `vibe.design-review`, `vibe.design` |
 
 ## Capability → Skills Routing
 
 | Capability | Skills |
 |------------|--------|
-| `commerce` | `commerce-patterns`, `e2e-commerce` |
-| `video` | `video-production` |
-| `event-automation` | `event-planning`, `event-comms`, `event-ops` |
-| `pm` | `create-prd`, `prioritization-frameworks`, `user-personas` |
-| `devlog` | `devlog` |
+| `commerce` | `vibe.commerce-patterns`, `vibe.e2e-commerce` |
+| `video` | `vibe.video-production` |
+| `event-automation` | `vibe.event-planning`, `vibe.event-comms`, `vibe.event-ops` |
+| `pm` | `vibe.create-prd`, `vibe.prioritization`, `vibe.user-personas` |
+| `devlog` | `vibe.devlog` |
 
 ## External Skills (skills.sh)
 
@@ -98,331 +114,286 @@
 
 ## All Skills (Alphabetical)
 
-### `agents-md` (global)
+### `vibe` (global)
+
+- **Description**: Dynamic dispatcher — 자연어 요구사항 + 첨부(URL/이미지/PDF/파일)를 받아 적합한 vibe.* 파이프라인을 동적 설계하고 1회 승인 후 체인 실행
+
+### `vibe.agents-md` (global)
 
 - **Description**: Author and optimize AGENTS.md / CLAUDE.md (same doctrine, different filenames): write new context files from scratch, or strip discoverable info and keep only gotchas. Based on Addy Osmani
 - **Invocation**: auto, chain
 - **Triggers**: agents.md, claude.md, context file, optimize agents, optimize claude, write claude.md, create claude.md, project instructions
 - **Priority**: 50
 
-### `arch-guard` (global)
+### `vibe.analyze` (global)
 
-- **Description**: Generate import-rule tests that mechanically enforce architecture layer constraints (e.g., 
-- **Invocation**: auto
-- **Triggers**: arch guard, architecture test, layer test, boundary test, structural test, arch validation, layer enforcement, dependency rules, architectural boundaries, circular dependency
-- **Priority**: 60
+- **Description**: Analyze any target — code, document, website, or Figma design
 
-### `brand-assets` (stack-local)
+### `vibe.brand-assets` (stack-local)
 
 - **Description**: Auto-generate app icons (iOS/Android/PWA), favicons, and OG images from SPEC brand information using the Antigravity image backend. Use when the project needs visual brand assets, when user mentions 
 - **Invocation**: auto
 - **Triggers**: favicon, logo, app icon, brand assets, branding, og image
 - **Priority**: 60
 
-### `capability-loop` (global)
+### `vibe.capability-loop` (global)
 
 - **Description**: When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking 
 - **Invocation**: auto
 - **Triggers**: capability loop, failure loop, build capability, missing capability, agent failed, why did it fail
 - **Priority**: 60
 
-### `chub-usage` (global)
+### `vibe.chub-usage` (optional)
 
 - **Description**: Context Hub (chub) — fetch vetted, up-to-date API documentation. Write accurate code based on the latest docs instead of training data when working with external APIs/SDKs.
 - **Invocation**: auto
 - **Triggers**: chub, context hub, API docs, latest API, deprecated API, SDK documentation, api reference, 최신 문서
 - **Priority**: 60
 
-### `clone` (global)
+### `vibe.clone` (global)
 
-- **Description**: URL → markup 수준 pixel-perfect 클론 본체 — headless browser로 라이브 사이트 캡처 후 현재 스택으로 스캐폴드.
+- **Description**: URL → 마크업 레벨 픽셀 완벽 클론 — 헤드리스 브라우저로 라이브 사이트 캡처 후 현재 프로젝트 스택에 맞게 스캐폴딩
 
-### `commerce-patterns` (capability)
+### `vibe.commerce-patterns` (capability)
 
 - **Description**: E-commerce domain patterns — cart management, payment processing (Toss/Stripe/PG), inventory tracking, and order state machines with transaction safety. Use when implementing any shopping cart, checkout flow, payment integration, stock management, or order lifecycle. Covers idempotency keys, double-charge prevention, stock reservation, and refund flows. Must use this skill when the codebase involves e-commerce — even for seemingly simple 
 - **Invocation**: auto
 - **Triggers**: commerce, ecommerce, cart, payment, checkout, inventory, toss, stripe, order flow
 - **Priority**: 60
 
-### `commit-push-pr` (global)
+### `vibe.commit-push-pr` (optional)
 
 - **Description**: Commit, push, and create PR in one go. Auto-activates on commit, PR, push keywords.
-- **Invocation**: auto, chain
+- **Invocation**: auto
 - **Triggers**: commit, push, PR, pull request, merge
 - **Priority**: 70
 
-### `context7-usage` (global)
+### `vibe.context7-usage` (optional)
 
 - **Description**: Context7 plugin for latest library documentation. Auto-activates when docs, documentation, latest version, official docs, API reference, or library help is needed.
 - **Invocation**: auto
 - **Triggers**: latest version, official docs, API reference, library help, context7
 - **Priority**: 60
 
-### `contract` (global)
+### `vibe.continue` (global)
 
-- **Description**: API contract drift 탐지 본체 — SPEC contract 추출 → 구현 비교 → breaking drift P1을 regress로 자동 등록.
+- **Description**: Restore previous session context for continuity — memory load, context restore, resume from last checkpoint.
 
-### `create-prd` (capability)
+### `vibe.contract` (global)
+
+- **Description**: API contract drift detection — extract contracts from SPEC, compare to implementation, fail on drift
+
+### `vibe.create-prd` (capability)
 
 - **Description**: Create a Product Requirements Document using a comprehensive 8-section template covering problem, objectives, segments, value propositions, solution, and release planning.
 - **Invocation**: auto, chain
 - **Triggers**: prd, product requirements, feature spec, requirements document
 - **Priority**: 60
 
-### `design-refine` (stack-local)
+### `vibe.design` (global)
+
+- **Description**: DESIGN.md(시각 품질 SSOT) 생성·검증·드리프트 검사·동기화. Figma 독립.
+
+### `vibe.design-refine` (stack-local)
 
 - **Description**: Design refinement — distill (remove visual complexity), normalize (hardcoded values → design tokens), polish (pre-ship micro-details). Modifying passes. Use when design-refine, design-polish, design-normalize, token-align, simplify-ui, ship-ready.
 - **Invocation**: command, auto
 - **Triggers**: design-refine, design-polish, design-normalize, token-align, design-distill, simplify-ui, ship-ready
 - **Priority**: 50
 
-### `design-review` (stack-local)
+### `vibe.design-review` (stack-local)
 
 - **Description**: Design quality review — technical audit (a11y, performance, responsive, theming, AI slop) + UX critique (Nielsen heuristics, persona red flags). Read-only report. Use when design-review, design-audit, ui-audit, a11y-check, ux-review.
 - **Invocation**: command, auto
 - **Triggers**: design-review, design-audit, ui-audit, a11y-check, design-critique, ux-review
 - **Priority**: 50
 
-### `design-teach` (global)
+### `vibe.design-teach` (global)
 
 - **Description**: Gather and store project design context — target audience, brand personality, aesthetic direction, constraints. Used by other design-* skills. Use when design-teach, design-setup, design-context.
 - **Invocation**: auto
 - **Triggers**: design-teach, design-setup, design-context
 - **Priority**: 50
 
-### `devlog` (capability)
+### `vibe.devlog` (capability)
 
 - **Description**: Auto-generate devlog posts from git commit history. Triggers every N commits, writes markdown to configured target repo.
 - **Invocation**: auto
 - **Triggers**: devlog, 개발일지, dev log, devlog 작성, 개발일지 작성
 - **Priority**: 60
 
-### `docs` (global)
+### `vibe.docs` (global)
 
-- **Description**: 프로젝트 문서 생성 본체 — README / 아키텍처 / 사용자 가이드 / 릴리즈 노트 / Mermaid 다이어그램 / codemaps.
+- **Description**: Generate project documentation — README, architecture docs, user guide, release notes, agent instructions, diagrams, codemaps
 
-### `e2e-commerce` (capability)
+### `vibe.e2e-commerce` (capability)
 
 - **Description**: E2E test scenarios for commerce checkout and payment flows. Provides ready-made Playwright test templates for cart→checkout→payment→confirmation flows, including PG sandbox testing (Toss/Stripe), error scenarios (payment failure, timeout, stock exhaustion), and idempotency verification. Use when writing E2E tests for any e-commerce feature — checkout, payment, order status, or refund flows.
 - **Invocation**: auto
 - **Triggers**: e2e commerce, checkout test, payment test, order flow test
 - **Priority**: 60
 
-### `event-comms` (capability)
+### `vibe.educational-content` (global)
+
+- **Description**: Create evidence-backed educational content from a subject, curriculum, source document, repository, product, expert interview, or demonstration. Use when Codex needs to research, design, script, verify, assess, or repurpose a lesson, course, tutorial, workshop, explainer, screencast, teaching article, presentation, worksheet, microlearning unit, or educational social content for any domain, including development and technical education. Especially useful when content needs observable learning outcomes, audience-appropriate scaffolding, practice and feedback, valid assessment, source traceability, or clear separation between verified facts and inference.
+
+### `vibe.event` (global)
+
+- **Description**: Community event automation — D-Day based proactive task execution
+
+### `vibe.event-comms` (capability)
 
 - **Description**: Event communication automation — SMS via Aligo, email via Gmail OAuth, SNS posts for LinkedIn/Threads. Handles templates, BCC rules, and confirmation protocol.
 - **Invocation**: auto
 - **Triggers**: sms, aligo, gmail, event email, event sms, 문자 발송, 메일 발송, SNS 홍보
 - **Priority**: 60
 
-### `event-ops` (capability)
+### `vibe.event-ops` (capability)
 
 - **Description**: Event operations — nametags, checklists, operational slides, Slido plans, image generation specs, settlement reports.
 - **Invocation**: auto
 - **Triggers**: nametag, event checklist, event slide, slido, 이름표, 행사 체크리스트, 운영 슬라이드, 정산
 - **Priority**: 60
 
-### `event-planning` (capability)
+### `vibe.event-planning` (capability)
 
 - **Description**: Community event automation — D-Day timeline, community patterns, proactive task execution. Auto-activates for event planning, meetup/webinar/conference management.
 - **Invocation**: auto
 - **Triggers**: event planning, meetup, webinar, conference, 행사, 밋업, 웨비나, D-Day, 이벤트 준비
 - **Priority**: 60
 
-### `exec-plan` (global)
+### `vibe.figma` (global)
 
-- **Description**: Convert a SPEC (3+ phases or multi-file) into a self-contained execution plan — explicit file paths, interfaces, acceptance criteria — that agents can run autonomously.
-- **Invocation**: auto, chain
-- **Triggers**: exec plan, execution plan, autonomous plan, self-contained plan, execute this spec, run this plan, parallel implementation
-- **Priority**: 60
+- **Description**: Figma ↔ Code 양방향 라우터 — READ(Figma→Code) / WRITE(plan→Figma)
 
-### `figma` (global)
-
-- **Description**: Figma → 코드 본체 — tree 기반 구조적 코드 생성 (extract/convert 모드 통합).
-
-### `git-worktree` (global)
+### `vibe.git-worktree` (optional)
 
 - **Description**: Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously.
 - **Invocation**: auto
 - **Triggers**: worktree, hotfix, parallel branch, multiple branches
 - **Priority**: 50
 
-### `handoff` (global)
+### `vibe.handoff` (global)
 
 - **Description**: Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords.
 - **Invocation**: auto
 - **Triggers**: handoff, handover, session cleanup, session end, context save
 - **Priority**: 60
 
-### `parallel-research` (global)
+### `vibe.harness` (global)
+
+- **Description**: Diagnose project Harness Engineering maturity across 6 axes
+
+### `vibe.image` (global)
+
+- **Description**: Generate images (icons, banners, mockups) using the Antigravity image backend.
+
+### `vibe.llm` (global)
+
+- **Description**: Refresh available models for claude/openai(api+oauth)/gemini/zai as of now and update the vibe model SSOT
+
+### `vibe.loop` (global)
+
+- **Description**: Loop engineering — design, install, and run autonomous goal loops whose completion is judged by deterministic gates, not self-report
+
+### `vibe.parallel-research` (global)
 
 - **Description**: Parallel research with 4 specialized agents (best-practices, framework-docs, codebase-patterns, security-advisory) running simultaneously. Use when facing unfamiliar technology, choosing between libraries/frameworks, designing architecture for a new feature, or investigating security implications. Must use this skill when user asks 
 - **Invocation**: auto
 - **Triggers**: parallel research, complex feature, technology selection, architecture design, security critical
 - **Priority**: 60
 
-### `presentation` (global)
+### `vibe.presentation` (optional)
 
 - **Description**: 소스 데이터(리서치/문서/지식그래프)를 16:9 HTML 슬라이드덱으로 생성한다. 디자인 시스템(타이포·색·그리드·1슬라이드1메시지)을 통째로 적용해 전문가 수준 결과를 뽑고, 1920×1080 PDF 로 발행한다. 사용자가 
 - **Invocation**: auto
 - **Triggers**: presentation, ppt, slide, deck, 슬라이드, 프레젠테이션, 발표자료, 덱
 - **Priority**: 50
 
-### `prioritization-frameworks` (capability)
+### `vibe.prioritization` (capability)
 
 - **Description**: Reference guide to 9 prioritization frameworks with formulas, when-to-use guidance, and templates — RICE, ICE, Kano, MoSCoW, Opportunity Score, and more.
 - **Invocation**: auto, chain
 - **Triggers**: prioritize, prioritization, rice, ice, kano, moscow, opportunity score
 - **Priority**: 50
 
-### `priority-todos` (global)
+### `vibe.priority-todos` (global)
 
 - **Description**: Priority-based TODO management (P1/P2/P3). Auto-activates when managing tasks, reviewing issues, or organizing work by priority.
 - **Invocation**: auto
 - **Triggers**: todo list, task management, P1, P2, P3, priority todos, organize tasks
 - **Priority**: 60
 
-### `regress` (global)
-
-- **Description**: 회귀 테스트 자동 진화 본체 — 버그 등록 → 예방 테스트 생성 → 반복 패턴 클러스터 → git fix 커밋 import. 저장소 .vibe/regressions/.
-
-### `restraint` (global)
-
-- **Description**: Restraint gate — block premature abstraction and premature optimization. Escalate the YAGNI ladder only on demonstrated need; optimize only on measured evidence. Merges yagni-ladder + rob-pike.
-- **Invocation**: auto
-- **Triggers**: premature optimization, premature abstraction, abstraction layer, helper module, utility class, wrapper class, manager class, config system, cache layer, parallelize, benchmark
-- **Priority**: 60
-
-### `seo-checklist` (stack-local)
-
-- **Description**: SEO gotchas for web development — easy-to-miss items that hurt search ranking. Covers meta tags, Open Graph, structured data (JSON-LD), sitemap, robots.txt, canonical URLs, and Naver/Google-specific requirements. Use when building or reviewing any public-facing web page, landing page, or marketing site. Must use this skill when user mentions SEO, search ranking, meta tags, or when deploying a web app that needs to be discoverable.
-- **Invocation**: auto
-- **Triggers**: seo, meta tags, sitemap, structured data, opengraph, search ranking, robots.txt, naver
-- **Priority**: 60
-
-### `spec` (global)
-
-- **Description**: 단일 패스 SPEC 작성 본체 — 자연어 요구사항(+첨부) → 필요할 때만 인라인 명확화 질문 → .vibe/specs/{feature}.md + .vibe/features/{feature}.feature 를 한 번에 생성 → 1회 셀프 리뷰 → SPEC 승인(유일한 의무 게이트).
-
-### `test` (global)
-
-- **Description**: vibe 자가검진 본체 — 대상 harness(~/.claude/~/.codex)의 모든 entry skill/skill/hook/agent 프로빙 → pass/fail 리포트 → ~/.vibe/test-reports/.
-
-### `tool-fallback` (global)
-
-- **Description**: Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors.
-- **Invocation**: auto
-- **Triggers**: search failure, 429, 5xx, overloaded, fallback, circuit breaker, rate limit
-- **Priority**: 60
-
-### `ui-ux-pro-max` (stack-local)
-
-- **Description**: UI/UX design intelligence with bold aesthetic direction. Searchable database: 50+ styles, 97 color palettes, 57 font pairings, 99 UX guidelines, 25 chart types across 9 stacks (React, Vue, Svelte, Angular, Astro, Next.js, Flutter, Swift, Kotlin). Use when building any UI component, choosing color schemes, selecting typography, applying design patterns, or reviewing UX compliance. Must use this skill when user builds frontend — pages, components, dashboards, or landing pages — to ensure design quality beyond generic AI output.
-- **Invocation**: command
-
-### `user-personas` (capability)
-
-- **Description**: Create refined user personas from research data — 3 personas with JTBD, pains, gains, and unexpected insights.
-- **Invocation**: auto, chain
-- **Triggers**: persona, user persona, user profile, user segment, user research
-- **Priority**: 50
-
-### `vercel-react-best-practices` (stack-local)
+### `vibe.react-best-practices` (stack-local)
 
 - **Description**: React/Next.js performance gotchas from Vercel engineering. Non-intuitive pitfalls that LLMs commonly miss.
 - **Invocation**: auto
 - **Triggers**: react, next.js, vercel, react performance, re-render, rendering waterfall
 - **Priority**: 60
 
-### `vibe` (unrouted)
-
-- **Description**: Dynamic dispatcher — 자연어 요구사항 + 첨부(URL/이미지/PDF/파일)를 받아 적합한 vibe.* 파이프라인을 동적 설계하고 1회 승인 후 체인 실행
-
-### `vibe.analyze` (unrouted)
-
-- **Description**: Analyze any target — code, document, website, or Figma design
-
-### `vibe.clone` (unrouted)
-
-- **Description**: URL → 마크업 레벨 픽셀 완벽 클론 — 헤드리스 브라우저로 라이브 사이트 캡처 후 현재 프로젝트 스택에 맞게 스캐폴딩
-
-### `vibe.continue` (unrouted)
-
-- **Description**: Restore previous session context for continuity — memory load, context restore, resume from last checkpoint.
-
-### `vibe.contract` (unrouted)
-
-- **Description**: API contract drift detection — extract contracts from SPEC, compare to implementation, fail on drift
-
-### `vibe.design` (stack-local)
-
-- **Description**: DESIGN.md(시각 품질 SSOT) 생성·검증·드리프트 검사·동기화. Figma 독립.
-
-### `vibe.docs` (unrouted)
-
-- **Description**: Generate project documentation — README, architecture docs, user guide, release notes, agent instructions, diagrams, codemaps
-
-### `vibe.event` (unrouted)
-
-- **Description**: Community event automation — D-Day based proactive task execution
-
-### `vibe.figma` (unrouted)
-
-- **Description**: Figma ↔ Code 양방향 라우터 — READ(Figma→Code) / WRITE(plan→Figma)
-
-### `vibe.harness` (unrouted)
-
-- **Description**: Diagnose project Harness Engineering maturity across 6 axes
-
-### `vibe.image` (unrouted)
-
-- **Description**: Generate images (icons, banners, mockups) using the Antigravity image backend.
-
-### `vibe.llm` (unrouted)
-
-- **Description**: Refresh available models for claude/openai(api+oauth)/gemini/zai as of now and update the vibe model SSOT
-
-### `vibe.loop` (unrouted)
-
-- **Description**: Loop engineering — design, install, and run autonomous goal loops whose completion is judged by deterministic gates, not self-report
-
-### `vibe.reason` (unrouted)
+### `vibe.reason` (global)
 
 - **Description**: Apply systematic reasoning framework to complex problems
 
-### `vibe.regress` (unrouted)
+### `vibe.regress` (global)
 
 - **Description**: Regression test auto-evolution — register bugs, generate preventive tests, cluster patterns
 
-### `vibe.review` (unrouted)
+### `vibe.review` (global)
 
 - **Description**: Multi-agent parallel code review with priority-based findings
 
-### `vibe.run` (unrouted)
+### `vibe.run` (global)
 
 - **Description**: Execute implementation from SPEC
 
-### `vibe.scaffold` (unrouted)
+### `vibe.scaffold` (global)
 
 - **Description**: Generate or audit project folder structure optimized for AI-assisted development
 
-### `vibe.spec` (unrouted)
+### `vibe.seo-checklist` (stack-local)
+
+- **Description**: SEO gotchas for web development — easy-to-miss items that hurt search ranking. Covers meta tags, Open Graph, structured data (JSON-LD), sitemap, robots.txt, canonical URLs, and Naver/Google-specific requirements. Use when building or reviewing any public-facing web page, landing page, or marketing site. Must use this skill when user mentions SEO, search ranking, meta tags, or when deploying a web app that needs to be discoverable.
+- **Invocation**: auto
+- **Triggers**: seo, meta tags, sitemap, structured data, opengraph, search ranking, robots.txt, naver
+- **Priority**: 60
+
+### `vibe.spec` (global)
 
 - **Description**: SPEC 진입점 — 자연어 요구사항(+첨부)을 받아 단일 패스 SPEC 작성 → 1회 승인 → /vibe.run 핸드오프
 
-### `vibe.test` (unrouted)
+### `vibe.test` (global)
 
 - **Description**: Self-test vibe — probe every entry skill/skill/hook/agent in the target harness install dir and write a pass/fail report
 
-### `vibe.trace` (unrouted)
+### `vibe.tool-fallback` (optional)
+
+- **Description**: Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors.
+- **Invocation**: auto
+- **Triggers**: search failure, 429, 5xx, overloaded, fallback, circuit breaker, rate limit
+- **Priority**: 60
+
+### `vibe.trace` (global)
 
 - **Description**: Generate and display Requirements Traceability Matrix (RTM) — REQ → SPEC → Feature → Code 관계 추적
 
-### `vibe.verify` (unrouted)
+### `vibe.ui-ux-pro-max` (stack-local)
+
+- **Description**: UI/UX design intelligence with bold aesthetic direction. Searchable database: 50+ styles, 97 color palettes, 57 font pairings, 99 UX guidelines, 25 chart types across 9 stacks (React, Vue, Svelte, Angular, Astro, Next.js, Flutter, Swift, Kotlin). Use when building any UI component, choosing color schemes, selecting typography, applying design patterns, or reviewing UX compliance. Must use this skill when user builds frontend — pages, components, dashboards, or landing pages — to ensure design quality beyond generic AI output.
+- **Invocation**: command
+
+### `vibe.user-personas` (capability)
+
+- **Description**: Create refined user personas from research data — 3 personas with JTBD, pains, gains, and unexpected insights.
+- **Invocation**: auto, chain
+- **Triggers**: persona, user persona, user profile, user segment, user research
+- **Priority**: 50
+
+### `vibe.verify` (global)
 
 - **Description**: Verify implementation against SPEC requirements
 
-### `video-production` (capability)
+### `vibe.video-production` (capability)
 
 - **Description**: Video processing gotchas — FFmpeg commands, transcoding pipelines, HLS/DASH streaming setup, subtitle embedding (SRT/VTT), and thumbnail extraction. Use when the project involves any video manipulation, media processing, or streaming infrastructure. Covers codec selection, bitrate optimization, and common FFmpeg pitfalls. Must use this skill when user works with video files, mentions FFmpeg, or needs media processing — even for simple tasks like 
 - **Invocation**: auto

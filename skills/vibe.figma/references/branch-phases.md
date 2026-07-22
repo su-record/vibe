@@ -82,7 +82,7 @@
 ```
 1. URL 수집 — Branch 1 Phase 0와 동일 (urlArgs 있으면 전달, 없으면 인터랙티브)
 
-2. Load skill `figma` — Phase 0 Setup
+2. Load skill `vibe.figma` — Phase 0 Setup
    → 스택만 감지. 디렉토리 생성.
    ⛔ component-index.json 인덱싱 SKIP
    ⛔ project-tokens.json 스캔 SKIP
