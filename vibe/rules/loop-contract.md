@@ -42,6 +42,24 @@
 | `--interactive` | off | 단계별 확인 모드 (회전마다 사람 승인 — 과거의 기본값) |
 | `--max-iter N` | — | 회전 상한 명시 (N=1이면 1회 시도) |
 | `automationLevel` | `confirm` | `confirm`(SPEC·stuck에서 질문) / `autonomous`(기록 후 계속, 비대화형) — `.vibe/config.json` |
+| `stakes` | `production` | 태스크 무게. `demo` / `prototype` / `production` — 아래 매핑이 SSOT |
+
+## Stakes — 태스크 무게 비례 실행 (SSOT)
+
+파이프라인 깊이는 태스크의 무게에 비례해야 한다. 분류는 `/vibe` 디스패처 Phase 1이 수행하고, 매핑 정의는 이 표가 유일하다. **판정이 불확실하면 항상 상향(production)한다.**
+
+| stakes | 판정 신호 | max_iterations | 리뷰 | 검증 스크립트 |
+|---|---|---|---|---|
+| `demo` | 명시 키워드(데모·일회성·실험·테스트용·throwaway·토이) / 기존 프로젝트 코드와 무관한 신규 폴더 / `.vibe/config.json` 없는 임시 디렉토리 | 1 | 1패스 (리뷰어 스케일링 최소 셋) | **신규 생성 금지** — 기존 테스트 러너·브라우저 게이트만 사용 |
+| `prototype` | 검증용 초기 버전 명시 / 유지보수 가능성 있으나 배포 대상 아님 | 1 | 1패스 (리뷰어 스케일링 축소 셋) | 신규 생성 금지 |
+| `production` | 기본값 — 신호 없음·상충 포함 | 10 | 수렴 루프 (기본 리뷰어 셋) | 허용 |
+
+- demo/prototype 판정 신호가 상충하면 SPEC 승인 메시지에 stakes 확인 질문 1개를 **편승**시킨다 (별도 왕복 금지) — `vibe.spec` 승인 게이트 참조.
+- production 행은 기존 기본 동작과 동일하다 — 이 표의 도입으로 기본 동작은 변하지 않는다.
+
+### JUDGE 검증 산출물 절제 (모든 stakes 공통)
+
+JUDGE는 이번 feature의 **신규 생성 파일** 기준으로 검증 코드 총량(테스트·검증 스크립트)과 구현 코드 총량을 `git diff --numstat` 로 비교한다. 검증 코드 바이트 합 > 구현 코드 바이트 합이면 **P2 경고**를 run-ledger 에 기록한다 (restraint 원칙의 프로세스 적용). 경고는 advisory — 게이트 통과 여부를 바꾸지 않는다.
 
 ## 금지 (루프 권한 경계)
 

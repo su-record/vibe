@@ -105,6 +105,14 @@ Detect project tech stack FIRST before launching reviewers.
 
 ### Phase 2: Parallel Agent Review (STACK-AWARE)
 
+**리뷰어 스케일링 (stakes × 변경 파일 수)** — stakes 정의 SSOT: `vibe/rules/loop-contract.md` Stakes 표. 위임(서브에이전트)마다 컨텍스트 재주입 비용이 발생하므로, 리뷰어 수는 태스크 무게에 비례시킨다:
+
+| stakes | 변경 파일 | 리뷰어 셋 |
+|---|---|---|
+| demo | ≤5 | correctness + security **2종만** |
+| demo / prototype | >5 또는 prototype | correctness + security + data-integrity **3종** |
+| production | 무관 | 아래 Core Reviewers 전체 (기존 기본 동작 — 불변) |
+
 **Spawn the reviewers as concurrent native subagents in ONE message** — one `code-reviewer` instance per focus plus `security-reviewer`, each scoped to the changed files:
 
 ```

@@ -181,6 +181,7 @@ SPEC 요약(Goal, Done Criteria, 시나리오 수, Out of Scope, 열린 Assumpti
 - 수정 요청 → 반영 후 재제시 (사용자 주도 반복 — 자동 루프 아님).
 - `automationLevel: autonomous` → 승인 생략, 요약만 출력하고 진행.
 - 승인 후 SPEC 변경은 코드 변경과 같은 커밋으로 (SPEC-First — `vibe.run` 참조).
+- **Stakes 편승 질문**: 디스패처의 stakes 판정(`vibe/rules/loop-contract.md` Stakes 표)이 불확실하거나 신호가 상충하면, 이 승인 메시지에 stakes 확인 질문 1개(demo/prototype/production 선택지)를 포함한다. 별도의 추가 확인 왕복을 만들지 않는다 — 승인 게이트가 유일한 질문 지점이다.
 
 ## Output
 

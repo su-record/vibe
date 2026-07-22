@@ -75,6 +75,19 @@ user-invocable: true
 
 복수 의도면 우선순위: resume > figma-driven > new feature > 기타.
 
+### Phase 1-b: Stakes 분류 (태스크 무게)
+
+의도와 별개로 태스크의 **무게(stakes)** 를 분류한다 — 매핑 SSOT: `vibe/rules/loop-contract.md`의 Stakes 표.
+
+| stakes | 판정 신호 | 적용 프로파일 |
+|---|---|---|
+| `demo` | 명시 키워드(데모·일회성·실험·테스트용·throwaway·토이), 기존 프로젝트 코드와 무관한 신규 폴더, `.vibe/config.json` 없는 임시 디렉토리 | `--max-iter 1` + 리뷰 1패스 + **검증 스크립트 신규 생성 금지** |
+| `prototype` | 검증용 초기 버전 명시, 배포 대상 아님 | demo 와 동일 프로파일 |
+| `production` | 기본값 — 신호 없음 | 기존 기본 동작 (수렴 루프, 기본 리뷰어 셋) |
+
+- **불확실하면 상향한다** (production). 신호가 상충하면 SPEC 승인 메시지에 stakes 확인 질문 1개를 편승시킨다 — 별도 확인 왕복을 만들지 않는다.
+- 판정 결과는 Phase 3 실행 계획에 `Stakes:` 줄로 명시하고 spec/run/review 체인에 전달한다.
+
 > **⚠️ 위 표는 닫힌 화이트리스트가 아니라 "흔한 케이스 빠른 경로"다.** 표에 없는 요구사항이라도 막지 말고 **Catch-all 라우팅**(아래)으로 처리한다.
 
 ### Catch-all 라우팅 (표에 없는 의도)
@@ -125,6 +138,7 @@ user-invocable: true
 Input: 자연어 ("패럴랙스 웹사이트 만들어줘")
 Resume: 없음 (신규)
 Keywords: 없음
+Stakes: production (신호 없음 — 기본 상향)
 
 Phase 1: /vibe.spec → 단일 패스 SPEC + 승인 (유일한 의무 게이트)
 Phase 2: /vibe.figma → UI 디자인 트랙 (type=website 감지)
