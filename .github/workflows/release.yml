@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:
@@ -33,10 +35,13 @@ jobs:
       - name: Run vitest
         run: pnpm test -- --reporter=default
 
+      - name: Generate release notes
+        run: node dist/cli/generate-release-notes.js "$GITHUB_REF_NAME" release-notes.md
+
       - name: Publish to npm (OIDC trusted publishing — 토큰 없음)
         run: npm publish --access public --provenance
 
-      - name: Create GitHub Release (auto notes from merged PRs)
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes
+      - name: Create GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ github.token }}
