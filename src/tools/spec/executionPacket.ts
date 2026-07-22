@@ -53,6 +53,7 @@ export interface ExecutionPacket {
   canonicalSpecHash: string;
   requirements: PacketRequirement[];
   constraints: string[];
+  rejectedAlternatives: string[];
   doneCriteria: PacketContractItem[];
   evidenceRequired: PacketEvidence[];
   contextSources: string[];
@@ -118,6 +119,7 @@ interface ParsedSpec {
   criteria: PacketContractItem[];
   evidence: PacketEvidence[];
   constraints: string[];
+  rejectedAlternatives: string[];
   contextSources: string[];
   assumptions: string[];
   pointers: SourcePointer[];
@@ -191,6 +193,7 @@ function parseSpec(markdown: string, path: string): ParsedSpec {
     criteria: criteria.items,
     evidence: parseEvidence(markdown),
     constraints: listItems(markdown, 'Constraints'),
+    rejectedAlternatives: listItems(markdown, 'Rejected Alternatives'),
     contextSources: listItems(markdown, 'Context Sources'),
     assumptions: listItems(markdown, 'Assumptions'),
     pointers: criteria.pointers,
@@ -299,6 +302,7 @@ function buildPacket(input: CompileExecutionPacketInput, parsed: ParsedSpec): Ex
     canonicalSpecHash: createHash('sha256').update(input.canonicalSpec).digest('hex'),
     requirements,
     constraints: parsed.constraints,
+    rejectedAlternatives: parsed.rejectedAlternatives,
     doneCriteria: criteria,
     evidenceRequired: parsed.evidence.filter(item => ids.has(item.criterionId)),
     contextSources: parsed.contextSources,

@@ -23,6 +23,12 @@
 
 - {Invariant or implementation boundary that every execution packet must preserve}
 
+### Rejected Alternatives (Traps)
+
+> Approaches considered and rejected, each with a mechanistic reason — so the loop never revisits a dead end. Omit only when no real design choice existed (or on demo/prototype stakes).
+
+- {Rejected approach} — {mechanistic reason it fails, e.g., "shelve is not thread-safe under multi-writer load", not a vague label like "doesn't scale"}
+
 ---
 
 ## 2. Requirements

@@ -142,6 +142,7 @@ Task(subagent_type="Explore",
 - **Out of Scope** — 이번에 하지 않는 것을 명시 (비어 있으면 스코프 팽창 신호).
 - **Assumptions** — 3단계에서 채택한 기본값 전부.
 - **Constraints** — 구현·보안·호환성 경계. execution packet으로 압축돼도 반드시 보존한다.
+- **Rejected Alternatives (Traps)** — 검토했으나 기각한 설계 접근 + **기계적 기각 사유** 1줄씩 ("확장 안 됨" 같은 라벨이 아니라 "shelve 는 multi-writer 에서 thread-safe 하지 않다" 수준). 루프가 같은 막다른 길을 재방문하지 않기 위한 섹션 — Constraints 처럼 execution packet 압축에도 보존한다. 실질적 설계 선택지가 없었거나 demo/prototype 이면 생략.
 - **API Contract** (해당 시에만) — 엔드포인트/요청/응답 형태. 이 섹션이 있으면 이후 `/vibe.contract` 가 drift 를 검사한다.
 
 이어서 `.vibe/features/{feature-name}.feature` 를 생성한다: 시나리오 섹션을 gherkin 으로 변환 (Done Criteria ↔ Scenario 매핑 유지). `/vibe.run` 이 이 파일을 구현·검증 단위로 사용한다.
@@ -161,6 +162,7 @@ Task(subagent_type="Explore",
 - [ ] 수치가 필요한 곳에 수치가 있는가 (제한·타임아웃·크기 — 없으면 기본값 + Assumptions)
 - [ ] Out of Scope 가 비어 있지 않은가
 - [ ] 요구사항에 있던 것 중 SPEC 에서 빠진 것이 없는가
+- [ ] 설계 선택지가 있었던 결정에 기각 대안이 Rejected Alternatives (Traps) 로 남았는가 — 기계적 사유 포함 (production 만; 선택지가 없었으면 통과)
 - [ ] 헤더에 `Stakes:` 필드가 있고, demo/prototype 인데 SPEC 이 분할·대형화되지 않았는가
 
 ### 6. Approval — the single gate

@@ -184,6 +184,24 @@ describe('Execution Packet Compiler', () => {
     });
   });
 
+  it('Rejected Alternatives (Traps) 섹션을 packet에 보존, 없으면 빈 배열', () => {
+    const withTraps = canonicalSpec.replace(
+      '## Requirements',
+      '### Rejected Alternatives (Traps)\n- shelve — not thread-safe under multi-writer load\n\n## Requirements',
+    );
+    const compiled = compileExecutionPacket(input({ canonicalSpec: withTraps }));
+
+    expect(compiled.ok).toBe(true);
+    if (!compiled.ok) return;
+    expect(compiled.packet.rejectedAlternatives)
+      .toEqual(['shelve — not thread-safe under multi-writer load']);
+
+    const withoutTraps = compileExecutionPacket(input());
+    expect(withoutTraps.ok).toBe(true);
+    if (!withoutTraps.ok) return;
+    expect(withoutTraps.packet.rejectedAlternatives).toEqual([]);
+  });
+
   it('지원하지 않는 runtime profile을 구조화된 오류로 거부', () => {
     const result = Reflect.apply(compileExecutionPacket, undefined, [{
       ...input(),
