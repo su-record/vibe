@@ -133,6 +133,10 @@ function adaptCodexInvocation(section: string): string {
       '## Workflow\n\nCodex exposes Vibe as skills, not top-level `/vibe.*` slash commands. Invoke with `$vibe`, `$vibe.spec`, or `/skills`.\n\n| Task | Codex invocation |',
     )
     .replace('| 3+ files | `/vibe.spec` |', '| 3+ files | `$vibe.spec` or `/skills` -> `vibe.spec` |')
+    .replace(
+      'or asks for a new feature or scaffold, run `/vibe` FIRST — before any direct implementation.',
+      'or asks for a new feature or scaffold, run `$vibe` FIRST — before any direct implementation.',
+    )
     .replace('| Analyze | `/vibe.analyze` (code, docs, web, Figma) |', '| Analyze | `$vibe.analyze` or `/skills` -> `vibe.analyze` |')
     .replace('| Harness check | `/vibe.harness` |', '| Harness check | `$vibe.harness` or `/skills` -> `vibe.harness` |')
     .replace('| Project structure | `/vibe.scaffold` |', '| Project structure | `$vibe.scaffold` or `/skills` -> `vibe.scaffold` |')
@@ -383,6 +387,12 @@ function buildGlobalSection(language: string): string {
   lines.push('| Analyze | `/vibe.analyze` (code, docs, web, Figma) |');
   lines.push('| Harness check | `/vibe.harness` |');
   lines.push('| Project structure | `/vibe.scaffold` |');
+  lines.push('');
+  lines.push(
+    '**Hard trigger (mandatory, not advisory)**: if the request creates or modifies 3+ files, ' +
+    'or asks for a new feature or scaffold, run `/vibe` FIRST — before any direct implementation. ' +
+    'The file-count condition alone decides; do not skip because the task looks simple.'
+  );
   lines.push('');
 
   lines.push('## Loop Contract');
