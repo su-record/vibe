@@ -143,13 +143,16 @@ export function upgrade(_options: CliOptions = { silent: false }): void {
     cleanStaleTempDirs();
 
     // --prefer-online: npm 캐시 대신 레지스트리에서 최신 버전 확인
-    // stdio: 'pipe' 로 npm 노이즈를 숨기지만, postinstall 이 낸 **보고성 라인**은
-    // 되살려야 한다 — 그러지 않으면 "철회된 스킬 파일을 지웠다" 같은 사실이 조용히
-    // 사라진다 (pruneExtraneousSkillFiles 의 no-silent-deletion 계약).
-    const npmOutput = execSync('npm install -g @su-record/vibe@latest --prefer-online', {
-      stdio: 'pipe',
-      encoding: 'utf-8',
-    });
+    // --foreground-scripts: npm 은 기본적으로 lifecycle script 출력을 **버린다**.
+    //   이 플래그가 없으면 postinstall 의 console.log 가 stdout 에 아예 오지 않아
+    //   아래 extractPostinstallReport 가 파싱할 것이 없다 (실측 확인).
+    // stdio: 'pipe' 로 npm 노이즈는 계속 숨기고, 보고성 라인만 골라 되살린다 —
+    //   그러지 않으면 "철회된 스킬 파일을 지웠다" 가 조용히 사라진다
+    //   (pruneExtraneousSkillFiles 의 no-silent-deletion 계약).
+    const npmOutput = execSync(
+      'npm install -g @su-record/vibe@latest --prefer-online --foreground-scripts',
+      { stdio: 'pipe', encoding: 'utf-8' },
+    );
     const postinstallReport = extractPostinstallReport(npmOutput);
 
     // 설치된 새 버전을 디스크에서 직접 읽기 (현재 프로세스의 캐시된 값이 아닌)

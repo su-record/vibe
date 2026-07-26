@@ -119,9 +119,26 @@ export function pruneExtraneousSkillFiles(src: string, dest: string): string[] {
     const srcPath = path.join(src, entry.name);
 
     if (!fs.existsSync(srcPath)) {
-      if (entry.isDirectory()) fs.rmSync(destPath, { recursive: true, force: true });
-      else fs.rmSync(destPath, { force: true });
-      removed.push(entry.name);
+      // vibe 가 설치 후 **생성**하는 산출물은 배송본에 없는 것이 정상이다.
+      // 지웠다 재생성하면 매 upgrade 마다 "정리했다" 보고가 뜨는데, 실제로는 철회된
+      // 문서가 아니라 vibe 자신의 생성물이라 보고가 노이즈가 된다.
+      if (isVibeGeneratedArtifact(destPath)) continue;
+
+      if (entry.isDirectory()) {
+        // 통째로 지우지 않는다 — 생성물이 섞여 있으면 그것까지 날아간다.
+        // srcPath 가 없는 상태로 재귀하면 모든 자식이 "배송본에 없음" 으로 평가되어
+        // 생성물만 남고 나머지가 정리된다. 비게 되면 디렉토리도 제거한다.
+        removed.push(
+          ...pruneExtraneousSkillFiles(srcPath, destPath).map((p) => path.join(entry.name, p)),
+        );
+        if (fs.readdirSync(destPath).length === 0) {
+          fs.rmSync(destPath, { recursive: true, force: true });
+          removed.push(entry.name);
+        }
+      } else {
+        fs.rmSync(destPath, { force: true });
+        removed.push(entry.name);
+      }
       continue;
     }
 
@@ -133,6 +150,40 @@ export function pruneExtraneousSkillFiles(src: string, dest: string): string[] {
   }
 
   return removed;
+}
+
+/**
+ * 설치 후 vibe 가 생성한 산출물인지 — 배송본에 없어도 지우지 않는다.
+ *
+ * 현재 대상: `applyCodexSkillInvocationPolicies` 가 쓰는 `agents/openai.yaml`
+ * (`CODEX_POLICY_MARKER` 로 식별). 디렉토리는 내부가 전부 생성물일 때만 생성물로 본다 —
+ * 사용자/배송 파일이 섞여 있으면 지우지 않는 쪽이 안전하다.
+ */
+function isVibeGeneratedArtifact(destPath: string): boolean {
+  let stat: fs.Stats;
+  try {
+    stat = fs.statSync(destPath);
+  } catch {
+    return false;
+  }
+
+  if (stat.isDirectory()) {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(destPath, { withFileTypes: true });
+    } catch {
+      return false;
+    }
+    // 빈 디렉토리는 생성물로 보지 않는다 (정리 대상)
+    if (entries.length === 0) return false;
+    return entries.every((e) => isVibeGeneratedArtifact(path.join(destPath, e.name)));
+  }
+
+  try {
+    return fs.readFileSync(destPath, 'utf-8').includes(CODEX_POLICY_MARKER);
+  } catch {
+    return false;
+  }
 }
 
 /**

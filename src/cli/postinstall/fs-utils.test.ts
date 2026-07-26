@@ -284,3 +284,64 @@ describe('copySkillsFiltered prunes stale files', () => {
     expect(fs.existsSync(path.join(dest, 'user-own-skill', 'SKILL.md'))).toBe(true);
   });
 });
+
+/**
+ * vibe 가 설치 후 생성하는 산출물(`agents/openai.yaml`)은 배송본에 없다.
+ * prune 이 이를 지우면 매 upgrade 마다 삭제→재생성이 반복되고, "정리했다" 보고가
+ * 철회된 문서가 아니라 vibe 자신의 생성물을 가리켜 노이즈가 된다.
+ */
+describe('pruneExtraneousSkillFiles — vibe 생성물 보존', () => {
+  const MANAGED = '# VIBE managed Codex skill policy\npolicy:\n  allow_implicit_invocation: false\n';
+
+  function makePair(): { src: string; dest: string } {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-prune-gen-'));
+    const src = path.join(root, 'src');
+    const dest = path.join(root, 'dest');
+    fs.mkdirSync(src, { recursive: true });
+    fs.mkdirSync(dest, { recursive: true });
+    return { src, dest };
+  }
+
+  it('keeps a managed codex policy file that the package does not ship', () => {
+    const { src, dest } = makePair();
+    fs.mkdirSync(path.join(dest, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(dest, 'agents', 'openai.yaml'), MANAGED);
+
+    const removed = pruneExtraneousSkillFiles(src, dest);
+
+    expect(removed).toEqual([]);
+    expect(fs.existsSync(path.join(dest, 'agents', 'openai.yaml'))).toBe(true);
+  });
+
+  it('still removes an unmanaged file sitting next to a managed one', () => {
+    const { src, dest } = makePair();
+    fs.mkdirSync(path.join(dest, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(dest, 'agents', 'openai.yaml'), MANAGED);
+    fs.writeFileSync(path.join(dest, 'references-stale.md'), 'retracted');
+
+    const removed = pruneExtraneousSkillFiles(src, dest);
+
+    expect(removed).toEqual(['references-stale.md']);
+    expect(fs.existsSync(path.join(dest, 'agents', 'openai.yaml'))).toBe(true);
+  });
+
+  it('removes a directory whose contents are not vibe-generated', () => {
+    const { src, dest } = makePair();
+    fs.mkdirSync(path.join(dest, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(dest, 'agents', 'openai.yaml'), MANAGED);
+    fs.writeFileSync(path.join(dest, 'agents', 'handwritten.yaml'), 'not managed');
+
+    const removed = pruneExtraneousSkillFiles(src, dest);
+
+    // 섞여 있으면 디렉토리를 통째로 지우지 않는다 — 내부만 정리한다
+    expect(removed).toEqual([path.join('agents', 'handwritten.yaml')]);
+    expect(fs.existsSync(path.join(dest, 'agents', 'openai.yaml'))).toBe(true);
+  });
+
+  it('removes an empty extraneous directory', () => {
+    const { src, dest } = makePair();
+    fs.mkdirSync(path.join(dest, 'empty'), { recursive: true });
+
+    expect(pruneExtraneousSkillFiles(src, dest)).toEqual(['empty']);
+  });
+});
