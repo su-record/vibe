@@ -50,7 +50,9 @@ function convertAgentToClaude(content: string, filename: string): string {
   const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
   const name = path.basename(filename, '.md');
-  const model = CLAUDE_MODEL_MAPPING[name] || 'sonnet';
+  // 미등록 에이전트는 세션 모델을 상속한다 — 매핑 누락이 조용한 다운그레이드가
+  // 되지 않도록 fallback 도 독트린(inherit)을 따른다.
+  const model = CLAUDE_MODEL_MAPPING[name] || 'inherit';
 
   // 도구 해석
   const toolCategory = CLAUDE_AGENT_TOOL_CATEGORY[name] || 'read-only';

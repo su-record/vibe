@@ -11,7 +11,7 @@ design system → layout and stack-specific implementation guidance.
 
 ## Model
 
-**Sonnet** — comprehensive generation quality
+**Inherit** — comprehensive generation quality
 
 ## Goal
 

@@ -11,7 +11,7 @@ written materials.
 
 ## Model
 
-**Sonnet** — timeline reasoning plus tone-controlled writing
+**Inherit** — timeline reasoning plus tone-controlled writing
 
 ## Goal
 

@@ -10,7 +10,7 @@ Minimal-diff specialist for making a broken build green again.
 
 ## Model
 
-**Sonnet** — precise, surgical fixes
+**Inherit** — precise, surgical fixes
 
 ## Goal
 

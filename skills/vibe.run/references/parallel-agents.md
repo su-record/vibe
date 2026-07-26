@@ -2,52 +2,36 @@
 
 > Loaded by vibe.run SKILL.md when parallel execution patterns, parallel subagent groups, or model selection details are needed.
 
-## Model Orchestration (Intelligent Routing)
+## Model Orchestration — Inherit by Default
 
-Automatically select optimal model based on **task complexity analysis**.
+**Do not pass a `model` parameter.** Subagents inherit the session model.
 
-### Complexity-Based Model Selection
+The complexity→tier routing that used to live here (Haiku for simple work, Sonnet
+for standard, Opus for architecture) is **retired**. It was written when the
+default session model was weak enough that routing *up* was the win. With a strong
+default, a hardcoded tier can only route *down* — and a downgraded subagent's
+misses land back on the session model to find and undo. That costs more than the
+tokens it saves.
 
-| Complexity Score | Model | When to Use |
-|------------------|-------|-------------|
-| 0-7 (Low) | **Haiku** | Simple fixes, searches, single file changes |
-| 8-19 (Medium) | **Sonnet** | Standard features, 3-5 files, integrations |
-| 20+ (High) | **Opus** | Architecture, security, multi-service, 6+ files |
+### The only exception
 
-### Complexity Signals
+| Agent | Tier | Why it overrides the session model |
+|-------|------|------------------------------------|
+| `architect` | `opus` | Design decisions are expensive to reverse — guarantee a floor even when the session runs lower |
 
-| Signal | Score |
-|--------|-------|
-| Architecture change | +15 |
-| Security implication | +12 |
-| Multi-service | +8 |
-| Refactoring | +12 |
-| 6+ files | +15 |
-| 3-5 files | +8 |
-| New feature | +5 |
-| Bug fix | -3 |
-| Documentation | -5 |
+Every other agent (`implementer`, `tester`, `e2e-tester`, `code-reviewer`,
+`security-reviewer`, `build-error-resolver`, UI/event agents) is `inherit`.
+SSOT: `CLAUDE_MODEL_MAPPING` in `src/cli/postinstall/constants.ts`.
 
-### Agent × Model Selection
+> Adding a new tier override requires an answer to: *"why must this run at this
+> tier regardless of what the session is running?"* "It's a simple task" is not
+> an answer — a strong model finishes simple tasks quickly at no quality cost.
 
-Tier-variant agents were consolidated — the model is a Task parameter, not a separate agent:
+### What still scales with complexity
 
-| Agent | Low | Medium | High |
-|-------|-------------|-----------------|-------------|
-| Explore (native) | `model: "haiku"` | `model: "sonnet"` | `model: "opus"` |
-| implementer | `model: "haiku"` | `model: "sonnet"` | `model: "opus"` |
-| architect | `model: "haiku"` | `model: "sonnet"` | `model: "opus"` |
-
-### Task Calls by Role
-
-| Task Type | Model | Task Parameter |
-|-----------|-------|----------------|
-| Simple search | Haiku | `model: "haiku"` |
-| Codebase exploration | Haiku/Sonnet | Auto-selected |
-| Core implementation | Sonnet | `model: "sonnet"` |
-| Test writing | Haiku | `model: "haiku"` |
-| Architecture decisions | Opus | Main session |
-| Final review | Opus | Main session |
+Complexity should change **how many agents you spawn and how deep they go**, not
+which model they run. See the Stakes table in `vibe/rules/loop-contract.md` — that
+is the SSOT for proportional execution.
 
 ## Mandatory Parallel Exploration (Phase Start)
 
@@ -59,11 +43,11 @@ Tier-variant agents were consolidated — the model is a Task parameter, not a s
 │                                                                 │
 │  Launch ALL of these in ONE message:                            │
 │                                                                 │
-│  Task(haiku) ─┬─→ "Analyze related files in <context>"          │
-│               │                                                 │
-│  Task(haiku) ─┼─→ "Check dependencies and imports"              │
-│               │                                                 │
-│  Task(haiku) ─┴─→ "Find existing patterns and conventions"      │
+│  Task ─┬─→ "Analyze related files in <context>"                 │
+│        │                                                        │
+│  Task ─┼─→ "Check dependencies and imports"                     │
+│        │                                                        │
+│  Task ─┴─→ "Find existing patterns and conventions"             │
 │                                                                 │
 │  [If GPT enabled] Bash: node "[LLM_SCRIPT]" gpt orchestrate-json "[question]"
 │  [If Antigravity enabled] Bash: node "[LLM_SCRIPT]" antigravity orchestrate-json "[question]"
@@ -71,7 +55,7 @@ Tier-variant agents were consolidated — the model is a Task parameter, not a s
                               │
                               ↓ (wait for all to complete)
 ┌─────────────────────────────────────────────────────────────────┐
-│  STEP 2: SYNTHESIZE (Opus)                                      │
+│  STEP 2: SYNTHESIZE                                      │
 │  - Review all exploration results                               │
 │  - Decide implementation approach                               │
 │  - Identify files to modify/create                              │
@@ -81,10 +65,10 @@ Tier-variant agents were consolidated — the model is a Task parameter, not a s
 ┌─────────────────────────────────────────────────────────────────┐
 │  STEP 3: IMPLEMENT + BACKGROUND AGENTS (PARALLEL)               │
 │                                                                 │
-│  Main Agent (sonnet):                                           │
+│  Main Agent:                                           │
 │  └─→ Execute current phase implementation                       │
 │                                                                 │
-│  Background Agents (haiku, run_in_background=true):             │
+│  Background Agents (run_in_background=true):             │
 │  ├─→ Task: "Prepare Phase N+1 - analyze required files"         │
 │  ├─→ Task: "Pre-generate test cases for current implementation" │
 │  └─→ Task: "Search for related types/interfaces needed"         │
@@ -97,7 +81,7 @@ Tier-variant agents were consolidated — the model is a Task parameter, not a s
 │  STEP 4: TEST + PHASE PIPELINING                                │
 │                                                                 │
 │  Current Phase:                                                 │
-│  └─→ Task(haiku): Write tests using pre-generated cases         │
+│  └─→ Task: Write tests using pre-generated cases                │
 │                                                                 │
 │  Next Phase Prep (from background results):                     │
 │  └─→ Already have file analysis, ready to start immediately     │
@@ -109,18 +93,18 @@ Tier-variant agents were consolidated — the model is a Task parameter, not a s
 **Correct — Single message with multiple parallel Tasks:**
 ```
 <message>
-  Task(haiku, "Analyze src/components/ for existing patterns")
-  Task(haiku, "Check package.json dependencies")
-  Task(haiku, "Find usage of similar features in codebase")
+  Task("Analyze src/components/ for existing patterns")
+  Task("Check package.json dependencies")
+  Task("Find usage of similar features in codebase")
 </message>
 → All 3 run simultaneously, ~3x faster
 ```
 
 **WRONG — Sequential calls (DO NOT DO THIS):**
 ```
-<message>Task(haiku, "Analyze...")</message>
-<message>Task(haiku, "Check...")</message>
-<message>Task(haiku, "Find...")</message>
+<message>Task("Analyze...")</message>
+<message>Task("Check...")</message>
+<message>Task("Find...")</message>
 → 3x slower, wastes time
 ```
 
@@ -141,27 +125,27 @@ No status polling is needed — the harness re-invokes you when each background 
 ```
 Phase N Start
     │
-    ├─→ [PARALLEL] Task(haiku) × 3: Exploration
+    ├─→ [PARALLEL] Task × 3: Exploration
     │       - Related code analysis
     │       - Dependency check
     │       - Pattern discovery
     │
     ↓ (all complete)
     │
-    ├─→ Opus: Synthesize and decide
+    ├─→ Synthesize and decide
     │
     ├─→ [PARALLEL PIPELINE] ←── KEY SPEED OPTIMIZATION
     │       │
-    │       ├─→ Main: Task(sonnet) Implementation
+    │       ├─→ Main: Task Implementation
     │       │
     │       └─→ Background (run_in_background=true):
-    │               ├─→ Task(haiku): Phase N+1 file analysis
-    │               ├─→ Task(haiku): Test case preparation
-    │               └─→ Task(haiku): Type/interface lookup
+    │               ├─→ Task: Phase N+1 file analysis
+    │               ├─→ Task: Test case preparation
+    │               └─→ Task: Type/interface lookup
     │
     ↓ (main completes)
     │
-    ├─→ Task(haiku): Tests (uses pre-generated cases)
+    ├─→ Task: Tests (uses pre-generated cases)
     │
     ↓
 Phase N Complete

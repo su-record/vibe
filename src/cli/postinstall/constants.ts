@@ -438,22 +438,27 @@ export const LEGACY_SKILL_DIRS: ReadonlyArray<string> = [
 // ─── Claude Code 네이티브 서브에이전트 매핑 ───
 
 // Claude Code 모델 매핑 (사용 가능: sonnet, opus, haiku, inherit)
-// 독트린: 기본은 세션 모델 상속 — 여기 명시된 tier 는 의도적 예외만
-// (아키텍처 심층 리뷰 → opus, 기계적 문서/다이어그램 → haiku).
+// 독트린: 기본은 세션 모델 상속(`inherit`) — 명시 tier 는 의도적 예외만.
+// WHY: 세션 모델이 강할수록(예: Opus 급) 고정 tier 는 업그레이드가 아니라
+// **다운그레이드**로 작동한다. vibe.review 는 리뷰어를 8~11개 spawn 하므로
+// 고정 tier 하나가 리뷰 품질 전체의 상한이 된다. 비용 라우팅으로 아끼는 것보다
+// 약한 모델이 만든 오탐·누락을 사람이 되돌리는 비용이 크다.
+// 예외는 "세션 모델과 무관하게 항상 이 tier 여야 한다"를 근거로 댈 수 있을 때만 추가한다.
 export const CLAUDE_MODEL_MAPPING: Record<string, string> = {
+  // 의도적 예외 — 되돌리기 비싼 설계 판단은 세션 모델이 낮아도 상한을 보장한다
   'architect': 'opus',
-  'implementer': 'sonnet',
-  'tester': 'haiku',
-  'e2e-tester': 'sonnet',
-  'build-error-resolver': 'sonnet',
-  'code-reviewer': 'sonnet',
-  'security-reviewer': 'sonnet',
+  'implementer': 'inherit',
+  'tester': 'inherit',
+  'e2e-tester': 'inherit',
+  'build-error-resolver': 'inherit',
+  'code-reviewer': 'inherit',
+  'security-reviewer': 'inherit',
   // UI agents (conditional group)
-  'design-reviewer': 'sonnet',
-  'design-system-gen': 'sonnet',
+  'design-reviewer': 'inherit',
+  'design-system-gen': 'inherit',
   // Event agents (conditional group)
-  'event-planner': 'sonnet',
-  'event-ops': 'sonnet',
+  'event-planner': 'inherit',
+  'event-ops': 'inherit',
 };
 
 // Claude Code 에이전트 도구 세트 정의

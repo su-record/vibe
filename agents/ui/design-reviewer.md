@@ -11,7 +11,7 @@ anti-pattern detection in one pass.
 
 ## Model
 
-**Sonnet** — parallel-review accuracy
+**Inherit** — parallel-review accuracy
 
 ## Goal
 

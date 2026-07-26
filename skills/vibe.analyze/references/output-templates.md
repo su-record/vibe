@@ -15,10 +15,10 @@
 ## Mode 1: Scale for Large Projects (6+ related files) — Additional Agent Prompts
 
 ```text
-Agent(subagent_type="Explore", model="haiku",
+Agent(subagent_type="Explore",
   prompt="Find all test files related to [FEATURE]. Identify tested vs untested paths.")
 
-Agent(subagent_type="Explore", model="haiku",
+Agent(subagent_type="Explore",
   prompt="Analyze [FEATURE] configuration, environment variables, and external integrations.")
 ```
 

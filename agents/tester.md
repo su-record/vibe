@@ -11,7 +11,7 @@ test suite that would actually catch the bugs this code could have.
 
 ## Model
 
-**Haiku** — fast test generation inside the run loop
+**Inherit** — tests are only as good as the model that reasons about edge cases
 
 ## Goal
 

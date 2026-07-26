@@ -10,7 +10,7 @@ Core implementation specialist — turns a SPEC or task description into working
 
 ## Model
 
-**Sonnet** — implementation quality at loop speed
+**Inherit** — implementation quality tracks the session model
 
 ## Goal
 

@@ -10,7 +10,7 @@
 
 | Feature | Description |
 |---------|-------------|
-| **Parallel Exploration** | 3+ Task(haiku) agents run simultaneously (ACT 병렬화) |
+| **Parallel Exploration** | 3+ Task agents run simultaneously (ACT 병렬화) |
 | **Loop (기본 동작)** | 모든 실행의 기본 — exit=게이트 통과 또는 stuck 또는 max_iterations |
 | **Context Compression** | Aggressive auto-save at 70%+ context |
 | **No Pause** | stuck·SPEC 게이트 외 확인 없음 (`automationLevel: autonomous`) |

@@ -11,7 +11,7 @@ and confirmation-gated SMS/email sends.
 
 ## Model
 
-**Sonnet** — structured document generation plus send-safety judgement
+**Inherit** — structured document generation plus send-safety judgement
 
 ## Goal
 
