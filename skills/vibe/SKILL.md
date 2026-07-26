@@ -1,6 +1,6 @@
 ---
 name: vibe
-description: Dynamic dispatcher — 자연어 요구사항 + 첨부(URL/이미지/PDF/파일)를 받아 적합한 vibe.* 파이프라인을 동적 설계하고 1회 승인 후 체인 실행
+description: 어떤 vibe 스킬을 써야 할지 정해지지 않은 요구사항이 들어왔을 때 — 자연어(+URL/이미지/PDF/파일 첨부)로 의도를 분류해 vibe.* 파이프라인을 동적 설계하고, SPEC 1회 승인 후 게이트 통과까지 체인 실행
 argument-hint: "<자연어 요구사항> [+ URL/이미지/PDF/파일 첨부]"
 user-invocable: true
 ---
@@ -37,7 +37,7 @@ user-invocable: true
 
 ## Process
 
-> **⏱️ Timer**: 시작 시 `getCurrentTime` 호출하고 결과를 `{start_time}` 으로 기록한다.
+> **⏱️ Timer**: 시작 시 시스템 시각을 조회해 `{start_time}` 으로 기록한다 (하네스 무관 — 셸 `date` 등 실행 가능한 수단).
 
 ### Phase 0: Input 수집
 
@@ -157,17 +157,25 @@ Phase 4: /vibe.verify → 검증
 
 ### Phase 4: 체인 실행
 
-승인된 파이프라인을 순차 호출:
+승인된 파이프라인을 순차 호출한다. **호출 표면은 하네스마다 다르므로 아래 adapter 로 번역한다** — 어느 한쪽 문법을 본문에 박아두면 다른 하네스에서 그대로 깨진다.
+
+| 하네스 | 호출 표면 |
+|---|---|
+| Claude Code | 스킬 로드 (`vibe.{name}`) — 슬래시 진입점 `/vibe.{name}` 과 동일 대상 |
+| Codex | 스킬 로드 (`vibe.{name}`) — `$vibe.{name}` 또는 `/skills` |
 
 ```
-호출 형식: SlashCommand({command: "/vibe.{name} <args>"})
+호출 계약(하네스 무관): "skill `vibe.{name}` 을 인자 <args> 로 로드한다"
 
-예:
-1. SlashCommand({command: "/vibe.spec \"패럴랙스 웹사이트\""})
-2. SlashCommand({command: "/vibe.figma"})
-3. SlashCommand({command: "/vibe.run"})
-...
+예 (파이프라인 3단계):
+1. load skill vibe.spec   args: "패럴랙스 웹사이트"
+2. load skill vibe.figma  args: (없음)
+3. load skill vibe.run    args: (없음)
 ```
+
+⛔ 본문에 `SlashCommand({...})` 같은 CC 전용 호출 문법을 쓰지 않는다. Codex 에는 그 도구가 없어
+직역 하네스가 문자 그대로 실행하려다 실패한다 (dual-harness doctrine: 명시성 공통분모).
+스킬 **이름과 인자**가 계약이고, 그것을 실제 호출로 바꾸는 것은 각 하네스의 몫이다.
 
 각 phase 종료 후 JUDGE 단계:
 - 게이트 통과 (P1=0 ∧ verifyPassed) → 루프 종료, Phase 5 보고
@@ -194,59 +202,13 @@ Phase 4: /vibe.verify → 검증
   📄 .vibe/reports/parallax-site-rtm.md
 
 ⏱️ 시작: {start_time}
-⏱️ 완료: {getCurrentTime 결과}
+⏱️ 완료: {종료 시 조회한 시스템 시각}
 ```
 
-## Routing Examples
+## Routing Examples & Output
 
-### 예시 1: 신규 + figma
-
-```
-입력: /vibe "https://www.figma.com/design/abc/login 로 로그인 페이지"
-
-→ Intent: figma-driven UI
-→ Resume: 없음
-→ Pipeline:
-   1. /vibe.figma  (figma Extract + Convert Mode)
-   2. /vibe.spec   (생성된 SPEC 자동 보정)
-   3. /vibe.run
-   4. /vibe.verify
-   5. /vibe.trace
-```
-
-### 예시 2: Resume
-
-```
-입력: /vibe "이어서"  (혹은 빈 호출)
-
-→ Resume: .vibe/specs/login/ 발견 (3개 phase 파일)
-→ .vibe/features/login/ 없음
-→ Pipeline:
-   1. /vibe.run (구현부터)
-   2. /vibe.verify
-   3. /vibe.trace
-```
-
-### 예시 3: Review only
-
-```
-입력: /vibe "이 코드 리뷰만" + 📎 src/auth/login.ts
-
-→ Intent: review only
-→ Pipeline:
-   1. /vibe.review (단일 phase)
-```
-
-### 예시 4: automationLevel autonomous (ultrawork 별칭)
-
-```
-입력: /vibe "결제 API 만들어줘" ultrawork
-
-→ automationLevel: autonomous 설정 → SPEC 승인 게이트 skip
-→ 병렬 ACT 활성화
-→ ANCHOR→ACT→JUDGE→RECORD 루프 (게이트 통과까지 자동 반복)
-→ stuck 시 TODO 기록 후 루프 종료 (사용자 질문 없음)
-```
+라우팅 예시 4종(figma 신규 · resume · review only · autonomous)과 종료 보고 출력 포맷:
+`references/routing-examples.md`
 
 ## ⛔ 하지 않는 것
 
@@ -275,32 +237,11 @@ Phase 4: /vibe.verify → 검증
 | `verify` | 기본 동작과 동일 (no-op) — JUDGE는 항상 결정론 검증 |
 | `ralplan` | 동일 loop-contract를 계획 단계에 적용 |
 
-## Output
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 /vibe Dynamic Dispatcher
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## Done Criteria
 
-[Phase 0: Input 분석]
-...
-
-[Phase 1: Intent 분류]
-→ new feature + figma-driven UI
-
-[Phase 2: Resume 감지]
-→ 진행 중인 작업 없음
-
-[Phase 3: 파이프라인 설계]
-...
-
-[Phase 4: 실행]
-... (SPEC 승인은 spec 단계 내부의 1회 게이트)
-
-[Phase 5: 종료 보고]
-...
-```
-
----
-
-ARGUMENTS: {자연어 요구사항 + 첨부}
+- [ ] Intent 분류 결과와 Stakes 판정이 실행 계획에 명시됐다 (`Stakes:` 줄 없는 계획은 무효)
+- [ ] Resume 감지를 수행했다 — `.vibe/{specs,features}/` 확인 기록이 있다
+- [ ] SPEC 승인 게이트를 1회 통과했다 (또는 `automationLevel: autonomous` 로 skip 근거가 있다)
+- [ ] 체인의 각 phase 가 하네스 중립 호출 계약으로 표현됐다 (CC 전용 문법 0건)
+- [ ] 루프 종료 사유가 셋 중 하나로 기록됐다: 게이트 통과 │ stuck │ max_iterations

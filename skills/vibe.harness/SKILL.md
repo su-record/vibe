@@ -1,11 +1,18 @@
 ---
 name: vibe.harness
-description: Diagnose project Harness Engineering maturity across 6 axes
+description: 프로젝트의 Claude Code·Codex 하네스 품질과 병목을 진단하거나 6축 성숙도 점수가 필요할 때 사용한다.
 argument-hint: (no arguments)
 user-invocable: true
 ---
 
 # /vibe.harness
+
+## 완료 기준
+
+- [ ] 6개 평가 축에 각각 점수와 파일 근거가 있다.
+- [ ] 적용할 수 없는 하네스 항목은 감점 대신 N/A로 기록되어 있다.
+- [ ] P1 finding마다 검사 명령 또는 파일 위치가 있다.
+- [ ] harness 보고서가 지정 경로에 존재한다.
 
 Diagnose project Harness Engineering maturity across 6 axes and suggest targeted improvements.
 
@@ -28,19 +35,17 @@ When items are N/A, **remove their points from the total** rather than scoring 0
 
 ## Process
 
-### 1. Collect Project State (Parallel Agents)
+### 1. Collect Project State (Parallel Delegation)
 
-Dispatch 3 native Explore agents in a single message:
+Delegate the three independent inspections through the harness's native
+collaboration capability. Claude Code maps each worker to Task/Agent; Codex
+maps each worker to native collaboration. Inherit the session model by default
+and dispatch concurrently when capacity permits:
 
 ```text
-Agent(subagent_type="Explore", model="haiku",
-  prompt="Check project scaffolding: 1) Does docs/ exist with business documents? 2) Does .dev/ exist for AI logs? 3) Is src/ organized by role (not flat)? 4) Is tests/ separate from src/? 5) List top-level directory structure.")
-
-Agent(subagent_type="Explore", model="haiku",
-  prompt="Check project context and boundaries: 1) Does CLAUDE.md exist? How many lines? 2) Does .claude/rules/ or .vibe/ exist? How many rule files? 3) Does .claude/settings.local.json exist with hooks? 4) Does .vibe/config.json exist? 5) Are there any .claude/skills/ directories?")
-
-Agent(subagent_type="Explore", model="haiku",
-  prompt="Check project planning, execution, and verification: 1) Are there SPEC files in .vibe/specs/? 2) Are there Feature (BDD) files in .vibe/features/? 3) Are there test files? How many? 4) Is there CI config (.github/workflows, etc.)? 5) Are there .dev/learnings/ files?")
+- Worker: check scaffolding, docs/.dev presence, source organization, test separation, and top-level structure.
+- Worker: check `CLAUDE.md`/`AGENTS.md`, harness rules, lifecycle configuration, `.vibe/config.json`, and installed skills.
+- Worker: check SPEC/Feature files, tests, CI configuration, and learning records.
 ```
 
 ### 2. Score Each Axis
@@ -89,7 +94,7 @@ Agent(subagent_type="Explore", model="haiku",
 
 | Item | Criteria | Points |
 |------|----------|--------|
-| Automated quality checks | PostToolUse hooks for code inspection | /4 |
+| Automated quality checks | Explicit lint/type/test/JUDGE commands; lifecycle hooks may accelerate them | /4 |
 | Tests exist | Test files present and executable | /4 |
 | CI/CD | Automated build/test pipeline configured | /4 |
 | Traceability | SPEC → code → test mapping (RTM) | /3 |

@@ -2,7 +2,7 @@
 name: vibe.git-worktree
 invocation: [auto]
 tier: optional
-description: "Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously."
+description: "Use when PR review, hotfix, parallel testing, or simultaneous branch work needs an isolated Git worktree."
 triggers: [worktree, hotfix, parallel branch, multiple branches]
 priority: 50
 ---
@@ -61,11 +61,7 @@ git worktree prune
 
 ## Troubleshooting
 
-| Error | Fix |
-|-------|-----|
-| "already checked out" | Branch is in another worktree — `git worktree list`, then remove |
-| Locked worktree | `git worktree unlock <path>` |
-| Stale worktree | `git worktree prune` |
+Read `references/troubleshooting.md` only when creation, locking, or cleanup fails. Successful calls do not load it.
 
 ## Done Criteria (K4)
 

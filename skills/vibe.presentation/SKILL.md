@@ -10,6 +10,13 @@ user-invocable: true
 
 # Presentation Builder
 
+## 완료 기준
+
+- [ ] 요청된 16:9 HTML slide deck이 존재한다.
+- [ ] 모든 slide가 1920×1080 viewport에서 overflow 없이 렌더링된다.
+- [ ] 인용한 사실에 source가 연결되어 있다.
+- [ ] PDF 요청 시 PDF 파일이 생성되어 있다.
+
 소스 데이터 → 디자인 시스템 적용 LLM → HTML 슬라이드덱 → 1920×1080 PDF.
 
 ## 핵심 원칙

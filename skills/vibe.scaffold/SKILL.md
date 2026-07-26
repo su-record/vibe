@@ -1,11 +1,18 @@
 ---
 name: vibe.scaffold
-description: Generate or audit project folder structure optimized for AI-assisted development
+description: 새 프로젝트 구조를 만들거나 기존 폴더 구조가 AI-assisted development에 적합한지 감사할 때 사용한다.
 argument-hint: --check (audit existing) or project-type
 user-invocable: true
 ---
 
 # /vibe.scaffold
+
+## 완료 기준
+
+- [ ] 요청된 디렉터리와 필수 설정 파일이 존재한다.
+- [ ] 생성한 package 또는 module의 build 명령이 통과한다.
+- [ ] import·module 해석 검사가 통과한다.
+- [ ] audit mode에서는 발견 항목마다 실제 경로 근거가 있다.
 
 Design and generate a project structure where AI works effectively on its own.
 
@@ -103,18 +110,7 @@ lib/
 
 ### 5. Clean Architecture Layers (Optional)
 
-```
-src/
-├── domain/           # Business rules (pure logic, no external deps)
-├── application/      # Use cases (domain composition)
-├── infrastructure/   # External integrations (DB, API, files)
-└── presentation/     # UI or API endpoints
-```
-
-Layer rules:
-- Dependency direction: presentation → application → domain (reverse forbidden)
-- domain must not import external packages
-- infrastructure implements domain interfaces
+When clean architecture is explicitly selected, read `references/clean-architecture.md`. Default stack layouts and `--check` audits do not load it.
 
 ### 6. Generate Supporting Files
 

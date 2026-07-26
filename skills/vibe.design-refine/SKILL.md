@@ -10,6 +10,13 @@ priority: 50
 
 # Design Refine — Distill / Normalize / Polish
 
+## Done Criteria
+
+- [ ] 요청된 distill·normalize·polish pass가 변경 파일에 적용되어 있다.
+- [ ] 새 hardcoded visual value가 추가되지 않았다.
+- [ ] 대상 프로젝트의 lint와 관련 UI 테스트가 통과한다.
+- [ ] 변경된 token 참조가 DESIGN.md와 일치한다.
+
 Modifying design-improvement passes. Mode selected by the first argument; default runs the full pipeline in order: **distill → normalize → polish**.
 
 ## Usage

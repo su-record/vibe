@@ -2,7 +2,7 @@
 name: vibe.react-best-practices
 invocation: [auto]
 tier: core
-description: "React/Next.js performance gotchas from Vercel engineering. Non-intuitive pitfalls that LLMs commonly miss."
+description: "Use when implementing or reviewing React/Next.js code where Vercel performance pitfalls, rendering behavior, or bundle efficiency must be checked."
 triggers: [react, next.js, vercel, react performance, re-render, rendering waterfall]
 priority: 60
 ---

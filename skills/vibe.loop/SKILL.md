@@ -1,11 +1,18 @@
 ---
 name: vibe.loop
-description: Loop engineering — design, install, and run autonomous goal loops whose completion is judged by deterministic gates, not self-report
+description: 반복 작업을 자율 goal loop로 설계·설치·실행하고 결정론적 gate로 완료를 판정해야 할 때 사용한다.
 argument-hint: "design | install | run | status | list [loop-name]"
 user-invocable: true
 ---
 
 # /vibe.loop
+
+## 완료 기준
+
+- [ ] loop 정의에 ANCHOR, ACT, JUDGE, RECORD가 모두 있다.
+- [ ] JUDGE가 exit code, 파일 상태 또는 ledger 값으로 판정된다.
+- [ ] stuck 조건과 max_iterations가 명시되어 있다.
+- [ ] 실행 결과가 pass, stuck, max_iterations 중 하나로 기록된다.
 
 **Loop Engineering** — 사람이 프롬프트하는 대신, 에이전트에게 프롬프트하는 루프를 설계한다.
 
@@ -55,16 +62,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 ## install — 스케줄 연결
 
-루프 정의는 하네스 중립이다. 현재 환경을 감지해 정확한 설치 명령을 **사용자에게 제시**한다 (직접 등록하지 않는다 — 스케줄 등록은 사용자 결정):
-
-| 환경 | 명령 |
-|------|------|
-| Claude Code (세션 루프) | `/loop <interval> "/vibe.loop run <name>"` |
-| Claude Code (클라우드 루틴) | `/schedule` 로 cron `<schedule>` + 프롬프트 `/vibe.loop run <name>` 등록 |
-| OS cron 폴백 | `<schedule> cd <project> && claude -p "/vibe.loop run <name>" --permission-mode acceptEdits` |
-| Codex | Automations 탭에 `<schedule>` + `$vibe.loop run <name>` 등록 |
-
-`trigger: manual` 루프는 install 불필요 — run만 안내한다.
+`install` 호출에서만 `references/install-adapters.md`를 읽어 현재 하네스의 명령을 제시한다. `design`, `run`, `status`, `list` 호출은 읽지 않는다. `trigger: manual` 루프는 install 없이 run만 안내한다.
 
 ## run — 1회 반복 실행 (핵심)
 

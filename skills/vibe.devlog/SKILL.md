@@ -2,11 +2,18 @@
 name: vibe.devlog
 invocation: [auto]
 tier: standard
-description: "Auto-generate devlog posts from git commit history. Triggers every N commits, writes markdown to configured target repo."
+description: "Use when accumulated git commits must be turned into a devlog post or the configured N-commit publication threshold is reached."
 triggers: [devlog, 개발일지, dev log, devlog 작성, 개발일지 작성]
 priority: 60
 ---
 # Devlog Auto-Generator
+
+## Done Criteria
+
+- [ ] 처리한 commit 범위가 산출물에 기록되어 있다.
+- [ ] devlog Markdown이 설정된 대상 경로에 존재한다.
+- [ ] 이미 처리한 commit이 중복 포함되지 않았다.
+- [ ] 설정된 frontmatter 필드가 모두 채워져 있다.
 
 Analyzes git commit history to automatically generate development logs and saves them as posts to the configured blog repository.
 
@@ -46,9 +53,12 @@ Analyzes git commit history to automatically generate development logs and saves
 
 ## Trigger Modes
 
-### 1. Auto (post-commit hook)
+### 1. Auto (lifecycle acceleration)
 
-The `devlog-gen.js` hook checks the counter on every commit, and when it reaches `interval`, generates a devlog via `llm-orchestrate.js`.
+When lifecycle hooks are available, `devlog-gen.js` may check the counter after
+each commit and invoke `llm-orchestrate.js`. Hooks are acceleration only: before
+declaring the devlog workflow complete, explicitly count commits since the last
+devlog and run the same generation step when the count reaches `interval`.
 
 ### 2. Manual
 
@@ -126,14 +136,7 @@ The number is automatically determined as the last existing file number + 1.
 
 ### Step 5: (Optional) Auto Push
 
-If `autoPush: true`:
-
-```bash
-cd {targetRepo}
-git add {targetDir}/{prefix}-{NNNN}.md
-git commit -m "post: Add {prefix} #{NNNN}"
-git push
-```
+If `autoPush: true`, read `references/auto-push.md` and require normal external-state confirmation. Calls with `autoPush: false` do not load it.
 
 ## Rules
 

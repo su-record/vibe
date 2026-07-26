@@ -189,7 +189,7 @@ Detection at edit time, blocking at deterministic gates:
 
 **7+ agents** — 7 global goal-oriented agents (architect, implementer, tester, code-reviewer, security-reviewer, …) + 4 conditional (UI/Event — installed project-locally only when the stack/capability matches; 11 total). Agents are delegated by goal + constraints + Done criteria, not step scripts; exploration, planning, and parallelism use the harness's native subagents directly.
 
-**51 skills** — Not all loaded at once. Every public skill uses the `vibe.*` namespace, while internal core behavior is bundled into the public skill body:
+**52 skills** — Not all loaded at once. Every public skill uses the `vibe.*` namespace, while internal core behavior is bundled into the public skill body:
 
 | Tier | When loaded | Purpose | Examples |
 |------|-------------|---------|----------|

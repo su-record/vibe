@@ -1,165 +1,66 @@
 ---
 name: vibe.event
-description: Community event automation — D-Day based proactive task execution
-argument-hint: '"MDC 12차 3/30" or "webinar AI에이전트 4/15" or "DWK 5차 5/20"'
+description: 커뮤니티 행사 일정·홍보·운영을 준비하거나 D-Day 기준 자동화가 필요할 때 — event 유형을 판별하고 외부 발송 전 승인을 강제한다.
+argument-hint: '"event description" | status | dashboard'
 user-invocable: true
 ---
 
 # /vibe.event
 
-Automate community event planning with D-Day based proactive execution.
+## 완료 기준
+
+- [ ] event 유형, 날짜, D-Day가 상태 파일에 기록되어 있다.
+- [ ] 선택한 planning·communications·operations 단계의 산출물이 존재한다.
+- [ ] 외부 발송은 명시적 승인 기록 없이는 실행되지 않았다.
+- [ ] 완료된 task와 남은 task 상태가 저장되어 있다.
+
+Route one event request across planning, communications, and operations without loading unrelated detail.
 
 ## Usage
 
-```
-/vibe.event "MDC 12차 3/30"                    # Parse: type=MDC, edition=12, date=3/30
-/vibe.event "webinar AI에이전트 4/15"            # Parse: type=webinar, topic=AI에이전트, date=4/15
-/vibe.event "DWK 5차 5/20 오프라인"              # Parse: type=DWK, edition=5, date=5/20, format=offline
-/vibe.event status                              # Show current event status
-/vibe.event dashboard                           # Open dashboard (localhost:8080)
-```
-
-## Execution Flow
-
-```
-1. PARSE input
-   ├── Event type: MDC / webinar / DWK
-   ├── Edition number (optional)
-   ├── Date (required)
-   ├── Topic (optional, can be set later)
-   └── Format: offline/online (DWK only, default=offline)
-
-2. CALCULATE D-Day
-   └── today - event_date = D-{n}
-
-3. LOAD or CREATE state
-   ├── Check .event_state.json
-   └── Create if new event
-
-4. DETERMINE current phase
-   ├── MDC: 11 steps (D-60 → D+2)
-   ├── Webinar: 5 steps (planning → D+1)
-   └── DWK: 9 steps (D-30 → D+3)
-
-5. AUTO-EXECUTE pending deliverables
-   ├── Content drafts → event-planner agent
-   ├── Speaker research → event-planner agent
-   ├── Image generation → event-ops agent
-   ├── SMS/email drafts → event-ops agent
-   └── Ops materials → event-ops agent
-
-6. REQUEST confirmation for send actions
-   ├── SMS actual send
-   ├── Email actual send
-   └── Notion real registration
-
-7. SAVE state
-   └── Update .event_state.json
+```text
+/vibe.event "MDC 12차 3/30"
+/vibe.event "webinar AI에이전트 4/15"
+/vibe.event "DWK 5차 5/20 오프라인"
+/vibe.event status
+/vibe.event dashboard
 ```
 
-## Input Parsing Rules
+## Routing
 
-| Input | Parsed Result |
-|-------|---------------|
-| `MDC 12차 3/30` | type=MDC, edition=12, date=2026-03-30 |
-| `webinar AI에이전트` | type=webinar, topic=AI에이전트, date=TBD (ask) |
-| `DWK 5차 5/20 오프라인` | type=DWK, edition=5, date=2026-05-20, format=offline |
-| `status` | Show .event_state.json summary |
-| `dashboard` | Run `python output/serve.py` |
+1. Parse event type (`MDC`, `webinar`, `DWK`), edition, date, topic, and format.
+2. Load `.event_state.json` when present; update it after each completed action.
+   For the complete phase tables, parsing examples, state schema, dashboard,
+   and legacy safety contract, read `references/orchestration-legacy.md`.
+3. Select only the required reference:
+   - timeline, speakers, outreach, intro/SNS/review content → `references/planning.md`
+   - SMS, email, invitations, reminders, SNS delivery copy → `references/comms.md`
+   - nametags, checklist, slides, Slido, images, settlement → `references/operations.md`
+4. When a request crosses modes, execute planning before communications and operations, sharing the same event state and output paths.
 
-## Phase-by-Phase Agent Dispatch
+Claude Code maps named event workers to Task/Agent; Codex maps them to native
+collaboration. Inherit the session model and delegate independent work only
+when it does not race on `.event_state.json` or shared output files.
 
-### MDC Phases
+## Safety Gate
 
-| Phase | Agents Triggered | Outputs |
-|-------|-----------------|---------|
-| D-60 | event-planner | 3 topic suggestions + speaker research |
-| D-45 | event-planner | DM + email outreach drafts |
-| D-40 | event-ops | Topic confirmation request email |
-| D-28 | event-planner, event-ops | Intro + 2 images + 3 SMS + 1 email |
-| D-30 | event-planner, event-ops | LinkedIn/Threads promo + SMS send(✅) |
-| D-14 | event-planner | LinkedIn/Threads reminder |
-| D-3 | event-ops | BCC email + SMS send(✅) |
-| D-1 | event-ops | Nametags + checklist + PPTX + SMS(✅) |
-| D-Day | event-ops | Day-of SMS(✅) |
-| D+1 | event-planner, event-ops | Review posts + settlement |
-| D+2 | — | Site update (manual) |
+- Drafts, previews, test sends, and local artifacts may be produced automatically.
+- Never send SMS/email/SNS, publish content, upload, or contact a real person without explicit confirmation in the current conversation.
+- Before confirmation show recipient count, exact preview, channel, and cost estimate where applicable. Email recipients use BCC.
+- Autonomous mode never bypasses this external-state confirmation.
 
-### Webinar Phases
+## State and Outputs
 
-| Phase | Agents Triggered | Outputs |
-|-------|-----------------|---------|
-| Planning | event-planner, event-ops | Intro + 3 images + SMS + email |
-| Planning | event-planner | LinkedIn/Threads promo |
-| D-4 | event-ops | Zoom(manual) + BCC email + SMS(✅) |
-| D-Day | event-ops | SMS(✅) + slides |
-| D+1 | event-planner | Review posts |
+- State: `.event_state.json`
+- Speaker history: `data/speakers/{name}.json`
+- Reports and copy: `output/reports/`
+- Images and prompts: `output/images/`
 
-### DWK Phases
+## Done
 
-| Phase | Agents Triggered | Outputs |
-|-------|-----------------|---------|
-| D-30 | event-planner | 3 topics + speaker research |
-| D-25 | event-planner | DM + email outreach |
-| D-20 | event-ops | Topic confirmation email |
-| D-16 | event-planner, event-ops | Intro + 2 images + SMS + email |
-| D-15 | event-planner | LinkedIn/Threads promo |
-| D-3 | event-ops | BCC email + SMS(✅) |
-| D-1 | event-ops | Slido plan + PPTX + SNS remind(✅) |
-| D-Day | event-ops | SMS(✅) + nametags(offline) |
-| D+3 | event-planner, event-ops | Review + settlement |
+- Event identity and current D-Day phase are explicit.
+- Every requested artifact exists at its documented path.
+- State reflects completed, pending, and confirmation-blocked work.
+- No external send or publish occurred without explicit approval.
 
-## State File Format
-
-```json
-{
-  "event_id": "MDC-12",
-  "type": "MDC",
-  "edition": 12,
-  "date": "2026-03-30",
-  "title": "마케팅데이터커넥트 12회",
-  "topic": "마케팅 자동화",
-  "format": "offline",
-  "speakers": [
-    {
-      "name": "김영수",
-      "company": "Company X",
-      "topic": "마케팅 데이터 파이프라인"
-    }
-  ],
-  "current_step": "D-28",
-  "completed_steps": ["D-60", "D-45", "D-40"],
-  "outputs": {
-    "D-28": ["intro.md", "thumbnail_500x500.png", "sms_notification.txt"]
-  },
-  "confirmations_pending": []
-}
-```
-
-## Dashboard
-
-```bash
-# Start dashboard
-python output/serve.py
-# Opens http://localhost:8080
-
-# Features:
-# - Timeline view with D-Day progress
-# - Generate buttons per step
-# - File preview links
-# - API status (Antigravity/Aligo key validity)
-# - Dark theme with community color coding
-```
-
-## Safety Rules
-
-```
-CRITICAL — These are absolute prohibitions:
-1. NEVER send SMS/email without explicit user confirmation
-2. ALWAYS use BCC for email (never expose attendee emails)
-3. NEVER use emoji in SMS (EUC-KR incompatible)
-4. NEVER delete files (move only)
-5. ALWAYS test SMS with testmode_yn=Y before real send
-6. NEVER register to Notion without dry_run first
-7. NEVER commit .env files
-```
+ARGUMENTS: $ARGUMENTS

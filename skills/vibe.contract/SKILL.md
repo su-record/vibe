@@ -1,6 +1,6 @@
 ---
 name: vibe.contract
-description: API contract drift detection — extract contracts from SPEC, compare to implementation, fail on drift
+description: Use when a SPEC API contract may differ from implementation or endpoint and schema drift must be detected.
 argument-hint: "extract | check | diff [feature-name]"
 user-invocable: true
 ---
@@ -54,32 +54,9 @@ Execute the bundled implementation below with subcommand: `$ARGUMENTS`
 
 ## Storage Format
 
-```
-.vibe/contracts/
-  <feature>.md           # extracted contract (SSOT)
-  <feature>.snapshot.md  # implementation snapshot at last check (for diff)
-```
-
-### Contract schema (frontmatter)
-
-```yaml
----
-feature: string
-extracted-from: path/to/spec.md
-extracted-at: ISO timestamp
-endpoints:
-  - method: GET | POST | PUT | DELETE | PATCH
-    path: /users/:id
-    request:
-      params: { id: string }
-      body: null
-    response:
-      200: { id: string, email: string, ... }
-      404: { error: string }
-      required: [id, email]
-  - ...
----
-```
+계약 파일의 저장 위치와 frontmatter 스키마는 아래 **Storage Contract** 절이 SSOT다.
+이 문서 안에서 스키마를 두 번 정의하지 않는다 — 과거 이 자리에 있던 축약본은 `id`·`kind`·
+`source-spec-hash` 가 빠진 손실 버전이었다.
 
 ## Integration with /vibe.verify
 

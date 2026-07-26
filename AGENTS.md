@@ -26,12 +26,12 @@ Transform imperative tasks into verifiable goals **before** coding:
 
 Weak criteria ("make it work") require constant clarification. Strong criteria let the loop run independently.
 
-### TypeScript (detected by Quality Gate hooks — violations injected as additionalContext; blocked by auto-commit verify gate, Stop warning, and pr-test-gate)
+### TypeScript (hard rules — `any`/`console.log` detected by Quality Gate hooks and injected as additionalContext; deterministic gates are pr-test-gate + Stop verify warning)
 - No `any` / `as any` / `@ts-ignore` — use `unknown` + type guards; fix at root
 - Explicit return types on all functions
 
-### Complexity Limits
-Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10
+### Complexity Limits (model-judged, not hook-detected)
+Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10 — apply in-context judgement; no regex heuristics enforce these
 
 ### Forbidden Patterns
 No `console.log` in commits · No hardcoded strings/numbers · No commented-out code · No incomplete code without TODO
@@ -58,7 +58,7 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 | `~/.codex/config.toml` | Codex `notify` (turn-complete lifecycle hook, auto-installed) |
 
 **`.vibe/config.json` behavior keys** (set per-project to tune gate behavior):
-- `scopeGuard.enabled` / `scopeGuard.mode` — scope fence on/off; `warn` (default) or `block`
+- `scopeGuard.enabled` / `scopeGuard.mode` — scope fence opt-in (default **off** everywhere — CLI and hooks share this default); mode `warn` (default) or `block`
 - `verifyGate.mode` — `warn` (default) or `block` (Stop hook blocks once if run started but verify not passed)
 - `autoTest.mode` — `debounce` (default, 120s cooldown per unchanged test file) / `always` / `off`
 - `qualityCheck.consoleAllow` — array of file globs where `console.log` is permitted
@@ -127,7 +127,7 @@ Public skills use the `vibe.*` namespace and are classified as **entry** / **sta
 
 ## Context Management
 
-- Exploration → Haiku · Implementation → Sonnet · Architecture → Opus
+- **Model routing: inherit by default** — 서브에이전트는 세션 모델을 상속한다. 명시적 예외만 tier alias 로 지정 (아키텍처 심층 리뷰 → `opus`). 구세대 "탐색→Haiku·구현→Sonnet" 비용 라우팅은 폐기 — 강한 기본 모델에서 라우팅 우회가 절약보다 품질 손실이 크다
 - At 85%+ context: `save_memory` → `/new` → `$vibe.continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
 
 ## Git

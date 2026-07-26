@@ -1,11 +1,18 @@
 ---
 name: vibe.reason
-description: Apply systematic reasoning framework to complex problems
+description: 복잡한 문제에서 가설·근거·트레이드오프를 구조화해 결론을 내려야 할 때 체계적 reasoning framework를 적용한다.
 argument-hint: "problem description"
 user-invocable: true
 ---
 
 # /vibe.reason
+
+## 완료 기준
+
+- [ ] 문제, 제약, 판단 기준이 명시되어 있다.
+- [ ] 각 핵심 주장에 근거 또는 명시된 가정이 연결되어 있다.
+- [ ] 검토한 대안과 탈락 이유가 기록되어 있다.
+- [ ] 결론이 판단 기준에 따라 재현 가능하게 도출되어 있다.
 
 Apply 9-step reasoning framework to complex problems.
 
@@ -15,7 +22,7 @@ Apply 9-step reasoning framework to complex problems.
 /vibe.reason "problem description"
 ```
 
-> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+> **⏱️ Timer**: Query the system clock at START and record the result as `{start_time}`.
 
 ## When to Use
 
