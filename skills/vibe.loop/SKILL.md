@@ -62,16 +62,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 ## install — 스케줄 연결
 
-루프 정의는 하네스 중립이다. 현재 환경을 감지해 정확한 설치 명령을 **사용자에게 제시**한다 (직접 등록하지 않는다 — 스케줄 등록은 사용자 결정):
-
-| 환경 | 명령 |
-|------|------|
-| Claude Code (세션 루프) | `/loop <interval> "/vibe.loop run <name>"` |
-| Claude Code (클라우드 루틴) | `/schedule` 로 cron `<schedule>` + 프롬프트 `/vibe.loop run <name>` 등록 |
-| OS cron 폴백 | `<schedule> cd <project> && claude -p "/vibe.loop run <name>" --permission-mode acceptEdits` |
-| Codex | Automations 탭에 `<schedule>` + `$vibe.loop run <name>` 등록 |
-
-`trigger: manual` 루프는 install 불필요 — run만 안내한다.
+`install` 호출에서만 `references/install-adapters.md`를 읽어 현재 하네스의 명령을 제시한다. `design`, `run`, `status`, `list` 호출은 읽지 않는다. `trigger: manual` 루프는 install 없이 run만 안내한다.
 
 ## run — 1회 반복 실행 (핵심)
 

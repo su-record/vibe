@@ -61,11 +61,7 @@ git worktree prune
 
 ## Troubleshooting
 
-| Error | Fix |
-|-------|-----|
-| "already checked out" | Branch is in another worktree — `git worktree list`, then remove |
-| Locked worktree | `git worktree unlock <path>` |
-| Stale worktree | `git worktree prune` |
+Read `references/troubleshooting.md` only when creation, locking, or cleanup fails. Successful calls do not load it.
 
 ## Done Criteria (K4)
 

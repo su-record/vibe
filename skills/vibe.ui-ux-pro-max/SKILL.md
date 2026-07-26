@@ -79,9 +79,7 @@ Searchable database: 50+ styles, 97 color palettes, 57 font pairings, 99 UX guid
 
 ### 8. Charts & Data (LOW)
 
-- `chart-type` - Match chart type to data type
-- `color-guidance` - Use accessible color palettes
-- `data-table` - Provide table alternative for accessibility
+For dashboards or other data visualizations only, read `references/charts-and-data.md`. UI calls without charts do not load it.
 
 ---
 

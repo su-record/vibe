@@ -136,14 +136,7 @@ The number is automatically determined as the last existing file number + 1.
 
 ### Step 5: (Optional) Auto Push
 
-If `autoPush: true`:
-
-```bash
-cd {targetRepo}
-git add {targetDir}/{prefix}-{NNNN}.md
-git commit -m "post: Add {prefix} #{NNNN}"
-git push
-```
+If `autoPush: true`, read `references/auto-push.md` and require normal external-state confirmation. Calls with `autoPush: false` do not load it.
 
 ## Rules
 

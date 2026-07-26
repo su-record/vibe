@@ -32,8 +32,8 @@ Auto-generate app icons and favicons based on SPEC brand information.
 - `android-chrome-512x512.png`
 
 ### Mobile (if applicable)
-- iOS: `AppIcon.appiconset/` with all sizes
-- Android: `mipmap-*/` adaptive icons
+
+For native iOS or Android targets only, read `references/mobile-assets.md`. Web-only favicon/OG calls do not load it.
 
 ## SPEC Brand Section
 

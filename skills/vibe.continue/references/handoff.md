@@ -1,104 +1,142 @@
+# Handoff Workflow and Canonical HANDOFF.md Template
+
+Use this document before a session ends or a long pause when detailed work state must survive context reset. `vibe.continue` restores state; handoff mode first records progress, decisions, changed files, verification status, and the exact next step in `HANDOFF.md`.
+
+## When to Generate
+
+- Context reaches roughly 80–100k tokens.
+- The session has already been compacted three times.
+- Work will pause for an extended period.
+- Complex progress needs a durable record for a teammate or future session.
+
+Automatic continue restores available session state at the start of a new session; HANDOFF.md is the manual, repository-verifiable record created before the old session ends. They complement rather than replace each other.
+
+## Generation Procedure
+
+1. Inspect `git status` and the five most recent commits.
+2. Separate completed, in-progress, and remaining work.
+3. Fill every applicable template field below from conversation and repository evidence.
+4. Write `HANDOFF.md`, then read it back and verify it against repository state.
+5. Durable harness memory may mirror the document, but is optional and never the correctness source.
+
+## Restore Procedure
+
+Run `vibe.continue`, read `HANDOFF.md`, and verify its branch, changed files, and test status before resuming from `Next immediate step`.
+
+## Done Criteria
+
+- [ ] HANDOFF.md exists with all applicable sections filled.
+- [ ] Completed, in-progress, and remaining tasks match repository state.
+- [ ] All modified files and the last commit are recorded.
+- [ ] Session decisions, cautions, blockers, and exact next step are present.
+- [ ] The written document was read back and checked against Git and test evidence.
+
 ---
-name: handoff-reference
-user-invocable: false
-invocation: [auto]
-tier: standard
-description: "Generate HANDOFF.md work handover document before session end. Auto-activates on handoff, handover, session cleanup keywords."
-triggers: [handoff, handover, session cleanup, session end, context save]
-priority: 60
+
+# Work Handover: {{FEATURE_OR_TASK_NAME}}
+
+**Date**: {{DATE}}
+**Branch**: {{GIT_BRANCH}}
+**Author**: {{AUTHOR}}
+**Session context**: {{CONTEXT_PERCENT}}% used
+
 ---
 
-# Handoff — Session Handover Document
+## Status at Handoff
 
-Record work status before session end so the next session can pick up immediately.
+| Area | Status | Notes |
+|------|--------|-------|
+| Build | {{BUILD_STATUS}} | `npm run build` |
+| Tests | {{TEST_STATUS}} | `npx vitest run` |
+| Type check | {{TYPECHECK_STATUS}} | `npx tsc --noEmit` |
+| Lint | {{LINT_STATUS}} | |
 
-## What is HANDOFF.md?
+---
 
-A file that records the current work status before context reset. Reading this file in a new session allows immediate continuation.
+## Completed Work
 
-### Difference from `/vibe.continue`
+- [x] {{COMPLETED_TASK_1}}
+- [x] {{COMPLETED_TASK_2}}
+- [x] {{COMPLETED_TASK_3}}
 
-| Item | `/vibe.continue` | Handoff |
-|------|--------------------------|---------|
-| Method | Automatic session context restore | Manual handover document |
-| Includes | Memory + session state | Work progress + notes + file list |
-| When to use | At new session start | Before session end |
-| Purpose | Quick auto-restore | Detailed handover (team/future self) |
+Last commit: `{{LAST_COMMIT_HASH}}` — {{LAST_COMMIT_MESSAGE}}
 
-## When to Use
+---
 
-- When context reaches 80-100k tokens
-- After using `/compact` 3 times
-- Before pausing work for an extended period
-- When progress recording is needed during complex work
+## In Progress (resume here)
 
-## State Persistence
+### {{IN_PROGRESS_TASK_NAME}}
 
-Persist the current state in `HANDOFF.md` itself. Record decisions, changed
-files, test status, and the exact next step from the conversation, then verify
-them against `git status` and recent history. If the active harness also offers
-session memory, it may mirror this information there, but that optional
-capability is not a correctness requirement.
+- Progress: {{PROGRESS_PERCENT}}%
+- Current state: {{CURRENT_STATE_DESCRIPTION}}
+- Next immediate step: {{NEXT_STEP}}
+- Blocking question (if any): {{BLOCKER_OR_NONE}}
 
-## HANDOFF.md Template
+**Where to look first:**
+- `{{KEY_FILE_1}}` — {{KEY_FILE_1_CONTEXT}}
+- `{{KEY_FILE_2}}` — {{KEY_FILE_2_CONTEXT}}
 
-```markdown
-# Work Handover Document
+---
 
-## Completed Tasks
-- [x] Completed task 1
-- [x] Completed task 2
+## Remaining Tasks (in priority order)
 
-## In Progress
-- [ ] Currently working on
-  - Progress: 70%
-  - Next step: implement ~~
+1. **[P1]** {{P1_TASK}} — must complete before merge
+2. **[P2]** {{P2_TASK}} — complete before PR review
+3. **[P3]** {{P3_TASK}} — nice-to-have
 
-## Next Tasks
-1. High priority task
-2. Next task
+---
 
-## Notes & Cautions
-- Do not touch: ~~
-- Known bugs: ~~
-- Temporary workarounds: ~~
+## Decisions Made This Session
 
-## Related Files
-- src/components/Login.tsx — Login form
-- src/api/auth.ts — Auth API
+| Decision | Rationale | Alternatives Rejected |
+|----------|-----------|----------------------|
+| {{DECISION_1}} | {{RATIONALE_1}} | {{ALTERNATIVES_1}} |
+| {{DECISION_2}} | {{RATIONALE_2}} | {{ALTERNATIVES_2}} |
 
-## Last State
-- Branch: feature/auth
-- Last commit: abc1234
-- Test status: passing
-```
+---
 
-## Generation Steps
+## Do Not Touch
 
-1. Check current changed files with `git status`
-2. Check recent commits with `git log --oneline -5`
-3. Organize in-progress and remaining tasks
-4. Generate `HANDOFF.md` with the current context and key decisions
-5. Read the completed file back and verify it against repository state
+- `{{FRAGILE_FILE_1}}` — {{REASON_1}}
+- `{{FRAGILE_FILE_2}}` — {{REASON_2}}
 
-## Restoring in New Session
+---
+
+## Known Issues / Workarounds
+
+- {{KNOWN_ISSUE_1}}
+- {{KNOWN_ISSUE_2}}
+
+---
+
+## All Modified Files
 
 ```
-Read HANDOFF.md and continue working
+{{GIT_STATUS_OUTPUT}}
 ```
 
-Or use alongside VIBE auto-restore:
+---
 
-```
+## How to Resume
+
+```bash
+# 1. Load context
 /vibe.continue
+
+# 2. Read this file if context is missing
+# cat HANDOFF.md
+
+# 3. Verify baseline
+npm run build && npx vitest run
+
+# 4. Pick up from: {{RESUME_INSTRUCTION}}
 ```
 
-In this case, `/vibe.continue` reads `HANDOFF.md` and verifies the restored state against the repository.
+---
 
-## Done Criteria (K4)
+## Optional Session Memory References
 
-- [ ] HANDOFF.md created with all sections filled
-- [ ] Completed/in-progress/next tasks accurately listed
-- [ ] Related files section includes all modified files
-- [ ] Session context and key decisions are present in `HANDOFF.md`
-- [ ] The saved state was read back and checked against repository state
+When the active harness provides durable memory, record its references here:
+
+- `{{MEMORY_KEY_1}}` — {{MEMORY_KEY_1_DESCRIPTION}}
+- `{{MEMORY_KEY_2}}` — {{MEMORY_KEY_2_DESCRIPTION}}

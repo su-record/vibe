@@ -57,10 +57,7 @@ SPEC 승인 (1회 — automationLevel: autonomous 면 생략)
 
 ### 레거시 아티팩트 호환 (구버전 .vibe/interviews/, .vibe/plans/)
 
-구버전 vibe 가 남긴 `.vibe/interviews/{feature}.md`, `.vibe/plans/{feature}.md` 가 존재할 수 있다:
-
-- **존재하면**: spec 패스의 **입력 컨텍스트**로 읽어 활용한다 (이미 답한 질문을 다시 묻지 않게).
-- **절대 요구하거나 재생성하지 않는다**: 이 파일들의 부재는 결함이 아니라 정상 상태다. interview/plan 스킬은 더 이상 존재하지 않는다.
+Legacy `.vibe/interviews/` or `.vibe/plans/` artifacts가 실제로 감지된 경우에만 `references/legacy-artifacts.md`를 읽는다. 신규 프로젝트와 현재 형식만 있는 호출은 읽지 않는다.
 
 ### `.last-feature` 포인터
 

@@ -11,6 +11,7 @@
  * in the source record change.
  */
 
+{{TEST_RUNNER_IMPORT}}
 {{IMPORTS_FROM_SUT}}
 
 describe('regression: {{SYMPTOM_SHORT}}', () => {

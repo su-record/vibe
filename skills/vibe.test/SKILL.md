@@ -124,6 +124,16 @@ Axis detail:
 - **Context** — count ` ``` ` fence *pairs* in the body. Three or more blocks with no `references/`
   sibling directory means templates/examples/schemas are inlined where they should be extracted.
   A skill with a `references/` dir passes regardless of fence count.
+- **A `references/` dir is not by itself a pass.** The context axis asks whether *conditional bulk
+  still sits inline*, not whether the directory exists — a 6-line reference file next to a 150-line
+  body clears the directory check while saving nothing. Judge the body: does it still inline a
+  block that most invocations skip? If yes, the axis warns regardless of the sibling directory.
+- **Safety and correctness rules never move behind a conditional load.** "Read
+  `references/protected-branches.md` if the branch is protected" is circular — deciding whether the
+  rule applies requires already knowing the rule. Anything the skill must obey *before* it can
+  classify the situation (destructive-operation guards, push/force-push prohibitions, data-loss
+  boundaries) stays inline. Only material that is *looked up after* the situation is known is
+  eligible.
 - **Anti-gaming (scope + context)** — a reference only saves context if it is **conditionally**
   loaded. If the body instructs reading a reference unconditionally ("read `references/x.md`" with
   no condition attached), nothing was saved: the invocation now costs body + reference *plus* an

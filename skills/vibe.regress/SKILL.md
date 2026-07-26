@@ -48,31 +48,8 @@ The `regress` skill performs registration, generation, and clustering.
 
 ## Storage Format
 
-```markdown
----
-slug: login-jwt-expiry-off-by-one
-symptom: "JWT expiry cuts off one second early"
-root-cause-tag: timezone
-fix-commit: abc1234
-test-path: src/auth/__tests__/login.regression.test.ts
-status: open | test-generated | resolved
-registered: 2026-04-14
-feature: login
----
-
-## Reproduction
-1. ...
-
-## Root cause
-...
-
-## Fix
-...
-```
-
----
-
-ARGUMENTS: $ARGUMENTS
+회귀 항목의 저장 위치와 frontmatter 스키마는 아래 **Storage Contract** 절이 SSOT다.
+`root-cause-tag` 허용값 목록도 그쪽에만 둔다 — 두 곳에 두면 한쪽이 조용히 낡는다.
 
 ## Bundled implementation
 
@@ -163,7 +140,8 @@ Most calls are automatic; manual use is rare (bugs found outside `/vibe.verify`,
    - Sibling `__tests__/` next to the implementation file, OR
    - The project's existing test dir (vitest config `test.include`)
 4. File name: `<original-file>.regression.test.ts`
-5. Body: render `templates/test-vitest.md` or `templates/test-jest.md`
+5. Body: render `templates/test-template.md`; set `{{TEST_RUNNER_IMPORT}}` to the Vitest import below or an empty string for Jest globals:
+   - Vitest: `import { describe, it, expect{{EXTRA_IMPORTS}} } from 'vitest';`
 6. Update bug frontmatter: `test-path`, `status: test-generated`
 7. **Run the test immediately** — should fail (if not yet fixed) or pass (if fixed). Record outcome in frontmatter.
 

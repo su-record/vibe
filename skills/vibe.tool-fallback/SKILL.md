@@ -33,32 +33,11 @@ priority: 60
 
 ## Decision Trees
 
-### Web Search Fails
+Select exactly one conditional reference for the failing capability; unrelated failures do not load it:
 
-```
-Web Search fails (429, 529, timeout)
-  → Check circuit state
-  → OPEN? → Skip to alternative immediately
-  → CLOSED? → Try context7 for library docs
-  → Still fails? → active harness knowledge (last resort, label uncertainty)
-```
-
-### External LLM Fails
-
-```
-VibeOrchestrator.smartRoute({ type, prompt })
-  → Primary LLM fails (429, 401, 5xx)
-  → Skip to secondary LLM (no retry on rate limit)
-  → Secondary fails → active harness handles directly
-```
-
-### File/Code Not Found
-
-```
-File-pattern search fails → Expand pattern: *.ts → **/*.ts → **/*
-  → Use content-based text search
-  → Check git log for file history
-```
+- Web search failure → `references/web-search.md`
+- External LLM failure → `references/external-llm.md`
+- File/code lookup failure → `references/file-lookup.md`
 
 ## Error Response Actions
 

@@ -113,87 +113,13 @@ Based on classification, build the appropriate artifact:
 - ✅ **Capability prevents the failure** → Step 5 PERSIST
 - ❌ **Capability does NOT prevent the failure** → Step 4.5 ESCALATE (re-diagnose or ask user)
 
-### Step 4.5: ESCALATE — When VERIFY Fails
+### Step 4.5: ESCALATE — When VERIFY Fails (조건부)
 
-> **Problem**: The built capability didn't actually prevent the failure. This usually means the initial diagnosis was wrong (picked `Tool` when it needed `Guardrail`), or the failure has multiple missing capabilities.
->
-> **Do NOT silently proceed** — a sub-standard capability log pollutes `.vibe/capabilities-log.md` and the failure will recur.
+> **진입 조건**: Step 4 VERIFY 실패. 통과했으면 이 단계 전체를 건너뛴다.
+> **Problem**: 만든 capability 가 실제로 실패를 막지 못했다는 뜻 — 대개 초기 진단이 틀렸거나(Tool 로 골랐는데 Guardrail 이 필요했다) 누락 capability 가 여럿이다.
+> **조용히 진행 금지** — 미달 capability 로그는 `.vibe/capabilities-log.md` 를 오염시키고 실패는 재발한다.
 
-**Escalation loop:**
-
-```python
-tried = [current_diagnosis.category]  # e.g., ["Tool"]
-
-while True:
-    # Re-diagnose excluding already-tried categories
-    next_diagnosis = diagnose(failure, exclude=tried)
-
-    if next_diagnosis is None:
-        # All 5 categories (Tool/Guardrail/Abstraction/Documentation/Feedback) exhausted
-        escalate_to_user(failure, tried)
-        break
-
-    if next_diagnosis.category in tried:
-        # Stuck: diagnose keeps returning the same category
-        escalate_to_user(failure, tried)
-        break
-
-    tried.append(next_diagnosis.category)
-    capability = build(next_diagnosis)
-
-    if verify(capability, failure):
-        persist(capability)
-        return  # Success — go to Step 5
-
-    # Still failing — next iteration
-```
-
-**User escalation prompt (interactive mode):**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ CAPABILITY LOOP STUCK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Failure: {original failure description}
-
-Tried capabilities (all failed to prevent the failure):
-  ❌ Tool: {what was built, why it didn't work}
-  ❌ Guardrail: {what was built, why it didn't work}
-  ❌ Documentation: {what was built, why it didn't work}
-
-Automated diagnosis has run out of angles. This failure may require
-human judgment (process issue, cross-category solution, or external factor).
-
-How would you like to proceed?
-  1. Suggest a different angle (e.g., "this is a process issue", "needs Tool+Guardrail combination")
-     → Attempt custom approach per user instruction, then enter next verify
-  2. "manual" — resolve this failure via manual intervention, end capability loop
-     (record "escalated to manual" in capabilities-log.md)
-  3. "abort" — give up, record failure only
-     (record "diagnosis exhausted" in capabilities-log.md, do not halt the rest of the workflow)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**ultrawork mode exception:**
-
-```python
-if ultrawork_mode:
-    # Skip user prompt: try all 5 categories in sequence, record final state
-    all_tried_exhausted = exhaust_all_categories(failure, tried)
-    record_failure_to_log(
-        status="diagnosis_exhausted",
-        tried=all_tried_exhausted,
-        failure=failure
-    )
-    return  # Proceed without blocking downstream workflow
-```
-
-**Rollback of failed builds:**
-
-- Each failed capability build should be rolled back before trying the next category (unless it's non-destructive documentation).
-- For code additions (tool/guardrail/abstraction): `git checkout -- {files}` or delete created files.
-- For docs-only additions: leave in place (low risk) but note in escalation prompt.
+에스컬레이션 루프 전문(재진단·타입 재분류·롤백 판단): `references/escalate.md`
 
 ### Step 5: PERSIST — Record for Future Reference
 

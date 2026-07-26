@@ -110,18 +110,7 @@ lib/
 
 ### 5. Clean Architecture Layers (Optional)
 
-```
-src/
-├── domain/           # Business rules (pure logic, no external deps)
-├── application/      # Use cases (domain composition)
-├── infrastructure/   # External integrations (DB, API, files)
-└── presentation/     # UI or API endpoints
-```
-
-Layer rules:
-- Dependency direction: presentation → application → domain (reverse forbidden)
-- domain must not import external packages
-- infrastructure implements domain interfaces
+When clean architecture is explicitly selected, read `references/clean-architecture.md`. Default stack layouts and `--check` audits do not load it.
 
 ### 6. Generate Supporting Files
 
