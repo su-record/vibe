@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 
-import { readInstalledLLMStatus, repairProjectHooks } from './upgrade.js';
+import { extractPostinstallReport, readInstalledLLMStatus, repairProjectHooks } from './upgrade.js';
 
 describe('upgrade command helpers', () => {
   it('reads LLM status from the newly installed package', () => {
@@ -89,5 +89,46 @@ describe('repairProjectHooks', () => {
 
     expect(repairProjectHooks(root).length).toBeGreaterThan(0);
     expect(repairProjectHooks(root)).toEqual([]);
+  });
+});
+
+/**
+ * `vibe upgrade` 는 npm 출력을 pipe 로 숨기는데, 그 과정에서 postinstall 의 보고성
+ * 라인까지 삼켜졌다. "철회된 스킬 파일을 지웠다" 가 사라지면 삭제가 조용해진다 —
+ * pruneExtraneousSkillFiles 가 제거 목록을 반환하게 만든 이유가 무효화된다.
+ */
+describe('extractPostinstallReport', () => {
+  it('surfaces the pruned-files report line', () => {
+    const npmOutput = [
+      'added 1 package in 3s',
+      '   stale skill files pruned: vibe.run/references/ralph-loop.md',
+      'npm notice New major version available',
+    ].join('\n');
+
+    expect(extractPostinstallReport(npmOutput)).toEqual([
+      'stale skill files pruned: vibe.run/references/ralph-loop.md',
+    ]);
+  });
+
+  it('surfaces optional-skill removals', () => {
+    const npmOutput = '   optional skill removed: vibe.presentation\n';
+
+    expect(extractPostinstallReport(npmOutput)).toEqual([
+      'optional skill removed: vibe.presentation',
+    ]);
+  });
+
+  it('drops npm noise so the upgrade result is not buried', () => {
+    const npmOutput = [
+      'npm warn deprecated foo@1.0.0',
+      'added 42 packages',
+      'changed 3 packages in 5s',
+    ].join('\n');
+
+    expect(extractPostinstallReport(npmOutput)).toEqual([]);
+  });
+
+  it('returns nothing for empty output', () => {
+    expect(extractPostinstallReport('')).toEqual([]);
   });
 });

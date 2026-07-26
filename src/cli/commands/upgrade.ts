@@ -49,6 +49,31 @@ export function readInstalledLLMStatus(globalRoot: string): string {
   }).trimEnd();
 }
 
+/** postinstall 이 보고한 라인 접두사 — 이 목록만 사용자에게 되살린다 */
+const POSTINSTALL_REPORT_PREFIXES = [
+  'stale skill files pruned:',
+  'optional skill removed:',
+] as const;
+
+/**
+ * npm 출력에서 postinstall 의 보고성 라인만 뽑는다.
+ *
+ * WHY: `npm install -g` 를 `stdio: 'pipe'` 로 감싸 npm 노이즈를 숨기는데, 그 과정에서
+ * postinstall 이 낸 보고까지 삼켜졌다. 특히 "철회된 스킬 파일을 지웠다" 는 사실이
+ * 사라지면 삭제가 조용해진다 — `pruneExtraneousSkillFiles` 가 제거 목록을 반환하도록
+ * 만든 이유가 무효화된다.
+ *
+ * npm 전체 출력을 그대로 흘리지 않는 이유: 진행률·경고가 섞여 업그레이드 결과를 가린다.
+ * 접두사 화이트리스트로 vibe 가 의도적으로 낸 라인만 통과시킨다.
+ */
+export function extractPostinstallReport(npmOutput: string): string[] {
+  return npmOutput
+    .split('\n')
+    .map((line): string => line.trim())
+    .filter((line): boolean =>
+      POSTINSTALL_REPORT_PREFIXES.some((prefix) => line.startsWith(prefix)));
+}
+
 /** 프로젝트 훅이 이미 설치돼 있는지 — `hooks` 키 존재까지 확인한다 */
 function hasClaudeHooks(projectRoot: string): boolean {
   try {
@@ -118,9 +143,14 @@ export function upgrade(_options: CliOptions = { silent: false }): void {
     cleanStaleTempDirs();
 
     // --prefer-online: npm 캐시 대신 레지스트리에서 최신 버전 확인
-    execSync('npm install -g @su-record/vibe@latest --prefer-online', {
+    // stdio: 'pipe' 로 npm 노이즈를 숨기지만, postinstall 이 낸 **보고성 라인**은
+    // 되살려야 한다 — 그러지 않으면 "철회된 스킬 파일을 지웠다" 같은 사실이 조용히
+    // 사라진다 (pruneExtraneousSkillFiles 의 no-silent-deletion 계약).
+    const npmOutput = execSync('npm install -g @su-record/vibe@latest --prefer-online', {
       stdio: 'pipe',
+      encoding: 'utf-8',
     });
+    const postinstallReport = extractPostinstallReport(npmOutput);
 
     // 설치된 새 버전을 디스크에서 직접 읽기 (현재 프로세스의 캐시된 값이 아닌)
     let newVersion = 'unknown';
@@ -147,8 +177,11 @@ export function upgrade(_options: CliOptions = { silent: false }): void {
     const hookNote = repaired.length > 0
       ? `\n🔧 Project hooks restored: ${repaired.join(', ')}\n`
       : '';
+    const pruneNote = postinstallReport.length > 0
+      ? `\n🧹 ${postinstallReport.join('\n🧹 ')}\n`
+      : '';
 
-    log(`\n✅ vibe upgraded (v${newVersion})\n${hookNote}\n${llmStatus}\n`);
+    log(`\n✅ vibe upgraded (v${newVersion})\n${hookNote}${pruneNote}\n${llmStatus}\n`);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Upgrade failed:', message);
