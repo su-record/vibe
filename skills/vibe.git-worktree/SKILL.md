@@ -2,7 +2,7 @@
 name: vibe.git-worktree
 invocation: [auto]
 tier: optional
-description: "Git Worktree for parallel branch work. Auto-activates for PR review, hotfix, parallel testing, or working on multiple branches simultaneously."
+description: "Use when PR review, hotfix, parallel testing, or simultaneous branch work needs an isolated Git worktree."
 triggers: [worktree, hotfix, parallel branch, multiple branches]
 priority: 50
 ---

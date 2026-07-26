@@ -1,11 +1,18 @@
 ---
 name: vibe.spec
-description: SPEC 진입점 — 자연어 요구사항(+첨부)을 받아 단일 패스 SPEC 작성 → 1회 승인 → /vibe.run 핸드오프
+description: 자연어 요구사항이나 첨부 자료로 승인 가능한 SPEC을 작성해야 할 때 — 단일 패스로 작성하고 1회 승인 후 vibe.run으로 넘긴다.
 argument-hint: "(선택) feature name, requirement, file path, or idea"
 user-invocable: true
 ---
 
 # /vibe.spec
+
+## 완료 기준
+
+- [ ] `.vibe/specs/<feature>.md`가 존재한다.
+- [ ] 모든 REQ에 결정론적 Done Criteria와 Evidence Required가 있다.
+- [ ] 제약, 범위 제외, stakes가 명시되어 있다.
+- [ ] confirm mode에서는 사용자 승인 상태가 기록되어 있다.
 
 **SPEC 단계의 얇은 진입점.** 요구사항을 받아 `spec` 스킬(단일 패스)을 실행하고, SPEC 승인(유일한 의무 게이트) 후 `/vibe.run` 으로 넘긴다. interview → plan → spec → review 다단계 파이프라인은 폐지되었다 — 명확화 질문은 spec 패스 안에서 인라인으로, 리뷰는 셀프 리뷰 1회로 흡수됐다.
 
@@ -109,11 +116,11 @@ ARGUMENTS: $ARGUMENTS
 ### 2. Project context
 
 - `.vibe/config.json` 읽기 — `references.languages[]` 의 스택 가이드, `stacks` 확인.
-- 기존 코드 파악이 필요하면 네이티브 Explore 서브에이전트에 위임 (main session 에서 프로젝트 파일을 훑지 않는다):
+- 기존 코드 파악이 필요하면 하네스의 네이티브 협업 기능에 독립 탐색 worker로 위임한다. Claude Code는 Task/Agent, Codex는 native collaboration에 매핑하며 기본 모델을 상속한다 (coordinator session에서 프로젝트 전체를 훑지 않는다):
 
 ```text
-Task(subagent_type="Explore",
-  prompt="Find existing implementations related to [FEATURE]. Return: tech stack, relevant files, patterns. Under 200 tokens.")
+Worker: Find existing implementations related to [FEATURE]. Return the tech stack,
+relevant files, and patterns in under 200 tokens.
 ```
 
 ### 3. Clarify — 진짜 모호할 때만

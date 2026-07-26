@@ -1,6 +1,6 @@
 ---
 name: vibe.regress
-description: Regression test auto-evolution — register bugs, generate preventive tests, cluster patterns
+description: Use when a reproduced bug must be registered, turned into a preventive test, or clustered into a recurring root-cause pattern.
 argument-hint: "register | generate | list | import | cluster [args]"
 user-invocable: true
 ---
@@ -142,7 +142,7 @@ Clustering depends on this, so use **only the predefined set**:
 Most calls are automatic; manual use is rare (bugs found outside `/vibe.verify`, or production incidents).
 
 **Steps**:
-1. `getCurrentTime` for today's date
+1. Query the system clock for today's date
 2. `git log -1 --format=%H` for current commit hash (fix-commit candidate)
 3. Conversation extracts:
    - Reproduction steps (Given/When/Then)

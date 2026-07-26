@@ -1,7 +1,7 @@
 ---
 name: verifier
 role: Checks handoff completeness against the HANDOFF.md rubric
-tools: [Read, Bash]
+capabilities: [full-file-reading, shell-command-execution]
 ---
 
 # Verifier

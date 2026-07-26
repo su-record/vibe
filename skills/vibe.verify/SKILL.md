@@ -1,11 +1,18 @@
 ---
 name: vibe.verify
-description: Verify implementation against SPEC requirements
-argument-hint: "feature name"
+description: 승인된 SPEC에 대한 구현 완료를 판정하거나 REQ→SPEC→Feature→Code 추적표가 필요할 때 검증 또는 trace mode로 실행한다.
+argument-hint: "feature name [--e2e] | trace feature-name [--html] [--save] [--json]"
 user-invocable: true
 ---
 
 # /vibe.verify
+
+## 완료 기준
+
+- [ ] 승인된 SPEC의 모든 REQ가 pass 또는 fail로 판정되어 있다.
+- [ ] 각 판정에 test output, 파일·행 또는 산출물 경로 근거가 있다.
+- [ ] verify mode 성공 시 run ledger의 `verifyPassed`가 true다.
+- [ ] trace mode에서는 RTM 파일이 존재하고 누락 REQ가 0개다.
 
 SPEC-driven verification. Check the implementation against the SPEC's **Done criteria** and Feature scenarios, record the result to the **run ledger** (`recordVerify`), and auto-register regressions on failure. The JUDGE gate is code-enforced by the ledger — a verification never counts as passed by self-report.
 
@@ -14,7 +21,17 @@ SPEC-driven verification. Check the implementation against the SPEC's **Done cri
 ```
 /vibe.verify "feature-name"           # SPEC-based verification
 /vibe.verify --e2e "feature-name"     # + E2E browser verification (agents/e2e-tester.md)
+/vibe.verify trace "feature-name"     # Requirements Traceability Matrix
+/vibe.verify trace "feature-name" --html | --save | --json
 ```
+
+## Trace mode
+
+When the first argument is `trace`, read `references/trace-mode.md` and execute
+that RTM workflow instead of the verification process below. Preserve the
+feature name and `--html`, `--save`, and `--json` flags. An empty RTM is a gate
+failure. Trace output alone does not set `verifyPassed`; run normal verify mode
+to bind command evidence to the run ledger.
 
 ## Scope
 
@@ -39,7 +56,11 @@ Extract the Done criteria / scenarios — this list is the verification checklis
 
 ### 2. Verify each Done criterion (parallel, deterministic)
 
-Run all applicable methods as parallel sub-agents in ONE message; each returns a short pass/fail summary instead of bloating main context:
+Run all applicable methods through the harness's native collaboration
+capability; each worker returns a short pass/fail summary instead of bloating
+the coordinator context. Claude Code maps workers to Task/Agent; Codex maps
+them to native collaboration. Inherit the session model by default and run
+independent methods concurrently when capacity permits:
 
 | Method | How | Condition |
 |---|---|---|
@@ -104,7 +125,12 @@ Load skill `vibe.contract` with: check "{feature}"
 
 ### 7. Metrics + Ledger update (MANDATORY final step)
 
-Record run metrics, then write the verify result to the run ledger. This is the machine-readable deterministic JUDGE record consumed by the Stop-hook verify gate, auto-commit verify gate, and loop-contract gates. `recordVerify` also writes `.vibe/runs/{run-id}/evidence.json`; Model Judge findings remain advisory-only and Human Taste remains release-only.
+Record run metrics, then explicitly write the verify result to the run ledger.
+This machine-readable record is the deterministic JUDGE consumed by the
+loop-contract gates. Lifecycle Stop/auto-commit hooks may consume the same
+record for earlier feedback, but correctness does not depend on either hook.
+`recordVerify` also writes `.vibe/runs/{run-id}/evidence.json`; Model Judge
+findings remain advisory-only and Human Taste remains release-only.
 
 ```bash
 # Append step-count history (ok if current-run.json missing)

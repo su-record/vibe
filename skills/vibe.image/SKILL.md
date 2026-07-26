@@ -1,11 +1,18 @@
 ---
 name: vibe.image
-description: Generate images (icons, banners, mockups) using the Antigravity image backend.
+description: 아이콘·배너·목업 같은 래스터 이미지 산출물이 필요할 때 Antigravity 이미지 backend로 생성한다.
 argument-hint: '"description" [--pro] [--icon "AppName"] [--size WxH]'
 user-invocable: true
 ---
 
 # /vibe.image
+
+## Done Criteria
+
+- [ ] 요청된 이미지 파일이 지정 경로에 존재한다.
+- [ ] 파일 형식과 픽셀 크기가 요청값과 일치한다.
+- [ ] 투명 배경 요청 시 alpha channel이 존재한다.
+- [ ] 생성 결과 경로가 최종 응답에 포함된다.
 
 Generate images using the Antigravity image backend.
 

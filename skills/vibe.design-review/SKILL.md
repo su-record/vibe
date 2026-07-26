@@ -10,6 +10,13 @@ priority: 50
 
 # Design Review — Technical Audit + UX Critique
 
+## Done Criteria
+
+- [ ] review report가 지정 출력 경로에 존재한다.
+- [ ] 모든 finding에 severity와 파일·행 또는 화면 근거가 있다.
+- [ ] accessibility, responsive, performance, theming 검사가 판정되어 있다.
+- [ ] 발견된 P1 개수와 최종 판정이 보고서에 기록되어 있다.
+
 Read-only design quality review. Two modes selected by the first argument. No code modifications — report only.
 
 ## Usage

@@ -2,13 +2,20 @@
 name: vibe.user-personas
 invocation: [auto, chain]
 tier: standard
-description: "Create refined user personas from research data — 3 personas with JTBD, pains, gains, and unexpected insights."
+description: "Use when research data must be synthesized into three evidence-based user personas with JTBD, pains, gains, and unexpected insights."
 triggers: [persona, user persona, user profile, user segment, user research]
 priority: 50
 chain-next: [vibe.create-prd, vibe.prioritization]
 ---
 
 # User Personas
+
+## Done Criteria
+
+- [ ] 정확히 3개의 persona가 생성되어 있다.
+- [ ] 각 persona에 JTBD, pains, gains가 모두 존재한다.
+- [ ] 각 핵심 특성이 research source와 연결되어 있다.
+- [ ] 근거 없는 추론은 inference로 표시되어 있다.
 
 > Based on the user persona framework from [Product Compass](https://www.productcompass.pm/p/interviewing-customers-the-ultimate) by Pawel Huryn (MIT License).
 

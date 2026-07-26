@@ -43,7 +43,7 @@ A HANDOFF.md is complete only when all required items are present and accurate.
 
 - Known issues / workarounds (if any discovered this session)
 - "Do not touch" warnings (if any fragile areas identified)
-- Memory keys saved via `core_save_memory`
+- Optional harness memory references, when the active harness provides durable memory
 
 ## Quality Bar
 

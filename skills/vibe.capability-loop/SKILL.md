@@ -3,7 +3,7 @@ name: vibe.capability-loop
 user-invocable: false
 invocation: [auto]
 tier: standard
-description: "When an agent fails, diagnose which capability is missing and build it into the repo. Activates after repeated agent failures, tool errors, or when a task keeps failing in the same way. Analyzes failure transcripts, identifies the missing guardrail/tool/abstraction/doc, and creates it permanently. Use this skill whenever you see 3+ similar failures, an agent hitting the same wall repeatedly, or the user asking 'why does this keep failing'."
+description: Use when the same agent or tool failure repeats, or a missing capability blocks progress, to reproduce the cause and build a permanent repository capability.
 triggers: [capability loop, failure loop, build capability, missing capability, agent failed, why did it fail]
 priority: 60
 ---
@@ -272,3 +272,11 @@ VERIFY: Does the built capability actually prevent the failure?
 - After `/vibe.run` failure → auto-trigger capability-loop diagnosis
 - After `/vibe.review` findings → suggest capability-loop for recurring patterns
 - After manual agent correction → prompt "What capability would have prevented this?"
+
+## Done Criteria
+
+- [ ] The pre-change reproduction command and failing output are recorded.
+- [ ] The missing capability type and selection evidence are recorded.
+- [ ] The same reproduction command passes after the change.
+- [ ] The related deterministic test or guard passes.
+- [ ] The capability log contains status and verification evidence.

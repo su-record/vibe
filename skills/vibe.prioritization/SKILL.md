@@ -10,6 +10,13 @@ chain-next: [vibe.create-prd]
 
 # Prioritization Frameworks Reference
 
+## Done Criteria
+
+- [ ] 선택한 framework와 선택 근거가 기록되어 있다.
+- [ ] 모든 평가 대상에 framework의 필수 입력값이 있다.
+- [ ] 정의된 산식으로 점수가 계산되어 있다.
+- [ ] 최종 정렬 순서와 동점 처리 기준이 명시되어 있다.
+
 > Based on the Product Frameworks Compendium from [Product Compass](https://www.productcompass.pm/p/the-product-frameworks-compendium) by Pawel Huryn (MIT License).
 
 A reference guide to help you select and apply the right prioritization framework for your context.

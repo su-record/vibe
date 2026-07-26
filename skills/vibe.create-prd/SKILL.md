@@ -2,13 +2,20 @@
 name: vibe.create-prd
 invocation: [auto, chain]
 tier: standard
-description: "Create a Product Requirements Document using a comprehensive 8-section template covering problem, objectives, segments, value propositions, solution, and release planning."
+description: "Use when a product idea or research input must become an implementation-ready PRD covering the problem, objectives, segments, value propositions, solution, and release plan."
 triggers: [prd, product requirements, feature spec, requirements document]
 priority: 60
 chain-next: [vibe.user-personas, vibe.prioritization]
 ---
 
 # Create a Product Requirements Document
+
+## Done Criteria
+
+- [ ] PRD 파일이 요청된 출력 경로에 존재한다.
+- [ ] 8개 필수 섹션이 모두 비어 있지 않다.
+- [ ] 목표마다 측정 가능한 성공 지표가 있다.
+- [ ] release 범위와 제외 범위가 명시되어 있다.
 
 > Based on the PRD template from [Product Compass](https://www.productcompass.pm/p/prd-template) by Pawel Huryn (MIT License).
 

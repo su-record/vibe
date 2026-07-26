@@ -1,6 +1,6 @@
 ---
 name: vibe.docs
-description: Generate project documentation — README, architecture docs, user guide, release notes, agent instructions, diagrams, codemaps
+description: Use when README, guides, architecture, release notes, agent instructions, diagrams, or codemaps must be generated or synchronized with the actual codebase.
 argument-hint: "readme, guide, arch, release, agent, diagram, or codemaps"
 user-invocable: true
 ---
@@ -80,11 +80,11 @@ Analyze the codebase and generate a complete README.md:
 
 **Analysis approach:**
 ```
-Read: package.json → name, description, scripts, dependencies
-Glob: src/**/*.ts → module structure
-Grep: pattern="export (function|class|const)" → public API surface
-Grep: pattern="(app|router)\.(get|post|put|delete)" → API endpoints
-Read: CLAUDE.md → project conventions
+Full-file reading: package.json → name, description, scripts, dependencies
+File-pattern search: src/**/*.ts → module structure
+Text search: pattern="export (function|class|const)" → public API surface
+Text search: pattern="(app|router)\.(get|post|put|delete)" → API endpoints
+Full-file reading: CLAUDE.md → project conventions
 ```
 
 ### `/vibe.docs guide` — User Guide
@@ -101,10 +101,10 @@ Output: `docs/GUIDE.md`
 
 **Analysis approach:**
 ```
-Read: package.json → bin, scripts, peerDependencies
-Glob: src/cli/commands/*.ts → CLI command list
-Grep: pattern="throw new|Error\(" → common error scenarios
-Grep: pattern="(process\.env|config)\.\w+" → configuration options
+Full-file reading: package.json → bin, scripts, peerDependencies
+File-pattern search: src/cli/commands/*.ts → CLI command list
+Text search: pattern="throw new|Error\(" → common error scenarios
+Text search: pattern="(process\.env|config)\.\w+" → configuration options
 ```
 
 ### `/vibe.docs arch` — Architecture Documentation
@@ -120,9 +120,9 @@ Output: `docs/ARCHITECTURE.md`
 
 **Mermaid diagram generation:**
 ```
-Glob: src/**/ → module list
-Grep: pattern="^import .+ from" → dependency edges
-Read: CLAUDE.md → architecture notes
+File-pattern search: src/**/ → module list
+Text search: pattern="^import .+ from" → dependency edges
+Full-file reading: CLAUDE.md → architecture notes
 
 Generate:
 graph TD
@@ -290,3 +290,11 @@ Before finalizing any document:
 - [ ] Links and paths are valid
 - [ ] No placeholder text remaining
 - [ ] Consistent with project language (Korean/English)
+
+## Done Criteria
+
+- [ ] The requested document exists at its specified path.
+- [ ] Example commands, paths, and identifiers match the repository.
+- [ ] No placeholder or unverified feature claim remains.
+- [ ] Internal links and file paths resolve to real targets.
+- [ ] The document preserves the project's existing language.

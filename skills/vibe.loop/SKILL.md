@@ -1,11 +1,18 @@
 ---
 name: vibe.loop
-description: Loop engineering — design, install, and run autonomous goal loops whose completion is judged by deterministic gates, not self-report
+description: 반복 작업을 자율 goal loop로 설계·설치·실행하고 결정론적 gate로 완료를 판정해야 할 때 사용한다.
 argument-hint: "design | install | run | status | list [loop-name]"
 user-invocable: true
 ---
 
 # /vibe.loop
+
+## 완료 기준
+
+- [ ] loop 정의에 ANCHOR, ACT, JUDGE, RECORD가 모두 있다.
+- [ ] JUDGE가 exit code, 파일 상태 또는 ledger 값으로 판정된다.
+- [ ] stuck 조건과 max_iterations가 명시되어 있다.
+- [ ] 실행 결과가 pass, stuck, max_iterations 중 하나로 기록된다.
 
 **Loop Engineering** — 사람이 프롬프트하는 대신, 에이전트에게 프롬프트하는 루프를 설계한다.
 

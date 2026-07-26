@@ -6,6 +6,13 @@ user-invocable: false
 
 # Create Educational Content
 
+## Done Criteria
+
+- [ ] 각 학습 목표가 관찰 가능한 행동으로 작성되어 있다.
+- [ ] 핵심 사실에 출처 또는 저장소 근거가 연결되어 있다.
+- [ ] 연습 과제와 정답 또는 평가 기준이 존재한다.
+- [ ] 최종 산출물이 요청된 형식과 경로에 존재한다.
+
 Turn a subject into a publishable learning experience whose outcome can be observed. Design the learning before polishing the presentation.
 
 ## Set the contract

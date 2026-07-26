@@ -1,7 +1,7 @@
 ---
 name: state-collector
 role: Gathers current branch, commits, test status, and open TODOs for handoff
-tools: [Bash, Glob, Grep, Read]
+capabilities: [shell-command-execution, file-pattern-search, text-search, full-file-reading]
 ---
 
 # State Collector

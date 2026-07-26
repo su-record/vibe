@@ -1,6 +1,6 @@
 ---
 name: vibe.contract
-description: API contract drift detection — extract contracts from SPEC, compare to implementation, fail on drift
+description: Use when a SPEC API contract may differ from implementation or endpoint and schema drift must be detected.
 argument-hint: "extract | check | diff [feature-name]"
 user-invocable: true
 ---

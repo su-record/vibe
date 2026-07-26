@@ -2,7 +2,7 @@
 name: vibe.tool-fallback
 invocation: [auto]
 tier: optional
-description: "Tool failure fallback strategies with circuit breaker. Auto-activates on API errors, search failures, timeouts, 429, 5xx, overloaded errors."
+description: "Use when a tool or provider returns API errors, search failures, timeouts, 429, 5xx, or overload responses and a circuit-breaker fallback is required."
 triggers: [search failure, 429, 5xx, overloaded, fallback, circuit breaker, rate limit]
 priority: 60
 ---
@@ -40,7 +40,7 @@ Web Search fails (429, 529, timeout)
   → Check circuit state
   → OPEN? → Skip to alternative immediately
   → CLOSED? → Try context7 for library docs
-  → Still fails? → Claude's built-in knowledge (last resort)
+  → Still fails? → active harness knowledge (last resort, label uncertainty)
 ```
 
 ### External LLM Fails
@@ -49,14 +49,14 @@ Web Search fails (429, 529, timeout)
 VibeOrchestrator.smartRoute({ type, prompt })
   → Primary LLM fails (429, 401, 5xx)
   → Skip to secondary LLM (no retry on rate limit)
-  → Secondary fails → Claude handles directly
+  → Secondary fails → active harness handles directly
 ```
 
 ### File/Code Not Found
 
 ```
-Glob fails → Expand pattern: *.ts → **/*.ts → **/*
-  → Use Grep for content-based search
+File-pattern search fails → Expand pattern: *.ts → **/*.ts → **/*
+  → Use content-based text search
   → Check git log for file history
 ```
 
@@ -83,13 +83,12 @@ Request → Check circuit
                       └─ Use alternative
 ```
 
-## LLM Priority by Task Type
+## Model Selection
 
-| Task Type | Primary → Secondary → Fallback |
-|-----------|-------------------------------|
-| architecture, debugging | GPT → Antigravity → Claude |
-| uiux, code-analysis | Antigravity → GPT → Claude |
-| code-gen, general | Claude only |
+Inherit the active session model by default. Use the configured provider/model
+SSOT for external fallbacks instead of a hardcoded provider order. The only
+permitted override is an `opus` tier for an explicitly requested deep
+architecture review; if unavailable, keep the inherited model.
 
 ## Principles
 

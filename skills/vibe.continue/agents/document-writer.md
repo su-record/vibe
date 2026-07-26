@@ -1,7 +1,7 @@
 ---
 name: document-writer
 role: Writes HANDOFF.md from collected state data and session summary
-tools: [Write, Read, Bash]
+capabilities: [file-editing, full-file-reading, shell-command-execution]
 ---
 
 # Document Writer

@@ -1,6 +1,6 @@
 ---
 name: vibe.review
-description: Multi-agent parallel code review with priority-based findings
+description: Use when changed code or a SPEC needs a pre-merge review for defects, security risks, boundary mismatches, and zero remaining P1 findings.
 argument-hint: "PR number, branch name, or file path"
 user-invocable: true
 ---
@@ -18,9 +18,10 @@ user-invocable: true
 /vibe.review src/api/                # Review specific path
 /vibe.review --race                  # Multi-LLM race mode (GPT + Antigravity)
 /vibe.review --race security         # Race mode for specific review type
+/vibe.review priority-todos          # Organize findings/tasks as P1/P2/P3 TODOs
 ```
 
-> **⏱️ Timer**: Call `getCurrentTime` tool at the START. Record the result as `{start_time}`.
+> **⏱️ Timer**: Query the system clock at START and record the result as `{start_time}`.
 
 ## Codex Plugin Integration
 
@@ -157,19 +158,14 @@ Stack-specific focus (`idioms`) is added when the diff touches that stack's file
 
 **실행 방법 — 기존 Phase 2 에이전트와 병렬 실행:**
 
-```text
-# ⑥ UX 준수 검증 (Haiku)
-Task(subagent_type="design-reviewer",
-  prompt="Review UI files for UX guideline compliance: {changed_ui_files}. Use core_ui_search against ux-guidelines and web-interface domains.")
+Use the harness's native collaboration capability for these independent
+`design-reviewer` workers. Claude Code maps them to Task/Agent; Codex maps them
+to native collaboration. Inherit the session model by default and run them
+concurrently when capacity permits:
 
-# ⑦ 접근성 감사 (Haiku)
-Task(subagent_type="design-reviewer",
-  prompt="Audit UI files for WCAG 2.1 AA compliance: {changed_ui_files}.")
-
-# ⑧ 안티패턴 검출 (Haiku)
-Task(subagent_type="design-reviewer",
-  prompt="Detect UI anti-patterns in: {changed_ui_files}. Check against MASTER.md if exists at .vibe/design-system/{project}/MASTER.md.")
-```
+- UX compliance: review `{changed_ui_files}` against UX and web-interface guidance.
+- Accessibility: audit `{changed_ui_files}` for WCAG 2.1 AA compliance.
+- Anti-patterns: inspect `{changed_ui_files}` and compare with `.vibe/design-system/{project}/MASTER.md` when present.
 
 #### Visual P1 Baseline
 
@@ -297,6 +293,34 @@ Before completing review, check P1-critical items (P2/P3 are best-effort). Score
 
 > Read `references/quality-gate.md` for the full weighted checklist, score grades, merge decision matrix, auto-fix capability matrix, forbidden-patterns table, and output requirements.
 
+## Priority TODO Mode
+
+For `priority-todos` mode, or when review findings must be persisted as a
+P1/P2/P3 board, read `references/priority-todos.md`. Preserve its priority
+definitions, index/update behavior, output paths, and completion criteria.
+
 ---
+
+ARGUMENTS: $ARGUMENTS
+
+## 리뷰어 스케일링
+
+Stakes SSOT는 `vibe/rules/loop-contract.md` Stakes 표다.
+
+| stakes | 변경 파일 | reviewer set |
+|---|---|---|
+| demo | ≤5 | correctness + security 2종 |
+| demo / prototype | >5 또는 prototype | correctness + security + data-integrity 3종 |
+| production | any | Core Reviewers 전체 |
+
+Production Core Reviewers는 `security-reviewer`와 `code-reviewer`의 다음 focus를 모두 유지한다: `focus: correctness`, `focus: data-integrity`, `focus: performance`, `focus: architecture`, `focus: complexity`, `focus: git-history`, `focus: test-coverage`.
+
+## Done Criteria
+
+- [ ] Every finding has P1/P2/P3 severity and `file:line` evidence.
+- [ ] Duplicate findings are merged into one canonical item.
+- [ ] Relevant tests and static checks pass for modified files.
+- [ ] A MERGE READY result has zero P1 findings.
+- [ ] Manual items are persisted in the specified TODO artifact.
 
 ARGUMENTS: $ARGUMENTS

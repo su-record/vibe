@@ -3,12 +3,19 @@ name: vibe.agents-md
 user-invocable: false
 invocation: [auto, chain]
 tier: standard
-description: "Author and optimize AGENTS.md / CLAUDE.md (same doctrine, different filenames): write new context files from scratch, or strip discoverable info and keep only gotchas. Based on Addy Osmani's AGENTS.md principles + Curse of Instructions research. Activates on agents.md, claude.md, context file authoring/optimization."
+description: "Use when authoring or optimizing AGENTS.md or CLAUDE.md — create the context file or remove discoverable detail while preserving project-specific gotchas."
 triggers: [agents.md, claude.md, context file, optimize agents, optimize claude, write claude.md, create claude.md, project instructions]
 priority: 50
 ---
 
 # agents-md — Context File Author & Optimizer
+
+## Done Criteria
+
+- [ ] 요청된 AGENTS.md 또는 CLAUDE.md가 존재한다.
+- [ ] 저장소에서 탐색 가능한 일반 정보가 중복 서술되지 않는다.
+- [ ] 프로젝트 고유 제약과 검증 명령이 남아 있다.
+- [ ] 두 파일을 함께 관리하면 공통 규칙의 의미가 일치한다.
 
 Author and optimize AGENTS.md / CLAUDE.md files. They are the **same doctrine
 under different filenames** — everything below applies to both.
@@ -30,13 +37,8 @@ under-weight the middle. Most important rules → top. Frequently violated rules
 
 Search project root for these files:
 
-```
-Glob: pattern="AGENTS.md"
-Glob: pattern="CLAUDE.md"
-Glob: pattern=".cursorrules"
-Glob: pattern=".github/copilot-instructions.md"
-Glob: pattern=".windsurfrules"
-```
+Use the harness's file-pattern search capability for `AGENTS.md`, `CLAUDE.md`,
+`.cursorrules`, `.github/copilot-instructions.md`, and `.windsurfrules`.
 
 If a target exists → optimize it (Steps 2–3). If none exists and the user wants
 one → author it (Step 1b), then run the same optimization pass on the draft.
@@ -75,7 +77,7 @@ Information the agent can find by exploring the code:
 
 | Type | Example | Discovery Path |
 |------|---------|---------------|
-| Directory structure | "Components are in src/" | `ls`, `Glob` |
+| Directory structure | "Components are in src/" | directory listing or file-pattern search |
 | Tech stack | "Uses React + TypeScript" | `package.json`, file extensions |
 | Phase/progress tables | "Phase 1 ✅, Phase 2 ✅..." | Just history, not actionable guidance |
 | Build/test commands | "Run tests with npm test" | `package.json` scripts |
@@ -134,7 +136,7 @@ Rules:
 - Each gotcha has **bold title + specific do/don't**
 - "Don't use X" is more useful than "We use X"
 - Target under 50 lines total; 60–150 acceptable for complex projects; at 300+ the agent ignores half of it
-- Don't inline everything — Claude Code follows `@docs/FILE.md` references and loads them on demand (progressive disclosure)
+- Don't inline everything — point to `docs/FILE.md` and load it on demand (progressive disclosure)
 
 ## Step 4: CLAUDE.md Separation (if applicable)
 

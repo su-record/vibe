@@ -99,9 +99,9 @@ npm run build && npx vitest run
 
 ---
 
-## Session Memory Keys
+## Optional Session Memory References
 
-The following keys were saved with `core_save_memory`:
+When the active harness provides durable memory, record its references here:
 
 - `{{MEMORY_KEY_1}}` — {{MEMORY_KEY_1_DESCRIPTION}}
 - `{{MEMORY_KEY_2}}` — {{MEMORY_KEY_2_DESCRIPTION}}

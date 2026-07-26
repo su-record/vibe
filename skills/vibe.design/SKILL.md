@@ -1,11 +1,18 @@
 ---
 name: vibe.design
-description: DESIGN.md(시각 품질 SSOT) 생성·검증·드리프트 검사·동기화. Figma 독립.
+description: UI 작업 전에 시각 품질 SSOT가 필요하거나 DESIGN.md를 생성·검증·동기화할 때 사용한다. Figma와 독립적으로 동작한다.
 argument-hint: "init [--from=interview|code|reference|figma] | lint | verify | sync | preview"
 user-invocable: true
 ---
 
 # /vibe.design
+
+## 완료 기준
+
+- [ ] DESIGN.md가 프로젝트 루트에 존재한다.
+- [ ] 선택한 subcommand의 lint 또는 drift 검사가 통과한다.
+- [ ] 색상·타이포그래피·간격 token에 placeholder가 없다.
+- [ ] `init --from=interview`이면 `.vibe/design-context.json`이 존재한다.
 
 **vibe 의 세 번째 SSOT — 시각 품질 계약 문서(`DESIGN.md`)** 의 라이프사이클을 전담한다.
 
@@ -35,7 +42,7 @@ user-invocable: true
 
 ## Process
 
-> **⏱️ Timer**: 시작 시 `getCurrentTime` 호출, `{start_time}` 으로 기록.
+> **⏱️ Timer**: 시작 시 시스템 시각을 조회해 `{start_time}` 으로 기록.
 
 ### Subcommand: `init`
 
@@ -58,9 +65,15 @@ user-invocable: true
 
 #### `--from=interview` 흐름
 
-1. 사용자가 9 섹션을 순차 답변 (브랜드 톤, 컬러, 폰트, 컴포넌트 스타일, 그리드, 그림자/뎁스, 금기, 브레이크포인트, 에이전트 가이드)
-2. 빈 섹션은 템플릿 기본값(주석) 으로 채움
-3. `DESIGN.md` 저장 + `lint` 자동 실행 → P1 없으면 성공
+Read `references/design-context.md` for codebase signal collection, audience,
+brand, aesthetic, constraint questions, `.vibe/design-context.json` schema,
+and update semantics.
+
+1. 기존 코드 신호와 `.vibe/design-context.json`을 먼저 수집한다.
+2. 사용자가 9 섹션을 순차 답변 (브랜드 톤, 컬러, 폰트, 컴포넌트 스타일, 그리드, 그림자/뎁스, 금기, 브레이크포인트, 에이전트 가이드).
+3. design-context의 audience/brand/aesthetic/constraints를 같은 인터뷰에서 수집해 `.vibe/design-context.json`에 저장한다. 기존 파일은 field-level replacement, `createdAt` 보존, `updatedAt` 갱신 규칙을 따른다.
+4. 빈 DESIGN.md 섹션은 템플릿 기본값(주석)으로 채운다.
+5. `DESIGN.md` 저장 + `lint` 자동 실행 → P1 없으면 성공.
 
 #### `--from=code` 흐름
 

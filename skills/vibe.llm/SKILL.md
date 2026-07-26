@@ -1,11 +1,18 @@
 ---
 name: vibe.llm
-description: Refresh available models for claude/openai(api+oauth)/gemini/zai as of now and update the vibe model SSOT
+description: provider별 사용 가능 모델이 바뀌었거나 현재 claude/openai/gemini/zai 모델 목록과 vibe model SSOT를 갱신할 때 사용한다.
 argument-hint: "list | refresh"
 user-invocable: true
 ---
 
 # /vibe.llm
+
+## 완료 기준
+
+- [ ] 각 provider의 모델 조회가 성공 또는 명시적 실패로 기록되어 있다.
+- [ ] model SSOT가 조회 결과와 일치한다.
+- [ ] 중복 model ID가 없다.
+- [ ] SSOT 검증 명령이 통과한다.
 
 현재 시점 기준으로 각 LLM provider(claude, openai API+oauth, gemini, zai)의
 **사용 가능한 모델을 최신화**하고, vibe 가 쓰는 **모델 SSOT(`~/.vibe/config.json` models)**를 갱신한다.

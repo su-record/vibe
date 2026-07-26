@@ -2,7 +2,7 @@
 name: vibe.commit-push-pr
 invocation: [auto]
 tier: optional
-description: "Commit, push, and create PR in one go. Auto-activates on commit, PR, push keywords."
+description: "Use when the user asks to commit completed changes, push the branch, and open a pull request in one workflow."
 triggers: [commit, push, PR, pull request, merge]
 priority: 70
 ---

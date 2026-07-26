@@ -1,6 +1,6 @@
 ---
 name: vibe.analyze
-description: Analyze any target — code, document, website, or Figma design
+description: Use when code, documents, websites, Figma, or project quality must be analyzed into an evidence-backed report.
 argument-hint: '"feature-name" or file.pdf or https://... or --code or --deps or --arch'
 user-invocable: true
 ---
@@ -39,9 +39,9 @@ Determine analysis mode from the argument pattern:
 
 ## File Reading Policy (Mandatory)
 
-- **SPEC/Feature files**: Always use `Read` tool for the full file (never Grep for content)
+- **SPEC/Feature files**: Always use the harness's full-file reading capability (never text search for content)
 - **Source files**: Read the entire file before analyzing (no partial reads)
-- **Grep restriction**: Use only for locating files, not for understanding content
+- **Text-search restriction**: Use only for locating files, not for understanding content
 - **Agent prompts**: Always include "Read target files in full before analyzing"
 - **No partial analysis**: Never judge a file by a few lines around a Grep match
 
@@ -81,22 +81,19 @@ Read `CLAUDE.md`, `package.json`, `pyproject.toml`, etc. to identify tech stack.
 
 #### 3. Explore Related Code (Parallel Sub-Agents)
 
-**MANDATORY: Always use native Explore sub-agents. Never explore in main session.**
+**MANDATORY: Delegate independent exploration through the harness's native collaboration capability. Never explore all branches in the coordinator session.**
 
 > Why: 3 Explore agents return ~600 tokens of summaries to main session.
-> Direct Glob/Grep/Read in main session would add 5-15K tokens of raw content.
+> Direct file-pattern search, text search, and full-file reading in the coordinator session would add 5-15K tokens of raw content.
 
-**Parallel exploration (ALL in ONE message):**
+**Harness adapter:** Claude Code maps each worker to Task/Agent; Codex maps each
+worker to native collaboration. Inherit the session model by default. Dispatch
+the following independent workers concurrently when capacity permits:
 
 ```text
-Agent(subagent_type="Explore", model="haiku",
-  prompt="Find all [FEATURE] related API endpoints. List file paths, HTTP methods, routes, and auth requirements.")
-
-Agent(subagent_type="Explore", model="haiku",
-  prompt="Find all [FEATURE] related services, business logic, and utility functions. Map dependencies.")
-
-Agent(subagent_type="Explore", model="haiku",
-  prompt="Find all [FEATURE] related data models, schemas, and database queries. Document relationships and key fields.")
+- Worker: find all [FEATURE] related API endpoints; list paths, methods, routes, and auth requirements.
+- Worker: find all [FEATURE] related services, business logic, utilities, and dependencies.
+- Worker: find all [FEATURE] related data models, schemas, queries, relationships, and key fields.
 ```
 
 > Read `references/output-templates.md` for the additional "Scale for large projects (6+ related files)" agent prompts.
@@ -160,11 +157,8 @@ Analyze document **structure, key content, quality, and applicability** to:
 #### 3. Analyze Content (Parallel Sub-Agents)
 
 ```text
-Agent(subagent_type="general-purpose", model="haiku",
-  prompt="Read the document at [PATH] and extract: 1) Section structure / table of contents 2) Key concepts and definitions 3) Main arguments or claims. Use the Read tool with pages parameter for PDFs.")
-
-Agent(subagent_type="general-purpose", model="haiku",
-  prompt="Read the document at [PATH] and extract: 1) Actionable recommendations 2) Data points, metrics, examples 3) References to external resources. Use the Read tool with pages parameter for PDFs.")
+- Worker: read [PATH] in full (page ranges for PDFs) and extract section structure, key concepts, definitions, and claims.
+- Worker: read [PATH] in full (page ranges for PDFs) and extract recommendations, data points, examples, and references.
 ```
 
 #### 4. Project Relevance Analysis
@@ -199,20 +193,15 @@ Analyze website **tech stack, UX/UI, SEO, accessibility, and performance** to:
 
 #### 1. Fetch Website
 
-- Use `WebFetch` tool to retrieve HTML
+- Use the harness's web-page retrieval capability to retrieve HTML
 - Fetch key pages (home, main feature pages, login, etc.)
 
 #### 2. Analyze (Parallel Sub-Agents)
 
 ```text
-Agent(subagent_type="general-purpose", model="haiku",
-  prompt="Analyze the HTML from [URL] (use WebFetch). Extract: 1) Tech stack (framework, meta tags, scripts) 2) Page structure (header, nav, main sections, footer) 3) SEO elements (title, meta description, OG tags, structured data)")
-
-Agent(subagent_type="general-purpose", model="haiku",
-  prompt="Analyze the HTML from [URL] (use WebFetch). Extract: 1) Accessibility (ARIA labels, semantic HTML, alt texts, heading hierarchy) 2) Performance hints (script loading, image optimization) 3) Mobile responsiveness (viewport meta, media queries)")
-
-Agent(subagent_type="general-purpose", model="haiku",
-  prompt="Analyze the HTML from [URL] (use WebFetch). Extract: 1) UX patterns (navigation, CTA placement, form design) 2) Design system hints (CSS variables, component patterns) 3) Content strategy (copywriting tone, information hierarchy)")
+- Worker: retrieve and analyze [URL] for tech stack, page structure, and SEO elements.
+- Worker: retrieve and analyze [URL] for accessibility, performance hints, and responsiveness.
+- Worker: retrieve and analyze [URL] for UX patterns, design-system signals, and content strategy.
 ```
 
 #### 3. Figma URL Handling
@@ -228,7 +217,7 @@ If a Figma URL is detected, switch to **Figma-specific analysis**:
 
 #### Fallback
 
-If `WebFetch` fails:
+If web-page retrieval fails:
 1. Retry once with a simplified URL (strip query params)
 2. If still failing, inform user of the error (timeout, DNS, etc.)
 3. Suggest user provide HTML file directly: `/vibe.analyze page.html`
@@ -292,5 +281,14 @@ Each mode has a weighted completeness checklist. Score = sum(checked items × we
 > Read `references/quality-gate.md` for the full mode-specific weighted checklists, score grades, depth-level table, forbidden-patterns table, and quality thresholds (code/deps).
 
 ---
+
+ARGUMENTS: $ARGUMENTS
+
+## Done Criteria
+
+- [ ] The report records the target and selected mode.
+- [ ] Every material finding has a file/line, URL, or source-location citation.
+- [ ] The selected mode's minimum depth and quality score pass.
+- [ ] The specified `.vibe/reports/` output exists.
 
 ARGUMENTS: $ARGUMENTS

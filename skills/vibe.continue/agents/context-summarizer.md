@@ -1,7 +1,7 @@
 ---
 name: context-summarizer
 role: Summarizes decisions made during the session and their rationale
-tools: [Read, Bash]
+capabilities: [full-file-reading, shell-command-execution]
 ---
 
 # Context Summarizer
