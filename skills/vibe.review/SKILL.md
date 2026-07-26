@@ -293,20 +293,6 @@ definitions, index/update behavior, output paths, and completion criteria.
 
 ---
 
-ARGUMENTS: $ARGUMENTS
-
-## 리뷰어 스케일링
-
-Stakes SSOT는 `vibe/rules/loop-contract.md` Stakes 표다.
-
-| stakes | 변경 파일 | reviewer set |
-|---|---|---|
-| demo | ≤5 | correctness + security 2종 |
-| demo / prototype | >5 또는 prototype | correctness + security + data-integrity 3종 |
-| production | any | Core Reviewers 전체 |
-
-Production Core Reviewers는 `security-reviewer`와 `code-reviewer`의 다음 focus를 모두 유지한다: `focus: correctness`, `focus: data-integrity`, `focus: performance`, `focus: architecture`, `focus: complexity`, `focus: git-history`, `focus: test-coverage`.
-
 ## Done Criteria
 
 - [ ] Every finding has P1/P2/P3 severity and `file:line` evidence.

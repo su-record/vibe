@@ -119,7 +119,7 @@ After implementing each scenario, **automatic verification**:
 ## **ULTRAWORK Mode** (ulw) — deprecated alias
 
 > 루프 시맨틱은 `vibe/rules/loop-contract.md`를 따른다. `ultrawork`/`ulw`는 `automationLevel: autonomous` + 병렬 ACT의 deprecated 별칭이다.
-> 전체 Boulder Loop 다이어그램, automation level 정의, confirmation matrix: `references/ultrawork-mode.md`
+> `autonomous`가 vibe.run 안에서 구체적으로 바꾸는 것: `references/automation-level.md`
 
 `ultrawork` 또는 `ulw` 포함 시 vibe.run-specific 동작:
 - 병렬 탐색 — 하네스의 네이티브 서브에이전트를 **동시 슬롯 한도까지** 스폰 (CC: 한 메시지에 3개 이상). 슬롯이 부족하면 개수를 줄이거나 순차 실행하되 탐색 항목을 버리지 않는다
@@ -142,16 +142,16 @@ After implementing each scenario, **automatic verification**:
 
 Every `/vibe.run` invocation must explicitly initialize `.vibe/metrics/run-ledger.json` (fields: `runStarted`, `runFeature`, `verifyPassed`, `verifyAt`) and reset `verifyPassed` to `false`. Before completion, invoke `/vibe.verify`; its `verify-ledger.js` step must record `verifyPassed`, `verifyAt`, and command evidence, then read the ledger back and enforce `verifyPassed === true && verifyAt > runStarted`. Stop/auto-commit hooks may warn or short-circuit this sequence when available, but they are acceleration only and never the correctness basis.
 
-### Interactive Checkpoints
+### Interactive Checkpoints (`--interactive` 전용)
 
-Checkpoints are decision gates inserted at critical points. At L3/L4, most are **auto-resolved** using the default option.
+> ⚠️ **기본 실행에서는 발화하지 않는다.** SPEC 승인이 유일한 의무적 사람 개입이라는 loop-contract 계약을 깨지 않기 위해, 아래 체크포인트는 사용자가 `--interactive` 를 준 경우에만 사람에게 묻는다. 그 외에는 표의 기본 옵션으로 **자동 해소하고 기록만 남긴다** (`automationLevel` 값과 무관).
 
-| Type | When It Fires | Default Option |
+| Type | 발화 시점 | 기본 옵션 |
 |------|--------------|----------------|
-| `requirements_confirm` | Before starting Phase 1 | Confirm (a) |
-| `architecture_choice` | When architecture approach is ambiguous | Clean/balanced (b) |
-| `implementation_scope` | Before any large scope change (6+ files) | Approve (a) |
-| `fix_strategy` | When critical issues are found during quality gate | Fix all (a) |
+| `requirements_confirm` | Phase 1 시작 전 | Confirm (a) |
+| `architecture_choice` | 아키텍처 접근이 모호할 때 | Clean/balanced (b) |
+| `implementation_scope` | 큰 범위 변경 전 (6+ 파일) | Approve (a) |
+| `fix_strategy` | 품질 게이트에서 critical 발견 시 | Fix all (a) |
 
 Checkpoint format example:
 ```

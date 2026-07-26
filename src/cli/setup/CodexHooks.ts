@@ -19,6 +19,8 @@ export interface CodexHooksConfig {
     PreToolUse: CodexHookEntry[];
     PostToolUse: CodexHookEntry[];
     Stop: CodexHookEntry[];
+    /** CC 의 context_window_* Notification 등가물 — Codex 에는 임계치 알림이 없다 */
+    PreCompact: CodexHookEntry[];
   };
 }
 
@@ -42,6 +44,7 @@ export function buildCodexHooksConfig(coreDir: string = getCoreConfigDir()): Cod
       PreToolUse: [hookEntry(normalizedCoreDir, 'PreToolUse')],
       PostToolUse: [hookEntry(normalizedCoreDir, 'PostToolUse')],
       Stop: [hookEntry(normalizedCoreDir, 'Stop')],
+      PreCompact: [hookEntry(normalizedCoreDir, 'PreCompact')],
     },
   };
 }

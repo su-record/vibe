@@ -77,13 +77,13 @@ user-invocable: true
 
 ### Phase 1-b: Stakes 분류 (태스크 무게)
 
-의도와 별개로 태스크의 **무게(stakes)** 를 분류한다 — 매핑 SSOT: `vibe/rules/loop-contract.md`의 Stakes 표.
+의도와 별개로 태스크의 **무게(stakes)** 를 분류한다 — 매핑 SSOT: `vibe/rules/loop-contract.md`의 Stakes 표. 아래 표는 디스패처가 다른 파일을 로드하지 않고 판정할 수 있도록 둔 사본이며, **SSOT 와 문구가 어긋나면 SSOT 가 이긴다** (드리프트는 `stakes-contract.test.ts` 가 CI 에서 차단한다).
 
 | stakes | 판정 신호 | 적용 프로파일 |
 |---|---|---|
 | `demo` | 명시 키워드(데모·일회성·실험·테스트용·throwaway·토이), 닫힌 표현(그냥·간단히·빠르게·한 줄만·quick·just — 보조 신호), 기존 프로젝트 코드와 무관한 신규 폴더, `.vibe/config.json` 없는 임시 디렉토리 | `--max-iter 1` + 리뷰 1패스 + **검증 스크립트 신규 생성 금지** |
-| `prototype` | 검증용 초기 버전 명시, 배포 대상 아님 | demo 와 동일 프로파일 |
-| `production` | 기본값 — 신호 없음 | 기존 기본 동작 (수렴 루프, 기본 리뷰어 셋) |
+| `prototype` | 검증용 초기 버전 명시, 유지보수 가능성 있으나 배포 대상 아님 | demo 와 동일 프로파일 |
+| `production` | 기본값 — 신호 없음·**상충 포함** | 기존 기본 동작 (수렴 루프, 기본 리뷰어 셋) |
 
 - **불확실하면 상향한다** (production). 신호가 상충하면 SPEC 승인 메시지에 stakes 확인 질문 1개를 편승시킨다 — 별도 확인 왕복을 만들지 않는다.
 - **닫힌 표현은 보조 신호** — 기존 프로젝트 코드 위 작업에서 닫힌 표현만 있으면(명시 키워드·임시 디렉토리 없음) 단독 하향하지 않고 상충으로 간주해 편승 질문으로 확정한다 (SSOT: `vibe/rules/loop-contract.md`).

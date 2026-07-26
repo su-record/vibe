@@ -72,6 +72,43 @@ describe('D1 — vibe 디스패처: stakes 분류 규칙', () => {
   });
 });
 
+/**
+ * 디스패처의 Stakes 표는 **의도적 사본**이다 — 모델이 다른 파일을 로드하지 않고
+ * 판정할 수 있어야 하므로 D1 이 본문 존재를 요구한다. 문제는 사본이 조용히
+ * 드리프트한다는 것이고, 실제로 그런 일이 있었다:
+ *
+ *   SSOT     `production` | 기본값 — 신호 없음·상충 포함
+ *   사본     `production` | 기본값 — 신호 없음            ← "상충 포함" 소실
+ *
+ * 신호가 상충할 때 상향(production)하지 않으면 리뷰어 셋과 max_iterations 가
+ * 통째로 축소된다. 사본을 허용하는 대신 드리프트를 CI 에서 막는다.
+ */
+describe('D1/D2 — Stakes 사본 드리프트 가드', () => {
+  const dispatcher = read('skills/vibe/SKILL.md');
+  const ssot = read('vibe/rules/loop-contract.md');
+
+  it('상충 신호 → production 상향 규칙이 SSOT 와 사본 양쪽에 있다', () => {
+    expect(ssot, 'SSOT production 행에 "상충" 누락').toMatch(/`production`[^\n]*상충/);
+    expect(dispatcher, '디스패처 사본 production 행에 "상충" 누락').toMatch(/`production`[^\n]*상충/);
+  });
+
+  it('prototype 판정 신호가 SSOT 와 사본 양쪽에서 유지보수 가능성을 언급한다', () => {
+    expect(ssot).toMatch(/`prototype`[^\n]*유지보수 가능성/);
+    expect(dispatcher).toMatch(/`prototype`[^\n]*유지보수 가능성/);
+  });
+
+  it('사본이 SSOT 우선임을 명시한다 (충돌 시 판단 근거)', () => {
+    expect(dispatcher).toMatch(/SSOT 가 이긴다|SSOT가 이긴다/);
+  });
+
+  it('세 stakes 값의 판정 신호가 양쪽에 모두 존재한다', () => {
+    for (const level of ['`demo`', '`prototype`', '`production`']) {
+      expect(ssot, `SSOT 에 ${level} 누락`).toContain(level);
+      expect(dispatcher, `사본에 ${level} 누락`).toContain(level);
+    }
+  });
+});
+
 describe('D3 — vibe.spec: 승인 게이트 stakes 편승 질문', () => {
   const doc = read('skills/vibe.spec/SKILL.md');
 

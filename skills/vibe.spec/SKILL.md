@@ -83,8 +83,6 @@ trace(`/vibe.trace`)·contract(`/vibe.contract`) 는 사용자가 요청하거�
 
 ---
 
-ARGUMENTS: $ARGUMENTS
-
 ## Bundled implementation
 
 

@@ -95,8 +95,6 @@ Each mode has a weighted completeness checklist. Score = sum(checked items × we
 
 ---
 
-ARGUMENTS: $ARGUMENTS
-
 ## Done Criteria
 
 - [ ] The report records the target and selected mode.

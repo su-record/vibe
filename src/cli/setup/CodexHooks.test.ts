@@ -40,8 +40,10 @@ describe('CodexHooks', () => {
     () => {
     const committed = JSON.parse(fs.readFileSync(localHooksPath, 'utf-8')) as ReturnType<typeof buildCodexHooksConfig>;
 
-    // Verify structure: all 5 events present with adapter command
-    const events = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop'] as const;
+    // Verify structure: every registered event present with adapter command
+    const events = [
+      'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop', 'PreCompact',
+    ] as const;
     for (const event of events) {
       const cmd = committed.hooks[event][0].hooks[0].command;
       expect(cmd).toContain('codex-hook-adapter.js');

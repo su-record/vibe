@@ -162,7 +162,7 @@ Auto-update scenario status with `Last verified` timestamp and quality score.
 
 ### 8. Coverage Verification Loop (RTM)
 
-> 루프 시맨틱은 `vibe/rules/loop-contract.md`를 따른다. 여기서의 exit 기준은 `coveragePercent === 100`. RTM 다이어그램, 출력 형식, 반복 규칙: `references/ralph-loop.md`
+> 루프 시맨틱은 `vibe/rules/loop-contract.md`를 따른다. 여기서의 exit 기준은 `coveragePercent === 100`. RTM 다이어그램, 출력 형식, 반복 규칙: `references/coverage-loop.md`
 
 After ALL phases complete:
 

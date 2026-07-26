@@ -116,6 +116,23 @@ function handleStop() {
   // Turn-complete side effects stay on Codex notify to avoid duplicate commits.
 }
 
+/**
+ * PreCompact → context-save.
+ *
+ * CC 는 `Notification` 의 context_window_80/90/95 matcher 로 임계치마다 저장한다.
+ * Codex 에는 그 알림이 없어 압축 전 체크포인트가 아예 저장되지 않았다 — 압축으로
+ * 컨텍스트가 날아가도 복원 지점이 없었다.
+ *
+ * PreCompact 는 임계치 추정이 아니라 "지금 압축한다"는 확정 신호라 오히려 정확하다.
+ * urgency 는 `high` — 압축이 임박했으므로 medium 보다 강하되, 세션 종료 직전은
+ * 아니므로 critical 은 아니다. context-save 자체가 30s 디바운스를 가지므로
+ * 연속 압축에도 중복 저장되지 않는다.
+ */
+function handlePreCompact() {
+  runScript('context-save.js', ['high']);
+  // stdout 주입 없음 — 압축 직전에 컨텍스트를 더 늘리는 것은 역효과다.
+}
+
 switch (eventName) {
   case 'SessionStart':
     writeAdditionalContext(combinedOutput(runScript('session-start.js')));
@@ -131,6 +148,9 @@ switch (eventName) {
     break;
   case 'Stop':
     handleStop();
+    break;
+  case 'PreCompact':
+    handlePreCompact();
     break;
   default:
     break;
