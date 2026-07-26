@@ -60,6 +60,45 @@ Docs: https://github.com/su-record/vibe
 }
 
 /**
+ * 프로젝트 훅 설치 상태 — 하네스별 한 줄 요약.
+ *
+ * WHY: 훅이 없으면 sentinel-guard·scope-guard·run-ledger·verify 게이트가 전부
+ * 조용히 죽는다. 그런데 `vibe upgrade` 는 전역 자산만 갱신하므로 upgrade 만 쓰는
+ * 사용자는 이 상태에 도달하고도 알 방법이 없었다. 상태 화면이 결정론적 가드의
+ * 생사를 보여주지 않으면 loop-contract 의 전제를 검증할 수단이 없다.
+ */
+export function formatHookStatus(projectRoot: string): string {
+  const lines: string[] = [];
+
+  const claudeSettings = path.join(projectRoot, '.claude', 'settings.local.json');
+  let claudeOk = false;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(claudeSettings, 'utf-8')) as { hooks?: unknown };
+    claudeOk = Boolean(parsed.hooks);
+  } catch { /* 없거나 손상 → 미설치 취급 */ }
+  lines.push(
+    claudeOk
+      ? '  Claude Code         ✓ .claude/settings.local.json'
+      : '  Claude Code         ⬚ not installed (run: vibe update)',
+  );
+
+  // Codex 훅은 Codex 대상 프로젝트에서만 의미가 있다
+  const isCodexProject =
+    fs.existsSync(path.join(projectRoot, '.codex')) ||
+    fs.existsSync(path.join(projectRoot, 'AGENTS.md'));
+  if (isCodexProject) {
+    const codexOk = fs.existsSync(path.join(projectRoot, '.codex', 'hooks.json'));
+    lines.push(
+      codexOk
+        ? '  Codex               ✓ .codex/hooks.json'
+        : '  Codex               ⬚ not installed (run: vibe update)',
+    );
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * 상태 표시 — 모든 시스템 상태를 한 곳에서 확인
  */
 export function showStatus(): void {
@@ -87,6 +126,7 @@ VIBE Status (v${packageJson.version})
 
 Project: ${projectStatus}
 ${isCoreProject ? `Language: ${config.language || 'ko'}\n` : ''}
+${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}
 ${formatLLMStatus()}
   `);
 }

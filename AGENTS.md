@@ -55,7 +55,10 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 | `~/.vibe/config.json` | Global credentials, models (0o600) |
 | `.vibe/config.json` | Project stacks, capabilities — Claude/Codex 공용 SSOT |
 | `.claude/settings.local.json` | Claude Code hooks (auto-generated, don't commit) |
+| `.codex/hooks.json` | Codex native hooks (auto-generated, don't commit) |
 | `~/.codex/config.toml` | Codex `notify` (turn-complete lifecycle hook, auto-installed) |
+
+> ⚠️ 훅은 **프로젝트 로컬** 아티팩트다 — `vibe upgrade` 는 전역 자산만 갱신하므로 upgrade 만 쓰면 훅이 설치되지 않는다. `vibe upgrade` 가 현재 프로젝트의 누락 훅을 복구하고, `vibe status` 가 하네스별 설치 여부를 보고한다.
 
 **`.vibe/config.json` behavior keys** (set per-project to tune gate behavior):
 - `scopeGuard.enabled` / `scopeGuard.mode` — scope fence opt-in (default **off** everywhere — CLI and hooks share this default); mode `warn` (default) or `block`
@@ -72,7 +75,7 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/`update` 시 `.vibe/` 로 이동한다.
 
 ### Dual-Harness Doctrine
-하네스 차이는 경로가 아니라 **인지 방식**(CC=추론 / Codex=직역)에 있다. 원칙: **암묵적 동작에 의존하지 않는다 — 추론은 `/vibe` 디스패처가 앞단에서, skill 본문은 전부 명시적으로.** ("명시성 공통분모 + 추론 앞단"). Hook은 의도별 매핑: 라이프사이클 → Codex `config.toml notify`, 행동 가드 → AGENTS.md soft-hook(직역이라 신뢰성↑). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
+하네스 차이는 경로가 아니라 **인지 방식**(CC=추론 / Codex=직역)에 있다. 원칙: **암묵적 동작에 의존하지 않는다 — 추론은 `/vibe` 디스패처가 앞단에서, skill 본문은 전부 명시적으로.** ("명시성 공통분모 + 추론 앞단"). Hook은 의도별 매핑: 라이프사이클(turn 완료) → Codex `config.toml notify`, 나머지(SessionStart·UserPromptSubmit·Pre/PostToolUse) → Codex 네이티브 hook(`.codex/hooks.json` + `codex-hook-adapter.js`). AGENTS.md soft-hook 은 폐기하지 않고 **훅 미설치 환경의 2차 방어선**으로 유지(직역이라 신뢰성↑). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
 
 ### Gotchas
 - `better-sqlite3` WAL mode — synchronous API
@@ -134,6 +137,6 @@ Public skills use the `vibe.*` namespace and are classified as **entry** / **sta
 
 **Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `AGENTS.md`
 **Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `vibe.test` artifacts live with the vibe install, not with the project
-**Exclude**: `~/.codex/{rules,agents,skills}/`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`
+**Exclude**: `~/.codex/{rules,agents,skills}/`, `.claude/settings.local.json`, `.codex/hooks.json`, `.vibe/{memories,checkpoints,metrics}/`
 
 <!-- VIBE:END -->

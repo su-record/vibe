@@ -34,17 +34,18 @@
 
 CC의 풍부한 hook 모델(PreToolUse/PostToolUse/UserPromptSubmit/Stop)에는 Codex에 완전한 등가물이 없다. hook의 **의도**별로 하네스에 맞는 메커니즘에 매핑한다.
 
+Codex도 이제 네이티브 hook을 지원한다(`codex features list` → `hooks: stable`). vibe는 두 메커니즘을 **모두** 사용하며, hook의 **의도**별로 매핑한다.
+
 | hook 의도 | Claude Code | Codex |
 |---|---|---|
-| 라이프사이클 (turn 완료, 세션 시작/종료) | `Stop` / `SessionStart` hook | `config.toml`의 `notify` 프로그램 (agent-turn-complete 시 JSON 발화) |
-| pre-edit / scope guard | `PreToolUse` (동기 deny) | ❌ 동기 인터셉트 없음 → AGENTS.md 운영 규칙 + notify 기반 사후 검증 |
-| 키워드 디스패치 (ralph/ultrawork) | `UserPromptSubmit` | AGENTS.md 지시 (Codex가 직역 실행) |
-| 금지 패턴 차단 | `PreToolUse` | AGENTS.md 규칙 + 에이전트에게 실행하라 지시한 check 명령 |
+| 라이프사이클 (turn 완료) | `Stop` hook | `config.toml`의 `notify` (agent-turn-complete 시 JSON 발화) |
+| 세션 시작 | `SessionStart` hook | `.codex/hooks.json` → `SessionStart` |
+| pre-edit / scope guard | `PreToolUse` (동기 deny) | `.codex/hooks.json` → `PreToolUse` (동기 deny) |
+| 키워드 디스패치 | `UserPromptSubmit` | `.codex/hooks.json` → `UserPromptSubmit` |
+| 금지 패턴 차단 | `PreToolUse` | `PreToolUse` + AGENTS.md 규칙 (이중 방어) |
 
-**핵심 통찰: Codex의 직역 성향이 AGENTS.md "soft hook"을 신뢰성 있게 만든다.** CC는 soft 지시를 가끔 무시해 hard hook이 필요하지만, Codex는 적힌 대로 실행한다. 따라서:
+**구현**: `hooks/scripts/codex-hook-adapter.js`가 Codex hook 이벤트를 기존 vibe hook 스크립트로 번역하고 deny 결정(JSON)을 보존한다. 설치는 `installProjectCodexHooks()` → `.codex/hooks.json` (프로젝트 로컬, gitignored). 라이프사이클 후처리(auto-commit·devlog)는 `codex-notify.js`가 `notify` 경로로 담당한다.
 
-- **하드 라이프사이클 이벤트** → Codex `config.toml notify` (실제·결정적). `stop-dispatcher` 로직(auto-commit, devlog, review gate) 재사용 가능.
-- **행동 가드** → AGENTS.md 운영 규칙. 직역이라 *오히려* 신뢰성 있음.
-- **진짜 동기 pre-edit 차단은 Codex에서 불가** — 사후 검증을 완화책으로 수용한다.
+**핵심 통찰: Codex의 직역 성향이 AGENTS.md "soft hook"을 신뢰성 있게 만든다.** CC는 soft 지시를 가끔 무시해 hard hook이 필요하지만, Codex는 적힌 대로 실행한다. 따라서 AGENTS.md 운영 규칙은 네이티브 hook이 생긴 뒤에도 **폐기하지 않고 2차 방어선으로 유지한다** — hook이 설치되지 않은 환경(전역 설치만 한 경우, 다른 클론)에서도 가드가 남는다.
 
-> **Action item (미구현):** `.codex/settings.local.json`에 죽은 hook을 쓰는 것을 중단하고, 대신 `.codex/config.toml`에 `notify` 핸들러를 생성해 `stop-dispatcher` 로직을 재사용하며, 가드 규칙은 AGENTS.md로 방출한다.
+> ⚠️ **훅은 "설치돼 있다"고 가정하지 않는다.** 훅은 프로젝트 로컬 아티팩트라 `vibe upgrade` 만으로는 설치되지 않는다(전역 자산만 갱신). `vibe status` 가 하네스별 훅 설치 여부를 보고하고, `vibe upgrade` 는 현재 프로젝트의 누락 훅을 복구한다. 결정론적 가드의 생사는 **관측 가능해야** 한다 — 조용히 죽은 가드는 없는 가드보다 나쁘다.
