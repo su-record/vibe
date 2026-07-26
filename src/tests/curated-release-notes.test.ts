@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyCommits,
   createReleaseNotes,
+  selectChangedSpecPaths,
   selectPreviousSemanticTag,
   type ClassifiedCommits,
 } from '../tools/release/releaseNotes.js';
@@ -124,5 +125,76 @@ describe('release notes CLI', () => {
     const cli = readFileSync(resolve('src/cli/generate-release-notes.ts'), 'utf8');
 
     expect(cli).toContain("'--diff-filter=AMR'");
+  });
+
+  it('detects renames so pure moves can be filtered', () => {
+    const cli = readFileSync(resolve('src/cli/generate-release-notes.ts'), 'utf8');
+
+    expect(cli).toContain("'--name-status'");
+    expect(cli).toContain("'-M'");
+  });
+
+  // pathspec 은 rename 짝을 잘라 R100 을 A 로 만든다 — 경로 필터는 순수 함수 쪽에 있어야 한다
+  it('does not restrict the spec diff with a pathspec', () => {
+    const cli = readFileSync(resolve('src/cli/generate-release-notes.ts'), 'utf8');
+
+    expect(cli).not.toContain("'--', '.vibe/specs'");
+  });
+});
+
+/**
+ * 디렉토리 재편이 릴리즈 노트를 오염시키던 회귀를 막는다:
+ * 레거시 `.claude/vibe/specs/` → `.vibe/specs/` 이전만으로 몇 달 전 feature 가
+ * 신규 Highlights 로 올라갔다 (v3.2.8 준비 중 발견).
+ */
+describe('selectChangedSpecPaths', () => {
+  it('keeps added and modified specs', () => {
+    const nameStatus = ['A\t.vibe/specs/new-feature.md', 'M\t.vibe/specs/existing.md'].join('\n');
+
+    expect(selectChangedSpecPaths(nameStatus)).toEqual([
+      '.vibe/specs/new-feature.md',
+      '.vibe/specs/existing.md',
+    ]);
+  });
+
+  it('drops pure renames — a move is not release content', () => {
+    const nameStatus = 'R100\t.claude/vibe/specs/old-feature.md\t.vibe/specs/old-feature.md';
+
+    expect(selectChangedSpecPaths(nameStatus)).toEqual([]);
+  });
+
+  it('keeps a rename that also changed content, using the new path', () => {
+    const nameStatus = 'R087\t.vibe/specs/before.md\t.vibe/specs/after.md';
+
+    expect(selectChangedSpecPaths(nameStatus)).toEqual(['.vibe/specs/after.md']);
+  });
+
+  it('drops deletions — they do not exist at the current tag', () => {
+    expect(selectChangedSpecPaths('D\t.vibe/specs/removed.md')).toEqual([]);
+  });
+
+  it('ignores non-markdown entries and blank lines', () => {
+    const nameStatus = ['A\t.vibe/specs/notes.txt', '', 'A\t.vibe/specs/real.md'].join('\n');
+
+    expect(selectChangedSpecPaths(nameStatus)).toEqual(['.vibe/specs/real.md']);
+  });
+
+  // 경로 필터가 git pathspec 이 아니라 이 함수에 있어야 하는 이유:
+  // pathspec 으로 제한하면 rename 원본이 밖에 있을 때 git 이 R100 대신 A 를 낸다.
+  it('filters to .vibe/specs/ so the diff can run without a pathspec', () => {
+    const nameStatus = [
+      'M\tsrc/cli/index.ts',
+      'A\tCLAUDE.md',
+      'M\t.vibe/features/thing.feature',
+      'A\t.vibe/specs/real.md',
+    ].join('\n');
+
+    expect(selectChangedSpecPaths(nameStatus)).toEqual(['.vibe/specs/real.md']);
+  });
+
+  it('drops the legacy .claude/vibe/specs source side of a move', () => {
+    const nameStatus = 'R100\t.claude/vibe/specs/a.md\t.vibe/specs/a.md';
+
+    expect(selectChangedSpecPaths(nameStatus)).toEqual([]);
   });
 });
