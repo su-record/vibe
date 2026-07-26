@@ -7,6 +7,8 @@ import {
   applyCodexSkillInvocationPolicies,
   cleanupOptionalSkills,
   cleanupRenamedSkills,
+  copySkillsFiltered,
+  pruneExtraneousSkillFiles,
 } from './fs-utils.js';
 
 function writeSkill(root: string, name: string, frontmatter: string): string {
@@ -185,5 +187,100 @@ describe('cleanupRenamedSkills', () => {
 
     expect(results).toContainEqual(expect.objectContaining({ name: 'spec', action: 'skipped-not-vibe' }));
     expect(fs.existsSync(path.join(globalSkillsDir, 'spec'))).toBe(true);
+  });
+});
+
+/**
+ * 배송본에서 삭제·개명된 스킬 파일이 설치본에 영구 잔존하던 회귀를 막는다.
+ *
+ * 실제 사례(v3.2.10 배포 후 도그푸딩에서 발견): `references/ralph-loop.md` 와
+ * `references/ultrawork-mode.md` 를 내용 모순 때문에 삭제하고 새 파일로 교체했는데,
+ * `vibe upgrade` 후에도 두 구 파일이 `~/.claude/skills/` 와 `~/.codex/skills/` 에
+ * 남아 있었다. 스킬 문서는 모델이 읽는 계약이므로 철회한 계약이 살아있는 셈이었다.
+ */
+describe('pruneExtraneousSkillFiles', () => {
+  function makePair(): { src: string; dest: string } {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-prune-'));
+    const src = path.join(root, 'src');
+    const dest = path.join(root, 'dest');
+    fs.mkdirSync(path.join(src, 'references'), { recursive: true });
+    fs.mkdirSync(path.join(dest, 'references'), { recursive: true });
+    return { src, dest };
+  }
+
+  it('removes a file that no longer ships', () => {
+    const { src, dest } = makePair();
+    fs.writeFileSync(path.join(src, 'SKILL.md'), 'new');
+    fs.writeFileSync(path.join(dest, 'SKILL.md'), 'old');
+    fs.writeFileSync(path.join(dest, 'references', 'ralph-loop.md'), 'retracted');
+
+    const removed = pruneExtraneousSkillFiles(src, dest);
+
+    expect(removed).toContain(path.join('references', 'ralph-loop.md'));
+    expect(fs.existsSync(path.join(dest, 'references', 'ralph-loop.md'))).toBe(false);
+    // 배송본에 있는 파일은 건드리지 않는다
+    expect(fs.existsSync(path.join(dest, 'SKILL.md'))).toBe(true);
+  });
+
+  it('removes a whole directory that no longer ships', () => {
+    const { src, dest } = makePair();
+    fs.mkdirSync(path.join(dest, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(dest, 'agents', 'gone.md'), 'x');
+
+    const removed = pruneExtraneousSkillFiles(src, dest);
+
+    expect(removed).toContain('agents');
+    expect(fs.existsSync(path.join(dest, 'agents'))).toBe(false);
+  });
+
+  it('is a no-op when dest mirrors src', () => {
+    const { src, dest } = makePair();
+    fs.writeFileSync(path.join(src, 'SKILL.md'), 'a');
+    fs.writeFileSync(path.join(dest, 'SKILL.md'), 'a');
+
+    expect(pruneExtraneousSkillFiles(src, dest)).toEqual([]);
+  });
+
+  it('tolerates a missing dest', () => {
+    const { src } = makePair();
+    expect(pruneExtraneousSkillFiles(src, path.join(src, '..', 'nope'))).toEqual([]);
+  });
+});
+
+describe('copySkillsFiltered prunes stale files', () => {
+  it('replaces a renamed reference instead of leaving both', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-copyprune-'));
+    const src = path.join(root, 'pkg-skills');
+    const dest = path.join(root, 'installed-skills');
+
+    // 배송본: 새 이름만 존재
+    fs.mkdirSync(path.join(src, 'vibe.run', 'references'), { recursive: true });
+    fs.writeFileSync(path.join(src, 'vibe.run', 'SKILL.md'), 'skill');
+    fs.writeFileSync(path.join(src, 'vibe.run', 'references', 'automation-level.md'), 'new');
+
+    // 설치본: 구 이름이 남아 있는 상태
+    fs.mkdirSync(path.join(dest, 'vibe.run', 'references'), { recursive: true });
+    fs.writeFileSync(path.join(dest, 'vibe.run', 'SKILL.md'), 'stale');
+    fs.writeFileSync(path.join(dest, 'vibe.run', 'references', 'ultrawork-mode.md'), 'retracted');
+
+    const pruned = copySkillsFiltered(src, dest, ['vibe.run']);
+
+    expect(pruned).toContain(path.join('vibe.run', 'references', 'ultrawork-mode.md'));
+    const refs = fs.readdirSync(path.join(dest, 'vibe.run', 'references'));
+    expect(refs).toEqual(['automation-level.md']);
+  });
+
+  it('does not touch skills outside the allowed list', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-copyprune-scope-'));
+    const src = path.join(root, 'pkg-skills');
+    const dest = path.join(root, 'installed-skills');
+    fs.mkdirSync(path.join(src, 'vibe.run'), { recursive: true });
+    fs.writeFileSync(path.join(src, 'vibe.run', 'SKILL.md'), 'skill');
+    fs.mkdirSync(path.join(dest, 'user-own-skill'), { recursive: true });
+    fs.writeFileSync(path.join(dest, 'user-own-skill', 'SKILL.md'), 'mine');
+
+    copySkillsFiltered(src, dest, ['vibe.run']);
+
+    expect(fs.existsSync(path.join(dest, 'user-own-skill', 'SKILL.md'))).toBe(true);
   });
 });

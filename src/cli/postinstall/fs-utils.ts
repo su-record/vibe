@@ -94,6 +94,48 @@ export function copySkillsOverwrite(src: string, dest: string): void {
 }
 
 /**
+ * 스킬 디렉토리에서 배송본에 없는 파일을 제거한다 (mirror).
+ *
+ * WHY: `copySkillsOverwrite` 는 덮어쓰기만 하므로 배송본에서 **삭제·개명된** 파일이
+ * 설치본에 영구 잔존했다. 실제 사례 — `references/ralph-loop.md` 와
+ * `references/ultrawork-mode.md` 를 내용 모순(존재하지 않는 L0~L4 레벨 체계, SSOT 와
+ * 반대인 stuck 시맨틱) 때문에 삭제하고 새 파일로 교체했는데, `vibe upgrade` 후에도 구
+ * 파일이 남아 모델이 계속 읽을 수 있었다. 스킬 문서는 모델이 읽는 계약이므로, 철회한
+ * 계약이 남아 있는 것은 단순 잔재가 아니라 **잘못된 지시가 살아있는 것**이다.
+ *
+ * 스킬 디렉토리는 vibe 관리 영역이고(배송 파일을 무조건 덮어쓴다) 사용자 편집 대상이
+ * 아니므로 mirror 가 안전하다. 무엇을 지웠는지 호출자가 보고할 수 있도록 반환한다 —
+ * 조용한 삭제를 만들지 않는다.
+ *
+ * @returns 제거된 경로 (dest 기준 상대경로)
+ */
+export function pruneExtraneousSkillFiles(src: string, dest: string): string[] {
+  if (!fs.existsSync(dest)) return [];
+
+  const removed: string[] = [];
+
+  for (const entry of fs.readdirSync(dest, { withFileTypes: true })) {
+    const destPath = path.join(dest, entry.name);
+    const srcPath = path.join(src, entry.name);
+
+    if (!fs.existsSync(srcPath)) {
+      if (entry.isDirectory()) fs.rmSync(destPath, { recursive: true, force: true });
+      else fs.rmSync(destPath, { force: true });
+      removed.push(entry.name);
+      continue;
+    }
+
+    if (entry.isDirectory()) {
+      removed.push(
+        ...pruneExtraneousSkillFiles(srcPath, destPath).map((p) => path.join(entry.name, p)),
+      );
+    }
+  }
+
+  return removed;
+}
+
+/**
  * 레거시 스킬 디렉토리 삭제 (이름 변경된 구 디렉토리 정리)
  */
 export function removeLegacySkills(
@@ -132,8 +174,9 @@ export function copySkillsFiltered(
   src: string,
   dest: string,
   allowedSkills: ReadonlyArray<string>,
-): void {
+): string[] {
   ensureDir(dest);
+  const pruned: string[] = [];
   const entries = fs.readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
@@ -141,7 +184,13 @@ export function copySkillsFiltered(
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     copySkillsOverwrite(srcPath, destPath);
+    // 복사 후 mirror — 배송본에서 사라진 파일이 설치본에 남지 않도록.
+    // 복사 전에 하면 이번에 새로 추가된 파일까지 지웠다 다시 쓰게 된다.
+    pruned.push(
+      ...pruneExtraneousSkillFiles(srcPath, destPath).map((p) => path.join(entry.name, p)),
+    );
   }
+  return pruned;
 }
 
 /**

@@ -128,7 +128,11 @@ export function main(): void {
             console.log(`   optional skill notice [${r.name}]: ${r.reason}`);
           }
         }
-        copySkillsFiltered(skillsSource, sklsDir, GLOBAL_SKILLS);
+        const prunedSkillFiles = copySkillsFiltered(skillsSource, sklsDir, GLOBAL_SKILLS);
+        if (prunedSkillFiles.length > 0) {
+          // 조용히 지우지 않는다 — 철회된 스킬 문서가 남아 있었다는 사실은 보고 대상이다.
+          console.log(`   stale skill files pruned: ${prunedSkillFiles.join(', ')}`);
+        }
         replaceTemplatesInDir(sklsDir);
         if (label === 'codex') applyCodexSkillInvocationPolicies(sklsDir);
       }
