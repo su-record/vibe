@@ -7,7 +7,7 @@ user-invocable: true
 
 # /vibe.review
 
-**Parallel Agent Code Review** - 13+ specialists review simultaneously
+**Parallel Agent Code Review** — focus 별 전문 리뷰어를 **가능한 범위에서 병렬로, 나머지는 순차로** 실행 (production 기본 셋 8종 + 조건부)
 
 ## Usage
 
@@ -139,7 +139,9 @@ run agent security-reviewer  args: "Review {FILES} for vulnerabilities"
 
 Stack-specific focus (`idioms`) is added when the diff touches that stack's files. Collect all results, then dedupe/merge findings before Phase 3.
 
-**Core Reviewers (Always Run — parallel `code-reviewer` instances, one per focus, plus `security-reviewer`):**
+**Core Reviewers (production stakes 의 기본 셋 — `code-reviewer` 를 focus 별로 하나씩 + `security-reviewer`):**
+
+> demo/prototype 에서는 위 리뷰어 스케일링 표의 축소 셋만 실행한다. 이 표는 **production 의 전체 셋**이며 "무조건 8개 전부"라는 뜻이 아니다 — stakes 판정이 셋 크기를 결정한다 (SSOT: `vibe/rules/loop-contract.md` Stakes 표).
 | Agent (focus) | Focus |
 |-------|-------|
 | security-reviewer | OWASP Top 10, vulnerabilities |
@@ -171,7 +173,7 @@ UI 파일이 없으면 이 Phase 전체를 건너뛴다 — reference 도 읽지
 
 **검증 방법: "양쪽 동시 읽기"**
 
-반드시 **생산자와 소비자 코드를 동시에** Read하여 교차 비교한다.
+생산자와 소비자 코드를 **같은 판단 안에서 함께** 읽어 교차 비교한다 (한쪽만 읽고 판단 금지). 두 파일을 동시에 열 도구가 없어도 규칙은 유효하다 — 순서대로 전체를 읽은 뒤 비교하면 된다.
 
 > Read `references/boundary-check.md` for the full verification-area table and checklist.
 
@@ -223,11 +225,15 @@ After agent results:
 
 ### Auto-Fix 실패 시 Codex Rescue (Codex 플러그인 활성화 시)
 
-P1/P2 auto-fix 가 **재시도 1회까지 실패**하면(= 시도 2회), TODO 로 내리기 전에 Codex 에 **1회** 위임한다 — escalation ladder SSOT: 위 Anti-Patterns:
+P1/P2 auto-fix 가 **재시도 1회까지 실패**하면(= 시도 2회), TODO 로 내리기 전에 Codex 에 **1회** 위임한다 — escalation ladder SSOT: 위 Anti-Patterns.
+
+위임 요청 내용(호출 표면 무관):
 
 ```
-/codex:rescue "Fix {priority} issue: {issue-description}. File: {file-path}"
+Fix {priority} issue: {issue-description}. File: {file-path}
 ```
+
+이 요청을 Codex 플러그인이 **실제로 제공하는** rescue/review 명령으로 전달한다. 제공 명령을 확인할 수 없으면 위임을 건너뛰고 바로 TODO 로 내린다 — 존재하지 않는 슬래시 명령을 실행하려 시도하지 않는다 (위 "명령 이름을 가정하지 않는다").
 
 Codex 수정 완료 후 해당 리뷰 에이전트가 재검증.
 

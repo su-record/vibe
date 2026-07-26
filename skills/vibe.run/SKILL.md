@@ -122,7 +122,7 @@ After implementing each scenario, **automatic verification**:
 > 전체 Boulder Loop 다이어그램, automation level 정의, confirmation matrix: `references/ultrawork-mode.md`
 
 `ultrawork` 또는 `ulw` 포함 시 vibe.run-specific 동작:
-- 병렬 탐색 (3+ Task agents 동시)
+- 병렬 탐색 — 하네스의 네이티브 서브에이전트를 **동시 슬롯 한도까지** 스폰 (CC: 한 메시지에 3개 이상). 슬롯이 부족하면 개수를 줄이거나 순차 실행하되 탐색 항목을 버리지 않는다
 - 비대화형 (중단점 없음)
 - Race Review (GPT+Antigravity) 기본 활성화
 - stuck 시 TODO 기록 후 다음 시나리오로 (사용자 질문 없음)
