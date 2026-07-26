@@ -124,11 +124,18 @@ function detectAnyType(lines) {
 
 /**
  * P1: console.log 탐지 — 허용 경로가 아닌 곳의 src/ 코드.
+ *
+ * 코드 확장자에만 적용한다: 마크다운·JSON·텍스트에 인용된 `console.log(` 는
+ * 커밋되면 안 되는 디버그 코드가 아니라 문서상의 예시다. 확장자 게이트가 없으면
+ * SKILL.md 안의 bash/JS 스니펫이 매 편집마다 P1 으로 주입돼, 고칠 수도 없는
+ * 경고가 반복되고 게이트 신뢰도가 떨어진다.
+ *
  * @param {string[]} lines
  * @param {string} filePath
  * @returns {Array<{ line: number, match: string, severity: 'P1' }>}
  */
 function detectConsoleLogs(lines, filePath) {
+  if (!CODE_EXT_RE.test(filePath)) return [];
   if (isConsoleAllowed(filePath)) return [];
   const findings = [];
   lines.forEach((line, i) => {

@@ -153,3 +153,61 @@ describe('console.log 허용 경로 정책', () => {
     expect(isConsoleAllowed('src/infra/lib/MemoryManager.ts')).toBe(false);
   });
 });
+
+// ─── 확장자 게이트 (문서 안의 코드 스니펫 오탐 방지) ──────────────────────
+/**
+ * SKILL.md 등 문서에 인용된 `console.log(` 는 커밋되면 안 되는 디버그 코드가
+ * 아니라 예시다. 확장자 게이트가 없으면 문서를 편집할 때마다 고칠 수도 없는
+ * P1 이 주입되고, 반복되는 오탐이 게이트 신뢰도를 깎는다.
+ *
+ * 재구현이 아니라 실제 code-check.js 의 run() 을 통과시켜 검증한다.
+ */
+describe('console.log 확장자 게이트', () => {
+  let tempDir;
+  let runCodeCheck;
+
+  beforeEach(async () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-codecheck-ext-'));
+    ({ run: runCodeCheck } = await import('../code-check.js'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  /** 허용 glob 에 걸리지 않는 경로를 쓰기 위해 src/feature/ 아래에 만든다 */
+  function writeFixture(name, body) {
+    const dir = path.join(tempDir, 'src', 'feature');
+    fs.mkdirSync(dir, { recursive: true });
+    const full = path.join(dir, name);
+    fs.writeFileSync(full, body);
+    return full;
+  }
+
+  it('마크다운 안의 console.log 는 findings 를 만들지 않는다', async () => {
+    const filePath = writeFixture(
+      'guide.md',
+      ['# Guide', '', '```bash', 'node -e "console.log(1)"', '```', ''].join('\n'),
+    );
+
+    const { findings } = await runCodeCheck({ filePath });
+
+    expect(findings.filter(f => /console\.log/.test(f))).toEqual([]);
+  });
+
+  it('JSON 안의 console.log 문자열도 findings 를 만들지 않는다', async () => {
+    const filePath = writeFixture('fixture.json', '{ "cmd": "console.log(1)" }\n');
+
+    const { findings } = await runCodeCheck({ filePath });
+
+    expect(findings.filter(f => /console\.log/.test(f))).toEqual([]);
+  });
+
+  it('코드 확장자에서는 여전히 탐지한다 (게이트가 탐지 자체를 죽이지 않음)', async () => {
+    const filePath = writeFixture('service.ts', 'export const f = () => { console.log(1); };\n');
+
+    const { findings } = await runCodeCheck({ filePath });
+
+    expect(findings.some(f => /console\.log/.test(f))).toBe(true);
+  });
+});
