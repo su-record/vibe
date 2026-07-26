@@ -41,10 +41,12 @@ Execute **Scenario-Driven Implementation** with automatic quality verification.
 
 ## File Reading Policy (Mandatory)
 
-- **SPEC/Feature 파일**: 반드시 `Read` 도구로 전체 파일을 읽을 것 (Grep 금지)
-- **소스코드 파일**: 구현/수정 대상 파일은 반드시 `Read` 도구로 전체 읽은 후 작업할 것
-- **Grep 사용 제한**: 파일 위치 탐색(어떤 파일에 있는지 찾기)에만 사용. 파일 내용 파악에는 반드시 Read 사용
-- **에이전트 spawn 시**: 프롬프트에 "대상 파일을 Read 도구로 전체 읽은 후 구현하라"를 반드시 포함할 것
+> 규칙은 **전체 읽기**이지 특정 도구 이름이 아니다. 하네스가 제공하는 파일 읽기 수단을 쓴다 — Claude Code 는 `Read` 도구, Codex 는 셸(`cat`/`sed -n`) 등. 도구 이름이 없다고 규칙을 건너뛰지 않는다.
+
+- **SPEC/Feature 파일**: 전체를 읽는다 (검색 결과 일부만 보고 판단 금지)
+- **소스코드 파일**: 구현/수정 대상 파일은 전체를 읽은 후 작업한다
+- **검색 도구 사용 제한**: grep/ripgrep 류는 **파일 위치 탐색**(어떤 파일에 있는지)에만 쓴다. 내용 파악은 전체 읽기로 한다
+- **에이전트 실행 시**: 프롬프트에 "대상 파일을 전체 읽은 후 구현하라"를 포함한다
 
 ## **Scenario-Driven Development (SDD)**
 
@@ -177,7 +179,7 @@ Default: a
 | 1-1 | Phase Isolation Protocol | 3+ phase SPEC 은 phase 단위 격리 + 체크포인트 필수 |
 | 1-2 | SPEC-First Gate | SPEC 에 없는 것을 구현하지 않는다 |
 | 2 | Extract Scenario List | Feature 파일의 시나리오가 작업 단위 |
-| 3 | Scenario-by-Scenario Implementation | 시나리오 하나씩 — 병렬 금지 |
+| 3 | Scenario-by-Scenario Implementation | 기본 순차. **구현→검증 쌍은 시나리오 단위로 쪼개지 않는다**. `autonomous` 에서 서로 의존하지 않는 시나리오는 병렬 가능하되 검증은 시나리오별로 각각 (SSOT: 위 "하네스-안전 증분") |
 | 4 | Brand Assets | 신규 프로젝트만 (`references/brand-assets.md`) |
 | 5 | Race Code Review | `references/race-review.md` |
 | 6 | Quality Report | 자동 생성 |

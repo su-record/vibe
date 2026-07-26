@@ -99,7 +99,7 @@ ARGUMENTS: $ARGUMENTS
 | 입력 | 처리 |
 |---|---|
 | 자연어 요구사항 | 그대로 SPEC 패스의 주 입력 |
-| 📎 첨부 (md/txt/pdf/이미지 등) | Read 도구로 분석 후 요구사항에 병합 |
+| 📎 첨부 (md/txt/pdf/이미지 등) | 하네스의 파일 읽기 수단(CC `Read` 도구 / Codex 셸 등)으로 전체를 읽어 분석 후 요구사항에 병합 |
 | 파일 경로 인자 (PRD 등) | 존재 확인 후 Read — 첨부와 동일 취급 |
 | **레거시 아티팩트** `.vibe/interviews/{feature}.md`, `.vibe/plans/{feature}.md` | 존재하면 **입력 컨텍스트로만** 읽는다. 절대 요구하거나 재생성하지 않는다 — 없어도 정상 경로 |
 

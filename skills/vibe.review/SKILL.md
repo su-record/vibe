@@ -31,7 +31,9 @@ user-invocable: true
 > CODEX_AVAILABLE=$(node "{{VIBE_PATH}}/hooks/scripts/codex-detect.js" 2>/dev/null || echo "unavailable")
 > ```
 >
-> `available`이면 `/codex:review`, `/codex:rescue` 자동 호출. `unavailable`이면 기존 GPT+Antigravity Race 모드로 동작.
+> `available`이면 Codex 플러그인의 review/rescue 명령을 사용하고, `unavailable`이면 GPT+Antigravity Race 모드로 동작한다.
+>
+> ⚠️ **명령 이름을 가정하지 않는다.** 과거 본문은 `/codex:review`·`/codex:rescue` 를 고정 호출했으나, 이는 특정 플러그인 설치본에만 존재하는 표면이다. 실제 사용 가능한 명령을 확인한 뒤 쓰고, 없으면 Race 모드로 폴백한다 — 존재하지 않는 슬래시 명령을 실행하려 시도하지 않는다.
 
 ## Race Mode (v2.6.9)
 
@@ -41,9 +43,11 @@ user-invocable: true
 
 ## File Reading Policy (Mandatory)
 
-- **소스코드 파일**: 리뷰 대상 파일은 반드시 `Read` 도구로 전체 파일을 읽은 후 리뷰할 것 (Grep으로 훑어보기 금지)
-- **Grep 사용 제한**: 파일 위치 탐색(어떤 파일에 있는지 찾기)에만 사용. 파일 내용 파악 및 리뷰에는 반드시 Read 사용
-- **에이전트 spawn 시**: 프롬프트에 "대상 파일을 Read 도구로 전체 읽은 후 분석하라"를 반드시 포함할 것
+> 규칙은 **전체 읽기**이지 특정 도구 이름이 아니다. 하네스가 제공하는 파일 읽기 수단을 쓴다 — Claude Code 는 `Read` 도구, Codex 는 셸(`cat`/`sed -n`) 등. 도구 이름이 없다고 규칙을 건너뛰지 않는다.
+
+- **소스코드 파일**: 리뷰 대상 파일은 전체를 읽은 후 리뷰한다 (검색 결과만 훑어보고 판단 금지)
+- **검색 도구 사용 제한**: grep/ripgrep 류는 **파일 위치 탐색**에만 쓴다. 내용 파악과 리뷰는 전체 읽기로 한다
+- **에이전트 실행 시**: 프롬프트에 "대상 파일을 전체 읽은 후 분석하라"를 포함한다
 - **부분 읽기 금지**: Grep 결과의 주변 몇 줄만 보고 판단하지 말 것. 전체 맥락을 파악해야 정확한 리뷰 가능
 
 ## Priority System
@@ -82,7 +86,7 @@ user-invocable: true
 - "All items must be verified" → Only P1 is mandatory, P2/P3 are best-effort
 - "Found one more issue" (repeated) → Only report P1s not mentioned in previous review
 - Forcing code changes for P3 issues → P3 goes to TODO files only, never force code changes
-- Infinite retries on auto-fix failure → max 1 retry then move to TODO
+- Infinite retries on auto-fix failure → **escalation ladder**: 최초 시도 → 재시도 1회 → (Codex 플러그인 있으면) Codex Rescue 1회 → TODO. 같은 방식으로 계속 재시도하지 않는다
 
 ## Process
 
@@ -114,15 +118,24 @@ Detect project tech stack FIRST before launching reviewers.
 | demo / prototype | >5 또는 prototype | correctness + security + data-integrity **3종** |
 | production | 무관 | 아래 Core Reviewers 전체 (기존 기본 동작 — 불변) |
 
-**Spawn the reviewers as concurrent native subagents in ONE message** — one `code-reviewer` instance per focus plus `security-reviewer`, each scoped to the changed files:
+**Spawn one reviewer per focus, as concurrently as the harness allows** — a `code-reviewer` instance per focus plus `security-reviewer`, each scoped to the changed files.
+
+호출 계약(하네스 무관): "에이전트 `{agent}` 를 인자 `Review {FILES} — focus: {focus}` 로 실행한다"
 
 ```
-Task (code-reviewer): "Review [FILES] — focus: correctness"      (concurrent)
-Task (code-reviewer): "Review [FILES] — focus: data-integrity"   (concurrent)
-Task (code-reviewer): "Review [FILES] — focus: performance"      (concurrent)
-Task (code-reviewer): "Review [FILES] — focus: architecture"     (concurrent)
-Task (security-reviewer): "Review [FILES] for vulnerabilities"   (concurrent)
+run agent code-reviewer      args: "Review {FILES} — focus: correctness"
+run agent code-reviewer      args: "Review {FILES} — focus: data-integrity"
+run agent code-reviewer      args: "Review {FILES} — focus: performance"
+run agent code-reviewer      args: "Review {FILES} — focus: architecture"
+run agent security-reviewer  args: "Review {FILES} for vulnerabilities"
 ```
+
+| 하네스 | 실행 방식 |
+|---|---|
+| Claude Code | 네이티브 서브에이전트를 **한 메시지에 모두** 스폰 (동시 실행) |
+| Codex | 동시 슬롯 한도 내에서 스폰하고, 남는 focus 는 **순차 실행**한다 |
+
+> **동시 슬롯이 focus 수보다 적으면 focus 를 버리지 말고 순차로 돌린다.** 커버리지가 동시성보다 우선이다 — 리뷰 축을 조용히 빠뜨리면 P1 을 놓친다. 스킵한 focus 가 있으면 최종 보고에 명시한다.
 
 Stack-specific focus (`idioms`) is added when the diff touches that stack's files. Collect all results, then dedupe/merge findings before Phase 3.
 
@@ -210,7 +223,7 @@ After agent results:
 
 ### Auto-Fix 실패 시 Codex Rescue (Codex 플러그인 활성화 시)
 
-P1/P2 auto-fix **3회 실패** 시, Codex에 위임:
+P1/P2 auto-fix 가 **재시도 1회까지 실패**하면(= 시도 2회), TODO 로 내리기 전에 Codex 에 **1회** 위임한다 — escalation ladder SSOT: 위 Anti-Patterns:
 
 ```
 /codex:rescue "Fix {priority} issue: {issue-description}. File: {file-path}"
@@ -235,8 +248,8 @@ Save **remaining** findings to `.vibe/todos/`:
 > Read `references/output-template.md` for the full Fix Workflow prompt template.
 
 - Wait for user's choice before proceeding
-- If user chooses VIBE → wait for `/vibe.spec` command
-- If user chooses Plan Mode → proceed with EnterPlanMode
+- If user chooses VIBE → wait for the user to invoke the `vibe.spec` skill
+- If user chooses Plan Mode → enter the harness's plan/read-only mode if it has one (Claude Code: plan mode). **하네스에 등가 모드가 없으면**(Codex 등) 모드 전환 대신 "계획만 제시하고 사용자 승인 전까지 파일을 수정하지 않는다"를 그대로 지킨다 — 없는 모드를 호출하려 시도하지 않는다.
 
 ## Core Tools (Code Analysis)
 
