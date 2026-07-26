@@ -125,7 +125,7 @@ $vibe "<requirement>" [+ 📎 attachments]   # Codex
 | `--max-iter N` | 10 | Iteration cap |
 | `automationLevel` | `confirm` | `confirm` / `autonomous` (non-interactive; stuck → TODO) — `.vibe/config.json` |
 
-**Deprecated aliases** (mapped, not taught): `ralph`→default(no-op) · `verify`→default(no-op) · `quick`→`--max-iter 1` · `ralplan`→loop applied to planning · `ultrawork`/`ulw`→`automationLevel: autonomous` + parallel ACT
+**Deprecated aliases** (mapped, not taught): `ralph`→default(no-op) · `verify`→default(no-op) · `quick`→`--max-iter 1` + min JUDGE · `ralplan`→loop applied to planning · `ultrawork`/`ulw`→`automationLevel: autonomous` + parallel ACT
 
 ## Skill Tiers
 

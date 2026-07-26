@@ -44,6 +44,8 @@
 
 ## Deprecated 별칭
 
-매핑 SSOT 는 `vibe/rules/loop-contract.md` Deprecated 별칭 표다. 여기서 다시 정의하지
-않는다 — 요약하면 `ultrawork`/`ulw` → `automationLevel: autonomous` + 병렬 ACT,
-`ralph`/`verify` → 기본 동작(no-op), `quick` → `--max-iter 1`.
+매핑 SSOT 는 `vibe/rules/loop-contract.md` 의 Deprecated 별칭 표다.
+**여기에 요약도 두지 않는다** — 별칭을 만나면 그 표를 읽어서 환원한다.
+
+> WHY: 이 자리에 요약을 두었더니 `quick` 의 "최소 JUDGE" 가 빠지고 `ralplan` 이 아예
+> 누락돼 SSOT 와 어긋났다. 부분 요약은 전체 사본보다 드리프트를 알아채기 어렵다.

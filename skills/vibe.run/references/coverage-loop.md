@@ -18,6 +18,10 @@
 ```
 모든 phase 종료
    ↓
+   (stuck 판정은 커버리지 수치가 아니라 **발견 해시**로 한다 — 커버리지가 그대로여도
+    남은 항목이 달라졌으면 진전이 있는 것이고, 반대로 커버리지가 올라도 같은 발견이
+    반복되면 막힌 것이다. SSOT: loop-contract stuck 절)
+   ↓
 RTM 생성 → coveragePercent, uncoveredRequirements[]
    ↓
 100%? ──YES──→ 완료 (최종 RTM 보고)
@@ -26,7 +30,7 @@ RTM 생성 → coveragePercent, uncoveredRequirements[]
    ↓
 uncoveredRequirements 를 구현 → RTM 재생성
    ↓
-stuck? (연속 2회 동일 커버리지 — loop-ledger.js check-stuck)
+stuck? (연속 2회 동일 발견(discover/findings) 해시 — loop-ledger.js check-stuck)
    ├─ confirm    → 루프 종료 + 사용자 질문 (값 제공 / sub-100 승인 / 중단)
    └─ autonomous → 루프 종료 + 미달 커버리지를 TODO 로 기록 (질문 없음)
    ↓

@@ -78,4 +78,48 @@ describe('stuck 시맨틱 — 문서 간 정합', () => {
     expect(doc, `${rel}: 미달 처리 규칙 없음`)
       .toMatch(/완료로 기록하지 않는다|as complete|TODO|인박스/);
   });
+
+  /**
+   * stuck 은 **발견 해시**로 판정한다. 커버리지 수치로 바꿔 적으면 판정이 달라진다 —
+   * 커버리지가 그대로여도 남은 항목이 바뀌었으면 진전이고, 반대로 커버리지가 올라도
+   * 같은 발견이 반복되면 막힌 것이다. coverage-loop.md 가 실제로 "연속 2회 동일
+   * 커버리지" 로 적혀 있었다.
+   */
+  it('stuck 판정 기준을 커버리지 수치로 바꿔 적은 문서가 없다', () => {
+    for (const rel of DOCS_STATING_STUCK) {
+      expect(read(rel), `${rel}: stuck 을 커버리지 수치로 판정`)
+        .not.toMatch(/연속 2회 동일 커버리지/);
+    }
+  });
+});
+
+/**
+ * Deprecated 별칭 환원은 loop-contract 의 표가 유일 SSOT 다.
+ * 요약을 여러 곳에 두었더니 `quick` 의 "최소 JUDGE" 가 빠지고 `ralplan` 이
+ * 누락되는 식으로 어긋났다 — 부분 요약은 전체 사본보다 드리프트를 알아채기 어렵다.
+ */
+describe('deprecated 별칭 매핑 정합', () => {
+  const ssot = read('vibe/rules/loop-contract.md');
+
+  it('SSOT 에 별칭 5종이 모두 정의돼 있다', () => {
+    for (const alias of ['`ralph`', '`verify`', '`quick`', '`ralplan`', '`ultrawork`']) {
+      expect(ssot, `SSOT 에 ${alias} 누락`).toContain(alias);
+    }
+  });
+
+  it('SSOT 의 quick 은 --max-iter 1 + 최소 JUDGE 다', () => {
+    expect(ssot).toMatch(/`quick`[^\n]*--max-iter 1[^\n]*최소 JUDGE/);
+  });
+
+  it.each(['CLAUDE.md', 'AGENTS.md'])('%s 의 quick 요약이 최소 JUDGE 를 빠뜨리지 않는다', (rel) => {
+    const doc = read(rel);
+    if (!/`quick`/.test(doc)) return;
+    expect(doc, `${rel}: quick 에 최소 JUDGE 누락`)
+      .toMatch(/`quick`→`--max-iter 1`[^\n]*(?:min JUDGE|최소 JUDGE)/);
+  });
+
+  it('automation-level.md 는 별칭 요약을 두지 않고 SSOT 를 가리킨다', () => {
+    const doc = read('skills/vibe.run/references/automation-level.md');
+    expect(doc).toMatch(/요약도 두지 않는다/);
+  });
 });
