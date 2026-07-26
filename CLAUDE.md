@@ -42,7 +42,7 @@ No `console.log` in commits · No hardcoded strings/numbers · No commented-out 
 Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECORD; exit = gates pass │ stuck │ max_iterations).
 - **Loop until P1 = 0 AND no new findings** — run/verify state is tracked in `.vibe/metrics/run-ledger.json`; stuck is judged by discover-hash (2 identical rounds), not by the model
 - **Narrowing scope**: Round 1 full → Round 2 P1+P2 → Round 3+ P1 only
-- **Stuck** → ask user (fill values / approve sub-100 / abort); `automationLevel: autonomous` records a TODO and continues non-interactively. Never silently proceed sub-100
+- **Stuck** → **ends the loop** in both modes. `confirm` asks the user (fill values / approve sub-100 / abort); `autonomous` records a TODO and moves to the next independent unit non-interactively — it does NOT keep retrying the stuck loop, and never records sub-100 as complete
 - **Changed files only** — never full-project scan
 
 ## Architecture (Non-Obvious)

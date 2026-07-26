@@ -180,7 +180,7 @@ Phase 4: /vibe.verify → 검증
 각 phase 종료 후 JUDGE 단계:
 - 게이트 통과 (P1=0 ∧ verifyPassed) → 루프 종료, Phase 5 보고
 - 게이트 미통과 → RECORD(run-ledger + loop-history.jsonl) 후 다음 ANCHOR로
-- stuck(연속 2회 동일 findings 해시) → `automationLevel: confirm`이면 사용자 질문; `autonomous`이면 TODO 기록 후 루프 종료
+- stuck(연속 2회 동일 findings 해시) → **어느 automationLevel 에서도 루프를 종료한다.** `confirm`이면 사용자 질문, `autonomous`이면 질문 없이 TODO 기록 후 다음 독립 단위로. 미달을 완료로 기록하지 않는다 (SSOT: `vibe/rules/loop-contract.md` stuck 절)
 - max_iterations(기본 10) 도달 → 잔여를 인박스로 이월
 
 ### Phase 5: 종료 보고

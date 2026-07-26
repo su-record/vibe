@@ -10,7 +10,9 @@
 | `automationLevel` | 사람 개입 |
 |---|---|
 | `confirm` (기본) | SPEC 승인 1회 + stuck 시 질문 |
-| `autonomous` | SPEC 승인·stuck 질문 모두 skip (stuck → TODO 기록 후 계속) |
+| `autonomous` | SPEC 승인·stuck 질문 모두 skip |
+
+> ⚠️ **stuck 은 두 값 모두에서 루프를 종료한다.** `autonomous` 가 바꾸는 것은 "사람에게 묻는지" 뿐이며, stuck 난 루프를 더 돌린다는 뜻이 아니다 (2회 연속 동일 발견은 정의상 재시도가 무의미). 미달은 TODO 로 남기고 다음 독립 단위로 넘어가며, **완료로 기록하지 않는다.** SSOT: `vibe/rules/loop-contract.md` stuck 절.
 
 `.vibe/config.json` 에서 설정한다. 루프 자체(ANCHOR→ACT→JUDGE→RECORD)는 두 값에서
 **동일하게** 돌아간다 — automationLevel 은 루프의 유무가 아니라 **질문 여부**를 바꾼다.
@@ -23,7 +25,7 @@
 
 | 항목 | `confirm` | `autonomous` |
 |---|---|---|
-| stuck 처리 | 사용자에게 질문 | TODO 기록 후 다음 시나리오 |
+| stuck 처리 | **루프 종료** + 사용자에게 질문 | **루프 종료** + TODO 기록 후 다음 시나리오 (질문 없음) |
 | ACT 병렬화 | 순차 허용 | 서로 의존하지 않는 시나리오 병렬 |
 | 컨텍스트 85%+ | 경고 | 자동 저장 |
 | 외부 LLM (GPT/Antigravity) | 명시 요청 시 | 활성화돼 있으면 자동 상담 |

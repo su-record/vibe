@@ -31,7 +31,16 @@
 종료 권한은 테스트 exit code·run-ledger·RTM 같은 **결정론적 Judge**에만 있다. Model Judge는 누락·모순·위험을 발견하는 보조 수단이며, 발견을 테스트나 관측 가능한 기준으로 내리기 전에는 차단 근거가 아니다. Human Taste는 공개·배포 시점의 사람 판단으로 남고 루프의 완료 상태를 변경하지 않는다.
 
 ### stuck (결정론)
-연속 2회 회전의 발견(discover/findings) 해시가 동일 → 중단하고 사람에게 (`loop-ledger.js check-stuck`이 판정·기록). "다시 해보면 될 것 같다"는 모델 판단으로 무시 금지.
+연속 2회 회전의 발견(discover/findings) 해시가 동일 → **그 루프는 종료한다** (`loop-ledger.js check-stuck`이 판정·기록). "다시 해보면 될 것 같다"는 모델 판단으로 무시 금지.
+
+**stuck 은 루프 종료이고, 그 다음 행동은 `automationLevel` 이 결정한다** — 이 둘을 섞지 말 것:
+
+| | 루프 | 사람에게 질문 | 그 다음 |
+|---|---|---|---|
+| `confirm` | 종료 | **한다** (값 채우기 / sub-100 승인 / 중단) | 사용자 응답에 따름 |
+| `autonomous` | 종료 | 하지 않음 | TODO 기록 후 **다음 독립 작업 단위로** 진행 (비대화형) |
+
+> `autonomous` 의 "계속" 은 **stuck 난 루프를 더 돌린다는 뜻이 아니다** — 2회 연속 동일 발견은 정의상 재시도가 무의미하다. 같은 목표를 붙잡지 않고 다음 단위로 넘어간다는 뜻이며, 미달은 TODO/인박스에 남는다. 미달 상태를 **완료로 기록하지 않는다.**
 
 ## 파라미터 (기본값)
 
@@ -41,7 +50,7 @@
 | `exit` | 게이트 통과 (P1=0 ∧ verifyPassed) | 종료 기준. coverage 100% 등으로 상향 가능 |
 | `--interactive` | off | 단계별 확인 모드 (회전마다 사람 승인 — 과거의 기본값) |
 | `--max-iter N` | — | 회전 상한 명시 (N=1이면 1회 시도) |
-| `automationLevel` | `confirm` | `confirm`(SPEC·stuck에서 질문) / `autonomous`(기록 후 계속, 비대화형) — `.vibe/config.json` |
+| `automationLevel` | `confirm` | `confirm`(SPEC·stuck에서 질문) / `autonomous`(질문 없이 TODO 기록 후 다음 단위로, 비대화형) — `.vibe/config.json`. **어느 값에서도 stuck 은 루프를 종료한다** (위 stuck 절) |
 | `stakes` | `production` | 태스크 무게. `demo` / `prototype` / `production` — 아래 매핑이 SSOT |
 
 ## Stakes — 태스크 무게 비례 실행 (SSOT)

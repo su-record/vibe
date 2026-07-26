@@ -11,6 +11,10 @@
 모델은 구현이 부분적일 때도 "완료"라고 보고한다. 그래서 완료 판정을 자기보고가 아니라
 **RTM 커버리지 수치**에 맡긴다 — JUDGE 기준은 `coveragePercent === 100`.
 
+> ⚠️ **"루프 종료" ≠ "feature 완료".** stuck·max_iterations 로 루프가 끝나도 커버리지가
+> 100% 미만이면 **미달로 기록**한다. 미달을 완료로 표기하는 것은 이 게이트의 존재 이유를
+> 무효화한다 — 그게 바로 막으려던 자기보고다.
+
 ```
 모든 phase 종료
    ↓
@@ -23,8 +27,8 @@ RTM 생성 → coveragePercent, uncoveredRequirements[]
 uncoveredRequirements 를 구현 → RTM 재생성
    ↓
 stuck? (연속 2회 동일 커버리지 — loop-ledger.js check-stuck)
-   ├─ confirm    → 사용자 질문 (값 제공 / 승인 / 중단)
-   └─ autonomous → TODO 기록 후 완료
+   ├─ confirm    → 루프 종료 + 사용자 질문 (값 제공 / sub-100 승인 / 중단)
+   └─ autonomous → 루프 종료 + 미달 커버리지를 TODO 로 기록 (질문 없음)
    ↓
 max_iterations(기본 10) 도달 → 잔여 인박스 이월
 ```
