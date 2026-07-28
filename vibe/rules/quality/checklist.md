@@ -28,7 +28,7 @@ const typeSafety = {
 ```typescript
 const codeStructure = {
   singleResponsibility: true,    // ✅ Single Responsibility Principle
-  functionUnder30Lines: true,    // ✅ Functions ≤30 lines (recommended), 50 allowed
+  functionUnder50Lines: true,    // ✅ Functions ≤50 lines
   maxNesting3Levels: true,       // ✅ Max nesting 3 levels
   cyclomaticComplexity: 10,      // ✅ Cyclomatic complexity ≤ 10
   cognitiveComplexity: 15,       // ✅ Cognitive complexity ≤ 15
@@ -171,7 +171,7 @@ const bundleOptimization = {
 
 ```text
 [ ] Follow Single Responsibility Principle
-[ ] Keep function length ≤30 lines (max 50)
+[ ] Keep function length ≤50 lines
 [ ] Nesting depth ≤3 levels
 [ ] Extract magic numbers to constants
 [ ] Ensure type safety
@@ -266,7 +266,7 @@ npm run format:check
 ```text
 ✅ Only modified requested scope?
 ✅ No any types?
-✅ Functions ≤30 lines? (max 50)
+✅ Functions ≤50 lines?
 ✅ Nesting ≤3 levels?
 ✅ Error handling implemented?
 ✅ Magic numbers extracted to constants?

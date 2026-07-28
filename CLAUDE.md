@@ -7,12 +7,14 @@
 > - `AGENTS.md` — **Codex** (100% supported)
 >
 > `AGENTS.md` is regenerated from this file via `/vibe.docs agent`. Edit here first.
+> **Translation rule** (so this file never carries both syntaxes): `/vibe.*` → `$vibe.*`, and
+> Codex has no top-level `/vibe.*` slash commands — entrypoints are skills, reachable via `/skills`.
 
 ## Hard Rules
 
 ### Behavior
 - **Modify only requested scope** — Every changed line traces to the user's request
-- **Edit existing files over creating new** — Fix at source
+- **Edit existing files over creating new** — Fix at source. Creating files is correct when the user asks for a new feature, module, or scaffold — an explicit request overrides this default
 - **Preserve existing style** — Match conventions even if you'd do it differently
 - **Respect Ctrl+C / Escape** — Previous task CANCELLED
 - **State assumptions, ask when uncertain** — Don't pick silently when ambiguity exists; push back if a simpler approach exists
@@ -88,11 +90,10 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 
 ## Workflow
 
-Claude Code uses `/vibe` as the **single slash entry point**. Codex exposes the same Vibe entrypoints as skills, so use `$vibe`, `$vibe.spec`, or `/skills` instead of expecting top-level `/vibe.*` slash commands in the Codex popup. Natural-language requirement (+ optional URL/image/PDF/file attachments) → vibe analyzes intent, confirms the SPEC once (the only mandatory human gate), then loops per `vibe/rules/loop-contract.md` until gates pass. `automationLevel: autonomous` skips the confirmation for non-interactive runs.
+`/vibe` is the **single slash entry point**. Natural-language requirement (+ optional URL/image/PDF/file attachments) → vibe analyzes intent, confirms the SPEC once (the only mandatory human gate), then loops per `vibe/rules/loop-contract.md` until gates pass. `automationLevel: autonomous` skips the confirmation for non-interactive runs.
 
 ```
-$vibe "<requirement>" [+ 📎 attachments]   # Codex
-/vibe "<requirement>" [+ 📎 attachments]   # Claude Code
+/vibe "<requirement>" [+ 📎 attachments]
   → Intent classification (new feature / figma-driven / clone / resume / review / regress / contract / scaffold / docs / analyze / harness / test / continue / image)
   → Smart Resume detection (.vibe/{specs,features}/ — legacy interviews/plans 는 입력 컨텍스트로만 인식)
   → SPEC confirmation (1-time approval; skipped on automationLevel: autonomous)
@@ -100,20 +101,20 @@ $vibe "<requirement>" [+ 📎 attachments]   # Codex
 ```
 
 **Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
-- Codex: `$vibe.spec` / Claude Code: `/vibe.spec` — single-pass SPEC (인라인 질문 → SPEC 1패스 → 승인 1회; 구 interview/plan/spec-review 4단계는 폐지)
-- Codex: `$vibe.figma` / Claude Code: `/vibe.figma` — Figma ↔ code (UI track)
-- Codex: `$vibe.run` / Claude Code: `/vibe.run` — SPEC-driven implementation
-- Codex: `$vibe.verify` / Claude Code: `/vibe.verify` — implementation vs SPEC verification
-- Codex: `$vibe.regress` / Claude Code: `/vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
-- Codex: `$vibe.contract` / Claude Code: `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress.
-- Codex: `$vibe.trace` / Claude Code: `/vibe.trace` — Requirements Traceability Matrix
-- Codex: `$vibe.loop` / Claude Code: `/vibe.loop` — loop engineering. Goal loops whose completion is judged by deterministic gates (run-ledger/tests), with stuck detection by discover-hash and a human triage inbox. Loops never push/release.
-- Codex: `$vibe.test` / Claude Code: `/vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to regress. Recommended before every release.
+- `/vibe.spec` — single-pass SPEC (인라인 질문 → SPEC 1패스 → 승인 1회; 구 interview/plan/spec-review 4단계는 폐지)
+- `/vibe.figma` — Figma ↔ code (UI track)
+- `/vibe.run` — SPEC-driven implementation
+- `/vibe.verify` — implementation vs SPEC verification
+- `/vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
+- `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress.
+- `/vibe.trace` — Requirements Traceability Matrix
+- `/vibe.loop` — loop engineering. Goal loops whose completion is judged by deterministic gates (run-ledger/tests), with stuck detection by discover-hash and a human triage inbox. Loops never push/release.
+- `/vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to regress. Recommended before every release.
 
 | Task Size | Approach |
 |---|---|
 | 1–2 files | Plan Mode |
-| 3+ files | `$vibe "<requirement>"` in Codex, `/vibe "<requirement>"` in Claude Code (or the explicit `vibe.spec` entrypoint) |
+| 3+ files | `/vibe "<requirement>"` (or `/vibe.spec` to start at the SPEC phase) |
 
 ## Loop Contract (default execution model)
 

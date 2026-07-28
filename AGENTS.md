@@ -10,7 +10,7 @@
 
 ### Behavior
 - **Modify only requested scope** — Every changed line traces to the user's request
-- **Edit existing files over creating new** — Fix at source
+- **Edit existing files over creating new** — Fix at source. Creating files is correct when the user asks for a new feature, module, or scaffold — an explicit request overrides this default
 - **Preserve existing style** — Match conventions even if you'd do it differently
 - **Respect Ctrl+C / Escape** — Previous task CANCELLED
 - **State assumptions, ask when uncertain** — Don't pick silently when ambiguity exists; push back if a simpler approach exists

@@ -10,7 +10,10 @@
  *   auto-format — 코드 스타일 정규화 (변경 시 finding 반환)
  *   code-check  — 하드룰(any/console.log) 탐지 (additionalContext 주입만, 커밋 게이트 미연동)
  *   auto-test   — 관련 테스트 실행 (debounce 지원)
- *   post-edit   — console.log 감지
+ *
+ * post-edit.js 는 여기서 돌리지 않는다 — console.log 감지는 code-check 가 같은
+ * 허용 경로 규칙(lib/console-allow.js)으로 이미 수행한다. 둘 다 돌리면 허용
+ * 경로에서도 경고가 남는다. post-edit.js 는 antigravity-hooks.json 단독 등록용.
  *
  * 출력 계약 (Claude Code PostToolUse):
  *   findings 있음 → stdout에 JSON hookSpecificOutput 1개 출력, exit 0
@@ -33,7 +36,6 @@ import path from 'path';
 import { run as autoFormat } from './auto-format.js';
 import { run as codeCheck } from './code-check.js';
 import { run as autoTest } from './auto-test.js';
-import { run as postEdit } from './post-edit.js';
 
 // ─── 설정 로딩 ────────────────────────────────────────────────────────
 function loadHookConfig() {
@@ -59,7 +61,6 @@ const steps = [
   { name: 'auto-format', run: autoFormat },
   { name: 'code-check',  run: codeCheck  },
   { name: 'auto-test',   run: autoTest   },
-  { name: 'post-edit',   run: postEdit   },
 ];
 
 const enabledSteps = steps.filter(s => isEnabled(hookConfig, s.name));

@@ -173,7 +173,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 > Default SPEC path is `.vibe/specs/<feature>.md`. `status === 'empty'` must be treated as failed/not-applicable — never as 100% pass.
 
-JUDGE: `coveragePercent === 100` → 루프 종료. stuck(연속 2회 동일 커버리지) → automationLevel confirm이면 사용자 질문; autonomous이면 TODO + done.
+JUDGE: `coveragePercent === 100` → 루프 종료. stuck(연속 2회 동일 발견 해시 — `loop-ledger.js check-stuck`; 커버리지 수치가 아니라 발견으로 판정한다) → **어느 automationLevel 에서도 루프를 종료한다**; confirm이면 사용자 질문, autonomous이면 TODO 기록 후 다음 독립 단위로. 미달 커버리지를 완료로 기록하지 않는다 (SSOT: `vibe/rules/loop-contract.md`).
 
 ---
 

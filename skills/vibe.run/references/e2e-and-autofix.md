@@ -34,7 +34,7 @@ Scenario verification failed
 
 **Stakes 프로파일 (SSOT: `vibe/rules/loop-contract.md` Stakes 표):**
 - `demo`/`prototype` → max_iterations 1, 리뷰 1패스, **검증 스크립트 신규 생성 금지** — 검증은 기존 테스트 러너·브라우저 게이트만 사용한다. 새 verify_*.py / 검증 전용 스크립트 파일을 만들지 않는다.
-- JUDGE 검증 산출물 절제 (모든 stakes): 이번 feature 신규 검증 코드 바이트 합이 신규 구현 코드 바이트 합을 초과하면 (`git diff --numstat` 기준) P2 경고를 run-ledger 에 기록한다. advisory — 게이트 통과 여부는 불변.
+- JUDGE 검증 산출물 절제 (모든 stakes): 이번 feature 신규 검증 코드 줄 수가 신규 구현 코드 줄 수를 초과하면 (`git diff --numstat` 기준) **최종 보고에 P2 경고 1줄**을 적는다. run-ledger 에는 적재하지 않는다 (경고 필드 없음). advisory — 게이트 통과 여부는 불변.
 
 ---
 

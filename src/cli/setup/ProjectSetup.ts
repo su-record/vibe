@@ -126,31 +126,25 @@ function adaptSection(section: string, label: string, dirName: string, targetFil
     .replace(new RegExp(`${dirName.replace('.', '\\.')}\\/CLAUDE\\.md`, 'g'), `${dirName}/${targetFile}`);
 }
 
+/**
+ * Codex 는 top-level `/vibe.*` 슬래시 커맨드가 없다 — 진입점은 skill 이다.
+ *
+ * 행마다 정확 문자열로 치환하면 buildGlobalSection 문구가 바뀔 때 조용히 어긋난다
+ * (감사 2026-07-27: `| 3+ files |` 행과 `Exclude:` 행이 실제로 그렇게 깨져 있었다).
+ * 변환은 규칙 하나로 하고, Codex 전용 안내만 따로 덧붙인다.
+ */
 function adaptCodexInvocation(section: string): string {
   return section
+    .replace(/\/vibe(\.[a-z-]+)?\b/g, (_match, sub?: string) => `$vibe${sub ?? ''}`)
     .replace(
       '## Workflow\n\n| Task | Command |',
       '## Workflow\n\nCodex exposes Vibe as skills, not top-level `/vibe.*` slash commands. Invoke with `$vibe`, `$vibe.spec`, or `/skills`.\n\n| Task | Codex invocation |',
     )
-    .replace('| 3+ files | `/vibe.spec` |', '| 3+ files | `$vibe.spec` or `/skills` -> `vibe.spec` |')
-    .replace(
-      'or asks for a new feature or scaffold, run `/vibe` FIRST — before any direct implementation.',
-      'or asks for a new feature or scaffold, run `$vibe` FIRST — before any direct implementation.',
-    )
-    .replace('| Analyze | `/vibe.analyze` (code, docs, web, Figma) |', '| Analyze | `$vibe.analyze` or `/skills` -> `vibe.analyze` |')
-    .replace('| Harness check | `/vibe.harness` |', '| Harness check | `$vibe.harness` or `/skills` -> `vibe.harness` |')
-    .replace('| Project structure | `/vibe.scaffold` |', '| Project structure | `$vibe.scaffold` or `/skills` -> `vibe.scaffold` |')
-    .replace(
-      'At 85%+ context: save_memory → /new → /vibe.continue (raised from 70% — /new discards KV prefix cache; compact less often to preserve cache reuse)',
-      'At 85%+ context: save_memory → /new → invoke `$vibe.continue` or choose `vibe.continue` from `/skills`. (raised from 70% — /new discards KV prefix cache; compact less often to preserve cache reuse)',
-    )
-    .replace(
-      'Exclude: `~/.codex/{rules,commands,agents,skills}/`, `.codex/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`',
-      'Exclude: `~/.codex/{rules,agents,skills}/`, `.codex/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`',
-    );
+    // 접두만 매칭 — 뒤쪽 항목이 늘어도 깨지지 않는다 (Codex 는 commands/ 를 쓰지 않는다)
+    .replace('Exclude: `~/.codex/{rules,commands,agents,skills}/`', 'Exclude: `~/.codex/{rules,agents,skills}/`');
 }
 
-function adaptToCodex(section: string): string {
+export function adaptToCodex(section: string): string {
   return adaptCodexInvocation(adaptSection(section, 'Codex', '.codex', 'AGENTS.md'));
 }
 const adaptToAntigravity = (section: string): string => adaptSection(section, 'Antigravity', '.gemini', 'GEMINI.md');
@@ -339,8 +333,11 @@ function analyzeProjectStructure(projectRoot: string): ProjectDirs {
   };
 }
 
-/** 전역 VIBE 규약 섹션 (프로젝트 독립) — ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md */
-function buildGlobalSection(language: string): string {
+/**
+ * 전역 VIBE 규약 섹션 (프로젝트 독립) — ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md
+ * export 이유: 하네스별 변환 결과를 테스트가 직접 검증한다 (instruction-drift.test.ts).
+ */
+export function buildGlobalSection(language: string): string {
   const lines: string[] = [];
 
   lines.push('# VIBE');
@@ -383,7 +380,7 @@ function buildGlobalSection(language: string): string {
   lines.push('| Task | Command |');
   lines.push('|------|---------|');
   lines.push('| 1-2 files | Plan Mode |');
-  lines.push('| 3+ files | `/vibe.spec` |');
+  lines.push('| 3+ files | `/vibe` (or `/vibe.spec` to start at the SPEC phase) |');
   lines.push('| Analyze | `/vibe.analyze` (code, docs, web, Figma) |');
   lines.push('| Harness check | `/vibe.harness` |');
   lines.push('| Project structure | `/vibe.scaffold` |');
@@ -411,8 +408,8 @@ function buildGlobalSection(language: string): string {
 
   lines.push('## Git');
   lines.push('');
-  lines.push('Include: `.vibe/{plans,specs,features,todos,config.json,constitution.md}`, `CLAUDE.md`');
-  lines.push('Exclude: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.vibe/{memories,checkpoints,metrics}/`');
+  lines.push('Include: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `CLAUDE.md`');
+  lines.push('Exclude: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.codex/hooks.json`, `.vibe/{memories,checkpoints,metrics}/`');
 
   return lines.join('\n');
 }

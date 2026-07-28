@@ -69,6 +69,9 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 `status: paused` 루프는 즉시 종료. 실행 순서는 **전부 의무**이며 생략 불가:
 
 ```
+0. ANCHOR   node "$HOOKS_DIR/loop-ledger.js" anchor [feature]
+             → missing[] 이 비어 있지 않으면 없는 아티팩트를 기억으로 메우지 않는다.
+               재고정 실패를 인박스에 남기고 종료한다.
 1. 검증     validateLoopDefinition 통과 확인 (위 design 3의 명령) — 실패 시 인박스에 기록 후 종료
 2. 시작 기록  node "$HOOKS_DIR/loop-ledger.js" start <name>
 3. DISCOVER  정의의 discover 지시 실행 → 일거리 목록 산출
@@ -84,10 +87,10 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
              · tests:  정의의 test_command 실행 → exit 0 만 성공
              · none:   판정 생략(보고만). "코드를 보니 잘 된 것 같다"는 판정이 아니다.
 7. 종료 기록  node "$HOOKS_DIR/loop-ledger.js" end <name> <ok|fail|stuck> "<한 줄 요약>"
-8. 인박스    $INBOX 상단에 결과 블록 prepend:
-             ## <name> — <ISO 시각> — <ok|fail|stuck>
-             - 발견: N건 / 처리: M건 / 검증: <기준과 결과>
-             - 리뷰 필요: <항목들 — 없으면 "없음">
+8. 인박스    node "$HOOKS_DIR/loop-ledger.js" inbox <name> <ok|fail|stuck> \
+               "발견: N건 / 처리: M건 / 검증: <기준과 결과>" \
+               "리뷰 필요: <항목들 — 없으면 없음>"
+             → 블록 형식과 최신순 정렬은 명령이 보장한다. 손으로 마크다운을 쓰지 않는다.
 ```
 
 **금지**: `git push`, `gh pr merge`, `npm publish`, 버전 범프, 릴리즈 — 루프는 커밋까지만 가며(auto-commit verify 게이트 통과 시), 그 이상은 인박스를 본 사람이 한다.

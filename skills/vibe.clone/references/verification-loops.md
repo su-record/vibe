@@ -6,7 +6,8 @@
 ## Phase 4: Compile Gate
 
 ```
-No round cap. Loop until compile succeeds (or stuck → ask user).
+No round cap. Loop until compile succeeds (or stuck → end loop; automationLevel decides
+whether the user is asked — see Termination below).
 
 0. Capture baseline (before Phase 3): record existing tsc + build errors
    → Phase 4 only fixes NEW errors
@@ -33,7 +34,8 @@ Termination:
 **⛔ Skipping Phase 5 makes the entire clone "incomplete".**
 
 ```
-No round cap. Loop until P1=0 (or stuck → ask user).
+No round cap. Loop until P1=0 (or stuck → end loop; automationLevel decides whether the
+user is asked — see Termination below).
 Infrastructure: src/infra/lib/browser/ (Puppeteer + CDP) — same as figma Phase 6.
 
 1. Render scaffolded page in dev server at matching viewport
@@ -52,7 +54,8 @@ Narrowing scope:
 Termination:
   ✅ P1=0 AND no new findings → complete
   ⚠️ Stuck: same findings → ask user (resolve / proceed / abort)
-  automationLevel: autonomous → on stuck, record TODO without prompting and complete
+  automationLevel: autonomous → on stuck, record TODO without prompting and end the loop
+     as `stuck` — never record unresolved P1 as complete (SSOT: vibe/rules/loop-contract.md)
 
 Responsive: after MO verification → change viewport → repeat against PC screenshot
 Post-merge (Phase 3C): re-run at BOTH viewports (375×812 vs mo/screenshot.png,

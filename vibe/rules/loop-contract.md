@@ -21,14 +21,34 @@
                Model Judge(advisory-only): 발견을 제안하지만 완료 권한 없음
                Human Taste(release-only): UX·브랜드·제품 감각을 판단하지만 루프 완료 권한 없음
       RECORD   run-ledger + `.vibe/runs/{run-id}/evidence.json` + loop-history.jsonl
-  → 종료(EXIT): 게이트 전부 통과 │ stuck │ max_iterations │ 예산 상한
+  → 종료(EXIT): 게이트 전부 통과 │ stuck │ max_iterations │ 예산 상한 │ 실행 실패(error)
 ```
 
 ### ANCHOR가 컨텍스트 오염 방어인 이유
 루프 상태는 컨텍스트가 아니라 디스크에 산다. 매 회전이 아티팩트에서 다시 시작하므로 컨텍스트가 오염되거나 compact로 소실돼도 루프는 깨지지 않으며, 회전마다 fresh 컨텍스트(서브에이전트)로 돌려도 된다.
 
+**재고정은 명령으로 한다** — 모델의 기억이 아니라 디스크가 답한다:
+
+```bash
+node "$HOOKS_DIR/loop-ledger.js" anchor [feature]
+# → { feature, spec, scope, ledger, latestInbox, missing[] }
+```
+
+`missing` 이 비어 있지 않으면 그 회전은 재고정에 실패한 것이다 — 없는 아티팩트를 기억으로 메우지 않는다. JUDGE·RECORD·stuck 이 전부 명령으로 판정되는데 ANCHOR만 산문 지시로 남아 있으면, 정작 오염 방어의 근거가 되는 단계가 가장 약해진다.
+
 ### Judge 권한 경계
 종료 권한은 테스트 exit code·run-ledger·RTM 같은 **결정론적 Judge**에만 있다. Model Judge는 누락·모순·위험을 발견하는 보조 수단이며, 발견을 테스트나 관측 가능한 기준으로 내리기 전에는 차단 근거가 아니다. Human Taste는 공개·배포 시점의 사람 판단으로 남고 루프의 완료 상태를 변경하지 않는다.
+
+#### P1 은 출처가 둘이다 — exit 기준은 이를 구분한다
+
+"P1" 이 가리키는 것이 두 가지이고, 위 권한 경계는 그중 하나에만 적용된다.
+
+| 출처 | 예 | 성격 | exit 게이트 |
+|---|---|---|---|
+| **측정된 P1** | clone Phase 5 `pixelmatch diffRatio > 0.05`, computed CSS delta > 2px, contract drift, 테스트 실패 | 결정론 | **차단한다** — 게이트 통과 = 측정 P1 0 |
+| **판정된 P1** | `vibe.review` 리뷰어 findings | Model Judge | **단독으로 차단하지 않는다** — 테스트·관측 기준으로 내려야 게이트가 된다 |
+
+판정된 P1 이 남았는데 내릴 기준이 없으면, 그것은 게이트 실패가 아니라 **인박스로 가는 리뷰 항목**이다. 동일한 판정 P1 이 2회 연속 반복되면 stuck 이며 — 완료가 아니다 (아래 stuck 절).
 
 ### stuck (결정론)
 연속 2회 회전의 발견(discover/findings) 해시가 동일 → **그 루프는 종료한다** (`loop-ledger.js check-stuck`이 판정·기록). "다시 해보면 될 것 같다"는 모델 판단으로 무시 금지.
@@ -42,12 +62,25 @@
 
 > `autonomous` 의 "계속" 은 **stuck 난 루프를 더 돌린다는 뜻이 아니다** — 2회 연속 동일 발견은 정의상 재시도가 무의미하다. 같은 목표를 붙잡지 않고 다음 단위로 넘어간다는 뜻이며, 미달은 TODO/인박스에 남는다. 미달 상태를 **완료로 기록하지 않는다.**
 
+### 실행 실패 (error) — stuck 과 다른 종료 사유
+
+stuck 은 **같은 발견이 반복되는** 상태다. 스킬이 로드되지 않거나, 도구가 없거나, 파일이 없거나, 명령이 비정상 종료하는 것은 stuck 이 아니라 **실행 실패**이며 해시 비교로는 잡히지 않는다. 재시도 대상도 아니다 — 환경이 바뀌지 않는 한 결과가 같다.
+
+| | 루프 | 사람에게 질문 | 그 다음 |
+|---|---|---|---|
+| `confirm` | 종료 | **한다** (원인 제시 + 조치 요청 / 건너뛰기 / 중단) | 사용자 응답에 따름 |
+| `autonomous` | 종료 | 하지 않음 | 인박스에 원인 기록 후 **다음 독립 단위로** |
+
+- 실패한 단계를 **같은 방식으로 재시도하지 않는다.** 재시도가 의미 있으려면 무엇이 달라지는지 말할 수 있어야 한다 (`vibe.review` 의 escalation ladder 가 그 예 — 재시도 1회 → 다른 하네스 1회 → TODO).
+- 실행 실패도 **완료가 아니다.** stuck 과 동일하게, 미달 상태를 완료로 기록하지 않는다.
+- 원인은 인박스에 남긴다: `loop-ledger.js inbox <name> fail "<원인 한 줄>"`.
+
 ## 파라미터 (기본값)
 
 | 파라미터 | 기본 | 의미 |
 |---|---|---|
 | `max_iterations` | 10 | 회전 상한. 도달 시 잔여를 인박스로 이월 |
-| `exit` | 게이트 통과 (P1=0 ∧ verifyPassed) | 종료 기준. coverage 100% 등으로 상향 가능 |
+| `exit` | 게이트 통과 (**측정된** P1=0 ∧ verifyPassed) | 종료 기준. coverage 100% 등으로 상향 가능. 판정된 P1 은 위 Judge 권한 경계 표를 따른다 |
 | `--interactive` | off | 단계별 확인 모드 (회전마다 사람 승인 — 과거의 기본값) |
 | `--max-iter N` | — | 회전 상한 명시 (N=1이면 1회 시도) |
 | `automationLevel` | `confirm` | `confirm`(SPEC·stuck에서 질문) / `autonomous`(질문 없이 TODO 기록 후 다음 단위로, 비대화형) — `.vibe/config.json`. **어느 값에서도 stuck 은 루프를 종료한다** (위 stuck 절) |
@@ -69,7 +102,11 @@
 
 ### JUDGE 검증 산출물 절제 (모든 stakes 공통)
 
-JUDGE는 이번 feature의 **신규 생성 파일** 기준으로 검증 코드 총량(테스트·검증 스크립트)과 구현 코드 총량을 `git diff --numstat` 로 비교한다. 검증 코드 바이트 합 > 구현 코드 바이트 합이면 **P2 경고**를 run-ledger 에 기록한다 (restraint 원칙의 프로세스 적용). 경고는 advisory — 게이트 통과 여부를 바꾸지 않는다.
+검증은 실패 비용보다 싸야 한다 — 검증 코드가 구현 코드보다 커지면 그 루프는 남는 장사가 아니다.
+
+JUDGE는 이번 feature의 **신규 생성 파일** 기준으로 검증 코드 총량(테스트·검증 스크립트)과 구현 코드 총량을 `git diff --numstat` 로 비교하고, 검증 코드 줄 수가 구현 코드 줄 수를 넘으면 **최종 보고에 P2 경고 1줄**을 적는다 (restraint 원칙의 프로세스 적용).
+
+> ⚠️ 이 경고는 **보고용이며 어디에도 적재되지 않는다.** run-ledger 스키마(`runId`·`runStarted`·`runFeature`·`verifyPassed`·`verifyAt`·`stopWarned`·`verifyRequired`·`verifyRequiredReason`)에는 경고 필드가 없다 — 기록을 지시하면 갈 곳 없는 지시가 된다. 게이트 통과 여부를 바꾸지 않는다.
 
 ## 금지 (루프 권한 경계)
 

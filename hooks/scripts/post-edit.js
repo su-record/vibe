@@ -10,9 +10,9 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
+import { shouldCheckConsole } from './lib/console-allow.js';
 
 const CONSOLE_LOG_RE = /console\.log\(/;
-const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
 
 /**
  * in-process 진입점 — console.log 감지만 수행.
@@ -25,7 +25,7 @@ export async function run(ctx) {
   try {
     const filePath = ctx.filePath;
 
-    if (filePath && CODE_EXT_RE.test(filePath)) {
+    if (filePath && shouldCheckConsole(filePath)) {
       const resolved = path.resolve(filePath);
       if (existsSync(resolved)) {
         const lines = readFileSync(resolved, 'utf-8').split('\n');

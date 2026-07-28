@@ -33,6 +33,13 @@ const DOCS_STATING_STUCK = [
   'skills/vibe/SKILL.md',
   'skills/vibe.run/references/automation-level.md',
   'skills/vibe.run/references/coverage-loop.md',
+  // 감사 2026-07-27: 아래 둘이 목록에 없어서, 가드가 있는데도 "stuck → 완료 기록"
+  // 위반이 살아남았다. 커버리지 목록 자체가 드리프트의 통로였다.
+  'skills/vibe.run/references/process-steps.md',
+  'skills/vibe.clone/references/verification-loops.md',
+  // 감사 2026-07-28(L1): vibe.review 는 같은 상태를 "stuck" 이 아니라 "converged" 라
+  // 불러서 위 가드를 통째로 비켜갔다 — 단어가 아니라 의미로도 막는다 (아래 수렴 절).
+  'skills/vibe.review/SKILL.md',
 ] as const;
 
 describe('stuck 시맨틱 — SSOT', () => {
@@ -80,6 +87,23 @@ describe('stuck 시맨틱 — 문서 간 정합', () => {
   });
 
   /**
+   * 위 검사는 "미달 처리 규칙을 언급하는가" 만 본다 — 언급하면서 동시에 완료로
+   * 기록하라고 적을 수 있다. 실제로 process-steps.md 는 "TODO + done", clone 의
+   * verification-loops.md 는 "record TODO ... and complete" 로 적혀 있었다.
+   * 위반 문구 자체를 금지한다.
+   */
+  it.each(DOCS_STATING_STUCK)('%s 가 stuck 을 완료로 기록하라고 적지 않는다', (rel) => {
+    const doc = read(rel);
+    if (!/stuck/i.test(doc)) return;
+
+    for (const line of doc.split('\n')) {
+      if (!/stuck/i.test(line)) continue;
+      expect(line, `${rel}: stuck 을 완료로 기록하는 지시`)
+        .not.toMatch(/TODO \+ done|without prompting and complete\b/i);
+    }
+  });
+
+  /**
    * stuck 은 **발견 해시**로 판정한다. 커버리지 수치로 바꿔 적으면 판정이 달라진다 —
    * 커버리지가 그대로여도 남은 항목이 바뀌었으면 진전이고, 반대로 커버리지가 올라도
    * 같은 발견이 반복되면 막힌 것이다. coverage-loop.md 가 실제로 "연속 2회 동일
@@ -98,6 +122,36 @@ describe('stuck 시맨틱 — 문서 간 정합', () => {
  * 요약을 여러 곳에 두었더니 `quick` 의 "최소 JUDGE" 가 빠지고 `ralplan` 이
  * 누락되는 식으로 어긋났다 — 부분 요약은 전체 사본보다 드리프트를 알아채기 어렵다.
  */
+/**
+ * "발견이 안 바뀜" 은 수렴이 아니라 stuck 이다 — 남은 P1 이 0 일 때만 수렴이다.
+ * vibe.review 는 이 상태를 "converged → DONE" 이라 적어, stuck 단어를 쓰지 않는 것만으로
+ * 위 가드를 전부 비켜갔다 (감사 2026-07-28 L1). 부르는 이름과 무관하게 막는다.
+ */
+describe('발견 불변을 P1 조건 없이 완료로 부르지 않는다', () => {
+  const DOCS_STATING_CONVERGENCE = [
+    'skills/vibe.review/SKILL.md',
+    'vibe/rules/loop-contract.md',
+    'CLAUDE.md',
+    'AGENTS.md',
+  ] as const;
+
+  it.each(DOCS_STATING_CONVERGENCE)('%s', (rel) => {
+    for (const line of read(rel).split('\n')) {
+      const claimsDone = /→\s*(?:DONE|완료)|means DONE|= *converged/i.test(line);
+      if (!claimsDone) continue;
+      if (!/unchanged|안 바뀌|동일|no new findings|새 발견/i.test(line)) continue;
+
+      expect(line, `${rel}: 발견 불변만으로 완료 선언 (P1=0 조건 없음)`)
+        .toMatch(/P1 *= *0|P1=0/);
+    }
+  });
+
+  it('vibe.review 가 P1 잔존 시 stuck 임을 명시한다', () => {
+    expect(read('skills/vibe.review/SKILL.md'))
+      .toMatch(/P1 *> *0[^\n]*(?:STUCK|stuck)/);
+  });
+});
+
 describe('deprecated 별칭 매핑 정합', () => {
   const ssot = read('vibe/rules/loop-contract.md');
 

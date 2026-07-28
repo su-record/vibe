@@ -81,7 +81,7 @@ All reference documents are stored globally and specified in `.vibe/config.json`
 - **DRY**: Don't Repeat Yourself
 - **SRP**: Single Responsibility Principle
 - **YAGNI**: You Aren't Gonna Need It
-- **Functions ≤30 lines** (recommended), ≤50 lines (allowed)
+- **Functions ≤50 lines** (SSOT: `CLAUDE.md` Complexity Limits)
 - **Cyclomatic Complexity ≤10**
 - **Cognitive Complexity ≤15**
 

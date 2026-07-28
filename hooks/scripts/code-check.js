@@ -10,11 +10,10 @@
  * (run-ledger verifyRequired)를 태우지 않는다 — 그 게이트는 결정론적
  * 검증 흐름(vibe.verify) 전용이다.
  */
-import { getToolsBaseUrl, PROJECT_DIR, readProjectConfig } from './utils.js';
+import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
 import { readFileSync } from 'fs';
-import path from 'path';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
-import { globToRegExp } from './lib/glob.js';
+import { CODE_EXT_RE, shouldCheckConsole } from './lib/console-allow.js';
 
 const BASE_URL = getToolsBaseUrl();
 
@@ -31,50 +30,6 @@ const P1_DETECTORS = [
 ];
 
 const TS_EXT_RE = /\.(ts|tsx)$/;
-const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
-
-// console.log 기본 허용 경로 (glob 패턴 → 정규식으로 변환)
-const DEFAULT_CONSOLE_ALLOW_GLOBS = [
-  'hooks/scripts/**',
-  'scripts/**',
-  '**/cli/**',
-  '**/*.test.*',
-  '**/*.spec.*',
-  '**/__tests__/**',
-];
-
-/**
- * .vibe/config.json의 qualityCheck.consoleAllow 글로브 목록 로드.
- * 기본 글로브와 병합하여 반환.
- * @returns {RegExp[]}
- */
-function loadConsoleAllowPatterns() {
-  try {
-    const cfg = readProjectConfig();
-    const extra = cfg?.qualityCheck?.consoleAllow;
-    const globs = Array.isArray(extra)
-      ? [...DEFAULT_CONSOLE_ALLOW_GLOBS, ...extra]
-      : DEFAULT_CONSOLE_ALLOW_GLOBS;
-    return globs.map(g => globToRegExp(g));
-  } catch {
-    return DEFAULT_CONSOLE_ALLOW_GLOBS.map(g => globToRegExp(g));
-  }
-}
-
-/**
- * 파일 경로가 console.log 허용 경로인지 판단.
- * @param {string} filePath - 절대 또는 프로젝트 상대 경로
- * @returns {boolean}
- */
-function isConsoleAllowed(filePath) {
-  try {
-    const rel = path.relative(PROJECT_DIR, path.resolve(filePath)).replace(/\\/g, '/');
-    const patterns = loadConsoleAllowPatterns();
-    return patterns.some(re => re.test(rel));
-  } catch {
-    return false;
-  }
-}
 
 /**
  * hook ctx에서 수정된 파일 경로 추출.
@@ -100,15 +55,71 @@ function classifyObservation(files) {
 }
 
 /**
+ * 백슬래시로 이스케이프되지 않은 첫 token 위치. 없으면 -1.
+ * 템플릿 리터럴 안의 \` 를 종료 백틱으로 오인하지 않기 위해 필요하다.
+ * @param {string} str
+ * @param {string} token
+ * @returns {number}
+ */
+function findUnescaped(str, token) {
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === '\\') { i++; continue; }
+    if (str.startsWith(token, i)) return i;
+  }
+  return -1;
+}
+
+/**
+ * 한 줄에서 코드가 아닌 구간(주석·문자열·템플릿 리터럴)을 지운다.
+ * 여러 줄에 걸친 블록 주석·템플릿 리터럴을 잇기 위해 state를 받고 갱신해 돌려준다.
+ * @param {string} line
+ * @param {{ inBlock: boolean, inTemplate: boolean }} state - 제자리 갱신
+ * @returns {string} 코드 구간만 남은 문자열
+ */
+function stripNonCodeLine(line, state) {
+  let rest = line;
+  let code = '';
+  while (rest.length > 0) {
+    if (state.inBlock || state.inTemplate) {
+      const closer = state.inBlock ? '*/' : '`';
+      const end = findUnescaped(rest, closer);
+      if (end === -1) break;
+      if (state.inBlock) state.inBlock = false;
+      else state.inTemplate = false;
+      rest = rest.slice(end + closer.length);
+      continue;
+    }
+    const opener = rest.match(/\/\*|\/\/|`|'|"/);
+    if (!opener) return code + rest;
+    code += rest.slice(0, opener.index);
+    const token = opener[0];
+    rest = rest.slice(opener.index + token.length);
+    if (token === '//') break;
+    if (token === '/*') { state.inBlock = true; continue; }
+    if (token === '`') { state.inTemplate = true; continue; }
+    const close = findUnescaped(rest, token); // 홑/겹따옴표는 줄을 넘지 않는다
+    rest = close === -1 ? '' : rest.slice(close + 1);
+  }
+  return code;
+}
+
+/**
  * P1: any 타입 탐지 — .ts/.tsx 전용, 단어 경계 기반.
+ *
+ * 주석·문자열·템플릿 리터럴은 제외한다: `any` 를 **금지하는** 문서 문장이
+ * 그 자체로 P1 이 되면, 고칠 수도 없는 경고가 그 파일을 편집할 때마다
+ * 주입돼 게이트 신뢰도가 떨어진다 (detectConsoleLogs의 확장자 게이트와 같은 이유).
+ *
  * @param {string[]} lines
  * @returns {Array<{ line: number, match: string, severity: 'P1' }>}
  */
 function detectAnyType(lines) {
   const findings = [];
+  const state = { inBlock: false, inTemplate: false };
   lines.forEach((line, i) => {
+    const code = stripNonCodeLine(line, state);
     for (const re of P1_DETECTORS) {
-      if (re.test(line)) {
+      if (re.test(code)) {
         findings.push({
           line: i + 1,
           match: line.trim(),
@@ -135,8 +146,7 @@ function detectAnyType(lines) {
  * @returns {Array<{ line: number, match: string, severity: 'P1' }>}
  */
 function detectConsoleLogs(lines, filePath) {
-  if (!CODE_EXT_RE.test(filePath)) return [];
-  if (isConsoleAllowed(filePath)) return [];
+  if (!shouldCheckConsole(filePath)) return [];
   const findings = [];
   lines.forEach((line, i) => {
     if (/console\.log\(/.test(line)) {

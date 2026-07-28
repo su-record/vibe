@@ -79,7 +79,11 @@ user-invocable: true
 
 - **P1 = 0 means MERGE READY** — mergeable even with remaining P2/P3
 - **P1 = 0 after auto-fix means DONE** — record P2 auto-fix failures as TODO and stop
-- **Final P1 list unchanged after Review Debate → DONE** — no new findings = converged
+- **P1 = 0 AND final P1 list unchanged after Review Debate → DONE** — converged
+- **P1 > 0 AND final P1 list unchanged → STUCK, not DONE** — 같은 발견이 2회 연속이면
+  루프는 종료하되 **완료로 기록하지 않는다**. `confirm` 이면 사용자에게 묻고, `autonomous`
+  이면 TODO 로 남긴다 (SSOT: `vibe/rules/loop-contract.md` stuck 절). "목록이 안 바뀌었으니
+  수렴했다" 는 남은 P1 을 완료로 포장하는 것이다
 
 ### Anti-Patterns (FORBIDDEN)
 

@@ -44,6 +44,14 @@ describe('D2 — loop-contract.md: Stakes 매핑 SSOT', () => {
     expect(doc).toMatch(/게이트 통과 여부를 바꾸지 않는다/);
   });
 
+  /**
+   * run-ledger 스키마에 경고 필드가 없다 — "run-ledger 에 기록한다" 는 갈 곳 없는 지시였다.
+   * 감사 2026-07-28(L4): 문서를 구현에 맞춰 보고용으로 내렸다.
+   */
+  it('절제 경고를 run-ledger 에 적재한다고 주장하지 않는다', () => {
+    expect(doc).not.toMatch(/P2 경고[^\n]{0,20}run-ledger 에 기록/);
+  });
+
   it('production 기본 동작 불변: max_iterations 기본 10 유지', () => {
     expect(doc).toMatch(/\|\s*`max_iterations`\s*\|\s*10\s*\|/);
   });
