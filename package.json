@@ -21,7 +21,7 @@
     "vibe": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/cli/index.js",
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli/index.js",
     "dev": "tsc --watch",
     "gen:skill-docs": "npx tsx scripts/gen-skill-docs.ts",
     "gen:skill-docs:check": "npx tsx scripts/gen-skill-docs.ts --check",
@@ -33,7 +33,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "prepublishOnly": "pnpm build",
-    "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(()=>{})\"",
+    "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(e=>process.stderr.write('\\u26a0\\ufe0f  vibe postinstall skipped: '+((e&&e.message)||e)+'\\n   Assets and hooks were not installed. Run: npx vibe upgrade\\n'))\"",
     "release": "pnpm version patch && git push origin main --follow-tags"
   },
   "keywords": [
@@ -69,14 +69,15 @@
   "engines": {
     "node": ">=20.12.0"
   },
+  "packageManager": "pnpm@9.15.9",
   "optionalDependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.6",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.38",
     "@ast-grep/napi": "^0.40.5"
   },
   "dependencies": {
     "@clack/prompts": "^1.0.0",
     "better-sqlite3": "^12.9.0",
-    "chalk": "^5.3.0",
+    "chalk": "^5.6.2",
     "glob": "^13.0.1",
     "papaparse": "^5.5.3",
     "ts-morph": "^26.0.0",
@@ -85,11 +86,11 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.10",
     "@types/papaparse": "^5.5.2",
-    "@vitest/coverage-v8": "^4.0.9",
+    "@vitest/coverage-v8": "^4.1.10",
     "ajv": "^8.17.1",
-    "typescript": "^5.5.4",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   },
   "files": [
@@ -99,6 +100,7 @@
     "agents/",
     "skills/",
     "hooks/",
+    "!hooks/scripts/__tests__",
     ".env.example",
     "CLAUDE.md",
     "README.md",
