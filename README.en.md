@@ -254,7 +254,7 @@ Full guides, skill reference, and configuration details are in the [Wiki](https:
 
 ## Requirements
 
-- Node.js >= 18.0.0
+- Node.js >= 20.12.0 (`better-sqlite3` needs Node 20+, `@clack/prompts` needs 20.12+)
 - Claude Code or Codex CLI
 - GPT, Antigravity (optional — second opinions only)
 

@@ -1,5 +1,5 @@
 /**
- * Hook dispatcher library — 여러 hook script를 단일 이벤트에서 병렬 실행.
+ * Hook dispatcher library — 여러 hook script를 단일 이벤트에서 실행.
  *
  * 목적:
  * - stdin을 한 번만 읽어 각 자식에 동일 버퍼로 pipe (중복 파싱/읽기 방지)
@@ -7,14 +7,23 @@
  * - 한 스크립트 실패가 다른 스크립트를 막지 않도록 cascade 격리
  * - PreToolUse 계열: 자식 중 하나라도 exit 2(deny)면 상위에 전파
  *
- * 직렬 → 병렬 전환 (2026-04):
- *   기존 직렬 실행은 tool당 150~300ms 누적 오버헤드를 유발.
- *   PreToolUse 가드는 모두 독립적 검증자이므로 병렬화해도 의미상 문제 없음.
- *   트레이드오프:
- *     - early-deny 낭비: sentinel-guard가 block이어도 pre-tool/scope-guard가
- *       이미 spawn됨. 실측 μs 수준이라 무시.
- *     - stderr 인터리빙: 가드 2개가 동시 block 시 경고 메시지가 섞일 수 있음.
- *       각 메시지는 자체적으로 완결된 라인이라 가독성 문제 없음.
+ * 실행 모델이 둘로 갈린다 — 스텝이 서로 독립인지가 기준:
+ *
+ *   dispatch()          = 순차 (spawn). 유일한 사용처인 Stop 은 스텝끼리
+ *                         부작용을 공유한다(auto-commit 의 git 상태를
+ *                         devlog-gen 이 읽는다). 병렬화하면 auto-commit 의
+ *                         git cascade 와 겹쳐 프로세스가 폭주하고,
+ *                         devlog 가 커밋 이전 상태를 관측한다.
+ *                         회귀 방지: __tests__/stop-dispatcher-sequential.test.js
+ *
+ *   dispatchInProcess() = 병렬 (import). PreToolUse 가드는 모두 독립적
+ *                         검증자라 순서가 의미 없고, 직렬 실행은 tool당
+ *                         150~300ms 누적 오버헤드를 유발한다.
+ *                         트레이드오프:
+ *                           - early-deny 낭비: sentinel-guard가 block이어도
+ *                             pre-tool/scope-guard가 이미 실행됨. 실측 μs 수준.
+ *                           - stderr 인터리빙: 가드 2개가 동시 block 시 경고가
+ *                             섞일 수 있음. 각 메시지가 완결된 라인이라 무해.
  */
 import { spawn } from 'child_process';
 import path from 'path';
@@ -93,7 +102,11 @@ function buildChildEnv(stdinData) {
 }
 
 /**
- * 디스패처 실행 — 활성화된 스텝을 병렬로 spawn.
+ * 디스패처 실행 — 활성화된 스텝을 선언 순서대로 **순차** spawn.
+ *
+ * 순차인 이유는 파일 상단 주석 참고 — 스텝이 git 상태 같은 부작용을 공유한다.
+ * 앞 스텝이 실패해도 다음 스텝은 계속 실행한다(cascade 격리 유지).
+ *
  * @param {Array<{name: string, script: string, args?: string[], denyOnExit2?: boolean, timeoutMs?: number}>} steps
  */
 export async function dispatch(steps) {
@@ -101,12 +114,11 @@ export async function dispatch(steps) {
   const hookConfig = loadHookConfig();
 
   const enabledSteps = steps.filter(s => isEnabled(hookConfig, s.name));
-  const results = await Promise.all(
-    enabledSteps.map(step =>
-      runScript(step.script, step.args || [], stdinData, step.timeoutMs || 30000)
-        .then(code => ({ step, code }))
-    )
-  );
+  const results = [];
+  for (const step of enabledSteps) {
+    const code = await runScript(step.script, step.args || [], stdinData, step.timeoutMs || 30000);
+    results.push({ step, code });
+  }
 
   // 하나라도 deny(exit 2) 반환 → 상위에 전파
   if (results.some(({ step, code }) => step.denyOnExit2 && code === 2)) {

@@ -31,6 +31,7 @@
     "validate:counts": "npx tsx scripts/validate-counts.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "prepublishOnly": "pnpm build",
     "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(()=>{})\"",
     "release": "pnpm version patch && git push origin main --follow-tags"
@@ -66,7 +67,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.12.0"
   },
   "optionalDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.6",
@@ -86,9 +87,10 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/papaparse": "^5.5.2",
+    "@vitest/coverage-v8": "^4.0.9",
     "ajv": "^8.17.1",
     "typescript": "^5.5.4",
-    "vitest": "^4.0.9"
+    "vitest": "^4.1.10"
   },
   "files": [
     "dist/",

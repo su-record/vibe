@@ -5,6 +5,7 @@ node_modules/
 dist/
 mcp/dist/
 *.tgz
+coverage/
 
 # Lock files (npm - unused)
 package-lock.json

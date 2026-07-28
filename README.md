@@ -222,7 +222,7 @@ codex
 
 ## 요구사항
 
-- Node.js >= 18.0.0
+- Node.js >= 20.12.0 (`better-sqlite3` 는 Node 20+, `@clack/prompts` 는 20.12+ 요구)
 - Claude Code 또는 Codex CLI 중 하나
 - GPT, Antigravity (선택 — 세컨드 오피니언 전용)
 
