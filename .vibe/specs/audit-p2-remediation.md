@@ -159,8 +159,13 @@
 |---|---|
 | 변환 함수별 happy path + 경계 케이스 테스트 존재 | 테스트 파일 |
 | SSE 스트림 상태 전이(시작→delta→tool_call→종료) 검증 | 테스트 |
-| `src/infra/lib/codex-proxy.ts` statements 커버리지 60% 이상 | 커버리지 리포트 |
+| **두 번역 계층 모두** 커버 — Anthropic↔OpenAI(Chat Completions)와 Anthropic↔Codex Responses | 테스트 파일의 describe 블록 |
 | 네트워크·포트 바인딩 없이 통과 | 테스트 실행 로그 |
+| 파일 statements 커버리지를 측정해 기록 | 커버리지 리포트 |
+
+> **AC 정정 (2026-07-29, 실측 후)** — 초안의 "statements 60% 이상" 은 측정 없이 잡은 수치였고, 실측 결과 도달 불가능한 기준이었다. 파일 1,143 L 중 번역 계층은 약 500 L 이고 나머지 ~640 L 은 HTTP 서버 기동·요청 라우팅·OAuth 토큰 갱신·async 네트워크 핸들러(`handleStream`, `handleCodexStream`, `collectCodexResponse`, `startProxy`, 셸 함수 생성)로, 이 REQ 가 **명시적으로 범위에서 제외한** 부분이다. 번역 계층을 100% 덮어도 파일 기준으로는 60% 에 닿지 않는다.
+> 측정값: statements **43.19%**, functions **59.42%** (테스트 42개). 26.26% → 43.19% 로 올린 차이는 초안 구현이 놓쳤던 Codex Responses 번역 계층(527-917 L, ~390 L)을 덮은 것이다 — 서버 코드로 오인했던 구간이다.
+> 파일 전체 수치를 게이트로 삼으면 번역 로직이 아니라 서버 부팅 코드를 테스트하도록 유도된다. 그래서 게이트를 "두 번역 계층 모두 커버" 로 바꾸고, 백분율은 측정·기록 대상으로만 남긴다.
 
 #### REQ-audit-p2-remediation-009: `clone-extract.js` 테스트
 1,291 L, 훅 계층 최대 스크립트. 직접 테스트 0건.

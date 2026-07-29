@@ -95,6 +95,10 @@ function extractSystemText(system: string | ContentBlock[] | undefined): string 
   return system.filter(b => b.type === 'text' && b.text).map(b => b.text!).join('\n');
 }
 
+// 아래 변환 함수들은 테스트를 위해 export 한다 — 서버 기동/네트워크와 분리된
+// 순수 변환이라 fixture 로 단독 검증 가능하다 (REQ-audit-p2-remediation-008).
+// 외부 소비자용 API 가 아니다; 공개 진입점은 startProxy 계열이다.
+
 // ─── Content Block Translation ───────────────────────────────
 
 type OContentPart = { type: string; text?: string; image_url?: { url: string } };
@@ -161,7 +165,7 @@ function translateUserMsg(msg: AMessage, result: OMessage[]): void {
 
 // ─── Full Message Array Translation ──────────────────────────
 
-function buildOMessages(system: ARequest['system'], messages: AMessage[]): OMessage[] {
+export function buildOMessages(system: ARequest['system'], messages: AMessage[]): OMessage[] {
   const result: OMessage[] = [];
   const sysText = extractSystemText(system);
   if (sysText) result.push({ role: 'system', content: sysText });
@@ -177,7 +181,7 @@ function buildOMessages(system: ARequest['system'], messages: AMessage[]): OMess
 
 // ─── Tool Definition Translation ─────────────────────────────
 
-function translateTools(
+export function translateTools(
   tools: ARequest['tools'],
 ): Array<Record<string, unknown>> | undefined {
   if (!tools?.length) return undefined;
@@ -187,7 +191,7 @@ function translateTools(
   }));
 }
 
-function translateToolChoice(
+export function translateToolChoice(
   choice: ARequest['tool_choice'],
 ): string | Record<string, unknown> | undefined {
   if (!choice) return undefined;
@@ -201,7 +205,7 @@ function translateToolChoice(
 
 // ─── Build OpenAI Request Body ───────────────────────────────
 
-function buildORequest(req: ARequest, defaultModel?: string): Record<string, unknown> {
+export function buildORequest(req: ARequest, defaultModel?: string): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: defaultModel || req.model,
     messages: buildOMessages(req.system, req.messages),
@@ -221,7 +225,7 @@ function buildORequest(req: ARequest, defaultModel?: string): Record<string, unk
 
 // ─── Finish Reason Mapping ───────────────────────────────────
 
-function mapFinishReason(reason: string | null | undefined): string {
+export function mapFinishReason(reason: string | null | undefined): string {
   if (reason === 'stop') return 'end_turn';
   if (reason === 'tool_calls') return 'tool_use';
   if (reason === 'length') return 'max_tokens';
@@ -230,7 +234,7 @@ function mapFinishReason(reason: string | null | undefined): string {
 
 // ─── Build Anthropic Response (Non-Streaming) ────────────────
 
-function buildAResponse(
+export function buildAResponse(
   oResp: Record<string, unknown>,
   model: string,
 ): Record<string, unknown> {
@@ -272,7 +276,7 @@ function writeSSE(res: http.ServerResponse, event: string, data: Record<string, 
 
 // ─── Streaming State ─────────────────────────────────────────
 
-interface StreamState {
+export interface StreamState {
   messageId: string;
   model: string;
   nextBlockIndex: number;
@@ -284,7 +288,7 @@ interface StreamState {
   outputTokens: number;
 }
 
-function newStreamState(model: string): StreamState {
+export function newStreamState(model: string): StreamState {
   return {
     messageId: `msg_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
     model,
@@ -300,7 +304,7 @@ function newStreamState(model: string): StreamState {
 
 // ─── Stream Chunk Processing ─────────────────────────────────
 
-function processChunk(res: http.ServerResponse, s: StreamState, chunk: OStreamChunk): void {
+export function processChunk(res: http.ServerResponse, s: StreamState, chunk: OStreamChunk): void {
   if (chunk.usage) {
     s.inputTokens = chunk.usage.prompt_tokens ?? s.inputTokens;
     s.outputTokens = chunk.usage.completion_tokens ?? s.outputTokens;
@@ -369,7 +373,7 @@ function processToolDelta(res: http.ServerResponse, s: StreamState, tc: ToolCall
 
 // ─── Close All Stream Blocks ─────────────────────────────────
 
-function closeStream(res: http.ServerResponse, s: StreamState): void {
+export function closeStream(res: http.ServerResponse, s: StreamState): void {
   if (s.textBlockOpen) {
     writeSSE(res, 'content_block_stop', { type: 'content_block_stop', index: s.textBlockIndex });
   }
@@ -532,7 +536,7 @@ interface CodexInput {
   output?: string;
 }
 
-function buildCodexInput(messages: AMessage[]): CodexInput[] {
+export function buildCodexInput(messages: AMessage[]): CodexInput[] {
   const input: CodexInput[] = [];
 
   for (const msg of messages) {
@@ -601,7 +605,7 @@ function buildCodexInput(messages: AMessage[]): CodexInput[] {
   return input;
 }
 
-function buildCodexTools(
+export function buildCodexTools(
   tools: ARequest['tools'],
 ): Array<Record<string, unknown>> | undefined {
   if (!tools?.length) return undefined;
@@ -613,7 +617,7 @@ function buildCodexTools(
   }));
 }
 
-function buildCodexRequest(req: ARequest, defaultModel?: string): Record<string, unknown> {
+export function buildCodexRequest(req: ARequest, defaultModel?: string): Record<string, unknown> {
   const sysText = extractSystemText(req.system);
   const body: Record<string, unknown> = {
     model: defaultModel || req.model,
@@ -629,7 +633,7 @@ function buildCodexRequest(req: ARequest, defaultModel?: string): Record<string,
   return body;
 }
 
-function buildCodexHeaders(token: string, accountId?: string): Record<string, string> {
+export function buildCodexHeaders(token: string, accountId?: string): Record<string, string> {
   const headers: Record<string, string> = {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
@@ -644,7 +648,7 @@ function buildCodexHeaders(token: string, accountId?: string): Record<string, st
 
 // ─── Codex Responses SSE → Anthropic SSE ────────────────────
 
-interface CodexStreamState {
+export interface CodexStreamState {
   messageId: string;
   model: string;
   nextBlockIndex: number;
@@ -656,7 +660,7 @@ interface CodexStreamState {
   outputTokens: number;
 }
 
-function newCodexStreamState(model: string): CodexStreamState {
+export function newCodexStreamState(model: string): CodexStreamState {
   return {
     messageId: `msg_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
     model,
@@ -670,7 +674,7 @@ function newCodexStreamState(model: string): CodexStreamState {
   };
 }
 
-function processCodexEvent(
+export function processCodexEvent(
   res: http.ServerResponse,
   s: CodexStreamState,
   eventType: string,
@@ -741,7 +745,7 @@ function processCodexEvent(
   }
 }
 
-function closeCodexStream(res: http.ServerResponse, s: CodexStreamState): void {
+export function closeCodexStream(res: http.ServerResponse, s: CodexStreamState): void {
   if (s.textBlockOpen) {
     writeSSE(res, 'content_block_stop', { type: 'content_block_stop', index: s.textBlockIndex });
   }
