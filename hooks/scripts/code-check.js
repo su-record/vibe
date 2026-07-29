@@ -136,10 +136,15 @@ function detectAnyType(lines) {
 /**
  * P1: console.log 탐지 — 허용 경로가 아닌 곳의 src/ 코드.
  *
- * 코드 확장자에만 적용한다: 마크다운·JSON·텍스트에 인용된 `console.log(` 는
- * 커밋되면 안 되는 디버그 코드가 아니라 문서상의 예시다. 확장자 게이트가 없으면
- * SKILL.md 안의 bash/JS 스니펫이 매 편집마다 P1 으로 주입돼, 고칠 수도 없는
- * 경고가 반복되고 게이트 신뢰도가 떨어진다.
+ * 두 겹의 게이트를 쓴다:
+ *  1. 확장자 — 마크다운·JSON·텍스트에 인용된 `console.log(` 는 커밋되면 안 되는
+ *     디버그 코드가 아니라 문서상의 예시다. 이게 없으면 SKILL.md 안의 스니펫이
+ *     매 편집마다 P1 으로 주입된다.
+ *  2. 코드 구간 — 코드 파일 **안에서도** JSDoc 예시와 사용자에게 출력할 마크다운
+ *     템플릿 리터럴에 `console.log(` 가 등장한다. 원본 라인을 그대로 검사하면
+ *     그것들이 전부 P1 이 되어, 고칠 수 없는 경고가 반복되고 게이트 신뢰도가
+ *     떨어진다 — detectAnyType 이 stripNonCodeLine 을 쓰는 것과 같은 이유다.
+ *     (2026-07-28 감사: 실측 9건 중 7건이 이 오탐이었다)
  *
  * @param {string[]} lines
  * @param {string} filePath
@@ -148,8 +153,10 @@ function detectAnyType(lines) {
 function detectConsoleLogs(lines, filePath) {
   if (!shouldCheckConsole(filePath)) return [];
   const findings = [];
+  const state = { inBlock: false, inTemplate: false };
   lines.forEach((line, i) => {
-    if (/console\.log\(/.test(line)) {
+    const code = stripNonCodeLine(line, state);
+    if (/console\.log\(/.test(code)) {
       findings.push({
         line: i + 1,
         match: line.trim(),

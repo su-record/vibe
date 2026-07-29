@@ -56,6 +56,44 @@ function isEnabled(hookConfig, name) {
   return true;
 }
 
+/**
+ * guard 크래시를 deny 로 승격할지 — `VIBE_HOOK_FAILCLOSED=0` 이면 끈다.
+ *
+ * fail-closed 는 "검증하지 못했으면 통과시키지 않는다" 는 안전한 기본값이지만,
+ * guard 에 버그가 생기면 Edit·Bash 가 전면 차단되어 guard 소스를 고칠 수단까지
+ * 막힌다. 그래서 탈출구는 선택이 아니라 **복구 유일 수단**이고, 차단 메시지가
+ * 스스로 그 방법을 알려줘야 한다 (교착에 빠진 사용자는 문서를 찾아볼 수 없다).
+ */
+function isFailClosed() {
+  return process.env.VIBE_HOOK_FAILCLOSED !== '0';
+}
+
+/**
+ * step 크래시를 stderr 에 드러낸다. 침묵하면 게이트가 죽은 줄도 모른다.
+ * @param {string} name
+ * @param {unknown} err
+ */
+function reportCrash(name, err) {
+  const message = (err && err.message) || String(err);
+  process.stderr.write(`[vibe] hook step "${name}" crashed: ${message}\n`);
+}
+
+/**
+ * 크래시한 step 의 종료 코드를 정한다.
+ * deny 권한(denyOnExit2)이 있는 guard 만 2(deny)로 승격한다 — 로깅용 step 하나가
+ * 죽었다고 도구 호출을 막을 이유는 없다.
+ * @param {{ name: string, denyOnExit2?: boolean }} step
+ * @returns {number}
+ */
+function crashExitCode(step) {
+  if (!step.denyOnExit2 || !isFailClosed()) return 1;
+  process.stderr.write(
+    `[vibe] blocked: guard "${step.name}" could not complete, so the operation was not verified.\n` +
+    `       To bypass temporarily, re-run with VIBE_HOOK_FAILCLOSED=0\n`
+  );
+  return 2;
+}
+
 async function readStdin() {
   if (process.stdin.isTTY) return '';
   let data = '';
@@ -150,9 +188,11 @@ export async function dispatchInProcess(steps, { argvToolName = '' } = {}) {
     enabledSteps.map(async (step) => {
       try {
         return { step, code: await step.run(ctx) };
-      } catch {
-        // 크래시 격리 — 실패 step은 exit 1 취급, 나머지 step과 디스패처는 계속
-        return { step, code: 1 };
+      } catch (err) {
+        // 크래시 격리는 유지하되 침묵하지 않는다. deny 권한이 있는 guard 는
+        // 검증에 실패한 것이므로 통과시키지 않는다 (fail-closed).
+        reportCrash(step.name, err);
+        return { step, code: crashExitCode(step) };
       }
     })
   );

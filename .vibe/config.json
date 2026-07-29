@@ -1,0 +1,10 @@
+{
+  "_comment": "vibe 프로젝트 로컬 설정. Claude/Codex 공용 SSOT. hooks 키가 없으면 모든 훅이 활성 상태다.",
+  "qualityCheck": {
+    "_comment": "console.log 하드룰의 정당한 예외. 기본 허용 경로(hooks/scripts/**, **/cli/** 등)로 덮이지 않는 것만 적는다.",
+    "consoleAllow": [
+      "src/infra/lib/utils.ts",
+      "src/infra/lib/codex-proxy.ts"
+    ]
+  }
+}
