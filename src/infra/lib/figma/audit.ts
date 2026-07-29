@@ -11,6 +11,7 @@
  */
 
 import { figmaFetch, loadToken } from './api.js';
+import type { FigmaApiNode, FigmaNodesResponse } from './types.js';
 
 export type AuditSeverity = 'P1' | 'P2';
 
@@ -38,8 +39,6 @@ export interface AuditReport {
   p2Count: number;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 const UNSUPPORTED_BLEND_MODES = new Set([
   'LINEAR_BURN',
   'LINEAR_DODGE',
@@ -47,7 +46,7 @@ const UNSUPPORTED_BLEND_MODES = new Set([
   'PLUS_LIGHTER',
 ]);
 
-function pushFrom(node: any, trail: string[], findings: AuditFinding[]): void {
+function pushFrom(node: FigmaApiNode, trail: string[], findings: AuditFinding[]): void {
   const path = trail.join(' / ') || node.name || node.id;
   const base = { nodeId: node.id, path, name: node.name ?? '', type: node.type };
 
@@ -116,7 +115,7 @@ function pushFrom(node: any, trail: string[], findings: AuditFinding[]): void {
   }
 }
 
-function walkAudit(node: any, trail: string[], findings: AuditFinding[], counter: { n: number }): void {
+function walkAudit(node: FigmaApiNode, trail: string[], findings: AuditFinding[], counter: { n: number }): void {
   counter.n += 1;
   const nextTrail = [...trail, node.name ?? node.id];
   pushFrom(node, nextTrail, findings);
@@ -125,12 +124,10 @@ function walkAudit(node: any, trail: string[], findings: AuditFinding[], counter
   }
 }
 
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
 export async function auditNode(fileKey: string, nodeId: string, depth?: number): Promise<AuditReport> {
   const token = loadToken();
   const depthParam = depth ? `&depth=${depth}` : '';
-  const data = await figmaFetch<{ nodes?: Record<string, { document?: unknown }> }>(
+  const data = await figmaFetch<FigmaNodesResponse>(
     `/files/${fileKey}/nodes?ids=${nodeId}${depthParam}`,
     token,
   );

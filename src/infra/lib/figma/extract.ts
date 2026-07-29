@@ -7,6 +7,10 @@ import path from 'path';
 import { figmaFetch, loadToken } from './api.js';
 import type {
   FigmaNode,
+  FigmaApiNode,
+  FigmaNodesResponse,
+  FigmaImagesResponse,
+  FigmaImageFillsResponse,
   FigmaRawProps,
   FigmaWarning,
   FigmaImageMap,
@@ -36,8 +40,7 @@ interface ExtractResult {
   warnings: FigmaWarning[];
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-function extractCSS(node: any): ExtractResult {
+function extractCSS(node: FigmaApiNode): ExtractResult {
   const css: Record<string, string> = {};
   const raw: FigmaRawProps = {};
   const warnings: FigmaWarning[] = [];
@@ -142,8 +145,8 @@ function extractCSS(node: any): ExtractResult {
   if (node.fills?.length) {
     for (const fill of node.fills) {
       if (fill.visible === false) continue;
-      if (fill.type === 'SOLID') {
-        const a = fill.opacity ?? fill.color?.a ?? 1;
+      if (fill.type === 'SOLID' && fill.color) {
+        const a = fill.opacity ?? fill.color.a ?? 1;
         css.backgroundColor = figmaColorToCSS({ ...fill.color, a });
       } else if (fill.type === 'IMAGE') {
         imageRef = fill.imageRef;
@@ -155,8 +158,8 @@ function extractCSS(node: any): ExtractResult {
   // INSIDE/OUTSIDE, recording a warning lets the audit pipeline flag
   // the visual shift rather than pretending the border matches.
   if (node.strokes?.length && node.strokeWeight) {
-    const stroke = node.strokes.find((s: any) => s.visible !== false && s.type === 'SOLID');
-    if (stroke) {
+    const stroke = node.strokes.find(s => s.visible !== false && s.type === 'SOLID');
+    if (stroke?.color) {
       css.border = `${node.strokeWeight}px solid ${figmaColorToCSS(stroke.color)}`;
       raw.strokeWeight = node.strokeWeight;
       if (node.strokeAlign) {
@@ -177,7 +180,7 @@ function extractCSS(node: any): ExtractResult {
     const shadows: string[] = [];
     for (const eff of node.effects) {
       if (eff.visible === false) continue;
-      if (eff.type === 'DROP_SHADOW' || eff.type === 'INNER_SHADOW') {
+      if ((eff.type === 'DROP_SHADOW' || eff.type === 'INNER_SHADOW') && eff.color) {
         const inset = eff.type === 'INNER_SHADOW' ? 'inset ' : '';
         const x = eff.offset?.x ?? 0;
         const y = eff.offset?.y ?? 0;
@@ -218,8 +221,8 @@ function extractCSS(node: any): ExtractResult {
       });
     }
     if (node.fills?.length) {
-      const textFill = node.fills.find((f: any) => f.visible !== false && f.type === 'SOLID');
-      if (textFill) css.color = figmaColorToCSS(textFill.color);
+      const textFill = node.fills.find(f => f.visible !== false && f.type === 'SOLID');
+      if (textFill?.color) css.color = figmaColorToCSS(textFill.color);
     }
   }
 
@@ -232,24 +235,24 @@ function extractCSS(node: any): ExtractResult {
 const VECTOR_TYPE_RE = /^(VECTOR|LINE|BOOLEAN_OPERATION|STAR|REGULAR_POLYGON)$/;
 
 /** D1-D3: TEXT whose visual fidelity cannot be preserved by HTML text. */
-function isDesignTextNode(n: any): boolean {
+function isDesignTextNode(n: FigmaApiNode): boolean {
   if (n.type !== 'TEXT') return false;
-  const fills = (n.fills || []).filter((f: any) => f.visible !== false);
+  const fills = (n.fills || []).filter(f => f.visible !== false);
   if (fills.length >= 2) return true;
-  if (fills.some((f: any) => typeof f.type === 'string' && f.type.startsWith('GRADIENT_'))) return true;
-  if ((n.effects || []).some((e: any) => e.visible !== false && (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW'))) return true;
-  if ((n.strokes || []).some((s: any) => s.visible !== false)) return true;
+  if (fills.some(f => typeof f.type === 'string' && f.type.startsWith('GRADIENT_'))) return true;
+  if ((n.effects || []).some(e => e.visible !== false && (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW'))) return true;
+  if ((n.strokes || []).some(s => s.visible !== false)) return true;
   return false;
 }
 
 /** Q1: any descendant carries meaningful text content. */
-function hasTextDescendantRaw(n: any): boolean {
+function hasTextDescendantRaw(n: FigmaApiNode): boolean {
   if (n.type === 'TEXT' && typeof n.characters === 'string' && n.characters.trim().length) return true;
   return (n.children || []).some(hasTextDescendantRaw);
 }
 
 /** Q2: 2+ direct children sharing the same componentId / name stem. */
-function hasRepeatingInstancesRaw(n: any): boolean {
+function hasRepeatingInstancesRaw(n: FigmaApiNode): boolean {
   const kids = n.children || [];
   if (kids.length < 2) return false;
   const keyCount: Record<string, number> = {};
@@ -264,13 +267,17 @@ function hasRepeatingInstancesRaw(n: any): boolean {
 }
 
 /** D4 helper: direct VECTOR-family children count. */
-function vectorChildCountRaw(n: any): number {
-  return (n.children || []).filter((c: any) => VECTOR_TYPE_RE.test(c.type || '')).length;
+function vectorChildCountRaw(n: FigmaApiNode): number {
+  return (n.children || []).filter(c => VECTOR_TYPE_RE.test(c.type || '')).length;
 }
 
 // ─── Tree Walker ────────────────────────────────────────────────────
 
-function walkNode(node: any): FigmaNode {
+/**
+ * Figma REST 노드 트리 → 이 파이프라인의 출력 계약(FigmaNode)으로 변환.
+ * 네트워크와 분리된 순수 변환이라 fixture 로 단독 검증할 수 있다.
+ */
+export function walkNode(node: FigmaApiNode): FigmaNode {
   const { css, raw, warnings } = extractCSS(node);
   const result: FigmaNode = {
     nodeId: node.id,
@@ -304,14 +311,13 @@ function walkNode(node: any): FigmaNode {
 
   return result;
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // ─── Public API ─────────────────────────────────────────────────────
 
 export async function getTree(options: FigmaTreeOptions): Promise<FigmaNode> {
   const token = loadToken();
   const depthParam = options.depth ? `&depth=${options.depth}` : '';
-  const data = await figmaFetch<any>(
+  const data = await figmaFetch<FigmaNodesResponse>(
     `/files/${options.fileKey}/nodes?ids=${options.nodeId}${depthParam}`,
     token,
   );
@@ -362,7 +368,7 @@ export async function getImages(options: FigmaImageOptions): Promise<FigmaImageM
   // 렌더링 모드: 노드를 PNG로 렌더
   if (options.render && options.nodeIds?.length) {
     const ids = options.nodeIds.join(',');
-    const data = await figmaFetch<any>(
+    const data = await figmaFetch<FigmaImagesResponse>(
       `/images/${options.fileKey}?ids=${ids}&format=png&scale=2`,
       token,
     );
@@ -381,7 +387,7 @@ export async function getImages(options: FigmaImageOptions): Promise<FigmaImageM
   }
 
   // Fill 이미지 모드
-  const data = await figmaFetch<any>(`/files/${options.fileKey}/images`, token);
+  const data = await figmaFetch<FigmaImageFillsResponse>(`/files/${options.fileKey}/images`, token);
   if (!data.meta?.images) throw new Error('No image fills found');
 
   const allImages: Record<string, string> = data.meta.images;
@@ -418,7 +424,7 @@ export async function getScreenshot(options: FigmaScreenshotOptions): Promise<{ 
   const fmt = options.format ?? 'png';
   const scale = options.scale ?? 2;
 
-  const data = await figmaFetch<any>(
+  const data = await figmaFetch<FigmaImagesResponse>(
     `/images/${options.fileKey}?ids=${options.nodeId}&format=${fmt}&scale=${scale}`,
     token,
   );
