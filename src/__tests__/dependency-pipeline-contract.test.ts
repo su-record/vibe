@@ -34,14 +34,22 @@ describe('패키지 매니저 정합', () => {
     expect(pkg.packageManager).toMatch(/^pnpm@\d+\.\d+\.\d+$/);
   });
 
-  it('선언된 pnpm 메이저가 CI 의 pnpm/action-setup 버전과 일치한다', () => {
-    const declaredMajor = pkg.packageManager!.match(/^pnpm@(\d+)\./)![1];
+  /**
+   * 버전은 `packageManager` 한 곳에만 선언한다.
+   *
+   * 원래 이 테스트는 워크플로가 `version:` 을 **선언하도록** 강제했는데, 그 구성은
+   * 실행이 불가능하다 — `pnpm/action-setup@v4` 는 action 설정과 `packageManager` 에
+   * 버전이 동시에 있으면 ERR_PNPM_BAD_PM_VERSION 을 피하려 즉시 실패한다
+   * ("Multiple versions of pnpm specified"). v3.2.15 릴리즈가 이 조합으로 9초 만에
+   * 죽었다. action 은 `packageManager` 를 스스로 읽으므로 그쪽이 SSOT 다.
+   */
+  it('워크플로가 pnpm 버전을 중복 선언하지 않는다', () => {
     for (const [name, text] of workflowText()) {
-      const versions = [...text.matchAll(/pnpm\/action-setup@v\d+\s*\n\s*with:\s*\n\s*version:\s*(\d+)/g)];
-      expect(versions.length, `${name} 에 pnpm/action-setup 설정이 없다`).toBeGreaterThan(0);
-      for (const m of versions) {
-        expect(m[1], `${name} 의 pnpm 메이저가 packageManager 와 다르다`).toBe(declaredMajor);
-      }
+      expect(text, `${name} 에 pnpm/action-setup 이 없다`).toContain('pnpm/action-setup@');
+      expect(
+        [...text.matchAll(/pnpm\/action-setup@v\d+[^\n]*\n\s*with:\s*\n\s*version:/g)],
+        `${name} 이 packageManager 와 별도로 pnpm 버전을 선언한다 — action 이 실패한다`,
+      ).toHaveLength(0);
     }
   });
 });
