@@ -1288,4 +1288,19 @@ if (isMain) {
   });
 }
 
-export { collectSubUrls, diffStyles };
+// 순수 함수만 노출한다 — 브라우저 기동 없이 단독 검증 가능한 경로
+// (REQ-audit-p2-remediation-009). capture/discoverSubUrls 등 puppeteer 의존
+// 경로는 여기서 다루지 않는다.
+export {
+  collectSubUrls,
+  diffStyles,
+  parseArgs,
+  parseViewport,
+  localePrefixOf,
+  normalizeSubUrl,
+  isSameMenuScope,
+  isExcludedSubLink,
+  findSitemapUrl,
+  uniqueFilename,
+  sanitizeHtml,
+};
