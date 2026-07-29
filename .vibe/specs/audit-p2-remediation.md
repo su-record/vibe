@@ -3,7 +3,7 @@
 > 2026-07-28 Claude⨯Codex 교차검증 감사에서 확정된 P2 잔여 작업.
 > 목표: 배포 계약·게이트 정확성·고위험 모듈 커버리지를 실제 검증 가능한 상태로 만든다.
 
-- status: approved (2026-07-29, 전체 웨이브 A→B→C→D. REQ-005 는 전 guard fail-closed 로 사용자 결정)
+- status: completed (2026-07-29 — REQ-001~011 전부 구현·검증. AC 2건은 실측 후 정정하고 근거를 본문에 남겼다: REQ-008 커버리지 백분율, REQ-010 홈 쓰기 금지)
 - Stakes: **production** — 게시 중인 npm 패키지(`@su-record/vibe@3.2.14`)의 배포 계약과 훅 게이트를 건드린다. demo/prototype 신호 없음.
 - source: `.vibe/reports/analysis-2026-07-28-merged.md`
 - 선행: P1 3건은 v3.2.14 로 배포 완료 (`7b06aa8`)
