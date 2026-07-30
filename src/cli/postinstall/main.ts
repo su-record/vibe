@@ -44,6 +44,7 @@ import {
   installCodexNotify,
 } from '../setup/ProjectSetup.js';
 import { writeHookPackageJson } from '../setup/GlobalInstaller.js';
+import { resolveInstallHome, restoreOwnership } from '../setup/InstallHome.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,6 +54,16 @@ const __dirname = path.dirname(__filename);
  */
 export function main(): void {
   try {
+    // sudo 로 전역 설치하면 postinstall 이 root 로 돌아 os.homedir() 가 /root 를 준다.
+    // 그러면 패키지·CLI 는 멀쩡한데 정작 쓰는 사람의 ~/.claude/{skills,agents} 만 빈다.
+    // POSIX 의 os.homedir() 는 $HOME 을 우선하므로 여기서 한 번 교정하면
+    // ~/.vibe · ~/.claude · ~/.cursor 등 모든 하위 호출부가 함께 올바른 홈을 본다.
+    const installHome = resolveInstallHome();
+    if (installHome.redirected) {
+      process.env.HOME = installHome.home;
+      console.log(`ℹ️  sudo 감지 — 자산을 ${installHome.home} 에 설치합니다 (root 홈 아님)`);
+    }
+
     const globalCoreDir = getCoreConfigDir();
     const nodeModulesDir = path.join(globalCoreDir, 'node_modules');
     const corePackageDir = path.join(nodeModulesDir, '@su-record', 'vibe');
@@ -231,6 +242,15 @@ export function main(): void {
     console.log(`🧠 Claude Code: ${claudeStatusMsg}`);
     if (!claudeStatus.installed && !codexStatus.installed) {
       console.warn('⚠️  Install Claude Code or Codex CLI to use VIBE harness features.');
+    }
+
+    // root 가 만든 트리를 그대로 두면 사용자가 자기 설정을 고칠 수 없다.
+    if (installHome.redirected) {
+      const restored = [globalCoreDir, globalClaudeDir, path.join(installHome.home, '.cursor')]
+        .filter(dir => restoreOwnership(dir, installHome));
+      if (restored.length > 0) {
+        console.log(`🔑 소유권 복원 (${installHome.uid}:${installHome.gid}): ${restored.join(', ')}`);
+      }
     }
   } catch (error) {
     // postinstall 실패해도 설치는 계속 진행

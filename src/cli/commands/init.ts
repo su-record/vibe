@@ -20,7 +20,6 @@ import {
   installProjectHooks,
   installProjectCodexHooks,
   installCodexNotify,
-  installCursorRules,
   detectOsLanguage,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
@@ -427,8 +426,9 @@ export async function init(
     if (target === 'codex' || codexStatus.installed) {
       runStep(s3, 'Installing Codex project hooks', () => installProjectCodexHooks(projectRoot));
     }
-    runStep(s3, 'Updating Cursor global assets', () => updateCursorGlobalAssets(stackTypes));
-    runStep(s3, 'Installing Cursor rules', () => installCursorRules(projectRoot, stackTypes));
+    // Cursor 자산은 init 에서 설치하지 않는다 — vibe 가 대상으로 삼는 하네스는
+    // Claude Code / Codex / Antigravity 이고, Cursor 는 프로젝트 초기화의 일부가
+    // 아니다. 전역 갱신 경로(`vibe update`)에는 그대로 남아 있다.
     runStep(s3, 'Installing language rules', () => installLanguageRules(projectRoot, stackTypes, harnessDir));
 
     runStep(s3, 'Installing local skills', () => {

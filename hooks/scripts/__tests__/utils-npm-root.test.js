@@ -97,3 +97,58 @@ describe('utils.js — getGlobalNpmPath() npm-root 파일 캐시', () => {
     expect(stderr).not.toMatch(/^Error:/m);
   });
 });
+
+/**
+ * npm 이 PATH 에 없고 캐시도 없을 때의 폴백 — 격리 서버 회귀.
+ *
+ * 재현했던 결함: 폴백 후보가 /usr/local·~/.npm-global·~/.nvm 뿐이라, 배포판 npm
+ * (prefix=/usr → /usr/lib/node_modules)이나 사용자 prefix(~/.local)에 설치된
+ * 환경에서 존재하지 않는 /usr/local/lib/node_modules 를 루트로 확정했다.
+ * 그 뒤 모든 동적 import 가 조용히 실패해 도구 계층 전체가 죽었다.
+ */
+describe('getGlobalNpmPath — npm 부재 시 폴백', () => {
+  /** npm 을 뺀 PATH 로 실행한다 (node 만 심볼릭 링크로 남긴다) */
+  function runWithoutNpm(cacheFilePath, extraEnv = {}) {
+    const stub = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-nonpm-'));
+    fs.symlinkSync(process.execPath, path.join(stub, 'node'));
+    try {
+      return spawnSync(process.execPath, ['--input-type=module', '--eval',
+        `import { getGlobalNpmPath } from '${UTILS_URL}';
+         process.stdout.write(getGlobalNpmPath() || '');`
+      ], {
+        encoding: 'utf-8',
+        timeout: 10000,
+        env: {
+          PATH: stub,
+          HOME: process.env.HOME,
+          VIBE_NPM_ROOT_CACHE_FILE: cacheFilePath,
+          ...extraEnv,
+        },
+      });
+    } finally {
+      fs.rmSync(stub, { recursive: true, force: true });
+    }
+  }
+
+  it('패키지가 실제로 있는 prefix 를 고른다', () => {
+    const result = runWithoutNpm(makeTempCacheFile());
+    expect(result.status).toBe(0);
+
+    const chosen = result.stdout.trim();
+    expect(chosen).toBeTruthy();
+    // 폴백이 지어낸 경로가 아니라, @su-record/vibe 가 실제로 있는 곳이어야 한다
+    expect(
+      fs.existsSync(path.join(chosen, '@su-record', 'vibe')),
+      `선택된 prefix 에 패키지가 없다: ${chosen}`,
+    ).toBe(true);
+  });
+
+  it('폴백이 /usr/local 로 고정되지 않는다', () => {
+    const result = runWithoutNpm(makeTempCacheFile());
+    const chosen = result.stdout.trim();
+    // 이 저장소의 실제 설치 prefix 는 /usr/local 이 아니다 — 하드코딩 회귀 감지
+    if (!fs.existsSync('/usr/local/lib/node_modules/@su-record/vibe')) {
+      expect(chosen).not.toBe('/usr/local/lib/node_modules');
+    }
+  });
+});

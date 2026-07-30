@@ -201,11 +201,18 @@ function npmRootFallback() {
   }
   const homeDir = os.homedir();
   const candidates = [
+    // node 바이너리에서 유도 — prefix 를 어떻게 잡았든 따라간다. 가장 확실하므로 먼저 본다.
+    // (/usr/bin/node → /usr/lib/node_modules, ~/.local/bin/node → ~/.local/lib/node_modules)
+    path.resolve(path.dirname(process.execPath), '..', 'lib', 'node_modules'),
     '/usr/local/lib/node_modules',
+    '/usr/lib/node_modules',                                   // 배포판 npm (apt/dnf, prefix=/usr)
+    path.join(homeDir, '.local', 'lib', 'node_modules'),        // 사용자 prefix — 격리 서버에서 흔하다
     path.join(homeDir, '.npm-global', 'lib', 'node_modules'),
     path.join(homeDir, '.nvm', 'versions', 'node', process.version, 'lib', 'node_modules'),
   ];
-  return candidates.find(p => fs.existsSync(p)) || candidates[0];
+  // 패키지가 실제로 있는 후보를 고른다 — 디렉토리 존재만으로는 엉뚱한 prefix 를 집는다
+  const withPackage = candidates.find(p => fs.existsSync(path.join(p, '@su-record', 'vibe')));
+  return withPackage || candidates.find(p => fs.existsSync(p)) || candidates[0];
 }
 
 // L1 인-프로세스 캐시
@@ -248,6 +255,23 @@ function hasRuntimeDeps(packageRoot) {
  * 프로세스 내 메모이제이션: getToolsBaseUrl/getLibBaseUrl/getCliBaseUrl이 한 훅
  * 프로세스에서 각각 호출되면 최악 6회 동기 stat이 반복되므로 결과를 캐싱한다.
  */
+/**
+ * 패키지 루트 해석 실패를 1회만 보고한다.
+ *
+ * 훅 호출부는 전부 fail-open(try/catch) 이라, 해석이 틀려도 사용자에게는
+ * "아무 일도 안 일어남" 으로만 보인다 — 조용히 죽은 가드다. 진단 단서를 남긴다.
+ */
+let _warnedUnresolved = false;
+function warnUnresolvedPackageRoot(subpath, candidates) {
+  if (_warnedUnresolved) return;
+  _warnedUnresolved = true;
+  process.stderr.write(
+    `[vibe] 패키지 루트를 찾지 못했습니다 (${subpath}).\n`
+    + `       확인한 경로: ${candidates.join(', ')}\n`
+    + `       VIBE_PATH 를 설치 경로로 지정하거나 'vibe upgrade' 로 재설치하세요.\n`
+  );
+}
+
 const _packageUrlCache = new Map();
 function getPackageUrl(subpath, probeFile) {
   const cacheKey = `${subpath}|${probeFile}`;
@@ -267,7 +291,13 @@ function getPackageUrl(subpath, probeFile) {
       break;
     }
   }
-  if (result === null) result = toFileUrl(path.join(globalRoot, subpath));
+  if (result === null) {
+    // 후보가 전부 검증에 실패했다 — 지어낸 경로를 돌려주면 이후 모든 import 가
+    // 조용히 실패하고 도구 계층 전체가 죽은 채로 돈다. 경로는 종전대로 돌려주되
+    // (호출부는 fail-open 이므로 동작은 유지) 무슨 일이 있었는지는 남긴다.
+    result = toFileUrl(path.join(globalRoot, subpath));
+    warnUnresolvedPackageRoot(subpath, candidates);
+  }
   _packageUrlCache.set(cacheKey, result);
   return result;
 }
