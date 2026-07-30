@@ -10,6 +10,7 @@ import { CliOptions } from '../types.js';
 import { log, getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
 import { installProjectHooks, installProjectCodexHooks } from '../setup.js';
+import { detectCodexCli } from '../utils/cli-detector.js';
 
 /**
  * Remove stale npm temp directories that cause ENOTEMPTY errors
@@ -97,7 +98,7 @@ function hasClaudeHooks(projectRoot: string): boolean {
  * 모델의 양심이 아니라 결정론적 가드")가 조용히 무너지는 지점이라, 여기서만큼은
  * 경고가 아니라 복구를 한다.
  *
- * 범위는 훅으로 한정한다 — 스킬·CLAUDE.md·cursor 규칙 재생성은 `vibe update` 의
+ * 범위는 훅으로 한정한다 — 스킬·CLAUDE.md 재생성은 `vibe update` 의
  * 몫이고, 전역 명령이 프로젝트 문서를 말없이 바꾸면 놀라움이 더 크다.
  * 훅 파일은 gitignore 된 로컬 설치 아티팩트이고 설치는 idempotent 다.
  *
@@ -122,7 +123,11 @@ export function repairProjectHooks(projectRoot: string): string[] {
     } catch { /* 복구 실패가 업그레이드 자체를 실패시키지 않는다 */ }
   }
 
-  if ((hasCodexDir || hasAgentsMd) && !existsSync(join(projectRoot, '.codex', 'hooks.json'))) {
+  // 보고(vibe status)와 같은 기준으로 복구한다 — `.codex/`·AGENTS.md 는 gitignore
+  // 대상이라 fresh clone 에 없고, 아티팩트로만 판정하면 Codex 훅이 영영 복구되지
+  // 않는다. `vibe init` 도 detectCodexCli().installed 로 설치를 결정한다.
+  const usesCodex = hasCodexDir || hasAgentsMd || detectCodexCli().installed;
+  if (usesCodex && !existsSync(join(projectRoot, '.codex', 'hooks.json'))) {
     try {
       installProjectCodexHooks(projectRoot);
       repaired.push('.codex/hooks.json');

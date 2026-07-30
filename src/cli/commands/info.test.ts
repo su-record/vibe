@@ -88,13 +88,26 @@ describe('formatHookStatus', () => {
     expect(formatHookStatus(root)).toContain('✓ .claude/settings.local.json');
   });
 
-  it('reports Codex hooks only for Codex-enabled projects', () => {
-    const plain = tempProject();
-    expect(formatHookStatus(plain)).not.toContain('Codex');
+  it('Codex 를 안 쓰는 프로젝트에서는 Codex 행을 내지 않는다', () => {
+    expect(formatHookStatus(tempProject(), false)).not.toContain('Codex');
+  });
 
+  it('아티팩트가 있으면 Codex 행을 낸다', () => {
     const codex = tempProject();
     fs.writeFileSync(path.join(codex, 'AGENTS.md'), '# project\n');
-    expect(formatHookStatus(codex)).toContain('Codex');
-    expect(formatHookStatus(codex)).toContain('not installed');
+    expect(formatHookStatus(codex, false)).toContain('Codex');
+    expect(formatHookStatus(codex, false)).toContain('not installed');
+  });
+
+  /**
+   * `.codex/` 와 `AGENTS.md` 는 gitignore 대상이라 fresh clone 에는 없다.
+   * 아티팩트로만 판정하면 정작 보고해야 할 미설치 상태에서 행이 사라진다 —
+   * `vibe init` 과 같은 기준(Codex CLI 설치 여부)으로 판정한다.
+   */
+  it('아티팩트가 없어도 Codex CLI 가 있으면 미설치를 보고한다', () => {
+    const fresh = tempProject();
+    const output = formatHookStatus(fresh, true);
+    expect(output).toContain('Codex');
+    expect(output).toContain('not installed');
   });
 });

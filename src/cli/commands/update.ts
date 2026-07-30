@@ -30,7 +30,6 @@ import {
   installProjectHooks,
   installProjectCodexHooks,
   installCodexNotify,
-  installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
   generateProjectAntigravityMd,
@@ -39,7 +38,6 @@ import {
   generateGlobalAntigravityMd,
 } from '../setup.js';
 import {
-  updateCursorGlobalAssets,
   installLocalSkills,
   installLanguageRules,
 } from './init.js';
@@ -167,12 +165,9 @@ export function update(options: CliOptions = { silent: false }): void {
       installProjectCodexHooks(projectRoot);
     }
 
-    // Cursor 글로벌 에셋 업데이트 (agents, skills, rules-template) - 먼저 실행!
+    // Cursor 자산은 더 이상 설치·갱신하지 않는다 — 대상 하네스는
+    // Claude Code / Codex / Antigravity 다. 잔여물 정리는 `vibe remove` 가 한다.
     const stackTypes = detectedStacks.map(s => s.type);
-    updateCursorGlobalAssets(stackTypes, options);
-
-    // Cursor IDE 룰 설치/업데이트 (프로젝트 레벨) - rules-template 생성 후 현재 스택에 해당하는 룰만 복사
-    installCursorRules(projectRoot, stackTypes);
 
     // 감지된 스택 언어 룰 설치/업데이트 (~/.<harness>/vibe/languages/)
     installLanguageRules(projectRoot, stackTypes, primaryHarness);

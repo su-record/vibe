@@ -275,15 +275,6 @@ export const LANGUAGE_GLOBS: Record<string, string> = {
   'gdscript-godot.md': '**/*.gd',
 };
 
-// Cursor 모델 매핑 (리뷰어 → 모델)
-// 사용 가능: composer-1, claude-4.5-opus-high, claude-4.5-opus-high-thinking,
-//           claude-4.5-sonnet-thinking, gpt-5.5, gpt-5.5-pro, antigravity-pro, antigravity-fast
-export const CURSOR_MODEL_MAPPING: Record<string, string> = {
-  // 통합 리뷰어 2종 — 깊은 추론 필요 → thinking 모델
-  'code-reviewer': 'claude-4.5-sonnet-thinking',
-  'security-reviewer': 'claude-4.5-sonnet-thinking',
-};
-
 // 언어 룰 파일 접두사 (이 접두사로 시작하는 .mdc는 core에서 관리)
 export const LANGUAGE_RULE_PREFIXES = [
   'typescript-', 'python-', 'dart-', 'go.', 'rust.', 'kotlin-',

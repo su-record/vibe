@@ -84,9 +84,9 @@ describe('init — 산출물', () => {
 
 describe('init — 격리', () => {
   // init 은 의도적으로 홈에 전역 규약을 주입한다 (init.ts:460 — ~/.claude/CLAUDE.md,
-  // ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md + cursor 에셋). 따라서 "홈에 쓰지 않는다" 가
+  // ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md). 따라서 "홈에 쓰지 않는다" 가
   // 아니라 "문서화된 하네스 디렉터리 밖으로는 새지 않는다" 가 지킬 계약이다.
-  const ALLOWED_HOME_ROOTS = ['.claude', '.codex', '.gemini', '.cursor', '.vibe'];
+  const ALLOWED_HOME_ROOTS = ['.claude', '.codex', '.gemini', '.vibe'];
 
   function strayHomeWrites(): string[] {
     return tree(fakeHome)

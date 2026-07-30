@@ -18,7 +18,6 @@ export {
   installCodexNotify,
   updateGitignore,
   updateConfig,
-  installCursorRules,
   generateProjectClaudeMd,
   generateProjectAgentsMd,
   generateProjectAntigravityMd,

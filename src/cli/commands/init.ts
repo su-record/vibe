@@ -31,10 +31,7 @@ import {
 } from '../setup.js';
 import * as p from '@clack/prompts';
 import {
-  installCursorAgents,
   installClaudeAgents,
-  generateCursorRules,
-  generateCursorSkills,
   resolveLocalSkills,
   resolveLocalAgentGroups,
   copySkillsFiltered,
@@ -48,46 +45,6 @@ import { detectAntigravityCli, detectCodexCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 import { installExternalSkills } from './skills.js';
 
-/**
- * Update global Cursor assets (agents, rules, skills)
- * Called by both init and update
- * @param detectedStacks - 감지된 기술 스택 배열 (예: ['typescript-react', 'python-fastapi'])
- */
-export function updateCursorGlobalAssets(
-  detectedStacks: string[] = [],
-  options: CliOptions = { silent: false }
-): void {
-  try {
-    const __dirname = path.dirname(new URL(import.meta.url).pathname);
-    const packageRoot = path.resolve(__dirname, '..', '..', '..');
-    const agentsSource = path.join(packageRoot, 'agents');
-
-    // VIBE 언어 룰 디렉토리 (~/.claude/vibe/languages/ 또는 패키지 내 languages/)
-    const globalLanguagesDir = path.join(os.homedir(), '.claude', 'vibe', 'languages');
-    const packageLanguagesDir = path.join(packageRoot, 'languages');
-    const languagesDir = fs.existsSync(globalLanguagesDir) ? globalLanguagesDir : packageLanguagesDir;
-
-    // 1. Cursor agents (12 reviewers)
-    const cursorAgentsDir = path.join(os.homedir(), '.cursor', 'agents');
-    if (fs.existsSync(agentsSource)) {
-      installCursorAgents(agentsSource, cursorAgentsDir);
-    }
-
-    // 2. Cursor rules template (VIBE 언어 룰 기반 + 공통 룰)
-    const cursorRulesTemplateDir = path.join(os.homedir(), '.cursor', 'rules-template');
-    generateCursorRules(cursorRulesTemplateDir, detectedStacks, languagesDir);
-
-    // 3. Cursor skills (7 VIBE skills)
-    const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
-    generateCursorSkills(cursorSkillsDir);
-
-  } catch (err) {
-    // Non-critical - don't fail init/update
-    if (!options.silent) {
-      console.warn(`   ⚠️ Cursor assets update warning: ${(err as Error).message}`);
-    }
-  }
-}
 
 /**
  * 스택 + capability 기반 로컬 스킬 설치 (.claude/skills/)

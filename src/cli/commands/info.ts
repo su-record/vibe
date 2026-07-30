@@ -7,6 +7,7 @@ import fs from 'fs';
 import { VibeConfig } from '../types.js';
 import { getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
+import { detectCodexCli } from '../utils/cli-detector.js';
 
 /**
  * 도움말 표시
@@ -67,7 +68,11 @@ Docs: https://github.com/su-record/vibe
  * 사용자는 이 상태에 도달하고도 알 방법이 없었다. 상태 화면이 결정론적 가드의
  * 생사를 보여주지 않으면 loop-contract 의 전제를 검증할 수단이 없다.
  */
-export function formatHookStatus(projectRoot: string): string {
+export function formatHookStatus(
+  projectRoot: string,
+  /** Codex CLI 설치 여부 — 생략하면 감지한다. 테스트가 머신 상태에 좌우되지 않도록 주입 가능. */
+  codexInstalled: boolean = detectCodexCli().installed,
+): string {
   const lines: string[] = [];
 
   const claudeSettings = path.join(projectRoot, '.claude', 'settings.local.json');
@@ -82,8 +87,14 @@ export function formatHookStatus(projectRoot: string): string {
       : '  Claude Code         ⬚ not installed (run: vibe update)',
   );
 
-  // Codex 훅은 Codex 대상 프로젝트에서만 의미가 있다
+  // Codex 훅 보고 여부는 **아티팩트가 아니라 하네스 설치 여부**로 정한다.
+  //
+  // 아티팩트(.codex/, AGENTS.md)로만 판정하면, 그 둘이 gitignore 대상이라
+  // fresh clone 에서는 "Codex 프로젝트가 아니다" 로 결론내고 행 자체를 숨긴다 —
+  // 정작 보고해야 할 미설치 상태에서 침묵하는 셈이다. `vibe init` 은 이미
+  // detectCodexCli().installed 로 설치를 결정하므로 판정 기준을 거기에 맞춘다.
   const isCodexProject =
+    codexInstalled ||
     fs.existsSync(path.join(projectRoot, '.codex')) ||
     fs.existsSync(path.join(projectRoot, 'AGENTS.md'));
   if (isCodexProject) {

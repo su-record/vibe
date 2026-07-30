@@ -71,7 +71,7 @@ function convertAgentToClaude(content: string, filename: string): string {
   const titleMatch = normalizedContent.match(/^# (.+)$/m);
   const title = titleMatch ? titleMatch[1].trim() : name;
 
-  // Role 섹션 추출 (cursor-agents.ts와 동일 패턴)
+  // Role 섹션 추출
   const roleMatch = normalizedContent.match(/## Role\s*\n([\s\S]*?)(?=\n## )/);
   const roleLines = roleMatch
     ? roleMatch[1]

@@ -8,7 +8,7 @@
  * main() 내부 오류는 이미 console.warn 으로 보고되므로, 여기서 고정하는 것은
  * **모듈 임포트 자체가 실패하는 경로** 다 — 그때가 가장 조용했다.
  *
- * 성공 경로는 실제 설치를 수행(~/.vibe, ~/.cursor 쓰기)하므로 테스트하지 않는다.
+ * 성공 경로는 실제 설치를 수행(~/.vibe 쓰기)하므로 테스트하지 않는다.
  */
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'child_process';

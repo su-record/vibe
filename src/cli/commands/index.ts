@@ -2,7 +2,7 @@
  * CLI 명령어 모듈
  */
 
-export { init, updateCursorGlobalAssets } from './init.js';
+export { init } from './init.js';
 export { setup } from './setup.js';
 export { update } from './update.js';
 export { upgrade } from './upgrade.js';

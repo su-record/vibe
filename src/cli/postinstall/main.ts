@@ -30,10 +30,7 @@ import {
 } from './constants.js';
 import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
 import { seedInlineSkills } from './inline-skills.js';
-import { generateCursorRules } from './cursor-rules.js';
-import { installCursorAgents } from './cursor-agents.js';
 import { installClaudeAgents } from './claude-agents.js';
-import { generateCursorSkills } from './cursor-skills.js';
 import { detectAntigravityCli, detectClaudeCli, detectCodexCli } from '../utils/cli-detector.js';
 import { getClaudeCodeStatus, formatClaudeCodeStatus } from '../auth.js';
 import { migrateLegacyFiles } from '../../infra/lib/config/GlobalConfigManager.js';
@@ -57,7 +54,7 @@ export function main(): void {
     // sudo 로 전역 설치하면 postinstall 이 root 로 돌아 os.homedir() 가 /root 를 준다.
     // 그러면 패키지·CLI 는 멀쩡한데 정작 쓰는 사람의 ~/.claude/{skills,agents} 만 빈다.
     // POSIX 의 os.homedir() 는 $HOME 을 우선하므로 여기서 한 번 교정하면
-    // ~/.vibe · ~/.claude · ~/.cursor 등 모든 하위 호출부가 함께 올바른 홈을 본다.
+    // ~/.vibe · ~/.claude · ~/.codex 등 모든 하위 호출부가 함께 올바른 홈을 본다.
     const installHome = resolveInstallHome();
     if (installHome.redirected) {
       process.env.HOME = installHome.home;
@@ -223,22 +220,14 @@ export function main(): void {
     // 6-4. 전역 env 설정 (Agent Teams 등 모든 프로젝트에 필요한 환경변수)
     ensureGlobalEnvSettings();
 
-    // 7-9. IDE 지원: Cursor agents + rules + skills (독립 작업)
-    const cursorAgentsDir = path.join(os.homedir(), '.cursor', 'agents');
-    const cursorRulesTemplateDir = path.join(os.homedir(), '.cursor', 'rules-template');
-    const cursorSkillsDir = path.join(os.homedir(), '.cursor', 'skills');
-    installCursorAgents(agentsSource, cursorAgentsDir);
-    generateCursorRules(cursorRulesTemplateDir, [], globalLanguagesDir);
-    generateCursorSkills(cursorSkillsDir);
+    // Cursor 자산은 설치하지 않는다 — vibe 의 대상 하네스는 Claude Code / Codex /
+    // Antigravity 다. 기존 설치본의 ~/.cursor 잔여물은 `vibe remove` 가 정리한다.
 
     // Claude Code CLI 존재 확인 (인증은 vibe init에서)
     const claudeStatus = getClaudeCodeStatus(false);
     const claudeStatusMsg = formatClaudeCodeStatus(claudeStatus);
 
     console.log(`✅ core global setup complete: ${globalCoreDir}`);
-    console.log(`✅ cursor agents installed: ${cursorAgentsDir}`);
-    console.log(`✅ cursor rules template: ${cursorRulesTemplateDir}`);
-    console.log(`✅ cursor skills installed: ${cursorSkillsDir}`);
     console.log(`🧠 Claude Code: ${claudeStatusMsg}`);
     if (!claudeStatus.installed && !codexStatus.installed) {
       console.warn('⚠️  Install Claude Code or Codex CLI to use VIBE harness features.');
@@ -246,7 +235,7 @@ export function main(): void {
 
     // root 가 만든 트리를 그대로 두면 사용자가 자기 설정을 고칠 수 없다.
     if (installHome.redirected) {
-      const restored = [globalCoreDir, globalClaudeDir, path.join(installHome.home, '.cursor')]
+      const restored = [globalCoreDir, globalClaudeDir]
         .filter(dir => restoreOwnership(dir, installHome));
       if (restored.length > 0) {
         console.log(`🔑 소유권 복원 (${installHome.uid}:${installHome.gid}): ${restored.join(', ')}`);
