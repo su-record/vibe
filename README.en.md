@@ -4,7 +4,7 @@
 
 [![npm](https://img.shields.io/npm/v/@su-record/vibe)](https://www.npmjs.com/package/@su-record/vibe)
 [![npm downloads](https://img.shields.io/npm/dt/@su-record/vibe.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/@su-record/vibe)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.12-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 Vibe is a **verification harness** for AI coding. It anchors a SPEC in sourced context, hands completion to **deterministic gates instead of the model's self-report**, and writes an Evidence Bundle for every verified run. Model Judges are advisory-only; Human Taste is release-only — so you can vibe-code fast without shipping unverified code.
@@ -217,7 +217,6 @@ Skills teach only what the model doesn't know (domain gotchas, current APIs, pro
 |-----|--------|
 | [Claude Code](https://claude.ai/code) | Full support |
 | [Codex](https://github.com/openai/codex) | Full support (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
-| [Cursor](https://cursor.sh) | Agents + Rules |
 | Antigravity CLI (`agy`) | Agents + Skills |
 
 ---

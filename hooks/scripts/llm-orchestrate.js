@@ -627,7 +627,7 @@ async function main() {
   const cacheKey = getCacheKey(provider, cleanPrompt, systemPrompt, jsonMode);
   const cached = getCachedResponse(cacheKey);
   if (cached) {
-    logLlmCost(provider, 'cache', cleanPrompt.length, cached.length, 0, true);
+    logLlmCost(provider, 'cache', { inputLen: cleanPrompt.length, outputLen: cached.length, durationMs: 0, cached: true });
     console.log(cached);
     return;
   }
@@ -675,7 +675,7 @@ async function main() {
 
       // 비용 추적
       const model = resolveModel(currentProvider, vibeConfig);
-      logLlmCost(currentProvider, model, cleanPrompt.length, result.result.length, Date.now() - startTime, false);
+      logLlmCost(currentProvider, model, { inputLen: cleanPrompt.length, outputLen: result.result.length, durationMs: Date.now() - startTime, cached: false });
 
       console.log(output);
       return;

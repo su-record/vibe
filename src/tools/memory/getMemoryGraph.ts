@@ -1,6 +1,6 @@
 // Get memory graph structure (Knowledge Graph visualization)
 
-import { ToolResult, ToolDefinition } from '../../infra/types/tool.js';
+import { ToolResult, ToolDefinition, MemoryGraphNode, MemoryRelation } from '../../infra/types/tool.js';
 import { MemoryManager } from '../../infra/lib/MemoryManager.js';
 
 export const getMemoryGraphDefinition: ToolDefinition = {
@@ -121,7 +121,7 @@ ${graph.clusters.length > 0 ? `- Cluster members: ${graph.clusters.map(c => `[${
   }
 }
 
-function generateTreeFormat(startKey: string | undefined, nodes: any[], edges: any[]): string {
+function generateTreeFormat(startKey: string | undefined, nodes: MemoryGraphNode[], edges: MemoryRelation[]): string {
   let output = '## Memory Graph\n\n';
 
   if (startKey) {
@@ -178,7 +178,7 @@ function generateTreeFormat(startKey: string | undefined, nodes: any[], edges: a
   return output;
 }
 
-function generateListFormat(nodes: any[], edges: any[]): string {
+function generateListFormat(nodes: MemoryGraphNode[], edges: MemoryRelation[]): string {
   let output = '## Memory Graph (List)\n\n';
 
   output += '### Nodes\n';
@@ -194,7 +194,7 @@ function generateListFormat(nodes: any[], edges: any[]): string {
   return output;
 }
 
-function generateMermaidDiagram(nodes: any[], edges: any[]): string {
+function generateMermaidDiagram(nodes: MemoryGraphNode[], edges: MemoryRelation[]): string {
   let output = '## Memory Graph (Mermaid)\n\n```mermaid\ngraph LR\n';
 
   // Add nodes with categories as subgraphs

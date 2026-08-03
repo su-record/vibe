@@ -1,24 +1,22 @@
 name: Star Gate
 
+# PR 은 대상에서 제외한다 — 이 워크플로는 댓글만 다는 것이 아니라 대상을 닫는다.
+# 코드 기여를 스타 여부로 닫으면 첫 기여자가 그대로 이탈한다. 홍보 효과는 이슈 쪽에 남긴다.
 on:
   issues:
-    types: [opened, reopened]
-  pull_request_target:
     types: [opened, reopened]
 
 permissions:
   issues: write
-  pull-requests: write
 
 jobs:
   star-gate:
     runs-on: ubuntu-latest
     steps:
-      # 코드 체크아웃 없음 — pull_request_target에서도 포크 코드가 실행되지 않아 안전
       - uses: actions/github-script@v7
         with:
           script: |
-            const item = context.payload.issue ?? context.payload.pull_request;
+            const item = context.payload.issue;
             const author = item.user.login;
             if (item.user.type === 'Bot') return;
             if (['OWNER', 'MEMBER', 'COLLABORATOR'].includes(item.author_association)) return;
@@ -33,13 +31,11 @@ jobs:
               return;
             }
 
-            const isIssue = Boolean(context.payload.issue);
-            const kind = isIssue ? 'issue' : 'PR';
             const body = [
-              `안녕하세요 @${author}! 이 저장소는 ⭐ 스타를 누른 분들의 이슈/PR을 받고 있어요.`,
+              `안녕하세요 @${author}! 이 저장소는 ⭐ 스타를 누른 분들의 이슈를 받고 있어요.`,
               '',
-              `Hi @${author}! This repo accepts issues/PRs from stargazers.`,
-              `Please [star the repo](https://github.com/${context.repo.owner}/${context.repo.repo}/stargazers) and reopen this ${kind} — the gate will pass automatically on reopen. Thanks! 🙏`,
+              `Hi @${author}! This repo accepts issues from stargazers.`,
+              `Please [star the repo](https://github.com/${context.repo.owner}/${context.repo.repo}/stargazers) and reopen this issue — the gate will pass automatically on reopen. Thanks! 🙏`,
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -52,5 +48,5 @@ jobs:
               repo: context.repo.repo,
               issue_number: item.number,
               state: 'closed',
-              ...(isIssue ? { state_reason: 'not_planned' } : {}),
+              state_reason: 'not_planned',
             });

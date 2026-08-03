@@ -4,10 +4,10 @@
 
 [![npm](https://img.shields.io/npm/v/@su-record/vibe)](https://www.npmjs.com/package/@su-record/vibe)
 [![npm downloads](https://img.shields.io/npm/dt/@su-record/vibe.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/@su-record/vibe)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.12-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-**English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, Cursor, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*
+**English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*
 
 Vibe는 AI 코딩을 위한 **검증 하네스(verification harness)** 입니다. 출처가 있는 컨텍스트로 SPEC을 고정하고, **완료 판정을 모델의 자기 보고가 아니라 결정론적 게이트(테스트 exit code, run-ledger, 회귀 기억)에 맡긴 뒤 실행별 Evidence Bundle을 남깁니다.** Model Judge는 발견만 제안하고, Human Taste는 release에서만 판단합니다. 빠르게 바이브 코딩하되, 검증 안 된 코드가 나가지 않게.
 
@@ -189,7 +189,6 @@ codex
 |-----|------|
 | [Claude Code](https://claude.ai/code) | 전체 지원 |
 | [Codex](https://github.com/openai/codex) | 전체 지원 (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
-| [Cursor](https://cursor.sh) | 에이전트 + 룰 |
 | Antigravity CLI (`agy`) | 에이전트 + 스킬 |
 
 ---

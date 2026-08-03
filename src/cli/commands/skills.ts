@@ -23,7 +23,7 @@ function isValidSkillTarget(target: string): boolean {
  */
 export function skillsAdd(target?: string): void {
   if (!target) {
-    console.log(`
+    log(`
 Usage: vibe skills add <owner/repo>
 
 Install skills from skills.sh ecosystem.
@@ -37,13 +37,13 @@ Example: vibe skills add vercel-labs/skills
     process.exit(1);
   }
 
-  console.log(`\nInstalling skill: ${target}...\n`);
+  log(`\nInstalling skill: ${target}...\n`);
 
   try {
     execSync(`npx skills add ${target} --agent claude-code`, {
       stdio: 'inherit',
     });
-    console.log(`\n✅ Skill "${target}" installed successfully.`);
+    log(`\n✅ Skill "${target}" installed successfully.`);
   } catch {
     console.error(`\n❌ Failed to install skill "${target}".`);
     process.exit(1);

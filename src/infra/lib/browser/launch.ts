@@ -11,12 +11,19 @@ const DEFAULT_VIEWPORT = { width: 1920, height: 1080 };
 
 let browserInstance: unknown = null;
 
+/**
+ * puppeteer 모듈에서 실제로 쓰는 표면만 구조적으로 선언한다.
+ * optional peer dep 이라 타입 선언이 없을 수 있어 전체 타입을 참조하지 않는다.
+ */
+interface PuppeteerModule {
+  launch: (options: Record<string, unknown>) => Promise<unknown>;
+}
+
 /** Puppeteer 동적 import (optional dependency) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- puppeteer is optional peer dep
-async function loadPuppeteer(): Promise<Record<string, any>> {
+async function loadPuppeteer(): Promise<PuppeteerModule> {
   try {
     // @ts-expect-error -- puppeteer is optional peer dependency, may not have type declarations
-    return await import('puppeteer') as Record<string, any>;
+    return await import('puppeteer') as PuppeteerModule;
   } catch {
     throw new Error(
       'puppeteer is not installed. Run: npm install puppeteer\n' +

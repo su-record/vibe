@@ -5,7 +5,7 @@
 
 ## P1
 
-- [ ] **CI에 validator 3종 편입** — `.github/workflows/test.yml`에 `validate:counts`, `gen:skill-docs:check`, `validate:skill-invocation` 추가. 현재 build+test만 실행해 count/catalog drift가 CI에서 보이지 않는다 (이번에 고친 drift 2건 모두 CI를 통과해 들어온 것).
+- [x] **CI에 validator 3종 편입** — 2026-08-03 완료 (`repo-hygiene-remediation` REQ-002). `.github/workflows/test.yml` 의 `verify` job 이 lint·ratchet 포함 6종을 실행한다. 이 항목이 미해결로 남아 있던 동안 drift 2건(README 의 Cursor 잔존, Node 배지 `>=18`)이 또 CI를 통과해 3.2.16 에 실렸다 — `validate:counts` 에 하네스·엔진 대조를 추가해 같은 종류를 막았다.
 - [ ] **agy stdin 전송 전환** — `hooks/scripts/llm-orchestrate.js` `callAntigravityCli()`가 argv로 프롬프트를 전달하는데, Windows `cmd.exe /c`는 인자 내 LF에서 명령을 절단해 멀티라인 프롬프트가 구조적으로 깨진다. agy CLI의 stdin 지원 확인 후 codex/claude 경로처럼 stdin 전송으로 전환하고, `llm-orchestrate-antigravity.test.js`의 win32 skip을 해제한다.
 
 ## P2

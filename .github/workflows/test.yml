@@ -8,9 +8,99 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build (type-check)
+  # 선언된 품질 규칙이 실제로 강제되는지 — 린트 + 드리프트 가드.
+  # 이 job 이 없던 동안 README 는 삭제된 하네스(Cursor)를 계속 광고했고
+  # Node 배지는 engines 와 어긋난 채 릴리스됐다.
+  verify:
+    name: Lint & Drift Guards
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # 버전은 package.json packageManager 가 SSOT
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (oxlint — CLAUDE.md hard rules)
+        run: pnpm lint
+
+      - name: Complexity ratchet (no new violations)
+        run: pnpm lint:ratchet
+
+      - name: SKILL-CATALOG.md freshness
+        run: pnpm gen:skill-docs:check
+
+      - name: Agent model sections in sync
+        run: pnpm sync:agent-models:check
+
+      - name: Skill invocation declarations
+        run: pnpm validate:skill-invocation
+
+      - name: Count / harness / engine claims
+        run: pnpm validate:counts
+
+  build:
+    name: Build (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # engines 는 >=20.12.0, release 는 Node 24 에서 publish 한다.
+        # 배포 런타임이 CI 에서 한 번도 검증되지 않던 상태를 없애기 위해 셋 다 돌린다.
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # 버전은 package.json packageManager 가 SSOT
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (tsc)
+        run: pnpm build
+
+  test:
+    name: Tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # 버전은 package.json packageManager 가 SSOT
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (tsc) # dist/ 필요 — 훅 테스트가 dist/tools 동적 import 를 검증 (code-check-memory-write)
+        run: pnpm build
+
+      - name: Run vitest
+        run: pnpm test -- --reporter=default
+
+  coverage:
+    name: Coverage ratchet
+    runs-on: ubuntu-latest
+    needs: build
     steps:
       - uses: actions/checkout@v4
 
@@ -27,25 +117,6 @@ jobs:
       - name: Build (tsc)
         run: pnpm build
 
-  test:
-    name: Tests
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4 # 버전은 package.json packageManager 가 SSOT
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build (tsc) # dist/ 필요 — 훅 테스트가 dist/tools 동적 import 를 검증 (code-check-memory-write)
-        run: pnpm build
-
-      - name: Run vitest
-        run: pnpm test -- --reporter=default
+      # vitest.config.ts 의 thresholds 미달 시 실패한다.
+      - name: Run coverage
+        run: pnpm test:coverage

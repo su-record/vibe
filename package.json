@@ -23,12 +23,15 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && chmod +x dist/cli/index.js",
     "dev": "tsc --watch",
-    "gen:skill-docs": "npx tsx scripts/gen-skill-docs.ts",
-    "gen:skill-docs:check": "npx tsx scripts/gen-skill-docs.ts --check",
-    "sync:agent-models": "npx tsx scripts/sync-agent-models.ts",
-    "sync:agent-models:check": "npx tsx scripts/sync-agent-models.ts --check",
-    "validate:skill-invocation": "npx tsx scripts/validate-skill-invocation.ts",
-    "validate:counts": "npx tsx scripts/validate-counts.ts",
+    "gen:skill-docs": "tsx scripts/gen-skill-docs.ts",
+    "gen:skill-docs:check": "tsx scripts/gen-skill-docs.ts --check",
+    "sync:agent-models": "tsx scripts/sync-agent-models.ts",
+    "sync:agent-models:check": "tsx scripts/sync-agent-models.ts --check",
+    "validate:skill-invocation": "tsx scripts/validate-skill-invocation.ts",
+    "validate:counts": "tsx scripts/validate-counts.ts",
+    "lint": "oxlint",
+    "lint:ratchet": "tsx scripts/lint-ratchet.ts",
+    "verify:all": "pnpm lint && pnpm lint:ratchet && pnpm gen:skill-docs:check && pnpm sync:agent-models:check && pnpm validate:skill-invocation && pnpm validate:counts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -90,6 +93,8 @@
     "@types/papaparse": "^5.5.2",
     "@vitest/coverage-v8": "^4.1.10",
     "ajv": "^8.17.1",
+    "oxlint": "^1.76.0",
+    "tsx": "^4.23.5",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   },
@@ -108,7 +113,8 @@
   ],
   "pnpm": {
     "onlyBuiltDependencies": [
-      "better-sqlite3"
+      "better-sqlite3",
+      "esbuild"
     ]
   }
 }

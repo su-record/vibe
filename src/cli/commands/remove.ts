@@ -5,7 +5,7 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { removeDirRecursive } from '../utils.js';
+import { log, removeDirRecursive } from '../utils.js';
 
 /**
  * remove 명령어 실행
@@ -20,28 +20,28 @@ export function remove(): void {
   const hasAny = fs.existsSync(vibeDir) || fs.existsSync(legacyClaudeVibe) ||
                  fs.existsSync(legacyCoreDir);
   if (!hasAny) {
-    console.log('❌ Not a vibe project.');
+    log('❌ Not a vibe project.');
     return;
   }
 
-  console.log('🗑️  Removing vibe...\n');
+  log('🗑️  Removing vibe...\n');
 
   // .vibe 폴더 제거 (SSOT)
   if (fs.existsSync(vibeDir)) {
     removeDirRecursive(vibeDir);
-    console.log('   ✅ .vibe/ removed\n');
+    log('   ✅ .vibe/ removed\n');
   }
 
   // 레거시 `.claude/vibe/` 제거
   if (fs.existsSync(legacyClaudeVibe)) {
     removeDirRecursive(legacyClaudeVibe);
-    console.log('   ✅ .claude/vibe/ removed (legacy)\n');
+    log('   ✅ .claude/vibe/ removed (legacy)\n');
   }
 
   // 레거시 .core 폴더도 제거
   if (fs.existsSync(legacyCoreDir)) {
     removeDirRecursive(legacyCoreDir);
-    console.log('   ✅ .core/ removed (legacy)\n');
+    log('   ✅ .core/ removed (legacy)\n');
   }
 
   // .claude/commands 제거
@@ -54,7 +54,7 @@ export function remove(): void {
         fs.unlinkSync(cmdPath);
       }
     });
-    console.log('   ✅ Slash commands removed\n');
+    log('   ✅ Slash commands removed\n');
   }
 
   // .claude/agents 제거
@@ -70,7 +70,7 @@ export function remove(): void {
         fs.unlinkSync(agentPath);
       }
     });
-    console.log('   ✅ Subagents removed\n');
+    log('   ✅ Subagents removed\n');
   }
 
   // .claude/settings.json에서 hooks 제거
@@ -81,7 +81,7 @@ export function remove(): void {
       if (settings.hooks) {
         delete settings.hooks;
         fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-        console.log('   ✅ Hooks removed\n');
+        log('   ✅ Hooks removed\n');
       }
     } catch { /* ignore: optional operation */ }
   }
@@ -102,7 +102,7 @@ export function remove(): void {
       }
     });
     if (removedAgents > 0) {
-      console.log(`   ✅ Cursor agents removed (${removedAgents})\n`);
+      log(`   ✅ Cursor agents removed (${removedAgents})\n`);
     }
   }
 
@@ -119,7 +119,7 @@ export function remove(): void {
       }
     });
     if (removedSkills > 0) {
-      console.log(`   ✅ Cursor skills removed (${removedSkills})\n`);
+      log(`   ✅ Cursor skills removed (${removedSkills})\n`);
     }
   }
 
@@ -139,11 +139,11 @@ export function remove(): void {
       }
     });
     if (removedRules > 0) {
-      console.log(`   ✅ Cursor rules template removed (${removedRules})\n`);
+      log(`   ✅ Cursor rules template removed (${removedRules})\n`);
     }
   }
 
-  console.log(`
+  log(`
 ✅ vibe removed!
 
 Removed:

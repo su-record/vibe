@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "eslint"],
+  "env": { "builtin": true, "node": true, "es2024": true },
+  "ignorePatterns": ["dist/**", "node_modules/**", "coverage/**", "dev-log/**"],
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "max-params": ["error", 5],
+    "max-depth": ["warn", 3],
+    "max-lines-per-function": ["warn", { "max": 50, "skipBlankLines": true, "skipComments": true }],
+    "complexity": ["warn", 10]
+  },
+  "overrides": [
+    {
+      "files": ["src/cli/**", "hooks/scripts/**", "scripts/**", "src/infra/lib/utils.ts", "src/infra/lib/codex-proxy.ts"],
+      "rules": { "no-console": "off" }
+    },
+    {
+      "files": ["**/*.test.ts", "**/__tests__/**", "src/test-helpers/**", "src/tests/**"],
+      "rules": {
+        "typescript/no-explicit-any": "off",
+        "no-console": "off",
+        "max-lines-per-function": "off",
+        "complexity": "off",
+        "max-depth": "off"
+      }
+    }
+  ]
+}
