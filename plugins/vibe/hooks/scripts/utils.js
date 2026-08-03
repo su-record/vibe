@@ -372,12 +372,11 @@ const DEFAULT_COST = { input: 0.003, output: 0.010 };
  *
  * @param {string} provider - 프로바이더 (gpt, antigravity)
  * @param {string} model - 모델명
- * @param {number} inputLen - 입력 문자 수
- * @param {number} outputLen - 출력 문자 수
- * @param {number} durationMs - 호출 소요 시간
- * @param {boolean} cached - 캐시 히트 여부
+ * @param {{ inputLen: number, outputLen: number, durationMs: number, cached: boolean }} call
+ *   inputLen/outputLen 은 문자 수, durationMs 는 호출 소요 시간, cached 는 캐시 히트 여부
  */
-export function logLlmCost(provider, model, inputLen, outputLen, durationMs, cached) {
+export function logLlmCost(provider, model, call) {
+  const { inputLen, outputLen, durationMs, cached } = call;
   try {
     if (fs.existsSync(LLM_COST_PATH)) {
       const stat = fs.statSync(LLM_COST_PATH);

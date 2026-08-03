@@ -123,7 +123,14 @@ function generateBGStyles(sectionClass, images, indentLevel) {
  * 부모 경로를 포함하여 중복 클래스명 방지.
  * SCSS nesting 없이 모든 클래스를 루트 레벨로 출력.
  */
-function collectNodeBlocks(node, sectionClass, isRoot, childIndex, blocks, parentPath) {
+/**
+ * @param {object} node
+ * @param {{ sectionClass: string, blocks: object[] }} ctx - 재귀 전체가 공유하는 수집 컨텍스트
+ * @param {{ isRoot: boolean, childIndex: number, parentPath: string }} pos - 노드별 위치 정보
+ */
+function collectNodeBlocks(node, ctx, pos) {
+  const { sectionClass, blocks } = ctx;
+  const { isRoot, childIndex, parentPath } = pos;
   const css = node.css || {};
   const children = node.children || [];
 
@@ -187,7 +194,7 @@ function collectNodeBlocks(node, sectionClass, isRoot, childIndex, blocks, paren
     const childCls = nodeToClassName(child, idx);
     if (seenClasses.has(childCls)) { idx++; continue; }
     seenClasses.add(childCls);
-    collectNodeBlocks(child, sectionClass, false, idx, blocks, currentPath);
+    collectNodeBlocks(child, ctx, { isRoot: false, childIndex: idx, parentPath: currentPath });
     idx++;
   }
 }
@@ -205,7 +212,7 @@ function generateSectionSCSS(section) {
 
   // Flat BEM 블록 수집
   const blocks = [];
-  collectNodeBlocks(section, sectionClass, true, 0, blocks, '');
+  collectNodeBlocks(section, { sectionClass, blocks }, { isRoot: true, childIndex: 0, parentPath: '' });
 
   // 블록 → SCSS 텍스트
   for (const block of blocks) {

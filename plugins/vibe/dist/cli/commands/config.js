@@ -9,6 +9,7 @@
 import fs from 'fs';
 import chalk from 'chalk';
 import { readGlobalConfig, getGlobalConfigPath, getProjectConfigPath, getProjectConfigPaths, } from '../../infra/lib/config/GlobalConfigManager.js';
+import { log } from '../utils.js';
 // ============================================================================
 // Constants
 // ============================================================================
@@ -140,11 +141,11 @@ function formatEntry(entry) {
     return `  ${chalk.white(entry.key)} = ${chalk.gray(masked)}  ${label}`;
 }
 function printSourceLegend() {
-    console.log(chalk.dim('Sources:'));
-    console.log(chalk.dim(`  ${chalk.blue('[global]')}  ~/.vibe/config.json`));
-    console.log(chalk.dim(`  ${chalk.green('[project]')} .vibe/config.json`));
-    console.log(chalk.dim(`  ${chalk.yellow('[env]')}     Environment variable`));
-    console.log('');
+    log(chalk.dim('Sources:'));
+    log(chalk.dim(`  ${chalk.blue('[global]')}  ~/.vibe/config.json`));
+    log(chalk.dim(`  ${chalk.green('[project]')} .vibe/config.json`));
+    log(chalk.dim(`  ${chalk.yellow('[env]')}     Environment variable`));
+    log('');
 }
 // ============================================================================
 // Public API
@@ -159,19 +160,19 @@ export function configShow() {
     const projectPaths = getProjectConfigPaths(projectDir);
     const globalExists = fs.existsSync(globalPath);
     const projectExists = projectPaths.some(p => fs.existsSync(p));
-    console.log('');
-    console.log(chalk.bold('Vibe Configuration (merged)'));
-    console.log('');
+    log('');
+    log(chalk.bold('Vibe Configuration (merged)'));
+    log('');
     printSourceLegend();
     // File status
-    console.log(chalk.dim('Files:'));
-    console.log(`  ${globalExists ? chalk.green('found') : chalk.red('missing')}  ${globalPath}`);
-    console.log(`  ${projectExists ? chalk.green('found') : chalk.red('missing')}  ${projectPath}`);
-    console.log('');
+    log(chalk.dim('Files:'));
+    log(`  ${globalExists ? chalk.green('found') : chalk.red('missing')}  ${globalPath}`);
+    log(`  ${projectExists ? chalk.green('found') : chalk.red('missing')}  ${projectPath}`);
+    log('');
     const entries = buildConfigEntries(projectDir);
     if (entries.length === 0) {
-        console.log(chalk.dim('  No configuration found. Run: vibe setup'));
-        console.log('');
+        log(chalk.dim('  No configuration found. Run: vibe setup'));
+        log('');
         return;
     }
     // Group by top-level section
@@ -183,18 +184,18 @@ export function configShow() {
         sections.set(section, list);
     }
     for (const [section, sectionEntries] of sections) {
-        console.log(chalk.bold.underline(section));
+        log(chalk.bold.underline(section));
         for (const entry of sectionEntries) {
-            console.log(formatEntry(entry));
+            log(formatEntry(entry));
         }
-        console.log('');
+        log('');
     }
 }
 /**
  * Display config subcommand help
  */
 export function configHelp() {
-    console.log(`
+    log(`
 Config Commands:
   vibe config show          Show merged configuration from all sources
   vibe config help          Show this help

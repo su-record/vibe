@@ -20,10 +20,39 @@ import { resolveInstallHome, restoreOwnership } from '../setup/InstallHome.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 /**
+ * 이 저장소 자신에서 install 을 돌린 경우인지 판정한다.
+ *
+ * npm·pnpm 은 install 을 시작한 디렉토리를 INIT_CWD 로 넘긴다. 그것이 이 패키지의
+ * 루트와 같다면 소비자 설치가 아니라 **개발자가 자기 작업 트리에서 install 한 것**이다.
+ * 그대로 진행하면 작업 중인 브랜치의 자산이 개발자의 전역 홈(~/.claude, ~/.vibe)을
+ * 덮어쓴다 — 브랜치를 옮길 때마다 전역 하네스가 조용히 바뀐다.
+ *
+ * @param packageRoot 이 패키지의 루트 (dist 기준으로 역산된 경로)
+ */
+export function isSelfInstall(packageRoot) {
+    const initCwd = process.env.INIT_CWD;
+    if (!initCwd)
+        return false;
+    const resolve = (p) => {
+        try {
+            return fs.realpathSync(path.resolve(p));
+        }
+        catch {
+            return path.resolve(p);
+        }
+    };
+    return resolve(initCwd) === resolve(packageRoot);
+}
+/**
  * postinstall 메인 함수
  */
 export function main() {
     try {
+        if (isSelfInstall(path.resolve(__dirname, '..', '..', '..'))) {
+            console.log('ℹ️  vibe 저장소 자체의 install 로 판단해 전역 자산 설치를 건너뜁니다.\n' +
+                '   이 작업 트리를 전역에 반영하려면: pnpm build && node dist/cli/index.js upgrade');
+            return;
+        }
         // sudo 로 전역 설치하면 postinstall 이 root 로 돌아 os.homedir() 가 /root 를 준다.
         // 그러면 패키지·CLI 는 멀쩡한데 정작 쓰는 사람의 ~/.claude/{skills,agents} 만 빈다.
         // POSIX 의 os.homedir() 는 $HOME 을 우선하므로 여기서 한 번 교정하면

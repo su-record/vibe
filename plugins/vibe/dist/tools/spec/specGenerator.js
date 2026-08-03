@@ -46,7 +46,7 @@ function generateSplitSpec(prd, featureName, phases, options) {
     // Phase별 SPEC
     for (let i = 0; i < phases.length; i++) {
         const phase = phases[i];
-        const phaseContent = buildPhaseSpecContent(prd, featureName, phase, i + 1, phases.length, options);
+        const phaseContent = buildPhaseSpecContent(prd, featureName, { phase, phaseNumber: i + 1, totalPhases: phases.length }, options);
         const phaseName = normalizeFileName(phase.name);
         splitFiles.push({
             path: `phase-${i + 1}-${phaseName}.md`,
@@ -261,10 +261,8 @@ ${options.humanTaste?.map(item => `- ${item}`).join('\n') || '- None recorded; r
 `;
     return content;
 }
-/**
- * Phase별 SPEC 콘텐츠 빌드
- */
-function buildPhaseSpecContent(prd, featureName, phase, phaseNumber, totalPhases, options) {
+function buildPhaseSpecContent(prd, featureName, position, options) {
+    const { phase, phaseNumber, totalPhases } = position;
     const now = new Date().toISOString();
     let content = `---
 status: pending

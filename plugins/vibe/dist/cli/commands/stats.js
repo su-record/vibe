@@ -10,6 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import chalk from 'chalk';
+import { log } from '../utils.js';
 // ============================================================================
 // Constants
 // ============================================================================
@@ -121,9 +122,9 @@ function padRight(str, len) {
     return str.length >= len ? str : str + ' '.repeat(len - str.length);
 }
 function printHeader(title) {
-    console.log('');
-    console.log(chalk.bold(`📊 ${title}`));
-    console.log(DIVIDER);
+    log('');
+    log(chalk.bold(`📊 ${title}`));
+    log(DIVIDER);
 }
 // ============================================================================
 // Default stats (all-time summary)
@@ -136,27 +137,27 @@ function printSummarySection(events, decisions) {
     const runsLabel = successRate !== null
         ? `${totalRuns} (${successRate}% success)`
         : `${totalRuns}`;
-    console.log(`${chalk.white(padRight('Sessions:', 16))} ${chalk.cyan(sessions)}`);
-    console.log(`${chalk.white(padRight('Skill Runs:', 16))} ${chalk.cyan(runsLabel)}`);
+    log(`${chalk.white(padRight('Sessions:', 16))} ${chalk.cyan(sessions)}`);
+    log(`${chalk.white(padRight('Skill Runs:', 16))} ${chalk.cyan(runsLabel)}`);
     if (avgDuration !== null) {
-        console.log(`${chalk.white(padRight('Avg Duration:', 16))} ${chalk.cyan(`${avgDuration}s`)}`);
+        log(`${chalk.white(padRight('Avg Duration:', 16))} ${chalk.cyan(`${avgDuration}s`)}`);
     }
-    console.log(`${chalk.white(padRight('Total Decisions:', 16))} ${chalk.cyan(decisions.length)}`);
+    log(`${chalk.white(padRight('Total Decisions:', 16))} ${chalk.cyan(decisions.length)}`);
 }
 function printTopSkills(summaries) {
     if (summaries.length === 0) {
-        console.log(chalk.dim('  No skill data yet.'));
+        log(chalk.dim('  No skill data yet.'));
         return;
     }
-    console.log('');
-    console.log(chalk.bold('Top Skills:'));
+    log('');
+    log(chalk.bold('Top Skills:'));
     const top = summaries.slice(0, TOP_SKILLS_COUNT);
     top.forEach((s, i) => {
         const rank = chalk.dim(`  ${i + 1}.`);
         const name = chalk.white(padRight(s.skill, 18));
         const runs = chalk.cyan(`${s.count} runs`);
         const rate = formatSuccessRate(s.successCount, s.count);
-        console.log(`${rank} ${name} ${runs}  (${rate})`);
+        log(`${rank} ${name} ${runs}  (${rate})`);
     });
 }
 export function statsDefault() {
@@ -166,14 +167,14 @@ export function statsDefault() {
     printHeader('Vibe Stats');
     printSummarySection(events, decisions);
     printTopSkills(summaries);
-    console.log('');
+    log('');
 }
 // ============================================================================
 // --week: Last 7 days with day-by-day breakdown
 // ============================================================================
 function printWeeklyBreakdown(events) {
-    console.log('');
-    console.log(chalk.bold('Day-by-Day Breakdown:'));
+    log('');
+    log(chalk.bold('Day-by-Day Breakdown:'));
     const today = new Date();
     for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
@@ -186,7 +187,7 @@ function printWeeklyBreakdown(events) {
         const rate = dayEvents.length > 0
             ? `  (${formatSuccessRate(successCount, dayEvents.length)})`
             : '';
-        console.log(`  ${label}  ${count}${rate}`);
+        log(`  ${label}  ${count}${rate}`);
     }
 }
 export function statsWeek() {
@@ -199,7 +200,7 @@ export function statsWeek() {
     printSummarySection(events, decisions);
     printTopSkills(summaries);
     printWeeklyBreakdown(events);
-    console.log('');
+    log('');
 }
 // ============================================================================
 // --quality: Quality trends
@@ -207,11 +208,11 @@ export function statsWeek() {
 function printReviewStats(spans) {
     const reviewSpans = spans.filter(s => s.type === 'review');
     const p1Spans = reviewSpans.filter(s => s.attributes['p1_count'] !== undefined && Number(s.attributes['p1_count']) > 0);
-    console.log(chalk.bold('Review Quality:'));
-    console.log(`  ${chalk.white(padRight('Review spans:', 20))} ${chalk.cyan(reviewSpans.length)}`);
-    console.log(`  ${chalk.white(padRight('With P1 issues:', 20))} ${chalk.red(p1Spans.length)}`);
+    log(chalk.bold('Review Quality:'));
+    log(`  ${chalk.white(padRight('Review spans:', 20))} ${chalk.cyan(reviewSpans.length)}`);
+    log(`  ${chalk.white(padRight('With P1 issues:', 20))} ${chalk.red(p1Spans.length)}`);
     const errorSpans = spans.filter(s => s.status === 'error');
-    console.log(`  ${chalk.white(padRight('Error spans:', 20))} ${chalk.yellow(errorSpans.length)}`);
+    log(`  ${chalk.white(padRight('Error spans:', 20))} ${chalk.yellow(errorSpans.length)}`);
 }
 function printErrorTypes(spans) {
     const errorSpans = spans.filter(s => s.status === 'error');
@@ -222,20 +223,20 @@ function printErrorTypes(spans) {
         const key = `${span.type}/${span.name}`;
         errorMap.set(key, (errorMap.get(key) ?? 0) + 1);
     }
-    console.log('');
-    console.log(chalk.bold('Most Common Errors:'));
+    log('');
+    log(chalk.bold('Most Common Errors:'));
     [...errorMap.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .forEach(([name, count]) => {
-        console.log(`  ${chalk.red(padRight(name, 30))} ${chalk.white(count)}x`);
+        log(`  ${chalk.red(padRight(name, 30))} ${chalk.white(count)}x`);
     });
 }
 function printDecisionQuality(decisions) {
-    console.log('');
-    console.log(chalk.bold('Decision Success Rate by Category:'));
+    log('');
+    log(chalk.bold('Decision Success Rate by Category:'));
     if (decisions.length === 0) {
-        console.log(chalk.dim('  No decision data yet.'));
+        log(chalk.dim('  No decision data yet.'));
         return;
     }
     const categoryMap = new Map();
@@ -253,7 +254,7 @@ function printDecisionQuality(decisions) {
         const rate = data.withOutcome > 0
             ? formatSuccessRate(data.success, data.withOutcome)
             : chalk.dim('no outcome');
-        console.log(`  ${chalk.white(padRight(category, 20))} ${chalk.cyan(`${data.total} decisions`)}  ${rate}`);
+        log(`  ${chalk.white(padRight(category, 20))} ${chalk.cyan(`${data.total} decisions`)}  ${rate}`);
     }
 }
 export function statsQuality() {
@@ -263,13 +264,13 @@ export function statsQuality() {
     printReviewStats(spans);
     printErrorTypes(spans);
     printDecisionQuality(decisions);
-    console.log('');
+    log('');
 }
 // ============================================================================
 // Help
 // ============================================================================
 export function statsHelp() {
-    console.log(`
+    log(`
 Stats Commands:
   vibe stats              All-time session summary
   vibe stats --week       Last 7 days with daily breakdown
