@@ -6,6 +6,7 @@
  * Token stored in ~/.vibe/config.json is required for API access.
  */
 import { readGlobalConfig, patchGlobalConfig, } from '../../infra/lib/config/GlobalConfigManager.js';
+import { log } from '../utils.js';
 const DEFAULT_BREAKPOINTS = {
     breakpoint: 1024,
     pcTarget: 1920,
@@ -28,8 +29,8 @@ function loadBreakpoints() {
  */
 export function figmaSetup(token) {
     if (!token) {
-        console.log('Usage: vibe figma setup <access-token>');
-        console.log('  Get a token from: Figma > Settings > Personal access tokens');
+        log('Usage: vibe figma setup <access-token>');
+        log('  Get a token from: Figma > Settings > Personal access tokens');
         return;
     }
     patchGlobalConfig({
@@ -40,7 +41,7 @@ export function figmaSetup(token) {
             },
         },
     });
-    console.log('Figma access token saved');
+    log('Figma access token saved');
 }
 /**
  * vibe figma status
@@ -49,20 +50,20 @@ export function figmaStatus() {
     const config = loadFigmaConfig();
     const envToken = process.env.FIGMA_ACCESS_TOKEN;
     if (!config?.accessToken && !envToken) {
-        console.log('Figma: not configured');
-        console.log('  Run: vibe figma setup <access-token>');
+        log('Figma: not configured');
+        log('  Run: vibe figma setup <access-token>');
         return;
     }
     if (config?.accessToken) {
         const token = config.accessToken;
         const preview = token.slice(0, 8) + '...' + token.slice(-4);
-        console.log(`Figma: configured (${preview})`);
+        log(`Figma: configured (${preview})`);
         if (config.createdAt) {
-            console.log(`  Added: ${config.createdAt}`);
+            log(`  Added: ${config.createdAt}`);
         }
     }
     else if (envToken) {
-        console.log('Figma: configured (via FIGMA_ACCESS_TOKEN env)');
+        log('Figma: configured (via FIGMA_ACCESS_TOKEN env)');
     }
 }
 /**
@@ -71,7 +72,7 @@ export function figmaStatus() {
 export function figmaLogout() {
     const config = loadFigmaConfig();
     if (!config?.accessToken) {
-        console.log('Figma: not configured');
+        log('Figma: not configured');
         return;
     }
     patchGlobalConfig({
@@ -79,7 +80,7 @@ export function figmaLogout() {
             figma: { accessToken: undefined, createdAt: undefined },
         },
     });
-    console.log('Figma access token removed');
+    log('Figma access token removed');
 }
 /**
  * vibe figma breakpoints [--set key=value]
@@ -102,26 +103,26 @@ export function figmaBreakpoints(setArg) {
         patchGlobalConfig({
             figma: { breakpoints: { [key]: num } },
         });
-        console.log(`Breakpoint updated: ${key} = ${num}px`);
+        log(`Breakpoint updated: ${key} = ${num}px`);
     }
     const bp = loadBreakpoints();
     const isCustom = readGlobalConfig().figma?.breakpoints;
-    console.log(`Figma Breakpoints${isCustom ? ' (customized)' : ' (defaults)'}:`);
-    console.log(`  breakpoint:     ${bp.breakpoint}px  (PC↔Mobile boundary)`);
-    console.log(`  pcTarget:       ${bp.pcTarget}px  (PC main target)`);
-    console.log(`  mobilePortrait: ${bp.mobilePortrait}px  (Mobile portrait max)`);
-    console.log(`  mobileMinimum:  ${bp.mobileMinimum}px  (Mobile minimum)`);
-    console.log(`  designPc:       ${bp.designPc}px  (Figma PC artboard)`);
-    console.log(`  designMobile:   ${bp.designMobile}px  (Figma Mobile artboard)`);
+    log(`Figma Breakpoints${isCustom ? ' (customized)' : ' (defaults)'}:`);
+    log(`  breakpoint:     ${bp.breakpoint}px  (PC↔Mobile boundary)`);
+    log(`  pcTarget:       ${bp.pcTarget}px  (PC main target)`);
+    log(`  mobilePortrait: ${bp.mobilePortrait}px  (Mobile portrait max)`);
+    log(`  mobileMinimum:  ${bp.mobileMinimum}px  (Mobile minimum)`);
+    log(`  designPc:       ${bp.designPc}px  (Figma PC artboard)`);
+    log(`  designMobile:   ${bp.designMobile}px  (Figma Mobile artboard)`);
     if (!isCustom) {
-        console.log('\n  Customize: vibe figma breakpoints --set breakpoint=768');
+        log('\n  Customize: vibe figma breakpoints --set breakpoint=768');
     }
 }
 /**
  * vibe figma help
  */
 export function figmaHelp() {
-    console.log(`
+    log(`
 Figma Commands:
   vibe figma setup <token>                Set Figma access token
   vibe figma breakpoints                  Show current breakpoint defaults

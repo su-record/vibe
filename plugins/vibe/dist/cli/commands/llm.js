@@ -6,6 +6,7 @@
  *   vibe llm help
  */
 import { fetchAllProviders, applyToConfig } from '../llm/model-refresh.js';
+import { log } from '../utils.js';
 function sourceLabel(p) {
     if (p.source === 'no-key')
         return 'no key — curated list';
@@ -16,38 +17,38 @@ function sourceLabel(p) {
     return 'live';
 }
 function printProvider(p) {
-    console.log(`\n${p.label}  [${sourceLabel(p)}]`);
+    log(`\n${p.label}  [${sourceLabel(p)}]`);
     for (const id of p.models) {
         const star = id === p.recommended ? ' ★' : '';
-        console.log(`  ${id}${star}`);
+        log(`  ${id}${star}`);
     }
 }
 export async function llmList() {
-    console.log('Fetching available models from providers...');
+    log('Fetching available models from providers...');
     const providers = await fetchAllProviders();
     for (const p of providers)
         printProvider(p);
-    console.log('\n★ = recommended (latest). Update SSOT: vibe llm refresh');
+    log('\n★ = recommended (latest). Update SSOT: vibe llm refresh');
 }
 export async function llmRefresh() {
-    console.log('Refreshing models from provider APIs...');
+    log('Refreshing models from provider APIs...');
     const providers = await fetchAllProviders();
     for (const p of providers)
         printProvider(p);
     const changes = applyToConfig(providers);
-    console.log('\n─── SSOT update (~/.vibe/config.json models) ───');
+    log('\n─── SSOT update (~/.vibe/config.json models) ───');
     if (changes.length === 0) {
-        console.log('  Already up to date — no changes.');
+        log('  Already up to date — no changes.');
     }
     else {
         for (const c of changes) {
-            console.log(`  ${c.key}: ${c.from ?? '(unset)'} → ${c.to}`);
+            log(`  ${c.key}: ${c.from ?? '(unset)'} → ${c.to}`);
         }
     }
-    console.log('\nNote: Claude models are managed as Claude Code tiers (sonnet/opus/haiku) and are not auto-overwritten.');
+    log('\nNote: Claude models are managed as Claude Code tiers (sonnet/opus/haiku) and are not auto-overwritten.');
 }
 export function llmHelp() {
-    console.log(`
+    log(`
 vibe llm — LLM model discovery & SSOT refresh
 
   vibe llm list       List currently available models per provider

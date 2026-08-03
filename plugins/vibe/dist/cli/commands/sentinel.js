@@ -4,6 +4,7 @@
  */
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { log } from '../utils.js';
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Helpers
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -34,7 +35,7 @@ function tryLoadStorage() {
 export function sentinelStatus() {
     const storage = tryLoadStorage();
     if (!storage) {
-        console.log('Sentinel: No database found. Run a session first.');
+        log('Sentinel: No database found. Run a session first.');
         return;
     }
     const db = storage.getDatabase();
@@ -65,7 +66,7 @@ export function sentinelStatus() {
     catch {
         // Table may not exist
     }
-    console.log(`
+    log(`
 Security Sentinel Status
 ========================
   Policies:      ${policyCount} active
@@ -78,10 +79,11 @@ Security Sentinel Status
     Blocked:         ${blockedActions}
   `);
 }
-export function sentinelAudit(type, risk, days, deadLetter, retryId, discardId) {
+export function sentinelAudit(options = {}) {
+    const { type, risk, days, deadLetter, retryId, discardId } = options;
     const storage = tryLoadStorage();
     if (!storage) {
-        console.log('No audit data found.');
+        log('No audit data found.');
         return;
     }
     const db = storage.getDatabase();
@@ -89,36 +91,36 @@ export function sentinelAudit(type, risk, days, deadLetter, retryId, discardId) 
         try {
             const rows = db.prepare('SELECT * FROM dead_letter_events ORDER BY failedAt DESC LIMIT 50').all();
             if (rows.length === 0) {
-                console.log('No dead letter events.');
+                log('No dead letter events.');
                 return;
             }
-            console.log(`Dead Letter Events (${rows.length}):`);
+            log(`Dead Letter Events (${rows.length}):`);
             for (const row of rows) {
-                console.log(`  [${row.id}] ${row.eventType} — retries: ${row.retryCount}, failed: ${row.failedAt}`);
+                log(`  [${row.id}] ${row.eventType} — retries: ${row.retryCount}, failed: ${row.failedAt}`);
             }
         }
         catch {
-            console.log('Dead letter table not found.');
+            log('Dead letter table not found.');
         }
         return;
     }
     if (retryId) {
         try {
             db.prepare("UPDATE event_outbox SET status = 'pending', retryCount = 0 WHERE id = ?").run(retryId);
-            console.log(`Event ${retryId} re-queued for retry.`);
+            log(`Event ${retryId} re-queued for retry.`);
         }
         catch (err) {
-            console.log(`Failed to retry: ${err.message}`);
+            log(`Failed to retry: ${err.message}`);
         }
         return;
     }
     if (discardId) {
         try {
             db.prepare('DELETE FROM dead_letter_events WHERE id = ?').run(discardId);
-            console.log(`Dead letter event ${discardId} discarded.`);
+            log(`Dead letter event ${discardId} discarded.`);
         }
         catch (err) {
-            console.log(`Failed to discard: ${err.message}`);
+            log(`Failed to discard: ${err.message}`);
         }
         return;
     }
@@ -138,149 +140,149 @@ export function sentinelAudit(type, risk, days, deadLetter, retryId, discardId) 
     try {
         const rows = db.prepare(query).all(...params);
         if (rows.length === 0) {
-            console.log('No audit events found.');
+            log('No audit events found.');
             return;
         }
-        console.log(`Audit Events (${rows.length}):`);
+        log(`Audit Events (${rows.length}):`);
         for (const row of rows) {
             const risk = row.riskLevel ?? '-';
             const outcome = row.outcome ?? '-';
-            console.log(`  [${row.id}] ${row.eventType} | risk=${risk} | outcome=${outcome} | ${row.createdAt}`);
+            log(`  [${row.id}] ${row.eventType} | risk=${risk} | outcome=${outcome} | ${row.createdAt}`);
         }
     }
     catch (err) {
-        console.log(`Query failed: ${err.message}`);
+        log(`Query failed: ${err.message}`);
     }
 }
 export function sentinelApprove(id) {
     if (!id) {
-        console.log('Usage: vibe sentinel approve <confirmation-id>');
+        log('Usage: vibe sentinel approve <confirmation-id>');
         return;
     }
     const storage = tryLoadStorage();
     if (!storage) {
-        console.log('No database found.');
+        log('No database found.');
         return;
     }
     const db = storage.getDatabase();
     try {
         const row = db.prepare('SELECT * FROM confirmations WHERE id = ?').get(id);
         if (!row) {
-            console.log(`Confirmation ${id} not found.`);
+            log(`Confirmation ${id} not found.`);
             return;
         }
         if (row.status !== 'pending') {
-            console.log(`Confirmation ${id} is already ${row.status}.`);
+            log(`Confirmation ${id} is already ${row.status}.`);
             return;
         }
         db.prepare("UPDATE confirmations SET status = 'approved', ownerResponse = 'CLI approval', resolvedAt = ? WHERE id = ?").run(new Date().toISOString(), id);
-        console.log(`Confirmation ${id} approved.`);
+        log(`Confirmation ${id} approved.`);
     }
     catch (err) {
-        console.log(`Failed: ${err.message}`);
+        log(`Failed: ${err.message}`);
     }
 }
 export function sentinelReject(id) {
     if (!id) {
-        console.log('Usage: vibe sentinel reject <confirmation-id>');
+        log('Usage: vibe sentinel reject <confirmation-id>');
         return;
     }
     const storage = tryLoadStorage();
     if (!storage) {
-        console.log('No database found.');
+        log('No database found.');
         return;
     }
     const db = storage.getDatabase();
     try {
         const row = db.prepare('SELECT * FROM confirmations WHERE id = ?').get(id);
         if (!row) {
-            console.log(`Confirmation ${id} not found.`);
+            log(`Confirmation ${id} not found.`);
             return;
         }
         if (row.status !== 'pending') {
-            console.log(`Confirmation ${id} is already ${row.status}.`);
+            log(`Confirmation ${id} is already ${row.status}.`);
             return;
         }
         db.prepare("UPDATE confirmations SET status = 'rejected', ownerResponse = 'CLI rejection', resolvedAt = ? WHERE id = ?").run(new Date().toISOString(), id);
-        console.log(`Confirmation ${id} rejected.`);
+        log(`Confirmation ${id} rejected.`);
     }
     catch (err) {
-        console.log(`Failed: ${err.message}`);
+        log(`Failed: ${err.message}`);
     }
 }
 export function sentinelPolicyList() {
     const storage = tryLoadStorage();
     if (!storage) {
-        console.log('No policies found.');
+        log('No policies found.');
         return;
     }
     const db = storage.getDatabase();
     try {
         const rows = db.prepare('SELECT name, description, action, priority, enabled FROM policies ORDER BY priority DESC').all();
         if (rows.length === 0) {
-            console.log('No policies configured.');
+            log('No policies configured.');
             return;
         }
-        console.log('Sentinel Policies:');
+        log('Sentinel Policies:');
         for (const row of rows) {
             const status = row.enabled ? 'ON' : 'OFF';
-            console.log(`  [${status}] ${row.name} (priority: ${row.priority}, action: ${row.action})`);
+            log(`  [${status}] ${row.name} (priority: ${row.priority}, action: ${row.action})`);
             if (row.description)
-                console.log(`        ${row.description}`);
+                log(`        ${row.description}`);
         }
     }
     catch (err) {
-        console.log(`Failed: ${err.message}`);
+        log(`Failed: ${err.message}`);
     }
 }
 export function sentinelPolicyToggle(name, enable) {
     if (!name) {
-        console.log(`Usage: vibe sentinel policy ${enable ? 'enable' : 'disable'} <policy-name>`);
+        log(`Usage: vibe sentinel policy ${enable ? 'enable' : 'disable'} <policy-name>`);
         return;
     }
     const storage = tryLoadStorage();
     if (!storage) {
-        console.log('No database found.');
+        log('No database found.');
         return;
     }
     const db = storage.getDatabase();
     try {
         const result = db.prepare('UPDATE policies SET enabled = ?, updatedAt = ? WHERE name = ?').run(enable ? 1 : 0, new Date().toISOString(), name);
         if (result.changes === 0) {
-            console.log(`Policy '${name}' not found.`);
+            log(`Policy '${name}' not found.`);
         }
         else {
-            console.log(`Policy '${name}' ${enable ? 'enabled' : 'disabled'}.`);
+            log(`Policy '${name}' ${enable ? 'enabled' : 'disabled'}.`);
         }
     }
     catch (err) {
-        console.log(`Failed: ${err.message}`);
+        log(`Failed: ${err.message}`);
     }
 }
 export function sentinelSuggestions(action, id) {
     const storage = tryLoadStorage();
     if (!storage) {
-        console.log('No suggestions found.');
+        log('No suggestions found.');
         return;
     }
     const db = storage.getDatabase();
     if (action === 'accept' && id) {
         try {
             db.prepare("UPDATE suggestions SET status = 'accepted', resolvedAt = ? WHERE id = ?").run(new Date().toISOString(), id);
-            console.log(`Suggestion ${id} accepted.`);
+            log(`Suggestion ${id} accepted.`);
         }
         catch (err) {
-            console.log(`Failed: ${err.message}`);
+            log(`Failed: ${err.message}`);
         }
         return;
     }
     if (action === 'dismiss' && id) {
         try {
             db.prepare("UPDATE suggestions SET status = 'dismissed', resolvedAt = ? WHERE id = ?").run(new Date().toISOString(), id);
-            console.log(`Suggestion ${id} dismissed.`);
+            log(`Suggestion ${id} dismissed.`);
         }
         catch (err) {
-            console.log(`Failed: ${err.message}`);
+            log(`Failed: ${err.message}`);
         }
         return;
     }
@@ -288,20 +290,20 @@ export function sentinelSuggestions(action, id) {
     try {
         const rows = db.prepare("SELECT id, type, title, priority, riskLevel FROM suggestions WHERE status = 'pending' ORDER BY priority ASC LIMIT 20").all();
         if (rows.length === 0) {
-            console.log('No pending suggestions.');
+            log('No pending suggestions.');
             return;
         }
-        console.log(`Pending Suggestions (${rows.length}):`);
+        log(`Pending Suggestions (${rows.length}):`);
         for (const row of rows) {
-            console.log(`  [P${row.priority}] ${row.type}: ${row.title} (risk: ${row.riskLevel}) — id: ${row.id}`);
+            log(`  [P${row.priority}] ${row.type}: ${row.title} (risk: ${row.riskLevel}) — id: ${row.id}`);
         }
     }
     catch (err) {
-        console.log(`Failed: ${err.message}`);
+        log(`Failed: ${err.message}`);
     }
 }
 export function sentinelHelp() {
-    console.log(`
+    log(`
 Sentinel Commands:
   vibe sentinel status                     Show sentinel status
   vibe sentinel audit [--type X] [--risk Y] [--days N]

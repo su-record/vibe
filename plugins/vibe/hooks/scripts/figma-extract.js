@@ -729,7 +729,11 @@ function resolveImageFills(node, imgMap) {
   for (const c of node.children || []) resolveImageFills(c, imgMap);
 }
 
-async function cmdRender(token, fk, nid, outDir, depth, scale) {
+/**
+ * @param {{ outDir?: string, depth?: number, scale?: number }} opts
+ */
+async function cmdRender(token, fk, nid, opts) {
+  const { outDir, depth, scale } = opts;
   if (!outDir) fail('--out=<dir> required');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
@@ -875,7 +879,7 @@ if (invokedDirectly) {
     case 'tree': await cmdTree(token, fk, nid, flags.depth ? +flags.depth : undefined); break;
     case 'images': await cmdImages(token, fk, nid, flags.out, flags.depth ? +flags.depth : 10); break;
     case 'screenshot': await cmdScreenshot(token, fk, nid, flags.out); break;
-    case 'render': await cmdRender(token, fk, nid, flags.out, flags.depth ? +flags.depth : 10, flags.scale ? +flags.scale : 0.667); break;
+    case 'render': await cmdRender(token, fk, nid, { outDir: flags.out, depth: flags.depth ? +flags.depth : 10, scale: flags.scale ? +flags.scale : 0.667 }); break;
     default: console.log('Usage: node figma-extract.js <tree|images|screenshot|render> <fileKey> <nodeId> [flags]');
   }
 }

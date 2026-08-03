@@ -4,7 +4,7 @@
 
 [![npm](https://img.shields.io/npm/v/@su-record/vibe)](https://www.npmjs.com/package/@su-record/vibe)
 [![npm downloads](https://img.shields.io/npm/dt/@su-record/vibe.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/@su-record/vibe)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.12-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 **English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*

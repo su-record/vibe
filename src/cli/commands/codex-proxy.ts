@@ -17,6 +17,7 @@ import { findCodexCredentials } from '../../infra/lib/gpt/auth.js';
 import { patchGlobalConfig } from '../../infra/lib/config/GlobalConfigManager.js';
 import type { GlobalVibeConfig } from '../types.js';
 
+import { log } from '../utils.js';
 const AUTH_LABELS: Record<string, string> = {
   'codex-cli': 'Codex CLI (ChatGPT Pro)',
   'apikey': 'API Key',
@@ -34,7 +35,7 @@ export function codexLaunch(model: string | undefined, claudeArgs: string[]): vo
 export function codexShell(modelArg: string | undefined): void {
   const settings = getProxySettings();
   const model = modelArg || settings.model;
-  console.log(generateShellFunction(model));
+  log(generateShellFunction(model));
 }
 
 // ─── 상태 확인 ───────────────────────────────────────────────
@@ -42,11 +43,11 @@ export function codexShell(modelArg: string | undefined): void {
 export function codexStatus(): void {
   const auth = checkAuthSource();
   const settings = getProxySettings();
-  console.log(`\n  Provider: ${settings.provider || '미설정'}`);
-  console.log(`  모델:     ${settings.model || '(기본값)'}`);
-  console.log(`  인증:     ${auth ? AUTH_LABELS[auth.source] || auth.source : '미설정'}`);
-  console.log(`  Target:   ${settings.targetUrl || 'https://api.openai.com'}`);
-  console.log(`  명령어:   ${settings.alias || 'vibe codex'}\n`);
+  log(`\n  Provider: ${settings.provider || '미설정'}`);
+  log(`  모델:     ${settings.model || '(기본값)'}`);
+  log(`  인증:     ${auth ? AUTH_LABELS[auth.source] || auth.source : '미설정'}`);
+  log(`  Target:   ${settings.targetUrl || 'https://api.openai.com'}`);
+  log(`  명령어:   ${settings.alias || 'vibe codex'}\n`);
 }
 
 // ─── Setup ──────────────────────────────────────────────────
@@ -287,7 +288,7 @@ async function textOrCancel(message: string, placeholder?: string): Promise<stri
 // ─── 도움말 ──────────────────────────────────────────────────
 
 export function codexHelp(): void {
-  console.log(`
+  log(`
 Codex Proxy — Claude Code + OpenAI/Antigravity 호환 모델
 
 사용법:

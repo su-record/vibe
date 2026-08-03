@@ -7,7 +7,6 @@
 const DEFAULT_VIEWPORT = { width: 1920, height: 1080 };
 let browserInstance = null;
 /** Puppeteer 동적 import (optional dependency) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- puppeteer is optional peer dep
 async function loadPuppeteer() {
     try {
         // @ts-expect-error -- puppeteer is optional peer dependency, may not have type declarations

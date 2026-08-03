@@ -96,19 +96,11 @@ async function main() {
       getLatestVersionCached(),
     ]);
 
-    console.log(time.content[0].text);
-
-    // Active feature 1줄 인덱스
-    try {
-      const LIB_BASE_P = (await import('./utils.js')).getLibBaseUrl();
-      const iterMod = await import(`${LIB_BASE_P}IterationTracker.js`);
-      const progressLine = iterMod.getProgressSummary(PROJECT_DIR);
-      if (progressLine) {
-        console.log(`\n📋 ${progressLine} — resume full context: /vibe.continue`);
-      }
-    } catch { /* progress index is best-effort */ }
-
-    console.log('\n[Memory Index — bodies on demand via recall_memory]');
+    // ─── 안정 블록 먼저 ────────────────────────────────────────────────
+    // 세션마다 값이 달라지는 것(현재 시각·진행 카운터·버전 체크)은 아래 휘발 블록으로
+    // 모아 뒤에 붙인다. 세션 컨텍스트의 앞부분을 가능한 한 세션 간 동일하게 유지하려는
+    // 배치다 — 휘발 데이터를 앞에 두면 어떤 합성 방식에서도 이득이 없다.
+    console.log('[Memory Index — bodies on demand via recall_memory]');
     console.log(memories.content[0].text);
 
     // Phase 3 — Recipes + anti-patterns 인덱스 (post-task curation)
@@ -129,15 +121,6 @@ async function main() {
         }
       }
     } catch { /* curation is best-effort */ }
-
-    // Version check
-    if (latestVersion) {
-      const currentVersion = getCurrentVersion();
-      if (currentVersion && compareVersions(latestVersion, currentVersion) > 0) {
-        console.log(`\n⬆️ Harness update available: v${currentVersion} → v${latestVersion}`);
-        console.log('   Run: vibe upgrade');
-      }
-    }
 
     // Scope sync — 기본 OFF (opt-in: scopeGuard.enabled=true). SSOT: scope-from-spec.js.
     try {
@@ -214,8 +197,32 @@ async function main() {
 
     // Evolution 상태 요약은 제거 — evolution 은 동결(opt-in) 상태이며
     // 사용자는 `vibe evolution` CLI 로 명시적으로 조회한다 (P3-3).
+
+    // ─── 휘발 블록 마지막 ──────────────────────────────────────────────
+    // 현재 시각·진행 카운터·버전 체크는 세션마다 값이 달라진다. 위의 안정 블록을
+    // 앞에 두기 위해 여기로 모았다. 내용은 이전과 동일하고 순서만 바뀐다.
+    console.log(`\n${time.content[0].text}`);
+
+    try {
+      const LIB_BASE_P = (await import('./utils.js')).getLibBaseUrl();
+      const iterMod = await import(`${LIB_BASE_P}IterationTracker.js`);
+      const progressLine = iterMod.getProgressSummary(PROJECT_DIR);
+      if (progressLine) {
+        console.log(`📋 ${progressLine} — resume full context: /vibe.continue`);
+      }
+    } catch { /* progress index is best-effort */ }
+
+    if (latestVersion) {
+      const currentVersion = getCurrentVersion();
+      if (currentVersion && compareVersions(latestVersion, currentVersion) > 0) {
+        console.log(`\n⬆️ Harness update available: v${currentVersion} → v${latestVersion}`);
+        console.log('   Run: vibe upgrade');
+      }
+    }
   } catch (e) {
-    console.log('[Session] Error:', e.message);
+    // 훅 실패를 stdout 으로 보내면 "실패 신호" 가 아니라 모델에게 주입되는
+    // 컨텍스트 문자열이 된다 — 가드의 생사가 관측 불가능해진다.
+    console.error('[Session] Error:', e.message);
   }
 }
 

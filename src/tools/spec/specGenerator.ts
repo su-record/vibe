@@ -130,7 +130,7 @@ function generateSplitSpec(
   // Phase별 SPEC
   for (let i = 0; i < phases.length; i++) {
     const phase = phases[i];
-    const phaseContent = buildPhaseSpecContent(prd, featureName, phase, i + 1, phases.length, options);
+    const phaseContent = buildPhaseSpecContent(prd, featureName, { phase, phaseNumber: i + 1, totalPhases: phases.length }, options);
     const phaseName = normalizeFileName(phase.name);
     splitFiles.push({
       path: `phase-${i + 1}-${phaseName}.md`,
@@ -377,14 +377,20 @@ ${options.humanTaste?.map(item => `- ${item}`).join('\n') || '- None recorded; r
 /**
  * Phase별 SPEC 콘텐츠 빌드
  */
+/** Phase SPEC 하나를 렌더하는 데 필요한 위치 정보 */
+interface PhasePosition {
+  phase: PhaseInfo;
+  phaseNumber: number;
+  totalPhases: number;
+}
+
 function buildPhaseSpecContent(
   prd: ParsedPRD,
   featureName: string,
-  phase: PhaseInfo,
-  phaseNumber: number,
-  totalPhases: number,
+  position: PhasePosition,
   options: SpecGeneratorOptions
 ): string {
+  const { phase, phaseNumber, totalPhases } = position;
   const now = new Date().toISOString();
 
   let content = `---

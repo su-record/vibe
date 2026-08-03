@@ -16,6 +16,7 @@ import {
 } from '../../infra/lib/config/GlobalConfigManager.js';
 import type { TelegramChannelConfig } from '../types.js';
 
+import { log } from '../utils.js';
 const TELEGRAM_PID_FILE = path.join(getVibeDir(), 'telegram.pid');
 const TELEGRAM_LOG_DIR = path.join(getVibeDir(), 'logs');
 
@@ -29,8 +30,8 @@ function saveConfig(config: TelegramChannelConfig): void {
 
 export function telegramSetup(token?: string): void {
   if (!token) {
-    console.log('Usage: vibe telegram setup <bot-token>');
-    console.log('  Get a token from @BotFather on Telegram');
+    log('Usage: vibe telegram setup <bot-token>');
+    log('  Get a token from @BotFather on Telegram');
     return;
   }
 
@@ -41,49 +42,49 @@ export function telegramSetup(token?: string): void {
   };
 
   saveConfig(config);
-  console.log('Telegram bot token saved');
+  log('Telegram bot token saved');
   if ((config.allowedChatIds ?? []).length === 0) {
-    console.log('No allowed chat IDs set. Use: vibe telegram chat <chat-id>');
+    log('No allowed chat IDs set. Use: vibe telegram chat <chat-id>');
   }
 }
 
 export function telegramChat(chatId?: string): void {
   if (!chatId) {
-    console.log('Usage: vibe telegram chat <chat-id>');
-    console.log('  Add a Telegram chat ID to the allow list');
+    log('Usage: vibe telegram chat <chat-id>');
+    log('  Add a Telegram chat ID to the allow list');
     return;
   }
 
   const config = loadConfig();
   if (!config) {
-    console.log('Telegram not configured. Run: vibe telegram setup <bot-token>');
+    log('Telegram not configured. Run: vibe telegram setup <bot-token>');
     return;
   }
 
   const chatIds = config.allowedChatIds ?? [];
   if (chatIds.includes(chatId)) {
-    console.log(`Chat ID "${chatId}" is already in the allow list`);
+    log(`Chat ID "${chatId}" is already in the allow list`);
     return;
   }
 
   chatIds.push(chatId);
   config.allowedChatIds = chatIds;
   saveConfig(config);
-  console.log(`Chat ID "${chatId}" added to allow list`);
+  log(`Chat ID "${chatId}" added to allow list`);
 }
 
 export function telegramStatus(): void {
   const config = loadConfig();
   if (!config) {
-    console.log('Telegram: not configured');
+    log('Telegram: not configured');
     return;
   }
 
   const token = config.botToken ?? '';
   const tokenPreview = token.slice(0, 8) + '...' + token.slice(-4);
-  console.log(`Telegram Bot: configured (${tokenPreview})`);
+  log(`Telegram Bot: configured (${tokenPreview})`);
   const chatIds = config.allowedChatIds ?? [];
-  console.log(`Allowed chats: ${chatIds.length > 0 ? chatIds.join(', ') : 'none'}`);
+  log(`Allowed chats: ${chatIds.length > 0 ? chatIds.join(', ') : 'none'}`);
 }
 
 function readPid(): number | null {
@@ -114,7 +115,7 @@ function ensurePlaywright(): boolean {
   const found = candidates.some((p) => fs.existsSync(p));
   if (found) return true;
 
-  console.log('Playwright not installed. Starting auto-install...');
+  log('Playwright not installed. Starting auto-install...');
 
   try {
     child_process.execSync('npm install playwright', {
@@ -125,7 +126,7 @@ function ensurePlaywright(): boolean {
       stdio: 'inherit',
       timeout: 300_000,
     });
-    console.log('Playwright installed!');
+    log('Playwright installed!');
     return true;
   } catch {
     console.warn('Playwright auto-install failed. Starting without screenshot support.');
@@ -136,7 +137,7 @@ function ensurePlaywright(): boolean {
 export function telegramStart(): void {
   const existingPid = readPid();
   if (existingPid !== null && isProcessRunning(existingPid)) {
-    console.log(`Telegram bridge is already running (PID: ${existingPid})`);
+    log(`Telegram bridge is already running (PID: ${existingPid})`);
     return;
   }
 
@@ -146,15 +147,15 @@ export function telegramStart(): void {
 
   const config = loadConfig();
   if (!config) {
-    console.log('Telegram not configured. Run: vibe telegram setup <bot-token>');
+    log('Telegram not configured. Run: vibe telegram setup <bot-token>');
     return;
   }
   if (!config.botToken) {
-    console.log('Bot token not set. Run: vibe telegram setup <bot-token>');
+    log('Bot token not set. Run: vibe telegram setup <bot-token>');
     return;
   }
   if (!config.allowedChatIds || config.allowedChatIds.length === 0) {
-    console.log('No allowed chat IDs. Run: vibe telegram chat <chat-id>');
+    log('No allowed chat IDs. Run: vibe telegram chat <chat-id>');
     return;
   }
 
@@ -194,8 +195,8 @@ export function telegramStart(): void {
   setTimeout(() => {
     const savedPid = readPid();
     if (savedPid !== null && isProcessRunning(savedPid)) {
-      console.log(`Telegram bridge started (PID: ${savedPid})`);
-      console.log(`Log: ${logFile}`);
+      log(`Telegram bridge started (PID: ${savedPid})`);
+      log(`Log: ${logFile}`);
     } else {
       console.error('Telegram bridge failed to start. Check log: ' + logFile);
     }
@@ -205,14 +206,14 @@ export function telegramStart(): void {
 export function telegramStop(): void {
   const pid = readPid();
   if (pid === null || !isProcessRunning(pid)) {
-    console.log('Telegram bridge is not running');
+    log('Telegram bridge is not running');
     if (pid !== null) {
       try { fs.unlinkSync(TELEGRAM_PID_FILE); } catch { /* ignore */ }
     }
     return;
   }
 
-  console.log(`Stopping Telegram bridge (PID: ${pid})...`);
+  log(`Stopping Telegram bridge (PID: ${pid})...`);
 
   try {
     process.kill(pid, 'SIGTERM');
@@ -224,18 +225,18 @@ export function telegramStop(): void {
     if (!isProcessRunning(pid)) {
       clearInterval(interval);
       try { fs.unlinkSync(TELEGRAM_PID_FILE); } catch { /* ignore */ }
-      console.log('Telegram bridge stopped');
+      log('Telegram bridge stopped');
     } else if (checks >= 10) {
       clearInterval(interval);
       try { process.kill(pid, 'SIGKILL'); } catch { /* ignore */ }
       try { fs.unlinkSync(TELEGRAM_PID_FILE); } catch { /* ignore */ }
-      console.log('Telegram bridge force-stopped');
+      log('Telegram bridge force-stopped');
     }
   }, 500);
 }
 
 export function telegramHelp(): void {
-  console.log(`
+  log(`
 Vibe Telegram Commands:
   vibe telegram setup <token>    Set bot token
   vibe telegram chat <id>        Add allowed chat ID

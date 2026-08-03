@@ -30,12 +30,16 @@ Transform imperative tasks into verifiable goals **before** coding:
 
 Weak criteria ("make it work") require constant clarification. Strong criteria let the loop run independently.
 
-### TypeScript (hard rules — `any`/`console.log` detected by Quality Gate hooks and injected as additionalContext; deterministic gates are pr-test-gate + Stop verify warning)
+### TypeScript (hard rules — `pnpm lint`(oxlint) 가 CI `verify` job 에서 강제한다; Quality Gate 훅은 편집 시점 조기 경고로 남는다)
 - No `any` / `as any` / `@ts-ignore` — use `unknown` + type guards; fix at root
 - Explicit return types on all functions
+- `console.log` 금지 · `console.warn`/`console.error`(stderr 진단)는 허용 — `src/cli/**`·`hooks/scripts/**` 는 stdout 이 곧 인터페이스라 예외 (`.oxlintrc.json` overrides)
 
-### Complexity Limits (model-judged, not hook-detected)
-Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10 — apply in-context judgement; no regex heuristics enforce these
+### Complexity Limits (기계 판정 — `.oxlintrc.json` + `pnpm lint:ratchet`)
+Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10
+- `max-params` 는 **error** — 신규 위반 0건이어야 CI 통과
+- 나머지 3종은 저장소에 기존 부채가 있어 **라쳇**으로 잡는다: `.oxlint-baseline.json` 의 규칙별 상한을 넘으면 CI 실패. 부채는 늘지 않고 줄이는 방향으로만 갱신한다 (`pnpm lint:ratchet --update`)
+- 현황과 상환 순서: `.vibe/todos/complexity-debt-2026-08-03.md`
 
 ### Forbidden Patterns
 No `console.log` in commits · No hardcoded strings/numbers · No commented-out code · No incomplete code without TODO

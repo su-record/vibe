@@ -3,7 +3,7 @@
  */
 import path from 'path';
 import fs from 'fs';
-import { getPackageJson } from '../utils.js';
+import { log, getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
 import { missingNativeDeps } from '../setup/NativeDeps.js';
@@ -14,7 +14,7 @@ import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
  * 도움말 표시
  */
 export function showHelp() {
-    console.log(`
+    log(`
 VIBE - AI Coding Harness (Claude Code / Codex / Antigravity)
 
 Commands:
@@ -243,7 +243,7 @@ export function showStatus() {
     const projectStatus = isCoreProject
         ? `✅ ${projectRoot}`
         : `⬚ Not a core project (run: vibe init)`;
-    console.log(`
+    log(`
 VIBE Status (v${packageJson.version})
 
 Project: ${projectStatus}
@@ -258,6 +258,6 @@ ${formatLLMStatus()}
  */
 export function showVersion() {
     const packageJson = getPackageJson();
-    console.log(`core v${packageJson.version}`);
+    log(`core v${packageJson.version}`);
 }
 //# sourceMappingURL=info.js.map

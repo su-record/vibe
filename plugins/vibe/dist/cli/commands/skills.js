@@ -31,7 +31,7 @@ function isValidSkillTarget(target) {
  */
 export function skillsAdd(target) {
     if (!target) {
-        console.log(`
+        log(`
 Usage: vibe skills add <owner/repo>
 
 Install skills from skills.sh ecosystem.
@@ -46,12 +46,12 @@ Examples:
         console.error(`❌ Invalid skill target: "${target}" (expected: owner/repo)`);
         process.exit(1);
     }
-    console.log(`\nInstalling skill: ${target}...\n`);
+    log(`\nInstalling skill: ${target}...\n`);
     try {
         execSync(`npx skills add ${target} --agent claude-code`, {
             stdio: 'inherit',
         });
-        console.log(`\n✅ Skill "${target}" installed successfully.`);
+        log(`\n✅ Skill "${target}" installed successfully.`);
     }
     catch {
         console.error(`\n❌ Failed to install skill "${target}".`);
