@@ -97,7 +97,7 @@ $vibe "<requirement>" [+ 📎 attachments]
 ```
 
 **Advanced (explicit phase) entrypoints** — still available for power users when you know exactly which phase to run:
-- `$vibe.spec` — single-pass SPEC (인라인 질문 → SPEC 1패스 → 승인 1회; 구 interview/plan/spec-review 4단계는 폐지)
+- `$vibe.spec` — single-pass SPEC (커버리지 스윕 → 최대 3개 인라인 질문 → SPEC 1패스 → 승인 1회; 구 interview/plan/spec-review 4단계는 폐지). 제한하는 축은 질문 수가 아니라 **사용자가 반드시 답해야 하는 수** — 훑지 않은 결정 지점이 SPEC 에 아예 없는 상태를 막고, 묻지 않은 것은 전부 Assumptions 로 편입한다
 - `$vibe.figma` — Figma ↔ code (UI track)
 - `$vibe.run` — SPEC-driven implementation
 - `$vibe.verify` — implementation vs SPEC verification
@@ -132,6 +132,7 @@ Public skills use the `vibe.*` namespace and are classified as **entry** / **sta
 
 - **Model routing: inherit by default** — 서브에이전트는 세션 모델을 상속한다. 명시적 예외만 tier alias 로 지정 (아키텍처 심층 리뷰 → `opus`). 구세대 "탐색→Haiku·구현→Sonnet" 비용 라우팅은 폐기 — 강한 기본 모델에서 라우팅 우회가 절약보다 품질 손실이 크다
 - At 85%+ context: `save_memory` → `/new` → `$vibe.continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
+- **단계 경계 리셋 (용량 기준과 병행)**: SPEC 승인 시점에 새 세션에서 `$vibe.run` 을 시작하는 선택지를 승인 메시지에 편승시킨다 (`vibe.spec` Step 6 `[2]`). 명확화 왕복 ≥2회 · SPEC 수정 요청 ≥1회 · 분할 SPEC 중 하나라도 충족할 때만 권장 표시. 85% 규칙을 대체하지 않는다 — 용량이 찼을 때가 아니라 **잔류 컨텍스트가 노이즈가 되는 경계**에서 끊는 별개 축이다 (명확화 왕복·기각안 논의 텍스트가 구현에 새는 것을 막는다)
 
 ## Git
 

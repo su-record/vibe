@@ -177,6 +177,21 @@ Phase 4: /vibe.verify → 검증
 직역 하네스가 문자 그대로 실행하려다 실패한다 (dual-harness doctrine: 명시성 공통분모).
 스킬 **이름과 인자**가 계약이고, 그것을 실제 호출로 바꾸는 것은 각 하네스의 몫이다.
 
+**세션 경계 (`vibe.spec` Step 6 의 `[2]` 선택):** 사용자가 승인 메시지에서 `[2] 승인 → 새 세션에서 run` 을 골랐으면 **체인을 계속하지 않는다.** `vibe.run` 을 호출하지 말고 아래를 출력한 뒤 종료한다:
+
+```
+✅ SPEC 승인 완료: {feature-name}
+   .vibe/specs/{feature-name}.md · .vibe/features/{feature-name}.feature
+
+새 세션에서 재개하세요:
+  /vibe.run "{feature-name}"
+```
+
+- execution packet 은 여기서 컴파일하지 않는다 — 새 세션의 `vibe.run` Step 1-0 이 담당한다 (컴파일 시점 불변).
+- 별도 핸드오프 아티팩트를 만들지 않는다 — SPEC·Feature·`.vibe/.last-feature` 가 재개에 필요한 전부다.
+- `automationLevel: autonomous` 에서는 `[2]` 가 선택될 수 없으므로(권고 자체를 띄우지 않음) 이 분기는 발생하지 않는다.
+- 이 종료는 stuck 도 실행 실패도 아니다 — 루프 종료 사유가 아니라 **사용자 선택에 의한 정상 일시 중단**으로 기록한다.
+
 각 phase 종료 후 JUDGE 단계:
 - 게이트 통과 (**측정된** P1=0 ∧ verifyPassed) → 루프 종료, Phase 5 보고. 판정된 P1(리뷰어 findings)은 단독으로 게이트를 막지 않는다 — SSOT: `vibe/rules/loop-contract.md` Judge 권한 경계
 - 게이트 미통과 → RECORD(run-ledger + loop-history.jsonl) 후 다음 ANCHOR로

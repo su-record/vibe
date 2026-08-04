@@ -118,16 +118,32 @@ Worker: Find existing implementations related to [FEATURE]. Return the tech stac
 relevant files, and patterns in under 200 tokens.
 ```
 
-### 3. Clarify — 진짜 모호할 때만
+### 3. Clarify — 넓게 훑고, 좁게 묻는다
 
-별도 인터뷰 단계가 아니다. 요구사항·첨부·레거시 아티팩트·코드베이스 컨텍스트로 답을 합리적으로 정할 수 있으면 **묻지 않는다**. 다음 조건을 모두 만족할 때만 질문한다:
+별도 인터뷰 단계가 아니다. 이 단계가 제한하는 것은 **질문 수가 아니라 사용자가 반드시 답해야 하는 수**다. 결정 지점은 전부 훑되(3-a), 사용자에게는 최대 3개만 묻는다(3-b). 나머지는 전부 Assumptions 로 편입된다 — 훑지 않아서 SPEC 에 아예 존재하지 않는 결정 지점을 없애는 것이 목적이다.
 
-- 답에 따라 Done Criteria 나 구현 방향이 실제로 갈라진다 (인증 방식, 데이터 모델의 필수 필드, 외부 연동 여부 등)
-- 합리적 기본값을 SPEC 의 Assumptions 로 명시하는 것으로 대체할 수 없다
+#### 3-a. 커버리지 스윕 (내부 단계 — 사용자에게 출력하지 않는다)
 
-질문할 때는 **한 번에 묶어서** (번호 목록, 최대 5개), 각 질문에 제안 기본값을 붙인다. `automationLevel: autonomous` 면 질문 없이 기본값을 채택하고 전부 SPEC 의 Assumptions 섹션에 기록한다.
+"이 요구사항으로 SPEC 을 쓸 때 결정이 필요한 지점" 을 **개수 제한 없이** 열거한다. 각 항목에 제안 기본값을 붙인다:
 
-사소한 값(타임아웃, 페이지 크기, 재시도 횟수 등)은 묻지 말고 상식적 기본값을 채택 + Assumptions 에 기록.
+```
+{결정 지점} → {제안 기본값} → {갈라짐: Done Criteria 가 실제로 달라지는가 yes/no}
+```
+
+훑을 축(최소): 범위 경계 · 데이터 모델의 필수 필드 · 외부 연동 여부 · 인증/권한 · 오류 처리 방침 · 수치 파라미터(타임아웃·크기·재시도) · 하위 호환 · 기존 테스트/계약 영향 · 산출물 위치 · 언어·표기 규약.
+
+이 목록 자체는 출력하지 않는다. 출력 대상은 3-b 의 질문과 최종 SPEC 의 Assumptions 뿐이다.
+
+#### 3-b. 답변 요청 (사용자에게 출력)
+
+3-a 결과에서 `갈라짐: yes` 인 항목만 남기고, 그중 **최대 3개**만 묻는다. 3개를 넘으면 영향 범위가 큰 순으로 3개를 고르고 나머지는 기본값을 채택한다.
+
+- 질문은 **한 번에 묶어서** (번호 목록), 각 질문에 제안 기본값을 붙인다.
+- **3-b 로 묻지 않은 3-a 항목은 전부** SPEC 의 Assumptions 섹션에 기록한다. 누락 0건 — Step 5 체크리스트가 이를 점검한다.
+- Assumptions 를 사용자에게 보일 때(Step 6)는 3개 이하면 전부, 3개 초과면 핵심 3개 + `그 외 N건은 SPEC 참조` 로 접어서 제시한다.
+- `automationLevel: autonomous` 면 3-b 질문을 생략하고 3-a 전 항목의 기본값을 채택해 Assumptions 에 기록한다.
+
+사소한 값(타임아웃, 페이지 크기, 재시도 횟수 등)은 3-a 에서 `갈라짐: no` 로 판정해 묻지 말고 상식적 기본값 + Assumptions 로 처리한다.
 
 ### 4. Write SPEC — one pass
 
@@ -164,6 +180,7 @@ relevant files, and patterns in under 200 tokens.
 - [ ] 수치가 필요한 곳에 수치가 있는가 (제한·타임아웃·크기 — 없으면 기본값 + Assumptions)
 - [ ] Out of Scope 가 비어 있지 않은가
 - [ ] 요구사항에 있던 것 중 SPEC 에서 빠진 것이 없는가
+- [ ] 3-a 커버리지 스윕에서 나온 결정 지점이 **전부** 3-b 질문 또는 Assumptions 중 하나로 귀결됐는가 (누락 0건)
 - [ ] 설계 선택지가 있었던 결정에 기각 대안이 Rejected Alternatives (Traps) 로 남았는가 — 기계적 사유 포함 (production 만; 선택지가 없었으면 통과)
 - [ ] 헤더에 `Stakes:` 필드가 있고, demo/prototype 인데 SPEC 이 분할·대형화되지 않았는가
 
@@ -179,14 +196,28 @@ SPEC 요약(Goal, Done Criteria, 시나리오 수, Out of Scope, 열린 Assumpti
    Stakes: {demo|prototype|production} — {판정 근거 1구}
    Done Criteria: {N}개 (전부 결정론 게이트)
    Scenarios: {M}개 · Out of Scope: {K}항목
-   Assumptions: {요약 또는 "없음"}
+   Assumptions: {3개 이하면 전부 · 초과면 핵심 3개 + "그 외 N건은 SPEC 참조"}
 
 승인하면 이 SPEC 이 루프의 Done 정의가 됩니다.
-[1] 승인 → 구현 진행   [2] 수정 요청   [3] 중단
+[1] 승인 → 이 세션에서 계속   [2] 승인 → 새 세션에서 run{권장 표시}
+[3] 수정 요청                 [4] 중단
 ```
 
 - 수정 요청 → 반영 후 재제시 (사용자 주도 반복 — 자동 루프 아님).
-- `automationLevel: autonomous` → 승인 생략, 요약만 출력하고 진행.
+- `automationLevel: autonomous` → 승인 생략, 요약만 출력하고 `[1]` 로 진행 (세션 경계 권고 없음 — 비대화형이라 리셋 불가).
+
+#### 세션 경계 선택지 (`[2]`)
+
+승인 게이트에 **편승하는 선택지**다. 별도 프롬프트를 만들지 않는다 — loop-contract 의 "의무적 사람 개입은 SPEC 승인 1회" 불변식을 지킨다.
+
+- **선택지 개수는 항상 4개로 고정한다.** 트리거 충족 여부와 무관하게 `[1]`~`[4]` 를 그대로 출력한다. 조건에 따라 다르게 출력하지 않는다.
+- 아래 관측 가능한 프록시 중 **하나라도** 충족하면 `{권장 표시}` 자리에 ` (권장)` 을 넣는다. 하나도 충족하지 않으면 빈 문자열로 둔다:
+  1. 명확화 왕복 ≥ 2회 — 3-b 질문 배치 1회 = 1왕복, SPEC 수정 요청 1회 = 1왕복
+  2. SPEC 수정 요청 ≥ 1회
+  3. 분할 SPEC (5+ phase 로 폴더 분할됨)
+- 컨텍스트 사용률(%)은 트리거로 쓰지 않는다 — 하네스 중립적으로 읽을 수단이 없어 CC 와 Codex 에서 권고 시점이 갈린다.
+- `[2]` 를 권하는 근거: 명확화 왕복·SPEC 수정 과정·Rejected Alternatives 논의 텍스트가 구현 컨텍스트에 잔류하면 노이즈가 된다. 특히 기각안은 SPEC 에 "기각됨" 으로 적혀 있어도 대화 히스토리에는 살아있는 형태로 남는다.
+- `[2]` 선택 시 SPEC·Feature·`.vibe/.last-feature` 는 이미 디스크에 있으므로 별도 핸드오프 아티팩트를 만들지 않는다. execution packet 은 지금 컴파일하지 않는다 — 새 세션의 `vibe.run` Step 1-0 이 그대로 담당한다.
 - 승인 후 SPEC 변경은 코드 변경과 같은 커밋으로 (SPEC-First — `vibe.run` 참조).
 - **Stakes 편승 질문**: 디스패처의 stakes 판정(`vibe/rules/loop-contract.md` Stakes 표)이 불확실하거나 신호가 상충하면, 이 승인 메시지에 stakes 확인 질문 1개(demo/prototype/production 선택지)를 포함한다. 별도의 추가 확인 왕복을 만들지 않는다 — 승인 게이트가 유일한 질문 지점이다.
 
@@ -197,6 +228,8 @@ SPEC 요약(Goal, Done Criteria, 시나리오 수, Out of Scope, 열린 Assumpti
 | SPEC | `.vibe/specs/{feature-name}.md` (또는 분할 폴더) |
 | Feature (BDD) | `.vibe/features/{feature-name}.feature` (또는 분할 폴더) |
 | Pointer | `.vibe/.last-feature` |
+
+Step 6 에서 `[2]` (새 세션에서 run) 를 선택했으면 여기서 종료하고, 새 세션에서 `/vibe.run "{feature-name}"` 로 재개한다 — 위 세 파일이 재개에 필요한 전부다.
 
 승인된 SPEC 은 루프의 ANCHOR 로 쓰인다: `/vibe.run` 이 시나리오 단위로 구현·검증하고, `/vibe.verify` 가 Done Criteria 를 판정해 `.vibe/metrics/run-ledger.json` 의 `verifyPassed` 를 기록한다. 게이트 통과 여부는 항상 run-ledger·테스트 exit code 가 판정한다.
 
