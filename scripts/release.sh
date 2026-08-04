@@ -37,6 +37,13 @@ gh pr create --base main --head "$BRANCH" --title "$VERSION" \
   --body "Release ${TAG}. 버전 범프만 포함한다 — 릴리스 절차는 scripts/release.sh 참조."
 
 echo "▶ 필수 체크 대기 중 (Build (type-check) · Tests)"
+# `--watch` 는 체크가 아직 하나도 등록되지 않았으면 즉시 실패한다
+# ("no checks reported on the ... branch"). PR 생성과 워크플로 등록 사이에
+# 수 초의 간격이 있으므로, 등록될 때까지 먼저 기다린다.
+for _ in $(seq 1 60); do
+  [ "$(gh pr checks "$BRANCH" --json name -q 'length' 2>/dev/null || echo 0)" -gt 0 ] && break
+  sleep 5
+done
 gh pr checks "$BRANCH" --watch --fail-fast
 gh pr merge "$BRANCH" --squash --delete-branch
 
