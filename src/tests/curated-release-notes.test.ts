@@ -178,6 +178,17 @@ describe('release procedure respects branch protection', () => {
     expect(script.indexOf('gh pr checks')).toBeLessThan(script.indexOf('gh pr merge'));
   });
 
+  /**
+   * v3.2.18 첫 실주행에서 `--watch` 가 "no checks reported on the
+   * 'release/v3.2.18' branch" 로 즉시 실패했다 — PR 생성과 워크플로 등록 사이의
+   * 레이스다. 등록을 먼저 기다리지 않으면 매 릴리스가 같은 지점에서 끊긴다.
+   */
+  it('REQ-release-flow-006 체크가 등록될 때까지 기다린 뒤 watch 한다', () => {
+    expect(executable).toMatch(/gh pr checks "\$BRANCH" --json name -q 'length'/);
+    expect(executable.indexOf("--json name -q 'length'"))
+      .toBeLessThan(executable.indexOf('--watch'));
+  });
+
   it('REQ-release-flow-004 병합 후 태그를 붙여 Release 워크플로를 발동한다', () => {
     expect(script).toMatch(/git tag -a "\$TAG"/);
     expect(script).toMatch(/git push -q origin "\$TAG"/);
