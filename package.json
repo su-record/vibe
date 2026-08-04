@@ -34,7 +34,7 @@
     "test:coverage": "vitest run --coverage",
     "prepublishOnly": "pnpm build",
     "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(e=>process.stderr.write('\\u26a0\\ufe0f  vibe postinstall skipped: '+((e&&e.message)||e)+'\\n   Assets and hooks were not installed. Run: npx vibe upgrade\\n'))\"",
-    "release": "pnpm version patch && git push origin main --follow-tags"
+    "release": "bash scripts/release.sh"
   },
   "keywords": [
     "ai",

@@ -118,6 +118,79 @@ describe('published release contract', () => {
     expect(notes).toContain('## Fixed');
     expect(notes).toContain('## Verification');
   });
+
+  /**
+   * v3.2.15~v3.2.17 은 `name` 이 빈 문자열로 발행됐다 — `gh release create` 에
+   * `--title` 이 없어 API 가 null 을 받았기 때문이다. 제목은 워크플로가 넣고,
+   * 본문은 H1 을 넣지 않는다 (넣으면 릴리스 페이지에서 제목이 두 번 보인다).
+   */
+  it('REQ-release-notes-007 sets the release title from the tag', () => {
+    const workflow = readFileSync(resolve('.github/workflows/release.yml'), 'utf8');
+
+    expect(workflow).toContain('--title "$GITHUB_REF_NAME"');
+  });
+
+  it('REQ-release-notes-007 keeps the notes body free of a duplicate H1 title', () => {
+    const notes = createReleaseNotes({
+      currentTag: 'v3.2.1',
+      previousTag: 'v3.2.0',
+      specs: [],
+      commits: [{ subject: 'fix: correct behavior', body: '' }],
+    });
+
+    expect(notes.startsWith('## Highlights')).toBe(true);
+    expect(notes).not.toContain('# v3.2.1\n');
+  });
+});
+
+/**
+ * main 보호 규칙은 필수 체크 2개(Build (type-check) · Tests)를 요구하는데 그 체크는
+ * 푸시 **후** 실행된다. 구 `pnpm version patch && git push origin main --follow-tags`
+ * 는 그래서 릴리스마다 bypass 로 기록됐다 (v3.2.17 푸시 로그: "Bypassed rule
+ * violations for refs/heads/main"). 버전 범프를 PR 로 보내 체크를 실제로 통과시킨다.
+ */
+describe('release procedure respects branch protection', () => {
+  const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
+    scripts?: Record<string, string>;
+  };
+  const script = readFileSync(resolve('scripts/release.sh'), 'utf8');
+  // 헤더 주석이 구 절차(`git push origin main --follow-tags`)를 인용하므로,
+  // 금지 패턴은 실행 라인에서만 찾는다.
+  const executable = script
+    .split('\n')
+    .filter((line): boolean => !line.trimStart().startsWith('#'))
+    .join('\n');
+
+  it('REQ-release-flow-001 release 스크립트가 main 으로 직접 푸시하지 않는다', () => {
+    expect(pkg.scripts?.release).toBe('bash scripts/release.sh');
+    expect(executable).not.toMatch(/git push\s+(-\S+\s+)*origin\s+main/);
+  });
+
+  it('REQ-release-flow-002 버전 범프가 PR 을 거친다', () => {
+    expect(script).toContain('--no-git-tag-version');
+    expect(script).toContain('gh pr create');
+    expect(script).toContain('gh pr merge');
+  });
+
+  it('REQ-release-flow-003 필수 체크 통과를 기다린 뒤 병합한다', () => {
+    expect(script).toContain('gh pr checks');
+    expect(script).toContain('--watch');
+    expect(script.indexOf('gh pr checks')).toBeLessThan(script.indexOf('gh pr merge'));
+  });
+
+  it('REQ-release-flow-004 병합 후 태그를 붙여 Release 워크플로를 발동한다', () => {
+    expect(script).toMatch(/git tag -a "\$TAG"/);
+    expect(script).toMatch(/git push -q origin "\$TAG"/);
+    expect(script.indexOf('gh pr merge')).toBeLessThan(script.indexOf('git tag -a'));
+  });
+
+  it('REQ-release-flow-005 필수 체크가 PR 에서 실행되도록 test.yml 이 트리거된다', () => {
+    const test = readFileSync(resolve('.github/workflows/test.yml'), 'utf8');
+
+    expect(test).toMatch(/pull_request:/);
+    expect(test).toContain('Build (type-check)');
+    expect(test).toContain('Tests');
+  });
 });
 
 describe('release notes CLI', () => {

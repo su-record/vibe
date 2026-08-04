@@ -161,8 +161,9 @@ export function createReleaseNotes(input: ReleaseNotesInput): string {
   if (highlights.length === 0 && commitSections.length === 0) {
     throw new Error(`No release changes found in ${input.previousTag}..${input.currentTag}`);
   }
+  // 태그 제목은 `gh release create --title` 이 설정한다. 본문에 `# {tag}` 를 다시
+  // 넣으면 릴리스 페이지에서 제목이 두 번 렌더된다.
   return [
-    `# ${input.currentTag}`,
     '## Highlights',
     ...highlights,
     ...commitSections,
