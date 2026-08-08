@@ -114,6 +114,18 @@ describe('code-check: 코드인 구간을 놓치지 않는다', () => {
     expect((await findingsFor(f)).some(x => x.includes('any-type'))).toBe(true);
   });
 
+  it('보간 안 객체 리터럴이 보간을 조기 종료시키지 않는다', async () => {
+    // `${ {a:1}.x as any }` — 첫 `}` 는 객체를 닫는 것이지 보간의 끝이 아니다
+    const f = write('brace-depth.ts', 'const t = `${ {a:1}.x as any }`;\n');
+    expect((await findingsFor(f)).some(x => x.includes('any-type'))).toBe(true);
+  });
+
+  it('보간 안 중괄호가 다음 줄로 새지 않는다', async () => {
+    const f = write('brace-leak.ts',
+      'const t = `${ f({a:1}) } tail`;\nexport function g(x: any): void { void x; }\n');
+    expect((await findingsFor(f)).some(x => x.includes('line 2'))).toBe(true);
+  });
+
   it('템플릿 리터럴 본문은 여전히 문자열로 본다', async () => {
     const f = write('body.ts', 'export const DOC = `\n금지: as any\n`;\n');
     expect(await findingsFor(f)).toEqual([]);

@@ -98,7 +98,8 @@ function consumeTemplate(rest, state) {
     state.stack.pop();
     return rest.slice(stop.index + 1);
   }
-  state.stack.push('expr');
+  // depth 는 보간 안에서 열린 `{` 수 — 0 일 때의 `}` 만 보간을 닫는다
+  state.stack.push({ kind: 'expr', depth: 0 });
   return rest.slice(stop.index + 2);
 }
 
@@ -117,7 +118,8 @@ function stripNonCodeLine(line, state) {
   let code = '';
 
   while (rest.length > 0) {
-    const top = state.stack[state.stack.length - 1];
+    const frame = state.stack[state.stack.length - 1];
+    const top = typeof frame === 'object' ? frame.kind : frame;
 
     if (top === 'block') {
       const end = findUnescaped(rest, '*/');
@@ -134,16 +136,24 @@ function stripNonCodeLine(line, state) {
     }
 
     // 코드 구간 (최상위 또는 `${}` 안)
-    const opener = rest.match(/\/\*|\/\/|`|'|"|\/|\}/);
+    const opener = rest.match(/\/\*|\/\/|`|'|"|\/|\{|\}/);
     if (!opener) return code + rest;
     code += rest.slice(0, opener.index);
     const token = opener[0];
     const consumed = rest.slice(opener.index + token.length);
 
     if (token === '//') break;
+    if (token === '{') {
+      if (top === 'expr') frame.depth++;
+      code += '{';
+      rest = consumed;
+      continue;
+    }
     if (token === '}') {
-      // `${}` 의 끝이면 템플릿으로 복귀, 아니면 평범한 블록 닫기
-      if (top === 'expr') state.stack.pop();
+      // 보간 안에서 열린 `{` 가 남아 있으면 그걸 닫는 것이지 보간의 끝이 아니다
+      // (`${ {a:1}.x as any }` 를 조기 종료하던 원인)
+      if (top === 'expr' && frame.depth === 0) state.stack.pop();
+      else if (top === 'expr') { frame.depth--; code += '}'; }
       else code += '}';
       rest = consumed;
       continue;
