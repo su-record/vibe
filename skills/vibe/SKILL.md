@@ -103,12 +103,25 @@ user-invocable: true
 
 ### Phase 2: Smart Resume 감지
 
+**파일 존재 검사는 눈으로 하지 않는다 — 명령이 확정한다.** Phase 0 의 URL·첨부 분류와
+stakes 의 결정론 신호(config 유무·임시 디렉토리·git 여부)도 이 한 번의 호출로 함께 받는다:
+
+```bash
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { console.log(JSON.stringify(t.collectDispatchSignals(process.cwd(), {urls: [], attachments: [], feature: undefined}), null, 2)); })"
 ```
-.vibe/.last-feature 존재 → 직전 feature 이름 추출
-.vibe/specs/{feature}/ 또는 .vibe/specs/{feature}.md 존재 → spec 단계 완료
-.vibe/features/{feature}/ 또는 .vibe/features/{feature}.feature 존재 → feature 단계 완료
-.vibe/plans/{feature}.md · .vibe/interviews/{feature}.md 존재 → 레거시 아티팩트 (구버전) — spec 패스의 입력 컨텍스트로만 사용, 재생성 금지
-```
+
+반환값을 **사실로 받는다**:
+
+| 필드 | 의미 |
+|---|---|
+| `resume.resumeFrom` | `run`(SPEC 있음) / `none`(처음부터) |
+| `resume.specPath` · `featurePath` | 실제 경로 (분할 SPEC `_index.md` 포함) |
+| `resume.legacyArtifacts` | 구버전 plans/interviews — **입력 컨텍스트로만** 쓰고 재생성 금지 |
+| `stakes.hasVibeConfig` · `isTempDir` · `isGitRepo` | Phase 1-b 의 결정론 신호 (언어 신호는 모델 판단으로 남는다) |
+| `urls[].kind` | `figma` / `github` / `youtube` / `web` |
+| `attachments[].kind` · `exists` | `spec` / `feature` / `document` / `image` / `code` |
+
+> 의도 분류(Phase 1)는 그대로 모델이 한다 — 애매한 판단은 모델, 파일 존재·도메인·확장자는 코드다.
 
 감지된 진행 상태가 있으면 사용자에게 명시:
 
