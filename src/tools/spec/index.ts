@@ -72,3 +72,15 @@ export type {
   TraceSummary,
   TraceMatrixOptions
 } from './traceabilityMatrix.js';
+
+// SPEC Code Guard — 산출물이 하류(run/verify)로 넘어가기 전 노드 단위 검사
+export {
+  validateSpecDocument,
+  formatSpecValidation,
+  featureSlugFromPath,
+} from './validateSpecDocument.js';
+export type {
+  SpecValidationResult,
+  SpecFinding,
+  SpecFindingSeverity,
+} from './validateSpecDocument.js';

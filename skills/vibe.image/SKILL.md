@@ -34,6 +34,14 @@ Generate images using the Antigravity image backend.
 **Step 0: Script path:**
 - `[LLM_SCRIPT]` = `{{VIBE_PATH}}/hooks/scripts/llm-orchestrate.js`
 
+**Step 0-b: 비용 게이트 (생성 전 의무)** — 이미지 생성은 되돌릴 수 없는 지출이다. SSOT: `vibe/rules/loop-contract.md` 비용 게이트 절.
+
+```bash
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const op={kind:'paid-generation',provider:'antigravity',label:'이미지 {N}장 생성'}; console.log(t.formatCostGate(op, t.evaluateCostGate(op))); })"
+```
+
+`ask` 면 생성 전에 무엇을 몇 장 만들지 제시하고 확인받는다. `autonomous` 면 묻지 않고 인박스에 기록한 뒤 진행한다. `.vibe/config.json` 의 `costGate.paidGenerationRequiresApproval: false` 로 끌 수 있다.
+
 **General image generation (Antigravity fast image):**
 ```bash
 node "[LLM_SCRIPT]" antigravity image "IMAGE_DESCRIPTION" --output "OUTPUT_PATH"

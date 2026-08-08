@@ -89,12 +89,23 @@ export function remove(): void {
   // Cursor 글로벌 에셋 제거
   const cursorDir = path.join(os.homedir(), '.cursor');
 
-  // Cursor agents 제거 (consolidated reviewers)
+  // Cursor agents 제거 — 현행 2종 + 리뷰어 통합 이전에 깔린 레거시까지.
+  //
+  // 목록이 현행 2종뿐이라 구버전에서 설치된 11종이 영구 잔여물로 남아 있었다
+  // (실측: 설치본에 13개). vibe 는 더 이상 Cursor 자산을 설치하지 않으므로
+  // 이 목록이 유일한 회수 수단이다 — 놓치면 되돌릴 방법이 없다.
   const cursorAgentsDir = path.join(cursorDir, 'agents');
   if (fs.existsSync(cursorAgentsDir)) {
-    const coreReviewers = ['code-reviewer.md', 'security-reviewer.md'];
+    const vibeReviewers = [
+      'code-reviewer.md', 'security-reviewer.md',
+      // 통합 이전 레거시
+      'architecture-reviewer.md', 'complexity-reviewer.md', 'data-integrity-reviewer.md',
+      'git-history-reviewer.md', 'performance-reviewer.md', 'python-reviewer.md',
+      'rails-reviewer.md', 'react-reviewer.md', 'simplicity-reviewer.md',
+      'test-coverage-reviewer.md', 'typescript-reviewer.md',
+    ];
     let removedAgents = 0;
-    coreReviewers.forEach(agent => {
+    vibeReviewers.forEach(agent => {
       const agentPath = path.join(cursorAgentsDir, agent);
       if (fs.existsSync(agentPath)) {
         fs.unlinkSync(agentPath);
@@ -152,9 +163,7 @@ Removed:
   - Slash commands (7)
   - Subagents (10)
   - Hooks settings
-  - Cursor agents (2)
-  - Cursor skills (7)
-  - Cursor rules template (5)
+  - Cursor assets (agents / skills / rules-template — 레거시 포함)
 
 To reinstall: vibe init
   `);

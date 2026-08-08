@@ -35,6 +35,8 @@ Input 분석 + Smart Resume
     ↓
 Execute the bundled implementation below — 단일 패스: 컨텍스트 수집 → (필요시) 인라인 질문 → SPEC + Feature 작성 → 셀프 리뷰 1회
     ↓
+SPEC Code Guard (아래) — P1 이 있으면 승인으로 가지 않고 SPEC 작성으로 되돌아간다
+    ↓
 SPEC 승인 (1회 — automationLevel: autonomous 면 생략)
     ↓
 /vibe.run "{feature-name}"
@@ -64,6 +66,25 @@ Legacy `.vibe/interviews/` or `.vibe/plans/` artifacts가 실제로 감지된 �
 - spec 패스에서 feature 이름 확정 시 `.vibe/.last-feature` 에 한 줄 기록 (spec 스킬이 수행).
 - 개인 작업 포인터이므로 git 커밋 금지 (`.gitignore` 에 `.vibe/.last-feature`).
 - 워크플로 완주(verify 통과) 시 삭제.
+
+## SPEC Code Guard (승인 전 의무)
+
+SPEC 을 쓴 직후, **승인을 요청하기 전에** 실행한다. 셀프 리뷰가 아니라 코드 판정이다:
+
+```bash
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const fs=require('fs'); const p='.vibe/specs/{feature-name}.md'; const r=t.validateSpecDocument(fs.readFileSync(p,'utf-8'),{specPath:p}); console.log(t.formatSpecValidation(r)); process.exitCode = r.valid ? 0 : 1; })"
+```
+
+| 검사 | 심각도 | 왜 하류가 깨지는가 |
+|---|---|---|
+| REQ-* ID 부재 | P1 | RTM 이 `status:"empty"` — 커버리지 게이트가 판정불가가 된다 |
+| Stakes 부재/오값 | P1 | 디스패처가 파이프라인 깊이를 정할 입력이 없다 |
+| Done Criteria 부재/빈 섹션 | P1 | JUDGE 가 판정할 기준이 없다 |
+| 미치환 placeholder | P1 | 직역 하네스가 예시 텍스트를 실데이터로 넣는다 |
+| Scenarios 부재 | P2 | `vibe.run` 시나리오 루프의 분해 단위가 없다 |
+| REQ 슬러그 ≠ 파일명 | P2 | 게이트는 통과하나 ID 규약 이탈로 추적이 흐려진다 |
+
+**P1 이 하나라도 있으면 승인 요청으로 넘어가지 않는다** — SPEC 작성으로 되돌아가 고치고 다시 검사한다 (backward edge). 2회 연속 같은 findings 면 stuck 으로 처리한다 (SSOT: `vibe/rules/loop-contract.md`). P2 는 통과를 막지 않고 승인 메시지에 함께 표시한다.
 
 ## 승인과 루프
 
