@@ -1,5 +1,7 @@
 # SPEC: Execution Packet Compiler
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 - **Created**: 2026-07-20
 - **Status**: APPROVED
 - **Tech Stack**: TypeScript, Node.js, Vitest, ESM

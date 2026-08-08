@@ -1,5 +1,7 @@
 # SPEC: Stakes-Proportional Pipeline
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 - **Created**: 2026-07-22
 - **Status**: APPROVED (2026-07-22) · Implemented · D1~D6 gates passed
 - **Tech Stack**: Markdown (skill bodies), TypeScript (static contract tests), Vitest

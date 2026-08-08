@@ -7,6 +7,8 @@ depends: system-lean-hardening
 
 # SPEC: utils-dissolution — vibe.utils 해체 + documenter/diagrammer 제거
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 ## 목표 (Done 의 정의)
 
 `vibe.utils` 모놀리스(9모드)를 해체해 각 기능을 명시적 스킬/기존 스킬 모드/툴 호출로 재배치하고,
@@ -30,7 +32,7 @@ thin 에이전트 2기(documenter·diagrammer)를 제거하되 프롬프트 규�
 
 ## 작업 항목
 
-### Track A — skills + agents 파일
+### REQ-utils-dissolution-001: Track A — skills + agents 파일
 - A1 `skills/vibe.continue/SKILL.md` 신설 (소형, --continue 내용 승계: core_start_session → 컨텍스트 복원 → 체크포인트 재개)
 - A2 `skills/vibe.image/SKILL.md` 신설 (--image 의 MANDATORY 툴 호출 블록 + references/image-generation-examples.md 이동)
 - A3 `skills/docs/` 에 diagram·codemaps 모드 추가 — agents/diagrammer.md·documenter.md 프롬프트 규약을 `skills/docs/references/` 로 이관 후 두 에이전트 .md 삭제. docs/SKILL.md 의 Task(documenter/diagrammer) 호출을 네이티브 실행(+이관된 규약 Read)으로 교체. `vibe.docs` entry 라우팅 갱신
@@ -38,7 +40,7 @@ thin 에이전트 2기(documenter·diagrammer)를 제거하되 프롬프트 규�
 - A5 `skills/vibe.utils/` 디렉토리 삭제
 - A6 참조 스킬 갱신: handoff(SKILL.md:19-21,101 + templates/handoff.md:89), exec-plan(SKILL.md:132 + templates/plan.md:147), vibe(SKILL.md 라우팅 표의 utils 행 → continue/image/docs 로 재배치)
 
-### Track B — src/hooks/templates/문서
+### REQ-utils-dissolution-002: Track B — src/hooks/templates/문서
 - B1 constants.ts: GLOBAL_SKILLS_ENTRY − vibe.utils + vibe.continue + vibe.image; LEGACY_SKILL_DIRS += 'vibe.utils'
 - B2 constants.ts 에이전트 매핑에서 documenter·diagrammer 제거 (CLAUDE_MODEL_MAPPING 등 전체) + claude-agents.ts descriptions; remove.ts 는 stale-cleanup 목록 유지
 - B3 `/vibe.utils --continue` 참조 교체 → `/vibe.continue`: ProjectSetup.ts:140,141,399 · inline-skills.ts:131,143 · SkillRepository.ts:513 · info.ts:54 · vibe/templates/claudemd-template.md:67 · CLAUDE.md:134 · AGENTS.md:131
