@@ -62,6 +62,20 @@ node "$HOOKS_DIR/loop-ledger.js" anchor [feature]
 
 > `autonomous` 의 "계속" 은 **stuck 난 루프를 더 돌린다는 뜻이 아니다** — 2회 연속 동일 발견은 정의상 재시도가 무의미하다. 같은 목표를 붙잡지 않고 다음 단위로 넘어간다는 뜻이며, 미달은 TODO/인박스에 남는다. 미달 상태를 **완료로 기록하지 않는다.**
 
+### 노드 가드 — 게이트를 끝에만 두지 않는다
+
+결정론 게이트가 전부 JUDGE(파이프라인 끝)에만 있으면, 쓸 수 없는 산출물이 체인을 끝까지 타고 간 뒤에야 걸린다. 실패는 **만들어진 노드에서** 잡는 것이 싸다.
+
+- 산출물을 내는 노드는 그 산출물이 **하류가 요구하는 형태인지** 코드로 검사한다. 취향이 아니라 계약을 검사한다 — "이게 없으면 하류의 무엇이 깨지는가"로 항목을 정한다.
+- 실패하면 다음 노드로 가지 않고 **그 노드로 되돌아간다** (backward edge). 루프 전체를 재시작하지 않는다.
+- 되돌린 뒤에도 같은 findings 가 2회 연속이면 stuck 이다 (위 stuck 절).
+
+| 노드 | 가드 | 검사 근거 |
+|---|---|---|
+| `vibe.spec` | `validateSpecDocument` | RTM 이 게이트로 동작할 REQ-* / JUDGE 입력인 Done Criteria / 디스패처 입력인 Stakes / 직역 하네스가 실데이터로 넣는 placeholder |
+| `vibe.run` | 테스트 exit code · run-ledger | 기존 JUDGE |
+| `vibe.clone` · `vibe.figma` | pixelmatch diffRatio · computed CSS delta | 측정된 P1 (위 Judge 권한 경계 표) |
+
 ### 실행 실패 (error) — stuck 과 다른 종료 사유
 
 stuck 은 **같은 발견이 반복되는** 상태다. 스킬이 로드되지 않거나, 도구가 없거나, 파일이 없거나, 명령이 비정상 종료하는 것은 stuck 이 아니라 **실행 실패**이며 해시 비교로는 잡히지 않는다. 재시도 대상도 아니다 — 환경이 바뀌지 않는 한 결과가 같다.

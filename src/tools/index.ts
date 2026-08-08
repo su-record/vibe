@@ -283,6 +283,11 @@ export type {
 
 // ─── Loop Tools ───
 export { validateLoopDefinition } from './loop/index.js';
+export {
+  validateSpecDocument,
+  formatSpecValidation,
+  featureSlugFromPath,
+} from './spec/index.js';
 
 // 디스패처 결정론 신호 — 파일 존재·URL 도메인·첨부 확장자는 모델이 아니라 코드가 판정한다
 export {
