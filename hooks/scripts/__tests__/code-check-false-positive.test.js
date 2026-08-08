@@ -72,3 +72,62 @@ describe('code-check: any 탐지는 코드 구간에만 적용된다', () => {
     expect(findings[0]).toContain('line 2');
   });
 });
+
+/**
+ * 미탐 회귀 (2026-08-08).
+ *
+ * 오탐만 고치고 미탐은 남겨두면 게이트 신뢰도는 반쪽이다. 상태 모델이 단순해
+ * 두 가지를 놓치고 있었다:
+ *  - 템플릿 보간 `${...}` 안은 **실행되는 코드**인데 문자열로 취급해 건너뛰었다
+ *  - 정규식 리터럴 안의 백틱을 템플릿 시작으로 오인해 이후 줄이 통째로 무력화됐다
+ */
+describe('code-check: 코드인 구간을 놓치지 않는다', () => {
+  it('템플릿 보간 안의 as any 를 잡는다', async () => {
+    const f = write('interp.ts', 'const t = `a ${(v as any)} b`;\n');
+    const findings = await findingsFor(f);
+    expect(findings.some(x => x.includes('any-type'))).toBe(true);
+  });
+
+  it('중첩 템플릿 보간도 잡는다', async () => {
+    const f = write('nested.ts', 'const t = `x ${`y ${(v as any)}`} z`;\n');
+    expect((await findingsFor(f)).some(x => x.includes('any-type'))).toBe(true);
+  });
+
+  it('보간 안의 console.log 도 잡는다', async () => {
+    const f = write('interp-log.ts', 'const t = `${console.log(1)}`;\n');
+    expect((await findingsFor(f)).some(x => x.includes('console.log'))).toBe(true);
+  });
+
+  it('정규식 리터럴의 백틱이 이후 코드를 무력화하지 않는다', async () => {
+    const f = write('regex-tick.ts', 'const re = /`/;\nexport function d(x: any): void { void x; }\n');
+    expect((await findingsFor(f)).some(x => x.includes('any-type'))).toBe(true);
+  });
+
+  it('정규식 리터럴의 따옴표도 마찬가지', async () => {
+    const f = write('regex-quote.ts', "const re = /'/;\nexport function d(x: any): void { void x; }\n");
+    expect((await findingsFor(f)).some(x => x.includes('any-type'))).toBe(true);
+  });
+
+  it('나눗셈을 정규식으로 오인하지 않는다', async () => {
+    // a / b / c 를 정규식으로 읽으면 그 사이 코드가 통째로 사라진다
+    const f = write('division.ts', 'const r = a / b / c;\nexport function d(x: any): void { void x; }\n');
+    expect((await findingsFor(f)).some(x => x.includes('any-type'))).toBe(true);
+  });
+
+  it('보간 안 객체 리터럴이 보간을 조기 종료시키지 않는다', async () => {
+    // `${ {a:1}.x as any }` — 첫 `}` 는 객체를 닫는 것이지 보간의 끝이 아니다
+    const f = write('brace-depth.ts', 'const t = `${ {a:1}.x as any }`;\n');
+    expect((await findingsFor(f)).some(x => x.includes('any-type'))).toBe(true);
+  });
+
+  it('보간 안 중괄호가 다음 줄로 새지 않는다', async () => {
+    const f = write('brace-leak.ts',
+      'const t = `${ f({a:1}) } tail`;\nexport function g(x: any): void { void x; }\n');
+    expect((await findingsFor(f)).some(x => x.includes('line 2'))).toBe(true);
+  });
+
+  it('템플릿 리터럴 본문은 여전히 문자열로 본다', async () => {
+    const f = write('body.ts', 'export const DOC = `\n금지: as any\n`;\n');
+    expect(await findingsFor(f)).toEqual([]);
+  });
+});

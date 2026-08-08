@@ -598,9 +598,23 @@ export function installCodexNotify(configDir: string): void {
   const endIdx = existing.indexOf(CODEX_NOTIFY_END);
 
   if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-    // 기존 관리 블록 교체
     const before = existing.substring(0, startIdx).trimEnd();
     const after = existing.substring(endIdx + CODEX_NOTIFY_END.length).trimStart();
+
+    // 관리 블록 **밖에** notify 가 생겼는지 먼저 본다.
+    //
+    // TOML 은 같은 키를 두 번 선언하면 파싱 자체가 실패한다 — codex 가 통째로 뜨지
+    // 않는다. 예전에는 이 분기가 블록만 보고 재작성해서, 우리가 블록을 넣은 뒤
+    // 다른 도구(codex-computer-use 등)가 자기 notify 를 추가하면 다음 upgrade 마다
+    // 중복 키를 만들었다. 그런 도구는 보통 `--previous-notify` 로 우리 것을 이미
+    // 체인하므로, 블록을 지우고 양보하는 쪽이 동작도 보존한다.
+    if (/^\s*notify\s*=/m.test(before) || /^\s*notify\s*=/m.test(after)) {
+      const merged = [before, after].filter(Boolean).join('\n\n');
+      fs.writeFileSync(configPath, merged ? merged + '\n' : '');
+      log(`⚠️  Codex config.toml defines 'notify' outside the vibe block; removed the vibe block to avoid a duplicate TOML key (${configPath})`);
+      return;
+    }
+
     const next = (before ? before + '\n\n' : '') + block + (after ? '\n\n' + after : '') + '\n';
     fs.writeFileSync(configPath, next);
     return;
