@@ -11,6 +11,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { projectVibePath, projectVibeRoot } from './vibePaths.js';
 
 export type AttachmentKind = 'spec' | 'feature' | 'document' | 'image' | 'code' | 'unknown';
 export type UrlKind = 'figma' | 'github' | 'youtube' | 'web';
@@ -55,7 +56,9 @@ function firstExisting(projectRoot: string, candidates: string[]): string | null
 
 function readLastFeature(projectRoot: string): string | null {
   try {
-    const raw = fs.readFileSync(path.join(projectRoot, '.vibe', '.last-feature'), 'utf-8').trim();
+    // 경로는 vibePaths 가 소유한다 — `.vibe/` 하드코딩은 레거시 프로젝트에서 빗나가고,
+    // feature 가 null 이 되면 spec 탐색까지 연쇄로 무너진다
+    const raw = fs.readFileSync(projectVibePath(projectRoot, '.last-feature'), 'utf-8').trim();
     return raw.length > 0 ? raw : null;
   } catch {
     return null;
@@ -73,19 +76,20 @@ export function detectResumeState(projectRoot: string, feature?: string): Resume
     return { lastFeature, feature: null, specPath: null, featurePath: null, resumeFrom: 'none', legacyArtifacts: [] };
   }
 
+  const vibeRel = path.relative(projectRoot, projectVibeRoot(projectRoot));
   const specPath = firstExisting(projectRoot, [
-    path.join('.vibe', 'specs', `${name}.md`),
-    path.join('.vibe', 'specs', name, '_index.md'),
+    path.join(vibeRel, 'specs', `${name}.md`),
+    path.join(vibeRel, 'specs', name, '_index.md'),
   ]);
   const featurePath = firstExisting(projectRoot, [
-    path.join('.vibe', 'features', `${name}.feature`),
-    path.join('.vibe', 'features', name),
+    path.join(vibeRel, 'features', `${name}.feature`),
+    path.join(vibeRel, 'features', name),
   ]);
 
   // 구버전 산출물 — 입력 컨텍스트로만 쓰고 재생성하지 않는다
   const legacyArtifacts = [
-    path.join('.vibe', 'plans', `${name}.md`),
-    path.join('.vibe', 'interviews', `${name}.md`),
+    path.join(vibeRel, 'plans', `${name}.md`),
+    path.join(vibeRel, 'interviews', `${name}.md`),
   ].filter(rel => fs.existsSync(path.join(projectRoot, rel)));
 
   return {
@@ -106,7 +110,7 @@ export function detectStakesSignals(projectRoot: string): StakesSignals {
   const tmpRoots = [process.env.TMPDIR, '/tmp', '/var/folders'].filter(Boolean) as string[];
   const resolved = path.resolve(projectRoot);
   return {
-    hasVibeConfig: fs.existsSync(path.join(projectRoot, '.vibe', 'config.json')),
+    hasVibeConfig: fs.existsSync(projectVibePath(projectRoot, 'config.json')),
     isTempDir: tmpRoots.some(root => resolved.startsWith(path.resolve(root) + path.sep)),
     isGitRepo: fs.existsSync(path.join(projectRoot, '.git')),
   };
@@ -136,8 +140,9 @@ export function classifyAttachment(filePath: string): AttachmentKind {
   const normalized = filePath.replace(/\\/g, '/');
 
   if (ext === '.feature') return 'feature';
-  // 경로 선두에도 매칭돼야 한다 — 첨부는 보통 상대 경로로 온다 (`📎 .vibe/specs/login.md`)
-  if (ext === '.md' && /(^|\/)\.vibe\/specs\//.test(normalized)) return 'spec';
+  // 경로 선두에도 매칭돼야 한다 — 첨부는 보통 상대 경로로 온다 (`📎 .vibe/specs/login.md`).
+  // 레거시 레이아웃(`.claude/vibe/specs/`)도 같은 SPEC 이다.
+  if (ext === '.md' && /(^|\/)(\.vibe|\.claude\/vibe)\/specs\//.test(normalized)) return 'spec';
   if (IMAGE_EXT.has(ext)) return 'image';
   if (CODE_EXT.has(ext)) return 'code';
   if (DOC_EXT.has(ext)) return 'document';

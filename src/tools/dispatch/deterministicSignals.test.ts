@@ -164,3 +164,53 @@ describe('collectDispatchSignals', () => {
     expect(s.attachments).toEqual([]);
   });
 });
+
+/**
+ * 레거시 레이아웃 회귀 (G-D).
+ *
+ * `.vibe/` 를 하드코딩하면 `.claude/vibe/` 프로젝트에서 `.last-feature` 를 못 찾고,
+ * feature 가 null 이 되면 spec 탐색까지 연쇄로 무너진다 — 실제로 ANCHOR 가
+ * feature·spec·scope 를 전부 missing 으로 보고했다. 경로 소유권을 vibePaths 로
+ * 옮긴 뒤의 동작을 고정한다.
+ */
+describe('레거시 레이아웃 (.claude/vibe/)', () => {
+  const LEGACY = ['.claude', 'vibe'];
+
+  const writeLegacy = (rel: string, content = ''): void => {
+    const p = path.join(dir, ...LEGACY, rel);
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, content, 'utf-8');
+  };
+
+  it('.last-feature 를 레거시 경로에서 찾는다', () => {
+    writeLegacy('.last-feature', 'login\n');
+    expect(detectResumeState(dir).lastFeature).toBe('login');
+  });
+
+  it('레거시 SPEC 을 찾아 resume 지점을 잡는다', () => {
+    writeLegacy('.last-feature', 'login\n');
+    writeLegacy(path.join('specs', 'login.md'), '# SPEC');
+
+    const r = detectResumeState(dir);
+    expect(r.resumeFrom).toBe('run');
+    expect(r.specPath).toBe(path.join('.claude', 'vibe', 'specs', 'login.md'));
+  });
+
+  it('레거시 config.json 도 stakes 신호로 인식한다', () => {
+    writeLegacy('config.json', '{}');
+    expect(detectStakesSignals(dir).hasVibeConfig).toBe(true);
+  });
+
+  it('신규 레이아웃이 있으면 그쪽을 우선한다', () => {
+    writeLegacy('.last-feature', 'old\n');
+    const modern = path.join(dir, '.vibe');
+    fs.mkdirSync(modern, { recursive: true });
+    fs.writeFileSync(path.join(modern, '.last-feature'), 'new\n', 'utf-8');
+
+    expect(detectResumeState(dir).lastFeature).toBe('new');
+  });
+
+  it('레거시 경로의 SPEC 첨부도 spec 으로 분류한다', () => {
+    expect(classifyAttachment('.claude/vibe/specs/login.md')).toBe('spec');
+  });
+});

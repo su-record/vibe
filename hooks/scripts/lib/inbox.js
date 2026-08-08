@@ -8,11 +8,19 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { projectVibePath } from '../utils.js';
 
 const HEADER = '# Loop Inbox\n\n> 루프가 남긴 사람 리뷰 큐. 최신 항목이 위에 온다.\n';
 
-function inboxPath(projectDir) {
-  return path.join(projectDir, '.vibe', 'loops', 'inbox.md');
+/**
+ * 인박스 경로 — 이 모듈이 소유한다.
+ *
+ * 쓰기는 항상 `.vibe/` 로 한다(신규 레이아웃). 읽기는 레거시(`.claude/vibe/`)도
+ * 봐야 하므로 `projectVibePath` 를 쓴다 — 두 쪽이 다른 파일을 보면 기록은 되는데
+ * ANCHOR 는 못 읽는 상태가 된다.
+ */
+export function inboxPath(projectDir) {
+  return projectVibePath(projectDir, 'loops', 'inbox.md');
 }
 
 /**

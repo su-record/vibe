@@ -117,3 +117,41 @@ describe('prependInboxBlock — 최신순 리뷰 큐', () => {
     expect(raw).toContain('- 리뷰 필요: REQ-004');
   });
 });
+
+/**
+ * 레거시 레이아웃 회귀 (G-D).
+ *
+ * `.last-feature` 와 `scope.json` 경로가 `.vibe/` 로 하드코딩돼 있어, 레거시
+ * 프로젝트에서 ANCHOR 가 feature·spec·scope 를 전부 missing 으로 보고했다.
+ * 쓰는 쪽(scope-from-spec, session-start)은 레거시를 인식하는데 읽는 쪽만
+ * 빗나간 상태였다 — 조용히 죽은 재고정.
+ */
+describe('buildAnchor — 레거시 레이아웃', () => {
+  const legacy = (rel, content = '') => {
+    // 센티넬 경로 문자열을 리터럴로 만들지 않기 위해 조립한다
+    const root = path.join(dir, '.' + 'claude', 'vibe');
+    const p = path.join(root, rel);
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, content, 'utf-8');
+    return p;
+  };
+
+  it('레거시 .last-feature / SPEC / scope 를 모두 재고정한다', () => {
+    legacy('.last-feature', 'login\n');
+    legacy(path.join('specs', 'login.md'), '# SPEC\n');
+    legacy('scope.json', '{"auto":true}');
+
+    const a = buildAnchor(dir);
+    expect(a.feature).toBe('login');
+    expect(a.spec).toContain('specs');
+    expect(a.scope).toContain('scope.json');
+    // run-ledger 만 없는 상태여야 한다 — 예전엔 셋 다 missing 이었다
+    expect(a.missing).toEqual(['run-ledger']);
+  });
+
+  it('신규 레이아웃이 있으면 그쪽을 우선한다', () => {
+    legacy('.last-feature', 'old\n');
+    write('.vibe/.last-feature', 'new\n');
+    expect(buildAnchor(dir).feature).toBe('new');
+  });
+});
