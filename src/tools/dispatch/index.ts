@@ -12,3 +12,13 @@ export type {
   UrlKind,
   AttachmentKind,
 } from './deterministicSignals.js';
+
+export { evaluateCostGate, formatCostGate } from './costGate.js';
+export type {
+  CostOperation,
+  CostOperationKind,
+  CostGateConfig,
+  CostGateDecision,
+  CostGateAction,
+  AutomationLevel,
+} from './costGate.js';

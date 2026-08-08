@@ -304,6 +304,12 @@ export type {
   UrlKind,
   AttachmentKind,
 } from './dispatch/index.js';
+export { evaluateCostGate, formatCostGate } from './dispatch/index.js';
+export type {
+  CostOperation,
+  CostGateConfig,
+  CostGateDecision,
+} from './dispatch/index.js';
 export type {
   ParsedLoopDefinition,
   LoopValidationResult,

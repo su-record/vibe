@@ -69,6 +69,7 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 - `verifyGate.mode` — `warn` (default) or `block` (Stop hook blocks once if run started but verify not passed)
 - `autoTest.mode` — `debounce` (default, 120s cooldown per unchanged test file) / `always` / `off`
 - `qualityCheck.consoleAllow` — array of file globs where `console.log` is permitted
+- `costGate.{enabled, maxAgentsWithoutApproval, paidGenerationRequiresApproval}` — 되돌릴 수 없는 지출·이상 규모 팬아웃 직전 승인 (기본 on / 12 / true). 평상시 규모는 통과 — SSOT: `vibe/rules/loop-contract.md`
 
 ### Quality SSOT (3-tier)
 | Path | Purpose |
