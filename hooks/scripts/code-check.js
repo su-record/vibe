@@ -69,36 +69,100 @@ function findUnescaped(str, token) {
   return -1;
 }
 
+/** 정규식 리터럴이 시작될 수 있는 위치인지 — 직전 코드로 나눗셈과 구분한다 */
+function canStartRegex(codeSoFar) {
+  const prev = codeSoFar.replace(/\s+$/, '');
+  if (prev === '') return true;
+  if (/\b(return|typeof|case|in|of|new|delete|void|throw)$/.test(prev)) return true;
+  return /[=(,:[!&|?{};+\-*%~^<>]$/.test(prev);
+}
+
+/** 템플릿 리터럴 안에서 종료 백틱과 `${` 중 먼저 오는 것을 찾는다 */
+function nextTemplateStop(rest) {
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === '\\') { i++; continue; }
+    if (rest[i] === '`') return { kind: 'end', index: i };
+    if (rest[i] === '$' && rest[i + 1] === '{') return { kind: 'expr', index: i };
+  }
+  return null;
+}
+
+/**
+ * 템플릿 리터럴 본문을 소비한다. `${` 를 만나면 **코드 구간**으로 넘긴다 —
+ * 보간 안은 문자열이 아니라 실행되는 코드다 (`` `${x as any}` `` 를 놓치던 원인).
+ */
+function consumeTemplate(rest, state) {
+  const stop = nextTemplateStop(rest);
+  if (!stop) return null; // 줄 끝까지 템플릿 — 다음 줄로 상태를 이어간다
+  if (stop.kind === 'end') {
+    state.stack.pop();
+    return rest.slice(stop.index + 1);
+  }
+  state.stack.push('expr');
+  return rest.slice(stop.index + 2);
+}
+
 /**
  * 한 줄에서 코드가 아닌 구간(주석·문자열·템플릿 리터럴)을 지운다.
- * 여러 줄에 걸친 블록 주석·템플릿 리터럴을 잇기 위해 state를 받고 갱신해 돌려준다.
+ *
+ * 상태는 스택이다 — 템플릿 안의 `${}` 안에 또 템플릿이 올 수 있다.
+ * 여러 줄에 걸친 블록 주석·템플릿 리터럴은 스택으로 이어진다.
+ *
  * @param {string} line
- * @param {{ inBlock: boolean, inTemplate: boolean }} state - 제자리 갱신
+ * @param {{ stack: Array<'block'|'template'|'expr'> }} state - 제자리 갱신
  * @returns {string} 코드 구간만 남은 문자열
  */
 function stripNonCodeLine(line, state) {
   let rest = line;
   let code = '';
+
   while (rest.length > 0) {
-    if (state.inBlock || state.inTemplate) {
-      const closer = state.inBlock ? '*/' : '`';
-      const end = findUnescaped(rest, closer);
+    const top = state.stack[state.stack.length - 1];
+
+    if (top === 'block') {
+      const end = findUnescaped(rest, '*/');
       if (end === -1) break;
-      if (state.inBlock) state.inBlock = false;
-      else state.inTemplate = false;
-      rest = rest.slice(end + closer.length);
+      state.stack.pop();
+      rest = rest.slice(end + 2);
       continue;
     }
-    const opener = rest.match(/\/\*|\/\/|`|'|"/);
+    if (top === 'template') {
+      const next = consumeTemplate(rest, state);
+      if (next === null) break;
+      rest = next;
+      continue;
+    }
+
+    // 코드 구간 (최상위 또는 `${}` 안)
+    const opener = rest.match(/\/\*|\/\/|`|'|"|\/|\}/);
     if (!opener) return code + rest;
     code += rest.slice(0, opener.index);
     const token = opener[0];
-    rest = rest.slice(opener.index + token.length);
+    const consumed = rest.slice(opener.index + token.length);
+
     if (token === '//') break;
-    if (token === '/*') { state.inBlock = true; continue; }
-    if (token === '`') { state.inTemplate = true; continue; }
-    const close = findUnescaped(rest, token); // 홑/겹따옴표는 줄을 넘지 않는다
-    rest = close === -1 ? '' : rest.slice(close + 1);
+    if (token === '}') {
+      // `${}` 의 끝이면 템플릿으로 복귀, 아니면 평범한 블록 닫기
+      if (top === 'expr') state.stack.pop();
+      else code += '}';
+      rest = consumed;
+      continue;
+    }
+    if (token === '/*') { state.stack.push('block'); rest = consumed; continue; }
+    if (token === '`') { state.stack.push('template'); rest = consumed; continue; }
+    if (token === '/') {
+      // 정규식 리터럴이면 통째로 건너뛴다 — 안의 백틱/따옴표가 상태를 오염시킨다
+      if (canStartRegex(code)) {
+        const end = findUnescaped(consumed, '/');
+        rest = end === -1 ? '' : consumed.slice(end + 1);
+      } else {
+        code += '/';
+        rest = consumed;
+      }
+      continue;
+    }
+    const close = findUnescaped(consumed, token); // 홑/겹따옴표는 줄을 넘지 않는다
+    rest = close === -1 ? '' : consumed.slice(close + 1);
   }
   return code;
 }
@@ -115,7 +179,7 @@ function stripNonCodeLine(line, state) {
  */
 function detectAnyType(lines) {
   const findings = [];
-  const state = { inBlock: false, inTemplate: false };
+  const state = { stack: [] };
   lines.forEach((line, i) => {
     const code = stripNonCodeLine(line, state);
     for (const re of P1_DETECTORS) {
@@ -153,7 +217,7 @@ function detectAnyType(lines) {
 function detectConsoleLogs(lines, filePath) {
   if (!shouldCheckConsole(filePath)) return [];
   const findings = [];
-  const state = { inBlock: false, inTemplate: false };
+  const state = { stack: [] };
   lines.forEach((line, i) => {
     const code = stripNonCodeLine(line, state);
     if (/console\.log\(/.test(code)) {
