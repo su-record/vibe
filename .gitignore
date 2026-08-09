@@ -35,6 +35,7 @@ hooks/scripts/__tests__/.vibe/
 
 # vibe runtime artifacts (per CLAUDE.md Git Exclude)
 .vibe/metrics/
+.vibe/gates/
 .vibe/memories/
 .vibe/checkpoints/
 .vibe/packets/

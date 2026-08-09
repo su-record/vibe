@@ -143,6 +143,6 @@ Public skills use the `vibe.*` namespace and are classified as **entry** / **sta
 
 **Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `CLAUDE.md`
 **Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `/vibe.test` artifacts live with the vibe install, not with the project
-**Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.codex/hooks.json`, `.vibe/{memories,checkpoints,metrics}/`
+**Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.codex/hooks.json`, `.vibe/{memories,checkpoints,metrics,gates}/`
 
 <!-- VIBE:END -->

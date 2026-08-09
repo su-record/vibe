@@ -8,6 +8,9 @@
  *   node hooks/scripts/loop-ledger.js check-stuck <name> <discoverHash>
  *   node hooks/scripts/loop-ledger.js anchor [feature]
  *   node hooks/scripts/loop-ledger.js inbox <name> <ok|fail|stuck> [line...]
+ *   node hooks/scripts/loop-ledger.js gate open <id> <question> [option...]
+ *   node hooks/scripts/loop-ledger.js gate list
+ *   node hooks/scripts/loop-ledger.js gate answer <id> <answer>
  *
  * check-stuck: 'stuck' 또는 'ok'를 stdout에 출력하고 항상 exit 0.
  * anchor: 재고정 번들 JSON을 stdout에 출력한다 (loop-contract ANCHOR 절).
@@ -17,6 +20,7 @@
 import { appendLoopEvent, isStuck } from './lib/loop-ledger.js';
 import { buildAnchor } from './lib/anchor.js';
 import { prependInboxBlock } from './lib/inbox.js';
+import { openGate, listOpenGates, answerGate, formatOpenGates } from './lib/gates.js';
 
 const [, , subcommand, ...args] = process.argv;
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -69,10 +73,39 @@ if (subcommand === 'start') {
        : '[loop-ledger] WARNING: inbox write failed\n'
   );
 
+} else if (subcommand === 'gate') {
+  // 사람 판단 지점을 디스크에 남긴다 — 세션이 죽어도 무엇을 묻고 있었는지 남는다
+  const [action, id, ...rest] = args;
+
+  if (action === 'list') {
+    process.stdout.write(formatOpenGates(listOpenGates(projectDir)) + '\n');
+
+  } else if (action === 'open') {
+    const [question, ...options] = rest;
+    if (!id || !question) {
+      process.stdout.write('[loop-ledger] error: gate open 에 id 와 구체적 질문이 필요합니다\n');
+      process.exit(0);
+    }
+    const file = openGate(projectDir, { id, question, options, at: new Date().toISOString() });
+    process.stdout.write(file
+      ? `[loop-ledger] gate opened: ${id}\n`
+      : '[loop-ledger] WARNING: gate open failed (질문이 너무 짧거나 쓰기 실패)\n');
+
+  } else if (action === 'answer') {
+    const answer = rest.join(' ');
+    const ok = answerGate(projectDir, id, answer, new Date().toISOString());
+    process.stdout.write(ok
+      ? `[loop-ledger] gate answered: ${id}\n`
+      : `[loop-ledger] WARNING: gate not found or already answered: ${id}\n`);
+
+  } else {
+    process.stdout.write('[loop-ledger] 사용법: gate open <id> <question> [option...] | gate list | gate answer <id> <answer>\n');
+  }
+
 } else {
   process.stdout.write(
     '[loop-ledger] 사용법: start <name> | end <name> <ok|fail|stuck> [summary] | '
-    + 'check-stuck <name> <hash> | anchor [feature] | inbox <name> <ok|fail|stuck> [line...]\n'
+    + 'check-stuck <name> <hash> | anchor [feature] | inbox <name> <ok|fail|stuck> [line...] | gate <open|list|answer> …\n'
   );
 }
 

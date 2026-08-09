@@ -208,7 +208,7 @@ Phase 4: /vibe.verify → 검증
 각 phase 종료 후 JUDGE 단계:
 - 게이트 통과 (**측정된** P1=0 ∧ verifyPassed) → 루프 종료, Phase 5 보고. 판정된 P1(리뷰어 findings)은 단독으로 게이트를 막지 않는다 — SSOT: `vibe/rules/loop-contract.md` Judge 권한 경계
 - 게이트 미통과 → RECORD(run-ledger + loop-history.jsonl) 후 다음 ANCHOR로
-- stuck(연속 2회 동일 findings 해시) → **어느 automationLevel 에서도 루프를 종료한다.** `confirm`이면 사용자 질문, `autonomous`이면 질문 없이 TODO 기록 후 다음 독립 단위로. 미달을 완료로 기록하지 않는다 (SSOT: `vibe/rules/loop-contract.md` stuck 절)
+- stuck(연속 2회 동일 findings 해시) → **어느 automationLevel 에서도 루프를 종료한다.** `confirm` 이면 사용자에게 묻되 질문을 컨텍스트에만 두지 말고 `loop-ledger.js gate open stuck-{feature} "<무엇이 막혔는지>" "<선택지…>"` 로 남긴다 — 세션이 끊겨도 무엇을 기다리는지 살아남는다 (게이트 객체 절). `autonomous` 면 질문 없이 TODO 기록 후 다음 독립 단위로. 미달을 완료로 기록하지 않는다 (SSOT: `vibe/rules/loop-contract.md` stuck 절)
 - max_iterations(기본 10) 도달 → 잔여를 인박스로 이월
 - **실행 실패(error)** — 스킬 미설치·도구 부재·파일 없음·명령 비정상 종료는 stuck 이 아니다(해시 비교로 안 잡힌다). 같은 방식으로 재시도하지 않고 루프를 종료한다: `confirm` 이면 원인을 제시하고 조치/건너뛰기/중단을 묻고, `autonomous` 이면 `loop-ledger.js inbox <name> fail "<원인>"` 기록 후 다음 독립 단위로. 실행 실패도 완료로 기록하지 않는다 (SSOT: `vibe/rules/loop-contract.md` 실행 실패 절)
 
