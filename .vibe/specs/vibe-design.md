@@ -9,6 +9,8 @@ plan: .vibe/plans/vibe-design.md
 
 # SPEC: vibe-design
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 > `/vibe.design` 스킬 + `DESIGN.md` 시각 품질 SSOT를 vibe에 도입한다. CLAUDE.md(코드)·AGENTS.md(빌드)에 이은 세 번째 SSOT.
 
 ## Persona
@@ -83,7 +85,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 ## Task
 <task>
 
-### Phase 1: Foundation — `vibe.design` 스킬 + DESIGN.md 포맷 정의
+### REQ-vibe-design-001: Phase 1: Foundation — `vibe.design` 스킬 + DESIGN.md 포맷 정의
 
 1. [ ] **`skills/vibe.design/SKILL.md` 작성**
    - File: `skills/vibe.design/SKILL.md`
@@ -143,7 +145,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
      - 추출 실패 시 → 인터뷰 폴백
    - Verify: v1 필수 3 패턴 + documented-only 2 패턴 + 폴백 동작 모두 명시
 
-### Phase 2: Integration — 기존 vibe 워크플로 통합
+### REQ-vibe-design-002: Phase 2: Integration — 기존 vibe 워크플로 통합
 
 5. [ ] **`src/cli/postinstall/constants.ts` 수정**
    - File: `src/cli/postinstall/constants.ts`
@@ -200,7 +202,7 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
    - **DESIGN.md 부재가 `/vibe.figma` 실행을 막아서는 안 됨**
    - Verify: `--emit-design-md` 플래그가 argument-hint에 포함 + WRITE에서 DESIGN.md 우선순위 명시
 
-### Phase 3: Docs & Tests — 문서 + 자동화 검증
+### REQ-vibe-design-003: Phase 3: Docs & Tests — 문서 + 자동화 검증
 
 10. [ ] **`CLAUDE.md` 수정**
     - File: `CLAUDE.md`

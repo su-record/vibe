@@ -8,6 +8,8 @@ lastUpdated: 2026-06-10T16:50:00+09:00
 
 # SPEC: hook-dispatcher-inprocess
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 ## Persona
 <role>
 - vibe 훅 시스템을 작성·운영해 온 시니어 개발자
@@ -45,7 +47,7 @@ lastUpdated: 2026-06-10T16:50:00+09:00
 
 ## Task
 <task>
-### Phase 1: 공용 컨텍스트 + run(ctx) 추출
+### REQ-hook-dispatcher-inprocess-001: Phase 1: 공용 컨텍스트 + run(ctx) 추출
 1. [ ] `hooks/scripts/lib/hook-context.js` 신규
    - `readStdinSync()` (sentinel/pre-tool-guard의 중복 구현 통합)
    - `buildCtx({ payload, argvToolName, env })` → `{ toolName, toolInput, payload }`
@@ -64,7 +66,7 @@ lastUpdated: 2026-06-10T16:50:00+09:00
    - post-edit: 전역 uncaughtException 핸들러를 CLI shim 내부로 이동
    - Verify: `npm run build` 영향 없음(JS), 수동 스모크 (아래 Output Format)
 
-### Phase 2: 디스패처 전환
+### REQ-hook-dispatcher-inprocess-002: Phase 2: 디스패처 전환
 1. [ ] `lib/dispatcher.js`에 `dispatchInProcess(steps, { readStdin })` 추가
    - stdin 1회 읽기 → ctx 구성 → config.hooks[name].enabled 필터 → `Promise.all(steps.map(s => s.run(ctx)))`
    - step별 try/catch: throw → 1 취급 (fail-open). `denyOnExit2 && code === 2` → `process.exit(2)`
@@ -73,7 +75,7 @@ lastUpdated: 2026-06-10T16:50:00+09:00
 3. [ ] `post-edit-dispatcher.js`: 동일 전환
    - Verify: `echo '<payload>' | node hooks/scripts/pre-tool-dispatcher.js Bash; echo $?`
 
-### Phase 3: Testing and Verification
+### REQ-hook-dispatcher-inprocess-003: Phase 3: Testing and Verification
 1. [ ] 신규 `hooks/scripts/__tests__/dispatcher-inprocess.test.js` — 디스패처를 CLI로 spawn하여 외부 계약 검증:
    - deny 보존: 위험 Bash(`rm -rf /`) → exit 2 / sentinel 경로 Edit → exit 2 / 안전 입력 → exit 0
    - scope-guard: scope.json 없으면 no-op (exit 0)

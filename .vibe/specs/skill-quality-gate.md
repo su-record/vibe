@@ -50,7 +50,7 @@ verify 축을 `fail`로 잡으면 진입 스킬 22개 중 17개가 즉시 실패
 
 ## Task
 <task>
-### Phase 1: STCV 품질 프로브
+### REQ-skill-quality-gate-001: Phase 1: STCV 품질 프로브
 1. [ ] `skills/vibe.test/SKILL.md` — `skills` 프로브에 품질 축 4개 추가
 
    | 축 | 판정 | severity |
@@ -65,7 +65,7 @@ verify 축을 `fail`로 잡으면 진입 스킬 22개 중 17개가 즉시 실패
 3. [ ] **`failed[]`와 regress 연동은 `fail`만** — warn은 자동 등록하지 않는다 (기존 P1 계약 보존)
 4. [ ] Verify: `>400` 규칙이 vibe.run/figma/clone 3개를 정확히 잡는다
 
-### Phase 2: 토큰 다이어트
+### REQ-skill-quality-gate-002: Phase 2: 토큰 다이어트
 5. [ ] `vibe.run` 845줄 → SKILL.md ≤250 + `references/`
 6. [ ] `vibe.figma` 839줄 → SKILL.md ≤250 + `references/`
 7. [ ] `vibe.clone` 451줄 → SKILL.md ≤250 + `references/`
@@ -74,7 +74,7 @@ verify 축을 `fail`로 잡으면 진입 스킬 22개 중 17개가 즉시 실패
 8. [ ] 3개 스킬에 `Done Criteria` 섹션 신설
 9. [ ] Verify: `vibe.test` scope/context/verify 3축 모두 pass
 
-### Phase 3: description 트리거화
+### REQ-skill-quality-gate-003: Phase 3: description 트리거화
 10. [ ] `GLOBAL_SKILLS_ENTRY` 22개의 서술형 description을 발동 조건형으로 재작성
 11. [ ] Verify: Phase 1의 trigger 축이 22개 전부 pass
 12. [ ] `CLAUDE.md` / `AGENTS.md`에 품질 게이트 문서화

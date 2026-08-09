@@ -8,6 +8,8 @@ lastUpdated: 2026-03-31T14:30:00Z
 
 # SPEC: PM Skills + Workflow Chaining System
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 ## Persona
 <role>
 Senior TypeScript developer working on the @su-record/vibe npm package.
@@ -46,7 +48,7 @@ pm-skills 레포(phuryn/pm-skills)에서 검증된 PM 프레임워크 기반 스
 
 ## Task
 <task>
-### Phase 1: chain-next 메타데이터 필드 추가
+### REQ-pm-skills-chaining-001: Phase 1: chain-next 메타데이터 필드 추가
 1. [ ] `src/infra/lib/SkillFrontmatter.ts` — `SkillMetadata` interface에 `chainNext?: string[]` 추가
    - File: `src/infra/lib/SkillFrontmatter.ts:11`
    - 변경: interface에 optional field 추가
@@ -61,7 +63,7 @@ pm-skills 레포(phuryn/pm-skills)에서 검증된 PM 프레임워크 기반 스
    - File: `src/infra/lib/SkillFrontmatter.ts:198`
    - 변경: `chainNext: metadata.chainNext` 추가
 
-### Phase 2: PM 스킬 3개 생성
+### REQ-pm-skills-chaining-002: Phase 2: PM 스킬 3개 생성
 1. [ ] `skills/create-prd/SKILL.md` 생성
    - pm-skills의 create-prd를 vibe 포맷으로 변환
    - frontmatter: name, description, triggers, priority, chain-next
@@ -76,7 +78,7 @@ pm-skills 레포(phuryn/pm-skills)에서 검증된 PM 프레임워크 기반 스
    - 내용: 리서치 기반 3개 페르소나 생성 워크플로우
    - chain-next: [create-prd, prioritization-frameworks]
 
-### Phase 3: PM capability 등록 + 기존 스킬 chain-next 소급
+### REQ-pm-skills-chaining-003: Phase 3: PM capability 등록 + 기존 스킬 chain-next 소급
 1. [ ] `src/cli/postinstall/constants.ts` — CAPABILITY_SKILLS에 pm 매핑 추가
    - File: `src/cli/postinstall/constants.ts:44`
    - 추가: `'pm': ['create-prd', 'prioritization-frameworks', 'user-personas']`

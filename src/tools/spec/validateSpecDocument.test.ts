@@ -121,6 +121,53 @@ describe('Done Criteria — JUDGE 입력', () => {
   });
 });
 
+/**
+ * 완료 기준 인식 범위 회귀.
+ *
+ * 최초 가드는 영문 `Done Criteria` 제목 + `D1` 표기만 인식해서, 실제 SPEC 17개 중
+ * 12개를 "기준 없음" 으로 오판했다. 그 문서들은 결함이 아니라 표기가 달랐을 뿐이고
+ * 내용은 오히려 더 결정론적이었다(`npm run build && npx vitest run` 그린 등).
+ * 문자열이 아니라 의미로 찾는다 — 실측한 형식을 전부 고정한다.
+ */
+describe('완료 기준 — 실제 SPEC 들이 쓰는 표기', () => {
+  const withSection = (section: string): string =>
+    VALID_SPEC.replace(/## 3\. Done Criteria[\s\S]*?## 4\./, section + '\n\n## 4.');
+
+  it.each([
+    ['한국어 제목 + 실행 문구', '## 완료 기준\n완료 판정 = `npm run build && npx vitest run` 그린'],
+    ['"Done 의 정의"', '## 목표 (Done 의 정의)\n완료 판정 = 수용 기준 전부 통과 + 빌드 그린'],
+    ['"수용 기준"', '## 수용 기준\n- [ ] AC1: 모든 시나리오 통과'],
+    ['"Goal — Verifiable" + G 표기', '## Goal — Verifiable\n**G1.** 60초 안에 파일이 생성된다'],
+    ['Acceptance Criteria + 체크박스', '## Acceptance Criteria\n- [ ] **AC-1**: 통과한다'],
+  ])('%s 를 인식한다', (_label, section) => {
+    expect(validateSpecDocument(withSection(section)).findings.map(f => f.code))
+      .not.toContain('no-done-criteria');
+  });
+
+  it('하위 섹션이 있어도 본문을 끝까지 본다', () => {
+    // `## Acceptance Criteria` 밑에 `### …` 를 두고 그 아래 항목을 나열하는 형식
+    const spec = withSection('## Acceptance Criteria\n\n### 라벨링 규칙\n\n- [ ] **AC-1**: 통과한다');
+    const codes = validateSpecDocument(spec).findings.map(f => f.code);
+    expect(codes).not.toContain('no-done-criteria');
+    expect(codes).not.toContain('empty-done-criteria');
+  });
+
+  it('REQ 별 인라인 `- AC:` 기준도 충족으로 본다', () => {
+    const spec = withSection('## 요구사항\n### REQ-login-002: 로그아웃\n- AC: 세션이 삭제된다');
+    expect(validateSpecDocument(spec).findings.map(f => f.code)).not.toContain('no-done-criteria');
+  });
+
+  it('REQ 별 `| Done Criteria |` 표도 충족으로 본다', () => {
+    const spec = withSection('## 요구사항\n\n| Done Criteria | Evidence Required |\n|---|---|\n| exit 0 | 명령 출력 |');
+    expect(validateSpecDocument(spec).findings.map(f => f.code)).not.toContain('no-done-criteria');
+  });
+
+  it('제목만 있고 판정할 것이 없으면 여전히 잡는다', () => {
+    const spec = withSection('## 완료 기준\n\n(추후 작성)');
+    expect(validateSpecDocument(spec).findings.map(f => f.code)).toContain('empty-done-criteria');
+  });
+});
+
 describe('placeholder — 직역 하네스가 실데이터로 넣는 것', () => {
   it('미치환 템플릿 변수는 P1', () => {
     const spec = VALID_SPEC.replace('로그인 기능을 추가한다.', '{{FEATURE_GOAL}}');

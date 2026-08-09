@@ -8,6 +8,8 @@ lastUpdated: 2026-04-06T12:00:00+09:00
 
 # SPEC: figma-extract-tool
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 ## Persona
 <role>
 Figma REST API를 직접 호출하여 노드 트리, CSS 속성, 이미지를 추출하는 도구.
@@ -57,7 +59,7 @@ node hooks/scripts/figma-extract.js screenshot <fileKey> <nodeId> --out=<path>
 
 ## Task
 <task>
-### Phase 1: Figma API 클라이언트 + 노드 트리
+### REQ-figma-extract-tool-001: Phase 1: Figma API 클라이언트 + 노드 트리
 
 1. [ ] `hooks/scripts/figma-extract.js` 생성
    - CLI 인터페이스: `tree`, `images`, `screenshot` 서브커맨드
@@ -129,7 +131,7 @@ node hooks/scripts/figma-extract.js screenshot <fileKey> <nodeId> --out=<path>
    - 결과를 합쳐서 하나의 JSON으로 출력
    - Verify: Daily 인스턴스(3604px)에서 자식 노드 목록 확인
 
-### Phase 2: 이미지 다운로드
+### REQ-figma-extract-tool-002: Phase 2: 이미지 다운로드
 
 4. [ ] `images` 서브커맨드 구현
    - Phase 1 tree 결과에서 `imageRef`가 있는 노드 수집
@@ -151,7 +153,7 @@ node hooks/scripts/figma-extract.js screenshot <fileKey> <nodeId> --out=<path>
    - 단일 노드의 렌더링 이미지 저장
    - Verify: KID 섹션 스크린샷 저장
 
-### Phase 3: vibe-figma 스킬 연동
+### REQ-figma-extract-tool-003: Phase 3: vibe-figma 스킬 연동
 
 6. [ ] vibe-figma SKILL.md 수정
    - Phase 2 섹션 루프에서 MCP 호출 → `figma-extract.js` 호출로 교체

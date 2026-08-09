@@ -1,5 +1,7 @@
 # SPEC: harness-remediation
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 > 2026-06-11 하네스 3중 평가(Claude 심층 / Codex 리포트 / Codex 재검증)에서 확정된 보완 작업.
 > 목표: 선언된 품질 약속을 실제 결정론적 게이트로 배선한다.
 

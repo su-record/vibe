@@ -8,6 +8,8 @@ lastUpdated: 2026-07-02T13:35:00+09:00
 
 # SPEC: clone-quality-overhaul
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 ## Persona
 <role>
 - vibe clone 파이프라인(skills/clone + hooks/scripts/clone-*.js)을 작성해 온 시니어 개발자
@@ -52,7 +54,7 @@ vibe의 우위 요소(보존): clone-validate 결정론 게이트, pixel diff P1
 
 ## Task
 <task>
-### Phase 1: CSS 권한 역전 해소 + 반응형 통합 (P1)
+### REQ-clone-quality-overhaul-001: Phase 1: CSS 권한 역전 해소 + 반응형 통합 (P1)
 
 1. [x] **R1 — SCSS 게이트 완화** (`skills/clone/SKILL.md`, `skills/vibe.clone/SKILL.md`)
    - Immutable Rule 1 개정: "clone-to-scss.js 산출물 = **초안(skeleton)**. 모델은 computed.json/states.json/behaviors.json에 근거를 제시할 수 있을 때만 SCSS 값 수정·재구성 가능(반응형 단위 변환, % 복원, 중복 제거). 근거 없는 eyeball 값 생성은 여전히 금지"
@@ -69,7 +71,7 @@ vibe의 우위 요소(보존): clone-validate 결정론 게이트, pixel diff P1
    - 병합 후 Phase 5: MO 뷰포트 → mo/screenshot.png, PC 뷰포트 → pc/screenshot.png 각각 diff. 한쪽이라도 P1이면 미완료
    - Verify: SKILL.md 절차에 두 BP 재검증 명시
 
-### Phase 2: 동작 캡처 확장 + 병렬 빌더 (P2)
+### REQ-clone-quality-overhaul-002: Phase 2: 동작 캡처 확장 + 병렬 빌더 (P2)
 
 4. [x] **R3 — 인터랙션 스윕 4종 확장** (`hooks/scripts/clone-extract.js`)
    - `behaviors.hover[]`: cursor:pointer/a/button/[role=button] 후보 최대 30개 — CDP 마우스 호버 → computed diff (diffStyles 재사용) → `{label, changed, transition}`
@@ -87,7 +89,7 @@ vibe의 우위 요소(보존): clone-validate 결정론 게이트, pixel diff P1
    - 순서 계약: tokens/base SCSS + Foundation 완료 후에만 병렬 시작; 빌더는 tsc 통과 후 종료; 오케스트레이터가 섹션별 clone-validate → 머지 → 빌드 게이트
    - Verify: SKILL.md에 인라인 규칙·150줄 규칙·순서 계약 명시 (구현 검증은 /vibe.test parity)
 
-### Phase 3: 실콘텐츠 옵션 + Foundation (P3)
+### REQ-clone-quality-overhaul-003: Phase 3: 실콘텐츠 옵션 + Foundation (P3)
 
 7. [x] **R5 — `--real-content` 플래그** (`skills/vibe.clone/SKILL.md`, `skills/clone/SKILL.md`, `hooks/scripts/clone-spec.js`)
    - 기본값 placeholder 유지. `--real-content` 시 verbatim 텍스트 사용 — 단 본인 소유/명시 허가 확인 질문 1회 (Legal Notes에 연동)

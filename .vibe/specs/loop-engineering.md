@@ -4,6 +4,8 @@ status: completed
 
 # SPEC: loop-engineering
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 > 루프 엔지니어링 리서치(Osmani 2026-06, Steinberger, Cherny)에서 확인된 vibe의 공백 보완.
 > vibe는 하네스 계층(비계·게이트·메모리)은 충실하나, **Automations 계층**(스케줄된 발견/분류 → 자율 반복)이 없다.
 > 원칙: 루프의 완료 판정은 모델의 자기 보고가 아니라 **run-ledger/verify 게이트가 결정**한다. 루프는 기존 결정론 게이트(scope-guard, verifyGate, auto-commit 게이트) 위에서만 돈다.

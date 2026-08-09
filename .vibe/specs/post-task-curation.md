@@ -23,6 +23,8 @@ naming-decision: |
 
 # Post-Task Curation — Learn Once, Reuse Forever
 
+- **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
+
 **Purpose**: Browser Use가 브라우저 도메인에서 한 것을 vibe는 개발 워크플로 도메인에서 한다. 한 agent가 어렵게 풀어낸 task의 경로를 다음 agent의 1회차 출발점으로 만든다.
 
 ## Why this exists
@@ -75,7 +77,7 @@ naming-decision: |
 
 ## File changes (precise)
 
-### A. `.vibe/{recipes,anti-patterns}/` 디렉토리 + gitignore SSOT
+### REQ-post-task-curation-001: A. `.vibe/{recipes,anti-patterns}/` 디렉토리 + gitignore SSOT
 
 | File | Change |
 |---|---|
@@ -84,7 +86,7 @@ naming-decision: |
 | `CLAUDE.md` Git Include 라인 (105-107) | `.vibe/{recipes,anti-patterns}/` 를 Include 로 |
 | `~/.claude/CLAUDE.md` 글로벌 동치 라인 | 동일 갱신 |
 
-### B. `step-counter.js` 확장 (현재 46줄 → ~110줄 예상)
+### REQ-post-task-curation-002: B. `step-counter.js` 확장 (현재 46줄 → ~110줄 예상)
 
 기존: `current-run.json` 의 `steps += 1` 만.
 
@@ -95,7 +97,7 @@ naming-decision: |
 
 `error_category` 분류는 lightweight regex 셋 (이미 있는 `root-cause-tag` enum 재사용 — 18개 안 됨, 11개).
 
-### C. `vibe-learn` skill 신설 (post-run extractor)
+### REQ-post-task-curation-003: C. `vibe-learn` skill 신설 (post-run extractor)
 
 ```
 skills/vibe-learn/
@@ -110,7 +112,7 @@ Subcommands:
 - `index` — `.vibe/{recipes,anti-patterns}/*.md` frontmatter 모아 1-line 인덱스 반환
 - `consume` — `/vibe.utils --continue` 가 호출, 인덱스를 system-context 형식으로 직렬화
 
-### D. `/vibe.run` 및 `/vibe.verify` 종료 hook 추가
+### REQ-post-task-curation-004: D. `/vibe.run` 및 `/vibe.verify` 종료 hook 추가
 
 `/vibe.run` 의 마지막 phase 에 `vibe-learn extract` 호출. 실패 시 silent (학습 자산은 best-effort).
 

@@ -124,24 +124,55 @@ function checkStakes(content: string, findings: SpecFinding[]): void {
   }
 }
 
+/**
+ * 완료 기준 섹션 제목 — 표기는 여러 가지다.
+ *
+ * 처음에는 영문 `Done Criteria` 만 찾았는데, 실제 SPEC 들은 "목표 (Done 의 정의)" ·
+ * "수용 기준" · "Goal — Verifiable" 로 쓰고 있었고 내용은 오히려 더 결정론적이었다
+ * (`npm run build && npx vitest run` 그린 등). 문자열이 아니라 의미로 찾는다.
+ */
+const DONE_HEADING = /^#{1,3}\s*\d*\.?\s*(?:.*\b(?:Done Criteria|Acceptance Criteria)\b.*|.*(?:완료 기준|완료 판정|수용 기준|Done 의 정의|Verifiable).*)$/im;
+
+/** 기준 항목 표기 — D1 / G1 / AC1 / 체크박스 / 표 행 */
+const CRITERION_ITEM = /\b(?:D|G|AC)\d+\b|^\s*[-*]\s*\[[ x]\]|^\s*\|\s*(?:D|G|AC)?\d+\s*\|/im;
+
+/**
+ * 요구사항마다 기준을 인라인으로 다는 형식도 유효하다 — 별도 섹션이 없을 뿐
+ * JUDGE 입력은 존재한다. 실제 SPEC 들이 쓰는 두 가지:
+ *   `- AC: 옵션 없이 호출 시 …`          (harness-remediation)
+ *   `| Done Criteria | Evidence Required |`  (audit-p2-remediation, REQ 별 표)
+ */
+const INLINE_CRITERIA = /^\s*[-*]\s*AC\s*[:：]|^\s*\|\s*Done Criteria\s*\||^\s*\|\s*(?:Criterion|Verified by|Evidence)\s*\|/im;
+
 function checkDoneCriteria(content: string, findings: SpecFinding[]): void {
-  const heading = content.match(/^#{1,3}\s*\d*\.?\s*Done Criteria.*$/im);
+  if (INLINE_CRITERIA.test(content)) return; // REQ 별 인라인 기준으로 충족
+
+  const heading = content.match(DONE_HEADING);
   if (!heading) {
     findings.push({
       severity: 'P1',
       code: 'no-done-criteria',
-      message: 'Done Criteria 섹션이 없다 — JUDGE 가 판정할 입력이 없다.',
+      message: '완료 기준 섹션이 없다 (Done Criteria / 완료 기준 / 수용 기준 …) — JUDGE 가 판정할 입력이 없다.',
     });
     return;
   }
-  // 섹션 본문에 D1 같은 기준 항목이 실제로 있는지
+  // 제목만 있고 판정할 것이 없는 경우를 잡는다 — 섹션 본문에 기준 항목이나
+  // 실행 가능한 판정 문구(명령·그린 여부)가 있어야 한다.
+  //
+  // 본문은 **동일·상위 레벨** 제목에서 자른다. 아무 레벨에서나 자르면 자기
+  // 하위 섹션 앞에서 끊겨, `## Acceptance Criteria` 밑에 `### …` 를 두고 그 아래
+  // AC 체크박스를 나열한 SPEC 이 "비었다" 로 오판된다 (vibe-design 실측).
+  const level = (heading[0].match(/^#+/) ?? ['#'])[0].length;
   const after = content.slice((heading.index ?? 0) + heading[0].length);
-  const body = after.split(/^#{1,3}\s/m)[0];
-  if (!/\bD\d+\b/.test(body)) {
+  const body = after.split(new RegExp(`^#{1,${level}}\\s`, 'm'))[0];
+  const hasItems = CRITERION_ITEM.test(body);
+  const hasVerifiableSentence = /완료\s*(?:판정)?\s*=|그린|exit\s*0|`[^`\n]*(?:test|build|vitest|tsc)[^`\n]*`/i.test(body);
+
+  if (!hasItems && !hasVerifiableSentence) {
     findings.push({
       severity: 'P1',
       code: 'empty-done-criteria',
-      message: 'Done Criteria 섹션에 기준 항목(D1, D2 …)이 없다 — 제목만 있고 판정 기준이 비었다.',
+      message: '완료 기준 섹션에 판정할 항목이 없다 (D1/G1/AC1 · 체크박스 · 실행 가능한 판정 문구) — 제목만 있다.',
       line: lineOf(content, heading.index ?? 0),
     });
   }
