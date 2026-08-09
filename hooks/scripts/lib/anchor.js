@@ -10,6 +10,7 @@ import path from 'path';
 import { readLedger } from './run-ledger.js';
 import { projectVibePath } from '../utils.js';
 import { inboxPath } from './inbox.js';
+import { listOpenGates } from './gates.js';
 
 /** 우선순위대로 첫 번째로 존재하는 경로를 고른다 */
 function firstExisting(projectDir, candidates) {
@@ -65,7 +66,8 @@ function readLatestInboxBlock(projectDir) {
  * @param {string} projectDir
  * @param {string} [feature] - 생략 시 `.vibe/.last-feature`
  * @returns {{ feature: string|null, spec: string|null, scope: string|null,
- *             ledger: object|null, latestInbox: string|null, missing: string[] }}
+ *             ledger: object|null, latestInbox: string|null, openGates: object[],
+ *             missing: string[] }}
  */
 export function buildAnchor(projectDir, feature) {
   const resolved = feature || readLastFeature(projectDir);
@@ -81,5 +83,17 @@ export function buildAnchor(projectDir, feature) {
   if (!spec) missing.push('spec');
   if (!ledger) missing.push('run-ledger');
 
-  return { feature: resolved, spec, scope, ledger, latestInbox: readLatestInboxBlock(projectDir), missing };
+  // 열린 게이트는 재고정 대상이다 — 사람이 무엇을 기다리는지 모르면 다음 턴이
+  // 같은 질문을 다시 만들거나, 답을 기다리는 줄도 모르고 진행한다
+  const openGates = listOpenGates(projectDir);
+
+  return {
+    feature: resolved,
+    spec,
+    scope,
+    ledger,
+    latestInbox: readLatestInboxBlock(projectDir),
+    openGates,
+    missing,
+  };
 }

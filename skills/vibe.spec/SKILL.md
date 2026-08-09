@@ -86,6 +86,20 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 
 **P1 이 하나라도 있으면 승인 요청으로 넘어가지 않는다** — SPEC 작성으로 되돌아가 고치고 다시 검사한다 (backward edge). 2회 연속 같은 findings 면 stuck 으로 처리한다 (SSOT: `vibe/rules/loop-contract.md`). P2 는 통과를 막지 않고 승인 메시지에 함께 표시한다.
 
+## 승인 게이트를 디스크에 남긴다
+
+승인을 요청하기 **전에** 게이트를 연다. 세션이 끊겨도 무엇을 묻고 있었는지 남는다
+(SSOT: `vibe/rules/loop-contract.md` 게이트 객체 절):
+
+```bash
+node "$HOOKS_DIR/loop-ledger.js" gate open spec-{feature-name} \
+  "SPEC '{feature-name}' 로 진행할까요? {가정 1건 명시}" \
+  "승인 → run 진행" "수정 후 재작성" "중단"
+```
+
+사용자가 답하면 `gate answer spec-{feature-name} "<선택>"` 으로 닫는다. 이미 열린
+게이트가 있으면(ANCHOR 의 `openGates`) 같은 질문을 새로 만들지 말고 그것을 이어받는다.
+
 ## 승인과 루프
 
 SPEC 승인이 `vibe/rules/loop-contract.md` 가 정의하는 **유일한 의무적 사람 개입**이다. 승인 후에는 ANCHOR→ACT→JUDGE→RECORD 루프가 게이트 통과까지 자동 반복한다 (`/vibe.run` → `/vibe.verify`). 별도의 파이프라인 승인·단계별 stop gate 는 없다.
