@@ -11,6 +11,7 @@ import { log, getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
 import { installProjectHooks, installProjectCodexHooks } from '../setup.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
+import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
 
 /**
  * Remove stale npm temp directories that cause ENOTEMPTY errors
@@ -138,6 +139,48 @@ export function repairProjectHooks(projectRoot: string): string[] {
 }
 
 /**
+ * 전역 자산(`~/.vibe/`)이 방금 설치한 버전으로 갱신됐는지 판정한다.
+ *
+ * postinstall 이 패키지를 `~/.vibe/node_modules/@su-record/vibe` 로 복사하므로,
+ * 그 사본의 버전이 **마지막으로 postinstall 이 성공한 시점**을 말해준다.
+ *
+ * @returns 갱신됐으면 null, 아니면 발견된 사본 버전(없으면 'none')
+ */
+export function staleGlobalAssets(installedVersion: string): string | null {
+  try {
+    const copied = JSON.parse(readFileSync(
+      join(getCoreConfigDir(), 'node_modules', '@su-record', 'vibe', 'package.json'),
+      'utf-8',
+    )) as { version?: string };
+    return copied.version === installedVersion ? null : (copied.version ?? 'unknown');
+  } catch {
+    return 'none';
+  }
+}
+
+/**
+ * postinstall 을 직접 실행해 전역 자산을 복구한다.
+ *
+ * WHY: npm 이 lifecycle script 를 건너뛰는 환경이 있다 (`npm warn install-scripts`).
+ * 그러면 전역 **패키지**는 새 버전인데 `~/.vibe/hooks/scripts/` 는 옛날 그대로다 —
+ * sentinel·scope·run-ledger·verify 가 전부 구버전 코드로 돌면서 upgrade 는
+ * "✅ 성공" 을 출력한다. 실측: 두 번의 릴리즈 동안 훅이 5일 전 상태로 멈춰 있었다.
+ * 결정론적 가드의 생사는 관측 가능해야 한다 — 여기서만큼은 경고가 아니라 복구를 한다.
+ *
+ * @returns 복구 성공 여부
+ */
+function runInstalledPostinstall(globalRoot: string): boolean {
+  try {
+    const entry = join(globalRoot, '@su-record', 'vibe', 'dist', 'cli', 'postinstall', 'main.js');
+    if (!existsSync(entry)) return false;
+    execFileSync(process.execPath, [entry], { stdio: 'ignore', timeout: 120_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Upgrade global package to latest version
  * npm install -g → postinstall handles global config
  */
@@ -181,6 +224,18 @@ export function upgrade(_options: CliOptions = { silent: false }): void {
       if (globalRoot) llmStatus = readInstalledLLMStatus(globalRoot);
     } catch { /* fallback to current process formatter */ }
 
+    // 전역 자산이 실제로 갱신됐는지 확인한다 — npm 이 lifecycle script 를 건너뛰면
+    // 패키지만 새 버전이고 ~/.vibe/hooks/ 는 옛날 그대로인 채 "성공" 이 출력된다
+    let globalNote = '';
+    const stale = staleGlobalAssets(newVersion);
+    if (stale && globalRoot) {
+      const recovered = runInstalledPostinstall(globalRoot);
+      const after = recovered ? staleGlobalAssets(newVersion) : stale;
+      globalNote = after === null
+        ? `\n🔧 Global assets restored (postinstall did not run — was v${stale})\n`
+        : `\n⚠️  Global assets stale (v${after}) — hooks may run old code. Try: npm install -g @su-record/vibe@latest --force --foreground-scripts\n`;
+    }
+
     const repaired = repairProjectHooks(process.cwd());
     const hookNote = repaired.length > 0
       ? `\n🔧 Project hooks restored: ${repaired.join(', ')}\n`
@@ -189,7 +244,7 @@ export function upgrade(_options: CliOptions = { silent: false }): void {
       ? `\n🧹 ${postinstallReport.join('\n🧹 ')}\n`
       : '';
 
-    log(`\n✅ vibe upgraded (v${newVersion})\n${hookNote}${pruneNote}\n${llmStatus}\n`);
+    log(`\n✅ vibe upgraded (v${newVersion})\n${globalNote}${hookNote}${pruneNote}\n${llmStatus}\n`);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Upgrade failed:', message);
