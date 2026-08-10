@@ -86,6 +86,11 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
              · ledger: cat .vibe/metrics/run-ledger.json → verifyPassed === true 만 성공
              · tests:  정의의 test_command 실행 → exit 0 만 성공
              · none:   판정 생략(보고만). "코드를 보니 잘 된 것 같다"는 판정이 아니다.
+6-b. 회전 기록  node "$HOOKS_DIR/loop-ledger.js" iteration <name> <verified|unverified>
+             VERIFY 결과를 그대로 넣는다. 이어서 예산을 확인한다:
+             node "$HOOKS_DIR/loop-ledger.js" budget <name> <max_iterations>
+             → exhausted 면 잔여를 인박스로 이월하고 종료한다. 회전 수를 모델이
+               세지 않는다 — 폭주 방어는 코드가 판정한다 (loop-contract 예산 절).
 7. 종료 기록  node "$HOOKS_DIR/loop-ledger.js" end <name> <ok|fail|stuck> "<한 줄 요약>"
 8. 인박스    node "$HOOKS_DIR/loop-ledger.js" inbox <name> <ok|fail|stuck> \
                "발견: N건 / 처리: M건 / 검증: <기준과 결과>" \
@@ -111,6 +116,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 |------|------|
 | 완료는 게이트가 판정 | run-ledger `verifyPassed` / 테스트 exit code (REQ-005) |
 | stuck은 해시가 판정 | loop-ledger check-stuck, 동일 발견 2회 연속 (REQ-009) |
+| 회전 수도 코드가 판정 | loop-ledger iteration/budget — iterations(폭주 방어) 와 verified(전진량) 를 분리 |
 | 이해 부채 가드 | 인박스 리뷰 큐 + push/release 금지 (REQ-008) |
 | 기록 없는 실행 없음 | loop-history.jsonl start/end 의무 (REQ-006) |
 
