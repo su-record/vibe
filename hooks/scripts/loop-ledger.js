@@ -11,13 +11,15 @@
  *   node hooks/scripts/loop-ledger.js gate open <id> <question> [option...]
  *   node hooks/scripts/loop-ledger.js gate list
  *   node hooks/scripts/loop-ledger.js gate answer <id> <answer>
+ *   node hooks/scripts/loop-ledger.js iteration <name> <verified|unverified>
+ *   node hooks/scripts/loop-ledger.js budget <name> [maxIterations]
  *
  * check-stuck: 'stuck' 또는 'ok'를 stdout에 출력하고 항상 exit 0.
  * anchor: 재고정 번들 JSON을 stdout에 출력한다 (loop-contract ANCHOR 절).
  * 항상 exit 0 (fail-open).
  */
 
-import { appendLoopEvent, isStuck } from './lib/loop-ledger.js';
+import { appendLoopEvent, isStuck, recordIteration, readBudget } from './lib/loop-ledger.js';
 import { buildAnchor } from './lib/anchor.js';
 import { prependInboxBlock } from './lib/inbox.js';
 import { openGate, listOpenGates, answerGate, formatOpenGates } from './lib/gates.js';
@@ -73,6 +75,27 @@ if (subcommand === 'start') {
        : '[loop-ledger] WARNING: inbox write failed\n'
   );
 
+} else if (subcommand === 'iteration') {
+  // 회전 계수는 코드가 한다 — max_iterations 를 모델이 세면 폭주 방어가 양심이 된다
+  const [loop, verifiedArg] = args;
+  if (!loop || !['verified', 'unverified'].includes(verifiedArg || '')) {
+    process.stdout.write('[loop-ledger] error: iteration 에 루프 이름과 verified|unverified 가 필요합니다\n');
+    process.exit(0);
+  }
+  recordIteration(projectDir, loop, verifiedArg === 'verified');
+  const b = readBudget(projectDir, loop);
+  process.stdout.write(`[loop-ledger] iteration recorded: ${loop} ${verifiedArg} (${b.iterations} 회전 / 검증 ${b.verified})\n`);
+
+} else if (subcommand === 'budget') {
+  const [loop, maxRaw] = args;
+  if (!loop) {
+    process.stdout.write('[loop-ledger] error: budget 에 루프 이름이 필요합니다\n');
+    process.exit(0);
+  }
+  const max = Number.parseInt(maxRaw ?? '10', 10);
+  const b = readBudget(projectDir, loop, Number.isInteger(max) && max > 0 ? max : 10);
+  process.stdout.write(JSON.stringify(b) + '\n');
+
 } else if (subcommand === 'gate') {
   // 사람 판단 지점을 디스크에 남긴다 — 세션이 죽어도 무엇을 묻고 있었는지 남는다
   const [action, id, ...rest] = args;
@@ -105,7 +128,7 @@ if (subcommand === 'start') {
 } else {
   process.stdout.write(
     '[loop-ledger] 사용법: start <name> | end <name> <ok|fail|stuck> [summary] | '
-    + 'check-stuck <name> <hash> | anchor [feature] | inbox <name> <ok|fail|stuck> [line...] | gate <open|list|answer> …\n'
+    + 'check-stuck <name> <hash> | anchor [feature] | inbox <name> <ok|fail|stuck> [line...] | gate <open|list|answer> | iteration <name> <verified|unverified> | budget <name> [max]\n'
   );
 }
 

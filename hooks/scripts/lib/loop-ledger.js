@@ -36,7 +36,7 @@ export function hashDiscoverOutput(text) {
  * 루프 이벤트를 jsonl 파일에 append한다.
  *
  * @param {string} projectDir
- * @param {{ loop: string, event: 'start'|'discover'|'end', result?: 'ok'|'fail'|'stuck', summary?: string, discoverHash?: string }} opts
+ * @param {{ loop: string, event: 'start'|'discover'|'end'|'iteration', result?: 'ok'|'fail'|'stuck', summary?: string, discoverHash?: string, verified?: boolean }} opts
  * @returns {boolean} 성공 여부
  */
 export function appendLoopEvent(projectDir, opts) {
@@ -50,6 +50,7 @@ export function appendLoopEvent(projectDir, opts) {
       ...(opts.result !== undefined ? { result: opts.result } : {}),
       ...(opts.summary !== undefined ? { summary: opts.summary } : {}),
       ...(opts.discoverHash !== undefined ? { discoverHash: opts.discoverHash } : {}),
+      ...(opts.verified !== undefined ? { verified: opts.verified } : {}),
     };
     fs.appendFileSync(p, JSON.stringify(entry) + '\n', 'utf-8');
     return true;
@@ -114,5 +115,57 @@ export function isStuck(projectDir, loop, discoverHash) {
     return Boolean(lastHash && lastHash === discoverHash);
   } catch {
     return false;
+  }
+}
+
+/**
+ * 회전 1회를 기록한다.
+ *
+ * @param {string} projectDir
+ * @param {string} loop
+ * @param {boolean} verified - 이 회전이 검증을 통과했는가 (JUDGE 결정론 게이트 기준)
+ * @returns {boolean}
+ */
+export function recordIteration(projectDir, loop, verified) {
+  return appendLoopEvent(projectDir, { loop, event: 'iteration', verified: Boolean(verified) });
+}
+
+/**
+ * 현재 루프 실행의 예산 상태.
+ *
+ * 두 축을 **따로** 센다:
+ *  - `iterations` — 모든 회전. `max_iterations` 와 비교하는 폭주 방어 축이다.
+ *  - `verified`   — 검증을 통과한 회전만. 실제로 전진한 양이다.
+ *
+ * 둘을 하나로 뭉치면 "10회를 썼다" 는 알아도 "그중 8회가 헛돌았다" 는 모른다 —
+ * 헛도는 루프와 원래 큰 작업을 구분할 수 없다. loop-contract 는 폭주 방어가
+ * 모델의 양심이 아니라 코드여야 한다고 선언하는데, 정작 max_iterations 에는
+ * 런타임 계수가 없어 모델이 스스로 세고 있었다 (감사 2026-08-10).
+ *
+ * 직전 `start` 이후만 센다 — 새 실행은 예산도 새로 시작한다.
+ *
+ * @param {string} projectDir
+ * @param {string} loop
+ * @param {number} [maxIterations=10]
+ * @returns {{ iterations: number, verified: number, remaining: number, exhausted: boolean }}
+ */
+export function readBudget(projectDir, loop, maxIterations = 10) {
+  const empty = { iterations: 0, verified: 0, remaining: maxIterations, exhausted: false };
+  try {
+    const raw = fs.readFileSync(historyPath(projectDir), 'utf-8');
+    const events = raw.split('\n')
+      .map(line => { try { return JSON.parse(line); } catch { return null; } })
+      .filter(e => e && e.loop === loop);
+
+    const lastStart = events.map(e => e.event).lastIndexOf('start');
+    const scoped = lastStart === -1 ? events : events.slice(lastStart);
+
+    const iters = scoped.filter(e => e.event === 'iteration');
+    const iterations = iters.length;
+    const verified = iters.filter(e => e.verified === true).length;
+    const remaining = Math.max(0, maxIterations - iterations);
+    return { iterations, verified, remaining, exhausted: remaining === 0 };
+  } catch {
+    return empty;
   }
 }
