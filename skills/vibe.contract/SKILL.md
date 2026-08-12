@@ -58,26 +58,17 @@ Execute the bundled implementation below with subcommand: `$ARGUMENTS`
 이 문서 안에서 스키마를 두 번 정의하지 않는다 — 과거 이 자리에 있던 축약본은 `id`·`kind`·
 `source-spec-hash` 가 빠진 손실 버전이었다.
 
-## Integration with /vibe.verify
+## Integration
 
-After `/vibe.verify <feature>` scenarios pass, auto-chain:
-
-```
-scenarios pass → /vibe.contract check <feature>
-  ├─ no drift → ✅ complete
-  └─ drift found → ❌ report + auto /vibe.regress register (tag: integration)
-```
-
-## Integration with /vibe.spec
-
-Right after `/vibe.spec` finishes writing the SPEC, auto-invoke `/vibe.contract extract`. The resulting contract becomes the reference for the subsequent `/vibe.run`.
+`/vibe.spec` 직후 `extract`, `/vibe.verify` 시나리오 통과 후 `check` 로 자동 연결된다.
+호출 계약과 drift 등급별 처리(P1 강등 / P2·P3 경고)는 아래 **Integration Points** 절이 SSOT다 —
+이 자리에 있던 요약본은 P1/P2/P3 구분이 빠진 손실 버전이었다.
 
 ## Done Criteria
 
-- [ ] `extract` exits cleanly when SPEC has no API section (not every feature has one)
-- [ ] `check` is silent when no drift; otherwise prints findings grouped by severity
-- [ ] Every P1 drift triggers `/vibe.regress register --from-contract`
-- [ ] `diff` says "first run" when no prior snapshot exists
+아래 **Done Criteria** 절(Bundled implementation 안)이 SSOT다 — 이 자리에 있던 축약본은
+`source-spec-hash` 재추출 no-op, drift 위치(file:line), 프레임워크 감지 실패 처리가 빠진
+손실 버전이었다.
 
 ---
 
@@ -184,10 +175,6 @@ endpoints:
      + phoneNumber: string    ← new field (P3 safe)
    ```
 4. On any drift, auto-call `/vibe.regress register --from-contract`
-
-## Drift Severity Matrix
-
-(matches command file — keep both in sync on edits)
 
 ## Integration Points
 
