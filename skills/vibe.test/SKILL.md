@@ -41,10 +41,9 @@ Probe spec: below. Report schema: `references/report-template.md`.
 
 ## Done Criteria
 
-- [ ] Runs without any external LLM call — file reads + vitest only
-- [ ] A single probe failure never halts the overall run
-- [ ] JSON report matches `references/report-template.md` exactly
-- [ ] P1 failures auto-register via `/vibe.regress`
+아래 **Done Criteria** 절(Bundled implementation 안)이 SSOT다 — 이 자리에 있던 축약본은
+리포트 위치(`~/.vibe/test-reports/`, 프로젝트 로컬 금지), `warned` 만으로는 regress 를
+부르지 않는다는 규칙, STCV 4축, 에이전트 그룹 재귀 탐색이 빠진 손실 버전이었다.
 
 ---
 

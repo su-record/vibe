@@ -268,12 +268,6 @@ Step 6 에서 `[2]` (새 세션에서 run) 를 선택했으면 여기서 종료�
 
 승인된 SPEC 은 루프의 ANCHOR 로 쓰인다: `/vibe.run` 이 시나리오 단위로 구현·검증하고, `/vibe.verify` 가 Done Criteria 를 판정해 `.vibe/metrics/run-ledger.json` 의 `verifyPassed` 를 기록한다. 게이트 통과 여부는 항상 run-ledger·테스트 exit code 가 판정한다.
 
-## Next Step
-
-```
-/vibe.run "{feature-name}"
-```
-
 ---
 
 ARGUMENTS: $ARGUMENTS
