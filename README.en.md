@@ -59,7 +59,7 @@ One entry point. Single-pass SPEC → one approval → loop until the gates pass
 
 **Loop-default** — After SPEC approval, vibe loops (ANCHOR→ACT→JUDGE→RECORD) until gates pass, with deterministic stuck/iteration guards. `--interactive` for step-by-step confirmation; `--max-iter N` to cap iterations; `automationLevel: autonomous` (`.vibe/config.json`) runs non-interactively to completion.
 
-**Loop engineering** — `/vibe.loop` designs and installs autonomous goal loops (triage → run/verify pipelines). Completion is judged by deterministic gates (run-ledger/tests), not self-report; results land in a human triage inbox — loops never push or release.
+**Loop engineering** — `/vibe.loop` designs and installs autonomous goal loops (triage → run/verify pipelines). Completion is judged by deterministic gates (run-ledger/tests), not self-report — and so is runaway protection: iterations are counted in code, tracking **total rounds** and **verified rounds** separately so a thrashing loop is distinguishable from a genuinely large one. Results land in a human triage inbox — loops never push or release.
 
 ---
 
@@ -181,6 +181,8 @@ Detection at edit time, blocking at deterministic gates:
 |-------|--------------|
 | Edit hooks (Edit/Write) | **Detects** only low-false-positive hard rules — `any`/`@ts-ignore`, `console.log` → injects findings to the model (additionalContext). No length/nesting heuristics — the model judges those better in context |
 | Deterministic gates | **PR test gate** (runs the actual test suite before PR creation, incl. `gh pr create`) · **auto-commit verify gate** (refuses commits until verify passes) · **Stop hook** verify-skip warn/block · **scope-guard** (opt-in; monitors edits outside SPEC scope) · **sentinel** (blocks destructive commands and harness self-modification) |
+| Node gates | Gates are not only at the end of the pipeline — the **SPEC Code Guard** checks downstream requirements (REQ IDs, Stakes, Done Criteria, unfilled placeholders) **before** approval and sends failures back to SPEC authoring (backward edge) |
+| Human gates | **Gate objects** — a pending question is written to disk (`.vibe/gates/`) so it survives a dead session. **Cost gate** — approval is requested only before irreversible spend (paid generation) or unusually large agent fan-out; normal scale passes through |
 | Review + convergence loop | Parallel `code-reviewer` instances — one per focus (correctness / architecture / performance / data-integrity / …) — plus `security-reviewer`. Loops until P1 = 0, with convergence decided by discover-hash: two identical rounds = stuck, ask the user. Never silently proceeds. |
 
 ---
@@ -217,7 +219,6 @@ Skills teach only what the model doesn't know (domain gotchas, current APIs, pro
 |-----|--------|
 | [Claude Code](https://claude.ai/code) | Full support |
 | [Codex](https://github.com/openai/codex) | Full support (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
-| [Cursor](https://cursor.sh) | Agents + Rules |
 | Antigravity CLI (`agy`) | Agents + Skills |
 
 ---

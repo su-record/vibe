@@ -52,18 +52,24 @@ status: active
 - `verify: tests` — `test_command` exit code 0
 - `verify: none` — 파이프라인 마지막 스킬 완료 시
 - 연속 2회 `discoverHash` 동일 → stuck으로 중단, 인박스 기록
+- `max_iterations` 소진 → 잔여를 인박스로 이월. **회전 수는 코드가 센다** —
+  `loop-ledger.js iteration <name> <verified|unverified>` 로 기록하고
+  `budget <name> <max>` 로 확인한다 (모델이 세지 않는다)
+- 실행 실패(스킬 미설치·도구 부재·명령 비정상 종료) → stuck 이 아니라 즉시 종료.
+  같은 방식으로 재시도하지 않는다
+
+전문: `vibe/rules/loop-contract.md` (예산 · 실행 실패 절)
 
 ## 인박스 보고 형식
 
-{각 반복 완료 후 `.vibe/loops/inbox.md`에 추가되는 항목 형식.}
+블록 형식과 최신순 정렬은 **명령이 보장한다** — 손으로 마크다운을 쓰지 않는다:
 
+```bash
+node "$HOOKS_DIR/loop-ledger.js" inbox {loop-name} <ok|fail|stuck> \
+  "발견: N건 / 처리: M건 / 검증: {기준과 결과}" \
+  "리뷰 필요: {사람이 확인해야 할 사항 — 없으면 없음}"
 ```
-## [{loop-name}] {YYYY-MM-DD HH:mm}
 
-- **결과**: ok | fail | stuck
-- **처리한 항목**: {항목 설명}
-- **검증 상태**: verifyPassed=true | false
-- **리뷰 필요**: {사람이 확인해야 할 사항. 없으면 "없음"}
-```
+기록되는 형식: `## {loop-name} — {ISO 시각} — {결과}` + 본문 줄들.
 
 > 루프는 push·release·배포를 수행하지 않는다. auto-commit verify 게이트 통과 시 커밋까지만.

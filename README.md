@@ -7,7 +7,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-**English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, Cursor, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*
+**English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*
 
 Vibe는 AI 코딩을 위한 **검증 하네스(verification harness)** 입니다. 출처가 있는 컨텍스트로 SPEC을 고정하고, **완료 판정을 모델의 자기 보고가 아니라 결정론적 게이트(테스트 exit code, run-ledger, 회귀 기억)에 맡긴 뒤 실행별 Evidence Bundle을 남깁니다.** Model Judge는 발견만 제안하고, Human Taste는 release에서만 판단합니다. 빠르게 바이브 코딩하되, 검증 안 된 코드가 나가지 않게.
 
@@ -153,6 +153,8 @@ codex
 |------|------|
 | 편집 훅 (Edit/Write) | 오탐률 낮은 하드룰만 **탐지** — `any`/`@ts-ignore`, `console.log` → 모델에 즉시 주입(additionalContext). 함수 길이·중첩 같은 휴리스틱은 없음 — 모델이 컨텍스트 안에서 더 정확히 판단 |
 | 결정론 게이트 | **PR 테스트 게이트**(PR 생성 전 테스트 스위트 직접 실행, `gh pr create` 포함) · **auto-commit verify 게이트**(verify 통과 전 커밋 거부) · **Stop 훅** verify-skip 경고/차단 · **scope-guard**(opt-in, SPEC 범위 밖 편집 감시) · **sentinel**(파괴적 명령·하네스 자기 수정 차단) |
+| 노드 게이트 | 게이트를 파이프라인 끝에만 두지 않음 — **SPEC Code Guard**가 승인 **전에** 하류 요구사항(REQ-ID·Stakes·Done Criteria·미치환 placeholder)을 검사하고, 실패하면 SPEC 작성으로 되돌림(backward edge) |
+| 사람 게이트 | **게이트 객체** — 대기 중인 질문을 디스크(`.vibe/gates/`)에 남겨 세션이 끊겨도 무엇을 묻는지 살아남음. **비용 게이트** — 되돌릴 수 없는 지출(유료 생성)과 이상 규모 팬아웃 직전에만 승인 요청(평상시 규모는 통과) |
 | 리뷰 + 수렴 루프 | `code-reviewer`를 관점(focus)별 병렬 인스턴스로 실행(correctness/architecture/performance/data-integrity/…) + `security-reviewer`. P1=0까지 루프하되 수렴은 discover-hash가 판정 — 2라운드 동일 findings면 stuck으로 확정하고 사람에게 질문. 절대 조용히 넘어가지 않음 |
 
 ---
@@ -179,7 +181,7 @@ codex
 
 **Smart Resume** — `.last-feature` 포인터가 마지막 작업을 추적. 인자 없이 `/vibe`를 호출하면 중단된 위치를 보여주거나 진행 중 feature 목록을 제시.
 
-**루프 엔지니어링** — `/vibe.loop`로 자율 목표 루프를 설계·설치(트리아지 → run/verify 파이프라인). 완료 판정은 자기 보고가 아니라 결정론 게이트(run-ledger/테스트)가 내리고, 결과는 사람 리뷰 인박스로 — 루프는 push/release를 하지 않습니다.
+**루프 엔지니어링** — `/vibe.loop`로 자율 목표 루프를 설계·설치(트리아지 → run/verify 파이프라인). 완료 판정은 자기 보고가 아니라 결정론 게이트(run-ledger/테스트)가 내리고, 폭주 방어도 마찬가지 — 회전 수를 코드가 세고 **전체 회전**과 **검증을 통과한 회전**을 따로 집계해 헛도는 루프와 큰 작업을 구분합니다. 결과는 사람 리뷰 인박스로 — 루프는 push/release를 하지 않습니다.
 
 ---
 
@@ -189,7 +191,6 @@ codex
 |-----|------|
 | [Claude Code](https://claude.ai/code) | 전체 지원 |
 | [Codex](https://github.com/openai/codex) | 전체 지원 (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
-| [Cursor](https://cursor.sh) | 에이전트 + 룰 |
 | Antigravity CLI (`agy`) | 에이전트 + 스킬 |
 
 ---
