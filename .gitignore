@@ -43,3 +43,6 @@ hooks/scripts/__tests__/.vibe/
 .vibe/.last-feature
 .vibe/scope.json
 .claude/scheduled_tasks.lock
+
+# 플러그인 빌드 산출물 (scripts/build-plugin.ts)
+/plugins/

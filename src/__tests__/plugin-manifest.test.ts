@@ -114,11 +114,20 @@ describe('.agents/plugins/marketplace.json', () => {
     expect(entry.name).toBe(manifest.name);
   });
 
-  it('source.path 가 ./ 로 시작하고 플러그인 루트를 가리킨다', () => {
+  /**
+   * 저장소 루트를 가리키면 Codex 가 워킹트리를 통째로 캐시에 복사한다 —
+   * 실측 655MB, 그중 620MB 가 node_modules 였다. `plugins/vibe` 는
+   * `npm run build:plugin` 이 조립하는 배포 트리(8.9MB)다.
+   */
+  it('source.path 가 빌드 산출물을 가리킨다 (저장소 루트가 아니라)', () => {
     const src = entry.source as Record<string, string>;
     expect(src.source).toBe('local');
     expect(src.path).toMatch(/^\.\//);
-    // 이 저장소는 루트 자체가 플러그인이다 — 매니페스트가 그 경로에 있어야 한다
-    expect(fs.existsSync(path.join(ROOT, src.path, '.codex-plugin', 'plugin.json'))).toBe(true);
+    expect(src.path, '루트를 가리키면 node_modules 까지 복사된다').not.toBe('./');
+    expect(src.path).toBe('./plugins/vibe');
+  });
+
+  it('빌드 산출물은 커밋하지 않는다', () => {
+    expect(read('.gitignore')).toMatch(/^\/plugins\/$/m);
   });
 });

@@ -190,11 +190,17 @@ codex
 npm 전역 설치와 **병행**하는 경로다. ChatGPT 와 Codex 는 플러그인 디렉토리를 공유하므로, 한 번 패키징하면 양쪽에 올라간다.
 
 ```bash
-# 저장소를 그대로 플러그인으로 설치해 검증 (repo 스코프 마켓플레이스가 이미 포함돼 있다)
-#   .agents/plugins/marketplace.json → source.path "./"
-# 1) ChatGPT 데스크톱 앱 재시작
-# 2) Plugins Directory 에서 "Vibe (local)" → vibe 설치
+npm run build:plugin              # plugins/vibe/ 로 배포 트리 조립 (package.json files 기준)
+codex plugin marketplace add .    # repo 스코프 마켓플레이스 등록
+codex plugin add vibe@vibe-local  # 설치
+codex plugin list                 # vibe@vibe-local  installed, enabled
 ```
+
+ChatGPT 데스크톱 앱에서는 앱을 **재시작**한 뒤 Plugins Directory 에서 "Vibe (local)" → `vibe` 를 설치한다.
+
+> 마켓플레이스 파일만 만들어두면 잡히지 않는다 — `marketplace add` 로 **등록**해야 한다.
+> `source.path` 는 저장소 루트가 아니라 빌드 산출물(`./plugins/vibe`)을 가리킨다.
+> 루트를 가리키면 워킹트리가 통째로 캐시에 복사된다 (실측 655MB, 그중 620MB 가 `node_modules`).
 
 | 번들 | ChatGPT 앱 | Codex CLI |
 |---|---|---|
