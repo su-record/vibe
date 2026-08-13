@@ -133,6 +133,27 @@ function handlePreCompact() {
   // stdout 주입 없음 — 압축 직전에 컨텍스트를 더 늘리는 것은 역효과다.
 }
 
+/**
+ * PostCompact → ANCHOR 재고정.
+ *
+ * loop-contract 는 ANCHOR 의 존재 이유를 "컨텍스트가 오염되거나 compact 로 소실돼도
+ * 루프는 깨지지 않는다" 로 규정한다. 그런데 정작 **압축 직후 자동 재고정이 없었다** —
+ * 모델이 스스로 `anchor` 를 다시 부르기를 기대하는 상태였다. 압축은 그 기대가 가장
+ * 깨지기 쉬운 순간이다(방금 지시를 잃은 참이다).
+ *
+ * PreCompact 가 압축 **전** 체크포인트를 저장한다면, PostCompact 는 압축 **후**
+ * 디스크에서 사실을 다시 읽어 컨텍스트에 넣는다. 둘은 짝이다.
+ *
+ * 재고정 결과는 additionalContext 로 주입한다 — 압축 직후는 컨텍스트가 비어 있어
+ * 주입 비용이 가장 싸고 효용이 가장 크다.
+ */
+function handlePostCompact() {
+  const out = combinedOutput(runScript('loop-ledger.js', ['anchor']));
+  if (out && out.trim()) {
+    writeAdditionalContext('[vibe] ANCHOR (post-compact re-anchor):\n' + out.trim());
+  }
+}
+
 switch (eventName) {
   case 'SessionStart':
     writeAdditionalContext(combinedOutput(runScript('session-start.js')));
@@ -151,6 +172,9 @@ switch (eventName) {
     break;
   case 'PreCompact':
     handlePreCompact();
+    break;
+  case 'PostCompact':
+    handlePostCompact();
     break;
   default:
     break;

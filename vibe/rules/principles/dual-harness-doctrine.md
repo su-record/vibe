@@ -32,17 +32,24 @@
 
 ## Hooks Across Harnesses
 
-CC의 풍부한 hook 모델(PreToolUse/PostToolUse/UserPromptSubmit/Stop)에는 Codex에 완전한 등가물이 없다. hook의 **의도**별로 하네스에 맞는 메커니즘에 매핑한다.
+Codex는 네이티브 hook을 지원한다(`codex features list` → `hooks: stable`). 두 하네스의 이벤트 집합은 이제 거의 겹치므로, **경로만 다르고 의도는 같게** 매핑한다.
 
-Codex도 이제 네이티브 hook을 지원한다(`codex features list` → `hooks: stable`). vibe는 두 메커니즘을 **모두** 사용하며, hook의 **의도**별로 매핑한다.
+> 과거 이 자리에는 "Codex에 완전한 등가물이 없다" 고 적혀 있었다. 실측(2026-08-13)으로 낡은 서술임을 확인했다 — Codex는 SessionStart · UserPromptSubmit · PreToolUse · PostToolUse · PermissionRequest · Stop · SessionEnd · Pre/PostCompact · SubagentStart/Stop 를 제공한다.
 
 | hook 의도 | Claude Code | Codex |
 |---|---|---|
-| 라이프사이클 (turn 완료) | `Stop` hook | `config.toml`의 `notify` (agent-turn-complete 시 JSON 발화) |
-| 세션 시작 | `SessionStart` hook | `.codex/hooks.json` → `SessionStart` |
-| pre-edit / scope guard | `PreToolUse` (동기 deny) | `.codex/hooks.json` → `PreToolUse` (동기 deny) |
-| 키워드 디스패치 | `UserPromptSubmit` | `.codex/hooks.json` → `UserPromptSubmit` |
+| 세션 시작 | `SessionStart` | `.codex/hooks.json` → `SessionStart` |
+| 키워드 디스패치 | `UserPromptSubmit` | `UserPromptSubmit` |
+| pre-edit / scope guard | `PreToolUse` (동기 deny) | `PreToolUse` (동기 deny) |
 | 금지 패턴 차단 | `PreToolUse` | `PreToolUse` + AGENTS.md 규칙 (이중 방어) |
+| 편집 후 품질 검사 | `PostToolUse` | `PostToolUse` |
+| 압축 전 체크포인트 | `Notification` (context_window_*) | `PreCompact` — 임계치 추정이 아닌 확정 신호라 더 정확 |
+| **압축 후 재고정** | (없음 — 모델이 `anchor` 호출) | **`PostCompact` → `loop-ledger.js anchor`** |
+| 라이프사이클 (turn 완료) | `Stop` hook | `config.toml` 의 `notify` (아래 참조) |
+
+**`Stop` 이 아니라 `notify` 를 쓰는 이유**: Codex 도 `Stop` 이벤트를 제공하고 vibe 도 등록해 두었지만, turn 완료 후처리(auto-commit·devlog)는 `notify` 가 담당한다. 둘 다에서 실행하면 커밋이 중복된다 — `Stop` 핸들러는 의도적으로 비워 둔다.
+
+**미등록 이벤트와 이유**: `SessionEnd`(타임아웃 1초 — 무거운 작업 불가) · `SubagentStart/Stop`(계측 외 용도 없음) · `PermissionRequest`(비용 게이트를 하네스 강제로 올릴 자리 — 후보로 남김).
 
 **구현**: `hooks/scripts/codex-hook-adapter.js`가 Codex hook 이벤트를 기존 vibe hook 스크립트로 번역하고 deny 결정(JSON)을 보존한다. 설치는 `installProjectCodexHooks()` → `.codex/hooks.json` (프로젝트 로컬, gitignored). 라이프사이클 후처리(auto-commit·devlog)는 `codex-notify.js`가 `notify` 경로로 담당한다.
 

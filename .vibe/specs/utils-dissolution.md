@@ -7,6 +7,9 @@ depends: system-lean-hardening
 
 # SPEC: utils-dissolution — vibe.utils 해체 + documenter/diagrammer 제거
 
+> ⚠️ **이후 변경 (v3.2.22, 2026-08-09)**: 이 문서가 언급하는 `SkillRepository.ts` 는 참조 0건으로 확인돼 삭제됐다. 아래 본문은 **작성 시점의 사실**이며 수정하지 않는다 — 당시 판단의 근거를 남기기 위함이다.
+
+
 - **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
 
 ## 목표 (Done 의 정의)

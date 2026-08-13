@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "3.2.25",
+  "version": "3.2.26",
   "description": "AI Coding Framework for Claude Code — 7+ agents, 52 skills, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
@@ -34,7 +34,9 @@
     "test:coverage": "vitest run --coverage",
     "prepublishOnly": "pnpm build",
     "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(e=>process.stderr.write('\\u26a0\\ufe0f  vibe postinstall skipped: '+((e&&e.message)||e)+'\\n   Assets and hooks were not installed. Run: npx vibe upgrade\\n'))\"",
-    "release": "bash scripts/release.sh"
+    "release": "bash scripts/release.sh",
+    "sync:plugin-version": "npx tsx scripts/sync-plugin-version.ts",
+    "version": "npx tsx scripts/sync-plugin-version.ts && git add .codex-plugin/plugin.json"
   },
   "keywords": [
     "ai",
@@ -94,6 +96,7 @@
     "vitest": "^4.1.10"
   },
   "files": [
+    ".codex-plugin/",
     "dist/",
     "vibe/",
     "languages/",

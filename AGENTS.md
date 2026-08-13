@@ -76,7 +76,7 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/`update` 시 `.vibe/` 로 이동한다.
 
 ### Dual-Harness Doctrine
-하네스 차이는 경로가 아니라 **인지 방식**(CC=추론 / Codex=직역)에 있다. 원칙: **암묵적 동작에 의존하지 않는다 — 추론은 `/vibe` 디스패처가 앞단에서, skill 본문은 전부 명시적으로.** ("명시성 공통분모 + 추론 앞단"). Hook은 의도별 매핑: 라이프사이클(turn 완료) → Codex `config.toml notify`, 나머지(SessionStart·UserPromptSubmit·Pre/PostToolUse) → Codex 네이티브 hook(`.codex/hooks.json` + `codex-hook-adapter.js`). AGENTS.md soft-hook 은 폐기하지 않고 **훅 미설치 환경의 2차 방어선**으로 유지(직역이라 신뢰성↑). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
+하네스 차이는 경로가 아니라 **인지 방식**(CC=추론 / Codex=직역)에 있다. 원칙: **암묵적 동작에 의존하지 않는다 — 추론은 `/vibe` 디스패처가 앞단에서, skill 본문은 전부 명시적으로.** ("명시성 공통분모 + 추론 앞단"). Hook은 의도별 매핑: 라이프사이클(turn 완료) → Codex `config.toml notify`, 나머지(SessionStart·UserPromptSubmit·Pre/PostToolUse·Pre/PostCompact) → Codex 네이티브 hook(`.codex/hooks.json` + `codex-hook-adapter.js`). **`PostCompact` 는 압축 직후 `loop-ledger.js anchor` 로 재고정한다** — ANCHOR 가 컨텍스트 소실에 대비하는 장치인데 정작 압축 시점에 자동 실행이 없었다. AGENTS.md soft-hook 은 폐기하지 않고 **훅 미설치 환경의 2차 방어선**으로 유지(직역이라 신뢰성↑). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
 
 ### Gotchas
 - `better-sqlite3` WAL mode — synchronous API

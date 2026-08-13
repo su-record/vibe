@@ -1,0 +1,20 @@
+{
+  "name": "vibe-local",
+  "interface": {
+    "displayName": "Vibe (local)"
+  },
+  "plugins": [
+    {
+      "name": "vibe",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

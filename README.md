@@ -7,7 +7,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-**English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, Cursor, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*
+**English** — Vibe is a **verification harness** for AI coding agents. It wraps Claude Code, Codex, and Antigravity CLI so that "done" is decided by deterministic gates — test exit codes, run-ledgers, regression memory — instead of the model's self-report. Models already plan and implement well; what's missing is a reason to trust "it's done." Vibe supplies that ground truth: vibe-code fast, but nothing unverified ships. Install with `npm install -g @su-record/vibe && vibe init`, then throw a natural-language requirement at `/vibe` — one SPEC approval, then an autonomous ANCHOR→ACT→JUDGE→RECORD loop until the gates pass. *(Full docs below are in Korean; the CLI works in any language.)*
 
 Vibe는 AI 코딩을 위한 **검증 하네스(verification harness)** 입니다. 출처가 있는 컨텍스트로 SPEC을 고정하고, **완료 판정을 모델의 자기 보고가 아니라 결정론적 게이트(테스트 exit code, run-ledger, 회귀 기억)에 맡긴 뒤 실행별 Evidence Bundle을 남깁니다.** Model Judge는 발견만 제안하고, Human Taste는 release에서만 판단합니다. 빠르게 바이브 코딩하되, 검증 안 된 코드가 나가지 않게.
 
@@ -153,6 +153,8 @@ codex
 |------|------|
 | 편집 훅 (Edit/Write) | 오탐률 낮은 하드룰만 **탐지** — `any`/`@ts-ignore`, `console.log` → 모델에 즉시 주입(additionalContext). 함수 길이·중첩 같은 휴리스틱은 없음 — 모델이 컨텍스트 안에서 더 정확히 판단 |
 | 결정론 게이트 | **PR 테스트 게이트**(PR 생성 전 테스트 스위트 직접 실행, `gh pr create` 포함) · **auto-commit verify 게이트**(verify 통과 전 커밋 거부) · **Stop 훅** verify-skip 경고/차단 · **scope-guard**(opt-in, SPEC 범위 밖 편집 감시) · **sentinel**(파괴적 명령·하네스 자기 수정 차단) |
+| 노드 게이트 | 게이트를 파이프라인 끝에만 두지 않음 — **SPEC Code Guard**가 승인 **전에** 하류 요구사항(REQ-ID·Stakes·Done Criteria·미치환 placeholder)을 검사하고, 실패하면 SPEC 작성으로 되돌림(backward edge) |
+| 사람 게이트 | **게이트 객체** — 대기 중인 질문을 디스크(`.vibe/gates/`)에 남겨 세션이 끊겨도 무엇을 묻는지 살아남음. **비용 게이트** — 되돌릴 수 없는 지출(유료 생성)과 이상 규모 팬아웃 직전에만 승인 요청(평상시 규모는 통과) |
 | 리뷰 + 수렴 루프 | `code-reviewer`를 관점(focus)별 병렬 인스턴스로 실행(correctness/architecture/performance/data-integrity/…) + `security-reviewer`. P1=0까지 루프하되 수렴은 discover-hash가 판정 — 2라운드 동일 findings면 stuck으로 확정하고 사람에게 질문. 절대 조용히 넘어가지 않음 |
 
 ---
@@ -179,7 +181,28 @@ codex
 
 **Smart Resume** — `.last-feature` 포인터가 마지막 작업을 추적. 인자 없이 `/vibe`를 호출하면 중단된 위치를 보여주거나 진행 중 feature 목록을 제시.
 
-**루프 엔지니어링** — `/vibe.loop`로 자율 목표 루프를 설계·설치(트리아지 → run/verify 파이프라인). 완료 판정은 자기 보고가 아니라 결정론 게이트(run-ledger/테스트)가 내리고, 결과는 사람 리뷰 인박스로 — 루프는 push/release를 하지 않습니다.
+**루프 엔지니어링** — `/vibe.loop`로 자율 목표 루프를 설계·설치(트리아지 → run/verify 파이프라인). 완료 판정은 자기 보고가 아니라 결정론 게이트(run-ledger/테스트)가 내리고, 폭주 방어도 마찬가지 — 회전 수를 코드가 세고 **전체 회전**과 **검증을 통과한 회전**을 따로 집계해 헛도는 루프와 큰 작업을 구분합니다. 결과는 사람 리뷰 인박스로 — 루프는 push/release를 하지 않습니다.
+
+---
+
+## 플러그인으로 설치 (실험적)
+
+npm 전역 설치와 **병행**하는 경로다. ChatGPT 와 Codex 는 플러그인 디렉토리를 공유하므로, 한 번 패키징하면 양쪽에 올라간다.
+
+```bash
+# 저장소를 그대로 플러그인으로 설치해 검증 (repo 스코프 마켓플레이스가 이미 포함돼 있다)
+#   .agents/plugins/marketplace.json → source.path "./"
+# 1) ChatGPT 데스크톱 앱 재시작
+# 2) Plugins Directory 에서 "Vibe (local)" → vibe 설치
+```
+
+| 번들 | ChatGPT 앱 | Codex CLI |
+|---|---|---|
+| skills (52) | ✅ | ✅ |
+| hooks | **미확인** — 훅 문서가 Codex 아래에만 있다 | ✅ (trust 승인 후) |
+
+> ⚠️ 훅은 설치·활성화만으로 신뢰되지 않는다 — Codex 가 정의를 검토·승인할 때까지 건너뛴다.
+> `vibe init`·`vibe upgrade` 같은 CLI 와 프로젝트 로컬 훅 설치는 플러그인이 대체하지 못하므로 npm 설치는 계속 필요하다.
 
 ---
 
@@ -189,25 +212,57 @@ codex
 |-----|------|
 | [Claude Code](https://claude.ai/code) | 전체 지원 |
 | [Codex](https://github.com/openai/codex) | 전체 지원 (`~/.codex/`, AGENTS.md, native hooks.json, config.toml notify, codex exec agent fallback) |
-| [Cursor](https://cursor.sh) | 에이전트 + 룰 |
 | Antigravity CLI (`agy`) | 에이전트 + 스킬 |
 
 ---
 
 ## 명령어
 
+`/vibe` 하나로 시작하면 나머지는 vibe 가 라우팅한다. 아래는 특정 단계를 직접 부르고 싶을 때의 목록이다.
+
+**핵심 흐름**
+
 | 명령어 | 용도 |
 |--------|------|
 | `/vibe` | **메인 진입점** — 자연어 요구사항 → SPEC 1패스 → 1회 승인 → 게이트 통과까지 루프 |
-| `/vibe.spec` | (advanced) SPEC 1패스 명시적 호출 — 인라인 질문 → SPEC + BDD → 승인 |
-| `/vibe.run` | (advanced) SPEC 기반 구현 |
-| `/vibe.figma` | (advanced) Figma ↔ 코드 (읽기 또는 쓰기, 3가지 모드) |
-| `/vibe.design` | (advanced) DESIGN.md 시각 품질 SSOT — init / lint / verify / sync / preview |
-| `/vibe.verify` | (advanced) 구현이 SPEC Done 기준에 맞는지 검증 — 결과는 run-ledger에 기록 |
-| `/vibe.regress` | (advanced) 회귀 테스트 자동 진화 — verify 실패 자동 등록, 반복 패턴 승격 |
-| `/vibe.trace` | (advanced) 요구사항 추적 매트릭스 |
-| `/vibe.continue` | 세션 복원 — 85%+ 컨텍스트에서 `save_memory` → `/new` 후 이어서 작업 |
-| `/vibe.image` | 이미지 생성 (Antigravity) — 아이콘/배너/목업 |
+| `/vibe.spec` | SPEC 1패스 명시적 호출 — 인라인 질문 → SPEC + BDD → 승인 |
+| `/vibe.run` | SPEC 기반 구현 |
+| `/vibe.verify` | 구현이 SPEC Done 기준에 맞는지 검증 — 결과는 run-ledger 에 기록 |
+| `/vibe.continue` | 세션 복원 — 85%+ 컨텍스트에서 `save_memory` → `/new` 후 이어서 |
+
+**검증 · 품질**
+
+| 명령어 | 용도 |
+|--------|------|
+| `/vibe.review` | 관점별 병렬 리뷰 (correctness / security / performance …) — P1=0 까지 수렴 |
+| `/vibe.regress` | 회귀 테스트 자동 진화 — verify 실패 자동 등록, 반복 패턴 승격 |
+| `/vibe.contract` | SPEC API 계약 ↔ 구현 drift 탐지 — P1 drift 는 regress 로 전파 |
+| `/vibe.trace` | 요구사항 추적 매트릭스 (RTM) |
+| `/vibe.loop` | 자율 목표 루프 설계·설치 — 완료는 결정론 게이트가 판정 |
+| `/vibe.test` | vibe 설치 자가검진 (CC ↔ Codex 동등성) — 릴리즈 전 권장 |
+| `/vibe.harness` | 프로젝트 하네스 품질 6축 진단 (N/100) |
+
+**설계 · UI**
+
+| 명령어 | 용도 |
+|--------|------|
+| `/vibe.figma` | Figma ↔ 코드 (읽기 또는 쓰기, 3가지 모드) |
+| `/vibe.design` | DESIGN.md 시각 품질 SSOT — init / lint / verify / sync / preview |
+| `/vibe.clone` | 참조 사이트 URL → 현재 스택으로 마크업 재현 (픽셀 검증 루프) |
+| `/vibe.image` | 이미지 생성 (Antigravity) — 아이콘 / 배너 / 목업 |
+
+**분석 · 문서 · 운영**
+
+| 명령어 | 용도 |
+|--------|------|
+| `/vibe.analyze` | 코드·문서·웹·Figma 분석 → 근거 있는 리포트 |
+| `/vibe.reason` | 복잡한 문제의 가설·근거·트레이드오프 구조화 |
+| `/vibe.docs` | README·가이드·아키텍처·릴리즈 노트·다이어그램을 코드와 동기화 |
+| `/vibe.scaffold` | 새 프로젝트 구조 생성 / 기존 구조 감사 |
+| `/vibe.llm` | provider 별 사용 가능 모델 목록 갱신 |
+
+> 위는 자주 쓰는 것들이다. 설치된 전체 스킬 목록은 [SKILL-CATALOG.md](SKILL-CATALOG.md) 에 있고,
+> 표에 없는 요구사항도 `/vibe` 가 description 기반 Catch-all 라우팅으로 처리한다.
 
 ---
 
@@ -216,7 +271,7 @@ codex
 상세 가이드, 스킬 레퍼런스, 설정 방법은 [Wiki](https://github.com/su-record/vibe/wiki)를 참고하세요.
 
 - [README (English)](README.en.md)
-- [릴리스 노트](RELEASE_NOTES.md)
+- [릴리스 노트](https://github.com/su-record/vibe/releases) — 태그마다 CI 가 SPEC·커밋에서 결정론적으로 생성
 
 ---
 
