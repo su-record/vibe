@@ -92,3 +92,33 @@ describe('npm 배포본이 플러그인 자산을 담는다', () => {
     expect(pkg.files as string[]).toContain('hooks/');
   });
 });
+
+/**
+ * 로컬 마켓플레이스 — 저장소를 그대로 플러그인으로 설치해 검증하기 위한 항목.
+ * ChatGPT 데스크톱 재시작이 필요해 CI 로는 끝까지 확인할 수 없으므로,
+ * 최소한 매니페스트와 어긋나지 않는 것만이라도 고정한다.
+ */
+describe('.agents/plugins/marketplace.json', () => {
+  const mp = readJson('.agents/plugins/marketplace.json');
+  const entry = (mp.plugins as Array<Record<string, unknown>>)[0];
+
+  it.each(['name', 'interface', 'plugins'])('최상위 %s 가 있다', (k) => {
+    expect(mp[k]).toBeDefined();
+  });
+
+  it.each(['name', 'source', 'policy', 'category'])('항목에 필수 필드 %s 가 있다', (k) => {
+    expect(entry[k]).toBeDefined();
+  });
+
+  it('플러그인 이름이 매니페스트와 같다', () => {
+    expect(entry.name).toBe(manifest.name);
+  });
+
+  it('source.path 가 ./ 로 시작하고 플러그인 루트를 가리킨다', () => {
+    const src = entry.source as Record<string, string>;
+    expect(src.source).toBe('local');
+    expect(src.path).toMatch(/^\.\//);
+    // 이 저장소는 루트 자체가 플러그인이다 — 매니페스트가 그 경로에 있어야 한다
+    expect(fs.existsSync(path.join(ROOT, src.path, '.codex-plugin', 'plugin.json'))).toBe(true);
+  });
+});

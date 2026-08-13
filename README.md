@@ -185,6 +185,27 @@ codex
 
 ---
 
+## 플러그인으로 설치 (실험적)
+
+npm 전역 설치와 **병행**하는 경로다. ChatGPT 와 Codex 는 플러그인 디렉토리를 공유하므로, 한 번 패키징하면 양쪽에 올라간다.
+
+```bash
+# 저장소를 그대로 플러그인으로 설치해 검증 (repo 스코프 마켓플레이스가 이미 포함돼 있다)
+#   .agents/plugins/marketplace.json → source.path "./"
+# 1) ChatGPT 데스크톱 앱 재시작
+# 2) Plugins Directory 에서 "Vibe (local)" → vibe 설치
+```
+
+| 번들 | ChatGPT 앱 | Codex CLI |
+|---|---|---|
+| skills (52) | ✅ | ✅ |
+| hooks | **미확인** — 훅 문서가 Codex 아래에만 있다 | ✅ (trust 승인 후) |
+
+> ⚠️ 훅은 설치·활성화만으로 신뢰되지 않는다 — Codex 가 정의를 검토·승인할 때까지 건너뛴다.
+> `vibe init`·`vibe upgrade` 같은 CLI 와 프로젝트 로컬 훅 설치는 플러그인이 대체하지 못하므로 npm 설치는 계속 필요하다.
+
+---
+
 ## 지원 도구
 
 | CLI | 상태 |
