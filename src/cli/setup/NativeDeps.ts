@@ -68,7 +68,17 @@ export function repairNativeDeps(packageRoot: string): { repaired: string[]; fai
   return { repaired, failed };
 }
 
-/** 복구 실패 시 사용자가 직접 쓸 명령 — npm 정책을 푸는 쪽이 근본 처방이다 */
+/**
+ * 복구 실패 시 사용자가 직접 쓸 명령 — npm 정책을 푸는 쪽이 근본 처방이다.
+ *
+ * `npm install-scripts approve` 를 안내하면 안 된다(실측). 그건 승인을 **설치된
+ * 패키지 자신의 package.json** 에 쓰는데, 그 파일은 다음 `npm i -g` 가 게시본으로
+ * 덮어쓴다 — 업그레이드 한 번이면 승인이 사라진다. 같은 이유로 `allowScripts` 를
+ * 우리 package.json 에 담아 게시해도 무의미하다(전역 설치에서 무시됨을 확인).
+ *
+ * 유일하게 지속되는 형태는 사용자 레벨 npm config 다.
+ */
 export function nativeDepHint(names: string[]): string {
-  return `npm install-scripts approve ${names.join(' ')} && npm install -g @su-record/vibe@latest --force`;
+  return `npm config set allow-scripts=${names.join(',')} --location=user`
+    + ` && npm install -g @su-record/vibe@latest --force`;
 }

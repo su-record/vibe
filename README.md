@@ -94,6 +94,16 @@ codex
 /vibe "사용자 인증 추가"
 ```
 
+> **npm 12 를 쓴다면** — npm 12 는 `allowScripts` 정책으로 install 스크립트를 기본 차단한다.
+> 그러면 설치는 성공하는데 `better-sqlite3` 네이티브 바인딩이 빌드되지 않아 메모리·RAG 가 죽는다.
+> `vibe upgrade` 가 자동 복구하지만, 근본적으로 막으려면 한 번 승인해 두면 된다:
+>
+> ```bash
+> npm config set allow-scripts=@su-record/vibe,better-sqlite3 --location=user
+> ```
+>
+> 상태는 `vibe status` 의 `Native bindings` 행으로 확인한다.
+
 ---
 
 ## Figma ↔ 코드

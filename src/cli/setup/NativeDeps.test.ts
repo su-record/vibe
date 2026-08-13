@@ -86,8 +86,23 @@ describe('repairNativeDeps', () => {
   });
 });
 
+/**
+ * 안내 문구가 틀리면 사용자는 고쳤다고 믿고 다음 업그레이드에 다시 깨진다.
+ * 실측으로 확인한 것: `npm install-scripts approve` 는 승인을 설치본의
+ * package.json 에 쓰고, 그 파일은 다음 `npm i -g` 가 게시본으로 덮어쓴다.
+ */
 describe('nativeDepHint', () => {
-  it('npm 정책을 푸는 명령을 안내한다 — 차단이 근본 원인이다', () => {
-    expect(nativeDepHint(['better-sqlite3'])).toContain('npm install-scripts approve better-sqlite3');
+  it('사용자 레벨 npm config 를 안내한다 — 유일하게 재설치를 견디는 형태', () => {
+    const hint = nativeDepHint(['better-sqlite3']);
+    expect(hint).toContain('npm config set allow-scripts=better-sqlite3');
+    expect(hint).toContain('--location=user');
+  });
+
+  it('install-scripts approve 를 안내하지 않는다 — 다음 설치에 지워진다', () => {
+    expect(nativeDepHint(['better-sqlite3'])).not.toContain('install-scripts approve');
+  });
+
+  it('여러 패키지는 쉼표로 잇는다 — npm config 가 받는 형식', () => {
+    expect(nativeDepHint(['a', 'b'])).toContain('allow-scripts=a,b');
   });
 });
