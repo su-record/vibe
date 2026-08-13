@@ -164,9 +164,13 @@ export function staleGlobalAssets(installedVersion: string): string | null {
  *
  * WHY: npm 이 lifecycle script 를 건너뛰는 환경이 있다 (`npm warn install-scripts`).
  * npm 12 의 `allowScripts` 는 아예 **기본 차단**이다 — 승인 목록에 없는 패키지의
- * install/postinstall 은 실행되지 않고 경고 한 줄만 남는다. 사용자 레벨 승인
- * (`npm config set allow-scripts=…`)으로도 **최상위 패키지 자신의 postinstall 은
- * 계속 차단된다**(npm 12.0.2 실측) — 그래서 이 복구는 승인 여부와 무관하게 필요하다.
+ * install/postinstall 은 실행되지 않고 경고 한 줄만 남는다.
+ *
+ * 사용자 레벨 승인(`npm config set allow-scripts=@su-record/vibe,better-sqlite3
+ * --location=user`)을 해두면 이 postinstall 도 정상 실행된다(레지스트리 설치로 확인).
+ * 그래도 이 복구는 남긴다 — 승인은 **머신마다 사람이 한 번 해야 하는 일**이고,
+ * 기본값은 차단이다. 안 해둔 머신에서 조용히 구버전 훅으로 도는 것을 막는 쪽이
+ * 이 함수의 존재 이유다.
  * 그러면 전역 **패키지**는 새 버전인데 `~/.vibe/hooks/scripts/` 는 옛날 그대로다 —
  * sentinel·scope·run-ledger·verify 가 전부 구버전 코드로 돌면서 upgrade 는
  * "✅ 성공" 을 출력한다. 실측: 두 번의 릴리즈 동안 훅이 5일 전 상태로 멈춰 있었다.
