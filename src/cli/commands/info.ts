@@ -8,6 +8,7 @@ import { VibeConfig } from '../types.js';
 import { getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
+import { missingNativeDeps } from '../setup/NativeDeps.js';
 
 /**
  * 도움말 표시
@@ -111,6 +112,20 @@ export function formatHookStatus(
 }
 
 /**
+ * 네이티브 바인딩 상태 — 빠져 있으면 메모리·RAG 가 매 훅마다 조용히 죽는다.
+ *
+ * npm 12 의 `allowScripts` 가 install 스크립트를 차단하면 설치는 성공하는데
+ * 바인딩만 없는 상태가 된다. 상태 화면이 이걸 보여주지 않으면 사용자는
+ * "설치는 됐는데 메모리가 안 붙는다" 를 진단할 방법이 없다.
+ */
+export function formatNativeDepStatus(packageRoot: string): string {
+  const missing = missingNativeDeps(packageRoot);
+  return missing.length === 0
+    ? '  Native bindings     ✓ ok'
+    : `  Native bindings     ✗ ${missing.join(', ')} — memory/RAG disabled (run: vibe upgrade)`;
+}
+
+/**
  * 상태 표시 — 모든 시스템 상태를 한 곳에서 확인
  */
 export function showStatus(): void {
@@ -138,7 +153,8 @@ VIBE Status (v${packageJson.version})
 
 Project: ${projectStatus}
 ${isCoreProject ? `Language: ${config.language || 'ko'}\n` : ''}
-${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}
+${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}${formatNativeDepStatus(path.resolve(import.meta.dirname, '..', '..', '..'))}
+
 ${formatLLMStatus()}
   `);
 }

@@ -12,6 +12,7 @@ import { formatLLMStatus } from '../auth.js';
 import { installProjectHooks, installProjectCodexHooks } from '../setup.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
 import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
+import { missingNativeDeps, repairNativeDeps, nativeDepHint } from '../setup/NativeDeps.js';
 
 /**
  * Remove stale npm temp directories that cause ENOTEMPTY errors
@@ -162,6 +163,8 @@ export function staleGlobalAssets(installedVersion: string): string | null {
  * postinstall 을 직접 실행해 전역 자산을 복구한다.
  *
  * WHY: npm 이 lifecycle script 를 건너뛰는 환경이 있다 (`npm warn install-scripts`).
+ * npm 12 의 `allowScripts` 는 아예 **기본 차단**이다 — 승인 목록에 없는 패키지의
+ * install/postinstall 은 실행되지 않고 경고 한 줄만 남는다.
  * 그러면 전역 **패키지**는 새 버전인데 `~/.vibe/hooks/scripts/` 는 옛날 그대로다 —
  * sentinel·scope·run-ledger·verify 가 전부 구버전 코드로 돌면서 upgrade 는
  * "✅ 성공" 을 출력한다. 실측: 두 번의 릴리즈 동안 훅이 5일 전 상태로 멈춰 있었다.
@@ -236,6 +239,21 @@ export function upgrade(_options: CliOptions = { silent: false }): void {
         : `\n⚠️  Global assets stale (v${after}) — hooks may run old code. Try: npm install -g @su-record/vibe@latest --force --foreground-scripts\n`;
     }
 
+    // 네이티브 바인딩도 같은 이유(allowScripts 차단)로 빠진다 — 여기서도 복구한다.
+    // 빠지면 메모리·RAG·sentinel 이 매 훅마다 bindings 에러로 죽는데, 설치는 ✅ 로 보인다.
+    let nativeNote = '';
+    if (globalRoot) {
+      const pkgRoot = join(globalRoot, '@su-record', 'vibe');
+      if (missingNativeDeps(pkgRoot).length > 0) {
+        const { repaired: fixed, failed } = repairNativeDeps(pkgRoot);
+        if (fixed.length > 0) nativeNote += `\n🔧 Native bindings rebuilt: ${fixed.join(', ')}\n`;
+        if (failed.length > 0) {
+          nativeNote += `\n⚠️  Native bindings missing (${failed.join(', ')}) — memory/RAG disabled.`
+            + ` Try: ${nativeDepHint(failed)}\n`;
+        }
+      }
+    }
+
     const repaired = repairProjectHooks(process.cwd());
     const hookNote = repaired.length > 0
       ? `\n🔧 Project hooks restored: ${repaired.join(', ')}\n`
@@ -244,7 +262,7 @@ export function upgrade(_options: CliOptions = { silent: false }): void {
       ? `\n🧹 ${postinstallReport.join('\n🧹 ')}\n`
       : '';
 
-    log(`\n✅ vibe upgraded (v${newVersion})\n${globalNote}${hookNote}${pruneNote}\n${llmStatus}\n`);
+    log(`\n✅ vibe upgraded (v${newVersion})\n${globalNote}${nativeNote}${hookNote}${pruneNote}\n${llmStatus}\n`);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Upgrade failed:', message);
