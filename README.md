@@ -189,11 +189,22 @@ codex
 
 npm 전역 설치와 **병행**하는 경로다. ChatGPT 와 Codex 는 플러그인 디렉토리를 공유하므로, 한 번 패키징하면 양쪽에 올라간다.
 
+**npm 으로 설치한 경우** (대부분)
+
 ```bash
-npm run build:plugin              # plugins/vibe/ 로 배포 트리 조립 (package.json files 기준)
-codex plugin marketplace add .    # repo 스코프 마켓플레이스 등록
-codex plugin add vibe@vibe-local  # 설치
-codex plugin list                 # vibe@vibe-local  installed, enabled
+vibe plugin install                     # 배포 트리 조립 + 개인 마켓플레이스 등록
+codex plugin marketplace add ~          # 홈을 마켓플레이스 루트로 등록
+codex plugin add vibe@vibe              # 설치
+codex plugin list                       # vibe@vibe  installed, enabled
+vibe plugin status                      # 조립·등록 상태 확인
+```
+
+**저장소를 클론한 경우** (개발·검증용)
+
+```bash
+npm run build:plugin                    # plugins/vibe/ 로 조립 (package.json files 기준)
+codex plugin marketplace add .
+codex plugin add vibe@vibe-local
 ```
 
 ChatGPT 데스크톱 앱에서는 앱을 **재시작**한 뒤 Plugins Directory 에서 "Vibe (local)" → `vibe` 를 설치한다.
