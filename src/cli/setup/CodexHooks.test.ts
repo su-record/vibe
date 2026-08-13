@@ -42,7 +42,8 @@ describe('CodexHooks', () => {
 
     // Verify structure: every registered event present with adapter command
     const events = [
-      'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop', 'PreCompact',
+      'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop',
+      'PreCompact', 'PostCompact',
     ] as const;
     for (const event of events) {
       const cmd = committed.hooks[event][0].hooks[0].command;

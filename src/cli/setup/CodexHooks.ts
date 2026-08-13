@@ -21,6 +21,7 @@ export interface CodexHooksConfig {
     Stop: CodexHookEntry[];
     /** CC 의 context_window_* Notification 등가물 — Codex 에는 임계치 알림이 없다 */
     PreCompact: CodexHookEntry[];
+    PostCompact: CodexHookEntry[];
   };
 }
 
@@ -45,6 +46,7 @@ export function buildCodexHooksConfig(coreDir: string = getCoreConfigDir()): Cod
       PostToolUse: [hookEntry(normalizedCoreDir, 'PostToolUse')],
       Stop: [hookEntry(normalizedCoreDir, 'Stop')],
       PreCompact: [hookEntry(normalizedCoreDir, 'PreCompact')],
+      PostCompact: [hookEntry(normalizedCoreDir, 'PostCompact')],
     },
   };
 }
