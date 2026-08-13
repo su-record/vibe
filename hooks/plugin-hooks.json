@@ -1,0 +1,123 @@
+{
+  "_comment": "플러그인 번들용 훅 정의. hooks/hooks.json 과 같은 내용이되 경로가 다르다 — npm 설치 경로는 postinstall 이 {{VIBE_PATH}} 를 치환하지만, 플러그인은 치환 단계가 없어 런타임 환경변수 ${PLUGIN_ROOT} 를 쓴다. 두 파일이 갈라지지 않도록 plugin-manifest.test.ts 가 이벤트 집합을 대조한다.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/session-start.js"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/pre-tool-dispatcher.js Bash"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/pre-tool-dispatcher.js Edit"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/pre-tool-dispatcher.js Write"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__github__create_pull_request",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/pr-test-gate.js"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/post-edit-dispatcher.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|Bash|Task|SlashCommand|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/step-counter.js"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/prompt-dispatcher.js"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "context_window_80",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/context-save.js medium"
+          }
+        ]
+      },
+      {
+        "matcher": "context_window_90",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/context-save.js high"
+          }
+        ]
+      },
+      {
+        "matcher": "context_window_95",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/context-save.js critical"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PLUGIN_ROOT}/hooks/scripts/stop-dispatcher.js"
+          }
+        ]
+      }
+    ]
+  }
+}

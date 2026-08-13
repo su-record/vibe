@@ -94,6 +94,7 @@
     "vitest": "^4.1.10"
   },
   "files": [
+    ".codex-plugin/",
     "dist/",
     "vibe/",
     "languages/",
