@@ -225,22 +225,51 @@ Skills teach only what the model doesn't know (domain gotchas, current APIs, pro
 
 ## Commands
 
+Start with `/vibe` and it routes the rest. Below is the list for when you want to call a specific phase directly.
+
+**Core flow**
+
 | Command | Purpose |
 |---------|---------|
-| `/vibe` | Main entry point — natural language requirement → single-pass SPEC → one approval → loop until gates pass |
-| `/vibe.spec` | Advanced — explicit single-pass SPEC (inline questions → SPEC + BDD → approval) |
+| `/vibe` | **Main entry point** — natural language requirement → single-pass SPEC → one approval → loop until gates pass |
+| `/vibe.spec` | Explicit single-pass SPEC (inline questions → SPEC + BDD → approval) |
 | `/vibe.run` | Implement from SPEC |
+| `/vibe.verify` | Verify implementation against SPEC Done criteria — result recorded in the run ledger |
+| `/vibe.continue` | Session restore — pick up after `save_memory` → `/new` at 85%+ context |
+
+**Verification & quality**
+
+| Command | Purpose |
+|---------|---------|
+| `/vibe.review` | Parallel review by focus (correctness / security / performance …) — converges to P1 = 0 |
+| `/vibe.regress` | Regression test auto-evolution — auto-registers on verify failure, promotes recurring patterns |
+| `/vibe.contract` | SPEC API contract ↔ implementation drift detection — P1 drift propagates to regress |
+| `/vibe.trace` | Requirements traceability matrix |
+| `/vibe.loop` | Design and install autonomous goal loops — completion judged by deterministic gates |
+| `/vibe.test` | vibe self-test (CC ↔ Codex parity) — recommended before every release |
+| `/vibe.harness` | Diagnose Harness Engineering maturity (6-axis, N/100) |
+
+**Design & UI**
+
+| Command | Purpose |
+|---------|---------|
 | `/vibe.figma` | Figma ↔ Code (read or write, 3 modes) |
 | `/vibe.design` | DESIGN.md visual quality SSOT — init / lint / verify / sync / preview |
-| `/vibe.verify` | Verify implementation against SPEC Done criteria — result recorded in the run ledger |
-| `/vibe.regress` | Regression test auto-evolution — auto-registers on verify failure, promotes recurring patterns |
-| `/vibe.trace` | Requirements traceability matrix |
-| `/vibe.analyze` | Analyze any target — code, documents, websites, Figma |
-| `/vibe.scaffold` | Generate or audit project folder structure |
-| `/vibe.harness` | Diagnose Harness Engineering maturity (6-axis scoring) |
-| `/vibe.docs` | Generate project documentation — plus diagram / codemaps modes |
-| `/vibe.continue` | Session restore — pick up where you left off after `save_memory` → `/new` at 85%+ context |
+| `/vibe.clone` | Reference site URL → reproduce markup in your stack (pixel verification loop) |
 | `/vibe.image` | Image generation (Antigravity) — icons, banners, mockups |
+
+**Analysis, docs & ops**
+
+| Command | Purpose |
+|---------|---------|
+| `/vibe.analyze` | Analyze any target — code, documents, websites, Figma |
+| `/vibe.reason` | Structure hypotheses, evidence and trade-offs for hard problems |
+| `/vibe.docs` | Keep README, guides, architecture, release notes and diagrams in sync with the code |
+| `/vibe.scaffold` | Generate or audit project folder structure |
+| `/vibe.llm` | Refresh the available model list per provider |
+
+> These are the common ones. The full installed skill list lives in [SKILL-CATALOG.md](SKILL-CATALOG.md),
+> and requirements not in the table are handled by `/vibe`'s description-based catch-all routing.
 
 ---
 
@@ -249,7 +278,7 @@ Skills teach only what the model doesn't know (domain gotchas, current APIs, pro
 Full guides, skill reference, and configuration details are in the [Wiki](https://github.com/su-record/vibe/wiki).
 
 - [README (Korean)](README.md)
-- [Release Notes](RELEASE_NOTES.md)
+- [Release Notes](https://github.com/su-record/vibe/releases) — generated deterministically by CI from SPECs and commits on each tag
 
 ---
 

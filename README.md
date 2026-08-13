@@ -197,18 +197,51 @@ codex
 
 ## 명령어
 
+`/vibe` 하나로 시작하면 나머지는 vibe 가 라우팅한다. 아래는 특정 단계를 직접 부르고 싶을 때의 목록이다.
+
+**핵심 흐름**
+
 | 명령어 | 용도 |
 |--------|------|
 | `/vibe` | **메인 진입점** — 자연어 요구사항 → SPEC 1패스 → 1회 승인 → 게이트 통과까지 루프 |
-| `/vibe.spec` | (advanced) SPEC 1패스 명시적 호출 — 인라인 질문 → SPEC + BDD → 승인 |
-| `/vibe.run` | (advanced) SPEC 기반 구현 |
-| `/vibe.figma` | (advanced) Figma ↔ 코드 (읽기 또는 쓰기, 3가지 모드) |
-| `/vibe.design` | (advanced) DESIGN.md 시각 품질 SSOT — init / lint / verify / sync / preview |
-| `/vibe.verify` | (advanced) 구현이 SPEC Done 기준에 맞는지 검증 — 결과는 run-ledger에 기록 |
-| `/vibe.regress` | (advanced) 회귀 테스트 자동 진화 — verify 실패 자동 등록, 반복 패턴 승격 |
-| `/vibe.trace` | (advanced) 요구사항 추적 매트릭스 |
-| `/vibe.continue` | 세션 복원 — 85%+ 컨텍스트에서 `save_memory` → `/new` 후 이어서 작업 |
-| `/vibe.image` | 이미지 생성 (Antigravity) — 아이콘/배너/목업 |
+| `/vibe.spec` | SPEC 1패스 명시적 호출 — 인라인 질문 → SPEC + BDD → 승인 |
+| `/vibe.run` | SPEC 기반 구현 |
+| `/vibe.verify` | 구현이 SPEC Done 기준에 맞는지 검증 — 결과는 run-ledger 에 기록 |
+| `/vibe.continue` | 세션 복원 — 85%+ 컨텍스트에서 `save_memory` → `/new` 후 이어서 |
+
+**검증 · 품질**
+
+| 명령어 | 용도 |
+|--------|------|
+| `/vibe.review` | 관점별 병렬 리뷰 (correctness / security / performance …) — P1=0 까지 수렴 |
+| `/vibe.regress` | 회귀 테스트 자동 진화 — verify 실패 자동 등록, 반복 패턴 승격 |
+| `/vibe.contract` | SPEC API 계약 ↔ 구현 drift 탐지 — P1 drift 는 regress 로 전파 |
+| `/vibe.trace` | 요구사항 추적 매트릭스 (RTM) |
+| `/vibe.loop` | 자율 목표 루프 설계·설치 — 완료는 결정론 게이트가 판정 |
+| `/vibe.test` | vibe 설치 자가검진 (CC ↔ Codex 동등성) — 릴리즈 전 권장 |
+| `/vibe.harness` | 프로젝트 하네스 품질 6축 진단 (N/100) |
+
+**설계 · UI**
+
+| 명령어 | 용도 |
+|--------|------|
+| `/vibe.figma` | Figma ↔ 코드 (읽기 또는 쓰기, 3가지 모드) |
+| `/vibe.design` | DESIGN.md 시각 품질 SSOT — init / lint / verify / sync / preview |
+| `/vibe.clone` | 참조 사이트 URL → 현재 스택으로 마크업 재현 (픽셀 검증 루프) |
+| `/vibe.image` | 이미지 생성 (Antigravity) — 아이콘 / 배너 / 목업 |
+
+**분석 · 문서 · 운영**
+
+| 명령어 | 용도 |
+|--------|------|
+| `/vibe.analyze` | 코드·문서·웹·Figma 분석 → 근거 있는 리포트 |
+| `/vibe.reason` | 복잡한 문제의 가설·근거·트레이드오프 구조화 |
+| `/vibe.docs` | README·가이드·아키텍처·릴리즈 노트·다이어그램을 코드와 동기화 |
+| `/vibe.scaffold` | 새 프로젝트 구조 생성 / 기존 구조 감사 |
+| `/vibe.llm` | provider 별 사용 가능 모델 목록 갱신 |
+
+> 위는 자주 쓰는 것들이다. 설치된 전체 스킬 목록은 [SKILL-CATALOG.md](SKILL-CATALOG.md) 에 있고,
+> 표에 없는 요구사항도 `/vibe` 가 description 기반 Catch-all 라우팅으로 처리한다.
 
 ---
 
@@ -217,7 +250,7 @@ codex
 상세 가이드, 스킬 레퍼런스, 설정 방법은 [Wiki](https://github.com/su-record/vibe/wiki)를 참고하세요.
 
 - [README (English)](README.en.md)
-- [릴리스 노트](RELEASE_NOTES.md)
+- [릴리스 노트](https://github.com/su-record/vibe/releases) — 태그마다 CI 가 SPEC·커밋에서 결정론적으로 생성
 
 ---
 

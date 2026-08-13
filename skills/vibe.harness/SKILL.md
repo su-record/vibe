@@ -110,47 +110,7 @@ and dispatch concurrently when capacity permits:
 
 ### 3. Generate Report
 
-```markdown
-## Harness Diagnosis (N/100)
-
-### Score and Grade
-- **Score**: N/100
-- **Grade**: [S / A / B / C / D]
-
-| Grade | Range | Description |
-|-------|-------|-------------|
-| S | 90-100 | Production-ready Harness |
-| A | 75-89 | Well-structured, minor gaps |
-| B | 60-74 | Functional but missing key elements |
-| C | 40-59 | Basic setup, significant gaps |
-| D | 0-39 | Minimal or no Harness |
-
-### Axis Scores
-
-| Axis | Score | Details |
-|------|-------|---------|
-| Scaffolding | /20 | [findings] |
-| Context | /20 | [findings] |
-| Planning | /15 | [findings] |
-| Orchestration | /15 | [findings] |
-| Verification | /15 | [findings] |
-| Compounding | /15 | [findings] |
-
-### Top 3 Improvements
-
-1. **[lowest axis]**: [specific action with command]
-2. **[second lowest]**: [specific action with command]
-3. **[third lowest]**: [specific action with command]
-
-### Auto-Fixable Items
-
-The following can be improved immediately:
-1. [ ] `/vibe.scaffold` — generate missing project directories
-2. [ ] `vibe init` — initialize AI configuration
-3. [ ] `vibe update` — regenerate CLAUDE.md from project analysis
-
-Proceed with auto-fix? (y/n)
-```
+형식: `references/report-template.md` (Step 3 호출 시에만 읽는다).
 
 ### 4. Save Report
 

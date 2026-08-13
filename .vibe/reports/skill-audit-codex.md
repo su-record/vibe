@@ -1,5 +1,8 @@
 # CC ↔ Codex 스킬·에이전트 감사 보고서
 
+> ⚠️ **이후 변경 (v3.2.22, 2026-08-09)**: 이 문서가 언급하는 `OrchestrateWorkflow` 는 참조 0건으로 확인돼 삭제됐다. 아래 본문은 **작성 시점의 사실**이며 수정하지 않는다 — 당시 판단의 근거를 남기기 위함이다.
+
+
 ## 1. 결론
 
 - **목표 A — 하네스 동등성: 미달.** 동일한 Markdown 자산을 양쪽에 복사하는 수준의 배포는 있으나, 다수 스킬이 Claude Code의 `SlashCommand`, `Task/Agent(subagent_type=...)`, `Read/Write/Glob/WebFetch/AskUserQuestion`, Stop/PostToolUse hook을 실행 계약으로 사용한다. 특히 `vibe/SKILL.md`는 `SlashCommand({command: "/vibe..."})`를 직접 지시하고, agent 설치기는 Codex에도 CC용 model/tool/permission frontmatter를 변환해 넣으므로 “100% supported”를 입증하지 못한다.
