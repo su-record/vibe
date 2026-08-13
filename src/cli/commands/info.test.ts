@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { formatHookStatus, showHelp, showStatus } from './info.js';
+import { formatHookStatus, formatNativeDepStatus, showHelp, showStatus } from './info.js';
 
 const originalCwd = process.cwd();
 
@@ -109,5 +109,31 @@ describe('formatHookStatus', () => {
     const output = formatHookStatus(fresh, true);
     expect(output).toContain('Codex');
     expect(output).toContain('not installed');
+  });
+});
+
+/**
+ * npm 12 의 allowScripts 가 install 스크립트를 막으면 설치는 ✅ 인데 바인딩만 없다.
+ * 상태 화면이 침묵하면 "메모리가 왜 안 붙지" 를 진단할 방법이 없다.
+ */
+describe('formatNativeDepStatus', () => {
+  const tempRoot = (): string => fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-native-status-'));
+
+  it('바인딩이 있으면 ok 를 낸다', () => {
+    const root = tempRoot();
+    fs.mkdirSync(path.join(root, 'node_modules', 'better-sqlite3', 'build', 'Release'),
+      { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'node_modules', 'better-sqlite3', 'build', 'Release', 'better_sqlite3.node'),
+      '');
+    expect(formatNativeDepStatus(root)).toContain('✓');
+  });
+
+  it('소스만 있고 바인딩이 없으면 무엇이 죽는지까지 말한다', () => {
+    const root = tempRoot();
+    fs.mkdirSync(path.join(root, 'node_modules', 'better-sqlite3'), { recursive: true });
+    const out = formatNativeDepStatus(root);
+    expect(out).toContain('better-sqlite3');
+    expect(out).toContain('memory/RAG disabled');
   });
 });
