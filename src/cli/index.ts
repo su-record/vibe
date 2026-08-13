@@ -36,6 +36,7 @@ import {
   codexLaunch, codexStatus, codexShell, codexHelp,
   llmList, llmRefresh, llmHelp,
 } from './commands/index.js';
+import { pluginInstall, pluginStatus } from './commands/plugin.js';
 
 // ============================================================================
 // Constants
@@ -348,6 +349,19 @@ Example: vibe skills add vercel-labs/skills
   case 'status':
     showStatus();
     break;
+
+  // vibe plugin <install|status>
+  case 'plugin': {
+    const sub = positionalArgs[1];
+    if (sub === 'status') pluginStatus();
+    else if (sub === 'install' || sub === undefined) pluginInstall();
+    else {
+      console.error(`Unknown: vibe plugin ${sub}`);
+      console.error('Usage: vibe plugin [install|status]');
+      process.exitCode = 1;
+    }
+    break;
+  }
 
   // vibe telegram <subcommand>
   case 'telegram': {
