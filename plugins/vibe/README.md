@@ -244,13 +244,15 @@ ChatGPT 데스크톱 앱에서는 앱을 **재시작**한 뒤 Plugins Directory 
 > `source.path` 는 저장소 루트가 아니라 빌드 산출물(`./plugins/vibe`)을 가리킨다.
 > 루트를 가리키면 워킹트리가 통째로 캐시에 복사된다 (실측 655MB, 그중 620MB 가 `node_modules`).
 
-| 번들 | ChatGPT 앱 | Codex CLI |
-|---|---|---|
-| skills (52) | ✅ | ✅ |
-| hooks | **미확인** — 훅 문서가 Codex 아래에만 있다 | ✅ (trust 승인 후) |
+| 번들 | Claude Code | Codex CLI | ChatGPT 앱 |
+|---|---|---|---|
+| skills (52) | ✅ | ✅ | ✅ |
+| agents (11) | ✅ | — | — |
+| hooks (6 이벤트) | ✅ | ✅ (trust 승인 후) | **미확인** — 훅 문서가 Codex 아래에만 있다 |
 
-> ⚠️ 훅은 설치·활성화만으로 신뢰되지 않는다 — Codex 가 정의를 검토·승인할 때까지 건너뛴다.
-> `vibe init`·`vibe upgrade` 같은 CLI 와 프로젝트 로컬 훅 설치는 플러그인이 대체하지 못하므로 npm 설치는 계속 필요하다.
+> ⚠️ Codex 에서 훅은 설치·활성화만으로 신뢰되지 않는다 — Codex 가 정의를 검토·승인할 때까지 건너뛴다.
+> `vibe init` 이 만드는 프로젝트 로컬 설정과 `vibe upgrade` 의 자기복구는 플러그인이 대체하지 못한다 —
+> 그 둘이 필요하면 npm 설치를 함께 쓴다.
 
 ---
 
@@ -277,6 +279,14 @@ ChatGPT 데스크톱 앱에서는 앱을 **재시작**한 뒤 Plugins Directory 
 | `/vibe.run` | SPEC 기반 구현 |
 | `/vibe.verify` | 구현이 SPEC Done 기준에 맞는지 검증 — 결과는 run-ledger 에 기록 |
 | `/vibe.continue` | 세션 복원 — 85%+ 컨텍스트에서 `save_memory` → `/new` 후 이어서 |
+
+**CLI**
+
+| 명령 | 용도 |
+|---|---|
+| `vibe status` | 하네스 상태 — 하네스별 훅, 네이티브 바인딩, LLM 인증 |
+| `vibe upgrade` | 업그레이드 + 자기복구 (전역 자산 · 프로젝트 훅 · 네이티브 바인딩) |
+| `vibe plugin install` | 플러그인 배포 트리 조립 + 마켓플레이스 등록 |
 
 **검증 · 품질**
 

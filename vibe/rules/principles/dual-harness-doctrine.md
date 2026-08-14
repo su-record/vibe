@@ -56,3 +56,19 @@ Codex는 네이티브 hook을 지원한다(`codex features list` → `hooks: sta
 **핵심 통찰: Codex의 직역 성향이 AGENTS.md "soft hook"을 신뢰성 있게 만든다.** CC는 soft 지시를 가끔 무시해 hard hook이 필요하지만, Codex는 적힌 대로 실행한다. 따라서 AGENTS.md 운영 규칙은 네이티브 hook이 생긴 뒤에도 **폐기하지 않고 2차 방어선으로 유지한다** — hook이 설치되지 않은 환경(전역 설치만 한 경우, 다른 클론)에서도 가드가 남는다.
 
 > ⚠️ **훅은 "설치돼 있다"고 가정하지 않는다.** 훅은 프로젝트 로컬 아티팩트라 `vibe upgrade` 만으로는 설치되지 않는다(전역 자산만 갱신). `vibe status` 가 하네스별 훅 설치 여부를 보고하고, `vibe upgrade` 는 현재 프로젝트의 누락 훅을 복구한다. 결정론적 가드의 생사는 **관측 가능해야** 한다 — 조용히 죽은 가드는 없는 가드보다 나쁘다.
+
+## 훅 정의가 세 벌이 됐다 (배포 경로별)
+
+배포 경로가 npm · Claude Code 플러그인 · Codex 플러그인 셋으로 늘면서 훅 정의도 셋이 됐다. 경로 변수가 다르기 때문이다 — 그리고 **정의가 갈라지면 한쪽 하네스에서만 게이트가 죽고, 그건 조용히 일어난다.** 이 문서가 반복해서 말하는 실패 모드다.
+
+| 파일 | 경로 | 변수 | 생성 |
+|---|---|---|---|
+| `hooks/hooks.json` | npm | `{{VIBE_PATH}}` — postinstall 이 치환 | **SSOT** (손으로 고치는 유일한 파일) |
+| `hooks/claude-plugin-hooks.json` | Claude Code 플러그인 | `${CLAUDE_PLUGIN_ROOT}` | `gen-plugin-hooks.ts` |
+| `hooks/plugin-hooks.json` | Codex 플러그인 | `${PLUGIN_ROOT}` | `gen-plugin-hooks.ts` |
+
+- 드리프트는 `npm run gen:plugin-hooks:check` 가 CI 에서 막는다. 손으로 맞추는 선택지는 두지 않는다
+- **이중 실행 가드**: npm 설치본과 플러그인이 겹치면 같은 6개 이벤트가 두 벌 등록돼 게이트가 2회, Stop 의 auto-commit 도 2회 돈다. 플러그인 훅은 `plugin-hook-entry.js` 를 거쳐, 프로젝트에 **vibe 훅**이 있으면 물러난다. 판정 기준이 "훅 키가 있다" 가 아니라 "vibe 훅이 있다" 인 이유는 사용자 자작 훅만 있는 프로젝트에서까지 침묵하면 설치한 의미가 없기 때문이다
+- 실행은 자식 spawn 이 아니라 in-process `import` 다 — 훅 실행 모델 규약을 플러그인 경로에서도 지킨다
+
+> 하네스가 늘어날 때 늘려야 하는 것은 **정의가 아니라 생성기**다. 정의를 늘리면 그 수만큼 갈라질 자리가 생긴다.
