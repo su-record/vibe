@@ -1,0 +1,123 @@
+/**
+ * Antigravity API 타입 정의
+ */
+export type AntigravityAuthMethod = 'apikey';
+export interface AuthInfo {
+    type: AntigravityAuthMethod;
+    apiKey?: string;
+}
+export interface AntigravityModelInfo {
+    id: string;
+    name: string;
+    description: string;
+    maxTokens: number;
+}
+export interface AvailableModel {
+    modelId: string;
+    displayName: string;
+    description: string;
+    inputTokenLimit: number;
+    outputTokenLimit: number;
+    supportedActions: string[];
+}
+export interface ChatMessage {
+    role: 'user' | 'assistant' | 'system' | 'model';
+    content: string;
+}
+export interface ChatOptions {
+    model?: string;
+    messages?: ChatMessage[];
+    maxTokens?: number;
+    temperature?: number;
+    systemPrompt?: string;
+    webSearch?: boolean;
+    jsonMode?: boolean;
+    /** 내부 재시도 카운터 */
+    _retryCount?: number;
+    /** 외부 취소 signal (SmartRouter 등). timeout 과 결합된다. */
+    signal?: AbortSignal;
+    /** fetch hard timeout (ms). 미지정 시 DEFAULT_LLM_TIMEOUT_MS. */
+    timeoutMs?: number;
+}
+export interface ChatResponse {
+    content: string;
+    model: string;
+    finishReason?: string;
+    usage?: unknown;
+}
+/** SSE 스트리밍 청크 */
+export interface StreamChunk {
+    content: string;
+    done: boolean;
+    model?: string;
+    finishReason?: string;
+    usage?: unknown;
+}
+export interface AntigravityApiResponse {
+    response?: {
+        candidates?: AntigravityCandidate[];
+        usageMetadata?: unknown;
+    };
+    candidates?: AntigravityCandidate[];
+    usageMetadata?: unknown;
+}
+export interface AntigravityCandidate {
+    content?: {
+        parts?: Array<{
+            text?: string;
+        }>;
+    };
+    finishReason?: string;
+}
+export interface ImageGenerationOptions {
+    size?: string;
+    output?: string;
+    model?: 'nano-banana' | 'nano-banana-pro';
+}
+export interface ImageGenerationResult {
+    data: Buffer;
+    mimeType: string;
+}
+export interface ImageAnalysisOptions {
+    model?: string;
+    maxTokens?: number;
+    temperature?: number;
+    systemPrompt?: string;
+}
+export type MultimodalContent = {
+    role: 'user';
+    parts: Array<{
+        text?: string;
+        inlineData?: {
+            mimeType: string;
+            data: string;
+        };
+    }>;
+};
+export interface CompleteCodeOptions {
+    /** 커서 앞 텍스트 */
+    prefix: string;
+    /** 커서 뒤 텍스트 */
+    suffix?: string;
+    /** 프로그래밍 언어 */
+    language?: string;
+    /** 최대 토큰 수 */
+    maxTokens?: number;
+    /** 모델 선택 */
+    model?: string;
+    /** 내부 재시도 카운터 */
+    _retryCount?: number;
+}
+export interface CompleteCodeResponse {
+    completions: string[];
+    model: string;
+}
+export interface VibeAntigravityOptions {
+    maxTokens?: number;
+    jsonMode?: boolean;
+    /** 외부 취소 signal (SmartRouter 등). chat 으로 관통된다. */
+    signal?: AbortSignal;
+    /** fetch hard timeout (ms). */
+    timeoutMs?: number;
+}
+//# sourceMappingURL=types.d.ts.map

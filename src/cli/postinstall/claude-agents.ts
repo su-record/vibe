@@ -44,9 +44,28 @@ function generateDescription(name: string, title: string, roleLines: string[]): 
 }
 
 /**
- * VIBE 에이전트를 Claude Code 네이티브 서브에이전트 형식으로 변환
+ * YAML 스칼라로 안전하게 감싼다.
+ *
+ * WHY: description 에 `: ` 가 들어가면 — `caller passes focus: correctness` 처럼
+ * 자연스럽게 생긴다 — 평문 스칼라가 매핑으로 해석돼 frontmatter 전체가 파싱에
+ * 실패한다. 그러면 name·model·tools·permissionMode 까지 **통째로 조용히 버려지고**
+ * 에이전트는 메타데이터 없이 로드된다. 실측: 설치본 11개 중 4개가 이 상태였고
+ * (`code-reviewer`·`e2e-tester`·`event-ops`·`security-reviewer`) 아무 경고도 없었다.
  */
-function convertAgentToClaude(content: string, filename: string): string {
+function yamlString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * VIBE 에이전트를 Claude Code 네이티브 서브에이전트 형식으로 변환
+ *
+ * export 인 이유: 플러그인 배포 트리(`scripts/build-plugin.ts`)도 같은 변환을 써야
+ * 한다. 저장소의 `agents/*.md` 에는 frontmatter 가 없고 — 설치 시점에 여기서
+ * 생성된다 — 플러그인은 postinstall 을 거치지 않으므로 빌드 때 미리 굽지 않으면
+ * description·model·tools 없이 로드된다(실측: `claude plugin validate` 경고 11건).
+ * 변환 로직을 두 벌로 만들면 그 순간부터 갈라진다.
+ */
+export function convertAgentToClaude(content: string, filename: string): string {
   const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
   const name = path.basename(filename, '.md');
@@ -87,7 +106,7 @@ function convertAgentToClaude(content: string, filename: string): string {
   // YAML frontmatter 조립
   let frontmatter = '---\n';
   frontmatter += `name: ${name}\n`;
-  frontmatter += `description: ${description}\n`;
+  frontmatter += `description: ${yamlString(description)}\n`;
   frontmatter += `model: ${model}\n`;
   frontmatter += `tools: ${tools.join(', ')}\n`;
   frontmatter += `permissionMode: ${permissionMode}\n`;

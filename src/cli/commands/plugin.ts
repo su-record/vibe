@@ -14,10 +14,11 @@ import os from 'os';
 import path from 'path';
 import { log } from '../utils.js';
 import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
+import { convertAgentToClaude } from '../postinstall/claude-agents.js';
 
 /** 조립 대상 — package.json `files` 와 같은 목록을 쓴다 (배포 내용의 SSOT) */
 const PLUGIN_ENTRIES = [
-  '.codex-plugin', 'dist', 'vibe', 'languages', 'agents', 'skills', 'hooks',
+  '.codex-plugin', '.claude-plugin', 'dist', 'vibe', 'languages', 'agents', 'skills', 'hooks',
   'CLAUDE.md', 'README.md', 'LICENSE',
 ] as const;
 
@@ -26,6 +27,11 @@ const SKIP = new Set(['node_modules', '__tests__']);
 
 function pluginTreeDir(): string {
   return path.join(getCoreConfigDir(), 'plugin', 'vibe');
+}
+
+/** Claude Code 마켓플레이스 — 플러그인 트리의 **부모**에 둔다 (source 가 `./vibe`) */
+function claudeMarketplacePath(): string {
+  return path.join(pluginTreeDir(), '..', '.claude-plugin', 'marketplace.json');
 }
 
 function marketplacePath(): string {
@@ -94,6 +100,69 @@ function writeMarketplace(pluginDir: string): string {
   return file;
 }
 
+/**
+ * Claude Code 마켓플레이스를 쓴다 — 스키마가 Codex 쪽과 다르다.
+ *
+ * `owner` 는 문자열이 아니라 객체여야 하고(`claude plugin validate` 가 거부한다),
+ * `source` 는 마켓플레이스 루트 기준 상대 경로 문자열이다.
+ */
+function writeClaudeMarketplace(pluginDir: string): string {
+  const file = claudeMarketplacePath();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+
+  fs.writeFileSync(file, JSON.stringify({
+    $schema: 'https://anthropic.com/claude-code/marketplace.schema.json',
+    name: 'vibe',
+    description: 'Verification harness for AI coding agents — deterministic gates decide "done".',
+    owner: { name: 'su-record', url: 'https://github.com/su-record' },
+    plugins: [{
+      name: 'vibe',
+      displayName: 'Vibe',
+      description: 'Natural-language requirement to a SPEC you approve once, then an'
+        + ' ANCHOR→ACT→JUDGE→RECORD loop until deterministic gates pass.',
+      author: { name: 'su-record' },
+      category: 'productivity',
+      homepage: 'https://github.com/su-record/vibe',
+      source: `./${path.basename(pluginDir)}`,
+    }],
+  }, null, 2) + '\n');
+  return file;
+}
+
+/**
+ * 에이전트에 frontmatter 를 굽고 평면으로 다시 쓴다.
+ *
+ * 저장소·npm tarball 의 `agents/*.md` 에는 frontmatter 가 없다 — postinstall 이
+ * 설치 시점에 만든다. 플러그인은 그 단계를 거치지 않으므로 여기서 굽지 않으면
+ * description·model·tools 없이 로드된다. 평면화는 Claude Code 가 `agents/*.md` 만
+ * 스캔하기 때문이다(실측: 하위 디렉토리의 4개가 경고 없이 사라졌다).
+ */
+function bakeAgents(dir: string): void {
+  if (!fs.existsSync(dir)) return;
+
+  const agents: Array<{ name: string; content: string }> = [];
+  const walk = (current: string, rel: string): void => {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (rel === '' && entry.name === 'teams') continue;
+        walk(path.join(current, entry.name), rel ? `${rel}/${entry.name}` : entry.name);
+      } else if (entry.name.endsWith('.md')) {
+        agents.push({
+          name: entry.name,
+          content: fs.readFileSync(path.join(current, entry.name), 'utf-8'),
+        });
+      }
+    }
+  };
+  walk(dir, '');
+
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  for (const { name, content } of agents) {
+    fs.writeFileSync(path.join(dir, name), convertAgentToClaude(content, name), 'utf-8');
+  }
+}
+
 /** 플러그인 트리를 조립하고 개인 마켓플레이스에 등록한다 */
 export function pluginInstall(): void {
   const root = packageRoot();
@@ -117,21 +186,30 @@ export function pluginInstall(): void {
     return;
   }
 
+  bakeAgents(path.join(out, 'agents'));
   const file = writeMarketplace(out);
+  const claudeFile = writeClaudeMarketplace(out);
   log(`
 ✅ vibe 플러그인 준비 완료
 
-  플러그인   ${out}
+  플러그인     ${out}
   마켓플레이스 ${file}
-  포함       ${copied.join(', ')}
+               ${claudeFile}
+  포함         ${copied.join(', ')}
 
 다음 단계:
+  Claude Code  claude plugin marketplace add ${path.dirname(path.dirname(claudeFile))}
+               claude plugin install vibe@vibe
   Codex        codex plugin marketplace add ${marketplaceRoot()}
                codex plugin add vibe@vibe
                (훅은 설치만으로 신뢰되지 않습니다 — Codex 가 정의를 검토·승인해야 실행됩니다)
   ChatGPT 앱   앱을 재시작한 뒤 Plugins Directory 에서 Vibe 설치
+
+⚠️  npm 설치본의 프로젝트 훅이 이미 있으면 플러그인 훅은 스스로 물러납니다
+    (같은 게이트가 두 번 도는 것을 막습니다).
 `);
 }
+
 
 /** 조립 상태와 마켓플레이스 등록 여부를 보고한다 */
 export function pluginStatus(): void {

@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "schema_version": "1",
+  "description": "UI/UX Design Intelligence CSV data for VIBE framework",
+  "files": {
+    "products.csv": ["No", "Product_Type", "Keywords", "Style_Recommendation", "Color_Palette_Type", "Typography_Type", "Layout_Preference", "Dashboard_Style"],
+    "ui-reasoning.csv": ["No", "UI_Category", "Style_Priority", "Color_Mood", "Typography_Mood", "Decision_Rules", "Anti_Patterns", "Severity"],
+    "styles.csv": ["No", "Style Category", "Keywords", "Primary Colors", "Effects", "Best For", "CSS Keywords", "Design System Variables", "Implementation Checklist"],
+    "colors.csv": ["No", "Product Type", "Primary (Hex)", "Secondary (Hex)", "CTA (Hex)", "Background (Hex)", "Text (Hex)", "Border/Divider (Hex)", "Notes"],
+    "typography.csv": ["No", "Font Pairing Name", "Heading Font", "Body Font", "Best For", "Mood", "Google Fonts URL"],
+    "landing.csv": ["No", "Product Type", "Pattern Name", "Section Order", "Primary CTA Placement", "Color Strategy", "Effects", "Conversion Tips"],
+    "charts.csv": ["No", "Chart Type", "Best For", "Data Type", "Library", "Key Config", "Accessibility Notes"],
+    "icons.csv": ["No", "Icon Library", "Style", "Best For", "CDN URL", "React Component", "Size Options"],
+    "react-performance.csv": ["No", "Pattern", "Problem", "Solution", "Impact", "Priority"],
+    "ux-guidelines.csv": ["No", "Category", "Guideline", "Priority", "WCAG Level", "Implementation"],
+    "web-interface.csv": ["No", "Component", "Pattern", "Best Practice", "Anti-Pattern", "Framework Support"],
+    "stacks/nextjs.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/react.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/shadcn.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/html-tailwind.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/svelte.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/vue.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/nuxtjs.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/nuxt-ui.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/astro.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/flutter.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/react-native.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/swiftui.csv": ["No", "Category", "Pattern", "Implementation", "Notes"],
+    "stacks/jetpack-compose.csv": ["No", "Category", "Pattern", "Implementation", "Notes"]
+  }
+}

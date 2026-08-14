@@ -1,0 +1,22 @@
+{
+  "name": "vibe",
+  "displayName": "Vibe",
+  "version": "3.2.32",
+  "description": "Verification harness for AI coding agents — \"done\" is decided by deterministic gates (test exit codes, run-ledger, regression memory), not the model self-report.",
+  "author": {
+    "name": "su-record",
+    "url": "https://github.com/su-record"
+  },
+  "homepage": "https://github.com/su-record/vibe",
+  "repository": "https://github.com/su-record/vibe",
+  "license": "MIT",
+  "keywords": [
+    "verification",
+    "spec",
+    "testing",
+    "code-review",
+    "loop",
+    "harness"
+  ],
+  "hooks": "./hooks/claude-plugin-hooks.json"
+}

@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "3.2.31",
+  "version": "3.2.32",
   "description": "AI Coding Framework for Claude Code — 7+ agents, 52 skills, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
@@ -37,7 +37,10 @@
     "release": "bash scripts/release.sh",
     "sync:plugin-version": "npx tsx scripts/sync-plugin-version.ts",
     "version": "npx tsx scripts/sync-plugin-version.ts && git add .codex-plugin/plugin.json",
-    "build:plugin": "npx tsx scripts/build-plugin.ts"
+    "build:plugin": "npx tsx scripts/build-plugin.ts",
+    "gen:plugin-hooks": "npx tsx scripts/gen-plugin-hooks.ts",
+    "gen:plugin-hooks:check": "npx tsx scripts/gen-plugin-hooks.ts --check",
+    "validate:plugin-tree": "npx tsx scripts/build-plugin.ts && git diff --exit-code --stat plugins/"
   },
   "keywords": [
     "ai",
@@ -97,6 +100,8 @@
     "vitest": "^4.1.10"
   },
   "files": [
+    ".claude-plugin/",
+    "!.claude-plugin/marketplace.json",
     ".codex-plugin/",
     "dist/",
     "vibe/",
