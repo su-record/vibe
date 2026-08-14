@@ -1,0 +1,514 @@
+/**
+ * GPT 채팅 API
+ */
+import crypto from 'crypto';
+import { CHATGPT_BASE_URL } from './constants.js';
+import { sleep } from '../utils.js';
+import { createTimeoutSignal } from '../llm/timeout.js';
+import { getAuthInfo, getApiKeyFromConfig } from './auth.js';
+// Codex API 엔드포인트
+const CODEX_RESPONSES_URL = `${CHATGPT_BASE_URL}/codex/responses`;
+// GitHub에서 Codex instructions 가져오기 (캐시)
+let cachedInstructions = null;
+let instructionsCacheTime = 0;
+const INSTRUCTIONS_CACHE_TTL = 15 * 60 * 1000; // 15분
+// 사용 가능한 모델 목록
+export const GPT_MODELS = {
+    // GPT-5.5 Pro (Pro plan — highest accuracy, complex tasks)
+    'gpt-5.5-pro': {
+        id: 'gpt-5.5-pro',
+        name: 'GPT-5.5 Pro',
+        description: 'Pro plan, highest accuracy for complex reasoning',
+        maxTokens: 1_000_000,
+        reasoning: { effort: 'high', summary: 'auto' },
+    },
+    // GPT-5.5 (Plus plan, frontier model — faster, sharper thinker for fewer tokens)
+    'gpt-5.5': {
+        id: 'gpt-5.5',
+        name: 'GPT-5.5',
+        description: 'Plus plan, frontier model with 1M context and autonomous multi-step workflows',
+        maxTokens: 1_000_000,
+        reasoning: { effort: 'high', summary: 'auto' },
+    },
+    // GPT-5.3 Codex (코딩 특화)
+    'gpt-5.3-codex': {
+        id: 'gpt-5.3-codex',
+        name: 'GPT-5.3 Codex',
+        description: 'Coding specialized model',
+        maxTokens: 32768,
+        reasoning: { effort: 'high', summary: 'auto' },
+    },
+    // GPT-5.3 Codex Spark (초고속 코딩 — 1000+ tok/s)
+    'gpt-5.3-codex-spark': {
+        id: 'gpt-5.3-codex-spark',
+        name: 'GPT-5.3 Codex Spark',
+        description: 'Ultra-fast coding model (1000+ tok/s)',
+        maxTokens: 16384,
+        reasoning: { effort: 'low', summary: 'auto' },
+    },
+};
+import { getModelOverride } from '../config/GlobalConfigManager.js';
+// config.json models.gpt 우선, 환경변수 fallback
+function resolveGptModelOverride() {
+    const cfgModel = getModelOverride('gpt');
+    if (cfgModel && GPT_MODELS[cfgModel])
+        return cfgModel;
+    if (process.env.GPT_MODEL && GPT_MODELS[process.env.GPT_MODEL])
+        return process.env.GPT_MODEL;
+    return null;
+}
+const ENV_MODEL = resolveGptModelOverride();
+// 플랜별 기본 모델 매핑
+const PLAN_MODEL_MAP = {
+    pro: 'gpt-5.5-pro',
+    plus: 'gpt-5.5',
+    free: 'gpt-5.3-codex',
+};
+/**
+ * 플랜 기반 모델 선택 (환경변수 GPT_MODEL 우선)
+ */
+export function getDefaultModel(plan) {
+    if (ENV_MODEL)
+        return ENV_MODEL;
+    if (plan)
+        return PLAN_MODEL_MAP[plan];
+    return 'gpt-5.5';
+}
+// 하위 호환용
+export const DEFAULT_MODEL = ENV_MODEL || 'gpt-5.5';
+/**
+ * GitHub에서 Codex instructions 가져오기
+ */
+export async function getCodexInstructions(model = 'gpt-5.5') {
+    // 캐시 확인
+    if (cachedInstructions && Date.now() - instructionsCacheTime < INSTRUCTIONS_CACHE_TTL) {
+        return cachedInstructions;
+    }
+    // 모델에 따른 prompt 파일 선택
+    const promptFile = 'gpt_5_2_prompt.md';
+    // 최신 릴리스 태그 가져오기
+    let tag = 'rust-v0.80.0'; // 기본값
+    try {
+        const releaseRes = await fetch('https://github.com/openai/codex/releases/latest', {
+            redirect: 'manual',
+        });
+        const location = releaseRes.headers.get('location');
+        if (location) {
+            const match = location.match(/\/tag\/([^/]+)$/);
+            if (match)
+                tag = match[1];
+        }
+    }
+    catch { /* ignore: optional operation */
+        // 기본 태그 사용
+    }
+    const url = `https://raw.githubusercontent.com/openai/codex/${tag}/codex-rs/vibe/${promptFile}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch instructions: ${response.status}`);
+        }
+        cachedInstructions = await response.text();
+        instructionsCacheTime = Date.now();
+        return cachedInstructions;
+    }
+    catch { /* ignore: optional operation */
+        // 캐시된 버전이 있으면 사용
+        if (cachedInstructions) {
+            return cachedInstructions;
+        }
+        // 기본 instructions 반환
+        return 'You are a helpful coding assistant.';
+    }
+}
+/**
+ * SSE 스트림 파싱
+ */
+async function parseSSEStream(stream) {
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let result = '';
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done)
+            break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]')
+                    continue;
+                try {
+                    const json = JSON.parse(data);
+                    if (json.type === 'response.output_text.delta') {
+                        result += json.delta || '';
+                    }
+                }
+                catch { /* ignore: optional operation */
+                    // JSON 파싱 실패 무시
+                }
+            }
+        }
+    }
+    return result;
+}
+/**
+ * OpenAI Chat Completions API 호출 (API Key 방식 + Function Calling 웹 검색)
+ */
+async function chatWithApiKey(apiKey, options) {
+    const { model = DEFAULT_MODEL, messages = [], maxTokens = 4096, temperature = 0.7, systemPrompt = '', } = options;
+    // API Key 방식은 OpenAI 모델 사용 (5.5 계열 + 5.3-codex만 지원)
+    const apiKeyModelMap = {
+        'gpt-5.5': 'gpt-5.5',
+        'gpt-5.5-pro': 'gpt-5.5',
+        'gpt-5.3-codex': 'gpt-5.3-codex',
+    };
+    const actualModel = apiKeyModelMap[model] || 'gpt-5.5';
+    // 메시지 구성
+    const apiMessages = [];
+    if (systemPrompt) {
+        apiMessages.push({ role: 'system', content: systemPrompt });
+    }
+    for (const msg of messages) {
+        apiMessages.push({ role: msg.role, content: msg.content });
+    }
+    const retryCount = options._retryCount || 0;
+    const maxRetries = 3;
+    const { signal, cleanup } = createTimeoutSignal(options.timeoutMs, options.signal);
+    try {
+        const requestBody = {
+            model: actualModel,
+            messages: apiMessages,
+            max_completion_tokens: maxTokens, // GPT-5 family uses max_completion_tokens instead of max_tokens
+            temperature,
+        };
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+            signal,
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            // 429 Rate Limit - 재시도
+            if (response.status === 429 && retryCount < maxRetries) {
+                const delay = Math.pow(2, retryCount) * 1000;
+                await sleep(delay);
+                return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
+            }
+            let errorMessage = `OpenAI API error (${response.status})`;
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error?.message) {
+                    errorMessage = errorJson.error.message;
+                }
+            }
+            catch { /* ignore */ }
+            throw new Error(errorMessage);
+        }
+        const result = await response.json();
+        const assistantMessage = result.choices[0]?.message;
+        // 일반 응답 (Function Calling 없음)
+        return {
+            content: assistantMessage?.content || '',
+            model: result.model,
+            finishReason: result.choices[0]?.finish_reason || 'stop',
+        };
+    }
+    catch (error) {
+        if (error.name === 'TypeError' && retryCount < maxRetries) {
+            const delay = Math.pow(2, retryCount) * 1000;
+            await sleep(delay);
+            return chatWithApiKey(apiKey, { ...options, _retryCount: retryCount + 1 });
+        }
+        throw error;
+    }
+    finally {
+        cleanup();
+    }
+}
+/**
+ * GPT API 호출 (Codex Backend)
+ */
+async function chatWithCodex(accessToken, options, accountId) {
+    const { model = DEFAULT_MODEL, messages = [], systemPrompt = '', } = options;
+    // 모델 정보 가져오기
+    const modelInfo = GPT_MODELS[model] || GPT_MODELS[DEFAULT_MODEL];
+    // Codex instructions 가져오기
+    const instructions = await getCodexInstructions(modelInfo.id);
+    // 메시지를 Codex 형식으로 변환
+    const input = messages.map(msg => ({
+        type: 'message',
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: [{ type: 'input_text', text: msg.content }],
+    }));
+    // 시스템 프롬프트를 instructions에 추가
+    let finalInstructions = instructions;
+    if (systemPrompt) {
+        finalInstructions = `${instructions}\n\n<user_context>\n${systemPrompt}\n</user_context>`;
+    }
+    const sessionId = crypto.randomUUID();
+    const requestBody = {
+        model: modelInfo.id,
+        store: false,
+        stream: true,
+        input,
+        instructions: finalInstructions,
+        reasoning: modelInfo.reasoning,
+        text: { verbosity: 'medium' },
+        include: ['reasoning.encrypted_content'],
+        prompt_cache_key: sessionId,
+    };
+    // API 호출 (재시도 로직 포함)
+    const retryCount = options._retryCount || 0;
+    const maxRetries = 3;
+    const { signal, cleanup } = createTimeoutSignal(options.timeoutMs, options.signal);
+    try {
+        const headers = {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'responses=experimental',
+            'originator': 'codex_cli_rs',
+            'session_id': sessionId,
+        };
+        if (accountId) {
+            headers['chatgpt-account-id'] = accountId;
+        }
+        const response = await fetch(CODEX_RESPONSES_URL, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(requestBody),
+            signal,
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            // 429 Rate Limit - 재시도
+            if (response.status === 429 && retryCount < maxRetries) {
+                const delay = Math.pow(2, retryCount) * 1000;
+                await sleep(delay);
+                return chatWithCodex(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
+            }
+            // 에러 파싱
+            let errorMessage = `GPT API error (${response.status})`;
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error?.message) {
+                    errorMessage = errorJson.error.message;
+                }
+                else if (errorJson.detail) {
+                    errorMessage = errorJson.detail;
+                }
+            }
+            catch { /* ignore: optional operation */
+                errorMessage += `: ${errorText.substring(0, 200)}`;
+            }
+            throw new Error(errorMessage);
+        }
+        // 스트리밍 응답 파싱
+        const content = await parseSSEStream(response.body);
+        const modelInfo2 = GPT_MODELS[model] || GPT_MODELS[DEFAULT_MODEL];
+        return {
+            content,
+            model: modelInfo2.name,
+            finishReason: 'stop',
+        };
+    }
+    catch (error) {
+        // 네트워크 에러 재시도
+        if (error.name === 'TypeError' && retryCount < maxRetries) {
+            const delay = Math.pow(2, retryCount) * 1000;
+            await sleep(delay);
+            return chatWithCodex(accessToken, { ...options, _retryCount: retryCount + 1 }, accountId);
+        }
+        throw error;
+    }
+    finally {
+        cleanup();
+    }
+}
+/**
+ * 인증 방식에 따라 적절한 chat 함수 호출
+ */
+async function callWithAuth(authInfo, options) {
+    switch (authInfo.type) {
+        case 'apikey':
+            return chatWithApiKey(authInfo.apiKey, options);
+        case 'codex-cli':
+            return chatWithCodex(authInfo.accessToken, options, authInfo.accountId);
+        default:
+            throw new Error(`Unknown auth type: ${authInfo.type}`);
+    }
+}
+/**
+ * fallback 가능한 에러인지 확인
+ */
+function isFallbackError(errorMsg) {
+    return errorMsg.includes('429') ||
+        errorMsg.includes('401') ||
+        errorMsg.includes('403') ||
+        errorMsg.toLowerCase().includes('usage limit') ||
+        errorMsg.toLowerCase().includes('rate limit') ||
+        errorMsg.toLowerCase().includes('quota');
+}
+/**
+ * GPT API 호출 (고정 순서 인증 + Fallback)
+ * codex-cli → apikey 순서, 실패 시 다음 방식으로 자동 전환
+ */
+export async function chat(options) {
+    const authInfo = await getAuthInfo();
+    // plan 기반 모델 자동 선택 (options.model 미지정 시)
+    const resolvedOptions = options.model
+        ? options
+        : { ...options, model: getDefaultModel(authInfo.plan) };
+    try {
+        return await callWithAuth(authInfo, resolvedOptions);
+    }
+    catch (error) {
+        const errorMsg = error.message;
+        if (!isFallbackError(errorMsg)) {
+            throw error;
+        }
+        // 현재 방식 실패 → 다른 방식으로 fallback
+        if (authInfo.type !== 'apikey') {
+            try {
+                const apiKey = getApiKeyFromConfig();
+                if (apiKey) {
+                    return await callWithAuth({ type: 'apikey', apiKey }, options);
+                }
+            }
+            catch { /* fallback failed */ }
+        }
+        throw error;
+    }
+}
+/**
+ * 스트리밍 Chat (Codex 또는 API Key 자동 선택)
+ */
+export async function* chatStream(options) {
+    const authInfo = await getAuthInfo();
+    // API Key 방식은 스트리밍 미지원 - 일반 chat 사용
+    if (authInfo.type === 'apikey') {
+        const result = await chat(options);
+        yield { type: 'delta', content: result.content };
+        yield { type: 'done' };
+        return;
+    }
+    // Codex 스트리밍
+    const planModel = getDefaultModel(authInfo.plan);
+    const { model = planModel, messages = [], systemPrompt = '', } = options;
+    const modelInfo = GPT_MODELS[model] || GPT_MODELS[DEFAULT_MODEL];
+    const instructions = await getCodexInstructions(modelInfo.id);
+    const input = messages.map(msg => ({
+        type: 'message',
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: [{ type: 'input_text', text: msg.content }],
+    }));
+    const finalInstructions = systemPrompt
+        ? `${instructions}\n\n<user_context>\n${systemPrompt}\n</user_context>`
+        : instructions;
+    const streamSessionId = crypto.randomUUID();
+    const requestBody = {
+        model: modelInfo.id,
+        store: false,
+        stream: true,
+        input,
+        instructions: finalInstructions,
+        reasoning: modelInfo.reasoning,
+        text: { verbosity: 'medium' },
+        include: ['reasoning.encrypted_content'],
+        prompt_cache_key: streamSessionId,
+    };
+    const streamHeaders = {
+        'Authorization': `Bearer ${authInfo.accessToken}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'responses=experimental',
+        'originator': 'codex_cli_rs',
+        'session_id': streamSessionId,
+    };
+    if (authInfo.accountId) {
+        streamHeaders['chatgpt-account-id'] = authInfo.accountId;
+    }
+    // 스트리밍은 본질적으로 길 수 있어 total timeout 을 걸지 않는다. 대신 연결 수립까지만
+    // hard timeout(clearTimer)을 적용하고, 이후 read 는 외부 취소 signal 만 따른다.
+    const { signal, cleanup, clearTimer } = createTimeoutSignal(options.timeoutMs, options.signal);
+    try {
+        const response = await fetch(CODEX_RESPONSES_URL, {
+            method: 'POST',
+            headers: streamHeaders,
+            body: JSON.stringify(requestBody),
+            signal,
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`GPT API error (${response.status}): ${errorText}`);
+        }
+        clearTimer(); // 연결 수립 — total timeout 해제, caller 취소(외부 signal)는 유지
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done)
+                break;
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') {
+                        yield { type: 'done' };
+                        return;
+                    }
+                    try {
+                        const json = JSON.parse(data);
+                        if (json.type === 'response.output_text.delta') {
+                            yield { type: 'delta', content: json.delta || '' };
+                        }
+                    }
+                    catch { /* ignore: optional operation */
+                        // JSON 파싱 실패 무시
+                    }
+                }
+            }
+        }
+    }
+    finally {
+        cleanup();
+    }
+}
+/**
+ * 사용 가능한 모델 목록 반환
+ */
+export function getAvailableModels() {
+    return Object.values(GPT_MODELS);
+}
+/**
+ * 모델 정보 가져오기
+ */
+export function getModelInfo(modelId) {
+    return GPT_MODELS[modelId] || null;
+}
+/**
+ * 간단한 질문-응답
+ */
+export async function ask(prompt, options = {}) {
+    const result = await chat({
+        ...options,
+        messages: [{ role: 'user', content: prompt }],
+    });
+    return result.content;
+}
+/**
+ * 빠른 질문 (GPT-5.5 사용)
+ */
+export async function quickAsk(prompt) {
+    return ask(prompt, {
+        model: 'gpt-5.5',
+        maxTokens: 2048,
+        temperature: 0.3,
+    });
+}
+//# sourceMappingURL=chat.js.map

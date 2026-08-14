@@ -1,0 +1,171 @@
+/**
+ * Loop Ledger 라이브러리 — 루프 실행 이력 추적 및 stuck 감지.
+ *
+ * 파일 위치: <projectDir>/.vibe/metrics/loop-history.jsonl
+ * 형식: JSON Lines — 각 줄이 독립적인 루프 이벤트 JSON 객체
+ *
+ * 모든 함수는 fail-open (try/catch, 오류 시 무시하거나 안전한 기본값 반환).
+ * isStuck: 같은 루프의 가장 최근 discover 이벤트의 discoverHash가
+ *   신규 hash와 같으면 stuck으로 판정한다 (2회 연속 동일 발견).
+ *   discover 이벤트는 CLI check-stuck이 판정 직후 스스로 기록한다 —
+ *   기록 없는 판정은 다음 실행의 비교 기준을 잃는다.
+ */
+
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+
+/** 루프 이력 파일 경로 */
+function historyPath(projectDir) {
+  return path.join(projectDir, '.vibe', 'metrics', 'loop-history.jsonl');
+}
+
+/**
+ * discover 산출물 텍스트를 sha256 hex 해시로 변환한다.
+ * 공백/줄바꿈을 정규화해 동등한 출력이 동일 해시를 갖도록 한다.
+ *
+ * @param {string} text
+ * @returns {string} sha256 hex
+ */
+export function hashDiscoverOutput(text) {
+  const normalized = text.replace(/\s+/g, ' ').trim();
+  return crypto.createHash('sha256').update(normalized, 'utf-8').digest('hex');
+}
+
+/**
+ * 루프 이벤트를 jsonl 파일에 append한다.
+ *
+ * @param {string} projectDir
+ * @param {{ loop: string, event: 'start'|'discover'|'end'|'iteration', result?: 'ok'|'fail'|'stuck', summary?: string, discoverHash?: string, verified?: boolean }} opts
+ * @returns {boolean} 성공 여부
+ */
+export function appendLoopEvent(projectDir, opts) {
+  try {
+    const p = historyPath(projectDir);
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    const entry = {
+      ts: new Date().toISOString(),
+      loop: opts.loop,
+      event: opts.event,
+      ...(opts.result !== undefined ? { result: opts.result } : {}),
+      ...(opts.summary !== undefined ? { summary: opts.summary } : {}),
+      ...(opts.discoverHash !== undefined ? { discoverHash: opts.discoverHash } : {}),
+      ...(opts.verified !== undefined ? { verified: opts.verified } : {}),
+    };
+    fs.appendFileSync(p, JSON.stringify(entry) + '\n', 'utf-8');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 지정 루프의 특정 이벤트 목록을 최신순으로 읽는다.
+ * 손상된 줄은 건너뛴다 (fail-open).
+ *
+ * @param {string} projectDir
+ * @param {string} loop
+ * @param {string} eventType
+ * @returns {{ ts: string, discoverHash?: string }[]}
+ */
+function readEventsOfType(projectDir, loop, eventType) {
+  try {
+    const p = historyPath(projectDir);
+    if (!fs.existsSync(p)) return [];
+    const lines = fs.readFileSync(p, 'utf-8').split('\n').filter(Boolean);
+    const events = [];
+    for (const line of lines) {
+      try {
+        const obj = JSON.parse(line);
+        if (obj.loop === loop && obj.event === eventType) {
+          events.push(obj);
+        }
+      } catch {
+        // 손상된 줄 무시
+      }
+    }
+    // 최신순 정렬 (ts 기준)
+    return events.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 신규 discoverHash가 stuck 조건을 충족하는지 판정한다.
+ *
+ * stuck 조건: 신규 hash가 non-empty이고, 해당 루프의 가장 최근
+ * discover 이벤트에 동일한 discoverHash가 있을 때.
+ * (직전 실행의 발견 + 이번 발견 = 2회 연속 동일이 되는 시점)
+ *
+ * 주의: 판정만 하고 기록하지 않으면 다음 실행이 비교할 기준이 없다 —
+ * 호출자는 판정 직후 event:'discover'로 해시를 기록해야 한다 (CLI check-stuck이 수행).
+ *
+ * @param {string} projectDir
+ * @param {string} loop
+ * @param {string} discoverHash
+ * @returns {boolean}
+ */
+export function isStuck(projectDir, loop, discoverHash) {
+  try {
+    if (!discoverHash) return false;
+    const discoverEvents = readEventsOfType(projectDir, loop, 'discover');
+    if (discoverEvents.length === 0) return false;
+    const lastHash = discoverEvents[0].discoverHash;
+    return Boolean(lastHash && lastHash === discoverHash);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 회전 1회를 기록한다.
+ *
+ * @param {string} projectDir
+ * @param {string} loop
+ * @param {boolean} verified - 이 회전이 검증을 통과했는가 (JUDGE 결정론 게이트 기준)
+ * @returns {boolean}
+ */
+export function recordIteration(projectDir, loop, verified) {
+  return appendLoopEvent(projectDir, { loop, event: 'iteration', verified: Boolean(verified) });
+}
+
+/**
+ * 현재 루프 실행의 예산 상태.
+ *
+ * 두 축을 **따로** 센다:
+ *  - `iterations` — 모든 회전. `max_iterations` 와 비교하는 폭주 방어 축이다.
+ *  - `verified`   — 검증을 통과한 회전만. 실제로 전진한 양이다.
+ *
+ * 둘을 하나로 뭉치면 "10회를 썼다" 는 알아도 "그중 8회가 헛돌았다" 는 모른다 —
+ * 헛도는 루프와 원래 큰 작업을 구분할 수 없다. loop-contract 는 폭주 방어가
+ * 모델의 양심이 아니라 코드여야 한다고 선언하는데, 정작 max_iterations 에는
+ * 런타임 계수가 없어 모델이 스스로 세고 있었다 (감사 2026-08-10).
+ *
+ * 직전 `start` 이후만 센다 — 새 실행은 예산도 새로 시작한다.
+ *
+ * @param {string} projectDir
+ * @param {string} loop
+ * @param {number} [maxIterations=10]
+ * @returns {{ iterations: number, verified: number, remaining: number, exhausted: boolean }}
+ */
+export function readBudget(projectDir, loop, maxIterations = 10) {
+  const empty = { iterations: 0, verified: 0, remaining: maxIterations, exhausted: false };
+  try {
+    const raw = fs.readFileSync(historyPath(projectDir), 'utf-8');
+    const events = raw.split('\n')
+      .map(line => { try { return JSON.parse(line); } catch { return null; } })
+      .filter(e => e && e.loop === loop);
+
+    const lastStart = events.map(e => e.event).lastIndexOf('start');
+    const scoped = lastStart === -1 ? events : events.slice(lastStart);
+
+    const iters = scoped.filter(e => e.event === 'iteration');
+    const iterations = iters.length;
+    const verified = iters.filter(e => e.verified === true).length;
+    const remaining = Math.max(0, maxIterations - iterations);
+    return { iterations, verified, remaining, exhausted: remaining === 0 };
+  } catch {
+    return empty;
+  }
+}

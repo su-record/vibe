@@ -1,0 +1,152 @@
+/**
+ * 공통 유틸리티 함수
+ */
+import fs from 'fs';
+import path from 'path';
+/**
+ * 지정된 시간만큼 대기
+ */
+export function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+/**
+ * PATH에서 실행 파일 존재 여부를 탐색 (which/where 서브프로세스 없이 크로스 플랫폼)
+ * - POSIX: 실행 권한(X_OK)까지 확인
+ * - Windows: PATHEXT 확장자(.exe/.cmd 등)를 붙여 파일 존재 확인
+ */
+export function findExecutableInPath(name) {
+    const dirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+    const exts = process.platform === 'win32'
+        ? (process.env.PATHEXT || '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean)
+        : [''];
+    for (const dir of dirs) {
+        for (const ext of exts) {
+            if (isExecutableFile(path.join(dir, name + ext)))
+                return true;
+        }
+    }
+    return false;
+}
+function isExecutableFile(candidate) {
+    try {
+        const stat = fs.statSync(candidate, { throwIfNoEntry: false });
+        if (!stat?.isFile())
+            return false;
+        if (process.platform !== 'win32')
+            fs.accessSync(candidate, fs.constants.X_OK);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+/**
+ * Agent SDK query 함수 동적 로드
+ * SDK가 설치되지 않은 경우 null 반환
+ */
+let agentSdkQuery = null;
+export async function getAgentSdkQuery() {
+    if (agentSdkQuery)
+        return agentSdkQuery;
+    try {
+        const sdk = await import('@anthropic-ai/claude-agent-sdk');
+        agentSdkQuery = sdk.query;
+        return agentSdkQuery;
+    }
+    catch { /* ignore: optional operation */
+        return null;
+    }
+}
+/**
+ * 디버그 로깅 (환경변수로 제어)
+ */
+export function debugLog(message, ...args) {
+    if (process.env.VIBE_DEBUG === 'true') {
+        console.log(`[VIBE DEBUG] ${message}`, ...args);
+    }
+}
+/**
+ * 경고 로깅 (환경변수로 제어)
+ */
+export function warnLog(message, ...args) {
+    if (process.env.VIBE_DEBUG === 'true') {
+        console.warn(`[VIBE WARN] ${message}`, ...args);
+    }
+}
+/**
+ * 에러 로깅 (항상 출력, 단 verbose 모드에서만 상세)
+ */
+export function errorLog(message, error) {
+    if (process.env.VIBE_DEBUG === 'true' && error) {
+        console.error(`[VIBE ERROR] ${message}`, error);
+    }
+}
+/**
+ * Extract a human-readable message from an unknown caught value.
+ */
+export function extractErrorMessage(error) {
+    if (error instanceof Error)
+        return error.message;
+    return String(error);
+}
+/**
+ * Handle a caught error according to its severity.
+ *
+ * - fatal: logs to stderr and re-throws
+ * - recoverable: logs a user-visible warning (via warnFn) and continues
+ * - ignorable: logs only in debug mode
+ *
+ * @param severity - how critical the error is
+ * @param context - short description of what was being attempted
+ * @param error - the caught value
+ * @param warnFn - optional callback for user-visible warnings (defaults to stderr)
+ */
+export function handleCaughtError(severity, context, error, warnFn) {
+    const message = extractErrorMessage(error);
+    switch (severity) {
+        case 'fatal':
+            process.stderr.write(`[VIBE FATAL] ${context}: ${message}\n`);
+            throw error;
+        case 'recoverable': {
+            const warning = `   ⚠️  ${context}: ${message}`;
+            if (warnFn) {
+                warnFn(warning);
+            }
+            else {
+                process.stderr.write(warning + '\n');
+            }
+            break;
+        }
+        case 'ignorable':
+            debugLog(`[ignorable] ${context}: ${message}`);
+            break;
+    }
+}
+/**
+ * 안전한 JSON 파싱
+ * @param jsonString 파싱할 JSON 문자열
+ * @param context 에러 로깅에 사용할 컨텍스트 설명
+ * @returns 파싱된 객체 또는 null
+ */
+export function safeParseJSON(jsonString, context) {
+    try {
+        return JSON.parse(jsonString);
+    }
+    catch (error) {
+        const ctx = context ? ` (${context})` : '';
+        warnLog(`JSON parse failed${ctx}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return null;
+    }
+}
+/**
+ * 안전한 JSON 파싱 (기본값 반환)
+ * @param jsonString 파싱할 JSON 문자열
+ * @param defaultValue 파싱 실패 시 반환할 기본값
+ * @param context 에러 로깅에 사용할 컨텍스트 설명
+ * @returns 파싱된 객체 또는 기본값
+ */
+export function safeParseJSONWithDefault(jsonString, defaultValue, context) {
+    const result = safeParseJSON(jsonString, context);
+    return result ?? defaultValue;
+}
+//# sourceMappingURL=utils.js.map

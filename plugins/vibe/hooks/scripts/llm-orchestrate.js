@@ -1,0 +1,696 @@
+/**
+ * UserPromptSubmit Hook - LLM 오케스트레이션 (GPT/Antigravity/Claude)
+ *
+ * Usage:
+ *   node llm-orchestrate.js <provider> <mode> "prompt"
+ *   node llm-orchestrate.js <provider> <mode> "systemPrompt" "prompt"
+ *
+ *   provider: gpt | antigravity | claude
+ *   mode: orchestrate | orchestrate-json | image | analyze-image
+ *
+ * Image Mode:
+ *   node llm-orchestrate.js antigravity image "prompt" --output "./image.png"
+ *   node llm-orchestrate.js antigravity image "prompt" --output "./image.png" --size "1920x1080"
+ *
+ * Features:
+ *   - CLI-based: GPT → codex exec, Antigravity → agy -p, Claude → claude --print
+ *   - Exponential backoff retry (3 attempts)
+ *   - Auto fallback: gpt ↔ antigravity
+ *   - Overload/rate-limit detection
+ *   - Image generation (Google image model)
+ *   - Image analysis (Google multimodal model)
+ *
+ * Analyze-Image Mode:
+ *   node llm-orchestrate.js antigravity analyze-image "./image.png" "Analyze this UI"
+ *   node llm-orchestrate.js antigravity analyze-image "./image.png" "prompt" --system "system prompt"
+ *
+ * Input: JSON from stdin with { prompt: string } (when no CLI args)
+ */
+import { getLibBaseUrl, readVibeConfig, logLlmCost } from './utils.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import crypto from 'crypto';
+import { execSync, spawn } from 'child_process';
+
+const LIB_URL = getLibBaseUrl();
+const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant.';
+
+const provider = process.argv[2] || 'antigravity';
+const mode = process.argv[3] || 'orchestrate';
+
+// WHY 3 retries: Enough to ride out brief 503/overload blips (typically 1-2
+// consecutive), but not so many that a genuinely down provider delays the
+// fallback chain for minutes.
+// VIBE_LLM_MAX_RETRIES override: UserPromptSubmit(hook) 모드에서는 1(재시도 없음)로
+// 낮춰 부모 dispatcher timeout 안에 단일 시도로 끝낸다. (B-2: hard-kill/무음실패 방지)
+const MAX_RETRIES = Number(process.env.VIBE_LLM_MAX_RETRIES) || 3;
+// WHY 2000ms initial delay: LLM rate-limit windows are typically 1-5s;
+// starting at 2s with exponential backoff (2s, 4s, 8s) covers most reset intervals.
+const INITIAL_DELAY_MS = 2000;
+
+// ============================================
+// Response Cache (TTL-based, in-memory)
+// ============================================
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX_ENTRIES = 50;
+const responseCache = new Map();
+
+function getCacheKey(providerName, prompt, sysPrompt, jsonMode) {
+  const hash = crypto.createHash('sha256')
+    .update(`${providerName}|${sysPrompt}|${prompt}|${jsonMode}`)
+    .digest('hex')
+    .slice(0, 16);
+  return hash;
+}
+
+function getCachedResponse(key) {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    responseCache.delete(key);
+    return null;
+  }
+  return entry.result;
+}
+
+function setCachedResponse(key, result) {
+  // Evict oldest entries when cache is full
+  if (responseCache.size >= CACHE_MAX_ENTRIES) {
+    const oldestKey = responseCache.keys().next().value;
+    responseCache.delete(oldestKey);
+  }
+  responseCache.set(key, { result, timestamp: Date.now() });
+}
+
+// ============================================
+// Simple Prompt Detection (early exit)
+// WHY skip orchestration for simple prompts: Sending greetings/acks to an
+// external LLM wastes latency and tokens — Claude handles these natively.
+// ============================================
+const SIMPLE_PROMPT_MAX_LEN = 20;
+const SIMPLE_PROMPT_PATTERNS = [
+  /^(hi|hello|hey|thanks|thank you|ok|yes|no|y|n)\.?$/i,
+  /^(help|version|status)$/i,
+];
+
+function isSimplePrompt(prompt) {
+  const trimmed = prompt.trim();
+  if (trimmed.length > SIMPLE_PROMPT_MAX_LEN) return false;
+  return SIMPLE_PROMPT_PATTERNS.some(p => p.test(trimmed));
+}
+
+function resolveModel(providerName, config) {
+  if (providerName === 'gpt-spark') return config.models?.gptCodexSpark || 'gpt-5.3-codex-spark';
+  if (providerName === 'gpt-codex') return config.models?.gptCodex || 'gpt-5.3-codex';
+  if (providerName === 'gpt') return config.models?.gpt || 'gpt-5.5';
+  if (providerName === 'antigravity') return config.models?.antigravity || 'antigravity';
+  if (providerName === 'zai') return config.models?.zaiCoding || config.models?.zai || 'glm-5.2';
+  if (providerName === 'claude') return 'claude';
+  return providerName;
+}
+
+/**
+ * 주관 LLM 자동 감지 — Claude가 보조로 사용되어야 하는 환경인지 판별
+ *
+ * true인 경우:
+ * - vibe-codex: ANTHROPIC_BASE_URL이 localhost (프록시 모드)
+ * - 명시적: VIBE_SECONDARY_LLM=claude
+ */
+function useClaudeAsSecondary() {
+  // 1. 명시적 환경변수
+  if (process.env.VIBE_SECONDARY_LLM === 'claude') return true;
+  // 2. vibe-codex 프록시 모드
+  const baseUrl = process.env.ANTHROPIC_BASE_URL || '';
+  if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) return true;
+  return false;
+}
+
+// Errors that should skip retry and go to fallback immediately
+const SKIP_RETRY_PATTERNS = [
+  /rate.?limit/i,
+  /quota/i,
+  /unauthorized/i,
+  /forbidden/i,
+  /authentication/i,
+  /401/,
+  /403/,
+  /429/,
+];
+
+// Errors that should trigger retry with backoff
+const RETRY_PATTERNS = [
+  /overload/i,
+  /503/,
+  /5\d\d/,
+  /network/i,
+  /timeout/i,
+  /ECONNRESET/i,
+  /ETIMEDOUT/i,
+  /spawn error/i,
+];
+
+function shouldSkipRetry(errorMsg) {
+  return SKIP_RETRY_PATTERNS.some(pattern => pattern.test(errorMsg));
+}
+
+function shouldRetry(errorMsg) {
+  return RETRY_PATTERNS.some(pattern => pattern.test(errorMsg));
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ============================================
+// Image Generation (delegates to Google image API)
+// ============================================
+
+function parseImageArgs(args) {
+  const result = { prompt: null, output: './generated-image.png', size: '1024x1024', model: 'nano-banana' };
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--output' || args[i] === '-o') {
+      result.output = args[++i];
+    } else if (args[i] === '--size' || args[i] === '-s') {
+      result.size = args[++i];
+    } else if (args[i] === '--pro') {
+      result.model = 'nano-banana-pro';
+    } else if (!args[i].startsWith('-') && !result.prompt) {
+      result.prompt = args[i];
+    }
+  }
+  return result;
+}
+
+// ============================================
+// Image Analysis (delegates to Google image API)
+// ============================================
+
+function parseAnalyzeImageArgs(args) {
+  const result = { imagePath: null, prompt: null, systemPrompt: null };
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--system' || args[i] === '-s') {
+      result.systemPrompt = args[++i];
+    } else if (!args[i].startsWith('-')) {
+      if (!result.imagePath) {
+        result.imagePath = args[i];
+      } else if (!result.prompt) {
+        result.prompt = args[i];
+      }
+    }
+  }
+  return result;
+}
+
+// ============================================
+// CLI Provider Functions
+// ============================================
+
+// VIBE_LLM_PRIMARY_TIMEOUT_MS override: hook 모드에서는 부모 dispatcher timeout 보다
+// 짧게 잡아(예: 45s) 자식이 스스로 정리하고 의미있는 메시지를 반환하게 한다.
+const CLI_TIMEOUT_MS = Number(process.env.VIBE_LLM_PRIMARY_TIMEOUT_MS) || 180000;
+const CLI_FALLBACK_TIMEOUT_MS = 30000;
+const IS_WINDOWS = os.platform() === 'win32';
+
+function spawnCli(cmd, args, options) {
+  // Windows: .cmd shim은 spawn 직접 실행 불가 → cmd.exe /c 로 실행
+  if (IS_WINDOWS) {
+    return spawn(process.env.ComSpec || 'cmd.exe', ['/c', cmd, ...args], options);
+  }
+  return spawn(cmd, args, options);
+}
+
+function buildCliPrompt(prompt, sysPrompt, jsonMode) {
+  let fullPrompt = sysPrompt && sysPrompt !== DEFAULT_SYSTEM_PROMPT
+    ? `[System]\n${sysPrompt}\n\n[User]\n${prompt}`
+    : prompt;
+  if (jsonMode) {
+    fullPrompt += '\n\nIMPORTANT: You must respond with valid JSON only.';
+  }
+  return fullPrompt;
+}
+
+
+function callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs) {
+  const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
+  const outputFile = path.join(os.tmpdir(), `vibe-codex-${crypto.randomUUID()}.txt`);
+  // stdin pipe로 프롬프트 전달 (shell escaping 이슈 회피)
+  const args = ['exec', '-m', model, '--sandbox', 'read-only', '--ephemeral', '-c', 'model_reasoning_effort="medium"', '-o', outputFile, '-'];
+
+  // config에 저장된 API key를 환경변수로 전달 (임베딩과 동일한 키 사용)
+  const vibeConfig = readVibeConfig();
+  const apiKey = vibeConfig.credentials?.gpt?.apiKey || process.env.OPENAI_API_KEY;
+  const env = apiKey ? { ...process.env, OPENAI_API_KEY: apiKey } : process.env;
+  const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
+
+  return new Promise((resolve, reject) => {
+    const proc = spawnCli('codex', args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: effectiveTimeout,
+      env,
+    });
+    proc.stdin.end(fullPrompt);
+
+    let stderr = '';
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+    proc.on('close', (code) => {
+      if (code === 0 && fs.existsSync(outputFile)) {
+        const result = fs.readFileSync(outputFile, 'utf8');
+        try { fs.unlinkSync(outputFile); } catch { /* ignore */ }
+        resolve(result);
+      } else {
+        try { fs.unlinkSync(outputFile); } catch { /* ignore */ }
+        reject(new Error(`codex exec failed (code ${code}): ${stderr.slice(0, 500)}`));
+      }
+    });
+
+    proc.on('error', (err) => {
+      try { fs.unlinkSync(outputFile); } catch { /* ignore */ }
+      reject(new Error(`codex exec spawn error: ${err.message}`));
+    });
+  });
+}
+
+// ZAI (Z.ai / GLM) — OpenAI 호환 HTTP API (CLI 없음)
+const ZAI_BASE_GENERAL = 'https://api.z.ai/api/paas/v4';
+const ZAI_BASE_CODING = 'https://api.z.ai/api/coding/paas/v4';
+
+function callZaiApi(prompt, sysPrompt, jsonMode, model, timeoutMs) {
+  const vibeConfig = readVibeConfig();
+  const codingKey = vibeConfig.credentials?.zai?.codingApiKey || process.env.ZAI_CODING_API_KEY;
+  const generalKey = vibeConfig.credentials?.zai?.apiKey || process.env.ZAI_API_KEY;
+  const useCoding = Boolean(codingKey);
+  const apiKey = codingKey || generalKey;
+  if (!apiKey) return Promise.reject(new Error('ZAI API key not set (vibe zai coding-key <key>)'));
+
+  const base = useCoding ? ZAI_BASE_CODING : ZAI_BASE_GENERAL;
+  const system = sysPrompt && sysPrompt !== DEFAULT_SYSTEM_PROMPT ? sysPrompt : DEFAULT_SYSTEM_PROMPT;
+  const content = jsonMode ? `${prompt}\n\nRespond with valid JSON only.` : prompt;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs || CLI_TIMEOUT_MS);
+
+  return fetch(`${base}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: system }, { role: 'user', content }],
+      max_tokens: 4096,
+      temperature: 0,
+    }),
+    signal: controller.signal,
+  }).then(async (res) => {
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`zai api failed (code ${res.status}): ${body.slice(0, 500)}`);
+    }
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error('zai api returned empty response');
+    return text;
+  }).finally(() => clearTimeout(timer));
+}
+
+function callAntigravityCli(prompt, sysPrompt, jsonMode, timeoutMs) {
+  const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
+  const args = ['-p', fullPrompt];
+  const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
+
+  return new Promise((resolve, reject) => {
+    const proc = spawnCli('agy', args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: effectiveTimeout,
+    });
+
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+    proc.on('close', (code) => {
+      if (code === 0 && stdout.trim()) {
+        resolve(stdout.trim());
+      } else {
+        reject(new Error(`antigravity cli failed (code ${code}): ${(stderr || stdout).slice(0, 500)}`));
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(new Error(`antigravity cli spawn error: ${err.message}`));
+    });
+  });
+}
+
+function callClaudeCli(prompt, sysPrompt, jsonMode, timeoutMs) {
+  const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
+  const args = ['--print', '--dangerously-skip-permissions'];
+  const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
+
+  // 재귀 가드 — 자식 Claude 세션의 UserPromptSubmit hook이 또 claude CLI를
+  // spawn하는 포크 폭탄을 차단 (prompt-dispatcher.js가 이 env를 보고 즉시 종료).
+  const currentDepth = parseInt(process.env.VIBE_HOOK_DEPTH || '0', 10);
+  const childEnv = { ...process.env, VIBE_HOOK_DEPTH: String(currentDepth + 1) };
+
+  return new Promise((resolve, reject) => {
+    const proc = spawnCli('claude', args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: effectiveTimeout,
+      env: childEnv,
+    });
+    proc.stdin.end(fullPrompt);
+
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+    proc.on('close', (code) => {
+      if (code === 0 && stdout.trim()) {
+        resolve(stdout.trim());
+      } else {
+        reject(new Error(`claude cli failed (code ${code}): ${(stderr || stdout).slice(0, 500)}`));
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(new Error(`claude cli spawn error: ${err.message}`));
+    });
+  });
+}
+
+async function callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs) {
+  const vibeConfig = readVibeConfig();
+
+  if (providerName === 'gpt' || providerName === 'gpt-codex' || providerName === 'gpt-spark') {
+    let model;
+    if (providerName === 'gpt-spark') {
+      model = vibeConfig.models?.gptCodexSpark || process.env.GPT_CODEX_SPARK_MODEL || 'gpt-5.3-codex-spark';
+    } else if (providerName === 'gpt-codex') {
+      model = vibeConfig.models?.gptCodex || process.env.GPT_CODEX_MODEL || 'gpt-5.3-codex';
+    } else {
+      model = vibeConfig.models?.gpt || process.env.GPT_MODEL || 'gpt-5.5';
+    }
+    return await callCodexCli(prompt, sysPrompt, jsonMode, model, timeoutMs);
+  }
+
+  if (providerName === 'antigravity') {
+    return await callAntigravityCli(prompt, sysPrompt, jsonMode, timeoutMs);
+  }
+
+  if (providerName === 'zai') {
+    // coding 키가 있으면 coding plan flagship(5.2), 아니면 일반 API 상한(5.1)
+    const hasCoding = Boolean(vibeConfig.credentials?.zai?.codingApiKey || process.env.ZAI_CODING_API_KEY);
+    const fallback = hasCoding ? 'glm-5.2' : 'glm-5.1';
+    const model = vibeConfig.models?.zaiCoding || vibeConfig.models?.zai || process.env.ZAI_MODEL || fallback;
+    return await callZaiApi(prompt, sysPrompt, jsonMode, model, timeoutMs);
+  }
+
+  if (providerName === 'claude') {
+    return await callClaudeCli(prompt, sysPrompt, jsonMode, timeoutMs);
+  }
+
+  throw new Error(`Unknown provider: ${providerName}`);
+}
+
+async function callWithRetry(providerName, prompt, sysPrompt, jsonMode, timeoutMs) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return { success: true, result: await callProvider(providerName, prompt, sysPrompt, jsonMode, timeoutMs) };
+    } catch (e) {
+      lastError = e;
+      const errorMsg = e.message || String(e);
+
+      // Skip retry for auth/quota errors - go to fallback immediately
+      if (shouldSkipRetry(errorMsg)) {
+        return { success: false, error: errorMsg, skipToFallback: true };
+      }
+
+      // Retry with backoff for transient errors
+      if (shouldRetry(errorMsg) && attempt < MAX_RETRIES) {
+        const delay = INITIAL_DELAY_MS * Math.pow(2, attempt - 1);
+        console.error(`[${providerName.toUpperCase()}] Retry ${attempt}/${MAX_RETRIES} after ${delay}ms...`);
+        await sleep(delay);
+        continue;
+      }
+
+      // Unknown error or max retries reached
+      return { success: false, error: errorMsg, skipToFallback: false };
+    }
+  }
+
+  return { success: false, error: lastError?.message || 'Max retries exceeded', skipToFallback: false };
+}
+
+async function main() {
+  // Image mode handling
+  if (mode === 'image') {
+    if (provider !== 'antigravity') {
+      console.log('[IMAGE] Error: Image generation only supports antigravity provider');
+      return;
+    }
+
+    const imageArgs = parseImageArgs(process.argv.slice(4));
+    if (!imageArgs.prompt) {
+      console.log('[IMAGE] Error: --prompt is required');
+      return;
+    }
+
+    // Ensure output directory exists
+    const outputDir = path.dirname(imageArgs.output);
+    if (outputDir && outputDir !== '.' && !fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    const modelLabel = imageArgs.model === 'nano-banana-pro' ? 'Google Pro Image' : 'Google Flash Image';
+    console.error(`[IMAGE] Generating with ${modelLabel}...`);
+    console.error(`  Prompt: ${imageArgs.prompt}`);
+    console.error(`  Size: ${imageArgs.size}`);
+    console.error(`  Model: ${modelLabel}`);
+    console.error(`  Output: ${imageArgs.output}`);
+
+    try {
+      const googleApi = await import(`${LIB_URL}gemini-api.js`);
+      const image = await googleApi.generateImage(imageArgs.prompt, { size: imageArgs.size, model: imageArgs.model });
+      fs.writeFileSync(imageArgs.output, image.data);
+      const stats = fs.statSync(imageArgs.output);
+      const sizeKB = (stats.size / 1024).toFixed(1);
+
+      console.log(JSON.stringify({
+        success: true,
+        path: path.resolve(imageArgs.output),
+        size: stats.size,
+        sizeKB: `${sizeKB} KB`,
+        prompt: imageArgs.prompt
+      }));
+    } catch (err) {
+      console.log(JSON.stringify({
+        success: false,
+        error: err.message,
+        prompt: imageArgs.prompt
+      }));
+    }
+    return;
+  }
+
+  // Analyze-image mode handling
+  if (mode === 'analyze-image') {
+    if (provider !== 'antigravity') {
+      console.log('[ANALYZE-IMAGE] Error: Image analysis only supports antigravity provider');
+      return;
+    }
+
+    const analyzeArgs = parseAnalyzeImageArgs(process.argv.slice(4));
+    if (!analyzeArgs.imagePath) {
+      console.log('[ANALYZE-IMAGE] Error: image path is required');
+      return;
+    }
+    if (!analyzeArgs.prompt) {
+      console.log('[ANALYZE-IMAGE] Error: analysis prompt is required');
+      return;
+    }
+
+    const absolutePath = path.resolve(analyzeArgs.imagePath);
+    if (!fs.existsSync(absolutePath)) {
+      console.log(JSON.stringify({
+        success: false,
+        error: `Image file not found: ${absolutePath}`,
+        imagePath: analyzeArgs.imagePath,
+      }));
+      return;
+    }
+
+    console.error(`[ANALYZE-IMAGE] Analyzing image with Google multimodal model...`);
+    console.error(`  Image: ${absolutePath}`);
+    console.error(`  Prompt: ${analyzeArgs.prompt}`);
+
+    try {
+      const googleApi = await import(`${LIB_URL}gemini-api.js`);
+      const options = {};
+      if (analyzeArgs.systemPrompt) {
+        options.systemPrompt = analyzeArgs.systemPrompt;
+      }
+      const analysis = await googleApi.analyzeImage(absolutePath, analyzeArgs.prompt, options);
+
+      console.log(JSON.stringify({
+        success: true,
+        analysis,
+        imagePath: absolutePath,
+      }));
+    } catch (err) {
+      console.log(JSON.stringify({
+        success: false,
+        error: err.message,
+        imagePath: absolutePath,
+      }));
+    }
+    return;
+  }
+
+  // Text generation mode (orchestrate / orchestrate-json)
+  let prompt;
+  let systemPrompt = DEFAULT_SYSTEM_PROMPT;
+
+  // --input <file> 플래그를 먼저 확인 (위치 인자보다 우선)
+  const inputFlagIdx = process.argv.indexOf('--input');
+  if (inputFlagIdx !== -1 && process.argv[inputFlagIdx + 1]) {
+    const inputFile = process.argv[inputFlagIdx + 1];
+
+    // Path traversal 방지: 절대경로로 resolve 후 임시 디렉토리 또는 프로젝트 내 확인
+    const resolvedInput = path.resolve(inputFile);
+    const allowedDirs = [os.tmpdir(), process.cwd()];
+    const isAllowed = allowedDirs.some(dir => resolvedInput.startsWith(path.resolve(dir)));
+    if (!isAllowed) {
+      console.log(`[${provider.toUpperCase()}] Error: Input file must be in temp directory or project directory`);
+      return;
+    }
+
+    try {
+      const inputData = fs.readFileSync(resolvedInput, 'utf8');
+      const parsed = JSON.parse(inputData);
+      prompt = parsed.prompt;
+      if (parsed.systemPrompt) {
+        systemPrompt = parsed.systemPrompt;
+      }
+    } catch (err) {
+      console.log(`[${provider.toUpperCase()}] Error: Failed to read input file: ${err.message}`);
+      return;
+    }
+  } else {
+    // CLI argument 사용
+    // Usage 1: node script.js gpt orchestrate "system prompt" "user prompt"
+    // Usage 2: node script.js gpt orchestrate "user prompt" (uses default system prompt)
+    const arg4 = process.argv[4]?.trim();
+    const arg5 = process.argv.slice(5).join(' ').trim();
+
+    if (arg5) {
+      // 5번째 인자가 있으면: arg4=시스템 프롬프트, arg5=사용자 프롬프트
+      systemPrompt = arg4;
+      prompt = arg5;
+    } else if (arg4) {
+      // 4번째 인자만 있으면: arg4=사용자 프롬프트 (시스템 프롬프트는 기본값)
+      prompt = arg4;
+    } else {
+      // Hook에서 호출: stdin으로 JSON 입력 (fallback)
+      let inputData = '';
+      for await (const chunk of process.stdin) {
+        inputData += chunk;
+      }
+
+      try {
+        const parsed = JSON.parse(inputData);
+        prompt = parsed.prompt;
+      } catch {
+        console.log(`[${provider.toUpperCase()}] Error: Invalid JSON input`);
+        return;
+      }
+    }
+  }
+
+  // 접두사 제거
+  const prefixPatterns = {
+    gpt: /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
+    'gpt-codex': /^(gpt[-.\s]|지피티-|vibe-gpt-)\s*/i,
+    antigravity: /^(antigravity[-.\s]|agy[-.\s]|안티그래비티-|vibe-antigravity-)\s*/i,
+  };
+  const cleanPrompt = prompt.replace(prefixPatterns[provider] || /^/, '').trim();
+  const jsonMode = mode === 'orchestrate-json';
+
+  // Early exit: simple prompts don't need LLM orchestration
+  if (isSimplePrompt(cleanPrompt)) {
+    return;
+  }
+
+  // Check cache for identical prompts
+  const cacheKey = getCacheKey(provider, cleanPrompt, systemPrompt, jsonMode);
+  const cached = getCachedResponse(cacheKey);
+  if (cached) {
+    logLlmCost(provider, 'cache', cleanPrompt.length, cached.length, 0, true);
+    console.log(cached);
+    return;
+  }
+
+  // Provider chain: primary → cross fallback
+  // 프록시 모드 (주관=GPT): 보조로 Claude CLI 사용
+  // 직접 모드 (주관=Claude): 보조로 GPT/Antigravity 사용
+  const providerLabels = { gpt: 'GPT', 'gpt-codex': 'GPT Codex', antigravity: 'Antigravity', claude: 'Claude' };
+  const isGpt = provider === 'gpt' || provider === 'gpt-codex' || provider === 'gpt-spark';
+  const isClaude = provider === 'claude';
+  const claudeSecondary = useClaudeAsSecondary();
+
+  let providerChain;
+  if (isClaude) {
+    // 명시적 claude 호출
+    providerChain = ['claude', 'antigravity'];
+  } else if (isGpt) {
+    // GPT 주관 → claude fallback (vibe-codex), antigravity fallback (직접 모드)
+    providerChain = claudeSecondary ? [provider, 'claude'] : [provider, 'antigravity'];
+  } else {
+    // Antigravity 주관 → claude fallback (vibe-codex), gpt fallback (직접 모드)
+    providerChain = claudeSecondary ? ['antigravity', 'claude'] : ['antigravity', 'gpt'];
+  }
+
+  // hook(UserPromptSubmit) 모드: 사용자가 `gpt`/`agy` 접두사로 명시적으로 부른 단발
+  // 보조 호출이라 cross-provider fallback 이 불필요하다. primary 1개로 단축해
+  // 부모 dispatcher timeout 안에 단일 시도로 끝낸다. (B-2)
+  if (process.env.VIBE_LLM_HOOK_MODE) {
+    providerChain = [providerChain[0]];
+  }
+
+  const vibeConfig = readVibeConfig();
+
+  for (let i = 0; i < providerChain.length; i++) {
+    const currentProvider = providerChain[i];
+    const label = providerLabels[currentProvider] || currentProvider.toUpperCase();
+    // Use shorter timeout for fallback providers
+    const timeoutMs = i === 0 ? CLI_TIMEOUT_MS : CLI_FALLBACK_TIMEOUT_MS;
+    const startTime = Date.now();
+    const result = await callWithRetry(currentProvider, cleanPrompt, systemPrompt, jsonMode, timeoutMs);
+
+    if (result.success) {
+      const output = `${label} response: ${result.result}`;
+      setCachedResponse(cacheKey, output);
+
+      // 비용 추적
+      const model = resolveModel(currentProvider, vibeConfig);
+      logLlmCost(currentProvider, model, cleanPrompt.length, result.result.length, Date.now() - startTime, false);
+
+      console.log(output);
+      return;
+    }
+
+    // Log failure and try fallback
+    if (i < providerChain.length - 1) {
+      const nextProvider = providerChain[i + 1];
+      const nextLabel = providerLabels[nextProvider] || nextProvider.toUpperCase();
+      console.error(`[${currentProvider.toUpperCase()}] Failed: ${result.error}. Falling back to ${nextLabel}...`);
+    } else {
+      // All providers failed
+      console.log(`[LLM] Error: All providers failed. Last error: ${result.error}`);
+    }
+  }
+}
+
+main();
