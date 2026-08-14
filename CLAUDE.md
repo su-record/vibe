@@ -53,6 +53,19 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 - ESM only (`"type": "module"`) — imports need `.js` extension
 - Build before test: `npm run build && npx vitest run`
 
+### Release Gates (전부 exit 0 이어야 배포)
+| 명령 | 막는 것 |
+|---|---|
+| `npm run build && npx vitest run` | 타입·동작 회귀 |
+| `npm run gen:skill-docs:check` | SKILL-CATALOG.md 드리프트 |
+| `npm run validate:counts` | README/package.json 개수 주장과 실제 불일치 |
+| `npm run validate:skill-invocation` | 스킬 invocation 선언 오류 |
+| `npm run sync:agent-models:check` | 에이전트 모델 섹션 드리프트 |
+| `npm run gen:plugin-hooks:check` | 훅 정의 세 벌의 드리프트 |
+| `npm run validate:plugin-tree` | 배포 트리와 소스 불일치 |
+
+마지막 둘은 CI(`test.yml`)에서도 돈다. **배포 순서는 PR 병합 먼저, 태그는 그다음** — 태그를 먼저 밀면 보호 브랜치에 막혀 병합이 실패해도 CI 가 이미 npm 에 게시한다(실측 v3.2.19).
+
 ### Config Locations
 | Path | Purpose |
 |---|---|
@@ -61,6 +74,11 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 | `.claude/settings.local.json` | Claude Code hooks (auto-generated, don't commit) |
 | `.codex/hooks.json` | Codex native hooks (auto-generated, don't commit) |
 | `~/.codex/config.toml` | Codex `notify` (turn-complete lifecycle hook, auto-installed) |
+| `.claude-plugin/plugin.json` | Claude Code 플러그인 매니페스트 (버전은 package.json 이 SSOT) |
+| `.claude-plugin/marketplace.json` | Claude Code 마켓플레이스 — `source: ./plugins/vibe` |
+| `.codex-plugin/plugin.json` | Codex/ChatGPT 플러그인 매니페스트 |
+| `.agents/plugins/marketplace.json` | Codex 마켓플레이스 — 같은 배포 트리를 가리킨다 |
+| `plugins/vibe/` | **커밋되는** 배포 트리 (`npm run build:plugin`) — 아래 배포 3경로 참조 |
 
 > ⚠️ 훅은 **프로젝트 로컬** 아티팩트다 — `vibe upgrade` 는 전역 자산만 갱신하므로 upgrade 만 쓰면 훅이 설치되지 않는다. `vibe upgrade` 가 현재 프로젝트의 누락 훅을 복구하고, `vibe status` 가 하네스별 설치 여부를 보고한다.
 
@@ -82,12 +100,28 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 ### Dual-Harness Doctrine
 하네스 차이는 경로가 아니라 **인지 방식**(CC=추론 / Codex=직역)에 있다. 원칙: **암묵적 동작에 의존하지 않는다 — 추론은 `/vibe` 디스패처가 앞단에서, skill 본문은 전부 명시적으로.** ("명시성 공통분모 + 추론 앞단"). Hook은 의도별 매핑: 라이프사이클(turn 완료) → Codex `config.toml notify`, 나머지(SessionStart·UserPromptSubmit·Pre/PostToolUse·Pre/PostCompact) → Codex 네이티브 hook(`.codex/hooks.json` + `codex-hook-adapter.js`). **`PostCompact` 는 압축 직후 `loop-ledger.js anchor` 로 재고정한다** — ANCHOR 가 컨텍스트 소실에 대비하는 장치인데 정작 압축 시점에 자동 실행이 없었다. AGENTS.md soft-hook 은 폐기하지 않고 **훅 미설치 환경의 2차 방어선**으로 유지(직역이라 신뢰성↑). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
 
+### 배포 3경로 (npm · Claude Code 플러그인 · Codex 플러그인)
+같은 자산을 세 경로로 내보낸다. **경로가 늘어난 만큼 정의도 갈라진다** — 갈라지면 한쪽 하네스에서만 게이트가 죽고, 그건 조용히 일어난다. 그래서 SSOT 를 하나로 묶고 생성·검증한다.
+
+| 경로 | 설치 | 훅 정의 | 경로 변수 |
+|---|---|---|---|
+| npm | `npm i -g @su-record/vibe` | `hooks/hooks.json` (**SSOT**) | `{{VIBE_PATH}}` — postinstall 이 치환 |
+| Claude Code | `claude plugin marketplace add su-record/vibe` | `hooks/claude-plugin-hooks.json` (생성물) | `${CLAUDE_PLUGIN_ROOT}` |
+| Codex/ChatGPT | `vibe plugin install` → `codex plugin add vibe@vibe` | `hooks/plugin-hooks.json` (생성물) | `${PLUGIN_ROOT}` |
+
+- **생성**: `npm run gen:plugin-hooks` — `--check` 가 CI 게이트. 손으로 고치지 않는다
+- **이중 실행 가드**: 플러그인 훅은 `plugin-hook-entry.js` 를 거친다. 프로젝트에 **vibe 훅**이 있으면 플러그인 쪽이 물러난다 — 없으면 게이트가 2회, Stop auto-commit 도 2회 돈다. 판정은 "훅 키가 있다" 가 아니라 "vibe 훅이 있다" (사용자 자작 훅만 있는 프로젝트에서 침묵하면 설치한 의미가 없다). 실행은 spawn 이 아니라 in-process `import` — 위 훅 실행 모델 규약을 플러그인 경로에서도 지킨다
+- **배포 트리를 커밋하는 이유**: Claude Code 마켓플레이스는 저장소를 **클론**해서 읽는다. `dist/` 는 gitignore 대상이고 `agents/*.md` 의 frontmatter 는 postinstall 이 만든다 — 저장소를 그대로 가리키면 기능이 빠진 플러그인이 된다(실측: 에이전트 11개 중 7개만, description 없이 로드). `plugins/vibe/` 를 커밋하고 드리프트는 `npm run validate:plugin-tree` 가 막는다. `.gitignore` 의 `dist/` 가 이 트리까지 삼키므로 `!/plugins/vibe/dist/` 예외가 필수다
+
 ### Gotchas
 - `better-sqlite3` WAL mode — synchronous API
 - `crypto.timingSafeEqual` requires same-length buffers — check length first
 - **Stack → asset SSOT**: `GLOBAL_SKILLS_*`, `STACK_TO_SKILLS`, `CAPABILITY_SKILLS` in `src/cli/postinstall/constants.ts`
 - **Hook dispatch order**: `prompt-dispatcher.js` → `llm-orchestrate.js` (매직 키워드 배너 훅 없음 — deprecated 별칭은 "Deprecated aliases" 표가 SSOT, 모델이 직접 해석)
 - **Hook 실행 모델**: per-event process spawn 유지 — **daemon/IPC 지양** (무상태·크래시 격리·인프라 제로가 ~20ms VM 기동 절감보다 우선). 훅 레이턴시 최적화는 dispatcher in-process 평탄화(자식 spawn → `import` 실행)로만 접근한다
+- **npm 12 `allowScripts`**: install 스크립트가 **기본 차단**된다. 설치는 ✅ 인데 vibe postinstall 도 `better-sqlite3` 네이티브 바인딩도 안 만들어진다 — 둘 다 자기복구(`runInstalledPostinstall`, `repairNativeDeps`)로 덮고 `vibe status` 가 보고한다. 근본 처방은 사용자 레벨 승인 하나뿐이다: `npm config set allow-scripts=@su-record/vibe,better-sqlite3 --location=user`. `npm install-scripts approve` 는 설치본 package.json 에 쓰므로 다음 설치에 지워진다(실측)
+- **에이전트 frontmatter 는 따옴표 필수**: description 에 `: ` 가 들어가면 YAML 평문 스칼라가 매핑으로 해석돼 **frontmatter 전체가 버려진다** — 에러 없이. 실측으로 설치본 11개 중 4개가 그 상태였다 (`convertAgentToClaude` 의 `yamlString`)
+- **Claude Code 는 `agents/*.md` 평면만 스캔**한다 — 하위 디렉토리 에이전트는 경고 없이 사라진다. 배포 트리는 평면화해서 굽는다
 
 ## Workflow
 
@@ -141,7 +175,7 @@ Public skills use the `vibe.*` namespace and are classified as **entry** / **sta
 
 ## Git
 
-**Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `CLAUDE.md`
+**Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `CLAUDE.md`, `plugins/vibe/` (배포 트리 — 생성물이지만 커밋한다, 위 "배포 3경로" 참조)
 **Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `/vibe.test` artifacts live with the vibe install, not with the project
 **Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.codex/hooks.json`, `.vibe/{memories,checkpoints,metrics,gates}/`
 
