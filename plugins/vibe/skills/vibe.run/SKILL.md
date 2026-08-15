@@ -100,6 +100,12 @@ test -f DESIGN.md
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+> **병렬 쓰기는 격리 없이 하지 않는다.** 병렬 항목이 **파일을 수정하면** 항목별 worktree 에서 실행한다 (`vibe.git-worktree` 패턴, `vibe.loop` 의 `isolation: worktree` 와 같은 축). 읽기 전용 병렬 탐색은 격리 불필요.
+>
+> WHY: 같은 워킹트리에서 두 에이전트가 쓰면 경합한다 — 파일 덮어쓰기, 공유 git 명령 충돌. 프롬프트로 막을 수 있는 종류가 아니라 **구조로만** 막힌다. 실측 사례: Bun 팀이 대규모 포팅을 여러 에이전트로 팬아웃했을 때 공유 워크스페이스에서 서로를 덮어써 운영상 실패했고, 해결책은 프롬프트가 아니라 그룹별 worktree 분리였다.
+>
+> 팬아웃 전에 답이 있어야 하는 3가지: **어디서 작업하는가 · 결과를 어떻게 병합하는가 · 둘이 충돌하면 어떻게 하는가.** 답이 없으면 병렬로 가지 않는다.
+
 > **하네스-안전 증분 (Dual-Harness Doctrine)**: 시나리오는 **가장 작은 검증 단위**다. 한 시나리오 구현 → 즉시 검증 → 다음. `automationLevel: autonomous`이라도 이 단위는 무너뜨리지 않는다 (병렬은 시나리오 간, 검증은 시나리오별). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
 
 ### Automated Verification (Closed Loop)
@@ -179,7 +185,7 @@ Default: a
 | 1-1 | Phase Isolation Protocol | 3+ phase SPEC 은 phase 단위 격리 + 체크포인트 필수 |
 | 1-2 | SPEC-First Gate | SPEC 에 없는 것을 구현하지 않는다 |
 | 2 | Extract Scenario List | Feature 파일의 시나리오가 작업 단위 |
-| 3 | Scenario-by-Scenario Implementation | 기본 순차. **구현→검증 쌍은 시나리오 단위로 쪼개지 않는다**. `autonomous` 에서 서로 의존하지 않는 시나리오는 병렬 가능하되 검증은 시나리오별로 각각 (SSOT: 위 "하네스-안전 증분") |
+| 3 | Scenario-by-Scenario Implementation | 기본 순차. **구현→검증 쌍은 시나리오 단위로 쪼개지 않는다**. `autonomous` 에서 서로 의존하지 않는 시나리오는 병렬 가능하되 검증은 시나리오별로 각각 (SSOT: 위 "하네스-안전 증분"), **병렬 시 격리 필수** (아래) |
 | 4 | Brand Assets | 신규 프로젝트만 (`references/brand-assets.md`) |
 | 5 | Race Code Review | `references/race-review.md` |
 | 6 | Quality Report | 자동 생성 |

@@ -219,6 +219,11 @@ After agent results:
 
 > P1/P2 findings 를 검증하기 위해 네이티브 서브에이전트를 병렬로 스폰한다 —
 > `security-reviewer` + `code-reviewer` 인스턴스(서로 다른 focus)가 각 finding 을 교차 검증(validate / upgrade / downgrade / remove)한다.
+>
+> **검증자에게 실행자의 컨텍스트를 넘기지 않는다.** 새 서브에이전트로 스폰하는 것 자체가
+> 이 규정이다 — finding 과 대상 파일만 주고, 리뷰 과정의 대화는 주지 않는다.
+> 같은 컨텍스트를 물려받은 검증자는 검증하지 않고 **자기 자신에게 동의한다**.
+> 그러면 교차 검증은 이름만 남고 단일 리뷰와 같아진다 — 더 비싸고, 통과 신호만 늘어난 채로.
 
 > Read `references/worked-examples.md` for the full Review Debate example output.
 

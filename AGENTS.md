@@ -109,6 +109,17 @@ Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/
 - **이중 실행 가드**: 플러그인 훅은 `plugin-hook-entry.js` 를 거친다. 프로젝트에 **vibe 훅**이 있으면 플러그인 쪽이 물러난다 — 없으면 게이트가 2회, Stop auto-commit 도 2회 돈다. 판정은 "훅 키가 있다" 가 아니라 "vibe 훅이 있다" (사용자 자작 훅만 있는 프로젝트에서 침묵하면 설치한 의미가 없다). 실행은 spawn 이 아니라 in-process `import` — 위 훅 실행 모델 규약을 플러그인 경로에서도 지킨다
 - **배포 트리를 커밋하는 이유**: Claude Code 마켓플레이스는 저장소를 **클론**해서 읽는다. `dist/` 는 gitignore 대상이고 `agents/*.md` 의 frontmatter 는 postinstall 이 만든다 — 저장소를 그대로 가리키면 기능이 빠진 플러그인이 된다(실측: 에이전트 11개 중 7개만, description 없이 로드). `plugins/vibe/` 를 커밋하고 드리프트는 `npm run validate:plugin-tree` 가 막는다. `.gitignore` 의 `dist/` 가 이 트리까지 삼키므로 `!/plugins/vibe/dist/` 예외가 필수다
 
+### 폭이 큰 작업 — 네이티브 workflow 로 라우팅 (Claude Code)
+Claude Code 는 `Workflow` 도구(dynamic workflows)를 제공한다 — 한 실행에서 **누적 1000 에이전트**, **동시 min(16, cores-2)**. vibe 의 병렬 ACT 는 그보다 앞서 만든 자체 팬아웃이라 이 상한을 쓰지 않는다.
+
+**언제 넘길지**: 독립 작업 단위가 **수십 개 이상**이고(파일별 감사·전면 마이그레이션·다각도 탐색), 중간 결과가 세션 컨텍스트에 쌓이면 안 될 때. 조율 비용은 스크립트 변수로 빠지지만 **에이전트 사용량 자체는 그대로 든다** — 절약되는 것은 조율이지 작업이 아니다.
+
+**넘기지 않을 때**: 단위가 한 자릿수, 단계가 진짜로 서로 의존, 매 단계 사람 승인이 필요, 또는 아직 뭘 찾는지 모르는 탐색. 이 경우 워크플로는 순수 오버헤드다.
+
+- **자동 라우팅하지 않는다** — 워크플로는 사용자가 명시적으로 옵트인해야 하는 도구다. vibe 는 조건에 맞을 때 **제안만** 하고, 기본은 자체 병렬 ACT 를 유지한다
+- **Codex 에는 등가물이 없다** — 하네스별 능력 차이지 워크플로 분기가 아니다. vibe 코어의 루프 계약은 양쪽에서 동일하게 남는다 (Dual-Harness Doctrine)
+- 넘기더라도 **격리·검증 규정은 그대로** 적용된다 — 파일을 쓰는 병렬 단위는 worktree, 검증자는 독립 컨텍스트
+
 ### Gotchas
 - `better-sqlite3` WAL mode — synchronous API
 - `crypto.timingSafeEqual` requires same-length buffers — check length first
