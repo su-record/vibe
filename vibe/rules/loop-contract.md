@@ -193,4 +193,6 @@ JUDGE는 이번 feature의 **신규 생성 파일** 기준으로 검증 코드 �
 | `verify` | 기본 동작과 동일 (no-op) — JUDGE는 항상 결정론 검증 |
 | `quick` | `--max-iter 1` + 최소 JUDGE |
 | `ralplan` | 같은 계약을 계획 단계에 적용 |
-| `ultrawork` / `ulw` | `automationLevel: autonomous` + 병렬 ACT — 루프 시맨틱이 아니라 자율성·병렬성 축 |
+| `ultrawork` / `ulw` | `automationLevel: autonomous` + 병렬 ACT — 루프 시맨틱이 아니라 자율성·병렬성 축. **병렬 항목이 파일을 수정하면 항목별 worktree 격리 필수** (`vibe.loop` 의 `isolation` 축과 같은 규칙) |
+
+> **폭이 수십 단위를 넘으면** Claude Code 네이티브 `Workflow`(누적 1000 에이전트 / 동시 min(16, cores-2))를 **제안**한다 — 자동 전환하지 않는다. 옵트인 도구이고, 조율 비용만 절약될 뿐 에이전트 사용량은 그대로 든다. Codex 에는 등가물이 없으므로 루프 계약 자체는 양쪽 동일하게 유지한다. 넘기더라도 위의 격리 규정과 검증자 컨텍스트 규정은 그대로 적용된다. 상세: `CLAUDE.md` "폭이 큰 작업 — 네이티브 workflow 로 라우팅".
