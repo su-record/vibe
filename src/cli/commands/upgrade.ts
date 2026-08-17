@@ -9,7 +9,7 @@ import { pathToFileURL } from 'url';
 import { CliOptions } from '../types.js';
 import { log, getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
-import { installProjectHooks, installProjectCodexHooks } from '../setup.js';
+import { installProjectHooks, installProjectCodexHooks, projectHooksStale } from '../setup.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
 import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
 import { missingNativeDeps, repairNativeDeps, nativeDepHint } from '../setup/NativeDeps.js';
@@ -118,10 +118,13 @@ export function repairProjectHooks(projectRoot: string): string[] {
 
   const repaired: string[] = [];
 
-  if (!hasClaudeHooks(projectRoot)) {
+  // 부재뿐 아니라 **내용이 어긋난** 경우도 복구한다 — 훅 정의가 바뀌어도
+  // 이미 설치한 사용자에게 도달하지 않던 문제(v3.2.35 matcher 수정 때 실측).
+  const claudeStale = projectHooksStale(projectRoot, '.claude');
+  if (!hasClaudeHooks(projectRoot) || claudeStale) {
     try {
       installProjectHooks(projectRoot, '.claude');
-      repaired.push('.claude/settings.local.json');
+      repaired.push(claudeStale ? '.claude/settings.local.json (stale)' : '.claude/settings.local.json');
     } catch { /* 복구 실패가 업그레이드 자체를 실패시키지 않는다 */ }
   }
 

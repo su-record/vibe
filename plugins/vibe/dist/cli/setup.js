@@ -6,7 +6,7 @@ export { detectOsLanguage } from './setup/LanguageDetector.js';
 // GlobalInstaller
 export { getCoreConfigDir, } from './setup/GlobalInstaller.js';
 // ProjectSetup
-export { updateConstitution, updateRules, installProjectHooks, installCodexNotify, updateGitignore, updateConfig, generateProjectClaudeMd, generateProjectAgentsMd, generateProjectAntigravityMd, generateGlobalClaudeMd, generateGlobalCodexAgentsMd, generateGlobalAntigravityMd, } from './setup/ProjectSetup.js';
+export { updateConstitution, updateRules, installProjectHooks, projectHooksStale, installCodexNotify, updateGitignore, updateConfig, generateProjectClaudeMd, generateProjectAgentsMd, generateProjectAntigravityMd, generateGlobalClaudeMd, generateGlobalCodexAgentsMd, generateGlobalAntigravityMd, } from './setup/ProjectSetup.js';
 export { buildCodexHooksConfig, installProjectCodexHooks, } from './setup/CodexHooks.js';
 export { migrateLegacyCore, consolidateLegacyVibe, cleanupLegacy, removeLocalAssets, cleanupClaudeConfig, cleanupLegacyMcp } from './setup/LegacyMigration.js';
 //# sourceMappingURL=setup.js.map

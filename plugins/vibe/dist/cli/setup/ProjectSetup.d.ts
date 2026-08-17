@@ -49,6 +49,19 @@ export declare function updateRules(coreDir: string, detectedStacks: TechStack[]
  * @param projectRoot 프로젝트 루트
  * @param harnessDir 하네스 디렉토리 이름 ('.claude', 기본값: '.claude')
  */
+/**
+ * 설치된 프로젝트 훅이 패키지 템플릿과 어긋났는가.
+ *
+ * WHY: `repairProjectHooks` 가 **부재**만 봤다 — 훅 키가 있으면 무조건 최신으로
+ * 취급했다. 그래서 훅 내용이 바뀌어도(예: PostToolUse matcher 에 `Agent` 추가)
+ * 이미 설치한 사용자에게는 **영영 도달하지 않는다**. 실측: v3.2.35 로 upgrade 한
+ * 직후에도 `.claude/settings.local.json` 은 옛 matcher 를 그대로 갖고 있었다.
+ *
+ * 전역 자산은 `staleGlobalAssets` 로 같은 문제를 이미 막았는데 프로젝트 훅에는
+ * 그 장치가 없었다. 설치 자체가 idempotent 하므로(아래 installer 는 `hooks` 키만
+ * 통째로 교체하고 나머지 설정은 보존한다) 어긋나면 그냥 다시 깔면 된다.
+ */
+export declare function projectHooksStale(projectRoot: string, harnessDir?: string): boolean;
 export declare function installProjectHooks(projectRoot: string, harnessDir?: string): void;
 /**
  * Codex notify 설치 — `~/.codex/config.toml` 에 `notify` 프로그램을 등록한다.

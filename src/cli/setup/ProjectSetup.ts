@@ -528,6 +528,42 @@ export function updateRules(coreDir: string, detectedStacks: TechStack[], isUpda
  * @param projectRoot 프로젝트 루트
  * @param harnessDir 하네스 디렉토리 이름 ('.claude', 기본값: '.claude')
  */
+/**
+ * 설치된 프로젝트 훅이 패키지 템플릿과 어긋났는가.
+ *
+ * WHY: `repairProjectHooks` 가 **부재**만 봤다 — 훅 키가 있으면 무조건 최신으로
+ * 취급했다. 그래서 훅 내용이 바뀌어도(예: PostToolUse matcher 에 `Agent` 추가)
+ * 이미 설치한 사용자에게는 **영영 도달하지 않는다**. 실측: v3.2.35 로 upgrade 한
+ * 직후에도 `.claude/settings.local.json` 은 옛 matcher 를 그대로 갖고 있었다.
+ *
+ * 전역 자산은 `staleGlobalAssets` 로 같은 문제를 이미 막았는데 프로젝트 훅에는
+ * 그 장치가 없었다. 설치 자체가 idempotent 하므로(아래 installer 는 `hooks` 키만
+ * 통째로 교체하고 나머지 설정은 보존한다) 어긋나면 그냥 다시 깔면 된다.
+ */
+export function projectHooksStale(
+  projectRoot: string,
+  harnessDir: string = '.claude',
+): boolean {
+  const template = path.join(
+    path.resolve(__dirname, '..', '..', '..'), 'hooks', 'hooks.json');
+  if (!fs.existsSync(template)) return false;   // 템플릿이 없으면 판정하지 않는다
+
+  try {
+    const expected = JSON.parse(
+      fs.readFileSync(template, 'utf-8')
+        .replace(/\{\{VIBE_PATH\}\}/g, getCoreConfigDir().replace(/\\/g, '/')),
+    ) as { hooks: unknown };
+    const installed = JSON.parse(
+      fs.readFileSync(path.join(projectRoot, harnessDir, 'settings.local.json'), 'utf-8'),
+    ) as { hooks?: unknown };
+
+    if (!installed.hooks) return false;   // 부재는 stale 이 아니라 미설치 — 호출부가 따로 본다
+    return JSON.stringify(installed.hooks) !== JSON.stringify(expected.hooks);
+  } catch {
+    return false;   // 판독 불가는 stale 로 보지 않는다 — 사용자 설정을 함부로 덮지 않는다
+  }
+}
+
 export function installProjectHooks(projectRoot: string, harnessDir: string = '.claude'): void {
   const claudeDir = path.join(projectRoot, harnessDir);
   const settingsLocalPath = path.join(claudeDir, 'settings.local.json');

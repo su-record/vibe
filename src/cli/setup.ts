@@ -15,6 +15,7 @@ export {
   updateConstitution,
   updateRules,
   installProjectHooks,
+  projectHooksStale,
   installCodexNotify,
   updateGitignore,
   updateConfig,
