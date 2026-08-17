@@ -61,7 +61,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|Bash|Task|SlashCommand|NotebookEdit",
+        "matcher": "Edit|Write|Bash|Agent|Skill|Task|SlashCommand|NotebookEdit",
         "hooks": [
           {
             "type": "command",

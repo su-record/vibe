@@ -2,10 +2,20 @@
 /**
  * PostToolUse Hook — 툴콜 스텝 카운터 + 패턴 로거 + 3-fail 감지기
  *
- * hooks.json matcher: "Edit|Write|Bash|Task|SlashCommand|NotebookEdit"
+ * hooks.json matcher: "Edit|Write|Bash|Agent|Skill|Task|SlashCommand|NotebookEdit"
  * → Read/Grep/Glob/WebFetch/WebSearch/TodoWrite/ToolSearch/ListMcpResourcesTool
  *   는 matcher 단에서 제외되어 이 프로세스 자체가 spawn 되지 않는다.
  *   아래 READ_ONLY_TOOLS 는 defense-in-depth 용 추가 가드이다.
+ *
+ * ⚠️ **툴 이름은 하네스가 바꾼다 — 옛 이름을 지우지 않는다.**
+ * 서브에이전트 툴이 `Task` → `Agent` 로 바뀌었는데 matcher 가 옛 이름만 갖고 있어
+ * 에이전트 스폰이 **한 건도 집계되지 않고 있었다**(2026-08 실측: 세션 로그 60개에서
+ * `Agent` 13회 / `Task` 0회). 슬래시 명령도 `SlashCommand` → `Skill` 로 옮겨갔다
+ * (`Skill` 116회 / `SlashCommand` 0회).
+ *
+ * 이 실패는 조용하다 — 카운터가 에러 없이 0을 센다. 그래서 규칙은 한 방향이다:
+ * **과다 매칭은 안전하고(스크립트가 걸러낸다) 과소 매칭은 소리 없이 데이터를 잃는다.**
+ * 새 이름은 추가하고 옛 이름은 남긴다 — 구버전 하네스 호환도 같이 얻는다.
  *
  * 책임 1) 액션 툴콜을 1 스텝으로 집계 → `current-run.json`
  *        ↳ /vibe.verify 가 history.jsonl에 append 후 출력
