@@ -90,23 +90,31 @@ is the SSOT for proportional execution.
 
 ### Parallel Task Call Pattern (MUST FOLLOW)
 
-**Correct — Single message with multiple parallel Tasks:**
+**Correct — Single message with multiple parallel spawns:**
 ```
 <message>
-  Task("Analyze src/components/ for existing patterns")
-  Task("Check package.json dependencies")
-  Task("Find usage of similar features in codebase")
+  Agent("Analyze src/components/ for existing patterns")
+  Agent("Check package.json dependencies")
+  Agent("Find usage of similar features in codebase")
 </message>
-→ All 3 run simultaneously, ~3x faster
+→ 세 건이 동시에 돈다. 벽시계 시간은 **가장 느린 하나**로 수렴한다
 ```
 
 **WRONG — Sequential calls (DO NOT DO THIS):**
 ```
-<message>Task("Analyze...")</message>
-<message>Task("Check...")</message>
-<message>Task("Find...")</message>
-→ 3x slower, wastes time
+<message>Agent("Analyze...")</message>
+<message>Agent("Check...")</message>
+<message>Agent("Find...")</message>
+→ 벽시계 시간이 **셋의 합**이 된다. 서로 읽지 않는 작업을 줄 세운 대가다
 ```
+
+> 도구 이름은 하네스가 바꾼다 — 서브에이전트 툴은 `Task` 에서 `Agent` 로 옮겨갔다
+> (2026-08 실측: 세션 로그 60개에서 `Agent` 13회 / `Task` 0회). Codex 에는 이 이름의
+> 도구가 없으므로 **호출 문법이 아니라 의도**로 읽는다 — "독립 작업은 한 번에 띄운다".
+>
+> **배수로 말하지 않는다.** 이전 판에는 "~3x faster" 라고 적혀 있었는데 근거가 없고
+> 사실도 아니다 — 병렬 실행의 벽시계 시간은 개수로 나눠지지 않고 가장 느린 항목과
+> 스폰 오버헤드로 정해진다. 측정하지 않은 배수는 적지 않는다.
 
 ### Background Agent Pattern (autonomous + parallel ACT)
 
