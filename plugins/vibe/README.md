@@ -142,7 +142,7 @@ codex
 
 # 라이프사이클
 /vibe.design lint                                  # Stitch 9-섹션 완전성 검증
-/vibe.design verify                                # 구현 ↔ DESIGN.md hex 토큰 드리프트 (<1s/100 파일)
+/vibe.design verify                                # 구현 ↔ DESIGN.md hex 토큰 드리프트
 ```
 
 **자동 통합**:

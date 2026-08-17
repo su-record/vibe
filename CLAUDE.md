@@ -39,6 +39,7 @@ Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10 — appl
 
 ### Forbidden Patterns
 No `console.log` in commits · No hardcoded strings/numbers · No commented-out code · No incomplete code without TODO
+- **수치에는 출처를 붙인다** — 실측(무엇을 어떻게 쟀는지) · 1차 문서 · 추정(추정임을 명시). 셋 다 아니면 숫자를 쓰지 않고 방향만 적는다. 측정 안 한 배수/퍼센트 금지, 모델마다 달라지는 값의 절대 하드코딩 금지(하네스 임계 신호를 쓴다). SSOT: `vibe/constitution.md` §3.5
 
 ### Convergence (review / auto-fix loops)
 Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECORD; exit = gates pass │ stuck │ max_iterations).

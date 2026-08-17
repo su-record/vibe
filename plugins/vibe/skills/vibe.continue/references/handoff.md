@@ -4,7 +4,7 @@ Use this document before a session ends or a long pause when detailed work state
 
 ## When to Generate
 
-- Context reaches roughly 80–100k tokens.
+- Context reaches the harness's own threshold — the `context_window_80/90/95` signal, i.e. the 85% rule in CLAUDE.md. Do not hardcode an absolute token count: the window differs by model (200k vs 1M), so a fixed number is wrong for most sessions.
 - The session has already been compacted three times.
 - Work will pause for an extended period.
 - Complex progress needs a durable record for a teammate or future session.
