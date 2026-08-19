@@ -26,15 +26,34 @@ failed scenario. The loop, not a human, closes the gap.
 
 Cheap verification is what makes the closed loop viable. Priority order:
 
-1. **Agent Browser MCP** — drives the browser via the accessibility tree
-   (`button "Sign In"` ≈ 15 chars vs 200+ for the equivalent DOM). Dozens of
-   loop iterations per session.
+1. **Agent Browser** — drives the browser via the accessibility tree, so a
+   control costs a ref (`@e2`) instead of a DOM subtree. Two ways in:
+
+   ```bash
+   npm install -g agent-browser && agent-browser install   # native CLI (no Node/Playwright at runtime)
+   agent-browser mcp                                        # or run it as an MCP server
+   ```
+
+   CLI shape — snapshot once, then act on refs:
+
+   ```bash
+   agent-browser open localhost:3000
+   agent-browser snapshot          # accessibility tree with refs
+   agent-browser click @e2
+   agent-browser fill @e3 "user@example.com"
+   agent-browser close
+   ```
+
 2. **Playwright test runner** — write a spec, run
    `npx playwright test --reporter=line`, consume pass/fail only.
+   If missing: `npx playwright install chromium`.
 3. **Playwright MCP (DOM-based)** — last resort; full DOM trees exhaust
    context in 2–3 interactions.
 
-If Playwright is needed and missing: `npx playwright install chromium`.
+> **1순위를 쓰려면 설치돼 있어야 한다.** 이전 판은 Agent Browser 를 1순위로
+> 지정해 놓고 **얻는 방법을 적지 않았다** — 결과적으로 전원이 2순위로 떨어졌다.
+> 설치 여부를 먼저 확인하고(`agent-browser --version`), 없으면 위 명령을 제안한
+> 뒤 사다리를 내려간다. 사다리는 선언이 아니라 실행 가능해야 의미가 있다.
 
 ## Verification Scope
 
