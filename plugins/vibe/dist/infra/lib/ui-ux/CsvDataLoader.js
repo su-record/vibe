@@ -1,9 +1,28 @@
-import Papa from 'papaparse';
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve, relative, isAbsolute } from 'path';
 import { homedir } from 'os';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { createRequire } from 'module';
+/**
+ * papaparse 를 **호출 시점에** 가져온다 — 모듈 로드 시점이 아니라.
+ *
+ * WHY: 이 파일은 `dist/tools/index.js` 통합 배럴이 재수출한다. 정적 import 면
+ * 배럴을 건드리는 **모든** 소비자가 papaparse 해석에 성공해야 한다 — CSV 를 쓸
+ * 생각이 전혀 없는 신호 수집기·비용 게이트까지 포함해서. 실제로 GPT 앱(플러그인
+ * 트리에는 node_modules 가 없다)에서 "선택 기능과 무관한 papaparse 누락으로
+ * 실패" 가 반복 보고됐다.
+ *
+ * 선택 기능의 의존성은 그 기능을 쓸 때만 필요해야 한다.
+ */
+function loadPapa() {
+    try {
+        return createRequire(import.meta.url)('papaparse');
+    }
+    catch {
+        return null;
+    }
+}
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 /**
@@ -46,7 +65,15 @@ export class CsvDataLoader {
         try {
             const rawContent = readFileSync(resolvedPath, 'utf-8');
             const cleanContent = this.removeBom(rawContent);
-            const parseResult = Papa.parse(cleanContent, {
+            const papa = loadPapa();
+            if (!papa) {
+                // 의존성 부재는 CSV 기능만 끈다 — 호출자를 죽이지 않는다
+                if (!this.quiet) {
+                    console.warn(`[CsvDataLoader] papaparse unavailable — CSV loading disabled (${filename})`);
+                }
+                return null;
+            }
+            const parseResult = papa.parse(cleanContent, {
                 header: true,
                 skipEmptyLines: true,
                 transformHeader: (h) => h.trim(),
