@@ -107,7 +107,7 @@ user-invocable: true
 stakes 의 결정론 신호(config 유무·임시 디렉토리·git 여부)도 이 한 번의 호출로 함께 받는다:
 
 ```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { console.log(JSON.stringify(t.collectDispatchSignals(process.cwd(), {urls: [], attachments: [], feature: undefined}), null, 2)); })"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/dispatch/index.js').then(t => { console.log(JSON.stringify(t.collectDispatchSignals(process.cwd(), {urls: [], attachments: [], feature: undefined}), null, 2)); })"
 ```
 
 반환값을 **사실로 받는다**:

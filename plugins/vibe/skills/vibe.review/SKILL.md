@@ -127,7 +127,7 @@ Detect project tech stack FIRST before launching reviewers.
 **스폰 직전 비용 게이트** (SSOT: `vibe/rules/loop-contract.md` 비용 게이트 절). 위 표대로 정한 리뷰어 수를 그대로 넣는다:
 
 ```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const op={kind:'agent-fanout',agentCount:{N},label:'리뷰어 {N}종 병렬'}; console.log(t.formatCostGate(op, t.evaluateCostGate(op))); })"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/dispatch/index.js').then(t => { const op={kind:'agent-fanout',agentCount:{N},label:'리뷰어 {N}종 병렬'}; console.log(t.formatCostGate(op, t.evaluateCostGate(op))); })"
 ```
 
 기본 임계값(12)에서 demo 2종·prototype 3종·production 8종은 전부 **통과**한다 — 평상시 규모는 멈추지 않는다. `ask` 가 나오면 스폰 전에 사용자에게 확인하고, `record` (autonomous) 면 묻지 않고 인박스에 남긴 뒤 진행한다.
