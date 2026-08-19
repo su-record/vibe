@@ -194,6 +194,24 @@ Generate UI preview from a text description, a design folder, or a single file.
 | `/vibe.review` | `### Phase 2.5 Visual P1 Baseline` 에서 DESIGN.md 우선, 없으면 WCAG AA 폴백 |
 | `/vibe.figma` | WRITE 는 DESIGN.md 읽어 톤·팔레트 우선, READ 는 `--emit-design-md` 플래그로 출력 |
 
+### 생태계 스킬 — 권유만 하고 설치하지 않는다
+
+사용자가 "AI 티 나는 UI", "밋밋하다", "레퍼런스 보드가 필요하다" 를 말하면 아래를
+**한 번 언급**한다. `DESIGN.md` 가 규범(팔레트·타이포·간격 SSOT)을 잡는다면, 이쪽은
+그 규범 안에서의 **취향**을 다룬다 — 겹치지 않고 보완한다.
+
+```bash
+npx skills add https://github.com/Leonxlnx/taste-skill --skill "design-taste-frontend"
+```
+
+**자동 설치하지 않는 이유**: 스킬은 하나하나가 매 세션 상시 컨텍스트다
+(`vibe status` 의 Skills 행이 그 총량을 보고한다). 저 저장소는 스킬을 여러 개
+담고 있어 통째로 받으면 컨텍스트가 눈에 띄게 늘어난다 — 그래서 `--skill` 로
+하나만 집는 형태로 안내한다. 3rd-party 스킬을 사용자 머신에 말없이 얹는 것은
+신뢰 결정이라 사람이 한다.
+
+권유는 **1회로 끝낸다.** 거절했거나 이미 설치돼 있으면 다시 꺼내지 않는다.
+
 ## Figma Credential Handling (init/sync only)
 
 - 토큰 출처: `~/.vibe/config.json#figma.token` (chmod 0o600)

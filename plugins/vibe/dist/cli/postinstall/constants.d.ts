@@ -22,7 +22,18 @@ export declare const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>>;
 export declare const CAPABILITY_SKILLS: Record<string, ReadonlyArray<string>>;
 /** 스택 → 외부 스킬(skills.sh) 매핑 (vibe init/update → npx skills add) */
 export declare const STACK_TO_EXTERNAL_SKILLS: Record<string, ReadonlyArray<string>>;
-/** Capability → 외부 스킬(skills.sh) 매핑 */
+/**
+ * Capability → 외부 스킬(skills.sh) 매핑.
+ *
+ * vibe 가 직접 쓰지 않고 생태계 스킬로 넘기는 영역을 여기에 둔다. MCP 서버 저작이
+ * 그런 경우다 — vibe 는 검증 하네스지 MCP 저작 도구가 아니고, 이미 잘 관리되는
+ * 1차 출처(`anthropics/skills`)가 있다. 없는 것을 새로 쓰는 것보다 있는 것을
+ * 가리키는 쪽이 유지보수가 적다.
+ *
+ * 여기 올리는 것은 **opt-in capability 에 한한다** — 스택 매핑과 달리 사용자가
+ * `vibe init` 에서 명시적으로 고른 경우에만 설치된다. 스킬은 상시 컨텍스트 비용이라
+ * (`vibe status` 의 Skills 행 참조) 묻지 않고 얹지 않는다.
+ */
 export declare const CAPABILITY_EXTERNAL_SKILLS: Record<string, ReadonlyArray<string>>;
 /** 사용자 선택 가능한 capability 목록 (vibe init 인터랙티브 프롬프트용) */
 export declare const AVAILABLE_CAPABILITIES: ReadonlyArray<{
