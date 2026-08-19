@@ -25,6 +25,19 @@ codexInstalled?: boolean): string;
  */
 export declare function formatNativeDepStatus(packageRoot: string): string;
 /**
+ * 전역 스킬 디렉토리의 구성 — **상시 컨텍스트 비용**을 보이게 한다.
+ *
+ * WHY: 스킬은 하나하나가 매 세션 컨텍스트에 얹힌다. 그런데 늘어나는 경로가 셋인데
+ * 어느 것도 보고되지 않았다 — vibe 자신, `vibe init` 이 스택에 맞춰 **자동 설치**하는
+ * 외부 스킬(실측: `vercel-labs/agent-skills` 한 패키지가 스킬 9개), 그리고 개명 뒤
+ * 남은 vibe 잔재. 사용자는 `vibe init` 한 번에 스킬이 몇 개 늘었는지 알 방법이 없었다.
+ *
+ * 잔재는 **보고만** 한다 — 자동 삭제하지 않는다. `docs`·`test` 같은 일반적인 이름이
+ * 섞여 있어 사용자가 만든 동명 스킬을 지울 위험이 실재하고, 애매할 때 지우는 쪽이
+ * 훨씬 나쁘다. 무엇이 있는지 보여주면 판단은 사람이 한다.
+ */
+export declare function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: string): string;
+/**
  * 상태 표시 — 모든 시스템 상태를 한 곳에서 확인
  */
 export declare function showStatus(): void;
