@@ -97,8 +97,21 @@ export const STACK_TO_EXTERNAL_SKILLS: Record<string, ReadonlyArray<string>> = {
   'typescript-nextjs': ['vercel-labs/agent-skills', 'vercel-labs/next-skills'],
 };
 
-/** Capability → 외부 스킬(skills.sh) 매핑 */
-export const CAPABILITY_EXTERNAL_SKILLS: Record<string, ReadonlyArray<string>> = {};
+/**
+ * Capability → 외부 스킬(skills.sh) 매핑.
+ *
+ * vibe 가 직접 쓰지 않고 생태계 스킬로 넘기는 영역을 여기에 둔다. MCP 서버 저작이
+ * 그런 경우다 — vibe 는 검증 하네스지 MCP 저작 도구가 아니고, 이미 잘 관리되는
+ * 1차 출처(`anthropics/skills`)가 있다. 없는 것을 새로 쓰는 것보다 있는 것을
+ * 가리키는 쪽이 유지보수가 적다.
+ *
+ * 여기 올리는 것은 **opt-in capability 에 한한다** — 스택 매핑과 달리 사용자가
+ * `vibe init` 에서 명시적으로 고른 경우에만 설치된다. 스킬은 상시 컨텍스트 비용이라
+ * (`vibe status` 의 Skills 행 참조) 묻지 않고 얹지 않는다.
+ */
+export const CAPABILITY_EXTERNAL_SKILLS: Record<string, ReadonlyArray<string>> = {
+  'mcp': ['anthropics/skills@mcp-builder'],
+};
 
 /** 사용자 선택 가능한 capability 목록 (vibe init 인터랙티브 프롬프트용) */
 export const AVAILABLE_CAPABILITIES: ReadonlyArray<{
@@ -111,6 +124,7 @@ export const AVAILABLE_CAPABILITIES: ReadonlyArray<{
   { value: 'event-automation', label: 'Event Automation', hint: '커뮤니티 행사 자동화 (밋업, 웨비나, 컨퍼런스)' },
   { value: 'pm', label: 'Product Management', hint: 'PRD, 우선순위, 페르소나 등' },
   { value: 'devlog', label: 'Dev Log Automation', hint: '커밋 기반 개발일지 자동 생성 + 블로그 레포 연동' },
+  { value: 'mcp', label: 'MCP Server Development', hint: 'MCP 서버 저작 — anthropics/skills@mcp-builder 설치' },
 ];
 
 /**
