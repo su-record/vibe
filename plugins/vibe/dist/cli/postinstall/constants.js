@@ -466,4 +466,47 @@ export const CLAUDE_AGENT_MEMORY = {
     'code-reviewer': 'user',
     'security-reviewer': 'user',
 };
+/**
+ * vibe 가 **과거에 배송했다가 더 이상 배송하지 않는** 스킬 이름.
+ *
+ * 출처: `git log --diff-filter=D -- 'skills/*'` — `skills/<name>/SKILL.md` 가 이력에서
+ * 삭제된 이름들이다(대부분 `vibe.*` 네임스페이스 도입 때 개명됐다).
+ *
+ * WHY 이 목록이 필요한가: 설치본 소유 판정이 **현재 배송 목록 포함 여부**로 되어 있어,
+ * 개명된 스킬은 영원히 "vibe 것이 아님" 으로 분류된다. 그래서 `~/.claude/skills/clone`
+ * 같은 잔재가 지워지지도 보고되지도 않은 채 **매 세션 상시 컨텍스트로 로드된다**
+ * (실측: 이 저장소 개발 머신에 clone·figma·test 3개가 남아 있었다).
+ *
+ * 자동 삭제는 하지 않는다 — `docs`·`plan`·`test` 처럼 일반적인 이름이 섞여 있어
+ * 사용자가 만든 동명 스킬을 지울 위험이 실재한다. 보고만 하고 판단은 사람이 한다.
+ */
+export const RETIRED_SKILL_NAMES = new Set([
+    'arch-guard',
+    'characterization-test',
+    'claude-md-guide',
+    'clone',
+    'contract',
+    'design-audit',
+    'design-critique',
+    'design-distill',
+    'design-normalize',
+    'design-polish',
+    'docs',
+    'exec-plan',
+    'figma',
+    'figma-convert',
+    'figma-extract',
+    'interview',
+    'plan',
+    'regress',
+    'restraint',
+    'rob-pike',
+    'spec',
+    'spec-review',
+    'systematic-debugging',
+    'techdebt',
+    'test',
+    'typescript-advanced-types',
+    'yagni-ladder',
+]);
 //# sourceMappingURL=constants.js.map

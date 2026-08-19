@@ -9,6 +9,7 @@ import { getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
 import { missingNativeDeps } from '../setup/NativeDeps.js';
+import { RETIRED_SKILL_NAMES } from '../postinstall/constants.js';
 
 /**
  * 도움말 표시
@@ -126,6 +127,54 @@ export function formatNativeDepStatus(packageRoot: string): string {
 }
 
 /**
+ * 전역 스킬 디렉토리의 구성 — **상시 컨텍스트 비용**을 보이게 한다.
+ *
+ * WHY: 스킬은 하나하나가 매 세션 컨텍스트에 얹힌다. 그런데 늘어나는 경로가 셋인데
+ * 어느 것도 보고되지 않았다 — vibe 자신, `vibe init` 이 스택에 맞춰 **자동 설치**하는
+ * 외부 스킬(실측: `vercel-labs/agent-skills` 한 패키지가 스킬 9개), 그리고 개명 뒤
+ * 남은 vibe 잔재. 사용자는 `vibe init` 한 번에 스킬이 몇 개 늘었는지 알 방법이 없었다.
+ *
+ * 잔재는 **보고만** 한다 — 자동 삭제하지 않는다. `docs`·`test` 같은 일반적인 이름이
+ * 섞여 있어 사용자가 만든 동명 스킬을 지울 위험이 실재하고, 애매할 때 지우는 쪽이
+ * 훨씬 나쁘다. 무엇이 있는지 보여주면 판단은 사람이 한다.
+ */
+export function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: string): string {
+  const dirs = (at: string): string[] => {
+    try {
+      return fs.readdirSync(at, { withFileTypes: true })
+        .filter((e) => e.isDirectory()).map((e) => e.name);
+    } catch {
+      return [];
+    }
+  };
+
+  const entries = dirs(globalSkillsDir);
+  if (entries.length === 0) {
+    return '  Skills              ⬚ not installed (run: vibe update)';
+  }
+
+  // 소유 판정은 이름 접두사가 아니라 **배송 목록**으로 한다 — 진입 스킬은
+  // `vibe.` 접두사가 없는 `vibe` 라서 접두사로 세면 외부로 오분류된다.
+  const shipped = new Set(dirs(shippedSkillsDir));
+  const vibe = entries.filter((n) => shipped.has(n));
+  const others = entries.filter((n) => !shipped.has(n));
+  const retired = others.filter((n) => RETIRED_SKILL_NAMES.has(n));
+  const external = others.filter((n) => !RETIRED_SKILL_NAMES.has(n));
+
+  const lines = [`  Skills              ${entries.length} always-on (vibe ${vibe.length})`];
+  if (external.length > 0) {
+    lines.push(`    external          ${external.length} — ${external.join(', ')}`);
+  }
+  if (retired.length > 0) {
+    lines.push(
+      `    stale (vibe 구버전) ${retired.length} — ${retired.join(', ')}`,
+      `                      ↳ 지금은 vibe.* 로 개명됨. 안 쓰면 지워도 된다`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/**
  * 상태 표시 — 모든 시스템 상태를 한 곳에서 확인
  */
 export function showStatus(): void {
@@ -153,7 +202,7 @@ VIBE Status (v${packageJson.version})
 
 Project: ${projectStatus}
 ${isCoreProject ? `Language: ${config.language || 'ko'}\n` : ''}
-${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}${formatNativeDepStatus(path.resolve(import.meta.dirname, '..', '..', '..'))}
+${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}${formatNativeDepStatus(path.resolve(import.meta.dirname, '..', '..', '..'))}\n${formatSkillStatus(path.join(process.env.HOME ?? '', '.claude', 'skills'), path.resolve(import.meta.dirname, '..', '..', '..', 'skills'))}
 
 ${formatLLMStatus()}
   `);
