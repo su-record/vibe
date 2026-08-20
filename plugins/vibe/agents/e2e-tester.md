@@ -34,34 +34,18 @@ failed scenario. The loop, not a human, closes the gap.
 
 Cheap verification is what makes the closed loop viable. Priority order:
 
-1. **Agent Browser** — drives the browser via the accessibility tree, so a
-   control costs a ref (`@e2`) instead of a DOM subtree. Two ways in:
-
-   ```bash
-   npm install -g agent-browser && agent-browser install   # native CLI (no Node/Playwright at runtime)
-   agent-browser mcp                                        # or run it as an MCP server
-   ```
-
-   CLI shape — snapshot once, then act on refs:
-
-   ```bash
-   agent-browser open localhost:3000
-   agent-browser snapshot          # accessibility tree with refs
-   agent-browser click @e2
-   agent-browser fill @e3 "user@example.com"
-   agent-browser close
-   ```
-
-2. **Playwright test runner** — write a spec, run
-   `npx playwright test --reporter=line`, consume pass/fail only.
+1. **Playwright test runner** — write a spec, run
+   `npx playwright test --reporter=line`, consume **pass/fail only**. The spec
+   file holds the interaction detail so the transcript doesn't.
    If missing: `npx playwright install chromium`.
-3. **Playwright MCP (DOM-based)** — last resort; full DOM trees exhaust
-   context in 2–3 interactions.
+2. **Playwright MCP (DOM-based)** — interactive poking when a spec can't
+   express the check. Last resort: full DOM trees exhaust context in 2–3
+   interactions, so budget for it rather than defaulting to it.
 
-> **1순위를 쓰려면 설치돼 있어야 한다.** 이전 판은 Agent Browser 를 1순위로
-> 지정해 놓고 **얻는 방법을 적지 않았다** — 결과적으로 전원이 2순위로 떨어졌다.
-> 설치 여부를 먼저 확인하고(`agent-browser --version`), 없으면 위 명령을 제안한
-> 뒤 사다리를 내려간다. 사다리는 선언이 아니라 실행 가능해야 의미가 있다.
+> **비용이 루프 횟수를 정한다.** 검증 한 번이 비쌀수록 세션당 돌릴 수 있는 루프가
+> 줄고, 루프가 줄면 닫힌 루프가 성립하지 않는다. 그래서 기본은 **결과만 소비하는**
+> 1순위다 — 상호작용 내용은 spec 파일에 남기고 컨텍스트에는 exit code 만 들인다.
+> DOM 을 컨텍스트로 끌어오는 방식은 그 예산을 한 번에 태운다.
 
 ## Verification Scope
 

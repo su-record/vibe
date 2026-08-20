@@ -10,13 +10,12 @@ Browser Tool Priority:
 
 | Priority | Tool | 용도 | 없을 때 |
 |----------|------|------|---------|
-| 1st | Agent Browser (접근성 트리) | AI 직접 조작, 최소 토큰 | `npm i -g agent-browser && agent-browser install` |
-| 2nd | Playwright Test Runner | 테스트 코드 실행, pass/fail 반환 | `npx playwright install chromium` |
-| 3rd | Playwright MCP (DOM) | 최후 수단, 토큰 비효율 | — |
+| 1st | Playwright Test Runner | 테스트 코드 실행, **pass/fail 만** 소비 | `npx playwright install chromium` |
+| 2nd | Playwright MCP (DOM) | spec 으로 표현 못 하는 확인, 최후 수단 | — |
 
-> 1순위는 **설치돼 있어야 1순위다.** 이전 판은 Agent Browser 를 1순위로 지정해
-> 놓고 얻는 방법을 어디에도 적지 않아, 실제로는 전원이 2순위로 떨어졌다.
-> `agent-browser --version` 으로 확인하고 없으면 위 명령을 제안한 뒤 내려간다.
+> 검증 비용이 루프 횟수를 정한다. 1순위는 상호작용 내용을 spec 파일에 남기고
+> 컨텍스트에는 exit code 만 들인다. DOM 을 컨텍스트로 끌어오는 2순위는 2~3회면
+> 예산을 태우므로 기본값이 아니라 예외로 쓴다.
 
 **활성화 조건:** Feature 파일에 UI 관련 시나리오 존재 + `.vibe/e2e/config.json`의 `closedLoop.enabled: true` (기본값) + dev server가 실행 중
 
