@@ -27,8 +27,24 @@ describe('capability 외부 스킬', () => {
     expect(resolveExternalSkills([], [])).toEqual([]);
   });
 
-  it('고른 capability 의 스킬만 나온다', () => {
-    expect(resolveExternalSkills([], ['mcp'])).toEqual(['anthropics/skills@mcp-builder']);
+  /**
+   * 매핑 **값**을 박지 않는다 — 어떤 패키지를 가리킬지는 유지보수자의 선택이고,
+   * 테스트가 그 선택을 되돌리라고 요구하면 안 된다. 고정하는 것은 "고른 것만
+   * 나온다" 는 성질이다. 기준값은 매핑 자체에서 읽는다.
+   */
+  it.each(Object.entries(CAPABILITY_EXTERNAL_SKILLS))(
+    '%s 를 고르면 그 매핑값만 나온다',
+    (cap, expected) => {
+      expect(resolveExternalSkills([], [cap])).toEqual([...expected]);
+    },
+  );
+
+  it('고르지 않은 capability 의 스킬은 섞이지 않는다', () => {
+    const caps = Object.keys(CAPABILITY_EXTERNAL_SKILLS);
+    if (caps.length < 2) return;   // 매핑이 하나뿐이면 검증할 것이 없다
+    const others = Object.entries(CAPABILITY_EXTERNAL_SKILLS)
+      .filter(([c]) => c !== caps[0]).flatMap(([, v]) => v);
+    expect(resolveExternalSkills([], [caps[0]]).some((s) => others.includes(s))).toBe(false);
   });
 
   it('모르는 capability 는 조용히 무시한다 — 설치를 실패시키지 않는다', () => {
@@ -68,7 +84,12 @@ describe('taste-skill 은 자동 설치하지 않는다', () => {
       .toContain('--skill');
   });
 
-  it('자동 설치 매핑에는 들어 있지 않다', () => {
+  /**
+   * 이건 **정책 단언**이다 — 임의의 선택이 아니라 "3rd-party 스킬을 말없이 얹지
+   * 않는다" 는 결정을 고정한다. 뒤집으려면 이 테스트를 의도적으로 지우면 된다.
+   * 실수로 승격되는 것만 막는 것이 목적이다.
+   */
+  it('자동 설치 매핑에는 들어 있지 않다 (정책 — 뒤집으려면 이 테스트를 함께 지울 것)', () => {
     expect(constants.toLowerCase()).not.toContain('taste-skill');
   });
 

@@ -132,8 +132,21 @@ describe('.claude-plugin/marketplace.json', () => {
     expect(entry.name).toBe(claudeManifest.name);
   });
 
-  it('source 가 빌드 산출물을 가리킨다 (저장소 루트가 아니라)', () => {
-    expect(entry.source).toBe('./plugins/vibe');
+  /**
+   * 고정하는 것은 **경로 값이 아니라 성질**이다 — 빌드 산출물을 가리킬 것, 저장소
+   * 루트를 가리키지 말 것. 값을 박으면 트리 위치를 옮기려는 유지보수자에게
+   * 테스트가 "되돌려라" 를 요구한다. 기준값은 빌드 스크립트에서 읽는다.
+   */
+  it('source 가 빌드 스크립트의 산출 위치와 일치한다', () => {
+    const outDir = /const OUT = path\.join\(ROOT, '([^']+)', '([^']+)'\)/
+      .exec(read('scripts/build-plugin.ts'));
+    expect(outDir, 'build-plugin.ts 의 OUT 을 읽지 못했다').not.toBeNull();
+    expect(entry.source).toBe(`./${outDir![1]}/${outDir![2]}`);
+  });
+
+  it('source 가 저장소 루트가 아니다 — 루트면 워킹트리가 통째로 복사된다', () => {
+    expect(entry.source).not.toBe('./');
+    expect(entry.source as string).toMatch(/^\.\/.+/);
   });
 
   it('빌드 산출물이 커밋된다 — 클론에 없으면 플러그인이 반쪽이 된다', () => {
@@ -173,6 +186,8 @@ describe('.agents/plugins/marketplace.json (Codex)', () => {
     Array<Record<string, unknown>>)[0];
 
   it('같은 배포 트리를 가리킨다 — 하네스마다 다른 트리를 두지 않는다', () => {
-    expect((entry.source as Record<string, string>).path).toBe('./plugins/vibe');
+    const claude = (readJson('.claude-plugin/marketplace.json').plugins as
+      Array<Record<string, unknown>>)[0].source;
+    expect((entry.source as Record<string, string>).path).toBe(claude);
   });
 });
