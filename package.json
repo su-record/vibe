@@ -36,7 +36,7 @@
     "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(e=>process.stderr.write('\\u26a0\\ufe0f  vibe postinstall skipped: '+((e&&e.message)||e)+'\\n   Assets and hooks were not installed. Run: npx vibe upgrade\\n'))\"",
     "release": "bash scripts/release.sh",
     "sync:plugin-version": "npx tsx scripts/sync-plugin-version.ts",
-    "version": "npx tsx scripts/sync-plugin-version.ts && git add .codex-plugin/plugin.json",
+    "version": "npx tsx scripts/sync-plugin-version.ts && npm run build && npx tsx scripts/build-plugin.ts && git add .codex-plugin/plugin.json .claude-plugin/plugin.json plugins/",
     "build:plugin": "npx tsx scripts/build-plugin.ts",
     "gen:plugin-hooks": "npx tsx scripts/gen-plugin-hooks.ts",
     "gen:plugin-hooks:check": "npx tsx scripts/gen-plugin-hooks.ts --check",
