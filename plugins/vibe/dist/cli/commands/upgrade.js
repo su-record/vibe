@@ -178,16 +178,52 @@ function runInstalledPostinstall(globalRoot) {
         return false;
     }
 }
+/** vibe 가 발행되는 곳 — 미러가 무엇을 말하든 "최신" 의 기준은 여기다 (release.yml) */
+export const PUBLISH_REGISTRY = 'https://registry.npmjs.org';
+/**
+ * `npm config get @su-record:registry` 출력에서 **유효한 오버라이드**만 뽑는다.
+ *
+ * WHY: 스코프 레지스트리는 `--registry` 플래그보다 우선한다 — 설정돼 있으면
+ * `@su-record/*` 의 조회도 설치도 전부 그리로 간다. 발행처와 다른 곳을 가리키면
+ * 그 미러가 뒤처진 만큼 upgrade 가 뒤처진다.
+ *
+ * @returns 발행처와 다른 레지스트리 URL, 없거나 발행처와 같으면 null
+ */
+export function scopeRegistryOverride(raw) {
+    const v = raw?.trim();
+    if (!v || v === 'undefined' || v === 'null')
+        return null;
+    const normalize = (u) => u.replace(/\/+$/, '');
+    return normalize(v) === normalize(PUBLISH_REGISTRY) ? null : v;
+}
+/** 현재 환경의 스코프 오버라이드 — 조회 실패는 "없음" 으로 읽는다 */
+function detectScopeRegistryOverride() {
+    try {
+        return scopeRegistryOverride(execSync('npm config get @su-record:registry', {
+            encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 10_000,
+        }));
+    }
+    catch {
+        return null;
+    }
+}
 /**
  * 레지스트리의 최신 버전 — 업그레이드가 **실제로 도달했는지** 판정하는 기준.
  *
+ * WHY 발행처를 명시하는가: 이 판정을 사용자 설정된 레지스트리로 하면, 미러가
+ * 뒤처진 경우 **설치본과 똑같은 옛 버전**을 읽고 "최신" 이라고 판정한다 — 즉
+ * 탐지가 필요한 바로 그 상황에서만 침묵한다. 실측(v3.2.46): `~/.npmrc` 의
+ * `@su-record:registry=https://npm.pkg.github.com` 때문에 upgrade 가 v2.9.37 에
+ * 머물렀는데, 같은 미러를 보던 이 판정은 아무 말도 하지 않았다.
+ *
+ * `--registry` 플래그로는 덮이지 않는다 (스코프 설정이 우선) — 스코프 키를 직접
+ * 덮어야 한다. 실측으로 확인한 유일한 방법이다.
+ *
  * @returns 조회 실패 시 null (판정하지 않는다 — 오프라인을 실패로 읽지 않는다)
  */
-function registryLatest() {
+export function registryLatest() {
     try {
-        const v = execSync('npm view @su-record/vibe version', {
-            encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000,
-        }).trim();
+        const v = execSync(`npm view @su-record/vibe version --@su-record:registry=${PUBLISH_REGISTRY}`, { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 }).trim();
         return /^\d+\.\d+\.\d+/.test(v) ? v : null;
     }
     catch {
@@ -206,13 +242,18 @@ function registryLatest() {
  * 원인은 머신마다 다르다(Node engines 불일치, npm prefix 가 PATH 의 vibe 와
  * 다른 곳, 레지스트리 미러). 여기서 단정하지 않고 **판별에 필요한 사실**을 준다.
  */
-export function formatVersionParity(installed, latest) {
+export function formatVersionParity(installed, latest, scopeOverride = null) {
     if (latest === null || installed === latest)
         return '';
     const required = getPackageJson().engines?.node;
     const lines = [
         `\n⚠️  최신이 아닙니다 — 설치본 v${installed} / 레지스트리 v${latest}`,
     ];
+    // 이것만은 단정할 수 있다 — 설정을 읽어서 아는 사실이지 추측이 아니다.
+    // 다른 후보보다 먼저 놓는 이유: 이 설정이 있으면 나머지를 아무리 고쳐도 안 고쳐진다.
+    if (scopeOverride) {
+        lines.push(`    @su-record 스코프가 ${scopeOverride} 로 지정돼 있습니다 (.npmrc)`, '    이 설정은 --registry 보다 우선합니다 — 그 레지스트리가 뒤처진 만큼 upgrade 도 뒤처집니다', '    조치: npm config delete @su-record:registry  (또는 해당 .npmrc 줄 제거)');
+    }
     if (required) {
         lines.push(`    Node ${process.version} (요구: ${required})`);
     }
@@ -287,7 +328,7 @@ export function upgrade(_options = { silent: false }) {
             ? `\n🧹 ${postinstallReport.join('\n🧹 ')}\n`
             : '';
         // 성공 보고 전에 **도달했는지** 확인한다 — exit 0 은 도달을 뜻하지 않는다
-        const parityNote = formatVersionParity(newVersion, registryLatest());
+        const parityNote = formatVersionParity(newVersion, registryLatest(), detectScopeRegistryOverride());
         const headline = parityNote ? `vibe upgrade 실행 (v${newVersion})` : `vibe upgraded (v${newVersion})`;
         const mark = parityNote ? '⚠️ ' : '✅';
         log(`\n${mark} ${headline}\n${parityNote}${globalNote}${nativeNote}${hookNote}${pruneNote}\n${llmStatus}\n`);

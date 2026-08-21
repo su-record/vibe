@@ -48,6 +48,33 @@ export declare function repairProjectHooks(projectRoot: string): string[];
  * @returns 갱신됐으면 null, 아니면 발견된 사본 버전(없으면 'none')
  */
 export declare function staleGlobalAssets(installedVersion: string): string | null;
+/** vibe 가 발행되는 곳 — 미러가 무엇을 말하든 "최신" 의 기준은 여기다 (release.yml) */
+export declare const PUBLISH_REGISTRY = "https://registry.npmjs.org";
+/**
+ * `npm config get @su-record:registry` 출력에서 **유효한 오버라이드**만 뽑는다.
+ *
+ * WHY: 스코프 레지스트리는 `--registry` 플래그보다 우선한다 — 설정돼 있으면
+ * `@su-record/*` 의 조회도 설치도 전부 그리로 간다. 발행처와 다른 곳을 가리키면
+ * 그 미러가 뒤처진 만큼 upgrade 가 뒤처진다.
+ *
+ * @returns 발행처와 다른 레지스트리 URL, 없거나 발행처와 같으면 null
+ */
+export declare function scopeRegistryOverride(raw: string | null | undefined): string | null;
+/**
+ * 레지스트리의 최신 버전 — 업그레이드가 **실제로 도달했는지** 판정하는 기준.
+ *
+ * WHY 발행처를 명시하는가: 이 판정을 사용자 설정된 레지스트리로 하면, 미러가
+ * 뒤처진 경우 **설치본과 똑같은 옛 버전**을 읽고 "최신" 이라고 판정한다 — 즉
+ * 탐지가 필요한 바로 그 상황에서만 침묵한다. 실측(v3.2.46): `~/.npmrc` 의
+ * `@su-record:registry=https://npm.pkg.github.com` 때문에 upgrade 가 v2.9.37 에
+ * 머물렀는데, 같은 미러를 보던 이 판정은 아무 말도 하지 않았다.
+ *
+ * `--registry` 플래그로는 덮이지 않는다 (스코프 설정이 우선) — 스코프 키를 직접
+ * 덮어야 한다. 실측으로 확인한 유일한 방법이다.
+ *
+ * @returns 조회 실패 시 null (판정하지 않는다 — 오프라인을 실패로 읽지 않는다)
+ */
+export declare function registryLatest(): string | null;
 /**
  * 설치본이 최신에 도달하지 못했으면 이유 후보와 함께 보고한다.
  *
@@ -60,7 +87,7 @@ export declare function staleGlobalAssets(installedVersion: string): string | nu
  * 원인은 머신마다 다르다(Node engines 불일치, npm prefix 가 PATH 의 vibe 와
  * 다른 곳, 레지스트리 미러). 여기서 단정하지 않고 **판별에 필요한 사실**을 준다.
  */
-export declare function formatVersionParity(installed: string, latest: string | null): string;
+export declare function formatVersionParity(installed: string, latest: string | null, scopeOverride?: string | null): string;
 /**
  * Upgrade global package to latest version
  * npm install -g → postinstall handles global config
