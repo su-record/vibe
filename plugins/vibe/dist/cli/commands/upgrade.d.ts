@@ -49,6 +49,19 @@ export declare function repairProjectHooks(projectRoot: string): string[];
  */
 export declare function staleGlobalAssets(installedVersion: string): string | null;
 /**
+ * 설치본이 최신에 도달하지 못했으면 이유 후보와 함께 보고한다.
+ *
+ * WHY: `npm install -g …@latest` 가 성공(exit 0)해도 설치본이 그대로일 수 있다.
+ * 실측 제보: macOS 에서 upgrade 가 "✅ vibe upgraded (v2.9.37)" 를 출력했는데
+ * 레지스트리 latest 는 v3.2.44 였다 — **40 릴리즈 뒤처진 채 성공이라고 말한 것**이다.
+ * 전역 자산·프로젝트 훅에서 두 번 고친 것과 같은 형태다: 결과를 확인하지 않으면
+ * 성공 보고는 아무것도 보장하지 않는다.
+ *
+ * 원인은 머신마다 다르다(Node engines 불일치, npm prefix 가 PATH 의 vibe 와
+ * 다른 곳, 레지스트리 미러). 여기서 단정하지 않고 **판별에 필요한 사실**을 준다.
+ */
+export declare function formatVersionParity(installed: string, latest: string | null): string;
+/**
  * Upgrade global package to latest version
  * npm install -g → postinstall handles global config
  */
