@@ -13,6 +13,25 @@ priority: 60
 
 > Are you processing video files programmatically? If just embedding a YouTube/Vimeo player, this skill is not needed.
 
+## Prerequisite — FFmpeg
+
+이 스킬의 모든 명령은 FFmpeg 에 의존한다. **작업 전에 존재를 먼저 확인한다:**
+
+```bash
+ffmpeg -version && ffprobe -version
+```
+
+없으면 설치를 안내하고 멈춘다 — 뒤로 갈수록 실패가 비싸진다.
+
+| 환경 | 설치 |
+|---|---|
+| macOS | `brew install ffmpeg` |
+| Debian/Ubuntu | `sudo apt install ffmpeg` |
+| 그 외 | https://ffmpeg.org/download.html |
+
+> 코덱까지 갖춰졌는지는 별개다 — 아래 Gotchas 의 "Assuming codec availability" 참조.
+> 빌드마다 포함 코덱이 다르므로 인코딩 전에 `ffmpeg -codecs` 로 확인한다.
+
 ## Gotchas
 
 | Gotcha | Consequence | Prevention |
