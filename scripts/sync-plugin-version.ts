@@ -6,6 +6,10 @@
  * 실제로 3.2.26 범프에서 매니페스트가 3.2.25 로 남아 plugin-manifest.test 가 잡았다.
  *
  * package.json 의 `version` 라이프사이클 훅으로 실행돼 범프 커밋에 함께 담긴다.
+ *
+ * 여기서 갱신하는 것은 **소스 매니페스트뿐**이다. 배포 트리(`plugins/vibe/`)의
+ * 사본은 build-plugin.ts 가 굽는다 — 그래서 version 훅이 둘을 함께 돌린다.
+ * 한쪽만 돌리면 `validate:plugin-tree` 가 릴리스 PR 에서 막는다 (실측 v3.2.47).
  */
 import fs from 'fs';
 import path from 'path';
