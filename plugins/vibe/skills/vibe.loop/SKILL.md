@@ -52,7 +52,7 @@ HISTORY=".vibe/metrics/loop-history.jsonl"
 3. **생성 직후 반드시 검증한다** — 실패 시 정의를 고치고 재검증, 통과 전에는 install/run 금지:
 
 ```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const fs = require('fs'); const r = t.validateLoopDefinition(fs.readFileSync('.vibe/loops/<name>.md', 'utf-8')); console.log(JSON.stringify(r.errors.length ? r.errors : 'valid')); })"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/loop/index.js').then(t => { const fs = require('fs'); const r = t.validateLoopDefinition(fs.readFileSync('.vibe/loops/<name>.md', 'utf-8')); console.log(JSON.stringify(r.errors.length ? r.errors : 'valid')); })"
 ```
 
 **기본 제안 레시피 — nightly-triage** (사용자가 목표를 정하지 못하면 이것을 제안):
