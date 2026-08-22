@@ -13,13 +13,17 @@
  *   node hooks/scripts/loop-ledger.js gate answer <id> <answer>
  *   node hooks/scripts/loop-ledger.js iteration <name> <verified|unverified>
  *   node hooks/scripts/loop-ledger.js budget <name> [maxIterations]
+ *   node hooks/scripts/loop-ledger.js trial <name> [trialIterations]
+ *   node hooks/scripts/loop-ledger.js trial-approve <name>
  *
  * check-stuck: 'stuck' 또는 'ok'를 stdout에 출력하고 항상 exit 0.
  * anchor: 재고정 번들 JSON을 stdout에 출력한다 (loop-contract ANCHOR 절).
  * 항상 exit 0 (fail-open).
  */
 
-import { appendLoopEvent, isStuck, recordIteration, readBudget } from './lib/loop-ledger.js';
+import {
+  appendLoopEvent, isStuck, recordIteration, readBudget, readTrialGate, approveTrial,
+} from './lib/loop-ledger.js';
 import { buildAnchor } from './lib/anchor.js';
 import { prependInboxBlock } from './lib/inbox.js';
 import { openGate, listOpenGates, answerGate, formatOpenGates } from './lib/gates.js';
@@ -95,6 +99,26 @@ if (subcommand === 'start') {
   const max = Number.parseInt(maxRaw ?? '10', 10);
   const b = readBudget(projectDir, loop, Number.isInteger(max) && max > 0 ? max : 10);
   process.stdout.write(JSON.stringify(b) + '\n');
+
+} else if (subcommand === 'trial') {
+  // 처음 거는 루프는 몇 바퀴만 돌고 멈춘다 — 정의가 틀린 채로 성실히 반복하는 것을 막는다
+  const [loop, capRaw] = args;
+  if (!loop) {
+    process.stdout.write('[loop-ledger] error: trial 에 루프 이름이 필요합니다\n');
+    process.exit(0);
+  }
+  const cap = Number.parseInt(capRaw ?? '2', 10);
+  const t = readTrialGate(projectDir, loop, Number.isInteger(cap) && cap > 0 ? cap : 2);
+  process.stdout.write(JSON.stringify(t) + '\n');
+
+} else if (subcommand === 'trial-approve') {
+  const [loop] = args;
+  if (!loop) {
+    process.stdout.write('[loop-ledger] error: trial-approve 에 루프 이름이 필요합니다\n');
+    process.exit(0);
+  }
+  approveTrial(projectDir, loop);
+  process.stdout.write(`[loop-ledger] ${loop} 시운전 해제 — 이후 max_iterations 예산으로 돈다\n`);
 
 } else if (subcommand === 'gate') {
   // 사람 판단 지점을 디스크에 남긴다 — 세션이 죽어도 무엇을 묻고 있었는지 남는다
