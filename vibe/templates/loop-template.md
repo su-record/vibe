@@ -14,6 +14,12 @@ pipeline:
 verify: ledger
 max_iterations: 10
 isolation: none
+# continuous: 한 호출에서 max_iterations 까지 계속 돈다 (기본)
+# per-iteration: 한 바퀴만 돌고 끝낸다 — 반복은 스케줄러가 만든다.
+#   컨텍스트가 호출마다 0에서 시작하므로 누적이 없다. 대신 매번 ANCHOR 문서를
+#   다시 읽어야 하고, 회전 사이 맥락은 파일(원장·인박스)로만 넘어간다.
+#   쓰려면 max_iterations 를 1 로 맞춰야 한다.
+session: continuous
 status: active
 ---
 

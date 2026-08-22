@@ -10,6 +10,19 @@
 export type LoopTrigger = 'scheduled' | 'manual' | 'on-event';
 export type LoopVerify = 'ledger' | 'tests' | 'none';
 export type LoopIsolation = 'worktree' | 'none';
+
+/**
+ * 한 번의 호출에서 몇 바퀴를 도는가.
+ *
+ * - `continuous` (기본) — `max_iterations` 한도까지 한 세션 안에서 계속 돈다.
+ *   회전 사이에 맥락이 남아 이어붙이기 좋지만, 컨텍스트가 단조 증가한다.
+ * - `per-iteration` — **한 바퀴만 돌고 끝낸다.** 반복은 스케줄러가 만든다.
+ *   호출마다 컨텍스트가 0에서 시작하므로 누적이 없다. 대신 매번 ANCHOR 문서를
+ *   다시 읽어야 하고(고정 비용), 회전 사이의 맥락은 파일로만 넘어간다.
+ *
+ * 어느 쪽이 결과가 나은지는 측정된 바 없다 — 축을 열어두고 선택하게 한다.
+ */
+export type LoopSession = 'continuous' | 'per-iteration';
 export type LoopStatus = 'active' | 'paused';
 
 /** 파싱된 루프 정의 */
@@ -24,6 +37,7 @@ export interface ParsedLoopDefinition {
   test_command?: string;
   max_iterations: number;
   isolation: LoopIsolation;
+  session: LoopSession;
   status: LoopStatus;
 }
 
@@ -39,6 +53,7 @@ export interface LoopValidationResult {
 const TRIGGER_VALUES: ReadonlySet<string> = new Set(['scheduled', 'manual', 'on-event']);
 const VERIFY_VALUES: ReadonlySet<string> = new Set(['ledger', 'tests', 'none']);
 const ISOLATION_VALUES: ReadonlySet<string> = new Set(['worktree', 'none']);
+const SESSION_VALUES: ReadonlySet<string> = new Set(['continuous', 'per-iteration']);
 const STATUS_VALUES: ReadonlySet<string> = new Set(['active', 'paused']);
 
 /** 5-필드 cron 기본 패턴 (과도한 검증 금지) */
@@ -177,6 +192,7 @@ export function validateLoopDefinition(content: string): LoopValidationResult {
   const test_command = typeof fm['test_command'] === 'string' ? fm['test_command'].trim() : undefined;
   const maxIterRaw = fm['max_iterations'];
   const isolation = typeof fm['isolation'] === 'string' ? fm['isolation'].trim() : 'none';
+  const session = typeof fm['session'] === 'string' ? fm['session'].trim() : 'continuous';
   const status = typeof fm['status'] === 'string' ? fm['status'].trim() : '';
 
   // 필수 필드 존재 검사
@@ -200,6 +216,9 @@ export function validateLoopDefinition(content: string): LoopValidationResult {
   }
   if (isolation && !ISOLATION_VALUES.has(isolation)) {
     errors.push(`isolation: 유효하지 않은 값 "${isolation}" — worktree|none 중 하나여야 합니다`);
+  }
+  if (session && !SESSION_VALUES.has(session)) {
+    errors.push(`session: 유효하지 않은 값 "${session}" — continuous|per-iteration 중 하나여야 합니다`);
   }
   if (status && !STATUS_VALUES.has(status)) {
     errors.push(`status: 유효하지 않은 값 "${status}" — active|paused 중 하나여야 합니다`);
@@ -237,6 +256,16 @@ export function validateLoopDefinition(content: string): LoopValidationResult {
     }
   }
 
+  // session: per-iteration 은 호출당 한 바퀴가 정의다 — max_iterations 와 어긋나면
+  // "한 바퀴만" 인지 "열 바퀴까지" 인지 두 값이 서로 다른 말을 하게 된다.
+  // 필드 하나가 두 뜻을 갖는 것을 막기 위해 일치를 요구한다.
+  if (session === 'per-iteration' && Number.isInteger(maxIter) && maxIter !== 1) {
+    errors.push(
+      `session: per-iteration 은 max_iterations 가 1 이어야 합니다 — 받은 값: ${maxIter}. `
+      + '반복은 스케줄러가 만든다 (trigger/schedule).'
+    );
+  }
+
   // pipeline 항목 검사
   for (const entry of pipeline) {
     if (!entry.startsWith('vibe.')) {
@@ -258,6 +287,7 @@ export function validateLoopDefinition(content: string): LoopValidationResult {
     verify: verify as LoopVerify,
     ...(test_command !== undefined ? { test_command } : {}),
     max_iterations: maxIter,
+    session: session as LoopSession,
     isolation: isolation as LoopIsolation,
     status: status as LoopStatus,
   };

@@ -8,6 +8,7 @@
 const TRIGGER_VALUES = new Set(['scheduled', 'manual', 'on-event']);
 const VERIFY_VALUES = new Set(['ledger', 'tests', 'none']);
 const ISOLATION_VALUES = new Set(['worktree', 'none']);
+const SESSION_VALUES = new Set(['continuous', 'per-iteration']);
 const STATUS_VALUES = new Set(['active', 'paused']);
 /** 5-필드 cron 기본 패턴 (과도한 검증 금지) */
 const CRON_PATTERN = /^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/;
@@ -134,6 +135,7 @@ export function validateLoopDefinition(content) {
     const test_command = typeof fm['test_command'] === 'string' ? fm['test_command'].trim() : undefined;
     const maxIterRaw = fm['max_iterations'];
     const isolation = typeof fm['isolation'] === 'string' ? fm['isolation'].trim() : 'none';
+    const session = typeof fm['session'] === 'string' ? fm['session'].trim() : 'continuous';
     const status = typeof fm['status'] === 'string' ? fm['status'].trim() : '';
     // 필수 필드 존재 검사
     if (!name)
@@ -162,6 +164,9 @@ export function validateLoopDefinition(content) {
     }
     if (isolation && !ISOLATION_VALUES.has(isolation)) {
         errors.push(`isolation: 유효하지 않은 값 "${isolation}" — worktree|none 중 하나여야 합니다`);
+    }
+    if (session && !SESSION_VALUES.has(session)) {
+        errors.push(`session: 유효하지 않은 값 "${session}" — continuous|per-iteration 중 하나여야 합니다`);
     }
     if (status && !STATUS_VALUES.has(status)) {
         errors.push(`status: 유효하지 않은 값 "${status}" — active|paused 중 하나여야 합니다`);
@@ -197,6 +202,13 @@ export function validateLoopDefinition(content) {
             errors.push(`max_iterations: ${MAX_ITERATIONS_MIN}–${MAX_ITERATIONS_MAX} 범위여야 합니다 — 받은 값: ${maxIter}`);
         }
     }
+    // session: per-iteration 은 호출당 한 바퀴가 정의다 — max_iterations 와 어긋나면
+    // "한 바퀴만" 인지 "열 바퀴까지" 인지 두 값이 서로 다른 말을 하게 된다.
+    // 필드 하나가 두 뜻을 갖는 것을 막기 위해 일치를 요구한다.
+    if (session === 'per-iteration' && Number.isInteger(maxIter) && maxIter !== 1) {
+        errors.push(`session: per-iteration 은 max_iterations 가 1 이어야 합니다 — 받은 값: ${maxIter}. `
+            + '반복은 스케줄러가 만든다 (trigger/schedule).');
+    }
     // pipeline 항목 검사
     for (const entry of pipeline) {
         if (!entry.startsWith('vibe.')) {
@@ -216,6 +228,7 @@ export function validateLoopDefinition(content) {
         verify: verify,
         ...(test_command !== undefined ? { test_command } : {}),
         max_iterations: maxIter,
+        session: session,
         isolation: isolation,
         status: status,
     };

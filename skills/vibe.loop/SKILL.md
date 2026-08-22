@@ -48,6 +48,8 @@ HISTORY=".vibe/metrics/loop-history.jsonl"
    - **발견(discover)**: 일거리를 어떻게 찾는가 — 명령 또는 지시
    - **검증(verify)**: `ledger`(vibe.verify 경유, 기본) / `tests`(테스트 명령 exit code) / `none`(보고만)
    - **격리(isolation)**: 병렬 항목이 파일을 수정하면 `worktree`, 아니면 `none`
+   - **세션(session)**: `continuous`(기본, 한 호출에서 여러 바퀴) / `per-iteration`
+     (한 바퀴만 — 반복은 스케줄러가 만든다, `max_iterations: 1` 필수)
 2. `{{VIBE_PATH}}/vibe/templates/loop-template.md`를 읽어 `.vibe/loops/<name>.md`를 생성한다.
 3. **생성 직후 반드시 검증한다** — 실패 시 정의를 고치고 재검증, 통과 전에는 install/run 금지:
 
@@ -101,6 +103,11 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/loop/
                · 확인할 것: `.vibe/metrics/loop-history.jsonl` 과 실제 변경 diff
                · 이어서 돌리려면: loop-ledger.js trial-approve <name>
                승인 없이 계속 도는 것 금지 — 정의가 맞는지 아직 아무도 모른다.
+6-d. 세션 판정 `session: per-iteration` 이면 **여기서 끝낸다.** 남은 발견 항목이
+             있어도 다음 회전으로 넘어가지 않는다 — 반복은 스케줄러의 몫이다.
+             잔여 항목은 7·8 의 종료 기록과 인박스에 남겨 다음 호출이 집게 한다.
+             넘길 것을 파일에 적기 전에 끝내지 않는다. per-iteration 의 전제는
+             "맥락이 파일로만 넘어간다" 이고, 안 적으면 그냥 유실이다.
 7. 종료 기록  node "$HOOKS_DIR/loop-ledger.js" end <name> <ok|fail|stuck> "<한 줄 요약>"
 8. 인박스    node "$HOOKS_DIR/loop-ledger.js" inbox <name> <ok|fail|stuck> \
                "발견: N건 / 처리: M건 / 검증: <기준과 결과>" \
