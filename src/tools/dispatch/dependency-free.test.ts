@@ -64,9 +64,12 @@ describe('dispatch 배럴은 의존성 프리다', () => {
  * 두 번째 겹: 호출 경로. 배럴이 깨끗해도 스킬 문서가 통합 배럴로 부르면 같은 일이 난다.
  */
 describe('스킬 문서가 게이트를 통합 배럴로 부르지 않는다', () => {
+  // `validateLoopDefinition` 도 게이트다 — 루프 정의가 유효해야 install/run 을 허용한다.
+  // 통합 배럴로 부르면 node_modules 없는 환경(플러그인 트리)에서 게이트가 죽는다.
   const GATE_FNS = [
     'collectDispatchSignals', 'detectResumeState', 'detectStakesSignals',
     'classifyUrl', 'classifyAttachment', 'evaluateCostGate', 'formatCostGate',
+    'validateLoopDefinition',
   ];
 
   const offenders: string[] = [];
