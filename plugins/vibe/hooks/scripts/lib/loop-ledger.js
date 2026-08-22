@@ -36,7 +36,7 @@ export function hashDiscoverOutput(text) {
  * 루프 이벤트를 jsonl 파일에 append한다.
  *
  * @param {string} projectDir
- * @param {{ loop: string, event: 'start'|'discover'|'end'|'iteration', result?: 'ok'|'fail'|'stuck', summary?: string, discoverHash?: string, verified?: boolean }} opts
+ * @param {{ loop: string, event: 'start'|'discover'|'end'|'iteration'|'trial-approved', result?: 'ok'|'fail'|'stuck', summary?: string, discoverHash?: string, verified?: boolean }} opts
  * @returns {boolean} 성공 여부
  */
 export function appendLoopEvent(projectDir, opts) {
@@ -168,4 +168,50 @@ export function readBudget(projectDir, loop, maxIterations = 10) {
   } catch {
     return empty;
   }
+}
+
+/**
+ * 시운전 게이트 — 처음 거는 루프는 **두 바퀴만** 돌고 멈춘다.
+ *
+ * WHY: 자율 루프의 첫 실행은 정의가 맞는지 아무도 모르는 상태다. discover 가
+ * 엉뚱한 것을 긁거나 verify 기준이 틀려 있으면 루프는 그걸 **성실하게 반복**한다.
+ * 사람이 안 보는 동안 도는 것이 목적이므로, 틀린 채로 도는 것도 안 보인다.
+ * 그래서 처음에는 몇 바퀴만 돌려 기록을 눈으로 확인한 뒤 풀어준다.
+ *
+ * `max_iterations` 와는 다른 축이다 — 그건 **한 실행의 폭주**를 막고, 이건
+ * **정의가 검증되지 않은 루프**를 막는다. 폭주 예산은 매 `start` 마다 초기화되지만
+ * 시운전은 승인 전까지 계속 걸린다.
+ *
+ * 승인은 이력에 남긴다(`event: 'trial-approved'`) — 설정 파일이 아니라 원장에
+ * 두는 이유는 루프별로 다르고, 언제 누가 풀었는지가 감사 대상이기 때문이다.
+ *
+ * @param {string} projectDir
+ * @param {string} loop
+ * @param {number} [trialIterations=2] 시운전 회전 수
+ * @returns {{ inTrial: boolean, cap: number|null, iterations: number, exhausted: boolean }}
+ */
+export function readTrialGate(projectDir, loop, trialIterations = 2) {
+  const cap = Math.max(1, Number(trialIterations) || 2);
+  try {
+    const raw = fs.readFileSync(historyPath(projectDir), 'utf-8');
+    const events = raw.split('\n')
+      .map(line => { try { return JSON.parse(line); } catch { return null; } })
+      .filter(e => e && e.loop === loop);
+
+    if (events.some(e => e.event === 'trial-approved')) {
+      return { inTrial: false, cap: null, iterations: 0, exhausted: false };
+    }
+
+    // 시운전 회전은 실행을 가로질러 누적한다 — 매 start 마다 초기화되면
+    // 루프를 다시 걸기만 해도 시운전이 무한정 연장된다.
+    const iterations = events.filter(e => e.event === 'iteration').length;
+    return { inTrial: true, cap, iterations, exhausted: iterations >= cap };
+  } catch {
+    return { inTrial: true, cap, iterations: 0, exhausted: false };
+  }
+}
+
+/** 시운전을 풀어 이 루프를 정상 예산으로 돌린다 — 사람이 기록을 확인한 뒤 호출한다 */
+export function approveTrial(projectDir, loop) {
+  return appendLoopEvent(projectDir, { loop, event: 'trial-approved' });
 }

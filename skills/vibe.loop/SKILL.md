@@ -73,6 +73,9 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/loop/
              → missing[] 이 비어 있지 않으면 없는 아티팩트를 기억으로 메우지 않는다.
                재고정 실패를 인박스에 남기고 종료한다.
 1. 검증     validateLoopDefinition 통과 확인 (위 design 3의 명령) — 실패 시 인박스에 기록 후 종료
+1-b. 시운전   node "$HOOKS_DIR/loop-ledger.js" trial <name> [trial_iterations]
+             → `inTrial: true` 면 이 실행의 회전 상한은 `cap` 이다 (max_iterations 아님).
+               `exhausted: true` 면 **한 바퀴도 돌지 않고** 종료한다 — 6-c 참조.
 2. 시작 기록  node "$HOOKS_DIR/loop-ledger.js" start <name>
 3. DISCOVER  정의의 discover 지시 실행 → 일거리 목록 산출
 4. STUCK 검사 DISCOVER_HASH=$(node -e "...hashDiscoverOutput...")   # 발견 목록 텍스트의 해시
@@ -91,6 +94,13 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/loop/
              node "$HOOKS_DIR/loop-ledger.js" budget <name> <max_iterations>
              → exhausted 면 잔여를 인박스로 이월하고 종료한다. 회전 수를 모델이
                세지 않는다 — 폭주 방어는 코드가 판정한다 (loop-contract 예산 절).
+6-c. 시운전 확인 시운전 중이면(1-b 의 `inTrial`) 매 회전 뒤 다시 확인한다:
+             node "$HOOKS_DIR/loop-ledger.js" trial <name> [trial_iterations]
+             → exhausted 면 **거기서 멈춘다.** 인박스에 아래를 남기고 종료:
+               · 무엇을 발견했고 무엇을 고쳤는지 (회전별 한 줄)
+               · 확인할 것: `.vibe/metrics/loop-history.jsonl` 과 실제 변경 diff
+               · 이어서 돌리려면: loop-ledger.js trial-approve <name>
+               승인 없이 계속 도는 것 금지 — 정의가 맞는지 아직 아무도 모른다.
 7. 종료 기록  node "$HOOKS_DIR/loop-ledger.js" end <name> <ok|fail|stuck> "<한 줄 요약>"
 8. 인박스    node "$HOOKS_DIR/loop-ledger.js" inbox <name> <ok|fail|stuck> \
                "발견: N건 / 처리: M건 / 검증: <기준과 결과>" \
