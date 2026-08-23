@@ -8,7 +8,21 @@
 // ─── Types ───────────────────────────────────────────────────────────
 
 export type LoopTrigger = 'scheduled' | 'manual' | 'on-event';
-export type LoopVerify = 'ledger' | 'tests' | 'none';
+/**
+ * 완료를 무엇으로 판정하는가.
+ *
+ * - `ledger` — run-ledger 의 `verifyPassed`
+ * - `tests`  — `test_command` 의 exit code
+ * - `visual` — `visual_command` 의 exit code **+ 사람이 볼 산출물**
+ * - `none`   — 판정 생략(보고만)
+ *
+ * ⚠️ `visual` 이 "모델이 스크린샷을 보고 판단한다" 는 뜻이 **아니다.** 그건
+ * 자기보고이고, loop-contract 가 배제하는 바로 그것이다. 게이트는 명령의 exit
+ * code 다 — 베이스라인 diff·접근성 감사·토큰 드리프트처럼 임계값으로 떨어지는
+ * 검사여야 한다. `tests` 와 갈리는 지점은 **증거를 남긴다**는 것이다: 스크린샷이나
+ * diff 이미지를 남겨 나중에 사람이 눈으로 확인할 수 있어야 한다.
+ */
+export type LoopVerify = 'ledger' | 'tests' | 'visual' | 'none';
 export type LoopIsolation = 'worktree' | 'none';
 
 /**
@@ -35,6 +49,8 @@ export interface ParsedLoopDefinition {
   pipeline: string[];
   verify: LoopVerify;
   test_command?: string;
+  visual_command?: string;
+  artifact_dir?: string;
   max_iterations: number;
   isolation: LoopIsolation;
   session: LoopSession;
@@ -51,7 +67,7 @@ export interface LoopValidationResult {
 // ─── Constants ───────────────────────────────────────────────────────
 
 const TRIGGER_VALUES: ReadonlySet<string> = new Set(['scheduled', 'manual', 'on-event']);
-const VERIFY_VALUES: ReadonlySet<string> = new Set(['ledger', 'tests', 'none']);
+const VERIFY_VALUES: ReadonlySet<string> = new Set(['ledger', 'tests', 'visual', 'none']);
 const ISOLATION_VALUES: ReadonlySet<string> = new Set(['worktree', 'none']);
 const SESSION_VALUES: ReadonlySet<string> = new Set(['continuous', 'per-iteration']);
 const STATUS_VALUES: ReadonlySet<string> = new Set(['active', 'paused']);
@@ -190,6 +206,8 @@ export function validateLoopDefinition(content: string): LoopValidationResult {
   const discover = typeof fm['discover'] === 'string' ? fm['discover'].trim() : '';
   const verify = typeof fm['verify'] === 'string' ? fm['verify'].trim() : '';
   const test_command = typeof fm['test_command'] === 'string' ? fm['test_command'].trim() : undefined;
+  const visual_command = typeof fm['visual_command'] === 'string' ? fm['visual_command'].trim() : undefined;
+  const artifact_dir = typeof fm['artifact_dir'] === 'string' ? fm['artifact_dir'].trim() : undefined;
   const maxIterRaw = fm['max_iterations'];
   const isolation = typeof fm['isolation'] === 'string' ? fm['isolation'].trim() : 'none';
   const session = typeof fm['session'] === 'string' ? fm['session'].trim() : 'continuous';
@@ -244,6 +262,27 @@ export function validateLoopDefinition(content: string): LoopValidationResult {
     errors.push('test_command: verify=tests 일 때만 허용됩니다');
   }
 
+  // 조건부 필드: visual_command iff verify === 'visual'
+  if (verify === 'visual') {
+    if (!visual_command) {
+      errors.push('visual_command: verify=visual 일 때 필수 필드입니다');
+    }
+    // 증거가 남지 않으면 `tests` 와 다를 것이 없다 — 나중에 사람이 볼 것이 있어야 한다
+    if (!artifact_dir) {
+      errors.push(
+        'artifact_dir: verify=visual 일 때 필수 필드입니다 — 스크린샷·diff 를 남길 위치. '
+        + '증거가 남지 않으면 verify=tests 와 다를 것이 없습니다.'
+      );
+    }
+  } else {
+    if (visual_command !== undefined) {
+      errors.push('visual_command: verify=visual 일 때만 허용됩니다');
+    }
+    if (artifact_dir !== undefined) {
+      errors.push('artifact_dir: verify=visual 일 때만 허용됩니다');
+    }
+  }
+
   // max_iterations 범위 검사
   const maxIter = Number(maxIterRaw);
   if (maxIterRaw !== undefined && maxIterRaw !== null && maxIterRaw !== '') {
@@ -286,6 +325,8 @@ export function validateLoopDefinition(content: string): LoopValidationResult {
     pipeline,
     verify: verify as LoopVerify,
     ...(test_command !== undefined ? { test_command } : {}),
+    ...(visual_command !== undefined ? { visual_command } : {}),
+    ...(artifact_dir !== undefined ? { artifact_dir } : {}),
     max_iterations: maxIter,
     session: session as LoopSession,
     isolation: isolation as LoopIsolation,

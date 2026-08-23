@@ -11,6 +11,10 @@ pipeline:
   - vibe.spec
   - vibe.run
   - vibe.verify
+# ledger(기본) | tests | visual | none
+#   visual: 렌더 결과를 완료 기준으로 삼는다. visual_command(게이트, exit 0)와
+#           artifact_dir(증거, 스크린샷·diff)이 함께 필요하다.
+#           모델이 화면을 보고 판정하는 것이 아니다 — 판정은 exit code 다.
 verify: ledger
 max_iterations: 10
 isolation: none

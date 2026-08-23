@@ -6,7 +6,7 @@
  */
 // ─── Constants ───────────────────────────────────────────────────────
 const TRIGGER_VALUES = new Set(['scheduled', 'manual', 'on-event']);
-const VERIFY_VALUES = new Set(['ledger', 'tests', 'none']);
+const VERIFY_VALUES = new Set(['ledger', 'tests', 'visual', 'none']);
 const ISOLATION_VALUES = new Set(['worktree', 'none']);
 const SESSION_VALUES = new Set(['continuous', 'per-iteration']);
 const STATUS_VALUES = new Set(['active', 'paused']);
@@ -133,6 +133,8 @@ export function validateLoopDefinition(content) {
     const discover = typeof fm['discover'] === 'string' ? fm['discover'].trim() : '';
     const verify = typeof fm['verify'] === 'string' ? fm['verify'].trim() : '';
     const test_command = typeof fm['test_command'] === 'string' ? fm['test_command'].trim() : undefined;
+    const visual_command = typeof fm['visual_command'] === 'string' ? fm['visual_command'].trim() : undefined;
+    const artifact_dir = typeof fm['artifact_dir'] === 'string' ? fm['artifact_dir'].trim() : undefined;
     const maxIterRaw = fm['max_iterations'];
     const isolation = typeof fm['isolation'] === 'string' ? fm['isolation'].trim() : 'none';
     const session = typeof fm['session'] === 'string' ? fm['session'].trim() : 'continuous';
@@ -192,6 +194,25 @@ export function validateLoopDefinition(content) {
     else if (test_command !== undefined) {
         errors.push('test_command: verify=tests 일 때만 허용됩니다');
     }
+    // 조건부 필드: visual_command iff verify === 'visual'
+    if (verify === 'visual') {
+        if (!visual_command) {
+            errors.push('visual_command: verify=visual 일 때 필수 필드입니다');
+        }
+        // 증거가 남지 않으면 `tests` 와 다를 것이 없다 — 나중에 사람이 볼 것이 있어야 한다
+        if (!artifact_dir) {
+            errors.push('artifact_dir: verify=visual 일 때 필수 필드입니다 — 스크린샷·diff 를 남길 위치. '
+                + '증거가 남지 않으면 verify=tests 와 다를 것이 없습니다.');
+        }
+    }
+    else {
+        if (visual_command !== undefined) {
+            errors.push('visual_command: verify=visual 일 때만 허용됩니다');
+        }
+        if (artifact_dir !== undefined) {
+            errors.push('artifact_dir: verify=visual 일 때만 허용됩니다');
+        }
+    }
     // max_iterations 범위 검사
     const maxIter = Number(maxIterRaw);
     if (maxIterRaw !== undefined && maxIterRaw !== null && maxIterRaw !== '') {
@@ -227,6 +248,8 @@ export function validateLoopDefinition(content) {
         pipeline,
         verify: verify,
         ...(test_command !== undefined ? { test_command } : {}),
+        ...(visual_command !== undefined ? { visual_command } : {}),
+        ...(artifact_dir !== undefined ? { artifact_dir } : {}),
         max_iterations: maxIter,
         session: session,
         isolation: isolation,
