@@ -24,7 +24,7 @@ Step 3: If neither → Error: "Run /vibe.spec first"
 For a monolithic SPEC, compile it after resolving the canonical path. For a split SPEC, do not compile `_index.md`; defer this step until each active phase file is loaded in Phase Isolation Step B. Compile with `writeExecutionPacket`, then immediately verify the saved artifact with `validateExecutionPacket`.
 
 ```bash
-node -e "import('file://{{VIBE_PATH}}/dist/tools/index.js').then(t => {
+node -e "import('file://{{VIBE_PATH}}/dist/tools/spec/index.js').then(t => {
   const projectPath=process.cwd(), specPath='.vibe/specs/{feature-name}.md';
   const profile='{codex-or-claude-code}';
   const written=t.writeExecutionPacket({projectPath,specPath,profile});
@@ -168,7 +168,7 @@ After ALL phases complete:
 
 ```bash
 # generateTraceabilityMatrix is synchronous — no .then()
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const r = t.generateTraceabilityMatrix('{feature-name}', {projectPath: process.cwd()}); console.log(JSON.stringify(r, null, 2)); })"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/spec/index.js').then(t => { const r = t.generateTraceabilityMatrix('{feature-name}', {projectPath: process.cwd()}); console.log(JSON.stringify(r, null, 2)); })"
 ```
 
 > Default SPEC path is `.vibe/specs/<feature>.md`. `status === 'empty'` must be treated as failed/not-applicable — never as 100% pass.
