@@ -5,7 +5,21 @@
  * 조건부 필드(schedule, test_command)를 결정론적으로 검증한다.
  */
 export type LoopTrigger = 'scheduled' | 'manual' | 'on-event';
-export type LoopVerify = 'ledger' | 'tests' | 'none';
+/**
+ * 완료를 무엇으로 판정하는가.
+ *
+ * - `ledger` — run-ledger 의 `verifyPassed`
+ * - `tests`  — `test_command` 의 exit code
+ * - `visual` — `visual_command` 의 exit code **+ 사람이 볼 산출물**
+ * - `none`   — 판정 생략(보고만)
+ *
+ * ⚠️ `visual` 이 "모델이 스크린샷을 보고 판단한다" 는 뜻이 **아니다.** 그건
+ * 자기보고이고, loop-contract 가 배제하는 바로 그것이다. 게이트는 명령의 exit
+ * code 다 — 베이스라인 diff·접근성 감사·토큰 드리프트처럼 임계값으로 떨어지는
+ * 검사여야 한다. `tests` 와 갈리는 지점은 **증거를 남긴다**는 것이다: 스크린샷이나
+ * diff 이미지를 남겨 나중에 사람이 눈으로 확인할 수 있어야 한다.
+ */
+export type LoopVerify = 'ledger' | 'tests' | 'visual' | 'none';
 export type LoopIsolation = 'worktree' | 'none';
 /**
  * 한 번의 호출에서 몇 바퀴를 도는가.
@@ -30,6 +44,8 @@ export interface ParsedLoopDefinition {
     pipeline: string[];
     verify: LoopVerify;
     test_command?: string;
+    visual_command?: string;
+    artifact_dir?: string;
     max_iterations: number;
     isolation: LoopIsolation;
     session: LoopSession;

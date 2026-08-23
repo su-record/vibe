@@ -46,7 +46,8 @@ HISTORY=".vibe/metrics/loop-history.jsonl"
    - **목표(goal)**: 루프가 0으로 만들려는 것 (예: "open 회귀 0건", "P1 lint 0건")
    - **트리거**: `scheduled`(cron) / `manual` / `on-event`
    - **발견(discover)**: 일거리를 어떻게 찾는가 — 명령 또는 지시
-   - **검증(verify)**: `ledger`(vibe.verify 경유, 기본) / `tests`(테스트 명령 exit code) / `none`(보고만)
+   - **검증(verify)**: `ledger`(vibe.verify 경유, 기본) / `tests`(테스트 명령 exit code) /
+     `visual`(렌더 결과 검사 exit code + `artifact_dir` 에 증거) / `none`(보고만)
    - **격리(isolation)**: 병렬 항목이 파일을 수정하면 `worktree`, 아니면 `none`
    - **세션(session)**: `continuous`(기본, 한 호출에서 여러 바퀴) / `per-iteration`
      (한 바퀴만 — 반복은 스케줄러가 만든다, `max_iterations: 1` 필수)
@@ -90,6 +91,12 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/loop/
 6. VERIFY    완료 판정 — verify 모드별 결정론 기준:
              · ledger: cat .vibe/metrics/run-ledger.json → verifyPassed === true 만 성공
              · tests:  정의의 test_command 실행 → exit 0 만 성공
+             · visual: 정의의 visual_command 실행 → **exit 0 만 성공**.
+                       산출물(스크린샷·diff)을 artifact_dir 에 남기고 그 경로를
+                       종료 기록·인박스에 적는다 — 나중에 사람이 눈으로 확인할 것.
+                       ⛔ 모델이 스크린샷을 보고 "괜찮아 보인다"고 판정하는 것은
+                       금지다. 그건 자기보고이고 게이트가 아니다. 판정은 exit code,
+                       이미지는 증거 — 둘의 역할을 섞지 않는다.
              · none:   판정 생략(보고만). "코드를 보니 잘 된 것 같다"는 판정이 아니다.
 6-b. 회전 기록  node "$HOOKS_DIR/loop-ledger.js" iteration <name> <verified|unverified>
              VERIFY 결과를 그대로 넣는다. 이어서 예산을 확인한다:
