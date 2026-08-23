@@ -23,6 +23,26 @@
 
 - {Invariant or implementation boundary that every execution packet must preserve}
 
+### Structure (경계가 바뀔 때만)
+
+> 아래 셋 중 **하나라도** 해당하면 채운다. 아니면 이 절을 통째로 지운다 —
+> 해당 없는데 그려두면 통과 의식이 되고, 시각적 완성도가 정확성을 착각하게 만든다.
+>
+> 1. 새 모듈·서비스 **경계**를 만든다
+> 2. **데이터 흐름**이 바뀐다 (읽고 쓰는 주체나 순서)
+> 3. **3개 이상 모듈**을 횡단한다
+>
+> 규범은 `vibe.docs` 의 `references/diagram-spec.md` 를 따른다 — 코드에서 확인한
+> 것만 그리고, 확인 못 한 요소는 뺀다. 여기에 다시 적지 않는다(SSOT).
+>
+> 목적은 설명이 아니라 **리뷰 표면**이다. 산문으로는 "박스가 빠졌다 / 화살표가
+> 거꾸로다" 가 안 보이지만 그림에서는 승인 전에 보인다.
+
+```mermaid
+graph TB
+  {노드와 간선 — 각 노드 옆에 근거 파일 경로를 주석으로}
+```
+
 ### Rejected Alternatives (Traps)
 
 > Approaches considered and rejected, each with a mechanistic reason — so the loop never revisits a dead end. Omit only when no real design choice existed (or on demo/prototype stakes).
