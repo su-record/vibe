@@ -50,6 +50,19 @@ jobs:
       - name: Run vitest
         run: pnpm test -- --reporter=default
 
+      # 선언한 게이트는 CI 에서 돌아야 게이트다.
+      #
+      # CLAUDE.md 가 릴리즈 게이트 7종을 선언해 두고 CI 는 그중 넷만 돌리고 있었다.
+      # 나머지는 사람이 릴리즈 때마다 손으로 돌리는 것에 의존했고, 그건 잊는 순간
+      # 없는 것과 같다 — **아무도 안 돌리는 가드는 아무것도 잡지 못한다.**
+      # 넷 다 수초 내에 끝나므로 PR 마다 돌린다.
+      - name: Docs and count claims match source
+        run: |
+          pnpm gen:skill-docs:check
+          pnpm validate:counts
+          pnpm validate:skill-invocation
+          pnpm sync:agent-models:check
+
       # 플러그인 배포 트리는 커밋되는 생성물이다 — Claude Code 마켓플레이스가
       # 저장소를 클론해 읽으므로 dist/ 와 구운 agents/ 가 트리에 있어야 한다.
       # 소스만 고치고 트리를 잊으면 플러그인 사용자만 구버전을 받게 되므로
