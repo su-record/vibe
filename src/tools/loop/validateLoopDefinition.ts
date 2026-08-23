@@ -84,6 +84,26 @@ const MAX_ITERATIONS_MAX = 50;
  * YAML-like frontmatter 파싱 (scope-from-spec.js#readFrontmatter 의미론 준수).
  * 스칼라 값과 인라인 배열([a, b, c]), 블록 시퀀스(- item)를 처리한다.
  */
+/**
+ * YAML 스칼라의 감싼 따옴표를 벗긴다.
+ *
+ * WHY: 이 파서는 `out[key] = raw` 로 원문을 그대로 담고 있었다. YAML 에서
+ * `key: "value"` 는 문자열 `value` 를 뜻하는데, 따옴표째 저장되면 그 값을 쓰는
+ * 쪽에서 깨진다 — 그리고 vibe 가 배송하는 템플릿이 **따옴표를 쓰라고 가르친다**:
+ *
+ *   schedule: "0 2 * * *"   → `"0 2 * * *"` 가 crontab 에 들어가 cron 필드 5개를 깬다
+ *   test_command: "npm test" → sh 가 `npm test` 라는 이름의 파일을 찾는다 (not found)
+ *
+ * 짝이 맞는 감싼 따옴표만 벗긴다 — 값 안의 따옴표나 짝이 안 맞는 것은 건드리지
+ * 않는다. 그건 사용자가 의도한 리터럴일 수 있다.
+ */
+function unquote(raw: string): string {
+  if (raw.length < 2) return raw;
+  const q = raw[0];
+  if ((q === '"' || q === "'") && raw.endsWith(q)) return raw.slice(1, -1);
+  return raw;
+}
+
 function parseFrontmatter(content: string): Record<string, unknown> {
   if (!content.startsWith('---')) return {};
   const end = content.indexOf('\n---', 3);
@@ -132,7 +152,7 @@ function parseFrontmatter(content: string): Record<string, unknown> {
       out[key] = raw
         .slice(1, -1)
         .split(',')
-        .map((s) => s.trim())
+        .map((s) => unquote(s.trim()))
         .filter((s) => s.length > 0);
     } else if (raw === '') {
       // key with no value — sequence follows (like `pipeline:\n  - vibe.spec`)
@@ -140,7 +160,7 @@ function parseFrontmatter(content: string): Record<string, unknown> {
       currentKey = key + '__seq';
       blockLines = [];
     } else {
-      out[key] = raw;
+      out[key] = unquote(raw);
     }
   }
 

@@ -32,8 +32,6 @@ const def = (over: Record<string, string> = {}): string => {
   return `---\n${body}\npipeline:\n  - vibe.run\n---\n\n# 루프\n`;
 };
 
-// 파서는 따옴표를 벗기지 않는다 — goal·test_command 를 포함한 모든 문자열 필드의
-// 기존 동작이다. 여기서 바꾸면 관례가 필드마다 갈린다.
 const OK = { visual_command: 'npm run test:visual', artifact_dir: '.vibe/e2e/shots' };
 
 describe('verify: visual', () => {
@@ -45,10 +43,13 @@ describe('verify: visual', () => {
     expect(r.definition?.artifact_dir).toBe('.vibe/e2e/shots');
   });
 
-  /** 따옴표를 벗기지 않는 것이 기존 관례다 — 새 필드가 혼자 다르게 굴면 안 된다 */
-  it('문자열을 원문 그대로 보존한다 — 기존 필드와 같은 관례', () => {
+  /**
+   * 따옴표째 저장하면 실행 시 깨진다 — `sh -c '"npm run vr"'` 는 `npm run vr` 라는
+   * 이름의 파일을 찾는다. 이 테스트의 초안은 그 버그를 "관례" 로 굳혀놓고 있었다.
+   */
+  it('감싼 따옴표를 벗긴다 — 따옴표째면 셸이 파일 이름으로 읽는다', () => {
     const r = validateLoopDefinition(def({ ...OK, visual_command: '"npm run vr"' }));
-    expect(r.definition?.visual_command).toBe('"npm run vr"');
+    expect(r.definition?.visual_command).toBe('npm run vr');
   });
 
   it('게이트 명령이 없으면 거부한다 — 판정 수단이 없다', () => {
