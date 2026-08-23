@@ -78,13 +78,13 @@ Examples:
 **1. Validate code quality before review:**
 
 ```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/convention/index.js').then(t => t.validateCodeQuality({targetPath: 'src/', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **2. Analyze complexity of changed files:**
 
 ```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => t.analyzeComplexity({targetPath: 'src/api/users.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/convention/index.js').then(t => t.analyzeComplexity({targetPath: 'src/api/users.ts', projectPath: process.cwd()}).then(r => console.log(r.content[0].text)))"
 ```
 
 **3. Save critical finding for reference:**

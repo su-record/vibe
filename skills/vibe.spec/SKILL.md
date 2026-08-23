@@ -72,7 +72,7 @@ Legacy `.vibe/interviews/` or `.vibe/plans/` artifacts가 실제로 감지된 �
 SPEC 을 쓴 직후, **승인을 요청하기 전에** 실행한다. 셀프 리뷰가 아니라 코드 판정이다:
 
 ```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const fs=require('fs'); const p='.vibe/specs/{feature-name}.md'; const r=t.validateSpecDocument(fs.readFileSync(p,'utf-8'),{specPath:p}); console.log(t.formatSpecValidation(r)); process.exitCode = r.valid ? 0 : 1; })"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/spec/index.js').then(t => { const fs=require('fs'); const p='.vibe/specs/{feature-name}.md'; const r=t.validateSpecDocument(fs.readFileSync(p,'utf-8'),{specPath:p}); console.log(t.formatSpecValidation(r)); process.exitCode = r.valid ? 0 : 1; })"
 ```
 
 | 검사 | 심각도 | 왜 하류가 깨지는가 |

@@ -63,32 +63,61 @@ describe('dispatch 배럴은 의존성 프리다', () => {
 /**
  * 두 번째 겹: 호출 경로. 배럴이 깨끗해도 스킬 문서가 통합 배럴로 부르면 같은 일이 난다.
  */
-describe('스킬 문서가 게이트를 통합 배럴로 부르지 않는다', () => {
-  // `validateLoopDefinition` 도 게이트다 — 루프 정의가 유효해야 install/run 을 허용한다.
-  // 통합 배럴로 부르면 node_modules 없는 환경(플러그인 트리)에서 게이트가 죽는다.
-  const GATE_FNS = [
-    'collectDispatchSignals', 'detectResumeState', 'detectStakesSignals',
-    'classifyUrl', 'classifyAttachment', 'evaluateCostGate', 'formatCostGate',
-    'validateLoopDefinition',
-  ];
+/**
+ * 두 번째 겹: 호출 경로.
+ *
+ * 처음엔 **게이트 함수 목록**으로만 검사했는데, 그 좁음 때문에 RTM
+ * (`generateTraceabilityMatrix`)이 통과했다 — `vibe.verify` 가 통합 배럴로 부르고
+ * 있었고, 사용자 환경에서 "papaparse 누락으로 RTM 생성기 실패" 로 터졌다.
+ * 게이트냐 아니냐는 이 문제와 무관했다. **의존성 없이 부를 수 있는 함수를
+ * 굳이 무거운 문로 부르느냐**가 기준이다.
+ *
+ * 그래서 목록 대신 규칙으로 바꾼다: 스킬이 통합 배럴로 부르는 함수 중
+ * **좁은 dep-free 배럴에도 있는 것**이 있으면 실패. 목록을 유지보수할 필요가
+ * 없고, 새 함수가 생겨도 자동으로 걸린다.
+ */
+import { pathToFileURL } from 'url';
 
-  const offenders: string[] = [];
-  const scan = (dir: string): void => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const p = path.join(dir, entry.name);
-      if (entry.isDirectory()) { scan(p); continue; }
-      if (!entry.name.endsWith('.md')) continue;
-      fs.readFileSync(p, 'utf-8').split('\n').forEach((line, i) => {
-        if (line.includes('dist/tools/index.js') && GATE_FNS.some((fn) => line.includes(fn))) {
-          offenders.push(`${path.relative(ROOT, p)}:${i + 1}`);
-        }
-      });
+/** 외부 의존성 없이 로드되는 배럴들 — 여기 있는 함수는 여기서 불러야 한다 */
+const LIGHT_BARRELS = ['convention', 'dispatch', 'interaction', 'loop', 'spec', 'time', 'ui'];
+
+describe('스킬이 가벼운 함수를 통합 배럴로 부르지 않는다', () => {
+  const dist = path.join(ROOT, 'dist', 'tools');
+
+  it('빌드 산출물이 있어야 검사할 수 있다', () => {
+    expect(fs.existsSync(dist), 'npm run build 를 먼저 실행해야 한다').toBe(true);
+  });
+
+  it('통합 배럴 호출에 좁은 배럴로 대체 가능한 함수가 없다', async () => {
+    const light = new Map<string, string>();
+    for (const b of LIGHT_BARRELS) {
+      const entry = path.join(dist, b, 'index.js');
+      if (!fs.existsSync(entry)) continue;
+      const mod = (await import(pathToFileURL(entry).href)) as Record<string, unknown>;
+      for (const name of Object.keys(mod)) if (!light.has(name)) light.set(name, b);
     }
-  };
-  scan(path.join(ROOT, 'skills'));
+    expect(light.size, '가벼운 배럴을 하나도 읽지 못했다면 검사가 공허하다')
+      .toBeGreaterThan(10);
 
-  it('게이트 호출은 dist/tools/dispatch/index.js 를 쓴다', () => {
-    expect(offenders, '통합 배럴은 전 기능의 의존성을 끌어온다 — 게이트는 그러면 안 된다')
+    const offenders: string[] = [];
+    const scan = (dir: string): void => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, entry.name);
+        if (entry.isDirectory()) { scan(p); continue; }
+        if (!entry.name.endsWith('.md')) continue;
+        fs.readFileSync(p, 'utf-8').split('\n').forEach((line, i) => {
+          if (!line.includes('dist/tools/index.js')) return;
+          for (const [fn, barrel] of light) {
+            if (new RegExp(`\\b${fn}\\b`).test(line)) {
+              offenders.push(`${path.relative(ROOT, p)}:${i + 1} — ${fn} 은 ${barrel} 배럴에 있다`);
+            }
+          }
+        });
+      }
+    };
+    scan(path.join(ROOT, 'skills'));
+
+    expect(offenders, '통합 배럴은 전 기능의 의존성을 끌어온다 — 가벼운 함수는 좁은 문으로')
       .toEqual([]);
   });
 });

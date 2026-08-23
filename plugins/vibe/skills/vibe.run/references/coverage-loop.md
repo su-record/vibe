@@ -40,7 +40,7 @@ max_iterations(기본 10) 도달 → 잔여 인박스 이월
 ## RTM 생성
 
 ```bash
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const r = t.generateTraceabilityMatrix('{feature-name}', {projectPath: process.cwd()}); console.log(JSON.stringify(r, null, 2)); })"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/spec/index.js').then(t => { const r = t.generateTraceabilityMatrix('{feature-name}', {projectPath: process.cwd()}); console.log(JSON.stringify(r, null, 2)); })"
 ```
 
 `generateTraceabilityMatrix` 는 동기 함수다 — 반환값에 `.then()` 을 쓰지 않는다.

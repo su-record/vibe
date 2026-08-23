@@ -188,10 +188,10 @@ The RTM generation uses core tools:
 
 ```bash
 # Generate RTM (generateTraceabilityMatrix is synchronous — no .then())
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const m = t.generateTraceabilityMatrix('login', {projectPath: process.cwd()}); console.log(t.formatMatrixAsMarkdown(m)); })"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/spec/index.js').then(t => { const m = t.generateTraceabilityMatrix('login', {projectPath: process.cwd()}); console.log(t.formatMatrixAsMarkdown(m)); })"
 
 # Generate HTML
-node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => { const m = t.generateTraceabilityMatrix('login', {projectPath: process.cwd()}); console.log(t.formatMatrixAsHtml(m)); })"
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/spec/index.js').then(t => { const m = t.generateTraceabilityMatrix('login', {projectPath: process.cwd()}); console.log(t.formatMatrixAsHtml(m)); })"
 ```
 
 > **Note:** Default SPEC path is `.vibe/specs/<feature>.md` (falls back to `.claude/vibe/specs/` then `.claude/specs/` for legacy projects).
