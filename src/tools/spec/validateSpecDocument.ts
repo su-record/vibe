@@ -144,6 +144,47 @@ const CRITERION_ITEM = /\b(?:D|G|AC)\d+\b|^\s*[-*]\s*\[[ x]\]|^\s*\|\s*(?:D|G|AC
  */
 const INLINE_CRITERIA = /^\s*[-*]\s*AC\s*[:：]|^\s*\|\s*Done Criteria\s*\||^\s*\|\s*(?:Criterion|Verified by|Evidence)\s*\|/im;
 
+/** 근거 등급 표시 — `Context Sources` 항목이 무엇에 기대는지 밝힌다 */
+const GROUNDING_TAGS = ['확인', '해석', '모름'] as const;
+const CONTEXT_HEADING = /^#{2,4}\s*(Context Sources|컨텍스트 소스|근거 자료)\s*$/mi;
+
+/**
+ * 근거 등급이 붙어 있는가.
+ *
+ * WHY: SPEC 의 주장은 세 종류가 섞인다 — 코드에서 **확인**한 것, 거기서 **해석**한 것,
+ * 아직 **모르는** 것. 셋이 같은 글머리표로 나열되면 리뷰어가 어디를 의심해야 할지
+ * 알 수 없다. 특히 해석을 확인으로 읽으면 틀린 전제 위에 구현이 쌓인다.
+ *
+ * `모름` 항목이 있는 것 자체는 결함이 아니다 — 모른다고 적는 편이 모르는 채로
+ * 확언하는 것보다 낫다. 그래서 등급 **부재**만 잡고 분포는 따지지 않는다.
+ *
+ * P2 인 이유: 등급이 없어도 하류 게이트(RTM·JUDGE)는 돌아간다. 승인을 막지 않고
+ * 승인 메시지에 함께 띄운다.
+ */
+function checkGrounding(content: string, findings: SpecFinding[]): void {
+  const heading = content.match(CONTEXT_HEADING);
+  if (!heading) return;   // 절이 없으면 이 검사 대상이 아니다
+
+  const level = (heading[0].match(/^#+/) ?? ['#'])[0].length;
+  const after = content.slice((heading.index ?? 0) + heading[0].length);
+  const next = after.search(new RegExp(`^#{1,${level}}\\s`, 'm'));
+  const body = next === -1 ? after : after.slice(0, next);
+
+  const items = body.split('\n').filter((l) => /^\s*[-*]\s+\S/.test(l));
+  if (items.length === 0) return;   // 빈 절은 다른 검사의 몫이다
+
+  const tagged = items.filter((l) => GROUNDING_TAGS.some((t) => l.includes(`[${t}]`)));
+  if (tagged.length === 0) {
+    findings.push({
+      severity: 'P2',
+      code: 'no-grounding-tags',
+      message: `Context Sources 항목에 근거 등급이 없다 — [확인] 코드에서 읽음 / `
+        + `[해석] 거기서 추론함 / [모름] 확인 못 함. 셋이 섞이면 리뷰어가 `
+        + `해석을 확인으로 읽는다.`,
+    });
+  }
+}
+
 function checkDoneCriteria(content: string, findings: SpecFinding[]): void {
   if (INLINE_CRITERIA.test(content)) return; // REQ 별 인라인 기준으로 충족
 
@@ -249,6 +290,7 @@ export function validateSpecDocument(
   const requirementIds = checkRequirements(content, featureSlug, findings);
   checkStakes(content, findings);
   checkDoneCriteria(content, findings);
+  checkGrounding(content, findings);
   checkPlaceholders(content, findings);
   checkScenarios(content, findings);
 

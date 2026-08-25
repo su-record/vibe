@@ -98,6 +98,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/spec/
 |---|---|---|
 | REQ-* ID 부재 | P1 | RTM 이 `status:"empty"` — 커버리지 게이트가 판정불가가 된다 |
 | Stakes 부재/오값 | P1 | 디스패처가 파이프라인 깊이를 정할 입력이 없다 |
+| Context Sources 근거 등급 부재 | P2 | 확인·해석·모름이 섞여 리뷰어가 해석을 확인으로 읽는다 |
 | Done Criteria 부재/빈 섹션 | P1 | JUDGE 가 판정할 기준이 없다 |
 | 미치환 placeholder | P1 | 직역 하네스가 예시 텍스트를 실데이터로 넣는다 |
 | Scenarios 부재 | P2 | `vibe.run` 시나리오 루프의 분해 단위가 없다 |
