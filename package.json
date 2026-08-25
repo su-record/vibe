@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "3.2.57",
+  "version": "3.2.58",
   "description": "AI Coding Framework for Claude Code — 7+ agents, 52 skills, multi-LLM orchestration",
   "type": "module",
   "main": "dist/cli/index.js",
@@ -40,7 +40,8 @@
     "build:plugin": "npx tsx scripts/build-plugin.ts",
     "gen:plugin-hooks": "npx tsx scripts/gen-plugin-hooks.ts",
     "gen:plugin-hooks:check": "npx tsx scripts/gen-plugin-hooks.ts --check",
-    "validate:plugin-tree": "npx tsx scripts/build-plugin.ts && git diff --exit-code --stat HEAD -- plugins/"
+    "validate:plugin-tree": "npx tsx scripts/build-plugin.ts && git diff --exit-code --stat HEAD -- plugins/",
+    "validate:mermaid": "npx tsx scripts/validate-mermaid.ts"
   },
   "keywords": [
     "ai",
@@ -92,10 +93,13 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^22.19.10",
     "@types/papaparse": "^5.5.2",
     "@vitest/coverage-v8": "^4.1.10",
     "ajv": "^8.17.1",
+    "jsdom": "^30.0.1",
+    "mermaid": "^11.17.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   },
