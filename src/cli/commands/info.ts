@@ -10,6 +10,8 @@ import { formatLLMStatus } from '../auth.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
 import { missingNativeDeps } from '../setup/NativeDeps.js';
 import { RETIRED_SKILL_NAMES } from '../postinstall/constants.js';
+import { createHash } from 'crypto';
+import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
 
 /**
  * 도움말 표시
@@ -162,6 +164,16 @@ export function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: str
   const external = others.filter((n) => !RETIRED_SKILL_NAMES.has(n));
 
   const lines = [`  Skills              ${entries.length} always-on (vibe ${vibe.length})`];
+
+  // 개수가 같아도 내용은 다를 수 있다 — 지문으로 확인한다
+  const drifted = driftedSkills(globalSkillsDir, shippedSkillsDir);
+  if (drifted !== null && drifted.length > 0) {
+    lines.push(
+      `    drifted           ${drifted.length} — ${drifted.slice(0, 5).join(', ')}`
+        + (drifted.length > 5 ? ` 외 ${drifted.length - 5}` : ''),
+      '                      ↳ 배송본과 내용이 다르다 (run: vibe update)',
+    );
+  }
   if (external.length > 0) {
     lines.push(`    external          ${external.length} — ${external.join(', ')}`);
   }
@@ -172,6 +184,71 @@ export function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: str
     );
   }
   return lines.join('\n');
+}
+
+/**
+ * 설치된 스킬이 배송본과 같은가.
+ *
+ * WHY: `vibe status` 는 스킬 **개수**만 셌다. 개수가 같아도 내용은 다를 수 있다 —
+ * 중단된 postinstall, 부분 복사, 사용자가 고친 파일. 이 저장소가 반복해서 겪은
+ * 실패가 전부 "설치본이 조용히 어긋났고 확인할 기준값이 없었다" 였다.
+ *
+ * ## 왜 해시 잠금 파일이 아니라 배송본 직접 대조인가
+ *
+ * 설치 시 postinstall 이 `{{VIBE_PATH_URL}}`·`{{VIBE_PATH}}` 를 실제 경로로 치환한다
+ * (`fs-utils.ts` replaceTemplatesInDir). 그래서 날것 비교는 치환된 스킬을 전부
+ * 드리프트로 잡는다(실측 29개 중 11개 오탐).
+ *
+ * 그렇다고 **역치환은 불가능하다** — 소스의 `file://{{VIBE_PATH}}` 와
+ * `{{VIBE_PATH_URL}}` 이 **같은 문자열**(`file:///…`)로 치환되므로 되돌릴 때
+ * 어느 쪽이었는지 알 수 없다(실측으로 `process-steps.md` 가 여기 걸렸다).
+ *
+ * 방향을 뒤집으면 모호함이 사라진다: 배송본에 **같은 치환을 적용해** 기대값을 만들고
+ * 설치본과 비교한다. 그리고 배송본은 항상 곁에 있다 — CLI 가 그 안에서 돈다.
+ * 별도 잠금 파일이 필요 없는 이유다.
+ *
+ * @returns 어긋난 스킬 이름들 (배송본을 못 읽으면 null — 판정하지 않는다)
+ */
+export function driftedSkills(
+  installedDir: string,
+  shippedSkillsDir: string,
+  corePath: string = getCoreConfigDir(),
+): string[] | null {
+  if (!fs.existsSync(shippedSkillsDir)) return null;
+
+  // 설치가 하는 것과 **같은** 치환 — SSOT 는 fs-utils.ts replaceTemplatesInDir
+  const corePathUrl = 'file:///' + corePath.replace(/^\//, '');
+  const asInstalled = (content: string): string =>
+    content.split('{{VIBE_PATH_URL}}').join(corePathUrl).split('{{VIBE_PATH}}').join(corePath);
+
+  const hash = (text: string): string =>
+    createHash('sha256').update(text).digest('hex');
+
+  const drifted: string[] = [];
+  const walk = (shipped: string, installed: string): boolean => {
+    for (const entry of fs.readdirSync(shipped, { withFileTypes: true })) {
+      const a = path.join(shipped, entry.name);
+      const b = path.join(installed, entry.name);
+      if (entry.isDirectory()) { if (walk(a, b)) return true; continue; }
+      try {
+        if (hash(asInstalled(fs.readFileSync(a, 'utf-8'))) !== hash(fs.readFileSync(b, 'utf-8'))) {
+          return true;
+        }
+      } catch {
+        return true;   // 설치본에 없는 파일 = 드리프트
+      }
+    }
+    return false;
+  };
+
+  for (const name of fs.readdirSync(shippedSkillsDir)) {
+    const shipped = path.join(shippedSkillsDir, name);
+    const installed = path.join(installedDir, name);
+    if (!fs.statSync(shipped).isDirectory()) continue;
+    if (!fs.existsSync(installed)) continue;   // 미설치는 드리프트가 아니다 (조건부 스킬)
+    if (walk(shipped, installed)) drifted.push(name);
+  }
+  return drifted;
 }
 
 /**
