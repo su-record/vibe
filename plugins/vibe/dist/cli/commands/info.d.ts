@@ -38,6 +38,30 @@ export declare function formatNativeDepStatus(packageRoot: string): string;
  */
 export declare function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: string): string;
 /**
+ * 설치된 스킬이 배송본과 같은가.
+ *
+ * WHY: `vibe status` 는 스킬 **개수**만 셌다. 개수가 같아도 내용은 다를 수 있다 —
+ * 중단된 postinstall, 부분 복사, 사용자가 고친 파일. 이 저장소가 반복해서 겪은
+ * 실패가 전부 "설치본이 조용히 어긋났고 확인할 기준값이 없었다" 였다.
+ *
+ * ## 왜 해시 잠금 파일이 아니라 배송본 직접 대조인가
+ *
+ * 설치 시 postinstall 이 `{{VIBE_PATH_URL}}`·`{{VIBE_PATH}}` 를 실제 경로로 치환한다
+ * (`fs-utils.ts` replaceTemplatesInDir). 그래서 날것 비교는 치환된 스킬을 전부
+ * 드리프트로 잡는다(실측 29개 중 11개 오탐).
+ *
+ * 그렇다고 **역치환은 불가능하다** — 소스의 `file://{{VIBE_PATH}}` 와
+ * `{{VIBE_PATH_URL}}` 이 **같은 문자열**(`file:///…`)로 치환되므로 되돌릴 때
+ * 어느 쪽이었는지 알 수 없다(실측으로 `process-steps.md` 가 여기 걸렸다).
+ *
+ * 방향을 뒤집으면 모호함이 사라진다: 배송본에 **같은 치환을 적용해** 기대값을 만들고
+ * 설치본과 비교한다. 그리고 배송본은 항상 곁에 있다 — CLI 가 그 안에서 돈다.
+ * 별도 잠금 파일이 필요 없는 이유다.
+ *
+ * @returns 어긋난 스킬 이름들 (배송본을 못 읽으면 null — 판정하지 않는다)
+ */
+export declare function driftedSkills(installedDir: string, shippedSkillsDir: string, corePath?: string): string[] | null;
+/**
  * 상태 표시 — 모든 시스템 상태를 한 곳에서 확인
  */
 export declare function showStatus(): void;
