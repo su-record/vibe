@@ -59,6 +59,7 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 | `npm run validate:skill-invocation` | 스킬 invocation 선언 오류 |
 | `npm run sync:agent-models:check` | 에이전트 모델 섹션 드리프트 |
 | `npm run gen:plugin-hooks:check` | 훅 정의 세 벌의 드리프트 |
+| `npm run validate:mermaid` | 렌더 안 되는 다이어그램 — 그림이 안 그려지면 리뷰 표면이 죽는다 |
 | `npm run validate:plugin-tree` | 배포 트리와 소스 불일치 |
 
 마지막 둘은 CI(`test.yml`)에서도 돈다. **배포 순서는 PR 병합 먼저, 태그는 그다음** — 태그를 먼저 밀면 보호 브랜치에 막혀 병합이 실패해도 CI 가 이미 npm 에 게시한다(실측 v3.2.19).

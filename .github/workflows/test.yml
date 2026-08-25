@@ -62,6 +62,7 @@ jobs:
           pnpm validate:counts
           pnpm validate:skill-invocation
           pnpm sync:agent-models:check
+          pnpm validate:mermaid
 
       # 플러그인 배포 트리는 커밋되는 생성물이다 — Claude Code 마켓플레이스가
       # 저장소를 클론해 읽으므로 dist/ 와 구운 agents/ 가 트리에 있어야 한다.
