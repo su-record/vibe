@@ -29,6 +29,7 @@ export {
 
 export {
   buildCodexHooksConfig,
+  codexHooksStale,
   installProjectCodexHooks,
 } from './setup/CodexHooks.js';
 
