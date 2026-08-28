@@ -82,7 +82,10 @@ export declare function installProjectHooks(projectRoot: string, harnessDir?: st
  * 어댑터에 연결해 turn 완료 시 auto-commit/devlog 를 돌린다.
  *
  * - 관리 블록(마커)으로 idempotent 갱신
- * - 사용자가 이미 자체 `notify` 키를 둔 경우 덮어쓰지 않고 건너뛴다(경고)
+ * - 관리 블록 밖에 다른 `notify` 키가 있으면 덮어쓰지 않는다(경고). TOML 은 루트 키
+ *   중복을 허용하지 않아, 둘을 함께 두면 codex 가 `duplicate key` 로 기동조차 못 한다.
+ *   Codex computer-use 는 기존 notify 를 `--previous-notify` 로 체인해 자체 키를
+ *   기록하므로, 이 경우 관리 블록을 제거하는 편이 vibe 어댑터도 함께 살린다.
  * - TOML 루트 키는 테이블 헤더 이전에 와야 하므로 관리 블록을 파일 최상단에 둔다
  *
  * @param configDir Codex 설정 디렉토리 (보통 `~/.codex`)
