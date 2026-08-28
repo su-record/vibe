@@ -1,6 +1,6 @@
 ---
 name: vibe.educational-content
-description: Create evidence-backed educational content from a subject, curriculum, source document, repository, product, expert interview, or demonstration. Use when Codex needs to research, design, script, verify, assess, or repurpose a lesson, course, tutorial, workshop, explainer, screencast, teaching article, presentation, worksheet, microlearning unit, or educational social content for any domain, including development and technical education. Especially useful when content needs observable learning outcomes, audience-appropriate scaffolding, practice and feedback, valid assessment, source traceability, or clear separation between verified facts and inference.
+description: Use when producing a lesson, course, tutorial, workshop, explainer, or assessment that needs observable learning outcomes and every claim traced to a source, with verified fact kept separate from inference.
 user-invocable: false
 ---
 

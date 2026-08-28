@@ -10,6 +10,7 @@ import {
   copySkillsFiltered,
   pruneExtraneousSkillFiles,
 } from './fs-utils.js';
+import { GLOBAL_SKILLS, resolveDemotedGlobalSkills } from './constants.js';
 
 function writeSkill(root: string, name: string, frontmatter: string): string {
   const skillDir = path.join(root, name);
@@ -343,5 +344,66 @@ describe('pruneExtraneousSkillFiles — vibe 생성물 보존', () => {
     fs.mkdirSync(path.join(dest, 'empty'), { recursive: true });
 
     expect(pruneExtraneousSkillFiles(src, dest)).toEqual(['empty']);
+  });
+});
+
+/**
+ * 스킬을 ENTRY 에서 스택/capability 로 **내리는** 것만으로는 기존 설치본이 정리되지
+ * 않는다 — `copySkillsFiltered` 는 허용 목록에 있는 디렉토리만 순회하므로 내려간
+ * 디렉토리는 그냥 순회에서 빠질 뿐이다. 그러면 내린 이유(전역 상시 컨텍스트 절감)가
+ * 기존 사용자에게는 실현되지 않고 description 이 매 세션 계속 실린다.
+ */
+describe('전역에서 내려간 스킬이 설치본에 남지 않는다', () => {
+  it('배송하지만 GLOBAL_SKILLS 에 없는 것만 골라낸다', () => {
+    const shipped = [...GLOBAL_SKILLS, 'vibe.figma', 'vibe.clone', 'vibe.event'];
+    expect(resolveDemotedGlobalSkills(shipped)).toEqual(['vibe.clone', 'vibe.event', 'vibe.figma']);
+  });
+
+  it('배송하지 않는 이름은 고르지 않는다 — 사용자 자작 스킬을 집으면 안 된다', () => {
+    expect(resolveDemotedGlobalSkills([...GLOBAL_SKILLS])).toEqual([]);
+  });
+
+  it('copySkillsFiltered 만으로는 내려간 스킬이 남는다 (이 테스트가 지키는 대상)', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-demoted-'));
+    const shippedSkillsDir = path.join(base, 'shipped');
+    const globalSkillsDir = path.join(base, 'installed');
+    fs.mkdirSync(shippedSkillsDir, { recursive: true });
+    fs.mkdirSync(globalSkillsDir, { recursive: true });
+
+    writeSkill(shippedSkillsDir, 'vibe.spec', '');
+    writeSkill(shippedSkillsDir, 'vibe.figma', '');
+    // 이전 버전에서 전역으로 설치돼 있던 상태
+    fs.mkdirSync(path.join(globalSkillsDir, 'vibe.figma'), { recursive: true });
+    fs.writeFileSync(path.join(globalSkillsDir, 'vibe.figma', 'SKILL.md'), skillContent('vibe.figma'));
+
+    copySkillsFiltered(shippedSkillsDir, globalSkillsDir, ['vibe.spec']);
+    expect(fs.existsSync(path.join(globalSkillsDir, 'vibe.figma')), 'copy 만으로는 남는다').toBe(true);
+
+    const demoted = resolveDemotedGlobalSkills(['vibe.spec', 'vibe.figma']).filter(n => n !== 'vibe.spec');
+    const results = cleanupOptionalSkills(globalSkillsDir, demoted, shippedSkillsDir);
+
+    expect(results.map(r => r.action)).toEqual(['removed']);
+    expect(fs.existsSync(path.join(globalSkillsDir, 'vibe.figma'))).toBe(false);
+    expect(fs.existsSync(path.join(globalSkillsDir, 'vibe.spec'))).toBe(true);
+  });
+
+  it('사용자가 고친 스킬은 내려가도 지우지 않는다', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-demoted-mod-'));
+    const shippedSkillsDir = path.join(base, 'shipped');
+    const globalSkillsDir = path.join(base, 'installed');
+    fs.mkdirSync(shippedSkillsDir, { recursive: true });
+    fs.mkdirSync(globalSkillsDir, { recursive: true });
+
+    writeSkill(shippedSkillsDir, 'vibe.figma', '');
+    fs.mkdirSync(path.join(globalSkillsDir, 'vibe.figma'), { recursive: true });
+    fs.writeFileSync(
+      path.join(globalSkillsDir, 'vibe.figma', 'SKILL.md'),
+      `${skillContent('vibe.figma')}\n사용자가 덧붙인 내용\n`,
+    );
+
+    const results = cleanupOptionalSkills(globalSkillsDir, ['vibe.figma'], shippedSkillsDir);
+
+    expect(results[0].action).toBe('skipped-user-modified');
+    expect(fs.existsSync(path.join(globalSkillsDir, 'vibe.figma'))).toBe(true);
   });
 });

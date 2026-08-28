@@ -336,6 +336,17 @@ function analyzeProjectStructure(projectRoot: string): ProjectDirs {
 /**
  * 전역 VIBE 규약 섹션 (프로젝트 독립) — ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md
  * export 이유: 하네스별 변환 결과를 테스트가 직접 검증한다 (instruction-drift.test.ts).
+ *
+ * **여기 적는 것의 기준**: 이 섹션은 사용자의 모든 프로젝트에서 매 요청에 실린다.
+ * 살짝 틀린 한 줄은 한 번의 나쁜 응답이 아니라 몇 달치 세금이 된다. 그래서
+ * 남기는 줄은 둘 중 하나여야 한다 — (a) 모델이 코드에서 관측할 수 없는 vibe 고유
+ * 메커니즘(훅이 무엇을 잡는지, 진입점이 무엇인지, 루프가 언제 끝나는지), 또는
+ * (b) 실측된 실패 모드. 일반적인 코딩 조언은 적지 않는다: 모델이 이미 아는 것을
+ * 다시 적으면 토큰만 쓰고 판단을 좁힌다.
+ *
+ * 실제로 지운 것 (2026-08): Rob Pike 최적화 5계명, 디버깅 5계명, 복잡도 수치.
+ * 앞의 둘은 순수 일반론이었고, 복잡도 수치는 `references.rules[]` 가 이미 들고
+ * 있어서 필요할 때 읽으면 되는 것을 상시 로드하고 있었다.
  */
 export function buildGlobalSection(language: string): string {
   const lines: string[] = [];
@@ -352,27 +363,15 @@ export function buildGlobalSection(language: string): string {
 
   lines.push('## Constraints');
   lines.push('');
-  lines.push('- Modify only requested scope');
-  lines.push('- Preserve existing style');
-  lines.push('- Prefer editing existing files for modifications');
-  lines.push('- Create new files when the task requires them (user asks for a feature/module/scaffold) — an explicit user request overrides this default');
-  lines.push('- Function ≤50 lines, nesting ≤3, params ≤5, complexity ≤10');
-  lines.push('- No `any`, no `console.log` in commits, no commented-out code');
+  lines.push('- Modify only requested scope — every changed line traces to the request');
+  lines.push('- Write code that reads like the surrounding code: match its naming, comment density, and idiom');
+  lines.push('- Prefer editing existing files; create new ones when the task asks for a feature, module, or scaffold');
   lines.push('');
-  lines.push('### Optimization Rules (Rob Pike)');
+  lines.push('### What the gate checks (mechanism, not style advice)');
   lines.push('');
-  lines.push('- Never optimize without measuring first');
-  lines.push('- Don\'t tune unless one part overwhelms the rest');
-  lines.push('- Fancy algorithms are slow when n is small — and n is usually small');
-  lines.push('- Simple code beats clever code. Data dominates.');
-  lines.push('');
-  lines.push('### Debugging Rules');
-  lines.push('');
-  lines.push('- Never fix before reproducing the failure');
-  lines.push('- State a root-cause hypothesis before changing code');
-  lines.push('- Write a failing test before fixing');
-  lines.push('- One hypothesis at a time. No "while I\'m here" refactoring.');
-  lines.push('- 3 failed fixes → suspect structural issue, stop patching');
+  lines.push('- PostToolUse flags `any` / `as any` / `@ts-ignore` and `console.log` — fix at the root, don\'t suppress');
+  lines.push('- Stop warns when a run started but verify never passed');
+  lines.push('- Structure standards live in `.vibe/config.json` → `references.rules[]`, not here');
   lines.push('');
 
   lines.push('## Workflow');

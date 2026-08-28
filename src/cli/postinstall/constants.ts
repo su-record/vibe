@@ -11,17 +11,26 @@
 /**
  * 도트 진입점 스킬 (예: vibe.spec)
  * Claude Code에서는 slash-style 진입점으로, Codex에서는 `/skills` 또는 `$vibe.spec`로 호출된다.
+ *
+ * **여기 넣는 기준**: 전역 설치 스킬의 frontmatter description 은 **모든 프로젝트의 매 요청에**
+ * 실린다 (스킬 본문은 호출될 때만 로드된다 — 상시 비용은 description 뿐이다). 그래서 ENTRY 는
+ * "스택과 무관하게 아무 프로젝트에서나 부를 수 있어야 하는 것"만 담는다.
+ *
+ * 스택이나 capability 가 이미 덮는 것은 그쪽으로 내린다 — 2026-08 에 내린 것:
+ *   vibe.event  → CAPABILITY_SKILLS['event-automation'] (picker + detect signature 존재)
+ *   vibe.figma  → STACK_TO_SKILLS UI 스택 (Figma 는 UI 작업에서만 의미가 있다)
+ *   vibe.clone  → STACK_TO_SKILLS UI 스택 (라이브 사이트 마크업 재현)
+ *
+ * 반대로 **detect signature 도 picker 옵션도 없는 스킬은 내리지 않는다** — 내리는 순간
+ * 아무 경로로도 도달할 수 없게 된다 (vibe.image 가 그 경우라 ENTRY 에 남는다).
  */
 export const GLOBAL_SKILLS_ENTRY: ReadonlyArray<string> = [
   'vibe',
   'vibe.analyze',
-  'vibe.clone',
   'vibe.continue',
   'vibe.contract',
   'vibe.design',
   'vibe.docs',
-  'vibe.event',
-  'vibe.figma',
   'vibe.harness',
   'vibe.image',
   'vibe.llm',
@@ -65,21 +74,42 @@ export const GLOBAL_SKILLS: ReadonlyArray<string> = [
   ...GLOBAL_SKILLS_STANDARD,
 ];
 
+/**
+ * 전역 스킬 디렉토리에서 **내려온** 스킬 — vibe 가 배송하지만 GLOBAL_SKILLS 에 없는 것
+ * (GLOBAL_SKILLS_OPTIONAL + 스택/capability 로만 설치되는 것 전부).
+ *
+ * WHY: `copySkillsFiltered` 는 허용 목록에 **있는** 디렉토리만 순회한다. 어떤 스킬을
+ * ENTRY 에서 스택/capability 로 내리면 그 디렉토리는 순회 대상에서 빠질 뿐이라,
+ * 이미 설치된 `~/.claude/skills/<name>/` 은 영원히 남아 매 세션 description 을 계속
+ * 싣는다 — 내린 이유(상시 컨텍스트 절감)가 기존 사용자에게는 아예 실현되지 않는다.
+ * `RETIRED_SKILL_NAMES` 가 개명에 대해 적어둔 것과 같은 실패 모드다.
+ *
+ * 삭제 판정은 `cleanupOptionalSkills` 에 맡긴다 — vibe 소유(SKILL.md name 일치)이고
+ * 사용자 미수정일 때만 지운다. 여기서 반환하는 이름은 전부 `skills/` 배송본에
+ * 실재하는 것이라 사용자가 만든 동명 스킬을 집을 위험이 없다.
+ */
+export function resolveDemotedGlobalSkills(shippedSkillNames: ReadonlyArray<string>): string[] {
+  const global = new Set<string>(GLOBAL_SKILLS);
+  return shippedSkillNames.filter(name => !global.has(name)).sort();
+}
+
+
 /** 스택 → 로컬 스킬 매핑 (vibe init/update → .claude/skills/) */
 export const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>> = {
-  // Web frontend → UI/UX + SEO + Design steering + React best practices
-  'typescript-react': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.react-best-practices', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
-  'typescript-nextjs': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.react-best-practices', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
-  'typescript-vue': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
-  'typescript-nuxt': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
-  'typescript-svelte': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
-  'typescript-angular': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
-  'typescript-astro': ['vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
-  // Mobile → UI + design-review only (refine 파이프라인은 CSS 기반)
-  'typescript-react-native': ['vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
-  'dart-flutter': ['vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
-  'swift-ios': ['vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
-  'kotlin-android': ['vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
+  // Web frontend → Figma/clone 진입 + UI/UX + SEO + Design steering + React best practices
+  'typescript-react': ['vibe.figma', 'vibe.clone', 'vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.react-best-practices', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-nextjs': ['vibe.figma', 'vibe.clone', 'vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.react-best-practices', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-vue': ['vibe.figma', 'vibe.clone', 'vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-nuxt': ['vibe.figma', 'vibe.clone', 'vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-svelte': ['vibe.figma', 'vibe.clone', 'vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-angular': ['vibe.figma', 'vibe.clone', 'vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  'typescript-astro': ['vibe.figma', 'vibe.clone', 'vibe.ui-ux-pro-max', 'vibe.brand-assets', 'vibe.seo-checklist', 'vibe.design-review', 'vibe.design-refine', 'vibe.design'],
+  // Mobile → Figma + UI + design-review only (refine 파이프라인은 CSS 기반,
+  //          clone 은 렌더된 DOM/computed CSS 캡처라 네이티브에 적용되지 않는다)
+  'typescript-react-native': ['vibe.figma', 'vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
+  'dart-flutter': ['vibe.figma', 'vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
+  'swift-ios': ['vibe.figma', 'vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
+  'kotlin-android': ['vibe.figma', 'vibe.ui-ux-pro-max', 'vibe.design-review', 'vibe.design'],
 };
 
 /** Capability → 로컬 스킬 매핑 (의존성 감지 기반 자동 설치) */
