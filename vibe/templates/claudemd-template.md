@@ -4,25 +4,15 @@
 
 ## Constraints
 
-- **Modify only requested scope** — Don't touch unrelated code
-- **Preserve existing style** — Follow project conventions
-- **Prefer editing existing files** — Fix problems at source. Create new files when the task explicitly requires them (user-requested feature, new module, scaffolding). An explicit user request overrides this default.
+- **Modify only requested scope** — every changed line traces to the request
+- **Write code that reads like the surrounding code** — match its naming, comment density, and idiom
+- **Prefer editing existing files** — create new ones when the task asks for a feature, module, or scaffold
 
-### Complexity Limits
+### What the gate actually checks
 
-| Metric | Limit |
-|--------|-------|
-| Function length | ≤50 lines |
-| Nesting depth | ≤3 levels |
-| Parameters | ≤5 |
-| Cyclomatic complexity | ≤10 |
+Mechanisms you cannot observe from the code: vibe's PostToolUse hook detects `any` / `as any` / `@ts-ignore` and `console.log` and injects them back as context — fix at the root (`unknown` + type guards, real logging) rather than suppressing. The Stop hook warns when a run started but verify never passed.
 
-### Forbidden Patterns
-
-- No `console.log` in commits
-- No hardcoded strings/numbers (use constants)
-- No commented-out code
-- No `any` type — use `unknown` + type guards
+Structure standards (complexity, naming, anti-patterns) are not repeated here — see References below and read them when a change is large enough to matter.
 
 ## Project Structure
 
@@ -45,18 +35,16 @@
 | Task Size | Approach |
 |-----------|----------|
 | 1-2 files | Plan Mode |
-| 3+ files | `/vibe.spec` — single entry point, orchestrates everything |
+| 3+ files | `/vibe` — single entry point (`/vibe.spec` starts at the SPEC phase) |
 | Analyze target | `/vibe.analyze` — code, documents, websites, Figma |
 | Check Harness | `/vibe.harness` — diagnose project maturity |
 | Project structure | `/vibe.scaffold` — generate optimized folder structure |
 
-## Magic Keywords
+## Loop Contract
 
-| Keyword | Effect |
-|---------|--------|
-| `ultrawork` / `ulw` | Parallel agents + auto-continue |
-| `ralph` | Iterate until 100% complete |
-| `quick` | Fast mode, minimal verification |
+`/vibe` = SPEC approval once → loop ANCHOR→ACT→JUDGE→RECORD until gates pass (deterministic JUDGE; stuck / max-iter guards).
+
+Deprecated aliases are mapped, not features: `ralph`/`verify` → default (no-op), `quick` → `--max-iter 1`, `ultrawork`/`ulw` → `automationLevel: autonomous` + parallel ACT.
 
 ## Quality Gate
 

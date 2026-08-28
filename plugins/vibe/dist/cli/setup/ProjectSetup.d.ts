@@ -37,6 +37,17 @@ export declare function generateProjectAntigravityMd(projectRoot: string, detect
 /**
  * 전역 VIBE 규약 섹션 (프로젝트 독립) — ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md
  * export 이유: 하네스별 변환 결과를 테스트가 직접 검증한다 (instruction-drift.test.ts).
+ *
+ * **여기 적는 것의 기준**: 이 섹션은 사용자의 모든 프로젝트에서 매 요청에 실린다.
+ * 살짝 틀린 한 줄은 한 번의 나쁜 응답이 아니라 몇 달치 세금이 된다. 그래서
+ * 남기는 줄은 둘 중 하나여야 한다 — (a) 모델이 코드에서 관측할 수 없는 vibe 고유
+ * 메커니즘(훅이 무엇을 잡는지, 진입점이 무엇인지, 루프가 언제 끝나는지), 또는
+ * (b) 실측된 실패 모드. 일반적인 코딩 조언은 적지 않는다: 모델이 이미 아는 것을
+ * 다시 적으면 토큰만 쓰고 판단을 좁힌다.
+ *
+ * 실제로 지운 것 (2026-08): Rob Pike 최적화 5계명, 디버깅 5계명, 복잡도 수치.
+ * 앞의 둘은 순수 일반론이었고, 복잡도 수치는 `references.rules[]` 가 이미 들고
+ * 있어서 필요할 때 읽으면 되는 것을 상시 로드하고 있었다.
  */
 export declare function buildGlobalSection(language: string): string;
 /**

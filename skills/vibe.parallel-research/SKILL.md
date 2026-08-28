@@ -3,7 +3,7 @@ name: vibe.parallel-research
 user-invocable: false
 invocation: [auto]
 tier: standard
-description: "Parallel research with 4 specialized agents (best-practices, framework-docs, codebase-patterns, security-advisory) running simultaneously. Use when facing unfamiliar technology, choosing between libraries/frameworks, designing architecture for a new feature, or investigating security implications. Must use this skill when user asks 'how should we build X', 'which library for Y', or when starting work on a complex feature with unknown requirements. Not for simple lookups — use web search directly for those."
+description: "Use before committing to an unfamiliar technology, a library choice, or a new feature's architecture — four agents (best-practices, framework-docs, codebase-patterns, security-advisory) research in parallel. Not for simple lookups: web search directly is faster."
 triggers: [parallel research, complex feature, technology selection, architecture design, security critical]
 priority: 60
 chain-next: [vibe.run]

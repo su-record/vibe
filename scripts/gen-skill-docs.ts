@@ -74,13 +74,13 @@ function loadConstants(): {
   // Parse actual postinstall globals (entry + core + standard).
   const globalSkills: string[] = [];
   for (const tier of ['GLOBAL_SKILLS_ENTRY', 'GLOBAL_SKILLS_STANDARD']) {
-    const tierMatch = content.match(new RegExp(`${tier}[^[]*\\[([\\s\\S]*?)\\]`));
+    const tierMatch = content.match(new RegExp(`export const ${tier}[^[]*\\[([\\s\\S]*?)\\]`));
     if (tierMatch) {
       const names = tierMatch[1].match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) ?? [];
       globalSkills.push(...names);
     }
   }
-  const optionalMatch = content.match(/GLOBAL_SKILLS_OPTIONAL[^[]*\[([\s\S]*?)\]/);
+  const optionalMatch = content.match(/export const GLOBAL_SKILLS_OPTIONAL[^[]*\[([\s\S]*?)\]/);
   const optionalSkills = optionalMatch?.[1].match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) ?? [];
 
   // Parse STACK_TO_SKILLS
@@ -89,7 +89,7 @@ function loadConstants(): {
   const stackToExternal = parseRecordBlock(content, 'STACK_TO_EXTERNAL_SKILLS');
 
   // Parse STACK_TO_LANGUAGE_FILE
-  const langMatch = content.match(/STACK_TO_LANGUAGE_FILE[^{]*\{([\s\S]*?)\};/);
+  const langMatch = content.match(/export const STACK_TO_LANGUAGE_FILE[^{]*\{([\s\S]*?)\};/);
   const stackToLanguage: Record<string, string> = {};
   if (langMatch) {
     const entries = langMatch[1].matchAll(/'([^']+)':\s*'([^']+)'/g);
@@ -101,8 +101,14 @@ function loadConstants(): {
   return { globalSkills, optionalSkills, stackToSkills, capabilitySkills, stackToLanguage, stackToExternal };
 }
 
+/**
+ * `export const` 에 앵커링한다 — 이름만으로 찾으면 **주석 속 언급이 먼저 잡힌다**.
+ * 실측: constants.ts 주석에 `CAPABILITY_SKILLS['event-automation']` 이라고 쓴 순간
+ * `[^{]*` 가 그 지점부터 다음 `{`(= STACK_TO_SKILLS)까지 흘러가, capability 매핑이
+ * 통째로 빈 객체가 되고 해당 스킬 11개가 카탈로그에서 조용히 `(unrouted)` 로 바뀌었다.
+ */
 function parseRecordBlock(content: string, name: string): Record<string, string[]> {
-  const regex = new RegExp(`${name}[^{]*\\{([\\s\\S]*?)\\};`);
+  const regex = new RegExp(`export const ${name}[^{]*\\{([\\s\\S]*?)\\};`);
   const match = content.match(regex);
   if (!match) return {};
 

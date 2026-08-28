@@ -130,3 +130,83 @@ describe('console.log 허용 경로 규칙이 한 곳에만 있다', () => {
     expect(read(rel), `${rel}: 허용 경로 목록이 다시 등장`).not.toMatch(/DEFAULT_CONSOLE_ALLOW_GLOBS/);
   });
 });
+
+/**
+ * Deprecated 별칭(`ultrawork`/`ralph`/`quick`/`verify`/`ralplan`)은 계속 **동작**하지만
+ * 기능으로 **가르치지는 않는다** — SSOT: CLAUDE.md "Deprecated aliases (mapped, not taught)".
+ *
+ * 실제로 갈라져 있던 것: `vibe/templates/claudemd-template.md` 가 "## Magic Keywords" 표로
+ * `ultrawork` / `ralph` / `quick` 을 살아있는 기능처럼 소개했고, `ralph` 는 이미 no-op 이었다.
+ * 같은 파일이 3+ files 진입점을 `/vibe.spec` 이라고도 했다 — 진입점은 `/vibe` 다.
+ *
+ * 이 테스트가 잡는 것은 문자열 불일치가 아니라 **서술의 격**이다. 상시 로드되는
+ * 지침 표면에서 별칭을 언급하려면 같은 줄 또는 그 줄이 속한 섹션 제목이 별칭임을
+ * 밝혀야 한다. 스킬 본문의 운영 서술(`ultrawork mode: ...`)은 대상이 아니다 —
+ * 거기서는 이미 환원된 동작을 집행하는 중이라 언급 자체가 정상이다.
+ */
+describe('상시 지침 표면이 deprecated 별칭을 기능으로 가르치지 않는다', () => {
+  const ALIAS = /\b(ultrawork|ulw|ralph|ralplan)\b/i;
+  const MARKED = /deprecated|별칭|no-op|alias/i;
+
+  /** 사용자가 "vibe 가 무엇을 제공하는가"로 읽는 표면 — 매 요청에 실리거나 프로젝트에 심긴다 */
+  const SURFACES: ReadonlyArray<readonly [string, string]> = [
+    ['CLAUDE.md', read('CLAUDE.md')],
+    ['AGENTS.md', read('AGENTS.md')],
+    ['vibe/templates/claudemd-template.md', read('vibe/templates/claudemd-template.md')],
+    ['skills/vibe/SKILL.md', read('skills/vibe/SKILL.md')],
+    ['buildGlobalSection(en)', buildGlobalSection('en')],
+    ['adaptToCodex(buildGlobalSection(en))', adaptToCodex(buildGlobalSection('en'))],
+  ];
+
+  it.each(SURFACES)('%s', (label, doc) => {
+    let heading = '';
+    const unmarked: string[] = [];
+    for (const line of doc.split('\n')) {
+      if (line.startsWith('#')) heading = line;
+      if (!ALIAS.test(line)) continue;
+      if (MARKED.test(line) || MARKED.test(heading)) continue;
+      unmarked.push(line.trim());
+    }
+    expect(unmarked, `${label}: 별칭을 살아있는 기능처럼 서술한 줄\n${unmarked.join('\n')}`).toEqual([]);
+  });
+
+  it('claudemd 템플릿에 Magic Keywords 표가 없다', () => {
+    expect(read('vibe/templates/claudemd-template.md')).not.toMatch(/Magic Keywords/i);
+  });
+
+  it('claudemd 템플릿의 3+ files 진입점이 `/vibe` 다', () => {
+    const row = read('vibe/templates/claudemd-template.md').match(/\| 3\+ files \| ([^|]+)\|/);
+    expect(row?.[1], '전역 규약과 다른 진입점을 심으면 프로젝트마다 지시가 갈린다')
+      .toMatch(/`\/vibe`/);
+  });
+});
+
+/**
+ * 전역 규약은 사용자의 **모든** 프로젝트에서 매 요청에 실린다 — 살짝 틀린 한 줄이
+ * 몇 달치 세금이 되는 자리다. 그래서 여기 남는 줄은 (a) 모델이 코드에서 관측할 수
+ * 없는 vibe 고유 메커니즘이거나 (b) 실측된 실패 모드여야 한다. 일반 코딩 조언은
+ * 모델이 이미 아는 것이라 토큰만 쓰고 판단을 좁힌다.
+ */
+describe('전역 규약이 일반 코딩 조언을 싣지 않는다', () => {
+  const global = buildGlobalSection('en');
+
+  const RETIRED = [
+    ['Rob Pike 최적화 5계명', /optimize without measuring|Fancy algorithms are slow|Data dominates/i],
+    ['디버깅 5계명', /Never fix before reproducing|root-cause hypothesis before changing/i],
+  ] as const;
+
+  it.each(RETIRED)('%s 가 없다', (_label, re) => {
+    expect(global).not.toMatch(re);
+  });
+
+  it('복잡도 수치를 다시 적지 않고 references.rules[] 로 넘긴다', () => {
+    expect(global, '수치는 `references.rules[]` 가 이미 들고 있다 — 상시 로드할 이유가 없다')
+      .not.toMatch(/≤\s*50\s*lines|nesting\s*≤|cyclomatic/i);
+    expect(global).toContain('references.rules[]');
+  });
+
+  it('훅이 실제로 잡는 것은 남긴다 — 코드에서 관측할 수 없는 메커니즘이다', () => {
+    expect(global).toMatch(/`any`/);
+    expect(global).toMatch(/console\.log/);
+  });
+});

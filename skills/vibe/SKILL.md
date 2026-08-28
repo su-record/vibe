@@ -101,6 +101,8 @@ user-invocable: true
 
 > 새 `vibe.*` 스킬이 추가되어 위 표에 행이 없더라도, Catch-all 이 description 기반으로 자동 라우팅하므로 기능이 막히지 않는다. 표 누락 = 기능 제한이 되어선 안 된다.
 
+**라우팅 대상이 설치되지 않았을 때**: 일부 스킬은 전역이 아니라 스택·capability 기준으로 설치된다 — 상시 로드되는 것은 스킬 본문이 아니라 frontmatter description 이고, 아무 프로젝트에나 실릴 이유가 없는 것은 내려두기 때문이다. `vibe.figma`·`vibe.clone` 은 UI 스택에서, `vibe.event*` 는 `event-automation` capability 에서 설치된다. 의도는 맞는데 스킬이 없으면 **되묻지 말고** 무엇이 없고 어떻게 얻는지 한 줄로 알린 뒤(`vibe update` 로 스택 재감지, 또는 `.vibe/config.json` 의 `capabilities` 에 추가) 나머지 파이프라인을 계속 진행한다.
+
 ### Phase 2: Smart Resume 감지
 
 **파일 존재 검사는 눈으로 하지 않는다 — 명령이 확정한다.** Phase 0 의 URL·첨부 분류와

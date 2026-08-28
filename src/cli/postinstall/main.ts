@@ -23,10 +23,10 @@ import {
 import {
   CONDITIONAL_AGENT_GROUPS,
   GLOBAL_SKILLS,
-  GLOBAL_SKILLS_OPTIONAL,
   LEGACY_SKILL_DIRS,
   LEGACY_SKILL_HASHES,
   LEGACY_SKILL_RENAMES,
+  resolveDemotedGlobalSkills,
 } from './constants.js';
 import { cleanupGlobalSettingsHooks, ensureGlobalEnvSettings } from './global-config.js';
 import { seedInlineSkills } from './inline-skills.js';
@@ -127,13 +127,21 @@ export function main(): void {
         ensureDir(sklsDir);
         removeLegacySkills(sklsDir, LEGACY_SKILL_DIRS);
         cleanupRenamedSkills(sklsDir, LEGACY_SKILL_RENAMES, LEGACY_SKILL_HASHES);
-        // optional 스킬 정리 — vibe 소유이고 사용자 미수정인 경우에만 삭제
-        const cleanupResults = cleanupOptionalSkills(sklsDir, GLOBAL_SKILLS_OPTIONAL, skillsSource);
+        // 전역에서 내려온 스킬 정리 — optional 뿐 아니라 스택/capability 로 내린 것도 포함한다.
+        // copySkillsFiltered 는 허용 목록에 있는 디렉토리만 순회하므로, 내리기만 해서는
+        // 기존 설치본이 남아 매 세션 description 을 계속 싣는다. 삭제는 vibe 소유이고
+        // 사용자 미수정일 때만 일어난다 (cleanupOptionalSkills).
+        const shippedSkillNames = fs
+          .readdirSync(skillsSource, { withFileTypes: true })
+          .filter(e => e.isDirectory())
+          .map(e => e.name);
+        const demoted = resolveDemotedGlobalSkills(shippedSkillNames);
+        const cleanupResults = cleanupOptionalSkills(sklsDir, demoted, skillsSource);
         for (const r of cleanupResults) {
           if (r.action === 'removed') {
-            console.log(`   optional skill removed: ${r.name}`);
+            console.log(`   non-global skill removed: ${r.name}`);
           } else {
-            console.log(`   optional skill notice [${r.name}]: ${r.reason}`);
+            console.log(`   non-global skill notice [${r.name}]: ${r.reason}`);
           }
         }
         const prunedSkillFiles = copySkillsFiltered(skillsSource, sklsDir, GLOBAL_SKILLS);
