@@ -9,7 +9,12 @@ import { pathToFileURL } from 'url';
 import { CliOptions } from '../types.js';
 import { log, getPackageJson } from '../utils.js';
 import { formatLLMStatus } from '../auth.js';
-import { installProjectHooks, installProjectCodexHooks, projectHooksStale } from '../setup.js';
+import {
+  installProjectHooks,
+  installProjectCodexHooks,
+  projectHooksStale,
+  codexHooksStale,
+} from '../setup.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
 import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
 import { missingNativeDeps, repairNativeDeps, nativeDepHint } from '../setup/NativeDeps.js';
@@ -89,6 +94,18 @@ function hasClaudeHooks(projectRoot: string): boolean {
   }
 }
 
+/** 위와 같은 기준의 Codex 판 — 파일만 있고 `hooks` 키가 없으면 미설치다 */
+function hasCodexHooks(projectRoot: string): boolean {
+  try {
+    const config = JSON.parse(
+      readFileSync(join(projectRoot, '.codex', 'hooks.json'), 'utf-8')
+    ) as { hooks?: unknown };
+    return Boolean(config.hooks);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * 업그레이드 후 현재 프로젝트의 훅을 복구한다.
  *
@@ -131,11 +148,16 @@ export function repairProjectHooks(projectRoot: string): string[] {
   // 보고(vibe status)와 같은 기준으로 복구한다 — `.codex/`·AGENTS.md 는 gitignore
   // 대상이라 fresh clone 에 없고, 아티팩트로만 판정하면 Codex 훅이 영영 복구되지
   // 않는다. `vibe init` 도 detectCodexCli().installed 로 설치를 결정한다.
+  //
+  // 판정 모양은 위 `.claude` 분기와 같아야 한다 — 한쪽만 staleness 를 보면 그 하네스
+  // 에서만 훅 정의 변경이 도달한다. 실측(v3.2.59): `PostCompact` 추가 후에도 기존
+  // `.codex/hooks.json` 은 `PreCompact` 까지만 남아 있었다.
   const usesCodex = hasCodexDir || hasAgentsMd || detectCodexCli().installed;
-  if (usesCodex && !existsSync(join(projectRoot, '.codex', 'hooks.json'))) {
+  const codexStale = codexHooksStale(projectRoot);
+  if (usesCodex && (!hasCodexHooks(projectRoot) || codexStale)) {
     try {
       installProjectCodexHooks(projectRoot);
-      repaired.push('.codex/hooks.json');
+      repaired.push(codexStale ? '.codex/hooks.json (stale)' : '.codex/hooks.json');
     } catch { /* 위와 동일 */ }
   }
 
