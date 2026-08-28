@@ -5,8 +5,8 @@
 
 ## P1
 
-- [ ] **CI에 validator 3종 편입** — `.github/workflows/test.yml`에 `validate:counts`, `gen:skill-docs:check`, `validate:skill-invocation` 추가. 현재 build+test만 실행해 count/catalog drift가 CI에서 보이지 않는다 (이번에 고친 drift 2건 모두 CI를 통과해 들어온 것).
-- [ ] **agy stdin 전송 전환** — `hooks/scripts/llm-orchestrate.js` `callAntigravityCli()`가 argv로 프롬프트를 전달하는데, Windows `cmd.exe /c`는 인자 내 LF에서 명령을 절단해 멀티라인 프롬프트가 구조적으로 깨진다. agy CLI의 stdin 지원 확인 후 codex/claude 경로처럼 stdin 전송으로 전환하고, `llm-orchestrate-antigravity.test.js`의 win32 skip을 해제한다.
+- [x] **CI에 validator 3종 편입** — 해소됨. 로컬에서 `test.yml` build job 에 3종을 넣었으나, origin/main `20e5d12` 가 같은 문제를 더 넓게(`sync:agent-models:check`·`validate:mermaid` 포함 5종) test job 에서 해결해 두었다. build/test 둘 다 필수 체크라 머지 차단력은 동일하므로 로컬 중복분은 되돌리고 업스트림 쪽을 SSOT 로 둔다.
+- [x] **agy stdin 전송 전환** — 2026-07-15 완료. 선행 조건이던 agy stdin 지원을 릴리즈 노트로 확인: v1.1.1 "prompt를 플래그로 받으면 stdin을 읽지 않음"(= 플래그 없으면 stdin에서 읽음), v1.1.2 "piped prompt가 stdin을 점유할 때 OAuth 입력을 /dev/tty·CONIN$로 우회". `callAntigravityCli()`를 `['-p']` + stdin pipe로 전환(codex/claude 경로와 동일), `llm-orchestrate-antigravity.test.js` win32 skip 해제 + 멀티라인 프롬프트 단언으로 계약 고정. 전체 스위트 1372 passed / 1 skipped / 0 failed.
 
 ## P2
 

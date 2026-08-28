@@ -314,14 +314,17 @@ function callZaiApi(prompt, sysPrompt, jsonMode, model, timeoutMs) {
 
 function callAntigravityCli(prompt, sysPrompt, jsonMode, timeoutMs) {
   const fullPrompt = buildCliPrompt(prompt, sysPrompt, jsonMode);
-  const args = ['-p', fullPrompt];
+  // 프롬프트는 stdin pipe로 전달 (agy 1.1.1+: -p 단독이면 stdin에서 읽음) —
+  // argv 전달은 Windows cmd.exe /c가 인자 내 LF에서 명령을 절단해 멀티라인 프롬프트가 깨진다.
+  const args = ['-p'];
   const effectiveTimeout = timeoutMs || CLI_TIMEOUT_MS;
 
   return new Promise((resolve, reject) => {
     const proc = spawnCli('agy', args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe'],
       timeout: effectiveTimeout,
     });
+    proc.stdin.end(fullPrompt);
 
     let stdout = '';
     let stderr = '';
