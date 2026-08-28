@@ -603,6 +603,33 @@ export function installProjectHooks(projectRoot: string, harnessDir: string = '.
 const CODEX_NOTIFY_START = '# >>> vibe notify (managed) — do not edit >>>';
 const CODEX_NOTIFY_END = '# <<< vibe notify (managed) <<<';
 
+/** 관리 블록을 기준으로 config.toml 을 앞/뒤로 쪼갠 결과 */
+interface CodexNotifySplit {
+  /** 관리 블록이 존재하는가 */
+  found: boolean;
+  /** 블록 앞부분 (trimEnd) */
+  before: string;
+  /** 블록 뒷부분 (trimStart) */
+  after: string;
+  /** 관리 블록을 제거한 나머지 전체 */
+  rest: string;
+}
+
+function splitCodexNotifyBlock(existing: string): CodexNotifySplit {
+  const startIdx = existing.indexOf(CODEX_NOTIFY_START);
+  const endIdx = existing.indexOf(CODEX_NOTIFY_END);
+
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
+    return { found: false, before: '', after: '', rest: existing };
+  }
+
+  const before = existing.substring(0, startIdx).trimEnd();
+  const after = existing.substring(endIdx + CODEX_NOTIFY_END.length).trimStart();
+  const rest = [before, after].filter(Boolean).join('\n\n');
+
+  return { found: true, before, after, rest: rest ? rest + '\n' : '' };
+}
+
 /**
  * Codex notify 설치 — `~/.codex/config.toml` 에 `notify` 프로그램을 등록한다.
  *
@@ -611,7 +638,10 @@ const CODEX_NOTIFY_END = '# <<< vibe notify (managed) <<<';
  * 어댑터에 연결해 turn 완료 시 auto-commit/devlog 를 돌린다.
  *
  * - 관리 블록(마커)으로 idempotent 갱신
- * - 사용자가 이미 자체 `notify` 키를 둔 경우 덮어쓰지 않고 건너뛴다(경고)
+ * - 관리 블록 밖에 다른 `notify` 키가 있으면 덮어쓰지 않는다(경고). TOML 은 루트 키
+ *   중복을 허용하지 않아, 둘을 함께 두면 codex 가 `duplicate key` 로 기동조차 못 한다.
+ *   Codex computer-use 는 기존 notify 를 `--previous-notify` 로 체인해 자체 키를
+ *   기록하므로, 이 경우 관리 블록을 제거하는 편이 vibe 어댑터도 함께 살린다.
  * - TOML 루트 키는 테이블 헤더 이전에 와야 하므로 관리 블록을 파일 최상단에 둔다
  *
  * @param configDir Codex 설정 디렉토리 (보통 `~/.codex`)
@@ -629,35 +659,22 @@ export function installCodexNotify(configDir: string): void {
   }
 
   const existing = fs.readFileSync(configPath, 'utf-8');
-  const startIdx = existing.indexOf(CODEX_NOTIFY_START);
-  const endIdx = existing.indexOf(CODEX_NOTIFY_END);
+  const { found, before, after, rest } = splitCodexNotifyBlock(existing);
 
-  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-    const before = existing.substring(0, startIdx).trimEnd();
-    const after = existing.substring(endIdx + CODEX_NOTIFY_END.length).trimStart();
-
-    // 관리 블록 **밖에** notify 가 생겼는지 먼저 본다.
-    //
-    // TOML 은 같은 키를 두 번 선언하면 파싱 자체가 실패한다 — codex 가 통째로 뜨지
-    // 않는다. 예전에는 이 분기가 블록만 보고 재작성해서, 우리가 블록을 넣은 뒤
-    // 다른 도구(codex-computer-use 등)가 자기 notify 를 추가하면 다음 upgrade 마다
-    // 중복 키를 만들었다. 그런 도구는 보통 `--previous-notify` 로 우리 것을 이미
-    // 체인하므로, 블록을 지우고 양보하는 쪽이 동작도 보존한다.
-    if (/^\s*notify\s*=/m.test(before) || /^\s*notify\s*=/m.test(after)) {
-      const merged = [before, after].filter(Boolean).join('\n\n');
-      fs.writeFileSync(configPath, merged ? merged + '\n' : '');
-      log(`⚠️  Codex config.toml defines 'notify' outside the vibe block; removed the vibe block to avoid a duplicate TOML key (${configPath})`);
+  // 관리 블록 밖에 다른 notify 키가 있는 경우 — 덮어쓰지 않는다
+  if (/^\s*notify\s*=/m.test(rest)) {
+    if (found) {
+      fs.writeFileSync(configPath, rest);
+      log(`⚠️  Codex config.toml defines its own 'notify'; removed the vibe managed block to avoid a duplicate key (${configPath})`);
       return;
     }
-
-    const next = (before ? before + '\n\n' : '') + block + (after ? '\n\n' + after : '') + '\n';
-    fs.writeFileSync(configPath, next);
+    log(`⚠️  Codex config.toml already defines 'notify'; skipping vibe notify install (${configPath})`);
     return;
   }
 
-  // 사용자가 자체 notify 키를 가진 경우 — 덮어쓰지 않는다
-  if (/^\s*notify\s*=/m.test(existing)) {
-    log(`⚠️  Codex config.toml already defines 'notify'; skipping vibe notify install (${configPath})`);
+  if (found) {
+    // 기존 관리 블록 교체
+    fs.writeFileSync(configPath, (before ? before + '\n\n' : '') + block + (after ? '\n\n' + after : '') + '\n');
     return;
   }
 
