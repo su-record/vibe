@@ -34,6 +34,21 @@
 
 - {Default adopted without asking — e.g., session expiry 24h}
 
+### 되돌리기 어려운 결정
+
+> 3-a 커버리지 스윕에서 `되돌림: 못 되돌린다` 로 판정한 항목만 적는다. **해당 항목이
+> 없으면 이 절을 통째로 지운다** — 해당 없는데 남겨두면 통과 의식이 된다 (Structure
+> 절과 같은 조건부 규약).
+>
+> 여기 오는 것은 이미 쌓인 데이터나 외부 계약 때문에 코드만 고쳐서는 못 되돌리는
+> 결정이다: 저장 스키마, 식별자 체계, 과금 단위 등. 각 줄은 전문용어 없이
+> `{무엇을 정했는가} → {나중에 뒤집으면 치를 비용}` 한 줄로 쓴다.
+>
+> 이 절의 내용은 `vibe.spec` Step 6 승인 메시지에도 최대 3줄로 노출된다 — SPEC 을
+> 열어보지 않는 사람에게 승인 직전에 한 번은 보이게 하기 위해서다.
+
+- {무엇을 정했는가} → {나중에 뒤집으면 치를 비용}
+
 ### Constraints
 
 - {Invariant or implementation boundary that every execution packet must preserve}
