@@ -1,0 +1,15 @@
+# 작업 트리 EOL 을 LF 로 고정한다.
+#
+# 왜: 생성물 검증 게이트 세 개(`gen:skill-docs:check`, `gen:plugin-hooks:check`,
+# `sync:agent-models:check`)가 메모리에서 만든 문자열(LF)과 디스크 파일을 **직접**
+# 비교한다. core.autocrlf=true 인 Windows 에서는 CRLF 로 체크아웃되므로, 내용이
+# 바이트 단위로 같아도 세 게이트가 전부 STALE 로 뜬다 — 실측 2026-08-29, 재생성 후
+# `git diff --ignore-cr-at-eol` 이 완전히 비어 있는데도 exit 1.
+#
+# 게이트를 EOL 무시 비교로 고치는 대신 여기서 막는 이유: 비교하는 곳은 앞으로도
+# 늘어나지만(생성물 경로가 셋이다) 체크아웃 규약은 한 곳이다. 스크립트마다 정규화를
+# 흩뿌리면 새로 추가되는 생성물에서 같은 결함이 다시 난다.
+#
+# 추적 파일 2189개 전부가 텍스트다 (실측: `git grep -I --name-only -e ''` 가 전량 반환).
+# text=auto 가 바이너리를 자동 판별하므로 나중에 이미지가 들어와도 변환하지 않는다.
+* text=auto eol=lf
