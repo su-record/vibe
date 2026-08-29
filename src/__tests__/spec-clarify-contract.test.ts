@@ -187,3 +187,114 @@ describe('D7 — CLAUDE.md ↔ AGENTS.md: 단계 경계 트리거 동기화', ()
     expect(leftovers, `변환되지 않은 줄:\n${leftovers.join('\n')}`).toEqual([]);
   });
 });
+
+/**
+ * D8 — 되돌림 비용 표면화 (SPEC: .vibe/specs/spec-reversibility-surface.md).
+ *
+ * 스윕이 결정 지점을 전부 열거하면서도 사용자에게 아무것도 보여주지 않던 구조를 고친다.
+ * 질문 상한(3개)은 그대로 두고, 되돌림 등급으로 **순서**만 바꾸며,
+ * `못 되돌린다` 항목만 승인 메시지로 끌어올린다.
+ */
+describe('D8 — vibe.spec: 되돌림 비용 축', () => {
+  const doc = read('skills/vibe.spec/SKILL.md');
+  const step3 = clarifySection(doc);
+
+  it('3-a 항목 형식에 되돌림 칸과 세 등급이 있다', () => {
+    expect(step3).toMatch(/\{되돌림: 싸다 \| 비싸다 \| 못 되돌린다\}/);
+  });
+
+  it('세 등급의 판정 기준이 본문에 정의된다 (등급이 라벨로만 남지 않게)', () => {
+    expect(step3).toMatch(/\| 싸다 \| 코드만 고치면 된다/);
+    expect(step3).toMatch(/\| 비싸다 \| 고치려면 여러 곳을 함께 바꿔야 한다/);
+    expect(step3).toMatch(/\| 못 되돌린다 \| 이미 쌓인 데이터/);
+  });
+
+  it('애매하면 등급을 올린다 (비대칭 비용) 가 명시된다', () => {
+    expect(step3, '아래로 잘못 판정하면 마이그레이션이 남는다 — 기본 방향이 본문에 있어야 한다')
+      .toMatch(/판정이 애매하면 \*\*위로 올린다\*\*/);
+  });
+
+  it('훑을 축에 운영 3종이 추가된다', () => {
+    expect(step3).toContain('데이터 보존과 마이그레이션 경로');
+    expect(step3).toContain('실패했을 때 사용자에게 보이는 것');
+    expect(step3).toContain('부하가 늘면 먼저 깨지는 곳');
+  });
+
+  it('3-b 선정이 되돌림 등급 우선으로 정렬된다', () => {
+    expect(step3).toMatch(/\*\*되돌림 등급이 높은 순\*\*/);
+    expect(step3, '동률 처리로 기존 기준이 남아야 정렬이 결정론적이다')
+      .toMatch(/같은 등급 안에서는 영향 범위가 큰 순/);
+  });
+
+  it('질문 상한 3개는 그대로다 — 순서만 바꾼다', () => {
+    expect(step3).toMatch(/\*\*최대 3개\*\*/);
+    expect(step3, '상한을 늘리는 형태로 변질되면 인지 예산 계약이 깨진다')
+      .toMatch(/상한을 늘리지 않고 \*\*순서만\*\* 바꾼다/);
+  });
+});
+
+describe('D8 — vibe.spec Step 4·5·6: 되돌림 항목의 귀결', () => {
+  const doc = read('skills/vibe.spec/SKILL.md');
+
+  it('Step 4 작성 요건에 되돌리기 어려운 결정 섹션이 명시된다', () => {
+    expect(doc).toMatch(/- \*\*되돌리기 어려운 결정\*\* \(해당 시에만\)/);
+    expect(doc, 'Assumptions 하위 목록이면 하류가 헤딩으로 찾지 못한다')
+      .toMatch(/Assumptions 안의 하위 목록이 아니라 \*\*별도 섹션\*\*/);
+  });
+
+  it('Step 5 체크리스트가 되돌림 등급 귀결을 점검한다', () => {
+    expect(doc).toMatch(/- \[ \] 3-a 의 모든 항목에 되돌림 등급이 붙었고/);
+    expect(doc, '0건일 때 아무것도 없어야 통과라는 조건이 체크리스트에 있어야 한다')
+      .toMatch(/0건이면 섹션·블록 모두 없어야 통과/);
+  });
+
+  it('Step 6 승인 메시지 블록에 되돌림 노출 자리가 있다', () => {
+    expect(doc).toMatch(/\{되돌림 노출 블록 — 아래 규칙 참조/);
+  });
+
+  it('노출 게이트가 못 되돌린다 하나로 한정된다', () => {
+    expect(doc).toMatch(/\*\*노출 게이트는 `못 되돌린다` 하나뿐이다\.\*\*/);
+    expect(doc, '비싸다까지 노출하면 거의 모든 SPEC 에서 블록이 떠 읽히지 않는다')
+      .toMatch(/`비싸다` 는 3-b 정렬에만 쓰고 노출하지 않는다/);
+  });
+
+  it('0건이면 블록을 통째로 생략한다 (통과 의식화 방지)', () => {
+    expect(doc).toMatch(/\*\*0건이면 블록을 통째로 생략한다\.\*\*/);
+    expect(doc).toMatch(/해당 없는 SPEC 에서 침묵하지 않으면 통과 의식이 된다/);
+  });
+
+  it('노출 상한이 Assumptions 접기와 같은 3으로 통일된다', () => {
+    expect(doc, '서로 다른 두 상한이 공존하면 직역 하네스가 어느 쪽을 쓸지 갈린다')
+      .toMatch(/최대 3줄\. 초과분은 `그 외 N건은 SPEC 참조` 로 접는다/);
+  });
+
+  it('autonomous 에서는 노출이 없고 기록만 남는다', () => {
+    expect(doc).toMatch(/승인 메시지 자체가 없으므로 노출도 없다/);
+  });
+
+  it('기존 Step 6 선택지 4개 고정이 보존된다 (D5 회귀 방지)', () => {
+    expect(doc).toMatch(/선택지 개수는 항상 4개로 고정한다/);
+  });
+});
+
+describe('D8 — spec-template: 되돌리기 어려운 결정 섹션', () => {
+  const tpl = read('vibe/templates/spec-template.md');
+
+  it('Assumptions 뒤, Constraints 앞에 위치한다', () => {
+    const assumptions = tpl.indexOf('### Assumptions');
+    const reversibility = tpl.indexOf('### 되돌리기 어려운 결정');
+    const constraints = tpl.indexOf('### Constraints');
+    expect(reversibility, '섹션이 템플릿에 없다').toBeGreaterThan(-1);
+    expect(reversibility).toBeGreaterThan(assumptions);
+    expect(constraints).toBeGreaterThan(reversibility);
+  });
+
+  it('해당 없으면 절을 지우라는 조건부 지시가 붙어 있다', () => {
+    expect(tpl, 'Structure 절과 같은 조건부 규약이어야 통과 의식이 되지 않는다')
+      .toMatch(/없으면 이 절을 통째로 지운다/);
+  });
+
+  it('줄 형식이 평문 한 줄로 고정된다', () => {
+    expect(tpl).toMatch(/\{무엇을 정했는가\} → \{나중에 뒤집으면 치를 비용\}/);
+  });
+});
