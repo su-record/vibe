@@ -1,6 +1,6 @@
 {
   "name": "vibe",
-  "version": "3.2.61",
+  "version": "3.2.62",
   "description": "Verification harness for AI coding agents — \"done\" is decided by deterministic gates (test exit codes, run-ledger, regression memory), not the model self-report.",
   "author": {
     "name": "su-record",
