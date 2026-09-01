@@ -31,7 +31,7 @@
     "validate:counts": "tsx scripts/validate-counts.ts",
     "lint": "oxlint",
     "lint:ratchet": "tsx scripts/lint-ratchet.ts",
-    "verify:all": "pnpm lint && pnpm lint:ratchet && pnpm gen:skill-docs:check && pnpm sync:agent-models:check && pnpm validate:skill-invocation && pnpm validate:counts",
+    "verify:all": "pnpm lint && pnpm lint:ratchet && pnpm gen:skill-docs:check && pnpm sync:agent-models:check && pnpm validate:skill-invocation && pnpm validate:counts && pnpm gen:agents-md:check && pnpm validate:spec-lifecycle && pnpm validate:cache-surface",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -44,7 +44,11 @@
     "gen:plugin-hooks": "npx tsx scripts/gen-plugin-hooks.ts",
     "gen:plugin-hooks:check": "npx tsx scripts/gen-plugin-hooks.ts --check",
     "validate:plugin-tree": "npx tsx scripts/build-plugin.ts && git diff --exit-code --stat HEAD -- plugins/",
-    "validate:mermaid": "npx tsx scripts/validate-mermaid.ts"
+    "validate:mermaid": "npx tsx scripts/validate-mermaid.ts",
+    "validate:spec-lifecycle": "npx tsx scripts/validate-spec-lifecycle.ts",
+    "validate:cache-surface": "npx tsx scripts/validate-cache-surface.ts",
+    "gen:agents-md": "npx tsx scripts/gen-agents-md.ts",
+    "gen:agents-md:check": "npx tsx scripts/gen-agents-md.ts --check"
   },
   "keywords": [
     "ai",

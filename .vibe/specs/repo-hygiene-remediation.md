@@ -4,7 +4,8 @@
 > 목표: **"완료 판정은 결정론적 게이트가 한다"는 제품 명제를 이 저장소 자신에게 적용한다.**
 > 선언만 되어 있고 기계가 강제하지 않던 규칙들을 CI 게이트로 배선하고, 그 부재로 이미 발생한 드리프트를 제거한다.
 
-- status: completed (2026-08-03, branch `claude/explicit-prompt-caching-demo-134pak` — REQ-001~014 전부 구현·게이트 통과)
+- status: VERIFIED (2026-08-03, branch `claude/explicit-prompt-caching-demo-134pak` — REQ-001~014 전부 구현·게이트 통과)
+- class: process
 - result: build 0 · lint 0 · ratchet 0 (435건 baseline) · 가드 4종 0 · 테스트 1714 passed (신규 8) · coverage 37.43/30.58/47.52/37.94 (threshold 통과)
 - Stakes: production (npm 배포 패키지 — 신호 없음, 기본 상향)
 - source: 2026-08-02 저장소 리뷰 (build/test/validation 스크립트 실측 기반)

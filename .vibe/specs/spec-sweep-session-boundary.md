@@ -1,7 +1,8 @@
 # SPEC: Coverage Sweep + Session Boundary
 
 - **Created**: 2026-08-04
-- **Status**: APPROVED (2026-08-04) · Implemented · D1~D7 gates passed
+- **Status**: VERIFIED (2026-08-04) · Implemented · D1~D7 gates passed)
+- **Class**: process
 - **Stakes**: production — 배포되는 npm 패키지(`@su-record/vibe`)의 스킬 본문 소스, demo 신호 없음 (SSOT: vibe/rules/loop-contract.md)
 - **Tech Stack**: Markdown (skill bodies), TypeScript (static contract tests), Vitest
 

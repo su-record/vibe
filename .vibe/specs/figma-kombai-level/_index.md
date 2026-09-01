@@ -1,5 +1,6 @@
 ---
-status: completed
+status: VERIFIED
+class: feature
 currentPhase: 4
 totalPhases: 4
 createdAt: 2026-04-07T00:00:00Z
@@ -48,3 +49,11 @@ lastUpdated: 2026-04-07T00:00:00Z
 - 기존 Phase 4 검증 루프에 컴파일 에러 피드백을 추가 (별도 Phase 아님)
 - 디자인 토큰 매핑은 Phase 2 재료 확보 시점에 기존 프로젝트 토큰 스캔 추가
 - 멀티 프레임은 Phase 2 재료 확보를 여러 URL 동시 처리로 확장
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `src/infra/lib/figma`
+- `src/infra/lib/browser`
+- `hooks/scripts/figma-extract.js`

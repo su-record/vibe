@@ -13,4 +13,6 @@ export { generateTraceabilityMatrix, formatMatrixAsMarkdown, formatMatrixAsHtml 
 export type { TraceItem, TraceabilityMatrix, TraceSummary, TraceMatrixOptions } from './traceabilityMatrix.js';
 export { validateSpecDocument, formatSpecValidation, featureSlugFromPath, } from './validateSpecDocument.js';
 export type { SpecValidationResult, SpecFinding, SpecFindingSeverity, } from './validateSpecDocument.js';
+export { SPEC_STATUSES, SPEC_CLASSES, ANCHOR_REQUIRED_CLASSES, parseSpecLifecycle, checkSpecLifecycle, anchorsRequired, isLifecycleExempt, } from './specLifecycle.js';
+export type { SpecStatus, SpecClass, SpecLifecycleHeader, LifecycleFinding, } from './specLifecycle.js';
 //# sourceMappingURL=index.d.ts.map

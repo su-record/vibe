@@ -3,8 +3,8 @@ slug: agents-md-stale-codex-paths
 symptom: "AGENTS.md referenced .codex/vibe/ paths; coco's actual path is .coco/vibe/"
 root-cause-tag: integration
 fix-commit: pending
-test-path: pending
-status: open
+test-path: npm run gen:agents-md:check
+status: fixed
 registered: 2026-04-14
 feature: vibe-test
 ---
@@ -41,9 +41,21 @@ Long-term fix: the `/vibe.test parity` subcommand validates path references auto
 
 ## Related
 
-- Fix commit: pending (committed alongside this regression record)
-- Test path: no automated test yet — `/vibe.test parity` `path-error` category will guard regression once implemented
+- Fix commit: pending (기록 직후 커밋 해시로 채운다)
+- Test path: `npm run gen:agents-md:check` — CI `test` job 의 드리프트 가드 블록과 `verify:all` 에서 돈다
 - Trigger: discovered while designing `/vibe.test` — the first dogfood case for this skill and the justification for its existence
+
+## Closure (2026-09-02)
+
+이 레코드가 지목한 **근본 원인**("CLAUDE.md ↔ AGENTS.md 동기화를 강제하는 자동 검사가 없다")이
+`harness-discipline-import` SPEC 으로 닫혔다. `scripts/agents-md-rules.json` 이 번역 규칙의 SSOT 이고,
+`scripts/gen-agents-md.ts` 가 CLAUDE.md 에서 AGENTS.md 를 결정론적으로 생성하며,
+`npm run gen:agents-md:check` 가 드리프트를 CI 에서 막는다.
+
+증상 문구의 `.coco/` 경로는 그 뒤 하네스가 Codex 로 되돌아가면서 **무효**가 됐다 — 이 레코드에서
+살아있는 것은 경로 이름이 아니라 "게이트 없는 두 벌 문서는 조용히 갈라진다" 는 실패 유형이다.
+게이트를 처음 돌렸을 때 실제로 드리프트 2건이 잡혔다 (`$vibe lint:ratchet` 과잉 번역,
+Dual-Harness Doctrine 절 미번역) — 레코드가 예측한 그대로였다.
 
 ## Notes
 

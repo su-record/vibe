@@ -14,6 +14,7 @@
  *    (dual-harness-doctrine 운영 규칙 2).
  */
 import path from 'path';
+import { checkSpecLifecycle } from './specLifecycle.js';
 
 export type SpecFindingSeverity = 'P1' | 'P2';
 
@@ -254,6 +255,18 @@ function checkPlaceholders(content: string, findings: SpecFinding[]): void {
   }
 }
 
+/**
+ * lifecycle 헤더(Status·Class·Anchors) — 닫힌 집합 판정은 `specLifecycle.ts` 가 소유한다.
+ *
+ * P1 인 이유: 값이 열려 있으면 `.vibe/specs/` 전수를 도는 CI 게이트가 무엇을 통과로
+ * 볼지 정할 수 없다. 실측으로 5가지 표기가 공존했고 그중 둘은 템플릿에 없는 값이었다.
+ */
+function checkLifecycle(content: string, specPath: string | undefined, findings: SpecFinding[]): void {
+  for (const f of checkSpecLifecycle(content, specPath)) {
+    findings.push({ severity: 'P1', code: f.code, message: f.message });
+  }
+}
+
 function checkScenarios(content: string, findings: SpecFinding[]): void {
   if (!/^#{1,3}\s*\d*\.?\s*Scenarios/im.test(content)) {
     findings.push({
@@ -289,6 +302,7 @@ export function validateSpecDocument(
 
   const requirementIds = checkRequirements(content, featureSlug, findings);
   checkStakes(content, findings);
+  checkLifecycle(content, options.specPath, findings);
   checkDoneCriteria(content, findings);
   checkGrounding(content, findings);
   checkPlaceholders(content, findings);

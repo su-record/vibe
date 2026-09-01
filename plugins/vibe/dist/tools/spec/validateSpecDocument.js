@@ -14,6 +14,7 @@
  *    (dual-harness-doctrine 운영 규칙 2).
  */
 import path from 'path';
+import { checkSpecLifecycle } from './specLifecycle.js';
 const REQ_ID = /\bREQ-([a-z0-9-]+)-(\d{3})\b/g;
 const STAKES_LINE = /^\s*[-*]?\s*\*{0,2}Stakes\*{0,2}\s*[:：]\s*(.+)$/im;
 const VALID_STAKES = ['demo', 'prototype', 'production'];
@@ -215,6 +216,17 @@ function checkPlaceholders(content, findings) {
         }
     }
 }
+/**
+ * lifecycle 헤더(Status·Class·Anchors) — 닫힌 집합 판정은 `specLifecycle.ts` 가 소유한다.
+ *
+ * P1 인 이유: 값이 열려 있으면 `.vibe/specs/` 전수를 도는 CI 게이트가 무엇을 통과로
+ * 볼지 정할 수 없다. 실측으로 5가지 표기가 공존했고 그중 둘은 템플릿에 없는 값이었다.
+ */
+function checkLifecycle(content, specPath, findings) {
+    for (const f of checkSpecLifecycle(content, specPath)) {
+        findings.push({ severity: 'P1', code: f.code, message: f.message });
+    }
+}
 function checkScenarios(content, findings) {
     if (!/^#{1,3}\s*\d*\.?\s*Scenarios/im.test(content)) {
         findings.push({
@@ -243,6 +255,7 @@ export function validateSpecDocument(content, options = {}) {
     const featureSlug = options.specPath ? featureSlugFromPath(options.specPath) : undefined;
     const requirementIds = checkRequirements(content, featureSlug, findings);
     checkStakes(content, findings);
+    checkLifecycle(content, options.specPath, findings);
     checkDoneCriteria(content, findings);
     checkGrounding(content, findings);
     checkPlaceholders(content, findings);

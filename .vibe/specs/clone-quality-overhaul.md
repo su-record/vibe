@@ -1,5 +1,6 @@
 ---
-status: implemented
+status: VERIFIED
+class: feature
 currentPhase: 3
 totalPhases: 3
 createdAt: 2026-07-02T10:00:00+09:00
@@ -115,3 +116,14 @@ vibe의 우위 요소(보존): clone-validate 결정론 게이트, pixel diff P1
 - clone-to-scss.js 코드 변경 (초안 생성기로 역할만 강등, 로직 그대로)
 - Tailwind 직접 출력 모드 (스택 불문 SCSS 유지)
 - 다크모드 캡처
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `hooks/scripts/__tests__`
+- `skills/vibe.clone/SKILL.md`
+- `hooks/scripts/clone-to-scss.js`
+- `hooks/scripts/clone-merge-responsive.js`
+- `hooks/scripts/clone-extract.js`
+- `hooks/scripts/clone-spec.js`

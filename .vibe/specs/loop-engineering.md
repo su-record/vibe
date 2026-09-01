@@ -1,5 +1,6 @@
 ---
-status: completed
+status: VERIFIED
+class: feature
 ---
 
 # SPEC: loop-engineering
@@ -54,3 +55,11 @@ CLAUDE.md/AGENTS.md 진입점 목록과 Git include 목록(`.vibe/loops/`), READ
 - CC 스케줄드 루틴 API 직접 연동(현재는 명령 생성까지)
 - Codex Automations API 연동
 - 루프 간 의존성/조합(DAG)
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `vibe/templates/loop-template.md`
+- `src/tools/loop/validateLoopDefinition.ts`
+- `hooks/scripts/loop-ledger.js`

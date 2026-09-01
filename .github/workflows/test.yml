@@ -63,6 +63,17 @@ jobs:
           pnpm validate:skill-invocation
           pnpm sync:agent-models:check
           pnpm validate:mermaid
+          pnpm gen:agents-md:check
+
+      # 선언한 규율은 선언한 자리에서 썩는다.
+      #
+      # SPEC 은 VERIFIED 로 확정된 뒤에도 코드가 움직이면 갱신되지 않고, 상시 로드
+      # 자산은 늘어나도 캐시 비용이 문서에 남지 않는다. 둘 다 사람이 눈으로 볼 수 없는
+      # 종류의 부패라 명령이 판정한다.
+      - name: Decision records and cache surface stay honest
+        run: |
+          pnpm validate:spec-lifecycle
+          pnpm validate:cache-surface
 
       # 플러그인 배포 트리는 커밋되는 생성물이다 — Claude Code 마켓플레이스가
       # 저장소를 클론해 읽으므로 dist/ 와 구운 agents/ 가 트리에 있어야 한다.

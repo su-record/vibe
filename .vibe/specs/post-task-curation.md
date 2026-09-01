@@ -1,6 +1,7 @@
 ---
 slug: post-task-curation
-status: draft
+status: DRAFT
+class: feature
 scope: internal
 authors: [su-record, claude]
 registered: 2026-05-07

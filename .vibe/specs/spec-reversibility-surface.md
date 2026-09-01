@@ -2,6 +2,7 @@
 
 - **Created**: 2026-08-29
 - **Status**: VERIFIED (2026-08-29 — run-ledger verifyPassed=true, 게이트 7건 exit 0)
+- **Class**: process
 - **Stakes**: production — 배포되는 스킬 본문 계약을 바꾼다. 잘못되면 모든 SPEC 작성 경로에 영향
 - **Tech Stack**: TypeScript (ESM), Vitest, Markdown 스킬 본문
 

@@ -2,7 +2,8 @@
 
 - **Stakes**: production — 배포된 CLI 의 훅 복구 경로이며 모든 Codex 사용자에게 영향
 - **Created**: 2026-08-29
-- **Status**: verified (2026-08-29 · run-ledger verifyPassed=true)
+- **Status**: VERIFIED (2026-08-29 · run-ledger verifyPassed=true)
+- **Class**: bug-fix
 
 ## Overview / Goal
 
@@ -108,3 +109,16 @@
 2. **`.codex/hooks.json` 을 템플릿 파일로 빼서 `projectHooksStale` 재사용** — `buildCodexHooksConfig` 는 `coreDir` 을 커맨드 문자열에 삽입해 생성한다. 템플릿화하면 placeholder 치환 규약이 하나 더 늘고, 기대값 출처가 설치 경로와 갈라져 지금 고치려는 드리프트를 다른 층에 재생산한다.
 3. **파일 mtime·버전 스탬프 비교** — 설치본에 버전을 적어두고 비교하는 방식은 정의가 그대로인데 버전만 오른 경우에도 stale 로 오판하고, 반대로 사용자가 손으로 고친 내용 불일치는 못 잡는다. 내용 비교가 정확히 알고 싶은 것을 본다.
 4. **`vibe status` 경고로만 알리고 복구는 사용자에게 맡김** — `.codex/hooks.json` 은 gitignore 된 로컬 아티팩트라 사용자가 드리프트를 인지할 경로가 없다. 설치가 idempotent 한 이상 경고보다 복구가 옳다 (`.claude` 가 이미 그 판단을 내렸다).
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `src/cli/commands/upgrade.ts:109-143`
+- `src/cli/commands/upgrade.ts:81-90`
+- `src/cli/setup/ProjectSetup.ts:542-564`
+- `src/cli/setup/CodexHooks.ts:39-52`
+- `src/cli/setup/CodexHooks.ts:65-79`
+- `src/cli/setup.ts:14-32`
+- `src/cli/commands/upgrade.test.ts:26-91`
+- `src/cli/setup.ts`

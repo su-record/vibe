@@ -10,6 +10,8 @@ import { validateSpecDocument, formatSpecValidation, featureSlugFromPath } from 
 /** 통과하는 최소 SPEC */
 const VALID_SPEC = `# SPEC: Login
 
+- **Status**: APPROVED
+- **Class**: feature
 - **Stakes**: production — 기존 코드 위 작업
 
 ## 1. Overview / Goal
@@ -238,5 +240,48 @@ describe('경계', () => {
     const bad = validateSpecDocument('# SPEC\n본문만 있음\n');
     expect(formatSpecValidation(bad)).toContain('❌');
     expect(formatSpecValidation(bad)).toContain('no-requirement-ids');
+  });
+});
+
+describe('lifecycle 헤더 — CI 게이트가 전수를 판정할 수 있으려면', () => {
+  it('닫힌 집합 밖 Status 는 P1 (실측: COMPLETE·소문자 verified 가 섞여 있었다)', () => {
+    const spec = VALID_SPEC.replace('- **Status**: APPROVED', '- **Status**: COMPLETE');
+    const r = validateSpecDocument(spec, { specPath: '.vibe/specs/login.md' });
+    expect(r.valid).toBe(false);
+    expect(r.findings.map(f => f.code)).toContain('invalid-spec-status');
+  });
+
+  it('Class 누락은 P1 (Anchors 요구 여부를 판정할 수 없다)', () => {
+    const spec = VALID_SPEC.replace('- **Class**: feature\n', '');
+    const r = validateSpecDocument(spec, { specPath: '.vibe/specs/login.md' });
+    expect(r.valid).toBe(false);
+    expect(r.findings.map(f => f.code)).toContain('no-spec-class');
+  });
+
+  it('VERIFIED + feature 인데 Anchors 절이 없으면 P1', () => {
+    const spec = VALID_SPEC.replace('- **Status**: APPROVED', '- **Status**: VERIFIED');
+    const r = validateSpecDocument(spec, { specPath: '.vibe/specs/login.md' });
+    expect(r.valid).toBe(false);
+    expect(r.findings.map(f => f.code)).toContain('no-anchors');
+  });
+
+  it('VERIFIED + process 는 Anchors 를 요구받지 않는다 (통과 의식 방지)', () => {
+    const spec = VALID_SPEC
+      .replace('- **Status**: APPROVED', '- **Status**: VERIFIED')
+      .replace('- **Class**: feature', '- **Class**: process');
+    const r = validateSpecDocument(spec, { specPath: '.vibe/specs/login.md' });
+    expect(r.valid).toBe(true);
+  });
+
+  it('분할 SPEC 의 phase 파일은 헤더를 요구받지 않는다 (_index.md 가 SSOT)', () => {
+    const spec = VALID_SPEC.replace('- **Status**: APPROVED\n- **Class**: feature\n', '');
+    const r = validateSpecDocument(spec, { specPath: '.vibe/specs/login/phase-1-core.md' });
+    expect(r.findings.map(f => f.code)).not.toContain('no-spec-status');
+  });
+
+  it('Class bug-fix 는 하이픈이 잘리지 않는다', () => {
+    const spec = VALID_SPEC.replace('- **Class**: feature', '- **Class**: bug-fix');
+    const r = validateSpecDocument(spec, { specPath: '.vibe/specs/login.md' });
+    expect(r.findings.map(f => f.code)).not.toContain('invalid-spec-class');
   });
 });

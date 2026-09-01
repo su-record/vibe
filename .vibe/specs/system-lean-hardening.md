@@ -1,6 +1,7 @@
 ---
 name: system-lean-hardening
-status: approved
+status: APPROVED
+class: architecture
 created: 2026-07-07
 source: .vibe/reports/analysis-2026-07-07-system-audit.md
 ---

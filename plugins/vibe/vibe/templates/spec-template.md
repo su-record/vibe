@@ -1,7 +1,8 @@
 # SPEC: {Feature Name}
 
 - **Created**: {YYYY-MM-DD}
-- **Status**: DRAFT | APPROVED
+- **Status**: DRAFT | APPROVED | VERIFIED | SUPERSEDED | REJECTED (닫힌 집합 — `npm run validate:spec-lifecycle`)
+- **Class**: feature | bug-fix | simplification | architecture | process | testing
 - **Stakes**: demo | prototype | production — {판정 근거 1구} (SSOT: vibe/rules/loop-contract.md)
 - **Tech Stack**: {Project tech stack summary}
 
@@ -153,3 +154,17 @@ Response: 201 {...}
 - Verification writes `.vibe/runs/{run-id}/evidence.json`; only deterministic Judge results can complete the loop.
 - Model Judge findings are advisory-only. Human Taste is release-only.
 - Gate = all Done Criteria pass (exit codes / observed behavior) — loop continues until gates pass, stuck, or max iterations.
+
+---
+
+## Anchors
+
+> **Class 가 feature · bug-fix · architecture 이고 Status 를 VERIFIED 로 올릴 때 필수.**
+> 그 외에는 이 절을 통째로 지운다 — 고정할 코드 경로가 없는 SPEC 에 억지로 요구하면 통과 의식이 된다.
+
+이 SPEC 이 안착한 경로를 나열한다. 여기 적힌 경로가 사라지면 `npm run validate:spec-lifecycle`
+이 실패한다 — 그것이 "코드가 움직였는데 SPEC 이 따라오지 않았다" 를 잡는 유일한 신호다.
+lifecycle 표기만으로는 못 잡는다: 문서는 Status 를 바꾸지 않은 채 늙기 때문이다.
+
+- `{src/auth/session.ts}`
+- `{src/auth/session.test.ts}`
