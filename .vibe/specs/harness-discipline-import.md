@@ -1,7 +1,7 @@
 # SPEC: harness-discipline-import — dsh 규율 3종 이식
 
 - **Created**: 2026-09-02
-- **Status**: APPROVED
+- **Status**: VERIFIED (2026-09-02 — verify-ledger verifyPassed=true, runId c65cabee)
 - **Class**: process
 - **Stakes**: production — 배포되는 저장소의 규약·CI 게이트·CLAUDE.md SSOT 를 바꾼다
 - **Tech Stack**: TypeScript (ESM), Vitest, oxlint, GitHub Actions, Markdown
