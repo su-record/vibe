@@ -12,24 +12,21 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
+import { createFakeHome, type FakeHome } from '../../test-helpers/index.js';
 
+let fakeHome: FakeHome;
 let home: string;
-let savedHome: string | undefined;
 
-/** getCoreConfigDir 이 HOME 을 따르므로 가짜 HOME 으로 격리한다 */
+/** getCoreConfigDir 이 os.homedir() 을 따르므로 가짜 HOME 으로 격리한다 */
 beforeEach(() => {
-  savedHome = process.env.HOME;
-  home = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-stale-'));
-  process.env.HOME = home;
+  fakeHome = createFakeHome('vibe-stale');
+  home = fakeHome.path;
   vi.resetModules();
 });
 
 afterEach(() => {
-  if (savedHome === undefined) delete process.env.HOME;
-  else process.env.HOME = savedHome;
-  fs.rmSync(home, { recursive: true, force: true });
+  fakeHome.restore();
   vi.resetModules();
 });
 

@@ -117,8 +117,12 @@ describe('utils.js — getGlobalNpmPath() npm-root 파일 캐시', () => {
  *
  * 실행 머신의 전역 설치 상태에 기대지 않는다 — 가짜 HOME 에 prefix 를 만들어
  * 판정만 검증한다. (전역 설치가 없는 CI 에서도 동일하게 성립해야 한다.)
+ *
+ * POSIX 전용: `npmRootFallback` 은 Windows 에서 `IS_WINDOWS` 분기로
+ * `APPDATA/npm/node_modules` 를 곧장 돌려주므로 여기서 검증하는 후보 사다리가
+ * 아예 실행되지 않는다. 심볼릭 링크 권한 문제가 아니라 코드 경로 자체가 없다.
  */
-describe('getGlobalNpmPath — npm 부재 시 폴백', () => {
+describe.skipIf(process.platform === 'win32')('getGlobalNpmPath — npm 부재 시 폴백', () => {
   /** npm 없는 PATH + 주어진 HOME 으로 실행 (node 만 심볼릭 링크로 남긴다) */
   function runWithoutNpm(cacheFilePath, home) {
     const stub = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-nonpm-'));

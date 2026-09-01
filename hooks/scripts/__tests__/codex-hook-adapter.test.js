@@ -87,7 +87,9 @@ describe('PostCompact — 압축 직후 재고정', () => {
       const ctx = JSON.parse(result.stdout.trim()).hookSpecificOutput.additionalContext;
       expect(ctx).toContain('post-compact re-anchor');
       expect(ctx).toContain('login');
-      expect(ctx).toContain('specs/login.md');
+      // ANCHOR 는 OS 구분자 그대로 경로를 싣고 JSON 이 한 번 더 이스케이프한다 —
+      // Windows 출력은 `specs\\\\login.md`. 연속 백슬래시를 통째로 구분자 하나로 본다
+      expect(ctx.replace(/\\+/g, '/')).toContain('specs/login.md');
     } finally {
       fs.rmSync(cwd, { recursive: true, force: true });
     }

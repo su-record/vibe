@@ -9,6 +9,29 @@ import {
   type CompileExecutionPacketInput,
 } from './executionPacket.js';
 
+/**
+ * 심볼릭 링크를 만들 수 있는 환경인지 실측한다.
+ *
+ * Windows 는 개발자 모드나 관리자 권한 없이는 `symlinkSync` 가 EPERM 을 던진다.
+ * 그 환경에서 링크 우회 거부 테스트는 "거부했다" 가 아니라 "픽스처를 못 만들었다" 로
+ * 실패하므로, 판정 대상이 아닌 이유로 빨간불이 된다. CI(Linux) 에서는 항상 돈다.
+ */
+function canCreateSymlink(): boolean {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-symlink-probe-'));
+  try {
+    const target = path.join(dir, 'target');
+    fs.writeFileSync(target, '');
+    fs.symlinkSync(target, path.join(dir, 'link'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const symlinkAvailable = canCreateSymlink();
+
 const canonicalSpec = `# SPEC: Example
 
 ## Context Sources
@@ -277,7 +300,7 @@ describe('Execution Packet Compiler', () => {
     }
   });
 
-  it('packet 디렉터리의 symbolic link를 통한 project 외부 쓰기를 거부', () => {
+  it.skipIf(!symlinkAvailable)('packet 디렉터리의 symbolic link를 통한 project 외부 쓰기를 거부', () => {
     const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-packet-project-'));
     const outsidePath = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-packet-outside-'));
     const specPath = '.vibe/specs/example.md';
@@ -383,7 +406,7 @@ describe('Execution Packet Compiler', () => {
     }
   });
 
-  it('symbolic link SPEC을 통한 project 외부 읽기를 거부', () => {
+  it.skipIf(!symlinkAvailable)('symbolic link SPEC을 통한 project 외부 읽기를 거부', () => {
     const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-spec-project-'));
     const outsidePath = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-spec-outside-'));
     const specPath = '.vibe/specs/example.md';

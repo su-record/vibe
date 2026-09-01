@@ -8,16 +8,21 @@
  * 실제 파일시스템에 쓰되 임시 디렉터리에 가둔다. HOME 도 임시로 돌려, 초기화가
  * 사용자 홈이나 전역 경로를 건드리지 않는다는 것을 관측 가능하게 만든다.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { init } from './init.js';
+import { createFakeHome, type FakeHome } from '../../test-helpers/index.js';
+
+// 로캘 탐지는 Windows 에서 powershell 을 띄우는데, 그 프로세스가 덮어쓴 USERPROFILE
+// 아래에 `AppData/` 를 만든다 (실측 2026-09-02). init 의 쓰기가 아닌 것이 격리
+// 계약에 잡히므로 탐지를 고정한다 — LANG 없는 CI 와 같은 값이다.
+vi.mock('../setup/LanguageDetector.js', () => ({ detectOsLanguage: (): 'en' => 'en' }));
 
 let projectDir: string;
-let fakeHome: string;
+let fakeHome: FakeHome;
 let originalCwd: string;
-let originalHome: string | undefined;
 let originalCI: string | undefined;
 
 /** 디렉터리 아래 모든 상대 경로를 모은다 */
@@ -37,24 +42,20 @@ function tree(dir: string): string[] {
 
 beforeEach(() => {
   originalCwd = process.cwd();
-  originalHome = process.env.HOME;
   originalCI = process.env.CI;
   // init 은 CI 에서 capability/devlog 프롬프트를 건너뛴다 — 기존 비대화형 게이트를 그대로 쓴다
   process.env.CI = '1';
   projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-init-'));
-  fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-home-'));
-  process.env.HOME = fakeHome;
+  fakeHome = createFakeHome('vibe-home');
   process.chdir(projectDir);
 });
 
 afterEach(() => {
   process.chdir(originalCwd);
-  if (originalHome === undefined) delete process.env.HOME;
-  else process.env.HOME = originalHome;
   if (originalCI === undefined) delete process.env.CI;
   else process.env.CI = originalCI;
   fs.rmSync(projectDir, { recursive: true, force: true });
-  fs.rmSync(fakeHome, { recursive: true, force: true });
+  fakeHome.restore();
 });
 
 describe('init — 산출물', () => {
@@ -89,7 +90,7 @@ describe('init — 격리', () => {
   const ALLOWED_HOME_ROOTS = ['.claude', '.codex', '.gemini', '.vibe'];
 
   function strayHomeWrites(): string[] {
-    return tree(fakeHome)
+    return tree(fakeHome.path)
       .map((rel) => rel.split(path.sep)[0])
       .filter((root, i, arr) => arr.indexOf(root) === i)
       .filter((root) => !ALLOWED_HOME_ROOTS.includes(root));
@@ -102,7 +103,7 @@ describe('init — 격리', () => {
 
   it('전역 규약 파일을 주입한다', async () => {
     await init();
-    expect(fs.existsSync(path.join(fakeHome, '.claude', 'CLAUDE.md'))).toBe(true);
+    expect(fs.existsSync(path.join(fakeHome.path, '.claude', 'CLAUDE.md'))).toBe(true);
   });
 
   it('프로젝트 이름을 주면 프로젝트 산출물은 그 하위에만 만든다', async () => {
