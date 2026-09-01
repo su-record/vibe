@@ -2,7 +2,7 @@
 slug: agents-md-stale-codex-paths
 symptom: "AGENTS.md referenced .codex/vibe/ paths; coco's actual path is .coco/vibe/"
 root-cause-tag: integration
-fix-commit: pending
+fix-commit: c1ea6b3
 test-path: npm run gen:agents-md:check
 status: fixed
 registered: 2026-04-14
@@ -41,7 +41,7 @@ Long-term fix: the `/vibe.test parity` subcommand validates path references auto
 
 ## Related
 
-- Fix commit: pending (기록 직후 커밋 해시로 채운다)
+- Fix commit: `c1ea6b3`
 - Test path: `npm run gen:agents-md:check` — CI `test` job 의 드리프트 가드 블록과 `verify:all` 에서 돈다
 - Trigger: discovered while designing `/vibe.test` — the first dogfood case for this skill and the justification for its existence
 
