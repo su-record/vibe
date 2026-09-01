@@ -14,4 +14,6 @@ export { compileExecutionPacket, getHarnessProfile, validateExecutionPacket, wri
 export { generateTraceabilityMatrix, formatMatrixAsMarkdown, formatMatrixAsHtml } from './traceabilityMatrix.js';
 // SPEC Code Guard — 산출물이 하류(run/verify)로 넘어가기 전 노드 단위 검사
 export { validateSpecDocument, formatSpecValidation, featureSlugFromPath, } from './validateSpecDocument.js';
+// SPEC lifecycle — 닫힌 Status/Class 집합과 Anchors 규율 (CI 게이트가 같은 정의를 import 한다)
+export { SPEC_STATUSES, SPEC_CLASSES, ANCHOR_REQUIRED_CLASSES, parseSpecLifecycle, checkSpecLifecycle, anchorsRequired, isLifecycleExempt, } from './specLifecycle.js';
 //# sourceMappingURL=index.js.map

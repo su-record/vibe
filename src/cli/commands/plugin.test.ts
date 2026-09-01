@@ -11,23 +11,20 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
+import { createFakeHome, type FakeHome } from '../../test-helpers/index.js';
 
+let fakeHome: FakeHome;
 let home: string;
-let savedHome: string | undefined;
 
 beforeEach(() => {
-  savedHome = process.env.HOME;
-  home = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-plugin-'));
-  process.env.HOME = home;
+  fakeHome = createFakeHome('vibe-plugin');
+  home = fakeHome.path;
   vi.resetModules();   // getCoreConfigDir 이 HOME 을 캐시할 수 있다
 });
 
 afterEach(() => {
-  if (savedHome === undefined) delete process.env.HOME;
-  else process.env.HOME = savedHome;
-  fs.rmSync(home, { recursive: true, force: true });
+  fakeHome.restore();
 });
 
 const load = async (): Promise<typeof import('./plugin.js')> => import('./plugin.js');

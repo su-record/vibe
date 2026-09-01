@@ -1,5 +1,6 @@
 ---
-status: implemented
+status: VERIFIED
+class: architecture
 currentPhase: 3
 totalPhases: 3
 createdAt: 2026-06-10T11:30:00+09:00
@@ -131,3 +132,14 @@ lastUpdated: 2026-06-10T16:50:00+09:00
 | pre-tool (Bash/Edit) | ~23ms | **~8ms** (-65%) |
 | post-edit | ~79ms | ~74ms (실작업 — prettier·모듈 로드 — 가 지배적, 프로세스 5→1로 CPU 절감) |
 </acceptance>
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `hooks/scripts/lib/dispatcher.js`
+- `hooks/scripts/pre-tool-dispatcher.js`
+- `hooks/scripts/post-edit-dispatcher.js`
+- `hooks/antigravity-hooks.json`
+- `hooks/scripts/lib/hook-context.js`
+- `hooks/scripts/__tests__/dispatcher-inprocess.test.js`

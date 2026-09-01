@@ -17,6 +17,10 @@ Cursor is not supported — do not generate or check Cursor-specific context fil
 **Source of truth:**
 - **`CLAUDE.md` is the content SSOT.** Always edit it first; `AGENTS.md` is a regenerated derivative.
 - Behavioral block: `skills/vibe.docs/templates/behavioral-principles.md` (4 Karpathy principles, wrapped in `<!-- VIBE-BEHAVIORAL:START/END -->` markers).
+- **번역 규칙이 파일로 존재하면 그 파일이 SSOT다.** 프로젝트 루트에 `scripts/agents-md-rules.json` 이 있으면
+  아래 4·5번 손 치환 목록을 쓰지 않고 `npm run gen:agents-md` 로 생성한다 — 규칙을 두 곳에 적으면
+  그 순간 두 벌이 되고, 어느 쪽이 맞는지 판정할 수단이 사라진다. 검증은 `npm run gen:agents-md:check`.
+  (vibe 저장소 자신이 이 경로다. 규칙 파일이 없는 프로젝트는 4·5번을 그대로 적용한다.)
 
 **Procedure (applies to both creation and modification):**
 
