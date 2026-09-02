@@ -85,4 +85,8 @@ export { validateSpecDocument, formatSpecValidation, featureSlugFromPath, } from
 // 디스패처 결정론 신호 — 파일 존재·URL 도메인·첨부 확장자는 모델이 아니라 코드가 판정한다
 export { collectDispatchSignals, detectResumeState, detectStakesSignals, classifyUrl, classifyAttachment, } from './dispatch/index.js';
 export { evaluateCostGate, formatCostGate } from './dispatch/index.js';
+// Contract tools — 역방향 계약 드리프트(구현 → SPEC)의 등급·목적지 고정
+export { REVERSE_DRIFT_KINDS, isReverseDriftKind, classifyReverseDrift, summarizeReverseDrift, formatReverseReport, formatReverseInboxLines, } from './contract/index.js';
+// Bench tools — 루프 설정 자기 대조. 판정 불가를 코드가 낸다 (§3.5)
+export { validateBenchDefinition, DEFAULT_MIN_RUNS_PER_ARM, summarizeArm, compareArms, formatBenchReport, } from './bench/index.js';
 //# sourceMappingURL=index.js.map

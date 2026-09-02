@@ -28,9 +28,11 @@ const iterate = (loop, ...outcomes) => {
   for (const verified of outcomes) recordIteration(dir, loop, verified);
 };
 
-describe('readBudget — 두 축을 따로 센다', () => {
+describe('readBudget — 예산 축을 따로 센다', () => {
   it('이력이 없으면 전액 남는다', () => {
-    expect(readBudget(dir, 'x', 10)).toEqual({
+    // 예산 축 4개의 의미를 고정한다. 반환 객체의 **전체 모양**은 고정하지 않는다 —
+    // 계측 축(cost)이 나중에 붙었고, 판정 축이 아닌 것이 늘었다고 이 계약이 깨지면 안 된다.
+    expect(readBudget(dir, 'x', 10)).toMatchObject({
       iterations: 0, verified: 0, remaining: 10, exhausted: false,
     });
   });

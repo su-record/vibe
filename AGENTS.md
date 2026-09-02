@@ -170,10 +170,10 @@ $vibe "<requirement>" [+ 📎 attachments]
 - `$vibe.run` — SPEC-driven implementation
 - `$vibe.verify` — implementation vs SPEC verification
 - `$vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
-- `$vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress.
+- `$vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress. `reverse` runs the other direction (implementation → SPEC) and routes SPEC gaps to the inbox — it never blocks the loop.
 - `$vibe.trace` — Requirements Traceability Matrix
-- `$vibe.loop` — loop engineering. Goal loops whose completion is judged by deterministic gates (run-ledger/tests), with stuck detection by discover-hash and a human triage inbox. Loops never push/release.
-- `$vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to regress. Recommended before every release.
+- `$vibe.loop` — loop engineering. Goal loops whose completion is judged by deterministic gates (run-ledger/tests), with stuck detection by discover-hash and a human triage inbox. Loops never push/release. `bench` self-compares loop settings and reports 'inconclusive' rather than inventing a difference the sample cannot support.
+- `$vibe.test` — vibe self-test. Probes every shipped surface (commands, skills, hooks, agents) in one install dir and writes a pass/fail report with STCV skill-quality verdicts. One command, no subcommands. Recommended before every release.
 
 | Task Size | Approach |
 |---|---|

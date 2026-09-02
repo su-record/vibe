@@ -13,6 +13,9 @@
  *   node hooks/scripts/loop-ledger.js gate answer <id> <answer>
  *   node hooks/scripts/loop-ledger.js iteration <name> <verified|unverified>
  *   node hooks/scripts/loop-ledger.js budget <name> [maxIterations]
+ *
+ * iteration: 회전을 기록하면서 비용(경과 시간·도구 호출 수·서브에이전트 수)을 함께 잰다.
+ *   수치의 출처는 코드다 — 모델이 보고한 값을 받는 인자는 두지 않는다.
  *   node hooks/scripts/loop-ledger.js trial <name> [trialIterations]
  *   node hooks/scripts/loop-ledger.js trial-approve <name>
  *
@@ -88,7 +91,12 @@ if (subcommand === 'start') {
   }
   recordIteration(projectDir, loop, verifiedArg === 'verified');
   const b = readBudget(projectDir, loop);
-  process.stdout.write(`[loop-ledger] iteration recorded: ${loop} ${verifiedArg} (${b.iterations} 회전 / 검증 ${b.verified})\n`);
+  // 비용은 계측이지 판정이 아니다 — 재지 못한 회전은 0 이 아니라 '미측정' 으로 보인다
+  const c = b.cost;
+  const costNote = c.measuredIterations > 0
+    ? `도구 ${c.toolCalls} / 서브에이전트 ${c.subagents} / ${Math.round(c.elapsedMs / 1000)}s (측정 ${c.measuredIterations}회전)`
+    : '비용 미측정';
+  process.stdout.write(`[loop-ledger] iteration recorded: ${loop} ${verifiedArg} (${b.iterations} 회전 / 검증 ${b.verified}) — ${costNote}\n`);
 
 } else if (subcommand === 'budget') {
   const [loop, maxRaw] = args;

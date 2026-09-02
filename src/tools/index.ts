@@ -318,3 +318,45 @@ export type {
   LoopIsolation,
   LoopStatus,
 } from './loop/index.js';
+
+// Contract tools — 역방향 계약 드리프트(구현 → SPEC)의 등급·목적지 고정
+export {
+  REVERSE_DRIFT_KINDS,
+  isReverseDriftKind,
+  classifyReverseDrift,
+  summarizeReverseDrift,
+  formatReverseReport,
+  formatReverseInboxLines,
+} from './contract/index.js';
+export type {
+  ReverseDriftKind,
+  ReverseDriftSeverity,
+  ReverseDriftClassification,
+  ReverseDriftFinding,
+  ReverseDriftSummary,
+  ReverseReportInput,
+} from './contract/index.js';
+
+// Bench tools — 루프 설정 자기 대조. 판정 불가를 코드가 낸다 (§3.5)
+export {
+  validateBenchDefinition,
+  DEFAULT_MIN_RUNS_PER_ARM,
+  summarizeArm,
+  compareArms,
+  formatBenchReport,
+} from './bench/index.js';
+export type {
+  BenchArm,
+  BenchDefinition,
+  BenchFinding,
+  BenchFindingSeverity,
+  BenchValidationResult,
+  ArmSummary,
+  BenchComparison,
+  BenchExclusion,
+  BenchMetric,
+  BenchRange,
+  BenchRun,
+  BenchVerdict,
+  BenchReportInput,
+} from './bench/index.js';
