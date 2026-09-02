@@ -31,12 +31,18 @@ run-ledger/evidence/인박스(결과 감사) · 팬아웃 비용 게이트와 wo
 - run-ledger 스키마에 필드를 **먼저** 추가한다. JUDGE 절제 경고가 갈 곳 없는 지시가 된 전례가 있다
 - 규율: 이 수치로 "N% 절감" 을 쓰지 않는다. 비교 가능한 형태로 쌓기만 한다
 
-### 3. 벤치마크 자세 (2번 완료 후)
+### 3. 벤치마크 자세 — **착수 완료** (`.vibe/specs/loop-bench-selfcompare.md`)
 
-- `vibe.test bench` — 외부 벤치마크가 아니라 **자기 대조**. 고정 태스크 셋을 조건만 바꿔 돌려
-  게이트 통과율·회전 수·2번의 비용축을 비교
-- 첫 대상: `per-iteration` vs `continuous`. loop-contract 가 "vibe 가 측정한 바 없다" 고 적어둔 자리
-- 산출물은 `~/.vibe/test-reports/` (프로젝트 로컬 아님 — 기존 규약)
+- 배치는 `vibe.test bench` 가 아니라 **`vibe.loop bench`** 로 바꿨다. `vibe.test` 본문이
+  "No subcommands / 설치 표면 점검" 으로 정체성을 못박았고, 벤치는 루프 설정을 비교하며
+  `loop-history.jsonl` 을 읽는다 — 루프 엔지니어링 관심사다
+- 핵심은 비교기가 아니라 **판정 불가를 코드가 내는 것**: `insufficient-runs` ·
+  `mixed-task-sets` · `inconclusive` · `difference-observed` 4종, `winner` 없음
+- 비율·퍼센트·배수 필드를 만들지 않는다. 필드가 있으면 쓰이고, 쓰이면 §3.5 가 금지하는
+  문구가 그 자리에서 만들어진다
+- **남은 일**: 실제로 돌려 표본을 쌓는 것. 첫 대상은 `per-iteration` vs `continuous` —
+  loop-contract 가 "측정한 바 없다" 고 적어둔 자리이고, 그 문장은 벤치가
+  `difference-observed` 를 낸 뒤에 지운다
 
 ### 4. 런타임 축 (별도 승인 필요 — vibe 대상 범위를 넓힌다)
 

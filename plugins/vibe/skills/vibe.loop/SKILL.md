@@ -1,7 +1,7 @@
 ---
 name: vibe.loop
 description: 반복 작업을 자율 goal loop로 설계·설치·실행하고 결정론적 gate로 완료를 판정해야 할 때 사용한다.
-argument-hint: "design | install | run | status | list [loop-name]"
+argument-hint: "design | install | run | status | list | bench [loop-name]"
 user-invocable: true
 ---
 
@@ -27,6 +27,7 @@ user-invocable: true
 /vibe.loop run <name>           # 1회 반복 실행 (스케줄러가 호출하는 진입점)
 /vibe.loop status [name]        # 실행 이력 + 인박스 요약
 /vibe.loop list                 # 정의된 루프 목록과 상태
+/vibe.loop bench <name>         # 루프 설정 자기 대조 — 조건만 바꿔 돌린 실행을 비교
 ```
 
 ## 경로 상수 (모든 서브커맨드 공통)
@@ -129,6 +130,50 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/loop/
 - `list`: `$LOOPS_DIR/*.md`의 frontmatter(name, trigger, status, goal) 테이블.
 - `status [name]`: `$HISTORY`에서 해당 루프(생략 시 전체)의 최근 10개 이벤트 + 인박스의 미처리 블록 수.
 
+## bench — 자기 대조 벤치마크
+
+`loop-contract.md` 는 `per-iteration` vs `continuous` 를 두고 **"어느 쪽이 결과가 나은지는 vibe 가
+측정한 바 없다"** 고 적어두었다. 축만 열고 기본값을 바꾸지 않은 이유가 그것이다. `bench` 는 그
+문장을 지울 수 있게 하는 도구다 — 외부 벤치마크(SWE-bench 등)와 겨루는 것이 아니라 **같은 루프를
+조건만 바꿔 돌린 결과끼리** 비교한다.
+
+**핵심은 비교가 아니라 판정 불가다.** 벤치 산출물은 곧 문서의 수치가 되므로, 판정을 절제에
+맡기면 constitution §3.5 가 금지하는 배수·퍼센트가 그 자리에서 만들어진다. 그래서 코드가 낸다.
+
+**Steps**:
+1. 벤치 정의를 만든다 — `name` · `taskSet`(모든 arm 이 동일하게 수행할 과제 id) ·
+   `arms`(비교할 조건 2개 이상, **이 축만 다르고 나머지는 같아야 한다**) · `minRunsPerArm`(기본 5)
+2. `validateBenchDefinition` 으로 검사한다. P1 이 있으면 실행하지 않는다
+3. arm 마다 `taskSet` 을 `minRunsPerArm` 회 이상 돌린다. 각 실행은 `loop-ledger.js budget` 산출물에서
+   `{armId, taskSetHash, gatesPassed, iterations, cost}` 를 남긴다
+4. `summarizeArm` → `compareArms` → `formatBenchReport`
+5. 리포트를 `~/.vibe/test-reports/<YYYYMMDD-HHmm>-bench-<name>.md` 에 쓴다 (**프로젝트 로컬 금지**)
+
+**판정 어휘 4종 — `winner` 는 없다**:
+
+| verdict | 뜻 |
+|---|---|
+| `insufficient-runs` | arm 당 사용 가능 실행이 `minRunsPerArm` 미만 — 어떤 차이든 우연과 구분되지 않는다 |
+| `mixed-task-sets` | 두 arm 이 같은 과제 셋을 돌지 않았다 — 다른 일을 시킨 결과는 비교가 아니다 |
+| `inconclusive` | 관측 범위(min~max)가 겹친다 — 이 표본으로는 차이를 말할 수 없다 |
+| `difference-observed` | 범위가 겹치지 않는다. **"차이가 관측됐다" 이지 "A 가 낫다" 가 아니다** |
+
+⛔ **비율·퍼센트·배수를 만들지 않는다.** 차이는 절대 단위 `delta` 로만 나오고, 게이트 통과도
+"3/5 회" 로 적지 "60%" 로 적지 않는다. 판정 규칙은 범위 겹침이며 **유의성 검정이 아니다** —
+표본이 한 자릿수인데 t-검정을 붙이면 정밀해 *보이는* 숫자가 나온다.
+
+⛔ **bench 는 아무것도 차단하지 않고, 기본값을 자동으로 바꾸지 않는다.** 리포트다.
+어느 조건을 고를지는 지표의 방향을 아는 사람이 정한다.
+
+```bash
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => {
+  const runs = JSON.parse(process.env.BENCH_RUNS);   // 위 3단계에서 모은 실행 기록
+  const a = t.summarizeArm('<arm-a>', runs), b = t.summarizeArm('<arm-b>', runs);
+  const cmp = t.compareArms(a, b, 'iterations');
+  console.log(t.formatBenchReport({ name: '<bench-name>', ranAt: new Date().toISOString(), comparison: cmp }));
+})"
+```
+
 ## Auto-integration
 
 - `/vibe.regress`의 open 항목, `/vibe.contract`의 drift는 nightly-triage discover의 1차 입력이다.
@@ -141,6 +186,7 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/loop/
 | 완료는 게이트가 판정 | run-ledger `verifyPassed` / 테스트 exit code (REQ-005) |
 | stuck은 해시가 판정 | loop-ledger check-stuck, 동일 발견 2회 연속 (REQ-009) |
 | 회전 수도 코드가 판정 | loop-ledger iteration/budget — iterations(폭주 방어) 와 verified(전진량) 를 분리 |
+| 판정 불가도 코드가 판정 | bench — 표본 부족·과제 셋 불일치·범위 겹침이면 차이를 말하지 않는다 (§3.5) |
 | 이해 부채 가드 | 인박스 리뷰 큐 + push/release 금지 (REQ-008) |
 | 기록 없는 실행 없음 | loop-history.jsonl start/end 의무 (REQ-006) |
 

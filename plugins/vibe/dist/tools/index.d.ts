@@ -74,4 +74,6 @@ export type { CostOperation, CostGateConfig, CostGateDecision, } from './dispatc
 export type { ParsedLoopDefinition, LoopValidationResult, LoopTrigger, LoopVerify, LoopIsolation, LoopStatus, } from './loop/index.js';
 export { REVERSE_DRIFT_KINDS, isReverseDriftKind, classifyReverseDrift, summarizeReverseDrift, formatReverseReport, formatReverseInboxLines, } from './contract/index.js';
 export type { ReverseDriftKind, ReverseDriftSeverity, ReverseDriftClassification, ReverseDriftFinding, ReverseDriftSummary, ReverseReportInput, } from './contract/index.js';
+export { validateBenchDefinition, DEFAULT_MIN_RUNS_PER_ARM, summarizeArm, compareArms, formatBenchReport, } from './bench/index.js';
+export type { BenchArm, BenchDefinition, BenchFinding, BenchFindingSeverity, BenchValidationResult, ArmSummary, BenchComparison, BenchExclusion, BenchMetric, BenchRange, BenchRun, BenchVerdict, BenchReportInput, } from './bench/index.js';
 //# sourceMappingURL=index.d.ts.map
