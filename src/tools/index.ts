@@ -360,3 +360,20 @@ export type {
   BenchVerdict,
   BenchReportInput,
 } from './bench/index.js';
+
+// Agent contract — 런타임 게이트를 빌드타임에 생성한다 (판정 대상은 도구 호출 로그)
+export {
+  parseAgentContract,
+  validateAgentContract,
+  checkAgentToolLog,
+} from './contract/index.js';
+export type {
+  AgentContract,
+  AgentContractCheck,
+  AgentContractFinding,
+  AgentContractFindingSeverity,
+  AgentContractValidation,
+  AgentToolCall,
+  AgentViolation,
+  AgentViolationKind,
+} from './contract/index.js';

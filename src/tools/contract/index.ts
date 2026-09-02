@@ -18,3 +18,19 @@ export type {
   ReverseDriftSummary,
   ReverseReportInput,
 } from './reverseDrift.js';
+
+export {
+  parseAgentContract,
+  validateAgentContract,
+  checkAgentToolLog,
+} from './agentContract.js';
+export type {
+  AgentContract,
+  AgentContractCheck,
+  AgentContractFinding,
+  AgentContractFindingSeverity,
+  AgentContractValidation,
+  AgentToolCall,
+  AgentViolation,
+  AgentViolationKind,
+} from './agentContract.js';

@@ -76,4 +76,6 @@ export { REVERSE_DRIFT_KINDS, isReverseDriftKind, classifyReverseDrift, summariz
 export type { ReverseDriftKind, ReverseDriftSeverity, ReverseDriftClassification, ReverseDriftFinding, ReverseDriftSummary, ReverseReportInput, } from './contract/index.js';
 export { validateBenchDefinition, DEFAULT_MIN_RUNS_PER_ARM, summarizeArm, compareArms, formatBenchReport, } from './bench/index.js';
 export type { BenchArm, BenchDefinition, BenchFinding, BenchFindingSeverity, BenchValidationResult, ArmSummary, BenchComparison, BenchExclusion, BenchMetric, BenchRange, BenchRun, BenchVerdict, BenchReportInput, } from './bench/index.js';
+export { parseAgentContract, validateAgentContract, checkAgentToolLog, } from './contract/index.js';
+export type { AgentContract, AgentContractCheck, AgentContractFinding, AgentContractFindingSeverity, AgentContractValidation, AgentToolCall, AgentViolation, AgentViolationKind, } from './contract/index.js';
 //# sourceMappingURL=index.d.ts.map

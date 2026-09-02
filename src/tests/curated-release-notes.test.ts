@@ -127,7 +127,13 @@ describe('published release contract', () => {
   it('REQ-release-notes-007 sets the release title from the tag', () => {
     const workflow = readFileSync(resolve('.github/workflows/release.yml'), 'utf8');
 
-    expect(workflow).toContain('--title "$GITHUB_REF_NAME"');
+    // 고정하는 것은 **제목이 태그에서 온다** 는 불변식이지, 그 태그를 담은 변수의
+    // 이름이 아니다. 원래 `$GITHUB_REF_NAME` 을 박고 있었는데, 릴리스 입구가 둘이
+    // 되면서(태그 push + workflow_dispatch) 태그 이름이 `$RELEASE_TAG` 로 모였다 —
+    // 그때 이 단언이 "되돌려라" 를 요구했다. 변수명은 워크플로에서 읽어온다.
+    const tagVar = workflow.match(/gh release create "\$(\w+)"/)?.[1];
+    expect(tagVar, 'gh release create 가 태그 변수를 쓰지 않는다').toBeTruthy();
+    expect(workflow).toContain(`--title "$${tagVar}"`);
   });
 
   it('REQ-release-notes-007 keeps the notes body free of a duplicate H1 title', () => {
