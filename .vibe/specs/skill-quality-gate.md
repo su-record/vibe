@@ -1,5 +1,6 @@
 ---
-status: in-progress
+status: APPROVED
+class: process
 currentPhase: 1
 totalPhases: 3
 stakes: production

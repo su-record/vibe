@@ -12,13 +12,13 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4 # 버전은 package.json packageManager 가 SSOT
+      - uses: pnpm/action-setup@v6 # 버전은 package.json packageManager 가 SSOT
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24' # npm >= 11.5 — OIDC trusted publishing 요구사항
           cache: 'pnpm'

@@ -4,6 +4,7 @@
 
 - **Created**: 2026-07-20
 - **Status**: APPROVED
+- **Class**: architecture
 - **Tech Stack**: TypeScript, Node.js, Markdown, Vitest
 
 ---

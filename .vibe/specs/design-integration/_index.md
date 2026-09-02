@@ -1,5 +1,6 @@
 ---
-status: pending
+status: DRAFT
+class: feature
 currentPhase: 0
 totalPhases: 3
 createdAt: 2026-03-31T14:23:56+09:00

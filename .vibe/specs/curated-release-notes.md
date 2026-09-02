@@ -3,7 +3,8 @@
 - **Stakes**: production — 이 저장소에 실제 배포된 작업 (사후 기재)
 
 - **Created**: 2026-07-20
-- **Status**: COMPLETE
+- **Status**: VERIFIED
+- **Class**: feature
 - **Tech Stack**: TypeScript, Node.js, GitHub Actions, Vitest
 
 ---
@@ -127,3 +128,9 @@ Scenario: 저장소 품질 게이트를 유지한다 # → D6
 - `npm run build && npm test`로 전체 저장소 회귀를 확인한다.
 - `gh release edit v3.2.1 --notes-file ...` 후 공개 본문을 readback한다.
 - Model Judge는 문장 개선만 제안할 수 있고 발행 성공을 판정하지 않는다.
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `.github/workflows/release.yml`

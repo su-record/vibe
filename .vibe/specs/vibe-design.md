@@ -1,5 +1,6 @@
 ---
-status: implemented
+status: VERIFIED
+class: feature
 currentPhase: 0
 totalPhases: 3
 createdAt: 2026-05-27T16:20:25Z
@@ -395,3 +396,16 @@ Google Stitch가 표준화 중인 `DESIGN.md` 포맷(awesome-design-md 73개 샘
 | 외부 의존성 | 5 | ✅ (Stitch 포맷, awesome-design-md, vibe 기존 스킬) | 5 |
 
 **Score: 100/100** ✅
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `src/cli/postinstall`
+- `src/cli/postinstall/constants.ts`
+- `skills/vibe.run/SKILL.md`
+- `skills/vibe.verify/SKILL.md`
+- `skills/vibe.review/SKILL.md`
+- `skills/vibe.figma/SKILL.md`
+- `skills/vibe.spec/SKILL.md`
+- `skills/vibe.docs/SKILL.md`

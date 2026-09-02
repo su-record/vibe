@@ -3,7 +3,8 @@
 > 2026-07-28 Claude⨯Codex 교차검증 감사에서 확정된 P2 잔여 작업.
 > 목표: 배포 계약·게이트 정확성·고위험 모듈 커버리지를 실제 검증 가능한 상태로 만든다.
 
-- status: completed (2026-07-29 — REQ-001~011 전부 구현·검증. AC 2건은 실측 후 정정하고 근거를 본문에 남겼다: REQ-008 커버리지 백분율, REQ-010 홈 쓰기 금지)
+- status: VERIFIED (2026-07-29 — REQ-001~011 전부 구현·검증. AC 2건은 실측 후 정정하고 근거를 본문에 남겼다: REQ-008 커버리지 백분율, REQ-010 홈 쓰기 금지)
+- class: bug-fix
 - Stakes: **production** — 게시 중인 npm 패키지(`@su-record/vibe@3.2.14`)의 배포 계약과 훅 게이트를 건드린다. demo/prototype 신호 없음.
 - source: `.vibe/reports/analysis-2026-07-28-merged.md`
 - 선행: P1 3건은 v3.2.14 로 배포 완료 (`7b06aa8`)
@@ -240,3 +241,16 @@ Gherkin: `.vibe/features/audit-p2-remediation.feature`
 
 - stderr 경고 문구(REQ-002, REQ-005)의 톤과 길이 — 하네스 출력에 섞였을 때 읽히는지는 사람이 판단한다.
 - 메이저 갱신 계획(REQ-011)의 권장 순서가 실제 릴리스 일정과 맞는지.
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `agents/tester.md`
+- `agents/e2e-tester.md`
+- `.github/workflows/test.yml`
+- `.github/workflows/release.yml`
+- `hooks/scripts/lib/dispatcher.js`
+- `hooks/scripts/pre-tool-dispatcher.js`
+- `hooks/scripts/code-check.js`
+- `src/infra/lib/figma/types.ts`

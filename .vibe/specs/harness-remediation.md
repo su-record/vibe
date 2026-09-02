@@ -5,7 +5,8 @@
 > 2026-06-11 하네스 3중 평가(Claude 심층 / Codex 리포트 / Codex 재검증)에서 확정된 보완 작업.
 > 목표: 선언된 품질 약속을 실제 결정론적 게이트로 배선한다.
 
-- status: completed (2026-06-11, branch feat/harness-remediation — P0·P1 전체 + 후속 8개 영역 구현·검증 완료. 잔여: Codex background-agent allowedTools의 런타임 샌드박스 연결은 별도 작업)
+- status: VERIFIED (2026-06-11, branch feat/harness-remediation — P0·P1 전체 + 후속 8개 영역 구현·검증 완료. 잔여: Codex background-agent allowedTools의 런타임 샌드박스 연결은 별도 작업)
+- class: bug-fix
 - source: `.vibe/reports/harness-2026-06-11.md` + Codex 재검증 (session 019eb3f4-e3e4-7b03-a7ad-9b6bfc10854d)
 
 ## P0 — 정합성 게이트 복구
@@ -72,3 +73,16 @@ PreToolUse exit 2는 실행 차단이 확실하지만, PostToolUse는 이미 편
 2. **verify-required 상태 기록** — run-ledger에 기록하여 auto-commit/Stop 게이트가 소비
 3. **다음 단계 진행 금지** — 차단은 상태를 소비하는 후속 게이트(auto-commit, Stop, pr-test-gate)에서 수행
 PostToolUse exit 2를 직접 쓰기 전에 각 하네스의 의미론을 확인하고, 불명확하면 위 3단 구조를 기본으로 한다.
+
+## Anchors
+
+이 SPEC 이 안착한 경로. 경로가 사라지면 `npm run validate:spec-lifecycle` 이 막는다.
+
+- `src/tools/spec/traceabilityMatrix.ts`
+- `skills/vibe.run/SKILL.md`
+- `skills/vibe.trace/SKILL.md`
+- `skills/vibe.spec/SKILL.md`
+- `hooks/scripts/lib/run-ledger.js`
+- `hooks/scripts/prompt-dispatcher.js`
+- `skills/vibe.verify/SKILL.md`
+- `hooks/scripts/auto-commit.js`

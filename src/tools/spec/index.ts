@@ -84,3 +84,20 @@ export type {
   SpecFinding,
   SpecFindingSeverity,
 } from './validateSpecDocument.js';
+
+// SPEC lifecycle — 닫힌 Status/Class 집합과 Anchors 규율 (CI 게이트가 같은 정의를 import 한다)
+export {
+  SPEC_STATUSES,
+  SPEC_CLASSES,
+  ANCHOR_REQUIRED_CLASSES,
+  parseSpecLifecycle,
+  checkSpecLifecycle,
+  anchorsRequired,
+  isLifecycleExempt,
+} from './specLifecycle.js';
+export type {
+  SpecStatus,
+  SpecClass,
+  SpecLifecycleHeader,
+  LifecycleFinding,
+} from './specLifecycle.js';

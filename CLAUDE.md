@@ -69,8 +69,11 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 | `npm run gen:plugin-hooks:check` | 훅 정의 세 벌의 드리프트 |
 | `npm run validate:mermaid` | 렌더 안 되는 다이어그램 — 그림이 안 그려지면 리뷰 표면이 죽는다 |
 | `npm run validate:plugin-tree` | 배포 트리와 소스 불일치 |
+| `npm run gen:agents-md:check` | CLAUDE.md ↔ AGENTS.md 드리프트 — 한 사실에 집이 둘 |
+| `npm run validate:spec-lifecycle` | SPEC 헤더의 닫힌 집합 이탈 · 죽은 Anchor(코드가 움직였는데 SPEC 이 안 따라옴) |
+| `npm run validate:cache-surface` | 상시 로드 자산 ↔ `vibe/rules/prefix-cache-surface.md` 불일치 |
 
-마지막 둘은 CI(`test.yml`)에서도 돈다. **배포 순서는 PR 병합 먼저, 태그는 그다음** — 태그를 먼저 밀면 보호 브랜치에 막혀 병합이 실패해도 CI 가 이미 npm 에 게시한다(실측 v3.2.19).
+이 표 전부가 CI(`test.yml`)에서 돈다 — 아무도 안 돌리는 가드는 아무것도 잡지 못한다. **배포 순서는 PR 병합 먼저, 태그는 그다음** — 태그를 먼저 밀면 보호 브랜치에 막혀 병합이 실패해도 CI 가 이미 npm 에 게시한다(실측 v3.2.19).
 
 ### Config Locations
 | Path | Purpose |
@@ -200,6 +203,7 @@ Public skills use the `vibe.*` namespace and are classified as **entry** / **sta
 ## Context Management
 
 - **Model routing: inherit by default** — 서브에이전트는 세션 모델을 상속한다. 명시적 예외만 tier alias 로 지정 (아키텍처 심층 리뷰 → `opus`). 구세대 "탐색→Haiku·구현→Sonnet" 비용 라우팅은 폐기 — 강한 기본 모델에서 라우팅 우회가 절약보다 품질 손실이 크다
+- **어떤 자산이 프리픽스 캐시를 무효화하는가**: `vibe/rules/prefix-cache-surface.md` (표면별 `Model Experience` + `KV Cache effect`, `validate:cache-surface` 가 실물과 맞춘다)
 - At 85%+ context: `save_memory` → `/new` → `/vibe.continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
 - **단계 경계 리셋 (용량 기준과 병행)**: SPEC 승인 시점에 새 세션에서 `/vibe.run` 을 시작하는 선택지를 승인 메시지에 편승시킨다 (`vibe.spec` Step 6 `[2]`). 명확화 왕복 ≥2회 · SPEC 수정 요청 ≥1회 · 분할 SPEC 중 하나라도 충족할 때만 권장 표시. 85% 규칙을 대체하지 않는다 — 용량이 찼을 때가 아니라 **잔류 컨텍스트가 노이즈가 되는 경계**에서 끊는 별개 축이다 (명확화 왕복·기각안 논의 텍스트가 구현에 새는 것을 막는다)
 

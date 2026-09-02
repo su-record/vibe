@@ -1,6 +1,7 @@
 ---
 name: utils-dissolution
-status: approved
+status: APPROVED
+class: simplification
 created: 2026-07-07
 depends: system-lean-hardening
 ---

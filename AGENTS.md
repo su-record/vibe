@@ -31,7 +31,7 @@ Weak criteria ("make it work") require constant clarification. Strong criteria l
 - Explicit return types on all functions
 - `console.log` 금지 · `console.warn`/`console.error`(stderr 진단)는 허용 — `src/cli/**`·`hooks/scripts/**` 는 stdout 이 곧 인터페이스라 예외 (`.oxlintrc.json` overrides)
 
-### Complexity Limits (기계 판정 — `.oxlintrc.json` + `$vibe lint:ratchet`)
+### Complexity Limits (기계 판정 — `.oxlintrc.json` + `pnpm lint:ratchet`)
 Function ≤50 lines · Nesting ≤3 · Params ≤5 · Cyclomatic ≤10
 - `max-params` 는 **error** — 신규 위반 0건이어야 CI 통과
 - 나머지 3종은 저장소에 기존 부채가 있어 **라쳇**으로 잡는다: `.oxlint-baseline.json` 의 규칙별 상한을 넘으면 CI 실패. 부채는 늘지 않고 줄이는 방향으로만 갱신한다 (`pnpm lint:ratchet --update`)
@@ -65,8 +65,11 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 | `npm run gen:plugin-hooks:check` | 훅 정의 세 벌의 드리프트 |
 | `npm run validate:mermaid` | 렌더 안 되는 다이어그램 — 그림이 안 그려지면 리뷰 표면이 죽는다 |
 | `npm run validate:plugin-tree` | 배포 트리와 소스 불일치 |
+| `npm run gen:agents-md:check` | CLAUDE.md ↔ AGENTS.md 드리프트 — 한 사실에 집이 둘 |
+| `npm run validate:spec-lifecycle` | SPEC 헤더의 닫힌 집합 이탈 · 죽은 Anchor(코드가 움직였는데 SPEC 이 안 따라옴) |
+| `npm run validate:cache-surface` | 상시 로드 자산 ↔ `vibe/rules/prefix-cache-surface.md` 불일치 |
 
-마지막 둘은 CI(`test.yml`)에서도 돈다. **배포 순서는 PR 병합 먼저, 태그는 그다음** — 태그를 먼저 밀면 보호 브랜치에 막혀 병합이 실패해도 CI 가 이미 npm 에 게시한다(실측 v3.2.19).
+이 표 전부가 CI(`test.yml`)에서 돈다 — 아무도 안 돌리는 가드는 아무것도 잡지 못한다. **배포 순서는 PR 병합 먼저, 태그는 그다음** — 태그를 먼저 밀면 보호 브랜치에 막혀 병합이 실패해도 CI 가 이미 npm 에 게시한다(실측 v3.2.19).
 
 ### Config Locations
 | Path | Purpose |
@@ -100,7 +103,7 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 Legacy: 기존 `.claude/vibe/` 는 런타임에 자동 인식되며 `vibe init`/`update` 시 `.vibe/` 로 이동한다.
 
 ### Dual-Harness Doctrine
-하네스 차이는 경로가 아니라 **인지 방식**(CC=추론 / Codex=직역)에 있다. 원칙: **암묵적 동작에 의존하지 않는다 — 추론은 `/vibe` 디스패처가 앞단에서, skill 본문은 전부 명시적으로.** ("명시성 공통분모 + 추론 앞단"). Hook은 의도별 매핑: 라이프사이클(turn 완료) → Codex `config.toml notify`, 나머지(SessionStart·UserPromptSubmit·Pre/PostToolUse·Pre/PostCompact) → Codex 네이티브 hook(`.codex/hooks.json` + `codex-hook-adapter.js`). **`PostCompact` 는 압축 직후 `loop-ledger.js anchor` 로 재고정한다** — ANCHOR 가 컨텍스트 소실에 대비하는 장치인데 정작 압축 시점에 자동 실행이 없었다. AGENTS.md soft-hook 은 폐기하지 않고 **훅 미설치 환경의 2차 방어선**으로 유지(직역이라 신뢰성↑). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
+하네스 차이는 경로가 아니라 **인지 방식**(CC=추론 / Codex=직역)에 있다. 원칙: **암묵적 동작에 의존하지 않는다 — 추론은 `$vibe` 디스패처가 앞단에서, skill 본문은 전부 명시적으로.** ("명시성 공통분모 + 추론 앞단"). Hook은 의도별 매핑: 라이프사이클(turn 완료) → Codex `config.toml notify`, 나머지(SessionStart·UserPromptSubmit·Pre/PostToolUse·Pre/PostCompact) → Codex 네이티브 hook(`.codex/hooks.json` + `codex-hook-adapter.js`). **`PostCompact` 는 압축 직후 `loop-ledger.js anchor` 로 재고정한다** — ANCHOR 가 컨텍스트 소실에 대비하는 장치인데 정작 압축 시점에 자동 실행이 없었다. AGENTS.md soft-hook 은 폐기하지 않고 **훅 미설치 환경의 2차 방어선**으로 유지(직역이라 신뢰성↑). 전문: `vibe/rules/principles/dual-harness-doctrine.md`.
 
 ### 배포 3경로 (npm · Claude Code 플러그인 · Codex 플러그인)
 같은 자산을 세 경로로 내보낸다. **경로가 늘어난 만큼 정의도 갈라진다** — 갈라지면 한쪽 하네스에서만 게이트가 죽고, 그건 조용히 일어난다. 그래서 SSOT 를 하나로 묶고 생성·검증한다.
@@ -175,7 +178,7 @@ $vibe "<requirement>" [+ 📎 attachments]
 | Task Size | Approach |
 |---|---|
 | 1–2 files | Plan Mode |
-| 3+ files | `$vibe "<requirement>"` (or `$vibe.spec` if you want to start at SPEC phase explicitly) |
+| 3+ files | `$vibe "<requirement>"` (or `$vibe.spec` to start at the SPEC phase) |
 
 ## Loop Contract (default execution model)
 
@@ -196,13 +199,14 @@ Public skills use the `vibe.*` namespace and are classified as **entry** / **sta
 ## Context Management
 
 - **Model routing: inherit by default** — 서브에이전트는 세션 모델을 상속한다. 명시적 예외만 tier alias 로 지정 (아키텍처 심층 리뷰 → `opus`). 구세대 "탐색→Haiku·구현→Sonnet" 비용 라우팅은 폐기 — 강한 기본 모델에서 라우팅 우회가 절약보다 품질 손실이 크다
+- **어떤 자산이 프리픽스 캐시를 무효화하는가**: `vibe/rules/prefix-cache-surface.md` (표면별 `Model Experience` + `KV Cache effect`, `validate:cache-surface` 가 실물과 맞춘다)
 - At 85%+ context: `save_memory` → `/new` → `$vibe.continue` (raised from 70% — `/new` 는 KV prefix cache 를 전량 폐기하므로, 압축 빈도를 낮춰 캐쉬 재사용을 늘린다)
 - **단계 경계 리셋 (용량 기준과 병행)**: SPEC 승인 시점에 새 세션에서 `$vibe.run` 을 시작하는 선택지를 승인 메시지에 편승시킨다 (`vibe.spec` Step 6 `[2]`). 명확화 왕복 ≥2회 · SPEC 수정 요청 ≥1회 · 분할 SPEC 중 하나라도 충족할 때만 권장 표시. 85% 규칙을 대체하지 않는다 — 용량이 찼을 때가 아니라 **잔류 컨텍스트가 노이즈가 되는 경계**에서 끊는 별개 축이다 (명확화 왕복·기각안 논의 텍스트가 구현에 새는 것을 막는다)
 
 ## Git
 
 **Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `AGENTS.md`, `plugins/vibe/` (배포 트리 — 생성물이지만 커밋한다, 위 "배포 3경로" 참조)
-**Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `vibe.test` artifacts live with the vibe install, not with the project
+**Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `$vibe.test` artifacts live with the vibe install, not with the project
 **Exclude**: `~/.codex/{rules,agents,skills}/`, `.claude/settings.local.json`, `.codex/hooks.json`, `.vibe/{memories,checkpoints,metrics,gates}/`
 
 <!-- VIBE:END -->
