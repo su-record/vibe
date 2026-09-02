@@ -318,3 +318,21 @@ export type {
   LoopIsolation,
   LoopStatus,
 } from './loop/index.js';
+
+// Contract tools — 역방향 계약 드리프트(구현 → SPEC)의 등급·목적지 고정
+export {
+  REVERSE_DRIFT_KINDS,
+  isReverseDriftKind,
+  classifyReverseDrift,
+  summarizeReverseDrift,
+  formatReverseReport,
+  formatReverseInboxLines,
+} from './contract/index.js';
+export type {
+  ReverseDriftKind,
+  ReverseDriftSeverity,
+  ReverseDriftClassification,
+  ReverseDriftFinding,
+  ReverseDriftSummary,
+  ReverseReportInput,
+} from './contract/index.js';

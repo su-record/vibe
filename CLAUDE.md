@@ -171,7 +171,7 @@ Claude Code 는 `Workflow` 도구(dynamic workflows)를 제공한다 — 한 실
 - `/vibe.run` — SPEC-driven implementation
 - `/vibe.verify` — implementation vs SPEC verification
 - `/vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
-- `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress.
+- `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress. `reverse` runs the other direction (implementation → SPEC) and routes SPEC gaps to the inbox — it never blocks the loop.
 - `/vibe.trace` — Requirements Traceability Matrix
 - `/vibe.loop` — loop engineering. Goal loops whose completion is judged by deterministic gates (run-ledger/tests), with stuck detection by discover-hash and a human triage inbox. Loops never push/release.
 - `/vibe.test` — vibe self-test across the CC ↔ Codex harnesses. Subcommands: `parity` (static), `report` (runtime), `compare` (diff). P1 drift auto-propagates to regress. Recommended before every release.
