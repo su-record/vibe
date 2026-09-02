@@ -41,6 +41,8 @@ const METRICS_DIR = projectVibePath(PROJECT_DIR, 'metrics');
 const ANTI_PATTERNS_DIR = projectVibePath(PROJECT_DIR, 'anti-patterns');
 const CURRENT_RUN_JSON = path.join(METRICS_DIR, 'current-run.json');
 const CURRENT_RUN_JSONL = path.join(METRICS_DIR, 'current-run.jsonl');
+// 회전 마커 — jsonl 앞부분이 잘린 사실을 소비자가 추측하지 않게 남긴다 (iteration-cost.js 가 읽는다)
+const CURRENT_RUN_ROTATION = path.join(METRICS_DIR, 'current-run-rotation.json');
 const MAX_JSONL_LINES = 5000;
 const FAIL_WINDOW = 10;
 const FAIL_THRESHOLD = 3;
@@ -169,6 +171,32 @@ function bumpCounter(toolName, currentLineCount) {
 // 책임 2: current-run.jsonl append + error_category 채움
 // 항상 즉시 append — 스로틀 없음 (3-fail detector, recipe-extractor 가 소비)
 // ─────────────────────────────────────────────────────
+
+/**
+ * 회전 사실을 **기록한다** — 소비자가 추측하지 않게.
+ *
+ * 회전은 로그의 앞부분을 지우므로, 그 뒤로 계산되는 구간 집계는 전부 하한이 된다.
+ * 그런데 "로그의 첫 줄이 구간 시작보다 뒤" 라는 추측으로는 회전을 알아낼 수 없다 —
+ * 그건 회전이 없어도 항상 참이다(구간 시작 직후에 툴콜이 없었을 뿐일 수 있다).
+ * 추측으로 두면 소비자가 멀쩡한 구간을 조용히 버린다.
+ *
+ * 별도 파일에 쓰는 이유: jsonl 에 마커 줄을 끼우면 이 파일을 툴콜 기록으로 읽는
+ * 기존 소비자(recipe-extractor · 3-fail detector)가 그것을 툴콜로 센다.
+ *
+ * @param {string[]} keptLines 회전 후 남긴 줄들
+ */
+function writeRotationMarker(keptLines) {
+  try {
+    let keptFrom = null;
+    for (const line of keptLines) {
+      try { keptFrom = JSON.parse(line).ts || null; break; } catch { /* 손상된 줄 건너뜀 */ }
+    }
+    fs.writeFileSync(
+      CURRENT_RUN_ROTATION,
+      JSON.stringify({ rotatedAt: new Date().toISOString(), keptFrom }, null, 2),
+    );
+  } catch { /* 마커 실패는 무시 — 회전 자체를 막지 않는다 */ }
+}
 function appendJsonl(ctx) {
   const toolName = ctx.toolName;
   if (!toolName) return null;
@@ -194,6 +222,7 @@ function appendJsonl(ctx) {
       if (lines.length > MAX_JSONL_LINES) {
         const keep = lines.slice(-Math.floor(MAX_JSONL_LINES / 2));
         fs.writeFileSync(CURRENT_RUN_JSONL, keep.join('\n') + '\n');
+        writeRotationMarker(keep);
       }
     }
   } catch { /* 회전 실패는 무시 */ }

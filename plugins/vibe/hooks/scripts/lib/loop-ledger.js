@@ -14,6 +14,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { measureIterationCost, sumIterationCosts } from './iteration-cost.js';
 
 /** 루프 이력 파일 경로 */
 function historyPath(projectDir) {
@@ -36,7 +37,7 @@ export function hashDiscoverOutput(text) {
  * 루프 이벤트를 jsonl 파일에 append한다.
  *
  * @param {string} projectDir
- * @param {{ loop: string, event: 'start'|'discover'|'end'|'iteration'|'trial-approved', result?: 'ok'|'fail'|'stuck', summary?: string, discoverHash?: string, verified?: boolean }} opts
+ * @param {{ loop: string, event: 'start'|'discover'|'end'|'iteration'|'trial-approved', result?: 'ok'|'fail'|'stuck', summary?: string, discoverHash?: string, verified?: boolean, cost?: object }} opts
  * @returns {boolean} 성공 여부
  */
 export function appendLoopEvent(projectDir, opts) {
@@ -51,6 +52,7 @@ export function appendLoopEvent(projectDir, opts) {
       ...(opts.summary !== undefined ? { summary: opts.summary } : {}),
       ...(opts.discoverHash !== undefined ? { discoverHash: opts.discoverHash } : {}),
       ...(opts.verified !== undefined ? { verified: opts.verified } : {}),
+      ...(opts.cost !== undefined ? { cost: opts.cost } : {}),
     };
     fs.appendFileSync(p, JSON.stringify(entry) + '\n', 'utf-8');
     return true;
@@ -121,13 +123,28 @@ export function isStuck(projectDir, loop, discoverHash) {
 /**
  * 회전 1회를 기록한다.
  *
+ * 비용은 **기록 시점에 재서 원장에 박는다.** 나중에 파생하지 않는 이유: 툴 로그
+ * (`current-run.jsonl`)는 2MB/5000줄에서 회전하므로 과거 창은 이미 사라졌을 수 있고,
+ * 그러면 조용히 낮은 값이 나온다. 계측은 재지 못한 것을 0 으로 채우지 않는 것이 절반이다.
+ *
+ * 계측은 append 보다 **먼저** 한다 — 창의 끝이 이번 회전이므로, 이 이벤트가 이력에
+ * 들어간 뒤에 재면 창이 자기 자신에서 시작한다.
+ *
  * @param {string} projectDir
  * @param {string} loop
  * @param {boolean} verified - 이 회전이 검증을 통과했는가 (JUDGE 결정론 게이트 기준)
  * @returns {boolean}
  */
 export function recordIteration(projectDir, loop, verified) {
-  return appendLoopEvent(projectDir, { loop, event: 'iteration', verified: Boolean(verified) });
+  let cost;
+  try {
+    cost = measureIterationCost(projectDir, loop);
+  } catch {
+    cost = undefined; // fail-open — 계측 실패가 회전 기록을 막지 않는다
+  }
+  return appendLoopEvent(projectDir, {
+    loop, event: 'iteration', verified: Boolean(verified), ...(cost ? { cost } : {}),
+  });
 }
 
 /**
@@ -146,11 +163,25 @@ export function recordIteration(projectDir, loop, verified) {
  *
  * @param {string} projectDir
  * @param {string} loop
+ * 세 번째 축(`cost`)은 **계측이지 판정이 아니다** — 예산 소진이나 stuck 을 좌우하지
+ * 않는다. 재지 못하거나 창이 잘린 회전은 합계에서 빠지고 `cost.measuredIterations` 가
+ * 분모를 알려준다. 분모를 모르면 합계는 거짓말이 된다.
+ *
+ * ⚠️ 이 수치로 "N% 절감" 같은 문구를 쓰지 않는다 — 비교 데이터가 쌓이기 전의
+ * 배수·퍼센트는 constitution §3.5 가 금지하는 바로 그것이다. 쌓기만 한다.
+ *
  * @param {number} [maxIterations=10]
- * @returns {{ iterations: number, verified: number, remaining: number, exhausted: boolean }}
+ * @returns {{ iterations: number, verified: number, remaining: number, exhausted: boolean,
+ *             cost: { measuredIterations: number, unmeasuredIterations: number,
+ *                     elapsedMs: number, toolCalls: number, subagents: number } }}
  */
 export function readBudget(projectDir, loop, maxIterations = 10) {
-  const empty = { iterations: 0, verified: 0, remaining: maxIterations, exhausted: false };
+  const emptyCost = {
+    measuredIterations: 0, unmeasuredIterations: 0, elapsedMs: 0, toolCalls: 0, subagents: 0,
+  };
+  const empty = {
+    iterations: 0, verified: 0, remaining: maxIterations, exhausted: false, cost: emptyCost,
+  };
   try {
     const raw = fs.readFileSync(historyPath(projectDir), 'utf-8');
     const events = raw.split('\n')
@@ -164,7 +195,9 @@ export function readBudget(projectDir, loop, maxIterations = 10) {
     const iterations = iters.length;
     const verified = iters.filter(e => e.verified === true).length;
     const remaining = Math.max(0, maxIterations - iterations);
-    return { iterations, verified, remaining, exhausted: remaining === 0 };
+    return {
+      iterations, verified, remaining, exhausted: remaining === 0, cost: sumIterationCosts(iters),
+    };
   } catch {
     return empty;
   }
