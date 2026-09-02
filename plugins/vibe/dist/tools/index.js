@@ -89,4 +89,6 @@ export { evaluateCostGate, formatCostGate } from './dispatch/index.js';
 export { REVERSE_DRIFT_KINDS, isReverseDriftKind, classifyReverseDrift, summarizeReverseDrift, formatReverseReport, formatReverseInboxLines, } from './contract/index.js';
 // Bench tools — 루프 설정 자기 대조. 판정 불가를 코드가 낸다 (§3.5)
 export { validateBenchDefinition, DEFAULT_MIN_RUNS_PER_ARM, summarizeArm, compareArms, formatBenchReport, } from './bench/index.js';
+// Agent contract — 런타임 게이트를 빌드타임에 생성한다 (판정 대상은 도구 호출 로그)
+export { parseAgentContract, validateAgentContract, checkAgentToolLog, } from './contract/index.js';
 //# sourceMappingURL=index.js.map
