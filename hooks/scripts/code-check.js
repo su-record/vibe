@@ -14,6 +14,7 @@ import { getToolsBaseUrl, PROJECT_DIR } from './utils.js';
 import { readFileSync } from 'fs';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
 import { CODE_EXT_RE, shouldCheckConsole } from './lib/console-allow.js';
+import { isEphemeralPath } from './lib/ephemeral-lane.js';
 
 const BASE_URL = getToolsBaseUrl();
 
@@ -287,6 +288,12 @@ export async function run(ctx) {
   const findings = [];
   const files = getModifiedFiles(ctx);
   if (files.length === 0) return { exitCode: 0, findings };
+
+  // 일회성 레인 — 생성·실행 후 폐기되는 코드에 durable 코드의 무게를 지우지 않는다.
+  // 판정은 **경로가** 한다 (모델이 아니라) — `lib/ephemeral-lane.js` 참조.
+  // 이 면제가 안전한 이유는 그 경로가 커밋될 수 없기 때문이다: gitignore 가 1차,
+  // pre-tool-guard 가 `git add -f` 를 막는 심층 방어다.
+  if (isEphemeralPath(files[0], PROJECT_DIR)) return { exitCode: 0, findings };
 
   // 1. 하드룰 탐지기 실행 (changed file only, regex only — 동적 import 없음) —
   //    additionalContext 주입만. 커밋 게이트(verifyRequired)는 태우지 않는다:

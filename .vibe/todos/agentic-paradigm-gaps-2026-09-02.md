@@ -61,7 +61,7 @@ loop-contract 의 push·release 금지는 **유지하고**, 런타임 게이트�
   (판정 주체가 LLM 추출이냐 로그냐)
 - vibe 를 런타임에 넣지 않았다. loop-contract 의 push·release·배포 금지는 그대로다
 
-### 5. 일회성 코드 레인 — **지금 열지 않는다**
+### 5. 일회성 코드 레인 — **사용자 지시로 착수 완료** (`.vibe/specs/ephemeral-code-lane.md`)
 
 `lifetime: durable | ephemeral` 축 신설안. 보류 사유 둘:
 
@@ -69,8 +69,18 @@ loop-contract 의 push·release 금지는 **유지하고**, 런타임 게이트�
   vibe 는 이미 stakes · automationLevel · session · isolation 축을 갖고 있다
 - 게이트 회피 구멍이 된다. "이건 일회성이라 린트 면제" 를 모델이 판정하면 축이 아니라 뒷문이다
 
-**여는 조건과 방법을 미리 정해둔다**: 실수요 2건 이상 → 판정을 모델이 아니라 **경로가** 한다
-(`.vibe/ephemeral/` 아래 + gitignore + 커밋 시도를 `pre-tool-guard.js` 가 차단). 그 조건 밖에서는 열지 않는다.
+보류 사유 둘 중 **첫째(실수요 0건)는 그대로 남아 있다** — 사용자 지시로 열었으므로 기록해 둔다.
+**둘째(게이트 회피 구멍)는 설계로 막았다**, 미리 정해둔 방법 그대로:
+
+- 판정을 모델이 아니라 **경로가** 한다 (`.vibe/ephemeral/`). 설정으로 열지 않는다
+- `path.resolve`/`path.relative` 로 판정한다 — `.vibe/ephemeral/../src/x.ts` 로 면제를 훔칠 수 없다
+- 방어 순서를 과장하지 않는다: gitignore 가 **1차**, `pre-tool-guard` 는 `git add -f` 하나를 막는 **심층 방어**
+  (훅은 프로젝트 로컬이라 미설치가 흔하다)
+- 면제 범위는 `code-check` 품질 검사뿐. 라쳇·린트·테스트는 커밋된 소스를 보므로 이 경로를 애초에 안 본다
+- 판정 실패는 fail-safe — 모르면 면제하지 않는다
+
+**남은 위험**: 실수요가 끝내 생기지 않으면 이 레인은 쓰이지 않는 축으로 남는다. 그때는 지우는 것이
+맞다 — 안 쓰는 면제 경로는 언젠가 다른 용도로 쓰인다.
 
 ## 하지 않기로 한 것
 
