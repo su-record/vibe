@@ -1,7 +1,8 @@
 # SPEC: 역방향 계약 드리프트 (구현 → SPEC)
 
 - **Created**: 2026-09-02
-- **Status**: DRAFT
+- **Status**: VERIFIED (2026-09-02 — 게이트 전량 exit 0)
+- **Class**: feature
 - **Stakes**: production — 배포되는 스킬 본문 계약과 공개 tools export 를 바꾼다. 잘못 잡으면 verify 게이트가 오작동한다
 - **Tech Stack**: TypeScript (ESM), Vitest, Markdown 스킬 본문
 
@@ -119,3 +120,12 @@
 - SPEC 자동 갱신
 - 역방향 결손의 회귀 테스트 등록
 - 개선 로드맵 2~5번 항목 (경제성 계측 · 벤치마크 · 런타임 축 · 일회성 코드 레인) — `.vibe/todos/` 에 별도 기록
+
+## Anchors
+
+이 SPEC 이 안착한 경로 — 사라지면 `npm run validate:spec-lifecycle` 이 빨간불을 켠다.
+
+- `src/tools/contract/reverseDrift.ts`
+- `src/tools/contract/index.ts`
+- `src/tools/contract/reverseDrift.test.ts`
+- `skills/vibe.contract/SKILL.md`

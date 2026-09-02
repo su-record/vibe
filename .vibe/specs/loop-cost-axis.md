@@ -1,7 +1,8 @@
 # SPEC: 루프 경제성 계측 축
 
 - **Created**: 2026-09-02
-- **Status**: DRAFT
+- **Status**: VERIFIED (2026-09-02 — 게이트 전량 exit 0)
+- **Class**: feature
 - **Stakes**: production — 모든 루프 실행이 지나가는 원장 경로를 바꾼다. 잘못되면 예산·stuck 판정이 오염된다
 - **Tech Stack**: Node.js (ESM, 훅 스크립트), Vitest
 
@@ -132,3 +133,14 @@ vibe 는 지금 효율을 **주장할 수 없다** — 금지되어서가 아니
 - 계측치를 근거로 한 효율 주장 — 데이터가 쌓이기 전에는 쓰지 않는다
 - `vibe.test bench` (로드맵 3번, 이 SPEC 의 산출물을 입력으로 쓴다)
 - 비용을 stuck·시운전·게이트 판정에 반영하는 것
+
+## Anchors
+
+이 SPEC 이 안착한 경로 — 사라지면 `npm run validate:spec-lifecycle` 이 빨간불을 켠다.
+
+- `hooks/scripts/lib/iteration-cost.js`
+- `hooks/scripts/lib/loop-ledger.js`
+- `hooks/scripts/loop-ledger.js`
+- `hooks/scripts/step-counter.js`
+- `hooks/scripts/__tests__/loop-cost.test.js`
+- `vibe/rules/loop-contract.md`

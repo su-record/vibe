@@ -1,7 +1,8 @@
 # SPEC: 루프 자기 대조 벤치마크
 
 - **Created**: 2026-09-02
-- **Status**: DRAFT
+- **Status**: VERIFIED (2026-09-02 — 게이트 전량 exit 0)
+- **Class**: feature
 - **Stakes**: production — 배포되는 스킬 본문과 공개 tools export 를 바꾼다. 잘못되면 근거 없는 비교 수치가 문서로 흘러간다
 - **Tech Stack**: TypeScript (ESM), Vitest, Markdown 스킬 본문
 
@@ -131,3 +132,14 @@
 - 통계적 유의성 검정
 - 외부 벤치마크(SWE-bench 등) 대조
 - 벤치 결과로 기본값을 자동 변경하는 것 — 기본값 변경은 사람의 결정이다
+
+## Anchors
+
+이 SPEC 이 안착한 경로 — 사라지면 `npm run validate:spec-lifecycle` 이 빨간불을 켠다.
+
+- `src/tools/bench/benchDefinition.ts`
+- `src/tools/bench/benchCompare.ts`
+- `src/tools/bench/benchReport.ts`
+- `src/tools/bench/index.ts`
+- `src/tools/bench/bench.test.ts`
+- `skills/vibe.loop/SKILL.md`
