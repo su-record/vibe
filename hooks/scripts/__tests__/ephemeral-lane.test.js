@@ -128,6 +128,12 @@ describe('DC-3 — 품질 검사가 일회성 경로를 건너뛴다', () => {
   // 실제 PROJECT_DIR 아래에서 검사해야 한다 — 임시 디렉토리는 **프로젝트 밖이라 설계상
   // 면제되지 않는다**(DC-2). 이 경로는 gitignore 대상이라 저장소를 오염시키지 않는다.
   const LANE = path.join(ROOT, EPHEMERAL_DIR);
+  // 대조군은 레인의 **형제** 경로다 — `.vibe/ephemeral-control.ts` 는 `.vibe/ephemeral/` 접두사에
+  // 걸리지 않아야 하므로 면제 판정이 정확한 접두사 비교인지까지 함께 검증한다.
+  // `src/` 에 두면 안 된다: wiring-integrity 가 `src/**/*.ts` 를 glob 한 뒤 읽는 사이에
+  // 이 파일이 지워져 ENOENT 로 터진다 (실측: PR #102 CI, 병렬 테스트 파일 간 경쟁).
+  // `hooks/scripts/**`·`__tests__/**` 도 안 된다: console.log 허용 경로라 대조가 성립하지 않는다.
+  const CONTROL = path.join(ROOT, '.vibe', 'ephemeral-control.ts');
   const DIRTY = 'export function probe(): void { console.log("x"); }\n';
   let created;
 
@@ -137,7 +143,7 @@ describe('DC-3 — 품질 검사가 일회성 경로를 건너뛴다', () => {
   });
   afterEach(() => {
     fs.rmSync(path.join(LANE, 'probe.ts'), { force: true });
-    fs.rmSync(path.join(ROOT, 'src', 'ephemeral-control.ts'), { force: true });
+    fs.rmSync(CONTROL, { force: true });
     if (created) fs.rmSync(created, { recursive: true, force: true });
   });
 
@@ -152,9 +158,8 @@ describe('DC-3 — 품질 검사가 일회성 경로를 건너뛴다', () => {
 
   it('같은 내용이 일회성 밖이면 걸린다 — 면제는 경로 안에서만이다', async () => {
     const { run } = await import('../code-check.js');
-    const control = path.join(ROOT, 'src', 'ephemeral-control.ts');
-    fs.writeFileSync(control, DIRTY);
-    const result = await run({ filePath: control });
+    fs.writeFileSync(CONTROL, DIRTY);
+    const result = await run({ filePath: CONTROL });
     expect(result.findings.length).toBeGreaterThan(0);
   });
 
