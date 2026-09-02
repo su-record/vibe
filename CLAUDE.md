@@ -75,6 +75,19 @@ Loop semantics SSOT: `vibe/rules/loop-contract.md` (ANCHOR→ACT→JUDGE→RECOR
 
 이 표 전부가 CI(`test.yml`)에서 돈다 — 아무도 안 돌리는 가드는 아무것도 잡지 못한다. **배포 순서는 PR 병합 먼저, 태그는 그다음** — 태그를 먼저 밀면 보호 브랜치에 막혀 병합이 실패해도 CI 가 이미 npm 에 게시한다(실측 v3.2.19).
 
+**릴리스 입구는 둘이다** (`.github/workflows/release.yml`):
+
+| 입구 | 언제 | 검사 주체 |
+|---|---|---|
+| `push: tags: ['v*']` | 기본 — `pnpm release` 가 미는 태그 | `scripts/release.sh` 가 태그 전에 확인 |
+| `workflow_dispatch` (`version` 입력) | **태그를 밀 수 없는 환경** (에이전트 세션의 이그레스 정책 등) | 워크플로 안의 Guard 스텝 |
+
+dispatch 는 `scripts/release.sh` 를 거치지 않으므로 워크플로가 스스로 같은 것을 확인한다: main 에서만 실행 · 입력 버전이 `package.json` 과 일치 · 같은 태그 부재. 태그는 **테스트 통과 뒤 publish 앞에** 워크플로가 만든다 — 깨진 빌드에 태그를 남기지도, 게시된 버전에 태그가 없게 두지도 않는다. 두 입구가 쓰는 태그 이름은 워크플로 `env.RELEASE_TAG` 한 곳에서 만든다(스텝마다 분기하면 한쪽만 조용히 틀린 태그로 게시된다).
+
+> ⚠️ dispatch 의 태그 push 가 Release 워크플로를 **다시 부르지 않는 이유**는 `GITHUB_TOKEN` 으로 만든 push 가 워크플로를 트리거하지 않기 때문이다(GitHub 재귀 방지). PAT·App 토큰으로 바꾸면 같은 버전이 두 번 게시된다.
+
+**버전 범프는 여전히 PR 로 병합된 뒤여야 한다** — dispatch 는 태그 push 만 대체하고 병합 순서는 바꾸지 않는다.
+
 ### Config Locations
 | Path | Purpose |
 |---|---|
