@@ -198,6 +198,7 @@ function formatOutput(toolName, validation) {
 import { logHookDecision, PROJECT_DIR } from './utils.js';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
 import { runPrTestGate } from './lib/pr-gate-runner.js';
+import { ephemeralPathsInGitCommand, formatEphemeralBlock } from './lib/ephemeral-lane.js';
 
 /** gh pr create 감지 정규식 (단어 경계 기준, 플래그 허용). */
 const GH_PR_CREATE_RE = /\bgh\s+pr\s+create\b/;
@@ -234,6 +235,21 @@ export async function run(ctx) {
         logHookDecision('pre-tool-guard', 'Bash', 'block', 'gh pr create: test gate failed');
         return 2;
       }
+    }
+  }
+
+  // 2-b단계: 일회성 경로를 커밋하려는 시도 차단 (심층 방어)
+  //
+  // 1차 방어는 gitignore 다 — `git add` 는 무시된 경로를 그냥 거부한다. 실제로 뚫리는
+  // 경로는 `git add -f` 하나뿐이고 여기서 그것을 막는다. 훅은 프로젝트 로컬이라
+  // 미설치가 흔하므로 이것을 1차라고 부르지 않는다.
+  if (toolName === 'Bash' || toolName === 'bash') {
+    const command = extractTarget(toolInput, 'command') || toolInput;
+    const ephemeral = ephemeralPathsInGitCommand(command);
+    if (ephemeral.length > 0) {
+      console.error(formatEphemeralBlock(ephemeral));
+      logHookDecision('pre-tool-guard', 'Bash', 'block', `ephemeral commit: ${ephemeral.join(', ')}`);
+      return 2;
     }
   }
 

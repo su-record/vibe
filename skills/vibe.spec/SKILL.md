@@ -134,7 +134,7 @@ SPEC 승인이 `vibe/rules/loop-contract.md` 가 정의하는 **유일한 의무
 /vibe.verify "{feature-name}"     # Done Criteria 판정 → run-ledger 기록
 ```
 
-trace(`/vibe.trace`)·contract(`/vibe.contract`) 는 사용자가 요청하거나 SPEC 에 API Contract 섹션이 있을 때만 체인한다.
+trace(`/vibe.trace`)·contract(`/vibe.contract`) 는 사용자가 요청하거나 SPEC 에 API Contract 섹션이 있을 때만 체인한다. Agent Contract 섹션이 있으면 `/vibe.contract agent` 도 함께 체인한다.
 
 ---
 
@@ -232,6 +232,7 @@ relevant files, and patterns in under 200 tokens.
 - **Constraints** — 구현·보안·호환성 경계. execution packet으로 압축돼도 반드시 보존한다.
 - **Rejected Alternatives (Traps)** — 검토했으나 기각한 설계 접근 + **기계적 기각 사유** 1줄씩 ("확장 안 됨" 같은 라벨이 아니라 "shelve 는 multi-writer 에서 thread-safe 하지 않다" 수준). 루프가 같은 막다른 길을 재방문하지 않기 위한 섹션 — Constraints 처럼 execution packet 압축에도 보존한다. 실질적 설계 선택지가 없었거나 demo/prototype 이면 생략.
 - **API Contract** (해당 시에만) — 엔드포인트/요청/응답 형태. 이 섹션이 있으면 이후 `/vibe.contract` 가 drift 를 검사한다.
+- **Agent Contract** (에이전트를 출하하는 기능만) — 허용/금지 도구, 되돌릴 수 없는 작업, 에스컬레이션 조건. 이 섹션이 있으면 `/vibe.contract agent` 가 **도구 호출 로그**에 대해 계약을 단언한다. 에스컬레이션은 로그로 판정할 수 없어 advisory 로만 나간다 — 판정할 수 없는 것을 게이트로 적지 않는다.
 
 이어서 `.vibe/features/{feature-name}.feature` 를 생성한다: 시나리오 섹션을 gherkin 으로 변환 (Done Criteria ↔ Scenario 매핑 유지). `/vibe.run` 이 이 파일을 구현·검증 단위로 사용한다.
 

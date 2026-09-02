@@ -1,7 +1,7 @@
 ---
 name: vibe.contract
 description: Use when a SPEC API contract may differ from implementation or endpoint and schema drift must be detected.
-argument-hint: "extract | check | reverse | diff [feature-name]"
+argument-hint: "extract | check | reverse | agent | diff [feature-name]"
 user-invocable: true
 ---
 
@@ -18,6 +18,7 @@ user-invocable: true
 /vibe.contract check <feature>         # contract vs implementation, drift report
 /vibe.contract diff <feature>          # changed fields since last check
 /vibe.contract reverse <feature>       # implementation → SPEC, SPEC 결손을 인박스로
+/vibe.contract agent <feature>         # 에이전트 계약 vs 도구 호출 로그
 ```
 
 ## What counts as an "API contract"
@@ -228,6 +229,51 @@ node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index
 node "$HOOKS_DIR/loop-ledger.js" inbox <feature> ok "<line 1>" "<line 2>" …
 ```
 
+### 5. `agent` — 에이전트 계약 vs 도구 호출 로그 (런타임 축)
+
+vibe 는 빌드타임만 다룬다. 그런데 사용자가 만드는 것이 **에이전트 제품**일 때, 그 에이전트가
+사용자 앞에서 내리는 판단은 vibe 의 어떤 게이트도 보지 않는다. 그렇다고 vibe 를 런타임에 넣으면
+`loop-contract` 의 push·release·배포 금지를 정면으로 깬다.
+
+그래서 vibe 가 런타임에 들어가는 대신 **런타임 게이트를 빌드타임에 생성한다.** SPEC 의
+`## Agent Contract` 섹션이 스위치다 (`## API Contract` 와 같은 관례).
+
+⛔ **LLM 이 에이전트 응답을 채점하지 않는다.** 그건 Model Judge 이고 완료 권한이 없다.
+단언 대상은 **도구 호출 로그**이고, "금지된 도구를 불렀는가" 는 관측된 사실이라 **차단한다** —
+`reverse` 가 절대 차단하지 않는 것과 반대 방향의 결정이며, 그 차이가 곧 Judge 권한 경계다.
+
+**Steps**:
+1. SPEC 에서 `## Agent Contract` 를 파싱한다. 없으면 → 조용히 종료 (모든 기능에 에이전트가 있지 않다)
+2. `validateAgentContract` 로 정의를 검사한다. P1 이면 실행하지 않는다
+3. 에이전트 실행 로그를 `{ tool, approved?, ts? }[]` 로 모은다 — **vibe 자신의 로그 형식**이다
+   (`step-counter.js` 의 `current-run.jsonl`). 새 형식을 발명하지 않는다
+4. `checkAgentToolLog` → 위반과 advisory
+5. 위반이 있으면 `blocking: true` — verify 를 실패로 내린다. **로그가 없으면 `checked: false` 이고,
+   그것은 위반 0건이 아니다** (안 본 것과 봤는데 깨끗한 것은 다르다)
+
+| 위반 | 뜻 |
+|---|---|
+| `forbidden-tool` | 계약이 금지한 도구를 호출했다 |
+| `unlisted-tool` | allowlist 가 선언됐는데 목록 밖 도구를 호출했다 (미선언이면 검사하지 않는다) |
+| `unapproved-irreversible` | 되돌릴 수 없는 작업을 승인 기록 없이 호출했다 |
+
+**`Escalate` 는 게이트가 아니다.** 조건 충족 여부가 도구 로그에 없어 판정할 수 없다. 선언은 받되
+`advisory` 로 사람에게 넘긴다 — 판정할 수 없는 것을 게이트에 넣으면 통과 의식이 되고,
+그건 없는 게이트보다 나쁘다.
+
+도구 이름은 **정확히 일치**만 인정한다. 글롭을 허용하면 `send_*` 가 `send_log` 까지 잡는지
+아무도 확신하지 못한다.
+
+```bash
+node -e "import('{{VIBE_PATH_URL}}/node_modules/@su-record/vibe/dist/tools/index.js').then(t => {
+  const spec = require('fs').readFileSync('<.vibe/specs/x.md>', 'utf-8');
+  const contract = t.parseAgentContract(spec);
+  if (!contract) { console.log('no-agent-contract'); return; }
+  console.log(JSON.stringify(t.validateAgentContract(contract)));
+  console.log(JSON.stringify(t.checkAgentToolLog(contract, JSON.parse(process.env.AGENT_LOG || 'null'))));
+})"
+```
+
 ## Integration Points
 
 ### From /vibe.spec
@@ -252,6 +298,8 @@ Load skill `vibe.contract` with: check <feature>
 ```
 Load skill `vibe.contract` with: reverse <feature>
 ```
+SPEC 에 `## Agent Contract` 가 있으면 `agent <feature>` 도 돌린다 — 위반은 **차단한다**
+(판정 대상이 도구 로그이므로 관측된 사실이다).
 - 결과와 **무관하게 verify 판정은 바뀌지 않는다** — 발견은 인박스로만 간다
 - 인박스에 올린 뒤 파이프라인을 계속 진행한다 (사람을 세우지 않는다)
 
@@ -292,3 +340,6 @@ After detection, grep for each framework's **route definition pattern** to map e
 - [ ] `reverse` 는 어떤 발견에도 verify 판정을 바꾸지 않는다
 - [ ] `reverse` 는 발견 0건이어도 `.reverse.md` 를 남긴다
 - [ ] `reverse` 는 발견 0건이면 인박스를 호출하지 않는다
+- [ ] `agent` 는 섹션이 없는 SPEC 에서 조용히 종료한다
+- [ ] `agent` 는 로그가 없으면 `checked:false` 로 남긴다 — 위반 0건으로 적지 않는다
+- [ ] `agent` 의 `Escalate` 는 advisory 로만 나가고 차단하지 않는다

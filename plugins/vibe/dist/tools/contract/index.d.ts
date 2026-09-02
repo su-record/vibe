@@ -3,4 +3,6 @@
  */
 export { REVERSE_DRIFT_KINDS, isReverseDriftKind, classifyReverseDrift, summarizeReverseDrift, formatReverseReport, formatReverseInboxLines, } from './reverseDrift.js';
 export type { ReverseDriftKind, ReverseDriftSeverity, ReverseDriftClassification, ReverseDriftFinding, ReverseDriftSummary, ReverseReportInput, } from './reverseDrift.js';
+export { parseAgentContract, validateAgentContract, checkAgentToolLog, } from './agentContract.js';
+export type { AgentContract, AgentContractCheck, AgentContractFinding, AgentContractFindingSeverity, AgentContractValidation, AgentToolCall, AgentViolation, AgentViolationKind, } from './agentContract.js';
 //# sourceMappingURL=index.d.ts.map

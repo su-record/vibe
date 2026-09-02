@@ -187,7 +187,7 @@ Claude Code 는 `Workflow` 도구(dynamic workflows)를 제공한다 — 한 실
 - `/vibe.run` — SPEC-driven implementation
 - `/vibe.verify` — implementation vs SPEC verification
 - `/vibe.regress` — regression test auto-evolution. Auto-registers on verify failure; `generate` produces preventive tests; `cluster` promotes recurring patterns.
-- `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress. `reverse` runs the other direction (implementation → SPEC) and routes SPEC gaps to the inbox — it never blocks the loop.
+- `/vibe.contract` — API contract drift detection. Compares the contract extracted from the SPEC against the implementation; P1 drift auto-propagates to regress. `reverse` runs the other direction (implementation → SPEC) and routes SPEC gaps to the inbox — it never blocks the loop. `agent` asserts a SPEC's Agent Contract against an agent's tool-call log — that one does block, because a logged call is observed fact rather than a model's judgement.
 - `/vibe.trace` — Requirements Traceability Matrix
 - `/vibe.loop` — loop engineering. Goal loops whose completion is judged by deterministic gates (run-ledger/tests), with stuck detection by discover-hash and a human triage inbox. Loops never push/release. `bench` self-compares loop settings and reports 'inconclusive' rather than inventing a difference the sample cannot support.
 - `/vibe.test` — vibe self-test. Probes every shipped surface (commands, skills, hooks, agents) in one install dir and writes a pass/fail report with STCV skill-quality verdicts. One command, no subcommands. Recommended before every release.
@@ -224,6 +224,16 @@ Public skills use the `vibe.*` namespace and are classified as **entry** / **sta
 
 **Include**: `.vibe/{plans,specs,features,todos,research,regressions,contracts,recipes,anti-patterns,loops,config.json,constitution.md}`, `CLAUDE.md`, `plugins/vibe/` (배포 트리 — 생성물이지만 커밋한다, 위 "배포 3경로" 참조)
 **Vibe-global (not project-local)**: `~/.vibe/test-reports/` — `/vibe.test` artifacts live with the vibe install, not with the project
-**Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.codex/hooks.json`, `.vibe/{memories,checkpoints,metrics,gates}/`
+**Exclude**: `~/.claude/{rules,commands,agents,skills}/`, `.claude/settings.local.json`, `.codex/hooks.json`, `.vibe/{memories,checkpoints,metrics,gates,ephemeral}/`
+
+### 일회성 코드 레인 (`lifetime` 축)
+
+`.vibe/ephemeral/` 은 **생성·실행 후 폐기되는 코드**의 자리다 — 분석 스크립트, 일회성 프로브. 품질 검사(`code-check` 훅)를 면제받는 대신 **커밋되지 않는다.** 면제받은 코드가 배포되면 그 면제가 곧 구멍이다.
+
+- **판정은 모델이 아니라 경로가 한다.** "이건 일회성이라 린트 면제" 를 모델이 정하면 축이 아니라 뒷문이고, 뒷문은 바쁠 때 쓰인다. 경로가 판정하면 면제 대상이 `ls` 하나로 감사된다
+- 정규화 후 판정한다 — `.vibe/ephemeral/../src/x.ts` 는 일회성이 **아니다**. 상위 탈출로 면제를 훔칠 수 없다
+- **방어 순서**: `.gitignore` 가 **1차**(`git add` 는 무시된 경로를 거부한다), `pre-tool-guard` 가 `git add -f` 하나를 막는 **심층 방어**. 훅은 프로젝트 로컬이라 미설치가 흔하므로 1차가 아니다
+- 면제 범위는 `code-check` 품질 검사뿐. 라쳇·린트·테스트는 커밋된 소스를 보므로 이 경로를 애초에 보지 않는다
+- 판정에 실패하면 **일회성이 아니라고 답한다**(fail-safe). 잘못된 면제는 조용히 게이트를 끄지만, 잘못된 비면제는 검사가 한 번 더 도는 것뿐이다
 
 <!-- VIBE:END -->

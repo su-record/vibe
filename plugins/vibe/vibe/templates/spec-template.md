@@ -147,7 +147,21 @@ Response: 201 {...}
 
 ---
 
-## 7. Verification
+## 7. Agent Contract (only if the feature ships an agent)
+
+> Presence of this section enables `/vibe.contract agent` — 에이전트 실행이 남긴 **도구 호출
+> 로그**에 대해 계약을 단언한다. LLM 이 에이전트 응답을 채점하는 것이 아니다: 그건 Model Judge 라
+> 완료 권한이 없다 (`vibe/rules/loop-contract.md`). 판정 대상이 로그이므로 위반은 차단한다.
+
+- **Allowed tools**: `{tool_a}`, `{tool_b}` — 비워 두면 allowlist 미선언(미등재 호출을 검사하지 않는다)
+- **Forbidden tools**: `{tool_x}`
+- **Irreversible**: `{tool_y}` — 호출에 승인 기록(`approved: true`)이 있어야 한다
+- **Escalate**: {조건 1문장} — **선언만 받는다.** 조건 충족 여부가 도구 로그에 없어 게이트가 되지 못하고,
+  advisory 로 사람에게 넘어간다. 판정할 수 없는 것을 게이트에 넣으면 통과 의식이 된다
+
+---
+
+## 8. Verification
 
 - `/vibe.run "{feature}"` implements scenario-by-scenario, verifying each immediately.
 - `/vibe.verify "{feature}"` judges the Done Criteria and sets `verifyPassed` in the run-ledger.

@@ -44,7 +44,7 @@ run-ledger/evidence/인박스(결과 감사) · 팬아웃 비용 게이트와 wo
   loop-contract 가 "측정한 바 없다" 고 적어둔 자리이고, 그 문장은 벤치가
   `difference-observed` 를 낸 뒤에 지운다
 
-### 4. 런타임 축 (별도 승인 필요 — vibe 대상 범위를 넓힌다)
+### 4. 런타임 축 — **착수 완료** (`.vibe/specs/agent-contract-runtime.md`)
 
 논문의 연구 대상은 배포되어 도는 에이전트인데 vibe 는 빌드타임만 다룬다.
 loop-contract 의 push·release 금지는 **유지하고**, 런타임 게이트를 빌드타임에 생성하는 형태로 잡는다.
@@ -52,10 +52,16 @@ loop-contract 의 push·release 금지는 **유지하고**, 런타임 게이트�
 - `vibe.spec` 템플릿에 `## Agent Contract`: 허용 도구 · 금지 행동 · 에스컬레이션 조건 · 되돌릴 수 없는 작업
 - `vibe.contract` 가 이를 계약으로 추출 (기존 "interface shape" 정의를 에이전트 계약까지 확장)
 - 생성하는 테스트는 **결정론이어야 한다** — LLM 이 에이전트 출력을 채점하는 형태는 Model Judge 이고
-  완료 권한이 없다. 단언 대상은 도구 호출 로그다: 금지 도구를 부르지 않았는가, 에스컬레이션
-  조건에서 실제로 멈췄는가
+  완료 권한이 없다. 단언 대상은 도구 호출 로그다
+- **구현하며 하나를 덜어냈다**: "에스컬레이션 조건에서 실제로 멈췄는가" 는 도구 로그만으로
+  판정할 수 없다 — 조건 충족 여부가 로그에 없다. 선언은 받되 advisory 로 사람에게 넘긴다.
+  판정할 수 없는 것을 게이트에 넣으면 통과 의식이 되고, 그건 없는 게이트보다 나쁘다
+- 위반 3종(`forbidden-tool` · `unlisted-tool` · `unapproved-irreversible`)은 **차단한다** —
+  `reverse` 가 절대 차단하지 않는 것과 반대 방향이며, 그 차이가 곧 Judge 권한 경계다
+  (판정 주체가 LLM 추출이냐 로그냐)
+- vibe 를 런타임에 넣지 않았다. loop-contract 의 push·release·배포 금지는 그대로다
 
-### 5. 일회성 코드 레인 — **지금 열지 않는다**
+### 5. 일회성 코드 레인 — **사용자 지시로 착수 완료** (`.vibe/specs/ephemeral-code-lane.md`)
 
 `lifetime: durable | ephemeral` 축 신설안. 보류 사유 둘:
 
@@ -63,8 +69,18 @@ loop-contract 의 push·release 금지는 **유지하고**, 런타임 게이트�
   vibe 는 이미 stakes · automationLevel · session · isolation 축을 갖고 있다
 - 게이트 회피 구멍이 된다. "이건 일회성이라 린트 면제" 를 모델이 판정하면 축이 아니라 뒷문이다
 
-**여는 조건과 방법을 미리 정해둔다**: 실수요 2건 이상 → 판정을 모델이 아니라 **경로가** 한다
-(`.vibe/ephemeral/` 아래 + gitignore + 커밋 시도를 `pre-tool-guard.js` 가 차단). 그 조건 밖에서는 열지 않는다.
+보류 사유 둘 중 **첫째(실수요 0건)는 그대로 남아 있다** — 사용자 지시로 열었으므로 기록해 둔다.
+**둘째(게이트 회피 구멍)는 설계로 막았다**, 미리 정해둔 방법 그대로:
+
+- 판정을 모델이 아니라 **경로가** 한다 (`.vibe/ephemeral/`). 설정으로 열지 않는다
+- `path.resolve`/`path.relative` 로 판정한다 — `.vibe/ephemeral/../src/x.ts` 로 면제를 훔칠 수 없다
+- 방어 순서를 과장하지 않는다: gitignore 가 **1차**, `pre-tool-guard` 는 `git add -f` 하나를 막는 **심층 방어**
+  (훅은 프로젝트 로컬이라 미설치가 흔하다)
+- 면제 범위는 `code-check` 품질 검사뿐. 라쳇·린트·테스트는 커밋된 소스를 보므로 이 경로를 애초에 안 본다
+- 판정 실패는 fail-safe — 모르면 면제하지 않는다
+
+**남은 위험**: 실수요가 끝내 생기지 않으면 이 레인은 쓰이지 않는 축으로 남는다. 그때는 지우는 것이
+맞다 — 안 쓰는 면제 경로는 언젠가 다른 용도로 쓰인다.
 
 ## 하지 않기로 한 것
 

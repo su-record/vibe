@@ -45,6 +45,9 @@ hooks/scripts/__tests__/.vibe/
 .vibe/runs/
 .vibe/.last-feature
 .vibe/scope.json
+
+# 일회성 코드 레인 — 품질 게이트를 면제받는 대신 커밋되지 않는다 (1차 방어)
+.vibe/ephemeral/
 .claude/scheduled_tasks.lock
 
 # 플러그인 빌드 산출물 (scripts/build-plugin.ts)
