@@ -2,8 +2,14 @@
  * Run Ledger — vibe.run 실행 및 vibe.verify 결과 추적.
  *
  * 파일 위치: <projectDir>/.vibe/metrics/run-ledger.json
- * 형식: { runId, runStarted, runFeature, verifyPassed, verifyAt, stopWarned,
- *         verifyRequired, verifyRequiredReason }
+ * 형식: { runId, runStarted, runFeature, verifyPassed, verifyAt, verifyBasis, stopWarned,
+ *         basisWarned, verifyRequired, verifyRequiredReason, verificationResults, independentRun }
+ *
+ * verifyBasis — verifyPassed 의 근거 등급:
+ *   'independent'  verify-runner 가 훅 프로세스에서 직접 실행한 테스트 명령의 exit code
+ *   'self-report'  테스트 명령을 찾지 못해 모델이 넘긴 results 만 있는 상태 (stop 훅이 경고)
+ * 명령이 감지되는데 독립 실행 없이 pass 를 요청하면 거부한다 — "자기보고로는 완료되지
+ * 않는다" 는 선언과 코드가 어긋나던 지점 (SPEC verify-gate-independence).
  *
  * 모든 함수는 fail-open (try/catch, 오류 시 null/false 반환).
  * 원자적 쓰기: 임시 파일 → rename 방식 사용.
@@ -12,8 +18,12 @@
 import fs from 'fs';
 import { randomUUID } from 'crypto';
 import path from 'path';
+import { clearHookTestRuns, readHookTestRuns } from './hook-test-runs.js';
+import { detectTestCommand } from './verify-runner.js';
 
-const EVIDENCE_SCHEMA_VERSION = '1.0.0';
+// 1.1.0: verifyBasis · independentRun · reportedResults · hookTestRuns 추가 (필드 추가만)
+const EVIDENCE_SCHEMA_VERSION = '1.1.0';
+export const VERIFY_BASIS = Object.freeze({ independent: 'independent', selfReport: 'self-report' });
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** 레저 파일 경로 */
@@ -114,7 +124,23 @@ function resolveSpecPath(projectDir, feature) {
   return fs.existsSync(path.join(projectDir, splitPath)) ? splitPath : null;
 }
 
+/**
+ * 독립 실행 결과 정규화 — verify-runner 의 반환값 중 evidence 에 남길 필드만.
+ * exitCode 가 정수가 아니면 독립 실행으로 치지 않는다 (null).
+ */
+function independentRunRecord(run) {
+  if (!run || typeof run !== 'object' || !Number.isInteger(run.exitCode)) return null;
+  return {
+    command: typeof run.command === 'string' ? run.command : null,
+    source: typeof run.source === 'string' ? run.source : null,
+    exitCode: run.exitCode,
+    at: typeof run.at === 'string' ? run.at : null,
+    durationMs: Number.isInteger(run.durationMs) ? run.durationMs : null,
+  };
+}
+
 function buildEvidence(projectDir, ledger, passed, generatedAt) {
+  const reported = verificationResults(ledger.verificationResults);
   return {
     schemaVersion: EVIDENCE_SCHEMA_VERSION,
     runId: ledger.runId,
@@ -124,7 +150,12 @@ function buildEvidence(projectDir, ledger, passed, generatedAt) {
       deterministic: {
         authority: 'blocking',
         verifyPassed: Boolean(passed),
-        verificationResults: verificationResults(ledger.verificationResults),
+        verifyBasis: ledger.verifyBasis || null,
+        independentRun: independentRunRecord(ledger.independentRun),
+        // 모델이 넘긴 결과 — 근거가 아니라 참고 기록. verificationResults 는 1.0.0 호환용 별칭.
+        reportedResults: reported,
+        verificationResults: reported,
+        hookTestRuns: readHookTestRuns(projectDir),
       },
       model: { authority: 'advisory-only', canComplete: false },
       humanTaste: { authority: 'release-only', canComplete: false },
@@ -152,7 +183,14 @@ function writeEvidence(projectDir, ledger, passed, generatedAt) {
 export function recordRunStart(projectDir, feature) {
   return withLedgerLock(projectDir, () => {
     const existing = readLedger(projectDir) || {};
-    const { verificationResults: _results, verificationCommands: _commands, ...retained } = existing;
+    const {
+      verificationResults: _results,
+      verificationCommands: _commands,
+      verifyBasis: _basis,
+      independentRun: _run,
+      basisWarned: _basisWarned,
+      ...retained
+    } = existing;
     const next = {
       ...retained,
       runId: randomUUID(),
@@ -162,45 +200,107 @@ export function recordRunStart(projectDir, feature) {
       verifyAt: null,
       stopWarned: false,
     };
+    // 훅 기록도 run 단위다 — 이전 run 의 편집·테스트 이벤트가 이번 판정에 섞이지 않게
+    clearHookTestRuns(projectDir);
     return writeLedger(projectDir, next);
   });
 }
 
 /**
- * vibe.verify 결과 기록.
- * pass 시 verifyRequired 상태를 클리어한다.
+ * pass 요청의 근거 등급 판정. 거부 사유는 모델이 다음 행동을 알 수 있게 구체적으로 쓴다.
+ * @param {string} projectDir
+ * @param {{command: string, exitCode: number}[]} reported - 모델이 넘긴 결과 (참고)
+ * @param {object|null} independentRun - verify-runner 결과 (근거)
+ * @returns {{ ok: boolean, basis: string|null, reason: string|null }}
+ */
+function judgePassBasis(projectDir, reported, independentRun) {
+  if (independentRun) {
+    if (independentRun.exitCode === 0) return { ok: true, basis: VERIFY_BASIS.independent, reason: null };
+    return {
+      ok: false,
+      basis: VERIFY_BASIS.independent,
+      reason: `independent test run failed: \`${independentRun.command || 'test'}\` exit ${independentRun.exitCode}`
+        + ' — fix the failing tests, then re-run verify-ledger.js pass',
+    };
+  }
+  const detected = detectTestCommand(projectDir);
+  if (detected) {
+    const command = [detected.command, ...detected.args].join(' ');
+    return {
+      ok: false,
+      basis: null,
+      reason: `independent run required: test command \`${command}\` (${detected.source}) was detected but not executed`
+        + ' — run `verify-ledger.js pass <runId>`, which executes it itself; reported results alone cannot pass',
+    };
+  }
+  if (reported.length === 0 || reported.some(result => result.exitCode !== 0)) {
+    return {
+      ok: false,
+      basis: VERIFY_BASIS.selfReport,
+      reason: 'self-report basis requires at least one reported command result with every exit code 0'
+        + ' (no test command detected — set verifyGate.command in .vibe/config.json to upgrade to independent basis)',
+    };
+  }
+  return { ok: true, basis: VERIFY_BASIS.selfReport, reason: null };
+}
+
+function writeVerifyRecord(projectDir, passed, record) {
+  const existing = readLedger(projectDir) || {};
+  const existingRunId = UUID_PATTERN.test(existing.runId || '') ? existing.runId : null;
+  if (existing.runId !== undefined && !existingRunId) return false;
+  if (existingRunId && record.runId !== existingRunId) return false;
+  const generatedAt = new Date().toISOString();
+  const next = {
+    ...existing,
+    runId: existingRunId || randomUUID(),
+    verifyPassed: Boolean(passed),
+    verifyAt: generatedAt,
+    verifyBasis: record.basis,
+    verificationResults: record.reported,
+    independentRun: record.independentRun,
+  };
+  // pass 시 verifyRequired 클리어
+  if (passed) {
+    next.verifyRequired = false;
+    next.verifyRequiredReason = null;
+  }
+  if (!writeEvidence(projectDir, next, passed, generatedAt)) return false;
+  return writeLedger(projectDir, next);
+}
+
+/**
+ * vibe.verify 결과 기록 — 사유 포함 버전. pass 시 verifyRequired 상태를 클리어한다.
+ *
+ * pass 의 근거는 `options.independentRun`(verify-runner 결과) 이다. 없으면 프로젝트에서
+ * 테스트 명령을 감지해 보고, 감지되면 거부한다(독립 실행을 건너뛴 것). 감지되지 않을 때만
+ * 모델이 넘긴 results 로 self-report 등급 통과를 허용한다.
+ * @param {string} projectDir
+ * @param {boolean} passed
+ * @param {{runId?: string, verificationResults?: object[], independentRun?: object|null}} options
+ * @returns {{ ok: boolean, basis: string|null, reason: string|null }}
+ */
+export function recordVerifyDetailed(projectDir, passed, options = {}) {
+  const reported = verificationResults(options.verificationResults);
+  const independentRun = independentRunRecord(options.independentRun);
+  const verdict = passed
+    ? judgePassBasis(projectDir, reported, independentRun)
+    : { ok: true, basis: independentRun ? VERIFY_BASIS.independent : VERIFY_BASIS.selfReport, reason: null };
+  if (!verdict.ok) return verdict;
+  const record = { runId: options.runId, reported, independentRun, basis: verdict.basis };
+  const written = withLedgerLock(projectDir, () => writeVerifyRecord(projectDir, passed, record));
+  if (!written) return { ok: false, basis: verdict.basis, reason: 'run-ledger write failed — runId mismatch, lock held, or evidence write error' };
+  return { ok: true, basis: verdict.basis, reason: null };
+}
+
+/**
+ * vibe.verify 결과 기록 (boolean 호환 표면). 사유가 필요하면 recordVerifyDetailed.
  * @param {string} projectDir
  * @param {boolean} passed - 검증 통과 여부
- * @param {{runId?: string, verificationResults?: object[]}} options
+ * @param {{runId?: string, verificationResults?: object[], independentRun?: object|null}} options
  * @returns {boolean} 성공 여부
  */
 export function recordVerify(projectDir, passed, options = {}) {
-  return withLedgerLock(projectDir, () => {
-    const existing = readLedger(projectDir) || {};
-    const existingRunId = UUID_PATTERN.test(existing.runId || '') ? existing.runId : null;
-    if (existing.runId !== undefined && !existingRunId) return false;
-    if (existingRunId && options.runId !== existingRunId) return false;
-    const runId = existingRunId || randomUUID();
-    const results = verificationResults(options.verificationResults);
-    if (passed && (results.length === 0 || results.some(result => result.exitCode !== 0))) {
-      return false;
-    }
-    const generatedAt = new Date().toISOString();
-    const next = {
-      ...existing,
-      runId,
-      verifyPassed: Boolean(passed),
-      verifyAt: generatedAt,
-      verificationResults: results,
-    };
-    // pass 시 verifyRequired 클리어
-    if (passed) {
-      next.verifyRequired = false;
-      next.verifyRequiredReason = null;
-    }
-    if (!writeEvidence(projectDir, next, passed, generatedAt)) return false;
-    return writeLedger(projectDir, next);
-  });
+  return recordVerifyDetailed(projectDir, passed, options).ok;
 }
 
 /**
@@ -232,6 +332,21 @@ export function markStopWarned(projectDir) {
   try {
     const existing = readLedger(projectDir) || {};
     const next = { ...existing, stopWarned: true };
+    return writeLedger(projectDir, next);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * self-report 등급 경고 플래그 세팅 — stop 훅이 같은 run 에서 두 번 경고하지 않게.
+ * @param {string} projectDir
+ * @returns {boolean} 성공 여부
+ */
+export function markBasisWarned(projectDir) {
+  try {
+    const existing = readLedger(projectDir) || {};
+    const next = { ...existing, basisWarned: true };
     return writeLedger(projectDir, next);
   } catch {
     return false;

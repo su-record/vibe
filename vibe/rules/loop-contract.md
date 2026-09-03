@@ -17,7 +17,7 @@
   → 루프:
       ANCHOR   디스크에서 재고정: SPEC + run-ledger + scope.json (+ 직전 인박스)
       ACT      파이프라인 실행 (스킬 체인)
-      JUDGE    Deterministic Judge(blocking): run-ledger verifyPassed │ 테스트 exit code │ RTM status
+      JUDGE    Deterministic Judge(blocking): run-ledger verifyPassed(verifyBasis=independent) │ 테스트 exit code │ RTM status
                Model Judge(advisory-only): 발견을 제안하지만 완료 권한 없음
                Human Taste(release-only): UX·브랜드·제품 감각을 판단하지만 루프 완료 권한 없음
       RECORD   run-ledger + `.vibe/runs/{run-id}/evidence.json` + loop-history.jsonl
@@ -49,6 +49,19 @@ node "$HOOKS_DIR/loop-ledger.js" anchor [feature]
 | **판정된 P1** | `vibe.review` 리뷰어 findings | Model Judge | **단독으로 차단하지 않는다** — 테스트·관측 기준으로 내려야 게이트가 된다 |
 
 판정된 P1 이 남았는데 내릴 기준이 없으면, 그것은 게이트 실패가 아니라 **인박스로 가는 리뷰 항목**이다. 동일한 판정 P1 이 2회 연속 반복되면 stuck 이며 — 완료가 아니다 (아래 stuck 절).
+
+#### 판정 근거 등급 — verifyPassed 는 누가 세웠는가
+
+`verifyPassed` 가 결정론 Judge 인 것은 **그 값을 세운 프로세스가 테스트를 직접 돌렸을 때만**이다. 2026-09-03 감사에서 `verify-ledger.js pass` 는 모델이 쓴 results.json 의 exitCode 만 보고 true 를 기록하고 있었다 — 구조화된 자기보고였고, 이 문서의 선언과 코드가 어긋난 지점이었다 (SPEC `verify-gate-independence`).
+
+| `verifyBasis` | 근거 | 하류 취급 |
+|---|---|---|
+| `independent` | `verify-ledger.js` 가 프로젝트 테스트 명령(`verifyGate.command` → `npm test` → vitest → jest)을 **스스로 실행**해 관측한 exit 0 | 게이트 통과 |
+| `self-report` | 테스트 명령을 하나도 찾지 못해 모델이 넘긴 results 만 있는 상태 | 통과는 시키되 **등급을 기록**하고 Stop 훅이 1회 경고, auto-commit 이 NOTE 를 남긴다 |
+
+명령이 감지되는데 독립 실행 없이 pass 를 요청하면 **거부**한다 — self-report 는 "명령이 없을 때의 차선" 이지 우회로가 아니다. 위조 불가능은 주장하지 않는다: 훅 기록(`.vibe/metrics/hook-test-runs.jsonl`)과 `verifyGate.command` 는 모델이 고칠 수 있는 파일이다. 이 등급이 막는 것은 **기본 경로에서 모델이 판정 근거를 쓰는 단계**이지 의도적 조작이 아니다.
+
+신선도는 소비자가 판정한다: verify 이후 코드 편집(훅이 `edit` 로 기록)이 있으면 auto-commit 이 `verifyAt` 과 비교해 커밋을 막는다. 훅이 ledger 의 판정 기록을 덮어쓰지 않는다 — 기록 원본과 evidence 가 어긋나지 않게.
 
 ### stuck (결정론)
 연속 2회 회전의 발견(discover/findings) 해시가 동일 → **그 루프는 종료한다** (`loop-ledger.js check-stuck`이 판정·기록). "다시 해보면 될 것 같다"는 모델 판단으로 무시 금지.
@@ -197,7 +210,7 @@ stuck 은 **같은 발견이 반복되는** 상태다. 스킬이 로드되지 �
 
 JUDGE는 이번 feature의 **신규 생성 파일** 기준으로 검증 코드 총량(테스트·검증 스크립트)과 구현 코드 총량을 `git diff --numstat` 로 비교하고, 검증 코드 줄 수가 구현 코드 줄 수를 넘으면 **최종 보고에 P2 경고 1줄**을 적는다 (restraint 원칙의 프로세스 적용).
 
-> ⚠️ 이 경고는 **보고용이며 어디에도 적재되지 않는다.** run-ledger 스키마(`runId`·`runStarted`·`runFeature`·`verifyPassed`·`verifyAt`·`stopWarned`·`verifyRequired`·`verifyRequiredReason`)에는 경고 필드가 없다 — 기록을 지시하면 갈 곳 없는 지시가 된다. 게이트 통과 여부를 바꾸지 않는다.
+> ⚠️ 이 경고는 **보고용이며 어디에도 적재되지 않는다.** run-ledger 스키마(`runId`·`runStarted`·`runFeature`·`verifyPassed`·`verifyAt`·`verifyBasis`·`independentRun`·`stopWarned`·`basisWarned`·`verifyRequired`·`verifyRequiredReason`)에는 경고 필드가 없다 — 기록을 지시하면 갈 곳 없는 지시가 된다. 게이트 통과 여부를 바꾸지 않는다.
 
 ## 금지 (루프 권한 경계)
 

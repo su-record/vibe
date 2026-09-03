@@ -14,27 +14,40 @@
  */
 import { execSync } from 'child_process';
 import { PROJECT_DIR, readProjectConfig, logHookDecision } from './utils.js';
-import { readLedger } from './lib/run-ledger.js';
+import { readLedger, VERIFY_BASIS } from './lib/run-ledger.js';
+import { lastCodeEdit } from './lib/hook-test-runs.js';
 
 // Opt-in 가드 — 명시적으로 켜지 않았으면 아무것도 하지 않는다.
 const __autoCommitCfg = readProjectConfig();
 if (__autoCommitCfg?.hooks?.['auto-commit']?.enabled !== true) process.exit(0);
 
-// verify 게이트 — vibe.run 세션이 시작됐으면 verifyPassed가 true이고
-// verifyAt > runStarted 인 경우에만 커밋을 허용한다.
-const __ledger = readLedger(PROJECT_DIR);
-if (__ledger && __ledger.runStarted) {
-  const verifyOk = __ledger.verifyPassed === true
-    && __ledger.verifyAt
-    && __ledger.verifyAt > __ledger.runStarted;
-  if (!verifyOk) {
-    const reason = !__ledger.verifyPassed
-      ? 'vibe.verify not passed — run /vibe.verify before committing'
-      : 'verifyAt is not after runStarted — re-run /vibe.verify';
-    logHookDecision('auto-commit', 'git-commit', 'block', reason);
-    process.stderr.write(`[auto-commit] SKIP: ${reason}\n`);
-    process.exit(0);
+/**
+ * verify 게이트 — vibe.run 세션이 시작됐으면 verifyPassed 가 true 이고 verifyAt > runStarted
+ * 이며, verify 이후 코드 편집이 없을 때만 커밋을 허용한다. 신선도 판정은 ledger 를 훅이
+ * 덮어쓰지 않고 여기서 hook-test-runs 의 편집 이벤트와 비교한다 (SPEC verify-gate-independence).
+ * @returns {string|null} 차단 사유 (통과면 null)
+ */
+function verifyGateReason(ledger) {
+  if (!ledger || !ledger.runStarted) return null;
+  if (ledger.verifyPassed !== true) return 'vibe.verify not passed — run /vibe.verify before committing';
+  if (!ledger.verifyAt || ledger.verifyAt <= ledger.runStarted) return 'verifyAt is not after runStarted — re-run /vibe.verify';
+  const edit = lastCodeEdit(PROJECT_DIR);
+  if (edit && edit.at > ledger.verifyAt) {
+    return `code edited after verify (${edit.filePath || 'unknown file'} at ${edit.at}) — re-run /vibe.verify`;
   }
+  return null;
+}
+
+const __ledger = readLedger(PROJECT_DIR);
+const __gateReason = verifyGateReason(__ledger);
+if (__gateReason) {
+  logHookDecision('auto-commit', 'git-commit', 'block', __gateReason);
+  process.stderr.write(`[auto-commit] SKIP: ${__gateReason}\n`);
+  process.exit(0);
+}
+if (__ledger && __ledger.runStarted && __ledger.verifyBasis === VERIFY_BASIS.selfReport) {
+  // 허용하되 등급을 남긴다 — 독립 실행 없이 통과한 커밋임을 로그에서 구분할 수 있게
+  process.stderr.write('[auto-commit] NOTE: verifyPassed is self-report basis (no independent test run backs it)\n');
 }
 
 // verifyRequired 게이트 — PostToolUse에서 P1 이슈가 발견되어 verify가 요구됨.
