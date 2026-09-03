@@ -89,14 +89,33 @@ setup     init · status · uninstall
 work      state [--graph] · profile <file> · intent draft | show · approve · check · evidence · abandon
 human     ask · authorize · inbox
 memory    regress record | list · knowledge add
+research  research --from-intent | "query"
+skills    skill suggest · create · add · search · list · used · prune · dismiss
 ledger    ledger · ledger compare · ledger why <node> · ledger edges [--type]
 ```
 
 `vibe --help` has the details. Every command accepts `--json`. The exit code is the verdict: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition.
 
+## Research — see what exists before building
+
+`vibe research --from-intent` turns the intent title, the hosts its `http` checks target and the stack into queries, searches GitHub repositories, code (`SKILL.md` files — needs a token) and skill catalogs, and ranks up to five candidates by keyword match, recency, stars and license. Each candidate carries one action: `vibe skill add …`, a knowledge note, or none. The note lands in `.vibe/knowledge/research/`; the same query is cached for a day. Nothing fetched is executed or installed.
+
+Default catalogs: `anthropics/skills`, `vercel-labs/agent-skills`, `NousResearch/hermes-agent` (a skill is any directory with a `SKILL.md`, at any depth). Add your own under `catalogs` in `.vibe/config.json`. Without a GitHub token (`GITHUB_TOKEN`, or `gh auth login`) code search is skipped and catalogs are read within the public limits.
+
 ## Skills
 
-Six common skills ship with the package — `vibe` (entry), `discover`, `scope`, `build`, `prove`, `handoff` — under 300 lines in total. They contain the harness command sequence and message shapes for each stage, nothing about how to code. Project-specific skills are created or imported per project, live only inside that project, and are installed only when bound to a check (phase 3).
+Six common skills ship with the package — `vibe` (entry), `discover`, `scope`, `build`, `prove`, `handoff` — under 300 lines in total. They contain the harness command sequence and message shapes for each stage, nothing about how to code.
+
+Project-specific skills live only inside the project (`.claude/skills`, `.codex/skills`, registry in `.vibe/skills/`) and are installed only when bound to a check or carrying knowledge the model lacks:
+
+```
+vibe skill suggest                         # ≤3 proposals from signals: http hosts, regression clusters, repeated questions, handoff
+vibe skill create <name> --check run|file|http|eval [--from-scenario <id>]
+vibe skill add owner/repo[@name] [--pin <sha>] [--yes]   # shows the commands inside, installs only with --yes, pinned to a commit
+vibe skill search <keyword> · list · used <name> · prune [--unused-runs 10] · dismiss <ref>
+```
+
+Proposals are proposals: the harness never installs, runs remote commands, or writes outside the project by itself. A dismissed proposal is not repeated.
 
 ## Language
 
@@ -111,13 +130,15 @@ evidence/        what the harness actually ran, per run
 ledger.jsonl     state changes, client, model, results, cost, typed edges
 inbox.jsonl      questions, STUCK notices, token hashes
 regressions/     fixed failures as reproducing checks
-knowledge/       domain notes the model reads when it needs them
-config.json      token policy
+knowledge/       domain notes the model reads when it needs them; research/ holds search notes
+skills/          registry of project-local skills and dismissed proposals
+cache/           research results, one day
+config.json      token policy · skill catalogs
 ```
 
 ## Status
 
-`4.0.0-alpha` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Next: GitHub research and automatic skill proposals (3b), stage proposals and the end-to-end example (3c), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0-alpha` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Next: the end-to-end "order spreadsheet" example (3c), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Develop
 

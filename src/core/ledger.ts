@@ -17,7 +17,9 @@ export type LedgerEventType =
   | 'ask'
   | 'authorize'
   | 'regress'
-  | 'knowledge';
+  | 'knowledge'
+  | 'research'
+  | 'skill';
 
 export interface LedgerEvent {
   at: string;

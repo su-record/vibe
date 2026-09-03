@@ -15,23 +15,20 @@
   then: non-test source is at most 5000 lines
   check: { type: run, cmd: "node checks/loc.js", expect: 0 }
 
-- id: http-eval-checks
-  needs: [build]
-  given: a local HTTP server and a labelled case set
-  when: http and eval scenarios are checked
-  then: status, schema and latency are judged by the harness; eval passes on a count of matching cases and lists mismatches
-  check: { type: run, cmd: "npx vitest run src/core/checks -t 'http|eval'", expect: 0, timeoutMs: 120000 }
+- id: skills-size
+  then: the six common skills are at most 300 lines in total
+  check: { type: run, cmd: "test $(cat skills/*/SKILL.md | wc -l) -le 300", expect: 0 }
 
-- id: table-sum
+- id: research
   needs: [build]
-  given: a CSV with quoted fields and thousands separators
-  when: a file check with sum runs
-  then: the column total is compared to the reference within the tolerance
-  check: { type: run, cmd: "npx vitest run src/core/checks/file.test.ts -t sum", expect: 0, timeoutMs: 120000 }
+  given: a fake GitHub client with repositories, code and three catalogs
+  when: research runs with a query, from the intent, and without a network
+  then: candidates are ranked with an action each, noise is dropped, a note and a ledger line are written, the cache answers offline, and skills are found at any catalog depth
+  check: { type: run, cmd: "npx vitest run src/core/research.test.ts", expect: 0, timeoutMs: 120000 }
 
-- id: profile
+- id: skills
   needs: [build]
-  given: a sample with empties, duplicates and mixed types
-  when: vibe profile runs
-  then: it reports types, missing counts, duplicates and at most three anomalies with numbers, and refuses a spreadsheet with a CSV hint
-  check: { type: run, cmd: "npx vitest run src/core/profile.test.ts src/cli.test.ts -t profile", expect: 0, timeoutMs: 120000 }
+  given: a project with scenarios, regressions and repeated questions
+  when: skills are created, added through a fixture, listed, used, pruned, suggested and dismissed
+  then: nothing installs without a check or without --yes, the commit is pinned, unused skills go, proposals follow the signals
+  check: { type: run, cmd: "npx vitest run src/core/skills.test.ts src/cli.test.ts -t 'skill'", expect: 0, timeoutMs: 180000 }

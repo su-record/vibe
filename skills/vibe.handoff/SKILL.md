@@ -17,6 +17,7 @@ Done: {intent title}
 - Checks passed: {id} [{type}] {at} …   (evidence: vibe evidence {run})
 - Left for human confirmation: {human scenarios and inbox ids}
 - Deliberately not done: {…}
+- Proposals: {from `vibe state --json` proposals[] — e.g. an operator skill for an irreversible step, at most 3}
 ```
 
 3. Write the handoff document `HANDOFF.md` (or the location the user chose), in English. Four sections are mandatory: **How to run**, **When it fails (alerts · rerun)**, **How to roll back**, **Contacts / owner**. Say so first if any is missing.

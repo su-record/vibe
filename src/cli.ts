@@ -16,7 +16,9 @@ import { compare, EDGE_TYPES, readEdges, readLedger, record, why, type CompareBy
 import { findProjectRoot, hasVibe, vibePath } from './core/paths.js';
 import { listRegressions, recordRegression } from './core/regress.js';
 import { profileFile } from './core/profile.js';
-import { graphMermaid } from './core/scenarios.js';
+import { research, SOURCES, type Source } from './core/research.js';
+import { addSkill, createSkill, dismissProposal, listSkills, markUsed, pruneSkills, suggestSkills } from './core/skills.js';
+import { graphMermaid, type CheckType } from './core/scenarios.js';
 import { readState } from './core/state.js';
 import { readJson, readText } from './core/store.js';
 import { verifyAndConsume } from './core/tokens.js';
@@ -71,6 +73,10 @@ const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
             authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
             knowledge add <file|--stdin> --title "…"
+  research  research --from-intent | "query" [--sources repos,code,skills] [--max 5]   (GitHub · skill catalogs · 24h cache)
+  skills    skill suggest [--all] · skill create <name> --check run|file|http|eval [--from-scenario <id>]
+            skill add owner/repo[@name] [--pin <sha>] [--yes] · skill search <keyword> · skill list
+            skill used <name> · skill prune [--unused-runs 10] [--dry-run] · skill dismiss <ref>
   ledger    ledger [--since 7d] · ledger compare --by client|model --metric checks|turns|cost [--min-runs 5]
             ledger why <node> [--depth 3] · ledger edges [--type supersedes|decided-by|implements|caused]
 
@@ -183,8 +189,101 @@ function cmdState(root: string, flags: Flags): Output {
     `  remaining ${view.remaining.length ? view.remaining.join(', ') : 'none'}`,
     `  inbox     ${view.inbox.open} open${view.inbox.items.map((q) => `\n    [${q.id}] ${q.question}`).join('')}`,
     ...view.notices.map((n) => `  ! ${n}`),
+    ...view.proposals.map((p) => `  → ${p.kind}: ${p.ref}  (${p.why})`),
   ];
   return { json: view, text: lines.join('\n'), code: 0 };
+}
+
+async function cmdResearch(root: string, sub: string | undefined, flags: Flags): Promise<Output> {
+  requireVibe(root);
+  const sourcesRaw = flagString(flags, 'sources');
+  const sources = sourcesRaw ? sourcesRaw.split(',').map((s) => s.trim()) : undefined;
+  if (sources?.some((s) => !SOURCES.includes(s as Source))) throw usage(`--sources ${SOURCES.join(',')}`);
+  const options: Parameters<typeof research>[1] = { fromIntent: flags['from-intent'] === true };
+  if (sub) options.query = sub;
+  if (sources) options.sources = sources as Source[];
+  const max = flagString(flags, 'max');
+  if (max) options.max = Number(max);
+  const r = await research(root, options);
+  const lines = [
+    `research ${r.queries.map((q) => JSON.stringify(q)).join(' · ')} · ${r.candidates.length} candidates${r.cached ? ' (cached)' : ''}${r.authenticated ? '' : ' · unauthenticated — code search skipped, catalogs only'}`,
+    ...r.candidates.map((c) => `  ${c.kind.padEnd(5)} ${c.ref}\n        ${c.why}\n        → ${c.action}`),
+    ...(r.file ? [`  note ${path.relative(root, r.file)}`] : []),
+  ];
+  return { json: r, text: lines.join('\n'), code: 0 };
+}
+
+function skillCreateOutput(root: string, name: string | undefined, flags: Flags): Output {
+  if (!name) throw usage('skill create <name> --check run|file|http|eval [--from-scenario <id>]');
+  const input: Parameters<typeof createSkill>[1] = { name };
+  const checkType = flagString(flags, 'check');
+  const from = flagString(flags, 'from-scenario');
+  if (checkType) input.checkType = checkType as CheckType;
+  if (from) input.fromScenario = from;
+  const r = createSkill(root, input);
+  return { json: r, text: `skill ${r.name} [${r.check.type}] → ${r.paths.join(', ')}\n  fill in SKILL.md: description · When · Procedure. It is installed because it carries a check.`, code: 0 };
+}
+
+async function skillAddOutput(root: string, spec: string | undefined, flags: Flags): Promise<Output> {
+  if (!spec) throw usage('skill add owner/repo[@name] [--pin <sha>] [--yes]');
+  const input: Parameters<typeof addSkill>[1] = { spec, yes: flags['yes'] === true };
+  const pin = flagString(flags, 'pin');
+  if (pin) input.pin = pin;
+  const r = await addSkill(root, input);
+  const commands = r.commands.length ? r.commands.map((c) => `    ${c}`).join('\n') : '    (none)';
+  if (!r.installed) {
+    return { json: r, text: `${r.ref} · ${r.license ?? 'no license'} · files ${r.files.join(', ')}\n  commands the skill would have the model run:\n${commands}\n  nothing installed — rerun with --yes to install these files pinned to ${r.sha.slice(0, 12)}`, code: 3 };
+  }
+  return { json: r, text: `installed ${r.ref} · ${r.license ?? 'no license'}\n  ${r.paths.join('\n  ')}\n  commands inside:\n${commands}`, code: 0 };
+}
+
+function skillSimple(root: string, sub: string, args: string[], flags: Flags): Output {
+  if (sub === 'list') {
+    const l = listSkills(root);
+    const project = l.project.map((s) => `  ${s.name} [${s.kind}] ${s.source}${s.check ? ` · check ${s.check.type}` : ''} · ${s.lastUsedRun === null ? 'never used' : `last used run ${s.lastUsedRun}`} (now ${l.currentRun})`);
+    return { json: l, text: [`common  ${l.common.join(' · ')}`, `project ${l.project.length ? '' : '(none)'}`, ...project].join('\n'), code: 0 };
+  }
+  if (sub === 'used') {
+    if (!args[0]) throw usage('skill used <name>');
+    const s = markUsed(root, args[0]);
+    return { json: s, text: `${s.name} used at run ${s.lastUsedRun}`, code: 0 };
+  }
+  if (sub === 'prune') {
+    const options: Parameters<typeof pruneSkills>[1] = { dryRun: flags['dry-run'] === true };
+    const n = flagString(flags, 'unused-runs');
+    if (n) options.unusedRuns = Number(n);
+    const r = pruneSkills(root, options);
+    return { json: r, text: `${options.dryRun ? 'would remove' : 'removed'} ${r.removed.length ? r.removed.join(', ') : 'nothing'} (unused for ${r.threshold} runs) · kept ${r.kept.length ? r.kept.join(', ') : 'none'}`, code: 0 };
+  }
+  if (sub === 'dismiss') {
+    dismissProposal(root, args[0] ?? '');
+    return { json: { dismissed: args[0] }, text: 'dismissed — it will not be proposed again', code: 0 };
+  }
+  const proposals = suggestSkills(root, flags['all'] === true);
+  return { json: proposals, text: proposals.length ? proposals.map((p) => `${p.kind.padEnd(9)} ${p.ref}\n          ${p.why} [${p.source}]`).join('\n') : 'no proposals — no signal in scenarios, regressions, inbox or state', code: 0 };
+}
+
+async function cmdSkill(root: string, sub: string | undefined, args: string[], flags: Flags): Promise<Output> {
+  requireVibe(root);
+  switch (sub) {
+    case 'create':
+      return skillCreateOutput(root, args[0], flags);
+    case 'add':
+      return skillAddOutput(root, args[0], flags);
+    case 'search': {
+      if (!args[0]) throw usage('skill search <keyword>');
+      const r = await research(root, { query: args[0], sources: ['skills', 'code'] });
+      return { json: r, text: r.candidates.length ? r.candidates.map((c) => `${c.ref}\n  ${c.why}\n  → ${c.action}`).join('\n') : `no skill matches "${args[0]}"${r.authenticated ? '' : ' (unauthenticated — catalogs only)'}`, code: 0 };
+    }
+    case 'suggest':
+    case 'list':
+    case 'used':
+    case 'prune':
+    case 'dismiss':
+      return skillSimple(root, sub, args, flags);
+    default:
+      throw usage('skill suggest | create | add | search | list | used | prune | dismiss');
+  }
 }
 
 function cmdProfile(root: string, file: string | undefined): Output {
@@ -449,6 +548,10 @@ export async function dispatch(argv: string[]): Promise<Output> {
       return cmdKnowledge(root, sub, rest, flags);
     case 'ledger':
       return cmdLedger(root, sub, rest, flags);
+    case 'research':
+      return cmdResearch(root, sub, flags);
+    case 'skill':
+      return cmdSkill(root, sub, rest, flags);
     default:
       throw usage(`unknown command: ${cmd}\n${HELP}`);
   }

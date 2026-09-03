@@ -4,6 +4,7 @@ import { hasIntent, intentPath, loadScenarios } from './intent.js';
 import { readLedger } from './ledger.js';
 import { listRegressions } from './regress.js';
 import { isHuman } from './scenarios.js';
+import { suggestSkills, type Proposal } from './skills.js';
 import { readState, stageOf, type Stage, type State } from './state.js';
 import { readText } from './store.js';
 
@@ -26,8 +27,8 @@ export interface StateView {
   remaining: string[];
   inbox: { open: number; items: Array<{ id: string; question: string; options?: string[]; default?: string; scenario?: string; needs?: string }> };
   last: { client: string; model: string | null; at: string } | null;
-  /** Skill create/import proposals — empty in 4.0.0-alpha (phase 3) */
-  proposals: Array<{ kind: string; ref: string; why: string }>;
+  /** Skill create/import/knowledge proposals from scenarios, regressions, inbox and state signals — at most three */
+  proposals: Proposal[];
   notices: string[];
 }
 
@@ -75,7 +76,7 @@ export function buildStateView(root: string): StateView {
     remaining,
     inbox: { open: questions.length, items: questions },
     last: lastEvent ? { client: lastEvent.client, model: lastEvent.model, at: lastEvent.at } : null,
-    proposals: [],
+    proposals: suggestSkills(root),
     notices,
   };
 }

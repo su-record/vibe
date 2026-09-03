@@ -24,12 +24,12 @@ interface Run {
   json: unknown;
 }
 
-function vibe(args: string[], input?: string): Run {
+function vibe(args: string[], input?: string, env: Record<string, string> = {}): Run {
   const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], {
     cwd: root,
     encoding: 'utf-8',
     input,
-    env: { ...process.env, VIBE_CLIENT: 'test-client' },
+    env: { ...process.env, VIBE_CLIENT: 'test-client', ...env },
     timeout: 60000,
   });
   let json: unknown = null;
@@ -207,5 +207,44 @@ describe('profile — the harness reads the sample before the interview', () => 
     expect(out.status).toBe(0);
     expect(out.json).toMatchObject({ rows: 3, duplicateRows: 1, anomalies: ['1 duplicate rows (identical in every column)', 'column "qty" is missing in 1 of 3 rows'] });
     expect(vibe(['profile']).status).toBe(2);
+  });
+});
+
+describe('skills — from proposal to installed, through the CLI', () => {
+  it('skill lifecycle: search finds a catalog skill through the fixture, add previews then installs, state carries proposals', () => {
+    const fixture = path.join(root, 'fixture.json');
+    const skillMd = '---\nname: deploy-to-vercel\n---\n```\nvercel deploy --prod\n```\n';
+    fs.writeFileSync(fixture, JSON.stringify({
+      '/branches/main': { commit: { sha: '0123456789abcdef' } },
+      '/contents/skills/deploy-to-vercel/SKILL.md?': { name: 'SKILL.md', type: 'file', path: 'skills/deploy-to-vercel/SKILL.md', content: Buffer.from(skillMd).toString('base64'), encoding: 'base64' },
+      '/contents/skills/deploy-to-vercel?': [{ name: 'SKILL.md', type: 'file', path: 'skills/deploy-to-vercel/SKILL.md' }],
+      '/repos/vercel-labs/agent-skills/git/trees': { tree: [{ path: 'skills/deploy-to-vercel/SKILL.md', type: 'blob' }] },
+      '/git/trees': { tree: [] },
+      '/search/code': { items: [] },
+      '/repos/vercel-labs/agent-skills': { default_branch: 'main', license: { spdx_id: 'MIT' } },
+    }));
+    const env = { VIBE_GITHUB_FIXTURE: fixture };
+    vibe(['init', '--tokens', 'off']);
+    vibe(['intent', 'draft', '--stdin'], JSON.stringify({ intent: '# Deploy\n\n## Why\nx\n', scenarios: '- { id: live, then: x, check: { type: http, url: "https://api.vercel.com/v9/projects" } }\n' }));
+    const proposals = (vibe(['state']).json as { proposals: Array<{ ref: string }> }).proposals;
+    expect(proposals.map((p) => p.ref)).toEqual(['vibe skill search vercel']);
+
+    const search = vibe(['skill', 'search', 'vercel'], undefined, env);
+    expect(search.status).toBe(0);
+    expect((search.json as { candidates: Array<{ action: string }> }).candidates[0]?.action).toBe('vibe skill add vercel-labs/agent-skills@deploy-to-vercel');
+
+    const preview = vibe(['skill', 'add', 'vercel-labs/agent-skills@deploy-to-vercel'], undefined, env);
+    expect(preview.status).toBe(3);
+    expect((preview.json as { commands: string[] }).commands).toEqual(['vercel deploy --prod']);
+    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'deploy-to-vercel'))).toBe(false);
+    const install = vibe(['skill', 'add', 'vercel-labs/agent-skills@deploy-to-vercel', '--yes'], undefined, env);
+    expect(install.status).toBe(0);
+    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'deploy-to-vercel', 'SKILL.md'))).toBe(true);
+    const list = vibe(['skill', 'list']).json as { project: Array<{ name: string; source: string }> };
+    expect(list.project[0]).toMatchObject({ name: 'deploy-to-vercel', source: 'vercel-labs/agent-skills@deploy-to-vercel#0123456789ab' });
+    expect(vibe(['skill', 'prune', '--dry-run', '--unused-runs', '0']).json).toMatchObject({ removed: ['deploy-to-vercel'] });
+    expect(vibe(['skill', 'create', 'nocheck']).status).toBe(2);
+    expect(vibe(['skill', 'create', 'live-guard', '--from-scenario', 'live']).status).toBe(0);
+    expect(vibe(['research', '--from-intent', '--sources', 'skills'], undefined, env).status).toBe(0);
   });
 });

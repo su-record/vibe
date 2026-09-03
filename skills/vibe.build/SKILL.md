@@ -15,8 +15,9 @@ user-invocable: false
    - Pass (`code 0`): next scenario.
    - Fail (`code 1`): read `tail` and fix. If the same failure happens twice the harness marks STUCK and leaves an inbox question — stop and show that question to the user.
    - Blocked (`status: blocked`): a parent has not passed; `vibe check {id}` runs unpassed parents first, so fix the parent named in `blockedBy`.
-4. Record a fixed failure with `vibe regress record --scenario {id} --title "…" --check-from-evidence {run}`.
-5. When `remaining` is empty, move to `vibe.prove`.
+4. When a project-local skill (`vibe skill list`) applies to the scenario, follow it and run `vibe skill used {name}` — prune decisions read the ledger.
+5. Record a fixed failure with `vibe regress record --scenario {id} --title "…" --check-from-evidence {run}`.
+6. When `remaining` is empty, move to `vibe.prove`.
 
 ## Irreversible actions
 

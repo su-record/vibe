@@ -1,0 +1,85 @@
+{
+  "at": "2026-09-03T06:41:31.549Z",
+  "queries": [
+    "deploy"
+  ],
+  "candidates": [
+    {
+      "kind": "skill",
+      "ref": "vercel-labs/agent-skills@deploy-to-vercel",
+      "url": "https://github.com/vercel-labs/agent-skills/tree/HEAD/skills/deploy-to-vercel",
+      "why": "catalog vercel-labs/agent-skills · matches \"deploy\"",
+      "stars": null,
+      "updatedAt": null,
+      "license": null,
+      "action": "vibe skill add vercel-labs/agent-skills@deploy-to-vercel",
+      "score": 5
+    },
+    {
+      "kind": "skill",
+      "ref": "NousResearch/hermes-agent@optional-skills/web-development/cloudflare-temporary-deploy",
+      "url": "https://github.com/NousResearch/hermes-agent/tree/HEAD/optional-skills/web-development/cloudflare-temporary-deploy",
+      "why": "catalog NousResearch/hermes-agent · matches \"deploy\"",
+      "stars": null,
+      "updatedAt": null,
+      "license": null,
+      "action": "vibe skill add NousResearch/hermes-agent@optional-skills/web-development/cloudflare-temporary-deploy",
+      "score": 5
+    },
+    {
+      "kind": "skill",
+      "ref": "vitorpamplona/amethyst",
+      "url": "https://github.com/vitorpamplona/amethyst/tree/HEAD/",
+      "why": "no keyword match · no license",
+      "stars": null,
+      "updatedAt": null,
+      "license": null,
+      "action": "vibe skill add vitorpamplona/amethyst",
+      "score": 0
+    },
+    {
+      "kind": "skill",
+      "ref": "Jia-Ethan/pavedpath-code",
+      "url": "https://github.com/Jia-Ethan/pavedpath-code/tree/HEAD/",
+      "why": "no keyword match · no license",
+      "stars": null,
+      "updatedAt": null,
+      "license": null,
+      "action": "vibe skill add Jia-Ethan/pavedpath-code",
+      "score": 0
+    },
+    {
+      "kind": "skill",
+      "ref": "andylizf/nonstop",
+      "url": "https://github.com/andylizf/nonstop/tree/HEAD/",
+      "why": "no keyword match · no license",
+      "stars": null,
+      "updatedAt": null,
+      "license": null,
+      "action": "vibe skill add andylizf/nonstop",
+      "score": 0
+    },
+    {
+      "kind": "skill",
+      "ref": "skaggsxyz/moltstream",
+      "url": "https://github.com/skaggsxyz/moltstream/tree/HEAD/",
+      "why": "no keyword match · no license",
+      "stars": null,
+      "updatedAt": null,
+      "license": null,
+      "action": "vibe skill add skaggsxyz/moltstream",
+      "score": 0
+    },
+    {
+      "kind": "skill",
+      "ref": "TexasBedouin/vibe-check",
+      "url": "https://github.com/TexasBedouin/vibe-check/tree/HEAD/",
+      "why": "no keyword match · no license",
+      "stars": null,
+      "updatedAt": null,
+      "license": null,
+      "action": "vibe skill add TexasBedouin/vibe-check",
+      "score": 0
+    }
+  ]
+}

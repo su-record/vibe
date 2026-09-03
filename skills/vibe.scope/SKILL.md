@@ -16,19 +16,22 @@ user-invocable: false
 3. Save with `vibe intent draft --stdin --json`, sending `{"intent": "...", "scenarios": "..."}` (both in English).
    - On rejection (`code 1`) fix the reasons and save again. Do not pass by deleting a rejected scenario — bind a check to it.
    - On success the response contains `token` when the project's token policy is `strict`; otherwise `token` is null and a plain yes in chat is enough.
-4. Send **one** approval message:
+4. Research and proposals, once, before the approval message: `vibe research --from-intent --json` (up to five candidates with an action each; skip silently on exit 2 and say "no network") and `vibe skill suggest --json` (up to three). Show both in the approval message. Do not install anything — the user says "add 1" and you run the printed `vibe skill add …` (preview first, `--yes` after they have seen the commands).
+5. Send **one** approval message:
 
 ```
 Success conditions:
 1. {then} [{check.type}]{ " ⚠ token" when irreversible }
 …
+Found on GitHub (if any, at most 5): {ref} — {why} → {action}
+Skill proposals (if any, at most 3): {kind} {ref} — {why}
 Things you did not ask about (if any, at most 3): …
 Needed before building (if any): {tools · skills · access}
 To proceed, {paste {token} | say yes}.
 ```
 
-5. When the user pastes the number (or says yes when no token was issued), run `vibe approve "{number}" --json` (or `vibe approve --json`). On `code 3` show the reason and ask again. On a change request go back to step 3.
-6. When the state is APPROVED, move to `vibe.build`.
+6. When the user pastes the number (or says yes when no token was issued), run `vibe approve "{number}" --json` (or `vibe approve --json`). On `code 3` show the reason and ask again. On a change request go back to step 3.
+7. When the state is APPROVED and any accepted skill is installed, move to `vibe.build`.
 
 ## Never
 
