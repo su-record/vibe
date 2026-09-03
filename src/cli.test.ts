@@ -248,3 +248,15 @@ describe('skills — from proposal to installed, through the CLI', () => {
     expect(vibe(['research', '--from-intent', '--sources', 'skills'], undefined, env).status).toBe(0);
   });
 });
+
+describe('installed binary', () => {
+  it('symlink: runs when invoked through a bin symlink, the way a global install calls it', () => {
+    const dist = path.join(here, '..', 'dist', 'cli.js');
+    if (!fs.existsSync(dist)) throw new Error('build first — this test runs the built CLI through a symlink');
+    const bin = path.join(root, 'bin');
+    fs.mkdirSync(bin);
+    fs.symlinkSync(dist, path.join(bin, 'vibe'));
+    const r = spawnSync('node', [path.join(bin, 'vibe'), '--version'], { encoding: 'utf-8' });
+    expect(r.stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
+  });
+});

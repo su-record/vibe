@@ -1,7 +1,6 @@
 {
-  ".github/workflows/test.yml": "0fd5cbb24912649d63fd4dfde3aeb8fd041d966a",
-  "README.md": "acdfede2317f93b9e434f46aedfe214a00e69dd3",
-  "package-lock.json": "ee1639b0a58bf74cdc5905596b0ed823ccec9193",
-  "package.json": "c54e3ba5a5b50ea699c29aeac6173b32dacfece4",
-  ".github/workflows/release.yml": "bdacfdbfd95c8482b39be15d7ed757ed85fbb347"
+  "package-lock.json": "a738067b68bbc5cb88ec26e5265b15da2f55cfa3",
+  "package.json": "36e548234941b1e7a1a8a1a139ca07cbc8535c3c",
+  "src/cli.test.ts": "8f3b6987c07e2638fe63e8b46192331e3f113b89",
+  "src/cli.ts": "a62083a5fbd7dc66cae6f8f9cf76cca265f5b4aa"
 }
