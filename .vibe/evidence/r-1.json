@@ -1,0 +1,58 @@
+{
+  "run": "r-1",
+  "at": "2026-09-03T05:35:49.599Z",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "a9bf7fe5789e",
+  "results": [
+    {
+      "id": "build",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1782,
+      "tail": "npm notice run @su-record/vibe@4.0.0-alpha.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+    },
+    {
+      "id": "tests",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 7274,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  7 passed (7)\n      Tests  36 passed (36)\n   Start at  05:35:51\n   Duration  6.74s (transform 406ms, setup 0ms, import 824ms, tests 6.81s, environment 1ms)"
+    },
+    {
+      "id": "card-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 37,
+      "tail": "card.md 650 bytes (limit 1024)"
+    },
+    {
+      "id": "source-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 41,
+      "tail": "src (non-test) 1916 lines (limit 5000)"
+    },
+    {
+      "id": "no-self-done",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1234,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  2 passed (2)\n      Tests  2 passed | 12 skipped (14)\n   Start at  05:35:59\n   Duration  448ms (transform 275ms, setup 0ms, import 470ms, tests 50ms, environment 0ms)"
+    },
+    {
+      "id": "card-reads",
+      "type": "human",
+      "status": "pending",
+      "exit": null,
+      "ms": 0,
+      "tail": "card.md 7줄을 읽고 한 줄이라도 무슨 뜻인지 모르겠으면 그 줄 번호를 알려 주세요",
+      "reason": "human — 판정하지 않는다"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{"at":"2026-09-03T05:35:17.887Z","event":"init","client":"claude-code","model":null,"detail":"claude"}
+{"at":"2026-09-03T05:35:18.035Z","event":"draft","client":"claude-code","model":null,"detail":"f17d5e97a27da87c"}
+{"at":"2026-09-03T05:35:49.454Z","event":"approve","client":"claude-code","model":null,"detail":"f17d5e97a27da87c"}
+{"at":"2026-09-03T05:35:59.992Z","event":"check","client":"claude-code","model":null,"run":"r-1","scenarioSet":"a9bf7fe5789e","scenarios":{"build":"pass","tests":"pass","card-size":"pass","source-size":"pass","no-self-done":"pass","card-reads":"pending"},"passed":5,"failed":0,"failHash":null,"ms":10368}
+{"at":"2026-09-03T05:35:59.992Z","event":"done","client":"claude-code","model":null,"run":"r-1"}

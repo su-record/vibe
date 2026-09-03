@@ -1,0 +1,32 @@
+{
+  "build": {
+    "last": "pass",
+    "at": "2026-09-03T05:35:49.599Z",
+    "run": "r-1"
+  },
+  "tests": {
+    "last": "pass",
+    "at": "2026-09-03T05:35:49.599Z",
+    "run": "r-1"
+  },
+  "card-size": {
+    "last": "pass",
+    "at": "2026-09-03T05:35:49.599Z",
+    "run": "r-1"
+  },
+  "source-size": {
+    "last": "pass",
+    "at": "2026-09-03T05:35:49.599Z",
+    "run": "r-1"
+  },
+  "no-self-done": {
+    "last": "pass",
+    "at": "2026-09-03T05:35:49.599Z",
+    "run": "r-1"
+  },
+  "card-reads": {
+    "last": "pending",
+    "at": "2026-09-03T05:35:49.599Z",
+    "run": "r-1"
+  }
+}

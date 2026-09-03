@@ -1,0 +1,3 @@
+{"type":"token","id":"t-mtl3coia-vn","kind":"approve","target":"f17d5e97a27da87c","tokenHash":"b3f7931ded5d98b987e8fe291c2be156b19e0c51d3f850ce2834c892960ea925","issuedAt":"2026-09-03T05:35:18.034Z","expiresAt":"2026-09-03T05:45:18.034Z"}
+{"type":"token-used","id":"t-mtl3coia-vn","at":"2026-09-03T05:35:49.453Z"}
+{"type":"question","id":"q-mtl3dkv4-2dm","at":"2026-09-03T05:35:59.968Z","question":"card.md 7줄을 읽고 한 줄이라도 무슨 뜻인지 모르겠으면 그 줄 번호를 알려 주세요","scenario":"card-reads"}
