@@ -506,11 +506,11 @@ function cmdLedger(root: string, sub: string | undefined, args: string[], flags:
 export async function dispatch(argv: string[]): Promise<Output> {
   const { positionals, flags } = parseArgs(argv);
   const [cmd, sub, ...rest] = positionals;
-  if (!cmd || flags['help'] === true) return { json: { help: HELP }, text: HELP, code: 0 };
   if (cmd === 'version' || flags['version'] === true) {
     const pkg = readJson<{ version: string }>(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'package.json'));
     return { json: { version: pkg?.version }, text: pkg?.version ?? 'unknown', code: 0 };
   }
+  if (!cmd || flags['help'] === true) return { json: { help: HELP }, text: HELP, code: 0 };
   const root = cmd === 'init' || cmd === 'plugin' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
   switch (cmd) {
@@ -572,5 +572,17 @@ async function main(): Promise<void> {
   }
 }
 
-const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
-if (invokedDirectly) void main();
+/** A global install runs this file through a `bin/vibe` symlink, so compare real paths, not argv as given. */
+function invokedDirectly(): boolean {
+  const argv1 = process.argv[1];
+  if (!argv1) return false;
+  const real = (p: string): string => {
+    try {
+      return fs.realpathSync(p);
+    } catch {
+      return path.resolve(p);
+    }
+  };
+  return real(argv1) === real(new URL(import.meta.url).pathname);
+}
+if (invokedDirectly()) void main();
