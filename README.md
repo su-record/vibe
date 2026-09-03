@@ -11,7 +11,7 @@ vibe plugin install                              # ChatGPT desktop only — Code
 codex plugin marketplace add ~ && codex plugin add vibe@<marketplace>   # the install output prints the exact name
 ```
 
-There is no `init`. The card, the six skills and the notification hook are the same in every project, so they live once per client home — `~/.claude` (CLAUDE.md · skills · settings.json) and `~/.codex` (AGENTS.md · skills · hooks.json), whichever exist. `npm i -g` puts them there when npm lets install scripts run; otherwise the first `vibe` command does, and every later command repairs a missing or stale copy. `vibe status` shows what is in place. The only thing inside a repository is `.vibe/`, created by the first record (`vibe intent draft`, `vibe tokens`, …) — a command that only reads leaves no trace.
+There is no `init`. The card, the six skills and the notification hook are the same in every project, so they live once per client home — `~/.claude` (CLAUDE.md · skills · settings.json) and `~/.codex` (AGENTS.md · skills · hooks.json), whichever exist. `npm i -g` puts them there when npm lets install scripts run; otherwise the first `vibe` command does, and every later command repairs a missing or stale copy. `vibe status` shows what is in place; `vibe uninstall` removes them again, along with anything a 4.0.1 `vibe init` left inside the current repository. The only thing inside a repository is `.vibe/`, created by the first record (`vibe intent draft`, `vibe tokens`, …) — a command that only reads leaves no trace.
 
 ChatGPT desktop reads the personal marketplace (`~/.agents/plugins/marketplace.json`); restart the app after installing. The plugin tree holds only the manifest, the six skills and the notification hooks — its hooks call the globally installed `vibe`.
 
@@ -138,7 +138,7 @@ config.json      token policy · skill catalogs
 
 ## Status
 
-`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Bench — the ledger is the benchmark
 

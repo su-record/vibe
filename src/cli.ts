@@ -24,7 +24,7 @@ import { readJson, readText } from './core/store.js';
 import { verifyAndConsume } from './core/tokens.js';
 import { buildStateView } from './core/view.js';
 import { installPlugin, pluginStatus } from './install/plugin.js';
-import { ensureGlobal, globalStatus, uninstallGlobal } from './install/global.js';
+import { ensureGlobal, globalStatus, uninstallGlobal, uninstallProjectSurfaces } from './install/global.js';
 import { ensureProject, projectStatus, purgeProject } from './install/project.js';
 
 type Flags = Record<string, string | boolean>;
@@ -66,7 +66,8 @@ function flagString(flags: Flags, key: string): string | undefined {
 const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
   setup     status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
-            npm i -g puts them there and any vibe command repairs them) · plugin install | status [--home <dir>]   (ChatGPT desktop)
+            npm i -g puts them there and any vibe command repairs them; uninstall also clears what an older init left in the project)
+            plugin install | status [--home <dir>]   (ChatGPT desktop)
   work      state [--graph] · profile <file.csv|tsv|jsonl|json> · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
   checks    run (exit code) · file (exists·pattern·contains·schema·sum) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass) · human (inbox, no verdict)
@@ -132,9 +133,11 @@ function cmdStatus(root: string, flags: Flags): Output {
 }
 
 function cmdUninstall(root: string, flags: Flags): Output {
-  const removed = uninstallGlobal(flagString(flags, 'home'));
-  if (flags['purge-state'] === true && purgeProject(root)) removed.push('.vibe/');
-  return { json: { removed }, text: removed.length ? `removed: ${removed.join(', ')}` : 'nothing to remove', code: 0 };
+  const home = uninstallGlobal(flagString(flags, 'home'));
+  const project = uninstallProjectSurfaces(root);
+  if (flags['purge-state'] === true && purgeProject(root)) project.push('.vibe/');
+  const removed = [...home, ...project.map((r) => path.join(path.relative(process.cwd(), root) || '.', r))];
+  return { json: { removed, home, project, root }, text: removed.length ? `removed: ${removed.join(', ')}` : 'nothing to remove', code: 0 };
 }
 
 function cmdPlugin(sub: string | undefined, flags: Flags): Output {
@@ -497,7 +500,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
   const [cmd, sub, ...rest] = positionals;
   if (cmd === 'version' || flags['version'] === true) return { json: { version: packageVersion() }, text: packageVersion(), code: 0 };
   if (!cmd || flags['help'] === true) return { json: { help: HELP }, text: HELP, code: 0 };
-  const repaired = process.env['VIBE_SKIP_SETUP'] ? [] : ensureGlobal(flagString(flags, 'home'));
+  const repaired = process.env['VIBE_SKIP_SETUP'] || cmd === 'uninstall' ? [] : ensureGlobal(flagString(flags, 'home'));
   if (repaired.length > 0) process.stderr.write(`[vibe] installed card, skills and hook for ${repaired.join(', ')}\n`);
   const root = cmd === 'plugin' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
