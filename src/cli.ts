@@ -500,7 +500,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
   const [cmd, sub, ...rest] = positionals;
   if (cmd === 'version' || flags['version'] === true) return { json: { version: packageVersion() }, text: packageVersion(), code: 0 };
   if (!cmd || flags['help'] === true) return { json: { help: HELP }, text: HELP, code: 0 };
-  const repaired = process.env['VIBE_SKIP_SETUP'] ? [] : ensureGlobal(flagString(flags, 'home'));
+  const repaired = process.env['VIBE_SKIP_SETUP'] || cmd === 'uninstall' ? [] : ensureGlobal(flagString(flags, 'home'));
   if (repaired.length > 0) process.stderr.write(`[vibe] installed card, skills and hook for ${repaired.join(', ')}\n`);
   const root = cmd === 'plugin' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));

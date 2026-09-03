@@ -1,8 +1,3 @@
 {
-  "README.md": "fb05146b2bb783209736a2de8a0a36ba046573ba",
-  "package-lock.json": "657353877562134a95abf638583bf271b7d57b3c",
-  "package.json": "c05218b8ea968a3c75802cf9d9285f2c4cccaa4e",
-  "src/cli.test.ts": "5a4732c5641f6773ce8640a466910042f1871338",
-  "src/cli.ts": "81b60cacd4988f8fcd482dce6950ddff52b983a2",
-  "src/install/global.ts": "fe5ddd33d758e611910f2128d5827b68050579ab"
+  "src/cli.ts": "92c599bcc373fc6bf55299e4ae37031f14722fc5"
 }
