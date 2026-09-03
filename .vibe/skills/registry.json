@@ -1,0 +1,22 @@
+{
+  "skills": [
+    {
+      "name": "example-settle",
+      "kind": "created",
+      "source": "created",
+      "check": {
+        "type": "run",
+        "cmd": "node examples/order-settlement/settle.js",
+        "expect": 0
+      },
+      "license": null,
+      "installedAt": "2026-09-03T06:47:38.858Z",
+      "installedRun": 0,
+      "lastUsedRun": null,
+      "lastUsedAt": null,
+      "paths": [
+        ".claude/skills/example-settle/SKILL.md"
+      ]
+    }
+  ]
+}

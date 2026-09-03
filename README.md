@@ -140,6 +140,10 @@ config.json      token policy · skill catalogs
 
 `4.0.0-alpha` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Next: the end-to-end "order spreadsheet" example (3c), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
 
+## Example
+
+`examples/order-settlement/` is the design walkthrough run for real: an order CSV with a duplicate row and a missing amount, a settlement script, a schema, and a dry-run send. This repository's own scenarios judge it — profile anomalies, exit codes, the `total` column sum, the summary schema — and the project-local skill created from the settle scenario has to survive `vibe skill prune`.
+
 ## Develop
 
 ```bash

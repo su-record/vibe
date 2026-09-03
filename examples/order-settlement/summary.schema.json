@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "required": ["sellers", "orders", "total", "duplicatesSkipped", "needsHuman"],
+  "properties": {
+    "sellers": { "type": "integer", "minimum": 1 },
+    "orders": { "type": "integer" },
+    "total": { "type": "number" },
+    "duplicatesSkipped": { "type": "integer" },
+    "needsHuman": { "type": "array", "items": { "type": "string" } }
+  }
+}

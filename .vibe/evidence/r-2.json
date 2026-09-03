@@ -1,17 +1,97 @@
 {
   "run": "r-2",
-  "at": "2026-09-03T06:25:24.006Z",
+  "at": "2026-09-03T06:48:36.290Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "95f419b05845",
+  "scenarioSet": "fa8355f566cf",
   "results": [
     {
-      "id": "ledger-why",
+      "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 4978,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 7 skipped (8)\n   Start at  06:25:24\n   Duration  4.17s (transform 56ms, setup 0ms, import 76ms, tests 3.93s, environment 0ms)"
+      "ms": 5216,
+      "tail": "npm notice run @su-record/vibe@4.0.0-alpha.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+    },
+    {
+      "id": "tests",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 27518,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  16 passed (16)\n      Tests  75 passed (75)\n   Start at  06:48:36\n   Duration  26.82s (transform 926ms, setup 0ms, import 2.42s, tests 29.42s, environment 2ms)"
+    },
+    {
+      "id": "card-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 50,
+      "tail": "card.md 705 bytes (limit 1024)"
+    },
+    {
+      "id": "source-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 63,
+      "tail": "src (non-test) 3612 lines (limit 5000)"
+    },
+    {
+      "id": "skills-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 10,
+      "tail": ""
+    },
+    {
+      "id": "example-profile",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 199,
+      "tail": "profile: 8 rows · anomalies 3 · both planted anomalies named"
+    },
+    {
+      "id": "settle",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 57,
+      "tail": "settlement: 3 sellers · 5 orders · total 4500.5 · 1 duplicates skipped · 1 rows need a person"
+    },
+    {
+      "id": "settlement-total",
+      "type": "file",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2,
+      "tail": "sum(total) = 4500.5 over 3 numeric rows · expected 4500.5"
+    },
+    {
+      "id": "settlement-summary",
+      "type": "file",
+      "status": "pass",
+      "exit": 0,
+      "ms": 48,
+      "tail": "ok: examples/order-settlement/out/summary.json"
+    },
+    {
+      "id": "send-dry-run",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 68,
+      "tail": "would send examples/order-settlement/out/settlement.csv to accounting@example.com"
+    },
+    {
+      "id": "example-skill",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 217,
+      "tail": "example-settle: check run · 1 files · kept by prune (threshold 10 runs)"
     }
   ]
 }

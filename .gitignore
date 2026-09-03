@@ -4,3 +4,4 @@ dist/
 .DS_Store
 # 개별 스킬·상태는 커밋한다 — .vibe/ 와 .claude/skills 는 사용자 것이다
 .claude/settings.local.json
+.vibe/cache/

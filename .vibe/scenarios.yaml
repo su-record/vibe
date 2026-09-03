@@ -19,16 +19,38 @@
   then: the six common skills are at most 300 lines in total
   check: { type: run, cmd: "test $(cat skills/*/SKILL.md | wc -l) -le 300", expect: 0 }
 
-- id: research
+- id: example-profile
   needs: [build]
-  given: a fake GitHub client with repositories, code and three catalogs
-  when: research runs with a query, from the intent, and without a network
-  then: candidates are ranked with an action each, noise is dropped, a note and a ledger line are written, the cache answers offline, and skills are found at any catalog depth
-  check: { type: run, cmd: "npx vitest run src/core/research.test.ts", expect: 0, timeoutMs: 120000 }
+  given: examples/order-settlement/orders.csv with a duplicate row and a missing amount
+  when: vibe profile runs on it
+  then: both anomalies are named with their numbers
+  check: { type: run, cmd: "node checks/example-profile.js", expect: 0 }
 
-- id: skills
+- id: settle
+  given: the example orders
+  when: settle.js runs
+  then: out/settlement.csv and out/summary.json are produced
+  check: { type: run, cmd: "node examples/order-settlement/settle.js", expect: 0 }
+
+- id: settlement-total
+  needs: [settle]
+  then: the total column sums to 4500.5 — the paid, de-duplicated, amount-bearing orders
+  check: { type: file, path: examples/order-settlement/out/settlement.csv, sum: { column: total, equals: 4500.5 } }
+
+- id: settlement-summary
+  needs: [settle]
+  then: summary.json matches its schema and lists order 1004 for a person
+  check: { type: file, path: examples/order-settlement/out/summary.json, schema: examples/order-settlement/summary.schema.json, contains: "\"1004\"" }
+
+- id: send-dry-run
+  needs: [settlement-total, settlement-summary]
+  irreversible: send
+  then: the sheet would go to accounting — the dry run exits 0; the real send needs a human token
+  check: { type: run, cmd: "node examples/order-settlement/send.js --dry-run", expect: 0 }
+
+- id: example-skill
   needs: [build]
-  given: a project with scenarios, regressions and repeated questions
-  when: skills are created, added through a fixture, listed, used, pruned, suggested and dismissed
-  then: nothing installs without a check or without --yes, the commit is pinned, unused skills go, proposals follow the signals
-  check: { type: run, cmd: "npx vitest run src/core/skills.test.ts src/cli.test.ts -t 'skill'", expect: 0, timeoutMs: 180000 }
+  given: a project-local skill created from the settle scenario
+  when: the registry and a prune dry run are inspected
+  then: the skill carries the settle check and is kept
+  check: { type: run, cmd: "node checks/example-skill.js", expect: 0 }
