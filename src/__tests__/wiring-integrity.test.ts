@@ -5,6 +5,7 @@ import { globSync } from 'glob';
 import {
   GLOBAL_SKILLS,
   GLOBAL_SKILLS_OPTIONAL,
+  SKILL_ROOTS,
   STACK_TO_SKILLS,
   CAPABILITY_SKILLS,
 } from '../cli/postinstall/constants.js';
@@ -18,7 +19,8 @@ import {
  */
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const SKILLS_DIR = path.join(ROOT, 'skills');
+// 코어(skills/)와 extras(skills-extra/) 두 루트 — SPEC skill-tier-boundary
+const SKILL_DIRS = SKILL_ROOTS.map((dir) => path.join(ROOT, dir));
 const HOOKS_DIR = path.join(ROOT, 'hooks');
 const HOOK_SCRIPTS_DIR = path.join(HOOKS_DIR, 'scripts');
 const AGENTS_DIR = path.join(ROOT, 'agents');
@@ -63,7 +65,8 @@ describe('F1 — entry→body skill install integrity', () => {
   ]);
 
   for (const skillName of installedSkillSet) {
-    const skillFile = path.join(SKILLS_DIR, skillName, 'SKILL.md');
+    const skillFile = SKILL_DIRS.map((dir) => path.join(dir, skillName, 'SKILL.md'))
+      .find((file) => fs.existsSync(file)) ?? path.join(SKILL_DIRS[0], skillName, 'SKILL.md');
 
     it(`${skillName}: SKILL.md exists`, () => {
       expect(fs.existsSync(skillFile), `missing skills/${skillName}/SKILL.md`).toBe(true);
@@ -115,13 +118,25 @@ describe('F2 — hook script reference integrity', () => {
   const hooksJson = path.join(HOOKS_DIR, 'hooks.json');
   const antigravityJson = path.join(HOOKS_DIR, 'antigravity-hooks.json');
   const srcFiles = globSync('**/*.ts', { cwd: SRC_DIR, absolute: true });
-  const skillMdFiles = [
-    ...globSync('*/SKILL.md', { cwd: SKILLS_DIR, absolute: true }),
-    ...globSync('*/references/*.md', { cwd: SKILLS_DIR, absolute: true }),
-  ];
+  const skillMdFiles = SKILL_DIRS.flatMap((dir) => [
+    ...globSync('*/SKILL.md', { cwd: dir, absolute: true }),
+    ...globSync('*/references/*.md', { cwd: dir, absolute: true }),
+  ]);
 
   it('discovers hook scripts', () => {
     expect(scriptNames.length).toBeGreaterThan(0);
+  });
+
+  // 두 루트 모두 실제로 훑는다 — extras 로 옮긴 스킬의 참조가 검사에서 조용히 빠지지 않게
+  // (SPEC skill-tier-boundary D11). 참조를 지워 실패를 유도하는 방식은 다른 훅 스크립트가
+  // 같은 이름을 참조하면 성립하지 않으므로, 읽는 대상 자체를 단언한다.
+  it('REQ-skill-tier-boundary-006 reads SKILL.md from every skill root', () => {
+    for (const dir of SKILL_DIRS) {
+      expect(
+        skillMdFiles.some((file) => file.startsWith(`${dir}${path.sep}`)),
+        `no SKILL.md scanned under ${path.relative(ROOT, dir)}`,
+      ).toBe(true);
+    }
   });
 
   for (const scriptName of scriptNames) {
@@ -190,7 +205,7 @@ describe('F3 — agent reference integrity', () => {
       if (KNOWN_UNWIRED.includes(agentName)) return;
 
       const referenced =
-        isReferencedInMarkdown(agentName, SKILLS_DIR) ||
+        SKILL_DIRS.some((dir) => isReferencedInMarkdown(agentName, dir)) ||
         isReferencedInMarkdown(agentName, RULES_DIR) ||
         isReferencedInSrc(agentName);
 

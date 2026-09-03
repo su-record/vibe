@@ -210,6 +210,8 @@ $vibe "<requirement>" [+ 📎 attachments]
 
 Public skills use the `vibe.*` namespace and are classified as **entry** / **standard** / **optional or project-local**. Core behavior is bundled inside the relevant public skill and is never exposed as a separate discovery entry. SSOT: `GLOBAL_SKILLS_ENTRY`, `GLOBAL_SKILLS_STANDARD`, and the stack/capability mappings in `src/cli/postinstall/constants.ts`.
 
+**Directory boundary** (SPEC `skill-tier-boundary`): coding-loop skills (global + stack) live in `skills/`; everything else (optional + capability, `EXTRA_SKILLS`) lives in `skills-extra/`. Both ship in the npm package (capability opt-in copies from there), but `scripts/build-plugin.ts` never bakes `skills-extra/` into the marketplace plugin tree. Placement is enforced by `skill-namespace.test.ts` against `CORE_SKILLS`/`EXTRA_SKILLS` — a skill in the wrong root fails CI, and no hand-maintained list exists besides the tier constants. README counts lead with the core number; `validate:counts` checks both.
+
 ## Context Management
 
 - **Model routing: inherit by default** — 서브에이전트는 세션 모델을 상속한다. 명시적 예외만 tier alias 로 지정 (아키텍처 심층 리뷰 → `opus`). 구세대 "탐색→Haiku·구현→Sonnet" 비용 라우팅은 폐기 — 강한 기본 모델에서 라우팅 우회가 절약보다 품질 손실이 크다

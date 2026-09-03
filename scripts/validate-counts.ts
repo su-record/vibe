@@ -3,7 +3,8 @@
  * validate-counts.ts — README / package.json 의 capability count claim 검증
  *
  * 검증 대상:
- *   - skillCount:          skills/ 하위 디렉토리 중 SKILL.md 가 있는 디렉토리 수
+ *   - coreCount / extraCount: skills/ · skills-extra/ 하위 디렉토리 중 SKILL.md 가 있는 디렉토리 수
+ *                             (코어 = 코딩 루프, extras = capability 옵트인·명시 호출 — SPEC skill-tier-boundary)
  *   - installedAgentCount: agents/ 에서 teams/ 와 CONDITIONAL_AGENT_GROUPS
  *                          (ui, figma, event) 를 제외한 .md 파일 수
  *                          (postinstall 의 전역 설치 대상과 동일한 기준)
@@ -30,6 +31,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
 const SKILLS_DIR = path.join(ROOT, 'skills');
+const EXTRA_SKILLS_DIR = path.join(ROOT, 'skills-extra');
 const AGENTS_DIR = path.join(ROOT, 'agents');
 const CLI_DETECTOR = path.join(ROOT, 'src/cli/utils/cli-detector.ts');
 
@@ -139,11 +141,12 @@ function harnessErrors(): string[] {
 /** postinstall 전역 설치에서 제외되는 조건부 그룹 (constants.ts CONDITIONAL_AGENT_GROUPS 와 동일) */
 const CONDITIONAL_AGENT_GROUPS: ReadonlySet<string> = new Set(['ui', 'figma', 'event']);
 
-function countSkills(): number {
+function countSkills(dir: string): number {
+  if (!fs.existsSync(dir)) return 0;
   let count = 0;
-  for (const entry of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
-    if (fs.existsSync(path.join(SKILLS_DIR, entry.name, 'SKILL.md'))) count++;
+    if (fs.existsSync(path.join(dir, entry.name, 'SKILL.md'))) count++;
   }
   return count;
 }
@@ -179,14 +182,33 @@ interface CountClaim {
   expected: string;
 }
 
-function buildClaims(skillCount: number, agentCount: number): CountClaim[] {
+function buildClaims(coreCount: number, extraCount: number, agentCount: number): CountClaim[] {
   const agentLabel = `${agentCount}+`;
   return [
     {
       file: path.join(ROOT, 'README.md'),
-      description: `README.md skill count (expected **${skillCount}개 스킬**)`,
-      pattern: /\*\*\d+개 스킬\*\*/,
-      expected: `**${skillCount}개 스킬**`,
+      description: `README.md core skill count (expected **${coreCount}개 코어 스킬**)`,
+      pattern: /\*\*\d+개 코어 스킬\*\*/,
+      expected: `**${coreCount}개 코어 스킬**`,
+    },
+    {
+      file: path.join(ROOT, 'README.md'),
+      description: `README.md extras count (expected "extras ${extraCount}개")`,
+      pattern: /extras \d+개/,
+      expected: `extras ${extraCount}개`,
+    },
+    {
+      // `claude plugin details vibe` 예시 줄 — 플러그인 트리는 코어+스택만 굽는다
+      file: path.join(ROOT, 'README.md'),
+      description: `README.md plugin details line (expected "# Skills ${coreCount} ·")`,
+      pattern: /# Skills \d+ ·/,
+      expected: `# Skills ${coreCount} ·`,
+    },
+    {
+      file: path.join(ROOT, 'README.md'),
+      description: `README.md harness table skills row (expected "| skills (${coreCount}) |")`,
+      pattern: /\| skills \(\d+\) \|/,
+      expected: `| skills (${coreCount}) |`,
     },
     {
       file: path.join(ROOT, 'README.md'),
@@ -196,9 +218,21 @@ function buildClaims(skillCount: number, agentCount: number): CountClaim[] {
     },
     {
       file: path.join(ROOT, 'README.en.md'),
-      description: `README.en.md skill count (expected **${skillCount} skills**)`,
-      pattern: /\*\*\d+ skills\*\*/,
-      expected: `**${skillCount} skills**`,
+      description: `README.en.md core skill count (expected **${coreCount} core skills**)`,
+      pattern: /\*\*\d+ core skills\*\*/,
+      expected: `**${coreCount} core skills**`,
+    },
+    {
+      file: path.join(ROOT, 'README.en.md'),
+      description: `README.en.md extras count (expected "${extraCount} extras")`,
+      pattern: /\d+ extras/,
+      expected: `${extraCount} extras`,
+    },
+    {
+      file: path.join(ROOT, 'README.en.md'),
+      description: `README.en.md plugin details line (expected "# Skills ${coreCount} ·")`,
+      pattern: /# Skills \d+ ·/,
+      expected: `# Skills ${coreCount} ·`,
     },
     {
       file: path.join(ROOT, 'README.en.md'),
@@ -208,9 +242,9 @@ function buildClaims(skillCount: number, agentCount: number): CountClaim[] {
     },
     {
       file: path.join(ROOT, 'package.json'),
-      description: `package.json description skill count (expected "${skillCount} skills")`,
-      pattern: /\d+ skills/,
-      expected: `${skillCount} skills`,
+      description: `package.json description core skill count (expected "${coreCount} core skills")`,
+      pattern: /\d+ core skills/,
+      expected: `${coreCount} core skills`,
     },
     {
       file: path.join(ROOT, 'package.json'),
@@ -222,18 +256,20 @@ function buildClaims(skillCount: number, agentCount: number): CountClaim[] {
 }
 
 function main(): void {
-  const skillCount = countSkills();
+  const coreCount = countSkills(SKILLS_DIR);
+  const extraCount = countSkills(EXTRA_SKILLS_DIR);
   const agentCount = countInstalledAgents();
 
   console.log(`Derived counts:`);
-  console.log(`  skills (SKILL.md dirs):          ${skillCount}`);
+  console.log(`  core skills (skills/ SKILL.md dirs):        ${coreCount}`);
+  console.log(`  extra skills (skills-extra/ SKILL.md dirs): ${extraCount}`);
   console.log(`  installed agents (non-teams, non-conditional): ${agentCount}`);
 
   const harnesses = supportedHarnesses();
   console.log(`  supported harnesses (cli-detector.ts):          ${harnesses.join(', ')}`);
   console.log(`  required Node (package.json engines):           >=${requiredNodeVersion()}`);
 
-  const claims = buildClaims(skillCount, agentCount);
+  const claims = buildClaims(coreCount, extraCount, agentCount);
   const errors: string[] = [...harnessErrors(), ...nodeVersionErrors()];
 
   for (const claim of claims) {
@@ -252,7 +288,7 @@ function main(): void {
 
   if (errors.length === 0) {
     console.log(
-      `\n✓ All claims match (${skillCount} skills, ${agentCount}+ agents, ` +
+      `\n✓ All claims match (${coreCount} core + ${extraCount} extra skills, ${agentCount}+ agents, ` +
         `${harnesses.length} harnesses, Node >=${requiredNodeVersion()}).`,
     );
     return;

@@ -81,14 +81,21 @@ export interface OptionalSkillResult {
  *
  * @param globalSkillsDir - 전역 CLI 스킬 디렉토리 (e.g. ~/.claude/skills)
  * @param optionalSkills - 정리 대상 스킬 이름 목록
- * @param shippedSkillsDir - 패키지 내 skills/ 디렉토리 (비교 기준)
+ * @param shippedSkillsDir - 패키지 내 스킬 루트(들) — skills/ 또는 [skills/, skills-extra/] (비교 기준)
  * @param dryRun - true이면 실제 삭제 없이 결과만 반환
  */
-export declare function cleanupOptionalSkills(globalSkillsDir: string, optionalSkills: ReadonlyArray<string>, shippedSkillsDir: string, dryRun?: boolean): OptionalSkillResult[];
+export declare function cleanupOptionalSkills(globalSkillsDir: string, optionalSkills: ReadonlyArray<string>, shippedSkillsDir: string | string[], dryRun?: boolean): OptionalSkillResult[];
 export declare function cleanupRenamedSkills(globalSkillsDir: string, renames: Readonly<Record<string, string>>, legacyHashes: Readonly<Record<string, string>>): OptionalSkillResult[];
 /**
  * Codex는 Vibe의 `user-invocable: false` 메타데이터를 직접 해석하지 않는다.
  * 내부 체인 전용 스킬은 공식 Codex skill policy로 implicit invocation을 막는다.
  */
 export declare function applyCodexSkillInvocationPolicies(skillsDir: string): void;
+/**
+ * 배송 스킬 루트 — 존재하는 것만, SKILL_ROOTS 순서(코어 먼저).
+ * 전역·로컬 설치와 demotion 이 전부 이 목록을 순회한다 (SPEC skill-tier-boundary).
+ */
+export declare function resolveSkillRoots(packageRoot: string): string[];
+/** 스킬 이름 → 배송 디렉토리. 어느 루트에도 없으면 null. */
+export declare function findSkillDir(packageRoot: string, skillName: string): string | null;
 //# sourceMappingURL=fs-utils.d.ts.map

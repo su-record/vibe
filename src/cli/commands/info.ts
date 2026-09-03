@@ -10,6 +10,7 @@ import { formatLLMStatus } from '../auth.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
 import { missingNativeDeps } from '../setup/NativeDeps.js';
 import { RETIRED_SKILL_NAMES } from '../postinstall/constants.js';
+import { resolveSkillRoots } from '../postinstall/fs-utils.js';
 import { createHash } from 'crypto';
 import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
 
@@ -140,7 +141,7 @@ export function formatNativeDepStatus(packageRoot: string): string {
  * 섞여 있어 사용자가 만든 동명 스킬을 지울 위험이 실재하고, 애매할 때 지우는 쪽이
  * 훨씬 나쁘다. 무엇이 있는지 보여주면 판단은 사람이 한다.
  */
-export function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: string): string {
+export function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: string | string[]): string {
   const dirs = (at: string): string[] => {
     try {
       return fs.readdirSync(at, { withFileTypes: true })
@@ -157,7 +158,9 @@ export function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: str
 
   // 소유 판정은 이름 접두사가 아니라 **배송 목록**으로 한다 — 진입 스킬은
   // `vibe.` 접두사가 없는 `vibe` 라서 접두사로 세면 외부로 오분류된다.
-  const shipped = new Set(dirs(shippedSkillsDir));
+  // 배송본은 두 루트(skills/, skills-extra/)에 흩어져 있다 — 소유 판정과 드리프트 검사 모두 합산
+  const shippedRoots = ([] as string[]).concat(shippedSkillsDir);
+  const shipped = new Set(shippedRoots.flatMap(dirs));
   const vibe = entries.filter((n) => shipped.has(n));
   const others = entries.filter((n) => !shipped.has(n));
   const retired = others.filter((n) => RETIRED_SKILL_NAMES.has(n));
@@ -166,7 +169,10 @@ export function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: str
   const lines = [`  Skills              ${entries.length} always-on (vibe ${vibe.length})`];
 
   // 개수가 같아도 내용은 다를 수 있다 — 지문으로 확인한다
-  const drifted = driftedSkills(globalSkillsDir, shippedSkillsDir);
+  const driftedPerRoot = shippedRoots.map((root): string[] | null => driftedSkills(globalSkillsDir, root));
+  const drifted = driftedPerRoot.every((d): boolean => d === null)
+    ? null
+    : driftedPerRoot.flatMap((d): string[] => d ?? []);
   if (drifted !== null && drifted.length > 0) {
     lines.push(
       `    drifted           ${drifted.length} — ${drifted.slice(0, 5).join(', ')}`
@@ -279,7 +285,7 @@ VIBE Status (v${packageJson.version})
 
 Project: ${projectStatus}
 ${isCoreProject ? `Language: ${config.language || 'ko'}\n` : ''}
-${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}${formatNativeDepStatus(path.resolve(import.meta.dirname, '..', '..', '..'))}\n${formatSkillStatus(path.join(process.env.HOME ?? '', '.claude', 'skills'), path.resolve(import.meta.dirname, '..', '..', '..', 'skills'))}
+${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}${formatNativeDepStatus(path.resolve(import.meta.dirname, '..', '..', '..'))}\n${formatSkillStatus(path.join(process.env.HOME ?? '', '.claude', 'skills'), resolveSkillRoots(path.resolve(import.meta.dirname, '..', '..', '..')))}
 
 ${formatLLMStatus()}
   `);

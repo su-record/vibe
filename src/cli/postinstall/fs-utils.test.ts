@@ -86,6 +86,28 @@ describe('cleanupOptionalSkills', () => {
     expect(fs.existsSync(installDir)).toBe(false);
   });
 
+  it('REQ-skill-tier-boundary-003 compares against any of several shipped roots (skills/, skills-extra/)', () => {
+    const { globalSkillsDir, shippedSkillsDir } = setupDirs();
+    const skillName = 'vibe.commit-push-pr';
+    const content = skillContent(skillName);
+
+    const installDir = path.join(globalSkillsDir, skillName);
+    fs.mkdirSync(installDir, { recursive: true });
+    fs.writeFileSync(path.join(installDir, 'SKILL.md'), content);
+
+    // 배송본은 두 번째 루트(extras)에만 있다 — 첫 루트만 보면 "배송본 없음 → 보존" 으로 오판한다
+    const emptyCoreRoot = path.join(shippedSkillsDir, 'core');
+    const extraRoot = path.join(shippedSkillsDir, 'extra');
+    fs.mkdirSync(emptyCoreRoot, { recursive: true });
+    fs.mkdirSync(path.join(extraRoot, skillName), { recursive: true });
+    fs.writeFileSync(path.join(extraRoot, skillName, 'SKILL.md'), content);
+
+    const results = cleanupOptionalSkills(globalSkillsDir, OPTIONAL, [emptyCoreRoot, extraRoot]);
+
+    expect(results[0].action).toBe('removed');
+    expect(fs.existsSync(installDir)).toBe(false);
+  });
+
   it('preserves user-modified optional skill and returns skipped-user-modified', () => {
     const { globalSkillsDir, shippedSkillsDir } = setupDirs();
     const skillName = 'vibe.git-worktree';

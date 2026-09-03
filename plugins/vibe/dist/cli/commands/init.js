@@ -11,7 +11,7 @@ import { formatLLMStatus } from '../auth.js';
 import { setupCollaboratorAutoInstall } from '../collaborator.js';
 import { updateConstitution, updateRules, migrateLegacyCore, updateGitignore, updateConfig, installProjectHooks, installProjectCodexHooks, installCodexNotify, detectOsLanguage, generateProjectClaudeMd, generateProjectAgentsMd, generateProjectAntigravityMd, generateGlobalClaudeMd, generateGlobalCodexAgentsMd, generateGlobalAntigravityMd, consolidateLegacyVibe, } from '../setup.js';
 import * as p from '@clack/prompts';
-import { installClaudeAgents, resolveLocalSkills, resolveLocalAgentGroups, copySkillsFiltered, applyCodexSkillInvocationPolicies, removeLegacySkills, AVAILABLE_CAPABILITIES, STACK_TO_LANGUAGE_FILE, LEGACY_AGENT_GROUPS, } from '../postinstall.js';
+import { installClaudeAgents, resolveLocalSkills, resolveLocalAgentGroups, resolveSkillRoots, copySkillsFiltered, applyCodexSkillInvocationPolicies, removeLegacySkills, AVAILABLE_CAPABILITIES, STACK_TO_LANGUAGE_FILE, LEGACY_AGENT_GROUPS, } from '../postinstall.js';
 import { detectAntigravityCli, detectCodexCli } from '../utils/cli-detector.js';
 import { Provisioner } from '../setup/Provisioner.js';
 import { installExternalSkills } from './skills.js';
@@ -27,11 +27,14 @@ export function installLocalSkills(projectRoot, stackTypes, capabilities = [], h
         return;
     const __dir = path.dirname(new URL(import.meta.url).pathname);
     const packageRoot = path.resolve(__dir, '..', '..', '..');
-    const skillsSource = path.join(packageRoot, 'skills');
-    if (!fs.existsSync(skillsSource))
+    // 스택 스킬은 skills/, capability 스킬은 skills-extra/ — 허용 목록에 없는 디렉토리는
+    // copySkillsFiltered 가 건너뛰므로 두 루트에 같은 목록을 넘겨도 안전하다.
+    const skillRoots = resolveSkillRoots(packageRoot);
+    if (skillRoots.length === 0)
         return;
     const localSkillsDir = path.join(projectRoot, harnessDir, 'skills');
-    copySkillsFiltered(skillsSource, localSkillsDir, localSkills);
+    for (const root of skillRoots)
+        copySkillsFiltered(root, localSkillsDir, localSkills);
     if (harnessDir === '.codex')
         applyCodexSkillInvocationPolicies(localSkillsDir);
     log(`   📦 Local skills installed: ${localSkills.join(', ')}\n`);

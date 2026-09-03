@@ -20,7 +20,17 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const SKILLS_DIR = path.join(ROOT, 'skills');
+const SKILL_ROOTS = ['skills', 'skills-extra'].map((dir) => path.join(ROOT, dir));
+
+/** 두 루트(skills/, skills-extra/)의 모든 SKILL.md 경로 — SPEC skill-tier-boundary */
+function listSkillMdFiles(): string[] {
+  return SKILL_ROOTS
+    .filter((root) => fs.existsSync(root))
+    .flatMap((root) => fs.readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(root, entry.name, 'SKILL.md'))
+      .filter((file) => fs.existsSync(file)));
+}
 const COMMANDS_DIR = path.join(ROOT, 'commands');
 
 const DRY = process.argv.includes('--dry');
@@ -73,10 +83,7 @@ function readSkill(file: string): SkillInfo | null {
 
 function collectSkills(): SkillInfo[] {
   const out: SkillInfo[] = [];
-  for (const entry of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const f = path.join(SKILLS_DIR, entry.name, 'SKILL.md');
-    if (!fs.existsSync(f)) continue;
+  for (const f of listSkillMdFiles()) {
     const info = readSkill(f);
     if (info) out.push(info);
   }
@@ -96,10 +103,7 @@ function collectCommandLoadRefs(): Set<string> {
     }
   }
   // 2) skill loaded by another skill via `Load skill <name>` (cross-skill)
-  for (const entry of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const f = path.join(SKILLS_DIR, entry.name, 'SKILL.md');
-    if (!fs.existsSync(f)) continue;
+  for (const f of listSkillMdFiles()) {
     const txt = fs.readFileSync(f, 'utf-8');
     for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w.:-]*)`?/g)) {
       refs.add(m[1]);

@@ -20,7 +20,17 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const SKILLS_DIR = path.join(ROOT, 'skills');
+const SKILL_ROOTS = ['skills', 'skills-extra'].map((dir) => path.join(ROOT, dir));
+
+/** 두 루트(skills/, skills-extra/)의 모든 SKILL.md 경로 — SPEC skill-tier-boundary */
+function listSkillMdFiles(): string[] {
+  return SKILL_ROOTS
+    .filter((root) => fs.existsSync(root))
+    .flatMap((root) => fs.readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(root, entry.name, 'SKILL.md'))
+      .filter((file) => fs.existsSync(file)));
+}
 const COMMANDS_DIR = path.join(ROOT, 'commands');
 
 const VALID_MODES = new Set(['command', 'auto', 'chain']);
@@ -71,10 +81,7 @@ function collectLoadRefs(): Set<string> {
       for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w.:-]*)`?/g)) refs.add(m[1]);
     }
   }
-  for (const dir of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
-    if (!dir.isDirectory()) continue;
-    const f = path.join(SKILLS_DIR, dir.name, 'SKILL.md');
-    if (!fs.existsSync(f)) continue;
+  for (const f of listSkillMdFiles()) {
     const txt = fs.readFileSync(f, 'utf-8');
     for (const m of txt.matchAll(/Load skill\s+`?([a-z0-9][\w.:-]*)`?/g)) refs.add(m[1]);
   }
@@ -94,10 +101,7 @@ function hasMatchingCommandFile(skillName: string): boolean {
 
 function main() {
   const skills: Parsed[] = [];
-  for (const dir of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
-    if (!dir.isDirectory()) continue;
-    const f = path.join(SKILLS_DIR, dir.name, 'SKILL.md');
-    if (!fs.existsSync(f)) continue;
+  for (const f of listSkillMdFiles()) {
     const p = parse(f);
     if (p) skills.push(p);
   }
