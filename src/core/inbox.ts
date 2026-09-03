@@ -3,7 +3,7 @@ import { vibePath } from './paths.js';
 import { appendJsonl, nowIso, readJsonl } from './store.js';
 import { issueToken, type TokenKind } from './tokens.js';
 
-/** 인박스 — 질문·답·STUCK·토큰이 한 파일에 append 된다. 사람이 읽을 수 있다. */
+/** Inbox — questions, answers, STUCK notices and tokens append to one human-readable file. */
 export interface QuestionEvent {
   type: 'question';
   id: string;
@@ -102,7 +102,7 @@ export function resolve(root: string, id: string): boolean {
   return true;
 }
 
-/** 같은 시나리오·같은 질문이 이미 열려 있으면 다시 묻지 않는다. */
+/** Do not ask the same open question twice. */
 export function hasOpenQuestion(root: string, predicate: (q: QuestionView) => boolean): boolean {
   return openQuestions(root).some(predicate);
 }

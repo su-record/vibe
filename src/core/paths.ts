@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 export const VIBE_DIR = '.vibe';
 
-/** `.vibe/` 를 가진 가장 가까운 상위 디렉토리. 없으면 시작 디렉토리. */
+/** Nearest ancestor that contains `.vibe/`; falls back to the start directory. */
 export function findProjectRoot(start: string = process.cwd()): string {
   let dir = path.resolve(start);
   for (;;) {
@@ -23,9 +23,9 @@ export function hasVibe(root: string): boolean {
   return fs.existsSync(vibePath(root));
 }
 
-/** 패키지 루트 — dist/ 나 src/ 어디서 실행돼도 같은 곳. */
+/** Package root — the same place whether running from dist/ or src/. */
 export function packageRoot(): string {
   const here = path.dirname(fileURLToPath(import.meta.url));
-  // dist/core 또는 src/core → 두 단계 위
+  // dist/core or src/core → two levels up
   return path.resolve(here, '..', '..');
 }

@@ -13,13 +13,13 @@ export interface StateFile {
   failStreak: number;
   lastFailHash: string | null;
   doneAt: string | null;
-  /** DONE 시점의 작업 트리 해시 — 달라지면 DONE 은 무효 */
+  /** Working-tree fingerprint at DONE — if it changes, DONE is void */
   doneTree: string | null;
   abandonedReason: string | null;
   updatedAt: string;
 }
 
-/** 허용 전이 — 여기 없는 전이는 종료 4. 모델이 원하는 상태를 말해도 소용없다. */
+/** Allowed transitions. Anything else exits 4 — the model naming a state changes nothing. */
 export const TRANSITIONS: Record<State, ReadonlyArray<State>> = {
   NONE: ['DRAFT'],
   DRAFT: ['DRAFT', 'APPROVED', 'ABANDONED'],
@@ -63,7 +63,7 @@ export function canTransition(from: State, to: State): boolean {
   return TRANSITIONS[from].includes(to);
 }
 
-/** 전이 표를 지키는 유일한 쓰기 경로. */
+/** The only write path that honours the transition table. */
 export function transition(root: string, to: State, patch: Partial<StateFile> = {}): StateFile {
   const current = readState(root);
   if (!canTransition(current.state, to)) {
@@ -72,7 +72,7 @@ export function transition(root: string, to: State, patch: Partial<StateFile> = 
   return writeState(root, { ...current, ...patch, state: to });
 }
 
-/** 단계는 상태에서 파생된다 — 저장하지 않는다. */
+/** The stage is derived from state — never stored. */
 export function stageOf(state: StateFile, hasIntent: boolean, allPassedOnce: boolean): Stage {
   switch (state.state) {
     case 'NONE':

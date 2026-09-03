@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * vibe CLI — 판정·기록·토큰. 스킬은 셸로 이것을 부른다.
- * 규약: 모든 명령은 --json 을 받는다. 종료 코드가 판정이다 (errors.ts).
+ * vibe CLI — verdicts, records, tokens. Skills call this from the shell.
+ * Every command accepts --json. The exit code is the verdict (errors.ts).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,7 +9,7 @@ import { runChecks } from './core/check.js';
 import { detectClient, detectModel } from './core/client.js';
 import { denied, usage, VibeError } from './core/errors.js';
 import { answer, ask, openQuestions, resolve as resolveQuestion } from './core/inbox.js';
-import { abandon, approve, draft, intentPath, loadScenarios, scenariosPath } from './core/intent.js';
+import { abandon, approve, draft, intentPath, loadScenarios } from './core/intent.js';
 import { addKnowledge } from './core/knowledge.js';
 import { compare, readLedger, record, type CompareBy, type CompareMetric } from './core/ledger.js';
 import { findProjectRoot, hasVibe, vibePath } from './core/paths.js';
@@ -56,18 +56,18 @@ function flagString(flags: Flags, key: string): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-const HELP = `vibe — AX/FDE 하네스. 판정은 하네스가, 승인은 사람이.
+const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
-  설치·환경   init [--client claude,codex,chatgpt] · status · uninstall [--purge-state]
-  작업 상태   state · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
-              approve <token> · check [id…] [--all] · evidence [run] · abandon --reason "…"
-  사람 개입   ask "질문" [--options "a|b"] [--default a] [--needs approve|authorize:<행동>] [--target "…"]
-              authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "답"|resolve <id>]
-  기억        regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
-              knowledge add <file|--stdin> --title "…"
-  장부        ledger [--since 7d] · ledger compare --by client|model --metric checks|turns|cost [--min-runs 5]
+  setup     init [--client claude,codex,chatgpt] · status · uninstall [--purge-state]
+  work      state · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
+            approve <token> · check [id…] [--all] · evidence [run] · abandon --reason "…"
+  human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
+            authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "text"|resolve <id>]
+  memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
+            knowledge add <file|--stdin> --title "…"
+  ledger    ledger [--since 7d] · ledger compare --by client|model --metric checks|turns|cost [--min-runs 5]
 
-모든 명령은 --json 을 받는다. 종료 코드: 0 성공 · 1 판정 실패 · 2 사용 오류 · 3 토큰 오류 · 4 상태 전이 불가
+Every command accepts --json. Exit codes: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition
 `;
 
 interface Output {
@@ -77,7 +77,7 @@ interface Output {
 }
 
 function requireVibe(root: string): void {
-  if (!hasVibe(root)) throw usage('.vibe/ 가 없다 — 먼저 `vibe init` 을 실행한다');
+  if (!hasVibe(root)) throw usage('no .vibe/ here — run `vibe init` first');
 }
 
 function readStdin(): string {
@@ -87,27 +87,27 @@ function readStdin(): string {
 function parseSince(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const match = /^(\d+)([dhm])$/.exec(value);
-  if (!match) throw usage('--since 는 7d · 12h · 30m 형식이다');
+  if (!match) throw usage('--since takes forms like 7d · 12h · 30m');
   const n = Number(match[1]);
   const unit = { d: 86_400_000, h: 3_600_000, m: 60_000 }[match[2] as 'd' | 'h' | 'm'];
   return n * unit;
 }
 
-// ─── 명령 ───────────────────────────────────────────────────────────
+// ─── Commands ───────────────────────────────────────────────────────
 
 function cmdInit(root: string, flags: Flags): Output {
   const raw = flagString(flags, 'client');
   const clients = raw ? raw.split(',').map((c) => c.trim()) : ['claude'];
   const bad = clients.filter((c) => !ALL_CLIENTS.includes(c as Client));
-  if (bad.length > 0) throw usage(`알 수 없는 클라이언트: ${bad.join(', ')} (claude, codex, chatgpt)`);
+  if (bad.length > 0) throw usage(`unknown client: ${bad.join(', ')} (claude, codex, chatgpt)`);
   const report = initProject(root, clients as Client[]);
   const lines = [
     `vibe init — ${root}`,
     `  clients   ${report.clients.join(', ')}`,
-    `  created   ${report.created.length ? report.created.join(', ') : '(이미 있음)'}`,
+    `  created   ${report.created.length ? report.created.join(', ') : '(already present)'}`,
     ...Object.entries(report.card).map(([file, how]) => `  card      ${file} ${how} (${report.cardBytes} bytes)`),
     ...Object.entries(report.skills).map(([dir, names]) => `  skills    ${dir}: ${names.join(', ')}`),
-    `  hook      ${report.hook ?? '(claude 아님)'}`,
+    `  hook      ${report.hook ?? '(not claude)'}`,
   ];
   return { json: report, text: lines.join('\n'), code: 0 };
 }
@@ -118,7 +118,7 @@ function cmdStatus(root: string): Output {
     `vibe status — ${root}`,
     `  .vibe     ${s.vibe ? 'ok' : 'missing (vibe init)'}`,
     `  state     ${s.state}`,
-    `  card      ${s.cardBytes} bytes${s.cardOver ? ' — 1KB 초과!' : ''} · CLAUDE.md ${s.cards['CLAUDE.md'] ? 'ok' : '-'} · AGENTS.md ${s.cards['AGENTS.md'] ? 'ok' : '-'}`,
+    `  card      ${s.cardBytes} bytes${s.cardOver ? ' — over 1KB!' : ''} · CLAUDE.md ${s.cards['CLAUDE.md'] ? 'ok' : '-'} · AGENTS.md ${s.cards['AGENTS.md'] ? 'ok' : '-'}`,
     `  skills    ${Object.entries(s.skills).map(([d, n]) => `${d} ${n}`).join(' · ')}`,
     `  hook      ${s.hook ? 'ok' : 'missing'}`,
     `  inbox     ${s.inboxOpen} open`,
@@ -136,8 +136,8 @@ function cmdState(root: string): Output {
   const view = buildStateView(root);
   const lines = [
     `${view.state} · ${view.stage}${view.intent ? ` · ${view.intent.title}` : ''}`,
-    ...view.scenarios.map((s) => `  ${s.last === 'pass' ? '✔' : s.last === 'fail' ? '✘' : s.last === 'pending' ? '?' : '·'} ${s.id} [${s.type}] ${s.then}${s.regression ? ' (회귀)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''}`),
-    `  remaining ${view.remaining.length ? view.remaining.join(', ') : '없음'}`,
+    ...view.scenarios.map((s) => `  ${s.last === 'pass' ? '✔' : s.last === 'fail' ? '✘' : s.last === 'pending' ? '?' : '·'} ${s.id} [${s.type}] ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''}`),
+    `  remaining ${view.remaining.length ? view.remaining.join(', ') : 'none'}`,
     `  inbox     ${view.inbox.open} open${view.inbox.items.map((q) => `\n    [${q.id}] ${q.question}`).join('')}`,
     ...view.notices.map((n) => `  ! ${n}`),
   ];
@@ -160,20 +160,20 @@ function cmdIntent(root: string, sub: string | undefined, args: string[], flags:
     scenariosText = payload.scenarios ?? '';
   } else {
     const [intentFile, scenariosFile] = args;
-    if (!intentFile || !scenariosFile) throw usage('intent draft <intent.md> <scenarios.yaml> 또는 --stdin');
+    if (!intentFile || !scenariosFile) throw usage('intent draft <intent.md> <scenarios.yaml> or --stdin');
     intentText = readText(path.resolve(root, intentFile)) ?? '';
     scenariosText = readText(path.resolve(root, scenariosFile)) ?? '';
-    if (!intentText) throw usage(`읽을 수 없다: ${intentFile}`);
-    if (!scenariosText) throw usage(`읽을 수 없다: ${scenariosFile}`);
+    if (!intentText) throw usage(`cannot read ${intentFile}`);
+    if (!scenariosText) throw usage(`cannot read ${scenariosFile}`);
   }
   const result = draft(root, intentText, scenariosText);
   if (!result.ok) {
-    return { json: result, text: `반려 ${result.rejections.length}건 — 저장하지 않았다\n${result.rejections.map((r) => `  ${r.id}: ${r.reason}`).join('\n')}`, code: 1 };
+    return { json: result, text: `rejected ${result.rejections.length} — nothing was saved\n${result.rejections.map((r) => `  ${r.id}: ${r.reason}`).join('\n')}`, code: 1 };
   }
   const text = [
-    `DRAFT 저장 · ${result.scenarios.length} 시나리오 · hash ${result.hash}`,
+    `DRAFT saved · ${result.scenarios.length} scenarios · hash ${result.hash}`,
     ...result.scenarios.map((s) => `  ${s.id} [${s.check.type}] ${s.then}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''}`),
-    `승인 토큰: ${result.token} (${result.expiresAt} 까지) — 사용자에게 보여 주고, 사용자가 붙여넣으면 \`vibe approve <token>\``,
+    `approval token: ${result.token} (valid until ${result.expiresAt}) — show it to the user; when they paste it back, run \`vibe approve <token>\``,
   ].join('\n');
   return { json: result, text, code: 0 };
 }
@@ -193,8 +193,8 @@ async function cmdCheck(root: string, args: string[], flags: Flags): Promise<Out
   const lines = [
     `${report.run} · ${report.state} · pass ${report.passed} · fail ${report.failed}${report.pending ? ` · pending ${report.pending}` : ''}`,
     ...report.outcomes.map((o) => `  ${o.status === 'pass' ? '✔' : o.status === 'fail' ? '✘' : '?'} ${o.id} [${o.type}] exit=${o.exit ?? '-'} ${o.ms}ms${o.reason ? ` — ${o.reason}` : ''}${o.tail && o.status !== 'pass' ? `\n      ${o.tail.split('\n').join('\n      ')}` : ''}`),
-    report.done ? '  DONE — 모든 게이트 시나리오 통과' : `  remaining ${report.remaining.join(', ') || '없음'}`,
-    ...(report.stuck ? ['  STUCK — 같은 실패 2회 연속. 인박스를 본다'] : []),
+    report.done ? '  DONE — every gate scenario passed' : `  remaining ${report.remaining.join(', ') || 'none'}`,
+    ...(report.stuck ? ['  STUCK — the same failure twice in a row; see the inbox'] : []),
   ];
   const code = report.stuck || report.failed > 0 ? 1 : 0;
   return { json: report, text: lines.join('\n'), code };
@@ -204,9 +204,9 @@ function cmdEvidence(root: string, args: string[]): Output {
   requireVibe(root);
   const dir = vibePath(root, 'evidence');
   const runId = args[0] ?? (fs.existsSync(dir) ? fs.readdirSync(dir).filter((n) => n.endsWith('.json')).sort((a, b) => Number(a.slice(2, -5)) - Number(b.slice(2, -5))).at(-1)?.replace('.json', '') : undefined);
-  if (!runId) throw usage('evidence 가 없다');
+  if (!runId) throw usage('no evidence yet');
   const evidence = readJson<unknown>(path.join(dir, `${runId}.json`));
-  if (!evidence) throw usage(`없는 run: ${runId}`);
+  if (!evidence) throw usage(`no such run: ${runId}`);
   return { json: evidence, text: JSON.stringify(evidence, null, 2), code: 0 };
 }
 
@@ -219,19 +219,19 @@ function cmdAbandon(root: string, flags: Flags): Output {
 function cmdAsk(root: string, args: string[], flags: Flags): Output {
   requireVibe(root);
   const question = args.join(' ');
-  if (!question) throw usage('ask "질문"');
+  if (!question) throw usage('ask "question"');
   const options = flagString(flags, 'options')?.split('|').map((s) => s.trim()).filter(Boolean);
   const needsRaw = flagString(flags, 'needs');
   let needs: { kind: 'approve' | 'authorize'; target: string } | undefined;
   if (needsRaw === 'approve') {
     const state = readState(root);
-    if (state.state !== 'DRAFT' || !state.intentHash) throw denied('승인 토큰은 DRAFT 상태에서만 발급된다');
+    if (state.state !== 'DRAFT' || !state.intentHash) throw denied('an approval token can only be issued in DRAFT');
     needs = { kind: 'approve', target: state.intentHash };
   } else if (needsRaw?.startsWith('authorize:')) {
     const action = needsRaw.slice('authorize:'.length);
     needs = { kind: 'authorize', target: `${action}:${flagString(flags, 'target') ?? ''}` };
   } else if (needsRaw) {
-    throw usage('--needs 는 approve 또는 authorize:<행동>');
+    throw usage('--needs takes approve or authorize:<action>');
   }
   const input: Parameters<typeof ask>[1] = { question };
   if (options && options.length) input.options = options;
@@ -240,7 +240,7 @@ function cmdAsk(root: string, args: string[], flags: Flags): Output {
   if (needs) input.needs = needs;
   const result = ask(root, input);
   record(root, { event: 'ask', client: detectClient(), model: detectModel(), detail: question.slice(0, 120) });
-  const text = [`질문 기록 [${result.id}]`, ...(result.token ? [`토큰: ${result.token} (${result.expiresAt} 까지) — 사용자가 채팅에 붙여넣어야 진행된다`] : [])].join('\n');
+  const text = [`question recorded [${result.id}]`, ...(result.token ? [`token: ${result.token} (valid until ${result.expiresAt}) — the user must paste it back in chat before anything proceeds`] : [])].join('\n');
   return { json: result, text, code: 0 };
 }
 
@@ -260,25 +260,25 @@ function cmdInbox(root: string, sub: string | undefined, args: string[]): Output
   requireVibe(root);
   if (sub === 'answer') {
     const [id, ...rest] = args;
-    if (!id || rest.length === 0) throw usage('inbox answer <id> "답"');
-    if (!answer(root, id, rest.join(' '))) throw usage(`없는 질문: ${id}`);
+    if (!id || rest.length === 0) throw usage('inbox answer <id> "text"');
+    if (!answer(root, id, rest.join(' '))) throw usage(`no such question: ${id}`);
     return { json: { ok: true }, text: `answered ${id}`, code: 0 };
   }
   if (sub === 'resolve') {
     const [id] = args;
     if (!id) throw usage('inbox resolve <id>');
-    if (!resolveQuestion(root, id)) throw usage(`없는 질문: ${id}`);
+    if (!resolveQuestion(root, id)) throw usage(`no such question: ${id}`);
     return { json: { ok: true }, text: `resolved ${id}`, code: 0 };
   }
   const open = openQuestions(root);
-  return { json: open, text: open.length ? open.map((q) => `[${q.id}] ${q.question}${q.options ? ` (${q.options.join(' | ')})` : ''}${q.answer ? `\n    답: ${q.answer}` : ''}`).join('\n') : '인박스 비어 있음', code: 0 };
+  return { json: open, text: open.length ? open.map((q) => `[${q.id}] ${q.question}${q.options ? ` (${q.options.join(' | ')})` : ''}${q.answer ? `\n    answer: ${q.answer}` : ''}`).join('\n') : 'inbox is empty', code: 0 };
 }
 
 function cmdRegress(root: string, sub: string | undefined, flags: Flags): Output {
   requireVibe(root);
   if (sub === 'list') {
     const list = listRegressions(root);
-    return { json: list, text: list.length ? list.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n') : '회귀 없음', code: 0 };
+    return { json: list, text: list.length ? list.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n') : 'no regressions', code: 0 };
   }
   if (sub !== 'record') throw usage('regress record --scenario <id> --title "…" | regress list');
   const scenario = flagString(flags, 'scenario');
@@ -313,16 +313,16 @@ function cmdLedger(root: string, sub: string | undefined, flags: Flags): Output 
       `compare by ${by} · metric ${metric} · verdict ${c.verdict}`,
       `  ${c.reason}`,
       ...c.arms.map((a) => `  ${a.arm}: runs ${a.runs} · usable ${a.usable}${a.range ? ` · min ${a.range.min} · max ${a.range.max} · mean ${a.range.mean.toFixed(2)}` : ''}`),
-      ...(c.delta !== null ? [`  delta ${c.delta.toFixed(2)} (절대 단위)`] : []),
+      ...(c.delta !== null ? [`  delta ${c.delta.toFixed(2)} (absolute units)`] : []),
     ].join('\n');
     return { json: c, text, code: 0 };
   }
   const events = readLedger(root, parseSince(flagString(flags, 'since')));
   const text = events.map((e) => `${e.at} ${e.event.padEnd(9)} ${e.client}${e.model ? `/${e.model}` : ''}${e.run ? ` ${e.run}` : ''}${typeof e.passed === 'number' ? ` pass ${e.passed} fail ${e.failed ?? 0}` : ''}${e.detail ? ` ${e.detail}` : ''}`).join('\n');
-  return { json: events, text: text || '장부 비어 있음', code: 0 };
+  return { json: events, text: text || 'ledger is empty', code: 0 };
 }
 
-// ─── 디스패치 ───────────────────────────────────────────────────────
+// ─── Dispatch ───────────────────────────────────────────────────────
 
 export async function dispatch(argv: string[]): Promise<Output> {
   const { positionals, flags } = parseArgs(argv);
@@ -333,6 +333,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
     return { json: { version: pkg?.version }, text: pkg?.version ?? 'unknown', code: 0 };
   }
   const root = cmd === 'init' ? process.cwd() : findProjectRoot();
+  const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
   switch (cmd) {
     case 'init':
       return cmdInit(root, flags);
@@ -345,17 +346,17 @@ export async function dispatch(argv: string[]): Promise<Output> {
     case 'intent':
       return cmdIntent(root, sub, rest, flags);
     case 'approve':
-      return cmdApprove(root, [sub, ...rest].filter((s): s is string => Boolean(s)));
+      return cmdApprove(root, tail);
     case 'check':
-      return cmdCheck(root, [sub, ...rest].filter((s): s is string => Boolean(s)), flags);
+      return cmdCheck(root, tail, flags);
     case 'evidence':
-      return cmdEvidence(root, [sub, ...rest].filter((s): s is string => Boolean(s)));
+      return cmdEvidence(root, tail);
     case 'abandon':
       return cmdAbandon(root, flags);
     case 'ask':
-      return cmdAsk(root, [sub, ...rest].filter((s): s is string => Boolean(s)), flags);
+      return cmdAsk(root, tail, flags);
     case 'authorize':
-      return cmdAuthorize(root, [sub, ...rest].filter((s): s is string => Boolean(s)), flags);
+      return cmdAuthorize(root, tail, flags);
     case 'inbox':
       return cmdInbox(root, sub, rest);
     case 'regress':
@@ -365,7 +366,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
     case 'ledger':
       return cmdLedger(root, sub, flags);
     default:
-      throw usage(`알 수 없는 명령: ${cmd}\n${HELP}`);
+      throw usage(`unknown command: ${cmd}\n${HELP}`);
   }
 }
 

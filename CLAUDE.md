@@ -1,11 +1,12 @@
-# vibe 4 (개발 저장소)
+# vibe 4 (development repository)
 
-이 저장소는 vibe 4 자신이다. vibe 4 로 vibe 4 를 개발한다 — `.vibe/` 의 Intent·시나리오가 이 저장소의 완료 정의다.
+This repository is vibe 4 itself. vibe 4 develops vibe 4 — the intent and scenarios in `.vibe/` are this repository's definition of done.
 
-- 빌드 `npm run build` · 테스트 `npm test` · 둘 다 `npm run check`
-- 판정은 `vibe check --all` (dist 가 있어야 한다: `node dist/cli.js check --all`)
-- 소스 5천 줄 이하, 상시 카드(`card.md`) 1KB 이하, 공통 스킬 6개 본문 합계 300줄 이하 — 넘기면 다시 vibe 3 이다
-- 설계안: 세션 아티팩트 "vibe 4 설계안" (Intent 의 원본)
+- Build `npm run build` · test `npm test` · both `npm run check`
+- Verdict: `vibe check --all` (needs dist: `node dist/cli.js check --all`)
+- Limits: source ≤ 5,000 lines, always-on card (`card.md`) ≤ 1KB, six common skills ≤ 300 lines in total — past these it is vibe 3 again
+- Language: every record, comment, message and document is English; the model talks to the user in the user's language
+- Design: the session artifact "vibe 4 설계안" is the source of the intent
 
 <!-- vibe:start -->
 You are working inside vibe. Rules:
@@ -15,5 +16,6 @@ You are working inside vibe. Rules:
 4. If `vibe check` fails twice the same way, stop and `vibe ask`.
 5. Surface at most three things the user did not ask about, each with a reason from the harness.
 6. Record any failure you fixed with `vibe regress record`.
+7. Talk to the user in the user's language. Write every record (intent, scenarios, inbox, knowledge, docs) in English.
 Start with `/vibe {request}`.
 <!-- vibe:end -->

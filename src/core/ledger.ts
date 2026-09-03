@@ -2,8 +2,9 @@ import { vibePath } from './paths.js';
 import { appendJsonl, nowIso, readJsonl } from './store.js';
 
 /**
- * 장부 — 모든 런이 클라이언트·모델·결과·비용을 남긴다. 비교는 장부 질의다.
- * 비율·퍼센트·배수 필드는 없다. 있으면 쓰이고, 쓰이면 주장이 된다.
+ * Ledger — every run leaves client, model, result and cost. Comparison is a ledger query.
+ * There are no ratio / percent / multiplier fields: a field that exists gets used, and a
+ * used number becomes a claim.
  */
 export type LedgerEventType =
   | 'init'
@@ -53,7 +54,7 @@ export function readLedger(root: string, sinceMs?: number): LedgerEvent[] {
   return all.filter((e) => new Date(e.at).getTime() >= cutoff);
 }
 
-// ─── 비교 — 판정 불가를 코드가 낸다 ────────────────────────────────
+// ─── Comparison — the code says "cannot tell" when it cannot ─────────────
 
 export type CompareBy = 'client' | 'model';
 export type CompareMetric = 'checks' | 'turns' | 'cost';
@@ -77,7 +78,7 @@ export interface Comparison {
   arms: ArmSummary[];
   verdict: Verdict;
   reason: string;
-  /** 절대 단위 차이 (b − a). 비율이 아니다 */
+  /** Absolute difference (b − a). Not a ratio. */
   delta: number | null;
 }
 
@@ -113,19 +114,19 @@ export function compare(root: string, by: CompareBy, metric: CompareMetric, minR
     };
   });
   const base = { by, metric, arms, delta: null };
-  if (arms.length < 2) return { ...base, verdict: 'insufficient-runs', reason: '비교할 arm 이 2개 미만이다' };
+  if (arms.length < 2) return { ...base, verdict: 'insufficient-runs', reason: 'fewer than two arms to compare' };
   const [a, b] = arms as [ArmSummary, ArmSummary];
   if (a.usable < minRuns || b.usable < minRuns) {
-    return { ...base, verdict: 'insufficient-runs', reason: `arm 당 사용 가능 런이 ${minRuns} 미만이다 (${a.arm} ${a.usable}, ${b.arm} ${b.usable})` };
+    return { ...base, verdict: 'insufficient-runs', reason: `fewer than ${minRuns} usable runs per arm (${a.arm} ${a.usable}, ${b.arm} ${b.usable})` };
   }
   const setsA = new Set(a.scenarioSets);
   const setsB = new Set(b.scenarioSets);
   if (setsA.size !== 1 || setsB.size !== 1 || [...setsA][0] !== [...setsB][0]) {
-    return { ...base, verdict: 'mixed-scenario-sets', reason: '두 arm 이 같은 시나리오 셋을 돌지 않았다 — 다른 일을 시킨 결과는 비교가 아니다' };
+    return { ...base, verdict: 'mixed-scenario-sets', reason: 'the arms did not run the same scenario set — results of different work are not comparable' };
   }
   const ra = a.range as Range;
   const rb = b.range as Range;
   const overlap = ra.min <= rb.max && rb.min <= ra.max;
-  if (overlap) return { ...base, verdict: 'inconclusive', reason: '관측 범위(min~max)가 겹친다 — 이 표본으로는 차이를 말할 수 없다' };
-  return { ...base, verdict: 'difference-observed', reason: '범위가 겹치지 않는다. "차이가 관측됐다" 이지 "낫다" 가 아니다', delta: rb.mean - ra.mean };
+  if (overlap) return { ...base, verdict: 'inconclusive', reason: 'observed ranges (min–max) overlap — this sample cannot tell a difference' };
+  return { ...base, verdict: 'difference-observed', reason: 'ranges do not overlap. "a difference was observed", not "one is better"', delta: rb.mean - ra.mean };
 }

@@ -13,7 +13,7 @@ export function readText(file: string): string | null {
   }
 }
 
-/** 임시 파일 → rename. 읽는 쪽이 반쯤 쓰인 파일을 보지 않는다. */
+/** Temp file → rename. Readers never see a half-written file. */
 export function writeAtomic(file: string, text: string): void {
   ensureDir(path.dirname(file));
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
@@ -49,7 +49,7 @@ export function readJsonl<T>(file: string): T[] {
     try {
       out.push(JSON.parse(line) as T);
     } catch {
-      // 깨진 줄은 건너뛴다 — append 중 크래시의 흔적
+      // skip broken lines — the trace of a crash mid-append
     }
   }
   return out;

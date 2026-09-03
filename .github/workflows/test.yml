@@ -19,6 +19,6 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      # vibe 4 가 자기 시나리오를 자기 CLI 로 판정한다. 승인은 사람 토큰이라 CI 에서는 카드·크기 검사만 직접 돈다.
+      # vibe 4 judges its own scenarios with its own CLI. Approval is a human token, so CI runs the size checks directly.
       - run: node checks/card-size.js
       - run: node checks/loc.js

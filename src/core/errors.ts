@@ -1,6 +1,6 @@
 /**
- * 종료 코드가 판정이다.
- *   0 성공 · 1 판정 실패(검사 불통과·STUCK) · 2 사용 오류 · 3 권한·토큰 오류 · 4 상태 전이 불가
+ * The exit code is the verdict.
+ *   0 success · 1 verdict failed (check failed / STUCK) · 2 usage error · 3 token/permission error · 4 invalid transition
  */
 export type ExitCode = 1 | 2 | 3 | 4;
 

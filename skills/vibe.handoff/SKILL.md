@@ -1,25 +1,25 @@
 ---
 name: vibe.handoff
-description: 완료 보고 + 인계 — 무엇을 만들었고 어떤 검사가 언제 통과했는지 보고하고, 운영할 사람이 혼자 돌릴 수 있는 문서를 남긴다. 문서의 명령은 하네스가 실제로 돌려 확인한다.
+description: Report and hand off — say what was built and which checks passed when, and leave a document the operator can run alone. The harness actually runs the commands in that document.
 user-invocable: false
 ---
 
-# 완료 보고 + 인계 (handoff)
+# Report + handoff
 
-## 절차
+## Procedure
 
-1. `vibe state --json` 이 DONE 인지 확인한다. 아니면 `vibe.prove` 로 돌아간다.
-2. 완료 보고를 쓴다 (사용자에게):
+1. Confirm `vibe state --json` is DONE. Otherwise go back to `vibe.prove`.
+2. Write the completion report (to the user, in the user's language):
 
 ```
-완료: {intent 제목}
-- 만든 것: {파일·기능 한 줄씩}
-- 통과한 검사: {id} [{type}] {at} …   (evidence: vibe evidence {run})
-- 사람 확인으로 남은 것: {human 시나리오와 인박스 id}
-- 하지 않은 것: {의도적으로 뺀 것}
+Done: {intent title}
+- Built: {one line per file/feature}
+- Checks passed: {id} [{type}] {at} …   (evidence: vibe evidence {run})
+- Left for human confirmation: {human scenarios and inbox ids}
+- Deliberately not done: {…}
 ```
 
-3. 인계 문서 `HANDOFF.md`(또는 사용자가 정한 위치)를 쓴다. 절 네 개는 필수다: **실행 방법**, **실패했을 때(알림·재실행)**, **되돌리는 방법**, **연락처·담당**. 빠지면 먼저 말한다.
-4. 인계 문서의 실행 명령이 실제로 도는지 시나리오로 추가한다 (`run` 검사) — `vibe intent draft` 로 시나리오를 늘리면 재승인이 필요하므로, 이미 승인된 시나리오에 인계 검사가 있으면 그것을 `vibe check` 한다. 없으면 사용자에게 "인계 검사를 추가해 재승인할지" 묻는다.
-5. 배포·발송 같은 되돌릴 수 없는 마지막 행동은 `vibe.build` 의 토큰 절차 그대로.
-6. 다음 요청을 위해 `knowledge/` 에 남길 것(반복된 질문·고객 규약)이 있으면 `vibe knowledge add` 를 제안한다.
+3. Write the handoff document `HANDOFF.md` (or the location the user chose), in English. Four sections are mandatory: **How to run**, **When it fails (alerts · rerun)**, **How to roll back**, **Contacts / owner**. Say so first if any is missing.
+4. The commands in the handoff document must be proven to run (`run` check). If an approved scenario already covers the handoff check, run `vibe check` on it. If not, ask the user whether to add a handoff scenario and re-approve.
+5. A final irreversible action (deploy, send) follows the token procedure in `vibe.build` exactly.
+6. If something should be kept for the next request (a repeated question, a customer convention), propose `vibe knowledge add`.

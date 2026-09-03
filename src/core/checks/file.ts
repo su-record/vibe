@@ -10,7 +10,7 @@ function done(pass: boolean, started: number, tail: string, reason?: string): Ch
   return result;
 }
 
-/** `file` 검사 — 존재 · 정규식 · 포함 · JSON Schema. 순서대로 전부 통과해야 한다. */
+/** `file` check — existence · regex · substring · JSON Schema. Every rule present must pass. */
 export function fileCheck(check: FileCheck, root: string): CheckResult {
   const started = Date.now();
   const target = path.resolve(root, check.path);

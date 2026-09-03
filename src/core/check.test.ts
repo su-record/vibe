@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
 
-const INTENT = '# 테스트 Intent\n\n## 왜\n검사\n';
+const INTENT = '# Test intent\n\n## Why\nchecks\n';
 
 function approved(scenarios: string): void {
   const result = draft(root, INTENT, scenarios);
@@ -24,17 +24,17 @@ function approved(scenarios: string): void {
   approve(root, result.token);
 }
 
-describe('check — 유일한 판정 경로', () => {
-  it('승인 전에는 check 가 돌지 않는다 (종료 4)', async () => {
+describe('check — the only verdict path', () => {
+  it('does not run before approval (exit 4)', async () => {
     draft(root, INTENT, `- { id: a, then: x, check: { type: run, cmd: "exit 0" } }`);
     await expect(runChecks(root)).rejects.toThrowError(VibeError);
   });
 
-  it('run·file 검사를 하네스가 실행하고 Evidence 를 쓴다 — 전부 통과면 DONE', async () => {
+  it('runs run·file checks itself and writes evidence — all pass means DONE', async () => {
     fs.writeFileSync(path.join(root, 'out.txt'), 'total=42\n');
     approved(`
 - { id: ok, then: exit 0, check: { type: run, cmd: "exit 0" } }
-- { id: out, then: out.txt 에 total 이 있다, check: { type: file, path: out.txt, pattern: "^total=\\\\d+$" } }
+- { id: out, then: out.txt has a total, check: { type: file, path: out.txt, pattern: "^total=\\\\d+$" } }
 `);
     const report = await runChecks(root);
     expect(report.state).toBe('DONE');
@@ -45,16 +45,16 @@ describe('check — 유일한 판정 경로', () => {
     expect(readLedger(root).map((e) => e.event)).toEqual(['draft', 'approve', 'check', 'done']);
   });
 
-  it('DONE 은 check 없이 만들어지지 않는다 — 상태 파일을 직접 써도 다음 state 에서 트리가 다르면 무효', async () => {
+  it('DONE cannot be made without check — a forged state file is void once the tree differs', async () => {
     approved(`- { id: ok, then: x, check: { type: run, cmd: "exit 0" } }`);
-    // 모델이 결과 파일을 위조하고 DONE 을 선언했다고 치자
+    // Suppose the model forged the results and declared DONE by hand
     transition(root, 'RUNNING');
     transition(root, 'DONE', { doneTree: 'forged', doneAt: new Date().toISOString() });
     expect(invalidateDoneIfEdited(root)).toBe(true);
     expect(readState(root).state).toBe('RUNNING');
   });
 
-  it('실패는 exit 와 출력 꼬리를 남기고 DONE 이 아니다', async () => {
+  it('a failure keeps exit and output tail and is not DONE', async () => {
     approved(`- { id: bad, then: x, check: { type: run, cmd: "echo boom; exit 3" } }`);
     const report = await runChecks(root);
     expect(report.state).toBe('RUNNING');
@@ -62,24 +62,24 @@ describe('check — 유일한 판정 경로', () => {
     expect(readResults(root)['bad']?.last).toBe('fail');
   });
 
-  it('같은 실패 2회 연속이면 STUCK 이고 인박스에 질문이 남는다', async () => {
+  it('the same failure twice in a row is STUCK and leaves an inbox question', async () => {
     approved(`- { id: bad, then: x, check: { type: run, cmd: "echo same; exit 1" } }`);
     await runChecks(root);
     const second = await runChecks(root);
     expect(second.stuck).toBe(true);
     expect(readState(root).state).toBe('STUCK');
     expect(openQuestions(root).some((q) => q.question.startsWith('STUCK'))).toBe(true);
-    // 다른 실패면 streak 이 끊긴다
+    // a different failure breaks the streak
     fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), `- { id: bad, then: x, check: { type: run, cmd: "echo other; exit 2" } }\n`);
     const third = await runChecks(root);
     expect(third.stuck).toBe(false);
     expect(readState(root).state).toBe('RUNNING');
   });
 
-  it('human 시나리오는 게이트가 아니다 — 인박스에 질문만 남기고 DONE 을 막지 않는다', async () => {
+  it('human scenarios are not gates — they ask once in the inbox and do not block DONE', async () => {
     approved(`
 - { id: ok, then: x, check: { type: run, cmd: "exit 0" } }
-- { id: taste, then: 문구가 자연스럽다, check: { type: human, question: "문구를 봐 주세요" } }
+- { id: taste, then: the wording reads well, check: { type: human, question: "Please review the wording" } }
 `);
     const report = await runChecks(root, { all: true });
     expect(report.done).toBe(true);
@@ -89,7 +89,7 @@ describe('check — 유일한 판정 경로', () => {
     expect(openQuestions(root)).toHaveLength(1);
   });
 
-  it('DONE 이후 파일이 바뀌면 RUNNING 으로 돌아간다', async () => {
+  it('editing after DONE goes back to RUNNING', async () => {
     approved(`- { id: ok, then: x, check: { type: run, cmd: "exit 0" } }`);
     await runChecks(root);
     expect(readState(root).state).toBe('DONE');
@@ -99,7 +99,7 @@ describe('check — 유일한 판정 경로', () => {
     expect(readState(root).state).toBe('RUNNING');
   });
 
-  it('기본 선택은 아직 통과하지 않은 시나리오만이다', async () => {
+  it('by default selects only scenarios that have not passed yet', async () => {
     approved(`
 - { id: a, then: x, check: { type: run, cmd: "exit 0" } }
 - { id: b, then: y, check: { type: run, cmd: "exit 1" } }

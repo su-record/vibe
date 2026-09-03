@@ -1,4 +1,4 @@
-// 소스 5000 줄 상한 (테스트 제외). 크기가 곧 vibe 3 으로 되돌아가는 첫 신호다.
+// Source is capped at 5,000 lines (tests excluded). Size is the first sign of drifting back to vibe 3.
 import fs from 'node:fs';
 import path from 'node:path';
 const root = new URL('../src', import.meta.url).pathname;

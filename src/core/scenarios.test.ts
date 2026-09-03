@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { parseScenarios } from './scenarios.js';
 
-describe('시나리오 검사 가능성', () => {
-  it('검사 유형이 없는 시나리오는 반려된다 — 산문은 Contract 가 아니다', () => {
+describe('scenario checkability', () => {
+  it('rejects a scenario without a check — prose is not a contract', () => {
     const { scenarios, rejections } = parseScenarios(`
 - id: s1
-  then: 정산표가 나온다
+  then: the settlement sheet is produced
 - id: s2
-  then: 합계가 맞다
+  then: totals match
   check: { type: run, cmd: "node checks/sum.js" }
 `);
     expect(scenarios.map((s) => s.id)).toEqual(['s2']);
-    expect(rejections).toEqual([{ id: 's1', reason: expect.stringContaining('check 가 없다') }]);
+    expect(rejections).toEqual([{ id: 's1', reason: expect.stringContaining('missing check') }]);
   });
 
-  it('유형별 필수 인자를 요구한다', () => {
+  it('requires the arguments of each check type', () => {
     const { rejections } = parseScenarios(`
 - { id: a, then: x, check: { type: run } }
 - { id: b, then: x, check: { type: file, path: out.json } }
@@ -25,24 +25,24 @@ describe('시나리오 검사 가능성', () => {
     expect(rejections.map((r) => r.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
 
-  it('id 규칙과 중복을 잡는다', () => {
+  it('enforces the id rule and catches duplicates', () => {
     const { rejections } = parseScenarios(`
 - { id: "Bad ID", then: x, check: { type: human, question: q } }
 - { id: dup, then: x, check: { type: human, question: q } }
 - { id: dup, then: y, check: { type: human, question: q } }
 `);
-    expect(rejections.map((r) => r.reason)).toEqual([expect.stringContaining('id 는'), expect.stringContaining('중복')]);
+    expect(rejections.map((r) => r.reason)).toEqual([expect.stringContaining('id must'), expect.stringContaining('duplicate')]);
   });
 
-  it('올바른 시나리오는 given/when/irreversible 을 보존한다', () => {
+  it('keeps given/when/irreversible on valid scenarios', () => {
     const { scenarios } = parseScenarios(`
 - id: send
-  given: 정산표가 있다
-  when: 월요일 09:00
-  then: 회계팀에 발송된다
+  given: the settlement sheet exists
+  when: Monday 09:00
+  then: it is sent to accounting
   irreversible: send
   check: { type: run, cmd: "npm run send -- --dry-run", expect: 0 }
 `);
-    expect(scenarios[0]).toMatchObject({ id: 'send', given: '정산표가 있다', irreversible: 'send', check: { type: 'run', expect: 0 } });
+    expect(scenarios[0]).toMatchObject({ id: 'send', given: 'the settlement sheet exists', irreversible: 'send', check: { type: 'run', expect: 0 } });
   });
 });

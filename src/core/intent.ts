@@ -35,15 +35,15 @@ export type DraftResult =
   | { ok: false; rejections: Rejection[] };
 
 /**
- * Intent + 시나리오 저장. 검사 유형이 없는 시나리오가 하나라도 있으면 아무것도 쓰지 않는다 —
- * 저장된 시나리오는 전부 검사 가능하다는 불변식을 지킨다. 성공하면 승인 토큰을 발급한다.
+ * Save intent + scenarios. If any scenario lacks a check type nothing is written — the
+ * invariant "every stored scenario is checkable" holds. On success an approval token is issued.
  */
 export function draft(root: string, intentText: string, scenariosText: string): DraftResult {
-  if (!intentText.trim()) throw usage('intent 본문이 비어 있다');
+  if (!intentText.trim()) throw usage('intent body is empty');
   const parsed = parseScenarios(scenariosText);
   if (parsed.rejections.length > 0) return { ok: false, rejections: parsed.rejections };
-  if (parsed.scenarios.length === 0) return { ok: false, rejections: [{ id: '(none)', reason: '시나리오가 하나도 없다' }] };
-  // 해시는 저장되는 바이트 그대로 — 나중에 파일에서 다시 계산한 값과 같아야 한다
+  if (parsed.scenarios.length === 0) return { ok: false, rejections: [{ id: '(none)', reason: 'no scenarios' }] };
+  // The hash covers the exact bytes written — approve recomputes it from the files.
   const intentNorm = intentText.endsWith('\n') ? intentText : `${intentText}\n`;
   const scenariosNorm = scenariosText.endsWith('\n') ? scenariosText : `${scenariosText}\n`;
   const hash = intentHash(intentNorm, scenariosNorm);
@@ -56,12 +56,12 @@ export function draft(root: string, intentText: string, scenariosText: string): 
   return { ok: true, hash, scenarios: parsed.scenarios, token: issued.token, tokenId: issued.id, expiresAt: issued.expiresAt };
 }
 
-/** 사람 토큰으로만 APPROVED 가 된다. Intent 가 바뀌면 이전 토큰은 대상 해시가 달라 무효다. */
+/** Only a human token makes APPROVED. If the intent changed, the old token's target hash no longer matches. */
 export function approve(root: string, token: string): { hash: string } {
   const state = readState(root);
-  if (state.state !== 'DRAFT' || !state.intentHash) throw denied(`승인할 DRAFT 가 없다 (현재 ${state.state})`);
+  if (state.state !== 'DRAFT' || !state.intentHash) throw denied(`nothing to approve (current state ${state.state})`);
   const current = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '');
-  if (current !== state.intentHash) throw denied('Intent 가 초안 이후 바뀌었다 — intent draft 를 다시 실행해 새 토큰을 받아야 한다');
+  if (current !== state.intentHash) throw denied('intent changed since the draft — run `intent draft` again to get a new token');
   const verdict = verifyAndConsume(root, 'approve', state.intentHash, token);
   if (!verdict.ok) throw denied(verdict.reason);
   transition(root, 'APPROVED', { approvedAt: new Date().toISOString() });
@@ -70,7 +70,7 @@ export function approve(root: string, token: string): { hash: string } {
 }
 
 export function abandon(root: string, reason: string): void {
-  if (!reason.trim()) throw usage('abandon 에는 --reason 이 필요하다');
+  if (!reason.trim()) throw usage('abandon requires --reason');
   transition(root, 'ABANDONED', { abandonedReason: reason });
   record(root, { event: 'abandon', client: detectClient(), model: detectModel(), detail: reason });
 }

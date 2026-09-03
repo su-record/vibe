@@ -3,8 +3,9 @@ import { vibePath } from './paths.js';
 import { appendJsonl, nowIso, readJsonl } from './store.js';
 
 /**
- * 사람 토큰 — 비밀은 프로세스가 아니라 사람이 쥔다.
- * 6자리 · 10분 · 1회용 · 대상 해시에 묶임. 저장은 해시뿐이라 파일을 읽어도 재사용할 수 없다.
+ * Human tokens — the secret is held by a person, not by a process.
+ * 6 digits · 10 minutes · single use · bound to a target hash. Only the hash is stored,
+ * so reading the file does not let anyone reuse a token.
  */
 export type TokenKind = 'approve' | 'authorize';
 export const TOKEN_TTL_MS = 10 * 60 * 1000;
@@ -86,19 +87,19 @@ export function issueToken(root: string, kind: TokenKind, target: string): { id:
 
 export type VerifyResult = { ok: true; id: string } | { ok: false; reason: string };
 
-/** 검증 + 1회 사용 처리. 실패는 기록되고 3회면 그 토큰은 죽는다. */
+/** Verify and consume once. Failures are recorded; three failures kill the token. */
 export function verifyAndConsume(root: string, kind: TokenKind, target: string, token: string, now: Date = new Date()): VerifyResult {
   const digits = token.replace(/\D/g, '');
-  if (digits.length !== 6) return { ok: false, reason: '토큰은 6자리 숫자다' };
+  if (digits.length !== 6) return { ok: false, reason: 'a token is six digits' };
   const wanted = hashToken(digits);
   const candidates = [...foldTokens(root).values()].filter((view) => view.kind === kind && view.target === target && view.usedAt === null);
-  if (candidates.length === 0) return { ok: false, reason: `이 대상에 발급된 ${kind} 토큰이 없다 — 다시 발급받아야 한다` };
+  if (candidates.length === 0) return { ok: false, reason: `no ${kind} token was issued for this target — ask for a new one` };
   const live = candidates.filter((view) => view.failures < TOKEN_MAX_FAILURES && new Date(view.expiresAt).getTime() > now.getTime());
-  if (live.length === 0) return { ok: false, reason: '토큰이 만료됐거나 실패 3회로 폐기됐다 — 다시 발급받아야 한다' };
+  if (live.length === 0) return { ok: false, reason: 'token expired or revoked after 3 failures — ask for a new one' };
   const match = live.find((view) => view.tokenHash === wanted);
   if (!match) {
     for (const view of live) appendJsonl(tokensPath(root), { type: 'token-failed', id: view.id, at: nowIso() } satisfies TokenFailed);
-    return { ok: false, reason: '토큰이 맞지 않는다' };
+    return { ok: false, reason: 'token does not match' };
   }
   appendJsonl(tokensPath(root), { type: 'token-used', id: match.id, at: nowIso() } satisfies TokenUsed);
   return { ok: true, id: match.id };

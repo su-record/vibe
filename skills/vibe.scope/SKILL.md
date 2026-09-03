@@ -1,35 +1,35 @@
 ---
 name: vibe.scope
-description: 범위 — Intent 와 시나리오(검사 유형 포함)를 쓰고, 승인 메시지 하나로 사람 토큰을 받는다. 구축 전에 필요한 스킬을 확인한다.
+description: Scope — write the intent and scenarios (each bound to a check), get one human token in one approval message. Make sure the tools needed for building are in place before building.
 user-invocable: false
 ---
 
-# 범위 (scope) — 승인 1회
+# Scope — one approval
 
-## 절차
+## Procedure
 
-1. 발견 결과로 시나리오를 쓴다. 시나리오마다 검사 유형 하나가 붙어야 저장된다:
-   - `run` 명령 exit code · `file` 존재/정규식/포함/스키마 · `http` 상태/본문 · `eval` 라벨 세트 일치 개수 · `human` 판정 없음(인박스)
-   - 검사를 못 붙이는 조건은 `human` 으로 명시한다. 되돌릴 수 없는 행동(push·deploy·send·delete·spend)은 `irreversible: <행동>` 을 적는다.
-2. 빠진 시나리오 유형을 스스로 점검한다: 실패 경로, 되돌리기, 권한 경계. 없으면 추가하거나 "왜 없어도 되는지" 한 줄.
-3. 저장: `vibe intent draft --stdin --json` 에 `{"intent": "...", "scenarios": "..."}` 를 넣는다.
-   - 반려(`code 1`)면 사유대로 고쳐 다시 저장한다. 반려된 시나리오를 지우는 것으로 통과하지 않는다 — 검사를 붙인다.
-   - 성공하면 응답에 `token` 이 있다.
-4. 승인 메시지를 **한 번에** 보낸다:
+1. Turn the discovery result into scenarios. A scenario is stored only if it carries exactly one check type:
+   - `run` command exit code · `file` exists/regex/contains/schema · `http` status/body · `eval` count of matching labelled cases · `human` no verdict (goes to the inbox)
+   - A condition you cannot check gets `human` explicitly. An irreversible action (push, deploy, send, delete, spend) gets `irreversible: <action>`.
+2. Check for missing scenario kinds yourself: the failure path, rollback, permission boundaries. Add them or say in one line why they are not needed.
+3. Save with `vibe intent draft --stdin --json`, sending `{"intent": "...", "scenarios": "..."}` (both in English).
+   - On rejection (`code 1`) fix the reasons and save again. Do not pass by deleting a rejected scenario — bind a check to it.
+   - On success the response contains `token`.
+4. Send **one** approval message:
 
 ```
-성공 조건:
-1. {then} [{check.type}]{irreversible 면 " ⚠ token"}
+Success conditions:
+1. {then} [{check.type}]{ " ⚠ token" when irreversible }
 …
-먼저 말할 것 (있으면, 최대 3): …
-구축 전에 갖출 것 (있으면): {필요한 도구·스킬·접근 권한}
-이대로 진행하려면 {token} 을 붙여넣어 주세요.
+Things you did not ask about (if any, at most 3): …
+Needed before building (if any): {tools · skills · access}
+To proceed, paste {token}.
 ```
 
-5. 사용자가 번호를 붙여넣으면 `vibe approve "{번호}" --json`. `code 3` 이면 사유를 보여 주고 다시 요청한다. 수정 요청이면 3 으로 돌아간다 — 새 토큰이 나온다.
-6. APPROVED 가 되면 `vibe.build` 로 넘어간다.
+5. When the user pastes the number, run `vibe approve "{number}" --json`. On `code 3` show the reason and ask again. On a change request go back to step 3 — a new token is issued.
+6. When the state is APPROVED, move to `vibe.build`.
 
-## 절대 하지 않는 것
+## Never
 
-- 토큰을 만들어 내거나 추측하기.
-- 시나리오를 산문으로만 두기. 검사 유형이 없는 시나리오는 하네스가 저장하지 않는다.
+- Invent or guess a token.
+- Leave a scenario as prose only. The harness does not store a scenario without a check.

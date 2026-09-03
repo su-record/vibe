@@ -66,30 +66,30 @@ function str(value: unknown): string | undefined {
 }
 
 /**
- * 검사 가능성 — 시나리오가 검사 유형 하나에 묶여야 저장된다.
- * 검사가 아닌 문장은 Contract 에 들어갈 수 없다 (SPEC 원칙 ①).
+ * Checkability — a scenario is stored only when bound to exactly one check type.
+ * Prose that cannot be checked is not part of the contract (principle ①).
  */
 function checkReason(check: unknown): string | null {
-  if (!isRecord(check)) return 'check 가 없다 — 검사 유형(run·file·http·eval·human) 하나가 필요하다';
+  if (!isRecord(check)) return 'missing check — one check type (run·file·http·eval·human) is required';
   const type = check['type'];
-  if (typeof type !== 'string' || !CHECK_TYPES.has(type)) return `알 수 없는 검사 유형: ${String(type)}`;
+  if (typeof type !== 'string' || !CHECK_TYPES.has(type)) return `unknown check type: ${String(type)}`;
   switch (type) {
     case 'run':
-      return str(check['cmd']) ? null : 'run 검사는 cmd 가 필요하다';
+      return str(check['cmd']) ? null : 'run check requires cmd';
     case 'file': {
-      if (!str(check['path'])) return 'file 검사는 path 가 필요하다';
+      if (!str(check['path'])) return 'file check requires path';
       const hasRule = check['exists'] !== undefined || str(check['pattern']) || str(check['contains']) || str(check['schema']);
-      return hasRule ? null : 'file 검사는 exists·pattern·contains·schema 중 하나가 필요하다';
+      return hasRule ? null : 'file check requires one of exists·pattern·contains·schema';
     }
     case 'http':
-      return str(check['url']) ? null : 'http 검사는 url 이 필요하다';
+      return str(check['url']) ? null : 'http check requires url';
     case 'eval': {
-      if (!str(check['cases']) || !str(check['runner'])) return 'eval 검사는 cases 와 runner 가 필요하다';
+      if (!str(check['cases']) || !str(check['runner'])) return 'eval check requires cases and runner';
       const expect = check['expect'];
-      return isRecord(expect) && Number.isInteger(expect['pass']) ? null : 'eval 검사는 expect.pass(개수)가 필요하다';
+      return isRecord(expect) && Number.isInteger(expect['pass']) ? null : 'eval check requires expect.pass (a count)';
     }
     case 'human':
-      return str(check['question']) ? null : 'human 검사는 question 이 필요하다';
+      return str(check['question']) ? null : 'human check requires question';
     default:
       return null;
   }
@@ -100,21 +100,21 @@ export function parseScenarios(text: string): ParsedScenarios {
   try {
     raw = YAML.parse(text);
   } catch (error) {
-    return { scenarios: [], rejections: [{ id: '(yaml)', reason: `YAML 파싱 실패: ${(error as Error).message}` }] };
+    return { scenarios: [], rejections: [{ id: '(yaml)', reason: `YAML parse failed: ${(error as Error).message}` }] };
   }
-  if (!Array.isArray(raw)) return { scenarios: [], rejections: [{ id: '(root)', reason: '최상위는 시나리오 목록이어야 한다' }] };
+  if (!Array.isArray(raw)) return { scenarios: [], rejections: [{ id: '(root)', reason: 'top level must be a list of scenarios' }] };
 
   const scenarios: Scenario[] = [];
   const rejections: Rejection[] = [];
   const seen = new Set<string>();
   raw.forEach((item, index) => {
     const label = isRecord(item) && typeof item['id'] === 'string' ? item['id'] : `#${index + 1}`;
-    if (!isRecord(item)) return void rejections.push({ id: label, reason: '항목이 객체가 아니다' });
+    if (!isRecord(item)) return void rejections.push({ id: label, reason: 'item is not an object' });
     const id = str(item['id']);
-    if (!id || !ID_RE.test(id)) return void rejections.push({ id: label, reason: 'id 는 소문자·숫자·하이픈 1~40자여야 한다' });
-    if (seen.has(id)) return void rejections.push({ id, reason: 'id 중복' });
+    if (!id || !ID_RE.test(id)) return void rejections.push({ id: label, reason: 'id must be 1-40 chars of lowercase letters, digits, hyphens' });
+    if (seen.has(id)) return void rejections.push({ id, reason: 'duplicate id' });
     const then = str(item['then']);
-    if (!then) return void rejections.push({ id, reason: 'then(성공 조건 문장)이 필요하다' });
+    if (!then) return void rejections.push({ id, reason: 'then (the success statement) is required' });
     const reason = checkReason(item['check']);
     if (reason) return void rejections.push({ id, reason });
     seen.add(id);

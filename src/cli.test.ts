@@ -38,8 +38,8 @@ function vibe(args: string[], input?: string): Run {
   return { status: result.status ?? -1, stdout: result.stdout, json };
 }
 
-describe('CLI — 요청부터 DONE 까지', () => {
-  it('init → draft → approve(token) → check → DONE, 종료 코드가 판정이다', () => {
+describe('CLI — from request to DONE', () => {
+  it('init → draft → approve(token) → check → DONE; the exit code is the verdict', () => {
     const init = vibe(['init']);
     expect(init.status).toBe(0);
     expect(fs.existsSync(path.join(root, '.vibe', 'state.json'))).toBe(true);
@@ -50,20 +50,20 @@ describe('CLI — 요청부터 DONE 까지', () => {
     expect((before.json as { state: string }).state).toBe('NONE');
 
     const draft = vibe(['intent', 'draft', '--stdin'], JSON.stringify({
-      intent: '# 인사\n\n## 왜\n테스트\n',
-      scenarios: '- { id: hello, then: hello 파일이 있다, check: { type: file, path: hello.txt, contains: "hi" } }\n',
+      intent: '# Hello\n\n## Why\ntest\n',
+      scenarios: '- { id: hello, then: hello.txt exists, check: { type: file, path: hello.txt, contains: "hi" } }\n',
     }));
     expect(draft.status).toBe(0);
     const token = (draft.json as { token: string }).token;
     expect(token).toMatch(/^\d{3} \d{3}$/);
 
-    // 승인 없이 check → 4
+    // check before approval → 4
     expect(vibe(['check']).status).toBe(4);
-    // 틀린 토큰 → 3
+    // wrong token → 3
     expect(vibe(['approve', '000', '000']).status).toBe(3);
     expect(vibe(['approve', token]).status).toBe(0);
 
-    // 파일이 없으니 실패 → 1
+    // the file does not exist yet → 1
     const failing = vibe(['check']);
     expect(failing.status).toBe(1);
     expect((failing.json as { state: string }).state).toBe('RUNNING');
@@ -81,10 +81,10 @@ describe('CLI — 요청부터 DONE 까지', () => {
     expect((evidence.json as { run: string }).run).toBe('r-2');
   });
 
-  it('authorize 는 발급된 토큰·행동·대상이 맞을 때만 0', () => {
+  it('authorize returns 0 only when token, action and target all match', () => {
     vibe(['init']);
     vibe(['intent', 'draft', '--stdin'], JSON.stringify({ intent: '# x', scenarios: '- { id: a, then: x, check: { type: run, cmd: "exit 0" } }\n' }));
-    const ask = vibe(['ask', '회계팀에 실제 발송할까요?', '--needs', 'authorize:send', '--target', 'acct@example.com']);
+    const ask = vibe(['ask', 'Send to accounting for real?', '--needs', 'authorize:send', '--target', 'acct@example.com']);
     expect(ask.status).toBe(0);
     const token = (ask.json as { token: string }).token;
     expect(vibe(['authorize', token, '--action', 'send', '--target', 'other@example.com']).status).toBe(3);
@@ -92,7 +92,7 @@ describe('CLI — 요청부터 DONE 까지', () => {
     expect(vibe(['authorize', token, '--action', 'send', '--target', 'acct@example.com']).status).toBe(3);
   });
 
-  it('uninstall 은 카드·스킬·훅을 걷고 .vibe 는 남긴다', () => {
+  it('uninstall removes card, skills and hook but keeps .vibe', () => {
     vibe(['init']);
     const out = vibe(['uninstall']);
     expect(out.status).toBe(0);
@@ -101,7 +101,7 @@ describe('CLI — 요청부터 DONE 까지', () => {
     expect(fs.existsSync(path.join(root, 'CLAUDE.md'))).toBe(false);
   });
 
-  it('help 는 항상 0', () => {
+  it('help always exits 0', () => {
     expect(execFileSync(TSX, [CLI_SRC, '--help'], { cwd: root, encoding: 'utf-8' })).toContain('vibe');
   });
 });

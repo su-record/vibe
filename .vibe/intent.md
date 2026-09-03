@@ -1,15 +1,16 @@
-# vibe 4 · 1단계 — CLI 코어 + Claude Code
+# vibe 4 · phase 1 — CLI core + Claude Code
 
-## 왜
-vibe 3 은 판정을 모델의 자기보고에 기대고, 지시문 6만 줄로 품질을 가르치려 했다. vibe 4 는 판정·기억·권한·장부·먼저 말하기 다섯만 하네스가 하고, 그 자신을 첫 사용자로 삼는다.
+## Why
+vibe 3 rested its verdicts on the model's self-report and tried to teach quality with sixty thousand lines of instructions. vibe 4 keeps only five harness duties — verdict, memory, permission, ledger, speaking first — and makes itself its own first user.
 
-## 무엇이 되면 성공인가
-- 빌드와 테스트가 하네스의 `run` 검사로 통과한다.
-- 상시 카드가 1KB 를 넘지 않는다.
-- 소스가 5천 줄을 넘지 않는다.
-- 모델이 `check` 없이 DONE 을 만들 수 없음이 테스트로 증명된다.
-- 사람 토큰 없이는 APPROVED 가 되지 않음이 테스트로 증명된다.
+## What counts as success
+- Build and tests pass as `run` checks executed by the harness.
+- The always-on card stays within 1KB.
+- Source stays within 5,000 lines.
+- Tests prove the model cannot make DONE without `check`.
+- Tests prove APPROVED cannot happen without a human token.
 
-## 제약
-- 의존성은 yaml · ajv 둘뿐. 에이전트 0, 공통 스킬 6.
-- 상태는 `.vibe/` 평문 파일. 모델은 evidence 를 쓸 수 없다 (CLI 만 쓴다).
+## Constraints
+- Dependencies: yaml and ajv only. Zero agents, six common skills.
+- State lives in `.vibe/` as plain files. The model never writes evidence (only the CLI does).
+- Every record is English; the model talks to the user in the user's language.

@@ -1,26 +1,30 @@
 # vibe 4
 
-누구나 옆에 AX/FDE 가 있는 경험. 막연한 요구를 검사 가능한 시나리오로 바꾸고, 됐다는 것을 하네스가 직접 증명하고, 운영할 사람에게 넘겨준다.
+The experience of having an AX/FDE next to you. A vague request becomes checkable scenarios; the harness proves the result itself; the work is handed over to whoever will run it.
 
 ```bash
 npm i -g @su-record/vibe
-cd your-project && vibe init            # Claude Code. Codex/ChatGPT 데스크톱: --client codex,chatgpt
+cd your-project && vibe init            # Claude Code. Codex / ChatGPT desktop: --client codex,chatgpt
 ```
 
-그 다음은 채팅에서 `/vibe 매주 오는 주문 엑셀을 정산표로 바꿔서 회계팀에 보내고 싶어`.
+Then, in chat: `/vibe every week an order spreadsheet arrives — turn it into a settlement sheet and send it to accounting`.
 
-## 무엇이 다른가
+## What is different
 
-- **판정은 하네스가 한다.** 시나리오마다 검사(run·file·http·eval·human)가 붙고, `vibe check` 가 직접 실행한 결과만 Evidence 가 된다. 모델의 "됐습니다" 는 상태를 바꾸지 못한다.
-- **승인과 되돌릴 수 없는 행동은 사람 토큰.** 6자리 번호를 사용자가 채팅에 붙여넣어야 진행된다. 모델은 만들 수 없다.
-- **상태는 저장소 안 평문 파일.** `.vibe/` 만 있으면 Claude Code 에서 승인하고 Codex 에서 이어받는다.
-- **먼저 말한다.** 사람의 인지는 좁다. 근거가 잡힌 것만 셋까지 먼저 띄운다.
-- **상시 지침은 1KB.** `card.md` 가 전부다.
+- **The harness judges.** Every scenario carries a check (run · file · http · eval · human) and only what `vibe check` executed itself becomes evidence. A model saying "done" changes nothing.
+- **Approval and irreversible actions need a human token.** A six-digit number the user pastes back into chat. The model cannot create one.
+- **State is plain files inside the repository.** With `.vibe/` present you can approve in Claude Code and continue in Codex.
+- **It speaks first.** Human attention is narrow. Up to three grounded things the user did not ask about.
+- **The always-on instruction is 1KB.** `card.md` is all of it.
 
-## 명령
+## Commands
 
-`vibe --help` 가 전부를 보여 준다. 종료 코드가 판정이다: 0 성공 · 1 판정 실패 · 2 사용 오류 · 3 토큰 오류 · 4 상태 전이 불가.
+`vibe --help` lists everything. The exit code is the verdict: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition.
 
-## 상태
+## Language
 
-4.0.0-alpha — 1단계(CLI 코어 + Claude Code). `http`·`eval` 검사, 리서치, 스킬 제안은 다음 단계. vibe 3 은 3.x 태그로 남고 더 개발하지 않는다.
+The card, skills, and every record vibe writes (intent, scenarios, inbox, knowledge, ledger) are English. The model talks to the user in the user's language.
+
+## Status
+
+4.0.0-alpha — phase 1 (CLI core + Claude Code). `http`/`eval` checks, research, and skill proposals come in later phases. vibe 3 stays on its 3.x tags and is no longer developed.

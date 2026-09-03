@@ -23,8 +23,9 @@ function walk(dir: string, rel: string, into: string[]): void {
 }
 
 /**
- * 작업 트리 지문 — DONE 은 편집 즉시 무효여야 하므로 "무엇이 바뀌었나" 를 코드가 본다.
- * git 저장소면 HEAD + 변경·미추적 파일 내용, 아니면 경로·크기·mtime.
+ * Working-tree fingerprint. DONE must be void the moment something is edited, so the code
+ * looks at what changed: HEAD plus changed/untracked file contents in a git repo, otherwise
+ * path·size·mtime of every file.
  */
 export function treeHash(root: string): string {
   const hash = createHash('sha256');

@@ -25,7 +25,7 @@ export interface StateView {
   remaining: string[];
   inbox: { open: number; items: Array<{ id: string; question: string; options?: string[]; default?: string; scenario?: string; needs?: string }> };
   last: { client: string; model: string | null; at: string } | null;
-  /** 스킬 생성·가져오기 제안 — 4.0.0-alpha 에서는 비어 있다 (3단계) */
+  /** Skill create/import proposals — empty in 4.0.0-alpha (phase 3) */
   proposals: Array<{ kind: string; ref: string; why: string }>;
   notices: string[];
 }
@@ -33,13 +33,13 @@ export interface StateView {
 function intentTitle(root: string): string {
   const text = readText(intentPath(root)) ?? '';
   const heading = text.split('\n').find((line) => line.startsWith('#'));
-  return heading ? heading.replace(/^#+\s*/, '').trim() : '(제목 없음)';
+  return heading ? heading.replace(/^#+\s*/, '').trim() : '(untitled)';
 }
 
-/** 모든 스킬의 첫 호출. DONE 이 편집으로 무효가 됐으면 여기서 RUNNING 으로 돌아간다. */
+/** Every skill's first call. A DONE invalidated by edits falls back to RUNNING here. */
 export function buildStateView(root: string): StateView {
   const notices: string[] = [];
-  if (invalidateDoneIfEdited(root)) notices.push('DONE 이후 파일이 바뀌어 RUNNING 으로 돌아갔다 — `vibe check` 를 다시 돌려야 한다');
+  if (invalidateDoneIfEdited(root)) notices.push('files changed after DONE — state is RUNNING again; run `vibe check`');
   const state = readState(root);
   const results = readResults(root);
   const scenarios = loadScenarios(root);
@@ -63,8 +63,8 @@ export function buildStateView(root: string): StateView {
   });
   const lastEvent = readLedger(root).at(-1);
   const intent = hasIntent(root) ? { title: intentTitle(root), hash: state.intentHash, approvedAt: state.approvedAt } : null;
-  if (state.state === 'STUCK') notices.push('STUCK — 같은 실패가 2회 연속이다. 인박스의 질문에 답이 필요하다');
-  if (scenarios.some(isHuman) && state.state === 'DONE') notices.push('human 항목은 게이트가 아니다 — 인박스에서 사람 확인을 요청했다');
+  if (state.state === 'STUCK') notices.push('STUCK — the same failure twice in a row; the inbox question needs an answer');
+  if (scenarios.some(isHuman) && state.state === 'DONE') notices.push('human items are not gates — a confirmation was requested in the inbox');
   return {
     state: state.state,
     stage: stageOf(state, intent !== null, allPassedOnce),

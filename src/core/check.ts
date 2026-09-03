@@ -40,7 +40,7 @@ export interface CheckReport {
   failHash: string | null;
   stuck: boolean;
   done: boolean;
-  /** 아직 한 번도 통과하지 않은 시나리오 id — DONE 이 안 된 이유 */
+  /** Scenario ids that have not passed yet — why this is not DONE */
   remaining: string[];
 }
 
@@ -60,9 +60,9 @@ async function execute(scenario: Scenario, root: string): Promise<CheckResult> {
     case 'file':
       return fileCheck(check, root);
     case 'human':
-      return { pass: false, exit: null, ms: 0, tail: check.question, reason: 'human — 판정하지 않는다' };
+      return { pass: false, exit: null, ms: 0, tail: check.question, reason: 'human — not judged by the harness' };
     default:
-      return { pass: false, exit: null, ms: 0, tail: '', reason: `${check.type} 검사는 이 버전(4.0.0-alpha)에서 아직 실행되지 않는다` };
+      return { pass: false, exit: null, ms: 0, tail: '', reason: `${check.type} checks are not executed in this version (4.0.0-alpha)` };
   }
 }
 
@@ -97,13 +97,14 @@ export interface CheckOptions {
 }
 
 /**
- * 유일한 판정 경로. 검사를 하네스가 실행하고 Evidence 를 쓴다.
- * 첫 호출에 APPROVED→RUNNING, 전부 통과면 DONE, 같은 실패 해시 2회 연속이면 STUCK.
+ * The only verdict path. The harness runs the checks and writes the evidence.
+ * First call moves APPROVED→RUNNING; all gates passing → DONE; the same failure hash
+ * twice in a row → STUCK.
  */
 export async function runChecks(root: string, options: CheckOptions = {}): Promise<CheckReport> {
   const state = readState(root);
   if (!['APPROVED', 'RUNNING', 'DONE', 'STUCK'].includes(state.state)) {
-    throw invalidTransition(`check 는 승인 뒤에만 돈다 (현재 ${state.state})`);
+    throw invalidTransition(`check runs only after approval (current state ${state.state})`);
   }
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
@@ -115,7 +116,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
     const wanted = new Set(options.ids);
     selected = universe.filter((s) => wanted.has(s.id));
     const missing = options.ids.filter((id) => !universe.some((s) => s.id === id));
-    if (missing.length > 0) throw invalidTransition(`알 수 없는 시나리오: ${missing.join(', ')}`);
+    if (missing.length > 0) throw invalidTransition(`unknown scenario: ${missing.join(', ')}`);
   } else if (options.all) {
     selected = universe;
   } else {
@@ -158,7 +159,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
       stuck = true;
       next.state = 'STUCK';
       if (!hasOpenQuestion(root, (q) => q.question.startsWith('STUCK'))) {
-        ask(root, { question: `STUCK: 같은 실패(${failHash})가 2회 연속이다 — ${outcomes.filter((o) => o.status === 'fail').map((o) => o.id).join(', ')}. 어떻게 할까요?`, options: ['힌트를 준다', '시나리오를 고친다', '중단한다'] });
+        ask(root, { question: `STUCK: the same failure (${failHash}) happened twice in a row — ${outcomes.filter((o) => o.status === 'fail').map((o) => o.id).join(', ')}. How should we proceed?`, options: ['give a hint', 'change the scenario', 'abandon'] });
       }
     } else if (current.state === 'DONE' || current.state === 'STUCK') {
       next.state = 'RUNNING';
@@ -187,7 +188,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   return { run, at, state: next.state, outcomes, passed, failed, pending, failHash, stuck, done, remaining };
 }
 
-/** DONE 인데 트리가 바뀌었으면 RUNNING 으로 되돌린다. state 명령이 매번 부른다. */
+/** DONE with a changed tree goes back to RUNNING. `state` calls this every time. */
 export function invalidateDoneIfEdited(root: string): boolean {
   const state = readState(root);
   if (state.state !== 'DONE' || !state.doneTree) return false;

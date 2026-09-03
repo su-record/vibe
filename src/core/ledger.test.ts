@@ -15,20 +15,20 @@ function check(client: string, passed: number, scenarioSet = 'set-a', model: str
   record(root, { event: 'check', client, model, run: 'r', scenarioSet, passed, failed: 0 });
 }
 
-describe('장부와 비교 — 판정 불가를 코드가 낸다', () => {
-  it('append 만 한다', () => {
+describe('ledger and comparison — the code says "cannot tell"', () => {
+  it('only appends', () => {
     record(root, { event: 'init', client: 'claude-code', model: null });
     record(root, { event: 'draft', client: 'codex', model: 'gpt' });
     expect(readLedger(root).map((e) => e.client)).toEqual(['claude-code', 'codex']);
   });
 
-  it('arm 당 5런 미만이면 insufficient-runs', () => {
+  it('fewer than 5 runs per arm is insufficient-runs', () => {
     check('claude-code', 3);
     check('codex', 3);
     expect(compare(root, 'client', 'checks').verdict).toBe('insufficient-runs');
   });
 
-  it('시나리오 셋이 다르면 mixed-scenario-sets — 실행을 버리지 않는다', () => {
+  it('different scenario sets are mixed-scenario-sets — runs are kept, not discarded', () => {
     for (let i = 0; i < 5; i += 1) check('claude-code', 3, 'set-a');
     for (let i = 0; i < 5; i += 1) check('codex', 3, 'set-b');
     const c = compare(root, 'client', 'checks');
@@ -36,7 +36,7 @@ describe('장부와 비교 — 판정 불가를 코드가 낸다', () => {
     expect(c.arms.map((a) => a.runs)).toEqual([5, 5]);
   });
 
-  it('범위가 겹치면 inconclusive, 안 겹치면 difference-observed (delta 는 절대 단위)', () => {
+  it('overlapping ranges are inconclusive; disjoint ranges are difference-observed (delta in absolute units)', () => {
     for (const v of [3, 4, 5, 4, 3]) check('claude-code', v);
     for (const v of [4, 5, 5, 4, 5]) check('codex', v);
     expect(compare(root, 'client', 'checks').verdict).toBe('inconclusive');
@@ -46,10 +46,10 @@ describe('장부와 비교 — 판정 불가를 코드가 낸다', () => {
     const c = compare(root, 'client', 'checks');
     expect(c.verdict).toBe('difference-observed');
     expect(c.delta).toBeCloseTo(4.6 - 1.6, 5);
-    expect(JSON.stringify(c)).not.toMatch(/ratio|percent|배/);
+    expect(JSON.stringify(c)).not.toMatch(/ratio|percent/);
   });
 
-  it('지표가 없는 런은 usable 에서 빠진다', () => {
+  it('runs without the metric drop out of usable', () => {
     for (let i = 0; i < 5; i += 1) record(root, { event: 'check', client: 'claude-code', model: null, scenarioSet: 'set-a' });
     for (let i = 0; i < 5; i += 1) check('codex', 3);
     const c = compare(root, 'client', 'turns');

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * 알림 훅 — 판정하지 않는다. 항상 exit 0.
+ * Notification hook — it never judges. Always exits 0.
  *
- *   post  PostToolUse(Edit|Write): `vibe state --json` 을 돌려 DONE 무효화·열린 인박스를 모델에게 알린다.
- *   pre   PreToolUse(Bash): 되돌릴 수 없는 명령인데 최근 authorize 기록이 없으면 stderr 로 경고한다.
+ *   post  PostToolUse(Edit|Write): runs `vibe state --json` and tells the model about a voided DONE or open inbox items.
+ *   pre   PreToolUse(Bash): warns on stderr when an irreversible command has no recent authorize record.
  *
- * 훅이 없는 환경에서도 게이트는 같다 — 판정은 어디서든 `vibe check` 하나다.
+ * Without hooks the gate is the same — the verdict is always `vibe check`, anywhere.
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -60,7 +60,7 @@ if (mode === 'pre') {
   const command = String((payload.tool_input && payload.tool_input.command) || '');
   for (const [action, re] of IRREVERSIBLE) {
     if (re.test(command) && !recentAuthorize(action)) {
-      process.stderr.write(`[vibe] "${action}" 는 되돌릴 수 없는 행동인데 최근 10분 안에 authorize 기록이 없다 — \`vibe ask --needs authorize:${action}\` 로 사람 토큰을 받아 \`vibe authorize\` 를 먼저 한다\n`);
+      process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first\n`);
       break;
     }
   }
@@ -73,9 +73,9 @@ if (result.status !== 0 || !result.stdout) process.exit(0);
 try {
   const view = JSON.parse(result.stdout);
   const notes = [...(view.notices || [])];
-  if (view.inbox && view.inbox.open > 0) notes.push(`인박스에 답이 필요한 질문 ${view.inbox.open}건 — \`vibe inbox\``);
+  if (view.inbox && view.inbox.open > 0) notes.push(`${view.inbox.open} inbox question(s) need an answer — \`vibe inbox\``);
   if (notes.length > 0) emitContext(`[vibe] ${notes.join(' · ')}`);
 } catch {
-  // 조용히
+  // stay quiet
 }
 process.exit(0);

@@ -12,8 +12,8 @@ beforeEach(() => {
 });
 afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
 
-describe('상태 기계', () => {
-  it('없는 전이는 종료 4 로 거부한다 — NONE → DONE', () => {
+describe('state machine', () => {
+  it('rejects transitions outside the table with exit 4 — NONE → DONE', () => {
     expect(readState(root).state).toBe('NONE');
     expect(() => transition(root, 'DONE')).toThrowError(VibeError);
     try {
@@ -24,7 +24,7 @@ describe('상태 기계', () => {
     expect(readState(root).state).toBe('NONE');
   });
 
-  it('허용된 경로만 지나간다 — NONE → DRAFT → APPROVED → RUNNING → DONE', () => {
+  it('walks the allowed path — NONE → DRAFT → APPROVED → RUNNING → DONE', () => {
     transition(root, 'DRAFT');
     transition(root, 'APPROVED');
     transition(root, 'RUNNING');
@@ -34,11 +34,11 @@ describe('상태 기계', () => {
     expect(canTransition('ABANDONED', 'APPROVED')).toBe(false);
   });
 
-  it('전이 표는 모든 상태를 덮는다', () => {
+  it('covers every state in the table', () => {
     for (const from of Object.keys(TRANSITIONS)) expect(TRANSITIONS[from as keyof typeof TRANSITIONS].length).toBeGreaterThan(0);
   });
 
-  it('단계는 상태에서 파생된다', () => {
+  it('derives the stage from state', () => {
     const base = readState(root);
     expect(stageOf({ ...base, state: 'NONE' }, false, false)).toBe('discover');
     expect(stageOf({ ...base, state: 'DRAFT' }, true, false)).toBe('scope');

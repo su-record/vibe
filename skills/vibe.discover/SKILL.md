@@ -1,34 +1,35 @@
 ---
 name: vibe.discover
-description: 발견 — 막연한 요구를 "무엇이 되면 성공인가" 로 바꾼다. 질문 최대 3개, 기본값 포함. 샘플의 예외를 먼저 말한다.
+description: Discover — turn a vague request into "what counts as success". At most three questions, each with a default. Surface anomalies in the sample before being asked.
 user-invocable: false
 ---
 
-# 발견 (discover)
+# Discover
 
-## 절차
+## Procedure
 
-1. 사용자가 준 첨부·샘플이 있으면 먼저 읽고 프로파일을 적는다: 열 이름, 타입, 빈 값·중복·형식 불일치 개수. 없으면 요구를 검사할 수 있는 샘플 하나를 요청한다.
-2. 질문은 **최대 3개**, 각 질문에 기본값을 붙인다. 답이 없으면 기본값으로 간다. 질문은 전부 "무엇이 되면 성공인가" 를 정하는 것이어야 한다.
-3. 샘플에서 보인 예외(빈 값·중복·이상치)는 사용자가 묻기 전에 먼저 말한다 — 최대 3개, 근거는 프로파일 수치.
-4. 답을 받으면 Intent 초안을 쓴다 (`.vibe/intent.md` 형식):
+1. If the user attached a sample or file, read it first and write a profile: column names, types, counts of empty values, duplicates, format mismatches. If there is no sample, ask for one that the success condition can be checked against.
+2. Ask **at most three questions**, each with a default. No answer means the default applies. Every question must serve one purpose: deciding what counts as success.
+3. Say the anomalies you saw in the sample (empties, duplicates, outliers) before the user asks — at most three, each backed by a number from the profile.
+4. With the answers, write the intent draft (`.vibe/intent.md`, in English):
 
 ```
-# {한 줄 제목}
+# {one-line title}
 
-## 왜
-{사용자 말 그대로, 한두 문장}
+## Why
+{the user's words, one or two sentences}
 
-## 무엇이 되면 성공인가
-- {검사 가능한 문장} …
+## What counts as success
+- {a checkable statement} …
 
-## 제약
-- {있는 시스템·데이터·기한}
+## Constraints
+- {existing systems, data, deadlines}
 ```
 
-5. 성공 조건이 1개 이상 검사 가능한 문장으로 적히면 `vibe.scope` 로 넘어간다.
+5. Once at least one success condition is a checkable statement, move to `vibe.scope`.
 
-## 메시지 형식
+## Message format
 
-- 질문은 번호 목록, 각 줄 끝에 `(기본: …)`.
-- 먼저 말하는 예외는 "샘플을 보니 …" 로 시작해 수치와 함께 한 줄.
+- Questions as a numbered list, each ending with `(default: …)`.
+- Anomalies start with "Looking at the sample, …" and carry the number.
+- Talk to the user in the user's language; the intent file itself is English.

@@ -19,8 +19,8 @@ export function tail(text: string, lines = TAIL_LINES): string {
 }
 
 /**
- * `run` 검사 — 하네스가 명령을 직접 돌린다. 모델이 "돌렸다" 고 말한 것은 여기 오지 않는다.
- * 셸을 쓴다: cmd 는 사용자가 scenarios.yaml 에 적은 문자열이다.
+ * `run` check — the harness executes the command itself. A model saying "I ran it" never
+ * reaches this function. The command string comes from scenarios.yaml, so it runs in a shell.
  */
 export function runCheck(check: RunCheck, root: string): Promise<CheckResult> {
   const cwd = check.cwd ? path.resolve(root, check.cwd) : root;

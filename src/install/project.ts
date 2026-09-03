@@ -19,7 +19,7 @@ export function cardText(): string {
   return readText(path.join(packageRoot(), 'card.md')) ?? '';
 }
 
-/** 마커 블록을 갈아 끼운다. 사용자의 나머지 본문은 손대지 않는다. */
+/** Replace the marker block; leave the rest of the user's file untouched. */
 export function upsertCard(file: string, card: string): 'created' | 'updated' | 'unchanged' {
   const block = `${CARD_START}\n${card.trim()}\n${CARD_END}`;
   const existing = readText(file);
@@ -79,7 +79,7 @@ function notifyCommand(mode: 'post' | 'pre'): string {
   return `node "${script}" ${mode}`;
 }
 
-/** 알림 훅 — 판정하지 않는다. 있던 다른 훅은 건드리지 않는다. */
+/** Notification hook — it never judges. Other hooks in the file are left alone. */
 export function installClaudeHook(root: string): 'added' | 'unchanged' {
   const file = path.join(root, '.claude', 'settings.local.json');
   const settings = readJson<Settings>(file) ?? {};
