@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "vibe 4 — an AX/FDE harness: scenarios you approve once, checks the harness runs itself, human tokens for irreversible actions.",
   "type": "module",
   "bin": {
@@ -10,6 +10,7 @@
     "dist/",
     "skills/",
     "hooks/",
+    "scripts/",
     "card.md",
     "README.md",
     "LICENSE"
@@ -21,7 +22,8 @@
     "build": "tsc -p tsconfig.json && chmod +x dist/cli.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "check": "npm run build && npm test"
+    "check": "npm run build && npm test",
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "ajv": "^8.17.1",

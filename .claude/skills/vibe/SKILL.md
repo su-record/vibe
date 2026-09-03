@@ -10,7 +10,7 @@ user-invocable: true
 
 ## 절차
 
-1. `vibe state --json` 을 실행한다. 없으면(`code 2`) `vibe init` 을 먼저 실행하고 다시 한다.
+1. `vibe state --json` 을 실행한다. `.vibe/` 가 없는 디렉터리는 NONE 을 답하고, 첫 기록이 그것을 만든다.
 2. `notices` 가 있으면 그대로 사용자에게 먼저 보여 준다.
 3. 진행 중 작업이 있으면(`state` 가 NONE·ABANDONED 가 아니면) "이어서 할까요, 새로 시작할까요" 를 한 줄로 묻는다. 새로 시작이면 `vibe abandon --reason "…"` 뒤에 진행한다.
 4. 단계를 고른다:

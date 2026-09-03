@@ -5,15 +5,15 @@
 Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app.
 
 ```bash
-npm i -g @su-record/vibe
-cd your-project && vibe init                     # Claude Code (CLAUDE.md card · .claude/skills · notification hook)
-cd your-project && vibe init --client codex      # Codex CLI  (AGENTS.md card · .codex/skills · .codex/hooks.json)
+npm i -g @su-record/vibe && vibe status          # that is the whole install
 
-vibe plugin install                              # Codex CLI + ChatGPT desktop as one OpenAI plugin
+vibe plugin install                              # ChatGPT desktop only — Codex CLI is already covered above
 codex plugin marketplace add ~ && codex plugin add vibe@<marketplace>   # the install output prints the exact name
 ```
 
-Codex and ChatGPT desktop read the same personal marketplace (`~/.agents/plugins/marketplace.json`); restart ChatGPT desktop after installing. The plugin tree holds only the manifest, the six skills and the notification hooks — its hooks call the globally installed `vibe`.
+There is no `init`. The card, the six skills and the notification hook are the same in every project, so they live once per client home — `~/.claude` (CLAUDE.md · skills · settings.json) and `~/.codex` (AGENTS.md · skills · hooks.json), whichever exist. `npm i -g` puts them there when npm lets install scripts run; otherwise the first `vibe` command does, and every later command repairs a missing or stale copy. `vibe status` shows what is in place. The only thing inside a repository is `.vibe/`, created by the first record (`vibe intent draft`, `vibe tokens`, …) — a command that only reads leaves no trace.
+
+ChatGPT desktop reads the personal marketplace (`~/.agents/plugins/marketplace.json`); restart the app after installing. The plugin tree holds only the manifest, the six skills and the notification hooks — its hooks call the globally installed `vibe`.
 
 Then, in chat:
 
@@ -75,17 +75,17 @@ Routing stays in code: the model never decides the order. Keep a graph under six
 ## Token policy
 
 ```bash
-vibe init --tokens strict         # approval and irreversible actions both need a six-digit human token
-vibe init --tokens irreversible   # default — a plain "yes" approves; push/deploy/send/delete/spend need a token
-vibe init --tokens off            # no tokens; everything is recorded as "auto" (you already skip permissions)
+vibe tokens strict         # approval and irreversible actions both need a six-digit human token
+vibe tokens irreversible   # default — a plain "yes" approves; push/deploy/send/delete/spend need a token
+vibe tokens off            # no tokens; everything is recorded as "auto" (you already skip permissions)
 ```
 
-Tokens are six digits, valid ten minutes, single use, bound to what they authorize, and stored only as hashes. The verdict itself is never configurable.
+The policy is per project (`.vibe/config.json`); `vibe tokens` alone prints it. Tokens are six digits, valid ten minutes, single use, bound to what they authorize, and stored only as hashes. The verdict itself is never configurable.
 
 ## Commands
 
 ```
-setup     init · status · uninstall
+setup     status · tokens · uninstall [--purge-state] · plugin install | status
 work      state [--graph] · profile <file> · intent draft | show · approve · check · evidence · abandon
 human     ask · authorize · inbox
 memory    regress record | list · knowledge add
@@ -106,7 +106,7 @@ Default catalogs: `anthropics/skills`, `vercel-labs/agent-skills`, `NousResearch
 
 Six common skills ship with the package — `vibe` (entry), `discover`, `scope`, `build`, `prove`, `handoff` — under 300 lines in total. They contain the harness command sequence and message shapes for each stage, nothing about how to code.
 
-Project-specific skills live only inside the project (`.claude/skills`, `.codex/skills`, registry in `.vibe/skills/`) and are installed only when bound to a check or carrying knowledge the model lacks:
+The six live in the client home, not in the repository. Project-specific skills live only inside the project (`.claude/skills`, `.codex/skills`, registry in `.vibe/skills/`) and are installed only when bound to a check or carrying knowledge the model lacks:
 
 ```
 vibe skill suggest                         # ≤3 proposals from signals: http hosts, regression clusters, repeated questions, handoff

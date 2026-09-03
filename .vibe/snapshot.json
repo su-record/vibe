@@ -1,6 +1,16 @@
 {
-  "package-lock.json": "a738067b68bbc5cb88ec26e5265b15da2f55cfa3",
-  "package.json": "36e548234941b1e7a1a8a1a139ca07cbc8535c3c",
-  "src/cli.test.ts": "8f3b6987c07e2638fe63e8b46192331e3f113b89",
-  "src/cli.ts": "a62083a5fbd7dc66cae6f8f9cf76cca265f5b4aa"
+  ".claude/skills/vibe/SKILL.md": "ebdb25c7c0c327fe28b0113f538e4e41f07425dd",
+  "README.md": "dd96b39a88a4e62874b0d2928d741f9b6a9ddf74",
+  "bench/README.md": "4a41eee7a136da613c90230de19f2e7ca762d63c",
+  "bench/run.js": "dca29b6310061ed38f6ff62d201559dffdff2195",
+  "package-lock.json": "ce38493b0209c00047c25e0f69b94823020715d8",
+  "package.json": "32a1d01326a4d9234aa7817678c922bfecd9ac46",
+  "skills/vibe/SKILL.md": "693b33ac6f4e8a2df2634b568ee56fabad9082bc",
+  "src/cli.test.ts": "21a26e30450ecd80431295c076e42ede91f68800",
+  "src/cli.ts": "30d5d170772f35564d208c2635da955fd60fbe77",
+  "src/install/codex.test.ts": "deleted",
+  "src/install/project.ts": "62d301c3a09342a6857b425cf17755bcd3171310",
+  "scripts/postinstall.js": "2715303a86672a2442e441023af43973c0f92414",
+  "src/install/global.test.ts": "ee9d55ca4c95c695835de53dd5df336b1f53ecc0",
+  "src/install/global.ts": "3638c736caed75e24cd02a61f2ef5afd6d439efc"
 }

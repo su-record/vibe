@@ -29,7 +29,7 @@ function vibe(args: string[], input?: string, env: Record<string, string> = {}):
     cwd: root,
     encoding: 'utf-8',
     input,
-    env: { ...process.env, VIBE_CLIENT: 'test-client', ...env },
+    env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_CLIENT: 'test-client', ...env }, // the bench and `vibe check` set VIBE_SKIP_SETUP; the tests install into $HOME=root
     timeout: 60000,
   });
   let json: unknown = null;
@@ -47,16 +47,20 @@ const HELLO = JSON.stringify({
 });
 
 describe('CLI — from request to DONE', () => {
-  it('strict: init → draft → approve(token) → check → DONE; the exit code is the verdict', () => {
-    const init = vibe(['init', '--tokens', 'strict']);
-    expect(init.status).toBe(0);
-    expect((init.json as { tokens: string }).tokens).toBe('strict');
-    expect(fs.existsSync(path.join(root, '.vibe', 'state.json'))).toBe(true);
-    expect(fs.readFileSync(path.join(root, 'CLAUDE.md'), 'utf-8')).toContain('<!-- vibe:start -->');
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
-
+  it('strict: tokens → draft → approve(token) → check → DONE; the exit code is the verdict', () => {
+    // no init: the first command installs the global surfaces into $HOME and `tokens` seeds .vibe/
     const before = vibe(['state']);
     expect((before.json as { state: string }).state).toBe('NONE');
+    expect(fs.existsSync(path.join(root, '.vibe'))).toBe(false); // a read leaves no trace
+    expect(fs.readFileSync(path.join(root, '.claude', 'CLAUDE.md'), 'utf-8')).toContain('<!-- vibe:start -->');
+    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
+    expect(fs.readFileSync(path.join(root, '.claude', 'settings.json'), 'utf-8')).toContain('hooks/notify.js');
+    expect(fs.existsSync(path.join(root, 'CLAUDE.md'))).toBe(false); // nothing in the project itself
+
+    const tokens = vibe(['tokens', 'strict']);
+    expect(tokens.status).toBe(0);
+    expect((tokens.json as { tokens: string }).tokens).toBe('strict');
+    expect(fs.existsSync(path.join(root, '.vibe', 'state.json'))).toBe(true);
 
     const draft = vibe(['intent', 'draft', '--stdin'], HELLO);
     expect(draft.status).toBe(0);
@@ -83,10 +87,11 @@ describe('CLI — from request to DONE', () => {
     expect((vibe(['evidence']).json as { run: string }).run).toBe('r-2');
   });
 
-  it('default (irreversible): approve needs no token, authorize does', () => {
-    vibe(['init']);
+  it('default (irreversible): approve needs no token, authorize does; the draft creates .vibe/', () => {
     const draft = vibe(['intent', 'draft', '--stdin'], HELLO);
     expect((draft.json as { token: string | null }).token).toBeNull();
+    expect(fs.existsSync(path.join(root, '.vibe', 'scenarios.yaml'))).toBe(true);
+    expect((vibe(['ledger']).json as Array<{ event: string }>)[0]?.event).toBe('init');
     const approved = vibe(['approve']);
     expect(approved.status).toBe(0);
     expect((approved.json as { basis: string }).basis).toBe('chat');
@@ -102,7 +107,7 @@ describe('CLI — from request to DONE', () => {
   });
 
   it('off: nothing needs a token and the ledger says auto', () => {
-    vibe(['init', '--tokens', 'off']);
+    vibe(['tokens', 'off']);
     vibe(['intent', 'draft', '--stdin'], HELLO);
     expect(vibe(['approve']).status).toBe(0);
     const ask = vibe(['ask', 'Push?', '--needs', 'authorize:push']);
@@ -114,10 +119,10 @@ describe('CLI — from request to DONE', () => {
 
   it('continues across clients — approved under one, checked under another, both in the ledger', () => {
     const as = (client: string, args: string[], input?: string): Run => {
-      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, VIBE_CLIENT: client }, timeout: 60000 });
+      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_CLIENT: client }, timeout: 60000 });
       return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
     };
-    as('claude-code', ['init', '--client', 'claude,codex']);
+    fs.mkdirSync(path.join(root, '.codex')); // a Codex home is present, so both clients get the surfaces
     as('claude-code', ['intent', 'draft', '--stdin'], HELLO);
     expect(as('claude-code', ['approve']).status).toBe(0);
     fs.writeFileSync(path.join(root, 'hello.txt'), 'hi\n');
@@ -129,15 +134,29 @@ describe('CLI — from request to DONE', () => {
     expect(ledger.find((e) => e.event === 'done')?.client).toBe('codex');
     expect((as('chatgpt', ['state']).json as { state: string }).state).toBe('DONE');
     expect(fs.existsSync(path.join(root, '.codex', 'hooks.json'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.codex', 'skills', 'vibe.scope', 'SKILL.md'))).toBe(true);
+    expect(fs.readFileSync(path.join(root, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
   });
 
-  it('uninstall removes card, skills and hook but keeps .vibe', () => {
-    vibe(['init']);
+  it('status reports version, the global surfaces and the project; a missing skill is repaired by the next command', () => {
+    vibe(['tokens', 'off']);
+    fs.rmSync(path.join(root, '.claude', 'skills', 'vibe.prove'), { recursive: true });
+    const status = vibe(['status']);
+    expect(status.status).toBe(0);
+    expect(status.json).toMatchObject({ version: expect.stringMatching(/^\d+\.\d+\.\d+/), clients: { claude: { card: true, skills: 6, hook: true, current: true } }, project: { vibe: true, state: 'NONE' } });
+    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe.prove', 'SKILL.md'))).toBe(true);
+  });
+
+  it('uninstall removes the global card, skills and hook but keeps .vibe unless --purge-state', () => {
+    vibe(['tokens', 'off']);
     const out = vibe(['uninstall']);
     expect(out.status).toBe(0);
     expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe'))).toBe(false);
+    expect(fs.existsSync(path.join(root, '.claude', 'CLAUDE.md'))).toBe(false);
+    expect(fs.existsSync(path.join(root, '.claude', 'settings.json'))).toBe(false);
     expect(fs.existsSync(path.join(root, '.vibe'))).toBe(true);
-    expect(fs.existsSync(path.join(root, 'CLAUDE.md'))).toBe(false);
+    expect((vibe(['uninstall', '--purge-state'], undefined, { VIBE_SKIP_SETUP: '1' }).json as { removed: string[] }).removed).toEqual(['.vibe/']);
+    expect(fs.existsSync(path.join(root, '.vibe'))).toBe(false);
   });
 
   it('help always exits 0', () => {
@@ -156,7 +175,7 @@ describe('graph — edges the ledger can walk', () => {
   });
 
   it('state --graph prints mermaid with one node per scenario and one edge per needs entry', () => {
-    vibe(['init', '--tokens', 'off']);
+    vibe(['tokens', 'off']);
     vibe(['intent', 'draft', '--stdin'], GRAPH);
     vibe(['approve']);
     vibe(['check', 'build']);
@@ -171,7 +190,7 @@ describe('graph — edges the ledger can walk', () => {
 
   it('ledger why walks caused → implements → decided-by edges back to the approval', () => {
     execFileSync('git', ['init', '-q'], { cwd: root });
-    vibe(['init', '--tokens', 'off']);
+    vibe(['tokens', 'off']);
     vibe(['intent', 'draft', '--stdin'], GRAPH);
     const first = (vibe(['state']).json as { intent: { hash: string } }).intent.hash;
     vibe(['approve']);
@@ -224,7 +243,7 @@ describe('skills — from proposal to installed, through the CLI', () => {
       '/repos/vercel-labs/agent-skills': { default_branch: 'main', license: { spdx_id: 'MIT' } },
     }));
     const env = { VIBE_GITHUB_FIXTURE: fixture };
-    vibe(['init', '--tokens', 'off']);
+    vibe(['tokens', 'off']);
     vibe(['intent', 'draft', '--stdin'], JSON.stringify({ intent: '# Deploy\n\n## Why\nx\n', scenarios: '- { id: live, then: x, check: { type: http, url: "https://api.vercel.com/v9/projects" } }\n' }));
     const proposals = (vibe(['state']).json as { proposals: Array<{ ref: string }> }).proposals;
     expect(proposals.map((p) => p.ref)).toEqual(['vibe skill search vercel']);
