@@ -1,0 +1,8 @@
+{"type":"token","id":"t-mtl3coia-vn","kind":"approve","target":"f17d5e97a27da87c","tokenHash":"b3f7931ded5d98b987e8fe291c2be156b19e0c51d3f850ce2834c892960ea925","issuedAt":"2026-09-03T05:35:18.034Z","expiresAt":"2026-09-03T05:45:18.034Z"}
+{"type":"token-used","id":"t-mtl3coia-vn","at":"2026-09-03T05:35:49.453Z"}
+{"type":"question","id":"q-mtl3dkv4-2dm","at":"2026-09-03T05:35:59.968Z","question":"card.md 7줄을 읽고 한 줄이라도 무슨 뜻인지 모르겠으면 그 줄 번호를 알려 주세요","scenario":"card-reads"}
+{"type":"resolve","id":"q-mtl3dkv4-2dm","at":"2026-09-03T05:48:22.227Z"}
+{"type":"token","id":"t-mtl3thq1-13c","kind":"approve","target":"6c6f8a3700914c7a","tokenHash":"3a8a3bdbc5b0ce4a546a493bc5a662b45850191acfdcbf74368f8e0317252462","issuedAt":"2026-09-03T05:48:22.393Z","expiresAt":"2026-09-03T05:58:22.393Z"}
+{"type":"token-used","id":"t-mtl3thq1-13c","at":"2026-09-03T05:49:08.444Z"}
+{"type":"question","id":"q-mtl3uq6z-w4","at":"2026-09-03T05:49:20.027Z","question":"Read the eight lines of card.md. If any line is unclear, tell me its number.","scenario":"card-reads"}
+{"type":"question","id":"q-mtl4kb3g-349","at":"2026-09-03T06:09:13.516Z","question":"Run `vibe plugin install`, then `codex plugin marketplace add ~` and `codex plugin add vibe@vibe-local`, restart ChatGPT desktop, and tell me whether the vibe plugin appears.","scenario":"chatgpt-desktop"}

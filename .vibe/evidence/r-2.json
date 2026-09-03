@@ -1,0 +1,81 @@
+{
+  "run": "r-2",
+  "at": "2026-09-03T07:50:10.758Z",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "2bf656e512e3",
+  "results": [
+    {
+      "id": "build",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 4361,
+      "tail": "npm notice run @su-record/vibe@4.0.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+    },
+    {
+      "id": "tests",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 26853,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  16 passed (16)\n      Tests  78 passed (78)\n   Start at  07:50:11\n   Duration  26.20s (transform 1.08s, setup 0ms, import 2.48s, tests 28.98s, environment 2ms)"
+    },
+    {
+      "id": "card-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 49,
+      "tail": "card.md 705 bytes (limit 1024)"
+    },
+    {
+      "id": "source-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 78,
+      "tail": "src (non-test) 3677 lines (limit 5000)"
+    },
+    {
+      "id": "skills-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 8,
+      "tail": ""
+    },
+    {
+      "id": "harness-arm",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1103,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  07:50:38\n   Duration  271ms (transform 63ms, setup 0ms, import 87ms, tests 9ms, environment 0ms)"
+    },
+    {
+      "id": "judge-checkable",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 105,
+      "tail": "judge: 5 file checks · reference total 4500.5"
+    },
+    {
+      "id": "bench-ran",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 46,
+      "tail": "bench: 20 judged runs · arms claude-code/on, claude-code/off, codex/on, codex/off"
+    },
+    {
+      "id": "compare-answers",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 139,
+      "tail": "compare by harness · metric checks · verdict inconclusive\n  observed ranges (min–max) overlap — this sample cannot tell a difference\n  on: runs 10 · usable 10 · min 5 · max 5 · mean 5.00\n  off: runs 10 · usable 10 · min 5 · max 5 · mean 5.00"
+    }
+  ]
+}

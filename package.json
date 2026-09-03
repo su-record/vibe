@@ -1,138 +1,46 @@
 {
   "name": "@su-record/vibe",
-  "version": "3.2.64",
-  "description": "AI Coding Framework for Claude Code — 7+ agents, 33 core skills, multi-LLM orchestration",
+  "version": "4.0.0",
+  "description": "vibe 4 — an AX/FDE harness: scenarios you approve once, checks the harness runs itself, human tokens for irreversible actions.",
   "type": "module",
-  "main": "dist/cli/index.js",
-  "exports": {
-    ".": "./dist/cli/index.js",
-    "./tools": "./dist/tools/index.js",
-    "./tools/memory": "./dist/tools/memory/index.js",
-    "./tools/convention": "./dist/tools/convention/index.js",
-    "./tools/ui": "./dist/tools/ui/index.js",
-    "./tools/time": "./dist/tools/time/index.js",
-    "./tools/interaction": "./dist/tools/interaction/index.js",
-    "./memory": {
-      "types": "./dist/infra/lib/memory/index.d.ts",
-      "default": "./dist/infra/lib/memory/index.js"
-    }
-  },
   "bin": {
-    "vibe": "dist/cli/index.js"
+    "vibe": "dist/cli.js"
   },
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli/index.js",
-    "dev": "tsc --watch",
-    "gen:skill-docs": "tsx scripts/gen-skill-docs.ts",
-    "gen:skill-docs:check": "tsx scripts/gen-skill-docs.ts --check",
-    "sync:agent-models": "tsx scripts/sync-agent-models.ts",
-    "sync:agent-models:check": "tsx scripts/sync-agent-models.ts --check",
-    "validate:skill-invocation": "tsx scripts/validate-skill-invocation.ts",
-    "validate:counts": "tsx scripts/validate-counts.ts",
-    "lint": "oxlint",
-    "lint:ratchet": "tsx scripts/lint-ratchet.ts",
-    "verify:all": "pnpm lint && pnpm lint:ratchet && pnpm gen:skill-docs:check && pnpm sync:agent-models:check && pnpm validate:skill-invocation && pnpm validate:counts && pnpm gen:agents-md:check && pnpm validate:spec-lifecycle && pnpm validate:cache-surface",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "pnpm build",
-    "postinstall": "node -e \"import('./dist/cli/postinstall/main.js').then(m=>m.main()).catch(e=>process.stderr.write('\\u26a0\\ufe0f  vibe postinstall skipped: '+((e&&e.message)||e)+'\\n   Assets and hooks were not installed. Run: npx vibe upgrade\\n'))\"",
-    "release": "bash scripts/release.sh",
-    "sync:plugin-version": "npx tsx scripts/sync-plugin-version.ts",
-    "version": "npx tsx scripts/sync-plugin-version.ts && npm run build && npx tsx scripts/build-plugin.ts && git add .codex-plugin/plugin.json .claude-plugin/plugin.json plugins/",
-    "build:plugin": "npx tsx scripts/build-plugin.ts",
-    "gen:plugin-hooks": "npx tsx scripts/gen-plugin-hooks.ts",
-    "gen:plugin-hooks:check": "npx tsx scripts/gen-plugin-hooks.ts --check",
-    "validate:plugin-tree": "npx tsx scripts/build-plugin.ts && git diff --exit-code --stat HEAD -- plugins/",
-    "validate:mermaid": "npx tsx scripts/validate-mermaid.ts",
-    "validate:spec-lifecycle": "npx tsx scripts/validate-spec-lifecycle.ts",
-    "validate:cache-surface": "npx tsx scripts/validate-cache-surface.ts",
-    "gen:agents-md": "npx tsx scripts/gen-agents-md.ts",
-    "gen:agents-md:check": "npx tsx scripts/gen-agents-md.ts --check"
-  },
-  "keywords": [
-    "ai",
-    "core",
-    "coding",
-    "spec-driven",
-    "claude",
-    "agent",
-    "requirements",
-    "user-story",
-    "ultrawork",
-    "parallel-agents",
-    "memory-management",
-    "knowledge-graph",
-    "code-analysis",
-    "code-quality",
-    "harness"
+  "files": [
+    "dist/",
+    "skills/",
+    "hooks/",
+    "card.md",
+    "README.md",
+    "LICENSE"
   ],
-  "author": "Su",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/su-record/vibe.git"
-  },
-  "bugs": {
-    "url": "https://github.com/su-record/vibe/issues"
-  },
-  "homepage": "https://github.com/su-record/vibe#readme",
-  "publishConfig": {
-    "access": "public"
-  },
   "engines": {
     "node": ">=20.12.0"
   },
-  "packageManager": "pnpm@9.15.9",
-  "optionalDependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.38",
-    "@ast-grep/napi": "^0.40.5"
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/cli.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "check": "npm run build && npm test"
   },
   "dependencies": {
-    "@clack/prompts": "^1.0.0",
-    "better-sqlite3": "^12.9.0",
-    "chalk": "^5.6.2",
-    "glob": "^13.0.1",
-    "papaparse": "^5.5.3",
-    "ts-morph": "^26.0.0",
-    "uuidv7": "^1.1.0",
-    "zod": "^4.3.6"
+    "ajv": "^8.17.1",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/jsdom": "^30.0.0",
     "@types/node": "^22.19.10",
-    "@types/papaparse": "^5.5.2",
-    "@vitest/coverage-v8": "^4.1.10",
-    "ajv": "^8.17.1",
-    "jsdom": "^25.0.1",
-    "mermaid": "^11.17.2",
-    "oxlint": "^1.76.0",
     "tsx": "^4.23.5",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   },
-  "files": [
-    ".claude-plugin/",
-    "!.claude-plugin/marketplace.json",
-    ".codex-plugin/",
-    "dist/",
-    "vibe/",
-    "languages/",
-    "agents/",
-    "skills/",
-    "skills-extra/",
-    "hooks/",
-    "!hooks/scripts/__tests__",
-    ".env.example",
-    "CLAUDE.md",
-    "README.md",
-    "LICENSE"
-  ],
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild"
-    ]
-  }
+  "license": "MIT",
+  "repository": "https://github.com/su-record/vibe",
+  "keywords": [
+    "harness",
+    "fde",
+    "verification",
+    "claude-code",
+    "codex",
+    "chatgpt"
+  ]
 }

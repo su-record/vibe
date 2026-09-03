@@ -1,0 +1,9 @@
+order_id,date,seller,amount,status,note
+1001,2026-08-01,Han Traders,"1,200.50",paid,
+1002,2026-08-01,Kim Books,300,paid,
+1003,2026-08-02,Han Traders,450,paid,
+1003,2026-08-02,Han Traders,450,paid,
+1004,2026-08-02,Park Farm,,paid,amount missing on the export
+1005,2026-08-03,Kim Books,700,refunded,
+1006,2026-08-03,Park Farm,"2,000",paid,
+1007,2026-08-04,Han Traders,550,paid,

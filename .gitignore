@@ -1,53 +1,8 @@
-# Dependencies
 node_modules/
-
-# Build outputs
 dist/
-# 플러그인 배포 트리는 예외 — Claude Code 마켓플레이스가 저장소를 클론해 읽으므로
-# dist/ 가 트리에 실제로 있어야 한다. 위의 `dist/` 가 여기까지 삼킨다.
-!/plugins/vibe/dist/
-mcp/dist/
-*.tgz
-coverage/
-
-# Lock files (npm - unused)
-package-lock.json
-
-# Docs
-wiki/
-
-# OS files
+*.log
 .DS_Store
-
-# IDE
-.vscode/
-.idea/
-
-# config
-.cursor/
-.env
-
-# vibe project hooks (personal)
+# 개별 스킬·상태는 커밋한다 — .vibe/ 와 .claude/skills 는 사용자 것이다
 .claude/settings.local.json
-.codex/hooks.json
-.claude/memories/
-.vibe/command-log.txt
-hooks/scripts/__tests__/.vibe/
-.claude/vibe/config.json
-.claude/vibe/.last-feature
-
-# vibe runtime artifacts (per CLAUDE.md Git Exclude)
-.vibe/metrics/
-.vibe/gates/
-.vibe/memories/
-.vibe/checkpoints/
-.vibe/packets/
-.vibe/runs/
-.vibe/.last-feature
-.vibe/scope.json
-
-# 일회성 코드 레인 — 품질 게이트를 면제받는 대신 커밋되지 않는다 (1차 방어)
-.vibe/ephemeral/
-.claude/scheduled_tasks.lock
-
-# 플러그인 빌드 산출물 (scripts/build-plugin.ts)
+.vibe/cache/
+bench/ledger.jsonl

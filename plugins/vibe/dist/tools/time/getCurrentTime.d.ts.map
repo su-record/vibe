@@ -1,1 +1,0 @@
-{"version":3,"file":"getCurrentTime.d.ts","sourceRoot":"","sources":["../../../src/tools/time/getCurrentTime.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,UAAU,EAAE,cAAc,EAAE,MAAM,2BAA2B,CAAC;AAEvE,eAAO,MAAM,wBAAwB,EAAE,cAmBtC,CAAC;AAEF,wBAAsB,cAAc,CAAC,IAAI,GAAE;IAAE,MAAM,CAAC,EAAE,MAAM,CAAC;IAAC,QAAQ,CAAC,EAAE,MAAM,CAAA;CAAO,GAAG,OAAO,CAAC,UAAU,CAAC,CAsC3G"}

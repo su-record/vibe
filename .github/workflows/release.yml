@@ -1,25 +1,14 @@
 name: Release
 
+# One entrance: push a tag `vX.Y.Z` that matches package.json. Publishing uses npm OIDC trusted
+# publishing (no token in secrets), which is bound to this workflow file name — keep `release.yml`.
 on:
   push:
     tags: ['v*']
-  # 태그를 밀 수 없는 환경에서도 릴리스할 수 있게 하는 두 번째 입구.
-  # 태그 push 는 그대로 남는다 — `scripts/release.sh` 흐름을 깨지 않는다.
-  workflow_dispatch:
-    inputs:
-      version:
-        description: '릴리스할 버전 — package.json 과 정확히 일치해야 한다 (예: 3.2.63). v 접두사는 붙이지 않는다.'
-        required: true
-        type: string
 
 permissions:
-  contents: write # GitHub Release 생성 + dispatch 경로의 태그 생성
+  contents: write # GitHub Release
   id-token: write # npm provenance
-
-# 두 입구가 쓰는 태그 이름을 **한 곳에서** 만든다. 아래 스텝들이 각자 분기하면
-# 한쪽 경로만 조용히 틀린 태그로 게시된다 — 릴리스에서 가장 비싼 종류의 버그다.
-env:
-  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', github.event.inputs.version) || github.ref_name }}
 
 jobs:
   publish:
@@ -29,68 +18,39 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6 # 버전은 package.json packageManager 가 SSOT
-
       - uses: actions/setup-node@v7
         with:
-          node-version: '24' # npm >= 11.5 — OIDC trusted publishing 요구사항
-          cache: 'pnpm'
+          node-version: '24' # npm >= 11.5 for OIDC trusted publishing
+          cache: npm
           registry-url: 'https://registry.npmjs.org'
 
-      # 태그 push 경로는 `scripts/release.sh` 가 아래 셋을 이미 확인한 뒤 태그를 민다.
-      # dispatch 는 그 스크립트를 거치지 않으므로 여기서 같은 것을 확인한다 —
-      # 입구가 둘이 되면 검사도 둘이어야 한다.
-      - name: Guard (dispatch 경로)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Tag matches package.json
         run: |
           set -euo pipefail
-
-          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
-            echo "::error::dispatch 는 main 에서만 실행한다 (현재: $GITHUB_REF)"
-            exit 1
-          fi
-
           PKG_TAG="v$(node -p "require('./package.json').version")"
-          if [ "$PKG_TAG" != "$RELEASE_TAG" ]; then
-            echo "::error::입력 버전($RELEASE_TAG)이 package.json($PKG_TAG)과 다르다 — 버전 범프가 main 에 병합됐는지 확인하라"
+          if [ "$PKG_TAG" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json ($PKG_TAG)"
             exit 1
           fi
 
-          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
-            echo "::error::태그 $RELEASE_TAG 가 이미 있다 — 같은 버전을 두 번 게시하지 않는다"
-            exit 1
-          fi
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: node checks/card-size.js && node checks/loc.js
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build (tsc)
-        run: pnpm build
-
-      - name: Run vitest
-        run: pnpm test -- --reporter=default
-
-      # 테스트 **뒤에** 태그를 만든다 — 깨진 빌드에 태그가 남으면 그 버전은 영원히 못 쓴다.
-      #
-      # ⚠️ 이 push 가 Release 워크플로를 다시 부르지 않는 이유: GITHUB_TOKEN 으로 만든
-      # push 는 워크플로를 트리거하지 않는다(GitHub 의 재귀 방지 규정). 이 사실이 깨지면
-      # 같은 버전이 두 번 게시된다 — PAT 나 App 토큰으로 바꾸지 말 것.
-      - name: Create tag (dispatch 경로)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Release notes
         run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
-          git push origin "$RELEASE_TAG"
+          PREV=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+          {
+            echo "## $GITHUB_REF_NAME"
+            echo
+            if [ -n "$PREV" ]; then git log --no-merges --pretty='- %s' "$PREV..$GITHUB_REF_NAME"; else git log --no-merges --pretty='- %s' -n 30; fi
+          } > release-notes.md
 
-      - name: Generate release notes
-        run: node dist/cli/generate-release-notes.js "$RELEASE_TAG" release-notes.md
-
-      - name: Publish to npm (OIDC trusted publishing — 토큰 없음)
+      - name: Publish to npm (OIDC trusted publishing)
         run: npm publish --access public --provenance
 
-      - name: Create GitHub Release
-        run: gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file release-notes.md
+      - name: GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ github.token }}

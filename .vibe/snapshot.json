@@ -1,0 +1,7 @@
+{
+  ".github/workflows/test.yml": "0fd5cbb24912649d63fd4dfde3aeb8fd041d966a",
+  "README.md": "acdfede2317f93b9e434f46aedfe214a00e69dd3",
+  "package-lock.json": "ee1639b0a58bf74cdc5905596b0ed823ccec9193",
+  "package.json": "c54e3ba5a5b50ea699c29aeac6173b32dacfece4",
+  ".github/workflows/release.yml": "bdacfdbfd95c8482b39be15d7ed757ed85fbb347"
+}
