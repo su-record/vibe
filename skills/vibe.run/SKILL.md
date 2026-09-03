@@ -146,7 +146,7 @@ After implementing each scenario, **automatic verification**:
 
 ### Run Ledger Tracking
 
-Every `/vibe.run` invocation must explicitly initialize `.vibe/metrics/run-ledger.json` (fields: `runStarted`, `runFeature`, `verifyPassed`, `verifyAt`) and reset `verifyPassed` to `false`. Before completion, invoke `/vibe.verify`; its `verify-ledger.js` step must record `verifyPassed`, `verifyAt`, and command evidence, then read the ledger back and enforce `verifyPassed === true && verifyAt > runStarted`. Stop/auto-commit hooks may warn or short-circuit this sequence when available, but they are acceleration only and never the correctness basis.
+Every `/vibe.run` invocation must explicitly initialize `.vibe/metrics/run-ledger.json` (fields: `runStarted`, `runFeature`, `verifyPassed`, `verifyAt`) and reset `verifyPassed` to `false`. Before completion, invoke `/vibe.verify`; its `verify-ledger.js pass` step **executes the project's test command itself** and records `verifyPassed`, `verifyAt`, `verifyBasis` (`independent` on its own exit 0; `self-report` only when no test command is detectable) and command evidence. Read the ledger back and enforce `verifyPassed === true && verifyAt > runStarted`; treat `verifyBasis === 'self-report'` as a flagged pass, not an independent one. Stop/auto-commit hooks may warn or short-circuit this sequence when available (auto-commit also blocks when a code edit is recorded after `verifyAt`), but they are acceleration only and never the correctness basis.
 
 ### Interactive Checkpoints (`--interactive` 전용)
 
