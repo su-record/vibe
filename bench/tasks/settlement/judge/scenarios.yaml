@@ -1,0 +1,22 @@
+- id: sheet
+  then: out/settlement.csv exists with the three columns
+  check: { type: file, path: out/settlement.csv, pattern: "^seller,orders,total" }
+
+- id: total
+  needs: [sheet]
+  then: the total column sums to 4500.5 — paid, de-duplicated, amount-bearing orders only
+  check: { type: file, path: out/settlement.csv, sum: { column: total, equals: 4500.5, tolerance: 0.001 } }
+
+- id: summary-schema
+  then: out/summary.json matches the schema
+  check: { type: file, path: out/summary.json, schema: judge/summary.schema.json }
+
+- id: duplicate-counted
+  needs: [summary-schema]
+  then: the duplicated order 1003 was skipped once
+  check: { type: file, path: out/summary.json, pattern: "\"duplicatesSkipped\":\\s*1\\b" }
+
+- id: needs-human
+  needs: [summary-schema]
+  then: order 1004 (no amount) is listed for a person
+  check: { type: file, path: out/summary.json, pattern: "\"needsHuman\":\\s*\\[\\s*\"?1004\"?\\s*\\]" }

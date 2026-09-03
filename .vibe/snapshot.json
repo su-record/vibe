@@ -1,7 +1,18 @@
 {
-  "src/core/check.test.ts": "c6c47dc5dfdb53dc8fff790b2b3d68d873eca3f5",
-  "src/core/check.ts": "7a60b6240c95fd47819ba470333f9aae8e675b2c",
-  "src/core/research.test.ts": "2291fadc31c937329052ec79d4ef7c3bac95bc72",
-  "src/core/research.ts": "506689e99662e606be2d71ad832e8dafaa092423",
-  "src/core/tree.ts": "b768866b9cb5940ea3c269bce2f1901bd9077016"
+  ".gitignore": "9ecc8815c835ae99241fffde4c8c04b2fbb5118f",
+  "README.md": "2cc42a2714d55a3c5927dd0281951318d98d4d75",
+  "src/cli.ts": "e65ef7d3b2b6e049a9ecd85c7efc0a4523a7e96e",
+  "src/core/check.ts": "2e5ed49fd59f0effe903035d22e1eb9fa273419c",
+  "src/core/client.ts": "4c57acc6c3a5f3ede969426089b2d3afcada9e0a",
+  "src/core/ledger.test.ts": "cc110ec90fa966ef90ed58b4987a6db18639177f",
+  "src/core/ledger.ts": "a9ab63ae9e7aa55b6e3ca814360b57343e6fa8cc",
+  "bench/README.md": "6c3c85c4d65793aa83bf29f6d6330addbe3fdc8b",
+  "bench/run.js": "cb198e8983ecc5763deaf5a93069901aed2958ff",
+  "bench/tasks/settlement/TASK.md": "11b9829a47f1a8885ccf4d028d947e1fbc7b9f87",
+  "bench/tasks/settlement/judge/intent.md": "6c1caa46eb4d12e73ed0963a2bd5d467293d8fc7",
+  "bench/tasks/settlement/judge/scenarios.yaml": "2eb7faeb08bd21a86f883ccbcfc3fd3043cde80a",
+  "bench/tasks/settlement/judge/summary.schema.json": "107b0e92bad548d056394ab944baa92926adf58d",
+  "bench/tasks/settlement/orders.csv": "36ad64a732f2f6616fd5810c526e581dfd903556",
+  "checks/bench-judge.js": "e5051765b4b5ac72c21c3d26dd67d5ca99e6905c",
+  "checks/bench-ran.js": "80bc83b98648946ad3dbc2ca71777dcecab00ee2"
 }

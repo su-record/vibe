@@ -138,7 +138,11 @@ config.json      token policy · skill catalogs
 
 ## Status
 
-`4.0.0-alpha` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Next: the end-to-end "order spreadsheet" example (3c), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0-alpha` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. vibe 3 stays on its 3.x tags and is no longer developed.
+
+## Bench — the ledger is the benchmark
+
+`bench/run.js` runs the same task under different arms (Claude Code · Codex, harness on · off), judges every run with the same scenarios, and appends one `check` line per run to `bench/ledger.jsonl`. `vibe ledger compare --by harness --metric checks --ledger bench/ledger.jsonl` answers with one of four verdicts and never a ratio. See `bench/README.md`.
 
 ## Example
 

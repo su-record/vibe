@@ -3,7 +3,7 @@ import { evalCheck } from './checks/eval.js';
 import { fileCheck } from './checks/file.js';
 import { httpCheck } from './checks/http.js';
 import { runCheck, type CheckResult } from './checks/run.js';
-import { detectClient, detectModel } from './client.js';
+import { detectClient, detectHarness, detectModel, reportedCostUsd, reportedTurns } from './client.js';
 import { invalidTransition } from './errors.js';
 import { ask, hasOpenQuestion } from './inbox.js';
 import { record, type Edge } from './ledger.js';
@@ -258,7 +258,8 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   writeJson(vibePath(root, 'evidence', `${run}.json`), evidence);
   const scenarioMap: Record<string, LastResult> = {};
   for (const o of outcomes) scenarioMap[o.id] = o.status;
-  record(root, { event: 'check', client: evidence.client, model: evidence.model, run, scenarioSet: evidence.scenarioSet, scenarios: scenarioMap, passed, failed, failHash, ms: outcomes.reduce((a, o) => a + o.ms, 0), edges });
+  const harness = detectHarness();
+  record(root, { event: 'check', client: evidence.client, model: evidence.model, ...(harness ? { harness } : {}), run, scenarioSet: evidence.scenarioSet, scenarios: scenarioMap, passed, failed, failHash, turns: reportedTurns(), costUsd: reportedCostUsd(), ms: outcomes.reduce((a, o) => a + o.ms, 0), edges });
   if (stuck) record(root, { event: 'stuck', client: evidence.client, model: evidence.model, run, failHash });
   if (done) record(root, { event: 'done', client: evidence.client, model: evidence.model, run });
 

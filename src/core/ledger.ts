@@ -26,6 +26,8 @@ export interface LedgerEvent {
   event: LedgerEventType;
   client: string;
   model: string | null;
+  /** on | off — set only by a bench run */
+  harness?: 'on' | 'off';
   run?: string;
   scenarioSet?: string;
   scenarios?: Record<string, 'pass' | 'fail' | 'pending' | 'blocked'>;
@@ -129,7 +131,7 @@ export function why(root: string, query: string, maxDepth = 3): WhyResult {
 
 // ─── Comparison — the code says "cannot tell" when it cannot ─────────────
 
-export type CompareBy = 'client' | 'model';
+export type CompareBy = 'client' | 'model' | 'harness';
 export type CompareMetric = 'checks' | 'turns' | 'cost';
 export type Verdict = 'insufficient-runs' | 'mixed-scenario-sets' | 'inconclusive' | 'difference-observed';
 
@@ -169,11 +171,19 @@ function range(values: number[]): Range | null {
   return { min, max, mean };
 }
 
-export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5): Comparison {
-  const checks = readLedger(root).filter((e) => e.event === 'check');
+function armKey(e: LedgerEvent, by: CompareBy): string {
+  if (by === 'client') return e.client;
+  if (by === 'model') return e.model ?? 'unknown';
+  return e.harness ?? 'unknown';
+}
+
+/** `ledgerFile` lets a bench keep its own ledger outside any project. */
+export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5, ledgerFile?: string): Comparison {
+  const events = ledgerFile ? readJsonl<LedgerEvent>(ledgerFile) : readLedger(root);
+  const checks = events.filter((e) => e.event === 'check');
   const groups = new Map<string, LedgerEvent[]>();
   for (const e of checks) {
-    const key = by === 'client' ? e.client : e.model ?? 'unknown';
+    const key = armKey(e, by);
     groups.set(key, [...(groups.get(key) ?? []), e]);
   }
   const arms: ArmSummary[] = [...groups.entries()].map(([arm, events]) => {

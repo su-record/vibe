@@ -77,7 +77,7 @@ const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
   skills    skill suggest [--all] · skill create <name> --check run|file|http|eval [--from-scenario <id>]
             skill add owner/repo[@name] [--pin <sha>] [--yes] · skill search <keyword> · skill list
             skill used <name> · skill prune [--unused-runs 10] [--dry-run] · skill dismiss <ref>
-  ledger    ledger [--since 7d] · ledger compare --by client|model --metric checks|turns|cost [--min-runs 5]
+  ledger    ledger [--since 7d] · ledger compare --by client|model|harness --metric checks|turns|cost [--min-runs 5] [--ledger <file>]
             ledger why <node> [--depth 3] · ledger edges [--type supersedes|decided-by|implements|caused]
 
 A scenario may declare needs: [ids] — independent scenarios are checked in parallel, dependents after their parents pass.
@@ -484,10 +484,10 @@ function cmdLedger(root: string, sub: string | undefined, args: string[], flags:
   if (sub === 'compare') {
     const by = (flagString(flags, 'by') ?? 'client') as CompareBy;
     const metric = (flagString(flags, 'metric') ?? 'checks') as CompareMetric;
-    if (!['client', 'model'].includes(by)) throw usage('--by client|model');
+    if (!['client', 'model', 'harness'].includes(by)) throw usage('--by client|model|harness');
     if (!['checks', 'turns', 'cost'].includes(metric)) throw usage('--metric checks|turns|cost');
     const minRuns = Number(flagString(flags, 'min-runs') ?? 5);
-    const c = compare(root, by, metric, minRuns);
+    const c = compare(root, by, metric, minRuns, flagString(flags, 'ledger'));
     const text = [
       `compare by ${by} · metric ${metric} · verdict ${c.verdict}`,
       `  ${c.reason}`,

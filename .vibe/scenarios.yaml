@@ -19,16 +19,25 @@
   then: the six common skills are at most 300 lines in total
   check: { type: run, cmd: "test $(cat skills/*/SKILL.md | wc -l) -le 300", expect: 0 }
 
-- id: implements-exact
+- id: harness-arm
   needs: [build]
-  given: a git repository checked twice with one file edited in between
-  when: the ledger edges of both checks are read
-  then: the first check links every dirty file and the second links only the edited file
-  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t implements", expect: 0, timeoutMs: 120000 }
+  given: a bench ledger file with on and off arms
+  when: ledger compare --by harness reads it
+  then: the arms are on and off and the verdict is one of the four
+  check: { type: run, cmd: "npx vitest run src/core/ledger.test.ts -t harness", expect: 0, timeoutMs: 120000 }
 
-- id: research-narrowing
+- id: judge-checkable
+  then: every judge scenario of the settlement task is a file check bound to the same reference total as the example
+  check: { type: run, cmd: "node checks/bench-judge.js", expect: 0 }
+
+- id: bench-ran
   needs: [build]
-  given: a fake GitHub client that answers nothing for three words and something for two
-  when: research runs with the three-word query
-  then: the two-word result is returned
-  check: { type: run, cmd: "npx vitest run src/core/research.test.ts -t narrow", expect: 0, timeoutMs: 120000 }
+  given: bench/run.js executed by a person for each arm
+  when: bench/ledger.jsonl is read
+  then: at least one judged run per arm (claude-code on/off, codex on/off) is present
+  check: { type: run, cmd: "node checks/bench-ran.js", expect: 0 }
+
+- id: compare-answers
+  needs: [bench-ran]
+  then: the comparison over the bench ledger returns one of the four verdicts, never a ratio
+  check: { type: run, cmd: "node dist/cli.js ledger compare --by harness --metric checks --ledger bench/ledger.jsonl --min-runs 1", expect: 0 }

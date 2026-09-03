@@ -16,6 +16,16 @@ function check(client: string, passed: number, scenarioSet = 'set-a', model: str
 }
 
 describe('ledger and comparison — the code says "cannot tell"', () => {
+  it('harness: compares on/off arms from a bench ledger file outside any project', () => {
+    const file = path.join(root, 'bench.jsonl');
+    for (const v of [5, 5, 4, 5, 5]) fs.appendFileSync(file, `${JSON.stringify({ at: new Date().toISOString(), event: 'check', client: 'claude-code', model: null, harness: 'on', run: 'r', scenarioSet: 's', passed: v, failed: 5 - v })}\n`);
+    for (const v of [2, 3, 2, 3, 3]) fs.appendFileSync(file, `${JSON.stringify({ at: new Date().toISOString(), event: 'check', client: 'claude-code', model: null, harness: 'off', run: 'r', scenarioSet: 's', passed: v, failed: 5 - v })}\n`);
+    const c = compare(root, 'harness', 'checks', 5, file);
+    expect(c.arms.map((a) => a.arm)).toEqual(['on', 'off']);
+    expect(c.verdict).toBe('difference-observed');
+    expect(c.delta).toBeCloseTo(-2.2);
+  });
+
   it('only appends', () => {
     record(root, { event: 'init', client: 'claude-code', model: null });
     record(root, { event: 'draft', client: 'codex', model: 'gpt' });
