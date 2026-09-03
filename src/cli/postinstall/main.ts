@@ -8,6 +8,7 @@ import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import {
+  resolveSkillRoots,
   getCoreConfigDir,
   ensureDir,
   copyDirRecursive,
@@ -128,7 +129,9 @@ export function main(): void {
     //    ~/.claude/ (필수)
     //    NOTE: commands/ 폴더는 더 이상 사용하지 않음 — Codex는 /skills 또는 $skill로 스킬을 명시 호출
     const agentsSource = path.join(packageRoot, 'agents');
-    const skillsSource = path.join(packageRoot, 'skills');
+    // 코딩 루프 스킬은 skills/, 그 밖은 skills-extra/ — 전역 복사는 GLOBAL_SKILLS 만 고르므로
+    // 두 루트를 같은 목록으로 순회해도 안전하다 (허용 목록 밖 디렉토리는 건너뛴다).
+    const skillRoots = resolveSkillRoots(packageRoot);
 
     /** 레거시 vibe.*.md 커맨드 파일을 ~/.claude/commands/ 에서 제거 (도트 스킬로 마이그레이션됨) */
     function removeLegacyVibeCommands(cmdsDir: string): void {
@@ -156,7 +159,7 @@ export function main(): void {
 
       // skills
       const sklsDir = path.join(targetDir, 'skills');
-      if (fs.existsSync(skillsSource)) {
+      if (skillRoots.length > 0) {
         ensureDir(sklsDir);
         removeLegacySkills(sklsDir, LEGACY_SKILL_DIRS);
         cleanupRenamedSkills(sklsDir, LEGACY_SKILL_RENAMES, LEGACY_SKILL_HASHES);
@@ -164,12 +167,14 @@ export function main(): void {
         // copySkillsFiltered 는 허용 목록에 있는 디렉토리만 순회하므로, 내리기만 해서는
         // 기존 설치본이 남아 매 세션 description 을 계속 싣는다. 삭제는 vibe 소유이고
         // 사용자 미수정일 때만 일어난다 (cleanupOptionalSkills).
-        const shippedSkillNames = fs
-          .readdirSync(skillsSource, { withFileTypes: true })
+        // 배송 이름은 두 루트를 합친다 — skills-extra/ 로 내려간 스킬(예: vibe.educational-content)의
+        // 기존 전역 설치본도 demotion 대상이어야 한다.
+        const shippedSkillNames = skillRoots.flatMap(root => fs
+          .readdirSync(root, { withFileTypes: true })
           .filter(e => e.isDirectory())
-          .map(e => e.name);
+          .map(e => e.name));
         const demoted = resolveDemotedGlobalSkills(shippedSkillNames);
-        const cleanupResults = cleanupOptionalSkills(sklsDir, demoted, skillsSource);
+        const cleanupResults = cleanupOptionalSkills(sklsDir, demoted, skillRoots);
         for (const r of cleanupResults) {
           if (r.action === 'removed') {
             console.log(`   non-global skill removed: ${r.name}`);
@@ -177,7 +182,7 @@ export function main(): void {
             console.log(`   non-global skill notice [${r.name}]: ${r.reason}`);
           }
         }
-        const prunedSkillFiles = copySkillsFiltered(skillsSource, sklsDir, GLOBAL_SKILLS);
+        const prunedSkillFiles = skillRoots.flatMap(root => copySkillsFiltered(root, sklsDir, GLOBAL_SKILLS));
         if (prunedSkillFiles.length > 0) {
           // 조용히 지우지 않는다 — 철회된 스킬 문서가 남아 있었다는 사실은 보고 대상이다.
           console.log(`   stale skill files pruned: ${prunedSkillFiles.join(', ')}`);

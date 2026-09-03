@@ -36,7 +36,7 @@ export declare function formatNativeDepStatus(packageRoot: string): string;
  * 섞여 있어 사용자가 만든 동명 스킬을 지울 위험이 실재하고, 애매할 때 지우는 쪽이
  * 훨씬 나쁘다. 무엇이 있는지 보여주면 판단은 사람이 한다.
  */
-export declare function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: string): string;
+export declare function formatSkillStatus(globalSkillsDir: string, shippedSkillsDir: string | string[]): string;
 /**
  * 설치된 스킬이 배송본과 같은가.
  *

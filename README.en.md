@@ -102,7 +102,7 @@ An alternative to the npm install. The same distribution tree (`plugins/vibe`) s
 ```bash
 claude plugin marketplace add su-record/vibe
 claude plugin install vibe@vibe
-claude plugin details vibe          # Skills 52 · Agents 11 · Hooks 6
+claude plugin details vibe          # Skills 33 · Agents 11 · Hooks 6
 ```
 
 **If you already installed via npm**
@@ -237,13 +237,14 @@ Detection at edit time, blocking at deterministic gates:
 
 **7+ agents** — 7 global goal-oriented agents (architect, implementer, tester, code-reviewer, security-reviewer, …) + 4 conditional (UI/Event — installed project-locally only when the stack/capability matches; 11 total). Agents are delegated by goal + constraints + Done criteria, not step scripts; exploration, planning, and parallelism use the harness's native subagents directly.
 
-**52 skills** — Not all loaded at once. Every public skill uses the `vibe.*` namespace, while internal core behavior is bundled into the public skill body:
+**33 core skills** (+ 19 extras — capability opt-in or explicit invocation, `skills-extra/`) — Not all loaded at once. Every public skill uses the `vibe.*` namespace, while internal core behavior is bundled into the public skill body:
 
 | Tier | When loaded | Purpose | Examples |
 |------|-------------|---------|----------|
 | **Entry** | Globally installed | Public workflow entry points | vibe.spec, vibe.test, vibe.docs |
 | **Standard** | Globally installed | Shared workflow support | vibe.handoff, vibe.agents-md |
-| **Optional/Local** | Explicit invocation or project install | Stack/capability support | vibe.chub-usage, vibe.design-review |
+| **Stack-local** | Project install (UI stack detected) | Figma, clone, design review | vibe.figma, vibe.design-review |
+| **Extras** | Capability opt-in or explicit invocation (`skills-extra/`, not in the plugin tree) | Outside the coding loop — commerce, video, events, PM, education, tool wrappers | vibe.event, vibe.create-prd, vibe.chub-usage |
 
 Skills teach only what the model doesn't know (domain gotchas, current APIs, project conventions). Skills that re-taught basics like "how to debug" were deleted in v3.
 

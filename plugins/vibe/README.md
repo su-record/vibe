@@ -173,13 +173,14 @@ codex
 
 **7+ 에이전트** — 전역 7개(architect, implementer, tester, code-reviewer, security-reviewer 등) + 조건부 그룹 4개(UI/Event — 해당 스택 프로젝트에만 로컬 설치, 총 11개). 단계별 지시 스크립트가 아니라 목표+제약+Done 기준으로 위임하고, 탐색·계획·병렬 실행은 하네스의 네이티브 서브에이전트를 그대로 사용합니다.
 
-**52개 스킬** — 한 번에 다 로드되지 않음. 공개 스킬은 모두 `vibe.*` namespace를 사용하며, 내부 core 동작은 공개 스킬 본문에 통합됩니다:
+**33개 코어 스킬** (+ extras 19개 — capability 옵트인·명시 호출, `skills-extra/`) — 한 번에 다 로드되지 않음. 공개 스킬은 모두 `vibe.*` namespace를 사용하며, 내부 core 동작은 공개 스킬 본문에 통합됩니다:
 
 | 티어 | 로드 시점 | 용도 | 예시 |
 |------|----------|------|------|
 | **Entry** | 전역 설치 | 공개 워크플로 진입점 | vibe.spec, vibe.test, vibe.docs |
 | **Standard** | 전역 설치 | 공통 워크플로 지원 | vibe.handoff, vibe.agents-md |
-| **Optional/Local** | 명시 호출 또는 프로젝트별 설치 | 스택·capability 지원 | vibe.chub-usage, vibe.design-review |
+| **Stack-local** | 프로젝트별 설치 (UI 스택 감지) | Figma·클론·디자인 검토 | vibe.figma, vibe.design-review |
+| **Extras** | capability 옵트인 또는 명시 호출 (`skills-extra/`, 플러그인 트리 제외) | 코딩 루프 밖 — 커머스·영상·이벤트·PM·교육·도구 래퍼 | vibe.event, vibe.create-prd, vibe.chub-usage |
 
 스킬이 가르치는 것은 모델이 모르는 것(도메인 gotcha, 최신 API, 프로젝트 규약)뿐입니다. 디버깅하는 법 같은 기본기 재교육 스킬은 v3에서 전부 삭제됐습니다.
 
@@ -204,7 +205,7 @@ npm 전역 설치의 **대안** 경로다. Claude Code · Codex · ChatGPT 세 �
 ```bash
 claude plugin marketplace add su-record/vibe
 claude plugin install vibe@vibe
-claude plugin details vibe               # Skills 52 · Agents 11 · Hooks 6
+claude plugin details vibe               # Skills 33 · Agents 11 · Hooks 6
 ```
 
 **npm 으로 이미 설치한 경우**
@@ -246,7 +247,7 @@ ChatGPT 데스크톱 앱에서는 앱을 **재시작**한 뒤 Plugins Directory 
 
 | 번들 | Claude Code | Codex CLI | ChatGPT 앱 |
 |---|---|---|---|
-| skills (52) | ✅ | ✅ | ✅ |
+| skills (33) | ✅ | ✅ | ✅ |
 | agents (11) | ✅ | — | — |
 | hooks (6 이벤트) | ✅ | ✅ (trust 승인 후) | **미확인** — 훅 문서가 Codex 아래에만 있다 |
 

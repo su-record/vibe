@@ -34,6 +34,7 @@ import {
   installClaudeAgents,
   resolveLocalSkills,
   resolveLocalAgentGroups,
+  resolveSkillRoots,
   copySkillsFiltered,
   applyCodexSkillInvocationPolicies,
   removeLegacySkills,
@@ -63,11 +64,13 @@ export function installLocalSkills(
 
   const __dir = path.dirname(new URL(import.meta.url).pathname);
   const packageRoot = path.resolve(__dir, '..', '..', '..');
-  const skillsSource = path.join(packageRoot, 'skills');
-  if (!fs.existsSync(skillsSource)) return;
+  // 스택 스킬은 skills/, capability 스킬은 skills-extra/ — 허용 목록에 없는 디렉토리는
+  // copySkillsFiltered 가 건너뛰므로 두 루트에 같은 목록을 넘겨도 안전하다.
+  const skillRoots = resolveSkillRoots(packageRoot);
+  if (skillRoots.length === 0) return;
 
   const localSkillsDir = path.join(projectRoot, harnessDir, 'skills');
-  copySkillsFiltered(skillsSource, localSkillsDir, localSkills);
+  for (const root of skillRoots) copySkillsFiltered(root, localSkillsDir, localSkills);
   if (harnessDir === '.codex') applyCodexSkillInvocationPolicies(localSkillsDir);
   log(`   📦 Local skills installed: ${localSkills.join(', ')}\n`);
 }

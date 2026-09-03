@@ -8,6 +8,7 @@ import { formatLLMStatus } from '../auth.js';
 import { detectCodexCli } from '../utils/cli-detector.js';
 import { missingNativeDeps } from '../setup/NativeDeps.js';
 import { RETIRED_SKILL_NAMES } from '../postinstall/constants.js';
+import { resolveSkillRoots } from '../postinstall/fs-utils.js';
 import { createHash } from 'crypto';
 import { getCoreConfigDir } from '../setup/GlobalInstaller.js';
 /**
@@ -141,14 +142,19 @@ export function formatSkillStatus(globalSkillsDir, shippedSkillsDir) {
     }
     // 소유 판정은 이름 접두사가 아니라 **배송 목록**으로 한다 — 진입 스킬은
     // `vibe.` 접두사가 없는 `vibe` 라서 접두사로 세면 외부로 오분류된다.
-    const shipped = new Set(dirs(shippedSkillsDir));
+    // 배송본은 두 루트(skills/, skills-extra/)에 흩어져 있다 — 소유 판정과 드리프트 검사 모두 합산
+    const shippedRoots = [].concat(shippedSkillsDir);
+    const shipped = new Set(shippedRoots.flatMap(dirs));
     const vibe = entries.filter((n) => shipped.has(n));
     const others = entries.filter((n) => !shipped.has(n));
     const retired = others.filter((n) => RETIRED_SKILL_NAMES.has(n));
     const external = others.filter((n) => !RETIRED_SKILL_NAMES.has(n));
     const lines = [`  Skills              ${entries.length} always-on (vibe ${vibe.length})`];
     // 개수가 같아도 내용은 다를 수 있다 — 지문으로 확인한다
-    const drifted = driftedSkills(globalSkillsDir, shippedSkillsDir);
+    const driftedPerRoot = shippedRoots.map((root) => driftedSkills(globalSkillsDir, root));
+    const drifted = driftedPerRoot.every((d) => d === null)
+        ? null
+        : driftedPerRoot.flatMap((d) => d ?? []);
     if (drifted !== null && drifted.length > 0) {
         lines.push(`    drifted           ${drifted.length} — ${drifted.slice(0, 5).join(', ')}`
             + (drifted.length > 5 ? ` 외 ${drifted.length - 5}` : ''), '                      ↳ 배송본과 내용이 다르다 (run: vibe update)');
@@ -248,7 +254,7 @@ VIBE Status (v${packageJson.version})
 
 Project: ${projectStatus}
 ${isCoreProject ? `Language: ${config.language || 'ko'}\n` : ''}
-${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}${formatNativeDepStatus(path.resolve(import.meta.dirname, '..', '..', '..'))}\n${formatSkillStatus(path.join(process.env.HOME ?? '', '.claude', 'skills'), path.resolve(import.meta.dirname, '..', '..', '..', 'skills'))}
+${isCoreProject ? `Hooks (deterministic gates):\n${formatHookStatus(projectRoot)}\n` : ''}${formatNativeDepStatus(path.resolve(import.meta.dirname, '..', '..', '..'))}\n${formatSkillStatus(path.join(process.env.HOME ?? '', '.claude', 'skills'), resolveSkillRoots(path.resolve(import.meta.dirname, '..', '..', '..')))}
 
 ${formatLLMStatus()}
   `);

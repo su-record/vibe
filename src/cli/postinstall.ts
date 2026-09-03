@@ -7,6 +7,8 @@
 export {
   getCoreConfigDir,
   copySkillsFiltered,
+  resolveSkillRoots,
+  findSkillDir,
   applyCodexSkillInvocationPolicies,
   removeLegacySkills,
 } from './postinstall/fs-utils.js';

@@ -24,6 +24,14 @@ const OUT = path.join(ROOT, 'plugins', 'vibe');
 interface Pkg { files: string[] }
 
 /** `files` 항목 → 실제 복사 대상. 부정 패턴(`!…`)은 제외 목록으로 뺀다. */
+/**
+ * npm 에는 실리지만 플러그인 트리에는 굽지 않는 항목.
+ * `skills-extra/` 는 capability 옵트인 설치가 npm 설치본에서 복사하므로 tarball 에 필요하지만,
+ * 마켓플레이스 사용자가 받는 것은 코딩 루프(코어 + 스택)뿐이다 — 이름의 SSOT 는
+ * src/cli/postinstall/constants.ts SKILL_ROOTS (SPEC skill-tier-boundary).
+ */
+const PLUGIN_EXCLUDED_ENTRIES: ReadonlyArray<string> = ['skills-extra'];
+
 function resolveEntries(files: string[]): { include: string[]; exclude: string[] } {
   const include: string[] = [];
   const exclude: string[] = [];
@@ -93,12 +101,13 @@ function bakeAgents(outAgents: string): number {
 function main(): void {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8')) as Pkg;
   const { include, exclude } = resolveEntries(pkg.files);
+  const pluginInclude = include.filter((entry) => !PLUGIN_EXCLUDED_ENTRIES.includes(entry));
 
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
 
   const copied: string[] = [];
-  for (const entry of include) {
+  for (const entry of pluginInclude) {
     const src = path.join(ROOT, entry);
     if (!fs.existsSync(src)) continue;
     copyRecursive(src, path.join(OUT, entry), exclude);

@@ -17,7 +17,10 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
+// 코어(코딩 루프: 전역 + 스택)는 skills/, extras(optional + capability)는 skills-extra/ —
+// 배치 SSOT 는 constants.ts CORE_SKILLS/EXTRA_SKILLS, 검증은 skill-namespace.test.ts (SPEC skill-tier-boundary)
 const SKILLS_DIR = path.join(ROOT, 'skills');
+const EXTRA_SKILLS_DIR = path.join(ROOT, 'skills-extra');
 const OUTPUT_FILE = path.join(ROOT, 'SKILL-CATALOG.md');
 
 // ─── constants.ts에서 데이터 임포트 ───
@@ -122,23 +125,35 @@ function parseRecordBlock(content: string, name: string): Record<string, string[
   return result;
 }
 
-function discoverAllSkills(): Map<string, SkillFrontmatter> {
+function discoverSkills(root: string): Map<string, SkillFrontmatter> {
   const skills = new Map<string, SkillFrontmatter>();
-  if (!fs.existsSync(SKILLS_DIR)) return skills;
+  if (!fs.existsSync(root)) return skills;
 
-  const dirs = fs.readdirSync(SKILLS_DIR, { withFileTypes: true });
+  const dirs = fs.readdirSync(root, { withFileTypes: true });
   for (const dir of dirs) {
     if (!dir.isDirectory()) continue;
-    const skillMd = path.join(SKILLS_DIR, dir.name, 'SKILL.md');
+    const skillMd = path.join(root, dir.name, 'SKILL.md');
     const fm = parseSkillFrontmatter(skillMd);
     if (fm) skills.set(dir.name, fm);
   }
   return skills;
 }
 
+interface DiscoveredSkills {
+  all: Map<string, SkillFrontmatter>;
+  core: Map<string, SkillFrontmatter>;
+  extra: Map<string, SkillFrontmatter>;
+}
+
+function discoverAllSkills(): DiscoveredSkills {
+  const core = discoverSkills(SKILLS_DIR);
+  const extra = discoverSkills(EXTRA_SKILLS_DIR);
+  return { all: new Map([...core, ...extra]), core, extra };
+}
+
 function generateCatalog(): string {
   const { globalSkills, optionalSkills, stackToSkills, capabilitySkills, stackToLanguage, stackToExternal } = loadConstants();
-  const allSkills = discoverAllSkills();
+  const { all: allSkills, core: coreSkills, extra: extraSkills } = discoverAllSkills();
 
   const lines: string[] = [];
   const timestamp = new Date().toISOString().split('T')[0];
@@ -148,7 +163,18 @@ function generateCatalog(): string {
   lines.push('');
   lines.push('# Vibe Skill Catalog');
   lines.push('');
-  lines.push(`> Total: **${allSkills.size} skills** | Global: ${globalSkills.length} | Optional: ${optionalSkills.length} | Stack-local: ${new Set(Object.values(stackToSkills).flat()).size} | Capability: ${new Set(Object.values(capabilitySkills).flat()).size}`);
+  lines.push(`> Core: ${coreSkills.size} (\`skills/\` — global ${globalSkills.length} + stack-local ${new Set(Object.values(stackToSkills).flat()).size}) · Extras: ${extraSkills.size} (\`skills-extra/\` — optional ${optionalSkills.length} + capability ${new Set(Object.values(capabilitySkills).flat()).size}) · Total: ${allSkills.size} skills`);
+  lines.push('');
+
+  // ─── Extras ───
+  lines.push('## Extras (skills-extra/ — outside the coding loop)');
+  lines.push('');
+  lines.push('> Not baked into the marketplace plugin tree. Reached only by capability opt-in (`vibe init` → `.vibe/config.json` `capabilities`) or explicit invocation. Placement is enforced against `EXTRA_SKILLS` in `constants.ts`.');
+  lines.push('');
+  for (const name of [...extraSkills.keys()].sort()) {
+    const fm = extraSkills.get(name);
+    lines.push(`- \`${name}\` — ${fm?.description ?? '—'}`);
+  }
   lines.push('');
 
   // ─── Optional Skills ───

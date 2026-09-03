@@ -17,6 +17,7 @@
  *   vibe.event  → CAPABILITY_SKILLS['event-automation'] (picker + detect signature 존재)
  *   vibe.figma  → STACK_TO_SKILLS UI 스택 (Figma 는 UI 작업에서만 의미가 있다)
  *   vibe.clone  → STACK_TO_SKILLS UI 스택 (라이브 사이트 마크업 재현)
+ *   vibe.educational-content → CAPABILITY_SKILLS['education'] (2026-09 — 강의·튜토리얼 제작은 코딩 루프 밖, skills-extra/)
  *
  * 반대로 **detect signature 도 picker 옵션도 없는 스킬은 내리지 않는다** — 내리는 순간
  * 아무 경로로도 도달할 수 없게 된다 (vibe.image 가 그 경우라 ENTRY 에 남는다).
@@ -47,6 +48,21 @@ export declare function resolveDemotedGlobalSkills(shippedSkillNames: ReadonlyAr
 export declare const STACK_TO_SKILLS: Record<string, ReadonlyArray<string>>;
 /** Capability → 로컬 스킬 매핑 (의존성 감지 기반 자동 설치) */
 export declare const CAPABILITY_SKILLS: Record<string, ReadonlyArray<string>>;
+/**
+ * 스킬 배송 루트 — 코딩 루프 스킬(전역 + 스택)은 `skills/`, 그 밖(optional + capability)은
+ * `skills-extra/`.
+ *
+ * WHY 디렉토리 경계: 설치 시점 티어만으로는 저장소 트리·npm tarball·마켓플레이스 플러그인이
+ * 한 덩어리로 남아 "무엇이 코어인가" 가 보이지 않았다 (SPEC skill-tier-boundary). 배치의 SSOT 는
+ * 아래 `CORE_SKILLS`·`EXTRA_SKILLS` 이고 `skill-namespace.test.ts` 가 실제 디렉토리와 대조한다 —
+ * 손으로 유지하는 두 번째 목록을 만들지 않는다. 플러그인 트리(`scripts/build-plugin.ts`)는
+ * `skills-extra/` 를 굽지 않는다. 순서는 코어 먼저 — 같은 이름이 두 루트에 있을 수 없다.
+ */
+export declare const SKILL_ROOTS: ReadonlyArray<string>;
+/** `skills-extra/` 에 있어야 하는 스킬 — optional + capability 전개 (파생값) */
+export declare const EXTRA_SKILLS: ReadonlyArray<string>;
+/** `skills/` 에 있어야 하는 공개 스킬 — 전역 + 스택 전개 (파생값) */
+export declare const CORE_SKILLS: ReadonlyArray<string>;
 /** 스택 → 외부 스킬(skills.sh) 매핑 (vibe init/update → npx skills add) */
 export declare const STACK_TO_EXTERNAL_SKILLS: Record<string, ReadonlyArray<string>>;
 /**

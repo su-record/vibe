@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { createHash } from 'node:crypto';
 import { getGlobalConfigDir } from '../../infra/lib/llm/auth/ConfigManager.js';
+import { SKILL_ROOTS } from './constants.js';
 
 /**
  * 전역 vibe 설정 디렉토리 경로 (getCoreConfigDir = getGlobalConfigDir alias)
@@ -283,12 +284,15 @@ function isVibeOwnedSkill(
  */
 function isUserModified(
   installedSkillDir: string,
-  shippedSkillsDir: string,
+  shippedSkillsDirs: string | string[],
   skillName: string,
 ): boolean {
   const installedPath = path.join(installedSkillDir, 'SKILL.md');
-  const shippedPath = path.join(shippedSkillsDir, skillName, 'SKILL.md');
-  if (!fs.existsSync(shippedPath)) return true; // 배송본 없음 → 보수적으로 수정됨 취급
+  // 배송본은 여러 루트(skills/, skills-extra/)에 흩어져 있다 — 먼저 찾히는 것이 기준
+  const shippedPath = ([] as string[]).concat(shippedSkillsDirs)
+    .map((dir) => path.join(dir, skillName, 'SKILL.md'))
+    .find((candidate) => fs.existsSync(candidate));
+  if (!shippedPath) return true; // 배송본 없음 → 보수적으로 수정됨 취급
   if (!fs.existsSync(installedPath)) return false;
   const installed = fs.readFileSync(installedPath, 'utf-8');
   const shipped = fs.readFileSync(shippedPath, 'utf-8');
@@ -305,13 +309,13 @@ function isUserModified(
  *
  * @param globalSkillsDir - 전역 CLI 스킬 디렉토리 (e.g. ~/.claude/skills)
  * @param optionalSkills - 정리 대상 스킬 이름 목록
- * @param shippedSkillsDir - 패키지 내 skills/ 디렉토리 (비교 기준)
+ * @param shippedSkillsDir - 패키지 내 스킬 루트(들) — skills/ 또는 [skills/, skills-extra/] (비교 기준)
  * @param dryRun - true이면 실제 삭제 없이 결과만 반환
  */
 export function cleanupOptionalSkills(
   globalSkillsDir: string,
   optionalSkills: ReadonlyArray<string>,
-  shippedSkillsDir: string,
+  shippedSkillsDir: string | string[],
   dryRun = false,
 ): OptionalSkillResult[] {
   const results: OptionalSkillResult[] = [];
@@ -420,4 +424,23 @@ export function applyCodexSkillInvocationPolicies(skillsDir: string): void {
     if (readUserInvocableFalse(skillPath)) writeManagedCodexPolicy(skillDir);
     else cleanupManagedCodexPolicy(skillDir);
   }
+}
+
+/**
+ * 배송 스킬 루트 — 존재하는 것만, SKILL_ROOTS 순서(코어 먼저).
+ * 전역·로컬 설치와 demotion 이 전부 이 목록을 순회한다 (SPEC skill-tier-boundary).
+ */
+export function resolveSkillRoots(packageRoot: string): string[] {
+  return SKILL_ROOTS
+    .map((dir) => path.join(packageRoot, dir))
+    .filter((dir) => fs.existsSync(dir));
+}
+
+/** 스킬 이름 → 배송 디렉토리. 어느 루트에도 없으면 null. */
+export function findSkillDir(packageRoot: string, skillName: string): string | null {
+  for (const root of resolveSkillRoots(packageRoot)) {
+    const candidate = path.join(root, skillName);
+    if (fs.existsSync(path.join(candidate, 'SKILL.md'))) return candidate;
+  }
+  return null;
 }
