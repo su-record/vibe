@@ -1,7 +1,7 @@
 # SPEC: Skill Tier Boundary
 
 - **Created**: 2026-09-03
-- **Status**: VERIFIED (2026-09-03 — verify-ledger verifyPassed=true; 이 브랜치는 #106 병합 전이라 구 CLI 의 results 기반 기록)
+- **Status**: VERIFIED (2026-09-03 — verify-ledger verifyPassed=true, verifyBasis=independent — #106 병합 후 재판정)
 - **Class**: architecture
 - **Stakes**: production — 배포 트리·npm 패키지·설치 경로·README 개수 주장을 바꾸는 기존 프로젝트 변경 (SSOT: vibe/rules/loop-contract.md)
 - **Tech Stack**: TypeScript ESM CLI (`src/cli/**`), tsx scripts (`scripts/**`), vitest, Markdown skills
