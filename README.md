@@ -10,7 +10,7 @@ cd your-project && vibe init                     # Claude Code (CLAUDE.md card �
 cd your-project && vibe init --client codex      # Codex CLI  (AGENTS.md card · .codex/skills · .codex/hooks.json)
 
 vibe plugin install                              # Codex CLI + ChatGPT desktop as one OpenAI plugin
-codex plugin marketplace add ~ && codex plugin add vibe@vibe-local
+codex plugin marketplace add ~ && codex plugin add vibe@<marketplace>   # the install output prints the exact name
 ```
 
 Codex and ChatGPT desktop read the same personal marketplace (`~/.agents/plugins/marketplace.json`); restart ChatGPT desktop after installing. The plugin tree holds only the manifest, the six skills and the notification hooks — its hooks call the globally installed `vibe`.

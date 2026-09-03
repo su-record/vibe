@@ -29,6 +29,7 @@ describe('vibe plugin install / status', () => {
     expect(marketplace.name).toBe(MARKETPLACE_NAME);
     expect(marketplace.plugins[0]).toMatchObject({ name: 'vibe', source: { source: 'local', path: './.vibe/plugin/vibe' } });
     expect(report.next[0]).toContain('codex plugin marketplace add');
+    expect(report.next[1]).toBe(`codex plugin add vibe@${MARKETPLACE_NAME}`);
 
     const status = pluginStatus(home);
     expect(status.drift).toEqual([]);
@@ -39,7 +40,8 @@ describe('vibe plugin install / status', () => {
     const paths = pluginPaths(home);
     fs.mkdirSync(path.dirname(paths.marketplace), { recursive: true });
     fs.writeFileSync(paths.marketplace, JSON.stringify({ name: 'mine', plugins: [{ name: 'other', source: { source: 'local', path: './x' } }, { name: 'vibe', source: { source: 'local', path: './old' } }] }));
-    installPlugin(home);
+    const report = installPlugin(home);
+    expect(report.next[1]).toBe('codex plugin add vibe@mine'); // the real marketplace name, not ours
     const marketplace = JSON.parse(fs.readFileSync(paths.marketplace, 'utf-8')) as { name: string; plugins: Array<{ name: string; source: { path: string } }> };
     expect(marketplace.name).toBe('mine');
     expect(marketplace.plugins.map((p) => p.name)).toEqual(['other', 'vibe']);

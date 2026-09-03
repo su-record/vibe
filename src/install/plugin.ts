@@ -100,7 +100,7 @@ interface MarketplaceDoc {
 }
 
 /** Register the tree in the personal marketplace Codex and ChatGPT desktop both read. Other plugins are kept. */
-export function writeMarketplace(paths: PluginPaths): string {
+export function writeMarketplace(paths: PluginPaths): { file: string; marketplaceName: string } {
   const doc: MarketplaceDoc = readJson<MarketplaceDoc>(paths.marketplace) ?? {};
   doc.name ??= MARKETPLACE_NAME;
   doc.interface ??= { displayName: 'Vibe (local)' };
@@ -116,12 +116,13 @@ export function writeMarketplace(paths: PluginPaths): string {
   else plugins[index] = entry;
   doc.plugins = plugins;
   writeJson(paths.marketplace, doc);
-  return paths.marketplace;
+  return { file: paths.marketplace, marketplaceName: doc.name };
 }
 
 export interface PluginInstallReport {
   tree: string;
   marketplace: string;
+  marketplaceName: string;
   files: string[];
   version: string;
   next: string[];
@@ -130,15 +131,16 @@ export interface PluginInstallReport {
 export function installPlugin(home?: string): PluginInstallReport {
   const paths = pluginPaths(home);
   const files = assemblePlugin(paths.tree);
-  writeMarketplace(paths);
+  const { marketplaceName } = writeMarketplace(paths);
   return {
     tree: paths.tree,
     marketplace: paths.marketplace,
+    marketplaceName,
     files,
     version: packageVersion(),
     next: [
       `codex plugin marketplace add ${paths.home}`,
-      `codex plugin add vibe@${MARKETPLACE_NAME}`,
+      `codex plugin add vibe@${marketplaceName}`,
       'ChatGPT desktop reads the same marketplace file — restart the app to see the plugin',
     ],
   };

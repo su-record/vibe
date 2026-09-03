@@ -33,5 +33,5 @@
   check: { type: run, cmd: "npx vitest run src/cli.test.ts -t continues", expect: 0, timeoutMs: 120000 }
 
 - id: chatgpt-desktop
-  then: after `vibe plugin install` and `codex plugin marketplace add ~`, the vibe plugin appears in ChatGPT desktop
-  check: { type: human, question: "Run `vibe plugin install`, then `codex plugin marketplace add ~` and `codex plugin add vibe@vibe-local`, restart ChatGPT desktop, and tell me whether the vibe plugin appears." }
+  then: after `vibe plugin install` and the two codex commands it prints, the vibe plugin appears in ChatGPT desktop
+  check: { type: human, question: "Run `vibe plugin install` and the two codex commands it prints, restart ChatGPT desktop, and tell me whether the vibe plugin appears." }
