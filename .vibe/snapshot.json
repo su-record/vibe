@@ -1,18 +1,7 @@
 {
-  ".gitignore": "9ecc8815c835ae99241fffde4c8c04b2fbb5118f",
-  "README.md": "2cc42a2714d55a3c5927dd0281951318d98d4d75",
-  "src/cli.ts": "e65ef7d3b2b6e049a9ecd85c7efc0a4523a7e96e",
-  "src/core/check.ts": "2e5ed49fd59f0effe903035d22e1eb9fa273419c",
-  "src/core/client.ts": "4c57acc6c3a5f3ede969426089b2d3afcada9e0a",
-  "src/core/ledger.test.ts": "cc110ec90fa966ef90ed58b4987a6db18639177f",
-  "src/core/ledger.ts": "a9ab63ae9e7aa55b6e3ca814360b57343e6fa8cc",
-  "bench/README.md": "6c3c85c4d65793aa83bf29f6d6330addbe3fdc8b",
-  "bench/run.js": "cb198e8983ecc5763deaf5a93069901aed2958ff",
-  "bench/tasks/settlement/TASK.md": "11b9829a47f1a8885ccf4d028d947e1fbc7b9f87",
-  "bench/tasks/settlement/judge/intent.md": "6c1caa46eb4d12e73ed0963a2bd5d467293d8fc7",
-  "bench/tasks/settlement/judge/scenarios.yaml": "2eb7faeb08bd21a86f883ccbcfc3fd3043cde80a",
-  "bench/tasks/settlement/judge/summary.schema.json": "107b0e92bad548d056394ab944baa92926adf58d",
-  "bench/tasks/settlement/orders.csv": "36ad64a732f2f6616fd5810c526e581dfd903556",
-  "checks/bench-judge.js": "e5051765b4b5ac72c21c3d26dd67d5ca99e6905c",
-  "checks/bench-ran.js": "80bc83b98648946ad3dbc2ca71777dcecab00ee2"
+  ".github/workflows/test.yml": "0fd5cbb24912649d63fd4dfde3aeb8fd041d966a",
+  "README.md": "acdfede2317f93b9e434f46aedfe214a00e69dd3",
+  "package-lock.json": "ee1639b0a58bf74cdc5905596b0ed823ccec9193",
+  "package.json": "c54e3ba5a5b50ea699c29aeac6173b32dacfece4",
+  ".github/workflows/release.yml": "bdacfdbfd95c8482b39be15d7ed757ed85fbb347"
 }

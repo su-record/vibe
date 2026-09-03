@@ -1,6 +1,6 @@
 {
   "name": "@su-record/vibe",
-  "version": "4.0.0-alpha.0",
+  "version": "4.0.0",
   "description": "vibe 4 — an AX/FDE harness: scenarios you approve once, checks the harness runs itself, human tokens for irreversible actions.",
   "type": "module",
   "bin": {

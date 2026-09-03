@@ -1,4 +1,4 @@
-name: Test
+name: Build & Test
 
 on:
   pull_request:
@@ -6,9 +6,10 @@ on:
   push:
     branches: [main, v4]
 
+# Job names match the main branch protection rule: "Build (type-check)" and "Tests".
 jobs:
-  check:
-    name: Build · Test · Self-check
+  build:
+    name: Build (type-check)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -18,7 +19,21 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
       - run: npm test
-      # vibe 4 judges its own scenarios with its own CLI. Approval is a human token, so CI runs the size checks directly.
+      # vibe 4 judges its own scenarios with its own CLI; approval is a person's, so CI runs the size gates directly.
       - run: node checks/card-size.js
       - run: node checks/loc.js
+      - run: test $(cat skills/*/SKILL.md | wc -l) -le 300
