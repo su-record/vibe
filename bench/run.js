@@ -7,6 +7,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { installSurfaces, projectLayout } from '../dist/install/global.js';
 
 const here = path.dirname(new URL(import.meta.url).pathname);
 const repo = path.resolve(here, '..');
@@ -27,7 +28,8 @@ const taskDir = path.join(here, 'tasks', task);
 // vibe on PATH must be vibe 4 from this checkout, never a global vibe 3
 const shim = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-shim-'));
 fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${repo}/dist/cli.js" "$@"\n`, { mode: 0o755 });
-const env = { ...process.env, PATH: `${shim}:${process.env.PATH}` };
+// the arms differ by what the workspace carries, so the operator's ~/.claude must not be touched or repaired mid-run
+const env = { ...process.env, PATH: `${shim}:${process.env.PATH}`, VIBE_SKIP_SETUP: '1' };
 delete env.CLAUDECODE;
 delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
@@ -37,7 +39,8 @@ function prepare() {
   for (const f of fs.readdirSync(taskDir)) if (f !== 'judge') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
   execFileSync('git', ['init', '-q'], { cwd: ws });
   if (harness === 'on') {
-    execFileSync('node', [path.join(repo, 'dist/cli.js'), 'init', '--client', client === 'claude' ? 'claude' : 'codex', '--tokens', 'off'], { cwd: ws, env });
+    // card, skills and hook go into the workspace itself — the `off` arm must stay bare
+    installSurfaces(ws, projectLayout(client === 'claude' ? 'claude' : 'codex'));
     judge(ws, false); // the agent sees the approved intent and can run `vibe check` itself
   }
   return ws;
@@ -49,7 +52,7 @@ function judge(ws, run) {
   if (!fs.existsSync(path.join(ws, '.vibe'))) fs.mkdirSync(path.join(ws, '.vibe'));
   const stdin = JSON.stringify({ intent: fs.readFileSync(path.join(taskDir, 'judge', 'intent.md'), 'utf-8'), scenarios: fs.readFileSync(path.join(taskDir, 'judge', 'scenarios.yaml'), 'utf-8') });
   const vibe = (a, extra = {}) => spawnSync('node', [path.join(repo, 'dist/cli.js'), ...a, '--json'], { cwd: ws, encoding: 'utf-8', input: extra.input, env: { ...env, ...extra.env } });
-  vibe(['init', '--tokens', 'off']);
+  vibe(['tokens', 'off']);
   vibe(['intent', 'draft', '--stdin'], { input: stdin });
   vibe(['approve']);
   if (!run) return null;

@@ -1,6 +1,6 @@
 {
-  "run": "r-4",
-  "at": "2026-09-03T16:10:36.969Z",
+  "run": "r-6",
+  "at": "2026-09-03T16:13:46.823Z",
   "client": "claude-code",
   "model": null,
   "scenarioSet": "2bf656e512e3",
@@ -10,23 +10,23 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 4799,
+      "ms": 5110,
       "tail": "npm notice run @su-record/vibe@4.0.1 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
-      "status": "fail",
-      "exit": 1,
-      "ms": 23694,
-      "tail": "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯\n\n\n Test Files  1 failed | 15 passed (16)\n      Tests  3 failed | 80 passed (83)\n   Start at  16:10:37\n   Duration  22.99s (transform 978ms, setup 0ms, import 2.57s, tests 26.08s, environment 2ms)"
+      "status": "pass",
+      "exit": 0,
+      "ms": 28205,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  16 passed (16)\n      Tests  83 passed (83)\n   Start at  16:13:47\n   Duration  27.45s (transform 1.05s, setup 0ms, import 2.65s, tests 30.48s, environment 2ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 45,
+      "ms": 48,
       "tail": "card.md 705 bytes (limit 1024)"
     },
     {
@@ -34,7 +34,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 68,
+      "ms": 66,
       "tail": "src (non-test) 3793 lines (limit 5000)"
     },
     {
@@ -50,15 +50,15 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1100,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  16:11:01\n   Duration  263ms (transform 70ms, setup 0ms, import 98ms, tests 9ms, environment 0ms)"
+      "ms": 1055,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  16:14:15\n   Duration  264ms (transform 72ms, setup 0ms, import 98ms, tests 8ms, environment 0ms)"
     },
     {
       "id": "judge-checkable",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 105,
+      "ms": 97,
       "tail": "judge: 5 file checks · reference total 4500.5"
     },
     {
@@ -66,7 +66,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 50,
+      "ms": 40,
       "tail": "bench: 20 judged runs · arms claude-code/on, claude-code/off, codex/on, codex/off"
     },
     {
@@ -74,7 +74,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 139,
+      "ms": 133,
       "tail": "compare by harness · metric checks · verdict inconclusive\n  observed ranges (min–max) overlap — this sample cannot tell a difference\n  on: runs 10 · usable 10 · min 5 · max 5 · mean 5.00\n  off: runs 10 · usable 10 · min 5 · max 5 · mean 5.00"
     }
   ]

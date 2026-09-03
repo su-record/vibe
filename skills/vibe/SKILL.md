@@ -10,7 +10,7 @@ The user says what they want in their own words. You pick the stage. This is the
 
 ## Procedure
 
-1. Run `vibe state --json`. If it fails with code 2, run `vibe init` first and retry.
+1. Run `vibe state --json`. A directory without `.vibe/` answers NONE; the first record creates it.
 2. If `notices` is non-empty, show them to the user first.
 3. If work is in progress (`state` is not NONE or ABANDONED), ask in one line: continue or start over? Starting over means `vibe abandon --reason "…"` first.
 4. Pick the stage:

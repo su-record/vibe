@@ -7,13 +7,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runChecks } from './core/check.js';
 import { detectClient, detectModel } from './core/client.js';
-import { irreversibleNeedsToken, parseTokenPolicy, readConfig } from './core/config.js';
+import { irreversibleNeedsToken, parseTokenPolicy, readConfig, writeConfig } from './core/config.js';
 import { denied, usage, VibeError } from './core/errors.js';
 import { answer, ask, openQuestions, resolve as resolveQuestion } from './core/inbox.js';
 import { abandon, approve, draft, intentPath, loadScenarios } from './core/intent.js';
 import { addKnowledge } from './core/knowledge.js';
 import { compare, EDGE_TYPES, readEdges, readLedger, record, why, type CompareBy, type CompareMetric, type EdgeType } from './core/ledger.js';
-import { findProjectRoot, hasVibe, vibePath } from './core/paths.js';
+import { findProjectRoot, vibePath } from './core/paths.js';
 import { listRegressions, recordRegression } from './core/regress.js';
 import { profileFile } from './core/profile.js';
 import { research, SOURCES, type Source } from './core/research.js';
@@ -24,7 +24,8 @@ import { readJson, readText } from './core/store.js';
 import { verifyAndConsume } from './core/tokens.js';
 import { buildStateView } from './core/view.js';
 import { installPlugin, pluginStatus } from './install/plugin.js';
-import { ALL_CLIENTS, initProject, statusProject, uninstallProject, type Client } from './install/project.js';
+import { ensureGlobal, globalStatus, uninstallGlobal } from './install/global.js';
+import { ensureProject, projectStatus, purgeProject } from './install/project.js';
 
 type Flags = Record<string, string | boolean>;
 interface Parsed {
@@ -64,8 +65,8 @@ function flagString(flags: Flags, key: string): string | undefined {
 
 const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
-  setup     init [--client claude,codex,chatgpt] [--tokens strict|irreversible|off] · status · uninstall [--purge-state]
-            plugin install | status [--home <dir>]   (Codex CLI · ChatGPT desktop — one OpenAI plugin)
+  setup     status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
+            npm i -g puts them there and any vibe command repairs them) · plugin install | status [--home <dir>]   (ChatGPT desktop)
   work      state [--graph] · profile <file.csv|tsv|jsonl|json> · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
   checks    run (exit code) · file (exists·pattern·contains·schema·sum) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass) · human (inbox, no verdict)
@@ -91,10 +92,6 @@ interface Output {
   code: number;
 }
 
-function requireVibe(root: string): void {
-  if (!hasVibe(root)) throw usage('no .vibe/ here — run `vibe init` first');
-}
-
 function readStdin(): string {
   return fs.readFileSync(0, 'utf-8');
 }
@@ -110,41 +107,33 @@ function parseSince(value: string | undefined): number | undefined {
 
 // ─── Commands ───────────────────────────────────────────────────────
 
-function cmdInit(root: string, flags: Flags): Output {
-  const raw = flagString(flags, 'client');
-  const clients = raw ? raw.split(',').map((c) => c.trim()) : ['claude'];
-  const bad = clients.filter((c) => !ALL_CLIENTS.includes(c as Client));
-  if (bad.length > 0) throw usage(`unknown client: ${bad.join(', ')} (claude, codex, chatgpt)`);
-  const tokensRaw = flagString(flags, 'tokens');
-  const report = initProject(root, clients as Client[], tokensRaw ? parseTokenPolicy(tokensRaw) : undefined);
-  const lines = [
-    `vibe init — ${root}`,
-    `  clients   ${report.clients.join(', ')}`,
-    `  tokens    ${report.tokens}`,
-    `  created   ${report.created.length ? report.created.join(', ') : '(already present)'}`,
-    ...Object.entries(report.card).map(([file, how]) => `  card      ${file} ${how} (${report.cardBytes} bytes)`),
-    ...Object.entries(report.skills).map(([dir, names]) => `  skills    ${dir}: ${names.join(', ')}`),
-    ...Object.entries(report.hook).map(([file, how]) => `  hook      ${file} ${how}`),
-  ];
-  return { json: report, text: lines.join('\n'), code: 0 };
+function cmdTokens(root: string, policyRaw: string | undefined): Output {
+  if (policyRaw) {
+    ensureProject(root);
+    writeConfig(root, { tokens: parseTokenPolicy(policyRaw) });
+  }
+  const policy = readConfig(root).tokens;
+  return { json: { tokens: policy }, text: `tokens: ${policy}`, code: 0 };
 }
 
-function cmdStatus(root: string): Output {
-  const s = statusProject(root);
+function cmdStatus(root: string, flags: Flags): Output {
+  const g = globalStatus(flagString(flags, 'home'));
+  const p = projectStatus(root);
   const lines = [
-    `vibe status — ${root}`,
-    `  .vibe     ${s.vibe ? 'ok' : 'missing (vibe init)'}`,
-    `  state     ${s.state}`,
-    `  card      ${s.cardBytes} bytes${s.cardOver ? ' — over 1KB!' : ''} · CLAUDE.md ${s.cards['CLAUDE.md'] ? 'ok' : '-'} · AGENTS.md ${s.cards['AGENTS.md'] ? 'ok' : '-'}`,
-    `  skills    ${Object.entries(s.skills).map(([d, n]) => `${d} ${n}`).join(' · ')}`,
-    ...Object.entries(s.hooks).map(([file, ok]) => `  hook      ${file} ${ok ? 'ok' : '-'}`),
-    `  inbox     ${s.inboxOpen} open`,
+    `vibe ${packageVersion()} — ${g.home}`,
+    ...Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}${c.current ? '' : ' — stale; any vibe command repairs it'}`),
+    `  card      ${g.cardBytes} bytes${g.cardOver ? ' — over 1KB!' : ''}`,
+    `project   ${p.root}`,
+    `  .vibe     ${p.vibe ? 'ok' : 'none yet — the first record creates it'}`,
+    `  state     ${p.state}`,
+    `  inbox     ${p.inboxOpen} open`,
   ];
-  return { json: s, text: lines.join('\n'), code: 0 };
+  return { json: { version: packageVersion(), ...g, project: p }, text: lines.join('\n'), code: 0 };
 }
 
 function cmdUninstall(root: string, flags: Flags): Output {
-  const removed = uninstallProject(root, flags['purge-state'] !== true);
+  const removed = uninstallGlobal(flagString(flags, 'home'));
+  if (flags['purge-state'] === true && purgeProject(root)) removed.push('.vibe/');
   return { json: { removed }, text: removed.length ? `removed: ${removed.join(', ')}` : 'nothing to remove', code: 0 };
 }
 
@@ -176,7 +165,6 @@ function cmdPlugin(sub: string | undefined, flags: Flags): Output {
 const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·' };
 
 function cmdState(root: string, flags: Flags): Output {
-  requireVibe(root);
   const view = buildStateView(root);
   if (flags['graph'] === true) {
     const scenarios = [...loadScenarios(root), ...listRegressions(root)];
@@ -195,7 +183,7 @@ function cmdState(root: string, flags: Flags): Output {
 }
 
 async function cmdResearch(root: string, sub: string | undefined, flags: Flags): Promise<Output> {
-  requireVibe(root);
+  ensureProject(root);
   const sourcesRaw = flagString(flags, 'sources');
   const sources = sourcesRaw ? sourcesRaw.split(',').map((s) => s.trim()) : undefined;
   if (sources?.some((s) => !SOURCES.includes(s as Source))) throw usage(`--sources ${SOURCES.join(',')}`);
@@ -264,7 +252,7 @@ function skillSimple(root: string, sub: string, args: string[], flags: Flags): O
 }
 
 async function cmdSkill(root: string, sub: string | undefined, args: string[], flags: Flags): Promise<Output> {
-  requireVibe(root);
+  if (sub && !['list', 'suggest'].includes(sub)) ensureProject(root);
   switch (sub) {
     case 'create':
       return skillCreateOutput(root, args[0], flags);
@@ -298,13 +286,13 @@ function cmdProfile(root: string, file: string | undefined): Output {
 }
 
 function cmdIntent(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
-  requireVibe(root);
   if (sub === 'show') {
     const scenarios = loadScenarios(root);
     const intent = readText(intentPath(root)) ?? '';
     return { json: { intent, scenarios }, text: `${intent.trim()}\n\n${scenarios.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n')}`, code: 0 };
   }
   if (sub !== 'draft') throw usage('intent draft | intent show');
+  ensureProject(root);
   let intentText: string;
   let scenariosText: string;
   if (flags['stdin'] === true) {
@@ -334,14 +322,14 @@ function cmdIntent(root: string, sub: string | undefined, args: string[], flags:
 }
 
 function cmdApprove(root: string, args: string[]): Output {
-  requireVibe(root);
+  ensureProject(root);
   const token = args.join(' ') || null;
   const result = approve(root, token);
   return { json: { ok: true, ...result, state: 'APPROVED' }, text: `APPROVED · ${result.hash} (by ${result.basis})`, code: 0 };
 }
 
 async function cmdCheck(root: string, args: string[], flags: Flags): Promise<Output> {
-  requireVibe(root);
+  ensureProject(root);
   const options = flags['all'] === true ? { all: true } : args.length ? { ids: args } : {};
   const report = await runChecks(root, options);
   const lines = [
@@ -355,7 +343,6 @@ async function cmdCheck(root: string, args: string[], flags: Flags): Promise<Out
 }
 
 function cmdEvidence(root: string, args: string[]): Output {
-  requireVibe(root);
   const dir = vibePath(root, 'evidence');
   const runId = args[0] ?? (fs.existsSync(dir) ? fs.readdirSync(dir).filter((n) => n.endsWith('.json')).sort((a, b) => Number(a.slice(2, -5)) - Number(b.slice(2, -5))).at(-1)?.replace('.json', '') : undefined);
   if (!runId) throw usage('no evidence yet');
@@ -365,13 +352,13 @@ function cmdEvidence(root: string, args: string[]): Output {
 }
 
 function cmdAbandon(root: string, flags: Flags): Output {
-  requireVibe(root);
+  ensureProject(root);
   abandon(root, flagString(flags, 'reason') ?? '');
   return { json: { state: 'ABANDONED' }, text: 'ABANDONED', code: 0 };
 }
 
 function cmdAsk(root: string, args: string[], flags: Flags): Output {
-  requireVibe(root);
+  ensureProject(root);
   const question = args.join(' ');
   if (!question) throw usage('ask "question"');
   const options = flagString(flags, 'options')?.split('|').map((s) => s.trim()).filter(Boolean);
@@ -404,7 +391,7 @@ function cmdAsk(root: string, args: string[], flags: Flags): Output {
 }
 
 function cmdAuthorize(root: string, args: string[], flags: Flags): Output {
-  requireVibe(root);
+  ensureProject(root);
   const token = args.join(' ') || null;
   const action = flagString(flags, 'action');
   if (!action) throw usage('authorize [token] --action push|deploy|send|delete|spend [--target "…"]');
@@ -422,7 +409,6 @@ function cmdAuthorize(root: string, args: string[], flags: Flags): Output {
 }
 
 function cmdInbox(root: string, sub: string | undefined, args: string[]): Output {
-  requireVibe(root);
   if (sub === 'answer') {
     const [id, ...rest] = args;
     if (!id || rest.length === 0) throw usage('inbox answer <id> "text"');
@@ -440,12 +426,12 @@ function cmdInbox(root: string, sub: string | undefined, args: string[]): Output
 }
 
 function cmdRegress(root: string, sub: string | undefined, flags: Flags): Output {
-  requireVibe(root);
   if (sub === 'list') {
     const list = listRegressions(root);
     return { json: list, text: list.length ? list.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n') : 'no regressions', code: 0 };
   }
   if (sub !== 'record') throw usage('regress record --scenario <id> --title "…" | regress list');
+  ensureProject(root);
   const scenario = flagString(flags, 'scenario');
   const title = flagString(flags, 'title');
   if (!scenario || !title) throw usage('regress record --scenario <id> --title "…"');
@@ -457,7 +443,7 @@ function cmdRegress(root: string, sub: string | undefined, flags: Flags): Output
 }
 
 function cmdKnowledge(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
-  requireVibe(root);
+  ensureProject(root);
   if (sub !== 'add') throw usage('knowledge add <file|--stdin> --title "…"');
   const title = flagString(flags, 'title') ?? '';
   const body = flags['stdin'] === true ? readStdin() : args[0] ? readText(path.resolve(root, args[0])) ?? '' : '';
@@ -466,7 +452,6 @@ function cmdKnowledge(root: string, sub: string | undefined, args: string[], fla
 }
 
 function cmdLedger(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
-  requireVibe(root);
   if (sub === 'why') {
     const node = args[0];
     if (!node) throw usage('ledger why <node>  — a scenario id, regression id, file path, intent hash or run id');
@@ -503,21 +488,24 @@ function cmdLedger(root: string, sub: string | undefined, args: string[], flags:
 
 // ─── Dispatch ───────────────────────────────────────────────────────
 
+function packageVersion(): string {
+  return readJson<{ version: string }>(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'package.json'))?.version ?? 'unknown';
+}
+
 export async function dispatch(argv: string[]): Promise<Output> {
   const { positionals, flags } = parseArgs(argv);
   const [cmd, sub, ...rest] = positionals;
-  if (cmd === 'version' || flags['version'] === true) {
-    const pkg = readJson<{ version: string }>(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'package.json'));
-    return { json: { version: pkg?.version }, text: pkg?.version ?? 'unknown', code: 0 };
-  }
+  if (cmd === 'version' || flags['version'] === true) return { json: { version: packageVersion() }, text: packageVersion(), code: 0 };
   if (!cmd || flags['help'] === true) return { json: { help: HELP }, text: HELP, code: 0 };
-  const root = cmd === 'init' || cmd === 'plugin' ? process.cwd() : findProjectRoot();
+  const repaired = process.env['VIBE_SKIP_SETUP'] ? [] : ensureGlobal(flagString(flags, 'home'));
+  if (repaired.length > 0) process.stderr.write(`[vibe] installed card, skills and hook for ${repaired.join(', ')}\n`);
+  const root = cmd === 'plugin' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
   switch (cmd) {
-    case 'init':
-      return cmdInit(root, flags);
     case 'status':
-      return cmdStatus(root);
+      return cmdStatus(root, flags);
+    case 'tokens':
+      return cmdTokens(root, sub);
     case 'uninstall':
       return cmdUninstall(root, flags);
     case 'plugin':

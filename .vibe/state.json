@@ -2,11 +2,11 @@
   "state": "DONE",
   "intentHash": "7c0c062929715f70",
   "approvedAt": "2026-09-03T07:11:17.359Z",
-  "runs": 3,
+  "runs": 7,
   "failStreak": 0,
   "lastFailHash": null,
-  "doneAt": "2026-09-03T07:54:07.564Z",
-  "doneTree": "132190557bf5bcd2",
+  "doneAt": "2026-09-03T16:20:46.811Z",
+  "doneTree": "5de63bfc7cd1f184",
   "abandonedReason": null,
-  "updatedAt": "2026-09-03T07:54:35.490Z"
+  "updatedAt": "2026-09-03T16:21:13.884Z"
 }
