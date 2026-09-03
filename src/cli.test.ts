@@ -199,3 +199,13 @@ describe('graph — edges the ledger can walk', () => {
     expect(vibe(['ledger', 'why', 'nothing-here']).status).toBe(1);
   });
 });
+
+describe('profile — the harness reads the sample before the interview', () => {
+  it('profile prints anomalies first and works without .vibe', () => {
+    fs.writeFileSync(path.join(root, 'sample.csv'), 'id,qty\n1,2\n1,2\n2,\n');
+    const out = vibe(['profile', 'sample.csv']);
+    expect(out.status).toBe(0);
+    expect(out.json).toMatchObject({ rows: 3, duplicateRows: 1, anomalies: ['1 duplicate rows (identical in every column)', 'column "qty" is missing in 1 of 3 rows'] });
+    expect(vibe(['profile']).status).toBe(2);
+  });
+});

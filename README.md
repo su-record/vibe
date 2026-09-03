@@ -36,11 +36,23 @@ Any client can pick the work up: `vibe state` says where you are, because the st
 
 ## Five things the harness does (and nothing else)
 
-1. **Independent verdict.** Every scenario carries a check: `run` (exit code), `file` (exists / regex / contains / JSON Schema), `http`, `eval` (count of matching labelled cases), or `human` (no verdict — goes to the inbox). Only what `vibe check` executed itself becomes evidence. A model saying "done" changes nothing; DONE is void the moment a file changes.
+1. **Independent verdict.** Every scenario carries a check: `run` (exit code), `file` (exists / regex / contains / JSON Schema / column sum), `http` (status / JSON Schema / latency ceiling), `eval` (count of matching labelled cases through a runner), or `human` (no verdict — goes to the inbox). Only what `vibe check` executed itself becomes evidence. A model saying "done" changes nothing; DONE is void the moment a file changes.
 2. **Memory across sessions and clients.** `.vibe/` holds the intent, scenarios, evidence, ledger, inbox, regressions and knowledge as plain files you can read and commit.
 3. **Permission stays with people.** Who may authorize is your policy, not the harness's law (see below).
 4. **A ledger, not a claim.** Every run records client, model, result, cost when the client provides it. Comparisons are ledger queries with four verdicts — insufficient runs, mixed scenario sets, inconclusive, difference observed — and never a winner, ratio or percentage. Events also carry typed edges (`supersedes`, `decided-by`, `implements`, `caused`), so `vibe ledger why <node>` can answer "why does this regression exist" or "which approval covers this file".
 5. **It speaks first.** Human attention is narrow. At each stage the harness surfaces up to three things you did not ask about, each with a reason it found in your files, ledger or history.
+
+## Check types
+
+| type | verdict | arguments |
+|---|---|---|
+| `run` | exit code | `cmd`, `expect` (default 0), `timeoutMs`, `cwd` |
+| `file` | exists · regex · substring · JSON Schema · column sum | `path`, `exists` / `pattern` / `contains` / `schema` / `sum: {column, equals, tolerance}` |
+| `http` | status · body schema · latency ceiling | `url`, `method`, `expect: {status, schema, maxMs}`, `timeoutMs` |
+| `eval` | count of matching cases (never a ratio) | `cases` (jsonl `{id, input, expected}`), `runner` (stdin → stdout), `expect: {pass}` |
+| `human` | none — a question in the inbox | `question` |
+
+Tables (`csv` · `tsv` · `jsonl` · `json`) are read by the harness itself; `vibe profile <file>` prints columns, types, missing values, duplicates and up to three anomalies before the interview. Spreadsheets are exported as CSV — the harness takes no dependency for Excel.
 
 ## The work graph
 
@@ -74,7 +86,7 @@ Tokens are six digits, valid ten minutes, single use, bound to what they authori
 
 ```
 setup     init · status · uninstall
-work      state [--graph] · intent draft | show · approve · check · evidence · abandon
+work      state [--graph] · profile <file> · intent draft | show · approve · check · evidence · abandon
 human     ask · authorize · inbox
 memory    regress record | list · knowledge add
 ledger    ledger · ledger compare · ledger why <node> · ledger edges [--type]
@@ -105,7 +117,7 @@ config.json      token policy
 
 ## Status
 
-`4.0.0-alpha` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Next: `http` / `eval` checks, GitHub research and automatic skill proposals (phase 3), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0-alpha` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Next: GitHub research and automatic skill proposals (3b), stage proposals and the end-to-end example (3c), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Develop
 

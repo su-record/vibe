@@ -8,9 +8,9 @@ user-invocable: false
 
 ## Procedure
 
-1. If the user attached a sample or file, read it first and write a profile: column names, types, counts of empty values, duplicates, format mismatches. If there is no sample, ask for one that the success condition can be checked against.
+1. If the user attached a sample or file, run `vibe profile {file} --json` first (csv · tsv · jsonl · json; ask for a CSV export of a spreadsheet). It returns columns, types, missing counts, duplicates and up to three anomalies with numbers. If there is no sample, ask for one that the success condition can be checked against.
 2. Ask **at most three questions**, each with a default. No answer means the default applies. Every question must serve one purpose: deciding what counts as success.
-3. Say the anomalies you saw in the sample (empties, duplicates, outliers) before the user asks — at most three, each backed by a number from the profile.
+3. Say the profile's anomalies before the user asks — at most three, each with its number. Do not add anomalies the profile did not find.
 4. With the answers, write the intent draft (`.vibe/intent.md`, in English):
 
 ```

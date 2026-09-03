@@ -16,18 +16,22 @@ export interface FileCheck {
   pattern?: string;
   contains?: string;
   schema?: string;
+  /** Column total of a CSV/TSV/JSONL/JSON table equals a reference value (± tolerance). */
+  sum?: { column: string; equals: number; tolerance?: number };
 }
 export interface HttpCheck {
   type: 'http';
   url: string;
   method?: string;
   expect?: { status?: number; schema?: string; maxMs?: number };
+  timeoutMs?: number;
 }
 export interface EvalCheck {
   type: 'eval';
   cases: string;
   runner: string;
   expect: { pass: number };
+  timeoutMs?: number;
 }
 export interface HumanCheck {
   type: 'human';
@@ -91,8 +95,10 @@ function checkReason(check: unknown): string | null {
       return str(check['cmd']) ? null : 'run check requires cmd';
     case 'file': {
       if (!str(check['path'])) return 'file check requires path';
-      const hasRule = check['exists'] !== undefined || str(check['pattern']) || str(check['contains']) || str(check['schema']);
-      return hasRule ? null : 'file check requires one of exists·pattern·contains·schema';
+      const sum = check['sum'];
+      if (sum !== undefined && !(isRecord(sum) && str(sum['column']) && typeof sum['equals'] === 'number')) return 'file sum requires column and equals (a number)';
+      const hasRule = check['exists'] !== undefined || str(check['pattern']) || str(check['contains']) || str(check['schema']) || sum !== undefined;
+      return hasRule ? null : 'file check requires one of exists·pattern·contains·schema·sum';
     }
     case 'http':
       return str(check['url']) ? null : 'http check requires url';

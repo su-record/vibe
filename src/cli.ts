@@ -15,6 +15,7 @@ import { addKnowledge } from './core/knowledge.js';
 import { compare, EDGE_TYPES, readEdges, readLedger, record, why, type CompareBy, type CompareMetric, type EdgeType } from './core/ledger.js';
 import { findProjectRoot, hasVibe, vibePath } from './core/paths.js';
 import { listRegressions, recordRegression } from './core/regress.js';
+import { profileFile } from './core/profile.js';
 import { graphMermaid } from './core/scenarios.js';
 import { readState } from './core/state.js';
 import { readJson, readText } from './core/store.js';
@@ -63,8 +64,9 @@ const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
   setup     init [--client claude,codex,chatgpt] [--tokens strict|irreversible|off] · status · uninstall [--purge-state]
             plugin install | status [--home <dir>]   (Codex CLI · ChatGPT desktop — one OpenAI plugin)
-  work      state [--graph] · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
+  work      state [--graph] · profile <file.csv|tsv|jsonl|json> · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
+  checks    run (exit code) · file (exists·pattern·contains·schema·sum) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass) · human (inbox, no verdict)
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
             authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
@@ -183,6 +185,17 @@ function cmdState(root: string, flags: Flags): Output {
     ...view.notices.map((n) => `  ! ${n}`),
   ];
   return { json: view, text: lines.join('\n'), code: 0 };
+}
+
+function cmdProfile(root: string, file: string | undefined): Output {
+  if (!file) throw usage('profile <file.csv|tsv|jsonl|json>');
+  const p = profileFile(root, file);
+  const lines = [
+    `${p.file} · ${p.format} · ${p.rows} rows · ${p.columns.length} columns · ${p.duplicateRows} duplicate rows`,
+    ...p.anomalies.map((a) => `  ! ${a}`),
+    ...p.columns.map((c) => `  ${c.name || '(no header)'} ${c.type}${c.missing ? ` · missing ${c.missing}` : ''} · distinct ${c.distinct}${c.min !== undefined ? ` · ${c.min}…${c.max}` : ''} · e.g. ${c.sample.map((s) => JSON.stringify(s)).join(', ')}`),
+  ];
+  return { json: p, text: lines.join('\n'), code: 0 };
 }
 
 function cmdIntent(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
@@ -412,6 +425,8 @@ export async function dispatch(argv: string[]): Promise<Output> {
       return cmdPlugin(sub, flags);
     case 'state':
       return cmdState(root, flags);
+    case 'profile':
+      return cmdProfile(root, sub);
     case 'intent':
       return cmdIntent(root, sub, rest, flags);
     case 'approve':

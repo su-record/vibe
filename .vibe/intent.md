@@ -1,16 +1,16 @@
-# vibe 4 · phase 2b — work graph and typed ledger edges
+# vibe 4 · phase 3a — FDE check types and sample profiling
 
 ## Why
-Scenarios are a flat list run one after another, and the ledger is an event log without relations. The graph-engineering research (knowledge/research/2026-09-03-graph-engineering.md) found two things worth taking: a dependency edge between scenarios so the harness can order and parallelise checks by code, and typed edges in the ledger so `vibe ledger` can answer "why does this regression exist" and "which approval covers this file" without a graph database. Everything else in that note (org graphs, model routing, orchestration runtimes) stays out.
+An FDE's scenarios are rarely "the tests pass". They are "the endpoint answers with this shape in under a second", "the extractor gets these labelled cases right", "the settlement sheet's total equals the bank statement". Until the harness can judge those itself, such scenarios fall to `human` and the verdict is a claim again. The interview also needs the sample read by code, not by the model: columns, types, empties, duplicates, with numbers the model can say first.
 
 ## What counts as success
-- A scenario may declare `needs: [ids]`. Unknown ids, cycles, and a `human` parent are rejected at draft time.
-- `vibe check` runs scenarios whose needs are all satisfied in parallel (at most four at once), then their dependents; a scenario whose parent did not pass is reported `blocked` with the parent named, is not run, and blocks DONE. `vibe check <id>` pulls in unpassed ancestors.
-- `vibe state --graph` prints the work graph as mermaid with each node's last result.
-- The ledger carries typed edges: `supersedes` (new intent → previous), `decided-by` (intent → chat or token), `implements` (scenario that just passed → files changed in the working tree), `caused` (regression → source scenario and evidence run). `vibe ledger why <node>` walks them.
-- Phase 1 and 2 gates still hold: build, tests, card ≤ 1KB, source ≤ 5,000 lines.
+- `http` checks run: status code, body against a JSON Schema, latency ceiling; a dead host fails with a reason.
+- `eval` checks run: a JSONL case set through a runner's stdin/stdout, the verdict a count of matching cases against `expect.pass`, mismatches listed.
+- `file` checks gain `sum`: a column total of a csv/tsv/jsonl/json table equals a reference value within a tolerance.
+- `vibe profile <file>` reports rows, columns, types, missing values, duplicates and at most three anomalies with numbers; spreadsheets are refused with a CSV hint.
+- Phase 1–2 gates still hold: build, tests, card ≤ 1KB, source ≤ 5,000 lines.
 
 ## Constraints
-- No orchestration runtime. The client already provides subagents; the harness orders checks and documents the isolation rule (independent scenarios may be built in separate worktrees, merged before `vibe check --all`).
-- A work graph stays under six scenario nodes with edges; past that, split the intent.
+- No new dependency: tables are parsed by the harness (RFC 4180 CSV), HTTP uses Node's fetch, Excel is out of scope.
+- Eval verdicts are counts, never ratios; model-graded evaluation stays advisory and is not implemented here.
 - Every record is English; the model talks to the user in the user's language.

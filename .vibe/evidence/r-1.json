@@ -1,32 +1,32 @@
 {
   "run": "r-1",
-  "at": "2026-09-03T06:24:54.572Z",
+  "at": "2026-09-03T06:33:35.314Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "95f419b05845",
+  "scenarioSet": "6f63e90697b9",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1941,
+      "ms": 2057,
       "tail": "npm notice run @su-record/vibe@4.0.0-alpha.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
-      "status": "fail",
-      "exit": 1,
-      "ms": 20810,
-      "tail": "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n\n Test Files  1 failed | 9 passed (10)\n      Tests  1 failed | 55 passed (56)\n   Start at  06:24:57\n   Duration  19.72s (transform 848ms, setup 0ms, import 1.88s, tests 20.96s, environment 5ms)"
+      "status": "pass",
+      "exit": 0,
+      "ms": 20560,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  14 passed (14)\n      Tests  66 passed (66)\n   Start at  06:33:38\n   Duration  19.88s (transform 886ms, setup 0ms, import 1.89s, tests 22.04s, environment 2ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 44,
+      "ms": 39,
       "tail": "card.md 705 bytes (limit 1024)"
     },
     {
@@ -34,32 +34,32 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 43,
-      "tail": "src (non-test) 2491 lines (limit 5000)"
+      "ms": 44,
+      "tail": "src (non-test) 2883 lines (limit 5000)"
     },
     {
-      "id": "needs-edges",
+      "id": "http-eval-checks",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3636,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  2 passed (2)\n      Tests  5 passed | 12 skipped (17)\n   Start at  06:24:58\n   Duration  1.96s (transform 477ms, setup 0ms, import 920ms, tests 990ms, environment 0ms)"
+      "ms": 2866,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  2 passed | 1 skipped (3)\n      Tests  4 passed | 2 skipped (6)\n   Start at  06:33:38\n   Duration  1.29s (transform 455ms, setup 0ms, import 909ms, tests 955ms, environment 0ms)"
     },
     {
-      "id": "ledger-why",
-      "type": "run",
-      "status": "fail",
-      "exit": 1,
-      "ms": 7459,
-      "tail": "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n\n Test Files  1 failed (1)\n      Tests  1 failed | 7 skipped (8)\n   Start at  06:24:57\n   Duration  6.02s (transform 192ms, setup 0ms, import 245ms, tests 5.56s, environment 0ms)"
-    },
-    {
-      "id": "state-graph",
+      "id": "table-sum",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 4870,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 7 skipped (8)\n   Start at  06:24:57\n   Duration  3.42s (transform 115ms, setup 0ms, import 135ms, tests 3.04s, environment 0ms)"
+      "ms": 2303,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  06:33:38\n   Duration  880ms (transform 187ms, setup 0ms, import 348ms, tests 21ms, environment 0ms)"
+    },
+    {
+      "id": "profile",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3010,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  2 passed (2)\n      Tests  3 passed | 8 skipped (11)\n   Start at  06:33:38\n   Duration  1.87s (transform 221ms, setup 0ms, import 341ms, tests 1.47s, environment 2ms)"
     }
   ]
 }

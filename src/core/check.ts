@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
+import { evalCheck } from './checks/eval.js';
 import { fileCheck } from './checks/file.js';
+import { httpCheck } from './checks/http.js';
 import { runCheck, type CheckResult } from './checks/run.js';
 import { detectClient, detectModel } from './client.js';
 import { invalidTransition } from './errors.js';
@@ -63,10 +65,14 @@ async function execute(scenario: Scenario, root: string): Promise<CheckResult> {
       return runCheck(check, root);
     case 'file':
       return fileCheck(check, root);
+    case 'http':
+      return httpCheck(check, root);
+    case 'eval':
+      return evalCheck(check, root);
     case 'human':
       return { pass: false, exit: null, ms: 0, tail: check.question, reason: 'human — not judged by the harness' };
     default:
-      return { pass: false, exit: null, ms: 0, tail: '', reason: `${check.type} checks are not executed in this version (4.0.0-alpha)` };
+      return { pass: false, exit: null, ms: 0, tail: '', reason: `unknown check type` };
   }
 }
 

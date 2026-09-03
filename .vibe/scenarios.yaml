@@ -15,21 +15,23 @@
   then: non-test source is at most 5000 lines
   check: { type: run, cmd: "node checks/loc.js", expect: 0 }
 
-- id: needs-edges
+- id: http-eval-checks
   needs: [build]
-  given: scenarios that declare needs
-  when: they are drafted and checked
-  then: unknown ids, cycles and human parents are rejected; independent scenarios run in parallel; a dependent of a failed parent is blocked and not run
-  check: { type: run, cmd: "npx vitest run src/core/scenarios.test.ts src/core/check.test.ts -t needs", expect: 0, timeoutMs: 120000 }
+  given: a local HTTP server and a labelled case set
+  when: http and eval scenarios are checked
+  then: status, schema and latency are judged by the harness; eval passes on a count of matching cases and lists mismatches
+  check: { type: run, cmd: "npx vitest run src/core/checks -t 'http|eval'", expect: 0, timeoutMs: 120000 }
 
-- id: ledger-why
+- id: table-sum
   needs: [build]
-  given: a drafted, approved, checked intent with a recorded regression
-  when: vibe ledger why is asked about the regression or a changed file
-  then: the answer walks caused, implements and decided-by edges back to the approval
-  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t 'ledger why'", expect: 0, timeoutMs: 120000 }
+  given: a CSV with quoted fields and thousands separators
+  when: a file check with sum runs
+  then: the column total is compared to the reference within the tolerance
+  check: { type: run, cmd: "npx vitest run src/core/checks/file.test.ts -t sum", expect: 0, timeoutMs: 120000 }
 
-- id: state-graph
+- id: profile
   needs: [build]
-  then: vibe state --graph prints mermaid with one node per scenario, one edge per needs entry, and the last result on each node
-  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t 'state --graph'", expect: 0, timeoutMs: 120000 }
+  given: a sample with empties, duplicates and mixed types
+  when: vibe profile runs
+  then: it reports types, missing counts, duplicates and at most three anomalies with numbers, and refuses a spreadsheet with a CSV hint
+  check: { type: run, cmd: "npx vitest run src/core/profile.test.ts src/cli.test.ts -t profile", expect: 0, timeoutMs: 120000 }
