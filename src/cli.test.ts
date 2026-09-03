@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { installSurfaces, projectLayout } from './install/global.js';
 
 // Every call spawns tsx; under `vibe check` several vitest processes run at once, so 5s is too tight.
 vi.setConfig({ testTimeout: 60_000 });
@@ -147,16 +148,37 @@ describe('CLI — from request to DONE', () => {
     expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe.prove', 'SKILL.md'))).toBe(true);
   });
 
-  it('uninstall removes the global card, skills and hook but keeps .vibe unless --purge-state', () => {
-    vibe(['tokens', 'off']);
-    const out = vibe(['uninstall']);
+  it('uninstall removes the global card, skills and hook, and what an older init left in the project; .vibe stays unless --purge-state', () => {
+    // HOME is root; the repository is a directory below it, as on a real machine
+    const project = path.join(root, 'project');
+    fs.mkdirSync(project);
+    const inProject = (args: string[]): Run => {
+      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_CLIENT: 'test-client' }, timeout: 60000 });
+      return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
+    };
+    inProject(['tokens', 'off']);
+    // a 4.0.1 `vibe init` left these inside the repository
+    installSurfaces(project, projectLayout('claude'));
+    fs.writeFileSync(path.join(project, 'CLAUDE.md'), `# Mine\n\n${fs.readFileSync(path.join(project, 'CLAUDE.md'), 'utf-8')}`);
+    fs.mkdirSync(path.join(project, '.claude', 'skills', 'my-skill'));
+
+    const out = inProject(['uninstall']);
     expect(out.status).toBe(0);
+    const removed = (out.json as { removed: string[] }).removed;
+    expect(removed).toContain('CLAUDE.md card');
+    expect(removed).toContain(path.join('.claude', 'settings.local.json') + ' hook');
     expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe'))).toBe(false);
     expect(fs.existsSync(path.join(root, '.claude', 'CLAUDE.md'))).toBe(false);
     expect(fs.existsSync(path.join(root, '.claude', 'settings.json'))).toBe(false);
-    expect(fs.existsSync(path.join(root, '.vibe'))).toBe(true);
-    expect((vibe(['uninstall', '--purge-state'], undefined, { VIBE_SKIP_SETUP: '1' }).json as { removed: string[] }).removed).toEqual(['.vibe/']);
-    expect(fs.existsSync(path.join(root, '.vibe'))).toBe(false);
+    expect(fs.readFileSync(path.join(project, 'CLAUDE.md'), 'utf-8').trim()).toBe('# Mine');
+    expect(fs.existsSync(path.join(project, '.claude', 'skills', 'vibe'))).toBe(false);
+    expect(fs.existsSync(path.join(project, '.claude', 'skills', 'my-skill'))).toBe(true);
+    expect(fs.existsSync(path.join(project, '.claude', 'settings.local.json'))).toBe(false);
+    expect(fs.existsSync(path.join(project, '.vibe'))).toBe(true);
+
+    const purged = spawnSync(TSX, [CLI_SRC, 'uninstall', '--purge-state', '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '1' } });
+    expect((JSON.parse(purged.stdout) as { removed: string[] }).removed).toEqual(['.vibe/']);
+    expect(fs.existsSync(path.join(project, '.vibe'))).toBe(false);
   });
 
   it('help always exits 0', () => {

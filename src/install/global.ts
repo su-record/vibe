@@ -292,3 +292,10 @@ export function uninstallGlobal(home: string = os.homedir()): string[] {
   }
   return removed;
 }
+
+/** Remove what `vibe init` (≤ 4.0.1) or the bench left inside a repository: card blocks, the six skills, notify hooks. Project skills and other hooks stay. */
+export function uninstallProjectSurfaces(root: string): string[] {
+  const removed: string[] = [];
+  for (const client of ALL_CLIENTS) removed.push(...removeSurfaces(root, projectLayout(client)));
+  return removed;
+}
