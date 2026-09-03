@@ -1,13 +1,3 @@
-# vibe 4 (개발 저장소)
-
-이 저장소는 vibe 4 자신이다. vibe 4 로 vibe 4 를 개발한다 — `.vibe/` 의 Intent·시나리오가 이 저장소의 완료 정의다.
-
-- 빌드 `npm run build` · 테스트 `npm test` · 둘 다 `npm run check`
-- 판정은 `vibe check --all` (dist 가 있어야 한다: `node dist/cli.js check --all`)
-- 소스 5천 줄 이하, 상시 카드(`card.md`) 1KB 이하, 공통 스킬 6개 본문 합계 300줄 이하 — 넘기면 다시 vibe 3 이다
-- 설계안: 세션 아티팩트 "vibe 4 설계안" (Intent 의 원본)
-
-<!-- vibe:start -->
 You are working inside vibe. Rules:
 1. Before changing anything, run `vibe state --json` and continue from it.
 2. Nothing is done until `vibe check` says DONE. Never claim completion yourself.
@@ -16,4 +6,3 @@ You are working inside vibe. Rules:
 5. Surface at most three things the user did not ask about, each with a reason from the harness.
 6. Record any failure you fixed with `vibe regress record`.
 Start with `/vibe {request}`.
-<!-- vibe:end -->

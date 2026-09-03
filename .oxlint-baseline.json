@@ -1,8 +1,0 @@
-{
-  "_comment": "CLAUDE.md 복잡도 한계 위반의 상한선. scripts/lint-ratchet.ts 가 강제한다. 숫자는 줄이는 방향으로만 갱신한다 — 늘리려면 그 이유가 리뷰에서 정당화돼야 한다.",
-  "counts": {
-    "eslint(complexity)": 175,
-    "eslint(max-depth)": 154,
-    "eslint(max-lines-per-function)": 92
-  }
-}

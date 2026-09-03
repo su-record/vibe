@@ -1,138 +1,24 @@
-name: Build & Test
+name: Test
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, v4]
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main, v4]
 
 jobs:
-  build:
-    name: Build (type-check)
+  check:
+    name: Build · Test · Self-check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6 # 버전은 package.json packageManager 가 SSOT
-
       - uses: actions/setup-node@v7
         with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build (tsc)
-        run: pnpm build
-
-  test:
-    name: Tests
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6 # 버전은 package.json packageManager 가 SSOT
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build (tsc) # dist/ 필요 — 훅 테스트가 dist/tools 동적 import 를 검증 (code-check-memory-write)
-        run: pnpm build
-
-      - name: Run vitest
-        run: pnpm test -- --reporter=default
-
-      # 선언한 게이트는 CI 에서 돌아야 게이트다.
-      #
-      # CLAUDE.md 가 릴리즈 게이트 7종을 선언해 두고 CI 는 그중 넷만 돌리고 있었다.
-      # 나머지는 사람이 릴리즈 때마다 손으로 돌리는 것에 의존했고, 그건 잊는 순간
-      # 없는 것과 같다 — **아무도 안 돌리는 가드는 아무것도 잡지 못한다.**
-      # 넷 다 수초 내에 끝나므로 PR 마다 돌린다.
-      - name: Docs and count claims match source
-        run: |
-          pnpm gen:skill-docs:check
-          pnpm validate:counts
-          pnpm validate:skill-invocation
-          pnpm sync:agent-models:check
-          pnpm validate:mermaid
-          pnpm gen:agents-md:check
-
-      # 선언한 규율은 선언한 자리에서 썩는다.
-      #
-      # SPEC 은 VERIFIED 로 확정된 뒤에도 코드가 움직이면 갱신되지 않고, 상시 로드
-      # 자산은 늘어나도 캐시 비용이 문서에 남지 않는다. 둘 다 사람이 눈으로 볼 수 없는
-      # 종류의 부패라 명령이 판정한다.
-      - name: Decision records and cache surface stay honest
-        run: |
-          pnpm validate:spec-lifecycle
-          pnpm validate:cache-surface
-
-      # 플러그인 배포 트리는 커밋되는 생성물이다 — Claude Code 마켓플레이스가
-      # 저장소를 클론해 읽으므로 dist/ 와 구운 agents/ 가 트리에 있어야 한다.
-      # 소스만 고치고 트리를 잊으면 플러그인 사용자만 구버전을 받게 되므로
-      # 드리프트를 여기서 막는다.
-      - name: Plugin hook definitions in sync
-        run: pnpm gen:plugin-hooks:check
-
-      - name: Plugin tree matches source
-        run: pnpm validate:plugin-tree
-
-  # 선언된 품질 규칙이 실제로 강제되는지 — 린트 + 복잡도 라쳇.
-  # 이 job 이 없던 동안 README 는 삭제된 하네스(Cursor)를 계속 광고했고
-  # Node 배지는 engines 와 어긋난 채 릴리스됐다.
-  #
-  # 드리프트 가드 5종은 위 `test` job 에 남겨 둔다 — 그쪽이 필수 상태 체크라
-  # 여기로 옮기면 병합 차단력이 사라진다.
-  verify:
-    name: Lint & Ratchet
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6 # 버전은 package.json packageManager 가 SSOT
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint (oxlint — CLAUDE.md hard rules)
-        run: pnpm lint
-
-      - name: Complexity ratchet (no new violations)
-        run: pnpm lint:ratchet
-
-  coverage:
-    name: Coverage ratchet
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6 # 버전은 package.json packageManager 가 SSOT
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build (tsc)
-        run: pnpm build
-
-      # vitest.config.ts 의 thresholds 미달 시 실패한다.
-      - name: Run coverage
-        run: pnpm test:coverage
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      # vibe 4 가 자기 시나리오를 자기 CLI 로 판정한다. 승인은 사람 토큰이라 CI 에서는 카드·크기 검사만 직접 돈다.
+      - run: node checks/card-size.js
+      - run: node checks/loc.js

@@ -1,0 +1,27 @@
+- id: build
+  given: 소스가 있다
+  when: tsc 로 빌드한다
+  then: 타입 오류 없이 dist 가 생긴다
+  check: { type: run, cmd: "npm run build", expect: 0, timeoutMs: 120000 }
+
+- id: tests
+  given: dist 가 있다
+  when: vitest 를 돌린다
+  then: 모든 테스트가 통과한다
+  check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
+
+- id: card-size
+  then: 상시 카드가 1024 바이트를 넘지 않는다
+  check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
+
+- id: source-size
+  then: 테스트를 제외한 src 가 5000 줄을 넘지 않는다
+  check: { type: run, cmd: "node checks/loc.js", expect: 0 }
+
+- id: no-self-done
+  then: 모델(코드)이 check 없이 DONE 을 만들 수 없고, 토큰 없이 APPROVED 가 되지 않는다
+  check: { type: run, cmd: "npx vitest run src/core/check.test.ts src/core/intent.test.ts -t \"없이\"", expect: 0, timeoutMs: 120000 }
+
+- id: card-reads
+  then: 카드 7줄이 엔지니어가 아닌 사람에게도 읽힌다
+  check: { type: human, question: "card.md 7줄을 읽고 한 줄이라도 무슨 뜻인지 모르겠으면 그 줄 번호를 알려 주세요" }
