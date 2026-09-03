@@ -1,30 +1,91 @@
 # vibe 4
 
-The experience of having an AX/FDE next to you. A vague request becomes checkable scenarios; the harness proves the result itself; the work is handed over to whoever will run it.
+**The experience of having an AX/FDE next to you.** Say what you need in plain words. vibe turns it into checkable scenarios, builds it, proves it by running the checks itself, and hands it over to whoever will run it. Vibe-coding quality is the by-product of that discipline.
+
+Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app.
 
 ```bash
 npm i -g @su-record/vibe
 cd your-project && vibe init            # Claude Code. Codex / ChatGPT desktop: --client codex,chatgpt
 ```
 
-Then, in chat: `/vibe every week an order spreadsheet arrives — turn it into a settlement sheet and send it to accounting`.
+Then, in chat:
 
-## What is different
+```
+/vibe every week an order spreadsheet arrives — turn it into a settlement sheet and send it to accounting
+```
 
-- **The harness judges.** Every scenario carries a check (run · file · http · eval · human) and only what `vibe check` executed itself becomes evidence. A model saying "done" changes nothing.
-- **Who may authorize is your policy.** `vibe init --tokens strict|irreversible|off`. Under `strict` both approval and irreversible actions (push, deploy, send, delete, spend) need a six-digit number the user pastes back into chat; the default `irreversible` asks a token only for irreversible actions; `off` records everything as auto for users who already skip permissions. The verdict itself is never configurable.
-- **State is plain files inside the repository.** With `.vibe/` present you can approve in Claude Code and continue in Codex.
-- **It speaks first.** Human attention is narrow. Up to three grounded things the user did not ask about.
-- **The always-on instruction is 1KB.** `card.md` is all of it.
+## The flow
+
+```
+request (/vibe …)
+  → interview      discover: at most three questions, sample profiling, anomalies said first
+  → scenarios      scope: each scenario bound to a check · research · skills needed → one approval
+  → build          one scenario at a time, `vibe check` after each
+  → prove          `vibe check --all` — every scenario plus every regression
+  → report + handoff   a document the operator can run alone; irreversible steps need a token
+```
+
+Any client can pick the work up: `vibe state` says where you are, because the state lives in plain files inside the repository. There is no handoff document — the state is the handoff.
+
+## Five things the harness does (and nothing else)
+
+1. **Independent verdict.** Every scenario carries a check: `run` (exit code), `file` (exists / regex / contains / JSON Schema), `http`, `eval` (count of matching labelled cases), or `human` (no verdict — goes to the inbox). Only what `vibe check` executed itself becomes evidence. A model saying "done" changes nothing; DONE is void the moment a file changes.
+2. **Memory across sessions and clients.** `.vibe/` holds the intent, scenarios, evidence, ledger, inbox, regressions and knowledge as plain files you can read and commit.
+3. **Permission stays with people.** Who may authorize is your policy, not the harness's law (see below).
+4. **A ledger, not a claim.** Every run records client, model, result, cost when the client provides it. Comparisons are ledger queries with four verdicts — insufficient runs, mixed scenario sets, inconclusive, difference observed — and never a winner, ratio or percentage.
+5. **It speaks first.** Human attention is narrow. At each stage the harness surfaces up to three things you did not ask about, each with a reason it found in your files, ledger or history.
+
+## Token policy
+
+```bash
+vibe init --tokens strict         # approval and irreversible actions both need a six-digit human token
+vibe init --tokens irreversible   # default — a plain "yes" approves; push/deploy/send/delete/spend need a token
+vibe init --tokens off            # no tokens; everything is recorded as "auto" (you already skip permissions)
+```
+
+Tokens are six digits, valid ten minutes, single use, bound to what they authorize, and stored only as hashes. The verdict itself is never configurable.
 
 ## Commands
 
-`vibe --help` lists everything. The exit code is the verdict: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition.
+```
+setup     init · status · uninstall
+work      state · intent draft | show · approve · check · evidence · abandon
+human     ask · authorize · inbox
+memory    regress record | list · knowledge add
+ledger    ledger · ledger compare
+```
+
+`vibe --help` has the details. Every command accepts `--json`. The exit code is the verdict: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition.
+
+## Skills
+
+Six common skills ship with the package — `vibe` (entry), `discover`, `scope`, `build`, `prove`, `handoff` — under 300 lines in total. They contain the harness command sequence and message shapes for each stage, nothing about how to code. Project-specific skills are created or imported per project, live only inside that project, and are installed only when bound to a check (phase 3).
 
 ## Language
 
-The card, skills, and every record vibe writes (intent, scenarios, inbox, knowledge, ledger) are English. The model talks to the user in the user's language.
+The always-on card (1KB), the skills and every record vibe writes are English. The model talks to you in your language.
+
+## What is inside `.vibe/`
+
+```
+intent.md        what and why — the one page you approve
+scenarios.yaml   given / when / then + the check that judges each
+evidence/        what the harness actually ran, per run
+ledger.jsonl     state changes, client, model, results, cost
+inbox.jsonl      questions, STUCK notices, token hashes
+regressions/     fixed failures as reproducing checks
+knowledge/       domain notes the model reads when it needs them
+config.json      token policy
+```
 
 ## Status
 
-4.0.0-alpha — phase 1 (CLI core + Claude Code). `http`/`eval` checks, research, and skill proposals come in later phases. vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0-alpha` — phase 1: CLI core + Claude Code. Next: Codex CLI and ChatGPT desktop adapters (phase 2), `http` / `eval` checks, GitHub research and automatic skill proposals (phase 3), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
+
+## Develop
+
+```bash
+npm ci && npm run check          # build + tests
+node dist/cli.js check --all     # vibe 4 judges its own scenarios
+```
