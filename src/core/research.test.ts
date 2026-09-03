@@ -17,6 +17,8 @@ afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
 
 const recent = new Date(Date.now() - 10 * 86_400_000).toISOString();
 const RESPONSES: Record<string, unknown> = {
+  '/search/repositories?q=three%20words%20nothing': { items: [] },
+  '/search/repositories?q=three%20words&': { items: [{ full_name: 'x/three-words', html_url: 'https://github.com/x/three-words', description: 'three words', stargazers_count: 1, pushed_at: recent, license: { spdx_id: 'MIT' } }] },
   '/search/repositories': { items: [
     { full_name: 'acme/settle-sheet', html_url: 'https://github.com/acme/settle-sheet', description: 'settlement sheets from order csv', stargazers_count: 120, pushed_at: recent, license: { spdx_id: 'MIT' } },
     { full_name: 'x/unrelated', html_url: 'https://github.com/x/unrelated', description: 'nothing here', stargazers_count: 5, pushed_at: '2020-01-01T00:00:00Z', license: null },
@@ -60,6 +62,11 @@ describe('research — see what exists before building', () => {
     expect(again.candidates).toHaveLength(2);
     await expect(research(root, { query: 'something else' }, dead)).rejects.toMatchObject({ exitCode: 2 });
     await expect(research(root, { fromIntent: true }, fake())).rejects.toThrowError(/no intent/);
+  });
+
+  it('research: narrowing — an empty repository search is retried with fewer words', async () => {
+    const r = await research(root, { query: 'three words nothing', sources: ['repos'] }, fake());
+    expect(r.candidates.map((c) => c.ref)).toEqual(['x/three-words']);
   });
 
   it('research: catalogs are read with one tree request each and skills are found at any depth; code search is skipped without a token', async () => {

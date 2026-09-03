@@ -1,57 +1,37 @@
 {
   "build": {
     "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
+    "at": "2026-09-03T07:07:28.200Z",
+    "run": "r-1"
   },
   "tests": {
     "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
+    "at": "2026-09-03T07:07:28.200Z",
+    "run": "r-1"
   },
   "card-size": {
     "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
+    "at": "2026-09-03T07:07:28.200Z",
+    "run": "r-1"
   },
   "source-size": {
     "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
+    "at": "2026-09-03T07:07:28.200Z",
+    "run": "r-1"
   },
   "skills-size": {
     "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
+    "at": "2026-09-03T07:07:28.200Z",
+    "run": "r-1"
   },
-  "example-profile": {
+  "implements-exact": {
     "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
+    "at": "2026-09-03T07:07:28.200Z",
+    "run": "r-1"
   },
-  "settle": {
+  "research-narrowing": {
     "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
-  },
-  "settlement-total": {
-    "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
-  },
-  "settlement-summary": {
-    "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
-  },
-  "send-dry-run": {
-    "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
-  },
-  "example-skill": {
-    "last": "pass",
-    "at": "2026-09-03T06:48:36.290Z",
-    "run": "r-2"
+    "at": "2026-09-03T07:07:28.200Z",
+    "run": "r-1"
   }
 }

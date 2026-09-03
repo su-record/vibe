@@ -1,0 +1,7 @@
+{
+  "src/core/check.test.ts": "c6c47dc5dfdb53dc8fff790b2b3d68d873eca3f5",
+  "src/core/check.ts": "7a60b6240c95fd47819ba470333f9aae8e675b2c",
+  "src/core/research.test.ts": "2291fadc31c937329052ec79d4ef7c3bac95bc72",
+  "src/core/research.ts": "506689e99662e606be2d71ad832e8dafaa092423",
+  "src/core/tree.ts": "b768866b9cb5940ea3c269bce2f1901bd9077016"
+}

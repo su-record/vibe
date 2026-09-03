@@ -1,16 +1,16 @@
 {
   "run": "r-1",
-  "at": "2026-09-03T06:47:39.278Z",
+  "at": "2026-09-03T07:07:28.200Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "fa8355f566cf",
+  "scenarioSet": "184c6b04fd3b",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3465,
+      "ms": 2579,
       "tail": "npm notice run @su-record/vibe@4.0.0-alpha.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
@@ -18,15 +18,15 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 29227,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  16 passed (16)\n      Tests  75 passed (75)\n   Start at  06:47:43\n   Duration  28.53s (transform 934ms, setup 0ms, import 2.46s, tests 31.67s, environment 2ms)"
+      "ms": 25902,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  16 passed (16)\n      Tests  77 passed (77)\n   Start at  07:07:31\n   Duration  25.23s (transform 1.08s, setup 0ms, import 2.21s, tests 28.05s, environment 3ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 114,
+      "ms": 46,
       "tail": "card.md 705 bytes (limit 1024)"
     },
     {
@@ -34,64 +34,32 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 100,
-      "tail": "src (non-test) 3612 lines (limit 5000)"
+      "ms": 51,
+      "tail": "src (non-test) 3645 lines (limit 5000)"
     },
     {
       "id": "skills-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 20,
+      "ms": 10,
       "tail": ""
     },
     {
-      "id": "example-profile",
+      "id": "implements-exact",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 274,
-      "tail": "profile: 8 rows · anomalies 3 · both planted anomalies named"
+      "ms": 2549,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 12 skipped (13)\n   Start at  07:07:32\n   Duration  1.25s (transform 481ms, setup 0ms, import 737ms, tests 94ms, environment 0ms)"
     },
     {
-      "id": "settle",
+      "id": "research-narrowing",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 57,
-      "tail": "settlement: 3 sellers · 5 orders · total 4500.5 · 1 duplicates skipped · 1 rows need a person"
-    },
-    {
-      "id": "settlement-total",
-      "type": "file",
-      "status": "pass",
-      "exit": 0,
-      "ms": 1,
-      "tail": "sum(total) = 4500.5 over 3 numeric rows · expected 4500.5"
-    },
-    {
-      "id": "settlement-summary",
-      "type": "file",
-      "status": "pass",
-      "exit": 0,
-      "ms": 81,
-      "tail": "ok: examples/order-settlement/out/summary.json"
-    },
-    {
-      "id": "send-dry-run",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 39,
-      "tail": "would send examples/order-settlement/out/settlement.csv to accounting@example.com"
-    },
-    {
-      "id": "example-skill",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 226,
-      "tail": "example-settle: check run · 1 files · kept by prune (threshold 10 runs)"
+      "ms": 2205,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 4 skipped (5)\n   Start at  07:07:31\n   Duration  862ms (transform 353ms, setup 0ms, import 506ms, tests 22ms, environment 1ms)"
     }
   ]
 }

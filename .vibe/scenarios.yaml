@@ -19,38 +19,16 @@
   then: the six common skills are at most 300 lines in total
   check: { type: run, cmd: "test $(cat skills/*/SKILL.md | wc -l) -le 300", expect: 0 }
 
-- id: example-profile
+- id: implements-exact
   needs: [build]
-  given: examples/order-settlement/orders.csv with a duplicate row and a missing amount
-  when: vibe profile runs on it
-  then: both anomalies are named with their numbers
-  check: { type: run, cmd: "node checks/example-profile.js", expect: 0 }
+  given: a git repository checked twice with one file edited in between
+  when: the ledger edges of both checks are read
+  then: the first check links every dirty file and the second links only the edited file
+  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t implements", expect: 0, timeoutMs: 120000 }
 
-- id: settle
-  given: the example orders
-  when: settle.js runs
-  then: out/settlement.csv and out/summary.json are produced
-  check: { type: run, cmd: "node examples/order-settlement/settle.js", expect: 0 }
-
-- id: settlement-total
-  needs: [settle]
-  then: the total column sums to 4500.5 — the paid, de-duplicated, amount-bearing orders
-  check: { type: file, path: examples/order-settlement/out/settlement.csv, sum: { column: total, equals: 4500.5 } }
-
-- id: settlement-summary
-  needs: [settle]
-  then: summary.json matches its schema and lists order 1004 for a person
-  check: { type: file, path: examples/order-settlement/out/summary.json, schema: examples/order-settlement/summary.schema.json, contains: "\"1004\"" }
-
-- id: send-dry-run
-  needs: [settlement-total, settlement-summary]
-  irreversible: send
-  then: the sheet would go to accounting — the dry run exits 0; the real send needs a human token
-  check: { type: run, cmd: "node examples/order-settlement/send.js --dry-run", expect: 0 }
-
-- id: example-skill
+- id: research-narrowing
   needs: [build]
-  given: a project-local skill created from the settle scenario
-  when: the registry and a prune dry run are inspected
-  then: the skill carries the settle check and is kept
-  check: { type: run, cmd: "node checks/example-skill.js", expect: 0 }
+  given: a fake GitHub client that answers nothing for three words and something for two
+  when: research runs with the three-word query
+  then: the two-word result is returned
+  check: { type: run, cmd: "npx vitest run src/core/research.test.ts -t narrow", expect: 0, timeoutMs: 120000 }

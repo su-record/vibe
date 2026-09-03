@@ -128,6 +128,27 @@ describe('tree hash — content, not commit id', () => {
   });
 });
 
+describe('implements edges — files changed since the previous check', () => {
+  it('implements: the first check covers every dirty file; the next check only what changed in between', async () => {
+    const git = (...args: string[]): void => void execFileSync('git', args, { cwd: root, stdio: 'ignore' });
+    git('init', '-q');
+    git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'init');
+    fs.writeFileSync(path.join(root, 'a.txt'), 'a');
+    fs.writeFileSync(path.join(root, 'b.txt'), 'b');
+    approved(`
+- { id: a, then: x, check: { type: file, path: a.txt, contains: a } }
+- { id: b, then: x, check: { type: file, path: b.txt, contains: bb } }
+`);
+    await runChecks(root, { all: true });
+    const first = readLedger(root).filter((e) => e.event === 'check').at(-1)?.edges ?? [];
+    expect(first.map((e) => `${e.from}→${e.to}`).sort()).toEqual(['scenario:a→file:a.txt', 'scenario:a→file:b.txt']);
+    fs.writeFileSync(path.join(root, 'b.txt'), 'bb');
+    await runChecks(root);
+    const second = readLedger(root).filter((e) => e.event === 'check').at(-1)?.edges ?? [];
+    expect(second.map((e) => `${e.from}→${e.to}`)).toEqual(['scenario:b→file:b.txt']);
+  });
+});
+
 describe('needs — the work graph orders and parallelises checks', () => {
   it('needs: independent scenarios run at the same time; a dependent runs after its parent', async () => {
     approved(`

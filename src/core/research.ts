@@ -162,13 +162,24 @@ async function catalogCandidates(client: GithubClient, catalog: string, queryTok
   return out;
 }
 
+/** GitHub ANDs every word; a three-word query often finds nothing, so an empty answer is retried with the first two words, then one. */
+async function searchRepos(client: GithubClient, query: string): Promise<RepoItem[]> {
+  const words = query.split(' ').filter(Boolean);
+  for (let n = words.length; n >= 1; n -= 1) {
+    const q = words.slice(0, n).join(' ');
+    const res = (await client.get(`/search/repositories?q=${encodeURIComponent(q)}&sort=updated&per_page=5`)) as { items?: RepoItem[] };
+    if ((res.items ?? []).length > 0 || n === 1) return res.items ?? [];
+  }
+  return [];
+}
+
 async function search(client: GithubClient, queries: string[], sources: Source[], catalogs: string[]): Promise<Candidate[]> {
   const found: Candidate[] = [];
   const queryTokens = tokens(queries.join(' '));
   for (const q of queries) {
     if (sources.includes('repos')) {
-      const res = (await client.get(`/search/repositories?q=${encodeURIComponent(q)}&sort=updated&per_page=5`)) as { items?: RepoItem[] };
-      for (const item of res.items ?? []) {
+      const res = await searchRepos(client, q);
+      for (const item of res) {
         const c = fromRepo(item, queryTokens);
         if (c) found.push(c);
       }

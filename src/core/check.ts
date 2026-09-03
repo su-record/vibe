@@ -13,7 +13,7 @@ import { listRegressions } from './regress.js';
 import { ancestorsOf, isHuman, type Scenario } from './scenarios.js';
 import { readState, transition, writeState, type StateFile } from './state.js';
 import { nowIso, readJson, writeJson } from './store.js';
-import { changedFiles, treeHash } from './tree.js';
+import { changedBlobs, changedSince, treeHash } from './tree.js';
 
 export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked';
 /** Checks that may run at the same time — independent scenarios only, never a dependent before its parent. */
@@ -155,10 +155,20 @@ async function runLayers(root: string, selected: Array<Scenario & { regression?:
   return outcomes.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 }
 
-/** A scenario that just passed for the first time implements the files currently changed in the tree. */
+function snapshotPath(root: string): string {
+  return vibePath(root, 'snapshot.json');
+}
+
+/**
+ * A scenario that just passed for the first time implements the files that changed since the
+ * previous check — not everything dirty in the tree. The snapshot of changed-file content ids is
+ * kept between checks so the diff is exact.
+ */
 function implementsEdges(root: string, scenarioIds: string[]): Edge[] {
+  const current = changedBlobs(root);
+  const files = changedSince(readJson<Record<string, string>>(snapshotPath(root)), current);
+  writeJson(snapshotPath(root), current);
   if (scenarioIds.length === 0) return [];
-  const files = changedFiles(root);
   const edges: Edge[] = [];
   for (const id of scenarioIds) for (const file of files) edges.push({ type: 'implements', from: `scenario:${id}`, to: `file:${file}` });
   return edges;

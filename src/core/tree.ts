@@ -27,18 +27,30 @@ function walk(dir: string, rel: string, into: string[]): void {
   }
 }
 
-/** Files changed or untracked relative to HEAD, `.vibe/` excluded. Empty outside git. */
-export function changedFiles(root: string, limit = 100): string[] {
+/** Changed or untracked files relative to HEAD with their content ids (`deleted` when gone), `.vibe/` excluded. Empty outside git. */
+export function changedBlobs(root: string, limit = 200): Record<string, string> {
   const changed = git(root, ['status', '--porcelain', '--untracked-files=all']);
-  if (changed === null) return [];
-  const out: string[] = [];
+  const out: Record<string, string> = {};
+  if (changed === null) return out;
+  let n = 0;
   for (const line of changed.split('\n')) {
     const file = line.slice(3).trim();
     if (!file || file.startsWith('.vibe/')) continue;
-    out.push(file);
-    if (out.length >= limit) break;
+    try {
+      out[file] = blobId(fs.readFileSync(path.join(root, file)));
+    } catch {
+      out[file] = 'deleted';
+    }
+    n += 1;
+    if (n >= limit) break;
   }
   return out;
+}
+
+/** Files whose content differs from a previous snapshot — new, edited or deleted since then. */
+export function changedSince(previous: Record<string, string> | null, current: Record<string, string>): string[] {
+  if (previous === null) return Object.keys(current);
+  return Object.keys(current).filter((file) => previous[file] !== current[file]);
 }
 
 /**
