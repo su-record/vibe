@@ -14,7 +14,7 @@ user-invocable: true
 - [ ] verify mode 성공 시 run ledger의 `verifyPassed`가 true다.
 - [ ] trace mode에서는 RTM 파일이 존재하고 누락 REQ가 0개다.
 
-SPEC-driven verification. Check the implementation against the SPEC's **Done criteria** and Feature scenarios, record the result to the **run ledger** (`recordVerify`), and auto-register regressions on failure. The JUDGE gate is code-enforced by the ledger — a verification never counts as passed by self-report.
+SPEC-driven verification. Check the implementation against the SPEC's **Done criteria** and Feature scenarios, record the result to the **run ledger** (`recordVerify`), and auto-register regressions on failure. The JUDGE gate is code-enforced by the ledger: `verify-ledger.js pass` runs the project's test command **itself** and records `verifyBasis: 'independent'` only on its own exit 0. When no test command can be detected the pass is recorded as `verifyBasis: 'self-report'` — allowed, but flagged on Stop and in auto-commit, never silently equal to independent.
 
 ## Usage
 
@@ -139,12 +139,13 @@ const fs=require('fs'),p='.vibe/metrics';
 try{const c=JSON.parse(fs.readFileSync(p+'/current-run.json','utf-8'));
 fs.appendFileSync(p+'/history.jsonl',JSON.stringify({verifiedAt:new Date().toISOString(),feature:c.feature,startedAt:c.startedAt,steps:c.steps||0})+'\n');}catch{}"
 
-# Write the exact commands run in steps 2-3 and their exit codes.
+# (Optional, reference only) the commands you ran in steps 2-3 and their exit codes:
 mkdir -p .vibe/metrics
-# Write `.vibe/metrics/verification-results.json` as:
-# [{"command":"npm test","exitCode":0}, ...]
+# `.vibe/metrics/verification-results.json` as [{"command":"npm test","exitCode":0}, ...]
+# This file is NOT the basis of the verdict — it is kept in evidence.json as `reportedResults`.
 
-# Bind the result to the current run and its command evidence.
+# Bind the result to the current run. `pass` makes verify-ledger.js execute the project's
+# test command itself (verifyGate.command → npm test → vitest → jest) and judge by its exit code.
 HOOKS_DIR="${VIBE_PATH:-$(npm root -g 2>/dev/null)/@su-record/vibe}/hooks/scripts"
 RUN_ID=$(node -p "JSON.parse(require('fs').readFileSync('.vibe/metrics/run-ledger.json','utf8')).runId")
 [ -f "$HOOKS_DIR/verify-ledger.js" ] && node "$HOOKS_DIR/verify-ledger.js" pass "$RUN_ID" .vibe/metrics/verification-results.json   # or: fail
@@ -153,7 +154,16 @@ RUN_ID=$(node -p "JSON.parse(require('fs').readFileSync('.vibe/metrics/run-ledge
 [ -f "$HOOKS_DIR/recipe-extractor.js" ] && node "$HOOKS_DIR/recipe-extractor.js" 2>/dev/null || true
 ```
 
-Use `pass` only when the summary in step 4 is PASS; otherwise `fail`. A passing record requires at least one command result and every exit code must be zero. A stale run ID, missing evidence, or mismatched result leaves `verifyPassed` unset and downstream gates treat the run as unverified.
+Use `pass` only when the summary in step 4 is PASS; otherwise `fail`. Read the stdout line:
+
+| stdout | Meaning | Next |
+|---|---|---|
+| `recorded: verifyPassed=true (pass, basis=independent — npm test exit 0)` | the hook process ran the tests and observed exit 0 | done |
+| `recorded: verifyPassed=true (pass, basis=self-report — no test command detected…)` | no runnable test command exists; only your reported results back the pass | acceptable, but Stop will warn once — set `verifyGate.command` in `.vibe/config.json` to upgrade |
+| `REJECTED: … independent test run failed: … exit N` | the independent run failed even if your reported results said 0 | fix, then re-run `pass` |
+| `REJECTED: … independent run required …` | a test command was detected but not executed (e.g. `recordVerify` called without the CLI) | always go through `verify-ledger.js pass` |
+
+A stale run ID, a failed independent run, or a rejected basis leaves `verifyPassed` false and downstream gates treat the run as unverified. `verifyBasis` is recorded in the ledger and in `evidence.json` (`judges.deterministic`).
 
 ## Failure escalation (convergence-based, no retry cap)
 

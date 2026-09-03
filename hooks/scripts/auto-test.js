@@ -17,6 +17,7 @@ import { createHash } from 'crypto';
 import path from 'path';
 import { PROJECT_DIR, readProjectConfig } from './utils.js';
 import { buildCliCtx, isDirectRun } from './lib/hook-context.js';
+import { appendHookTestRun } from './lib/hook-test-runs.js';
 
 // WHY async execFile (not execSync): in-process 디스패처에서 다른 step과
 // Promise.all로 병렬 실행되므로, 60초 동기 실행은 체인 전체를 직렬화시킨다.
@@ -195,23 +196,41 @@ export async function run(ctx) {
       updateDebounceState(testFile, skipSrc);
     }
 
+    const { exitCode, output } = await executeTest(args);
+    // 훅이 관측한 사실을 남긴다 — verify 의 보조 증거 (lib/hook-test-runs.js)
+    appendHookTestRun(PROJECT_DIR, { kind: 'auto-test', filePath: relPath, command: `npx ${args.join(' ')}`, exitCode });
+    findings.push(exitCode === 0
+      ? `[AUTO-TEST] PASSED: ${relPath}\n${tailLines(output)}`
+      : `[AUTO-TEST] FAILED\n${tailLines(output)}`);
+  } catch (err) {
+    findings.push(`[AUTO-TEST] FAILED\n${tailLines(String((err && err.message) || err))}`);
+  }
+  return { exitCode: 0, findings };
+}
+
+function tailLines(text) {
+  return String(text || '').trim().split('\n').slice(-MAX_OUTPUT_LINES).join('\n');
+}
+
+/**
+ * 테스트 러너 실행 — exit code 와 출력만 돌려준다 (throw 하지 않는다).
+ * @param {string[]} args
+ * @returns {Promise<{ exitCode: number, output: string }>}
+ */
+async function executeTest(args) {
+  try {
     const { stdout } = await execFileAsync('npx', args, {
       cwd: PROJECT_DIR,
       timeout: TEST_TIMEOUT_MS,
       // Windows에서 npx는 npx.cmd — shell 없이는 execFile이 찾지 못함
       shell: process.platform === 'win32',
     });
-
-    const tail = stdout.trim().split('\n').slice(-MAX_OUTPUT_LINES).join('\n');
-    findings.push(`[AUTO-TEST] PASSED: ${relPath}\n${tail}`);
+    return { exitCode: 0, output: stdout };
   } catch (err) {
     const stderr = err.stderr ? err.stderr.toString() : '';
     const stdout = err.stdout ? err.stdout.toString() : '';
-    const combined = (stdout + '\n' + stderr).trim();
-    const tail = combined.split('\n').slice(-MAX_OUTPUT_LINES).join('\n');
-    findings.push(`[AUTO-TEST] FAILED\n${tail}`);
+    return { exitCode: Number.isInteger(err.code) ? err.code : 1, output: `${stdout}\n${stderr}` };
   }
-  return { exitCode: 0, findings };
 }
 
 // standalone CLI 모드

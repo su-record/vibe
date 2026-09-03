@@ -107,6 +107,7 @@ dispatch 는 `scripts/release.sh` 를 거치지 않으므로 워크플로가 스
 **`.vibe/config.json` behavior keys** (set per-project to tune gate behavior):
 - `scopeGuard.enabled` / `scopeGuard.mode` — scope fence opt-in (default **off** everywhere — CLI and hooks share this default); mode `warn` (default) or `block`
 - `verifyGate.mode` — `warn` (default) or `block` (Stop hook blocks once if run started but verify not passed)
+- `verifyGate.command` / `verifyGate.timeoutMs` — test command `verify-ledger.js pass` executes itself (default: detect `npm test` → vitest → jest; timeout 600000ms). Without any detectable command the run is recorded as `verifyBasis: 'self-report'`
 - `autoTest.mode` — `debounce` (default, 120s cooldown per unchanged test file) / `always` / `off`
 - `qualityCheck.consoleAllow` — array of file globs where `console.log` is permitted
 - `costGate.{enabled, maxAgentsWithoutApproval, paidGenerationRequiresApproval}` — 되돌릴 수 없는 지출·이상 규모 팬아웃 직전 승인 (기본 on / 12 / true). 평상시 규모는 통과 — SSOT: `vibe/rules/loop-contract.md`
@@ -199,7 +200,7 @@ Claude Code 는 `Workflow` 도구(dynamic workflows)를 제공한다 — 한 실
 
 ## Loop Contract (default execution model)
 
-`/vibe {requirement}` = SPEC approval once (the only mandatory human gate) → loop ANCHOR→ACT→JUDGE→RECORD until gates pass. Completion is judged by deterministic gates (run-ledger `verifyPassed`, test exit codes), never by self-report. SSOT: `vibe/rules/loop-contract.md`.
+`/vibe {requirement}` = SPEC approval once (the only mandatory human gate) → loop ANCHOR→ACT→JUDGE→RECORD until gates pass. Completion is judged by deterministic gates (run-ledger `verifyPassed`, test exit codes). `verifyPassed` carries a **basis grade** (`verifyBasis`): `independent` when `verify-ledger.js` ran the project's test command itself and observed exit 0, `self-report` only when no test command could be detected — that grade is recorded, warned on Stop, and never silently equal to independent. SSOT: `vibe/rules/loop-contract.md` 판정 근거 등급.
 
 | Parameter | Default | Meaning |
 |---|---|---|

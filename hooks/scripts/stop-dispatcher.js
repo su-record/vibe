@@ -17,7 +17,7 @@
  * 이 Stop dispatcher도 건너뛴다 (자식 세션에서 auto-commit 등이 돌 이유 없음).
  */
 import { dispatch } from './lib/dispatcher.js';
-import { readLedger, markStopWarned } from './lib/run-ledger.js';
+import { readLedger, markStopWarned, markBasisWarned, VERIFY_BASIS } from './lib/run-ledger.js';
 import { PROJECT_DIR, readProjectConfig } from './utils.js';
 
 if (process.env.VIBE_HOOK_DEPTH) process.exit(0);
@@ -44,6 +44,19 @@ try {
     }
   }
 } catch { /* verify-skip 게이트 실패는 이후 실행을 막지 않음 */ }
+
+// 근거 등급 경고 — verifyPassed 가 self-report 등급(테스트 명령 미감지)이면 1회 알린다.
+// 차단이 아니다: 명령이 없는 프로젝트를 막지 않는다는 결정 (SPEC verify-gate-independence).
+try {
+  const ledger = readLedger(PROJECT_DIR);
+  if (ledger && ledger.verifyPassed && ledger.verifyBasis === VERIFY_BASIS.selfReport && !ledger.basisWarned) {
+    markBasisWarned(PROJECT_DIR);
+    process.stderr.write(
+      '[vibe] WARNING: verifyPassed rests on self-report basis — no test command was detected, '
+      + 'so no independent run backs it. Set verifyGate.command in .vibe/config.json to upgrade.\n',
+    );
+  }
+} catch { /* 등급 경고 실패는 이후 실행을 막지 않음 */ }
 
 try {
   await dispatch([

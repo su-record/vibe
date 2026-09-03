@@ -28,7 +28,9 @@
  * 실패 격리: step별 try/catch — 한 step이 throw해도 나머지는 계속 진행.
  */
 import { readStdinSync, buildCtx } from './lib/hook-context.js';
-import { readProjectConfig } from './utils.js';
+import { PROJECT_DIR, readProjectConfig } from './utils.js';
+import { appendHookTestRun } from './lib/hook-test-runs.js';
+import { CODE_EXT_RE } from './lib/console-allow.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -56,6 +58,12 @@ function isEnabled(hookConfig, name) {
 const { raw, parsed } = readStdinSync();
 const ctx = buildCtx({ rawInput: raw, payload: parsed });
 const hookConfig = loadHookConfig();
+
+// 코드 편집 이벤트 기록 — verify 이후 편집을 auto-commit 이 판정하는 근거 (lib/hook-test-runs.js).
+// step 들보다 먼저 남긴다: auto-test 의 기록이 같은 편집의 뒤에 오도록.
+if (ctx.filePath && CODE_EXT_RE.test(ctx.filePath)) {
+  appendHookTestRun(PROJECT_DIR, { kind: 'edit', filePath: ctx.filePath });
+}
 
 const steps = [
   { name: 'auto-format', run: autoFormat },

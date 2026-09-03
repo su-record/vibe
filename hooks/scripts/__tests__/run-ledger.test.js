@@ -106,7 +106,7 @@ describe('run-ledger: round-trip', () => {
     expect(fs.existsSync(evidencePath)).toBe(true);
     const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf-8'));
     expect(evidence).toMatchObject({
-      schemaVersion: '1.0.0',
+      schemaVersion: '1.1.0',
       runId: after.runId,
       specPath: '.vibe/specs/feat.md',
       judges: {
@@ -381,16 +381,22 @@ describe('verify-ledger CLI', () => {
     expect(result.status).toBe(0);
   });
 
-  it('기록 실패는 exit 0을 유지하되 stderr 경고로 노출', () => {
+  it('기록 실패는 exit 0을 유지하되 stdout 의 REJECTED 사유로 노출', () => {
+    // 거부 사유는 stdout 으로 간다 — 모델이 Bash 결과에서 다음 행동을 읽는 채널이기 때문
+    // (SPEC verify-gate-independence Constraints). 여기서는 프로젝트 경로가 파일이라
+    // 명령 감지가 불가능해 self-report 등급으로 판정되고, 그 뒤 ledger 쓰기가 실패한다.
     const projectFile = path.join(tmpDir, 'not-a-directory');
     fs.writeFileSync(projectFile, 'occupied');
-    const result = spawnSync('node', [CLI, 'pass'], {
+    const resultsPath = path.join(tmpDir, 'results.json');
+    fs.writeFileSync(resultsPath, JSON.stringify(PASS_RESULTS));
+    const result = spawnSync('node', [CLI, 'pass', 'ignored-run-id', resultsPath], {
       encoding: 'utf-8',
       timeout: 5000,
       env: { ...process.env, CLAUDE_PROJECT_DIR: projectFile },
     });
     expect(result.status).toBe(0);
-    expect(result.stderr).toContain('evidence.json write failed');
+    expect(result.stdout).toContain('REJECTED');
+    expect(result.stdout).toContain('write failed');
     expect(result.stdout).not.toContain('recorded:');
   });
 });
