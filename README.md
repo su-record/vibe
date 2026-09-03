@@ -115,7 +115,7 @@ vibe skill add owner/repo[@name] [--pin <sha>] [--yes]   # shows the commands in
 vibe skill search <keyword> · list · used <name> · prune [--unused-runs 10] · dismiss <ref>
 ```
 
-Proposals are proposals: the harness never installs, runs remote commands, or writes outside the project by itself. A dismissed proposal is not repeated.
+Proposals are proposals: the harness never installs a proposed skill, runs remote commands, or writes anything but its own six skills, card and hook outside the project. A dismissed proposal is not repeated.
 
 ## Language
 
@@ -138,7 +138,7 @@ config.json      token policy · skill catalogs
 
 ## Status
 
-`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Bench — the ledger is the benchmark
 
