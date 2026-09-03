@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -107,5 +108,63 @@ describe('check — the only verdict path', () => {
     await runChecks(root);
     const second = await runChecks(root);
     expect(second.outcomes.map((o) => o.id)).toEqual(['b']);
+  });
+});
+
+describe('tree hash — content, not commit id', () => {
+  it('committing the same content keeps DONE; changing content voids it', async () => {
+    const git = (...args: string[]): void => void execFileSync('git', args, { cwd: root, stdio: 'ignore' });
+    git('init', '-q');
+    git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'init');
+    fs.writeFileSync(path.join(root, 'a.txt'), 'x');
+    approved(`- { id: a, then: x, check: { type: file, path: a.txt, contains: x } }`);
+    expect((await runChecks(root, { all: true })).done).toBe(true);
+    git('add', '-A');
+    git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'work');
+    expect(invalidateDoneIfEdited(root)).toBe(false);
+    expect(readState(root).state).toBe('DONE');
+    fs.writeFileSync(path.join(root, 'a.txt'), 'xy');
+    expect(invalidateDoneIfEdited(root)).toBe(true);
+  });
+});
+
+describe('needs — the work graph orders and parallelises checks', () => {
+  it('needs: independent scenarios run at the same time; a dependent runs after its parent', async () => {
+    approved(`
+- { id: slow-a, then: x, check: { type: run, cmd: "sleep 0.6" } }
+- { id: slow-b, then: x, check: { type: run, cmd: "sleep 0.6" } }
+- { id: child, needs: [slow-a, slow-b], then: x, check: { type: run, cmd: "sleep 0.1" } }
+`);
+    const started = Date.now();
+    const report = await runChecks(root, { all: true });
+    const wall = Date.now() - started;
+    expect(report.done).toBe(true);
+    expect(wall).toBeLessThan(1100); // two 0.6s checks in parallel, then the child — not 1.3s in a row
+    expect(report.outcomes.map((o) => o.id)).toEqual(['slow-a', 'slow-b', 'child']);
+  });
+
+  it('needs: a dependent of a failed parent is blocked, not run, and DONE is withheld', async () => {
+    approved(`
+- { id: parent, then: x, check: { type: run, cmd: "exit 1" } }
+- { id: child, needs: [parent], then: x, check: { type: run, cmd: "echo ran > child.txt" } }
+`);
+    const report = await runChecks(root, { all: true });
+    expect(report.done).toBe(false);
+    expect(report.outcomes.find((o) => o.id === 'child')).toMatchObject({ status: 'blocked', blockedBy: ['parent'], reason: 'blocked — needs parent' });
+    expect(fs.existsSync(path.join(root, 'child.txt'))).toBe(false);
+    expect(readResults(root)['child']?.last).toBe('blocked');
+    expect(report.remaining).toEqual(['parent', 'child']);
+    expect(report.failHash).not.toBeNull(); // only the real failure counts toward STUCK
+  });
+
+  it('needs: checking one id pulls in ancestors that have not passed', async () => {
+    approved(`
+- { id: build, then: x, check: { type: run, cmd: "echo built > built.txt" } }
+- { id: tests, needs: [build], then: x, check: { type: file, path: built.txt, contains: built } }
+`);
+    const report = await runChecks(root, { ids: ['tests'] });
+    expect(report.outcomes.map((o) => [o.id, o.status])).toEqual([['build', 'pass'], ['tests', 'pass']]);
+    const again = await runChecks(root, { ids: ['tests'] });
+    expect(again.outcomes.map((o) => o.id)).toEqual(['tests']); // build already passed — not rerun
   });
 });

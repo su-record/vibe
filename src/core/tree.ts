@@ -10,6 +10,11 @@ function git(root: string, args: string[]): string | null {
   return result.status === 0 ? result.stdout : null;
 }
 
+/** The id git would give this content — `sha1("blob <size>\\0" + bytes)`. */
+function blobId(content: Buffer): string {
+  return createHash('sha1').update(`blob ${content.length}\0`).update(content).digest('hex');
+}
+
 function walk(dir: string, rel: string, into: string[]): void {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
@@ -22,27 +27,48 @@ function walk(dir: string, rel: string, into: string[]): void {
   }
 }
 
+/** Files changed or untracked relative to HEAD, `.vibe/` excluded. Empty outside git. */
+export function changedFiles(root: string, limit = 100): string[] {
+  const changed = git(root, ['status', '--porcelain', '--untracked-files=all']);
+  if (changed === null) return [];
+  const out: string[] = [];
+  for (const line of changed.split('\n')) {
+    const file = line.slice(3).trim();
+    if (!file || file.startsWith('.vibe/')) continue;
+    out.push(file);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 /**
  * Working-tree fingerprint. DONE must be void the moment something is edited, so the code
- * looks at what changed: HEAD plus changed/untracked file contents in a git repo, otherwise
+ * looks at content: tracked blob ids plus changed/untracked file contents in a git repo, otherwise
  * path·size·mtime of every file.
  */
 export function treeHash(root: string): string {
   const hash = createHash('sha256');
-  const head = git(root, ['rev-parse', 'HEAD']);
-  if (head !== null) {
-    hash.update(head);
+  const tracked = git(root, ['ls-tree', '-r', 'HEAD']);
+  if (tracked !== null) {
+    // path → blob id, for tracked and working-tree files alike, so committing the same content
+    // gives the same hash. `.vibe/` is excluded because state.json changes on every check.
+    const blobs = new Map<string, string>();
+    for (const line of tracked.split('\n')) {
+      const [meta, file] = line.split('\t');
+      const id = meta?.split(' ')[2];
+      if (file && id && !file.startsWith('.vibe/')) blobs.set(file, id);
+    }
     const changed = git(root, ['status', '--porcelain', '--untracked-files=all']) ?? '';
     for (const line of changed.split('\n')) {
       const file = line.slice(3).trim();
       if (!file || file.startsWith('.vibe/')) continue;
-      hash.update(line);
       try {
-        hash.update(fs.readFileSync(path.join(root, file)));
+        blobs.set(file, blobId(fs.readFileSync(path.join(root, file))));
       } catch {
-        hash.update('(missing)');
+        blobs.delete(file);
       }
     }
+    for (const [file, id] of [...blobs.entries()].sort()) hash.update(`${file}:${id}\n`);
     return hash.digest('hex').slice(0, 16);
   }
   const entries: string[] = [];

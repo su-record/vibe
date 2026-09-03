@@ -15,6 +15,7 @@ export interface ScenarioView {
   at: string | null;
   regression?: boolean;
   irreversible?: string;
+  needs?: string[];
 }
 
 export interface StateView {
@@ -48,6 +49,7 @@ export function buildStateView(root: string): StateView {
     const view: ScenarioView = { id: s.id, then: s.then, type: s.check.type, last: results[s.id]?.last ?? 'never', at: results[s.id]?.at ?? null };
     if ('regression' in s && s.regression) view.regression = true;
     if (s.irreversible) view.irreversible = s.irreversible;
+    if (s.needs) view.needs = s.needs;
     return view;
   });
   const gated = views.filter((v) => v.type !== 'human');

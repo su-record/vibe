@@ -28,7 +28,7 @@ request (/vibe …)
   → interview      discover: at most three questions, sample profiling, anomalies said first
   → scenarios      scope: each scenario bound to a check · research · skills needed → one approval
   → build          one scenario at a time, `vibe check` after each
-  → prove          `vibe check --all` — every scenario plus every regression
+  → prove          `vibe check --all` — every scenario plus every regression, ordered by the work graph
   → report + handoff   a document the operator can run alone; irreversible steps need a token
 ```
 
@@ -39,8 +39,26 @@ Any client can pick the work up: `vibe state` says where you are, because the st
 1. **Independent verdict.** Every scenario carries a check: `run` (exit code), `file` (exists / regex / contains / JSON Schema), `http`, `eval` (count of matching labelled cases), or `human` (no verdict — goes to the inbox). Only what `vibe check` executed itself becomes evidence. A model saying "done" changes nothing; DONE is void the moment a file changes.
 2. **Memory across sessions and clients.** `.vibe/` holds the intent, scenarios, evidence, ledger, inbox, regressions and knowledge as plain files you can read and commit.
 3. **Permission stays with people.** Who may authorize is your policy, not the harness's law (see below).
-4. **A ledger, not a claim.** Every run records client, model, result, cost when the client provides it. Comparisons are ledger queries with four verdicts — insufficient runs, mixed scenario sets, inconclusive, difference observed — and never a winner, ratio or percentage.
+4. **A ledger, not a claim.** Every run records client, model, result, cost when the client provides it. Comparisons are ledger queries with four verdicts — insufficient runs, mixed scenario sets, inconclusive, difference observed — and never a winner, ratio or percentage. Events also carry typed edges (`supersedes`, `decided-by`, `implements`, `caused`), so `vibe ledger why <node>` can answer "why does this regression exist" or "which approval covers this file".
 5. **It speaks first.** Human attention is narrow. At each stage the harness surfaces up to three things you did not ask about, each with a reason it found in your files, ledger or history.
+
+## The work graph
+
+A scenario may declare what it depends on:
+
+```yaml
+- id: build
+  then: dist is produced
+  check: { type: run, cmd: "npm run build" }
+- id: tests
+  needs: [build]
+  then: every test passes
+  check: { type: run, cmd: "npm test" }
+```
+
+`vibe check` runs scenarios whose parents have passed, up to four at a time, then their dependents. A dependent of a failed parent is reported `blocked` and never run. `vibe check tests` pulls in `build` if it has not passed yet. Unknown ids, cycles and a `human` parent are rejected at draft time. `vibe state --graph` prints the graph as mermaid with the last result on each node.
+
+Routing stays in code: the model never decides the order. Keep a graph under six connected scenarios; past that, split the intent. When independent scenarios are built by parallel agents, each works in its own worktree and the branches are merged before `vibe check --all` — the harness orders checks, it does not run agents.
 
 ## Token policy
 
@@ -56,10 +74,10 @@ Tokens are six digits, valid ten minutes, single use, bound to what they authori
 
 ```
 setup     init · status · uninstall
-work      state · intent draft | show · approve · check · evidence · abandon
+work      state [--graph] · intent draft | show · approve · check · evidence · abandon
 human     ask · authorize · inbox
 memory    regress record | list · knowledge add
-ledger    ledger · ledger compare
+ledger    ledger · ledger compare · ledger why <node> · ledger edges [--type]
 ```
 
 `vibe --help` has the details. Every command accepts `--json`. The exit code is the verdict: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition.
@@ -76,9 +94,9 @@ The always-on card (1KB), the skills and every record vibe writes are English. T
 
 ```
 intent.md        what and why — the one page you approve
-scenarios.yaml   given / when / then + the check that judges each
+scenarios.yaml   given / when / then + the check that judges each + needs (the work graph)
 evidence/        what the harness actually ran, per run
-ledger.jsonl     state changes, client, model, results, cost
+ledger.jsonl     state changes, client, model, results, cost, typed edges
 inbox.jsonl      questions, STUCK notices, token hashes
 regressions/     fixed failures as reproducing checks
 knowledge/       domain notes the model reads when it needs them
@@ -87,7 +105,7 @@ config.json      token policy
 
 ## Status
 
-`4.0.0-alpha` — phase 1: CLI core + Claude Code. Next: Codex CLI and ChatGPT desktop adapters (phase 2), `http` / `eval` checks, GitHub research and automatic skill proposals (phase 3), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0-alpha` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Next: `http` / `eval` checks, GitHub research and automatic skill proposals (phase 3), then measured comparisons across clients and models (phase 4). vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Develop
 

@@ -42,6 +42,8 @@ export interface Scenario {
   then: string;
   check: Check;
   irreversible?: string;
+  /** DEPENDS_ON edges — this scenario is checked only after every listed scenario has passed. */
+  needs?: string[];
 }
 
 export interface Rejection {
@@ -63,6 +65,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function str(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function strList(value: unknown): string[] | null {
+  if (value === undefined || value === null) return [];
+  const list = Array.isArray(value) ? value : [value];
+  const out: string[] = [];
+  for (const item of list) {
+    if (typeof item !== 'string' || !item.trim()) return null;
+    if (!out.includes(item)) out.push(item);
+  }
+  return out;
 }
 
 /**
@@ -117,6 +130,8 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (!then) return void rejections.push({ id, reason: 'then (the success statement) is required' });
     const reason = checkReason(item['check']);
     if (reason) return void rejections.push({ id, reason });
+    const needs = strList(item['needs']);
+    if (needs === null) return void rejections.push({ id, reason: 'needs must be a list of scenario ids' });
     seen.add(id);
     const scenario: Scenario = { id, then, check: item['check'] as Check };
     const given = str(item['given']);
@@ -125,9 +140,83 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (given) scenario.given = given;
     if (when) scenario.when = when;
     if (irreversible) scenario.irreversible = irreversible;
+    if (needs.length > 0) scenario.needs = needs;
     scenarios.push(scenario);
   });
+  rejectBadEdges(scenarios, rejections);
   return { scenarios, rejections };
+}
+
+/**
+ * Edges are validated over the whole set: every `needs` id must exist, must not be a human
+ * scenario (it never passes, so the dependent would never run) and must not form a cycle.
+ * A scenario with a bad edge is rejected — nothing is stored with a dangling relation.
+ */
+function rejectBadEdges(scenarios: Scenario[], rejections: Rejection[]): void {
+  const byId = new Map(scenarios.map((s) => [s.id, s]));
+  const bad = new Set<string>();
+  for (const s of scenarios) {
+    for (const need of s.needs ?? []) {
+      const parent = byId.get(need);
+      if (!parent) rejections.push({ id: s.id, reason: `needs unknown scenario: ${need}` });
+      else if (need === s.id) rejections.push({ id: s.id, reason: 'a scenario cannot need itself' });
+      else if (parent.check.type === 'human') rejections.push({ id: s.id, reason: `needs ${need}, a human scenario — it has no verdict and would block forever` });
+      else continue;
+      bad.add(s.id);
+    }
+  }
+  for (const id of cycleMembers(scenarios.filter((s) => !bad.has(s.id)))) {
+    rejections.push({ id, reason: 'needs form a cycle' });
+    bad.add(id);
+  }
+  for (let i = scenarios.length - 1; i >= 0; i -= 1) if (bad.has(scenarios[i]!.id)) scenarios.splice(i, 1);
+}
+
+function cycleMembers(scenarios: Scenario[]): string[] {
+  const indegree = new Map(scenarios.map((s) => [s.id, 0]));
+  for (const s of scenarios) for (const need of s.needs ?? []) if (indegree.has(need)) indegree.set(s.id, (indegree.get(s.id) ?? 0) + 1);
+  const queue = scenarios.filter((s) => indegree.get(s.id) === 0).map((s) => s.id);
+  const seen = new Set<string>();
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    seen.add(id);
+    for (const s of scenarios) {
+      if (!s.needs?.includes(id)) continue;
+      const left = (indegree.get(s.id) ?? 0) - 1;
+      indegree.set(s.id, left);
+      if (left === 0) queue.push(s.id);
+    }
+  }
+  return scenarios.filter((s) => !seen.has(s.id)).map((s) => s.id);
+}
+
+/** Ancestors of `ids` through `needs`, nearest first, without the ids themselves. */
+export function ancestorsOf(scenarios: Scenario[], ids: string[]): string[] {
+  const byId = new Map(scenarios.map((s) => [s.id, s]));
+  const out: string[] = [];
+  const queue = [...ids];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    for (const need of byId.get(id)?.needs ?? []) {
+      if (ids.includes(need) || out.includes(need)) continue;
+      out.push(need);
+      queue.push(need);
+    }
+  }
+  return out;
+}
+
+/** The work graph as mermaid — one node per scenario, one edge per `needs` entry, the last result on each node. */
+export function graphMermaid(scenarios: Scenario[], lastOf: (id: string) => string): string {
+  const mark: Record<string, string> = { pass: '✔', fail: '✘', blocked: '⊘', pending: '?', never: '·' };
+  const lines = ['graph LR'];
+  for (const s of scenarios) {
+    const last = lastOf(s.id);
+    lines.push(`  ${s.id}["${s.id} ${mark[last] ?? last}"]:::${last}`);
+  }
+  for (const s of scenarios) for (const need of s.needs ?? []) lines.push(`  ${need} --> ${s.id}`);
+  lines.push('  classDef pass stroke:#2e7d32', '  classDef fail stroke:#c62828', '  classDef blocked stroke:#ef6c00,stroke-dasharray:4', '  classDef pending stroke:#6a1b9a', '  classDef never stroke:#9e9e9e');
+  return lines.join('\n');
 }
 
 export function isHuman(scenario: Scenario): boolean {

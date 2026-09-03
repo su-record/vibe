@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseScenarios } from './scenarios.js';
+import { ancestorsOf, graphMermaid, parseScenarios } from './scenarios.js';
 
 describe('scenario checkability', () => {
   it('rejects a scenario without a check — prose is not a contract', () => {
@@ -44,5 +44,39 @@ describe('scenario checkability', () => {
   check: { type: run, cmd: "npm run send -- --dry-run", expect: 0 }
 `);
     expect(scenarios[0]).toMatchObject({ id: 'send', given: 'the settlement sheet exists', irreversible: 'send', check: { type: 'run', expect: 0 } });
+  });
+});
+
+describe('needs — dependency edges are validated over the whole set', () => {
+  it('rejects unknown ids, self reference, a human parent, and cycles; keeps clean edges', () => {
+    const { scenarios, rejections } = parseScenarios(`
+- { id: build, then: x, check: { type: run, cmd: "true" } }
+- { id: tests, needs: [build], then: x, check: { type: run, cmd: "true" } }
+- { id: ghost, needs: [nope], then: x, check: { type: run, cmd: "true" } }
+- { id: me, needs: [me], then: x, check: { type: run, cmd: "true" } }
+- { id: ask, then: x, check: { type: human, question: q } }
+- { id: after-ask, needs: [ask], then: x, check: { type: run, cmd: "true" } }
+- { id: a, needs: [b], then: x, check: { type: run, cmd: "true" } }
+- { id: b, needs: [a], then: x, check: { type: run, cmd: "true" } }
+`);
+    expect(scenarios.map((s) => s.id)).toEqual(['build', 'tests', 'ask']);
+    expect(scenarios[1]?.needs).toEqual(['build']);
+    expect(rejections).toEqual([
+      { id: 'ghost', reason: 'needs unknown scenario: nope' },
+      { id: 'me', reason: 'a scenario cannot need itself' },
+      { id: 'after-ask', reason: expect.stringContaining('human scenario') },
+      { id: 'a', reason: 'needs form a cycle' },
+      { id: 'b', reason: 'needs form a cycle' },
+    ]);
+  });
+
+  it('accepts a single id as needs and computes ancestors nearest first', () => {
+    const { scenarios } = parseScenarios(`
+- { id: a, then: x, check: { type: run, cmd: "true" } }
+- { id: b, needs: a, then: x, check: { type: run, cmd: "true" } }
+- { id: c, needs: [b], then: x, check: { type: run, cmd: "true" } }
+`);
+    expect(ancestorsOf(scenarios, ['c'])).toEqual(['b', 'a']);
+    expect(graphMermaid(scenarios, () => 'never')).toContain('a --> b');
   });
 });

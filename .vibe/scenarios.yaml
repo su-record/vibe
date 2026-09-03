@@ -3,6 +3,7 @@
   check: { type: run, cmd: "npm run build", expect: 0, timeoutMs: 120000 }
 
 - id: tests
+  needs: [build]
   then: every test passes
   check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
 
@@ -14,24 +15,21 @@
   then: non-test source is at most 5000 lines
   check: { type: run, cmd: "node checks/loc.js", expect: 0 }
 
-- id: codex-init
-  given: an empty project
-  when: vibe init --client codex runs
-  then: AGENTS.md carries the card, .codex/skills has the six common skills, .codex/hooks.json has the notification hooks
-  check: { type: run, cmd: "npx vitest run src/install/codex.test.ts", expect: 0, timeoutMs: 120000 }
+- id: needs-edges
+  needs: [build]
+  given: scenarios that declare needs
+  when: they are drafted and checked
+  then: unknown ids, cycles and human parents are rejected; independent scenarios run in parallel; a dependent of a failed parent is blocked and not run
+  check: { type: run, cmd: "npx vitest run src/core/scenarios.test.ts src/core/check.test.ts -t needs", expect: 0, timeoutMs: 120000 }
 
-- id: plugin-install
-  given: a home directory with vibe installed
-  when: vibe plugin install runs
-  then: a plugin tree with manifest, skills and hooks exists and the personal marketplace lists it; plugin status reports no drift
-  check: { type: run, cmd: "npx vitest run src/install/plugin.test.ts", expect: 0, timeoutMs: 120000 }
+- id: ledger-why
+  needs: [build]
+  given: a drafted, approved, checked intent with a recorded regression
+  when: vibe ledger why is asked about the regression or a changed file
+  then: the answer walks caused, implements and decided-by edges back to the approval
+  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t 'ledger why'", expect: 0, timeoutMs: 120000 }
 
-- id: continuity
-  given: an intent approved under one client
-  when: the next check runs under another client
-  then: the ledger shows both clients and the state carries over
-  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t continues", expect: 0, timeoutMs: 120000 }
-
-- id: chatgpt-desktop
-  then: after `vibe plugin install` and the two codex commands it prints, the vibe plugin appears in ChatGPT desktop
-  check: { type: human, question: "Run `vibe plugin install` and the two codex commands it prints, restart ChatGPT desktop, and tell me whether the vibe plugin appears." }
+- id: state-graph
+  needs: [build]
+  then: vibe state --graph prints mermaid with one node per scenario, one edge per needs entry, and the last result on each node
+  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t 'state --graph'", expect: 0, timeoutMs: 120000 }

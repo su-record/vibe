@@ -4,16 +4,18 @@ import { runCheck, type CheckResult } from './checks/run.js';
 import { detectClient, detectModel } from './client.js';
 import { invalidTransition } from './errors.js';
 import { ask, hasOpenQuestion } from './inbox.js';
-import { record } from './ledger.js';
+import { record, type Edge } from './ledger.js';
 import { vibePath } from './paths.js';
 import { loadScenarios } from './intent.js';
 import { listRegressions } from './regress.js';
-import { isHuman, type Scenario } from './scenarios.js';
+import { ancestorsOf, isHuman, type Scenario } from './scenarios.js';
 import { readState, transition, writeState, type StateFile } from './state.js';
 import { nowIso, readJson, writeJson } from './store.js';
-import { treeHash } from './tree.js';
+import { changedFiles, treeHash } from './tree.js';
 
-export type LastResult = 'pass' | 'fail' | 'pending';
+export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked';
+/** Checks that may run at the same time — independent scenarios only, never a dependent before its parent. */
+export const MAX_PARALLEL = 4;
 export interface ResultsFile {
   [id: string]: { last: LastResult; at: string; run: string };
 }
@@ -27,6 +29,8 @@ export interface ScenarioOutcome {
   tail: string;
   reason?: string;
   regression?: boolean;
+  /** Parents that had not passed when this scenario's turn came — it was not run. */
+  blockedBy?: string[];
 }
 
 export interface CheckReport {
@@ -91,6 +95,69 @@ function askHumanOnce(root: string, scenario: Scenario): void {
   ask(root, { question, scenario: scenario.id });
 }
 
+async function runOne(root: string, scenario: Scenario & { regression?: boolean }): Promise<ScenarioOutcome> {
+  const result = await execute(scenario, root);
+  const status: LastResult = isHuman(scenario) ? 'pending' : result.pass ? 'pass' : 'fail';
+  if (isHuman(scenario)) askHumanOnce(root, scenario);
+  const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status, exit: result.exit, ms: result.ms, tail: result.tail };
+  if (result.reason) outcome.reason = result.reason;
+  if (scenario.regression) outcome.regression = true;
+  return outcome;
+}
+
+function blocked(scenario: Scenario & { regression?: boolean }, by: string[]): ScenarioOutcome {
+  const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status: 'blocked', exit: null, ms: 0, tail: '', reason: `blocked — needs ${by.join(', ')}`, blockedBy: by };
+  if (scenario.regression) outcome.regression = true;
+  return outcome;
+}
+
+/**
+ * The work graph decides the order: every scenario whose parents have all passed runs in the
+ * current layer, at most MAX_PARALLEL at a time; the rest wait for the next layer. A scenario
+ * whose parent ended anywhere but `pass` is blocked and never run. Cycles cannot reach here —
+ * the parser rejects them.
+ */
+async function runLayers(root: string, selected: Array<Scenario & { regression?: boolean }>, previous: ResultsFile): Promise<ScenarioOutcome[]> {
+  const last: Record<string, LastResult | undefined> = {};
+  for (const [id, r] of Object.entries(previous)) last[id] = r.last;
+  const outcomes: ScenarioOutcome[] = [];
+  let waiting = [...selected];
+  while (waiting.length > 0) {
+    const stillToRun = new Set(waiting.map((s) => s.id));
+    const ready = waiting.filter((s) => (s.needs ?? []).every((n) => last[n] === 'pass'));
+    // A parent that will not run in this invocation and has not passed blocks its dependents.
+    const stuck = waiting.filter((s) => !ready.includes(s) && (s.needs ?? []).some((n) => !stillToRun.has(n) && last[n] !== 'pass'));
+    for (const s of stuck) {
+      outcomes.push(blocked(s, (s.needs ?? []).filter((n) => last[n] !== 'pass')));
+      last[s.id] = 'blocked';
+    }
+    waiting = waiting.filter((s) => !ready.includes(s) && !stuck.includes(s));
+    if (ready.length === 0 && stuck.length === 0) {
+      // Only a cycle could leave scenarios waiting on each other; the parser rejects cycles, so this is a guard.
+      for (const s of waiting) outcomes.push(blocked(s, s.needs ?? []));
+      break;
+    }
+    for (let i = 0; i < ready.length; i += MAX_PARALLEL) {
+      const batch = await Promise.all(ready.slice(i, i + MAX_PARALLEL).map((s) => runOne(root, s)));
+      for (const o of batch) {
+        outcomes.push(o);
+        last[o.id] = o.status;
+      }
+    }
+  }
+  const order = new Map(selected.map((s, i) => [s.id, i]));
+  return outcomes.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+}
+
+/** A scenario that just passed for the first time implements the files currently changed in the tree. */
+function implementsEdges(root: string, scenarioIds: string[]): Edge[] {
+  if (scenarioIds.length === 0) return [];
+  const files = changedFiles(root);
+  const edges: Edge[] = [];
+  for (const id of scenarioIds) for (const file of files) edges.push({ type: 'implements', from: `scenario:${id}`, to: `file:${file}` });
+  return edges;
+}
+
 export interface CheckOptions {
   ids?: string[];
   all?: boolean;
@@ -113,10 +180,11 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
 
   let selected: Array<Scenario & { regression?: boolean }>;
   if (options.ids && options.ids.length > 0) {
-    const wanted = new Set(options.ids);
-    selected = universe.filter((s) => wanted.has(s.id));
     const missing = options.ids.filter((id) => !universe.some((s) => s.id === id));
     if (missing.length > 0) throw invalidTransition(`unknown scenario: ${missing.join(', ')}`);
+    // An explicit id pulls in the ancestors that have not passed yet — `check tests` builds first.
+    const wanted = new Set([...options.ids, ...ancestorsOf(universe, options.ids).filter((id) => previous[id]?.last !== 'pass')]);
+    selected = universe.filter((s) => wanted.has(s.id));
   } else if (options.all) {
     selected = universe;
   } else {
@@ -126,20 +194,13 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   if (state.state === 'APPROVED') transition(root, 'RUNNING');
   const run = nextRunId(state);
   const at = nowIso();
-  const outcomes: ScenarioOutcome[] = [];
-  for (const scenario of selected) {
-    const result = await execute(scenario, root);
-    const status: LastResult = isHuman(scenario) ? 'pending' : result.pass ? 'pass' : 'fail';
-    if (isHuman(scenario)) askHumanOnce(root, scenario);
-    const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status, exit: result.exit, ms: result.ms, tail: result.tail };
-    if (result.reason) outcome.reason = result.reason;
-    if (scenario.regression) outcome.regression = true;
-    outcomes.push(outcome);
-  }
+  const outcomes = await runLayers(root, selected, previous);
 
   const results: ResultsFile = { ...previous };
   for (const o of outcomes) results[o.id] = { last: o.status, at, run };
   writeJson(resultsPath(root), results);
+  const implemented = outcomes.filter((o) => o.status === 'pass' && previous[o.id]?.last !== 'pass').map((o) => o.id);
+  const edges = implementsEdges(root, implemented);
 
   const gated = universe.filter((s) => !isHuman(s));
   const remaining = gated.filter((s) => results[s.id]?.last !== 'pass').map((s) => s.id);
@@ -181,7 +242,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   writeJson(vibePath(root, 'evidence', `${run}.json`), evidence);
   const scenarioMap: Record<string, LastResult> = {};
   for (const o of outcomes) scenarioMap[o.id] = o.status;
-  record(root, { event: 'check', client: evidence.client, model: evidence.model, run, scenarioSet: evidence.scenarioSet, scenarios: scenarioMap, passed, failed, failHash, ms: outcomes.reduce((a, o) => a + o.ms, 0) });
+  record(root, { event: 'check', client: evidence.client, model: evidence.model, run, scenarioSet: evidence.scenarioSet, scenarios: scenarioMap, passed, failed, failHash, ms: outcomes.reduce((a, o) => a + o.ms, 0), edges });
   if (stuck) record(root, { event: 'stuck', client: evidence.client, model: evidence.model, run, failHash });
   if (done) record(root, { event: 'done', client: evidence.client, model: evidence.model, run });
 

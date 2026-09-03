@@ -4,7 +4,7 @@ import YAML from 'yaml';
 import { detectClient, detectModel } from './client.js';
 import { usage } from './errors.js';
 import { loadScenarios } from './intent.js';
-import { record } from './ledger.js';
+import { record, type Edge } from './ledger.js';
 import { vibePath } from './paths.js';
 import { parseScenarios, type Scenario } from './scenarios.js';
 import { ensureDir, readJson, readText, writeAtomic } from './store.js';
@@ -59,6 +59,8 @@ export function recordRegression(root: string, input: RegressionRecordInput): { 
   ensureDir(regressionsDir(root));
   const file = path.join(regressionsDir(root), `${id}.yaml`);
   writeAtomic(file, body);
-  record(root, { event: 'regress', client: detectClient(), model: detectModel(), detail: id });
+  const edges: Edge[] = [{ type: 'caused', from: `regression:${id}`, to: `scenario:${source.id}` }];
+  if (input.fromEvidence) edges.push({ type: 'caused', from: `regression:${id}`, to: `run:${input.fromEvidence}` });
+  record(root, { event: 'regress', client: detectClient(), model: detectModel(), detail: id, edges });
   return { id, file };
 }

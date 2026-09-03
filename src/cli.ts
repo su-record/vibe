@@ -12,9 +12,10 @@ import { denied, usage, VibeError } from './core/errors.js';
 import { answer, ask, openQuestions, resolve as resolveQuestion } from './core/inbox.js';
 import { abandon, approve, draft, intentPath, loadScenarios } from './core/intent.js';
 import { addKnowledge } from './core/knowledge.js';
-import { compare, readLedger, record, type CompareBy, type CompareMetric } from './core/ledger.js';
+import { compare, EDGE_TYPES, readEdges, readLedger, record, why, type CompareBy, type CompareMetric, type EdgeType } from './core/ledger.js';
 import { findProjectRoot, hasVibe, vibePath } from './core/paths.js';
 import { listRegressions, recordRegression } from './core/regress.js';
+import { graphMermaid } from './core/scenarios.js';
 import { readState } from './core/state.js';
 import { readJson, readText } from './core/store.js';
 import { verifyAndConsume } from './core/tokens.js';
@@ -62,13 +63,16 @@ const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
   setup     init [--client claude,codex,chatgpt] [--tokens strict|irreversible|off] · status · uninstall [--purge-state]
             plugin install | status [--home <dir>]   (Codex CLI · ChatGPT desktop — one OpenAI plugin)
-  work      state · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
+  work      state [--graph] · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
             authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
             knowledge add <file|--stdin> --title "…"
   ledger    ledger [--since 7d] · ledger compare --by client|model --metric checks|turns|cost [--min-runs 5]
+            ledger why <node> [--depth 3] · ledger edges [--type supersedes|decided-by|implements|caused]
+
+A scenario may declare needs: [ids] — independent scenarios are checked in parallel, dependents after their parents pass.
 
 Every command accepts --json. Exit codes: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition
 `;
@@ -161,12 +165,19 @@ function cmdPlugin(sub: string | undefined, flags: Flags): Output {
   throw usage('plugin install | plugin status [--home <dir>]');
 }
 
-function cmdState(root: string): Output {
+const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·' };
+
+function cmdState(root: string, flags: Flags): Output {
   requireVibe(root);
   const view = buildStateView(root);
+  if (flags['graph'] === true) {
+    const scenarios = [...loadScenarios(root), ...listRegressions(root)];
+    const graph = graphMermaid(scenarios, (id) => view.scenarios.find((s) => s.id === id)?.last ?? 'never');
+    return { json: { ...view, graph }, text: graph, code: 0 };
+  }
   const lines = [
     `${view.state} · ${view.stage}${view.intent ? ` · ${view.intent.title}` : ''}`,
-    ...view.scenarios.map((s) => `  ${s.last === 'pass' ? '✔' : s.last === 'fail' ? '✘' : s.last === 'pending' ? '?' : '·'} ${s.id} [${s.type}] ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''}`),
+    ...view.scenarios.map((s) => `  ${GLYPH[s.last] ?? '·'} ${s.id} [${s.type}]${s.needs ? ` needs ${s.needs.join(', ')}` : ''} ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''}`),
     `  remaining ${view.remaining.length ? view.remaining.join(', ') : 'none'}`,
     `  inbox     ${view.inbox.open} open${view.inbox.items.map((q) => `\n    [${q.id}] ${q.question}`).join('')}`,
     ...view.notices.map((n) => `  ! ${n}`),
@@ -342,8 +353,22 @@ function cmdKnowledge(root: string, sub: string | undefined, args: string[], fla
   return { json: result, text: `knowledge → ${path.relative(root, result.file)}`, code: 0 };
 }
 
-function cmdLedger(root: string, sub: string | undefined, flags: Flags): Output {
+function cmdLedger(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
   requireVibe(root);
+  if (sub === 'why') {
+    const node = args[0];
+    if (!node) throw usage('ledger why <node>  — a scenario id, regression id, file path, intent hash or run id');
+    const result = why(root, node, Number(flagString(flags, 'depth') ?? 3));
+    if (!result.node) return { json: result, text: `no edge touches ${node}`, code: 1 };
+    const text = [`${result.node}`, ...result.steps.map((s) => `${'  '.repeat(s.depth)}${s.edge.from} ─${s.edge.type}→ ${s.edge.to}  (${s.edge.event} ${s.edge.at})`)].join('\n');
+    return { json: result, text, code: 0 };
+  }
+  if (sub === 'edges') {
+    const type = flagString(flags, 'type');
+    if (type && !EDGE_TYPES.includes(type as EdgeType)) throw usage(`--type ${EDGE_TYPES.join('|')}`);
+    const edges = readEdges(root, type as EdgeType | undefined);
+    return { json: edges, text: edges.length ? edges.map((e) => `${e.at} ${e.from} ─${e.type}→ ${e.to}`).join('\n') : 'no edges', code: 0 };
+  }
   if (sub === 'compare') {
     const by = (flagString(flags, 'by') ?? 'client') as CompareBy;
     const metric = (flagString(flags, 'metric') ?? 'checks') as CompareMetric;
@@ -386,7 +411,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
     case 'plugin':
       return cmdPlugin(sub, flags);
     case 'state':
-      return cmdState(root);
+      return cmdState(root, flags);
     case 'intent':
       return cmdIntent(root, sub, rest, flags);
     case 'approve':
@@ -408,7 +433,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
     case 'knowledge':
       return cmdKnowledge(root, sub, rest, flags);
     case 'ledger':
-      return cmdLedger(root, sub, flags);
+      return cmdLedger(root, sub, rest, flags);
     default:
       throw usage(`unknown command: ${cmd}\n${HELP}`);
   }

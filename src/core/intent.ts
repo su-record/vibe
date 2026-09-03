@@ -48,13 +48,15 @@ export function draft(root: string, intentText: string, scenariosText: string): 
   const intentNorm = intentText.endsWith('\n') ? intentText : `${intentText}\n`;
   const scenariosNorm = scenariosText.endsWith('\n') ? scenariosText : `${scenariosText}\n`;
   const hash = intentHash(intentNorm, scenariosNorm);
+  const previous = readState(root).intentHash;
   writeAtomic(intentPath(root), intentNorm);
   writeAtomic(scenariosPath(root), scenariosNorm);
   writeJson(vibePath(root, 'results.json'), {});
   transition(root, 'DRAFT', { intentHash: hash, approvedAt: null, runs: 0, failStreak: 0, lastFailHash: null, doneAt: null, doneTree: null, abandonedReason: null });
   const policy = readConfig(root).tokens;
   const issued = approvalNeedsToken(policy) ? issueToken(root, 'approve', hash) : null;
-  record(root, { event: 'draft', client: detectClient(), model: detectModel(), detail: hash });
+  const edges = previous && previous !== hash ? [{ type: 'supersedes' as const, from: `intent:${hash}`, to: `intent:${previous}` }] : [];
+  record(root, { event: 'draft', client: detectClient(), model: detectModel(), detail: hash, edges });
   return { ok: true, hash, scenarios: parsed.scenarios, token: issued?.token ?? null, tokenId: issued?.id ?? null, expiresAt: issued?.expiresAt ?? null, policy };
 }
 
@@ -70,14 +72,16 @@ export function approve(root: string, token: string | null): { hash: string; bas
   if (current !== state.intentHash) throw denied('intent changed since the draft — run `intent draft` again to get a new token');
   const policy = readConfig(root).tokens;
   let basis: 'token' | 'chat' = 'chat';
+  let by = 'human:chat';
   if (approvalNeedsToken(policy) || token) {
     if (!token) throw denied('this project requires a human token to approve (tokens: strict)');
     const verdict = verifyAndConsume(root, 'approve', state.intentHash, token);
     if (!verdict.ok) throw denied(verdict.reason);
     basis = 'token';
+    by = `human:token:${verdict.id}`;
   }
   transition(root, 'APPROVED', { approvedAt: new Date().toISOString() });
-  record(root, { event: 'approve', client: detectClient(), model: detectModel(), detail: `${state.intentHash} by ${basis}` });
+  record(root, { event: 'approve', client: detectClient(), model: detectModel(), detail: `${state.intentHash} by ${basis}`, edges: [{ type: 'decided-by', from: `intent:${state.intentHash}`, to: by }] });
   return { hash: state.intentHash, basis };
 }
 

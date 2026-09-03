@@ -1,58 +1,17 @@
 {
   "run": "r-2",
-  "at": "2026-09-03T05:57:30.442Z",
+  "at": "2026-09-03T06:25:24.006Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "019712c86775",
+  "scenarioSet": "95f419b05845",
   "results": [
     {
-      "id": "build",
+      "id": "ledger-why",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1766,
-      "tail": "npm notice run @su-record/vibe@4.0.0-alpha.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
-    },
-    {
-      "id": "tests",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 10038,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  8 passed (8)\n      Tests  41 passed (41)\n   Start at  05:57:32\n   Duration  9.51s (transform 346ms, setup 0ms, import 803ms, tests 9.60s, environment 1ms)"
-    },
-    {
-      "id": "card-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 38,
-      "tail": "card.md 705 bytes (limit 1024)"
-    },
-    {
-      "id": "source-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 40,
-      "tail": "src (non-test) 1998 lines (limit 5000)"
-    },
-    {
-      "id": "no-self-done",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 1217,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  2 passed (2)\n      Tests  2 passed | 12 skipped (14)\n   Start at  05:57:43\n   Duration  447ms (transform 251ms, setup 0ms, import 480ms, tests 53ms, environment 0ms)"
-    },
-    {
-      "id": "card-reads",
-      "type": "human",
-      "status": "pending",
-      "exit": null,
-      "ms": 0,
-      "tail": "Read the eight lines of card.md. If any line is unclear, tell me its number.",
-      "reason": "human — not judged by the harness"
+      "ms": 4978,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 7 skipped (8)\n   Start at  06:25:24\n   Duration  4.17s (transform 56ms, setup 0ms, import 76ms, tests 3.93s, environment 0ms)"
     }
   ]
 }

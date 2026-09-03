@@ -11,6 +11,7 @@ user-invocable: false
 1. Turn the discovery result into scenarios. A scenario is stored only if it carries exactly one check type:
    - `run` command exit code · `file` exists/regex/contains/schema · `http` status/body · `eval` count of matching labelled cases · `human` no verdict (goes to the inbox)
    - A condition you cannot check gets `human` explicitly. An irreversible action (push, deploy, send, delete, spend) gets `irreversible: <action>`.
+   - A scenario that only makes sense after another one has passed gets `needs: [ids]`. The harness orders and parallelises checks from these edges; keep a connected graph under six scenarios.
 2. Check for missing scenario kinds yourself: the failure path, rollback, permission boundaries. Add them or say in one line why they are not needed.
 3. Save with `vibe intent draft --stdin --json`, sending `{"intent": "...", "scenarios": "..."}` (both in English).
    - On rejection (`code 1`) fix the reasons and save again. Do not pass by deleting a rejected scenario — bind a check to it.

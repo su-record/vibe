@@ -26,7 +26,7 @@ export interface LedgerEvent {
   model: string | null;
   run?: string;
   scenarioSet?: string;
-  scenarios?: Record<string, 'pass' | 'fail' | 'pending'>;
+  scenarios?: Record<string, 'pass' | 'fail' | 'pending' | 'blocked'>;
   passed?: number;
   failed?: number;
   failHash?: string | null;
@@ -35,7 +35,18 @@ export interface LedgerEvent {
   ms?: number;
   skillsUsed?: string[];
   detail?: string;
+  /** Typed relations between nodes — the only edge kinds the ledger knows. */
+  edges?: Edge[];
 }
+
+export type EdgeType = 'supersedes' | 'decided-by' | 'implements' | 'caused';
+/** Nodes are `kind:value` — intent:<hash> · scenario:<id> · file:<path> · regression:<id> · run:<id> · human:chat · human:token:<id> */
+export interface Edge {
+  type: EdgeType;
+  from: string;
+  to: string;
+}
+export const EDGE_TYPES: readonly EdgeType[] = ['supersedes', 'decided-by', 'implements', 'caused'];
 
 export function ledgerPath(root: string): string {
   return vibePath(root, 'ledger.jsonl');
@@ -52,6 +63,66 @@ export function readLedger(root: string, sinceMs?: number): LedgerEvent[] {
   if (!sinceMs) return all;
   const cutoff = Date.now() - sinceMs;
   return all.filter((e) => new Date(e.at).getTime() >= cutoff);
+}
+
+// ─── Edges — "why" is a walk over typed relations, not a query language ───
+
+export interface EdgeHit extends Edge {
+  at: string;
+  event: LedgerEventType;
+}
+
+export function readEdges(root: string, type?: EdgeType): EdgeHit[] {
+  const out: EdgeHit[] = [];
+  for (const e of readLedger(root)) {
+    for (const edge of e.edges ?? []) if (!type || edge.type === type) out.push({ ...edge, at: e.at, event: e.event });
+  }
+  return out;
+}
+
+function nodeMatches(node: string, query: string): boolean {
+  return node === query || node.endsWith(`:${query}`);
+}
+
+export interface WhyStep {
+  depth: number;
+  edge: EdgeHit;
+}
+export interface WhyResult {
+  node: string | null;
+  steps: WhyStep[];
+}
+
+/**
+ * Walk outward from a node along every edge that touches it, up to `maxDepth` hops. The result
+ * is the list of edges in the order they were reached — enough to read "regression r-1 was caused
+ * by scenario x, which implements file y, decided by chat" without a graph database.
+ */
+export function why(root: string, query: string, maxDepth = 3): WhyResult {
+  const edges = readEdges(root);
+  const start = edges.map((e) => [e.from, e.to]).flat().find((n) => nodeMatches(n, query)) ?? null;
+  if (!start) return { node: null, steps: [] };
+  const seenNodes = new Set([start]);
+  const seenEdges = new Set<EdgeHit>();
+  const steps: WhyStep[] = [];
+  let frontier = [start];
+  for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth += 1) {
+    const next: string[] = [];
+    for (const node of frontier) {
+      for (const edge of edges) {
+        if (seenEdges.has(edge) || (edge.from !== node && edge.to !== node)) continue;
+        seenEdges.add(edge);
+        steps.push({ depth, edge });
+        const other = edge.from === node ? edge.to : edge.from;
+        if (!seenNodes.has(other)) {
+          seenNodes.add(other);
+          next.push(other);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return { node: start, steps };
 }
 
 // ─── Comparison — the code says "cannot tell" when it cannot ─────────────

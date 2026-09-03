@@ -3,7 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Every call spawns tsx; under `vibe check` several vitest processes run at once, so 5s is too tight.
+vi.setConfig({ testTimeout: 60_000 });
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const CLI_SRC = path.join(here, 'cli.ts');
@@ -139,5 +142,60 @@ describe('CLI — from request to DONE', () => {
 
   it('help always exits 0', () => {
     expect(execFileSync(TSX, [CLI_SRC, '--help'], { cwd: root, encoding: 'utf-8' })).toContain('vibe');
+  });
+});
+
+describe('graph — edges the ledger can walk', () => {
+  const GRAPH = JSON.stringify({
+    intent: '# Graph\n\n## Why\nedges\n',
+    scenarios: [
+      '- { id: build, then: out exists, check: { type: run, cmd: "echo x > out.txt" } }',
+      '- { id: tests, needs: [build], then: out has x, check: { type: file, path: out.txt, contains: x } }',
+      '',
+    ].join('\n'),
+  });
+
+  it('state --graph prints mermaid with one node per scenario and one edge per needs entry', () => {
+    vibe(['init', '--tokens', 'off']);
+    vibe(['intent', 'draft', '--stdin'], GRAPH);
+    vibe(['approve']);
+    vibe(['check', 'build']);
+    const out = vibe(['state', '--graph']);
+    expect(out.status).toBe(0);
+    const graph = (out.json as { graph: string }).graph;
+    expect(graph).toContain('graph LR');
+    expect(graph).toContain('build["build ✔"]:::pass');
+    expect(graph).toContain('tests["tests ·"]:::never');
+    expect(graph).toContain('build --> tests');
+  });
+
+  it('ledger why walks caused → implements → decided-by edges back to the approval', () => {
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    vibe(['init', '--tokens', 'off']);
+    vibe(['intent', 'draft', '--stdin'], GRAPH);
+    const first = (vibe(['state']).json as { intent: { hash: string } }).intent.hash;
+    vibe(['approve']);
+    vibe(['check', '--all']);
+    const reg = vibe(['regress', 'record', '--scenario', 'tests', '--title', 'out lost x', '--check-from-evidence', 'r-1']);
+    expect(reg.status).toBe(0);
+    const id = (reg.json as { id: string }).id;
+
+    const about = vibe(['ledger', 'why', id]);
+    expect(about.status).toBe(0);
+    const steps = (about.json as { steps: Array<{ depth: number; edge: { type: string; from: string; to: string } }> }).steps;
+    expect(steps.map((s) => s.edge.type)).toEqual(expect.arrayContaining(['caused', 'implements']));
+    expect(steps.find((s) => s.edge.type === 'caused' && s.edge.to === 'scenario:tests')).toBeTruthy();
+    expect(steps.find((s) => s.edge.type === 'implements' && s.edge.to === 'file:out.txt')).toBeTruthy();
+
+    // which approval covers this file? file → implements ← scenario … the intent decided by chat
+    const decided = vibe(['ledger', 'edges', '--type', 'decided-by']).json as Array<{ from: string; to: string }>;
+    expect(decided).toEqual([{ at: expect.any(String), event: 'approve', type: 'decided-by', from: `intent:${first}`, to: 'human:chat' }]);
+
+    // a redraft supersedes the previous intent
+    vibe(['intent', 'draft', '--stdin'], GRAPH.replace('out has x', 'out still has x'));
+    const sup = vibe(['ledger', 'edges', '--type', 'supersedes']).json as Array<{ to: string }>;
+    expect(sup).toHaveLength(1);
+    expect(sup[0]?.to).toBe(`intent:${first}`);
+    expect(vibe(['ledger', 'why', 'nothing-here']).status).toBe(1);
   });
 });
