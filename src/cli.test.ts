@@ -109,6 +109,25 @@ describe('CLI — from request to DONE', () => {
     expect((auth.json as { basis: string }).basis).toBe('auto');
   });
 
+  it('continues across clients — approved under one, checked under another, both in the ledger', () => {
+    const as = (client: string, args: string[], input?: string): Run => {
+      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, VIBE_CLIENT: client }, timeout: 60000 });
+      return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
+    };
+    as('claude-code', ['init', '--client', 'claude,codex']);
+    as('claude-code', ['intent', 'draft', '--stdin'], HELLO);
+    expect(as('claude-code', ['approve']).status).toBe(0);
+    fs.writeFileSync(path.join(root, 'hello.txt'), 'hi\n');
+    const checked = as('codex', ['check']);
+    expect(checked.status).toBe(0);
+    expect((checked.json as { done: boolean }).done).toBe(true);
+    const ledger = as('chatgpt', ['ledger']).json as Array<{ event: string; client: string }>;
+    expect(ledger.find((e) => e.event === 'approve')?.client).toBe('claude-code');
+    expect(ledger.find((e) => e.event === 'done')?.client).toBe('codex');
+    expect((as('chatgpt', ['state']).json as { state: string }).state).toBe('DONE');
+    expect(fs.existsSync(path.join(root, '.codex', 'hooks.json'))).toBe(true);
+  });
+
   it('uninstall removes card, skills and hook but keeps .vibe', () => {
     vibe(['init']);
     const out = vibe(['uninstall']);

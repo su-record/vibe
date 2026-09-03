@@ -19,6 +19,7 @@ import { readState } from './core/state.js';
 import { readJson, readText } from './core/store.js';
 import { verifyAndConsume } from './core/tokens.js';
 import { buildStateView } from './core/view.js';
+import { installPlugin, pluginStatus } from './install/plugin.js';
 import { ALL_CLIENTS, initProject, statusProject, uninstallProject, type Client } from './install/project.js';
 
 type Flags = Record<string, string | boolean>;
@@ -60,6 +61,7 @@ function flagString(flags: Flags, key: string): string | undefined {
 const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
   setup     init [--client claude,codex,chatgpt] [--tokens strict|irreversible|off] · status · uninstall [--purge-state]
+            plugin install | status [--home <dir>]   (Codex CLI · ChatGPT desktop — one OpenAI plugin)
   work      state · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
@@ -110,7 +112,7 @@ function cmdInit(root: string, flags: Flags): Output {
     `  created   ${report.created.length ? report.created.join(', ') : '(already present)'}`,
     ...Object.entries(report.card).map(([file, how]) => `  card      ${file} ${how} (${report.cardBytes} bytes)`),
     ...Object.entries(report.skills).map(([dir, names]) => `  skills    ${dir}: ${names.join(', ')}`),
-    `  hook      ${report.hook ?? '(not claude)'}`,
+    ...Object.entries(report.hook).map(([file, how]) => `  hook      ${file} ${how}`),
   ];
   return { json: report, text: lines.join('\n'), code: 0 };
 }
@@ -123,7 +125,7 @@ function cmdStatus(root: string): Output {
     `  state     ${s.state}`,
     `  card      ${s.cardBytes} bytes${s.cardOver ? ' — over 1KB!' : ''} · CLAUDE.md ${s.cards['CLAUDE.md'] ? 'ok' : '-'} · AGENTS.md ${s.cards['AGENTS.md'] ? 'ok' : '-'}`,
     `  skills    ${Object.entries(s.skills).map(([d, n]) => `${d} ${n}`).join(' · ')}`,
-    `  hook      ${s.hook ? 'ok' : 'missing'}`,
+    ...Object.entries(s.hooks).map(([file, ok]) => `  hook      ${file} ${ok ? 'ok' : '-'}`),
     `  inbox     ${s.inboxOpen} open`,
   ];
   return { json: s, text: lines.join('\n'), code: 0 };
@@ -132,6 +134,31 @@ function cmdStatus(root: string): Output {
 function cmdUninstall(root: string, flags: Flags): Output {
   const removed = uninstallProject(root, flags['purge-state'] !== true);
   return { json: { removed }, text: removed.length ? `removed: ${removed.join(', ')}` : 'nothing to remove', code: 0 };
+}
+
+function cmdPlugin(sub: string | undefined, flags: Flags): Output {
+  const home = flagString(flags, 'home');
+  if (sub === 'install') {
+    const r = installPlugin(home);
+    const text = [
+      `plugin ${r.version} → ${r.tree}`,
+      `  files       ${r.files.join(', ')}`,
+      `  marketplace ${r.marketplace}`,
+      '  next:',
+      ...r.next.map((n) => `    ${n}`),
+    ].join('\n');
+    return { json: r, text, code: 0 };
+  }
+  if (sub === 'status') {
+    const r = pluginStatus(home);
+    const text = [
+      `plugin tree ${r.exists ? 'ok' : 'missing'} — ${r.tree}`,
+      `  manifest ${r.manifestVersion ?? '-'} · package ${r.packageVersion} · skills ${r.skills} · hooks ${r.hooks ? 'ok' : '-'} · registered ${r.registered ? 'yes' : 'no'}`,
+      ...(r.drift.length ? r.drift.map((d) => `  drift: ${d}`) : ['  no drift']),
+    ].join('\n');
+    return { json: r, text, code: r.drift.length ? 1 : 0 };
+  }
+  throw usage('plugin install | plugin status [--home <dir>]');
 }
 
 function cmdState(root: string): Output {
@@ -347,7 +374,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
     const pkg = readJson<{ version: string }>(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'package.json'));
     return { json: { version: pkg?.version }, text: pkg?.version ?? 'unknown', code: 0 };
   }
-  const root = cmd === 'init' ? process.cwd() : findProjectRoot();
+  const root = cmd === 'init' || cmd === 'plugin' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
   switch (cmd) {
     case 'init':
@@ -356,6 +383,8 @@ export async function dispatch(argv: string[]): Promise<Output> {
       return cmdStatus(root);
     case 'uninstall':
       return cmdUninstall(root, flags);
+    case 'plugin':
+      return cmdPlugin(sub, flags);
     case 'state':
       return cmdState(root);
     case 'intent':

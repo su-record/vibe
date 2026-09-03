@@ -76,8 +76,10 @@ if (mode === 'pre') {
   process.exit(0);
 }
 
-if (!fs.existsSync(cli)) process.exit(0);
-const result = spawnSync(process.execPath, [cli, 'state', '--json'], { cwd: root, encoding: 'utf-8', timeout: 15000 });
+// Inside the npm package dist/cli.js sits next to us; inside a plugin tree it does not, so fall back to `vibe` on PATH.
+const result = fs.existsSync(cli)
+  ? spawnSync(process.execPath, [cli, 'state', '--json'], { cwd: root, encoding: 'utf-8', timeout: 15000 })
+  : spawnSync('vibe', ['state', '--json'], { cwd: root, encoding: 'utf-8', timeout: 15000, shell: process.platform === 'win32' });
 if (result.status !== 0 || !result.stdout) process.exit(0);
 try {
   const view = JSON.parse(result.stdout);

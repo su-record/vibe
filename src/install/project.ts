@@ -80,9 +80,14 @@ function notifyCommand(mode: 'post' | 'pre'): string {
   return `node "${script}" ${mode}`;
 }
 
+/** Hook files per client. Codex reads a native `.codex/hooks.json` with the same shape as Claude's settings. */
+export const HOOK_FILES: Record<'claude' | 'codex', string> = {
+  claude: path.join('.claude', 'settings.local.json'),
+  codex: path.join('.codex', 'hooks.json'),
+};
+
 /** Notification hook — it never judges. Other hooks in the file are left alone. */
-export function installClaudeHook(root: string): 'added' | 'unchanged' {
-  const file = path.join(root, '.claude', 'settings.local.json');
+export function installHookFile(file: string): 'added' | 'unchanged' {
   const settings = readJson<Settings>(file) ?? {};
   const hooks = settings.hooks ?? {};
   const wanted: Array<[string, string, string]> = [
@@ -103,8 +108,15 @@ export function installClaudeHook(root: string): 'added' | 'unchanged' {
   return 'added';
 }
 
-export function removeClaudeHook(root: string): boolean {
-  const file = path.join(root, '.claude', 'settings.local.json');
+export function installClaudeHook(root: string): 'added' | 'unchanged' {
+  return installHookFile(path.join(root, HOOK_FILES.claude));
+}
+
+export function installCodexHook(root: string): 'added' | 'unchanged' {
+  return installHookFile(path.join(root, HOOK_FILES.codex));
+}
+
+export function removeHookFile(file: string): boolean {
   const settings = readJson<Settings>(file);
   if (!settings?.hooks) return false;
   let changed = false;
@@ -120,6 +132,11 @@ export function removeClaudeHook(root: string): boolean {
   return changed;
 }
 
+export function hasNotifyHook(file: string): boolean {
+  const settings = readJson<Settings>(file);
+  return Object.values(settings?.hooks ?? {}).some((list) => list.some((e) => e.hooks.some((h) => h.command.includes('hooks/notify.js'))));
+}
+
 export interface InitReport {
   root: string;
   clients: Client[];
@@ -127,7 +144,7 @@ export interface InitReport {
   created: string[];
   card: Record<string, string>;
   skills: Record<string, string[]>;
-  hook: string | null;
+  hook: Record<string, string>;
   cardBytes: number;
 }
 
@@ -159,17 +176,18 @@ export function initProject(root: string, clients: ReadonlyArray<Client>, tokens
   const card = cardText();
   const cardReport: Record<string, string> = {};
   const skillReport: Record<string, string[]> = {};
-  let hook: string | null = null;
+  const hook: Record<string, string> = {};
   const wantsClaude = clients.includes('claude');
   const wantsCodexLike = clients.includes('codex') || clients.includes('chatgpt');
   if (wantsClaude) {
     cardReport['CLAUDE.md'] = upsertCard(path.join(root, 'CLAUDE.md'), card);
     skillReport['.claude/skills'] = copySkills(path.join(root, '.claude', 'skills'));
-    hook = installClaudeHook(root);
+    hook[HOOK_FILES.claude] = installClaudeHook(root);
   }
   if (wantsCodexLike) {
     cardReport['AGENTS.md'] = upsertCard(path.join(root, 'AGENTS.md'), card);
     skillReport['.codex/skills'] = copySkills(path.join(root, '.codex', 'skills'));
+    hook[HOOK_FILES.codex] = installCodexHook(root);
   }
   record(root, { event: 'init', client: detectClient(), model: detectModel(), detail: clients.join(',') });
   return { root, clients: [...clients], tokens: policy, created, card: cardReport, skills: skillReport, hook, cardBytes: Buffer.byteLength(card, 'utf-8') };
@@ -182,7 +200,7 @@ export interface StatusReport {
   cardOver: boolean;
   cards: Record<string, boolean>;
   skills: Record<string, number>;
-  hook: boolean;
+  hooks: Record<string, boolean>;
   state: string;
   inboxOpen: number;
 }
@@ -197,10 +215,10 @@ export function statusProject(root: string): StatusReport {
     const full = path.join(root, dir);
     skills[dir] = fs.existsSync(full) ? fs.readdirSync(full).filter((n) => n === 'vibe' || n.startsWith('vibe.')).length : 0;
   }
-  const settings = readJson<Settings>(path.join(root, '.claude', 'settings.local.json'));
-  const hook = Object.values(settings?.hooks ?? {}).some((list) => list.some((e) => e.hooks.some((h) => h.command.includes('hooks/notify.js'))));
+  const hooks: Record<string, boolean> = {};
+  for (const file of Object.values(HOOK_FILES)) hooks[file] = hasNotifyHook(path.join(root, file));
   const vibe = fs.existsSync(vibePath(root));
-  return { root, vibe, cardBytes, cardOver: cardBytes > CARD_MAX_BYTES, cards, skills, hook, state: vibe ? readState(root).state : 'NONE', inboxOpen: vibe ? openQuestions(root).length : 0 };
+  return { root, vibe, cardBytes, cardOver: cardBytes > CARD_MAX_BYTES, cards, skills, hooks, state: vibe ? readState(root).state : 'NONE', inboxOpen: vibe ? openQuestions(root).length : 0 };
 }
 
 export function uninstallProject(root: string, keepState: boolean): string[] {
@@ -215,7 +233,7 @@ export function uninstallProject(root: string, keepState: boolean): string[] {
       }
     }
   }
-  if (removeClaudeHook(root)) removed.push('.claude/settings.local.json hook');
+  for (const file of Object.values(HOOK_FILES)) if (removeHookFile(path.join(root, file))) removed.push(`${file} hook`);
   if (!keepState && fs.existsSync(vibePath(root))) {
     fs.rmSync(vibePath(root), { recursive: true, force: true });
     removed.push('.vibe/');

@@ -1,16 +1,16 @@
 {
   "run": "r-1",
-  "at": "2026-09-03T05:56:28.394Z",
+  "at": "2026-09-03T06:08:53.858Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "019712c86775",
+  "scenarioSet": "21d6053f27a6",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1806,
+      "ms": 1861,
       "tail": "npm notice run @su-record/vibe@4.0.0-alpha.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
@@ -18,15 +18,15 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 10015,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  8 passed (8)\n      Tests  41 passed (41)\n   Start at  05:56:30\n   Duration  9.49s (transform 417ms, setup 0ms, import 832ms, tests 9.58s, environment 1ms)"
+      "ms": 12417,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  10 passed (10)\n      Tests  49 passed (49)\n   Start at  06:08:56\n   Duration  11.89s (transform 457ms, setup 0ms, import 972ms, tests 12.09s, environment 1ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 37,
+      "ms": 40,
       "tail": "card.md 705 bytes (limit 1024)"
     },
     {
@@ -34,24 +34,40 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 39,
-      "tail": "src (non-test) 1998 lines (limit 5000)"
+      "ms": 41,
+      "tail": "src (non-test) 2221 lines (limit 5000)"
     },
     {
-      "id": "no-self-done",
+      "id": "codex-init",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1208,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  2 passed (2)\n      Tests  2 passed | 12 skipped (14)\n   Start at  05:56:41\n   Duration  436ms (transform 243ms, setup 0ms, import 460ms, tests 53ms, environment 0ms)"
+      "ms": 1143,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  06:09:08\n   Duration  353ms (transform 112ms, setup 0ms, import 152ms, tests 43ms, environment 0ms)"
     },
     {
-      "id": "card-reads",
+      "id": "plugin-install",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1071,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  3 passed (3)\n   Start at  06:09:10\n   Duration  287ms (transform 70ms, setup 0ms, import 95ms, tests 28ms, environment 0ms)"
+    },
+    {
+      "id": "continuity",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3084,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  06:09:11\n   Duration  2.29s (transform 45ms, setup 0ms, import 66ms, tests 2.07s, environment 0ms)"
+    },
+    {
+      "id": "chatgpt-desktop",
       "type": "human",
       "status": "pending",
       "exit": null,
       "ms": 0,
-      "tail": "Read the eight lines of card.md. If any line is unclear, tell me its number.",
+      "tail": "Run `vibe plugin install`, then `codex plugin marketplace add ~` and `codex plugin add vibe@vibe-local`, restart ChatGPT desktop, and tell me whether the vibe plugin appears.",
       "reason": "human — not judged by the harness"
     }
   ]

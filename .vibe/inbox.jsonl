@@ -5,3 +5,4 @@
 {"type":"token","id":"t-mtl3thq1-13c","kind":"approve","target":"6c6f8a3700914c7a","tokenHash":"3a8a3bdbc5b0ce4a546a493bc5a662b45850191acfdcbf74368f8e0317252462","issuedAt":"2026-09-03T05:48:22.393Z","expiresAt":"2026-09-03T05:58:22.393Z"}
 {"type":"token-used","id":"t-mtl3thq1-13c","at":"2026-09-03T05:49:08.444Z"}
 {"type":"question","id":"q-mtl3uq6z-w4","at":"2026-09-03T05:49:20.027Z","question":"Read the eight lines of card.md. If any line is unclear, tell me its number.","scenario":"card-reads"}
+{"type":"question","id":"q-mtl4kb3g-349","at":"2026-09-03T06:09:13.516Z","question":"Run `vibe plugin install`, then `codex plugin marketplace add ~` and `codex plugin add vibe@vibe-local`, restart ChatGPT desktop, and tell me whether the vibe plugin appears.","scenario":"chatgpt-desktop"}

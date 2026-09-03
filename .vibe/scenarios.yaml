@@ -1,12 +1,8 @@
 - id: build
-  given: the source tree exists
-  when: tsc builds it
   then: dist is produced without type errors
   check: { type: run, cmd: "npm run build", expect: 0, timeoutMs: 120000 }
 
 - id: tests
-  given: dist exists
-  when: vitest runs
   then: every test passes
   check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
 
@@ -18,10 +14,24 @@
   then: non-test source is at most 5000 lines
   check: { type: run, cmd: "node checks/loc.js", expect: 0 }
 
-- id: no-self-done
-  then: the model (code) cannot make DONE without check, and under the strict policy APPROVED cannot happen without a token
-  check: { type: run, cmd: "npx vitest run src/core/check.test.ts src/core/intent.test.ts -t \"without\"", expect: 0, timeoutMs: 120000 }
+- id: codex-init
+  given: an empty project
+  when: vibe init --client codex runs
+  then: AGENTS.md carries the card, .codex/skills has the six common skills, .codex/hooks.json has the notification hooks
+  check: { type: run, cmd: "npx vitest run src/install/codex.test.ts", expect: 0, timeoutMs: 120000 }
 
-- id: card-reads
-  then: the eight lines of the card are readable by a non-engineer
-  check: { type: human, question: "Read the eight lines of card.md. If any line is unclear, tell me its number." }
+- id: plugin-install
+  given: a home directory with vibe installed
+  when: vibe plugin install runs
+  then: a plugin tree with manifest, skills and hooks exists and the personal marketplace lists it; plugin status reports no drift
+  check: { type: run, cmd: "npx vitest run src/install/plugin.test.ts", expect: 0, timeoutMs: 120000 }
+
+- id: continuity
+  given: an intent approved under one client
+  when: the next check runs under another client
+  then: the ledger shows both clients and the state carries over
+  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t continues", expect: 0, timeoutMs: 120000 }
+
+- id: chatgpt-desktop
+  then: after `vibe plugin install` and `codex plugin marketplace add ~`, the vibe plugin appears in ChatGPT desktop
+  check: { type: human, question: "Run `vibe plugin install`, then `codex plugin marketplace add ~` and `codex plugin add vibe@vibe-local`, restart ChatGPT desktop, and tell me whether the vibe plugin appears." }
