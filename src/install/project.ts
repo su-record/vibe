@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { detectClient, detectModel } from '../core/client.js';
+import { readConfig, writeConfig, type TokenPolicy } from '../core/config.js';
 import { record } from '../core/ledger.js';
 import { packageRoot, vibePath } from '../core/paths.js';
 import { emptyState, readState, statePath } from '../core/state.js';
@@ -122,6 +123,7 @@ export function removeClaudeHook(root: string): boolean {
 export interface InitReport {
   root: string;
   clients: Client[];
+  tokens: TokenPolicy;
   created: string[];
   card: Record<string, string>;
   skills: Record<string, string[]>;
@@ -129,7 +131,7 @@ export interface InitReport {
   cardBytes: number;
 }
 
-export function initProject(root: string, clients: ReadonlyArray<Client>): InitReport {
+export function initProject(root: string, clients: ReadonlyArray<Client>, tokens?: TokenPolicy): InitReport {
   const created: string[] = [];
   for (const dir of ['', 'evidence', 'knowledge', 'knowledge/research', 'regressions']) {
     const target = vibePath(root, dir);
@@ -151,6 +153,8 @@ export function initProject(root: string, clients: ReadonlyArray<Client>): InitR
     }
   }
   if (!fs.existsSync(statePath(root))) writeJson(statePath(root), emptyState());
+  if (tokens) writeConfig(root, { ...readConfig(root), tokens });
+  const policy = readConfig(root).tokens;
 
   const card = cardText();
   const cardReport: Record<string, string> = {};
@@ -168,7 +172,7 @@ export function initProject(root: string, clients: ReadonlyArray<Client>): InitR
     skillReport['.codex/skills'] = copySkills(path.join(root, '.codex', 'skills'));
   }
   record(root, { event: 'init', client: detectClient(), model: detectModel(), detail: clients.join(',') });
-  return { root, clients: [...clients], created, card: cardReport, skills: skillReport, hook, cardBytes: Buffer.byteLength(card, 'utf-8') };
+  return { root, clients: [...clients], tokens: policy, created, card: cardReport, skills: skillReport, hook, cardBytes: Buffer.byteLength(card, 'utf-8') };
 }
 
 export interface StatusReport {

@@ -55,7 +55,16 @@ function recentAuthorize(action) {
 
 if (!fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
 
+function tokensOff() {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, '.vibe', 'config.json'), 'utf-8')).tokens === 'off';
+  } catch {
+    return false;
+  }
+}
+
 if (mode === 'pre') {
+  if (tokensOff()) process.exit(0);
   const payload = readPayload();
   const command = String((payload.tool_input && payload.tool_input.command) || '');
   for (const [action, re] of IRREVERSIBLE) {

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { detectClient, detectModel } from './client.js';
+import { approvalNeedsToken, readConfig } from './config.js';
 import { denied, usage } from './errors.js';
 import { record } from './ledger.js';
 import { vibePath } from './paths.js';
@@ -31,7 +32,7 @@ export function hasIntent(root: string): boolean {
 }
 
 export type DraftResult =
-  | { ok: true; hash: string; scenarios: Scenario[]; token: string; tokenId: string; expiresAt: string }
+  | { ok: true; hash: string; scenarios: Scenario[]; token: string | null; tokenId: string | null; expiresAt: string | null; policy: string }
   | { ok: false; rejections: Rejection[] };
 
 /**
@@ -51,22 +52,33 @@ export function draft(root: string, intentText: string, scenariosText: string): 
   writeAtomic(scenariosPath(root), scenariosNorm);
   writeJson(vibePath(root, 'results.json'), {});
   transition(root, 'DRAFT', { intentHash: hash, approvedAt: null, runs: 0, failStreak: 0, lastFailHash: null, doneAt: null, doneTree: null, abandonedReason: null });
-  const issued = issueToken(root, 'approve', hash);
+  const policy = readConfig(root).tokens;
+  const issued = approvalNeedsToken(policy) ? issueToken(root, 'approve', hash) : null;
   record(root, { event: 'draft', client: detectClient(), model: detectModel(), detail: hash });
-  return { ok: true, hash, scenarios: parsed.scenarios, token: issued.token, tokenId: issued.id, expiresAt: issued.expiresAt };
+  return { ok: true, hash, scenarios: parsed.scenarios, token: issued?.token ?? null, tokenId: issued?.id ?? null, expiresAt: issued?.expiresAt ?? null, policy };
 }
 
-/** Only a human token makes APPROVED. If the intent changed, the old token's target hash no longer matches. */
-export function approve(root: string, token: string): { hash: string } {
+/**
+ * APPROVED — under `strict` only a human token does it; otherwise a plain approve is recorded as
+ * "by chat". Either way the ledger says how it was approved. If the intent changed, the old token's
+ * target hash no longer matches.
+ */
+export function approve(root: string, token: string | null): { hash: string; basis: 'token' | 'chat' } {
   const state = readState(root);
   if (state.state !== 'DRAFT' || !state.intentHash) throw denied(`nothing to approve (current state ${state.state})`);
   const current = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '');
   if (current !== state.intentHash) throw denied('intent changed since the draft — run `intent draft` again to get a new token');
-  const verdict = verifyAndConsume(root, 'approve', state.intentHash, token);
-  if (!verdict.ok) throw denied(verdict.reason);
+  const policy = readConfig(root).tokens;
+  let basis: 'token' | 'chat' = 'chat';
+  if (approvalNeedsToken(policy) || token) {
+    if (!token) throw denied('this project requires a human token to approve (tokens: strict)');
+    const verdict = verifyAndConsume(root, 'approve', state.intentHash, token);
+    if (!verdict.ok) throw denied(verdict.reason);
+    basis = 'token';
+  }
   transition(root, 'APPROVED', { approvedAt: new Date().toISOString() });
-  record(root, { event: 'approve', client: detectClient(), model: detectModel(), detail: state.intentHash });
-  return { hash: state.intentHash };
+  record(root, { event: 'approve', client: detectClient(), model: detectModel(), detail: `${state.intentHash} by ${basis}` });
+  return { hash: state.intentHash, basis };
 }
 
 export function abandon(root: string, reason: string): void {

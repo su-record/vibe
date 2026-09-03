@@ -12,7 +12,7 @@ Then, in chat: `/vibe every week an order spreadsheet arrives — turn it into a
 ## What is different
 
 - **The harness judges.** Every scenario carries a check (run · file · http · eval · human) and only what `vibe check` executed itself becomes evidence. A model saying "done" changes nothing.
-- **Approval and irreversible actions need a human token.** A six-digit number the user pastes back into chat. The model cannot create one.
+- **Who may authorize is your policy.** `vibe init --tokens strict|irreversible|off`. Under `strict` both approval and irreversible actions (push, deploy, send, delete, spend) need a six-digit number the user pastes back into chat; the default `irreversible` asks a token only for irreversible actions; `off` records everything as auto for users who already skip permissions. The verdict itself is never configurable.
 - **State is plain files inside the repository.** With `.vibe/` present you can approve in Claude Code and continue in Codex.
 - **It speaks first.** Human attention is narrow. Up to three grounded things the user did not ask about.
 - **The always-on instruction is 1KB.** `card.md` is all of it.

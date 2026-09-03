@@ -14,7 +14,7 @@ user-invocable: false
 2. Check for missing scenario kinds yourself: the failure path, rollback, permission boundaries. Add them or say in one line why they are not needed.
 3. Save with `vibe intent draft --stdin --json`, sending `{"intent": "...", "scenarios": "..."}` (both in English).
    - On rejection (`code 1`) fix the reasons and save again. Do not pass by deleting a rejected scenario — bind a check to it.
-   - On success the response contains `token`.
+   - On success the response contains `token` when the project's token policy is `strict`; otherwise `token` is null and a plain yes in chat is enough.
 4. Send **one** approval message:
 
 ```
@@ -23,10 +23,10 @@ Success conditions:
 …
 Things you did not ask about (if any, at most 3): …
 Needed before building (if any): {tools · skills · access}
-To proceed, paste {token}.
+To proceed, {paste {token} | say yes}.
 ```
 
-5. When the user pastes the number, run `vibe approve "{number}" --json`. On `code 3` show the reason and ask again. On a change request go back to step 3 — a new token is issued.
+5. When the user pastes the number (or says yes when no token was issued), run `vibe approve "{number}" --json` (or `vibe approve --json`). On `code 3` show the reason and ask again. On a change request go back to step 3.
 6. When the state is APPROVED, move to `vibe.build`.
 
 ## Never

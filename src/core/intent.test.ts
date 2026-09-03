@@ -2,8 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { writeConfig } from './config.js';
 import { VibeError } from './errors.js';
 import { abandon, approve, draft, loadScenarios } from './intent.js';
+import { readLedger } from './ledger.js';
 import { readState } from './state.js';
 
 let root: string;
@@ -24,17 +26,24 @@ describe('intent draft / approve', () => {
     expect(readState(root).state).toBe('NONE');
   });
 
-  it('saving makes DRAFT and issues an approval token', () => {
+  it('saving makes DRAFT; under the default policy no token is issued and a plain approve is recorded "by chat"', () => {
     const result = draft(root, INTENT, OK);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(readState(root)).toMatchObject({ state: 'DRAFT', intentHash: result.hash });
     expect(loadScenarios(root).map((s) => s.id)).toEqual(['s1']);
-    expect(result.token).toMatch(/^\d{3} \d{3}$/);
+    expect(result.token).toBeNull();
+    expect(result.policy).toBe('irreversible');
+    expect(approve(root, null)).toEqual({ hash: result.hash, basis: 'chat' });
+    expect(readLedger(root).at(-1)?.detail).toContain('by chat');
   });
 
-  it('never becomes APPROVED without the token — a wrong number exits 3', () => {
-    draft(root, INTENT, OK);
+  it('under strict, never becomes APPROVED without the token — a wrong number exits 3', () => {
+    writeConfig(root, { tokens: 'strict' });
+    const result = draft(root, INTENT, OK);
+    if (!result.ok) throw new Error('draft failed');
+    expect(result.token).toMatch(/^\d{3} \d{3}$/);
+    expect(() => approve(root, null)).toThrowError(VibeError);
     expect(() => approve(root, '000 000')).toThrowError(VibeError);
     try {
       approve(root, '123456');
@@ -44,19 +53,20 @@ describe('intent draft / approve', () => {
     expect(readState(root).state).toBe('DRAFT');
   });
 
-  it('the right token approves once; the same token does not work twice', () => {
+  it('under strict, the right token approves once and the same token does not work twice', () => {
+    writeConfig(root, { tokens: 'strict' });
     const result = draft(root, INTENT, OK);
-    if (!result.ok) throw new Error('draft failed');
-    expect(approve(root, result.token)).toEqual({ hash: result.hash });
+    if (!result.ok || !result.token) throw new Error('draft failed');
+    expect(approve(root, result.token)).toEqual({ hash: result.hash, basis: 'token' });
     expect(readState(root).state).toBe('APPROVED');
     expect(() => approve(root, result.token)).toThrowError(VibeError);
   });
 
-  it('a changed intent voids the old token', () => {
+  it('a changed intent voids the approval regardless of policy', () => {
     const first = draft(root, INTENT, OK);
     if (!first.ok) throw new Error('draft failed');
     fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), `${OK}- { id: s2, then: one more, check: { type: run, cmd: "exit 0" } }\n`);
-    expect(() => approve(root, first.token)).toThrowError(/changed since the draft/);
+    expect(() => approve(root, null)).toThrowError(/changed since the draft/);
   });
 
   it('abandon needs a reason and is recorded', () => {

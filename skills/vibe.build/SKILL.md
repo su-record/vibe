@@ -24,7 +24,7 @@ Before actually executing an `irreversible` scenario (send, deploy, delete, spen
 vibe ask "{what is about to happen, one line}" --needs authorize:{action} --target "{target}" --json
 ```
 
-Show the token in the response to the user. Only after the user pastes it and `vibe authorize "{number}" --action {action} --target "{target}"` exits 0 may you execute. Dry runs need no token.
+If the response carries a token, show it to the user and execute only after they paste it and `vibe authorize "{number}" --action {action} --target "{target}"` exits 0. If the project's token policy is `off`, the response has no token: run `vibe authorize --action {action} --target "{target}"` (recorded as auto) and proceed. Dry runs never need a token.
 
 ## Never
 

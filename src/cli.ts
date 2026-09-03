@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runChecks } from './core/check.js';
 import { detectClient, detectModel } from './core/client.js';
+import { irreversibleNeedsToken, parseTokenPolicy, readConfig } from './core/config.js';
 import { denied, usage, VibeError } from './core/errors.js';
 import { answer, ask, openQuestions, resolve as resolveQuestion } from './core/inbox.js';
 import { abandon, approve, draft, intentPath, loadScenarios } from './core/intent.js';
@@ -58,9 +59,9 @@ function flagString(flags: Flags, key: string): string | undefined {
 
 const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
-  setup     init [--client claude,codex,chatgpt] · status · uninstall [--purge-state]
+  setup     init [--client claude,codex,chatgpt] [--tokens strict|irreversible|off] · status · uninstall [--purge-state]
   work      state · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
-            approve <token> · check [id…] [--all] · evidence [run] · abandon --reason "…"
+            approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
             authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
@@ -100,10 +101,12 @@ function cmdInit(root: string, flags: Flags): Output {
   const clients = raw ? raw.split(',').map((c) => c.trim()) : ['claude'];
   const bad = clients.filter((c) => !ALL_CLIENTS.includes(c as Client));
   if (bad.length > 0) throw usage(`unknown client: ${bad.join(', ')} (claude, codex, chatgpt)`);
-  const report = initProject(root, clients as Client[]);
+  const tokensRaw = flagString(flags, 'tokens');
+  const report = initProject(root, clients as Client[], tokensRaw ? parseTokenPolicy(tokensRaw) : undefined);
   const lines = [
     `vibe init — ${root}`,
     `  clients   ${report.clients.join(', ')}`,
+    `  tokens    ${report.tokens}`,
     `  created   ${report.created.length ? report.created.join(', ') : '(already present)'}`,
     ...Object.entries(report.card).map(([file, how]) => `  card      ${file} ${how} (${report.cardBytes} bytes)`),
     ...Object.entries(report.skills).map(([dir, names]) => `  skills    ${dir}: ${names.join(', ')}`),
@@ -173,17 +176,18 @@ function cmdIntent(root: string, sub: string | undefined, args: string[], flags:
   const text = [
     `DRAFT saved · ${result.scenarios.length} scenarios · hash ${result.hash}`,
     ...result.scenarios.map((s) => `  ${s.id} [${s.check.type}] ${s.then}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''}`),
-    `approval token: ${result.token} (valid until ${result.expiresAt}) — show it to the user; when they paste it back, run \`vibe approve <token>\``,
+    result.token
+      ? `approval token: ${result.token} (valid until ${result.expiresAt}) — show it to the user; when they paste it back, run \`vibe approve <token>\``
+      : `tokens: ${result.policy} — when the user says yes in chat, run \`vibe approve\``,
   ].join('\n');
   return { json: result, text, code: 0 };
 }
 
 function cmdApprove(root: string, args: string[]): Output {
   requireVibe(root);
-  const token = args.join(' ');
-  if (!token) throw usage('approve <token>');
+  const token = args.join(' ') || null;
   const result = approve(root, token);
-  return { json: { ok: true, ...result, state: 'APPROVED' }, text: `APPROVED · ${result.hash}`, code: 0 };
+  return { json: { ok: true, ...result, state: 'APPROVED' }, text: `APPROVED · ${result.hash} (by ${result.basis})`, code: 0 };
 }
 
 async function cmdCheck(root: string, args: string[], flags: Flags): Promise<Output> {
@@ -223,13 +227,14 @@ function cmdAsk(root: string, args: string[], flags: Flags): Output {
   const options = flagString(flags, 'options')?.split('|').map((s) => s.trim()).filter(Boolean);
   const needsRaw = flagString(flags, 'needs');
   let needs: { kind: 'approve' | 'authorize'; target: string } | undefined;
+  const policy = readConfig(root).tokens;
   if (needsRaw === 'approve') {
     const state = readState(root);
     if (state.state !== 'DRAFT' || !state.intentHash) throw denied('an approval token can only be issued in DRAFT');
-    needs = { kind: 'approve', target: state.intentHash };
+    if (policy === 'strict') needs = { kind: 'approve', target: state.intentHash };
   } else if (needsRaw?.startsWith('authorize:')) {
     const action = needsRaw.slice('authorize:'.length);
-    needs = { kind: 'authorize', target: `${action}:${flagString(flags, 'target') ?? ''}` };
+    if (irreversibleNeedsToken(policy)) needs = { kind: 'authorize', target: `${action}:${flagString(flags, 'target') ?? ''}` };
   } else if (needsRaw) {
     throw usage('--needs takes approve or authorize:<action>');
   }
@@ -240,20 +245,30 @@ function cmdAsk(root: string, args: string[], flags: Flags): Output {
   if (needs) input.needs = needs;
   const result = ask(root, input);
   record(root, { event: 'ask', client: detectClient(), model: detectModel(), detail: question.slice(0, 120) });
-  const text = [`question recorded [${result.id}]`, ...(result.token ? [`token: ${result.token} (valid until ${result.expiresAt}) — the user must paste it back in chat before anything proceeds`] : [])].join('\n');
-  return { json: result, text, code: 0 };
+  const text = [
+    `question recorded [${result.id}]`,
+    ...(result.token ? [`token: ${result.token} (valid until ${result.expiresAt}) — the user must paste it back in chat before anything proceeds`] : []),
+    ...(needsRaw && !result.token ? [`tokens: ${policy} — no token needed; proceed when the user says yes`] : []),
+  ].join('\n');
+  return { json: { ...result, policy }, text, code: 0 };
 }
 
 function cmdAuthorize(root: string, args: string[], flags: Flags): Output {
   requireVibe(root);
-  const token = args.join(' ');
+  const token = args.join(' ') || null;
   const action = flagString(flags, 'action');
-  if (!token || !action) throw usage('authorize <token> --action push|deploy|send|delete|spend [--target "…"]');
+  if (!action) throw usage('authorize [token] --action push|deploy|send|delete|spend [--target "…"]');
   const target = `${action}:${flagString(flags, 'target') ?? ''}`;
-  const verdict = verifyAndConsume(root, 'authorize', target, token);
-  if (!verdict.ok) throw denied(verdict.reason);
-  record(root, { event: 'authorize', client: detectClient(), model: detectModel(), detail: target });
-  return { json: { ok: true, action, target }, text: `authorized: ${target}`, code: 0 };
+  const policy = readConfig(root).tokens;
+  let basis: 'token' | 'auto' = 'auto';
+  if (irreversibleNeedsToken(policy)) {
+    if (!token) throw denied(`"${action}" needs a human token here (tokens: ${policy})`);
+    const verdict = verifyAndConsume(root, 'authorize', target, token);
+    if (!verdict.ok) throw denied(verdict.reason);
+    basis = 'token';
+  }
+  record(root, { event: 'authorize', client: detectClient(), model: detectModel(), detail: `${target} by ${basis}` });
+  return { json: { ok: true, action, target, basis }, text: `authorized: ${target} (by ${basis})`, code: 0 };
 }
 
 function cmdInbox(root: string, sub: string | undefined, args: string[]): Output {
