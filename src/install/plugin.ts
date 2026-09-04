@@ -36,12 +36,12 @@ function manifest(version: string): Record<string, unknown> {
   return {
     name: 'vibe',
     version,
-    description: 'An AX/FDE harness — scenarios you approve once, checks the harness runs itself, human tokens for irreversible actions.',
+    description: 'An AX/FDE harness for Claude Code, Codex CLI and ChatGPT desktop. Say what you need, approve the scenarios once; the harness proves the work by running the checks itself. Memory in plain files, human tokens for irreversible actions, a ledger instead of claims.',
     author: { name: 'su-record', url: 'https://github.com/su-record' },
     homepage: 'https://github.com/su-record/vibe',
     repository: 'https://github.com/su-record/vibe',
     license: 'MIT',
-    keywords: ['harness', 'fde', 'verification', 'codex', 'chatgpt'],
+    keywords: ['harness', 'ax', 'fde', 'verification', 'codex', 'chatgpt'],
     skills: './skills/',
     hooks: './hooks/hooks.json',
     interface: {

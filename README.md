@@ -1,6 +1,6 @@
 # vibe 4
 
-**The experience of having an AX/FDE next to you.** Say what you need in plain words. vibe turns it into checkable scenarios, builds it, proves it by running the checks itself, and hands it over to whoever will run it. Vibe-coding quality is the by-product of that discipline.
+**The experience of having an AX/FDE next to you** — an agent-experience engineer, the forward-deployed kind who sits with the customer and makes the model do the actual job. Say what you need in plain words. vibe turns it into checkable scenarios, builds it, proves it by running the checks itself, and hands it over to whoever will run it. Vibe-coding quality is the by-product of that discipline.
 
 Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app.
 
