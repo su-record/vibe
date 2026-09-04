@@ -19,11 +19,11 @@ If `vibe` is not on PATH, run `npm i -g @su-record/vibe` once; every command bel
 
 | state | stage | skill |
 |---|---|---|
-| NONE · ABANDONED · DRAFT without intent | discover | `vibe.discover` |
-| DRAFT with intent | scope | `vibe.scope` |
-| APPROVED · RUNNING with remaining | build | `vibe.build` |
-| RUNNING without remaining · STUCK | prove | `vibe.prove` |
-| DONE | handoff | `vibe.handoff` |
+| NONE · ABANDONED · DRAFT without intent | discover | `vibe-discover` |
+| DRAFT with intent | scope | `vibe-scope` |
+| APPROVED · RUNNING with remaining | build | `vibe-build` |
+| RUNNING without remaining · STUCK | prove | `vibe-prove` |
+| DONE | handoff | `vibe-handoff` |
 
 5. Load that skill and follow it.
 

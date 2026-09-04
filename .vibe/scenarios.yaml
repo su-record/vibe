@@ -20,14 +20,18 @@
   then: the six common skills are at most 300 lines in total
   check: { type: run, cmd: "test $(cat skills/*/SKILL.md | wc -l) -le 300", expect: 0 }
 
+- id: skill-names
+  then: every common skill name is spec-conformant and equals its directory, bodies reference only those names, and none of the six is tracked under the repository's .claude/skills or .codex/skills
+  check: { type: run, cmd: "node checks/skill-names.js", expect: 0 }
+
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.7
+  then: the committed manifests match package.json 4.1.8 and the plugin tree carries the six hyphenated skills
   check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
-- id: sweep
+- id: legacy-sweep
   needs: [build]
-  given: settings with two dead vibe 3 hooks, one live hook, one user hook, and a codex notify line
-  when: the sweep runs twice
-  then: the dead entries and the notify line go, the rest stays, and the second run changes nothing
-  check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t 'vibe 3 leftovers'", expect: 0, timeoutMs: 120000 }
+  given: a client home with the six dotted skill directories from 4.1.7 next to a project skill
+  when: the next command repairs the surfaces, and again on uninstall
+  then: the dotted directories are gone, the hyphenated six are present, and the project skill is untouched
+  check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t 'dotted'", expect: 0, timeoutMs: 120000 }

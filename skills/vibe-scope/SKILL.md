@@ -1,5 +1,5 @@
 ---
-name: vibe.scope
+name: vibe-scope
 description: Scope — write the intent and scenarios (each bound to a check), get one human token in one approval message. Make sure the tools needed for building are in place before building.
 user-invocable: false
 ---
@@ -31,7 +31,7 @@ To proceed, {paste {token} | say yes}.
 ```
 
 6. When the user pastes the number (or says yes when no token was issued), run `vibe approve "{number}" --json` (or `vibe approve --json`). On `code 3` show the reason and ask again. On a change request go back to step 3.
-7. When the state is APPROVED and any accepted skill is installed, move to `vibe.build`.
+7. When the state is APPROVED and any accepted skill is installed, move to `vibe-build`.
 
 ## Never
 

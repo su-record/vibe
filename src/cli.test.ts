@@ -135,17 +135,17 @@ describe('CLI — from request to DONE', () => {
     expect(ledger.find((e) => e.event === 'done')?.client).toBe('codex');
     expect((as('chatgpt', ['state']).json as { state: string }).state).toBe('DONE');
     expect(fs.existsSync(path.join(root, '.codex', 'hooks.json'))).toBe(true);
-    expect(fs.existsSync(path.join(root, '.codex', 'skills', 'vibe.scope', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.codex', 'skills', 'vibe-scope', 'SKILL.md'))).toBe(true);
     expect(fs.readFileSync(path.join(root, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
   });
 
   it('status reports version, the global surfaces and the project; a missing skill is repaired by the next command', () => {
     vibe(['tokens', 'off']);
-    fs.rmSync(path.join(root, '.claude', 'skills', 'vibe.prove'), { recursive: true });
+    fs.rmSync(path.join(root, '.claude', 'skills', 'vibe-prove'), { recursive: true });
     const status = vibe(['status']);
     expect(status.status).toBe(0);
     expect(status.json).toMatchObject({ version: expect.stringMatching(/^\d+\.\d+\.\d+/), clients: { claude: { card: true, skills: 6, hook: true, current: true } }, project: { vibe: true, state: 'NONE' } });
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe.prove', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(true);
   });
 
   it('uninstall removes the global card, skills and hook, and what an older init left in the project; .vibe stays unless --purge-state', () => {

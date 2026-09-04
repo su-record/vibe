@@ -1,5 +1,5 @@
 ---
-name: vibe.build
+name: vibe-build
 description: Build — implement approved scenarios one at a time; after each one, `vibe check <id>` lets the harness judge. Never say "done".
 user-invocable: false
 ---
@@ -17,7 +17,7 @@ user-invocable: false
    - Blocked (`status: blocked`): a parent has not passed; `vibe check {id}` runs unpassed parents first, so fix the parent named in `blockedBy`.
 4. When a project-local skill (`vibe skill list`) applies to the scenario, follow it and run `vibe skill used {name}` — prune decisions read the ledger.
 5. Record a fixed failure with `vibe regress record --scenario {id} --title "…" --check-from-evidence {run}`.
-6. When `remaining` is empty, move to `vibe.prove`.
+6. When `remaining` is empty, move to `vibe-prove`.
 
 ## Irreversible actions
 

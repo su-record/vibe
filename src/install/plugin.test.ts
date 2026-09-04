@@ -19,7 +19,7 @@ describe('vibe plugin install / status', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(paths.tree, '.codex-plugin', 'plugin.json'), 'utf-8')) as { name: string; version: string; skills: string; hooks: string };
     const pkg = JSON.parse(fs.readFileSync(path.join(packageRoot(), 'package.json'), 'utf-8')) as { version: string };
     expect(manifest).toMatchObject({ name: 'vibe', version: pkg.version, skills: './skills/', hooks: './hooks/codex-hooks.json' });
-    expect(fs.readdirSync(path.join(paths.tree, 'skills')).sort()).toEqual(['vibe', 'vibe.build', 'vibe.discover', 'vibe.handoff', 'vibe.prove', 'vibe.scope']);
+    expect(fs.readdirSync(path.join(paths.tree, 'skills')).sort()).toEqual(['vibe', 'vibe-build', 'vibe-discover', 'vibe-handoff', 'vibe-prove', 'vibe-scope']);
     const hooks = fs.readFileSync(path.join(paths.tree, 'hooks', 'codex-hooks.json'), 'utf-8');
     expect(hooks).toContain('${PLUGIN_ROOT}/hooks/notify.js');
     expect(hooks).toContain('${PLUGIN_ROOT}/hooks/session.js');
@@ -57,7 +57,7 @@ describe('vibe plugin install / status', () => {
     const manifestPath = path.join(paths.tree, '.codex-plugin', 'plugin.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as { version: string };
     fs.writeFileSync(manifestPath, JSON.stringify({ ...manifest, version: '0.0.1' }));
-    fs.rmSync(path.join(paths.tree, 'skills', 'vibe.prove'), { recursive: true });
+    fs.rmSync(path.join(paths.tree, 'skills', 'vibe-prove'), { recursive: true });
     const status = pluginStatus(home);
     expect(status.drift).toEqual([`manifest 0.0.1 ≠ package ${status.packageVersion}`, 'skills 5 ≠ 6']);
   });

@@ -19,7 +19,9 @@ export const ALL_CLIENTS: ReadonlyArray<Client> = ['claude', 'codex', 'hermes'];
 export const CARD_START = '<!-- vibe:start -->';
 export const CARD_END = '<!-- vibe:end -->';
 export const CARD_MAX_BYTES = 1024;
-export const SKILL_NAMES = ['vibe', 'vibe.discover', 'vibe.scope', 'vibe.build', 'vibe.prove', 'vibe.handoff'] as const;
+export const SKILL_NAMES = ['vibe', 'vibe-discover', 'vibe-scope', 'vibe-build', 'vibe-prove', 'vibe-handoff'] as const;
+/** The directory names five of the six carried before 4.1.8 (a dot is outside the Agent Skills name grammar); swept wherever the harness owns a skills directory. */
+export const LEGACY_SKILL_NAMES = ['vibe.discover', 'vibe.scope', 'vibe.build', 'vibe.prove', 'vibe.handoff'] as const;
 
 /** Where a client reads its card, skills and hooks — relative to `base`. */
 export interface Layout {
@@ -102,8 +104,21 @@ function skillCurrent(dest: string, name: string): boolean {
   return want !== null && readText(to) === want;
 }
 
+/** Remove the pre-4.1.8 dotted directories; returns what went. Project skills in the same directory are not touched. */
+export function removeLegacySkills(dest: string): string[] {
+  const removed: string[] = [];
+  for (const name of LEGACY_SKILL_NAMES) {
+    const target = path.join(dest, name);
+    if (!fs.existsSync(target)) continue;
+    fs.rmSync(target, { recursive: true, force: true });
+    removed.push(name);
+  }
+  return removed;
+}
+
 /** Copy the six common skills; a stale copy is replaced. Project skills in the same directory are not touched. */
 export function copySkills(dest: string): string[] {
+  removeLegacySkills(dest);
   const copied: string[] = [];
   for (const name of SKILL_NAMES) {
     const from = skillSource(name);
@@ -117,7 +132,7 @@ export function copySkills(dest: string): string[] {
 }
 
 export function removeSkills(dest: string): string[] {
-  const removed: string[] = [];
+  const removed: string[] = removeLegacySkills(dest);
   for (const name of SKILL_NAMES) {
     const target = path.join(dest, name);
     if (!fs.existsSync(target)) continue;
@@ -260,12 +275,14 @@ export function globalStatus(home: string = os.homedir()): GlobalStatus {
 }
 
 /**
- * Self-repair: when a detected client lacks the surfaces or carries a stale copy, install them.
+ * Self-repair: when a detected client lacks the surfaces or carries a stale copy, install them;
+ * the dotted skill directories of ≤ 4.1.7 go first, in every mode.
  * Returns the clients that were repaired. Never throws — a broken home must not block a verdict.
  */
 export function ensureGlobal(home: string = os.homedir()): Client[] {
   try {
     sweepDeadHooks(home);
+    for (const client of detectClients(home)) removeLegacySkills(path.join(home, globalLayout(client).skills));
     const stale = detectClients(home).filter((c) => !clientStatus(home, c).current);
     if (stale.length > 0) setupGlobal(home, stale);
     return stale;

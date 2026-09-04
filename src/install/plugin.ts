@@ -12,7 +12,7 @@ import { pluginTree } from './tree.js';
  * 300MB into the Codex cache because the whole package was the plugin; here the plugin is only the
  * manifest, the six common skills and the notification hooks.
  */
-const SKILL_NAMES = ['vibe', 'vibe.discover', 'vibe.scope', 'vibe.build', 'vibe.prove', 'vibe.handoff'] as const;
+const SKILL_NAMES = ['vibe', 'vibe-discover', 'vibe-scope', 'vibe-build', 'vibe-prove', 'vibe-handoff'] as const;
 export const MARKETPLACE_NAME = 'vibe-local';
 
 export interface PluginPaths {
@@ -129,7 +129,7 @@ export function pluginStatus(home?: string): PluginStatusReport {
   const manifestVersion = readJson<{ version?: string }>(path.join(paths.tree, '.codex-plugin', 'plugin.json'))?.version ?? null;
   const version = packageVersion();
   const skillsDir = path.join(paths.tree, 'skills');
-  const skills = fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir).filter((n) => n === 'vibe' || n.startsWith('vibe.')).length : 0;
+  const skills = fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir).filter((n) => n === 'vibe' || n.startsWith('vibe-')).length : 0;
   const hooks = fs.existsSync(path.join(paths.tree, 'hooks', 'codex-hooks.json')) && fs.existsSync(path.join(paths.tree, 'hooks', 'notify.js'));
   const marketplace = readJson<MarketplaceDoc>(paths.marketplace);
   const registered = Boolean(marketplace?.plugins?.some((p) => p?.name === 'vibe'));

@@ -1,65 +1,73 @@
 {
   "run": "r-1",
-  "at": "2026-09-04T06:09:14.753Z",
+  "at": "2026-09-04T08:17:35.093Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "d575e036fc75",
+  "scenarioSet": "bc96e2e7b4ba",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2578,
-      "tail": "npm notice run @su-record/vibe@4.1.7 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 3093,
+      "tail": "npm notice run @su-record/vibe@4.1.8 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 26222,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  23 passed (23)\n      Tests  106 passed (106)\n   Start at  06:09:17\n   Duration  25.61s (transform 1.10s, setup 0ms, import 2.26s, tests 32.26s, environment 3ms)"
+      "ms": 30506,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  23 passed (23)\n      Tests  107 passed (107)\n   Start at  08:17:38\n   Duration  29.75s (transform 1.60s, setup 0ms, import 3.14s, tests 36.70s, environment 5ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 38,
+      "ms": 55,
       "tail": "card.md 873 bytes (limit 1024)"
     },
     {
       "id": "file-size",
       "type": "run",
-      "status": "fail",
-      "exit": 1,
-      "ms": 245,
-      "tail": "50 files · 5370 lines · largest src/install/global.ts (406) · limits file 400 · function 50\n  ✘ src/install/global.ts 406 lines (limit 400)\n  1 over the limit"
+      "status": "pass",
+      "exit": 0,
+      "ms": 512,
+      "tail": "51 files · 5406 lines · largest src/core/skills.ts (329) · limits file 400 · function 50\n  every file and function within limits"
     },
     {
       "id": "skills-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 9,
+      "ms": 10,
       "tail": ""
+    },
+    {
+      "id": "skill-names",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 55,
+      "tail": "6 common skills: names conform, references resolve, none tracked under .claude/skills or .codex/skills"
     },
     {
       "id": "plugin-tree",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 200,
+      "ms": 408,
       "tail": "plugin tree matches package.json"
     },
     {
-      "id": "sweep",
+      "id": "legacy-sweep",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1523,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 8 skipped (9)\n   Start at  06:09:18\n   Duration  574ms (transform 309ms, setup 0ms, import 374ms, tests 13ms, environment 0ms)"
+      "ms": 2342,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 9 skipped (10)\n   Start at  08:17:39\n   Duration  876ms (transform 433ms, setup 0ms, import 548ms, tests 45ms, environment 0ms)"
     }
   ]
 }
