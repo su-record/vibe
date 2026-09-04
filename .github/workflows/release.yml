@@ -37,6 +37,7 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: node checks/card-size.js && node checks/loc.js
+      - run: node dist/cli.js plugin build --check
 
       - name: Release notes
         run: |

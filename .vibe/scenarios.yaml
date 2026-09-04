@@ -19,25 +19,27 @@
   then: the six common skills are at most 300 lines in total
   check: { type: run, cmd: "test $(cat skills/*/SKILL.md | wc -l) -le 300", expect: 0 }
 
-- id: harness-arm
+- id: plugin-tree
   needs: [build]
-  given: a bench ledger file with on and off arms
-  when: ledger compare --by harness reads it
-  then: the arms are on and off and the verdict is one of the four
-  check: { type: run, cmd: "npx vitest run src/core/ledger.test.ts -t harness", expect: 0, timeoutMs: 120000 }
+  given: the committed marketplace files
+  when: vibe plugin build --check runs
+  then: nothing differs from what package.json generates
+  check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
-- id: judge-checkable
-  then: every judge scenario of the settlement task is a file check bound to the same reference total as the example
-  check: { type: run, cmd: "node checks/bench-judge.js", expect: 0 }
-
-- id: bench-ran
+- id: plugin-hooks
   needs: [build]
-  given: bench/run.js executed by a person for each arm
-  when: bench/ledger.jsonl is read
-  then: at least one judged run per arm (claude-code on/off, codex on/off) is present
-  check: { type: run, cmd: "node checks/bench-ran.js", expect: 0 }
+  given: a home with and without the npm install
+  when: session.js and notify.js --plugin run
+  then: the card is handed over once, the CLI state is named, and both hooks step back when the npm install owns the client
+  check: { type: run, cmd: "npx vitest run src/install/tree.test.ts -t hooks", expect: 0, timeoutMs: 120000 }
 
-- id: compare-answers
-  needs: [bench-ran]
-  then: the comparison over the bench ledger returns one of the four verdicts, never a ratio
-  check: { type: run, cmd: "node dist/cli.js ledger compare --by harness --metric checks --ledger bench/ledger.jsonl --min-runs 1", expect: 0 }
+- id: hermes
+  needs: [build]
+  given: a home with ~/.hermes
+  when: the surfaces are installed and removed
+  then: SOUL.md carries the card block, the six skills are present, no hook file, and uninstall restores SOUL.md
+  check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t hermes", expect: 0, timeoutMs: 120000 }
+
+- id: marketplaces-visible
+  then: the plugin shows in Claude Code and Codex plugin lists and in ChatGPT desktop after the marketplace add commands
+  check: { type: human, question: "Run the three marketplace lines from the README on your machine and tell me which clients list the vibe plugin (Claude Code · Codex · ChatGPT desktop)." }

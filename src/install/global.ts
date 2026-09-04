@@ -10,8 +10,8 @@ import { readJson, readText, writeAtomic, writeJson } from '../core/store.js';
  * not in each repository. `npm i -g` puts them there (postinstall) and every `vibe` command repairs
  * them when they are missing or stale. Only `.vibe/` state belongs to a project.
  */
-export type Client = 'claude' | 'codex';
-export const ALL_CLIENTS: ReadonlyArray<Client> = ['claude', 'codex'];
+export type Client = 'claude' | 'codex' | 'hermes';
+export const ALL_CLIENTS: ReadonlyArray<Client> = ['claude', 'codex', 'hermes'];
 export const CARD_START = '<!-- vibe:start -->';
 export const CARD_END = '<!-- vibe:end -->';
 export const CARD_MAX_BYTES = 1024;
@@ -21,25 +21,26 @@ export const SKILL_NAMES = ['vibe', 'vibe.discover', 'vibe.scope', 'vibe.build',
 export interface Layout {
   card: string;
   skills: string;
-  hook: string;
+  /** Absent for clients without a hook file (Hermes reads AGENTS.md and skills only). */
+  hook?: string;
 }
 
-const CLIENT_DIR: Record<Client, string> = { claude: '.claude', codex: '.codex' };
+const CLIENT_DIR: Record<Client, string> = { claude: '.claude', codex: '.codex', hermes: '.hermes' };
 
 /** User-level layout: one per client home. Codex reads a native `~/.codex/hooks.json` shaped like Claude's settings. */
 export function globalLayout(client: Client): Layout {
   const dir = CLIENT_DIR[client];
-  return client === 'claude'
-    ? { card: path.join(dir, 'CLAUDE.md'), skills: path.join(dir, 'skills'), hook: path.join(dir, 'settings.json') }
-    : { card: path.join(dir, 'AGENTS.md'), skills: path.join(dir, 'skills'), hook: path.join(dir, 'hooks.json') };
+  if (client === 'claude') return { card: path.join(dir, 'CLAUDE.md'), skills: path.join(dir, 'skills'), hook: path.join(dir, 'settings.json') };
+  if (client === 'codex') return { card: path.join(dir, 'AGENTS.md'), skills: path.join(dir, 'skills'), hook: path.join(dir, 'hooks.json') };
+  // Hermes Agent: identity file SOUL.md is the only home-level instruction it always loads; skills follow the agentskills.io layout.
+  return { card: path.join(dir, 'SOUL.md'), skills: path.join(dir, 'skills') };
 }
 
 /** Repository-level layout — used by the bench, where one workspace must carry the harness and another must not. */
 export function projectLayout(client: Client): Layout {
   const dir = CLIENT_DIR[client];
-  return client === 'claude'
-    ? { card: 'CLAUDE.md', skills: path.join(dir, 'skills'), hook: path.join(dir, 'settings.local.json') }
-    : { card: 'AGENTS.md', skills: path.join(dir, 'skills'), hook: path.join(dir, 'hooks.json') };
+  if (client === 'claude') return { card: 'CLAUDE.md', skills: path.join(dir, 'skills'), hook: path.join(dir, 'settings.local.json') };
+  return { card: 'AGENTS.md', skills: path.join(dir, 'skills'), hook: path.join(dir, 'hooks.json') };
 }
 
 export function cardText(): string {
@@ -76,7 +77,7 @@ export function removeCard(file: string): boolean {
   const start = existing.indexOf(CARD_START);
   const end = existing.indexOf(CARD_END);
   if (start === -1 || end === -1) return false;
-  const next = `${existing.slice(0, start)}${existing.slice(end + CARD_END.length)}`.replace(/\n{3,}/g, '\n\n');
+  const next = `${existing.slice(0, start)}${existing.slice(end + CARD_END.length)}`.replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '\n');
   if (next.trim() === '') fs.rmSync(file);
   else writeAtomic(file, next);
   return true;
@@ -213,7 +214,7 @@ export function installSurfaces(base: string, layout: Layout): SurfaceReport {
   return {
     card: upsertCard(path.join(base, layout.card)),
     skills: copySkills(path.join(base, layout.skills)),
-    hook: installHookFile(path.join(base, layout.hook)),
+    hook: layout.hook ? installHookFile(path.join(base, layout.hook)) : 'none',
   };
 }
 
@@ -221,7 +222,7 @@ export function removeSurfaces(base: string, layout: Layout): string[] {
   const removed: string[] = [];
   if (removeCard(path.join(base, layout.card))) removed.push(`${layout.card} card`);
   for (const name of removeSkills(path.join(base, layout.skills))) removed.push(path.join(layout.skills, name));
-  if (removeHookFile(path.join(base, layout.hook))) removed.push(`${layout.hook} hook`);
+  if (layout.hook && removeHookFile(path.join(base, layout.hook))) removed.push(`${layout.hook} hook`);
   return removed;
 }
 
@@ -236,7 +237,7 @@ export interface SurfaceStatus {
 export function surfaceStatus(base: string, layout: Layout): SurfaceStatus {
   const skillsDir = path.join(base, layout.skills);
   const card = hasCurrentCard(path.join(base, layout.card));
-  const hook = hasCurrentHook(path.join(base, layout.hook));
+  const hook = layout.hook ? hasCurrentHook(path.join(base, layout.hook)) : true;
   const skillsCurrent = SKILL_NAMES.every((name) => skillCurrent(skillsDir, name));
   return { card, skills: countSkills(skillsDir), hook, current: card && hook && skillsCurrent };
 }

@@ -18,11 +18,13 @@ describe('vibe plugin install / status', () => {
     expect(report.tree).toBe(paths.tree);
     const manifest = JSON.parse(fs.readFileSync(path.join(paths.tree, '.codex-plugin', 'plugin.json'), 'utf-8')) as { name: string; version: string; skills: string; hooks: string };
     const pkg = JSON.parse(fs.readFileSync(path.join(packageRoot(), 'package.json'), 'utf-8')) as { version: string };
-    expect(manifest).toMatchObject({ name: 'vibe', version: pkg.version, skills: './skills/', hooks: './hooks/hooks.json' });
+    expect(manifest).toMatchObject({ name: 'vibe', version: pkg.version, skills: './skills/', hooks: './hooks/codex-hooks.json' });
     expect(fs.readdirSync(path.join(paths.tree, 'skills')).sort()).toEqual(['vibe', 'vibe.build', 'vibe.discover', 'vibe.handoff', 'vibe.prove', 'vibe.scope']);
-    const hooks = fs.readFileSync(path.join(paths.tree, 'hooks', 'hooks.json'), 'utf-8');
+    const hooks = fs.readFileSync(path.join(paths.tree, 'hooks', 'codex-hooks.json'), 'utf-8');
     expect(hooks).toContain('${PLUGIN_ROOT}/hooks/notify.js');
+    expect(hooks).toContain('${PLUGIN_ROOT}/hooks/session.js');
     expect(fs.existsSync(path.join(paths.tree, 'hooks', 'notify.js'))).toBe(true);
+    expect(fs.existsSync(path.join(paths.tree, 'hooks', 'session.js'))).toBe(true);
     expect(fs.existsSync(path.join(paths.tree, 'node_modules'))).toBe(false);
 
     const marketplace = JSON.parse(fs.readFileSync(paths.marketplace, 'utf-8')) as { name: string; plugins: Array<{ name: string; source: { source: string; path: string } }> };

@@ -112,3 +112,25 @@ describe('.vibe/ — created by the first record, never by a command that only r
     expect(fs.readFileSync(path.join(root, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n')).toHaveLength(1);
   });
 });
+
+describe('hermes client', () => {
+  it('hermes: a ~/.hermes home gets the card in SOUL.md and the six skills, no hook file; uninstall clears them', () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-hermes-'));
+    fs.mkdirSync(path.join(home, '.hermes'));
+    fs.writeFileSync(path.join(home, '.hermes', 'SOUL.md'), '# Identity\nI am Hermes.\n');
+    const report = setupGlobal(home);
+    expect(report.clients).toEqual(['hermes']);
+    expect(report.surfaces['hermes']).toMatchObject({ card: 'updated', hook: 'none' });
+    const soul = fs.readFileSync(path.join(home, '.hermes', 'SOUL.md'), 'utf-8');
+    expect(soul.startsWith('# Identity')).toBe(true);
+    expect(soul).toContain('<!-- vibe:start -->');
+    expect(fs.readdirSync(path.join(home, '.hermes', 'skills')).sort()).toEqual(['vibe', 'vibe.build', 'vibe.discover', 'vibe.handoff', 'vibe.prove', 'vibe.scope']);
+    expect(fs.existsSync(path.join(home, '.hermes', 'hooks.json'))).toBe(false);
+    expect(globalStatus(home).clients['hermes']).toMatchObject({ card: true, skills: 6, hook: true, current: true });
+    expect(ensureGlobal(home)).toEqual([]);
+    const removed = uninstallGlobal(home);
+    expect(removed).toContain('.hermes/SOUL.md card');
+    expect(fs.readFileSync(path.join(home, '.hermes', 'SOUL.md'), 'utf-8')).toBe('# Identity\nI am Hermes.\n');
+    fs.rmSync(home, { recursive: true, force: true });
+  });
+});

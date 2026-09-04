@@ -8,6 +8,8 @@ user-invocable: true
 
 The user says what they want in their own words. You pick the stage. This is the only place where model judgement is allowed.
 
+If `vibe` is not on PATH, run `npm i -g @su-record/vibe` once; every command below is that CLI.
+
 ## Procedure
 
 1. Run `vibe state --json`. A directory without `.vibe/` answers NONE; the first record creates it.

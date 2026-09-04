@@ -1,0 +1,34 @@
+{
+  "name": "vibe",
+  "version": "4.1.0",
+  "description": "An AX/FDE harness for Claude Code, Codex CLI and ChatGPT desktop. Say what you need, approve the scenarios once; the harness proves the work by running the checks itself. Memory in plain files, human tokens for irreversible actions, a ledger instead of claims.",
+  "author": {
+    "name": "su-record",
+    "url": "https://github.com/su-record"
+  },
+  "homepage": "https://github.com/su-record/vibe",
+  "repository": "https://github.com/su-record/vibe",
+  "license": "MIT",
+  "keywords": [
+    "harness",
+    "ax",
+    "fde",
+    "verification",
+    "codex",
+    "chatgpt"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/codex-hooks.json",
+  "interface": {
+    "displayName": "Vibe",
+    "shortDescription": "The harness judges; a human approves",
+    "longDescription": "Say what you need. vibe turns it into checkable scenarios, builds it, proves it by running the checks itself, and hands it over. Start with /vibe.",
+    "developerName": "su-record",
+    "category": "Developer Tools",
+    "websiteURL": "https://github.com/su-record/vibe",
+    "defaultPrompt": [
+      "Use vibe to turn this request into approved scenarios and build it.",
+      "Use vibe to prove the current work with vibe check --all."
+    ]
+  }
+}

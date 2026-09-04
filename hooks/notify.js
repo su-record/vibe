@@ -9,13 +9,28 @@
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const mode = process.argv[2] || 'post';
+const asPlugin = process.argv.includes('--plugin');
 const here = path.dirname(fileURLToPath(import.meta.url));
 const cli = path.join(here, '..', 'dist', 'cli.js');
 const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+// Plugin copy and npm copy must not both fire. The npm install writes a notify hook into the
+// client's home settings; when that exists, the plugin's hook steps back.
+if (asPlugin) {
+  const home = process.env.VIBE_HOME_DIR || os.homedir();
+  for (const file of [path.join(home, '.claude', 'settings.json'), path.join(home, '.codex', 'hooks.json')]) {
+    try {
+      if (fs.readFileSync(file, 'utf-8').includes('hooks/notify.js')) process.exit(0);
+    } catch {
+      /* no such file — keep going */
+    }
+  }
+}
 
 function readPayload() {
   try {

@@ -2,18 +2,25 @@
 
 **The experience of having an AX/FDE next to you** — an agent-experience engineer, the forward-deployed kind who sits with the customer and makes the model do the actual job. Say what you need in plain words. vibe turns it into checkable scenarios, builds it, proves it by running the checks itself, and hands it over to whoever will run it. Vibe-coding quality is the by-product of that discipline.
 
-Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app.
+Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app · Hermes Agent.
+
+Install from the marketplace of the client you use — the repository is the plugin, and every path carries the same card, six skills and notification hook:
 
 ```bash
-npm i -g @su-record/vibe && vibe status          # that is the whole install
+# Claude Code
+claude plugin marketplace add su-record/vibe && claude plugin install vibe@vibe
 
-vibe plugin install                              # ChatGPT desktop only — Codex CLI is already covered above
-codex plugin marketplace add ~ && codex plugin add vibe@<marketplace>   # the install output prints the exact name
+# Codex CLI · ChatGPT desktop (one OpenAI plugin; restart ChatGPT desktop afterwards)
+codex plugin marketplace add su-record/vibe && codex plugin add vibe@vibe
+
+# Hermes Agent (skills from the agentskills.io layout; the card goes into ~/.hermes/SOUL.md on first `vibe` run)
+for s in vibe vibe.discover vibe.scope vibe.build vibe.prove vibe.handoff; do hermes skills install su-record/vibe/skills/$s; done
+
+# or the CLI alone — it puts the surfaces into every client home it finds (~/.claude · ~/.codex · ~/.hermes)
+npm i -g @su-record/vibe
 ```
 
-There is no `init`. The card, the six skills and the notification hook are the same in every project, so they live once per client home — `~/.claude` (CLAUDE.md · skills · settings.json) and `~/.codex` (AGENTS.md · skills · hooks.json), whichever exist. `npm i -g` puts them there when npm lets install scripts run; otherwise the first `vibe` command does, and every later command repairs a missing or stale copy. `vibe status` shows what is in place; `vibe uninstall` removes them again, along with anything a 4.0.1 `vibe init` left inside the current repository. The only thing inside a repository is `.vibe/`, created by the first record (`vibe intent draft`, `vibe tokens`, …) — a command that only reads leaves no trace.
-
-ChatGPT desktop reads the personal marketplace (`~/.agents/plugins/marketplace.json`); restart the app after installing. The plugin tree holds only the manifest, the six skills and the notification hooks — its hooks call the globally installed `vibe`.
+The plugins call the `vibe` CLI; their SessionStart hook installs it with npm when it is missing or older than the plugin, and says so in the session. When both the plugin and the npm install are present, the plugin's card and hook step back — one card, one hook.
 
 Then, in chat:
 
@@ -138,7 +145,7 @@ config.json      token policy · skill catalogs
 
 ## Status
 
-`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the repository is the plugin — Claude Code and Codex/ChatGPT marketplaces, Hermes skills, `vibe plugin build --check` as the drift gate. vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Bench — the ledger is the benchmark
 

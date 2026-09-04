@@ -37,3 +37,4 @@ jobs:
       - run: node checks/card-size.js
       - run: node checks/loc.js
       - run: test $(cat skills/*/SKILL.md | wc -l) -le 300
+      - run: node dist/cli.js plugin build --check
