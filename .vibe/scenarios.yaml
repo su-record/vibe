@@ -18,15 +18,15 @@
 
 - id: skills-size
   then: the six common skills are at most 300 lines in total
-  check: { type: run, cmd: "test $(cat skills/*/SKILL.md | wc -l) -le 300", expect: 0 }
+  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300", expect: 0 }
 
 - id: skill-names
-  then: every common skill name is spec-conformant and equals its directory, bodies reference only those names, and none of the six is tracked under the repository's .claude/skills or .codex/skills
+  then: every common skill name is spec-conformant and equals its directory, and none of the six is tracked under the repository's .claude/skills or .codex/skills
   check: { type: run, cmd: "node checks/skill-names.js", expect: 0 }
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.8 and the plugin tree carries the six hyphenated skills
+  then: the committed manifests match package.json 4.1.8 and the plugin tree carries the language pack
   check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
 - id: legacy-sweep
@@ -35,3 +35,47 @@
   when: the next command repairs the surfaces, and again on uninstall
   then: the dotted directories are gone, the hyphenated six are present, and the project skill is untouched
   check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t 'dotted'", expect: 0, timeoutMs: 120000 }
+
+- id: project-root
+  needs: [build]
+  given: a temporary home holding only the plugin store, a project folder below it without .vibe, a git root, and a .vibe with state.json above an empty .vibe
+  when: findProjectRoot runs from each of them
+  then: the project folder is returned, the search stops at the git root, the .vibe with records wins, and the home is returned only when the start is the home
+  check: { type: run, cmd: "npx vitest run src/core/paths.test.ts", expect: 0, timeoutMs: 120000 }
+
+- id: plugin-store
+  needs: [build]
+  given: a home with a ≤ 4.1.7 plugin tree under ~/.vibe/plugin
+  when: the plugin is installed again
+  then: the tree is at ~/.config/vibe/plugin/vibe, the marketplace entry points there, and ~/.vibe is gone
+  check: { type: run, cmd: "npx vitest run src/install/plugin.test.ts -t 'config'", expect: 0, timeoutMs: 120000 }
+
+- id: root-visible
+  needs: [build]
+  given: a project with records and a subdirectory below it
+  when: vibe state --json runs from the subdirectory and a run check's command is missing
+  then: the state carries root and a notice that the root is above, and the failed check's tail names the working directory
+  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t 'resolved root'", expect: 0, timeoutMs: 180000 }
+
+- id: review-check
+  needs: [build]
+  given: a scenario with check type review on a Korean file, VIBE_REVIEW_CMD pointing at a fake reviewer that answers PASS, then REJECT with a list, then "PASS with a remark"
+  when: vibe check runs it three times
+  then: the first passes with both stages in evidence, the second fails with the REJECT list in tail, the third fails because the reply is not exactly PASS
+  check: { type: run, cmd: "npx vitest run src/core/checks/review.test.ts", expect: 0, timeoutMs: 120000 }
+
+- id: lang-detect
+  needs: [build]
+  then: Korean text detects as ko, English text as en, empty or other-script text as unknown, and a review without lang on unknown text fails with a reason
+  check: { type: run, cmd: "npx vitest run src/core/lang.test.ts", expect: 0, timeoutMs: 120000 }
+
+- id: language-pack
+  then: every skills/antislop-*/SKILL.md is at most 600 lines, every reviewers/*/ prompt at most 300, each pack has both reviewers, pack names conform, and the reviewers name no Claude-only tool
+  check: { type: run, cmd: "node checks/language-pack.js", expect: 0 }
+
+- id: pack-installed
+  needs: [build]
+  given: a temporary home in home mode
+  when: the surfaces are installed
+  then: antislop-ko and antislop-en sit next to the six in every client's skills directory and the status still counts six common skills
+  check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t 'language pack'", expect: 0, timeoutMs: 120000 }

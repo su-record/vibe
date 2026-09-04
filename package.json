@@ -9,6 +9,8 @@
   "files": [
     "dist/",
     "skills/",
+    "reviewers/",
+    "agents/",
     "hooks/",
     "scripts/",
     ".claude-plugin/",

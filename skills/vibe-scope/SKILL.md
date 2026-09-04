@@ -9,7 +9,8 @@ user-invocable: false
 ## Procedure
 
 1. Turn the discovery result into scenarios. A scenario is stored only if it carries exactly one check type:
-   - `run` command exit code · `file` exists/regex/contains/schema/sum (a column total equals a reference) · `http` status/schema/maxMs · `eval` count of matching labelled cases (jsonl `{input, expected}` through a runner's stdin/stdout, `expect.pass` is a count) · `human` no verdict (goes to the inbox)
+   - `run` command exit code · `file` exists/regex/contains/schema/sum (a column total equals a reference) · `http` status/schema/maxMs · `eval` count of matching labelled cases (jsonl `{input, expected}` through a runner's stdin/stdout, `expect.pass` is a count) · `review` a language pack's copy editor then chief editor, run by the harness, exact `PASS` only · `human` no verdict (goes to the inbox)
+   - When a success condition is human-read text (blog, column, article, report, script, speech), propose `check: { type: review, path: <file>, contract: <file>, evidence: <file> }` and mark it `⚠ model-judged` in the approval message.
    - A condition you cannot check gets `human` explicitly. An irreversible action (push, deploy, send, delete, spend) gets `irreversible: <action>`.
    - A scenario that only makes sense after another one has passed gets `needs: [ids]`. The harness orders and parallelises checks from these edges; keep a connected graph under six scenarios.
 2. Check for missing scenario kinds yourself: the failure path, rollback, permission boundaries. Add them or say in one line why they are not needed. When the intent writes code, propose a size gate: `check: { type: run, cmd: "vibe size src --max-file 400 --max-function 50" }`.

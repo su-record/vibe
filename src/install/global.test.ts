@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CARD_START, detectClients, ensureGlobal, globalLayout, globalStatus, hasNotifyHook, installSurfaces, projectLayout, setupGlobal, sweepDeadHooks, uninstallGlobal } from './global.js';
+import { languagePacks } from './plugin.js';
 import { ensureProject, hasProject, projectStatus } from './project.js';
 
 // These tests cover the home surfaces; plugin registration through the client CLIs has its own tests (register.test.ts).
@@ -22,7 +23,7 @@ describe('global surfaces — one copy per client home', () => {
     const report = setupGlobal(home);
     expect(report.clients).toEqual(['codex']);
     expect(report.surfaces['codex']).toMatchObject({ card: 'created', hook: 'added' });
-    expect(report.surfaces['codex']?.skills).toHaveLength(6);
+    expect(report.surfaces['codex']?.skills).toHaveLength(6 + languagePacks().length);
     expect(fs.readFileSync(path.join(home, '.codex', 'AGENTS.md'), 'utf-8')).toContain(CARD_START);
     expect(fs.existsSync(path.join(home, '.codex', 'skills', 'vibe-scope', 'SKILL.md'))).toBe(true);
     const hooks = JSON.parse(fs.readFileSync(path.join(home, '.codex', 'hooks.json'), 'utf-8')) as { hooks: Record<string, unknown[]> };
@@ -80,12 +81,29 @@ describe('global surfaces — one copy per client home', () => {
     fs.writeFileSync(path.join(skills, 'vibe.build', 'SKILL.md'), 'old\n');
     fs.writeFileSync(path.join(skills, 'my-skill', 'SKILL.md'), 'mine\n');
     ensureGlobal(home);
-    expect(fs.readdirSync(skills).sort()).toEqual(['my-skill', 'vibe', 'vibe-build', 'vibe-discover', 'vibe-handoff', 'vibe-prove', 'vibe-scope']);
+    expect(fs.readdirSync(skills).sort()).toEqual([...languagePacks(), 'my-skill', 'vibe', 'vibe-build', 'vibe-discover', 'vibe-handoff', 'vibe-prove', 'vibe-scope'].sort());
     fs.mkdirSync(path.join(skills, 'vibe.scope'), { recursive: true });
     const removed = uninstallGlobal(home);
     expect(removed).toContain(path.join('.claude', 'skills', 'vibe.scope'));
     expect(fs.readdirSync(skills)).toEqual(['my-skill']);
     expect(fs.readFileSync(path.join(skills, 'my-skill', 'SKILL.md'), 'utf-8')).toBe('mine\n');
+  });
+
+  it('the language packs sit next to the six in every client, are repaired when stale, and the status still counts six common skills', () => {
+    fs.mkdirSync(path.join(home, '.codex'));
+    setupGlobal(home, ['claude', 'codex']);
+    for (const client of ['.claude', '.codex']) {
+      const names = fs.readdirSync(path.join(home, client, 'skills'));
+      expect(names).toContain('antislop-ko');
+      expect(names).toContain('antislop-en');
+      expect(fs.existsSync(path.join(home, client, 'skills', 'antislop-ko', 'references', 'genres.md'))).toBe(true);
+    }
+    expect(globalStatus(home).clients['claude']).toMatchObject({ skills: 6, current: true });
+    fs.writeFileSync(path.join(home, '.claude', 'skills', 'antislop-ko', 'SKILL.md'), 'old\n');
+    expect(ensureGlobal(home)).toEqual(['claude']);
+    expect(fs.readFileSync(path.join(home, '.claude', 'skills', 'antislop-ko', 'SKILL.md'), 'utf-8')).not.toBe('old\n');
+    uninstallGlobal(home);
+    expect(fs.existsSync(path.join(home, '.claude', 'skills', 'antislop-ko'))).toBe(false);
   });
 
   it('uninstall removes card, skills and hook from every client home and leaves user content', () => {
@@ -168,7 +186,7 @@ describe('hermes client', () => {
     const soul = fs.readFileSync(path.join(home, '.hermes', 'SOUL.md'), 'utf-8');
     expect(soul.startsWith('# Identity')).toBe(true);
     expect(soul).toContain('<!-- vibe:start -->');
-    expect(fs.readdirSync(path.join(home, '.hermes', 'skills')).sort()).toEqual(['vibe', 'vibe-build', 'vibe-discover', 'vibe-handoff', 'vibe-prove', 'vibe-scope']);
+    expect(fs.readdirSync(path.join(home, '.hermes', 'skills')).sort()).toEqual([...languagePacks(), 'vibe', 'vibe-build', 'vibe-discover', 'vibe-handoff', 'vibe-prove', 'vibe-scope'].sort());
     expect(fs.existsSync(path.join(home, '.hermes', 'hooks.json'))).toBe(false);
     expect(globalStatus(home).clients['hermes']).toMatchObject({ card: true, skills: 6, hook: true, current: true });
     expect(ensureGlobal(home)).toEqual([]);

@@ -26,4 +26,4 @@ if (errors.length > 0) {
   console.error(errors.join('\n'));
   process.exit(1);
 }
-console.log(`${dirs.length} common skills: names conform, references resolve, none tracked under .claude/skills or .codex/skills`);
+console.log(`${dirs.length} skills: names conform, references resolve, none tracked under .claude/skills or .codex/skills`);

@@ -1,6 +1,6 @@
 import YAML from 'yaml';
 
-export type CheckType = 'run' | 'file' | 'http' | 'eval' | 'human';
+export type CheckType = 'run' | 'file' | 'http' | 'eval' | 'review' | 'human';
 
 export interface RunCheck {
   type: 'run';
@@ -33,11 +33,20 @@ export interface EvalCheck {
   expect: { pass: number };
   timeoutMs?: number;
 }
+/** The harness runs a language pack's reviewers (copy editor, then chief editor) on a manuscript; only an exact `PASS` passes a stage. */
+export interface ReviewCheck {
+  type: 'review';
+  path: string;
+  lang?: 'ko' | 'en';
+  contract?: string;
+  evidence?: string;
+  timeoutMs?: number;
+}
 export interface HumanCheck {
   type: 'human';
   question: string;
 }
-export type Check = RunCheck | FileCheck | HttpCheck | EvalCheck | HumanCheck;
+export type Check = RunCheck | FileCheck | HttpCheck | EvalCheck | ReviewCheck | HumanCheck;
 
 export interface Scenario {
   id: string;
@@ -60,7 +69,7 @@ export interface ParsedScenarios {
   rejections: Rejection[];
 }
 
-const CHECK_TYPES: ReadonlySet<string> = new Set(['run', 'file', 'http', 'eval', 'human']);
+const CHECK_TYPES: ReadonlySet<string> = new Set(['run', 'file', 'http', 'eval', 'review', 'human']);
 const ID_RE = /^[a-z][a-z0-9-]{0,39}$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -87,7 +96,7 @@ function strList(value: unknown): string[] | null {
  * Prose that cannot be checked is not part of the contract (principle ①).
  */
 function checkReason(check: unknown): string | null {
-  if (!isRecord(check)) return 'missing check — one check type (run·file·http·eval·human) is required';
+  if (!isRecord(check)) return 'missing check — one check type (run·file·http·eval·review·human) is required';
   const type = check['type'];
   if (typeof type !== 'string' || !CHECK_TYPES.has(type)) return `unknown check type: ${String(type)}`;
   switch (type) {
@@ -106,6 +115,11 @@ function checkReason(check: unknown): string | null {
       if (!str(check['cases']) || !str(check['runner'])) return 'eval check requires cases and runner';
       const expect = check['expect'];
       return isRecord(expect) && Number.isInteger(expect['pass']) ? null : 'eval check requires expect.pass (a count)';
+    }
+    case 'review': {
+      if (!str(check['path'])) return 'review check requires path (the manuscript)';
+      const lang = check['lang'];
+      return lang === undefined || lang === 'ko' || lang === 'en' ? null : 'review lang must be ko or en';
     }
     case 'human':
       return str(check['question']) ? null : 'human check requires question';

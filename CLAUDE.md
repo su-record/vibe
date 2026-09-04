@@ -5,7 +5,8 @@ This repository is vibe 4 itself. vibe 4 develops vibe 4 — the intent and scen
 - Build `npm run build` · test `npm test` · both `npm run check`
 - Verdict: `vibe check --all` (needs dist: `node dist/cli.js check --all`)
 - Limits: no file over 400 lines (`checks/loc.js`; the total is free to grow), always-on card (`card.md`) ≤ 1KB, six common skills ≤ 300 lines in total — past these it is vibe 3 again
-- Language: every record, comment, message and document is English; the model talks to the user in the user's language
+- Language packs (`skills/antislop-<lang>` + `reviewers/<lang>/`): loaded only when that language is written, so they have their own budget — SKILL.md ≤ 600 lines, each reviewer prompt ≤ 300 (`checks/language-pack.js`)
+- Language: every record, comment, message and document is English; the model talks to the user in the user's language. Exception: a language pack is written in its own language — its content is that language
 - Design: the session artifact "vibe 4 설계안" is the source of the intent
 
 <!-- vibe:start -->
