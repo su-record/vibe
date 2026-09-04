@@ -34,7 +34,7 @@ const fake: GithubClient = { authenticated: true, get: (p) => {
 describe('project-local skills — installed only with a check, never globally', () => {
   it('skills: create needs a check type or a scenario; the skeleton lands in every client dir that exists and is registered', () => {
     expect(() => createSkill(root, { name: 'settle' })).toThrowError(VibeError);
-    expect(() => createSkill(root, { name: 'vibe.build', checkType: 'run' })).toThrowError(/common skill/);
+    expect(() => createSkill(root, { name: 'vibe-build', checkType: 'run' })).toThrowError(/common skill/);
     const r = createSkill(root, { name: 'settle', checkType: 'file' });
     expect(r.paths).toEqual(['.claude/skills/settle/SKILL.md']);
     const md = fs.readFileSync(path.join(root, r.paths[0]!), 'utf-8');

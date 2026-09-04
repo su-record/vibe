@@ -83,12 +83,12 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     const report = setupGlobal(home);
     expect(report.surfaces['codex']).toMatchObject({ mode: 'plugin', hook: 'plugin', card: 'created' });
     expect(log('codex.log')).toEqual([`plugin marketplace add ${home}`, 'plugin add vibe@vibe-local']);
-    expect(fs.existsSync(path.join(home, '.vibe', 'plugin', 'vibe', '.codex-plugin', 'plugin.json'))).toBe(true);
+    expect(fs.existsSync(path.join(home, '.config', 'vibe', 'plugin', 'vibe', '.codex-plugin', 'plugin.json'))).toBe(true);
     expect(fs.existsSync(path.join(home, '.codex', 'skills'))).toBe(false);
     expect(fs.readFileSync(path.join(home, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
     expect(globalStatus(home).clients['codex']).toMatchObject({ mode: 'plugin', current: true });
     expect(ensureGlobal(home)).toEqual([]);
-    expect(uninstallGlobal(home)).toEqual(expect.arrayContaining([path.join(home, '.vibe', 'plugin', 'vibe'), '.codex/AGENTS.md card']));
+    expect(uninstallGlobal(home)).toEqual(expect.arrayContaining([path.join(home, '.config', 'vibe', 'plugin', 'vibe'), '.codex/AGENTS.md card']));
   });
 
   it('home mode: VIBE_NO_PLUGIN (or no CLI) keeps the older path — card, skills and hook in the client home', () => {

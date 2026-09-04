@@ -135,17 +135,38 @@ describe('CLI — from request to DONE', () => {
     expect(ledger.find((e) => e.event === 'done')?.client).toBe('codex');
     expect((as('chatgpt', ['state']).json as { state: string }).state).toBe('DONE');
     expect(fs.existsSync(path.join(root, '.codex', 'hooks.json'))).toBe(true);
-    expect(fs.existsSync(path.join(root, '.codex', 'skills', 'vibe.scope', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.codex', 'skills', 'vibe-scope', 'SKILL.md'))).toBe(true);
     expect(fs.readFileSync(path.join(root, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
+  });
+
+  it('the resolved root is visible: state carries root and a notice from a subdirectory; a missing command names the cwd', () => {
+    const home = path.join(root, 'home'); // the project is not the home, so the home rule does not apply to it
+    fs.mkdirSync(home);
+    const env = { HOME: home };
+    vibe(['tokens', 'off'], undefined, env);
+    vibe(['intent', 'draft', '--stdin'], JSON.stringify({ intent: '# Root\n\n## Why\ntest\n', scenarios: '- { id: gone, then: x, check: { type: run, cmd: "./scripts/nowhere.sh" } }\n' }), env);
+    expect(vibe(['approve'], undefined, env).status).toBe(0);
+    const sub = path.join(root, 'src', 'deep');
+    fs.mkdirSync(sub, { recursive: true });
+    const from = spawnSync(TSX, [CLI_SRC, 'state', '--json'], { cwd: sub, encoding: 'utf-8', env: { ...process.env, HOME: home, VIBE_SKIP_SETUP: '1', VIBE_NO_PLUGIN: '1' }, timeout: 60000 });
+    const view = JSON.parse(from.stdout) as { root: string; notices: string[] };
+    expect(view.root).toBe(root);
+    expect(view.notices.some((n) => n.includes('project root is') && n.includes(root))).toBe(true);
+    expect(fs.existsSync(path.join(sub, '.vibe'))).toBe(false);
+    const checked = vibe(['check', 'gone'], undefined, env);
+    expect(checked.status).toBe(1);
+    const outcome = (checked.json as { outcomes: Array<{ id: string; exit: number; tail: string }> }).outcomes.find((o) => o.id === 'gone');
+    expect(outcome?.exit).toBe(127);
+    expect(outcome?.tail).toContain(`command not found — the check ran in ${root}`);
   });
 
   it('status reports version, the global surfaces and the project; a missing skill is repaired by the next command', () => {
     vibe(['tokens', 'off']);
-    fs.rmSync(path.join(root, '.claude', 'skills', 'vibe.prove'), { recursive: true });
+    fs.rmSync(path.join(root, '.claude', 'skills', 'vibe-prove'), { recursive: true });
     const status = vibe(['status']);
     expect(status.status).toBe(0);
     expect(status.json).toMatchObject({ version: expect.stringMatching(/^\d+\.\d+\.\d+/), clients: { claude: { card: true, skills: 6, hook: true, current: true } }, project: { vibe: true, state: 'NONE' } });
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe.prove', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(true);
   });
 
   it('uninstall removes the global card, skills and hook, and what an older init left in the project; .vibe stays unless --purge-state', () => {

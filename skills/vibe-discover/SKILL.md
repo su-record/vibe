@@ -1,5 +1,5 @@
 ---
-name: vibe.discover
+name: vibe-discover
 description: Discover — turn a vague request into "what counts as success". At most three questions, each with a default. Surface anomalies in the sample before being asked.
 user-invocable: false
 ---
@@ -31,7 +31,7 @@ user-invocable: false
 - {existing systems, data, deadlines}
 ```
 
-5. Once at least one success condition is a checkable statement, move to `vibe.scope`.
+5. Once at least one success condition is a checkable statement, move to `vibe-scope`.
 
 ## Message format
 

@@ -20,7 +20,8 @@ export function tail(text: string, lines = TAIL_LINES): string {
 
 /**
  * `run` check — the harness executes the command itself. A model saying "I ran it" never
- * reaches this function. The command string comes from scenarios.yaml, so it runs in a shell.
+ * reaches this function. The command string comes from scenarios.yaml, so it runs in a shell,
+ * in the project root unless the check names a `cwd`.
  */
 export function runCheck(check: RunCheck, root: string): Promise<CheckResult> {
   const cwd = check.cwd ? path.resolve(root, check.cwd) : root;
@@ -46,6 +47,7 @@ export function runCheck(check: RunCheck, root: string): Promise<CheckResult> {
     child.on('close', (code) => {
       clearTimeout(timer);
       const exit = code ?? null;
+      if (exit === 127) captured += `\n[vibe] command not found — the check ran in ${cwd}`; // 127 is the usual sign of a misresolved project root
       resolve({ pass: exit === expect, exit, ms: Date.now() - started, tail: tail(captured) });
     });
   });

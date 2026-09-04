@@ -88,7 +88,7 @@ export function codexRegistered(home: string): boolean {
   return s.exists && s.registered && s.drift.length === 0;
 }
 
-/** Assemble the tree under ~/.vibe/plugin, register the personal marketplace, and let Codex pick it up. */
+/** Assemble the tree under ~/.config/vibe/plugin, register the personal marketplace, and let Codex pick it up. */
 export function registerCodex(home: string): RegisterReport {
   if (codexRegistered(home)) return { ok: true, mode: 'plugin', version: packageVersion(), detail: 'current' };
   const r = installPlugin(home);

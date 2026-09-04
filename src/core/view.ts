@@ -7,6 +7,7 @@ import { isHuman } from './scenarios.js';
 import { suggestSkills, type Proposal } from './skills.js';
 import { readState, stageOf, type Stage, type State } from './state.js';
 import { readText } from './store.js';
+import path from 'node:path';
 
 export interface ScenarioView {
   id: string;
@@ -20,6 +21,8 @@ export interface ScenarioView {
 }
 
 export interface StateView {
+  /** The resolved project root — every record below lives in `${root}/.vibe` */
+  root: string;
   state: State;
   stage: Stage;
   intent: { title: string; hash: string | null; approvedAt: string | null } | null;
@@ -39,8 +42,9 @@ function intentTitle(root: string): string {
 }
 
 /** Every skill's first call. A DONE invalidated by edits falls back to RUNNING here. */
-export function buildStateView(root: string): StateView {
+export function buildStateView(root: string, cwd: string = process.cwd()): StateView {
   const notices: string[] = [];
+  if (path.resolve(cwd) !== path.resolve(root)) notices.push(`project root is ${root} — above the current directory; records and run checks use that root`);
   if (invalidateDoneIfEdited(root)) notices.push('files changed after DONE — state is RUNNING again; run `vibe check`');
   const state = readState(root);
   const results = readResults(root);
@@ -69,6 +73,7 @@ export function buildStateView(root: string): StateView {
   if (state.state === 'STUCK') notices.push('STUCK — the same failure twice in a row; the inbox question needs an answer');
   if (scenarios.some(isHuman) && state.state === 'DONE') notices.push('human items are not gates — a confirmation was requested in the inbox');
   return {
+    root,
     state: state.state,
     stage: stageOf(state, intent !== null, allPassedOnce),
     intent,

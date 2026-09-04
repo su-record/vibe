@@ -1,10 +1,3 @@
 {
-  ".claude-plugin/marketplace.json": "df094c9f2125f402e72d465cac2adce9637ce930",
-  ".claude-plugin/plugin.json": "274772d3fd056d174c97d258f68d15914c448fbf",
-  ".codex-plugin/plugin.json": "b38ce180093fd44f2f8d112819be7a42817ceb79",
-  "README.md": "d292f9a8bfbecb208f97d2ca77d4b593bbea002b",
-  "package.json": "3f05859a75840f9af5ff223c498c5d41e73c6f96",
-  "src/install/global.test.ts": "9d6a365003a878d6a8c5a92503eb7809fd8f59d9",
-  "src/install/global.ts": "0fcac7cf76d05347dad2a58739124ef47972da6b",
-  "src/install/hooks.ts": "4ea5ea04779da9f2e67db3ef4ac9553315cfb66a"
+  ".github/workflows/test.yml": "a6299dd485409568738131e2d81a978420eb5acf"
 }

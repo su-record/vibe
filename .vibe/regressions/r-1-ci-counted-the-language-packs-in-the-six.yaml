@@ -1,0 +1,10 @@
+# Regression check — CI counted the language packs in the six-skill budget (skills/*/SKILL.md)
+# Source scenario: skills-size
+- id: r-1-ci-counted-the-language-packs-in-the-six
+  then: "[regression] CI counted the language packs in the six-skill budget
+    (skills/*/SKILL.md) — source skills-size: the six common skills are at most
+    300 lines in total"
+  check:
+    type: run
+    cmd: test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300
+    expect: 0

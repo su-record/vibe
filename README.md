@@ -13,7 +13,7 @@ That is the whole install. The package registers itself as a local plugin in eve
 | client | what the install does |
 |---|---|
 | Claude Code | `claude plugin marketplace add <package dir>` + `claude plugin install vibe@vibe` — skills and hooks come from the plugin, the card from its SessionStart hook |
-| Codex CLI · ChatGPT desktop | assembles the plugin tree under `~/.vibe/plugin`, registers the personal marketplace, runs `codex plugin add vibe@vibe-local`; the card goes into `~/.codex/AGENTS.md`; restart ChatGPT desktop afterwards |
+| Codex CLI · ChatGPT desktop | assembles the plugin tree under `~/.config/vibe/plugin`, registers the personal marketplace, runs `codex plugin add vibe@vibe-local`; the card goes into `~/.codex/AGENTS.md`; restart ChatGPT desktop afterwards |
 | Hermes Agent | six skills into `~/.hermes/skills`, the card block into `~/.hermes/SOUL.md` |
 | Claude desktop app | `vibe plugin mcpb --out vibe.mcpb`, open the file in the app, pick the project folder — an MCP Bundle whose only job is to call the `vibe` CLI; for the interview, approval, verdict and handoff, not for writing code |
 | no client CLI on PATH (or `VIBE_NO_PLUGIN=1`) | the older path: card, skills and hook written into the client home |
@@ -55,7 +55,10 @@ Any client can pick the work up: `vibe state` says where you are, because the st
 | `file` | exists · regex · substring · JSON Schema · column sum | `path`, `exists` / `pattern` / `contains` / `schema` / `sum: {column, equals, tolerance}` |
 | `http` | status · body schema · latency ceiling | `url`, `method`, `expect: {status, schema, maxMs}`, `timeoutMs` |
 | `eval` | count of matching cases (never a ratio) | `cases` (jsonl `{id, input, expected}`), `runner` (stdin → stdout), `expect: {pass}` |
+| `review` | a language pack's reviewers — copy editor, then chief editor — run by the harness through the client CLI; a stage passes only on an exact `PASS` | `path` (the manuscript), `lang` (`ko` · `en`, else detected from the text), `contract`, `evidence`, `timeoutMs` |
 | `human` | none — a question in the inbox | `question` |
+
+`review` is the only model-judged check: the harness spawns `claude -p` (or `codex exec`, or `VIBE_REVIEW_CMD`) with the reviewer prompt and the manuscript on stdin, and reads the reply — nothing the writing model says about its own prose counts. The scope skill marks such a scenario `⚠ model-judged`, and the same REJECT twice in a row is STUCK like any other failure.
 
 A project's code-size rule is a scenario too: `check: { type: run, cmd: "vibe size src --max-file 400 --max-function 50" }` — `vibe size` exits 1 when a file or function is over, and the scope skill proposes it whenever an intent writes code.
 
@@ -111,7 +114,9 @@ Default catalogs: `anthropics/skills`, `vercel-labs/agent-skills`, `NousResearch
 
 ## Skills
 
-Six common skills ship with the package — `vibe` (entry), `discover`, `scope`, `build`, `prove`, `handoff` — under 300 lines in total. They contain the harness command sequence and message shapes for each stage, nothing about how to code.
+Six common skills ship with the package — `vibe` (entry), `vibe-discover`, `vibe-scope`, `vibe-build`, `vibe-prove`, `vibe-handoff` — under 300 lines in total, named by the Agent Skills grammar (lowercase, digits, hyphens; name = directory) so Claude Code, Codex and ChatGPT load them alike. They contain the harness command sequence and message shapes for each stage, nothing about how to code.
+
+Language packs ship next to the six: `antislop-ko` and `antislop-en` (`skills/antislop-<lang>`, written in that language) carry the writing principles that strip AI clichés and translationese, and `reviewers/<lang>/` the two reviewer prompts the `review` check runs — also installed as client agents (`agents/<lang>-copy-editor.md` for Claude Code, TOML under the Codex plugin tree). A pack loads only when that language is written.
 
 The six live in the client home, not in the repository. Project-specific skills live only inside the project (`.claude/skills`, `.codex/skills`, registry in `.vibe/skills/`) and are installed only when bound to a check or carrying knowledge the model lacks:
 
@@ -145,7 +150,7 @@ config.json      token policy · skill catalogs
 
 ## Status
 
-`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the package is the plugin — `npm i -g` registers a local plugin in Claude Code and Codex/ChatGPT, Hermes Agent joins as a client, `vibe plugin build --check` gates manifest drift. `4.1.1`: `vibe update`. `4.1.2`: the Claude desktop app through an MCP Bundle (`vibe plugin mcpb`). `4.1.3`: the bundle finds the CLI without the shell's PATH (Homebrew, nvm, fnm, volta) or from a path set at install. `4.1.4`: `vibe read` for xlsx · docx · pptx · pdf, `vibe profile` reads xlsx, card rule 8 (read files whole). `4.1.5`: `vibe read` for Hangul hwp · hwpx and html. `4.1.6`: `vibe size`, a built-in file/function size check for any project; the CLI split into modules; the repository's own limit is now per file (400), not a total. `4.1.7`: hook entries left by vibe 3 that point at a missing script are swept at every command, so Claude Code stops reporting them. vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the package is the plugin — `npm i -g` registers a local plugin in Claude Code and Codex/ChatGPT, Hermes Agent joins as a client, `vibe plugin build --check` gates manifest drift. `4.1.1`: `vibe update`. `4.1.2`: the Claude desktop app through an MCP Bundle (`vibe plugin mcpb`). `4.1.3`: the bundle finds the CLI without the shell's PATH (Homebrew, nvm, fnm, volta) or from a path set at install. `4.1.4`: `vibe read` for xlsx · docx · pptx · pdf, `vibe profile` reads xlsx, card rule 8 (read files whole). `4.1.5`: `vibe read` for Hangul hwp · hwpx and html. `4.1.6`: `vibe size`, a built-in file/function size check for any project; the CLI split into modules; the repository's own limit is now per file (400), not a total. `4.1.7`: hook entries left by vibe 3 that point at a missing script are swept at every command, so Claude Code stops reporting them. `4.1.8`: the five stage skills are `vibe-discover` … `vibe-handoff` (a dot is outside the Agent Skills name grammar) and the dotted directories an older install left in a client home are swept; `.vibe/` means one thing — the plugin tree moves to `~/.config/vibe/plugin`, a `.vibe/` counts as a project only when it holds a record, the search stops at `.git` and never lands on the home, `vibe state` shows `root`, a `run` check that exits 127 names its cwd; the `review` check and the `antislop-ko` · `antislop-en` language packs — the harness runs a copy editor and a chief editor on human-read text and passes only on `PASS`. vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Bench — the ledger is the benchmark
 

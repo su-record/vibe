@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { evalCheck } from './checks/eval.js';
 import { fileCheck } from './checks/file.js';
 import { httpCheck } from './checks/http.js';
+import { reviewCheck } from './checks/review.js';
 import { runCheck, type CheckResult } from './checks/run.js';
 import { detectClient, detectHarness, detectModel, reportedCostUsd, reportedTurns } from './client.js';
 import { invalidTransition } from './errors.js';
@@ -69,6 +70,8 @@ async function execute(scenario: Scenario, root: string): Promise<CheckResult> {
       return httpCheck(check, root);
     case 'eval':
       return evalCheck(check, root);
+    case 'review':
+      return reviewCheck(check, root);
     case 'human':
       return { pass: false, exit: null, ms: 0, tail: check.question, reason: 'human — not judged by the harness' };
     default:

@@ -19,7 +19,7 @@ import { readState } from './state.js';
  * installed only when bound to a check or carrying knowledge the model does not have. Proposals
  * are proposals — installing, running remote commands and global installs never happen by themselves.
  */
-export const COMMON_SKILLS: readonly string[] = ['vibe', 'vibe.discover', 'vibe.scope', 'vibe.build', 'vibe.prove', 'vibe.handoff'];
+export const COMMON_SKILLS: readonly string[] = ['vibe', 'vibe-discover', 'vibe-scope', 'vibe-build', 'vibe-prove', 'vibe-handoff'];
 const SKILL_DIRS = ['.claude/skills', '.codex/skills'] as const;
 const NAME_RE = /^[a-z][a-z0-9.-]{0,39}$/;
 const DEFAULT_UNUSED_RUNS = 10;

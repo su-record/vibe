@@ -1,81 +1,65 @@
 {
   "run": "r-4",
-  "at": "2026-09-03T16:10:36.969Z",
+  "at": "2026-09-04T08:08:34.193Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "2bf656e512e3",
+  "scenarioSet": "d575e036fc75",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 4799,
-      "tail": "npm notice run @su-record/vibe@4.0.1 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 3647,
+      "tail": "npm notice run @su-record/vibe@4.1.7 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
-      "status": "fail",
-      "exit": 1,
-      "ms": 23694,
-      "tail": "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯\n\n\n Test Files  1 failed | 15 passed (16)\n      Tests  3 failed | 80 passed (83)\n   Start at  16:10:37\n   Duration  22.99s (transform 978ms, setup 0ms, import 2.57s, tests 26.08s, environment 2ms)"
+      "status": "pass",
+      "exit": 0,
+      "ms": 28716,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  23 passed (23)\n      Tests  106 passed (106)\n   Start at  08:08:34\n   Duration  28.06s (transform 1.16s, setup 0ms, import 2.56s, tests 35.14s, environment 3ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 45,
-      "tail": "card.md 705 bytes (limit 1024)"
+      "ms": 52,
+      "tail": "card.md 873 bytes (limit 1024)"
     },
     {
-      "id": "source-size",
+      "id": "file-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 68,
-      "tail": "src (non-test) 3793 lines (limit 5000)"
+      "ms": 436,
+      "tail": "51 files · 5389 lines · largest src/core/skills.ts (329) · limits file 400 · function 50\n  every file and function within limits"
     },
     {
       "id": "skills-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 9,
+      "ms": 8,
       "tail": ""
     },
     {
-      "id": "harness-arm",
+      "id": "plugin-tree",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1100,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  16:11:01\n   Duration  263ms (transform 70ms, setup 0ms, import 98ms, tests 9ms, environment 0ms)"
+      "ms": 223,
+      "tail": "plugin tree matches package.json"
     },
     {
-      "id": "judge-checkable",
+      "id": "sweep",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 105,
-      "tail": "judge: 5 file checks · reference total 4500.5"
-    },
-    {
-      "id": "bench-ran",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 50,
-      "tail": "bench: 20 judged runs · arms claude-code/on, claude-code/off, codex/on, codex/off"
-    },
-    {
-      "id": "compare-answers",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 139,
-      "tail": "compare by harness · metric checks · verdict inconclusive\n  observed ranges (min–max) overlap — this sample cannot tell a difference\n  on: runs 10 · usable 10 · min 5 · max 5 · mean 5.00\n  off: runs 10 · usable 10 · min 5 · max 5 · mean 5.00"
+      "ms": 1225,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 8 skipped (9)\n   Start at  08:09:03\n   Duration  398ms (transform 181ms, setup 0ms, import 232ms, tests 11ms, environment 0ms)"
     }
   ]
 }

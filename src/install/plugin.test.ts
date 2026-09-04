@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { packageRoot } from '../core/paths.js';
-import { installPlugin, MARKETPLACE_NAME, pluginPaths, pluginStatus } from './plugin.js';
+import { codexAgentToml, installPlugin, languagePacks, MARKETPLACE_NAME, pluginPaths, pluginStatus, sweepLegacyPluginStore } from './plugin.js';
 
 let home: string;
 beforeEach(() => {
@@ -19,7 +19,7 @@ describe('vibe plugin install / status', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(paths.tree, '.codex-plugin', 'plugin.json'), 'utf-8')) as { name: string; version: string; skills: string; hooks: string };
     const pkg = JSON.parse(fs.readFileSync(path.join(packageRoot(), 'package.json'), 'utf-8')) as { version: string };
     expect(manifest).toMatchObject({ name: 'vibe', version: pkg.version, skills: './skills/', hooks: './hooks/codex-hooks.json' });
-    expect(fs.readdirSync(path.join(paths.tree, 'skills')).sort()).toEqual(['vibe', 'vibe.build', 'vibe.discover', 'vibe.handoff', 'vibe.prove', 'vibe.scope']);
+    expect(fs.readdirSync(path.join(paths.tree, 'skills')).sort()).toEqual([...languagePacks(), 'vibe', 'vibe-build', 'vibe-discover', 'vibe-handoff', 'vibe-prove', 'vibe-scope'].sort());
     const hooks = fs.readFileSync(path.join(paths.tree, 'hooks', 'codex-hooks.json'), 'utf-8');
     expect(hooks).toContain('${PLUGIN_ROOT}/hooks/notify.js');
     expect(hooks).toContain('${PLUGIN_ROOT}/hooks/session.js');
@@ -29,7 +29,7 @@ describe('vibe plugin install / status', () => {
 
     const marketplace = JSON.parse(fs.readFileSync(paths.marketplace, 'utf-8')) as { name: string; plugins: Array<{ name: string; source: { source: string; path: string } }> };
     expect(marketplace.name).toBe(MARKETPLACE_NAME);
-    expect(marketplace.plugins[0]).toMatchObject({ name: 'vibe', source: { source: 'local', path: './.vibe/plugin/vibe' } });
+    expect(marketplace.plugins[0]).toMatchObject({ name: 'vibe', source: { source: 'local', path: './.config/vibe/plugin/vibe' } });
     expect(report.next[0]).toContain('codex plugin marketplace add');
     expect(report.next[1]).toBe(`codex plugin add vibe@${MARKETPLACE_NAME}`);
 
@@ -47,7 +47,7 @@ describe('vibe plugin install / status', () => {
     const marketplace = JSON.parse(fs.readFileSync(paths.marketplace, 'utf-8')) as { name: string; plugins: Array<{ name: string; source: { path: string } }> };
     expect(marketplace.name).toBe('mine');
     expect(marketplace.plugins.map((p) => p.name)).toEqual(['other', 'vibe']);
-    expect(marketplace.plugins[1]?.source.path).toBe('./.vibe/plugin/vibe');
+    expect(marketplace.plugins[1]?.source.path).toBe('./.config/vibe/plugin/vibe');
   });
 
   it('reports drift when the tree is stale or missing', () => {
@@ -57,8 +57,38 @@ describe('vibe plugin install / status', () => {
     const manifestPath = path.join(paths.tree, '.codex-plugin', 'plugin.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as { version: string };
     fs.writeFileSync(manifestPath, JSON.stringify({ ...manifest, version: '0.0.1' }));
-    fs.rmSync(path.join(paths.tree, 'skills', 'vibe.prove'), { recursive: true });
+    fs.rmSync(path.join(paths.tree, 'skills', 'vibe-prove'), { recursive: true });
     const status = pluginStatus(home);
     expect(status.drift).toEqual([`manifest 0.0.1 ≠ package ${status.packageVersion}`, 'skills 5 ≠ 6']);
+  });
+
+  it('the tree lives under ~/.config/vibe; a ≤ 4.1.7 store at ~/.vibe/plugin goes, and an emptied ~/.vibe with it', () => {
+    fs.mkdirSync(path.join(home, '.vibe', 'plugin', 'vibe', 'skills'), { recursive: true });
+    fs.writeFileSync(path.join(home, '.vibe', 'plugin', 'vibe', 'README.md'), 'old');
+    const report = installPlugin(home);
+    expect(report.tree).toBe(path.join(home, '.config', 'vibe', 'plugin', 'vibe'));
+    expect(fs.existsSync(path.join(home, '.vibe'))).toBe(false);
+    const marketplace = JSON.parse(fs.readFileSync(pluginPaths(home).marketplace, 'utf-8')) as { plugins: Array<{ name: string; source: { path: string } }> };
+    expect(marketplace.plugins.find((p) => p.name === 'vibe')?.source.path).toBe('./.config/vibe/plugin/vibe');
+    // a home .vibe that holds a project record is left alone
+    fs.mkdirSync(path.join(home, '.vibe', 'plugin'), { recursive: true });
+    fs.writeFileSync(path.join(home, '.vibe', 'state.json'), '{}');
+    expect(sweepLegacyPluginStore(home)).toEqual([path.join(home, '.vibe', 'plugin')]);
+    expect(fs.existsSync(path.join(home, '.vibe', 'state.json'))).toBe(true);
+  });
+
+  it('every language pack ships two Codex reviewers as TOML in the tree', () => {
+    installPlugin(home);
+    const agents = path.join(pluginPaths(home).tree, 'agents');
+    expect(languagePacks().length).toBeGreaterThan(0);
+    for (const pack of languagePacks()) {
+      const lang = pack.replace('antislop-', '');
+      for (const stage of ['copy-editor', 'chief-editor']) {
+        const toml = fs.readFileSync(path.join(agents, `${lang}-${stage}.toml`), 'utf-8');
+        expect(toml).toContain(`name = "${lang}-${stage}"`);
+        expect(toml).toContain('developer_instructions = """');
+        expect(codexAgentToml(lang, stage)).toBe(toml);
+      }
+    }
   });
 });
