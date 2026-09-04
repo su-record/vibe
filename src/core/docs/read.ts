@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { usage } from '../errors.js';
 import { formatOf, parseTable, type Cell, type Table } from '../table.js';
+import { htmlText } from './html.js';
+import { readHwp, readHwpx } from './hwp.js';
 import { readDocx, readPptx, readXlsx, type Sheet } from './office.js';
 import { readPdf } from './pdf.js';
 
@@ -10,7 +12,7 @@ import { readPdf } from './pdf.js';
  * pptx (Office XML, no dependency), pdf (pdftotext or built-in), and the table formats. Images are
  * not read here: the client's own model sees them.
  */
-export type DocFormat = 'xlsx' | 'docx' | 'pptx' | 'pdf' | 'csv' | 'tsv' | 'jsonl' | 'json' | 'text';
+export type DocFormat = 'xlsx' | 'docx' | 'pptx' | 'pdf' | 'hwpx' | 'hwp' | 'html' | 'csv' | 'tsv' | 'jsonl' | 'json' | 'text';
 
 export interface Section {
   title: string;
@@ -41,6 +43,9 @@ export function docFormatOf(file: string): DocFormat {
   if (ext === 'docx' || ext === 'dotx') return 'docx';
   if (ext === 'pptx' || ext === 'potx') return 'pptx';
   if (ext === 'pdf') return 'pdf';
+  if (ext === 'hwpx') return 'hwpx';
+  if (ext === 'hwp') return 'hwp';
+  if (ext === 'html' || ext === 'htm') return 'html';
   return formatOf(file) ?? 'text';
 }
 
@@ -83,6 +88,9 @@ function sections(file: string, format: DocFormat, buf: Buffer, options: ReadOpt
     const pdf = readPdf(file, buf);
     return { method: pdf.method, sections: pageRange(options.pages, pdf.pages.length).map((i) => ({ title: `page ${i + 1}`, text: pdf.pages[i] ?? '' })) };
   }
+  if (format === 'hwpx') return { method: 'owpml', sections: readHwpx(buf).map((t, i) => ({ title: `¶${i + 1}`, text: t })) };
+  if (format === 'hwp') return { method: 'hwp5', sections: readHwp(buf).map((t, i) => ({ title: `¶${i + 1}`, text: t })) };
+  if (format === 'html') return { method: 'html', sections: [{ title: path.basename(file), text: htmlText(buf.toString('utf-8')) }] };
   if (format === 'text') return { method: 'utf-8', sections: [{ title: path.basename(file), text: buf.toString('utf-8') }] };
   const table = parseTable(buf.toString('utf-8'), format);
   return { method: 'table', sections: [{ title: path.basename(file), table, text: tableMarkdown(table) }] };
