@@ -1,0 +1,28 @@
+# Regression check — Codex plugin never followed vibe update: codexRegistered read vibe's own tree and the marketplace entry name, never the version Codex held or where the entry pointed; vibe status printed the package version for Codex
+# Source scenario: codex-stale
+# Output at the time:
+#   
+#    RUN  v4.1.11 /home/ubuntu/repos/vibe
+#   
+#   
+#    Test Files  1 passed (1)
+#         Tests  2 passed | 4 skipped (6)
+#      Start at  18:06:38
+#      Duration  1.08s (transform 469ms, setup 0ms, import 552ms, tests 241ms, environment 0ms)
+- id: r-1-codex-plugin-never-followed-vibe-update-
+  then: "[regression] Codex plugin never followed vibe update: codexRegistered
+    read vibe's own tree and the marketplace entry name, never the version Codex
+    held or where the entry pointed; vibe status printed the package version for
+    Codex — source codex-stale: the first status reports the old version and not
+    current; the repair rewrites the marketplace to the new tree and logs plugin
+    remove then plugin add; the second status reports the package version and
+    current; the second ensureGlobal runs nothing"
+  check:
+    type: run
+    cmd: npx vitest run src/install/register.test.ts -t 'codex behind'
+    expect: 0
+    timeoutMs: 120000
+  given: a home with the codex CLI, a Codex cache holding an older vibe plugin,
+    and a marketplace entry pointing at ./.vibe/plugin/vibe
+  when: status is read, ensureGlobal runs, status is read again, ensureGlobal runs
+    again

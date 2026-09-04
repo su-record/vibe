@@ -26,7 +26,17 @@ case "$*" in
   "plugin uninstall"*) printf '{"version":2,"plugins":{}}' > "$P/installed_plugins.json";;
 esac
 `;
+/** Codex copies the marketplace's tree into ~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/ on add and deletes it on remove. */
 const CODEX_SHIM = `#!/bin/sh
+echo "$@" >> "$HOME/codex.log"
+C="$HOME/.codex/plugins/cache/vibe-local/vibe"
+case "$*" in
+  "--version") echo codex-cli 9.9.9;;
+  "plugin add"*) V=$(node -p "require('$HOME/.config/vibe/plugin/vibe/.codex-plugin/plugin.json').version"); mkdir -p "$C/$V"; cp -r "$HOME/.config/vibe/plugin/vibe/." "$C/$V/";;
+  "plugin remove"*) rm -rf "$C";;
+esac
+`;
+const CODEX_SHIM_NO_CACHE = `#!/bin/sh
 echo "$@" >> "$HOME/codex.log"
 case "$*" in "--version") echo codex-cli 9.9.9;; esac
 `;
@@ -78,7 +88,8 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(removed).toEqual(['claude plugin vibe@vibe', 'claude marketplace vibe']);
   });
 
-  it('plugin mode: codex gets the assembled tree, the personal marketplace and the two codex commands; the card stays in ~/.codex/AGENTS.md', () => {
+  it('plugin mode: codex gets the assembled tree, the personal marketplace and the two codex commands; the card stays in ~/.codex/AGENTS.md; a Codex whose cache cannot be read is not stale', () => {
+    fs.writeFileSync(path.join(shim, 'codex'), CODEX_SHIM_NO_CACHE, { mode: 0o755 });
     fs.mkdirSync(path.join(home, '.codex'));
     const report = setupGlobal(home);
     expect(report.surfaces['codex']).toMatchObject({ mode: 'plugin', hook: 'plugin', card: 'created' });
@@ -88,7 +99,39 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(fs.readFileSync(path.join(home, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
     expect(globalStatus(home).clients['codex']).toMatchObject({ mode: 'plugin', current: true });
     expect(ensureGlobal(home)).toEqual([]);
+    expect(log('codex.log')).toHaveLength(2); // an unreadable cache is not stale — nothing ran again
     expect(uninstallGlobal(home)).toEqual(expect.arrayContaining([path.join(home, '.config', 'vibe', 'plugin', 'vibe'), '.codex/AGENTS.md card']));
+    expect(log('codex.log').at(-1)).toBe('plugin remove vibe@vibe-local');
+  });
+
+  it('plugin mode: codex behind — an older plugin in the Codex cache and a marketplace entry at the ≤ 4.1.7 path are read as stale, repaired by remove + add, and read as current afterwards', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(packageRoot(), 'package.json'), 'utf-8')) as { version: string };
+    fs.mkdirSync(path.join(home, '.codex'));
+    fs.mkdirSync(path.join(home, '.agents', 'plugins'), { recursive: true });
+    fs.writeFileSync(path.join(home, '.agents', 'plugins', 'marketplace.json'), JSON.stringify({ name: 'vibe-local', plugins: [{ name: 'vibe', source: { source: 'local', path: './.vibe/plugin/vibe' } }] }));
+    const old = path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.1', '.codex-plugin');
+    fs.mkdirSync(old, { recursive: true });
+    fs.writeFileSync(path.join(old, 'plugin.json'), JSON.stringify({ name: 'vibe', version: '0.0.1' }));
+
+    const before = globalStatus(home).clients['codex'];
+    expect(before).toMatchObject({ mode: 'plugin', current: false, pluginVersion: '0.0.1' });
+    expect(ensureGlobal(home)).toEqual(['codex']);
+    expect(log('codex.log')).toEqual([`plugin marketplace add ${home}`, 'plugin remove vibe@vibe-local', 'plugin add vibe@vibe-local']);
+    const marketplace = JSON.parse(fs.readFileSync(path.join(home, '.agents', 'plugins', 'marketplace.json'), 'utf-8')) as { plugins: Array<{ name: string; source: { path: string } }> };
+    expect(marketplace.plugins.find((p) => p.name === 'vibe')?.source.path).toBe('./.config/vibe/plugin/vibe');
+    expect(fs.existsSync(path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.1'))).toBe(false);
+
+    const after = globalStatus(home).clients['codex'];
+    expect(after).toMatchObject({ mode: 'plugin', current: true, pluginVersion: pkg.version });
+    expect(ensureGlobal(home)).toEqual([]);
+    expect(log('codex.log')).toHaveLength(3); // current — nothing ran again
+  });
+
+  it('plugin mode: codex behind — when the marketplace is already configured, codex marketplace add may refuse and the registration still goes on', () => {
+    fs.writeFileSync(path.join(shim, 'codex'), CODEX_SHIM.replace('"plugin add"*)', '"plugin marketplace add"*) echo "marketplace vibe-local already exists" >&2; exit 1;;\n  "plugin add"*)'), { mode: 0o755 });
+    fs.mkdirSync(path.join(home, '.codex'));
+    expect(setupGlobal(home).surfaces['codex']).toMatchObject({ mode: 'plugin' });
+    expect(globalStatus(home).clients['codex']).toMatchObject({ current: true });
   });
 
   it('home mode: VIBE_NO_PLUGIN (or no CLI) keeps the older path — card, skills and hook in the client home', () => {

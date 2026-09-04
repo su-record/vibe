@@ -1,3 +1,12 @@
 {
-  ".github/workflows/test.yml": "a6299dd485409568738131e2d81a978420eb5acf"
+  ".claude-plugin/marketplace.json": "ad27445da371079c48cf359d5008821b383eec24",
+  ".claude-plugin/plugin.json": "1868610bc6e5a6670e87a5932431cfe2252b686a",
+  ".codex-plugin/plugin.json": "60009189595f344dc65ddea9bc02a12637f8ed2f",
+  "README.md": "f59a913208734dca9e9710d8a5f653e01f20096c",
+  "package.json": "f921654e9e61b18ead4cb08870bf5ff6201b40d6",
+  "src/install/global.ts": "caf1b6e278bf3b6f6051fdf0cf334bf712502afd",
+  "src/install/plugin.test.ts": "1e8e8203dce1970f38ee294adcdfe852d48c2ed2",
+  "src/install/plugin.ts": "7e079f121180d7b4077332be105b15e98ade17e4",
+  "src/install/register.test.ts": "4b2f1446e16ccb3dbd56f9169bd3a8794a85d7b1",
+  "src/install/register.ts": "4ea5987b4ac865102f36893b4f169590743713d5"
 }

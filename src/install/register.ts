@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { packageRoot } from '../core/paths.js';
 import { readJson, writeJson } from '../core/store.js';
-import { installPlugin, pluginPaths, pluginStatus } from './plugin.js';
+import { installPlugin, MARKETPLACE_NAME, pluginPaths, pluginStatus } from './plugin.js';
+import { newer } from './update.js';
 
 /**
  * The package registers itself as a local plugin wherever a client CLI is present, so a plugin
@@ -83,26 +84,55 @@ export function unregisterClaude(home: string): string[] {
 
 // ─── Codex CLI · ChatGPT desktop ─────────────────────────────────────────
 
-export function codexRegistered(home: string): boolean {
-  const s = pluginStatus(home);
-  return s.exists && s.registered && s.drift.length === 0;
+function marketplaceName(home: string): string {
+  return readJson<{ name?: string }>(pluginPaths(home).marketplace)?.name ?? MARKETPLACE_NAME;
 }
 
-/** Assemble the tree under ~/.config/vibe/plugin, register the personal marketplace, and let Codex pick it up. */
+/**
+ * The version Codex has installed, read from its cache (`~/.codex/plugins/cache/<marketplace>/vibe/<version>/`);
+ * the highest when several are present, null when Codex holds none — a reading, not the package version.
+ */
+export function codexPluginVersion(home: string): string | null {
+  const dir = path.join(home, '.codex', 'plugins', 'cache', marketplaceName(home), 'vibe');
+  if (!fs.existsSync(dir)) return null;
+  const versions = fs
+    .readdirSync(dir)
+    .filter((v) => /^\d+\.\d+\.\d+/.test(v) && fs.existsSync(path.join(dir, v, '.codex-plugin', 'plugin.json')))
+    .sort((a, b) => (newer(a, b) ? -1 : newer(b, a) ? 1 : 0));
+  return versions[0] ?? null;
+}
+
+/** Tree without drift, marketplace pointing at it, and Codex holding this version. An unreadable cache (null) is not stale. */
+export function codexRegistered(home: string): boolean {
+  const s = pluginStatus(home);
+  if (!s.exists || !s.registered || s.drift.length > 0) return false;
+  const held = codexPluginVersion(home);
+  return held === null || held === packageVersion();
+}
+
+/**
+ * Assemble the tree under ~/.config/vibe/plugin, register the personal marketplace, and let Codex pick it up.
+ * Codex has no per-plugin update: an older install is removed and added again. A marketplace that is
+ * already configured is not a failure.
+ */
 export function registerCodex(home: string): RegisterReport {
   if (codexRegistered(home)) return { ok: true, mode: 'plugin', version: packageVersion(), detail: 'current' };
+  const held = codexPluginVersion(home);
   const r = installPlugin(home);
+  const id = `vibe@${r.marketplaceName}`;
   const add = run('codex', ['plugin', 'marketplace', 'add', home], home);
-  const plug = run('codex', ['plugin', 'add', `vibe@${r.marketplaceName}`], home);
-  const ok = add.ok && plug.ok;
-  return { ok, mode: ok ? 'plugin' : 'home', version: r.version, detail: ok ? `registered vibe@${r.marketplaceName}` : `codex plugin add failed: ${(add.ok ? plug.out : add.out).slice(-200)}` };
+  if (!add.ok && !/already/i.test(add.out)) return { ok: false, mode: 'home', version: held, detail: `codex marketplace add failed: ${add.out.slice(-200)}` };
+  if (held !== null) run('codex', ['plugin', 'remove', id], home);
+  const plug = run('codex', ['plugin', 'add', id], home);
+  if (!plug.ok) return { ok: false, mode: 'home', version: held, detail: `codex plugin add failed: ${plug.out.slice(-200)}` };
+  return { ok: true, mode: 'plugin', version: r.version, detail: held ? `updated ${held} → ${r.version}` : `registered ${id}` };
 }
 
 export function unregisterCodex(home: string): string[] {
   const removed: string[] = [];
   const paths = pluginPaths(home);
   if (fs.existsSync(paths.tree)) {
-    run('codex', ['plugin', 'remove', 'vibe'], home);
+    run('codex', ['plugin', 'remove', `vibe@${marketplaceName(home)}`], home);
     fs.rmSync(paths.tree, { recursive: true, force: true });
     removed.push(paths.tree);
   }

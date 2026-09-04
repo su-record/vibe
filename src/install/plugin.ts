@@ -159,6 +159,12 @@ export function installPlugin(home?: string): PluginInstallReport {
   };
 }
 
+/** Where the marketplace entry points, resolved against the home; null when the entry carries no local path. */
+function marketplaceTarget(paths: PluginPaths, entry: Record<string, unknown> | undefined): string | null {
+  const src = entry?.source as { path?: string } | undefined;
+  return typeof src?.path === 'string' ? path.resolve(paths.home, src.path) : null;
+}
+
 export interface PluginStatusReport {
   tree: string;
   exists: boolean;
@@ -178,13 +184,15 @@ export function pluginStatus(home?: string): PluginStatusReport {
   const skillsDir = path.join(paths.tree, 'skills');
   const skills = fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir).filter((n) => n === 'vibe' || n.startsWith('vibe-')).length : 0;
   const hooks = fs.existsSync(path.join(paths.tree, 'hooks', 'codex-hooks.json')) && fs.existsSync(path.join(paths.tree, 'hooks', 'notify.js'));
-  const marketplace = readJson<MarketplaceDoc>(paths.marketplace);
-  const registered = Boolean(marketplace?.plugins?.some((p) => p?.name === 'vibe'));
+  const entry = readJson<MarketplaceDoc>(paths.marketplace)?.plugins?.find((p) => p?.name === 'vibe');
+  const registered = entry !== undefined;
+  const pointsAt = marketplaceTarget(paths, entry);
   const drift: string[] = [];
   if (!exists) drift.push('plugin tree missing — run `vibe plugin install`');
   if (exists && manifestVersion !== version) drift.push(`manifest ${manifestVersion ?? 'none'} ≠ package ${version}`);
   if (exists && skills !== SKILL_NAMES.length) drift.push(`skills ${skills} ≠ ${SKILL_NAMES.length}`);
   if (exists && !hooks) drift.push('hooks missing');
   if (!registered) drift.push('not registered in the personal marketplace');
+  if (registered && pointsAt !== paths.tree) drift.push(`marketplace points at ${pointsAt ?? 'no path'}`);
   return { tree: paths.tree, exists, manifestVersion, packageVersion: version, skills, hooks, registered, drift };
 }
