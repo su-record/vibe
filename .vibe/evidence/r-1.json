@@ -1,48 +1,48 @@
 {
   "run": "r-1",
-  "at": "2026-09-04T02:25:45.154Z",
+  "at": "2026-09-04T05:21:04.525Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "50a9a7c44dd4",
+  "scenarioSet": "f13b912f9647",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2812,
-      "tail": "npm notice run @su-record/vibe@4.1.3 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 2450,
+      "tail": "npm notice run @su-record/vibe@4.1.4 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 39264,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  20 passed (20)\n      Tests  97 passed (97)\n   Start at  02:25:48\n   Duration  38.51s (transform 1.35s, setup 0ms, import 3.40s, tests 46.50s, environment 3ms)"
+      "ms": 25588,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  21 passed (21)\n      Tests  101 passed (101)\n   Start at  05:21:07\n   Duration  25.02s (transform 954ms, setup 0ms, import 2.06s, tests 31.66s, environment 3ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 46,
-      "tail": "card.md 705 bytes (limit 1024)"
+      "ms": 45,
+      "tail": "card.md 873 bytes (limit 1024)"
     },
     {
       "id": "source-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 44,
-      "tail": "src (non-test) 4277 lines (limit 5000)"
+      "ms": 47,
+      "tail": "src (non-test) 4671 lines (limit 5000)"
     },
     {
       "id": "skills-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 17,
+      "ms": 6,
       "tail": ""
     },
     {
@@ -50,24 +50,24 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 190,
+      "ms": 157,
       "tail": "plugin tree matches package.json"
     },
     {
-      "id": "cli-lookup",
+      "id": "read-documents",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 4722,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 2 skipped (3)\n   Start at  02:25:49\n   Duration  3.52s (transform 198ms, setup 0ms, import 256ms, tests 3.07s, environment 0ms)"
+      "ms": 1480,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  05:21:07\n   Duration  516ms (transform 242ms, setup 0ms, import 300ms, tests 39ms, environment 0ms)"
     },
     {
-      "id": "manifest-setting",
+      "id": "read-example",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 316,
-      "tail": "manifest 4.1.3: vibe_cli file setting → VIBE_CLI"
+      "ms": 187,
+      "tail": ""
     }
   ]
 }

@@ -8,7 +8,12 @@ user-invocable: false
 
 ## Procedure
 
-1. If the user attached a sample or file, run `vibe profile {file} --json` first (csv · tsv · jsonl · json; ask for a CSV export of a spreadsheet). It returns columns, types, missing counts, duplicates and up to three anomalies with numbers. If there is no sample, ask for one that the success condition can be checked against.
+1. Read what the user attached through the harness, so every client sees the same thing:
+   - table (csv · tsv · jsonl · json · xlsx) → `vibe profile {file} --json` [`--sheet`]: columns, types, missing counts, duplicates, up to three anomalies with numbers
+   - document (xlsx · docx · pptx · pdf) → `vibe read {file} --json` [`--sheet` · `--pages`]; it says which reader it used (pdf: `pdftotext` when installed, else built-in)
+   - image → your own file reader; vibe does not read images
+   - code or plain text → your file reader, the whole file — never a grep excerpt
+   If there is no sample, ask for one that the success condition can be checked against.
 2. Ask **at most three questions**, each with a default. No answer means the default applies. Every question must serve one purpose: deciding what counts as success.
 3. Say the profile's anomalies before the user asks — at most three, each with its number. Do not add anomalies the profile did not find.
 4. With the answers, write the intent draft (`.vibe/intent.md`, in English):

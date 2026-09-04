@@ -1,13 +1,16 @@
-# vibe 4 · 4.1.3 — the bundle finds the CLI without the shell's PATH
+# vibe 4 · 4.1.4 — the harness reads documents
 
 ## Why
-A desktop app is launched without the terminal's PATH (macOS: /usr/bin:/bin), so the first real install of the 4.1.2 bundle would report "vibe not installed" on a machine that has it. The server now looks where npm puts binaries and accepts a path from the install screen.
+A Claude Code session extracted a PDF with Python although its own reader handles PDFs, and Codex and Hermes have no document reader at all. The sample is the FDE's raw material; when the harness reads it, every client gets the same text and the model stops improvising. Excel, the format customers actually send, finally goes in as Excel.
 
 ## What counts as success
-- With PATH empty, the server finds the CLI through the `vibe executable` install setting and names it in the initialize instructions; without either it says "CLI not found" with the install command.
-- The manifest carries the optional `vibe_cli` file setting and passes it as VIBE_CLI.
-- Earlier gates still hold: build, tests, card ≤ 1KB, source ≤ 5,000 lines, six common skills ≤ 300 lines, plugin tree current.
+- `vibe read <file>` returns the text of xlsx (sheets as markdown tables), docx (paragraphs and tables in order), pptx (slides in order) and pdf (pdftotext when installed, a built-in reader otherwise), plus the table formats and plain text; it names the reader, supports `--sheet` and `--pages`, and truncates long output with a hint.
+- `vibe profile` accepts xlsx, first or named sheet.
+- The card gains rule 8: read files whole, search only to locate; documents and samples through `vibe read` / `vibe profile`; images through the client's own reader. The card stays under 1KB.
+- The discover skill routes attachments by kind to profile, read, or the client's reader.
+- Earlier gates still hold: build, tests, source ≤ 5,000 lines, six common skills ≤ 300 lines, plugin tree current.
 
 ## Constraints
-- The search is a fixed list of usual npm prefixes and version managers; nothing is installed or written.
+- No dependency: zip via zlib, Office XML by pattern, PDF text operators by hand; quality is reported, never claimed.
+- vibe does not read images and never pretends to.
 - Every record is English; the model talks to the user in the user's language.

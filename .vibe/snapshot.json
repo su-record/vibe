@@ -1,3 +1,18 @@
 {
-  "checks/mcpb-manifest.js": "0de9309ef8d9536b7a142a38e6ff0df272982ade"
+  ".claude-plugin/marketplace.json": "4d0f65fb51807f51f8713e3534212d86f49b17a9",
+  ".claude-plugin/plugin.json": "9d5356b588c6976beccf47daa4124a38dcf1c474",
+  ".codex-plugin/plugin.json": "d38636e95561e41e0b37a69c2989866661f0d105",
+  "README.md": "c94d601750757d7784e716e5d22beb09c2b744f9",
+  "card.md": "d48f3345a66c2f960840a47460a98e8df53cc1e5",
+  "package.json": "c9544ad7a25eba5fe76e307f7cbee16e9703b3b9",
+  "skills/vibe.discover/SKILL.md": "50fbb714f57be7fee23fc14d05bc31e59376da59",
+  "src/cli.ts": "1f3c4713a7d01a98f0fd68ab8c6f3d36f5d0524e",
+  "src/core/profile.test.ts": "8eed9cdc6901dad803e160abe01e5ea2e0ad8c25",
+  "src/core/profile.ts": "8af3db9e40c1b5cec1d01f59a964866fce6928dd",
+  "src/core/docs/office.ts": "c4f7295619bc2b1f8d7bf50c571dfdc2aabfcb79",
+  "src/core/docs/pdf.ts": "b8c68266d685e0e39642d3879d8c6248d2b084a3",
+  "src/core/docs/read.test.ts": "96a4dbda2f6dd8fa9a19e0257d013b83a18034a8",
+  "src/core/docs/read.ts": "3641020a6c5f208f59657b32c305d623a211c1f1",
+  "src/core/docs/xml.ts": "45a1e126a15defac8159d1a4016f1127ebd647b0",
+  "src/core/docs/zip.ts": "a187b69bbe9df24194b21c34b10aaf0735fb777c"
 }

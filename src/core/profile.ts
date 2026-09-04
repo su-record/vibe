@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { usage } from './errors.js';
+import { xlsxTable } from './docs/read.js';
 import { formatOf, parseTable, type Cell, type Table } from './table.js';
 
 /**
@@ -89,11 +90,20 @@ export function profileTable(table: Table, file: string): Profile {
   return { file, format: table.format, rows: table.rows.length, columns, duplicateRows, anomalies: anomaliesOf(table, columns, duplicateRows) };
 }
 
-export function profileFile(root: string, file: string): Profile {
-  const format = formatOf(file);
-  if (!format) throw usage(`cannot profile ${path.extname(file) || 'a file without extension'} — csv · tsv · jsonl · json (export spreadsheets as CSV)`);
+export function profileFile(root: string, file: string, sheet?: string): Profile {
   const target = path.resolve(root, file);
   if (!fs.existsSync(target)) throw usage(`no such file: ${file}`);
+  const ext = path.extname(file).toLowerCase();
+  if (ext === '.xlsx' || ext === '.xlsm') {
+    try {
+      return { ...profileTable(xlsxTable(fs.readFileSync(target), sheet), file), format: 'csv' };
+    } catch (error) {
+      if ((error as { exitCode?: number }).exitCode) throw error;
+      throw usage(`cannot parse ${file}: ${(error as Error).message}`);
+    }
+  }
+  const format = formatOf(file);
+  if (!format) throw usage(`cannot profile ${path.extname(file) || 'a file without extension'} — csv · tsv · jsonl · json · xlsx`);
   let table: Table;
   try {
     table = parseTable(fs.readFileSync(target, 'utf-8'), format);
