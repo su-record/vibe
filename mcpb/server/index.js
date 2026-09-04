@@ -10,6 +10,8 @@
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import readline from 'node:readline';
 
 const PROTOCOL = '2025-06-18';
@@ -32,9 +34,41 @@ const TOOLS = [
   { name: 'vibe_skill_suggest', description: 'Skill proposals from signals in scenarios, regressions, inbox and state.', args: {}, cmd: () => ['skill', 'suggest'] },
 ];
 
+/**
+ * A desktop app does not inherit the shell's PATH (macOS launches it with /usr/bin:/bin), so the
+ * CLI is looked up the way a person would: the path given at install, then PATH, then the usual
+ * npm prefixes — Homebrew, nvm, fnm, volta, npm's own prefix, ~/.local/bin.
+ */
+function findVibe() {
+  const given = process.env.VIBE_CLI && process.env.VIBE_CLI.trim();
+  if (given && fs.existsSync(given)) return given;
+  const home = os.homedir();
+  const exe = process.platform === 'win32' ? 'vibe.cmd' : 'vibe';
+  const dirs = [
+    ...(process.env.PATH || '').split(path.delimiter),
+    '/opt/homebrew/bin', '/usr/local/bin', path.join(home, '.local', 'bin'), path.join(home, '.npm-global', 'bin'), path.join(home, 'node_modules', '.bin'),
+    path.join(home, '.volta', 'bin'), path.join(home, 'AppData', 'Roaming', 'npm'),
+  ];
+  for (const base of [path.join(home, '.nvm', 'versions', 'node'), path.join(home, '.fnm', 'node-versions'), path.join(home, 'Library', 'Application Support', 'fnm', 'node-versions')]) {
+    try {
+      for (const v of fs.readdirSync(base).sort().reverse()) dirs.push(path.join(base, v, 'bin'), path.join(base, v, 'installation', 'bin'));
+    } catch {
+      /* not this version manager */
+    }
+  }
+  for (const dir of dirs) {
+    const candidate = path.join(dir, exe);
+    if (dir && fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+const VIBE = findVibe();
+
 function runVibe(args, input) {
-  const r = spawnSync('vibe', [...args, '--json'], { cwd: project, encoding: 'utf-8', input, timeout: 600000, env: { ...process.env, VIBE_CLIENT: 'claude-app' }, shell: process.platform === 'win32' });
-  if (r.error && r.error.code === 'ENOENT') return { isError: true, text: 'the vibe CLI is not installed on this machine — run: npm i -g @su-record/vibe' };
+  if (!VIBE) return { isError: true, text: 'the vibe CLI was not found — install it with `npm i -g @su-record/vibe`, or set its path in the extension settings (vibe executable)' };
+  const r = spawnSync(VIBE, [...args, '--json'], { cwd: project, encoding: 'utf-8', input, timeout: 600000, env: { ...process.env, VIBE_CLIENT: 'claude-app', PATH: `${path.dirname(VIBE)}${path.delimiter}${process.env.PATH || ''}` }, shell: process.platform === 'win32' });
+  if (r.error) return { isError: true, text: `could not run ${VIBE}: ${r.error.message}` };
   const text = (r.stdout || '').trim() || (r.stderr || '').trim() || `exit ${r.status}`;
   return { isError: r.status !== 0, text };
 }
@@ -50,7 +84,7 @@ function handle(msg) {
   if (msg.id === undefined) return; // notification
   const { id, method, params = {} } = msg;
   if (method === 'initialize') {
-    return respond(id, { protocolVersion: params.protocolVersion || PROTOCOL, capabilities: { tools: {} }, serverInfo: { name: 'vibe', version: VERSION }, instructions: `vibe project: ${project}${fs.existsSync(`${project}/.vibe`) ? '' : ' (no .vibe yet — the first intent draft creates it)'}. Start with vibe_state. Talk to the user in the user's language; write every record in English.` });
+    return respond(id, { protocolVersion: params.protocolVersion || PROTOCOL, capabilities: { tools: {} }, serverInfo: { name: 'vibe', version: VERSION }, instructions: `vibe project: ${project}${fs.existsSync(`${project}/.vibe`) ? '' : ' (no .vibe yet — the first intent draft creates it)'} · CLI ${VIBE || 'not found — npm i -g @su-record/vibe'}. Start with vibe_state. Talk to the user in the user's language; write every record in English.` });
   }
   if (method === 'ping') return respond(id, {});
   if (method === 'tools/list') {

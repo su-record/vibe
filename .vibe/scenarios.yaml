@@ -21,23 +21,17 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.2
+  then: the committed manifests match package.json 4.1.3
   check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
-- id: mcpb-bundle
+- id: cli-lookup
   needs: [build]
-  given: the package on disk
-  when: vibe plugin mcpb runs
-  then: a valid zip with manifest, server and README is written and python's zipfile validates it
-  check: { type: run, cmd: "npx vitest run src/install/mcpb.test.ts -t 'valid zip'", expect: 0, timeoutMs: 120000 }
+  given: a server started with PATH=/nonexistent
+  when: initialize is sent with and without the vibe_cli setting
+  then: it names the CLI from the setting, and says CLI not found without it
+  check: { type: run, cmd: "npx vitest run src/install/mcpb.test.ts -t 'without PATH'", expect: 0, timeoutMs: 120000 }
 
-- id: mcpb-server
+- id: manifest-setting
   needs: [build]
-  given: the vibe CLI on PATH and an empty project folder
-  when: a stdio client sends initialize, tools/list and tools/call
-  then: the server answers, drafts an intent through the CLI, and rejects an unknown tool with a JSON-RPC error
-  check: { type: run, cmd: "npx vitest run src/install/mcpb.test.ts -t 'stdio'", expect: 0, timeoutMs: 120000 }
-
-- id: claude-app-visible
-  then: the bundle installs in the Claude desktop app and vibe_state answers there
-  check: { type: human, question: "Run `vibe plugin mcpb --out ~/Desktop/vibe.mcpb`, open the file in the Claude desktop app, pick a project folder, and ask Claude to call vibe_state — does it answer?" }
+  then: the generated manifest carries the optional vibe_cli file setting mapped to VIBE_CLI
+  check: { type: run, cmd: "node checks/mcpb-manifest.js", expect: 0 }

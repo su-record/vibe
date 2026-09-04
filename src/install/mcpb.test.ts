@@ -64,4 +64,22 @@ describe('mcpb — the Claude desktop bundle', () => {
     expect(fs.existsSync(path.join(project, '.vibe', 'intent.md'))).toBe(true);
     expect((byId[5]!['error'] as { code: number }).code).toBe(-32602);
   });
+
+  it('mcpb: the server finds the CLI without PATH when the install setting names it, and says so when it cannot', async () => {
+    const shim = path.join(dir, 'bin');
+    fs.mkdirSync(shim);
+    fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${path.join(packageRoot(), 'dist', 'cli.js')}" "$@"\n`, { mode: 0o755 });
+    const ask = (env: Record<string, string>): Promise<string> => new Promise((resolve) => {
+      const server = spawn(process.execPath, [path.join(packageRoot(), 'mcpb', 'server', 'index.js')], { env: { ...env, PATH: '/nonexistent', HOME: dir, VIBE_PROJECT_DIR: dir, VIBE_SKIP_SETUP: '1', VIBE_OFFLINE: '1' } });
+      let out = '';
+      server.stdout.on('data', (c: Buffer) => void (out += c.toString()));
+      server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })}\n`);
+      setTimeout(() => {
+        server.kill();
+        resolve(out);
+      }, 1500);
+    });
+    expect(await ask({ VIBE_CLI: path.join(shim, 'vibe') })).toContain(`CLI ${path.join(shim, 'vibe')}`);
+    expect(await ask({})).toContain('CLI not found');
+  });
 });
