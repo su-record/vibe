@@ -3,10 +3,9 @@
  * SessionStart hook for the marketplace plugins (Claude Code · Codex · ChatGPT desktop).
  *
  * A plugin cannot write the client's CLAUDE.md / AGENTS.md, so the always-on card is handed to
- * the model here as context instead. It also makes sure the `vibe` CLI the skills call exists at
- * this plugin's version — installing it with npm when it is missing or older, and saying so.
- * If the npm install already put the card into this client's home, the plugin steps back: one
- * card, one hook, never two. Always exits 0.
+ * the model here as context instead, with one line about the `vibe` CLI the skills call (the
+ * npm package that registered this plugin; never installed from here). If the client home already
+ * carries the card, the plugin steps back: one card, one hook, never two. Always exits 0.
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -51,16 +50,10 @@ function newer(a, b) {
   return false;
 }
 
-let cliNote;
 const installed = cliVersion();
-if (installed && !newer(version, installed)) {
-  cliNote = `vibe CLI ${installed} on PATH`;
-} else if (process.env.VIBE_NO_INSTALL) {
-  cliNote = `vibe CLI ${installed ? `${installed} is older than this plugin (${version})` : 'is not on PATH'} — run: npm i -g @su-record/vibe@${version}`;
-} else {
-  const r = spawnSync('npm', ['i', '-g', `@su-record/vibe@${version}`], { encoding: 'utf-8', timeout: 80000, shell: process.platform === 'win32' });
-  cliNote = r.status === 0 ? `vibe CLI ${version} installed with npm (it was ${installed || 'missing'})` : `vibe CLI could not be installed automatically — run: npm i -g @su-record/vibe@${version}`;
-}
+const cliNote = installed && !newer(version, installed)
+  ? `vibe CLI ${installed} on PATH`
+  : `vibe CLI ${installed ? `${installed} is older than this plugin (${version})` : 'is not on PATH'} — run: npm i -g @su-record/vibe@${version}`;
 
 const text = `${card}\n\n[vibe plugin ${version}] ${cliNote}`;
 process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } })}\n`);

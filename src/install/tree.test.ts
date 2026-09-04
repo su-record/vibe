@@ -16,12 +16,11 @@ describe('plugin tree — the repository is the plugin, generated from package.j
   it('tree: every marketplace file carries the package version and description; hooks differ only by the root variable', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(packageRoot(), 'package.json'), 'utf-8')) as { version: string; description: string };
     const tree = pluginTree();
-    expect(Object.keys(tree).sort()).toEqual(['.agents/plugins/marketplace.json', '.claude-plugin/marketplace.json', '.claude-plugin/plugin.json', '.codex-plugin/plugin.json', 'hooks/codex-hooks.json', 'hooks/hooks.json']);
+    expect(Object.keys(tree).sort()).toEqual(['.claude-plugin/marketplace.json', '.claude-plugin/plugin.json', '.codex-plugin/plugin.json', 'hooks/codex-hooks.json', 'hooks/hooks.json']);
     for (const file of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) {
       expect(JSON.parse(tree[file]!)).toMatchObject({ name: 'vibe', version: pkg.version, description: pkg.description });
     }
     expect(JSON.parse(tree['.claude-plugin/marketplace.json']!).plugins[0]).toMatchObject({ name: 'vibe', source: './' });
-    expect(JSON.parse(tree['.agents/plugins/marketplace.json']!).plugins[0].source).toEqual({ source: 'local', path: './' });
     const norm = (t: string): string => t.replace(/\$\{(CLAUDE_)?PLUGIN_ROOT\}/g, 'R').replace(/session\.js\\" (claude|codex)/g, 'session.js C');
     expect(norm(tree['hooks/hooks.json']!)).toBe(norm(tree['hooks/codex-hooks.json']!));
     expect(JSON.parse(tree['hooks/hooks.json']!).hooks.SessionStart[0].hooks[0].command).toContain('session.js" claude');

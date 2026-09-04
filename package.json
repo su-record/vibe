@@ -11,6 +11,8 @@
     "skills/",
     "hooks/",
     "scripts/",
+    ".claude-plugin/",
+    ".codex-plugin/",
     "card.md",
     "README.md",
     "LICENSE"

@@ -4,9 +4,9 @@ import { packageRoot } from '../core/paths.js';
 import { readJson, readText, writeAtomic } from '../core/store.js';
 
 /**
- * The repository is the plugin. One generator writes every marketplace surface from package.json,
- * so the three install paths (Claude Code marketplace · Codex/ChatGPT marketplace · npm) cannot
- * drift apart: `vibe plugin build` writes the files, `vibe plugin build --check` is the CI gate.
+ * The package is the plugin. One generator writes every plugin manifest and hook file from
+ * package.json, so the client surfaces cannot drift from the CLI: `vibe plugin build` writes the
+ * files, `vibe plugin build --check` is the CI gate. Registration is local (see register.ts).
  */
 interface Pkg {
   version: string;
@@ -63,7 +63,6 @@ export function pluginTree(p: Pkg = pkg()): Record<string, string> {
     '.claude-plugin/plugin.json': json({ name: 'vibe', version: p.version, description: p.description, author: AUTHOR, homepage: REPO, repository: REPO, license: 'MIT', keywords: ['harness', 'ax', 'fde', 'verification', 'claude-code'] }),
     '.claude-plugin/marketplace.json': json({ name: 'vibe', owner: AUTHOR, metadata: { description: p.description, version: p.version }, plugins: [{ name: 'vibe', source: './', description: p.description, version: p.version, category: 'productivity' }] }),
     '.codex-plugin/plugin.json': json(codexManifest(p)),
-    '.agents/plugins/marketplace.json': json({ name: 'vibe', interface: { displayName: 'Vibe' }, plugins: [{ name: 'vibe', source: { source: 'local', path: './' }, policy: { installation: 'AVAILABLE', authentication: 'ON_INSTALL' }, category: 'Developer Tools' }] }),
     'hooks/hooks.json': json(hookSet('${CLAUDE_PLUGIN_ROOT}', 'claude')),
     'hooks/codex-hooks.json': json(hookSet('${PLUGIN_ROOT}', 'codex')),
   };

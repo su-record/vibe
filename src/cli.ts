@@ -123,7 +123,7 @@ function cmdStatus(root: string, flags: Flags): Output {
   const p = projectStatus(root);
   const lines = [
     `vibe ${packageVersion()} — ${g.home}`,
-    ...Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}${c.current ? '' : ' — stale; any vibe command repairs it'}`),
+    ...Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${c.current ? '' : ' — stale; any vibe command repairs it'}`),
     `  card      ${g.cardBytes} bytes${g.cardOver ? ' — over 1KB!' : ''}`,
     `project   ${p.root}`,
     `  .vibe     ${p.vibe ? 'ok' : 'none yet — the first record creates it'}`,

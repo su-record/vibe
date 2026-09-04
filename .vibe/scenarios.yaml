@@ -40,6 +40,13 @@
   then: SOUL.md carries the card block, the six skills are present, no hook file, and uninstall restores SOUL.md
   check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t hermes", expect: 0, timeoutMs: 120000 }
 
-- id: marketplaces-visible
-  then: the plugin shows in Claude Code and Codex plugin lists and in ChatGPT desktop after the marketplace add commands
-  check: { type: human, question: "Run the three marketplace lines from the README on your machine and tell me which clients list the vibe plugin (Claude Code · Codex · ChatGPT desktop)." }
+- id: plugin-mode
+  needs: [build]
+  given: stand-in claude and codex CLIs on PATH
+  when: setup, status, ensure and uninstall run
+  then: the package registers as a local plugin, updates an older one, re-points a stray marketplace, writes no home surfaces, and unregisters on uninstall; VIBE_NO_PLUGIN keeps the home path
+  check: { type: run, cmd: "npx vitest run src/install/register.test.ts", expect: 0, timeoutMs: 120000 }
+
+- id: plugin-visible
+  then: after `npm i -g @su-record/vibe` the Claude Code /plugin list shows vibe@vibe, Codex lists vibe, and ChatGPT desktop shows the plugin
+  check: { type: human, question: "After `npm i -g @su-record/vibe@4.1.0`, open Claude Code and run /plugin, run `codex plugin list`, and restart ChatGPT desktop — tell me which of the three show vibe." }

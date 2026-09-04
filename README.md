@@ -4,23 +4,20 @@
 
 Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app · Hermes Agent.
 
-Install from the marketplace of the client you use — the repository is the plugin, and every path carries the same card, six skills and notification hook:
-
 ```bash
-# Claude Code
-claude plugin marketplace add su-record/vibe && claude plugin install vibe@vibe
-
-# Codex CLI · ChatGPT desktop (one OpenAI plugin; restart ChatGPT desktop afterwards)
-codex plugin marketplace add su-record/vibe && codex plugin add vibe@vibe
-
-# Hermes Agent (skills from the agentskills.io layout; the card goes into ~/.hermes/SOUL.md on first `vibe` run)
-for s in vibe vibe.discover vibe.scope vibe.build vibe.prove vibe.handoff; do hermes skills install su-record/vibe/skills/$s; done
-
-# or the CLI alone — it puts the surfaces into every client home it finds (~/.claude · ~/.codex · ~/.hermes)
 npm i -g @su-record/vibe
 ```
 
-The plugins call the `vibe` CLI; their SessionStart hook installs it with npm when it is missing or older than the plugin, and says so in the session. When both the plugin and the npm install are present, the plugin's card and hook step back — one card, one hook.
+That is the whole install. The package registers itself as a local plugin in every client it finds and keeps the registration current on every later command:
+
+| client | what the install does |
+|---|---|
+| Claude Code | `claude plugin marketplace add <package dir>` + `claude plugin install vibe@vibe` — skills and hooks come from the plugin, the card from its SessionStart hook |
+| Codex CLI · ChatGPT desktop | assembles the plugin tree under `~/.vibe/plugin`, registers the personal marketplace, runs `codex plugin add vibe@vibe-local`; the card goes into `~/.codex/AGENTS.md`; restart ChatGPT desktop afterwards |
+| Hermes Agent | six skills into `~/.hermes/skills`, the card block into `~/.hermes/SOUL.md` |
+| no client CLI on PATH (or `VIBE_NO_PLUGIN=1`) | the older path: card, skills and hook written into the client home |
+
+`vibe status` shows the mode and version per client; `vibe uninstall` unregisters and removes everything. Nothing is published to a public marketplace — the plugin is the package on your disk, so `npm i -g` again is the update.
 
 Then, in chat:
 
@@ -145,7 +142,7 @@ config.json      token policy · skill catalogs
 
 ## Status
 
-`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the repository is the plugin — Claude Code and Codex/ChatGPT marketplaces, Hermes skills, `vibe plugin build --check` as the drift gate. vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the package is the plugin — `npm i -g` registers a local plugin in Claude Code and Codex/ChatGPT, Hermes Agent joins as a client, `vibe plugin build --check` gates manifest drift. vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Bench — the ledger is the benchmark
 

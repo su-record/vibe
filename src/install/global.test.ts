@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CARD_START, detectClients, ensureGlobal, globalLayout, globalStatus, hasNotifyHook, installSurfaces, projectLayout, setupGlobal, uninstallGlobal } from './global.js';
 import { ensureProject, hasProject, projectStatus } from './project.js';
 
+// These tests cover the home surfaces; plugin registration through the client CLIs has its own tests (register.test.ts).
+process.env['VIBE_NO_PLUGIN'] = '1';
+
 let home: string;
 beforeEach(() => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-home-'));
@@ -47,7 +50,7 @@ describe('global surfaces — one copy per client home', () => {
 
     const second = setupGlobal(home);
     expect(second.surfaces['claude']).toMatchObject({ card: 'unchanged', hook: 'unchanged' });
-    expect(globalStatus(home).clients['claude']).toEqual({ card: true, skills: 6, hook: true, current: true });
+    expect(globalStatus(home).clients['claude']).toMatchObject({ card: true, skills: 6, hook: true, current: true });
   });
 
   it('a notify hook from another install path is replaced, not duplicated', () => {

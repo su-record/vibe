@@ -30,7 +30,7 @@ function vibe(args: string[], input?: string, env: Record<string, string> = {}):
     cwd: root,
     encoding: 'utf-8',
     input,
-    env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_CLIENT: 'test-client', ...env }, // the bench and `vibe check` set VIBE_SKIP_SETUP; the tests install into $HOME=root
+    env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: 'test-client', ...env }, // the bench and `vibe check` set VIBE_SKIP_SETUP; the tests install into $HOME=root
     timeout: 60000,
   });
   let json: unknown = null;
@@ -120,7 +120,7 @@ describe('CLI — from request to DONE', () => {
 
   it('continues across clients — approved under one, checked under another, both in the ledger', () => {
     const as = (client: string, args: string[], input?: string): Run => {
-      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_CLIENT: client }, timeout: 60000 });
+      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: client }, timeout: 60000 });
       return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
     };
     fs.mkdirSync(path.join(root, '.codex')); // a Codex home is present, so both clients get the surfaces
@@ -153,7 +153,7 @@ describe('CLI — from request to DONE', () => {
     const project = path.join(root, 'project');
     fs.mkdirSync(project);
     const inProject = (args: string[]): Run => {
-      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_CLIENT: 'test-client' }, timeout: 60000 });
+      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: 'test-client' }, timeout: 60000 });
       return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
     };
     inProject(['tokens', 'off']);
@@ -176,7 +176,7 @@ describe('CLI — from request to DONE', () => {
     expect(fs.existsSync(path.join(project, '.claude', 'settings.local.json'))).toBe(false);
     expect(fs.existsSync(path.join(project, '.vibe'))).toBe(true);
 
-    const purged = spawnSync(TSX, [CLI_SRC, 'uninstall', '--purge-state', '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '1' } });
+    const purged = spawnSync(TSX, [CLI_SRC, 'uninstall', '--purge-state', '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '1', VIBE_NO_PLUGIN: '1' } });
     expect((JSON.parse(purged.stdout) as { removed: string[] }).removed).toEqual(['.vibe/']);
     expect(fs.existsSync(path.join(project, '.vibe'))).toBe(false);
   });
