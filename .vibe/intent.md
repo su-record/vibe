@@ -1,17 +1,17 @@
-# vibe 4 · phase 4 — measurement
+# vibe 4 · phase 5 — the package is the plugin
 
 ## Why
-The design says vibe 4 is recommended to others only when the ledger shows a difference, not when its author believes one. That needs a bench: the same task and the same judge under different arms — Claude Code and Codex, harness on and off — with every run recorded as a `check` event carrying client, model, harness, turns and cost, and a comparison that says "cannot tell" when it cannot.
+One install, one runtime. `npm i -g` stays the only install; what the client sees is a plugin, because the package registers itself as a local plugin wherever a client CLI is present — Claude Code (directory marketplace + `vibe@vibe`), Codex/ChatGPT (personal marketplace + tree), Hermes (skills + SOUL.md). No public marketplace: a marketplace copy would need its own install path and vibe 3 showed how three paths drift. One generator writes every manifest and hook file from package.json and a drift check is a gate.
 
 ## What counts as success
-- The ledger carries a `harness` arm (on | off) and the client's reported turns and cost; `vibe ledger compare --by harness` works, also over a ledger file outside any project.
-- `bench/run.js` prepares a fresh workspace per run, runs the agent headless (`claude -p` or `codex exec`), then judges with the task's scenarios and appends one line to `bench/ledger.jsonl`.
-- The settlement task and its judge are checkable: every judge scenario is a `file` check, the reference total is the same 4500.5 as the example.
-- The bench actually ran: at least one judged run per arm is in the ledger and the comparison command answers with one of its four verdicts.
+- `vibe plugin build` writes `.claude-plugin/`, `.codex-plugin/`, `hooks/hooks.json` and `hooks/codex-hooks.json` from package.json; `--check` exits 1 on any difference and the committed tree is current; the manifests ship in the npm package.
+- With the `claude` CLI present, setup registers the package directory as marketplace `vibe` and installs `vibe@vibe`; an older plugin is updated, a marketplace pointing elsewhere is re-pointed, nothing runs when current, uninstall unregisters. With the `codex` CLI present, setup assembles the tree, registers the personal marketplace and runs the two codex commands; the card stays in `~/.codex/AGENTS.md`. Without a CLI (or with `VIBE_NO_PLUGIN`) the home surfaces are written as before.
+- The plugin SessionStart hook hands the card to the model and names the CLI version; it and the plugin notify hook stay silent when the client home already carries the npm surfaces.
+- Hermes is a client: `~/.hermes` gets the card in SOUL.md and the six skills, no hook.
 - Earlier gates still hold: build, tests, card ≤ 1KB, source ≤ 5,000 lines, six common skills ≤ 300 lines.
 
 ## Constraints
-- The bench spends the user's Claude and Codex quota; it runs only when a person starts it.
-- In the `on` arm the agent sees the approved scenarios including their checks — that is what the harness is; the README says so.
-- The verdict of a comparison is never turned into a ratio or a recommendation by the code.
+- Manifests are never edited by hand; package.json is the only version and description source.
+- The hooks never install anything; registration only ever runs the client's own plugin commands.
+- Screens the harness cannot see (the Claude Code `/plugin` list, Codex, ChatGPT desktop) are human items.
 - Every record is English; the model talks to the user in the user's language.

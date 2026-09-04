@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { packageRoot } from '../core/paths.js';
 import { readJson, readText, writeAtomic, writeJson } from '../core/store.js';
+import { claudePluginVersion, cliAvailable, codexRegistered, registerClaude, registerCodex, unregisterClaude, unregisterCodex, type Mode } from './register.js';
 
 /**
  * The always-on surfaces — card, six common skills, notification hook — are identical in every
@@ -10,8 +11,8 @@ import { readJson, readText, writeAtomic, writeJson } from '../core/store.js';
  * not in each repository. `npm i -g` puts them there (postinstall) and every `vibe` command repairs
  * them when they are missing or stale. Only `.vibe/` state belongs to a project.
  */
-export type Client = 'claude' | 'codex';
-export const ALL_CLIENTS: ReadonlyArray<Client> = ['claude', 'codex'];
+export type Client = 'claude' | 'codex' | 'hermes';
+export const ALL_CLIENTS: ReadonlyArray<Client> = ['claude', 'codex', 'hermes'];
 export const CARD_START = '<!-- vibe:start -->';
 export const CARD_END = '<!-- vibe:end -->';
 export const CARD_MAX_BYTES = 1024;
@@ -21,25 +22,26 @@ export const SKILL_NAMES = ['vibe', 'vibe.discover', 'vibe.scope', 'vibe.build',
 export interface Layout {
   card: string;
   skills: string;
-  hook: string;
+  /** Absent for clients without a hook file (Hermes reads AGENTS.md and skills only). */
+  hook?: string;
 }
 
-const CLIENT_DIR: Record<Client, string> = { claude: '.claude', codex: '.codex' };
+const CLIENT_DIR: Record<Client, string> = { claude: '.claude', codex: '.codex', hermes: '.hermes' };
 
 /** User-level layout: one per client home. Codex reads a native `~/.codex/hooks.json` shaped like Claude's settings. */
 export function globalLayout(client: Client): Layout {
   const dir = CLIENT_DIR[client];
-  return client === 'claude'
-    ? { card: path.join(dir, 'CLAUDE.md'), skills: path.join(dir, 'skills'), hook: path.join(dir, 'settings.json') }
-    : { card: path.join(dir, 'AGENTS.md'), skills: path.join(dir, 'skills'), hook: path.join(dir, 'hooks.json') };
+  if (client === 'claude') return { card: path.join(dir, 'CLAUDE.md'), skills: path.join(dir, 'skills'), hook: path.join(dir, 'settings.json') };
+  if (client === 'codex') return { card: path.join(dir, 'AGENTS.md'), skills: path.join(dir, 'skills'), hook: path.join(dir, 'hooks.json') };
+  // Hermes Agent: identity file SOUL.md is the only home-level instruction it always loads; skills follow the agentskills.io layout.
+  return { card: path.join(dir, 'SOUL.md'), skills: path.join(dir, 'skills') };
 }
 
 /** Repository-level layout — used by the bench, where one workspace must carry the harness and another must not. */
 export function projectLayout(client: Client): Layout {
   const dir = CLIENT_DIR[client];
-  return client === 'claude'
-    ? { card: 'CLAUDE.md', skills: path.join(dir, 'skills'), hook: path.join(dir, 'settings.local.json') }
-    : { card: 'AGENTS.md', skills: path.join(dir, 'skills'), hook: path.join(dir, 'hooks.json') };
+  if (client === 'claude') return { card: 'CLAUDE.md', skills: path.join(dir, 'skills'), hook: path.join(dir, 'settings.local.json') };
+  return { card: 'AGENTS.md', skills: path.join(dir, 'skills'), hook: path.join(dir, 'hooks.json') };
 }
 
 export function cardText(): string {
@@ -76,7 +78,7 @@ export function removeCard(file: string): boolean {
   const start = existing.indexOf(CARD_START);
   const end = existing.indexOf(CARD_END);
   if (start === -1 || end === -1) return false;
-  const next = `${existing.slice(0, start)}${existing.slice(end + CARD_END.length)}`.replace(/\n{3,}/g, '\n\n');
+  const next = `${existing.slice(0, start)}${existing.slice(end + CARD_END.length)}`.replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '\n');
   if (next.trim() === '') fs.rmSync(file);
   else writeAtomic(file, next);
   return true;
@@ -206,6 +208,8 @@ export interface SurfaceReport {
   card: string;
   skills: string[];
   hook: string;
+  mode: Mode;
+  detail?: string;
 }
 
 /** Install card, skills and hook under `base` following `layout`. Idempotent. */
@@ -213,15 +217,44 @@ export function installSurfaces(base: string, layout: Layout): SurfaceReport {
   return {
     card: upsertCard(path.join(base, layout.card)),
     skills: copySkills(path.join(base, layout.skills)),
-    hook: installHookFile(path.join(base, layout.hook)),
+    hook: layout.hook ? installHookFile(path.join(base, layout.hook)) : 'none',
+    mode: 'home',
   };
+}
+
+/**
+ * Plugin mode: the client CLI registers this package as a local plugin, so skills and hooks come
+ * from the plugin and the home copies go. Claude Code's plugin carries the card in its SessionStart
+ * hook; Codex keeps the card in ~/.codex/AGENTS.md because its plugin hooks do not run at session start.
+ * Falls back to the home surfaces when the CLI is missing or the registration fails.
+ */
+function installClient(home: string, client: Client): SurfaceReport {
+  const layout = globalLayout(client);
+  if (client === 'claude' && cliAvailable('claude')) {
+    const r = registerClaude(home);
+    if (r.ok) {
+      removeSurfaces(home, layout);
+      return { card: 'plugin', skills: [], hook: 'plugin', mode: 'plugin', detail: r.detail };
+    }
+    return { ...installSurfaces(home, layout), detail: r.detail };
+  }
+  if (client === 'codex' && cliAvailable('codex')) {
+    const r = registerCodex(home);
+    if (r.ok) {
+      removeSkills(path.join(home, layout.skills));
+      if (layout.hook) removeHookFile(path.join(home, layout.hook));
+      return { card: upsertCard(path.join(home, layout.card)), skills: [], hook: 'plugin', mode: 'plugin', detail: r.detail };
+    }
+    return { ...installSurfaces(home, layout), detail: r.detail };
+  }
+  return installSurfaces(home, layout);
 }
 
 export function removeSurfaces(base: string, layout: Layout): string[] {
   const removed: string[] = [];
   if (removeCard(path.join(base, layout.card))) removed.push(`${layout.card} card`);
   for (const name of removeSkills(path.join(base, layout.skills))) removed.push(path.join(layout.skills, name));
-  if (removeHookFile(path.join(base, layout.hook))) removed.push(`${layout.hook} hook`);
+  if (layout.hook && removeHookFile(path.join(base, layout.hook))) removed.push(`${layout.hook} hook`);
   return removed;
 }
 
@@ -231,14 +264,37 @@ export interface SurfaceStatus {
   hook: boolean;
   /** Every surface present and identical to what this package version ships */
   current: boolean;
+  mode: Mode;
+  /** Plugin mode: the version the client has installed */
+  pluginVersion?: string | null;
 }
 
 export function surfaceStatus(base: string, layout: Layout): SurfaceStatus {
   const skillsDir = path.join(base, layout.skills);
   const card = hasCurrentCard(path.join(base, layout.card));
-  const hook = hasCurrentHook(path.join(base, layout.hook));
+  const hook = layout.hook ? hasCurrentHook(path.join(base, layout.hook)) : true;
   const skillsCurrent = SKILL_NAMES.every((name) => skillCurrent(skillsDir, name));
-  return { card, skills: countSkills(skillsDir), hook, current: card && hook && skillsCurrent };
+  return { card, skills: countSkills(skillsDir), hook, current: card && hook && skillsCurrent, mode: 'home' };
+}
+
+function packageVersion(): string {
+  return readJson<{ version: string }>(path.join(packageRoot(), 'package.json'))?.version ?? '0.0.0';
+}
+
+/** Status per client: plugin mode when the client CLI is present, home mode otherwise. */
+export function clientStatus(home: string, client: Client): SurfaceStatus {
+  const layout = globalLayout(client);
+  if (client === 'claude' && cliAvailable('claude')) {
+    const version = claudePluginVersion(home);
+    const current = version === packageVersion();
+    return { card: current, skills: current ? SKILL_NAMES.length : 0, hook: current, current, mode: 'plugin', pluginVersion: version };
+  }
+  if (client === 'codex' && cliAvailable('codex')) {
+    const registered = codexRegistered(home);
+    const card = hasCurrentCard(path.join(home, layout.card));
+    return { card, skills: registered ? SKILL_NAMES.length : 0, hook: registered, current: registered && card, mode: 'plugin', pluginVersion: registered ? packageVersion() : null };
+  }
+  return surfaceStatus(home, layout);
 }
 
 export interface GlobalReport {
@@ -251,7 +307,7 @@ export interface GlobalReport {
 /** Install the always-on surfaces into every detected client home. */
 export function setupGlobal(home: string = os.homedir(), clients: ReadonlyArray<Client> = detectClients(home)): GlobalReport {
   const surfaces: Record<string, SurfaceReport> = {};
-  for (const client of clients) surfaces[client] = installSurfaces(home, globalLayout(client));
+  for (const client of clients) surfaces[client] = installClient(home, client);
   return { home, clients: [...clients], surfaces, cardBytes: Buffer.byteLength(cardText(), 'utf-8') };
 }
 
@@ -264,7 +320,7 @@ export interface GlobalStatus {
 
 export function globalStatus(home: string = os.homedir()): GlobalStatus {
   const clients: Record<string, SurfaceStatus> = {};
-  for (const client of detectClients(home)) clients[client] = surfaceStatus(home, globalLayout(client));
+  for (const client of detectClients(home)) clients[client] = clientStatus(home, client);
   const cardBytes = Buffer.byteLength(cardText(), 'utf-8');
   return { home, clients, cardBytes, cardOver: cardBytes > CARD_MAX_BYTES };
 }
@@ -275,7 +331,7 @@ export function globalStatus(home: string = os.homedir()): GlobalStatus {
  */
 export function ensureGlobal(home: string = os.homedir()): Client[] {
   try {
-    const stale = detectClients(home).filter((c) => !surfaceStatus(home, globalLayout(c)).current);
+    const stale = detectClients(home).filter((c) => !clientStatus(home, c).current);
     if (stale.length > 0) setupGlobal(home, stale);
     return stale;
   } catch {
@@ -288,6 +344,8 @@ export function uninstallGlobal(home: string = os.homedir()): string[] {
   const removed: string[] = [];
   for (const client of ALL_CLIENTS) {
     if (!fs.existsSync(path.join(home, CLIENT_DIR[client]))) continue;
+    if (client === 'claude' && cliAvailable('claude')) removed.push(...unregisterClaude(home));
+    if (client === 'codex' && cliAvailable('codex')) removed.push(...unregisterCodex(home));
     removed.push(...removeSurfaces(home, globalLayout(client)));
   }
   return removed;

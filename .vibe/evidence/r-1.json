@@ -1,32 +1,32 @@
 {
   "run": "r-1",
-  "at": "2026-09-03T07:14:22.712Z",
+  "at": "2026-09-04T01:08:53.714Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "2bf656e512e3",
+  "scenarioSet": "e1440f2f1538",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2404,
-      "tail": "npm notice run @su-record/vibe@4.0.0-alpha.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 2603,
+      "tail": "npm notice run @su-record/vibe@4.1.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 25659,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  16 passed (16)\n      Tests  78 passed (78)\n   Start at  07:14:25\n   Duration  25.02s (transform 741ms, setup 0ms, import 1.86s, tests 27.17s, environment 2ms)"
+      "ms": 28854,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  18 passed (18)\n      Tests  92 passed (92)\n   Start at  01:08:57\n   Duration  28.06s (transform 1.12s, setup 0ms, import 2.63s, tests 31.78s, environment 6ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 45,
+      "ms": 50,
       "tail": "card.md 705 bytes (limit 1024)"
     },
     {
@@ -34,48 +34,57 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 50,
-      "tail": "src (non-test) 3677 lines (limit 5000)"
+      "ms": 53,
+      "tail": "src (non-test) 4045 lines (limit 5000)"
     },
     {
       "id": "skills-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 14,
+      "ms": 7,
       "tail": ""
     },
     {
-      "id": "harness-arm",
+      "id": "plugin-tree",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1468,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  07:14:26\n   Duration  398ms (transform 129ms, setup 0ms, import 166ms, tests 27ms, environment 0ms)"
+      "ms": 186,
+      "tail": "plugin tree matches package.json"
     },
     {
-      "id": "judge-checkable",
+      "id": "plugin-hooks",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 97,
-      "tail": "judge: 5 file checks · reference total 4500.5"
+      "ms": 2752,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  3 passed | 1 skipped (4)\n   Start at  01:08:57\n   Duration  1.32s (transform 188ms, setup 0ms, import 278ms, tests 704ms, environment 0ms)"
     },
     {
-      "id": "bench-ran",
+      "id": "hermes",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 46,
-      "tail": "bench: 4 judged runs · arms claude-code/on, claude-code/off, codex/on, codex/off"
+      "ms": 2432,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 7 skipped (8)\n   Start at  01:08:57\n   Duration  956ms (transform 361ms, setup 0ms, import 472ms, tests 43ms, environment 0ms)"
     },
     {
-      "id": "compare-answers",
+      "id": "plugin-mode",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 136,
-      "tail": "compare by harness · metric checks · verdict inconclusive\n  observed ranges (min–max) overlap — this sample cannot tell a difference\n  on: runs 2 · usable 2 · min 5 · max 5 · mean 5.00\n  off: runs 2 · usable 2 · min 5 · max 5 · mean 5.00"
+      "ms": 1734,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  01:09:25\n   Duration  933ms (transform 135ms, setup 0ms, import 170ms, tests 598ms, environment 0ms)"
+    },
+    {
+      "id": "plugin-visible",
+      "type": "human",
+      "status": "pending",
+      "exit": null,
+      "ms": 0,
+      "tail": "After `npm i -g @su-record/vibe@4.1.0`, open Claude Code and run /plugin, run `codex plugin list`, and restart ChatGPT desktop — tell me which of the three show vibe.",
+      "reason": "human — not judged by the harness"
     }
   ]
 }

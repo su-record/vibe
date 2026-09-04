@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { packageRoot } from '../core/paths.js';
-import { ensureDir, readJson, writeJson } from '../core/store.js';
+import { ensureDir, readJson, writeAtomic, writeJson } from '../core/store.js';
+import { pluginTree } from './tree.js';
 
 /**
  * OpenAI plugin for Codex CLI and ChatGPT desktop — one tree, one personal marketplace.
@@ -32,51 +33,14 @@ function packageVersion(): string {
   return readJson<{ version: string }>(path.join(packageRoot(), 'package.json'))?.version ?? '0.0.0';
 }
 
-function manifest(version: string): Record<string, unknown> {
-  return {
-    name: 'vibe',
-    version,
-    description: 'An AX/FDE harness for Claude Code, Codex CLI and ChatGPT desktop. Say what you need, approve the scenarios once; the harness proves the work by running the checks itself. Memory in plain files, human tokens for irreversible actions, a ledger instead of claims.',
-    author: { name: 'su-record', url: 'https://github.com/su-record' },
-    homepage: 'https://github.com/su-record/vibe',
-    repository: 'https://github.com/su-record/vibe',
-    license: 'MIT',
-    keywords: ['harness', 'ax', 'fde', 'verification', 'codex', 'chatgpt'],
-    skills: './skills/',
-    hooks: './hooks/hooks.json',
-    interface: {
-      displayName: 'Vibe',
-      shortDescription: 'The harness judges; a human approves',
-      longDescription: 'Say what you need. vibe turns it into checkable scenarios, builds it, proves it by running the checks itself, and hands it over. Start with /vibe.',
-      developerName: 'su-record',
-      category: 'Developer Tools',
-      websiteURL: 'https://github.com/su-record/vibe',
-      defaultPrompt: ['Use vibe to turn this request into approved scenarios and build it.', 'Use vibe to prove the current work with vibe check --all.'],
-    },
-  };
-}
-
-function pluginHooks(): Record<string, unknown> {
-  const hook = (mode: 'post' | 'pre'): { type: 'command'; command: string; timeout: number } => ({
-    type: 'command',
-    command: `node "\${PLUGIN_ROOT}/hooks/notify.js" ${mode}`,
-    timeout: 20,
-  });
-  return {
-    hooks: {
-      PostToolUse: [{ matcher: 'Edit|Write|MultiEdit|NotebookEdit', hooks: [hook('post')] }],
-      PreToolUse: [{ matcher: 'Bash', hooks: [hook('pre')] }],
-    },
-  };
-}
-
 /** Rebuild the tree from scratch — a stale file in the cache is worse than a slow install. */
 export function assemblePlugin(tree: string): string[] {
   fs.rmSync(tree, { recursive: true, force: true });
   ensureDir(tree);
   const written: string[] = [];
   const version = packageVersion();
-  writeJson(path.join(tree, '.codex-plugin', 'plugin.json'), manifest(version));
+  const generated = pluginTree();
+  writeAtomic(path.join(tree, '.codex-plugin', 'plugin.json'), generated['.codex-plugin/plugin.json']!);
   written.push('.codex-plugin/plugin.json');
   for (const name of SKILL_NAMES) {
     const from = path.join(packageRoot(), 'skills', name);
@@ -84,10 +48,12 @@ export function assemblePlugin(tree: string): string[] {
     fs.cpSync(from, path.join(tree, 'skills', name), { recursive: true });
     written.push(`skills/${name}`);
   }
-  writeJson(path.join(tree, 'hooks', 'hooks.json'), pluginHooks());
-  written.push('hooks/hooks.json');
-  fs.copyFileSync(path.join(packageRoot(), 'hooks', 'notify.js'), path.join(tree, 'hooks', 'notify.js'));
-  written.push('hooks/notify.js');
+  writeAtomic(path.join(tree, 'hooks', 'codex-hooks.json'), generated['hooks/codex-hooks.json']!);
+  written.push('hooks/codex-hooks.json');
+  for (const file of ['notify.js', 'session.js']) {
+    fs.copyFileSync(path.join(packageRoot(), 'hooks', file), path.join(tree, 'hooks', file));
+    written.push(`hooks/${file}`);
+  }
   fs.writeFileSync(path.join(tree, 'README.md'), `# vibe ${version}\n\nAssembled by \`vibe plugin install\`. Do not edit — rerun the command instead.\nHooks call the globally installed \`vibe\` CLI; the verdict is always \`vibe check\`.\n`, 'utf-8');
   written.push('README.md');
   return written;
@@ -164,7 +130,7 @@ export function pluginStatus(home?: string): PluginStatusReport {
   const version = packageVersion();
   const skillsDir = path.join(paths.tree, 'skills');
   const skills = fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir).filter((n) => n === 'vibe' || n.startsWith('vibe.')).length : 0;
-  const hooks = fs.existsSync(path.join(paths.tree, 'hooks', 'hooks.json')) && fs.existsSync(path.join(paths.tree, 'hooks', 'notify.js'));
+  const hooks = fs.existsSync(path.join(paths.tree, 'hooks', 'codex-hooks.json')) && fs.existsSync(path.join(paths.tree, 'hooks', 'notify.js'));
   const marketplace = readJson<MarketplaceDoc>(paths.marketplace);
   const registered = Boolean(marketplace?.plugins?.some((p) => p?.name === 'vibe'));
   const drift: string[] = [];
