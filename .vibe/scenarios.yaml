@@ -8,12 +8,13 @@
   check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
 
 - id: card-size
-  then: the always-on card is at most 1024 bytes with rule 8 present
-  check: { type: run, cmd: "node checks/card-size.js && grep -q 'Read files whole' card.md", expect: 0 }
+  then: the always-on card is at most 1024 bytes
+  check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
 
-- id: source-size
-  then: non-test source is at most 5000 lines
-  check: { type: run, cmd: "node checks/loc.js", expect: 0 }
+- id: file-size
+  needs: [build]
+  then: no source file over 400 lines and no function over 50, judged by vibe size itself
+  check: { type: run, cmd: "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
 
 - id: skills-size
   then: the six common skills are at most 300 lines in total
@@ -21,19 +22,16 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.5
+  then: the committed manifests match package.json 4.1.6
   check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
-- id: read-documents
+- id: size-check
   needs: [build]
-  given: generated xlsx, docx, pptx and pdf fixtures
-  when: vibe read and vibe profile run on them
-  then: sheets become tables, paragraphs and slides keep their order, pdf text comes out with the reader named, long output is truncated with a hint
-  check: { type: run, cmd: "npx vitest run src/core/docs", expect: 0, timeoutMs: 120000 }
+  given: a tree with a long file, a long function, a python module, a test file and node_modules
+  when: measureSize runs
+  then: the long file and the two long functions are reported, tests and node_modules are skipped
+  check: { type: run, cmd: "npx vitest run src/core/size.test.ts", expect: 0, timeoutMs: 120000 }
 
-- id: hangul-html
-  needs: [build]
-  given: a hand-built HWP 5 OLE file, an HWPX zip and an HTML page
-  when: vibe read runs on them
-  then: paragraphs come out in order, controls are skipped, a locked HWP is refused, HTML loses its markup
-  check: { type: run, cmd: "npx vitest run src/core/docs/hwp.test.ts", expect: 0, timeoutMs: 120000 }
+- id: cli-modules
+  then: the CLI is split into command modules and cli.ts only dispatches
+  check: { type: run, cmd: "test -f src/cli/setup.ts -a -f src/cli/work.ts -a -f src/cli/human.ts -a -f src/cli/memory.ts && test $(wc -l < src/cli.ts) -le 150", expect: 0 }

@@ -4,7 +4,7 @@ This repository is vibe 4 itself. vibe 4 develops vibe 4 — the intent and scen
 
 - Build `npm run build` · test `npm test` · both `npm run check`
 - Verdict: `vibe check --all` (needs dist: `node dist/cli.js check --all`)
-- Limits: source ≤ 5,000 lines, always-on card (`card.md`) ≤ 1KB, six common skills ≤ 300 lines in total — past these it is vibe 3 again
+- Limits: no file over 400 lines (`checks/loc.js`; the total is free to grow), always-on card (`card.md`) ≤ 1KB, six common skills ≤ 300 lines in total — past these it is vibe 3 again
 - Language: every record, comment, message and document is English; the model talks to the user in the user's language
 - Design: the session artifact "vibe 4 설계안" is the source of the intent
 

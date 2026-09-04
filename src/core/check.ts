@@ -179,6 +179,47 @@ export interface CheckOptions {
   all?: boolean;
 }
 
+type Selectable = Scenario & { regression?: boolean };
+
+function selectScenarios(universe: Selectable[], previous: ResultsFile, options: CheckOptions): Selectable[] {
+  if (options.ids && options.ids.length > 0) {
+    const missing = options.ids.filter((id) => !universe.some((s) => s.id === id));
+    if (missing.length > 0) throw invalidTransition(`unknown scenario: ${missing.join(', ')}`);
+    // An explicit id pulls in the ancestors that have not passed yet — `check tests` builds first.
+    const wanted = new Set([...options.ids, ...ancestorsOf(universe, options.ids).filter((id) => previous[id]?.last !== 'pass')]);
+    return universe.filter((s) => wanted.has(s.id));
+  }
+  if (options.all) return universe;
+  return universe.filter((s) => isHuman(s) || previous[s.id]?.last !== 'pass');
+}
+
+/** The state after a run: STUCK on the same failure twice, DONE when nothing remains, otherwise RUNNING. */
+function settleState(root: string, current: StateFile, failHash: string | null, remaining: string[], outcomes: ScenarioOutcome[], at: string): { next: StateFile; stuck: boolean; done: boolean } {
+  let next: StateFile = { ...current, runs: current.runs + 1 };
+  if (failHash !== null) {
+    const streak = failHash === current.lastFailHash ? current.failStreak + 1 : 1;
+    next = { ...next, lastFailHash: failHash, failStreak: streak };
+    if (streak >= 2) {
+      next.state = 'STUCK';
+      if (!hasOpenQuestion(root, (q) => q.question.startsWith('STUCK'))) {
+        ask(root, { question: `STUCK: the same failure (${failHash}) happened twice in a row — ${outcomes.filter((o) => o.status === 'fail').map((o) => o.id).join(', ')}. How should we proceed?`, options: ['give a hint', 'change the scenario', 'abandon'] });
+      }
+      return { next, stuck: true, done: false };
+    }
+    if (current.state === 'DONE' || current.state === 'STUCK') next.state = 'RUNNING';
+    return { next, stuck: false, done: false };
+  }
+  next = { ...next, lastFailHash: null, failStreak: 0 };
+  if (remaining.length === 0) {
+    next.state = 'DONE';
+    next.doneAt = at;
+    next.doneTree = treeHash(root);
+    return { next, stuck: false, done: true };
+  }
+  if (current.state === 'STUCK') next.state = 'RUNNING';
+  return { next, stuck: false, done: false };
+}
+
 /**
  * The only verdict path. The harness runs the checks and writes the evidence.
  * First call moves APPROVED→RUNNING; all gates passing → DONE; the same failure hash
@@ -191,21 +232,9 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   }
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
-  const universe: Array<Scenario & { regression?: boolean }> = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))];
+  const universe: Selectable[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))];
   const previous = readResults(root);
-
-  let selected: Array<Scenario & { regression?: boolean }>;
-  if (options.ids && options.ids.length > 0) {
-    const missing = options.ids.filter((id) => !universe.some((s) => s.id === id));
-    if (missing.length > 0) throw invalidTransition(`unknown scenario: ${missing.join(', ')}`);
-    // An explicit id pulls in the ancestors that have not passed yet — `check tests` builds first.
-    const wanted = new Set([...options.ids, ...ancestorsOf(universe, options.ids).filter((id) => previous[id]?.last !== 'pass')]);
-    selected = universe.filter((s) => wanted.has(s.id));
-  } else if (options.all) {
-    selected = universe;
-  } else {
-    selected = universe.filter((s) => isHuman(s) || previous[s.id]?.last !== 'pass');
-  }
+  const selected = selectScenarios(universe, previous, options);
 
   if (state.state === 'APPROVED') transition(root, 'RUNNING');
   const run = nextRunId(state);
@@ -224,34 +253,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const failed = outcomes.filter((o) => o.status === 'fail').length;
   const pending = outcomes.filter((o) => o.status === 'pending').length;
   const failHash = failHashOf(outcomes);
-
-  const current = readState(root);
-  let stuck = false;
-  let done = false;
-  let next: StateFile = { ...current, runs: current.runs + 1 };
-  if (failHash !== null) {
-    const streak = failHash === current.lastFailHash ? current.failStreak + 1 : 1;
-    next = { ...next, lastFailHash: failHash, failStreak: streak };
-    if (streak >= 2) {
-      stuck = true;
-      next.state = 'STUCK';
-      if (!hasOpenQuestion(root, (q) => q.question.startsWith('STUCK'))) {
-        ask(root, { question: `STUCK: the same failure (${failHash}) happened twice in a row — ${outcomes.filter((o) => o.status === 'fail').map((o) => o.id).join(', ')}. How should we proceed?`, options: ['give a hint', 'change the scenario', 'abandon'] });
-      }
-    } else if (current.state === 'DONE' || current.state === 'STUCK') {
-      next.state = 'RUNNING';
-    }
-  } else {
-    next = { ...next, lastFailHash: null, failStreak: 0 };
-    if (remaining.length === 0) {
-      done = true;
-      next.state = 'DONE';
-      next.doneAt = at;
-      next.doneTree = treeHash(root);
-    } else if (current.state === 'STUCK') {
-      next.state = 'RUNNING';
-    }
-  }
+  const { next, stuck, done } = settleState(root, readState(root), failHash, remaining, outcomes, at);
   writeState(root, next);
 
   const evidence = { run, at, client: detectClient(), model: detectModel(), scenarioSet: scenarioSetHash(scenarios), results: outcomes };
