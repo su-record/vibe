@@ -1,20 +1,10 @@
 {
-  ".claude-plugin/marketplace.json": "9c44c93157d72ebc71622df7eb2534f99f6e0680",
-  ".claude-plugin/plugin.json": "83ade358020f78761cefef52410f2ff1e912430c",
-  ".codex-plugin/plugin.json": "3366b3f8cfbfdde45588454a7278580f150ffe64",
-  "CLAUDE.md": "22ce49c135e6132e733b96665ca211c5eb37ba28",
-  "README.md": "9ac65b769aca6517f6b211bf7d7abf85c1deaec3",
-  "checks/loc.js": "718e8b78c2469cb6d3d1676543ddac7837b29911",
-  "package.json": "9f9defb894334975fdb803793f07276c0c13a49b",
-  "skills/vibe.scope/SKILL.md": "95401d64c17b9c2fc7813f74943072525193bb85",
-  "src/cli.ts": "a3a3a0165f3d2e8842d9c91dd9a94dd0bd0f033a",
-  "src/core/check.ts": "d51991367201b369b2db6001e620bbc04e739945",
-  "src/core/checks/file.ts": "3b5bddd0c6282740a2846394b76f49508c6e00b8",
-  "src/cli/common.ts": "0ecbd3a2f36166bf59e565f17bc03d7444486415",
-  "src/cli/human.ts": "49f8b97083556d158d4b5e5e228a0831c35eceef",
-  "src/cli/memory.ts": "84f65ebdebc56c5f8eec0dc99f7f274b31673981",
-  "src/cli/setup.ts": "1f5371e2035c09df8936eff7fd92f57d647ac50f",
-  "src/cli/work.ts": "c5ecf60e3af1a086856a52b04ed2d6ce45423553",
-  "src/core/size.test.ts": "24ffcc59816073fa2b72585f06f36fbaa807ae72",
-  "src/core/size.ts": "ac45a400df4b394538691f17f1287bee64ab8a7e"
+  ".claude-plugin/marketplace.json": "df094c9f2125f402e72d465cac2adce9637ce930",
+  ".claude-plugin/plugin.json": "274772d3fd056d174c97d258f68d15914c448fbf",
+  ".codex-plugin/plugin.json": "b38ce180093fd44f2f8d112819be7a42817ceb79",
+  "README.md": "d292f9a8bfbecb208f97d2ca77d4b593bbea002b",
+  "package.json": "3f05859a75840f9af5ff223c498c5d41e73c6f96",
+  "src/install/global.test.ts": "9d6a365003a878d6a8c5a92503eb7809fd8f59d9",
+  "src/install/global.ts": "0fcac7cf76d05347dad2a58739124ef47972da6b",
+  "src/install/hooks.ts": "4ea5ea04779da9f2e67db3ef4ac9553315cfb66a"
 }
