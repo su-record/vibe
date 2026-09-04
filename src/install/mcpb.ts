@@ -24,10 +24,11 @@ export function mcpbManifest(version: string, description: string): Record<strin
     server: {
       type: 'node',
       entry_point: 'server/index.js',
-      mcp_config: { command: 'node', args: ['${__dirname}/server/index.js'], env: { VIBE_PROJECT_DIR: '${user_config.project}', VIBE_MCPB_VERSION: version } },
+      mcp_config: { command: 'node', args: ['${__dirname}/server/index.js'], env: { VIBE_PROJECT_DIR: '${user_config.project}', VIBE_CLI: '${user_config.vibe_cli}', VIBE_MCPB_VERSION: version } },
     },
     user_config: {
       project: { type: 'directory', title: 'Project folder', description: 'The repository vibe works in — its .vibe/ holds the intent, scenarios, evidence and ledger.', required: true },
+      vibe_cli: { type: 'file', title: 'vibe executable (optional)', description: 'Leave empty to search PATH and the usual npm locations (Homebrew, nvm, fnm, volta). Set it when the app reports the CLI was not found — `which vibe` in a terminal prints the path.', required: false },
     },
     tools: [
       { name: 'vibe_state', description: 'Where the project is' },
