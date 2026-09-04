@@ -21,32 +21,17 @@
 
 - id: plugin-tree
   needs: [build]
-  given: the committed marketplace files
-  when: vibe plugin build --check runs
-  then: nothing differs from what package.json generates
+  then: the committed manifests match package.json 4.1.1
   check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
-- id: plugin-hooks
+- id: update
   needs: [build]
-  given: a home with and without the npm install
-  when: session.js and notify.js --plugin run
-  then: the card is handed over once, the CLI state is named, and both hooks step back when the npm install owns the client
-  check: { type: run, cmd: "npx vitest run src/install/tree.test.ts -t hooks", expect: 0, timeoutMs: 120000 }
+  given: a stand-in npm on PATH
+  when: vibe update runs with an equal, a newer, and a failing registry
+  then: it installs only when newer, reports the manual command on failure, and says when the registry is unreachable
+  check: { type: run, cmd: "npx vitest run src/install/update.test.ts", expect: 0, timeoutMs: 120000 }
 
-- id: hermes
+- id: status-update-line
   needs: [build]
-  given: a home with ~/.hermes
-  when: the surfaces are installed and removed
-  then: SOUL.md carries the card block, the six skills are present, no hook file, and uninstall restores SOUL.md
-  check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t hermes", expect: 0, timeoutMs: 120000 }
-
-- id: plugin-mode
-  needs: [build]
-  given: stand-in claude and codex CLIs on PATH
-  when: setup, status, ensure and uninstall run
-  then: the package registers as a local plugin, updates an older one, re-points a stray marketplace, writes no home surfaces, and unregisters on uninstall; VIBE_NO_PLUGIN keeps the home path
-  check: { type: run, cmd: "npx vitest run src/install/register.test.ts", expect: 0, timeoutMs: 120000 }
-
-- id: plugin-visible
-  then: after `npm i -g @su-record/vibe` the Claude Code /plugin list shows vibe@vibe, Codex lists vibe, and ChatGPT desktop shows the plugin
-  check: { type: human, question: "After `npm i -g @su-record/vibe@4.1.0`, open Claude Code and run /plugin, run `codex plugin list`, and restart ChatGPT desktop — tell me which of the three show vibe." }
+  then: vibe status --json carries an update field and the help lists update [--check]
+  check: { type: run, cmd: "VIBE_OFFLINE=1 node dist/cli.js status --json | grep -q '\"update\"' && node dist/cli.js --help | grep -q 'update \\[--check\\]'", expect: 0 }

@@ -17,7 +17,7 @@ That is the whole install. The package registers itself as a local plugin in eve
 | Hermes Agent | six skills into `~/.hermes/skills`, the card block into `~/.hermes/SOUL.md` |
 | no client CLI on PATH (or `VIBE_NO_PLUGIN=1`) | the older path: card, skills and hook written into the client home |
 
-`vibe status` shows the mode and version per client; `vibe uninstall` unregisters and removes everything. Nothing is published to a public marketplace — the plugin is the package on your disk, so `npm i -g` again is the update.
+`vibe status` shows the mode and version per client and says when a newer version exists; `vibe update` installs it and re-registers the plugins; `vibe uninstall` unregisters and removes everything. Nothing is published to a public marketplace — the plugin is the package on your disk.
 
 Then, in chat:
 
@@ -89,7 +89,7 @@ The policy is per project (`.vibe/config.json`); `vibe tokens` alone prints it. 
 ## Commands
 
 ```
-setup     status · tokens · uninstall [--purge-state] · plugin install | status
+setup     update [--check] · status · tokens · uninstall [--purge-state] · plugin install | status
 work      state [--graph] · profile <file> · intent draft | show · approve · check · evidence · abandon
 human     ask · authorize · inbox
 memory    regress record | list · knowledge add
