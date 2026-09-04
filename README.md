@@ -57,7 +57,7 @@ Any client can pick the work up: `vibe state` says where you are, because the st
 | `eval` | count of matching cases (never a ratio) | `cases` (jsonl `{id, input, expected}`), `runner` (stdin → stdout), `expect: {pass}` |
 | `human` | none — a question in the inbox | `question` |
 
-Tables (`csv` · `tsv` · `jsonl` · `json`) are read by the harness itself; `vibe profile <file>` prints columns, types, missing values, duplicates and up to three anomalies before the interview. Spreadsheets are exported as CSV — the harness takes no dependency for Excel.
+The harness reads what the customer sends, so every client sees the same text: `vibe profile <file>` (csv · tsv · jsonl · json · xlsx) prints columns, types, missing values, duplicates and up to three anomalies before the interview; `vibe read <file>` (xlsx · docx · pptx · pdf · tables) returns the text, sheets as markdown tables, and names the reader it used — Office XML is parsed in-house with no dependency, PDF through `pdftotext` when installed and a built-in reader otherwise. Images are left to the client's own model.
 
 ## The work graph
 
@@ -91,7 +91,7 @@ The policy is per project (`.vibe/config.json`); `vibe tokens` alone prints it. 
 
 ```
 setup     update [--check] · status · tokens · uninstall [--purge-state] · plugin install | status
-work      state [--graph] · profile <file> · intent draft | show · approve · check · evidence · abandon
+work      state [--graph] · read <file> · profile <file> · intent draft | show · approve · check · evidence · abandon
 human     ask · authorize · inbox
 memory    regress record | list · knowledge add
 research  research --from-intent | "query"
@@ -143,7 +143,7 @@ config.json      token policy · skill catalogs
 
 ## Status
 
-`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the package is the plugin — `npm i -g` registers a local plugin in Claude Code and Codex/ChatGPT, Hermes Agent joins as a client, `vibe plugin build --check` gates manifest drift. `4.1.1`: `vibe update`. `4.1.2`: the Claude desktop app through an MCP Bundle (`vibe plugin mcpb`). `4.1.3`: the bundle finds the CLI without the shell's PATH (Homebrew, nvm, fnm, volta) or from a path set at install. vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the package is the plugin — `npm i -g` registers a local plugin in Claude Code and Codex/ChatGPT, Hermes Agent joins as a client, `vibe plugin build --check` gates manifest drift. `4.1.1`: `vibe update`. `4.1.2`: the Claude desktop app through an MCP Bundle (`vibe plugin mcpb`). `4.1.3`: the bundle finds the CLI without the shell's PATH (Homebrew, nvm, fnm, volta) or from a path set at install. `4.1.4`: `vibe read` for xlsx · docx · pptx · pdf, `vibe profile` reads xlsx, card rule 8 (read files whole). vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Bench — the ledger is the benchmark
 

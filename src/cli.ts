@@ -16,6 +16,7 @@ import { compare, EDGE_TYPES, readEdges, readLedger, record, why, type CompareBy
 import { findProjectRoot, vibePath } from './core/paths.js';
 import { listRegressions, recordRegression } from './core/regress.js';
 import { profileFile } from './core/profile.js';
+import { readDocument } from './core/docs/read.js';
 import { research, SOURCES, type Source } from './core/research.js';
 import { addSkill, createSkill, dismissProposal, listSkills, markUsed, pruneSkills, suggestSkills } from './core/skills.js';
 import { graphMermaid, type CheckType } from './core/scenarios.js';
@@ -72,7 +73,7 @@ const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
   setup     update [--check] · status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
             npm i -g puts them there and any vibe command repairs them; uninstall also clears what an older init left in the project)
             plugin build [--check] (manifests from package.json) · plugin mcpb [--out vibe.mcpb] (Claude desktop app bundle) · plugin install | status [--home <dir>]
-  work      state [--graph] · profile <file.csv|tsv|jsonl|json> · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
+  work      state [--graph] · read <file> [--sheet] [--pages] (xlsx·docx·pptx·pdf·tables) · profile <file> [--sheet] (csv·tsv·jsonl·json·xlsx) · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
   checks    run (exit code) · file (exists·pattern·contains·schema·sum) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass) · human (inbox, no verdict)
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
@@ -309,9 +310,20 @@ async function cmdSkill(root: string, sub: string | undefined, args: string[], f
   }
 }
 
-function cmdProfile(root: string, file: string | undefined): Output {
-  if (!file) throw usage('profile <file.csv|tsv|jsonl|json>');
-  const p = profileFile(root, file);
+function cmdRead(root: string, file: string | undefined, flags: Flags): Output {
+  if (!file) throw usage('read <file.xlsx|docx|pptx|pdf|csv|…> [--sheet name] [--pages A-B]');
+  const options: Parameters<typeof readDocument>[2] = {};
+  const sheet = flagString(flags, 'sheet');
+  const pages = flagString(flags, 'pages');
+  if (sheet) options.sheet = sheet;
+  if (pages) options.pages = pages;
+  const d = readDocument(root, file, options);
+  return { json: d, text: `${d.file} · ${d.format} · read by ${d.method} · ${d.sections.length} section(s)${d.truncated ? ' · truncated' : ''}\n\n${d.text}`, code: 0 };
+}
+
+function cmdProfile(root: string, file: string | undefined, flags: Flags): Output {
+  if (!file) throw usage('profile <file.csv|tsv|jsonl|json|xlsx> [--sheet name]');
+  const p = profileFile(root, file, flagString(flags, 'sheet'));
   const lines = [
     `${p.file} · ${p.format} · ${p.rows} rows · ${p.columns.length} columns · ${p.duplicateRows} duplicate rows`,
     ...p.anomalies.map((a) => `  ! ${a}`),
@@ -553,7 +565,9 @@ export async function dispatch(argv: string[]): Promise<Output> {
     case 'state':
       return cmdState(root, flags);
     case 'profile':
-      return cmdProfile(root, sub);
+      return cmdProfile(root, sub, flags);
+    case 'read':
+      return cmdRead(root, sub, flags);
     case 'intent':
       return cmdIntent(root, sub, rest, flags);
     case 'approve':

@@ -8,8 +8,8 @@
   check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
 
 - id: card-size
-  then: the always-on card is at most 1024 bytes
-  check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
+  then: the always-on card is at most 1024 bytes with rule 8 present
+  check: { type: run, cmd: "node checks/card-size.js && grep -q 'Read files whole' card.md", expect: 0 }
 
 - id: source-size
   then: non-test source is at most 5000 lines
@@ -21,17 +21,17 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.3
+  then: the committed manifests match package.json 4.1.4
   check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
-- id: cli-lookup
+- id: read-documents
   needs: [build]
-  given: a server started with PATH=/nonexistent
-  when: initialize is sent with and without the vibe_cli setting
-  then: it names the CLI from the setting, and says CLI not found without it
-  check: { type: run, cmd: "npx vitest run src/install/mcpb.test.ts -t 'without PATH'", expect: 0, timeoutMs: 120000 }
+  given: generated xlsx, docx, pptx and pdf fixtures
+  when: vibe read and vibe profile run on them
+  then: sheets become tables, paragraphs and slides keep their order, pdf text comes out with the reader named, long output is truncated with a hint
+  check: { type: run, cmd: "npx vitest run src/core/docs", expect: 0, timeoutMs: 120000 }
 
-- id: manifest-setting
+- id: read-example
   needs: [build]
-  then: the generated manifest carries the optional vibe_cli file setting mapped to VIBE_CLI
-  check: { type: run, cmd: "node checks/mcpb-manifest.js", expect: 0 }
+  then: vibe read on the example orders CSV prints a markdown table with the amount column
+  check: { type: run, cmd: "node dist/cli.js read examples/order-settlement/orders.csv | grep -q '| order_id | date | seller | amount |'", expect: 0 }

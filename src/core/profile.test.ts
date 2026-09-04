@@ -33,13 +33,15 @@ describe('profile — anomalies first, with numbers', () => {
     expect(p.anomalies).toContainEqual('column "amount" mixes number and string');
   });
 
-  it('profile: JSONL gains columns as they appear; unknown extensions are refused with the CSV hint', () => {
+  it('profile: JSONL gains columns as they appear; a broken xlsx and an unknown extension are refused with reasons', () => {
     fs.writeFileSync(path.join(root, 'rows.jsonl'), '{"a":1}\n{"a":2,"b":true}\n');
     const p = profileFile(root, 'rows.jsonl');
     expect(p.columns.map((c) => c.name)).toEqual(['a', 'b']);
     expect(p.columns[1]).toMatchObject({ type: 'boolean', missing: 1 });
     fs.writeFileSync(path.join(root, 'orders.xlsx'), 'PK');
-    expect(() => profileFile(root, 'orders.xlsx')).toThrowError(VibeError);
-    expect(() => profileFile(root, 'orders.xlsx')).toThrowError(/export spreadsheets as CSV/);
+    expect(() => profileFile(root, 'orders.xlsx')).toThrowError(/cannot parse orders.xlsx/);
+    fs.writeFileSync(path.join(root, 'orders.bin'), 'x');
+    expect(() => profileFile(root, 'orders.bin')).toThrowError(VibeError);
+    expect(() => profileFile(root, 'orders.bin')).toThrowError(/csv · tsv · jsonl · json · xlsx/);
   });
 });

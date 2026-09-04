@@ -1,6 +1,6 @@
 {
   "name": "vibe",
-  "version": "4.1.3",
+  "version": "4.1.4",
   "description": "An AX/FDE harness for Claude Code, Codex CLI and ChatGPT desktop. Say what you need, approve the scenarios once; the harness proves the work by running the checks itself. Memory in plain files, human tokens for irreversible actions, a ledger instead of claims.",
   "author": {
     "name": "su-record",
