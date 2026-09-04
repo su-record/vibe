@@ -1,10 +1,7 @@
 {
-  ".claude-plugin/marketplace.json": "a963069502267f27bcb6c4a7a06083b831f995c5",
-  ".claude-plugin/plugin.json": "0953cdbcd762e2bc7a46ff262fe7f93be17f91c6",
-  ".codex-plugin/plugin.json": "acab6841e2d3a0bd49b01a1f4c698b1dc68fe5b2",
-  "README.md": "b4fc848dccb42e91c4b1422654f4af3e828b5aed",
-  "package.json": "e2673b2edef7533681b09c4e632b6116c9355d48",
-  "src/cli.ts": "92735acf3a0334cf5616f80a7f789e6d9bb92cf7",
-  "src/install/update.test.ts": "811dbc2f99749cf1405761fac4c923ca0c436216",
-  "src/install/update.ts": "db7ea049aee0fe7ff016dd0470f760a71bd7d860"
+  ".claude-plugin/marketplace.json": "f480ad3831f7b78e0e81fc1979367998882a9696",
+  ".claude-plugin/plugin.json": "5d8577ef3ac4553ead875e564d5467d29c291ce1",
+  ".codex-plugin/plugin.json": "f147a1fdfefd31978667ee15ad0159baa2d74455",
+  "README.md": "00570cc4fdbc153ee80fabfe2e4279db6273a7a0",
+  "package.json": "e44db1d64c7a630ae95984afe8c5b701cd901e46"
 }
