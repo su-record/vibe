@@ -1,4 +1,4 @@
-# vibe 4 · 4.2.0 — the Claude desktop app through an MCP Bundle
+# vibe 4 · 4.1.2 — the Claude desktop app through an MCP Bundle
 
 ## Why
 The Claude desktop app has one plugin form, the MCP Bundle. Its model has no shell, so the bundle is a cable to the `vibe` CLI on the machine: interview, intent and scenarios, one approval, the verdict, inbox and ledger — the FDE work that needs no code editor. Building stays with Claude Code, Codex and Hermes on the same `.vibe/`.

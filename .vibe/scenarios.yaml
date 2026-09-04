@@ -21,7 +21,7 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.2.0
+  then: the committed manifests match package.json 4.1.2
   check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
 - id: mcpb-bundle
