@@ -2,7 +2,7 @@
 
 **The experience of having an AX/FDE next to you** — an agent-experience engineer, the forward-deployed kind who sits with the customer and makes the model do the actual job. Say what you need in plain words. vibe turns it into checkable scenarios, builds it, proves it by running the checks itself, and hands it over to whoever will run it. Vibe-coding quality is the by-product of that discipline.
 
-Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app · Hermes Agent.
+Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app · Hermes Agent · Claude desktop app (interview, approval, verdict, handoff).
 
 ```bash
 npm i -g @su-record/vibe
@@ -15,6 +15,7 @@ That is the whole install. The package registers itself as a local plugin in eve
 | Claude Code | `claude plugin marketplace add <package dir>` + `claude plugin install vibe@vibe` — skills and hooks come from the plugin, the card from its SessionStart hook |
 | Codex CLI · ChatGPT desktop | assembles the plugin tree under `~/.vibe/plugin`, registers the personal marketplace, runs `codex plugin add vibe@vibe-local`; the card goes into `~/.codex/AGENTS.md`; restart ChatGPT desktop afterwards |
 | Hermes Agent | six skills into `~/.hermes/skills`, the card block into `~/.hermes/SOUL.md` |
+| Claude desktop app | `vibe plugin mcpb --out vibe.mcpb`, open the file in the app, pick the project folder — an MCP Bundle whose only job is to call the `vibe` CLI; for the interview, approval, verdict and handoff, not for writing code |
 | no client CLI on PATH (or `VIBE_NO_PLUGIN=1`) | the older path: card, skills and hook written into the client home |
 
 `vibe status` shows the mode and version per client and says when a newer version exists; `vibe update` installs it and re-registers the plugins; `vibe uninstall` unregisters and removes everything. Nothing is published to a public marketplace — the plugin is the package on your disk.
@@ -142,7 +143,7 @@ config.json      token policy · skill catalogs
 
 ## Status
 
-`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the package is the plugin — `npm i -g` registers a local plugin in Claude Code and Codex/ChatGPT, Hermes Agent joins as a client, `vibe plugin build --check` gates manifest drift. vibe 3 stays on its 3.x tags and is no longer developed.
+`4.0.0` — phase 1: CLI core + Claude Code. Phase 2: Codex CLI and ChatGPT desktop adapters, the work graph and typed ledger edges. Phase 3a: `http` / `eval` checks, column sums, sample profiling. Phase 3b: GitHub research, project-local skills and proposals. Phase 3c: the end-to-end order-settlement example. Phase 4: the bench and `ledger compare --by harness`. `4.0.2`: no `init` — the card, skills and hook live in the client home and any `vibe` command repairs them. `4.0.3`: `vibe uninstall` also clears what an older `init` left in the project. `4.1.0`: the package is the plugin — `npm i -g` registers a local plugin in Claude Code and Codex/ChatGPT, Hermes Agent joins as a client, `vibe plugin build --check` gates manifest drift. `4.1.1`: `vibe update`. `4.2.0`: the Claude desktop app through an MCP Bundle (`vibe plugin mcpb`). vibe 3 stays on its 3.x tags and is no longer developed.
 
 ## Bench — the ledger is the benchmark
 

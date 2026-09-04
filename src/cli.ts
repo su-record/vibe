@@ -26,6 +26,7 @@ import { buildStateView } from './core/view.js';
 import { installPlugin, pluginStatus } from './install/plugin.js';
 import { checkPluginTree, writePluginTree } from './install/tree.js';
 import { checkUpdate, runUpdate } from './install/update.js';
+import { buildMcpb } from './install/mcpb.js';
 import { spawnSync } from 'node:child_process';
 import { ensureGlobal, globalStatus, uninstallGlobal, uninstallProjectSurfaces } from './install/global.js';
 import { ensureProject, projectStatus, purgeProject } from './install/project.js';
@@ -70,7 +71,7 @@ const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
   setup     update [--check] · status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
             npm i -g puts them there and any vibe command repairs them; uninstall also clears what an older init left in the project)
-            plugin build [--check] (marketplace files from package.json) · plugin install | status [--home <dir>] (local Codex/ChatGPT tree)
+            plugin build [--check] (manifests from package.json) · plugin mcpb [--out vibe.mcpb] (Claude desktop app bundle) · plugin install | status [--home <dir>]
   work      state [--graph] · profile <file.csv|tsv|jsonl|json> · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
   checks    run (exit code) · file (exists·pattern·contains·schema·sum) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass) · human (inbox, no verdict)
@@ -161,6 +162,10 @@ function cmdUninstall(root: string, flags: Flags): Output {
 
 function cmdPlugin(sub: string | undefined, flags: Flags): Output {
   const home = flagString(flags, 'home');
+  if (sub === 'mcpb') {
+    const r = buildMcpb(flagString(flags, 'out') ?? 'vibe.mcpb');
+    return { json: r, text: `${r.file} · ${r.bytes} bytes · vibe ${r.version}\n  open it in the Claude desktop app (macOS · Windows), pick the project folder; the app needs the vibe CLI: npm i -g @su-record/vibe`, code: 0 };
+  }
   if (sub === 'build') {
     if (flags['check'] === true) {
       const drift = checkPluginTree();
@@ -189,7 +194,7 @@ function cmdPlugin(sub: string | undefined, flags: Flags): Output {
     ].join('\n');
     return { json: r, text, code: r.drift.length ? 1 : 0 };
   }
-  throw usage('plugin build [--check] | plugin install | plugin status [--home <dir>]');
+  throw usage('plugin build [--check] | plugin mcpb [--out vibe.mcpb] | plugin install | plugin status [--home <dir>]');
 }
 
 const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·' };

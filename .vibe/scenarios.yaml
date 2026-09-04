@@ -21,17 +21,23 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.1
+  then: the committed manifests match package.json 4.2.0
   check: { type: run, cmd: "node dist/cli.js plugin build --check", expect: 0 }
 
-- id: update
+- id: mcpb-bundle
   needs: [build]
-  given: a stand-in npm on PATH
-  when: vibe update runs with an equal, a newer, and a failing registry
-  then: it installs only when newer, reports the manual command on failure, and says when the registry is unreachable
-  check: { type: run, cmd: "npx vitest run src/install/update.test.ts", expect: 0, timeoutMs: 120000 }
+  given: the package on disk
+  when: vibe plugin mcpb runs
+  then: a valid zip with manifest, server and README is written and python's zipfile validates it
+  check: { type: run, cmd: "npx vitest run src/install/mcpb.test.ts -t 'valid zip'", expect: 0, timeoutMs: 120000 }
 
-- id: status-update-line
+- id: mcpb-server
   needs: [build]
-  then: vibe status --json carries an update field and the help lists update [--check]
-  check: { type: run, cmd: "VIBE_OFFLINE=1 node dist/cli.js status --json | grep -q '\"update\"' && node dist/cli.js --help | grep -q 'update \\[--check\\]'", expect: 0 }
+  given: the vibe CLI on PATH and an empty project folder
+  when: a stdio client sends initialize, tools/list and tools/call
+  then: the server answers, drafts an intent through the CLI, and rejects an unknown tool with a JSON-RPC error
+  check: { type: run, cmd: "npx vitest run src/install/mcpb.test.ts -t 'stdio'", expect: 0, timeoutMs: 120000 }
+
+- id: claude-app-visible
+  then: the bundle installs in the Claude desktop app and vibe_state answers there
+  check: { type: human, question: "Run `vibe plugin mcpb --out ~/Desktop/vibe.mcpb`, open the file in the Claude desktop app, pick a project folder, and ask Claude to call vibe_state — does it answer?" }

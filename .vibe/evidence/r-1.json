@@ -1,32 +1,32 @@
 {
   "run": "r-1",
-  "at": "2026-09-04T01:26:50.834Z",
+  "at": "2026-09-04T01:34:25.285Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "dc2a284f5f86",
+  "scenarioSet": "80d0aeeec511",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2486,
-      "tail": "npm notice run @su-record/vibe@4.1.1 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 2355,
+      "tail": "npm notice run @su-record/vibe@4.2.0 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 26272,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  19 passed (19)\n      Tests  94 passed (94)\n   Start at  01:26:53\n   Duration  25.59s (transform 1.15s, setup 0ms, import 2.57s, tests 29.04s, environment 3ms)"
+      "ms": 26011,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  20 passed (20)\n      Tests  96 passed (96)\n   Start at  01:34:28\n   Duration  25.39s (transform 1.07s, setup 0ms, import 2.21s, tests 29.25s, environment 3ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 44,
+      "ms": 42,
       "tail": "card.md 705 bytes (limit 1024)"
     },
     {
@@ -34,15 +34,15 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 48,
-      "tail": "src (non-test) 4132 lines (limit 5000)"
+      "ms": 47,
+      "tail": "src (non-test) 4276 lines (limit 5000)"
     },
     {
       "id": "skills-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 9,
+      "ms": 8,
       "tail": ""
     },
     {
@@ -50,24 +50,33 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 191,
+      "ms": 203,
       "tail": "plugin tree matches package.json"
     },
     {
-      "id": "update",
+      "id": "mcpb-bundle",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1838,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  01:26:54\n   Duration  520ms (transform 112ms, setup 0ms, import 156ms, tests 61ms, environment 0ms)"
+      "ms": 1583,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  01:34:28\n   Duration  467ms (transform 162ms, setup 0ms, import 205ms, tests 61ms, environment 0ms)"
     },
     {
-      "id": "status-update-line",
+      "id": "mcpb-server",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 578,
-      "tail": ""
+      "ms": 2057,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  01:34:28\n   Duration  987ms (transform 164ms, setup 0ms, import 226ms, tests 535ms, environment 0ms)"
+    },
+    {
+      "id": "claude-app-visible",
+      "type": "human",
+      "status": "pending",
+      "exit": null,
+      "ms": 0,
+      "tail": "Run `vibe plugin mcpb --out ~/Desktop/vibe.mcpb`, open the file in the Claude desktop app, pick a project folder, and ask Claude to call vibe_state — does it answer?",
+      "reason": "human — not judged by the harness"
     }
   ]
 }

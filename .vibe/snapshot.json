@@ -1,10 +1,12 @@
 {
-  ".claude-plugin/marketplace.json": "a963069502267f27bcb6c4a7a06083b831f995c5",
-  ".claude-plugin/plugin.json": "0953cdbcd762e2bc7a46ff262fe7f93be17f91c6",
-  ".codex-plugin/plugin.json": "acab6841e2d3a0bd49b01a1f4c698b1dc68fe5b2",
-  "README.md": "b4fc848dccb42e91c4b1422654f4af3e828b5aed",
-  "package.json": "e2673b2edef7533681b09c4e632b6116c9355d48",
-  "src/cli.ts": "92735acf3a0334cf5616f80a7f789e6d9bb92cf7",
-  "src/install/update.test.ts": "811dbc2f99749cf1405761fac4c923ca0c436216",
-  "src/install/update.ts": "db7ea049aee0fe7ff016dd0470f760a71bd7d860"
+  ".claude-plugin/marketplace.json": "b3eb79eccc544973dfee000a1b0cd360b52fa11d",
+  ".claude-plugin/plugin.json": "26363d8d7d19f7e8b4029d0ec95dec7170fd5aa5",
+  ".codex-plugin/plugin.json": "fe0cb2045b65d4738c11f8628ac1a9190b742d82",
+  "README.md": "cac04ef12d336361740afbcef32c105c374c3666",
+  "package.json": "a9bc611294236de23b3e5ef6e9b5b5b3cddae862",
+  "src/cli.ts": "faa336d00b68db33613bcd2693f46c9ea39f7d16",
+  "mcpb/README.md": "987e01878d1654d2957e031335d01826cafd9903",
+  "mcpb/server/index.js": "62fdbe49dedb5906a132075722979be43a16e7fa",
+  "src/install/mcpb.test.ts": "e5ded85da2da776e4d358f0d8dbfee352050c5f5",
+  "src/install/mcpb.ts": "3c7d318306d3a34869b13ea6dc57bccdaa993868"
 }
