@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CARD_START, detectClients, ensureGlobal, globalLayout, globalStatus, hasNotifyHook, installSurfaces, projectLayout, setupGlobal, uninstallGlobal } from './global.js';
+import { CARD_START, detectClients, ensureGlobal, globalLayout, globalStatus, hasNotifyHook, installSurfaces, projectLayout, setupGlobal, sweepDeadHooks, uninstallGlobal } from './global.js';
 import { ensureProject, hasProject, projectStatus } from './project.js';
 
 // These tests cover the home surfaces; plugin registration through the client CLIs has its own tests (register.test.ts).
@@ -113,6 +113,32 @@ describe('.vibe/ — created by the first record, never by a command that only r
     expect(fs.readFileSync(path.join(root, '.vibe', 'ledger.jsonl'), 'utf-8')).toContain('"event":"init"');
     expect(ensureProject(root)).toEqual([]);
     expect(fs.readFileSync(path.join(root, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n')).toHaveLength(1);
+  });
+});
+
+describe('vibe 3 leftovers', () => {
+  it('sweeps hook entries and the codex notify line that point at a vibe 3 script that no longer exists, and keeps live ones', () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-sweep-'));
+    fs.mkdirSync(path.join(home, '.claude'));
+    fs.mkdirSync(path.join(home, '.codex'));
+    const live = path.join(home, 'live', 'hooks', 'scripts', 'ok.js');
+    fs.mkdirSync(path.dirname(live), { recursive: true });
+    fs.writeFileSync(live, '');
+    fs.writeFileSync(path.join(home, '.claude', 'settings.json'), JSON.stringify({ model: 'x', hooks: {
+      SessionStart: [{ hooks: [{ type: 'command', command: `node ${home}/.vibe/hooks/scripts/session-start.js` }] }],
+      Stop: [{ hooks: [{ type: 'command', command: `node "${home}/.vibe/hooks/scripts/stop-dispatcher.js"` }, { type: 'command', command: 'echo bye' }] }],
+      PostToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: `node ${live}` }] }],
+    } }));
+    fs.writeFileSync(path.join(home, '.codex', 'config.toml'), `model = "gpt"\nnotify = ["node", "${home}/.vibe/hooks/scripts/codex-notify.js"]\n`);
+    const removed = sweepDeadHooks(home);
+    expect(removed).toHaveLength(3);
+    const settings = JSON.parse(fs.readFileSync(path.join(home, '.claude', 'settings.json'), 'utf-8')) as { model: string; hooks: Record<string, Array<{ hooks: Array<{ command: string }> }>> };
+    expect(settings.model).toBe('x');
+    expect(Object.keys(settings.hooks).sort()).toEqual(['PostToolUse', 'Stop']);
+    expect(settings.hooks['Stop']?.[0]?.hooks.map((h) => h.command)).toEqual(['echo bye']);
+    expect(fs.readFileSync(path.join(home, '.codex', 'config.toml'), 'utf-8')).toBe('model = "gpt"\n');
+    expect(sweepDeadHooks(home)).toEqual([]);
+    fs.rmSync(home, { recursive: true, force: true });
   });
 });
 

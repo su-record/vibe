@@ -3,7 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { packageRoot } from '../core/paths.js';
 import { readJson, readText, writeAtomic, writeJson } from '../core/store.js';
+import { hasCurrentHook, installHookFile, removeHookFile, sweepDeadHooks } from './hooks.js';
 import { claudePluginVersion, cliAvailable, codexRegistered, registerClaude, registerCodex, unregisterClaude, unregisterCodex, type Mode } from './register.js';
+
+export { hasNotifyHook, sweepDeadHooks } from './hooks.js';
 
 /**
  * The always-on surfaces — card, six common skills, notification hook — are identical in every
@@ -128,75 +131,6 @@ export function countSkills(dest: string): number {
   return fs.existsSync(dest) ? fs.readdirSync(dest).filter((n) => (SKILL_NAMES as ReadonlyArray<string>).includes(n)).length : 0;
 }
 
-interface HookEntry {
-  matcher?: string;
-  hooks: Array<{ type: 'command'; command: string; timeout?: number }>;
-}
-interface Settings {
-  hooks?: Record<string, HookEntry[]>;
-  [key: string]: unknown;
-}
-
-const NOTIFY_MARK = 'hooks/notify.js';
-
-function notifyCommand(mode: 'post' | 'pre'): string {
-  return `node "${path.join(packageRoot(), NOTIFY_MARK)}" ${mode}`;
-}
-
-function wantedHooks(): Array<[string, string, string]> {
-  return [
-    ['PostToolUse', 'Edit|Write|MultiEdit|NotebookEdit', notifyCommand('post')],
-    ['PreToolUse', 'Bash', notifyCommand('pre')],
-  ];
-}
-
-function isNotify(entry: HookEntry): boolean {
-  return entry.hooks.some((h) => h.command.includes(NOTIFY_MARK));
-}
-
-/** Notification hook — it never judges. Other hooks in the file are left alone; a notify entry from another install path is replaced. */
-export function installHookFile(file: string): 'added' | 'unchanged' {
-  const settings = readJson<Settings>(file) ?? {};
-  const hooks: Record<string, HookEntry[]> = { ...settings.hooks };
-  for (const [event, matcher, command] of wantedHooks()) {
-    const kept = (hooks[event] ?? []).filter((entry) => !isNotify(entry));
-    hooks[event] = [...kept, { matcher, hooks: [{ type: 'command', command, timeout: 20 }] }];
-  }
-  const next = { ...settings, hooks };
-  if (JSON.stringify(next) === JSON.stringify(settings)) return 'unchanged';
-  writeJson(file, next);
-  return 'added';
-}
-
-export function removeHookFile(file: string): boolean {
-  const settings = readJson<Settings>(file);
-  if (!settings?.hooks) return false;
-  let changed = false;
-  for (const [event, list] of Object.entries(settings.hooks)) {
-    const kept = list.filter((entry) => !isNotify(entry));
-    if (kept.length !== list.length) {
-      changed = true;
-      if (kept.length === 0) delete settings.hooks[event];
-      else settings.hooks[event] = kept;
-    }
-  }
-  if (changed) {
-    if (Object.keys(settings.hooks).length === 0) delete settings.hooks;
-    if (Object.keys(settings).length === 0) fs.rmSync(file);
-    else writeJson(file, settings);
-  }
-  return changed;
-}
-
-export function hasNotifyHook(file: string): boolean {
-  const settings = readJson<Settings>(file);
-  return Object.values(settings?.hooks ?? {}).some((list) => list.some(isNotify));
-}
-
-function hasCurrentHook(file: string): boolean {
-  const settings = readJson<Settings>(file);
-  return wantedHooks().every(([event, , command]) => (settings?.hooks?.[event] ?? []).some((e) => e.hooks.some((h) => h.command === command)));
-}
 
 /** Clients whose home directory exists. A machine with neither gets Claude Code — the primary surface. */
 export function detectClients(home: string = os.homedir()): Client[] {
@@ -331,6 +265,7 @@ export function globalStatus(home: string = os.homedir()): GlobalStatus {
  */
 export function ensureGlobal(home: string = os.homedir()): Client[] {
   try {
+    sweepDeadHooks(home);
     const stale = detectClients(home).filter((c) => !clientStatus(home, c).current);
     if (stale.length > 0) setupGlobal(home, stale);
     return stale;
@@ -341,7 +276,7 @@ export function ensureGlobal(home: string = os.homedir()): Client[] {
 
 /** Remove the surfaces from every client home that has them; project `.vibe/` state is not touched here. */
 export function uninstallGlobal(home: string = os.homedir()): string[] {
-  const removed: string[] = [];
+  const removed: string[] = sweepDeadHooks(home);
   for (const client of ALL_CLIENTS) {
     if (!fs.existsSync(path.join(home, CLIENT_DIR[client]))) continue;
     if (client === 'claude' && cliAvailable('claude')) removed.push(...unregisterClaude(home));

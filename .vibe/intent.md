@@ -1,14 +1,13 @@
-# vibe 4 · 4.1.6 — `vibe size`, and a limit per file instead of a total
+# vibe 4 · 4.1.7 — sweep the hooks vibe 3 left behind
 
 ## Why
-A total line cap punishes the harness for doing more; a cap per file and per function keeps every piece readable, which is what the cap was for. The same rule is useful in any project, so it becomes a built-in check that a scenario can bind, and the scope skill proposes it whenever an intent writes code. The CLI, the one file over the new limit, is split into command modules.
+A machine that had vibe 3 keeps hook entries in `~/.claude/settings.json`, `~/.codex/hooks.json` and a `notify` line in `~/.codex/config.toml` that point at `…/hooks/scripts/*.js`. Once that install is gone, Claude Code reports a missing script at every session start and stop. The user saw exactly that. vibe 4 now removes entries whose script no longer exists, on every command and on uninstall, and leaves every live hook alone.
 
 ## What counts as success
-- `vibe size [paths] [--max-file N] [--max-function M]` counts files and functions across ts/js/py and more, ignores strings, comments and nested template literals when matching braces, skips tests and node_modules, and exits 1 with a list when anything is over.
-- This repository passes its own rule: no file over 400 lines, no function over 50, across src, hooks and the bundle server.
-- The scope skill proposes a size scenario for code-writing intents; the help and README describe it.
-- Earlier gates still hold: build, tests, card ≤ 1KB, six common skills ≤ 300 lines, plugin tree current.
+- Entries whose `hooks/scripts/*.js` file is missing are removed from both settings files and the codex notify line; live entries, other hooks and unrelated settings stay; a second sweep changes nothing.
+- The sweep runs from `ensureGlobal` (every command) and `uninstallGlobal`.
+- Earlier gates still hold: build, tests, card ≤ 1KB, file 400 / function 50, six common skills ≤ 300 lines, plugin tree current.
 
 ## Constraints
-- The total is no longer capped; only files and functions are.
+- Only entries that reference a `hooks/scripts/` file that does not exist are touched; nothing else in the files changes.
 - Every record is English; the model talks to the user in the user's language.
