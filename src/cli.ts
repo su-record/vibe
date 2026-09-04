@@ -25,6 +25,8 @@ import { verifyAndConsume } from './core/tokens.js';
 import { buildStateView } from './core/view.js';
 import { installPlugin, pluginStatus } from './install/plugin.js';
 import { checkPluginTree, writePluginTree } from './install/tree.js';
+import { checkUpdate, runUpdate } from './install/update.js';
+import { spawnSync } from 'node:child_process';
 import { ensureGlobal, globalStatus, uninstallGlobal, uninstallProjectSurfaces } from './install/global.js';
 import { ensureProject, projectStatus, purgeProject } from './install/project.js';
 
@@ -66,7 +68,7 @@ function flagString(flags: Flags, key: string): string | undefined {
 
 const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
-  setup     status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
+  setup     update [--check] · status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
             npm i -g puts them there and any vibe command repairs them; uninstall also clears what an older init left in the project)
             plugin build [--check] (marketplace files from package.json) · plugin install | status [--home <dir>] (local Codex/ChatGPT tree)
   work      state [--graph] · profile <file.csv|tsv|jsonl|json> · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
@@ -121,16 +123,32 @@ function cmdTokens(root: string, policyRaw: string | undefined): Output {
 function cmdStatus(root: string, flags: Flags): Output {
   const g = globalStatus(flagString(flags, 'home'));
   const p = projectStatus(root);
+  const update = process.env['VIBE_OFFLINE'] ? { installed: packageVersion(), latest: null, available: false } : checkUpdate();
   const lines = [
     `vibe ${packageVersion()} — ${g.home}`,
     ...Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${c.current ? '' : ' — stale; any vibe command repairs it'}`),
     `  card      ${g.cardBytes} bytes${g.cardOver ? ' — over 1KB!' : ''}`,
+    ...(update.available ? [`  update    ${update.latest} available — \`vibe update\``] : []),
     `project   ${p.root}`,
     `  .vibe     ${p.vibe ? 'ok' : 'none yet — the first record creates it'}`,
     `  state     ${p.state}`,
     `  inbox     ${p.inboxOpen} open`,
   ];
-  return { json: { version: packageVersion(), ...g, project: p }, text: lines.join('\n'), code: 0 };
+  return { json: { version: packageVersion(), ...g, project: p, update }, text: lines.join('\n'), code: 0 };
+}
+
+function cmdUpdate(flags: Flags): Output {
+  if (flags['check'] === true) {
+    const c = checkUpdate();
+    const text = c.latest === null ? `installed ${c.installed} · registry unreachable` : c.available ? `${c.installed} → ${c.latest} available — run \`vibe update\`` : `${c.installed} is current`;
+    return { json: c, text, code: 0 };
+  }
+  const r = runUpdate();
+  if (!r.updated) return { json: r, text: r.detail, code: r.latest === null ? 2 : 0 };
+  // The new binary registers the plugins itself; run it once so the report shows the new state.
+  const after = spawnSync('vibe', ['status'], { encoding: 'utf-8', timeout: 120_000, shell: process.platform === 'win32' });
+  const tail = after.status === 0 ? after.stdout.trim() : `run \`vibe status\` to finish the setup`;
+  return { json: { ...r, status: after.stdout }, text: `updated ${r.detail}\n${tail}`, code: 0 };
 }
 
 function cmdUninstall(root: string, flags: Flags): Output {
@@ -510,12 +528,17 @@ export async function dispatch(argv: string[]): Promise<Output> {
   if (cmd === 'version' || flags['version'] === true) return { json: { version: packageVersion() }, text: packageVersion(), code: 0 };
   if (!cmd || flags['help'] === true) return { json: { help: HELP }, text: HELP, code: 0 };
   const repaired = process.env['VIBE_SKIP_SETUP'] || cmd === 'uninstall' ? [] : ensureGlobal(flagString(flags, 'home'));
-  if (repaired.length > 0) process.stderr.write(`[vibe] installed card, skills and hook for ${repaired.join(', ')}\n`);
+  if (repaired.length > 0) {
+    const modes = globalStatus(flagString(flags, 'home')).clients;
+    process.stderr.write(`[vibe] set up ${repaired.map((c) => `${c} (${modes[c]?.mode === 'plugin' ? `plugin ${modes[c]?.pluginVersion ?? ''}`.trim() : 'card, skills, hook in home'})`).join(', ')}\n`);
+  }
   const root = cmd === 'plugin' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
   switch (cmd) {
     case 'status':
       return cmdStatus(root, flags);
+    case 'update':
+      return cmdUpdate(flags);
     case 'tokens':
       return cmdTokens(root, sub);
     case 'uninstall':
