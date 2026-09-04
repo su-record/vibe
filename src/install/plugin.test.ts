@@ -62,6 +62,19 @@ describe('vibe plugin install / status', () => {
     expect(status.drift).toEqual([`manifest 0.0.1 ≠ package ${status.packageVersion}`, 'skills 5 ≠ 6']);
   });
 
+  it('reports drift when the marketplace points elsewhere — the ≤ 4.1.7 path, or none — while the entry still counts as registered', () => {
+    installPlugin(home);
+    const paths = pluginPaths(home);
+    const doc = JSON.parse(fs.readFileSync(paths.marketplace, 'utf-8')) as { plugins: Array<{ name: string; source: { source: string; path: string } }> };
+    doc.plugins[0]!.source.path = './.vibe/plugin/vibe';
+    fs.writeFileSync(paths.marketplace, JSON.stringify(doc));
+    const status = pluginStatus(home);
+    expect(status.registered).toBe(true);
+    expect(status.drift).toEqual([`marketplace points at ${path.join(home, '.vibe', 'plugin', 'vibe')}`]);
+    installPlugin(home);
+    expect(pluginStatus(home).drift).toEqual([]);
+  });
+
   it('the tree lives under ~/.config/vibe; a ≤ 4.1.7 store at ~/.vibe/plugin goes, and an emptied ~/.vibe with it', () => {
     fs.mkdirSync(path.join(home, '.vibe', 'plugin', 'vibe', 'skills'), { recursive: true });
     fs.writeFileSync(path.join(home, '.vibe', 'plugin', 'vibe', 'README.md'), 'old');
