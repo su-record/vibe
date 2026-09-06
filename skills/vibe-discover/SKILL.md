@@ -11,6 +11,7 @@ user-invocable: false
 1. Read what the user attached through the harness, so every client sees the same thing:
    - table (csv · tsv · jsonl · json · xlsx) → `vibe profile {file} --json` [`--sheet`]: columns, types, missing counts, duplicates, up to three anomalies with numbers
    - document (xlsx · docx · pptx · pdf · hwp · hwpx · html) → `vibe read {file} --json` [`--sheet` · `--pages`]; it says which reader it used (pdf: `pdftotext` when installed, else built-in)
+   - long material that only needs an answer ("what does this contract require", "which sheet holds the totals") → `vibe read {files} --ask "{question}"`; a low-reasoning model reads it and only the answer enters your context
    - image → your own file reader; vibe does not read images
    - code or plain text → your file reader, the whole file — never a grep excerpt
    If there is no sample, ask for one that the success condition can be checked against.

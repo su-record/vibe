@@ -11,6 +11,7 @@ user-invocable: false
 1. Take scenarios in the order of `remaining` from `vibe state --json` — parents before their `needs` dependents (`vibe state --graph` shows the edges). Put scenarios marked `irreversible` last.
    - Scenarios with no edge between them may be built by parallel agents, each in its own worktree, merged before `vibe check --all`. Never two agents in one working tree.
 2. Build only what that scenario needs — code, a script, a document, configuration, whatever. Make sure the check itself (`check.cmd`, `check.path`) can actually run.
+   - Orientation reads ("what does this module do", "where is X handled") go through `vibe read <files> --ask "<question>"` — a low-reasoning model reads and answers with line numbers; read the file yourself only to edit or debug it.
 3. Run `vibe check {id} --json`.
    - Pass (`code 0`): next scenario.
    - Fail (`code 1`): read `tail` and fix. If the same failure happens twice the harness marks STUCK and leaves an inbox question — stop and show that question to the user.

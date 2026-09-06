@@ -4,6 +4,8 @@
  *
  *   post  PostToolUse(Edit|Write): runs `vibe state --json` and tells the model about a voided DONE or open inbox items.
  *   pre   PreToolUse(Bash): warns on stderr when an irreversible command has no recent authorize record.
+ *         PreToolUse(Read): when the file is over READ_ADVISE_LINES, tells the model that `vibe read <file> --ask`
+ *         lets a low-reasoning model read it — advice only, the read goes ahead.
  *
  * Without hooks the gate is the same — the verdict is always `vibe check`, anywhere.
  */
@@ -78,9 +80,33 @@ function tokensOff() {
   }
 }
 
+const READ_ADVISE_LINES = Number(process.env.VIBE_READ_ADVISE_LINES || 400);
+
+function countLines(file) {
+  try {
+    const text = fs.readFileSync(file, 'utf-8');
+    return text.length === 0 ? 0 : text.replace(/\n$/, '').split('\n').length;
+  } catch {
+    return 0;
+  }
+}
+
+function adviseRead(payload) {
+  const file = String((payload.tool_input && payload.tool_input.file_path) || '');
+  if (!file) return;
+  const lines = countLines(path.resolve(root, file));
+  if (lines <= READ_ADVISE_LINES) return;
+  const shown = path.isAbsolute(file) ? path.relative(root, file) || file : file;
+  emitContext(`[vibe] ${shown} is ${lines} lines — when it only has to be understood, not edited or debugged, \`vibe read ${shown} --ask "<question>"\` lets a low-reasoning model read it and returns the answer with line numbers`);
+}
+
 if (mode === 'pre') {
-  if (tokensOff()) process.exit(0);
   const payload = readPayload();
+  if (payload.tool_name === 'Read') {
+    adviseRead(payload);
+    process.exit(0);
+  }
+  if (tokensOff()) process.exit(0);
   const command = String((payload.tool_input && payload.tool_input.command) || '');
   for (const [action, re] of IRREVERSIBLE) {
     if (re.test(command) && !recentAuthorize(action)) {

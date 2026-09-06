@@ -1,23 +1,23 @@
-# vibe 4 · 4.1.9 — Codex follows `vibe update`: the plugin Codex runs is read, compared and re-registered
+# vibe 4 · 4.1.10 — the harness reads for the model: `vibe read --ask` hands a file corpus to a low-reasoning model
 
 ## Why
-`vibe update` installs the new package and lets the new binary re-register the plugins on its first command. For Claude Code this works: `registerClaude` reads the version Claude has installed, compares it with the package and runs `claude plugin update`. For Codex it never did. `codexRegistered` looks only at vibe's own tree under `~/.config/vibe/plugin/vibe` and at whether the personal marketplace has an entry *named* `vibe`; it never reads what Codex actually installed, and it never checks where the entry points. So a Codex plugin stays at the version it was first registered with, a marketplace entry still pointing at the ≤ 4.1.7 store `~/.vibe/plugin/vibe` (a path that no longer exists) passes as "registered", and `vibe status` prints the package version as the Codex plugin version — a claim, not a reading.
+Most of a coding session's tokens go to reading, not reasoning: the frontier model loads whole files into its context to answer "what does this module do", "where is X handled", "what does this report say". Spotify's shunt plugin measured a ~90% mean token cut on bulk reads by routing them to a cheap worker model whose reply — not the files — enters the main context. Its limits are documented: the worker's summaries carry no line numbers, so edits and debugging still need the real file.
 
-The user hit exactly that today: `vibe status` said `codex plugin 4.1.8`, `codex plugin list` said `4.1.7` from `/home/ubuntu/.vibe/plugin/vibe`.
+vibe already has the two pieces: `vibe read` extracts text from any document with no dependency, and the `review` check already spawns the client CLI (`claude -p`, `codex exec`) with a prompt on stdin. Joining them gives every client the same delegation without a hook that blocks reads: the harness reads, numbers the lines, asks a low-reasoning model, and returns only the answer. Card rule 8 ("read files whole") stays for editing and debugging; the new rule says when not to.
 
 ## What counts as success
-- `codexPluginVersion(home)` reads the version Codex has installed from its cache (`~/.codex/plugins/cache/<marketplace>/vibe/<version>/.codex-plugin/plugin.json`, highest version when several are present) and returns null when there is none.
-- `pluginStatus` reports drift when the marketplace entry's `source.path` does not resolve to the current tree (`marketplace points at <path>`), not only when the entry is missing.
-- `codexRegistered` is true only when the tree has no drift and the version Codex has installed equals the package version. A Codex cache that cannot be read (null) is not treated as stale — the marketplace and tree remain the verdict then, so a Codex build with another cache layout does not re-register on every command.
-- `registerCodex`, when not current: assembles the tree, rewrites the marketplace entry, adds the marketplace to Codex, and — when Codex already holds an older version — removes the plugin before adding it again (Codex CLI has no per-plugin update; local marketplaces are refreshed by remove + add). The detail reads `updated <old> → <new>` or `registered vibe@<marketplace>`. A marketplace-add that fails only because the marketplace is already configured does not fail the registration.
-- `clientStatus` for Codex reports `pluginVersion` from the Codex cache (falling back to the package version only when the cache is unreadable and the tree is registered) and `current: false` when Codex is behind, so `ensureGlobal` repairs it on the next command and `vibe update`'s follow-up `vibe status` shows the new version.
-- Regression test: a home whose Codex cache holds an older plugin and whose marketplace entry points at `./.vibe/plugin/vibe` — status reports the old version and not current; `ensureGlobal` repairs Codex (marketplace rewritten to the new tree, `plugin remove` then `plugin add` logged); afterwards status reports the package version, current, and a second `ensureGlobal` runs nothing.
-- Regression test: `pluginStatus` lists the marketplace-path drift when the entry points elsewhere.
-- Earlier gates still hold: build, tests, card ≤ 1KB, file 400 / function 50, six common skills ≤ 300 lines, language packs within budget, plugin tree current for 4.1.9.
-- The README status line carries a `4.1.9` entry.
+- `vibe read <file…> --ask "<question>"` extracts every named file (documents through the existing readers, code and text verbatim), numbers the lines of text and code files (`N| line`) so the answer can cite them, wraps each file in `<file path="…">…</file>`, puts the question last, and sends the bundle on stdin to the reader command. The reply is the command's stdout; stderr reports `files · chars in · reader · chars out · ms`; `--json` carries `{ files, chars, reader, reply, ms }`.
+- `vibe read <file…>` without `--ask` accepts several files and prints them one after another, as before for one.
+- The reader command is `VIBE_READER_CMD` when set, else `reader` in `.vibe/config.json`, else `claude -p --output-format text --model haiku` when `claude` is on PATH, else `codex exec -c model_reasoning_effort=low -` when `codex` is; with none the command fails with exit 2 and names the three options. `CLAUDECODE` is removed from the child environment as in the `review` check.
+- The bundle is capped at 400,000 characters; over the cap the command fails with exit 2 and tells the caller to ask about fewer files or use `--pages` / `--sheet`. The reader has 300 s.
+- The notification hook gains a `PreToolUse` entry for `Read`: inside a vibe project, when the file being read is over 400 lines, it adds context naming the line count and `vibe read <file> --ask "…"`. It never blocks; outside a project it is silent; both plugin manifests (`hooks/hooks.json`, `hooks/codex-hooks.json`) and the home-settings install carry the entry.
+- Card rule 8 says when to delegate: a file that only has to be understood, not edited or debugged, goes through `vibe read --ask`. The card stays ≤ 1KB. `vibe-build` and `vibe-discover` name the same rule in one line each; the six common skills stay ≤ 300 lines.
+- Tests: a fake reader (`VIBE_READER_CMD`) proves the bundle shape (file tags, numbered lines, question last, several files), the reply passthrough, the cap, and the exit-2 error without a reader; the hook test proves the advice for a long file and silence for a short one.
+- Live proof: with `claude` on this machine, `vibe read src/core/lang.ts --ask "…"` through Haiku names `detectLang`.
+- Earlier gates still hold: build, tests, card ≤ 1KB, file 400 / function 50, six common skills ≤ 300 lines, language packs within budget, plugin tree current for 4.1.10, README status line carries `4.1.10`, help lists `--ask`.
 
 ## Constraints
-- Claude Code registration does not change.
-- No new dependency; the Codex cache is read from disk, no extra `codex` invocation for status.
-- `.vibe/` layout inside a project and the plugin tree layout stay as they are.
+- No new dependency. The worker is whichever client CLI is already installed; nothing is downloaded.
+- The hook advises; it never blocks a read. Card rule 8 (read whole for editing and debugging) is not weakened.
+- `review` check behaviour does not change.
 - Every record is English; the model talks to the user in the user's language.

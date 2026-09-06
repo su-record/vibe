@@ -1,48 +1,48 @@
 {
   "run": "r-1",
-  "at": "2026-09-04T18:06:33.746Z",
+  "at": "2026-09-06T05:27:12.379Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "2b50a5c27df8",
+  "scenarioSet": "9f3775b3f487",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2816,
-      "tail": "npm notice run @su-record/vibe@4.1.9 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 3825,
+      "tail": "npm notice run @su-record/vibe@4.1.10 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 30963,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  26 passed (26)\n      Tests  125 passed (125)\n   Start at  18:06:37\n   Duration  30.29s (transform 1.82s, setup 0ms, import 3.39s, tests 37.85s, environment 4ms)"
+      "status": "fail",
+      "exit": 1,
+      "ms": 49422,
+      "tail": "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n\n Test Files  1 failed | 27 passed (28)\n      Tests  1 failed | 133 passed (134)\n   Start at  05:27:17\n   Duration  48.04s (transform 2.34s, setup 0ms, import 4.85s, tests 60.32s, environment 8ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 40,
-      "tail": "card.md 873 bytes (limit 1024)"
+      "ms": 52,
+      "tail": "card.md 1010 bytes (limit 1024)"
     },
     {
       "id": "file-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3951,
-      "tail": "[vibe] set up claude (plugin), codex (plugin 4.1.9)\n53 files · 5658 lines · largest src/core/skills.ts (329) · limits file 400 · function 50\n  every file and function within limits"
+      "ms": 1208,
+      "tail": "54 files · 5802 lines · largest src/core/skills.ts (329) · limits file 400 · function 50\n  every file and function within limits"
     },
     {
       "id": "skills-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 10,
+      "ms": 17,
       "tail": ""
     },
     {
@@ -50,7 +50,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 52,
+      "ms": 58,
       "tail": "8 skills: names conform, references resolve, none tracked under .claude/skills or .codex/skills"
     },
     {
@@ -58,7 +58,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 48,
+      "ms": 65,
       "tail": "2 language pack(s): antislop-en (324 lines), antislop-ko (320 lines) — reviewers and agents in step"
     },
     {
@@ -66,39 +66,55 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3900,
-      "tail": "[vibe] set up claude (plugin), codex (plugin 4.1.9)\nplugin tree matches package.json"
+      "ms": 973,
+      "tail": "plugin tree matches package.json"
     },
     {
-      "id": "codex-stale",
+      "id": "read-ask",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2809,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 4 skipped (6)\n   Start at  18:06:38\n   Duration  1.08s (transform 469ms, setup 0ms, import 552ms, tests 241ms, environment 0ms)"
+      "ms": 1250,
+      "tail": "[vibe read] 2 file(s) · 2710 chars in · reader: node checks/fake-reader.js · 60 chars out · 120ms"
     },
     {
-      "id": "marketplace-drift",
+      "id": "read-ask-live",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1284,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  18:07:08\n   Duration  455ms (transform 217ms, setup 0ms, import 252ms, tests 24ms, environment 0ms)"
+      "ms": 7540,
+      "tail": "[vibe read] 1 file(s) · 735 chars in · reader: claude -p --output-format text --model haiku · 22 chars out · 6903ms"
     },
     {
-      "id": "codex-unreadable-cache",
+      "id": "read-no-reader",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1323,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  18:07:08\n   Duration  458ms (transform 210ms, setup 0ms, import 246ms, tests 45ms, environment 0ms)"
+      "ms": 2394,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 6 skipped (7)\n   Start at  05:28:07\n   Duration  819ms (transform 257ms, setup 0ms, import 364ms, tests 20ms, environment 0ms)"
+    },
+    {
+      "id": "read-advice",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 181,
+      "tail": "read-advice: long file advised, short file silent"
+    },
+    {
+      "id": "help-line",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 589,
+      "tail": ""
     },
     {
       "id": "readme-status",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3,
+      "ms": 5,
       "tail": ""
     }
   ]

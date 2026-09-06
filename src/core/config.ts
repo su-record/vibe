@@ -19,6 +19,8 @@ export interface Config {
   tokens: TokenPolicy;
   /** GitHub repositories whose `skills/` (or root) directories are searched as skill catalogs. */
   catalogs: string[];
+  /** The reader command for `vibe read --ask` (stdin → stdout); unset means the client CLI on PATH at its lowest reasoning. */
+  reader?: string;
 }
 
 export function configPath(root: string): string {
@@ -29,7 +31,8 @@ export function readConfig(root: string): Config {
   const raw = readJson<Partial<Config>>(configPath(root)) ?? {};
   const tokens = TOKEN_POLICIES.includes(raw.tokens as TokenPolicy) ? (raw.tokens as TokenPolicy) : DEFAULT_TOKEN_POLICY;
   const catalogs = Array.isArray(raw.catalogs) ? raw.catalogs.filter((c): c is string => typeof c === 'string' && /^[\w.-]+\/[\w.-]+$/.test(c)) : [...DEFAULT_CATALOGS];
-  return { tokens, catalogs };
+  const reader = typeof raw.reader === 'string' && raw.reader.trim() ? raw.reader.trim() : undefined;
+  return reader ? { tokens, catalogs, reader } : { tokens, catalogs };
 }
 
 export function writeConfig(root: string, config: Partial<Config>): void {

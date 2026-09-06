@@ -8,8 +8,8 @@
   check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
 
 - id: card-size
-  then: the always-on card is at most 1024 bytes
-  check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
+  then: the always-on card is at most 1024 bytes and names `vibe read --ask`
+  check: { type: run, cmd: "node checks/card-size.js && grep -q -- '--ask' card.md", expect: 0 }
 
 - id: file-size
   needs: [build]
@@ -17,8 +17,8 @@
   check: { type: run, cmd: "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
 
 - id: skills-size
-  then: the six common skills are at most 300 lines in total
-  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300", expect: 0 }
+  then: the six common skills are at most 300 lines in total and vibe-build and vibe-discover name `vibe read --ask`
+  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q -- '--ask' skills/vibe-build/SKILL.md && grep -q -- '--ask' skills/vibe-discover/SKILL.md", expect: 0 }
 
 - id: skill-names
   then: every common skill name is spec-conformant and equals its directory, and none of the six is tracked under the repository's .claude/skills or .codex/skills
@@ -30,30 +30,41 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.9 and the plugin tree carries the language pack
-  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.9\"' .codex-plugin/plugin.json", expect: 0 }
+  then: the committed manifests match package.json 4.1.10 and both hook manifests carry the PreToolUse Read entry
+  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.10\"' .codex-plugin/plugin.json && grep -q '\"matcher\": \"Read\"' hooks/hooks.json && grep -q '\"matcher\": \"Read\"' hooks/codex-hooks.json", expect: 0 }
 
-- id: codex-stale
+- id: read-ask
   needs: [build]
-  given: a home with the codex CLI, a Codex cache holding an older vibe plugin, and a marketplace entry pointing at ./.vibe/plugin/vibe
-  when: status is read, ensureGlobal runs, status is read again, ensureGlobal runs again
-  then: the first status reports the old version and not current; the repair rewrites the marketplace to the new tree and logs plugin remove then plugin add; the second status reports the package version and current; the second ensureGlobal runs nothing
-  check: { type: run, cmd: "npx vitest run src/install/register.test.ts -t 'codex behind'", expect: 0, timeoutMs: 120000 }
+  given: a fake reader command that reports what it was sent
+  when: vibe read is asked a question over two source files
+  then: the reader receives two file tags with numbered lines and the question last, and its reply is the command's stdout
+  check: { type: run, cmd: "VIBE_READER_CMD='node checks/fake-reader.js' node dist/cli.js read src/core/lang.ts src/core/paths.ts --ask 'where is the language detected' | grep -q 'files=2 numbered=yes question=where is the language detected'", expect: 0 }
 
-- id: marketplace-drift
+- id: read-ask-live
   needs: [build]
-  given: an installed tree whose marketplace entry is edited to point elsewhere
-  when: pluginStatus runs
-  then: drift names the path the entry points at, and registered stays true
-  check: { type: run, cmd: "npx vitest run src/install/plugin.test.ts -t 'marketplace points'", expect: 0, timeoutMs: 120000 }
+  given: the claude CLI on this machine
+  when: vibe read asks Haiku which exported function decides between ko and en in src/core/lang.ts
+  then: the reply names detectLang
+  check: { type: run, cmd: "node dist/cli.js read src/core/lang.ts --ask 'Which exported function decides between ko and en? Answer with the function name and its line number only.' | grep -qi detectLang", expect: 0, timeoutMs: 180000 }
 
-- id: codex-unreadable-cache
+- id: read-no-reader
   needs: [build]
-  given: a home with the codex CLI whose Codex cache has no vibe entry after registration
-  when: ensureGlobal runs a second time
-  then: nothing runs again — an unreadable cache is not stale
-  check: { type: run, cmd: "npx vitest run src/install/register.test.ts -t 'codex gets the assembled tree'", expect: 0, timeoutMs: 120000 }
+  given: no claude or codex on PATH and no VIBE_READER_CMD
+  when: vibe read --ask runs
+  then: exit 2 and the message names VIBE_READER_CMD, config reader, claude and codex
+  check: { type: run, cmd: "npx vitest run src/core/reader.test.ts -t 'no reader'", expect: 0, timeoutMs: 120000 }
+
+- id: read-advice
+  given: a vibe project, a 500-line file and a 100-line file
+  when: the notification hook receives a PreToolUse Read for each
+  then: the long file gets context naming its line count and vibe read --ask; the short file gets nothing; the hook exits 0 both times
+  check: { type: run, cmd: "node checks/read-advice.js", expect: 0 }
+
+- id: help-line
+  needs: [build]
+  then: vibe --help lists read --ask
+  check: { type: run, cmd: "node dist/cli.js --help | grep -q -- '--ask'", expect: 0 }
 
 - id: readme-status
-  then: the README status line carries a 4.1.9 entry
-  check: { type: run, cmd: "grep -q '`4.1.9`' README.md", expect: 0 }
+  then: the README describes vibe read --ask and its status line carries a 4.1.10 entry
+  check: { type: run, cmd: "grep -q '`4.1.10`' README.md && grep -q -- '--ask' README.md", expect: 0 }
