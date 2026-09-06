@@ -1,7 +1,8 @@
-import { spawn, spawnSync } from 'node:child_process';
 import { readConfig } from './config.js';
 import { readDocument } from './docs/read.js';
 import { usage } from './errors.js';
+import { claudeArgs, codexArgs, findSession, hasCli, parseClaude, parseCodex, readerHome, saveSession, sessionKey, spawnReader, type ReaderClient, type ReaderRun, type ReaderUsage } from './readerSession.js';
+import { ensureDir } from './store.js';
 
 /**
  * `vibe read --ask` — the harness reads for the model. The files go to a low-reasoning reader
@@ -11,7 +12,6 @@ import { usage } from './errors.js';
  */
 export const READER_MAX_CHARS = 400_000;
 const TIMEOUT_MS = 300_000;
-const MAX_CAPTURE = 1024 * 1024;
 
 const INSTRUCTIONS = [
   'You are a reader. Answer the question at the end from the files below and nothing else.',
@@ -23,27 +23,6 @@ export interface ReadBundle {
   files: string[];
   chars: number;
   text: string;
-}
-
-export interface ReaderReply {
-  files: string[];
-  chars: number;
-  reader: string;
-  reply: string;
-  ms: number;
-  exit: number | null;
-}
-
-const NO_READER = 'no reader available — set VIBE_READER_CMD, put `reader` in .vibe/config.json, or have `claude` or `codex` on PATH';
-
-/** The reader command: env, project config, then the client CLI on PATH at its lowest reasoning. The bundle goes to stdin, the answer is stdout. */
-export function readerCommand(root: string): string | null {
-  const custom = process.env['VIBE_READER_CMD'] || readConfig(root).reader;
-  if (custom) return custom;
-  const has = (name: string): boolean => spawnSync(name, ['--version'], { encoding: 'utf-8', timeout: 15_000, shell: process.platform === 'win32' }).status === 0;
-  if (has('claude')) return 'claude -p --output-format text --model haiku';
-  if (has('codex')) return 'codex exec -c model_reasoning_effort=low -';
-  return null;
 }
 
 export function numberLines(text: string): string {
@@ -71,39 +50,80 @@ export function readerPrompt(bundle: ReadBundle, question: string): string {
   return `${INSTRUCTIONS}\n\n${bundle.text}\n\n## Question\n\n${question.trim()}\n`;
 }
 
-function run(cmd: string, cwd: string, prompt: string): Promise<{ reply: string; exit: number | null; killed: boolean }> {
-  return new Promise((resolve) => {
-    const env: NodeJS.ProcessEnv = { ...process.env };
-    delete env['CLAUDECODE']; // a nested client CLI must not think it is inside itself
-    const child = spawn(cmd, { cwd, shell: true, env, stdio: ['pipe', 'pipe', 'pipe'] });
-    let reply = '';
-    let killed = false;
-    child.stdout.on('data', (chunk: Buffer) => {
-      if (reply.length < MAX_CAPTURE) reply += chunk.toString('utf-8');
-    });
-    child.stderr.on('data', () => undefined);
-    const timer = setTimeout(() => {
-      killed = true;
-      child.kill('SIGKILL');
-    }, TIMEOUT_MS);
-    child.on('error', () => resolve({ reply, exit: null, killed }));
-    child.on('close', (code) => {
-      clearTimeout(timer);
-      resolve({ reply, exit: code, killed });
-    });
-    child.stdin.end(prompt);
-  });
+export interface ReaderChoice {
+  client: ReaderClient;
+  /** The command as reported to the caller */
+  label: string;
+  cmd: string;
 }
 
-export async function askReader(root: string, files: string[], question: string, options: { sheet?: string; pages?: string } = {}): Promise<ReaderReply> {
+const NO_READER = 'no reader available — set VIBE_READER_CMD, put `reader` in .vibe/config.json, or have `claude` or `codex` on PATH';
+
+/** The reader, in order: env, project config (both stateless shell commands), then the client CLI on PATH at its lowest reasoning. */
+export function chooseReader(root: string): ReaderChoice | null {
+  const custom = process.env['VIBE_READER_CMD'] || readConfig(root).reader;
+  if (custom) return { client: 'custom', label: custom, cmd: custom };
+  if (hasCli('claude')) return { client: 'claude', label: 'claude -p --model haiku', cmd: 'claude' };
+  if (hasCli('codex')) return { client: 'codex', label: 'codex exec (reasoning low)', cmd: 'codex' };
+  return null;
+}
+
+/** Kept for callers that only want the command string. */
+export function readerCommand(root: string): string | null {
+  return chooseReader(root)?.label ?? null;
+}
+
+export interface ReaderReply {
+  files: string[];
+  chars: number;
+  reader: string;
+  session: { id: string | null; resumed: boolean };
+  usage: ReaderUsage | null;
+  reply: string;
+  ms: number;
+}
+
+interface AskOptions {
+  sheet?: string;
+  pages?: string;
+  home?: string;
+  now?: number;
+}
+
+function firstMessage(choice: ReaderChoice, bundle: ReadBundle, question: string): string {
+  const body = `${bundle.text}\n\n## Question\n\n${question.trim()}\n`;
+  return choice.client === 'claude' ? body : `${INSTRUCTIONS}\n\n${body}`; // claude carries the instructions as its system prompt
+}
+
+function followUp(question: string): string {
+  return `Same files as before.\n\n## Question\n\n${question.trim()}\n`;
+}
+
+async function runChoice(choice: ReaderChoice, resume: string | null, stdin: string, root: string, home: string | undefined): Promise<ReaderRun> {
+  if (choice.client === 'custom') {
+    const r = await spawnReader(choice.cmd, null, stdin, root, TIMEOUT_MS); // a user's command runs where the user wrote it
+    return { reply: r.out, sessionId: null, usage: null, exit: r.exit, killed: r.killed };
+  }
+  const cwd = readerHome(home); // the client CLIs run in a neutral directory: no project card, memory or hooks
+  ensureDir(cwd);
+  const args = choice.client === 'claude' ? claudeArgs(INSTRUCTIONS, resume) : codexArgs(resume);
+  const r = await spawnReader(choice.cmd, args, stdin, cwd, TIMEOUT_MS);
+  const parsed = choice.client === 'claude' ? parseClaude(r.out) : parseCodex(r.out);
+  return { ...parsed, exit: r.exit, killed: r.killed };
+}
+
+export async function askReader(root: string, files: string[], question: string, options: AskOptions = {}): Promise<ReaderReply> {
   if (!question.trim()) throw usage('--ask needs a question');
-  const reader = readerCommand(root);
-  if (!reader) throw usage(NO_READER);
+  const choice = chooseReader(root);
+  if (!choice) throw usage(NO_READER);
   const bundle = bundleFiles(root, files, options);
+  const key = sessionKey(choice.client, bundle.text);
+  const existing = choice.client === 'custom' ? null : findSession(key, options.home, options.now);
   const started = Date.now();
-  const r = await run(reader, root, readerPrompt(bundle, question));
+  const r = await runChoice(choice, existing?.id ?? null, existing ? followUp(question) : firstMessage(choice, bundle, question), root, options.home);
   const ms = Date.now() - started;
-  if (r.killed) throw usage(`the reader gave no answer within ${TIMEOUT_MS}ms: ${reader}`);
-  if (r.exit !== 0) throw usage(`the reader failed (exit ${r.exit ?? 'none'}): ${reader}${r.reply.trim() ? `\n${r.reply.trim()}` : ''}`);
-  return { files: bundle.files, chars: bundle.chars, reader, reply: r.reply.trim(), ms, exit: r.exit };
+  if (r.killed) throw usage(`the reader gave no answer within ${TIMEOUT_MS}ms: ${choice.label}`);
+  if (r.exit !== 0) throw usage(`the reader failed (exit ${r.exit ?? 'none'}): ${choice.label}${r.reply.trim() ? `\n${r.reply.trim()}` : ''}`);
+  if (r.sessionId) saveSession(key, { id: r.sessionId, client: choice.client, at: new Date(options.now ?? Date.now()).toISOString(), files: bundle.files, chars: bundle.chars }, options.home, options.now);
+  return { files: bundle.files, chars: bundle.chars, reader: choice.label, session: { id: r.sessionId, resumed: existing !== null }, usage: r.usage, reply: r.reply.trim(), ms };
 }

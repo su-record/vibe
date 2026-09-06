@@ -1,6 +1,9 @@
 {
-  "README.md": "9edac30b2f326db1a67afdfe9c8303726eab2aeb",
-  "src/core/regress.ts": "dbeb040c069157ff900e2744356ffe985bd97f7f",
-  "src/core/view.ts": "238f6d5148a3d5e3991f9ecd05d24aacd763efcd",
-  "src/core/regress.test.ts": "d1f2b83c011ebb237c559f23f7d5f7af70b0853e"
+  "README.md": "db64dcb62a274e3e48d988eb3c788bb182f17c0a",
+  "src/cli/work.ts": "1645df68884e2a46737a31aff0d4d0b8a8574aa3",
+  "src/core/checks/review.ts": "db62d073203d0a94585b752e2492fedd86df5ccd",
+  "src/core/reader.test.ts": "e0ac07676810a9b61c0bd1a0fa1d2bc2d2db34f3",
+  "src/core/reader.ts": "055e8c8db78555fed8ec9626db6fd0a65cabd666",
+  "checks/read-live.js": "37b49aab739ba5dca2632d320556cfccb3bddf49",
+  "src/core/readerSession.ts": "1c2dc1e8862dc9fffda328239be142cf94a574e9"
 }

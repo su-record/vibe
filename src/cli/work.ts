@@ -45,7 +45,10 @@ export async function cmdRead(root: string, files: string[], flags: Flags): Prom
   const ask = flagString(flags, 'ask');
   if (ask !== undefined || flags['ask'] === true) {
     const r = await askReader(root, files, ask ?? '', options);
-    if (flags['json'] !== true) process.stderr.write(`[vibe read] ${r.files.length} file(s) · ${r.chars} chars in · reader: ${r.reader} · ${r.reply.length} chars out · ${r.ms}ms\n`);
+    const u = r.usage;
+    const session = r.session.id ? `session ${r.session.resumed ? 'resumed' : 'new'}` : 'no session';
+    const cache = u ? `cache read ${u.cacheRead.toLocaleString('en-US')} · write ${u.cacheWrite.toLocaleString('en-US')} · input ${u.input.toLocaleString('en-US')}` : `${r.reply.length} chars out`;
+    if (flags['json'] !== true) process.stderr.write(`[vibe read] ${r.files.length} file(s) · ${r.chars.toLocaleString('en-US')} chars · ${r.reader} · ${session} · ${cache} · ${(r.ms / 1000).toFixed(1)}s\n`);
     return { json: r, text: r.reply, code: 0 };
   }
   const docs = files.map((file) => readDocument(root, file, options));

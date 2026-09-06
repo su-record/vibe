@@ -3,17 +3,56 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { askReader, bundleFiles, numberLines, READER_MAX_CHARS, readerCommand, readerPrompt } from './reader.js';
+import { SESSION_TTL_MS } from './readerSession.js';
 
 let root: string;
+let home: string;
+const savedPath = process.env['PATH'];
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-reader-'));
+  home = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-reader-home-'));
   fs.writeFileSync(path.join(root, 'a.ts'), 'export const a = 1;\nexport const b = 2;\n');
   fs.writeFileSync(path.join(root, 'b.csv'), 'id,total\n1,10\n2,20\n');
 });
 afterEach(() => {
   fs.rmSync(root, { recursive: true, force: true });
+  fs.rmSync(home, { recursive: true, force: true });
   delete process.env['VIBE_READER_CMD'];
+  process.env['PATH'] = savedPath;
 });
+
+/**
+ * A fake client CLI on PATH: answers `--version`, records argv and stdin to a log, and replies in
+ * the real CLI's JSON — a new session id on a fresh call, the resumed id with cache reads on `--resume`.
+ */
+function fakeClient(name: 'claude' | 'codex'): string {
+  const bin = path.join(home, 'bin');
+  fs.mkdirSync(bin, { recursive: true });
+  const log = path.join(home, `${name}.log`);
+  const claude = `
+    const id = r >= 0 ? a[r + 1] : 'sess-' + n;
+    out(JSON.stringify({ session_id: id, result: 'answer ' + n, usage: { input_tokens: 9, cache_creation_input_tokens: r >= 0 ? 900 : 13000, cache_read_input_tokens: r >= 0 ? 13000 : 0, output_tokens: 40 } }));`;
+  const codex = `
+    const id = r >= 0 ? a[r + 1] : 'thread-' + n;
+    out(JSON.stringify({ type: 'thread.started', thread_id: id }) + '\\n' + JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'answer ' + n } }) + '\\n' + JSON.stringify({ type: 'turn.completed', usage: { input_tokens: 27000, cached_input_tokens: r >= 0 ? 21000 : 12000, cache_write_input_tokens: 0, output_tokens: 6 } }) + '\\n');`;
+  fs.writeFileSync(path.join(bin, name), `#!${process.execPath}
+    const fs = require('fs');
+    const a = process.argv.slice(2);
+    if (a[0] === '--version') { process.stdout.write('1.0.0\\n'); process.exit(0); }
+    const stdin = fs.readFileSync(0, 'utf-8');
+    const n = fs.existsSync(${JSON.stringify(log)}) ? fs.readFileSync(${JSON.stringify(log)}, 'utf-8').split('\\n---\\n').length : 1;
+    fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({ argv: a, cwd: process.cwd(), stdin }) + '\\n---\\n');
+    const r = a.indexOf(${name === 'claude' ? "'--resume'" : "'resume'"});
+    const out = (s) => process.stdout.write(s);
+    ${name === 'claude' ? claude : codex}
+  `, { mode: 0o755 });
+  process.env['PATH'] = `${bin}${path.delimiter}${path.dirname(process.execPath)}`;
+  return log;
+}
+
+function calls(log: string): Array<{ argv: string[]; cwd: string; stdin: string }> {
+  return fs.readFileSync(log, 'utf-8').split('\n---\n').filter(Boolean).map((l) => JSON.parse(l) as { argv: string[]; cwd: string; stdin: string });
+}
 
 /** A fake reader that echoes the prompt it received, so the test can look at the bundle. */
 function echoReader(): string {
@@ -42,6 +81,7 @@ describe('vibe read --ask — the harness reads for the model', () => {
     process.env['VIBE_READER_CMD'] = echoReader();
     const r = await askReader(root, ['a.ts'], 'what is a?');
     expect(r.reader).toContain('echo.js');
+    expect(r.session).toEqual({ id: null, resumed: false });
     expect(r.files).toEqual(['a.ts']);
     expect(r.reply).toContain('1| export const a = 1;');
     expect(r.reply.endsWith('what is a?')).toBe(true);
@@ -54,14 +94,9 @@ describe('vibe read --ask — the harness reads for the model', () => {
   });
 
   it('no reader: exit 2 and the message names VIBE_READER_CMD, config reader, claude and codex', async () => {
-    const savedPath = process.env['PATH'];
     process.env['PATH'] = root; // nothing on it
-    try {
-      expect(readerCommand(root)).toBeNull();
-      await expect(askReader(root, ['a.ts'], 'q')).rejects.toMatchObject({ exitCode: 2, message: expect.stringMatching(/VIBE_READER_CMD.*config\.json.*claude.*codex/) });
-    } finally {
-      process.env['PATH'] = savedPath;
-    }
+    expect(readerCommand(root)).toBeNull();
+    await expect(askReader(root, ['a.ts'], 'q')).rejects.toMatchObject({ exitCode: 2, message: expect.stringMatching(/VIBE_READER_CMD.*config\.json.*claude.*codex/) });
   });
 
   it('config.json reader wins over PATH; the env wins over both', () => {
@@ -78,5 +113,59 @@ describe('vibe read --ask — the harness reads for the model', () => {
     process.env['VIBE_READER_CMD'] = `node ${script}`;
     await expect(askReader(root, ['a.ts'], 'q')).rejects.toThrow(/exit 3.*\nquota exceeded/s);
     await expect(askReader(root, ['a.ts'], '  ')).rejects.toThrow(/needs a question/);
+  });
+
+  it('session: claude gets the slim flags in the neutral directory; the second ask resumes with only the question; a changed file and an aged entry start new sessions', async () => {
+    const log = fakeClient('claude');
+    const now = Date.now();
+    const first = await askReader(root, ['a.ts', 'b.csv'], 'what is a?', { home, now });
+    expect(first.reader).toBe('claude -p --model haiku');
+    expect(first.session).toEqual({ id: 'sess-1', resumed: false });
+    expect(first.usage).toEqual({ input: 9, cacheRead: 0, cacheWrite: 13000, output: 40 });
+    expect(first.reply).toBe('answer 1');
+    const [c1] = calls(log);
+    expect(c1?.argv.slice(0, 1)).toEqual(['-p']);
+    expect(c1?.argv).toContain('--system-prompt');
+    expect(c1?.argv).toEqual(expect.arrayContaining(['--tools', '', '--disable-slash-commands', '--strict-mcp-config', '--setting-sources', '', '--output-format', 'json', '--model', 'haiku']));
+    expect(c1?.argv).not.toContain('--resume');
+    expect(c1?.cwd).toBe(path.join(home, '.config', 'vibe', 'reader'));
+    expect(c1?.stdin).toContain('<file path="a.ts"');
+    expect(c1?.stdin.trim().endsWith('## Question\n\nwhat is a?')).toBe(true);
+    expect(c1?.stdin).not.toContain('You are a reader'); // that is the system prompt, not the message
+
+    const second = await askReader(root, ['a.ts', 'b.csv'], 'and b?', { home, now: now + 60_000 });
+    expect(second.session).toEqual({ id: 'sess-1', resumed: true });
+    expect(second.usage?.cacheRead).toBe(13000);
+    const c2 = calls(log)[1];
+    expect(c2?.argv).toContain('--resume');
+    expect(c2?.argv[c2.argv.indexOf('--resume') + 1]).toBe('sess-1');
+    expect(c2?.stdin).not.toContain('<file');
+    expect(c2?.stdin).toContain('## Question\n\nand b?');
+
+    fs.appendFileSync(path.join(root, 'a.ts'), 'export const c = 3;\n');
+    const changed = await askReader(root, ['a.ts', 'b.csv'], 'and c?', { home, now: now + 120_000 });
+    expect(changed.session).toEqual({ id: 'sess-3', resumed: false });
+
+    const aged = await askReader(root, ['a.ts', 'b.csv'], 'still c?', { home, now: now + 120_000 + SESSION_TTL_MS + 1 });
+    expect(aged.session).toEqual({ id: 'sess-4', resumed: false });
+    const index = JSON.parse(fs.readFileSync(path.join(home, '.config', 'vibe', 'reader', 'sessions.json'), 'utf-8')) as Record<string, { id: string }>;
+    expect(Object.values(index).map((e) => e.id)).toEqual(['sess-4']); // the aged ones were dropped
+  });
+
+  it('session: codex runs exec --skip-git-repo-check --json at low reasoning, reads the thread id and cached tokens, and resumes by thread', async () => {
+    const log = fakeClient('codex');
+    const now = Date.now();
+    const first = await askReader(root, ['a.ts'], 'q1', { home, now });
+    expect(first.reader).toBe('codex exec (reasoning low)');
+    expect(first.session).toEqual({ id: 'thread-1', resumed: false });
+    expect(first.usage).toEqual({ input: 15000, cacheRead: 12000, cacheWrite: 0, output: 6 });
+    expect(first.reply).toBe('answer 1');
+    const [c1] = calls(log);
+    expect(c1?.argv).toEqual(['exec', '--skip-git-repo-check', '--json', '-c', 'model_reasoning_effort=low', '-']);
+    expect(c1?.stdin.startsWith('You are a reader')).toBe(true); // codex has no system prompt flag: the instructions lead the message
+    const second = await askReader(root, ['a.ts'], 'q2', { home, now: now + 1000 });
+    expect(second.session).toEqual({ id: 'thread-1', resumed: true });
+    expect(second.usage?.cacheRead).toBe(21000);
+    expect(calls(log)[1]?.argv).toEqual(['exec', '--skip-git-repo-check', 'resume', 'thread-1', '--json', '-c', 'model_reasoning_effort=low', '-']);
   });
 });

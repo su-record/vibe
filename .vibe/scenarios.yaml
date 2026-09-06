@@ -42,10 +42,17 @@
 
 - id: read-ask-live
   needs: [build]
-  given: the claude CLI on this machine
-  when: vibe read asks Haiku which exported function decides between ko and en in src/core/lang.ts
-  then: the reply names detectLang
-  check: { type: run, cmd: "node dist/cli.js read src/core/lang.ts --ask 'Which exported function decides between ko and en? Answer with the function name and its line number only.' | grep -qi detectLang", expect: 0, timeoutMs: 180000 }
+  given: the claude CLI on this machine and no reader session for these files
+  when: vibe read asks Haiku twice over src/core/skills.ts and src/core/regress.ts
+  then: the first answer names recordRegression; the second run reports the session as resumed with cache-read tokens above zero
+  check: { type: run, cmd: "node checks/read-live.js", expect: 0, timeoutMs: 300000 }
+
+- id: read-session
+  needs: [build]
+  given: a fake claude and a fake codex on PATH that answer in each CLI's JSON and record their arguments
+  when: vibe read asks twice over the same files, then over a changed file, then after the session entry has aged past an hour
+  then: the first run starts a session with the slim flags and no project context; the second resumes it and sends only the question; the changed file and the aged entry each start a new session
+  check: { type: run, cmd: "npx vitest run src/core/reader.test.ts -t 'session'", expect: 0, timeoutMs: 120000 }
 
 - id: read-no-reader
   needs: [build]
