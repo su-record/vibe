@@ -1,1 +1,6 @@
-{}
+{
+  "README.md": "9edac30b2f326db1a67afdfe9c8303726eab2aeb",
+  "src/core/regress.ts": "dbeb040c069157ff900e2744356ffe985bd97f7f",
+  "src/core/view.ts": "238f6d5148a3d5e3991f9ecd05d24aacd763efcd",
+  "src/core/regress.test.ts": "d1f2b83c011ebb237c559f23f7d5f7af70b0853e"
+}

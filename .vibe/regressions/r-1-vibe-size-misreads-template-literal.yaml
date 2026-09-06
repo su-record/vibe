@@ -4,7 +4,7 @@
 #   53 files · 5610 lines · largest src/core/skills.ts (329) · limits file 400 · function 50
 #     ✘ src/install/plugin.ts › tomlString() 136 lines (limit 50)
 #     1 over the limit
-- id: r-1-vibe-size-misreads-a-template-literal-ho
+- id: r-1-vibe-size-misreads-template-literal
   then: "[regression] vibe size misreads a template literal holding three quotes
     as an unclosed function — source file-size: no source file over 400 lines
     and no function over 50, judged by vibe size itself"

@@ -1,6 +1,6 @@
 # Regression check — installHookFile kept only the last notify entry per event, so a second PreToolUse matcher dropped the Bash one
 # Source scenario: tests
-- id: r-1-installhookfile-kept-only-the-last-notif
+- id: r-4-installhookfile-kept-only-last-entry
   then: "[regression] installHookFile kept only the last notify entry per event,
     so a second PreToolUse matcher dropped the Bash one — source tests: every
     test passes"
