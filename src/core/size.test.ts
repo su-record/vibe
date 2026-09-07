@@ -24,4 +24,23 @@ describe('vibe size — a built-in check for files and functions', () => {
     expect(r.findings.map((f) => `${f.kind}:${f.name}:${f.lines}`).sort()).toEqual(['file:src/long.js:121', 'function:big:62', 'function:long_one:56']);
     expect(measureSize(root, ['src/a.ts'], { maxFile: 400, maxFunction: 100 }).findings).toEqual([]);
   });
+
+  it('regex: quotes, backticks and braces inside a regex literal, a division, and a template holding three double quotes do not swallow the function', () => {
+    fs.mkdirSync(path.join(root, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'src', 'lex.ts'), [
+      'export function first(text: string): number {',
+      '  const m = /matches "([^"]*)"/.exec(text);',
+      '  const n = text.match(/`([a-z]+)`/g);',
+      '  const cls = /[`"\'{]/.test(text);',
+      '  const ratio = 10 / 2 / 5;',
+      '  const fence = `${"\\""}${"\\""}${"\\""}`;',
+      '  return m && n && cls ? ratio + fence.length : 0;',
+      '}',
+      'export function second(): string {',
+      '  return "two";',
+      '}',
+    ].join('\n'));
+    const r = measureSize(root, ['src/lex.ts'], { maxFile: 400, maxFunction: 5 });
+    expect(r.findings.map((f) => `${f.name}:${f.lines}`)).toEqual(['first:8']); // first is 8 lines (over 5), second is 3
+  });
 });
