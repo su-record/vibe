@@ -1,11 +1,15 @@
 {
-  ".claude-plugin/marketplace.json": "2c424693918e7510c01725cf43c8f03ff7f330bd",
-  ".claude-plugin/plugin.json": "5bbc655563f08e5b9b018a6ec1d39e1cfb9f4039",
-  ".codex-plugin/plugin.json": "8f32b19c37a6fd9e1be1b370c2963358d530ddfd",
-  "README.md": "1ba1a010e77cf56c158ce94af83aa0431c8ac1bf",
-  "package.json": "63210b841a32f189b7401b32adaf6fb57288b329",
-  "src/core/research.test.ts": "8017a6aa8780ada1de7183a11cca7c0db7d9497a",
-  "src/core/research.ts": "2aa46ac92d3e9f10765044c090bf0999b1d5bd76",
-  "src/core/size.test.ts": "7afe6d08f1568827e4c59353acedff9b2a174e60",
-  "src/core/size.ts": "e6e649f67db1d9ac9ac2c916dbccbc173f6b0190"
+  ".claude-plugin/marketplace.json": "0f4cf84c10e4e5f81a48f5df0176141f8fe1de2b",
+  ".claude-plugin/plugin.json": "bdf90c20a17fe7f4db67826e7fc3c804693c957c",
+  ".codex-plugin/plugin.json": "f23f89c28c2e10ae617ee3f632385d8183114799",
+  "README.md": "3ea0ed66a87311e90991c35b755f29790395acd7",
+  "package.json": "787a9ce92304786fdfa00a0102c6f605946ed2a9",
+  "skills/vibe-scope/SKILL.md": "cb3d5f26940c738f782b92835eb3ae8f5957fb01",
+  "src/core/checks/review.test.ts": "c2b64f88b8560f188a7b0d93e9df9e48cf3bbd4a",
+  "src/core/checks/review.ts": "95025a5f42caebe20c0e107a28ac56e75cea0626",
+  "src/core/checks/source.test.ts": "5a031a124d48179818dee1c987841fa20eb8a3b5",
+  "src/core/checks/source.ts": "6e558995e7c2a2ee03e97d9c5ee891c62ef18959",
+  "src/core/scenarios.ts": "96fb272d76ede0158e512d526c7325dc344a9d9e",
+  "checks/changed-live.js": "ea4d5005491bd2605749a46c7d60ad2a3cadffcf",
+  "src/core/checks/changed.ts": "cd00050e9027186a41a5018829c80a1e74564e66"
 }

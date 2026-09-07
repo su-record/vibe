@@ -41,13 +41,22 @@ export function numberLines(text: string): string {
  * The artifact as the reviewers see it: one file, or every source file under a directory, each
  * numbered line by line so a finding can name `file:line`. The cap is the reviewer's context.
  */
-export function collectSource(root: string, target: string, maxChars: number, kind: SourceKind = 'design'): { files: string[]; text: string } {
+/** Every source file of `kind` under `target` (or the file itself), absolute, sorted. */
+export function listSource(root: string, target: string, kind: SourceKind): string[] {
   const full = path.resolve(root, target);
   if (!fs.existsSync(full)) throw usage(`no such path: ${target}`);
   const files: string[] = [];
   if (fs.statSync(full).isDirectory()) walk(full, files, kind);
   else files.push(full);
-  if (files.length === 0) throw usage(`no source files under ${target}`);
+  return files;
+}
+
+export function isSourceOf(file: string, kind: SourceKind): boolean {
+  return SOURCE_EXT[kind].has(path.extname(file).toLowerCase());
+}
+
+/** The `<file>` blocks, numbered, within the cap; `roles` labels each file for the reviewer when the selection is a change. */
+export function renderSource(root: string, files: string[], maxChars: number, roles?: Map<string, string>): { files: string[]; text: string } {
   const blocks: string[] = [];
   let chars = 0;
   const listed: string[] = [];
@@ -57,7 +66,14 @@ export function collectSource(root: string, target: string, maxChars: number, ki
     chars += body.length;
     if (chars > maxChars) break;
     listed.push(rel);
-    blocks.push(`<file path="${rel}">\n${body}\n</file>`);
+    const role = roles?.get(file);
+    blocks.push(`<file path="${rel}"${role ? ` role="${role}"` : ''}>\n${body}\n</file>`);
   }
   return { files: listed, text: blocks.join('\n\n') };
+}
+
+export function collectSource(root: string, target: string, maxChars: number, kind: SourceKind = 'design'): { files: string[]; text: string } {
+  const files = listSource(root, target, kind);
+  if (files.length === 0) throw usage(`no source files under ${target}`);
+  return renderSource(root, files, maxChars);
 }

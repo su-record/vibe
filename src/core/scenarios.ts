@@ -50,6 +50,8 @@ export interface ReviewCheck {
   evidence?: string;
   /** A rendered image of the artifact, for a pack whose reviewers look at the result. */
   screenshot?: string;
+  /** Review what changed under `path` and its one-hop dependents: `true` against HEAD, or a git ref. */
+  changed?: boolean | string;
   timeoutMs?: number;
 }
 export interface HumanCheck {
@@ -130,6 +132,8 @@ function checkReason(check: unknown): string | null {
       if (!str(check['path'])) return 'review check requires path (the manuscript)';
       const pack = check['pack'];
       if (pack !== undefined && (typeof pack !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(pack))) return 'review pack must be a reviewers/ directory name';
+      const changed = check['changed'];
+      if (changed !== undefined && changed !== true && !str(changed)) return 'review changed must be true or a git ref';
       const lang = check['lang'];
       return lang === undefined || lang === 'ko' || lang === 'en' ? null : 'review lang must be ko or en';
     }
