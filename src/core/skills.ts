@@ -175,14 +175,32 @@ async function locateSkill(client: GithubClient, owner: string, repo: string, na
   throw usage(`no SKILL.md found in ${owner}/${repo}${name ? ` for ${name}` : ''} at ${sha.slice(0, 7)}`);
 }
 
-async function fetchFiles(client: GithubClient, owner: string, repo: string, entries: ContentEntry[], sha: string): Promise<Record<string, string>> {
+const MAX_SKILL_FILES = 200;
+const MAX_SKILL_BYTES = 5 * 1024 * 1024;
+
+/** The whole skill directory — `references/`, `scripts/`, `assets/` and deeper — keyed by path relative to the skill, within a cap. */
+async function fetchFiles(client: GithubClient, owner: string, repo: string, entries: ContentEntry[], sha: string, base = ''): Promise<Record<string, string>> {
   const files: Record<string, string> = {};
-  for (const entry of entries) {
-    if (entry.type !== 'file' || !entry.name || !entry.path) continue;
-    const full = (await client.get(`/repos/${owner}/${repo}/contents/${entry.path}?ref=${sha}`)) as ContentEntry;
-    if (typeof full.content !== 'string') continue;
-    files[entry.name] = full.encoding === 'base64' ? Buffer.from(full.content, 'base64').toString('utf-8') : full.content;
-  }
+  let bytes = 0;
+  const visit = async (list: ContentEntry[], prefix: string): Promise<void> => {
+    for (const entry of list) {
+      if (!entry.name || !entry.path) continue;
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.type === 'dir') {
+        const sub = (await client.get(`/repos/${owner}/${repo}/contents/${entry.path}?ref=${sha}`)) as ContentEntry[];
+        if (Array.isArray(sub)) await visit(sub, rel);
+        continue;
+      }
+      if (entry.type !== 'file') continue;
+      const full = (await client.get(`/repos/${owner}/${repo}/contents/${entry.path}?ref=${sha}`)) as ContentEntry;
+      if (typeof full.content !== 'string') continue;
+      const text = full.encoding === 'base64' ? Buffer.from(full.content, 'base64').toString('utf-8') : full.content;
+      bytes += Buffer.byteLength(text);
+      if (Object.keys(files).length >= MAX_SKILL_FILES || bytes > MAX_SKILL_BYTES) throw usage(`the skill is over the cap (${MAX_SKILL_FILES} files, ${MAX_SKILL_BYTES / 1024 / 1024} MB) at ${rel} — install it by hand if it is really that large`);
+      files[rel] = text;
+    }
+  };
+  await visit(entries, base);
   if (!files['SKILL.md']) throw usage('SKILL.md could not be downloaded');
   return files;
 }

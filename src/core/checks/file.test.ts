@@ -41,4 +41,36 @@ describe('file check — sum', () => {
     expect(fileCheck({ type: 'file', path: 'draft.md', absent: '@placeholders' }, root).tail).toBe('line 3: Lorem ipsum\nline 5: [[\nline 5: TBD');
     expect(fileCheck({ type: 'file', path: 'clean.md', absent: '@placeholders|swap' }, root).tail).toBe('line 3: swap');
   });
+
+  it('traceable: every number is in the evidence, a missing one is named by line, a fenced number is ignored', () => {
+    fs.writeFileSync(path.join(root, 'evidence.md'), 'bundle 37,576 chars; 13132 tokens; $0.044 then $0.0053; 9.8 s; 5.3 s; measured 2026-09-06\n');
+    fs.writeFileSync(path.join(root, 'report.md'), 'A 37,576-character bundle cost 13,132 tokens and $0.044, then $0.0053 in 5.3 s.\n\n```\nport 8080\n```\n\nDated 2026.\n');
+    expect(fileCheck({ type: 'file', path: 'report.md', traceable: 'evidence.md' }, root)).toMatchObject({ pass: true });
+    fs.appendFileSync(path.join(root, 'report.md'), 'Latency fell 41% to 90 ms.\n');
+    const miss = fileCheck({ type: 'file', path: 'report.md', traceable: 'evidence.md' }, root);
+    expect(miss).toMatchObject({ pass: false, reason: 'untraceable number' });
+    expect(miss.tail).toBe('line 8: 41%\nline 8: 90');
+    expect(fileCheck({ type: 'file', path: 'report.md', traceable: 'nowhere.md' }, root).reason).toBe('evidence file missing: nowhere.md');
+  });
+
+  it('a11y: alt, heading order, unnamed controls, unlabelled inputs and contrast are named by line; a clean page passes', () => {
+    fs.writeFileSync(path.join(root, 'bad.html'), [
+      '<style>',
+      '.muted { color: #999; background: #fff; }',
+      '</style>',
+      '<h1>Roster</h1>',
+      '<h3>Shifts</h3>',
+      '<img src="a.png">',
+      '<button></button>',
+      '<input type="text" id="q">',
+      '<a href="/x"><span></span></a>',
+    ].join('\n'));
+    const r = fileCheck({ type: 'file', path: 'bad.html', a11y: true }, root);
+    expect(r).toMatchObject({ pass: false, reason: 'accessibility defect' });
+    expect(r.tail).toBe('line 2: contrast 2.85:1 for color #999 on #fff\nline 5: heading skips from h1 to h3\nline 6: <img> without alt');
+    fs.writeFileSync(path.join(root, 'good.html'), '<style>.ink { color: #1a1a1a; background: #fff; }</style>\n<h1>Roster</h1>\n<h2>Shifts</h2>\n<img src="a.png" alt="ward map">\n<button>Assign</button>\n<label for="q">Search</label><input type="text" id="q">\n<a href="/x" aria-label="home"></a>\n');
+    expect(fileCheck({ type: 'file', path: 'good.html', a11y: true }, root)).toMatchObject({ pass: true });
+    fs.writeFileSync(path.join(root, 'theme.css'), '.a { color: rgb(120,120,120); background-color: #ffffff; }\n.b { color: #000; background: #fff; }\n');
+    expect(fileCheck({ type: "file", path: "theme.css", a11y: true }, root).tail).toBe("line 1: contrast 4.42:1 for color rgb(120,120,120) on #ffffff");
+  });
 });

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { Ajv } from 'ajv';
 import type { FileCheck } from '../scenarios.js';
 import { formatOf, parseTable } from '../table.js';
+import { a11yRule, traceableRule } from './fileRules.js';
 import type { CheckResult } from './run.js';
 
 function done(pass: boolean, started: number, tail: string, reason?: string): CheckResult {
@@ -112,6 +113,15 @@ export function fileCheck(check: FileCheck, root: string): CheckResult {
   if (check.absent !== undefined) {
     const failed = absentRule(check.absent, content, started);
     if (failed) return failed;
+  }
+  if (check.traceable !== undefined) {
+    const r = traceableRule(content, check.traceable, root);
+    if (typeof r === 'string') return done(false, started, '', r);
+    if (r.length > 0) return done(false, started, r.map((f) => `line ${f.line}: ${f.text}`).join('\n'), 'untraceable number');
+  }
+  if (check.a11y === true) {
+    const r = a11yRule(content, check.path);
+    if (r.length > 0) return done(false, started, r.map((f) => `line ${f.line}: ${f.text}`).join('\n'), 'accessibility defect');
   }
   if (check.schema !== undefined) {
     const failed = schemaRule(check.schema, content, root, started);

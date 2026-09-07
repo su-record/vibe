@@ -5,7 +5,7 @@ import { packageRoot } from '../core/paths.js';
 import { readJson, readText, writeAtomic, writeJson } from '../core/store.js';
 import { hasCurrentHook, installHookFile, removeHookFile, sweepDeadHooks } from './hooks.js';
 import { languagePacks, sweepLegacyPluginStore } from './plugin.js';
-import { claudePluginVersion, cliAvailable, codexPluginVersion, codexRegistered, registerClaude, registerCodex, unregisterClaude, unregisterCodex, type Mode } from './register.js';
+import { claudeHeldElsewhere, claudePluginVersion, cliAvailable, codexPluginVersion, codexRegistered, registerClaude, registerCodex, unregisterClaude, unregisterCodex, type Mode } from './register.js';
 
 export { hasNotifyHook, sweepDeadHooks } from './hooks.js';
 
@@ -236,7 +236,7 @@ export function clientStatus(home: string, client: Client): SurfaceStatus {
   const layout = globalLayout(client);
   if (client === 'claude' && cliAvailable('claude')) {
     const version = claudePluginVersion(home);
-    const current = version === packageVersion();
+    const current = version === packageVersion() || claudeHeldElsewhere(home) !== null;
     return { card: current, skills: current ? SKILL_NAMES.length : 0, hook: current, current, mode: 'plugin', pluginVersion: version };
   }
   if (client === 'codex' && cliAvailable('codex')) {

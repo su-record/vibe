@@ -58,12 +58,34 @@ export interface RegisterReport {
   detail: string;
 }
 
+/** The version of the vibe package at `dir`, when there is one. */
+function vibeVersionAt(dir: string | null): string | null {
+  if (!dir) return null;
+  const pkg = readJson<{ name?: string; version?: string }>(path.join(dir, 'package.json'));
+  return pkg?.name === '@su-record/vibe' && typeof pkg.version === 'string' ? pkg.version : null;
+}
+
+/**
+ * Highest version wins: a marketplace that already points at another vibe install of a version
+ * greater than or equal to this one, which Claude actually holds, is left alone — a development
+ * checkout and a global install stop re-registering each other on every command.
+ */
+export function claudeHeldElsewhere(home: string, root: string = packageRoot()): { at: string; version: string } | null {
+  const at = claudeMarketplacePath(home);
+  if (!at || path.resolve(at) === path.resolve(root)) return null;
+  const theirs = vibeVersionAt(at);
+  if (!theirs || newer(packageVersion(), theirs)) return null;
+  return claudePluginVersion(home) === theirs ? { at, version: theirs } : null;
+}
+
 /** Point the `vibe` marketplace at this package and install/update the plugin. Idempotent: nothing runs when current. */
 export function registerClaude(home: string, root: string = packageRoot()): RegisterReport {
   const want = packageVersion();
   const installed = claudePluginVersion(home);
   const at = claudeMarketplacePath(home);
   if (installed === want && at === root) return { ok: true, mode: 'plugin', version: installed, detail: 'current' };
+  const elsewhere = claudeHeldElsewhere(home, root);
+  if (elsewhere) return { ok: true, mode: 'plugin', version: elsewhere.version, detail: `current — ${elsewhere.version} at ${elsewhere.at}` };
   if (at !== null && at !== root) run('claude', ['plugin', 'marketplace', 'remove', MARKETPLACE], home);
   if (at !== root) {
     const add = run('claude', ['plugin', 'marketplace', 'add', root, '--scope', 'user'], home);
@@ -103,7 +125,16 @@ export function codexPluginVersion(home: string): string | null {
 }
 
 /** Tree without drift, marketplace pointing at it, and Codex holding this version. An unreadable cache (null) is not stale. */
+/** Highest version wins for Codex too: a tree assembled by a newer install, which Codex holds, is not torn down by an older binary. */
+export function codexHeldNewer(home: string): string | null {
+  const s = pluginStatus(home);
+  if (!s.exists || !s.registered || !s.manifestVersion || !newer(s.manifestVersion, packageVersion())) return null;
+  const otherDrift = s.drift.filter((d) => !d.startsWith('manifest '));
+  return otherDrift.length === 0 && codexPluginVersion(home) === s.manifestVersion ? s.manifestVersion : null;
+}
+
 export function codexRegistered(home: string): boolean {
+  if (codexHeldNewer(home)) return true;
   const s = pluginStatus(home);
   if (!s.exists || !s.registered || s.drift.length > 0) return false;
   const held = codexPluginVersion(home);
@@ -116,6 +147,8 @@ export function codexRegistered(home: string): boolean {
  * already configured is not a failure.
  */
 export function registerCodex(home: string): RegisterReport {
+  const newerHeld = codexHeldNewer(home);
+  if (newerHeld) return { ok: true, mode: 'plugin', version: newerHeld, detail: `current — ${newerHeld} at ${pluginPaths(home).tree}` };
   if (codexRegistered(home)) return { ok: true, mode: 'plugin', version: packageVersion(), detail: 'current' };
   const held = codexPluginVersion(home);
   const r = installPlugin(home);

@@ -19,7 +19,10 @@ export type Source = 'repos' | 'code' | 'skills';
 export const SOURCES: readonly Source[] = ['repos', 'code', 'skills'];
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_MAX = 5;
-const STOP = new Set(['a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'vibe', 'phase', 'into', 'from', 'on', 'by', 'is', 'it']);
+const STOP = new Set(['a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'vibe', 'phase', 'into', 'from', 'on', 'by', 'is', 'it',
+  // words every intent uses — they describe the harness, not the work
+  'check', 'checks', 'scenario', 'scenarios', 'intent', 'harness', 'model', 'client', 'test', 'tests', 'file', 'files', 'line', 'lines', 'when', 'then', 'given',
+  'that', 'this', 'each', 'every', 'same', 'other', 'than', 'under', 'over', 'first', 'names', 'name', 'none', 'nothing', 'stays', 'still', 'earlier', 'gates', 'build', 'live']);
 
 export interface Candidate {
   kind: 'repo' | 'skill';
@@ -70,25 +73,55 @@ function tokens(text: string): string[] {
   return [...new Set(text.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !STOP.has(w)))];
 }
 
-/** Queries come from the intent title, the hosts its http checks target, and the stack. */
+/** The words the intent body actually repeats: backticked names first, then frequent words of four letters or more. */
+function bodyTerms(text: string): { names: string[]; words: string[] } {
+  const section = text.split(/^## What counts as success/m)[1]?.split(/^## /m)[0] ?? text;
+  const count = new Map<string, number>();
+  const backtick = String.fromCharCode(96); // written this way so the size parser does not read a template literal into the regex
+  for (const m of section.matchAll(new RegExp(`${backtick}([a-z][a-z0-9-]{3,})${backtick}`, 'g'))) count.set(m[1]!, (count.get(m[1]!) ?? 0) + 1);
+  const names = [...count.entries()].filter(([w]) => !STOP.has(w)).sort((a, b) => b[1] - a[1]).map(([w]) => w);
+  const freq = new Map<string, number>();
+  for (const w of section.toLowerCase().replace(new RegExp(`${backtick}[^${backtick}]*${backtick}`, 'g'), ' ').split(/[^a-z0-9]+/)) {
+    if (w.length < 4 || STOP.has(w) || /^\d/.test(w)) continue;
+    freq.set(w, (freq.get(w) ?? 0) + 1);
+  }
+  const words = [...freq.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).map(([w]) => w);
+  return { names, words };
+}
+
+/** Queries come from what the intent body names and repeats — never from the title's first words — then the hosts its http checks target and the stack. */
 export function queriesFromIntent(root: string): string[] {
   const queries: string[] = [];
-  const heading = (readText(intentPath(root)) ?? '').split('\n').find((l) => l.startsWith('#')) ?? '';
-  const title = tokens(heading.replace(/^#+/, '')).slice(0, 4).join(' ');
-  if (title) queries.push(title);
+  const text = readText(intentPath(root)) ?? '';
+  const { names, words } = bodyTerms(text);
+  const push = (parts: string[]): void => {
+    const q = [...new Set(parts.filter(Boolean))].slice(0, 4).join(' ');
+    if (q.split(' ').length >= 2 && !queries.includes(q)) queries.push(q);
+  };
+  if (names.length === 0 && words.length === 0) { // an intent with no body yet: the title is all there is
+    const heading = text.split('\n').find((l) => l.startsWith('#')) ?? '';
+    const title = tokens(heading.replace(/^#+/, '')).slice(0, 4);
+    push(title);
+    words.push(...title);
+  } else {
+    push(words.slice(0, 3));
+    push([names[0] ?? '', ...words.filter((w) => w !== names[0]).slice(0, 2)]);
+    push(names.slice(1, 4));
+  }
+  const body = queries.slice(0, 3);
   for (const s of loadScenarios(root)) {
     if (s.check.type !== 'http') continue;
     try {
       const host = new URL(s.check.url).hostname.replace(/^(www|api)\./, '').split('.')[0];
-      if (host && !queries.includes(`${host} sdk`)) queries.push(`${host} sdk`);
+      if (host && !body.includes(`${host} sdk`)) body.push(`${host} sdk`);
     } catch {
       /* not a URL — nothing to ask */
     }
   }
   const pkg = readJson<{ dependencies?: Record<string, string> }>(path.join(root, 'package.json'));
   const deps = Object.keys(pkg?.dependencies ?? {}).filter((d) => !d.startsWith('@types/')).slice(0, 2);
-  if (deps.length > 0 && title) queries.push(`${deps.join(' ')} ${title.split(' ')[0]}`);
-  return queries.slice(0, 3);
+  if (deps.length > 0 && words[0]) body.push(`${deps.join(' ')} ${words[0]}`);
+  return body.slice(0, 5);
 }
 
 function score(text: string, queryTokens: string[], stars: number | null, updatedAt: string | null, license: string | null): { score: number; matched: string[] } {
@@ -194,8 +227,12 @@ async function search(client: GithubClient, queries: string[], sources: Source[]
   }
   if (sources.includes('skills')) for (const catalog of catalogs) found.push(...(await catalogCandidates(client, catalog, queryTokens)));
   const byRef = new Map<string, Candidate>();
-  // A candidate none of the query words describe is noise, whatever search returned it.
-  for (const c of found) if (!c.why.startsWith('no keyword match') && (!byRef.has(c.ref) || byRef.get(c.ref)!.score < c.score)) byRef.set(c.ref, c);
+  // A candidate none of the query words describe is noise, whatever search returned it; so is one that matches only words under four letters.
+  for (const c of found) {
+    const matched = c.why.split('matches "')[1]?.split('"')[0]?.split(', ') ?? [];
+    if (matched.length === 0 || matched.every((t) => t.length < 4)) continue;
+    if (!byRef.has(c.ref) || byRef.get(c.ref)!.score < c.score) byRef.set(c.ref, c);
+  }
   return [...byRef.values()].sort((a, b) => b.score - a.score);
 }
 

@@ -25,9 +25,9 @@ interface Run {
   json: unknown;
 }
 
-function vibe(args: string[], input?: string, env: Record<string, string> = {}): Run {
+function vibe(args: string[], input?: string, env: Record<string, string> = {}, cwd: string = root): Run {
   const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], {
-    cwd: root,
+    cwd,
     encoding: 'utf-8',
     input,
     env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: 'test-client', ...env }, // the bench and `vibe check` set VIBE_SKIP_SETUP; the tests install into $HOME=root
@@ -320,5 +320,33 @@ describe('installed binary', () => {
     fs.symlinkSync(dist, path.join(bin, 'vibe'));
     const r = spawnSync('node', [path.join(bin, 'vibe'), '--version'], { encoding: 'utf-8' });
     expect(r.stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
+  });
+});
+
+describe('usage — what the readers spend is in the ledger', () => {
+  it('usage: vibe read --ask through a fake claude inside a project leaves a usage event that vibe ledger --json lists', () => {
+    const bin = path.join(root, 'fakebin');
+    fs.mkdirSync(bin, { recursive: true });
+    fs.writeFileSync(path.join(bin, 'claude'), `#!${process.execPath}
+      const a = process.argv.slice(2);
+      if (a[0] === '--version') { process.stdout.write('1.0.0\\n'); process.exit(0); }
+      require('fs').readFileSync(0, 'utf-8');
+      process.stdout.write(JSON.stringify({ session_id: 'sess', result: 'the answer', total_cost_usd: 0.002, modelUsage: { 'claude-haiku-4-5': {} }, usage: { input_tokens: 9, cache_creation_input_tokens: 700, cache_read_input_tokens: 0, output_tokens: 12 } }));
+    `, { mode: 0o755 });
+    const project = path.join(root, 'proj');
+    fs.mkdirSync(project, { recursive: true });
+    fs.writeFileSync(path.join(project, 'a.ts'), 'export const a = 1;\n');
+    const env = { PATH: `${bin}${path.delimiter}${path.dirname(process.execPath)}`, VIBE_HOME_DIR: root };
+    const draft = vibe(['intent', 'draft', '--stdin'], JSON.stringify({ intent: '# t\n', scenarios: '- { id: x, then: y, check: { type: run, cmd: "true" } }\n' }), env, project);
+    expect(draft.status).toBe(0);
+    const read = vibe(['read', 'a.ts', '--ask', 'what is a?'], undefined, env, project);
+    expect(read.status).toBe(0);
+    expect((read.json as { reply: string; usage: { cacheWrite: number } }).reply).toBe('the answer');
+    const ledger = vibe(['ledger'], undefined, env, project);
+    type Ev = { event: string; detail?: string; tokens?: { cacheWrite: number }; costUsd?: number; model?: string };
+    const all = Array.isArray(ledger.json) ? (ledger.json as Ev[]) : (ledger.json as { events: Ev[] }).events;
+    const usage = all.filter((e) => e.event === 'usage');
+    expect(usage).toHaveLength(1);
+    expect(usage[0]).toMatchObject({ detail: 'reader', tokens: { cacheWrite: 700 }, costUsd: 0.002, model: 'claude-haiku-4-5' });
   });
 });

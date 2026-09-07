@@ -4,6 +4,8 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { packageRoot } from '../core/paths.js';
 import { ensureGlobal, globalStatus, setupGlobal, uninstallGlobal } from './global.js';
+import { installPlugin, pluginPaths } from './plugin.js';
+import { registerClaude, registerCodex } from './register.js';
 
 /**
  * The client CLIs are stand-ins: shell scripts that log their arguments and write the same
@@ -142,5 +144,39 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(fs.existsSync(path.join(home, '.claude', 'skills', 'vibe'))).toBe(true);
     expect(log('claude.log')).toEqual([]);
     expect(globalStatus(home).clients['claude']).toMatchObject({ mode: 'home', current: true });
+  });
+
+  it('highest version wins: a marketplace pointing at a newer install that Claude holds is left alone; an older one is replaced; Codex likewise', () => {
+    const newerPkg = path.join(home, 'newer');
+    fs.mkdirSync(newerPkg, { recursive: true });
+    fs.writeFileSync(path.join(newerPkg, 'package.json'), JSON.stringify({ name: '@su-record/vibe', version: '99.0.0' }));
+    const plugins = path.join(home, '.claude', 'plugins');
+    fs.mkdirSync(plugins, { recursive: true });
+    fs.writeFileSync(path.join(plugins, 'known_marketplaces.json'), JSON.stringify({ vibe: { source: { source: 'directory', path: newerPkg } } }));
+    fs.writeFileSync(path.join(plugins, 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'vibe@vibe': [{ scope: 'user', version: '99.0.0' }] } }));
+    const left = registerClaude(home);
+    expect(left).toMatchObject({ ok: true, mode: 'plugin', version: '99.0.0' });
+    expect(left.detail).toContain(`99.0.0 at ${newerPkg}`);
+    expect(fs.existsSync(path.join(home, 'claude.log'))).toBe(false); // nothing ran
+    expect(globalStatus(home).clients['claude']).toMatchObject({ current: true, pluginVersion: '99.0.0' });
+
+    fs.writeFileSync(path.join(newerPkg, 'package.json'), JSON.stringify({ name: '@su-record/vibe', version: '0.0.1' }));
+    fs.writeFileSync(path.join(plugins, 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'vibe@vibe': [{ scope: 'user', version: '0.0.1' }] } }));
+    const replaced = registerClaude(home);
+    expect(replaced.ok).toBe(true);
+    expect(fs.readFileSync(path.join(home, 'claude.log'), 'utf-8')).toContain('plugin marketplace add');
+
+    // Codex: a tree assembled by a newer install, held by Codex, stays
+    installPlugin(home);
+    const tree = pluginPaths(home).tree;
+    const manifestPath = path.join(tree, '.codex-plugin', 'plugin.json');
+    fs.writeFileSync(manifestPath, JSON.stringify({ ...JSON.parse(fs.readFileSync(manifestPath, 'utf-8')), version: '99.0.0' }));
+    const cache = path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '99.0.0', '.codex-plugin');
+    fs.mkdirSync(cache, { recursive: true });
+    fs.writeFileSync(path.join(cache, 'plugin.json'), JSON.stringify({ name: 'vibe', version: '99.0.0' }));
+    const codexLeft = registerCodex(home);
+    expect(codexLeft).toMatchObject({ ok: true, version: '99.0.0' });
+    expect(codexLeft.detail).toContain('99.0.0 at');
+    expect(fs.existsSync(path.join(home, 'codex.log'))).toBe(false);
   });
 });

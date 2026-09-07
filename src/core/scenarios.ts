@@ -17,6 +17,10 @@ export interface FileCheck {
   contains?: string;
   /** A regular expression that must match nowhere in the file — placeholders, a reprinted writer's note. */
   absent?: string;
+  /** An evidence file every number in this file must be traceable to. */
+  traceable?: string;
+  /** Mechanical accessibility defects in an html (or css) file: alt, heading order, unnamed controls, unlabelled inputs, contrast. */
+  a11y?: boolean;
   schema?: string;
   /** Column total of a CSV/TSV/JSONL/JSON table equals a reference value (± tolerance). */
   sum?: { column: string; equals: number; tolerance?: number };
@@ -112,8 +116,8 @@ function checkReason(check: unknown): string | null {
       if (!str(check['path'])) return 'file check requires path';
       const sum = check['sum'];
       if (sum !== undefined && !(isRecord(sum) && str(sum['column']) && typeof sum['equals'] === 'number')) return 'file sum requires column and equals (a number)';
-      const hasRule = check['exists'] !== undefined || str(check['pattern']) || str(check['contains']) || str(check['absent']) || str(check['schema']) || sum !== undefined;
-      return hasRule ? null : 'file check requires one of exists·pattern·contains·absent·schema·sum';
+      const hasRule = check['exists'] !== undefined || str(check['pattern']) || str(check['contains']) || str(check['absent']) || str(check['traceable']) || check['a11y'] === true || str(check['schema']) || sum !== undefined;
+      return hasRule ? null : 'file check requires one of exists·pattern·contains·absent·traceable·a11y·schema·sum';
     }
     case 'http':
       return str(check['url']) ? null : 'http check requires url';

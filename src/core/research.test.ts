@@ -76,4 +76,21 @@ describe('research — see what exists before building', () => {
     expect(r.candidates.find((c) => c.ref.startsWith('org/'))).toBeUndefined();
     expect(skillDirsInTree([{ path: 'a/SKILL.md', type: 'blob' }, { path: 'SKILL.md', type: 'blob' }, { path: 'skills/b/c/SKILL.md', type: 'blob' }])).toEqual([{ name: 'a', dir: 'a' }, { name: 'b/c', dir: 'skills/b/c' }]);
   });
+
+  it('intent: queries come from what the success section names and repeats, never the title\'s first words; a candidate matching only a short word is dropped', async () => {
+    const own = fs.readFileSync(path.join(process.cwd(), '.vibe', 'intent.md'), 'utf-8');
+    fs.writeFileSync(path.join(root, '.vibe', 'intent.md'), own);
+    fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), '- { id: x, then: y, check: { type: run, cmd: "true" } }\n');
+    const queries = queriesFromIntent(root);
+    expect(queries.length).toBeGreaterThanOrEqual(2);
+    for (const q of queries) for (const w of q.split(' ')) expect(['one', 'spec', 'slim']).not.toContain(w);
+    expect(queries.join(' ')).toMatch(/review|pack|reviewer|usage|design|code/);
+    const noisy: GithubClient = { authenticated: false, get: (p) => {
+      if (p.includes('/search/repositories')) return Promise.resolve({ items: [{ full_name: 'v9l9/minecraft-', html_url: 'https://github.com/v9l9/minecraft-', description: 'one block at a time', stargazers_count: 6, pushed_at: recent, license: null }] });
+      if (p.includes('/git/trees')) return Promise.resolve({ tree: [] });
+      return Promise.reject(new Error(`no fixture for ${p}`));
+    } };
+    const r = await research(root, { fromIntent: true, query: 'one review pack' }, noisy);
+    expect(r.candidates.map((c) => c.ref)).not.toContain('v9l9/minecraft-');
+  });
 });
