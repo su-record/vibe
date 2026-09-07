@@ -52,7 +52,38 @@ function sumRule(check: FileCheck, content: string, started: number): CheckResul
   return ok ? done(true, started, line) : done(false, started, line, 'sum mismatch');
 }
 
-/** `file` check — existence · regex · substring · JSON Schema · column sum. Every rule present must pass. */
+/**
+ * Named expressions for `absent`, so a scenario (and the scope skill) can say what it forbids
+ * without spelling the leftovers it forbids: `@placeholders` is lorem-ipsum text, a bracketed TODO,
+ * TBD, a company-name placeholder, an unfilled double-brace field, and a double-square-bracket
+ * note to the model that was reprinted into the artifact.
+ */
+export const ABSENT_PRESETS: Readonly<Record<string, string>> = {
+  '@placeholders': ['Lorem ipsum', '\\[TODO\\]', '\\bTBD\\b', 'Your Company', '\\{\\{', '\\[\\['].join('|'),
+};
+
+export function absentExpression(value: string): string {
+  return value.split('|').map((part) => ABSENT_PRESETS[part.trim()] ?? part).join('|');
+}
+
+/** `absent` — the expression must match nowhere; the first three matches are named by line so the writer can go there. */
+function absentRule(expression: string, content: string, started: number): CheckResult | null {
+  let re: RegExp;
+  try {
+    re = new RegExp(absentExpression(expression), 'g');
+  } catch (error) {
+    return done(false, started, '', `bad absent: ${(error as Error).message}`);
+  }
+  const hits: string[] = [];
+  for (const m of content.matchAll(re)) {
+    if (m[0] === '') break;
+    hits.push(`line ${content.slice(0, m.index).split('\n').length}: ${m[0]}`);
+    if (hits.length === 3) break;
+  }
+  return hits.length === 0 ? null : done(false, started, hits.join('\n'), 'forbidden text present');
+}
+
+/** `file` check — existence · regex · substring · absence · JSON Schema · column sum. Every rule present must pass. */
 export function fileCheck(check: FileCheck, root: string): CheckResult {
   const started = Date.now();
   const target = path.resolve(root, check.path);
@@ -77,6 +108,10 @@ export function fileCheck(check: FileCheck, root: string): CheckResult {
   }
   if (check.contains !== undefined && !content.includes(check.contains)) {
     return done(false, started, `text not found: ${JSON.stringify(check.contains)}`);
+  }
+  if (check.absent !== undefined) {
+    const failed = absentRule(check.absent, content, started);
+    if (failed) return failed;
   }
   if (check.schema !== undefined) {
     const failed = schemaRule(check.schema, content, root, started);

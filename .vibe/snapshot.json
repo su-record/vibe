@@ -1,10 +1,13 @@
 {
-  ".claude-plugin/marketplace.json": "d04e420c190c3bcbddc0dfd61a4e9b0dc014523c",
-  ".claude-plugin/plugin.json": "9707d675b1466c6789cc28d79783946fc19dfa5d",
-  ".codex-plugin/plugin.json": "d3828bdb8ea5c8cb3617aad76e20c8ace2dca90b",
-  "README.md": "17781bdfcb2dcf6215ea450ba3b7a56bf62d3b6a",
-  "card.md": "75387ec13a36e49e7232b82b5c4e909c04873895",
-  "package.json": "c7679563899f89331029aced7eeeff63f0795fae",
-  "skills/vibe-handoff/SKILL.md": "44c3d5b84a703f3c333cc964677f520f75c63cc5",
-  "checks/report-voice.js": "954a698c69c19353c1818aa6cf50d024124faffe"
+  ".claude-plugin/marketplace.json": "5f552080fc8dca6dc5fbd45452f66b964e680c91",
+  ".claude-plugin/plugin.json": "65ac648c58d81211503089eac0cd6b2e0c07863b",
+  ".codex-plugin/plugin.json": "1f7e049a33debe75ab7721bc9c841f6d102feedd",
+  "README.md": "3e67ab3d9a9864ab04f77563b493ba62642a1ff5",
+  "package.json": "4ff20c3d003898ee170223ae91605cd57dcc5069",
+  "skills/vibe-scope/SKILL.md": "d6f4b50d205e911b386c958ee86f7bcc825c5dea",
+  "src/core/checks/file.test.ts": "3efba5a834df6f39ddc7fc71a0bf8a81429c431a",
+  "src/core/checks/file.ts": "625829fc397d1abe2658ae72db1437b9e17fa9d3",
+  "src/core/scenarios.test.ts": "03b86feb3cbd454a590cb0a29bfa3fd508907f7b",
+  "src/core/scenarios.ts": "25a01ba0ec021dfb7c3d00b5d2238e1e448f0f74",
+  "checks/absent-live.js": "503478d84537adb35fc9bccdd8a176de242e1289"
 }

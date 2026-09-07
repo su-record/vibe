@@ -79,4 +79,11 @@ describe('needs — dependency edges are validated over the whole set', () => {
     expect(ancestorsOf(scenarios, ['c'])).toEqual(['b', 'a']);
     expect(graphMermaid(scenarios, () => 'never')).toContain('a --> b');
   });
+
+  it('absent alone is a complete file check', () => {
+    const r = parseScenarios('- { id: gate, then: "no placeholder", check: { type: file, path: draft.md, absent: "Lorem ipsum|\\\\[\\\\[" } }\n');
+    expect(r.rejections).toEqual([]);
+    expect(r.scenarios[0]?.check).toMatchObject({ type: 'file', absent: 'Lorem ipsum|\\[\\[' });
+    expect(parseScenarios('- { id: gate, then: "x", check: { type: file, path: draft.md } }\n').rejections[0]?.reason).toContain('absent');
+  });
 });

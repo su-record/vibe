@@ -15,6 +15,8 @@ export interface FileCheck {
   exists?: boolean;
   pattern?: string;
   contains?: string;
+  /** A regular expression that must match nowhere in the file — placeholders, a reprinted writer's note. */
+  absent?: string;
   schema?: string;
   /** Column total of a CSV/TSV/JSONL/JSON table equals a reference value (± tolerance). */
   sum?: { column: string; equals: number; tolerance?: number };
@@ -110,8 +112,8 @@ function checkReason(check: unknown): string | null {
       if (!str(check['path'])) return 'file check requires path';
       const sum = check['sum'];
       if (sum !== undefined && !(isRecord(sum) && str(sum['column']) && typeof sum['equals'] === 'number')) return 'file sum requires column and equals (a number)';
-      const hasRule = check['exists'] !== undefined || str(check['pattern']) || str(check['contains']) || str(check['schema']) || sum !== undefined;
-      return hasRule ? null : 'file check requires one of exists·pattern·contains·schema·sum';
+      const hasRule = check['exists'] !== undefined || str(check['pattern']) || str(check['contains']) || str(check['absent']) || str(check['schema']) || sum !== undefined;
+      return hasRule ? null : 'file check requires one of exists·pattern·contains·absent·schema·sum';
     }
     case 'http':
       return str(check['url']) ? null : 'http check requires url';

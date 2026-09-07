@@ -17,11 +17,11 @@
   check: { type: run, cmd: "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
 
 - id: skills-size
-  then: the six common skills are at most 300 lines in total
-  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300", expect: 0 }
+  then: the six common skills are at most 300 lines in total and vibe-scope proposes the absent pre-gate next to review
+  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q 'absent:' skills/vibe-scope/SKILL.md", expect: 0 }
 
 - id: skill-names
-  then: every common skill name is spec-conformant and equals its directory, and none of the six is tracked under the repository's .claude/skills or .codex/skills
+  then: every common skill name is spec-conformant and equals its directory
   check: { type: run, cmd: "node checks/skill-names.js", expect: 0 }
 
 - id: packs
@@ -29,14 +29,32 @@
   check: { type: run, cmd: "node checks/packs.js", expect: 0 }
 
 - id: report-voice
-  then: card rule 9 separates changed from verified and keeps the load-bearing caveat, and vibe-handoff carries the Report voice section with the not-checked and turns rules
+  then: card rule 9 and the handoff Report voice are present
   check: { type: run, cmd: "node checks/report-voice.js", expect: 0 }
+
+- id: absent-rule
+  needs: [build]
+  given: a clean file and a file holding a placeholder
+  when: a file check with absent runs on each, and with a bad expression, and validation sees absent alone
+  then: the clean file passes, the placeholder fails naming line and text, the bad expression is reported, and absent alone is a complete check
+  check: { type: run, cmd: "npx vitest run src/core/checks/file.test.ts src/core/scenarios.test.ts -t 'absent'", expect: 0, timeoutMs: 120000 }
+
+- id: absent-live
+  needs: [build]
+  given: this repository's README
+  when: a file check with absent runs on it through the CLI-facing check runner
+  then: it passes, and the same check with absent set to a word README does contain fails with forbidden text present
+  check: { type: run, cmd: "node checks/absent-live.js", expect: 0, timeoutMs: 60000 }
+
+- id: no-placeholders
+  then: README, the card and the six common skills carry no placeholder text or reprinted writer note
+  check: { type: run, cmd: "! grep -rlE 'Lorem ipsum|\\[TODO\\]|\\bTBD\\b|Your Company|\\{\\{|\\[\\[' README.md card.md skills/vibe/SKILL.md skills/vibe-*/SKILL.md", expect: 0 }
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.12
-  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.12\"' .codex-plugin/plugin.json", expect: 0 }
+  then: the committed manifests match package.json 4.1.13
+  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.13\"' .codex-plugin/plugin.json", expect: 0 }
 
 - id: readme-status
-  then: the README status line carries a 4.1.12 entry
-  check: { type: run, cmd: "grep -q '`4.1.12`' README.md", expect: 0 }
+  then: the README check table names absent and the status line carries a 4.1.13 entry
+  check: { type: run, cmd: "grep -q '`4.1.13`' README.md && grep -q 'absent' README.md", expect: 0 }
