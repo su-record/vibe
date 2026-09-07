@@ -1,15 +1,19 @@
-# vibe 4 · 4.1.15 — `vibe size` reads regex literals
+# vibe 4 · 4.1.16 — a code review reads what changed and what depends on it, not the whole directory
 
 ## Why
-`vibe size` counts a function by its braces, skipping strings, template literals and comments. It does not know a regular-expression literal, so a quote or a backtick inside one — `/matches "([^"]*)"/`, `` /`([a-z]+)`/ `` — opens a string that never closes, every brace after it is ignored, and the function runs to the end of the file. It reported `bodyTerms()` at 117 lines and `search()` at 72 in 4.1.14 (both under 30), and the 4.1.8 triple-quote case was the same class. Both were worked around by rewriting the code; the parser should read the code as written.
+`review` with `pack: code` (and `pack: design`) on a directory sends every source file under it to both reviewers. On a real repository that is most of the token bill for nothing: the reviewers judge a change, and a change is a handful of files plus the files that import them. trace-mcp measured a PR review at 3,951 tokens against 13,595 for "the diff plus every touched file" by asking a dependency graph which symbols the change reaches. vibe does not need a graph or a dependency to get the first hop: git says what changed, and an import scan says who depends on it.
 
 ## What counts as success
-- The brace lexer recognises a regex literal: a `/` where an expression can start — at the start of a line, or after `( , = : [ ! & | ? { } ; + - * % < > ~ ^` or the keywords `return`, `typeof`, `case`, `do`, `else`, `in`, `of` — and skips to its closing `/`, honouring escapes and character classes, then its flags; a `/` after an identifier, a number, `)` or `]` is division and is not skipped.
-- Quotes, backticks and braces inside a regex literal do not change the lexer state; a regex never spans lines.
-- Unit test: a function holding `/matches "([^"]*)"/`, `` /`([a-z]+)`/g ``, `/[`"'{]/`, a division `a / b / c`, and a template literal holding three double quotes measures at its true length, and a function after it measures at its own.
-- The worked-around code in `src/core/research.ts` returns to plain regex literals and `vibe size` still reports every file and function within limits; the regression is recorded.
-- Earlier gates still hold: build, tests, card ≤ 1KB, file 400 / function 50, skill names, packs, report voice, no placeholders, plugin tree current for 4.1.15, README status line carries `4.1.15`.
+- The `review` check gains `changed`: `true` means the working tree against `HEAD` (modified, added and untracked files, deleted ones dropped); a string is a git ref to diff against (`main`, `HEAD~3`, a sha). Only files under `path` count. Without a git repository the check fails with the reason `changed needs a git repository`.
+- One hop of dependents joins the set: every source file under `path` whose import or require names a changed file by relative path (`./x`, `../x/index`, extension or not; Python `from .x import`, `from pkg.x import`, `import pkg.x`). Each `<file>` block carries `role="changed"` or `role="dependent"`, changed files first, and the bundle opens with the list of both.
+- With nothing changed under `path` the check passes with the tail `nothing changed under <path> since <ref> — nothing reviewed`; it never sends the whole directory by accident.
+- Text packs ignore `changed` (a manuscript is one file); validation accepts `changed` as `true` or a string.
+- The collector's selection is unit-tested in a temporary git repository: a changed file, a file that imports it, a file that does not, an untracked file, a deleted file, a Python import; the ref form; the no-git failure; the nothing-changed pass.
+- `vibe-scope` proposes `changed: true` on every `review` of a directory in a git repository; the six common skills stay ≤ 300 lines. README's check table names `changed`.
+- Live: on this repository, a `pack: code` review bundle built with `changed: true` while `src/core/checks/source.ts` is modified lists that file as changed and `src/core/checks/review.ts` as dependent, and lists no file that neither changed nor imports a changed one — proven by the collector alone, no model.
+- Earlier gates still hold: build, tests, card ≤ 1KB, file 400 / function 50, skill names, packs, report voice, no placeholders, plugin tree current for 4.1.16, README status line carries `4.1.16`.
 
 ## Constraints
-- No new dependency; the lexer stays a line-by-line state machine.
+- No dependency, no index, no daemon: git and a regular expression over import lines. Deeper reach stays with tools built for it.
+- The reviewers' verdict rule does not change.
 - Every record is English; the model talks to the user in the user's language.

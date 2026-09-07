@@ -6,6 +6,7 @@ import { claudeArgs, codexArgs, hasCli, parseClaude, parseCodex, readerHome, REV
 import type { ReviewCheck } from '../scenarios.js';
 import { ensureDir } from '../store.js';
 import { packStages, TEXT_PACKS } from './packs.js';
+import { collectChanged } from './changed.js';
 import { collectSource } from './source.js';
 import { tail, type CheckResult } from './run.js';
 
@@ -48,12 +49,18 @@ function message(contract: string, evidence: string, body: string, screenshot: s
   return `## Editorial contract\n\n${contract.trim()}\n\n## Evidence ledger\n\n${evidence.trim()}${screenshot}\n\n${body}\n`;
 }
 
-/** A text pack judges a manuscript; every other pack judges source, one file or a directory of them. */
-function artifact(check: ReviewCheck, root: string, pack: string): { section: string; body: string } {
+/** A text pack judges a manuscript; every other pack judges source — a file, a directory, or with `changed` the change and its dependents. */
+function artifact(check: ReviewCheck, root: string, pack: string): { section: string; body: string; nothing?: string } {
   if ((TEXT_PACKS as readonly string[]).includes(pack)) {
     return { section: 'Manuscript', body: fs.readFileSync(path.resolve(root, check.path), 'utf-8') };
   }
-  const collected = collectSource(root, check.path, MAX_SOURCE_CHARS, pack === 'code' ? 'code' : 'design');
+  const kind = pack === 'code' ? 'code' : 'design';
+  if (check.changed) {
+    const c = collectChanged(root, check.path, MAX_SOURCE_CHARS, kind, check.changed === true ? true : check.changed);
+    if (c.selection.changed.length === 0) return { section: 'Source', body: '', nothing: `nothing changed under ${check.path} since ${c.selection.ref} — nothing reviewed` };
+    return { section: 'Source', body: c.text };
+  }
+  const collected = collectSource(root, check.path, MAX_SOURCE_CHARS, kind);
   return { section: 'Source', body: collected.text };
 }
 
@@ -109,12 +116,13 @@ export async function reviewCheck(check: ReviewCheck, root: string): Promise<Che
   if (stages.length === 0) return fail(`no reviewers/${pack} in this package`);
   const choice = chooseReviewer();
   if (!choice) return fail('no reviewer available — needs `claude` or `codex` on PATH, or VIBE_REVIEW_CMD');
-  let piece: { section: string; body: string };
+  let piece: { section: string; body: string; nothing?: string };
   try {
     piece = artifact(check, root, pack);
   } catch (error) {
     return fail((error as Error).message);
   }
+  if (piece.nothing) return { pass: true, exit: 0, ms: Date.now() - started, tail: piece.nothing };
   const contract = readOptional(root, check.contract);
   const evidence = readOptional(root, check.evidence);
   const shot = check.screenshot ? `\n\n## Screenshot\n\n${path.resolve(root, check.screenshot)} — open this image with your file reader before judging.` : '';

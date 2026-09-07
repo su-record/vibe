@@ -162,4 +162,23 @@ describe('review check — the harness runs the reviewers and reads only PASS', 
     expect(first?.stdin.startsWith('You are a front-end lead')).toBe(true);
     expect(first?.stdin).toContain('## Source');
   });
+
+  it('changed: nothing changed passes with the tail and asks no reviewer; a change sends the roles', async () => {
+    const { execFileSync } = await import('node:child_process');
+    const g = (...args: string[]): string => execFileSync('git', ['-C', root, ...args], { encoding: 'utf-8', env: { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' } });
+    g('init', '-q');
+    g('add', '.');
+    g('commit', '-q', '-m', 'base');
+    fakeReviewer(['PASS', 'PASS']);
+    const quiet = await reviewCheck({ type: 'review', pack: 'design', path: 'ui', changed: true }, root);
+    expect(quiet).toMatchObject({ pass: true, tail: 'nothing changed under ui since HEAD — nothing reviewed' });
+    expect(fs.existsSync(path.join(root, 'asked.log'))).toBe(false);
+    fs.appendFileSync(path.join(root, 'ui', 'style.css'), '.x { color: red; }\n');
+    const r = await reviewCheck({ type: 'review', pack: 'design', path: 'ui', changed: true }, root);
+    expect(r.pass).toBe(true);
+    const prompts = fs.readFileSync(path.join(root, 'prompts.log'), 'utf-8');
+    expect(prompts).toContain('Changed since HEAD: ui/style.css');
+    expect(prompts).toContain('<file path="ui/style.css" role="changed">');
+    expect(prompts).not.toContain('<file path="ui/page.html"'); // page.html does not import the stylesheet
+  });
 });
