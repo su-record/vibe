@@ -37,7 +37,7 @@ reviewers in sequence.
 ```
 
 - `path` is the full manuscript under review, `contract` is the editorial contract, and `evidence` is the evidence ledger. Both can be omitted, but a manuscript for outside submission should keep both as files. If `lang` is not set, the harness infers it from the manuscript's script.
-- The harness runs `reviewers/en/copy-editor.md` first, and only on a pass runs `reviewers/en/chief-editor.md`. A stage passes only when the entire response is exactly one line, `PASS`. Any response that differs from the `REJECT` list format counts as a failure, and the response is kept in evidence's `tail`.
+- The harness runs `reviewers/en/1-copy-editor.md` first, and only on a pass runs `reviewers/en/2-chief-editor.md`. A stage passes only when the entire response is exactly one line, `PASS`. Any response that differs from the `REJECT` list format counts as a failure, and the response is kept in evidence's `tail`.
 - If the same failure repeats twice, the harness stops at STUCK and asks in the inbox. The writer fixes the `REJECT` items with the smallest possible change and reruns `vibe check`. If an item conflicts with the evidence or only enforces a preference and cannot be fixed, don't discard it — hand it to `vibe ask` along with the conflict.
 
 ## Reviewer input bundle

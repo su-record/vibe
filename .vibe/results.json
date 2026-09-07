@@ -1,97 +1,102 @@
 {
   "build": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "tests": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "card-size": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "file-size": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "skills-size": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "skill-names": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
-  "language-pack": {
+  "packs": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
+  },
+  "design-pack": {
+    "last": "pass",
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
+  },
+  "ko-borrow": {
+    "last": "pass",
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
+  },
+  "borrow": {
+    "last": "pass",
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "plugin-tree": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
-  "read-ask": {
+  "review-pack": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
-  "read-ask-live": {
+  "review-live-claude": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
-  "read-session": {
+  "review-live-codex": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
-  "read-no-reader": {
+  "read-live-codex": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
-  },
-  "read-advice": {
-    "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
-  },
-  "help-line": {
-    "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "readme-status": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "r-1-vibe-size-misreads-template-literal": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "r-2-ci-counted-the-language-packs": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "r-3-codex-plugin-never-followed-update": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   },
   "r-4-installhookfile-kept-only-last-entry": {
     "last": "pass",
-    "at": "2026-09-06T21:45:51.329Z",
-    "run": "r-2"
+    "at": "2026-09-07T00:52:23.324Z",
+    "run": "r-3"
   }
 }

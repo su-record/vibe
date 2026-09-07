@@ -18,9 +18,12 @@ What to check:
 
 For a usage question that needs a ruling, do not rely on memory — verify against a named dictionary and the stated style guide's current entries. When more than one form is acceptable, follow the editorial contract's formatting rule and the document's own internal consistency.
 
+A weak tell alone is not grounds for a REJECT item: a single hedge, a single hyphenated compound, one passive clause with no actor worth naming, or one bolded phrase. Flag it only when two or more such tells overlap in the same passage. A tell that already changes what the reader can trust on its own, such as a dropped fact, a broken agreement or a wrong reference, is grounds for REJECT by itself.
+
 Output rules:
 - If there are no defects, output exactly one line, `PASS`, with no surrounding explanation.
 - If there are defects, write `REJECT` on the first line, then one line per item in the form `location | original | impact | fix condition`. Fill in all four fields.
 - Do not flag a difference that is purely a matter of taste. Do not flag a problem you cannot pin to a location and a reader effect.
 - Do not add content the evidence does not contain, and do not write a full replacement sentence.
 - Do not treat a character's dialogue, a quotation, or a deliberate non-standard usage in the manuscript as a defect.
+- The REJECT list may end with up to three lines in the form `KEEP | <span> | <reason>`, naming a specific span the writer must not touch while fixing the findings above. Use it only for a span worth protecting from an overcorrection; do not pad the list to three when there is nothing to protect.

@@ -235,6 +235,56 @@ no real logic or rhythm behind them, not as a list of forbidden words:
 - Manufactured significance with no named source: "This is a testament to," "This speaks volumes about," "game-changer," "a paradigm shift."
 - A rhetorical question used as an opener to manufacture urgency: "Have you ever wondered...?"
 - A stock transition into the body that adds nothing: "Let's dive in," "Without further ado."
+- False range: "from X to Y" where X and Y sit on no real scale, as in "from innovation to cultural transformation." Name the actual items instead of stretching them into a spectrum with nothing in the middle.
+- The "serves as" dodge: "serves as," "stands as," "marks," "represents" standing in for a plain "is." "The gallery serves as LAAA's exhibition space" becomes "The gallery is LAAA's exhibition space."
+- The magic adverb: "quietly," "arguably," "fundamentally" lending an ordinary claim weight the evidence hasn't earned. Cut the adverb; if the claim needs it to be true, the claim itself is weak.
+- "Not X. Not Y. Just Z.": a manufactured countdown that stages the real point instead of stating it. Delete the setup and say Z.
+- The bold-first bullet: every list item opens with a bolded label and colon that only restate the item that follows. Write the list as prose, or drop the bold where the label adds nothing the sentence doesn't already say.
+- The colon reveal: a flat clause, a colon, then a dramatic lowercase payoff, as in "The best part: it learns." State it as one sentence instead: "It learns, which is the part that matters."
+- Engineering metaphor nouns used as scaffolding rather than description: "substrate," "flywheel," "north star," "wedge," "vector," "nexus" standing in for a concrete mechanism. Name the mechanism instead of the metaphor.
+- Say what it does, not how it feels: a sentence that names a feeling, as in "the tool stays close at hand," instead of a mechanism or a number. "Runs quickly" becomes "loads in under a second"; if no number or mechanism can replace the feeling, cut the sentence.
+
+### Strength tiers
+
+A tell earns a cut on one sighting when a single instance already changes what the reader can trust: the "serves as" dodge, the colon reveal, "Not X. Not Y. Just Z.," a false range, an authority named only as "experts" or "observers." Treat these as strong on their own.
+
+A tell is weak when a careful writer produces the same thing on purpose about as often as not: one hyphenated compound, one hedge, one adverb, a single passive clause with no actor worth naming, one bolded phrase. Act on a weak tell only when two or more of them overlap in the same passage. A paragraph that stacks a reflex hedge, an actor-dropping passive and a bolded label all at once is worth fixing; any one of those alone usually is not.
+
+### Five questions before a cut
+
+Before removing anything flagged above, ask, in order:
+
+1. Does the meaning go with it? If cutting the phrase drops a fact, a condition or a judgment, it is content, not a tell.
+2. Is it the writer's choice, or is it a form? A writer who could defend the choice made a choice. A form is what's left in a sentence when nobody decided anything.
+3. Does it deliver, or does it declare? A sentence that states a fact delivers. A sentence that announces its own importance declares.
+4. Does it add light, or only heat? A number, a name or a mechanism adds light. An intensifier adds heat and nothing else.
+5. Would a sceptical reader trust the sentence more with the phrase in it than without it?
+
+A phrase that answers yes to all five stays. It fails as soon as one answer comes back no.
+
+### Portability test
+
+A sentence that would read exactly the same with another person, another company, another country or another product dropped in is filler, whatever vocabulary it uses. Test it directly: swap in the nearest unrelated proper noun and see whether the sentence still holds. If it does, cut the sentence or replace it with a fact specific to this subject.
+
+### Notes to the writer are not content
+
+A source sometimes carries an instruction addressed to the person doing the writing, not to the reader: "keep this tone," "make it shorter here," "don't promise this can't happen again." Carry out the instruction. Never reprint it. Treating an instruction as material to preserve is the same class of error as inventing a fact that was never there: both put something in the piece that doesn't belong to the reader.
+
+### A sample outranks the rules
+
+When the author supplies a sample of their own prose, read it before applying anything else in this section. Match its sentence length, its openings, its transitions and its dash rate, even in a place where this pack would otherwise cut a dash or split a long sentence. The sample is evidence of what this particular writer does on purpose. The rules above describe only what's left in a sentence when nobody decided anything.
+
+### What is not a tell
+
+Not every marker named on this page is evidence of a model's default choice. Leave these alone:
+
+- A quotation, reproduced exactly as spoken or written, including any cliché inside it.
+- A proper noun, even one that happens to repeat a pattern named above.
+- Text written before November 2022, when several of these patterns were already common without a model producing them.
+- A low-variance or non-native writer's plain, repetitive precision. A sentence that restates a point because the writer isn't confident the first version landed is a style, not slop.
+- A real hedge stating a real uncertainty: a stated confidence level, a named limitation, an "as far as I could confirm."
+
+This pack never tries to guess whether a person or a model wrote a given passage. It names patterns and asks whether the sentence in front of you needs them, not who typed it.
 
 Read the relevant section only of
 [Genre Writing Guide](references/genres.md) when a genre-specific judgment is
