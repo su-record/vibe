@@ -8,6 +8,8 @@ export interface CheckResult {
   ms: number;
   tail: string;
   reason?: string;
+  /** What a model-judged check spent, per stage, when the driver reports it. */
+  usage?: Array<{ stage: string; input: number; cacheRead: number; cacheWrite: number; output: number }>;
 }
 
 const DEFAULT_TIMEOUT_MS = 600_000;

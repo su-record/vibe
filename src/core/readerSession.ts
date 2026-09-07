@@ -19,10 +19,7 @@ export interface ReaderUsage {
   output: number;
 }
 
-export interface ReaderRun {
-  reply: string;
-  sessionId: string | null;
-  usage: ReaderUsage | null;
+export interface ReaderRun extends Parsed {
   exit: number | null;
   killed: boolean;
 }
@@ -104,34 +101,57 @@ export function spawnReader(cmd: string, args: string[] | null, stdin: string, c
   });
 }
 
-const CLAUDE_SLIM = ['--output-format', 'json', '--model', 'haiku', '--tools', '', '--disable-slash-commands', '--strict-mcp-config', '--setting-sources', ''];
+export interface DriverOptions {
+  /** `haiku` for the reader; null keeps the client's default model — judgment keeps the strong model. */
+  model: string | null;
+  /** Claude tools the process may use; the reader gets none, a reviewer gets its file tools. */
+  tools: string[];
+  /** Codex reasoning effort; null keeps the default. */
+  effort: string | null;
+}
+export const READER_DRIVER: DriverOptions = { model: 'haiku', tools: [], effort: 'low' };
+/** A reviewer reads the artifact inline; `Read` is for a screenshot. Every other tool schema is tokens on every stage (measured: Read 1.1k, Grep 1k, WebFetch+WebSearch 0.5k). */
+export const REVIEWER_DRIVER: DriverOptions = { model: null, tools: ['Read'], effort: null };
 
-/** `claude -p` as a reader: its own system prompt, no tools, no settings, no project — the corpus is the only context. */
-export function claudeArgs(instructions: string, resume: string | null): string[] {
-  return ['-p', ...(resume ? ['--resume', resume] : []), '--system-prompt', instructions, ...CLAUDE_SLIM];
+/** `claude -p` slim: its own system prompt, only the tools named, no settings, no project — the message is the only context. */
+export function claudeArgs(instructions: string, resume: string | null, options: DriverOptions = READER_DRIVER): string[] {
+  const model = options.model ? ['--model', options.model] : [];
+  return ['-p', ...(resume ? ['--resume', resume] : []), '--system-prompt', instructions, '--output-format', 'json', ...model, '--tools', options.tools.join(','), '--disable-slash-commands', '--strict-mcp-config', '--setting-sources', ''];
 }
 
-/** `codex exec` as a reader at its lowest reasoning; `--json` carries the thread id and the token usage. */
-export function codexArgs(resume: string | null): string[] {
+/** `codex exec` slim; `--json` carries the thread id and the token usage. */
+export function codexArgs(resume: string | null, options: DriverOptions = READER_DRIVER): string[] {
   const head = resume ? ['exec', '--skip-git-repo-check', 'resume', resume] : ['exec', '--skip-git-repo-check'];
-  return [...head, '--json', '-c', 'model_reasoning_effort=low', '-'];
+  const effort = options.effort ? ['-c', `model_reasoning_effort=${options.effort}`] : [];
+  return [...head, '--json', ...effort, '-'];
 }
 
 interface ClaudeJson {
   session_id?: string;
   result?: string;
   is_error?: boolean;
+  total_cost_usd?: number;
+  modelUsage?: Record<string, unknown>;
   usage?: { input_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number; output_tokens?: number };
 }
 
-export function parseClaude(out: string): { reply: string; sessionId: string | null; usage: ReaderUsage | null } {
+export interface Parsed {
+  reply: string;
+  sessionId: string | null;
+  usage: ReaderUsage | null;
+  costUsd: number | null;
+  model: string | null;
+}
+
+export function parseClaude(out: string): Parsed {
   try {
     const j = JSON.parse(out) as ClaudeJson;
     const u = j.usage;
     const usage = u ? { input: u.input_tokens ?? 0, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0, output: u.output_tokens ?? 0 } : null;
-    return { reply: j.is_error ? '' : (j.result ?? ''), sessionId: j.session_id ?? null, usage };
+    const model = j.modelUsage ? Object.keys(j.modelUsage)[0] ?? null : null;
+    return { reply: j.is_error ? '' : (j.result ?? ''), sessionId: j.session_id ?? null, usage, costUsd: typeof j.total_cost_usd === 'number' ? j.total_cost_usd : null, model };
   } catch {
-    return { reply: out, sessionId: null, usage: null };
+    return { reply: out, sessionId: null, usage: null, costUsd: null, model: null };
   }
 }
 
@@ -142,7 +162,7 @@ interface CodexEvent {
   usage?: { input_tokens?: number; cached_input_tokens?: number; cache_write_input_tokens?: number; output_tokens?: number };
 }
 
-export function parseCodex(out: string): { reply: string; sessionId: string | null; usage: ReaderUsage | null } {
+export function parseCodex(out: string): Parsed {
   let reply = '';
   let sessionId: string | null = null;
   let usage: ReaderUsage | null = null;
@@ -161,5 +181,5 @@ export function parseCodex(out: string): { reply: string; sessionId: string | nu
       usage = { input: Math.max(0, (e.usage.input_tokens ?? 0) - cached), cacheRead: cached, cacheWrite: e.usage.cache_write_input_tokens ?? 0, output: e.usage.output_tokens ?? 0 };
     }
   }
-  return { reply, sessionId, usage };
+  return { reply, sessionId, usage, costUsd: null, model: null };
 }

@@ -1,4 +1,5 @@
-import { vibePath } from './paths.js';
+import { isProjectDir, vibePath } from './paths.js';
+import { readState } from './state.js';
 import { appendJsonl, nowIso, readJsonl } from './store.js';
 
 /**
@@ -19,7 +20,8 @@ export type LedgerEventType =
   | 'regress'
   | 'knowledge'
   | 'research'
-  | 'skill';
+  | 'skill'
+  | 'usage';
 
 export interface LedgerEvent {
   at: string;
@@ -36,6 +38,8 @@ export interface LedgerEvent {
   failHash?: string | null;
   turns?: number | null;
   costUsd?: number | null;
+  /** What a reader or reviewer call cost in tokens — a `usage` event, attributed to the run in progress. */
+  tokens?: { input: number; cacheRead: number; cacheWrite: number; output: number } | null;
   ms?: number;
   skillsUsed?: string[];
   detail?: string;
@@ -60,6 +64,22 @@ export function record(root: string, event: Omit<LedgerEvent, 'at'>): LedgerEven
   const full: LedgerEvent = { at: nowIso(), ...event };
   appendJsonl(ledgerPath(root), full);
   return full;
+}
+
+export interface UsageInput {
+  detail: string;
+  client: string;
+  model: string | null;
+  tokens: LedgerEvent['tokens'];
+  costUsd: number | null;
+  ms: number;
+}
+
+/** A reader or reviewer call inside a project leaves what it cost; outside a project nothing is written. */
+export function recordUsage(root: string, input: UsageInput): LedgerEvent | null {
+  if (!isProjectDir(root)) return null;
+  const run = `r-${readState(root).runs + 1}`;
+  return record(root, { event: 'usage', client: input.client, model: input.model, run, detail: input.detail, tokens: input.tokens ?? null, costUsd: input.costUsd, ms: input.ms });
 }
 
 export function readLedger(root: string, sinceMs?: number): LedgerEvent[] {
@@ -163,6 +183,14 @@ function metricOf(e: LedgerEvent, metric: CompareMetric): number | null {
   return typeof e.costUsd === 'number' ? e.costUsd : null;
 }
 
+function withUsage(e: LedgerEvent, metric: CompareMetric, usageByRun: Map<string, number>): number | null {
+  const own = metricOf(e, metric);
+  if (metric !== 'cost') return own;
+  const spent = e.run ? usageByRun.get(e.run) : undefined;
+  if (own === null && spent === undefined) return null;
+  return (own ?? 0) + (spent ?? 0);
+}
+
 function range(values: number[]): Range | null {
   if (values.length === 0) return null;
   const min = Math.min(...values);
@@ -181,13 +209,16 @@ function armKey(e: LedgerEvent, by: CompareBy): string {
 export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5, ledgerFile?: string): Comparison {
   const events = ledgerFile ? readJsonl<LedgerEvent>(ledgerFile) : readLedger(root);
   const checks = events.filter((e) => e.event === 'check');
+  // What the readers and reviewers spent during a run belongs to that run's cost.
+  const usageByRun = new Map<string, number>();
+  for (const e of events) if (e.event === 'usage' && e.run && typeof e.costUsd === 'number') usageByRun.set(e.run, (usageByRun.get(e.run) ?? 0) + e.costUsd);
   const groups = new Map<string, LedgerEvent[]>();
   for (const e of checks) {
     const key = armKey(e, by);
     groups.set(key, [...(groups.get(key) ?? []), e]);
   }
   const arms: ArmSummary[] = [...groups.entries()].map(([arm, events]) => {
-    const values = events.map((e) => metricOf(e, metric)).filter((v): v is number => v !== null);
+    const values = events.map((e) => withUsage(e, metric, usageByRun)).filter((v): v is number => v !== null);
     return {
       arm,
       runs: events.length,

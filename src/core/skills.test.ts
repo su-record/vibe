@@ -23,7 +23,11 @@ const FIXTURE: Record<string, unknown> = {
   '/branches/main': { commit: { sha: 'abc123abc123abc123' } },
   '/contents/skills/csv-settle/SKILL.md?': { name: 'SKILL.md', type: 'file', path: 'skills/csv-settle/SKILL.md', content: Buffer.from(SKILL_MD).toString('base64'), encoding: 'base64' },
   '/contents/skills/csv-settle/notes.md?': { name: 'notes.md', type: 'file', path: 'skills/csv-settle/notes.md', content: 'notes', encoding: 'utf-8' },
-  '/contents/skills/csv-settle?': [{ name: 'SKILL.md', type: 'file', path: 'skills/csv-settle/SKILL.md' }, { name: 'notes.md', type: 'file', path: 'skills/csv-settle/notes.md' }, { name: 'sub', type: 'dir', path: 'skills/csv-settle/sub' }],
+  '/contents/skills/csv-settle?': [{ name: 'SKILL.md', type: 'file', path: 'skills/csv-settle/SKILL.md' }, { name: 'notes.md', type: 'file', path: 'skills/csv-settle/notes.md' }, { name: 'references', type: 'dir', path: 'skills/csv-settle/references' }],
+  '/contents/skills/csv-settle/references?': [{ name: 'deep', type: 'dir', path: 'skills/csv-settle/references/deep' }, { name: 'rules.md', type: 'file', path: 'skills/csv-settle/references/rules.md' }],
+  '/contents/skills/csv-settle/references/deep?': [{ name: 'more.md', type: 'file', path: 'skills/csv-settle/references/deep/more.md' }],
+  '/contents/skills/csv-settle/references/rules.md?': { name: 'rules.md', type: 'file', path: 'skills/csv-settle/references/rules.md', content: 'rules', encoding: 'utf-8' },
+  '/contents/skills/csv-settle/references/deep/more.md?': { name: 'more.md', type: 'file', path: 'skills/csv-settle/references/deep/more.md', content: 'more', encoding: 'utf-8' },
   '/repos/org/skills': { default_branch: 'main', license: { spdx_id: 'MIT' } },
 };
 const fake: GithubClient = { authenticated: true, get: (p) => {
@@ -53,7 +57,7 @@ describe('project-local skills — installed only with a check, never globally',
 
   it('skills: add shows the commands and installs nothing until --yes; then pins the commit and records the license', async () => {
     const preview = await addSkill(root, { spec: 'org/skills@csv-settle', yes: false }, fake);
-    expect(preview).toMatchObject({ installed: false, ref: 'org/skills@csv-settle#abc123abc123', license: 'MIT', commands: ['node scripts/settle.js orders.csv', 'vibe check settle'], files: ['SKILL.md', 'notes.md'] });
+    expect(preview).toMatchObject({ installed: false, ref: 'org/skills@csv-settle#abc123abc123', license: 'MIT', commands: ['node scripts/settle.js orders.csv', 'vibe check settle'], files: ['SKILL.md', 'notes.md', 'references/deep/more.md', 'references/rules.md'] });
     expect(fs.existsSync(path.join(root, '.claude', 'skills', 'csv-settle'))).toBe(false);
     const done = await addSkill(root, { spec: 'org/skills@csv-settle', yes: true }, fake);
     expect(done.installed).toBe(true);
@@ -98,5 +102,22 @@ describe('project-local skills — installed only with a check, never globally',
     expect(suggestSkills(root)).toHaveLength(3);
     dismissProposal(root, 'vibe skill search stripe');
     expect(suggestSkills(root, true).map((p) => p.source)).toEqual(['state', 'regressions', 'inbox']);
+  });
+
+  it('skills: add takes the whole tree — references/ and deeper land under the skill directory; a skill over the cap stops with a reason', async () => {
+    const done = await addSkill(root, { spec: 'org/skills@csv-settle', yes: true }, fake);
+    expect(done.installed).toBe(true);
+    expect(fs.readFileSync(path.join(root, '.claude', 'skills', 'csv-settle', 'references', 'deep', 'more.md'), 'utf-8')).toBe('more');
+    expect(fs.readFileSync(path.join(root, '.claude', 'skills', 'csv-settle', 'references', 'rules.md'), 'utf-8')).toBe('rules');
+    const big: Record<string, unknown> = { ...FIXTURE };
+    const many = Array.from({ length: 201 }, (_, i) => ({ name: `f${i}.md`, type: 'file', path: `skills/csv-settle/f${i}.md` }));
+    big['/contents/skills/csv-settle?'] = [{ name: 'SKILL.md', type: 'file', path: 'skills/csv-settle/SKILL.md' }, ...many];
+    const bigClient: GithubClient = { authenticated: true, get: (p) => {
+      const m = /contents\/skills\/csv-settle\/(f\d+\.md)\?/.exec(p);
+      if (m) return Promise.resolve({ name: m[1], type: 'file', path: `skills/csv-settle/${m[1]}`, content: 'x', encoding: 'utf-8' });
+      const key = Object.keys(big).find((k) => p.includes(k));
+      return key ? Promise.resolve(big[key]) : Promise.reject(new Error(`no fixture for ${p}`));
+    } };
+    await expect(addSkill(root, { spec: 'org/skills@csv-settle', yes: false }, bigClient)).rejects.toThrow(/over the cap/);
   });
 });

@@ -31,6 +31,7 @@ export interface ScenarioOutcome {
   ms: number;
   tail: string;
   reason?: string;
+  usage?: CheckResult['usage'];
   regression?: boolean;
   /** Parents that had not passed when this scenario's turn came — it was not run. */
   blockedBy?: string[];
@@ -110,6 +111,7 @@ async function runOne(root: string, scenario: Scenario & { regression?: boolean 
   if (isHuman(scenario)) askHumanOnce(root, scenario);
   const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status, exit: result.exit, ms: result.ms, tail: result.tail };
   if (result.reason) outcome.reason = result.reason;
+  if (result.usage) outcome.usage = result.usage;
   if (scenario.regression) outcome.regression = true;
   return outcome;
 }

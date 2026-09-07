@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { compare, readLedger, record } from './ledger.js';
+import { compare, readLedger, record, recordUsage } from './ledger.js';
 
 let root: string;
 beforeEach(() => {
@@ -65,5 +65,26 @@ describe('ledger and comparison — the code says "cannot tell"', () => {
     const c = compare(root, 'client', 'turns');
     expect(c.verdict).toBe('insufficient-runs');
     expect(c.arms[0]?.usable).toBe(0);
+  });
+
+  it('usage: a reader or reviewer call inside a project leaves tokens, cost and the run in progress; outside a project nothing; compare --metric cost adds it to the run', () => {
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-usage-out-'));
+    expect(recordUsage(outside, { detail: 'reader', client: 'claude', model: 'haiku', tokens: { input: 1, cacheRead: 0, cacheWrite: 0, output: 1 }, costUsd: 0.001, ms: 5 })).toBeNull();
+    expect(fs.existsSync(path.join(outside, '.vibe'))).toBe(false);
+    fs.rmSync(outside, { recursive: true, force: true });
+
+    fs.mkdirSync(path.join(root, '.vibe'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.vibe', 'state.json'), JSON.stringify({ state: 'RUNNING', runs: 2 }));
+    const e = recordUsage(root, { detail: 'review ko/copy-editor', client: 'claude', model: 'claude-opus-5', tokens: { input: 1204, cacheRead: 0, cacheWrite: 0, output: 3 }, costUsd: 0.01, ms: 900 });
+    expect(e).toMatchObject({ event: 'usage', run: 'r-3', detail: 'review ko/copy-editor', tokens: { input: 1204 }, costUsd: 0.01 });
+    expect(readLedger(root).filter((x) => x.event === 'usage')).toHaveLength(1);
+    // five checks per arm with a scenario set; the usage of run r-3 lands on the check that carries r-3
+    for (const [client, i] of [['a', 0], ['a', 1], ['a', 2], ['a', 3], ['a', 4], ['b', 5], ['b', 6], ['b', 7], ['b', 8], ['b', 9]] as Array<[string, number]>) {
+      record(root, { event: 'check', client, model: null, run: `r-${i}`, scenarioSet: 'S', passed: 1, failed: 0, costUsd: 0.1 });
+    }
+    const c = compare(root, 'client', 'cost');
+    const armA = c.arms.find((a) => a.arm === 'a');
+    expect(armA?.range?.max).toBeCloseTo(0.11, 5); // r-3 carries the 0.01 of the review stage
+    expect(c.arms.find((a) => a.arm === 'b')?.range?.max).toBeCloseTo(0.1, 5);
   });
 });

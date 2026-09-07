@@ -1,7 +1,8 @@
 import { readConfig } from './config.js';
 import { readDocument } from './docs/read.js';
 import { usage } from './errors.js';
-import { claudeArgs, codexArgs, findSession, hasCli, parseClaude, parseCodex, readerHome, saveSession, sessionKey, spawnReader, type ReaderClient, type ReaderRun, type ReaderUsage } from './readerSession.js';
+import { recordUsage } from './ledger.js';
+import { claudeArgs, codexArgs, findSession, hasCli, parseClaude, parseCodex, READER_DRIVER, readerHome, saveSession, sessionKey, spawnReader, type ReaderClient, type ReaderRun, type ReaderUsage } from './readerSession.js';
 import { ensureDir } from './store.js';
 
 /**
@@ -102,11 +103,11 @@ function followUp(question: string): string {
 async function runChoice(choice: ReaderChoice, resume: string | null, stdin: string, root: string, home: string | undefined): Promise<ReaderRun> {
   if (choice.client === 'custom') {
     const r = await spawnReader(choice.cmd, null, stdin, root, TIMEOUT_MS); // a user's command runs where the user wrote it
-    return { reply: r.out, sessionId: null, usage: null, exit: r.exit, killed: r.killed };
+    return { reply: r.out, sessionId: null, usage: null, costUsd: null, model: null, exit: r.exit, killed: r.killed };
   }
   const cwd = readerHome(home); // the client CLIs run in a neutral directory: no project card, memory or hooks
   ensureDir(cwd);
-  const args = choice.client === 'claude' ? claudeArgs(INSTRUCTIONS, resume) : codexArgs(resume);
+  const args = choice.client === 'claude' ? claudeArgs(INSTRUCTIONS, resume, READER_DRIVER) : codexArgs(resume, READER_DRIVER);
   const r = await spawnReader(choice.cmd, args, stdin, cwd, TIMEOUT_MS);
   const parsed = choice.client === 'claude' ? parseClaude(r.out) : parseCodex(r.out);
   return { ...parsed, exit: r.exit, killed: r.killed };
@@ -125,5 +126,6 @@ export async function askReader(root: string, files: string[], question: string,
   if (r.killed) throw usage(`the reader gave no answer within ${TIMEOUT_MS}ms: ${choice.label}`);
   if (r.exit !== 0) throw usage(`the reader failed (exit ${r.exit ?? 'none'}): ${choice.label}${r.reply.trim() ? `\n${r.reply.trim()}` : ''}`);
   if (r.sessionId) saveSession(key, { id: r.sessionId, client: choice.client, at: new Date(options.now ?? Date.now()).toISOString(), files: bundle.files, chars: bundle.chars }, options.home, options.now);
+  recordUsage(root, { detail: 'reader', client: choice.client, model: r.model ?? (choice.client === 'claude' ? READER_DRIVER.model : null), tokens: r.usage, costUsd: r.costUsd, ms });
   return { files: bundle.files, chars: bundle.chars, reader: choice.label, session: { id: r.sessionId, resumed: existing !== null }, usage: r.usage, reply: r.reply.trim(), ms };
 }
