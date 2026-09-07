@@ -78,7 +78,21 @@ describe('research — see what exists before building', () => {
   });
 
   it('intent: queries come from what the success section names and repeats, never the title\'s first words; a candidate matching only a short word is dropped', async () => {
-    const own = fs.readFileSync(path.join(process.cwd(), '.vibe', 'intent.md'), 'utf-8');
+    const own = [
+      '# vibe 4 · 4.1.14 — one spec: slim review with usage, the code pack, two deterministic checks',
+      '',
+      '## Why',
+      'The last four releases were cut one conversation at a time.',
+      '',
+      '## What counts as success',
+      '- The `review` check runs each stage through the reader drivers; the reviewer prompt is the system prompt.',
+      '- `antislop-code` joins the packs with a reviewer and a maintainer; the `review` check takes `pack: code`.',
+      '- Every review stage reports usage; the ledger holds a usage event per stage and per reader call.',
+      '- The design pack and the code pack are reviewed live on both clients.',
+      '',
+      '## Constraints',
+      '- No new dependency.',
+    ].join('\n');
     fs.writeFileSync(path.join(root, '.vibe', 'intent.md'), own);
     fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), '- { id: x, then: y, check: { type: run, cmd: "true" } }\n');
     const queries = queriesFromIntent(root);

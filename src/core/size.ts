@@ -63,7 +63,36 @@ function stepCode(ch: string, st: BraceState): number {
   return 0;
 }
 
-/** Net `{` minus `}` on one line outside strings, template literals and comments; `${…}` inside a template is code again. */
+const REGEX_AFTER_WORD = new Set(['return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'instanceof', 'void', 'delete', 'throw', 'await', 'yield']);
+
+/** A `/` starts a regex literal where an expression can start: after an operator, an opener, a separator, a keyword, or at the start of the line — not after a value. */
+function regexCanStart(line: string, i: number): boolean {
+  const before = line.slice(0, i).replace(/\s+$/, '');
+  if (before === '') return true;
+  const last = before.at(-1)!;
+  if ('(,=:[!&|?{};+-*%<>~^'.includes(last)) return true;
+  const word = /([A-Za-z_$][\w$]*)$/.exec(before)?.[1];
+  return word !== undefined && REGEX_AFTER_WORD.has(word);
+}
+
+/** The index just past a regex literal that starts at `i`: escapes and character classes are honoured, then the flags. */
+function skipRegex(line: string, i: number): number {
+  let inClass = false;
+  for (let j = i + 1; j < line.length; j += 1) {
+    const ch = line[j]!;
+    if (ch === '\\') j += 1;
+    else if (inClass) inClass = ch !== ']';
+    else if (ch === '[') inClass = true;
+    else if (ch === '/') {
+      let k = j + 1;
+      while (k < line.length && /[a-z]/i.test(line[k]!)) k += 1;
+      return k;
+    }
+  }
+  return line.length; // an unterminated regex is not one; the rest of the line is left as it was
+}
+
+/** Net `{` minus `}` on one line outside strings, template literals, regex literals and comments; `${…}` inside a template is code again. */
 function braceDelta(line: string, st: BraceState): number {
   let depth = 0;
   for (let i = 0; i < line.length; i += 1) {
@@ -84,6 +113,10 @@ function braceDelta(line: string, st: BraceState): number {
       const close = line.indexOf('*/', i + 2);
       if (close === -1) break;
       i = close + 1;
+      continue;
+    }
+    if (ch === '/' && regexCanStart(line, i)) {
+      i = skipRegex(line, i) - 1;
       continue;
     }
     depth += stepCode(ch, st);

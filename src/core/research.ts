@@ -77,11 +77,10 @@ function tokens(text: string): string[] {
 function bodyTerms(text: string): { names: string[]; words: string[] } {
   const section = text.split(/^## What counts as success/m)[1]?.split(/^## /m)[0] ?? text;
   const count = new Map<string, number>();
-  const backtick = String.fromCharCode(96); // written this way so the size parser does not read a template literal into the regex
-  for (const m of section.matchAll(new RegExp(`${backtick}([a-z][a-z0-9-]{3,})${backtick}`, 'g'))) count.set(m[1]!, (count.get(m[1]!) ?? 0) + 1);
+  for (const m of section.matchAll(/`([a-z][a-z0-9-]{3,})`/g)) count.set(m[1]!, (count.get(m[1]!) ?? 0) + 1);
   const names = [...count.entries()].filter(([w]) => !STOP.has(w)).sort((a, b) => b[1] - a[1]).map(([w]) => w);
   const freq = new Map<string, number>();
-  for (const w of section.toLowerCase().replace(new RegExp(`${backtick}[^${backtick}]*${backtick}`, 'g'), ' ').split(/[^a-z0-9]+/)) {
+  for (const w of section.toLowerCase().replace(/`[^`]*`/g, ' ').split(/[^a-z0-9]+/)) {
     if (w.length < 4 || STOP.has(w) || /^\d/.test(w)) continue;
     freq.set(w, (freq.get(w) ?? 0) + 1);
   }
@@ -229,7 +228,7 @@ async function search(client: GithubClient, queries: string[], sources: Source[]
   const byRef = new Map<string, Candidate>();
   // A candidate none of the query words describe is noise, whatever search returned it; so is one that matches only words under four letters.
   for (const c of found) {
-    const matched = c.why.split('matches "')[1]?.split('"')[0]?.split(', ') ?? [];
+    const matched = /matches "([^"]*)"/.exec(c.why)?.[1]?.split(', ') ?? [];
     if (matched.length === 0 || matched.every((t) => t.length < 4)) continue;
     if (!byRef.has(c.ref) || byRef.get(c.ref)!.score < c.score) byRef.set(c.ref, c);
   }

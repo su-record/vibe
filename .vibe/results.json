@@ -1,132 +1,82 @@
 {
   "build": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "tests": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "card-size": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "file-size": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
-  "skills-size": {
+  "regex-literal": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "skill-names": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "packs": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "report-voice": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "no-placeholders": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "review-slim": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "review-live-claude": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "review-live-codex": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "code-collector": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "traceable": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "a11y": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "deterministic-live": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "token-ledger": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "skill-add-tree": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "highest-version": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
-  },
-  "research-queries": {
-    "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "plugin-tree": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "readme-status": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "r-1-vibe-size-misreads-template-literal": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "r-2-ci-counted-the-language-packs": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "r-3-codex-plugin-never-followed-update": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   },
   "r-4-installhookfile-kept-only-last-entry": {
     "last": "pass",
-    "at": "2026-09-07T02:09:33.516Z",
-    "run": "r-1"
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
+  },
+  "r-5-vibe-size-read-a-quote-or-a-backtick": {
+    "last": "pass",
+    "at": "2026-09-07T02:23:10.765Z",
+    "run": "r-2"
   }
 }
