@@ -17,62 +17,26 @@
   check: { type: run, cmd: "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
 
 - id: skills-size
-  then: the six common skills are at most 300 lines in total and vibe-scope proposes the design review
-  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q 'pack: design' skills/vibe-scope/SKILL.md", expect: 0 }
+  then: the six common skills are at most 300 lines in total
+  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300", expect: 0 }
 
 - id: skill-names
   then: every common skill name is spec-conformant and equals its directory, and none of the six is tracked under the repository's .claude/skills or .codex/skills
   check: { type: run, cmd: "node checks/skill-names.js", expect: 0 }
 
 - id: packs
-  then: every antislop pack (ko, en, design) has numbered reviewer stages within budget, agents in step, and no client-only tool names; the old check file is gone and the workflow runs the new one
-  check: { type: run, cmd: "node checks/packs.js && test ! -e checks/language-pack.js && grep -q 'checks/packs.js' .github/workflows/test.yml", expect: 0 }
+  then: every antislop pack has numbered reviewer stages within budget and agents in step
+  check: { type: run, cmd: "node checks/packs.js", expect: 0 }
 
-- id: design-pack
-  then: the design pack has its SKILL.md, catalogue and plan references, two numbered reviewers, and two Claude agents
-  check: { type: run, cmd: "test -f skills/antislop-design/SKILL.md && test -f skills/antislop-design/references/catalogue.md && test -f skills/antislop-design/references/plan.md && test -f reviewers/design/1-markup-reviewer.md && test -f reviewers/design/2-art-director.md && test -f agents/design-markup-reviewer.md && test -f agents/design-art-director.md && test -f reviewers/ko/1-copy-editor.md && test -f reviewers/en/2-chief-editor.md", expect: 0 }
-
-- id: ko-borrow
-  then: antislop-ko carries the em-dash rule and a 조사·어미 생략 subsection with four before → after pairs
-  check: { type: run, cmd: "grep -q '줄표' skills/antislop-ko/SKILL.md && grep -q '^### 조사·어미 생략' skills/antislop-ko/SKILL.md && test $(sed -n '/^### 조사·어미 생략/,/^###/p' skills/antislop-ko/SKILL.md | grep -c '→') -ge 4", expect: 0 }
-
-- id: borrow
-  then: both text packs carry the six new sections, the English catalogue names the new patterns, and all four text reviewers carry the overlap rule and the KEEP line
-  check: { type: run, cmd: "node checks/borrow.js", expect: 0 }
+- id: report-voice
+  then: card rule 9 separates changed from verified and keeps the load-bearing caveat, and vibe-handoff carries the Report voice section with the not-checked and turns rules
+  check: { type: run, cmd: "node checks/report-voice.js", expect: 0 }
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.11 and the plugin tree carries the design agents for Codex
-  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.11\"' .codex-plugin/plugin.json", expect: 0 }
-
-- id: review-pack
-  needs: [build]
-  given: a fake reviewer that records what it was sent
-  when: the review check runs with pack design on a file and on a directory, with a screenshot, with lang ko, and with an unknown pack
-  then: the design bundles carry the numbered source and the screenshot line and the stages run as markup-reviewer then art-director; the text pack still runs copy-editor then chief-editor; the unknown pack fails with a reason
-  check: { type: run, cmd: "npx vitest run src/core/checks/review.test.ts -t 'pack'", expect: 0, timeoutMs: 120000 }
-
-- id: review-live-claude
-  needs: [build]
-  given: the claude CLI and the slop fixture
-  when: the review check judges checks/fixtures/slop/index.html with pack design
-  then: the markup reviewer answers REJECT naming at least two catalogue markers, so the check fails
-  check: { type: run, cmd: "node checks/review-live.js claude", expect: 0, timeoutMs: 600000 }
-
-- id: review-live-codex
-  needs: [build]
-  given: the codex CLI and the slop fixture
-  when: the review check judges the same fixture through codex exec
-  then: the markup reviewer answers REJECT naming at least two catalogue markers, so the check fails
-  check: { type: run, cmd: "node checks/review-live.js codex", expect: 0, timeoutMs: 600000 }
-
-- id: read-live-codex
-  needs: [build]
-  given: the codex CLI on PATH and claude hidden from it
-  when: vibe read asks twice over the same files through the Codex reader
-  then: the second run reports the session as resumed with cache-read tokens above zero
-  check: { type: run, cmd: "node checks/read-live.js codex", expect: 0, timeoutMs: 600000 }
+  then: the committed manifests match package.json 4.1.12
+  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.12\"' .codex-plugin/plugin.json", expect: 0 }
 
 - id: readme-status
-  then: the README describes the design pack and its status line carries a 4.1.11 entry
-  check: { type: run, cmd: "grep -q '`4.1.11`' README.md && grep -q 'antislop-design' README.md", expect: 0 }
+  then: the README status line carries a 4.1.12 entry
+  check: { type: run, cmd: "grep -q '`4.1.12`' README.md", expect: 0 }

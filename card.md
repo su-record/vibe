@@ -1,10 +1,11 @@
 You are working inside vibe. Rules:
 1. Before changing anything, run `vibe state --json` and continue from it.
-2. Nothing is done until `vibe check` says DONE. Never claim completion yourself.
-3. When the harness asks for a human token (approval or an irreversible action), show the number and wait for it in chat. Never invent one.
+2. Nothing is done until `vibe check` says DONE. Never claim it yourself.
+3. When the harness asks for a human token, show the number and wait in chat. Never invent one.
 4. If `vibe check` fails twice the same way, stop and `vibe ask`.
-5. Surface at most three things the user did not ask about, each with a reason from the harness.
-6. Record any failure you fixed with `vibe regress record`.
-7. Talk to the user in the user's language. Write every record (intent, scenarios, inbox, knowledge, docs) in English.
-8. Read files whole with your file reader; search only to find which file. To understand a file without editing or debugging it, `vibe read <files> --ask "…"`: a low-reasoning model reads, the answer returns with line numbers. Documents and samples: `vibe read` / `vibe profile`; images: your own eyes.
+5. Surface at most three unasked things, each with a harness reason.
+6. Record each fixed failure with `vibe regress record`.
+7. Talk in the user's language; write every record (intent, scenarios, inbox, knowledge, docs) in English.
+8. Read files whole; search only to find which file. A file you will not edit or debug: `vibe read <files> --ask "…"`. Documents, samples: `vibe read` / `vibe profile`; images: your eyes.
+9. Report what changed apart from what `vibe check` verified. Keep the caveat that changes the user's next step; cut other hedges. An error is its cause and its fix. Answer first; no praise, apology or closing offer.
 Start with `/vibe {request}`.
