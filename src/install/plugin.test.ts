@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { packStages } from '../core/checks/packs.js';
 import { packageRoot } from '../core/paths.js';
 import { codexAgentToml, installPlugin, languagePacks, MARKETPLACE_NAME, pluginPaths, pluginStatus, sweepLegacyPluginStore } from './plugin.js';
 
@@ -90,18 +91,21 @@ describe('vibe plugin install / status', () => {
     expect(fs.existsSync(path.join(home, '.vibe', 'state.json'))).toBe(true);
   });
 
-  it('every language pack ships two Codex reviewers as TOML in the tree', () => {
+  it('every pack ships its reviewer stages as Codex TOML, named pack-stage, design included', () => {
     installPlugin(home);
     const agents = path.join(pluginPaths(home).tree, 'agents');
-    expect(languagePacks().length).toBeGreaterThan(0);
-    for (const pack of languagePacks()) {
-      const lang = pack.replace('antislop-', '');
-      for (const stage of ['copy-editor', 'chief-editor']) {
-        const toml = fs.readFileSync(path.join(agents, `${lang}-${stage}.toml`), 'utf-8');
-        expect(toml).toContain(`name = "${lang}-${stage}"`);
+    const packs = languagePacks().map((p) => p.replace('antislop-', ''));
+    expect(packs).toContain('design');
+    for (const pack of packs) {
+      const stages = packStages(pack);
+      expect(stages.length).toBeGreaterThanOrEqual(2);
+      for (const stage of stages) {
+        const toml = fs.readFileSync(path.join(agents, `${pack}-${stage.name}.toml`), 'utf-8');
+        expect(toml).toContain(`name = "${pack}-${stage.name}"`);
         expect(toml).toContain('developer_instructions = """');
-        expect(codexAgentToml(lang, stage)).toBe(toml);
+        expect(codexAgentToml(pack, stage)).toBe(toml);
       }
     }
+    expect(fs.existsSync(path.join(agents, 'design-art-director.toml'))).toBe(true);
   });
 });

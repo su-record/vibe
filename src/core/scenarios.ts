@@ -33,13 +33,17 @@ export interface EvalCheck {
   expect: { pass: number };
   timeoutMs?: number;
 }
-/** The harness runs a language pack's reviewers (copy editor, then chief editor) on a manuscript; only an exact `PASS` passes a stage. */
+/** The harness runs a reviewer pack's stages in order on the artifact; only an exact `PASS` passes a stage. */
 export interface ReviewCheck {
   type: 'review';
   path: string;
+  /** The reviewer pack: a directory under `reviewers/` (`ko` · `en` · `design` · …). Without it, `lang`, then the manuscript's language. */
+  pack?: string;
   lang?: 'ko' | 'en';
   contract?: string;
   evidence?: string;
+  /** A rendered image of the artifact, for a pack whose reviewers look at the result. */
+  screenshot?: string;
   timeoutMs?: number;
 }
 export interface HumanCheck {
@@ -118,6 +122,8 @@ function checkReason(check: unknown): string | null {
     }
     case 'review': {
       if (!str(check['path'])) return 'review check requires path (the manuscript)';
+      const pack = check['pack'];
+      if (pack !== undefined && (typeof pack !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(pack))) return 'review pack must be a reviewers/ directory name';
       const lang = check['lang'];
       return lang === undefined || lang === 'ko' || lang === 'en' ? null : 'review lang must be ko or en';
     }

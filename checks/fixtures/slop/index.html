@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, -apple-system, sans-serif; background: #f5f5f7; color: #6b7280; text-align: center; }
+  section { padding: 24px 16px; opacity: 0; animation: fadeUp 0.6s ease forwards; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .hero { background: linear-gradient(135deg, #667eea, #764ba2); padding: 24px; color: white; }
+  .hero h1 { font-size: 40px; background: linear-gradient(90deg, #fff, #e0d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: #d8d0f0; margin-top: 16px; }
+  .cta { display: inline-block; margin: 24px 8px 0; padding: 16px 24px; background: rgba(255,255,255,0.2); backdrop-filter: blur(6px); border-radius: 24px; color: white; text-decoration: none; }
+  .welcome { padding: 24px 16px; font-size: 20px; color: #9ca3af; }
+  .cards { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+  .card { width: 220px; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 24px; transition: transform 0.2s; }
+  .card:hover { transform: translateY(-4px); }
+  .card .icon { font-size: 32px; }
+  .card h3 { margin-top: 16px; color: #a1a1aa; }
+  .card p { margin-top: 16px; color: #9ca3af; font-size: 14px; }
+  .stats { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+  .stat { width: 160px; background: white; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 24px; }
+  .stat .num { font-size: 28px; font-weight: bold; color: #667eea; }
+  .stat .label { margin-top: 16px; color: #a1a1aa; font-size: 14px; }
+  .testimonial { max-width: 480px; margin: 0 auto; background: white; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 24px; }
+  .testimonial p { color: #9ca3af; font-style: italic; }
+  .testimonial .who { margin-top: 16px; color: #a1a1aa; font-size: 14px; }
+  .cta-final { padding: 16px 24px; background: #667eea; color: white; border: none; border-radius: 24px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <h1>Unlock your workflow</h1>
+  <p>Manage everything seamlessly, effortlessly, in one place.</p>
+  <a class="cta" href="#">Get started</a>
+</section>
+
+<section class="welcome">Welcome back 👋</section>
+
+<section class="cards">
+  <div class="card">
+    <div class="icon">🚀</div>
+    <h3>Launch faster</h3>
+    <p>Ship projects seamlessly with our effortless toolkit.</p>
+  </div>
+  <div class="card">
+    <div class="icon">✨</div>
+    <h3>Stay organized</h3>
+    <p>Unlock a clearer view of everything that matters.</p>
+  </div>
+  <div class="card">
+    <div class="icon">📊</div>
+    <h3>Track progress</h3>
+    <p>Empower your team with effortless insight.</p>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat">
+    <div class="num">10,000+</div>
+    <div class="label">Happy users</div>
+  </div>
+  <div class="stat">
+    <div class="num">99.9%</div>
+    <div class="label">Uptime</div>
+  </div>
+  <div class="stat">
+    <div class="num">4.9★</div>
+    <div class="label">Average rating</div>
+  </div>
+</section>
+
+<section class="testimonial">
+  <p>"This tool transformed how our team works. It just feels effortless now."</p>
+  <div class="who">— Jane D., Product Manager</div>
+</section>
+
+<section>
+  <button class="cta-final">Get started</button>
+</section>
+
+</body>
+</html>

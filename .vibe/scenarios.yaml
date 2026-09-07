@@ -8,8 +8,8 @@
   check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
 
 - id: card-size
-  then: the always-on card is at most 1024 bytes and names `vibe read --ask`
-  check: { type: run, cmd: "node checks/card-size.js && grep -q -- '--ask' card.md", expect: 0 }
+  then: the always-on card is at most 1024 bytes
+  check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
 
 - id: file-size
   needs: [build]
@@ -17,61 +17,62 @@
   check: { type: run, cmd: "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
 
 - id: skills-size
-  then: the six common skills are at most 300 lines in total and vibe-build and vibe-discover name `vibe read --ask`
-  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q -- '--ask' skills/vibe-build/SKILL.md && grep -q -- '--ask' skills/vibe-discover/SKILL.md", expect: 0 }
+  then: the six common skills are at most 300 lines in total and vibe-scope proposes the design review
+  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q 'pack: design' skills/vibe-scope/SKILL.md", expect: 0 }
 
 - id: skill-names
   then: every common skill name is spec-conformant and equals its directory, and none of the six is tracked under the repository's .claude/skills or .codex/skills
   check: { type: run, cmd: "node checks/skill-names.js", expect: 0 }
 
-- id: language-pack
-  then: every skills/antislop-*/SKILL.md is at most 600 lines, every reviewers/*/ prompt at most 300, each pack has both reviewers, pack names conform, and the reviewers name no Claude-only tool
-  check: { type: run, cmd: "node checks/language-pack.js", expect: 0 }
+- id: packs
+  then: every antislop pack (ko, en, design) has numbered reviewer stages within budget, agents in step, and no client-only tool names; the old check file is gone and the workflow runs the new one
+  check: { type: run, cmd: "node checks/packs.js && test ! -e checks/language-pack.js && grep -q 'checks/packs.js' .github/workflows/test.yml", expect: 0 }
+
+- id: design-pack
+  then: the design pack has its SKILL.md, catalogue and plan references, two numbered reviewers, and two Claude agents
+  check: { type: run, cmd: "test -f skills/antislop-design/SKILL.md && test -f skills/antislop-design/references/catalogue.md && test -f skills/antislop-design/references/plan.md && test -f reviewers/design/1-markup-reviewer.md && test -f reviewers/design/2-art-director.md && test -f agents/design-markup-reviewer.md && test -f agents/design-art-director.md && test -f reviewers/ko/1-copy-editor.md && test -f reviewers/en/2-chief-editor.md", expect: 0 }
+
+- id: ko-borrow
+  then: antislop-ko carries the em-dash rule and a 조사·어미 생략 subsection with four before → after pairs
+  check: { type: run, cmd: "grep -q '줄표' skills/antislop-ko/SKILL.md && grep -q '^### 조사·어미 생략' skills/antislop-ko/SKILL.md && test $(sed -n '/^### 조사·어미 생략/,/^###/p' skills/antislop-ko/SKILL.md | grep -c '→') -ge 4", expect: 0 }
+
+- id: borrow
+  then: both text packs carry the six new sections, the English catalogue names the new patterns, and all four text reviewers carry the overlap rule and the KEEP line
+  check: { type: run, cmd: "node checks/borrow.js", expect: 0 }
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.10 and both hook manifests carry the PreToolUse Read entry
-  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.10\"' .codex-plugin/plugin.json && grep -q '\"matcher\": \"Read\"' hooks/hooks.json && grep -q '\"matcher\": \"Read\"' hooks/codex-hooks.json", expect: 0 }
+  then: the committed manifests match package.json 4.1.11 and the plugin tree carries the design agents for Codex
+  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.11\"' .codex-plugin/plugin.json", expect: 0 }
 
-- id: read-ask
+- id: review-pack
   needs: [build]
-  given: a fake reader command that reports what it was sent
-  when: vibe read is asked a question over two source files
-  then: the reader receives two file tags with numbered lines and the question last, and its reply is the command's stdout
-  check: { type: run, cmd: "VIBE_READER_CMD='node checks/fake-reader.js' node dist/cli.js read src/core/lang.ts src/core/paths.ts --ask 'where is the language detected' | grep -q 'files=2 numbered=yes question=where is the language detected'", expect: 0 }
+  given: a fake reviewer that records what it was sent
+  when: the review check runs with pack design on a file and on a directory, with a screenshot, with lang ko, and with an unknown pack
+  then: the design bundles carry the numbered source and the screenshot line and the stages run as markup-reviewer then art-director; the text pack still runs copy-editor then chief-editor; the unknown pack fails with a reason
+  check: { type: run, cmd: "npx vitest run src/core/checks/review.test.ts -t 'pack'", expect: 0, timeoutMs: 120000 }
 
-- id: read-ask-live
+- id: review-live-claude
   needs: [build]
-  given: the claude CLI on this machine and no reader session for these files
-  when: vibe read asks Haiku twice over src/core/skills.ts and src/core/regress.ts
-  then: the first answer names recordRegression; the second run reports the session as resumed with cache-read tokens above zero
-  check: { type: run, cmd: "node checks/read-live.js", expect: 0, timeoutMs: 300000 }
+  given: the claude CLI and the slop fixture
+  when: the review check judges checks/fixtures/slop/index.html with pack design
+  then: the markup reviewer answers REJECT naming at least two catalogue markers, so the check fails
+  check: { type: run, cmd: "node checks/review-live.js claude", expect: 0, timeoutMs: 600000 }
 
-- id: read-session
+- id: review-live-codex
   needs: [build]
-  given: a fake claude and a fake codex on PATH that answer in each CLI's JSON and record their arguments
-  when: vibe read asks twice over the same files, then over a changed file, then after the session entry has aged past an hour
-  then: the first run starts a session with the slim flags and no project context; the second resumes it and sends only the question; the changed file and the aged entry each start a new session
-  check: { type: run, cmd: "npx vitest run src/core/reader.test.ts -t 'session'", expect: 0, timeoutMs: 120000 }
+  given: the codex CLI and the slop fixture
+  when: the review check judges the same fixture through codex exec
+  then: the markup reviewer answers REJECT naming at least two catalogue markers, so the check fails
+  check: { type: run, cmd: "node checks/review-live.js codex", expect: 0, timeoutMs: 600000 }
 
-- id: read-no-reader
+- id: read-live-codex
   needs: [build]
-  given: no claude or codex on PATH and no VIBE_READER_CMD
-  when: vibe read --ask runs
-  then: exit 2 and the message names VIBE_READER_CMD, config reader, claude and codex
-  check: { type: run, cmd: "npx vitest run src/core/reader.test.ts -t 'no reader'", expect: 0, timeoutMs: 120000 }
-
-- id: read-advice
-  given: a vibe project, a 500-line file and a 100-line file
-  when: the notification hook receives a PreToolUse Read for each
-  then: the long file gets context naming its line count and vibe read --ask; the short file gets nothing; the hook exits 0 both times
-  check: { type: run, cmd: "node checks/read-advice.js", expect: 0 }
-
-- id: help-line
-  needs: [build]
-  then: vibe --help lists read --ask
-  check: { type: run, cmd: "node dist/cli.js --help | grep -q -- '--ask'", expect: 0 }
+  given: the codex CLI on PATH and claude hidden from it
+  when: vibe read asks twice over the same files through the Codex reader
+  then: the second run reports the session as resumed with cache-read tokens above zero
+  check: { type: run, cmd: "node checks/read-live.js codex", expect: 0, timeoutMs: 600000 }
 
 - id: readme-status
-  then: the README describes vibe read --ask and its status line carries a 4.1.10 entry
-  check: { type: run, cmd: "grep -q '`4.1.10`' README.md && grep -q -- '--ask' README.md", expect: 0 }
+  then: the README describes the design pack and its status line carries a 4.1.11 entry
+  check: { type: run, cmd: "grep -q '`4.1.11`' README.md && grep -q 'antislop-design' README.md", expect: 0 }

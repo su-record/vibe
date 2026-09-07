@@ -36,7 +36,7 @@ vibe 안에서는 심사를 모델이 돌리지 않는다. 원고에 `review` �
 
 - `path` 는 심사할 원고 전문, `contract` 는 편집 계약, `evidence` 는 근거 장부다. 둘은 생략할 수 있지만
   제출용 원고에는 둘 다 파일로 둔다. `lang` 을 적지 않으면 원고의 문자로 판별한다.
-- 하네스는 `reviewers/ko/copy-editor.md` 를 먼저, 통과하면 `reviewers/ko/chief-editor.md` 를 띄운다.
+- 하네스는 `reviewers/ko/1-copy-editor.md` 를 먼저, 통과하면 `reviewers/ko/2-chief-editor.md` 를 띄운다.
   응답 전체가 정확히 `PASS` 한 줄일 때만 그 단계가 통과다. `REJECT` 목록과 형식이 다른 응답은 모두
   실패이고, 응답은 evidence 의 `tail` 에 남는다.
 - 같은 실패가 두 번 이어지면 하네스가 STUCK 으로 멈추고 인박스에 묻는다. 작성자는 `REJECT` 항목을

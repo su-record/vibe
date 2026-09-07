@@ -2,12 +2,13 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { detectLang } from '../lang.js';
-import { packageRoot } from '../paths.js';
 import type { ReviewCheck } from '../scenarios.js';
+import { packStages, TEXT_PACKS } from './packs.js';
+import { collectSource } from './source.js';
 import { tail, type CheckResult } from './run.js';
 
-const STAGES = ['copy-editor', 'chief-editor'] as const;
 const DEFAULT_TIMEOUT_MS = 600_000;
+const MAX_SOURCE_CHARS = 400_000;
 const MAX_CAPTURE = 256 * 1024;
 
 /** The reviewer command: `VIBE_REVIEW_CMD` (tests, custom clients), else the client CLI on PATH. The prompt goes to stdin, the reply is stdout. */
@@ -20,19 +21,31 @@ export function reviewerCommand(): string | null {
   return null;
 }
 
-function reviewerPrompt(lang: string, stage: string): string | null {
-  const file = path.join(packageRoot(), 'reviewers', lang, `${stage}.md`);
-  return fs.existsSync(file) ? fs.readFileSync(file, 'utf-8') : null;
-}
-
 function readOptional(root: string, file: string | undefined): string {
   if (!file) return '(not provided)';
   const full = path.resolve(root, file);
   return fs.existsSync(full) ? fs.readFileSync(full, 'utf-8') : `(missing file: ${file})`;
 }
 
-function bundle(instructions: string, contract: string, evidence: string, manuscript: string): string {
-  return `${instructions.trim()}\n\n---\n\n## Editorial contract\n\n${contract.trim()}\n\n## Evidence ledger\n\n${evidence.trim()}\n\n## Manuscript\n\n${manuscript}\n`;
+function bundle(instructions: string, contract: string, evidence: string, body: string, screenshot: string): string {
+  return `${instructions.trim()}\n\n---\n\n## Editorial contract\n\n${contract.trim()}\n\n## Evidence ledger\n\n${evidence.trim()}${screenshot}\n\n${body}\n`;
+}
+
+/** A text pack judges a manuscript; every other pack judges source, one file or a directory of them. */
+function artifact(check: ReviewCheck, root: string, pack: string): { section: string; body: string } {
+  if ((TEXT_PACKS as readonly string[]).includes(pack)) {
+    return { section: 'Manuscript', body: fs.readFileSync(path.resolve(root, check.path), 'utf-8') };
+  }
+  const collected = collectSource(root, check.path, MAX_SOURCE_CHARS);
+  return { section: 'Source', body: collected.text };
+}
+
+/** The pack: what the check names, else the text pack for `lang`, else the language of the text itself. */
+function choosePack(check: ReviewCheck, root: string): string | null {
+  if (check.pack) return check.pack;
+  if (check.lang) return check.lang;
+  const file = path.resolve(root, check.path);
+  return fs.statSync(file).isDirectory() ? null : detectLang(fs.readFileSync(file, 'utf-8'));
 }
 
 function ask(cmd: string, cwd: string, prompt: string, timeoutMs: number): Promise<{ reply: string; exit: number | null; killed: boolean }> {
@@ -60,37 +73,44 @@ function ask(cmd: string, cwd: string, prompt: string, timeoutMs: number): Promi
 }
 
 /**
- * `review` check — the harness itself runs the language pack's reviewers in order (copy editor,
- * then chief editor) and reads their verdict. A stage passes only when the whole trimmed reply is
- * exactly `PASS`; a REJECT list, a remark after PASS, an empty or killed reply all fail, with the
- * reply kept in `tail`. The manuscript is never edited here.
+ * `review` check — the harness itself runs the pack's reviewer stages in order and reads their
+ * verdict. A stage passes only when the whole trimmed reply is exactly `PASS`; a REJECT list, a
+ * remark after PASS, an empty or killed reply all fail, with the reply kept in `tail`. Nothing is
+ * edited here: the reviewers judge, the writer fixes.
  */
 export async function reviewCheck(check: ReviewCheck, root: string): Promise<CheckResult> {
   const started = Date.now();
   const fail = (reason: string, text = ''): CheckResult => ({ pass: false, exit: 1, ms: Date.now() - started, tail: tail(text), reason });
-  const file = path.resolve(root, check.path);
-  if (!fs.existsSync(file)) return fail(`manuscript missing: ${check.path}`);
-  const manuscript = fs.readFileSync(file, 'utf-8');
-  const lang = check.lang ?? detectLang(manuscript);
-  if (!lang) return fail(`language unknown — set lang: ko|en on the check`);
+  if (!fs.existsSync(path.resolve(root, check.path))) return fail(`artifact missing: ${check.path}`);
+  const pack = choosePack(check, root);
+  if (!pack) return fail('language unknown — set lang: ko|en or pack: <name> on the check');
+  const stages = packStages(pack);
+  if (stages.length === 0) return fail(`no reviewers/${pack} in this package`);
   const cmd = reviewerCommand();
   if (!cmd) return fail('no reviewer available — needs `claude` or `codex` on PATH, or VIBE_REVIEW_CMD');
+  let piece: { section: string; body: string };
+  try {
+    piece = artifact(check, root, pack);
+  } catch (error) {
+    return fail((error as Error).message);
+  }
   const contract = readOptional(root, check.contract);
   const evidence = readOptional(root, check.evidence);
+  const shot = check.screenshot ? `\n\n## Screenshot\n\n${path.resolve(root, check.screenshot)} — open this image with your file reader before judging.` : '';
   const timeoutMs = check.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const lines: string[] = [];
-  for (const stage of STAGES) {
-    const instructions = reviewerPrompt(lang, stage);
-    if (!instructions) return fail(`no ${lang} ${stage} in this package`);
-    const r = await ask(cmd, root, bundle(instructions, contract, evidence, manuscript), timeoutMs);
-    if (r.killed) return fail(`${stage}: killed after ${timeoutMs}ms`, lines.join('\n'));
+  for (const stage of stages) {
+    const instructions = fs.readFileSync(stage.file, 'utf-8');
+    const prompt = bundle(instructions, contract, evidence, `## ${piece.section}\n\n${piece.body}`, shot);
+    const r = await ask(cmd, root, prompt, timeoutMs);
+    if (r.killed) return fail(`${stage.name}: killed after ${timeoutMs}ms`, lines.join('\n'));
     const verdict = r.reply.trim();
     if (verdict === 'PASS') {
-      lines.push(`${lang} ${stage}: PASS`);
+      lines.push(`${pack} ${stage.name}: PASS`);
       continue;
     }
-    lines.push(`${lang} ${stage}: ${verdict === '' ? `no reply (exit ${r.exit})` : 'not PASS'}`, verdict);
-    return fail(`${stage} did not pass`, lines.join('\n'));
+    lines.push(`${pack} ${stage.name}: ${verdict === '' ? `no reply (exit ${r.exit})` : 'not PASS'}`, verdict);
+    return fail(`${stage.name} did not pass`, lines.join('\n'));
   }
   return { pass: true, exit: 0, ms: Date.now() - started, tail: lines.join('\n') };
 }
