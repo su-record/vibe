@@ -9,7 +9,7 @@
 #         Tests  2 passed | 4 skipped (6)
 #      Start at  18:06:38
 #      Duration  1.08s (transform 469ms, setup 0ms, import 552ms, tests 241ms, environment 0ms)
-- id: r-1-codex-plugin-never-followed-vibe-update-
+- id: r-3-codex-plugin-never-followed-update
   then: "[regression] Codex plugin never followed vibe update: codexRegistered
     read vibe's own tree and the marketplace entry name, never the version Codex
     held or where the entry pointed; vibe status printed the package version for

@@ -1,0 +1,11 @@
+# Regression check — installHookFile kept only the last notify entry per event, so a second PreToolUse matcher dropped the Bash one
+# Source scenario: tests
+- id: r-4-installhookfile-kept-only-last-entry
+  then: "[regression] installHookFile kept only the last notify entry per event,
+    so a second PreToolUse matcher dropped the Bash one — source tests: every
+    test passes"
+  check:
+    type: run
+    cmd: npx vitest run src/install/global.test.ts -t "replaced, not duplicated"
+    expect: 0
+    timeoutMs: 300000

@@ -16,7 +16,7 @@ export function reviewerCommand(): string | null {
   if (custom) return custom;
   const has = (name: string): boolean => spawnSync(name, ['--version'], { encoding: 'utf-8', timeout: 15_000, shell: process.platform === 'win32' }).status === 0;
   if (has('claude')) return 'claude -p --output-format text';
-  if (has('codex')) return 'codex exec -';
+  if (has('codex')) return 'codex exec --skip-git-repo-check -';
   return null;
 }
 

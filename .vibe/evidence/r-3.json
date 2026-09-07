@@ -1,48 +1,48 @@
 {
   "run": "r-3",
-  "at": "2026-09-04T09:44:49.931Z",
+  "at": "2026-09-06T05:30:34.344Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "9bff2d328697",
+  "scenarioSet": "9f3775b3f487",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 4409,
-      "tail": "npm notice run @su-record/vibe@4.1.8 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 5080,
+      "tail": "npm notice run @su-record/vibe@4.1.10 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 32585,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  26 passed (26)\n      Tests  122 passed (122)\n   Start at  09:44:50\n   Duration  31.88s (transform 1.46s, setup 0ms, import 3.12s, tests 39.67s, environment 4ms)"
+      "ms": 33007,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  28 passed (28)\n      Tests  134 passed (134)\n   Start at  05:30:35\n   Duration  32.24s (transform 1.33s, setup 0ms, import 3.21s, tests 40.75s, environment 11ms)"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 93,
-      "tail": "card.md 873 bytes (limit 1024)"
+      "ms": 53,
+      "tail": "card.md 1010 bytes (limit 1024)"
     },
     {
       "id": "file-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 370,
-      "tail": "53 files · 5613 lines · largest src/core/skills.ts (329) · limits file 400 · function 50\n  every file and function within limits"
+      "ms": 366,
+      "tail": "54 files · 5802 lines · largest src/core/skills.ts (329) · limits file 400 · function 50\n  every file and function within limits"
     },
     {
       "id": "skills-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 9,
+      "ms": 10,
       "tail": ""
     },
     {
@@ -50,8 +50,16 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 55,
+      "ms": 74,
       "tail": "8 skills: names conform, references resolve, none tracked under .claude/skills or .codex/skills"
+    },
+    {
+      "id": "language-pack",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 44,
+      "tail": "2 language pack(s): antislop-en (324 lines), antislop-ko (320 lines) — reviewers and agents in step"
     },
     {
       "id": "plugin-tree",
@@ -62,68 +70,52 @@
       "tail": "plugin tree matches package.json"
     },
     {
-      "id": "legacy-sweep",
+      "id": "read-ask",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1246,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 10 skipped (11)\n   Start at  09:45:23\n   Duration  435ms (transform 205ms, setup 0ms, import 256ms, tests 20ms, environment 0ms)"
+      "ms": 391,
+      "tail": "[vibe read] 2 file(s) · 2710 chars in · reader: node checks/fake-reader.js · 60 chars out · 77ms"
     },
     {
-      "id": "project-root",
+      "id": "read-ask-live",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1842,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  09:45:25\n   Duration  465ms (transform 79ms, setup 0ms, import 103ms, tests 15ms, environment 0ms)"
+      "ms": 6253,
+      "tail": "[vibe read] 1 file(s) · 735 chars in · reader: claude -p --output-format text --model haiku · 22 chars out · 5863ms"
     },
     {
-      "id": "plugin-store",
+      "id": "read-no-reader",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1733,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 4 skipped (5)\n   Start at  09:45:24\n   Duration  507ms (transform 136ms, setup 0ms, import 174ms, tests 19ms, environment 0ms)"
+      "ms": 1634,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 6 skipped (7)\n   Start at  05:31:08\n   Duration  569ms (transform 239ms, setup 0ms, import 302ms, tests 18ms, environment 0ms)"
     },
     {
-      "id": "root-visible",
+      "id": "read-advice",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 4188,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 12 skipped (13)\n   Start at  09:45:25\n   Duration  2.54s (transform 201ms, setup 0ms, import 244ms, tests 2.04s, environment 0ms)"
+      "ms": 249,
+      "tail": "read-advice: long file advised, short file silent"
     },
     {
-      "id": "review-check",
+      "id": "help-line",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2327,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  09:45:25\n   Duration  678ms (transform 100ms, setup 0ms, import 134ms, tests 318ms, environment 0ms)"
+      "ms": 151,
+      "tail": ""
     },
     {
-      "id": "lang-detect",
+      "id": "readme-status",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1124,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  3 passed (3)\n   Start at  09:45:28\n   Duration  243ms (transform 40ms, setup 0ms, import 68ms, tests 7ms, environment 0ms)"
-    },
-    {
-      "id": "language-pack",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 41,
-      "tail": "2 language pack(s): antislop-en (324 lines), antislop-ko (320 lines) — reviewers and agents in step"
-    },
-    {
-      "id": "pack-installed",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 1296,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 10 skipped (11)\n   Start at  09:45:28\n   Duration  483ms (transform 220ms, setup 0ms, import 277ms, tests 35ms, environment 0ms)"
+      "ms": 5,
+      "tail": ""
     }
   ]
 }

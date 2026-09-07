@@ -6,6 +6,7 @@ import { usage } from '../core/errors.js';
 import { abandon, approve, draft, intentPath, loadScenarios } from '../core/intent.js';
 import { vibePath } from '../core/paths.js';
 import { profileFile } from '../core/profile.js';
+import { askReader } from '../core/reader.js';
 import { measureSize } from '../core/size.js';
 import { listRegressions } from '../core/regress.js';
 import { graphMermaid } from '../core/scenarios.js';
@@ -34,15 +35,25 @@ export function cmdState(root: string, flags: Flags): Output {
   return { json: view, text: lines.join('\n'), code: 0 };
 }
 
-export function cmdRead(root: string, file: string | undefined, flags: Flags): Output {
-  if (!file) throw usage('read <file.xlsx|docx|pptx|pdf|csv|…> [--sheet name] [--pages A-B]');
+export async function cmdRead(root: string, files: string[], flags: Flags): Promise<Output> {
+  if (files.length === 0) throw usage('read <file…> [--sheet name] [--pages A-B] [--ask "question"]');
   const options: Parameters<typeof readDocument>[2] = {};
   const sheet = flagString(flags, 'sheet');
   const pages = flagString(flags, 'pages');
   if (sheet) options.sheet = sheet;
   if (pages) options.pages = pages;
-  const d = readDocument(root, file, options);
-  return { json: d, text: `${d.file} · ${d.format} · read by ${d.method} · ${d.sections.length} section(s)${d.truncated ? ' · truncated' : ''}\n\n${d.text}`, code: 0 };
+  const ask = flagString(flags, 'ask');
+  if (ask !== undefined || flags['ask'] === true) {
+    const r = await askReader(root, files, ask ?? '', options);
+    const u = r.usage;
+    const session = r.session.id ? `session ${r.session.resumed ? 'resumed' : 'new'}` : 'no session';
+    const cache = u ? `cache read ${u.cacheRead.toLocaleString('en-US')} · write ${u.cacheWrite.toLocaleString('en-US')} · input ${u.input.toLocaleString('en-US')}` : `${r.reply.length} chars out`;
+    if (flags['json'] !== true) process.stderr.write(`[vibe read] ${r.files.length} file(s) · ${r.chars.toLocaleString('en-US')} chars · ${r.reader} · ${session} · ${cache} · ${(r.ms / 1000).toFixed(1)}s\n`);
+    return { json: r, text: r.reply, code: 0 };
+  }
+  const docs = files.map((file) => readDocument(root, file, options));
+  const text = docs.map((d) => `${d.file} · ${d.format} · read by ${d.method} · ${d.sections.length} section(s)${d.truncated ? ' · truncated' : ''}\n\n${d.text}`).join('\n\n');
+  return { json: docs.length === 1 ? docs[0] : docs, text, code: 0 };
 }
 
 export function cmdSize(root: string, args: string[], flags: Flags): Output {

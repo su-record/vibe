@@ -23,6 +23,7 @@ function wantedHooks(): Array<[string, string, string]> {
   return [
     ['PostToolUse', 'Edit|Write|MultiEdit|NotebookEdit', notifyCommand('post')],
     ['PreToolUse', 'Bash', notifyCommand('pre')],
+    ['PreToolUse', 'Read', notifyCommand('pre')],
   ];
 }
 
@@ -30,14 +31,12 @@ function isNotify(entry: HookEntry): boolean {
   return entry.hooks.some((h) => h.command.includes(NOTIFY_MARK));
 }
 
-/** Notification hook — it never judges. Other hooks in the file are left alone; a notify entry from another install path is replaced. */
+/** Notification hook — it never judges. Other hooks in the file are left alone; notify entries from another install path are replaced. */
 export function installHookFile(file: string): 'added' | 'unchanged' {
   const settings = readJson<Settings>(file) ?? {};
-  const hooks: Record<string, HookEntry[]> = { ...settings.hooks };
-  for (const [event, matcher, command] of wantedHooks()) {
-    const kept = (hooks[event] ?? []).filter((entry) => !isNotify(entry));
-    hooks[event] = [...kept, { matcher, hooks: [{ type: 'command', command, timeout: 20 }] }];
-  }
+  const hooks: Record<string, HookEntry[]> = {};
+  for (const [event, list] of Object.entries(settings.hooks ?? {})) hooks[event] = list.filter((entry) => !isNotify(entry));
+  for (const [event, matcher, command] of wantedHooks()) hooks[event] = [...(hooks[event] ?? []), { matcher, hooks: [{ type: 'command', command, timeout: 20 }] }];
   const next = { ...settings, hooks };
   if (JSON.stringify(next) === JSON.stringify(settings)) return 'unchanged';
   writeJson(file, next);

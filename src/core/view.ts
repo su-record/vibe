@@ -2,7 +2,7 @@ import { invalidateDoneIfEdited, readResults, type LastResult } from './check.js
 import { openQuestions } from './inbox.js';
 import { hasIntent, intentPath, loadScenarios } from './intent.js';
 import { readLedger } from './ledger.js';
-import { listRegressions } from './regress.js';
+import { listRegressions, regressionProblems } from './regress.js';
 import { isHuman } from './scenarios.js';
 import { suggestSkills, type Proposal } from './skills.js';
 import { readState, stageOf, type Stage, type State } from './state.js';
@@ -70,6 +70,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   });
   const lastEvent = readLedger(root).at(-1);
   const intent = hasIntent(root) ? { title: intentTitle(root), hash: state.intentHash, approvedAt: state.approvedAt } : null;
+  notices.push(...regressionProblems(root));
   if (state.state === 'STUCK') notices.push('STUCK — the same failure twice in a row; the inbox question needs an answer');
   if (scenarios.some(isHuman) && state.state === 'DONE') notices.push('human items are not gates — a confirmation was requested in the inbox');
   return {

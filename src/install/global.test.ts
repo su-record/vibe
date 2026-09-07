@@ -59,8 +59,8 @@ describe('global surfaces — one copy per client home', () => {
     fs.writeFileSync(path.join(home, '.claude', 'settings.json'), JSON.stringify({ hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'node "/old/vibe/hooks/notify.js" pre' }] }] } }));
     setupGlobal(home);
     const settings = JSON.parse(fs.readFileSync(path.join(home, '.claude', 'settings.json'), 'utf-8')) as { hooks: Record<string, Array<{ hooks: Array<{ command: string }> }>> };
-    expect(settings.hooks['PreToolUse']).toHaveLength(1);
-    expect(settings.hooks['PreToolUse']?.[0]?.hooks[0]?.command).not.toContain('/old/');
+    expect(settings.hooks['PreToolUse']?.map((e) => (e as { matcher?: string }).matcher)).toEqual(['Bash', 'Read']); // one entry per matcher, the old path gone
+    expect(settings.hooks['PreToolUse']?.every((e) => !e.hooks[0]?.command.includes('/old/'))).toBe(true);
   });
 
   it('ensureGlobal repairs a stale skill and a missing card, and is a no-op when everything is current', () => {
