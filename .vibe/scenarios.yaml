@@ -7,6 +7,20 @@
   then: every test passes
   check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
 
+- id: entry-guard
+  needs: [build]
+  given: a file URL with a percent-encoded space, its decoded path, and a symlink to the file
+  when: the guard's comparison runs
+  then: the URL matches its own path and the symlink, and does not match another file; the built CLI still answers --version through a symlink
+  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t 'symlink|guard'", expect: 0, timeoutMs: 120000 }
+
+- id: win-quoting
+  needs: [build]
+  given: an empty argument, a spaced one, one with a double quote, and a plain one
+  when: the Windows shell quoting runs
+  then: the first three are quoted for cmd.exe and the plain one is unchanged; the reader driver's argument list is quoted only on win32
+  check: { type: run, cmd: "npx vitest run src/core/reader.test.ts -t 'quoting'", expect: 0, timeoutMs: 120000 }
+
 - id: card-size
   then: the always-on card is at most 1024 bytes
   check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
@@ -15,17 +29,6 @@
   needs: [build]
   then: no source file over 400 lines and no function over 50, judged by vibe size itself
   check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
-
-- id: research-window
-  needs: [build]
-  given: a fixture client with a repository released 12 days ago, a higher-scored one last touched four months ago, and one whose releases request fails
-  when: research runs with the default window and with --days 7
-  then: in-window activity ranks first whatever the score, nothing is dropped, the why lines say what moved, the failed releases request falls back to the last commit, and the cache key follows the window
-  check: { type: run, cmd: "npx vitest run src/core/research.test.ts -t 'window'", expect: 0, timeoutMs: 120000 }
-
-- id: skills-size
-  then: the six common skills are at most 300 lines in total and vibe-scope names the research window
-  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q 'last 30 days' skills/vibe-scope/SKILL.md", expect: 0 }
 
 - id: skill-names
   then: every common skill name is spec-conformant and equals its directory
@@ -49,9 +52,9 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.18
-  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.18\"' .codex-plugin/plugin.json", expect: 0 }
+  then: the committed manifests match package.json 4.1.19
+  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.19\"' .codex-plugin/plugin.json", expect: 0 }
 
 - id: readme-status
-  then: the README names --days and the status line carries a 4.1.18 entry
-  check: { type: run, cmd: "grep -q '`4.1.18`' README.md && grep -q -- '--days' README.md", expect: 0 }
+  then: the README status line carries a 4.1.19 entry
+  check: { type: run, cmd: "grep -q '`4.1.19`' README.md", expect: 0 }

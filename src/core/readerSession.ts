@@ -64,6 +64,20 @@ export function saveSession(key: string, entry: SessionEntry, home?: string, now
   writeJson(sessionsFile(home), kept);
 }
 
+/**
+ * Windows spawns a `.cmd` shim through the shell, and Node joins the arguments with spaces without
+ * quoting — an empty argument vanishes and `--tools` would swallow the next flag. Quote for cmd.exe
+ * whatever is empty or holds a space, a quote or a metacharacter; leave plain words alone.
+ */
+export function winQuote(arg: string): string {
+  if (arg !== '' && !/[\s"&|<>^%()]/.test(arg)) return arg;
+  return `"${arg.replace(/"/g, '\\"')}"`;
+}
+
+export function shellArgs(args: string[], platform: string = process.platform): string[] {
+  return platform === 'win32' ? args.map(winQuote) : args;
+}
+
 export function hasCli(name: string): boolean {
   return spawnSync(name, ['--version'], { encoding: 'utf-8', timeout: 15_000, shell: process.platform === 'win32' }).status === 0;
 }
@@ -81,7 +95,7 @@ export function spawnReader(cmd: string, args: string[] | null, stdin: string, c
     delete env['CLAUDECODE']; // a nested client CLI must not think it is inside itself
     const child = args === null
       ? spawn(cmd, { cwd, shell: true, env, stdio: ['pipe', 'pipe', 'pipe'] })
-      : spawn(cmd, args, { cwd, shell: process.platform === 'win32', env, stdio: ['pipe', 'pipe', 'pipe'] });
+      : spawn(cmd, shellArgs(args), { cwd, shell: process.platform === 'win32', env, stdio: ['pipe', 'pipe', 'pipe'] });
     let out = '';
     let killed = false;
     child.stdout.on('data', (chunk: Buffer) => {

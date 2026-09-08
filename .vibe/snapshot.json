@@ -1,13 +1,11 @@
 {
-  ".claude-plugin/marketplace.json": "5e562985e15cad17b0e75f194134d0ec43043140",
-  ".claude-plugin/plugin.json": "3419de14308114f050f4081602d13f9073cc589c",
-  ".codex-plugin/plugin.json": "a78c8e20577db39c9a3e17f11b9f8321312fe48f",
-  "README.md": "aa026c9edaa9f9b47f2b78f2c3fb88da2210ff9e",
-  "package.json": "3d1041b67dbc90e860ad9660d160b642b75c0020",
-  "skills/vibe-scope/SKILL.md": "9079e226cbe92acda50d9c206508c3216d99a286",
-  "src/cli/common.ts": "096c41f2d9666d9c2a6cc63df5577cfde5fca1f6",
-  "src/cli/memory.ts": "61254e9649c9ce4693684fb09fcbe8ec585926b4",
-  "src/core/research.test.ts": "19016d333be4c3413f933558f81cd5255359d309",
-  "src/core/research.ts": "a983f352f0ee2acc4213b53f372e7e019c59f452",
-  "src/core/recent.ts": "a8f8241ba8637990dc4d30b66a38558480ef2458"
+  ".claude-plugin/marketplace.json": "0bc64b37ed8569fb43bca9b443333f4733c63361",
+  ".claude-plugin/plugin.json": "bd3eacf85da4254516c61a3048f6f96b9540f394",
+  ".codex-plugin/plugin.json": "8b51256b9e88bdac91bc090edbd061596e30624f",
+  "README.md": "c753d14a553028c0a5ced48860aee95fddcae32c",
+  "package.json": "554a3c9ea8b503acc58a8fffc0cf5f497744be1e",
+  "src/cli.test.ts": "2ad6d4ca827ad476fae5f7142a1bdaf480c2eeb9",
+  "src/cli.ts": "d67652293c6517c0d730dfc4e152750cb3f4da34",
+  "src/core/reader.test.ts": "c557a6fe0340de8782d1801c32fb34aed47bd47b",
+  "src/core/readerSession.ts": "f3e61c8a827dbaa7cd0e19879ccce195afe9feb4"
 }

@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -312,6 +313,22 @@ describe('skills — from proposal to installed, through the CLI', () => {
 });
 
 describe('installed binary', () => {
+  it('guard: the file URL matches its own path and a symlink to it, a percent-encoded space included, and not another file', async () => {
+    const { sameFile } = await import('./cli.js');
+    const dir = path.join(root, 'with space');
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, 'cli.js');
+    fs.writeFileSync(file, '');
+    fs.writeFileSync(path.join(dir, 'other.js'), '');
+    fs.symlinkSync(file, path.join(root, 'vibe-link'));
+    const url = pathToFileURL(file).href;
+    expect(url).toContain('%20');
+    expect(sameFile(file, url)).toBe(true);
+    expect(sameFile(path.join(root, 'vibe-link'), url)).toBe(true);
+    expect(sameFile(path.join(dir, 'other.js'), url)).toBe(false);
+    expect(sameFile(undefined, url)).toBe(false);
+  });
+
   it('symlink: runs when invoked through a bin symlink, the way a global install calls it', () => {
     const dist = path.join(here, '..', 'dist', 'cli.js');
     if (!fs.existsSync(dist)) throw new Error('build first — this test runs the built CLI through a symlink');

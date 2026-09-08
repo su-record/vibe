@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { askReader, bundleFiles, numberLines, READER_MAX_CHARS, readerCommand, readerPrompt } from './reader.js';
-import { SESSION_TTL_MS } from './readerSession.js';
+import { claudeArgs, READER_DRIVER, SESSION_TTL_MS, shellArgs, winQuote } from './readerSession.js';
 
 let root: string;
 let home: string;
@@ -195,5 +195,20 @@ describe('vibe read --ask — the harness reads for the model', () => {
     fs.rmSync(path.join(root, '.vibe', 'config.json'));
     const plain = await askReader(root, ['a.ts'], 'q', { home, now: now + 4000 });
     expect(plain.reader).toBe('codex default/low'); // unset keeps the defaults
+  });
+
+  it('quoting: an empty, a spaced and a quoted argument are quoted for cmd.exe, a plain one is not, and only win32 quotes', () => {
+    expect(winQuote('')).toBe('""');
+    expect(winQuote('a b')).toBe('"a b"');
+    expect(winQuote('say "hi"')).toBe('"say \\"hi\\""');
+    expect(winQuote('--tools')).toBe('--tools');
+    const args = claudeArgs('You are a reader.', null, READER_DRIVER);
+    expect(args).toContain(''); // --tools '' and --setting-sources ''
+    expect(shellArgs(args, 'linux')).toEqual(args);
+    const win = shellArgs(args, 'win32');
+    expect(win[win.indexOf('--tools') + 1]).toBe('""');
+    expect(win[win.indexOf('--setting-sources') + 1]).toBe('""');
+    expect(win[win.indexOf('--system-prompt') + 1]).toBe('"You are a reader."');
+    expect(win).toContain('--disable-slash-commands');
   });
 });
