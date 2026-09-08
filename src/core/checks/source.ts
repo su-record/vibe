@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { relPosix } from '../paths.js';
 import { usage } from '../errors.js';
 
 /** Files a pack reads: design takes the markup, styles, components and vector art; code takes the languages a maintainer reads. */
@@ -61,7 +62,7 @@ export function renderSource(root: string, files: string[], maxChars: number, ro
   let chars = 0;
   const listed: string[] = [];
   for (const file of files) {
-    const rel = path.relative(root, file);
+    const rel = relPosix(root, file);
     const body = numberLines(fs.readFileSync(file, 'utf-8'));
     chars += body.length;
     if (chars > maxChars) break;

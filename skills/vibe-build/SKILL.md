@@ -9,8 +9,8 @@ user-invocable: false
 ## Procedure
 
 1. Take scenarios in the order of `remaining` from `vibe state --json` — parents before their `needs` dependents (`vibe state --graph` shows the edges). Put scenarios marked `irreversible` last.
-   - Scenarios with no edge between them may be built by parallel agents, each in its own worktree, merged before `vibe check --all`. Never two agents in one working tree.
-2. Build only what that scenario needs — code, a script, a document, configuration, whatever. Make sure the check itself (`check.cmd`, `check.path`) can actually run.
+   - Scenarios with no edge between them may be built by parallel agents, each in its own worktree, merged before `vibe check --all`. Never two agents in one working tree. Batch scenarios of one shape into one dispatch; never a nested subagent (a reviewer's reviewer counts for nothing). Hand artifacts to an agent as files, never pasted. When the context is nearly full, start a new session from `.vibe/` instead of compacting.
+2. Read `vibe context {id}` first — the files and symbols the check touches, the decisions and regressions that touched them, the conventions — then build only what that scenario needs. Make sure the check itself (`check.cmd`, `check.path`) can actually run.
    - Orientation reads ("what does this module do", "where is X handled") go through `vibe read <files> --ask "<question>"` — a low-reasoning model reads and answers with line numbers; read the file yourself only to edit or debug it.
 3. Run `vibe check {id} --json`.
    - Pass (`code 0`): next scenario.

@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { askReader, bundleFiles, numberLines, READER_MAX_CHARS, readerCommand, readerPrompt } from './reader.js';
-import { claudeArgs, READER_DRIVER, SESSION_TTL_MS, shellArgs, winQuote } from './readerSession.js';
+import { claudeArgs, READER_DRIVER, SESSION_TTL_MS, shellArgs, systemPromptArgs, winQuote } from './readerSession.js';
 
 let root: string;
 let home: string;
@@ -210,5 +210,11 @@ describe('vibe read --ask — the harness reads for the model', () => {
     expect(win[win.indexOf('--setting-sources') + 1]).toBe('""');
     expect(win[win.indexOf('--system-prompt') + 1]).toBe('"You are a reader."');
     expect(win).toContain('--disable-slash-commands');
+    // on Windows a multi-line prompt cannot travel as an argument: it goes through a file
+    const onWin = claudeArgs('line one\nline two', null, READER_DRIVER, 'win32');
+    expect(onWin).not.toContain('--system-prompt');
+    const file = onWin[onWin.indexOf('--system-prompt-file') + 1]!;
+    expect(fs.readFileSync(file, 'utf-8')).toBe('line one\nline two');
+    expect(systemPromptArgs('x', 'linux')).toEqual(['--system-prompt', 'x']);
   });
 });

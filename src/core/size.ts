@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { relPosix } from './paths.js';
 
 /**
  * `vibe size` — a built-in check any project can bind to a scenario: no file over N lines, no
@@ -26,22 +27,25 @@ export interface SizeReport {
   findings: SizeFinding[];
 }
 
-const SOURCE = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|java|kt|rs|swift|rb|cs|php)$/;
-const DEFAULT_EXCLUDE = /(^|\/)(node_modules|dist|build|out|\.git|\.vibe|vendor|coverage)(\/|$)|\.(test|spec)\.[jt]sx?$|_test\.(go|py)$/;
-const BRACE_HEADER = /^\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function\s*\*?\s*([A-Za-z_$][\w$]*)|(?:public|private|protected|static|override|final|\s)*\s*(?:func|fn)\s+(?:\([^)]*\)\s*)?([A-Za-z_$][\w$]*)|(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*(?::[^=]+)?=>\s*\{\s*$|(?:public|private|protected|static|async|override|\s)*\s*([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?::\s*[^{]+)?\{\s*$)/;
-const INDENT_HEADER = /^(\s*)(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(/;
+export const SOURCE = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|java|kt|rs|swift|rb|cs|php)$/;
+export const DEFAULT_EXCLUDE = /(^|\/)(node_modules|dist|build|out|\.git|\.vibe|vendor|coverage)(\/|$)|\.(test|spec)\.[jt]sx?$|_test\.(go|py)$/;
+/** A function-like header for the brace languages: a named function, `func`/`fn` with an optional receiver, an arrow assigned to a binding, or a bare `name(...) {` method. */
+export const BRACE_HEADER = /^\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function\s*\*?\s*([A-Za-z_$][\w$]*)|(?:public|private|protected|static|override|final|\s)*\s*(?:func|fn)\s+(?:\([^)]*\)\s*)?([A-Za-z_$][\w$]*)|(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*(?::[^=]+)?=>\s*\{\s*$|(?:public|private|protected|static|async|override|\s)*\s*([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?::\s*[^{]+)?\{\s*$)/;
+/** A Python `def`, indentation-delimited. */
+export const INDENT_HEADER = /^(\s*)(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(/;
 
-function walk(dir: string, exclude: RegExp, into: string[]): void {
+/** Every source file under `dir`, skipping `exclude`. */
+export function walk(dir: string, exclude: RegExp, into: string[]): void {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (exclude.test(full)) continue;
+    if (exclude.test(full.split(path.sep).join('/'))) continue; // the exclude pattern is written with `/`; Windows walks with `\\`
     if (entry.isDirectory()) walk(full, exclude, into);
     else if (SOURCE.test(entry.name)) into.push(full);
   }
 }
 
 /** Lexer state that survives line breaks: open quotes and `${…}` expressions inside template literals. */
-interface BraceState {
+export interface BraceState {
   stack: Array<'"' | "'" | '`' | 'expr'>;
   exprDepth: number[];
 }
@@ -93,7 +97,7 @@ function skipRegex(line: string, i: number): number {
 }
 
 /** Net `{` minus `}` on one line outside strings, template literals, regex literals and comments; `${…}` inside a template is code again. */
-function braceDelta(line: string, st: BraceState): number {
+export function braceDelta(line: string, st: BraceState): number {
   let depth = 0;
   for (let i = 0; i < line.length; i += 1) {
     const ch = line[i]!;
@@ -175,7 +179,7 @@ export function measureSize(root: string, paths: string[], options: SizeOptions)
   let totalLines = 0;
   let largest: SizeReport['largestFile'] = null;
   for (const file of files) {
-    const rel = path.relative(root, file);
+    const rel = relPosix(root, file);
     const lines = fs.readFileSync(file, 'utf-8').split('\n');
     totalLines += lines.length;
     if (!largest || lines.length > largest.lines) largest = { file: rel, lines: lines.length };

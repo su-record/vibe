@@ -1,0 +1,3 @@
+- id: test
+  then: settle.test.cjs passes against the fixed settle.cjs
+  check: { type: run, cmd: "node --test settle.test.cjs", expect: 0, timeoutMs: 30000 }

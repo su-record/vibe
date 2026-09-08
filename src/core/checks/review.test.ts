@@ -184,6 +184,25 @@ describe('review check — the harness runs the reviewers and reads only PASS', 
     expect(prompts).not.toContain('<file path="ui/page.html"'); // page.html does not import the stylesheet
   });
 
+  it('blast: a changed function and a caller reached through an import open the bundle with changed and affected symbols, the caller listed as a dependent', async () => {
+    const { execFileSync } = await import('node:child_process');
+    const g = (...args: string[]): string => execFileSync('git', ['-C', root, ...args], { encoding: 'utf-8', env: { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' } });
+    fs.mkdirSync(path.join(root, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'src', 'base.ts'), ['export function core(): number {', '  return 1;', '}', ''].join('\n'));
+    fs.writeFileSync(path.join(root, 'src', 'mid.ts'), ["import { core } from './base.js';", '', 'export function wrap(): number {', '  return core();', '}', ''].join('\n'));
+    g('init', '-q');
+    g('add', '.');
+    g('commit', '-q', '-m', 'base');
+    fs.writeFileSync(path.join(root, 'src', 'base.ts'), ['export function core(): number {', '  return 2;', '}', ''].join('\n'));
+    fakeReviewer(['PASS', 'PASS']);
+    const r = await reviewCheck({ type: 'review', pack: 'code', path: 'src', changed: true }, root);
+    expect(r.pass).toBe(true);
+    const prompts = fs.readFileSync(path.join(root, 'prompts.log'), 'utf-8');
+    expect(prompts).toContain('Changed symbols: core');
+    expect(prompts).toContain('Affected symbols: src/mid.ts');
+    expect(prompts).toContain('<file path="src/mid.ts" role="dependent">');
+  });
+
   it('model: the project config sets the reviewer model and effort; the env wins; unset keeps the client default', async () => {
     const log = fakeCli('claude');
     process.env['VIBE_REVIEW_CLIENT'] = 'claude';

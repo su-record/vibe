@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Notification hook — it never judges. Always exits 0.
+ * Notification hook — it never judges the work; it gates one thing: an irreversible command without a token.
  *
  *   post  PostToolUse(Edit|Write): runs `vibe state --json` and tells the model about a voided DONE or open inbox items.
- *   pre   PreToolUse(Bash): warns on stderr when an irreversible command has no recent authorize record.
+ *   pre   PreToolUse(Bash): an irreversible command with no recent authorize record is blocked (exit 2) under the
+ *         strict and irreversible token policies, and only warned about under off.
  *         PreToolUse(Read): when the file is over READ_ADVISE_LINES, tells the model that `vibe read <file> --ask`
  *         lets a low-reasoning model read it — advice only, the read goes ahead.
  *
@@ -72,12 +73,15 @@ function recentAuthorize(action) {
 
 if (!fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
 
-function tokensOff() {
+function tokenPolicy() {
   try {
-    return JSON.parse(fs.readFileSync(path.join(root, '.vibe', 'config.json'), 'utf-8')).tokens === 'off';
+    return JSON.parse(fs.readFileSync(path.join(root, '.vibe', 'config.json'), 'utf-8')).tokens || 'irreversible';
   } catch {
-    return false;
+    return 'irreversible';
   }
+}
+function tokensOff() {
+  return tokenPolicy() === 'off';
 }
 
 const READ_ADVISE_LINES = Number(process.env.VIBE_READ_ADVISE_LINES || 400);
@@ -96,7 +100,7 @@ function adviseRead(payload) {
   if (!file) return;
   const lines = countLines(path.resolve(root, file));
   if (lines <= READ_ADVISE_LINES) return;
-  const shown = path.isAbsolute(file) ? path.relative(root, file) || file : file;
+  const shown = (path.isAbsolute(file) ? path.relative(root, file) || file : file).split(path.sep).join('/');
   emitContext(`[vibe] ${shown} is ${lines} lines — when it only has to be understood, not edited or debugged, \`vibe read ${shown} --ask "<question>"\` lets a low-reasoning model read it and returns the answer with line numbers`);
 }
 
@@ -106,12 +110,13 @@ if (mode === 'pre') {
     adviseRead(payload);
     process.exit(0);
   }
-  if (tokensOff()) process.exit(0);
   const command = String((payload.tool_input && payload.tool_input.command) || '');
+  // Under strict and irreversible the gate blocks (exit 2 stops the tool call in Claude Code); under off it only warns.
   for (const [action, re] of IRREVERSIBLE) {
     if (re.test(command) && !recentAuthorize(action)) {
-      process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first\n`);
-      break;
+      const blocking = tokenPolicy() !== 'off';
+      process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — ${blocking ? 'blocked: ' : ''}get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first\n`);
+      process.exit(blocking ? 2 : 0);
     }
   }
   process.exit(0);

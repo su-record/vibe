@@ -87,4 +87,43 @@ describe('ledger and comparison — the code says "cannot tell"', () => {
     expect(armA?.range?.max).toBeCloseTo(0.11, 5); // r-3 carries the 0.01 of the review stage
     expect(c.arms.find((a) => a.arm === 'b')?.range?.max).toBeCloseTo(0.1, 5);
   });
+
+  it('paired: keeps only runs that pair with a passing run in the other arm, on the same task', () => {
+    const file = path.join(root, 'bench.jsonl');
+    const line = (harness: string, i: number, ms: number, extra: Partial<Parameters<typeof record>[1]> = {}) =>
+      `${JSON.stringify({ at: new Date().toISOString(), event: 'check', client: 'claude-code', model: null, harness, run: `r-${i}`, scenarioSet: 's', task: 't', pair: `t#${i}`, passed: 5, failed: 0, ms, ...extra })}\n`;
+    for (let i = 0; i < 3; i += 1) {
+      fs.appendFileSync(file, line('on', i, 1000 + i));
+      fs.appendFileSync(file, line('off', i, 2000 + i));
+    }
+    fs.appendFileSync(file, line('on', 3, 9999)); // unpaired — no "off" run at index 3
+    fs.appendFileSync(file, line('on', 4, 1500)); // pairs, but the other side failed — excluded too
+    fs.appendFileSync(file, line('off', 4, 2500, { passed: 4, failed: 1 }));
+
+    const unpaired = compare(root, 'harness', 'ms', 2, file);
+    expect(unpaired.arms.find((a) => a.arm === 'on')?.runs).toBe(5);
+
+    const c = compare(root, 'harness', 'ms', 2, file, true);
+    expect(c.arms.find((a) => a.arm === 'on')?.runs).toBe(3);
+    expect(c.arms.find((a) => a.arm === 'off')?.runs).toBe(3);
+    expect(c.verdict).toBe('difference-observed');
+
+    // a ledger without a `pair` field falls back to task + order within each arm
+    const legacy = path.join(root, 'legacy.jsonl');
+    const legacyLine = (harness: string, i: number, ms: number) =>
+      `${JSON.stringify({ at: new Date().toISOString(), event: 'check', client: 'claude-code', model: null, harness, run: `r-${i}`, scenarioSet: 's', task: 'legacy', passed: 5, failed: 0, ms })}\n`;
+    for (let i = 0; i < 3; i += 1) {
+      fs.appendFileSync(legacy, legacyLine('on', i, 100 + i));
+      fs.appendFileSync(legacy, legacyLine('off', i, 200 + i));
+    }
+    expect(compare(root, 'harness', 'ms', 2, legacy, true).arms.map((a) => a.runs)).toEqual([3, 3]);
+  });
+
+  it('recomputed: costMismatch counts a run whose recomputed cost differs from the reported cost by more than 3x', () => {
+    for (let i = 0; i < 5; i += 1) record(root, { event: 'check', client: 'claude-code', model: null, run: `r-${i}`, scenarioSet: 'set-a', passed: 3, failed: 0, costUsd: 0.1, costRecomputed: i === 0 ? 0.5 : 0.11 });
+    for (let i = 0; i < 5; i += 1) record(root, { event: 'check', client: 'codex', model: null, run: `r-${i}`, scenarioSet: 'set-a', passed: 3, failed: 0, costUsd: 0.1, costRecomputed: 0.1 });
+    const c = compare(root, 'client', 'checks');
+    expect(c.arms.find((a) => a.arm === 'claude-code')?.costMismatch).toBe(1);
+    expect(c.arms.find((a) => a.arm === 'codex')?.costMismatch).toBe(0);
+  });
 });

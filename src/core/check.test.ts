@@ -55,8 +55,14 @@ describe('check — the only verdict path', () => {
     expect(readState(root).state).toBe('RUNNING');
   });
 
+  const failing = (word: string, code: number): string => {
+    const file = path.join(root, `${word}.cjs`);
+    fs.writeFileSync(file, `process.stdout.write('${word}'); process.exit(${code});`);
+    return `node ${word}.cjs`;
+  };
+
   it('a failure keeps exit and output tail and is not DONE', async () => {
-    approved(`- { id: bad, then: x, check: { type: run, cmd: "echo boom; exit 3" } }`);
+    approved(`- { id: bad, then: x, check: { type: run, cmd: "${failing('boom', 3)}" } }`);
     const report = await runChecks(root);
     expect(report.state).toBe('RUNNING');
     expect(report.outcomes[0]).toMatchObject({ id: 'bad', status: 'fail', exit: 3, tail: 'boom' });
@@ -64,14 +70,14 @@ describe('check — the only verdict path', () => {
   });
 
   it('the same failure twice in a row is STUCK and leaves an inbox question', async () => {
-    approved(`- { id: bad, then: x, check: { type: run, cmd: "echo same; exit 1" } }`);
+    approved(`- { id: bad, then: x, check: { type: run, cmd: "${failing('same', 1)}" } }`);
     await runChecks(root);
     const second = await runChecks(root);
     expect(second.stuck).toBe(true);
     expect(readState(root).state).toBe('STUCK');
     expect(openQuestions(root).some((q) => q.question.startsWith('STUCK'))).toBe(true);
     // a different failure breaks the streak
-    fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), `- { id: bad, then: x, check: { type: run, cmd: "echo other; exit 2" } }\n`);
+    fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), `- { id: bad, then: x, check: { type: run, cmd: "${failing('other', 2)}" } }\n`);
     const third = await runChecks(root);
     expect(third.stuck).toBe(false);
     expect(readState(root).state).toBe('RUNNING');

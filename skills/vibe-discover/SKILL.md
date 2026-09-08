@@ -8,6 +8,8 @@ user-invocable: false
 
 ## Procedure
 
+Order the questions by impact: scope first, then security and privacy, then the reader's or user's experience, then technical detail. A question further down the list is asked only when the earlier ones are settled.
+
 1. Read what the user attached through the harness, so every client sees the same thing:
    - table (csv · tsv · jsonl · json · xlsx) → `vibe profile {file} --json` [`--sheet`]: columns, types, missing counts, duplicates, up to three anomalies with numbers
    - document (xlsx · docx · pptx · pdf · hwp · hwpx · html) → `vibe read {file} --json` [`--sheet` · `--pages`]; it says which reader it used (pdf: `pdftotext` when installed, else built-in)

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { capabilityLines, detectCapabilities } from '../core/capabilities.js';
 import { spawnSync } from 'node:child_process';
 import { parseTokenPolicy, readConfig, writeConfig } from '../core/config.js';
 import { usage } from '../core/errors.js';
@@ -16,7 +17,8 @@ export function cmdTokens(root: string, policyRaw: string | undefined): Output {
     writeConfig(root, { tokens: parseTokenPolicy(policyRaw) });
   }
   const policy = readConfig(root).tokens;
-  return { json: { tokens: policy }, text: `tokens: ${policy}`, code: 0 };
+  const note = policy === 'off' && policyRaw ? '\n  off means no token and no gate: the hook only warns before an irreversible command. Use it inside a container or a VM.' : '';
+  return { json: { tokens: policy }, text: `tokens: ${policy}${note}`, code: 0 };
 }
 
 export function cmdStatus(root: string, flags: Flags): Output {
@@ -32,8 +34,10 @@ export function cmdStatus(root: string, flags: Flags): Output {
     `  .vibe     ${p.vibe ? 'ok' : 'none yet — the first record creates it'}`,
     `  state     ${p.state}`,
     `  inbox     ${p.inboxOpen} open`,
+    'tools     present · serves · absent means vibe does it alone',
+    ...capabilityLines(root),
   ];
-  return { json: { version: packageVersion(), ...g, project: p, update }, text: lines.join('\n'), code: 0 };
+  return { json: { version: packageVersion(), ...g, project: p, update, tools: detectCapabilities(root) }, text: lines.join('\n'), code: 0 };
 }
 
 export function cmdUpdate(flags: Flags): Output {

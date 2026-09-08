@@ -45,6 +45,14 @@ export interface LedgerEvent {
   detail?: string;
   /** Typed relations between nodes — the only edge kinds the ledger knows. */
   edges?: Edge[];
+  /** Bench-only fields (bench/run.js writes these lines directly, not through `record`). */
+  task?: string;
+  /** `<task>#<index>` — the same run repeated across arms, so `compare --paired` can line them up. */
+  pair?: string;
+  /** Whether every scenario passed in this run. Falls back to `failed === 0` when absent. */
+  armPassed?: boolean;
+  /** costUsd recomputed from tokens at a configured price; null when the price or the tokens are unknown. */
+  costRecomputed?: number | null;
 }
 
 export type EdgeType = 'supersedes' | 'decided-by' | 'implements' | 'caused';
@@ -152,7 +160,7 @@ export function why(root: string, query: string, maxDepth = 3): WhyResult {
 // ─── Comparison — the code says "cannot tell" when it cannot ─────────────
 
 export type CompareBy = 'client' | 'model' | 'harness';
-export type CompareMetric = 'checks' | 'turns' | 'cost';
+export type CompareMetric = 'checks' | 'turns' | 'cost' | 'ms';
 export type Verdict = 'insufficient-runs' | 'mixed-scenario-sets' | 'inconclusive' | 'difference-observed';
 
 export interface Range {
@@ -166,6 +174,8 @@ export interface ArmSummary {
   usable: number;
   scenarioSets: string[];
   range: Range | null;
+  /** Runs whose recomputed cost differs from the client-reported cost by more than 3×. */
+  costMismatch: number;
 }
 export interface Comparison {
   by: CompareBy;
@@ -180,7 +190,52 @@ export interface Comparison {
 function metricOf(e: LedgerEvent, metric: CompareMetric): number | null {
   if (metric === 'checks') return typeof e.passed === 'number' ? e.passed : null;
   if (metric === 'turns') return typeof e.turns === 'number' ? e.turns : null;
+  if (metric === 'ms') return typeof e.ms === 'number' ? e.ms : null;
   return typeof e.costUsd === 'number' ? e.costUsd : null;
+}
+
+/** A run "passed" for pairing purposes when every scenario in it passed. */
+function armPassed(e: LedgerEvent): boolean {
+  return e.armPassed ?? (typeof e.failed === 'number' && e.failed === 0);
+}
+
+/** The key that lines up the same run across two arms: the `pair` field bench/run.js writes, or — for a
+ * ledger without one — the nth occurrence of a task within its own arm, in the order it was recorded. */
+function pairKey(e: LedgerEvent, seenPerTask: Map<string, number>): string {
+  if (e.pair) return e.pair;
+  const task = e.task ?? 'unknown';
+  const n = seenPerTask.get(task) ?? 0;
+  seenPerTask.set(task, n + 1);
+  return `${task}#${n}`;
+}
+
+/** Keep only runs that pair with a run in the other arm on the same task, both of which passed. Needs
+ * exactly two arms — pairing across more than two has no single "other side" to match against. */
+function pairedOnly(checks: LedgerEvent[], by: CompareBy): LedgerEvent[] {
+  const arms = new Map<string, LedgerEvent[]>();
+  for (const e of checks) {
+    const key = armKey(e, by);
+    arms.set(key, [...(arms.get(key) ?? []), e]);
+  }
+  const [armA, armB] = [...arms.keys()];
+  if (arms.size !== 2 || armA === undefined || armB === undefined) return checks;
+  const seenA = new Map<string, number>();
+  const seenB = new Map<string, number>();
+  const bByKey = new Map((arms.get(armB) ?? []).map((e) => [pairKey(e, seenB), e]));
+  const out: LedgerEvent[] = [];
+  for (const e of arms.get(armA) ?? []) {
+    const other = bByKey.get(pairKey(e, seenA));
+    if (other && armPassed(e) && armPassed(other)) out.push(e, other);
+  }
+  return out;
+}
+
+/** costRecomputed far (more than 3×) from the client-reported costUsd — a run worth a second look. */
+function costMismatched(e: LedgerEvent): boolean {
+  const a = e.costRecomputed;
+  const b = e.costUsd;
+  if (typeof a !== 'number' || typeof b !== 'number' || a === 0 || b === 0) return false;
+  return Math.max(a, b) / Math.min(a, b) > 3;
 }
 
 function withUsage(e: LedgerEvent, metric: CompareMetric, usageByRun: Map<string, number>): number | null {
@@ -205,10 +260,13 @@ function armKey(e: LedgerEvent, by: CompareBy): string {
   return e.harness ?? 'unknown';
 }
 
-/** `ledgerFile` lets a bench keep its own ledger outside any project. */
-export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5, ledgerFile?: string): Comparison {
+/** `ledgerFile` lets a bench keep its own ledger outside any project. `paired` keeps only runs that
+ * pair with a passing run in the other arm on the same task (see `pairedOnly`) — for a bench ledger,
+ * where efficiency is only comparable between runs that both did the work. */
+export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5, ledgerFile?: string, paired = false): Comparison {
   const events = ledgerFile ? readJsonl<LedgerEvent>(ledgerFile) : readLedger(root);
-  const checks = events.filter((e) => e.event === 'check');
+  const allChecks = events.filter((e) => e.event === 'check');
+  const checks = paired ? pairedOnly(allChecks, by) : allChecks;
   // What the readers and reviewers spent during a run belongs to that run's cost.
   const usageByRun = new Map<string, number>();
   for (const e of events) if (e.event === 'usage' && e.run && typeof e.costUsd === 'number') usageByRun.set(e.run, (usageByRun.get(e.run) ?? 0) + e.costUsd);
@@ -225,6 +283,7 @@ export function compare(root: string, by: CompareBy, metric: CompareMetric, minR
       usable: values.length,
       scenarioSets: [...new Set(events.map((e) => e.scenarioSet ?? 'unknown'))],
       range: range(values),
+      costMismatch: events.filter(costMismatched).length,
     };
   });
   const base = { by, metric, arms, delta: null };
