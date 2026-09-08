@@ -1,11 +1,1 @@
-{
-  ".claude-plugin/marketplace.json": "0bc64b37ed8569fb43bca9b443333f4733c63361",
-  ".claude-plugin/plugin.json": "bd3eacf85da4254516c61a3048f6f96b9540f394",
-  ".codex-plugin/plugin.json": "8b51256b9e88bdac91bc090edbd061596e30624f",
-  "README.md": "c753d14a553028c0a5ced48860aee95fddcae32c",
-  "package.json": "554a3c9ea8b503acc58a8fffc0cf5f497744be1e",
-  "src/cli.test.ts": "2ad6d4ca827ad476fae5f7142a1bdaf480c2eeb9",
-  "src/cli.ts": "d67652293c6517c0d730dfc4e152750cb3f4da34",
-  "src/core/reader.test.ts": "c557a6fe0340de8782d1801c32fb34aed47bd47b",
-  "src/core/readerSession.ts": "f3e61c8a827dbaa7cd0e19879ccce195afe9feb4"
-}
+{}
