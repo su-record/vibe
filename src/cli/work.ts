@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { analyzeIntent, renderAnalysis } from '../core/analyze.js';
 import { runChecks } from '../core/check.js';
 import { readDocument } from '../core/docs/read.js';
 import { usage } from '../core/errors.js';
@@ -85,7 +86,11 @@ export function cmdIntent(root: string, sub: string | undefined, args: string[],
     const intent = readText(intentPath(root)) ?? '';
     return { json: { intent, scenarios }, text: `${intent.trim()}\n\n${scenarios.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n')}`, code: 0 };
   }
-  if (sub !== 'draft') throw usage('intent draft | intent show');
+  if (sub === 'analyze') {
+    const analysis = analyzeIntent(root);
+    return { json: analysis, text: renderAnalysis(analysis), code: 0 };
+  }
+  if (sub !== 'draft') throw usage('intent draft | intent show | intent analyze');
   ensureProject(root);
   let intentText: string;
   let scenariosText: string;

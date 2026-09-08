@@ -5,30 +5,97 @@
 - id: tests
   needs: [build]
   then: every test passes
-  check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 300000 }
-
-- id: entry-guard
-  needs: [build]
-  given: a file URL with a percent-encoded space, its decoded path, and a symlink to the file
-  when: the guard's comparison runs
-  then: the URL matches its own path and the symlink, and does not match another file; the built CLI still answers --version through a symlink
-  check: { type: run, cmd: "npx vitest run src/cli.test.ts -t 'symlink|guard'", expect: 0, timeoutMs: 120000 }
-
-- id: win-quoting
-  needs: [build]
-  given: an empty argument, a spaced one, one with a double quote, and a plain one
-  when: the Windows shell quoting runs
-  then: the first three are quoted for cmd.exe and the plain one is unchanged; the reader driver's argument list is quoted only on win32
-  check: { type: run, cmd: "npx vitest run src/core/reader.test.ts -t 'quoting'", expect: 0, timeoutMs: 120000 }
+  check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 400000 }
 
 - id: card-size
-  then: the always-on card is at most 1024 bytes
-  check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
+  then: the always-on card is at most 1024 bytes and says a claim outside a check is unverified
+  check: { type: run, cmd: "node checks/card-size.js && grep -q 'unverified' card.md", expect: 0 }
 
 - id: file-size
   needs: [build]
   then: no source file over 400 lines and no function over 50, judged by vibe size itself
-  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
+  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js size src hooks mcpb/server bench --max-file 400 --max-function 50", expect: 0 }
+
+- id: map
+  needs: [build]
+  given: a fixture tree in ts, py and go with functions, classes, exports and imports across files
+  when: vibe map, symbols, callers and blast run, then a file changes and map runs again
+  then: symbols carry signatures and line ranges, edges resolve across the three languages, callers are marked import or name, blast follows a changed symbol two hops, and only the changed file is re-read
+  check: { type: run, cmd: "npx vitest run src/core/map/*.test.ts", expect: 0, timeoutMs: 180000 }
+
+- id: map-live
+  needs: [build]
+  given: this repository
+  when: vibe map src, vibe callers reviewCheck, vibe blast run
+  then: the map lists every src file with symbols, callers of reviewCheck include src/core/check.ts marked import, blast on a dirty tree names changed symbols with their callers, and the warm run takes under 500 ms
+  check: { type: run, cmd: "node checks/map-live.js", expect: 0, timeoutMs: 120000 }
+
+- id: review-blast
+  needs: [build]
+  given: a temporary git repository where a function changed and another file calls it through an import
+  when: the review check runs with changed true
+  then: the bundle opens with changed symbols and affected symbols and lists the caller as a dependent
+  check: { type: run, cmd: "npx vitest run src/core/checks/review.test.ts -t 'blast'", expect: 0, timeoutMs: 120000 }
+
+- id: context
+  needs: [build]
+  given: a project with a scenario whose check names a file, ledger events that touched it, a matching knowledge note, conventions, and a global note
+  when: vibe context runs for the scenario
+  then: the output holds the file with its neighbour symbols, the events, the note, the conventions, the global note after the project's, the check command, each with a source, within 12000 characters
+  check: { type: run, cmd: "npx vitest run src/core/context.test.ts", expect: 0, timeoutMs: 120000 }
+
+- id: conventions
+  needs: [build]
+  given: a repository with lint and tsconfig files, a package.json test script, and a ledger with a REJECT reason repeated twice and a regression
+  when: vibe conventions runs twice
+  then: the read conventions and the learned lines are in conventions.md with their sources, the second run appends nothing new, and vibe knowledge add --global lands under the home
+  check: { type: run, cmd: "npx vitest run src/core/conventions.test.ts src/core/knowledge.test.ts -t 'conventions|global'", expect: 0, timeoutMs: 120000 }
+
+- id: analyze
+  needs: [build]
+  given: an intent whose success bullets are partly covered by scenarios, one scenario no bullet asks for, and a human check on a bullet naming a file
+  when: vibe intent analyze runs
+  then: the table marks uncovered, unrequested and weak with a verdict line, and nothing on disk changes
+  check: { type: run, cmd: "npx vitest run src/core/analyze.test.ts", expect: 0, timeoutMs: 120000 }
+
+- id: hook-gate
+  given: a git push payload with no authorize record
+  when: the PreToolUse hook runs under strict, irreversible and off
+  then: strict and irreversible exit 2 with the reason on stderr, off exits 0 with a warning, and vibe tokens off prints the container note once
+  check: { type: run, cmd: "npx vitest run src/install/notify.test.ts -t 'gate'", expect: 0, timeoutMs: 120000 }
+
+- id: bench-tasks
+  then: bench/tasks holds settlement, vibe-fix and report, each with a judge whose checks are deterministic, and bench-judge accepts run for vibe-fix
+  check: { type: run, cmd: "node checks/bench-judge.js && test -d bench/tasks/vibe-fix/judge && test -d bench/tasks/report/judge", expect: 0 }
+
+- id: bench-compare
+  needs: [build]
+  given: a bench ledger with paired and unpaired runs, reported and recomputed cost, and ms
+  when: ledger compare runs with --metric ms and --paired
+  then: unpaired runs are excluded, ms compares, and a recomputed cost far from the reported one is flagged
+  check: { type: run, cmd: "npx vitest run src/core/ledger.test.ts -t 'paired|recomputed'", expect: 0, timeoutMs: 120000 }
+
+- id: bench-gate
+  needs: [build]
+  given: bench/ledger.jsonl with the latest five runs per arm for every task
+  when: checks/bench-gate.js runs
+  then: it passes only when every task has five runs per arm and the on arm is not worse on checks; a ledger missing a task fails with its name
+  check: { type: run, cmd: "node checks/bench-gate.js --self-test", expect: 0, timeoutMs: 60000 }
+
+- id: capabilities
+  needs: [build]
+  given: a PATH with a fake graft and no pdftotext
+  when: vibe status runs and vibe map runs
+  then: status lists graft present and pdftotext absent with the operations each serves, and map says it used graft
+  check: { type: run, cmd: "npx vitest run src/core/capabilities.test.ts", expect: 0, timeoutMs: 120000 }
+
+- id: skills-size
+  then: the six common skills are at most 300 lines in total; build has the no-nested-subagent, batch, file-handoff and reset rules; discover orders its questions; scope runs analyze and proposes a tool
+  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q 'nested' skills/vibe-build/SKILL.md && grep -q 'vibe context' skills/vibe-build/SKILL.md && grep -q 'security' skills/vibe-discover/SKILL.md && grep -q 'intent analyze' skills/vibe-scope/SKILL.md && grep -q 'vibe status' skills/vibe-scope/SKILL.md", expect: 0 }
+
+- id: windows-ci
+  then: the test workflow runs on windows-latest too and exercises the CLI through the shim
+  check: { type: run, cmd: "grep -q 'windows-latest' .github/workflows/test.yml && grep -q 'read' .github/workflows/test.yml", expect: 0 }
 
 - id: skill-names
   then: every common skill name is spec-conformant and equals its directory
@@ -52,9 +119,9 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.19
-  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.19\"' .codex-plugin/plugin.json", expect: 0 }
+  then: the committed manifests match package.json 4.1.20
+  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.20\"' .codex-plugin/plugin.json", expect: 0 }
 
 - id: readme-status
-  then: the README status line carries a 4.1.19 entry
-  check: { type: run, cmd: "grep -q '`4.1.19`' README.md", expect: 0 }
+  then: the README documents map, context, conventions, analyze, the gate, the bench gate and capabilities, and its status line carries a 4.1.20 entry
+  check: { type: run, cmd: "grep -q '`4.1.20`' README.md && grep -q 'vibe map' README.md && grep -q 'vibe context' README.md && grep -q 'intent analyze' README.md && grep -q 'bench-gate' README.md", expect: 0 }

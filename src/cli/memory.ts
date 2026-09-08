@@ -126,11 +126,12 @@ export function cmdRegress(root: string, sub: string | undefined, flags: Flags):
 
 export function cmdKnowledge(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
   ensureProject(root);
-  if (sub !== 'add') throw usage('knowledge add <file|--stdin> --title "…"');
+  if (sub !== 'add') throw usage('knowledge add <file|--stdin> --title "…" [--global]');
   const title = flagString(flags, 'title') ?? '';
   const body = flags['stdin'] === true ? readStdin() : args[0] ? readText(path.resolve(root, args[0])) ?? '' : '';
-  const result = addKnowledge(root, title, body);
-  return { json: result, text: `knowledge → ${path.relative(root, result.file)}`, code: 0 };
+  const global = flags['global'] === true;
+  const result = addKnowledge(root, title, body, { global });
+  return { json: result, text: `knowledge → ${global ? result.file : path.relative(root, result.file)}`, code: 0 };
 }
 
 export function cmdLedger(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
@@ -152,13 +153,14 @@ export function cmdLedger(root: string, sub: string | undefined, args: string[],
     const by = (flagString(flags, 'by') ?? 'client') as CompareBy;
     const metric = (flagString(flags, 'metric') ?? 'checks') as CompareMetric;
     if (!['client', 'model', 'harness'].includes(by)) throw usage('--by client|model|harness');
-    if (!['checks', 'turns', 'cost'].includes(metric)) throw usage('--metric checks|turns|cost');
+    if (!['checks', 'turns', 'cost', 'ms'].includes(metric)) throw usage('--metric checks|turns|cost|ms');
     const minRuns = Number(flagString(flags, 'min-runs') ?? 5);
-    const c = compare(root, by, metric, minRuns, flagString(flags, 'ledger'));
+    const paired = flags['paired'] === true;
+    const c = compare(root, by, metric, minRuns, flagString(flags, 'ledger'), paired);
     const text = [
-      `compare by ${by} · metric ${metric} · verdict ${c.verdict}`,
+      `compare by ${by} · metric ${metric}${paired ? ' · paired' : ''} · verdict ${c.verdict}`,
       `  ${c.reason}`,
-      ...c.arms.map((a) => `  ${a.arm}: runs ${a.runs} · usable ${a.usable}${a.range ? ` · min ${a.range.min} · max ${a.range.max} · mean ${a.range.mean.toFixed(2)}` : ''}`),
+      ...c.arms.map((a) => `  ${a.arm}: runs ${a.runs} · usable ${a.usable}${a.range ? ` · min ${a.range.min} · max ${a.range.max} · mean ${a.range.mean.toFixed(2)}` : ''}${a.costMismatch ? ` · costMismatch ${a.costMismatch}` : ''}`),
       ...(c.delta !== null ? [`  delta ${c.delta.toFixed(2)} (absolute units)`] : []),
     ].join('\n');
     return { json: c, text, code: 0 };

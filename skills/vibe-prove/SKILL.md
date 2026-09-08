@@ -17,3 +17,5 @@ user-invocable: false
 ## What DONE means
 
 DONE means every gate scenario passed on this exact tree. Changing any file sends the state back to RUNNING; run `vibe check --all` again.
+
+On STUCK, read `vibe context {id}` before touching anything — the decisions and regressions around that scenario are usually the reason.

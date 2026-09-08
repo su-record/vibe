@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Bench — the same task, the same judge, different arms. Each run: fresh workspace from the task,
 // the agent works headless (claude -p or codex exec), then vibe 4 judges with the task's scenarios
-// and one `check` line lands in bench/ledger.jsonl carrying client, model, harness, turns, cost.
+// and one `check` line lands in bench/ledger.jsonl carrying client, model, harness, turns, cost,
+// tokens, a recomputed cost and the agent's wall-clock time.
 // Read it with: vibe ledger compare --by harness --metric checks --ledger bench/ledger.jsonl
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -19,11 +20,13 @@ const opt = (name, fallback) => {
 const client = opt('client', 'claude');
 const harness = opt('harness', 'on');
 const runs = Number(opt('runs', '1'));
-const task = opt('task', 'settlement');
+const taskArg = opt('task', 'settlement');
 const model = opt('model', null);
 const maxTurns = Number(opt('max-turns', '40'));
+const parallel = Math.max(1, Number(opt('parallel', '4')));
 const ledger = path.join(here, 'ledger.jsonl');
-const taskDir = path.join(here, 'tasks', task);
+const AGENT_TIMEOUT_MS = 15 * 60_000;
+const MAX_CAPTURE = 64 * 1024 * 1024;
 
 // vibe on PATH must be vibe 4 from this checkout, never a global vibe 3
 const shim = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-shim-'));
@@ -34,58 +37,139 @@ delete env.CLAUDECODE;
 delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
 
-function prepare() {
+function taskNames() {
+  if (taskArg !== 'all') return [taskArg];
+  return fs.readdirSync(path.join(here, 'tasks'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+}
+
+function prepare(task) {
+  const taskDir = path.join(here, 'tasks', task);
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-bench-${client}-${harness}-`));
   for (const f of fs.readdirSync(taskDir)) if (f !== 'judge') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
   execFileSync('git', ['init', '-q'], { cwd: ws });
   if (harness === 'on') {
     // card, skills and hook go into the workspace itself — the `off` arm must stay bare
     installSurfaces(ws, projectLayout(client === 'claude' ? 'claude' : 'codex'));
-    judge(ws, false); // the agent sees the approved intent and can run `vibe check` itself
+    draftAndApprove(ws, taskDir);
   }
   return ws;
 }
 
-function judge(ws, run) {
+function vibeSync(ws, a, extra = {}) {
+  return spawnSync('node', [path.join(repo, 'dist/cli.js'), ...a, '--json'], { cwd: ws, encoding: 'utf-8', input: extra.input, env: { ...env, ...extra.env } });
+}
+
+/** The intent the task's own judge defines, drafted and approved so `vibe check --all` can score it. */
+function draftAndApprove(ws, taskDir) {
   fs.rmSync(path.join(ws, '.vibe', 'results.json'), { force: true });
   fs.cpSync(path.join(taskDir, 'judge'), path.join(ws, 'judge'), { recursive: true });
   if (!fs.existsSync(path.join(ws, '.vibe'))) fs.mkdirSync(path.join(ws, '.vibe'));
   const stdin = JSON.stringify({ intent: fs.readFileSync(path.join(taskDir, 'judge', 'intent.md'), 'utf-8'), scenarios: fs.readFileSync(path.join(taskDir, 'judge', 'scenarios.yaml'), 'utf-8') });
-  const vibe = (a, extra = {}) => spawnSync('node', [path.join(repo, 'dist/cli.js'), ...a, '--json'], { cwd: ws, encoding: 'utf-8', input: extra.input, env: { ...env, ...extra.env } });
-  vibe(['tokens', 'off']);
-  vibe(['intent', 'draft', '--stdin'], { input: stdin });
-  vibe(['approve']);
-  if (!run) return null;
-  const out = vibe(['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '' } });
+  vibeSync(ws, ['tokens', 'off']);
+  vibeSync(ws, ['intent', 'draft', '--stdin'], { input: stdin });
+  vibeSync(ws, ['approve']);
+}
+
+/** After the agent stops: judge with the task's real scenarios and append one ledger line. */
+function judge(ws, run, task, index) {
+  const taskDir = path.join(here, 'tasks', task);
+  draftAndApprove(ws, taskDir); // idempotent — the `off` arm never drafted, the `on` arm re-drafts the same intent
+  const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '' } });
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const check = lines.map((l) => JSON.parse(l)).reverse().find((e) => e.event === 'check');
-  fs.appendFileSync(ledger, `${JSON.stringify({ ...check, task, workspace: ws, agentMs: run.ms })}\n`);
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, pair: `${task}#${index}` };
+  fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
 
-function runClaude(ws) {
+function priceEnv(name) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** (input + 0.1×cacheRead + 1.25×cacheWrite) × input price + output × output price, per million tokens.
+ * Null — never zero — when the price or the tokens are unknown, so an unset price is never read as a claim. */
+function recomputedCost(tokens) {
+  const inputPrice = priceEnv('VIBE_BENCH_INPUT_PRICE');
+  const outputPrice = priceEnv('VIBE_BENCH_OUTPUT_PRICE');
+  if (!tokens || inputPrice === null || outputPrice === null) return null;
+  const weightedInput = tokens.input + 0.1 * tokens.cacheRead + 1.25 * tokens.cacheWrite;
+  return (weightedInput * inputPrice + tokens.output * outputPrice) / 1_000_000;
+}
+
+/** Async spawn — a real OS process per call, awaited by promise rather than blocking, so `--parallel`
+ * gets genuine concurrency: several long agent runs progressing side by side, not queued behind each other. */
+function spawnAsync(cmd, cmdArgs, { cwd, input, timeoutMs = AGENT_TIMEOUT_MS } = {}) {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, cmdArgs, { cwd, env });
+    let out = '';
+    const capture = (chunk) => {
+      if (out.length < MAX_CAPTURE) out += chunk.toString('utf-8');
+    };
+    child.stdout?.on('data', capture);
+    child.stderr?.on('data', capture);
+    const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
+    child.on('error', () => {
+      clearTimeout(timer);
+      resolve({ stdout: out, code: null });
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      resolve({ stdout: out, code });
+    });
+    if (input !== undefined) child.stdin?.end(input);
+    else child.stdin?.end();
+  });
+}
+
+function claudeUsage(out) {
+  const used = out.modelUsage ? Object.keys(out.modelUsage).sort((x, y) => (out.modelUsage[y].outputTokens ?? 0) - (out.modelUsage[x].outputTokens ?? 0))[0] : null;
+  const u = used ? out.modelUsage[used] : null;
+  const tokens = u ? { input: u.inputTokens ?? 0, cacheRead: u.cacheReadInputTokens ?? 0, cacheWrite: u.cacheCreationInputTokens ?? 0, output: u.outputTokens ?? 0 } : null;
+  return { model: used, tokens };
+}
+
+async function runClaude(ws) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   const a = ['-p', prompt, '--output-format', 'json', '--dangerously-skip-permissions', '--max-turns', String(maxTurns)];
   if (model) a.push('--model', model);
   const started = Date.now();
-  const r = spawnSync('claude', a, { cwd: ws, encoding: 'utf-8', env, timeout: 15 * 60_000, maxBuffer: 64 * 1024 * 1024 });
+  const r = await spawnAsync('claude', a, { cwd: ws });
   let out = {};
   try {
     out = JSON.parse(r.stdout);
   } catch {
     /* no JSON — the run failed; the judge will say so */
   }
-  const used = out.modelUsage ? Object.keys(out.modelUsage).sort((x, y) => (out.modelUsage[y].outputTokens ?? 0) - (out.modelUsage[x].outputTokens ?? 0))[0] : null;
-  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? null, costUsd: out.total_cost_usd ?? null, ms: Date.now() - started };
+  const { model: used, tokens } = claudeUsage(out);
+  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? null, costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens };
 }
 
-function runCodex(ws) {
+/** codex exec `--json` streams one line per event; `turn.completed` carries the turn's own usage. */
+function codexUsage(stdout) {
+  for (const line of stdout.split('\n')) {
+    if (!line.includes('"turn.completed"')) continue;
+    try {
+      const event = JSON.parse(line);
+      const u = event.usage ?? event.item?.usage ?? null;
+      if (!u) continue;
+      return { input: u.input_tokens ?? u.inputTokens ?? 0, cacheRead: u.cached_input_tokens ?? u.cachedInputTokens ?? 0, cacheWrite: 0, output: u.output_tokens ?? u.outputTokens ?? 0 };
+    } catch {
+      /* not this line */
+    }
+  }
+  return null;
+}
+
+async function runCodex(ws) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   const a = ['exec', '--skip-git-repo-check', '--dangerously-bypass-approvals-and-sandbox', '--json', '-C', ws];
   if (model) a.push('-m', model);
   const started = Date.now();
-  const r = spawnSync('codex', a, { cwd: ws, encoding: 'utf-8', env, input: prompt, timeout: 15 * 60_000, maxBuffer: 64 * 1024 * 1024 });
+  const r = await spawnAsync('codex', a, { cwd: ws, input: prompt });
   // codex exec is one turn; the comparable unit is completed items (commands, messages, patches)
   let turns = 0;
   for (const line of r.stdout.split('\n')) if (line.includes('"item.completed"')) turns += 1;
@@ -97,12 +181,34 @@ function runCodex(ws) {
       usedModel = null;
     }
   }
-  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started };
+  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens: codexUsage(r.stdout) };
 }
 
-for (let i = 0; i < runs; i += 1) {
-  const ws = prepare();
-  const run = client === 'claude' ? runClaude(ws) : runCodex(ws);
-  const report = judge(ws, run);
-  console.log(`${client} ${harness} run ${i + 1}/${runs}: passed ${report.passed} failed ${report.failed} · turns ${run.turns ?? '-'} · cost ${run.costUsd ?? '-'} · ${Math.round(run.ms / 1000)}s · ${ws}`);
+async function runOneJob(job) {
+  const ws = prepare(job.task);
+  const run = client === 'claude' ? await runClaude(ws) : await runCodex(ws);
+  const report = judge(ws, run, job.task, job.index);
+  return { ...job, ws, run, report };
 }
+
+/** A fixed-size pool of workers pulling from a shared queue — `--parallel` concurrent agent runs at once. */
+async function runPool(jobs, size) {
+  const queue = [...jobs];
+  const results = [];
+  async function worker() {
+    let job;
+    while ((job = queue.shift())) results.push(await runOneJob(job));
+  }
+  await Promise.all(Array.from({ length: Math.min(size, jobs.length) }, worker));
+  return results;
+}
+
+function report(outcome) {
+  const { task, index, run, report: r, ws } = outcome;
+  const cost = run.costUsd ?? '-';
+  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}`);
+}
+
+const jobs = taskNames().flatMap((task) => Array.from({ length: runs }, (_, index) => ({ task, index })));
+const outcomes = await runPool(jobs, parallel);
+for (const outcome of outcomes) report(outcome);

@@ -14,6 +14,9 @@ import { flagString, HELP, packageVersion, parseArgs, type Flags, type Output } 
 import { cmdAsk, cmdAuthorize, cmdInbox } from './cli/human.js';
 import { cmdKnowledge, cmdLedger, cmdRegress, cmdResearch, cmdSkill } from './cli/memory.js';
 import { cmdPlugin, cmdStatus, cmdTokens, cmdUninstall, cmdUpdate } from './cli/setup.js';
+import { cmdContext } from './cli/context.js';
+import { cmdConventions } from './cli/conventions.js';
+import { cmdBlast, cmdCallers, cmdMap, cmdSymbols } from './cli/map.js';
 import { cmdAbandon, cmdApprove, cmdCheck, cmdEvidence, cmdIntent, cmdProfile, cmdRead, cmdSize, cmdState } from './cli/work.js';
 
 export { parseArgs } from './cli/common.js';
@@ -29,6 +32,12 @@ const COMMANDS: Record<string, Handler> = {
   profile: (root, sub, _r, _t, flags) => cmdProfile(root, sub, flags),
   read: (root, _s, _r, tail, flags) => cmdRead(root, tail, flags),
   size: (root, _s, _r, tail, flags) => cmdSize(root, tail, flags),
+  map: (root, _s, _r, tail, flags) => cmdMap(root, tail, flags),
+  symbols: (root, _s, _r, tail) => cmdSymbols(root, tail),
+  callers: (root, _s, _r, tail, flags) => cmdCallers(root, tail, flags),
+  blast: (root, _s, _r, tail, flags) => cmdBlast(root, tail, flags),
+  context: (root, _s, _r, tail, flags) => cmdContext(root, tail, flags),
+  conventions: (root, _s, _r, _t, flags) => cmdConventions(root, flags),
   intent: (root, sub, rest, _t, flags) => cmdIntent(root, sub, rest, flags),
   approve: (root, _s, _r, tail) => cmdApprove(root, tail),
   check: (root, _s, _r, tail, flags) => cmdCheck(root, tail, flags),

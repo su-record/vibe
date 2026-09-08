@@ -2,12 +2,16 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { usage } from '../errors.js';
+import { blast } from '../map/index.js';
+import { blastSummary } from '../map/format.js';
 import { isSourceOf, listSource, renderSource, type SourceKind } from './source.js';
 
 /**
  * A code review reads what changed and what depends on it. git says what changed under `path`;
- * one hop of dependents is every source file whose import or require names a changed file. No
- * graph, no index: a regular expression over import lines — deeper reach belongs to tools built for it.
+ * for `code`, `blast` names the changed symbols and the callers that reach them and the bundle
+ * opens with that; when it finds no call-detected caller (a value changed, not something invoked,
+ * or the language has none), the fallback is one hop of dependents — every source file whose
+ * import or require names a changed file, from a regular expression over import lines.
  */
 export interface ChangedSelection {
   ref: string;
@@ -89,12 +93,22 @@ export function dependentsOf(root: string, target: string, changed: string[], ki
   return out.sort();
 }
 
+/** `blast`'s callers as a dependent list, when it found at least one call-detected caller — otherwise `null`, meaning the one-hop import fallback applies. */
+function blastDependents(root: string, target: string, kind: SourceKind): { head: string; dependents: string[] } | null {
+  if (kind !== 'code') return null;
+  const result = blast(root, 2, target);
+  if (result.callers.length === 0) return null;
+  const summary = blastSummary(result);
+  return { head: `${summary.changedLine}\n${summary.affectedLine}`, dependents: summary.files };
+}
+
 export function collectChanged(root: string, target: string, maxChars: number, kind: SourceKind, ref: string | true): { selection: ChangedSelection; files: string[]; text: string } {
   const { ref: against, files: changed } = changedFiles(root, target, ref, kind);
-  const dependents = changed.length ? dependentsOf(root, target, changed, kind) : [];
-  const roles = new Map<string, string>([...changed.map((f) => [f, 'changed'] as const), ...dependents.map((f) => [f, 'dependent'] as const)]);
   const rel = (f: string): string => path.relative(root, f);
-  const head = `Changed since ${against}: ${changed.map(rel).join(', ') || 'none'}\nDependents (one hop): ${dependents.map(rel).join(', ') || 'none'}`;
+  const viaBlast = changed.length ? blastDependents(root, target, kind) : null;
+  const dependents = viaBlast ? viaBlast.dependents.map((d) => path.resolve(root, d)) : changed.length ? dependentsOf(root, target, changed, kind) : [];
+  const head = viaBlast?.head ?? `Changed since ${against}: ${changed.map(rel).join(', ') || 'none'}\nDependents (one hop): ${dependents.map(rel).join(', ') || 'none'}`;
+  const roles = new Map<string, string>([...changed.map((f) => [f, 'changed'] as const), ...dependents.map((f) => [f, 'dependent'] as const)]);
   const rendered = renderSource(root, [...changed, ...dependents], maxChars, roles);
   return { selection: { ref: against, changed: changed.map(rel), dependents: dependents.map(rel) }, files: rendered.files, text: `${head}\n\n${rendered.text}` };
 }

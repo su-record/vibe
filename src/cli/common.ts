@@ -55,6 +55,9 @@ export const HELP = `vibe — an AX/FDE harness. The harness judges; a human app
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
   checks    run (exit code) · file (exists·pattern·contains·schema·sum) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass) · human (inbox, no verdict)
             size [paths…] [--max-file 400] [--max-function 50]  — a built-in check for a scenario: exit 1 when a file or function is over
+  map       map [path] · symbols <file> · callers <symbol> [--depth N] · blast [--depth 2]   (the codebase map: symbols, imports, callers — graft when present)
+  context   context <scenario> (what one scenario needs: check, files, symbols, conventions, decisions, notes) · conventions (read + learned → .vibe/knowledge/conventions.md)
+            intent analyze (success bullets vs scenarios: uncovered · unrequested · weak) · knowledge add <file|--stdin> --title "…" [--global]
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
             authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list

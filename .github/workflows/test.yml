@@ -40,3 +40,26 @@ jobs:
       - run: node checks/skill-names.js
       - run: node checks/packs.js
       - run: node dist/cli.js plugin build --check
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      # the CLI through npm's .cmd shim, the way a global install runs it on Windows
+      - run: npm i -g .
+      - run: vibe --version
+      - run: vibe state
+        env:
+          VIBE_SKIP_SETUP: '1'
+      # a fake reader on PATH: the read --ask driver must survive cmd.exe's argument joining
+      - run: node checks/win-read.js
+        shell: cmd

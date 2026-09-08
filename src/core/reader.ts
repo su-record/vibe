@@ -2,7 +2,10 @@ import { readConfig, roleChoice } from './config.js';
 import { readDocument } from './docs/read.js';
 import { usage } from './errors.js';
 import { recordUsage } from './ledger.js';
+import { skeletonBlock } from './map/format.js';
+import { symbolsOf } from './map/index.js';
 import { claudeArgs, codexArgs, driverLabel, findSession, hasCli, parseClaude, parseCodex, READER_DRIVER, readerHome, saveSession, sessionKey, spawnReader, withChoice, type DriverOptions, type ReaderClient, type ReaderRun, type ReaderUsage } from './readerSession.js';
+import { SOURCE } from './size.js';
 import { ensureDir } from './store.js';
 
 /**
@@ -32,7 +35,17 @@ export function numberLines(text: string): string {
   return lines.map((line, i) => `${String(i + 1).padStart(width)}| ${line}`).join('\n');
 }
 
-/** Every file as a `<file>` block: documents through the readers, code and text numbered line by line. */
+/** A code file's skeleton — one line per symbol — so a question about a function is answered with the function in view; empty when the file has no symbols or fails to parse. */
+function codeSkeleton(root: string, file: string): string {
+  try {
+    const symbols = symbolsOf(root, file);
+    return symbols.length ? `${skeletonBlock(file, symbols)}\n` : '';
+  } catch {
+    return '';
+  }
+}
+
+/** Every file as a `<file>` block: documents through the readers, code and text numbered line by line, a code file preceded by its skeleton. */
 export function bundleFiles(root: string, files: string[], options: { sheet?: string; pages?: string } = {}): ReadBundle {
   if (files.length === 0) throw usage('read <file…> --ask "<question>"');
   const blocks: string[] = [];
@@ -40,9 +53,10 @@ export function bundleFiles(root: string, files: string[], options: { sheet?: st
   for (const file of files) {
     const doc = readDocument(root, file, { ...options, maxChars: READER_MAX_CHARS });
     const body = doc.format === 'text' ? numberLines(doc.sections.map((s) => s.text).join('\n')) : doc.text;
-    chars += body.length;
+    const skeleton = doc.format === 'text' && SOURCE.test(file) ? codeSkeleton(root, file) : '';
+    chars += skeleton.length + body.length;
     if (chars > READER_MAX_CHARS) throw usage(`the files exceed ${READER_MAX_CHARS} characters at ${file} — ask about fewer files, or use --pages / --sheet`);
-    blocks.push(`<file path="${file}" format="${doc.format}">\n${body}\n</file>`);
+    blocks.push(`${skeleton}<file path="${file}" format="${doc.format}">\n${body}\n</file>`);
   }
   return { files, chars, text: blocks.join('\n\n') };
 }

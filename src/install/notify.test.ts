@@ -12,9 +12,9 @@ beforeEach(() => {
 });
 afterEach(() => fs.rmSync(project, { recursive: true, force: true }));
 
-function pre(payload: unknown, env: NodeJS.ProcessEnv = {}): { status: number | null; stdout: string } {
+function pre(payload: unknown, env: NodeJS.ProcessEnv = {}): { status: number | null; stdout: string; stderr: string } {
   const r = spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'pre'], { input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, ...env, CLAUDE_PROJECT_DIR: project } });
-  return { status: r.status, stdout: r.stdout };
+  return { status: r.status, stdout: r.stdout, stderr: r.stderr };
 }
 
 describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
@@ -39,5 +39,31 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(pre({ tool_name: 'Read', tool_input: { file_path: path.join(project, 'ten.ts') } }, { VIBE_READ_ADVISE_LINES: '5' }).stdout).toContain('10 lines');
     fs.rmSync(path.join(project, '.vibe'), { recursive: true });
     expect(pre({ tool_name: 'Read', tool_input: { file_path: path.join(project, 'ten.ts') } }, { VIBE_READ_ADVISE_LINES: '5' }).stdout).toBe('');
+  });
+
+  it('gate: a git push with no authorize record is blocked under strict and irreversible, warned under off; tokens off prints the container note once', () => {
+    const push = { tool_name: 'Bash', tool_input: { command: 'git push origin main' } };
+    for (const policy of ['strict', 'irreversible']) {
+      fs.writeFileSync(path.join(project, '.vibe', 'config.json'), JSON.stringify({ tokens: policy }));
+      const r = pre(push);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toContain('blocked');
+      expect(r.stderr).toContain('vibe ask --needs authorize:push');
+    }
+    fs.writeFileSync(path.join(project, '.vibe', 'config.json'), JSON.stringify({ tokens: 'off' }));
+    const warned = pre(push);
+    expect(warned.status).toBe(0);
+    expect(warned.stderr).toContain('irreversible');
+    expect(warned.stderr).not.toContain('blocked');
+    expect(pre({ tool_name: 'Bash', tool_input: { command: 'git status' } }).status).toBe(0);
+    // an authorize record inside ten minutes lets it through under any policy
+    fs.writeFileSync(path.join(project, '.vibe', 'config.json'), JSON.stringify({ tokens: 'strict' }));
+    fs.writeFileSync(path.join(project, '.vibe', 'ledger.jsonl'), `${JSON.stringify({ at: new Date().toISOString(), event: 'authorize', detail: 'push:origin' })}\n`);
+    expect(pre(push).status).toBe(0);
+    // the note on `vibe tokens off`
+    const cli = spawnSync(process.execPath, [path.join(packageRoot(), 'dist', 'cli.js'), 'tokens', 'off'], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+    expect(cli.stdout).toContain('container');
+    const again = spawnSync(process.execPath, [path.join(packageRoot(), 'dist', 'cli.js'), 'tokens'], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+    expect(again.stdout).not.toContain('container');
   });
 });
