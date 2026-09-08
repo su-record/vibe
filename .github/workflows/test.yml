@@ -53,7 +53,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: npm test
+      # the fixtures that fake a client CLI with a POSIX shim or a symlink stay Linux-only for now (named for the next release);
+      # everything else — the map, the checks, the ledger, the size lexer, the hook — runs here too
+      - run: npx vitest run --exclude "**/{cli,global,register,reader,review,capabilities,tree,plugin,update,skills,research}.test.ts"
       # the CLI through npm's .cmd shim, the way a global install runs it on Windows
       - run: npm i -g .
       - run: vibe --version
