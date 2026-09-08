@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { relPosix } from '../paths.js';
 
 /**
  * Import edges, resolved to a file that exists (or, for Go, a package directory expanded to the
@@ -133,7 +134,7 @@ export function resolveImports(root: string, file: string, text: string, knownFi
     }
     const hit = firstExisting([candidate]) ?? (path.extname(candidate) ? null : firstExisting([`${candidate}.go`]));
     if (!hit) continue;
-    const rel = path.relative(root, hit);
+    const rel = relPosix(root, hit);
     if (knownFiles.has(rel)) out.add(rel);
   }
   return [...out].sort();

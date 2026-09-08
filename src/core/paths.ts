@@ -46,3 +46,8 @@ export function packageRoot(): string {
   // dist/core or src/core → two levels up
   return path.resolve(here, '..', '..');
 }
+
+/** A path relative to `root` with `/` separators on every platform — the form records, caches and reviewers see. */
+export function relPosix(root: string, file: string): string {
+  return path.relative(root, file).split(path.sep).join('/');
+}

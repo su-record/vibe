@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { relPosix } from './paths.js';
 
 /**
  * `vibe size` — a built-in check any project can bind to a scenario: no file over N lines, no
@@ -178,7 +179,7 @@ export function measureSize(root: string, paths: string[], options: SizeOptions)
   let totalLines = 0;
   let largest: SizeReport['largestFile'] = null;
   for (const file of files) {
-    const rel = path.relative(root, file);
+    const rel = relPosix(root, file);
     const lines = fs.readFileSync(file, 'utf-8').split('\n');
     totalLines += lines.length;
     if (!largest || lines.length > largest.lines) largest = { file: rel, lines: lines.length };

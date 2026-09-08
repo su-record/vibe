@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { relPosix } from '../paths.js';
 import { usage } from '../errors.js';
 import { blast } from '../map/index.js';
 import { blastSummary } from '../map/format.js';
@@ -104,7 +105,7 @@ function blastDependents(root: string, target: string, kind: SourceKind): { head
 
 export function collectChanged(root: string, target: string, maxChars: number, kind: SourceKind, ref: string | true): { selection: ChangedSelection; files: string[]; text: string } {
   const { ref: against, files: changed } = changedFiles(root, target, ref, kind);
-  const rel = (f: string): string => path.relative(root, f);
+  const rel = (f: string): string => relPosix(root, f);
   const viaBlast = changed.length ? blastDependents(root, target, kind) : null;
   const dependents = viaBlast ? viaBlast.dependents.map((d) => path.resolve(root, d)) : changed.length ? dependentsOf(root, target, changed, kind) : [];
   const head = viaBlast?.head ?? `Changed since ${against}: ${changed.map(rel).join(', ') || 'none'}\nDependents (one hop): ${dependents.map(rel).join(', ') || 'none'}`;

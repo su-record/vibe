@@ -5,7 +5,7 @@ import { usage } from './errors.js';
 import { intentPath, loadScenarios } from './intent.js';
 import { globalKnowledgeDir, knowledgeDir } from './knowledge.js';
 import { readLedger, type LedgerEvent } from './ledger.js';
-import { vibePath } from './paths.js';
+import { vibePath, relPosix } from './paths.js';
 import { listRegressions } from './regress.js';
 import type { Check, Scenario } from './scenarios.js';
 import { readJson, readText } from './store.js';
@@ -86,7 +86,7 @@ function walkDir(dir: string, root: string, into: string[]): void {
     if (SKIP_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walkDir(full, root, into);
-    else if (entry.isFile()) into.push(path.relative(root, full));
+    else if (entry.isFile()) into.push(relPosix(root, full));
   }
 }
 
@@ -97,14 +97,14 @@ function touchedPaths(check: Check, root: string): string[] {
     const full = path.resolve(root, check.path);
     if (fs.existsSync(full)) {
       if (fs.statSync(full).isDirectory()) walkDir(full, root, out);
-      else out.push(path.relative(root, full));
+      else out.push(relPosix(root, full));
     }
   }
   if (check.type === 'run') {
     for (const token of check.cmd.split(/\s+/)) {
       if (!/[./]/.test(token)) continue;
       const full = path.resolve(root, token);
-      if (fs.existsSync(full) && fs.statSync(full).isFile()) out.push(path.relative(root, full));
+      if (fs.existsSync(full) && fs.statSync(full).isFile()) out.push(relPosix(root, full));
     }
   }
   return [...new Set(out)];
@@ -199,11 +199,11 @@ export function buildContext(root: string, scenarioId: string, options: ContextO
   const events = relevantEvents(root, scenarioId, touched);
   const fileTerms = touched.map((f) => path.basename(f, path.extname(f)).toLowerCase());
   const terms = tokenize(`${scenario.then} ${scenario.id} ${fileTerms.join(' ')}`);
-  const notes = matchingNotes(readNotesDir(knowledgeDir(root)), terms, (file) => path.relative(root, file));
-  const globalNotes = matchingNotes(readNotesDir(globalKnowledgeDir(home)), terms, (file) => `~${path.sep}${path.relative(home, file)}`);
+  const notes = matchingNotes(readNotesDir(knowledgeDir(root)), terms, (file) => relPosix(root, file));
+  const globalNotes = matchingNotes(readNotesDir(globalKnowledgeDir(home)), terms, (file) => `~/${relPosix(home, file)}`);
   const conventionsFile = vibePath(root, 'knowledge', 'conventions.md');
   const conventionsText = readText(conventionsFile);
-  const conventions = conventionsText === null ? null : { source: path.relative(root, conventionsFile), text: conventionsText };
+  const conventions = conventionsText === null ? null : { source: relPosix(root, conventionsFile), text: conventionsText };
   return { scenarioId, then: scenario.then, check: scenario.check, checkSource: `.vibe/scenarios.yaml#${scenarioId}`, files, events, notes, conventions, globalNotes };
 }
 

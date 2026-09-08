@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { vibePath } from '../paths.js';
+import { vibePath, relPosix } from '../paths.js';
 import { DEFAULT_EXCLUDE, SOURCE, walk } from '../size.js';
 import { ensureDir, readJson, writeJson } from '../store.js';
 import { resolveImports } from './imports.js';
@@ -65,15 +65,15 @@ function discoverFiles(root: string, target: string): string[] {
 export function buildMap(root: string, target = '.'): BuildResult {
   const cached = readJson<CodeMap>(cachePath(root)) ?? { files: {} };
   const files = discoverFiles(root, target);
-  const known = new Set(files.map((f) => path.relative(root, f)));
+  const known = new Set(files.map((f) => relPosix(root, f)));
   const nextFiles: Record<string, FileMap> = { ...cached.files };
-  const targetRel = target === '.' ? '' : path.relative(root, path.resolve(root, target));
+  const targetRel = target === '.' ? '' : relPosix(root, path.resolve(root, target));
   for (const rel of Object.keys(nextFiles)) {
     if ((targetRel === '' || rel === targetRel || rel.startsWith(`${targetRel}/`)) && !known.has(rel)) delete nextFiles[rel];
   }
   const refreshed: string[] = [];
   for (const full of files) {
-    const rel = path.relative(root, full);
+    const rel = relPosix(root, full);
     const text = fs.readFileSync(full, 'utf-8');
     const hash = hashOf(text);
     if (cached.files[rel]?.hash === hash) continue;
