@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { detectClient, detectModel } from './client.js';
 import { readConfig } from './config.js';
+import { applyWindow, type Recent } from './recent.js';
 import { usage } from './errors.js';
 import { githubClient, type GithubClient } from './github.js';
 import { intentPath, loadScenarios } from './intent.js';
@@ -19,6 +20,7 @@ export type Source = 'repos' | 'code' | 'skills';
 export const SOURCES: readonly Source[] = ['repos', 'code', 'skills'];
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_MAX = 5;
+const DEFAULT_DAYS = 30;
 const STOP = new Set(['a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'vibe', 'phase', 'into', 'from', 'on', 'by', 'is', 'it',
   // words every intent uses — they describe the harness, not the work
   'check', 'checks', 'scenario', 'scenarios', 'intent', 'harness', 'model', 'client', 'test', 'tests', 'file', 'files', 'line', 'lines', 'when', 'then', 'given',
@@ -34,6 +36,8 @@ export interface Candidate {
   license: string | null;
   action: string;
   score: number;
+  /** What moved inside the research window — repositories only. */
+  recent?: Recent;
 }
 
 export interface ResearchOptions {
@@ -41,11 +45,17 @@ export interface ResearchOptions {
   fromIntent?: boolean;
   sources?: Source[];
   max?: number;
+  /** The window in days; what moved inside it ranks first. */
+  days?: number;
+  /** For tests: the clock the window is measured against. */
+  now?: number;
 }
 
 export interface ResearchResult {
   queries: string[];
   sources: Source[];
+  days: number;
+  cutoff: string;
   candidates: Candidate[];
   file: string | null;
   cached: boolean;
@@ -97,15 +107,14 @@ export function queriesFromIntent(root: string): string[] {
     const q = [...new Set(parts.filter(Boolean))].slice(0, 4).join(' ');
     if (q.split(' ').length >= 2 && !queries.includes(q)) queries.push(q);
   };
-  if (names.length === 0 && words.length === 0) { // an intent with no body yet: the title is all there is
+  push(words.slice(0, 3));
+  push([names[0] ?? '', ...words.filter((w) => w !== names[0]).slice(0, 2)]);
+  push(names.slice(1, 4));
+  if (queries.length === 0) { // a body too thin to name anything twice: the title is all there is
     const heading = text.split('\n').find((l) => l.startsWith('#')) ?? '';
     const title = tokens(heading.replace(/^#+/, '')).slice(0, 4);
-    push(title);
+    push([...names.slice(0, 1), ...title]);
     words.push(...title);
-  } else {
-    push(words.slice(0, 3));
-    push([names[0] ?? '', ...words.filter((w) => w !== names[0]).slice(0, 2)]);
-    push(names.slice(1, 4));
   }
   const body = queries.slice(0, 3);
   for (const s of loadScenarios(root)) {
@@ -239,10 +248,11 @@ function slug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'research';
 }
 
-function writeNote(root: string, queries: string[], candidates: Candidate[]): string {
+function writeNote(root: string, queries: string[], candidates: Candidate[], days: number, cutoff: string): string {
   const file = vibePath(root, 'knowledge', 'research', `${nowIso().slice(0, 10)}-${slug(queries[0] ?? '')}.md`);
-  const rows = candidates.map((c) => `| ${c.kind} | [${c.ref}](${c.url}) | ${c.why} | ${c.action} |`);
-  const body = [`# Research — ${queries.join(' · ')}`, '', `Date: ${nowIso().slice(0, 10)} · Source: GitHub search and skill catalogs · Ranked by keyword match, recency, stars, license. Nothing here was executed or installed.`, '', '| kind | candidate | why | action |', '|---|---|---|---|', ...rows, ''].join('\n');
+  const latest = (c: Candidate): string => (c.recent ? (c.recent.releases[0] ? `${c.recent.releases[0].tag} ${c.recent.releases[0].at.slice(0, 10)}` : c.recent.lastCommitAt ? `commit ${c.recent.lastCommitAt.slice(0, 10)}` : 'none') : '—');
+  const rows = candidates.map((c) => `| ${c.kind} | [${c.ref}](${c.url}) | ${c.recent ? (c.recent.inWindow ? 'yes' : 'no') : '—'} | ${latest(c)} | ${c.why} | ${c.action} |`);
+  const body = [`# Research — ${queries.join(' · ')}`, '', `Date: ${nowIso().slice(0, 10)} · Window: last ${days} days (since ${cutoff}) · Source: GitHub search and skill catalogs · Ranked by activity inside the window first, then keyword match, recency, stars, license; nothing is dropped for being old. Nothing here was executed or installed.`, '', '| kind | candidate | in window | latest | why | action |', '|---|---|---|---|---|---|', ...rows, ''].join('\n');
   writeAtomic(file, body);
   return file;
 }
@@ -252,8 +262,11 @@ export async function research(root: string, options: ResearchOptions, client: G
   if (queries.length === 0) throw usage(options.fromIntent ? 'no intent to research — draft one first' : 'research --from-intent | "query"');
   const sources = options.sources ?? [...SOURCES];
   const max = options.max ?? DEFAULT_MAX;
+  const days = options.days ?? DEFAULT_DAYS;
+  const now = options.now ?? Date.now();
+  const cutoff = new Date(now - days * 86_400_000).toISOString().slice(0, 10);
   const catalogs = readConfig(root).catalogs;
-  const key = createHash('sha256').update(JSON.stringify([queries, sources, catalogs])).digest('hex').slice(0, 16);
+  const key = createHash('sha256').update(JSON.stringify([queries, sources, catalogs, days])).digest('hex').slice(0, 16);
   const cacheFile = vibePath(root, 'cache', 'research', `${key}.json`);
   const cached = readJson<{ at: string; candidates: Candidate[] }>(cacheFile);
   let candidates: Candidate[];
@@ -263,8 +276,8 @@ export async function research(root: string, options: ResearchOptions, client: G
     fromCache = true;
   } else {
     try {
-      candidates = await search(client, queries, sources, catalogs);
-      writeJson(cacheFile, { at: nowIso(), queries, candidates });
+      candidates = await applyWindow(client, await search(client, queries, sources, catalogs), days, now);
+      writeJson(cacheFile, { at: nowIso(), queries, days, candidates });
     } catch (error) {
       if (!cached) throw error;
       candidates = cached.candidates;
@@ -272,7 +285,7 @@ export async function research(root: string, options: ResearchOptions, client: G
     }
   }
   candidates = candidates.slice(0, max);
-  const file = fromCache && fs.existsSync(cacheFile) ? null : writeNote(root, queries, candidates);
-  if (!fromCache) record(root, { event: 'research', client: detectClient(), model: detectModel(), detail: queries.join(' · ') });
-  return { queries, sources, candidates, file, cached: fromCache, authenticated: client.authenticated };
+  const file = fromCache && fs.existsSync(cacheFile) ? null : writeNote(root, queries, candidates, days, cutoff);
+  if (!fromCache) record(root, { event: 'research', client: detectClient(), model: detectModel(), detail: `${queries.join(' · ')} (last ${days} days)` });
+  return { queries, sources, days, cutoff, candidates, file, cached: fromCache, authenticated: client.authenticated };
 }

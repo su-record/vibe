@@ -52,7 +52,7 @@ describe('research — see what exists before building', () => {
     expect(r.candidates[0]?.why).toContain('matches "settlement, csv"');
     expect(r.candidates[1]).toMatchObject({ kind: 'skill', action: 'vibe skill add org/skills@csv-settle' });
     expect(r.file && fs.readFileSync(r.file, 'utf-8')).toContain('| repo | [acme/settle-sheet]');
-    expect(readLedger(root).at(-1)).toMatchObject({ event: 'research', detail: 'settlement csv' });
+    expect(readLedger(root).at(-1)).toMatchObject({ event: 'research', detail: 'settlement csv (last 30 days)' });
   });
 
   it('research: the same query is answered from the cache for a day, even with no network; no cache and no network is exit 2', async () => {
@@ -106,5 +106,48 @@ describe('research — see what exists before building', () => {
     } };
     const r = await research(root, { fromIntent: true, query: 'one review pack' }, noisy);
     expect(r.candidates.map((c) => c.ref)).not.toContain('v9l9/minecraft-');
+  });
+
+  it('window: activity inside the window ranks first whatever the score, nothing is dropped, the why says what moved, a failed releases request falls back to the commit, and the cache key follows the window', async () => {
+    const now = new Date('2026-09-08T00:00:00Z').getTime();
+    const day = 86_400_000;
+    const iso = (d: number): string => new Date(now - d * day).toISOString();
+    draft(root, '# Settlement sheet\n\n## What counts as success\n- the `settle` sheet is built from the order csv\n- the settle sheet totals match the order csv\n', '- { id: x, then: y, check: { type: run, cmd: "true" } }\n');
+    const items = [
+      { full_name: 'acme/old-but-loved', html_url: 'https://github.com/acme/old-but-loved', description: 'settle sheet order csv settle', stargazers_count: 9000, pushed_at: iso(120), license: { spdx_id: 'MIT' } },
+      { full_name: 'acme/fresh', html_url: 'https://github.com/acme/fresh', description: 'settle sheet', stargazers_count: 3, pushed_at: iso(2), license: { spdx_id: 'MIT' } },
+      { full_name: 'acme/broken-releases', html_url: 'https://github.com/acme/broken-releases', description: 'settle order', stargazers_count: 10, pushed_at: iso(5), license: null },
+    ];
+    const client: GithubClient = { authenticated: false, get: (p) => {
+      if (p.includes('/search/repositories')) return Promise.resolve({ items });
+      if (p.includes('/git/trees')) return Promise.resolve({ tree: [] });
+      if (p.includes('/repos/acme/old-but-loved/releases')) return Promise.resolve([{ tag_name: 'v9.0.0', published_at: iso(200) }]);
+      if (p.includes('/repos/acme/old-but-loved/commits')) return Promise.resolve([{ commit: { committer: { date: iso(120) } } }]);
+      if (p.includes('/repos/acme/fresh/releases')) return Promise.resolve([{ tag_name: 'v4.2.0', published_at: iso(12) }, { tag_name: 'v4.1.0', published_at: iso(40) }]);
+      if (p.includes('/repos/acme/broken-releases/releases')) return Promise.reject(new Error('403'));
+      if (p.includes('/repos/acme/broken-releases/commits')) return Promise.resolve([{ commit: { author: { date: iso(5) } } }]);
+      return Promise.reject(new Error(`no fixture for ${p}`));
+    } };
+    const r = await research(root, { fromIntent: true, sources: ['repos'], now }, client);
+    expect(r.days).toBe(30);
+    expect(r.cutoff).toBe('2026-08-09');
+    expect(r.candidates.slice(0, 2).map((c) => c.ref).sort()).toEqual(['acme/broken-releases', 'acme/fresh']); // the two inside the window first, by score between them
+    expect(r.candidates[2]?.ref).toBe('acme/old-but-loved'); // the best-scored repository is last because it is stale; nothing dropped
+    const fresh = r.candidates.find((c) => c.ref === 'acme/fresh')!;
+    expect(fresh.why).toContain('released v4.2.0 12 days ago');
+    expect(fresh.recent).toMatchObject({ inWindow: true, lastCommitAt: null });
+    expect(r.candidates.find((c) => c.ref === 'acme/broken-releases')?.why).toContain('last commit 5 days ago, no release in 30 days');
+    const old = r.candidates.find((c) => c.ref === 'acme/old-but-loved')!;
+    expect(old.why).toContain('last commit 4 months ago, no release in 30 days');
+    expect(old.recent?.inWindow).toBe(false);
+    expect(old.score).toBeGreaterThan(fresh.score); // score alone would have put it first
+    expect(fs.readFileSync(r.file!, 'utf-8')).toContain('Window: last 30 days (since 2026-08-09)');
+
+    const week = await research(root, { fromIntent: true, sources: ['repos'], now, days: 7 }, client);
+    expect(week.cached).toBe(false); // another window is another cache key
+    expect(week.candidates.map((c) => c.ref)).toEqual(['acme/broken-releases', 'acme/old-but-loved', 'acme/fresh']); // the 12-day release is outside a 7-day window: fresh is stale now and ranks by score among the stale
+    expect(week.candidates.find((c) => c.ref === 'acme/fresh')?.why).toContain('no release in 7 days');
+    const again = await research(root, { fromIntent: true, sources: ['repos'], now, days: 7 }, client);
+    expect(again.cached).toBe(true);
   });
 });

@@ -20,9 +20,14 @@ export async function cmdResearch(root: string, sub: string | undefined, flags: 
   if (sources) options.sources = sources as Source[];
   const max = flagString(flags, 'max');
   if (max) options.max = Number(max);
+  const days = flagString(flags, 'days');
+  if (days) {
+    if (!/^\d+$/.test(days) || Number(days) < 1) throw usage('--days takes a positive number of days');
+    options.days = Number(days);
+  }
   const r = await research(root, options);
   const lines = [
-    `research ${r.queries.map((q) => JSON.stringify(q)).join(' · ')} · ${r.candidates.length} candidates${r.cached ? ' (cached)' : ''}${r.authenticated ? '' : ' · unauthenticated — code search skipped, catalogs only'}`,
+    `research ${r.queries.map((q) => JSON.stringify(q)).join(' · ')} · last ${r.days} days (since ${r.cutoff}) · ${r.candidates.length} candidates${r.cached ? ' (cached)' : ''}${r.authenticated ? '' : ' · unauthenticated — code search skipped, catalogs only'}`,
     ...r.candidates.map((c) => `  ${c.kind.padEnd(5)} ${c.ref}\n        ${c.why}\n        → ${c.action}`),
     ...(r.file ? [`  note ${path.relative(root, r.file)}`] : []),
   ];

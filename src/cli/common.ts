@@ -59,7 +59,7 @@ export const HELP = `vibe — an AX/FDE harness. The harness judges; a human app
             authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
             knowledge add <file|--stdin> --title "…"
-  research  research --from-intent | "query" [--sources repos,code,skills] [--max 5]   (GitHub · skill catalogs · 24h cache)
+  research  research --from-intent | "query" [--sources repos,code,skills] [--max 5] [--days 30]   (GitHub · skill catalogs · what moved inside the window first · 24h cache)
   skills    skill suggest [--all] · skill create <name> --check run|file|http|eval [--from-scenario <id>]
             skill add owner/repo[@name] [--pin <sha>] [--yes] · skill search <keyword> · skill list
             skill used <name> · skill prune [--unused-runs 10] [--dry-run] · skill dismiss <ref>
