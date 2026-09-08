@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ensureDir, readJson, writeJson } from './store.js';
@@ -149,11 +150,23 @@ export function driverLabel(client: 'claude' | 'codex', options: DriverOptions):
   return `${client} ${model ?? 'default'}${effort ? `/${effort}` : ''}`;
 }
 
+/**
+ * The system prompt as an argument, except on Windows: cmd.exe ends a command line at a newline
+ * even inside quotes, and a reviewer prompt is many lines — so there it goes through a file.
+ */
+export function systemPromptArgs(instructions: string, platform: string = process.platform, dir: string = readerHome()): string[] {
+  if (platform !== 'win32') return ['--system-prompt', instructions];
+  ensureDir(dir);
+  const file = path.join(dir, `prompt-${createHash('sha256').update(instructions).digest('hex').slice(0, 16)}.txt`);
+  if (!fs.existsSync(file)) fs.writeFileSync(file, instructions, 'utf-8');
+  return ['--system-prompt-file', file];
+}
+
 /** `claude -p` slim: its own system prompt, only the tools named, no settings, no project — the message is the only context. */
-export function claudeArgs(instructions: string, resume: string | null, options: DriverOptions = READER_DRIVER): string[] {
+export function claudeArgs(instructions: string, resume: string | null, options: DriverOptions = READER_DRIVER, platform: string = process.platform): string[] {
   const model = options.model ? ['--model', options.model] : [];
   const effort = options.effort ? ['--effort', options.effort] : [];
-  return ['-p', ...(resume ? ['--resume', resume] : []), '--system-prompt', instructions, '--output-format', 'json', ...model, ...effort, '--tools', options.tools.join(','), '--disable-slash-commands', '--strict-mcp-config', '--setting-sources', ''];
+  return ['-p', ...(resume ? ['--resume', resume] : []), ...systemPromptArgs(instructions, platform), '--output-format', 'json', ...model, ...effort, '--tools', options.tools.join(','), '--disable-slash-commands', '--strict-mcp-config', '--setting-sources', ''];
 }
 
 /** `codex exec` slim; `--json` carries the thread id and the token usage. */
