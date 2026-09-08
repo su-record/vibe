@@ -14,18 +14,18 @@
 - id: file-size
   needs: [build]
   then: no source file over 400 lines and no function over 50, judged by vibe size itself
-  check: { type: run, cmd: "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
+  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
 
-- id: model-config
+- id: research-window
   needs: [build]
-  given: a project whose config names a reader model and effort and a reviewer model, fake claude and codex CLIs on PATH, and the env overrides
-  when: vibe read --ask and a review stage run
-  then: the drivers receive the configured flags, the env wins over config, unset keeps the defaults, and a changed model starts a new session
-  check: { type: run, cmd: "npx vitest run src/core/reader.test.ts src/core/checks/review.test.ts src/core/config.test.ts -t 'model'", expect: 0, timeoutMs: 180000 }
+  given: a fixture client with a repository released 12 days ago, a higher-scored one last touched four months ago, and one whose releases request fails
+  when: research runs with the default window and with --days 7
+  then: in-window activity ranks first whatever the score, nothing is dropped, the why lines say what moved, the failed releases request falls back to the last commit, and the cache key follows the window
+  check: { type: run, cmd: "npx vitest run src/core/research.test.ts -t 'window'", expect: 0, timeoutMs: 120000 }
 
-- id: no-catalogue
-  then: no model name beyond the two aliases appears in the source
-  check: { type: run, cmd: "! grep -rnE 'gpt-[0-9]|claude-(opus|sonnet|haiku)-[0-9]|luna|astra|sonnet|opus' src --include=*.ts --exclude=*.test.ts", expect: 0 }
+- id: skills-size
+  then: the six common skills are at most 300 lines in total and vibe-scope names the research window
+  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q 'last 30 days' skills/vibe-scope/SKILL.md", expect: 0 }
 
 - id: skill-names
   then: every common skill name is spec-conformant and equals its directory
@@ -43,11 +43,15 @@
   then: README, the card and the six common skills carry no placeholder text or reprinted writer note
   check: { type: run, cmd: "! grep -rlE 'Lorem ipsum|\\[TODO\\]|\\bTBD\\b|Your Company|\\{\\{|\\[\\[' README.md card.md skills/vibe/SKILL.md skills/vibe-*/SKILL.md", expect: 0 }
 
+- id: no-catalogue
+  then: no model name beyond the two aliases appears in the source
+  check: { type: run, cmd: "! grep -rnE 'gpt-[0-9]|claude-(opus|sonnet|haiku)-[0-9]|luna|astra|sonnet|opus' src --include=*.ts --exclude=*.test.ts", expect: 0 }
+
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.17
-  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.17\"' .codex-plugin/plugin.json", expect: 0 }
+  then: the committed manifests match package.json 4.1.18
+  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.18\"' .codex-plugin/plugin.json", expect: 0 }
 
 - id: readme-status
-  then: the README documents reader and reviewer model settings and its status line carries a 4.1.17 entry
-  check: { type: run, cmd: "grep -q '`4.1.17`' README.md && grep -q 'VIBE_REVIEWER_MODEL' README.md", expect: 0 }
+  then: the README names --days and the status line carries a 4.1.18 entry
+  check: { type: run, cmd: "grep -q '`4.1.18`' README.md && grep -q -- '--days' README.md", expect: 0 }

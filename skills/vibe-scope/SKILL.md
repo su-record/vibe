@@ -21,7 +21,7 @@ user-invocable: false
 3. Save with `vibe intent draft --stdin --json`, sending `{"intent": "...", "scenarios": "..."}` (both in English).
    - On rejection (`code 1`) fix the reasons and save again. Do not pass by deleting a rejected scenario — bind a check to it.
    - On success the response contains `token` when the project's token policy is `strict`; otherwise `token` is null and a plain yes in chat is enough.
-4. Research and proposals, once, before the approval message: `vibe research --from-intent --json` (up to five candidates with an action each; skip silently on exit 2 and say "no network") and `vibe skill suggest --json` (up to three). Show both in the approval message. Do not install anything — the user says "add 1" and you run the printed `vibe skill add …` (preview first, `--yes` after they have seen the commands).
+4. Research and proposals, once, before the approval message: `vibe research --from-intent --json` (up to five candidates with an action each, what moved in the last 30 days first — `--days N` for another window; skip silently on exit 2 and say "no network") and `vibe skill suggest --json` (up to three). Show both in the approval message. Do not install anything — the user says "add 1" and you run the printed `vibe skill add …` (preview first, `--yes` after they have seen the commands).
 5. Send **one** approval message:
 
 ```
