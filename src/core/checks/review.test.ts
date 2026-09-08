@@ -21,6 +21,8 @@ afterEach(() => {
   fs.rmSync(root, { recursive: true, force: true });
   delete process.env['VIBE_REVIEW_CMD'];
   delete process.env['VIBE_REVIEW_CLIENT'];
+  delete process.env['VIBE_REVIEWER_MODEL'];
+  delete process.env['VIBE_REVIEWER_EFFORT'];
   delete process.env['VIBE_HOME_DIR'];
   process.env['PATH'] = savedPath;
 });
@@ -180,5 +182,24 @@ describe('review check — the harness runs the reviewers and reads only PASS', 
     expect(prompts).toContain('Changed since HEAD: ui/style.css');
     expect(prompts).toContain('<file path="ui/style.css" role="changed">');
     expect(prompts).not.toContain('<file path="ui/page.html"'); // page.html does not import the stylesheet
+  });
+
+  it('model: the project config sets the reviewer model and effort; the env wins; unset keeps the client default', async () => {
+    const log = fakeCli('claude');
+    process.env['VIBE_REVIEW_CLIENT'] = 'claude';
+    fs.mkdirSync(path.join(root, '.vibe'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.vibe', 'config.json'), JSON.stringify({ reviewer: { model: 'big-judge', effort: 'high' } }));
+    await reviewCheck({ type: 'review', path: 'column.md' }, root);
+    const [first] = calls(log);
+    expect(first?.argv).toEqual(expect.arrayContaining(['--model', 'big-judge', '--effort', 'high']));
+    process.env['VIBE_REVIEWER_EFFORT'] = 'max';
+    await reviewCheck({ type: 'review', path: 'column.md' }, root);
+    expect(calls(log)[2]?.argv).toEqual(expect.arrayContaining(['--model', 'big-judge', '--effort', 'max']));
+    fs.rmSync(path.join(root, '.vibe', 'config.json'));
+    delete process.env['VIBE_REVIEWER_EFFORT'];
+    await reviewCheck({ type: 'review', path: 'column.md' }, root);
+    const plain = calls(log)[4]?.argv ?? [];
+    expect(plain).not.toContain('--model');
+    expect(plain).not.toContain('--effort');
   });
 });

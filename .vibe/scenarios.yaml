@@ -16,23 +16,16 @@
   then: no source file over 400 lines and no function over 50, judged by vibe size itself
   check: { type: run, cmd: "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50", expect: 0 }
 
-- id: changed-collector
+- id: model-config
   needs: [build]
-  given: a temporary git repository with a committed tree, one modified file, one file importing it, one unrelated file, one untracked file, one deleted file and a Python pair
-  when: the collector runs with changed true and with a ref, in a directory that is not a repository, and with nothing changed
-  then: the selection is the changed files and their one-hop dependents with roles, the ref form diffs against it, no repository fails with the reason, nothing changed passes with the tail
-  check: { type: run, cmd: "npx vitest run src/core/checks/source.test.ts src/core/checks/review.test.ts -t 'changed'", expect: 0, timeoutMs: 120000 }
+  given: a project whose config names a reader model and effort and a reviewer model, fake claude and codex CLIs on PATH, and the env overrides
+  when: vibe read --ask and a review stage run
+  then: the drivers receive the configured flags, the env wins over config, unset keeps the defaults, and a changed model starts a new session
+  check: { type: run, cmd: "npx vitest run src/core/reader.test.ts src/core/checks/review.test.ts src/core/config.test.ts -t 'model'", expect: 0, timeoutMs: 180000 }
 
-- id: changed-live
-  needs: [build]
-  given: this repository with src/core/checks/source.ts modified in the working tree
-  when: the code collector runs with changed true over src
-  then: source.ts is listed as changed, review.ts as dependent, and no file that neither changed nor imports a changed file is listed
-  check: { type: run, cmd: "node checks/changed-live.js", expect: 0, timeoutMs: 60000 }
-
-- id: skills-size
-  then: the six common skills are at most 300 lines in total and vibe-scope proposes changed true on directory reviews
-  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300 && grep -q 'changed: true' skills/vibe-scope/SKILL.md", expect: 0 }
+- id: no-catalogue
+  then: no model name beyond the two aliases appears in the source
+  check: { type: run, cmd: "! grep -rnE 'gpt-[0-9]|claude-(opus|sonnet|haiku)-[0-9]|luna|astra|sonnet|opus' src --include=*.ts --exclude=*.test.ts", expect: 0 }
 
 - id: skill-names
   then: every common skill name is spec-conformant and equals its directory
@@ -52,9 +45,9 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.16
-  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.16\"' .codex-plugin/plugin.json", expect: 0 }
+  then: the committed manifests match package.json 4.1.17
+  check: { type: run, cmd: "node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.17\"' .codex-plugin/plugin.json", expect: 0 }
 
 - id: readme-status
-  then: the README check table names changed and the status line carries a 4.1.16 entry
-  check: { type: run, cmd: "grep -q '`4.1.16`' README.md && grep -q 'changed' README.md", expect: 0 }
+  then: the README documents reader and reviewer model settings and its status line carries a 4.1.17 entry
+  check: { type: run, cmd: "grep -q '`4.1.17`' README.md && grep -q 'VIBE_REVIEWER_MODEL' README.md", expect: 0 }

@@ -1,15 +1,14 @@
 {
-  ".claude-plugin/marketplace.json": "0f4cf84c10e4e5f81a48f5df0176141f8fe1de2b",
-  ".claude-plugin/plugin.json": "bdf90c20a17fe7f4db67826e7fc3c804693c957c",
-  ".codex-plugin/plugin.json": "f23f89c28c2e10ae617ee3f632385d8183114799",
-  "README.md": "3ea0ed66a87311e90991c35b755f29790395acd7",
-  "package.json": "787a9ce92304786fdfa00a0102c6f605946ed2a9",
-  "skills/vibe-scope/SKILL.md": "cb3d5f26940c738f782b92835eb3ae8f5957fb01",
-  "src/core/checks/review.test.ts": "c2b64f88b8560f188a7b0d93e9df9e48cf3bbd4a",
-  "src/core/checks/review.ts": "95025a5f42caebe20c0e107a28ac56e75cea0626",
-  "src/core/checks/source.test.ts": "5a031a124d48179818dee1c987841fa20eb8a3b5",
-  "src/core/checks/source.ts": "6e558995e7c2a2ee03e97d9c5ee891c62ef18959",
-  "src/core/scenarios.ts": "96fb272d76ede0158e512d526c7325dc344a9d9e",
-  "checks/changed-live.js": "ea4d5005491bd2605749a46c7d60ad2a3cadffcf",
-  "src/core/checks/changed.ts": "cd00050e9027186a41a5018829c80a1e74564e66"
+  ".claude-plugin/marketplace.json": "a32dd07e24523c9ee3d8289046e1938693de06f7",
+  ".claude-plugin/plugin.json": "a09abb6fd9a2d4471a6a36c5a6546999a18d7dea",
+  ".codex-plugin/plugin.json": "7086efec368d2dbd00eff1e603bf913e3d1d1db6",
+  "README.md": "af79d6255e149f58787daf6e973bc8f6b4ae0128",
+  "package.json": "e56c3ab2b337d6d01b26b4ee95514ce20239e001",
+  "src/core/checks/review.test.ts": "fe134e7d12035896ecd9cc1dc5825880da56ca59",
+  "src/core/checks/review.ts": "1fed27e281c289d5c47e8a682e43ccc82e664344",
+  "src/core/config.test.ts": "b8f6fea126302d044dec8128ee3adf9b779a0c67",
+  "src/core/config.ts": "34a3dcf57500ef873c7d87c19b6af99e1e56bb6d",
+  "src/core/reader.test.ts": "91916cd49dce0a704c21dc575288254d925d46fd",
+  "src/core/reader.ts": "ee1ad0e729e30b8c1bb4994d8f81450db407232d",
+  "src/core/readerSession.ts": "165b5190c957858b4e454f864129e3b4c542afda"
 }

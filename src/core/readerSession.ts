@@ -102,28 +102,52 @@ export function spawnReader(cmd: string, args: string[] | null, stdin: string, c
 }
 
 export interface DriverOptions {
-  /** `haiku` for the reader; null keeps the client's default model — judgment keeps the strong model. */
+  /** Claude model: `haiku` for the reader; null keeps the client's default — judgment keeps the strong model. */
   model: string | null;
   /** Claude tools the process may use; the reader gets none, a reviewer gets its file tools. */
   tools: string[];
-  /** Codex reasoning effort; null keeps the default. */
+  /** Claude reasoning effort (`--effort`); null keeps the default. */
   effort: string | null;
+  /** Codex model (`-m`); null keeps the default. */
+  codexModel: string | null;
+  /** Codex reasoning effort; null keeps the default. */
+  codexEffort: string | null;
 }
-export const READER_DRIVER: DriverOptions = { model: 'haiku', tools: [], effort: 'low' };
+export const READER_DRIVER: DriverOptions = { model: 'haiku', tools: [], effort: null, codexModel: null, codexEffort: 'low' };
 /** A reviewer reads the artifact inline; `Read` is for a screenshot. Every other tool schema is tokens on every stage (measured: Read 1.1k, Grep 1k, WebFetch+WebSearch 0.5k). */
-export const REVIEWER_DRIVER: DriverOptions = { model: null, tools: ['Read'], effort: null };
+export const REVIEWER_DRIVER: DriverOptions = { model: null, tools: ['Read'], effort: null, codexModel: null, codexEffort: null };
+
+/** The project's choice for a role laid over the driver's defaults — the same `model`/`effort` reach whichever client runs. */
+export function withChoice(base: DriverOptions, choice: { model?: string; effort?: string }): DriverOptions {
+  return {
+    ...base,
+    model: choice.model ?? base.model,
+    effort: choice.effort ?? base.effort,
+    codexModel: choice.model ?? base.codexModel,
+    codexEffort: choice.effort ?? base.codexEffort,
+  };
+}
+
+/** What a driver runs at, for a label or a session key: `claude haiku` · `codex default/low` · `claude big/high`. */
+export function driverLabel(client: 'claude' | 'codex', options: DriverOptions): string {
+  const model = client === 'claude' ? options.model : options.codexModel;
+  const effort = client === 'claude' ? options.effort : options.codexEffort;
+  return `${client} ${model ?? 'default'}${effort ? `/${effort}` : ''}`;
+}
 
 /** `claude -p` slim: its own system prompt, only the tools named, no settings, no project — the message is the only context. */
 export function claudeArgs(instructions: string, resume: string | null, options: DriverOptions = READER_DRIVER): string[] {
   const model = options.model ? ['--model', options.model] : [];
-  return ['-p', ...(resume ? ['--resume', resume] : []), '--system-prompt', instructions, '--output-format', 'json', ...model, '--tools', options.tools.join(','), '--disable-slash-commands', '--strict-mcp-config', '--setting-sources', ''];
+  const effort = options.effort ? ['--effort', options.effort] : [];
+  return ['-p', ...(resume ? ['--resume', resume] : []), '--system-prompt', instructions, '--output-format', 'json', ...model, ...effort, '--tools', options.tools.join(','), '--disable-slash-commands', '--strict-mcp-config', '--setting-sources', ''];
 }
 
 /** `codex exec` slim; `--json` carries the thread id and the token usage. */
 export function codexArgs(resume: string | null, options: DriverOptions = READER_DRIVER): string[] {
   const head = resume ? ['exec', '--skip-git-repo-check', 'resume', resume] : ['exec', '--skip-git-repo-check'];
-  const effort = options.effort ? ['-c', `model_reasoning_effort=${options.effort}`] : [];
-  return [...head, '--json', ...effort, '-'];
+  const model = options.codexModel ? ['-m', options.codexModel] : [];
+  const effort = options.codexEffort ? ['-c', `model_reasoning_effort=${options.codexEffort}`] : [];
+  return [...head, '--json', ...model, ...effort, '-'];
 }
 
 interface ClaudeJson {

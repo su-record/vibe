@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { detectLang } from '../lang.js';
 import { recordUsage } from '../ledger.js';
-import { claudeArgs, codexArgs, hasCli, parseClaude, parseCodex, readerHome, REVIEWER_DRIVER, spawnReader, type ReaderClient, type ReaderUsage } from '../readerSession.js';
+import { roleChoice } from '../config.js';
+import { claudeArgs, codexArgs, driverLabel, hasCli, parseClaude, parseCodex, readerHome, REVIEWER_DRIVER, spawnReader, withChoice, type DriverOptions, type ReaderClient, type ReaderUsage } from '../readerSession.js';
 import type { ReviewCheck } from '../scenarios.js';
 import { ensureDir } from '../store.js';
 import { packStages, TEXT_PACKS } from './packs.js';
@@ -17,6 +18,7 @@ export interface ReviewerChoice {
   client: ReaderClient;
   label: string;
   cmd: string;
+  driver?: DriverOptions;
 }
 
 /**
@@ -24,19 +26,21 @@ export interface ReviewerChoice {
  * client CLI on PATH through the slim driver, `VIBE_REVIEW_CLIENT` forcing one. The model is the
  * client's default: judgment keeps the strong model; only the project context is dropped.
  */
-export function chooseReviewer(): ReviewerChoice | null {
+export function chooseReviewer(root: string = process.cwd()): ReviewerChoice | null {
   const custom = process.env['VIBE_REVIEW_CMD'];
   if (custom) return { client: 'custom', label: custom, cmd: custom };
+  const driver = withChoice(REVIEWER_DRIVER, roleChoice(root, 'reviewer'));
+  const pick = (client: 'claude' | 'codex'): ReviewerChoice => ({ client, label: `${driverLabel(client, driver)} (slim)`, cmd: client, driver });
   const forced = process.env['VIBE_REVIEW_CLIENT'];
-  if (forced === 'claude' || forced === 'codex') return { client: forced, label: forced === 'claude' ? 'claude -p (slim)' : 'codex exec (slim)', cmd: forced };
-  if (hasCli('claude')) return { client: 'claude', label: 'claude -p (slim)', cmd: 'claude' };
-  if (hasCli('codex')) return { client: 'codex', label: 'codex exec (slim)', cmd: 'codex' };
+  if (forced === 'claude' || forced === 'codex') return pick(forced);
+  if (hasCli('claude')) return pick('claude');
+  if (hasCli('codex')) return pick('codex');
   return null;
 }
 
 /** Kept for callers that only want the command string. */
-export function reviewerCommand(): string | null {
-  return chooseReviewer()?.label ?? null;
+export function reviewerCommand(root: string = process.cwd()): string | null {
+  return chooseReviewer(root)?.label ?? null;
 }
 
 function readOptional(root: string, file: string | undefined): string {
@@ -90,7 +94,8 @@ async function askStage(choice: ReviewerChoice, instructions: string, message: s
   const cwd = readerHome();
   ensureDir(cwd);
   const claude = choice.client === 'claude';
-  const args = claude ? claudeArgs(instructions.trim(), null, REVIEWER_DRIVER) : codexArgs(null, REVIEWER_DRIVER);
+  const driver = choice.driver ?? REVIEWER_DRIVER;
+  const args = claude ? claudeArgs(instructions.trim(), null, driver) : codexArgs(null, driver);
   const r = await spawnReader(choice.cmd, args, claude ? message : `${instructions.trim()}\n\n---\n\n${message}`, cwd, timeoutMs);
   const parsed = claude ? parseClaude(r.out) : parseCodex(r.out);
   return { ...parsed, exit: r.exit, killed: r.killed };
@@ -114,7 +119,7 @@ export async function reviewCheck(check: ReviewCheck, root: string): Promise<Che
   if (!pack) return fail('language unknown — set lang: ko|en or pack: <name> on the check');
   const stages = packStages(pack);
   if (stages.length === 0) return fail(`no reviewers/${pack} in this package`);
-  const choice = chooseReviewer();
+  const choice = chooseReviewer(root);
   if (!choice) return fail('no reviewer available — needs `claude` or `codex` on PATH, or VIBE_REVIEW_CMD');
   let piece: { section: string; body: string; nothing?: string };
   try {
@@ -133,7 +138,8 @@ export async function reviewCheck(check: ReviewCheck, root: string): Promise<Che
     const instructions = fs.readFileSync(stage.file, 'utf-8');
     const r = await askStage(choice, instructions, message(contract, evidence, `## ${piece.section}\n\n${piece.body}`, shot), root, timeoutMs);
     if (r.usage) usage.push({ stage: stage.name, ...r.usage });
-    recordUsage(root, { detail: `review ${pack}/${stage.name}`, client: choice.client, model: r.model, tokens: r.usage, costUsd: r.costUsd, ms: Date.now() - started });
+    const chosen = choice.driver ? (choice.client === 'claude' ? choice.driver.model : choice.driver.codexModel) : null;
+    recordUsage(root, { detail: `review ${pack}/${stage.name}`, client: choice.client, model: r.model ?? chosen, tokens: r.usage, costUsd: r.costUsd, ms: Date.now() - started });
     if (r.killed) return fail(`${stage.name}: killed after ${timeoutMs}ms`, lines.join('\n'));
     const verdict = r.reply.trim();
     if (verdict === 'PASS') {
