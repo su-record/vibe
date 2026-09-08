@@ -38,7 +38,7 @@ export const INDENT_HEADER = /^(\s*)(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(/;
 export function walk(dir: string, exclude: RegExp, into: string[]): void {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (exclude.test(full)) continue;
+    if (exclude.test(full.split(path.sep).join('/'))) continue; // the exclude pattern is written with `/`; Windows walks with `\\`
     if (entry.isDirectory()) walk(full, exclude, into);
     else if (SOURCE.test(entry.name)) into.push(full);
   }

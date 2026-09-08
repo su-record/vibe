@@ -100,7 +100,7 @@ function adviseRead(payload) {
   if (!file) return;
   const lines = countLines(path.resolve(root, file));
   if (lines <= READ_ADVISE_LINES) return;
-  const shown = path.isAbsolute(file) ? path.relative(root, file) || file : file;
+  const shown = (path.isAbsolute(file) ? path.relative(root, file) || file : file).split(path.sep).join('/');
   emitContext(`[vibe] ${shown} is ${lines} lines — when it only has to be understood, not edited or debugged, \`vibe read ${shown} --ask "<question>"\` lets a low-reasoning model read it and returns the answer with line numbers`);
 }
 

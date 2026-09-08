@@ -65,7 +65,7 @@ describe('buildContext — everything a scenario needs, most relevant first, wit
     expect(bundle.events[0]?.event).toBe('approve');
     expect(bundle.events[0]?.source).toMatch(/^ledger:approve/);
 
-    expect(bundle.conventions?.source).toBe(path.join('.vibe', 'knowledge', 'conventions.md'));
+    expect(bundle.conventions?.source).toBe('.vibe/knowledge/conventions.md'); // posix on every platform
     expect(bundle.conventions?.text).toContain('keep functions small');
 
     expect(bundle.notes).toHaveLength(1);
