@@ -6,6 +6,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { usage, VibeError } from './core/errors.js';
 import { findProjectRoot } from './core/paths.js';
 import { ensureGlobal, globalStatus } from './install/global.js';
@@ -75,9 +76,12 @@ async function main(): Promise<void> {
   }
 }
 
-/** A global install runs this file through a `bin/vibe` symlink, so compare real paths, not argv as given. */
-function invokedDirectly(): boolean {
-  const argv1 = process.argv[1];
+/**
+ * A global install runs this file through a `bin/vibe` symlink or npm's `.cmd` shim, so compare
+ * real paths, not argv as given. The file's own path comes from `fileURLToPath`, which turns a
+ * `file:` URL into a native path on every platform (`/C:/…` from `URL.pathname` never matched on Windows).
+ */
+export function sameFile(argv1: string | undefined, moduleUrl: string): boolean {
   if (!argv1) return false;
   const real = (p: string): string => {
     try {
@@ -86,7 +90,7 @@ function invokedDirectly(): boolean {
       return path.resolve(p);
     }
   };
-  return real(argv1) === real(new URL(import.meta.url).pathname);
+  return real(argv1) === real(fileURLToPath(moduleUrl));
 }
-if (invokedDirectly()) void main();
+if (sameFile(process.argv[1], import.meta.url)) void main();
 
