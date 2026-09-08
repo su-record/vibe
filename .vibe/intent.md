@@ -1,19 +1,17 @@
-# vibe 4 · 4.1.16 — a code review reads what changed and what depends on it, not the whole directory
+# vibe 4 · 4.1.17 — the reader's and the reviewer's model are the project's to set
 
 ## Why
-`review` with `pack: code` (and `pack: design`) on a directory sends every source file under it to both reviewers. On a real repository that is most of the token bill for nothing: the reviewers judge a change, and a change is a handful of files plus the files that import them. trace-mcp measured a PR review at 3,951 tokens against 13,595 for "the diff plus every touched file" by asking a dependency graph which symbols the change reaches. vibe does not need a graph or a dependency to get the first hop: git says what changed, and an import scan says who depends on it.
+The reader runs Claude at `haiku` and Codex at `model_reasoning_effort=low`; the reviewers run the client's default model. Those are aliases on purpose — vibe carries no model catalogue, because a catalogue goes stale with every provider release (this month: `none` and `minimal` effort gone on GPT-6 Astra, new Sol · Terra · Luna tiers). What a project cannot do today is choose: read with `gpt-5.6-luna` on Codex, review with a named Claude model, raise the reader's effort for a hard corpus. The only lever is `VIBE_READER_CMD`, which replaces the whole driver and loses sessions, cache and usage. Two small settings give the choice without vibe knowing any model name.
 
 ## What counts as success
-- The `review` check gains `changed`: `true` means the working tree against `HEAD` (modified, added and untracked files, deleted ones dropped); a string is a git ref to diff against (`main`, `HEAD~3`, a sha). Only files under `path` count. Without a git repository the check fails with the reason `changed needs a git repository`.
-- One hop of dependents joins the set: every source file under `path` whose import or require names a changed file by relative path (`./x`, `../x/index`, extension or not; Python `from .x import`, `from pkg.x import`, `import pkg.x`). Each `<file>` block carries `role="changed"` or `role="dependent"`, changed files first, and the bundle opens with the list of both.
-- With nothing changed under `path` the check passes with the tail `nothing changed under <path> since <ref> — nothing reviewed`; it never sends the whole directory by accident.
-- Text packs ignore `changed` (a manuscript is one file); validation accepts `changed` as `true` or a string.
-- The collector's selection is unit-tested in a temporary git repository: a changed file, a file that imports it, a file that does not, an untracked file, a deleted file, a Python import; the ref form; the no-git failure; the nothing-changed pass.
-- `vibe-scope` proposes `changed: true` on every `review` of a directory in a git repository; the six common skills stay ≤ 300 lines. README's check table names `changed`.
-- Live: on this repository, a `pack: code` review bundle built with `changed: true` while `src/core/checks/source.ts` is modified lists that file as changed and `src/core/checks/review.ts` as dependent, and lists no file that neither changed nor imports a changed one — proven by the collector alone, no model.
-- Earlier gates still hold: build, tests, card ≤ 1KB, file 400 / function 50, skill names, packs, report voice, no placeholders, plugin tree current for 4.1.16, README status line carries `4.1.16`.
+- `.vibe/config.json` accepts `reader: { model?, effort? }` and `reviewer: { model?, effort? }`. `model` is passed as `--model <model>` to Claude and `-m <model>` to Codex; `effort` as `--effort <effort>` to Claude and `-c model_reasoning_effort=<effort>` to Codex. Unset keeps today's defaults (reader: Claude `haiku`, Codex effort `low`; reviewer: the client's default model, default effort). The existing string form `reader: "<command>"` keeps meaning a stateless custom command.
+- `VIBE_READER_MODEL`, `VIBE_READER_EFFORT`, `VIBE_REVIEWER_MODEL`, `VIBE_REVIEWER_EFFORT` override the config for one run.
+- `vibe read --ask` reports the model the driver answered with when the CLI names it; the `usage` ledger event carries it, as today.
+- A session key includes the model and effort, so changing them starts a new reader session instead of resuming one made by another model.
+- `vibe tokens`-style setting is not added: the config file is edited directly; README documents the two objects and the four variables, and says why vibe carries no model list.
+- Tests: with a fake `claude` and a fake `codex` on PATH, the reader and a review stage receive the configured model and effort flags, the env override wins over config, an unset config keeps the defaults, and a changed model does not resume the old session.
+- Earlier gates still hold: build, tests, card ≤ 1KB, file 400 / function 50, skill names, packs, report voice, no placeholders, plugin tree current for 4.1.17, README status line carries `4.1.17`.
 
 ## Constraints
-- No dependency, no index, no daemon: git and a regular expression over import lines. Deeper reach stays with tools built for it.
-- The reviewers' verdict rule does not change.
+- No model name inside vibe beyond the two aliases it already uses (`haiku`, `low`).
 - Every record is English; the model talks to the user in the user's language.

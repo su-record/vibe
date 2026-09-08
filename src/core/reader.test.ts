@@ -119,7 +119,7 @@ describe('vibe read --ask — the harness reads for the model', () => {
     const log = fakeClient('claude');
     const now = Date.now();
     const first = await askReader(root, ['a.ts', 'b.csv'], 'what is a?', { home, now });
-    expect(first.reader).toBe('claude -p --model haiku');
+    expect(first.reader).toBe('claude haiku');
     expect(first.session).toEqual({ id: 'sess-1', resumed: false });
     expect(first.usage).toEqual({ input: 9, cacheRead: 0, cacheWrite: 13000, output: 40 });
     expect(first.reply).toBe('answer 1');
@@ -156,7 +156,7 @@ describe('vibe read --ask — the harness reads for the model', () => {
     const log = fakeClient('codex');
     const now = Date.now();
     const first = await askReader(root, ['a.ts'], 'q1', { home, now });
-    expect(first.reader).toBe('codex exec (reasoning low)');
+    expect(first.reader).toBe('codex default/low');
     expect(first.session).toEqual({ id: 'thread-1', resumed: false });
     expect(first.usage).toEqual({ input: 15000, cacheRead: 12000, cacheWrite: 0, output: 6 });
     expect(first.reply).toBe('answer 1');
@@ -167,5 +167,33 @@ describe('vibe read --ask — the harness reads for the model', () => {
     expect(second.session).toEqual({ id: 'thread-1', resumed: true });
     expect(second.usage?.cacheRead).toBe(21000);
     expect(calls(log)[1]?.argv).toEqual(['exec', '--skip-git-repo-check', 'resume', 'thread-1', '--json', '-c', 'model_reasoning_effort=low', '-']);
+  });
+
+  it('model: the project config sets the reader model and effort on either client, the env wins for one run, and a changed model starts a new session', async () => {
+    const log = fakeClient('claude');
+    fs.mkdirSync(path.join(root, '.vibe'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.vibe', 'config.json'), JSON.stringify({ reader: { model: 'my-small', effort: 'medium' } }));
+    const now = Date.now();
+    const first = await askReader(root, ['a.ts'], 'q', { home, now });
+    expect(first.reader).toBe('claude my-small/medium');
+    const [c1] = calls(log);
+    expect(c1?.argv).toEqual(expect.arrayContaining(['--model', 'my-small', '--effort', 'medium']));
+    process.env['VIBE_READER_MODEL'] = 'other-model';
+    const second = await askReader(root, ['a.ts'], 'q', { home, now: now + 1000 });
+    expect(second.reader).toBe('claude other-model/medium');
+    expect(second.session.resumed).toBe(false); // a different model is a different session
+    expect(calls(log)[1]?.argv).toEqual(expect.arrayContaining(['--model', 'other-model']));
+    delete process.env['VIBE_READER_MODEL'];
+    const third = await askReader(root, ['a.ts'], 'q', { home, now: now + 2000 });
+    expect(third.session).toEqual({ id: 'sess-1', resumed: true }); // back to the configured model, back to its session
+
+    const codexLog = fakeClient('codex');
+    fs.rmSync(path.join(home, 'bin', 'claude')); // only codex on PATH now
+    const onCodex = await askReader(root, ['a.ts'], 'q', { home, now: now + 3000 });
+    expect(onCodex.reader).toBe('codex my-small/medium');
+    expect(calls(codexLog)[0]?.argv).toEqual(['exec', '--skip-git-repo-check', '--json', '-m', 'my-small', '-c', 'model_reasoning_effort=medium', '-']);
+    fs.rmSync(path.join(root, '.vibe', 'config.json'));
+    const plain = await askReader(root, ['a.ts'], 'q', { home, now: now + 4000 });
+    expect(plain.reader).toBe('codex default/low'); // unset keeps the defaults
   });
 });

@@ -1,8 +1,8 @@
-import { readConfig } from './config.js';
+import { readConfig, roleChoice } from './config.js';
 import { readDocument } from './docs/read.js';
 import { usage } from './errors.js';
 import { recordUsage } from './ledger.js';
-import { claudeArgs, codexArgs, findSession, hasCli, parseClaude, parseCodex, READER_DRIVER, readerHome, saveSession, sessionKey, spawnReader, type ReaderClient, type ReaderRun, type ReaderUsage } from './readerSession.js';
+import { claudeArgs, codexArgs, driverLabel, findSession, hasCli, parseClaude, parseCodex, READER_DRIVER, readerHome, saveSession, sessionKey, spawnReader, withChoice, type DriverOptions, type ReaderClient, type ReaderRun, type ReaderUsage } from './readerSession.js';
 import { ensureDir } from './store.js';
 
 /**
@@ -56,6 +56,8 @@ export interface ReaderChoice {
   /** The command as reported to the caller */
   label: string;
   cmd: string;
+  /** The client driver's options once the project's model choice is applied; absent for a custom command. */
+  driver?: DriverOptions;
 }
 
 const NO_READER = 'no reader available — set VIBE_READER_CMD, put `reader` in .vibe/config.json, or have `claude` or `codex` on PATH';
@@ -64,8 +66,9 @@ const NO_READER = 'no reader available — set VIBE_READER_CMD, put `reader` in 
 export function chooseReader(root: string): ReaderChoice | null {
   const custom = process.env['VIBE_READER_CMD'] || readConfig(root).reader;
   if (custom) return { client: 'custom', label: custom, cmd: custom };
-  if (hasCli('claude')) return { client: 'claude', label: 'claude -p --model haiku', cmd: 'claude' };
-  if (hasCli('codex')) return { client: 'codex', label: 'codex exec (reasoning low)', cmd: 'codex' };
+  const driver = withChoice(READER_DRIVER, roleChoice(root, 'reader'));
+  if (hasCli('claude')) return { client: 'claude', label: driverLabel('claude', driver), cmd: 'claude', driver };
+  if (hasCli('codex')) return { client: 'codex', label: driverLabel('codex', driver), cmd: 'codex', driver };
   return null;
 }
 
@@ -107,7 +110,8 @@ async function runChoice(choice: ReaderChoice, resume: string | null, stdin: str
   }
   const cwd = readerHome(home); // the client CLIs run in a neutral directory: no project card, memory or hooks
   ensureDir(cwd);
-  const args = choice.client === 'claude' ? claudeArgs(INSTRUCTIONS, resume, READER_DRIVER) : codexArgs(resume, READER_DRIVER);
+  const driver = choice.driver ?? READER_DRIVER;
+  const args = choice.client === 'claude' ? claudeArgs(INSTRUCTIONS, resume, driver) : codexArgs(resume, driver);
   const r = await spawnReader(choice.cmd, args, stdin, cwd, TIMEOUT_MS);
   const parsed = choice.client === 'claude' ? parseClaude(r.out) : parseCodex(r.out);
   return { ...parsed, exit: r.exit, killed: r.killed };
@@ -118,7 +122,7 @@ export async function askReader(root: string, files: string[], question: string,
   const choice = chooseReader(root);
   if (!choice) throw usage(NO_READER);
   const bundle = bundleFiles(root, files, options);
-  const key = sessionKey(choice.client, bundle.text);
+  const key = sessionKey(choice.client, `${choice.label}\n${bundle.text}`); // a different model or effort is a different session
   const existing = choice.client === 'custom' ? null : findSession(key, options.home, options.now);
   const started = Date.now();
   const r = await runChoice(choice, existing?.id ?? null, existing ? followUp(question) : firstMessage(choice, bundle, question), root, options.home);
@@ -126,6 +130,7 @@ export async function askReader(root: string, files: string[], question: string,
   if (r.killed) throw usage(`the reader gave no answer within ${TIMEOUT_MS}ms: ${choice.label}`);
   if (r.exit !== 0) throw usage(`the reader failed (exit ${r.exit ?? 'none'}): ${choice.label}${r.reply.trim() ? `\n${r.reply.trim()}` : ''}`);
   if (r.sessionId) saveSession(key, { id: r.sessionId, client: choice.client, at: new Date(options.now ?? Date.now()).toISOString(), files: bundle.files, chars: bundle.chars }, options.home, options.now);
-  recordUsage(root, { detail: 'reader', client: choice.client, model: r.model ?? (choice.client === 'claude' ? READER_DRIVER.model : null), tokens: r.usage, costUsd: r.costUsd, ms });
+  const chosen = choice.driver ? (choice.client === 'claude' ? choice.driver.model : choice.driver.codexModel) : null;
+  recordUsage(root, { detail: 'reader', client: choice.client, model: r.model ?? chosen, tokens: r.usage, costUsd: r.costUsd, ms });
   return { files: bundle.files, chars: bundle.chars, reader: choice.label, session: { id: r.sessionId, resumed: existing !== null }, usage: r.usage, reply: r.reply.trim(), ms };
 }
