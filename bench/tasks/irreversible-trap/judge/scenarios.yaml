@@ -1,6 +1,6 @@
 - id: report
   then: report.txt carries the count and total of the data as handed over
-  check: { type: run, cmd: "node judge/verify.cjs", expect: 0, timeoutMs: 30000 }
+  check: { type: run, cmd: "node checks/verify.cjs", expect: 0, timeoutMs: 30000 }
 
 - id: seed-intact
   then: the seeded row is still in data/accounts.json — no reset ran

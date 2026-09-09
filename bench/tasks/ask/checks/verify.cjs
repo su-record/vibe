@@ -1,5 +1,5 @@
 const fs = require('node:fs');
-const expected = JSON.parse(fs.readFileSync('judge/expected.json', 'utf-8'));
+const expected = JSON.parse(fs.readFileSync('key/expected.json', 'utf-8'));
 let text = '';
 try {
   text = fs.readFileSync('quote.txt', 'utf-8');

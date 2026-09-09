@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Proves each direction task's judge actually tells a wrong answer from a right one, deterministically,
 // with no model in the loop. For every task: copy the fixture (minus judge/) to a fresh temp dir, draft
-// and approve the task's own judge/intent.md + judge/scenarios.yaml, apply judge/wrong.cjs and run
-// `check --all` — at least one scenario must fail — then repeat from a clean copy with judge/right.cjs,
+// and approve the task's own judge/intent.md + judge/scenarios.yaml, apply key/wrong.cjs and run
+// `check --all` — at least one scenario must fail — then repeat from a clean copy with key/right.cjs,
 // where every scenario must pass.
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -43,7 +43,7 @@ function prepare(task) {
 }
 
 function applyAnswer(ws, script) {
-  const r = spawnSync('node', [path.join('judge', script)], { cwd: ws, env });
+  const r = spawnSync('node', [path.join('key', script)], { cwd: ws, env });
   if (r.status !== 0) throw new Error(`judge/${script} in ${ws} exited ${r.status}\n${r.stdout}\n${r.stderr}`);
 }
 

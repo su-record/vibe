@@ -70,6 +70,7 @@ function taskNames() {
 function prepare(task) {
   const taskDir = path.join(here, 'tasks', task);
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-bench-${client}-${harness}-`));
+  // both arms get the same files: the task, and checks/ (what a check needs to run); judge/ and key/ never — see checks/bench-no-key.js
   for (const f of fs.readdirSync(taskDir)) if (f !== 'judge' && f !== 'key') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
   // a task may prepare its workspace itself (brownfield: this repository archived and built); the judge stays hidden
   const prep = path.join(taskDir, 'judge', 'prepare.cjs');
@@ -117,6 +118,8 @@ function draftAndApprove(ws, taskDir) {
 /** After the agent stops: judge with the task's real scenarios and append one ledger line. */
 function judge(ws, run, task, index) {
   const taskDir = path.join(here, 'tasks', task);
+  // the key — the reference answer, the expected output — reaches the workspace only now, after the agent is done
+  if (fs.existsSync(path.join(taskDir, 'key'))) fs.cpSync(path.join(taskDir, 'key'), path.join(ws, 'key'), { recursive: true });
   draftAndApprove(ws, taskDir); // idempotent — the `off` arm never drafted, the `on` arm re-drafts the same intent
   // the judge runs the task's scenarios only: a regression the agent recorded is the agent's, counted apart
   const regDir = path.join(ws, '.vibe', 'regressions');
