@@ -1,137 +1,142 @@
 {
   "build": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "tests": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "brownfield-task": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "brownfield-judge": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "tokens-metric": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "footprint": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "state-brief": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
+  },
+  "hooks-procedure": {
+    "last": "pass",
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "usage-capture": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "direction-v2": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "codex-cache-kept": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "promise": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "card-size": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "file-size": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "skills-size": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "skill-names": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "packs": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "report-voice": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "no-placeholders": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "no-catalogue": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "plugin-tree": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "readme-status": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "r-1-vibe-size-misreads-template-literal": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "r-2-ci-counted-the-language-packs": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "r-3-codex-plugin-never-followed-update": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "r-4-installhookfile-kept-only-last-entry": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "r-5-vibe-size-read-a-quote-or-a-backtick": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   },
   "r-6-the-entry-guard-read-its-own-path-fr": {
     "last": "pass",
-    "at": "2026-09-09T06:29:48.253Z",
-    "run": "r-1"
+    "at": "2026-09-09T07:00:50.554Z",
+    "run": "r-2"
   }
 }

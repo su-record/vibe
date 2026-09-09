@@ -9,7 +9,7 @@ import YAML from 'yaml';
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 const tasksDir = path.join(root, 'bench/tasks');
 /** Tasks whose judge is allowed a `run` check, alongside `file` checks. Every other task: file only. */
-const RUN_ALLOWED = new Set(['vibe-fix', 'regression-trap', 'long-context', 'ambiguous-brief', 'brownfield', 'irreversible-trap', 'session-split']);
+const RUN_ALLOWED = new Set(['vibe-fix', 'regression-trap', 'long-context', 'ambiguous-brief', 'brownfield', 'irreversible-trap', 'session-split', 'ask']);
 const REFERENCE_TOTAL = 4500.5;
 
 function scenariosOf(task) {

@@ -35,7 +35,45 @@ switch (cmd) {
     fs.writeFileSync(out, `name,amount\n${load().map((e) => `${csvCell(e.name)},${money(e.amount)}\n`).join('')}`);
     break;
   }
+  case 'remove': {
+    const entries = load();
+    const i = Number(args[0]);
+    if (args[0] === undefined || !Number.isInteger(i) || i < 0 || i >= entries.length) {
+      process.stderr.write('remove <index>: index out of range\n');
+      process.exit(2);
+    }
+    entries.splice(i, 1);
+    save(entries);
+    break;
+  }
+  case 'stats': {
+    const amounts = load().map((e) => e.amount);
+    const n = amounts.length;
+    const sum = amounts.reduce((s, a) => s + a, 0);
+    process.stdout.write(`count ${n}\nmin ${money(n ? Math.min(...amounts) : 0)}\nmax ${money(n ? Math.max(...amounts) : 0)}\navg ${money(n ? sum / n : 0)}\n`);
+    break;
+  }
+  case 'import': {
+    const [file] = args;
+    if (!file || !fs.existsSync(file)) {
+      process.stderr.write('import <file.csv>: no such file\n');
+      process.exit(2);
+    }
+    const rows = fs.readFileSync(file, 'utf-8').trim().split('\n').slice(1);
+    const parsed = rows.map((row) => {
+      const m = /^(?:"((?:[^"]|"")*)"|([^,]*)),(.*)$/.exec(row);
+      const name = m[1] !== undefined ? m[1].replace(/""/g, '"') : m[2];
+      return { name, amount: Number(m[3]) };
+    });
+    save([...load(), ...parsed]);
+    break;
+  }
+  case 'find': {
+    const needle = (args[0] ?? '').toLowerCase();
+    process.stdout.write(load().filter((e) => e.name.toLowerCase().includes(needle)).map((e) => `${e.name}\t${money(e.amount)}\n`).join(''));
+    break;
+  }
   default:
-    process.stderr.write('usage: ledger.cjs add|list|total|export\n');
+    process.stderr.write('usage: ledger.cjs add|list|total|export|remove|stats|import|find\n');
     process.exit(2);
 }

@@ -38,14 +38,15 @@ export interface StateView {
   notices: string[];
   /** What to do now, in one line — the router follows this, not a skill file. */
   next: string;
-  /** `small`: at most four scenarios, all run/file, no needs chain deeper than one — one `check --all` at the end.
-   * `full` is the same procedure plus failure handling: `vibe context <id>` and `vibe check <id>` only for a scenario that failed. */
+  /** `small` unless something in the build skill applies: an irreversible scenario, a check that is not run/file, a needs chain
+   * deeper than one, or more than eight scenarios. `full` is the same procedure plus that skill; a count of five is not a reason. */
   size: 'small' | 'full';
 }
 
-function sizeOf(scenarios: Array<{ id: string; check: { type: string }; needs?: string[]; regression?: boolean }>): 'small' | 'full' {
+function sizeOf(scenarios: Array<{ id: string; check: { type: string }; needs?: string[]; regression?: boolean; irreversible?: string }>): 'small' | 'full' {
   const own = scenarios.filter((s) => !('regression' in s && s.regression));
-  if (own.length > 4) return 'full';
+  if (own.length > 8) return 'full';
+  if (own.some((s) => s.irreversible)) return 'full';
   const byId = new Map(own.map((s) => [s.id, s]));
   for (const s of own) {
     if (s.check.type !== 'run' && s.check.type !== 'file') return 'full';

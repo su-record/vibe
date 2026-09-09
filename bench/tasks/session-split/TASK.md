@@ -9,3 +9,7 @@ must exit 0 with every case passing. Subcommands:
 - `list` — one line per entry, `<name>\t<amount with two decimals>`, in insertion order
 - `total` — prints `total: <sum with two decimals>`
 - `export <file>` — writes a CSV with a `name,amount` header; names containing a comma or a quote are double-quoted with quotes doubled
+- `remove <index>` — deletes the entry at that zero-based index; an index out of range exits 2
+- `stats` — prints `count <n>`, `min <amount>`, `max <amount>`, `avg <amount>` on four lines, two decimals
+- `import <file.csv>` — appends entries from a CSV with a `name,amount` header (quoted names allowed)
+- `find <text>` — prints the entries whose name contains the text, case-insensitive, in the `list` format

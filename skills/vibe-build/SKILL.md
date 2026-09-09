@@ -8,7 +8,7 @@ user-invocable: false
 
 ## Procedure
 
-0. Whatever the size: build every remaining scenario, then one `vibe check --all` — no check per scenario, no `vibe context` before building, no handoff document unless the intent names one. `vibe context <id>` and `vibe check <id>` are for a scenario that failed, and for a question the files do not answer. Steps 1–2 are for `size: full`.
+0. Whatever the size: build every remaining scenario, then one `vibe check --all` — no check per scenario, no `vibe context` before building, no handoff document unless the intent names one. `vibe context <id>` and `vibe check <id>` are for a scenario that failed, and for a question the files do not answer. Steps 1–2 are for `size: full` — an irreversible scenario, a review/http/eval check, a needs chain two deep, or more than eight scenarios.
 1. Take scenarios in the order of `remaining` from `vibe state --json` — parents before their `needs` dependents (`vibe state --graph` shows the edges). Put scenarios marked `irreversible` last.
    - Scenarios with no edge between them may be built by parallel agents, each in its own worktree, merged before `vibe check --all`. Never two agents in one working tree. Batch scenarios of one shape into one dispatch; never a nested subagent (a reviewer's reviewer counts for nothing). Hand artifacts to an agent as files, never pasted. When the context is nearly full, start a new session from `.vibe/` instead of compacting.
 2. Build only what each scenario needs, and make sure the check itself (`check.cmd`, `check.path`) can actually run. `vibe map` and `vibe context {id}` are tools for a question — where a symbol lives, what a change reaches — not a step before every scenario.

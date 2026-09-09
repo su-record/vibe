@@ -1,0 +1,9 @@
+{
+  "customer": "acct-2041",
+  "items": [
+    { "name": "Desk lamp", "qty": 2, "unitUsd": 39.5 },
+    { "name": "Monitor arm", "qty": 1, "unitUsd": 89.0 },
+    { "name": "USB-C hub", "qty": 3, "unitUsd": 24.75 },
+    { "name": "Cable set", "qty": 4, "unitUsd": 6.2 }
+  ]
+}

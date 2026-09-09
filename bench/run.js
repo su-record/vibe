@@ -55,7 +55,7 @@ delete env.CLAUDE_PROJECT_DIR;
 // bare model never ran) and the four 4.1.21 tasks stay on disk, retired, and run by name.
 // `--set` picks a named group; `--task` (still the default) picks one task, or every directory
 // under tasks/ with `all`.
-const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['session-split'], context: ['brownfield'] };
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['ask', 'session-split'], context: ['brownfield'] };
 SETS.all = [...SETS.overhead, ...SETS.direction, ...SETS.context];
 
 function taskNames() {
@@ -70,7 +70,7 @@ function taskNames() {
 function prepare(task) {
   const taskDir = path.join(here, 'tasks', task);
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-bench-${client}-${harness}-`));
-  for (const f of fs.readdirSync(taskDir)) if (f !== 'judge') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
+  for (const f of fs.readdirSync(taskDir)) if (f !== 'judge' && f !== 'key') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
   // a task may prepare its workspace itself (brownfield: this repository archived and built); the judge stays hidden
   const prep = path.join(taskDir, 'judge', 'prepare.cjs');
   if (fs.existsSync(prep)) execFileSync('node', [prep], { cwd: ws, env: { ...env, VIBE_BENCH_REPO: repo }, stdio: 'ignore' });
@@ -126,7 +126,7 @@ function judge(ws, run, task, index) {
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const check = lines.map((l) => JSON.parse(l)).reverse().find((e) => e.event === 'check');
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), sessions: run.sessions ?? 1, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -208,7 +208,7 @@ async function runClaude(ws, session = {}) {
   const { result, assistantTurns } = claudeResult(r.stdout);
   const out = result ?? {};
   const { model: used, tokens } = claudeUsage(out);
-  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? (assistantTurns || null), costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing' };
+  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? (assistantTurns || null), costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText: typeof out.result === 'string' ? out.result : '' };
 }
 
 /** codex exec `--json` streams one line per event; `turn.completed` carries the turn's own usage. */
@@ -235,7 +235,17 @@ async function runCodex(ws, session = {}) {
   const r = await spawnAsync('codex', a, { cwd: ws, input: prompt, timeoutMs: session.cutMs ?? AGENT_TIMEOUT_MS });
   // codex exec is one turn; the comparable unit is completed items (commands, messages, patches)
   let turns = 0;
-  for (const line of r.stdout.split('\n')) if (line.includes('"item.completed"')) turns += 1;
+  let finalText = '';
+  for (const line of r.stdout.split('\n')) {
+    if (!line.includes('"item.completed"')) continue;
+    turns += 1;
+    try {
+      const item = JSON.parse(line).item;
+      if (item?.type === 'agent_message' && typeof item.text === 'string') finalText = item.text;
+    } catch {
+      /* not this line */
+    }
+  }
   let usedModel = model;
   if (!usedModel) {
     try {
@@ -245,24 +255,54 @@ async function runCodex(ws, session = {}) {
     }
   }
   const tokens = codexUsage(r.stdout);
-  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing' };
+  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText };
 }
 
 /** Two sessions on one workspace add up: turns, cost, time and tokens are the task's total; the model is the last one. */
 function sumRuns(a, b) {
   const add = (x, y) => (x === null && y === null ? null : (x ?? 0) + (y ?? 0));
   const tokens = a.tokens && b.tokens ? Object.fromEntries(Object.keys(a.tokens).map((k) => [k, a.tokens[k] + b.tokens[k]])) : null;
-  return { client: a.client, model: b.model ?? a.model, turns: add(a.turns, b.turns), costUsd: add(a.costUsd, b.costUsd), ms: a.ms + b.ms, tokens, usage: tokens ? 'captured' : 'missing', sessions: (a.sessions ?? 1) + 1 };
+  return { client: a.client, model: b.model ?? a.model, turns: add(a.turns, b.turns), costUsd: add(a.costUsd, b.costUsd), ms: a.ms + b.ms, tokens, usage: tokens ? 'captured' : 'missing', sessions: (a.sessions ?? 1) + 1, finalText: b.finalText ?? '' };
+}
+
+/** A task's fake user (`judge/meta.json` → `fakeUser`, a script under the task's key/ that never reaches the workspace):
+ * between sessions it reads what the agent asked — the `on` arm's open inbox questions, or the final message of either
+ * arm — and answers only what it was asked. The answer lands in TASK.md for both arms and in the inbox for `on`. */
+function fakeUser(ws, task, run) {
+  const script = path.join(here, 'tasks', task, meta(task).fakeUser);
+  const asked = [];
+  if (harness === 'on') {
+    try {
+      const view = JSON.parse(vibeSync(ws, ['state']).stdout);
+      for (const q of view.inbox?.items ?? []) asked.push({ id: q.id, text: q.question });
+    } catch {
+      /* no state */
+    }
+  }
+  if (run.finalText) asked.push({ id: null, text: run.finalText });
+  let answered = 0;
+  for (const q of asked) {
+    const r = spawnSync('node', [script], { input: q.text, encoding: 'utf-8' });
+    const answer = (r.stdout || '').trim();
+    if (!answer) continue;
+    answered += 1;
+    fs.appendFileSync(path.join(ws, 'TASK.md'), `\n\nAnswer from the user, to what you asked: ${answer}\n`);
+    if (q.id) vibeSync(ws, ['inbox', 'answer', q.id, answer]);
+  }
+  return answered;
 }
 
 async function runOneJob(job) {
   const ws = prepare(job.task);
   const sessions = meta(job.task).sessions ?? [{}];
   let run = null;
-  for (const session of sessions) {
+  let asked = 0;
+  for (const [i, session] of sessions.entries()) {
     const one = client === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
     run = run ? sumRuns(run, one) : one;
+    if (meta(job.task).fakeUser && i < sessions.length - 1) asked += fakeUser(ws, job.task, one);
   }
+  run.asked = asked;
   const report = judge(ws, run, job.task, job.index);
   return { ...job, ws, run, report };
 }

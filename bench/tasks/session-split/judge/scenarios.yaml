@@ -13,3 +13,19 @@
 - id: export
   then: export writes a quoted CSV
   check: { type: run, cmd: "node --test tests/export.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: remove
+  then: remove deletes by index and rejects one out of range
+  check: { type: run, cmd: "node --test tests/remove.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: stats
+  then: stats prints count, min, max, avg
+  check: { type: run, cmd: "node --test tests/stats.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: import
+  then: import appends rows from a CSV with a header
+  check: { type: run, cmd: "node --test tests/import.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: find
+  then: find filters by name, case-insensitive
+  check: { type: run, cmd: "node --test tests/find.test.cjs", expect: 0, timeoutMs: 30000 }

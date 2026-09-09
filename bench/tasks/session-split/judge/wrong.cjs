@@ -1,3 +1,5 @@
-// The first session's partial work, never continued: add and list exist, total and export do not.
+// The first session's partial work, never continued: add, list, total and export exist; the other four do not.
 const fs = require('node:fs');
-fs.writeFileSync('ledger.cjs', fs.readFileSync('judge/ledger.cjs', 'utf-8').replace(/\n  case 'total':[\s\S]*?\n  case 'export'/, "\n  case 'export'").replace(/\n  case 'export':[\s\S]*?break;\n/, '\n'));
+let src = fs.readFileSync('judge/ledger.cjs', 'utf-8');
+for (const name of ['remove', 'stats', 'import', 'find']) src = src.replace(new RegExp(`\n  case '${name}': \\{[\\s\\S]*?\n  \\}\n`), '\n');
+fs.writeFileSync('ledger.cjs', src);

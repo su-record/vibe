@@ -55,6 +55,20 @@ const cliNote = installed && !newer(version, installed)
   ? `vibe CLI ${installed} on PATH`
   : `vibe CLI ${installed ? `${installed} is older than this plugin (${version})` : 'is not on PATH'} — run: npm i -g @su-record/vibe@${version}`;
 
-const text = `${card}\n\n[vibe plugin ${version}] ${cliNote}`;
+/** The project's `vibe state`, when the session starts inside one — the model's first command, handed over for free. */
+function stateNote() {
+  const cwd = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  let dir = cwd;
+  for (;;) {
+    if (fs.existsSync(path.join(dir, '.vibe', 'state.json'))) break;
+    const up = path.dirname(dir);
+    if (up === dir || fs.existsSync(path.join(dir, '.git'))) return '';
+    dir = up;
+  }
+  const r = spawnSync('vibe', ['state'], { cwd: dir, encoding: 'utf-8', timeout: 20000, shell: process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+  return r.status === 0 && r.stdout ? `\n\n[vibe state — this is the first command already run; continue from its next line]\n${r.stdout.trim()}` : '';
+}
+
+const text = `${card}\n\n[vibe plugin ${version}] ${cliNote}${stateNote()}`;
 process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } })}\n`);
 process.exit(0);

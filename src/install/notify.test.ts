@@ -42,6 +42,26 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(pre({ tool_name: 'Read', tool_input: { file_path: path.join(project, 'ten.ts') } }, { VIBE_READ_ADVISE_LINES: '5' }).stdout).toBe('');
   });
 
+  it('stop: with an approved intent still building the verdict runs and comes back as the reason the turn is not over; DONE, a continued turn or no intent stays silent', () => {
+    const cli = path.join(packageRoot(), 'dist', 'cli.js');
+    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+    const stop = (payload: object) => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'stop'], { cwd: project, input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
+    expect(stop({}).stdout).toBe(''); // no intent
+    fs.writeFileSync(path.join(project, 'intent.md'), '# t\n\n## Why\nx\n');
+    fs.writeFileSync(path.join(project, 'scenarios.yaml'), '- { id: a, then: x, check: { type: run, cmd: "node -e 0" } }\n');
+    vibe('tokens', 'off');
+    vibe('intent', 'draft', 'intent.md', 'scenarios.yaml');
+    vibe('approve');
+    const blocked = JSON.parse(stop({}).stdout) as { decision: string; reason: string };
+    expect(blocked.decision).toBe('block');
+    expect(blocked.reason).toContain('DONE — every gate scenario passed');
+    expect(blocked.reason).toContain('Report from this output');
+    expect(stop({}).stdout).toBe(''); // DONE now — the verdict is not rerun
+    fs.writeFileSync(path.join(project, 'edit.txt'), 'changed\n'); // RUNNING again
+    expect(stop({ stop_hook_active: true }).stdout).toBe(''); // a turn already continued by this hook is let go
+    expect(JSON.parse(stop({}).stdout).decision).toBe('block');
+  });
+
   it('gate: a git push with no authorize record is blocked under strict and irreversible, warned under off; tokens off prints the container note once', () => {
     const push = { tool_name: 'Bash', tool_input: { command: 'git push origin main' } };
     for (const policy of ['strict', 'irreversible']) {

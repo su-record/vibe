@@ -30,14 +30,21 @@
   given: an approved intent of five run scenarios (size full)
   when: vibe state runs
   then: the next line says check --all first and context and check <id> only on a failure; the card, the router and the build skill say the same; the gate's allowance is 2
-  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'full' && grep -q 'on a failure' card.md && grep -q 'on a failure' skills/vibe-build/SKILL.md && grep -q 'TURNS_ALLOWANCE = 2' checks/bench-gate.js", expect: 0, timeoutMs: 120000 }
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'full' && grep -q 'on a failure' card.md && grep -q 'on a failure' skills/vibe-build/SKILL.md && grep -q 'TOKENS_OVERHEAD = 1.25' checks/bench-gate.js && grep -q 'Over 400 lines' card.md", expect: 0, timeoutMs: 120000 }
 
 - id: state-brief
   needs: [build]
   given: an approved intent
   when: vibe state and vibe check run
   then: each scenario line names its check, the check output ends with the next line, and the card starts at vibe state
-  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'next      ' src/cli/work.ts && grep -q 'Start with `vibe state`' card.md && grep -q 'needs no skill' skills/vibe-build/SKILL.md skills/vibe-prove/SKILL.md skills/vibe-handoff/SKILL.md && grep -q 'no further reads' src/core/view.ts", expect: 0, timeoutMs: 120000 }
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'next      ' src/cli/work.ts && grep -q 'Start from `vibe state`' card.md && grep -q 'needs no skill' skills/vibe-build/SKILL.md skills/vibe-prove/SKILL.md skills/vibe-handoff/SKILL.md && grep -q 'no further reads' src/core/view.ts", expect: 0, timeoutMs: 120000 }
+
+- id: hooks-procedure
+  needs: [build]
+  given: an approved intent still building
+  when: a Claude turn ends, and a session starts inside the project
+  then: the Stop hook runs the verdict once and returns it as the reason; the session hook hands over vibe state; size full means the build skill applies
+  check: { type: run, cmd: "npx vitest run src/install/notify.test.ts -t 'stop' && npx vitest run src/install/tree.test.ts && npx vitest run src/core/view.test.ts -t 'size' && grep -q 'stateNote' hooks/session.js", expect: 0, timeoutMs: 180000 }
 
 - id: usage-capture
   then: the bench runs claude with stream-json and reads the last result event; a run without usage is named
@@ -47,8 +54,8 @@
   needs: [build]
   given: irreversible-trap and session-split under bench/tasks with judges, and the hook's patterns matching mutation.ts
   when: the judges run on a wrong and a right answer, and the hook sees npm run reset-data under the irreversible policy
-  then: both judges separate, the hook blocks the reset, and SETS.direction names session-split (the trap retired)
-  check: { type: run, cmd: "node checks/direction-judges.js irreversible-trap session-split && npx vitest run src/install/notify.test.ts -t 'gate' && grep -q \"direction: \\['session-split'\\]\" checks/bench-gate.js", expect: 0, timeoutMs: 600000 }
+  then: the judges separate, the hook blocks the reset, and SETS.direction names ask and session-split
+  check: { type: run, cmd: "node checks/direction-judges.js ask session-split irreversible-trap && npx vitest run src/install/notify.test.ts -t 'gate' && grep -q \"direction: \\['ask', 'session-split'\\]\" checks/bench-gate.js", expect: 0, timeoutMs: 600000 }
 
 - id: codex-cache-kept
   needs: [build]

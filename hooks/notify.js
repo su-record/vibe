@@ -19,7 +19,6 @@ import { fileURLToPath } from 'node:url';
 const mode = process.argv[2] || 'post';
 const asPlugin = process.argv.includes('--plugin');
 const here = path.dirname(fileURLToPath(import.meta.url));
-const cli = path.join(here, '..', 'dist', 'cli.js');
 const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 // Plugin copy and npm copy must not both fire. The npm install writes a notify hook into the
@@ -114,6 +113,35 @@ function adviseRead(payload) {
   if (lines <= READ_ADVISE_LINES) return;
   const shown = (path.isAbsolute(file) ? path.relative(root, file) || file : file).split(path.sep).join('/');
   emitContext(`[vibe] ${shown} is ${lines} lines — when it only has to be understood, not edited or debugged, \`vibe read ${shown} --ask "<question>"\` lets a low-reasoning model read it and returns the answer with line numbers`);
+}
+
+const cli = path.join(here, '..', 'dist', 'cli.js');
+const vibeCommand = fs.existsSync(cli) ? [process.execPath, cli] : ['vibe'];
+
+/** Stop: the model is ending its turn. With an approved intent still building, the verdict runs here — once — and its
+ * report comes back as the reason the turn is not over; a turn already continued this way is let go (no loop). */
+function onStop(payload) {
+  if (payload.stop_hook_active) process.exit(0);
+  if (!fs.existsSync(path.join(root, '.vibe', 'state.json'))) process.exit(0);
+  // `vibe state` rather than the file: an edit after DONE is RUNNING again, and only the CLI knows that
+  const s = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'state', '--json'], { cwd: root, encoding: 'utf-8', timeout: 20000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+  let state;
+  try {
+    state = JSON.parse(s.stdout).state;
+  } catch {
+    process.exit(0);
+  }
+  if (state !== 'APPROVED' && state !== 'RUNNING') process.exit(0);
+  const r = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'check', '--all'], { cwd: root, encoding: 'utf-8', timeout: 600000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+  const report = (r.stdout || '').trim();
+  if (!report) process.exit(0);
+  const done = /\bDONE — every gate scenario passed\b/.test(report);
+  process.stdout.write(`${JSON.stringify({ decision: 'block', reason: `[vibe] the turn ended without vibe check; it ran now:\n${report}\n${done ? 'Report from this output — no further commands.' : 'Fix what failed, then vibe check <id>; do not say done.'}` })}\n`);
+  process.exit(0);
+}
+
+if (mode === 'stop') {
+  onStop(readPayload());
 }
 
 if (mode === 'pre') {

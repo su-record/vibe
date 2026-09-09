@@ -1,12 +1,12 @@
 {
   "state": "DONE",
-  "intentHash": "86edcc8457e8e408",
-  "approvedAt": "2026-09-09T06:29:48.050Z",
-  "runs": 1,
+  "intentHash": "186fa1545915cf0f",
+  "approvedAt": "2026-09-09T06:58:00.111Z",
+  "runs": 2,
   "failStreak": 0,
   "lastFailHash": null,
-  "doneAt": "2026-09-09T06:29:48.253Z",
-  "doneTree": "d0c1fa0bda458443",
+  "doneAt": "2026-09-09T07:00:50.554Z",
+  "doneTree": "8c526251a7f5b56d",
   "abandonedReason": null,
-  "updatedAt": "2026-09-09T06:30:44.180Z"
+  "updatedAt": "2026-09-09T07:01:49.763Z"
 }

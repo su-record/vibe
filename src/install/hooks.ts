@@ -15,16 +15,19 @@ interface Settings {
 
 const NOTIFY_MARK = 'hooks/notify.js';
 
-function notifyCommand(mode: 'post' | 'pre'): string {
+function notifyCommand(mode: 'post' | 'pre' | 'stop'): string {
   return `node "${path.join(packageRoot(), NOTIFY_MARK)}" ${mode}`;
 }
 
-function wantedHooks(): Array<[string, string, string]> {
-  return [
+/** Codex has no Stop event; its hook file (under .codex) gets the three tool hooks only. */
+function wantedHooks(file = ''): Array<[string, string, string]> {
+  const hooks: Array<[string, string, string]> = [
     ['PostToolUse', 'Edit|Write|MultiEdit|NotebookEdit', notifyCommand('post')],
     ['PreToolUse', 'Bash', notifyCommand('pre')],
     ['PreToolUse', 'Read', notifyCommand('pre')],
   ];
+  if (!file.split(path.sep).includes('.codex')) hooks.push(['Stop', '', notifyCommand('stop')]);
+  return hooks;
 }
 
 function isNotify(entry: HookEntry): boolean {
@@ -36,7 +39,7 @@ export function installHookFile(file: string): 'added' | 'unchanged' {
   const settings = readJson<Settings>(file) ?? {};
   const hooks: Record<string, HookEntry[]> = {};
   for (const [event, list] of Object.entries(settings.hooks ?? {})) hooks[event] = list.filter((entry) => !isNotify(entry));
-  for (const [event, matcher, command] of wantedHooks()) hooks[event] = [...(hooks[event] ?? []), { matcher, hooks: [{ type: 'command', command, timeout: 20 }] }];
+  for (const [event, matcher, command] of wantedHooks(file)) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' ? 620 : 20 }] }];
   const next = { ...settings, hooks };
   if (JSON.stringify(next) === JSON.stringify(settings)) return 'unchanged';
   writeJson(file, next);
@@ -124,5 +127,5 @@ export function hasNotifyHook(file: string): boolean {
 
 export function hasCurrentHook(file: string): boolean {
   const settings = readJson<Settings>(file);
-  return wantedHooks().every(([event, , command]) => (settings?.hooks?.[event] ?? []).some((e) => e.hooks.some((h) => h.command === command)));
+  return wantedHooks(file).every(([event, , command]) => (settings?.hooks?.[event] ?? []).some((e) => e.hooks.some((h) => h.command === command)));
 }

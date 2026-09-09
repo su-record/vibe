@@ -42,7 +42,7 @@ describe('vibe state — the next line is the procedure', () => {
     expect(done.next).toBe('report — DONE r-3: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks');
   });
 
-  it('size: a review check, a fifth scenario or a needs chain two deep makes a task full', () => {
+  it('size: a review check, an irreversible scenario, a ninth scenario or a needs chain two deep makes a task full; a fifth does not', () => {
     draft(root, '# t\n', THREE + '- { id: d, then: w, check: { type: review, path: doc.md, lang: en } }\n');
     expect(buildStateView(root, root).size).toBe('full');
     approve(root, null);
@@ -51,5 +51,14 @@ describe('vibe state — the next line is the procedure', () => {
     expect(buildStateView(root, root).size).toBe('full');
     draft(root, '# t\n', THREE);
     expect(buildStateView(root, root).size).toBe('small');
+    // five run/file scenarios are still small — a count is not a reason to load the build skill
+    draft(root, '# t\n', THREE + '- { id: d, then: w, check: { type: run, cmd: "true" } }\n- { id: e, then: v, check: { type: run, cmd: "true" } }\n');
+    expect(buildStateView(root, root).size).toBe('small');
+    // an irreversible scenario is: the skill's authorize procedure applies
+    draft(root, '# t\n', THREE + '- { id: d, then: w, irreversible: "push:origin", check: { type: run, cmd: "true" } }\n');
+    expect(buildStateView(root, root).size).toBe('full');
+    // nine scenarios are: parallel worktrees apply
+    draft(root, '# t\n', THREE + Array.from({ length: 6 }, (_, i) => `- { id: s${i}, then: w, check: { type: run, cmd: "true" } }`).join('\n') + '\n');
+    expect(buildStateView(root, root).size).toBe('full');
   });
 });

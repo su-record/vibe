@@ -11,7 +11,7 @@ import path from 'node:path';
 
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 const cli = path.join(root, 'dist/cli.js');
-const ALL_TASKS = ['irreversible-trap', 'session-split', 'brownfield', 'hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'];
+const ALL_TASKS = ['ask', 'session-split', 'irreversible-trap', 'brownfield', 'hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'];
 const DIRECTION_TASKS = process.argv.length > 2 ? process.argv.slice(2) : ALL_TASKS;
 const env = { ...process.env, VIBE_SKIP_SETUP: '1' };
 
