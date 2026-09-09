@@ -50,10 +50,12 @@ const HELLO = JSON.stringify({
 
 describe('CLI — from request to DONE', () => {
   it('strict: tokens → draft → approve(token) → check → DONE; the exit code is the verdict', () => {
-    // no init: the first command installs the global surfaces into $HOME and `tokens` seeds .vibe/
+    // no init: `vibe setup` installs the global surfaces into $HOME (a query never does) and `tokens` seeds .vibe/
     const before = vibe(['state']);
     expect((before.json as { state: string }).state).toBe('NONE');
     expect(fs.existsSync(path.join(root, '.vibe'))).toBe(false); // a read leaves no trace
+    expect(fs.existsSync(path.join(root, '.claude', 'CLAUDE.md'))).toBe(false); // and repairs nothing
+    expect(vibe(['setup']).status).toBe(0);
     expect(fs.readFileSync(path.join(root, '.claude', 'CLAUDE.md'), 'utf-8')).toContain('<!-- vibe:start -->');
     expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
     expect(fs.readFileSync(path.join(root, '.claude', 'settings.json'), 'utf-8')).toContain('hooks/notify.js');
@@ -125,6 +127,7 @@ describe('CLI — from request to DONE', () => {
       return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
     };
     fs.mkdirSync(path.join(root, '.codex')); // a Codex home is present, so both clients get the surfaces
+    as('claude-code', ['setup']);
     as('claude-code', ['intent', 'draft', '--stdin'], HELLO);
     expect(as('claude-code', ['approve']).status).toBe(0);
     fs.writeFileSync(path.join(root, 'hello.txt'), 'hi\n');
@@ -161,12 +164,16 @@ describe('CLI — from request to DONE', () => {
     expect(outcome?.tail).toContain(`command not found — the check ran in ${root}`);
   });
 
-  it('status reports version, the global surfaces and the project; a missing skill is repaired by the next command', () => {
+  it('status reports version, the global surfaces and the project; a missing skill is named by status and repaired by setup, not by a query', () => {
+    vibe(['setup']);
     vibe(['tokens', 'off']);
     fs.rmSync(path.join(root, '.claude', 'skills', 'vibe-prove'), { recursive: true });
+    vibe(['state']);
+    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(false); // a query repaired nothing
     const status = vibe(['status']);
     expect(status.status).toBe(0);
-    expect(status.json).toMatchObject({ version: expect.stringMatching(/^\d+\.\d+\.\d+/), clients: { claude: { card: true, skills: 6, hook: true, current: true } }, project: { vibe: true, state: 'NONE' } });
+    expect(status.json).toMatchObject({ version: expect.stringMatching(/^\d+\.\d+\.\d+/), clients: { claude: { card: true, skills: 5, hook: true, current: false } }, project: { vibe: true, state: 'NONE' } });
+    expect(vibe(['setup']).status).toBe(0);
     expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(true);
   });
 

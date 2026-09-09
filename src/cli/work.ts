@@ -16,7 +16,7 @@ import { buildStateView } from '../core/view.js';
 import { ensureProject } from '../install/project.js';
 import { flagString, readStdin, type Flags, type Output } from './common.js';
 
-const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·' };
+const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·', stale: '↻' };
 
 export function cmdState(root: string, flags: Flags): Output {
   const view = buildStateView(root);
@@ -29,9 +29,10 @@ export function cmdState(root: string, flags: Flags): Output {
     `${view.state} · ${view.stage}${view.intent ? ` · ${view.intent.title}` : ''}`,
     `  next      ${view.next}`,
     `  size      ${view.size}`,
-    ...view.scenarios.map((s) => `  ${GLYPH[s.last] ?? '·'} ${s.id} [${s.type}]${s.needs ? ` needs ${s.needs.join(', ')}` : ''} ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''} — check: ${s.check}`),
+    ...view.scenarios.map((s) => `  ${GLYPH[s.last] ?? '·'} ${s.id} [${s.type}]${s.needs ? ` needs ${s.needs.join(', ')}` : ''} ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''} — check: ${s.check}${s.files ? ` — files: ${s.files.join(', ')}` : ''}`),
     `  remaining ${view.remaining.length ? view.remaining.join(', ') : 'none'}`,
     `  inbox     ${view.inbox.open} open${view.inbox.items.map((q) => `\n    [${q.id}] ${q.question}`).join('')}`,
+    '  commands  vibe check --all · vibe check <id> · vibe context <id> · vibe ask "question" [--options a|b] [--default a] (then stop and wait for the answer) · vibe regress record --scenario <id> --title "…"',
     ...view.notices.map((n) => `  ! ${n}`),
     ...view.proposals.map((p) => `  → ${p.kind}: ${p.ref}  (${p.why})`),
   ];

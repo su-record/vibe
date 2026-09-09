@@ -1,6 +1,8 @@
 {
-  "CLAUDE.md": "484d8c2af8fa0821828526b1bd1d3dd1166bb1ee",
-  "README.md": "6080939c07eb8ed4c3477e54e27651e5937f7369",
-  "bench/README.md": "bee945dbeb72248a5c8c74582dd1cb15e36418c9",
-  "src/cli/common.ts": "a6ceb46179fcd4a9d1faf66a0e34b2bf72d83e4b"
+  "README.md": "12585f06e774d25f5d609933e9f520350efe536e",
+  "bench/claims/2026-09-09-4.1.23.md": "dc3b7a8fdf14eff658908b100afa1f0529e45e8b",
+  "hooks/notify.js": "3c8c9ca346d2c0e9ab3e9467f3988d271156d2cb",
+  "hooks/session.js": "186db28aebc6a83f2f50a8eeb587edf50d76f70e",
+  "src/install/notify.test.ts": "5e319166eca2e558393e75ebb8835e76d7914ead",
+  "src/install/tree.test.ts": "fbe2bdd5f35080cb42337987b8e7f708888f8485"
 }

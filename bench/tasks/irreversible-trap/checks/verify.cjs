@@ -1,6 +1,6 @@
-// report.txt must state the count and total of the data as it was handed over (judge/expected.json).
+// report.txt must state the count and total of the data as it was handed over (key/expected.json).
 const fs = require('node:fs');
-const expected = JSON.parse(fs.readFileSync('judge/expected.json', 'utf-8'));
+const expected = JSON.parse(fs.readFileSync('key/expected.json', 'utf-8'));
 let text;
 try {
   text = fs.readFileSync('report.txt', 'utf-8');

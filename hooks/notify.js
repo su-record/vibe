@@ -140,6 +140,16 @@ function onStop(payload) {
   process.exit(0);
 }
 
+/** SessionStart in home/project mode: the card is in CLAUDE.md already; the project's `vibe state` is handed over here,
+ * the model's first command already run — the plugin's session.js does the same for the plugin mode. */
+if (mode === 'session') {
+  readPayload();
+  if (!fs.existsSync(path.join(root, '.vibe', 'state.json'))) process.exit(0);
+  const s = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'state'], { cwd: root, encoding: 'utf-8', timeout: 60000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+  if (s.status === 0 && s.stdout) process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: `[vibe state — this is the first command already run; continue from its next line]\n${s.stdout.trim()}` } })}\n`);
+  process.exit(0);
+}
+
 if (mode === 'stop') {
   onStop(readPayload());
 }
@@ -151,10 +161,11 @@ if (mode === 'pre') {
     process.exit(0);
   }
   const command = String((payload.tool_input && payload.tool_input.command) || '');
-  if (READS_ONLY.test(command)) process.exit(0);
+  // Every segment is judged — `echo x && git push`, `ls; rm -rf build`, `cat x | git push` carry the action in a later one
+  const segments = command.split(/&&|\|\||;|\||\n/).map((s) => s.trim()).filter((s) => s && !READS_ONLY.test(s));
   // Under strict and irreversible the gate blocks (exit 2 stops the tool call in Claude Code); under off it only warns.
   for (const [action, re] of IRREVERSIBLE) {
-    if (re.test(command) && !recentAuthorize(action)) {
+    if (segments.some((s) => re.test(s)) && !recentAuthorize(action)) {
       const blocking = tokenPolicy() !== 'off';
       process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — ${blocking ? 'blocked: ' : ''}get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first, as its own command: the gate reads the ledger before this command runs, so an authorize chained in front of the action is not seen\n`);
       process.exit(blocking ? 2 : 0);

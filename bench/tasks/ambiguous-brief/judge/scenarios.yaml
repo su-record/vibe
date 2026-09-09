@@ -20,4 +20,4 @@
 - id: length
   needs: [exists]
   then: the note is twelve lines or fewer — one line per changelog entry, nothing more
-  check: { type: run, cmd: "node judge/lines.cjs", expect: 0, timeoutMs: 10000 }
+  check: { type: run, cmd: "node checks/lines.cjs", expect: 0, timeoutMs: 10000 }

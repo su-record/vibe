@@ -47,7 +47,7 @@ export function flagString(flags: Flags, key: string): string | undefined {
 
 export const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
-  setup     update [--check] · status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
+  setup     setup (card, skills, hook or the plugin registration — the only repair besides update) · update [--check] · status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
             npm i -g puts them there and any vibe command repairs them; uninstall also clears what an older init left in the project)
             plugin build [--check] (manifests from package.json) · plugin mcpb [--out vibe.mcpb] (Claude desktop app bundle) · plugin install | status [--home <dir>]
   work      state [--graph] · read <file…> [--sheet] [--pages] (xlsx·docx·pptx·pdf·hwp·hwpx·html·tables·code) · read <file…> --ask "question" (a low-reasoning model reads, only the answer returns)

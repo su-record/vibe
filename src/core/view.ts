@@ -1,10 +1,12 @@
-import { invalidateDoneIfEdited, readResults, type LastResult } from './check.js';
+import { invalidateDoneIfEdited, readResults, type LastResult, type ResultsFile } from './check.js';
 import { openQuestions } from './inbox.js';
 import { hasIntent, intentPath, loadScenarios } from './intent.js';
 import { readLedger } from './ledger.js';
 import { actionOf } from './checks/mutation.js';
 import { listRegressions, regressionProblems } from './regress.js';
-import { isHuman } from './scenarios.js';
+import { filesFor } from './context.js';
+import { PROCEDURE } from './procedure.js';
+import { isHuman, type Scenario } from './scenarios.js';
 import { suggestSkills, type Proposal } from './skills.js';
 import { readState, stageOf, type Stage, type State } from './state.js';
 import { readText } from './store.js';
@@ -21,6 +23,8 @@ export interface ScenarioView {
   needs?: string[];
   /** What the check runs or reads — the command, the path, the URL, the question — so `vibe state` is the brief and scenarios.yaml need not be opened. */
   check: string;
+  /** The files this scenario is about (the check's files plus one hop of imports), for a scenario still to pass — read these, open nothing else until a check fails. */
+  files?: string[];
 }
 
 export interface StateView {
@@ -65,6 +69,19 @@ function checkTarget(check: Record<string, unknown>): string {
   return c.type ?? '';
 }
 
+/** One scenario as the brief shows it: its check, and — while it has not passed — the files it is about. */
+function scenarioView(root: string, s: Scenario & { regression?: boolean }, results: ResultsFile): ScenarioView {
+  const view: ScenarioView = { id: s.id, then: s.then, type: s.check.type, last: results[s.id]?.last ?? 'never', at: results[s.id]?.at ?? null, check: checkTarget(s.check as unknown as Record<string, unknown>) };
+  if (s.regression) view.regression = true;
+  if (s.irreversible) view.irreversible = s.irreversible;
+  if (s.needs) view.needs = s.needs;
+  if (view.last !== 'pass' && !isHuman(s)) {
+    const files = filesFor(root, s.check);
+    if (files.length) view.files = files;
+  }
+  return view;
+}
+
 function nextLine(state: State, stage: Stage, remaining: string[], inbox: string[], size: 'small' | 'full', run: number): string {
   if (state === 'STUCK') return `prove — STUCK: answer inbox [${inbox.join(', ')}], then vibe check --all`;
   if (inbox.length > 0) return `answer inbox [${inbox.join(', ')}] — then continue`;
@@ -72,8 +89,8 @@ function nextLine(state: State, stage: Stage, remaining: string[], inbox: string
   if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, research, one approval message; wait for "yes"';
   if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
-  const tail = size === 'small' ? 'then one vibe check --all' : 'then vibe check --all; on a failure, vibe context <id> then vibe check <id>';
-  return `build ${remaining.join(', ')} — ${tail}`;
+  const tail = size === 'small' ? PROCEDURE.build : `${PROCEDURE.build}; ${PROCEDURE.failure}`;
+  return `build ${remaining.join(', ')} ${tail}`;
 }
 
 function intentTitle(root: string): string {
@@ -91,13 +108,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   const results = readResults(root);
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
-  const views: ScenarioView[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))].map((s) => {
-    const view: ScenarioView = { id: s.id, then: s.then, type: s.check.type, last: results[s.id]?.last ?? 'never', at: results[s.id]?.at ?? null, check: checkTarget(s.check as unknown as Record<string, unknown>) };
-    if ('regression' in s && s.regression) view.regression = true;
-    if (s.irreversible) view.irreversible = s.irreversible;
-    if (s.needs) view.needs = s.needs;
-    return view;
-  });
+  const views: ScenarioView[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))].map((s) => scenarioView(root, s, results));
   const gated = views.filter((v) => v.type !== 'human');
   const remaining = gated.filter((v) => v.last !== 'pass').map((v) => v.id);
   const allPassedOnce = gated.length > 0 && remaining.length === 0;

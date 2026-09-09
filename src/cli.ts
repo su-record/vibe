@@ -13,7 +13,7 @@ import { ensureGlobal, globalStatus } from './install/global.js';
 import { flagString, HELP, packageVersion, parseArgs, type Flags, type Output } from './cli/common.js';
 import { cmdAsk, cmdAuthorize, cmdInbox } from './cli/human.js';
 import { cmdKnowledge, cmdLedger, cmdRegress, cmdResearch, cmdSkill } from './cli/memory.js';
-import { cmdPlugin, cmdStatus, cmdTokens, cmdUninstall, cmdUpdate } from './cli/setup.js';
+import { cmdPlugin, cmdSetup, cmdStatus, cmdTokens, cmdUninstall, cmdUpdate } from './cli/setup.js';
 import { cmdContext } from './cli/context.js';
 import { cmdConventions } from './cli/conventions.js';
 import { cmdBlast, cmdCallers, cmdMap, cmdSymbols } from './cli/map.js';
@@ -24,6 +24,7 @@ export { parseArgs } from './cli/common.js';
 type Handler = (root: string, sub: string | undefined, rest: string[], tail: string[], flags: Flags) => Output | Promise<Output>;
 const COMMANDS: Record<string, Handler> = {
   status: (root, _s, _r, _t, flags) => cmdStatus(root, flags),
+  setup: (_root, _s, _r, _t, flags) => cmdSetup(flags),
   update: (_root, _s, _r, _t, flags) => cmdUpdate(flags),
   tokens: (root, sub) => cmdTokens(root, sub),
   uninstall: (root, _s, _r, _t, flags) => cmdUninstall(root, flags),
@@ -53,6 +54,8 @@ const COMMANDS: Record<string, Handler> = {
   skill: (root, sub, rest, _t, flags) => cmdSkill(root, sub, rest, flags),
 };
 
+const REPAIRS = new Set(['update', 'plugin']); // `setup` is the repair itself
+
 export async function dispatch(argv: string[]): Promise<Output> {
   const { positionals, flags } = parseArgs(argv);
   const [cmd, sub, ...rest] = positionals;
@@ -60,7 +63,8 @@ export async function dispatch(argv: string[]): Promise<Output> {
   if (!cmd || flags['help'] === true) return { json: { help: HELP }, text: HELP, code: 0 };
   const handler = COMMANDS[cmd];
   if (!handler) throw usage(`unknown command: ${cmd}\n${HELP}`);
-  const repaired = process.env['VIBE_SKIP_SETUP'] || cmd === 'uninstall' ? [] : ensureGlobal(flagString(flags, 'home'));
+  // A command does only what it says: the install is repaired by `setup`, `update` and `plugin`, never on the way to a query
+  const repaired = REPAIRS.has(cmd) && !process.env['VIBE_SKIP_SETUP'] ? ensureGlobal(flagString(flags, 'home')) : [];
   if (repaired.length > 0) {
     const modes = globalStatus(flagString(flags, 'home')).clients;
     process.stderr.write(`[vibe] set up ${repaired.map((c) => `${c} (${modes[c]?.mode === 'plugin' ? `plugin ${modes[c]?.pluginVersion ?? ''}`.trim() : 'card, skills, hook in home'})`).join(', ')}\n`);

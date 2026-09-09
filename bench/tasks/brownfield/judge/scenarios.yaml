@@ -5,7 +5,7 @@
 - id: lines-test
   needs: [build]
   then: parseScenarios accepts a lines rule alone and fileCheck fails over the limit with the count in the reason
-  check: { type: run, cmd: "npx vitest run judge/lines.test.ts", expect: 0, timeoutMs: 180000 }
+  check: { type: run, cmd: "npx vitest run checks/lines.test.ts", expect: 0, timeoutMs: 180000 }
 
 - id: readme
   then: the README check table's file row names lines

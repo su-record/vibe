@@ -26,7 +26,7 @@ function hookSet(root: string, sessionArg: string): Record<string, unknown> {
   return {
     hooks: {
       SessionStart: [{ hooks: [cmd('session.js', sessionArg)] }],
-      ...(sessionArg === 'claude' ? { Stop: [{ hooks: [{ ...cmd('notify.js', 'stop --plugin'), timeout: 620 }] }] } : {}),
+      Stop: [{ hooks: [{ ...cmd('notify.js', 'stop --plugin'), timeout: 620 }] }],
       PostToolUse: [{ matcher: 'Edit|Write|MultiEdit|NotebookEdit', hooks: [{ ...cmd('notify.js', 'post --plugin'), timeout: 20 }] }],
       PreToolUse: [
         { matcher: 'Bash', hooks: [{ ...cmd('notify.js', 'pre --plugin'), timeout: 20 }] },

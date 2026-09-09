@@ -42,6 +42,22 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(pre({ tool_name: 'Read', tool_input: { file_path: path.join(project, 'ten.ts') } }, { VIBE_READ_ADVISE_LINES: '5' }).stdout).toBe('');
   });
 
+  it('session: at session start the project state is handed over; no project, nothing', () => {
+    const cli = path.join(packageRoot(), 'dist', 'cli.js');
+    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+    const session = () => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'session'], { cwd: project, input: '{}', encoding: 'utf-8', env: { ...process.env, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
+    expect(session().stdout).toBe('');
+    fs.writeFileSync(path.join(project, 'intent.md'), '# t\n\n## Why\nx\n');
+    fs.writeFileSync(path.join(project, 'scenarios.yaml'), '- { id: a, then: x, check: { type: run, cmd: "node -e 0" } }\n');
+    vibe('tokens', 'off');
+    vibe('intent', 'draft', 'intent.md', 'scenarios.yaml');
+    vibe('approve');
+    const out = JSON.parse(session().stdout) as { hookSpecificOutput: { hookEventName: string; additionalContext: string } };
+    expect(out.hookSpecificOutput.hookEventName).toBe('SessionStart');
+    expect(out.hookSpecificOutput.additionalContext).toContain('first command already run');
+    expect(out.hookSpecificOutput.additionalContext).toContain('next      build a first');
+  }, 60_000);
+
   it('stop: with an approved intent still building the verdict runs and comes back as the reason the turn is not over; DONE, a continued turn or no intent stays silent', () => {
     const cli = path.join(packageRoot(), 'dist', 'cli.js');
     const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
@@ -60,9 +76,9 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     fs.writeFileSync(path.join(project, 'edit.txt'), 'changed\n'); // RUNNING again
     expect(stop({ stop_hook_active: true }).stdout).toBe(''); // a turn already continued by this hook is let go
     expect(JSON.parse(stop({}).stdout).decision).toBe('block');
-  });
+  }, 60_000);
 
-  it('gate: a git push with no authorize record is blocked under strict and irreversible, warned under off; tokens off prints the container note once', () => {
+  it('gate: a git push with no authorize record is blocked under strict and irreversible, warned under off; every command segment is judged; tokens off prints the container note once', () => {
     const push = { tool_name: 'Bash', tool_input: { command: 'git push origin main' } };
     for (const policy of ['strict', 'irreversible']) {
       fs.writeFileSync(path.join(project, '.vibe', 'config.json'), JSON.stringify({ tokens: policy }));
@@ -83,6 +99,11 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(reset.status).toBe(2);
     expect(reset.stderr).toContain('vibe ask --needs authorize:reset');
     expect(pre({ tool_name: 'Bash', tool_input: { command: 'grep -rn reset src/' } }).status).toBe(0);
+    // every segment is judged: a read-only first word hides nothing
+    for (const cmd of ['echo preview && git push origin main', 'ls; git push origin main', 'cat x | git push origin main', 'grep -rn reset src/ && npm run reset-data', 'git log | head; rm -rf build']) {
+      expect(pre({ tool_name: 'Bash', tool_input: { command: cmd } }).status, `segment: ${cmd}`).toBe(2);
+    }
+    expect(pre({ tool_name: 'Bash', tool_input: { command: 'grep -rn reset src/ | head; git log --oneline' } }).status).toBe(0); // segment: every part reads
     for (const cmd of ['pg_restore db.dump', 'npx prisma migrate reset', 'rm -rf build', 'npm run seed', 'npm publish', 'terraform apply']) {
       const hook = pre({ tool_name: 'Bash', tool_input: { command: cmd } });
       expect(hook.status, cmd).toBe(2);

@@ -70,6 +70,7 @@ function taskNames() {
 function prepare(task) {
   const taskDir = path.join(here, 'tasks', task);
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-bench-${client}-${harness}-`));
+  // both arms get the same files: the task, and checks/ (what a check needs to run); judge/ and key/ never — see checks/bench-no-key.js
   for (const f of fs.readdirSync(taskDir)) if (f !== 'judge' && f !== 'key') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
   // a task may prepare its workspace itself (brownfield: this repository archived and built); the judge stays hidden
   const prep = path.join(taskDir, 'judge', 'prepare.cjs');
@@ -117,6 +118,8 @@ function draftAndApprove(ws, taskDir) {
 /** After the agent stops: judge with the task's real scenarios and append one ledger line. */
 function judge(ws, run, task, index) {
   const taskDir = path.join(here, 'tasks', task);
+  // the key — the reference answer, the expected output — reaches the workspace only now, after the agent is done
+  if (fs.existsSync(path.join(taskDir, 'key'))) fs.cpSync(path.join(taskDir, 'key'), path.join(ws, 'key'), { recursive: true });
   draftAndApprove(ws, taskDir); // idempotent — the `off` arm never drafted, the `on` arm re-drafts the same intent
   // the judge runs the task's scenarios only: a regression the agent recorded is the agent's, counted apart
   const regDir = path.join(ws, '.vibe', 'regressions');
@@ -125,8 +128,13 @@ function judge(ws, run, task, index) {
   const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '' } });
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
-  const check = lines.map((l) => JSON.parse(l)).reverse().find((e) => e.event === 'check');
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const events = lines.map((l) => JSON.parse(l));
+  const check = events.reverse().find((e) => e.event === 'check');
+  // tokens a reader or reviewer spent on the agent's behalf (`usage` events) are the agent's cost too — nothing hides in a side model
+  const side = events.filter((e) => e.event === 'usage' && e.tokens);
+  if (side.length && run.tokens) for (const e of side) for (const k of ['input', 'cacheRead', 'cacheWrite', 'output']) run.tokens[k] = (run.tokens[k] ?? 0) + (e.tokens[k] ?? 0);
+  const sideModels = [...new Set(side.map((e) => e.detail))];
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(sideModels.length ? { sideModels } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -207,8 +215,9 @@ async function runClaude(ws, session = {}) {
   const r = await spawnAsync('claude', a, { cwd: ws });
   const { result, assistantTurns } = claudeResult(r.stdout);
   const out = result ?? {};
+  const error = out.is_error && typeof out.result === 'string' ? out.result.slice(0, 160) : /rate limit|usage limit|overloaded|credit balance/i.test(r.stdout) && !out.usage ? 'client error: limit or overload' : null;
   const { model: used, tokens } = claudeUsage(out);
-  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? (assistantTurns || null), costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText: typeof out.result === 'string' ? out.result : '' };
+  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? (assistantTurns || null), costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText: typeof out.result === 'string' ? out.result : '', ...(error ? { error } : {}) };
 }
 
 /** codex exec `--json` streams one line per event; `turn.completed` carries the turn's own usage. */
@@ -219,7 +228,9 @@ function codexUsage(stdout) {
       const event = JSON.parse(line);
       const u = event.usage ?? event.item?.usage ?? null;
       if (!u) continue;
-      return { input: u.input_tokens ?? u.inputTokens ?? 0, cacheRead: u.cached_input_tokens ?? u.cachedInputTokens ?? 0, cacheWrite: 0, output: u.output_tokens ?? u.outputTokens ?? 0 };
+      // codex's input_tokens includes cached_input_tokens; the bench's input is the uncached part, so the cache weight is not paid twice
+      const cached = u.cached_input_tokens ?? u.cachedInputTokens ?? 0;
+      return { input: Math.max(0, (u.input_tokens ?? u.inputTokens ?? 0) - cached), cacheRead: cached, cacheWrite: 0, output: u.output_tokens ?? u.outputTokens ?? 0 };
     } catch {
       /* not this line */
     }
@@ -229,14 +240,17 @@ function codexUsage(stdout) {
 
 async function runCodex(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
-  const a = ['exec', '--skip-git-repo-check', '--dangerously-bypass-approvals-and-sandbox', '--json', '-C', ws];
+  // the workspace's own hooks (the on arm's gate, session hand-over and stop verdict) run without a persisted trust entry
+  const a = ['exec', '--skip-git-repo-check', '--dangerously-bypass-approvals-and-sandbox', '--dangerously-bypass-hook-trust', '--json', '-C', ws];
   if (model) a.push('-m', model);
   const started = Date.now();
   const r = await spawnAsync('codex', a, { cwd: ws, input: prompt, timeoutMs: session.cutMs ?? AGENT_TIMEOUT_MS });
   // codex exec is one turn; the comparable unit is completed items (commands, messages, patches)
   let turns = 0;
   let finalText = '';
+  let error = null;
   for (const line of r.stdout.split('\n')) {
+    if (line.includes('"error"') && /usage limit|at capacity|rate limit|insufficient|quota/i.test(line)) error = (/"message":"([^"]{0,160})/.exec(line)?.[1] ?? 'client error').replace(/\\n/g, ' ');
     if (!line.includes('"item.completed"')) continue;
     turns += 1;
     try {
@@ -255,7 +269,7 @@ async function runCodex(ws, session = {}) {
     }
   }
   const tokens = codexUsage(r.stdout);
-  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText };
+  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText, ...(error ? { error } : {}) };
 }
 
 /** Two sessions on one workspace add up: turns, cost, time and tokens are the task's total; the model is the last one. */
@@ -299,6 +313,7 @@ async function runOneJob(job) {
   let asked = 0;
   for (const [i, session] of sessions.entries()) {
     const one = client === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
+    if (one.error) { run = { ...(run ? sumRuns(run, one) : one), error: one.error }; break; }
     run = run ? sumRuns(run, one) : one;
     if (meta(job.task).fakeUser && i < sessions.length - 1) asked += fakeUser(ws, job.task, one);
   }
@@ -313,7 +328,14 @@ async function runPool(jobs, size) {
   const results = [];
   async function worker() {
     let job;
-    while ((job = queue.shift())) results.push(await runOneJob(job));
+    while ((job = queue.shift())) {
+      const outcome = await runOneJob(job);
+      results.push(outcome);
+      if (outcome.run.error) {
+        console.error(`${client} ${harness} ${job.task}: ${outcome.run.error} — the arm stops here; a limit is not a measurement`);
+        queue.length = 0;
+      }
+    }
   }
   await Promise.all(Array.from({ length: Math.min(size, jobs.length) }, worker));
   return results;
@@ -322,7 +344,7 @@ async function runPool(jobs, size) {
 function report(outcome) {
   const { task, index, run, report: r, ws } = outcome;
   const cost = run.costUsd ?? '-';
-  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}`);
+  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}${run.error ? ` · ERROR ${run.error}` : ''}`);
 }
 
 const jobs = taskNames().flatMap((task) => Array.from({ length: runs }, (_, index) => ({ task, index })));

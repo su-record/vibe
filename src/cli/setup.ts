@@ -2,7 +2,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parseTokenPolicy, readConfig, writeConfig } from '../core/config.js';
 import { usage } from '../core/errors.js';
-import { globalStatus, uninstallGlobal, uninstallProjectSurfaces } from '../install/global.js';
+import { ensureGlobal, globalStatus, uninstallGlobal, uninstallProjectSurfaces } from '../install/global.js';
 import { buildMcpb } from '../install/mcpb.js';
 import { installPlugin, pluginStatus } from '../install/plugin.js';
 import { ensureProject, projectStatus, purgeProject } from '../install/project.js';
@@ -20,13 +20,22 @@ export function cmdTokens(root: string, policyRaw: string | undefined): Output {
   return { json: { tokens: policy }, text: `tokens: ${policy}${note}`, code: 0 };
 }
 
+/** The one command whose job is the install: card, skills and hook per client, or the plugin registration. */
+export function cmdSetup(flags: Flags): Output {
+  const home = flagString(flags, 'home');
+  const repaired = ensureGlobal(home);
+  const g = globalStatus(home);
+  const lines = Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${(repaired as string[]).includes(client) ? ' — set up now' : c.current ? ' — current' : ' — still stale'}`);
+  return { json: { repaired, ...g }, text: [`vibe ${packageVersion()} — ${g.home}`, ...lines].join('\n'), code: 0 };
+}
+
 export function cmdStatus(root: string, flags: Flags): Output {
   const g = globalStatus(flagString(flags, 'home'));
   const p = projectStatus(root);
   const update = process.env['VIBE_OFFLINE'] ? { installed: packageVersion(), latest: null, available: false } : checkUpdate();
   const lines = [
     `vibe ${packageVersion()} — ${g.home}`,
-    ...Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${c.current ? '' : ' — stale; any vibe command repairs it'}`),
+    ...Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${c.current ? '' : ' — stale; `vibe setup` repairs it'}`),
     `  card      ${g.cardBytes} bytes${g.cardOver ? ' — over 1KB!' : ''}`,
     ...(update.available ? [`  update    ${update.latest} available — \`vibe update\``] : []),
     `project   ${p.root}`,

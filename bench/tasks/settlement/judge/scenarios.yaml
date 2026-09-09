@@ -9,7 +9,7 @@
 
 - id: summary-schema
   then: out/summary.json matches the schema
-  check: { type: file, path: out/summary.json, schema: judge/summary.schema.json }
+  check: { type: file, path: out/summary.json, schema: checks/summary.schema.json }
 
 - id: duplicate-counted
   needs: [summary-schema]
