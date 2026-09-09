@@ -1,4 +1,5 @@
 import YAML from 'yaml';
+import { mutationOf } from './checks/mutation.js';
 
 export type CheckType = 'run' | 'file' | 'http' | 'eval' | 'review' | 'human';
 
@@ -180,6 +181,12 @@ export function parseScenarios(text: string): ParsedScenarios {
     scenarios.push(scenario);
   });
   rejectBadEdges(scenarios, rejections);
+  // a check observes: a run command that would change the world is irreversible unless the scenario said so itself
+  for (const s of scenarios) {
+    if (s.check.type !== 'run' || s.irreversible) continue;
+    const action = mutationOf(s.check.cmd);
+    if (action) s.irreversible = `${action} (detected)`;
+  }
   return { scenarios, rejections };
 }
 

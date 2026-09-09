@@ -14,18 +14,19 @@ If `vibe` is not on PATH, run `npm i -g @su-record/vibe` once; every command bel
 
 1. Run `vibe state --json`. A directory without `.vibe/` answers NONE; the first record creates it.
 2. If `notices` is non-empty, show them to the user first.
-3. If work is in progress (`state` is not NONE or ABANDONED), ask in one line: continue or start over? Starting over means `vibe abandon --reason "…"` first.
-4. Pick the stage:
+3. If work is in progress (`state` is not NONE or ABANDONED) and the user's request is a new one, ask in one line: continue or start over? Starting over means `vibe abandon --reason "…"` first.
+4. Follow the `next` line. It is the procedure; a stage skill is loaded only when `next` names one:
 
-| state | stage | skill |
-|---|---|---|
-| NONE · ABANDONED · DRAFT without intent | discover | `vibe-discover` |
-| DRAFT with intent | scope | `vibe-scope` |
-| APPROVED · RUNNING with remaining | build | `vibe-build` |
-| RUNNING without remaining · STUCK | prove | `vibe-prove` |
-| DONE | handoff | `vibe-handoff` |
+| `next` starts with | do |
+|---|---|
+| `discover` | load `vibe-discover` |
+| `approve` | load `vibe-scope` — the draft, `vibe intent analyze`, research, one approval message |
+| `build …` | build what it lists; `size: small` → one `vibe check --all` at the end; `size: full` → `vibe check <id>` after each, then `--all`; load `vibe-build` only for a full task with parallel or irreversible scenarios |
+| `check --all` | run it |
+| `prove — STUCK` · `answer inbox` | answer the question, then `vibe check --all`; load `vibe-prove` on a second STUCK |
+| `report` | the completion report (card rule 9); HANDOFF.md only if the intent asks; no further checks after DONE |
 
-5. Load that skill and follow it.
+With an approved intent, never re-enter scope: a second draft voids the approval and doubles the work.
 
 ## Never
 

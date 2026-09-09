@@ -90,6 +90,12 @@ export function recordUsage(root: string, input: UsageInput): LedgerEvent | null
   return record(root, { event: 'usage', client: input.client, model: input.model, run, detail: input.detail, tokens: input.tokens ?? null, costUsd: input.costUsd, ms: input.ms });
 }
 
+/** An authorize record for `action` inside the window — what lets an irreversible scenario run at all. */
+export function recentAuthorize(root: string, action: string, windowMs = 10 * 60 * 1000): boolean {
+  const cutoff = Date.now() - windowMs;
+  return readLedger(root).some((e) => e.event === 'authorize' && (e.detail ?? '').startsWith(`${action}:`) && new Date(e.at).getTime() >= cutoff);
+}
+
 export function readLedger(root: string, sinceMs?: number): LedgerEvent[] {
   const all = readJsonl<LedgerEvent>(ledgerPath(root));
   if (!sinceMs) return all;
@@ -263,8 +269,14 @@ function armKey(e: LedgerEvent, by: CompareBy): string {
 /** `ledgerFile` lets a bench keep its own ledger outside any project. `paired` keeps only runs that
  * pair with a passing run in the other arm on the same task (see `pairedOnly`) — for a bench ledger,
  * where efficiency is only comparable between runs that both did the work. */
-export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5, ledgerFile?: string, paired = false): Comparison {
-  const events = ledgerFile ? readJsonl<LedgerEvent>(ledgerFile) : readLedger(root);
+export interface CompareFilter {
+  client?: string;
+  task?: string;
+}
+
+export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5, ledgerFile?: string, paired = false, filter: CompareFilter = {}): Comparison {
+  const all = ledgerFile ? readJsonl<LedgerEvent & { task?: string }>(ledgerFile) : readLedger(root);
+  const events = all.filter((e) => (!filter.client || e.client === filter.client) && (!filter.task || (e as { task?: string }).task === filter.task));
   const allChecks = events.filter((e) => e.event === 'check');
   const checks = paired ? pairedOnly(allChecks, by) : allChecks;
   // What the readers and reviewers spent during a run belongs to that run's cost.

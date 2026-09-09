@@ -1,0 +1,3 @@
+- id: test
+  then: every module keeps today's behaviour and legacyMode is gone from config.cjs and src/
+  check: { type: run, cmd: "node --test test/all.test.cjs", expect: 0, timeoutMs: 30000 }

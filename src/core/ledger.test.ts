@@ -126,4 +126,18 @@ describe('ledger and comparison — the code says "cannot tell"', () => {
     expect(c.arms.find((a) => a.arm === 'claude-code')?.costMismatch).toBe(1);
     expect(c.arms.find((a) => a.arm === 'codex')?.costMismatch).toBe(0);
   });
+
+  it('filter: --client and --task keep only the matching runs of a bench ledger', () => {
+    const file = path.join(root, 'bench.jsonl');
+    const line = (client: string, task: string, harness: string, i: number, passed: number): string => JSON.stringify({ at: new Date(Date.now() + i).toISOString(), event: 'check', client, model: null, harness, task, run: `r-${i}`, scenarioSet: task, passed, failed: 0, turns: passed * 2 });
+    const lines: string[] = [];
+    let i = 0;
+    for (const client of ['claude-code', 'codex']) for (const task of ['settlement', 'report']) for (const harness of ['on', 'off']) for (let k = 0; k < 5; k += 1) lines.push(line(client, task, harness, (i += 1), harness === 'on' ? 5 : 3));
+    fs.writeFileSync(file, `${lines.join('\n')}\n`);
+    const filtered = compare(root, 'harness', 'checks', 5, file, false, { client: 'codex', task: 'report' });
+    expect(filtered.arms.map((a) => a.runs)).toEqual([5, 5]);
+    expect(filtered.verdict).toBe('difference-observed');
+    const mixed = compare(root, 'harness', 'checks', 5, file, false, { client: 'codex' });
+    expect(mixed.verdict).toBe('mixed-scenario-sets'); // two tasks in one arm
+  });
 });

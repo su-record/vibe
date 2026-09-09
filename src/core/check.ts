@@ -3,11 +3,12 @@ import { evalCheck } from './checks/eval.js';
 import { fileCheck } from './checks/file.js';
 import { httpCheck } from './checks/http.js';
 import { reviewCheck } from './checks/review.js';
+import { actionOf } from './checks/mutation.js';
 import { runCheck, type CheckResult } from './checks/run.js';
 import { detectClient, detectHarness, detectModel, reportedCostUsd, reportedTurns } from './client.js';
 import { invalidTransition } from './errors.js';
 import { ask, hasOpenQuestion } from './inbox.js';
-import { record, type Edge } from './ledger.js';
+import { record, type Edge, recentAuthorize } from './ledger.js';
 import { vibePath } from './paths.js';
 import { loadScenarios } from './intent.js';
 import { listRegressions } from './regress.js';
@@ -105,7 +106,19 @@ function askHumanOnce(root: string, scenario: Scenario): void {
   ask(root, { question, scenario: scenario.id });
 }
 
+/** An irreversible scenario runs only behind an authorize record: the harness never re-executes a mutation on its own. */
+function unauthorized(root: string, scenario: Scenario & { regression?: boolean }): ScenarioOutcome | null {
+  if (!scenario.irreversible) return null;
+  const action = actionOf(scenario.irreversible);
+  if (recentAuthorize(root, action)) return null;
+  const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status: 'blocked', exit: null, ms: 0, tail: '', reason: `irreversible (${action}) — vibe authorize --action ${action} first; check --all never runs it on its own` };
+  if (scenario.regression) outcome.regression = true;
+  return outcome;
+}
+
 async function runOne(root: string, scenario: Scenario & { regression?: boolean }): Promise<ScenarioOutcome> {
+  const held = unauthorized(root, scenario);
+  if (held) return held;
   const result = await execute(scenario, root);
   const status: LastResult = isHuman(scenario) ? 'pending' : result.pass ? 'pass' : 'fail';
   if (isHuman(scenario)) askHumanOnce(root, scenario);

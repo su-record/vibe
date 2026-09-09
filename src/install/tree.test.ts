@@ -49,7 +49,7 @@ describe('plugin hooks — one card, one hook, never two', () => {
     expect(out.status).toBe(0);
     const ctx = (JSON.parse(out.stdout) as { hookSpecificOutput: { hookEventName: string; additionalContext: string } }).hookSpecificOutput;
     expect(ctx.hookEventName).toBe('SessionStart');
-    expect(ctx.additionalContext).toContain('You are working inside vibe');
+    expect(ctx.additionalContext).toContain('You work inside vibe');
     expect(ctx.additionalContext).toMatch(/vibe CLI \d+\.\d+\.\d+ on PATH/);
     const noCli = spawnSync(process.execPath, [session, 'codex'], { encoding: 'utf-8', env: { ...env, PATH: shim } });
     expect((JSON.parse(noCli.stdout) as { hookSpecificOutput: { additionalContext: string } }).hookSpecificOutput.additionalContext).toContain('npm i -g @su-record/vibe@');

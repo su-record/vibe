@@ -27,6 +27,8 @@ export function cmdState(root: string, flags: Flags): Output {
   }
   const lines = [
     `${view.state} · ${view.stage}${view.intent ? ` · ${view.intent.title}` : ''}`,
+    `  next      ${view.next}`,
+    `  size      ${view.size}`,
     ...view.scenarios.map((s) => `  ${GLYPH[s.last] ?? '·'} ${s.id} [${s.type}]${s.needs ? ` needs ${s.needs.join(', ')}` : ''} ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''}`),
     `  remaining ${view.remaining.length ? view.remaining.join(', ') : 'none'}`,
     `  inbox     ${view.inbox.open} open${view.inbox.items.map((q) => `\n    [${q.id}] ${q.question}`).join('')}`,

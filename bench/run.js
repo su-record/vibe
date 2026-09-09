@@ -8,7 +8,7 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { installSurfaces, projectLayout } from '../dist/install/global.js';
+import { installSurfaces, projectLayout, SKILL_NAMES } from '../dist/install/global.js';
 
 const here = path.dirname(new URL(import.meta.url).pathname);
 const repo = path.resolve(here, '..');
@@ -21,6 +21,7 @@ const client = opt('client', 'claude');
 const harness = opt('harness', 'on');
 const runs = Number(opt('runs', '1'));
 const taskArg = opt('task', 'settlement');
+const setArg = opt('set', null);
 const model = opt('model', null);
 const maxTurns = Number(opt('max-turns', '40'));
 const parallel = Math.max(1, Number(opt('parallel', '4')));
@@ -47,7 +48,17 @@ delete env.CLAUDECODE;
 delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
 
+// The overhead set is the three saturated tasks from the first clean bench; the direction set is
+// the four the bare model is expected to fail at least some of the time. `--set` picks a named
+// group; `--task` (still the default) picks one task, or every directory under tasks/ with `all`.
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'] };
+SETS.all = [...SETS.overhead, ...SETS.direction];
+
 function taskNames() {
+  if (setArg) {
+    if (!SETS[setArg]) throw new Error(`unknown --set ${setArg} (overhead|direction|all)`);
+    return SETS[setArg];
+  }
   if (taskArg !== 'all') return [taskArg];
   return fs.readdirSync(path.join(here, 'tasks'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
 }
@@ -59,7 +70,11 @@ function prepare(task) {
   execFileSync('git', ['init', '-q'], { cwd: ws });
   if (harness === 'on') {
     // card, skills and hook go into the workspace itself — the `off` arm must stay bare
-    installSurfaces(ws, projectLayout(client === 'claude' ? 'claude' : 'codex'));
+    const layout = projectLayout(client === 'claude' ? 'claude' : 'codex');
+    installSurfaces(ws, layout);
+    // the six common skills only — a pack rides along only when the judge uses a review check (none does today)
+    const skillsDir = path.join(ws, layout.skills);
+    for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
     draftAndApprove(ws, taskDir);
   }
   return ws;

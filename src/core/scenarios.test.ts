@@ -86,4 +86,17 @@ describe('needs — dependency edges are validated over the whole set', () => {
     expect(r.scenarios[0]?.check).toMatchObject({ type: 'file', absent: 'Lorem ipsum|\\[\\[' });
     expect(parseScenarios('- { id: gate, then: "x", check: { type: file, path: draft.md } }\n').rejections[0]?.reason).toContain('absent');
   });
+
+  it('mutation: a run check that restores, seeds, drops, pushes or deploys is irreversible with the detected action; a declared one keeps its own; a reading command is not', () => {
+    const r = parseScenarios([
+      '- { id: restore, then: x, check: { type: run, cmd: "npm run db:restore && npm test" } }',
+      '- { id: seed, then: x, check: { type: run, cmd: "node scripts/seed.js" } }',
+      '- { id: mine, then: x, irreversible: "deploy:prod", check: { type: run, cmd: "npm run deploy" } }',
+      '- { id: read, then: x, check: { type: run, cmd: "npm test" } }',
+      '- { id: doc, then: x, check: { type: file, path: restore-notes.md, exists: true } }',
+    ].join('\n'));
+    expect(r.rejections).toEqual([]);
+    const by = Object.fromEntries(r.scenarios.map((s) => [s.id, s.irreversible]));
+    expect(by).toEqual({ restore: 'restore (detected)', seed: 'seed (detected)', mine: 'deploy:prod', read: undefined, doc: undefined });
+  });
 });

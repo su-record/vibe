@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
+import { actionOf } from './checks/mutation.js';
 import { detectClient, detectModel } from './client.js';
 import { usage } from './errors.js';
 import { loadScenarios } from './intent.js';
@@ -60,6 +61,7 @@ export function recordRegression(root: string, input: RegressionRecordInput): { 
   const source = loadScenarios(root).find((s) => s.id === input.scenario);
   if (!source) throw usage(`unknown scenario: ${input.scenario}`);
   if (source.check.type === 'human') throw usage('a human scenario cannot become a regression check — it has no verdict');
+  if (source.irreversible) throw usage(`a regression must observe — ${source.id} mutates (${actionOf(source.irreversible)}); write a check that reproduces the failure without changing state`);
   if (!input.title.trim()) throw usage('--title is required');
   const existing = readRegressionFiles(root).length;
   const id = regressionId(existing + 1, input.title);
