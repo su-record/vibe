@@ -136,5 +136,5 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(cli.stdout).toContain('container');
     const again = spawnSync(process.execPath, [path.join(packageRoot(), 'dist', 'cli.js'), 'tokens'], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
     expect(again.stdout).not.toContain('container');
-  });
+  }, 60_000); // Like the other CLI integration tests above, this starts many Node processes under load.
 });

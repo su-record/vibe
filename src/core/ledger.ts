@@ -28,7 +28,7 @@ export interface LedgerEvent {
   event: LedgerEventType;
   client: string;
   model: string | null;
-  /** on | off — set only by a bench run */
+  /** on | off | scoped — set only by a bench run */
   harness?: 'on' | 'off' | 'scoped';
   run?: string;
   scenarioSet?: string;
@@ -221,8 +221,8 @@ function pairKey(e: LedgerEvent, seenPerTask: Map<string, number>): string {
   return `${task}#${n}`;
 }
 
-/** Keep only runs that pair with a run in the other arm on the same task, both of which passed. Needs
- * exactly two arms — pairing across more than two has no single "other side" to match against. */
+/** Keep only matching passing pairs. Other arm counts retain their summaries so compare can
+ * explain why no pairwise verdict is possible. */
 function pairedOnly(checks: LedgerEvent[], by: CompareBy): LedgerEvent[] {
   const arms = new Map<string, LedgerEvent[]>();
   for (const e of checks) {
@@ -272,17 +272,17 @@ function armKey(e: LedgerEvent, by: CompareBy): string {
   return e.harness ?? 'unknown';
 }
 
-/** `ledgerFile` lets a bench keep its own ledger outside any project. `paired` keeps only runs that
- * pair with a passing run in the other arm on the same task (see `pairedOnly`) — for a bench ledger,
- * where efficiency is only comparable between runs that both did the work. */
 export interface CompareFilter {
   client?: string;
   task?: string;
 }
 
+/** `ledgerFile` lets a bench keep its own ledger outside any project. `paired` keeps only runs that
+ * pair with a passing run in the other arm on the same task (see `pairedOnly`) — for a bench ledger,
+ * where efficiency is only comparable between runs that both did the work. */
 export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5, ledgerFile?: string, paired = false, filter: CompareFilter = {}): Comparison {
-  const all = ledgerFile ? readJsonl<LedgerEvent & { task?: string }>(ledgerFile) : readLedger(root);
-  const events = all.filter((e) => (!filter.client || e.client === filter.client) && (!filter.task || (e as { task?: string }).task === filter.task));
+  const all = ledgerFile ? readJsonl<LedgerEvent>(ledgerFile) : readLedger(root);
+  const events = all.filter((e) => (!filter.client || e.client === filter.client) && (!filter.task || e.task === filter.task));
   const allChecks = events.filter((e) => e.event === 'check');
   const checks = paired ? pairedOnly(allChecks, by) : allChecks;
   // What the readers and reviewers spent during a run belongs to that run's cost.
@@ -306,6 +306,7 @@ export function compare(root: string, by: CompareBy, metric: CompareMetric, minR
   });
   const base = { by, metric, arms, delta: null };
   if (arms.length < 2) return { ...base, verdict: 'insufficient-runs', reason: 'fewer than two arms to compare' };
+  if (arms.length > 2) return { ...base, verdict: 'inconclusive', reason: `more than two arms to compare — filter the ledger to exactly two ${by} arms` };
   const [a, b] = arms as [ArmSummary, ArmSummary];
   if (a.usable < minRuns || b.usable < minRuns) {
     return { ...base, verdict: 'insufficient-runs', reason: `fewer than ${minRuns} usable runs per arm (${a.arm} ${a.usable}, ${b.arm} ${b.usable})` };
