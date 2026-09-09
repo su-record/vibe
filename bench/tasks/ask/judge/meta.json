@@ -1,1 +1,1 @@
-{ "sessions": [{}, {}], "fakeUser": "key/answer.cjs" }
+{ "sessions": [{}, {}], "fakeUser": "key/answer.cjs", "outputs": ["quote.cjs", "quote.txt"] }

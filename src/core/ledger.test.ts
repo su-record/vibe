@@ -16,6 +16,25 @@ function check(client: string, passed: number, scenarioSet = 'set-a', model: str
 }
 
 describe('ledger and comparison — the code says "cannot tell"', () => {
+  it('stalled attempts are counted but excluded from quality, without hiding their cost', () => {
+    for (const client of ['a', 'b']) for (let i = 0; i < 5; i += 1) {
+      record(root, { event: 'check', client, model: null, scenarioSet: 's', passed: 3, failed: 0, costUsd: 1 });
+    }
+    record(root, { event: 'check', client: 'a', model: null, scenarioSet: 's', passed: 0, failed: 3, stalled: true, costUsd: 7 });
+    expect(compare(root, 'client', 'checks').arms[0]).toMatchObject({ runs: 6, usable: 5, stalled: 1, range: { mean: 3 } });
+    expect(compare(root, 'client', 'cost').arms[0]).toMatchObject({ usable: 6, stalled: 1, range: { mean: 2 } });
+  });
+
+  it('stalled attempts remain visible when pairing has no completed pairs', () => {
+    for (const client of ['a', 'b']) record(root, { event: 'check', client, model: null, scenarioSet: 's', pair: 't#0', passed: 0, failed: 0, armPassed: true, stalled: true, ms: 10 });
+    expect(compare(root, 'client', 'ms', 1, undefined, true)).toMatchObject({
+      verdict: 'insufficient-runs', arms: [
+        { arm: 'a', runs: 0, usable: 0, stalled: 1, range: null },
+        { arm: 'b', runs: 0, usable: 0, stalled: 1, range: null },
+      ],
+    });
+  });
+
   it.each([false, true])('three arms: no pairwise verdict in any record order (paired=%s)', (paired) => {
     const file = path.join(root, 'three-arms.jsonl');
     const orders = [['off', 'on', 'scoped'], ['off', 'scoped', 'on'], ['on', 'off', 'scoped'],

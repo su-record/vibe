@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { installSurfaces, projectLayout, SKILL_NAMES } from '../dist/install/global.js';
+import { answerQuestions, stalled } from './dialogue.js';
 
 const here = path.dirname(new URL(import.meta.url).pathname);
 const repo = path.resolve(here, '..');
@@ -31,7 +32,7 @@ const setArg = opt('set', null);
 const model = opt('model', null);
 const maxTurns = Number(opt('max-turns', '40'));
 const parallel = Math.max(1, Number(opt('parallel', '4')));
-const ledger = path.join(here, 'ledger.jsonl');
+const ledger = path.resolve(opt('ledger', path.join(here, 'ledger.jsonl')));
 const AGENT_TIMEOUT_MS = 15 * 60_000;
 const MAX_CAPTURE = 64 * 1024 * 1024;
 
@@ -165,7 +166,7 @@ function judge(ws, run, task, index) {
   const side = events.filter((e) => e.event === 'usage' && e.tokens);
   if (side.length && run.tokens) for (const e of side) for (const k of ['input', 'cacheRead', 'cacheWrite', 'output']) run.tokens[k] = (run.tokens[k] ?? 0) + (e.tokens[k] ?? 0);
   const sideModels = [...new Set(side.map((e) => e.detail))];
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped: { ...scoped, approvals: run.approvals ?? 0 } } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(run.stalled ? { stalled: true } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped: { ...scoped, approvals: run.approvals ?? 0 } } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: !run.stalled && check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -310,40 +311,14 @@ function sumRuns(a, b) {
   return { client: a.client, model: b.model ?? a.model, turns: add(a.turns, b.turns), costUsd: add(a.costUsd, b.costUsd), ms: a.ms + b.ms, tokens, usage: tokens ? 'captured' : 'missing', sessions: (a.sessions ?? 1) + 1, finalText: b.finalText ?? '' };
 }
 
-/** A task's fake user (`judge/meta.json` → `fakeUser`, a script under the task's key/ that never reaches the workspace):
- * between sessions it reads what the agent asked — the `on` arm's open inbox questions, or the final message of either
- * arm — and answers only what it was asked. The answer lands in TASK.md for both arms and in the inbox for `on`. */
-function fakeUser(ws, task, run) {
-  const script = path.join(here, 'tasks', task, meta(task).fakeUser);
-  const asked = [];
-  if (harness === 'on' || harness === 'scoped') {
-    try {
-      const view = JSON.parse(vibeSync(ws, ['state']).stdout);
-      for (const q of view.inbox?.items ?? []) asked.push({ id: q.id, text: q.question });
-    } catch {
-      /* no state */
-    }
-  }
-  if (run.finalText) asked.push({ id: null, text: run.finalText });
-  let answered = 0;
-  for (const q of asked) {
-    const r = spawnSync('node', [script], { input: q.text, encoding: 'utf-8' });
-    const answer = (r.stdout || '').trim();
-    if (!answer) continue;
-    answered += 1;
-    fs.appendFileSync(path.join(ws, 'TASK.md'), `\n\nAnswer from the user, to what you asked: ${answer}\n`);
-    if (q.id) vibeSync(ws, ['inbox', 'answer', q.id, answer]);
-  }
-  return answered;
-}
-
 async function runOneJob(job) {
   const ws = prepare(job.task);
   if (prepareOnly) {
     console.log(JSON.stringify({ ws, harness, clients, task: job.task }));
     return { ...job, ws, run: { client, turns: null, ms: 0, tokens: null }, report: { passed: 0, failed: 0 } };
   }
-  const sessions = meta(job.task).sessions ?? [{}];
+  const config = meta(job.task);
+  const sessions = config.sessions ?? [{}];
   let run = null;
   let asked = 0;
   let approvals = 0;
@@ -353,17 +328,18 @@ async function runOneJob(job) {
     const one = sessionClient === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
     if (one.error) { run = { ...(run ? sumRuns(run, one) : one), error: one.error }; break; }
     run = run ? sumRuns(run, one) : one;
-    if (meta(job.task).fakeUser && i < sessions.length - 1) asked += fakeUser(ws, job.task, one);
+    if (config.fakeUser && i < sessions.length - 1) asked += answerQuestions(ws, path.join(here, 'tasks', job.task, config.fakeUser), one.finalText);
     // scoped: the agent stopped at the approval message, as the flow says — the user says yes, and the work goes on in a new session
-    if (harness === 'scoped' && i === sessions.length - 1 && approvals === 0 && stateOf(ws) === 'DRAFT') {
+    if (harness === 'scoped' && approvals === 0 && stateOf(ws) === 'DRAFT') {
       vibeSync(ws, ['approve']);
       fs.appendFileSync(path.join(ws, 'TASK.md'), '\n\nUser: yes — approved as proposed; go ahead and build.\n');
       approvals += 1;
-      sessions.push({});
+      if (i === sessions.length - 1) sessions.push({});
     }
   }
   run.approvals = approvals;
   run.asked = asked;
+  run.stalled = stalled(ws, config.outputs);
   const report = judge(ws, run, job.task, job.index);
   return { ...job, ws, run, report };
 }
@@ -395,7 +371,7 @@ async function runPool(jobs, size) {
 function report(outcome) {
   const { task, index, run, report: r, ws } = outcome;
   const cost = run.costUsd ?? '-';
-  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}${run.error ? ` · ERROR ${run.error}` : ''}`);
+  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}${run.stalled ? ' · STALLED (excluded from quality)' : ''}${run.error ? ` · ERROR ${run.error}` : ''}`);
 }
 
 const jobs = taskNames().flatMap((task) => Array.from({ length: runs }, (_, index) => ({ task, index })));

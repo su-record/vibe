@@ -45,8 +45,9 @@ function missingArms(task, lines, set) {
   if (missing.length > 0) return `${task}: missing arm(s) ${missing.join(', ')}`;
   for (const arm of wanted) {
     const runs = latest(lines.filter((l) => armOf(l) === arm));
-    const count = runs.filter((l) => !l.error && observed(l.passed)).length;
-    if (count < REQUIRED_RUNS) return `${task}: ${arm} has ${count} usable run(s) in its latest ${REQUIRED_RUNS} attempts, needs ${REQUIRED_RUNS}`;
+    const count = runs.filter((l) => !l.error && !l.stalled && observed(l.passed)).length;
+    const stalled = runs.filter((l) => l.stalled).length;
+    if (count < REQUIRED_RUNS) return `${task}: ${arm} has ${count} usable run(s) in its latest ${REQUIRED_RUNS} attempts, needs ${REQUIRED_RUNS}${stalled ? ` (${stalled} stalled)` : ''}`;
     if (arm.endsWith('/scoped')) continue;
     const metrics = set === 'overhead' ? ['tokens', 'ms'] : set === 'context' || DIRECTION_RULES[task] === 'cheaper' ? ['tokens'] : ['turns'];
     for (const metric of metrics) {
