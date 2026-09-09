@@ -29,7 +29,7 @@ export interface LedgerEvent {
   client: string;
   model: string | null;
   /** on | off — set only by a bench run */
-  harness?: 'on' | 'off';
+  harness?: 'on' | 'off' | 'scoped';
   run?: string;
   scenarioSet?: string;
   scenarios?: Record<string, 'pass' | 'fail' | 'pending' | 'blocked'>;

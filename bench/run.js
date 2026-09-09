@@ -124,6 +124,14 @@ function draftAndApprove(ws, taskDir) {
 }
 
 /** After the agent stops: judge with the task's real scenarios and append one ledger line. */
+function stateOf(ws) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(ws, '.vibe', 'state.json'), 'utf-8')).state;
+  } catch {
+    return 'NONE';
+  }
+}
+
 /** What a scoped agent wrote for itself — scenario count and check types — read before the judge's intent replaces it. */
 function scopedWork(ws) {
   try {
@@ -157,7 +165,7 @@ function judge(ws, run, task, index) {
   const side = events.filter((e) => e.event === 'usage' && e.tokens);
   if (side.length && run.tokens) for (const e of side) for (const k of ['input', 'cacheRead', 'cacheWrite', 'output']) run.tokens[k] = (run.tokens[k] ?? 0) + (e.tokens[k] ?? 0);
   const sideModels = [...new Set(side.map((e) => e.detail))];
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped: { ...scoped, approvals: run.approvals ?? 0 } } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -338,13 +346,23 @@ async function runOneJob(job) {
   const sessions = meta(job.task).sessions ?? [{}];
   let run = null;
   let asked = 0;
-  for (const [i, session] of sessions.entries()) {
+  let approvals = 0;
+  for (let i = 0; i < sessions.length; i += 1) {
+    const session = sessions[i];
     const sessionClient = clients[i % clients.length];
     const one = sessionClient === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
     if (one.error) { run = { ...(run ? sumRuns(run, one) : one), error: one.error }; break; }
     run = run ? sumRuns(run, one) : one;
     if (meta(job.task).fakeUser && i < sessions.length - 1) asked += fakeUser(ws, job.task, one);
+    // scoped: the agent stopped at the approval message, as the flow says — the user says yes, and the work goes on in a new session
+    if (harness === 'scoped' && i === sessions.length - 1 && approvals === 0 && stateOf(ws) === 'DRAFT') {
+      vibeSync(ws, ['approve']);
+      fs.appendFileSync(path.join(ws, 'TASK.md'), '\n\nUser: yes — approved as proposed; go ahead and build.\n');
+      approvals += 1;
+      sessions.push({});
+    }
   }
+  run.approvals = approvals;
   run.asked = asked;
   const report = judge(ws, run, job.task, job.index);
   return { ...job, ws, run, report };

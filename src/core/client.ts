@@ -8,9 +8,9 @@ export function detectClient(env: NodeJS.ProcessEnv = process.env): string {
 }
 
 /** Bench arms: VIBE_HARNESS=on|off says whether the agent worked with the vibe card and skills. */
-export function detectHarness(): 'on' | 'off' | null {
+export function detectHarness(): 'on' | 'off' | 'scoped' | null {
   const v = process.env['VIBE_HARNESS'];
-  return v === 'on' || v === 'off' ? v : null;
+  return v === 'on' || v === 'off' || v === 'scoped' ? v : null;
 }
 
 function envNumber(name: string): number | null {
