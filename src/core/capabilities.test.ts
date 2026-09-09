@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cmdMap } from '../cli/map.js';
-import { capabilityLines, detectCapabilities, proposeTools } from './capabilities.js';
+import { detectCapabilities, proposeTools } from './capabilities.js';
 
 let root: string;
 let home: string;
@@ -30,7 +30,7 @@ function fakeGraftOnly(): void {
 }
 
 describe('capabilities — one convention for other harnesses', () => {
-  it('status lists graft present with what it serves and pdftotext absent with the fallback; vibe map says it used graft', () => {
+  it('detection: graft present with what it serves and pdftotext absent with the fallback; vibe map says it used graft', () => {
     fakeGraftOnly();
     const all = detectCapabilities(root, home);
     const graft = all.find((c) => c.tool === 'graft')!;
@@ -40,9 +40,6 @@ describe('capabilities — one convention for other harnesses', () => {
     const pdf = all.find((c) => c.tool === 'pdftotext')!;
     expect(pdf.present).toBe(false);
     expect(pdf.fallback).toContain('built-in');
-    const lines = capabilityLines(root);
-    expect(lines.some((l) => l.includes('✔ graft') && l.includes('map, callers, blast'))).toBe(true);
-    expect(lines.some((l) => l.includes('· pdftotext') && l.includes('absent'))).toBe(true);
     const out = cmdMap(root, ['.'], {});
     expect(out.text.startsWith('(via graft)')).toBe(true);
     expect(out.text).toContain('GRAFT-MAP map .');

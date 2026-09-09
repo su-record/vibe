@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { capabilityLines, detectCapabilities } from '../core/capabilities.js';
 import { spawnSync } from 'node:child_process';
 import { parseTokenPolicy, readConfig, writeConfig } from '../core/config.js';
 import { usage } from '../core/errors.js';
@@ -34,10 +33,8 @@ export function cmdStatus(root: string, flags: Flags): Output {
     `  .vibe     ${p.vibe ? 'ok' : 'none yet — the first record creates it'}`,
     `  state     ${p.state}`,
     `  inbox     ${p.inboxOpen} open`,
-    'tools     present · serves · absent means vibe does it alone',
-    ...capabilityLines(root),
   ];
-  return { json: { version: packageVersion(), ...g, project: p, update, tools: detectCapabilities(root) }, text: lines.join('\n'), code: 0 };
+  return { json: { version: packageVersion(), ...g, project: p, update }, text: lines.join('\n'), code: 0 };
 }
 
 export function cmdUpdate(flags: Flags): Output {
