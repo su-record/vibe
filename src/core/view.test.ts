@@ -47,7 +47,7 @@ describe('vibe state — the next line is the procedure', () => {
     draft(root, '# t\n', THREE + '- { id: d, then: w, check: { type: review, path: doc.md, lang: en } }\n');
     expect(buildStateView(root, root).size).toBe('full');
     approve(root, null);
-    expect(buildStateView(root, root).next).toBe('build a, b, c, d — then vibe check --all; on a failure, vibe context <id> then vibe check <id>');
+    expect(buildStateView(root, root).next).toBe('build a, b, c, d — then one vibe check --all; on a failure, vibe context <id> then vibe check <id>');
     draft(root, '# t\n', THREE + '- { id: d, then: w, needs: [c], check: { type: run, cmd: "true" } }\n');
     expect(buildStateView(root, root).size).toBe('full');
     draft(root, '# t\n', THREE);

@@ -10,7 +10,7 @@ Main surfaces: Claude Code · Codex CLI · ChatGPT desktop app · Hermes Agent �
 npm i -g @su-record/vibe
 ```
 
-That is the whole install. The package registers itself as a local plugin in every client it finds and keeps the registration current on every later command:
+That is the whole install. The package registers itself as a local plugin in every client it finds and `vibe setup` or `vibe update` keeps the registration current — a query such as `vibe state` never touches the install, and `vibe status` says when it is stale:
 
 | client | what the install does |
 |---|---|
@@ -34,7 +34,7 @@ Then, in chat:
 request          `vibe state` says the stage and the next step (the session hook hands it over on Claude Code)
   → interview      discover: at most three questions, sample profiling, anomalies said first
   → scenarios      scope: each scenario bound to a check · research · skills needed → one approval
-  → build          everything, then one `vibe check --all`; `vibe context <id>` and `vibe check <id>` only for a scenario that failed
+  → build          everything, then one `vibe check --all`; on a failure, `vibe context <id>` then `vibe check <id>`
   → prove          `vibe check --all` — every scenario plus every regression, ordered by the work graph; the Stop hook runs it if a turn ends without it
   → report         from the check output; HANDOFF.md only when the intent asks; irreversible steps need a token
 ```

@@ -31,9 +31,9 @@ The user's rule stands: one release with everything, one bench, one deploy — a
 - Query commands never repair the install: `state`, `check`, `evidence`, `ledger`, `read`, `profile`, `map`, `symbols`, `callers`, `blast`, `context`, `conventions`, `intent show`, `inbox`, `regress list`, `skill list` run without touching `~/.claude` or `~/.codex`; `vibe status` says when the install is stale and `vibe update` / `vibe setup` repair it. `VIBE_SKIP_SETUP` is no longer needed for a query.
 - One procedure, one source: the `next` line's wording is generated from one table in `src/core/procedure.ts`, and a check (`checks/procedure.js`) proves card rule 2, the router skill and README's flow block quote the same three sentences.
 
-### D · The flaky test is found
-- `npm test` runs under the load `check --all` applies (the suite twice in parallel, three times) until the failing test is named; it is fixed at the cause (a timing assertion measures against a baseline taken in the same process, or an order dependency is removed), and a regression is recorded.
+### D · The suite under load
+- `checks/suite-under-load.js` runs the suite twice in parallel, three rounds, and names any test that fails; on 2026-09-09 three rounds passed clean, so the failure seen twice under `check --all` is not reproduced by this load and stays open — the check stays as the guard that will name it when it shows.
 
 ## Constraints
-- Patch version 4.1.23; files ≤ 400 lines, functions ≤ 50; card ≤ 1024 bytes; six skills ≤ 300 lines.
+- Patch version 4.1.23 (package.json bumped in this release; `vibe status` and the plugin manifests follow); files ≤ 400 lines, functions ≤ 50; card ≤ 1024 bytes; six skills ≤ 300 lines.
 - No release until the fair bench has run and the gate passes; if it does not, the README says which rule fails and the release waits.

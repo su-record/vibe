@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CARD_START, detectClients, ensureGlobal, globalLayout, globalStatus, hasNotifyHook, installSurfaces, projectLayout, setupGlobal, sweepDeadHooks, uninstallGlobal } from './global.js';
 import { languagePacks } from './plugin.js';
 import { ensureProject, hasProject, projectStatus } from './project.js';
+import { packageRoot } from '../core/paths.js';
 
 // These tests cover the home surfaces; plugin registration through the client CLIs has its own tests (register.test.ts).
 process.env['VIBE_NO_PLUGIN'] = '1';
@@ -16,6 +17,22 @@ beforeEach(() => {
 afterEach(() => fs.rmSync(home, { recursive: true, force: true }));
 
 describe('global surfaces — one copy per client home', () => {
+  it('query: vibe state leaves a stale home alone; vibe status names it; vibe setup repairs it', () => {
+    const { spawnSync } = require('node:child_process') as typeof import('node:child_process');
+    const cli = path.join(packageRoot(), 'dist', 'cli.js');
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-query-project-'));
+    const emptyPath = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-empty-path-')); // no claude, no codex on PATH: home mode
+    const run = (...args: string[]) => spawnSync(process.execPath, [cli, ...args, '--home', home], { cwd: project, encoding: 'utf-8', env: { PATH: emptyPath, HOME: home, VIBE_HOME_DIR: home, VIBE_OFFLINE: '1' } });
+    expect(run('state').status).toBe(0);
+    expect(fs.existsSync(path.join(home, '.claude', 'CLAUDE.md'))).toBe(false); // a query repaired nothing
+    expect(run('status').stdout).toContain('stale; `vibe setup` repairs it');
+    const setup = run('setup');
+    expect(setup.status).toBe(0);
+    expect(setup.stdout).toContain('set up now');
+    expect(fs.readFileSync(path.join(home, '.claude', 'CLAUDE.md'), 'utf-8')).toContain(CARD_START);
+    fs.rmSync(project, { recursive: true, force: true });
+  });
+
   it('a home with neither client gets Claude Code; a Codex home gets AGENTS.md, .codex/skills and .codex/hooks.json', () => {
     expect(detectClients(home)).toEqual(['claude']);
     fs.mkdirSync(path.join(home, '.codex'));

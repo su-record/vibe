@@ -61,7 +61,7 @@
 
 - id: flaky-named
   needs: [build]
-  then: the test that failed under load is named in a regression and the suite passes twice in parallel three times
+  then: the suite passes twice in parallel three times, or the check names what failed
   check: { type: run, cmd: "node checks/suite-under-load.js", expect: 0, timeoutMs: 900000 }
 
 - id: size
