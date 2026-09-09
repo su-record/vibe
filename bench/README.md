@@ -47,11 +47,15 @@ Beyond the base ledger fields, a bench line carries:
 - `costRecomputed` — `(input + 0.1×cacheRead + 1.25×cacheWrite) × VIBE_BENCH_INPUT_PRICE` plus `output × VIBE_BENCH_OUTPUT_PRICE`, both prices per million tokens and read from those two environment variables. Unset either one (the default) and `costRecomputed` is `null`, not a $0 claim — nothing is invented.
 - `ms` — the agent's own wall-clock time for the run (not the judge's check-execution time, which the base ledger line otherwise carries in this field).
 - `armPassed` — whether every scenario in the run passed (`failed === 0`). Efficiency metrics (`ms`, cost) are only comparable between runs that both actually did the work — see `--paired` below.
+- `usage` — `captured` or `missing`: whether the client reported its usage at all (a run that died before its final event is named, not silently zero).
+- `sessions` — how many agent sessions were summed into the line (1, or what the task's `judge/meta.json` named).
+- `asked` — on a task with a fake user, how many questions the arm asked that the fake user answered.
+- `agentRegressions` — regressions the agent recorded during its run; the judge removes them before scoring so they never count as the task's own scenarios.
 - `pair` — `<task>#<index>`, the same run repeated across arms, so a paired comparison can line up "claude's 3rd `on` run" against "claude's 3rd `off` run".
 
 ## Comparing
 
-`vibe ledger compare` takes `--metric checks|turns|cost|ms` and `--paired`. `--paired` keeps only runs that pair with a passing run in the other arm on the same task (by `pair`, or by task-and-order for a ledger written before this field existed) — efficiency numbers compared only where both arms actually passed. A comparison's arm summary also carries `costMismatch`: how many of that arm's runs had a `costRecomputed` more than 3× away from the client-reported `costUsd`, worth a second look before a cost claim is made.
+`vibe ledger compare` takes `--metric checks|turns|cost|ms|tokens` (tokens are weighted input: `input + 0.1×cacheRead + 1.25×cacheWrite`), `--paired`, `--client <c>` and `--task <t>`. `--paired` keeps only runs that pair with a passing run in the other arm on the same task (by `pair`, or by task-and-order for a ledger written before this field existed) — efficiency numbers compared only where both arms actually passed. A comparison's arm summary also carries `costMismatch`: how many of that arm's runs had a `costRecomputed` more than 3× away from the client-reported `costUsd`, worth a second look before a cost claim is made.
 
 A release note that claims a saving quotes the compare verdict, and the claim is written into the intent before the bench runs. A verdict of `inconclusive` or `insufficient-runs` is not a claim.
 

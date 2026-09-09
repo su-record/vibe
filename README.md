@@ -31,12 +31,12 @@ Then, in chat:
 ## The flow
 
 ```
-request (/vibe …)
+request          `vibe state` says the stage and the next step (the session hook hands it over on Claude Code)
   → interview      discover: at most three questions, sample profiling, anomalies said first
   → scenarios      scope: each scenario bound to a check · research · skills needed → one approval
-  → build          one scenario at a time, `vibe check` after each
-  → prove          `vibe check --all` — every scenario plus every regression, ordered by the work graph
-  → report + handoff   a document the operator can run alone; irreversible steps need a token
+  → build          everything, then one `vibe check --all`; `vibe context <id>` and `vibe check <id>` only for a scenario that failed
+  → prove          `vibe check --all` — every scenario plus every regression, ordered by the work graph; the Stop hook runs it if a turn ends without it
+  → report         from the check output; HANDOFF.md only when the intent asks; irreversible steps need a token
 ```
 
 Any client can pick the work up: `vibe state` says where you are, because the state lives in plain files inside the repository. There is no handoff document — the state is the handoff.
@@ -101,13 +101,15 @@ The policy is per project (`.vibe/config.json`); `vibe tokens` alone prints it. 
 ## Commands
 
 ```
-setup     update [--check] · status · tokens · uninstall [--purge-state] · plugin install | status
-work      state [--graph] · read <file> · profile <file> · intent draft | show · approve · check · evidence · abandon
-human     ask · authorize · inbox
-memory    regress record | list · knowledge add
-research  research --from-intent | "query"
+setup     update [--check] · status · tokens · uninstall [--purge-state] · plugin build | mcpb | install | status
+work      state [--graph] · read <file…> [--ask "…"] · profile <file> · intent draft | show | analyze · approve · check [id…] [--all] · evidence · abandon
+checks    run · file · http · eval · review · human · size [--max-file 400] [--max-function 50]
+map       map · symbols <file> · callers <symbol> · blast · context <scenario> · conventions
+human     ask · authorize --action <action> · inbox [answer <id> "…" | resolve <id>]
+memory    regress record | list · knowledge add [--global]
+research  research --from-intent | "query" [--days 30]
 skills    skill suggest · create · add · search · list · used · prune · dismiss
-ledger    ledger · ledger compare · ledger why <node> · ledger edges [--type]
+ledger    ledger · ledger compare --metric checks|turns|cost|ms|tokens [--paired] [--client] [--task] · ledger why <node> · ledger edges [--type]
 ```
 
 `vibe --help` has the details. Every command accepts `--json`. The exit code is the verdict: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition.
@@ -152,8 +154,8 @@ inbox.jsonl      questions, STUCK notices, token hashes
 regressions/     fixed failures as reproducing checks
 knowledge/       domain notes the model reads when it needs them; research/ holds search notes
 skills/          registry of project-local skills and dismissed proposals
-cache/           research results, one day
-config.json      token policy · skill catalogs
+cache/           research results (one day) · map.json (the codebase map, keyed by the tree)
+config.json      token policy · skill catalogs · reader and reviewer model settings
 ```
 
 ## Status
