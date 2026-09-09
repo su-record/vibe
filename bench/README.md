@@ -13,7 +13,7 @@ vibe ledger compare --by harness --metric ms --paired --ledger bench/ledger.json
 vibe ledger compare --by harness --metric checks --task hidden-requirement --ledger bench/ledger.jsonl
 ```
 
-`on` means the agent worked in a workspace with the vibe card, skills and an approved intent, so it could run `vibe check` itself. `off` means a bare workspace with only the task. The bench installs the card, skills and hook into the workspace itself for the `on` arm and sets `VIBE_SKIP_SETUP`, so the run never touches or repairs `~/.claude`. Both arms run under an isolated home (credentials copied in): the operator's own vibe plugin, skills and marketplace reach neither arm, so `off` is really off and `on` is only what the workspace carries. The judge runs the task's scenarios alone; a regression the agent recorded during its run is counted separately as `agentRegressions`, never as a passed check. In both arms the judge is the same: after the agent stops, the task's scenarios run through `vibe check --all` and one line per run lands in `bench/ledger.jsonl` with client, model, harness, turns, cost as the client reports it, tokens by kind, a recomputed cost, the agent's wall-clock time and whether every scenario passed.
+`on` means the agent worked in a workspace with the vibe card, skills, hooks and the judge's intent already approved, so it could run `vibe check` itself. `off` means a bare workspace with only the task. `scoped` (4.1.25) means the card, skills and hooks with no intent: the agent runs discover and scope itself from the brief — `vibe profile`, `vibe intent draft`, `vibe intent analyze` — and `tokens off` lets it approve; the judge's intent replaces the agent's at judge time, and the line carries `scoped: { scenarios, checks, approved }`. A two-session task can name one client per session (`--client claude:codex`, `judge/meta.json` `clients`); the line's client is then the pair. The bench installs the card, skills and hook into the workspace itself for the `on` arm and sets `VIBE_SKIP_SETUP`, so the run never touches or repairs `~/.claude`. Both arms run under an isolated home (credentials copied in): the operator's own vibe plugin, skills and marketplace reach neither arm, so `off` is really off and `on` is only what the workspace carries. The judge runs the task's scenarios alone; a regression the agent recorded during its run is counted separately as `agentRegressions`, never as a passed check. In both arms the judge is the same: after the agent stops, the task's scenarios run through `vibe check --all` and one line per run lands in `bench/ledger.jsonl` with client, model, harness, turns, cost as the client reports it, tokens by kind, a recomputed cost, the agent's wall-clock time and whether every scenario passed.
 
 ## The tasks
 
@@ -27,6 +27,8 @@ The **overhead set** — saturated on purpose, so a passing arm proves nothing a
 
 The **direction set** — each one a failure class the field has seen and the mechanism separates, so a passing arm says something about what the harness prevents, not just procedure:
 
+- `anomaly` — a week's orders whose export holds a repeated order id, a refund as a negative amount and one euro row, with `docs/finance.md` saying how each is settled and a brief that mentions none of it. `vibe profile` names all three before the interview. The judge holds the settlement and supplies it through `VIBE_KEY_EXPECTED`.
+- `handover` — `session-split` across two clients: the first session on Claude Code (cut at ten turns), the second on Codex with no memory and only the files. Judge: the tests.
 - `session-split` — see below.
 
 Retired after the 4.1.24 run (both bare models ask the customer once the fake user answers any question about the quote):
@@ -67,8 +69,8 @@ A release note that claims a saving quotes the compare verdict, and the claim is
 
 `checks/bench-gate.js` reads `bench/ledger.jsonl` and requires every task's latest five runs for every arm that client has been benched with (four arms — claude/codex × on/off — or, when a client was never benched at all, just the arms that exist, so long as there are at least two to compare). Two rules, one per set:
 
-- **Overhead** — per client, `on`'s mean checks-passed is never worse than `off`'s, `on` weighted input tokens ≤ `off` × 1.25, and `on` ms ≤ `off` ms × 1.5; turns are printed in the reason, not gated.
-- **Direction** — per client and task: a trap separates when `on` scores higher on checks than `off` on at least one client and is not worse on the others, with `on` turns at most 2× `off`; `session-split` holds when `on` is not worse on checks and spends no more tokens over its two sessions. A task that does neither is named as one the bare model already gets right, a candidate for retirement.
+- **Overhead** — per client, `on`'s and `scoped`'s mean checks-passed are never worse than `off`'s (scoped's tokens are reported, not gated), `on` weighted input tokens ≤ `off` × 1.25, and `on` ms ≤ `off` ms × 1.5; turns are printed in the reason, not gated.
+- **Direction** — per client and task: a trap separates when `on` or `scoped` scores higher on checks than `off` on at least one client and is not worse on the others, with `on` turns at most 2× `off`; `session-split` and `handover` hold when `on` is not worse on checks and spends no more tokens over its two sessions. A task that does neither is named as one the bare model already gets right, a candidate for retirement.
 
 It exits 1 naming the set, the task and the client that failed a rule. It runs as a `vibe check --all` scenario, not in CI, because the bench itself spends real model tokens — CI never triggers a bench run.
 

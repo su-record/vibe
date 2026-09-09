@@ -1,0 +1,12 @@
+- id: settlement
+  given: an export with a repeated order id, a refund and a euro order, and docs/finance.md
+  then: out/settlement.csv follows the finance rules, one row per seller in order
+  check: { type: run, cmd: "node checks/verify.cjs settlement", expect: 0, timeoutMs: 30000 }
+
+- id: summary
+  then: out/summary.json matches the settlement
+  check: { type: run, cmd: "node checks/verify.cjs summary", expect: 0, timeoutMs: 30000 }
+
+- id: files
+  then: both files exist
+  check: { type: run, cmd: "test -f out/settlement.csv && test -f out/summary.json", expect: 0 }

@@ -19,6 +19,10 @@ export interface ColumnProfile {
   distinct: number;
   min?: number;
   max?: number;
+  /** Numbers below zero — a refund in an amount column, a negative count. */
+  negatives?: number;
+  /** Value counts when the column holds few distinct values — a status, a currency, a category. */
+  values?: Record<string, number>;
   sample: Cell[];
 }
 
@@ -33,6 +37,9 @@ export interface Profile {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?)?$/;
 const SAMPLE_SIZE = 3;
+const LOW_CARDINALITY = 6;
+const RARE_SHARE = 0.1;
+const ID_NAME = /(^|[_\s-])(id|no|key|code)$/i;
 const MAX_ANOMALIES = 3;
 
 function typeOf(cell: Cell): CellType {
@@ -61,6 +68,13 @@ function profileColumn(name: string, cells: Cell[]): ColumnProfile {
   if (numbers.length > 0) {
     column.min = Math.min(...numbers);
     column.max = Math.max(...numbers);
+    const negatives = numbers.filter((n) => n < 0).length;
+    if (negatives > 0) column.negatives = negatives;
+  }
+  if (distinct.size >= 2 && distinct.size <= LOW_CARDINALITY && type === 'string') {
+    const counts: Record<string, number> = {};
+    for (const v of cells) if (v !== null && v !== '') counts[String(v)] = (counts[String(v)] ?? 0) + 1;
+    column.values = counts;
   }
   return column;
 }
@@ -72,6 +86,12 @@ function anomaliesOf(table: Table, columns: ColumnProfile[], duplicateRows: numb
     if (c.type === 'empty') found.push(`column "${c.name}" is empty in every row`);
     else if (c.type === 'mixed') found.push(`column "${c.name}" mixes ${Object.keys(c.types).filter((t) => t !== 'empty').join(' and ')}`);
     else if (c.missing > 0) found.push(`column "${c.name}" is missing in ${c.missing} of ${table.rows.length} rows`);
+    if (c.negatives) found.push(`column "${c.name}" has ${c.negatives} negative value${c.negatives > 1 ? 's' : ''} (a refund? a reversal?)`);
+    const present = table.rows.length - c.missing;
+    // a repeated id beyond the rows already named as exact duplicates — the same order on two dates, not the same row twice
+    const repeats = present - c.distinct - duplicateRows;
+    if (ID_NAME.test(c.name) && repeats > 0) found.push(`column "${c.name}" repeats: ${repeats} of ${present} values appear more than once`);
+    for (const [value, n] of Object.entries(c.values ?? {})) if (n / present <= RARE_SHARE && n < present) found.push(`column "${c.name}" is "${value}" in only ${n} of ${present} rows`);
   }
   const untitled = table.columns.filter((c) => c === '').length;
   if (untitled > 0) found.push(`${untitled} columns have no header`);

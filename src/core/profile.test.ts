@@ -33,6 +33,15 @@ describe('profile — anomalies first, with numbers', () => {
     expect(p.anomalies).toContainEqual('column "amount" mixes number and string');
   });
 
+  it('profile: a negative amount, a repeated id and a rare category value are named as anomalies', () => {
+    const file = path.join(root, 'orders.csv');
+    fs.writeFileSync(file, 'order_id,seller,amount,currency\n1,a,10,KRW\n2,b,20,KRW\n2,b,25,KRW\n3,c,-5,KRW\n4,d,30,KRW\n5,e,40,KRW\n6,f,50,KRW\n7,g,60,KRW\n8,h,70,KRW\n9,i,80,KRW\n10,j,90,EUR\n');
+    const p = profileFile(root, 'orders.csv');
+    expect(p.anomalies).toEqual(expect.arrayContaining([expect.stringContaining('"order_id" repeats: 1 of 11'), expect.stringContaining('"amount" has 1 negative value'), expect.stringContaining('"currency" is "EUR" in only 1 of 11 rows')]));
+    expect(p.columns.find((c) => c.name === 'amount')?.negatives).toBe(1);
+    expect(p.columns.find((c) => c.name === 'currency')?.values).toEqual({ KRW: 10, EUR: 1 });
+  });
+
   it('profile: JSONL gains columns as they appear; a broken xlsx and an unknown extension are refused with reasons', () => {
     fs.writeFileSync(path.join(root, 'rows.jsonl'), '{"a":1}\n{"a":2,"b":true}\n');
     const p = profileFile(root, 'rows.jsonl');

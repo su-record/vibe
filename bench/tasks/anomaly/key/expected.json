@@ -1,0 +1,25 @@
+{
+  "sellers": {
+    "Han Traders": {
+      "orders": 2,
+      "total": 200000
+    },
+    "Kim Books": {
+      "orders": 3,
+      "total": 120000
+    },
+    "Lee Foods": {
+      "orders": 2,
+      "total": 27000
+    },
+    "Park Tools": {
+      "orders": 2,
+      "total": 315500
+    }
+  },
+  "summary": {
+    "sellers": 4,
+    "orders": 9,
+    "total": 662500
+  }
+}

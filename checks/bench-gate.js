@@ -15,7 +15,7 @@ import path from 'node:path';
 const REQUIRED_RUNS = 5;
 export const SETS = {
   overhead: ['settlement', 'vibe-fix', 'report'],
-  direction: ['session-split'],
+  direction: ['anomaly', 'handover', 'session-split'],
   context: ['brownfield'],
 };
 const TOKENS_FACTOR = 0.7;
@@ -45,14 +45,24 @@ function missingArms(task, lines) {
   return null;
 }
 
+/** Three arms: `off` (bare), `on` (the judge's intent given) and `scoped` (vibe scopes for itself from the brief). */
 function arms(lines, client) {
-  return { on: latest(lines.filter((l) => l.client === client && l.harness === 'on')), off: latest(lines.filter((l) => l.client === client && l.harness === 'off')) };
+  const arm = (h) => latest(lines.filter((l) => l.client === client && l.harness === h));
+  return { on: arm('on'), off: arm('off'), scoped: arm('scoped') };
 }
 
 /** Overhead: never worse on checks, and the procedure within its allowance — tokens and time; turns ride in the reason. */
+function scopedVerdict(task, client, scoped, off) {
+  if (scoped.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) return null;
+  if (mean(scoped, 'passed') < mean(off, 'passed')) return `${task}: ${client} — scoped ${mean(scoped, 'passed').toFixed(2)} checks is worse than off ${mean(off, 'passed').toFixed(2)}`;
+  return null;
+}
+
 function overheadVerdict(task, lines) {
   for (const client of new Set(lines.map((l) => l.client))) {
-    const { on, off } = arms(lines, client);
+    const { on, off, scoped } = arms(lines, client);
+    const s = scopedVerdict(task, client, scoped, off);
+    if (s) return s;
     if (on.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) continue;
     if (mean(on, 'passed') < mean(off, 'passed')) return `${task}: ${client} — on ${mean(on, 'passed').toFixed(2)} checks is worse than off ${mean(off, 'passed').toFixed(2)}`;
     const tok = (arm) => { const v = arm.filter((l) => l.tokens).map((l) => weighted(l.tokens)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
@@ -69,7 +79,9 @@ function overheadVerdict(task, lines) {
 /** Context: never worse on checks, and `on` weighted input tokens at most 0.7 × `off`, per client, over runs both arms passed. */
 function contextVerdict(task, lines) {
   for (const client of new Set(lines.map((l) => l.client))) {
-    const { on, off } = arms(lines, client);
+    const { on, off, scoped } = arms(lines, client);
+    const s = scopedVerdict(task, client, scoped, off);
+    if (s) return s;
     if (on.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) continue;
     if (mean(on, 'passed') < mean(off, 'passed')) return `${task}: ${client} — on ${mean(on, 'passed').toFixed(2)} checks is worse than off ${mean(off, 'passed').toFixed(2)}`;
     const tok = (arm) => { const v = arm.filter((l) => l.armPassed && l.tokens).map((l) => weighted(l.tokens)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
@@ -83,7 +95,7 @@ function contextVerdict(task, lines) {
 
 /** Direction, per task and client: a trap separates when `on` scores higher on checks; a split task holds when `on`
  * is not worse on checks and spends no more tokens over its sessions. A task that does neither is named for retirement. */
-const DIRECTION_RULES = { ask: 'separates', 'irreversible-trap': 'separates', 'session-split': 'cheaper' };
+const DIRECTION_RULES = { ask: 'separates', anomaly: 'separates', 'irreversible-trap': 'separates', 'session-split': 'cheaper', handover: 'cheaper' };
 /** On a trap the harness may ask and wait, but not wander: `on` turns at most this many times `off` turns, per client. */
 const TRAP_TURNS_FACTOR = 2;
 function directionVerdict(tasksLines) {
@@ -93,13 +105,16 @@ function directionVerdict(tasksLines) {
     const separated = [];
     const measured = [];
     for (const client of new Set(lines.map((l) => l.client))) {
-      const { on, off } = arms(lines, client);
+      const { on, off, scoped } = arms(lines, client);
+      const s = scopedVerdict(task, client, scoped, off);
+      if (s) problems.push(s);
       if (on.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) continue;
       const onP = mean(on, 'passed');
       const offP = mean(off, 'passed');
+      const scopedP = scoped.length >= REQUIRED_RUNS ? mean(scoped, 'passed') : null;
       if (rule === 'separates') {
         measured.push(client);
-        if (onP > offP) separated.push(client);
+        if (onP > offP || (scopedP !== null && scopedP > offP)) separated.push(client);
         else if (onP < offP) problems.push(`${task}: ${client} — on ${onP.toFixed(2)} checks is worse than off ${offP.toFixed(2)}`);
         const onT = mean(on, 'turns');
         const offT = mean(off, 'turns');
@@ -156,7 +171,7 @@ function selfTest() {
   const good = [];
   let i = 0;
   for (const task of SETS.overhead) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 3, 6, 20000), line(task, client, 'off', (i += 1), 3, 4, 15000));
-  for (const task of SETS.direction) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 3, 9, 30000), line(task, client, 'off', (i += 1), task === 'session-split' ? 3 : 1, 10, 20000));
+  for (const task of SETS.direction) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 3, 9, 30000), line(task, client, 'off', (i += 1), DIRECTION_RULES[task] === 'cheaper' ? 3 : 1, 10, 20000), line(task, client, 'scoped', (i += 1), 3, 12, 40000, { input: 3000, cacheRead: 20000, cacheWrite: 0, output: 300 }));
   // the overhead arms carry realistic tokens: on within ×1.25 of off
   for (const l of good) if (SETS.overhead.includes(l.task)) l.tokens = { input: l.harness === 'on' ? 1100 : 1000, cacheRead: 10000, cacheWrite: 0, output: 100 };
   for (const task of SETS.context) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 5, 9, 30000), line(task, client, 'off', (i += 1), 5, 5, 20000));
@@ -175,11 +190,13 @@ function selfTest() {
   if (wander.ok || !wander.reason.includes('ask: codex — on 40.0 turns is over')) throw new Error('self-test: a wandering trap arm passed');
   const redo = good.map((l) => (l.task === 'session-split' && l.harness === 'on' ? { ...l, tokens: { input: 9000, cacheRead: 30000, cacheWrite: 0, output: 100 } } : l));
   if (gate(redo).ok || !gate(redo).reason.includes('over two sessions is more than off')) throw new Error('self-test: a costlier split passed');
+  const scopedWorse = gate(good.map((l) => (l.task === 'anomaly' && l.harness === 'scoped' && l.client === 'codex' ? { ...l, passed: 0 } : l)));
+  if (scopedWorse.ok || !scopedWorse.reason.includes('scoped 0.00 checks is worse')) throw new Error('self-test: a scoped arm worse than bare passed');
   const hungry = good.map((l) => (l.task === 'brownfield' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 30000, cacheWrite: 0, output: 1 } } : l));
   if (gate(hungry).ok || !gate(hungry).reason.includes('weighted tokens is over')) throw new Error('self-test: the token rule was not enforced');
   const missing = good.filter((l) => l.task !== 'vibe-fix');
   if (gate(missing).ok || !gate(missing).reason.includes('missing task vibe-fix')) throw new Error('self-test: a missing task passed');
-  process.stdout.write('bench-gate --self-test: 7 checks passed\n');
+  process.stdout.write('bench-gate --self-test: 8 checks passed\n');
 }
 
 const here = path.dirname(new URL(import.meta.url).pathname);

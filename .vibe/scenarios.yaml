@@ -2,43 +2,32 @@
   then: the package builds and every test passes
   check: { type: run, cmd: "npm run check", expect: 0, timeoutMs: 600000 }
 
-- id: ask-stops
+- id: scoped-arm
   needs: [build]
-  given: an open question, then an answered one
-  when: vibe ask runs and vibe state runs
-  then: ask says stop and wait; next says wait while unanswered, and carries the answer once answered
-  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'inbox' && npx vitest run src/cli.test.ts -t 'ask'", expect: 0, timeoutMs: 180000 }
+  given: bench/run.js with --harness scoped
+  when: a workspace is prepared and judged
+  then: the workspace holds card, skills and hooks but no intent; the ledger line says scoped and counts the agent's scenarios; the gate reads the third arm
+  check: { type: run, cmd: "node checks/bench-scoped.js && node checks/bench-gate.js --self-test", expect: 0, timeoutMs: 300000 }
 
-- id: failure-files
+- id: anomaly-task
   needs: [build]
-  given: a scenario whose check fails
-  when: vibe check runs
-  then: the failed line names the scenario's files and next says fix with the files; the procedure phrase is quoted everywhere
-  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'files' && node checks/procedure.js", expect: 0, timeoutMs: 180000 }
+  given: bench/tasks/anomaly with its checks, key and judge
+  when: the direction judges run
+  then: the wrong answer (the brief taken literally) fails and the right one (the document followed) passes; vibe profile names the three anomalies
+  check: { type: run, cmd: "node checks/direction-judges.js anomaly && node checks/bench-judge.js && node checks/bench-no-key.js && node checks/anomaly-profile.js", expect: 0, timeoutMs: 600000 }
 
-- id: claim-audit
+- id: handover-task
   needs: [build]
-  given: a transcript whose last assistant message claims completion while the state is RUNNING
-  when: the Stop hook runs
-  then: it blocks naming the claim and the state; a message without a claim, or DONE, passes
-  check: { type: run, cmd: "npx vitest run src/install/notify.test.ts -t 'claim'", expect: 0, timeoutMs: 180000 }
-
-- id: codex-trust
-  needs: [build]
-  given: a config.toml with and without hooks.state entries for vibe's hooks
-  when: vibe status runs
-  then: the codex line says trusted or how to trust
-  check: { type: run, cmd: "npx vitest run src/install/register.test.ts -t 'trust'", expect: 0, timeoutMs: 180000 }
-
-- id: scope-probe
-  then: the scope skill says probe before scenarios and write the check first
-  check: { type: run, cmd: "grep -q 'probe' skills/vibe-scope/SKILL.md && grep -q 'check script' skills/vibe-scope/SKILL.md", expect: 0 }
+  given: bench/tasks/handover with judge/meta.json naming two clients
+  when: the direction judges run and run.js parses --client claude:codex
+  then: the judge separates wrong from right; the runner names both clients on the line
+  check: { type: run, cmd: "node checks/direction-judges.js handover && node checks/bench-handover.js", expect: 0, timeoutMs: 600000 }
 
 - id: gate-is-release
-  needs: [build]
-  given: the bench rerun on every set, five runs per arm, both clients
+  needs: [scoped-arm, anomaly-task, handover-task]
+  given: the bench rerun on every set and arm
   when: the gate reads bench/ledger.jsonl
-  then: every pre-registered rule passes, including Codex's ask turns at most twice bare
+  then: every pre-registered rule passes
   check: { type: run, cmd: "node checks/bench-gate.js && node checks/bench-ran.js", expect: 0, timeoutMs: 120000 }
 
 - id: size

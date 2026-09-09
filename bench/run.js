@@ -19,8 +19,12 @@ const opt = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i === -1 ? fallback : args[i + 1];
 };
-const client = opt('client', 'claude');
+// `--client claude:codex` names one client per session on a two-session task (a handover); `client` is the first
+const clients = opt('client', 'claude').split(':');
+const client = clients[0];
+// `off` bare · `on` the judge's intent given · `scoped` vibe scopes for itself from the brief (card, skills, hooks, no intent)
 const harness = opt('harness', 'on');
+const prepareOnly = process.argv.includes('--prepare-only');
 const runs = Number(opt('runs', '1'));
 const taskArg = opt('task', 'settlement');
 const setArg = opt('set', null);
@@ -55,7 +59,7 @@ delete env.CLAUDE_PROJECT_DIR;
 // bare model never ran) and the four 4.1.21 tasks stay on disk, retired, and run by name.
 // `--set` picks a named group; `--task` (still the default) picks one task, or every directory
 // under tasks/ with `all`.
-const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['session-split'], context: ['brownfield'] };
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['anomaly', 'handover', 'session-split'], context: ['brownfield'] };
 SETS.all = [...SETS.overhead, ...SETS.direction, ...SETS.context];
 
 function taskNames() {
@@ -76,16 +80,20 @@ function prepare(task) {
   const prep = path.join(taskDir, 'judge', 'prepare.cjs');
   if (fs.existsSync(prep)) execFileSync('node', [prep], { cwd: ws, env: { ...env, VIBE_BENCH_REPO: repo }, stdio: 'ignore' });
   execFileSync('git', ['init', '-q'], { cwd: ws });
-  if (harness === 'on') {
-    // card, skills and hook go into the workspace itself — the `off` arm must stay bare
-    const layout = projectLayout(client === 'claude' ? 'claude' : 'codex');
-    installSurfaces(ws, layout);
-    // the six common skills only — a pack rides along only when the judge uses a review check (none does today)
-    const skillsDir = path.join(ws, layout.skills);
-    for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
-    draftAndApprove(ws, taskDir);
+  if (harness === 'on' || harness === 'scoped') {
+    // card, skills and hook go into the workspace itself — the `off` arm must stay bare; a two-client task gets both layouts
+    for (const c of new Set(clients)) {
+      const layout = projectLayout(c === 'claude' ? 'claude' : 'codex');
+      installSurfaces(ws, layout);
+      // the six common skills only — a pack rides along only when the judge uses a review check (none does today)
+      const skillsDir = path.join(ws, layout.skills);
+      for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
+    }
+    if (harness === 'on') draftAndApprove(ws, taskDir);
+    // scoped: no intent — the agent runs discover and scope itself; `tokens off` lets it approve without a human
+    if (harness === 'scoped') vibeSync(ws, ['tokens', 'off']);
     // the policy an install has by default: the hook blocks an irreversible command until `vibe authorize`
-    vibeSync(ws, ['tokens', 'irreversible']);
+    if (harness === 'on') vibeSync(ws, ['tokens', 'irreversible']);
   }
   return ws;
 }
@@ -116,8 +124,21 @@ function draftAndApprove(ws, taskDir) {
 }
 
 /** After the agent stops: judge with the task's real scenarios and append one ledger line. */
+/** What a scoped agent wrote for itself — scenario count and check types — read before the judge's intent replaces it. */
+function scopedWork(ws) {
+  try {
+    const text = fs.readFileSync(path.join(ws, '.vibe', 'scenarios.yaml'), 'utf-8');
+    const checks = [...text.matchAll(/type:\s*(\w+)/g)].map((m) => m[1]);
+    const approved = fs.existsSync(path.join(ws, '.vibe', 'state.json')) && JSON.parse(fs.readFileSync(path.join(ws, '.vibe', 'state.json'), 'utf-8')).approvedAt !== null;
+    return { scenarios: checks.length, checks: [...new Set(checks)], approved };
+  } catch {
+    return { scenarios: 0, checks: [], approved: false };
+  }
+}
+
 function judge(ws, run, task, index) {
   const taskDir = path.join(here, 'tasks', task);
+  const scoped = harness === 'scoped' ? scopedWork(ws) : null;
   // the key — the reference answer, the expected output — reaches the workspace only now, after the agent is done
   if (fs.existsSync(path.join(taskDir, 'key'))) fs.cpSync(path.join(taskDir, 'key'), path.join(ws, 'key'), { recursive: true });
   draftAndApprove(ws, taskDir); // idempotent — the `off` arm never drafted, the `on` arm re-drafts the same intent
@@ -127,7 +148,7 @@ function judge(ws, run, task, index) {
   fs.rmSync(regDir, { recursive: true, force: true });
   const keyFile = path.join(taskDir, 'key', 'expected.json');
   const keyEnv = fs.existsSync(keyFile) ? { VIBE_KEY_EXPECTED: fs.readFileSync(keyFile, 'utf-8') } : {};
-  const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '', ...keyEnv } });
+  const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: clients.length > 1 ? clients.map((c) => (c === 'claude' ? 'claude-code' : c)).join('→') : run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '', ...keyEnv } });
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const events = lines.map((l) => JSON.parse(l));
@@ -136,7 +157,7 @@ function judge(ws, run, task, index) {
   const side = events.filter((e) => e.event === 'usage' && e.tokens);
   if (side.length && run.tokens) for (const e of side) for (const k of ['input', 'cacheRead', 'cacheWrite', 'output']) run.tokens[k] = (run.tokens[k] ?? 0) + (e.tokens[k] ?? 0);
   const sideModels = [...new Set(side.map((e) => e.detail))];
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(sideModels.length ? { sideModels } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -211,7 +232,7 @@ function claudeResult(stdout) {
 async function runClaude(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   // user settings stay out of both arms; the `on` arm keeps the workspace's own (.claude/settings.local.json, skills)
-  const a = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions', '--max-turns', String(session.maxTurns ?? maxTurns), '--setting-sources', harness === 'on' ? 'project,local' : ''];
+  const a = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions', '--max-turns', String(session.maxTurns ?? maxTurns), '--setting-sources', harness === 'off' ? '' : 'project,local'];
   if (model) a.push('--model', model);
   const started = Date.now();
   const r = await spawnAsync('claude', a, { cwd: ws });
@@ -287,7 +308,7 @@ function sumRuns(a, b) {
 function fakeUser(ws, task, run) {
   const script = path.join(here, 'tasks', task, meta(task).fakeUser);
   const asked = [];
-  if (harness === 'on') {
+  if (harness === 'on' || harness === 'scoped') {
     try {
       const view = JSON.parse(vibeSync(ws, ['state']).stdout);
       for (const q of view.inbox?.items ?? []) asked.push({ id: q.id, text: q.question });
@@ -310,11 +331,16 @@ function fakeUser(ws, task, run) {
 
 async function runOneJob(job) {
   const ws = prepare(job.task);
+  if (prepareOnly) {
+    console.log(JSON.stringify({ ws, harness, clients, task: job.task }));
+    return { ...job, ws, run: { client, turns: null, ms: 0, tokens: null }, report: { passed: 0, failed: 0 } };
+  }
   const sessions = meta(job.task).sessions ?? [{}];
   let run = null;
   let asked = 0;
   for (const [i, session] of sessions.entries()) {
-    const one = client === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
+    const sessionClient = clients[i % clients.length];
+    const one = sessionClient === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
     if (one.error) { run = { ...(run ? sumRuns(run, one) : one), error: one.error }; break; }
     run = run ? sumRuns(run, one) : one;
     if (meta(job.task).fakeUser && i < sessions.length - 1) asked += fakeUser(ws, job.task, one);
@@ -322,6 +348,11 @@ async function runOneJob(job) {
   run.asked = asked;
   const report = judge(ws, run, job.task, job.index);
   return { ...job, ws, run, report };
+}
+
+if (prepareOnly) {
+  await runOneJob({ task: taskNames()[0], index: 0 });
+  process.exit(0);
 }
 
 /** A fixed-size pool of workers pulling from a shared queue — `--parallel` concurrent agent runs at once. */
