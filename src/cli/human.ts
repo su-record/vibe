@@ -37,8 +37,9 @@ export function cmdAsk(root: string, args: string[], flags: Flags): Output {
     `question recorded [${result.id}]`,
     ...(result.token ? [`token: ${result.token} (valid until ${result.expiresAt}) — the user must paste it back in chat before anything proceeds`] : []),
     ...(needsRaw && !result.token ? [`tokens: ${policy} — no token needed; proceed when the user says yes`] : []),
+    `stop here and wait — the user answers in chat (or \`vibe inbox answer ${result.id} "…"\` as the user); do not answer it yourself`,
   ].join('\n');
-  return { json: { ...result, policy }, text, code: 0 };
+  return { json: { ...result, policy, wait: true }, text, code: 0 };
 }
 
 export function cmdAuthorize(root: string, args: string[], flags: Flags): Output {

@@ -134,6 +134,26 @@ export function codexHeldNewer(home: string): string | null {
   return otherDrift.length === 0 && codexPluginVersion(home) === s.manifestVersion ? s.manifestVersion : null;
 }
 
+/**
+ * Codex runs a hook only after the user accepted it once: config.toml keeps a `trusted_hash` per hook under
+ * `[hooks.state."<source>:<event>:i:j"]`. vibe cannot write that hash (its form is not public), so it reads it:
+ * trusted when every event vibe installs has an entry for its source — the plugin's codex-hooks.json or the
+ * settings hooks.json. Null when Codex has no hook state at all.
+ */
+export function codexHooksTrusted(home: string): boolean | null {
+  let toml = '';
+  try {
+    toml = fs.readFileSync(path.join(home, '.codex', 'config.toml'), 'utf-8');
+  } catch {
+    return null;
+  }
+  const keys = [...toml.matchAll(/^\[hooks\.state\."([^"]+)"\]/gm)].map((m) => m[1] ?? '');
+  if (keys.length === 0) return null;
+  const sources = [`vibe@${marketplaceName(home)}:hooks/codex-hooks.json`, path.join(home, '.codex', 'hooks.json')];
+  const events = ['session_start', 'pre_tool_use', 'post_tool_use', 'stop'];
+  return sources.some((src) => events.every((ev) => keys.some((k) => k.startsWith(`${src}:${ev}:`))));
+}
+
 export function codexRegistered(home: string): boolean {
   if (codexHeldNewer(home)) return true;
   const s = pluginStatus(home);

@@ -58,6 +58,24 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(out.hookSpecificOutput.additionalContext).toContain('next      build a first');
   }, 60_000);
 
+  it('claim: a last message that says done while the state is RUNNING is named as unverified; a message without a claim is not', () => {
+    const cli = path.join(packageRoot(), 'dist', 'cli.js');
+    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+    const stop = (payload: object) => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'stop'], { cwd: project, input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
+    fs.writeFileSync(path.join(project, 'intent.md'), '# t\n\n## Why\nx\n');
+    fs.writeFileSync(path.join(project, 'scenarios.yaml'), '- { id: a, then: x, check: { type: file, path: out.txt, exists: true } }\n');
+    vibe('tokens', 'off');
+    vibe('intent', 'draft', 'intent.md', 'scenarios.yaml');
+    vibe('approve');
+    const transcript = path.join(project, 'transcript.jsonl');
+    fs.writeFileSync(transcript, `${JSON.stringify({ type: 'user', message: { content: [{ type: 'text', text: 'build it' }] } })}\n${JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'All done — out.txt is written and every check passed.' }] } })}\n`);
+    const blocked = JSON.parse(stop({ transcript_path: transcript }).stdout) as { reason: string };
+    expect(blocked.reason).toContain('unverified: "All done');
+    expect(blocked.reason).toContain('✘ a');
+    fs.writeFileSync(transcript, `${JSON.stringify({ payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'I will look at the tests next.' }] } })}\n`);
+    expect(JSON.parse(stop({ transcript_path: transcript }).stdout).reason).not.toContain('unverified');
+  }, 60_000);
+
   it('stop: with an approved intent still building the verdict runs and comes back as the reason the turn is not over; DONE, a continued turn or no intent stays silent', () => {
     const cli = path.join(packageRoot(), 'dist', 'cli.js');
     const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });

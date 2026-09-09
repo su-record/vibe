@@ -7,5 +7,5 @@ export const PROCEDURE = {
   /** After building everything: one verdict. */
   build: 'first, then one vibe check --all',
   /** Only a failed scenario gets the closer look. */
-  failure: 'on a failure, vibe context <id> then vibe check <id>',
+  failure: 'on a failure, fix what the check names; vibe context <id> when that is not enough',
 } as const;

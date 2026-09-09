@@ -2,74 +2,44 @@
   then: the package builds and every test passes
   check: { type: run, cmd: "npm run check", expect: 0, timeoutMs: 600000 }
 
-- id: stale-result
+- id: ask-stops
   needs: [build]
-  given: a scenario that passed, then its file changed
-  when: the default vibe check runs
-  then: the scenario is selected again and DONE is withheld; results carry the tree they passed on
-  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'stale'", expect: 0, timeoutMs: 120000 }
+  given: an open question, then an answered one
+  when: vibe ask runs and vibe state runs
+  then: ask says stop and wait; next says wait while unanswered, and carries the answer once answered
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'inbox' && npx vitest run src/cli.test.ts -t 'ask'", expect: 0, timeoutMs: 180000 }
 
-- id: approval-reverified
+- id: failure-files
   needs: [build]
-  given: an approved intent whose scenarios.yaml changed afterwards
+  given: a scenario whose check fails
   when: vibe check runs
-  then: exit 4 naming the approved hash; no check runs
-  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'approval void'", expect: 0, timeoutMs: 120000 }
+  then: the failed line names the scenario's files and next says fix with the files; the procedure phrase is quoted everywhere
+  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'files' && node checks/procedure.js", expect: 0, timeoutMs: 180000 }
 
-- id: parent-gate
+- id: claim-audit
   needs: [build]
-  given: a parent that passed before and fails on this run
-  when: vibe check --all runs
-  then: the dependent is blocked, not run
-  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'recheck'", expect: 0, timeoutMs: 120000 }
+  given: a transcript whose last assistant message claims completion while the state is RUNNING
+  when: the Stop hook runs
+  then: it blocks naming the claim and the state; a message without a claim, or DONE, passes
+  check: { type: run, cmd: "npx vitest run src/install/notify.test.ts -t 'claim'", expect: 0, timeoutMs: 180000 }
 
-- id: state-files
+- id: codex-trust
   needs: [build]
-  given: a scenario whose check touches a file
-  when: vibe state runs
-  then: the scenario line names the files it is about, and the card says to read those and nothing else until a check fails
-  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'files the state names' card.md && grep -q 'filesFor' src/core/context.ts", expect: 0, timeoutMs: 120000 }
+  given: a config.toml with and without hooks.state entries for vibe's hooks
+  when: vibe status runs
+  then: the codex line says trusted or how to trust
+  check: { type: run, cmd: "npx vitest run src/install/register.test.ts -t 'trust'", expect: 0, timeoutMs: 180000 }
 
-- id: hook-segments
-  needs: [build]
-  given: the irreversible policy
-  when: a compound command carries an irreversible segment
-  then: it is blocked; a command whose every segment reads is not
-  check: { type: run, cmd: "npx vitest run src/install/notify.test.ts -t 'segment'", expect: 0, timeoutMs: 120000 }
-
-- id: bench-no-key
-  needs: [build]
-  given: every task split into checks/, key/ and judge/
-  when: a workspace is prepared for the on arm and the judge's intents are read
-  then: no key file and no key value reaches the on arm; the direction judges still separate wrong from right
-  check: { type: run, cmd: "node checks/bench-judge.js && node checks/bench-no-key.js && node checks/direction-judges.js ask session-split brownfield", expect: 0, timeoutMs: 900000 }
+- id: scope-probe
+  then: the scope skill says probe before scenarios and write the check first
+  check: { type: run, cmd: "grep -q 'probe' skills/vibe-scope/SKILL.md && grep -q 'check script' skills/vibe-scope/SKILL.md", expect: 0 }
 
 - id: gate-is-release
-  needs: [bench-no-key]
-  given: the fair bench run on every set, five runs per arm
+  needs: [build]
+  given: the bench rerun on every set, five runs per arm, both clients
   when: the gate reads bench/ledger.jsonl
-  then: every pre-registered rule passes, and the README promise quotes them
+  then: every pre-registered rule passes, including Codex's ask turns at most twice bare
   check: { type: run, cmd: "node checks/bench-gate.js && node checks/bench-ran.js", expect: 0, timeoutMs: 120000 }
-
-- id: retraction
-  then: the 4.1.22 claim files carry the contamination note with the counts, and README's opening is written from the fair run
-  check: { type: run, cmd: "grep -q 'contamination' bench/claims/2026-09-09-4.1.22e.md && grep -q 'fair' README.md && ! grep -q 'four runs in five' README.md", expect: 0 }
-
-- id: queries-read-only
-  needs: [build]
-  given: a stale global install
-  when: vibe state runs
-  then: nothing under the home changes; vibe status names the staleness; vibe update repairs it
-  check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t 'query'", expect: 0, timeoutMs: 120000 }
-
-- id: one-procedure
-  then: card rule 2, the router skill and README's flow block quote the procedure table
-  check: { type: run, cmd: "node checks/procedure.js", expect: 0 }
-
-- id: flaky-named
-  needs: [build]
-  then: the suite passes twice in parallel three times, or the check names what failed
-  check: { type: run, cmd: "node checks/suite-under-load.js", expect: 0, timeoutMs: 900000 }
 
 - id: size
   needs: [build]
@@ -77,5 +47,10 @@
   check: { type: run, cmd: "node dist/cli.js size src --max-file 400 --max-function 50", expect: 0 }
 
 - id: card-size
-  then: card.md is at most 1024 bytes and the six skills at most 300 lines
-  check: { type: run, cmd: "node checks/card-size.js && node checks/loc.js", expect: 0 }
+  then: card.md is at most 1024 bytes and the six skills at most 300 lines; one procedure
+  check: { type: run, cmd: "node checks/card-size.js && node checks/loc.js && node checks/procedure.js", expect: 0 }
+
+- id: under-load
+  needs: [build]
+  then: the suite passes twice in parallel three times
+  check: { type: run, cmd: "node checks/suite-under-load.js", expect: 0, timeoutMs: 900000 }

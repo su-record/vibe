@@ -9,6 +9,7 @@ import { openQuestions } from './inbox.js';
 import { approve, draft } from './intent.js';
 import { readLedger, record } from './ledger.js';
 import { readState, transition } from './state.js';
+import { buildStateView } from './view.js';
 
 let root: string;
 beforeEach(() => {
@@ -98,6 +99,14 @@ describe('check — the only verdict path', () => {
     expect(again.outcomes.map((o) => [o.id, o.status])).toEqual([['out', 'fail']]);
     expect(again.done).toBe(false);
     expect(readState(root).state).toBe('RUNNING');
+  });
+
+  it('files: after a failed check the next line says fix and names the files the scenario is about', async () => {
+    fs.writeFileSync(path.join(root, 'out.txt'), 'bad\n');
+    approved('- { id: out, then: x, check: { type: file, path: out.txt, contains: good } }');
+    const report = await runChecks(root, { all: true });
+    expect(report.failed).toBe(1);
+    expect(buildStateView(root, root).next).toBe('fix out (files: out.txt) — on a failure, fix what the check names; vibe context <id> when that is not enough; then vibe check <id>');
   });
 
   it('approval void: scenarios.yaml edited after approval — vibe check refuses (exit 4) and runs nothing', async () => {

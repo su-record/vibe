@@ -121,6 +121,16 @@ describe('CLI — from request to DONE', () => {
     expect((auth.json as { basis: string }).basis).toBe('auto');
   });
 
+  it('ask: the answer says stop and wait, and the JSON carries wait', () => {
+    vibe(['tokens', 'off']);
+    vibe(['intent', 'draft', '--stdin'], HELLO);
+    vibe(['approve']);
+    const asked = vibe(['ask', 'which currency?']);
+    expect(asked.status).toBe(0);
+    expect(asked.json).toMatchObject({ wait: true });
+    expect(vibe(['state']).json).toMatchObject({ next: expect.stringMatching(/^wait — q-.* asked; the user answers; stop and wait/) });
+  });
+
   it('continues across clients — approved under one, checked under another, both in the ledger', () => {
     const as = (client: string, args: string[], input?: string): Run => {
       const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: client }, timeout: 60000 });
