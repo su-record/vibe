@@ -42,6 +42,22 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(pre({ tool_name: 'Read', tool_input: { file_path: path.join(project, 'ten.ts') } }, { VIBE_READ_ADVISE_LINES: '5' }).stdout).toBe('');
   });
 
+  it('session: at session start the project state is handed over; no project, nothing', () => {
+    const cli = path.join(packageRoot(), 'dist', 'cli.js');
+    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+    const session = () => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'session'], { cwd: project, input: '{}', encoding: 'utf-8', env: { ...process.env, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
+    expect(session().stdout).toBe('');
+    fs.writeFileSync(path.join(project, 'intent.md'), '# t\n\n## Why\nx\n');
+    fs.writeFileSync(path.join(project, 'scenarios.yaml'), '- { id: a, then: x, check: { type: run, cmd: "node -e 0" } }\n');
+    vibe('tokens', 'off');
+    vibe('intent', 'draft', 'intent.md', 'scenarios.yaml');
+    vibe('approve');
+    const out = JSON.parse(session().stdout) as { hookSpecificOutput: { hookEventName: string; additionalContext: string } };
+    expect(out.hookSpecificOutput.hookEventName).toBe('SessionStart');
+    expect(out.hookSpecificOutput.additionalContext).toContain('first command already run');
+    expect(out.hookSpecificOutput.additionalContext).toContain('next      build a');
+  });
+
   it('stop: with an approved intent still building the verdict runs and comes back as the reason the turn is not over; DONE, a continued turn or no intent stays silent', () => {
     const cli = path.join(packageRoot(), 'dist', 'cli.js');
     const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });

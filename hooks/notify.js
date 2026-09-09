@@ -140,6 +140,16 @@ function onStop(payload) {
   process.exit(0);
 }
 
+/** SessionStart in home/project mode: the card is in CLAUDE.md already; the project's `vibe state` is handed over here,
+ * the model's first command already run — the plugin's session.js does the same for the plugin mode. */
+if (mode === 'session') {
+  readPayload();
+  if (!fs.existsSync(path.join(root, '.vibe', 'state.json'))) process.exit(0);
+  const s = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'state'], { cwd: root, encoding: 'utf-8', timeout: 20000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+  if (s.status === 0 && s.stdout) process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: `[vibe state — this is the first command already run; continue from its next line]\n${s.stdout.trim()}` } })}\n`);
+  process.exit(0);
+}
+
 if (mode === 'stop') {
   onStop(readPayload());
 }

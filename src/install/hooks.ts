@@ -15,18 +15,18 @@ interface Settings {
 
 const NOTIFY_MARK = 'hooks/notify.js';
 
-function notifyCommand(mode: 'post' | 'pre' | 'stop'): string {
+function notifyCommand(mode: 'post' | 'pre' | 'stop' | 'session'): string {
   return `node "${path.join(packageRoot(), NOTIFY_MARK)}" ${mode}`;
 }
 
-/** Codex has no Stop event; its hook file (under .codex) gets the three tool hooks only. */
+/** Codex has no Stop or SessionStart event; its hook file (under .codex) gets the three tool hooks only. */
 function wantedHooks(file = ''): Array<[string, string, string]> {
   const hooks: Array<[string, string, string]> = [
     ['PostToolUse', 'Edit|Write|MultiEdit|NotebookEdit', notifyCommand('post')],
     ['PreToolUse', 'Bash', notifyCommand('pre')],
     ['PreToolUse', 'Read', notifyCommand('pre')],
   ];
-  if (!file.split(path.sep).includes('.codex')) hooks.push(['Stop', '', notifyCommand('stop')]);
+  if (!file.split(path.sep).includes('.codex')) hooks.push(['Stop', '', notifyCommand('stop')], ['SessionStart', '', notifyCommand('session')]);
   return hooks;
 }
 
@@ -39,7 +39,7 @@ export function installHookFile(file: string): 'added' | 'unchanged' {
   const settings = readJson<Settings>(file) ?? {};
   const hooks: Record<string, HookEntry[]> = {};
   for (const [event, list] of Object.entries(settings.hooks ?? {})) hooks[event] = list.filter((entry) => !isNotify(entry));
-  for (const [event, matcher, command] of wantedHooks(file)) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' ? 620 : 20 }] }];
+  for (const [event, matcher, command] of wantedHooks(file)) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' ? 620 : event === 'SessionStart' ? 30 : 20 }] }];
   const next = { ...settings, hooks };
   if (JSON.stringify(next) === JSON.stringify(settings)) return 'unchanged';
   writeJson(file, next);

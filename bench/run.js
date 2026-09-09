@@ -128,8 +128,13 @@ function judge(ws, run, task, index) {
   const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '' } });
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
-  const check = lines.map((l) => JSON.parse(l)).reverse().find((e) => e.event === 'check');
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const events = lines.map((l) => JSON.parse(l));
+  const check = events.reverse().find((e) => e.event === 'check');
+  // tokens a reader or reviewer spent on the agent's behalf (`usage` events) are the agent's cost too — nothing hides in a side model
+  const side = events.filter((e) => e.event === 'usage' && e.tokens);
+  if (side.length && run.tokens) for (const e of side) for (const k of ['input', 'cacheRead', 'cacheWrite', 'output']) run.tokens[k] = (run.tokens[k] ?? 0) + (e.tokens[k] ?? 0);
+  const sideModels = [...new Set(side.map((e) => e.detail))];
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(sideModels.length ? { sideModels } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
