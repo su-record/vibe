@@ -128,7 +128,7 @@ if (mode === 'pre') {
   for (const [action, re] of IRREVERSIBLE) {
     if (re.test(command) && !recentAuthorize(action)) {
       const blocking = tokenPolicy() !== 'off';
-      process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — ${blocking ? 'blocked: ' : ''}get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first\n`);
+      process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — ${blocking ? 'blocked: ' : ''}get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first, as its own command: the gate reads the ledger before this command runs, so an authorize chained in front of the action is not seen\n`);
       process.exit(blocking ? 2 : 0);
     }
   }

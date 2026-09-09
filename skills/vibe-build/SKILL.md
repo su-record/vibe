@@ -29,7 +29,7 @@ Before actually executing an `irreversible` scenario (send, deploy, delete, spen
 vibe ask "{what is about to happen, one line}" --needs authorize:{action} --target "{target}" --json
 ```
 
-If the response carries a token, show it to the user and execute only after they paste it and `vibe authorize "{number}" --action {action} --target "{target}"` exits 0. If the project's token policy is `off`, the response has no token: run `vibe authorize --action {action} --target "{target}"` (recorded as auto) and proceed. Dry runs never need a token.
+If the response carries a token, show it to the user and execute only after they paste it and `vibe authorize "{number}" --action {action} --target "{target}"` exits 0 — as its own tool call, never chained in front of the action with `&&`: the hook reads the ledger before a command runs, so it blocks the chained command as unauthorized. If the project's token policy is `off`, the response has no token: run `vibe authorize --action {action} --target "{target}"` (recorded as auto) and proceed. Dry runs never need a token.
 
 ## Never
 

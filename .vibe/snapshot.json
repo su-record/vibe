@@ -1,5 +1,4 @@
 {
-  "README.md": "b8bd16a63532fc5e3f5e69e59cd5df4e507d075b",
-  "src/install/register.test.ts": "a989ef93995a58095c07c65bdbbd95a260714110",
-  "src/install/register.ts": "896c1adc30267ef8f59e32452a0ff9166ddaa682"
+  "hooks/notify.js": "280d9e420085727421816033731754bb8045576d",
+  "skills/vibe-build/SKILL.md": "63d782a3d2ab59c5fd1f50277f4b6d5043e9eece"
 }
