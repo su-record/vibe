@@ -53,20 +53,21 @@ export const HELP = `vibe — an AX/FDE harness. The harness judges; a human app
   work      state [--graph] · read <file…> [--sheet] [--pages] (xlsx·docx·pptx·pdf·hwp·hwpx·html·tables·code) · read <file…> --ask "question" (a low-reasoning model reads, only the answer returns)
             profile <file> [--sheet] (csv·tsv·jsonl·json·xlsx) · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
             approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
-  checks    run (exit code) · file (exists·pattern·contains·schema·sum) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass) · human (inbox, no verdict)
+  checks    run (exit code; a mutating command is irreversible and needs vibe authorize) · file (exists·pattern·contains·absent·schema·sum·traceable·a11y) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass)
+            review (pack ko|en|design|code, path, changed, screenshot — two reviewer stages, PASS only) · human (inbox, no verdict)
             size [paths…] [--max-file 400] [--max-function 50]  — a built-in check for a scenario: exit 1 when a file or function is over
   map       map [path] · symbols <file> · callers <symbol> [--depth N] · blast [--depth 2]   (the codebase map: symbols, imports, callers — graft when present)
   context   context <scenario> (what one scenario needs: check, files, symbols, conventions, decisions, notes) · conventions (read + learned → .vibe/knowledge/conventions.md)
             intent analyze (success bullets vs scenarios: uncovered · unrequested · weak) · knowledge add <file|--stdin> --title "…" [--global]
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
-            authorize <token> --action push|deploy|send|delete|spend [--target "…"] · inbox [list|answer <id> "text"|resolve <id>]
+            authorize [token] --action <action> [--target "…"] (push · deploy · publish · send · delete · restore · reset · seed · migrate · drop · truncate · apply · spend — the same words the hook and the check gate use) · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
             knowledge add <file|--stdin> --title "…"
   research  research --from-intent | "query" [--sources repos,code,skills] [--max 5] [--days 30]   (GitHub · skill catalogs · what moved inside the window first · 24h cache)
   skills    skill suggest [--all] · skill create <name> --check run|file|http|eval [--from-scenario <id>]
             skill add owner/repo[@name] [--pin <sha>] [--yes] · skill search <keyword> · skill list
             skill used <name> · skill prune [--unused-runs 10] [--dry-run] · skill dismiss <ref>
-  ledger    ledger [--since 7d] · ledger compare --by client|model|harness --metric checks|turns|cost [--min-runs 5] [--ledger <file>]
+  ledger    ledger [--since 7d] · ledger compare --by client|model|harness --metric checks|turns|cost|ms|tokens [--paired] [--client <c>] [--task <t>] [--min-runs 5] [--ledger <file>]
             ledger why <node> [--depth 3] · ledger edges [--type supersedes|decided-by|implements|caused]
 
 A scenario may declare needs: [ids] — independent scenarios are checked in parallel, dependents after their parents pass.
