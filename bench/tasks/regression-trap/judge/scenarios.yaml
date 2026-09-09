@@ -1,0 +1,7 @@
+- id: invoice
+  then: invoice.test.cjs passes — invoices show cents
+  check: { type: run, cmd: "node --test invoice.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: receipt
+  then: receipt.test.cjs still passes — receipts keep whole-unit totals
+  check: { type: run, cmd: "node --test receipt.test.cjs", expect: 0, timeoutMs: 30000 }

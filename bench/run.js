@@ -8,7 +8,7 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { installSurfaces, projectLayout } from '../dist/install/global.js';
+import { installSurfaces, projectLayout, SKILL_NAMES } from '../dist/install/global.js';
 
 const here = path.dirname(new URL(import.meta.url).pathname);
 const repo = path.resolve(here, '..');
@@ -21,6 +21,7 @@ const client = opt('client', 'claude');
 const harness = opt('harness', 'on');
 const runs = Number(opt('runs', '1'));
 const taskArg = opt('task', 'settlement');
+const setArg = opt('set', null);
 const model = opt('model', null);
 const maxTurns = Number(opt('max-turns', '40'));
 const parallel = Math.max(1, Number(opt('parallel', '4')));
@@ -31,13 +32,33 @@ const MAX_CAPTURE = 64 * 1024 * 1024;
 // vibe on PATH must be vibe 4 from this checkout, never a global vibe 3
 const shim = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-shim-'));
 fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${repo}/dist/cli.js" "$@"\n`, { mode: 0o755 });
-// the arms differ by what the workspace carries, so the operator's ~/.claude must not be touched or repaired mid-run
-const env = { ...process.env, PATH: `${shim}:${process.env.PATH}`, VIBE_SKIP_SETUP: '1' };
+// The arms differ only by what the workspace carries. Both run under an isolated home: the operator's
+// ~/.claude plugin and ~/.agents marketplace (vibe itself, on this machine) must not reach either arm —
+// an `off` run that can call `vibe regress record` is not an `off` run. Credentials are copied in.
+const isoHome = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-bench-home-'));
+for (const [dir, files] of [['.claude', ['.credentials.json']], ['.codex', ['auth.json', 'config.toml']]]) {
+  fs.mkdirSync(path.join(isoHome, dir), { recursive: true });
+  for (const f of files) {
+    const from = path.join(os.homedir(), dir, f);
+    if (fs.existsSync(from)) fs.copyFileSync(from, path.join(isoHome, dir, f));
+  }
+}
+const env = { ...process.env, PATH: `${shim}:${process.env.PATH}`, VIBE_SKIP_SETUP: '1', HOME: isoHome, USERPROFILE: isoHome, CODEX_HOME: path.join(isoHome, '.codex'), VIBE_HOME_DIR: isoHome };
 delete env.CLAUDECODE;
 delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
 
+// The overhead set is the three saturated tasks from the first clean bench; the direction set is
+// the four the bare model is expected to fail at least some of the time. `--set` picks a named
+// group; `--task` (still the default) picks one task, or every directory under tasks/ with `all`.
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'] };
+SETS.all = [...SETS.overhead, ...SETS.direction];
+
 function taskNames() {
+  if (setArg) {
+    if (!SETS[setArg]) throw new Error(`unknown --set ${setArg} (overhead|direction|all)`);
+    return SETS[setArg];
+  }
   if (taskArg !== 'all') return [taskArg];
   return fs.readdirSync(path.join(here, 'tasks'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
 }
@@ -49,7 +70,11 @@ function prepare(task) {
   execFileSync('git', ['init', '-q'], { cwd: ws });
   if (harness === 'on') {
     // card, skills and hook go into the workspace itself — the `off` arm must stay bare
-    installSurfaces(ws, projectLayout(client === 'claude' ? 'claude' : 'codex'));
+    const layout = projectLayout(client === 'claude' ? 'claude' : 'codex');
+    installSurfaces(ws, layout);
+    // the six common skills only — a pack rides along only when the judge uses a review check (none does today)
+    const skillsDir = path.join(ws, layout.skills);
+    for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
     draftAndApprove(ws, taskDir);
   }
   return ws;
@@ -74,11 +99,15 @@ function draftAndApprove(ws, taskDir) {
 function judge(ws, run, task, index) {
   const taskDir = path.join(here, 'tasks', task);
   draftAndApprove(ws, taskDir); // idempotent — the `off` arm never drafted, the `on` arm re-drafts the same intent
+  // the judge runs the task's scenarios only: a regression the agent recorded is the agent's, counted apart
+  const regDir = path.join(ws, '.vibe', 'regressions');
+  const agentRegressions = fs.existsSync(regDir) ? fs.readdirSync(regDir).filter((f) => f.endsWith('.yaml')).length : 0;
+  fs.rmSync(regDir, { recursive: true, force: true });
   const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '' } });
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const check = lines.map((l) => JSON.parse(l)).reverse().find((e) => e.event === 'check');
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -134,7 +163,8 @@ function claudeUsage(out) {
 
 async function runClaude(ws) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
-  const a = ['-p', prompt, '--output-format', 'json', '--dangerously-skip-permissions', '--max-turns', String(maxTurns)];
+  // user settings stay out of both arms; the `on` arm keeps the workspace's own (.claude/settings.local.json, skills)
+  const a = ['-p', prompt, '--output-format', 'json', '--dangerously-skip-permissions', '--max-turns', String(maxTurns), '--setting-sources', harness === 'on' ? 'project,local' : ''];
   if (model) a.push('--model', model);
   const started = Date.now();
   const r = await spawnAsync('claude', a, { cwd: ws });

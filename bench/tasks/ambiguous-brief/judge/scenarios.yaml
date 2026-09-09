@@ -1,0 +1,23 @@
+- id: exists
+  then: out/note.md exists
+  check: { type: file, path: out/note.md, exists: true }
+
+- id: heading
+  needs: [exists]
+  then: the note opens with a heading naming the release, 80 characters or fewer
+  check: { type: file, path: out/note.md, pattern: "^#\\s.{1,78}$" }
+
+- id: no-placeholders
+  needs: [exists]
+  then: the note carries no placeholder text
+  check: { type: file, path: out/note.md, absent: "@placeholders" }
+
+- id: traceable
+  needs: [exists]
+  then: every number in the note is traceable to CHANGELOG.md
+  check: { type: file, path: out/note.md, traceable: CHANGELOG.md }
+
+- id: length
+  needs: [exists]
+  then: the note is twelve lines or fewer — one line per changelog entry, nothing more
+  check: { type: run, cmd: "node judge/lines.cjs", expect: 0, timeoutMs: 10000 }

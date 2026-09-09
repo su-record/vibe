@@ -8,6 +8,7 @@ user-invocable: false
 
 ## Procedure
 
+0. `size: small` in `vibe state` means: build every remaining scenario, then one `vibe check --all` — no per-scenario check, no `vibe context`, no handoff document unless the intent names one. The rest of this skill is for `size: full`.
 1. Take scenarios in the order of `remaining` from `vibe state --json` — parents before their `needs` dependents (`vibe state --graph` shows the edges). Put scenarios marked `irreversible` last.
    - Scenarios with no edge between them may be built by parallel agents, each in its own worktree, merged before `vibe check --all`. Never two agents in one working tree. Batch scenarios of one shape into one dispatch; never a nested subagent (a reviewer's reviewer counts for nothing). Hand artifacts to an agent as files, never pasted. When the context is nearly full, start a new session from `.vibe/` instead of compacting.
 2. Read `vibe context {id}` first — the files and symbols the check touches, the decisions and regressions that touched them, the conventions — then build only what that scenario needs. Make sure the check itself (`check.cmd`, `check.path`) can actually run.

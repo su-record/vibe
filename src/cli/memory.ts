@@ -156,9 +156,14 @@ export function cmdLedger(root: string, sub: string | undefined, args: string[],
     if (!['checks', 'turns', 'cost', 'ms'].includes(metric)) throw usage('--metric checks|turns|cost|ms');
     const minRuns = Number(flagString(flags, 'min-runs') ?? 5);
     const paired = flags['paired'] === true;
-    const c = compare(root, by, metric, minRuns, flagString(flags, 'ledger'), paired);
+    const filter: { client?: string; task?: string } = {};
+    const fClient = flagString(flags, 'client');
+    const fTask = flagString(flags, 'task');
+    if (fClient) filter.client = fClient;
+    if (fTask) filter.task = fTask;
+    const c = compare(root, by, metric, minRuns, flagString(flags, 'ledger'), paired, filter);
     const text = [
-      `compare by ${by} · metric ${metric}${paired ? ' · paired' : ''} · verdict ${c.verdict}`,
+      `compare by ${by} · metric ${metric}${paired ? ' · paired' : ''}${fClient ? ` · client ${fClient}` : ''}${fTask ? ` · task ${fTask}` : ''} · verdict ${c.verdict}`,
       `  ${c.reason}`,
       ...c.arms.map((a) => `  ${a.arm}: runs ${a.runs} · usable ${a.usable}${a.range ? ` · min ${a.range.min} · max ${a.range.max} · mean ${a.range.mean.toFixed(2)}` : ''}${a.costMismatch ? ` · costMismatch ${a.costMismatch}` : ''}`),
       ...(c.delta !== null ? [`  delta ${c.delta.toFixed(2)} (absolute units)`] : []),

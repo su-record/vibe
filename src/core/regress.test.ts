@@ -30,4 +30,10 @@ describe('regress record — a recorded regression is one that check --all can r
     expect(listRegressions(root)).toEqual([]);
     expect(regressionProblems(root)).toEqual(['regressions/r-1-too-long-an-identifier-for-the-rule-to-accept.yaml is not checked — r-1-too-long-an-identifier-for-the-rule-to-accept: id must be 1-40 chars of lowercase letters, digits, hyphens']);
   });
+
+  it('observe: a source check that mutates cannot become a regression', () => {
+    draft(root, '# t\n', '- { id: restore, then: x, check: { type: run, cmd: "npm run db:restore && npm test" } }\n');
+    expect(() => recordRegression(root, { scenario: 'restore', title: 'seed overwritten' })).toThrow(/a regression must observe — restore mutates \(restore\)/);
+    expect(listRegressions(root)).toEqual([]);
+  });
 });

@@ -7,7 +7,7 @@ import { invalidateDoneIfEdited, readResults, runChecks } from './check.js';
 import { VibeError } from './errors.js';
 import { openQuestions } from './inbox.js';
 import { approve, draft } from './intent.js';
-import { readLedger } from './ledger.js';
+import { readLedger, record } from './ledger.js';
 import { readState, transition } from './state.js';
 
 let root: string;
@@ -193,5 +193,27 @@ describe('needs — the work graph orders and parallelises checks', () => {
     expect(report.outcomes.map((o) => [o.id, o.status])).toEqual([['build', 'pass'], ['tests', 'pass']]);
     const again = await runChecks(root, { ids: ['tests'] });
     expect(again.outcomes.map((o) => o.id)).toEqual(['tests']); // build already passed — not rerun
+  });
+
+  it('mutates: a restoring check is blocked without an authorize record and DONE stays out of reach; it runs after vibe authorize; a reading check runs regardless', async () => {
+    fs.writeFileSync(path.join(root, 'probe.cjs'), "require('fs').appendFileSync('ran.log', 'restore\\n');");
+    approved([
+      '- { id: restore, then: x, check: { type: run, cmd: "node probe.cjs" , timeoutMs: 20000 } }',
+      '- { id: read, then: y, check: { type: run, cmd: "node -e 0" } }',
+    ].join('\n').replace('cmd: "node probe.cjs"', 'cmd: "node probe.cjs && echo restore"'));
+    const first = await runChecks(root);
+    const restore = first.outcomes.find((o) => o.id === 'restore')!;
+    expect(restore.status).toBe('blocked');
+    expect(restore.reason).toContain('irreversible (restore)');
+    expect(restore.reason).toContain('vibe authorize --action restore');
+    expect(first.outcomes.find((o) => o.id === 'read')?.status).toBe('pass');
+    expect(first.state).not.toBe('DONE');
+    expect(first.stuck).toBe(false);
+    expect(fs.existsSync(path.join(root, 'ran.log'))).toBe(false); // the restore never ran
+    record(root, { event: 'authorize', client: 'test', model: null, detail: 'restore: by auto' });
+    const second = await runChecks(root);
+    expect(second.outcomes.find((o) => o.id === 'restore')?.status).toBe('pass');
+    expect(fs.readFileSync(path.join(root, 'ran.log'), 'utf-8')).toBe('restore\n');
+    expect(second.state).toBe('DONE');
   });
 });

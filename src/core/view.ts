@@ -2,6 +2,7 @@ import { invalidateDoneIfEdited, readResults, type LastResult } from './check.js
 import { openQuestions } from './inbox.js';
 import { hasIntent, intentPath, loadScenarios } from './intent.js';
 import { readLedger } from './ledger.js';
+import { actionOf } from './checks/mutation.js';
 import { listRegressions, regressionProblems } from './regress.js';
 import { isHuman } from './scenarios.js';
 import { suggestSkills, type Proposal } from './skills.js';
@@ -33,6 +34,32 @@ export interface StateView {
   /** Skill create/import/knowledge proposals from scenarios, regressions, inbox and state signals — at most three */
   proposals: Proposal[];
   notices: string[];
+  /** What to do now, in one line — the router follows this, not a skill file. */
+  next: string;
+  /** `small`: at most four scenarios, all run/file, no needs chain deeper than one — one `check --all` at the end; `full` otherwise. */
+  size: 'small' | 'full';
+}
+
+function sizeOf(scenarios: Array<{ id: string; check: { type: string }; needs?: string[]; regression?: boolean }>): 'small' | 'full' {
+  const own = scenarios.filter((s) => !('regression' in s && s.regression));
+  if (own.length > 4) return 'full';
+  const byId = new Map(own.map((s) => [s.id, s]));
+  for (const s of own) {
+    if (s.check.type !== 'run' && s.check.type !== 'file') return 'full';
+    if ((s.needs ?? []).some((n) => (byId.get(n)?.needs ?? []).length > 0)) return 'full';
+  }
+  return 'small';
+}
+
+function nextLine(state: State, stage: Stage, remaining: string[], inbox: string[], size: 'small' | 'full', run: number): string {
+  if (state === 'STUCK') return `prove — STUCK: answer inbox [${inbox.join(', ')}], then vibe check --all`;
+  if (inbox.length > 0) return `answer inbox [${inbox.join(', ')}] — then continue`;
+  if (stage === 'discover') return 'discover — the vibe-discover skill: what counts as success, at most three questions';
+  if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, research, one approval message; wait for "yes"';
+  if (state === 'DONE') return `report — DONE r-${run}; say what was built and which checks passed; write HANDOFF.md only if the intent asks`;
+  if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
+  const tail = size === 'small' ? 'then one vibe check --all' : 'vibe check <id> after each, then vibe check --all';
+  return `build ${remaining.join(', ')} — ${tail}`;
 }
 
 function intentTitle(root: string): string {
@@ -71,12 +98,17 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   const lastEvent = readLedger(root).at(-1);
   const intent = hasIntent(root) ? { title: intentTitle(root), hash: state.intentHash, approvedAt: state.approvedAt } : null;
   notices.push(...regressionProblems(root));
+  for (const s of scenarios) if (s.irreversible) notices.push(`${s.id} mutates (${actionOf(s.irreversible)}) — not run by check --all without vibe authorize --action ${actionOf(s.irreversible)}`);
   if (state.state === 'STUCK') notices.push('STUCK — the same failure twice in a row; the inbox question needs an answer');
   if (scenarios.some(isHuman) && state.state === 'DONE') notices.push('human items are not gates — a confirmation was requested in the inbox');
+  const stage = stageOf(state, intent !== null, allPassedOnce);
+  const size = sizeOf([...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))]);
   return {
     root,
     state: state.state,
-    stage: stageOf(state, intent !== null, allPassedOnce),
+    stage,
+    next: nextLine(state.state, stage, remaining, questions.map((q) => q.id), size, state.runs),
+    size,
     intent,
     scenarios: views,
     remaining,
