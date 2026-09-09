@@ -19,7 +19,6 @@ import { fileURLToPath } from 'node:url';
 const mode = process.argv[2] || 'post';
 const asPlugin = process.argv.includes('--plugin');
 const here = path.dirname(fileURLToPath(import.meta.url));
-const cli = path.join(here, '..', 'dist', 'cli.js');
 const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 // Plugin copy and npm copy must not both fire. The npm install writes a notify hook into the
@@ -47,12 +46,24 @@ function emitContext(text) {
   process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: mode === 'post' ? 'PostToolUse' : 'PreToolUse', additionalContext: text } })}\n`);
 }
 
+// The same actions the check gate names (src/core/checks/mutation.ts), so a blocked tool call and a blocked
+// check ask for the same `vibe authorize --action`; `send` is the hook's own. A command that only reads —
+// grep, cat, git log — is never gated, whatever words it carries.
 const IRREVERSIBLE = [
+  ['restore', /(?:\b|_)restore\b/i],
+  ['reset', /\breset\b/i],
+  ['drop', /\bdrop\b/i],
+  ['truncate', /\btruncate\b/i],
+  ['seed', /\bseed(?:ing|ed)?\b/i],
+  ['migrate', /\bmigrat\w*[:\s-]+(?:fresh|down|rollback|refresh|reset)\b|\b(?:rollback|down)[:\s-]+migrat/i],
+  ['delete', /\brm\s+-[a-z]*r[a-z]*f?\b|\bDELETE\s+FROM\b|\bkubectl\s+delete\b|\bgit\s+push\s+[^|]*--force\b/i],
   ['push', /\bgit\s+push\b/],
-  ['deploy', /\b(vercel|netlify|fly|wrangler|gcloud|aws)\s+(deploy|apply|publish)\b|\bnpm\s+publish\b|\bkubectl\s+apply\b|\bterraform\s+apply\b/],
+  ['deploy', /\bdeploy\b/i],
+  ['publish', /\bnpm\s+publish\b|\bpublish\b/i],
+  ['apply', /\bterraform\s+apply\b|\bkubectl\s+apply\b/i],
   ['send', /\b(sendmail|mail\s+-s|curl\s+[^|]*-X\s*POST)\b/],
-  ['delete', /\brm\s+-rf\b|\bgit\s+push\s+[^|]*--force\b|\bDROP\s+TABLE\b/i],
 ];
+const READS_ONLY = /^\s*(?:grep|rg|cat|head|tail|less|ls|find|wc|echo|printf|sed\s+-n|git\s+(?:log|diff|show|status|grep|blame|branch|ls-files)|vibe\s+(?:state|context|map|read|check|ledger))\b/;
 
 function recentAuthorize(action) {
   try {
@@ -104,6 +115,35 @@ function adviseRead(payload) {
   emitContext(`[vibe] ${shown} is ${lines} lines — when it only has to be understood, not edited or debugged, \`vibe read ${shown} --ask "<question>"\` lets a low-reasoning model read it and returns the answer with line numbers`);
 }
 
+const cli = path.join(here, '..', 'dist', 'cli.js');
+const vibeCommand = fs.existsSync(cli) ? [process.execPath, cli] : ['vibe'];
+
+/** Stop: the model is ending its turn. With an approved intent still building, the verdict runs here — once — and its
+ * report comes back as the reason the turn is not over; a turn already continued this way is let go (no loop). */
+function onStop(payload) {
+  if (payload.stop_hook_active) process.exit(0);
+  if (!fs.existsSync(path.join(root, '.vibe', 'state.json'))) process.exit(0);
+  // `vibe state` rather than the file: an edit after DONE is RUNNING again, and only the CLI knows that
+  const s = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'state', '--json'], { cwd: root, encoding: 'utf-8', timeout: 20000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+  let state;
+  try {
+    state = JSON.parse(s.stdout).state;
+  } catch {
+    process.exit(0);
+  }
+  if (state !== 'APPROVED' && state !== 'RUNNING') process.exit(0);
+  const r = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'check', '--all'], { cwd: root, encoding: 'utf-8', timeout: 600000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+  const report = (r.stdout || '').trim();
+  if (!report) process.exit(0);
+  const done = /\bDONE — every gate scenario passed\b/.test(report);
+  process.stdout.write(`${JSON.stringify({ decision: 'block', reason: `[vibe] the turn ended without vibe check; it ran now:\n${report}\n${done ? 'Report from this output — no further commands.' : 'Fix what failed, then vibe check <id>; do not say done.'}` })}\n`);
+  process.exit(0);
+}
+
+if (mode === 'stop') {
+  onStop(readPayload());
+}
+
 if (mode === 'pre') {
   const payload = readPayload();
   if (payload.tool_name === 'Read') {
@@ -111,11 +151,12 @@ if (mode === 'pre') {
     process.exit(0);
   }
   const command = String((payload.tool_input && payload.tool_input.command) || '');
+  if (READS_ONLY.test(command)) process.exit(0);
   // Under strict and irreversible the gate blocks (exit 2 stops the tool call in Claude Code); under off it only warns.
   for (const [action, re] of IRREVERSIBLE) {
     if (re.test(command) && !recentAuthorize(action)) {
       const blocking = tokenPolicy() !== 'off';
-      process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — ${blocking ? 'blocked: ' : ''}get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first\n`);
+      process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — ${blocking ? 'blocked: ' : ''}get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first, as its own command: the gate reads the ledger before this command runs, so an authorize chained in front of the action is not seen\n`);
       process.exit(blocking ? 2 : 0);
     }
   }

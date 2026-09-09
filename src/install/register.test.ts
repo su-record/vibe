@@ -114,6 +114,11 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     const old = path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.1', '.codex-plugin');
     fs.mkdirSync(old, { recursive: true });
     fs.writeFileSync(path.join(old, 'plugin.json'), JSON.stringify({ name: 'vibe', version: '0.0.1' }));
+    fs.mkdirSync(path.join(old, '..', 'hooks'));
+    fs.writeFileSync(path.join(old, '..', 'hooks', 'notify.js'), '// the hook a running session still points at\n');
+    const older = path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.0', '.codex-plugin');
+    fs.mkdirSync(older, { recursive: true });
+    fs.writeFileSync(path.join(older, 'plugin.json'), JSON.stringify({ name: 'vibe', version: '0.0.0' }));
 
     const before = globalStatus(home).clients['codex'];
     expect(before).toMatchObject({ mode: 'plugin', current: false, pluginVersion: '0.0.1' });
@@ -121,7 +126,10 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(log('codex.log')).toEqual([`plugin marketplace add ${home}`, 'plugin remove vibe@vibe-local', 'plugin add vibe@vibe-local']);
     const marketplace = JSON.parse(fs.readFileSync(path.join(home, '.agents', 'plugins', 'marketplace.json'), 'utf-8')) as { plugins: Array<{ name: string; source: { path: string } }> };
     expect(marketplace.plugins.find((p) => p.name === 'vibe')?.source.path).toBe('./.config/vibe/plugin/vibe');
-    expect(fs.existsSync(path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.1'))).toBe(false);
+    // the version just replaced stays, hooks and all, for a session that started under it; anything older is swept
+    expect(fs.existsSync(path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.1', 'hooks', 'notify.js'))).toBe(true);
+    expect(fs.existsSync(path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.0'))).toBe(false);
+    expect(fs.existsSync(path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', pkg.version, '.codex-plugin', 'plugin.json'))).toBe(true);
 
     const after = globalStatus(home).clients['codex'];
     expect(after).toMatchObject({ mode: 'plugin', current: true, pluginVersion: pkg.version });

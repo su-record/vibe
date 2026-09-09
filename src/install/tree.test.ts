@@ -22,7 +22,10 @@ describe('plugin tree — the repository is the plugin, generated from package.j
     }
     expect(JSON.parse(tree['.claude-plugin/marketplace.json']!).plugins[0]).toMatchObject({ name: 'vibe', source: './' });
     const norm = (t: string): string => t.replace(/\$\{(CLAUDE_)?PLUGIN_ROOT\}/g, 'R').replace(/session\.js\\" (claude|codex)/g, 'session.js C');
-    expect(norm(tree['hooks/hooks.json']!)).toBe(norm(tree['hooks/codex-hooks.json']!));
+    const claudeHooks = JSON.parse(tree['hooks/hooks.json']!) as { hooks: Record<string, unknown> };
+    expect(Object.keys(claudeHooks.hooks)).toContain('Stop'); // the verdict runs when a Claude turn ends without it; Codex has no such event
+    delete claudeHooks.hooks['Stop'];
+    expect(norm(JSON.stringify(claudeHooks, null, 2)).trim()).toBe(norm(tree['hooks/codex-hooks.json']!).trim());
     expect(JSON.parse(tree['hooks/hooks.json']!).hooks.SessionStart[0].hooks[0].command).toContain('session.js" claude');
   });
 

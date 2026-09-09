@@ -7,54 +7,79 @@
   then: every test passes
   check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 400000 }
 
-- id: next-line
+- id: brownfield-task
+  then: bench/tasks/brownfield ships TASK.md, judge/prepare.cjs, judge/right.cjs, judge/lines.test.ts and a five-scenario judge; bench-judge accepts it; run.js runs a task's prepare.cjs
+  check: { type: run, cmd: "node checks/bench-judge.js && test -f bench/tasks/brownfield/judge/prepare.cjs && test -f bench/tasks/brownfield/judge/right.cjs && test -f bench/tasks/brownfield/judge/lines.test.ts && test $(grep -c '^- id:' bench/tasks/brownfield/judge/scenarios.yaml) -ge 5 && grep -q 'prepare.cjs' bench/run.js", expect: 0 }
+
+- id: brownfield-judge
   needs: [build]
-  given: projects in DRAFT with intent, APPROVED with three cheap scenarios, RUNNING with one remaining, STUCK, DONE, and one with an open inbox question
-  when: vibe state runs in each
-  then: the next line names approve, build a b c then check --all, check --all remaining, answer inbox, report, and prove respectively, size says small for the three-cheap project and full for a project with a review check, and the JSON carries next and size
-  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next'", expect: 0, timeoutMs: 120000 }
+  given: a workspace prepared from this repository, untouched, then with the reference patch applied
+  when: the brownfield judge runs on each
+  then: the untouched repository fails the tests scenario and the patched one passes every scenario
+  check: { type: run, cmd: "node checks/direction-judges.js brownfield", expect: 0, timeoutMs: 600000 }
+
+- id: tokens-metric
+  needs: [build]
+  given: a bench ledger with tokens per line
+  when: ledger compare runs with --metric tokens, paired
+  then: the arms compare on input + 0.1 cacheRead + 1.25 cacheWrite and the gate's context set applies the 0.7 rule
+  check: { type: run, cmd: "npx vitest run src/core/ledger.test.ts -t 'tokens' && node checks/bench-gate.js --self-test", expect: 0, timeoutMs: 120000 }
+
+- id: footprint
+  needs: [build]
+  given: an approved intent of five run scenarios (size full)
+  when: vibe state runs
+  then: the next line says check --all first and context and check <id> only on a failure; the card, the router and the build skill say the same; the gate's allowance is 2
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'full' && grep -q 'on a failure' card.md && grep -q 'on a failure' skills/vibe-build/SKILL.md && grep -q 'TOKENS_OVERHEAD = 1.25' checks/bench-gate.js && grep -q 'Over 400 lines' card.md", expect: 0, timeoutMs: 120000 }
+
+- id: state-brief
+  needs: [build]
+  given: an approved intent
+  when: vibe state and vibe check run
+  then: each scenario line names its check, the check output ends with the next line, and the card starts at vibe state
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'next      ' src/cli/work.ts && grep -q 'Start from `vibe state`' card.md && grep -q 'needs no skill' skills/vibe-build/SKILL.md skills/vibe-prove/SKILL.md skills/vibe-handoff/SKILL.md && grep -q 'no further reads' src/core/view.ts", expect: 0, timeoutMs: 120000 }
+
+- id: hooks-procedure
+  needs: [build]
+  given: an approved intent still building
+  when: a Claude turn ends, and a session starts inside the project
+  then: the Stop hook runs the verdict once and returns it as the reason; the session hook hands over vibe state; size full means the build skill applies
+  check: { type: run, cmd: "npx vitest run src/install/notify.test.ts -t 'stop' && npx vitest run src/install/tree.test.ts && npx vitest run src/core/view.test.ts -t 'size' && grep -q 'stateNote' hooks/session.js", expect: 0, timeoutMs: 180000 }
+
+- id: usage-capture
+  then: the bench runs claude with stream-json and reads the last result event; a run without usage is named
+  check: { type: run, cmd: "grep -q 'stream-json' bench/run.js && grep -q 'usage: missing' bench/run.js", expect: 0 }
+
+- id: direction-v2
+  needs: [build]
+  given: irreversible-trap and session-split under bench/tasks with judges, and the hook's patterns matching mutation.ts
+  when: the judges run on a wrong and a right answer, and the hook sees npm run reset-data under the irreversible policy
+  then: the judges separate, the hook blocks the reset, and SETS.direction names ask and session-split
+  check: { type: run, cmd: "node checks/direction-judges.js ask session-split irreversible-trap && npx vitest run src/install/notify.test.ts -t 'gate' && grep -q \"direction: \\['ask', 'session-split'\\]\" checks/bench-gate.js", expect: 0, timeoutMs: 600000 }
+
+- id: codex-cache-kept
+  needs: [build]
+  given: Codex holding 0.0.1 with a hook file, and 0.0.0 beside it
+  when: vibe re-registers the package version
+  then: 0.0.1 stays with its hook, 0.0.0 is swept, the new version is added
+  check: { type: run, cmd: "npx vitest run src/install/register.test.ts -t 'codex behind' && grep -q 'keeps its hooks until it restarts' README.md", expect: 0, timeoutMs: 120000 }
+
+- id: promise
+  then: README opens with what the fifth run showed — prevention on ask, the cost per client — and links the claims
+  check: { type: run, cmd: "grep -q 'written before the run' README.md && grep -q 'four runs in five' README.md && grep -q 'bench/claims' README.md", expect: 0 }
 
 - id: card-size
-  then: the card is at most 1024 bytes, rule 2 names the small-task fast path, rule 6 says a regression is only a failure vibe check reported
-  check: { type: run, cmd: "node checks/card-size.js && grep -q 'check --all' card.md && grep -q 'reported' card.md", expect: 0 }
-
-- id: router
-  then: the router skill routes by the next line, never re-enters scope with an approved intent, and loads a stage skill only when next names one; scope says a check observes; the six common skills stay within 300 lines
-  check: { type: run, cmd: "grep -q 'next' skills/vibe/SKILL.md && grep -q 'never re-enter' skills/vibe/SKILL.md && grep -q 'observes' skills/vibe-scope/SKILL.md && test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300", expect: 0 }
-
-- id: direction-tasks
-  then: bench/tasks holds hidden-requirement, regression-trap, long-context and ambiguous-brief with deterministic judges, and bench-judge accepts them; run.js takes --set
-  check: { type: run, cmd: "node checks/bench-judge.js && for t in hidden-requirement regression-trap long-context ambiguous-brief; do test -f bench/tasks/$t/judge/scenarios.yaml || exit 1; done && grep -q -- '--set' bench/run.js", expect: 0 }
-
-- id: direction-judges
-  needs: [build]
-  given: each direction task's fixture with the obvious wrong answer applied and with the right answer applied
-  when: the task's judge runs on each
-  then: the wrong answer fails at least one judge scenario and the right answer passes them all, for every direction task
-  check: { type: run, cmd: "node checks/direction-judges.js", expect: 0, timeoutMs: 300000 }
-
-- id: compare-filters
-  needs: [build]
-  given: a bench ledger with two clients and three tasks
-  when: ledger compare runs with --client and --task
-  then: only the matching runs are compared, and bench-gate names the set and task that fails a rule
-  check: { type: run, cmd: "npx vitest run src/core/ledger.test.ts -t 'filter' && node checks/bench-gate.js --self-test", expect: 0, timeoutMs: 120000 }
-
-- id: on-arm-surfaces
-  then: the bench on arm installs the six common skills only unless the judge uses a review check
-  check: { type: run, cmd: "grep -q 'SKILL_NAMES' bench/run.js && ! grep -q 'languagePacks' bench/run.js", expect: 0 }
-
-- id: check-observes
-  needs: [build]
-  given: a scenario whose run check is npm run db:restore && npm test, one declared irreversible, and one plain
-  when: vibe check --all runs, then after vibe authorize --action restore, and vibe regress record is tried on the restore scenario
-  then: the restore scenario is blocked with the reason and DONE stays out of reach, the plain one runs, the declared one is blocked the same way, after authorize the restore runs, and the regression is refused with the observe rule
-  check: { type: run, cmd: "npx vitest run src/core/check.test.ts src/core/scenarios.test.ts src/core/regress.test.ts -t 'mutat|observe'", expect: 0, timeoutMs: 180000 }
+  then: the always-on card is at most 1024 bytes
+  check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
 
 - id: file-size
   needs: [build]
   then: no source file over 400 lines and no function over 50, judged by vibe size itself
   check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js size src hooks mcpb/server bench --max-file 400 --max-function 50", expect: 0 }
+
+- id: skills-size
+  then: the six common skills are at most 300 lines in total
+  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300", expect: 0 }
 
 - id: skill-names
   then: every common skill name is spec-conformant and equals its directory
@@ -78,9 +103,9 @@
 
 - id: plugin-tree
   needs: [build]
-  then: the committed manifests match package.json 4.1.21
-  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.21\"' .codex-plugin/plugin.json", expect: 0 }
+  then: the committed manifests match package.json 4.1.22
+  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.22\"' .codex-plugin/plugin.json", expect: 0 }
 
 - id: readme-status
-  then: the README describes the next line, the fast path and the two bench sets, and its status line carries a 4.1.21 entry
-  check: { type: run, cmd: "grep -q '`4.1.21`' README.md && grep -q 'direction set' README.md && grep -q 'fast path' README.md", expect: 0 }
+  then: the README names the brownfield task and --metric tokens and its status line carries a 4.1.22 entry
+  check: { type: run, cmd: "grep -q '`4.1.22`' README.md && grep -q 'brownfield' README.md && grep -q -- '--metric tokens' README.md", expect: 0 }

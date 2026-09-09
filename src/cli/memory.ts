@@ -153,7 +153,7 @@ export function cmdLedger(root: string, sub: string | undefined, args: string[],
     const by = (flagString(flags, 'by') ?? 'client') as CompareBy;
     const metric = (flagString(flags, 'metric') ?? 'checks') as CompareMetric;
     if (!['client', 'model', 'harness'].includes(by)) throw usage('--by client|model|harness');
-    if (!['checks', 'turns', 'cost', 'ms'].includes(metric)) throw usage('--metric checks|turns|cost|ms');
+    if (!['checks', 'turns', 'cost', 'ms', 'tokens'].includes(metric)) throw usage('--metric checks|turns|cost|ms|tokens');
     const minRuns = Number(flagString(flags, 'min-runs') ?? 5);
     const paired = flags['paired'] === true;
     const filter: { client?: string; task?: string } = {};

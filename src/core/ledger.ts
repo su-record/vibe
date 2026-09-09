@@ -166,7 +166,7 @@ export function why(root: string, query: string, maxDepth = 3): WhyResult {
 // ─── Comparison — the code says "cannot tell" when it cannot ─────────────
 
 export type CompareBy = 'client' | 'model' | 'harness';
-export type CompareMetric = 'checks' | 'turns' | 'cost' | 'ms';
+export type CompareMetric = 'checks' | 'turns' | 'cost' | 'ms' | 'tokens';
 export type Verdict = 'insufficient-runs' | 'mixed-scenario-sets' | 'inconclusive' | 'difference-observed';
 
 export interface Range {
@@ -193,10 +193,16 @@ export interface Comparison {
   delta: number | null;
 }
 
+/** Input tokens as they are billed: cache reads at a tenth, cache writes at a quarter more. */
+export function weightedTokens(t: { input: number; cacheRead: number; cacheWrite: number }): number {
+  return t.input + 0.1 * t.cacheRead + 1.25 * t.cacheWrite;
+}
+
 function metricOf(e: LedgerEvent, metric: CompareMetric): number | null {
   if (metric === 'checks') return typeof e.passed === 'number' ? e.passed : null;
   if (metric === 'turns') return typeof e.turns === 'number' ? e.turns : null;
   if (metric === 'ms') return typeof e.ms === 'number' ? e.ms : null;
+  if (metric === 'tokens') return e.tokens ? weightedTokens(e.tokens) : null;
   return typeof e.costUsd === 'number' ? e.costUsd : null;
 }
 

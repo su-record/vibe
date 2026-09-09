@@ -19,6 +19,8 @@ export interface ScenarioView {
   regression?: boolean;
   irreversible?: string;
   needs?: string[];
+  /** What the check runs or reads — the command, the path, the URL, the question — so `vibe state` is the brief and scenarios.yaml need not be opened. */
+  check: string;
 }
 
 export interface StateView {
@@ -36,13 +38,15 @@ export interface StateView {
   notices: string[];
   /** What to do now, in one line — the router follows this, not a skill file. */
   next: string;
-  /** `small`: at most four scenarios, all run/file, no needs chain deeper than one — one `check --all` at the end; `full` otherwise. */
+  /** `small` unless something in the build skill applies: an irreversible scenario, a check that is not run/file, a needs chain
+   * deeper than one, or more than eight scenarios. `full` is the same procedure plus that skill; a count of five is not a reason. */
   size: 'small' | 'full';
 }
 
-function sizeOf(scenarios: Array<{ id: string; check: { type: string }; needs?: string[]; regression?: boolean }>): 'small' | 'full' {
+function sizeOf(scenarios: Array<{ id: string; check: { type: string }; needs?: string[]; regression?: boolean; irreversible?: string }>): 'small' | 'full' {
   const own = scenarios.filter((s) => !('regression' in s && s.regression));
-  if (own.length > 4) return 'full';
+  if (own.length > 8) return 'full';
+  if (own.some((s) => s.irreversible)) return 'full';
   const byId = new Map(own.map((s) => [s.id, s]));
   for (const s of own) {
     if (s.check.type !== 'run' && s.check.type !== 'file') return 'full';
@@ -51,14 +55,24 @@ function sizeOf(scenarios: Array<{ id: string; check: { type: string }; needs?: 
   return 'small';
 }
 
+/** The one thing a check acts on: a run's command, a file's path, an http call, a review's path, a human's question. */
+function checkTarget(check: Record<string, unknown>): string {
+  const c = check as { type?: string; cmd?: string; path?: string; url?: string; method?: string; question?: string };
+  if (c.cmd) return c.cmd;
+  if (c.path) return c.path;
+  if (c.url) return `${c.method ?? 'GET'} ${c.url}`;
+  if (c.question) return c.question;
+  return c.type ?? '';
+}
+
 function nextLine(state: State, stage: Stage, remaining: string[], inbox: string[], size: 'small' | 'full', run: number): string {
   if (state === 'STUCK') return `prove — STUCK: answer inbox [${inbox.join(', ')}], then vibe check --all`;
   if (inbox.length > 0) return `answer inbox [${inbox.join(', ')}] — then continue`;
   if (stage === 'discover') return 'discover — the vibe-discover skill: what counts as success, at most three questions';
   if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, research, one approval message; wait for "yes"';
-  if (state === 'DONE') return `report — DONE r-${run}; say what was built and which checks passed; write HANDOFF.md only if the intent asks`;
+  if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
-  const tail = size === 'small' ? 'then one vibe check --all' : 'vibe check <id> after each, then vibe check --all';
+  const tail = size === 'small' ? 'then one vibe check --all' : 'then vibe check --all; on a failure, vibe context <id> then vibe check <id>';
   return `build ${remaining.join(', ')} — ${tail}`;
 }
 
@@ -78,7 +92,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
   const views: ScenarioView[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))].map((s) => {
-    const view: ScenarioView = { id: s.id, then: s.then, type: s.check.type, last: results[s.id]?.last ?? 'never', at: results[s.id]?.at ?? null };
+    const view: ScenarioView = { id: s.id, then: s.then, type: s.check.type, last: results[s.id]?.last ?? 'never', at: results[s.id]?.at ?? null, check: checkTarget(s.check as unknown as Record<string, unknown>) };
     if ('regression' in s && s.regression) view.regression = true;
     if (s.irreversible) view.irreversible = s.irreversible;
     if (s.needs) view.needs = s.needs;

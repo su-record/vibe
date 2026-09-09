@@ -2,7 +2,9 @@
 // Bench — the same task, the same judge, different arms. Each run: fresh workspace from the task,
 // the agent works headless (claude -p or codex exec), then vibe 4 judges with the task's scenarios
 // and one `check` line lands in bench/ledger.jsonl carrying client, model, harness, turns, cost,
-// tokens, a recomputed cost and the agent's wall-clock time.
+// tokens (`usage: missing` names a run whose client never reported them), a recomputed cost and the
+// agent's wall-clock time; a task with `judge/meta.json` sessions runs the agent that many times on one
+// workspace and sums.
 // Read it with: vibe ledger compare --by harness --metric checks --ledger bench/ledger.jsonl
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -49,14 +51,16 @@ delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
 
 // The overhead set is the three saturated tasks from the first clean bench; the direction set is
-// the four the bare model is expected to fail at least some of the time. `--set` picks a named
-// group; `--task` (still the default) picks one task, or every directory under tasks/ with `all`.
-const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'] };
-SETS.all = [...SETS.overhead, ...SETS.direction];
+// a task cut across two sessions; `irreversible-trap` (a reset in the brief's natural path, which the
+// bare model never ran) and the four 4.1.21 tasks stay on disk, retired, and run by name.
+// `--set` picks a named group; `--task` (still the default) picks one task, or every directory
+// under tasks/ with `all`.
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['ask', 'session-split'], context: ['brownfield'] };
+SETS.all = [...SETS.overhead, ...SETS.direction, ...SETS.context];
 
 function taskNames() {
   if (setArg) {
-    if (!SETS[setArg]) throw new Error(`unknown --set ${setArg} (overhead|direction|all)`);
+    if (!SETS[setArg]) throw new Error(`unknown --set ${setArg} (overhead|direction|context|all)`);
     return SETS[setArg];
   }
   if (taskArg !== 'all') return [taskArg];
@@ -66,7 +70,10 @@ function taskNames() {
 function prepare(task) {
   const taskDir = path.join(here, 'tasks', task);
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-bench-${client}-${harness}-`));
-  for (const f of fs.readdirSync(taskDir)) if (f !== 'judge') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
+  for (const f of fs.readdirSync(taskDir)) if (f !== 'judge' && f !== 'key') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
+  // a task may prepare its workspace itself (brownfield: this repository archived and built); the judge stays hidden
+  const prep = path.join(taskDir, 'judge', 'prepare.cjs');
+  if (fs.existsSync(prep)) execFileSync('node', [prep], { cwd: ws, env: { ...env, VIBE_BENCH_REPO: repo }, stdio: 'ignore' });
   execFileSync('git', ['init', '-q'], { cwd: ws });
   if (harness === 'on') {
     // card, skills and hook go into the workspace itself — the `off` arm must stay bare
@@ -76,8 +83,20 @@ function prepare(task) {
     const skillsDir = path.join(ws, layout.skills);
     for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
     draftAndApprove(ws, taskDir);
+    // the policy an install has by default: the hook blocks an irreversible command until `vibe authorize`
+    vibeSync(ws, ['tokens', 'irreversible']);
   }
   return ws;
+}
+
+/** A task's `judge/meta.json`: `sessions` lists one entry per agent session on the same workspace — `{ maxTurns }`
+ * (claude) or `{ cutMs }` (codex, which has no turn cap) — so a task can be cut and resumed with no memory between. */
+function meta(task) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(here, 'tasks', task, 'judge', 'meta.json'), 'utf-8'));
+  } catch {
+    return {};
+  }
 }
 
 function vibeSync(ws, a, extra = {}) {
@@ -107,7 +126,7 @@ function judge(ws, run, task, index) {
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const check = lines.map((l) => JSON.parse(l)).reverse().find((e) => e.event === 'check');
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -161,21 +180,35 @@ function claudeUsage(out) {
   return { model: used, tokens };
 }
 
-async function runClaude(ws) {
+/** The stream's final `result` event carries turns, cost and usage; when the process died before it (timeout,
+ * a crash), the assistant events that did arrive still give the turn count and the run is named usage-missing. */
+function claudeResult(stdout) {
+  let result = null;
+  let assistantTurns = 0;
+  for (const line of stdout.split('\n')) {
+    if (!line.startsWith('{')) continue;
+    try {
+      const event = JSON.parse(line);
+      if (event.type === 'result') result = event;
+      else if (event.type === 'assistant') assistantTurns += 1;
+    } catch {
+      /* a partial line */
+    }
+  }
+  return { result, assistantTurns };
+}
+
+async function runClaude(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   // user settings stay out of both arms; the `on` arm keeps the workspace's own (.claude/settings.local.json, skills)
-  const a = ['-p', prompt, '--output-format', 'json', '--dangerously-skip-permissions', '--max-turns', String(maxTurns), '--setting-sources', harness === 'on' ? 'project,local' : ''];
+  const a = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions', '--max-turns', String(session.maxTurns ?? maxTurns), '--setting-sources', harness === 'on' ? 'project,local' : ''];
   if (model) a.push('--model', model);
   const started = Date.now();
   const r = await spawnAsync('claude', a, { cwd: ws });
-  let out = {};
-  try {
-    out = JSON.parse(r.stdout);
-  } catch {
-    /* no JSON — the run failed; the judge will say so */
-  }
+  const { result, assistantTurns } = claudeResult(r.stdout);
+  const out = result ?? {};
   const { model: used, tokens } = claudeUsage(out);
-  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? null, costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens };
+  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? (assistantTurns || null), costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText: typeof out.result === 'string' ? out.result : '' };
 }
 
 /** codex exec `--json` streams one line per event; `turn.completed` carries the turn's own usage. */
@@ -194,15 +227,25 @@ function codexUsage(stdout) {
   return null;
 }
 
-async function runCodex(ws) {
+async function runCodex(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   const a = ['exec', '--skip-git-repo-check', '--dangerously-bypass-approvals-and-sandbox', '--json', '-C', ws];
   if (model) a.push('-m', model);
   const started = Date.now();
-  const r = await spawnAsync('codex', a, { cwd: ws, input: prompt });
+  const r = await spawnAsync('codex', a, { cwd: ws, input: prompt, timeoutMs: session.cutMs ?? AGENT_TIMEOUT_MS });
   // codex exec is one turn; the comparable unit is completed items (commands, messages, patches)
   let turns = 0;
-  for (const line of r.stdout.split('\n')) if (line.includes('"item.completed"')) turns += 1;
+  let finalText = '';
+  for (const line of r.stdout.split('\n')) {
+    if (!line.includes('"item.completed"')) continue;
+    turns += 1;
+    try {
+      const item = JSON.parse(line).item;
+      if (item?.type === 'agent_message' && typeof item.text === 'string') finalText = item.text;
+    } catch {
+      /* not this line */
+    }
+  }
   let usedModel = model;
   if (!usedModel) {
     try {
@@ -211,12 +254,55 @@ async function runCodex(ws) {
       usedModel = null;
     }
   }
-  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens: codexUsage(r.stdout) };
+  const tokens = codexUsage(r.stdout);
+  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText };
+}
+
+/** Two sessions on one workspace add up: turns, cost, time and tokens are the task's total; the model is the last one. */
+function sumRuns(a, b) {
+  const add = (x, y) => (x === null && y === null ? null : (x ?? 0) + (y ?? 0));
+  const tokens = a.tokens && b.tokens ? Object.fromEntries(Object.keys(a.tokens).map((k) => [k, a.tokens[k] + b.tokens[k]])) : null;
+  return { client: a.client, model: b.model ?? a.model, turns: add(a.turns, b.turns), costUsd: add(a.costUsd, b.costUsd), ms: a.ms + b.ms, tokens, usage: tokens ? 'captured' : 'missing', sessions: (a.sessions ?? 1) + 1, finalText: b.finalText ?? '' };
+}
+
+/** A task's fake user (`judge/meta.json` → `fakeUser`, a script under the task's key/ that never reaches the workspace):
+ * between sessions it reads what the agent asked — the `on` arm's open inbox questions, or the final message of either
+ * arm — and answers only what it was asked. The answer lands in TASK.md for both arms and in the inbox for `on`. */
+function fakeUser(ws, task, run) {
+  const script = path.join(here, 'tasks', task, meta(task).fakeUser);
+  const asked = [];
+  if (harness === 'on') {
+    try {
+      const view = JSON.parse(vibeSync(ws, ['state']).stdout);
+      for (const q of view.inbox?.items ?? []) asked.push({ id: q.id, text: q.question });
+    } catch {
+      /* no state */
+    }
+  }
+  if (run.finalText) asked.push({ id: null, text: run.finalText });
+  let answered = 0;
+  for (const q of asked) {
+    const r = spawnSync('node', [script], { input: q.text, encoding: 'utf-8' });
+    const answer = (r.stdout || '').trim();
+    if (!answer) continue;
+    answered += 1;
+    fs.appendFileSync(path.join(ws, 'TASK.md'), `\n\nAnswer from the user, to what you asked: ${answer}\n`);
+    if (q.id) vibeSync(ws, ['inbox', 'answer', q.id, answer]);
+  }
+  return answered;
 }
 
 async function runOneJob(job) {
   const ws = prepare(job.task);
-  const run = client === 'claude' ? await runClaude(ws) : await runCodex(ws);
+  const sessions = meta(job.task).sessions ?? [{}];
+  let run = null;
+  let asked = 0;
+  for (const [i, session] of sessions.entries()) {
+    const one = client === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
+    run = run ? sumRuns(run, one) : one;
+    if (meta(job.task).fakeUser && i < sessions.length - 1) asked += fakeUser(ws, job.task, one);
+  }
+  run.asked = asked;
   const report = judge(ws, run, job.task, job.index);
   return { ...job, ws, run, report };
 }

@@ -11,7 +11,8 @@ import path from 'node:path';
 
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 const cli = path.join(root, 'dist/cli.js');
-const DIRECTION_TASKS = ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'];
+const ALL_TASKS = ['ask', 'session-split', 'irreversible-trap', 'brownfield', 'hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'];
+const DIRECTION_TASKS = process.argv.length > 2 ? process.argv.slice(2) : ALL_TASKS;
 const env = { ...process.env, VIBE_SKIP_SETUP: '1' };
 
 function vibe(cwd, args) {
@@ -30,6 +31,11 @@ function prepare(task) {
   const taskDir = path.join(root, 'bench/tasks', task);
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-direction-${task}-`));
   for (const f of fs.readdirSync(taskDir)) fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
+  const prep = path.join(ws, 'judge', 'prepare.cjs');
+  if (fs.existsSync(prep)) {
+    const r = spawnSync('node', [prep], { cwd: ws, env: { ...env, VIBE_BENCH_REPO: root }, encoding: 'utf-8' });
+    if (r.status !== 0) throw new Error(`judge/prepare.cjs for ${task} exited ${r.status}\n${r.stdout}\n${r.stderr}`);
+  }
   mustOk(ws, ['tokens', 'off']);
   mustOk(ws, ['intent', 'draft', 'judge/intent.md', 'judge/scenarios.yaml']);
   mustOk(ws, ['approve']);

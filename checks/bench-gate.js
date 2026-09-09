@@ -1,9 +1,12 @@
 #!/usr/bin/env node
-// The gate — every release proves its bench number before it ships. Two sets, two rules, both
-// pre-registered in bench/claims/: the overhead set (saturated on purpose) measures what the
-// harness costs — `on` turns ≤ `off` + 4 and `on` ms ≤ `off` × 1.5 per client, and never worse on
-// checks; the direction set measures what it prevents — `on` scores higher on checks for at least
-// two of its tasks per client, and a task that does not separate the arms is named for retirement.
+// The gate — every release proves its bench number before it ships. Three sets, pre-registered in
+// bench/claims/. The measure is the user's: tokens and time. The overhead set (saturated on purpose)
+// measures what the harness costs — `on` weighted input tokens ≤ `off` × 1.25 and `on` ms ≤ `off` × 1.5
+// per client, never worse on checks; turns are reported, not gated (two of them are the harness's own
+// commands). The direction set measures what it prevents — a trap task separates when `on` scores
+// higher on checks; a session-split task holds when `on` is not worse on checks and spends no more
+// tokens over its sessions. The context set: `on` tokens ≤ `off` × 0.7. A task that does not separate
+// the arms is named for retirement.
 // Runs as a `vibe check --all` scenario, not in CI — the bench spends real model tokens.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -12,9 +15,12 @@ import path from 'node:path';
 const REQUIRED_RUNS = 5;
 export const SETS = {
   overhead: ['settlement', 'vibe-fix', 'report'],
-  direction: ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'],
+  direction: ['ask', 'session-split'],
+  context: ['brownfield'],
 };
-const TURNS_ALLOWANCE = 4;
+const TOKENS_FACTOR = 0.7;
+const weighted = (t) => t.input + 0.1 * t.cacheRead + 1.25 * t.cacheWrite;
+const TOKENS_OVERHEAD = 1.25;
 const MS_FACTOR = 1.5;
 
 const armOf = (line) => `${line.client}/${line.harness}`;
@@ -43,15 +49,16 @@ function arms(lines, client) {
   return { on: latest(lines.filter((l) => l.client === client && l.harness === 'on')), off: latest(lines.filter((l) => l.client === client && l.harness === 'off')) };
 }
 
-/** Overhead: never worse on checks, and the procedure within its allowance — turns and time. */
+/** Overhead: never worse on checks, and the procedure within its allowance — tokens and time; turns ride in the reason. */
 function overheadVerdict(task, lines) {
   for (const client of new Set(lines.map((l) => l.client))) {
     const { on, off } = arms(lines, client);
     if (on.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) continue;
     if (mean(on, 'passed') < mean(off, 'passed')) return `${task}: ${client} — on ${mean(on, 'passed').toFixed(2)} checks is worse than off ${mean(off, 'passed').toFixed(2)}`;
-    const onT = mean(on, 'turns');
-    const offT = mean(off, 'turns');
-    if (onT !== null && offT !== null && onT > offT + TURNS_ALLOWANCE) return `${task}: ${client} — on ${onT.toFixed(1)} turns is over off ${offT.toFixed(1)} + ${TURNS_ALLOWANCE}`;
+    const tok = (arm) => { const v = arm.filter((l) => l.tokens).map((l) => weighted(l.tokens)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+    const onTok = tok(on);
+    const offTok = tok(off);
+    if (onTok !== null && offTok !== null && onTok > offTok * TOKENS_OVERHEAD) return `${task}: ${client} — on ${Math.round(onTok)} weighted tokens is over off ${Math.round(offTok)} × ${TOKENS_OVERHEAD} (turns ${mean(on, 'turns')?.toFixed(1)} vs ${mean(off, 'turns')?.toFixed(1)})`;
     const onMs = mean(on, 'ms');
     const offMs = mean(off, 'ms');
     if (onMs !== null && offMs !== null && onMs > offMs * MS_FACTOR) return `${task}: ${client} — on ${Math.round(onMs / 1000)}s is over off ${Math.round(offMs / 1000)}s × ${MS_FACTOR}`;
@@ -59,20 +66,42 @@ function overheadVerdict(task, lines) {
   return null;
 }
 
-/** Direction: per client, the tasks where `on` scores higher on checks; fewer than two is a failure that names the rest. */
+/** Context: never worse on checks, and `on` weighted input tokens at most 0.7 × `off`, per client, over runs both arms passed. */
+function contextVerdict(task, lines) {
+  for (const client of new Set(lines.map((l) => l.client))) {
+    const { on, off } = arms(lines, client);
+    if (on.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) continue;
+    if (mean(on, 'passed') < mean(off, 'passed')) return `${task}: ${client} — on ${mean(on, 'passed').toFixed(2)} checks is worse than off ${mean(off, 'passed').toFixed(2)}`;
+    const tok = (arm) => { const v = arm.filter((l) => l.armPassed && l.tokens).map((l) => weighted(l.tokens)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+    const onTok = tok(on);
+    const offTok = tok(off);
+    if (onTok === null || offTok === null) return `${task}: ${client} — no token counts to compare`;
+    if (onTok > offTok * TOKENS_FACTOR) return `${task}: ${client} — on ${Math.round(onTok)} weighted tokens is over off ${Math.round(offTok)} × ${TOKENS_FACTOR}`;
+  }
+  return null;
+}
+
+/** Direction, per task and client: a trap separates when `on` scores higher on checks; a split task holds when `on`
+ * is not worse on checks and spends no more tokens over its sessions. A task that does neither is named for retirement. */
+const DIRECTION_RULES = { ask: 'separates', 'irreversible-trap': 'separates', 'session-split': 'cheaper' };
 function directionVerdict(tasksLines) {
-  const clients = new Set(tasksLines.flatMap(([, lines]) => lines.map((l) => l.client)));
   const problems = [];
-  for (const client of clients) {
-    const separating = [];
-    const flat = [];
-    for (const [task, lines] of tasksLines) {
+  for (const [task, lines] of tasksLines) {
+    const rule = DIRECTION_RULES[task] ?? 'separates';
+    for (const client of new Set(lines.map((l) => l.client))) {
       const { on, off } = arms(lines, client);
       if (on.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) continue;
-      if (mean(on, 'passed') > mean(off, 'passed')) separating.push(task);
-      else flat.push(task);
+      const onP = mean(on, 'passed');
+      const offP = mean(off, 'passed');
+      if (rule === 'separates' && onP <= offP) problems.push(`${task}: ${client} — on ${onP.toFixed(2)} checks does not separate from off ${offP.toFixed(2)}; the bare model already gets it right`);
+      if (rule === 'cheaper') {
+        if (onP < offP) problems.push(`${task}: ${client} — on ${onP.toFixed(2)} checks is worse than off ${offP.toFixed(2)}`);
+        else {
+          const tok = (arm) => { const v = arm.filter((l) => l.tokens).map((l) => weighted(l.tokens)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+          if (tok(on) !== null && tok(off) !== null && tok(on) > tok(off)) problems.push(`${task}: ${client} — on ${Math.round(tok(on))} weighted tokens over two sessions is more than off ${Math.round(tok(off))} (turns ${mean(on, 'turns')?.toFixed(1)} vs ${mean(off, 'turns')?.toFixed(1)})`);
+        }
+      }
     }
-    if (separating.length < 2) problems.push(`direction: ${client} — only ${separating.length} task(s) separate the arms; the bare model already gets right: ${flat.join(', ') || 'none measured'}`);
   }
   return problems.length ? problems.join('; ') : null;
 }
@@ -84,6 +113,11 @@ export function gate(lines, sets = SETS) {
     const reason = mine.length === 0 ? `overhead: missing task ${task}` : missingArms(task, mine) ?? overheadVerdict(task, mine);
     results.push({ set: 'overhead', task, ok: reason === null, reason: reason ?? `overhead: ${task} ok` });
   }
+  for (const task of sets.context ?? []) {
+    const mine = lines.filter((l) => l.task === task);
+    const reason = mine.length === 0 ? `context: missing task ${task}` : missingArms(task, mine) ?? contextVerdict(task, mine);
+    results.push({ set: 'context', task, ok: reason === null, reason: reason ?? `context: ${task} ok` });
+  }
   const direction = sets.direction.map((task) => [task, lines.filter((l) => l.task === task)]);
   for (const [task, mine] of direction) {
     const reason = mine.length === 0 ? `direction: missing task ${task}` : missingArms(task, mine);
@@ -91,7 +125,7 @@ export function gate(lines, sets = SETS) {
   }
   const dv = directionVerdict(direction.filter(([, l]) => l.length > 0));
   if (dv) results.push({ set: 'direction', task: '*', ok: false, reason: dv });
-  else if (direction.some(([, l]) => l.length > 0)) results.push({ set: 'direction', task: '*', ok: true, reason: 'direction: at least two tasks separate the arms per client' });
+  else if (direction.some(([, l]) => l.length > 0)) results.push({ set: 'direction', task: '*', ok: true, reason: 'direction: the trap separates the arms and the split costs no more tokens, per client' });
   const failed = results.filter((r) => !r.ok);
   return { ok: failed.length === 0, results, reason: failed.map((r) => r.reason).join('; ') };
 }
@@ -101,25 +135,31 @@ function readLedger(file) {
   return fs.readFileSync(file, 'utf-8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }
 
-function line(task, client, harness, i, passed, turns, ms) {
-  return { at: new Date(Date.now() + i * 1000).toISOString(), event: 'check', client, harness, task, passed, failed: 0, turns, ms, armPassed: true };
+function line(task, client, harness, i, passed, turns, ms, tokens) {
+  return { at: new Date(Date.now() + i * 1000).toISOString(), event: 'check', client, harness, task, passed, failed: 0, turns, ms, armPassed: true, tokens: tokens ?? { input: harness === 'on' ? 1000 : 5000, cacheRead: harness === 'on' ? 10000 : 30000, cacheWrite: 0, output: 100 } };
 }
 
 function selfTest() {
   const good = [];
   let i = 0;
   for (const task of SETS.overhead) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 3, 6, 20000), line(task, client, 'off', (i += 1), 3, 4, 15000));
-  for (const task of SETS.direction) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 3, 9, 30000), line(task, client, 'off', (i += 1), task === 'long-context' ? 3 : 1, 5, 20000));
+  for (const task of SETS.direction) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 3, 9, 30000), line(task, client, 'off', (i += 1), task === 'session-split' ? 3 : 1, 10, 20000));
+  // the overhead arms carry realistic tokens: on within ×1.25 of off
+  for (const l of good) if (SETS.overhead.includes(l.task)) l.tokens = { input: l.harness === 'on' ? 1100 : 1000, cacheRead: 10000, cacheWrite: 0, output: 100 };
+  for (const task of SETS.context) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 5, 9, 30000), line(task, client, 'off', (i += 1), 5, 5, 20000));
   const passing = gate(good);
   if (!passing.ok) throw new Error(`self-test: a good ledger failed: ${passing.reason}`);
-  const heavy = good.map((l) => (l.task === 'report' && l.harness === 'on' ? { ...l, turns: 20 } : l));
-  if (gate(heavy).ok || !gate(heavy).reason.includes('report: claude-code — on 20.0 turns')) throw new Error('self-test: the turns allowance was not enforced');
-  const flat = good.map((l) => (SETS.direction.includes(l.task) ? { ...l, passed: 3 } : l));
-  const fv = gate(flat);
-  if (fv.ok || !fv.reason.includes('only 0 task(s) separate')) throw new Error('self-test: a flat direction set passed');
+  const heavy = good.map((l) => (l.task === 'report' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 10000, cacheWrite: 0, output: 100 } } : l));
+  if (gate(heavy).ok || !gate(heavy).reason.includes('report: claude-code — on 6000 weighted tokens is over')) throw new Error('self-test: the tokens allowance was not enforced');
+  const flat = gate(good.map((l) => (l.task === 'ask' ? { ...l, passed: 3 } : l)));
+  if (flat.ok || !flat.reason.includes('ask: claude-code — on 3.00 checks does not separate')) throw new Error('self-test: a flat trap passed');
+  const redo = good.map((l) => (l.task === 'session-split' && l.harness === 'on' ? { ...l, tokens: { input: 9000, cacheRead: 30000, cacheWrite: 0, output: 100 } } : l));
+  if (gate(redo).ok || !gate(redo).reason.includes('over two sessions is more than off')) throw new Error('self-test: a costlier split passed');
+  const hungry = good.map((l) => (l.task === 'brownfield' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 30000, cacheWrite: 0, output: 1 } } : l));
+  if (gate(hungry).ok || !gate(hungry).reason.includes('weighted tokens is over')) throw new Error('self-test: the token rule was not enforced');
   const missing = good.filter((l) => l.task !== 'vibe-fix');
   if (gate(missing).ok || !gate(missing).reason.includes('missing task vibe-fix')) throw new Error('self-test: a missing task passed');
-  process.stdout.write('bench-gate --self-test: 4 checks passed\n');
+  process.stdout.write('bench-gate --self-test: 6 checks passed\n');
 }
 
 const here = path.dirname(new URL(import.meta.url).pathname);

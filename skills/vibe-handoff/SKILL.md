@@ -1,6 +1,6 @@
 ---
 name: vibe-handoff
-description: Report and hand off — say what was built and which checks passed when, and leave a document the operator can run alone. The harness actually runs the commands in that document.
+description: Only when the intent asks for a HANDOFF.md, or the user asks for a document an operator runs alone. DONE itself needs no skill — answer from the `vibe check` output.
 user-invocable: false
 ---
 

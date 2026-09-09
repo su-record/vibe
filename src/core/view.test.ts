@@ -24,6 +24,7 @@ describe('vibe state — the next line is the procedure', () => {
     let v = buildStateView(root, root);
     expect(v.size).toBe('small');
     expect(v.next).toBe('build a, b, c — then one vibe check --all');
+    expect(v.scenarios.map((s) => s.check)).toEqual(['true', 'out.txt', 'true']); // the brief: what each check acts on
     writeState(root, { ...readState(root), state: 'RUNNING' });
     fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1' }, b: { last: 'pass', at: 'now', run: 'r-1' } }));
     v = buildStateView(root, root);
@@ -38,15 +39,26 @@ describe('vibe state — the next line is the procedure', () => {
     writeState(root, { ...readState(root), state: 'DONE', runs: 3 });
     fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-3' }, b: { last: 'pass', at: 'now', run: 'r-3' }, c: { last: 'pass', at: 'now', run: 'r-3' } }));
     const done = buildStateView(root, root);
-    expect(done.next).toBe('report — DONE r-3; say what was built and which checks passed; write HANDOFF.md only if the intent asks');
+    expect(done.next).toBe('report — DONE r-3: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks');
   });
 
-  it('size: a review check, a fifth scenario or a needs chain two deep makes a task full', () => {
+  it('size: a review check, an irreversible scenario, a ninth scenario or a needs chain two deep makes a task full; a fifth does not', () => {
     draft(root, '# t\n', THREE + '- { id: d, then: w, check: { type: review, path: doc.md, lang: en } }\n');
     expect(buildStateView(root, root).size).toBe('full');
+    approve(root, null);
+    expect(buildStateView(root, root).next).toBe('build a, b, c, d — then vibe check --all; on a failure, vibe context <id> then vibe check <id>');
     draft(root, '# t\n', THREE + '- { id: d, then: w, needs: [c], check: { type: run, cmd: "true" } }\n');
     expect(buildStateView(root, root).size).toBe('full');
     draft(root, '# t\n', THREE);
     expect(buildStateView(root, root).size).toBe('small');
+    // five run/file scenarios are still small — a count is not a reason to load the build skill
+    draft(root, '# t\n', THREE + '- { id: d, then: w, check: { type: run, cmd: "true" } }\n- { id: e, then: v, check: { type: run, cmd: "true" } }\n');
+    expect(buildStateView(root, root).size).toBe('small');
+    // an irreversible scenario is: the skill's authorize procedure applies
+    draft(root, '# t\n', THREE + '- { id: d, then: w, irreversible: "push:origin", check: { type: run, cmd: "true" } }\n');
+    expect(buildStateView(root, root).size).toBe('full');
+    // nine scenarios are: parallel worktrees apply
+    draft(root, '# t\n', THREE + Array.from({ length: 6 }, (_, i) => `- { id: s${i}, then: w, check: { type: run, cmd: "true" } }`).join('\n') + '\n');
+    expect(buildStateView(root, root).size).toBe('full');
   });
 });

@@ -140,4 +140,16 @@ describe('ledger and comparison — the code says "cannot tell"', () => {
     const mixed = compare(root, 'harness', 'checks', 5, file, false, { client: 'codex' });
     expect(mixed.verdict).toBe('mixed-scenario-sets'); // two tasks in one arm
   });
+
+  it('tokens: --metric tokens compares weighted input (input + 0.1 cacheRead + 1.25 cacheWrite)', () => {
+    const file = path.join(root, 'tok.jsonl');
+    const line = (harness: string, i: number, tokens: { input: number; cacheRead: number; cacheWrite: number; output: number }): string => JSON.stringify({ at: new Date(Date.now() + i).toISOString(), event: 'check', client: 'c', model: null, harness, task: 'brownfield', run: `r-${i}`, pair: `brownfield#${i % 5}`, scenarioSet: 'b', passed: 5, failed: 0, armPassed: true, tokens });
+    const lines: string[] = [];
+    for (let i = 0; i < 5; i += 1) lines.push(line('on', i, { input: 1000, cacheRead: 10000, cacheWrite: 400, output: 100 }), line('off', i, { input: 5000, cacheRead: 30000, cacheWrite: 0, output: 100 }));
+    fs.writeFileSync(file, `${lines.join('\n')}\n`);
+    const c = compare(root, 'harness', 'tokens', 5, file, true);
+    expect(c.verdict).toBe('difference-observed');
+    expect(c.arms.find((a) => a.arm === 'on')?.range?.mean).toBeCloseTo(1000 + 1000 + 500, 5);
+    expect(c.arms.find((a) => a.arm === 'off')?.range?.mean).toBeCloseTo(5000 + 3000, 5);
+  });
 });
