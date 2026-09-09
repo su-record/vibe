@@ -65,8 +65,8 @@
   check: { type: run, cmd: "npx vitest run src/install/register.test.ts -t 'codex behind' && grep -q 'keeps its hooks until it restarts' README.md", expect: 0, timeoutMs: 120000 }
 
 - id: promise
-  then: README opens with the measured cost and what was not shown, and links the claims
-  check: { type: run, cmd: "grep -q 'written before the run' README.md && grep -q 'no prevention number' README.md && grep -q 'bench/claims' README.md", expect: 0 }
+  then: README opens with what the fifth run showed — prevention on ask, the cost per client — and links the claims
+  check: { type: run, cmd: "grep -q 'written before the run' README.md && grep -q 'four runs in five' README.md && grep -q 'bench/claims' README.md", expect: 0 }
 
 - id: card-size
   then: the always-on card is at most 1024 bytes
