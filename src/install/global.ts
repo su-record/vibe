@@ -5,7 +5,7 @@ import { packageRoot } from '../core/paths.js';
 import { readJson, readText, writeAtomic, writeJson } from '../core/store.js';
 import { hasCurrentHook, installHookFile, removeHookFile, sweepDeadHooks } from './hooks.js';
 import { languagePacks, sweepLegacyPluginStore } from './plugin.js';
-import { claudeHeldElsewhere, claudePluginVersion, cliAvailable, codexPluginVersion, codexRegistered, registerClaude, registerCodex, unregisterClaude, unregisterCodex, type Mode } from './register.js';
+import { claudeHeldElsewhere, claudePluginVersion, cliAvailable, codexHooksTrusted, codexPluginVersion, codexRegistered, registerClaude, registerCodex, type Mode, unregisterClaude, unregisterCodex } from './register.js';
 
 export { hasNotifyHook, sweepDeadHooks } from './hooks.js';
 
@@ -217,6 +217,8 @@ export interface SurfaceStatus {
   mode: Mode;
   /** Plugin mode: the version the client has installed */
   pluginVersion?: string | null;
+  /** Codex only: whether the user accepted vibe's hooks (config.toml hooks.state); null when Codex holds no hook state. */
+  hooksTrusted?: boolean | null;
 }
 
 export function surfaceStatus(base: string, layout: Layout): SurfaceStatus {
@@ -243,7 +245,7 @@ export function clientStatus(home: string, client: Client): SurfaceStatus {
     const registered = codexRegistered(home);
     const card = hasCurrentCard(path.join(home, layout.card));
     const held = codexPluginVersion(home); // what Codex runs, not what the package says
-    return { card, skills: registered ? SKILL_NAMES.length : 0, hook: registered, current: registered && card, mode: 'plugin', pluginVersion: held ?? (registered ? packageVersion() : null) };
+    return { card, skills: registered ? SKILL_NAMES.length : 0, hook: registered, current: registered && card, mode: 'plugin', pluginVersion: held ?? (registered ? packageVersion() : null), hooksTrusted: codexHooksTrusted(home) };
   }
   return surfaceStatus(home, layout);
 }

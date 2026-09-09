@@ -35,7 +35,7 @@ export interface StateView {
   intent: { title: string; hash: string | null; approvedAt: string | null } | null;
   scenarios: ScenarioView[];
   remaining: string[];
-  inbox: { open: number; items: Array<{ id: string; question: string; options?: string[]; default?: string; scenario?: string; needs?: string }> };
+  inbox: { open: number; items: Array<{ id: string; question: string; answer?: string; options?: string[]; default?: string; scenario?: string; needs?: string }> };
   last: { client: string; model: string | null; at: string } | null;
   /** Skill create/import/knowledge proposals from scenarios, regressions, inbox and state signals — at most three */
   proposals: Proposal[];
@@ -82,13 +82,26 @@ function scenarioView(root: string, s: Scenario & { regression?: boolean }, resu
   return view;
 }
 
-function nextLine(state: State, stage: Stage, remaining: string[], inbox: string[], size: 'small' | 'full', run: number): string {
-  if (state === 'STUCK') return `prove — STUCK: answer inbox [${inbox.join(', ')}], then vibe check --all`;
-  if (inbox.length > 0) return `answer inbox [${inbox.join(', ')}] — then continue`;
+type InboxItem = StateView['inbox']['items'][number];
+
+/** Asking is a stop: an unanswered question means wait; an answered one carries its answer and lets the work continue. */
+function inboxLine(state: State, items: InboxItem[]): string | null {
+  const waiting = items.filter((q) => !q.answer);
+  const answered = items.filter((q) => q.answer);
+  if (waiting.length > 0) return `${state === 'STUCK' ? 'STUCK — ' : 'wait — '}${waiting.map((q) => q.id).join(', ')} asked; the user answers; stop and wait — do not answer it yourself`;
+  if (answered.length > 0) return `answered ${answered.map((q) => `${q.id}: "${q.answer}"`).join(' · ')} — ${state === 'STUCK' ? 'then vibe check --all' : 'continue building'}; vibe inbox resolve <id> once used`;
+  return null;
+}
+
+function nextLine(state: State, stage: Stage, remaining: string[], inbox: InboxItem[], size: 'small' | 'full', run: number, failed: ScenarioView[] = []): string {
+  const asked = inboxLine(state, inbox);
+  if (asked) return asked;
+  if (state === 'STUCK') return 'prove — STUCK: the same failure twice; vibe ask, then stop';
   if (stage === 'discover') return 'discover — the vibe-discover skill: what counts as success, at most three questions';
   if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, research, one approval message; wait for "yes"';
   if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
+  if (failed.length > 0) return `fix ${failed.map((f) => `${f.id}${f.files?.length ? ` (files: ${f.files.join(', ')})` : ''}`).join(', ')} — ${PROCEDURE.failure}; then vibe check <id>`;
   const tail = size === 'small' ? PROCEDURE.build : `${PROCEDURE.build}; ${PROCEDURE.failure}`;
   return `build ${remaining.join(', ')} ${tail}`;
 }
@@ -114,6 +127,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   const allPassedOnce = gated.length > 0 && remaining.length === 0;
   const questions = openQuestions(root).map((q) => {
     const item: StateView['inbox']['items'][number] = { id: q.id, question: q.question };
+    if (q.answer) item.answer = q.answer;
     if (q.options) item.options = q.options;
     if (q.default) item.default = q.default;
     if (q.scenario) item.scenario = q.scenario;
@@ -132,7 +146,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
     root,
     state: state.state,
     stage,
-    next: nextLine(state.state, stage, remaining, questions.map((q) => q.id), size, state.runs),
+    next: nextLine(state.state, stage, remaining, questions, size, state.runs, views.filter((v) => v.last === 'fail')),
     size,
     intent,
     scenarios: views,

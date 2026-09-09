@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { packageRoot } from '../core/paths.js';
 import { ensureGlobal, globalStatus, setupGlobal, uninstallGlobal } from './global.js';
 import { installPlugin, pluginPaths } from './plugin.js';
-import { registerClaude, registerCodex } from './register.js';
+import { codexHooksTrusted, registerClaude, registerCodex } from './register.js';
 
 /**
  * The client CLIs are stand-ins: shell scripts that log their arguments and write the same
@@ -104,6 +104,16 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(log('codex.log')).toHaveLength(2); // an unreadable cache is not stale — nothing ran again
     expect(uninstallGlobal(home)).toEqual(expect.arrayContaining([path.join(home, '.config', 'vibe', 'plugin', 'vibe'), '.codex/AGENTS.md card']));
     expect(log('codex.log').at(-1)).toBe('plugin remove vibe@vibe-local');
+  });
+
+  it('trust: Codex trusts vibe\'s hooks only when config.toml holds a hooks.state entry for every event of a source vibe installed', () => {
+    const cfg = path.join(home, '.codex', 'config.toml');
+    fs.mkdirSync(path.dirname(cfg), { recursive: true });
+    expect(codexHooksTrusted(home)).toBeNull(); // no config at all
+    fs.writeFileSync(cfg, 'model = "x"\n[hooks.state]\n[hooks.state."vibe@vibe-local:hooks/codex-hooks.json:pre_tool_use:0:0"]\ntrusted_hash = "sha256:a"\n');
+    expect(codexHooksTrusted(home)).toBe(false); // one event of four
+    fs.appendFileSync(cfg, ['session_start', 'post_tool_use', 'stop'].map((ev) => `[hooks.state."vibe@vibe-local:hooks/codex-hooks.json:${ev}:0:0"]\ntrusted_hash = "sha256:b"\n`).join(''));
+    expect(codexHooksTrusted(home)).toBe(true);
   });
 
   it('plugin mode: codex behind — an older plugin in the Codex cache and a marketplace entry at the ≤ 4.1.7 path are read as stale, repaired by remove + add, and read as current afterwards', () => {

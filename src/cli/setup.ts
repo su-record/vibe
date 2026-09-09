@@ -25,7 +25,7 @@ export function cmdSetup(flags: Flags): Output {
   const home = flagString(flags, 'home');
   const repaired = ensureGlobal(home);
   const g = globalStatus(home);
-  const lines = Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${(repaired as string[]).includes(client) ? ' — set up now' : c.current ? ' — current' : ' — still stale'}`);
+  const lines = Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${(repaired as string[]).includes(client) ? ' — set up now' : c.current ? ' — current' : ' — still stale'}${c.hooksTrusted === false || c.hooksTrusted === null ? ' — hooks not trusted by Codex: open Codex once in a vibe project and accept them, or pass --dangerously-bypass-hook-trust in automation' : c.hooksTrusted ? ' · hooks trusted' : ''}`);
   return { json: { repaired, ...g }, text: [`vibe ${packageVersion()} — ${g.home}`, ...lines].join('\n'), code: 0 };
 }
 
@@ -35,7 +35,7 @@ export function cmdStatus(root: string, flags: Flags): Output {
   const update = process.env['VIBE_OFFLINE'] ? { installed: packageVersion(), latest: null, available: false } : checkUpdate();
   const lines = [
     `vibe ${packageVersion()} — ${g.home}`,
-    ...Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${c.current ? '' : ' — stale; `vibe setup` repairs it'}`),
+    ...Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${c.current ? '' : ' — stale; `vibe setup` repairs it'}${c.hooksTrusted === false || c.hooksTrusted === null ? ' — hooks not trusted by Codex: open Codex once in a vibe project and accept them, or pass --dangerously-bypass-hook-trust in automation' : c.hooksTrusted ? ' · hooks trusted' : ''}`),
     `  card      ${g.cardBytes} bytes${g.cardOver ? ' — over 1KB!' : ''}`,
     ...(update.available ? [`  update    ${update.latest} available — \`vibe update\``] : []),
     `project   ${p.root}`,

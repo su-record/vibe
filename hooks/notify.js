@@ -118,6 +118,31 @@ function adviseRead(payload) {
 const cli = path.join(here, '..', 'dist', 'cli.js');
 const vibeCommand = fs.existsSync(cli) ? [process.execPath, cli] : ['vibe'];
 
+/** The model's last message, when it claims completion: done, complete, finished, passed, ready, all checks. Read from the
+ * transcript the client names (Claude Code and Codex both pass `transcript_path`); null when there is no such claim. */
+function completionClaim(transcriptPath) {
+  if (!transcriptPath) return null;
+  let text = '';
+  try {
+    const lines = fs.readFileSync(transcriptPath, 'utf-8').trim().split('\n');
+    for (let i = lines.length - 1; i >= 0 && !text; i -= 1) {
+      let m;
+      try {
+        m = JSON.parse(lines[i]);
+      } catch {
+        continue;
+      }
+      const msg = m.type === 'assistant' ? m.message : m.payload && m.payload.type === 'message' && m.payload.role === 'assistant' ? m.payload : null;
+      if (!msg) continue;
+      for (const c of msg.content || []) if (typeof c.text === 'string') text += c.text;
+    }
+  } catch {
+    return null;
+  }
+  const m = /[^.\n]*\b(done|complete[d]?|finished|passed|ready|all checks? pass(?:ed)?|everything passes)\b[^.\n]*/i.exec(text);
+  return m ? m[0].trim().slice(0, 120) : null;
+}
+
 /** Stop: the model is ending its turn. With an approved intent still building, the verdict runs here — once — and its
  * report comes back as the reason the turn is not over; a turn already continued this way is let go (no loop). */
 function onStop(payload) {
@@ -132,11 +157,13 @@ function onStop(payload) {
     process.exit(0);
   }
   if (state !== 'APPROVED' && state !== 'RUNNING') process.exit(0);
+  const claim = completionClaim(payload.transcript_path);
   const r = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'check', '--all'], { cwd: root, encoding: 'utf-8', timeout: 600000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
   const report = (r.stdout || '').trim();
   if (!report) process.exit(0);
   const done = /\bDONE — every gate scenario passed\b/.test(report);
-  process.stdout.write(`${JSON.stringify({ decision: 'block', reason: `[vibe] the turn ended without vibe check; it ran now:\n${report}\n${done ? 'Report from this output — no further commands.' : 'Fix what failed, then vibe check <id>; do not say done.'}` })}\n`);
+  const audit = claim && !done ? `unverified: "${claim}" — vibe check says otherwise (below). ` : '';
+  process.stdout.write(`${JSON.stringify({ decision: 'block', reason: `[vibe] ${audit}the turn ended without vibe check; it ran now:\n${report}\n${done ? 'Report from this output — no further commands.' : 'Fix what failed, then vibe check <id>; do not say done.'}` })}\n`);
   process.exit(0);
 }
 

@@ -31,8 +31,8 @@ export function cmdState(root: string, flags: Flags): Output {
     `  size      ${view.size}`,
     ...view.scenarios.map((s) => `  ${GLYPH[s.last] ?? '·'} ${s.id} [${s.type}]${s.needs ? ` needs ${s.needs.join(', ')}` : ''} ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''} — check: ${s.check}${s.files ? ` — files: ${s.files.join(', ')}` : ''}`),
     `  remaining ${view.remaining.length ? view.remaining.join(', ') : 'none'}`,
-    `  inbox     ${view.inbox.open} open${view.inbox.items.map((q) => `\n    [${q.id}] ${q.question}`).join('')}`,
-    '  commands  vibe check --all · vibe check <id> · vibe context <id> · vibe ask "question" [--options a|b] [--default a] (then stop and wait for the answer) · vibe regress record --scenario <id> --title "…"',
+    `  inbox     ${view.inbox.open} open${view.inbox.items.map((q) => `\n    [${q.id}] ${q.question}${q.answer ? ` → ${q.answer}` : ' (waiting)'}`).join('')}`,
+    '  commands  vibe check --all (runs every check itself — build, tests; do not run them by hand) · vibe check <id> · vibe context <id> · vibe ask "question" [--options a|b] [--default a] (then stop and wait for the answer) · vibe regress record --scenario <id> --title "…"',
     ...view.notices.map((n) => `  ! ${n}`),
     ...view.proposals.map((p) => `  → ${p.kind}: ${p.ref}  (${p.why})`),
   ];
@@ -134,9 +134,10 @@ export async function cmdCheck(root: string, args: string[], flags: Flags): Prom
   ensureProject(root);
   const options = flags['all'] === true ? { all: true } : args.length ? { ids: args } : {};
   const report = await runChecks(root, options);
+  const files = new Map(buildStateView(root).scenarios.map((s) => [s.id, s.files ?? []]));
   const lines = [
     `${report.run} · ${report.state} · pass ${report.passed} · fail ${report.failed}${report.pending ? ` · pending ${report.pending}` : ''}`,
-    ...report.outcomes.map((o) => `  ${o.status === 'pass' ? '✔' : o.status === 'fail' ? '✘' : '?'} ${o.id} [${o.type}] exit=${o.exit ?? '-'} ${o.ms}ms${o.reason ? ` — ${o.reason}` : ''}${o.tail && o.status !== 'pass' ? `\n      ${o.tail.split('\n').join('\n      ')}` : ''}`),
+    ...report.outcomes.map((o) => `  ${o.status === 'pass' ? '✔' : o.status === 'fail' ? '✘' : '?'} ${o.id} [${o.type}] exit=${o.exit ?? '-'} ${o.ms}ms${o.reason ? ` — ${o.reason}` : ''}${o.status === 'fail' && files.get(o.id)?.length ? ` — files: ${files.get(o.id)!.join(', ')}` : ''}${o.tail && o.status !== 'pass' ? `\n      ${o.tail.split('\n').join('\n      ')}` : ''}`),
     report.done ? '  DONE — every gate scenario passed' : `  remaining ${report.remaining.join(', ') || 'none'}`,
     ...(report.stuck ? ['  STUCK — the same failure twice in a row; see the inbox'] : []),
     `  next      ${buildStateView(root).next}`,

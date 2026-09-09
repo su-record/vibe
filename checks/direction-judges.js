@@ -48,7 +48,9 @@ function applyAnswer(ws, script) {
 }
 
 function checkAll(ws) {
-  const r = vibe(ws, ['check', '--all']);
+  const keyFile = path.join(ws, 'key', 'expected.json');
+  const keyEnv = fs.existsSync(keyFile) ? { VIBE_KEY_EXPECTED: fs.readFileSync(keyFile, 'utf-8') } : {};
+  const r = spawnSync('node', [cli, 'check', '--all', '--json'], { cwd: ws, encoding: 'utf-8', env: { ...env, ...keyEnv } });
   return JSON.parse(r.stdout);
 }
 

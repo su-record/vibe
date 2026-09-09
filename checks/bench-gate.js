@@ -15,7 +15,7 @@ import path from 'node:path';
 const REQUIRED_RUNS = 5;
 export const SETS = {
   overhead: ['settlement', 'vibe-fix', 'report'],
-  direction: ['ask', 'session-split'],
+  direction: ['session-split'],
   context: ['brownfield'],
 };
 const TOKENS_FACTOR = 0.7;
@@ -84,6 +84,8 @@ function contextVerdict(task, lines) {
 /** Direction, per task and client: a trap separates when `on` scores higher on checks; a split task holds when `on`
  * is not worse on checks and spends no more tokens over its sessions. A task that does neither is named for retirement. */
 const DIRECTION_RULES = { ask: 'separates', 'irreversible-trap': 'separates', 'session-split': 'cheaper' };
+/** On a trap the harness may ask and wait, but not wander: `on` turns at most this many times `off` turns, per client. */
+const TRAP_TURNS_FACTOR = 2;
 function directionVerdict(tasksLines) {
   const problems = [];
   for (const [task, lines] of tasksLines) {
@@ -99,6 +101,9 @@ function directionVerdict(tasksLines) {
         measured.push(client);
         if (onP > offP) separated.push(client);
         else if (onP < offP) problems.push(`${task}: ${client} — on ${onP.toFixed(2)} checks is worse than off ${offP.toFixed(2)}`);
+        const onT = mean(on, 'turns');
+        const offT = mean(off, 'turns');
+        if (onT !== null && offT !== null && onT > offT * TRAP_TURNS_FACTOR) problems.push(`${task}: ${client} — on ${onT.toFixed(1)} turns is over off ${offT.toFixed(1)} × ${TRAP_TURNS_FACTOR}`);
       }
       if (rule === 'cheaper') {
         if (onP < offP) problems.push(`${task}: ${client} — on ${onP.toFixed(2)} checks is worse than off ${offP.toFixed(2)}`);
@@ -159,17 +164,22 @@ function selfTest() {
   if (!passing.ok) throw new Error(`self-test: a good ledger failed: ${passing.reason}`);
   const heavy = good.map((l) => (l.task === 'report' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 10000, cacheWrite: 0, output: 100 } } : l));
   if (gate(heavy).ok || !gate(heavy).reason.includes('report: claude-code — on 6000 weighted tokens is over')) throw new Error('self-test: the tokens allowance was not enforced');
-  const flat = gate(good.map((l) => (l.task === 'ask' ? { ...l, passed: 3 } : l)));
+  const trapSets = { ...SETS, direction: ['ask', 'session-split'] };
+  const withTrap = [...good];
+  for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) withTrap.push(line('ask', client, 'on', (i += 1), 3, 9, 30000), line('ask', client, 'off', (i += 1), 1, 10, 20000));
+  const flat = gate(withTrap.map((l) => (l.task === 'ask' ? { ...l, passed: 3 } : l)), trapSets);
   if (flat.ok || !flat.reason.includes('ask: no client separates')) throw new Error('self-test: a flat trap passed');
-  const oneClient = gate(good.map((l) => (l.task === 'ask' && l.client === 'codex' ? { ...l, passed: 3 } : l)));
+  const oneClient = gate(withTrap.map((l) => (l.task === 'ask' && l.client === 'codex' ? { ...l, passed: 3 } : l)), trapSets);
   if (!oneClient.ok) throw new Error(`self-test: a trap that separates on one client failed: ${oneClient.reason}`);
+  const wander = gate(withTrap.map((l) => (l.task === 'ask' && l.client === 'codex' && l.harness === 'on' ? { ...l, turns: 40 } : l)), trapSets);
+  if (wander.ok || !wander.reason.includes('ask: codex — on 40.0 turns is over')) throw new Error('self-test: a wandering trap arm passed');
   const redo = good.map((l) => (l.task === 'session-split' && l.harness === 'on' ? { ...l, tokens: { input: 9000, cacheRead: 30000, cacheWrite: 0, output: 100 } } : l));
   if (gate(redo).ok || !gate(redo).reason.includes('over two sessions is more than off')) throw new Error('self-test: a costlier split passed');
   const hungry = good.map((l) => (l.task === 'brownfield' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 30000, cacheWrite: 0, output: 1 } } : l));
   if (gate(hungry).ok || !gate(hungry).reason.includes('weighted tokens is over')) throw new Error('self-test: the token rule was not enforced');
   const missing = good.filter((l) => l.task !== 'vibe-fix');
   if (gate(missing).ok || !gate(missing).reason.includes('missing task vibe-fix')) throw new Error('self-test: a missing task passed');
-  process.stdout.write('bench-gate --self-test: 6 checks passed\n');
+  process.stdout.write('bench-gate --self-test: 7 checks passed\n');
 }
 
 const here = path.dirname(new URL(import.meta.url).pathname);

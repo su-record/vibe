@@ -18,12 +18,13 @@ user-invocable: false
    - Next to every `review`, propose its deterministic pre-gate on the same file: `check: { type: file, path: <file>, absent: "@placeholders" }` — the preset is the usual leftovers (lorem-ipsum text, a bracketed TODO, a to-be-decided mark, a company-name placeholder, unfilled double-brace fields, double-square-bracket notes); add the project's own words with `|`. For a directory, a `run` check with `grep -rlE` and `expect: 1`. Tell the writer that a note to the model goes between double square brackets, so the gate catches it if it survives into the artifact.
    - A condition you cannot check gets `human` explicitly. An irreversible action (push, deploy, send, delete, spend) gets `irreversible: <action>`.
    - A scenario that only makes sense after another one has passed gets `needs: [ids]`. The harness orders and parallelises checks from these edges; keep a connected graph under six scenarios.
-2. Check for missing scenario kinds yourself: the failure path, rollback, permission boundaries. Add them or say in one line why they are not needed. When the intent writes code, propose a size gate: `check: { type: run, cmd: "vibe size src --max-file 400 --max-function 50" }`.
-3. Save with `vibe intent draft --stdin --json`, sending `{"intent": "...", "scenarios": "..."}` (both in English).
+2. Before the scenarios: an assumption the intent rests on — an API's shape, a runtime, a file that must exist — is probed with a one-file script, and its result goes into the intent's Why; a scenario with no deterministic check gets its check script written under `checks/` first, before the code the scenario is about.
+3. Check for missing scenario kinds yourself: the failure path, rollback, permission boundaries. Add them or say in one line why they are not needed. When the intent writes code, propose a size gate: `check: { type: run, cmd: "vibe size src --max-file 400 --max-function 50" }`.
+4. Save with `vibe intent draft --stdin --json`, sending `{"intent": "...", "scenarios": "..."}` (both in English).
    - On rejection (`code 1`) fix the reasons and save again. Do not pass by deleting a rejected scenario — bind a check to it.
    - On success the response contains `token` when the project's token policy is `strict`; otherwise `token` is null and a plain yes in chat is enough.
-4. Run `vibe intent analyze` and resolve every `uncovered` bullet (add a scenario or cut the bullet) before asking; an `unrequested` scenario is cut or the bullet is written. Then research and proposals, once, before the approval message: `vibe research --from-intent --json` (up to five candidates with an action each, what moved in the last 30 days first — `--days N` for another window; skip silently on exit 2 and say "no network") and `vibe skill suggest --json` (up to three). Show both in the approval message. Do not install anything — the user says "add 1" and you run the printed `vibe skill add …` (preview first, `--yes` after they have seen the commands). `vibe status` lists the tools vibe would use if present; when the project would use one (a large repository → a symbol graph; a design review → a screenshot tool) put its one-line install in the approval message. A project-local skill is kept only if removing a line of it would make the model err.
-5. Send **one** approval message:
+5. Run `vibe intent analyze` and resolve every `uncovered` bullet (add a scenario or cut the bullet) before asking; an `unrequested` scenario is cut or the bullet is written. Then research and proposals, once, before the approval message: `vibe research --from-intent --json` (up to five candidates with an action each, what moved in the last 30 days first — `--days N` for another window; skip silently on exit 2 and say "no network") and `vibe skill suggest --json` (up to three). Show both in the approval message. Do not install anything — the user says "add 1" and you run the printed `vibe skill add …` (preview first, `--yes` after they have seen the commands). When the project would use a tool vibe knows (a large repository → a symbol graph such as graft; a design review → a screenshot tool) put its one-line install in the approval message. A project-local skill is kept only if removing a line of it would make the model err.
+6. Send **one** approval message:
 
 ```
 Success conditions:
@@ -36,8 +37,8 @@ Needed before building (if any): {tools · skills · access}
 To proceed, {paste {token} | say yes}.
 ```
 
-6. When the user pastes the number (or says yes when no token was issued), run `vibe approve "{number}" --json` (or `vibe approve --json`). On `code 3` show the reason and ask again. On a change request go back to step 3.
-7. When the state is APPROVED and any accepted skill is installed, move to `vibe-build`.
+7. When the user pastes the number (or says yes when no token was issued), run `vibe approve "{number}" --json` (or `vibe approve --json`). On `code 3` show the reason and ask again. On a change request go back to step 3.
+8. When the state is APPROVED and any accepted skill is installed, move to `vibe-build`.
 
 ## Never
 
