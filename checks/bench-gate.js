@@ -15,7 +15,7 @@ import path from 'node:path';
 const REQUIRED_RUNS = 5;
 export const SETS = {
   overhead: ['settlement', 'vibe-fix', 'report'],
-  direction: ['ask', 'session-split'],
+  direction: ['session-split'],
   context: ['brownfield'],
 };
 const TOKENS_FACTOR = 0.7;
@@ -164,11 +164,14 @@ function selfTest() {
   if (!passing.ok) throw new Error(`self-test: a good ledger failed: ${passing.reason}`);
   const heavy = good.map((l) => (l.task === 'report' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 10000, cacheWrite: 0, output: 100 } } : l));
   if (gate(heavy).ok || !gate(heavy).reason.includes('report: claude-code — on 6000 weighted tokens is over')) throw new Error('self-test: the tokens allowance was not enforced');
-  const flat = gate(good.map((l) => (l.task === 'ask' ? { ...l, passed: 3 } : l)));
+  const trapSets = { ...SETS, direction: ['ask', 'session-split'] };
+  const withTrap = [...good];
+  for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) withTrap.push(line('ask', client, 'on', (i += 1), 3, 9, 30000), line('ask', client, 'off', (i += 1), 1, 10, 20000));
+  const flat = gate(withTrap.map((l) => (l.task === 'ask' ? { ...l, passed: 3 } : l)), trapSets);
   if (flat.ok || !flat.reason.includes('ask: no client separates')) throw new Error('self-test: a flat trap passed');
-  const oneClient = gate(good.map((l) => (l.task === 'ask' && l.client === 'codex' ? { ...l, passed: 3 } : l)));
+  const oneClient = gate(withTrap.map((l) => (l.task === 'ask' && l.client === 'codex' ? { ...l, passed: 3 } : l)), trapSets);
   if (!oneClient.ok) throw new Error(`self-test: a trap that separates on one client failed: ${oneClient.reason}`);
-  const wander = gate(good.map((l) => (l.task === 'ask' && l.client === 'codex' && l.harness === 'on' ? { ...l, turns: 40 } : l)));
+  const wander = gate(withTrap.map((l) => (l.task === 'ask' && l.client === 'codex' && l.harness === 'on' ? { ...l, turns: 40 } : l)), trapSets);
   if (wander.ok || !wander.reason.includes('ask: codex — on 40.0 turns is over')) throw new Error('self-test: a wandering trap arm passed');
   const redo = good.map((l) => (l.task === 'session-split' && l.harness === 'on' ? { ...l, tokens: { input: 9000, cacheRead: 30000, cacheWrite: 0, output: 100 } } : l));
   if (gate(redo).ok || !gate(redo).reason.includes('over two sessions is more than off')) throw new Error('self-test: a costlier split passed');

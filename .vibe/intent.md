@@ -30,6 +30,7 @@ Two ideas from Pstack (Lauren Tan) are cheap and fit: a probe before scenarios, 
 
 ### F · The bench, once more
 - Every set reruns on both clients; the gate passes; `bench/claims/2026-09-09-4.1.24.md` pre-registers the same rules plus one: Codex's turns on `ask` at most 2× bare Codex's. README's opening is rewritten only where a number moved.
+- Found on the way: the fake user answered only questions with a question mark, and bare Claude Code asks in statements ("give me the rate and discount"); answered fairly, both bare models get `ask` right — nothing to prevent, `ask` is retired under the pre-registered rule, and README withdraws the five-of-five claim.
 
 ## Constraints
 - Patch version 4.1.24; files ≤ 400 lines, functions ≤ 50; card ≤ 1024 bytes; six skills ≤ 300 lines.

@@ -27,8 +27,12 @@ The **overhead set** — saturated on purpose, so a passing arm proves nothing a
 
 The **direction set** — each one a failure class the field has seen and the mechanism separates, so a passing arm says something about what the harness prevents, not just procedure:
 
+- `session-split` — see below.
+
+Retired after the 4.1.24 run (both bare models ask the customer once the fake user answers any question about the quote):
+
 - `ask` — a quote from `cart.json` "in the currency and with the discount agreed with the customer", neither of which is in the files. Two sessions; between them the task's fake user (`key/answer.cjs`, never copied into the workspace) reads what the agent asked — the `on` arm's open inbox questions, or either arm's final message — and answers only a question about the customer, currency, discount or price; the answer lands in TASK.md for both arms and in the inbox for `on`. An arm that delivered without asking gets no answer and its quote is in USD. The judge holds the terms (KRW at 1380, 12% off, whole won, plain digits) and supplies them to the check through `VIBE_KEY_EXPECTED` when it runs; on disk the check only says it is judge-time. The fake user answers any question about the quote with the whole of the terms, format included. The ledger line carries `asked`.
-- `session-split` — an eight-subcommand CLI with tests, built across two agent sessions on one workspace with no memory between them: `judge/meta.json` names the sessions (`maxTurns: 10` cuts the first on claude, `cutMs: 150000` on codex, which has no turn cap — around a third of the work), and the ledger line carries the sum of turns, tokens, cost and time with `sessions: 2`. The judge is the tests.
+- `session-split` (the direction set today) — an eight-subcommand CLI with tests, built across two agent sessions on one workspace with no memory between them: `judge/meta.json` names the sessions (`maxTurns: 10` cuts the first on claude, `cutMs: 150000` on codex, which has no turn cap — around a third of the work), and the ledger line carries the sum of turns, tokens, cost and time with `sessions: 2`. The judge is the tests.
 
 Retired after the 4.1.22 run and kept on disk (`--task <name>` still runs them):
 
@@ -64,7 +68,7 @@ A release note that claims a saving quotes the compare verdict, and the claim is
 `checks/bench-gate.js` reads `bench/ledger.jsonl` and requires every task's latest five runs for every arm that client has been benched with (four arms — claude/codex × on/off — or, when a client was never benched at all, just the arms that exist, so long as there are at least two to compare). Two rules, one per set:
 
 - **Overhead** — per client, `on`'s mean checks-passed is never worse than `off`'s, `on` weighted input tokens ≤ `off` × 1.25, and `on` ms ≤ `off` ms × 1.5; turns are printed in the reason, not gated.
-- **Direction** — per client and task: `ask` separates when `on` scores higher on checks than `off`; `session-split` holds when `on` is not worse on checks and spends no more tokens over its two sessions. A task that does neither is named as one the bare model already gets right, a candidate for retirement.
+- **Direction** — per client and task: a trap separates when `on` scores higher on checks than `off` on at least one client and is not worse on the others, with `on` turns at most 2× `off`; `session-split` holds when `on` is not worse on checks and spends no more tokens over its two sessions. A task that does neither is named as one the bare model already gets right, a candidate for retirement.
 
 It exits 1 naming the set, the task and the client that failed a rule. It runs as a `vibe check --all` scenario, not in CI, because the bench itself spends real model tokens — CI never triggers a bench run.
 

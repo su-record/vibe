@@ -55,7 +55,7 @@ delete env.CLAUDE_PROJECT_DIR;
 // bare model never ran) and the four 4.1.21 tasks stay on disk, retired, and run by name.
 // `--set` picks a named group; `--task` (still the default) picks one task, or every directory
 // under tasks/ with `all`.
-const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['ask', 'session-split'], context: ['brownfield'] };
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['session-split'], context: ['brownfield'] };
 SETS.all = [...SETS.overhead, ...SETS.direction, ...SETS.context];
 
 function taskNames() {
