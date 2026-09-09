@@ -6,6 +6,8 @@ import { intentPath, loadScenarios } from './intent.js';
 import { globalKnowledgeDir, knowledgeDir } from './knowledge.js';
 import { readLedger, type LedgerEvent } from './ledger.js';
 import { vibePath, relPosix } from './paths.js';
+import { resolveImports } from './map/imports.js';
+import { buildMap } from './map/index.js';
 import { listRegressions } from './regress.js';
 import type { Check, Scenario } from './scenarios.js';
 import { readJson, readText } from './store.js';
@@ -191,6 +193,36 @@ function matchingNotes(notes: RawNote[], terms: Set<string>, sourceOf: (file: st
 }
 
 /** Ordered by priority for `renderContext`: check, files/symbols, conventions, events, notes, global notes. */
+/**
+ * The files a scenario is about: what its check touches, plus one hop of imports either way from the
+ * codebase map (built here when absent or stale — the cache makes that cheap). `vibe state` hands this
+ * over so the model reads these and opens nothing else until a check fails.
+ */
+export function filesFor(root: string, check: Check, limit = 8): string[] {
+  const touched = touchedPaths(check, root);
+  if (touched.length === 0) return [];
+  try {
+    buildMap(root);
+  } catch {
+    /* no map — the touched files alone */
+  }
+  const out = buildFiles(root, touched).map((f) => f.path);
+  // a touched file outside the map (a test the size walk excludes, a script) still names what it imports
+  const known = new Set(Object.keys(readMapCache(root)?.files ?? {}));
+  for (const t of touched) {
+    if (known.has(t)) continue;
+    const full = path.join(root, t);
+    let text = '';
+    try {
+      text = fs.readFileSync(full, 'utf-8');
+    } catch {
+      continue;
+    }
+    for (const imp of resolveImports(root, t, text, known)) if (!out.includes(imp)) out.push(imp);
+  }
+  return out.slice(0, limit);
+}
+
 export function buildContext(root: string, scenarioId: string, options: ContextOptions = {}): ContextBundle {
   const scenario = findScenario(root, scenarioId);
   const home = options.home ?? process.env['VIBE_HOME_DIR'] ?? os.homedir();

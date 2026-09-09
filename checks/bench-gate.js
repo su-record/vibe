@@ -4,7 +4,7 @@
 // measures what the harness costs — `on` weighted input tokens ≤ `off` × 1.25 and `on` ms ≤ `off` × 1.5
 // per client, never worse on checks; turns are reported, not gated (two of them are the harness's own
 // commands). The direction set measures what it prevents — a trap task separates when `on` scores
-// higher on checks; a session-split task holds when `on` is not worse on checks and spends no more
+// higher on checks on at least one client and is not worse on the others; a session-split task holds when `on` is not worse on checks and spends no more
 // tokens over its sessions. The context set: `on` tokens ≤ `off` × 0.7. A task that does not separate
 // the arms is named for retirement.
 // Runs as a `vibe check --all` scenario, not in CI — the bench spends real model tokens.
@@ -88,12 +88,18 @@ function directionVerdict(tasksLines) {
   const problems = [];
   for (const [task, lines] of tasksLines) {
     const rule = DIRECTION_RULES[task] ?? 'separates';
+    const separated = [];
+    const measured = [];
     for (const client of new Set(lines.map((l) => l.client))) {
       const { on, off } = arms(lines, client);
       if (on.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) continue;
       const onP = mean(on, 'passed');
       const offP = mean(off, 'passed');
-      if (rule === 'separates' && onP <= offP) problems.push(`${task}: ${client} — on ${onP.toFixed(2)} checks does not separate from off ${offP.toFixed(2)}; the bare model already gets it right`);
+      if (rule === 'separates') {
+        measured.push(client);
+        if (onP > offP) separated.push(client);
+        else if (onP < offP) problems.push(`${task}: ${client} — on ${onP.toFixed(2)} checks is worse than off ${offP.toFixed(2)}`);
+      }
       if (rule === 'cheaper') {
         if (onP < offP) problems.push(`${task}: ${client} — on ${onP.toFixed(2)} checks is worse than off ${offP.toFixed(2)}`);
         else {
@@ -102,6 +108,8 @@ function directionVerdict(tasksLines) {
         }
       }
     }
+    // a trap has something to prevent when at least one client's bare model falls for it; a client that does not fall is named, not failed
+    if (rule === 'separates' && measured.length > 0 && separated.length === 0) problems.push(`${task}: no client separates (${measured.join(', ')}) — the bare model already gets it right; retire the task`);
   }
   return problems.length ? problems.join('; ') : null;
 }
@@ -152,7 +160,9 @@ function selfTest() {
   const heavy = good.map((l) => (l.task === 'report' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 10000, cacheWrite: 0, output: 100 } } : l));
   if (gate(heavy).ok || !gate(heavy).reason.includes('report: claude-code — on 6000 weighted tokens is over')) throw new Error('self-test: the tokens allowance was not enforced');
   const flat = gate(good.map((l) => (l.task === 'ask' ? { ...l, passed: 3 } : l)));
-  if (flat.ok || !flat.reason.includes('ask: claude-code — on 3.00 checks does not separate')) throw new Error('self-test: a flat trap passed');
+  if (flat.ok || !flat.reason.includes('ask: no client separates')) throw new Error('self-test: a flat trap passed');
+  const oneClient = gate(good.map((l) => (l.task === 'ask' && l.client === 'codex' ? { ...l, passed: 3 } : l)));
+  if (!oneClient.ok) throw new Error(`self-test: a trap that separates on one client failed: ${oneClient.reason}`);
   const redo = good.map((l) => (l.task === 'session-split' && l.harness === 'on' ? { ...l, tokens: { input: 9000, cacheRead: 30000, cacheWrite: 0, output: 100 } } : l));
   if (gate(redo).ok || !gate(redo).reason.includes('over two sessions is more than off')) throw new Error('self-test: a costlier split passed');
   const hungry = good.map((l) => (l.task === 'brownfield' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 30000, cacheWrite: 0, output: 1 } } : l));
