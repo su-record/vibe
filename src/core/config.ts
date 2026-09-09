@@ -11,7 +11,8 @@ import { readJson, writeJson } from './store.js';
  */
 export type TokenPolicy = 'strict' | 'irreversible' | 'off';
 export const TOKEN_POLICIES: ReadonlyArray<TokenPolicy> = ['strict', 'irreversible', 'off'];
-export const DEFAULT_TOKEN_POLICY: TokenPolicy = 'irreversible';
+/** `off` by default, by the user's decision: a plain "yes" approves and the hook only warns before an irreversible command; `irreversible` and `strict` are opt-in. */
+export const DEFAULT_TOKEN_POLICY: TokenPolicy = 'off';
 
 export const DEFAULT_CATALOGS: readonly string[] = ['anthropics/skills', 'vercel-labs/agent-skills', 'NousResearch/hermes-agent'];
 

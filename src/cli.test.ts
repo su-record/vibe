@@ -91,7 +91,7 @@ describe('CLI — from request to DONE', () => {
     expect((vibe(['evidence']).json as { run: string }).run).toBe('r-2');
   });
 
-  it('default (irreversible): approve needs no token, authorize does; the draft creates .vibe/', () => {
+  it('default (off): nothing needs a token; irreversible (opt-in): approve needs none, authorize does; the draft creates .vibe/', () => {
     const draft = vibe(['intent', 'draft', '--stdin'], HELLO);
     expect((draft.json as { token: string | null }).token).toBeNull();
     expect(fs.existsSync(path.join(root, '.vibe', 'scenarios.yaml'))).toBe(true);
@@ -99,6 +99,10 @@ describe('CLI — from request to DONE', () => {
     const approved = vibe(['approve']);
     expect(approved.status).toBe(0);
     expect((approved.json as { basis: string }).basis).toBe('chat');
+    // the default policy is off: an irreversible action asks for no token and authorize records "auto"
+    expect((vibe(['ask', 'Send for real?', '--needs', 'authorize:send', '--target', 'x@example.com']).json as { token: string | null }).token).toBeNull();
+    expect(vibe(['authorize', '--action', 'send', '--target', 'x@example.com']).status).toBe(0);
+    vibe(['tokens', 'irreversible']);
 
     const ask = vibe(['ask', 'Send to accounting for real?', '--needs', 'authorize:send', '--target', 'acct@example.com']);
     expect(ask.status).toBe(0);

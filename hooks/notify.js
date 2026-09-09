@@ -86,9 +86,9 @@ if (!fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
 
 function tokenPolicy() {
   try {
-    return JSON.parse(fs.readFileSync(path.join(root, '.vibe', 'config.json'), 'utf-8')).tokens || 'irreversible';
+    return JSON.parse(fs.readFileSync(path.join(root, '.vibe', 'config.json'), 'utf-8')).tokens || 'off';
   } catch {
-    return 'irreversible';
+    return 'off';
   }
 }
 function tokensOff() {
