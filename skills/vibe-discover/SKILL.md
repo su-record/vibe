@@ -11,14 +11,15 @@ user-invocable: false
 Order the questions by impact: scope first, then security and privacy, then the reader's or user's experience, then technical detail. A question further down the list is asked only when the earlier ones are settled.
 
 1. Read what the user attached through the harness, so every client sees the same thing:
+   - before asking, scan `docs/`, `README*` and `*.md` for relevant rules even when the brief does not name them; read those documents before deciding what is unknown
    - table (csv · tsv · jsonl · json · xlsx) → `vibe profile {file} --json` [`--sheet`]: columns, types, missing counts, duplicates, up to three anomalies with numbers
    - document (xlsx · docx · pptx · pdf · hwp · hwpx · html) → `vibe read {file} --json` [`--sheet` · `--pages`]; it says which reader it used (pdf: `pdftotext` when installed, else built-in)
    - long material that only needs an answer ("what does this contract require", "which sheet holds the totals") → `vibe read {files} --ask "{question}"`; a low-reasoning model reads it and only the answer enters your context
    - image → your own file reader; vibe does not read images
    - code or plain text → your file reader, the whole file — never a grep excerpt
    If there is no sample, ask for one that the success condition can be checked against.
-2. Ask **at most three questions**, each with a default. No answer means the default applies. Every question must serve one purpose: deciding what counts as success.
-3. Say the profile's anomalies before the user asks — at most three, each with its number. Do not add anomalies the profile did not find.
+2. Say the profile's anomalies before asking questions — at most three, each with its number. Do not add anomalies the profile did not find.
+3. Ask **at most three questions**, each with a default. No answer means the default applies. Every question must serve one purpose: deciding what counts as success.
 4. With the answers, write the intent draft (`.vibe/intent.md`, in English):
 
 ```

@@ -9,11 +9,14 @@ import { ensureProject } from '../install/project.js';
 import { flagString, type Flags, type Output } from './common.js';
 
 export function cmdAsk(root: string, args: string[], flags: Flags): Output {
-  ensureProject(root);
-  const question = args.join(' ');
+  const question = args.join(' ').trim();
   if (!question) throw usage('ask "question"');
   const options = flagString(flags, 'options')?.split('|').map((s) => s.trim()).filter(Boolean);
   const needsRaw = flagString(flags, 'needs');
+  if (!/[?？]/u.test(question) && !options?.length && !needsRaw) {
+    throw usage('vibe ask is for questions only the user can answer; report results in chat');
+  }
+  ensureProject(root);
   let needs: { kind: 'approve' | 'authorize'; target: string } | undefined;
   const policy = readConfig(root).tokens;
   if (needsRaw === 'approve') {

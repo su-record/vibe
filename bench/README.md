@@ -65,6 +65,12 @@ Beyond the base ledger fields, a bench line carries:
 
 A release note that claims a saving quotes the compare verdict, and the claim is written into the intent before the bench runs. A verdict of `inconclusive` or `insufficient-runs` is not a claim.
 
+Tasks can declare `outputs` in `judge/meta.json`. Before judging, a run with an unanswered inbox question and none of those files is marked `stalled: true`. Stalled attempts remain in the ledger and each comparison arm reports their count, including when pairing excludes every run. They do not enter checks-passed averages or completed pairs; their unpaired token, time, and cost measurements remain visible. A wrong or partial output still receives its quality score. Tasks without declared outputs and unrecorded chat questions are not classified as stalled.
+
+The release gate still needs five usable attempts within the latest five; a stalled attempt fails completeness and is named in the reason. Excluding it from a quality average does not replace it with an older success. `bench/run.js --ledger <file>` writes an isolated ledger when verifying the runner or recording a separate experiment.
+
+`anomaly`, like `ask`, gives every arm two planned sessions with a task-owned fake user between them. The answer is appended to `TASK.md` for either client and recorded against unanswered inbox questions. The fake-user script stays under `key/`, outside the agent's workspace. Scoped approval uses the next planned session when available; only a draft reached in the final planned session adds a continuation, recorded in `sessions` and `scoped.approvals`.
+
 ## The gate
 
 `checks/bench-gate.js` reads judged `check` events from `bench/ledger.jsonl`. For every client present in a task, all three arms (`off`, `on`, `scoped`) must have five valid scores in their latest five attempts. A client error stays in that window and cannot be replaced by an older success. Every gated metric also needs five finite, nonnegative observations: `on`/`off` tokens and time for overhead, tokens for completed context runs and split tasks, and turns for traps. Missing evidence fails the gate. The quality and cost rules are:

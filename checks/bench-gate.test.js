@@ -23,6 +23,7 @@ describe('release evidence', () => {
 
   it.each([
     ['all client errors', (rows) => rows.map((r) => ({ ...r, error: 'client failed' })), 'usable run(s)'],
+    ['one stalled attempt', (rows) => rows.map((r) => r.pair.endsWith('#4') ? { ...r, stalled: true } : r), '4 usable run(s) in its latest 5 attempts, needs 5 (1 stalled)'],
     ['missing scoped arm', (rows) => rows.filter((r) => r.harness !== 'scoped'), 'missing arm(s)'],
     ['four scoped attempts', (rows) => rows.filter((r) => r.harness !== 'scoped' || !r.pair.endsWith('#4')), 'usable run(s)'],
     ['five failing scoped runs', (rows) => rows.map((r) => r.harness === 'scoped' ? { ...r, passed: 0 } : r), 'scoped 0.00 checks is worse'],
