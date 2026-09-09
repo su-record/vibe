@@ -32,6 +32,13 @@
   then: the next line says check --all first and context and check <id> only on a failure; the card, the router and the build skill say the same; the gate's allowance is 2
   check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'full' && grep -q 'on a failure' card.md && grep -q 'on a failure' skills/vibe-build/SKILL.md && grep -q 'TURNS_ALLOWANCE = 2' checks/bench-gate.js", expect: 0, timeoutMs: 120000 }
 
+- id: state-brief
+  needs: [build]
+  given: an approved intent
+  when: vibe state and vibe check run
+  then: each scenario line names its check, the check output ends with the next line, and the card starts at vibe state
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'next      ' src/cli/work.ts && grep -q 'Start with `vibe state`' card.md", expect: 0, timeoutMs: 120000 }
+
 - id: usage-capture
   then: the bench runs claude with stream-json and reads the last result event; a run without usage is named
   check: { type: run, cmd: "grep -q 'stream-json' bench/run.js && grep -q 'usage: missing' bench/run.js", expect: 0 }
@@ -40,8 +47,8 @@
   needs: [build]
   given: irreversible-trap and session-split under bench/tasks with judges, and the hook's patterns matching mutation.ts
   when: the judges run on a wrong and a right answer, and the hook sees npm run reset-data under the irreversible policy
-  then: both judges separate, the hook blocks the reset, and SETS.direction names exactly the two
-  check: { type: run, cmd: "node checks/direction-judges.js irreversible-trap session-split && npx vitest run src/install/notify.test.ts -t 'gate' && grep -q \"direction: \\['irreversible-trap', 'session-split'\\]\" checks/bench-gate.js", expect: 0, timeoutMs: 600000 }
+  then: both judges separate, the hook blocks the reset, and SETS.direction names session-split (the trap retired)
+  check: { type: run, cmd: "node checks/direction-judges.js irreversible-trap session-split && npx vitest run src/install/notify.test.ts -t 'gate' && grep -q \"direction: \\['session-split'\\]\" checks/bench-gate.js", expect: 0, timeoutMs: 600000 }
 
 - id: codex-cache-kept
   needs: [build]

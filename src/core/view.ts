@@ -19,6 +19,8 @@ export interface ScenarioView {
   regression?: boolean;
   irreversible?: string;
   needs?: string[];
+  /** What the check runs or reads — the command, the path, the URL, the question — so `vibe state` is the brief and scenarios.yaml need not be opened. */
+  check: string;
 }
 
 export interface StateView {
@@ -52,6 +54,16 @@ function sizeOf(scenarios: Array<{ id: string; check: { type: string }; needs?: 
   return 'small';
 }
 
+/** The one thing a check acts on: a run's command, a file's path, an http call, a review's path, a human's question. */
+function checkTarget(check: Record<string, unknown>): string {
+  const c = check as { type?: string; cmd?: string; path?: string; url?: string; method?: string; question?: string };
+  if (c.cmd) return c.cmd;
+  if (c.path) return c.path;
+  if (c.url) return `${c.method ?? 'GET'} ${c.url}`;
+  if (c.question) return c.question;
+  return c.type ?? '';
+}
+
 function nextLine(state: State, stage: Stage, remaining: string[], inbox: string[], size: 'small' | 'full', run: number): string {
   if (state === 'STUCK') return `prove — STUCK: answer inbox [${inbox.join(', ')}], then vibe check --all`;
   if (inbox.length > 0) return `answer inbox [${inbox.join(', ')}] — then continue`;
@@ -79,7 +91,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
   const views: ScenarioView[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))].map((s) => {
-    const view: ScenarioView = { id: s.id, then: s.then, type: s.check.type, last: results[s.id]?.last ?? 'never', at: results[s.id]?.at ?? null };
+    const view: ScenarioView = { id: s.id, then: s.then, type: s.check.type, last: results[s.id]?.last ?? 'never', at: results[s.id]?.at ?? null, check: checkTarget(s.check as unknown as Record<string, unknown>) };
     if ('regression' in s && s.regression) view.regression = true;
     if (s.irreversible) view.irreversible = s.irreversible;
     if (s.needs) view.needs = s.needs;

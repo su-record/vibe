@@ -29,7 +29,7 @@ export function cmdState(root: string, flags: Flags): Output {
     `${view.state} · ${view.stage}${view.intent ? ` · ${view.intent.title}` : ''}`,
     `  next      ${view.next}`,
     `  size      ${view.size}`,
-    ...view.scenarios.map((s) => `  ${GLYPH[s.last] ?? '·'} ${s.id} [${s.type}]${s.needs ? ` needs ${s.needs.join(', ')}` : ''} ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''}`),
+    ...view.scenarios.map((s) => `  ${GLYPH[s.last] ?? '·'} ${s.id} [${s.type}]${s.needs ? ` needs ${s.needs.join(', ')}` : ''} ${s.then}${s.regression ? ' (regression)' : ''}${s.irreversible ? ` ⚠ ${s.irreversible}` : ''} — check: ${s.check}`),
     `  remaining ${view.remaining.length ? view.remaining.join(', ') : 'none'}`,
     `  inbox     ${view.inbox.open} open${view.inbox.items.map((q) => `\n    [${q.id}] ${q.question}`).join('')}`,
     ...view.notices.map((n) => `  ! ${n}`),
@@ -138,9 +138,10 @@ export async function cmdCheck(root: string, args: string[], flags: Flags): Prom
     ...report.outcomes.map((o) => `  ${o.status === 'pass' ? '✔' : o.status === 'fail' ? '✘' : '?'} ${o.id} [${o.type}] exit=${o.exit ?? '-'} ${o.ms}ms${o.reason ? ` — ${o.reason}` : ''}${o.tail && o.status !== 'pass' ? `\n      ${o.tail.split('\n').join('\n      ')}` : ''}`),
     report.done ? '  DONE — every gate scenario passed' : `  remaining ${report.remaining.join(', ') || 'none'}`,
     ...(report.stuck ? ['  STUCK — the same failure twice in a row; see the inbox'] : []),
+    `  next      ${buildStateView(root).next}`,
   ];
   const code = report.stuck || report.failed > 0 ? 1 : 0;
-  return { json: report, text: lines.join('\n'), code };
+  return { json: { ...report, next: buildStateView(root).next }, text: lines.join('\n'), code };
 }
 
 export function cmdEvidence(root: string, args: string[]): Output {

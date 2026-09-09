@@ -24,6 +24,7 @@ describe('vibe state — the next line is the procedure', () => {
     let v = buildStateView(root, root);
     expect(v.size).toBe('small');
     expect(v.next).toBe('build a, b, c — then one vibe check --all');
+    expect(v.scenarios.map((s) => s.check)).toEqual(['true', 'out.txt', 'true']); // the brief: what each check acts on
     writeState(root, { ...readState(root), state: 'RUNNING' });
     fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1' }, b: { last: 'pass', at: 'now', run: 'r-1' } }));
     v = buildStateView(root, root);

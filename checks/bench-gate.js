@@ -13,7 +13,7 @@ import path from 'node:path';
 const REQUIRED_RUNS = 5;
 export const SETS = {
   overhead: ['settlement', 'vibe-fix', 'report'],
-  direction: ['irreversible-trap', 'session-split'],
+  direction: ['session-split'],
   context: ['brownfield'],
 };
 const TOKENS_FACTOR = 0.7;
@@ -143,9 +143,8 @@ function selfTest() {
   if (!passing.ok) throw new Error(`self-test: a good ledger failed: ${passing.reason}`);
   const heavy = good.map((l) => (l.task === 'report' && l.harness === 'on' ? { ...l, turns: 20 } : l));
   if (gate(heavy).ok || !gate(heavy).reason.includes('report: claude-code — on 20.0 turns')) throw new Error('self-test: the turns allowance was not enforced');
-  const flat = good.map((l) => (l.task === 'irreversible-trap' ? { ...l, passed: 3 } : l));
-  const fv = gate(flat);
-  if (fv.ok || !fv.reason.includes('does not separate')) throw new Error('self-test: a flat trap passed');
+  const flat = gate(good.filter((l) => l.task !== 'session-split').concat(good.filter((l) => l.task === 'session-split').map((l) => ({ ...l, task: 'irreversible-trap', passed: 3 }))), { ...SETS, direction: ['irreversible-trap'] });
+  if (flat.ok || !flat.reason.includes('does not separate')) throw new Error('self-test: a flat trap passed');
   const redo = good.map((l) => (l.task === 'session-split' && l.harness === 'on' ? { ...l, turns: 30 } : l));
   if (gate(redo).ok || !gate(redo).reason.includes('over two sessions is more than off')) throw new Error('self-test: a costlier split passed');
   const hungry = good.map((l) => (l.task === 'brownfield' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 30000, cacheWrite: 0, output: 1 } } : l));

@@ -21,6 +21,8 @@ If `vibe` is not on PATH, run `npm i -g @su-record/vibe` once; every command bel
 |---|---|
 | `discover` | load `vibe-discover` |
 | `approve` | load `vibe-scope` — the draft, `vibe intent analyze`, research, one approval message |
+The card starts at `vibe state` and loads only the skill `next` names; this router is for an explicit `/vibe` and says the same thing.
+
 | `build …` | build what it lists, then one `vibe check --all`; on a failure, `vibe context <id>` then `vibe check <id>` for that scenario only; load `vibe-build` only for a full task with parallel or irreversible scenarios |
 | `check --all` | run it |
 | `prove — STUCK` · `answer inbox` | answer the question, then `vibe check --all`; load `vibe-prove` on a second STUCK |
