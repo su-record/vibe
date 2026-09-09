@@ -20,9 +20,13 @@ export function isProjectDir(dir: string): boolean {
 export function findProjectRoot(start: string = process.cwd(), home: string = os.homedir()): string {
   const origin = path.resolve(start);
   const homeDir = path.resolve(home);
+  // the system temp directory is never a project root the search climbs into: a stray /tmp/.vibe must not
+  // capture every temp folder's records (a test's, a bench workspace's) — only a search that starts there sees it
+  const tmpDir = path.resolve(os.tmpdir());
   let dir = origin;
   for (;;) {
     if (dir === homeDir && origin !== homeDir) break;
+    if (dir === tmpDir && origin !== tmpDir) break;
     if (isProjectDir(dir)) return dir;
     if (fs.existsSync(path.join(dir, '.git'))) break;
     const parent = path.dirname(dir);

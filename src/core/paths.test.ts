@@ -31,6 +31,22 @@ describe('findProjectRoot — .vibe means a project only when it holds a record'
     expect(findProjectRoot(below, home)).toBe(below);
   });
 
+  it('never climbs into the system temp directory: a .vibe at os.tmpdir() is invisible to a folder below it', () => {
+    const tmpVibe = path.join(os.tmpdir(), '.vibe');
+    const existed = fs.existsSync(tmpVibe);
+    if (!existed) {
+      fs.mkdirSync(tmpVibe, { recursive: true });
+      fs.writeFileSync(path.join(tmpVibe, 'state.json'), JSON.stringify({ state: 'NONE' }));
+    }
+    try {
+      const below = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-below-'));
+      expect(findProjectRoot(below, home)).toBe(below);
+      fs.rmSync(below, { recursive: true, force: true });
+    } finally {
+      if (!existed) fs.rmSync(tmpVibe, { recursive: true, force: true });
+    }
+  });
+
   it('stops at the first directory that contains .git', () => {
     fs.writeFileSync(path.join(mk('outer', '.vibe'), 'intent.md'), '# x');
     const repo = mk('outer', 'repo');
