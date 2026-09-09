@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-09-01",
+  "seededAt": "2026-09-08",
+  "accounts": [
+    {
+      "id": "acct-1001",
+      "owner": "Mira Chen",
+      "balance": 420.5
+    },
+    {
+      "id": "acct-1002",
+      "owner": "Tomas Reyes",
+      "balance": 1899.99
+    },
+    {
+      "id": "acct-1003",
+      "owner": "Aisha Bello",
+      "balance": 75.0
+    },
+    {
+      "id": "acct-1004",
+      "owner": "Jonas Lind",
+      "balance": 0.0
+    },
+    {
+      "id": "acct-1005",
+      "owner": "Priya Nair",
+      "balance": 312.25
+    },
+    {
+      "id": "acct-seed-001",
+      "owner": "Staging seed (do not remove)",
+      "balance": 1250.75
+    }
+  ]
+}

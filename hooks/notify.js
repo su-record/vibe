@@ -47,12 +47,24 @@ function emitContext(text) {
   process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: mode === 'post' ? 'PostToolUse' : 'PreToolUse', additionalContext: text } })}\n`);
 }
 
+// The same actions the check gate names (src/core/checks/mutation.ts), so a blocked tool call and a blocked
+// check ask for the same `vibe authorize --action`; `send` is the hook's own. A command that only reads —
+// grep, cat, git log — is never gated, whatever words it carries.
 const IRREVERSIBLE = [
+  ['restore', /(?:\b|_)restore\b/i],
+  ['reset', /\breset\b/i],
+  ['drop', /\bdrop\b/i],
+  ['truncate', /\btruncate\b/i],
+  ['seed', /\bseed(?:ing|ed)?\b/i],
+  ['migrate', /\bmigrat\w*[:\s-]+(?:fresh|down|rollback|refresh|reset)\b|\b(?:rollback|down)[:\s-]+migrat/i],
+  ['delete', /\brm\s+-[a-z]*r[a-z]*f?\b|\bDELETE\s+FROM\b|\bkubectl\s+delete\b|\bgit\s+push\s+[^|]*--force\b/i],
   ['push', /\bgit\s+push\b/],
-  ['deploy', /\b(vercel|netlify|fly|wrangler|gcloud|aws)\s+(deploy|apply|publish)\b|\bnpm\s+publish\b|\bkubectl\s+apply\b|\bterraform\s+apply\b/],
+  ['deploy', /\bdeploy\b/i],
+  ['publish', /\bnpm\s+publish\b|\bpublish\b/i],
+  ['apply', /\bterraform\s+apply\b|\bkubectl\s+apply\b/i],
   ['send', /\b(sendmail|mail\s+-s|curl\s+[^|]*-X\s*POST)\b/],
-  ['delete', /\brm\s+-rf\b|\bgit\s+push\s+[^|]*--force\b|\bDROP\s+TABLE\b/i],
 ];
+const READS_ONLY = /^\s*(?:grep|rg|cat|head|tail|less|ls|find|wc|echo|printf|sed\s+-n|git\s+(?:log|diff|show|status|grep|blame|branch|ls-files)|vibe\s+(?:state|context|map|read|check|ledger))\b/;
 
 function recentAuthorize(action) {
   try {
@@ -111,6 +123,7 @@ if (mode === 'pre') {
     process.exit(0);
   }
   const command = String((payload.tool_input && payload.tool_input.command) || '');
+  if (READS_ONLY.test(command)) process.exit(0);
   // Under strict and irreversible the gate blocks (exit 2 stops the tool call in Claude Code); under off it only warns.
   for (const [action, re] of IRREVERSIBLE) {
     if (re.test(command) && !recentAuthorize(action)) {

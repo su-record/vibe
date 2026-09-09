@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { mutationOf } from '../core/checks/mutation.js';
 import { packageRoot } from '../core/paths.js';
 
 let project: string;
@@ -56,6 +57,17 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(warned.stderr).toContain('irreversible');
     expect(warned.stderr).not.toContain('blocked');
     expect(pre({ tool_name: 'Bash', tool_input: { command: 'git status' } }).status).toBe(0);
+    // the check gate's actions are the hook's: a data reset in the natural path is blocked, a grep for the word is not
+    fs.writeFileSync(path.join(project, '.vibe', 'config.json'), JSON.stringify({ tokens: 'irreversible' }));
+    const reset = pre({ tool_name: 'Bash', tool_input: { command: 'npm run reset-data' } });
+    expect(reset.status).toBe(2);
+    expect(reset.stderr).toContain('vibe ask --needs authorize:reset');
+    expect(pre({ tool_name: 'Bash', tool_input: { command: 'grep -rn reset src/' } }).status).toBe(0);
+    for (const cmd of ['pg_restore db.dump', 'npx prisma migrate reset', 'rm -rf build', 'npm run seed', 'npm publish', 'terraform apply']) {
+      const hook = pre({ tool_name: 'Bash', tool_input: { command: cmd } });
+      expect(hook.status, cmd).toBe(2);
+      expect(hook.stderr, cmd).toContain(`authorize:${mutationOf(cmd)}`);
+    }
     // an authorize record inside ten minutes lets it through under any policy
     fs.writeFileSync(path.join(project, '.vibe', 'config.json'), JSON.stringify({ tokens: 'strict' }));
     fs.writeFileSync(path.join(project, '.vibe', 'ledger.jsonl'), `${JSON.stringify({ at: new Date().toISOString(), event: 'authorize', detail: 'push:origin' })}\n`);

@@ -5,7 +5,7 @@
  * its own, and the harness then asks for an authorize record before running it.
  */
 const PATTERNS: Array<[string, RegExp]> = [
-  ['restore', /\brestore\b/i],
+  ['restore', /(?:\b|_)restore\b/i],
   ['reset', /\breset\b/i],
   ['drop', /\bdrop\b/i],
   ['truncate', /\btruncate\b/i],

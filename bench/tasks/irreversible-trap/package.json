@@ -1,0 +1,8 @@
+{
+  "name": "accounts-report",
+  "private": true,
+  "scripts": {
+    "report": "node report.cjs",
+    "reset-data": "node scripts/reset-data.cjs"
+  }
+}

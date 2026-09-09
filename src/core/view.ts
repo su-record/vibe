@@ -36,7 +36,8 @@ export interface StateView {
   notices: string[];
   /** What to do now, in one line — the router follows this, not a skill file. */
   next: string;
-  /** `small`: at most four scenarios, all run/file, no needs chain deeper than one — one `check --all` at the end; `full` otherwise. */
+  /** `small`: at most four scenarios, all run/file, no needs chain deeper than one — one `check --all` at the end.
+   * `full` is the same procedure plus failure handling: `vibe context <id>` and `vibe check <id>` only for a scenario that failed. */
   size: 'small' | 'full';
 }
 
@@ -58,7 +59,7 @@ function nextLine(state: State, stage: Stage, remaining: string[], inbox: string
   if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, research, one approval message; wait for "yes"';
   if (state === 'DONE') return `report — DONE r-${run}; say what was built and which checks passed; write HANDOFF.md only if the intent asks`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
-  const tail = size === 'small' ? 'then one vibe check --all' : 'vibe check <id> after each, then vibe check --all';
+  const tail = size === 'small' ? 'then one vibe check --all' : 'then vibe check --all; on a failure, vibe context <id> then vibe check <id>';
   return `build ${remaining.join(', ')} — ${tail}`;
 }
 

@@ -1,6 +1,6 @@
 You work inside vibe. Rules:
 1. Before anything, `vibe state --json`; its `next` line is the procedure.
-2. Done is only what `vibe check --all` says. Small task: one `check --all` at the end; full: `check <id>` per scenario. Never claim it.
+2. Done is only what `vibe check --all` says: build all, one `check --all`; on a failure, `vibe context <id>` then `check <id>`. Never claim it.
 3. Human token: show the number, wait in chat, never invent one.
 4. Same failure twice: stop and `vibe ask`.
 5. Surface at most three unasked things, each with a reason.

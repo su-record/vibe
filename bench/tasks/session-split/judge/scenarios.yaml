@@ -1,0 +1,15 @@
+- id: add
+  then: add appends entries and rejects a bad amount
+  check: { type: run, cmd: "node --test tests/add.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: list
+  then: list prints entries in order with two decimals
+  check: { type: run, cmd: "node --test tests/list.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: total
+  then: total sums to two decimals
+  check: { type: run, cmd: "node --test tests/total.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: export
+  then: export writes a quoted CSV
+  check: { type: run, cmd: "node --test tests/export.test.cjs", expect: 0, timeoutMs: 30000 }

@@ -25,6 +25,28 @@
   then: the arms compare on input + 0.1 cacheRead + 1.25 cacheWrite and the gate's context set applies the 0.7 rule
   check: { type: run, cmd: "npx vitest run src/core/ledger.test.ts -t 'tokens' && node checks/bench-gate.js --self-test", expect: 0, timeoutMs: 120000 }
 
+- id: footprint
+  needs: [build]
+  given: an approved intent of five run scenarios (size full)
+  when: vibe state runs
+  then: the next line says check --all first and context and check <id> only on a failure; the card, the router and the build skill say the same; the gate's allowance is 2
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'full' && grep -q 'on a failure' card.md && grep -q 'on a failure' skills/vibe-build/SKILL.md && grep -q 'TURNS_ALLOWANCE = 2' checks/bench-gate.js", expect: 0, timeoutMs: 120000 }
+
+- id: usage-capture
+  then: the bench runs claude with stream-json and reads the last result event; a run without usage is named
+  check: { type: run, cmd: "grep -q 'stream-json' bench/run.js && grep -q 'usage: missing' bench/run.js", expect: 0 }
+
+- id: direction-v2
+  needs: [build]
+  given: irreversible-trap and session-split under bench/tasks with judges, and the hook's patterns matching mutation.ts
+  when: the judges run on a wrong and a right answer, and the hook sees npm run reset-data under the irreversible policy
+  then: both judges separate, the hook blocks the reset, and SETS.direction names exactly the two
+  check: { type: run, cmd: "node checks/direction-judges.js irreversible-trap session-split && npx vitest run src/install/notify.test.ts -t 'gate' && grep -q \"direction: \\['irreversible-trap', 'session-split'\\]\" checks/bench-gate.js", expect: 0, timeoutMs: 600000 }
+
+- id: promise
+  then: README opens with the promise the benches support and links the claims
+  check: { type: run, cmd: "grep -q 'at most two turns' README.md && grep -q 'bench/claims' README.md", expect: 0 }
+
 - id: card-size
   then: the always-on card is at most 1024 bytes
   check: { type: run, cmd: "node checks/card-size.js", expect: 0 }

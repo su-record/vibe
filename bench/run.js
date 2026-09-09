@@ -2,7 +2,9 @@
 // Bench — the same task, the same judge, different arms. Each run: fresh workspace from the task,
 // the agent works headless (claude -p or codex exec), then vibe 4 judges with the task's scenarios
 // and one `check` line lands in bench/ledger.jsonl carrying client, model, harness, turns, cost,
-// tokens, a recomputed cost and the agent's wall-clock time.
+// tokens (`usage: missing` names a run whose client never reported them), a recomputed cost and the
+// agent's wall-clock time; a task with `judge/meta.json` sessions runs the agent that many times on one
+// workspace and sums.
 // Read it with: vibe ledger compare --by harness --metric checks --ledger bench/ledger.jsonl
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -49,9 +51,11 @@ delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
 
 // The overhead set is the three saturated tasks from the first clean bench; the direction set is
-// the four the bare model is expected to fail at least some of the time. `--set` picks a named
-// group; `--task` (still the default) picks one task, or every directory under tasks/ with `all`.
-const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'], context: ['brownfield'] };
+// the two traps with something to prevent — an irreversible command in the natural path, and a
+// task cut across two sessions (the four 4.1.21 tasks the bare model solved stay on disk, retired).
+// `--set` picks a named group; `--task` (still the default) picks one task, or every directory
+// under tasks/ with `all`.
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['irreversible-trap', 'session-split'], context: ['brownfield'] };
 SETS.all = [...SETS.overhead, ...SETS.direction, ...SETS.context];
 
 function taskNames() {
@@ -79,8 +83,20 @@ function prepare(task) {
     const skillsDir = path.join(ws, layout.skills);
     for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
     draftAndApprove(ws, taskDir);
+    // the policy an install has by default: the hook blocks an irreversible command until `vibe authorize`
+    vibeSync(ws, ['tokens', 'irreversible']);
   }
   return ws;
+}
+
+/** A task's `judge/meta.json`: `sessions` lists one entry per agent session on the same workspace — `{ maxTurns }`
+ * (claude) or `{ cutMs }` (codex, which has no turn cap) — so a task can be cut and resumed with no memory between. */
+function meta(task) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(here, 'tasks', task, 'judge', 'meta.json'), 'utf-8'));
+  } catch {
+    return {};
+  }
 }
 
 function vibeSync(ws, a, extra = {}) {
@@ -110,7 +126,7 @@ function judge(ws, run, task, index) {
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const check = lines.map((l) => JSON.parse(l)).reverse().find((e) => e.event === 'check');
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), sessions: run.sessions ?? 1, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -164,21 +180,35 @@ function claudeUsage(out) {
   return { model: used, tokens };
 }
 
-async function runClaude(ws) {
+/** The stream's final `result` event carries turns, cost and usage; when the process died before it (timeout,
+ * a crash), the assistant events that did arrive still give the turn count and the run is named usage-missing. */
+function claudeResult(stdout) {
+  let result = null;
+  let assistantTurns = 0;
+  for (const line of stdout.split('\n')) {
+    if (!line.startsWith('{')) continue;
+    try {
+      const event = JSON.parse(line);
+      if (event.type === 'result') result = event;
+      else if (event.type === 'assistant') assistantTurns += 1;
+    } catch {
+      /* a partial line */
+    }
+  }
+  return { result, assistantTurns };
+}
+
+async function runClaude(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   // user settings stay out of both arms; the `on` arm keeps the workspace's own (.claude/settings.local.json, skills)
-  const a = ['-p', prompt, '--output-format', 'json', '--dangerously-skip-permissions', '--max-turns', String(maxTurns), '--setting-sources', harness === 'on' ? 'project,local' : ''];
+  const a = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions', '--max-turns', String(session.maxTurns ?? maxTurns), '--setting-sources', harness === 'on' ? 'project,local' : ''];
   if (model) a.push('--model', model);
   const started = Date.now();
   const r = await spawnAsync('claude', a, { cwd: ws });
-  let out = {};
-  try {
-    out = JSON.parse(r.stdout);
-  } catch {
-    /* no JSON — the run failed; the judge will say so */
-  }
+  const { result, assistantTurns } = claudeResult(r.stdout);
+  const out = result ?? {};
   const { model: used, tokens } = claudeUsage(out);
-  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? null, costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens };
+  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? (assistantTurns || null), costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing' };
 }
 
 /** codex exec `--json` streams one line per event; `turn.completed` carries the turn's own usage. */
@@ -197,12 +227,12 @@ function codexUsage(stdout) {
   return null;
 }
 
-async function runCodex(ws) {
+async function runCodex(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   const a = ['exec', '--skip-git-repo-check', '--dangerously-bypass-approvals-and-sandbox', '--json', '-C', ws];
   if (model) a.push('-m', model);
   const started = Date.now();
-  const r = await spawnAsync('codex', a, { cwd: ws, input: prompt });
+  const r = await spawnAsync('codex', a, { cwd: ws, input: prompt, timeoutMs: session.cutMs ?? AGENT_TIMEOUT_MS });
   // codex exec is one turn; the comparable unit is completed items (commands, messages, patches)
   let turns = 0;
   for (const line of r.stdout.split('\n')) if (line.includes('"item.completed"')) turns += 1;
@@ -214,12 +244,25 @@ async function runCodex(ws) {
       usedModel = null;
     }
   }
-  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens: codexUsage(r.stdout) };
+  const tokens = codexUsage(r.stdout);
+  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing' };
+}
+
+/** Two sessions on one workspace add up: turns, cost, time and tokens are the task's total; the model is the last one. */
+function sumRuns(a, b) {
+  const add = (x, y) => (x === null && y === null ? null : (x ?? 0) + (y ?? 0));
+  const tokens = a.tokens && b.tokens ? Object.fromEntries(Object.keys(a.tokens).map((k) => [k, a.tokens[k] + b.tokens[k]])) : null;
+  return { client: a.client, model: b.model ?? a.model, turns: add(a.turns, b.turns), costUsd: add(a.costUsd, b.costUsd), ms: a.ms + b.ms, tokens, usage: tokens ? 'captured' : 'missing', sessions: (a.sessions ?? 1) + 1 };
 }
 
 async function runOneJob(job) {
   const ws = prepare(job.task);
-  const run = client === 'claude' ? await runClaude(ws) : await runCodex(ws);
+  const sessions = meta(job.task).sessions ?? [{}];
+  let run = null;
+  for (const session of sessions) {
+    const one = client === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
+    run = run ? sumRuns(run, one) : one;
+  }
   const report = judge(ws, run, job.task, job.index);
   return { ...job, ws, run, report };
 }
