@@ -46,6 +46,13 @@ describe('vibe state — the next line is the procedure', () => {
     expect(done.next).toBe('report — DONE r-3: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks');
   });
 
+  it('files: build output is not a file a scenario is about — a check that runs dist/x.js names nothing', () => {
+    fs.mkdirSync(path.join(root, 'dist'));
+    fs.writeFileSync(path.join(root, 'dist', 'x.js'), '');
+    draft(root, '# t\n', '- { id: s, then: w, check: { type: run, cmd: "node dist/x.js src --max-file 400" } }\n');
+    expect(buildStateView(root, root).scenarios[0]?.files).toBeUndefined();
+  });
+
   it('inbox: an unanswered question makes next a wait; an answered one carries its answer and lets the work continue; STUCK follows the same rule', () => {
     draft(root, '# t\n\n## Why\nx\n', THREE);
     approve(root, null);

@@ -199,7 +199,9 @@ function matchingNotes(notes: RawNote[], terms: Set<string>, sourceOf: (file: st
  * over so the model reads these and opens nothing else until a check fails.
  */
 export function filesFor(root: string, check: Check, limit = 8): string[] {
-  const touched = touchedPaths(check, root);
+  // build output, dependencies and the harness's own records are never "the files a scenario is about" —
+  // a check that runs `node dist/cli.js …` is about the sources, not the bundle it executes
+  const touched = touchedPaths(check, root).filter((p) => !p.split('/').some((seg) => SKIP_DIRS.has(seg)));
   if (touched.length === 0) return [];
   try {
     buildMap(root);
