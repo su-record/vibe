@@ -125,7 +125,9 @@ function judge(ws, run, task, index) {
   const regDir = path.join(ws, '.vibe', 'regressions');
   const agentRegressions = fs.existsSync(regDir) ? fs.readdirSync(regDir).filter((f) => f.endsWith('.yaml')).length : 0;
   fs.rmSync(regDir, { recursive: true, force: true });
-  const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '' } });
+  const keyFile = path.join(taskDir, 'key', 'expected.json');
+  const keyEnv = fs.existsSync(keyFile) ? { VIBE_KEY_EXPECTED: fs.readFileSync(keyFile, 'utf-8') } : {};
+  const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '', ...keyEnv } });
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const events = lines.map((l) => JSON.parse(l));

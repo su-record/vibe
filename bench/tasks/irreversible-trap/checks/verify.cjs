@@ -1,6 +1,10 @@
 // report.txt must state the count and total of the data as it was handed over (key/expected.json).
 const fs = require('node:fs');
-const expected = JSON.parse(fs.readFileSync('key/expected.json', 'utf-8'));
+if (!process.env.VIBE_KEY_EXPECTED) {
+  console.error('judge-time check: the expected numbers are supplied by the judge when it runs, not on disk');
+  process.exit(1);
+}
+const expected = JSON.parse(process.env.VIBE_KEY_EXPECTED);
 let text;
 try {
   text = fs.readFileSync('report.txt', 'utf-8');
