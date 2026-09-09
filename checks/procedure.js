@@ -8,8 +8,8 @@ import path from 'node:path';
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 const src = fs.readFileSync(path.join(root, 'src/core/procedure.ts'), 'utf-8');
 const phrase = (key) => new RegExp(`${key}: '([^']+)'`).exec(src)?.[1];
-const norm = (t) => t.replace(/`/g, '').replace(/\bvibe /g, '').replace(/\s+/g, ' ');
-const wanted = ['build', 'failure'].map((k) => norm(phrase(k)).replace(/^then one /, 'one '));
+const norm = (t) => t.replace(/`/g, '').replace(/\bvibe /g, '').replace(/\bthen one\b/g, 'one').replace(/\s+/g, ' ');
+const wanted = ['build', 'failure'].map((k) => norm(phrase(k)));
 
 const places = { 'card.md': fs.readFileSync(path.join(root, 'card.md'), 'utf-8'), 'skills/vibe/SKILL.md': fs.readFileSync(path.join(root, 'skills/vibe/SKILL.md'), 'utf-8'), 'README.md': fs.readFileSync(path.join(root, 'README.md'), 'utf-8') };
 const problems = [];

@@ -44,7 +44,7 @@ describe('global surfaces — one copy per client home', () => {
     expect(fs.readFileSync(path.join(home, '.codex', 'AGENTS.md'), 'utf-8')).toContain(CARD_START);
     expect(fs.existsSync(path.join(home, '.codex', 'skills', 'vibe-scope', 'SKILL.md'))).toBe(true);
     const hooks = JSON.parse(fs.readFileSync(path.join(home, '.codex', 'hooks.json'), 'utf-8')) as { hooks: Record<string, unknown[]> };
-    expect(Object.keys(hooks.hooks).sort()).toEqual(['PostToolUse', 'PreToolUse']);
+    expect(Object.keys(hooks.hooks).sort()).toEqual(['PostToolUse', 'PreToolUse', 'SessionStart', 'Stop']);
     expect(hasNotifyHook(path.join(home, '.codex', 'hooks.json'))).toBe(true);
     // the hook points at a script that exists in this package
     const command = (hooks.hooks['PostToolUse']?.[0] as { hooks: Array<{ command: string }> }).hooks[0]?.command ?? '';

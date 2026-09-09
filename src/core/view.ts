@@ -90,7 +90,7 @@ function nextLine(state: State, stage: Stage, remaining: string[], inbox: string
   if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
   const tail = size === 'small' ? PROCEDURE.build : `${PROCEDURE.build}; ${PROCEDURE.failure}`;
-  return `build ${remaining.join(', ')} — ${tail}`;
+  return `build ${remaining.join(', ')} ${tail}`;
 }
 
 function intentTitle(root: string): string {

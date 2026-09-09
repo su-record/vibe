@@ -24,7 +24,7 @@ describe('vibe state — the next line is the procedure', () => {
     approve(root, null);
     let v = buildStateView(root, root);
     expect(v.size).toBe('small');
-    expect(v.next).toBe('build a, b, c — then one vibe check --all');
+    expect(v.next).toBe('build a, b, c first, then one vibe check --all');
     expect(v.scenarios.map((s) => s.check)).toEqual(['true', 'out.txt', 'true']); // the brief: what each check acts on
     expect(v.scenarios[1]?.files).toBeUndefined(); // out.txt does not exist yet — nothing to name
     fs.writeFileSync(path.join(root, 'out.txt'), 'x');
@@ -32,7 +32,7 @@ describe('vibe state — the next line is the procedure', () => {
     writeState(root, { ...readState(root), state: 'RUNNING' });
     fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) }, b: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) } }));
     v = buildStateView(root, root);
-    expect(v.next).toBe('build c — then one vibe check --all');
+    expect(v.next).toBe('build c first, then one vibe check --all');
     fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) }, b: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) }, c: { last: 'fail', at: 'now', run: 'r-1' } }));
     expect(buildStateView(root, root).next).toMatch(/^build c/);
     ask(root, { question: 'which currency?', scenario: 'b' });
@@ -50,7 +50,7 @@ describe('vibe state — the next line is the procedure', () => {
     draft(root, '# t\n', THREE + '- { id: d, then: w, check: { type: review, path: doc.md, lang: en } }\n');
     expect(buildStateView(root, root).size).toBe('full');
     approve(root, null);
-    expect(buildStateView(root, root).next).toBe('build a, b, c, d — then one vibe check --all; on a failure, vibe context <id> then vibe check <id>');
+    expect(buildStateView(root, root).next).toBe('build a, b, c, d first, then one vibe check --all; on a failure, vibe context <id> then vibe check <id>');
     draft(root, '# t\n', THREE + '- { id: d, then: w, needs: [c], check: { type: run, cmd: "true" } }\n');
     expect(buildStateView(root, root).size).toBe('full');
     draft(root, '# t\n', THREE);

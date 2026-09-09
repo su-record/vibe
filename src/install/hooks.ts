@@ -19,15 +19,15 @@ function notifyCommand(mode: 'post' | 'pre' | 'stop' | 'session'): string {
   return `node "${path.join(packageRoot(), NOTIFY_MARK)}" ${mode}`;
 }
 
-/** Codex has no Stop or SessionStart event; its hook file (under .codex) gets the three tool hooks only. */
-function wantedHooks(file = ''): Array<[string, string, string]> {
-  const hooks: Array<[string, string, string]> = [
+/** Claude Code and Codex run the same five: the tool hooks, Stop (the verdict when a turn ends) and SessionStart (the state handed over). Codex runs them once their trust is granted. */
+function wantedHooks(): Array<[string, string, string]> {
+  return [
     ['PostToolUse', 'Edit|Write|MultiEdit|NotebookEdit', notifyCommand('post')],
     ['PreToolUse', 'Bash', notifyCommand('pre')],
     ['PreToolUse', 'Read', notifyCommand('pre')],
+    ['Stop', '', notifyCommand('stop')],
+    ['SessionStart', '', notifyCommand('session')],
   ];
-  if (!file.split(path.sep).includes('.codex')) hooks.push(['Stop', '', notifyCommand('stop')], ['SessionStart', '', notifyCommand('session')]);
-  return hooks;
 }
 
 function isNotify(entry: HookEntry): boolean {
@@ -39,7 +39,7 @@ export function installHookFile(file: string): 'added' | 'unchanged' {
   const settings = readJson<Settings>(file) ?? {};
   const hooks: Record<string, HookEntry[]> = {};
   for (const [event, list] of Object.entries(settings.hooks ?? {})) hooks[event] = list.filter((entry) => !isNotify(entry));
-  for (const [event, matcher, command] of wantedHooks(file)) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' ? 620 : event === 'SessionStart' ? 30 : 20 }] }];
+  for (const [event, matcher, command] of wantedHooks()) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' ? 620 : event === 'SessionStart' ? 30 : 20 }] }];
   const next = { ...settings, hooks };
   if (JSON.stringify(next) === JSON.stringify(settings)) return 'unchanged';
   writeJson(file, next);
@@ -127,5 +127,5 @@ export function hasNotifyHook(file: string): boolean {
 
 export function hasCurrentHook(file: string): boolean {
   const settings = readJson<Settings>(file);
-  return wantedHooks(file).every(([event, , command]) => (settings?.hooks?.[event] ?? []).some((e) => e.hooks.some((h) => h.command === command)));
+  return wantedHooks().every(([event, , command]) => (settings?.hooks?.[event] ?? []).some((e) => e.hooks.some((h) => h.command === command)));
 }

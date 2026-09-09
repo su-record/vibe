@@ -36,7 +36,7 @@ const version = (() => {
 })();
 const card = read(path.join(root, 'card.md')).trim();
 const homeCard = client === 'claude' ? path.join(home, '.claude', 'CLAUDE.md') : path.join(home, '.codex', 'AGENTS.md');
-if (read(homeCard).includes(CARD_START)) process.exit(0); // the npm install owns this client
+const homeOwns = read(homeCard).includes(CARD_START); // the npm install owns the card for this client; the state is still handed over below
 
 function cliVersion() {
   const r = spawnSync('vibe', ['--version'], { encoding: 'utf-8', timeout: 10000, shell: process.platform === 'win32' });
@@ -69,6 +69,8 @@ function stateNote() {
   return r.status === 0 && r.stdout ? `\n\n[vibe state — this is the first command already run; continue from its next line]\n${r.stdout.trim()}` : '';
 }
 
-const text = `${card}\n\n[vibe plugin ${version}] ${cliNote}${stateNote()}`;
+const state = stateNote();
+if (homeOwns && !state) process.exit(0);
+const text = homeOwns ? state.trim() : `${card}\n\n[vibe plugin ${version}] ${cliNote}${state}`;
 process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } })}\n`);
 process.exit(0);

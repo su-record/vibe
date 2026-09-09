@@ -240,7 +240,8 @@ function codexUsage(stdout) {
 
 async function runCodex(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
-  const a = ['exec', '--skip-git-repo-check', '--dangerously-bypass-approvals-and-sandbox', '--json', '-C', ws];
+  // the workspace's own hooks (the on arm's gate, session hand-over and stop verdict) run without a persisted trust entry
+  const a = ['exec', '--skip-git-repo-check', '--dangerously-bypass-approvals-and-sandbox', '--dangerously-bypass-hook-trust', '--json', '-C', ws];
   if (model) a.push('-m', model);
   const started = Date.now();
   const r = await spawnAsync('codex', a, { cwd: ws, input: prompt, timeoutMs: session.cutMs ?? AGENT_TIMEOUT_MS });

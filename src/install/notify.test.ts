@@ -55,7 +55,7 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     const out = JSON.parse(session().stdout) as { hookSpecificOutput: { hookEventName: string; additionalContext: string } };
     expect(out.hookSpecificOutput.hookEventName).toBe('SessionStart');
     expect(out.hookSpecificOutput.additionalContext).toContain('first command already run');
-    expect(out.hookSpecificOutput.additionalContext).toContain('next      build a');
+    expect(out.hookSpecificOutput.additionalContext).toContain('next      build a first');
   });
 
   it('stop: with an approved intent still building the verdict runs and comes back as the reason the turn is not over; DONE, a continued turn or no intent stays silent', () => {
