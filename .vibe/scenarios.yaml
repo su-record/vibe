@@ -1,111 +1,74 @@
 - id: build
-  then: dist is produced without type errors
-  check: { type: run, cmd: "npm run build", expect: 0, timeoutMs: 120000 }
+  then: the package builds and every test passes
+  check: { type: run, cmd: "npm run check", expect: 0, timeoutMs: 600000 }
 
-- id: tests
+- id: stale-result
   needs: [build]
-  then: every test passes
-  check: { type: run, cmd: "npm test", expect: 0, timeoutMs: 400000 }
+  given: a scenario that passed, then its file changed
+  when: the default vibe check runs
+  then: the scenario is selected again and DONE is withheld; results carry the tree they passed on
+  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'stale'", expect: 0, timeoutMs: 120000 }
 
-- id: brownfield-task
-  then: bench/tasks/brownfield ships TASK.md, judge/prepare.cjs, judge/right.cjs, judge/lines.test.ts and a five-scenario judge; bench-judge accepts it; run.js runs a task's prepare.cjs
-  check: { type: run, cmd: "node checks/bench-judge.js && test -f bench/tasks/brownfield/judge/prepare.cjs && test -f bench/tasks/brownfield/judge/right.cjs && test -f bench/tasks/brownfield/judge/lines.test.ts && test $(grep -c '^- id:' bench/tasks/brownfield/judge/scenarios.yaml) -ge 5 && grep -q 'prepare.cjs' bench/run.js", expect: 0 }
-
-- id: brownfield-judge
+- id: approval-reverified
   needs: [build]
-  given: a workspace prepared from this repository, untouched, then with the reference patch applied
-  when: the brownfield judge runs on each
-  then: the untouched repository fails the tests scenario and the patched one passes every scenario
-  check: { type: run, cmd: "node checks/direction-judges.js brownfield", expect: 0, timeoutMs: 600000 }
+  given: an approved intent whose scenarios.yaml changed afterwards
+  when: vibe check runs
+  then: exit 4 naming the approved hash; no check runs
+  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'approval void'", expect: 0, timeoutMs: 120000 }
 
-- id: tokens-metric
+- id: parent-gate
   needs: [build]
-  given: a bench ledger with tokens per line
-  when: ledger compare runs with --metric tokens, paired
-  then: the arms compare on input + 0.1 cacheRead + 1.25 cacheWrite and the gate's context set applies the 0.7 rule
-  check: { type: run, cmd: "npx vitest run src/core/ledger.test.ts -t 'tokens' && node checks/bench-gate.js --self-test", expect: 0, timeoutMs: 120000 }
+  given: a parent that passed before and fails on this run
+  when: vibe check --all runs
+  then: the dependent is blocked, not run
+  check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'recheck'", expect: 0, timeoutMs: 120000 }
 
-- id: footprint
+- id: hook-segments
   needs: [build]
-  given: an approved intent of five run scenarios (size full)
+  given: the irreversible policy
+  when: a compound command carries an irreversible segment
+  then: it is blocked; a command whose every segment reads is not
+  check: { type: run, cmd: "npx vitest run src/install/notify.test.ts -t 'segment'", expect: 0, timeoutMs: 120000 }
+
+- id: bench-no-key
+  needs: [build]
+  given: every task split into checks/, key/ and judge/
+  when: a workspace is prepared for the on arm and the judge's intents are read
+  then: no key file and no key value reaches the on arm; the direction judges still separate wrong from right
+  check: { type: run, cmd: "node checks/bench-judge.js && node checks/bench-no-key.js && node checks/direction-judges.js ask session-split brownfield", expect: 0, timeoutMs: 900000 }
+
+- id: gate-is-release
+  needs: [bench-no-key]
+  given: the fair bench run on every set, five runs per arm
+  when: the gate reads bench/ledger.jsonl
+  then: every pre-registered rule passes, and the README promise quotes them
+  check: { type: run, cmd: "node checks/bench-gate.js && node checks/bench-ran.js", expect: 0, timeoutMs: 120000 }
+
+- id: retraction
+  then: the 4.1.22 claim files carry the contamination note with the counts, and README's opening is written from the fair run
+  check: { type: run, cmd: "grep -q 'contamination' bench/claims/2026-09-09-4.1.22e.md && grep -q 'fair' README.md && ! grep -q 'four runs in five' README.md", expect: 0 }
+
+- id: queries-read-only
+  needs: [build]
+  given: a stale global install
   when: vibe state runs
-  then: the next line says check --all first and context and check <id> only on a failure; the card, the router and the build skill say the same; the gate's allowance is 2
-  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'full' && grep -q 'on a failure' card.md && grep -q 'on a failure' skills/vibe-build/SKILL.md && grep -q 'TOKENS_OVERHEAD = 1.25' checks/bench-gate.js && grep -q 'Over 400 lines' card.md", expect: 0, timeoutMs: 120000 }
+  then: nothing under the home changes; vibe status names the staleness; vibe update repairs it
+  check: { type: run, cmd: "npx vitest run src/install/global.test.ts -t 'query'", expect: 0, timeoutMs: 120000 }
 
-- id: state-brief
+- id: one-procedure
+  then: card rule 2, the router skill and README's flow block quote the procedure table
+  check: { type: run, cmd: "node checks/procedure.js", expect: 0 }
+
+- id: flaky-named
   needs: [build]
-  given: an approved intent
-  when: vibe state and vibe check run
-  then: each scenario line names its check, the check output ends with the next line, and the card starts at vibe state
-  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'next      ' src/cli/work.ts && grep -q 'Start from `vibe state`' card.md && grep -q 'needs no skill' skills/vibe-build/SKILL.md skills/vibe-prove/SKILL.md skills/vibe-handoff/SKILL.md && grep -q 'no further reads' src/core/view.ts", expect: 0, timeoutMs: 120000 }
+  then: the test that failed under load is named in a regression and the suite passes twice in parallel three times
+  check: { type: run, cmd: "node checks/suite-under-load.js", expect: 0, timeoutMs: 900000 }
 
-- id: hooks-procedure
+- id: size
   needs: [build]
-  given: an approved intent still building
-  when: a Claude turn ends, and a session starts inside the project
-  then: the Stop hook runs the verdict once and returns it as the reason; the session hook hands over vibe state; size full means the build skill applies
-  check: { type: run, cmd: "npx vitest run src/install/notify.test.ts -t 'stop' && npx vitest run src/install/tree.test.ts && npx vitest run src/core/view.test.ts -t 'size' && grep -q 'stateNote' hooks/session.js", expect: 0, timeoutMs: 180000 }
-
-- id: usage-capture
-  then: the bench runs claude with stream-json and reads the last result event; a run without usage is named
-  check: { type: run, cmd: "grep -q 'stream-json' bench/run.js && grep -q 'usage: missing' bench/run.js", expect: 0 }
-
-- id: direction-v2
-  needs: [build]
-  given: irreversible-trap and session-split under bench/tasks with judges, and the hook's patterns matching mutation.ts
-  when: the judges run on a wrong and a right answer, and the hook sees npm run reset-data under the irreversible policy
-  then: the judges separate, the hook blocks the reset, and SETS.direction names ask and session-split
-  check: { type: run, cmd: "node checks/direction-judges.js ask session-split irreversible-trap && npx vitest run src/install/notify.test.ts -t 'gate' && grep -q \"direction: \\['ask', 'session-split'\\]\" checks/bench-gate.js", expect: 0, timeoutMs: 600000 }
-
-- id: codex-cache-kept
-  needs: [build]
-  given: Codex holding 0.0.1 with a hook file, and 0.0.0 beside it
-  when: vibe re-registers the package version
-  then: 0.0.1 stays with its hook, 0.0.0 is swept, the new version is added
-  check: { type: run, cmd: "npx vitest run src/install/register.test.ts -t 'codex behind' && grep -q 'keeps its hooks until it restarts' README.md", expect: 0, timeoutMs: 120000 }
-
-- id: promise
-  then: README opens with what the fifth run showed — prevention on ask, the cost per client — and links the claims
-  check: { type: run, cmd: "grep -q 'written before the run' README.md && grep -q 'four runs in five' README.md && grep -q 'bench/claims' README.md", expect: 0 }
+  then: no file over 400 lines, no function over 50
+  check: { type: run, cmd: "node dist/cli.js size src --max-file 400 --max-function 50", expect: 0 }
 
 - id: card-size
-  then: the always-on card is at most 1024 bytes
-  check: { type: run, cmd: "node checks/card-size.js", expect: 0 }
-
-- id: file-size
-  needs: [build]
-  then: no source file over 400 lines and no function over 50, judged by vibe size itself
-  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js size src hooks mcpb/server bench --max-file 400 --max-function 50", expect: 0 }
-
-- id: skills-size
-  then: the six common skills are at most 300 lines in total
-  check: { type: run, cmd: "test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300", expect: 0 }
-
-- id: skill-names
-  then: every common skill name is spec-conformant and equals its directory
-  check: { type: run, cmd: "node checks/skill-names.js", expect: 0 }
-
-- id: packs
-  then: every antislop pack has numbered reviewer stages within budget and agents in step
-  check: { type: run, cmd: "node checks/packs.js", expect: 0 }
-
-- id: report-voice
-  then: card rule 9 and the handoff Report voice are present
-  check: { type: run, cmd: "node checks/report-voice.js", expect: 0 }
-
-- id: no-placeholders
-  then: README, the card and the six common skills carry no placeholder text or reprinted writer note
-  check: { type: run, cmd: "! grep -rlE 'Lorem ipsum|\\[TODO\\]|\\bTBD\\b|Your Company|\\{\\{|\\[\\[' README.md card.md skills/vibe/SKILL.md skills/vibe-*/SKILL.md", expect: 0 }
-
-- id: no-catalogue
-  then: no model name beyond the two aliases appears in the source
-  check: { type: run, cmd: "! grep -rnE 'gpt-[0-9]|claude-(opus|sonnet|haiku)-[0-9]|luna|astra|sonnet|opus' src --include=*.ts --exclude=*.test.ts", expect: 0 }
-
-- id: plugin-tree
-  needs: [build]
-  then: the committed manifests match package.json 4.1.22
-  check: { type: run, cmd: "VIBE_SKIP_SETUP=1 node dist/cli.js plugin build --check && grep -q '\"version\": \"4.1.22\"' .codex-plugin/plugin.json", expect: 0 }
-
-- id: readme-status
-  then: the README names the brownfield task and --metric tokens and its status line carries a 4.1.22 entry
-  check: { type: run, cmd: "grep -q '`4.1.22`' README.md && grep -q 'brownfield' README.md && grep -q -- '--metric tokens' README.md", expect: 0 }
+  then: card.md is at most 1024 bytes and the six skills at most 300 lines
+  check: { type: run, cmd: "node checks/card-size.js && node checks/loc.js", expect: 0 }

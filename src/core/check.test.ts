@@ -70,17 +70,58 @@ describe('check — the only verdict path', () => {
   });
 
   it('the same failure twice in a row is STUCK and leaves an inbox question', async () => {
-    approved(`- { id: bad, then: x, check: { type: run, cmd: "${failing('same', 1)}" } }`);
+    // the failure's message comes from a data file, so the scenario set never changes behind the approval
+    fs.writeFileSync(path.join(root, 'msg.txt'), 'same:1');
+    fs.writeFileSync(path.join(root, 'bad.cjs'), "const [m, c] = require('fs').readFileSync('msg.txt', 'utf-8').split(':'); process.stdout.write(m); process.exit(Number(c));");
+    approved('- { id: bad, then: x, check: { type: run, cmd: "node bad.cjs" } }');
     await runChecks(root);
     const second = await runChecks(root);
     expect(second.stuck).toBe(true);
     expect(readState(root).state).toBe('STUCK');
     expect(openQuestions(root).some((q) => q.question.startsWith('STUCK'))).toBe(true);
     // a different failure breaks the streak
-    fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), `- { id: bad, then: x, check: { type: run, cmd: "${failing('other', 2)}" } }\n`);
+    fs.writeFileSync(path.join(root, 'msg.txt'), 'other:2');
     const third = await runChecks(root);
     expect(third.stuck).toBe(false);
     expect(readState(root).state).toBe('RUNNING');
+  });
+
+  it('stale: a pass is bound to the tree it was taken on — the file changes, the default check selects the scenario again and DONE is withheld', async () => {
+    fs.writeFileSync(path.join(root, 'out.txt'), 'good\n');
+    approved('- { id: out, then: x, check: { type: file, path: out.txt, contains: good } }');
+    expect((await runChecks(root)).done).toBe(true);
+    expect(readResults(root)['out']).toMatchObject({ last: 'pass' });
+    expect(readResults(root)['out']?.tree).toBeTruthy();
+    fs.writeFileSync(path.join(root, 'out.txt'), 'bad\n');
+    expect(readResults(root)['out']?.last).toBe('stale');
+    const again = await runChecks(root); // default selection, no --all
+    expect(again.outcomes.map((o) => [o.id, o.status])).toEqual([['out', 'fail']]);
+    expect(again.done).toBe(false);
+    expect(readState(root).state).toBe('RUNNING');
+  });
+
+  it('approval void: scenarios.yaml edited after approval — vibe check refuses (exit 4) and runs nothing', async () => {
+    fs.writeFileSync(path.join(root, 'out.txt'), 'bad\n');
+    approved('- { id: out, then: x, check: { type: file, path: out.txt, contains: good } }');
+    fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), '- { id: out, then: x, check: { type: file, path: out.txt, exists: true } }\n');
+    await expect(runChecks(root, { all: true })).rejects.toThrowError(/approval void/);
+    expect(fs.existsSync(path.join(root, '.vibe', 'evidence', 'r-1.json'))).toBe(false);
+  });
+
+  it('recheck: a parent that passed before and fails on this run blocks its dependent — this run judges, not the last one', async () => {
+    fs.writeFileSync(path.join(root, 'out.txt'), 'good\n');
+    fs.writeFileSync(path.join(root, 'child.cjs'), "require('fs').appendFileSync('ran.log', 'child\\n');");
+    approved([
+      '- { id: out, then: x, check: { type: file, path: out.txt, contains: good } }',
+      '- { id: child, needs: [out], then: y, check: { type: run, cmd: "node child.cjs" } }',
+    ].join('\n'));
+    expect((await runChecks(root, { all: true })).done).toBe(true);
+    fs.rmSync(path.join(root, 'ran.log'));
+    fs.writeFileSync(path.join(root, 'out.txt'), 'bad\n');
+    const again = await runChecks(root, { all: true });
+    expect(again.outcomes.find((o) => o.id === 'out')?.status).toBe('fail');
+    expect(again.outcomes.find((o) => o.id === 'child')).toMatchObject({ status: 'blocked', blockedBy: ['out'] });
+    expect(fs.existsSync(path.join(root, 'ran.log'))).toBe(false);
   });
 
   it('human scenarios are not gates — they ask once in the inbox and do not block DONE', async () => {
@@ -151,7 +192,8 @@ describe('implements edges — files changed since the previous check', () => {
     fs.writeFileSync(path.join(root, 'b.txt'), 'bb');
     await runChecks(root);
     const second = readLedger(root).filter((e) => e.event === 'check').at(-1)?.edges ?? [];
-    expect(second.map((e) => `${e.from}→${e.to}`)).toEqual(['scenario:b→file:b.txt']);
+    // a's pass was on the previous tree, so it ran again and passed again: both implement the file that changed
+    expect(second.map((e) => `${e.from}→${e.to}`).sort()).toEqual(['scenario:a→file:b.txt', 'scenario:b→file:b.txt']);
   });
 });
 

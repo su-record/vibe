@@ -10,18 +10,19 @@ import { invalidTransition } from './errors.js';
 import { ask, hasOpenQuestion } from './inbox.js';
 import { record, type Edge, recentAuthorize } from './ledger.js';
 import { vibePath } from './paths.js';
-import { loadScenarios } from './intent.js';
+import { intentHash, intentPath, loadScenarios, scenariosPath } from './intent.js';
 import { listRegressions } from './regress.js';
 import { ancestorsOf, isHuman, type Scenario } from './scenarios.js';
 import { readState, transition, writeState, type StateFile } from './state.js';
-import { nowIso, readJson, writeJson } from './store.js';
+import { nowIso, readJson, readText, writeJson } from './store.js';
 import { changedBlobs, changedSince, treeHash } from './tree.js';
 
-export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked';
+export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale';
 /** Checks that may run at the same time — independent scenarios only, never a dependent before its parent. */
 export const MAX_PARALLEL = 4;
 export interface ResultsFile {
-  [id: string]: { last: LastResult; at: string; run: string };
+  /** `tree`: the tree hash the result was taken on — a result from another tree is stale and counts as not passed. */
+  [id: string]: { last: LastResult; at: string; run: string; tree?: string };
 }
 
 export interface ScenarioOutcome {
@@ -58,7 +59,12 @@ export function resultsPath(root: string): string {
 }
 
 export function readResults(root: string): ResultsFile {
-  return readJson<ResultsFile>(resultsPath(root)) ?? {};
+  const stored = readJson<ResultsFile>(resultsPath(root)) ?? {};
+  const tree = treeHash(root);
+  const live: ResultsFile = {};
+  // A pass is bound to the tree it was taken on: any other tree makes it stale, never DONE
+  for (const [id, r] of Object.entries(stored)) live[id] = r.last === 'pass' && r.tree !== tree ? { ...r, last: 'stale' } : r;
+  return live;
 }
 
 async function execute(scenario: Scenario, root: string): Promise<CheckResult> {
@@ -143,7 +149,9 @@ function blocked(scenario: Scenario & { regression?: boolean }, by: string[]): S
  */
 async function runLayers(root: string, selected: Array<Scenario & { regression?: boolean }>, previous: ResultsFile): Promise<ScenarioOutcome[]> {
   const last: Record<string, LastResult | undefined> = {};
-  for (const [id, r] of Object.entries(previous)) last[id] = r.last;
+  // A parent selected for this run is judged by this run, never by what it did last time
+  const selectedIds = new Set(selected.map((s) => s.id));
+  for (const [id, r] of Object.entries(previous)) if (!selectedIds.has(id)) last[id] = r.last;
   const outcomes: ScenarioOutcome[] = [];
   let waiting = [...selected];
   while (waiting.length > 0) {
@@ -248,6 +256,9 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   if (!['APPROVED', 'RUNNING', 'DONE', 'STUCK'].includes(state.state)) {
     throw invalidTransition(`check runs only after approval (current state ${state.state})`);
   }
+  // The approval covers one intent and one scenario set; a check on anything else is void
+  const currentHash = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '');
+  if (currentHash !== state.intentHash) throw invalidTransition(`approval void — the intent or scenarios changed since ${state.intentHash ?? 'the approval'}; run vibe intent draft and approve again`);
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
   const universe: Selectable[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))];
@@ -260,7 +271,8 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const outcomes = await runLayers(root, selected, previous);
 
   const results: ResultsFile = { ...previous };
-  for (const o of outcomes) results[o.id] = { last: o.status, at, run };
+  const tree = treeHash(root); // after the checks ran: a check that writes build output is part of the tree it passed on
+  for (const o of outcomes) results[o.id] = { last: o.status, at, run, tree };
   writeJson(resultsPath(root), results);
   const implemented = outcomes.filter((o) => o.status === 'pass' && previous[o.id]?.last !== 'pass').map((o) => o.id);
   const edges = implementsEdges(root, implemented);
@@ -276,8 +288,8 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
 
   const evidence = { run, at, client: detectClient(), model: detectModel(), scenarioSet: scenarioSetHash(scenarios), results: outcomes };
   writeJson(vibePath(root, 'evidence', `${run}.json`), evidence);
-  const scenarioMap: Record<string, LastResult> = {};
-  for (const o of outcomes) scenarioMap[o.id] = o.status;
+  const scenarioMap: Record<string, Exclude<LastResult, 'stale'>> = {};
+  for (const o of outcomes) scenarioMap[o.id] = o.status as Exclude<LastResult, 'stale'>;
   const harness = detectHarness();
   record(root, { event: 'check', client: evidence.client, model: evidence.model, ...(harness ? { harness } : {}), run, scenarioSet: evidence.scenarioSet, scenarios: scenarioMap, passed, failed, failHash, turns: reportedTurns(), costUsd: reportedCostUsd(), ms: outcomes.reduce((a, o) => a + o.ms, 0), edges });
   if (stuck) record(root, { event: 'stuck', client: evidence.client, model: evidence.model, run, failHash });

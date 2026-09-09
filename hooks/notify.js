@@ -151,10 +151,11 @@ if (mode === 'pre') {
     process.exit(0);
   }
   const command = String((payload.tool_input && payload.tool_input.command) || '');
-  if (READS_ONLY.test(command)) process.exit(0);
+  // Every segment is judged — `echo x && git push`, `ls; rm -rf build`, `cat x | git push` carry the action in a later one
+  const segments = command.split(/&&|\|\||;|\||\n/).map((s) => s.trim()).filter((s) => s && !READS_ONLY.test(s));
   // Under strict and irreversible the gate blocks (exit 2 stops the tool call in Claude Code); under off it only warns.
   for (const [action, re] of IRREVERSIBLE) {
-    if (re.test(command) && !recentAuthorize(action)) {
+    if (segments.some((s) => re.test(s)) && !recentAuthorize(action)) {
       const blocking = tokenPolicy() !== 'off';
       process.stderr.write(`[vibe] "${action}" is irreversible and no authorize record exists in the last 10 minutes — ${blocking ? 'blocked: ' : ''}get a human token with \`vibe ask --needs authorize:${action}\` and run \`vibe authorize\` first, as its own command: the gate reads the ledger before this command runs, so an authorize chained in front of the action is not seen\n`);
       process.exit(blocking ? 2 : 0);

@@ -16,7 +16,7 @@ import { buildStateView } from '../core/view.js';
 import { ensureProject } from '../install/project.js';
 import { flagString, readStdin, type Flags, type Output } from './common.js';
 
-const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·' };
+const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·', stale: '↻' };
 
 export function cmdState(root: string, flags: Flags): Output {
   const view = buildStateView(root);

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { approve, draft } from './intent.js';
 import { ask } from './inbox.js';
 import { readState, writeState } from './state.js';
+import { treeHash } from './tree.js';
 import { buildStateView } from './view.js';
 
 let root: string;
@@ -26,10 +27,10 @@ describe('vibe state — the next line is the procedure', () => {
     expect(v.next).toBe('build a, b, c — then one vibe check --all');
     expect(v.scenarios.map((s) => s.check)).toEqual(['true', 'out.txt', 'true']); // the brief: what each check acts on
     writeState(root, { ...readState(root), state: 'RUNNING' });
-    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1' }, b: { last: 'pass', at: 'now', run: 'r-1' } }));
+    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) }, b: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) } }));
     v = buildStateView(root, root);
     expect(v.next).toBe('build c — then one vibe check --all');
-    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1' }, b: { last: 'pass', at: 'now', run: 'r-1' }, c: { last: 'fail', at: 'now', run: 'r-1' } }));
+    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) }, b: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) }, c: { last: 'fail', at: 'now', run: 'r-1' } }));
     expect(buildStateView(root, root).next).toMatch(/^build c/);
     ask(root, { question: 'which currency?', scenario: 'b' });
     expect(buildStateView(root, root).next).toMatch(/^answer inbox \[q-/);
@@ -37,7 +38,7 @@ describe('vibe state — the next line is the procedure', () => {
     writeState(root, { ...readState(root), state: 'STUCK', runs: 2 });
     expect(buildStateView(root, root).next).toMatch(/^prove — STUCK/);
     writeState(root, { ...readState(root), state: 'DONE', runs: 3 });
-    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-3' }, b: { last: 'pass', at: 'now', run: 'r-3' }, c: { last: 'pass', at: 'now', run: 'r-3' } }));
+    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-3', tree: treeHash(root) }, b: { last: 'pass', at: 'now', run: 'r-3', tree: treeHash(root) }, c: { last: 'pass', at: 'now', run: 'r-3', tree: treeHash(root) } }));
     const done = buildStateView(root, root);
     expect(done.next).toBe('report — DONE r-3: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks');
   });
