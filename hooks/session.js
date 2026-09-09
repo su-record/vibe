@@ -65,7 +65,7 @@ function stateNote() {
     if (up === dir || fs.existsSync(path.join(dir, '.git'))) return '';
     dir = up;
   }
-  const r = spawnSync('vibe', ['state'], { cwd: dir, encoding: 'utf-8', timeout: 20000, shell: process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+  const r = spawnSync('vibe', ['state'], { cwd: dir, encoding: 'utf-8', timeout: 60000, shell: process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
   return r.status === 0 && r.stdout ? `\n\n[vibe state — this is the first command already run; continue from its next line]\n${r.stdout.trim()}` : '';
 }
 

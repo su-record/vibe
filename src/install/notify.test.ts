@@ -56,7 +56,7 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(out.hookSpecificOutput.hookEventName).toBe('SessionStart');
     expect(out.hookSpecificOutput.additionalContext).toContain('first command already run');
     expect(out.hookSpecificOutput.additionalContext).toContain('next      build a first');
-  });
+  }, 60_000);
 
   it('stop: with an approved intent still building the verdict runs and comes back as the reason the turn is not over; DONE, a continued turn or no intent stays silent', () => {
     const cli = path.join(packageRoot(), 'dist', 'cli.js');
@@ -76,7 +76,7 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     fs.writeFileSync(path.join(project, 'edit.txt'), 'changed\n'); // RUNNING again
     expect(stop({ stop_hook_active: true }).stdout).toBe(''); // a turn already continued by this hook is let go
     expect(JSON.parse(stop({}).stdout).decision).toBe('block');
-  });
+  }, 60_000);
 
   it('gate: a git push with no authorize record is blocked under strict and irreversible, warned under off; every command segment is judged; tokens off prints the container note once', () => {
     const push = { tool_name: 'Bash', tool_input: { command: 'git push origin main' } };

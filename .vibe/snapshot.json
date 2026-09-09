@@ -1,17 +1,8 @@
 {
-  ".claude-plugin/marketplace.json": "47b552b6fba58f1dde1baf1a78cad5be8046c083",
-  ".claude-plugin/plugin.json": "9523995d59ea2bc3620c3fe074b2041add4444a0",
-  ".codex-plugin/plugin.json": "b3278ef9ba56a777b840f8bb0007f3edac1664f9",
-  "README.md": "579232cfa9e49b4879eeca034850d467bafd996e",
-  "package-lock.json": "63ee7c7cb17495fffef365dea55ad655ecdb734a",
-  "package.json": "85a3a672f24d2ccae76b2012dd34aee2c581471e",
-  "src/cli.test.ts": "dc00e0fec45d50d786f0c62beb63b2af2d1fb029",
-  "src/cli.ts": "f83fb696e2f08a85826009afc5c10b67d4f3fffc",
-  "src/cli/common.ts": "38a6ae701359fcfe275f7cb148874fde427be3c0",
-  "src/cli/setup.ts": "f5c0367aeac52869f3d78ea262a0eaec05ea385b",
-  "src/core/view.test.ts": "f5178e0b3490814caa5589274d9b67f24b604b88",
-  "src/core/view.ts": "bbe9d0e31071092db4941a7e91d2771f0c2a1fd5",
-  "src/install/global.test.ts": "a55639d8fc11254d355ed37613699d2c2abb756f",
-  "checks/procedure.js": "5871fdb294371ac551e03b378eb7f8957719b009",
-  "src/core/procedure.ts": "acc81fce3973f0382582dacc964a82f91f899566"
+  "README.md": "12585f06e774d25f5d609933e9f520350efe536e",
+  "bench/claims/2026-09-09-4.1.23.md": "dc3b7a8fdf14eff658908b100afa1f0529e45e8b",
+  "hooks/notify.js": "3c8c9ca346d2c0e9ab3e9467f3988d271156d2cb",
+  "hooks/session.js": "186db28aebc6a83f2f50a8eeb587edf50d76f70e",
+  "src/install/notify.test.ts": "5e319166eca2e558393e75ebb8835e76d7914ead",
+  "src/install/tree.test.ts": "fbe2bdd5f35080cb42337987b8e7f708888f8485"
 }
