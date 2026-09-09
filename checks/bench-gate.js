@@ -24,7 +24,7 @@ const TOKENS_OVERHEAD = 1.25;
 const MS_FACTOR = 1.5;
 
 const armOf = (line) => `${line.client}/${line.harness}`;
-const latest = (lines) => [...lines].sort((a, b) => new Date(a.at) - new Date(b.at)).slice(-REQUIRED_RUNS);
+const latest = (lines) => [...lines].filter((l) => !l.error).sort((a, b) => new Date(a.at) - new Date(b.at)).slice(-REQUIRED_RUNS);
 const mean = (lines, key) => {
   const vals = lines.map((l) => l[key]).filter((v) => typeof v === 'number');
   return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;

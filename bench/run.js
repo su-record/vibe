@@ -129,7 +129,7 @@ function judge(ws, run, task, index) {
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const check = lines.map((l) => JSON.parse(l)).reverse().find((e) => e.event === 'check');
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -210,8 +210,9 @@ async function runClaude(ws, session = {}) {
   const r = await spawnAsync('claude', a, { cwd: ws });
   const { result, assistantTurns } = claudeResult(r.stdout);
   const out = result ?? {};
+  const error = out.is_error && typeof out.result === 'string' ? out.result.slice(0, 160) : /rate limit|usage limit|overloaded|credit balance/i.test(r.stdout) && !out.usage ? 'client error: limit or overload' : null;
   const { model: used, tokens } = claudeUsage(out);
-  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? (assistantTurns || null), costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText: typeof out.result === 'string' ? out.result : '' };
+  return { client: 'claude-code', model: used ?? model ?? null, turns: out.num_turns ?? (assistantTurns || null), costUsd: out.total_cost_usd ?? null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText: typeof out.result === 'string' ? out.result : '', ...(error ? { error } : {}) };
 }
 
 /** codex exec `--json` streams one line per event; `turn.completed` carries the turn's own usage. */
@@ -239,7 +240,9 @@ async function runCodex(ws, session = {}) {
   // codex exec is one turn; the comparable unit is completed items (commands, messages, patches)
   let turns = 0;
   let finalText = '';
+  let error = null;
   for (const line of r.stdout.split('\n')) {
+    if (line.includes('"error"') && /usage limit|at capacity|rate limit|insufficient|quota/i.test(line)) error = (/"message":"([^"]{0,160})/.exec(line)?.[1] ?? 'client error').replace(/\\n/g, ' ');
     if (!line.includes('"item.completed"')) continue;
     turns += 1;
     try {
@@ -258,7 +261,7 @@ async function runCodex(ws, session = {}) {
     }
   }
   const tokens = codexUsage(r.stdout);
-  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText };
+  return { client: 'codex', model: usedModel, turns: turns || null, costUsd: null, ms: Date.now() - started, tokens, usage: tokens ? 'captured' : 'missing', finalText, ...(error ? { error } : {}) };
 }
 
 /** Two sessions on one workspace add up: turns, cost, time and tokens are the task's total; the model is the last one. */
@@ -302,6 +305,7 @@ async function runOneJob(job) {
   let asked = 0;
   for (const [i, session] of sessions.entries()) {
     const one = client === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
+    if (one.error) { run = { ...(run ? sumRuns(run, one) : one), error: one.error }; break; }
     run = run ? sumRuns(run, one) : one;
     if (meta(job.task).fakeUser && i < sessions.length - 1) asked += fakeUser(ws, job.task, one);
   }
@@ -316,7 +320,14 @@ async function runPool(jobs, size) {
   const results = [];
   async function worker() {
     let job;
-    while ((job = queue.shift())) results.push(await runOneJob(job));
+    while ((job = queue.shift())) {
+      const outcome = await runOneJob(job);
+      results.push(outcome);
+      if (outcome.run.error) {
+        console.error(`${client} ${harness} ${job.task}: ${outcome.run.error} — the arm stops here; a limit is not a measurement`);
+        queue.length = 0;
+      }
+    }
   }
   await Promise.all(Array.from({ length: Math.min(size, jobs.length) }, worker));
   return results;
@@ -325,7 +336,7 @@ async function runPool(jobs, size) {
 function report(outcome) {
   const { task, index, run, report: r, ws } = outcome;
   const cost = run.costUsd ?? '-';
-  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}`);
+  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}${run.error ? ` · ERROR ${run.error}` : ''}`);
 }
 
 const jobs = taskNames().flatMap((task) => Array.from({ length: runs }, (_, index) => ({ task, index })));
