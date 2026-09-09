@@ -1,104 +1,80 @@
 {
   "run": "r-1",
-  "at": "2026-09-09T01:58:47.803Z",
+  "at": "2026-09-09T03:58:45.408Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "1b5566ad4672",
+  "scenarioSet": "f380972f29f3",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 7543,
-      "tail": "npm notice run @su-record/vibe@4.1.21 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 3810,
+      "tail": "npm notice run @su-record/vibe@4.1.22 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
     },
     {
       "id": "tests",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 84557,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  37 passed (37)\n      Tests  194 passed (194)\n   Start at  01:59:05\n   Duration  82.83s (transform 3.15s, setup 0ms, import 9.27s, tests 117.59s, environment 14ms)"
+      "ms": 50886,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  37 passed (37)\n      Tests  195 passed (195)\n   Start at  03:58:54\n   Duration  49.37s (transform 3.11s, setup 0ms, import 6.99s, tests 62.53s, environment 11ms)"
     },
     {
-      "id": "next-line",
+      "id": "brownfield-task",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 6011,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  01:59:06\n   Duration  2.55s (transform 1.03s, setup 0ms, import 1.57s, tests 309ms, environment 0ms)"
+      "ms": 152,
+      "tail": "judge: 8 tasks (ambiguous-brief, brownfield, hidden-requirement, long-context, regression-trap, report, settlement, vibe-fix) · every check deterministic · settlement reference total 4500.5"
+    },
+    {
+      "id": "brownfield-judge",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 31250,
+      "tail": "direction judges: 1 tasks (brownfield) · wrong answer fails, right answer passes, for every one"
+    },
+    {
+      "id": "tokens-metric",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3689,
+      "tail": "\n\n Test Files  1 passed (1)\n      Tests  2 passed | 9 skipped (11)\n   Start at  03:58:55\n   Duration  845ms (transform 347ms, setup 0ms, import 439ms, tests 46ms, environment 0ms)\n\nbench-gate --self-test: 5 checks passed"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 307,
+      "ms": 108,
       "tail": "card.md 1016 bytes (limit 1024)"
-    },
-    {
-      "id": "router",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 312,
-      "tail": ""
-    },
-    {
-      "id": "direction-tasks",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 301,
-      "tail": "judge: 7 tasks (ambiguous-brief, hidden-requirement, long-context, regression-trap, report, settlement, vibe-fix) · every check deterministic · settlement reference total 4500.5"
-    },
-    {
-      "id": "direction-judges",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 31860,
-      "tail": "direction judges: 4 tasks (hidden-requirement, regression-trap, long-context, ambiguous-brief) · wrong answer fails, right answer passes, for every one"
-    },
-    {
-      "id": "compare-filters",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 5007,
-      "tail": "\n\n Test Files  1 passed (1)\n      Tests  1 passed | 9 skipped (10)\n   Start at  01:59:06\n   Duration  1.54s (transform 900ms, setup 0ms, import 1.03s, tests 22ms, environment 0ms)\n\nbench-gate --self-test: 4 checks passed"
-    },
-    {
-      "id": "on-arm-surfaces",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 13,
-      "tail": ""
-    },
-    {
-      "id": "check-observes",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 5117,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  3 passed (3)\n      Tests  3 passed | 22 skipped (25)\n   Start at  02:00:29\n   Duration  3.33s (transform 2.19s, setup 0ms, import 3.02s, tests 557ms, environment 0ms)"
     },
     {
       "id": "file-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 507,
-      "tail": "131 files · 8997 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits"
+      "ms": 1052,
+      "tail": "134 files · 9048 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits"
+    },
+    {
+      "id": "skills-size",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 56,
+      "tail": ""
     },
     {
       "id": "skill-names",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 468,
+      "ms": 77,
       "tail": "10 skills: names conform, references resolve, none tracked under .claude/skills or .codex/skills"
     },
     {
@@ -106,7 +82,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 95,
+      "ms": 106,
       "tail": "4 pack(s): antislop-code (207 lines, reviewer → maintainer), antislop-design (232 lines, markup-reviewer → art-director), antislop-en (374 lines, copy-editor → chief-editor), antislop-ko (408 lines, copy-editor → chief-editor) — reviewers and agents in step"
     },
     {
@@ -114,7 +90,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 48,
+      "ms": 72,
       "tail": "report voice in place: card rule 9 and vibe-handoff Report voice"
     },
     {
@@ -122,7 +98,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 13,
+      "ms": 19,
       "tail": ""
     },
     {
@@ -138,7 +114,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 387,
+      "ms": 173,
       "tail": "plugin tree matches package.json"
     },
     {
@@ -146,7 +122,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 63,
+      "ms": 8,
       "tail": ""
     },
     {
@@ -154,8 +130,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 278,
-      "tail": "72 files · 8327 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
+      "ms": 225,
+      "tail": "72 files · 8333 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
       "regression": true
     },
     {
@@ -163,7 +139,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 9,
+      "ms": 7,
       "tail": "",
       "regression": true
     },
@@ -172,8 +148,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 4224,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 5 skipped (7)\n   Start at  01:58:59\n   Duration  1.09s (transform 302ms, setup 0ms, import 379ms, tests 195ms, environment 0ms)",
+      "ms": 2621,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 5 skipped (7)\n   Start at  03:58:51\n   Duration  1.08s (transform 356ms, setup 0ms, import 439ms, tests 371ms, environment 0ms)",
       "regression": true
     },
     {
@@ -181,8 +157,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3822,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 10 skipped (11)\n   Start at  01:58:58\n   Duration  959ms (transform 485ms, setup 0ms, import 621ms, tests 34ms, environment 0ms)",
+      "ms": 2546,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 10 skipped (11)\n   Start at  03:58:51\n   Duration  764ms (transform 417ms, setup 0ms, import 505ms, tests 21ms, environment 0ms)",
       "regression": true
     },
     {
@@ -190,8 +166,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2675,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  01:58:57\n   Duration  541ms (transform 141ms, setup 0ms, import 198ms, tests 51ms, environment 0ms)",
+      "ms": 2531,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  03:58:51\n   Duration  791ms (transform 180ms, setup 0ms, import 235ms, tests 26ms, environment 1ms)",
       "regression": true
     },
     {
@@ -199,8 +175,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3118,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 13 skipped (15)\n   Start at  01:59:01\n   Duration  1.81s (transform 891ms, setup 0ms, import 429ms, tests 942ms, environment 0ms)",
+      "ms": 3419,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 13 skipped (15)\n   Start at  03:58:51\n   Duration  1.83s (transform 1.07s, setup 0ms, import 575ms, tests 1.03s, environment 0ms)",
       "regression": true
     }
   ]

@@ -51,12 +51,12 @@ delete env.CLAUDE_PROJECT_DIR;
 // The overhead set is the three saturated tasks from the first clean bench; the direction set is
 // the four the bare model is expected to fail at least some of the time. `--set` picks a named
 // group; `--task` (still the default) picks one task, or every directory under tasks/ with `all`.
-const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'] };
-SETS.all = [...SETS.overhead, ...SETS.direction];
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'], context: ['brownfield'] };
+SETS.all = [...SETS.overhead, ...SETS.direction, ...SETS.context];
 
 function taskNames() {
   if (setArg) {
-    if (!SETS[setArg]) throw new Error(`unknown --set ${setArg} (overhead|direction|all)`);
+    if (!SETS[setArg]) throw new Error(`unknown --set ${setArg} (overhead|direction|context|all)`);
     return SETS[setArg];
   }
   if (taskArg !== 'all') return [taskArg];
@@ -67,6 +67,9 @@ function prepare(task) {
   const taskDir = path.join(here, 'tasks', task);
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-bench-${client}-${harness}-`));
   for (const f of fs.readdirSync(taskDir)) if (f !== 'judge') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
+  // a task may prepare its workspace itself (brownfield: this repository archived and built); the judge stays hidden
+  const prep = path.join(taskDir, 'judge', 'prepare.cjs');
+  if (fs.existsSync(prep)) execFileSync('node', [prep], { cwd: ws, env: { ...env, VIBE_BENCH_REPO: repo }, stdio: 'ignore' });
   execFileSync('git', ['init', '-q'], { cwd: ws });
   if (harness === 'on') {
     // card, skills and hook go into the workspace itself — the `off` arm must stay bare

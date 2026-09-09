@@ -13,7 +13,10 @@ const REQUIRED_RUNS = 5;
 export const SETS = {
   overhead: ['settlement', 'vibe-fix', 'report'],
   direction: ['hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'],
+  context: ['brownfield'],
 };
+const TOKENS_FACTOR = 0.7;
+const weighted = (t) => t.input + 0.1 * t.cacheRead + 1.25 * t.cacheWrite;
 const TURNS_ALLOWANCE = 4;
 const MS_FACTOR = 1.5;
 
@@ -59,6 +62,21 @@ function overheadVerdict(task, lines) {
   return null;
 }
 
+/** Context: never worse on checks, and `on` weighted input tokens at most 0.7 × `off`, per client, over runs both arms passed. */
+function contextVerdict(task, lines) {
+  for (const client of new Set(lines.map((l) => l.client))) {
+    const { on, off } = arms(lines, client);
+    if (on.length < REQUIRED_RUNS || off.length < REQUIRED_RUNS) continue;
+    if (mean(on, 'passed') < mean(off, 'passed')) return `${task}: ${client} — on ${mean(on, 'passed').toFixed(2)} checks is worse than off ${mean(off, 'passed').toFixed(2)}`;
+    const tok = (arm) => { const v = arm.filter((l) => l.armPassed && l.tokens).map((l) => weighted(l.tokens)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+    const onTok = tok(on);
+    const offTok = tok(off);
+    if (onTok === null || offTok === null) return `${task}: ${client} — no token counts to compare`;
+    if (onTok > offTok * TOKENS_FACTOR) return `${task}: ${client} — on ${Math.round(onTok)} weighted tokens is over off ${Math.round(offTok)} × ${TOKENS_FACTOR}`;
+  }
+  return null;
+}
+
 /** Direction: per client, the tasks where `on` scores higher on checks; fewer than two is a failure that names the rest. */
 function directionVerdict(tasksLines) {
   const clients = new Set(tasksLines.flatMap(([, lines]) => lines.map((l) => l.client)));
@@ -84,6 +102,11 @@ export function gate(lines, sets = SETS) {
     const reason = mine.length === 0 ? `overhead: missing task ${task}` : missingArms(task, mine) ?? overheadVerdict(task, mine);
     results.push({ set: 'overhead', task, ok: reason === null, reason: reason ?? `overhead: ${task} ok` });
   }
+  for (const task of sets.context ?? []) {
+    const mine = lines.filter((l) => l.task === task);
+    const reason = mine.length === 0 ? `context: missing task ${task}` : missingArms(task, mine) ?? contextVerdict(task, mine);
+    results.push({ set: 'context', task, ok: reason === null, reason: reason ?? `context: ${task} ok` });
+  }
   const direction = sets.direction.map((task) => [task, lines.filter((l) => l.task === task)]);
   for (const [task, mine] of direction) {
     const reason = mine.length === 0 ? `direction: missing task ${task}` : missingArms(task, mine);
@@ -101,8 +124,8 @@ function readLedger(file) {
   return fs.readFileSync(file, 'utf-8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }
 
-function line(task, client, harness, i, passed, turns, ms) {
-  return { at: new Date(Date.now() + i * 1000).toISOString(), event: 'check', client, harness, task, passed, failed: 0, turns, ms, armPassed: true };
+function line(task, client, harness, i, passed, turns, ms, tokens) {
+  return { at: new Date(Date.now() + i * 1000).toISOString(), event: 'check', client, harness, task, passed, failed: 0, turns, ms, armPassed: true, tokens: tokens ?? { input: harness === 'on' ? 1000 : 5000, cacheRead: harness === 'on' ? 10000 : 30000, cacheWrite: 0, output: 100 } };
 }
 
 function selfTest() {
@@ -110,6 +133,7 @@ function selfTest() {
   let i = 0;
   for (const task of SETS.overhead) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 3, 6, 20000), line(task, client, 'off', (i += 1), 3, 4, 15000));
   for (const task of SETS.direction) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 3, 9, 30000), line(task, client, 'off', (i += 1), task === 'long-context' ? 3 : 1, 5, 20000));
+  for (const task of SETS.context) for (const client of ['claude-code', 'codex']) for (let k = 0; k < 5; k += 1) good.push(line(task, client, 'on', (i += 1), 5, 9, 30000), line(task, client, 'off', (i += 1), 5, 5, 20000));
   const passing = gate(good);
   if (!passing.ok) throw new Error(`self-test: a good ledger failed: ${passing.reason}`);
   const heavy = good.map((l) => (l.task === 'report' && l.harness === 'on' ? { ...l, turns: 20 } : l));
@@ -117,9 +141,11 @@ function selfTest() {
   const flat = good.map((l) => (SETS.direction.includes(l.task) ? { ...l, passed: 3 } : l));
   const fv = gate(flat);
   if (fv.ok || !fv.reason.includes('only 0 task(s) separate')) throw new Error('self-test: a flat direction set passed');
+  const hungry = good.map((l) => (l.task === 'brownfield' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 30000, cacheWrite: 0, output: 1 } } : l));
+  if (gate(hungry).ok || !gate(hungry).reason.includes('weighted tokens is over')) throw new Error('self-test: the token rule was not enforced');
   const missing = good.filter((l) => l.task !== 'vibe-fix');
   if (gate(missing).ok || !gate(missing).reason.includes('missing task vibe-fix')) throw new Error('self-test: a missing task passed');
-  process.stdout.write('bench-gate --self-test: 4 checks passed\n');
+  process.stdout.write('bench-gate --self-test: 5 checks passed\n');
 }
 
 const here = path.dirname(new URL(import.meta.url).pathname);
