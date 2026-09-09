@@ -1,4 +1,6 @@
 {
-  "README.md": "032a97f30300d168188ffe189d966b9eee0b1dd8",
-  "bench/claims/2026-09-09-4.1.22e.md": "a5bba7f1246eda78d4d4c774b4b72aa8b947f6d9"
+  "README.md": "9615462c1804284e345180907de3b19da01d0c13",
+  "src/cli/setup.ts": "0e3ed8d5fa88476d86b450386779f2de6802b533",
+  "src/core/capabilities.test.ts": "ece103fa3d1b87a84290d4c90c7da2b6f3d40324",
+  "src/core/capabilities.ts": "cb8da02b65ffd70dc3ab0f514360a5b1f91b8f37"
 }

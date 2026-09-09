@@ -28,7 +28,6 @@ export const CAPABILITIES: readonly Capability[] = [
   { tool: 'pdftotext', probe: { command: ['pdftotext', '-v'] }, serves: ['read pdf'], fallback: 'the built-in pdf reader', install: 'apt install poppler-utils · brew install poppler' },
   { tool: 'agent-browser', probe: { command: ['agent-browser', '--version'] }, serves: ['screenshot'], fallback: 'the design review judges the source alone', install: 'npm i -g agent-browser' },
   { tool: 'playwright', probe: { command: ['playwright', '--version'] }, serves: ['screenshot'], fallback: 'the design review judges the source alone', install: 'npm i -g playwright && playwright install chromium' },
-  { tool: 'last30days', probe: { dirs: ['.claude/skills/last30days', '.codex/skills/last30days', '.agents/skills/last30days'] }, serves: ['research'], fallback: 'vibe research — GitHub, last 30 days', install: 'vibe skill add mvanhorn/last30days-skill --yes' },
 ];
 
 export interface Detected extends Capability {
@@ -77,7 +76,3 @@ export function proposeTools(root: string, signals: { files: number; design: boo
   return out;
 }
 
-/** The status table: tool · present · serves · fallback. */
-export function capabilityLines(root: string): string[] {
-  return detectCapabilities(root).map((c) => `  ${c.present ? '✔' : '·'} ${c.tool.padEnd(13)} ${c.serves.join(', ').padEnd(18)} ${c.present ? c.detail : `absent — ${c.fallback}`}`);
-}
