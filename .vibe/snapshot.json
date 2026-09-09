@@ -1,13 +1,7 @@
 {
-  "README.md": "6bc82327b11850e3762c62c054ddc99c1f406387",
-  "bench/README.md": "306116e9b34cebf30e2d421bebc1ae396482afcd",
-  "bench/claims/2026-09-09-4.1.22b.md": "8aeff07a3e5169090599eb89b42749ec480ddf24",
-  "bench/run.js": "b728f4f944105d85c10b95c3a880bd0fb3a27a10",
-  "card.md": "5502b95d4e452f460ffcaa2dc27aa583fc4dd170",
-  "checks/bench-gate.js": "de2546c413a71a71a072a70c9fbb45dea705cdc6",
-  "skills/vibe/SKILL.md": "91cea91fe6037e912b7a8bbd18feb42d589faba8",
-  "src/cli/work.ts": "f50f91489ae7a57e396cf8c4bc98249833360532",
-  "src/core/view.test.ts": "115c6be9dac67d7fb9610999488eb5da5c087852",
-  "src/core/view.ts": "2935c103f205505c9541dd3e3335ffdf24284632",
-  "bench/claims/2026-09-09-4.1.22c.md": "f6d972ea2afb9cfca0903b24f90003bc8027a811"
+  "skills/vibe-build/SKILL.md": "40b64eb56bbaf316f6973dbd908ee27281c71577",
+  "skills/vibe-handoff/SKILL.md": "4ce6e63e640d2c7e68a676fb830b9d53b20f3a86",
+  "skills/vibe-prove/SKILL.md": "647aaebb69d12ea16792dd9b6cbd675aa42d2719",
+  "src/core/view.test.ts": "7f7426036d900f4bfd66654317a76c983aa02bb7",
+  "src/core/view.ts": "af1b93955337f56376acc8556d0b6a228f8ec49c"
 }

@@ -1,6 +1,6 @@
 ---
 name: vibe-build
-description: Build — implement every approved scenario, then one `vibe check --all`; `vibe context` and `vibe check <id>` only for a scenario that failed. Never say "done".
+description: For a `size: full` task only — parallel worktrees, irreversible scenarios, a failed scenario's `vibe context`. A `size: small` task needs no skill — build everything, one `vibe check --all`.
 user-invocable: false
 ---
 

@@ -69,7 +69,7 @@ function nextLine(state: State, stage: Stage, remaining: string[], inbox: string
   if (inbox.length > 0) return `answer inbox [${inbox.join(', ')}] — then continue`;
   if (stage === 'discover') return 'discover — the vibe-discover skill: what counts as success, at most three questions';
   if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, research, one approval message; wait for "yes"';
-  if (state === 'DONE') return `report — DONE r-${run}; say what was built and which checks passed; write HANDOFF.md only if the intent asks`;
+  if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
   const tail = size === 'small' ? 'then one vibe check --all' : 'then vibe check --all; on a failure, vibe context <id> then vibe check <id>';
   return `build ${remaining.join(', ')} — ${tail}`;

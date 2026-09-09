@@ -39,7 +39,7 @@ describe('vibe state — the next line is the procedure', () => {
     writeState(root, { ...readState(root), state: 'DONE', runs: 3 });
     fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-3' }, b: { last: 'pass', at: 'now', run: 'r-3' }, c: { last: 'pass', at: 'now', run: 'r-3' } }));
     const done = buildStateView(root, root);
-    expect(done.next).toBe('report — DONE r-3; say what was built and which checks passed; write HANDOFF.md only if the intent asks');
+    expect(done.next).toBe('report — DONE r-3: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks');
   });
 
   it('size: a review check, a fifth scenario or a needs chain two deep makes a task full', () => {

@@ -37,7 +37,7 @@
   given: an approved intent
   when: vibe state and vibe check run
   then: each scenario line names its check, the check output ends with the next line, and the card starts at vibe state
-  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'next      ' src/cli/work.ts && grep -q 'Start with `vibe state`' card.md", expect: 0, timeoutMs: 120000 }
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'next      ' src/cli/work.ts && grep -q 'Start with `vibe state`' card.md && grep -q 'needs no skill' skills/vibe-build/SKILL.md skills/vibe-prove/SKILL.md skills/vibe-handoff/SKILL.md && grep -q 'no further reads' src/core/view.ts", expect: 0, timeoutMs: 120000 }
 
 - id: usage-capture
   then: the bench runs claude with stream-json and reads the last result event; a run without usage is named

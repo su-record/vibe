@@ -1,6 +1,6 @@
 ---
 name: vibe-prove
-description: Prove — run every scenario and regression at once with `vibe check --all` to reach DONE. On STUCK, stop and ask.
+description: Only on STUCK (the same failure twice) — read `vibe context <id>`, answer the inbox, `vibe check --all`. A passing task needs no skill.
 user-invocable: false
 ---
 
