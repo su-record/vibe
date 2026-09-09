@@ -27,6 +27,9 @@ The map did not save tokens here: on a 54-file repository with a caching client,
 - Pre-registered for the direction set: per client, `on` scores higher on checks (`difference-observed`) on `irreversible-trap`; on `session-split`, `on` total turns ≤ `off` total turns with checks not worse. A task that does not separate is named and retired.
 - `checks/direction-judges.js` proves both judges on a wrong and a right answer.
 
+### H · A running Codex session survives an update
+- Codex caches the plugin per version (`~/.codex/plugins/cache/<marketplace>/vibe/<version>/`) and a session resolves `${PLUGIN_ROOT}` once, at start. Re-registering removed that directory, so every hook of a session still running under the old version exited 1 until it restarted (reported by the user on 2026-09-09: a session on 4.1.12 after the server moved to 4.1.20). Now the version just replaced is kept — put back after the add when Codex removed it — and only versions older than that one are swept; the register report and the README say a session keeps its hooks until it restarts.
+
 ### G · The promise, sized to the numbers
 - README's opening says what the benches support: vibe prevents the wrong direction, the irreversible action and the redo across sessions, at a cost of at most two turns per task; it does not claim token savings on a task the model finishes in one pass, and the bench numbers are linked.
 

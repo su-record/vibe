@@ -43,6 +43,13 @@
   then: both judges separate, the hook blocks the reset, and SETS.direction names exactly the two
   check: { type: run, cmd: "node checks/direction-judges.js irreversible-trap session-split && npx vitest run src/install/notify.test.ts -t 'gate' && grep -q \"direction: \\['irreversible-trap', 'session-split'\\]\" checks/bench-gate.js", expect: 0, timeoutMs: 600000 }
 
+- id: codex-cache-kept
+  needs: [build]
+  given: Codex holding 0.0.1 with a hook file, and 0.0.0 beside it
+  when: vibe re-registers the package version
+  then: 0.0.1 stays with its hook, 0.0.0 is swept, the new version is added
+  check: { type: run, cmd: "npx vitest run src/install/register.test.ts -t 'codex behind' && grep -q 'keeps its hooks until it restarts' README.md", expect: 0, timeoutMs: 120000 }
+
 - id: promise
   then: README opens with the promise the benches support and links the claims
   check: { type: run, cmd: "grep -q 'at most two turns' README.md && grep -q 'bench/claims' README.md", expect: 0 }
