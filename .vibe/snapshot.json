@@ -1,7 +1,4 @@
 {
-  "skills/vibe-build/SKILL.md": "40b64eb56bbaf316f6973dbd908ee27281c71577",
-  "skills/vibe-handoff/SKILL.md": "4ce6e63e640d2c7e68a676fb830b9d53b20f3a86",
-  "skills/vibe-prove/SKILL.md": "647aaebb69d12ea16792dd9b6cbd675aa42d2719",
-  "src/core/view.test.ts": "7f7426036d900f4bfd66654317a76c983aa02bb7",
-  "src/core/view.ts": "af1b93955337f56376acc8556d0b6a228f8ec49c"
+  "README.md": "d30193d77a92398297c7fcfc97ba03b61897650d",
+  "bench/claims/2026-09-09-4.1.22d.md": "340f224d15d5efdc821b077d7399ed7dabcc9ae1"
 }

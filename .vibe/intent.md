@@ -34,7 +34,7 @@ The map did not save tokens here: on a 54-file repository with a caching client,
 - Codex caches the plugin per version (`~/.codex/plugins/cache/<marketplace>/vibe/<version>/`) and a session resolves `${PLUGIN_ROOT}` once, at start. Re-registering removed that directory, so every hook of a session still running under the old version exited 1 until it restarted (reported by the user on 2026-09-09: a session on 4.1.12 after the server moved to 4.1.20). Now the version just replaced is kept — put back after the add when Codex removed it — and only versions older than that one are swept; the register report and the README say a session keeps its hooks until it restarts.
 
 ### G · The promise, sized to the numbers
-- README's opening says what the benches support: vibe prevents the wrong direction, the irreversible action and the redo across sessions, at a cost of at most two turns per task; it does not claim token savings on a task the model finishes in one pass, and the bench numbers are linked.
+- README's opening says what the benches support and nothing more, in measured numbers: the cost per task over the bare model on each client, what a session split in two cost, what the 54-file repository cost; no prevention number, because the bare model never took the bait; no token saving on a one-pass task. Every number links to `bench/claims/`, written before the run. The +2 rule stays in the gate as the next release's target, and the next cut is named (`size: full` should mean the build skill applies, not a count of five).
 
 ## Constraints
 - The judge is deterministic; no model judges. The task's reference patch is not shown to either arm.
