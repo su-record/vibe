@@ -228,7 +228,9 @@ function codexUsage(stdout) {
       const event = JSON.parse(line);
       const u = event.usage ?? event.item?.usage ?? null;
       if (!u) continue;
-      return { input: u.input_tokens ?? u.inputTokens ?? 0, cacheRead: u.cached_input_tokens ?? u.cachedInputTokens ?? 0, cacheWrite: 0, output: u.output_tokens ?? u.outputTokens ?? 0 };
+      // codex's input_tokens includes cached_input_tokens; the bench's input is the uncached part, so the cache weight is not paid twice
+      const cached = u.cached_input_tokens ?? u.cachedInputTokens ?? 0;
+      return { input: Math.max(0, (u.input_tokens ?? u.inputTokens ?? 0) - cached), cacheRead: cached, cacheWrite: 0, output: u.output_tokens ?? u.outputTokens ?? 0 };
     } catch {
       /* not this line */
     }

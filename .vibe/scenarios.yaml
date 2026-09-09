@@ -23,6 +23,13 @@
   then: the dependent is blocked, not run
   check: { type: run, cmd: "npx vitest run src/core/check.test.ts -t 'recheck'", expect: 0, timeoutMs: 120000 }
 
+- id: state-files
+  needs: [build]
+  given: a scenario whose check touches a file
+  when: vibe state runs
+  then: the scenario line names the files it is about, and the card says to read those and nothing else until a check fails
+  check: { type: run, cmd: "npx vitest run src/core/view.test.ts -t 'next' && grep -q 'files the state names' card.md && grep -q 'filesFor' src/core/context.ts", expect: 0, timeoutMs: 120000 }
+
 - id: hook-segments
   needs: [build]
   given: the irreversible policy
