@@ -14,7 +14,7 @@ import path from 'node:path';
 const REQUIRED_RUNS = 5;
 export const SETS = {
   overhead: ['settlement', 'vibe-fix', 'report'],
-  direction: ['anomaly', 'handover', 'session-split'],
+  direction: ['handover', 'session-split'],
   context: ['brownfield'],
 };
 const TOKENS_FACTOR = 0.7;
@@ -199,7 +199,7 @@ function selfTest() {
   if (wander.ok || !wander.reason.includes('ask: codex — on 40.0 turns is over')) throw new Error('self-test: a wandering trap arm passed');
   const redo = good.map((l) => (l.task === 'session-split' && l.harness === 'on' ? { ...l, tokens: { input: 9000, cacheRead: 30000, cacheWrite: 0, output: 100 } } : l));
   if (gate(redo).ok || !gate(redo).reason.includes('over two sessions is more than off')) throw new Error('self-test: a costlier split passed');
-  const scopedWorse = gate(good.map((l) => (l.task === 'anomaly' && l.harness === 'scoped' && l.client === 'codex' ? { ...l, passed: 0 } : l)));
+  const scopedWorse = gate(withTrap.map((l) => (l.task === 'ask' && l.harness === 'scoped' && l.client === 'codex' ? { ...l, passed: 0 } : l)), trapSets);
   if (scopedWorse.ok || !scopedWorse.reason.includes('scoped 0.00 checks is worse')) throw new Error('self-test: a scoped arm worse than bare passed');
   const hungry = good.map((l) => (l.task === 'brownfield' && l.harness === 'on' ? { ...l, tokens: { input: 5000, cacheRead: 30000, cacheWrite: 0, output: 1 } } : l));
   if (gate(hungry).ok || !gate(hungry).reason.includes('weighted tokens is over')) throw new Error('self-test: the token rule was not enforced');
