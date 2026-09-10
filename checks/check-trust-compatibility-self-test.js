@@ -7,7 +7,7 @@ import { requireCI, checkMigrationDocument, readinessCause } from '../bench/fde/
 import { capture, runClient } from '../bench/fde/clients.js';
 import { recordSession } from '../bench/fde/accounting.js';
 import { attemptEvidence, readLines } from '../bench/fde/evidence.js';
-import { ensurePrivateDirectory, auditDiagnostics, windowsAclError, windowsAclEnvironment } from '../bench/fde/private-artifacts.js';
+import { ensurePrivateDirectory, auditDiagnostics, windowsAclError, windowsAclEnvironment, writeDiagnostic } from '../bench/fde/private-artifacts.js';
 import { contentSummary } from '../bench/fde/privacy.js';
 import { captureCases } from './check-trust-capture-self-test.js';
 
@@ -70,11 +70,20 @@ async function readinessCases(root) {
   assert.throws(() => checkMigrationDocument(document), /MIGRATION_DOCUMENT/);
 }
 
+function privateFileCase(diagnostics) {
+  const payload = { text: marker }, expected = contentSummary(JSON.stringify(payload));
+  // Check a fresh file directly so an ACL failure retains its fixed cause before capture maps errors.
+  const reference = writeDiagnostic(diagnostics, 'fresh-file-contract', 'transport', payload);
+  assert.equal(reference.private, true); assert.equal(reference.complete, true);
+  assert.equal(reference.bytes, expected.bytes); assert.equal(reference.sha256, expected.sha256);
+  assert.deepEqual(JSON.parse(fs.readFileSync(reference.path, 'utf8')), payload);
+}
+
 async function privacyCase(root, enabled) {
   const workspace = path.join(root, enabled ? 'enabled-workspace' : 'default-workspace'); fs.mkdirSync(workspace);
   const directory = path.join(root, enabled ? 'private-enabled' : 'private-disabled');
   const diagnostics = { enabled, directory: enabled ? directory : null };
-  if (enabled) ensurePrivateDirectory(directory, [workspace]);
+  if (enabled) { ensurePrivateDirectory(directory, [workspace]); privateFileCase(diagnostics); }
   const script = path.join(workspace, 'transport.cjs');
   const events = [{ type: 'item.completed', item: { type: 'command_execution', command: marker, aggregated_output: marker } },
     { type: 'item.completed', item: { type: 'agent_message', text: marker } },
