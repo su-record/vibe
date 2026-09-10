@@ -69,6 +69,8 @@ function validateTask(task, harness) {
   assert.deepEqual(agentEvidence(ws).verification, verification);
   assert.deepEqual(treeManifest(path.join(snapshot.path, 'files')), snapshot.manifest, 'frozen scope changed');
   fs.writeFileSync(path.join(ws, task === 'ask' ? 'quote.txt' : 'out/summary.json'), task === 'ask' ? 'TOTAL: 0\n' : '{}');
+  // Both contracts execute the generator; corrupting only its output lets it repair the fixture.
+  if (task === 'ask') fs.writeFileSync(path.join(ws, 'quote.cjs'), "require('node:fs').writeFileSync('quote.txt', 'TOTAL: 0\\n');\n");
   const broken = vibeSync(ws, ['check', '--all'], context);
   assert.equal(broken.status, 1, `${task}/${harness} public check accepted broken output`);
   assert.ok(!/VIBE_KEY_EXPECTED|judge-time only/.test(broken.stdout), 'public failure depends on judge infrastructure');
@@ -80,6 +82,10 @@ try {
   for (const task of ['anomaly', 'ask']) for (const harness of ['off', 'on', 'scoped']) validateTask(task, harness);
   for (const script of ['bench-judge.js', 'bench-no-key.js']) execFileSync(process.execPath, [path.join(repo, 'checks', script)], { cwd: repo, env, stdio: 'inherit', timeout: 240000 });
   console.log('bench-public: six real preparations, runnable public checks, private-only grading, immutable agent scopes');
+} catch (error) {
+  console.error(error.stack);
+  console.error(`bench-public failed: ${error.message.split('\n')[0]}`);
+  process.exitCode = 1;
 } finally {
   for (const directory of cleanup.reverse()) fs.rmSync(directory, { recursive: true, force: true });
 }
