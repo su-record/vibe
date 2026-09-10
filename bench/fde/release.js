@@ -3,6 +3,7 @@ import { digest } from './evidence.js';
 import { weightedInput, addTokens } from './clients.js';
 import { failureCode } from './privacy.js';
 import { completeCapture } from './capture-policy.js';
+import { sliceReport } from './read-slices.js';
 
 const mean = (rows, get) => rows.length ? rows.reduce((sum, row) => sum + get(row), 0) / rows.length : null;
 const tokenValues = (tokens) => tokens && ['input', 'cacheRead', 'cacheWrite', 'output'].every((key) => Number.isFinite(tokens[key]) && tokens[key] >= 0);
@@ -126,7 +127,7 @@ export function evaluate(protocol, records, requirements, ci) {
   const cells = compareQuality(usable, qualityProblems);
   const costProblems = [];
   const costs = compareCost(usable, costProblems);
-  return { ok: !evidenceProblems.length && !qualityProblems.length && !costProblems.length, limitation: ASSESSMENT_LIMITATION,
+  return { sliceReads: sliceReport(records, CLIENTS, ARMS), ok: !evidenceProblems.length && !qualityProblems.length && !costProblems.length, limitation: ASSESSMENT_LIMITATION,
     evidence: { ok: !evidenceProblems.length, problems: evidenceProblems, planned: 60, recorded: rows.length, usable: usable.length,
       apiOrHarnessErrors: rows.filter((r) => r.error).length, stalled: rows.filter((r) => r.stalled).length, excluded },
     quality: { ok: !qualityProblems.length && !evidenceProblems.length, problems: qualityProblems, cells },
