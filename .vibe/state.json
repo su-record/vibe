@@ -1,12 +1,12 @@
 {
-  "state": "RUNNING",
+  "state": "STUCK",
   "intentHash": "813870424ca93965",
   "approvedAt": "2026-09-09T21:06:41.494Z",
-  "runs": 2,
-  "failStreak": 1,
-  "lastFailHash": "a507f294",
+  "runs": 5,
+  "failStreak": 2,
+  "lastFailHash": "798aac42",
   "doneAt": null,
   "doneTree": null,
   "abandonedReason": null,
-  "updatedAt": "2026-09-09T21:20:18.073Z"
+  "updatedAt": "2026-09-10T00:48:33.684Z"
 }

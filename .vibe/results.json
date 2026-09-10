@@ -1,86 +1,86 @@
 {
   "build": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "scoped-arm": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "anomaly-task": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "handover-task": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "gate-is-release": {
     "last": "fail",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "size": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "card-size": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "under-load": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "r-1-vibe-size-misreads-template-literal": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "r-2-ci-counted-the-language-packs": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "r-3-codex-plugin-never-followed-update": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "r-4-installhookfile-kept-only-last-entry": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "r-5-vibe-size-read-a-quote-or-a-backtick": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   },
   "r-6-the-entry-guard-read-its-own-path-fr": {
     "last": "pass",
-    "at": "2026-09-09T21:15:27.250Z",
-    "run": "r-2",
-    "tree": "2dc0c2959819eb10"
+    "at": "2026-09-10T00:42:21.832Z",
+    "run": "r-5",
+    "tree": "a9eb49b0e93b19a0"
   }
 }
