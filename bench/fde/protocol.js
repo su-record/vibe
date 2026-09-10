@@ -46,8 +46,12 @@ export function validateCandidate(protocol, repo) {
   const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
   if (git('rev-parse', 'HEAD') !== protocol.candidateRevision) throw new Error('candidate checkout does not match the measured/CI revision');
   const changed = [...git('diff', 'HEAD', '--name-only').split('\n'), ...git('ls-files', '--others', '--exclude-standard').split('\n')];
-  const runtime = /^(?:\.vibe\/(?:state\.json|results\.json|snapshot\.json|ledger\.jsonl|inbox\.jsonl|evidence\/r-\d+\.json|metrics\/current-run\.jsonl?)|bench\/claims\/4\.1\.26\/.*)$/;
+  const runtime = /^(?:\.vibe\/(?:state\.json|results\.json|snapshot\.json|ledger\.jsonl|inbox\.jsonl|evidence\/r-\d+\.json|runs\/r-[1-9]\d*|metrics\/current-run\.jsonl?)|bench\/claims\/4\.1\.26\/.*)$/;
   if (changed.some((file) => file && !runtime.test(file))) throw new Error('candidate source has edits outside generated verification/cohort evidence');
+  for (const file of changed.filter((name) => name.startsWith('.vibe/runs/'))) {
+    const stat = fs.lstatSync(path.join(repo, file), { throwIfNoEntry: false });
+    if (!stat?.isFile() || stat.size !== 0) throw new Error('candidate run reservation must be an empty regular file');
+  }
   if (productHash(repo) !== protocol.products?.candidate) throw new Error('candidate executable product differs from frozen evidence');
 }
 
