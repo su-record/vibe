@@ -15,10 +15,16 @@ const CLI_SRC = path.join(here, 'cli.ts');
 const TSX = path.join(here, '..', 'node_modules', '.bin', 'tsx');
 
 let root: string;
+let fixtureDir: string;
+let fixtureHome: string;
 beforeEach(() => {
-  root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-cli-'));
+  fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-cli-'));
+  root = path.join(fixtureDir, 'project');
+  fixtureHome = path.join(fixtureDir, 'home');
+  fs.mkdirSync(root);
+  fs.mkdirSync(fixtureHome);
 });
-afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
+afterEach(() => fs.rmSync(fixtureDir, { recursive: true, force: true }));
 
 interface Run {
   status: number;
@@ -31,7 +37,7 @@ function vibe(args: string[], input?: string, env: Record<string, string> = {}, 
     cwd,
     encoding: 'utf-8',
     input,
-    env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: 'test-client', ...env }, // the bench and `vibe check` set VIBE_SKIP_SETUP; the tests install into $HOME=root
+    env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: 'test-client', ...env }, // setup uses the fixture home, separate from the project and its records
     timeout: 60000,
   });
   let json: unknown = null;
@@ -54,11 +60,11 @@ describe('CLI — from request to DONE', () => {
     const before = vibe(['state']);
     expect((before.json as { state: string }).state).toBe('NONE');
     expect(fs.existsSync(path.join(root, '.vibe'))).toBe(false); // a read leaves no trace
-    expect(fs.existsSync(path.join(root, '.claude', 'CLAUDE.md'))).toBe(false); // and repairs nothing
+    expect(fs.existsSync(path.join(fixtureHome, '.claude', 'CLAUDE.md'))).toBe(false); // and repairs nothing
     expect(vibe(['setup']).status).toBe(0);
-    expect(fs.readFileSync(path.join(root, '.claude', 'CLAUDE.md'), 'utf-8')).toContain('<!-- vibe:start -->');
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
-    expect(fs.readFileSync(path.join(root, '.claude', 'settings.json'), 'utf-8')).toContain('hooks/notify.js');
+    expect(fs.readFileSync(path.join(fixtureHome, '.claude', 'CLAUDE.md'), 'utf-8')).toContain('<!-- vibe:start -->');
+    expect(fs.existsSync(path.join(fixtureHome, '.claude', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
+    expect(fs.readFileSync(path.join(fixtureHome, '.claude', 'settings.json'), 'utf-8')).toContain('hooks/notify.js');
     expect(fs.existsSync(path.join(root, 'CLAUDE.md'))).toBe(false); // nothing in the project itself
 
     const tokens = vibe(['tokens', 'strict']);
@@ -137,10 +143,10 @@ describe('CLI — from request to DONE', () => {
 
   it('continues across clients — approved under one, checked under another, both in the ledger', () => {
     const as = (client: string, args: string[], input?: string): Run => {
-      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: client }, timeout: 60000 });
+      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: client }, timeout: 60000 });
       return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
     };
-    fs.mkdirSync(path.join(root, '.codex')); // a Codex home is present, so both clients get the surfaces
+    fs.mkdirSync(path.join(fixtureHome, '.codex')); // a Codex home is present, so both clients get the surfaces
     as('claude-code', ['setup']);
     as('claude-code', ['intent', 'draft', '--stdin'], HELLO);
     expect(as('claude-code', ['approve']).status).toBe(0);
@@ -152,9 +158,9 @@ describe('CLI — from request to DONE', () => {
     expect(ledger.find((e) => e.event === 'approve')?.client).toBe('claude-code');
     expect(ledger.find((e) => e.event === 'done')?.client).toBe('codex');
     expect((as('chatgpt', ['state']).json as { state: string }).state).toBe('DONE');
-    expect(fs.existsSync(path.join(root, '.codex', 'hooks.json'))).toBe(true);
-    expect(fs.existsSync(path.join(root, '.codex', 'skills', 'vibe-scope', 'SKILL.md'))).toBe(true);
-    expect(fs.readFileSync(path.join(root, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
+    expect(fs.existsSync(path.join(fixtureHome, '.codex', 'hooks.json'))).toBe(true);
+    expect(fs.existsSync(path.join(fixtureHome, '.codex', 'skills', 'vibe-scope', 'SKILL.md'))).toBe(true);
+    expect(fs.readFileSync(path.join(fixtureHome, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
   });
 
   it('the resolved root is visible: state carries root and a notice from a subdirectory; a missing command names the cwd', () => {
@@ -181,14 +187,14 @@ describe('CLI — from request to DONE', () => {
   it('status reports version, the global surfaces and the project; a missing skill is named by status and repaired by setup, not by a query', () => {
     vibe(['setup']);
     vibe(['tokens', 'off']);
-    fs.rmSync(path.join(root, '.claude', 'skills', 'vibe-prove'), { recursive: true });
+    fs.rmSync(path.join(fixtureHome, '.claude', 'skills', 'vibe-prove'), { recursive: true });
     vibe(['state']);
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(false); // a query repaired nothing
+    expect(fs.existsSync(path.join(fixtureHome, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(false); // a query repaired nothing
     const status = vibe(['status']);
     expect(status.status).toBe(0);
     expect(status.json).toMatchObject({ version: expect.stringMatching(/^\d+\.\d+\.\d+/), clients: { claude: { card: true, skills: 5, hook: true, current: false } }, project: { vibe: true, state: 'NONE' } });
     expect(vibe(['setup']).status).toBe(0);
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(fixtureHome, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(true);
   });
 
   it('uninstall removes the global card, skills and hook, and what an older init left in the project; .vibe stays unless --purge-state', () => {
@@ -225,7 +231,7 @@ describe('CLI — from request to DONE', () => {
   });
 
   it('help always exits 0', () => {
-    expect(execFileSync(TSX, [CLI_SRC, '--help'], { cwd: root, encoding: 'utf-8' })).toContain('vibe');
+    expect(execFileSync(TSX, [CLI_SRC, '--help'], { cwd: root, encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome } })).toContain('vibe');
   });
 });
 
@@ -356,7 +362,7 @@ describe('installed binary', () => {
     const bin = path.join(root, 'bin');
     fs.mkdirSync(bin);
     fs.symlinkSync(dist, path.join(bin, 'vibe'));
-    const r = spawnSync('node', [path.join(bin, 'vibe'), '--version'], { encoding: 'utf-8' });
+    const r = spawnSync('node', [path.join(bin, 'vibe'), '--version'], { encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome } });
     expect(r.stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
   });
 });
