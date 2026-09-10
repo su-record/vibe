@@ -1,45 +1,136 @@
-- id: build
-  then: the package builds and every test passes
-  check: { type: run, cmd: "npm run check", expect: 0, timeoutMs: 600000 }
+# Draft for user approval, 2026-09-10; do not load into the active intent yet.
+# Paths are relative to the future implementation checkout.
+# New checks named below must be implemented after approval. They are not present
+# or passing merely because this YAML parses. No check starts paid model calls.
 
-- id: scoped-arm
-  needs: [build]
-  given: bench/run.js with --harness scoped
-  when: a workspace is prepared and judged
-  then: the workspace holds card, skills and hooks but no intent; the ledger line says scoped and counts the agent's scenarios; the gate reads the third arm
-  check: { type: run, cmd: "node checks/bench-scoped.js && node checks/bench-gate.js --self-test", expect: 0, timeoutMs: 300000 }
+- id: compatibility
+  given: >-
+    The candidate 4.1.26 implementation and the approved 4.1.25 behavior contract
+    described in intent section G.
+  when: >-
+    The package checks, structural budgets, gate self-test, and repeated parallel
+    suite run against isolated fixture homes and temporary directories.
+  then: >-
+    Build and tests pass; home and temporary-root boundaries, hook action matching,
+    approval/inbox behavior, portable child startup, and nonzero child exits retain
+    their regression coverage. Source/card/skill budgets hold. No historical gate
+    threshold, retired task status, or frozen benchmark row is changed. Windows
+    execution remains a CI requirement; a local Linux pass is not Windows evidence.
+  check:
+    type: run
+    cmd: >-
+      npm run check && node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50
+      && node checks/card-size.js && node checks/loc.js && node checks/procedure.js
+      && node checks/bench-gate.js --self-test && node checks/suite-under-load.js
+    expect: 0
+    timeoutMs: 1200000
 
-- id: anomaly-task
-  needs: [build]
-  given: bench/tasks/anomaly with its checks, key and judge
-  when: the direction judges run
-  then: the wrong answer (the brief taken literally) fails and the right one (the document followed) passes; vibe profile names the three anomalies
-  check: { type: run, cmd: "node checks/direction-judges.js anomaly && node checks/bench-judge.js && node checks/bench-no-key.js && node checks/anomaly-profile.js", expect: 0, timeoutMs: 600000 }
+- id: public-check-boundary
+  needs: [compatibility]
+  given: >-
+    Prepared off, on, and scoped workspaces for work-opportunities, preserved
+    anomaly/ask diagnostics, and the active task contracts in intent section A.
+  when: >-
+    The real runner preparation and isolated grading paths execute deterministic
+    valid and broken fixtures with every judge-only environment value removed
+    from the agent environment.
+  then: >-
+    Public checks need no private key or judge path; they accept a valid artifact
+    and reject a relevant defect without an infrastructure dependency failure.
+    Agent files and environment contain no private sentinel, fake-user key,
+    reference implementation, or private test cases. The agent scope and referenced
+    checks are frozen before building, remain unchanged by private grading, and
+    agent verification is recorded separately from the private artifact grade.
+    Retired diagnostics remain available without changing historical evidence.
+  check:
+    type: run
+    cmd: node checks/bench-public.js
+    expect: 0
+    timeoutMs: 300000
 
-- id: handover-task
-  needs: [build]
-  given: bench/tasks/handover with judge/meta.json naming two clients
-  when: the direction judges run and run.js parses --client claude:codex
-  then: the judge separates wrong from right; the runner names both clients on the line
-  check: { type: run, cmd: "node checks/direction-judges.js handover && node checks/bench-handover.js", expect: 0, timeoutMs: 600000 }
+- id: discovery-agreement
+  needs: [public-check-boundary]
+  given: >-
+    Clear, ambiguous, missing-evidence, changed-evidence, blocked-access, and resumed
+    customer requests governed by intent sections B and C.
+  when: >-
+    Deterministic dialogue fixtures exercise discovery, source reuse, candidate
+    ranking, one-pilot approval, unanswered questions, and resumption through the
+    real CLI and procedure integration points.
+  then: >-
+    Accessible evidence is used before a customer-only question; a clear request
+    can reach approval without a ceremonial interview. A material unknown is not
+    defaulted after silence or a question cap. Unchanged evidence can be reused;
+    changed sources invalidate affected findings. The opportunity register records
+    traceable frequency, duration coverage, explicit unknowns, tools, installation,
+    failure/review/rollback boundaries, and candidate checks. Selection follows the
+    customer's objective and activates exactly one pilot. Reports are not questions,
+    answered questions resume the remaining work, and unrelated external authority
+    is not inferred. Live-agent adherence is assessed by the separate cohort.
+  check:
+    type: run
+    cmd: node checks/discovery-contract.js
+    expect: 0
+    timeoutMs: 300000
 
-- id: gate-is-release
-  needs: [scoped-arm, anomaly-task, handover-task]
-  given: the bench rerun on every set and arm
-  when: the gate reads bench/ledger.jsonl
-  then: every pre-registered rule passes
-  check: { type: run, cmd: "node checks/bench-gate.js && node checks/bench-ran.js", expect: 0, timeoutMs: 120000 }
+- id: work-opportunities
+  needs: [discovery-agreement]
+  given: >-
+    The frozen synthetic work sources, two customer variants, neutral output
+    contract, public checks, private requirement map, and valid/broken solutions
+    defined in intent sections D and E.
+  when: >-
+    Fixture validation, fake-customer dialogue cases, scope snapshot capture, private
+    grading, check-discrimination tests, and local installation/replay/rollback run
+    without a live model, network dependency, or real external side effect.
+  then: >-
+    Distinct source events and measured time recompute to the fixture manifest;
+    absent time stays unknown. Relevant equivalent questions get equal answers in
+    every arm, and customer priority changes the selected pilot. Scope coverage,
+    critical omissions, grounded opportunities, unsupported assertions, and final
+    behavior are separate metrics. Reference scopes/implementations pass and each
+    declared broken example fails for its intended reason. Pilot checks reject
+    static hard-coded output on changed input, preserve source files, exercise
+    missing fields and failure paths, and verify a reversible fixture-local install
+    plus human review before simulated external effects. Scope snapshots survive
+    implementation and judging; missing usage/reviews and stalled/error attempts
+    stay visible. Human semantic ratings are never fabricated by this checker.
+  check:
+    type: run
+    cmd: node checks/work-opportunities.js
+    expect: 0
+    timeoutMs: 300000
 
-- id: size
-  needs: [build]
-  then: no file over 400 lines, no function over 50
-  check: { type: run, cmd: "node dist/cli.js size src --max-file 400 --max-function 50", expect: 0 }
-
-- id: card-size
-  then: card.md is at most 1024 bytes and the six skills at most 300 lines; one procedure
-  check: { type: run, cmd: "node checks/card-size.js && node checks/loc.js && node checks/procedure.js", expect: 0 }
-
-- id: under-load
-  needs: [build]
-  then: the suite passes twice in parallel three times
-  check: { type: run, cmd: "node checks/suite-under-load.js", expect: 0, timeoutMs: 900000 }
+- id: fde-release-evidence
+  needs: [work-opportunities]
+  given: >-
+    A pre-registered protocol, the separately authorized 60-attempt discovery
+    cohort, arm-blinded scope reviews, and the candidate release report under
+    bench/claims/4.1.26/, governed by intent sections E, F, and G.
+  when: >-
+    The release-evidence checker validates its negative cases, then reads the frozen
+    protocol, isolated cohort ledger, snapshots, reviews, client CI results, and
+    report. It launches no agents and appends no benchmark rows.
+  then: >-
+    Every planned client/variant/arm cell has five usable observations and required
+    usage/review evidence, with all errors and stalls preserved. Each candidate
+    attempt has no critical omission or unsupported assertion, identifies the three
+    grounded recurring families, reaches at least 90 percent weighted scope
+    coverage, and passes every selected-pilot behavioral check. Candidate scope and
+    artifact quality are no worse than bare or baseline scoped in either client or
+    variant. Per client, candidate full-flow weighted input tokens are at most
+    0.80 times baseline scoped over equally weighted variants and matched complete
+    attempts, without increasing mean output tokens or customer clarification/
+    correction count. The report separates scope quality, human burden proxies,
+    machine time, costs, and agent/private verification; it states missing evidence
+    and makes no unmeasured ROI, prevention, or human-time-saving claim. Linux and
+    Windows CI evidence identifies the candidate revision. Incomplete evidence or
+    a missed target fails with its reason rather than silently changing the cohort.
+  check:
+    type: run
+    cmd: >-
+      node checks/release-4.1.26.js --self-test
+      && node checks/release-4.1.26.js --protocol bench/claims/4.1.26/protocol.json
+      --ledger bench/claims/4.1.26/ledger.jsonl --report bench/claims/4.1.26/results.md
+    expect: 0
+    timeoutMs: 120000
