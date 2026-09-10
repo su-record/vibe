@@ -2,7 +2,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { installSurfaces, projectLayout, SKILL_NAMES } from '../dist/install/global.js';
+import { pathToFileURL } from 'node:url';
 
 export function agentEnvironment(input) {
   return Object.fromEntries(Object.entries(input).filter(([key]) => !/^VIBE_(KEY|JUDGE)_/i.test(key)));
@@ -31,15 +31,19 @@ export function approveContract(ws, contractDir, context) {
   checkedVibe(ws, ['approve'], context);
 }
 
-function addSurfaces(ws, clients) {
-  for (const client of new Set(clients)) {
-    const layout = projectLayout(client === 'claude' ? 'claude' : 'codex');
-    installSurfaces(ws, layout);
-    const skills = path.join(ws, layout.skills);
-    for (const name of fs.readdirSync(skills)) {
-      if (!SKILL_NAMES.includes(name)) fs.rmSync(path.join(skills, name), { recursive: true, force: true });
-    }
-  }
+function addSurfaces(ws, clients, repo) {
+  // Load the arm's own product, including its card, hooks and skills. The baseline is never patched.
+  const script = `import fs from 'node:fs'; import path from 'node:path';
+    const {installSurfaces,projectLayout,SKILL_NAMES}=await import(process.argv[1]);
+    for(const client of JSON.parse(process.argv[3])) {
+      const layout=projectLayout(client==='claude'?'claude':'codex');
+      installSurfaces(process.argv[2],layout);
+      const skills=path.join(process.argv[2],layout.skills);
+      for(const name of fs.readdirSync(skills)) if(!SKILL_NAMES.includes(name))
+        fs.rmSync(path.join(skills,name),{recursive:true,force:true});
+    }`;
+  execFileSync(process.execPath, ['--input-type=module', '-e', script,
+    pathToFileURL(path.join(repo, 'dist/install/global.js')).href, ws, JSON.stringify([...new Set(clients)])]);
 }
 
 export function prepareWorkspace(taskDir, { repo, env, harness, clients }) {
@@ -54,7 +58,7 @@ export function prepareWorkspace(taskDir, { repo, env, harness, clients }) {
   });
   execFileSync('git', ['init', '-q'], { cwd: ws });
   if (harness !== 'off') {
-    addSurfaces(ws, clients);
+    addSurfaces(ws, clients, repo);
     if (harness === 'on') approveContract(ws, path.join(taskDir, 'public'), context);
     checkedVibe(ws, ['tokens', harness === 'on' ? 'irreversible' : 'off'], context);
   }

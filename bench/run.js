@@ -104,6 +104,7 @@ function judge(ws, run, task, index) {
   const { report, check } = gradeWorkspace(ws, taskDir, { repo, env }, { ...run, harness, client: judgeClient });
   // tokens a reader or reviewer spent on the agent's behalf (`usage` events) are the agent's cost too — nothing hides in a side model
   const side = evidence.sideUsage;
+  if (side.some((e) => !e.tokens)) { run.tokens = null; run.usage = 'missing'; }
   if (side.length && run.tokens) for (const e of side) for (const k of ['input', 'cacheRead', 'cacheWrite', 'output']) run.tokens[k] = (run.tokens[k] ?? 0) + (e.tokens[k] ?? 0);
   const sideModels = [...new Set(side.map((e) => e.detail))];
   const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(run.stalled ? { stalled: true } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped: { ...scoped, approvals: run.approvals ?? 0 } } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: !run.error && !run.stalled && check.failed === 0, agentRegressions: evidence.regressions, agentVerification: evidence.verification, scopeSnapshots: run.scopeSnapshots ?? [], pair: `${task}#${index}` };
@@ -254,6 +255,9 @@ function sumRuns(a, b) {
 }
 
 async function runOneJob(job) {
+  if (!prepareOnly && meta(job.task).protocol === 'fde-discovery-v1') {
+    throw new Error('work-opportunities requires bench/fde-run.js and an approved frozen protocol; legacy sessions cannot score discovery');
+  }
   const ws = prepare(job.task);
   if (prepareOnly) {
     console.log(JSON.stringify({ ws, harness, clients, task: job.task }));

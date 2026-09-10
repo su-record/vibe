@@ -53,6 +53,6 @@ export function agentEvidence(ws) {
     scoped: { scenarios: scenarios.length, checks: [...new Set(scenarios.map((s) => s.check?.type).filter(Boolean))], approved: Boolean(state.approvedAt) },
     verification: { state: state.state ?? 'NONE', passed: check?.passed ?? null, failed: check?.failed ?? null, results, at: check?.at ?? null },
     regressions: fs.existsSync(regDir) ? fs.readdirSync(regDir).filter((name) => name.endsWith('.yaml')).length : 0,
-    sideUsage: events.filter((event) => event.event === 'usage' && event.tokens),
+    sideUsage: events.filter((event) => event.event === 'usage'),
   };
 }
