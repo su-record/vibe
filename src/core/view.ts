@@ -10,6 +10,7 @@ import { isHuman, type Scenario } from './scenarios.js';
 import { suggestSkills, type Proposal } from './skills.js';
 import { readState, stageOf, type Stage, type State } from './state.js';
 import { readText } from './store.js';
+import { sourceValidity } from './source-basis.js';
 import path from 'node:path';
 
 export interface ScenarioView {
@@ -89,22 +90,24 @@ function scenarioTargets(scenarios: ScenarioView[]): string {
 }
 
 /** Asking is a stop: an unanswered question means wait; an answered one carries its answer and lets the work continue. */
-function inboxLine(state: State, items: InboxItem[], remaining: ScenarioView[]): string | null {
-  const waiting = items.filter((q) => !q.answer);
-  const answered = items.filter((q) => q.answer);
+function inboxLine(state: State, stage: Stage, items: InboxItem[], remaining: ScenarioView[]): string | null {
+  const waiting = items.filter((q) => !q.answer?.trim());
+  const answered = items.filter((q) => q.answer?.trim());
   if (waiting.length > 0) return `${state === 'STUCK' ? 'STUCK — ' : 'wait — '}${waiting.map((q) => q.id).join(', ')} asked; the user answers; stop and wait — do not answer it yourself`;
-  const resume = state === 'DONE' ? 'reply in chat, not vibe ask' : remaining.length ? `continue building ${scenarioTargets(remaining)}; then vibe check --all` : 'then vibe check --all';
+  const resume = stage === 'discover' ? 'continue discovery with vibe-discover; use the answer to resolve material unknowns'
+    : stage === 'scope' ? 'continue scope with vibe-scope; incorporate the answer, confirm sufficient agreement and request approval'
+      : state === 'DONE' ? 'reply in chat, not vibe ask' : remaining.length ? `continue building ${scenarioTargets(remaining)}; then vibe check --all` : 'then vibe check --all';
   if (answered.length > 0) return `answered ${answered.map((q) => `${q.id}: "${q.answer}"`).join(' · ')} — ${resume}; vibe inbox resolve <id> once used`;
   return null;
 }
 
 function nextLine(state: State, stage: Stage, pending: ScenarioView[], inbox: InboxItem[], size: 'small' | 'full', run: number): string {
-  const asked = inboxLine(state, inbox, pending);
+  const asked = inboxLine(state, stage, inbox, pending);
   if (asked) return asked;
   const remaining = pending.map((s) => s.id);
   if (state === 'STUCK') return 'prove — STUCK: the same failure twice; vibe ask, then stop';
-  if (stage === 'discover') return 'discover — the vibe-discover skill: what counts as success, at most three questions';
-  if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, research, one approval message; wait for "yes"';
+  if (stage === 'discover') return 'discover — the vibe-discover skill: inspect accessible evidence, resolve material unknowns, stop when agreement is sufficient';
+  if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, confirm sufficient agreement, one approval message; wait for "yes"';
   if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — reply in chat, not vibe ask; with no skill and no further reads; HANDOFF.md only if the intent asks`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
   const failed = pending.filter((s) => s.last === 'fail');
@@ -144,6 +147,8 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   });
   const lastEvent = readLedger(root).at(-1);
   const intent = hasIntent(root) ? { title: intentTitle(root), hash: state.intentHash, approvedAt: state.approvedAt } : null;
+  const sources = sourceValidity(root);
+  if (sources && !sources.valid) notices.push(`source basis changed or missing: ${[...sources.changed, ...sources.missing, ...sources.unreadable].join(', ')} — re-evaluate affected findings and redraft before approval`);
   notices.push(...regressionProblems(root));
   for (const s of scenarios) if (s.irreversible) notices.push(`${s.id} mutates (${actionOf(s.irreversible)}) — not run by check --all without vibe authorize --action ${actionOf(s.irreversible)}`);
   if (state.state === 'STUCK') notices.push('STUCK — the same failure twice in a row; the inbox question needs an answer');

@@ -12,6 +12,7 @@ import { measureSize } from '../core/size.js';
 import { listRegressions } from '../core/regress.js';
 import { graphMermaid } from '../core/scenarios.js';
 import { readJson, readText } from '../core/store.js';
+import { sourceValidity } from '../core/source-basis.js';
 import { buildStateView } from '../core/view.js';
 import { ensureProject } from '../install/project.js';
 import { flagString, readStdin, type Flags, type Output } from './common.js';
@@ -83,33 +84,38 @@ export function cmdProfile(root: string, file: string | undefined, flags: Flags)
   return { json: p, text: lines.join('\n'), code: 0 };
 }
 
+function draftInput(root: string, args: string[], flags: Flags): { intent: string; scenarios: string; sources?: string[] } {
+  if (flags['sources'] === true) throw usage('--sources requires comma-separated input file paths');
+  if (flags['stdin'] === true) {
+    if (flags['sources'] !== undefined) throw usage('with --stdin, supply sources in the JSON payload');
+    return JSON.parse(readStdin()) as { intent: string; scenarios: string; sources?: string[] };
+  }
+  const [intentFile, scenariosFile] = args;
+  if (!intentFile || !scenariosFile) throw usage('intent draft <intent.md> <scenarios.yaml> [--sources a,b] or --stdin');
+  const intent = readText(path.resolve(root, intentFile)) ?? '';
+  const scenarios = readText(path.resolve(root, scenariosFile)) ?? '';
+  if (!intent) throw usage(`cannot read ${intentFile}`);
+  if (!scenarios) throw usage(`cannot read ${scenariosFile}`);
+  const sources = flagString(flags, 'sources');
+  return sources === undefined ? { intent, scenarios } : { intent, scenarios, sources: sources.split(',').map((file) => file.trim()) };
+}
+
 export function cmdIntent(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
   if (sub === 'show') {
     const scenarios = loadScenarios(root);
     const intent = readText(intentPath(root)) ?? '';
-    return { json: { intent, scenarios }, text: `${intent.trim()}\n\n${scenarios.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n')}`, code: 0 };
+    const sourceBasis = sourceValidity(root);
+    const sources = sourceBasis ? `\n\nSource basis: ${sourceBasis.valid ? 'unchanged' : 're-evaluate changed or missing inputs'}\n${sourceBasis.sources.map((source) => `- ${source.path}: ${source.status}`).join('\n')}` : '';
+    return { json: { intent, scenarios, sourceBasis }, text: `${intent.trim()}\n\n${scenarios.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n')}${sources}`, code: 0 };
   }
   if (sub === 'analyze') {
     const analysis = analyzeIntent(root);
     return { json: analysis, text: renderAnalysis(analysis), code: 0 };
   }
   if (sub !== 'draft') throw usage('intent draft | intent show | intent analyze');
+  const input = draftInput(root, args, flags);
   ensureProject(root);
-  let intentText: string;
-  let scenariosText: string;
-  if (flags['stdin'] === true) {
-    const payload = JSON.parse(readStdin()) as { intent?: string; scenarios?: string };
-    intentText = payload.intent ?? '';
-    scenariosText = payload.scenarios ?? '';
-  } else {
-    const [intentFile, scenariosFile] = args;
-    if (!intentFile || !scenariosFile) throw usage('intent draft <intent.md> <scenarios.yaml> or --stdin');
-    intentText = readText(path.resolve(root, intentFile)) ?? '';
-    scenariosText = readText(path.resolve(root, scenariosFile)) ?? '';
-    if (!intentText) throw usage(`cannot read ${intentFile}`);
-    if (!scenariosText) throw usage(`cannot read ${scenariosFile}`);
-  }
-  const result = draft(root, intentText, scenariosText);
+  const result = draft(root, input.intent ?? '', input.scenarios ?? '', input.sources);
   if (!result.ok) {
     return { json: result, text: `rejected ${result.rejections.length} — nothing was saved\n${result.rejections.map((r) => `  ${r.id}: ${r.reason}`).join('\n')}`, code: 1 };
   }

@@ -117,6 +117,29 @@ describe('check — the only verdict path', () => {
     expect(fs.existsSync(path.join(root, '.vibe', 'evidence', 'r-1.json'))).toBe(false);
   });
 
+  it('source-backed checks pass on approved evidence and reject changed evidence before executing', async () => {
+    fs.writeFileSync(path.join(root, 'facts.md'), 'observed facts');
+    fs.writeFileSync(path.join(root, 'out.txt'), 'local output');
+    draft(root, INTENT, '- { id: out, then: x, check: { type: file, path: out.txt, exists: true } }', ['facts.md']);
+    approve(root, null);
+    expect((await runChecks(root, { all: true })).done).toBe(true);
+    fs.writeFileSync(path.join(root, 'facts.md'), 'changed facts');
+    expect(invalidateDoneIfEdited(root)).toBe(true);
+    await expect(runChecks(root, { all: true })).rejects.toThrow(/approval void.*facts.md.*re-evaluate/);
+    expect(readState(root).runs).toBe(1);
+    expect(fs.existsSync(path.join(root, '.vibe/evidence/r-2.json'))).toBe(false);
+  });
+
+  it('DONE is invalid when source bookkeeping changes even if the working-tree hash is unchanged', async () => {
+    fs.writeFileSync(path.join(root, 'facts.md'), 'observed facts');
+    draft(root, INTENT, '- { id: facts, then: x, check: { type: file, path: facts.md, exists: true } }', ['facts.md']);
+    approve(root, null);
+    expect((await runChecks(root)).done).toBe(true);
+    fs.rmSync(path.join(root, '.vibe/source-basis.json'));
+    expect(invalidateDoneIfEdited(root)).toBe(true);
+    await expect(runChecks(root)).rejects.toThrow(/approval void/);
+  });
+
   it('recheck: a parent that passed before and fails on this run blocks its dependent — this run judges, not the last one', async () => {
     fs.writeFileSync(path.join(root, 'out.txt'), 'good\n');
     fs.writeFileSync(path.join(root, 'child.cjs'), "require('fs').appendFileSync('ran.log', 'child\\n');");

@@ -15,6 +15,7 @@ import { listRegressions } from './regress.js';
 import { ancestorsOf, isHuman, type Scenario } from './scenarios.js';
 import { readState, transition, writeState, type StateFile } from './state.js';
 import { nowIso, readJson, readText, writeJson } from './store.js';
+import { readSourceBasis, sourceValidity } from './source-basis.js';
 import { changedBlobs, changedSince, treeHash } from './tree.js';
 
 export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale';
@@ -246,6 +247,14 @@ function settleState(root: string, current: StateFile, failHash: string | null, 
   return { next, stuck: false, done: false };
 }
 
+function validateApproval(root: string, state: StateFile): void {
+  const basis = readSourceBasis(root);
+  const currentHash = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '', basis);
+  if (currentHash !== state.intentHash) throw invalidTransition(`approval void — the intent or scenarios changed since ${state.intentHash ?? 'the approval'}; run vibe intent draft and approve again`);
+  const sources = sourceValidity(root, basis);
+  if (sources && !sources.valid) throw invalidTransition(`approval void — source changed or missing: ${[...sources.changed, ...sources.missing, ...sources.unreadable].join(', ')}; re-evaluate affected findings, run vibe intent draft and approve again`);
+}
+
 /**
  * The only verdict path. The harness runs the checks and writes the evidence.
  * First call moves APPROVED→RUNNING; all gates passing → DONE; the same failure hash
@@ -256,9 +265,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   if (!['APPROVED', 'RUNNING', 'DONE', 'STUCK'].includes(state.state)) {
     throw invalidTransition(`check runs only after approval (current state ${state.state})`);
   }
-  // The approval covers one intent and one scenario set; a check on anything else is void
-  const currentHash = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '');
-  if (currentHash !== state.intentHash) throw invalidTransition(`approval void — the intent or scenarios changed since ${state.intentHash ?? 'the approval'}; run vibe intent draft and approve again`);
+  validateApproval(root, state);
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
   const universe: Selectable[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))];
@@ -302,7 +309,9 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
 export function invalidateDoneIfEdited(root: string): boolean {
   const state = readState(root);
   if (state.state !== 'DONE' || !state.doneTree) return false;
-  if (treeHash(root) === state.doneTree) return false;
+  const basis = readSourceBasis(root);
+  const currentHash = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '', basis);
+  if (treeHash(root) === state.doneTree && currentHash === state.intentHash && (sourceValidity(root, basis)?.valid ?? true)) return false;
   writeState(root, { ...state, state: 'RUNNING', doneAt: null, doneTree: null });
   return true;
 }
