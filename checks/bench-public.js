@@ -78,6 +78,7 @@ function validateTask(task, harness) {
 try {
   for (const task of ['anomaly', 'ask']) taskCopy(task);
   for (const task of ['anomaly', 'ask']) for (const harness of ['off', 'on', 'scoped']) validateTask(task, harness);
+  for (const script of ['bench-judge.js', 'bench-no-key.js']) execFileSync(process.execPath, [path.join(repo, 'checks', script)], { cwd: repo, env, stdio: 'inherit', timeout: 240000 });
   console.log('bench-public: six real preparations, runnable public checks, private-only grading, immutable agent scopes');
 } finally {
   for (const directory of cleanup.reverse()) fs.rmSync(directory, { recursive: true, force: true });

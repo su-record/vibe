@@ -5,7 +5,7 @@ import path from 'node:path';
 import { installSurfaces, projectLayout, SKILL_NAMES } from '../dist/install/global.js';
 
 export function agentEnvironment(input) {
-  return Object.fromEntries(Object.entries(input).filter(([key]) => !/^VIBE_(KEY|JUDGE)_/.test(key)));
+  return Object.fromEntries(Object.entries(input).filter(([key]) => !/^VIBE_(KEY|JUDGE)_/i.test(key)));
 }
 
 export function vibeSync(ws, args, { repo, env }, extra = {}) {
@@ -76,5 +76,6 @@ export function gradingWorkspace(ws, taskDir) {
     if (name === 'checks' || /(?:^|\.)test\.[cm]?js$/.test(name)) fs.cpSync(path.join(taskDir, name), path.join(workspace, name), { recursive: true });
   }
   fs.rmSync(path.join(workspace, '.vibe/regressions'), { recursive: true, force: true });
+  fs.rmSync(path.join(workspace, '.vibe/inbox.jsonl'), { force: true });
   return { root, workspace, home };
 }
