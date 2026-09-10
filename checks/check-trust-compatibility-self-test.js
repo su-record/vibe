@@ -7,12 +7,20 @@ import { requireCI, checkMigrationDocument, readinessCause } from '../bench/fde/
 import { capture, runClient } from '../bench/fde/clients.js';
 import { recordSession } from '../bench/fde/accounting.js';
 import { attemptEvidence, readLines } from '../bench/fde/evidence.js';
-import { ensurePrivateDirectory, auditDiagnostics, windowsAclError } from '../bench/fde/private-artifacts.js';
+import { ensurePrivateDirectory, auditDiagnostics, windowsAclError, windowsAclEnvironment } from '../bench/fde/private-artifacts.js';
 import { contentSummary } from '../bench/fde/privacy.js';
 import { captureCases } from './check-trust-capture-self-test.js';
 
 const revision = 'c'.repeat(40), marker = 'PRIVATE_PAYLOAD_7291';
 const ci = () => ['linux', 'windows'].map((platform) => ({ platform, revision, status: 'passed', url: 'fixture-only', at: '2026-09-10' }));
+
+function aclEnvironmentCases() {
+  const unrelated = { PATH: 'fixture-bin', SystemRoot: 'fixture-system', USERPROFILE: 'fixture-home', VIBE_BENCH_PRIVATE_ENTRY: 'fixture-entry' };
+  const parent = Object.freeze({ ...unrelated, PSModulePath: marker, PSMODULEPATH: marker, pSmOdUlEpAtH: marker });
+  assert.deepEqual(windowsAclEnvironment(parent), unrelated, 'only inherited module paths are removed from the child environment');
+  assert.deepEqual(parent, { ...unrelated, PSModulePath: marker, PSMODULEPATH: marker, pSmOdUlEpAtH: marker }, 'parent environment stays unchanged');
+  assert.deepEqual(windowsAclEnvironment(Object.freeze(unrelated)), unrelated, 'an absent module path preserves every field');
+}
 
 function aclFailureCases() {
   const privatePath = 'C:\\Users\\fixture-private\\diagnostic.json';
@@ -41,6 +49,7 @@ function aclFailureCases() {
 }
 
 async function readinessCases(root) {
+  aclEnvironmentCases();
   aclFailureCases();
   let validations = 0, invocations = 0;
   const services = { validate: () => { validations++; throw new Error('fixture reached post-CI validation'); }, invoke: () => { invocations++; } };
