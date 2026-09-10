@@ -1,0 +1,7 @@
+event_id,invoice_id,vendor,amount,status
+invoice-01,INV-101,Local Supply,120,needs review
+invoice-02,INV-102,Studio North,137,matched
+invoice-03,INV-103,Local Supply,154,needs review
+invoice-04,INV-104,Studio North,171,matched
+invoice-05,INV-105,Local Supply,188,needs review
+invoice-06,INV-106,Studio North,205,matched

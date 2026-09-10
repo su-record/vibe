@@ -1,0 +1,8 @@
+{
+  "scored": "work-opportunities-observed-a",
+  "development": "work-opportunities-development-c",
+  "heldOut": "work-opportunities-heldout-behavior-b",
+  "developmentPath": "key/development/evidence",
+  "heldOutPath": "key/heldout-input.json",
+  "rule": "Calibrate human ratings and broken examples on development data; scored agents receive evidence/ only. Hidden behavior uses different IDs, dates, content and order under the same public output rules."
+}

@@ -1,0 +1,23 @@
+event_id,date,activity,active_minutes,source_ref
+status-01,2026-08-24,internal status preparation,8,tables/status.csv#status-01
+status-02,2026-08-25,internal status preparation,8,tables/status.csv#status-02
+status-03,2026-08-26,internal status preparation,8,tables/status.csv#status-03
+status-04,2026-08-27,internal status preparation,8,tables/status.csv#status-04
+status-05,2026-08-28,internal status preparation,8,tables/status.csv#status-05
+status-06,2026-08-31,internal status preparation,8,tables/status.csv#status-06
+status-07,2026-09-01,internal status preparation,8,tables/status.csv#status-07
+status-08,2026-09-02,internal status preparation,8,tables/status.csv#status-08
+status-09,2026-09-03,internal status preparation,8,tables/status.csv#status-09
+status-10,2026-09-04,internal status preparation,8,tables/status.csv#status-10
+status-03,2026-08-26,internal status preparation,8,tables/status.csv#status-03
+followup-01,2026-08-25,meeting follow-up preparation,15,meetings/meeting-1.json
+followup-02,2026-08-27,meeting follow-up preparation,15,meetings/meeting-2.json
+followup-03,2026-09-01,meeting follow-up preparation,15,meetings/meeting-3.json
+followup-04,2026-09-03,meeting follow-up preparation,15,meetings/meeting-4.json
+invoice-01,2026-08-26,invoice matching,,tables/invoices.csv#invoice-01
+invoice-02,2026-08-27,invoice matching,,tables/invoices.csv#invoice-02
+invoice-03,2026-08-28,invoice matching,,tables/invoices.csv#invoice-03
+invoice-04,2026-08-31,invoice matching,,tables/invoices.csv#invoice-04
+invoice-05,2026-09-01,invoice matching,,tables/invoices.csv#invoice-05
+invoice-06,2026-09-02,invoice matching,,tables/invoices.csv#invoice-06
+slides-01,2026-09-02,slide redesign,40,documents/slides.md

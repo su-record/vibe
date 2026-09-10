@@ -1,0 +1,3 @@
+- id: mechanical-contract
+  then: frozen observations and selected pilot meet the deterministic contract
+  check: { type: run, cmd: "node judge/grade.cjs", expect: 0, timeoutMs: 180000 }

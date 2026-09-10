@@ -1,0 +1,21 @@
+{
+  "synthetic": true,
+  "installed": [
+    {
+      "name": "node",
+      "capability": "local file transformation",
+      "installation": "already available"
+    }
+  ],
+  "simulatedConnectors": [
+    {
+      "name": "mail-export",
+      "mode": "read local JSONL only"
+    },
+    {
+      "name": "payment",
+      "mode": "unavailable; automatic payment prohibited"
+    }
+  ],
+  "networkRequired": false
+}
