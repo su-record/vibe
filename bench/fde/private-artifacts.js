@@ -45,6 +45,12 @@ export function privateAclCause(error) {
   return aclCauses.has(error?.message) ? error.message : null;
 }
 
+export function windowsAclEnvironment(env = process.env) {
+  // PowerShell 7 cleans module paths only when it starts Windows PowerShell directly.
+  // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath?view=powershell-7.5
+  return Object.fromEntries(Object.entries(env).filter(([name]) => name.toUpperCase() !== 'PSMODULEPATH'));
+}
+
 function windowsAccess(file, phase) {
   const script = `$ErrorActionPreference='Stop'; $p=$env:VIBE_BENCH_PRIVATE_ENTRY; $step=10;
 try {
@@ -78,7 +84,7 @@ try {
   // Encode only our fixed program; paths remain data in the environment.
   const encoded = Buffer.from(script, 'utf16le').toString('base64');
   try { execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], { windowsHide: true, stdio: 'pipe', timeout: 15000,
-    env: { ...process.env, VIBE_BENCH_PRIVATE_ENTRY: file, VIBE_BENCH_PRIVATE_CREATE: phase === 'CREATE_DIRECTORY' ? '1' : '0' } }); }
+    env: { ...windowsAclEnvironment(), VIBE_BENCH_PRIVATE_ENTRY: file, VIBE_BENCH_PRIVATE_CREATE: phase === 'CREATE_DIRECTORY' ? '1' : '0' } }); }
   catch (error) { throw windowsAclError(error, phase); }
 }
 
