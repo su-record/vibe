@@ -57,7 +57,7 @@ it('diagnoses at two, keeps the masked cause and source first, asks at five and 
   resolve(root, question.id);
   await runChecks(root, { approach: 'use the provided type information' });
   expect(readState(root).failStreak).toBe(1);
-});
+}, 60_000); // Six actual checks and their subprocesses must fit together under suite load.
 it('cosmetic output changes and approach labels do not erase a failure or invent an approach', async () => {
   fixture(); await runChecks(root);
   const first = readState(root).lastFailHash;

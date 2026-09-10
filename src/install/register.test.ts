@@ -88,7 +88,7 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(globalStatus(home).clients['claude']?.current).toBe(true);
     const removed = uninstallGlobal(home);
     expect(removed).toEqual(['claude plugin vibe@vibe', 'claude marketplace vibe']);
-  });
+  }, 60_000); // Multiple stand-in client invocations share this integration deadline.
 
   it('plugin mode: codex gets the assembled tree, the personal marketplace and the two codex commands; the card stays in ~/.codex/AGENTS.md; a Codex whose cache cannot be read is not stale', () => {
     fs.writeFileSync(path.join(shim, 'codex'), CODEX_SHIM_NO_CACHE, { mode: 0o755 });

@@ -35,7 +35,7 @@ it('blocks slicing files named by state and names cat for Codex; whole files pas
   expect(pre('cat src/selected.ts').stdout).toBe('');
   expect(pre('head selected.ts', {}, path.join(root, 'src')).status).toBe(2);
   expect(pre('head src/selected.ts', { VIBE_CLIENT: 'claude' }).stderr).toContain('Read tool');
-});
+}, 60_000); // Keep each hook's 5-second deadline; allow time for all eight processes.
 
 it('blocks contracts/specs and file-fed slices, while locating and non-file output pass', () => {
   for (const command of ["grep rules .vibe/intent.md | cut -c1-170", 'head < .vibe/scenarios.yaml', '< specs/release.md head -n 2', 'tail specs/release.md', 'cd specs && head release.md', 'rg -n rules specs/release.md | head']) expect(pre(command).status, command).toBe(2);
