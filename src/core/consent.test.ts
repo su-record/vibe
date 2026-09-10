@@ -77,11 +77,24 @@ it('rejects malformed/linked receipts and bounded invalid inspection inputs', ()
   fs.writeFileSync(receipt, '{bad');
   expect(consentStatus(root).valid).toBe(false);
   fs.rmSync(receipt);
-  fs.symlinkSync(path.join(root, 'proof.cjs'), receipt);
+  if (process.platform === 'win32') fs.linkSync(path.join(root, 'proof.cjs'), receipt);
+  else fs.symlinkSync(path.join(root, 'proof.cjs'), receipt);
   expect(consentStatus(root).valid).toBe(false);
   expect(() => saveConsent(root)).toThrow(/linked|regular/);
   fs.writeFileSync(path.join(root, 'bad.yaml'), '- { id: a, then: x, check: { type: unknown } }');
   expect(inspectContract(root, ['.vibe/intent.md', 'bad.yaml']).rejections).not.toHaveLength(0);
   fs.writeFileSync(path.join(root, 'large.md'), 'x'.repeat(1_048_577));
   expect(inspectContract(root, ['large.md', 'bad.yaml']).rejections).not.toHaveLength(0);
+});
+
+it('a changed resolved working directory invalidates the reviewed plan', () => {
+  const first = path.join(root, 'first'); const second = path.join(root, 'second');
+  fs.mkdirSync(first); fs.mkdirSync(second);
+  const link = path.join(root, 'work');
+  fs.symlinkSync(first, link, process.platform === 'win32' ? 'junction' : 'dir');
+  draft(root, '# directory binding', '- { id: proof, then: checked, check: { type: run, cmd: "exit 0", cwd: work } }');
+  approve(root, null);
+  expect(consentStatus(root).valid).toBe(true);
+  fs.unlinkSync(link); fs.symlinkSync(second, link, process.platform === 'win32' ? 'junction' : 'dir');
+  expect(consentStatus(root)).toMatchObject({ valid: false, changed: ['checks'] });
 });

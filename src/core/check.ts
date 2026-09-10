@@ -17,11 +17,12 @@ import { readState, transition, writeState, type StateFile } from './state.js';
 import { nowIso, readJson, readText, writeJson } from './store.js';
 import { readSourceBasis, sourceValidity } from './source-basis.js';
 import { changedBlobs, changedSince, treeHash } from './tree.js';
-import { requireConsent } from './consent.js';
+import { consentStatus, requireConsent } from './consent.js';
 import { fingerprint } from './inspect.js';
 import { diagnosticFile } from './evidence.js';
 import { readHandoffs } from './handoff.js';
 import { outputCapture } from './output-capture.js';
+import { recordStopEvidence } from './session.js';
 
 export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale' | 'handoff';
 /** Checks that may run at the same time — independent scenarios only, never a dependent before its parent. */
@@ -144,7 +145,7 @@ async function runOne(root: string, scenario: Scenario & { regression?: boolean 
   const held = unauthorized(root, scenario);
   if (held) return held;
   let result: CheckResult;
-  try { result = await execute(scenario, root); }
+  try { requireConsent(root); result = await execute(scenario, root); }
   catch { result = { pass: false, exit: null, ms: 0, tail: '', failureCode: 'adapter-error' }; }
   const status: LastResult = isHuman(scenario) ? 'pending' : result.pass ? 'pass' : 'fail';
   if (isHuman(scenario)) askHumanOnce(root, scenario);
@@ -318,18 +319,24 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const pending = outcomes.filter((o) => o.status === 'pending').length;
   const failHash = failHashOf(outcomes);
   const { next, stuck, done } = settleState(root, readState(root), failHash, remaining, outcomes, at);
+  const report = { run, at, state: next.state, outcomes, passed, failed, pending, failHash, stuck, done, remaining };
+  recordReport(root, report, scenarios, edges);
+  recordStopEvidence(root, { run, done, intentHash: state.intentHash, scenarios: universe.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
   writeState(root, next);
+  for (const event of [...(stuck ? ['stuck' as const] : []), ...(done ? ['done' as const] : [])]) record(root, { event, client: detectClient(), model: detectModel(), run, failHash });
+  return report;
+}
 
-  const evidence = { schemaVersion: 2, run, at, intentHash: state.intentHash, client: detectClient(), model: detectModel(), scenarioSet: scenarioSetHash(scenarios), results: outcomes.map(({ diagnostic: _private, ...outcome }) => outcome) };
+
+function recordReport(root: string, report: CheckReport, scenarios: Scenario[], edges: Edge[]): void {
+  const { run, at, outcomes, passed, failed, failHash } = report;
+  const evidence = { schemaVersion: 2, run, at, intentHash: readState(root).intentHash, client: detectClient(), model: detectModel(), scenarioSet: scenarioSetHash(scenarios), results: outcomes.map(({ diagnostic: _private, ...outcome }) => outcome) };
   writeJson(vibePath(root, 'evidence', `${run}.json`), evidence);
   const scenarioMap: Record<string, Exclude<LastResult, 'stale'>> = {};
   for (const o of outcomes) scenarioMap[o.id] = o.status as Exclude<LastResult, 'stale'>;
   const harness = detectHarness();
   record(root, { event: 'check', client: evidence.client, model: evidence.model, ...(harness ? { harness } : {}), run, scenarioSet: evidence.scenarioSet, scenarios: scenarioMap, passed, failed, failHash, turns: reportedTurns(), costUsd: reportedCostUsd(), ms: outcomes.reduce((a, o) => a + o.ms, 0), edges });
-  if (stuck) record(root, { event: 'stuck', client: evidence.client, model: evidence.model, run, failHash });
-  if (done) record(root, { event: 'done', client: evidence.client, model: evidence.model, run });
 
-  return { run, at, state: next.state, outcomes, passed, failed, pending, failHash, stuck, done, remaining };
 }
 
 /** DONE with a changed tree goes back to RUNNING. `state` calls this every time. */
@@ -338,7 +345,7 @@ export function invalidateDoneIfEdited(root: string): boolean {
   if (state.state !== 'DONE' || !state.doneTree) return false;
   const basis = readSourceBasis(root);
   const currentHash = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '', basis);
-  if (treeHash(root) === state.doneTree && currentHash === state.intentHash && (sourceValidity(root, basis)?.valid ?? true)) return false;
+  if (treeHash(root) === state.doneTree && currentHash === state.intentHash && (sourceValidity(root, basis)?.valid ?? true) && consentStatus(root).valid) return false;
   writeState(root, { ...state, state: 'RUNNING', doneAt: null, doneTree: null });
   return true;
 }

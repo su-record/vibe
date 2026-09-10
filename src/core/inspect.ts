@@ -18,10 +18,12 @@ export function boundedFile(file: string, limit = MAX_INPUT): Buffer {
     part = path.join(part, component);
     if (fs.lstatSync(part).isSymbolicLink()) throw denied('inspection requires regular files without linked path components');
   }
-  const fd = fs.openSync(absolute, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0));
+  const before = fs.lstatSync(absolute);
+  if (!before.isFile() || before.size > limit) throw denied('inspection input is not a regular file within the byte limit');
+  const fd = fs.openSync(absolute, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0) | (fs.constants.O_NONBLOCK ?? 0));
   try {
     const stat = fs.fstatSync(fd);
-    if (!stat.isFile() || stat.size > limit) throw denied('inspection input is not a regular file within the byte limit');
+    if (!stat.isFile() || stat.size > limit || stat.ino !== before.ino || stat.dev !== before.dev) throw denied('inspection input changed or is not a regular file within the byte limit');
     const buffer = Buffer.alloc(limit + 1);
     const length = fs.readSync(fd, buffer, 0, buffer.length, 0);
     if (length > limit) throw denied('inspection input exceeds the byte limit');
