@@ -12,7 +12,21 @@ function canonical(file) {
   return path.join(canonical(path.dirname(file)), path.basename(file));
 }
 
-function windowsAccess(file, create = false) {
+const aclPhases = new Set(['CREATE_DIRECTORY', 'VERIFY_DIRECTORY', 'VERIFY_FILE']);
+export function windowsAclError(error, phase) {
+  if (!aclPhases.has(phase)) return new Error('PRIVATE_ACL_UNVERIFIED');
+  const reason = error?.code === 'ETIMEDOUT' ? 'TIMEOUT'
+    : error?.status === 2 ? 'OWNER_MISMATCH' : error?.status === 3 ? 'UNEXPECTED_GRANT'
+      : Number.isInteger(error?.status) ? 'SCRIPT_FAILED'
+        : ['ENOENT', 'EACCES', 'EPERM'].includes(error?.code) ? 'START_FAILED' : 'UNVERIFIED';
+  return new Error(`PRIVATE_ACL_${phase}_${reason}`);
+}
+
+export function privateAclCause(error) {
+  return /^PRIVATE_ACL_(?:CREATE_DIRECTORY|VERIFY_DIRECTORY|VERIFY_FILE)_(?:OWNER_MISMATCH|UNEXPECTED_GRANT|SCRIPT_FAILED|START_FAILED|TIMEOUT|UNVERIFIED)$/.test(error?.message) ? error.message : null;
+}
+
+function windowsAccess(file, phase) {
   const script = `$ErrorActionPreference='Stop'; $p=$env:VIBE_BENCH_PRIVATE_ENTRY;
 $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User;
 $acl=Get-Acl -LiteralPath $p;
@@ -28,14 +42,14 @@ foreach($rule in $acl.GetAccessRules($true,$true,[System.Security.Principal.Secu
   if($rule.AccessControlType -eq 'Allow' -and $allowed -notcontains $rule.IdentityReference.Value){exit 3}
 }`;
   try { execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, stdio: 'pipe', timeout: 15000,
-    env: { ...process.env, VIBE_BENCH_PRIVATE_ENTRY: file, VIBE_BENCH_PRIVATE_CREATE: create ? '1' : '0' } }); }
-  catch { throw new Error('PRIVATE_ACL_UNVERIFIED'); }
+    env: { ...process.env, VIBE_BENCH_PRIVATE_ENTRY: file, VIBE_BENCH_PRIVATE_CREATE: phase === 'CREATE_DIRECTORY' ? '1' : '0' } }); }
+  catch (error) { throw windowsAclError(error, phase); }
 }
 
 function verifyEntry(file, directory) {
   const stat = fs.lstatSync(file);
   if (stat.isSymbolicLink() || (directory ? !stat.isDirectory() : !stat.isFile())) throw new Error('PRIVATE_PATH_NOT_REGULAR');
-  if (process.platform === 'win32') windowsAccess(file);
+  if (process.platform === 'win32') windowsAccess(file, directory ? 'VERIFY_DIRECTORY' : 'VERIFY_FILE');
   else if (stat.uid !== process.getuid() || (stat.mode & 0o077) !== 0) throw new Error('PRIVATE_PATH_PERMISSIONS');
   return stat;
 }
@@ -47,7 +61,7 @@ export function ensurePrivateDirectory(directory, forbidden = [], { create = tru
   if (!fs.existsSync(directory)) {
     if (!create) throw new Error('PRIVATE_PATH_MISSING');
     fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
-    if (process.platform === 'win32') windowsAccess(directory, true);
+    if (process.platform === 'win32') windowsAccess(directory, 'CREATE_DIRECTORY');
   }
   verifyEntry(directory, true);
   return target;

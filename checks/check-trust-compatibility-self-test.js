@@ -7,13 +7,35 @@ import { requireCI, checkMigrationDocument, readinessCause } from '../bench/fde/
 import { capture, runClient } from '../bench/fde/clients.js';
 import { recordSession } from '../bench/fde/accounting.js';
 import { attemptEvidence, readLines } from '../bench/fde/evidence.js';
-import { ensurePrivateDirectory, auditDiagnostics } from '../bench/fde/private-artifacts.js';
+import { ensurePrivateDirectory, auditDiagnostics, windowsAclError } from '../bench/fde/private-artifacts.js';
+import { contentSummary } from '../bench/fde/privacy.js';
 import { captureCases } from './check-trust-capture-self-test.js';
 
 const revision = 'c'.repeat(40), marker = 'PRIVATE_PAYLOAD_7291';
 const ci = () => ['linux', 'windows'].map((platform) => ({ platform, revision, status: 'passed', url: 'fixture-only', at: '2026-09-10' }));
 
+function aclFailureCases() {
+  const privatePath = 'C:\\Users\\fixture-private\\diagnostic.json';
+  const cases = [
+    [{ status: 2 }, 'OWNER_MISMATCH'], [{ status: 3 }, 'UNEXPECTED_GRANT'],
+    [{ status: 1 }, 'SCRIPT_FAILED'], [{ code: 'ENOENT' }, 'START_FAILED'],
+    [{ code: 'EACCES' }, 'START_FAILED'], [{ code: 'ETIMEDOUT', status: null }, 'TIMEOUT'],
+    [{ status: null, signal: 'SIGTERM' }, 'UNVERIFIED'],
+  ];
+  for (const phase of ['CREATE_DIRECTORY', 'VERIFY_DIRECTORY', 'VERIFY_FILE']) for (const [fields, reason] of cases) {
+    const original = Object.assign(new Error(`${marker}: ${privatePath}`), fields, { stderr: Buffer.from(marker), path: privatePath });
+    const failure = windowsAclError(original, phase);
+    const expected = `PRIVATE_ACL_${phase}_${reason}`;
+    assert.equal(failure.message, expected); assert.equal(readinessCause(failure), expected);
+    const shared = JSON.stringify({ cause: readinessCause(failure), details: contentSummary(failure.message) });
+    assert.ok(!shared.includes(marker)); assert.ok(!shared.includes(privatePath));
+    assert.equal(readinessCause(new Error(`${expected}: ${marker}`)), null, 'only complete fixed codes are public');
+  }
+  assert.equal(windowsAclError(new Error(marker), marker).message, 'PRIVATE_ACL_UNVERIFIED');
+}
+
 async function readinessCases(root) {
+  aclFailureCases();
   let validations = 0, invocations = 0;
   const services = { validate: () => { validations++; throw new Error('fixture reached post-CI validation'); }, invoke: () => { invocations++; } };
   const options = { protocol: { candidateRevision: revision }, repo: root, ledger: path.join(root, 'ledger.jsonl') };

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { privateAclCause } from './private-artifacts.js';
 
 export function requireCI(records, revision) {
   for (const platform of ['linux', 'windows']) {
@@ -22,4 +23,4 @@ export function compatibility(repo, records) {
 }
 
 const readinessCodes = new Set(['CI_REQUIRED_LINUX', 'CI_REQUIRED_WINDOWS', 'MIGRATION_DOCUMENT_MISSING', 'MIGRATION_DOCUMENT_BOUNDARIES_MISSING']);
-export const readinessCause = (error) => readinessCodes.has(error?.message) ? error.message : null;
+export const readinessCause = (error) => readinessCodes.has(error?.message) ? error.message : privateAclCause(error);
