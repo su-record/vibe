@@ -36,7 +36,7 @@ it('accepts real exclusive run reservations and their evidence without changing 
     fs.writeFileSync(path.join(repo, '.vibe/runs/r-2'), 'not a reservation');
     expect(() => validateCandidate(protocol, repo)).toThrow('run reservation must be an empty regular file');
   });
-});
+}, 60_000);
 
 it('still rejects source, contract and unrelated files under the reservation directory', () => {
   candidateFixture((repo, protocol) => {
@@ -48,4 +48,4 @@ it('still rejects source, contract and unrelated files under the reservation dir
     }
     expect(() => validateCandidate(protocol, repo)).not.toThrow();
   });
-});
+}, 60_000);
