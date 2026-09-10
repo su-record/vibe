@@ -1,0 +1,41 @@
+{
+  "protocol": "fde-discovery-v1",
+  "evidence": {
+    "documents/policy.md": "77eb4b7093ccd7ae32a872f09f2dff94952c9f28615ef8b375d46a9191e9c4e4",
+    "documents/slides.md": "1d40004bebf63f99ed78136f4adbba49e402fdf19046dfb5470c095cf5e33fdc",
+    "documents/tools.json": "17e65b43c6aec54e2d13f96f6cab99ebd67278c53d2eec943f328bdc21f96556",
+    "documents/window.json": "77c5372f31fc927928adc67bf8d9860889487b556684d83602415fb60de66503",
+    "mail.jsonl": "18429dde397b4ce5450919d22768ad08ef4d4ece6cc38b75179186d8f868ef94",
+    "meetings/meeting-1.json": "c91c4c1b6e4b93691a25e18a4ce73cd56188085aeaba5aa4d9ffc45bb852fd0d",
+    "meetings/meeting-2.json": "100ca087099da6cefe3b634a892f4c228df8931c19fa7852d1f1442fbfe7789f",
+    "meetings/meeting-3.json": "623d9380ba945b8d105f18ca6d47c92c8e0e0b7aefdf69e2c7bda0904ba5b727",
+    "meetings/meeting-4.json": "71db6da763e6974594686547a3a772a8e15b1b1e77bc123eccf355150c1ae090",
+    "tables/invoices.csv": "233bdc9ac49b2b98d67b0b7effc09bafebe07729bf825cec39d60e66836fde2c",
+    "tables/status.csv": "a8dd9c58b566c875da07edf07a33943f6e5f26a27ea9443e372c0827841d4f4b",
+    "worklog.csv": "2fd2442bbb39356c43499a8b7ea446ba077400d52916b8484ec85662aa9c0b27"
+  },
+  "developmentEvidence": {
+    "documents/policy.md": "3d64f2b6b6647c21dbdb1ec7cd54a63cb1f5e4767a374a6cce6240149361bcef",
+    "documents/slides.md": "2967f6eb5ccb8e8e0b98191779532351d08735862ae14467a635df62beccaec6",
+    "documents/tools.json": "845dac6617932f059ad8b538deec72931f1f9a218eb021ae50315028011e4929",
+    "documents/window.json": "25d2f8bc00be4f0bcbbeec6efde04fbfeb6f3dc467dc49553acadef24e303374",
+    "mail.jsonl": "bb378ef631e324caef6dfb1c81224148b88ec42c4b9592f54ef19d9ec18f5d88",
+    "meetings/meeting-1.json": "6b82fb7fcde661b7a25ba56bd8245a244308753eff07e0b4ba2199e857b6fc0d",
+    "meetings/meeting-2.json": "21742412fabbd427200b58fa9685472c631010a820e216189f59faf4150bd7f5",
+    "meetings/meeting-3.json": "38794cebcdc8ac07f32f24f962000d37b1ec9e99523f2064d88b8a225fd2cb24",
+    "meetings/meeting-4.json": "0d7382cd067b40d8e123be68347af37d2707af4a64a7af4421f1206a4de619ba",
+    "tables/invoices.csv": "5b0854e6402802730c3e3f2f9f4b6afa82f874923d0724faf27c6274d155a7c9",
+    "tables/status.csv": "9a3536958cfd2fdaa3bac930e0d14db30f9e9a1bf23c42c6050eddcacd8aee24",
+    "worklog.csv": "d31ca9d392875068b34300500599b1242ac5142cfb4c33f3e0e1247da4ab989f"
+  },
+  "heldOut": "d2ca2a967600c4a5663b7d68fd99b810e609beafb37254f01603da4d9369e22c",
+  "requirements": "6f3e6157798e02c8906b09b2f2f44ebdbbe0fd0bb367abb223b8c55790c530d2",
+  "dataSets": {
+    "scored": "work-opportunities-observed-a",
+    "development": "work-opportunities-development-c",
+    "heldOut": "work-opportunities-heldout-behavior-b",
+    "developmentPath": "key/development/evidence",
+    "heldOutPath": "key/heldout-input.json",
+    "rule": "Calibrate human ratings and broken examples on development data; scored agents receive evidence/ only. Hidden behavior uses different IDs, dates, content and order under the same public output rules."
+  }
+}

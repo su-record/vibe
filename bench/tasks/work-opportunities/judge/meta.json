@@ -1,0 +1,8 @@
+{
+  "protocol": "fde-discovery-v1",
+  "outputs": [
+    "out/opportunities.json",
+    "out/scope.json",
+    "automation/run.cjs"
+  ]
+}

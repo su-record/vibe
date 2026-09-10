@@ -1,0 +1,20 @@
+{
+  "synthetic": true,
+  "eventId": "followup-04",
+  "date": "2026-09-03",
+  "durationMinutes": 90,
+  "actions": [
+    {
+      "id": "action-4a",
+      "text": "Confirm milestone 4",
+      "owner": "Mira",
+      "due": "2026-09-04"
+    },
+    {
+      "id": "action-4b",
+      "text": "Prepare follow-up notes 4",
+      "owner": null,
+      "due": null
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{"id":"mail-1","eventId":"status-01","subject":"Daily status preparation","body":"Status data is in the table; this message refers to the same work event."}
+{"id":"mail-2","eventId":"status-02","subject":"Daily status preparation","body":"Status data is in the table; this message refers to the same work event."}
+{"id":"mail-3","eventId":"status-03","subject":"Daily status preparation","body":"Status data is in the table; this message refers to the same work event."}
+{"id":"mail-4","eventId":"status-04","subject":"Daily status preparation","body":"Status data is in the table; this message refers to the same work event."}
+{"id":"mail-5","eventId":"status-05","subject":"Daily status preparation","body":"Status data is in the table; this message refers to the same work event."}
+{"id":"mail-6","eventId":"status-06","subject":"Daily status preparation","body":"Status data is in the table; this message refers to the same work event."}
+{"id":"mail-7","eventId":"status-07","subject":"Daily status preparation","body":"Status data is in the table; this message refers to the same work event."}
+{"id":"mail-forward","eventId":"status-03","subject":"Forwarded productivity claim","body":"An outside vendor claims 10 hours saved per week. This is not a measurement of this customer's work."}
+{"id":"mail-meeting","eventId":"followup-02","subject":"Meeting follow-ups","body":"Please keep missing ownership and due dates visible."}
+{"id":"mail-invoice","eventId":"invoice-01","subject":"Invoice review","body":"Check the local export. No payment is authorized."}
