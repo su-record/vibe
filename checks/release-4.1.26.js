@@ -7,13 +7,14 @@ import { evaluate } from '../bench/fde/release.js';
 import { renderReport } from '../bench/fde/report.js';
 import { readLines, fileHash, digest } from '../bench/fde/evidence.js';
 import { treeManifest } from '../bench/snapshot.js';
-import { codePins } from '../bench/fde/protocol.js';
+import { codePins, validateCandidate } from '../bench/fde/protocol.js';
 import { selfTest } from './release-4.1.26-self-test.js';
 
 const repo = fileURLToPath(new URL('..', import.meta.url));
 const args = process.argv.slice(2);
 const option = (name) => { const index = args.indexOf(`--${name}`); if (index < 0 || !args[index + 1]) throw new Error(`--${name} is required`); return path.resolve(args[index + 1]); };
 function audit(protocol, rows, task) {
+  validateCandidate(protocol, repo);
   const actual = codePins(repo, task);
   for (const key of ['runner', 'fixture', 'rubric']) if (actual[key] !== protocol.pins?.[key]) throw new Error(`${key} bytes differ from frozen protocol`);
   for (const row of rows.filter((entry) => entry.event === 'attempt')) {

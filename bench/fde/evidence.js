@@ -31,15 +31,28 @@ export async function privateGrade(workspace, task, grade, variant, snapshot) {
 export function usageSummary(sessions, sideUsage, prices = {}) {
   const tokens = addTokens([...sessions.map((s) => s.tokens), ...sideUsage.map((s) => s.tokens)]);
   const reported = sessions.every((s) => Number.isFinite(s.costUsd)) ? sessions.reduce((sum, s) => sum + s.costUsd, 0) : null;
-  const price = (model, amount) => amount && prices[model] ? (weightedInput(amount) * prices[model].input + amount.output * prices[model].output) / 1e6 : null;
-  const costs = sessions.flatMap((session) => session.models?.length ? session.models.map((m) => price(m.model, m.tokens)) : [price(session.requestedModel, session.tokens)]).concat(sideUsage.map((s) => Number.isFinite(s.costUsd) ? s.costUsd : price(s.model, s.tokens)));
+  const price = (model, amount) => {
+    if (!amount) return null;
+    const costs = Object.keys(amount).map((key) => amount[key] === 0 ? 0 : Number.isFinite(prices[model]?.[key]) ? amount[key] * prices[model][key] / 1e6 : null);
+    return costs.every(Number.isFinite) ? costs.reduce((sum, cost) => sum + cost, 0) : null;
+  };
+  const costs = sessions.flatMap((session) => session.models?.length ? session.models.map((m) => price(m.model, m.tokens)) : [price(session.requestedModel, session.tokens)]).concat(sideUsage.map((s) => price(s.model, s.tokens)));
+  const recomputed = costs.length && costs.every(Number.isFinite) ? costs.reduce((a, b) => a + b, 0) : null;
+  const sideCosts = sideUsage.map((s) => Number.isFinite(s.costUsd) ? s.costUsd : price(s.model, s.tokens));
+  const reportedTotal = reported !== null && sideCosts.every(Number.isFinite) ? reported + sideCosts.reduce((sum, cost) => sum + cost, 0) : null;
   return { tokens, weightedInput: tokens ? weightedInput(tokens) : null, usage: tokens ? 'captured' : 'missing',
-    reportedMainCostUsd: reported, costUsd: costs.length && costs.every(Number.isFinite) ? costs.reduce((a, b) => a + b, 0) : null,
+    reportedMainCostUsd: reported, recomputedCostUsd: recomputed, costUsd: recomputed ?? reportedTotal,
+    costBasis: recomputed !== null ? 'configured-category-prices' : reportedTotal !== null ? 'client-reported-plus-known-side-costs' : 'unknown',
     allocation: 'aggregate-only', sideUsage };
 }
 
 export function attemptEvidence(context, identity, grade, prices) {
-  const agent = agentEvidence(context.workspace);
+  let agent;
+  try { agent = agentEvidence(context.workspace); }
+  catch (error) {
+    context.error = [context.error, `agent evidence unavailable: ${error.message}`].filter(Boolean).join('; ');
+    agent = { sideUsage: [{ tokens: null, error: error.message }], verification: null, scoped: null };
+  }
   return { ...identity, event: 'attempt', at: new Date().toISOString(), workspace: context.workspace,
     ...usageSummary(context.sessions, agent.sideUsage, prices), sessions: context.sessions, events: context.events,
     customer: { clarificationRounds: context.clarifications, corrections: context.corrections, answers: context.answers },

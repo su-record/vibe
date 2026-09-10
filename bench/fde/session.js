@@ -66,11 +66,16 @@ function approve(context) {
     deliver(context, { text: 'Proposed local pilot', id: null }, decision);
     return true;
   }
-  deliver(context, { text: 'Proposed local pilot', id: null }, decision);
+  // Clarification replies may be hashed input evidence. Consent must not rewrite that source.
+  const consent = path.join(workspace, 'customer/consent.json');
+  fs.mkdirSync(path.dirname(consent), { recursive: true });
+  fs.writeFileSync(consent, `${JSON.stringify({ ...decision, simulated: true, at: now() }, null, 2)}\n`);
+  fs.appendFileSync(path.join(workspace, 'TASK.md'), `\n\nCustomer approval: ${decision.answer}\nConsent record: customer/consent.json. Continue with the approved build.\n`);
   const state = readJson(path.join(workspace, '.vibe/state.json'), {});
   // Consent is authored by the private customer, never inferred from a model-written approval event.
   for (const question of openQuestions(workspace).filter((q) => !q.answer)) {
-    if (question.needs === 'approve') answer(workspace, question.id, decision.answer);
+    const classified = context.customer.respond(question.question, variant);
+    if (question.needs === 'approve' || classified.decision === 'proposal-required') answer(workspace, question.id, decision.answer);
   }
   if (state.state === 'DRAFT') {
     const result = vibeSync(workspace, ['approve'], context);
@@ -95,7 +100,7 @@ async function oneSession(context, invoke) {
   context.sessions.push({ ...result, phase, started, finished: now(), phaseAllocation: 'unavailable-within-session' });
   if (result.error) { context.error = result.error; return false; }
   const responses = questions(context, result.finalText);
-  if (!context.approved && exists(context.workspace, 'automation/run.cjs')) context.prematureBuild = true;
+  if (!context.approved && (exists(context.workspace, 'automation/run.cjs') || exists(context.workspace, 'automation/install.cjs'))) context.prematureBuild = true;
   if (responses.length) return clarify(context, responses);
   if (!context.approved || contextChanged(context)) return approve(context);
   event(context, 'proof', { status: 'agent-ended', note: 'Command trace and product verification determine what actually ran.' });

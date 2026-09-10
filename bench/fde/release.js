@@ -7,6 +7,17 @@ const mean = (rows, get) => rows.length ? rows.reduce((sum, row) => sum + get(ro
 const tokenValues = (tokens) => tokens && ['input', 'cacheRead', 'cacheWrite', 'output'].every((key) => Number.isFinite(tokens[key]) && tokens[key] >= 0);
 const behavior = (row) => row.privateGrade.pilot.passed / row.privateGrade.pilot.total;
 
+function validGrade(grade) {
+  return grade?.complete === true && grade.fixture === 'scored'
+    && typeof grade.sourcePreserved === 'boolean'
+    && Number.isInteger(grade.groundedOpportunities) && grade.groundedOpportunities >= 0
+    && Number.isInteger(grade.unsupportedAssertions) && grade.unsupportedAssertions >= 0
+    && Array.isArray(grade.criticalOmissions) && grade.criticalOmissions.every((id) => typeof id === 'string')
+    && Number.isInteger(grade.pilot?.total) && grade.pilot.total > 0 && Number.isInteger(grade.pilot.passed)
+    && grade.pilot.passed >= 0 && grade.pilot.passed <= grade.pilot.total
+    && Number.isFinite(grade.mechanicalCoverage?.ratio) && grade.mechanicalCoverage.ratio >= 0 && grade.mechanicalCoverage.ratio <= 1;
+}
+
 function rowErrors(row, plan, protocol) {
   const errors = [];
   for (const key of ['client', 'variant', 'arm', 'attempt', 'doubleReview']) if (row[key] !== plan[key]) errors.push(`${key} differs from plan`);
@@ -17,7 +28,8 @@ function rowErrors(row, plan, protocol) {
   if (row.error || row.stalled || row.incomplete) errors.push(row.error ?? (row.stalled ? 'stalled' : 'incomplete'));
   if (!tokenValues(row.tokens) || row.usage !== 'captured') errors.push('missing usage');
   if (!row.scopeSnapshots?.length || row.prematureBuild) errors.push('missing pre-build approved scope');
-  if (!row.privateGrade?.pilot?.total || !Number.isFinite(row.privateGrade?.mechanicalCoverage?.ratio)) errors.push('missing private grade');
+  if (!validGrade(row.privateGrade)) errors.push('missing/invalid scored private grade');
+  if (row.gradedScopeHash !== row.scopeSnapshots?.[0]?.hash) errors.push('discovery grade must use the initial pre-build agreement');
   if (!row.sessions?.length || row.sessions.some((s) => !tokenValues(s.tokens) || s.phaseAllocation !== 'unavailable-within-session' || !['discovery', 'implementation'].includes(s.phase))) errors.push('missing or invented phase attribution');
   const aggregate = addTokens([...(row.sessions ?? []).map((s) => s.tokens), ...(row.sideUsage ?? []).map((s) => s.tokens)]);
   if (aggregate && JSON.stringify(aggregate) !== JSON.stringify(row.tokens)) errors.push('session/side usage does not reconcile');
@@ -25,6 +37,7 @@ function rowErrors(row, plan, protocol) {
   if (!['intake', 'scope', 'approval', 'build', 'proof', 'handoff'].every((phase) => phases.has(phase))) errors.push('missing phase boundaries');
   if (row.events?.some((event) => event.allocation !== 'unavailable')) errors.push('invented phase allocation');
   if (!Number.isInteger(row.customer?.clarificationRounds) || !Number.isInteger(row.customer?.corrections)) errors.push('missing customer burden proxy');
+  if (!Number.isFinite(row.ms) || row.ms < 0) errors.push('missing machine time');
   return errors;
 }
 
@@ -37,6 +50,7 @@ function qualityFloor(row, scope) {
   if (grade.groundedOpportunities < TARGETS.groundedFamilies) reasons.push('missing grounded recurring families');
   if (scope.coverage < TARGETS.scopeFloor) reasons.push('weighted scope below 90%');
   if (behavior(row) !== 1) reasons.push('selected pilot behavior failed');
+  if (!grade.sourcePreserved) reasons.push('pilot changed source evidence');
   return reasons;
 }
 

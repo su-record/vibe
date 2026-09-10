@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { draft } from '../../dist/core/intent.js';
 import { discoverySession } from './session.js';
 
 async function fixture(run, customer = { respond: () => ({ status: 'report' }), proposal: () => ({ approved: true, answer: 'Approved local draft pilot.' }) }) {
@@ -9,7 +11,11 @@ async function fixture(run, customer = { respond: () => ({ status: 'report' }), 
   fs.writeFileSync(path.join(workspace, 'TASK.md'), 'Synthetic protocol test');
   let context;
   try {
-    context = await discoverySession({ workspace, customer, variant: 'status-first', limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1 } }, (session) => run(workspace, session));
+    const home = path.join(workspace, 'fixture-home');
+    fs.mkdirSync(home);
+    context = await discoverySession({ workspace, customer, variant: 'status-first', repo: fileURLToPath(new URL('../../', import.meta.url)),
+      env: { ...process.env, HOME: home, USERPROFILE: home, VIBE_HOME_DIR: home, VIBE_SKIP_SETUP: '1' },
+      limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1 } }, (session) => run(workspace, session));
     return context;
   } finally {
     fs.rmSync(workspace, { recursive: true, force: true });
@@ -56,5 +62,20 @@ describe('common customer scheduling', () => {
       return reply('report');
     });
     expect(result.prematureBuild).toBe(true);
+  });
+  it('approves a scope that hashes clarification evidence without changing the answers', async () => {
+    const result = await fixture((workspace, session) => {
+      if (session.index === 0) {
+        proposed(workspace);
+        fs.mkdirSync(path.join(workspace, 'customer'));
+        fs.writeFileSync(path.join(workspace, 'customer/answers.json'), '{"answers":[{"answer":"Status first"}]}');
+        draft(workspace, '# Local pilot', '- id: proof\n  then: proof exists\n  check: {type: file, path: proof.txt, exists: true}\n', ['customer/answers.json']);
+      }
+      return reply('report');
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.approved).toBe(true);
+    expect(result.completed).toBe(true);
+    expect(result.snapshots[0].manifest['customer/consent.json']).toBeTruthy();
   });
 });

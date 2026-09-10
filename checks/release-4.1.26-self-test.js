@@ -10,19 +10,19 @@ const requirements = [3, 2, 3, 3, 2, 2, 3, 3, 1, 1].map((weight, i) => ({ id: `r
 export function example() {
   const protocol = { id: 'fde-discovery-v1', status: 'frozen', candidateRevision: revision, baselineRevision: '2d2af57', schedule: schedule(), targets: TARGETS,
     pins: { runner: hash, fixture: hash, rubric: hash }, products: { baseline: hash, candidate: hash },
-    settings: Object.fromEntries(['claude', 'codex'].map((client) => [client, { model: 'test-model', sources: { model: { source: 'test-fixture' } }, maxTurns: 40 }])),
+    settings: Object.fromEntries(['claude', 'codex'].map((client) => [client, { model: 'test-model', sources: { model: { source: 'test-fixture' } }, maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
     limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1, sessionMs: 1000, attemptMs: 6000, concurrencyPerClient: 1 },
     budget: { rawTokens: 10000000, wallMs: 100000, unknownMoneyAccepted: true }, humanReview: { calibration: { artifact: 'test-only' }, rubricHash: hash } };
   const rows = protocol.schedule.map((plan) => {
     const tokens = { input: plan.arm === 'scoped-4.1.26' ? 70 : 100, cacheRead: 0, cacheWrite: 0, output: 10 };
     return { ...plan, event: 'attempt', protocol: protocol.id, protocolHash: digest(protocol), runnerHash: hash, fixtureHash: hash,
       harnessRevision: plan.arm === 'off' ? null : plan.arm === 'scoped-4.1.25' ? protocol.baselineRevision : revision, model: 'test-model',
-      tokens, usage: 'captured', ms: 100, scopeSnapshots: [{ hash: digest(plan.id) }],
+      tokens, usage: 'captured', ms: 100, scopeSnapshots: [{ hash: digest(plan.id) }], gradedScopeHash: digest(plan.id),
       sessions: [{ tokens, phase: 'discovery', phaseAllocation: 'unavailable-within-session' }],
       events: ['intake', 'scope', 'approval', 'build', 'proof', 'handoff'].map((phase) => ({ phase, allocation: 'unavailable' })),
-      customer: { clarificationRounds: 1, corrections: 0 }, privateGrade: { mechanicalCoverage: { ratio: 1 }, criticalOmissions: [], unsupportedAssertions: 0, groundedOpportunities: 3, pilot: { passed: 5, total: 5 } } };
+      customer: { clarificationRounds: 1, corrections: 0 }, privateGrade: { complete: true, fixture: 'scored', sourcePreserved: true, mechanicalCoverage: { ratio: 1 }, criticalOmissions: [], unsupportedAssertions: 0, groundedOpportunities: 3, pilot: { passed: 5, total: 5 } } };
   });
-  const ratings = rows.flatMap((row) => Array.from({ length: row.doubleReview ? 2 : 1 }, (_, index) => ({ packet: packetId(row), kind: 'human', reviewer: `fixture-person-${index}`, at: '2026-09-10', reason: 'Unit-test fixture, never cohort evidence',
+  const ratings = rows.flatMap((row) => Array.from({ length: row.doubleReview ? 2 : 1 }, (_, index) => ({ packet: packetId(row), scopeHash: row.scopeSnapshots[0].hash, kind: 'human', reviewer: `fixture-person-${index}`, at: '2026-09-10', reason: 'Unit-test fixture, never cohort evidence',
     requirements: requirements.map((r) => ({ id: r.id, satisfied: true, reason: 'fixture', evidence: ['out/scope.json'] })), unsupportedAssertions: 0, unnecessaryScope: 0, correctProblem: true })));
   const ci = ['linux', 'windows'].map((platform) => ({ platform, revision, status: 'passed', url: 'fixture-only', at: '2026-09-10' }));
   return { protocol, rows, ratings, requirements, ci };
@@ -49,6 +49,9 @@ export function selfTest() {
     ['unsupported claim', (f) => { f.rows.find((r) => r.arm === 'scoped-4.1.26').privateGrade.unsupportedAssertions = 1; }],
     ['invented human verdict', (f) => { f.ratings[0].kind = 'model'; }],
     ['side-model omitted', (f) => { f.rows[0].sideUsage = [{ tokens: { input: 10, cacheRead: 0, cacheWrite: 0, output: 2 } }]; }],
+    ['development rows', (f) => { f.rows[0].privateGrade.fixture = 'development'; }],
+    ['missing grade metric', (f) => { delete f.rows[0].privateGrade.unsupportedAssertions; }],
+    ['amended grade substituted', (f) => { f.rows[0].gradedScopeHash = 'later scope'; }],
   ];
   for (const [name, mutate] of broken) { const fixture = example(); mutate(fixture); assert.equal(assess(fixture).ok, false, name); }
   console.log(`4.1.26 release --self-test: ${broken.length + 1} deterministic evidence checks passed; no scored rows written`);

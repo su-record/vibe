@@ -10,7 +10,7 @@ export function renderReport(protocol, result) {
     const data = cell.arms[arm];
     lines.push(`| ${cell.client} / ${cell.variant} | ${arm} | ${data.usable} | ${value(data.scope)} | ${value(data.behavior)} |`);
   }
-  lines.push('', '| Client | Arm | Matched | Weighted input | Output tokens | Customer response rounds | Machine ms | Recomputed USD |', '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |');
+  lines.push('', '| Client | Arm | Matched | Weighted input | Output tokens | Customer response rounds | Machine ms | Known USD |', '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |');
   for (const cell of result.cost.clients) for (const arm of ARMS) {
     const data = cell.arms[arm];
     lines.push(`| ${cell.client} | ${arm} | ${data.n} | ${value(data.weightedInput)} | ${value(data.output)} | ${value(data.customerResponses)} | ${value(data.machineMs)} | ${value(data.costUsd)} |`);

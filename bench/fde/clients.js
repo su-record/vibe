@@ -5,7 +5,7 @@ const zero = () => ({ input: 0, cacheRead: 0, cacheWrite: 0, output: 0 });
 export const weightedInput = (tokens) => tokens.input + 0.1 * tokens.cacheRead + 1.25 * tokens.cacheWrite;
 export const rawTokens = (tokens) => Object.values(tokens).reduce((sum, value) => sum + value, 0);
 export function addTokens(entries) {
-  if (!entries.length || entries.some((entry) => !entry)) return null;
+  if (!entries.length || entries.some((entry) => !entry || Object.keys(zero()).some((key) => !Number.isFinite(entry[key]) || entry[key] < 0))) return null;
   return entries.reduce((sum, entry) => {
     for (const key of Object.keys(sum)) sum[key] += entry[key];
     return sum;
@@ -56,7 +56,7 @@ function parseCodex(event, parsed, turns) {
   if (event.type === 'turn.completed') {
     const u = event.usage ?? {};
     const cached = u.cached_input_tokens ?? 0;
-    turns.push(usage(Math.max(0, u.input_tokens - cached), cached, u.cache_write_input_tokens ?? 0, u.output_tokens));
+    turns.push(cached > u.input_tokens ? null : usage(u.input_tokens - cached, cached, u.cache_write_input_tokens ?? 0, u.output_tokens));
   }
   if (event.type !== 'item.completed') return;
   const item = event.item ?? {};

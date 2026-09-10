@@ -20,10 +20,19 @@ export function validateProducts(protocol, repo, baseline) {
   const revision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: baseline, encoding: 'utf8' }).trim();
   if (!revision.startsWith(BASELINE)) throw new Error('baseline checkout is not the pinned 4.1.25 revision');
   if (execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: baseline, encoding: 'utf8' }).trim()) throw new Error('baseline product has tracked edits');
+  validateCandidate(protocol, repo);
   for (const [arm, directory, version] of [['baseline', baseline, '4.1.25'], ['candidate', repo, '4.1.26']]) {
     if (JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8')).version !== version) throw new Error(`${arm} version mismatch`);
     if (productHash(directory) !== protocol.products?.[arm]) throw new Error(`${arm} executable/card/skill/hook hash changed or was not frozen`);
   }
+}
+
+export function validateCandidate(protocol, repo) {
+  const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  if (git('rev-parse', 'HEAD') !== protocol.candidateRevision) throw new Error('candidate checkout does not match the measured/CI revision');
+  const changed = [...git('diff', 'HEAD', '--name-only').split('\n'), ...git('ls-files', '--others', '--exclude-standard').split('\n')];
+  if (changed.some((file) => file && !file.startsWith('bench/claims/4.1.26/'))) throw new Error('candidate source has edits outside its cohort evidence');
+  if (productHash(repo) !== protocol.products?.candidate) throw new Error('candidate executable product differs from frozen evidence');
 }
 
 export function schedule() {
@@ -69,7 +78,7 @@ export function protocolDraft(repo, task, sourceSettings) {
   return { id: ID, status: 'draft', createdAt: new Date().toISOString(), pins: codePins(repo, task),
     baselineRevision: BASELINE, candidateRevision: null, products: { baseline: null, candidate: null }, targets: TARGETS, schedule: schedule(),
     settings: Object.fromEntries(CLIENTS.map((client) => [client, { model: sourceSettings[client].model.value, effort: sourceSettings[client].effort.value,
-      sources: sourceSettings[client], maxTurns: 40 }])),
+      sources: sourceSettings[client], maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
     limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1, sessionMs: 900000, attemptMs: 3600000, concurrencyPerClient: 1 },
     budget: { rawTokens: null, usd: null, wallMs: null, unknownMoneyAccepted: false, note: 'Accounting is observed at client-result boundaries. One in-flight invocation may overshoot; missing usage stops further calls.' },
     prices: {}, humanReview: { rubricHash: fileHash(path.join(task, 'key/requirements.json')), doubleReview: 'attempt-1-every-cell', calibration: null },
@@ -87,7 +96,9 @@ export function protocolErrors(protocol, { frozen = true } = {}) {
   if (!protocol.limits || protocol.limits.clarificationRounds !== 2 || protocol.limits.scopeCorrections !== 1 || protocol.limits.concurrencyPerClient !== 1) errors.push('customer or concurrency protocol changed');
   for (const client of CLIENTS) {
     const setting = protocol.settings?.[client];
-    if (!setting?.model || !setting?.sources?.model?.source || !Number.isInteger(setting.maxTurns) || setting.maxTurns < 1) errors.push(`${client}: missing model/settings provenance`);
+    if (!setting?.model || !setting?.sources?.model?.source) errors.push(`${client}: missing model/settings provenance`);
+    if (client === 'claude' && (!Number.isInteger(setting?.maxTurns) || setting.maxTurns < 1)) errors.push('claude: missing turn cap');
+    if (client === 'codex' && (setting?.maxTurns !== null || setting?.turnLimit !== 'unavailable-use-shared-time-limit')) errors.push('codex: unavailable turn cap must be explicit; shared wall limits still apply');
   }
   for (const key of ['sessions', 'sessionMs', 'attemptMs']) if (!positive(protocol.limits?.[key])) errors.push(`missing ${key} limit`);
   if (frozen) {
@@ -96,7 +107,7 @@ export function protocolErrors(protocol, { frozen = true } = {}) {
     for (const arm of ['baseline', 'candidate']) if (!/^[a-f0-9]{64}$/.test(protocol.products?.[arm] ?? '')) errors.push(`missing ${arm} executable hash`);
     if (!positive(protocol.budget?.rawTokens) || !positive(protocol.budget?.wallMs)) errors.push('token and wall budget required');
     if (!positive(protocol.budget?.usd) && !protocol.budget?.unknownMoneyAccepted) errors.push('currency budget or explicit unknown-money acceptance required');
-    for (const [model, price] of Object.entries(protocol.prices ?? {})) if (![price.input, price.output].every((n) => Number.isFinite(n) && n >= 0)) errors.push(`${model}: invalid configured price`);
+    for (const [model, price] of Object.entries(protocol.prices ?? {})) if (Object.values(price).some((n) => !Number.isFinite(n) || n < 0)) errors.push(`${model}: invalid configured price`);
     if (!protocol.humanReview?.calibration?.artifact || protocol.humanReview.rubricHash !== protocol.pins?.rubric) errors.push('human rubric calibration missing or mismatched');
   }
   return errors;
@@ -106,4 +117,6 @@ export function authorize(protocol, approval) {
   const errors = protocolErrors(protocol);
   if (!approval?.approvedBy || !approval?.approvedAt || approval.protocolHash !== digest(protocol) || approval.action !== 'run-60-planned-attempts') errors.push('separate human authorization for this exact protocol is missing');
   if (errors.length) throw new Error(errors.join('; '));
+  const calibration = protocol.humanReview.calibration;
+  if (!calibration.sha256 || !fs.existsSync(calibration.artifact) || fileHash(calibration.artifact) !== calibration.sha256) throw new Error('human calibration artifact missing or changed before scored execution');
 }

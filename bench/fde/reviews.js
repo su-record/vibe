@@ -3,7 +3,7 @@ import path from 'node:path';
 import { digest } from './evidence.js';
 
 export function packetId(row) {
-  return digest({ protocol: row.protocolHash, scopes: row.scopeSnapshots?.map((s) => s.hash) ?? [] });
+  return digest({ protocol: row.protocolHash, attempt: row.id, scopes: row.scopeSnapshots?.map((s) => s.hash) ?? [] });
 }
 
 /** Separate reviewer packets contain neutral artifacts and customer replies, never arm/usage metadata. */
@@ -50,7 +50,7 @@ function decisions(rating) {
 export function reviewedScope(row, ratings, requirements) {
   const packet = packetId(row);
   const all = ratings.filter((rating) => rating.packet === packet);
-  const valid = all.filter((rating) => validRating(rating, packet, requirements));
+  const valid = all.filter((rating) => rating.scopeHash === row.scopeSnapshots?.[0]?.hash && validRating(rating, packet, requirements));
   const primary = valid.filter((rating) => !rating.adjudication);
   if (new Set(primary.map((r) => r.reviewer)).size < (row.doubleReview ? 2 : 1)) return { error: 'missing independent human review' };
   let accepted = primary[0];
