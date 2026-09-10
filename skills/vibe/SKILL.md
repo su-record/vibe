@@ -13,6 +13,7 @@ If `vibe` is not on PATH, run `npm i -g @su-record/vibe` once; every command bel
 ## Procedure
 
 1. Run `vibe state --json`. A directory without `.vibe/` answers NONE; the first record creates it.
+   - Once the intended worktree is known, run `vibe session bind` when the host supplies `CODEX_THREAD_ID` or `CLAUDE_SESSION_ID`; otherwise use its actual session ID with `--session`. Never invent an ID or bind from inherited ledger entries. SessionStart and Stop read status only; run checks explicitly.
 2. If `notices` is non-empty, show them to the user first.
 3. If work is in progress (`state` is not NONE or ABANDONED) and the user's request is a new one, ask in one line: continue or start over? Starting over means `vibe abandon --reason "…"` first.
 4. Follow the `next` line. It is the procedure; a stage skill is loaded only when `next` names one:

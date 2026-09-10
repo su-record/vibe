@@ -17,6 +17,7 @@ import { cmdAsk, cmdAuthorize, cmdInbox } from './cli/human.js';
 import { cmdKnowledge, cmdLedger, cmdRegress, cmdResearch, cmdSkill } from './cli/memory.js';
 import { cmdPlugin, cmdSetup, cmdStatus, cmdTokens, cmdUninstall, cmdUpdate } from './cli/setup.js';
 import { cmdContext } from './cli/context.js';
+import { cmdSession } from './cli/session.js';
 import { cmdConventions } from './cli/conventions.js';
 import { cmdBlast, cmdCallers, cmdMap, cmdSymbols } from './cli/map.js';
 import { cmdAbandon, cmdApprove, cmdCheck, cmdEvidence, cmdIntent, cmdProfile, cmdRead, cmdSize, cmdState } from './cli/work.js';
@@ -32,6 +33,7 @@ const COMMANDS: Record<string, Handler> = {
   uninstall: (root, _s, _r, _t, flags) => cmdUninstall(root, flags),
   plugin: (_root, sub, _r, _t, flags) => cmdPlugin(sub, flags),
   state: (root, _s, _r, _t, flags) => cmdState(root, flags),
+  session: (root, sub, _r, _t, flags) => cmdSession(root, sub, flags),
   profile: (root, sub, _r, _t, flags) => cmdProfile(root, sub, flags),
   read: (root, _s, _r, tail, flags) => cmdRead(root, tail, flags),
   size: (root, _s, _r, tail, flags) => cmdSize(root, tail, flags),
@@ -72,7 +74,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
     const modes = globalStatus(flagString(flags, 'home')).clients;
     process.stderr.write(`[vibe] set up ${repaired.map((c) => `${c} (${modes[c]?.mode === 'plugin' ? `plugin ${modes[c]?.pluginVersion ?? ''}`.trim() : 'card, skills, hook in home'})`).join(', ')}\n`);
   }
-  const root = cmd === 'plugin' ? process.cwd() : findProjectRoot();
+  const root = cmd === 'plugin' || cmd === 'session' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
   return handler(root, sub, rest, tail, flags);
 }

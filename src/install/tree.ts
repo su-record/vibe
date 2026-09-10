@@ -22,11 +22,11 @@ const AUTHOR = { name: 'su-record', url: 'https://github.com/su-record' };
 const REPO = 'https://github.com/su-record/vibe';
 
 function hookSet(root: string, sessionArg: string): Record<string, unknown> {
-  const cmd = (file: string, arg: string): { type: 'command'; command: string; timeout: number } => ({ type: 'command', command: `node "${root}/hooks/${file}" ${arg}`, timeout: 90 });
+  const cmd = (file: string, arg: string): { type: 'command'; command: string; timeout: number } => ({ type: 'command', command: `node "${root}/hooks/${file}" ${arg}`, timeout: 5 });
   return {
     hooks: {
       SessionStart: [{ hooks: [cmd('session.js', sessionArg)] }],
-      Stop: [{ hooks: [{ ...cmd('notify.js', 'stop --plugin'), timeout: 620 }] }],
+      Stop: [{ hooks: [{ ...cmd('notify.js', 'stop --plugin'), timeout: 5 }] }],
       PostToolUse: [{ matcher: 'Edit|Write|MultiEdit|NotebookEdit', hooks: [{ ...cmd('notify.js', 'post --plugin'), timeout: 20 }] }],
       PreToolUse: [
         { matcher: 'Bash', hooks: [{ ...cmd('notify.js', 'pre --plugin'), timeout: 20 }] },

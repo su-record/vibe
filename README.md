@@ -31,15 +31,21 @@ Then, in chat:
 ## The flow
 
 ```
-request          `vibe state` says the stage and the next step (the session hook hands it over on Claude Code)
+request          `vibe state` says the stage and the next step; bind the host session to this worktree
   → discover       evidence first; ask only about consequential unknowns, up to three per round
   → scenarios      sufficient agreement · executable checks · needed tools → one approval
   → build          everything first, then one `vibe check --all`; on a failure, fix what the check names; `vibe context <id>` when that is not enough
-  → prove          `vibe check --all` — every scenario plus every regression, ordered by the work graph; the Stop hook runs it if a turn ends without it
+  → prove          explicitly run `vibe check --all` — every scenario plus every regression, ordered by the work graph
   → report         from the check output; HANDOFF.md only when the intent asks; irreversible steps need a token
 ```
 
 Any client can pick the work up: `vibe state` says where you are, because the state lives in plain files inside the repository. There is no handoff document — the state is the handoff.
+
+In the intended worktree, run `vibe session bind` once per host session. It uses `CODEX_THREAD_ID` or `CLAUDE_SESSION_ID`; if the host supplies only a hook `session_id`, pass that exact value with `--session <id>`. `vibe session status` reports the association. Binding is explicit and private to the local machine: a copied ledger, parent repository or sibling worktree cannot choose the session's target. Missing or conflicting identifiers leave Stop unavailable until the association is corrected.
+
+SessionStart and Stop perform bounded local reads with packaged modules. They run no checks, models, services or PATH commands. Stop recognizes completion only from a fresh explicit-check record for the exact canonical worktree, revision, contract and files. It blocks unchanged unfinished work at most twice, then releases it as unmet. An inbox wait or scenario handoff also releases without success. Titles, check output, transcript claims and handoff reasons never become Stop instructions.
+
+Session bindings, retry counters and explicit-check proofs live outside the project in `~/.vibe-runtime`, with private directory/file permissions and linked-entry rejection. On Windows, confidentiality still depends on the user's home ACL; POSIX mode bits cannot prove it. Status reads reject oversized or changing inputs and linked project files. A project fingerprint is bounded to 10,000 entries, 64 MiB total, 8 MiB per file and a 1.5-second traversal budget; exceeding a bound reports unavailable, never DONE. Git metadata, dependency trees and client configuration directories are excluded; contract files and regressions under `.vibe/` remain included.
 
 A clear request needs no ceremonial interview. Relevant documents and sample profiles can answer questions before the customer is asked. An unanswered material question remains unanswered even if a default was proposed. Research and new integrations are used for a specific unresolved need, not on every local task.
 
@@ -119,6 +125,7 @@ The policy is per project (`.vibe/config.json`); `vibe tokens` alone prints it. 
 ```
 setup     update [--check] · status · tokens · uninstall [--purge-state] · plugin build | mcpb | install | status
 work      state [--graph] · read <file…> [--ask "…"] · profile <file> · intent draft | show | analyze · approve · check [id…] [--all] · evidence · abandon
+session   session bind [--session id] · session status [--session id]
 checks    run · file · http · eval · review · human · size [--max-file 400] [--max-function 50]
 map       map · symbols <file> · callers <symbol> · blast · context <scenario> · conventions
 human     ask · authorize --action <action> · inbox [answer <id> "…" | resolve <id>]
@@ -155,7 +162,7 @@ vibe skill add owner/repo[@name] [--pin <sha>] [--yes]   # shows the commands in
 vibe skill search <keyword> · list · used <name> · prune [--unused-runs 10] · dismiss <ref>
 ```
 
-Proposals are proposals: the harness never installs a proposed skill, runs remote commands, or writes anything but its own six skills, card and hook outside the project. A dismissed proposal is not repeated.
+Proposals are proposals: the harness never installs a proposed skill or runs remote commands without an explicit action. Its local installation and private runtime records live outside the project. A dismissed proposal is not repeated.
 
 ## Language
 
@@ -193,7 +200,7 @@ The mechanisms below support the FDE procedure. Their effect on a particular tas
 - **`vibe context <scenario>`** hands the model what one scenario needs, most relevant first and each with its source: the check, files, nearby symbols, conventions, relevant ledger events and knowledge notes, within 12,000 characters. Use it when the files named by a failed check do not answer the question; it is not a mandatory read before building.
 - **`vibe conventions`** writes `.vibe/knowledge/conventions.md`: what the repository declares (lint and formatter configs, `tsconfig` strictness, the test and lint scripts, an `AGENTS.md` heading) and what the harness learned — a REJECT reason or a KEEP line that recurs, every regression title, every decision recorded at approval — one line each with its source, append-only. `vibe knowledge add --global` keeps a note under `~/.config/vibe/knowledge/` for every project.
 - **`vibe intent analyze`** is the read-only check before approval: each bullet of "What counts as success" against the scenarios — `uncovered` bullets, `unrequested` scenarios, a `human` check where a file or a command is named is `weak`. The scope skill resolves `uncovered` before it asks for the approval.
-- **The hooks carry the procedure.** On Claude Code the `SessionStart` hook hands over the card (plugin mode) and, inside a project, the `vibe state` output — the first command already run, in plugin and settings mode alike; the `Stop` hook runs `vibe check --all` when a turn ends with an approved intent still building and returns the verdict as the reason the turn is not over (once; a turn already continued this way is let go), and when the model's last message claims completion — done, finished, passed — that the verdict does not support, the reason opens with `unverified: "<claim>"`; so "done" is a structure, not a rule. Codex runs the same hooks — SessionStart, PreToolUse, PostToolUse, Stop — once their trust is granted (Codex records a `trusted_hash` per hook in `~/.codex/config.toml`; it asks on first use, and the bench passes `--dangerously-bypass-hook-trust` for the workspace's own hooks); the card lives in `~/.codex/AGENTS.md`.
+- **The hooks report bounded status.** SessionStart hands over the card when needed and reports the explicit session/worktree association. Stop reads existing check proof and can release unfinished work without calling it complete; it never executes the next step. Run `vibe state` for the procedure and `vibe check` for a verdict. Claude Code and Codex use the same packaged readers once the client trusts the hooks; client trust does not turn repository text or a copied ledger into a session binding.
 - **The hook gates the irreversible.** Under the `strict` and `irreversible` token policies (opt-in: the default is `off`) the `PreToolUse` hook blocks (exit 2) a command with no authorize record in the last ten minutes that does what the check gate calls irreversible — `restore`, `reset`, `drop`, `truncate`, `seed`, `migrate … down`, `rm -rf`, `git push`, `deploy`, `publish`, `terraform apply`, plus a send — the same action words `vibe authorize --action` takes, so a blocked tool call and a blocked check ask for the same record; a command that only reads (`grep`, `cat`, `git log` …) is never gated; under `off` it warns, and `vibe tokens off` says once that `off` belongs inside a container or a VM.
 - **Other tools are used when present, never listed.** `graft` and `trace` (map, callers, blast), `claude` and `codex` (reader, reviewer), `pdftotext` (pdf), `agent-browser` and `playwright` (a screenshot for the art director) are detected and used through one convention; absent, vibe does the work itself. The scope skill puts a one-line install in the approval message when a project would use one. Nothing is installed by vibe, and `vibe status` shows the install, not a tool table.
 - **The bench is a gate.** `bench/tasks/` holds three deterministic tasks (`settlement`, `vibe-fix`, `report`); `bench/run.js --task all --parallel 4` runs the arms side by side and records turns, reported cost, cost recomputed from tokens with the published cache multipliers, tokens by kind, wall-clock and pass; `vibe ledger compare --metric ms --paired` compares only runs both arms passed; `checks/bench-gate.js` passes when every task has five runs per arm and the `on` arm is not worse on checks. A release that claims a saving writes the claim in its intent before the bench runs and quotes the verdict; a claim that lands `inconclusive` is not made.

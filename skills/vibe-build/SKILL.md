@@ -15,7 +15,7 @@ user-invocable: false
    - Orientation reads ("what does this module do", "where is X handled") go through `vibe read <files> --ask "<question>"` — a low-reasoning model reads and answers with line numbers; read the file yourself only to edit or debug it.
 3. When everything is built, `vibe check --all --json`; on a failure, fix what the check names — the failed line carries the scenario's files — and `vibe check {id} --json` for that scenario only; `vibe context {id}` when the files are not enough: the decisions, regressions and notes around them.
    - Pass (`code 0`): the next failing scenario, or `vibe check --all` when none is left.
-   - Fail (`code 1`): read `tail` and fix. If the same failure happens twice the harness marks STUCK and leaves an inbox question — stop and show that question to the user.
+   - Fail (`code 1`): use the structured failure code and files; raw output requires an explicit `--diagnostics` check and stays private. If the same failure happens twice the harness marks STUCK and leaves an inbox question — stop and show that question to the user.
    - Blocked (`status: blocked`): a parent has not passed; `vibe check {id}` runs unpassed parents first, so fix the parent named in `blockedBy`.
 4. When a project-local skill (`vibe skill list`) applies to the scenario, follow it and run `vibe skill used {name}` — prune decisions read the ledger.
 5. Record a fixed failure with `vibe regress record --scenario {id} --title "…" --check-from-evidence {run}`.
@@ -35,3 +35,4 @@ If the response carries a token, show it to the user and execute only after they
 
 - Weaken a check to make it pass (editing scenarios.yaml voids the approval — the harness enforces this).
 - Claim a pass without `vibe check`.
+- Rely on Stop to run checks. It blocks unchanged unfinished work twice, then releases it as unmet; inbox waits and scenario handoffs also release without success.

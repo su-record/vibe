@@ -15,6 +15,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sessionRuntime from './session-state.cjs';
+import sessionFiles from './session-files.cjs';
 
 const mode = process.argv[2] || 'post';
 const asPlugin = process.argv.includes('--plugin');
@@ -27,7 +29,7 @@ if (asPlugin) {
   const home = process.env.VIBE_HOME_DIR || os.homedir();
   for (const file of [path.join(home, '.claude', 'settings.json'), path.join(home, '.codex', 'hooks.json')]) {
     try {
-      if (fs.readFileSync(file, 'utf-8').includes('hooks/notify.js')) process.exit(0);
+      if ((sessionFiles.optional(file, 65536) ?? '').includes('hooks/notify.js')) process.exit(0);
     } catch {
       /* no such file — keep going */
     }
@@ -35,11 +37,13 @@ if (asPlugin) {
 }
 
 function readPayload() {
-  try {
-    return JSON.parse(fs.readFileSync(0, 'utf-8'));
-  } catch {
-    return {};
-  }
+  try { return ['stop', 'session'].includes(mode) ? sessionFiles.readPayload() : JSON.parse(fs.readFileSync(0, 'utf8')); }
+  catch { return { session_id: 'invalid payload' }; }
+}
+
+function structuralSession(payload) {
+  const view = sessionRuntime.sessionStatus(payload);
+  return sessionRuntime.message(view, view.status === 'bound' ? 'session status only; run vibe state for the procedure' : `${view.status}; use explicit vibe session bind in the intended worktree`);
 }
 
 function emitContext(text) {
@@ -82,7 +86,7 @@ function recentAuthorize(action) {
   }
 }
 
-if (!fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
+if (!['stop', 'session'].includes(mode) && !fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
 
 function tokenPolicy() {
   try {
@@ -91,10 +95,6 @@ function tokenPolicy() {
     return 'off';
   }
 }
-function tokensOff() {
-  return tokenPolicy() === 'off';
-}
-
 const READ_ADVISE_LINES = Number(process.env.VIBE_READ_ADVISE_LINES || 400);
 
 function countLines(file) {
@@ -118,67 +118,14 @@ function adviseRead(payload) {
 const cli = path.join(here, '..', 'dist', 'cli.js');
 const vibeCommand = fs.existsSync(cli) ? [process.execPath, cli] : ['vibe'];
 
-/** The model's last message, when it claims completion: done, complete, finished, passed, ready, all checks. Read from the
- * transcript the client names (Claude Code and Codex both pass `transcript_path`); null when there is no such claim. */
-function completionClaim(transcriptPath) {
-  if (!transcriptPath) return null;
-  let text = '';
-  try {
-    const lines = fs.readFileSync(transcriptPath, 'utf-8').trim().split('\n');
-    for (let i = lines.length - 1; i >= 0 && !text; i -= 1) {
-      let m;
-      try {
-        m = JSON.parse(lines[i]);
-      } catch {
-        continue;
-      }
-      const msg = m.type === 'assistant' ? m.message : m.payload && m.payload.type === 'message' && m.payload.role === 'assistant' ? m.payload : null;
-      if (!msg) continue;
-      for (const c of msg.content || []) if (typeof c.text === 'string') text += c.text;
-    }
-  } catch {
-    return null;
-  }
-  const m = /[^.\n]*\b(done|complete[d]?|finished|passed|ready|all checks? pass(?:ed)?|everything passes)\b[^.\n]*/i.exec(text);
-  return m ? m[0].trim().slice(0, 120) : null;
-}
-
-/** Stop: the model is ending its turn. With an approved intent still building, the verdict runs here — once — and its
- * report comes back as the reason the turn is not over; a turn already continued this way is let go (no loop). */
-function onStop(payload) {
-  if (payload.stop_hook_active) process.exit(0);
-  if (!fs.existsSync(path.join(root, '.vibe', 'state.json'))) process.exit(0);
-  // `vibe state` rather than the file: an edit after DONE is RUNNING again, and only the CLI knows that
-  const s = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'state', '--json'], { cwd: root, encoding: 'utf-8', timeout: 20000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
-  let state;
-  try {
-    state = JSON.parse(s.stdout).state;
-  } catch {
-    process.exit(0);
-  }
-  if (state !== 'APPROVED' && state !== 'RUNNING') process.exit(0);
-  const claim = completionClaim(payload.transcript_path);
-  const r = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'check', '--all'], { cwd: root, encoding: 'utf-8', timeout: 600000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
-  const report = (r.stdout || '').trim();
-  if (!report) process.exit(0);
-  const done = /\bDONE — every gate scenario passed\b/.test(report);
-  const audit = claim && !done ? `unverified: "${claim}" — vibe check says otherwise (below). ` : '';
-  process.stdout.write(`${JSON.stringify({ decision: 'block', reason: `[vibe] ${audit}the turn ended without vibe check; it ran now:\n${report}\n${done ? 'Report from this output — no further commands.' : 'Fix what failed, then vibe check <id>; do not say done.'}` })}\n`);
-  process.exit(0);
-}
-
-/** SessionStart in home/project mode: the card is in CLAUDE.md already; the project's `vibe state` is handed over here,
- * the model's first command already run — the plugin's session.js does the same for the plugin mode. */
-if (mode === 'session') {
-  readPayload();
-  if (!fs.existsSync(path.join(root, '.vibe', 'state.json'))) process.exit(0);
-  const s = spawnSync(vibeCommand[0], [...vibeCommand.slice(1), 'state'], { cwd: root, encoding: 'utf-8', timeout: 60000, shell: vibeCommand.length === 1 && process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
-  if (s.status === 0 && s.stdout) process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: `[vibe state — this is the first command already run; continue from its next line]\n${s.stdout.trim()}` } })}\n`);
-  process.exit(0);
-}
-
+// Stop never resolves a PATH command or reads a transcript as instructions.
 if (mode === 'stop') {
-  onStop(readPayload());
+  process.stdout.write(`${JSON.stringify(sessionRuntime.stopDecision(readPayload()))}\n`);
+  process.exit(0);
+}
+if (mode === 'session') {
+  process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: structuralSession(readPayload()) } })}\n`);
+  process.exit(0);
 }
 
 if (mode === 'pre') {
