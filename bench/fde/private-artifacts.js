@@ -13,35 +13,71 @@ function canonical(file) {
 }
 
 const aclPhases = new Set(['CREATE_DIRECTORY', 'VERIFY_DIRECTORY', 'VERIFY_FILE']);
+const aclOperations = new Map([
+  [10, 'IDENTITY_FAILED'], [11, 'READ_FAILED'], [12, 'PROTECTION_FAILED'], [13, 'RULE_CREATE_FAILED'],
+  [14, 'RULE_SET_FAILED'], [15, 'OWNER_SET_FAILED'], [16, 'WRITE_FAILED'], [17, 'REREAD_FAILED'],
+  [18, 'OWNER_QUERY_FAILED'], [19, 'GRANTS_QUERY_FAILED'],
+]);
+const aclExceptions = new Map([
+  [0, 'UNKNOWN'], [1, 'ARGUMENT_EXCEPTION'], [2, 'UNAUTHORIZED_ACCESS_EXCEPTION'],
+  [3, 'PRIVILEGE_NOT_HELD_EXCEPTION'], [4, 'IDENTITY_NOT_MAPPED_EXCEPTION'], [5, 'PLATFORM_NOT_SUPPORTED_EXCEPTION'],
+]);
+const aclReasons = ['OWNER_MISMATCH', 'UNEXPECTED_GRANT', 'SCRIPT_FAILED', 'START_FAILED', 'TIMEOUT', 'UNVERIFIED',
+  ...[...aclOperations.values()].flatMap(operation => [...aclExceptions.values()].map(exception => `${operation}_${exception}`))];
+const aclCauses = new Set([...aclPhases].flatMap(phase => aclReasons.map(reason => `PRIVATE_ACL_${phase}_${reason}`)));
+
+function operationFailure(status) {
+  if (!Number.isInteger(status)) return null;
+  const operation = aclOperations.get(Math.floor(status / 10)), exception = aclExceptions.get(status % 10);
+  return operation && exception ? `${operation}_${exception}` : null;
+}
+
 export function windowsAclError(error, phase) {
   if (!aclPhases.has(phase)) return new Error('PRIVATE_ACL_UNVERIFIED');
   const reason = error?.code === 'ETIMEDOUT' ? 'TIMEOUT'
     : error?.status === 2 ? 'OWNER_MISMATCH' : error?.status === 3 ? 'UNEXPECTED_GRANT'
-      : Number.isInteger(error?.status) ? 'SCRIPT_FAILED'
-        : ['ENOENT', 'EACCES', 'EPERM'].includes(error?.code) ? 'START_FAILED' : 'UNVERIFIED';
+      : operationFailure(error?.status) ?? (Number.isInteger(error?.status) ? 'SCRIPT_FAILED'
+        : ['ENOENT', 'EACCES', 'EPERM'].includes(error?.code) ? 'START_FAILED' : 'UNVERIFIED');
   return new Error(`PRIVATE_ACL_${phase}_${reason}`);
 }
 
 export function privateAclCause(error) {
-  return /^PRIVATE_ACL_(?:CREATE_DIRECTORY|VERIFY_DIRECTORY|VERIFY_FILE)_(?:OWNER_MISMATCH|UNEXPECTED_GRANT|SCRIPT_FAILED|START_FAILED|TIMEOUT|UNVERIFIED)$/.test(error?.message) ? error.message : null;
+  return aclCauses.has(error?.message) ? error.message : null;
 }
 
 function windowsAccess(file, phase) {
-  const script = `$ErrorActionPreference='Stop'; $p=$env:VIBE_BENCH_PRIVATE_ENTRY;
-$sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User;
-$acl=Get-Acl -LiteralPath $p;
-if($env:VIBE_BENCH_PRIVATE_CREATE -eq '1') {
-  $acl.SetAccessRuleProtection($true,$false);
-  $rule=New-Object System.Security.AccessControl.FileSystemAccessRule($sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow');
-  $acl.SetAccessRule($rule); $acl.SetOwner($sid); Set-Acl -LiteralPath $p -AclObject $acl;
-  $acl=Get-Acl -LiteralPath $p;
-}
-if($acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value -ne $sid.Value){exit 2}
-$allowed=@($sid.Value,'S-1-5-18','S-1-5-32-544');
-foreach($rule in $acl.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier])) {
-  if($rule.AccessControlType -eq 'Allow' -and $allowed -notcontains $rule.IdentityReference.Value){exit 3}
+  const script = `$ErrorActionPreference='Stop'; $p=$env:VIBE_BENCH_PRIVATE_ENTRY; $step=10;
+try {
+  $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User;
+  $step=11; $acl=Get-Acl -LiteralPath $p;
+  if($env:VIBE_BENCH_PRIVATE_CREATE -eq '1') {
+    $step=12; $acl.SetAccessRuleProtection($true,$false);
+    $step=13; $rule=New-Object System.Security.AccessControl.FileSystemAccessRule($sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow');
+    $step=14; $acl.SetAccessRule($rule);
+    $step=15; $acl.SetOwner($sid);
+    $step=16; Set-Acl -LiteralPath $p -AclObject $acl;
+    $step=17; $acl=Get-Acl -LiteralPath $p;
+  }
+  $step=18; if($acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value -ne $sid.Value){exit 2}
+  $allowed=@($sid.Value,'S-1-5-18','S-1-5-32-544');
+  $step=19; foreach($rule in $acl.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier])) {
+    if($rule.AccessControlType -eq 'Allow' -and $allowed -notcontains $rule.IdentityReference.Value){exit 3}
+  }
+} catch {
+  $types=@{'System.ArgumentException'=1;'System.UnauthorizedAccessException'=2;
+    'System.Security.AccessControl.PrivilegeNotHeldException'=3;
+    'System.Security.Principal.IdentityNotMappedException'=4;'System.PlatformNotSupportedException'=5};
+  $category=0; $cause=$_.Exception;
+  for($depth=0; $depth -lt 8 -and $null -ne $cause; $depth++) {
+    $type=$cause.GetType().FullName;
+    if($types.ContainsKey($type)){$category=$types[$type];break}
+    $cause=$cause.InnerException;
+  }
+  exit ($step*10+$category)
 }`;
-  try { execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, stdio: 'pipe', timeout: 15000,
+  // Encode only our fixed program; paths remain data in the environment.
+  const encoded = Buffer.from(script, 'utf16le').toString('base64');
+  try { execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], { windowsHide: true, stdio: 'pipe', timeout: 15000,
     env: { ...process.env, VIBE_BENCH_PRIVATE_ENTRY: file, VIBE_BENCH_PRIVATE_CREATE: phase === 'CREATE_DIRECTORY' ? '1' : '0' } }); }
   catch (error) { throw windowsAclError(error, phase); }
 }

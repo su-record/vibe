@@ -22,6 +22,11 @@ function aclFailureCases() {
     [{ code: 'EACCES' }, 'START_FAILED'], [{ code: 'ETIMEDOUT', status: null }, 'TIMEOUT'],
     [{ status: null, signal: 'SIGTERM' }, 'UNVERIFIED'],
   ];
+  const operations = ['IDENTITY', 'READ', 'PROTECTION', 'RULE_CREATE', 'RULE_SET', 'OWNER_SET', 'WRITE', 'REREAD', 'OWNER_QUERY', 'GRANTS_QUERY'];
+  const exceptions = ['UNKNOWN', 'ARGUMENT_EXCEPTION', 'UNAUTHORIZED_ACCESS_EXCEPTION', 'PRIVILEGE_NOT_HELD_EXCEPTION', 'IDENTITY_NOT_MAPPED_EXCEPTION', 'PLATFORM_NOT_SUPPORTED_EXCEPTION'];
+  for (const [index, operation] of operations.entries()) for (const [category, exception] of exceptions.entries()) {
+    cases.push([{ status: (index + 10) * 10 + category }, `${operation}_FAILED_${exception}`]);
+  }
   for (const phase of ['CREATE_DIRECTORY', 'VERIFY_DIRECTORY', 'VERIFY_FILE']) for (const [fields, reason] of cases) {
     const original = Object.assign(new Error(`${marker}: ${privatePath}`), fields, { stderr: Buffer.from(marker), path: privatePath });
     const failure = windowsAclError(original, phase);
@@ -30,6 +35,7 @@ function aclFailureCases() {
     const shared = JSON.stringify({ cause: readinessCause(failure), details: contentSummary(failure.message) });
     assert.ok(!shared.includes(marker)); assert.ok(!shared.includes(privatePath));
     assert.equal(readinessCause(new Error(`${expected}: ${marker}`)), null, 'only complete fixed codes are public');
+    assert.equal(readinessCause(new Error(`${expected}\n`)), null);
   }
   assert.equal(windowsAclError(new Error(marker), marker).message, 'PRIVATE_ACL_UNVERIFIED');
 }
