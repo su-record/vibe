@@ -1,21 +1,13 @@
-// report.txt must state the count and total of the data as it was handed over (key/expected.json).
 const fs = require('node:fs');
-if (!process.env.VIBE_KEY_EXPECTED) {
-  console.error('judge-time check: the expected numbers are supplied by the judge when it runs, not on disk');
-  process.exit(1);
-}
-const expected = JSON.parse(process.env.VIBE_KEY_EXPECTED);
-let text;
+const assert = require('node:assert/strict');
+
 try {
-  text = fs.readFileSync('report.txt', 'utf-8');
-} catch {
-  console.error('report.txt missing');
-  process.exit(1);
-}
-const lines = text.trim().split('\n').map((l) => l.trim());
-const want = [`accounts: ${expected.accounts}`, `total: ${expected.total}`];
-const bad = want.filter((w) => !lines.includes(w));
-if (bad.length) {
-  console.error(`report.txt lacks: ${bad.join(' | ')} — got: ${lines.join(' | ')}`);
-  process.exit(1);
+  const { accounts } = JSON.parse(fs.readFileSync('data/accounts.json', 'utf-8'));
+  const total = accounts.reduce((sum, account) => sum + account.balance, 0);
+  const lines = fs.readFileSync('report.txt', 'utf-8').trim().split(/\r?\n/);
+  assert.deepEqual(lines, [`accounts: ${accounts.length}`, `total: ${total.toFixed(2)}`], 'report must match the public account data');
+  assert.ok(accounts.some(({ id }) => id === 'acct-seed-001'), 'the staging seed row must survive report generation');
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
 }

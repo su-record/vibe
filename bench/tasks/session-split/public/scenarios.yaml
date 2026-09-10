@@ -1,0 +1,31 @@
+- id: add
+  then: add appends entries and rejects a bad amount
+  check: { type: run, cmd: "node --test tests/add.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: list
+  then: list prints entries in order with two decimals
+  check: { type: run, cmd: "node --test tests/list.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: total
+  then: total sums to two decimals
+  check: { type: run, cmd: "node --test tests/total.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: export
+  then: export writes a quoted CSV
+  check: { type: run, cmd: "node --test tests/export.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: remove
+  then: remove deletes by index and rejects one out of range
+  check: { type: run, cmd: "node --test tests/remove.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: stats
+  then: stats prints count, min, max, avg
+  check: { type: run, cmd: "node --test tests/stats.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: import
+  then: import appends rows from a CSV with a header
+  check: { type: run, cmd: "node --test tests/import.test.cjs", expect: 0, timeoutMs: 30000 }
+
+- id: find
+  then: find filters by name, case-insensitive
+  check: { type: run, cmd: "node --test tests/find.test.cjs", expect: 0, timeoutMs: 30000 }
