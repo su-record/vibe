@@ -18,11 +18,15 @@ function run(body) {
       fs.writeFileSync(path.join(fixture, 'npx.cmd'), `@echo off\r\n"${process.execPath}" "${fake}" %*\r\n`);
     } else fs.writeFileSync(path.join(fixture, 'npx'), `#!${process.execPath}\n${body}\n`, { mode: 0o755 });
   }
-  // On Windows the shell is the spawned child: make that executable absent for the startup case.
-  const shell = process.platform === 'win32' && body === undefined ? { ComSpec: path.join(fixture, 'missing-cmd.exe') } : {};
+  const env = { ...process.env, PATH: fixture, VIBE_LOAD_ROUNDS: '1' };
+  if (process.platform === 'win32' && body === undefined) {
+    // Windows treats keys case-insensitively; an inherited COMSPEC would win over a new ComSpec.
+    for (const key of Object.keys(env)) if (key.toUpperCase() === 'COMSPEC') delete env[key];
+    env.ComSpec = path.join(fixture, 'missing-cmd.exe');
+  }
   return spawnSync(process.execPath, [script], {
     cwd: fixture, encoding: 'utf-8', timeout: 10_000,
-    env: { ...process.env, ...shell, PATH: fixture, VIBE_LOAD_ROUNDS: '1' },
+    env,
   });
 }
 
