@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { readPrivate, writePrivate } = require('./private-store.cjs');
 const { optional, json, digest, revision, projectFingerprint } = require('./session-files.cjs');
+const { contextStatus } = require('./session-context.cjs');
 
 const ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
 const HASH = /^[a-f0-9]{16,64}$/;
@@ -62,20 +63,39 @@ function validEvidence(input) {
     new Set(input.scenarios.map(s => s.id)).size === input.scenarios.length &&
     (!input.done || (input.scenarios.length > 0 && input.scenarios.every(s => s.status === 'pass')));
 }
+function stopSnapshot(root, plan) {
+  let currentRevision = 'unavailable';
+  try {
+    currentRevision = revision(root);
+    const context = contextStatus(root, plan);
+    if (context !== 'fresh') return { snapshotStatus: context, failureCode: 'stop-context-unavailable', revision: currentRevision, files: null, workflow: null };
+    return { snapshotStatus: 'complete', revision: currentRevision, files: projectFingerprint(root), workflow: workflow(root).changes };
+  } catch {
+    return { snapshotStatus: 'unavailable', failureCode: 'stop-snapshot-unavailable', revision: currentRevision, files: null, workflow: null };
+  }
+}
 function recordStopEvidence(root, input) {
   root = fs.realpathSync(root);
   if (!validEvidence(input)) throw new Error('invalid Stop evidence');
-  const proof = { schemaVersion: 1, root, run: input.run, intentHash: input.intentHash, done: input.done,
-    scenarios: input.scenarios, revision: revision(root), files: projectFingerprint(root), workflow: workflow(root).changes };
+  const proof = { schemaVersion: 2, root, run: input.run, intentHash: input.intentHash, done: input.done,
+    scenarios: input.scenarios, executionPlan: input.executionPlan, ...stopSnapshot(root, input.executionPlan) };
   writePrivate(root, name('proof', root), JSON.stringify(proof));
   return proof;
 }
+function unavailableStatus(root, binding, proof) {
+  let currentRevision = 'unavailable';
+  try { currentRevision = revision(root); } catch { /* Only fixed diagnostic text leaves the hook. */ }
+  return { root, revision: currentRevision, intent: proof.intentHash, complete: false, fresh: false, snapshotStatus: 'unavailable',
+    remaining: proof.scenarios.map(s => s.id), waiting: [], handed: [], graph: binding.scenarios };
+}
 function structuralStatus(root, binding) {
-  const flow = workflow(root);
   const raw = readPrivate(root, name('proof', root));
   const proof = raw === null ? null : JSON.parse(raw);
+  if (proof && (proof.schemaVersion !== 2 || proof.root !== root || !validEvidence(proof))) throw new Error('invalid private proof');
+  if (proof && proof.snapshotStatus !== 'complete') return unavailableStatus(root, binding, proof);
+  if (proof && contextStatus(root, proof.executionPlan) !== 'fresh') return unavailableStatus(root, binding, proof);
+  const flow = workflow(root);
   const currentRevision = revision(root);
-  if (proof && (proof.schemaVersion !== 1 || proof.root !== root || !validEvidence(proof))) throw new Error('invalid private proof');
   const scenarios = proof?.scenarios ?? binding.scenarios;
   if (scenarios.length > 1000 || scenarios.some(s => !ID.test(s.id))) throw new Error('invalid private scenarios');
   const filesFresh = Boolean(proof && proof.intentHash === flow.intentHash && proof.revision === currentRevision && proof.files === projectFingerprint(root));
@@ -121,6 +141,7 @@ function allHanded(view) {
 function stopDecision(payload = {}, env = process.env, cwd = process.cwd()) {
   const view = sessionStatus(payload, env, cwd);
   if (view.status !== 'bound') return { systemMessage: message(view, `${view.status}; unmet; use explicit vibe session bind in the intended worktree`) };
+  if (view.snapshotStatus === 'unavailable') return { systemMessage: message(view, 'explicit-check snapshot unavailable; unmet') };
   if (view.complete) return { systemMessage: message(view, 'verified completion from an explicit check') };
   if (view.approvalWaiting) return { systemMessage: message(view, 'waiting for approval; unmet') };
   if (view.abandoned) return { systemMessage: message(view, 'intent abandoned; unmet') };

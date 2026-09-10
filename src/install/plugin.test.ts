@@ -26,7 +26,7 @@ describe('vibe plugin install / status', () => {
     expect(hooks).toContain('${PLUGIN_ROOT}/hooks/session.js');
     expect(fs.existsSync(path.join(paths.tree, 'hooks', 'notify.js'))).toBe(true);
     expect(fs.existsSync(path.join(paths.tree, 'hooks', 'session.js'))).toBe(true);
-    for (const module of ['private-store.cjs', 'session-files.cjs', 'session-state.cjs']) expect(fs.existsSync(path.join(paths.tree, 'hooks', module))).toBe(true);
+    for (const module of ['private-store.cjs', 'session-files.cjs', 'session-state.cjs', 'session-context.cjs']) expect(fs.existsSync(path.join(paths.tree, 'hooks', module))).toBe(true);
     expect(fs.existsSync(path.join(paths.tree, 'card.md'))).toBe(true);
     expect(JSON.parse(fs.readFileSync(path.join(paths.tree, 'package.json'), 'utf8')).type).toBe('module');
     expect(fs.existsSync(path.join(paths.tree, 'node_modules'))).toBe(false);

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { packageRoot } from './paths.js';
@@ -36,6 +37,21 @@ function git(args: string[]) {
   const result = spawnSync('git', ['-c', 'core.hooksPath=disabled-hooks', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', ...args], { cwd: root, env, encoding: 'utf8' });
   expect(result.status, result.stderr).toBe(0);
 }
+function proof() {
+  const directory = path.join(home, '.vibe-runtime');
+  const file = fs.readdirSync(directory).find(name => name.startsWith('proof-'))!;
+  return JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8'));
+}
+function expectUnavailablePass() {
+  const checked = cli(['check', '--all']);
+  expect(checked.status, checked.stdout).toBe(0);
+  expect(JSON.parse(checked.stdout)).toMatchObject({ done: true, passed: 1, failed: 0 });
+  expect(proof()).toMatchObject({ snapshotStatus: 'unavailable', failureCode: 'stop-snapshot-unavailable', files: null, workflow: null });
+  const stopped = JSON.parse(hook().stdout);
+  expect(stopped.decision).toBeUndefined();
+  expect(stopped.systemMessage).toContain('snapshot unavailable; unmet');
+  expect(stopped.systemMessage).not.toContain('verified completion');
+}
 
 it('never executes a check; only a fresh explicit check can produce verified Stop status', () => {
   draft();
@@ -64,6 +80,63 @@ it('uses explicit check proof and invalidates it after artifact changes', () => 
   expect(done.systemMessage).toContain('verified completion');
   fs.writeFileSync(path.join(root, 'ran.txt'), 'changed after the check');
   expect(hook().stdout).not.toContain('verified completion');
+}, 60000);
+
+it('preserves a passing check when an unrelated artifact exceeds the Stop byte limit', () => {
+  draft();
+  fs.writeFileSync(path.join(root, 'large-artifact.bin'), Buffer.alloc(8388609, 65));
+  expectUnavailablePass();
+}, 60000);
+
+it('preserves a passing check when the project contains a symlink or Windows junction', () => {
+  draft();
+  const target = path.join(fixture, 'linked-data');
+  fs.mkdirSync(target); fs.writeFileSync(path.join(target, 'sample.txt'), 'local fixture');
+  fs.symlinkSync(target, path.join(root, 'linked-data'), process.platform === 'win32' ? 'junction' : 'dir');
+  expectUnavailablePass();
+}, 60000);
+
+it('still rejects an explicit check when its private proof cannot be stored', () => {
+  draft();
+  const name = `proof-${createHash('sha256').update(fs.realpathSync(root)).digest('hex')}.json`;
+  fs.mkdirSync(path.join(home, '.vibe-runtime', name), { mode: 0o700 });
+  const checked = cli(['check', '--all']);
+  expect(checked.status).not.toBe(0);
+  expect(checked.stdout).toContain('cannot retain explicit Stop evidence');
+  expect(fs.readFileSync(path.join(root, 'ran.txt'), 'utf8')).toBe('explicit check');
+  expect(JSON.parse(fs.readFileSync(path.join(root, '.vibe/state.json'), 'utf8')).state).not.toBe('DONE');
+}, 60000);
+
+it('does not reuse check completion after PATH or the local consent receipt changes', () => {
+  draft();
+  expect(cli(['check', '--all']).status).toBe(0);
+  expect(hook().stdout).toContain('verified completion');
+  const oldPath = env.PATH;
+  env.PATH = `${path.join(fixture, 'new-bin')}${path.delimiter}${oldPath ?? ''}`;
+  expect(hook().stdout).toContain('snapshot unavailable; unmet');
+  env.PATH = oldPath;
+  const directory = path.join(home, '.vibe-runtime');
+  const receipt = fs.readdirSync(directory).find(name => name.startsWith('consent-'))!;
+  fs.rmSync(path.join(directory, receipt));
+  expect(hook().stdout).toContain('snapshot unavailable; unmet');
+}, 60000);
+
+it('checks declared verifier bytes outside the project both after and during the check', () => {
+  draft(false);
+  const external = path.join(fixture, 'verifier.cjs');
+  fs.writeFileSync(external, '// approved bytes');
+  fs.appendFileSync(path.join(root, 'scenarios.yaml'), '  verifiers: [../verifier.cjs]\n');
+  expect(cli(['intent', 'draft', 'intent.md', 'scenarios.yaml']).status).toBe(0);
+  expect(cli(['approve']).status).toBe(0);
+  expect(cli(['check', '--all']).status).toBe(0);
+  expect(hook().stdout).toContain('verified completion');
+  fs.writeFileSync(external, '// changed bytes');
+  expect(hook().stdout).toContain('snapshot unavailable; unmet');
+  expect(cli(['approve']).status).toBe(0);
+  fs.writeFileSync(path.join(root, 'marker.cjs'), `require('node:fs').writeFileSync(${JSON.stringify(external)}, '// changed during the check');`);
+  expect(cli(['check', '--all']).status).toBe(0);
+  expect(proof().snapshotStatus).toBe('stale');
+  expect(hook().stdout).toContain('snapshot unavailable; unmet');
 }, 60000);
 
 it('keeps a whole-intent abandonment unmet even after a previous passing check', () => {
