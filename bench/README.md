@@ -57,7 +57,9 @@ The new protocol has 60 planned attempts: two clients Ã— two customer variants Ã
 
 Read [the cohort procedure](claims/4.1.26/README.md) before executing it. `node bench/fde-run.js --protocol <file>` only lists readiness gaps. `--draft` writes a new proposal without overwriting an existing protocol. **Paid execution requires a frozen protocol and a separate human authorization for its exact hash.** Ordinary checks, the report builder and release gate never invoke models.
 
-The release validator requires external human reviews of frozen scopes, including independent double review of attempt 1 in every cell (12/60). Deterministic observation/behavior scores and human semantic ratings are distinct. Missing human ratings, usage, calibration or Linux/Windows CI evidence fail completeness. Scope floor, critical omissions, unsupported claims, final pilot behavior, per-cell comparisons and the 0.80 baseline input-token target are separate rules. Synthetic fixture minutes are not demonstrated time saved; money stays unknown when prices are not configured.
+The release validator uses deterministic mechanical agreement coverage, critical omissions, unsupported structured assertions, grounded opportunities, pilot behavior and source preservation. Coverage must reconcile with the frozen requirement weights. Human ratings and calibration are optional diagnostics and do not affect authorization or release. Usage and Linux/Windows CI evidence remain required, as do five usable attempts per cell, per-cell non-regression and the 0.80 baseline input-token target. The pilot's human review before external action remains required product behavior. Synthetic fixture minutes are not demonstrated time saved; money stays unknown when prices are not configured.
+
+These indicators do not measure the appropriateness of problem framing or tradeoff judgment.
 
 ## The numbers a run records
 
