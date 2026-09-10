@@ -6,14 +6,16 @@
 // agent's wall-clock time; a task with `judge/meta.json` sessions runs the agent that many times on one
 // workspace and sums.
 // Read it with: vibe ledger compare --by harness --metric checks --ledger bench/ledger.jsonl
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { installSurfaces, projectLayout, SKILL_NAMES } from '../dist/install/global.js';
 import { shellArgs } from '../dist/core/readerSession.js';
 import { answerQuestions, stalled } from './dialogue.js';
+import { agentEnvironment, prepareWorkspace, vibeSync as invokeVibe } from './workspace.js';
+import { agentEvidence, freezeScope, readJson } from './snapshot.js';
+import { gradeWorkspace } from './grading.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..');
@@ -25,7 +27,7 @@ const opt = (name, fallback) => {
 // `--client claude:codex` names one client per session on a two-session task (a handover); `client` is the first
 const clients = opt('client', 'claude').split(':');
 const client = clients[0];
-// `off` bare · `on` the judge's intent given · `scoped` vibe scopes for itself from the brief (card, skills, hooks, no intent)
+// `off` bare · `on` public scope supplied · `scoped` vibe scopes for itself from the brief
 const harness = opt('harness', 'on');
 const prepareOnly = process.argv.includes('--prepare-only');
 const runs = Number(opt('runs', '1'));
@@ -40,8 +42,8 @@ const MAX_CAPTURE = 64 * 1024 * 1024;
 
 // vibe on PATH must be vibe 4 from this checkout, never a global vibe 3
 const shim = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-shim-'));
-if (process.platform === 'win32') fs.writeFileSync(path.join(shim, 'vibe.cmd'), `@echo off\r\n"${process.execPath}" "${path.join(repo, 'dist/cli.js')}" %*\r\n`);
-else fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${repo}/dist/cli.js" "$@"\n`, { mode: 0o755 });
+if (process.platform === 'win32') fs.writeFileSync(path.join(shim, 'vibe.cmd'), `@echo off\r\n"${process.execPath}" "${path.join(here, 'vibe-shim.js')}" "${path.join(repo, 'dist/cli.js')}" %*\r\n`);
+else fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec "${process.execPath}" "${here}/vibe-shim.js" "${repo}/dist/cli.js" "$@"\n`, { mode: 0o755 });
 // The arms differ only by what the workspace carries. Both run under an isolated home: the operator's
 // ~/.claude plugin and ~/.agents marketplace (vibe itself, on this machine) must not reach either arm —
 // an `off` run that can call `vibe regress record` is not an `off` run. Credentials are copied in.
@@ -53,7 +55,8 @@ for (const [dir, files] of [['.claude', ['.credentials.json']], ['.codex', ['aut
     if (fs.existsSync(from)) fs.copyFileSync(from, path.join(isoHome, dir, f));
   }
 }
-const env = { ...process.env, PATH: `${shim}${path.delimiter}${process.env.PATH}`, VIBE_SKIP_SETUP: '1', HOME: isoHome, USERPROFILE: isoHome, CODEX_HOME: path.join(isoHome, '.codex'), VIBE_HOME_DIR: isoHome };
+const snapshotLog = path.join(shim, 'approvals.jsonl');
+const env = agentEnvironment({ ...process.env, PATH: `${shim}${path.delimiter}${process.env.PATH}`, VIBE_SKIP_SETUP: '1', HOME: isoHome, USERPROFILE: isoHome, CODEX_HOME: path.join(isoHome, '.codex'), VIBE_HOME_DIR: isoHome, VIBE_BENCH_SNAPSHOTS: snapshotLog });
 delete env.CLAUDECODE;
 delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
@@ -75,100 +78,36 @@ function taskNames() {
 }
 
 function prepare(task) {
-  const taskDir = path.join(here, 'tasks', task);
-  const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-bench-${client}-${harness}-`));
-  // both arms get the same files: the task, and checks/ (what a check needs to run); judge/ and key/ never — see checks/bench-no-key.js
-  for (const f of fs.readdirSync(taskDir)) if (f !== 'judge' && f !== 'key') fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
-  // a task may prepare its workspace itself (brownfield: this repository archived and built); the judge stays hidden
-  const prep = path.join(taskDir, 'judge', 'prepare.cjs');
-  if (fs.existsSync(prep)) execFileSync('node', [prep], { cwd: ws, env: { ...env, VIBE_BENCH_REPO: repo }, stdio: 'ignore' });
-  execFileSync('git', ['init', '-q'], { cwd: ws });
-  if (harness === 'on' || harness === 'scoped') {
-    // card, skills and hook go into the workspace itself — the `off` arm must stay bare; a two-client task gets both layouts
-    for (const c of new Set(clients)) {
-      const layout = projectLayout(c === 'claude' ? 'claude' : 'codex');
-      installSurfaces(ws, layout);
-      // the six common skills only — a pack rides along only when the judge uses a review check (none does today)
-      const skillsDir = path.join(ws, layout.skills);
-      for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
-    }
-    if (harness === 'on') draftAndApprove(ws, taskDir);
-    // scoped: no intent — the agent runs discover and scope itself; `tokens off` lets it approve without a human
-    if (harness === 'scoped') vibeSync(ws, ['tokens', 'off']);
-    // the policy an install has by default: the hook blocks an irreversible command until `vibe authorize`
-    if (harness === 'on') vibeSync(ws, ['tokens', 'irreversible']);
-  }
-  return ws;
+  return prepareWorkspace(path.join(here, 'tasks', task), { repo, env, harness, clients });
 }
 
 /** A task's `judge/meta.json`: `sessions` lists one entry per agent session on the same workspace — `{ maxTurns }`
  * (claude) or `{ cutMs }` (codex, which has no turn cap) — so a task can be cut and resumed with no memory between. */
 function meta(task) {
-  try {
-    return JSON.parse(fs.readFileSync(path.join(here, 'tasks', task, 'judge', 'meta.json'), 'utf-8'));
-  } catch {
-    return {};
-  }
+  return readJson(path.join(here, 'tasks', task, 'judge/meta.json'), {});
 }
 
 function vibeSync(ws, a, extra = {}) {
-  return spawnSync('node', [path.join(repo, 'dist/cli.js'), ...a, '--json'], { cwd: ws, encoding: 'utf-8', input: extra.input, env: { ...env, ...extra.env } });
-}
-
-/** The intent the task's own judge defines, drafted and approved so `vibe check --all` can score it. */
-function draftAndApprove(ws, taskDir) {
-  fs.rmSync(path.join(ws, '.vibe', 'results.json'), { force: true });
-  fs.cpSync(path.join(taskDir, 'judge'), path.join(ws, 'judge'), { recursive: true });
-  if (!fs.existsSync(path.join(ws, '.vibe'))) fs.mkdirSync(path.join(ws, '.vibe'));
-  const stdin = JSON.stringify({ intent: fs.readFileSync(path.join(taskDir, 'judge', 'intent.md'), 'utf-8'), scenarios: fs.readFileSync(path.join(taskDir, 'judge', 'scenarios.yaml'), 'utf-8') });
-  vibeSync(ws, ['tokens', 'off']);
-  vibeSync(ws, ['intent', 'draft', '--stdin'], { input: stdin });
-  vibeSync(ws, ['approve']);
+  return invokeVibe(ws, a, { repo, env }, extra);
 }
 
 /** After the agent stops: judge with the task's real scenarios and append one ledger line. */
 function stateOf(ws) {
-  try {
-    return JSON.parse(fs.readFileSync(path.join(ws, '.vibe', 'state.json'), 'utf-8')).state;
-  } catch {
-    return 'NONE';
-  }
-}
-
-/** What a scoped agent wrote for itself — scenario count and check types — read before the judge's intent replaces it. */
-function scopedWork(ws) {
-  try {
-    const text = fs.readFileSync(path.join(ws, '.vibe', 'scenarios.yaml'), 'utf-8');
-    const checks = [...text.matchAll(/type:\s*(\w+)/g)].map((m) => m[1]);
-    const approved = fs.existsSync(path.join(ws, '.vibe', 'state.json')) && JSON.parse(fs.readFileSync(path.join(ws, '.vibe', 'state.json'), 'utf-8')).approvedAt !== null;
-    return { scenarios: checks.length, checks: [...new Set(checks)], approved };
-  } catch {
-    return { scenarios: 0, checks: [], approved: false };
-  }
+  return readJson(path.join(ws, '.vibe/state.json'), {}).state ?? 'NONE';
 }
 
 function judge(ws, run, task, index) {
   const taskDir = path.join(here, 'tasks', task);
-  const scoped = harness === 'scoped' ? scopedWork(ws) : null;
-  // the key — the reference answer, the expected output — reaches the workspace only now, after the agent is done
-  if (fs.existsSync(path.join(taskDir, 'key'))) fs.cpSync(path.join(taskDir, 'key'), path.join(ws, 'key'), { recursive: true });
-  draftAndApprove(ws, taskDir); // idempotent — the `off` arm never drafted, the `on` arm re-drafts the same intent
-  // the judge runs the task's scenarios only: a regression the agent recorded is the agent's, counted apart
-  const regDir = path.join(ws, '.vibe', 'regressions');
-  const agentRegressions = fs.existsSync(regDir) ? fs.readdirSync(regDir).filter((f) => f.endsWith('.yaml')).length : 0;
-  fs.rmSync(regDir, { recursive: true, force: true });
-  const keyFile = path.join(taskDir, 'key', 'expected.json');
-  const keyEnv = fs.existsSync(keyFile) ? { VIBE_KEY_EXPECTED: fs.readFileSync(keyFile, 'utf-8') } : {};
-  const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: clients.length > 1 ? clients.map((c) => (c === 'claude' ? 'claude-code' : c)).join('→') : run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '', ...keyEnv } });
-  const report = JSON.parse(out.stdout);
-  const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
-  const events = lines.map((l) => JSON.parse(l));
-  const check = events.reverse().find((e) => e.event === 'check');
+  const evidence = agentEvidence(ws);
+  const scoped = harness === 'scoped' ? evidence.scoped : null;
+  const judgeClient = clients.length > 1 ? clients.map((c) => (c === 'claude' ? 'claude-code' : c)).join('→') : run.client;
+  const { report, check } = gradeWorkspace(ws, taskDir, { repo, env }, { ...run, harness, client: judgeClient });
   // tokens a reader or reviewer spent on the agent's behalf (`usage` events) are the agent's cost too — nothing hides in a side model
-  const side = events.filter((e) => e.event === 'usage' && e.tokens);
+  const side = evidence.sideUsage;
   if (side.length && run.tokens) for (const e of side) for (const k of ['input', 'cacheRead', 'cacheWrite', 'output']) run.tokens[k] = (run.tokens[k] ?? 0) + (e.tokens[k] ?? 0);
   const sideModels = [...new Set(side.map((e) => e.detail))];
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(run.stalled ? { stalled: true } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped: { ...scoped, approvals: run.approvals ?? 0 } } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: !run.stalled && check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(run.stalled ? { stalled: true } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped: { ...scoped, approvals: run.approvals ?? 0 } } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: !run.error && !run.stalled && check.failed === 0, agentRegressions: evidence.regressions, agentVerification: evidence.verification, scopeSnapshots: run.scopeSnapshots ?? [], pair: `${task}#${index}` };
+  fs.mkdirSync(path.dirname(ledger), { recursive: true });
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -322,6 +261,7 @@ async function runOneJob(job) {
   }
   const config = meta(job.task);
   const sessions = config.sessions ?? [{}];
+  const scopeSnapshots = harness === 'on' ? [freezeScope(ws)] : [];
   let run = null;
   let asked = 0;
   let approvals = 0;
@@ -334,13 +274,17 @@ async function runOneJob(job) {
     if (config.fakeUser && i < sessions.length - 1) asked += answerQuestions(ws, path.join(here, 'tasks', job.task, config.fakeUser), one.finalText);
     // scoped: the agent stopped at the approval message, as the flow says — the user says yes, and the work goes on in a new session
     if (harness === 'scoped' && approvals === 0 && stateOf(ws) === 'DRAFT') {
-      vibeSync(ws, ['approve']);
+      const approved = vibeSync(ws, ['approve']);
+      if (approved.status !== 0) throw new Error(`scoped approval failed: ${approved.stderr || approved.stdout}`);
+      scopeSnapshots.push(freezeScope(ws));
       fs.appendFileSync(path.join(ws, 'TASK.md'), '\n\nUser: yes — approved as proposed; go ahead and build.\n');
       approvals += 1;
       if (i === sessions.length - 1) sessions.push({});
     }
   }
   run.approvals = approvals;
+  const captured = fs.existsSync(snapshotLog) ? fs.readFileSync(snapshotLog, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)).filter((s) => s.workspace === ws) : [];
+  run.scopeSnapshots = [...scopeSnapshots, ...captured];
   run.asked = asked;
   run.stalled = stalled(ws, config.outputs);
   const report = judge(ws, run, job.task, job.index);
