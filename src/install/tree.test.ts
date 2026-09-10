@@ -45,7 +45,7 @@ describe('plugin hooks — one card, one hook, never two', () => {
     const shim = path.join(root, 'bin');
     fs.mkdirSync(shim);
     fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${path.join(packageRoot(), 'dist', 'cli.js')}" "$@"\n`, { mode: 0o755 });
-    const env = { ...process.env, VIBE_HOME_DIR: root, VIBE_NO_INSTALL: '1', PATH: `${shim}:${process.env['PATH']}` };
+    const env = { ...process.env, HOME: root, VIBE_HOME_DIR: root, VIBE_NO_INSTALL: '1', PATH: `${shim}:${process.env['PATH']}` };
     const out = spawnSync(process.execPath, [session, 'claude'], { cwd: root, encoding: 'utf-8', env }); // no project under root: the card only
     expect(out.status).toBe(0);
     const ctx = (JSON.parse(out.stdout) as { hookSpecificOutput: { hookEventName: string; additionalContext: string } }).hookSpecificOutput;
@@ -73,7 +73,7 @@ describe('plugin hooks — one card, one hook, never two', () => {
     fs.mkdirSync(path.join(root, '.vibe'));
     fs.mkdirSync(path.join(root, '.claude'));
     fs.writeFileSync(path.join(root, '.claude', 'settings.json'), JSON.stringify({ hooks: { PostToolUse: [{ hooks: [{ type: 'command', command: 'node /x/hooks/notify.js post' }] }] } }));
-    const env = { ...process.env, VIBE_HOME_DIR: root, CLAUDE_PROJECT_DIR: root };
+    const env = { ...process.env, HOME: root, VIBE_HOME_DIR: root, CLAUDE_PROJECT_DIR: root };
     const guarded = spawnSync(process.execPath, [notify, 'pre', '--plugin'], { encoding: 'utf-8', env, input: JSON.stringify({ tool_input: { command: 'git push' } }) });
     expect(guarded.status).toBe(0);
     expect(guarded.stderr).toBe('');

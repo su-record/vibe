@@ -1,14 +1,17 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { findProjectRoot, isProjectDir } from './paths.js';
 
 let home: string;
 beforeEach(() => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-root-'));
 });
-afterEach(() => fs.rmSync(home, { recursive: true, force: true }));
+afterEach(() => {
+  vi.restoreAllMocks();
+  fs.rmSync(home, { recursive: true, force: true });
+});
 
 const mk = (...parts: string[]): string => {
   const p = path.join(home, ...parts);
@@ -29,6 +32,28 @@ describe('findProjectRoot — .vibe means a project only when it holds a record'
     const below = mk('notes');
     expect(findProjectRoot(home, home)).toBe(home);
     expect(findProjectRoot(below, home)).toBe(below);
+  });
+
+  it('an empty starting home never adopts its parent project', () => {
+    fs.writeFileSync(path.join(mk('outer', '.vibe'), 'state.json'), '{}');
+    const start = mk('outer', 'home');
+    expect(findProjectRoot(start, start)).toBe(start);
+  });
+
+  it('the OS home remains a boundary when a different home is supplied', () => {
+    const actualHome = mk('os-home');
+    vi.spyOn(os, 'userInfo').mockReturnValue({ ...os.userInfo(), homedir: actualHome });
+    fs.writeFileSync(path.join(mk('os-home', '.vibe'), 'state.json'), '{}');
+    const start = mk('os-home', 'project');
+    expect(findProjectRoot(start, mk('supplied-home'))).toBe(start);
+  });
+
+  it('the system temp root cannot capture a child project', () => {
+    const temporary = mk('system-temp');
+    vi.spyOn(os, 'tmpdir').mockReturnValue(temporary);
+    fs.writeFileSync(path.join(mk('system-temp', '.vibe'), 'state.json'), '{}');
+    const start = mk('system-temp', 'project');
+    expect(findProjectRoot(start, home)).toBe(start);
   });
 
   it('stops at the first directory that contains .git', () => {
