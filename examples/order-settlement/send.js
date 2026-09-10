@@ -4,8 +4,9 @@
 // --dry-run. Here the "send" is a copy into outbox/ so the example stays self-contained.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 const sheet = path.join(here, 'out', 'settlement.csv');
 if (!fs.existsSync(sheet)) {
   console.error('no settlement sheet — run settle.js first');

@@ -8,8 +8,9 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const cli = path.join(root, 'dist/cli.js');
 const ALL_TASKS = ['anomaly', 'handover', 'session-split', 'ask', 'irreversible-trap', 'brownfield', 'hidden-requirement', 'regression-trap', 'long-context', 'ambiguous-brief'];
 const DIRECTION_TASKS = process.argv.length > 2 ? process.argv.slice(2) : ALL_TASKS;

@@ -4,8 +4,9 @@
 // two places is how the model came to read intent.md for what a scenario id meant.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const src = fs.readFileSync(path.join(root, 'src/core/procedure.ts'), 'utf-8');
 const phrase = (key) => new RegExp(`${key}: '([^']+)'`).exec(src)?.[1];
 const norm = (t) => t.replace(/`/g, '').replace(/\bvibe /g, '').replace(/\bthen one\b/g, 'one').replace(/\s+/g, ' ');

@@ -3,8 +3,9 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const meta = JSON.parse(fs.readFileSync(path.join(root, 'bench/tasks/handover/judge/meta.json'), 'utf-8'));
 const problems = [];
 if (!Array.isArray(meta.clients) || meta.clients.length !== 2) problems.push('meta.clients does not name two clients');

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // The absent rule through the real check runner: README passes the placeholder gate, and the same
 // check with a word README does contain fails with the reason and the line named.
+import { fileURLToPath } from 'node:url';
 import { fileCheck } from '../dist/core/checks/file.js';
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const absent = 'Lorem ipsum|\\[TODO\\]|\\bTBD\\b|Your Company|\\{\\{|\\[\\[';
 const fail = (msg) => {
   process.stderr.write(`absent-live: ${msg}\n`);

@@ -5,7 +5,8 @@
 // reviewer carries the overlap rule and may end a REJECT with KEEP lines.
 import fs from 'node:fs';
 import path from 'node:path';
-const root = new URL('..', import.meta.url).pathname;
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('..', import.meta.url));
 const errors = [];
 const read = (f) => fs.readFileSync(path.join(root, f), 'utf-8');
 
