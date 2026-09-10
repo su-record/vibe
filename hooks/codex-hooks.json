@@ -6,7 +6,7 @@
           {
             "type": "command",
             "command": "node \"${PLUGIN_ROOT}/hooks/session.js\" codex",
-            "timeout": 90
+            "timeout": 5
           }
         ]
       }
@@ -17,7 +17,7 @@
           {
             "type": "command",
             "command": "node \"${PLUGIN_ROOT}/hooks/notify.js\" stop --plugin",
-            "timeout": 620
+            "timeout": 5
           }
         ]
       }

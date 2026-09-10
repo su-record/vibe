@@ -1,76 +1,27 @@
 #!/usr/bin/env node
-/**
- * SessionStart hook for the marketplace plugins (Claude Code · Codex · ChatGPT desktop).
- *
- * A plugin cannot write the client's CLAUDE.md / AGENTS.md, so the always-on card is handed to
- * the model here as context instead, with one line about the `vibe` CLI the skills call (the
- * npm package that registered this plugin; never installed from here). If the client home already
- * carries the card, the plugin steps back: one card, one hook, never two. Always exits 0.
- */
-import { spawnSync } from 'node:child_process';
-import fs from 'node:fs';
+// A packaged SessionStart reader: no CLI lookup, parent search or check execution.
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sessionRuntime from './session-state.cjs';
+import sessionFiles from './session-files.cjs';
 
 const client = process.argv[2] || 'claude';
-const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(here, '..');
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const home = process.env.VIBE_HOME_DIR || os.homedir();
-const CARD_START = '<!-- vibe:start -->';
-
-function read(file) {
-  try {
-    return fs.readFileSync(file, 'utf-8');
-  } catch {
-    return '';
-  }
+function read(file, limit = 65536) {
+  try { return sessionFiles.optional(file, limit) ?? ''; }
+  catch { return ''; }
 }
-
-const version = (() => {
-  try {
-    return JSON.parse(read(path.join(root, 'package.json'))).version || '0.0.0';
-  } catch {
-    return '0.0.0';
-  }
-})();
-const card = read(path.join(root, 'card.md')).trim();
+function payload() {
+  try { return sessionFiles.readPayload(); }
+  catch { return { session_id: 'invalid payload' }; }
+}
+const card = read(path.join(root, 'card.md'), 4096).trim();
 const homeCard = client === 'claude' ? path.join(home, '.claude', 'CLAUDE.md') : path.join(home, '.codex', 'AGENTS.md');
-const homeOwns = read(homeCard).includes(CARD_START); // the npm install owns the card for this client; the state is still handed over below
-
-function cliVersion() {
-  const r = spawnSync('vibe', ['--version'], { encoding: 'utf-8', timeout: 10000, shell: process.platform === 'win32' });
-  return r.status === 0 ? (r.stdout || '').trim() : null;
-}
-
-function newer(a, b) {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i += 1) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
-  return false;
-}
-
-const installed = cliVersion();
-const cliNote = installed && !newer(version, installed)
-  ? `vibe CLI ${installed} on PATH`
-  : `vibe CLI ${installed ? `${installed} is older than this plugin (${version})` : 'is not on PATH'} — run: npm i -g @su-record/vibe@${version}`;
-
-/** The project's `vibe state`, when the session starts inside one — the model's first command, handed over for free. */
-function stateNote() {
-  const cwd = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  let dir = cwd;
-  for (;;) {
-    if (fs.existsSync(path.join(dir, '.vibe', 'state.json'))) break;
-    const up = path.dirname(dir);
-    if (up === dir || fs.existsSync(path.join(dir, '.git'))) return '';
-    dir = up;
-  }
-  const r = spawnSync('vibe', ['state'], { cwd: dir, encoding: 'utf-8', timeout: 60000, shell: process.platform === 'win32', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
-  return r.status === 0 && r.stdout ? `\n\n[vibe state — this is the first command already run; continue from its next line]\n${r.stdout.trim()}` : '';
-}
-
-const state = stateNote();
-if (homeOwns && !state) process.exit(0);
-const text = homeOwns ? state.trim() : `${card}\n\n[vibe plugin ${version}] ${cliNote}${state}`;
+const homeOwns = read(homeCard).includes('<!-- vibe:start -->');
+const view = sessionRuntime.sessionStatus(payload());
+const status = view.status === 'bound' ? 'session status only; run vibe state for the procedure' : `${view.status}; use explicit vibe session bind in the intended worktree`;
+const note = sessionRuntime.message(view, status);
+const text = homeOwns ? note : `${card}\n\n${note}`;
 process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } })}\n`);
-process.exit(0);

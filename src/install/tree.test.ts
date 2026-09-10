@@ -22,7 +22,7 @@ describe('plugin tree — the repository is the plugin, generated from package.j
     }
     expect(JSON.parse(tree['.claude-plugin/marketplace.json']!).plugins[0]).toMatchObject({ name: 'vibe', source: './' });
     const norm = (t: string): string => t.replace(/\$\{(CLAUDE_)?PLUGIN_ROOT\}/g, 'R').replace(/session\.js\\" (claude|codex)/g, 'session.js C');
-    expect(Object.keys((JSON.parse(tree['hooks/hooks.json']!) as { hooks: Record<string, unknown> }).hooks)).toContain('Stop'); // the verdict runs when a turn ends without it, on both clients
+    expect(Object.keys((JSON.parse(tree['hooks/hooks.json']!) as { hooks: Record<string, unknown> }).hooks)).toContain('Stop'); // Stop reads bounded status on both clients; it never executes the verdict
     expect(norm(tree['hooks/hooks.json']!)).toBe(norm(tree['hooks/codex-hooks.json']!));
     expect(JSON.parse(tree['hooks/hooks.json']!).hooks.SessionStart[0].hooks[0].command).toContain('session.js" claude');
   });
@@ -41,33 +41,26 @@ describe('plugin hooks — one card, one hook, never two', () => {
   const session = path.join(packageRoot(), 'hooks', 'session.js');
   const notify = path.join(packageRoot(), 'hooks', 'notify.js');
 
-  it('hooks: session.js hands the card to the model and names the CLI state; it is silent when the npm install owns the client', () => {
-    const shim = path.join(root, 'bin');
-    fs.mkdirSync(shim);
-    fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${path.join(packageRoot(), 'dist', 'cli.js')}" "$@"\n`, { mode: 0o755 });
-    const env = { ...process.env, HOME: root, VIBE_HOME_DIR: root, VIBE_NO_INSTALL: '1', PATH: `${shim}:${process.env['PATH']}` };
-    const out = spawnSync(process.execPath, [session, 'claude'], { cwd: root, encoding: 'utf-8', env }); // no project under root: the card only
+  it('hooks: session.js hands over one card and bounded binding status without a PATH CLI', () => {
+    const home = path.join(root, 'home'), project = path.join(root, 'project');
+    fs.mkdirSync(home); fs.mkdirSync(project);
+    const env = { ...process.env, HOME: home, USERPROFILE: home, VIBE_HOME_DIR: home, CLAUDE_PROJECT_DIR: project,
+      CODEX_THREAD_ID: 'tree-session', CLAUDE_SESSION_ID: '', PATH: path.join(root, 'no-tools') };
+    const run = (client: string) => spawnSync(process.execPath, [session, client], { cwd: project, input: '{}', encoding: 'utf8', env, timeout: 5000 });
+    const out = run('claude');
     expect(out.status).toBe(0);
-    const ctx = (JSON.parse(out.stdout) as { hookSpecificOutput: { hookEventName: string; additionalContext: string } }).hookSpecificOutput;
+    const ctx = JSON.parse(out.stdout).hookSpecificOutput;
     expect(ctx.hookEventName).toBe('SessionStart');
     expect(ctx.additionalContext).toContain('You work inside vibe');
-    expect(ctx.additionalContext).toMatch(/vibe CLI \d+\.\d+\.\d+ on PATH/);
-    const noCli = spawnSync(process.execPath, [session, 'codex'], { cwd: root, encoding: 'utf-8', env: { ...env, PATH: shim } });
-    expect((JSON.parse(noCli.stdout) as { hookSpecificOutput: { additionalContext: string } }).hookSpecificOutput.additionalContext).toContain('npm i -g @su-record/vibe@');
-    fs.mkdirSync(path.join(root, '.claude'));
-    fs.writeFileSync(path.join(root, '.claude', 'CLAUDE.md'), '<!-- vibe:start -->\ncard\n<!-- vibe:end -->\n');
-    expect(spawnSync(process.execPath, [session, 'claude'], { cwd: root, encoding: 'utf-8', env }).stdout).toBe(''); // the home owns the card and there is no project: nothing to add
-    // the home owns the card but the session starts inside a project: the state alone is handed over
-    const project = path.join(root, 'project');
-    fs.mkdirSync(project);
-    fs.writeFileSync(path.join(project, 'intent.md'), '# t\n\n## Why\nx\n');
-    fs.writeFileSync(path.join(project, 'scenarios.yaml'), '- { id: a, then: x, check: { type: run, cmd: "node -e 0" } }\n');
-    for (const args of [['tokens', 'off'], ['intent', 'draft', 'intent.md', 'scenarios.yaml'], ['approve']]) spawnSync(process.execPath, [path.join(packageRoot(), 'dist', 'cli.js'), ...args], { cwd: project, encoding: 'utf-8', env: { ...env, VIBE_SKIP_SETUP: '1' } });
-    const inProject = spawnSync(process.execPath, [session, 'claude'], { cwd: project, encoding: 'utf-8', env: { ...env, VIBE_SKIP_SETUP: '1' } });
-    const ctx2 = (JSON.parse(inProject.stdout) as { hookSpecificOutput: { additionalContext: string } }).hookSpecificOutput.additionalContext;
-    expect(ctx2).toContain('first command already run');
-    expect(ctx2).not.toContain('You work inside vibe');
-  }, 60_000);
+    expect(ctx.additionalContext).toContain('session-unbound');
+    expect(run('codex').stdout).toContain('Stop ran no checks');
+    fs.mkdirSync(path.join(home, '.claude'));
+    fs.writeFileSync(path.join(home, '.claude', 'CLAUDE.md'), '<!-- vibe:start -->\ncard\n<!-- vibe:end -->\n');
+    const homeOwned = JSON.parse(run('claude').stdout).hookSpecificOutput.additionalContext;
+    expect(homeOwned).not.toContain('You work inside vibe');
+    expect(homeOwned).toContain('session-unbound');
+    expect(homeOwned).toContain('vibe session bind');
+  });
 
   it('hooks: notify.js --plugin steps back when the home settings already carry the npm notify hook', () => {
     fs.mkdirSync(path.join(root, '.vibe'));

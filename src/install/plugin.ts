@@ -9,11 +9,12 @@ import { pluginTree } from './tree.js';
 /**
  * OpenAI plugin for Codex CLI and ChatGPT desktop — one tree, one personal marketplace.
  *
- * The tree carries no node_modules: its hooks call the globally installed `vibe` CLI. vibe 3 copied
+ * The tree carries no node_modules: its session hooks use packaged status readers; explicit work uses the installed `vibe` CLI. vibe 3 copied
  * 300MB into the Codex cache because the whole package was the plugin; here the plugin is only the
  * manifest, the six common skills and the notification hooks.
  */
 const SKILL_NAMES = ['vibe', 'vibe-discover', 'vibe-scope', 'vibe-build', 'vibe-prove', 'vibe-handoff'] as const;
+const HOOK_FILES = ['notify.js', 'session.js', 'private-store.cjs', 'session-files.cjs', 'session-state.cjs'];
 export const MARKETPLACE_NAME = 'vibe-local';
 
 export interface PluginPaths {
@@ -75,6 +76,13 @@ export function agentName(pack: string, stage: Stage): string {
 function packageVersion(): string {
   return readJson<{ version: string }>(path.join(packageRoot(), 'package.json'))?.version ?? '0.0.0';
 }
+function copyHookAssets(tree: string): string[] {
+  const files = HOOK_FILES.map(file => `hooks/${file}`);
+  files.push('card.md');
+  for (const file of files) fs.copyFileSync(path.join(packageRoot(), file), path.join(tree, file));
+  writeJson(path.join(tree, 'package.json'), { private: true, type: 'module' });
+  return [...files, 'package.json'];
+}
 
 /** Rebuild the tree from scratch — a stale file in the cache is worse than a slow install. */
 export function assemblePlugin(tree: string): string[] {
@@ -103,11 +111,8 @@ export function assemblePlugin(tree: string): string[] {
   }
   writeAtomic(path.join(tree, 'hooks', 'codex-hooks.json'), generated['hooks/codex-hooks.json']!);
   written.push('hooks/codex-hooks.json');
-  for (const file of ['notify.js', 'session.js']) {
-    fs.copyFileSync(path.join(packageRoot(), 'hooks', file), path.join(tree, 'hooks', file));
-    written.push(`hooks/${file}`);
-  }
-  fs.writeFileSync(path.join(tree, 'README.md'), `# vibe ${version}\n\nAssembled by \`vibe plugin install\`. Do not edit — rerun the command instead.\nHooks call the globally installed \`vibe\` CLI; the verdict is always \`vibe check\`.\n`, 'utf-8');
+  written.push(...copyHookAssets(tree));
+  fs.writeFileSync(path.join(tree, 'README.md'), `# vibe ${version}\n\nAssembled by \`vibe plugin install\`. Do not edit — rerun the command instead.\nSessionStart and Stop use packaged status readers. Run \`vibe session bind\` in the intended worktree; completion requires an explicit \`vibe check\`.\n`, 'utf-8');
   written.push('README.md');
   return written;
 }
@@ -190,7 +195,7 @@ export function pluginStatus(home?: string): PluginStatusReport {
   const version = packageVersion();
   const skillsDir = path.join(paths.tree, 'skills');
   const skills = fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir).filter((n) => n === 'vibe' || n.startsWith('vibe-')).length : 0;
-  const hooks = fs.existsSync(path.join(paths.tree, 'hooks', 'codex-hooks.json')) && fs.existsSync(path.join(paths.tree, 'hooks', 'notify.js'));
+  const hooks = ['codex-hooks.json', ...HOOK_FILES].every(file => fs.existsSync(path.join(paths.tree, 'hooks', file)));
   const entry = readJson<MarketplaceDoc>(paths.marketplace)?.plugins?.find((p) => p?.name === 'vibe');
   const registered = entry !== undefined;
   const pointsAt = marketplaceTarget(paths, entry);
