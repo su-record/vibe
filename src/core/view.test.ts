@@ -84,6 +84,24 @@ describe('vibe state — the next line is the procedure', () => {
     expect(buildStateView(root, root).next).toBe('prove — STUCK: the same failure twice; vibe ask, then stop');
   });
 
+  it('answered discovery and draft questions resume their stage without starting an unapproved build', () => {
+    const discovery = ask(root, { question: 'Which problem matters?' });
+    answer(root, discovery.id, 'Missed follow-ups');
+    const discovered = buildStateView(root, root);
+    expect(discovered.stage).toBe('discover');
+    expect(discovered.next).toContain('continue discovery with vibe-discover');
+    expect(discovered.next).not.toMatch(/building|check --all/);
+    resolve(root, discovery.id);
+    draft(root, '# t\n', THREE);
+    const scope = ask(root, { question: 'Which output is acceptable?' });
+    answer(root, scope.id, 'Local drafts for review');
+    const scoped = buildStateView(root, root);
+    expect(scoped.stage).toBe('scope');
+    expect(scoped.next).toContain('continue scope with vibe-scope');
+    expect(scoped.next).toContain('request approval');
+    expect(scoped.next).not.toMatch(/building|check --all/);
+  });
+
   it('size: a review check, an irreversible scenario, a ninth scenario or a needs chain two deep makes a task full; a fifth does not', () => {
     draft(root, '# t\n', THREE + '- { id: d, then: w, check: { type: review, path: doc.md, lang: en } }\n');
     expect(buildStateView(root, root).size).toBe('full');
