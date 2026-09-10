@@ -46,7 +46,7 @@ describe('vibe state — the next line is the procedure', () => {
     expect(done.next).toBe('report — DONE r-3: answer the user from this output — what was built, which checks passed — reply in chat, not vibe ask; with no skill and no further reads; HANDOFF.md only if the intent asks');
     const reportQuestion = ask(root, { question: 'Which format?' });
     answer(root, reportQuestion.id, 'Plain text');
-    expect(buildStateView(root, root).next).toContain('reply in chat, not vibe ask');
+    expect(buildStateView(root, root).next).toBe(`answered ${reportQuestion.id}: "Plain text" — reply in chat, not vibe ask; vibe inbox resolve <id> once used`);
   });
 
   it('files: build output is not a file a scenario is about — a check that runs dist/x.js names nothing', () => {
