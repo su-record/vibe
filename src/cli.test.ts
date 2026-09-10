@@ -179,9 +179,11 @@ describe('CLI — from request to DONE', () => {
     expect(fs.existsSync(path.join(sub, '.vibe'))).toBe(false);
     const checked = vibe(['check', 'gone'], undefined, env);
     expect(checked.status).toBe(1);
-    const outcome = (checked.json as { outcomes: Array<{ id: string; exit: number; tail: string }> }).outcomes.find((o) => o.id === 'gone');
+    const outcome = (checked.json as { outcomes: Array<{ id: string; exit: number; tail: string; failureCode: string; executionContext: string }> }).outcomes.find((o) => o.id === 'gone');
     expect(outcome?.exit).toBe(127);
-    expect(outcome?.tail).toContain(`command not found — the check ran in ${root}`);
+    expect(outcome?.tail).toBe('');
+    expect(outcome?.failureCode).toBe('command-not-found');
+    expect(outcome?.executionContext).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('status reports version, the global surfaces and the project; a missing skill is named by status and repaired by setup, not by a query', () => {

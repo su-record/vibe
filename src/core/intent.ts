@@ -55,12 +55,13 @@ export function draft(root: string, intentText: string, scenariosText: string, s
   const intentNorm = intentText.endsWith('\n') ? intentText : `${intentText}\n`;
   const scenariosNorm = scenariosText.endsWith('\n') ? scenariosText : `${scenariosText}\n`;
   const hash = intentHash(intentNorm, scenariosNorm, sourceBasis);
-  const previous = readState(root).intentHash;
+  const previousState = readState(root);
+  const previous = previousState.intentHash;
   writeAtomic(intentPath(root), intentNorm);
   writeAtomic(scenariosPath(root), scenariosNorm);
   saveSourceBasis(root, sourceBasis);
   writeJson(vibePath(root, 'results.json'), {});
-  transition(root, 'DRAFT', { intentHash: hash, approvedAt: null, runs: 0, failStreak: 0, lastFailHash: null, doneAt: null, doneTree: null, abandonedReason: null });
+  transition(root, 'DRAFT', { intentHash: hash, approvedAt: null, runs: previousState.runs, failStreak: 0, lastFailHash: null, doneAt: null, doneTree: null, abandonedReason: null });
   const policy = readConfig(root).tokens;
   const issued = approvalNeedsToken(policy) ? issueToken(root, 'approve', hash) : null;
   const edges = previous && previous !== hash ? [{ type: 'supersedes' as const, from: `intent:${hash}`, to: `intent:${previous}` }] : [];

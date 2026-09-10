@@ -40,7 +40,7 @@ it('raw diagnostics are explicit private files outside the project', async () =>
 it('accepts an explicit nonzero exit only after a normal complete process', async () => {
   prepare();
   expect((await runCheck({ type: 'run', cmd: 'node emit.cjs', expect: 3 }, root)).pass).toBe(true);
-  fs.writeFileSync(path.join(root, 'hang.cjs'), 'setInterval(() => {}, 1000);');
+  fs.writeFileSync(path.join(root, 'hang.cjs'), 'setTimeout(() => {}, 1500);');
   const timed = await runCheck({ type: 'run', cmd: 'node hang.cjs', timeoutMs: 30, expect: 0 }, root);
   expect(timed).toMatchObject({ pass: false, failureCode: 'timeout' });
   fs.writeFileSync(path.join(root, 'large.cjs'), 'process.stdout.write(Buffer.alloc(2 * 1024 * 1024));');
@@ -54,4 +54,14 @@ it('legacy renderings hide raw output without rewriting the old evidence', () =>
   const shown = JSON.stringify(renderEvidence(legacy));
   expect(shown).not.toContain('PRIVATE-CANARY'); expect(shown).not.toContain('RAW-ERROR');
   expect(shown).toContain('legacy'); expect(JSON.stringify(legacy)).toBe(copy);
+});
+it('redrafting preserves prior evidence bytes and uses a new run id', async () => {
+  prepare(); await runChecks(root);
+  const file = path.join(root, '.vibe/evidence/r-1.json');
+  const before = fs.readFileSync(file);
+  draft(root, '# revised', '- { id: other, then: checked, check: { type: run, cmd: "exit 0" } }');
+  approve(root, null);
+  const report = await runChecks(root);
+  expect(report.run).toBe('r-2');
+  expect(fs.readFileSync(file)).toEqual(before);
 });

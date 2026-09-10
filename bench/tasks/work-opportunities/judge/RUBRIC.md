@@ -1,6 +1,6 @@
 # Scope review and data separation
 
-key/requirements.json is the frozen 23-unit requirement map. Mechanical coverage is a diagnostic
+key/requirements.json is the frozen 23-unit requirement map. Mechanical coverage is a deterministic release
 measurement of structured observations, executable checks and behavior. It is not a human verdict
 on problem framing, semantic requirement coverage, ranking rationale or unsupported prose.
 Those dimensions are outside the release indicators. Optional arm-blinded human diagnosis can
@@ -27,5 +27,7 @@ Refer defensible unlisted problem framings to human review; do not automatically
 Optional diagnostic studies can choose a sample and retain disagreements separately.
 Missing reviews remain missing. Deterministic assertions cover structured fields only; zero
 detected structured false claims does not certify the absence of unsupported prose.
+
+These indicators do not measure the appropriateness of problem framing or tradeoff judgment.
 
 These indicators do not measure the appropriateness of problem framing or tradeoff judgment.

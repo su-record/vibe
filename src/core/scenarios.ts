@@ -114,6 +114,9 @@ function checkReason(check: unknown): string | null {
   if (!isRecord(check)) return 'missing check — one check type (run·file·http·eval·review·human) is required';
   const type = check['type'];
   if (typeof type !== 'string' || !CHECK_TYPES.has(type)) return `unknown check type: ${String(type)}`;
+  if (check['timeoutMs'] !== undefined && (typeof check['timeoutMs'] !== 'number' || !Number.isFinite(check['timeoutMs']) || check['timeoutMs'] <= 0)) return 'timeoutMs must be a positive finite number';
+  if (type === 'run' && check['expect'] !== undefined && (!Number.isInteger(check['expect']) || Number(check['expect']) < 0 || Number(check['expect']) > 255)) return 'run expect must be an exit code from 0 to 255';
+  if (type === 'run' && check['cwd'] !== undefined && !str(check['cwd'])) return 'run cwd must be a nonempty directory path';
   switch (type) {
     case 'run':
       return str(check['cmd']) ? null : 'run check requires cmd';

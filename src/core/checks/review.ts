@@ -141,11 +141,12 @@ export async function reviewCheck(check: ReviewCheck, root: string): Promise<Che
   for (const stage of stages) {
     const instructions = fs.readFileSync(stage.file, 'utf-8');
     const r = await askStage(choice, instructions, message(contract, evidence, `## ${piece.section}\n\n${piece.body}`, shot), root, timeoutMs);
-    const outputOverflow = streams.add('stdout', r.raw.stdout) || streams.add('stderr', r.raw.stderr);
-    if (outputOverflow || r.failureCode || r.exit !== 0) return { ...fail(r.failureCode ?? (outputOverflow ? 'capture-overflow' : 'reviewer-exit')), failureCode: r.failureCode ?? (outputOverflow ? 'capture-overflow' : 'reviewer-exit'), usage };
+    const stdoutOverflow = streams.add('stdout', r.raw.stdout);
+    const outputOverflow = streams.add('stderr', r.raw.stderr) || stdoutOverflow;
     if (r.usage) usage.push({ stage: stage.name, ...r.usage });
     const chosen = choice.driver ? (choice.client === 'claude' ? choice.driver.model : choice.driver.codexModel) : null;
     recordUsage(root, { detail: `review ${pack}/${stage.name}`, client: choice.client, model: r.model ?? chosen, tokens: r.usage, costUsd: r.costUsd, ms: Date.now() - started });
+    if (outputOverflow || r.failureCode || r.exit !== 0) return { ...fail(r.failureCode ?? (outputOverflow ? 'capture-overflow' : 'reviewer-exit')), failureCode: r.failureCode ?? (outputOverflow ? 'capture-overflow' : 'reviewer-exit'), usage };
     if (r.killed) return fail(`${stage.name}: killed after ${timeoutMs}ms`, lines.join('\n'));
     const verdict = r.reply.trim();
     if (verdict === 'PASS') {

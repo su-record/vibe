@@ -62,11 +62,11 @@ describe('check — the only verdict path', () => {
     return `node ${word}.cjs`;
   };
 
-  it('a failure keeps exit and output tail and is not DONE', async () => {
+  it('a failure keeps exit and fingerprints, hides raw output, and is not DONE', async () => {
     approved(`- { id: bad, then: x, check: { type: run, cmd: "${failing('boom', 3)}" } }`);
     const report = await runChecks(root);
     expect(report.state).toBe('RUNNING');
-    expect(report.outcomes[0]).toMatchObject({ id: 'bad', status: 'fail', exit: 3, tail: 'boom' });
+    expect(report.outcomes[0]).toMatchObject({ id: 'bad', status: 'fail', exit: 3, tail: '', failureCode: 'exit-mismatch', capture: { stdout: { bytes: 4, complete: true } } });
     expect(readResults(root)['bad']?.last).toBe('fail');
   });
 

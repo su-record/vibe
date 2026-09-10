@@ -21,6 +21,7 @@ import { requireConsent } from './consent.js';
 import { fingerprint } from './inspect.js';
 import { diagnosticFile } from './evidence.js';
 import { readHandoffs } from './handoff.js';
+import { outputCapture } from './output-capture.js';
 
 export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale' | 'handoff';
 /** Checks that may run at the same time — independent scenarios only, never a dependent before its parent. */
@@ -77,7 +78,9 @@ export function readResults(root: string): ResultsFile {
   const live: ResultsFile = {};
   // A pass is bound to the tree it was taken on: any other tree makes it stale, never DONE
   for (const [id, r] of Object.entries(stored)) live[id] = r.last === 'pass' && r.tree !== tree ? { ...r, last: 'stale' } : r;
-  for (const id of Object.keys(readHandoffs(root))) live[id] = { last: 'handoff', at: stored[id]?.at ?? '', run: stored[id]?.run ?? '' };
+  const handoffs = readHandoffs(root);
+  for (const [id, result] of Object.entries(live)) if (result.last === 'handoff' && !handoffs[id]) result.last = 'pending';
+  for (const id of Object.keys(handoffs)) live[id] = { last: 'handoff', at: stored[id]?.at ?? '', run: stored[id]?.run ?? '' };
   return live;
 }
 
@@ -140,15 +143,17 @@ async function runOne(root: string, scenario: Scenario & { regression?: boolean 
   if (readHandoffs(root)[scenario.id]) return { id: scenario.id, type: scenario.check.type, status: 'handoff', exit: null, ms: 0, tail: '', reason: 'required work handed off; not passed' };
   const held = unauthorized(root, scenario);
   if (held) return held;
-  const result = await execute(scenario, root);
+  let result: CheckResult;
+  try { result = await execute(scenario, root); }
+  catch { result = { pass: false, exit: null, ms: 0, tail: '', failureCode: 'adapter-error' }; }
   const status: LastResult = isHuman(scenario) ? 'pending' : result.pass ? 'pass' : 'fail';
   if (isHuman(scenario)) askHumanOnce(root, scenario);
   const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status, exit: result.exit, ms: result.ms, tail: '' };
   if (!result.pass) { outcome.failureCode = result.failureCode ?? `${scenario.check.type}-failed`; outcome.reason = outcome.failureCode; }
-  if (result.capture) outcome.capture = result.capture;
+  outcome.capture = result.capture ?? outputCapture().finish(result.failureCode !== 'adapter-error').capture;
   if (result.signal !== undefined) outcome.signal = result.signal;
   if (result.cleanupUncertain) outcome.cleanupUncertain = true;
-  outcome.sources = scenario.verifiers ?? [];
+  outcome.sources = [...(scenario.verifiers ?? []), ...('path' in scenario.check ? [scenario.check.path] : []), ...(scenario.check.type === 'eval' ? [scenario.check.cases] : [])];
   if (options.diagnostics) outcome.diagnostic = diagnosticFile(root, `r-${readState(root).runs + 1}`, scenario.id, result);
   if (result.usage) outcome.usage = result.usage;
   if (scenario.regression) outcome.regression = true;

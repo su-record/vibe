@@ -4,7 +4,6 @@ import { createHash } from 'node:crypto';
 import { denied } from './errors.js';
 import { vibePath } from './paths.js';
 import { parseScenarios, type Scenario, type Rejection } from './scenarios.js';
-import { listRegressions } from './regress.js';
 import { readSourceBasis } from './source-basis.js';
 import { roleChoice } from './config.js';
 
@@ -31,6 +30,7 @@ export function boundedFile(file: string, limit = MAX_INPUT): Buffer {
 }
 
 export function inspectContract(root: string, files: string[] = []): { intent: string; scenarios: Scenario[]; rejections: Rejection[]; untrusted: true } {
+  root = fs.realpathSync(root);
   const rejections: Rejection[] = [];
   const read = (file: string): string => {
     try { return boundedFile(path.resolve(root, file)).toString('utf8'); }
@@ -65,13 +65,27 @@ function planCheck(root: string, scenario: Scenario) {
     unresolved: check.type === 'run' || check.type === 'eval' || check.type === 'review' ? ['Only explicitly declared verifier files are bound. Shell, package and dynamic dependencies have not been transitively audited.'] : [] };
 }
 
+function inspectedRegressions(root: string): Scenario[] {
+  const directory = vibePath(root, 'regressions');
+  if (!fs.existsSync(directory)) return [];
+  const names = fs.readdirSync(directory).filter((name) => name.endsWith('.yaml'));
+  if (names.length > 256) throw denied('too many regression files to inspect safely');
+  return names.sort().flatMap((name) => {
+    const parsed = parseScenarios(boundedFile(path.join(directory, name)).toString('utf8'));
+    if (parsed.rejections.length || !parsed.scenarios.length) throw denied('invalid inherited regression; inspect and repair it before approval');
+    return parsed.scenarios;
+  });
+}
+
 export function executionPlan(root: string) {
   const canonical = fs.realpathSync(root);
   const contract = inspectContract(canonical);
   if (contract.rejections.length) throw denied(`cannot preview invalid contract: ${JSON.stringify(contract.rejections)}`);
   // Regressions also execute: an imported regression cannot extend a receipt silently.
-  const scenarios = [...contract.scenarios, ...listRegressions(canonical)];
+  const scenarios = [...contract.scenarios, ...inspectedRegressions(canonical)];
   const definitions = boundedFile(vibePath(canonical, 'scenarios.yaml')).toString('utf8');
+  const sourceFile = vibePath(canonical, 'source-basis.json');
+  if (fs.lstatSync(sourceFile, { throwIfNoEntry: false })) boundedFile(sourceFile);
   return { schemaVersion: 1, project: canonical, contract: fingerprint({ intent: contract.intent, definitions, sources: readSourceBasis(canonical) }),
     platform: process.platform, shell: executionShell(), node: fs.realpathSync(process.execPath),
     path: process.env['PATH'] ?? '', pathExt: process.env['PATHEXT'] ?? '',
