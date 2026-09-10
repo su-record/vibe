@@ -2,10 +2,11 @@
 // On this repository, with src/core/checks/source.ts modified in the working tree, the change-scoped
 // collector lists source.ts as changed and review.ts (which imports it) as dependent, and lists no
 // file that neither changed nor imports a changed file. No model runs.
+import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { collectChanged } from '../dist/core/checks/changed.js';
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const fail = (msg) => {
   process.stderr.write(`changed-live: ${msg}\n`);
   process.exit(1);

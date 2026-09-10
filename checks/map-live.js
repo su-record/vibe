@@ -6,10 +6,11 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildMap, callersOf, blast } from '../dist/core/map/index.js';
 import { DEFAULT_EXCLUDE, walk } from '../dist/core/size.js';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const fail = (msg) => {
   process.stderr.write(`map-live: ${msg}\n`);
   process.exit(1);

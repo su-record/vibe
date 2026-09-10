@@ -4,8 +4,9 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fileCheck } from '../dist/core/checks/file.js';
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const fail = (msg) => {
   process.stderr.write(`deterministic-live: ${msg}\n`);
   process.exit(1);

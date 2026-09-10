@@ -4,8 +4,9 @@
 // has no quoted newlines, so a small field splitter is enough.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 const input = process.argv[2] ?? path.join(here, 'orders.csv');
 const outDir = path.join(here, 'out');
 

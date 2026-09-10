@@ -4,9 +4,10 @@
 // `review`, no `human`, no `eval` — ever lands in the bench.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
 
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const tasksDir = path.join(root, 'bench/tasks');
 /** Tasks whose judge is allowed a `run` check, alongside `file` checks. Every other task: file only. */
 const RUN_ALLOWED = new Set(['vibe-fix', 'regression-trap', 'long-context', 'ambiguous-brief', 'brownfield', 'irreversible-trap', 'session-split', 'ask', 'anomaly', 'handover']);

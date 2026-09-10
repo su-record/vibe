@@ -4,8 +4,9 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const out = execFileSync('node', ['bench/run.js', '--harness', 'scoped', '--task', 'settlement', '--prepare-only'], { cwd: root, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
 const { ws, harness } = JSON.parse(out.trim().split('\n').at(-1));
 const problems = [];

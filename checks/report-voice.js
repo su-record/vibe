@@ -3,7 +3,8 @@
 // from what the harness verified, keeps the load-bearing caveat, and estimates in turns, not days.
 import fs from 'node:fs';
 import path from 'node:path';
-const root = new URL('..', import.meta.url).pathname;
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('..', import.meta.url));
 const errors = [];
 const card = fs.readFileSync(path.join(root, 'card.md'), 'utf-8');
 const rule9 = card.split('\n').find((l) => l.startsWith('9. ')) ?? '';
