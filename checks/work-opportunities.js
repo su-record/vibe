@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
 import { prepareWorkspace, gradingWorkspace, vibeSync, agentEnvironment } from '../bench/workspace.js';
 import { freezeScope, treeManifest } from '../bench/snapshot.js';
+import { discoverySession } from '../bench/fde/session.js';
 
 const require = createRequire(import.meta.url);
 const repo = fileURLToPath(new URL('..', import.meta.url)), task = path.join(repo, 'bench/tasks/work-opportunities');
@@ -112,8 +113,35 @@ function observationFixture() {
   assert.equal(require(path.join(task, 'key/requirements.json')).reduce((sum, item) => sum + item.weight, 0), 23);
 }
 
+async function commonProtocol(variant, harness) {
+  const workspace = prepareWorkspace(task, { ...context, harness, clients: ['codex'] }); cleanup.push(workspace);
+  const result = await discoverySession({ ...context, workspace, variant, customer: { respond, proposal }, limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1 } }, ({ index }) => {
+    if (index === 0) return { finalText: 'I need your priority before selecting the first pilot.', ms: 0 };
+    if (index === 1) {
+      const { scope } = writeScope(workspace, variant);
+      if (harness === 'scoped') {
+        const input = JSON.stringify({ intent: scope.intent, scenarios: YAML.stringify(scope.scenarios), sources: ['customer/answers.json', 'evidence/worklog.csv'] });
+        const draft = vibeSync(workspace, ['intent', 'draft', '--stdin'], context, { input });
+        assert.equal(draft.status, 0, draft.stderr || draft.stdout);
+      }
+      return { finalText: 'Please approve the proposed scope.', ms: 0 };
+    }
+    build(workspace, variant);
+    return { finalText: 'The local pilot is ready.', ms: 0 };
+  });
+  for (const snapshot of result.snapshots) cleanup.push(snapshot.path);
+  assert.equal(result.error, undefined, result.error);
+  assert.equal(result.completed, true);
+  assert.equal(result.sessions.length, 3, 'no mandatory empty continuation');
+  assert.equal(result.clarifications, 1);
+  assert.equal(result.answers.length, 1, 'consent must not rewrite source-bound clarification replies');
+  assert.equal(result.snapshots[0].manifest['automation/run.cjs'], undefined);
+  assert.ok(result.snapshots[0].manifest['customer/consent.json']);
+}
+
 try {
   observationFixture(); customerCases();
+  for (const variant of ['status-first', 'followup-first']) for (const harness of ['off', 'scoped']) await commonProtocol(variant, harness);
   for (const variant of ['status-first', 'followup-first']) for (const harness of ['off', 'on', 'scoped']) referenceCase(variant, harness);
   referenceCase('status-first', 'off', true, 'development');
   brokenCase('duplicate-count', 'status-first', (result) => result.unsupportedDetails.some((detail) => detail.includes('observed.events')));

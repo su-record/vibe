@@ -1,0 +1,570 @@
+{
+  "id": "fde-discovery-v1",
+  "status": "draft",
+  "createdAt": "2026-09-10T05:47:56.817Z",
+  "pins": {
+    "revision": "e062f06ea0534e69e32466bfc3f71983913621fa",
+    "runner": "302b6eb5d9675da26faf3e2406d583e32112c6b332c5cd7ddd8a16c294a47237",
+    "fixture": "2e8b2a906d7a0e41fcb34baeeb36f6bcb93c88613e5a9864412538e71cb09764",
+    "rubric": "6f3e6157798e02c8906b09b2f2f44ebdbbe0fd0bb367abb223b8c55790c530d2"
+  },
+  "clientVersions": {
+    "claude": "2.1.267 (Claude Code)",
+    "codex": "codex-cli 0.153.4"
+  },
+  "nodeVersion": "v22.23.0",
+  "baselineRevision": "2d2af57",
+  "candidateRevision": null,
+  "products": {
+    "baseline": null,
+    "candidate": null
+  },
+  "targets": {
+    "scopeFloor": 0.9,
+    "groundedFamilies": 3,
+    "weightedInputRatio": 0.8,
+    "criticalOmissions": 0,
+    "unsupportedAssertions": 0
+  },
+  "schedule": [
+    {
+      "id": "claude/status-first/off/1",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/1",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/1",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "claude/followup-first/off/1",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/1",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/1",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "codex/status-first/off/1",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/1",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/1",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "codex/followup-first/off/1",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/1",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/1",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 1,
+      "doubleReview": true
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/2",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/2",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/off/2",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/2",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/2",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/off/2",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/2",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/2",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/off/2",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/2",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/2",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/off/2",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 2,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/3",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/off/3",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/3",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/3",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/off/3",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/3",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/3",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/off/3",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/3",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/3",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/off/3",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/3",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 3,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/off/4",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/4",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/4",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/off/4",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/4",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/4",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/off/4",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/4",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/4",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/off/4",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/4",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/4",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 4,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/5",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/5",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/status-first/off/5",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/5",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/5",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "claude/followup-first/off/5",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/5",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/5",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/status-first/off/5",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/5",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/5",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 5,
+      "doubleReview": false
+    },
+    {
+      "id": "codex/followup-first/off/5",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 5,
+      "doubleReview": false
+    }
+  ],
+  "settings": {
+    "claude": {
+      "model": "claude-fable-5-1[1m]",
+      "effort": null,
+      "sources": {
+        "model": {
+          "value": "claude-fable-5-1[1m]",
+          "source": "/home/ubuntu/.claude/settings.json"
+        },
+        "effort": {
+          "value": null,
+          "source": "/home/ubuntu/.claude/settings.json"
+        }
+      },
+      "maxTurns": 40,
+      "turnLimit": "client-enforced"
+    },
+    "codex": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "sources": {
+        "model": {
+          "value": "gpt-6-astra",
+          "source": "/home/ubuntu/.codex/config.toml"
+        },
+        "effort": {
+          "value": "xhigh",
+          "source": "/home/ubuntu/.codex/config.toml"
+        }
+      },
+      "maxTurns": null,
+      "turnLimit": "unavailable-use-shared-time-limit"
+    }
+  },
+  "limits": {
+    "sessions": 6,
+    "clarificationRounds": 2,
+    "scopeCorrections": 1,
+    "sessionMs": 900000,
+    "attemptMs": 3600000,
+    "concurrencyPerClient": 1
+  },
+  "budget": {
+    "rawTokens": null,
+    "usd": null,
+    "wallMs": null,
+    "unknownMoneyAccepted": false,
+    "note": "Accounting is observed at client-result boundaries. One in-flight invocation may overshoot; missing usage stops further calls."
+  },
+  "prices": {},
+  "humanReview": {
+    "rubricHash": "6f3e6157798e02c8906b09b2f2f44ebdbbe0fd0bb367abb223b8c55790c530d2",
+    "doubleReview": "attempt-1-every-cell",
+    "calibration": null
+  },
+  "task": "work-opportunities",
+  "limitations": [
+    "Synthetic discovery case; no ROI, human-time-saving, broad prevention or general FDE claim."
+  ]
+}

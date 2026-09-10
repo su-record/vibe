@@ -35,7 +35,11 @@ function inspectWorkspace(task, harness, ws, keyHashes) {
 
 function inspectTask(task) {
   const taskDir = path.join(tasksDir, task);
-  const keyHashes = new Set(files(path.join(taskDir, 'key')).map(digest));
+  // Development fixtures may repeat already-public policy/tool documents. Identical public bytes
+  // are not a hidden oracle; private-only reference implementations and cases still must be absent.
+  const publicHashes = new Set(fs.readdirSync(taskDir).filter((name) => !['key', 'judge', 'public'].includes(name))
+    .flatMap((name) => { const file = path.join(taskDir, name); return fs.statSync(file).isFile() ? [file] : files(file); }).map(digest));
+  const keyHashes = new Set(files(path.join(taskDir, 'key')).map(digest).filter((hash) => !publicHashes.has(hash)));
   for (const harness of ['off', 'on', 'scoped']) {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), `vibe-nokey-home-${task}-`));
     const env = agentEnvironment({ ...process.env, HOME: home, USERPROFILE: home, VIBE_SKIP_SETUP: '1', VIBE_KEY_SENTINEL: 'private-key-sentinel', VIBE_JUDGE_SENTINEL: 'private-judge-sentinel' });
