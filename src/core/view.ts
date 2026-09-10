@@ -15,6 +15,7 @@ import { readState, stageOf, type Stage, type State, type StateFile } from './st
 import { readText } from './store.js';
 import { sourceValidity } from './source-basis.js';
 import path from 'node:path';
+import { recordReadTargets } from './read-guard.js';
 
 export interface ScenarioView {
   id: string;
@@ -154,6 +155,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   });
   const lastEvent = readLedger(root).at(-1);
   const intent = hasIntent(root) ? { title: intentTitle(root), hash: state.intentHash, approvedAt: state.approvedAt } : null;
+  if (state.intentHash && !recordReadTargets(root, { intentHash: state.intentHash, files: views.flatMap(view => view.files ?? []) })) notices.push('read-target mirror unavailable; state remains available, intrinsic contract protection still applies');
   const sources = sourceValidity(root);
   if (sources && !sources.valid) notices.push(`source basis changed or missing: ${[...sources.changed, ...sources.missing, ...sources.unreadable].join(', ')} — re-evaluate affected findings and redraft before approval`);
   notices.push(...regressionProblems(root));

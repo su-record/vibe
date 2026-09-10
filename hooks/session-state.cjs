@@ -85,9 +85,11 @@ function recordStopEvidence(root, input) {
 }
 function unavailableStatus(root, binding, proof) {
   let currentRevision = 'unavailable';
+  let waiting = [];
   try { currentRevision = revision(root); } catch { /* Only fixed diagnostic text leaves the hook. */ }
+  try { waiting = workflow(root).waiting; } catch { /* An unavailable inbox cannot supply question ids. */ }
   return { root, revision: currentRevision, intent: proof.intentHash, complete: false, fresh: false, snapshotStatus: 'unavailable',
-    remaining: proof.scenarios.map(s => s.id), repair: repairData(proof.repair), failures: proof.failures ?? [], waiting: [], handed: [], graph: binding.scenarios };
+    remaining: proof.scenarios.map(s => s.id), repair: repairData(proof.repair), failures: proof.failures ?? [], waiting, handed: [], graph: binding.scenarios };
 }
 function structuralStatus(root, binding) {
   const raw = readPrivate(root, name('proof', root));

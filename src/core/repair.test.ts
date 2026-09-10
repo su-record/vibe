@@ -11,6 +11,7 @@ import { buildStateView } from './view.js';
 import { buildContext, renderContext } from './context.js';
 
 const { repairMessage } = createRequire(import.meta.url)('../../hooks/session-repair.cjs') as { repairMessage(view: unknown): string };
+const { readTargets } = createRequire(import.meta.url)('../../hooks/slice-store.cjs') as { readTargets(root: string): { available: boolean; files: string[] } };
 let root: string;
 beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-repair-')); });
 afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -31,6 +32,7 @@ it('diagnoses at two, keeps the masked cause and source first, asks at five and 
   expect(openQuestions(root)).toHaveLength(0);
   const view = buildStateView(root, root);
   expect(view.scenarios[0]?.files?.[0]).toBe('services/worker.ts');
+  expect(readTargets(root)).toMatchObject({ available: true, files: expect.arrayContaining([path.join(root, 'services/worker.ts')]) });
   expect(view.next).toContain("Cannot find namespace 'sharp'");
   expect(view.next).toContain('vibe context gates');
   const context = buildContext(root, 'gates');
