@@ -135,8 +135,10 @@ function nodeMatches(node: string, scenarioId: string, files: string[]): boolean
 
 function evidenceTail(root: string, run: string | undefined, scenarioId: string): string | null {
   if (!run) return null;
-  const evidence = readJson<{ results?: Array<{ id: string; tail?: string }> }>(vibePath(root, 'evidence', `${run}.json`));
-  return evidence?.results?.find((r) => r.id === scenarioId)?.tail ?? null;
+  const evidence = readJson<{ schemaVersion?: number; results?: Array<{ id: string; failureCode?: string; exit?: number }> }>(vibePath(root, 'evidence', `${run}.json`));
+  const result = evidence?.results?.find((r) => r.id === scenarioId);
+  if (!result) return null;
+  return evidence?.schemaVersion === 2 ? `${result.failureCode ?? 'check-result'}; exit=${result.exit ?? 'none'}; evidence=${run}#${scenarioId}` : `legacy evidence ${run}#${scenarioId}; raw output hidden`;
 }
 
 const RELEVANT_TYPES = new Set<LedgerEvent['event']>(['approve', 'regress', 'check']);

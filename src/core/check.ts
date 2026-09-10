@@ -17,8 +17,12 @@ import { readState, transition, writeState, type StateFile } from './state.js';
 import { nowIso, readJson, readText, writeJson } from './store.js';
 import { readSourceBasis, sourceValidity } from './source-basis.js';
 import { changedBlobs, changedSince, treeHash } from './tree.js';
+import { requireConsent } from './consent.js';
+import { fingerprint } from './inspect.js';
+import { diagnosticFile } from './evidence.js';
+import { readHandoffs } from './handoff.js';
 
-export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale';
+export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale' | 'handoff';
 /** Checks that may run at the same time — independent scenarios only, never a dependent before its parent. */
 export const MAX_PARALLEL = 4;
 export interface ResultsFile {
@@ -33,6 +37,14 @@ export interface ScenarioOutcome {
   exit: number | null;
   ms: number;
   tail: string;
+  signal?: string | null;
+  failureCode?: string;
+  capture?: CheckResult['capture'];
+  executionContext?: string;
+  evidenceId?: string;
+  sources?: string[];
+  diagnostic?: string;
+  cleanupUncertain?: boolean;
   reason?: string;
   usage?: CheckResult['usage'];
   regression?: boolean;
@@ -65,6 +77,7 @@ export function readResults(root: string): ResultsFile {
   const live: ResultsFile = {};
   // A pass is bound to the tree it was taken on: any other tree makes it stale, never DONE
   for (const [id, r] of Object.entries(stored)) live[id] = r.last === 'pass' && r.tree !== tree ? { ...r, last: 'stale' } : r;
+  for (const id of Object.keys(readHandoffs(root))) live[id] = { last: 'handoff', at: stored[id]?.at ?? '', run: stored[id]?.run ?? '' };
   return live;
 }
 
@@ -92,7 +105,7 @@ function failHashOf(outcomes: ScenarioOutcome[]): string | null {
   const failed = outcomes.filter((o) => o.status === 'fail').sort((a, b) => a.id.localeCompare(b.id));
   if (failed.length === 0) return null;
   const hash = createHash('sha256');
-  for (const o of failed) hash.update(`${o.id}|${o.exit}|${o.tail.split('\n')[0] ?? ''}\n`);
+  for (const o of failed) hash.update(`${o.id}|${o.type}|${o.exit}|${o.signal ?? ''}|${o.failureCode ?? 'check-failed'}\n`);
   return hash.digest('hex').slice(0, 8);
 }
 
@@ -123,14 +136,20 @@ function unauthorized(root: string, scenario: Scenario & { regression?: boolean 
   return outcome;
 }
 
-async function runOne(root: string, scenario: Scenario & { regression?: boolean }): Promise<ScenarioOutcome> {
+async function runOne(root: string, scenario: Scenario & { regression?: boolean }, options: CheckOptions): Promise<ScenarioOutcome> {
+  if (readHandoffs(root)[scenario.id]) return { id: scenario.id, type: scenario.check.type, status: 'handoff', exit: null, ms: 0, tail: '', reason: 'required work handed off; not passed' };
   const held = unauthorized(root, scenario);
   if (held) return held;
   const result = await execute(scenario, root);
   const status: LastResult = isHuman(scenario) ? 'pending' : result.pass ? 'pass' : 'fail';
   if (isHuman(scenario)) askHumanOnce(root, scenario);
-  const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status, exit: result.exit, ms: result.ms, tail: result.tail };
-  if (result.reason) outcome.reason = result.reason;
+  const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status, exit: result.exit, ms: result.ms, tail: '' };
+  if (!result.pass) { outcome.failureCode = result.failureCode ?? `${scenario.check.type}-failed`; outcome.reason = outcome.failureCode; }
+  if (result.capture) outcome.capture = result.capture;
+  if (result.signal !== undefined) outcome.signal = result.signal;
+  if (result.cleanupUncertain) outcome.cleanupUncertain = true;
+  outcome.sources = scenario.verifiers ?? [];
+  if (options.diagnostics) outcome.diagnostic = diagnosticFile(root, `r-${readState(root).runs + 1}`, scenario.id, result);
   if (result.usage) outcome.usage = result.usage;
   if (scenario.regression) outcome.regression = true;
   return outcome;
@@ -148,7 +167,7 @@ function blocked(scenario: Scenario & { regression?: boolean }, by: string[]): S
  * whose parent ended anywhere but `pass` is blocked and never run. Cycles cannot reach here —
  * the parser rejects them.
  */
-async function runLayers(root: string, selected: Array<Scenario & { regression?: boolean }>, previous: ResultsFile): Promise<ScenarioOutcome[]> {
+async function runLayers(root: string, selected: Array<Scenario & { regression?: boolean }>, previous: ResultsFile, options: CheckOptions): Promise<ScenarioOutcome[]> {
   const last: Record<string, LastResult | undefined> = {};
   // A parent selected for this run is judged by this run, never by what it did last time
   const selectedIds = new Set(selected.map((s) => s.id));
@@ -171,7 +190,7 @@ async function runLayers(root: string, selected: Array<Scenario & { regression?:
       break;
     }
     for (let i = 0; i < ready.length; i += MAX_PARALLEL) {
-      const batch = await Promise.all(ready.slice(i, i + MAX_PARALLEL).map((s) => runOne(root, s)));
+      const batch = await Promise.all(ready.slice(i, i + MAX_PARALLEL).map((s) => runOne(root, s, options)));
       for (const o of batch) {
         outcomes.push(o);
         last[o.id] = o.status;
@@ -204,6 +223,7 @@ function implementsEdges(root: string, scenarioIds: string[]): Edge[] {
 export interface CheckOptions {
   ids?: string[];
   all?: boolean;
+  diagnostics?: boolean;
 }
 
 type Selectable = Scenario & { regression?: boolean };
@@ -266,6 +286,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
     throw invalidTransition(`check runs only after approval (current state ${state.state})`);
   }
   validateApproval(root, state);
+  const executionContext = fingerprint(requireConsent(root));
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
   const universe: Selectable[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))];
@@ -275,7 +296,8 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   if (state.state === 'APPROVED') transition(root, 'RUNNING');
   const run = nextRunId(state);
   const at = nowIso();
-  const outcomes = await runLayers(root, selected, previous);
+  const outcomes = await runLayers(root, selected, previous, options);
+  for (const outcome of outcomes) { outcome.executionContext = executionContext; outcome.evidenceId = `${run}#${outcome.id}`; }
 
   const results: ResultsFile = { ...previous };
   const tree = treeHash(root); // after the checks ran: a check that writes build output is part of the tree it passed on
@@ -293,7 +315,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const { next, stuck, done } = settleState(root, readState(root), failHash, remaining, outcomes, at);
   writeState(root, next);
 
-  const evidence = { run, at, client: detectClient(), model: detectModel(), scenarioSet: scenarioSetHash(scenarios), results: outcomes };
+  const evidence = { schemaVersion: 2, run, at, intentHash: state.intentHash, client: detectClient(), model: detectModel(), scenarioSet: scenarioSetHash(scenarios), results: outcomes.map(({ diagnostic: _private, ...outcome }) => outcome) };
   writeJson(vibePath(root, 'evidence', `${run}.json`), evidence);
   const scenarioMap: Record<string, Exclude<LastResult, 'stale'>> = {};
   for (const o of outcomes) scenarioMap[o.id] = o.status as Exclude<LastResult, 'stale'>;

@@ -70,6 +70,8 @@ export interface Scenario {
   irreversible?: string;
   /** DEPENDS_ON edges — this scenario is checked only after every listed scenario has passed. */
   needs?: string[];
+  /** Explicitly reviewed verifier bytes, separate from artifacts being built. */
+  verifiers?: string[];
 }
 
 export interface Rejection {
@@ -169,6 +171,8 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (reason) return void rejections.push({ id, reason });
     const needs = strList(item['needs']);
     if (needs === null) return void rejections.push({ id, reason: 'needs must be a list of scenario ids' });
+    const verifiers = strList(item['verifiers']);
+    if (verifiers === null) return void rejections.push({ id, reason: 'verifiers must be a list of file paths' });
     seen.add(id);
     const scenario: Scenario = { id, then, check: item['check'] as Check };
     const given = str(item['given']);
@@ -178,6 +182,7 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (when) scenario.when = when;
     if (irreversible) scenario.irreversible = irreversible;
     if (needs.length > 0) scenario.needs = needs;
+    if (verifiers.length > 0) scenario.verifiers = verifiers;
     scenarios.push(scenario);
   });
   rejectBadEdges(scenarios, rejections);

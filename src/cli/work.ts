@@ -16,6 +16,10 @@ import { sourceValidity } from '../core/source-basis.js';
 import { buildStateView } from '../core/view.js';
 import { ensureProject } from '../install/project.js';
 import { flagString, readStdin, type Flags, type Output } from './common.js';
+import { executionPlan, inspectContract } from '../core/inspect.js';
+import { consentStatus } from '../core/consent.js';
+import { renderEvidence } from '../core/evidence.js';
+import { handoffScenario, reopenScenario } from '../core/handoff.js';
 
 const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·', stale: '↻' };
 
@@ -101,6 +105,10 @@ function draftInput(root: string, args: string[], flags: Flags): { intent: strin
 }
 
 export function cmdIntent(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
+  if (sub === 'inspect') {
+    const inspected = inspectContract(root, args);
+    return { json: inspected, text: `Untrusted contract data; no checks executed.\n${JSON.stringify(inspected, null, 2)}`, code: inspected.rejections.length ? 1 : 0 };
+  }
   if (sub === 'show') {
     const scenarios = loadScenarios(root);
     const intent = readText(intentPath(root)) ?? '';
@@ -129,7 +137,13 @@ export function cmdIntent(root: string, sub: string | undefined, args: string[],
   return { json: result, text, code: 0 };
 }
 
-export function cmdApprove(root: string, args: string[]): Output {
+export function cmdApprove(root: string, args: string[], flags: Flags = {}): Output {
+  if (flags['preview'] === true) {
+    const plan = executionPlan(root);
+    const consent = consentStatus(root, plan);
+    const preview = { plan, consent, untrusted: true, executed: false };
+    return { json: preview, text: `Execution plan preview; no commands executed or approval saved.\n${JSON.stringify(preview, null, 2)}`, code: 0 };
+  }
   ensureProject(root);
   const token = args.join(' ') || null;
   const result = approve(root, token);
@@ -139,7 +153,7 @@ export function cmdApprove(root: string, args: string[]): Output {
 export async function cmdCheck(root: string, args: string[], flags: Flags): Promise<Output> {
   ensureProject(root);
   const options = flags['all'] === true ? { all: true } : args.length ? { ids: args } : {};
-  const report = await runChecks(root, options);
+  const report = await runChecks(root, { ...options, diagnostics: flags['diagnostics'] === true });
   const files = new Map(buildStateView(root).scenarios.map((s) => [s.id, s.files ?? []]));
   const lines = [
     `${report.run} · ${report.state} · pass ${report.passed} · fail ${report.failed}${report.pending ? ` · pending ${report.pending}` : ''}`,
@@ -148,7 +162,7 @@ export async function cmdCheck(root: string, args: string[], flags: Flags): Prom
     ...(report.stuck ? ['  STUCK — the same failure twice in a row; see the inbox'] : []),
     `  next      ${buildStateView(root).next}`,
   ];
-  const code = report.stuck || report.failed > 0 ? 1 : 0;
+  const code = report.stuck || report.failed > 0 || report.outcomes.some((outcome) => outcome.status === 'handoff') ? 1 : 0;
   return { json: { ...report, next: buildStateView(root).next }, text: lines.join('\n'), code };
 }
 
@@ -158,11 +172,23 @@ export function cmdEvidence(root: string, args: string[]): Output {
   if (!runId) throw usage('no evidence yet');
   const evidence = readJson<unknown>(path.join(dir, `${runId}.json`));
   if (!evidence) throw usage(`no such run: ${runId}`);
-  return { json: evidence, text: JSON.stringify(evidence, null, 2), code: 0 };
+  const rendered = renderEvidence(evidence);
+  return { json: rendered, text: JSON.stringify(rendered, null, 2), code: 0 };
 }
 
 export function cmdAbandon(root: string, flags: Flags): Output {
+  const scenario = flagString(flags, 'scenario');
+  if (scenario) {
+    const handoff = handoffScenario(root, scenario, { reason: flagString(flags, 'reason') ?? '', category: flagString(flags, 'category') ?? '', nextAction: flagString(flags, 'next') ?? '', ...(flagString(flags, 'owner') ? { owner: flagString(flags, 'owner')! } : {}) });
+    return { json: { status: 'handoff', passed: false, handoff }, text: `HANDOFF ${scenario} — required work remains unmet`, code: 0 };
+  }
   ensureProject(root);
   abandon(root, flagString(flags, 'reason') ?? '');
   return { json: { state: 'ABANDONED' }, text: 'ABANDONED', code: 0 };
+}
+
+export function cmdReopen(root: string, args: string[], flags: Flags): Output {
+  if (args.length !== 1) throw usage('reopen <scenario> --reason "…"');
+  reopenScenario(root, args[0]!, flagString(flags, 'reason') ?? '');
+  return { json: { status: 'reopened', scenario: args[0] }, text: `REOPENED ${args[0]} — original check required`, code: 0 };
 }

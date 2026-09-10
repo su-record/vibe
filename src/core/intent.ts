@@ -10,6 +10,8 @@ import { readState, transition } from './state.js';
 import { captureSources, readSourceBasis, saveSourceBasis, sourceValidity, type SourceReference } from './source-basis.js';
 import { readText, writeAtomic, writeJson } from './store.js';
 import { issueToken, verifyAndConsume } from './tokens.js';
+import { consentStatus, saveConsent } from './consent.js';
+import { executionPlan } from './inspect.js';
 
 export function intentPath(root: string): string {
   return vibePath(root, 'intent.md');
@@ -73,7 +75,8 @@ export function draft(root: string, intentText: string, scenariosText: string, s
  */
 export function approve(root: string, token: string | null): { hash: string; basis: 'token' | 'chat' } {
   const state = readState(root);
-  if (state.state !== 'DRAFT' || !state.intentHash) throw denied(`nothing to approve (current state ${state.state})`);
+  const renewal = ['APPROVED', 'RUNNING', 'STUCK', 'DONE'].includes(state.state) && !consentStatus(root).valid;
+  if ((state.state !== 'DRAFT' && !renewal) || !state.intentHash) throw denied(`nothing to approve (current state ${state.state})`);
   const sourceBasis = readSourceBasis(root);
   const current = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '', sourceBasis);
   if (current !== state.intentHash) throw denied('intent changed since the draft — run `intent draft` again to get a new token');
@@ -82,6 +85,7 @@ export function approve(root: string, token: string | null): { hash: string; bas
   const waiting = openQuestions(root).filter((question) => !question.answer?.trim());
   const blocked = waiting.filter((question) => !(token && question.needs === 'approve' && question.target === state.intentHash));
   if (blocked.length) throw denied(`unanswered customer decisions: ${blocked.map((question) => question.id).join(', ')} — obtain an answer or resolve a withdrawn question before approval; defaults are not agreement`);
+  const plan = executionPlan(root);
   const policy = readConfig(root).tokens;
   let basis: 'token' | 'chat' = 'chat';
   let by = 'human:chat';
@@ -92,7 +96,8 @@ export function approve(root: string, token: string | null): { hash: string; bas
     basis = 'token';
     by = `human:token:${verdict.id}`;
   }
-  transition(root, 'APPROVED', { approvedAt: new Date().toISOString() });
+  saveConsent(root, plan);
+  if (!renewal) transition(root, 'APPROVED', { approvedAt: new Date().toISOString() });
   for (const question of waiting) resolveQuestion(root, question.id);
   record(root, { event: 'approve', client: detectClient(), model: detectModel(), detail: `${state.intentHash} by ${basis}`, edges: [{ type: 'decided-by', from: `intent:${state.intentHash}`, to: by }] });
   return { hash: state.intentHash, basis };

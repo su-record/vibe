@@ -15,7 +15,7 @@ export interface Output {
   code: number;
 }
 
-const BOOLEAN_FLAGS = new Set(['json', 'all', 'stdin', 'purge-state', 'dry-run', 'yes', 'help', 'version']);
+const BOOLEAN_FLAGS = new Set(['json', 'all', 'stdin', 'purge-state', 'dry-run', 'yes', 'help', 'version', 'preview', 'diagnostics']);
 
 export function parseArgs(argv: string[]): Parsed {
   const positionals: string[] = [];
@@ -52,7 +52,9 @@ export const HELP = `vibe — an AX/FDE harness. The harness judges; a human app
             plugin build [--check] (manifests from package.json) · plugin mcpb [--out vibe.mcpb] (Claude desktop app bundle) · plugin install | status [--home <dir>]
   work      state [--graph] · read <file…> [--sheet] [--pages] (xlsx·docx·pptx·pdf·hwp·hwpx·html·tables·code) · read <file…> --ask "question" (a low-reasoning model reads, only the answer returns)
             profile <file> [--sheet] (csv·tsv·jsonl·json·xlsx) · intent draft <intent.md> <scenarios.yaml> | --stdin · intent show
-            approve [token] · check [id…] [--all] · evidence [run] · abandon --reason "…"
+            intent inspect [intent.md scenarios.yaml] · approve [token] [--preview] · check [id…] [--all] [--diagnostics] · evidence [run]
+            abandon --reason "…" [--scenario id --category environment --next "…" --owner "…"] · reopen <scenario> --reason "…"
+            session bind [--session id] · session status [--session id] (Stop reports this worktree; it never checks)
   checks    run (exit code; a mutating command is irreversible and needs vibe authorize) · file (exists·pattern·contains·absent·schema·sum·traceable·a11y) · http (status·schema·maxMs) · eval (matching cases ≥ expect.pass)
             review (pack ko|en|design|code, path, changed, screenshot — two reviewer stages, PASS only) · human (inbox, no verdict)
             size [paths…] [--max-file 400] [--max-function 50]  — a built-in check for a scenario: exit 1 when a file or function is over

@@ -1,6 +1,7 @@
 import { isProjectDir, vibePath } from './paths.js';
 import { readState } from './state.js';
 import { appendJsonl, nowIso, readJsonl } from './store.js';
+import type { ScenarioHandoff } from './handoff.js';
 
 /**
  * Ledger — every run leaves client, model, result and cost. Comparison is a ledger query.
@@ -15,6 +16,8 @@ export type LedgerEventType =
   | 'stuck'
   | 'done'
   | 'abandon'
+  | 'handoff'
+  | 'reopen'
   | 'ask'
   | 'authorize'
   | 'regress'
@@ -24,6 +27,7 @@ export type LedgerEventType =
   | 'usage';
 
 export interface LedgerEvent {
+  handoff?: ScenarioHandoff;
   at: string;
   event: LedgerEventType;
   client: string;
@@ -32,7 +36,7 @@ export interface LedgerEvent {
   harness?: 'on' | 'off' | 'scoped';
   run?: string;
   scenarioSet?: string;
-  scenarios?: Record<string, 'pass' | 'fail' | 'pending' | 'blocked'>;
+  scenarios?: Record<string, 'pass' | 'fail' | 'pending' | 'blocked' | 'handoff'>;
   passed?: number;
   failed?: number;
   failHash?: string | null;

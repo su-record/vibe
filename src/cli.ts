@@ -9,6 +9,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { usage, VibeError } from './core/errors.js';
 import { findProjectRoot } from './core/paths.js';
+import { safeText } from './core/evidence.js';
+import { cmdReopen } from './cli/work.js';
 import { ensureGlobal, globalStatus } from './install/global.js';
 import { flagString, HELP, packageVersion, parseArgs, type Flags, type Output } from './cli/common.js';
 import { cmdAsk, cmdAuthorize, cmdInbox } from './cli/human.js';
@@ -40,10 +42,11 @@ const COMMANDS: Record<string, Handler> = {
   context: (root, _s, _r, tail, flags) => cmdContext(root, tail, flags),
   conventions: (root, _s, _r, _t, flags) => cmdConventions(root, flags),
   intent: (root, sub, rest, _t, flags) => cmdIntent(root, sub, rest, flags),
-  approve: (root, _s, _r, tail) => cmdApprove(root, tail),
+  approve: (root, _s, _r, tail, flags) => cmdApprove(root, tail, flags),
   check: (root, _s, _r, tail, flags) => cmdCheck(root, tail, flags),
   evidence: (root, _s, _r, tail) => cmdEvidence(root, tail),
   abandon: (root, _s, _r, _t, flags) => cmdAbandon(root, flags),
+  reopen: (root, _s, _r, tail, flags) => cmdReopen(root, tail, flags),
   ask: (root, _s, _r, tail, flags) => cmdAsk(root, tail, flags),
   authorize: (root, _s, _r, tail, flags) => cmdAuthorize(root, tail, flags),
   inbox: (root, sub, rest) => cmdInbox(root, sub, rest),
@@ -79,12 +82,12 @@ async function main(): Promise<void> {
   const wantsJson = argv.includes('--json');
   try {
     const out = await dispatch(argv);
-    process.stdout.write(wantsJson ? `${JSON.stringify(out.json, null, 2)}\n` : `${out.text}\n`);
+    process.stdout.write(wantsJson ? `${JSON.stringify(out.json, null, 2)}\n` : `${safeText(out.text, 200_000)}\n`);
     process.exitCode = out.code;
   } catch (error) {
     const code = error instanceof VibeError ? error.exitCode : 2;
     const message = error instanceof Error ? error.message : String(error);
-    process.stdout.write(wantsJson ? `${JSON.stringify({ error: message, code })}\n` : `vibe: ${message}\n`);
+    process.stdout.write(wantsJson ? `${JSON.stringify({ error: message, code })}\n` : `vibe: ${safeText(message)}\n`);
     process.exitCode = code;
   }
 }
@@ -106,4 +109,3 @@ export function sameFile(argv1: string | undefined, moduleUrl: string): boolean 
   return real(argv1) === real(fileURLToPath(moduleUrl));
 }
 if (sameFile(process.argv[1], import.meta.url)) void main();
-

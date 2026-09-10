@@ -1,6 +1,7 @@
-import { spawn } from 'node:child_process';
 import path from 'node:path';
 import type { RunCheck } from '../scenarios.js';
+import { checkProcess } from '../check-process.js';
+import type { CaptureEvidence } from '../output-capture.js';
 
 export interface CheckResult {
   pass: boolean;
@@ -8,13 +9,17 @@ export interface CheckResult {
   ms: number;
   tail: string;
   reason?: string;
+  signal?: string | null;
+  failureCode?: string;
+  capture?: CaptureEvidence;
+  raw?: { stdout: Buffer; stderr: Buffer };
+  cleanupUncertain?: boolean;
   /** What a model-judged check spent, per stage, when the driver reports it. */
   usage?: Array<{ stage: string; input: number; cacheRead: number; cacheWrite: number; output: number }>;
 }
 
 const DEFAULT_TIMEOUT_MS = 600_000;
 const TAIL_LINES = 8;
-const MAX_CAPTURE = 256 * 1024;
 
 export function tail(text: string, lines = TAIL_LINES): string {
   return text.trim().split('\n').slice(-lines).join('\n');
@@ -25,32 +30,13 @@ export function tail(text: string, lines = TAIL_LINES): string {
  * reaches this function. The command string comes from scenarios.yaml, so it runs in a shell,
  * in the project root unless the check names a `cwd`.
  */
-export function runCheck(check: RunCheck, root: string): Promise<CheckResult> {
+export async function runCheck(check: RunCheck, root: string): Promise<CheckResult> {
   const cwd = check.cwd ? path.resolve(root, check.cwd) : root;
   const timeoutMs = check.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const expect = check.expect ?? 0;
-  const started = Date.now();
-  return new Promise((resolve) => {
-    const child = spawn(check.cmd, { cwd, shell: true, env: { ...process.env, VIBE_CHECK: '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
-    let captured = '';
-    const capture = (chunk: Buffer): void => {
-      if (captured.length < MAX_CAPTURE) captured += chunk.toString('utf-8');
-    };
-    child.stdout.on('data', capture);
-    child.stderr.on('data', capture);
-    const timer = setTimeout(() => {
-      child.kill('SIGKILL');
-      captured += `\n[vibe] killed after ${timeoutMs}ms`;
-    }, timeoutMs);
-    child.on('error', (error) => {
-      clearTimeout(timer);
-      resolve({ pass: false, exit: null, ms: Date.now() - started, tail: tail(captured), reason: `spawn failed: ${error.message}` });
-    });
-    child.on('close', (code) => {
-      clearTimeout(timer);
-      const exit = code ?? null;
-      if (exit === 127) captured += `\n[vibe] command not found — the check ran in ${cwd}`; // 127 is the usual sign of a misresolved project root
-      resolve({ pass: exit === expect, exit, ms: Date.now() - started, tail: tail(captured) });
-    });
-  });
+  const result = await checkProcess(check.cmd, { cwd, timeoutMs });
+  const pass = result.failureCode === null && !result.signal && result.exit === expect;
+  const failureCode = result.failureCode ?? (result.signal ? 'signal' : result.exit === 127 ? 'command-not-found' : 'exit-mismatch');
+  const { failureCode: _issue, ...observed } = result;
+  return { ...observed, pass, tail: tail(result.raw.stdout.toString('utf8') + result.raw.stderr.toString('utf8')), ...(pass ? {} : { reason: failureCode, failureCode }) };
 }
