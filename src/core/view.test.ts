@@ -56,6 +56,17 @@ describe('vibe state — the next line is the procedure', () => {
     expect(buildStateView(root, root).scenarios[0]?.files).toBeUndefined();
   });
 
+  it('human items remain visible but are not gates, even with a failed result', () => {
+    draft(root, '# t\n', THREE + '- { id: taste, then: the wording reads well, check: { type: human, question: "Please review the wording" } }\n');
+    approve(root, null);
+    const failed = { last: 'fail', at: 'now', run: 'r-1', tree: treeHash(root) };
+    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: failed, taste: failed }));
+    const view = buildStateView(root, root);
+    expect(view.scenarios.find((s) => s.id === 'taste')).toMatchObject({ type: 'human', last: 'fail' });
+    expect(view.remaining).toEqual(['a', 'b', 'c']);
+    expect(view.next).toBe('fix a — on a failure, fix what the check names; vibe context <id> when that is not enough; then vibe check <id>');
+  });
+
   it('inbox: an unanswered question makes next a wait; an answered one carries its answer and lets the work continue; STUCK follows the same rule', () => {
     draft(root, '# t\n\n## Why\nx\n', THREE);
     approve(root, null);
