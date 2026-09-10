@@ -35,6 +35,7 @@ it('inspects and previews without executing, initializing storage, or changing r
   prepare();
   const before = fs.readFileSync(path.join(root, '.vibe', 'state.json'));
   expect(executionPlan(root).checks).toHaveLength(1);
+  expect(executionPlan(root).checks[0]?.timeoutMs).toBe(600_000);
   expect(fs.readFileSync(path.join(root, '.vibe', 'state.json'))).toEqual(before);
   expect(fs.existsSync(path.join(root, 'marker'))).toBe(false);
 });

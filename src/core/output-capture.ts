@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
 export const CAPTURE_LIMIT = 1_048_576;
+export const CAPTURE_GRACE_MS = 1000;
 export interface StreamEvidence { bytes: number; sha256: string; complete: boolean }
 export interface CaptureEvidence { stdout: StreamEvidence; stderr: StreamEvidence }
 

@@ -287,7 +287,8 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
     throw invalidTransition(`check runs only after approval (current state ${state.state})`);
   }
   validateApproval(root, state);
-  const executionContext = fingerprint(requireConsent(root));
+  const executionPlan = requireConsent(root);
+  const executionContext = fingerprint(executionPlan);
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
   const universe: Selectable[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))];
@@ -315,7 +316,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const { next, stuck, done } = settleState(root, readState(root), failHash, remaining, outcomes, at);
   const report = { run, at, state: next.state, outcomes, passed, failed, pending, failHash, stuck, done, remaining };
   recordReport(root, report, scenarios, edges);
-  recordStopEvidence(root, { run, done, intentHash: state.intentHash!, scenarios: gated.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
+  recordStopEvidence(root, { run, done, executionPlan, intentHash: state.intentHash!, scenarios: gated.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
   writeState(root, next);
   for (const event of [...(stuck ? ['stuck' as const] : []), ...(done ? ['done' as const] : [])]) record(root, { event, client: detectClient(), model: detectModel(), run, failHash });
   return report;

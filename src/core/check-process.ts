@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams, type SpawnOptionsWithoutStdio } from 'node:child_process';
 import { executionShell } from './inspect.js';
-import { outputCapture } from './output-capture.js';
+import { outputCapture, CAPTURE_GRACE_MS } from './output-capture.js';
 
 export type OutputObserver = (stream: 'stdout' | 'stderr', bytes: Buffer) => boolean;
 
@@ -23,7 +23,7 @@ function observe(child: ChildProcessWithoutNullStreams, timeoutMs: number, input
     };
     const stop = (code: string): void => {
       if (failureCode) return; failureCode = code; child.kill('SIGKILL');
-      grace = setTimeout(() => finish(null, 'SIGKILL', false), 1000);
+      grace = setTimeout(() => finish(null, 'SIGKILL', false), CAPTURE_GRACE_MS);
     };
     const timer = setTimeout(() => stop('timeout'), timeoutMs);
     for (const name of ['stdout', 'stderr'] as const) child[name].on('data', (chunk: Buffer) => {

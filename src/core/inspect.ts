@@ -5,6 +5,7 @@ import { denied } from './errors.js';
 import { vibePath } from './paths.js';
 import { parseScenarios, type Scenario, type Rejection } from './scenarios.js';
 import { configFromRaw, roleChoice } from './config.js';
+import { CAPTURE_LIMIT, CAPTURE_GRACE_MS } from './output-capture.js';
 import { readerHome, REVIEWER_DRIVER, withChoice } from './readerSession.js';
 
 export const hashBytes = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex');
@@ -78,7 +79,7 @@ function planCheck(root: string, scenario: Scenario, reviewer: ReturnType<typeof
   const cwd = check.type === 'review' ? reviewer.cwd : fs.realpathSync(check.type === 'run' && check.cwd ? path.resolve(root, check.cwd) : root);
   const declared = scenario.verifiers ?? [];
   return { id: scenario.id, needs: scenario.needs ?? [], check, cwd,
-    timeoutMs: 'timeoutMs' in check ? check.timeoutMs ?? (check.type === 'http' ? 30_000 : check.type === 'eval' ? 60_000 : 600_000) : null,
+    timeoutMs: check.type === 'run' || check.type === 'http' || check.type === 'eval' || check.type === 'review' ? check.timeoutMs ?? (check.type === 'http' ? 30_000 : check.type === 'eval' ? 60_000 : 600_000) : null,
     expectedExit: check.type === 'run' ? check.expect ?? 0 : null,
     verifiers: declared.map((file) => verifier(root, file)),
     unresolved: check.type === 'run' || check.type === 'eval' || check.type === 'review' ? ['Only explicitly declared verifier files are bound. Shell, package and dynamic dependencies have not been transitively audited.'] : [] };
@@ -110,6 +111,8 @@ export function executionPlan(root: string) {
   return { schemaVersion: 1, project: canonical, contract: fingerprint({ intent: contract.intent, definitions, sources }),
     platform: process.platform, shell: executionShell(), node: fs.realpathSync(process.execPath),
     path: process.env['PATH'] ?? '', pathExt: process.env['PATHEXT'] ?? '',
+    environment: Object.fromEntries(['HOME', 'USERPROFILE', 'VIBE_HOME_DIR', 'VIBE_REVIEW_CMD', 'VIBE_REVIEW_CLIENT', 'VIBE_REVIEWER_MODEL', 'VIBE_REVIEWER_EFFORT'].map((key) => [key, process.env[key] ?? null])),
+    capture: { perStreamBytes: CAPTURE_LIMIT, cleanupGraceMs: CAPTURE_GRACE_MS },
     reviewer, checks: scenarios.map((scenario) => planCheck(canonical, scenario, reviewer)) };
 }
 
