@@ -38,15 +38,18 @@ function bindSession(root, id, scenarios = []) {
   return { status: 'bound', ...binding };
 }
 function workflow(root) {
-  const questions = new Map(), handed = new Set(), changes = [];
+  const questions = new Map(), answered = new Set(), handed = new Set(), changes = [];
   const inbox = optional(path.join(root, '.vibe/inbox.jsonl')) ?? '';
   for (const line of inbox.split('\n').filter(Boolean)) {
     const e = JSON.parse(line);
     if (typeof e.id !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(e.id)) continue;
     if (e.type === 'question') questions.set(e.id, false);
+    if (e.type === 'answer' && typeof e.answer === 'string' && e.answer.trim()) answered.add(e.id);
     if (e.type === 'answer' || e.type === 'resolve') questions.delete(e.id);
   }
   const state = json(path.join(root, '.vibe/state.json'));
+  const repairQuestion = state.repair?.questionId;
+  if (state.repair?.waiting && typeof repairQuestion === 'string' && /^[a-zA-Z0-9-]{1,80}$/.test(repairQuestion) && !answered.has(repairQuestion)) questions.set(repairQuestion, false);
   const ledger = optional(path.join(root, '.vibe/ledger.jsonl'), 2097152) ?? '';
   for (const line of ledger.split('\n').filter(Boolean)) {
     const e = JSON.parse(line), item = e.handoff;

@@ -1,8 +1,8 @@
 /** One explicitly retained diagnostic summary, not a transcript. Masking is best effort, not a secrecy guarantee. */
 export function failureMessage(text: string, root: string): string | null {
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
-  const specific = lines.filter((line) => /\bTS\d{4,5}\b|\berror\b|\bfailed\b|\bFAIL\b|does not exist|\b(?:no-undef|no-unused-vars|@typescript-eslint\/[\w-]+)\b/i.test(line));
-  const selected = specific.find((line) => /\bTS\d{4,5}\b|does not exist/i.test(line)) ?? specific.filter((line) => !/^\s*(?:Test Files|Tests|FAIL\s+\S+)\b/.test(line)).at(-1) ?? specific.at(-1);
+  const lines = text.replace(/\u001b\[[0-9;]*[a-zA-Z]/g, '').split('\n').map((line) => line.trim()).filter(line => line && !/^(?:[>❯]\s*)?\d+\s*[|]/.test(line));
+  const specific = lines.filter((line) => /\bTS\d{4,5}\b|\berror\b|\w+Error:|\bfailed\b|\bFAIL\b|does not exist|\b(?:no-undef|no-unused-vars|@typescript-eslint\/[\w-]+)\b/i.test(line));
+  const selected = specific.find((line) => /\bTS\d{4,5}\b|does not exist/i.test(line)) ?? specific.find(line => /^(?:[\w.]*Error|Error):/.test(line)) ?? specific.filter((line) => !/^(?:Test Files|Tests|FAIL\s+\S+)\b/.test(line)).at(-1) ?? specific.at(-1);
   if (!selected) return null;
   return maskFailureLine(selected, root);
 }
@@ -14,7 +14,7 @@ export function maskFailureLine(selected: string, root: string): string {
     .replace(/(https?:\/\/)[^\s/@]+:[^\s/@]+@/gi, '$1[credentials]@')
     .replace(/(https?:\/\/[^\s?"']+)\?[^\s"']*/gi, '$1?[query]')
     .replace(/\b(Bearer)\s+[^\s"']+/gi, '$1 [redacted]')
-    .replace(/\b(api[_-]?key|access[_-]?token|token|secret|password|authorization)\s*[:=]\s*["']?[^\s,;"']+["']?/gi, '$1=[redacted]')
+    .replace(/(["']?\b(?:api[_-]?key|access[_-]?token|token|secret|password|authorization)\b["']?\s*[:=]\s*)(?:"(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s,;}"']+)/gi, '$1[redacted]')
     .replace(/\b(?:sk-|gh[pousr]_|AKIA)[A-Za-z0-9_-]{8,}\b/g, '[redacted]')
     .replace(/(^|[\s("'])(?:[A-Za-z]:[\\/]|\/)[^\s"')]+/g, '$1[path]')
     .replace(/\b[A-Za-z0-9+_=/-]{40,}\b/g, '[redacted]')

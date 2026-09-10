@@ -49,6 +49,10 @@ it('diagnoses at two, keeps the masked cause and source first, asks at five and 
   for (const secret of [root, 'top-secret', 'user@example.com', '?key=secret', 'RAW-UNRELATED-CANARY']) expect(shared).not.toContain(secret);
   await expect(runChecks(root)).rejects.toThrow(/repair limit reached/);
   expect(readState(root).runs).toBe(5);
+  resolve(root, question.id);
+  expect(buildStateView(root, root).next).toContain(`${question.id} asked`);
+  expect(buildStateView(root, root).next).toContain('stop and wait');
+  await expect(runChecks(root)).rejects.toThrow(/repair limit reached/);
   answer(root, question.id, 'Try the exported sharp type instead of a namespace.');
   resolve(root, question.id);
   await runChecks(root, { approach: 'use the provided type information' });

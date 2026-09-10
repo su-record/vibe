@@ -10,6 +10,10 @@ export const DIAGNOSE_AFTER = 2;
 export const ASK_AFTER = 5;
 export interface RepairAttempt { run: string; approach: string }
 export interface RepairState { hash: string; attempts: RepairAttempt[]; failures: FailureSummary[]; waiting: boolean; questionId?: string }
+export function pendingRepairQuestion(root: string, repair: RepairState | null | undefined) {
+  if (!repair?.waiting) return undefined;
+  return foldQuestions(root).find(q => q.id === repair.questionId && !q.answer?.trim());
+}
 export function repairFailure(root: string, current: StateFile, hash: string, failures: FailureSummary[], run: string, approach?: string): Pick<StateFile, 'state' | 'failStreak' | 'lastFailHash' | 'repair'> {
   const same = hash === current.lastFailHash;
   const failStreak = same ? current.failStreak + 1 : 1;

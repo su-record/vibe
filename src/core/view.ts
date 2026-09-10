@@ -1,5 +1,5 @@
 import { failureLine, type FailureSummary } from './failure.js';
-import { repairNext } from './repair.js';
+import { pendingRepairQuestion, repairNext } from './repair.js';
 import { invalidateDoneIfEdited, readResults, type LastResult, type ResultsFile } from './check.js';
 import { openQuestions } from './inbox.js';
 import { hasIntent, intentPath, loadScenarios } from './intent.js';
@@ -119,7 +119,8 @@ function nextLine(state: State, stage: Stage, pending: ScenarioView[], inbox: In
   if (isHandoffOnly(pending)) return `handoff — required work remains unmet: ${scenarioTargets(pending)}; reopen a handed-off scenario explicitly before retrying`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
   const failed = pending.filter((s) => s.last === 'fail');
-  if (failed.length > 0) return `fix ${scenarioTargets(failed)} — ${failed.flatMap(s => s.failure ? [failureLine(s.failure)] : []).join(' | ')}; ${PROCEDURE.failure}; then vibe check <id>`;
+  const facts = failed.flatMap(s => s.failure ? [failureLine(s.failure)] : []).join(' | ');
+  if (failed.length > 0) return `fix ${scenarioTargets(failed)} — ${facts ? `${facts}; ` : ''}${PROCEDURE.failure}; then vibe check <id>`;
   const tail = size === 'small' ? PROCEDURE.build : `${PROCEDURE.build}; ${PROCEDURE.failure}`;
   return `build ${remaining.join(', ')} ${tail}`;
 }
@@ -144,7 +145,9 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   const pending = gated.filter((v) => v.last !== 'pass');
   const remaining = pending.map((v) => v.id);
   const allPassedOnce = gated.length > 0 && remaining.length === 0;
-  const questions = openQuestions(root).map((q) => {
+  const inbox = openQuestions(root), repairQuestion = pendingRepairQuestion(root, state.repair);
+  if (repairQuestion && !inbox.some(q => q.id === repairQuestion.id)) inbox.push(repairQuestion);
+  const questions = inbox.map((q) => {
     const item: StateView['inbox']['items'][number] = { id: q.id, question: q.question };
     if (q.answer) item.answer = q.answer;
     if (q.options) item.options = q.options;

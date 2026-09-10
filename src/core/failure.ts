@@ -29,7 +29,7 @@ function projectFile(root: string, name: string): string | null {
 }
 function locations(root: string, text: string): FailureLocation[] {
   const found: FailureLocation[] = [];
-  const pattern = /((?:[A-Za-z]:)?[^\s"'()[\]<>]+?\.(?:[cm]?[jt]sx?|json|ya?ml|py|sh|cjs|md))(?::(\d+)(?::\d+)?|\((\d+),\d+\))/g;
+  const pattern = /((?:[A-Za-z]:)?[^\s"'()[\]<>]+?\.(?:[cm]?[jt]sx?|json|ya?ml|py|sh|cjs|md|sql))(?::(\d+)(?::\d+)?|\((\d+),\d+\))/g;
   for (const match of text.matchAll(pattern)) {
     const file = projectFile(root, match[1]!); const line = Number(match[2] ?? match[3]);
     if (file && Number.isSafeInteger(line) && line > 0 && !found.some((item) => item.file === file)) found.push({ file, line });

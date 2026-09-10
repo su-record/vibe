@@ -224,6 +224,11 @@ it('relays the same masked cause through both Stop clients and asks only at the 
   expect(current).toMatchObject({ failStreak: 5, repair: { waiting: true } });
   expect(waiting.systemMessage).toContain(`questions=${current.repair.questionId}`);
   expect(waiting.systemMessage).toContain("Cannot find namespace 'sharp'");
+  expect(cli(['inbox', 'resolve', current.repair.questionId]).status).toBe(0);
+  const stillWaiting = JSON.parse(hook().stdout);
+  expect(stillWaiting.decision).toBeUndefined();
+  expect(stillWaiting.systemMessage).toContain(`questions=${current.repair.questionId}`);
+  expect(stillWaiting.systemMessage).toContain('waiting for an answer');
 }, 60000);
 
 it('releases dependents only when a real handed-off requirement blocks them', () => {

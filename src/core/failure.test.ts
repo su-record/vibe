@@ -27,3 +27,19 @@ it('masks known secret forms, external paths, controls and excessive output whil
   expect(message!.length).toBeLessThanOrEqual(200);
   for (const raw of ['\u001b', '\u202e', 'hidden', 'Bearer secret', 'user@example.invalid', 'u:p@', 'q=private', '/outside/private.key']) expect(message).not.toContain(raw);
 });
+it('masks quoted JSON keys and whole quoted credentials without selecting a source-code frame', () => {
+  const diagnostic = 'Error: {"api_key":"local-secret-123","password":"short-password"} password="correct horse battery staple"';
+  const message = failureMessage(diagnostic + '\n76| expect(result.error).toBeUndefined();', root);
+  expect(message).toContain('Error:');
+  for (const secret of ['local-secret-123', 'short-password', 'correct', 'horse', 'battery', 'staple', 'expect(result.error)']) expect(message).not.toContain(secret);
+  expect(failureMessage('AssertionError: expected 3 to be +0\n76| expect(result.error).toBeUndefined();', root)).toBe('AssertionError: expected 3 to be +0');
+});
+it('navigates to an existing SQL migration instead of only its wrapper', () => {
+  fs.mkdirSync(path.join(root, 'migrations'));
+  fs.writeFileSync(path.join(root, 'migrations/0129_graph.sql'), 'select 1;');
+  const failure = summarizeFailure(root, { id: 'database', then: 'labels exist', check: { type: 'run', cmd: 'node wrapper.cjs' } }, {
+    pass: false, exit: 1, ms: 1, tail: 'migrations/0129_graph.sql:52: error: function ag_catalog.create_vlabel(unknown, name) does not exist',
+  });
+  expect(failure.locations[0]).toEqual({ file: 'migrations/0129_graph.sql', line: 52 });
+  expect(failure.message).toContain('function ag_catalog.create_vlabel');
+});

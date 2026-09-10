@@ -164,8 +164,7 @@ describe('CLI — from request to DONE', () => {
   });
 
   it('the resolved root is visible: state carries root and a notice from a subdirectory; a missing command names the cwd', () => {
-    const home = path.join(root, 'home'); // the project is not the home, so the home rule does not apply to it
-    fs.mkdirSync(home);
+    const home = fixtureHome; // local consent belongs outside the project, in its sibling fixture home
     const env = { HOME: home };
     vibe(['tokens', 'off'], undefined, env);
     vibe(['intent', 'draft', '--stdin'], JSON.stringify({ intent: '# Root\n\n## Why\ntest\n', scenarios: '- { id: gone, then: x, check: { type: run, cmd: "./scripts/nowhere.sh" } }\n' }), env);
