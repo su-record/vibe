@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
-import { diagnosticFile, artifactReference, writeDiagnostic } from './private-artifacts.js';
+import { diagnosticFile, openPrivateFile, artifactReference, writeDiagnostic } from './private-artifacts.js';
 import { CAPTURE } from './capture-policy.js';
 
 function closeFile(stream) {
@@ -15,7 +15,7 @@ function openStreams(diagnostics, artifactId) {
   try {
     for (const kind of ['stdout', 'stderr']) {
       const file = diagnosticFile(diagnostics, artifactId, kind);
-      streams[kind] = { file, fd: file ? fs.openSync(file, 'wx', 0o600) : null, prefix: null, retained: 0, bytes: 0, hash: createHash('sha256'), ended: false };
+      streams[kind] = { file, fd: file ? openPrivateFile(file) : null, prefix: null, retained: 0, bytes: 0, hash: createHash('sha256'), ended: false };
     }
     return streams;
   } catch (error) {

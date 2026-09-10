@@ -12,7 +12,7 @@ function canonical(file) {
   return path.join(canonical(path.dirname(file)), path.basename(file));
 }
 
-const aclPhases = new Set(['CREATE_DIRECTORY', 'VERIFY_DIRECTORY', 'VERIFY_FILE']);
+const aclPhases = new Set(['CREATE_DIRECTORY', 'CREATE_FILE', 'VERIFY_DIRECTORY', 'VERIFY_FILE']);
 const aclOperations = new Map([
   [10, 'IDENTITY_FAILED'], [11, 'READ_FAILED'], [12, 'PROTECTION_FAILED'], [13, 'RULE_CREATE_FAILED'],
   [14, 'RULE_SET_FAILED'], [15, 'OWNER_SET_FAILED'], [16, 'WRITE_FAILED'], [17, 'REREAD_FAILED'],
@@ -56,10 +56,12 @@ function windowsAccess(file, phase) {
 try {
   $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User;
   $step=11; $acl=Get-Acl -LiteralPath $p;
-  if($env:VIBE_BENCH_PRIVATE_CREATE -eq '1') {
+  if($env:VIBE_BENCH_PRIVATE_CREATE -eq 'CREATE_DIRECTORY') {
     $step=12; $acl.SetAccessRuleProtection($true,$false);
     $step=13; $rule=New-Object System.Security.AccessControl.FileSystemAccessRule($sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow');
     $step=14; $acl.SetAccessRule($rule);
+  }
+  if($env:VIBE_BENCH_PRIVATE_CREATE -eq 'CREATE_DIRECTORY' -or $env:VIBE_BENCH_PRIVATE_CREATE -eq 'CREATE_FILE') {
     $step=15; $acl.SetOwner($sid);
     $step=16; Set-Acl -LiteralPath $p -AclObject $acl;
     $step=17; $acl=Get-Acl -LiteralPath $p;
@@ -84,7 +86,7 @@ try {
   // Encode only our fixed program; paths remain data in the environment.
   const encoded = Buffer.from(script, 'utf16le').toString('base64');
   try { execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], { windowsHide: true, stdio: 'pipe', timeout: 15000,
-    env: { ...windowsAclEnvironment(), VIBE_BENCH_PRIVATE_ENTRY: file, VIBE_BENCH_PRIVATE_CREATE: phase === 'CREATE_DIRECTORY' ? '1' : '0' } }); }
+    env: { ...windowsAclEnvironment(), VIBE_BENCH_PRIVATE_ENTRY: file, VIBE_BENCH_PRIVATE_CREATE: phase } }); }
   catch (error) { throw windowsAclError(error, phase); }
 }
 
@@ -116,6 +118,15 @@ export function diagnosticFile(policy, id, kind) {
   return path.join(directory, `${hash(String(id))}.${kind}`);
 }
 
+export function openPrivateFile(file) {
+  const fd = fs.openSync(file, 'wx', 0o600);
+  try {
+    // New Windows files use the process token's default owner, not their directory's owner.
+    if (process.platform === 'win32') windowsAccess(file, 'CREATE_FILE');
+    return fd;
+  } catch (error) { fs.closeSync(fd); throw error; }
+}
+
 export function artifactReference(file, kind) {
   const stat = verifyEntry(file, false);
   const cap = ['stdout', 'stderr'].includes(kind) ? CAPTURE.streamBytes : CAPTURE.diagnosticBytes;
@@ -128,7 +139,8 @@ export function writeDiagnostic(policy, id, kind, data, byteLimit = CAPTURE.diag
   const file = diagnosticFile(policy, id, kind);
   if (!file) return null;
   const encoded = Buffer.from(JSON.stringify(data));
-  fs.writeFileSync(file, encoded.subarray(0, byteLimit), { flag: 'wx', mode: 0o600 });
+  const fd = openPrivateFile(file);
+  try { fs.writeFileSync(fd, encoded.subarray(0, byteLimit)); } finally { fs.closeSync(fd); }
   return { ...artifactReference(file, kind), complete: encoded.length <= byteLimit, observedBytes: encoded.length, observedSha256: hash(encoded) };
 }
 
