@@ -11,6 +11,7 @@ import { authorize, codePins, validateProducts, clientVersions } from './protoco
 import { requireCI } from './readiness.js';
 import { ensurePrivateDirectory, writeDiagnostic } from './private-artifacts.js';
 import { safeGrade, failureCode, contentSummary } from './privacy.js';
+import { sliceCounter, withSliceCounts, ledgerSliceTotals } from './read-slice-source.js';
 
 const require = createRequire(import.meta.url);
 const time = () => new Date().toISOString();
@@ -39,6 +40,7 @@ async function attempt(plan, options, records, started) {
   const harness = plan.arm === 'off' ? 'off' : 'scoped';
   const env = isolatedEnvironment(directory, product, process.env, harness);
   const workspace = prepareWorkspace(task, { repo: product, env, clients: [plan.client], harness });
+  const counter = sliceCounter(plan.arm, product, workspace, env);
   const customer = require(path.join(task, 'key/customer.cjs'));
   const { grade } = require(path.join(task, 'judge/grade.cjs'));
   const began = Date.now();
@@ -49,8 +51,11 @@ async function attempt(plan, options, records, started) {
     if (reason || remaining <= 0) return { error: reason ?? 'ATTEMPT_TIME_LIMIT', tokens: null, ms: 0, finalText: '', invoked: false };
     const sessionStart = { ...id, event: 'session-start', at: time(), session: session.index + 1 };
     append(ledger, sessionStart); records.push(sessionStart);
-    const result = await options.invoke({ client: plan.client, settings: protocol.settings[plan.client], workspace, harness, env, diagnostics: protocol.diagnostics, artifactId: `${id.protocolHash}/${plan.id}/${session.index + 1}`,
-      prompt: session.prompt, timeoutMs: Math.max(1, Math.min(remaining, protocol.limits.sessionMs, protocol.budget.wallMs - (Date.now() - started))) });
+    const result = await withSliceCounts(counter, () => options.invoke({ client: plan.client, settings: protocol.settings[plan.client], workspace, harness, env, diagnostics: protocol.diagnostics, artifactId: `${id.protocolHash}/${plan.id}/${session.index + 1}`,
+      prompt: session.prompt, timeoutMs: Math.max(1, Math.min(remaining, protocol.limits.sessionMs, protocol.budget.wallMs - (Date.now() - started))) }), (sliceReads) => {
+      const observation = { ...id, event: 'slice-reads', at: time(), session: session.index + 1, sliceReads };
+      append(ledger, observation); records.push(observation);
+    });
     sideCount = recordSession(result, { identity: id, session: session.index + 1, workspace, ledger, records, prices: protocol.prices, sideCount });
     return result;
   });
@@ -101,6 +106,7 @@ export async function runCohort(options, { validate = validateCohort, invoke = r
         row = { ...identity(plan, protocol), event: 'attempt', at: time(), error: failureCode(error.message), errorCode: failureCode(error.message), errorDetails: contentSummary(error.message), diagnostics: reference ? [reference] : [], diagnosticsError, incomplete: true };
       }
     }
+    row.sliceReads = ledgerSliceTotals(plan.arm, records, plan.id);
     append(ledger, row); records.push(row);
     process.stdout.write(`${plan.id}: ${row.errorCode ?? (row.stalled ? 'stalled' : 'recorded; deterministic assessment available')}\n`);
   }

@@ -33,6 +33,8 @@ Timeout, capture overflow or a start failure starts an independent 1,000 ms grac
 
 This controls the harness's transport capture. Client-owned execution files and approved source snapshots remain in isolated private artifact directories; the policy does not claim that the client itself keeps no local history.
 
+The candidate's slice-read guard has its own `sliceReads` measurement. Initialize its root-bound counter in the isolated execution HOME/USERPROFILE, read cumulative blocked/warned counts immediately before and after each client invocation, and record only numeric deltas. Append-only session observations survive client errors; attempt totals sum those increments without counting cumulative values twice. A missing/unreadable counter or a counter that decreased leaves unknown totals and preserves any other known session subtotal. A successfully initialized, observed counter may report a real zero. Bare and pinned 4.1.25 arms do not have this instrumentation: `supported: false`, `counts: null` means not instrumented, not zero. Reports include failed attempts and distinguish full observations, partial subtotals and unavailable counts. No command/file content enters the cohort ledger through this counter. These diagnostics do not change the quality requirements or the candidate's 0.80 weighted-input target.
+
 POSIX ownership and modes and Windows owner ACLs are verified; an ACL that cannot be verified is rejected. Directory and file identity can still change concurrently, and this does not isolate a hostile process running as the same user. A descendant may outlive the client: an open pipe gets a bounded closing grace and an incomplete-transport failure, not a claim that every descendant was contained.
 
 ## Optional human diagnostics

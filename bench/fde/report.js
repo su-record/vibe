@@ -20,10 +20,21 @@ export function renderReport(protocol, result) {
     const data = cell.arms[arm];
     lines.push(`| ${cell.client} | ${arm} | ${data.n} | ${value(data.weightedInput)} | ${value(data.output)} | ${value(data.customerResponses)} | ${value(data.machineMs)} | ${value(data.costUsd)} |`);
   }
+  lines.push(...sliceReadTable(result.sliceReads));
   lines.push('', 'Customer response rounds are a burden proxy, not measured customer minutes. Machine time is not human time saved. Savings and monetary ROI are not measured. Prices absent from the frozen configuration mean unknown money. This synthetic case does not establish broad prevention or general FDE superiority.', '',
     'Mechanical agreement coverage is recomputed from weighted requirements in frozen pre-build artifacts; behavior is checked separately on the pilot. Table values are means among usable attempts, and every candidate must also meet the per-attempt floor. Unsupported assertions cover structured fields only. Optional human diagnostics do not affect execution authorization or release gates. The pilot still requires human review before any external action.', '',
     'Agent verification summaries, command counts/hashes, and private behavior metrics remain separate in the append-only ledger. Original messages and transport output require explicit private diagnostics; shared rows never contain them. Capture is bounded to 64 MiB per stream; incomplete prefixes retain observed usage and unknown totals, stop further calls, and never count as usable samples. Within-session phase tokens/tool counts are unavailable; measured session totals are retained. Efficiency uses only matched accepted completions with equally weighted customer variants.', '',
     'The machine-readable assessment below includes every exclusion and failing target. Linux and Windows require CI evidence for the candidate revision; local Linux checks alone do not establish Windows compatibility.', '',
     '```json', JSON.stringify(result, null, 2), '```', '');
   return lines.join('\n');
+}
+
+function sliceReadTable(rows = []) {
+  const lines = ['', '| Client | Arm | Recorded attempts | Observed attempts | Slice-read blocks | Slice-read warnings |', '| --- | --- | ---: | ---: | ---: | ---: |'];
+  for (const row of rows) {
+    const show = (key) => !row.supported ? 'not instrumented' : row.counts ? String(row.counts[key]) : row.observedCounts ? `${row.observedCounts[key]} observed; total unknown` : 'unknown';
+    lines.push(`| ${row.client} | ${row.arm} | ${row.recorded} | ${row.observedAttempts} | ${show('blocked')} | ${show('warned')} |`);
+  }
+  lines.push('', 'Slice-read counts include failed attempts and sum only session counter increments. Off and 4.1.25 lack this instrumentation; they are not zero observations. Missing/reset counters leave unknown totals. Counts explain observed guard activity and do not change the quality or 0.80 weighted-input target. No command or file content is retained with these measurements.');
+  return lines;
 }

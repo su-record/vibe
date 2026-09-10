@@ -28,7 +28,7 @@ export function recordSession(result, { identity, session, workspace, ledger, re
     result.error = result.errorCode = 'AGENT_EVIDENCE_UNAVAILABLE';
   }
   const measured = { ...identity, event: 'session-usage', at: new Date().toISOString(), session,
-    ...usageSummary([result], side.slice(sideCount), prices), mainTokens: result.tokens };
+    ...usageSummary([result], side.slice(sideCount), prices), mainTokens: result.tokens, sliceReads: main.result.sliceReads };
   append(ledger, measured); records.push(measured);
   return side.length;
 }

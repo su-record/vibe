@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { safeSliceReads } from './read-slices.js';
 
 const digest = (value) => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value ?? null)).digest('hex');
 export const contentSummary = (value) => ({ sha256: digest(value), bytes: Buffer.byteLength(typeof value === 'string' ? value : JSON.stringify(value ?? null)) });
@@ -14,6 +15,7 @@ export function safeSession(session) {
   return { ...pick(session, measurements), tokens: tokens(session.tokens), models: session.models?.map((item) => ({ model: item.model, tokens: tokens(item.tokens) })), error: failureCode(session.errorCode ?? session.error), errorCode: failureCode(session.errorCode ?? session.error),
     observedUsage: session.observedUsage ? { tokens: tokens(session.observedUsage.tokens), costUsd: numeric(session.observedUsage.costUsd), complete: false,
       models: session.observedUsage.models?.map((item) => ({ model: item.model, tokens: tokens(item.tokens) })) } : undefined,
+    sliceReads: safeSliceReads(session.sliceReads),
     finalTextSummary: contentSummary(session.finalText ?? ''), toolCalls: { count: session.toolCalls?.length ?? 0, ...contentSummary(session.toolCalls ?? []) },
     errorDetails: contentSummary(session.errors ?? session.error ?? null), transport: session.transport,
     diagnostics: session.diagnostics ?? [], ...pick(session, ['phase', 'started', 'finished', 'phaseAllocation']) };
