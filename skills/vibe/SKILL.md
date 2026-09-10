@@ -26,7 +26,7 @@ The card starts at `vibe state` and loads only the skill `next` names; this rout
 
 | `build …` | build what it lists first, then one `vibe check --all`; on a failure, fix what the check names; `vibe context <id>` when that is not enough, then `vibe check <id>` for that scenario only; load `vibe-build` only for a full task with parallel or irreversible scenarios |
 | `check --all` | run it |
-| `prove — STUCK` · `answer inbox` | answer the question, then `vibe check --all`; load `vibe-prove` on a second STUCK |
+| `prove — STUCK` | load `vibe-prove`; at two same-hash failures diagnose with context and change approach; at five relay the question id and cause, then wait; never invent an answer |
 | `report` | the completion report (card rule 9); HANDOFF.md only if the intent asks; no further checks after DONE |
 
 Reuse an approved intent and unchanged evidence. Re-enter scope only for a changed outcome, constraint, or evidence basis: a new draft voids the previous approval.

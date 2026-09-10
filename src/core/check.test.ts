@@ -70,7 +70,7 @@ describe('check — the only verdict path', () => {
     expect(readResults(root)['bad']?.last).toBe('fail');
   });
 
-  it('the same failure twice in a row is STUCK and leaves an inbox question', async () => {
+  it('the same failure twice diagnoses without a question; a different failure clears the streak', async () => {
     // the failure's message comes from a data file, so the scenario set never changes behind the approval
     fs.writeFileSync(path.join(root, 'msg.txt'), 'same:1');
     fs.writeFileSync(path.join(root, 'bad.cjs'), "const [m, c] = require('fs').readFileSync('msg.txt', 'utf-8').split(':'); process.stdout.write(m); process.exit(Number(c));");
@@ -79,7 +79,8 @@ describe('check — the only verdict path', () => {
     const second = await runChecks(root);
     expect(second.stuck).toBe(true);
     expect(readState(root).state).toBe('STUCK');
-    expect(openQuestions(root).some((q) => q.question.startsWith('STUCK'))).toBe(true);
+    expect(openQuestions(root)).toHaveLength(0);
+    expect(buildStateView(root, root).next).toContain('change the approach');
     // a different failure breaks the streak
     fs.writeFileSync(path.join(root, 'msg.txt'), 'other:2');
     const third = await runChecks(root);
@@ -106,7 +107,9 @@ describe('check — the only verdict path', () => {
     approved('- { id: out, then: x, check: { type: file, path: out.txt, contains: good } }');
     const report = await runChecks(root, { all: true });
     expect(report.failed).toBe(1);
-    expect(buildStateView(root, root).next).toBe('fix out (files: out.txt) — on a failure, fix what the check names; vibe context <id> when that is not enough; then vibe check <id>');
+    expect(buildStateView(root, root).next).toContain('fix out (files: out.txt)');
+    expect(buildStateView(root, root).next).toContain('check="out.txt"');
+    expect(buildStateView(root, root).next).toContain('vibe context <id> when that is not enough; then vibe check <id>');
   });
 
   it('approval void: scenarios.yaml edited after approval — vibe check refuses (exit 4) and runs nothing', async () => {

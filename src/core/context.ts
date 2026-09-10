@@ -11,6 +11,8 @@ import { buildMap } from './map/index.js';
 import { listRegressions } from './regress.js';
 import type { Check, Scenario } from './scenarios.js';
 import { readJson, readText } from './store.js';
+import { readResults } from './check.js';
+import { failureLine, type FailureSummary } from './failure.js';
 
 /**
  * `vibe context` — what a scenario needs, assembled once instead of rediscovered every session:
@@ -135,10 +137,12 @@ function nodeMatches(node: string, scenarioId: string, files: string[]): boolean
 
 function evidenceTail(root: string, run: string | undefined, scenarioId: string): string | null {
   if (!run) return null;
-  const evidence = readJson<{ schemaVersion?: number; results?: Array<{ id: string; failureCode?: string; exit?: number }> }>(vibePath(root, 'evidence', `${run}.json`));
+  const evidence = readJson<{ schemaVersion?: number; results?: Array<{ id: string; failureCode?: string; exit?: number; failure?: FailureSummary }> }>(vibePath(root, 'evidence', `${run}.json`));
   const result = evidence?.results?.find((r) => r.id === scenarioId);
   if (!result) return null;
-  return evidence?.schemaVersion === 2 ? `${result.failureCode ?? 'check-result'}; exit=${result.exit ?? 'none'}; evidence=${run}#${scenarioId}` : `legacy evidence ${run}#${scenarioId}; raw output hidden`;
+  if (evidence?.schemaVersion !== 2) return `legacy evidence ${run}#${scenarioId}; raw output hidden`;
+  const summary = result.failure ? `Untrusted failure summary: ${failureLine(result.failure)}` : `${result.failureCode ?? 'check-result'}; exit=${result.exit ?? 'none'}`;
+  return `${summary}; evidence=${run}#${scenarioId}`;
 }
 
 const RELEVANT_TYPES = new Set<LedgerEvent['event']>(['approve', 'regress', 'check']);
@@ -230,7 +234,8 @@ export function filesFor(root: string, check: Check, limit = 8): string[] {
 export function buildContext(root: string, scenarioId: string, options: ContextOptions = {}): ContextBundle {
   const scenario = findScenario(root, scenarioId);
   const home = options.home ?? process.env['VIBE_HOME_DIR'] ?? os.homedir();
-  const touched = touchedPaths(scenario.check, root);
+  const failure = readResults(root)[scenarioId]?.failure;
+  const touched = [...new Set([...(failure?.locations.map(location => location.file) ?? []), ...touchedPaths(scenario.check, root)])];
   const files = buildFiles(root, touched);
   const events = relevantEvents(root, scenarioId, touched);
   const fileTerms = touched.map((f) => path.basename(f, path.extname(f)).toLowerCase());

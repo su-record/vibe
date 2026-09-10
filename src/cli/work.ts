@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { analyzeIntent, renderAnalysis } from '../core/analyze.js';
+import { failureLine } from '../core/failure.js';
 import { runChecks } from '../core/check.js';
 import { readDocument } from '../core/docs/read.js';
 import { usage } from '../core/errors.js';
@@ -153,13 +154,14 @@ export function cmdApprove(root: string, args: string[], flags: Flags = {}): Out
 export async function cmdCheck(root: string, args: string[], flags: Flags): Promise<Output> {
   ensureProject(root);
   const options = flags['all'] === true ? { all: true } : args.length ? { ids: args } : {};
-  const report = await runChecks(root, { ...options, diagnostics: flags['diagnostics'] === true });
+  const approach = flagString(flags, 'approach');
+  const report = await runChecks(root, { ...options, diagnostics: flags['diagnostics'] === true, ...(approach ? { approach } : {}) });
   const files = new Map(buildStateView(root).scenarios.map((s) => [s.id, s.files ?? []]));
   const lines = [
     `${report.run} · ${report.state} · pass ${report.passed} · fail ${report.failed}${report.pending ? ` · pending ${report.pending}` : ''}`,
-    ...report.outcomes.map((o) => `  ${o.status === 'pass' ? '✔' : o.status === 'fail' ? '✘' : '?'} ${o.id} [${o.type}] exit=${o.exit ?? '-'} ${o.ms}ms${o.reason ? ` — ${o.reason}` : ''}${o.status === 'fail' && files.get(o.id)?.length ? ` — files: ${files.get(o.id)!.join(', ')}` : ''}${o.tail && o.status !== 'pass' ? `\n      ${o.tail.split('\n').join('\n      ')}` : ''}`),
+    ...report.outcomes.map((o) => `  ${o.status === 'pass' ? '✔' : o.status === 'fail' ? '✘' : '?'} ${o.id} [${o.type}] exit=${o.exit ?? '-'} ${o.ms}ms${o.failure ? ` — ${failureLine(o.failure)}` : o.reason ? ` — ${o.reason}` : ''}${o.status === 'fail' && files.get(o.id)?.length ? ` — files: ${files.get(o.id)!.join(', ')}` : ''}${o.tail && o.status !== 'pass' ? `\n      ${o.tail.split('\n').join('\n      ')}` : ''}`),
     report.done ? '  DONE — every gate scenario passed' : `  remaining ${report.remaining.join(', ') || 'none'}`,
-    ...(report.stuck ? ['  STUCK — the same failure twice in a row; see the inbox'] : []),
+    ...(report.stuck ? ['  STUCK — follow the diagnosis or explicit inbox wait below'] : []),
     `  next      ${buildStateView(root).next}`,
   ];
   const code = report.stuck || report.failed > 0 || report.outcomes.some((outcome) => outcome.status === 'handoff') ? 1 : 0;

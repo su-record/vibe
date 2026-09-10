@@ -1,3 +1,4 @@
+import type { RepairState } from './repair.js';
 import { invalidTransition } from './errors.js';
 import { vibePath } from './paths.js';
 import { nowIso, readJson, writeJson } from './store.js';
@@ -11,6 +12,7 @@ export interface StateFile {
   approvedAt: string | null;
   runs: number;
   failStreak: number;
+  repair?: RepairState | null;
   lastFailHash: string | null;
   doneAt: string | null;
   /** Working-tree fingerprint at DONE — if it changes, DONE is void */

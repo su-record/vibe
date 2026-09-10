@@ -25,7 +25,7 @@ export function renderEvidence(value: unknown): unknown {
   if (!value || typeof value !== 'object') return { schema: 'invalid', results: [] };
   const evidence = value as Record<string, unknown>;
   const modern = evidence['schemaVersion'] === 2;
-  const allowed = ['id', 'type', 'status', 'exit', 'signal', 'ms', 'blockedBy', 'regression', 'failureCode', 'capture', 'executionContext', 'evidenceId', 'sources', 'usage', 'cleanupUncertain'];
+  const allowed = ['id', 'type', 'status', 'exit', 'signal', 'ms', 'blockedBy', 'regression', 'failureCode', 'failure', 'capture', 'executionContext', 'evidenceId', 'sources', 'usage', 'cleanupUncertain'];
   const results = Array.isArray(evidence['results']) ? evidence['results'].slice(0, 1000).map((raw: Record<string, unknown>) => {
     const result: Record<string, unknown> = { tail: '', output: modern ? 'raw output omitted' : 'legacy raw output hidden; not recollected' };
     for (const key of allowed) if (key in raw) result[key] = raw[key];

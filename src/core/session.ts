@@ -1,3 +1,5 @@
+import type { FailureSummary } from './failure.js';
+import type { RepairState } from './repair.js';
 import { createRequire } from 'node:module';
 import { denied } from './errors.js';
 import { inspectContract, type ExecutionPlan } from './inspect.js';
@@ -10,6 +12,8 @@ export interface StopEvidenceInput {
   done: boolean;
   intentHash: string;
   executionPlan: ExecutionPlan;
+  repair?: RepairState | null;
+  failures?: FailureSummary[];
   scenarios: Array<{ id: string; status: 'pass' | 'fail' | 'pending' | 'blocked' | 'stale' | 'handoff' }>;
 }
 interface SessionView { status: string; root?: string; revision?: string; complete?: boolean; [key: string]: unknown }

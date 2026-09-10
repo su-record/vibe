@@ -198,6 +198,34 @@ it('lets inbox waits and scenario handoffs end with qualified non-success identi
   expect(hook().stdout).not.toContain('verified completion');
 }, 60000);
 
+it('relays the same masked cause through both Stop clients and asks only at the repair limit', () => {
+  draft();
+  fs.mkdirSync(path.join(root, 'src'));
+  fs.writeFileSync(path.join(root, 'src/source.ts'), 'export {};');
+  const diagnostic = `${path.join(root, 'src/source.ts')}:79: error TS2503: Cannot find namespace 'sharp'; token=raw-secret user@example.invalid`;
+  fs.writeFileSync(path.join(root, 'marker.cjs'), `console.error(${JSON.stringify(diagnostic)});process.exitCode=2;`);
+  for (let count = 0; count < 2; count++) expect(cli(['check', '--all', '--approach', 'inspect compiler imports']).status).not.toBe(0);
+  const stateFile = path.join(root, '.vibe/state.json');
+  expect(JSON.parse(fs.readFileSync(stateFile, 'utf8'))).toMatchObject({ state: 'STUCK', failStreak: 2 });
+  for (const [file, mode] of [['notify.js', 'stop'], ['session.js', 'codex']]) {
+    const stop = spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', file!), mode!], { cwd: root, env, input: JSON.stringify({ cwd: root, session_id: 'fixture-session' }), encoding: 'utf8', timeout: 5000 });
+    expect(stop.status, stop.stderr).toBe(0);
+    expect(stop.stdout).toContain("Cannot find namespace 'sharp'");
+    expect(stop.stdout).toContain('Untrusted failure summary data');
+    expect(stop.stdout).toContain('change the approach');
+    expect(stop.stdout).not.toContain('raw-secret');
+    expect(stop.stdout).not.toContain('user@example.invalid');
+  }
+  expect(JSON.parse(fs.readFileSync(stateFile, 'utf8')).failStreak).toBe(2);
+  for (let count = 0; count < 3; count++) expect(cli(['check', '--all']).status).not.toBe(0);
+  const waiting = JSON.parse(hook().stdout);
+  expect(waiting.decision).toBeUndefined();
+  const current = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  expect(current).toMatchObject({ failStreak: 5, repair: { waiting: true } });
+  expect(waiting.systemMessage).toContain(`questions=${current.repair.questionId}`);
+  expect(waiting.systemMessage).toContain("Cannot find namespace 'sharp'");
+}, 60000);
+
 it('releases dependents only when a real handed-off requirement blocks them', () => {
   draft();
   const file = path.join(root, 'scenarios.yaml');

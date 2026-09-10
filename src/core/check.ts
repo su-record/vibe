@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { summarizeFailure, failureLine, type FailureSummary } from './failure.js';
+import { repairFailure, resumeRepair } from './repair.js';
 import { evalCheck } from './checks/eval.js';
 import { fileCheck } from './checks/file.js';
 import { httpCheck } from './checks/http.js';
@@ -7,7 +9,7 @@ import { actionOf } from './checks/mutation.js';
 import { runCheck, type CheckResult } from './checks/run.js';
 import { detectClient, detectHarness, detectModel, reportedCostUsd, reportedTurns } from './client.js';
 import { invalidTransition } from './errors.js';
-import { ask, hasOpenQuestion } from './inbox.js';
+import { ask, hasOpenQuestion, openQuestions, resolve as resolveQuestion } from './inbox.js';
 import { record, type Edge, recentAuthorize } from './ledger.js';
 import { vibePath } from './paths.js';
 import { intentHash, intentPath, loadScenarios, scenariosPath } from './intent.js';
@@ -31,7 +33,7 @@ export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale' | 'ha
 export const MAX_PARALLEL = 4;
 export interface ResultsFile {
   /** `tree`: the tree hash the result was taken on — a result from another tree is stale and counts as not passed. */
-  [id: string]: { last: LastResult; at: string; run: string; tree?: string };
+  [id: string]: { last: LastResult; at: string; run: string; tree?: string; failure?: FailureSummary };
 }
 
 export interface ScenarioOutcome {
@@ -43,6 +45,7 @@ export interface ScenarioOutcome {
   tail: string;
   signal?: string | null;
   failureCode?: string;
+  failure?: FailureSummary;
   capture?: CheckResult['capture'];
   executionContext?: string;
   evidenceId?: string;
@@ -108,7 +111,7 @@ function failHashOf(outcomes: ScenarioOutcome[]): string | null {
   const failed = outcomes.filter((o) => o.status === 'fail').sort((a, b) => a.id.localeCompare(b.id));
   if (failed.length === 0) return null;
   const hash = createHash('sha256');
-  for (const o of failed) hash.update(`${o.id}|${o.type}|${o.exit}|${o.signal ?? ''}|${o.failureCode ?? 'check-failed'}\n`);
+  for (const o of failed) hash.update(`${o.id}|${o.type}|${o.exit}|${o.signal ?? ''}|${o.failureCode ?? 'check-failed'}|${o.failure?.diagnosticCode ?? ''}|${o.failure?.locations[0]?.file ?? ''}\n`);
   return hash.digest('hex').slice(0, 8);
 }
 
@@ -129,8 +132,16 @@ function askHumanOnce(root: string, scenario: Scenario): void {
 function unauthorized(root: string, scenario: Scenario & { regression?: boolean }): ScenarioOutcome | null {
   if (!scenario.irreversible) return null;
   const action = actionOf(scenario.irreversible);
-  if (recentAuthorize(root, action)) return null;
+  if (recentAuthorize(root, action)) {
+    for (const q of openQuestions(root)) if (q.scenario === scenario.id && q.question.startsWith('Outside authority:')) resolveQuestion(root, q.id);
+    return null;
+  }
   const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status: 'blocked', exit: null, ms: 0, tail: '', reason: `irreversible (${action}) — vibe authorize --action ${action} first; check --all never runs it on its own` };
+  outcome.failureCode = 'authorization-required';
+  outcome.failure = summarizeFailure(root, scenario, { pass: false, exit: null, ms: 0, tail: '', failureCode: 'authorization-required' });
+  if (!hasOpenQuestion(root, (q) => q.scenario === scenario.id && q.question.startsWith('Outside authority:'))) {
+    ask(root, { scenario: scenario.id, question: `Outside authority: ${failureLine(outcome.failure)}. Irreversible action ${action} needs authorization; no action was attempted. Will you authorize it or revise the scope?`, options: ['authorize the action', 'revise scope', 'handoff'] });
+  }
   if (scenario.regression) outcome.regression = true;
   return outcome;
 }
@@ -145,7 +156,7 @@ async function runOne(root: string, scenario: Scenario & { regression?: boolean 
   const status: LastResult = isHuman(scenario) ? 'pending' : result.pass ? 'pass' : 'fail';
   if (isHuman(scenario)) askHumanOnce(root, scenario);
   const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status, exit: result.exit, ms: result.ms, tail: '' };
-  if (!result.pass) { outcome.failureCode = result.failureCode ?? `${scenario.check.type}-failed`; outcome.reason = outcome.failureCode; }
+  if (status === 'fail') { outcome.failureCode = result.failureCode ?? `${scenario.check.type}-failed`; outcome.reason = outcome.failureCode; outcome.failure = summarizeFailure(root, scenario, result); }
   outcome.capture = result.capture ?? outputCapture().finish(result.failureCode !== 'adapter-error').capture;
   if (result.signal !== undefined) outcome.signal = result.signal;
   if (result.cleanupUncertain) outcome.cleanupUncertain = true;
@@ -225,6 +236,7 @@ export interface CheckOptions {
   ids?: string[];
   all?: boolean;
   diagnostics?: boolean;
+  approach?: string;
 }
 
 type Selectable = Scenario & { regression?: boolean };
@@ -242,22 +254,14 @@ function selectScenarios(universe: Selectable[], previous: ResultsFile, options:
 }
 
 /** The state after a run: STUCK on the same failure twice, DONE when nothing remains, otherwise RUNNING. */
-function settleState(root: string, current: StateFile, failHash: string | null, remaining: string[], outcomes: ScenarioOutcome[], at: string): { next: StateFile; stuck: boolean; done: boolean } {
+function settleState(root: string, current: StateFile, failHash: string | null, remaining: string[], outcomes: ScenarioOutcome[], at: string, approach?: string): { next: StateFile; stuck: boolean; done: boolean } {
   let next: StateFile = { ...current };
   if (failHash !== null) {
-    const streak = failHash === current.lastFailHash ? current.failStreak + 1 : 1;
-    next = { ...next, lastFailHash: failHash, failStreak: streak };
-    if (streak >= 2) {
-      next.state = 'STUCK';
-      if (!hasOpenQuestion(root, (q) => q.question.startsWith('STUCK'))) {
-        ask(root, { question: `STUCK: the same failure (${failHash}) happened twice in a row — ${outcomes.filter((o) => o.status === 'fail').map((o) => o.id).join(', ')}. How should we proceed?`, options: ['give a hint', 'change the scenario', 'abandon'] });
-      }
-      return { next, stuck: true, done: false };
-    }
-    if (current.state === 'DONE' || current.state === 'STUCK') next.state = 'RUNNING';
-    return { next, stuck: false, done: false };
+    const failures = outcomes.filter((o) => o.status === 'fail').flatMap((o) => o.failure ? [o.failure] : []);
+    next = { ...next, ...repairFailure(root, current, failHash, failures, `r-${current.runs}`, approach) };
+    return { next, stuck: next.state === 'STUCK', done: false };
   }
-  next = { ...next, lastFailHash: null, failStreak: 0 };
+  next = { ...next, lastFailHash: null, failStreak: 0, repair: null };
   if (remaining.length === 0) {
     next.state = 'DONE';
     next.doneAt = at;
@@ -282,12 +286,13 @@ function validateApproval(root: string, state: StateFile): void {
  * twice in a row → STUCK.
  */
 export async function runChecks(root: string, options: CheckOptions = {}): Promise<CheckReport> {
-  const state = readState(root);
+  let state = readState(root);
   if (!['APPROVED', 'RUNNING', 'DONE', 'STUCK'].includes(state.state)) {
     throw invalidTransition(`check runs only after approval (current state ${state.state})`);
   }
   validateApproval(root, state);
   const executionPlan = requireConsent(root);
+  state = resumeRepair(root, state);
   const executionContext = fingerprint(executionPlan);
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
@@ -302,7 +307,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
 
   const results: ResultsFile = { ...previous };
   const tree = treeHash(root); // after the checks ran: a check that writes build output is part of the tree it passed on
-  for (const o of outcomes) results[o.id] = { last: o.status, at, run, tree };
+  for (const o of outcomes) results[o.id] = { last: o.status, at, run, tree, ...(o.failure ? { failure: o.failure } : {}) };
   writeJson(resultsPath(root), results);
   const implemented = outcomes.filter((o) => o.status === 'pass' && previous[o.id]?.last !== 'pass').map((o) => o.id);
   const edges = implementsEdges(root, implemented);
@@ -313,10 +318,10 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const failed = outcomes.filter((o) => o.status === 'fail').length;
   const pending = outcomes.filter((o) => o.status === 'pending').length;
   const failHash = failHashOf(outcomes);
-  const { next, stuck, done } = settleState(root, readState(root), failHash, remaining, outcomes, at);
+  const { next, stuck, done } = settleState(root, readState(root), failHash, remaining, outcomes, at, options.approach);
   const report = { run, at, state: next.state, outcomes, passed, failed, pending, failHash, stuck, done, remaining };
   recordReport(root, report, scenarios, edges);
-  recordStopEvidence(root, { run, done, executionPlan, intentHash: state.intentHash!, scenarios: gated.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
+  recordStopEvidence(root, { run, done, executionPlan, repair: next.repair ?? null, failures: outcomes.flatMap((outcome) => outcome.failure ? [outcome.failure] : []), intentHash: state.intentHash!, scenarios: gated.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
   writeState(root, next);
   for (const event of [...(stuck ? ['stuck' as const] : []), ...(done ? ['done' as const] : [])]) record(root, { event, client: detectClient(), model: detectModel(), run, failHash });
   return report;

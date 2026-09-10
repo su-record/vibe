@@ -1,3 +1,5 @@
+import { failureLine, type FailureSummary } from './failure.js';
+import { repairNext } from './repair.js';
 import { invalidateDoneIfEdited, readResults, type LastResult, type ResultsFile } from './check.js';
 import { openQuestions } from './inbox.js';
 import { hasIntent, intentPath, loadScenarios } from './intent.js';
@@ -9,7 +11,7 @@ import { PROCEDURE } from './procedure.js';
 import { isHuman, type Scenario } from './scenarios.js';
 import { isHandoffOnly } from './handoff-results.js';
 import { suggestSkills, type Proposal } from './skills.js';
-import { readState, stageOf, type Stage, type State } from './state.js';
+import { readState, stageOf, type Stage, type State, type StateFile } from './state.js';
 import { readText } from './store.js';
 import { sourceValidity } from './source-basis.js';
 import path from 'node:path';
@@ -25,6 +27,7 @@ export interface ScenarioView {
   needs?: string[];
   /** What the check runs or reads — the command, the path, the URL, the question — so `vibe state` is the brief and scenarios.yaml need not be opened. */
   check: string;
+  failure?: FailureSummary;
   /** The files this scenario is about (the check's files plus one hop of imports), for a scenario still to pass — read these, open nothing else until a check fails. */
   files?: string[];
 }
@@ -74,11 +77,13 @@ function checkTarget(check: Record<string, unknown>): string {
 /** One scenario as the brief shows it: its check, and — while it has not passed — the files it is about. */
 function scenarioView(root: string, s: Scenario & { regression?: boolean }, results: ResultsFile): ScenarioView {
   const view: ScenarioView = { id: s.id, then: s.then, type: s.check.type, last: results[s.id]?.last ?? 'never', at: results[s.id]?.at ?? null, check: checkTarget(s.check as unknown as Record<string, unknown>) };
+  const failure = results[s.id]?.failure;
+  if (failure) view.failure = failure;
   if (s.regression) view.regression = true;
   if (s.irreversible) view.irreversible = s.irreversible;
   if (s.needs) view.needs = s.needs;
   if (view.last !== 'pass' && !isHuman(s)) {
-    const files = filesFor(root, s.check);
+    const files = [...new Set([...(view.failure?.locations.map((location) => location.file) ?? []), ...filesFor(root, s.check)])].slice(0, 8);
     if (files.length) view.files = files;
   }
   return view;
@@ -94,7 +99,7 @@ function scenarioTargets(scenarios: ScenarioView[]): string {
 function inboxLine(state: State, stage: Stage, items: InboxItem[], remaining: ScenarioView[]): string | null {
   const waiting = items.filter((q) => !q.answer?.trim());
   const answered = items.filter((q) => q.answer?.trim());
-  if (waiting.length > 0) return `${state === 'STUCK' ? 'STUCK — ' : 'wait — '}${waiting.map((q) => q.id).join(', ')} asked; the user answers; stop and wait — do not answer it yourself`;
+  if (waiting.length > 0) return `${state === 'STUCK' ? 'STUCK — ' : 'wait — '}${waiting.map((q) => q.id).join(', ')} asked${remaining.some((s) => s.failure) ? ` — ${remaining.flatMap((s) => s.failure ? [failureLine(s.failure)] : []).join(' | ')}` : ''}; the user answers; stop and wait — do not answer it yourself`;
   const resume = stage === 'discover' ? 'continue discovery with vibe-discover; use the answer to resolve material unknowns'
     : stage === 'scope' ? 'continue scope with vibe-scope; incorporate the answer, confirm sufficient agreement and request approval'
       : state === 'DONE' ? 'reply in chat, not vibe ask' : remaining.length ? `continue building ${scenarioTargets(remaining)}; then vibe check --all` : 'then vibe check --all';
@@ -102,18 +107,18 @@ function inboxLine(state: State, stage: Stage, items: InboxItem[], remaining: Sc
   return null;
 }
 
-function nextLine(state: State, stage: Stage, pending: ScenarioView[], inbox: InboxItem[], size: 'small' | 'full', run: number): string {
+function nextLine(state: State, stage: Stage, pending: ScenarioView[], inbox: InboxItem[], size: 'small' | 'full', run: number, repair: StateFile['repair']): string {
   const asked = inboxLine(state, stage, inbox, pending);
   if (asked) return asked;
   const remaining = pending.map((s) => s.id);
-  if (state === 'STUCK') return 'prove — STUCK: the same failure twice; vibe ask, then stop';
+  if (state === 'STUCK') return repairNext(repair);
   if (stage === 'discover') return 'discover — the vibe-discover skill: inspect accessible evidence, resolve material unknowns, stop when agreement is sufficient';
   if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, confirm sufficient agreement, one approval message; wait for "yes"';
   if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — reply in chat, not vibe ask; with no skill and no further reads; HANDOFF.md only if the intent asks`;
   if (isHandoffOnly(pending)) return `handoff — required work remains unmet: ${scenarioTargets(pending)}; reopen a handed-off scenario explicitly before retrying`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
   const failed = pending.filter((s) => s.last === 'fail');
-  if (failed.length > 0) return `fix ${scenarioTargets(failed)} — ${PROCEDURE.failure}; then vibe check <id>`;
+  if (failed.length > 0) return `fix ${scenarioTargets(failed)} — ${failed.flatMap(s => s.failure ? [failureLine(s.failure)] : []).join(' | ')}; ${PROCEDURE.failure}; then vibe check <id>`;
   const tail = size === 'small' ? PROCEDURE.build : `${PROCEDURE.build}; ${PROCEDURE.failure}`;
   return `build ${remaining.join(', ')} ${tail}`;
 }
@@ -153,7 +158,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   if (sources && !sources.valid) notices.push(`source basis changed or missing: ${[...sources.changed, ...sources.missing, ...sources.unreadable].join(', ')} — re-evaluate affected findings and redraft before approval`);
   notices.push(...regressionProblems(root));
   for (const s of scenarios) if (s.irreversible) notices.push(`${s.id} mutates (${actionOf(s.irreversible)}) — not run by check --all without vibe authorize --action ${actionOf(s.irreversible)}`);
-  if (state.state === 'STUCK') notices.push('STUCK — the same failure twice in a row; the inbox question needs an answer');
+  if (state.state === 'STUCK') notices.push(state.repair?.waiting ? 'STUCK — repair limit reached; relay the question and its failure summary' : 'STUCK — diagnose the failure and change the approach; ordinary repair needs no permission');
   if (scenarios.some(isHuman) && state.state === 'DONE') notices.push('human items are not gates — a confirmation was requested in the inbox');
   const stage = stageOf(state, intent !== null, allPassedOnce);
   const size = sizeOf([...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))]);
@@ -161,7 +166,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
     root,
     state: state.state,
     stage,
-    next: nextLine(state.state, stage, pending, questions, size, state.runs),
+    next: nextLine(state.state, stage, pending, questions, size, state.runs, state.repair),
     size,
     intent,
     scenarios: views,

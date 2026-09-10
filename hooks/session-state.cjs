@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { readPrivate, writePrivate } = require('./private-store.cjs');
 const { optional, json, digest, revision, projectFingerprint } = require('./session-files.cjs');
+const { repairData, repairMessage } = require('./session-repair.cjs');
 const { contextStatus } = require('./session-context.cjs');
 
 const ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
@@ -61,7 +62,7 @@ function validEvidence(input) {
     Array.isArray(input.scenarios) && input.scenarios.length <= 1000 &&
     input.scenarios.every(s => s && ID.test(s.id) && STATUSES.includes(s.status)) &&
     new Set(input.scenarios.map(s => s.id)).size === input.scenarios.length &&
-    (!input.done || (input.scenarios.length > 0 && input.scenarios.every(s => s.status === 'pass')));
+    (!input.done || input.scenarios.every(s => s.status === 'pass'));
 }
 function stopSnapshot(root, plan) {
   let currentRevision = 'unavailable';
@@ -78,7 +79,7 @@ function recordStopEvidence(root, input) {
   root = fs.realpathSync(root);
   if (!validEvidence(input)) throw new Error('invalid Stop evidence');
   const proof = { schemaVersion: 2, root, run: input.run, intentHash: input.intentHash, done: input.done,
-    scenarios: input.scenarios, executionPlan: input.executionPlan, ...stopSnapshot(root, input.executionPlan) };
+    scenarios: input.scenarios, repair: input.repair ?? null, failures: input.failures ?? [], executionPlan: input.executionPlan, ...stopSnapshot(root, input.executionPlan) };
   writePrivate(root, name('proof', root), JSON.stringify(proof));
   return proof;
 }
@@ -86,7 +87,7 @@ function unavailableStatus(root, binding, proof) {
   let currentRevision = 'unavailable';
   try { currentRevision = revision(root); } catch { /* Only fixed diagnostic text leaves the hook. */ }
   return { root, revision: currentRevision, intent: proof.intentHash, complete: false, fresh: false, snapshotStatus: 'unavailable',
-    remaining: proof.scenarios.map(s => s.id), waiting: [], handed: [], graph: binding.scenarios };
+    remaining: proof.scenarios.map(s => s.id), repair: repairData(proof.repair), failures: proof.failures ?? [], waiting: [], handed: [], graph: binding.scenarios };
 }
 function structuralStatus(root, binding) {
   const raw = readPrivate(root, name('proof', root));
@@ -104,7 +105,7 @@ function structuralStatus(root, binding) {
   const remaining = complete ? [] : scenarios.filter(s => !filesFresh || s.status !== 'pass' || flow.handed.includes(s.id)).map(s => s.id);
   const hash = proof?.intentHash ?? 'unverified';
   return { root, revision: currentRevision, intent: hash, complete, fresh, approvalWaiting: flow.approvalWaiting, abandoned: flow.abandoned, waiting: flow.waiting, handed: flow.handed, graph: binding.scenarios,
-    remaining, progress: digest(JSON.stringify({ statuses: proof?.scenarios?.map(s => [s.id, s.status]).sort() ?? [] })) };
+    remaining, repair: repairData(proof?.repair), failures: proof?.failures ?? [], progress: digest(JSON.stringify({ statuses: proof?.scenarios?.map(s => [s.id, s.status]).sort() ?? [] })) };
 }
 function sessionStatus(payload = {}, env = process.env, cwd = process.cwd()) {
   let root;
@@ -126,7 +127,8 @@ function sessionStatus(payload = {}, env = process.env, cwd = process.cwd()) {
 function message(view, status) {
   const root = view.root ? encodeURIComponent(view.root).slice(0, 600) : 'unavailable';
   const ids = (view.remaining ?? []).slice(0, 12).map(id => `${view.intent}/${id}`).join(',') || 'unresolved';
-  return `[vibe] ${status}; root=${root}; revision=${view.revision}; scenarios=${ids}. Stop ran no checks.`;
+  const questions = (view.waiting ?? []).filter(id => /^[a-zA-Z0-9-]{1,80}$/.test(id)).slice(0, 12);
+  return `[vibe] ${status}; root=${root}; revision=${view.revision}; scenarios=${ids}${questions.length ? `; questions=${questions.join(',')}` : ''}. Stop ran no checks.${repairMessage(view)}`;
 }
 function allHanded(view) {
   if (!view.handed.length || !view.remaining.length) return false;

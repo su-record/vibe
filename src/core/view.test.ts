@@ -93,7 +93,8 @@ describe('vibe state — the next line is the procedure', () => {
     writeState(root, { ...readState(root), state: 'STUCK', runs: 2 });
     expect(buildStateView(root, root).next).toBe(`answered ${id}: "KRW" — continue building b (files: out.txt), c; then vibe check --all; vibe inbox resolve <id> once used`);
     resolve(root, id);
-    expect(buildStateView(root, root).next).toBe('prove — STUCK: the same failure twice; vibe ask, then stop');
+    expect(buildStateView(root, root).next).toContain('prove — STUCK diagnosis:');
+    expect(buildStateView(root, root).next).toContain('change the approach');
   });
 
   it('answered discovery and draft questions resume their stage without starting an unapproved build', () => {
