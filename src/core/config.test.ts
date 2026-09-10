@@ -14,9 +14,9 @@ afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
 
 describe('token policy', () => {
   it('defaults to irreversible and ignores garbage', () => {
-    expect(readConfig(root).tokens).toBe('irreversible');
+    expect(readConfig(root).tokens).toBe('off');
     fs.writeFileSync(path.join(root, '.vibe', 'config.json'), '{"tokens":"sometimes"}');
-    expect(readConfig(root).tokens).toBe('irreversible');
+    expect(readConfig(root).tokens).toBe('off');
   });
 
   it('round-trips through config.json', () => {

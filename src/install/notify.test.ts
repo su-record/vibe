@@ -6,15 +6,20 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mutationOf } from '../core/checks/mutation.js';
 import { packageRoot } from '../core/paths.js';
 
+let fixture: string;
+let fixtureHome: string;
 let project: string;
 beforeEach(() => {
-  project = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-notify-'));
-  fs.mkdirSync(path.join(project, '.vibe'));
+  fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-notify-'));
+  fixtureHome = path.join(fixture, 'home');
+  project = path.join(fixture, 'project');
+  fs.mkdirSync(fixtureHome);
+  fs.mkdirSync(path.join(project, '.vibe'), { recursive: true });
 });
-afterEach(() => fs.rmSync(project, { recursive: true, force: true }));
+afterEach(() => fs.rmSync(fixture, { recursive: true, force: true }));
 
 function pre(payload: unknown, env: NodeJS.ProcessEnv = {}): { status: number | null; stdout: string; stderr: string } {
-  const r = spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'pre'], { input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, ...env, CLAUDE_PROJECT_DIR: project } });
+  const r = spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'pre'], { input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, ...env, CLAUDE_PROJECT_DIR: project } });
   return { status: r.status, stdout: r.stdout, stderr: r.stderr };
 }
 
@@ -44,8 +49,8 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
 
   it('session: at session start the project state is handed over; no project, nothing', () => {
     const cli = path.join(packageRoot(), 'dist', 'cli.js');
-    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
-    const session = () => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'session'], { cwd: project, input: '{}', encoding: 'utf-8', env: { ...process.env, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
+    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '1' } });
+    const session = () => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'session'], { cwd: project, input: '{}', encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
     expect(session().stdout).toBe('');
     fs.writeFileSync(path.join(project, 'intent.md'), '# t\n\n## Why\nx\n');
     fs.writeFileSync(path.join(project, 'scenarios.yaml'), '- { id: a, then: x, check: { type: run, cmd: "node -e 0" } }\n');
@@ -60,8 +65,8 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
 
   it('claim: a last message that says done while the state is RUNNING is named as unverified; a message without a claim is not', () => {
     const cli = path.join(packageRoot(), 'dist', 'cli.js');
-    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
-    const stop = (payload: object) => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'stop'], { cwd: project, input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
+    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '1' } });
+    const stop = (payload: object) => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'stop'], { cwd: project, input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
     fs.writeFileSync(path.join(project, 'intent.md'), '# t\n\n## Why\nx\n');
     fs.writeFileSync(path.join(project, 'scenarios.yaml'), '- { id: a, then: x, check: { type: file, path: out.txt, exists: true } }\n');
     vibe('tokens', 'off');
@@ -78,8 +83,8 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
 
   it('stop: with an approved intent still building the verdict runs and comes back as the reason the turn is not over; DONE, a continued turn or no intent stays silent', () => {
     const cli = path.join(packageRoot(), 'dist', 'cli.js');
-    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
-    const stop = (payload: object) => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'stop'], { cwd: project, input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
+    const vibe = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '1' } });
+    const stop = (payload: object) => spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', 'notify.js'), 'stop'], { cwd: project, input: JSON.stringify(payload), encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, CLAUDE_PROJECT_DIR: project, VIBE_SKIP_SETUP: '1' } });
     expect(stop({}).stdout).toBe(''); // no intent
     fs.writeFileSync(path.join(project, 'intent.md'), '# t\n\n## Why\nx\n');
     fs.writeFileSync(path.join(project, 'scenarios.yaml'), '- { id: a, then: x, check: { type: run, cmd: "node -e 0" } }\n');
@@ -95,6 +100,34 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(stop({ stop_hook_active: true }).stdout).toBe(''); // a turn already continued by this hook is let go
     expect(JSON.parse(stop({}).stdout).decision).toBe('block');
   }, 60_000);
+
+  it('gate: approval commands and action words inside document paths pass', () => {
+    for (const tokens of ['irreversible', 'strict']) {
+      fs.writeFileSync(path.join(project, '.vibe', 'config.json'), JSON.stringify({ tokens }));
+      for (const command of [
+        'vibe authorize "fixture token" --action reset --target doc-reset',
+        'vibe ask --needs authorize:reset "Reset the docs?"',
+        'vibe inbox answer q-1 "reset done"',
+        'node scripts/check.js .vibe/doc-reset',
+        'node scripts/check.js my-reset-notes',
+        'node scripts/check.js my_reset_notes',
+        'node scripts/check.js docs/reset',
+        'node scripts/check.js docs/deploy docs/drop docs/truncate docs/seed docs/publish',
+        'node scripts/check.js docs/restore .vibe/db-restore.md',
+      ]) {
+        const result = pre({ tool_name: 'Bash', tool_input: { command } });
+        expect(result.status, `${tokens}: ${command}: ${result.stderr}`).toBe(0);
+        expect(result.stderr, command).toBe('');
+      }
+    }
+  }, 60_000); // Two policies start a separate Node process for each command, also under parallel suite load.
+
+  it('gate: a self-gated first segment does not hide a later destructive command', () => {
+    fs.writeFileSync(path.join(project, '.vibe', 'config.json'), JSON.stringify({ tokens: 'irreversible' }));
+    for (const command of ['vibe state && git push origin main', 'vibe inbox; npm run reset-data', 'vibe check | rm -rf build']) {
+      expect(pre({ tool_name: 'Bash', tool_input: { command } }).status, command).toBe(2);
+    }
+  });
 
   it('gate: a git push with no authorize record is blocked under strict and irreversible, warned under off; every command segment is judged; tokens off prints the container note once', () => {
     const push = { tool_name: 'Bash', tool_input: { command: 'git push origin main' } };
@@ -132,9 +165,9 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     fs.writeFileSync(path.join(project, '.vibe', 'ledger.jsonl'), `${JSON.stringify({ at: new Date().toISOString(), event: 'authorize', detail: 'push:origin' })}\n`);
     expect(pre(push).status).toBe(0);
     // the note on `vibe tokens off`
-    const cli = spawnSync(process.execPath, [path.join(packageRoot(), 'dist', 'cli.js'), 'tokens', 'off'], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+    const cli = spawnSync(process.execPath, [path.join(packageRoot(), 'dist', 'cli.js'), 'tokens', 'off'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '1' } });
     expect(cli.stdout).toContain('container');
-    const again = spawnSync(process.execPath, [path.join(packageRoot(), 'dist', 'cli.js'), 'tokens'], { cwd: project, encoding: 'utf-8', env: { ...process.env, VIBE_SKIP_SETUP: '1' } });
+    const again = spawnSync(process.execPath, [path.join(packageRoot(), 'dist', 'cli.js'), 'tokens'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '1' } });
     expect(again.stdout).not.toContain('container');
-  });
+  }, 60_000); // Like the other CLI integration tests above, this starts many Node processes under load.
 });

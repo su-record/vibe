@@ -1,98 +1,86 @@
 {
   "build": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
-  "ask-stops": {
+  "scoped-arm": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
-  "failure-files": {
+  "anomaly-task": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
-  "claim-audit": {
+  "handover-task": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
-  },
-  "codex-trust": {
-    "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
-    "run": "r-1",
-    "tree": "0ba20381bb887280"
-  },
-  "scope-probe": {
-    "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
-    "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "gate-is-release": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "size": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "card-size": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "under-load": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "r-1-vibe-size-misreads-template-literal": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "r-2-ci-counted-the-language-packs": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "r-3-codex-plugin-never-followed-update": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "r-4-installhookfile-kept-only-last-entry": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "r-5-vibe-size-read-a-quote-or-a-backtick": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   },
   "r-6-the-entry-guard-read-its-own-path-fr": {
     "last": "pass",
-    "at": "2026-09-09T14:10:13.026Z",
+    "at": "2026-09-10T02:06:57.453Z",
     "run": "r-1",
-    "tree": "0ba20381bb887280"
+    "tree": "566d5472958dd937"
   }
 }

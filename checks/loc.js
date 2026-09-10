@@ -2,8 +2,9 @@
 // outgrows one screen of purpose gets split — the total is free to grow with what the harness does.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 const LIMIT = 400;
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const files = [];
 const walk = (dir) => {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

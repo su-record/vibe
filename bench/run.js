@@ -10,30 +10,38 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { installSurfaces, projectLayout, SKILL_NAMES } from '../dist/install/global.js';
+import { shellArgs } from '../dist/core/readerSession.js';
+import { answerQuestions, stalled } from './dialogue.js';
 
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..');
 const args = process.argv.slice(2);
 const opt = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i === -1 ? fallback : args[i + 1];
 };
-const client = opt('client', 'claude');
+// `--client claude:codex` names one client per session on a two-session task (a handover); `client` is the first
+const clients = opt('client', 'claude').split(':');
+const client = clients[0];
+// `off` bare · `on` the judge's intent given · `scoped` vibe scopes for itself from the brief (card, skills, hooks, no intent)
 const harness = opt('harness', 'on');
+const prepareOnly = process.argv.includes('--prepare-only');
 const runs = Number(opt('runs', '1'));
 const taskArg = opt('task', 'settlement');
 const setArg = opt('set', null);
 const model = opt('model', null);
 const maxTurns = Number(opt('max-turns', '40'));
 const parallel = Math.max(1, Number(opt('parallel', '4')));
-const ledger = path.join(here, 'ledger.jsonl');
+const ledger = path.resolve(opt('ledger', path.join(here, 'ledger.jsonl')));
 const AGENT_TIMEOUT_MS = 15 * 60_000;
 const MAX_CAPTURE = 64 * 1024 * 1024;
 
 // vibe on PATH must be vibe 4 from this checkout, never a global vibe 3
 const shim = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-shim-'));
-fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${repo}/dist/cli.js" "$@"\n`, { mode: 0o755 });
+if (process.platform === 'win32') fs.writeFileSync(path.join(shim, 'vibe.cmd'), `@echo off\r\n"${process.execPath}" "${path.join(repo, 'dist/cli.js')}" %*\r\n`);
+else fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${repo}/dist/cli.js" "$@"\n`, { mode: 0o755 });
 // The arms differ only by what the workspace carries. Both run under an isolated home: the operator's
 // ~/.claude plugin and ~/.agents marketplace (vibe itself, on this machine) must not reach either arm —
 // an `off` run that can call `vibe regress record` is not an `off` run. Credentials are copied in.
@@ -45,17 +53,16 @@ for (const [dir, files] of [['.claude', ['.credentials.json']], ['.codex', ['aut
     if (fs.existsSync(from)) fs.copyFileSync(from, path.join(isoHome, dir, f));
   }
 }
-const env = { ...process.env, PATH: `${shim}:${process.env.PATH}`, VIBE_SKIP_SETUP: '1', HOME: isoHome, USERPROFILE: isoHome, CODEX_HOME: path.join(isoHome, '.codex'), VIBE_HOME_DIR: isoHome };
+const env = { ...process.env, PATH: `${shim}${path.delimiter}${process.env.PATH}`, VIBE_SKIP_SETUP: '1', HOME: isoHome, USERPROFILE: isoHome, CODEX_HOME: path.join(isoHome, '.codex'), VIBE_HOME_DIR: isoHome };
 delete env.CLAUDECODE;
 delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
 
-// The overhead set is the three saturated tasks from the first clean bench; the direction set is
-// a task cut across two sessions; `irreversible-trap` (a reset in the brief's natural path, which the
-// bare model never ran) and the four 4.1.21 tasks stay on disk, retired, and run by name.
+// Overhead measures saturated tasks; direction spans sessions and clients.
+// Retired tasks remain runnable by name — bench/README.md holds their inventory and reasons.
 // `--set` picks a named group; `--task` (still the default) picks one task, or every directory
 // under tasks/ with `all`.
-const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['session-split'], context: ['brownfield'] };
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['handover', 'session-split'], context: ['brownfield'] };
 SETS.all = [...SETS.overhead, ...SETS.direction, ...SETS.context];
 
 function taskNames() {
@@ -76,16 +83,20 @@ function prepare(task) {
   const prep = path.join(taskDir, 'judge', 'prepare.cjs');
   if (fs.existsSync(prep)) execFileSync('node', [prep], { cwd: ws, env: { ...env, VIBE_BENCH_REPO: repo }, stdio: 'ignore' });
   execFileSync('git', ['init', '-q'], { cwd: ws });
-  if (harness === 'on') {
-    // card, skills and hook go into the workspace itself — the `off` arm must stay bare
-    const layout = projectLayout(client === 'claude' ? 'claude' : 'codex');
-    installSurfaces(ws, layout);
-    // the six common skills only — a pack rides along only when the judge uses a review check (none does today)
-    const skillsDir = path.join(ws, layout.skills);
-    for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
-    draftAndApprove(ws, taskDir);
+  if (harness === 'on' || harness === 'scoped') {
+    // card, skills and hook go into the workspace itself — the `off` arm must stay bare; a two-client task gets both layouts
+    for (const c of new Set(clients)) {
+      const layout = projectLayout(c === 'claude' ? 'claude' : 'codex');
+      installSurfaces(ws, layout);
+      // the six common skills only — a pack rides along only when the judge uses a review check (none does today)
+      const skillsDir = path.join(ws, layout.skills);
+      for (const d of fs.readdirSync(skillsDir)) if (!SKILL_NAMES.includes(d)) fs.rmSync(path.join(skillsDir, d), { recursive: true, force: true });
+    }
+    if (harness === 'on') draftAndApprove(ws, taskDir);
+    // scoped: no intent — the agent runs discover and scope itself; `tokens off` lets it approve without a human
+    if (harness === 'scoped') vibeSync(ws, ['tokens', 'off']);
     // the policy an install has by default: the hook blocks an irreversible command until `vibe authorize`
-    vibeSync(ws, ['tokens', 'irreversible']);
+    if (harness === 'on') vibeSync(ws, ['tokens', 'irreversible']);
   }
   return ws;
 }
@@ -116,8 +127,29 @@ function draftAndApprove(ws, taskDir) {
 }
 
 /** After the agent stops: judge with the task's real scenarios and append one ledger line. */
+function stateOf(ws) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(ws, '.vibe', 'state.json'), 'utf-8')).state;
+  } catch {
+    return 'NONE';
+  }
+}
+
+/** What a scoped agent wrote for itself — scenario count and check types — read before the judge's intent replaces it. */
+function scopedWork(ws) {
+  try {
+    const text = fs.readFileSync(path.join(ws, '.vibe', 'scenarios.yaml'), 'utf-8');
+    const checks = [...text.matchAll(/type:\s*(\w+)/g)].map((m) => m[1]);
+    const approved = fs.existsSync(path.join(ws, '.vibe', 'state.json')) && JSON.parse(fs.readFileSync(path.join(ws, '.vibe', 'state.json'), 'utf-8')).approvedAt !== null;
+    return { scenarios: checks.length, checks: [...new Set(checks)], approved };
+  } catch {
+    return { scenarios: 0, checks: [], approved: false };
+  }
+}
+
 function judge(ws, run, task, index) {
   const taskDir = path.join(here, 'tasks', task);
+  const scoped = harness === 'scoped' ? scopedWork(ws) : null;
   // the key — the reference answer, the expected output — reaches the workspace only now, after the agent is done
   if (fs.existsSync(path.join(taskDir, 'key'))) fs.cpSync(path.join(taskDir, 'key'), path.join(ws, 'key'), { recursive: true });
   draftAndApprove(ws, taskDir); // idempotent — the `off` arm never drafted, the `on` arm re-drafts the same intent
@@ -127,7 +159,7 @@ function judge(ws, run, task, index) {
   fs.rmSync(regDir, { recursive: true, force: true });
   const keyFile = path.join(taskDir, 'key', 'expected.json');
   const keyEnv = fs.existsSync(keyFile) ? { VIBE_KEY_EXPECTED: fs.readFileSync(keyFile, 'utf-8') } : {};
-  const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '', ...keyEnv } });
+  const out = vibeSync(ws, ['check', '--all'], { env: { VIBE_HARNESS: harness, VIBE_CLIENT: clients.length > 1 ? clients.map((c) => (c === 'claude' ? 'claude-code' : c)).join('→') : run.client, VIBE_MODEL: run.model ?? '', VIBE_TURNS: run.turns ?? '', VIBE_COST_USD: run.costUsd ?? '', ...keyEnv } });
   const report = JSON.parse(out.stdout);
   const lines = fs.readFileSync(path.join(ws, '.vibe', 'ledger.jsonl'), 'utf-8').trim().split('\n');
   const events = lines.map((l) => JSON.parse(l));
@@ -136,7 +168,7 @@ function judge(ws, run, task, index) {
   const side = events.filter((e) => e.event === 'usage' && e.tokens);
   if (side.length && run.tokens) for (const e of side) for (const k of ['input', 'cacheRead', 'cacheWrite', 'output']) run.tokens[k] = (run.tokens[k] ?? 0) + (e.tokens[k] ?? 0);
   const sideModels = [...new Set(side.map((e) => e.detail))];
-  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(sideModels.length ? { sideModels } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: check.failed === 0, agentRegressions, pair: `${task}#${index}` };
+  const line = { ...check, task, workspace: ws, ms: run.ms, tokens: run.tokens ?? null, usage: run.usage ?? (run.tokens ? 'captured' : 'missing'), ...(run.error ? { error: run.error } : {}), ...(run.stalled ? { stalled: true } : {}), ...(sideModels.length ? { sideModels } : {}), ...(scoped ? { scoped: { ...scoped, approvals: run.approvals ?? 0 } } : {}), ...(clients.length > 1 ? { clients } : {}), sessions: run.sessions ?? 1, asked: run.asked ?? 0, costRecomputed: recomputedCost(run.tokens), armPassed: !run.stalled && check.failed === 0, agentRegressions, pair: `${task}#${index}` };
   fs.appendFileSync(ledger, `${JSON.stringify(line)}\n`);
   return report;
 }
@@ -162,7 +194,7 @@ function recomputedCost(tokens) {
  * gets genuine concurrency: several long agent runs progressing side by side, not queued behind each other. */
 function spawnAsync(cmd, cmdArgs, { cwd, input, timeoutMs = AGENT_TIMEOUT_MS } = {}) {
   return new Promise((resolve) => {
-    const child = spawn(cmd, cmdArgs, { cwd, env });
+    const child = spawn(cmd, shellArgs(cmdArgs), { cwd, env, shell: process.platform === 'win32' });
     let out = '';
     const capture = (chunk) => {
       if (out.length < MAX_CAPTURE) out += chunk.toString('utf-8');
@@ -211,10 +243,11 @@ function claudeResult(stdout) {
 async function runClaude(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   // user settings stay out of both arms; the `on` arm keeps the workspace's own (.claude/settings.local.json, skills)
-  const a = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions', '--max-turns', String(session.maxTurns ?? maxTurns), '--setting-sources', harness === 'on' ? 'project,local' : ''];
+  // cmd.exe cannot carry a multiline prompt in an argument; pass it on stdin on Windows.
+  const a = ['-p', ...(process.platform === 'win32' ? [] : [prompt]), '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions', '--max-turns', String(session.maxTurns ?? maxTurns), '--setting-sources', harness === 'off' ? '' : 'project,local'];
   if (model) a.push('--model', model);
   const started = Date.now();
-  const r = await spawnAsync('claude', a, { cwd: ws });
+  const r = await spawnAsync('claude', a, { cwd: ws, ...(process.platform === 'win32' ? { input: prompt } : {}) });
   const { result, assistantTurns } = claudeResult(r.stdout);
   const out = result ?? {};
   const error = out.is_error && typeof out.result === 'string' ? out.result.slice(0, 160) : /rate limit|usage limit|overloaded|credit balance/i.test(r.stdout) && !out.usage ? 'client error: limit or overload' : null;
@@ -281,47 +314,42 @@ function sumRuns(a, b) {
   return { client: a.client, model: b.model ?? a.model, turns: add(a.turns, b.turns), costUsd: add(a.costUsd, b.costUsd), ms: a.ms + b.ms, tokens, usage: tokens ? 'captured' : 'missing', sessions: (a.sessions ?? 1) + 1, finalText: b.finalText ?? '' };
 }
 
-/** A task's fake user (`judge/meta.json` → `fakeUser`, a script under the task's key/ that never reaches the workspace):
- * between sessions it reads what the agent asked — the `on` arm's open inbox questions, or the final message of either
- * arm — and answers only what it was asked. The answer lands in TASK.md for both arms and in the inbox for `on`. */
-function fakeUser(ws, task, run) {
-  const script = path.join(here, 'tasks', task, meta(task).fakeUser);
-  const asked = [];
-  if (harness === 'on') {
-    try {
-      const view = JSON.parse(vibeSync(ws, ['state']).stdout);
-      for (const q of view.inbox?.items ?? []) asked.push({ id: q.id, text: q.question });
-    } catch {
-      /* no state */
-    }
-  }
-  if (run.finalText) asked.push({ id: null, text: run.finalText });
-  let answered = 0;
-  for (const q of asked) {
-    const r = spawnSync('node', [script], { input: q.text, encoding: 'utf-8' });
-    const answer = (r.stdout || '').trim();
-    if (!answer) continue;
-    answered += 1;
-    fs.appendFileSync(path.join(ws, 'TASK.md'), `\n\nAnswer from the user, to what you asked: ${answer}\n`);
-    if (q.id) vibeSync(ws, ['inbox', 'answer', q.id, answer]);
-  }
-  return answered;
-}
-
 async function runOneJob(job) {
   const ws = prepare(job.task);
-  const sessions = meta(job.task).sessions ?? [{}];
+  if (prepareOnly) {
+    console.log(JSON.stringify({ ws, harness, clients, task: job.task }));
+    return { ...job, ws, run: { client, turns: null, ms: 0, tokens: null }, report: { passed: 0, failed: 0 } };
+  }
+  const config = meta(job.task);
+  const sessions = config.sessions ?? [{}];
   let run = null;
   let asked = 0;
-  for (const [i, session] of sessions.entries()) {
-    const one = client === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
+  let approvals = 0;
+  for (let i = 0; i < sessions.length; i += 1) {
+    const session = sessions[i];
+    const sessionClient = clients[i % clients.length];
+    const one = sessionClient === 'claude' ? await runClaude(ws, session) : await runCodex(ws, session);
     if (one.error) { run = { ...(run ? sumRuns(run, one) : one), error: one.error }; break; }
     run = run ? sumRuns(run, one) : one;
-    if (meta(job.task).fakeUser && i < sessions.length - 1) asked += fakeUser(ws, job.task, one);
+    if (config.fakeUser && i < sessions.length - 1) asked += answerQuestions(ws, path.join(here, 'tasks', job.task, config.fakeUser), one.finalText);
+    // scoped: the agent stopped at the approval message, as the flow says — the user says yes, and the work goes on in a new session
+    if (harness === 'scoped' && approvals === 0 && stateOf(ws) === 'DRAFT') {
+      vibeSync(ws, ['approve']);
+      fs.appendFileSync(path.join(ws, 'TASK.md'), '\n\nUser: yes — approved as proposed; go ahead and build.\n');
+      approvals += 1;
+      if (i === sessions.length - 1) sessions.push({});
+    }
   }
+  run.approvals = approvals;
   run.asked = asked;
+  run.stalled = stalled(ws, config.outputs);
   const report = judge(ws, run, job.task, job.index);
   return { ...job, ws, run, report };
+}
+
+if (prepareOnly) {
+  await runOneJob({ task: taskNames()[0], index: 0 });
+  process.exit(0);
 }
 
 /** A fixed-size pool of workers pulling from a shared queue — `--parallel` concurrent agent runs at once. */
@@ -346,7 +374,7 @@ async function runPool(jobs, size) {
 function report(outcome) {
   const { task, index, run, report: r, ws } = outcome;
   const cost = run.costUsd ?? '-';
-  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}${run.error ? ` · ERROR ${run.error}` : ''}`);
+  console.log(`${client} ${harness} ${task} run ${index + 1}/${runs}: passed ${r.passed} failed ${r.failed} · turns ${run.turns ?? '-'} · cost ${cost} · ${Math.round(run.ms / 1000)}s · ${ws}${run.stalled ? ' · STALLED (excluded from quality)' : ''}${run.error ? ` · ERROR ${run.error}` : ''}`);
 }
 
 const jobs = taskNames().flatMap((task) => Array.from({ length: runs }, (_, index) => ({ task, index })));

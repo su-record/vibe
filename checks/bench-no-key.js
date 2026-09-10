@@ -6,8 +6,9 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const tasksDir = path.join(root, 'bench/tasks');
 const FORBIDDEN = /^(right|wrong|expected|answer|quote|ledger|report)\.(cjs|json)$/;
 const problems = [];

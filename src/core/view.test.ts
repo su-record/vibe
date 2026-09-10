@@ -43,7 +43,10 @@ describe('vibe state — the next line is the procedure', () => {
     writeState(root, { ...readState(root), state: 'DONE', runs: 3 });
     fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-3', tree: treeHash(root) }, b: { last: 'pass', at: 'now', run: 'r-3', tree: treeHash(root) }, c: { last: 'pass', at: 'now', run: 'r-3', tree: treeHash(root) } }));
     const done = buildStateView(root, root);
-    expect(done.next).toBe('report — DONE r-3: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks');
+    expect(done.next).toBe('report — DONE r-3: answer the user from this output — what was built, which checks passed — reply in chat, not vibe ask; with no skill and no further reads; HANDOFF.md only if the intent asks');
+    const reportQuestion = ask(root, { question: 'Which format?' });
+    answer(root, reportQuestion.id, 'Plain text');
+    expect(buildStateView(root, root).next).toBe(`answered ${reportQuestion.id}: "Plain text" — reply in chat, not vibe ask; vibe inbox resolve <id> once used`);
   });
 
   it('files: build output is not a file a scenario is about — a check that runs dist/x.js names nothing', () => {
@@ -53,17 +56,30 @@ describe('vibe state — the next line is the procedure', () => {
     expect(buildStateView(root, root).scenarios[0]?.files).toBeUndefined();
   });
 
+  it('human items remain visible but are not gates, even with a failed result', () => {
+    draft(root, '# t\n', THREE + '- { id: taste, then: the wording reads well, check: { type: human, question: "Please review the wording" } }\n');
+    approve(root, null);
+    const failed = { last: 'fail', at: 'now', run: 'r-1', tree: treeHash(root) };
+    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: failed, taste: failed }));
+    const view = buildStateView(root, root);
+    expect(view.scenarios.find((s) => s.id === 'taste')).toMatchObject({ type: 'human', last: 'fail' });
+    expect(view.remaining).toEqual(['a', 'b', 'c']);
+    expect(view.next).toBe('fix a — on a failure, fix what the check names; vibe context <id> when that is not enough; then vibe check <id>');
+  });
+
   it('inbox: an unanswered question makes next a wait; an answered one carries its answer and lets the work continue; STUCK follows the same rule', () => {
     draft(root, '# t\n\n## Why\nx\n', THREE);
     approve(root, null);
+    fs.writeFileSync(path.join(root, 'out.txt'), 'x');
+    fs.writeFileSync(path.join(root, '.vibe', 'results.json'), JSON.stringify({ a: { last: 'pass', at: 'now', run: 'r-1', tree: treeHash(root) } }));
     const { id } = ask(root, { question: 'which currency?', scenario: 'b' });
     expect(buildStateView(root, root).next).toBe(`wait — ${id} asked; the user answers; stop and wait — do not answer it yourself`);
     answer(root, id, 'KRW');
     const v = buildStateView(root, root);
-    expect(v.next).toBe(`answered ${id}: "KRW" — continue building; vibe inbox resolve <id> once used`);
+    expect(v.next).toBe(`answered ${id}: "KRW" — continue building b (files: out.txt), c; then vibe check --all; vibe inbox resolve <id> once used`);
     expect(v.inbox.items[0]?.answer).toBe('KRW');
     writeState(root, { ...readState(root), state: 'STUCK', runs: 2 });
-    expect(buildStateView(root, root).next).toBe(`answered ${id}: "KRW" — then vibe check --all; vibe inbox resolve <id> once used`);
+    expect(buildStateView(root, root).next).toBe(`answered ${id}: "KRW" — continue building b (files: out.txt), c; then vibe check --all; vibe inbox resolve <id> once used`);
     resolve(root, id);
     expect(buildStateView(root, root).next).toBe('prove — STUCK: the same failure twice; vibe ask, then stop');
   });

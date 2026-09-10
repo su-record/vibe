@@ -5,8 +5,9 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const dirs = fs.readdirSync(path.join(root, 'skills')).sort();
 const errors = [];
 for (const dir of dirs) {

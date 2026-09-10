@@ -1,0 +1,13 @@
+order_id,date,seller,amount,currency,status
+2001,2026-09-01,Han Traders,120000,KRW,paid
+2002,2026-09-01,Kim Books,45000,KRW,paid
+2003,2026-09-02,Han Traders,80000,KRW,paid
+2004,2026-09-02,Lee Foods,32000,KRW,paid
+2005,2026-09-02,Kim Books,60000,KRW,paid
+2005,2026-09-03,Kim Books,60000,KRW,paid
+2006,2026-09-03,Lee Foods,-32000,KRW,paid
+2007,2026-09-03,Park Tools,150,EUR,paid
+2008,2026-09-04,Han Traders,55000,KRW,pending
+2009,2026-09-04,Park Tools,98000,KRW,paid
+2010,2026-09-05,Lee Foods,27000,KRW,paid
+2011,2026-09-05,Kim Books,15000,KRW,paid

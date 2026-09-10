@@ -50,20 +50,20 @@ function emitContext(text) {
 // check ask for the same `vibe authorize --action`; `send` is the hook's own. A command that only reads —
 // grep, cat, git log — is never gated, whatever words it carries.
 const IRREVERSIBLE = [
-  ['restore', /(?:\b|_)restore\b/i],
-  ['reset', /\breset\b/i],
-  ['drop', /\bdrop\b/i],
-  ['truncate', /\btruncate\b/i],
-  ['seed', /\bseed(?:ing|ed)?\b/i],
-  ['migrate', /\bmigrat\w*[:\s-]+(?:fresh|down|rollback|refresh|reset)\b|\b(?:rollback|down)[:\s-]+migrat/i],
+  ['restore', /(?:(?<![-/])\b|_)restore\b/i],
+  ['reset', /(?<![-/])\breset\b/i],
+  ['drop', /(?<![-/])\bdrop\b/i],
+  ['truncate', /(?<![-/])\btruncate\b/i],
+  ['seed', /(?<![-/])\bseed(?:ing|ed)?\b/i],
+  ['migrate', /(?<![-/])\bmigrat\w*[:\s-]+(?:fresh|down|rollback|refresh|reset)\b|(?<![-/])\b(?:rollback|down)[:\s-]+migrat/i],
   ['delete', /\brm\s+-[a-z]*r[a-z]*f?\b|\bDELETE\s+FROM\b|\bkubectl\s+delete\b|\bgit\s+push\s+[^|]*--force\b/i],
   ['push', /\bgit\s+push\b/],
-  ['deploy', /\bdeploy\b/i],
-  ['publish', /\bnpm\s+publish\b|\bpublish\b/i],
+  ['deploy', /(?<![-/])\bdeploy\b/i],
+  ['publish', /\bnpm\s+publish\b|(?<![-/])\bpublish\b/i],
   ['apply', /\bterraform\s+apply\b|\bkubectl\s+apply\b/i],
   ['send', /\b(sendmail|mail\s+-s|curl\s+[^|]*-X\s*POST)\b/],
 ];
-const READS_ONLY = /^\s*(?:grep|rg|cat|head|tail|less|ls|find|wc|echo|printf|sed\s+-n|git\s+(?:log|diff|show|status|grep|blame|branch|ls-files)|vibe\s+(?:state|context|map|read|check|ledger))\b/;
+const READS_ONLY = /^\s*(?:grep|rg|cat|head|tail|less|ls|find|wc|echo|printf|sed\s+-n|git\s+(?:log|diff|show|status|grep|blame|branch|ls-files))\b/;
 
 function recentAuthorize(action) {
   try {
@@ -86,9 +86,9 @@ if (!fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
 
 function tokenPolicy() {
   try {
-    return JSON.parse(fs.readFileSync(path.join(root, '.vibe', 'config.json'), 'utf-8')).tokens || 'irreversible';
+    return JSON.parse(fs.readFileSync(path.join(root, '.vibe', 'config.json'), 'utf-8')).tokens || 'off';
   } catch {
-    return 'irreversible';
+    return 'off';
   }
 }
 function tokensOff() {
@@ -189,7 +189,8 @@ if (mode === 'pre') {
   }
   const command = String((payload.tool_input && payload.tool_input.command) || '');
   // Every segment is judged — `echo x && git push`, `ls; rm -rf build`, `cat x | git push` carry the action in a later one
-  const segments = command.split(/&&|\|\||;|\||\n/).map((s) => s.trim()).filter((s) => s && !READS_ONLY.test(s));
+  // Vibe gates its own execution; its approval and inbox commands must remain reachable.
+  const segments = command.split(/&&|\|\||;|\||\n/).map((s) => s.trim()).filter((s) => s && !READS_ONLY.test(s) && !/^vibe(?:\s|$)/.test(s));
   // Under strict and irreversible the gate blocks (exit 2 stops the tool call in Claude Code); under off it only warns.
   for (const [action, re] of IRREVERSIBLE) {
     if (segments.some((s) => re.test(s)) && !recentAuthorize(action)) {

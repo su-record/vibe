@@ -1,9 +1,11 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { detectClient, detectModel } from '../core/client.js';
+import { usage } from '../core/errors.js';
 import { openQuestions } from '../core/inbox.js';
 import { record } from '../core/ledger.js';
-import { vibePath } from '../core/paths.js';
+import { isProjectDir, projectBoundaries, vibePath } from '../core/paths.js';
 import { emptyState, readState, statePath } from '../core/state.js';
 import { ensureDir, writeAtomic, writeJson } from '../core/store.js';
 
@@ -17,6 +19,10 @@ export function hasProject(root: string): boolean {
 
 /** Seed `.vibe/` when it is missing. Returns what was created; an existing project is left alone. */
 export function ensureProject(root: string): string[] {
+  if (projectBoundaries().includes(path.resolve(root)) && !isProjectDir(root)) {
+    const where = path.resolve(root) === path.resolve(os.tmpdir()) ? 'the system temporary directory' : 'your home directory';
+    throw usage(`vibe will not create a project in ${where} — run it inside the project`);
+  }
   const fresh = !hasProject(root);
   const created: string[] = [];
   for (const dir of ['', 'evidence', 'knowledge', 'knowledge/research', 'regressions']) {

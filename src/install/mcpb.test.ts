@@ -32,7 +32,7 @@ describe('mcpb — the Claude desktop bundle', () => {
     fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${path.join(packageRoot(), 'dist', 'cli.js')}" "$@"\n`, { mode: 0o755 });
     const project = path.join(dir, 'project');
     fs.mkdirSync(project);
-    const server = spawn(process.execPath, [path.join(packageRoot(), 'mcpb', 'server', 'index.js')], { env: { ...process.env, PATH: `${shim}:${process.env['PATH']}`, VIBE_PROJECT_DIR: project, VIBE_MCPB_VERSION: '9.9.9', VIBE_SKIP_SETUP: '1', VIBE_OFFLINE: '1' } });
+    const server = spawn(process.execPath, [path.join(packageRoot(), 'mcpb', 'server', 'index.js')], { env: { ...process.env, HOME: dir, PATH: `${shim}:${process.env['PATH']}`, VIBE_PROJECT_DIR: project, VIBE_MCPB_VERSION: '9.9.9', VIBE_SKIP_SETUP: '1', VIBE_OFFLINE: '1' } });
     const replies: Array<Record<string, unknown>> = [];
     let buffer = '';
     server.stdout.on('data', (chunk: Buffer) => {

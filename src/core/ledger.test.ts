@@ -16,6 +16,43 @@ function check(client: string, passed: number, scenarioSet = 'set-a', model: str
 }
 
 describe('ledger and comparison — the code says "cannot tell"', () => {
+  it('stalled attempts are counted but excluded from quality, without hiding their cost', () => {
+    for (const client of ['a', 'b']) for (let i = 0; i < 5; i += 1) {
+      record(root, { event: 'check', client, model: null, scenarioSet: 's', passed: 3, failed: 0, costUsd: 1 });
+    }
+    record(root, { event: 'check', client: 'a', model: null, scenarioSet: 's', passed: 0, failed: 3, stalled: true, costUsd: 7 });
+    expect(compare(root, 'client', 'checks').arms[0]).toMatchObject({ runs: 6, usable: 5, stalled: 1, range: { mean: 3 } });
+    expect(compare(root, 'client', 'cost').arms[0]).toMatchObject({ usable: 6, stalled: 1, range: { mean: 2 } });
+  });
+
+  it('stalled attempts remain visible when pairing has no completed pairs', () => {
+    for (const client of ['a', 'b']) record(root, { event: 'check', client, model: null, scenarioSet: 's', pair: 't#0', passed: 0, failed: 0, armPassed: true, stalled: true, ms: 10 });
+    expect(compare(root, 'client', 'ms', 1, undefined, true)).toMatchObject({
+      verdict: 'insufficient-runs', arms: [
+        { arm: 'a', runs: 0, usable: 0, stalled: 1, range: null },
+        { arm: 'b', runs: 0, usable: 0, stalled: 1, range: null },
+      ],
+    });
+  });
+
+  it.each([false, true])('three arms: no pairwise verdict in any record order (paired=%s)', (paired) => {
+    const file = path.join(root, 'three-arms.jsonl');
+    const orders = [['off', 'on', 'scoped'], ['off', 'scoped', 'on'], ['on', 'off', 'scoped'],
+      ['on', 'scoped', 'off'], ['scoped', 'off', 'on'], ['scoped', 'on', 'off']];
+    for (const order of orders) {
+      const rows = order.flatMap((harness) => Array.from({ length: harness === 'scoped' ? 1 : 5 }, (_, i) => ({
+        event: 'check', client: 'codex', harness, scenarioSet: 's', pair: `${harness}#${i}`,
+        passed: harness === 'scoped' ? 0 : 5, failed: harness === 'scoped' ? 5 : 0,
+        armPassed: harness !== 'scoped', ms: harness === 'off' ? 10 : harness === 'on' ? 20 : 0,
+      })));
+      fs.writeFileSync(file, `${rows.map((r) => JSON.stringify(r)).join('\n')}\n`);
+      expect(compare(root, 'harness', 'ms', 5, file, paired)).toMatchObject({
+        verdict: 'inconclusive', delta: null, arms: expect.arrayContaining([expect.objectContaining({ arm: 'scoped', runs: 1 })]),
+        reason: 'more than two arms to compare — filter the ledger to exactly two harness arms',
+      });
+    }
+  });
+
   it('harness: compares on/off arms from a bench ledger file outside any project', () => {
     const file = path.join(root, 'bench.jsonl');
     for (const v of [5, 5, 4, 5, 5]) fs.appendFileSync(file, `${JSON.stringify({ at: new Date().toISOString(), event: 'check', client: 'claude-code', model: null, harness: 'on', run: 'r', scenarioSet: 's', passed: v, failed: 5 - v })}\n`);

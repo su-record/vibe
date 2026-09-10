@@ -1,0 +1,1 @@
+{ "sessions": [{}, {}], "fakeUser": "key/answer.cjs", "outputs": ["out/settlement.csv", "out/summary.json"] }

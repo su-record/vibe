@@ -5,7 +5,8 @@
 // any client CLI). A pack is a medium, not only a language: `ko`, `en`, `design`.
 import fs from 'node:fs';
 import path from 'node:path';
-const root = new URL('..', import.meta.url).pathname;
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('..', import.meta.url));
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const STAGE_FILE = /^(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/;
 const CLIENT_ONLY = /\b(SendMessage|subagent_type|Agent 도구|Agent tool|TodoWrite|WebFetch)\b/;

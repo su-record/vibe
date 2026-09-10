@@ -33,7 +33,7 @@ describe('intent draft / approve', () => {
     expect(readState(root)).toMatchObject({ state: 'DRAFT', intentHash: result.hash });
     expect(loadScenarios(root).map((s) => s.id)).toEqual(['s1']);
     expect(result.token).toBeNull();
-    expect(result.policy).toBe('irreversible');
+    expect(result.policy).toBe('off');
     expect(approve(root, null)).toEqual({ hash: result.hash, basis: 'chat' });
     expect(readLedger(root).at(-1)?.detail).toContain('by chat');
   });

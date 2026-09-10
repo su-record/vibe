@@ -165,7 +165,7 @@ export function cmdLedger(root: string, sub: string | undefined, args: string[],
     const text = [
       `compare by ${by} · metric ${metric}${paired ? ' · paired' : ''}${fClient ? ` · client ${fClient}` : ''}${fTask ? ` · task ${fTask}` : ''} · verdict ${c.verdict}`,
       `  ${c.reason}`,
-      ...c.arms.map((a) => `  ${a.arm}: runs ${a.runs} · usable ${a.usable}${a.range ? ` · min ${a.range.min} · max ${a.range.max} · mean ${a.range.mean.toFixed(2)}` : ''}${a.costMismatch ? ` · costMismatch ${a.costMismatch}` : ''}`),
+      ...c.arms.map((a) => `  ${a.arm}: runs ${a.runs} · usable ${a.usable} · stalled ${a.stalled}${a.range ? ` · min ${a.range.min} · max ${a.range.max} · mean ${a.range.mean.toFixed(2)}` : ''}${a.costMismatch ? ` · costMismatch ${a.costMismatch}` : ''}`),
       ...(c.delta !== null ? [`  delta ${c.delta.toFixed(2)} (absolute units)`] : []),
     ].join('\n');
     return { json: c, text, code: 0 };

@@ -28,8 +28,8 @@ export interface LedgerEvent {
   event: LedgerEventType;
   client: string;
   model: string | null;
-  /** on | off — set only by a bench run */
-  harness?: 'on' | 'off';
+  /** on | off | scoped — set only by a bench run */
+  harness?: 'on' | 'off' | 'scoped';
   run?: string;
   scenarioSet?: string;
   scenarios?: Record<string, 'pass' | 'fail' | 'pending' | 'blocked'>;
@@ -51,6 +51,8 @@ export interface LedgerEvent {
   pair?: string;
   /** Whether every scenario passed in this run. Falls back to `failed === 0` when absent. */
   armPassed?: boolean;
+  /** An unanswered inbox question and none of the task's declared outputs, before judging. */
+  stalled?: boolean;
   /** costUsd recomputed from tokens at a configured price; null when the price or the tokens are unknown. */
   costRecomputed?: number | null;
 }
@@ -178,6 +180,8 @@ export interface ArmSummary {
   arm: string;
   runs: number;
   usable: number;
+  /** Stalled attempts in the input arm, also shown when pairing excludes them. */
+  stalled: number;
   scenarioSets: string[];
   range: Range | null;
   /** Runs whose recomputed cost differs from the client-reported cost by more than 3×. */
@@ -199,7 +203,7 @@ export function weightedTokens(t: { input: number; cacheRead: number; cacheWrite
 }
 
 function metricOf(e: LedgerEvent, metric: CompareMetric): number | null {
-  if (metric === 'checks') return typeof e.passed === 'number' ? e.passed : null;
+  if (metric === 'checks') return !e.stalled && typeof e.passed === 'number' ? e.passed : null;
   if (metric === 'turns') return typeof e.turns === 'number' ? e.turns : null;
   if (metric === 'ms') return typeof e.ms === 'number' ? e.ms : null;
   if (metric === 'tokens') return e.tokens ? weightedTokens(e.tokens) : null;
@@ -208,7 +212,7 @@ function metricOf(e: LedgerEvent, metric: CompareMetric): number | null {
 
 /** A run "passed" for pairing purposes when every scenario in it passed. */
 function armPassed(e: LedgerEvent): boolean {
-  return e.armPassed ?? (typeof e.failed === 'number' && e.failed === 0);
+  return !e.stalled && (e.armPassed ?? (typeof e.failed === 'number' && e.failed === 0));
 }
 
 /** The key that lines up the same run across two arms: the `pair` field bench/run.js writes, or — for a
@@ -221,8 +225,8 @@ function pairKey(e: LedgerEvent, seenPerTask: Map<string, number>): string {
   return `${task}#${n}`;
 }
 
-/** Keep only runs that pair with a run in the other arm on the same task, both of which passed. Needs
- * exactly two arms — pairing across more than two has no single "other side" to match against. */
+/** Keep only matching passing pairs. Other arm counts retain their summaries so compare can
+ * explain why no pairwise verdict is possible. */
 function pairedOnly(checks: LedgerEvent[], by: CompareBy): LedgerEvent[] {
   const arms = new Map<string, LedgerEvent[]>();
   for (const e of checks) {
@@ -272,33 +276,36 @@ function armKey(e: LedgerEvent, by: CompareBy): string {
   return e.harness ?? 'unknown';
 }
 
-/** `ledgerFile` lets a bench keep its own ledger outside any project. `paired` keeps only runs that
- * pair with a passing run in the other arm on the same task (see `pairedOnly`) — for a bench ledger,
- * where efficiency is only comparable between runs that both did the work. */
 export interface CompareFilter {
   client?: string;
   task?: string;
 }
 
+/** `ledgerFile` lets a bench keep its own ledger outside any project. `paired` keeps only runs that
+ * pair with a passing run in the other arm on the same task (see `pairedOnly`) — for a bench ledger,
+ * where efficiency is only comparable between runs that both did the work. */
 export function compare(root: string, by: CompareBy, metric: CompareMetric, minRuns = 5, ledgerFile?: string, paired = false, filter: CompareFilter = {}): Comparison {
-  const all = ledgerFile ? readJsonl<LedgerEvent & { task?: string }>(ledgerFile) : readLedger(root);
-  const events = all.filter((e) => (!filter.client || e.client === filter.client) && (!filter.task || (e as { task?: string }).task === filter.task));
+  const all = ledgerFile ? readJsonl<LedgerEvent>(ledgerFile) : readLedger(root);
+  const events = all.filter((e) => (!filter.client || e.client === filter.client) && (!filter.task || e.task === filter.task));
   const allChecks = events.filter((e) => e.event === 'check');
   const checks = paired ? pairedOnly(allChecks, by) : allChecks;
+  const selected = new Set(checks);
   // What the readers and reviewers spent during a run belongs to that run's cost.
   const usageByRun = new Map<string, number>();
   for (const e of events) if (e.event === 'usage' && e.run && typeof e.costUsd === 'number') usageByRun.set(e.run, (usageByRun.get(e.run) ?? 0) + e.costUsd);
   const groups = new Map<string, LedgerEvent[]>();
-  for (const e of checks) {
+  for (const e of allChecks) {
     const key = armKey(e, by);
     groups.set(key, [...(groups.get(key) ?? []), e]);
   }
-  const arms: ArmSummary[] = [...groups.entries()].map(([arm, events]) => {
+  const arms: ArmSummary[] = [...groups.entries()].map(([arm, input]) => {
+    const events = input.filter((e) => selected.has(e));
     const values = events.map((e) => withUsage(e, metric, usageByRun)).filter((v): v is number => v !== null);
     return {
       arm,
       runs: events.length,
       usable: values.length,
+      stalled: input.filter((e) => e.stalled).length,
       scenarioSets: [...new Set(events.map((e) => e.scenarioSet ?? 'unknown'))],
       range: range(values),
       costMismatch: events.filter(costMismatched).length,
@@ -306,6 +313,7 @@ export function compare(root: string, by: CompareBy, metric: CompareMetric, minR
   });
   const base = { by, metric, arms, delta: null };
   if (arms.length < 2) return { ...base, verdict: 'insufficient-runs', reason: 'fewer than two arms to compare' };
+  if (arms.length > 2) return { ...base, verdict: 'inconclusive', reason: `more than two arms to compare — filter the ledger to exactly two ${by} arms` };
   const [a, b] = arms as [ArmSummary, ArmSummary];
   if (a.usable < minRuns || b.usable < minRuns) {
     return { ...base, verdict: 'insufficient-runs', reason: `fewer than ${minRuns} usable runs per arm (${a.arm} ${a.usable}, ${b.arm} ${b.usable})` };

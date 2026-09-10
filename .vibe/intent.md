@@ -1,37 +1,31 @@
-# vibe 4 · 4.1.24 — asking is a stop, a failure names its files, a claim is audited, and Codex's trust is visible
+# vibe 4 · 4.1.25 — the bench measures the whole flow: vibe scopes for itself, and a task changes hands
 
 ## Why
-4.1.23's fair bench passed its gate, and its transcripts left one number to chase and two habits to remove. On `ask`, Codex with vibe spent 49.8 turns against bare Codex's 16.2 for the same right answer. The transcripts say why, and none of it is Codex's fault alone:
-- After `vibe ask`, the `next` line said `answer inbox [q-…] — then continue`, which the model read as an instruction to itself: in the second session Codex answered its own two questions with the text from TASK.md and resolved them — four wasted calls — and in the first session it kept working after asking instead of stopping.
-- "On a failure, `vibe context <id>`" was applied to every failing check, every time: `vibe context total` and `vibe context lines` 3.4 times each per run, though the failure was a missing answer, not a missing file.
-- The bench never had Codex's hooks trusted before 21:00 KST 2026-09-09, and a real install has the same gap: Codex records a `trusted_hash` per hook in config.toml and vibe cannot write it (the format is not public), so a user who installs vibe on Codex has no gate, no hand-over and no stop verdict until Codex asks them once — and nothing tells them.
-Two ideas from Pstack (Lauren Tan) are cheap and fit: a probe before scenarios, and an audit of the model's own completion claim against the verdict.
+Five trap tasks in a row — a hidden file, a shared helper, forty modules, a reset in the path, missing terms — were solved by the bare frontier models, and `ask` fell once its fake user answered fairly. The bench has been measuring only the build stage: the `on` arm receives the judge's own intent and scenarios, so discover and scope — where vibe says what counts as success, profiles the sample, names the unknowns and binds each scenario to a check — have never been measured at all. What vibe prevents, if anything, is in that stage and in what survives between sessions and clients; what it costs there is unknown.
 
 ## What counts as success
 
-### A · Asking is a stop
-- `vibe ask` says so: its text ends with `stop here and wait — the user answers in chat (or vibe inbox answer <id> "…" as the user); do not answer it yourself`, and its JSON carries `wait: true`.
-- The `next` line distinguishes the three inbox states: a question asked and unanswered → `wait — q-… asked; the user answers; stop`; answered but not resolved → `answered q-…: "<answer>" — continue building; vibe inbox resolve q-… once used`; none open → the stage's own line. `vibe state` lists an answered question with its answer.
-- The STUCK line follows the same rule: `STUCK — q-… asked; the user answers; stop` until the answer is in, then `answered … — vibe check --all`.
+### A · An arm that scopes for itself
+- `bench/run.js --harness scoped`: the workspace carries the card, skills and hooks like `on`, but no intent. The agent starts from TASK.md with `vibe state` saying `discover`; it runs discover and scope itself — `vibe profile` on the sample, `vibe intent draft`, `vibe intent analyze` — and `tokens off` approves without a human. The judge's intent and scenarios stay hidden until judge time, as for every arm; the judge scores with its own scenarios after `draftAndApprove` replaces the agent's. The ledger line carries `harness: scoped` and `scoped: { scenarios, checks }` — how many scenarios the agent wrote and which check types.
+- The gate treats `scoped` as a third arm: per task and client, `scoped` checks not worse than `off`, and its tokens reported. `vibe ledger compare --by harness` already separates it.
 
-### B · A failure names its files; context is for what files do not say
-- A failed check's line in `vibe check` output carries `files: …` (the scenario's files, as `vibe state` names them) and the `next` line after a failure says `fix <id> — files: …; vibe context <id> only for decisions and notes`.
-- The procedure's failure phrase becomes `on a failure, fix what the check names; vibe context <id> when that is not enough`, in one source, quoted by card rule 2, the router, the build skill and README (`checks/procedure.js`).
+### B · Two tasks where scoping is the work
+- `anomaly`: a week's orders as a CSV the brief calls "this week's export"; the file holds a duplicated order id, a refund as a negative amount and one row in another currency, and a `docs/finance.md` that says how each is settled — none of it in the brief. The judge expects the settlement that follows the document. `vibe profile` names the duplicate, the negative and the mixed currency before the interview; the discover skill says anomalies come first.
+- `handover`: `session-split` on two clients — the first session on one client (cut at a third), the second on the other with no memory and only the files; the `on` arm's second session reads the state, the bare arm's reads the tree. `bench/run.js` takes `--client claude:codex` for a two-client task; the ledger sums both. Judge: the tests.
 
-### C · A claim is audited at the stop
-- The Stop hook reads the transcript's last assistant message (`transcript_path` in the payload, Claude Code and Codex alike) and, when it claims completion — done, complete, finished, passed, ready, all checks — while the state is not DONE, blocks with `unverified: "<claim>" — vibe check says <state>, <remaining> remaining`. A DONE state or a message with no claim passes; a turn already continued by this hook is let go.
-- Card rule 9 keeps "unchecked is unverified"; the hook makes it structural.
+### C · The direction rule, restated for three arms
+- A task separates when `on` or `scoped` scores higher on checks than `off` on at least one client, not worse on the others, with turns at most 2× `off`. `session-split` and `handover` hold when `on` is not worse and spends no more tokens. A task no arm separates on is named and retired, as before.
 
-### D · Codex's hook trust is visible
-- `vibe status` and `vibe setup` read `~/.codex/config.toml` `[hooks.state]` and say, per hook source vibe installed (the plugin's `codex-hooks.json`, or the settings `hooks.json`), whether Codex trusts it; when not, the line says: `open Codex once in a vibe project and accept its hooks, or pass --dangerously-bypass-hook-trust in automation`. Tests with a fake config.toml.
+### D · The rest of the bench, once more
+- Every set reruns on both clients across `off`, `on` and `scoped` where the task admits it; the gate is the release condition; `bench/claims/2026-09-09-4.1.25.md` pre-registers the rules before the run. README's opening is rewritten from the numbers, and says what scoping cost and what it caught.
 
-### E · Probe and check-first, in the scope skill
-- Before scenarios are written, an assumption about the environment or an API that the intent rests on is probed with a one-file script whose result goes into the intent's Why; a scenario that has no deterministic check gets its check script written under `checks/` first, before the code the scenario is about.
-
-### F · The bench, once more
-- Every set reruns on both clients; the gate passes; `bench/claims/2026-09-09-4.1.24.md` pre-registers the same rules plus one: Codex's turns on `ask` at most 2× bare Codex's. README's opening is rewritten only where a number moved.
-- Found on the way: the fake user answered only questions with a question mark, and bare Claude Code asks in statements ("give me the rate and discount"); answered fairly, both bare models get `ask` right — nothing to prevent, `ask` is retired under the pre-registered rule, and README withdraws the five-of-five claim.
+### G · What an outside review found, and the release's own defects
+- A review of the gate and the ledger (Codex, 2026-09-09) reproduced three: rows with an `error` were counted toward the minimum-run requirement while being excluded from the verdict, so missing evidence passed; the direction branch checked `on > off || scoped > off` first, so a scoped improvement made the `on` regression check unreachable; `compare()` cast three arms to a two-element tuple and `pairedOnly()` returned unfiltered rows when a third arm was present, so a three-arm comparison judged the first two and `--paired` stopped pairing. All three are fixed with tests, and the release gate now requires five usable runs per required arm and a finite value for every gated metric.
+- Found while measuring: `checks/suite-under-load.js` reported success when a child exited non-zero without printing a failure pattern (a child that never started); the load check now fails on the exit code itself.
+- Reported by a user: the `PreToolUse` hook blocked `vibe authorize` — the very command its own message asks for — and any command naming a path such as `.vibe/doc-reset`, because the action words matched anywhere in the string. The hook no longer gates a `vibe` command, nor an action word that is part of a longer token; `npm run reset-data`, `prisma migrate reset`, `rm -rf` and `git push` are still gated, `pg_restore` included.
+- Found by the same review: project discovery skipped its home boundary when the search started at the home, so a test whose working directory was its own fixture home climbed out and wrote records into the real `/home/ubuntu/.vibe` (and, earlier, `/tmp/.vibe`). Discovery and creation now stop at the passed home, the real OS home and the system temp root, and creating a project in any of them is refused.
+- The token policy defaults to `off` by the user's decision: a plain yes approves and the hook only warns; `irreversible` and `strict` are opt-in.
 
 ## Constraints
-- Patch version 4.1.24; files ≤ 400 lines, functions ≤ 50; card ≤ 1024 bytes; six skills ≤ 300 lines.
-- No release until the gate passes on both clients and the check is DONE.
+- Patch version 4.1.25; files ≤ 400 lines, functions ≤ 50; card ≤ 1024 bytes; six skills ≤ 300 lines.
+- No release until the gate passes and the check is DONE.

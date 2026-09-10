@@ -84,24 +84,31 @@ function scenarioView(root: string, s: Scenario & { regression?: boolean }, resu
 
 type InboxItem = StateView['inbox']['items'][number];
 
+function scenarioTargets(scenarios: ScenarioView[]): string {
+  return scenarios.map((s) => `${s.id}${s.files?.length ? ` (files: ${s.files.join(', ')})` : ''}`).join(', ');
+}
+
 /** Asking is a stop: an unanswered question means wait; an answered one carries its answer and lets the work continue. */
-function inboxLine(state: State, items: InboxItem[]): string | null {
+function inboxLine(state: State, items: InboxItem[], remaining: ScenarioView[]): string | null {
   const waiting = items.filter((q) => !q.answer);
   const answered = items.filter((q) => q.answer);
   if (waiting.length > 0) return `${state === 'STUCK' ? 'STUCK — ' : 'wait — '}${waiting.map((q) => q.id).join(', ')} asked; the user answers; stop and wait — do not answer it yourself`;
-  if (answered.length > 0) return `answered ${answered.map((q) => `${q.id}: "${q.answer}"`).join(' · ')} — ${state === 'STUCK' ? 'then vibe check --all' : 'continue building'}; vibe inbox resolve <id> once used`;
+  const resume = state === 'DONE' ? 'reply in chat, not vibe ask' : remaining.length ? `continue building ${scenarioTargets(remaining)}; then vibe check --all` : 'then vibe check --all';
+  if (answered.length > 0) return `answered ${answered.map((q) => `${q.id}: "${q.answer}"`).join(' · ')} — ${resume}; vibe inbox resolve <id> once used`;
   return null;
 }
 
-function nextLine(state: State, stage: Stage, remaining: string[], inbox: InboxItem[], size: 'small' | 'full', run: number, failed: ScenarioView[] = []): string {
-  const asked = inboxLine(state, inbox);
+function nextLine(state: State, stage: Stage, pending: ScenarioView[], inbox: InboxItem[], size: 'small' | 'full', run: number): string {
+  const asked = inboxLine(state, inbox, pending);
   if (asked) return asked;
+  const remaining = pending.map((s) => s.id);
   if (state === 'STUCK') return 'prove — STUCK: the same failure twice; vibe ask, then stop';
   if (stage === 'discover') return 'discover — the vibe-discover skill: what counts as success, at most three questions';
   if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, research, one approval message; wait for "yes"';
-  if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — with no skill and no further reads; HANDOFF.md only if the intent asks`;
+  if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — reply in chat, not vibe ask; with no skill and no further reads; HANDOFF.md only if the intent asks`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
-  if (failed.length > 0) return `fix ${failed.map((f) => `${f.id}${f.files?.length ? ` (files: ${f.files.join(', ')})` : ''}`).join(', ')} — ${PROCEDURE.failure}; then vibe check <id>`;
+  const failed = pending.filter((s) => s.last === 'fail');
+  if (failed.length > 0) return `fix ${scenarioTargets(failed)} — ${PROCEDURE.failure}; then vibe check <id>`;
   const tail = size === 'small' ? PROCEDURE.build : `${PROCEDURE.build}; ${PROCEDURE.failure}`;
   return `build ${remaining.join(', ')} ${tail}`;
 }
@@ -123,7 +130,8 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
   const regressions = listRegressions(root);
   const views: ScenarioView[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))].map((s) => scenarioView(root, s, results));
   const gated = views.filter((v) => v.type !== 'human');
-  const remaining = gated.filter((v) => v.last !== 'pass').map((v) => v.id);
+  const pending = gated.filter((v) => v.last !== 'pass');
+  const remaining = pending.map((v) => v.id);
   const allPassedOnce = gated.length > 0 && remaining.length === 0;
   const questions = openQuestions(root).map((q) => {
     const item: StateView['inbox']['items'][number] = { id: q.id, question: q.question };
@@ -146,7 +154,7 @@ export function buildStateView(root: string, cwd: string = process.cwd()): State
     root,
     state: state.state,
     stage,
-    next: nextLine(state.state, stage, remaining, questions, size, state.runs, views.filter((v) => v.last === 'fail')),
+    next: nextLine(state.state, stage, pending, questions, size, state.runs),
     size,
     intent,
     scenarios: views,

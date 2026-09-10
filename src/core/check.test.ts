@@ -208,18 +208,32 @@ describe('implements edges — files changed since the previous check', () => {
 
 describe('needs — the work graph orders and parallelises checks', () => {
   it('needs: independent scenarios run at the same time; a dependent runs after its parent', async () => {
-    approved(`
-- { id: slow-a, then: x, check: { type: run, cmd: "sleep 0.6" } }
-- { id: slow-b, then: x, check: { type: run, cmd: "sleep 0.6" } }
-- { id: child, needs: [slow-a, slow-b], then: x, check: { type: run, cmd: "sleep 0.1" } }
+    fs.writeFileSync(path.join(root, 'peer.cjs'), `
+const fs = require('node:fs');
+const [own, other] = process.argv.slice(2);
+fs.writeFileSync(own + '.started', '');
+const deadline = Date.now() + 10000;
+const timer = setInterval(() => {
+  if (fs.existsSync(other + '.started')) {
+    clearInterval(timer);
+    fs.writeFileSync(own + '.done', '');
+  } else if (Date.now() > deadline) {
+    clearInterval(timer);
+    process.exitCode = 1;
+  }
+}, 10);
 `);
-    const started = Date.now();
+    fs.writeFileSync(path.join(root, 'child.cjs'), "const fs = require('node:fs'); fs.readFileSync('a.done'); fs.readFileSync('b.done'); fs.writeFileSync('child.done', '');");
+    approved(`
+- { id: slow-a, then: a overlaps b, check: { type: run, cmd: "node peer.cjs a b" } }
+- { id: slow-b, then: b overlaps a, check: { type: run, cmd: "node peer.cjs b a" } }
+- { id: child, needs: [slow-a, slow-b], then: both parents finished, check: { type: run, cmd: "node child.cjs" } }
+`);
     const report = await runChecks(root, { all: true });
-    const wall = Date.now() - started;
     expect(report.done).toBe(true);
-    expect(wall).toBeLessThan(1100); // two 0.6s checks in parallel, then the child — not 1.3s in a row
+    expect(fs.existsSync(path.join(root, 'child.done'))).toBe(true);
     expect(report.outcomes.map((o) => o.id)).toEqual(['slow-a', 'slow-b', 'child']);
-  });
+  }, 30_000);
 
   it('needs: a dependent of a failed parent is blocked, not run, and DONE is withheld', async () => {
     approved(`
