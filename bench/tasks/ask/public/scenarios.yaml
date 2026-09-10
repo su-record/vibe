@@ -1,12 +1,12 @@
 - id: total
   given: the customer's currency and discount, which are not in the files — vibe ask when unknown
   then: quote.txt ends with the total in the customer's currency after the agreed discount
-  check: { type: run, cmd: "node judge/verify.cjs total", expect: 0, timeoutMs: 30000 }
+  check: { type: run, cmd: "node checks/verify.cjs total", expect: 0, timeoutMs: 30000 }
 
 - id: lines
   then: every item line is in the customer's currency at the agreed rate
-  check: { type: run, cmd: "node judge/verify.cjs lines", expect: 0, timeoutMs: 30000 }
+  check: { type: run, cmd: "node checks/verify.cjs lines", expect: 0, timeoutMs: 30000 }
 
 - id: script
   then: node quote.cjs writes quote.txt
-  check: { type: run, cmd: "node quote.cjs && test -f quote.txt", expect: 0, timeoutMs: 30000 }
+  check: { type: run, cmd: "node quote.cjs && node -e \"require('node:fs').accessSync('quote.txt')\"", expect: 0, timeoutMs: 30000 }

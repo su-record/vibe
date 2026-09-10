@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// Every bench judge must be checkable by the harness alone: `file` checks everywhere, `run`
-// checks only where a task's own tests are the judge (vibe-fix). No model-judged check — no
-// `review`, no `human`, no `eval` — ever lands in the bench.
+// Private artifact grades stay deterministic; public approval contracts expose no private oracle.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,11 +8,11 @@ import YAML from 'yaml';
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const tasksDir = path.join(root, 'bench/tasks');
 /** Tasks whose judge is allowed a `run` check, alongside `file` checks. Every other task: file only. */
-const RUN_ALLOWED = new Set(['vibe-fix', 'regression-trap', 'long-context', 'ambiguous-brief', 'brownfield', 'irreversible-trap', 'session-split', 'ask', 'anomaly', 'handover']);
+const RUN_ALLOWED = new Set(['vibe-fix', 'regression-trap', 'long-context', 'ambiguous-brief', 'brownfield', 'irreversible-trap', 'session-split', 'ask', 'anomaly', 'handover', 'work-opportunities']);
 const REFERENCE_TOTAL = 4500.5;
 
-function scenariosOf(task) {
-  const file = path.join(tasksDir, task, 'judge', 'scenarios.yaml');
+function scenariosOf(task, contract = 'judge') {
+  const file = path.join(tasksDir, task, contract, 'scenarios.yaml');
   return YAML.parse(fs.readFileSync(file, 'utf-8'));
 }
 
@@ -23,27 +21,29 @@ function badChecks(task, scenarios) {
   return scenarios.filter((s) => !allowed.has(s.check?.type));
 }
 
-/** The on arm reads judge/intent.md and judge/scenarios.yaml; a check runs in the workspace. Neither may name the key. */
+/** Only public/ is approved in an agent workspace. Private checks may use judge/ and key/. */
 function keyLeaks(task, scenarios) {
   const problems = [];
   for (const s of scenarios) {
     const text = JSON.stringify(s.check ?? {});
-    if (/\b(judge|key)\//.test(text)) problems.push(`${task}: scenario ${s.id} reaches into judge/ or key/ — a check may use checks/ only`);
+    if (/\b(judge|key)[/\\]|VIBE_(KEY|JUDGE)_/.test(text)) problems.push(`${task}: public scenario ${s.id} depends on private grading`);
   }
   const keyFile = path.join(tasksDir, task, 'key', 'expected.json');
   if (!fs.existsSync(keyFile)) return problems;
-  const seen = fs.readFileSync(path.join(tasksDir, task, 'judge', 'intent.md'), 'utf-8') + fs.readFileSync(path.join(tasksDir, task, 'judge', 'scenarios.yaml'), 'utf-8');
+  const seen = fs.readFileSync(path.join(tasksDir, task, 'public', 'intent.md'), 'utf-8') + fs.readFileSync(path.join(tasksDir, task, 'public', 'scenarios.yaml'), 'utf-8');
   const values = [];
   const walk = (v) => (Array.isArray(v) ? v.forEach(walk) : v && typeof v === 'object' ? Object.values(v).forEach(walk) : values.push(String(v)));
   walk(JSON.parse(fs.readFileSync(keyFile, 'utf-8')));
-  for (const v of values) if (v.length >= 3 && seen.includes(v)) problems.push(`${task}: the intent or scenarios carry the key value "${v}"`);
+  for (const v of values) if (v.length >= 3 && seen.includes(v)) problems.push(`${task}: the public intent or scenarios carry the key value "${v}"`);
   return problems;
 }
 
 function checkTask(task) {
   const scenarios = scenariosOf(task);
   const bad = badChecks(task, scenarios);
-  const problems = keyLeaks(task, scenarios);
+  const publicScenarios = scenariosOf(task, 'public');
+  const problems = keyLeaks(task, publicScenarios);
+  for (const scenario of publicScenarios) if (!['file', 'run'].includes(scenario.check?.type)) problems.push(`${task}: public scenario ${scenario.id} is not executable`);
   if (bad.length > 0) problems.push(`${task}: non-deterministic check(s) ${bad.map((s) => s.id).join(',')}`);
   return problems.length ? problems.join('; ') : null;
 }
@@ -58,4 +58,4 @@ if (problems.length > 0) {
   console.error(`judge not checkable:\n${problems.map((p) => `  ${p}`).join('\n')}`);
   process.exit(1);
 }
-console.log(`judge: ${tasks.length} tasks (${tasks.join(', ')}) · every check deterministic · no check reaches judge/ or key/ · no key value in an intent · settlement reference total ${settlementTotal}`);
+console.log(`judge: ${tasks.length} tasks (${tasks.join(', ')}) · deterministic private grades · separate executable public contracts · no key value in a public intent · settlement reference total ${settlementTotal}`);

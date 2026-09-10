@@ -1,29 +1,32 @@
-// Judge-time check: the customer's terms are supplied by the judge (VIBE_KEY_EXPECTED), not kept on disk.
 const fs = require('node:fs');
-if (!process.env.VIBE_KEY_EXPECTED) {
-  console.error('judge-time check: the customer\'s terms are supplied by the judge when it runs, not on disk — build from what the customer told you');
-  process.exit(1);
+const assert = require('node:assert/strict');
+
+function customerTerms() {
+  assert.ok(fs.existsSync('customer/answers.json'), 'customer terms are unanswered: ask for the currency, exchange rate, discount and rounding');
+  const { answers } = JSON.parse(fs.readFileSync('customer/answers.json', 'utf-8'));
+  const text = answers.map(({ answer }) => answer).join('\n');
+  const conversion = [...text.matchAll(/1 USD\s*=\s*([\d,.]+)\s+([A-Z]{3})/g)].at(-1);
+  const discount = [...text.matchAll(/(\d+(?:\.\d+)?)%\s+(?:loyalty\s+)?discount/gi)].at(-1);
+  assert.ok(conversion && discount && /round every amount to whole \w+/i.test(text), 'customer replies must settle currency, exchange rate, discount and rounding before the quote can be checked');
+  const rate = Number(conversion[1].replaceAll(',', ''));
+  const percent = Number(discount[1]);
+  assert.ok(rate > 0 && percent >= 0 && percent <= 100, 'delivered customer terms must contain a valid exchange rate and percentage discount');
+  return { rate, discount: percent / 100 };
 }
-const expected = JSON.parse(process.env.VIBE_KEY_EXPECTED);
-let text = '';
+
 try {
-  text = fs.readFileSync('quote.txt', 'utf-8');
-} catch {
-  console.error('quote.txt missing');
-  process.exit(1);
-}
-const norm = (s) => s.replace(/[₩,\s]+/g, ' ').replace(/\bKRW\b/g, '').replace(/(\d)\.0+\b/g, '$1').replace(/\s+/g, ' ').trim();
-const lines = text.trim().split('\n').map(norm);
-if (process.argv[2] === 'total') {
-  const last = lines.at(-1) ?? '';
-  if (last !== `total ${expected.total}`) {
-    console.error(`last line "${last}" is not "total ${expected.total}"`);
-    process.exit(1);
+  const terms = customerTerms();
+  const { items } = JSON.parse(fs.readFileSync('cart.json', 'utf-8'));
+  const lines = fs.readFileSync('quote.txt', 'utf-8').trim().split(/\r?\n/);
+  if (process.argv[2] === 'total') {
+    const subtotal = items.reduce((sum, item) => sum + item.qty * item.unitUsd, 0);
+    const total = Math.round(subtotal * terms.rate * (1 - terms.discount));
+    assert.equal(lines.at(-1), `total ${total}`, 'quote total must use the delivered customer rate and discount');
+  } else {
+    const expected = items.map((item) => `${item.name} x${item.qty} ${Math.round(item.qty * item.unitUsd * terms.rate)}`);
+    assert.deepEqual(lines.slice(0, -1), expected, 'quote item lines must use the delivered customer currency and whole-unit format');
   }
-} else {
-  const missing = expected.lines.map(norm).filter((l) => !lines.includes(l));
-  if (missing.length) {
-    console.error(`item lines missing or not in KRW: ${missing.join(' | ')}`);
-    process.exit(1);
-  }
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
 }
