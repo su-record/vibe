@@ -10,7 +10,10 @@ import { diagnosticFile, renderEvidence } from './evidence.js';
 
 let root: string;
 beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-evidence-')); });
-afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
+afterEach(async () => {
+  // Killing cmd.exe may leave the finite-lived fixture child holding its Windows cwd briefly.
+  await fs.promises.rm(root, { recursive: true, force: true, maxRetries: process.platform === 'win32' ? 5 : 0, retryDelay: 100 });
+});
 const hash = (b: Buffer): string => createHash('sha256').update(b).digest('hex');
 function prepare(): Buffer {
   const bytes = Buffer.from([255, 0, 27, 91, 50, 74, ...Buffer.from('PRIVATE-CANARY')]);
@@ -42,10 +45,10 @@ it('accepts an explicit nonzero exit only after a normal complete process', asyn
   expect((await runCheck({ type: 'run', cmd: 'node emit.cjs', expect: 3 }, root)).pass).toBe(true);
   fs.writeFileSync(path.join(root, 'hang.cjs'), 'setTimeout(() => {}, 1500);');
   const timed = await runCheck({ type: 'run', cmd: 'node hang.cjs', timeoutMs: 30, expect: 0 }, root);
-  expect(timed).toMatchObject({ pass: false, failureCode: 'timeout' });
+  expect(timed).toMatchObject({ pass: false, failureCode: 'timeout', cleanupUncertain: true });
   fs.writeFileSync(path.join(root, 'large.cjs'), 'process.stdout.write(Buffer.alloc(2 * 1024 * 1024));');
   const large = await runCheck({ type: 'run', cmd: 'node large.cjs' }, root);
-  expect(large).toMatchObject({ pass: false, failureCode: 'capture-overflow' });
+  expect(large).toMatchObject({ pass: false, failureCode: 'capture-overflow', cleanupUncertain: true });
   expect(large.capture?.stdout.complete).toBe(false);
 });
 it('legacy renderings hide raw output without rewriting the old evidence', () => {
