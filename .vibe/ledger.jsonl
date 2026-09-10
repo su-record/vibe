@@ -324,3 +324,5 @@
 {"at":"2026-09-10T07:42:43.621Z","event":"approve","client":"claude-code","model":null,"detail":"07f94ba8181e5eee by chat","edges":[{"type":"decided-by","from":"intent:07f94ba8181e5eee","to":"human:chat"}]}
 {"at":"2026-09-10T07:50:08.023Z","event":"draft","client":"claude-code","model":null,"detail":"725b538f61ddd177","edges":[{"type":"supersedes","from":"intent:725b538f61ddd177","to":"intent:07f94ba8181e5eee"}]}
 {"at":"2026-09-10T07:50:08.207Z","event":"approve","client":"claude-code","model":null,"detail":"725b538f61ddd177 by chat","edges":[{"type":"decided-by","from":"intent:725b538f61ddd177","to":"human:chat"}]}
+{"at":"2026-09-10T08:35:55.311Z","event":"draft","client":"claude-code","model":null,"detail":"9a28c16a67aaefa7","edges":[{"type":"supersedes","from":"intent:9a28c16a67aaefa7","to":"intent:725b538f61ddd177"}]}
+{"at":"2026-09-10T08:35:55.585Z","event":"approve","client":"claude-code","model":null,"detail":"9a28c16a67aaefa7 by chat","edges":[{"type":"decided-by","from":"intent:9a28c16a67aaefa7","to":"human:chat"}]}

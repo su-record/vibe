@@ -1,4 +1,5 @@
-# Integrated instruction 13 draft: Claude activates this contract.
+# Integrated instructions 14-16 reapproval draft, based on 725b538f61ddd177.
+# Claude activates this contract; instruction 15-guard remains unanswered and excluded.
 # Ten acceptance groups; the six existing regressions remain separate and unchanged.
 # Trust implementation order is inspect -> evidence -> handoff -> Stop.
 # Checks never start paid calls. Final cohort evidence follows integrated CI and freeze.
@@ -17,6 +18,9 @@
     their regression coverage. Source/card/skill budgets hold. No historical gate
     threshold, retired task status, or frozen benchmark row is changed. Windows
     execution remains a CI requirement; a local Linux pass is not Windows evidence.
+    Both client fixtures cover protected-file slice blocks, full-file reads,
+    source/document warnings and log/location-search/command-output exceptions
+    within the existing card and common-skill budgets.
   check:
     type: run
     cmd: >-
@@ -40,6 +44,8 @@
     unchanged artifact work reuses consent. Customer-source findings and reviewed
     verifier files stay separate approval inputs. Linked or malformed receipts fail
     closed. Existing token policies and irreversible authorization remain distinct.
+    Repair-loop changes to approved intent/scenarios or explicitly bound verifier
+    bytes still void consent. No unapproved blanket edit-confirmation guard is added.
   check:
     type: run
     cmd: node checks/check-trust.js
@@ -57,8 +63,15 @@
     retained replay diagnostics stay private outside the repository. Incomplete
     capture is explicit and cannot pass. Legitimate expected nonzero exits remain supported. Optional raw
     diagnostics are local, private, bounded and labelled untrusted. Structured
-    failures remain actionable and stable for repeat detection. Historical raw
-    evidence is unchanged on disk and safely rendered, never silently migrated.
+    failures retain a specific human-readable cause, normalized and masked to at
+    most 200 characters, with failure code, exit/signal, approved target, validated
+    path:line/log references and original-stream digests. Compiler and database
+    causes survive into diagnostic guidance, the eventual question and Stop data;
+    full output, raw absolute paths, secrets, email values and URL queries are
+    absent. A validated failure-source file leads files before its wrapper.
+    Unclassified failures remain explicit. Summaries are untrusted data and never
+    select procedure. Historical raw evidence stays unchanged on disk and is
+    safely rendered, never silently migrated.
   check:
     type: run
     cmd: node checks/check-evidence-privacy.js
@@ -68,7 +81,7 @@
 - id: honest-scenario-handoff
   needs: [evidence-minimization]
   given: An intent with independent and dependent scenarios, existing whole-intent abandonment, and retained prior evidence.
-  when: An operator records a scenario handoff, attempts invalid input, continues independent work, or explicitly reopens a scenario.
+  when: An operator records or reopens a handoff, attempts invalid input, or explicit checks repeat a failure during bounded repair.
   then: >-
     Required reason/category/next action and scenario identity are appended with
     owner or explicit unknown and available evidence references. The original
@@ -76,7 +89,14 @@
     Abandonment never counts as pass, unblocks dependents, removes a required
     denominator or permits DONE. Reopen retains the prior handoff. Existing
     whole-intent abandon remains compatible, and ordinary waiting never abandons
-    work automatically.
+    work automatically. The second same-hash failure enters STUCK diagnosis with
+    context and changed-approach guidance but no question. The fifth consecutive
+    same-hash failure asks with the masked cause, question id and only recorded
+    approaches; when none exist the notice says not recorded. A different hash
+    starts a new streak; timestamps and approach labels do not reset it. Actions
+    outside agent authority ask immediately while repairable errors do not require
+    permission. The loop never weakens approval-bound checks or automatically
+    abandons work. The unanswered 15-guard proposal is not implemented.
   check:
     type: run
     cmd: node checks/scenario-handoff.js
@@ -90,11 +110,19 @@
   then: >-
     Stop executes zero check commands or model/service calls and never chooses
     another worktree from inherited data. Diagnostics identify the actual root
-    and revision with bounded fixed messages and qualified ids. Raw output and
-    free-form reasons never become privileged instructions. Waiting and handoff
+    and revision with bounded fixed messages and qualified ids. The same masked
+    cause from evidence/state appears as quoted untrusted data in the fixed Stop
+    template. Raw output and free-form reasons never become privileged instructions.
+    At the second same-hash check failure Stop guides diagnosis and an explicit
+    check; Stop events cannot increment check-failure counts. Waiting and handoff
     permit a non-successful stop; same-state retry limits cannot be reset by
     cosmetic changes and cannot manufacture completion. Fresh explicit check
-    evidence is still required for DONE on both client integrations.
+    evidence is still required for DONE on both client integrations. Snapshot scan
+    limits cannot fail an otherwise observed explicit check, and stale execution
+    context or external verifier bytes never become fresh completion. PreToolUse
+    uses protected structural file references, blocks protected slices with exit 2,
+    warns on other source/document slices, permits whole-file and exempt reads,
+    and names full Read for Claude or cat for Codex without invoking state/checks.
   check:
     type: run
     cmd: node checks/stop-session-contract.js
@@ -144,7 +172,10 @@
     failure/review/rollback boundaries, and candidate checks. Selection follows the
     customer's objective and activates exactly one pilot. Reports are not questions,
     answered questions resume the remaining work, and unrelated external authority
-    is not inferred. Live-agent adherence is assessed by the separate cohort.
+    is not inferred. Discovery, scope and build guidance locates fewer relevant
+    files and reads them whole, using the existing reader for non-edited files
+    over 400 lines. Sliced specification content does not substitute for the full
+    contract. Live-agent adherence is assessed by the separate cohort.
   check:
     type: run
     cmd: node checks/discovery-contract.js
@@ -197,6 +228,8 @@
     expected nonzero exits and regressions remain supported. Card, common skill
     and source budgets hold. Consent/evidence migration and rollback preserve
     historical rows and the instruction 12 deterministic quality/cost targets.
+    Instructions 14-16 and per-attempt slice-read counts are included before the
+    candidate is frozen; unanswered instruction 15-guard remains excluded.
     Linux and Windows CI both identify the exact integrated candidate revision;
     missing, stale or mismatched platform evidence remains unmet and prevents
     paid execution. Readiness self-tests prove missing CI/protocol evidence
@@ -237,7 +270,11 @@
     0.80 times baseline scoped over equally weighted variants and matched complete
     attempts, without increasing mean output tokens or customer clarification/
     correction count. The report separates scope quality, human burden proxies,
-    machine time, costs, and agent/private verification. Human ratings are optional
+    machine time, costs, and agent/private verification. Per-attempt slice-read
+    block/warning counts and instrumentation availability accompany costs,
+    including failed/stalled attempts. Unknown counts are not zero; a baseline
+    without the guard is labelled accordingly. Whole-file reading and repair-loop
+    overhead do not relax the 0.80 target or other thresholds. Human ratings are optional
     diagnostics and cannot alter the release verdict. Every passing and failing
     verdict states:
     These indicators do not measure the appropriateness of problem framing or
