@@ -19,11 +19,10 @@ it('a CLI started at fixture HOME cannot read or seed the parent project', () =>
   fs.mkdirSync(records);
   const original = JSON.stringify({ ...emptyState(), sentinel: 'parent must stay unchanged' });
   fs.writeFileSync(path.join(records, 'state.json'), original);
-  const cli = fileURLToPath(new URL('../cli.ts', import.meta.url));
-  const tsx = fileURLToPath(new URL('../../node_modules/.bin/tsx', import.meta.url));
-  const run = (args: string[]) => spawnSync(tsx, [cli, ...args, '--json'], {
+  const cli = fileURLToPath(new URL('../../dist/cli.js', import.meta.url));
+  const run = (args: string[]) => spawnSync(process.execPath, [cli, ...args, '--json'], {
     cwd: fixtureHome, encoding: 'utf-8', timeout: 60_000,
-    env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '1', VIBE_NO_PLUGIN: '1' },
+    env: { ...process.env, HOME: fixtureHome, USERPROFILE: fixtureHome, VIBE_SKIP_SETUP: '1', VIBE_NO_PLUGIN: '1' },
   });
   const state = run(['state']);
   expect(state.status, state.stdout || state.stderr).toBe(0);

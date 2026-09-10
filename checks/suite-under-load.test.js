@@ -7,14 +7,22 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 let fixture;
 const script = fileURLToPath(new URL('./suite-under-load.js', import.meta.url));
-beforeEach(() => { fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-load-check-')); });
+beforeEach(() => { fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4 load check-')); });
 afterEach(() => fs.rmSync(fixture, { recursive: true, force: true }));
 
 function run(body) {
-  if (body !== undefined) fs.writeFileSync(path.join(fixture, 'npx'), `#!${process.execPath}\n${body}\n`, { mode: 0o755 });
+  if (body !== undefined) {
+    if (process.platform === 'win32') {
+      const fake = path.join(fixture, 'npx.cjs');
+      fs.writeFileSync(fake, body);
+      fs.writeFileSync(path.join(fixture, 'npx.cmd'), `@echo off\r\n"${process.execPath}" "${fake}" %*\r\n`);
+    } else fs.writeFileSync(path.join(fixture, 'npx'), `#!${process.execPath}\n${body}\n`, { mode: 0o755 });
+  }
+  // On Windows the shell is the spawned child: make that executable absent for the startup case.
+  const shell = process.platform === 'win32' && body === undefined ? { ComSpec: path.join(fixture, 'missing-cmd.exe') } : {};
   return spawnSync(process.execPath, [script], {
     cwd: fixture, encoding: 'utf-8', timeout: 10_000,
-    env: { ...process.env, PATH: fixture, VIBE_LOAD_ROUNDS: '1' },
+    env: { ...process.env, ...shell, PATH: fixture, VIBE_LOAD_ROUNDS: '1' },
   });
 }
 

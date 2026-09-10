@@ -10,10 +10,12 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { installSurfaces, projectLayout, SKILL_NAMES } from '../dist/install/global.js';
+import { shellArgs } from '../dist/core/readerSession.js';
 import { answerQuestions, stalled } from './dialogue.js';
 
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..');
 const args = process.argv.slice(2);
 const opt = (name, fallback) => {
@@ -38,7 +40,8 @@ const MAX_CAPTURE = 64 * 1024 * 1024;
 
 // vibe on PATH must be vibe 4 from this checkout, never a global vibe 3
 const shim = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe4-shim-'));
-fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${repo}/dist/cli.js" "$@"\n`, { mode: 0o755 });
+if (process.platform === 'win32') fs.writeFileSync(path.join(shim, 'vibe.cmd'), `@echo off\r\n"${process.execPath}" "${path.join(repo, 'dist/cli.js')}" %*\r\n`);
+else fs.writeFileSync(path.join(shim, 'vibe'), `#!/bin/sh\nexec node "${repo}/dist/cli.js" "$@"\n`, { mode: 0o755 });
 // The arms differ only by what the workspace carries. Both run under an isolated home: the operator's
 // ~/.claude plugin and ~/.agents marketplace (vibe itself, on this machine) must not reach either arm —
 // an `off` run that can call `vibe regress record` is not an `off` run. Credentials are copied in.
@@ -50,7 +53,7 @@ for (const [dir, files] of [['.claude', ['.credentials.json']], ['.codex', ['aut
     if (fs.existsSync(from)) fs.copyFileSync(from, path.join(isoHome, dir, f));
   }
 }
-const env = { ...process.env, PATH: `${shim}:${process.env.PATH}`, VIBE_SKIP_SETUP: '1', HOME: isoHome, USERPROFILE: isoHome, CODEX_HOME: path.join(isoHome, '.codex'), VIBE_HOME_DIR: isoHome };
+const env = { ...process.env, PATH: `${shim}${path.delimiter}${process.env.PATH}`, VIBE_SKIP_SETUP: '1', HOME: isoHome, USERPROFILE: isoHome, CODEX_HOME: path.join(isoHome, '.codex'), VIBE_HOME_DIR: isoHome };
 delete env.CLAUDECODE;
 delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
@@ -191,7 +194,7 @@ function recomputedCost(tokens) {
  * gets genuine concurrency: several long agent runs progressing side by side, not queued behind each other. */
 function spawnAsync(cmd, cmdArgs, { cwd, input, timeoutMs = AGENT_TIMEOUT_MS } = {}) {
   return new Promise((resolve) => {
-    const child = spawn(cmd, cmdArgs, { cwd, env });
+    const child = spawn(cmd, shellArgs(cmdArgs), { cwd, env, shell: process.platform === 'win32' });
     let out = '';
     const capture = (chunk) => {
       if (out.length < MAX_CAPTURE) out += chunk.toString('utf-8');
@@ -240,10 +243,11 @@ function claudeResult(stdout) {
 async function runClaude(ws, session = {}) {
   const prompt = fs.readFileSync(path.join(ws, 'TASK.md'), 'utf-8');
   // user settings stay out of both arms; the `on` arm keeps the workspace's own (.claude/settings.local.json, skills)
-  const a = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions', '--max-turns', String(session.maxTurns ?? maxTurns), '--setting-sources', harness === 'off' ? '' : 'project,local'];
+  // cmd.exe cannot carry a multiline prompt in an argument; pass it on stdin on Windows.
+  const a = ['-p', ...(process.platform === 'win32' ? [] : [prompt]), '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions', '--max-turns', String(session.maxTurns ?? maxTurns), '--setting-sources', harness === 'off' ? '' : 'project,local'];
   if (model) a.push('--model', model);
   const started = Date.now();
-  const r = await spawnAsync('claude', a, { cwd: ws });
+  const r = await spawnAsync('claude', a, { cwd: ws, ...(process.platform === 'win32' ? { input: prompt } : {}) });
   const { result, assistantTurns } = claudeResult(r.stdout);
   const out = result ?? {};
   const error = out.is_error && typeof out.result === 'string' ? out.result.slice(0, 160) : /rate limit|usage limit|overloaded|credit balance/i.test(r.stdout) && !out.usage ? 'client error: limit or overload' : null;
