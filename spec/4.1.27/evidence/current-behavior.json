@@ -1,0 +1,21 @@
+{
+  "candidateRevision": "96e4ea7a9671f3cc8d3021b47affd61d75cff62d",
+  "kind": "current-behavior-characterization",
+  "releaseAcceptance": false,
+  "paidCohortCalls": 0,
+  "copiedApproval": {
+    "displayedState": "APPROVED",
+    "executedWithoutDestinationApproval": true,
+    "checkExitWasZero": true
+  },
+  "outputPersistence": {
+    "syntheticSuccessCanaryInEvidence": true
+  },
+  "existingAbandon": {
+    "cliState": "ABANDONED",
+    "state": "ABANDONED",
+    "reasonRetained": true,
+    "ledgerEvent": "abandon",
+    "lastResultNotCleared": true
+  }
+}
