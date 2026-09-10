@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Notification hook — it never judges the work; it gates one thing: an irreversible command without a token.
+ * Notification hook — execution consent and file-reading guidance, never the work's verdict.
  *
  *   post  PostToolUse(Edit|Write): runs `vibe state --json` and tells the model about a voided DONE or open inbox items.
  *   pre   PreToolUse(Bash): an irreversible command with no recent authorize record is blocked (exit 2) under the
  *         strict and irreversible token policies, and only warned about under off.
+ *         Partial Bash reads of protected files are blocked; other source/document slices are warned.
  *         PreToolUse(Read): when the file is over READ_ADVISE_LINES, tells the model that `vibe read <file> --ask`
  *         lets a low-reasoning model read it — advice only, the read goes ahead.
  *
@@ -17,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sessionRuntime from './session-state.cjs';
 import sessionFiles from './session-files.cjs';
+import sliceRuntime from './slice-guard.cjs';
 
 const mode = process.argv[2] || 'post';
 const asPlugin = process.argv.includes('--plugin');
@@ -44,6 +46,11 @@ function readPayload() {
 function structuralSession(payload) {
   const view = sessionRuntime.sessionStatus(payload);
   return sessionRuntime.message(view, view.status === 'bound' ? 'session status only; run vibe state for the procedure' : `${view.status}; use explicit vibe session bind in the intended worktree`);
+}
+function sliceClient() {
+  const declared = process.env.VIBE_CLIENT;
+  if (declared) return ['codex', 'chatgpt'].includes(declared) ? 'codex' : 'claude';
+  return process.env.CODEX_THREAD_ID && !process.env.CLAUDE_SESSION_ID ? 'codex' : 'claude';
 }
 
 function emitContext(text) {
@@ -86,7 +93,7 @@ function recentAuthorize(action) {
   }
 }
 
-if (!['stop', 'session'].includes(mode) && !fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
+if (!['stop', 'session', 'pre'].includes(mode) && !fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
 
 function tokenPolicy() {
   try {
@@ -116,7 +123,6 @@ function adviseRead(payload) {
 }
 
 const cli = path.join(here, '..', 'dist', 'cli.js');
-const vibeCommand = fs.existsSync(cli) ? [process.execPath, cli] : ['vibe'];
 
 // Stop never resolves a PATH command or reads a transcript as instructions.
 if (mode === 'stop') {
@@ -131,10 +137,15 @@ if (mode === 'session') {
 if (mode === 'pre') {
   const payload = readPayload();
   if (payload.tool_name === 'Read') {
-    adviseRead(payload);
+    if (fs.existsSync(path.join(root, '.vibe'))) adviseRead(payload);
     process.exit(0);
   }
   const command = String((payload.tool_input && payload.tool_input.command) || '');
+  const cwd = payload.tool_input?.cwd ?? payload.tool_input?.workdir ?? payload.cwd ?? process.cwd();
+  const slice = sliceRuntime.sliceGuard(root, command, sliceClient(), cwd);
+  if (slice.decision === 'block') { process.stderr.write(`${slice.message}\n`); process.exit(2); }
+  if (slice.decision === 'warn') emitContext(slice.message);
+  if (!fs.existsSync(path.join(root, '.vibe'))) process.exit(0);
   // Every segment is judged — `echo x && git push`, `ls; rm -rf build`, `cat x | git push` carry the action in a later one
   // Vibe gates its own execution; its approval and inbox commands must remain reachable.
   const segments = command.split(/&&|\|\||;|\||\n/).map((s) => s.trim()).filter((s) => s && !READS_ONLY.test(s) && !/^vibe(?:\s|$)/.test(s));
