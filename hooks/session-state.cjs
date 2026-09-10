@@ -25,9 +25,14 @@ function bindSession(root, id, scenarios = []) {
   root = fs.realpathSync(root);
   identity({ session_id: id });
   if (scenarios.length > 1000 || scenarios.some(s => !ID.test(s.id) || (s.needs ?? []).some(id => !ID.test(id)))) throw new Error('invalid session scenarios');
+  const guard = readPrivate(root, name('guard', id), 4096);
+  if (guard !== null) {
+    const existing = JSON.parse(guard);
+    if (!Number.isInteger(existing.count) || existing.count < 0 || existing.count > 3 || (existing.key !== null && !/^[a-f0-9]{64}$/.test(existing.key))) throw new Error('invalid session guard');
+  }
   const binding = { schemaVersion: 1, root, id, revision: revision(root), scenarios: scenarios.map(s => ({ id: s.id, needs: s.needs ?? [] })) };
   writePrivate(root, name('session', id), JSON.stringify(binding));
-  writePrivate(root, name('guard', id), JSON.stringify({ key: null, count: 0 }));
+  if (guard === null) writePrivate(root, name('guard', id), JSON.stringify({ key: null, count: 0 }));
   return { status: 'bound', ...binding };
 }
 function workflow(root) {
