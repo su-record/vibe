@@ -7,7 +7,7 @@ import { requireCI, checkMigrationDocument, readinessCause } from '../bench/fde/
 import { capture, runClient } from '../bench/fde/clients.js';
 import { recordSession } from '../bench/fde/accounting.js';
 import { attemptEvidence, readLines } from '../bench/fde/evidence.js';
-import { ensurePrivateDirectory, auditDiagnostics, windowsAclError, windowsAclEnvironment, writeDiagnostic } from '../bench/fde/private-artifacts.js';
+import { ensurePrivateDirectory, diagnosticFile, openPrivateFile, auditDiagnostics, windowsAclError, windowsAclEnvironment, writeDiagnostic } from '../bench/fde/private-artifacts.js';
 import { contentSummary } from '../bench/fde/privacy.js';
 import { captureCases } from './check-trust-capture-self-test.js';
 
@@ -35,7 +35,7 @@ function aclFailureCases() {
   for (const [index, operation] of operations.entries()) for (const [category, exception] of exceptions.entries()) {
     cases.push([{ status: (index + 10) * 10 + category }, `${operation}_FAILED_${exception}`]);
   }
-  for (const phase of ['CREATE_DIRECTORY', 'VERIFY_DIRECTORY', 'VERIFY_FILE']) for (const [fields, reason] of cases) {
+  for (const phase of ['CREATE_DIRECTORY', 'CREATE_FILE', 'VERIFY_DIRECTORY', 'VERIFY_FILE']) for (const [fields, reason] of cases) {
     const original = Object.assign(new Error(`${marker}: ${privatePath}`), fields, { stderr: Buffer.from(marker), path: privatePath });
     const failure = windowsAclError(original, phase);
     const expected = `PRIVATE_ACL_${phase}_${reason}`;
@@ -77,6 +77,14 @@ function privateFileCase(diagnostics) {
   assert.equal(reference.private, true); assert.equal(reference.complete, true);
   assert.equal(reference.bytes, expected.bytes); assert.equal(reference.sha256, expected.sha256);
   assert.deepEqual(JSON.parse(fs.readFileSync(reference.path, 'utf8')), payload);
+  const existing = diagnosticFile(diagnostics, 'existing-file-contract', 'transport');
+  fs.writeFileSync(existing, marker, { flag: 'wx', mode: 0o644 });
+  const before = fs.statSync(existing);
+  assert.throws(() => openPrivateFile(existing), { code: 'EEXIST' });
+  assert.throws(() => writeDiagnostic(diagnostics, 'existing-file-contract', 'transport', { changed: true }), { code: 'EEXIST' });
+  assert.equal(fs.readFileSync(existing, 'utf8'), marker);
+  const after = fs.statSync(existing);
+  for (const field of ['mode', 'uid', 'gid', 'size', 'mtimeMs', 'ctimeMs']) assert.equal(after[field], before[field], `existing file ${field} stays unchanged`);
 }
 
 async function privacyCase(root, enabled) {
