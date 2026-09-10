@@ -3,7 +3,8 @@
 key/requirements.json is the frozen 23-unit requirement map. Mechanical coverage is a diagnostic
 measurement of structured observations, executable checks and behavior. It is not a human verdict
 on problem framing, semantic requirement coverage, ranking rationale or unsupported prose.
-Those dimensions require the separate arm-blinded human review, with raw ratings and reasons.
+Those dimensions are outside the release indicators. Optional arm-blinded human diagnosis can
+retain raw ratings and reasons, but its absence or verdict never changes execution or release.
 
 Grade frozen scope evidence and check discrimination against private valid implementations
 and single-defect implementations. Submitted implementation failures do not lower scope
@@ -11,7 +12,7 @@ coverage. Source damage after approval and a missing final OPERATOR.md belong to
 pilot artifact metrics; source validity and promised handoff in the frozen agreement remain
 independent. Passing the artifact checks cannot repair a deficient frozen agreement.
 
-Calibrate on key/development/evidence and development reference/broken outputs. These have
+Develop deterministic checks on key/development/evidence and development reference/broken outputs. These have
 different stable IDs and dates from scored evidence/. grade(..., {fixture:"development"}) labels
 that result; development results must never enter the scored cohort. key/data-seeds.json names
 the seeds. The private fixture manifest pins both evidence sets and excludes its own file.
@@ -23,6 +24,8 @@ Score each requirement once, regardless of scenario count or wording. Distinct s
 opportunities and unsupported assertions are separate metrics. Accept different candidate IDs,
 scenario decompositions and implementations when the same evidence and agreed behavior hold.
 Refer defensible unlisted problem framings to human review; do not automatically discard them.
-Double-review the protocol's fixed sample and adjudicate disagreements before the release gate.
+Optional diagnostic studies can choose a sample and retain disagreements separately.
 Missing reviews remain missing. Deterministic assertions cover structured fields only; zero
 detected structured false claims does not certify the absence of unsupported prose.
+
+These indicators do not measure the appropriateness of problem framing or tradeoff judgment.

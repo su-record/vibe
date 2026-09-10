@@ -10,6 +10,11 @@ export const CLIENTS = ['claude', 'codex'];
 export const VARIANTS = ['status-first', 'followup-first'];
 export const BASELINE = '2d2af57';
 export const TARGETS = { scopeFloor: 0.9, groundedFamilies: 3, weightedInputRatio: 0.8, criticalOmissions: 0, unsupportedAssertions: 0 };
+export const ASSESSMENT_LIMITATION = 'These indicators do not measure the appropriateness of problem framing or tradeoff judgment.';
+export const ASSESSMENT = { kind: 'deterministic', indicators: ['mechanicalCoverage', 'criticalOmissions', 'unsupportedAssertions', 'groundedOpportunities', 'pilot', 'sourcePreserved'],
+  humanReview: 'optional-diagnostic', assertions: 'structured-only', limitation: ASSESSMENT_LIMITATION };
+export const SETTINGS = { claude: { model: 'claude-opus-5', effort: null }, codex: { model: 'gpt-5.6-terra', effort: 'xhigh' } };
+export const BUDGET = { rawTokens: 60000000, usd: null, wallMs: 86400000, unknownMoneyAccepted: true };
 
 export function clientVersions() {
   return Object.fromEntries(CLIENTS.map((client) => {
@@ -48,7 +53,7 @@ export function schedule() {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     for (const client of CLIENTS) for (const variant of VARIANTS) {
       const ordered = ARMS.map((_, offset) => ARMS[(offset + attempt) % ARMS.length]);
-      for (const arm of ordered) rows.push({ id: `${client}/${variant}/${arm}/${attempt + 1}`, client, variant, arm, attempt: attempt + 1, doubleReview: attempt === 0 });
+      for (const arm of ordered) rows.push({ id: `${client}/${variant}/${arm}/${attempt + 1}`, client, variant, arm, attempt: attempt + 1 });
     }
   }
   return rows;
@@ -89,9 +94,9 @@ export function protocolDraft(repo, task, sourceSettings) {
     settings: Object.fromEntries(CLIENTS.map((client) => [client, { model: sourceSettings[client].model.value, effort: sourceSettings[client].effort.value,
       sources: sourceSettings[client], maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
     limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1, sessionMs: 900000, attemptMs: 3600000, concurrencyPerClient: 1 },
-    budget: { rawTokens: null, usd: null, wallMs: null, unknownMoneyAccepted: false, note: 'Accounting is observed at client-result boundaries. One in-flight invocation may overshoot; missing usage stops further calls.' },
-    prices: {}, humanReview: { rubricHash: fileHash(path.join(task, 'key/requirements.json')), doubleReview: 'attempt-1-every-cell', calibration: null },
-    task: 'work-opportunities', limitations: ['Synthetic discovery case; no ROI, human-time-saving, broad prevention or general FDE claim.'],
+    budget: { ...BUDGET, note: 'Accounting is observed at client-result boundaries. One in-flight invocation may overshoot; missing usage stops further calls.' },
+    prices: {}, assessment: ASSESSMENT,
+    task: 'work-opportunities', limitations: [ASSESSMENT_LIMITATION, 'Synthetic discovery case; no ROI, human-time-saving, broad prevention or general FDE claim.'],
   };
 }
 
@@ -99,13 +104,18 @@ export function protocolErrors(protocol, { frozen = true } = {}) {
   const errors = [];
   const positive = (number) => Number.isFinite(number) && number > 0;
   if (protocol.id !== ID) errors.push('wrong protocol id');
-  if (JSON.stringify(protocol.schedule) !== JSON.stringify(schedule())) errors.push('the 60 planned cells/order/reviews changed');
+  const planned = protocol.schedule?.map(({ id, client, variant, arm, attempt }) => ({ id, client, variant, arm, attempt }));
+  if (JSON.stringify(planned) !== JSON.stringify(schedule())) errors.push('the 60 planned cells/order changed');
   if (JSON.stringify(protocol.targets) !== JSON.stringify(TARGETS)) errors.push('release targets changed');
+  if (JSON.stringify(protocol.assessment) !== JSON.stringify(ASSESSMENT)) errors.push('deterministic assessment policy changed or missing');
   if (!protocol.baselineRevision?.startsWith(BASELINE)) errors.push('baseline must be pinned 4.1.25');
   if (!protocol.limits || protocol.limits.clarificationRounds !== 2 || protocol.limits.scopeCorrections !== 1 || protocol.limits.concurrencyPerClient !== 1) errors.push('customer or concurrency protocol changed');
   for (const client of CLIENTS) {
     const setting = protocol.settings?.[client];
-    if (!setting?.model || !setting?.sources?.model?.source) errors.push(`${client}: missing model/settings provenance`);
+    for (const key of ['model', 'effort']) {
+      if (setting?.[key] !== SETTINGS[client][key]) errors.push(`${client}: ${key} differs from the approved setting`);
+      if (!setting?.sources?.[key]?.source || setting.sources[key].value !== setting[key]) errors.push(`${client}: missing or mismatched ${key} provenance`);
+    }
     if (client === 'claude' && (!Number.isInteger(setting?.maxTurns) || setting.maxTurns < 1)) errors.push('claude: missing turn cap');
     if (client === 'codex' && (setting?.maxTurns !== null || setting?.turnLimit !== 'unavailable-use-shared-time-limit')) errors.push('codex: unavailable turn cap must be explicit; shared wall limits still apply');
   }
@@ -115,10 +125,8 @@ export function protocolErrors(protocol, { frozen = true } = {}) {
     if (protocol.status !== 'frozen' || !/^[a-f0-9]{40}$/.test(protocol.candidateRevision ?? '')) errors.push('protocol/candidate not frozen');
     for (const field of ['runner', 'fixture', 'rubric']) if (!/^[a-f0-9]{64}$/.test(protocol.pins?.[field] ?? '')) errors.push(`missing ${field} hash`);
     for (const arm of ['baseline', 'candidate']) if (!/^[a-f0-9]{64}$/.test(protocol.products?.[arm] ?? '')) errors.push(`missing ${arm} executable hash`);
-    if (!positive(protocol.budget?.rawTokens) || !positive(protocol.budget?.wallMs)) errors.push('token and wall budget required');
-    if (!positive(protocol.budget?.usd) && !protocol.budget?.unknownMoneyAccepted) errors.push('currency budget or explicit unknown-money acceptance required');
+    for (const [key, value] of Object.entries(BUDGET)) if (protocol.budget?.[key] !== value) errors.push(`${key}: approved resource budget changed or missing`);
     for (const [model, price] of Object.entries(protocol.prices ?? {})) if (Object.values(price).some((n) => !Number.isFinite(n) || n < 0)) errors.push(`${model}: invalid configured price`);
-    if (!protocol.humanReview?.calibration?.artifact || protocol.humanReview.rubricHash !== protocol.pins?.rubric) errors.push('human rubric calibration missing or mismatched');
   }
   return errors;
 }
@@ -127,6 +135,4 @@ export function authorize(protocol, approval) {
   const errors = protocolErrors(protocol);
   if (!approval?.approvedBy || !approval?.approvedAt || approval.protocolHash !== digest(protocol) || approval.action !== 'run-60-planned-attempts') errors.push('separate human authorization for this exact protocol is missing');
   if (errors.length) throw new Error(errors.join('; '));
-  const calibration = protocol.humanReview.calibration;
-  if (!calibration.sha256 || !fs.existsSync(calibration.artifact) || fileHash(calibration.artifact) !== calibration.sha256) throw new Error('human calibration artifact missing or changed before scored execution');
 }
