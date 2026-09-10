@@ -7,6 +7,7 @@ import { answer, ask, resolve } from './inbox.js';
 import { readState, writeState } from './state.js';
 import { treeHash } from './tree.js';
 import { buildStateView } from './view.js';
+import { runChecks } from './check.js';
 
 let root: string;
 beforeEach(() => {
@@ -17,6 +18,17 @@ afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
 const THREE = '- { id: a, then: x, check: { type: run, cmd: "true" } }\n- { id: b, then: y, check: { type: file, path: out.txt, exists: true } }\n- { id: c, then: z, needs: [a], check: { type: run, cmd: "true" } }\n';
 
 describe('vibe state — the next line is the procedure', () => {
+  it('an irreversible scenario awaiting authorization is not described as handed off', async () => {
+    draft(root, '# authorization', '- { id: deployment, then: deployed, irreversible: deploy, check: { type: run, cmd: "exit 0" } }');
+    approve(root, null);
+    const report = await runChecks(root, { all: true });
+    expect(report.outcomes[0]?.status).toBe('blocked');
+    const view = buildStateView(root, root);
+    expect(view.next).not.toMatch(/^handoff|reopen/);
+    expect(view.next).toContain('deployment');
+    expect(view.notices).toContain('deployment mutates (deploy) — not run by check --all without vibe authorize --action deploy');
+  });
+
   it('next: names discover, approve, build then check --all, check --all, answer inbox, prove on STUCK and report on DONE; size is small or full', () => {
     expect(buildStateView(root, root).next).toMatch(/^discover/);
     draft(root, '# t\n\n## Why\nx\n', THREE);
