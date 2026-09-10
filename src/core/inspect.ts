@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import { denied } from './errors.js';
 import { vibePath } from './paths.js';
 import { parseScenarios, type Scenario, type Rejection } from './scenarios.js';
-import { readSourceBasis } from './source-basis.js';
-import { roleChoice } from './config.js';
+import { configFromRaw, roleChoice } from './config.js';
+import { readerHome, REVIEWER_DRIVER, withChoice } from './readerSession.js';
 
 export const hashBytes = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex');
 export const fingerprint = (value: unknown): string => hashBytes(JSON.stringify(value));
@@ -56,9 +56,26 @@ function verifier(root: string, file: string): { file: string; sha256: string | 
   catch { return { file: path.resolve(root, file), sha256: null, error: 'verifier must be a readable regular file within the byte limit' }; }
 }
 
-function planCheck(root: string, scenario: Scenario) {
+function resolvedDirectory(directory: string): string {
+  let existing = path.resolve(directory);
+  const suffix: string[] = [];
+  while (!fs.existsSync(existing)) { suffix.unshift(path.basename(existing)); existing = path.dirname(existing); }
+  return path.join(fs.realpathSync(existing), ...suffix);
+}
+
+function inspectedReviewer(root: string) {
+  const file = vibePath(root, 'config.json');
+  const value: unknown = fs.lstatSync(file, { throwIfNoEntry: false }) ? JSON.parse(boundedFile(file).toString('utf8')) : {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw denied('invalid project configuration in execution preview');
+  const choice = roleChoice(root, 'reviewer', configFromRaw(value));
+  const command = process.env['VIBE_REVIEW_CMD'] || null;
+  return { choice, driver: withChoice(REVIEWER_DRIVER, choice), command, client: process.env['VIBE_REVIEW_CLIENT'] ?? null,
+    cwd: command ? root : resolvedDirectory(readerHome()) };
+}
+
+function planCheck(root: string, scenario: Scenario, reviewer: ReturnType<typeof inspectedReviewer>) {
   const check = scenario.check;
-  const cwd = fs.realpathSync(check.type === 'run' && check.cwd ? path.resolve(root, check.cwd) : root);
+  const cwd = check.type === 'review' ? reviewer.cwd : fs.realpathSync(check.type === 'run' && check.cwd ? path.resolve(root, check.cwd) : root);
   const declared = scenario.verifiers ?? [];
   return { id: scenario.id, needs: scenario.needs ?? [], check, cwd,
     timeoutMs: 'timeoutMs' in check ? check.timeoutMs ?? (check.type === 'http' ? 30_000 : check.type === 'eval' ? 60_000 : 600_000) : null,
@@ -87,12 +104,13 @@ export function executionPlan(root: string) {
   const scenarios = [...contract.scenarios, ...inspectedRegressions(canonical)];
   const definitions = boundedFile(vibePath(canonical, 'scenarios.yaml')).toString('utf8');
   const sourceFile = vibePath(canonical, 'source-basis.json');
-  if (fs.lstatSync(sourceFile, { throwIfNoEntry: false })) boundedFile(sourceFile);
-  return { schemaVersion: 1, project: canonical, contract: fingerprint({ intent: contract.intent, definitions, sources: readSourceBasis(canonical) }),
+  const sources: unknown = fs.lstatSync(sourceFile, { throwIfNoEntry: false }) ? JSON.parse(boundedFile(sourceFile).toString('utf8')) : [];
+  if (!Array.isArray(sources) || sources.some((source) => !source || typeof source.path !== 'string' || !/^[a-f0-9]{64}$/.test(source.sha256))) throw denied('invalid source basis in execution preview');
+  const reviewer = inspectedReviewer(canonical);
+  return { schemaVersion: 1, project: canonical, contract: fingerprint({ intent: contract.intent, definitions, sources }),
     platform: process.platform, shell: executionShell(), node: fs.realpathSync(process.execPath),
     path: process.env['PATH'] ?? '', pathExt: process.env['PATHEXT'] ?? '',
-    reviewer: { choice: roleChoice(canonical, 'reviewer'), command: process.env['VIBE_REVIEW_CMD'] ?? null, client: process.env['VIBE_REVIEW_CLIENT'] ?? null },
-    checks: scenarios.map((scenario) => planCheck(canonical, scenario)) };
+    reviewer, checks: scenarios.map((scenario) => planCheck(canonical, scenario, reviewer)) };
 }
 
 export type ExecutionPlan = ReturnType<typeof executionPlan>;

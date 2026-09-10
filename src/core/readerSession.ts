@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ensureDir, readJson, writeJson } from './store.js';
-import { checkProcess } from './check-process.js';
+import { checkProcess, type OutputObserver } from './check-process.js';
 import type { CaptureEvidence } from './output-capture.js';
 
 /**
@@ -94,10 +94,10 @@ interface Spawned {
 }
 
 /** Spawn a reader in the neutral directory with the prompt on stdin. `args` null means a shell command string. */
-export async function spawnReader(cmd: string, args: string[] | null, stdin: string, cwd: string, timeoutMs: number): Promise<Spawned> {
+export async function spawnReader(cmd: string, args: string[] | null, stdin: string, cwd: string, timeoutMs: number, onOutput?: OutputObserver): Promise<Spawned> {
   const env: NodeJS.ProcessEnv = { ...process.env };
   delete env['CLAUDECODE'];
-  const result = await checkProcess(cmd, { cwd, timeoutMs, input: stdin, env, ...(args ? { args: shellArgs(args) } : {}) });
+  const result = await checkProcess(cmd, { cwd, timeoutMs, input: stdin, env, ...(onOutput ? { onOutput } : {}), ...(args ? { args: shellArgs(args) } : {}) });
   return { out: result.raw.stdout.toString('utf8'), exit: result.exit, killed: result.failureCode !== null,
     failureCode: result.failureCode, raw: result.raw, capture: result.capture };
 }

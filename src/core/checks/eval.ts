@@ -46,10 +46,8 @@ export async function evalCheck(check: EvalCheck, root: string): Promise<CheckRe
   let matched = 0;
   for (const c of cases) {
     const input = typeof c.input === 'string' ? c.input : JSON.stringify(c.input);
-    const processResult = await checkProcess(check.runner, { cwd: root, input, timeoutMs: check.timeoutMs ?? DEFAULT_CASE_TIMEOUT_MS });
-    const stdoutOverflow = streams.add('stdout', processResult.raw.stdout);
-    const overflow = streams.add('stderr', processResult.raw.stderr) || stdoutOverflow;
-    if (processResult.failureCode || processResult.exit !== 0 || overflow) return { ...streams.finish(false), pass: false, exit: processResult.exit, ms: Date.now() - started, tail: '', failureCode: processResult.failureCode ?? (overflow ? 'capture-overflow' : 'runner-exit'), cleanupUncertain: processResult.cleanupUncertain };
+    const processResult = await checkProcess(check.runner, { cwd: root, input, timeoutMs: check.timeoutMs ?? DEFAULT_CASE_TIMEOUT_MS, onOutput: streams.add });
+    if (processResult.failureCode || processResult.exit !== 0) return { ...streams.finish(processResult.failureCode === null), pass: false, exit: processResult.exit, ms: Date.now() - started, tail: '', failureCode: processResult.failureCode ?? 'runner-exit', cleanupUncertain: processResult.cleanupUncertain };
     const out = processResult.raw.stdout.toString('utf8');
     if (matches(out, c.expected)) matched += 1;
     else if (mismatches.length < MAX_MISMATCHES_SHOWN) mismatches.push(`${c.id}: got ${JSON.stringify(out.trim()).slice(0, 80)} · expected ${JSON.stringify(c.expected).slice(0, 80)}`);

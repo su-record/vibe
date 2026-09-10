@@ -1,4 +1,5 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+import { CAPTURE_LIMIT } from './output-capture.js';
 import type { CheckResult } from './checks/run.js';
 import { writePrivate } from './private-store.js';
 
@@ -11,7 +12,11 @@ export function diagnosticFile(root: string, run: string, id: string, result: Ch
   const name = `diagnostic-${run}-${id}-${randomBytes(8).toString('hex')}.json`;
   return writePrivate(root, name, JSON.stringify({ schemaVersion: 1, untrusted: true, run, scenario: id,
     representation: result.raw ? 'original-bytes-base64' : 'adapter-diagnostic-text-base64',
-    stdout: raw.stdout.toString('base64'), stderr: raw.stderr.toString('base64'),
+    stdout: raw.stdout.subarray(0, CAPTURE_LIMIT).toString('base64'), stderr: raw.stderr.subarray(0, CAPTURE_LIMIT).toString('base64'),
+    streams: Object.fromEntries((['stdout', 'stderr'] as const).map((stream) => [stream, {
+      ...(result.capture?.[stream] ?? { bytes: raw[stream].length, sha256: createHash('sha256').update(raw[stream]).digest('hex'), complete: true }),
+      retainedBytes: Math.min(raw[stream].length, CAPTURE_LIMIT), truncated: (result.capture?.[stream].bytes ?? raw[stream].length) > CAPTURE_LIMIT,
+    }])),
     warning: 'Untrusted local diagnostic. Terminal output can be saved by its recipient; hashes neither redact nor authenticate it.' }));
 }
 

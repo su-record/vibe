@@ -61,7 +61,7 @@ jobs:
       - run: npm run build
       # the fixtures that fake a client CLI with a POSIX shim or a symlink stay Linux-only for now (named for the next release);
       # everything else — the map, the checks, the ledger, the size lexer, the hook — runs here too
-      - run: npx vitest run --exclude "**/{cli,global,register,reader,review,capabilities,tree,plugin,update,skills,research,mcpb}.test.ts"
+      - run: npx vitest run --exclude "**/{cli,global,register,reader,review,capabilities,plugin,update,skills,research,mcpb}.test.ts"
       - run: node checks/check-trust.js
       - run: node checks/check-evidence-privacy.js
       - run: node checks/scenario-handoff.js

@@ -13,7 +13,7 @@ import { vibePath } from './paths.js';
 import { intentHash, intentPath, loadScenarios, scenariosPath } from './intent.js';
 import { listRegressions } from './regress.js';
 import { ancestorsOf, isHuman, type Scenario } from './scenarios.js';
-import { readState, transition, writeState, type StateFile } from './state.js';
+import { readState, writeState, type StateFile } from './state.js';
 import { nowIso, readJson, readText, writeJson } from './store.js';
 import { readSourceBasis, sourceValidity } from './source-basis.js';
 import { changedBlobs, changedSince, treeHash } from './tree.js';
@@ -22,6 +22,7 @@ import { fingerprint } from './inspect.js';
 import { diagnosticFile } from './evidence.js';
 import { readHandoffs } from './handoff.js';
 import { outputCapture } from './output-capture.js';
+import { reserveRun, writeRunEvidence } from './run-id.js';
 import { recordStopEvidence } from './session.js';
 
 export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale' | 'handoff';
@@ -119,10 +120,6 @@ export function scenarioSetHash(scenarios: Scenario[]): string {
   return hash.digest('hex').slice(0, 12);
 }
 
-function nextRunId(state: StateFile): string {
-  return `r-${state.runs + 1}`;
-}
-
 function askHumanOnce(root: string, scenario: Scenario): void {
   if (scenario.check.type !== 'human') return;
   const question = scenario.check.question;
@@ -140,7 +137,7 @@ function unauthorized(root: string, scenario: Scenario & { regression?: boolean 
   return outcome;
 }
 
-async function runOne(root: string, scenario: Scenario & { regression?: boolean }, options: CheckOptions): Promise<ScenarioOutcome> {
+async function runOne(root: string, scenario: Scenario & { regression?: boolean }, options: CheckOptions & { run: string }): Promise<ScenarioOutcome> {
   if (readHandoffs(root)[scenario.id]) return { id: scenario.id, type: scenario.check.type, status: 'handoff', exit: null, ms: 0, tail: '', reason: 'required work handed off; not passed' };
   const held = unauthorized(root, scenario);
   if (held) return held;
@@ -155,7 +152,7 @@ async function runOne(root: string, scenario: Scenario & { regression?: boolean 
   if (result.signal !== undefined) outcome.signal = result.signal;
   if (result.cleanupUncertain) outcome.cleanupUncertain = true;
   outcome.sources = [...(scenario.verifiers ?? []), ...('path' in scenario.check ? [scenario.check.path] : []), ...(scenario.check.type === 'eval' ? [scenario.check.cases] : [])];
-  if (options.diagnostics) outcome.diagnostic = diagnosticFile(root, `r-${readState(root).runs + 1}`, scenario.id, result);
+  if (options.diagnostics) outcome.diagnostic = diagnosticFile(root, options.run, scenario.id, result);
   if (result.usage) outcome.usage = result.usage;
   if (scenario.regression) outcome.regression = true;
   return outcome;
@@ -173,7 +170,7 @@ function blocked(scenario: Scenario & { regression?: boolean }, by: string[]): S
  * whose parent ended anywhere but `pass` is blocked and never run. Cycles cannot reach here —
  * the parser rejects them.
  */
-async function runLayers(root: string, selected: Array<Scenario & { regression?: boolean }>, previous: ResultsFile, options: CheckOptions): Promise<ScenarioOutcome[]> {
+async function runLayers(root: string, selected: Array<Scenario & { regression?: boolean }>, previous: ResultsFile, options: CheckOptions & { run: string }): Promise<ScenarioOutcome[]> {
   const last: Record<string, LastResult | undefined> = {};
   // A parent selected for this run is judged by this run, never by what it did last time
   const selectedIds = new Set(selected.map((s) => s.id));
@@ -248,7 +245,7 @@ function selectScenarios(universe: Selectable[], previous: ResultsFile, options:
 
 /** The state after a run: STUCK on the same failure twice, DONE when nothing remains, otherwise RUNNING. */
 function settleState(root: string, current: StateFile, failHash: string | null, remaining: string[], outcomes: ScenarioOutcome[], at: string): { next: StateFile; stuck: boolean; done: boolean } {
-  let next: StateFile = { ...current, runs: current.runs + 1 };
+  let next: StateFile = { ...current };
   if (failHash !== null) {
     const streak = failHash === current.lastFailHash ? current.failStreak + 1 : 1;
     next = { ...next, lastFailHash: failHash, failStreak: streak };
@@ -299,10 +296,9 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const previous = readResults(root);
   const selected = selectScenarios(universe, previous, options);
 
-  if (state.state === 'APPROVED') transition(root, 'RUNNING');
-  const run = nextRunId(state);
+  const run = reserveRun(root, state);
   const at = nowIso();
-  const outcomes = await runLayers(root, selected, previous, options);
+  const outcomes = await runLayers(root, selected, previous, { ...options, run });
   for (const outcome of outcomes) { outcome.executionContext = executionContext; outcome.evidenceId = `${run}#${outcome.id}`; }
 
   const results: ResultsFile = { ...previous };
@@ -321,7 +317,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const { next, stuck, done } = settleState(root, readState(root), failHash, remaining, outcomes, at);
   const report = { run, at, state: next.state, outcomes, passed, failed, pending, failHash, stuck, done, remaining };
   recordReport(root, report, scenarios, edges);
-  recordStopEvidence(root, { run, done, intentHash: state.intentHash, scenarios: universe.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
+  recordStopEvidence(root, { run, done, intentHash: state.intentHash, scenarios: gated.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
   writeState(root, next);
   for (const event of [...(stuck ? ['stuck' as const] : []), ...(done ? ['done' as const] : [])]) record(root, { event, client: detectClient(), model: detectModel(), run, failHash });
   return report;
@@ -331,7 +327,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
 function recordReport(root: string, report: CheckReport, scenarios: Scenario[], edges: Edge[]): void {
   const { run, at, outcomes, passed, failed, failHash } = report;
   const evidence = { schemaVersion: 2, run, at, intentHash: readState(root).intentHash, client: detectClient(), model: detectModel(), scenarioSet: scenarioSetHash(scenarios), results: outcomes.map(({ diagnostic: _private, ...outcome }) => outcome) };
-  writeJson(vibePath(root, 'evidence', `${run}.json`), evidence);
+  writeRunEvidence(root, run, evidence);
   const scenarioMap: Record<string, Exclude<LastResult, 'stale'>> = {};
   for (const o of outcomes) scenarioMap[o.id] = o.status as Exclude<LastResult, 'stale'>;
   const harness = detectHarness();

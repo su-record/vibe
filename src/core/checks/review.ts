@@ -10,6 +10,7 @@ import { packStages, TEXT_PACKS } from './packs.js';
 import { collectChanged } from './changed.js';
 import { collectSource } from './source.js';
 import { tail, type CheckResult } from './run.js';
+import type { OutputObserver } from '../check-process.js';
 import { outputCapture } from '../output-capture.js';
 
 const DEFAULT_TIMEOUT_MS = 600_000;
@@ -89,9 +90,9 @@ interface StageRun {
 }
 
 /** One stage: the custom command gets instructions + message on stdin in the project; a client driver gets the instructions as its system prompt (Claude) or leading the message (Codex), in the neutral directory. */
-async function askStage(choice: ReviewerChoice, instructions: string, message: string, root: string, timeoutMs: number): Promise<StageRun> {
+async function askStage(choice: ReviewerChoice, instructions: string, message: string, root: string, timeoutMs: number, onOutput: OutputObserver): Promise<StageRun> {
   if (choice.client === 'custom') {
-    const r = await spawnReader(choice.cmd, null, `${instructions.trim()}\n\n---\n\n${message}`, root, timeoutMs);
+    const r = await spawnReader(choice.cmd, null, `${instructions.trim()}\n\n---\n\n${message}`, root, timeoutMs, onOutput);
     return { raw: r.raw, failureCode: r.failureCode, reply: r.out, usage: null, costUsd: null, model: null, exit: r.exit, killed: r.killed };
   }
   const cwd = readerHome();
@@ -99,7 +100,7 @@ async function askStage(choice: ReviewerChoice, instructions: string, message: s
   const claude = choice.client === 'claude';
   const driver = choice.driver ?? REVIEWER_DRIVER;
   const args = claude ? claudeArgs(instructions.trim(), null, driver) : codexArgs(null, driver);
-  const r = await spawnReader(choice.cmd, args, claude ? message : `${instructions.trim()}\n\n---\n\n${message}`, cwd, timeoutMs);
+  const r = await spawnReader(choice.cmd, args, claude ? message : `${instructions.trim()}\n\n---\n\n${message}`, cwd, timeoutMs, onOutput);
   const parsed = claude ? parseClaude(r.out) : parseCodex(r.out);
   return { ...parsed, raw: r.raw, failureCode: r.failureCode, exit: r.exit, killed: r.killed };
 }
@@ -117,7 +118,7 @@ function usageLine(u: ReaderUsage | null): string {
 export async function reviewCheck(check: ReviewCheck, root: string): Promise<CheckResult> {
   const started = Date.now();
   const streams = outputCapture();
-  const fail = (reason: string, text = ''): CheckResult => ({ ...streams.finish(false), pass: false, exit: 1, ms: Date.now() - started, tail: tail(text), reason, failureCode: 'review-failed' });
+  const fail = (reason: string, text = '', complete = true): CheckResult => ({ ...streams.finish(complete), pass: false, exit: 1, ms: Date.now() - started, tail: tail(text), reason, failureCode: 'review-failed' });
   if (!fs.existsSync(path.resolve(root, check.path))) return fail(`artifact missing: ${check.path}`);
   const pack = choosePack(check, root);
   if (!pack) return fail('language unknown — set lang: ko|en or pack: <name> on the check');
@@ -140,14 +141,12 @@ export async function reviewCheck(check: ReviewCheck, root: string): Promise<Che
   const usage: Array<{ stage: string } & ReaderUsage> = [];
   for (const stage of stages) {
     const instructions = fs.readFileSync(stage.file, 'utf-8');
-    const r = await askStage(choice, instructions, message(contract, evidence, `## ${piece.section}\n\n${piece.body}`, shot), root, timeoutMs);
-    const stdoutOverflow = streams.add('stdout', r.raw.stdout);
-    const outputOverflow = streams.add('stderr', r.raw.stderr) || stdoutOverflow;
+    const r = await askStage(choice, instructions, message(contract, evidence, `## ${piece.section}\n\n${piece.body}`, shot), root, timeoutMs, streams.add);
     if (r.usage) usage.push({ stage: stage.name, ...r.usage });
     const chosen = choice.driver ? (choice.client === 'claude' ? choice.driver.model : choice.driver.codexModel) : null;
     recordUsage(root, { detail: `review ${pack}/${stage.name}`, client: choice.client, model: r.model ?? chosen, tokens: r.usage, costUsd: r.costUsd, ms: Date.now() - started });
-    if (outputOverflow || r.failureCode || r.exit !== 0) return { ...fail(r.failureCode ?? (outputOverflow ? 'capture-overflow' : 'reviewer-exit')), failureCode: r.failureCode ?? (outputOverflow ? 'capture-overflow' : 'reviewer-exit'), usage };
-    if (r.killed) return fail(`${stage.name}: killed after ${timeoutMs}ms`, lines.join('\n'));
+    if (r.failureCode || r.exit !== 0) return { ...fail(r.failureCode ?? 'reviewer-exit', '', r.failureCode === null), failureCode: r.failureCode ?? 'reviewer-exit', usage };
+    if (r.killed) return fail(`${stage.name}: killed after ${timeoutMs}ms`, lines.join('\n'), false);
     const verdict = r.reply.trim();
     if (verdict === 'PASS') {
       lines.push(`${pack} ${stage.name}: PASS${usageLine(r.usage)}`);

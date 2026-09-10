@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it } from 'vitest';
 import { approve, draft } from './intent.js';
 import { runChecks } from './check.js';
 import { runCheck } from './checks/run.js';
-import { renderEvidence } from './evidence.js';
+import { diagnosticFile, renderEvidence } from './evidence.js';
 
 let root: string;
 beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-evidence-')); });
@@ -64,4 +64,21 @@ it('redrafting preserves prior evidence bytes and uses a new run id', async () =
   const report = await runChecks(root);
   expect(report.run).toBe('r-2');
   expect(fs.readFileSync(file)).toEqual(before);
+});
+
+it('caps fallback diagnostics and records their original length and fingerprint', () => {
+  const text = 'private-adapter-detail'.repeat(100_000);
+  const file = diagnosticFile(root, 'r-test', 'proof', { pass: false, exit: 1, ms: 0, tail: text });
+  const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+  expect(Buffer.from(raw.stdout, 'base64').length).toBe(1_048_576);
+  expect(raw.streams.stdout).toMatchObject({ bytes: Buffer.byteLength(text), sha256: hash(Buffer.from(text)), truncated: true });
+});
+it('skips evidence ids left by an interrupted writer and reserves before starting checks', async () => {
+  prepare();
+  const dir = path.join(root, '.vibe/evidence'); fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, 'r-1.json'); fs.writeFileSync(file, 'interrupted evidence');
+  fs.writeFileSync(path.join(root, 'emit.cjs'), 'const fs=require("node:fs");const state=JSON.parse(fs.readFileSync(".vibe/state.json"));if(state.runs!==2||state.state!=="RUNNING")process.exit(1);');
+  const report = await runChecks(root);
+  expect(report.run).toBe('r-2'); expect(report.done).toBe(true);
+  expect(fs.readFileSync(file, 'utf8')).toBe('interrupted evidence');
 });

@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -97,4 +98,36 @@ it('a changed resolved working directory invalidates the reviewed plan', () => {
   expect(consentStatus(root).valid).toBe(true);
   fs.unlinkSync(link); fs.symlinkSync(second, link, process.platform === 'win32' ? 'junction' : 'dir');
   expect(consentStatus(root)).toMatchObject({ valid: false, changed: ['checks'] });
+});
+
+it('preview rejects linked, malformed and oversized configuration without initializing reviewer storage', () => {
+  prepare();
+  const config = path.join(root, '.vibe/config.json');
+  fs.writeFileSync(config, 'x'.repeat(1_048_577));
+  expect(() => executionPlan(root)).toThrow(/byte limit/);
+  fs.writeFileSync(config, '{bad');
+  expect(() => executionPlan(root)).toThrow();
+  fs.rmSync(config);
+  if (process.platform !== 'win32') {
+    fs.symlinkSync(path.join(root, 'proof.cjs'), config);
+    expect(() => executionPlan(root)).toThrow(/linked/);
+    fs.rmSync(config);
+  }
+  vi.stubEnv('VIBE_REVIEW_CLIENT', 'claude');
+  vi.stubEnv('VIBE_REVIEW_CMD', '');
+  const neutral = path.join(fixture, 'neutral');
+  vi.stubEnv('VIBE_HOME_DIR', neutral);
+  draft(root, '# reviewer context', '- { id: proof, then: reviewed, check: { type: review, path: artifact, pack: code } }');
+  const expected = path.join(neutral, '.config/vibe/reader');
+  expect(executionPlan(root).checks[0]?.cwd).toBe(expected);
+  expect(fs.existsSync(neutral)).toBe(false);
+  approve(root, null);
+  vi.stubEnv('VIBE_HOME_DIR', path.join(fixture, 'other-neutral'));
+  expect(consentStatus(root).valid).toBe(false);
+});
+
+it.skipIf(process.platform === 'win32')('preview refuses a FIFO configuration before opening it', () => {
+  prepare(); const file = path.join(root, '.vibe/config.json');
+  fs.rmSync(file, { force: true }); execFileSync('mkfifo', [file]);
+  expect(() => executionPlan(root)).toThrow(/regular file/);
 });
