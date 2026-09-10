@@ -318,3 +318,5 @@
 {"at":"2026-09-10T03:00:29.629Z","event":"done","client":"claude-code","model":null,"run":"r-3"}
 {"at":"2026-09-10T04:41:27.047Z","event":"draft","client":"claude-code","model":null,"detail":"9eba4480d18b5cef","edges":[{"type":"supersedes","from":"intent:9eba4480d18b5cef","to":"intent:96d202f21867c896"}]}
 {"at":"2026-09-10T04:41:35.720Z","event":"approve","client":"claude-code","model":null,"detail":"9eba4480d18b5cef by chat","edges":[{"type":"decided-by","from":"intent:9eba4480d18b5cef","to":"human:chat"}]}
+{"at":"2026-09-10T07:32:31.737Z","event":"draft","client":"claude-code","model":null,"detail":"a987586d7de40b56","edges":[{"type":"supersedes","from":"intent:a987586d7de40b56","to":"intent:9eba4480d18b5cef"}]}
+{"at":"2026-09-10T07:32:32.123Z","event":"approve","client":"claude-code","model":null,"detail":"a987586d7de40b56 by chat","edges":[{"type":"decided-by","from":"intent:a987586d7de40b56","to":"human:chat"}]}

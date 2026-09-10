@@ -1,12 +1,13 @@
-# Draft for user approval, 2026-09-10; do not load into the active intent yet.
-# Paths are relative to the future implementation checkout.
-# New checks named below must be implemented after approval. They are not present
-# or passing merely because this YAML parses. No check starts paid model calls.
+# Integrated instruction 13 draft: Claude activates this contract.
+# Ten acceptance groups; the six existing regressions remain separate and unchanged.
+# Trust implementation order is inspect -> evidence -> handoff -> Stop.
+# Checks never start paid calls. Final cohort evidence follows integrated CI and freeze.
+# Human semantic ratings remain optional diagnostics; pilot human-review boundaries remain.
 
 - id: compatibility
   given: >-
     The candidate 4.1.26 implementation and the approved 4.1.25 behavior contract
-    described in intent section G.
+    described in intent section K, including the integrated trust/runtime changes.
   when: >-
     The package checks, structural budgets, gate self-test, and repeated parallel
     suite run against isolated fixture homes and temporary directories.
@@ -25,8 +26,83 @@
     expect: 0
     timeoutMs: 1200000
 
-- id: public-check-boundary
+- id: inspect-and-consent
   needs: [compatibility]
+  given: An inherited or copied contract, fixture homes, and harmless local checks of every supported type.
+  when: The operator inspects, previews, approves, changes an approval-bound input, or attempts execution in another worktree.
+  then: >-
+    Inspection and preview parse bounded inputs without executing any check,
+    spawning a resolver, contacting a service, initializing a project, consuming
+    a token or writing approval state. Invalid inputs fail explicitly. A copied
+    project approval cannot authorize destination execution. One local receipt
+    binds the canonical project, contract, resolved CWD/shell/PATH, limits and
+    explicitly reviewed verifier bytes; changes require renewed consent while
+    unchanged artifact work reuses consent. Customer-source findings and reviewed
+    verifier files stay separate approval inputs. Linked or malformed receipts fail
+    closed. Existing token policies and irreversible authorization remain distinct.
+  check:
+    type: run
+    cmd: node checks/check-trust.js
+    expect: 0
+    timeoutMs: 1200000
+
+- id: evidence-minimization
+  needs: [inspect-and-consent]
+  given: Checks that emit synthetic sensitive text, terminal controls, invalid UTF-8, large streams and deterministic failures.
+  when: Checks complete, fail to start, time out, exceed the capture limit, or are rendered through evidence/context/hook views.
+  then: >-
+    Versioned evidence preserves outcome, check/context identity, exit/signal,
+    duration and complete per-stream byte counts/digests without raw output in
+    shared files or default responses, including benchmark records. Explicitly
+    retained replay diagnostics stay private outside the repository. Incomplete
+    capture is explicit and cannot pass. Legitimate expected nonzero exits remain supported. Optional raw
+    diagnostics are local, private, bounded and labelled untrusted. Structured
+    failures remain actionable and stable for repeat detection. Historical raw
+    evidence is unchanged on disk and safely rendered, never silently migrated.
+  check:
+    type: run
+    cmd: node checks/check-evidence-privacy.js
+    expect: 0
+    timeoutMs: 180000
+
+- id: honest-scenario-handoff
+  needs: [evidence-minimization]
+  given: An intent with independent and dependent scenarios, existing whole-intent abandonment, and retained prior evidence.
+  when: An operator records a scenario handoff, attempts invalid input, continues independent work, or explicitly reopens a scenario.
+  then: >-
+    Required reason/category/next action and scenario identity are appended with
+    owner or explicit unknown and available evidence references. The original
+    contract and history remain. Invalid ids and blank reasons change nothing.
+    Abandonment never counts as pass, unblocks dependents, removes a required
+    denominator or permits DONE. Reopen retains the prior handoff. Existing
+    whole-intent abandon remains compatible, and ordinary waiting never abandons
+    work automatically.
+  check:
+    type: run
+    cmd: node checks/scenario-handoff.js
+    expect: 0
+    timeoutMs: 180000
+
+- id: session-bound-stop
+  needs: [honest-scenario-handoff]
+  given: Two worktrees with different intent/revision evidence, hostile output/title/reason strings and repeated Stop events.
+  when: The hook receives a valid, absent, ambiguous, stale or conflicting session association and observes unmet, waiting, handoff or completed work.
+  then: >-
+    Stop executes zero check commands or model/service calls and never chooses
+    another worktree from inherited data. Diagnostics identify the actual root
+    and revision with bounded fixed messages and qualified ids. Raw output and
+    free-form reasons never become privileged instructions. Waiting and handoff
+    permit a non-successful stop; same-state retry limits cannot be reset by
+    cosmetic changes and cannot manufacture completion. Fresh explicit check
+    evidence is still required for DONE on both client integrations.
+  check:
+    type: run
+    cmd: node checks/stop-session-contract.js
+    expect: 0
+    timeoutMs: 180000
+
+- id: public-check-boundary
+  needs: [session-bound-stop]
   given: >-
     Prepared off, on, and scoped workspaces for work-opportunities, preserved
     anomaly/ask diagnostics, and the active task contracts in intent section A.
@@ -41,7 +117,9 @@
     reference implementation, or private test cases. The agent scope and referenced
     checks are frozen before building, remain unchanged by private grading, and
     agent verification is recorded separately from the private artifact grade.
-    Retired diagnostics remain available without changing historical evidence.
+    Required fixture-local execution consent is obtained through reviewed public
+    contracts without exposing the private oracle. Retired diagnostics remain
+    available without changing historical evidence.
   check:
     type: run
     cmd: node checks/bench-public.js
@@ -93,37 +171,78 @@
     static hard-coded output on changed input, preserve source files, exercise
     missing fields and failure paths, and verify a reversible fixture-local install
     plus human review before simulated external effects. Scope snapshots survive
-    implementation and judging; missing usage/reviews and stalled/error attempts
-    stay visible. Human semantic ratings are never fabricated by this checker.
+    implementation and judging; missing usage and stalled/error attempts stay
+    visible. Human semantic ratings are optional diagnostics, never fabricated by
+    this checker and never required for release. Human review before simulated
+    external effects remains part of the pilot behavior.
   check:
     type: run
     cmd: node checks/work-opportunities.js
     expect: 0
     timeoutMs: 300000
 
-- id: fde-release-evidence
+- id: compatibility-and-release-evidence
   needs: [work-opportunities]
   given: >-
+    The exact integrated 4.1.26 candidate, legacy projects/evidence, the retained
+    six regressions, immutable 4.1.25 benchmark records, and deterministic
+    Linux/Windows CI observations governed by intent section K.
+  when: >-
+    Migration and compatibility fixtures, structural/procedure checks, and
+    read-only protocol-readiness cases are evaluated before scored execution.
+    The checker validates completed CI evidence rather than starting jobs or
+    waiting for its own unfinished CI run.
+  then: >-
+    Existing token meanings, source-bound discovery, supported check types,
+    expected nonzero exits and regressions remain supported. Card, common skill
+    and source budgets hold. Consent/evidence migration and rollback preserve
+    historical rows and the instruction 12 deterministic quality/cost targets.
+    Linux and Windows CI both identify the exact integrated candidate revision;
+    missing, stale or mismatched platform evidence remains unmet and prevents
+    paid execution. Readiness self-tests prove missing CI/protocol evidence
+    cannot invoke a client. No paid call, human-rating prerequisite, automatic
+    transport retry or unmeasured cost/prevention claim is introduced by a check.
+    The cohort remains at zero until integration and this validation complete,
+    then the exact product and protocol are frozen before the one planned run.
+  check:
+    type: run
+    cmd: >-
+      node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50
+      && node checks/card-size.js && node checks/loc.js && node checks/procedure.js
+      && node checks/bench-gate.js --self-test && node checks/check-trust-compatibility.js
+    expect: 0
+    timeoutMs: 1200000
+
+- id: fde-release-evidence
+  needs: [compatibility-and-release-evidence]
+  given: >-
     A pre-registered protocol, the separately authorized 60-attempt discovery
-    cohort, arm-blinded scope reviews, and the candidate release report under
-    bench/claims/4.1.26/, governed by intent sections E, F, and G.
+    cohort, deterministic initial-scope grades, and the candidate release report
+    under bench/claims/4.1.26/, governed by intent sections E, J, and K.
   when: >-
     The release-evidence checker validates its negative cases, then reads the frozen
-    protocol, isolated cohort ledger, snapshots, reviews, client CI results, and
-    report. It launches no agents and appends no benchmark rows.
+    protocol, isolated cohort ledger, snapshots, mechanical grades, integrated
+    Linux/Windows CI results, and report. It launches no agents and appends no
+    benchmark rows.
   then: >-
     Every planned client/variant/arm cell has five usable observations and required
-    usage/review evidence, with all errors and stalls preserved. Each candidate
-    attempt has no critical omission or unsupported assertion, identifies the three
-    grounded recurring families, reaches at least 90 percent weighted scope
-    coverage, and passes every selected-pilot behavioral check. Candidate scope and
-    artifact quality are no worse than bare or baseline scoped in either client or
-    variant. Per client, candidate full-flow weighted input tokens are at most
+    usage and valid deterministic grade evidence, with all errors and stalls
+    preserved. Each candidate attempt has no mechanically detected critical
+    omission or unsupported structured assertion, identifies the three grounded
+    recurring families, reaches at least 90 percent mechanical weighted scope
+    coverage, and passes every selected-pilot behavioral check. Candidate
+    mechanical scope and artifact quality are no worse than bare or baseline
+    scoped in either client or variant. Per client, candidate full-flow weighted
+    input tokens are at most
     0.80 times baseline scoped over equally weighted variants and matched complete
     attempts, without increasing mean output tokens or customer clarification/
     correction count. The report separates scope quality, human burden proxies,
-    machine time, costs, and agent/private verification; it states missing evidence
-    and makes no unmeasured ROI, prevention, or human-time-saving claim. Linux and
+    machine time, costs, and agent/private verification. Human ratings are optional
+    diagnostics and cannot alter the release verdict. Every passing and failing
+    verdict states:
+    These indicators do not measure the appropriateness of problem framing or
+    tradeoff judgment. It states missing evidence and makes no unmeasured ROI,
+    prevention, or human-time-saving claim. Linux and
     Windows CI evidence identifies the candidate revision. Incomplete evidence or
     a missed target fails with its reason rather than silently changing the cohort.
   check:
