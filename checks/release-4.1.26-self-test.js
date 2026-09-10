@@ -43,6 +43,13 @@ function brokenCases() {
   return [
     ['missing cell', (f) => f.rows.pop()],
     ['missing usage', (f) => { f.rows[0].tokens = null; }],
+    ['incomplete capture with plausible usage', (f) => { f.rows[0].sessions[0].complete = false; }],
+    ['truncated stdout with plausible usage', (f) => { f.rows[0].sessions[0].transport.stdout.retainedBytes++; }],
+    ['stream byte overflow', (f) => { f.rows[0].sessions[0].transport.stderr.bytes = f.rows[0].sessions[0].transport.stderr.retainedBytes = 67108865; }],
+    ['missing capture policy', (f) => { delete f.protocol.capture; }],
+    ['expanded capture limit', (f) => { f.protocol.capture.streamBytes++; }],
+    ['expanded settlement grace', (f) => { f.protocol.capture.graceMs++; }],
+    ['expanded diagnostic limit', (f) => { f.protocol.capture.diagnosticBytes++; }],
     ['API failure', (f) => { f.rows[0].error = 'HTTP 500'; }],
     ['stalled', (f) => { f.rows[0].stalled = true; }],
     ['baseline revision', (f) => { f.rows.find((r) => r.arm === 'scoped-4.1.25').harnessRevision = 'wrong'; }],

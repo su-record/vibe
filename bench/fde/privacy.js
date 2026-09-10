@@ -2,16 +2,18 @@ import { createHash } from 'node:crypto';
 
 const digest = (value) => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value ?? null)).digest('hex');
 export const contentSummary = (value) => ({ sha256: digest(value), bytes: Buffer.byteLength(typeof value === 'string' ? value : JSON.stringify(value ?? null)) });
-const codes = new Set(['CLIENT_START_FAILED', 'CLIENT_TIMEOUT', 'CLIENT_EXIT_NONZERO', 'CLIENT_RESULT_ERROR', 'CLIENT_TRANSPORT_INCOMPLETE', 'DIAGNOSTIC_WRITE_FAILED', 'USAGE_MISSING', 'AGENT_EVIDENCE_UNAVAILABLE', 'GRADE_FAILED', 'GRADE_INCOMPLETE', 'HARNESS_ERROR', 'ATTEMPT_INTERRUPTED', 'SESSION_USAGE_INTERRUPTED', 'TOKEN_BUDGET_REACHED', 'WALL_BUDGET_REACHED', 'CURRENCY_USAGE_MISSING', 'CURRENCY_BUDGET_REACHED', 'ATTEMPT_TIME_LIMIT']);
+const codes = new Set(['CLIENT_START_FAILED', 'CLIENT_TIMEOUT', 'CLIENT_EXIT_NONZERO', 'CLIENT_RESULT_ERROR', 'CLIENT_TRANSPORT_INCOMPLETE', 'CLIENT_CAPTURE_OVERFLOW', 'DIAGNOSTIC_LIMIT_EXCEEDED', 'DIAGNOSTIC_WRITE_FAILED', 'USAGE_MISSING', 'AGENT_EVIDENCE_UNAVAILABLE', 'GRADE_FAILED', 'GRADE_INCOMPLETE', 'HARNESS_ERROR', 'ATTEMPT_INTERRUPTED', 'SESSION_USAGE_INTERRUPTED', 'TOKEN_BUDGET_REACHED', 'WALL_BUDGET_REACHED', 'CURRENCY_USAGE_MISSING', 'CURRENCY_BUDGET_REACHED', 'ATTEMPT_TIME_LIMIT']);
 export const failureCode = (value, fallback = 'HARNESS_ERROR') => value ? codes.has(value) ? value : fallback : null;
 const pick = (object, names) => Object.fromEntries(names.filter((name) => object?.[name] !== undefined).map((name) => [name, object[name]]));
 const tokens = (value) => value && ['input', 'cacheRead', 'cacheWrite', 'output'].every((key) => Number.isFinite(value[key]) && value[key] >= 0) ? pick(value, ['input', 'cacheRead', 'cacheWrite', 'output']) : null;
-const measurements = ['requestedModel', 'model', 'costUsd', 'ms', 'usage', 'exit', 'signal', 'invoked'];
+const measurements = ['requestedModel', 'model', 'costUsd', 'ms', 'usage', 'exit', 'signal', 'invoked', 'complete'];
 const numeric = (value) => Number.isFinite(value) ? value : null;
 const timestamp = (value) => typeof value === 'string' && /^\d{4}-\d\d-\d\dT[\d:.]+Z$/.test(value) ? value : null;
 
 export function safeSession(session) {
   return { ...pick(session, measurements), tokens: tokens(session.tokens), models: session.models?.map((item) => ({ model: item.model, tokens: tokens(item.tokens) })), error: failureCode(session.errorCode ?? session.error), errorCode: failureCode(session.errorCode ?? session.error),
+    observedUsage: session.observedUsage ? { tokens: tokens(session.observedUsage.tokens), costUsd: numeric(session.observedUsage.costUsd), complete: false,
+      models: session.observedUsage.models?.map((item) => ({ model: item.model, tokens: tokens(item.tokens) })) } : undefined,
     finalTextSummary: contentSummary(session.finalText ?? ''), toolCalls: { count: session.toolCalls?.length ?? 0, ...contentSummary(session.toolCalls ?? []) },
     errorDetails: contentSummary(session.errors ?? session.error ?? null), transport: session.transport,
     diagnostics: session.diagnostics ?? [], ...pick(session, ['phase', 'started', 'finished', 'phaseAllocation']) };

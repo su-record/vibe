@@ -521,5 +521,10 @@
   "diagnostics": {
     "enabled": false,
     "directory": null
+  },
+  "capture": {
+    "streamBytes": 67108864,
+    "diagnosticBytes": 67108864,
+    "graceMs": 1000
   }
 }

@@ -3,6 +3,8 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileHash, digest } from './evidence.js';
 import { treeManifest } from '../snapshot.js';
+import { CAPTURE } from './capture-policy.js';
+export { CAPTURE } from './capture-policy.js';
 
 export const ID = 'fde-discovery-v1';
 export const ARMS = ['off', 'scoped-4.1.25', 'scoped-4.1.26'];
@@ -94,7 +96,7 @@ export function protocolDraft(repo, task, sourceSettings) {
     baselineRevision: BASELINE, candidateRevision: null, products: { baseline: null, candidate: null }, targets: TARGETS, schedule: schedule(),
     settings: Object.fromEntries(CLIENTS.map((client) => [client, { model: sourceSettings[client].model.value, effort: sourceSettings[client].effort.value,
       sources: sourceSettings[client], maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
-    limits: { ...LIMITS }, diagnostics: { enabled: false, directory: null },
+    limits: { ...LIMITS }, capture: { ...CAPTURE }, diagnostics: { enabled: false, directory: null },
     budget: { ...BUDGET, note: 'Accounting is observed at client-result boundaries. One in-flight invocation may overshoot; missing usage stops further calls.' },
     prices: {}, assessment: ASSESSMENT,
     task: 'work-opportunities', limitations: [ASSESSMENT_LIMITATION, 'Synthetic discovery case; no ROI, human-time-saving, broad prevention or general FDE claim.'],
@@ -110,6 +112,7 @@ export function protocolErrors(protocol, { frozen = true } = {}) {
   if (JSON.stringify(protocol.assessment) !== JSON.stringify(ASSESSMENT)) errors.push('deterministic assessment policy changed or missing');
   if (!protocol.baselineRevision?.startsWith(BASELINE)) errors.push('baseline must be pinned 4.1.25');
   for (const [key, value] of Object.entries(LIMITS)) if (protocol.limits?.[key] !== value) errors.push(`${key}: approved execution limit changed or missing`);
+  if (JSON.stringify(protocol.capture) !== JSON.stringify(CAPTURE)) errors.push('fixed capture limits changed or missing');
   const diagnostics = protocol.diagnostics;
   if (typeof diagnostics?.enabled !== 'boolean' || (diagnostics.enabled ? typeof diagnostics.directory !== 'string' || !path.isAbsolute(diagnostics.directory) : diagnostics.directory !== null)) errors.push('explicit private diagnostics policy missing or invalid');
   for (const client of CLIENTS) {

@@ -10,6 +10,7 @@ import { treeManifest } from '../bench/snapshot.js';
 import { codePins, validateCandidate, ASSESSMENT_LIMITATION } from '../bench/fde/protocol.js';
 import { selfTest } from './release-4.1.26-self-test.js';
 import { auditDiagnostics } from '../bench/fde/private-artifacts.js';
+import { completeStream } from '../bench/fde/capture-policy.js';
 import { contentSummary } from '../bench/fde/privacy.js';
 
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -22,17 +23,19 @@ function audit(protocol, rows, task) {
   for (const row of rows.filter((entry) => entry.event === 'attempt')) {
     const forbidden = [repo, path.join(repo, 'bench/claims/4.1.26')];
     auditDiagnostics(protocol.diagnostics, row.diagnostics ?? [], forbidden);
-    if (protocol.diagnostics.enabled && !row.diagnostics?.some((ref) => ref.kind === 'attempt')) throw new Error(`${row.id}: missing opted-in private attempt details`);
+    if (row.diagnostics?.some((ref) => ref.complete !== true)) throw new Error(`${row.id}: incomplete private attempt diagnostic`);
+    if (protocol.diagnostics.enabled && !row.diagnostics?.some((ref) => ref.kind === 'attempt' && ref.complete === true)) throw new Error(`${row.id}: missing opted-in private attempt details`);
     for (const snapshot of row.scopeSnapshots ?? []) {
       if (digest(treeManifest(path.join(snapshot.path, 'files'))) !== snapshot.hash) throw new Error(`${row.id}: scope snapshot changed`);
     }
     for (const session of row.sessions ?? []) {
       if (session.invoked === false) continue;
       auditDiagnostics(protocol.diagnostics, session.diagnostics ?? [], forbidden);
+      if (session.diagnostics?.some((ref) => ref.complete !== true)) throw new Error(`${row.id}: incomplete private session diagnostic`);
       for (const stream of ['stdout', 'stderr']) {
         const recorded = session.transport?.[stream];
-        if (!recorded || !Number.isInteger(recorded.bytes) || !/^[a-f0-9]{64}$/.test(recorded.sha256 ?? '')) throw new Error(`${row.id}: missing ${stream} byte evidence`);
-        if (protocol.diagnostics.enabled && !session.diagnostics?.some((ref) => ref.kind === stream && ref.bytes === recorded.bytes && ref.sha256 === recorded.sha256)) throw new Error(`${row.id}: missing opted-in private ${stream}`);
+        if (!completeStream(recorded)) throw new Error(`${row.id}: missing ${stream} byte evidence`);
+        if (protocol.diagnostics.enabled && !session.diagnostics?.some((ref) => ref.kind === stream && ref.complete === true && ref.bytes === recorded.retainedBytes && ref.sha256 === recorded.retainedSha256)) throw new Error(`${row.id}: missing opted-in private ${stream}`);
       }
     }
   }

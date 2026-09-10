@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { CAPTURE } from './capture-policy.js';
 
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 const within = (parent, child) => { const relative = path.relative(parent, child); return !relative || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative)); };
@@ -61,14 +62,18 @@ export function diagnosticFile(policy, id, kind) {
 
 export function artifactReference(file, kind) {
   const stat = verifyEntry(file, false);
+  const cap = ['stdout', 'stderr'].includes(kind) ? CAPTURE.streamBytes : CAPTURE.diagnosticBytes;
+  if (stat.size > cap) throw new Error('DIAGNOSTIC_LIMIT_EXCEEDED');
   return { kind, path: file, bytes: stat.size, sha256: hash(fs.readFileSync(file)), private: true };
 }
 
-export function writeDiagnostic(policy, id, kind, data) {
+export function writeDiagnostic(policy, id, kind, data, byteLimit = CAPTURE.diagnosticBytes) {
+  if (!Number.isSafeInteger(byteLimit) || byteLimit < 1 || byteLimit > CAPTURE.diagnosticBytes) throw new Error('DIAGNOSTIC_LIMIT_INVALID');
   const file = diagnosticFile(policy, id, kind);
   if (!file) return null;
-  fs.writeFileSync(file, JSON.stringify(data), { flag: 'wx', mode: 0o600 });
-  return artifactReference(file, kind);
+  const encoded = Buffer.from(JSON.stringify(data));
+  fs.writeFileSync(file, encoded.subarray(0, byteLimit), { flag: 'wx', mode: 0o600 });
+  return { ...artifactReference(file, kind), complete: encoded.length <= byteLimit, observedBytes: encoded.length, observedSha256: hash(encoded) };
 }
 
 export function auditDiagnostics(policy, references, forbidden = []) {
