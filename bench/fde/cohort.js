@@ -7,7 +7,7 @@ import { discoverySession } from './session.js';
 import { runClient } from './clients.js';
 import { append, readLines, digest, privateGrade, attemptEvidence } from './evidence.js';
 import { budgetReason, recordSession } from './accounting.js';
-import { authorize, codePins, validateProducts } from './protocol.js';
+import { authorize, codePins, validateProducts, clientVersions } from './protocol.js';
 
 const require = createRequire(import.meta.url);
 const time = () => new Date().toISOString();
@@ -33,8 +33,8 @@ async function attempt(plan, options, records, started) {
   const directory = path.join(output, plan.id);
   fs.mkdirSync(directory, { recursive: true });
   const product = plan.arm === 'scoped-4.1.25' ? baseline : repo;
-  const env = isolatedEnvironment(directory, product);
   const harness = plan.arm === 'off' ? 'off' : 'scoped';
+  const env = isolatedEnvironment(directory, product, process.env, harness);
   const workspace = prepareWorkspace(task, { repo: product, env, clients: [plan.client], harness });
   const customer = require(path.join(task, 'key/customer.cjs'));
   const { grade } = require(path.join(task, 'judge/grade.cjs'));
@@ -44,8 +44,10 @@ async function attempt(plan, options, records, started) {
     const reason = budgetReason(protocol, records, started);
     const remaining = protocol.limits.attemptMs - (Date.now() - began);
     if (reason || remaining <= 0) return { error: reason ?? 'attempt time budget reached', tokens: null, ms: 0, finalText: '', invoked: false };
+    const sessionStart = { ...id, event: 'session-start', at: time(), session: session.index + 1 };
+    append(ledger, sessionStart); records.push(sessionStart);
     const result = await runClient({ client: plan.client, settings: protocol.settings[plan.client], workspace, harness, env,
-      prompt: session.prompt, timeoutMs: Math.min(remaining, protocol.limits.sessionMs), log: path.join(directory, `session-${session.index + 1}`) });
+      prompt: session.prompt, timeoutMs: Math.max(1, Math.min(remaining, protocol.limits.sessionMs, protocol.budget.wallMs - (Date.now() - started))), log: path.join(directory, `session-${session.index + 1}`) });
     sideCount = recordSession(result, { identity: id, session: session.index + 1, workspace, ledger, records, prices: protocol.prices, sideCount });
     return result;
   });
@@ -65,6 +67,7 @@ export async function runCohort(options) {
   const { protocol, approval, repo, task, ledger } = options;
   authorize(protocol, approval);
   validateProducts(protocol, repo, options.baseline);
+  if (JSON.stringify(clientVersions()) !== JSON.stringify(protocol.clientVersions) || process.version !== protocol.nodeVersion) throw new Error('client/runtime version changed after protocol freeze');
   const pins = codePins(repo, task);
   for (const key of ['runner', 'fixture', 'rubric']) if (pins[key] !== protocol.pins[key]) throw new Error(`${key} changed after protocol freeze`);
   const records = readLines(ledger);

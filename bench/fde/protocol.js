@@ -11,6 +11,13 @@ export const VARIANTS = ['status-first', 'followup-first'];
 export const BASELINE = '2d2af57';
 export const TARGETS = { scopeFloor: 0.9, groundedFamilies: 3, weightedInputRatio: 0.8, criticalOmissions: 0, unsupportedAssertions: 0 };
 
+export function clientVersions() {
+  return Object.fromEntries(CLIENTS.map((client) => {
+    try { return [client, execFileSync(client, ['--version'], { encoding: 'utf8', timeout: 15000, shell: process.platform === 'win32' }).trim()]; }
+    catch { return [client, null]; }
+  }));
+}
+
 export function productHash(repo) {
   return digest(['dist', 'skills', 'hooks'].map((dir) => [dir, treeManifest(path.join(repo, dir))])
     .concat(['card.md', 'package.json'].map((file) => [file, fileHash(path.join(repo, file))])));
@@ -31,7 +38,8 @@ export function validateCandidate(protocol, repo) {
   const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
   if (git('rev-parse', 'HEAD') !== protocol.candidateRevision) throw new Error('candidate checkout does not match the measured/CI revision');
   const changed = [...git('diff', 'HEAD', '--name-only').split('\n'), ...git('ls-files', '--others', '--exclude-standard').split('\n')];
-  if (changed.some((file) => file && !file.startsWith('bench/claims/4.1.26/'))) throw new Error('candidate source has edits outside its cohort evidence');
+  const runtime = /^(?:\.vibe\/(?:state\.json|results\.json|snapshot\.json|ledger\.jsonl|inbox\.jsonl|evidence\/r-\d+\.json|metrics\/current-run\.jsonl?)|bench\/claims\/4\.1\.26\/.*)$/;
+  if (changed.some((file) => file && !runtime.test(file))) throw new Error('candidate source has edits outside generated verification/cohort evidence');
   if (productHash(repo) !== protocol.products?.candidate) throw new Error('candidate executable product differs from frozen evidence');
 }
 
@@ -76,6 +84,7 @@ export function settingsFromSources(env, home) {
 /** A proposal is intentionally unable to authorize itself. Freeze after settings and budgets are confirmed. */
 export function protocolDraft(repo, task, sourceSettings) {
   return { id: ID, status: 'draft', createdAt: new Date().toISOString(), pins: codePins(repo, task),
+    clientVersions: clientVersions(), nodeVersion: process.version,
     baselineRevision: BASELINE, candidateRevision: null, products: { baseline: null, candidate: null }, targets: TARGETS, schedule: schedule(),
     settings: Object.fromEntries(CLIENTS.map((client) => [client, { model: sourceSettings[client].model.value, effort: sourceSettings[client].effort.value,
       sources: sourceSettings[client], maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
@@ -102,6 +111,7 @@ export function protocolErrors(protocol, { frozen = true } = {}) {
   }
   for (const key of ['sessions', 'sessionMs', 'attemptMs']) if (!positive(protocol.limits?.[key])) errors.push(`missing ${key} limit`);
   if (frozen) {
+    if (CLIENTS.some((client) => !protocol.clientVersions?.[client]) || !protocol.nodeVersion) errors.push('client/runtime versions must be frozen');
     if (protocol.status !== 'frozen' || !/^[a-f0-9]{40}$/.test(protocol.candidateRevision ?? '')) errors.push('protocol/candidate not frozen');
     for (const field of ['runner', 'fixture', 'rubric']) if (!/^[a-f0-9]{64}$/.test(protocol.pins?.[field] ?? '')) errors.push(`missing ${field} hash`);
     for (const arm of ['baseline', 'candidate']) if (!/^[a-f0-9]{64}$/.test(protocol.products?.[arm] ?? '')) errors.push(`missing ${arm} executable hash`);

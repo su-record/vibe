@@ -9,6 +9,7 @@ const revision = 'b'.repeat(40);
 const requirements = [3, 2, 3, 3, 2, 2, 3, 3, 1, 1].map((weight, i) => ({ id: `requirement-${i}`, weight, critical: [0, 1, 2, 3, 6, 7].includes(i) }));
 export function example() {
   const protocol = { id: 'fde-discovery-v1', status: 'frozen', candidateRevision: revision, baselineRevision: '2d2af57', schedule: schedule(), targets: TARGETS,
+    clientVersions: { claude: 'fixture-cli-1', codex: 'fixture-cli-2' }, nodeVersion: 'fixture-runtime',
     pins: { runner: hash, fixture: hash, rubric: hash }, products: { baseline: hash, candidate: hash },
     settings: Object.fromEntries(['claude', 'codex'].map((client) => [client, { model: 'test-model', sources: { model: { source: 'test-fixture' } }, maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
     limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1, sessionMs: 1000, attemptMs: 6000, concurrencyPerClient: 1 },
@@ -52,6 +53,7 @@ export function selfTest() {
     ['development rows', (f) => { f.rows[0].privateGrade.fixture = 'development'; }],
     ['missing grade metric', (f) => { delete f.rows[0].privateGrade.unsupportedAssertions; }],
     ['amended grade substituted', (f) => { f.rows[0].gradedScopeHash = 'later scope'; }],
+    ['unknown side usage', (f) => { f.rows[0].sideUsage = [{ tokens: null }]; }],
   ];
   for (const [name, mutate] of broken) { const fixture = example(); mutate(fixture); assert.equal(assess(fixture).ok, false, name); }
   console.log(`4.1.26 release --self-test: ${broken.length + 1} deterministic evidence checks passed; no scored rows written`);

@@ -26,7 +26,9 @@ export function writePackets(rows, output) {
     });
     const handoff = row.events?.filter((entry) => entry.phase === 'handoff').map((entry) => entry.text).join('\n\n') ?? '';
     fs.writeFileSync(path.join(directory, 'handoff.txt'), handoff);
-    index.push({ packet: id, doubleReview: row.doubleReview });
+    const metadata = { packet: id, scopeHash: row.scopeSnapshots[0].hash, doubleReview: row.doubleReview };
+    fs.writeFileSync(path.join(directory, 'packet.json'), `${JSON.stringify(metadata, null, 2)}\n`);
+    index.push(metadata);
   }
   fs.writeFileSync(path.join(output, 'index.json'), `${JSON.stringify(index, null, 2)}\n`, { flag: 'wx' });
   return index;

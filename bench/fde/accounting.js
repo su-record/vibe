@@ -3,7 +3,7 @@ import { append, usageSummary } from './evidence.js';
 import { rawTokens } from './clients.js';
 
 export function budgetReason(protocol, records, started) {
-  if (records.some((row) => row.event === 'session-result' && !records.some((entry) => entry.event === 'session-usage' && entry.id === row.id && entry.session === row.session))) return 'session side usage unavailable after interruption; additional paid calls stopped';
+  if (records.some((row) => ['session-start', 'session-result'].includes(row.event) && !records.some((entry) => entry.event === 'session-usage' && entry.id === row.id && entry.session === row.session))) return 'session usage unavailable after interruption; additional paid calls stopped';
   const summaries = records.filter((row) => row.event === 'session-usage');
   if (summaries.some((row) => !row.tokens)) return 'missing session usage; additional paid calls stopped';
   if (summaries.reduce((sum, row) => sum + rawTokens(row.tokens), 0) >= protocol.budget.rawTokens) return 'token budget reached';

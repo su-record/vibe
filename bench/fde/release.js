@@ -32,7 +32,7 @@ function rowErrors(row, plan, protocol) {
   if (row.gradedScopeHash !== row.scopeSnapshots?.[0]?.hash) errors.push('discovery grade must use the initial pre-build agreement');
   if (!row.sessions?.length || row.sessions.some((s) => !tokenValues(s.tokens) || s.phaseAllocation !== 'unavailable-within-session' || !['discovery', 'implementation'].includes(s.phase))) errors.push('missing or invented phase attribution');
   const aggregate = addTokens([...(row.sessions ?? []).map((s) => s.tokens), ...(row.sideUsage ?? []).map((s) => s.tokens)]);
-  if (aggregate && JSON.stringify(aggregate) !== JSON.stringify(row.tokens)) errors.push('session/side usage does not reconcile');
+  if (!aggregate || JSON.stringify(aggregate) !== JSON.stringify(row.tokens)) errors.push('session/side usage is missing or does not reconcile');
   const phases = new Set(row.events?.map((entry) => entry.phase));
   if (!['intake', 'scope', 'approval', 'build', 'proof', 'handoff'].every((phase) => phases.has(phase))) errors.push('missing phase boundaries');
   if (row.events?.some((event) => event.allocation !== 'unavailable')) errors.push('invented phase allocation');

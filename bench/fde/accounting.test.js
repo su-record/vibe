@@ -40,3 +40,8 @@ it('makes identical neutral scopes independently reviewable without exposing the
   expect(first).not.toBe(second);
   expect(first).toMatch(/^[a-f0-9]{64}$/);
 });
+
+it('stops after a paid invocation was interrupted before any result arrived', () => {
+  const pending = [{ id: 'attempt-1', event: 'session-start', session: 1 }];
+  expect(budgetReason({ budget: { rawTokens: 10000, wallMs: 10000 } }, pending, Date.now())).toContain('usage unavailable after interruption');
+});
