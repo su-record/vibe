@@ -9,6 +9,8 @@ import { readLines, digest } from '../bench/fde/evidence.js';
 import { treeManifest } from '../bench/snapshot.js';
 import { codePins, validateCandidate, ASSESSMENT_LIMITATION } from '../bench/fde/protocol.js';
 import { selfTest } from './release-4.1.26-self-test.js';
+import { auditDiagnostics } from '../bench/fde/private-artifacts.js';
+import { contentSummary } from '../bench/fde/privacy.js';
 
 const repo = fileURLToPath(new URL('..', import.meta.url));
 const args = process.argv.slice(2);
@@ -18,12 +20,20 @@ function audit(protocol, rows, task) {
   const actual = codePins(repo, task);
   for (const key of ['runner', 'fixture', 'rubric']) if (actual[key] !== protocol.pins?.[key]) throw new Error(`${key} bytes differ from frozen protocol`);
   for (const row of rows.filter((entry) => entry.event === 'attempt')) {
+    const forbidden = [repo, path.join(repo, 'bench/claims/4.1.26')];
+    auditDiagnostics(protocol.diagnostics, row.diagnostics ?? [], forbidden);
+    if (protocol.diagnostics.enabled && !row.diagnostics?.some((ref) => ref.kind === 'attempt')) throw new Error(`${row.id}: missing opted-in private attempt details`);
     for (const snapshot of row.scopeSnapshots ?? []) {
       if (digest(treeManifest(path.join(snapshot.path, 'files'))) !== snapshot.hash) throw new Error(`${row.id}: scope snapshot changed`);
     }
     for (const session of row.sessions ?? []) {
       if (session.invoked === false) continue;
-      for (const stream of ['stdout', 'stderr']) if (!fs.existsSync(`${session.log}.${stream}`)) throw new Error(`${row.id}: missing raw ${stream}`);
+      auditDiagnostics(protocol.diagnostics, session.diagnostics ?? [], forbidden);
+      for (const stream of ['stdout', 'stderr']) {
+        const recorded = session.transport?.[stream];
+        if (!recorded || !Number.isInteger(recorded.bytes) || !/^[a-f0-9]{64}$/.test(recorded.sha256 ?? '')) throw new Error(`${row.id}: missing ${stream} byte evidence`);
+        if (protocol.diagnostics.enabled && !session.diagnostics?.some((ref) => ref.kind === stream && ref.bytes === recorded.bytes && ref.sha256 === recorded.sha256)) throw new Error(`${row.id}: missing opted-in private ${stream}`);
+      }
     }
   }
 }
@@ -43,5 +53,5 @@ try {
     if (fs.readFileSync(option('report'), 'utf8') !== renderReport(protocol, result)) throw new Error('report is missing, stale or differs from the measured evidence');
     console.log('4.1.26 release evidence passed: complete cohort, per-cell deterministic indicators and per-client cost targets, Linux/Windows CI');
   }
-} catch (error) { console.error(`4.1.26 release evidence failed: ${error.message}`); process.exitCode = 1; }
+} catch (error) { console.error(JSON.stringify({ errorCode: 'RELEASE_EVIDENCE_FAILED', details: contentSummary(error.message) })); process.exitCode = 1; }
 finally { console.log(ASSESSMENT_LIMITATION); }

@@ -517,5 +517,9 @@
     "assertions": "structured-only",
     "limitation": "These indicators do not measure the appropriateness of problem framing or tradeoff judgment."
   },
-  "draftNote": "Regenerate source and executable pins after final integration, before separate execution approval. No cohort is authorized by this draft."
+  "draftNote": "Regenerate source and executable pins after final integration, before separate execution approval. No cohort is authorized by this draft.",
+  "diagnostics": {
+    "enabled": false,
+    "directory": null
+  }
 }

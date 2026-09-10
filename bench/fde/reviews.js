@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { digest } from './evidence.js';
+import { treeManifest } from '../snapshot.js';
 
 export function packetId(row) {
   return digest({ protocol: row.protocolHash, attempt: row.id, scopes: row.scopeSnapshots?.map((s) => s.hash) ?? [] });
@@ -17,15 +18,14 @@ export function writePackets(rows, output) {
     fs.mkdirSync(directory);
     row.scopeSnapshots.forEach((snapshot, number) => {
       const source = path.join(snapshot.path, 'files');
-      for (const name of Object.keys(snapshot.manifest)) {
+      for (const name of Object.keys(snapshot.manifest ?? treeManifest(source))) {
         if (!/^(out\/|checks\/|evidence\/|customer\/)/.test(name)) continue;
         const destination = path.join(directory, `scope-${number + 1}`, name);
         fs.mkdirSync(path.dirname(destination), { recursive: true });
         fs.copyFileSync(path.join(source, name), destination);
       }
     });
-    const handoff = row.events?.filter((entry) => entry.phase === 'handoff').map((entry) => entry.text).join('\n\n') ?? '';
-    fs.writeFileSync(path.join(directory, 'handoff.txt'), handoff);
+    fs.writeFileSync(path.join(directory, 'handoff.json'), JSON.stringify(row.events?.filter((entry) => entry.phase === 'handoff') ?? []));
     const metadata = { packet: id, scopeHash: row.scopeSnapshots[0].hash, doubleReview: row.doubleReview };
     fs.writeFileSync(path.join(directory, 'packet.json'), `${JSON.stringify(metadata, null, 2)}\n`);
     index.push(metadata);

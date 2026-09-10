@@ -19,8 +19,8 @@ it('preserves paid main usage before corrupt product evidence and stops further 
     expect(records[0].result.tokens.input).toBe(25);
     expect(records[1].mainTokens.input).toBe(25);
     expect(records[1].tokens).toBeNull();
-    expect(result.error).toContain('agent evidence unavailable');
-    expect(budgetReason({ budget: { rawTokens: 10000, wallMs: 10000 } }, records, Date.now())).toContain('missing session usage');
+    expect(result.error).toBe('AGENT_EVIDENCE_UNAVAILABLE');
+    expect(budgetReason({ budget: { rawTokens: 10000, wallMs: 10000 } }, records, Date.now())).toBe('USAGE_MISSING');
   } finally { fs.rmSync(workspace, { recursive: true, force: true }); }
 });
 
@@ -43,5 +43,5 @@ it('makes identical neutral scopes independently reviewable without exposing the
 
 it('stops after a paid invocation was interrupted before any result arrived', () => {
   const pending = [{ id: 'attempt-1', event: 'session-start', session: 1 }];
-  expect(budgetReason({ budget: { rawTokens: 10000, wallMs: 10000 } }, pending, Date.now())).toContain('usage unavailable after interruption');
+  expect(budgetReason({ budget: { rawTokens: 10000, wallMs: 10000 } }, pending, Date.now())).toBe('SESSION_USAGE_INTERRUPTED');
 });

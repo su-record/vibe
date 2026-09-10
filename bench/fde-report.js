@@ -6,6 +6,7 @@ import { evaluate } from './fde/release.js';
 import { renderReport } from './fde/report.js';
 import { writePackets } from './fde/reviews.js';
 import { ASSESSMENT_LIMITATION } from './fde/protocol.js';
+import { contentSummary } from './fde/privacy.js';
 
 const args = process.argv.slice(2);
 const option = (name, fallback) => { const i = args.indexOf(`--${name}`); return i < 0 ? fallback : args[i + 1]; };
@@ -23,5 +24,5 @@ try {
     fs.writeFileSync(path.join(directory, 'results.md'), renderReport(protocol, result));
     console.log(`Evidence report written; release objective ${result.ok ? 'met' : 'unmet'}. No model called.`);
   }
-} catch (error) { console.error(`Evidence report failed: ${error.message}`); process.exitCode = 1; }
+} catch (error) { console.error(JSON.stringify({ errorCode: 'REPORT_EVIDENCE_UNREADABLE', details: contentSummary(error.message) })); process.exitCode = 1; }
 finally { console.log(ASSESSMENT_LIMITATION); }

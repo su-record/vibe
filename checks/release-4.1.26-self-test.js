@@ -69,6 +69,12 @@ function brokenCases() {
     ['coverage hidden critical omission', (f) => { omitRequirements(candidate(f), ['review-boundary']); candidate(f).privateGrade.criticalOmissions = []; }],
     ['assessment policy', (f) => { delete f.protocol.assessment; }],
     ['approved budget', (f) => { f.protocol.budget.rawTokens++; }],
+    ['approved session count', (f) => { f.protocol.limits.sessions++; }],
+    ['approved session duration', (f) => { f.protocol.limits.sessionMs++; }],
+    ['approved attempt duration', (f) => { f.protocol.limits.attemptMs++; }],
+    ['approved Claude turn cap', (f) => { f.protocol.settings.claude.maxTurns++; }],
+    ['missing diagnostics decision', (f) => { delete f.protocol.diagnostics; }],
+    ['unselected diagnostics path', (f) => { f.protocol.diagnostics.directory = '/not-opted-in'; }],
     ['approved model', (f) => { f.protocol.settings.claude.model = 'another-model'; }],
     ['Claude effort must stay unset', (f) => { f.protocol.settings.claude.effort = 'high'; }],
   ];

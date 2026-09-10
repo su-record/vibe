@@ -15,6 +15,7 @@ export const ASSESSMENT = { kind: 'deterministic', indicators: ['mechanicalCover
   humanReview: 'optional-diagnostic', assertions: 'structured-only', limitation: ASSESSMENT_LIMITATION };
 export const SETTINGS = { claude: { model: 'claude-opus-5', effort: null }, codex: { model: 'gpt-5.6-terra', effort: 'xhigh' } };
 export const BUDGET = { rawTokens: 60000000, usd: null, wallMs: 86400000, unknownMoneyAccepted: true };
+export const LIMITS = { sessions: 6, clarificationRounds: 2, scopeCorrections: 1, sessionMs: 900000, attemptMs: 3600000, concurrencyPerClient: 1 };
 
 export function clientVersions() {
   return Object.fromEntries(CLIENTS.map((client) => {
@@ -93,7 +94,7 @@ export function protocolDraft(repo, task, sourceSettings) {
     baselineRevision: BASELINE, candidateRevision: null, products: { baseline: null, candidate: null }, targets: TARGETS, schedule: schedule(),
     settings: Object.fromEntries(CLIENTS.map((client) => [client, { model: sourceSettings[client].model.value, effort: sourceSettings[client].effort.value,
       sources: sourceSettings[client], maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
-    limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1, sessionMs: 900000, attemptMs: 3600000, concurrencyPerClient: 1 },
+    limits: { ...LIMITS }, diagnostics: { enabled: false, directory: null },
     budget: { ...BUDGET, note: 'Accounting is observed at client-result boundaries. One in-flight invocation may overshoot; missing usage stops further calls.' },
     prices: {}, assessment: ASSESSMENT,
     task: 'work-opportunities', limitations: [ASSESSMENT_LIMITATION, 'Synthetic discovery case; no ROI, human-time-saving, broad prevention or general FDE claim.'],
@@ -102,24 +103,24 @@ export function protocolDraft(repo, task, sourceSettings) {
 
 export function protocolErrors(protocol, { frozen = true } = {}) {
   const errors = [];
-  const positive = (number) => Number.isFinite(number) && number > 0;
   if (protocol.id !== ID) errors.push('wrong protocol id');
   const planned = protocol.schedule?.map(({ id, client, variant, arm, attempt }) => ({ id, client, variant, arm, attempt }));
   if (JSON.stringify(planned) !== JSON.stringify(schedule())) errors.push('the 60 planned cells/order changed');
   if (JSON.stringify(protocol.targets) !== JSON.stringify(TARGETS)) errors.push('release targets changed');
   if (JSON.stringify(protocol.assessment) !== JSON.stringify(ASSESSMENT)) errors.push('deterministic assessment policy changed or missing');
   if (!protocol.baselineRevision?.startsWith(BASELINE)) errors.push('baseline must be pinned 4.1.25');
-  if (!protocol.limits || protocol.limits.clarificationRounds !== 2 || protocol.limits.scopeCorrections !== 1 || protocol.limits.concurrencyPerClient !== 1) errors.push('customer or concurrency protocol changed');
+  for (const [key, value] of Object.entries(LIMITS)) if (protocol.limits?.[key] !== value) errors.push(`${key}: approved execution limit changed or missing`);
+  const diagnostics = protocol.diagnostics;
+  if (typeof diagnostics?.enabled !== 'boolean' || (diagnostics.enabled ? typeof diagnostics.directory !== 'string' || !path.isAbsolute(diagnostics.directory) : diagnostics.directory !== null)) errors.push('explicit private diagnostics policy missing or invalid');
   for (const client of CLIENTS) {
     const setting = protocol.settings?.[client];
     for (const key of ['model', 'effort']) {
       if (setting?.[key] !== SETTINGS[client][key]) errors.push(`${client}: ${key} differs from the approved setting`);
       if (!setting?.sources?.[key]?.source || setting.sources[key].value !== setting[key]) errors.push(`${client}: missing or mismatched ${key} provenance`);
     }
-    if (client === 'claude' && (!Number.isInteger(setting?.maxTurns) || setting.maxTurns < 1)) errors.push('claude: missing turn cap');
+    if (client === 'claude' && (setting?.maxTurns !== 40 || setting?.turnLimit !== 'client-enforced')) errors.push('claude: approved 40-turn cap changed');
     if (client === 'codex' && (setting?.maxTurns !== null || setting?.turnLimit !== 'unavailable-use-shared-time-limit')) errors.push('codex: unavailable turn cap must be explicit; shared wall limits still apply');
   }
-  for (const key of ['sessions', 'sessionMs', 'attemptMs']) if (!positive(protocol.limits?.[key])) errors.push(`missing ${key} limit`);
   if (frozen) {
     if (CLIENTS.some((client) => !protocol.clientVersions?.[client]) || !protocol.nodeVersion) errors.push('client/runtime versions must be frozen');
     if (protocol.status !== 'frozen' || !/^[a-f0-9]{40}$/.test(protocol.candidateRevision ?? '')) errors.push('protocol/candidate not frozen');

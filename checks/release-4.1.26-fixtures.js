@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { schedule, TARGETS, SETTINGS, BUDGET, ASSESSMENT, ASSESSMENT_LIMITATION } from '../bench/fde/protocol.js';
+import { schedule, TARGETS, SETTINGS, BUDGET, LIMITS, ASSESSMENT, ASSESSMENT_LIMITATION } from '../bench/fde/protocol.js';
 import { digest } from '../bench/fde/evidence.js';
 
 const hash = 'a'.repeat(64), revision = 'b'.repeat(40);
@@ -18,7 +18,7 @@ export function example() {
     settings: Object.fromEntries(['claude', 'codex'].map((client) => [client, { ...SETTINGS[client],
       sources: Object.fromEntries(Object.entries(SETTINGS[client]).map(([key, value]) => [key, { value, source: 'self-test fixture' }])),
       maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
-    limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1, sessionMs: 1000, attemptMs: 6000, concurrencyPerClient: 1 },
+    limits: { ...LIMITS }, diagnostics: { enabled: false, directory: null },
     budget: { ...BUDGET }, assessment: ASSESSMENT };
   const rows = protocol.schedule.map((plan) => {
     const tokens = { input: plan.arm === 'scoped-4.1.26' ? 70 : 100, cacheRead: 0, cacheWrite: 0, output: 10 };
