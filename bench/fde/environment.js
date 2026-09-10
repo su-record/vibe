@@ -25,6 +25,6 @@ export function isolatedEnvironment(root, product, source = process.env, harness
   const env = agentEnvironment({ ...source, HOME: home, USERPROFILE: home, CODEX_HOME: path.join(home, '.codex'),
     VIBE_HOME_DIR: home, VIBE_SKIP_SETUP: '1', PATH: `${shim}${path.delimiter}${source.PATH}`,
     VIBE_BENCH_SNAPSHOTS: path.join(root, 'product-approvals.jsonl') });
-  for (const key of ['CLAUDECODE', 'CLAUDE_CODE_ENTRYPOINT', 'CLAUDE_PROJECT_DIR', 'CODEX_THREAD_ID']) delete env[key];
+  for (const key of ['CLAUDECODE', 'CLAUDE_CODE_ENTRYPOINT', 'CLAUDE_PROJECT_DIR', 'CLAUDE_SESSION_ID', 'CODEX_THREAD_ID']) delete env[key];
   return env;
 }

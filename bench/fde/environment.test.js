@@ -12,8 +12,10 @@ it('copies fixture credentials only, strips private keys, and keeps the product 
     fs.mkdirSync(path.join(original, '.codex'), { recursive: true });
     fs.writeFileSync(path.join(original, '.codex/auth.json'), '{"fixture":true}');
     fs.writeFileSync(path.join(original, '.codex/config.toml'), 'operator instructions must not reach the arm');
-    const env = isolatedEnvironment(path.join(root, 'attempt'), root, { HOME: original, PATH: process.env.PATH, VIBE_KEY_EXPECTED: 'private' }, 'off');
+    const env = isolatedEnvironment(path.join(root, 'attempt'), root, { HOME: original, PATH: process.env.PATH, VIBE_KEY_EXPECTED: 'private', CLAUDE_SESSION_ID: 'operator-session', CODEX_THREAD_ID: 'operator-thread' }, 'off');
     expect(env.VIBE_KEY_EXPECTED).toBeUndefined();
+    expect(env.CLAUDE_SESSION_ID).toBeUndefined();
+    expect(env.CODEX_THREAD_ID).toBeUndefined();
     expect(fs.existsSync(path.join(env.CODEX_HOME, 'auth.json'))).toBe(true);
     expect(fs.existsSync(path.join(env.CODEX_HOME, 'config.toml'))).toBe(false);
     const blocked = spawnSync(process.execPath, [path.join(root, 'attempt/bin/bare-vibe.cjs')], { env, encoding: 'utf8' });
