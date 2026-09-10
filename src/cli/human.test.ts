@@ -36,11 +36,11 @@ describe('ask records questions, reports belong in chat', () => {
   });
 
   it('the CLI carries the usage error through as exit 2', () => {
-    const cli = fileURLToPath(new URL('../cli.ts', import.meta.url));
-    const tsx = fileURLToPath(new URL('../../node_modules/.bin/tsx', import.meta.url));
-    const result = spawnSync(tsx, [cli, 'ask', 'All checks passed.'], {
-      cwd: root, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '1' },
+    const cli = fileURLToPath(new URL('../../dist/cli.js', import.meta.url));
+    const result = spawnSync(process.execPath, [cli, 'ask', 'All checks passed.'], {
+      cwd: root, encoding: 'utf-8', timeout: 60_000,
+      env: { ...process.env, HOME: root, USERPROFILE: root, VIBE_SKIP_SETUP: '1' },
     });
     expect(result.status, result.stdout || result.stderr).toBe(2);
-  }, 60_000); // The neighbouring CLI tests also run through tsx under concurrent suites.
+  }, 60_000);
 });

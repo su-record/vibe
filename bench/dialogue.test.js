@@ -68,8 +68,14 @@ describe('the task-owned fake user and stalled attempts', () => {
   it.each(['off', 'on', 'scoped', 'stalled'])('the runner records two sessions and pre-judge stall status: %s', (mode) => {
     const bin = path.join(ws, 'bin');
     fs.mkdirSync(bin);
-    fs.writeFileSync(path.join(bin, 'claude'), `#!${process.execPath}
+    const fake = path.join(bin, 'claude.cjs');
+    fs.writeFileSync(fake, `
 const fs = require('node:fs');
+const args = process.argv.slice(2);
+const prompt = process.platform === 'win32' ? fs.readFileSync(0, 'utf8') : args[args.indexOf('-p') + 1];
+if (prompt !== fs.readFileSync('TASK.md', 'utf8')) process.exit(9);
+const sources = process.env.DIALOGUE_TEST_MODE === 'off' ? '' : 'project,local';
+if (args[args.indexOf('--setting-sources') + 1] !== sources) process.exit(10);
 const first = !fs.existsSync('.session-one');
 const stalled = process.env.DIALOGUE_TEST_MODE === 'stalled';
 if (first) {
@@ -92,11 +98,13 @@ if (first) {
   }
 }
 console.log(JSON.stringify({ type: 'result', result: first ? 'Which finance rules?' : stalled ? 'Which rounding?' : 'Files written.', num_turns: 1, total_cost_usd: 0, modelUsage: { fixture: { inputTokens: 1, outputTokens: 1 } } }));
-`, { mode: 0o755 });
+`);
+    if (process.platform === 'win32') fs.writeFileSync(path.join(bin, 'claude.cmd'), `@echo off\r\n"${process.execPath}" "${fake}" %*\r\n`);
+    else fs.writeFileSync(path.join(bin, 'claude'), `#!/bin/sh\nexec "${process.execPath}" "${fake}" "$@"\n`, { mode: 0o755 });
     const ledger = path.join(ws, 'result.jsonl');
     const root = fileURLToPath(new URL('../', import.meta.url));
     const result = spawnSync(process.execPath, [path.join(root, 'bench/run.js'), '--task', 'anomaly', '--harness', mode === 'stalled' ? 'on' : mode, '--client', 'claude', '--runs', '1', '--ledger', ledger], {
-      encoding: 'utf-8', env: { ...process.env, HOME: ws, VIBE_HOME_DIR: ws, PATH: `${bin}${path.delimiter}${process.env.PATH}`, DIALOGUE_TEST_MODE: mode, DIALOGUE_TEST_CLI: path.join(root, 'dist/cli.js') }, timeout: 60_000,
+      encoding: 'utf-8', env: { ...process.env, HOME: ws, USERPROFILE: ws, VIBE_HOME_DIR: ws, PATH: `${bin}${path.delimiter}${process.env.PATH}`, DIALOGUE_TEST_MODE: mode, DIALOGUE_TEST_CLI: path.join(root, 'dist/cli.js') }, timeout: 60_000,
     });
     expect(result.status, result.stderr).toBe(0);
     const line = JSON.parse(fs.readFileSync(ledger, 'utf-8'));

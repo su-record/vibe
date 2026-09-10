@@ -19,7 +19,7 @@ it.each([
   const ledger = path.join(fixture, 'ledger.jsonl');
   const result = spawnSync(process.execPath, [runner, '--client', 'claude', '--harness', 'off', '--prepare-only', '--ledger', ledger, ...selection], {
     cwd: fixture, encoding: 'utf-8', timeout: 20_000,
-    env: { ...process.env, HOME: fixtureHome, TMPDIR: fixture, VIBE_SKIP_SETUP: '1' },
+    env: { ...process.env, HOME: fixtureHome, USERPROFILE: fixtureHome, TMPDIR: fixture, TMP: fixture, TEMP: fixture, VIBE_SKIP_SETUP: '1' },
   });
   expect(result.status, result.stdout || result.stderr).toBe(0);
   const prepared = JSON.parse(result.stdout);

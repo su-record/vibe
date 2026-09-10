@@ -9,7 +9,10 @@ let failedRuns = 0;
 
 function run() {
   return new Promise((resolve) => {
-    const child = spawn('npx', ['vitest', 'run'], { encoding: 'utf-8' });
+    // npm's Windows shim needs cmd.exe; the command and arguments are fixed.
+    const child = process.platform === 'win32'
+      ? spawn('npx.cmd vitest run', { shell: true })
+      : spawn('npx', ['vitest', 'run']);
     let out = '';
     child.stdout.on('data', (d) => (out += d));
     child.stderr.on('data', (d) => (out += d));
