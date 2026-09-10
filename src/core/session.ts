@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import { denied } from './errors.js';
-import { inspectContract } from './inspect.js';
+import { inspectContract, type ExecutionPlan } from './inspect.js';
 import { listRegressions, regressionProblems } from './regress.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,6 +9,7 @@ export interface StopEvidenceInput {
   run: string;
   done: boolean;
   intentHash: string;
+  executionPlan: ExecutionPlan;
   scenarios: Array<{ id: string; status: 'pass' | 'fail' | 'pending' | 'blocked' | 'stale' | 'handoff' }>;
 }
 interface SessionView { status: string; root?: string; revision?: string; complete?: boolean; [key: string]: unknown }
