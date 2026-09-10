@@ -20,6 +20,7 @@ import { changedBlobs, changedSince, treeHash } from './tree.js';
 import { consentStatus, requireConsent } from './consent.js';
 import { fingerprint } from './inspect.js';
 import { diagnosticFile } from './evidence.js';
+import { foldHandoffResults } from './handoff-results.js';
 import { readHandoffs } from './handoff.js';
 import { outputCapture } from './output-capture.js';
 import { reserveRun, writeRunEvidence } from './run-id.js';
@@ -80,10 +81,7 @@ export function readResults(root: string): ResultsFile {
   const live: ResultsFile = {};
   // A pass is bound to the tree it was taken on: any other tree makes it stale, never DONE
   for (const [id, r] of Object.entries(stored)) live[id] = r.last === 'pass' && r.tree !== tree ? { ...r, last: 'stale' } : r;
-  const handoffs = readHandoffs(root);
-  for (const [id, result] of Object.entries(live)) if (result.last === 'handoff' && !handoffs[id]) result.last = 'pending';
-  for (const id of Object.keys(handoffs)) live[id] = { last: 'handoff', at: stored[id]?.at ?? '', run: stored[id]?.run ?? '' };
-  return live;
+  return foldHandoffResults(root, live);
 }
 
 async function execute(scenario: Scenario, root: string): Promise<CheckResult> {
@@ -317,7 +315,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const { next, stuck, done } = settleState(root, readState(root), failHash, remaining, outcomes, at);
   const report = { run, at, state: next.state, outcomes, passed, failed, pending, failHash, stuck, done, remaining };
   recordReport(root, report, scenarios, edges);
-  recordStopEvidence(root, { run, done, intentHash: state.intentHash, scenarios: gated.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
+  recordStopEvidence(root, { run, done, intentHash: state.intentHash!, scenarios: gated.map((scenario) => ({ id: scenario.id, status: results[scenario.id]?.last ?? 'pending' })) });
   writeState(root, next);
   for (const event of [...(stuck ? ['stuck' as const] : []), ...(done ? ['done' as const] : [])]) record(root, { event, client: detectClient(), model: detectModel(), run, failHash });
   return report;
