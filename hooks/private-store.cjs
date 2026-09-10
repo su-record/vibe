@@ -13,8 +13,8 @@ function privateEntry(stat, directory) {
   return stat;
 }
 function privateStat(file, directory) { return privateEntry(fs.lstatSync(file), directory); }
-function privateDirectory(root, create) {
-  const home = fs.realpathSync(os.homedir());
+function privateDirectory(root, create, homeDirectory = os.homedir()) {
+  const home = fs.realpathSync(homeDirectory);
   const dir = path.join(home, '.vibe-runtime');
   if (inside(fs.realpathSync(root), dir)) throw new Error('local execution consent storage must be outside the project');
   if (!fs.lstatSync(dir, { throwIfNoEntry: false })) {
@@ -27,9 +27,9 @@ function privateDirectory(root, create) {
 function entryName(name) {
   if (!/^[a-z0-9.-]+$/i.test(name)) throw new Error('invalid local store entry name');
 }
-function readPrivate(root, name, maxBytes = 2097152) {
+function readPrivate(root, name, maxBytes = 2097152, homeDirectory) {
   entryName(name);
-  const dir = privateDirectory(root, false);
+  const dir = privateDirectory(root, false, homeDirectory);
   if (!fs.existsSync(dir)) return null;
   const file = path.join(dir, name);
   if (!fs.lstatSync(file, { throwIfNoEntry: false })) return null;
@@ -45,9 +45,9 @@ function readPrivate(root, name, maxBytes = 2097152) {
     return buffer.subarray(0, length).toString('utf8');
   } finally { fs.closeSync(fd); }
 }
-function writePrivate(root, name, text) {
+function writePrivate(root, name, text, homeDirectory) {
   entryName(name);
-  const dir = privateDirectory(root, true);
+  const dir = privateDirectory(root, true, homeDirectory);
   const file = path.join(dir, name);
   if (fs.lstatSync(file, { throwIfNoEntry: false })) privateStat(file, false);
   const temporary = path.join(dir, `${name}.${randomBytes(12).toString('hex')}.tmp`);

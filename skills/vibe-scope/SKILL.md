@@ -8,6 +8,8 @@ user-invocable: false
 
 ## Procedure
 
+Read fewer relevant files, each in full (Claude Read; Codex `cat`); grep/rg/find locate only, never substitute content slices. Over 400 lines when not editing: `vibe read --ask`.
+
 1. Turn the discovery result into scenarios. A scenario is stored only if it carries exactly one check type:
    - `run` command exit code · `file` exists/regex/contains/absent (a regex that must match nowhere)/traceable (every number is in an evidence file)/a11y (mechanical accessibility defects)/schema/sum (a column total equals a reference) · `http` status/schema/maxMs · `eval` count of matching labelled cases (jsonl `{input, expected}` through a runner's stdin/stdout, `expect.pass` is a count) · `review` an antislop pack's reviewer stages in order (text: copy editor → chief editor; design: markup reviewer → art director; code: reviewer → maintainer), run by the harness, exact `PASS` only · `human` no verdict (goes to the inbox)
    - When a success condition is human-read text (blog, column, article, report, script, speech), propose `check: { type: review, path: <file>, contract: <file>, evidence: <file> }` and mark it `⚠ model-judged` in the approval message.
