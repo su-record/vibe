@@ -1,7 +1,5 @@
-import { spawn } from 'node:child_process';
-import fs from 'node:fs';
-import { createHash } from 'node:crypto';
-import { diagnosticFile, artifactReference, writeDiagnostic } from './private-artifacts.js';
+import { capture } from './capture.js';
+export { capture } from './capture.js';
 
 const zero = () => ({ input: 0, cacheRead: 0, cacheWrite: 0, output: 0 });
 export const weightedInput = (tokens) => tokens.input + 0.1 * tokens.cacheRead + 1.25 * tokens.cacheWrite;
@@ -81,51 +79,10 @@ export async function runClient({ client, settings, workspace, harness, env, pro
   const started = Date.now();
   const result = await captureProcess(client, clientArgs(client, settings, workspace, harness), { workspace, env, prompt, timeoutMs, diagnostics, artifactId });
   const parsed = parseEvents(client, result.stdout);
-  const errorCode = result.errorCode ?? (result.exit !== 0 ? 'CLIENT_EXIT_NONZERO' : parsed.errors.length ? 'CLIENT_RESULT_ERROR' : null);
+  const complete = result.complete === true;
+  const errorCode = result.errorCode ?? (!complete ? 'CLIENT_TRANSPORT_INCOMPLETE' : null) ?? (result.exit !== 0 ? 'CLIENT_EXIT_NONZERO' : parsed.errors.length ? 'CLIENT_RESULT_ERROR' : null);
   return { ...parsed, requestedModel: settings.model, exit: result.exit, signal: result.signal, error: errorCode, errorCode,
-    transport: result.transport, diagnostics: result.diagnostics, ms: Date.now() - started, usage: parsed.tokens ? 'captured' : 'missing' };
-}
-
-function finishStreams(streams) {
-  const references = [], transport = {}, content = {};
-  for (const [kind, stream] of Object.entries(streams)) {
-    if (stream.fd !== null) { fs.fsyncSync(stream.fd); fs.closeSync(stream.fd); references.push(artifactReference(stream.file, kind)); }
-    const bytes = Buffer.concat(stream.chunks); content[kind] = bytes.toString('utf8');
-    transport[kind] = { bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
-  }
-  return { content, transport, references };
-}
-
-export async function capture(command, args, { workspace, env, prompt, timeoutMs, diagnostics, artifactId }) {
-  const { shellArgs } = await import('../../dist/core/readerSession.js');
-  return new Promise((resolve, reject) => {
-    const streams = Object.fromEntries(['stdout', 'stderr'].map((kind) => {
-      const file = diagnosticFile(diagnostics, artifactId, kind);
-      return [kind, { chunks: [], file, fd: file ? fs.openSync(file, 'wx', 0o600) : null }];
-    }));
-    const child = spawn(command, shellArgs(args), { cwd: workspace, env, shell: process.platform === 'win32', stdio: ['pipe', 'pipe', 'pipe'] });
-    let errorCode = null, errorDetail = null, settled = false, grace;
-    const timer = setTimeout(() => { errorCode = 'CLIENT_TIMEOUT'; child.kill('SIGKILL'); }, timeoutMs);
-    const finish = (exit, signal) => {
-      if (settled) return; settled = true; clearTimeout(timer); clearTimeout(grace);
-      try {
-        const { content, transport, references } = finishStreams(streams);
-        const detail = writeDiagnostic(diagnostics, artifactId, 'transport', { exit, signal, errorCode, errorDetail });
-        if (detail) references.push(detail);
-        resolve({ ...content, exit, signal, errorCode, transport, diagnostics: references });
-      } catch (error) { reject(error); }
-    };
-    for (const [kind, stream] of Object.entries(streams)) child[kind].on('data', (bytes) => {
-      stream.chunks.push(bytes);
-      try { if (stream.fd !== null && fs.writeSync(stream.fd, bytes) !== bytes.length) throw new Error('partial diagnostic write'); }
-      catch (error) { errorCode = 'DIAGNOSTIC_WRITE_FAILED'; errorDetail = error.message; child.kill('SIGKILL'); }
-    });
-    child.on('error', (err) => { errorCode = 'CLIENT_START_FAILED'; errorDetail = err.message; });
-    child.on('exit', (exit, signal) => { grace = setTimeout(() => {
-      errorCode ??= 'CLIENT_TRANSPORT_INCOMPLETE'; child.stdout.destroy(); child.stderr.destroy(); finish(exit, signal);
-    }, 1000); });
-    child.on('close', finish);
-    child.stdin.on('error', () => undefined);
-    child.stdin.end(prompt);
-  });
+    transport: result.transport, diagnostics: result.diagnostics, complete, ms: Date.now() - started,
+    ...(!complete ? { observedUsage: { tokens: parsed.tokens, models: parsed.models, costUsd: parsed.costUsd, complete: false }, tokens: null, models: [], costUsd: null } : {}),
+    usage: !complete ? 'incomplete' : parsed.tokens ? 'captured' : 'missing' };
 }

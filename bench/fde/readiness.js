@@ -20,3 +20,6 @@ export function compatibility(repo, records) {
   checkMigrationDocument(path.join(repo, 'docs/check-consent.md'));
   return revision;
 }
+
+const readinessCodes = new Set(['CI_REQUIRED_LINUX', 'CI_REQUIRED_WINDOWS', 'MIGRATION_DOCUMENT_MISSING', 'MIGRATION_DOCUMENT_BOUNDARIES_MISSING']);
+export const readinessCause = (error) => readinessCodes.has(error?.message) ? error.message : null;

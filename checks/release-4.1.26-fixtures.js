@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { schedule, TARGETS, SETTINGS, BUDGET, LIMITS, ASSESSMENT, ASSESSMENT_LIMITATION } from '../bench/fde/protocol.js';
+import { schedule, TARGETS, SETTINGS, BUDGET, LIMITS, CAPTURE, ASSESSMENT, ASSESSMENT_LIMITATION } from '../bench/fde/protocol.js';
 import { digest } from '../bench/fde/evidence.js';
 
 const hash = 'a'.repeat(64), revision = 'b'.repeat(40);
@@ -18,14 +18,14 @@ export function example() {
     settings: Object.fromEntries(['claude', 'codex'].map((client) => [client, { ...SETTINGS[client],
       sources: Object.fromEntries(Object.entries(SETTINGS[client]).map(([key, value]) => [key, { value, source: 'self-test fixture' }])),
       maxTurns: client === 'claude' ? 40 : null, turnLimit: client === 'claude' ? 'client-enforced' : 'unavailable-use-shared-time-limit' }])),
-    limits: { ...LIMITS }, diagnostics: { enabled: false, directory: null },
+    limits: { ...LIMITS }, capture: { ...CAPTURE }, diagnostics: { enabled: false, directory: null },
     budget: { ...BUDGET }, assessment: ASSESSMENT };
   const rows = protocol.schedule.map((plan) => {
     const tokens = { input: plan.arm === 'scoped-4.1.26' ? 70 : 100, cacheRead: 0, cacheWrite: 0, output: 10 };
     return { ...plan, event: 'attempt', protocol: protocol.id, protocolHash: digest(protocol), runnerHash: hash, fixtureHash: hash,
       harnessRevision: plan.arm === 'off' ? null : plan.arm === 'scoped-4.1.25' ? protocol.baselineRevision : revision, model: SETTINGS[plan.client].model,
       tokens, usage: 'captured', ms: 100, scopeSnapshots: [{ hash: digest(plan.id) }], gradedScopeHash: digest(plan.id),
-      sessions: [{ tokens, phase: 'discovery', phaseAllocation: 'unavailable-within-session' }],
+      sessions: [{ tokens, complete: true, transport: Object.fromEntries(['stdout', 'stderr'].map((kind) => [kind, { bytes: 0, sha256: digest(''), retainedBytes: 0, retainedSha256: digest(''), complete: true }])), phase: 'discovery', phaseAllocation: 'unavailable-within-session' }],
       events: ['intake', 'scope', 'approval', 'build', 'proof', 'handoff'].map((phase) => ({ phase, allocation: 'unavailable' })),
       customer: { clarificationRounds: 1, corrections: 0 }, privateGrade: { complete: true, fixture: 'scored', sourcePreserved: true,
         mechanicalCoverage: { ratio: 1, totalWeight: 23, satisfiedWeight: 23, requirements: requirements.map((item) => ({ ...item, satisfied: true })) },

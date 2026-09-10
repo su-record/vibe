@@ -6,8 +6,9 @@ import { safeSession } from './privacy.js';
 export function budgetReason(protocol, records, started) {
   if (records.some((row) => ['session-start', 'session-result'].includes(row.event) && !records.some((entry) => entry.event === 'session-usage' && entry.id === row.id && entry.session === row.session))) return 'SESSION_USAGE_INTERRUPTED';
   const summaries = records.filter((row) => row.event === 'session-usage');
-  if (summaries.some((row) => !row.tokens)) return 'USAGE_MISSING';
-  if (summaries.reduce((sum, row) => sum + rawTokens(row.tokens), 0) >= protocol.budget.rawTokens) return 'TOKEN_BUDGET_REACHED';
+  if (summaries.reduce((sum, row) => sum + (row.observedUsage?.tokens || row.tokens ? rawTokens(row.observedUsage?.tokens ?? row.tokens) : 0), 0) >= protocol.budget.rawTokens) return 'TOKEN_BUDGET_REACHED';
+  if (protocol.budget.usd > 0 && summaries.reduce((sum, row) => sum + (row.observedUsage?.costUsd ?? row.costUsd ?? 0), 0) >= protocol.budget.usd) return 'CURRENCY_BUDGET_REACHED';
+  if (summaries.some((row) => !row.tokens || row.observedUsage?.tokensComplete === false)) return 'USAGE_MISSING';
   if (Date.now() - started >= protocol.budget.wallMs) return 'WALL_BUDGET_REACHED';
   if (protocol.budget.usd > 0) {
     if (summaries.some((row) => !Number.isFinite(row.costUsd))) return 'CURRENCY_USAGE_MISSING';

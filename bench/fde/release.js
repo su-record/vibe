@@ -2,6 +2,7 @@ import { CLIENTS, VARIANTS, ARMS, TARGETS, ASSESSMENT_LIMITATION, protocolErrors
 import { digest } from './evidence.js';
 import { weightedInput, addTokens } from './clients.js';
 import { failureCode } from './privacy.js';
+import { completeCapture } from './capture-policy.js';
 
 const mean = (rows, get) => rows.length ? rows.reduce((sum, row) => sum + get(row), 0) / rows.length : null;
 const tokenValues = (tokens) => tokens && ['input', 'cacheRead', 'cacheWrite', 'output'].every((key) => Number.isFinite(tokens[key]) && tokens[key] >= 0);
@@ -45,6 +46,7 @@ function rowErrors(row, plan, protocol, requirements) {
   if (!validGrade(row.privateGrade, requirements)) errors.push('missing/invalid scored private grade or inconsistent mechanical coverage');
   if (row.gradedScopeHash !== row.scopeSnapshots?.[0]?.hash) errors.push('discovery grade must use the initial pre-build agreement');
   if (!row.sessions?.length || row.sessions.some((s) => !tokenValues(s.tokens) || s.phaseAllocation !== 'unavailable-within-session' || !['discovery', 'implementation'].includes(s.phase))) errors.push('missing or invented phase attribution');
+  if (row.sessions?.some((session) => !completeCapture(session))) errors.push('missing, failed or incomplete bounded transport');
   const aggregate = addTokens([...(row.sessions ?? []).map((s) => s.tokens), ...(row.sideUsage ?? []).map((s) => s.tokens)]);
   if (!aggregate || JSON.stringify(aggregate) !== JSON.stringify(row.tokens)) errors.push('session/side usage is missing or does not reconcile');
   const phases = new Set(row.events?.map((entry) => entry.phase));

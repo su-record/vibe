@@ -3,11 +3,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { runCohort } from '../bench/fde/cohort.js';
-import { requireCI, checkMigrationDocument } from '../bench/fde/readiness.js';
+import { requireCI, checkMigrationDocument, readinessCause } from '../bench/fde/readiness.js';
 import { capture, runClient } from '../bench/fde/clients.js';
 import { recordSession } from '../bench/fde/accounting.js';
 import { attemptEvidence, readLines } from '../bench/fde/evidence.js';
 import { ensurePrivateDirectory, auditDiagnostics } from '../bench/fde/private-artifacts.js';
+import { captureCases } from './check-trust-capture-self-test.js';
 
 const revision = 'c'.repeat(40), marker = 'PRIVATE_PAYLOAD_7291';
 const ci = () => ['linux', 'windows'].map((platform) => ({ platform, revision, status: 'passed', url: 'fixture-only', at: '2026-09-10' }));
@@ -23,6 +24,8 @@ async function readinessCases(root) {
   await assert.rejects(runCohort({ ...options, ci: ci() }, services), /post-CI validation/);
   assert.equal(validations, 1); assert.equal(invocations, 0);
   assert.doesNotThrow(() => requireCI(ci(), revision));
+  for (const code of ['CI_REQUIRED_LINUX', 'CI_REQUIRED_WINDOWS', 'MIGRATION_DOCUMENT_MISSING', 'MIGRATION_DOCUMENT_BOUNDARIES_MISSING']) assert.equal(readinessCause(new Error(code)), code);
+  assert.equal(readinessCause(new Error(marker)), null, 'free text must stay out of shared error causes');
   const document = path.join(root, 'check-consent.md');
   fs.writeFileSync(document, '# Fixture migration\n\nUpgrade locally.\n\n## Rollback\nPreserve prior evidence.\n');
   assert.doesNotThrow(() => checkMigrationDocument(document));
@@ -44,7 +47,7 @@ async function privacyCase(root, enabled) {
     env: { ...process.env, HOME: workspace, USERPROFILE: workspace }, prompt: '', timeoutMs: 5000, diagnostics, artifactId: `fixture-${enabled}`,
     captureProcess: (_command, _args, options) => capture(process.execPath, [script], options) });
   assert.equal(session.finalText, marker, 'customer scheduling may consume the original text in memory');
-  assert.equal(session.errorCode, 'CLIENT_EXIT_NONZERO');
+  assert.equal(session.errorCode, 'CLIENT_EXIT_NONZERO'); assert.equal(session.complete, true);
   fs.mkdirSync(path.join(workspace, '.vibe'));
   fs.writeFileSync(path.join(workspace, '.vibe/results.json'), JSON.stringify({ output: marker }));
   fs.writeFileSync(path.join(workspace, '.vibe/ledger.jsonl'), JSON.stringify({ event: 'usage', model: 'fixture-helper', tokens: { input: 1, cacheRead: 0, cacheWrite: 0, output: 2 }, report: marker }));
@@ -68,7 +71,8 @@ export async function selfTest() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-check-trust-'));
   try {
     await readinessCases(root); await privacyCase(root, false); await privacyCase(root, true);
+    await captureCases(root);
     assert.throws(() => ensurePrivateDirectory(root, [root]), /PRIVATE_PATH/);
-    console.log('check-trust compatibility self-test: pre-run CI, migration boundary and opt-in private diagnostics passed; live calls 0');
+    console.log('check-trust compatibility self-test: pre-run CI, migration boundary, bounded capture, partial accounting and opt-in private diagnostics passed; live calls 0');
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 }
