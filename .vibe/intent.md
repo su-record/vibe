@@ -19,6 +19,13 @@ Five trap tasks in a row — a hidden file, a shared helper, forty modules, a re
 ### D · The rest of the bench, once more
 - Every set reruns on both clients across `off`, `on` and `scoped` where the task admits it; the gate is the release condition; `bench/claims/2026-09-09-4.1.25.md` pre-registers the rules before the run. README's opening is rewritten from the numbers, and says what scoping cost and what it caught.
 
+### G · What an outside review found, and the release's own defects
+- A review of the gate and the ledger (Codex, 2026-09-09) reproduced three: rows with an `error` were counted toward the minimum-run requirement while being excluded from the verdict, so missing evidence passed; the direction branch checked `on > off || scoped > off` first, so a scoped improvement made the `on` regression check unreachable; `compare()` cast three arms to a two-element tuple and `pairedOnly()` returned unfiltered rows when a third arm was present, so a three-arm comparison judged the first two and `--paired` stopped pairing. All three are fixed with tests, and the release gate now requires five usable runs per required arm and a finite value for every gated metric.
+- Found while measuring: `checks/suite-under-load.js` reported success when a child exited non-zero without printing a failure pattern (a child that never started); the load check now fails on the exit code itself.
+- Reported by a user: the `PreToolUse` hook blocked `vibe authorize` — the very command its own message asks for — and any command naming a path such as `.vibe/doc-reset`, because the action words matched anywhere in the string. The hook no longer gates a `vibe` command, nor an action word that is part of a longer token; `npm run reset-data`, `prisma migrate reset`, `rm -rf` and `git push` are still gated, `pg_restore` included.
+- Found by the same review: project discovery skipped its home boundary when the search started at the home, so a test whose working directory was its own fixture home climbed out and wrote records into the real `/home/ubuntu/.vibe` (and, earlier, `/tmp/.vibe`). Discovery and creation now stop at the passed home, the real OS home and the system temp root, and creating a project in any of them is refused.
+- The token policy defaults to `off` by the user's decision: a plain yes approves and the hook only warns; `irreversible` and `strict` are opt-in.
+
 ## Constraints
 - Patch version 4.1.25; files ≤ 400 lines, functions ≤ 50; card ≤ 1024 bytes; six skills ≤ 300 lines.
 - No release until the gate passes and the check is DONE.

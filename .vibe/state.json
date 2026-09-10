@@ -1,12 +1,12 @@
 {
-  "state": "STUCK",
-  "intentHash": "813870424ca93965",
-  "approvedAt": "2026-09-09T21:06:41.494Z",
-  "runs": 5,
-  "failStreak": 2,
-  "lastFailHash": "798aac42",
-  "doneAt": null,
-  "doneTree": null,
+  "state": "DONE",
+  "intentHash": "96d202f21867c896",
+  "approvedAt": "2026-09-10T02:06:52.706Z",
+  "runs": 2,
+  "failStreak": 0,
+  "lastFailHash": null,
+  "doneAt": "2026-09-10T02:06:57.453Z",
+  "doneTree": "566d5472958dd937",
   "abandonedReason": null,
-  "updatedAt": "2026-09-10T00:48:33.684Z"
+  "updatedAt": "2026-09-10T02:15:57.664Z"
 }
