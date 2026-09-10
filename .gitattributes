@@ -1,0 +1,6 @@
+# pluginTree emits LF; keep its committed artifacts byte-identical on every platform.
+/.claude-plugin/plugin.json text eol=lf
+/.claude-plugin/marketplace.json text eol=lf
+/.codex-plugin/plugin.json text eol=lf
+/hooks/hooks.json text eol=lf
+/hooks/codex-hooks.json text eol=lf
