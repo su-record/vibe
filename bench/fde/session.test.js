@@ -7,18 +7,20 @@ import { draft } from '../../dist/core/intent.js';
 import { discoverySession } from './session.js';
 
 async function fixture(run, customer = { respond: () => ({ status: 'report' }), proposal: () => ({ approved: true, answer: 'Approved local draft pilot.' }) }) {
-  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-fde-protocol-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-fde-protocol-test-'));
+  const workspace = path.join(root, 'project');
+  fs.mkdirSync(workspace);
   fs.writeFileSync(path.join(workspace, 'TASK.md'), 'Synthetic protocol test');
   let context;
   try {
-    const home = path.join(workspace, 'fixture-home');
+    const home = path.join(root, 'fixture-home');
     fs.mkdirSync(home);
     context = await discoverySession({ workspace, customer, variant: 'status-first', repo: fileURLToPath(new URL('../../', import.meta.url)),
       env: { ...process.env, HOME: home, USERPROFILE: home, VIBE_HOME_DIR: home, VIBE_SKIP_SETUP: '1' },
       limits: { sessions: 6, clarificationRounds: 2, scopeCorrections: 1 } }, (session) => run(workspace, session));
     return context;
   } finally {
-    fs.rmSync(workspace, { recursive: true, force: true });
+    fs.rmSync(root, { recursive: true, force: true });
     for (const snapshot of context?.snapshots ?? []) fs.rmSync(snapshot.path, { recursive: true, force: true });
   }
 }
