@@ -10,15 +10,26 @@ import { vibePath } from './paths.js';
 const CATEGORIES = ['unavailable-input', 'environment', 'outside-authority', 'technical-limit', 'withdrawn'];
 export interface ScenarioHandoff { intentHash: string; scenario: string; reason: string; category: string; owner: string; nextAction: string; evidence: string | null }
 
-export function readHandoffs(root: string): Record<string, ScenarioHandoff> {
+export function readHandoffHistory(root: string) {
   const hash = readState(root).intentHash;
   const pending: Record<string, ScenarioHandoff> = {};
-  for (const event of readLedger(root)) {
+  const invalidatedAfter = new Map<string, number>();
+  const checkedAt = new Map<string, number>();
+  for (const [index, event] of readLedger(root).entries()) {
+    if (event.event === 'check' && event.run) {
+      for (const [id, status] of Object.entries(event.scenarios ?? {})) if (status === 'pass') checkedAt.set(`${event.run}#${id}`, index);
+    }
     if (event.handoff?.intentHash !== hash) continue;
+    if (event.event !== 'handoff' && event.event !== 'reopen') continue;
+    invalidatedAfter.set(event.handoff.scenario, index);
     if (event.event === 'handoff') pending[event.handoff.scenario] = event.handoff;
     if (event.event === 'reopen') delete pending[event.handoff.scenario];
   }
-  return pending;
+  return { pending, invalidatedAfter, checkedAt };
+}
+
+export function readHandoffs(root: string): Record<string, ScenarioHandoff> {
+  return readHandoffHistory(root).pending;
 }
 
 function validate(root: string, id: string, reason: string): string {

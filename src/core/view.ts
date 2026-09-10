@@ -7,6 +7,7 @@ import { listRegressions, regressionProblems } from './regress.js';
 import { filesFor } from './context.js';
 import { PROCEDURE } from './procedure.js';
 import { isHuman, type Scenario } from './scenarios.js';
+import { isHandoffOnly } from './handoff-results.js';
 import { suggestSkills, type Proposal } from './skills.js';
 import { readState, stageOf, type Stage, type State } from './state.js';
 import { readText } from './store.js';
@@ -109,7 +110,7 @@ function nextLine(state: State, stage: Stage, pending: ScenarioView[], inbox: In
   if (stage === 'discover') return 'discover — the vibe-discover skill: inspect accessible evidence, resolve material unknowns, stop when agreement is sufficient';
   if (stage === 'scope') return 'approve — the vibe-scope skill: vibe intent analyze, confirm sufficient agreement, one approval message; wait for "yes"';
   if (state === 'DONE') return `report — DONE r-${run}: answer the user from this output — what was built, which checks passed — reply in chat, not vibe ask; with no skill and no further reads; HANDOFF.md only if the intent asks`;
-  if (pending.length && pending.every((s) => s.last === 'handoff' || s.last === 'blocked')) return `handoff — required work remains unmet: ${scenarioTargets(pending)}; reopen a handed-off scenario explicitly before retrying`;
+  if (isHandoffOnly(pending)) return `handoff — required work remains unmet: ${scenarioTargets(pending)}; reopen a handed-off scenario explicitly before retrying`;
   if (remaining.length === 0) return 'check --all — nothing remaining; the verdict comes from vibe check';
   const failed = pending.filter((s) => s.last === 'fail');
   if (failed.length > 0) return `fix ${scenarioTargets(failed)} — ${PROCEDURE.failure}; then vibe check <id>`;
