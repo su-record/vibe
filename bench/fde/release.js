@@ -1,6 +1,7 @@
 import { CLIENTS, VARIANTS, ARMS, TARGETS, ASSESSMENT_LIMITATION, protocolErrors } from './protocol.js';
 import { digest } from './evidence.js';
 import { weightedInput, addTokens } from './clients.js';
+import { failureCode } from './privacy.js';
 
 const mean = (rows, get) => rows.length ? rows.reduce((sum, row) => sum + get(row), 0) / rows.length : null;
 const tokenValues = (tokens) => tokens && ['input', 'cacheRead', 'cacheWrite', 'output'].every((key) => Number.isFinite(tokens[key]) && tokens[key] >= 0);
@@ -38,7 +39,7 @@ function rowErrors(row, plan, protocol, requirements) {
   const revision = row.arm === ARMS[1] ? protocol.baselineRevision : row.arm === ARMS[2] ? protocol.candidateRevision : null;
   if (row.harnessRevision !== revision) errors.push('harness revision mismatch');
   if (row.model !== protocol.settings[row.client]?.model) errors.push('model mismatch');
-  if (row.error || row.stalled || row.incomplete) errors.push(row.error ?? (row.stalled ? 'stalled' : 'incomplete'));
+  if (row.error || row.errorCode || row.stalled || row.incomplete) errors.push(failureCode(row.errorCode ?? row.error) ?? (row.stalled ? 'stalled' : 'incomplete'));
   if (!tokenValues(row.tokens) || row.usage !== 'captured') errors.push('missing usage');
   if (!row.scopeSnapshots?.length || row.prematureBuild) errors.push('missing pre-build approved scope');
   if (!validGrade(row.privateGrade, requirements)) errors.push('missing/invalid scored private grade or inconsistent mechanical coverage');

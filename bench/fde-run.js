@@ -5,13 +5,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { protocolDraft, protocolErrors, settingsFromSources } from './fde/protocol.js';
+import { contentSummary } from './fde/privacy.js';
 
 const repo = fileURLToPath(new URL('..', import.meta.url));
 const task = path.join(repo, 'bench/tasks/work-opportunities');
 const args = process.argv.slice(2);
 const option = (name, fallback) => { const index = args.indexOf(`--${name}`); return index < 0 ? fallback : args[index + 1]; };
 const protocolFile = path.resolve(option('protocol', path.join(repo, 'bench/claims/4.1.26/protocol.json')));
-if (args.includes('--draft')) {
+try { if (args.includes('--draft')) {
   if (fs.existsSync(protocolFile)) throw new Error('protocol already exists; review it rather than overwrite a possible frozen cohort');
   fs.mkdirSync(path.dirname(protocolFile), { recursive: true });
   fs.writeFileSync(protocolFile, `${JSON.stringify(protocolDraft(repo, task, settingsFromSources(process.env, os.homedir())), null, 2)}\n`, { flag: 'wx' });
@@ -32,3 +33,4 @@ if (args.includes('--draft')) {
       ledger: path.join(path.dirname(protocolFile), 'ledger.jsonl') });
   }
 }
+} catch (error) { console.error(JSON.stringify({ errorCode: 'COHORT_NOT_STARTED_OR_INTERRUPTED', details: contentSummary(error.message) })); process.exitCode = 1; }

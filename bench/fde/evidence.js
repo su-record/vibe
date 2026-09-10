@@ -4,6 +4,8 @@ import { createHash } from 'node:crypto';
 import { agentEvidence, treeManifest } from '../snapshot.js';
 import { gradingWorkspace } from '../workspace.js';
 import { addTokens, weightedInput } from './clients.js';
+import { safeSession, safeUsage, safeEvent, safeVerification, safeScope, safeGrade, safeSnapshot, failureCode, contentSummary } from './privacy.js';
+import { writeDiagnostic } from './private-artifacts.js';
 
 export const digest = (value) => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest('hex');
 export const fileHash = (file) => digest(fs.readFileSync(file));
@@ -43,22 +45,25 @@ export function usageSummary(sessions, sideUsage, prices = {}) {
   return { tokens, weightedInput: tokens ? weightedInput(tokens) : null, usage: tokens ? 'captured' : 'missing',
     reportedMainCostUsd: reported, recomputedCostUsd: recomputed, costUsd: recomputed ?? reportedTotal,
     costBasis: recomputed !== null ? 'configured-category-prices' : reportedTotal !== null ? 'client-reported-plus-known-side-costs' : 'unknown',
-    allocation: 'aggregate-only', sideUsage };
+    allocation: 'aggregate-only', sideUsage: sideUsage.map(safeUsage) };
 }
 
-export function attemptEvidence(context, identity, grade, prices) {
+export function attemptEvidence(context, identity, grade, prices, diagnostics) {
   let agent;
   try { agent = agentEvidence(context.workspace); }
   catch (error) {
-    context.error = [context.error, `agent evidence unavailable: ${error.message}`].filter(Boolean).join('; ');
-    agent = { sideUsage: [{ tokens: null, error: error.message }], verification: null, scoped: null };
+    context.error = 'AGENT_EVIDENCE_UNAVAILABLE';
+    agent = { sideUsage: [{ tokens: null, error: 'AGENT_EVIDENCE_UNAVAILABLE' }], verification: null, scoped: null };
   }
-  return { ...identity, event: 'attempt', at: new Date().toISOString(), workspace: context.workspace,
-    ...usageSummary(context.sessions, agent.sideUsage, prices), sessions: context.sessions, events: context.events,
-    customer: { clarificationRounds: context.clarifications, corrections: context.corrections, answers: context.answers },
-    scopeSnapshots: context.snapshots, agentVerification: agent.verification, agentScope: agent.scoped,
-    privateGrade: grade, error: context.error ?? null, stalled: context.stalled,
+  const privateArtifact = writeDiagnostic(diagnostics, `${identity.protocolHash}/${identity.id}`, 'attempt', { sessions: context.sessions, events: context.events, answers: context.answers, agent, grade, error: context.error });
+  const manifest = treeManifest(context.workspace);
+  return { ...identity, event: 'attempt', at: new Date().toISOString(), workspaceArtifact: { path: context.workspace, private: true, sha256: digest(manifest), files: Object.keys(manifest).length },
+    ...usageSummary(context.sessions, agent.sideUsage, prices), sessions: context.sessions.map(safeSession), events: context.events.map(safeEvent),
+    customer: { clarificationRounds: context.clarifications, corrections: context.corrections, answers: { count: context.answers.length, ...contentSummary(context.answers) } },
+    scopeSnapshots: context.snapshots.map(safeSnapshot), agentVerification: safeVerification(agent.verification), agentScope: safeScope(agent.scoped),
+    privateGrade: safeGrade(grade), error: failureCode(context.error), errorCode: failureCode(context.error), errorDetails: contentSummary(context.error), stalled: context.stalled,
+    diagnostics: privateArtifact ? [privateArtifact] : [],
     incomplete: !context.completed || !context.snapshots.length || context.prematureBuild,
-    prematureBuild: context.prematureBuild, humanReview: { status: 'missing' },
+    prematureBuild: context.prematureBuild,
     ms: context.sessions.reduce((sum, session) => sum + session.ms, 0) };
 }
