@@ -45,7 +45,7 @@ it('blocks contracts/specs and file-fed slices, while locating and non-file outp
     expect(result.status, command).toBe(0);
     expect(result.stdout, command).toBe('');
   }
-});
+}, 60_000); // Multiple Node processes run sequentially, also under parallel suite load.
 
 it('warns on every other source/document slice without blocking unrelated commands', () => {
   for (let i = 0; i < 2; i++) {
