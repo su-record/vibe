@@ -55,12 +55,11 @@ delete env.CLAUDECODE;
 delete env.CLAUDE_CODE_ENTRYPOINT;
 delete env.CLAUDE_PROJECT_DIR;
 
-// The overhead set is the three saturated tasks from the first clean bench; the direction set is
-// a task cut across two sessions; `irreversible-trap` (a reset in the brief's natural path, which the
-// bare model never ran) and the four 4.1.21 tasks stay on disk, retired, and run by name.
+// Overhead measures saturated tasks; direction spans sessions and clients.
+// Retired tasks remain runnable by name — bench/README.md holds their inventory and reasons.
 // `--set` picks a named group; `--task` (still the default) picks one task, or every directory
 // under tasks/ with `all`.
-const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['anomaly', 'handover', 'session-split'], context: ['brownfield'] };
+const SETS = { overhead: ['settlement', 'vibe-fix', 'report'], direction: ['handover', 'session-split'], context: ['brownfield'] };
 SETS.all = [...SETS.overhead, ...SETS.direction, ...SETS.context];
 
 function taskNames() {

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { gate, SETS } from './bench-gate.js';
 
-function completeLedger() {
+const TRAP_SETS = { ...SETS, direction: ['anomaly', ...SETS.direction] };
+
+function completeLedger(sets = SETS) {
   const rows = [];
-  for (const [set, tasks] of Object.entries(SETS)) {
+  for (const [set, tasks] of Object.entries(sets)) {
     for (const task of tasks) for (const client of ['claude-code', 'codex']) {
       for (const harness of ['off', 'on', 'scoped']) for (let i = 0; i < 5; i += 1) {
         const passed = task === 'anomaly' && harness === 'off' ? 3 : 5;
@@ -35,7 +37,6 @@ describe('release evidence', () => {
     ['non-finite tokens', (rows) => rows.map((r) => ({ ...r, tokens: { ...r.tokens, input: Infinity } })), 'tokens observations'],
     ['negative tokens', (rows) => rows.map((r) => ({ ...r, tokens: { ...r.tokens, cacheRead: -1 } })), 'tokens observations'],
     ['missing elapsed time', (rows) => rows.map((r) => ({ ...r, ms: null })), 'ms observations'],
-    ['missing trap turns', (rows) => rows.map((r) => r.task === 'anomaly' ? { ...r, turns: null } : r), 'turns observations'],
     ['unjudged events', (rows) => rows.map((r) => ({ ...r, event: 'usage' })), 'missing task'],
   ])('rejects %s', (_name, change, reason) => {
     expect(gate(change(completeLedger()))).toMatchObject({ ok: false, reason: expect.stringContaining(reason) });
@@ -48,17 +49,30 @@ describe('release evidence', () => {
   });
 
   it('rejects on regression even when scoped improves', () => {
-    const rows = completeLedger().map((r) => r.task === 'anomaly' && r.harness === 'on' ? { ...r, passed: 1 } : r);
-    expect(gate(rows)).toMatchObject({ ok: false, reason: expect.stringContaining('on 1.00 checks is worse than off 3.00') });
+    const rows = completeLedger(TRAP_SETS).map((r) => r.task === 'anomaly' && r.harness === 'on' ? { ...r, passed: 1 } : r);
+    expect(gate(rows, TRAP_SETS)).toMatchObject({ ok: false, reason: expect.stringContaining('on 1.00 checks is worse than off 3.00') });
   });
 
   it('allows scoped separation when on equals off', () => {
-    const rows = completeLedger().map((r) => r.task === 'anomaly' && r.harness === 'on' ? { ...r, passed: 3 } : r);
+    const rows = completeLedger(TRAP_SETS).map((r) => r.task === 'anomaly' && r.harness === 'on' ? { ...r, passed: 3 } : r);
+    expect(gate(rows, TRAP_SETS).ok).toBe(true);
+  });
+
+  it('still requires turn observations when a diagnostic trap is selected', () => {
+    const rows = completeLedger(TRAP_SETS).map((r) => r.task === 'anomaly' ? { ...r, turns: null } : r);
+    expect(gate(rows, TRAP_SETS)).toMatchObject({ ok: false, reason: expect.stringContaining('turns observations') });
+  });
+
+  it('retains retired observations without making them release gates', () => {
+    const rows = completeLedger(TRAP_SETS).map((r) => r.task === 'anomaly' ? { ...r, error: 'preserved failed attempt' } : r);
     expect(gate(rows).ok).toBe(true);
+    const diagnostic = gate(rows, TRAP_SETS);
+    expect(diagnostic).toMatchObject({ ok: false, reason: expect.stringContaining('anomaly:') });
+    expect(diagnostic.reason).toContain('usable run(s)');
   });
 
   it('does not claim direction success when a required task was not measured', () => {
-    const result = gate(completeLedger().filter((r) => r.task !== 'anomaly'));
+    const result = gate(completeLedger().filter((r) => r.task !== 'handover'));
     expect(result.ok).toBe(false);
     expect(result.results.some((r) => r.set === 'direction' && r.ok)).toBe(false);
   });

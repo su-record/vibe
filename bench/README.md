@@ -17,7 +17,7 @@ vibe ledger compare --by harness --metric checks --task hidden-requirement --led
 
 ## The tasks
 
-`bench/tasks/` holds two sets, each task with `TASK.md` (what the agent is given) and `judge/` (`intent.md` and `scenarios.yaml` — what the harness judges it by, never shown as the prompt):
+`bench/tasks/` holds the release sets and retired diagnostic tasks, each with `TASK.md` (what the agent is given) and `judge/` (`intent.md` and `scenarios.yaml` — what the harness judges it by, never shown as the prompt):
 
 The **overhead set** — saturated on purpose, so a passing arm proves nothing about quality; it exists to measure what the harness costs:
 
@@ -25,16 +25,18 @@ The **overhead set** — saturated on purpose, so a passing arm proves nothing a
 - `vibe-fix` — fix a single deterministic defect in a tiny, self-contained JavaScript module (`settle.cjs`) so its test (`settle.test.cjs`) passes; judged by a `run` check that runs `node --test settle.test.cjs` itself.
 - `report` — write a short markdown report from a given evidence file; judged by `file` checks: `absent: "@placeholders"` (no `[TODO]`, `TBD`, lorem ipsum, …), `traceable: evidence.md` (every number in the report must appear in the evidence) and a `pattern` for a required heading.
 
-The **direction set** — each one a failure class the field has seen and the mechanism separates, so a passing arm says something about what the harness prevents, not just procedure:
+The **direction set** measures work across sessions and clients, with quality and token use checked for each task:
 
-- `anomaly` — a week's orders whose export holds a repeated order id, a refund as a negative amount and one euro row, with `docs/finance.md` saying how each is settled and a brief that mentions none of it. `vibe profile` names all three before the interview. The judge holds the settlement and supplies it through `VIBE_KEY_EXPECTED`.
 - `handover` — `session-split` across two clients: the first session on Claude Code (cut at ten turns), the second on Codex with no memory and only the files. Judge: the tests.
-- `session-split` — see below.
+- `session-split` — an eight-subcommand CLI with tests, built across two agent sessions on one workspace with no memory between them: `judge/meta.json` names the sessions (`maxTurns: 10` cuts the first on claude, `cutMs: 150000` on codex, which has no turn cap — around a third of the work), and the ledger line carries the sum of turns, tokens, cost and time with `sessions: 2`. The judge is the tests.
+
+Retired after the 4.1.25 follow-up and kept on disk (`--task anomaly` still runs it):
+
+- `anomaly` — a week's orders with a repeated order id, a refund and one euro row, governed by `docs/finance.md`. Retirement reason: both bare models read docs/finance.md on their own — off scored 3/3 in five of five on both clients. `TASK.md`, `docs/finance.md`, `judge/` and `key/answer.cjs` remain available for explicit diagnostic runs. `judge/meta.json` declares two sessions and that fake user; the judge supplies the expected result through `VIBE_KEY_EXPECTED`.
 
 Retired after the 4.1.24 run (both bare models ask the customer once the fake user answers any question about the quote):
 
 - `ask` — a quote from `cart.json` "in the currency and with the discount agreed with the customer", neither of which is in the files. Two sessions; between them the task's fake user (`key/answer.cjs`, never copied into the workspace) reads what the agent asked — the `on` arm's open inbox questions, or either arm's final message — and answers only a question about the customer, currency, discount or price; the answer lands in TASK.md for both arms and in the inbox for `on`. An arm that delivered without asking gets no answer and its quote is in USD. The judge holds the terms (KRW at 1380, 12% off, whole won, plain digits) and supplies them to the check through `VIBE_KEY_EXPECTED` when it runs; on disk the check only says it is judge-time. The fake user answers any question about the quote with the whole of the terms, format included. The ledger line carries `asked`.
-- `session-split` (the direction set today) — an eight-subcommand CLI with tests, built across two agent sessions on one workspace with no memory between them: `judge/meta.json` names the sessions (`maxTurns: 10` cuts the first on claude, `cutMs: 150000` on codex, which has no turn cap — around a third of the work), and the ledger line carries the sum of turns, tokens, cost and time with `sessions: 2`. The judge is the tests.
 
 Retired after the 4.1.22 run and kept on disk (`--task <name>` still runs them):
 
