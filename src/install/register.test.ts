@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { packageRoot } from '../core/paths.js';
 import { ensureGlobal, globalStatus, setupGlobal, uninstallGlobal } from './global.js';
@@ -129,6 +130,10 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     const older = path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.0', '.codex-plugin');
     fs.mkdirSync(older, { recursive: true });
     fs.writeFileSync(path.join(older, 'plugin.json'), JSON.stringify({ name: 'vibe', version: '0.0.0' }));
+    const activeHook = path.join(older, '..', 'hooks', 'notify.js');
+    fs.mkdirSync(path.dirname(activeHook));
+    fs.writeFileSync(activeHook, 'process.stdout.write("old session hook still works");');
+    expect(spawnSync(process.execPath, [activeHook], { encoding: 'utf8' }).status).toBe(0);
 
     const before = globalStatus(home).clients['codex'];
     expect(before).toMatchObject({ mode: 'plugin', current: false, pluginVersion: '0.0.1' });
@@ -136,15 +141,36 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(log('codex.log')).toEqual([`plugin marketplace add ${home}`, 'plugin remove vibe@vibe-local', 'plugin add vibe@vibe-local']);
     const marketplace = JSON.parse(fs.readFileSync(path.join(home, '.agents', 'plugins', 'marketplace.json'), 'utf-8')) as { plugins: Array<{ name: string; source: { path: string } }> };
     expect(marketplace.plugins.find((p) => p.name === 'vibe')?.source.path).toBe('./.config/vibe/plugin/vibe');
-    // the version just replaced stays, hooks and all, for a session that started under it; anything older is swept
+    // A running session can still refer to any retained version after successive updates.
     expect(fs.existsSync(path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.1', 'hooks', 'notify.js'))).toBe(true);
-    expect(fs.existsSync(path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', '0.0.0'))).toBe(false);
+    const active = spawnSync(process.execPath, [activeHook], { encoding: 'utf8' });
+    expect(active.status, active.stderr).toBe(0);
+    expect(active.stdout).toBe('old session hook still works');
     expect(fs.existsSync(path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe', pkg.version, '.codex-plugin', 'plugin.json'))).toBe(true);
 
     const after = globalStatus(home).clients['codex'];
     expect(after).toMatchObject({ mode: 'plugin', current: true, pluginVersion: pkg.version });
     expect(ensureGlobal(home)).toEqual([]);
     expect(log('codex.log')).toHaveLength(3); // current — nothing ran again
+  });
+
+  it('keeps hooks from every cached version when adding the replacement fails', () => {
+    const cache = path.join(home, '.codex', 'plugins', 'cache', 'vibe-local', 'vibe');
+    for (const version of ['0.0.1', '0.0.2']) {
+      const tree = path.join(cache, version);
+      fs.mkdirSync(path.join(tree, '.codex-plugin'), { recursive: true });
+      fs.writeFileSync(path.join(tree, '.codex-plugin', 'plugin.json'), JSON.stringify({ name: 'vibe', version }));
+      fs.mkdirSync(path.join(tree, 'hooks'));
+      fs.writeFileSync(path.join(tree, 'hooks', 'value.cjs'), `module.exports = '${version}';`);
+      fs.writeFileSync(path.join(tree, 'hooks', 'notify.js'), 'process.stdout.write(require("./value.cjs"));');
+    }
+    fs.writeFileSync(path.join(shim, 'codex'), CODEX_SHIM.replace('"plugin add"*)', '"plugin add"*) rm -rf "$C"; exit 1;;\n  "unused"*)'), { mode: 0o755 });
+    expect(registerCodex(home)).toMatchObject({ ok: false });
+    for (const version of ['0.0.1', '0.0.2']) {
+      const result = spawnSync(process.execPath, [path.join(cache, version, 'hooks', 'notify.js')], { encoding: 'utf8' });
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toBe(version);
+    }
   });
 
   it('plugin mode: codex behind — when the marketplace is already configured, codex marketplace add may refuse and the registration still goes on', () => {
