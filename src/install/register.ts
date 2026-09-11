@@ -167,30 +167,31 @@ const codexCacheDir = (home: string): string => path.join(home, '.codex', 'plugi
 /**
  * A Codex or ChatGPT session resolves `${PLUGIN_ROOT}` once, at start, to the cache directory of the version it
  * found; `codex plugin remove` deletes that directory, and every hook of a session still running under the old
- * version then exits 1 until it restarts. So the version just replaced is kept in the cache — put back after the
- * add when Codex removed it — and only versions older than that one are swept.
+ * version then exits 1 until it restarts. Keep every cached version: a session may outlive several updates.
+ * Registration cannot determine which old paths are still in use.
  */
-function keepPreviousVersion(home: string, held: string, snapshot: string | null): void {
+function restoreVersions(home: string, snapshot: string | null): void {
+  if (!snapshot) return;
   const dir = codexCacheDir(home);
-  const previous = path.join(dir, held);
-  if (snapshot && !fs.existsSync(previous)) fs.cpSync(snapshot, previous, { recursive: true });
-  if (snapshot) fs.rmSync(snapshot, { recursive: true, force: true });
-  if (!fs.existsSync(dir)) return;
-  for (const v of fs.readdirSync(dir)) if (/^\d+\.\d+\.\d+/.test(v) && newer(held, v)) fs.rmSync(path.join(dir, v), { recursive: true, force: true });
+  for (const version of fs.readdirSync(snapshot)) {
+    fs.cpSync(path.join(snapshot, version), path.join(dir, version), { recursive: true, force: false });
+  }
 }
 
-function snapshotVersion(home: string, held: string): string | null {
-  const from = path.join(codexCacheDir(home), held);
+function snapshotVersions(home: string): string | null {
+  const from = codexCacheDir(home);
   if (!fs.existsSync(from)) return null;
   const to = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-codex-held-'));
-  fs.cpSync(from, to, { recursive: true });
+  for (const version of fs.readdirSync(from)) {
+    if (/^\d+\.\d+\.\d+/.test(version)) fs.cpSync(path.join(from, version), path.join(to, version), { recursive: true });
+  }
   return to;
 }
 
 /**
  * Assemble the tree under ~/.config/vibe/plugin, register the personal marketplace, and let Codex pick it up.
  * Codex has no per-plugin update: an older install is removed and added again, and the removed version's
- * cache directory is put back so a session that started under it keeps its hooks until it restarts. A
+ * cache directories are put back so existing sessions keep their hooks until they restart. A
  * marketplace that is already configured is not a failure.
  */
 export function registerCodex(home: string): RegisterReport {
@@ -202,10 +203,16 @@ export function registerCodex(home: string): RegisterReport {
   const id = `vibe@${r.marketplaceName}`;
   const add = run('codex', ['plugin', 'marketplace', 'add', home], home);
   if (!add.ok && !/already/i.test(add.out)) return { ok: false, mode: 'home', version: held, detail: `codex marketplace add failed: ${add.out.slice(-200)}` };
-  const snapshot = held !== null ? snapshotVersion(home, held) : null;
-  if (held !== null) run('codex', ['plugin', 'remove', id], home);
-  const plug = run('codex', ['plugin', 'add', id], home);
-  if (held !== null) keepPreviousVersion(home, held, snapshot);
+  const snapshot = snapshotVersions(home);
+  let plug: ReturnType<typeof run>;
+  try {
+    if (held !== null) run('codex', ['plugin', 'remove', id], home);
+    restoreVersions(home, snapshot);
+    plug = run('codex', ['plugin', 'add', id], home);
+  } finally {
+    restoreVersions(home, snapshot);
+    if (snapshot) fs.rmSync(snapshot, { recursive: true, force: true });
+  }
   if (!plug.ok) return { ok: false, mode: 'home', version: held, detail: `codex plugin add failed: ${plug.out.slice(-200)}` };
   return { ok: true, mode: 'plugin', version: r.version, detail: held ? `updated ${held} → ${r.version}; a session started under ${held} keeps its hooks until it restarts` : `registered ${id}` };
 }
