@@ -70,6 +70,8 @@ export interface Scenario {
   irreversible?: string;
   /** DEPENDS_ON edges — this scenario is checked only after every listed scenario has passed. */
   needs?: string[];
+  /** Explicitly reviewed verifier bytes, separate from artifacts being built. */
+  verifiers?: string[];
 }
 
 export interface Rejection {
@@ -112,6 +114,9 @@ function checkReason(check: unknown): string | null {
   if (!isRecord(check)) return 'missing check — one check type (run·file·http·eval·review·human) is required';
   const type = check['type'];
   if (typeof type !== 'string' || !CHECK_TYPES.has(type)) return `unknown check type: ${String(type)}`;
+  if (check['timeoutMs'] !== undefined && (typeof check['timeoutMs'] !== 'number' || !Number.isFinite(check['timeoutMs']) || check['timeoutMs'] <= 0)) return 'timeoutMs must be a positive finite number';
+  if (type === 'run' && check['expect'] !== undefined && (!Number.isInteger(check['expect']) || Number(check['expect']) < 0 || Number(check['expect']) > 255)) return 'run expect must be an exit code from 0 to 255';
+  if (type === 'run' && check['cwd'] !== undefined && !str(check['cwd'])) return 'run cwd must be a nonempty directory path';
   switch (type) {
     case 'run':
       return str(check['cmd']) ? null : 'run check requires cmd';
@@ -169,6 +174,8 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (reason) return void rejections.push({ id, reason });
     const needs = strList(item['needs']);
     if (needs === null) return void rejections.push({ id, reason: 'needs must be a list of scenario ids' });
+    const verifiers = strList(item['verifiers']);
+    if (verifiers === null) return void rejections.push({ id, reason: 'verifiers must be a list of file paths' });
     seen.add(id);
     const scenario: Scenario = { id, then, check: item['check'] as Check };
     const given = str(item['given']);
@@ -178,6 +185,7 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (when) scenario.when = when;
     if (irreversible) scenario.irreversible = irreversible;
     if (needs.length > 0) scenario.needs = needs;
+    if (verifiers.length > 0) scenario.verifiers = verifiers;
     scenarios.push(scenario);
   });
   rejectBadEdges(scenarios, rejections);

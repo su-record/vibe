@@ -1,0 +1,15 @@
+{
+  "synthetic": true,
+  "start": "2026-09-07",
+  "end": "2026-09-18",
+  "coverage": [
+    "exported worklog",
+    "exported mail",
+    "status and invoice tables",
+    "meeting notes"
+  ],
+  "missing": [
+    "measured review/correction effort for an installed automation",
+    "labor value and maintenance cost"
+  ]
+}

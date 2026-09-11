@@ -28,6 +28,7 @@ Done: {intent title}
 ## Report voice
 
 The completion report and the handoff document follow card rule 9. The verdict is `vibe check`'s line, never yours.
+A scenario handed off with `vibe abandon --scenario` remains unmet. Report its qualified ID, cause and next step; neither the handoff nor Stop releasing the session means DONE.
 
 - Each "Built" line says what changed and names the check and run that verified it (`tests [run] r-3`), or says "not checked".
 - "successfully", "should work" and "everything is in place" never appear. Say what ran and what it returned.

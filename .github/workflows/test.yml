@@ -40,6 +40,12 @@ jobs:
       - run: node checks/skill-names.js
       - run: node checks/packs.js
       - run: node dist/cli.js plugin build --check
+      # Deterministic integrated-contract checks; CI never starts the paid cohort or waits on its own CI receipt.
+      - run: node checks/bench-public.js
+      - run: node checks/discovery-contract.js
+      - run: node checks/work-opportunities.js
+      - run: node checks/release-4.1.26.js --self-test
+      - run: node checks/check-trust-compatibility.js --self-test
 
   windows:
     name: Windows
@@ -55,7 +61,13 @@ jobs:
       - run: npm run build
       # the fixtures that fake a client CLI with a POSIX shim or a symlink stay Linux-only for now (named for the next release);
       # everything else — the map, the checks, the ledger, the size lexer, the hook — runs here too
-      - run: npx vitest run --exclude "**/{cli,global,register,reader,review,capabilities,tree,plugin,update,skills,research,mcpb}.test.ts"
+      - run: npx vitest run --exclude "**/{cli,global,register,reader,review,capabilities,plugin,update,skills,research,mcpb}.test.ts"
+      - run: node checks/check-trust.js
+      - run: node checks/check-evidence-privacy.js
+      - run: node checks/scenario-handoff.js
+      - run: node checks/stop-session-contract.js
+      - run: node checks/release-4.1.26.js --self-test
+      - run: node checks/check-trust-compatibility.js --self-test
       # the CLI through npm's .cmd shim, the way a global install runs it on Windows
       - run: npm i -g .
       - run: vibe --version

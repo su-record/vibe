@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { analyzeIntent, renderAnalysis } from '../core/analyze.js';
+import { failureLine } from '../core/failure.js';
 import { runChecks } from '../core/check.js';
 import { readDocument } from '../core/docs/read.js';
 import { usage } from '../core/errors.js';
@@ -12,9 +13,14 @@ import { measureSize } from '../core/size.js';
 import { listRegressions } from '../core/regress.js';
 import { graphMermaid } from '../core/scenarios.js';
 import { readJson, readText } from '../core/store.js';
+import { sourceValidity } from '../core/source-basis.js';
 import { buildStateView } from '../core/view.js';
 import { ensureProject } from '../install/project.js';
 import { flagString, readStdin, type Flags, type Output } from './common.js';
+import { executionPlan, inspectContract } from '../core/inspect.js';
+import { consentStatus } from '../core/consent.js';
+import { renderEvidence } from '../core/evidence.js';
+import { handoffScenario, reopenScenario } from '../core/handoff.js';
 
 const GLYPH: Record<string, string> = { pass: '✔', fail: '✘', pending: '?', blocked: '⊘', never: '·', stale: '↻' };
 
@@ -83,33 +89,42 @@ export function cmdProfile(root: string, file: string | undefined, flags: Flags)
   return { json: p, text: lines.join('\n'), code: 0 };
 }
 
+function draftInput(root: string, args: string[], flags: Flags): { intent: string; scenarios: string; sources?: string[] } {
+  if (flags['sources'] === true) throw usage('--sources requires comma-separated input file paths');
+  if (flags['stdin'] === true) {
+    if (flags['sources'] !== undefined) throw usage('with --stdin, supply sources in the JSON payload');
+    return JSON.parse(readStdin()) as { intent: string; scenarios: string; sources?: string[] };
+  }
+  const [intentFile, scenariosFile] = args;
+  if (!intentFile || !scenariosFile) throw usage('intent draft <intent.md> <scenarios.yaml> [--sources a,b] or --stdin');
+  const intent = readText(path.resolve(root, intentFile)) ?? '';
+  const scenarios = readText(path.resolve(root, scenariosFile)) ?? '';
+  if (!intent) throw usage(`cannot read ${intentFile}`);
+  if (!scenarios) throw usage(`cannot read ${scenariosFile}`);
+  const sources = flagString(flags, 'sources');
+  return sources === undefined ? { intent, scenarios } : { intent, scenarios, sources: sources.split(',').map((file) => file.trim()) };
+}
+
 export function cmdIntent(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
+  if (sub === 'inspect') {
+    const inspected = inspectContract(root, args);
+    return { json: inspected, text: `Untrusted contract data; no checks executed.\n${JSON.stringify(inspected, null, 2)}`, code: inspected.rejections.length ? 1 : 0 };
+  }
   if (sub === 'show') {
     const scenarios = loadScenarios(root);
     const intent = readText(intentPath(root)) ?? '';
-    return { json: { intent, scenarios }, text: `${intent.trim()}\n\n${scenarios.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n')}`, code: 0 };
+    const sourceBasis = sourceValidity(root);
+    const sources = sourceBasis ? `\n\nSource basis: ${sourceBasis.valid ? 'unchanged' : 're-evaluate changed or missing inputs'}\n${sourceBasis.sources.map((source) => `- ${source.path}: ${source.status}`).join('\n')}` : '';
+    return { json: { intent, scenarios, sourceBasis }, text: `${intent.trim()}\n\n${scenarios.map((s) => `- ${s.id} [${s.check.type}] ${s.then}`).join('\n')}${sources}`, code: 0 };
   }
   if (sub === 'analyze') {
     const analysis = analyzeIntent(root);
     return { json: analysis, text: renderAnalysis(analysis), code: 0 };
   }
   if (sub !== 'draft') throw usage('intent draft | intent show | intent analyze');
+  const input = draftInput(root, args, flags);
   ensureProject(root);
-  let intentText: string;
-  let scenariosText: string;
-  if (flags['stdin'] === true) {
-    const payload = JSON.parse(readStdin()) as { intent?: string; scenarios?: string };
-    intentText = payload.intent ?? '';
-    scenariosText = payload.scenarios ?? '';
-  } else {
-    const [intentFile, scenariosFile] = args;
-    if (!intentFile || !scenariosFile) throw usage('intent draft <intent.md> <scenarios.yaml> or --stdin');
-    intentText = readText(path.resolve(root, intentFile)) ?? '';
-    scenariosText = readText(path.resolve(root, scenariosFile)) ?? '';
-    if (!intentText) throw usage(`cannot read ${intentFile}`);
-    if (!scenariosText) throw usage(`cannot read ${scenariosFile}`);
-  }
-  const result = draft(root, intentText, scenariosText);
+  const result = draft(root, input.intent ?? '', input.scenarios ?? '', input.sources);
   if (!result.ok) {
     return { json: result, text: `rejected ${result.rejections.length} — nothing was saved\n${result.rejections.map((r) => `  ${r.id}: ${r.reason}`).join('\n')}`, code: 1 };
   }
@@ -123,7 +138,13 @@ export function cmdIntent(root: string, sub: string | undefined, args: string[],
   return { json: result, text, code: 0 };
 }
 
-export function cmdApprove(root: string, args: string[]): Output {
+export function cmdApprove(root: string, args: string[], flags: Flags = {}): Output {
+  if (flags['preview'] === true) {
+    const plan = executionPlan(root);
+    const consent = consentStatus(root, plan);
+    const preview = { plan, consent, untrusted: true, executed: false };
+    return { json: preview, text: `Execution plan preview; no commands executed or approval saved.\n${JSON.stringify(preview, null, 2)}`, code: 0 };
+  }
   ensureProject(root);
   const token = args.join(' ') || null;
   const result = approve(root, token);
@@ -133,16 +154,17 @@ export function cmdApprove(root: string, args: string[]): Output {
 export async function cmdCheck(root: string, args: string[], flags: Flags): Promise<Output> {
   ensureProject(root);
   const options = flags['all'] === true ? { all: true } : args.length ? { ids: args } : {};
-  const report = await runChecks(root, options);
+  const approach = flagString(flags, 'approach');
+  const report = await runChecks(root, { ...options, diagnostics: flags['diagnostics'] === true, ...(approach ? { approach } : {}) });
   const files = new Map(buildStateView(root).scenarios.map((s) => [s.id, s.files ?? []]));
   const lines = [
     `${report.run} · ${report.state} · pass ${report.passed} · fail ${report.failed}${report.pending ? ` · pending ${report.pending}` : ''}`,
-    ...report.outcomes.map((o) => `  ${o.status === 'pass' ? '✔' : o.status === 'fail' ? '✘' : '?'} ${o.id} [${o.type}] exit=${o.exit ?? '-'} ${o.ms}ms${o.reason ? ` — ${o.reason}` : ''}${o.status === 'fail' && files.get(o.id)?.length ? ` — files: ${files.get(o.id)!.join(', ')}` : ''}${o.tail && o.status !== 'pass' ? `\n      ${o.tail.split('\n').join('\n      ')}` : ''}`),
+    ...report.outcomes.map((o) => `  ${o.status === 'pass' ? '✔' : o.status === 'fail' ? '✘' : '?'} ${o.id} [${o.type}] exit=${o.exit ?? '-'} ${o.ms}ms${o.failure ? ` — ${failureLine(o.failure)}` : o.reason ? ` — ${o.reason}` : ''}${o.status === 'fail' && files.get(o.id)?.length ? ` — files: ${files.get(o.id)!.join(', ')}` : ''}${o.tail && o.status !== 'pass' ? `\n      ${o.tail.split('\n').join('\n      ')}` : ''}`),
     report.done ? '  DONE — every gate scenario passed' : `  remaining ${report.remaining.join(', ') || 'none'}`,
-    ...(report.stuck ? ['  STUCK — the same failure twice in a row; see the inbox'] : []),
+    ...(report.stuck ? ['  STUCK — follow the diagnosis or explicit inbox wait below'] : []),
     `  next      ${buildStateView(root).next}`,
   ];
-  const code = report.stuck || report.failed > 0 ? 1 : 0;
+  const code = report.stuck || report.failed > 0 || report.outcomes.some((outcome) => outcome.status === 'handoff') ? 1 : 0;
   return { json: { ...report, next: buildStateView(root).next }, text: lines.join('\n'), code };
 }
 
@@ -152,11 +174,23 @@ export function cmdEvidence(root: string, args: string[]): Output {
   if (!runId) throw usage('no evidence yet');
   const evidence = readJson<unknown>(path.join(dir, `${runId}.json`));
   if (!evidence) throw usage(`no such run: ${runId}`);
-  return { json: evidence, text: JSON.stringify(evidence, null, 2), code: 0 };
+  const rendered = renderEvidence(evidence);
+  return { json: rendered, text: JSON.stringify(rendered, null, 2), code: 0 };
 }
 
 export function cmdAbandon(root: string, flags: Flags): Output {
+  const scenario = flagString(flags, 'scenario');
+  if (scenario) {
+    const handoff = handoffScenario(root, scenario, { reason: flagString(flags, 'reason') ?? '', category: flagString(flags, 'category') ?? '', nextAction: flagString(flags, 'next') ?? '', ...(flagString(flags, 'owner') ? { owner: flagString(flags, 'owner')! } : {}) });
+    return { json: { status: 'handoff', passed: false, handoff }, text: `HANDOFF ${scenario} — required work remains unmet`, code: 0 };
+  }
   ensureProject(root);
   abandon(root, flagString(flags, 'reason') ?? '');
   return { json: { state: 'ABANDONED' }, text: 'ABANDONED', code: 0 };
+}
+
+export function cmdReopen(root: string, args: string[], flags: Flags): Output {
+  if (args.length !== 1) throw usage('reopen <scenario> --reason "…"');
+  reopenScenario(root, args[0]!, flagString(flags, 'reason') ?? '');
+  return { json: { status: 'reopened', scenario: args[0] }, text: `REOPENED ${args[0]} — original check required`, code: 0 };
 }

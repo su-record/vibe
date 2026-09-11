@@ -1,0 +1,19 @@
+{
+  "eventId": "example-followup",
+  "date": "2026-09-01",
+  "durationMinutes": 30,
+  "actions": [
+    {
+      "id": "example-action-b",
+      "text": "Confirm the handoff",
+      "owner": null,
+      "due": null
+    },
+    {
+      "id": "example-action-a",
+      "text": "Review the draft",
+      "owner": "Mira",
+      "due": "2026-09-04"
+    }
+  ]
+}

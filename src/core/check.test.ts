@@ -62,15 +62,15 @@ describe('check — the only verdict path', () => {
     return `node ${word}.cjs`;
   };
 
-  it('a failure keeps exit and output tail and is not DONE', async () => {
+  it('a failure keeps exit and fingerprints, hides raw output, and is not DONE', async () => {
     approved(`- { id: bad, then: x, check: { type: run, cmd: "${failing('boom', 3)}" } }`);
     const report = await runChecks(root);
     expect(report.state).toBe('RUNNING');
-    expect(report.outcomes[0]).toMatchObject({ id: 'bad', status: 'fail', exit: 3, tail: 'boom' });
+    expect(report.outcomes[0]).toMatchObject({ id: 'bad', status: 'fail', exit: 3, tail: '', failureCode: 'exit-mismatch', capture: { stdout: { bytes: 4, complete: true } } });
     expect(readResults(root)['bad']?.last).toBe('fail');
   });
 
-  it('the same failure twice in a row is STUCK and leaves an inbox question', async () => {
+  it('the same failure twice diagnoses without a question; a different failure clears the streak', async () => {
     // the failure's message comes from a data file, so the scenario set never changes behind the approval
     fs.writeFileSync(path.join(root, 'msg.txt'), 'same:1');
     fs.writeFileSync(path.join(root, 'bad.cjs'), "const [m, c] = require('fs').readFileSync('msg.txt', 'utf-8').split(':'); process.stdout.write(m); process.exit(Number(c));");
@@ -79,7 +79,8 @@ describe('check — the only verdict path', () => {
     const second = await runChecks(root);
     expect(second.stuck).toBe(true);
     expect(readState(root).state).toBe('STUCK');
-    expect(openQuestions(root).some((q) => q.question.startsWith('STUCK'))).toBe(true);
+    expect(openQuestions(root)).toHaveLength(0);
+    expect(buildStateView(root, root).next).toContain('change the approach');
     // a different failure breaks the streak
     fs.writeFileSync(path.join(root, 'msg.txt'), 'other:2');
     const third = await runChecks(root);
@@ -106,7 +107,9 @@ describe('check — the only verdict path', () => {
     approved('- { id: out, then: x, check: { type: file, path: out.txt, contains: good } }');
     const report = await runChecks(root, { all: true });
     expect(report.failed).toBe(1);
-    expect(buildStateView(root, root).next).toBe('fix out (files: out.txt) — on a failure, fix what the check names; vibe context <id> when that is not enough; then vibe check <id>');
+    expect(buildStateView(root, root).next).toContain('fix out (files: out.txt)');
+    expect(buildStateView(root, root).next).toContain('check="out.txt"');
+    expect(buildStateView(root, root).next).toContain('vibe context <id> when that is not enough; then vibe check <id>');
   });
 
   it('approval void: scenarios.yaml edited after approval — vibe check refuses (exit 4) and runs nothing', async () => {
@@ -115,6 +118,29 @@ describe('check — the only verdict path', () => {
     fs.writeFileSync(path.join(root, '.vibe', 'scenarios.yaml'), '- { id: out, then: x, check: { type: file, path: out.txt, exists: true } }\n');
     await expect(runChecks(root, { all: true })).rejects.toThrowError(/approval void/);
     expect(fs.existsSync(path.join(root, '.vibe', 'evidence', 'r-1.json'))).toBe(false);
+  });
+
+  it('source-backed checks pass on approved evidence and reject changed evidence before executing', async () => {
+    fs.writeFileSync(path.join(root, 'facts.md'), 'observed facts');
+    fs.writeFileSync(path.join(root, 'out.txt'), 'local output');
+    draft(root, INTENT, '- { id: out, then: x, check: { type: file, path: out.txt, exists: true } }', ['facts.md']);
+    approve(root, null);
+    expect((await runChecks(root, { all: true })).done).toBe(true);
+    fs.writeFileSync(path.join(root, 'facts.md'), 'changed facts');
+    expect(invalidateDoneIfEdited(root)).toBe(true);
+    await expect(runChecks(root, { all: true })).rejects.toThrow(/approval void.*facts.md.*re-evaluate/);
+    expect(readState(root).runs).toBe(1);
+    expect(fs.existsSync(path.join(root, '.vibe/evidence/r-2.json'))).toBe(false);
+  });
+
+  it('DONE is invalid when source bookkeeping changes even if the working-tree hash is unchanged', async () => {
+    fs.writeFileSync(path.join(root, 'facts.md'), 'observed facts');
+    draft(root, INTENT, '- { id: facts, then: x, check: { type: file, path: facts.md, exists: true } }', ['facts.md']);
+    approve(root, null);
+    expect((await runChecks(root)).done).toBe(true);
+    fs.rmSync(path.join(root, '.vibe/source-basis.json'));
+    expect(invalidateDoneIfEdited(root)).toBe(true);
+    await expect(runChecks(root)).rejects.toThrow(/approval void/);
   });
 
   it('recheck: a parent that passed before and fails on this run blocks its dependent — this run judges, not the last one', async () => {

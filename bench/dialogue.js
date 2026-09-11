@@ -15,7 +15,13 @@ export function answerQuestions(ws, script, finalText) {
     const text = result.stdout.trim();
     if (!text) continue;
     answered += 1;
-    fs.appendFileSync(path.join(ws, 'TASK.md'), `\n\nAnswer from the user, to what you asked: ${text}\n`);
+    const directory = path.join(ws, 'customer');
+    const file = path.join(directory, 'answers.json');
+    fs.mkdirSync(directory, { recursive: true });
+    const delivered = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { answers: [] };
+    delivered.answers.push({ question: q.text, answer: text });
+    fs.writeFileSync(file, `${JSON.stringify(delivered, null, 2)}\n`);
+    fs.appendFileSync(path.join(ws, 'TASK.md'), `\n\nAnswer from the user, to what you asked: ${text}\nDelivered replies are recorded in customer/answers.json.\n`);
     if (q.id) answer(ws, q.id, text);
   }
   return answered;

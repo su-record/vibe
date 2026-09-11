@@ -63,7 +63,7 @@ describe('mcpb — the Claude desktop bundle', () => {
     expect(state.state).toBe('DRAFT');
     expect(fs.existsSync(path.join(project, '.vibe', 'intent.md'))).toBe(true);
     expect((byId[5]!['error'] as { code: number }).code).toBe(-32602);
-  });
+  }, 60_000); // The response poll is bounded at 10 seconds, beyond Vitest's default 5 seconds.
 
   it('mcpb: the server finds the CLI without PATH when the install setting names it, and says so when it cannot', async () => {
     const shim = path.join(dir, 'bin');

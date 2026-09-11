@@ -1,0 +1,7 @@
+- id: agreement
+  then: the neutral register and agreed scope use public evidence and explicit unknowns
+  check: { type: run, cmd: "node checks/verify.cjs scope", expect: 0, timeoutMs: 30000 }
+- id: local-pilot
+  needs: [agreement]
+  then: the selected local pilot passes public behavior, installation and rollback checks
+  check: { type: run, cmd: "node checks/verify.cjs pilot", expect: 0, timeoutMs: 90000 }

@@ -67,8 +67,8 @@ export function recordRegression(root: string, input: RegressionRecordInput): { 
   const id = regressionId(existing + 1, input.title);
   let tail = '';
   if (input.fromEvidence) {
-    const evidence = readJson<{ results?: Array<{ id: string; tail?: string }> }>(vibePath(root, 'evidence', `${input.fromEvidence}.json`));
-    tail = evidence?.results?.find((r) => r.id === input.scenario)?.tail ?? '';
+    const evidence = readJson<{ results?: Array<{ id: string; failureCode?: string }> }>(vibePath(root, 'evidence', `${input.fromEvidence}.json`));
+    tail = evidence?.results?.find((r) => r.id === input.scenario)?.failureCode ?? '';
   }
   const entry: Scenario = { id, then: `[regression] ${input.title} — source ${source.id}: ${source.then}`, check: source.check };
   if (source.given) entry.given = source.given;

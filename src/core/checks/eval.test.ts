@@ -26,7 +26,7 @@ describe('eval check — a count of matching cases, never a ratio', () => {
     expect(two.tail).toContain('c: got "OK"');
     const all = await evalCheck({ type: 'eval', cases: 'cases.jsonl', runner: UPPER, expect: { pass: 4 } }, root);
     expect(all).toMatchObject({ pass: false, exit: 1, reason: '3 of 4 cases matched (need 4)' });
-  });
+  }, 60_000); // Eight case-runner processes share the test; each adapter deadline is unchanged.
 
   it('eval: unreadable cases fail with a reason instead of throwing', async () => {
     const r = await evalCheck({ type: 'eval', cases: 'missing.jsonl', runner: UPPER, expect: { pass: 1 } }, root);

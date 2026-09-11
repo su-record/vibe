@@ -21,7 +21,7 @@ export function cmdAsk(root: string, args: string[], flags: Flags): Output {
   const policy = readConfig(root).tokens;
   if (needsRaw === 'approve') {
     const state = readState(root);
-    if (state.state !== 'DRAFT' || !state.intentHash) throw denied('an approval token can only be issued in DRAFT');
+    if (!['DRAFT', 'APPROVED', 'RUNNING', 'STUCK', 'DONE'].includes(state.state) || !state.intentHash) throw denied('an approval token needs an active drafted contract');
     if (policy === 'strict') needs = { kind: 'approve', target: state.intentHash };
   } else if (needsRaw?.startsWith('authorize:')) {
     const action = needsRaw.slice('authorize:'.length);

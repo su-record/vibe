@@ -9,12 +9,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { usage, VibeError } from './core/errors.js';
 import { findProjectRoot } from './core/paths.js';
+import { safeText } from './core/evidence.js';
+import { cmdReopen } from './cli/work.js';
 import { ensureGlobal, globalStatus } from './install/global.js';
 import { flagString, HELP, packageVersion, parseArgs, type Flags, type Output } from './cli/common.js';
 import { cmdAsk, cmdAuthorize, cmdInbox } from './cli/human.js';
 import { cmdKnowledge, cmdLedger, cmdRegress, cmdResearch, cmdSkill } from './cli/memory.js';
 import { cmdPlugin, cmdSetup, cmdStatus, cmdTokens, cmdUninstall, cmdUpdate } from './cli/setup.js';
 import { cmdContext } from './cli/context.js';
+import { cmdSession } from './cli/session.js';
 import { cmdConventions } from './cli/conventions.js';
 import { cmdBlast, cmdCallers, cmdMap, cmdSymbols } from './cli/map.js';
 import { cmdAbandon, cmdApprove, cmdCheck, cmdEvidence, cmdIntent, cmdProfile, cmdRead, cmdSize, cmdState } from './cli/work.js';
@@ -30,6 +33,7 @@ const COMMANDS: Record<string, Handler> = {
   uninstall: (root, _s, _r, _t, flags) => cmdUninstall(root, flags),
   plugin: (_root, sub, _r, _t, flags) => cmdPlugin(sub, flags),
   state: (root, _s, _r, _t, flags) => cmdState(root, flags),
+  session: (root, sub, _r, _t, flags) => cmdSession(root, sub, flags),
   profile: (root, sub, _r, _t, flags) => cmdProfile(root, sub, flags),
   read: (root, _s, _r, tail, flags) => cmdRead(root, tail, flags),
   size: (root, _s, _r, tail, flags) => cmdSize(root, tail, flags),
@@ -40,10 +44,11 @@ const COMMANDS: Record<string, Handler> = {
   context: (root, _s, _r, tail, flags) => cmdContext(root, tail, flags),
   conventions: (root, _s, _r, _t, flags) => cmdConventions(root, flags),
   intent: (root, sub, rest, _t, flags) => cmdIntent(root, sub, rest, flags),
-  approve: (root, _s, _r, tail) => cmdApprove(root, tail),
+  approve: (root, _s, _r, tail, flags) => cmdApprove(root, tail, flags),
   check: (root, _s, _r, tail, flags) => cmdCheck(root, tail, flags),
   evidence: (root, _s, _r, tail) => cmdEvidence(root, tail),
   abandon: (root, _s, _r, _t, flags) => cmdAbandon(root, flags),
+  reopen: (root, _s, _r, tail, flags) => cmdReopen(root, tail, flags),
   ask: (root, _s, _r, tail, flags) => cmdAsk(root, tail, flags),
   authorize: (root, _s, _r, tail, flags) => cmdAuthorize(root, tail, flags),
   inbox: (root, sub, rest) => cmdInbox(root, sub, rest),
@@ -69,7 +74,7 @@ export async function dispatch(argv: string[]): Promise<Output> {
     const modes = globalStatus(flagString(flags, 'home')).clients;
     process.stderr.write(`[vibe] set up ${repaired.map((c) => `${c} (${modes[c]?.mode === 'plugin' ? `plugin ${modes[c]?.pluginVersion ?? ''}`.trim() : 'card, skills, hook in home'})`).join(', ')}\n`);
   }
-  const root = cmd === 'plugin' ? process.cwd() : findProjectRoot();
+  const root = cmd === 'plugin' || cmd === 'session' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
   return handler(root, sub, rest, tail, flags);
 }
@@ -79,12 +84,12 @@ async function main(): Promise<void> {
   const wantsJson = argv.includes('--json');
   try {
     const out = await dispatch(argv);
-    process.stdout.write(wantsJson ? `${JSON.stringify(out.json, null, 2)}\n` : `${out.text}\n`);
+    process.stdout.write(wantsJson ? `${JSON.stringify(out.json, null, 2)}\n` : `${safeText(out.text, 200_000)}\n`);
     process.exitCode = out.code;
   } catch (error) {
     const code = error instanceof VibeError ? error.exitCode : 2;
     const message = error instanceof Error ? error.message : String(error);
-    process.stdout.write(wantsJson ? `${JSON.stringify({ error: message, code })}\n` : `vibe: ${message}\n`);
+    process.stdout.write(wantsJson ? `${JSON.stringify({ error: message, code })}\n` : `vibe: ${safeText(message)}\n`);
     process.exitCode = code;
   }
 }
@@ -106,4 +111,3 @@ export function sameFile(argv1: string | undefined, moduleUrl: string): boolean 
   return real(argv1) === real(fileURLToPath(moduleUrl));
 }
 if (sameFile(process.argv[1], import.meta.url)) void main();
-

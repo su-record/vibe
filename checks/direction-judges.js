@@ -16,8 +16,13 @@ const ALL_TASKS = ['anomaly', 'handover', 'session-split', 'ask', 'irreversible-
 const DIRECTION_TASKS = process.argv.length > 2 ? process.argv.slice(2) : ALL_TASKS;
 const env = { ...process.env, VIBE_SKIP_SETUP: '1' };
 
+function environment(ws, extra = {}) {
+  const home = path.join(ws, '.fixture-home');
+  return { ...env, HOME: home, USERPROFILE: home, ...extra };
+}
+
 function vibe(cwd, args) {
-  const r = spawnSync('node', [cli, ...args, '--json'], { cwd, encoding: 'utf-8', env });
+  const r = spawnSync(process.execPath, [cli, ...args, '--json'], { cwd, encoding: 'utf-8', env: environment(cwd) });
   return { code: r.status, stdout: r.stdout, stderr: r.stderr };
 }
 
@@ -31,10 +36,11 @@ function mustOk(cwd, args) {
 function prepare(task) {
   const taskDir = path.join(root, 'bench/tasks', task);
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), `vibe4-direction-${task}-`));
+  fs.mkdirSync(path.join(ws, '.fixture-home'));
   for (const f of fs.readdirSync(taskDir)) fs.cpSync(path.join(taskDir, f), path.join(ws, f), { recursive: true });
   const prep = path.join(ws, 'judge', 'prepare.cjs');
   if (fs.existsSync(prep)) {
-    const r = spawnSync('node', [prep], { cwd: ws, env: { ...env, VIBE_BENCH_REPO: root }, encoding: 'utf-8' });
+    const r = spawnSync(process.execPath, [prep], { cwd: ws, env: environment(ws, { VIBE_BENCH_REPO: root }), encoding: 'utf-8' });
     if (r.status !== 0) throw new Error(`judge/prepare.cjs for ${task} exited ${r.status}\n${r.stdout}\n${r.stderr}`);
   }
   mustOk(ws, ['tokens', 'off']);
@@ -44,14 +50,14 @@ function prepare(task) {
 }
 
 function applyAnswer(ws, script) {
-  const r = spawnSync('node', [path.join('key', script)], { cwd: ws, env });
-  if (r.status !== 0) throw new Error(`judge/${script} in ${ws} exited ${r.status}\n${r.stdout}\n${r.stderr}`);
+  const r = spawnSync(process.execPath, [path.join('key', script)], { cwd: ws, env: environment(ws) });
+  if (r.status !== 0) throw new Error(`key/${script} in ${ws} exited ${r.status}\n${r.stdout}\n${r.stderr}`);
 }
 
 function checkAll(ws) {
   const keyFile = path.join(ws, 'key', 'expected.json');
   const keyEnv = fs.existsSync(keyFile) ? { VIBE_KEY_EXPECTED: fs.readFileSync(keyFile, 'utf-8') } : {};
-  const r = spawnSync('node', [cli, 'check', '--all', '--json'], { cwd: ws, encoding: 'utf-8', env: { ...env, ...keyEnv } });
+  const r = spawnSync(process.execPath, [cli, 'check', '--all', '--json'], { cwd: ws, encoding: 'utf-8', env: environment(ws, keyEnv) });
   return JSON.parse(r.stdout);
 }
 
@@ -69,6 +75,8 @@ function judgeSeparates(task) {
     const failing = rightReport.outcomes.filter((o) => o.status === 'fail').map((o) => o.id).join(', ');
     problems.push(`${task}: the right answer failed ${failing}`);
   }
+  fs.rmSync(wrongWs, { recursive: true, force: true });
+  fs.rmSync(rightWs, { recursive: true, force: true });
   return problems;
 }
 

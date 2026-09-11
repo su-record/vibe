@@ -150,7 +150,7 @@ describe('vibe read --ask — the harness reads for the model', () => {
     expect(aged.session).toEqual({ id: 'sess-4', resumed: false });
     const index = JSON.parse(fs.readFileSync(path.join(home, '.config', 'vibe', 'reader', 'sessions.json'), 'utf-8')) as Record<string, { id: string }>;
     expect(Object.values(index).map((e) => e.id)).toEqual(['sess-4']); // the aged ones were dropped
-  });
+  }, 60_000); // Four reader processes plus client discovery run sequentially under suite load.
 
   it('session: codex runs exec --skip-git-repo-check --json at low reasoning, reads the thread id and cached tokens, and resumes by thread', async () => {
     const log = fakeClient('codex');
@@ -195,7 +195,7 @@ describe('vibe read --ask — the harness reads for the model', () => {
     fs.rmSync(path.join(root, '.vibe', 'config.json'));
     const plain = await askReader(root, ['a.ts'], 'q', { home, now: now + 4000 });
     expect(plain.reader).toBe('codex default/low'); // unset keeps the defaults
-  });
+  }, 60_000); // Five reader processes share this integration deadline; driver limits stay intact.
 
   it('quoting: an empty, a spaced and a quoted argument are quoted for cmd.exe, a plain one is not, and only win32 quotes', () => {
     expect(winQuote('')).toBe('""');

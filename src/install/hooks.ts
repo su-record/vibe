@@ -19,7 +19,7 @@ function notifyCommand(mode: 'post' | 'pre' | 'stop' | 'session'): string {
   return `node "${path.join(packageRoot(), NOTIFY_MARK)}" ${mode}`;
 }
 
-/** Claude Code and Codex run the same five: the tool hooks, Stop (the verdict when a turn ends) and SessionStart (the state handed over). Codex runs them once their trust is granted. */
+/** Claude Code and Codex run the same five: the tool hooks, Stop and SessionStart (bounded status only). Codex runs them once their trust is granted. */
 function wantedHooks(): Array<[string, string, string]> {
   return [
     ['PostToolUse', 'Edit|Write|MultiEdit|NotebookEdit', notifyCommand('post')],
@@ -39,7 +39,7 @@ export function installHookFile(file: string): 'added' | 'unchanged' {
   const settings = readJson<Settings>(file) ?? {};
   const hooks: Record<string, HookEntry[]> = {};
   for (const [event, list] of Object.entries(settings.hooks ?? {})) hooks[event] = list.filter((entry) => !isNotify(entry));
-  for (const [event, matcher, command] of wantedHooks()) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' ? 620 : event === 'SessionStart' ? 30 : 20 }] }];
+  for (const [event, matcher, command] of wantedHooks()) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' || event === 'SessionStart' ? 5 : 20 }] }];
   const next = { ...settings, hooks };
   if (JSON.stringify(next) === JSON.stringify(settings)) return 'unchanged';
   writeJson(file, next);

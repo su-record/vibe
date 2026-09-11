@@ -44,8 +44,7 @@ function choice(raw: unknown): ModelChoice | undefined {
 }
 
 /** The choice for a role: the environment for one run, else the project config, else nothing (the driver's defaults). */
-export function roleChoice(root: string, role: 'reader' | 'reviewer'): ModelChoice {
-  const cfg = readConfig(root);
+export function roleChoice(root: string, role: 'reader' | 'reviewer', cfg: Config = readConfig(root)): ModelChoice {
   const base = (role === 'reader' ? cfg.readerModel : cfg.reviewerModel) ?? {};
   const env = (key: string): string | undefined => process.env[key]?.trim() || undefined;
   const prefix = role === 'reader' ? 'VIBE_READER' : 'VIBE_REVIEWER';
@@ -62,7 +61,11 @@ export function configPath(root: string): string {
 }
 
 export function readConfig(root: string): Config {
-  const raw = readJson<Partial<Config>>(configPath(root)) ?? {};
+  return configFromRaw(readJson<unknown>(configPath(root)));
+}
+
+export function configFromRaw(value: unknown): Config {
+  const raw = (value && typeof value === 'object' && !Array.isArray(value) ? value : {}) as Partial<Config>;
   const tokens = TOKEN_POLICIES.includes(raw.tokens as TokenPolicy) ? (raw.tokens as TokenPolicy) : DEFAULT_TOKEN_POLICY;
   const catalogs = Array.isArray(raw.catalogs) ? raw.catalogs.filter((c): c is string => typeof c === 'string' && /^[\w.-]+\/[\w.-]+$/.test(c)) : [...DEFAULT_CATALOGS];
   const raw2 = raw as Record<string, unknown>;

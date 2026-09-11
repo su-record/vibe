@@ -1,9 +1,11 @@
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ensureDir, readJson, writeJson } from './store.js';
+import { checkProcess, type OutputObserver } from './check-process.js';
+import type { CaptureEvidence } from './output-capture.js';
 
 /**
  * Reader sessions — the cache is the harness's to manage. A file set is sent to the reader once;
@@ -34,7 +36,6 @@ export interface SessionEntry {
 }
 
 export const SESSION_TTL_MS = 60 * 60 * 1000;
-const MAX_CAPTURE = 1024 * 1024;
 
 export function readerHome(home: string = process.env['VIBE_HOME_DIR'] ?? os.homedir()): string {
   return path.join(home, '.config', 'vibe', 'reader');
@@ -84,36 +85,21 @@ export function hasCli(name: string): boolean {
 }
 
 interface Spawned {
+  raw: { stdout: Buffer; stderr: Buffer };
+  capture: CaptureEvidence;
+  failureCode: string | null;
   out: string;
   exit: number | null;
   killed: boolean;
 }
 
 /** Spawn a reader in the neutral directory with the prompt on stdin. `args` null means a shell command string. */
-export function spawnReader(cmd: string, args: string[] | null, stdin: string, cwd: string, timeoutMs: number): Promise<Spawned> {
-  return new Promise((resolve) => {
-    const env: NodeJS.ProcessEnv = { ...process.env };
-    delete env['CLAUDECODE']; // a nested client CLI must not think it is inside itself
-    const child = args === null
-      ? spawn(cmd, { cwd, shell: true, env, stdio: ['pipe', 'pipe', 'pipe'] })
-      : spawn(cmd, shellArgs(args), { cwd, shell: process.platform === 'win32', env, stdio: ['pipe', 'pipe', 'pipe'] });
-    let out = '';
-    let killed = false;
-    child.stdout.on('data', (chunk: Buffer) => {
-      if (out.length < MAX_CAPTURE) out += chunk.toString('utf-8');
-    });
-    child.stderr.on('data', () => undefined);
-    const timer = setTimeout(() => {
-      killed = true;
-      child.kill('SIGKILL');
-    }, timeoutMs);
-    child.on('error', () => resolve({ out, exit: null, killed }));
-    child.on('close', (code) => {
-      clearTimeout(timer);
-      resolve({ out, exit: code, killed });
-    });
-    child.stdin.end(stdin);
-  });
+export async function spawnReader(cmd: string, args: string[] | null, stdin: string, cwd: string, timeoutMs: number, onOutput?: OutputObserver): Promise<Spawned> {
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  delete env['CLAUDECODE'];
+  const result = await checkProcess(cmd, { cwd, timeoutMs, input: stdin, env, ...(onOutput ? { onOutput } : {}), ...(args ? { args: shellArgs(args) } : {}) });
+  return { out: result.raw.stdout.toString('utf8'), exit: result.exit, killed: result.failureCode !== null,
+    failureCode: result.failureCode, raw: result.raw, capture: result.capture };
 }
 
 export interface DriverOptions {

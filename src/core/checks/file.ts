@@ -8,6 +8,10 @@ import type { CheckResult } from './run.js';
 
 function done(pass: boolean, started: number, tail: string, reason?: string): CheckResult {
   const result: CheckResult = { pass, exit: pass ? 0 : 1, ms: Date.now() - started, tail };
+  if (!pass) {
+    const kinds: Record<string, string> = { 'file not found': 'file-not-found', 'read failed': 'file-read-failed', 'schema/json parse failed': 'schema-invalid', 'schema mismatch': 'schema-mismatch', 'sum mismatch': 'sum-mismatch', 'bad pattern': 'pattern-invalid', 'bad absent': 'pattern-invalid', 'forbidden text present': 'forbidden-text', 'untraceable number': 'untraceable-number', 'accessibility defect': 'accessibility-defect' };
+    result.failureCode = Object.entries(kinds).find(([prefix]) => reason?.startsWith(prefix))?.[1] ?? 'file-rule-failed';
+  }
   if (reason) result.reason = reason;
   return result;
 }

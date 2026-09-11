@@ -1,0 +1,21 @@
+- id: build
+  then: dist is produced without type errors
+  check: { type: run, cmd: "npm run build", expect: 0, timeoutMs: 180000 }
+
+- id: lines-test
+  needs: [build]
+  then: parseScenarios accepts a lines rule alone and fileCheck fails over the limit with the count in the reason
+  check: { type: run, cmd: "npx vitest run checks/lines.test.ts", expect: 0, timeoutMs: 180000 }
+
+- id: readme
+  then: the README check table's file row names lines
+  check: { type: file, path: README.md, pattern: "\\| `file` \\|[^\\n]*`lines" }
+
+- id: scope-skill
+  then: the scope skill's check list names lines
+  check: { type: file, path: skills/vibe-scope/SKILL.md, pattern: "`file` [^\\n]*lines" }
+
+- id: size
+  needs: [build]
+  then: no source file over 400 lines and no function over 50
+  check: { type: run, cmd: "node dist/cli.js size src --max-file 400 --max-function 50", expect: 0, timeoutMs: 60000 }

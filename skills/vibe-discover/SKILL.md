@@ -1,6 +1,6 @@
 ---
 name: vibe-discover
-description: Discover — turn a vague request into "what counts as success". At most three questions, each with a default. Surface anomalies in the sample before being asked.
+description: Discover — find the customer's problem and agree on success from evidence. Ask only about consequential unknowns; stop when the scope is sufficient.
 user-invocable: false
 ---
 
@@ -8,19 +8,20 @@ user-invocable: false
 
 ## Procedure
 
-Order the questions by impact: scope first, then security and privacy, then the reader's or user's experience, then technical detail. A question further down the list is asked only when the earlier ones are settled.
+Resolve the problem and success criteria before implementation choices. A clear request can need no interview. If the request is to find work AI can take over, read [work-opportunities.md](work-opportunities.md) for that procedure; do not load it for other tasks.
 
-1. Read what the user attached through the harness, so every client sees the same thing:
+1. Use accessible evidence before asking the customer:
+   - on resumption, reuse the intent's compact findings when `vibe intent show --json` reports their `sourceBasis` unchanged; re-evaluate only findings affected by changed or missing sources
    - before asking, scan `docs/`, `README*` and `*.md` for relevant rules even when the brief does not name them; read those documents before deciding what is unknown
-   - table (csv · tsv · jsonl · json · xlsx) → `vibe profile {file} --json` [`--sheet`]: columns, types, missing counts, duplicates, up to three anomalies with numbers
+   - when a table can resolve a relevant unknown (csv · tsv · jsonl · json · xlsx), use `vibe profile {file} --json` [`--sheet`]: columns, types, missing counts, duplicates, up to three anomalies with numbers
    - document (xlsx · docx · pptx · pdf · hwp · hwpx · html) → `vibe read {file} --json` [`--sheet` · `--pages`]; it says which reader it used (pdf: `pdftotext` when installed, else built-in)
    - long material that only needs an answer ("what does this contract require", "which sheet holds the totals") → `vibe read {files} --ask "{question}"`; a low-reasoning model reads it and only the answer enters your context
    - image → your own file reader; vibe does not read images
-   - code or plain text → your file reader, the whole file — never a grep excerpt
-   If there is no sample, ask for one that the success condition can be checked against.
-2. Say the profile's anomalies before asking questions — at most three, each with its number. Do not add anomalies the profile did not find.
-3. Ask **at most three questions**, each with a default. No answer means the default applies. Every question must serve one purpose: deciding what counts as success.
-4. With the answers, write the intent draft (`.vibe/intent.md`, in English):
+   - code or plain text → fewer relevant files, each in full (Claude Read; Codex `cat`); grep/rg/find locate only, never content slices; over 400 lines when not editing → `vibe read --ask`
+   If a required sample is absent, name what cannot be established and request the smallest useful sample. Do not demand a sample for a task already defined and checkable without one.
+2. Report relevant observed anomalies first — at most three, each with its number and source. Do not invent a profile finding, duration, saving, probability, or missing requirement.
+3. Ask only when the answer changes the problem, success condition, constraint, or permitted action. Bundle at most three high-impact questions per round; explain the decision each resolves. An optional proposal is labelled as a proposal. Silence never answers a material question or authorizes an action; ask a focused follow-up if an important unknown remains. Reports belong in chat, not `vibe ask`.
+4. Write the compact intent (`.vibe/intent.md`, in English), retaining source references, the customer's decisions, and explicit unknowns:
 
 ```
 # {one-line title}
@@ -35,10 +36,10 @@ Order the questions by impact: scope first, then security and privacy, then the 
 - {existing systems, data, deadlines}
 ```
 
-5. Once at least one success condition is a checkable statement, move to `vibe-scope`.
+5. Move to `vibe-scope` once the selected outcome, evidence basis, material constraints, executable acceptance conditions, and action boundaries are clear. Reuse an existing approved scope unless evidence or the requested outcome changes. Do not expand into another task just to fill a question or scenario quota.
 
 ## Message format
 
-- Questions as a numbered list, each ending with `(default: …)`.
+- Questions as a short numbered list when there is more than one; attach the decision, not an invented default.
 - Anomalies start with "Looking at the sample, …" and carry the number.
 - Talk to the user in the user's language; the intent file itself is English.

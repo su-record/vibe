@@ -31,7 +31,8 @@ describe('global surfaces — one copy per client home', () => {
     expect(setup.stdout).toContain('set up now');
     expect(fs.readFileSync(path.join(home, '.claude', 'CLAUDE.md'), 'utf-8')).toContain(CARD_START);
     fs.rmSync(project, { recursive: true, force: true });
-  });
+    fs.rmSync(emptyPath, { recursive: true, force: true });
+  }, 60_000); // Three real CLI processes run sequentially, including installation.
 
   it('a home with neither client gets Claude Code; a Codex home gets AGENTS.md, .codex/skills and .codex/hooks.json', () => {
     expect(detectClients(home)).toEqual(['claude']);

@@ -7,12 +7,12 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installSurfaces, projectLayout } from './install/global.js';
 
-// Every call spawns tsx; under `vibe check` several vitest processes run at once, so 5s is too tight.
+// A test drives several real CLI processes while `vibe check` runs concurrent suites.
 vi.setConfig({ testTimeout: 60_000 });
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const CLI_SRC = path.join(here, 'cli.ts');
-const TSX = path.join(here, '..', 'node_modules', '.bin', 'tsx');
+// `npm run check` builds first; reuse that CLI without restarting a TypeScript loader on every call.
+const CLI = path.join(here, '..', 'dist', 'cli.js');
 
 let root: string;
 let fixtureDir: string;
@@ -33,7 +33,7 @@ interface Run {
 }
 
 function vibe(args: string[], input?: string, env: Record<string, string> = {}, cwd: string = root): Run {
-  const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], {
+  const result = spawnSync(process.execPath, [CLI, ...args, '--json'], {
     cwd,
     encoding: 'utf-8',
     input,
@@ -143,7 +143,7 @@ describe('CLI — from request to DONE', () => {
 
   it('continues across clients — approved under one, checked under another, both in the ledger', () => {
     const as = (client: string, args: string[], input?: string): Run => {
-      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: client }, timeout: 60000 });
+      const result = spawnSync(process.execPath, [CLI, ...args, '--json'], { cwd: root, encoding: 'utf-8', input, env: { ...process.env, HOME: fixtureHome, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: client }, timeout: 60000 });
       return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
     };
     fs.mkdirSync(path.join(fixtureHome, '.codex')); // a Codex home is present, so both clients get the surfaces
@@ -164,24 +164,25 @@ describe('CLI — from request to DONE', () => {
   });
 
   it('the resolved root is visible: state carries root and a notice from a subdirectory; a missing command names the cwd', () => {
-    const home = path.join(root, 'home'); // the project is not the home, so the home rule does not apply to it
-    fs.mkdirSync(home);
+    const home = fixtureHome; // local consent belongs outside the project, in its sibling fixture home
     const env = { HOME: home };
     vibe(['tokens', 'off'], undefined, env);
     vibe(['intent', 'draft', '--stdin'], JSON.stringify({ intent: '# Root\n\n## Why\ntest\n', scenarios: '- { id: gone, then: x, check: { type: run, cmd: "./scripts/nowhere.sh" } }\n' }), env);
     expect(vibe(['approve'], undefined, env).status).toBe(0);
     const sub = path.join(root, 'src', 'deep');
     fs.mkdirSync(sub, { recursive: true });
-    const from = spawnSync(TSX, [CLI_SRC, 'state', '--json'], { cwd: sub, encoding: 'utf-8', env: { ...process.env, HOME: home, VIBE_SKIP_SETUP: '1', VIBE_NO_PLUGIN: '1' }, timeout: 60000 });
+    const from = spawnSync(process.execPath, [CLI, 'state', '--json'], { cwd: sub, encoding: 'utf-8', env: { ...process.env, HOME: home, VIBE_SKIP_SETUP: '1', VIBE_NO_PLUGIN: '1' }, timeout: 60000 });
     const view = JSON.parse(from.stdout) as { root: string; notices: string[] };
     expect(view.root).toBe(root);
     expect(view.notices.some((n) => n.includes('project root is') && n.includes(root))).toBe(true);
     expect(fs.existsSync(path.join(sub, '.vibe'))).toBe(false);
     const checked = vibe(['check', 'gone'], undefined, env);
     expect(checked.status).toBe(1);
-    const outcome = (checked.json as { outcomes: Array<{ id: string; exit: number; tail: string }> }).outcomes.find((o) => o.id === 'gone');
+    const outcome = (checked.json as { outcomes: Array<{ id: string; exit: number; tail: string; failureCode: string; executionContext: string }> }).outcomes.find((o) => o.id === 'gone');
     expect(outcome?.exit).toBe(127);
-    expect(outcome?.tail).toContain(`command not found — the check ran in ${root}`);
+    expect(outcome?.tail).toBe('');
+    expect(outcome?.failureCode).toBe('command-not-found');
+    expect(outcome?.executionContext).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('status reports version, the global surfaces and the project; a missing skill is named by status and repaired by setup, not by a query', () => {
@@ -202,7 +203,7 @@ describe('CLI — from request to DONE', () => {
     const project = path.join(root, 'project');
     fs.mkdirSync(project);
     const inProject = (args: string[]): Run => {
-      const result = spawnSync(TSX, [CLI_SRC, ...args, '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: 'test-client' }, timeout: 60000 });
+      const result = spawnSync(process.execPath, [CLI, ...args, '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '', VIBE_NO_PLUGIN: '1', VIBE_CLIENT: 'test-client' }, timeout: 60000 });
       return { status: result.status ?? -1, stdout: result.stdout, json: JSON.parse(result.stdout) };
     };
     inProject(['tokens', 'off']);
@@ -225,13 +226,13 @@ describe('CLI — from request to DONE', () => {
     expect(fs.existsSync(path.join(project, '.claude', 'settings.local.json'))).toBe(false);
     expect(fs.existsSync(path.join(project, '.vibe'))).toBe(true);
 
-    const purged = spawnSync(TSX, [CLI_SRC, 'uninstall', '--purge-state', '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '1', VIBE_NO_PLUGIN: '1' } });
+    const purged = spawnSync(process.execPath, [CLI, 'uninstall', '--purge-state', '--json'], { cwd: project, encoding: 'utf-8', env: { ...process.env, HOME: root, VIBE_SKIP_SETUP: '1', VIBE_NO_PLUGIN: '1' } });
     expect((JSON.parse(purged.stdout) as { removed: string[] }).removed).toEqual(['.vibe/']);
     expect(fs.existsSync(path.join(project, '.vibe'))).toBe(false);
   });
 
   it('help always exits 0', () => {
-    expect(execFileSync(TSX, [CLI_SRC, '--help'], { cwd: root, encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome } })).toContain('vibe');
+    expect(execFileSync(process.execPath, [CLI, '--help'], { cwd: root, encoding: 'utf-8', env: { ...process.env, HOME: fixtureHome } })).toContain('vibe');
   });
 });
 

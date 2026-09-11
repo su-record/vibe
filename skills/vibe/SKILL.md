@@ -13,6 +13,7 @@ If `vibe` is not on PATH, run `npm i -g @su-record/vibe` once; every command bel
 ## Procedure
 
 1. Run `vibe state --json`. A directory without `.vibe/` answers NONE; the first record creates it.
+   - Once the intended worktree is known, run `vibe session bind` when the host supplies `CODEX_THREAD_ID` or `CLAUDE_SESSION_ID`; otherwise use its actual session ID with `--session`. Never invent an ID or bind from inherited ledger entries. SessionStart and Stop read status only; run checks explicitly.
 2. If `notices` is non-empty, show them to the user first.
 3. If work is in progress (`state` is not NONE or ABANDONED) and the user's request is a new one, ask in one line: continue or start over? Starting over means `vibe abandon --reason "…"` first.
 4. Follow the `next` line. It is the procedure; a stage skill is loaded only when `next` names one:
@@ -20,15 +21,15 @@ If `vibe` is not on PATH, run `npm i -g @su-record/vibe` once; every command bel
 | `next` starts with | do |
 |---|---|
 | `discover` | load `vibe-discover` |
-| `approve` | load `vibe-scope` — the draft, `vibe intent analyze`, research, one approval message |
+| `approve` | load `vibe-scope` — sufficient agreement, runnable checks, `vibe intent analyze`, one approval message; research only for an unresolved gap |
 The card starts at `vibe state` and loads only the skill `next` names; this router is for an explicit `/vibe` and says the same thing.
 
 | `build …` | build what it lists first, then one `vibe check --all`; on a failure, fix what the check names; `vibe context <id>` when that is not enough, then `vibe check <id>` for that scenario only; load `vibe-build` only for a full task with parallel or irreversible scenarios |
 | `check --all` | run it |
-| `prove — STUCK` · `answer inbox` | answer the question, then `vibe check --all`; load `vibe-prove` on a second STUCK |
+| `prove — STUCK` | load `vibe-prove`; at two same-hash failures diagnose with context and change approach; at five relay the question id and cause, then wait; never invent an answer |
 | `report` | the completion report (card rule 9); HANDOFF.md only if the intent asks; no further checks after DONE |
 
-With an approved intent, never re-enter scope: a second draft voids the approval and doubles the work.
+Reuse an approved intent and unchanged evidence. Re-enter scope only for a changed outcome, constraint, or evidence basis: a new draft voids the previous approval.
 
 ## Never
 

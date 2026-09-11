@@ -1,0 +1,18 @@
+- id: exists
+  then: out/report.md exists
+  check: { type: file, path: out/report.md, exists: true }
+
+- id: heading
+  needs: [exists]
+  then: the report carries a Summary heading
+  check: { type: file, path: out/report.md, pattern: "^##\\s+Summary" }
+
+- id: no-placeholders
+  needs: [exists]
+  then: the report carries no placeholder text or reprinted writer note
+  check: { type: file, path: out/report.md, absent: "@placeholders" }
+
+- id: traceable
+  needs: [exists]
+  then: every number in the report is traceable to evidence.md
+  check: { type: file, path: out/report.md, traceable: evidence.md }

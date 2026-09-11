@@ -1,0 +1,530 @@
+{
+  "id": "fde-discovery-v1",
+  "status": "draft",
+  "createdAt": "2026-09-10T05:47:56.817Z",
+  "pins": {
+    "revision": null,
+    "runner": null,
+    "fixture": null,
+    "rubric": "6f3e6157798e02c8906b09b2f2f44ebdbbe0fd0bb367abb223b8c55790c530d2"
+  },
+  "clientVersions": {
+    "claude": "2.1.267 (Claude Code)",
+    "codex": "codex-cli 0.153.4"
+  },
+  "nodeVersion": "v22.23.0",
+  "baselineRevision": "2d2af57",
+  "candidateRevision": null,
+  "products": {
+    "baseline": null,
+    "candidate": null
+  },
+  "targets": {
+    "scopeFloor": 0.9,
+    "groundedFamilies": 3,
+    "weightedInputRatio": 0.8,
+    "criticalOmissions": 0,
+    "unsupportedAssertions": 0
+  },
+  "schedule": [
+    {
+      "id": "claude/status-first/off/1",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 1
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/1",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 1
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/1",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 1
+    },
+    {
+      "id": "claude/followup-first/off/1",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 1
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/1",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 1
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/1",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 1
+    },
+    {
+      "id": "codex/status-first/off/1",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 1
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/1",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 1
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/1",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 1
+    },
+    {
+      "id": "codex/followup-first/off/1",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 1
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/1",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 1
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/1",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 1
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/2",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 2
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/2",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 2
+    },
+    {
+      "id": "claude/status-first/off/2",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 2
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/2",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 2
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/2",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 2
+    },
+    {
+      "id": "claude/followup-first/off/2",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 2
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/2",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 2
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/2",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 2
+    },
+    {
+      "id": "codex/status-first/off/2",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 2
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/2",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 2
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/2",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 2
+    },
+    {
+      "id": "codex/followup-first/off/2",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 2
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/3",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 3
+    },
+    {
+      "id": "claude/status-first/off/3",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 3
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/3",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 3
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/3",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 3
+    },
+    {
+      "id": "claude/followup-first/off/3",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 3
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/3",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 3
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/3",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 3
+    },
+    {
+      "id": "codex/status-first/off/3",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 3
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/3",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 3
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/3",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 3
+    },
+    {
+      "id": "codex/followup-first/off/3",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 3
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/3",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 3
+    },
+    {
+      "id": "claude/status-first/off/4",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 4
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/4",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 4
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/4",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 4
+    },
+    {
+      "id": "claude/followup-first/off/4",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 4
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/4",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 4
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/4",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 4
+    },
+    {
+      "id": "codex/status-first/off/4",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 4
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/4",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 4
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/4",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 4
+    },
+    {
+      "id": "codex/followup-first/off/4",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 4
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/4",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 4
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/4",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 4
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.25/5",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 5
+    },
+    {
+      "id": "claude/status-first/scoped-4.1.26/5",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 5
+    },
+    {
+      "id": "claude/status-first/off/5",
+      "client": "claude",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 5
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.25/5",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 5
+    },
+    {
+      "id": "claude/followup-first/scoped-4.1.26/5",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 5
+    },
+    {
+      "id": "claude/followup-first/off/5",
+      "client": "claude",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 5
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.25/5",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 5
+    },
+    {
+      "id": "codex/status-first/scoped-4.1.26/5",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 5
+    },
+    {
+      "id": "codex/status-first/off/5",
+      "client": "codex",
+      "variant": "status-first",
+      "arm": "off",
+      "attempt": 5
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.25/5",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.25",
+      "attempt": 5
+    },
+    {
+      "id": "codex/followup-first/scoped-4.1.26/5",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "scoped-4.1.26",
+      "attempt": 5
+    },
+    {
+      "id": "codex/followup-first/off/5",
+      "client": "codex",
+      "variant": "followup-first",
+      "arm": "off",
+      "attempt": 5
+    }
+  ],
+  "settings": {
+    "claude": {
+      "model": "claude-opus-5",
+      "effort": null,
+      "sources": {
+        "model": {
+          "value": "claude-opus-5",
+          "source": "user:instructions-12-13"
+        },
+        "effort": {
+          "value": null,
+          "source": "user:instructions-12-13"
+        }
+      },
+      "maxTurns": 40,
+      "turnLimit": "client-enforced"
+    },
+    "codex": {
+      "model": "gpt-5.6-terra",
+      "effort": "xhigh",
+      "sources": {
+        "model": {
+          "value": "gpt-5.6-terra",
+          "source": "user:instructions-12-13"
+        },
+        "effort": {
+          "value": "xhigh",
+          "source": "user:instructions-12-13"
+        }
+      },
+      "maxTurns": null,
+      "turnLimit": "unavailable-use-shared-time-limit"
+    }
+  },
+  "limits": {
+    "sessions": 6,
+    "clarificationRounds": 2,
+    "scopeCorrections": 1,
+    "sessionMs": 900000,
+    "attemptMs": 3600000,
+    "concurrencyPerClient": 1
+  },
+  "budget": {
+    "rawTokens": 60000000,
+    "usd": null,
+    "wallMs": 86400000,
+    "unknownMoneyAccepted": true,
+    "note": "Accounting is observed at client-result boundaries. One in-flight invocation may overshoot; missing usage stops further calls."
+  },
+  "prices": {},
+  "task": "work-opportunities",
+  "limitations": [
+    "These indicators do not measure the appropriateness of problem framing or tradeoff judgment.",
+    "Synthetic discovery case; no ROI, human-time-saving, broad prevention or general FDE claim."
+  ],
+  "assessment": {
+    "kind": "deterministic",
+    "indicators": [
+      "mechanicalCoverage",
+      "criticalOmissions",
+      "unsupportedAssertions",
+      "groundedOpportunities",
+      "pilot",
+      "sourcePreserved"
+    ],
+    "humanReview": "optional-diagnostic",
+    "assertions": "structured-only",
+    "limitation": "These indicators do not measure the appropriateness of problem framing or tradeoff judgment."
+  },
+  "draftNote": "Regenerate source and executable pins after final integration, before separate execution approval. No cohort is authorized by this draft.",
+  "diagnostics": {
+    "enabled": false,
+    "directory": null
+  },
+  "capture": {
+    "streamBytes": 67108864,
+    "diagnosticBytes": 67108864,
+    "graceMs": 1000
+  }
+}

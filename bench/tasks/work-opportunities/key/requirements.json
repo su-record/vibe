@@ -1,0 +1,12 @@
+[
+  { "id": "traceability", "weight": 3, "critical": true, "mechanical": "source-backed distinct events and window", "human": "problem framing and relevance" },
+  { "id": "active-time", "weight": 2, "critical": true, "mechanical": "measured preparation time coverage", "human": "interpretation of effort" },
+  { "id": "unknown-claims", "weight": 3, "critical": true, "mechanical": "unsupported structured estimates stay null", "human": "unsupported factual or quantitative prose" },
+  { "id": "priority", "weight": 3, "critical": true, "mechanical": "selected family matches delivered preference", "human": "customer problem and selected outcome" },
+  { "id": "ranking", "weight": 2, "critical": false, "mechanical": "eligible selection and explicit rationale", "human": "ranking justification and unnecessary scope" },
+  { "id": "checks", "weight": 2, "critical": false, "mechanical": "candidate checks and selected-check discrimination", "human": "semantic requirement-to-scenario coverage" },
+  { "id": "output-contract", "weight": 3, "critical": true, "mechanical": "required pilot behavior and missing fields", "human": "scope's promised output behavior" },
+  { "id": "review-boundary", "weight": 3, "critical": true, "mechanical": "explicit review and no unapproved sink effects", "human": "permission and review clarity" },
+  { "id": "recovery", "weight": 1, "critical": false, "mechanical": "failure, installation and rollback", "human": "sufficiency of recovery agreement" },
+  { "id": "handoff", "weight": 1, "critical": false, "mechanical": "operator document and rerun plan", "human": "operator can use the handoff alone" }
+]

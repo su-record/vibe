@@ -1,0 +1,14 @@
+{
+  "seed": "work-opportunities-heldout-behavior-b",
+  "statusCsv": "event_id,date,team,status,blocker\nholdout-z9,2027-02-17,Research,blocked,New dependency\nholdout-a2,2027-02-16,Support,ready,\nholdout-m5,2027-02-18,Research,in progress,Waiting for customer\n",
+  "meeting": {
+    "eventId": "holdout-followup",
+    "date": "2027-02-17",
+    "durationMinutes": 75,
+    "actions": [
+      { "id": "holdout-z8", "text": "Confirm the changed customer brief", "owner": null, "due": "2027-02-20" },
+      { "id": "holdout-a4", "text": "Inspect the updated local evidence", "owner": "Aisha", "due": null },
+      { "id": "holdout-m6", "text": "Follow up on the uncovered dependency", "owner": null, "due": null }
+    ]
+  }
+}

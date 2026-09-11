@@ -1,0 +1,312 @@
+{
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "observationWindow",
+    "sourceCoverage",
+    "opportunities",
+    "selected",
+    "rankingRationale",
+    "customerAnswerRefs"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "observationWindow": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "string",
+          "minLength": 1
+        },
+        "end": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sourceCoverage": {
+      "type": "object",
+      "required": [
+        "available",
+        "missing"
+      ],
+      "properties": {
+        "available": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "opportunities": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "problem",
+          "countingRule",
+          "evidence",
+          "observed",
+          "automation",
+          "feasibility",
+          "risks",
+          "estimates",
+          "scenario"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "problem": {
+            "type": "string",
+            "minLength": 1
+          },
+          "countingRule": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "eventIds"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "eventIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1
+                }
+              }
+            }
+          },
+          "observed": {
+            "type": "object",
+            "required": [
+              "events",
+              "measuredEvents",
+              "activeMinutes"
+            ],
+            "properties": {
+              "events": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "measuredEvents": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "activeMinutes": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            }
+          },
+          "automation": {
+            "type": "object",
+            "required": [
+              "input",
+              "output",
+              "tool",
+              "installation"
+            ],
+            "properties": {
+              "input": {
+                "type": "string",
+                "minLength": 1
+              },
+              "output": {
+                "type": "string",
+                "minLength": 1
+              },
+              "tool": {
+                "type": "string",
+                "minLength": 1
+              },
+              "installation": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "feasibility": {
+            "type": "object",
+            "required": [
+              "status",
+              "prerequisites"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "ready",
+                  "local-only",
+                  "blocked"
+                ]
+              },
+              "prerequisites": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "risks": {
+            "type": "object",
+            "required": [
+              "failureCases",
+              "permissions",
+              "externalEffects",
+              "humanReview",
+              "rollback"
+            ],
+            "properties": {
+              "failureCases": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "permissions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "externalEffects": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "humanReview": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rollback": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "estimates": {
+            "type": "object",
+            "required": [
+              "savingsMinutes",
+              "roi",
+              "failureProbability",
+              "implementationHours"
+            ],
+            "properties": {
+              "savingsMinutes": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "roi": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "failureProbability": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "implementationHours": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "scenario": {
+            "type": "object",
+            "required": [
+              "id",
+              "check"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "check": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "cmd"
+                ],
+                "properties": {
+                  "type": {
+                    "const": "run"
+                  },
+                  "cmd": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "selected": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "rankingRationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "customerAnswerRefs": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  }
+}

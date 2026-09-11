@@ -1,0 +1,8 @@
+- id: summary-exists
+  then: out/summary.json exists
+  check: { type: file, path: out/summary.json, exists: true }
+
+- id: total-converted
+  needs: [summary-exists]
+  then: totalKRW is the paid orders converted through rates.json and summed
+  check: { type: run, cmd: "node checks/verify.cjs", expect: 0, timeoutMs: 30000 }
