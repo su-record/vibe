@@ -92,6 +92,7 @@ function unavailableStatus(root, binding, proof) {
   try { currentRevision = revision(root); } catch { /* Only fixed diagnostic text leaves the hook. */ }
   try { waiting = workflow(root).waiting; } catch { /* An unavailable inbox cannot supply question ids. */ }
   return { root, revision: currentRevision, intent: proof.intentHash, complete: false, fresh: false, snapshotStatus: 'unavailable',
+    progress: digest(JSON.stringify({ run: proof.run, snapshotStatus: proof.snapshotStatus, revision: proof.revision })),
     remaining: proof.scenarios.map(s => s.id), repair: repairData(proof.repair), failures: proof.failures ?? [], waiting, handed: [], graph: binding.scenarios };
 }
 function structuralStatus(root, binding) {
@@ -145,10 +146,20 @@ function allHanded(view) {
   } while (changed);
   return view.remaining.every(id => covered.has(id));
 }
+function oncePerState(view, status) {
+  try {
+    const key = view.progress;
+    const raw = readPrivate(view.root, name('guard', view.id), 4096);
+    const old = raw ? JSON.parse(raw) : {};
+    if (old.key === key) return {};
+    writePrivate(view.root, name('guard', view.id), JSON.stringify({ key, count: 1 }));
+    return { systemMessage: message(view, status) };
+  } catch { return { systemMessage: message(view, 'session guard unavailable; unmet') }; }
+}
 function stopDecision(payload = {}, env = process.env, cwd = process.cwd()) {
   const view = sessionStatus(payload, env, cwd);
   if (view.status !== 'bound') return { systemMessage: message(view, `${view.status}; unmet; use explicit vibe session bind in the intended worktree`) };
-  if (view.snapshotStatus === 'unavailable') return { systemMessage: message(view, 'explicit-check snapshot unavailable; unmet') };
+  if (view.snapshotStatus === 'unavailable') return oncePerState(view, 'explicit-check snapshot unavailable; unmet');
   if (view.complete) return { systemMessage: message(view, 'verified completion from an explicit check') };
   if (view.approvalWaiting) return { systemMessage: message(view, 'waiting for approval; unmet') };
   if (view.abandoned) return { systemMessage: message(view, 'intent abandoned; unmet') };
