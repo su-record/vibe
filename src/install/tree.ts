@@ -26,11 +26,9 @@ function hookSet(root: string, sessionArg: string): Record<string, unknown> {
   return {
     hooks: {
       SessionStart: [{ hooks: [cmd('session.js', sessionArg)] }],
-      Stop: [{ hooks: [{ ...cmd('notify.js', 'stop --plugin'), timeout: 5 }] }],
-      PostToolUse: [{ matcher: 'Edit|Write|MultiEdit|NotebookEdit', hooks: [{ ...cmd('notify.js', 'post --plugin'), timeout: 20 }] }],
+      Stop: [{ hooks: [{ ...cmd('notify.js', 'stop --plugin --personal'), timeout: 5 }] }],
       PreToolUse: [
-        { matcher: 'Bash', hooks: [{ ...cmd('notify.js', 'pre --plugin'), timeout: 20 }] },
-        { matcher: 'Read', hooks: [{ ...cmd('notify.js', 'pre --plugin'), timeout: 20 }] },
+        { matcher: 'Bash', hooks: [{ ...cmd('notify.js', 'pre --plugin --personal'), timeout: 20 }] },
       ],
     },
   };
@@ -50,12 +48,12 @@ export function codexManifest(p: Pkg = pkg()): Record<string, unknown> {
     hooks: './hooks/codex-hooks.json',
     interface: {
       displayName: 'Vibe',
-      shortDescription: 'The harness judges; a human approves',
-      longDescription: 'Say what you need. vibe turns it into checkable scenarios, builds it, proves it by running the checks itself, and hands it over. Start with /vibe.',
+      shortDescription: 'Your personal FDE',
+      longDescription: 'Understand your work, use the right tools, implement and verify useful outcomes. Start with /vibe.',
       developerName: 'su-record',
       category: 'Developer Tools',
       websiteURL: REPO,
-      defaultPrompt: ['Use vibe to turn this request into approved scenarios and build it.', 'Use vibe to prove the current work with vibe check --all.'],
+      defaultPrompt: ['Use vibe to help me solve this problem.', 'Use vibe to continue my project from its saved context.'],
     },
   };
 }

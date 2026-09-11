@@ -1,3 +1,4 @@
+import { captureRiskBase } from './risk-signals.js';
 import { createHash } from 'node:crypto';
 import { detectClient, detectModel } from './client.js';
 import { approvalNeedsToken, readConfig } from './config.js';
@@ -57,6 +58,7 @@ export function draft(root: string, intentText: string, scenariosText: string, s
   const hash = intentHash(intentNorm, scenariosNorm, sourceBasis);
   const previousState = readState(root);
   const previous = previousState.intentHash;
+  captureRiskBase(root, ['NONE', 'DONE', 'ABANDONED'].includes(previousState.state));
   writeAtomic(intentPath(root), intentNorm);
   writeAtomic(scenariosPath(root), scenariosNorm);
   saveSourceBasis(root, sourceBasis);

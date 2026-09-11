@@ -1,3 +1,4 @@
+import { requireRiskCoverage, uncoveredRisks } from './risk-signals.js';
 import { createHash } from 'node:crypto';
 import { summarizeFailure, failureLine, type FailureSummary } from './failure.js';
 import { repairFailure, resumeRepair } from './repair.js';
@@ -117,7 +118,7 @@ function failHashOf(outcomes: ScenarioOutcome[]): string | null {
 
 export function scenarioSetHash(scenarios: Scenario[]): string {
   const hash = createHash('sha256');
-  for (const s of [...scenarios].sort((a, b) => a.id.localeCompare(b.id))) hash.update(`${s.id}|${JSON.stringify(s.check)}\n`);
+  for (const s of [...scenarios].sort((a, b) => a.id.localeCompare(b.id))) hash.update(`${s.id}|${JSON.stringify({ check: s.check, needs: s.needs, risk: s.risk })}\n`);
   return hash.digest('hex').slice(0, 12);
 }
 
@@ -297,6 +298,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const scenarios = loadScenarios(root);
   const regressions = listRegressions(root);
   const universe: Selectable[] = [...scenarios, ...regressions.map((r) => ({ ...r, regression: true }))];
+  requireRiskCoverage(root, universe);
   const previous = readResults(root);
   const selected = selectScenarios(universe, previous, options);
 
@@ -305,6 +307,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   const outcomes = await runLayers(root, selected, previous, { ...options, run });
   for (const outcome of outcomes) { outcome.executionContext = executionContext; outcome.evidenceId = `${run}#${outcome.id}`; }
 
+  requireRiskCoverage(root, universe);
   const results: ResultsFile = { ...previous };
   const tree = treeHash(root); // after the checks ran: a check that writes build output is part of the tree it passed on
   for (const o of outcomes) results[o.id] = { last: o.status, at, run, tree, ...(o.failure ? { failure: o.failure } : {}) };
@@ -345,7 +348,7 @@ export function invalidateDoneIfEdited(root: string): boolean {
   if (state.state !== 'DONE' || !state.doneTree) return false;
   const basis = readSourceBasis(root);
   const currentHash = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '', basis);
-  if (treeHash(root) === state.doneTree && currentHash === state.intentHash && (sourceValidity(root, basis)?.valid ?? true) && consentStatus(root).valid) return false;
+  if (uncoveredRisks(root, loadScenarios(root)).length === 0 && treeHash(root) === state.doneTree && currentHash === state.intentHash && (sourceValidity(root, basis)?.valid ?? true) && consentStatus(root).valid) return false;
   writeState(root, { ...state, state: 'RUNNING', doneAt: null, doneTree: null });
   return true;
 }

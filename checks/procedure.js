@@ -1,22 +1,11 @@
-#!/usr/bin/env node
-// One procedure, one source: the phrases in src/core/procedure.ts must appear — backticks and the
-// word "vibe" aside — in card rule 2, the router skill and README's flow block. Two procedures in
-// two places is how the model came to read intent.md for what a scenario id meant.
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
-const src = fs.readFileSync(path.join(root, 'src/core/procedure.ts'), 'utf-8');
-const phrase = (key) => new RegExp(`${key}: '([^']+)'`).exec(src)?.[1];
-const norm = (t) => t.replace(/`/g, '').replace(/\bvibe /g, '').replace(/\bthen one\b/g, 'one').replace(/\s+/g, ' ');
-const wanted = ['build', 'failure'].map((k) => norm(phrase(k)));
-
-const places = { 'card.md': fs.readFileSync(path.join(root, 'card.md'), 'utf-8'), 'skills/vibe/SKILL.md': fs.readFileSync(path.join(root, 'skills/vibe/SKILL.md'), 'utf-8'), 'README.md': fs.readFileSync(path.join(root, 'README.md'), 'utf-8') };
-const problems = [];
-for (const [file, text] of Object.entries(places)) for (const w of wanted) if (!norm(text).includes(w)) problems.push(`${file} does not say "${w}"`);
-if (problems.length) {
-  console.error(`the procedure is written in more than one way:\n${problems.map((p) => `  ${p}`).join('\n')}`);
-  process.exit(1);
+const skill = fs.readFileSync(new URL('../skills/vibe/SKILL.md', import.meta.url), 'utf8');
+assert.match(skill, /internal brief/);
+assert.match(skill, /No additional model review by default/);
+assert.match(skill, /current checkout/);
+for (const [, name] of skill.matchAll(/internal guide ([a-z]+)/g)) {
+  assert.ok(fs.existsSync(new URL(`../internal/guides/${name}.md`, import.meta.url)), `missing guide ${name}`);
 }
-console.log(`procedure: card, router and README quote "${wanted.join('" and "')}"`);
+assert.equal(/load `vibe-(scope|build|prove)`/.test(skill), false);
+console.log('personal FDE procedure: one entry, resolvable internal guides, no automatic review or workspace');

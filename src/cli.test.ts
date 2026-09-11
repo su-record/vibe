@@ -159,7 +159,7 @@ describe('CLI — from request to DONE', () => {
     expect(ledger.find((e) => e.event === 'done')?.client).toBe('codex');
     expect((as('chatgpt', ['state']).json as { state: string }).state).toBe('DONE');
     expect(fs.existsSync(path.join(fixtureHome, '.codex', 'hooks.json'))).toBe(true);
-    expect(fs.existsSync(path.join(fixtureHome, '.codex', 'skills', 'vibe-scope', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(fixtureHome, '.codex', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
     expect(fs.readFileSync(path.join(fixtureHome, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
   });
 
@@ -188,14 +188,14 @@ describe('CLI — from request to DONE', () => {
   it('status reports version, the global surfaces and the project; a missing skill is named by status and repaired by setup, not by a query', () => {
     vibe(['setup']);
     vibe(['tokens', 'off']);
-    fs.rmSync(path.join(fixtureHome, '.claude', 'skills', 'vibe-prove'), { recursive: true });
+    fs.rmSync(path.join(fixtureHome, '.claude', 'skills', 'vibe'), { recursive: true });
     vibe(['state']);
-    expect(fs.existsSync(path.join(fixtureHome, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(false); // a query repaired nothing
+    expect(fs.existsSync(path.join(fixtureHome, '.claude', 'skills', 'vibe', 'SKILL.md'))).toBe(false); // a query repaired nothing
     const status = vibe(['status']);
     expect(status.status).toBe(0);
-    expect(status.json).toMatchObject({ version: expect.stringMatching(/^\d+\.\d+\.\d+/), clients: { claude: { card: true, skills: 5, hook: true, current: false } }, project: { vibe: true, state: 'NONE' } });
+    expect(status.json).toMatchObject({ version: expect.stringMatching(/^\d+\.\d+\.\d+/), clients: { claude: { card: true, skills: 0, hook: true, current: false } }, project: { vibe: true, state: 'NONE' } });
     expect(vibe(['setup']).status).toBe(0);
-    expect(fs.existsSync(path.join(fixtureHome, '.claude', 'skills', 'vibe-prove', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(fixtureHome, '.claude', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
   });
 
   it('uninstall removes the global card, skills and hook, and what an older init left in the project; .vibe stays unless --purge-state', () => {
@@ -327,10 +327,10 @@ describe('skills — from proposal to installed, through the CLI', () => {
     const preview = vibe(['skill', 'add', 'vercel-labs/agent-skills@deploy-to-vercel'], undefined, env);
     expect(preview.status).toBe(3);
     expect((preview.json as { commands: string[] }).commands).toEqual(['vercel deploy --prod']);
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'deploy-to-vercel'))).toBe(false);
+    expect(fs.existsSync(path.join(root, '.vibe', 'skills', 'installed', 'deploy-to-vercel'))).toBe(false);
     const install = vibe(['skill', 'add', 'vercel-labs/agent-skills@deploy-to-vercel', '--yes'], undefined, env);
     expect(install.status).toBe(0);
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'deploy-to-vercel', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.vibe', 'skills', 'installed', 'deploy-to-vercel', 'SKILL.md'))).toBe(true);
     const list = vibe(['skill', 'list']).json as { project: Array<{ name: string; source: string }> };
     expect(list.project[0]).toMatchObject({ name: 'deploy-to-vercel', source: 'vercel-labs/agent-skills@deploy-to-vercel#0123456789ab' });
     expect(vibe(['skill', 'prune', '--dry-run', '--unused-runs', '0']).json).toMatchObject({ removed: ['deploy-to-vercel'] });

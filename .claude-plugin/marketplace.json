@@ -5,15 +5,15 @@
     "url": "https://github.com/su-record"
   },
   "metadata": {
-    "description": "An AX/FDE harness for Claude Code, Codex CLI and ChatGPT desktop. Say what you need, approve the scenarios once; the harness proves the work by running the checks itself. Memory in plain files, human tokens for irreversible actions, a ledger instead of claims.",
-    "version": "4.1.30"
+    "description": "Your personal FDE in Claude and Codex. Understand the work, use the right tools, deliver and retain useful context. One entry: vibe.",
+    "version": "4.2.0"
   },
   "plugins": [
     {
       "name": "vibe",
       "source": "./",
-      "description": "An AX/FDE harness for Claude Code, Codex CLI and ChatGPT desktop. Say what you need, approve the scenarios once; the harness proves the work by running the checks itself. Memory in plain files, human tokens for irreversible actions, a ledger instead of claims.",
-      "version": "4.1.30",
+      "description": "Your personal FDE in Claude and Codex. Understand the work, use the right tools, deliver and retain useful context. One entry: vibe.",
+      "version": "4.2.0",
       "category": "productivity"
     }
   ]

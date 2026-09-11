@@ -1,4 +1,5 @@
 import YAML from 'yaml';
+import { bindRiskChecks, riskReason, type Risk } from './verification.js';
 import { mutationOf } from './checks/mutation.js';
 
 export type CheckType = 'run' | 'file' | 'http' | 'eval' | 'review' | 'human';
@@ -68,6 +69,7 @@ export interface Scenario {
   then: string;
   check: Check;
   irreversible?: string;
+  risk?: Risk;
   /** DEPENDS_ON edges — this scenario is checked only after every listed scenario has passed. */
   needs?: string[];
   /** Explicitly reviewed verifier bytes, separate from artifacts being built. */
@@ -176,11 +178,14 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (needs === null) return void rejections.push({ id, reason: 'needs must be a list of scenario ids' });
     const verifiers = strList(item['verifiers']);
     if (verifiers === null) return void rejections.push({ id, reason: 'verifiers must be a list of file paths' });
+    const invalidRisk = item['risk'] === undefined ? null : riskReason(item['risk']);
+    if (invalidRisk) return void rejections.push({ id, reason: invalidRisk });
     seen.add(id);
     const scenario: Scenario = { id, then, check: item['check'] as Check };
     const given = str(item['given']);
     const when = str(item['when']);
     const irreversible = str(item['irreversible']);
+    if (item['risk'] !== undefined) scenario.risk = item['risk'] as Risk;
     if (given) scenario.given = given;
     if (when) scenario.when = when;
     if (irreversible) scenario.irreversible = irreversible;
@@ -188,14 +193,19 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (verifiers.length > 0) scenario.verifiers = verifiers;
     scenarios.push(scenario);
   });
+  detectMutations(scenarios);
+  bindRiskChecks(scenarios, rejections);
   rejectBadEdges(scenarios, rejections);
+  return { scenarios, rejections };
+}
+
+function detectMutations(scenarios: Scenario[]): void {
   // a check observes: a run command that would change the world is irreversible unless the scenario said so itself
   for (const s of scenarios) {
     if (s.check.type !== 'run' || s.irreversible) continue;
     const action = mutationOf(s.check.cmd);
     if (action) s.irreversible = `${action} (detected)`;
   }
-  return { scenarios, rejections };
 }
 
 /**

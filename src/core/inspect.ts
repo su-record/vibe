@@ -1,3 +1,4 @@
+import { riskBase, riskRules } from './risk-signals.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -109,6 +110,7 @@ export function executionPlan(root: string) {
   if (!Array.isArray(sources) || sources.some((source) => !source || typeof source.path !== 'string' || !/^[a-f0-9]{64}$/.test(source.sha256))) throw denied('invalid source basis in execution preview');
   const reviewer = inspectedReviewer(canonical);
   return { schemaVersion: 1, project: canonical, contract: fingerprint({ intent: contract.intent, definitions, sources }),
+    riskBase: riskBase(canonical), riskRules: riskRules(canonical),
     platform: process.platform, shell: executionShell(), node: fs.realpathSync(process.execPath),
     path: process.env['PATH'] ?? '', pathExt: process.env['PATHEXT'] ?? '',
     environment: Object.fromEntries(['HOME', 'USERPROFILE', 'VIBE_HOME_DIR', 'VIBE_REVIEW_CMD', 'VIBE_REVIEW_CLIENT', 'VIBE_REVIEWER_MODEL', 'VIBE_REVIEWER_EFFORT'].map((key) => [key, process.env[key] ?? null])),

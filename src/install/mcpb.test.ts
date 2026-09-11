@@ -48,14 +48,23 @@ describe('mcpb — the Claude desktop bundle', () => {
     send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '0' } } });
     send({ jsonrpc: '2.0', method: 'notifications/initialized' });
     send({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
-    send({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'vibe_intent_draft', arguments: { intent: '# Hello\n\n## Why\nx\n', scenarios: '- { id: hi, then: x, check: { type: file, path: hi.txt, exists: true } }\n' } } });
-    send({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'vibe_state', arguments: {} } });
+    send({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'intent_draft', arguments: { intent: '# Hello\n\n## Why\nx\n', scenarios: '- { id: hi, then: x, check: { type: file, path: hi.txt, exists: true } }\n' } } } });
+    send({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'state' } } });
     send({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'nope', arguments: {} } });
-    await waitFor(5);
+    send({ jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'discover', arguments: { operation: 'skill' } } } });
+    send({ jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'guide', arguments: { name: 'extensions' } } } });
+    send({ jsonrpc: '2.0', id: 8, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'skill', arguments: { action: 'create', value: 'pilot', check: 'file' } } } });
+    send({ jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'skill', arguments: { action: 'delete-everything' } } } });
+    send({ jsonrpc: '2.0', id: 10, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'brief' } } });
+    send({ jsonrpc: '2.0', id: 11, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'knowledge', arguments: { title: 'Pilot decision', text: 'Use changed input; confirmed in the task.' } } } });
+    send({ jsonrpc: '2.0', id: 12, method: 'tools/call', params: { name: 'vibe_state', arguments: {} } });
+    send({ jsonrpc: '2.0', id: 13, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'performance', arguments: { action: 'report' } } } });
+    send({ jsonrpc: '2.0', id: 14, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'performance', arguments: { action: 'publish' } } } });
+    await waitFor(14);
     server.kill();
     const byId = Object.fromEntries(replies.map((r) => [r['id'] as number, r]));
     expect((byId[1]!['result'] as { serverInfo: { version: string } }).serverInfo.version).toBe('9.9.9');
-    expect((byId[2]!['result'] as { tools: Array<{ name: string }> }).tools.map((t) => t.name)).toContain('vibe_check');
+    expect((byId[2]!['result'] as { tools: Array<{ name: string }> }).tools.map((t) => t.name)).toEqual(['vibe']);
     const draft = byId[3]!['result'] as { isError: boolean; content: Array<{ text: string }> };
     expect(draft.isError).toBe(false);
     expect(JSON.parse(draft.content[0]!.text)).toMatchObject({ ok: true, scenarios: [{ id: 'hi' }] });
@@ -63,6 +72,17 @@ describe('mcpb — the Claude desktop bundle', () => {
     expect(state.state).toBe('DRAFT');
     expect(fs.existsSync(path.join(project, '.vibe', 'intent.md'))).toBe(true);
     expect((byId[5]!['error'] as { code: number }).code).toBe(-32602);
+    const text = (id: number) => (byId[id]!['result'] as { content: Array<{ text: string }> }).content[0]!.text;
+    expect(JSON.parse(text(6))[0].inputSchema.properties.action.enum).toContain('create');
+    expect(JSON.parse(text(7)).text).toContain('skill search');
+    expect(JSON.parse(text(8)).paths).toEqual(['.vibe/skills/installed/pilot/SKILL.md']);
+    expect(fs.existsSync(path.join(project, '.claude', 'skills', 'pilot'))).toBe(false);
+    expect((byId[9]!['error'] as { code: number }).code).toBe(-32602);
+    expect(JSON.parse(text(10)).guidance).toContain("You are the user's FDE");
+    expect(fs.readFileSync(path.join(project, '.vibe', 'knowledge', 'pilot-decision.md'), 'utf8')).toContain('confirmed in the task');
+    expect(JSON.parse(text(12)).state).toBe('DRAFT');
+    expect(JSON.parse(text(13))).toMatchObject({ runs: 0, checks: [] });
+    expect((byId[14]!['error'] as { code: number }).code).toBe(-32602);
   }, 60_000); // The response poll is bounded at 10 seconds, beyond Vitest's default 5 seconds.
 
   it('mcpb: the server finds the CLI without PATH when the install setting names it, and says so when it cannot', async () => {

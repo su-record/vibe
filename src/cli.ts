@@ -10,70 +10,69 @@ import { fileURLToPath } from 'node:url';
 import { usage, VibeError } from './core/errors.js';
 import { findProjectRoot } from './core/paths.js';
 import { safeText } from './core/evidence.js';
-import { cmdReopen } from './cli/work.js';
-import { ensureGlobal, globalStatus } from './install/global.js';
-import { flagString, HELP, packageVersion, parseArgs, type Flags, type Output } from './cli/common.js';
-import { cmdAsk, cmdAuthorize, cmdInbox } from './cli/human.js';
-import { cmdKnowledge, cmdLedger, cmdRegress, cmdResearch, cmdSkill } from './cli/memory.js';
-import { cmdPlugin, cmdSetup, cmdStatus, cmdTokens, cmdUninstall, cmdUpdate } from './cli/setup.js';
-import { cmdContext } from './cli/context.js';
-import { cmdSession } from './cli/session.js';
-import { cmdConventions } from './cli/conventions.js';
-import { cmdBlast, cmdCallers, cmdMap, cmdSymbols } from './cli/map.js';
-import { cmdAbandon, cmdApprove, cmdCheck, cmdEvidence, cmdIntent, cmdProfile, cmdRead, cmdSize, cmdState } from './cli/work.js';
+import { flagString, HELP, INTERNAL_HELP, packageVersion, parseArgs, type Flags, type Output } from './cli/common.js';
 
 export { parseArgs } from './cli/common.js';
 
 type Handler = (root: string, sub: string | undefined, rest: string[], tail: string[], flags: Flags) => Output | Promise<Output>;
 const COMMANDS: Record<string, Handler> = {
-  status: (root, _s, _r, _t, flags) => cmdStatus(root, flags),
-  setup: (_root, _s, _r, _t, flags) => cmdSetup(flags),
-  update: (_root, _s, _r, _t, flags) => cmdUpdate(flags),
-  tokens: (root, sub) => cmdTokens(root, sub),
-  uninstall: (root, _s, _r, _t, flags) => cmdUninstall(root, flags),
-  plugin: (_root, sub, _r, _t, flags) => cmdPlugin(sub, flags),
-  state: (root, _s, _r, _t, flags) => cmdState(root, flags),
-  session: (root, sub, _r, _t, flags) => cmdSession(root, sub, flags),
-  profile: (root, sub, _r, _t, flags) => cmdProfile(root, sub, flags),
-  read: (root, _s, _r, tail, flags) => cmdRead(root, tail, flags),
-  size: (root, _s, _r, tail, flags) => cmdSize(root, tail, flags),
-  map: (root, _s, _r, tail, flags) => cmdMap(root, tail, flags),
-  symbols: (root, _s, _r, tail) => cmdSymbols(root, tail),
-  callers: (root, _s, _r, tail, flags) => cmdCallers(root, tail, flags),
-  blast: (root, _s, _r, tail, flags) => cmdBlast(root, tail, flags),
-  context: (root, _s, _r, tail, flags) => cmdContext(root, tail, flags),
-  conventions: (root, _s, _r, _t, flags) => cmdConventions(root, flags),
-  intent: (root, sub, rest, _t, flags) => cmdIntent(root, sub, rest, flags),
-  approve: (root, _s, _r, tail, flags) => cmdApprove(root, tail, flags),
-  check: (root, _s, _r, tail, flags) => cmdCheck(root, tail, flags),
-  evidence: (root, _s, _r, tail) => cmdEvidence(root, tail),
-  abandon: (root, _s, _r, _t, flags) => cmdAbandon(root, flags),
-  reopen: (root, _s, _r, tail, flags) => cmdReopen(root, tail, flags),
-  ask: (root, _s, _r, tail, flags) => cmdAsk(root, tail, flags),
-  authorize: (root, _s, _r, tail, flags) => cmdAuthorize(root, tail, flags),
-  inbox: (root, sub, rest) => cmdInbox(root, sub, rest),
-  regress: (root, sub, _r, _t, flags) => cmdRegress(root, sub, flags),
-  knowledge: (root, sub, rest, _t, flags) => cmdKnowledge(root, sub, rest, flags),
-  ledger: (root, sub, rest, _t, flags) => cmdLedger(root, sub, rest, flags),
-  research: (root, sub, _r, _t, flags) => cmdResearch(root, sub, flags),
-  skill: (root, sub, rest, _t, flags) => cmdSkill(root, sub, rest, flags),
+  internal: async (root, sub, rest) => sub === 'risks' ? (await import('./cli/risks.js')).cmdRisks(root) : sub === 'performance'
+    ? (await import('./cli/performance.js')).cmdPerformance(root, rest)
+    : (await import('./cli/internal.js')).cmdInternal(root, sub, rest),
+  status: async (root, _s, _r, _t, flags) => (await import('./cli/setup.js')).cmdStatus(root, flags),
+  setup: async (_root, _s, _r, _t, flags) => (await import('./cli/setup.js')).cmdSetup(flags),
+  update: async (_root, _s, _r, _t, flags) => (await import('./cli/setup.js')).cmdUpdate(flags),
+  tokens: async (root, sub) => (await import('./cli/setup.js')).cmdTokens(root, sub),
+  uninstall: async (root, _s, _r, _t, flags) => (await import('./cli/setup.js')).cmdUninstall(root, flags),
+  plugin: async (_root, sub, _r, _t, flags) => (await import('./cli/setup.js')).cmdPlugin(sub, flags),
+  state: async (root, _s, _r, _t, flags) => (await import('./cli/work.js')).cmdState(root, flags),
+  session: async (root, sub, _r, _t, flags) => (await import('./cli/session.js')).cmdSession(root, sub, flags),
+  profile: async (root, sub, _r, _t, flags) => (await import('./cli/work.js')).cmdProfile(root, sub, flags),
+  read: async (root, _s, _r, tail, flags) => (await import('./cli/work.js')).cmdRead(root, tail, flags),
+  size: async (root, _s, _r, tail, flags) => (await import('./cli/work.js')).cmdSize(root, tail, flags),
+  map: async (root, _s, _r, tail, flags) => (await import('./cli/map.js')).cmdMap(root, tail, flags),
+  symbols: async (root, _s, _r, tail) => (await import('./cli/map.js')).cmdSymbols(root, tail),
+  callers: async (root, _s, _r, tail, flags) => (await import('./cli/map.js')).cmdCallers(root, tail, flags),
+  blast: async (root, _s, _r, tail, flags) => (await import('./cli/map.js')).cmdBlast(root, tail, flags),
+  context: async (root, _s, _r, tail, flags) => (await import('./cli/context.js')).cmdContext(root, tail, flags),
+  conventions: async (root, _s, _r, _t, flags) => (await import('./cli/conventions.js')).cmdConventions(root, flags),
+  intent: async (root, sub, rest, _t, flags) => (await import('./cli/work.js')).cmdIntent(root, sub, rest, flags),
+  approve: async (root, _s, _r, tail, flags) => (await import('./cli/work.js')).cmdApprove(root, tail, flags),
+  check: async (root, _s, _r, tail, flags) => (await import('./cli/work.js')).cmdCheck(root, tail, flags),
+  evidence: async (root, _s, _r, tail) => (await import('./cli/work.js')).cmdEvidence(root, tail),
+  abandon: async (root, _s, _r, _t, flags) => (await import('./cli/work.js')).cmdAbandon(root, flags),
+  reopen: async (root, _s, _r, tail, flags) => (await import('./cli/work.js')).cmdReopen(root, tail, flags),
+  ask: async (root, _s, _r, tail, flags) => (await import('./cli/human.js')).cmdAsk(root, tail, flags),
+  authorize: async (root, _s, _r, tail, flags) => (await import('./cli/human.js')).cmdAuthorize(root, tail, flags),
+  inbox: async (root, sub, rest) => (await import('./cli/human.js')).cmdInbox(root, sub, rest),
+  regress: async (root, sub, _r, _t, flags) => (await import('./cli/memory.js')).cmdRegress(root, sub, flags),
+  knowledge: async (root, sub, rest, _t, flags) => (await import('./cli/memory.js')).cmdKnowledge(root, sub, rest, flags),
+  ledger: async (root, sub, rest, _t, flags) => (await import('./cli/memory.js')).cmdLedger(root, sub, rest, flags),
+  research: async (root, sub, _r, _t, flags) => (await import('./cli/memory.js')).cmdResearch(root, sub, flags),
+  skill: async (root, sub, rest, _t, flags) => (await import('./cli/memory.js')).cmdSkill(root, sub, rest, flags),
 };
 
 const REPAIRS = new Set(['update', 'plugin']); // `setup` is the repair itself
+
+async function repairInstall(flags: Flags): Promise<void> {
+  const { ensureGlobal, globalStatus } = await import('./install/global.js');
+  const home = flagString(flags, 'home');
+  const repaired = ensureGlobal(home);
+  if (repaired.length === 0) return;
+  const modes = globalStatus(home).clients;
+  process.stderr.write(`[vibe] set up ${repaired.map((c) => `${c} (${modes[c]?.mode === 'plugin' ? `plugin ${modes[c]?.pluginVersion ?? ''}`.trim() : 'card, skills, hook in home'})`).join(', ')}\n`);
+}
 
 export async function dispatch(argv: string[]): Promise<Output> {
   const { positionals, flags } = parseArgs(argv);
   const [cmd, sub, ...rest] = positionals;
   if (cmd === 'version' || flags['version'] === true) return { json: { version: packageVersion() }, text: packageVersion(), code: 0 };
+  if (flags['help-internal'] === true) return { json: { help: INTERNAL_HELP }, text: INTERNAL_HELP, code: 0 };
   if (!cmd || flags['help'] === true) return { json: { help: HELP }, text: HELP, code: 0 };
   const handler = COMMANDS[cmd];
   if (!handler) throw usage(`unknown command: ${cmd}\n${HELP}`);
   // A command does only what it says: the install is repaired by `setup`, `update` and `plugin`, never on the way to a query
-  const repaired = REPAIRS.has(cmd) && !process.env['VIBE_SKIP_SETUP'] ? ensureGlobal(flagString(flags, 'home')) : [];
-  if (repaired.length > 0) {
-    const modes = globalStatus(flagString(flags, 'home')).clients;
-    process.stderr.write(`[vibe] set up ${repaired.map((c) => `${c} (${modes[c]?.mode === 'plugin' ? `plugin ${modes[c]?.pluginVersion ?? ''}`.trim() : 'card, skills, hook in home'})`).join(', ')}\n`);
-  }
+  if (REPAIRS.has(cmd) && !process.env['VIBE_SKIP_SETUP']) await repairInstall(flags);
   const root = cmd === 'plugin' || cmd === 'session' ? process.cwd() : findProjectRoot();
   const tail = [sub, ...rest].filter((s): s is string => Boolean(s));
   return handler(root, sub, rest, tail, flags);

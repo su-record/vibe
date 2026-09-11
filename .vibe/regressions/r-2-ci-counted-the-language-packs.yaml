@@ -6,5 +6,5 @@
     300 lines in total"
   check:
     type: run
-    cmd: test $(cat skills/vibe/SKILL.md skills/vibe-*/SKILL.md | wc -l) -le 300
+    cmd: test $(cat skills/vibe/SKILL.md internal/skills/vibe-*/SKILL.md | wc -l) -le 300
     expect: 0

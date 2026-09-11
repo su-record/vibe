@@ -76,7 +76,8 @@ it('a changed cause clears the repair streak and contract weakening is still ref
   await expect(runChecks(root)).rejects.toThrow(/approval void/);
 });
 it('outside-authority actions ask immediately without running the action', async () => {
-  draft(root, '# approval', '- { id: deploy, then: deployed, irreversible: deploy, check: { type: run, cmd: "exit 0" } }'); approve(root, null);
+  fs.writeFileSync(path.join(root, 'fixture.txt'), 'safe');
+  draft(root, '# approval', '- { id: deploy, then: deployed, irreversible: deploy, risk: {kind: deployment, impact: service interruption, recovery: fixture rollback, failureChecks: [proof], recoveryChecks: [proof]}, check: { type: run, cmd: "exit 0" } }\n- {id: proof, then: fixture preserved, check: {type: file, path: fixture.txt, contains: safe}}'); approve(root, null);
   const report = await runChecks(root);
   expect(report.outcomes[0]?.status).toBe('blocked');
   expect(openQuestions(root)[0]?.question).toContain('authorization-required');

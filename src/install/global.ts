@@ -10,7 +10,7 @@ import { claudeHeldElsewhere, claudePluginVersion, cliAvailable, codexHooksTrust
 export { hasNotifyHook, sweepDeadHooks } from './hooks.js';
 
 /**
- * The always-on surfaces — card, six common skills, notification hook — are identical in every
+ * The always-on surfaces — card, entry skill, notification hook — are identical in every
  * project and tied to the CLI version, so they live once per client home (`~/.claude`, `~/.codex`),
  * not in each repository. `npm i -g` puts them there (postinstall) and every `vibe` command repairs
  * them when they are missing or stale. Only `.vibe/` state belongs to a project.
@@ -20,7 +20,8 @@ export const ALL_CLIENTS: ReadonlyArray<Client> = ['claude', 'codex', 'hermes'];
 export const CARD_START = '<!-- vibe:start -->';
 export const CARD_END = '<!-- vibe:end -->';
 export const CARD_MAX_BYTES = 1024;
-export const SKILL_NAMES = ['vibe', 'vibe-discover', 'vibe-scope', 'vibe-build', 'vibe-prove', 'vibe-handoff'] as const;
+export const SKILL_NAMES = ['vibe'] as const;
+const RETIRED_SKILLS = ['vibe-discover', 'vibe-scope', 'vibe-build', 'vibe-prove', 'vibe-handoff'];
 /** The directory names five of the six carried before 4.1.8 (a dot is outside the Agent Skills name grammar); swept wherever the harness owns a skills directory. */
 export const LEGACY_SKILL_NAMES = ['vibe.discover', 'vibe.scope', 'vibe.build', 'vibe.prove', 'vibe.handoff'] as const;
 
@@ -105,23 +106,38 @@ function skillCurrent(dest: string, name: string): boolean {
   return want !== null && readText(to) === want;
 }
 
-/** Remove the pre-4.1.8 dotted directories; returns what went. Project skills in the same directory are not touched. */
+function sameSkillTree(original: string, installed: string): boolean {
+  const source = fs.lstatSync(original, { throwIfNoEntry: false });
+  const target = fs.lstatSync(installed, { throwIfNoEntry: false });
+  if (!source || !target || source.isSymbolicLink() || target.isSymbolicLink()) return false;
+  if (source.isFile() && target.isFile()) return fs.readFileSync(original).equals(fs.readFileSync(installed));
+  if (!source.isDirectory() || !target.isDirectory()) return false;
+  const names = fs.readdirSync(original).sort();
+  const installedNames = fs.readdirSync(installed).sort();
+  return names.length === installedNames.length && names.every((name, index) => name === installedNames[index]
+    && sameSkillTree(path.join(original, name), path.join(installed, name)));
+}
+
+/** Retire bundled surfaces; preserve modified instructions, references and added files. */
 export function removeLegacySkills(dest: string): string[] {
   const removed: string[] = [];
-  for (const name of LEGACY_SKILL_NAMES) {
+  for (const name of [...LEGACY_SKILL_NAMES, ...RETIRED_SKILLS, ...languagePacks()]) {
     const target = path.join(dest, name);
     if (!fs.existsSync(target)) continue;
+    if (!(LEGACY_SKILL_NAMES as readonly string[]).includes(name)) {
+      if (!sameSkillTree(path.join(packageRoot(), 'internal', 'skills', name), target)) continue;
+    }
     fs.rmSync(target, { recursive: true, force: true });
     removed.push(name);
   }
   return removed;
 }
 
-/** Copy the six common skills and the language packs; a stale copy is replaced. Project skills in the same directory are not touched. */
+/** Copy the single public entry; a stale copy is replaced. Project skills in the same directory are not touched. */
 export function copySkills(dest: string): string[] {
   removeLegacySkills(dest);
   const copied: string[] = [];
-  for (const name of [...SKILL_NAMES, ...languagePacks()]) {
+  for (const name of SKILL_NAMES) {
     const from = skillSource(name);
     if (!fs.existsSync(from)) continue;
     const to = path.join(dest, name);
@@ -134,7 +150,7 @@ export function copySkills(dest: string): string[] {
 
 export function removeSkills(dest: string): string[] {
   const removed: string[] = removeLegacySkills(dest);
-  for (const name of [...SKILL_NAMES, ...languagePacks()]) {
+  for (const name of SKILL_NAMES) {
     const target = path.join(dest, name);
     if (!fs.existsSync(target)) continue;
     fs.rmSync(target, { recursive: true, force: true });
@@ -225,7 +241,7 @@ export function surfaceStatus(base: string, layout: Layout): SurfaceStatus {
   const skillsDir = path.join(base, layout.skills);
   const card = hasCurrentCard(path.join(base, layout.card));
   const hook = layout.hook ? hasCurrentHook(path.join(base, layout.hook)) : true;
-  const skillsCurrent = [...SKILL_NAMES, ...languagePacks()].every((name) => skillCurrent(skillsDir, name));
+  const skillsCurrent = SKILL_NAMES.every((name) => skillCurrent(skillsDir, name));
   return { card, skills: countSkills(skillsDir), hook, current: card && hook && skillsCurrent, mode: 'home' };
 }
 

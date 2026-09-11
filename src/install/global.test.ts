@@ -3,7 +3,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CARD_START, detectClients, ensureGlobal, globalLayout, globalStatus, hasNotifyHook, installSurfaces, projectLayout, setupGlobal, sweepDeadHooks, uninstallGlobal } from './global.js';
-import { languagePacks } from './plugin.js';
 import { ensureProject, hasProject, projectStatus } from './project.js';
 import { packageRoot } from '../core/paths.js';
 
@@ -41,15 +40,15 @@ describe('global surfaces — one copy per client home', () => {
     const report = setupGlobal(home);
     expect(report.clients).toEqual(['codex']);
     expect(report.surfaces['codex']).toMatchObject({ card: 'created', hook: 'added' });
-    expect(report.surfaces['codex']?.skills).toHaveLength(6 + languagePacks().length);
+    expect(report.surfaces['codex']?.skills).toHaveLength(1);
     expect(fs.readFileSync(path.join(home, '.codex', 'AGENTS.md'), 'utf-8')).toContain(CARD_START);
-    expect(fs.existsSync(path.join(home, '.codex', 'skills', 'vibe-scope', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(home, '.codex', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
     const hooks = JSON.parse(fs.readFileSync(path.join(home, '.codex', 'hooks.json'), 'utf-8')) as { hooks: Record<string, unknown[]> };
-    expect(Object.keys(hooks.hooks).sort()).toEqual(['PostToolUse', 'PreToolUse', 'SessionStart', 'Stop']);
+    expect(Object.keys(hooks.hooks).sort()).toEqual(['PreToolUse', 'SessionStart', 'Stop']);
     expect(hasNotifyHook(path.join(home, '.codex', 'hooks.json'))).toBe(true);
     // the hook points at a script that exists in this package
-    const command = (hooks.hooks['PostToolUse']?.[0] as { hooks: Array<{ command: string }> }).hooks[0]?.command ?? '';
-    const script = /^node "(.+)" post$/.exec(command)?.[1];
+    const command = (hooks.hooks['PreToolUse']?.[0] as { hooks: Array<{ command: string }> }).hooks[0]?.command ?? '';
+    const script = /^node "(.+)" pre --personal$/.exec(command)?.[1];
     expect(script && fs.existsSync(script)).toBe(true);
     // nothing for Claude was created
     expect(fs.existsSync(path.join(home, '.claude'))).toBe(false);
@@ -64,12 +63,12 @@ describe('global surfaces — one copy per client home', () => {
     const settings = JSON.parse(fs.readFileSync(path.join(home, '.claude', 'settings.json'), 'utf-8')) as { model: string; hooks: Record<string, Array<{ hooks: Array<{ command: string }> }>> };
     expect(settings.model).toBe('x');
     expect(settings.hooks['Stop']?.[0]?.hooks[0]?.command).toBe('echo bye');
-    expect(settings.hooks['PostToolUse']).toHaveLength(1);
+    expect(settings.hooks['PostToolUse']).toBeUndefined();
     expect(fs.readFileSync(path.join(home, '.claude', 'CLAUDE.md'), 'utf-8')).toMatch(/^# Mine\n\nkeep this\n\n<!-- vibe:start -->/);
 
     const second = setupGlobal(home);
     expect(second.surfaces['claude']).toMatchObject({ card: 'unchanged', hook: 'unchanged' });
-    expect(globalStatus(home).clients['claude']).toMatchObject({ card: true, skills: 6, hook: true, current: true });
+    expect(globalStatus(home).clients['claude']).toMatchObject({ card: true, skills: 1, hook: true, current: true });
   });
 
   it('a notify hook from another install path is replaced, not duplicated', () => {
@@ -77,17 +76,17 @@ describe('global surfaces — one copy per client home', () => {
     fs.writeFileSync(path.join(home, '.claude', 'settings.json'), JSON.stringify({ hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'node "/old/vibe/hooks/notify.js" pre' }] }] } }));
     setupGlobal(home);
     const settings = JSON.parse(fs.readFileSync(path.join(home, '.claude', 'settings.json'), 'utf-8')) as { hooks: Record<string, Array<{ hooks: Array<{ command: string }> }>> };
-    expect(settings.hooks['PreToolUse']?.map((e) => (e as { matcher?: string }).matcher)).toEqual(['Bash', 'Read']); // one entry per matcher, the old path gone
+    expect(settings.hooks['PreToolUse']?.map((e) => (e as { matcher?: string }).matcher)).toEqual(['Bash']); // one entry per matcher, the old path gone
     expect(settings.hooks['PreToolUse']?.every((e) => !e.hooks[0]?.command.includes('/old/'))).toBe(true);
   });
 
   it('ensureGlobal repairs a stale skill and a missing card, and is a no-op when everything is current', () => {
     setupGlobal(home);
     expect(ensureGlobal(home)).toEqual([]);
-    fs.writeFileSync(path.join(home, '.claude', 'skills', 'vibe-build', 'SKILL.md'), 'old\n');
+    fs.writeFileSync(path.join(home, '.claude', 'skills', 'vibe', 'SKILL.md'), 'old\n');
     fs.rmSync(path.join(home, '.claude', 'CLAUDE.md'));
     expect(ensureGlobal(home)).toEqual(['claude']);
-    expect(fs.readFileSync(path.join(home, '.claude', 'skills', 'vibe-build', 'SKILL.md'), 'utf-8')).not.toBe('old\n');
+    expect(fs.readFileSync(path.join(home, '.claude', 'skills', 'vibe', 'SKILL.md'), 'utf-8')).not.toBe('old\n');
     expect(fs.existsSync(path.join(home, '.claude', 'CLAUDE.md'))).toBe(true);
     expect(ensureGlobal(home)).toEqual([]);
   });
@@ -99,7 +98,7 @@ describe('global surfaces — one copy per client home', () => {
     fs.writeFileSync(path.join(skills, 'vibe.build', 'SKILL.md'), 'old\n');
     fs.writeFileSync(path.join(skills, 'my-skill', 'SKILL.md'), 'mine\n');
     ensureGlobal(home);
-    expect(fs.readdirSync(skills).sort()).toEqual([...languagePacks(), 'my-skill', 'vibe', 'vibe-build', 'vibe-discover', 'vibe-handoff', 'vibe-prove', 'vibe-scope'].sort());
+    expect(fs.readdirSync(skills).sort()).toEqual(['my-skill', 'vibe']);
     fs.mkdirSync(path.join(skills, 'vibe.scope'), { recursive: true });
     const removed = uninstallGlobal(home);
     expect(removed).toContain(path.join('.claude', 'skills', 'vibe.scope'));
@@ -107,21 +106,19 @@ describe('global surfaces — one copy per client home', () => {
     expect(fs.readFileSync(path.join(skills, 'my-skill', 'SKILL.md'), 'utf-8')).toBe('mine\n');
   });
 
-  it('the language packs sit next to the six in every client, are repaired when stale, and the status still counts six common skills', () => {
-    fs.mkdirSync(path.join(home, '.codex'));
-    setupGlobal(home, ['claude', 'codex']);
-    for (const client of ['.claude', '.codex']) {
-      const names = fs.readdirSync(path.join(home, client, 'skills'));
-      expect(names).toContain('antislop-ko');
-      expect(names).toContain('antislop-en');
-      expect(fs.existsSync(path.join(home, client, 'skills', 'antislop-ko', 'references', 'genres.md'))).toBe(true);
-    }
-    expect(globalStatus(home).clients['claude']).toMatchObject({ skills: 6, current: true });
-    fs.writeFileSync(path.join(home, '.claude', 'skills', 'antislop-ko', 'SKILL.md'), 'old\n');
-    expect(ensureGlobal(home)).toEqual(['claude']);
-    expect(fs.readFileSync(path.join(home, '.claude', 'skills', 'antislop-ko', 'SKILL.md'), 'utf-8')).not.toBe('old\n');
-    uninstallGlobal(home);
-    expect(fs.existsSync(path.join(home, '.claude', 'skills', 'antislop-ko'))).toBe(false);
+  it('retires unchanged bundled skills but preserves user-modified skills', () => {
+    const skills = path.join(home, '.claude', 'skills');
+    fs.mkdirSync(skills, { recursive: true });
+    fs.cpSync(path.join(packageRoot(), 'internal', 'skills', 'antislop-ko'), path.join(skills, 'antislop-ko'), { recursive: true });
+    fs.cpSync(path.join(packageRoot(), 'internal', 'skills', 'antislop-en'), path.join(skills, 'antislop-en'), { recursive: true });
+    fs.writeFileSync(path.join(skills, 'antislop-en', 'references', 'genres.md'), 'my genre rules');
+    fs.mkdirSync(path.join(skills, 'vibe-build'));
+    fs.writeFileSync(path.join(skills, 'vibe-build', 'SKILL.md'), 'my custom procedure');
+    setupGlobal(home, ['claude']);
+    expect(fs.existsSync(path.join(skills, 'antislop-ko'))).toBe(false);
+    expect(fs.readFileSync(path.join(skills, 'vibe-build', 'SKILL.md'), 'utf8')).toBe('my custom procedure');
+    expect(fs.readFileSync(path.join(skills, 'antislop-en', 'references', 'genres.md'), 'utf8')).toBe('my genre rules');
+    expect(globalStatus(home).clients['claude']).toMatchObject({ skills: 1, current: true });
   });
 
   it('uninstall removes card, skills and hook from every client home and leaves user content', () => {
@@ -204,9 +201,9 @@ describe('hermes client', () => {
     const soul = fs.readFileSync(path.join(home, '.hermes', 'SOUL.md'), 'utf-8');
     expect(soul.startsWith('# Identity')).toBe(true);
     expect(soul).toContain('<!-- vibe:start -->');
-    expect(fs.readdirSync(path.join(home, '.hermes', 'skills')).sort()).toEqual([...languagePacks(), 'vibe', 'vibe-build', 'vibe-discover', 'vibe-handoff', 'vibe-prove', 'vibe-scope'].sort());
+    expect(fs.readdirSync(path.join(home, '.hermes', 'skills')).sort()).toEqual(['vibe']);
     expect(fs.existsSync(path.join(home, '.hermes', 'hooks.json'))).toBe(false);
-    expect(globalStatus(home).clients['hermes']).toMatchObject({ card: true, skills: 6, hook: true, current: true });
+    expect(globalStatus(home).clients['hermes']).toMatchObject({ card: true, skills: 1, hook: true, current: true });
     expect(ensureGlobal(home)).toEqual([]);
     const removed = uninstallGlobal(home);
     expect(removed).toContain('.hermes/SOUL.md card');
