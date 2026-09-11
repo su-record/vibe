@@ -1,11 +1,11 @@
 {
   "id": "fde-discovery-v1",
-  "status": "draft",
-  "createdAt": "2026-09-10T05:47:56.817Z",
+  "status": "frozen",
+  "createdAt": "2026-09-10T10:23:26.316Z",
   "pins": {
-    "revision": null,
-    "runner": null,
-    "fixture": null,
+    "revision": "28f7edaf7e38441da33b789c0cf8b65dae17387f",
+    "runner": "d329b098148b992acfef1263e2a0859bfc28983e8ea3b175dcc73f0678af3cf6",
+    "fixture": "b759fbb1d35052a1dba644f7808ab50e4a5f3bd3482b6a543b4789c36719b9a1",
     "rubric": "6f3e6157798e02c8906b09b2f2f44ebdbbe0fd0bb367abb223b8c55790c530d2"
   },
   "clientVersions": {
@@ -13,11 +13,11 @@
     "codex": "codex-cli 0.153.4"
   },
   "nodeVersion": "v22.23.0",
-  "baselineRevision": "2d2af57",
-  "candidateRevision": null,
+  "baselineRevision": "2d2af574e1eef3da6ac0f70d7119260c32b10867",
+  "candidateRevision": "28f7edaf7e38441da33b789c0cf8b65dae17387f",
   "products": {
-    "baseline": null,
-    "candidate": null
+    "baseline": "4135aae479562b15ef7738acf1446354aaffe6693e31981ecd990a1ee4141dae",
+    "candidate": "89bfa5bf9535fd7cf3db31542c89edea9b944174366f2dad9d954fc0b83b37be"
   },
   "targets": {
     "scopeFloor": 0.9,
@@ -455,11 +455,11 @@
       "sources": {
         "model": {
           "value": "claude-opus-5",
-          "source": "user:instructions-12-13"
+          "source": "/home/ubuntu/sutory/work/vibe-fde-20260910/measurement-settings.json#claude.model"
         },
         "effort": {
           "value": null,
-          "source": "user:instructions-12-13"
+          "source": "/home/ubuntu/sutory/work/vibe-fde-20260910/measurement-settings.json#claude.effort"
         }
       },
       "maxTurns": 40,
@@ -471,11 +471,11 @@
       "sources": {
         "model": {
           "value": "gpt-5.6-terra",
-          "source": "user:instructions-12-13"
+          "source": "/home/ubuntu/sutory/work/vibe-fde-20260910/measurement-settings.json#codex.model"
         },
         "effort": {
           "value": "xhigh",
-          "source": "user:instructions-12-13"
+          "source": "/home/ubuntu/sutory/work/vibe-fde-20260910/measurement-settings.json#codex.effort"
         }
       },
       "maxTurns": null,
@@ -490,6 +490,15 @@
     "attemptMs": 3600000,
     "concurrencyPerClient": 1
   },
+  "capture": {
+    "streamBytes": 67108864,
+    "diagnosticBytes": 67108864,
+    "graceMs": 1000
+  },
+  "diagnostics": {
+    "enabled": true,
+    "directory": "/home/ubuntu/sutory/work/vibe-fde-20260910/cohort-private"
+  },
   "budget": {
     "rawTokens": 60000000,
     "usd": null,
@@ -498,11 +507,6 @@
     "note": "Accounting is observed at client-result boundaries. One in-flight invocation may overshoot; missing usage stops further calls."
   },
   "prices": {},
-  "task": "work-opportunities",
-  "limitations": [
-    "These indicators do not measure the appropriateness of problem framing or tradeoff judgment.",
-    "Synthetic discovery case; no ROI, human-time-saving, broad prevention or general FDE claim."
-  ],
   "assessment": {
     "kind": "deterministic",
     "indicators": [
@@ -517,14 +521,105 @@
     "assertions": "structured-only",
     "limitation": "These indicators do not measure the appropriateness of problem framing or tradeoff judgment."
   },
-  "draftNote": "Regenerate source and executable pins after final integration, before separate execution approval. No cohort is authorized by this draft.",
-  "diagnostics": {
-    "enabled": false,
-    "directory": null
-  },
-  "capture": {
-    "streamBytes": 67108864,
-    "diagnosticBytes": 67108864,
-    "graceMs": 1000
+  "task": "work-opportunities",
+  "limitations": [
+    "These indicators do not measure the appropriateness of problem framing or tradeoff judgment.",
+    "Synthetic discovery case; no ROI, human-time-saving, broad prevention or general FDE claim."
+  ],
+  "availability": {
+    "codex": {
+      "model": "gpt-5.6-terra",
+      "verifiedOn": "2026-09-10",
+      "source": "Claude session, second invocation with retained raw evidence outside the cohort",
+      "startedAt": "2026-09-10T07:44:16Z",
+      "endedAt": "2026-09-10T07:44:24Z",
+      "exit": 0,
+      "cli": "codex-cli 0.153.4",
+      "cwd": "/tmp",
+      "scored": false,
+      "probeEffort": "xhigh",
+      "benchmarkEffort": "xhigh",
+      "observedOutcome": {
+        "event": "turn.completed",
+        "response": "ok",
+        "usage": {
+          "input_tokens": 16683,
+          "cached_input_tokens": 11008,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 5,
+          "reasoning_output_tokens": 0
+        },
+        "reportedCostUsd": null
+      },
+      "artifacts": {
+        "meta": {
+          "path": "/home/ubuntu/sutory/work/vibe-fde-20260910/model-probes/gpt-5.6-terra.meta.json",
+          "sha256": "f82cc94de639aad5f3bd9607ac4b87166d0d8d4479751f70bec0c96a16c03693"
+        },
+        "stdout": {
+          "path": "/home/ubuntu/sutory/work/vibe-fde-20260910/model-probes/gpt-5.6-terra.stdout.jsonl",
+          "sha256": "80f5232ca4f49c398cef8c3b89db068446121c7138482b891990cbe578017230"
+        },
+        "stderr": {
+          "path": "/home/ubuntu/sutory/work/vibe-fde-20260910/model-probes/gpt-5.6-terra.stderr.txt",
+          "sha256": "a5f0a58df99f2b14a63cf314351816f8c9918c51ff24f197df866103eb1f7bc3"
+        }
+      },
+      "basis": "Codex verified retained file hashes, metadata and structured stdout locally without another model invocation. This establishes invocation availability, not benchmark performance."
+    },
+    "claude": {
+      "model": "claude-opus-5",
+      "verifiedOn": "2026-09-10",
+      "source": "Claude session, second invocation with retained raw evidence outside the cohort",
+      "startedAt": "2026-09-10T07:44:08Z",
+      "endedAt": "2026-09-10T07:44:16Z",
+      "exit": 0,
+      "cli": "2.1.267 (Claude Code)",
+      "cwd": "/tmp",
+      "scored": false,
+      "probeEffort": null,
+      "benchmarkEffort": null,
+      "observedOutcome": {
+        "type": "result",
+        "response": "ok",
+        "isError": false,
+        "modelUsageIncludes": "claude-opus-5",
+        "usage": {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 12060,
+          "cache_read_input_tokens": 12014,
+          "output_tokens": 4
+        },
+        "reportedCostUsd": 0.126717
+      },
+      "artifacts": {
+        "meta": {
+          "path": "/home/ubuntu/sutory/work/vibe-fde-20260910/model-probes/claude-opus-5.meta.json",
+          "sha256": "37369fce1ca6c25313493ce94c9112fc6b2d7cd2d45876465958cbf319c711ca"
+        },
+        "stdout": {
+          "path": "/home/ubuntu/sutory/work/vibe-fde-20260910/model-probes/claude-opus-5.stdout.json",
+          "sha256": "fe9b2bf8331c8c4d2be4437b6928bd6c45e84442bb8e24c909b942f259189a42"
+        },
+        "stderr": {
+          "path": "/home/ubuntu/sutory/work/vibe-fde-20260910/model-probes/claude-opus-5.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "basis": "Codex verified retained file hashes, metadata and structured stdout locally without another model invocation. This establishes invocation availability, not benchmark performance."
+    },
+    "retainedEvidence": {
+      "manifest": "/home/ubuntu/sutory/work/vibe-fde-20260910/model-availability.json",
+      "sha256": "5a56078387f18c582ca9f8f3ddc7bc74ee036f4a9db5dac2ece0a9d5cf631fdd",
+      "sourceCommit": "6ffe88479f06a16403f015fd073f55d8dca2f94c",
+      "scope": "Unscored probes outside the cohort, raw evidence in model-probes/. These second retained captures are the availability evidence."
+    },
+    "earlierUnretainedProbes": {
+      "source": "Claude user handoff",
+      "countReported": 2,
+      "codexEffort": "low",
+      "rawEvidenceRetained": false,
+      "role": "Historical report only; not substituted for the retained captures or counted as scored attempts."
+    }
   }
 }

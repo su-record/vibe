@@ -1,0 +1,41 @@
+{
+  "run": "r-8",
+  "at": "2026-09-10T00:39:26.545Z",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "f7c1b0069b3c",
+  "results": [
+    {
+      "id": "scoped-arm",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2274,
+      "tail": "bench-scoped: card, skills and hooks, no intent, next says discover\nbench-gate --self-test: 9 checks passed"
+    },
+    {
+      "id": "anomaly-task",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 7156,
+      "tail": "direction judges: 1 tasks (anomaly) · wrong answer fails, right answer passes, for every one\njudge: 13 tasks (ambiguous-brief, anomaly, ask, brownfield, handover, hidden-requirement, irreversible-trap, long-context, regression-trap, report, session-split, settlement, vibe-fix) · every check deterministic · no check reaches judge/ or key/ · no key value in an intent · settlement reference total 4500.5\nbench-no-key: no task lets a key file into a prepared workspace\nanomaly-profile: 3 anomalies named — column \"order_id\" repeats: 1 of 12 values appear more than once · column \"amount\" has 1 negative value (a refund? a reversal?) · column \"currency\" is \"EUR\" in only 1 of 12 rows"
+    },
+    {
+      "id": "handover-task",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 13595,
+      "tail": "direction judges: 1 tasks (handover) · wrong answer fails, right answer passes, for every one\nbench-handover: two clients, two sessions, both layouts in the workspace"
+    },
+    {
+      "id": "gate-is-release",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 124,
+      "tail": "bench gate failed: overhead: settlement ok; overhead: vibe-fix ok; overhead: report ok; context: brownfield ok; anomaly: claude-code/scoped has 3 usable run(s) in its latest 5 attempts, needs 5"
+    }
+  ]
+}

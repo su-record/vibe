@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 2,
+  "run": "r-12",
+  "at": "2026-09-10T08:49:21.514Z",
+  "intentHash": "9a28c16a67aaefa7",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "9a7a1b6a798b",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 85296,
+      "tail": "",
+      "failureCode": "exit-mismatch",
+      "reason": "exit-mismatch",
+      "failure": {
+        "id": "compatibility",
+        "target": "npm run check && node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50 && node checks/card-size.js && node checks/loc.js && node checks/procedure.js && node checks/bench-gate.js",
+        "exit": 1,
+        "cause": "exit-mismatch",
+        "message": null,
+        "diagnosticCode": null,
+        "causeHash": null,
+        "locations": [],
+        "logs": []
+      },
+      "capture": {
+        "stdout": {
+          "bytes": 472,
+          "sha256": "bc2cd99aa04dfe295604beb2229dc4496786a261516b94108678726d0683ea7f",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 455,
+          "sha256": "672c36d2dbc9a4142f55a70975a656565fb19cbf7b1bb2108d38141d6baed1e6",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-12#compatibility"
+    }
+  ]
+}

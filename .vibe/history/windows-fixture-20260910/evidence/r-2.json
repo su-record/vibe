@@ -1,0 +1,111 @@
+{
+  "run": "r-2",
+  "at": "2026-09-10T02:46:25.577Z",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "ec022d652ebc",
+  "results": [
+    {
+      "id": "build",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 76496,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  45 passed (45)\n      Tests  268 passed (268)\n   Start at  02:46:33\n   Duration  68.46s (transform 3.02s, setup 0ms, import 6.87s, tests 110.23s, environment 9ms)"
+    },
+    {
+      "id": "path-regressions",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3393,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  3 passed (3)\n   Start at  02:46:27\n   Duration  942ms (transform 58ms, setup 0ms, import 95ms, tests 494ms, environment 0ms)"
+    },
+    {
+      "id": "deterministic-checks",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 8057,
+      "tail": "bench-no-key: no task lets a key file into a prepared workspace\njudge: 13 tasks (ambiguous-brief, anomaly, ask, brownfield, handover, hidden-requirement, irreversible-trap, long-context, regression-trap, report, session-split, settlement, vibe-fix) · every check deterministic · no check reaches judge/ or key/ · no key value in an intent · settlement reference total 4500.5\nbench-scoped: card, skills and hooks, no intent, next says discover\nbench-handover: two clients, two sessions, both layouts in the workspace\nanomaly-profile: 3 anomalies named — column \"order_id\" repeats: 1 of 12 values appear more than once · column \"amount\" has 1 negative value (a refund? a reversal?) · column \"currency\" is \"EUR\" in only 1 of 12 rows\ndirection judges: 2 tasks (anomaly, handover) · wrong answer fails, right answer passes, for every one\nbench gate passed: overhead: settlement ok; overhead: vibe-fix ok; overhead: report ok; context: brownfield ok; direction: all required tasks meet their per-client rules\nbench: 450 judged runs · arms claude-code/on, codex/on, codex/off, claude-code/off, claude-code/scoped, codex/scoped, codex/undefined, claude-code→codex/on, claude-code→codex/off, claude-code→codex/scoped"
+    },
+    {
+      "id": "review-paths",
+      "type": "review",
+      "status": "pass",
+      "exit": 0,
+      "ms": 126217,
+      "tail": "code reviewer: PASS · in 2 · cache read 1,889 · out 5,487\ncode maintainer: PASS · in 2 · cache read 1,744 · out 4,068",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 2,
+          "cacheRead": 1889,
+          "cacheWrite": 36302,
+          "output": 5487
+        },
+        {
+          "stage": "maintainer",
+          "input": 2,
+          "cacheRead": 1744,
+          "cacheWrite": 36302,
+          "output": 4068
+        }
+      ]
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1071,
+      "tail": "73 files · 8641 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
+      "regression": true
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 220,
+      "tail": "",
+      "regression": true
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2617,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  02:47:43\n   Duration  1.10s (transform 496ms, setup 0ms, import 586ms, tests 222ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2200,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  02:47:43\n   Duration  854ms (transform 468ms, setup 0ms, import 570ms, tests 20ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2309,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  02:47:43\n   Duration  579ms (transform 208ms, setup 0ms, import 268ms, tests 53ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3444,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  02:47:43\n   Duration  1.89s (transform 946ms, setup 0ms, import 550ms, tests 870ms, environment 2ms)",
+      "regression": true
+    }
+  ]
+}

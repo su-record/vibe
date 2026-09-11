@@ -1,0 +1,81 @@
+{
+  "run": "r-4",
+  "at": "2026-09-10T01:45:10.548Z",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "1307f47659fe",
+  "results": [
+    {
+      "id": "build",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 62772,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  44 passed (44)\n      Tests  265 passed (265)\n   Start at  01:45:21\n   Duration  51.82s (transform 1.77s, setup 0ms, import 4.30s, tests 87.71s, environment 6ms)"
+    },
+    {
+      "id": "under-load",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 218887,
+      "tail": "round 1/3: both passed\nround 2/3: both passed\nround 3/3: both passed\nsuite under load: 3 rounds × 2 parallel runs, nothing failed"
+    },
+    {
+      "id": "review-retirement",
+      "type": "review",
+      "status": "pass",
+      "exit": 0,
+      "ms": 280149,
+      "tail": "code reviewer: PASS · in 2 · cache read 1,889 · out 12,600\ncode maintainer: PASS · in 6 · cache read 66,574 · out 9,595",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 2,
+          "cacheRead": 1889,
+          "cacheWrite": 27666,
+          "output": 12600
+        },
+        {
+          "stage": "maintainer",
+          "input": 6,
+          "cacheRead": 66574,
+          "cacheWrite": 34110,
+          "output": 9595
+        }
+      ]
+    },
+    {
+      "id": "hook-regressions",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 19437,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  8 passed (8)\n   Start at  01:45:12\n   Duration  17.89s (transform 193ms, setup 0ms, import 267ms, tests 17.39s, environment 0ms)"
+    },
+    {
+      "id": "review-hooks",
+      "type": "review",
+      "status": "pass",
+      "exit": 0,
+      "ms": 280252,
+      "tail": "code reviewer: PASS · in 2 · cache read 1,889 · out 13,387\ncode maintainer: PASS · in 2 · cache read 1,744 · out 8,191",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 2,
+          "cacheRead": 1889,
+          "cacheWrite": 26172,
+          "output": 13387
+        },
+        {
+          "stage": "maintainer",
+          "input": 2,
+          "cacheRead": 1744,
+          "cacheWrite": 26172,
+          "output": 8191
+        }
+      ]
+    }
+  ]
+}

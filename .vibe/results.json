@@ -1,1 +1,98 @@
-{}
+{
+  "compatibility": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "inspect-and-consent": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "evidence-minimization": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "honest-scenario-handoff": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "session-bound-stop": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "public-check-boundary": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "discovery-agreement": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "work-opportunities": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "compatibility-and-release-evidence": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "fde-release-evidence": {
+    "last": "fail",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-1-vibe-size-misreads-template-literal": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-2-ci-counted-the-language-packs": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-3-codex-plugin-never-followed-update": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-4-installhookfile-kept-only-last-entry": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-5-vibe-size-read-a-quote-or-a-backtick": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-6-the-entry-guard-read-its-own-path-fr": {
+    "last": "pass",
+    "at": "2026-09-10T11:41:02.498Z",
+    "run": "r-3",
+    "tree": "f22cbc8c56137eff"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "run": "r-3",
+  "at": "2026-09-10T06:03:11.719Z",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "6294f1434080",
+  "results": [
+    {
+      "id": "public-check-boundary",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 17679,
+      "tail": "  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v22.23.0"
+    },
+    {
+      "id": "discovery-agreement",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs public-check-boundary",
+      "blockedBy": [
+        "public-check-boundary"
+      ]
+    },
+    {
+      "id": "work-opportunities",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs discovery-agreement",
+      "blockedBy": [
+        "discovery-agreement"
+      ]
+    },
+    {
+      "id": "fde-release-evidence",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs work-opportunities",
+      "blockedBy": [
+        "work-opportunities"
+      ]
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 36,
+      "tail": "",
+      "regression": true
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3208,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  06:03:13\n   Duration  1.24s (transform 418ms, setup 0ms, import 521ms, tests 337ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3703,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  06:03:14\n   Duration  889ms (transform 358ms, setup 0ms, import 447ms, tests 23ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1795,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  06:03:30\n   Duration  369ms (transform 127ms, setup 0ms, import 161ms, tests 15ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3081,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  06:03:30\n   Duration  1.75s (transform 1.00s, setup 0ms, import 513ms, tests 994ms, environment 0ms)",
+      "regression": true
+    }
+  ]
+}

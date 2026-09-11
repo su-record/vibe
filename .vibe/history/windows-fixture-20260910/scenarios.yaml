@@ -1,0 +1,25 @@
+- id: build
+  then: the package builds and every test passes
+  check:
+    type: run
+    cmd: npm run check
+    timeoutMs: 600000
+- id: load-guard
+  needs:
+  - build
+  then: the load checker preserves zero, nonzero and startup-failure outcomes
+  check:
+    type: run
+    cmd: npx vitest run checks/suite-under-load.test.js
+    timeoutMs: 120000
+- id: review-comspec
+  needs:
+  - build
+  then: the fixture environment correction passes the independent reviewer and maintainer
+  check:
+    type: review
+    pack: code
+    path: /home/ubuntu/sutory/work/vibe-windows-20260910/review-comspec
+    contract: /home/ubuntu/sutory/work/vibe-windows-20260910/comspec-contract.md
+    evidence: /home/ubuntu/sutory/work/vibe-windows-20260910/comspec-evidence.md
+    timeoutMs: 600000

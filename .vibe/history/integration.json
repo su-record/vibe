@@ -1,0 +1,222 @@
+[
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/evidence/r-1.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/evidence/r-1.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/evidence/r-2.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/evidence/r-2.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/evidence/r-3.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/evidence/r-3.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/evidence/r-4.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/evidence/r-4.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/evidence/r-5.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/evidence/r-5.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/evidence/r-6.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/evidence/r-6.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/evidence/r-7.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/evidence/r-7.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/evidence/r-8.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/evidence/r-8.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/inbox.jsonl",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/inbox.jsonl"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/intent.md",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/intent.md"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/ledger.jsonl",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/ledger.jsonl"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/results.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/results.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/scenarios.yaml",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/scenarios.yaml"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/snapshot.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/snapshot.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": ".vibe/state.json",
+    "integratedPath": ".vibe/history/windows-fixture-20260910/state.json"
+  },
+  {
+    "sourceCommit": "2de5fe09d0550809e49505fd605d6e3cfe5e2b88",
+    "sourcePath": "vitest.config.ts",
+    "integratedPath": "vitest.config.ts"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-1.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-1.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-11.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-11.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-12.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-12.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-13.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-13.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-14.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-14.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-15.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-15.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-16.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-16.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-17.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-17.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-2.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-2.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-3.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-3.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-4.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-4.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-5.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-5.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/evidence/r-6.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/evidence/r-6.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/ledger.jsonl",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/ledger.jsonl"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/results.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/results.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/runs/r-11",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/runs/r-11"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/runs/r-12",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/runs/r-12"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/runs/r-13",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/runs/r-13"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/runs/r-14",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/runs/r-14"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/runs/r-15",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/runs/r-15"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/runs/r-16",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/runs/r-16"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/runs/r-17",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/runs/r-17"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/snapshot.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/snapshot.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": ".vibe/state.json",
+    "integratedPath": ".vibe/history/discovery-cohort-20260910/state.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": "bench/claims/4.1.26/ci.jsonl",
+    "integratedPath": "bench/claims/4.1.26/ci.jsonl"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": "bench/claims/4.1.26/ledger.jsonl",
+    "integratedPath": "bench/claims/4.1.26/ledger.jsonl"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": "bench/claims/4.1.26/protocol.json",
+    "integratedPath": "bench/claims/4.1.26/protocol.json"
+  },
+  {
+    "sourceCommit": "db6dee8631a405adefea7593317fe4d3fe441a39",
+    "sourcePath": "bench/claims/4.1.26/results.md",
+    "integratedPath": "bench/claims/4.1.26/results.md"
+  }
+]

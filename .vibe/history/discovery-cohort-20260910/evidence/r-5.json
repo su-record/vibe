@@ -1,0 +1,63 @@
+{
+  "run": "r-5",
+  "at": "2026-09-10T06:18:10.565Z",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "6294f1434080",
+  "results": [
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 860,
+      "tail": "74 files · 8755 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
+      "regression": true
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 30,
+      "tail": "",
+      "regression": true
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3013,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  06:18:12\n   Duration  1.24s (transform 363ms, setup 0ms, import 454ms, tests 426ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2986,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  06:18:12\n   Duration  917ms (transform 469ms, setup 0ms, import 564ms, tests 19ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1730,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  06:18:14\n   Duration  452ms (transform 146ms, setup 0ms, import 185ms, tests 9ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3298,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  06:18:15\n   Duration  1.70s (transform 913ms, setup 0ms, import 400ms, tests 1.04s, environment 0ms)",
+      "regression": true
+    }
+  ]
+}

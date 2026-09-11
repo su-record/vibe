@@ -1,0 +1,109 @@
+{
+  "compatibility": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  },
+  "public-check-boundary": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  },
+  "discovery-agreement": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  },
+  "work-opportunities": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  },
+  "fde-release-evidence": {
+    "last": "fail",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522",
+    "failure": {
+      "id": "fde-release-evidence",
+      "target": "node checks/release-4.1.26.js --self-test && node checks/release-4.1.26.js --protocol bench/claims/4.1.26/protocol.json --ledger bench/claims/4.1.26/ledger.jsonl --report bench/claims/4.1.26/results.m",
+      "exit": 1,
+      "cause": "exit-mismatch",
+      "message": null,
+      "diagnosticCode": null,
+      "causeHash": null,
+      "locations": [],
+      "logs": []
+    }
+  },
+  "r-1-vibe-size-misreads-template-literal": {
+    "last": "stale",
+    "at": "2026-09-10T10:06:05.146Z",
+    "run": "r-16",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-2-ci-counted-the-language-packs": {
+    "last": "stale",
+    "at": "2026-09-10T10:06:05.146Z",
+    "run": "r-16",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-3-codex-plugin-never-followed-update": {
+    "last": "stale",
+    "at": "2026-09-10T10:06:05.146Z",
+    "run": "r-16",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-4-installhookfile-kept-only-last-entry": {
+    "last": "stale",
+    "at": "2026-09-10T10:06:05.146Z",
+    "run": "r-16",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-5-vibe-size-read-a-quote-or-a-backtick": {
+    "last": "stale",
+    "at": "2026-09-10T10:06:05.146Z",
+    "run": "r-16",
+    "tree": "f22cbc8c56137eff"
+  },
+  "r-6-the-entry-guard-read-its-own-path-fr": {
+    "last": "stale",
+    "at": "2026-09-10T10:06:05.146Z",
+    "run": "r-16",
+    "tree": "f22cbc8c56137eff"
+  },
+  "inspect-and-consent": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  },
+  "evidence-minimization": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  },
+  "honest-scenario-handoff": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  },
+  "session-bound-stop": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  },
+  "compatibility-and-release-evidence": {
+    "last": "pass",
+    "at": "2026-09-10T21:09:54.800Z",
+    "run": "r-17",
+    "tree": "4c32e80011cea522"
+  }
+}
