@@ -5,7 +5,7 @@ import { globalKnowledgeDir } from '../core/knowledge.js';
 import { usage } from '../core/errors.js';
 import type { Output } from './common.js';
 
-const GUIDES = ['discover', 'delivery', 'extensions', 'optimization', 'verification', 'code', 'design', 'ko', 'en'];
+const GUIDES = ['discover', 'delivery', 'extensions', 'optimization', 'verification', 'explanation', 'code', 'design', 'ko', 'en'];
 
 function boundedText(file: string, limit: number): string | null {
   const stat = fs.lstatSync(file, { throwIfNoEntry: false });

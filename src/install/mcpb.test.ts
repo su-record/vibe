@@ -60,7 +60,8 @@ describe('mcpb — the Claude desktop bundle', () => {
     send({ jsonrpc: '2.0', id: 12, method: 'tools/call', params: { name: 'vibe_state', arguments: {} } });
     send({ jsonrpc: '2.0', id: 13, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'performance', arguments: { action: 'report' } } } });
     send({ jsonrpc: '2.0', id: 14, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'performance', arguments: { action: 'publish' } } } });
-    await waitFor(14);
+    send({ jsonrpc: '2.0', id: 15, method: 'tools/call', params: { name: 'vibe', arguments: { operation: 'guide', arguments: { name: 'explanation' } } } });
+    await waitFor(15);
     server.kill();
     const byId = Object.fromEntries(replies.map((r) => [r['id'] as number, r]));
     expect((byId[1]!['result'] as { serverInfo: { version: string } }).serverInfo.version).toBe('9.9.9');
@@ -78,7 +79,8 @@ describe('mcpb — the Claude desktop bundle', () => {
     expect(JSON.parse(text(8)).paths).toEqual(['.vibe/skills/installed/pilot/SKILL.md']);
     expect(fs.existsSync(path.join(project, '.claude', 'skills', 'pilot'))).toBe(false);
     expect((byId[9]!['error'] as { code: number }).code).toBe(-32602);
-    expect(JSON.parse(text(10)).guidance).toContain("You are the user's FDE");
+    expect(JSON.parse(text(10)).guidance).toBe(fs.readFileSync(path.join(packageRoot(), 'skills/vibe/SKILL.md'), 'utf8'));
+    expect(JSON.parse(text(15))).toEqual({ name: 'explanation', text: fs.readFileSync(path.join(packageRoot(), 'internal/guides/explanation.md'), 'utf8') });
     expect(fs.readFileSync(path.join(project, '.vibe', 'knowledge', 'pilot-decision.md'), 'utf8')).toContain('confirmed in the task');
     expect(JSON.parse(text(12)).state).toBe('DRAFT');
     expect(JSON.parse(text(13))).toMatchObject({ runs: 0, checks: [] });

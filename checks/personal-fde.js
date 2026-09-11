@@ -31,7 +31,7 @@ const packages = Array.isArray(output) ? output : Object.values(output);
 assert.equal(packages.length, 1, 'expected one packed package');
 const packed = packages[0].files.map(file => file.path);
 assert.deepEqual(packed.filter(file => file.startsWith('skills/') && file.endsWith('SKILL.md')), ['skills/vibe/SKILL.md']);
-for (const file of ['internal/guides/extensions.md', 'internal/guides/optimization.md', 'internal/guides/verification.md', 'dist/core/performance.js', 'dist/core/verification.js']) assert.ok(packed.includes(file), file);
+for (const file of ['internal/guides/explanation.md', 'internal/guides/extensions.md', 'internal/guides/optimization.md', 'internal/guides/verification.md', 'dist/core/performance.js', 'dist/core/verification.js']) assert.ok(packed.includes(file), file);
 assert.ok(packed.includes('dist/cli/internal.js'));
 assert.ok(packed.includes('mcpb/server/index.js'));
 assert.equal(packed.some(file => file.startsWith('agents/')), false);
