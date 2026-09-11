@@ -53,6 +53,19 @@ function expectUnavailablePass() {
   expect(stopped.systemMessage).not.toContain('verified completion');
 }
 
+it('reports an unchanged unavailable snapshot once instead of appending it to every reply', () => {
+  draft();
+  fs.writeFileSync(path.join(root, 'large-artifact.bin'), Buffer.alloc(8388609, 65));
+  expect(cli(['check', '--all']).status).toBe(0);
+  const first = JSON.parse(hook().stdout);
+  expect(first.systemMessage).toContain('snapshot unavailable; unmet');
+  expect(JSON.parse(hook().stdout)).toEqual({});
+  fs.writeFileSync(path.join(root, 'marker.cjs'), 'process.exitCode = 1;');
+  expect(cli(['check', '--all']).status).not.toBe(0);
+  const changed = JSON.parse(hook().stdout);
+  expect(changed.systemMessage).toContain('snapshot unavailable; unmet');
+}, 60000);
+
 it('never executes a check; only a fresh explicit check can produce verified Stop status', () => {
   draft();
   const first = JSON.parse(hook().stdout);
@@ -118,7 +131,7 @@ it('does not reuse check completion after PATH or the local consent receipt chan
   const directory = path.join(home, '.vibe-runtime');
   const receipt = fs.readdirSync(directory).find(name => name.startsWith('consent-'))!;
   fs.rmSync(path.join(directory, receipt));
-  expect(hook().stdout).toContain('snapshot unavailable; unmet');
+  expect(JSON.parse(hook().stdout)).toEqual({});
 }, 60000);
 
 it('checks declared verifier bytes outside the project both after and during the check', () => {
