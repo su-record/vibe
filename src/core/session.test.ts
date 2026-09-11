@@ -21,8 +21,9 @@ afterEach(() => fs.rmSync(fixture, { recursive: true, force: true }));
 function cli(args: string[], cwd = root) {
   return spawnSync(process.execPath, [path.join(packageRoot(), 'dist/cli.js'), ...args, '--json'], { cwd, env: { ...env, CLAUDE_PROJECT_DIR: cwd }, encoding: 'utf8', timeout: 20000 });
 }
-function hook(payload: object = {}, cwd = root, script = path.join(packageRoot(), 'hooks/notify.js')) {
-  return spawnSync(process.execPath, [script, 'stop'], { cwd, env: { ...env, CLAUDE_PROJECT_DIR: cwd }, input: JSON.stringify({ cwd, session_id: 'fixture-session', ...payload }), encoding: 'utf8', timeout: 5000 });
+function hook(payload: object = {}, cwd = root) {
+  const script = "const fs=require('node:fs');const runtime=require(process.argv[1]);process.stdout.write(JSON.stringify(runtime.stopDecision(JSON.parse(fs.readFileSync(0,'utf8')))));";
+  return spawnSync(process.execPath, ['-e', script, path.join(packageRoot(), 'hooks/session-state.cjs')], { cwd, env: { ...env, CLAUDE_PROJECT_DIR: cwd }, input: JSON.stringify({ cwd, session_id: 'fixture-session', ...payload }), encoding: 'utf8', timeout: 5000 });
 }
 function draft(approve = true) {
   fs.writeFileSync(path.join(root, 'intent.md'), '# Marker contract');
@@ -211,7 +212,7 @@ it('lets inbox waits and scenario handoffs end with qualified non-success identi
   expect(hook().stdout).not.toContain('verified completion');
 }, 60000);
 
-it('relays the same masked cause through both Stop clients and asks only at the repair limit', () => {
+it('keeps masked diagnostics in session context while Stop stays concise and waits at the repair limit', () => {
   draft();
   fs.mkdirSync(path.join(root, 'src'));
   fs.writeFileSync(path.join(root, 'src/source.ts'), 'export {};');
@@ -223,9 +224,14 @@ it('relays the same masked cause through both Stop clients and asks only at the 
   for (const [file, mode] of [['notify.js', 'stop'], ['session.js', 'codex']]) {
     const stop = spawnSync(process.execPath, [path.join(packageRoot(), 'hooks', file!), mode!], { cwd: root, env, input: JSON.stringify({ cwd: root, session_id: 'fixture-session' }), encoding: 'utf8', timeout: 5000 });
     expect(stop.status, stop.stderr).toBe(0);
-    expect(stop.stdout).toContain("Cannot find namespace 'sharp'");
-    expect(stop.stdout).toContain('Untrusted failure summary data');
-    expect(stop.stdout).toContain('change the approach');
+    if (file === 'notify.js') {
+      expect(JSON.parse(stop.stdout)).toEqual({ decision: 'block', reason: '[vibe] Work remains unverified. Run vibe state for the next step.' });
+      expect(stop.stdout).not.toContain("Cannot find namespace 'sharp'");
+    } else {
+      expect(stop.stdout).toContain("Cannot find namespace 'sharp'");
+      expect(stop.stdout).toContain('Untrusted failure summary data');
+      expect(stop.stdout).toContain('change the approach');
+    }
     expect(stop.stdout).not.toContain('raw-secret');
     expect(stop.stdout).not.toContain('user@example.invalid');
   }
@@ -276,7 +282,8 @@ it('works from a packaged hook tree without dist or a PATH CLI and rejects malfo
       cwd: root, env, input: JSON.stringify({ cwd: root, session_id: 'fixture-session' }), encoding: 'utf8', timeout: 5000,
     });
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain('Stop ran no checks');
+    if (script === 'notify.js') expect(JSON.parse(result.stdout).decision).toBe('block');
+    else expect(result.stdout).toContain('Stop ran no checks');
   }
   expect(fs.existsSync(called)).toBe(false);
   expect(fs.existsSync(path.join(root, 'ran.txt'))).toBe(false);
