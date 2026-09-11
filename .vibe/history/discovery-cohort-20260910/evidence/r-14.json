@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 2,
+  "run": "r-14",
+  "at": "2026-09-10T09:15:41.166Z",
+  "intentHash": "9a28c16a67aaefa7",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "9a7a1b6a798b",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 404733,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 792,
+          "sha256": "eeb124e4b4a840527a41bcc8d7f6d172677e143ce44e2dead9f82f1ba7d72114",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 258,
+          "sha256": "c88f987ec1ac6971eb2bc127b22ee119be812857953762d1518708ad304813c1",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-14#compatibility"
+    }
+  ]
+}

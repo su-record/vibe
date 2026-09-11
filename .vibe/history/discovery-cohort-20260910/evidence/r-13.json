@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "run": "r-13",
+  "at": "2026-09-10T08:52:22.108Z",
+  "intentHash": "9a28c16a67aaefa7",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "9a7a1b6a798b",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 1044218,
+      "tail": "",
+      "failureCode": "exit-mismatch",
+      "reason": "exit-mismatch",
+      "failure": {
+        "id": "compatibility",
+        "target": "npm run check && node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50 && node checks/card-size.js && node checks/loc.js && node checks/procedure.js && node checks/bench-gate.js",
+        "exit": 1,
+        "cause": "exit-mismatch",
+        "message": "Error: Test timed out in 5000ms.",
+        "diagnosticCode": null,
+        "causeHash": "f47f338eeb029eefb461003f4eb6e357094745a069bbfeaaaebdcacf2e2eb69d",
+        "locations": [
+          {
+            "file": "src/core/repair.test.ts",
+            "line": 27
+          },
+          {
+            "file": "src/install/global.test.ts",
+            "line": 20
+          },
+          {
+            "file": "src/install/slice-guard.test.ts",
+            "line": 40
+          },
+          {
+            "file": "src/cli.test.ts",
+            "line": 58
+          },
+          {
+            "file": "src/core/reader.test.ts",
+            "line": 118
+          },
+          {
+            "file": "src/install/mcpb.test.ts",
+            "line": 29
+          },
+          {
+            "file": "src/install/register.test.ts",
+            "line": 81
+          },
+          {
+            "file": "src/core/checks/eval.test.ts",
+            "line": 16
+          }
+        ],
+        "logs": []
+      },
+      "capture": {
+        "stdout": {
+          "bytes": 34284,
+          "sha256": "ba406daa2117debbb8060f813e74219aaa96422d03fbcc514756cce0078e62ed",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 258,
+          "sha256": "c88f987ec1ac6971eb2bc127b22ee119be812857953762d1518708ad304813c1",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-13#compatibility"
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "run": "r-1",
+  "at": "2026-09-10T05:50:25.021Z",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "6294f1434080",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 131785,
+      "tail": "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n\n Test Files  1 failed | 50 passed (51)\n      Tests  1 failed | 297 passed (298)\n   Start at  05:50:37\n   Duration  119.20s (transform 4.90s, setup 0ms, import 11.44s, tests 245.12s, environment 26ms)"
+    },
+    {
+      "id": "public-check-boundary",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs compatibility",
+      "blockedBy": [
+        "compatibility"
+      ]
+    },
+    {
+      "id": "discovery-agreement",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs public-check-boundary",
+      "blockedBy": [
+        "public-check-boundary"
+      ]
+    },
+    {
+      "id": "work-opportunities",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs discovery-agreement",
+      "blockedBy": [
+        "discovery-agreement"
+      ]
+    },
+    {
+      "id": "fde-release-evidence",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs work-opportunities",
+      "blockedBy": [
+        "work-opportunities"
+      ]
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 98,
+      "tail": "    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v22.23.0",
+      "regression": true
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 18,
+      "tail": "",
+      "regression": true
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 5015,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  05:50:27\n   Duration  2.49s (transform 849ms, setup 0ms, import 940ms, tests 988ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 4427,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  05:52:39\n   Duration  1.20s (transform 501ms, setup 0ms, import 720ms, tests 17ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3971,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  05:52:39\n   Duration  614ms (transform 176ms, setup 0ms, import 235ms, tests 24ms, environment 0ms)",
+      "regression": true
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 4782,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  05:52:39\n   Duration  1.61s (transform 901ms, setup 0ms, import 456ms, tests 962ms, environment 0ms)",
+      "regression": true
+    }
+  ]
+}
