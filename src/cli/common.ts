@@ -45,7 +45,7 @@ export function flagString(flags: Flags, key: string): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-export const HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
+export const INTERNAL_HELP = `vibe — an AX/FDE harness. The harness judges; a human approves.
 
   setup     setup (card, skills, hook or the plugin registration — the only repair besides update) · update [--check] · status · tokens [strict|irreversible|off] · uninstall [--purge-state]   (card, skills and hook live in ~/.claude and ~/.codex;
             npm i -g puts them there and any vibe command repairs them; uninstall also clears what an older init left in the project)
@@ -75,6 +75,18 @@ export const HELP = `vibe — an AX/FDE harness. The harness judges; a human app
 A scenario may declare needs: [ids] — independent scenarios are checked in parallel, dependents after their parents pass.
 
 Every command accepts --json. Exit codes: 0 ok · 1 verdict failed · 2 usage · 3 token · 4 invalid transition
+`;
+export const HELP = `vibe — your personal FDE in Claude and Codex.
+
+Start with /vibe in your connected app and describe the work.
+
+  setup     install or repair the existing client integrations
+  status    show the installed version and client connection status
+  update    update the package and integrations
+  plugin mcpb --out vibe.mcpb    build the Claude Desktop extension
+
+Workflow, authoring guidance and skill extensions operate internally.
+For operator diagnostics use --help-internal or internal tools.
 `;
 export function readStdin(): string {
   return fs.readFileSync(0, 'utf-8');

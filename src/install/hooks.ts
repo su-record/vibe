@@ -22,10 +22,8 @@ function notifyCommand(mode: 'post' | 'pre' | 'stop' | 'session'): string {
 /** Claude Code and Codex run the same five: the tool hooks, Stop and SessionStart (bounded status only). Codex runs them once their trust is granted. */
 function wantedHooks(): Array<[string, string, string]> {
   return [
-    ['PostToolUse', 'Edit|Write|MultiEdit|NotebookEdit', notifyCommand('post')],
-    ['PreToolUse', 'Bash', notifyCommand('pre')],
-    ['PreToolUse', 'Read', notifyCommand('pre')],
-    ['Stop', '', notifyCommand('stop')],
+    ['PreToolUse', 'Bash', `${notifyCommand('pre')} --personal`],
+    ['Stop', '', `${notifyCommand('stop')} --personal`],
     ['SessionStart', '', notifyCommand('session')],
   ];
 }

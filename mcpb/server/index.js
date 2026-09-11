@@ -20,6 +20,13 @@ const project = process.env.VIBE_PROJECT_DIR || process.cwd();
 
 const str = (description) => ({ type: 'string', description });
 const TOOLS = [
+  { name: 'vibe_risks', description: 'Detect changed-path and execution risks, name uncovered obligations and list existing checks for reuse. Read-only; no model call.', args: {}, cmd: () => ['internal', 'risks'] },
+  { name: 'vibe_performance', description: 'Inspect recorded check costs, or explicitly measure fixed read-only CLI startup commands. No model calls; output bytes are not tokens.', args: { action: { type: 'string', enum: ['report', 'startup'] } }, required: ['action'], cmd: (a) => ['internal', 'performance', a.action] },
+  { name: 'vibe_knowledge', description: 'Retain a confirmed project fact or personal preference with its source and context. Never store credentials.', args: { title: str('A stable, specific title'), text: str('Confirmed knowledge, with source/context'), global: { type: 'boolean', description: 'Personal knowledge across projects; false for this project' } }, required: ['title', 'text'], cmd: (a) => ['knowledge', 'add', '--stdin', '--title', a.title, ...(a.global ? ['--global'] : [])], stdin: (a) => a.text },
+  { name: 'vibe_brief', description: 'Read compact project context and personal note locations; no checks or model calls.', args: {}, cmd: () => ['internal', 'brief', 'entry'] },
+  { name: 'vibe_guide', description: 'Read one internal authoring or workflow guide without a model call.', args: { name: str('discover, delivery, extensions, optimization, verification, code, design, ko or en') }, required: ['name'], cmd: (a) => ['internal', 'guide', a.name] },
+  { name: 'vibe_read', description: 'Read a document using installed local readers.', args: { file: str('Project-relative file path') }, required: ['file'], cmd: (a) => ['read', a.file] },
+  { name: 'vibe_skill', description: 'List, search, preview/install, create or record use of a project skill. Installation requires existing user authority.', args: { action: { type: 'string', enum: ['list', 'search', 'add', 'create', 'used'] }, value: str('Search query, source reference or skill name'), pin: str('Selected commit for installation'), check: { type: 'string', enum: ['run', 'file', 'http', 'eval'] }, yes: { type: 'boolean', description: 'Confirm the previously reviewed installation within user authority' } }, required: ['action'], cmd: (a) => ['skill', a.action, ...(a.value ? [a.value] : []), ...(a.pin ? ['--pin', a.pin] : []), ...(a.check ? ['--check', a.check] : []), ...(a.yes ? ['--yes'] : [])] },
   { name: 'vibe_state', description: 'Where the project is: state, stage, scenarios with last results, open inbox items, proposals. Call this first.', args: {}, cmd: () => ['state'] },
   { name: 'vibe_profile', description: 'Profile a sample table (csv · tsv · jsonl · json): rows, columns, types, missing values, duplicates, anomalies first.', args: { file: str('Path relative to the project folder') }, required: ['file'], cmd: (a) => ['profile', a.file] },
   { name: 'vibe_intent_draft', description: 'Save the intent (markdown) and scenarios (YAML list, each with a check). Rejected scenarios come back with reasons; nothing is saved then.', args: { intent: str('Intent markdown, English'), scenarios: str('scenarios.yaml text, English') }, required: ['intent', 'scenarios'], cmd: () => ['intent', 'draft', '--stdin'], stdin: (a) => JSON.stringify({ intent: a.intent, scenarios: a.scenarios }) },
@@ -80,20 +87,43 @@ function fail(id, code, message) {
   process.stdout.write(`${JSON.stringify({ jsonrpc: '2.0', id, error: { code, message } })}\n`);
 }
 
+function invalidArguments(tool, args) {
+  if (!args || typeof args !== 'object' || Array.isArray(args)) return 'arguments must be an object';
+  for (const key of tool.required || []) if (!(key in args)) return `missing argument: ${key}`;
+  for (const [key, value] of Object.entries(args)) {
+    const schema = tool.args[key];
+    if (!schema) return `unknown argument: ${key}`;
+    if (schema.type === 'array' ? !Array.isArray(value) || value.some(v => typeof v !== 'string') : typeof value !== schema.type) return `invalid argument: ${key}`;
+    if (schema.enum && !schema.enum.includes(value)) return `invalid choice: ${key}`;
+  }
+  return null;
+}
+
 function handle(msg) {
   if (msg.id === undefined) return; // notification
   const { id, method, params = {} } = msg;
   if (method === 'initialize') {
-    return respond(id, { protocolVersion: params.protocolVersion || PROTOCOL, capabilities: { tools: {} }, serverInfo: { name: 'vibe', version: VERSION }, instructions: `vibe project: ${project}${fs.existsSync(`${project}/.vibe`) ? '' : ' (no .vibe yet — the first intent draft creates it)'} · CLI ${VIBE || 'not found — npm i -g @su-record/vibe'}. Start with vibe_state. Talk to the user in the user's language; write every record in English.` });
+    return respond(id, { protocolVersion: params.protocolVersion || PROTOCOL, capabilities: { tools: {} }, serverInfo: { name: 'vibe', version: VERSION }, instructions: `vibe project: ${project}${fs.existsSync(`${project}/.vibe`) ? '' : ' (no .vibe yet — the first intent draft creates it)'} · CLI ${VIBE || 'not found — npm i -g @su-record/vibe'}. Use the vibe tool with operation brief first; discover returns an internal operation schema. The brief includes the personal FDE entry guidance; no extra model review by default. Talk to the user in the user's language; write every record in English.` });
   }
   if (method === 'ping') return respond(id, {});
   if (method === 'tools/list') {
-    return respond(id, { tools: TOOLS.map((t) => ({ name: t.name, description: t.description, inputSchema: { type: 'object', properties: t.args, ...(t.required ? { required: t.required } : {}) } })) });
+    return respond(id, { tools: [{ name: 'vibe', description: 'Your personal FDE: project context, internal guidance, tools and skill extensions. Use discover to inspect an operation before calling it.', inputSchema: { type: 'object', properties: { operation: { type: 'string', enum: ['discover', ...TOOLS.map(t => t.name.slice(5))] }, arguments: { type: 'object', description: 'Arguments for the selected operation. discover accepts an optional operation name.' } }, required: ['operation'], additionalProperties: false } }] });
   }
   if (method === 'tools/call') {
-    const tool = TOOLS.find((t) => t.name === params.name);
+    const envelope = params.arguments || {};
+    if (params.name === 'vibe' && envelope.operation === 'discover') {
+      const selected = envelope.arguments?.operation;
+      const entries = selected ? TOOLS.filter(t => t.name === `vibe_${selected}`) : TOOLS;
+      if (!entries.length) return fail(id, -32602, `unknown operation: ${selected}`);
+      const result = entries.map(t => ({ operation: t.name.slice(5), description: t.description, ...(selected ? { inputSchema: { type: 'object', properties: t.args, required: t.required || [], additionalProperties: false } } : {}) }));
+      return respond(id, { content: [{ type: 'text', text: JSON.stringify(result) }] });
+    }
+    const name = params.name === 'vibe' ? `vibe_${envelope.operation}` : params.name;
+    const tool = TOOLS.find((t) => t.name === name);
     if (!tool) return fail(id, -32602, `unknown tool: ${params.name}`);
-    const a = params.arguments || {};
+    const a = params.name === 'vibe' ? envelope.arguments || {} : envelope;
+    const invalid = invalidArguments(tool, a);
+    if (invalid) return fail(id, -32602, invalid);
     const r = runVibe(tool.cmd(a), tool.stdin ? tool.stdin(a) : undefined);
     return respond(id, { content: [{ type: 'text', text: r.text }], isError: r.isError });
   }

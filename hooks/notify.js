@@ -22,6 +22,7 @@ import sliceRuntime from './slice-guard.cjs';
 
 const mode = process.argv[2] || 'post';
 const asPlugin = process.argv.includes('--plugin');
+const personal = process.argv.includes('--personal');
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -131,7 +132,7 @@ const cli = path.join(here, '..', 'dist', 'cli.js');
 if (mode === 'stop') {
   const result = sessionRuntime.stopDecision(readPayload());
   // Status and failure details belong to explicit state/context requests, not the chat footer.
-  const output = result.decision === 'block'
+  const output = !personal && result.decision === 'block'
     ? { decision: 'block', reason: '[vibe] Work remains unverified. Run vibe state for the next step.' }
     : {};
   process.stdout.write(`${JSON.stringify(output)}\n`);
@@ -150,7 +151,8 @@ if (mode === 'pre') {
   }
   const command = String((payload.tool_input && payload.tool_input.command) || '');
   const cwd = payload.tool_input?.cwd ?? payload.tool_input?.workdir ?? payload.cwd ?? process.cwd();
-  const slice = sliceRuntime.sliceGuard(root, command, sliceClient(), cwd);
+  if (personal && tokenPolicy() === 'off') process.exit(0);
+  const slice = personal ? { decision: 'allow' } : sliceRuntime.sliceGuard(root, command, sliceClient(), cwd);
   if (slice.decision === 'block') { process.stderr.write(`${slice.message}\n`); process.exit(2); }
   if (slice.decision === 'warn') emitContext(slice.message);
   if (!fs.existsSync(path.join(root, '.vibe'))) process.exit(0);

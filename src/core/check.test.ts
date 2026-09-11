@@ -289,8 +289,8 @@ const timer = setInterval(() => {
   it('mutates: a restoring check is blocked without an authorize record and DONE stays out of reach; it runs after vibe authorize; a reading check runs regardless', async () => {
     fs.writeFileSync(path.join(root, 'probe.cjs'), "require('fs').appendFileSync('ran.log', 'restore\\n');");
     approved([
-      '- { id: restore, then: x, check: { type: run, cmd: "node probe.cjs" , timeoutMs: 20000 } }',
-      '- { id: read, then: y, check: { type: run, cmd: "node -e 0" } }',
+      '- { id: restore, then: x, risk: {kind: data, impact: database changes, recovery: restore fixture, failureChecks: [read], recoveryChecks: [read]}, check: { type: run, cmd: "node probe.cjs" , timeoutMs: 20000 } }',
+      '- { id: read, then: y, check: { type: file, path: probe.cjs, contains: appendFileSync } }',
     ].join('\n').replace('cmd: "node probe.cjs"', 'cmd: "node probe.cjs && echo restore"'));
     const first = await runChecks(root);
     const restore = first.outcomes.find((o) => o.id === 'restore')!;

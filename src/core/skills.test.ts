@@ -36,11 +36,11 @@ const fake: GithubClient = { authenticated: true, get: (p) => {
 } };
 
 describe('project-local skills — installed only with a check, never globally', () => {
-  it('skills: create needs a check type or a scenario; the skeleton lands in every client dir that exists and is registered', () => {
+  it('skills: create needs a check type or a scenario; the skeleton stays internal regardless of client directories and is registered', () => {
     expect(() => createSkill(root, { name: 'settle' })).toThrowError(VibeError);
-    expect(() => createSkill(root, { name: 'vibe-build', checkType: 'run' })).toThrowError(/common skill/);
+    expect(() => createSkill(root, { name: 'vibe', checkType: 'run' })).toThrowError(/common skill/);
     const r = createSkill(root, { name: 'settle', checkType: 'file' });
-    expect(r.paths).toEqual(['.claude/skills/settle/SKILL.md']);
+    expect(r.paths).toEqual(['.vibe/skills/installed/settle/SKILL.md']);
     const md = fs.readFileSync(path.join(root, r.paths[0]!), 'utf-8');
     expect(md).toContain('name: settle');
     expect(md).toContain('vibe skill used settle');
@@ -49,7 +49,7 @@ describe('project-local skills — installed only with a check, never globally',
     fs.mkdirSync(path.join(root, '.codex'));
     const fromScenario = createSkill(root, { name: 'total-guard', fromScenario: 'total' });
     expect(fromScenario.check).toEqual({ type: 'file', path: 'out.csv', sum: { column: 'amount', equals: 10 } });
-    expect(fromScenario.paths).toEqual(['.claude/skills/total-guard/SKILL.md', '.codex/skills/total-guard/SKILL.md']);
+    expect(fromScenario.paths).toEqual(['.vibe/skills/installed/total-guard/SKILL.md']);
     expect(() => createSkill(root, { name: 'ask-guard', fromScenario: 'ask' })).toThrowError(/human/);
     expect(readRegistry(root).skills.map((s) => s.name)).toEqual(['settle', 'total-guard']);
     expect(readLedger(root).filter((e) => e.event === 'skill')).toHaveLength(2);
@@ -58,10 +58,10 @@ describe('project-local skills — installed only with a check, never globally',
   it('skills: add shows the commands and installs nothing until --yes; then pins the commit and records the license', async () => {
     const preview = await addSkill(root, { spec: 'org/skills@csv-settle', yes: false }, fake);
     expect(preview).toMatchObject({ installed: false, ref: 'org/skills@csv-settle#abc123abc123', license: 'MIT', commands: ['node scripts/settle.js orders.csv', 'vibe check settle'], files: ['SKILL.md', 'notes.md', 'references/deep/more.md', 'references/rules.md'] });
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'csv-settle'))).toBe(false);
+    expect(fs.existsSync(path.join(root, '.vibe', 'skills', 'installed', 'csv-settle'))).toBe(false);
     const done = await addSkill(root, { spec: 'org/skills@csv-settle', yes: true }, fake);
     expect(done.installed).toBe(true);
-    expect(fs.readFileSync(path.join(root, '.claude', 'skills', 'csv-settle', 'notes.md'), 'utf-8')).toBe('notes');
+    expect(fs.readFileSync(path.join(root, '.vibe', 'skills', 'installed', 'csv-settle', 'notes.md'), 'utf-8')).toBe('notes');
     expect(readRegistry(root).skills[0]).toMatchObject({ name: 'csv-settle', kind: 'added', source: 'org/skills@csv-settle#abc123abc123', license: 'MIT', check: null });
     expect(await addSkill(root, { spec: 'org/skills@csv-settle', pin: 'fffffffffffff', yes: false }, fake)).toMatchObject({ sha: 'fffffffffffff' });
     expect(commandsIn('# t\n```\n# comment\nls -la\n```\ntext\n$ pwd\n')).toEqual(['ls -la', 'pwd']);
@@ -74,9 +74,9 @@ describe('project-local skills — installed only with a check, never globally',
     markUsed(root, 'live');
     expect(listSkills(root).project.find((s) => s.name === 'live')?.lastUsedRun).toBe(12);
     expect(pruneSkills(root, { dryRun: true })).toMatchObject({ removed: ['old'], kept: ['live'], threshold: 10 });
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'old'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.vibe', 'skills', 'installed', 'old'))).toBe(true);
     pruneSkills(root);
-    expect(fs.existsSync(path.join(root, '.claude', 'skills', 'old'))).toBe(false);
+    expect(fs.existsSync(path.join(root, '.vibe', 'skills', 'installed', 'old'))).toBe(false);
     expect(listSkills(root).project.map((s) => s.name)).toEqual(['live']);
     expect(() => markUsed(root, 'old')).toThrowError(VibeError);
   });
@@ -107,8 +107,8 @@ describe('project-local skills — installed only with a check, never globally',
   it('skills: add takes the whole tree — references/ and deeper land under the skill directory; a skill over the cap stops with a reason', async () => {
     const done = await addSkill(root, { spec: 'org/skills@csv-settle', yes: true }, fake);
     expect(done.installed).toBe(true);
-    expect(fs.readFileSync(path.join(root, '.claude', 'skills', 'csv-settle', 'references', 'deep', 'more.md'), 'utf-8')).toBe('more');
-    expect(fs.readFileSync(path.join(root, '.claude', 'skills', 'csv-settle', 'references', 'rules.md'), 'utf-8')).toBe('rules');
+    expect(fs.readFileSync(path.join(root, '.vibe', 'skills', 'installed', 'csv-settle', 'references', 'deep', 'more.md'), 'utf-8')).toBe('more');
+    expect(fs.readFileSync(path.join(root, '.vibe', 'skills', 'installed', 'csv-settle', 'references', 'rules.md'), 'utf-8')).toBe('rules');
     const big: Record<string, unknown> = { ...FIXTURE };
     const many = Array.from({ length: 201 }, (_, i) => ({ name: `f${i}.md`, type: 'file', path: `skills/csv-settle/f${i}.md` }));
     big['/contents/skills/csv-settle?'] = [{ name: 'SKILL.md', type: 'file', path: 'skills/csv-settle/SKILL.md' }, ...many];

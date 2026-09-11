@@ -1,7 +1,7 @@
 {
   "name": "@su-record/vibe",
-  "version": "4.1.30",
-  "description": "An AX/FDE harness for Claude Code, Codex CLI and ChatGPT desktop. Say what you need, approve the scenarios once; the harness proves the work by running the checks itself. Memory in plain files, human tokens for irreversible actions, a ledger instead of claims.",
+  "version": "4.2.0",
+  "description": "Your personal FDE in Claude and Codex. Understand the work, use the right tools, deliver and retain useful context. One entry: vibe.",
   "type": "module",
   "bin": {
     "vibe": "dist/cli.js"
@@ -10,7 +10,6 @@
     "dist/",
     "skills/",
     "reviewers/",
-    "agents/",
     "hooks/",
     "scripts/",
     ".claude-plugin/",
@@ -18,7 +17,8 @@
     "card.md",
     "README.md",
     "LICENSE",
-    "mcpb/"
+    "mcpb/",
+    "internal/"
   ],
   "engines": {
     "node": ">=20.12.0"

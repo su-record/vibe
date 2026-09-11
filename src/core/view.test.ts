@@ -19,7 +19,8 @@ const THREE = '- { id: a, then: x, check: { type: run, cmd: "true" } }\n- { id: 
 
 describe('vibe state — the next line is the procedure', () => {
   it('an irreversible scenario awaiting authorization is not described as handed off', async () => {
-    draft(root, '# authorization', '- { id: deployment, then: deployed, irreversible: deploy, check: { type: run, cmd: "exit 0" } }');
+    fs.writeFileSync(path.join(root, 'proof.txt'), 'safe');
+    draft(root, '# authorization', '- { id: deployment, then: deployed, irreversible: deploy, risk: {kind: deployment, impact: service interruption, recovery: fixture rollback, failureChecks: [proof], recoveryChecks: [proof]}, check: { type: run, cmd: "exit 0" } }\n- {id: proof, then: fixture preserved, check: {type: file, path: proof.txt, contains: safe}}');
     approve(root, null);
     const report = await runChecks(root, { all: true });
     expect(report.outcomes[0]?.status).toBe('blocked');

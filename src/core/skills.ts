@@ -15,12 +15,12 @@ import { readState } from './state.js';
 
 /**
  * Project-local skills. Nothing accumulates globally: a skill lives in this repository's
- * `.claude/skills` and `.codex/skills`, is registered in `.vibe/skills/registry.json`, and is
+ * `.vibe/skills/installed`, is registered in `.vibe/skills/registry.json`, and is
  * installed only when bound to a check or carrying knowledge the model does not have. Proposals
  * are proposals — installing, running remote commands and global installs never happen by themselves.
  */
-export const COMMON_SKILLS: readonly string[] = ['vibe', 'vibe-discover', 'vibe-scope', 'vibe-build', 'vibe-prove', 'vibe-handoff'];
-const SKILL_DIRS = ['.claude/skills', '.codex/skills'] as const;
+export const COMMON_SKILLS: readonly string[] = ['vibe'];
+const SKILL_DIRS = ['.vibe/skills/installed'] as const;
 const NAME_RE = /^[a-z][a-z0-9.-]{0,39}$/;
 const DEFAULT_UNUSED_RUNS = 10;
 const MAX_PROPOSALS = 3;
@@ -55,12 +55,6 @@ function writeRegistry(root: string, registry: Registry): void {
   writeJson(registryPath(root), registry);
 }
 
-/** Install into every client directory that exists; `.claude/skills` when none does. */
-function targetDirs(root: string): string[] {
-  const present = SKILL_DIRS.filter((d) => fs.existsSync(path.join(root, path.dirname(d))));
-  return present.length > 0 ? [...present] : [SKILL_DIRS[0]];
-}
-
 function templateCheck(type: CheckType, name: string): Check {
   switch (type) {
     case 'run':
@@ -79,7 +73,7 @@ function templateCheck(type: CheckType, name: string): Check {
 function skillBody(name: string, check: Check, from: string | null): string {
   const scenario = YAML.stringify([{ id: name, then: from ? `[from scenario ${from}] fill in the success statement` : 'fill in the success statement', check }]).trim();
   return [
-    '---', `name: ${name}`, 'description: "fill in — one line saying when this skill applies"', 'user-invocable: true', '---', '',
+    '---', `name: ${name}`, 'description: "fill in — one line saying when this skill applies"', 'user-invocable: false', '---', '',
     `# ${name}`, '', '## When', '', 'fill in — the situation that repeats in this project', '', '## Procedure', '',
     `1. Run \`vibe skill used ${name}\` so the ledger knows the skill was applied.`, '2. fill in — the steps, each one checkable', '', '## Check', '',
     'This skill is installed because it is bound to the check below. Add it to `scenarios.yaml` when the procedure is part of an intent.', '', '```yaml', scenario, '```', '',
@@ -88,7 +82,7 @@ function skillBody(name: string, check: Check, from: string | null): string {
 
 function writeSkillFiles(root: string, name: string, files: Record<string, string>): string[] {
   const written: string[] = [];
-  for (const dir of targetDirs(root)) {
+  for (const dir of SKILL_DIRS) {
     for (const [file, content] of Object.entries(files)) {
       const target = path.join(root, dir, name, file);
       writeAtomic(target, content);
@@ -266,7 +260,7 @@ export function pruneSkills(root: string, options: { unusedRuns?: number; dryRun
   const registry = readRegistry(root);
   const stale = registry.skills.filter((s) => current - (s.lastUsedRun ?? s.installedRun) >= unusedRuns);
   if (!options.dryRun) {
-    for (const s of stale) for (const dir of SKILL_DIRS) fs.rmSync(path.join(root, dir, s.name), { recursive: true, force: true });
+    for (const s of stale) for (const dir of [...SKILL_DIRS, '.claude/skills', '.codex/skills']) fs.rmSync(path.join(root, dir, s.name), { recursive: true, force: true });
     registry.skills = registry.skills.filter((s) => !stale.includes(s));
     writeRegistry(root, registry);
     if (stale.length > 0) record(root, { event: 'skill', client: detectClient(), model: detectModel(), detail: `prune ${stale.map((s) => s.name).join(', ')} (unused ${unusedRuns} runs)` });
@@ -343,4 +337,3 @@ export function suggestSkills(root: string, all = false): Proposal[] {
   const proposals = [...handoffSignals(root, project), ...regressionSignals(root, project), ...hostSignals(root, project), ...questionSignals(root)].filter((p) => !dismissed.has(p.ref));
   return all ? proposals : proposals.slice(0, MAX_PROPOSALS);
 }
-
