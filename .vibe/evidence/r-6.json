@@ -1,81 +1,17 @@
 {
   "run": "r-6",
-  "at": "2026-09-03T16:13:46.823Z",
+  "at": "2026-09-10T06:22:42.259Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "2bf656e512e3",
+  "scenarioSet": "6294f1434080",
   "results": [
     {
-      "id": "build",
+      "id": "compatibility",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 5110,
-      "tail": "npm notice run @su-record/vibe@4.0.1 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
-    },
-    {
-      "id": "tests",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 28205,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  16 passed (16)\n      Tests  83 passed (83)\n   Start at  16:13:47\n   Duration  27.45s (transform 1.05s, setup 0ms, import 2.65s, tests 30.48s, environment 2ms)"
-    },
-    {
-      "id": "card-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 48,
-      "tail": "card.md 705 bytes (limit 1024)"
-    },
-    {
-      "id": "source-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 66,
-      "tail": "src (non-test) 3793 lines (limit 5000)"
-    },
-    {
-      "id": "skills-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 9,
-      "tail": ""
-    },
-    {
-      "id": "harness-arm",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 1055,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  16:14:15\n   Duration  264ms (transform 72ms, setup 0ms, import 98ms, tests 8ms, environment 0ms)"
-    },
-    {
-      "id": "judge-checkable",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 97,
-      "tail": "judge: 5 file checks · reference total 4500.5"
-    },
-    {
-      "id": "bench-ran",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 40,
-      "tail": "bench: 20 judged runs · arms claude-code/on, claude-code/off, codex/on, codex/off"
-    },
-    {
-      "id": "compare-answers",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 133,
-      "tail": "compare by harness · metric checks · verdict inconclusive\n  observed ranges (min–max) overlap — this sample cannot tell a difference\n  on: runs 10 · usable 10 · min 5 · max 5 · mean 5.00\n  off: runs 10 · usable 10 · min 5 · max 5 · mean 5.00"
+      "ms": 509286,
+      "tail": "card.md 1023 bytes (limit 1024)\n74 files · largest 347 lines (limit 400 per file) · 8755 total\nprocedure: card, router and README quote \"first, one check --all\" and \"on a failure, fix what the check names; context <id> when that is not enough\"\nbench-gate --self-test: 9 checks passed\nround 1/3: both passed\nround 2/3: both passed\nround 3/3: both passed\nsuite under load: 3 rounds × 2 parallel runs, nothing failed"
     }
   ]
 }

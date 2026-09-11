@@ -1,89 +1,60 @@
 {
   "run": "r-3",
-  "at": "2026-09-10T02:55:48.694Z",
+  "at": "2026-09-10T06:03:11.719Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "5437940352f4",
+  "scenarioSet": "6294f1434080",
   "results": [
     {
-      "id": "build",
+      "id": "public-check-boundary",
       "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 48532,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  45 passed (45)\n      Tests  268 passed (268)\n   Start at  02:55:52\n   Duration  44.39s (transform 1.81s, setup 0ms, import 4.67s, tests 76.61s, environment 6ms)"
+      "status": "fail",
+      "exit": 1,
+      "ms": 17679,
+      "tail": "  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v22.23.0"
     },
     {
-      "id": "scoped-arm",
+      "id": "discovery-agreement",
       "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 735,
-      "tail": "bench-scoped: card, skills and hooks, no intent, next says discover\nbench-gate --self-test: 9 checks passed"
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs public-check-boundary",
+      "blockedBy": [
+        "public-check-boundary"
+      ]
     },
     {
-      "id": "anomaly-task",
+      "id": "work-opportunities",
       "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 4009,
-      "tail": "direction judges: 1 tasks (anomaly) · wrong answer fails, right answer passes, for every one\njudge: 13 tasks (ambiguous-brief, anomaly, ask, brownfield, handover, hidden-requirement, irreversible-trap, long-context, regression-trap, report, session-split, settlement, vibe-fix) · every check deterministic · no check reaches judge/ or key/ · no key value in an intent · settlement reference total 4500.5\nbench-no-key: no task lets a key file into a prepared workspace\nanomaly-profile: 3 anomalies named — column \"order_id\" repeats: 1 of 12 values appear more than once · column \"amount\" has 1 negative value (a refund? a reversal?) · column \"currency\" is \"EUR\" in only 1 of 12 rows"
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs discovery-agreement",
+      "blockedBy": [
+        "discovery-agreement"
+      ]
     },
     {
-      "id": "handover-task",
+      "id": "fde-release-evidence",
       "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 6126,
-      "tail": "direction judges: 1 tasks (handover) · wrong answer fails, right answer passes, for every one\nbench-handover: two clients, two sessions, both layouts in the workspace"
-    },
-    {
-      "id": "gate-is-release",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 120,
-      "tail": "bench gate passed: overhead: settlement ok; overhead: vibe-fix ok; overhead: report ok; context: brownfield ok; direction: all required tasks meet their per-client rules\nbench: 450 judged runs · arms claude-code/on, codex/on, codex/off, claude-code/off, claude-code/scoped, codex/scoped, codex/undefined, claude-code→codex/on, claude-code→codex/off, claude-code→codex/scoped"
-    },
-    {
-      "id": "size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 364,
-      "tail": "70 files · 8234 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits"
-    },
-    {
-      "id": "card-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 150,
-      "tail": "card.md 1023 bytes (limit 1024)\n73 files · largest 347 lines (limit 400 per file) · 8641 total\nprocedure: card, router and README quote \"first, one check --all\" and \"on a failure, fix what the check names; context <id> when that is not enough\""
-    },
-    {
-      "id": "under-load",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 222756,
-      "tail": "round 1/3: both passed\nround 2/3: both passed\nround 3/3: both passed\nsuite under load: 3 rounds × 2 parallel runs, nothing failed"
-    },
-    {
-      "id": "r-1-vibe-size-misreads-template-literal",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 240,
-      "tail": "73 files · 8641 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
-      "regression": true
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs work-opportunities",
+      "blockedBy": [
+        "work-opportunities"
+      ]
     },
     {
       "id": "r-2-ci-counted-the-language-packs",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 17,
+      "ms": 36,
       "tail": "",
       "regression": true
     },
@@ -92,8 +63,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2567,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  02:56:38\n   Duration  1.02s (transform 366ms, setup 0ms, import 453ms, tests 271ms, environment 0ms)",
+      "ms": 3208,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  06:03:13\n   Duration  1.24s (transform 418ms, setup 0ms, import 521ms, tests 337ms, environment 0ms)",
       "regression": true
     },
     {
@@ -101,8 +72,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2463,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  02:56:38\n   Duration  939ms (transform 462ms, setup 0ms, import 544ms, tests 18ms, environment 0ms)",
+      "ms": 3703,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  06:03:14\n   Duration  889ms (transform 358ms, setup 0ms, import 447ms, tests 23ms, environment 0ms)",
       "regression": true
     },
     {
@@ -110,8 +81,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1962,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  02:56:38\n   Duration  426ms (transform 152ms, setup 0ms, import 189ms, tests 12ms, environment 0ms)",
+      "ms": 1795,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  06:03:30\n   Duration  369ms (transform 127ms, setup 0ms, import 161ms, tests 15ms, environment 0ms)",
       "regression": true
     },
     {
@@ -119,8 +90,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3340,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  02:56:39\n   Duration  1.39s (transform 758ms, setup 0ms, import 368ms, tests 796ms, environment 0ms)",
+      "ms": 3081,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-fde-20260910/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  06:03:30\n   Duration  1.75s (transform 1.00s, setup 0ms, import 513ms, tests 994ms, environment 0ms)",
       "regression": true
     }
   ]

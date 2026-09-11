@@ -1,12 +1,39 @@
 {
-  "state": "APPROVED",
-  "intentHash": "9eba4480d18b5cef",
-  "approvedAt": "2026-09-10T04:41:35.719Z",
-  "runs": 0,
-  "failStreak": 0,
-  "lastFailHash": null,
+  "state": "STUCK",
+  "intentHash": "9a28c16a67aaefa7",
+  "approvedAt": "2026-09-10T08:35:55.584Z",
+  "runs": 17,
+  "failStreak": 2,
+  "lastFailHash": "edbfe9af",
   "doneAt": null,
   "doneTree": null,
   "abandonedReason": null,
-  "updatedAt": "2026-09-10T04:41:35.719Z"
+  "updatedAt": "2026-09-10T21:19:04.920Z",
+  "repair": {
+    "hash": "edbfe9af",
+    "attempts": [
+      {
+        "run": "r-16",
+        "approach": "Initialize ownership only for newly created Windows diagnostic files before payload writes; retain strict existing-file verification and record successful exact-revision Linux and Windows CI."
+      },
+      {
+        "run": "r-17",
+        "approach": "Record stopped approved cohort: Claude weekly limit, six errors and interrupted Codex session; preserve frozen protocol and missing usage."
+      }
+    ],
+    "failures": [
+      {
+        "id": "fde-release-evidence",
+        "target": "node checks/release-4.1.26.js --self-test && node checks/release-4.1.26.js --protocol bench/claims/4.1.26/protocol.json --ledger bench/claims/4.1.26/ledger.jsonl --report bench/claims/4.1.26/results.m",
+        "exit": 1,
+        "cause": "exit-mismatch",
+        "message": null,
+        "diagnosticCode": null,
+        "causeHash": null,
+        "locations": [],
+        "logs": []
+      }
+    ],
+    "waiting": false
+  }
 }

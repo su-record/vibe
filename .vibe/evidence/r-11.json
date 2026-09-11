@@ -1,0 +1,337 @@
+{
+  "schemaVersion": 2,
+  "run": "r-11",
+  "at": "2026-09-10T08:43:16.783Z",
+  "intentHash": "9a28c16a67aaefa7",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "9a7a1b6a798b",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 108776,
+      "tail": "",
+      "failureCode": "exit-mismatch",
+      "reason": "exit-mismatch",
+      "failure": {
+        "id": "compatibility",
+        "target": "npm run check && node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50 && node checks/card-size.js && node checks/loc.js && node checks/procedure.js && node checks/bench-gate.js",
+        "exit": 1,
+        "cause": "exit-mismatch",
+        "message": "76| expect(result.error).toBeUndefined();",
+        "diagnosticCode": null,
+        "causeHash": "e2db5378fbe2909a2d66ec73f851647b2d3617beba12a1641ce4179d3a9ec242",
+        "locations": [
+          {
+            "file": "src/cli.test.ts",
+            "line": 172
+          },
+          {
+            "file": "bench/fde/session.test.js",
+            "line": 76
+          },
+          {
+            "file": "src/core/view.test.ts",
+            "line": 49
+          }
+        ],
+        "logs": []
+      },
+      "capture": {
+        "stdout": {
+          "bytes": 893,
+          "sha256": "dadd81975caa3efb4963c41467c5118643a7c04731736f2421beb858ccbb0685",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 3435,
+          "sha256": "fda6e4adbe1faf3fa85c7194eeab92375b546568c601bb7a8c45ffbbfbb19d9f",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#compatibility"
+    },
+    {
+      "id": "inspect-and-consent",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs compatibility",
+      "blockedBy": [
+        "compatibility"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#inspect-and-consent"
+    },
+    {
+      "id": "evidence-minimization",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs inspect-and-consent",
+      "blockedBy": [
+        "inspect-and-consent"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#evidence-minimization"
+    },
+    {
+      "id": "honest-scenario-handoff",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs evidence-minimization",
+      "blockedBy": [
+        "evidence-minimization"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#honest-scenario-handoff"
+    },
+    {
+      "id": "session-bound-stop",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs honest-scenario-handoff",
+      "blockedBy": [
+        "honest-scenario-handoff"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#session-bound-stop"
+    },
+    {
+      "id": "public-check-boundary",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs session-bound-stop",
+      "blockedBy": [
+        "session-bound-stop"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#public-check-boundary"
+    },
+    {
+      "id": "discovery-agreement",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs public-check-boundary",
+      "blockedBy": [
+        "public-check-boundary"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#discovery-agreement"
+    },
+    {
+      "id": "work-opportunities",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs discovery-agreement",
+      "blockedBy": [
+        "discovery-agreement"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#work-opportunities"
+    },
+    {
+      "id": "compatibility-and-release-evidence",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs work-opportunities",
+      "blockedBy": [
+        "work-opportunities"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#compatibility-and-release-evidence"
+    },
+    {
+      "id": "fde-release-evidence",
+      "type": "run",
+      "status": "blocked",
+      "exit": null,
+      "ms": 0,
+      "tail": "",
+      "reason": "blocked — needs compatibility-and-release-evidence",
+      "blockedBy": [
+        "compatibility-and-release-evidence"
+      ],
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#fde-release-evidence"
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 660,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 132,
+          "sha256": "d8fa8ff1212da571d1da340bbc79bc43aa60c84675794adb1026811c3f890c61",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#r-1-vibe-size-misreads-template-literal"
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 98,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#r-2-ci-counted-the-language-packs"
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3107,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 245,
+          "sha256": "19249cad694e1428fb6017d7e71785dc7c189abeccde5b8643e52da329f41c2a",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 115,
+          "sha256": "7f04324b7624f8c0d9d7f68f8c495fe72390fb898948432b16c404cc6236b3e8",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#r-3-codex-plugin-never-followed-update"
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 4535,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 247,
+          "sha256": "de5325f7c696589ad1396c099457f79c4478c1941952cdb32ff44a02ade33796",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 125,
+          "sha256": "ac0af6bede422108c80f540a2910c8b0e4aa80a605e0c2d310cecfc43484e138",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#r-4-installhookfile-kept-only-last-entry"
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2933,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 244,
+          "sha256": "657710af315369cab110153e4e7e714d37f864a2a40b611042d318a958ed832b",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 101,
+          "sha256": "d0f8c59816627d99a71dff72392fe58023b45bfc84b7b26c8c6530c8dc273069",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#r-5-vibe-size-read-a-quote-or-a-backtick"
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 6086,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 247,
+          "sha256": "b98def34e0f26a66a23716d5d037b9c62bf9677695765022db6f38035b17b59a",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 103,
+          "sha256": "bbf46ec64c7129e650e46ceaa34ae5f091fdfa89af0ad1f3e81e41ca03d6b7af",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "b472ef4df245b6043157d0ec7dba0362e3daf11c6cd021c193e1891e8079107f",
+      "evidenceId": "r-11#r-6-the-entry-guard-read-its-own-path-fr"
+    }
+  ]
+}
