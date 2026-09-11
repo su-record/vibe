@@ -1,81 +1,35 @@
 {
   "run": "r-6",
-  "at": "2026-09-03T16:13:46.823Z",
+  "at": "2026-09-10T00:26:37.138Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "2bf656e512e3",
+  "scenarioSet": "f7c1b0069b3c",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 5110,
-      "tail": "npm notice run @su-record/vibe@4.0.1 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 59176,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  40 passed (40)\n      Tests  247 passed (247)\n   Start at  00:26:41\n   Duration  54.62s (transform 1.95s, setup 0ms, import 4.47s, tests 85.03s, environment 6ms)"
     },
     {
-      "id": "tests",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 28205,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  16 passed (16)\n      Tests  83 passed (83)\n   Start at  16:13:47\n   Duration  27.45s (transform 1.05s, setup 0ms, import 2.65s, tests 30.48s, environment 2ms)"
-    },
-    {
-      "id": "card-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 48,
-      "tail": "card.md 705 bytes (limit 1024)"
-    },
-    {
-      "id": "source-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 66,
-      "tail": "src (non-test) 3793 lines (limit 5000)"
-    },
-    {
-      "id": "skills-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 9,
-      "tail": ""
-    },
-    {
-      "id": "harness-arm",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 1055,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  16:14:15\n   Duration  264ms (transform 72ms, setup 0ms, import 98ms, tests 8ms, environment 0ms)"
-    },
-    {
-      "id": "judge-checkable",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 97,
-      "tail": "judge: 5 file checks · reference total 4500.5"
-    },
-    {
-      "id": "bench-ran",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 40,
-      "tail": "bench: 20 judged runs · arms claude-code/on, claude-code/off, codex/on, codex/off"
-    },
-    {
-      "id": "compare-answers",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 133,
-      "tail": "compare by harness · metric checks · verdict inconclusive\n  observed ranges (min–max) overlap — this sample cannot tell a difference\n  on: runs 10 · usable 10 · min 5 · max 5 · mean 5.00\n  off: runs 10 · usable 10 · min 5 · max 5 · mean 5.00"
+      "id": "review-human",
+      "type": "review",
+      "status": "fail",
+      "exit": 1,
+      "ms": 127952,
+      "tail": "code reviewer: not PASS · in 4 · cache read 20,896 · out 9,333\nREJECT\nsrc/core/view.ts:110 | The `fix` line's failed set silently narrows: it was `views.filter(v => v.last === 'fail')` (all scenario views) and is now `pending.filter(...)`, where `pending` is the gated set with `v.type !== 'human'` filtered out at line 133, so a human-type scenario whose last result is `fail` is no longer named | This is an observable output change outside the stated scope (the requested changes are the DONE/inbox messages), and no test in view.test.ts covers a failed human scenario, so neither the old nor the new behaviour is pinned — the next maintainer cannot tell whether the drop was intended or a side effect of the refactor | Either derive `failed` from the full `views` list as before, or, if excluding human items is intended, state it and add a case in view.test.ts that asserts the `fix` line for a human scenario with `last: 'fail'`\nKEEP | src/cli/human.ts:12-19 | the report guard and its placement before `ensureProject` are the requested behaviour and are covered by human.test.ts:19-26\nKEEP | src/core/view.ts:87-89 | `scenarioTargets` is shared by the fix line and the answered-inbox resume; both call sites depend on the identical format",
+      "reason": "reviewer did not pass",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 4,
+          "cacheRead": 20896,
+          "cacheWrite": 20757,
+          "output": 9333
+        }
+      ]
     }
   ]
 }

@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config';
 // not vitest — so they must never be picked up as part of this repository's own test suite.
 export default defineConfig({
   test: {
+    maxWorkers: 2,
     exclude: ['**/node_modules/**', '**/dist/**', 'bench/tasks/**'],
   },
 });

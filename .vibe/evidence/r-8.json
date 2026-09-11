@@ -1,81 +1,41 @@
 {
   "run": "r-8",
-  "at": "2026-09-03T17:17:15.698Z",
+  "at": "2026-09-10T00:39:26.545Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "2bf656e512e3",
+  "scenarioSet": "f7c1b0069b3c",
   "results": [
     {
-      "id": "build",
+      "id": "scoped-arm",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3440,
-      "tail": "npm notice run @su-record/vibe@4.0.3 build\nnpm notice run tsc -p tsconfig.json && chmod +x dist/cli.js"
+      "ms": 2274,
+      "tail": "bench-scoped: card, skills and hooks, no intent, next says discover\nbench-gate --self-test: 9 checks passed"
     },
     {
-      "id": "tests",
+      "id": "anomaly-task",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 7156,
+      "tail": "direction judges: 1 tasks (anomaly) · wrong answer fails, right answer passes, for every one\njudge: 13 tasks (ambiguous-brief, anomaly, ask, brownfield, handover, hidden-requirement, irreversible-trap, long-context, regression-trap, report, session-split, settlement, vibe-fix) · every check deterministic · no check reaches judge/ or key/ · no key value in an intent · settlement reference total 4500.5\nbench-no-key: no task lets a key file into a prepared workspace\nanomaly-profile: 3 anomalies named — column \"order_id\" repeats: 1 of 12 values appear more than once · column \"amount\" has 1 negative value (a refund? a reversal?) · column \"currency\" is \"EUR\" in only 1 of 12 rows"
+    },
+    {
+      "id": "handover-task",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 13595,
+      "tail": "direction judges: 1 tasks (handover) · wrong answer fails, right answer passes, for every one\nbench-handover: two clients, two sessions, both layouts in the workspace"
+    },
+    {
+      "id": "gate-is-release",
       "type": "run",
       "status": "fail",
       "exit": 1,
-      "ms": 25397,
-      "tail": "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n\n Test Files  1 failed | 15 passed (16)\n      Tests  1 failed | 82 passed (83)\n   Start at  17:17:16\n   Duration  24.79s (transform 785ms, setup 0ms, import 1.93s, tests 26.76s, environment 2ms)"
-    },
-    {
-      "id": "card-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 49,
-      "tail": "card.md 705 bytes (limit 1024)"
-    },
-    {
-      "id": "source-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 51,
-      "tail": "src (non-test) 3803 lines (limit 5000)"
-    },
-    {
-      "id": "skills-size",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 9,
-      "tail": ""
-    },
-    {
-      "id": "harness-arm",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 1038,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  17:17:41\n   Duration  251ms (transform 64ms, setup 0ms, import 87ms, tests 8ms, environment 0ms)"
-    },
-    {
-      "id": "judge-checkable",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 97,
-      "tail": "judge: 5 file checks · reference total 4500.5"
-    },
-    {
-      "id": "bench-ran",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 40,
-      "tail": "bench: 20 judged runs · arms claude-code/on, claude-code/off, codex/on, codex/off"
-    },
-    {
-      "id": "compare-answers",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 155,
-      "tail": "compare by harness · metric checks · verdict inconclusive\n  observed ranges (min–max) overlap — this sample cannot tell a difference\n  on: runs 10 · usable 10 · min 5 · max 5 · mean 5.00\n  off: runs 10 · usable 10 · min 5 · max 5 · mean 5.00"
+      "ms": 124,
+      "tail": "bench gate failed: overhead: settlement ok; overhead: vibe-fix ok; overhead: report ok; context: brownfield ok; anomaly: claude-code/scoped has 3 usable run(s) in its latest 5 attempts, needs 5"
     }
   ]
 }

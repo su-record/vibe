@@ -1,129 +1,189 @@
 {
   "run": "r-3",
-  "at": "2026-09-09T12:24:57.340Z",
+  "at": "2026-09-10T01:33:58.887Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "1aa944705c2e",
+  "scenarioSet": "1307f47659fe",
   "results": [
     {
       "id": "build",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 38871,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  37 passed (37)\n      Tests  201 passed (201)\n   Start at  12:25:01\n   Duration  34.94s (transform 1.54s, setup 0ms, import 3.52s, tests 52.05s, environment 5ms)"
+      "ms": 57782,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  44 passed (44)\n      Tests  265 passed (265)\n   Start at  01:34:09\n   Duration  47.05s (transform 1.88s, setup 0ms, import 4.16s, tests 78.54s, environment 6ms)"
     },
     {
-      "id": "stale-result",
+      "id": "scoped-arm",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2350,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 16 skipped (17)\n   Start at  12:25:41\n   Duration  1.15s (transform 624ms, setup 0ms, import 862ms, tests 91ms, environment 0ms)"
+      "ms": 1119,
+      "tail": "bench-scoped: card, skills and hooks, no intent, next says discover\nbench-gate --self-test: 9 checks passed"
     },
     {
-      "id": "approval-reverified",
+      "id": "anomaly-task",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2303,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 16 skipped (17)\n   Start at  12:25:40\n   Duration  1.09s (transform 598ms, setup 0ms, import 832ms, tests 54ms, environment 0ms)"
+      "ms": 4211,
+      "tail": "direction judges: 1 tasks (anomaly) · wrong answer fails, right answer passes, for every one\njudge: 13 tasks (ambiguous-brief, anomaly, ask, brownfield, handover, hidden-requirement, irreversible-trap, long-context, regression-trap, report, session-split, settlement, vibe-fix) · every check deterministic · no check reaches judge/ or key/ · no key value in an intent · settlement reference total 4500.5\nbench-no-key: no task lets a key file into a prepared workspace\nanomaly-profile: 3 anomalies named — column \"order_id\" repeats: 1 of 12 values appear more than once · column \"amount\" has 1 negative value (a refund? a reversal?) · column \"currency\" is \"EUR\" in only 1 of 12 rows"
     },
     {
-      "id": "parent-gate",
+      "id": "handover-task",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2446,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 16 skipped (17)\n   Start at  12:25:41\n   Duration  1.13s (transform 547ms, setup 0ms, import 775ms, tests 118ms, environment 0ms)"
-    },
-    {
-      "id": "state-files",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 2575,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  12:25:41\n   Duration  1.25s (transform 538ms, setup 0ms, import 788ms, tests 229ms, environment 0ms)"
-    },
-    {
-      "id": "hook-segments",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 4843,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 4 skipped (5)\n   Start at  12:25:43\n   Duration  3.40s (transform 249ms, setup 0ms, import 306ms, tests 2.55s, environment 0ms)"
-    },
-    {
-      "id": "bench-no-key",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 49554,
-      "tail": "judge: 11 tasks (ambiguous-brief, ask, brownfield, hidden-requirement, irreversible-trap, long-context, regression-trap, report, session-split, settlement, vibe-fix) · every check deterministic · no check reaches judge/ or key/ · no key value in an intent · settlement reference total 4500.5\nbench-no-key: no task lets a key file into a prepared workspace\ndirection judges: 3 tasks (ask, session-split, brownfield) · wrong answer fails, right answer passes, for every one"
+      "ms": 7373,
+      "tail": "direction judges: 1 tasks (handover) · wrong answer fails, right answer passes, for every one\nbench-handover: two clients, two sessions, both layouts in the workspace"
     },
     {
       "id": "gate-is-release",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 115,
-      "tail": "bench gate passed: overhead: settlement ok; overhead: vibe-fix ok; overhead: report ok; context: brownfield ok; direction: the trap separates the arms and the split costs no more tokens, per client\nbench: 294 judged runs · arms claude-code/on, codex/on, codex/off, claude-code/off"
-    },
-    {
-      "id": "retraction",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 10,
-      "tail": ""
-    },
-    {
-      "id": "queries-read-only",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 3979,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  12:25:43\n   Duration  2.57s (transform 524ms, setup 0ms, import 634ms, tests 1.71s, environment 0ms)"
-    },
-    {
-      "id": "one-procedure",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 56,
-      "tail": "procedure: card, router and README quote \"first, one check --all\" and \"on a failure, context <id> then check <id>\""
-    },
-    {
-      "id": "flaky-named",
-      "type": "run",
-      "status": "pass",
-      "exit": 0,
-      "ms": 180705,
-      "tail": "round 1/3: both passed\nround 2/3: both passed\nround 3/3: both passed\nsuite under load: 3 rounds × 2 parallel runs, nothing failed"
+      "ms": 140,
+      "tail": "bench gate passed: overhead: settlement ok; overhead: vibe-fix ok; overhead: report ok; context: brownfield ok; direction: all required tasks meet their per-client rules\nbench: 450 judged runs · arms claude-code/on, codex/on, codex/off, claude-code/off, claude-code/scoped, codex/scoped, codex/undefined, claude-code→codex/on, claude-code→codex/off, claude-code→codex/scoped"
     },
     {
       "id": "size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 206,
-      "tail": "70 files · 8144 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits"
+      "ms": 405,
+      "tail": "70 files · 8234 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits"
     },
     {
       "id": "card-size",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 93,
-      "tail": "card.md 1020 bytes (limit 1024)\n73 files · largest 347 lines (limit 400 per file) · 8523 total"
+      "ms": 279,
+      "tail": "card.md 1023 bytes (limit 1024)\n73 files · largest 347 lines (limit 400 per file) · 8641 total\nprocedure: card, router and README quote \"first, one check --all\" and \"on a failure, fix what the check names; context <id> when that is not enough\""
+    },
+    {
+      "id": "under-load",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 405032,
+      "tail": "   Duration  106.68s (transform 4.70s, setup 0ms, import 8.20s, tests 187.82s, environment 6ms)\n\nround 3/3: exit 1/1\nsuite under load: 2 child process(es) failed\nflaky under load:\n  1× × gate: approval commands and action words inside document paths pass 7185ms\n  2× FAIL  src/install/notify.test.ts > notification hook — PreToolUse(Read) advises, never blocks > gate: approval commands and action words inside document paths pass\n  1× × gate: approval commands and action words inside document paths pass 5840ms"
+    },
+    {
+      "id": "boundary-regressions",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 7835,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  3 passed (3)\n      Tests  13 passed (13)\n   Start at  01:34:02\n   Duration  4.51s (transform 464ms, setup 0ms, import 1.26s, tests 3.45s, environment 6ms)"
+    },
+    {
+      "id": "load-guard",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 5523,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  3 passed (3)\n   Start at  01:34:01\n   Duration  2.93s (transform 58ms, setup 0ms, import 105ms, tests 2.32s, environment 0ms)"
+    },
+    {
+      "id": "review-boundaries",
+      "type": "review",
+      "status": "pass",
+      "exit": 0,
+      "ms": 317079,
+      "tail": "code reviewer: PASS · in 2 · cache read 1,889 · out 12,216\ncode maintainer: PASS · in 4 · cache read 30,727 · out 11,598",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 2,
+          "cacheRead": 1889,
+          "cacheWrite": 27239,
+          "output": 12216
+        },
+        {
+          "stage": "maintainer",
+          "input": 4,
+          "cacheRead": 30727,
+          "cacheWrite": 33832,
+          "output": 11598
+        }
+      ]
+    },
+    {
+      "id": "review-load",
+      "type": "review",
+      "status": "pass",
+      "exit": 0,
+      "ms": 120835,
+      "tail": "code reviewer: PASS · in 4 · cache read 12,462 · out 2,162\ncode maintainer: PASS · in 4 · cache read 12,172 · out 2,721",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 4,
+          "cacheRead": 12462,
+          "cacheWrite": 0,
+          "output": 2162
+        },
+        {
+          "stage": "maintainer",
+          "input": 4,
+          "cacheRead": 12172,
+          "cacheWrite": 2844,
+          "output": 2721
+        }
+      ]
+    },
+    {
+      "id": "review-retirement",
+      "type": "review",
+      "status": "fail",
+      "exit": 1,
+      "ms": 320510,
+      "tail": "code reviewer: not PASS · in 2 · cache read 1,889 · out 24,946\nREJECT\nchecks/bench-gate.test.js:69 | The new \"retains retired observations\" test asserts the gate's whole joined `reason` by exact equality, naming `claude-code/on` — an arm that is only first because of the `wanted` order built inside `missingArms` (`on, off, scoped`, client insertion order) | The test's subject is that retired rows do not gate a release, but it now fails on any reordering of the arm loop or any rewording of the run-count message; it is also the only assertion in this file that does not use `expect.stringContaining`, so the next maintainer has to guess whether the exact text is load-bearing | Assert the observable outcome the test is named for — `ok: false` plus `expect.stringContaining('usable run(s)')`, or the failing result's `set`/`task` — and leave the arm name and counts out of the expectation\nKEEP | checks/bench-gate.test.js:61-64 (`still requires turn observations when a diagnostic trap is selected`) | This is the replacement for the deleted `missing trap turns` table row and is the only remaining cover for the `['turns']` metric branch in `missingArms`\nKEEP | bench/retirement.test.js:15,28 (`--task anomaly` row and the `docs/finance.md` assertion) | These pin the contract's \"anomaly's directory and explicit `--task anomaly` operation are preserved\"",
+      "reason": "reviewer did not pass",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 2,
+          "cacheRead": 1889,
+          "cacheWrite": 27628,
+          "output": 24946
+        }
+      ]
+    },
+    {
+      "id": "hook-regressions",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 8551,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  8 passed (8)\n   Start at  01:34:57\n   Duration  7.53s (transform 110ms, setup 0ms, import 145ms, tests 7.21s, environment 0ms)"
+    },
+    {
+      "id": "review-hooks",
+      "type": "review",
+      "status": "fail",
+      "exit": 1,
+      "ms": 108984,
+      "tail": "code reviewer: not PASS · in 2 · cache read 1,889 · out 8,172\nREJECT\n../../vibe-final-20260910/review-hooks/hooks/notify.js:53 | the `restore` rule is the only remaining bare-word action pattern left without the new `(?<![-/])` prefix guard, so `node scripts/check.js docs/restore` or `.vibe/db-restore.md` is still gated while the six sibling rules (reset, drop, truncate, seed, deploy, publish) now let the same path form through | the reported bug class (`.vibe/doc-reset` misclassified as destructive) is fixed for six action words and left live for a seventh, so the maintainer will get the identical report again against one rule and have to re-derive the whole fix; the new test at notify.test.ts:115 lists deploy/drop/truncate/seed/publish paths but silently omits restore, so nothing catches it | add the same `(?<![-/])` guard ahead of the word-boundary alternative only (leave the `_` alternative intact so `pg_restore` keeps matching), and extend the path-form case list to cover a slash- and hyphen-prefixed restore\n../../vibe-final-20260910/review-hooks/src/install/notify.test.ts:104 | the new gate test spawns 16 `notify.js` subprocesses (2 token policies × 8 commands) under vitest's default 5s timeout, while this file's own convention gives multi-spawn integration tests an explicit `60_000` with the reason spelled out at line 171 | a load-sensitive test with no declared timeout fails intermittently in CI and the maintainer cannot tell a real gate regression from a slow machine — exactly the load-check failure mode the reproduction record already tracks for this suite | give the test the same explicit longer timeout the sibling spawn-heavy tests carry, and/or drop the `strict`/`irreversible` outer loop, which halves the spawns without losing coverage since both policies exit through the same non-gated path here\nKEEP | hooks/notify.js:192-193 the `^vibe(?:\\s|$)` segment filter and its comment | this is the requested delegation and it correctly still inspects later segments, as notify.test.ts:124-129 proves\nKEEP | hooks/notify.js:53 the `(?:\\b|_)restore` underscore alternative | removing it would break the explicitly preserved `pg_restore` rule asserted at notify.test.ts:157\nKEEP | src/install/notify.test.ts:9-19 the sibling `fixtureHome`/`project` layout and single-root cleanup | this is the requested fixture HOME contract and the other suites depend on the same shape",
+      "reason": "reviewer did not pass",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 2,
+          "cacheRead": 1889,
+          "cacheWrite": 25903,
+          "output": 8172
+        }
+      ]
     },
     {
       "id": "r-1-vibe-size-misreads-template-literal",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 248,
-      "tail": "73 files · 8523 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
+      "ms": 256,
+      "tail": "73 files · 8641 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
       "regression": true
     },
     {
@@ -140,8 +200,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1488,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 5 skipped (7)\n   Start at  12:25:37\n   Duration  583ms (transform 186ms, setup 0ms, import 227ms, tests 167ms, environment 0ms)",
+      "ms": 1589,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  01:34:57\n   Duration  619ms (transform 203ms, setup 0ms, import 249ms, tests 181ms, environment 0ms)",
       "regression": true
     },
     {
@@ -149,8 +209,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1423,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  12:25:37\n   Duration  526ms (transform 244ms, setup 0ms, import 314ms, tests 16ms, environment 0ms)",
+      "ms": 3435,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  01:35:07\n   Duration  734ms (transform 379ms, setup 0ms, import 472ms, tests 17ms, environment 0ms)",
       "regression": true
     },
     {
@@ -158,8 +218,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 1215,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  12:25:38\n   Duration  289ms (transform 86ms, setup 0ms, import 112ms, tests 9ms, environment 0ms)",
+      "ms": 2479,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  01:35:06\n   Duration  808ms (transform 132ms, setup 0ms, import 163ms, tests 9ms, environment 0ms)",
       "regression": true
     },
     {
@@ -167,8 +227,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2167,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 13 skipped (15)\n   Start at  12:25:38\n   Duration  1.24s (transform 677ms, setup 0ms, import 258ms, tests 818ms, environment 0ms)",
+      "ms": 4003,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  01:35:07\n   Duration  1.97s (transform 1.08s, setup 0ms, import 473ms, tests 1.15s, environment 0ms)",
       "regression": true
     }
   ]

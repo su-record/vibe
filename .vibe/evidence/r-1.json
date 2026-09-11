@@ -1,98 +1,48 @@
 {
   "run": "r-1",
-  "at": "2026-09-09T21:13:20.660Z",
+  "at": "2026-09-10T02:51:05.621Z",
   "client": "claude-code",
   "model": null,
-  "scenarioSet": "5437940352f4",
+  "scenarioSet": "be9dc11f5763",
   "results": [
     {
       "id": "build",
       "type": "run",
-      "status": "fail",
-      "exit": 1,
-      "ms": 46329,
-      "tail": "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n\n Test Files  1 failed | 36 passed (37)\n      Tests  1 failed | 207 passed (208)\n   Start at  21:13:24\n   Duration  42.05s (transform 1.79s, setup 0ms, import 4.34s, tests 63.90s, environment 9ms)"
+      "status": "pass",
+      "exit": 0,
+      "ms": 75899,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  45 passed (45)\n      Tests  268 passed (268)\n   Start at  02:51:09\n   Duration  71.58s (transform 1.45s, setup 0ms, import 3.73s, tests 87.75s, environment 9ms)"
     },
     {
-      "id": "scoped-arm",
-      "type": "run",
-      "status": "blocked",
-      "exit": null,
-      "ms": 0,
-      "tail": "",
-      "reason": "blocked — needs build",
-      "blockedBy": [
-        "build"
-      ]
-    },
-    {
-      "id": "anomaly-task",
-      "type": "run",
-      "status": "blocked",
-      "exit": null,
-      "ms": 0,
-      "tail": "",
-      "reason": "blocked — needs build",
-      "blockedBy": [
-        "build"
-      ]
-    },
-    {
-      "id": "handover-task",
-      "type": "run",
-      "status": "blocked",
-      "exit": null,
-      "ms": 0,
-      "tail": "",
-      "reason": "blocked — needs build",
-      "blockedBy": [
-        "build"
-      ]
-    },
-    {
-      "id": "gate-is-release",
-      "type": "run",
-      "status": "blocked",
-      "exit": null,
-      "ms": 0,
-      "tail": "",
-      "reason": "blocked — needs scoped-arm, anomaly-task, handover-task",
-      "blockedBy": [
-        "scoped-arm",
-        "anomaly-task",
-        "handover-task"
-      ]
-    },
-    {
-      "id": "size",
-      "type": "run",
-      "status": "blocked",
-      "exit": null,
-      "ms": 0,
-      "tail": "",
-      "reason": "blocked — needs build",
-      "blockedBy": [
-        "build"
-      ]
-    },
-    {
-      "id": "card-size",
+      "id": "load-guard",
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 161,
-      "tail": "card.md 1023 bytes (limit 1024)\n73 files · largest 347 lines (limit 400 per file) · 8608 total\nprocedure: card, router and README quote \"first, one check --all\" and \"on a failure, fix what the check names; context <id> when that is not enough\""
+      "ms": 2191,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  3 passed (3)\n   Start at  02:52:26\n   Duration  732ms (transform 59ms, setup 0ms, import 84ms, tests 346ms, environment 0ms)"
     },
     {
-      "id": "under-load",
-      "type": "run",
-      "status": "blocked",
-      "exit": null,
-      "ms": 0,
-      "tail": "",
-      "reason": "blocked — needs build",
-      "blockedBy": [
-        "build"
+      "id": "review-comspec",
+      "type": "review",
+      "status": "pass",
+      "exit": 0,
+      "ms": 128939,
+      "tail": "code reviewer: PASS · in 2 · cache read 1,889 · out 5,787\ncode maintainer: PASS · in 2 · cache read 1,744 · out 3,772",
+      "usage": [
+        {
+          "stage": "reviewer",
+          "input": 2,
+          "cacheRead": 1889,
+          "cacheWrite": 3491,
+          "output": 5787
+        },
+        {
+          "stage": "maintainer",
+          "input": 2,
+          "cacheRead": 1744,
+          "cacheWrite": 3491,
+          "output": 3772
+        }
       ]
     },
     {
@@ -100,8 +50,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 274,
-      "tail": "73 files · 8608 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
+      "ms": 280,
+      "tail": "73 files · 8641 lines · largest src/core/skills.ts (347) · limits file 400 · function 50\n  every file and function within limits",
       "regression": true
     },
     {
@@ -109,7 +59,7 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 8,
+      "ms": 11,
       "tail": "",
       "regression": true
     },
@@ -118,8 +68,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2579,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  21:14:08\n   Duration  918ms (transform 285ms, setup 0ms, import 344ms, tests 188ms, environment 0ms)",
+      "ms": 1718,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 6 skipped (8)\n   Start at  02:51:06\n   Duration  773ms (transform 252ms, setup 0ms, import 308ms, tests 217ms, environment 0ms)",
       "regression": true
     },
     {
@@ -127,8 +77,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2161,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  21:14:08\n   Duration  595ms (transform 287ms, setup 0ms, import 362ms, tests 21ms, environment 0ms)",
+      "ms": 3461,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 11 skipped (12)\n   Start at  02:52:23\n   Duration  1.24s (transform 632ms, setup 0ms, import 781ms, tests 24ms, environment 0ms)",
       "regression": true
     },
     {
@@ -136,8 +86,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 2086,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  21:14:08\n   Duration  523ms (transform 171ms, setup 0ms, import 218ms, tests 23ms, environment 0ms)",
+      "ms": 3118,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 1 skipped (2)\n   Start at  02:52:23\n   Duration  669ms (transform 196ms, setup 0ms, import 270ms, tests 27ms, environment 0ms)",
       "regression": true
     },
     {
@@ -145,8 +95,8 @@
       "type": "run",
       "status": "pass",
       "exit": 0,
-      "ms": 3252,
-      "tail": "\n RUN  v4.1.11 /home/ubuntu/repos/vibe\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  21:14:08\n   Duration  1.68s (transform 762ms, setup 0ms, import 388ms, tests 787ms, environment 0ms)",
+      "ms": 3968,
+      "tail": "\n RUN  v4.1.11 /home/ubuntu/sutory/work/vibe-review-20260909/repo\n\n\n Test Files  1 passed (1)\n      Tests  2 passed | 14 skipped (16)\n   Start at  02:52:23\n   Duration  2.25s (transform 1.06s, setup 0ms, import 545ms, tests 1.22s, environment 0ms)",
       "regression": true
     }
   ]
