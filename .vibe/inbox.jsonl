@@ -17,3 +17,4 @@
 {"type":"resolve","id":"q-mtm99zlq-3s","at":"2026-09-10T04:41:16.499Z"}
 {"type":"resolve","id":"q-mtma6t6g-e7","at":"2026-09-10T04:41:16.673Z"}
 {"type":"resolve","id":"q-mtut6w7n-9l","at":"2026-09-10T04:41:16.852Z"}
+{"type":"question","id":"q-mtvgti69-1tz","at":"2026-09-10T11:49:59.746Z","question":"STUCK: the same failure (81a838fd) happened twice in a row — fde-release-evidence. How should we proceed?","options":["give a hint","change the scenario","abandon"]}
