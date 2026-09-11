@@ -72,8 +72,16 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(out.status).toBe(0);
     const status = JSON.parse(out.stdout);
     expect(status.decision).toBeUndefined();
-    expect(status.systemMessage).toContain('unmet');
-    expect(status.systemMessage).not.toContain('send everything');
+    expect(status).toEqual({});
+  });
+
+  it('malformed tool payloads do not crash the hook', () => {
+    for (const payload of [null, [], 'invalid']) {
+      const result = pre(payload);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toBe('');
+      expect(result.stderr).toBe('');
+    }
   });
 
   it('gate: approval commands and action words inside document paths pass', () => {

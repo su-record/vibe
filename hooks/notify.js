@@ -39,7 +39,10 @@ if (asPlugin) {
 }
 
 function readPayload() {
-  try { return ['stop', 'session'].includes(mode) ? sessionFiles.readPayload() : JSON.parse(fs.readFileSync(0, 'utf8')); }
+  try {
+    const value = ['stop', 'session'].includes(mode) ? sessionFiles.readPayload() : JSON.parse(fs.readFileSync(0, 'utf8'));
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : { session_id: 'invalid payload' };
+  }
   catch { return { session_id: 'invalid payload' }; }
 }
 
@@ -126,7 +129,12 @@ const cli = path.join(here, '..', 'dist', 'cli.js');
 
 // Stop never resolves a PATH command or reads a transcript as instructions.
 if (mode === 'stop') {
-  process.stdout.write(`${JSON.stringify(sessionRuntime.stopDecision(readPayload()))}\n`);
+  const result = sessionRuntime.stopDecision(readPayload());
+  // Status and failure details belong to explicit state/context requests, not the chat footer.
+  const output = result.decision === 'block'
+    ? { decision: 'block', reason: '[vibe] Work remains unverified. Run vibe state for the next step.' }
+    : {};
+  process.stdout.write(`${JSON.stringify(output)}\n`);
   process.exit(0);
 }
 if (mode === 'session') {

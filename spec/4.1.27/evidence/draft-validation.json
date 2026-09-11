@@ -1,0 +1,71 @@
+{
+  "kind": "draft-validation",
+  "at": "2026-09-10T06:54:55.803Z",
+  "scenarios": [
+    {
+      "id": "inspect-and-consent",
+      "needs": [],
+      "checkType": "run"
+    },
+    {
+      "id": "evidence-minimization",
+      "needs": [
+        "inspect-and-consent"
+      ],
+      "checkType": "run"
+    },
+    {
+      "id": "honest-scenario-handoff",
+      "needs": [
+        "evidence-minimization"
+      ],
+      "checkType": "run"
+    },
+    {
+      "id": "session-bound-stop",
+      "needs": [
+        "honest-scenario-handoff"
+      ],
+      "checkType": "run"
+    },
+    {
+      "id": "compatibility-and-release-evidence",
+      "needs": [
+        "session-bound-stop"
+      ],
+      "checkType": "run"
+    }
+  ],
+  "rejections": [],
+  "proposedCheckScripts": [
+    {
+      "path": "checks/check-trust.js",
+      "exists": false
+    },
+    {
+      "path": "checks/check-evidence-privacy.js",
+      "exists": false
+    },
+    {
+      "path": "checks/scenario-handoff.js",
+      "exists": false
+    },
+    {
+      "path": "checks/stop-session-contract.js",
+      "exists": false
+    },
+    {
+      "path": "checks/check-trust-compatibility.js",
+      "exists": false
+    }
+  ],
+  "runtimeImplemented": false,
+  "proposedAcceptanceExecuted": false,
+  "diagnostic": {
+    "path": "evidence/current-behavior.json",
+    "observedCases": 3,
+    "releaseAcceptance": false
+  },
+  "candidateProductHashUnchanged": "685918824f0f501d2176f2109d79886022f6db65520ef3c648b5188a3d1101f0",
+  "paidCohortCalls": 0
+}
