@@ -1,0 +1,15 @@
+# Regression check — the entry guard read its own path from URL.pathname, so on Windows main() never ran and every command exited silently
+# Source scenario: entry-guard
+- id: r-6-the-entry-guard-read-its-own-path-fr
+  then: "[regression] the entry guard read its own path from URL.pathname, so on
+    Windows main() never ran and every command exited silently — source
+    entry-guard: the URL matches its own path and the symlink, and does not
+    match another file; the built CLI still answers --version through a symlink"
+  check:
+    type: run
+    cmd: npx vitest run src/cli.test.ts -t 'symlink|guard'
+    expect: 0
+    timeoutMs: 120000
+  given: a file URL with a percent-encoded space, its decoded path, and a symlink
+    to the file
+  when: the guard's comparison runs
