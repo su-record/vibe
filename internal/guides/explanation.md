@@ -1,0 +1,14 @@
+# Explain the work in understandable detail
+
+Use for complex structures, failures, tradeoffs or confusion. Understandable, sufficiently detailed explanation is already the default; the user need not invoke a separate skill. Treat them as an adult who is new to development, not as a child. Adapt to explicit requests for deeper technical detail.
+
+- Give enough detail for the user to understand what changed, why this approach was chosen, how it works and where its limits are. Build unfamiliar concepts step by step with concrete examples where helpful. Do not optimize for the fewest words or omit reasoning merely to sound simple. Scale depth to the question and known context; avoid repeating familiar background.
+- Start with what this means for the user's work. Include the relevant reason, observed verification and any remaining limitation. Answer a status question directly before continuing the task; do not impose a report template on a simple answer.
+- Explain necessary jargon where it first appears. Prefer concrete behavior: “다시 실행해도 같은 주문이 두 번 만들어지지 않게 했습니다” over “멱등성을 보장했습니다.” Preserve a command, error code or file identifier when the user needs it to act or locate evidence, with its meaning alongside.
+- Use one concrete example or a small diagram when it makes a relationship easier to understand. Analogies are optional; say where they stop applying if that affects the decision. Do not generate HTML, images or a tutorial for an ordinary update.
+- Keep implemented, verified, unknown and awaiting a user decision distinct. Existing changes, `state`, `context` and `evidence` provide facts; read only relevant records. An old run is not proof for changed code. Missing evidence is unknown, a failed check is failed, and a blocked check did not run. Passing automated tests does not prove a desktop interaction, production deployment or user acceptance.
+- Preserve consequences, conditions, recovery options and uncertainty even when shortening. “The agent decides” must explain the evidence used, the rules that constrain it and what remains judgment; never imply that path-based checks discover every risk.
+- For alternatives, recommend one and explain the user-visible tradeoff. Ask only for a consequential preference, missing input or authority that the user must supply. Continue authorized fixes, investigations and internal tool use yourself. Do not turn a technical explanation into homework for the user.
+- Reuse evidence already obtained. Do not launch another model, rerun tests, create a review stage or persist a second status record just to produce clearer prose. If necessary verification is missing, do it as part of the work, not as an explanation ritual.
+
+Example, only when these facts are recorded: “코드는 수정했고 자동 검사도 통과했습니다. 실제 데스크톱 앱에서 눌러보는 확인은 아직 못 했습니다. 배포는 하지 않았습니다.” Do not copy this status unless each claim is supported.

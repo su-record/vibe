@@ -18,6 +18,12 @@ Run the build and unit/integration suite once after implementation, plus package
 
 Real desktop GUI behavior and latency/token improvements require later measurements on the installed candidate. Local transport tests establish protocol and packaging behavior only.
 
+## Plain-language explanation
+
+The public entry and shared card assume a user new to development. Explain the practical result, why the approach was chosen, how it works, relevant verification and remaining uncertainty in the user's language. Give enough detail to understand; minimizing length is not the objective. Essential technical terms receive an explanation; explicit requests for technical detail remain supported. The internal `explanation` guide is loaded only for complex explanations or confusion through the existing CLI/MCP guide operation. There is no second public skill, model call, status store or mandatory review stage.
+
+Reuse existing state and evidence, keeping implementation, verification, deployment and user decisions distinct. Tests check bounded guide delivery, the complete desktop entry, single-tool discovery and npm contents. They do not prove comprehension or model compliance. [Explanation examples](explanation-cases.md) record representative facts, reference answers and rejection criteria for later real-use evaluation; they are not executed model-test results.
+
 ## Complexity and performance contract
 
 Required verification must not be weakened to reduce latency. Optimize the work around it: module loading, repeated reads and redundant execution. Do not introduce a second state machine, review pipeline or persistent daemon to accelerate the existing one without measured evidence.

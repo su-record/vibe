@@ -3,10 +3,21 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { cmdInternal } from './internal.js';
+import { packageRoot } from '../core/paths.js';
 
 let root: string;
 beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-internal-')); });
 afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
+
+it('loads explanation guidance only on demand while the entry carries the default explanation policy', () => {
+  const entry = fs.readFileSync(path.join(packageRoot(), 'skills/vibe/SKILL.md'), 'utf8');
+  const guide = fs.readFileSync(path.join(packageRoot(), 'internal/guides/explanation.md'), 'utf8');
+  expect(cmdInternal(root, 'guide', ['explanation']).json).toEqual({ name: 'explanation', text: guide });
+  expect(cmdInternal(root, 'brief', ['entry']).json).toMatchObject({ guidance: entry });
+  expect(cmdInternal(root, 'brief', []).json).toMatchObject({ guidance: null });
+  expect(cmdInternal(root, 'brief', ['entry']).text).not.toContain(guide);
+  expect(fs.readdirSync(root)).toEqual([]);
+});
 
 it('provides task guidance without initializing a project or calling a model', () => {
   const guide = cmdInternal(root, 'guide', ['code']);

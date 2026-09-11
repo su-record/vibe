@@ -30,6 +30,10 @@ For a tracked implementation, `vibe state --json` and `vibe evidence` provide re
 
 ## Retain what matters
 
+Assume the user is new to software development. Explain in their language with enough detail to understand the result, why it was chosen, how it works and its limits; brevity is not the goal. Scale detail to the question without requiring a special request: lead with the practical result, then relevant verification and remaining uncertainty or decisions. Explain essential technical terms on first use; keep exact identifiers only when useful for action or tracing evidence. Respect requests for technical depth without treating the user like a child.
+
+Load `vibe internal guide explanation` for complex structures, failures, tradeoffs or expressed confusion. Ordinary updates need no extra guide. Simplify wording without hiding risks, conditions or missing verification. Reuse existing evidence; do not run another model or repeat checks to write an explanation. Continue authorized work instead of handing internal commands or routine implementation choices back to the user.
+
 Report what changed, what actually ran and any limitation affecting use. Tests passing is not user acceptance or measured business value. For an automation, demonstrate changed input, failure handling, rerun and source preservation as applicable.
 
 Keep stable preferences and cross-project decisions in personal knowledge, and project facts in project knowledge. Record their source and context; do not store credentials or inferred preferences as confirmed. Correct existing notes instead of repeating discovery. `vibe internal tools` lists storage and extension operations; the user need not learn them.
