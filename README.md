@@ -18,7 +18,7 @@ Project knowledge remains in `.vibe/knowledge`; personal knowledge in `~/.config
 
 Workflow and antislop guidance are local resources loaded only for the task at hand. Code, design and language guidance is applied during authoring; it does not automatically trigger editorial agents. Independent model review is optional and should target a concrete need.
 
-Skill discovery, installation and creation are retained. Vibe first checks the host's capabilities and installed project skills. If an actual gap remains, it researches a suitable skill, previews installation or creates a reusable procedure. New project skills live under `.vibe/skills/installed` and are loaded through their registry instead of appearing as extra host commands. Existing user skills are not removed merely because they have similar names.
+Skill discovery, installation and creation are retained. Vibe first checks the host's capabilities and installed project skills. For an actual gap or a concrete opportunity to improve accuracy, speed or recurring work, it researches a suitable skill even when direct implementation is possible. It checks host compatibility and representative behavior, and retains useful findings for reuse. Routine edits need no search; installation alone does not establish usefulness. New project skills live under `.vibe/skills/installed` and are loaded through their registry instead of appearing as extra host commands. Existing user skills are not removed merely because they have similar names.
 
 Use meaningful existing tests and required repository checks. Do not repeat unchanged verification merely to advance a workflow stage. Recorded machine verification, user acceptance and measured business value remain distinct.
 

@@ -5,3 +5,7 @@ Understand the user's work, desired outcome, friction and constraints from acces
 For AX opportunities, establish the source window, deduplicate work events and keep unmeasured effort unknown. Identify feasible recurring work, required tools/access, failure cases and human review points. Compare supported candidates against the user's objective and select one useful pilot. Do not invent savings or ROI.
 
 Agree on observable behavior, implement against real samples and validate changed/invalid inputs. Learn from actual use and retain useful decisions. A source export does not authorize external effects.
+
+For substantial source documents or focused questions across files, use the reading guide to choose local extraction, direct reading or an optional reader model. Preserve source references and extraction limitations.
+
+When source observations reveal repeated manual work, unfamiliar formats or recurring failures, consider the extensions guide even if direct implementation is possible. Look for a concrete benefit and reuse installed capabilities and prior findings first.

@@ -7,7 +7,7 @@ The user wants a personal FDE inside the existing Claude and Codex desktop integ
 - Expose only the vibe entry skill. Workflow and antislop instructions are internal, loaded on demand without a model call.
 - Preserve npm installation, Codex registration and Claude Desktop MCPB transport. Expose one MCP tool with discoverable internal operations.
 - Reuse project and personal knowledge. A brief reads relevant context without running tests, indexing the repository, creating records or invoking another model.
-- Preserve skill research, installation and creation. Use them for an identified capability gap, not as mandatory steps for every request.
+- Preserve skill research, installation and creation. Use them for an identified capability gap or concrete opportunity to improve accuracy, speed or recurring work. Check installed capabilities and retained findings first; research is not a mandatory stage for every request.
 - Reuse existing user authority, work in the current checkout and ask only about consequential missing information. No automatic review, new worktree or token exchange for ordinary work.
 - Keep the existing low-level verification, consent and strict-policy compatibility APIs for old projects. Do not silently relax an explicitly configured policy or claim legacy DONE for a task outside its contract.
 - Keep historical evidence intact. No publishing, live client installation, deletion of existing user worktrees or paid model evaluation is part of this implementation.

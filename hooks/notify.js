@@ -32,7 +32,10 @@ if (asPlugin) {
   const home = process.env.VIBE_HOME_DIR || os.homedir();
   for (const file of [path.join(home, '.claude', 'settings.json'), path.join(home, '.codex', 'hooks.json')]) {
     try {
-      if ((sessionFiles.optional(file, 65536) ?? '').includes('hooks/notify.js')) process.exit(0);
+      const settings = JSON.parse(sessionFiles.optional(file, 65536) ?? '{}');
+      const owned = Object.values(settings.hooks ?? {}).some(entries => entries.some(entry =>
+        entry.hooks?.some(hook => hook.command?.replaceAll('\\', '/').includes('hooks/notify.js'))));
+      if (owned) process.exit(0);
     } catch {
       /* no such file — keep going */
     }
@@ -129,6 +132,10 @@ function adviseRead(payload) {
 const cli = path.join(here, '..', 'dist', 'cli.js');
 
 // Stop never resolves a PATH command or reads a transcript as instructions.
+if (mode === 'stop' && personal) {
+  process.stdout.write('{}\n');
+  process.exit(0);
+}
 if (mode === 'stop') {
   const result = sessionRuntime.stopDecision(readPayload());
   // Status and failure details belong to explicit state/context requests, not the chat footer.

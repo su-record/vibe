@@ -36,7 +36,7 @@ export interface LedgerEvent {
   harness?: 'on' | 'off' | 'scoped';
   run?: string;
   scenarioSet?: string;
-  scenarios?: Record<string, 'pass' | 'fail' | 'pending' | 'blocked' | 'handoff'>;
+  scenarios?: Record<string, 'pass' | 'fail' | 'pending' | 'blocked' | 'handoff' | 'stale'>;
   passed?: number;
   failed?: number;
   failHash?: string | null;

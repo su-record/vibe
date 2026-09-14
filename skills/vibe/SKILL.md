@@ -18,8 +18,10 @@ For a tracked implementation, `vibe state --json` and `vibe evidence` provide re
 
 - Resolve consequential unknowns from accessible evidence before asking. A clear request needs no additional approval ceremony.
 - Work in the current checkout with one writer. Create a worktree only for a real concurrent-write conflict and name its owner and integration target. Read-only research and review need no branch.
-- Use host tools and installed skills first. Load `vibe internal guide extensions` only for a capability gap: it covers research, installation and creation. Do not install on speculation.
+- Use host tools and installed skills first. Load `vibe internal guide extensions` for a capability gap or a concrete opportunity to improve accuracy, speed or recurring work with an existing skill, even when you could implement it yourself. Reuse saved findings; routine edits need no search or speculative installation.
 - Load a short guide only when needed: `vibe internal guide discover` for ambiguous work or AX opportunities; `delivery` for integration and operation; `code`, `design`, `ko` or `en` for authoring. These are local reads, not model calls. Do not load every guide.
+- For long material, document extraction or focused questions over files, load `vibe internal guide reading`. Read short files and code being changed directly; use a separate reader only when its context benefit justifies the added call.
+- For a consequential capability unknown or ambiguous experiment, load `vibe internal guide feasibility`. Separate documented facts, observations and inference; test the smallest real boundary before expanding the solution.
 - For an implementation, use `vibe internal risks --json` to locate uncovered risk signals and reuse relevant existing checks. The check engine repeats this detection before execution and completion.
 - For data, access-control, public-interface, deployment or multi-system changes, load `vibe internal guide verification` before implementation. Record affected outcomes with risk obligations and use the existing check engine; do not omit required failure and recovery evidence.
 - For reported latency/cost or repeated work, load `vibe internal guide optimization`. Measure only when needed; preserve verification and authority boundaries.

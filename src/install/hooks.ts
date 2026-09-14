@@ -16,7 +16,7 @@ interface Settings {
 const NOTIFY_MARK = 'hooks/notify.js';
 
 function notifyCommand(mode: 'post' | 'pre' | 'stop' | 'session'): string {
-  return `node "${path.join(packageRoot(), NOTIFY_MARK)}" ${mode}`;
+  return `node "${path.join(packageRoot(), NOTIFY_MARK).split(path.sep).join('/')}" ${mode}`;
 }
 
 /** Claude Code and Codex run the same five: the tool hooks, Stop and SessionStart (bounded status only). Codex runs them once their trust is granted. */
@@ -28,15 +28,22 @@ function wantedHooks(): Array<[string, string, string]> {
   ];
 }
 
+function isNotifyCommand(command: string): boolean {
+  return command.replaceAll('\\', '/').includes(NOTIFY_MARK);
+}
 function isNotify(entry: HookEntry): boolean {
-  return entry.hooks.some((h) => h.command.includes(NOTIFY_MARK));
+  return entry.hooks.some(h => isNotifyCommand(h.command));
+}
+function withoutNotify(entries: HookEntry[]): HookEntry[] {
+  return entries.map(entry => ({ ...entry, hooks: entry.hooks.filter(h => !isNotifyCommand(h.command)) }))
+    .filter(entry => entry.hooks.length > 0);
 }
 
 /** Notification hook — it never judges. Other hooks in the file are left alone; notify entries from another install path are replaced. */
 export function installHookFile(file: string): 'added' | 'unchanged' {
   const settings = readJson<Settings>(file) ?? {};
   const hooks: Record<string, HookEntry[]> = {};
-  for (const [event, list] of Object.entries(settings.hooks ?? {})) hooks[event] = list.filter((entry) => !isNotify(entry));
+  for (const [event, list] of Object.entries(settings.hooks ?? {})) hooks[event] = withoutNotify(list);
   for (const [event, matcher, command] of wantedHooks()) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' || event === 'SessionStart' ? 5 : 20 }] }];
   const next = { ...settings, hooks };
   if (JSON.stringify(next) === JSON.stringify(settings)) return 'unchanged';
@@ -49,8 +56,8 @@ export function removeHookFile(file: string): boolean {
   if (!settings?.hooks) return false;
   let changed = false;
   for (const [event, list] of Object.entries(settings.hooks)) {
-    const kept = list.filter((entry) => !isNotify(entry));
-    if (kept.length !== list.length) {
+    const kept = withoutNotify(list);
+    if (list.some(isNotify)) {
       changed = true;
       if (kept.length === 0) delete settings.hooks[event];
       else settings.hooks[event] = kept;
