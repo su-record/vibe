@@ -59,7 +59,7 @@ export async function cmdRead(root: string, files: string[], flags: Flags): Prom
     const session = r.session.id ? `session ${r.session.resumed ? 'resumed' : 'new'}` : 'no session';
     const cache = u ? `cache read ${u.cacheRead.toLocaleString('en-US')} · write ${u.cacheWrite.toLocaleString('en-US')} · input ${u.input.toLocaleString('en-US')}` : `${r.reply.length} chars out`;
     if (flags['json'] !== true) process.stderr.write(`[vibe read] ${r.files.length} file(s) · ${r.chars.toLocaleString('en-US')} chars · ${r.reader} · ${session} · ${cache} · ${(r.ms / 1000).toFixed(1)}s\n`);
-    return { json: r, text: r.reply, code: 0 };
+    return { json: r, text: `Read scope (extracted content only): ${JSON.stringify(r.scope)}\n\n${r.reply}`, code: 0 };
   }
   const docs = files.map((file) => readDocument(root, file, options));
   const text = docs.map((d) => `${d.file} · ${d.format} · read by ${d.method} · ${d.sections.length} section(s)${d.truncated ? ' · truncated' : ''}\n\n${d.text}`).join('\n\n');

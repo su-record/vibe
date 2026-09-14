@@ -218,3 +218,35 @@ describe('vibe read --ask — the harness reads for the model', () => {
     expect(systemPromptArgs('x', 'linux')).toEqual(['--system-prompt', 'x']);
   });
 });
+
+it('retains source scope and extraction identity in the reader prompt and reply', async () => {
+  process.env['VIBE_READER_CMD'] = echoReader();
+  const first = await askReader(root, ['a.ts'], 'what is a?');
+  expect(first.scope[0]).toMatchObject({ file: 'a.ts', format: 'text', method: 'utf-8', selection: {}, sections: 1, truncated: false });
+  expect(first.reply).toContain(JSON.stringify(first.scope));
+  fs.writeFileSync(path.join(root, 'a.ts'), 'export const a = 9;\n');
+  const second = bundleFiles(root, ['a.ts']);
+  expect(second.scope[0]?.extractedSha256).not.toBe(first.scope[0]?.extractedSha256);
+});
+
+it('rejects an oversized source before invoking a reader', async () => {
+  const marker = path.join(root, 'reader-ran');
+  fs.writeFileSync(path.join(root, 'reader.cjs'), "require('fs').writeFileSync('reader-ran','yes')");
+  process.env['VIBE_READER_CMD'] = 'node reader.cjs';
+  fs.writeFileSync(path.join(root, 'huge.html'), '<p>' + 'x'.repeat(READER_MAX_CHARS + 100) + '</p>');
+  await expect(askReader(root, ['huge.html'], 'what is missing?')).rejects.toThrow(/exceed/);
+  expect(fs.existsSync(marker)).toBe(false);
+});
+
+it('counts scope and file wrappers against the reader input budget', () => {
+  fs.writeFileSync(path.join(root, 'empty.txt'), '');
+  expect(() => bundleFiles(root, Array.from({ length: 2000 }, () => 'empty.txt'))).toThrow(/including scope exceeds/);
+});
+
+it('records an applied PDF page selection without claiming whole-document coverage', () => {
+  const content = 'BT (Selected page) Tj ET';
+  fs.writeFileSync(path.join(root, 'sample.pdf'), `%PDF-1.4\n1 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\ntrailer\n<< >>\n%%EOF`);
+  const bundle = bundleFiles(root, ['sample.pdf'], { pages: '1' });
+  expect(bundle.scope[0]).toMatchObject({ file: 'sample.pdf', format: 'pdf', selection: { pages: '1' }, sections: 1, truncated: false });
+  expect(bundle.text).toContain('extracted content only');
+});
