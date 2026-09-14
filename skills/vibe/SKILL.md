@@ -16,6 +16,7 @@ For a tracked implementation, `vibe state --json` and `vibe evidence` provide re
 
 ## Deliver useful work
 
+- For recurring workflows, user corrections, actual-use failures or repeated workarounds, load `vibe internal guide fieldwork`. Learn the user’s operating meanings from real work, apply corrections to subsequent actions, and retain reusable findings in existing knowledge.
 - Resolve consequential unknowns from accessible evidence before asking. A clear request needs no additional approval ceremony.
 - Work in the current checkout with one writer. Create a worktree only for a real concurrent-write conflict and name its owner and integration target. Read-only research and review need no branch.
 - Use host tools and installed skills first. Load `vibe internal guide extensions` for a capability gap or a concrete opportunity to improve accuracy, speed or recurring work with an existing skill, even when you could implement it yourself. Reuse saved findings; routine edits need no search or speculative installation.

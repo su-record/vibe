@@ -9,7 +9,7 @@ let root: string;
 beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-internal-')); });
 afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
 
-it.each(['explanation', 'feasibility', 'reading', 'extensions'])('loads %s guidance only on demand while the entry stays compact', name => {
+it.each(['explanation', 'feasibility', 'reading', 'extensions', 'fieldwork'])('loads %s guidance only on demand while the entry stays compact', name => {
   const entry = fs.readFileSync(path.join(packageRoot(), 'skills/vibe/SKILL.md'), 'utf8');
   const guide = fs.readFileSync(path.join(packageRoot(), `internal/guides/${name}.md`), 'utf8');
   expect(cmdInternal(root, 'guide', [name]).json).toEqual({ name, text: guide });
@@ -47,4 +47,20 @@ it('keeps extension research, installation and creation reachable through intern
   expect(help.text).toContain('skill search');
   expect(help.text).toContain('skill add');
   expect(help.text).toContain('skill create');
+});
+
+it('keeps operating context and corrections visible beyond the ordinary note limit without loading bodies', () => {
+  const directory = path.join(root, '.vibe', 'knowledge');
+  fs.mkdirSync(directory, { recursive: true });
+  for (let i = 0; i < 25; i++) fs.writeFileSync(path.join(directory, `a-${i}.md`), 'ordinary');
+  for (const name of ['work-context.md', 'corrections.md', 'reuse.md']) fs.writeFileSync(path.join(directory, name), 'PRIVATE_BODY_NOT_FOR_AUTOMATIC_LOADING');
+  fs.mkdirSync(path.join(directory, 'a-directory.md'));
+  const before = fs.readdirSync(directory).sort();
+  const result = cmdInternal(root, 'brief', []);
+  const notes = (result.json as { notes: string[] }).notes.filter(file => file.startsWith(directory));
+  expect(notes).toHaveLength(20);
+  expect(notes.slice(0, 3).map(file => path.basename(file))).toEqual(['corrections.md', 'work-context.md', 'reuse.md']);
+  expect(notes).not.toContain(path.join(directory, 'a-directory.md'));
+  expect(JSON.stringify(result)).not.toContain('PRIVATE_BODY_NOT_FOR_AUTOMATIC_LOADING');
+  expect(fs.readdirSync(directory).sort()).toEqual(before);
 });
