@@ -9,10 +9,10 @@ let root: string;
 beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-internal-')); });
 afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
 
-it('loads explanation guidance only on demand while the entry carries the default explanation policy', () => {
+it.each(['explanation', 'feasibility', 'reading', 'extensions'])('loads %s guidance only on demand while the entry stays compact', name => {
   const entry = fs.readFileSync(path.join(packageRoot(), 'skills/vibe/SKILL.md'), 'utf8');
-  const guide = fs.readFileSync(path.join(packageRoot(), 'internal/guides/explanation.md'), 'utf8');
-  expect(cmdInternal(root, 'guide', ['explanation']).json).toEqual({ name: 'explanation', text: guide });
+  const guide = fs.readFileSync(path.join(packageRoot(), `internal/guides/${name}.md`), 'utf8');
+  expect(cmdInternal(root, 'guide', [name]).json).toEqual({ name, text: guide });
   expect(cmdInternal(root, 'brief', ['entry']).json).toMatchObject({ guidance: entry });
   expect(cmdInternal(root, 'brief', []).json).toMatchObject({ guidance: null });
   expect(cmdInternal(root, 'brief', ['entry']).text).not.toContain(guide);

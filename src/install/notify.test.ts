@@ -154,3 +154,30 @@ describe('notification hook — PreToolUse(Read) advises, never blocks', () => {
     expect(again.stdout).not.toContain('container');
   }, 60_000); // Like the other CLI integration tests above, this starts many Node processes under load.
 });
+
+it('personal Stop never evaluates the session or reads its payload', () => {
+  const hooks = path.join(fixture, 'hooks');
+  fs.cpSync(path.join(packageRoot(), 'hooks'), hooks, { recursive: true });
+  fs.writeFileSync(path.join(fixture, 'package.json'), '{"type":"module"}');
+  fs.writeFileSync(path.join(hooks, 'session-state.cjs'), "module.exports = { stopDecision() { throw new Error('session evaluation invoked'); } };");
+  const out = spawnSync(process.execPath, [path.join(hooks, 'notify.js'), 'stop', '--personal'], {
+    cwd: project, input: 'invalid-json', encoding: 'utf8', timeout: 5000,
+  });
+  expect(out.status).toBe(0);
+  expect(out.stderr).toBe('');
+  expect(JSON.parse(out.stdout)).toEqual({});
+});
+
+it('plugin defers to a home hook with Windows backslashes', () => {
+  fs.mkdirSync(path.join(fixtureHome, '.codex'));
+  fs.writeFileSync(path.join(fixtureHome, '.codex/hooks.json'), JSON.stringify({ hooks: { SessionStart: [
+    { hooks: [{ type: 'command', command: 'node "C:\\Users\\My Name\\vibe\\hooks\\notify.js" session' }] },
+  ] } }));
+  const out = spawnSync(process.execPath, [path.join(packageRoot(), 'hooks/notify.js'), 'session', '--plugin'], {
+    cwd: project, input: '{}', encoding: 'utf8', timeout: 5000,
+    env: { ...process.env, VIBE_HOME_DIR: fixtureHome },
+  });
+  expect(out.status).toBe(0);
+  expect(out.stdout).toBe('');
+  expect(out.stderr).toBe('');
+});

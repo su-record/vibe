@@ -12,3 +12,5 @@ Use for complex structures, failures, tradeoffs or confusion. Understandable, su
 - Reuse evidence already obtained. Do not launch another model, rerun tests, create a review stage or persist a second status record just to produce clearer prose. If necessary verification is missing, do it as part of the work, not as an explanation ritual.
 
 Example, only when these facts are recorded: “코드는 수정했고 자동 검사도 통과했습니다. 실제 데스크톱 앱에서 눌러보는 확인은 아직 못 했습니다. 배포는 하지 않았습니다.” Do not copy this status unless each claim is supported.
+
+Keep preparation, execution and confirmation distinct. Say “the command is prepared” when it has not run, and “this candidate cause reproduces the symptom” when the actual incident is not yet linked. Explain a blocked experiment as the missing prerequisite and its effect on the conclusion. Do not turn a successful schema check, local simulation or test suite into a claim of live integration or user acceptance.

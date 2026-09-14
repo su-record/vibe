@@ -1,3 +1,4 @@
+import { artifactsFresh, captureArtifacts, type ArtifactProof } from './artifacts.js';
 import { requireRiskCoverage, uncoveredRisks } from './risk-signals.js';
 import { createHash } from 'node:crypto';
 import { summarizeFailure, failureLine, type FailureSummary } from './failure.js';
@@ -34,7 +35,7 @@ export type LastResult = 'pass' | 'fail' | 'pending' | 'blocked' | 'stale' | 'ha
 export const MAX_PARALLEL = 4;
 export interface ResultsFile {
   /** `tree`: the tree hash the result was taken on — a result from another tree is stale and counts as not passed. */
-  [id: string]: { last: LastResult; at: string; run: string; tree?: string; failure?: FailureSummary };
+  [id: string]: { last: LastResult; at: string; run: string; tree?: string; failure?: FailureSummary; artifacts?: ArtifactProof };
 }
 
 export interface ScenarioOutcome {
@@ -47,6 +48,7 @@ export interface ScenarioOutcome {
   signal?: string | null;
   failureCode?: string;
   failure?: FailureSummary;
+  artifacts?: ArtifactProof;
   capture?: CheckResult['capture'];
   executionContext?: string;
   evidenceId?: string;
@@ -84,8 +86,23 @@ export function readResults(root: string): ResultsFile {
   const tree = treeHash(root);
   const live: ResultsFile = {};
   // A pass is bound to the tree it was taken on: any other tree makes it stale, never DONE
-  for (const [id, r] of Object.entries(stored)) live[id] = r.last === 'pass' && r.tree !== tree ? { ...r, last: 'stale' } : r;
-  return foldHandoffResults(root, live);
+  for (const [id, r] of Object.entries(stored)) live[id] = r.last === 'pass' && (r.tree !== tree || !artifactsFresh(root, r.artifacts)) ? { ...r, last: 'stale' } : r;
+  const results = foldHandoffResults(root, live);
+  if (Object.values(results).some(r => r.last === 'stale')) invalidateDependents(results, [...loadScenarios(root), ...listRegressions(root)]);
+  return results;
+}
+
+function invalidateDependents(results: ResultsFile, scenarios: Scenario[]): void {
+  let changed = Object.values(results).some(r => r.last === 'stale');
+  while (changed) {
+    changed = false;
+    for (const s of scenarios) {
+      const result = results[s.id];
+      if (result?.last !== 'pass' || !s.needs?.some(id => results[id]?.last === 'stale')) continue;
+      result.last = 'stale';
+      changed = true;
+    }
+  }
 }
 
 async function execute(scenario: Scenario, root: string): Promise<CheckResult> {
@@ -118,7 +135,7 @@ function failHashOf(outcomes: ScenarioOutcome[]): string | null {
 
 export function scenarioSetHash(scenarios: Scenario[]): string {
   const hash = createHash('sha256');
-  for (const s of [...scenarios].sort((a, b) => a.id.localeCompare(b.id))) hash.update(`${s.id}|${JSON.stringify({ check: s.check, needs: s.needs, risk: s.risk })}\n`);
+  for (const s of [...scenarios].sort((a, b) => a.id.localeCompare(b.id))) hash.update(`${s.id}|${JSON.stringify({ check: s.check, needs: s.needs, risk: s.risk, artifacts: s.artifacts })}\n`);
   return hash.digest('hex').slice(0, 12);
 }
 
@@ -154,9 +171,15 @@ async function runOne(root: string, scenario: Scenario & { regression?: boolean 
   let result: CheckResult;
   try { requireConsent(root); result = await execute(scenario, root); }
   catch { result = { pass: false, exit: null, ms: 0, tail: '', failureCode: 'adapter-error' }; }
+  let artifacts: ArtifactProof | undefined;
+  if (result.pass && scenario.artifacts) {
+    try { artifacts = captureArtifacts(root, scenario.artifacts); }
+    catch { result = { ...result, pass: false, failureCode: 'artifact-unavailable' }; }
+  }
   const status: LastResult = isHuman(scenario) ? 'pending' : result.pass ? 'pass' : 'fail';
   if (isHuman(scenario)) askHumanOnce(root, scenario);
   const outcome: ScenarioOutcome = { id: scenario.id, type: scenario.check.type, status, exit: result.exit, ms: result.ms, tail: '' };
+  if (artifacts) outcome.artifacts = artifacts;
   if (status === 'fail') { outcome.failureCode = result.failureCode ?? `${scenario.check.type}-failed`; outcome.reason = outcome.failureCode; outcome.failure = summarizeFailure(root, scenario, result); }
   outcome.capture = result.capture ?? outputCapture().finish(result.failureCode !== 'adapter-error').capture;
   if (result.signal !== undefined) outcome.signal = result.signal;
@@ -186,8 +209,10 @@ async function runLayers(root: string, selected: Array<Scenario & { regression?:
   const selectedIds = new Set(selected.map((s) => s.id));
   for (const [id, r] of Object.entries(previous)) if (!selectedIds.has(id)) last[id] = r.last;
   const outcomes: ScenarioOutcome[] = [];
+  const proofs = new Map(Object.entries(previous).map(([id, r]) => [id, r.artifacts]));
   let waiting = [...selected];
   while (waiting.length > 0) {
+    for (const [id, proof] of proofs) if (last[id] === 'pass' && !artifactsFresh(root, proof)) last[id] = 'stale';
     const stillToRun = new Set(waiting.map((s) => s.id));
     const ready = waiting.filter((s) => (s.needs ?? []).every((n) => last[n] === 'pass'));
     // A parent that will not run in this invocation and has not passed blocks its dependents.
@@ -203,10 +228,14 @@ async function runLayers(root: string, selected: Array<Scenario & { regression?:
       break;
     }
     for (let i = 0; i < ready.length; i += MAX_PARALLEL) {
-      const batch = await Promise.all(ready.slice(i, i + MAX_PARALLEL).map((s) => runOne(root, s, options)));
+      const batch = await Promise.all(ready.slice(i, i + MAX_PARALLEL).map((s) => {
+        const stale = (s.needs ?? []).filter(id => !artifactsFresh(root, proofs.get(id)));
+        return stale.length ? blocked(s, stale) : runOne(root, s, options);
+      }));
       for (const o of batch) {
         outcomes.push(o);
         last[o.id] = o.status;
+        proofs.set(o.id, o.artifacts);
       }
     }
   }
@@ -310,7 +339,18 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   requireRiskCoverage(root, universe);
   const results: ResultsFile = { ...previous };
   const tree = treeHash(root); // after the checks ran: a check that writes build output is part of the tree it passed on
-  for (const o of outcomes) results[o.id] = { last: o.status, at, run, tree, ...(o.failure ? { failure: o.failure } : {}) };
+  for (const o of outcomes) results[o.id] = { last: o.status, at, run, tree, ...(o.failure ? { failure: o.failure } : {}), ...(o.artifacts ? { artifacts: o.artifacts } : {}) };
+  for (const [id, r] of Object.entries(results)) {
+    if (r.last !== 'pass' || artifactsFresh(root, r.artifacts)) continue;
+    r.last = 'stale';
+    const outcome = outcomes.find(o => o.id === id);
+    if (outcome) { outcome.status = 'stale'; outcome.reason = 'artifact-changed'; }
+  }
+  const executed = new Set(outcomes.map(o => o.id));
+  const changedOutputs = new Set(Object.entries(previous).filter(([, r]) => r.artifacts && !artifactsFresh(root, r.artifacts)).map(([id]) => id));
+  for (const s of universe) if (!executed.has(s.id) && results[s.id]?.last === 'pass' && ancestorsOf(universe, [s.id]).some(id => changedOutputs.has(id))) results[s.id]!.last = 'stale';
+  invalidateDependents(results, universe);
+  for (const o of outcomes) if (o.status === 'pass' && results[o.id]?.last === 'stale') { o.status = 'stale'; o.reason = 'prerequisite-stale'; }
   writeJson(resultsPath(root), results);
   const implemented = outcomes.filter((o) => o.status === 'pass' && previous[o.id]?.last !== 'pass').map((o) => o.id);
   const edges = implementsEdges(root, implemented);
@@ -335,8 +375,8 @@ function recordReport(root: string, report: CheckReport, scenarios: Scenario[], 
   const { run, at, outcomes, passed, failed, failHash } = report;
   const evidence = { schemaVersion: 2, run, at, intentHash: readState(root).intentHash, client: detectClient(), model: detectModel(), scenarioSet: scenarioSetHash(scenarios), results: outcomes.map(({ diagnostic: _private, ...outcome }) => outcome) };
   writeRunEvidence(root, run, evidence);
-  const scenarioMap: Record<string, Exclude<LastResult, 'stale'>> = {};
-  for (const o of outcomes) scenarioMap[o.id] = o.status as Exclude<LastResult, 'stale'>;
+  const scenarioMap: Record<string, LastResult> = {};
+  for (const o of outcomes) scenarioMap[o.id] = o.status;
   const harness = detectHarness();
   record(root, { event: 'check', client: evidence.client, model: evidence.model, ...(harness ? { harness } : {}), run, scenarioSet: evidence.scenarioSet, scenarios: scenarioMap, passed, failed, failHash, turns: reportedTurns(), costUsd: reportedCostUsd(), ms: outcomes.reduce((a, o) => a + o.ms, 0), edges });
 
@@ -348,7 +388,7 @@ export function invalidateDoneIfEdited(root: string): boolean {
   if (state.state !== 'DONE' || !state.doneTree) return false;
   const basis = readSourceBasis(root);
   const currentHash = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '', basis);
-  if (uncoveredRisks(root, loadScenarios(root)).length === 0 && treeHash(root) === state.doneTree && currentHash === state.intentHash && (sourceValidity(root, basis)?.valid ?? true) && consentStatus(root).valid) return false;
+  if (uncoveredRisks(root, loadScenarios(root)).length === 0 && treeHash(root) === state.doneTree && currentHash === state.intentHash && (sourceValidity(root, basis)?.valid ?? true) && consentStatus(root).valid && Object.values(readJson<ResultsFile>(resultsPath(root)) ?? {}).every(r => r.last !== 'pass' || artifactsFresh(root, r.artifacts))) return false;
   writeState(root, { ...state, state: 'RUNNING', doneAt: null, doneTree: null });
   return true;
 }

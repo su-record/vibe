@@ -1,4 +1,5 @@
 import YAML from 'yaml';
+import { artifactPathsValid } from './artifact-paths.js';
 import { bindRiskChecks, riskReason, type Risk } from './verification.js';
 import { mutationOf } from './checks/mutation.js';
 
@@ -74,6 +75,8 @@ export interface Scenario {
   needs?: string[];
   /** Explicitly reviewed verifier bytes, separate from artifacts being built. */
   verifiers?: string[];
+  /** Concrete output files whose bytes must still exist when reusing a pass. */
+  artifacts?: string[];
 }
 
 export interface Rejection {
@@ -178,6 +181,7 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (needs === null) return void rejections.push({ id, reason: 'needs must be a list of scenario ids' });
     const verifiers = strList(item['verifiers']);
     if (verifiers === null) return void rejections.push({ id, reason: 'verifiers must be a list of file paths' });
+    if (item['artifacts'] !== undefined && !artifactPathsValid(item['artifacts'])) return void rejections.push({ id, reason: 'artifacts must contain 1–16 project-relative file paths outside .git and .vibe' });
     const invalidRisk = item['risk'] === undefined ? null : riskReason(item['risk']);
     if (invalidRisk) return void rejections.push({ id, reason: invalidRisk });
     seen.add(id);
@@ -191,6 +195,7 @@ export function parseScenarios(text: string): ParsedScenarios {
     if (irreversible) scenario.irreversible = irreversible;
     if (needs.length > 0) scenario.needs = needs;
     if (verifiers.length > 0) scenario.verifiers = verifiers;
+    if (item['artifacts'] !== undefined) scenario.artifacts = item['artifacts'] as string[];
     scenarios.push(scenario);
   });
   detectMutations(scenarios);
