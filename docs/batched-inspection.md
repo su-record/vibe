@@ -1,0 +1,13 @@
+# Compound inspection with existing tools
+
+Related search, path selection, bounded file reads and deterministic filtering can run within the host's existing code/shell execution. Vibe's reading and optimization guides now explain when to batch them and what evidence to retain. Simple searches remain direct tool calls. No additional runtime, installed package, blanket search-tool ban or model call is introduced.
+
+A useful result includes the selected search scope and filters, relevant matches and source locations, skipped/unreadable inputs, and truncation/completeness when the underlying tool provides them. Preserve these fields when returning a count or projected list; unknown completeness is not success. Independent reads may be batched, but dependent actions remain sequential. Editing stays within existing host permission, diff and verification behavior.
+
+The existing reader's `--ask` result now includes `scope`: one record per input with file, format, extraction method, applied PDF page/XLSX sheet selector, selected section count, truncation and SHA-256 of extracted reader content. Plain CLI answers also carry that scope. It is supplied to the reader and included in the session identity through the bundled text. A changed scope or extracted content cannot silently reuse a different bundle's reader session.
+
+A scope fingerprint identifies extracted content, not the original binary, visual appearance, formula semantics or answer correctness. Truncated/oversized extraction is rejected before reader execution; scope metadata and file wrappers also count against the final input character budget. Document extractors still read source files before extraction; this is not a global filesystem or process-memory cap. Source content is treated as evidence, not permission.
+
+Validation covers preserved scope in the actual reader adapter with a local echo fixture, source-change fingerprint invalidation, applied page selection, metadata-inclusive input limits and rejection before a reader process starts. Existing extraction, CLI and session reuse tests remain applicable. These tests do not measure model judgment, real host round-trip savings or total tokens.
+
+For performance evaluation, compare the same successful search/read question and scope using native tools versus a batched host call. Include all relevant input files and failure cases. Record correctness, host-call count, elapsed time and output bytes; report total model tokens only when actually available. A local wrapper benchmark does not establish an end-to-end speedup. The source investigation found single native rg searches faster than adding a separate codemode process on its small fixture, so no universal wrapper is adopted.
