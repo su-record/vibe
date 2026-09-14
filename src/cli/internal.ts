@@ -5,7 +5,7 @@ import { globalKnowledgeDir } from '../core/knowledge.js';
 import { usage } from '../core/errors.js';
 import type { Output } from './common.js';
 
-const GUIDES = ['discover', 'reading', 'delivery', 'extensions', 'optimization', 'feasibility', 'verification', 'explanation', 'code', 'design', 'ko', 'en'];
+const GUIDES = ['discover', 'fieldwork', 'reading', 'delivery', 'extensions', 'optimization', 'feasibility', 'verification', 'explanation', 'code', 'design', 'ko', 'en'];
 
 function boundedText(file: string, limit: number): string | null {
   const stat = fs.lstatSync(file, { throwIfNoEntry: false });
@@ -15,8 +15,11 @@ function boundedText(file: string, limit: number): string | null {
 
 function noteFiles(directory: string): string[] {
   if (!fs.lstatSync(directory, { throwIfNoEntry: false })?.isDirectory()) return [];
-  return fs.readdirSync(directory).filter(name => name.endsWith('.md')).sort().slice(0, 20)
-    .map(name => path.join(directory, name));
+  const priority = ['corrections.md', 'work-context.md', 'reuse.md'];
+  const names = fs.readdirSync(directory, { withFileTypes: true })
+    .filter(entry => entry.isFile() && entry.name.endsWith('.md')).map(entry => entry.name);
+  return [...priority.filter(name => names.includes(name)), ...names.filter(name => !priority.includes(name)).sort()]
+    .slice(0, 20).map(name => path.join(directory, name));
 }
 
 function brief(root: string, includeEntry: boolean): Output {

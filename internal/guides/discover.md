@@ -9,3 +9,5 @@ Agree on observable behavior, implement against real samples and validate change
 For substantial source documents or focused questions across files, use the reading guide to choose local extraction, direct reading or an optional reader model. Preserve source references and extraction limitations.
 
 When source observations reveal repeated manual work, unfamiliar formats or recurring failures, consider the extensions guide even if direct implementation is possible. Look for a concrete benefit and reuse installed capabilities and prior findings first.
+
+For recurring operations, use the fieldwork guide to learn the actual meanings, transitions and exception handling from accessible work. Check what an existing manual step enables before replacing it.
