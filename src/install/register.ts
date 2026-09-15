@@ -10,13 +10,14 @@ import { newer } from './update.js';
 /**
  * The package registers itself as a local plugin wherever a client CLI is present, so a plugin
  * is what the client sees while npm stays the only install. Claude Code: a directory marketplace
- * pointing at this package, plugin `vibe@vibe`. Codex / ChatGPT desktop: the personal marketplace
+ * pointing at this package, plugin `vibe@vibe-local`. Codex / ChatGPT desktop: the personal marketplace
  * and the assembled tree. When the CLI is absent (or VIBE_NO_PLUGIN is set) the surfaces go into
  * the client home instead — the older path, still complete.
  */
 export type Mode = 'plugin' | 'home';
-const MARKETPLACE = 'vibe';
-const PLUGIN_ID = 'vibe@vibe';
+const MARKETPLACE = MARKETPLACE_NAME;
+const PLUGIN_ID = `vibe@${MARKETPLACE}`;
+const LEGACY_ID = 'vibe@vibe';
 
 function run(cmd: string, args: string[], home: string): { ok: boolean; out: string } {
   const r = spawnSync(cmd, args, { encoding: 'utf-8', timeout: 120_000, env: { ...process.env, HOME: home, USERPROFILE: home }, shell: process.platform === 'win32' });
@@ -42,14 +43,23 @@ interface KnownMarketplaces {
   [name: string]: { source?: { source?: string; path?: string } };
 }
 
-export function claudePluginVersion(home: string): string | null {
+function claudeVersion(home: string, id: string): string | null {
   const doc = readJson<InstalledPlugins>(path.join(home, '.claude', 'plugins', 'installed_plugins.json'));
-  return doc?.plugins?.[PLUGIN_ID]?.[0]?.version ?? null;
+  return doc?.plugins?.[id]?.[0]?.version ?? null;
 }
 
-function claudeMarketplacePath(home: string): string | null {
+export function claudePluginVersion(home: string): string | null {
+  return claudeVersion(home, PLUGIN_ID) ?? claudeVersion(home, LEGACY_ID);
+}
+
+export function claudeNeedsMigration(home: string): boolean {
+  const doc = readJson<InstalledPlugins>(path.join(home, '.claude', 'plugins', 'installed_plugins.json'));
+  return doc?.plugins?.[LEGACY_ID]?.some(p => p.scope === 'user') ?? false;
+}
+
+function claudeMarketplacePath(home: string, name: string = MARKETPLACE): string | null {
   const doc = readJson<KnownMarketplaces>(path.join(home, '.claude', 'plugins', 'known_marketplaces.json'));
-  return doc?.[MARKETPLACE]?.source?.path ?? null;
+  return doc?.[name]?.source?.path ?? null;
 }
 
 export interface RegisterReport {
@@ -72,35 +82,63 @@ function vibeVersionAt(dir: string | null): string | null {
  * checkout and a global install stop re-registering each other on every command.
  */
 export function claudeHeldElsewhere(home: string, root: string = packageRoot()): { at: string; version: string } | null {
-  const at = claudeMarketplacePath(home);
+  const at = claudeMarketplacePath(home) ?? claudeMarketplacePath(home, 'vibe');
   if (!at || path.resolve(at) === path.resolve(root)) return null;
   const theirs = vibeVersionAt(at);
   if (!theirs || newer(packageVersion(), theirs)) return null;
+  if (claudeNeedsMigration(home) && !newer(theirs, packageVersion())) return null;
   return claudePluginVersion(home) === theirs ? { at, version: theirs } : null;
 }
 
-/** Point the `vibe` marketplace at this package and install/update the plugin. Idempotent: nothing runs when current. */
+/** Point the `vibe-local` marketplace at this package and install/update the plugin. Idempotent: nothing runs when current. */
 export function registerClaude(home: string, root: string = packageRoot()): RegisterReport {
   const want = packageVersion();
-  const installed = claudePluginVersion(home);
+  const installed = claudeVersion(home, PLUGIN_ID);
   const at = claudeMarketplacePath(home);
-  if (installed === want && at === root) return { ok: true, mode: 'plugin', version: installed, detail: 'current' };
+  if (installed === want && at === root && !claudeNeedsMigration(home)) return { ok: true, mode: 'plugin', version: installed, detail: 'current' };
   const elsewhere = claudeHeldElsewhere(home, root);
-  if (elsewhere) return { ok: true, mode: 'plugin', version: elsewhere.version, detail: `current — ${elsewhere.version} at ${elsewhere.at}` };
+  if (elsewhere && (!claudeNeedsMigration(home) || newer(elsewhere.version, want))) return { ok: true, mode: 'plugin', version: elsewhere.version, detail: `current — ${elsewhere.version} at ${elsewhere.at}` };
   if (at !== null && at !== root) run('claude', ['plugin', 'marketplace', 'remove', MARKETPLACE], home);
   if (at !== root) {
     const add = run('claude', ['plugin', 'marketplace', 'add', root, '--scope', 'user'], home);
-    if (!add.ok) return { ok: false, mode: 'home', version: installed, detail: `marketplace add failed: ${add.out.slice(-200)}` };
+    if (!add.ok) return { ok: false, mode: claudePluginVersion(home) ? 'plugin' : 'home', version: claudePluginVersion(home), detail: `marketplace add failed: ${add.out.slice(-200)}` };
   }
-  const step = installed ? run('claude', ['plugin', 'update', PLUGIN_ID], home) : run('claude', ['plugin', 'install', PLUGIN_ID, '--scope', 'user'], home);
-  if (!step.ok) return { ok: false, mode: 'home', version: installed, detail: `plugin ${installed ? 'update' : 'install'} failed: ${step.out.slice(-200)}` };
-  const now = claudePluginVersion(home);
-  return { ok: now !== null, mode: now !== null ? 'plugin' : 'home', version: now, detail: installed ? `updated ${installed} → ${now}` : `installed ${now}` };
+  const step = installed === want && at === root ? { ok: true, out: '' } : installed ? run('claude', ['plugin', 'update', PLUGIN_ID], home) : run('claude', ['plugin', 'install', PLUGIN_ID, '--scope', 'user'], home);
+  if (!step.ok) return { ok: false, mode: claudePluginVersion(home) ? 'plugin' : 'home', version: claudePluginVersion(home), detail: `plugin ${installed ? 'update' : 'install'} failed: ${step.out.slice(-200)}` };
+  const now = claudeVersion(home, PLUGIN_ID);
+  if (now !== want) return { ok: false, mode: claudePluginVersion(home) ? 'plugin' : 'home', version: now, detail: `plugin verification failed: expected ${want}, found ${now ?? 'none'}` };
+  const error = retireLegacyClaude(home);
+  if (error) return { ok: false, mode: 'plugin', version: now, detail: error };
+  return { ok: true, mode: 'plugin', version: now, detail: installed ? `updated ${installed} → ${now}` : `installed ${now}` };
+}
+
+/** Keep old cached hook paths alive for sessions that started before the namespace changed. */
+function retireLegacyClaude(home: string): string | null {
+  if (claudeNeedsMigration(home)) {
+    const cache = path.join(home, '.claude', 'plugins', 'cache', 'vibe', 'vibe');
+    const snapshot = fs.existsSync(cache) ? fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-claude-held-')) : null;
+    if (snapshot) fs.cpSync(cache, snapshot, { recursive: true });
+    let result: ReturnType<typeof run>;
+    try {
+      result = run('claude', ['plugin', 'uninstall', LEGACY_ID, '--scope', 'user'], home);
+    } finally {
+      if (snapshot) {
+        fs.cpSync(snapshot, cache, { recursive: true, force: false });
+        fs.rmSync(snapshot, { recursive: true, force: true });
+      }
+    }
+    if (!result.ok || claudeNeedsMigration(home)) return `legacy plugin removal failed: ${result.out.slice(-200)}`;
+  }
+  // Leave the old marketplace registered: it may serve other plugins/scopes, and removing
+  // it may delete cached hooks still used by running sessions. It exposes no uninstalled skill.
+  return null;
 }
 
 export function unregisterClaude(home: string): string[] {
   const removed: string[] = [];
-  if (claudePluginVersion(home) !== null && run('claude', ['plugin', 'uninstall', PLUGIN_ID], home).ok) removed.push(`claude plugin ${PLUGIN_ID}`);
+  for (const id of [PLUGIN_ID, LEGACY_ID]) {
+    if (claudeVersion(home, id) !== null && run('claude', ['plugin', 'uninstall', id, '--scope', 'user'], home).ok) removed.push(`claude plugin ${id}`);
+  }
   if (claudeMarketplacePath(home) !== null && run('claude', ['plugin', 'marketplace', 'remove', MARKETPLACE], home).ok) removed.push(`claude marketplace ${MARKETPLACE}`);
   return removed;
 }

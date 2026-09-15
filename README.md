@@ -44,3 +44,5 @@ Upgrades remove only unchanged bundled legacy skills from home surfaces. Modifie
 ## Validation
 
 Build and tests: `npm run check`. Packaged surface: `node checks/personal-fde.js`. These use local fixtures; no model call is required. Desktop GUI behavior and real-session token/latency improvements require separate validation on the installed candidate.
+
+Claude and Codex use `vibe-local` as the default installation source; the plugin and command remain `vibe`. Claude updates migrate the former `vibe@vibe` user installation after verifying the replacement. Cached files used by existing sessions and the old marketplace (which may serve other plugins) are retained. Restart the app to use the new registration. A failed migration is reported and retried on setup without adding duplicate home skills or hooks. Existing custom Codex marketplace names are preserved.

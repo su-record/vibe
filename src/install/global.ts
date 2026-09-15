@@ -5,7 +5,7 @@ import { packageRoot } from '../core/paths.js';
 import { readJson, readText, writeAtomic, writeJson } from '../core/store.js';
 import { hasCurrentHook, installHookFile, removeHookFile, sweepDeadHooks } from './hooks.js';
 import { languagePacks, sweepLegacyPluginStore } from './plugin.js';
-import { claudeHeldElsewhere, claudePluginVersion, cliAvailable, codexHooksTrusted, codexPluginVersion, codexRegistered, registerClaude, registerCodex, type Mode, unregisterClaude, unregisterCodex } from './register.js';
+import { claudeNeedsMigration, claudeHeldElsewhere, claudePluginVersion, cliAvailable, codexHooksTrusted, codexPluginVersion, codexRegistered, registerClaude, registerCodex, type Mode, unregisterClaude, unregisterCodex } from './register.js';
 
 export { hasNotifyHook, sweepDeadHooks } from './hooks.js';
 
@@ -198,8 +198,8 @@ function installClient(home: string, client: Client): SurfaceReport {
   const layout = globalLayout(client);
   if (client === 'claude' && cliAvailable('claude')) {
     const r = registerClaude(home);
-    if (r.ok) {
-      removeSurfaces(home, layout);
+    if (r.ok || r.mode === 'plugin') {
+      if (r.ok) removeSurfaces(home, layout);
       return { card: 'plugin', skills: [], hook: 'plugin', mode: 'plugin', detail: r.detail };
     }
     return { ...installSurfaces(home, layout), detail: r.detail };
@@ -254,7 +254,7 @@ export function clientStatus(home: string, client: Client): SurfaceStatus {
   const layout = globalLayout(client);
   if (client === 'claude' && cliAvailable('claude')) {
     const version = claudePluginVersion(home);
-    const current = version === packageVersion() || claudeHeldElsewhere(home) !== null;
+    const current = (version === packageVersion() && !claudeNeedsMigration(home)) || claudeHeldElsewhere(home) !== null;
     return { card: current, skills: current ? SKILL_NAMES.length : 0, hook: current, current, mode: 'plugin', pluginVersion: version };
   }
   if (client === 'codex' && cliAvailable('codex')) {

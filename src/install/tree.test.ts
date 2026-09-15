@@ -20,6 +20,7 @@ describe('plugin tree — the repository is the plugin, generated from package.j
     for (const file of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) {
       expect(JSON.parse(tree[file]!)).toMatchObject({ name: 'vibe', version: pkg.version, description: pkg.description });
     }
+    expect(JSON.parse(tree['.claude-plugin/marketplace.json']!).name).toBe('vibe-local');
     expect(JSON.parse(tree['.claude-plugin/marketplace.json']!).plugins[0]).toMatchObject({ name: 'vibe', source: './' });
     const norm = (t: string): string => t.replace(/\$\{(CLAUDE_)?PLUGIN_ROOT\}/g, 'R').replace(/session\.js\\" (claude|codex)/g, 'session.js C');
     expect(Object.keys((JSON.parse(tree['hooks/hooks.json']!) as { hooks: Record<string, unknown> }).hooks)).toContain('Stop'); // Stop reads bounded status on both clients; it never executes the verdict
