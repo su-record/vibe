@@ -63,7 +63,7 @@ export function pluginTree(p: Pkg = pkg()): Record<string, string> {
   const json = (v: unknown): string => `${JSON.stringify(v, null, 2)}\n`;
   return {
     '.claude-plugin/plugin.json': json({ name: 'vibe', version: p.version, description: p.description, author: AUTHOR, homepage: REPO, repository: REPO, license: 'MIT', keywords: ['harness', 'ax', 'fde', 'verification', 'claude-code'] }),
-    '.claude-plugin/marketplace.json': json({ name: 'vibe', owner: AUTHOR, metadata: { description: p.description, version: p.version }, plugins: [{ name: 'vibe', source: './', description: p.description, version: p.version, category: 'productivity' }] }),
+    '.claude-plugin/marketplace.json': json({ name: 'vibe-local', owner: AUTHOR, metadata: { description: p.description, version: p.version }, plugins: [{ name: 'vibe', source: './', description: p.description, version: p.version, category: 'productivity' }] }),
     '.codex-plugin/plugin.json': json(codexManifest(p)),
     'hooks/hooks.json': json(hookSet('${CLAUDE_PLUGIN_ROOT}', 'claude')),
     'hooks/codex-hooks.json': json(hookSet('${PLUGIN_ROOT}', 'codex')),

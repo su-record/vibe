@@ -17,17 +17,32 @@ let shim: string;
 let savedPath: string | undefined;
 let savedNoPlugin: string | undefined;
 
-const CLAUDE_SHIM = `#!/bin/sh
-echo "$@" >> "$HOME/claude.log"
-P="$HOME/.claude/plugins"; mkdir -p "$P"
-V=$(node -p "require('$PKG/package.json').version")
-case "$*" in
-  "--version") echo 9.9.9;;
-  "plugin marketplace add"*) printf '{"vibe":{"source":{"source":"directory","path":"%s"}}}' "$4" > "$P/known_marketplaces.json";;
-  "plugin marketplace remove"*) printf '{}' > "$P/known_marketplaces.json";;
-  "plugin install"*|"plugin update"*) printf '{"version":2,"plugins":{"vibe@vibe":[{"scope":"user","version":"%s"}]}}' "$V" > "$P/installed_plugins.json";;
-  "plugin uninstall"*) printf '{"version":2,"plugins":{}}' > "$P/installed_plugins.json";;
-esac
+const CLAUDE_SHIM = `#!/usr/bin/env node
+const fs = require('node:fs'), path = require('node:path');
+const args = process.argv.slice(2), home = process.env.HOME;
+fs.appendFileSync(path.join(home, 'claude.log'), args.join(' ') + '\\n');
+const dir = path.join(home, '.claude', 'plugins'); fs.mkdirSync(dir, {recursive:true});
+const read = file => { try { return JSON.parse(fs.readFileSync(path.join(dir,file),'utf8')); } catch { return {}; } };
+const save = (file, value) => fs.writeFileSync(path.join(dir,file), JSON.stringify(value));
+const version = require('$PKG/package.json').version;
+if (args[0] === '--version') { console.log('9.9.9'); process.exit(0); }
+if (args[1] === 'marketplace') {
+  const doc = read('known_marketplaces.json');
+  if (args[2] === 'add') {
+    const name = JSON.parse(fs.readFileSync(path.join(args[3], '.claude-plugin', 'marketplace.json'))).name;
+    doc[name] = {source:{source:'directory',path:args[3]}};
+  } else delete doc[args[3]];
+  save('known_marketplaces.json',doc);
+} else {
+  if (fs.existsSync(path.join(home, 'fail-' + args[1]))) process.exit(1);
+  const doc = read('installed_plugins.json'); doc.version = 2; doc.plugins ??= {};
+  if (args[1] === 'uninstall') {
+    const left = (doc.plugins[args[2]] ?? []).filter(p => p.scope !== 'user');
+    if (left.length) doc.plugins[args[2]] = left; else delete doc.plugins[args[2]];
+    if (args[2] === 'vibe@vibe') fs.rmSync(path.join(dir,'cache','vibe','vibe'), {recursive:true,force:true});
+  } else doc.plugins[args[2]] = [{scope:'user',version}];
+  save('installed_plugins.json',doc);
+}
 `;
 /** Codex copies the marketplace's tree into ~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/ on add and deletes it on remove. */
 const CODEX_SHIM = `#!/bin/sh
@@ -65,11 +80,11 @@ afterEach(() => {
 const log = (name: string): string[] => (fs.existsSync(path.join(home, name)) ? fs.readFileSync(path.join(home, name), 'utf-8').trim().split('\n') : []);
 
 describe('plugin mode — the package registers itself as a local plugin', () => {
-  it('plugin mode: with the claude CLI present the package becomes marketplace vibe + plugin vibe@vibe, and no home surfaces are written', () => {
+  it('plugin mode: with the claude CLI present the package becomes marketplace vibe-local + plugin vibe@vibe-local, and no home surfaces are written', () => {
     fs.mkdirSync(path.join(home, '.claude'));
     const report = setupGlobal(home);
     expect(report.surfaces['claude']).toMatchObject({ mode: 'plugin', card: 'plugin', hook: 'plugin' });
-    expect(log('claude.log')).toEqual([`plugin marketplace add ${packageRoot()} --scope user`, 'plugin install vibe@vibe --scope user']);
+    expect(log('claude.log')).toEqual([`plugin marketplace add ${packageRoot()} --scope user`, 'plugin install vibe@vibe-local --scope user']);
     expect(fs.existsSync(path.join(home, '.claude', 'CLAUDE.md'))).toBe(false);
     expect(fs.existsSync(path.join(home, '.claude', 'skills'))).toBe(false);
     const status = globalStatus(home).clients['claude'];
@@ -81,15 +96,83 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
 
   it('plugin mode: an older installed plugin is updated, a marketplace pointing elsewhere is re-pointed, uninstall unregisters', () => {
     fs.mkdirSync(path.join(home, '.claude', 'plugins'), { recursive: true });
-    fs.writeFileSync(path.join(home, '.claude', 'plugins', 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'vibe@vibe': [{ scope: 'user', version: '0.0.1' }] } }));
-    fs.writeFileSync(path.join(home, '.claude', 'plugins', 'known_marketplaces.json'), JSON.stringify({ vibe: { source: { source: 'directory', path: '/elsewhere' } } }));
+    fs.writeFileSync(path.join(home, '.claude', 'plugins', 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'vibe@vibe-local': [{ scope: 'user', version: '0.0.1' }] } }));
+    fs.writeFileSync(path.join(home, '.claude', 'plugins', 'known_marketplaces.json'), JSON.stringify({ 'vibe-local': { source: { source: 'directory', path: '/elsewhere' } } }));
     expect(globalStatus(home).clients['claude']?.current).toBe(false);
     expect(ensureGlobal(home)).toEqual(['claude']);
-    expect(log('claude.log')).toEqual(['plugin marketplace remove vibe', `plugin marketplace add ${packageRoot()} --scope user`, 'plugin update vibe@vibe']);
+    expect(log('claude.log')).toEqual(['plugin marketplace remove vibe-local', `plugin marketplace add ${packageRoot()} --scope user`, 'plugin update vibe@vibe-local']);
     expect(globalStatus(home).clients['claude']?.current).toBe(true);
     const removed = uninstallGlobal(home);
-    expect(removed).toEqual(['claude plugin vibe@vibe', 'claude marketplace vibe']);
+    expect(removed).toEqual(['claude plugin vibe@vibe-local', 'claude marketplace vibe-local']);
   }, 60_000); // Multiple stand-in client invocations share this integration deadline.
+
+  function seedLegacy(version = '4.2.4'): string {
+    const dir = path.join(home, '.claude', 'plugins');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'installed_plugins.json'), JSON.stringify({ plugins: {
+      'vibe@vibe': [{ scope: 'user', version }], 'other@vibe': [{ scope: 'user', version: '1.0.0' }],
+    } }));
+    fs.writeFileSync(path.join(dir, 'known_marketplaces.json'), JSON.stringify({
+      vibe: { source: { source: 'directory', path: packageRoot() } },
+    }));
+    const hook = path.join(dir, 'cache', 'vibe', 'vibe', version, 'hooks', 'notify.js');
+    fs.mkdirSync(path.dirname(hook), { recursive: true });
+    fs.writeFileSync(hook, 'process.stdout.write("still alive");');
+    return hook;
+  }
+
+  it('migrates even a same-version legacy install, preserves other plugins and active session hooks, and is idempotent', () => {
+    const version = JSON.parse(fs.readFileSync(path.join(packageRoot(), 'package.json'), 'utf8')).version;
+    const hook = seedLegacy(version);
+    expect(globalStatus(home).clients['claude']?.current).toBe(false);
+    expect(ensureGlobal(home)).toEqual(['claude']);
+    expect(log('claude.log')).toEqual([
+      `plugin marketplace add ${packageRoot()} --scope user`,
+      'plugin install vibe@vibe-local --scope user', 'plugin uninstall vibe@vibe --scope user',
+    ]);
+    const doc = JSON.parse(fs.readFileSync(path.join(home, '.claude/plugins/installed_plugins.json'), 'utf8'));
+    expect(Object.keys(doc.plugins).sort()).toEqual(['other@vibe', 'vibe@vibe-local']);
+    expect(spawnSync(process.execPath, [hook], { encoding: 'utf8' }).stdout).toBe('still alive');
+    expect(ensureGlobal(home)).toEqual([]);
+    expect(log('claude.log')).toHaveLength(3);
+  });
+
+  it('keeps the old installation on replacement failure without adding duplicate home hooks; retry completes', () => {
+    const hook = seedLegacy('0.0.1');
+    fs.writeFileSync(path.join(home, 'fail-install'), '');
+    const report = setupGlobal(home);
+    expect(report.surfaces['claude']).toMatchObject({ mode: 'plugin' });
+    expect(report.surfaces['claude']?.detail).toContain('failed');
+    expect(log('claude.log').some(line => line.includes('uninstall'))).toBe(false);
+    expect(fs.existsSync(path.join(home, '.claude/skills/vibe'))).toBe(false);
+    expect(fs.existsSync(hook)).toBe(true);
+    expect(globalStatus(home).clients['claude']?.current).toBe(false);
+    fs.rmSync(path.join(home, 'fail-install'));
+    expect(registerClaude(home)).toMatchObject({ ok: true });
+    expect(globalStatus(home).clients['claude']?.current).toBe(true);
+  });
+
+  it('does not retire the legacy plugin when the client reports success without installing the replacement', () => {
+    seedLegacy('0.0.1');
+    fs.writeFileSync(path.join(shim, 'claude'), CLAUDE_SHIM.replace('$PKG', packageRoot()).replace(
+      "if (fs.existsSync(path.join(home, 'fail-' + args[1]))) process.exit(1);",
+      "if (args[1] === 'install') process.exit(0);",
+    ), { mode: 0o755 });
+    expect(registerClaude(home)).toMatchObject({ ok: false, detail: expect.stringContaining('verification failed') });
+    expect(log('claude.log').some(line => line.includes('uninstall'))).toBe(false);
+  });
+
+  it('reports failed legacy removal as incomplete and retries cleanup without reinstalling', () => {
+    seedLegacy('0.0.1');
+    fs.writeFileSync(path.join(home, 'fail-uninstall'), '');
+    expect(registerClaude(home)).toMatchObject({ ok: false, mode: 'plugin' });
+    expect(globalStatus(home).clients['claude']?.current).toBe(false);
+    fs.rmSync(path.join(home, 'fail-uninstall'));
+    const before = log('claude.log').length;
+    expect(registerClaude(home)).toMatchObject({ ok: true });
+    expect(log('claude.log').slice(before)).toEqual(['plugin uninstall vibe@vibe --scope user']);
+    expect(globalStatus(home).clients['claude']?.current).toBe(true);
+  });
 
   it('plugin mode: codex gets the assembled tree, the personal marketplace and the two codex commands; the card stays in ~/.codex/AGENTS.md; a Codex whose cache cannot be read is not stale', () => {
     fs.writeFileSync(path.join(shim, 'codex'), CODEX_SHIM_NO_CACHE, { mode: 0o755 });
@@ -196,8 +279,8 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     fs.writeFileSync(path.join(newerPkg, 'package.json'), JSON.stringify({ name: '@su-record/vibe', version: '99.0.0' }));
     const plugins = path.join(home, '.claude', 'plugins');
     fs.mkdirSync(plugins, { recursive: true });
-    fs.writeFileSync(path.join(plugins, 'known_marketplaces.json'), JSON.stringify({ vibe: { source: { source: 'directory', path: newerPkg } } }));
-    fs.writeFileSync(path.join(plugins, 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'vibe@vibe': [{ scope: 'user', version: '99.0.0' }] } }));
+    fs.writeFileSync(path.join(plugins, 'known_marketplaces.json'), JSON.stringify({ 'vibe-local': { source: { source: 'directory', path: newerPkg } } }));
+    fs.writeFileSync(path.join(plugins, 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'vibe@vibe-local': [{ scope: 'user', version: '99.0.0' }] } }));
     const left = registerClaude(home);
     expect(left).toMatchObject({ ok: true, mode: 'plugin', version: '99.0.0' });
     expect(left.detail).toContain(`99.0.0 at ${newerPkg}`);
@@ -205,7 +288,7 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(globalStatus(home).clients['claude']).toMatchObject({ current: true, pluginVersion: '99.0.0' });
 
     fs.writeFileSync(path.join(newerPkg, 'package.json'), JSON.stringify({ name: '@su-record/vibe', version: '0.0.1' }));
-    fs.writeFileSync(path.join(plugins, 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'vibe@vibe': [{ scope: 'user', version: '0.0.1' }] } }));
+    fs.writeFileSync(path.join(plugins, 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'vibe@vibe-local': [{ scope: 'user', version: '0.0.1' }] } }));
     const replaced = registerClaude(home);
     expect(replaced.ok).toBe(true);
     expect(fs.readFileSync(path.join(home, 'claude.log'), 'utf-8')).toContain('plugin marketplace add');

@@ -1,19 +1,19 @@
 {
-  "name": "vibe",
+  "name": "vibe-local",
   "owner": {
     "name": "su-record",
     "url": "https://github.com/su-record"
   },
   "metadata": {
     "description": "Your personal FDE in Claude and Codex. Understand the work, use the right tools, deliver and retain useful context. One entry: vibe.",
-    "version": "4.2.4"
+    "version": "4.2.5"
   },
   "plugins": [
     {
       "name": "vibe",
       "source": "./",
       "description": "Your personal FDE in Claude and Codex. Understand the work, use the right tools, deliver and retain useful context. One entry: vibe.",
-      "version": "4.2.4",
+      "version": "4.2.5",
       "category": "productivity"
     }
   ]
