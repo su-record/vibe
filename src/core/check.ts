@@ -1,3 +1,4 @@
+import { selectScenarios, type Selectable } from './check-selection.js';
 import { artifactsFresh, captureArtifacts, type ArtifactProof } from './artifacts.js';
 import { requireRiskCoverage, uncoveredRisks } from './risk-signals.js';
 import { createHash } from 'node:crypto';
@@ -269,20 +270,6 @@ export interface CheckOptions {
   approach?: string;
 }
 
-type Selectable = Scenario & { regression?: boolean };
-
-function selectScenarios(universe: Selectable[], previous: ResultsFile, options: CheckOptions): Selectable[] {
-  if (options.ids && options.ids.length > 0) {
-    const missing = options.ids.filter((id) => !universe.some((s) => s.id === id));
-    if (missing.length > 0) throw invalidTransition(`unknown scenario: ${missing.join(', ')}`);
-    // An explicit id pulls in the ancestors that have not passed yet — `check tests` builds first.
-    const wanted = new Set([...options.ids, ...ancestorsOf(universe, options.ids).filter((id) => previous[id]?.last !== 'pass')]);
-    return universe.filter((s) => wanted.has(s.id));
-  }
-  if (options.all) return universe;
-  return universe.filter((s) => isHuman(s) || previous[s.id]?.last !== 'pass');
-}
-
 /** The state after a run: STUCK on the same failure twice, DONE when nothing remains, otherwise RUNNING. */
 function settleState(root: string, current: StateFile, failHash: string | null, remaining: string[], outcomes: ScenarioOutcome[], at: string, approach?: string): { next: StateFile; stuck: boolean; done: boolean } {
   let next: StateFile = { ...current };
@@ -302,7 +289,7 @@ function settleState(root: string, current: StateFile, failHash: string | null, 
   return { next, stuck: false, done: false };
 }
 
-function validateApproval(root: string, state: StateFile): void {
+export function validateApproval(root: string, state: StateFile): void {
   const basis = readSourceBasis(root);
   const currentHash = intentHash(readText(intentPath(root)) ?? '', readText(scenariosPath(root)) ?? '', basis);
   if (currentHash !== state.intentHash) throw invalidTransition(`approval void — the intent or scenarios changed since ${state.intentHash ?? 'the approval'}; run vibe intent draft and approve again`);

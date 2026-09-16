@@ -70,7 +70,7 @@ describe('vibe read — the harness reads documents so every client gets the sam
       expect(readDocument(root, 'report.pdf', { pages: '2' }).sections.map((s) => s.title)).toEqual(['page 2']);
     }
     expect(() => readDocument(root, 'report.pdf', { pages: 'x' })).toThrowError(VibeError);
-  });
+  }, 30_000); // Three external-tool probes can exceed Vitest's 5s default on Windows CI.
 
   it('read: tables and plain text pass through; a long document is truncated with a hint; missing files are usage errors', () => {
     fs.writeFileSync(path.join(root, 'a.csv'), 'x,y\n1,2\n');

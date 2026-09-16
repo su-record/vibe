@@ -9,6 +9,7 @@ const MAX_BYTES = 1_048_576;
 
 export function summarizeRuns(runs: unknown[]) {
   const checks = new Map<string, { id: string; executions: number; passed: number; totalMs: number; outputBytes: number }>();
+  const streaks = new Map<string, { id: string; signature: string; observations: number; totalMs: number }>();
   let skipped = 0;
   for (const run of runs) {
     if (!run || typeof run !== 'object' || !('results' in run) || !Array.isArray(run.results)) { skipped++; continue; }
@@ -23,10 +24,19 @@ export function summarizeRuns(runs: unknown[]) {
         if (Number.isFinite(bytes) && bytes >= 0) row.outputBytes += bytes;
       }
       checks.set(row.id, row);
+      const cause = result.failure?.causeHash;
+      if (result.status === 'fail' && typeof cause === 'string' && cause.length > 0) {
+        const signature = JSON.stringify([cause, result.exit, result.failure?.cause]);
+        const prior = streaks.get(result.id);
+        streaks.set(result.id, { id: result.id, signature,
+          observations: prior?.signature === signature ? prior.observations + 1 : 1,
+          totalMs: (prior?.signature === signature ? prior.totalMs : 0) + result.ms });
+      } else streaks.delete(result.id);
     }
   }
   return { runs: runs.length, skipped, checks: [...checks.values()].sort((a, b) => b.totalMs - a.totalMs),
-    limits: 'Recorded check executions only. Repetition is not proof of wasted work. Summed check duration is not wall time; output bytes are not model tokens. Host tool calls and host tokens are not observed.' };
+    repeatedFailures: [...streaks.values()].filter(s => s.observations >= 2).map(({ signature: _signature, ...s }) => s),
+    limits: 'Recorded check executions only. Repetition is not proof of wasted work. Summed check duration is not wall time; output bytes are not model tokens. Matching failures are observations, not proof of unchanged inputs or permission to retry. Host tool calls and host tokens are not observed.' };
 }
 
 export function performanceReport(root: string) {
@@ -34,7 +44,7 @@ export function performanceReport(root: string) {
   if (!fs.lstatSync(directory, { throwIfNoEntry: false })?.isDirectory()) return { ...summarizeRuns([]), omitted: 0 };
   const names = fs.readdirSync(directory).filter(name => /^r-\d+\.json$/.test(name)).sort((a, b) => Number(b.slice(2, -5)) - Number(a.slice(2, -5)));
   const selected = names.slice(0, 20);
-  const runs = selected.map(name => {
+  const runs = [...selected].reverse().map(name => {
     const file = path.join(directory, name);
     const stat = fs.lstatSync(file);
     if (!stat.isFile() || stat.size > MAX_BYTES) return null;

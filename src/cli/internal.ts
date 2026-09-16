@@ -45,6 +45,7 @@ export function cmdInternal(root: string, operation: string | undefined, args: s
   }
   if (operation === 'tools') {
     const text = 'Internal operations, use only for the current need:\n'
+      + 'internal verification [ids] [--all]: preview fresh evidence, selected checks, prerequisites and resume blockers without running checks\n'
       + 'internal risks: detect risk signals, missing coverage and reusable check candidates\n'
       + 'internal performance report | startup: inspect recorded check costs or measure fixed read-only CLI commands\n'
       + 'read <file> / profile <file>: extract or inspect data without a model\n'

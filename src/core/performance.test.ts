@@ -40,3 +40,18 @@ it('reports malformed, oversized and linked evidence as skipped', () => {
   fs.symlinkSync(path.join(dir, 'r-1.json'), path.join(dir, 'r-3.json'));
   expect(performanceReport(root)).toMatchObject({ runs: 3, skipped: 3, checks: [] });
 });
+
+it('reports observed repeat failures chronologically and clears signals after recovery or changed cause', () => {
+  const dir = path.join(root, '.vibe', 'evidence');
+  fs.mkdirSync(dir, { recursive: true });
+  const failure = (id: string, causeHash: string) => ({ id, status: 'fail', exit: 1, ms: 8,
+    failure: { cause: 'exit-mismatch', causeHash, message: 'PRIVATE_DIAGNOSTIC' } });
+  fs.writeFileSync(path.join(dir, 'r-2.json'), JSON.stringify({ results: [failure('a', 'same'), failure('b', 'new')] }));
+  fs.writeFileSync(path.join(dir, 'r-1.json'), JSON.stringify({ results: [failure('a', 'same'), failure('b', 'old')] }));
+  const report = performanceReport(root);
+  expect(report.repeatedFailures).toEqual([{ id: 'a', observations: 2, totalMs: 16 }]);
+  expect(JSON.stringify(report)).not.toContain('PRIVATE_DIAGNOSTIC');
+  fs.writeFileSync(path.join(dir, 'r-3.json'), JSON.stringify({ results: [{ id: 'a', status: 'pass', ms: 1 }] }));
+  expect(performanceReport(root).repeatedFailures).toEqual([]);
+  expect(summarizeRuns([{ results: [failure('a', 'same'), failure('a', 'same'), failure('a', '')] }]).repeatedFailures).toEqual([]);
+});
