@@ -16,7 +16,7 @@ export { parseArgs } from './cli/common.js';
 
 type Handler = (root: string, sub: string | undefined, rest: string[], tail: string[], flags: Flags) => Output | Promise<Output>;
 const COMMANDS: Record<string, Handler> = {
-  internal: async (root, sub, rest) => sub === 'risks' ? (await import('./cli/risks.js')).cmdRisks(root) : sub === 'performance'
+  internal: async (root, sub, rest, _tail, flags) => sub === 'verification' ? (await import('./cli/verification.js')).cmdVerification(root, rest, flags) : sub === 'risks' ? (await import('./cli/risks.js')).cmdRisks(root) : sub === 'performance'
     ? (await import('./cli/performance.js')).cmdPerformance(root, rest)
     : (await import('./cli/internal.js')).cmdInternal(root, sub, rest),
   status: async (root, _s, _r, _t, flags) => (await import('./cli/setup.js')).cmdStatus(root, flags),

@@ -14,6 +14,9 @@ export function pendingRepairQuestion(root: string, repair: RepairState | null |
   if (!repair?.waiting) return undefined;
   return foldQuestions(root).find(q => q.id === repair.questionId && !q.answer?.trim());
 }
+export function repairAwaitingInput(root: string, repair: RepairState | null | undefined): boolean {
+  return Boolean(repair?.waiting && !foldQuestions(root).find(q => q.id === repair.questionId)?.answer?.trim());
+}
 export function repairFailure(root: string, current: StateFile, hash: string, failures: FailureSummary[], run: string, approach?: string): Pick<StateFile, 'state' | 'failStreak' | 'lastFailHash' | 'repair'> {
   const same = hash === current.lastFailHash;
   const failStreak = same ? current.failStreak + 1 : 1;
