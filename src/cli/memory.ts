@@ -27,7 +27,8 @@ export async function cmdResearch(root: string, sub: string | undefined, flags: 
   }
   const r = await research(root, options);
   const lines = [
-    `research ${r.queries.map((q) => JSON.stringify(q)).join(' · ')} · last ${r.days} days (since ${r.cutoff}) · ${r.candidates.length} candidates${r.cached ? ' (cached)' : ''}${r.authenticated ? '' : ' · unauthenticated — code search skipped, catalogs only'}`,
+    `research ${r.queries.map((q) => JSON.stringify(q)).join(' · ')} · last ${r.days} days (since ${r.cutoff}) · ${r.candidates.length} candidates${r.cached ? ' (cached)' : ''}${r.authenticated ? '' : ' · unauthenticated — GitHub code search skipped'}`,
+    ...r.warnings.map(w => `  ${w}`),
     ...r.candidates.map((c) => `  ${c.kind.padEnd(5)} ${c.ref}\n        ${c.why}\n        → ${c.action}`),
     ...(r.file ? [`  note ${path.relative(root, r.file)}`] : []),
   ];
@@ -94,7 +95,7 @@ export async function cmdSkill(root: string, sub: string | undefined, args: stri
     case 'search': {
       if (!args[0]) throw usage('skill search <keyword>');
       const r = await research(root, { query: args[0], sources: ['skills', 'code'] });
-      return { json: r, text: r.candidates.length ? r.candidates.map((c) => `${c.ref}\n  ${c.why}\n  → ${c.action}`).join('\n') : `no skill matches "${args[0]}"${r.authenticated ? '' : ' (unauthenticated — catalogs only)'}`, code: 0 };
+      return { json: r, text: [...r.warnings, r.candidates.length ? r.candidates.map((c) => `${c.ref}\n  ${c.why}\n  → ${c.action}`).join('\n') : `no skill matches "${args[0]}"${r.authenticated ? '' : ' (GitHub code search unavailable)'}`].join('\n'), code: 0 };
     }
     case 'suggest':
     case 'list':

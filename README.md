@@ -20,6 +20,8 @@ Workflow and antislop guidance are local resources loaded only for the task at h
 
 Skill discovery, installation and creation are retained. Vibe first checks the host's capabilities and installed project skills. For an actual gap or a concrete opportunity to improve accuracy, speed or recurring work, it researches a suitable skill even when direct implementation is possible. It checks host compatibility and representative behavior, and retains useful findings for reuse. Routine edits need no search; installation alone does not establish usefulness. New project skills live under `.vibe/skills/installed` and are loaded through their registry instead of appearing as extra host commands. Existing user skills are not removed merely because they have similar names.
 
+Internal skill search also uses SkillsMP anonymously, alongside GitHub search and catalogs. Each uncached search sends only its first query to SkillsMP, requests at most five candidates and allows five seconds. Set `SKILLSMP_API_KEY` in the host environment for optional authenticated access, or `VIBE_SKILLSMP=off` to disable it. Results are cached for 24 hours; partial failures for five minutes. SkillsMP failure keeps the existing GitHub search available. Catalog descriptions are discovery hints, not verified quality or compatibility; installation still previews the original GitHub source. No additional public skill or model call is introduced.
+
 Use meaningful existing tests and required repository checks. Do not repeat unchanged verification merely to advance a workflow stage. Recorded machine verification, user acceptance and measured business value remain distinct.
 
 ## Existing desktop connections
