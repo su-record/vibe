@@ -1,3 +1,4 @@
+import { skillsmpClient, type SkillSearchClient } from './skillsmp.js';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -60,6 +61,7 @@ export interface ResearchResult {
   file: string | null;
   cached: boolean;
   authenticated: boolean;
+  warnings: string[];
 }
 
 interface RepoItem {
@@ -248,16 +250,18 @@ function slug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'research';
 }
 
-function writeNote(root: string, queries: string[], candidates: Candidate[], days: number, cutoff: string): string {
+function writeNote(root: string, queries: string[], candidates: Candidate[], days: number, cutoff: string, warnings: string[]): string {
   const file = vibePath(root, 'knowledge', 'research', `${nowIso().slice(0, 10)}-${slug(queries[0] ?? '')}.md`);
   const latest = (c: Candidate): string => (c.recent ? (c.recent.releases[0] ? `${c.recent.releases[0].tag} ${c.recent.releases[0].at.slice(0, 10)}` : c.recent.lastCommitAt ? `commit ${c.recent.lastCommitAt.slice(0, 10)}` : 'none') : '—');
   const rows = candidates.map((c) => `| ${c.kind} | [${c.ref}](${c.url}) | ${c.recent ? (c.recent.inWindow ? 'yes' : 'no') : '—'} | ${latest(c)} | ${c.why} | ${c.action} |`);
-  const body = [`# Research — ${queries.join(' · ')}`, '', `Date: ${nowIso().slice(0, 10)} · Window: last ${days} days (since ${cutoff}) · Source: GitHub search and skill catalogs · Ranked by activity inside the window first, then keyword match, recency, stars, license; nothing is dropped for being old. Nothing here was executed or installed.`, '', '| kind | candidate | in window | latest | why | action |', '|---|---|---|---|---|---|', ...rows, ''].join('\n');
+  const body = [`# Research — ${queries.join(' · ')}`, '', `Date: ${nowIso().slice(0, 10)} · Window: last ${days} days (since ${cutoff}) · Source: GitHub search, skill catalogs and optional SkillsMP discovery · GitHub results rank by activity inside the window, then keyword match, recency, stars and license; SkillsMP hints are interleaved without a quality score. Nothing is dropped for being old. Nothing here was executed or installed.`, ...warnings.map(w => `Search limitation: ${w}`), '', '| kind | candidate | in window | latest | why | action |', '|---|---|---|---|---|---|', ...rows, ''].join('\n');
   writeAtomic(file, body);
   return file;
 }
 
-export async function research(root: string, options: ResearchOptions, client: GithubClient = githubClient()): Promise<ResearchResult> {
+export async function research(root: string, options: ResearchOptions, client?: GithubClient, marketplace?: SkillSearchClient | null): Promise<ResearchResult> {
+  const github = client ?? githubClient();
+  const provider = marketplace !== undefined ? marketplace : client || process.env['VIBE_GITHUB_FIXTURE'] || process.env['VIBE_SKILLSMP'] === 'off' ? null : skillsmpClient();
   const queries = options.fromIntent ? queriesFromIntent(root) : options.query ? [options.query] : [];
   if (queries.length === 0) throw usage(options.fromIntent ? 'no intent to research — draft one first' : 'research --from-intent | "query"');
   const sources = options.sources ?? [...SOURCES];
@@ -266,26 +270,55 @@ export async function research(root: string, options: ResearchOptions, client: G
   const now = options.now ?? Date.now();
   const cutoff = new Date(now - days * 86_400_000).toISOString().slice(0, 10);
   const catalogs = readConfig(root).catalogs;
-  const key = createHash('sha256').update(JSON.stringify([queries, sources, catalogs, days])).digest('hex').slice(0, 16);
+  const key = createHash('sha256').update(JSON.stringify(['skillsmp-v1', queries, sources, catalogs, days, Boolean(provider)])).digest('hex').slice(0, 16);
   const cacheFile = vibePath(root, 'cache', 'research', `${key}.json`);
-  const cached = readJson<{ at: string; candidates: Candidate[] }>(cacheFile);
+  const cached = readJson<{ at: string; candidates: Candidate[]; warnings?: string[] }>(cacheFile);
   let candidates: Candidate[];
   let fromCache = false;
-  if (cached && Date.now() - new Date(cached.at).getTime() < CACHE_TTL_MS) {
+  let warnings: string[] = [];
+  if (cached && Date.now() - new Date(cached.at).getTime() < (cached.warnings?.length ? 300_000 : CACHE_TTL_MS)) {
     candidates = cached.candidates;
+    warnings = cached.warnings ?? [];
     fromCache = true;
   } else {
+    // Start independent sources together; the marketplace timeout must not delay GitHub.
+    const githubSearch = applyWindowAfterSearch();
+    async function applyWindowAfterSearch(): Promise<{ candidates: Candidate[]; error?: unknown }> {
+      try { return { candidates: await applyWindow(github, await search(github, queries, sources, catalogs), days, now) }; }
+      catch (error) { return { candidates: [], error }; }
+    }
+    let discovered: Candidate[] = [];
+    if (provider && sources.includes('skills')) {
+      try { discovered = await provider.search(queries[0]!); }
+      catch { warnings.push('SkillsMP unavailable, limited or invalid; using existing GitHub search'); }
+    }
     try {
-      candidates = await applyWindow(client, await search(client, queries, sources, catalogs), days, now);
-      writeJson(cacheFile, { at: nowIso(), queries, days, candidates });
+      const outcome = await githubSearch;
+      const existing = outcome.candidates;
+      if (outcome.error) {
+        if (discovered.length === 0) throw outcome.error;
+        warnings.push('GitHub search unavailable; SkillsMP candidates still require source inspection');
+      }
+      const unique = new Map<string, Candidate>();
+      const canonical = (c: Candidate): string => c.ref.replace('@skills/', '@').toLowerCase();
+      const originals = new Map(existing.map(c => [canonical(c), c]));
+      const mixed = existing.flatMap((c, i) => discovered[i] ? [c, discovered[i]!] : [c]);
+      mixed.push(...discovered.slice(existing.length));
+      for (const c of mixed) {
+        const ref = c.ref.replace('@skills/', '@').toLowerCase();
+        if (!unique.has(ref)) unique.set(ref, originals.get(ref) ?? c);
+      }
+      candidates = [...unique.values()];
+      writeJson(cacheFile, { at: nowIso(), queries, days, candidates, warnings });
     } catch (error) {
       if (!cached) throw error;
       candidates = cached.candidates;
+      warnings.push('Search failed; using expired cached candidates that require reinspection');
       fromCache = true;
     }
   }
   candidates = candidates.slice(0, max);
-  const file = fromCache && fs.existsSync(cacheFile) ? null : writeNote(root, queries, candidates, days, cutoff);
+  const file = fromCache && fs.existsSync(cacheFile) ? null : writeNote(root, queries, candidates, days, cutoff, warnings);
   if (!fromCache) record(root, { event: 'research', client: detectClient(), model: detectModel(), detail: `${queries.join(' · ')} (last ${days} days)` });
-  return { queries, sources, days, cutoff, candidates, file, cached: fromCache, authenticated: client.authenticated };
+  return { queries, sources, days, cutoff, candidates, file, cached: fromCache, authenticated: github.authenticated, warnings };
 }

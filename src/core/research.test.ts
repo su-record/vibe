@@ -7,6 +7,7 @@ import type { GithubClient } from './github.js';
 import { draft } from './intent.js';
 import { readLedger } from './ledger.js';
 import { queriesFromIntent, research, skillDirsInTree } from './research.js';
+import { skillsmpCandidate } from './skillsmp.js';
 
 let root: string;
 beforeEach(() => {
@@ -35,6 +36,53 @@ const fake = (authenticated = true): GithubClient => ({ authenticated, get: (p) 
 const dead: GithubClient = { authenticated: false, get: () => Promise.reject(new VibeError('no network', 2)) };
 
 describe('research — see what exists before building', () => {
+  it('merges marketplace results, deduplicates source refs and reuses the cache without searching', async () => {
+    let calls = 0;
+    const provider = { search: async () => {
+      calls++;
+      return [skillsmpCandidate({ githubUrl: 'https://github.com/anthropics/skills/tree/main/skills/xlsx' })!, skillsmpCandidate({ githubUrl: 'https://github.com/acme/tools/tree/main/skills/pdf' })!];
+    } };
+    const result = await research(root, { query: 'xlsx deploy sdlc', sources: ['skills'] }, fake(false), provider);
+    expect(result.candidates.filter(c => c.ref === 'anthropics/skills@xlsx')).toHaveLength(1);
+    expect(result.candidates.find(c => c.ref === 'anthropics/skills@xlsx')?.why).not.toContain('SkillsMP');
+    expect(result.candidates.some(c => c.ref === 'acme/tools@pdf')).toBe(true);
+    expect(result.warnings).toEqual([]);
+    const cached = await research(root, { query: 'xlsx deploy sdlc', sources: ['skills'] }, dead, provider);
+    expect(cached.cached).toBe(true);
+    expect(calls).toBe(1);
+    expect(fs.existsSync(path.join(root, '.vibe/skills/installed'))).toBe(false);
+  });
+
+  it('preserves GitHub results on marketplace failure and retries degraded cache after five minutes', async () => {
+    let calls = 0;
+    const provider = { search: async () => { calls++; throw new Error('secret-response'); } };
+    const options = { query: 'deploy', sources: ['skills'] as const };
+    const run = () => research(root, { ...options, sources: [...options.sources] }, fake(false), provider);
+    const result = await run();
+    expect(result.candidates[0]?.ref).toBe('vercel-labs/agent-skills@deploy-to-vercel');
+    expect(result.warnings.join(' ')).toContain('SkillsMP unavailable');
+    expect(JSON.stringify(result)).not.toContain('secret-response');
+    expect((await run()).cached).toBe(true);
+    expect(calls).toBe(1);
+    const dir = path.join(root, '.vibe/cache/research');
+    const file = path.join(dir, fs.readdirSync(dir)[0]!);
+    const cache = JSON.parse(fs.readFileSync(file, 'utf8'));
+    cache.at = new Date(Date.now() - 301000).toISOString();
+    fs.writeFileSync(file, JSON.stringify(cache));
+    expect((await run()).cached).toBe(false);
+    expect(calls).toBe(2);
+  });
+
+  it('keeps marketplace discovery when GitHub fails and skips it for repository-only searches', async () => {
+    let calls = 0;
+    const provider = { search: async () => { calls++; return [skillsmpCandidate({ githubUrl: 'https://github.com/acme/tools/tree/main/skills/pdf' })!]; } };
+    const result = await research(root, { query: 'pdf', sources: ['skills', 'repos'] }, dead, provider);
+    expect(result.candidates[0]?.ref).toBe('acme/tools@pdf');
+    expect(result.warnings[0]).toContain('GitHub search unavailable');
+    await research(root, { query: 'settlement', sources: ['repos'] }, fake(), provider);
+    expect(calls).toBe(1);
+  });
+
   it('research: queries come from the intent title, http hosts and the stack', () => {
     fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ dependencies: { yaml: '1', '@types/node': '1' } }));
     draft(root, '# Settlement sheet from the order CSV\n\n## Why\nx\n', `
