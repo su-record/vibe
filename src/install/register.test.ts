@@ -29,8 +29,10 @@ if (args[0] === '--version') { console.log('9.9.9'); process.exit(0); }
 if (args[1] === 'marketplace') {
   const doc = read('known_marketplaces.json');
   if (args[2] === 'add') {
-    const name = JSON.parse(fs.readFileSync(path.join(args[3], '.claude-plugin', 'marketplace.json'))).name;
-    doc[name] = {source:{source:'directory',path:args[3]}};
+    if (Object.values(doc).some(p => p.source?.path === args[3])) process.exit(0);
+    const file = args[3].endsWith('marketplace.json');
+    const name = JSON.parse(fs.readFileSync(file ? args[3] : path.join(args[3], '.claude-plugin', 'marketplace.json'))).name;
+    doc[name] = {source:{source:file ? 'file' : 'directory',path:args[3]}};
   } else delete doc[args[3]];
   save('known_marketplaces.json',doc);
 } else {
@@ -127,7 +129,7 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(globalStatus(home).clients['claude']?.current).toBe(false);
     expect(ensureGlobal(home)).toEqual(['claude']);
     expect(log('claude.log')).toEqual([
-      `plugin marketplace add ${packageRoot()} --scope user`,
+      `plugin marketplace add ${path.join(packageRoot(), '.claude-plugin', 'marketplace.json')} --scope user`,
       'plugin install vibe@vibe-local --scope user', 'plugin uninstall vibe@vibe --scope user',
     ]);
     const doc = JSON.parse(fs.readFileSync(path.join(home, '.claude/plugins/installed_plugins.json'), 'utf8'));
@@ -147,6 +149,9 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(fs.existsSync(path.join(home, '.claude/skills/vibe'))).toBe(false);
     expect(fs.existsSync(hook)).toBe(true);
     expect(globalStatus(home).clients['claude']?.current).toBe(false);
+    const details: Record<string, string> = {};
+    expect(ensureGlobal(home, details)).toEqual([]);
+    expect(details['claude']).toContain('install failed');
     fs.rmSync(path.join(home, 'fail-install'));
     expect(registerClaude(home)).toMatchObject({ ok: true });
     expect(globalStatus(home).clients['claude']?.current).toBe(true);

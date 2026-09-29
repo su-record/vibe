@@ -71,10 +71,11 @@ export function syncUpdatedIntegrations(version: string, home?: string): { ok: b
   const args = [cli, 'setup', '--json', ...(home ? ['--home', home] : [])];
   const after = spawnSync(process.execPath, args, { encoding: 'utf-8', timeout: INSTALL_TIMEOUT_MS });
   try {
-    const setup = JSON.parse(after.stdout ?? '') as { version?: string; clients?: Record<string, { current?: boolean }> };
+    const setup = JSON.parse(after.stdout ?? '') as { version?: string; clients?: Record<string, { current?: boolean }>; details?: Record<string, string> };
     const stale = Object.entries(setup.clients ?? {}).filter(([, c]) => !c.current).map(([name]) => name);
     if (after.status !== 0 || setup.version !== version || !setup.clients || stale.length) {
-      return { ok: false, setup, detail: `plugin synchronization incomplete${stale.length ? `: ${stale.join(', ')}` : ''}; run \`vibe setup\`` };
+      const reasons = Object.entries(setup.details ?? {}).filter(([client]) => client === 'setup' || stale.includes(client)).map(([client, detail]) => `${client}: ${detail}`).join('\n');
+      return { ok: false, setup, detail: `plugin synchronization incomplete${stale.length ? `: ${stale.join(', ')}` : ''}; run \`vibe setup\`${reasons ? `\n${reasons}` : ''}` };
     }
     return { ok: true, setup, detail: 'client integrations synchronized; restart existing sessions to load the updated plugin' };
   } catch {

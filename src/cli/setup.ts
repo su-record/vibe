@@ -22,10 +22,12 @@ export function cmdTokens(root: string, policyRaw: string | undefined): Output {
 /** The one command whose job is the install: card, skills and hook per client, or the plugin registration. */
 export function cmdSetup(flags: Flags): Output {
   const home = flagString(flags, 'home');
-  const repaired = ensureGlobal(home);
+  const details: Record<string, string> = {};
+  const repaired = ensureGlobal(home, details);
   const g = globalStatus(home);
   const lines = Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${(repaired as string[]).includes(client) ? ' — set up now' : c.current ? ' — current' : ' — still stale'}${c.hooksTrusted === false || c.hooksTrusted === null ? ' — hooks not trusted by Codex: open Codex once in a vibe project and accept them, or pass --dangerously-bypass-hook-trust in automation' : c.hooksTrusted ? ' · hooks trusted' : ''}`);
-  return { json: { version: packageVersion(), repaired, ...g }, text: [`vibe ${packageVersion()} — ${g.home}`, ...lines].join('\n'), code: Object.values(g.clients).some(c => !c.current) ? 2 : 0 };
+  const failures = Object.entries(details).filter(([client]) => client === 'setup' || !g.clients[client]?.current).map(([client, detail]) => `  ${client}: ${detail}`);
+  return { json: { version: packageVersion(), repaired, details, ...g }, text: [`vibe ${packageVersion()} — ${g.home}`, ...lines, ...failures].join('\n'), code: failures.length || Object.values(g.clients).some(c => !c.current) ? 2 : 0 };
 }
 
 export function cmdStatus(root: string, flags: Flags): Output {
