@@ -59,7 +59,9 @@ export function claudeNeedsMigration(home: string): boolean {
 
 function claudeMarketplacePath(home: string, name: string = MARKETPLACE): string | null {
   const doc = readJson<KnownMarketplaces>(path.join(home, '.claude', 'plugins', 'known_marketplaces.json'));
-  return doc?.[name]?.source?.path ?? null;
+  const source = doc?.[name]?.source;
+  if (source?.source === 'file' && source.path && path.basename(source.path) === 'marketplace.json' && path.basename(path.dirname(source.path)) === '.claude-plugin') return path.dirname(path.dirname(source.path));
+  return source?.path ?? null;
 }
 
 export interface RegisterReport {
@@ -100,7 +102,10 @@ export function registerClaude(home: string, root: string = packageRoot()): Regi
   if (elsewhere && (!claudeNeedsMigration(home) || newer(elsewhere.version, want))) return { ok: true, mode: 'plugin', version: elsewhere.version, detail: `current — ${elsewhere.version} at ${elsewhere.at}` };
   if (at !== null && at !== root) run('claude', ['plugin', 'marketplace', 'remove', MARKETPLACE], home);
   if (at !== root) {
-    const add = run('claude', ['plugin', 'marketplace', 'add', root, '--scope', 'user'], home);
+    // Claude deduplicates directory sources by path, retaining the former marketplace name.
+    // A manifest file is a distinct source; preserve the old registration and live caches.
+    const source = claudeMarketplacePath(home, 'vibe') === root ? path.join(root, '.claude-plugin', 'marketplace.json') : root;
+    const add = run('claude', ['plugin', 'marketplace', 'add', source, '--scope', 'user'], home);
     if (!add.ok) return { ok: false, mode: claudePluginVersion(home) ? 'plugin' : 'home', version: claudePluginVersion(home), detail: `marketplace add failed: ${add.out.slice(-200)}` };
   }
   const step = installed === want && at === root ? { ok: true, out: '' } : installed ? run('claude', ['plugin', 'update', PLUGIN_ID], home) : run('claude', ['plugin', 'install', PLUGIN_ID, '--scope', 'user'], home);

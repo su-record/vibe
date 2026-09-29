@@ -1,11 +1,25 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../install/update.js', () => ({ checkUpdate: vi.fn(), runUpdate: vi.fn(), syncUpdatedIntegrations: vi.fn() }));
 vi.mock('../install/global.js', () => ({ ensureGlobal: vi.fn(() => []), globalStatus: vi.fn(), uninstallGlobal: vi.fn(), uninstallProjectSurfaces: vi.fn() }));
-import { cmdUpdate } from './setup.js';
+import { cmdSetup, cmdUpdate } from './setup.js';
 import { checkUpdate, runUpdate, syncUpdatedIntegrations } from '../install/update.js';
 import { ensureGlobal, globalStatus } from '../install/global.js';
 
 beforeEach(() => vi.clearAllMocks());
+it('reports a failed repair as stale, preserves its cause, and never says set up now', () => {
+  vi.mocked(ensureGlobal).mockImplementationOnce((_home, details) => {
+    if (details) details.claude = 'marketplace add failed: registration rejected';
+    return [];
+  });
+  vi.mocked(globalStatus).mockReturnValue({ home: '/tmp/home', cardBytes: 0, cardOver: false, clients: {
+    claude: { current: false, mode: 'plugin', pluginVersion: '4.2.4', card: false, skills: 0, hook: false },
+  } });
+  const result = cmdSetup({});
+  expect(result.code).toBe(2);
+  expect(result.text).toContain('still stale');
+  expect(result.text).toContain('registration rejected');
+  expect(result.text).not.toContain('set up now');
+});
 it('synchronizes the new binary after npm update and reports synchronization failure', () => {
   vi.mocked(runUpdate).mockReturnValue({ installed: '4.2.7', latest: '4.2.8', available: true, updated: true, detail: '4.2.7 → 4.2.8' });
   vi.mocked(syncUpdatedIntegrations).mockReturnValue({ ok: true, detail: 'synchronized' });

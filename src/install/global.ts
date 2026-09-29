@@ -299,15 +299,21 @@ export function globalStatus(home: string = os.homedir()): GlobalStatus {
  * the dotted skill directories of ≤ 4.1.7 go first, in every mode.
  * Returns the clients that were repaired. Never throws — a broken home must not block a verdict.
  */
-export function ensureGlobal(home: string = os.homedir()): Client[] {
+export function ensureGlobal(home: string = os.homedir(), details?: Record<string, string>): Client[] {
   try {
     sweepDeadHooks(home);
     sweepLegacyPluginStore(home);
     for (const client of detectClients(home)) removeLegacySkills(path.join(home, globalLayout(client).skills));
     const stale = detectClients(home).filter((c) => !clientStatus(home, c).current);
-    if (stale.length > 0) setupGlobal(home, stale);
-    return stale;
-  } catch {
+    if (stale.length > 0) {
+      const report = setupGlobal(home, stale);
+      if (details) for (const [client, surface] of Object.entries(report.surfaces)) {
+        if (surface.detail) details[client] = surface.detail;
+      }
+    }
+    return stale.filter(c => clientStatus(home, c).current);
+  } catch (error) {
+    if (details) details['setup'] = error instanceof Error ? error.message : 'integration setup failed';
     return [];
   }
 }
