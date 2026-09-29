@@ -6,7 +6,7 @@ import { readJson } from '../core/store.js';
 /**
  * `vibe update` — the update is an npm install, but the user should not have to know npm.
  * Asks the registry for the latest version, installs it globally when it differs, and lets the
- * new binary re-register the plugins (every command does that on its own).
+ * new binary explicitly re-register the plugins; ordinary queries are read-only.
  */
 export const PACKAGE = '@su-record/vibe';
 const VIEW_TIMEOUT_MS = 10_000;
@@ -60,4 +60,24 @@ export function runUpdate(): UpdateResult {
   const r = npm(['i', '-g', `${PACKAGE}@${check.latest}`], INSTALL_TIMEOUT_MS);
   if (!r.ok) return { ...check, updated: false, detail: `npm install failed — run: npm i -g ${PACKAGE}@${check.latest}\n${r.out.slice(-300)}` };
   return { ...check, updated: true, detail: `${check.installed} → ${check.latest}` };
+}
+
+/** Resolve npm's installed copy, not an older executable earlier on PATH. */
+export function syncUpdatedIntegrations(version: string, home?: string): { ok: boolean; detail: string; setup?: unknown } {
+  const root = npm(['root', '-g'], VIEW_TIMEOUT_MS);
+  const dir = root.out.split('\n').at(-1)?.trim();
+  if (!root.ok || !dir || !path.isAbsolute(dir)) return { ok: false, detail: 'could not locate the updated package; run `vibe setup`' };
+  const cli = path.join(dir, '@su-record', 'vibe', 'dist', 'cli.js');
+  const args = [cli, 'setup', '--json', ...(home ? ['--home', home] : [])];
+  const after = spawnSync(process.execPath, args, { encoding: 'utf-8', timeout: INSTALL_TIMEOUT_MS });
+  try {
+    const setup = JSON.parse(after.stdout ?? '') as { version?: string; clients?: Record<string, { current?: boolean }> };
+    const stale = Object.entries(setup.clients ?? {}).filter(([, c]) => !c.current).map(([name]) => name);
+    if (after.status !== 0 || setup.version !== version || !setup.clients || stale.length) {
+      return { ok: false, setup, detail: `plugin synchronization incomplete${stale.length ? `: ${stale.join(', ')}` : ''}; run \`vibe setup\`` };
+    }
+    return { ok: true, setup, detail: 'client integrations synchronized; restart existing sessions to load the updated plugin' };
+  } catch {
+    return { ok: false, detail: 'could not verify plugin synchronization; run `vibe setup`' };
+  }
 }

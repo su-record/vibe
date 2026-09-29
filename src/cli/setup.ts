@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { parseTokenPolicy, readConfig, writeConfig } from '../core/config.js';
 import { usage } from '../core/errors.js';
 import { ensureGlobal, globalStatus, uninstallGlobal, uninstallProjectSurfaces } from '../install/global.js';
@@ -7,7 +6,7 @@ import { buildMcpb } from '../install/mcpb.js';
 import { installPlugin, pluginStatus } from '../install/plugin.js';
 import { ensureProject, projectStatus, purgeProject } from '../install/project.js';
 import { checkPluginTree, writePluginTree } from '../install/tree.js';
-import { checkUpdate, runUpdate } from '../install/update.js';
+import { checkUpdate, runUpdate, syncUpdatedIntegrations } from '../install/update.js';
 import { flagString, packageVersion, type Flags, type Output } from './common.js';
 
 export function cmdTokens(root: string, policyRaw: string | undefined): Output {
@@ -26,7 +25,7 @@ export function cmdSetup(flags: Flags): Output {
   const repaired = ensureGlobal(home);
   const g = globalStatus(home);
   const lines = Object.entries(g.clients).map(([client, c]) => `  ${client.padEnd(9)} ${c.mode === 'plugin' ? `plugin ${c.pluginVersion ?? 'not installed'}` : `home · card ${c.card ? 'ok' : '-'} · skills ${c.skills} · hook ${c.hook ? 'ok' : '-'}`}${(repaired as string[]).includes(client) ? ' — set up now' : c.current ? ' — current' : ' — still stale'}${c.hooksTrusted === false || c.hooksTrusted === null ? ' — hooks not trusted by Codex: open Codex once in a vibe project and accept them, or pass --dangerously-bypass-hook-trust in automation' : c.hooksTrusted ? ' · hooks trusted' : ''}`);
-  return { json: { repaired, ...g }, text: [`vibe ${packageVersion()} — ${g.home}`, ...lines].join('\n'), code: 0 };
+  return { json: { version: packageVersion(), repaired, ...g }, text: [`vibe ${packageVersion()} — ${g.home}`, ...lines].join('\n'), code: Object.values(g.clients).some(c => !c.current) ? 2 : 0 };
 }
 
 export function cmdStatus(root: string, flags: Flags): Output {
@@ -53,11 +52,13 @@ export function cmdUpdate(flags: Flags): Output {
     return { json: c, text, code: 0 };
   }
   const r = runUpdate();
-  if (!r.updated) return { json: r, text: r.detail, code: r.latest === null ? 2 : 0 };
-  // The new binary registers the plugins itself; run it once so the report shows the new state.
-  const after = spawnSync('vibe', ['status'], { encoding: 'utf-8', timeout: 120_000, shell: process.platform === 'win32' });
-  const tail = after.status === 0 ? after.stdout.trim() : `run \`vibe status\` to finish the setup`;
-  return { json: { ...r, status: after.stdout }, text: `updated ${r.detail}\n${tail}`, code: 0 };
+  if (!r.updated) {
+    if (r.latest === null || r.available) return { json: r, text: r.detail, code: 2 };
+    const setup = cmdSetup(flags);
+    return { json: { ...r, integrations: setup.json }, text: `${r.detail}\n${setup.text}`, code: setup.code };
+  }
+  const integrations = syncUpdatedIntegrations(r.latest!, flagString(flags, 'home'));
+  return { json: { ...r, integrations }, text: `updated ${r.detail}\n${integrations.detail}`, code: integrations.ok ? 0 : 2 };
 }
 
 export function cmdUninstall(root: string, flags: Flags): Output {

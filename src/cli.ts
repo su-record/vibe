@@ -52,7 +52,7 @@ const COMMANDS: Record<string, Handler> = {
   skill: async (root, sub, rest, _t, flags) => (await import('./cli/memory.js')).cmdSkill(root, sub, rest, flags),
 };
 
-const REPAIRS = new Set(['update', 'plugin']); // `setup` is the repair itself
+const REPAIRS = new Set(['plugin']); // setup/update explicitly repair using the intended package version
 
 async function repairInstall(flags: Flags): Promise<void> {
   const { ensureGlobal, globalStatus } = await import('./install/global.js');
