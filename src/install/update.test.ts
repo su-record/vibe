@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { checkUpdate, installedVersion, newer, runUpdate } from './update.js';
+import { checkUpdate, installedVersion, newer, runUpdate, syncUpdatedIntegrations } from './update.js';
 
 let dir: string;
 let savedPath: string | undefined;
@@ -22,6 +22,27 @@ afterEach(() => {
 });
 
 describe('vibe update — an npm install the user does not have to know about', () => {
+  it('runs the npm-installed CLI setup, forwards a spaced home path and verifies stale or wrong versions', () => {
+    const globalRoot = path.join(dir, 'global modules');
+    const cli = path.join(globalRoot, '@su-record/vibe/dist/cli.js');
+    fs.mkdirSync(path.dirname(cli), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'npm'), `#!/bin/sh\nprintf '%s\\n' '${globalRoot}'\n`, { mode: 0o755 });
+    const write = (version: string, current: boolean, code = 0): void => {
+      fs.writeFileSync(cli, `require('fs').writeFileSync(${JSON.stringify(path.join(dir, 'args.json'))}, JSON.stringify(process.argv.slice(2))); console.log(${JSON.stringify(JSON.stringify({ version, clients: { claude: { current }, codex: { current } } }))}); process.exitCode=${code};`);
+    };
+    write('99.0.0', true);
+    expect(syncUpdatedIntegrations('99.0.0', path.join(dir, 'user home')).ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, 'args.json'), 'utf8'))).toEqual(['setup', '--json', '--home', path.join(dir, 'user home')]);
+    write('99.0.0', false);
+    expect(syncUpdatedIntegrations('99.0.0')).toMatchObject({ ok: false, detail: expect.stringContaining('claude, codex') });
+    write('98.0.0', true);
+    expect(syncUpdatedIntegrations('99.0.0').ok).toBe(false);
+    write('99.0.0', true, 1);
+    expect(syncUpdatedIntegrations('99.0.0').ok).toBe(false);
+    fs.writeFileSync(cli, 'console.log("not json")');
+    expect(syncUpdatedIntegrations('99.0.0').ok).toBe(false);
+  });
+
   it('update: compares versions, installs only when the registry is newer, and reports a failed install with the manual command', () => {
     expect(newer('4.1.1', '4.1.0')).toBe(true);
     expect(newer('4.1.0', '4.1.0')).toBe(false);

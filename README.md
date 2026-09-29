@@ -31,7 +31,7 @@ Use meaningful existing tests and required repository checks. Do not repeat unch
 - Claude Desktop uses the existing MCPB transport. Build it with `vibe plugin mcpb --out vibe.mcpb`, open it in the app and select the project. The tool catalog exposes one `vibe` tool; internal operations are discovered on demand. Its existing CLI operations are retained. Code editing requires tools available in the host; the MCPB itself does not add a general-purpose shell.
 - Hermes and clients without plugin registration receive the single entry through the existing home installation fallback.
 
-`vibe status` reports installation state; `vibe setup` repairs it; `vibe update` updates it. Queries never reinstall plugins. The npm package includes internal guidance and runtime code, while the assembled plugin remains small.
+`vibe status` reports installation state; `vibe setup` repairs it. `vibe update` installs the new package, runs setup through that installed copy and verifies detected client integrations. It also repairs integrations when the package is already current, and reports incomplete synchronization as a failure. `vibe update --check` only checks versions. Global npm installs run setup through postinstall when scripts are allowed; if scripts are disabled, run `vibe update` or `vibe setup`. Restart existing Claude/Codex sessions to load the updated plugin. Queries never reinstall plugins. The npm package includes internal guidance and runtime code, while the assembled plugin remains small.
 
 ## Compatibility and diagnostics
 

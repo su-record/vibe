@@ -12,8 +12,8 @@ export { hasNotifyHook, sweepDeadHooks } from './hooks.js';
 /**
  * The always-on surfaces — card, entry skill, notification hook — are identical in every
  * project and tied to the CLI version, so they live once per client home (`~/.claude`, `~/.codex`),
- * not in each repository. `npm i -g` puts them there (postinstall) and every `vibe` command repairs
- * them when they are missing or stale. Only `.vibe/` state belongs to a project.
+ * not in each repository. `npm i -g` puts them there (postinstall); `vibe setup` and `vibe update`
+ * explicitly repair missing or stale integrations. Only `.vibe/` state belongs to a project.
  */
 export type Client = 'claude' | 'codex' | 'hermes';
 export const ALL_CLIENTS: ReadonlyArray<Client> = ['claude', 'codex', 'hermes'];
