@@ -179,7 +179,7 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(globalStatus(home).clients['claude']?.current).toBe(true);
   });
 
-  it('plugin mode: codex gets the assembled tree, the personal marketplace and the two codex commands; the card stays in ~/.codex/AGENTS.md; a Codex whose cache cannot be read is not stale', () => {
+  it('an unreadable Codex cache remains unverified, preserves the card, and recovers when installation becomes observable', () => {
     fs.writeFileSync(path.join(shim, 'codex'), CODEX_SHIM_NO_CACHE, { mode: 0o755 });
     fs.mkdirSync(path.join(home, '.codex'));
     const report = setupGlobal(home);
@@ -188,9 +188,14 @@ describe('plugin mode — the package registers itself as a local plugin', () =>
     expect(fs.existsSync(path.join(home, '.config', 'vibe', 'plugin', 'vibe', '.codex-plugin', 'plugin.json'))).toBe(true);
     expect(fs.existsSync(path.join(home, '.codex', 'skills'))).toBe(false);
     expect(fs.readFileSync(path.join(home, '.codex', 'AGENTS.md'), 'utf-8')).toContain('<!-- vibe:start -->');
-    expect(globalStatus(home).clients['codex']).toMatchObject({ mode: 'plugin', current: true });
+    expect(globalStatus(home).clients['codex']).toMatchObject({ mode: 'plugin', current: false, pluginVersion: null });
+    expect(report.surfaces['codex']?.detail).toContain('observed unknown');
+    fs.writeFileSync(path.join(shim, 'codex'), CODEX_SHIM, { mode: 0o755 });
+    expect(ensureGlobal(home)).toEqual(['codex']);
+    expect(globalStatus(home).clients['codex']?.current).toBe(true);
+    const calls = log('codex.log').length;
     expect(ensureGlobal(home)).toEqual([]);
-    expect(log('codex.log')).toHaveLength(2); // an unreadable cache is not stale — nothing ran again
+    expect(log('codex.log')).toHaveLength(calls);
     expect(uninstallGlobal(home)).toEqual(expect.arrayContaining([path.join(home, '.config', 'vibe', 'plugin', 'vibe'), '.codex/AGENTS.md card']));
     expect(log('codex.log').at(-1)).toBe('plugin remove vibe@vibe-local');
   });

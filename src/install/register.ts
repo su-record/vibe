@@ -168,7 +168,7 @@ export function codexPluginVersion(home: string): string | null {
   return versions[0] ?? null;
 }
 
-/** Tree without drift, marketplace pointing at it, and Codex holding this version. An unreadable cache (null) is not stale. */
+/** An assembled tree alone does not prove Codex has installed it. */
 /** Highest version wins for Codex too: a tree assembled by a newer install, which Codex holds, is not torn down by an older binary. */
 export function codexHeldNewer(home: string): string | null {
   const s = pluginStatus(home);
@@ -202,7 +202,7 @@ export function codexRegistered(home: string): boolean {
   const s = pluginStatus(home);
   if (!s.exists || !s.registered || s.drift.length > 0) return false;
   const held = codexPluginVersion(home);
-  return held === null || held === packageVersion();
+  return held === packageVersion();
 }
 
 const codexCacheDir = (home: string): string => path.join(home, '.codex', 'plugins', 'cache', marketplaceName(home), 'vibe');
@@ -257,6 +257,8 @@ export function registerCodex(home: string): RegisterReport {
     if (snapshot) fs.rmSync(snapshot, { recursive: true, force: true });
   }
   if (!plug.ok) return { ok: false, mode: 'home', version: held, detail: `codex plugin add failed: ${plug.out.slice(-200)}` };
+  const observed = codexPluginVersion(home);
+  if (observed !== r.version) return { ok: false, mode: 'plugin', version: observed, detail: `codex verification incomplete: expected ${r.version}, observed ${observed ?? 'unknown'}; inspect the client installation before retrying setup` };
   return { ok: true, mode: 'plugin', version: r.version, detail: held ? `updated ${held} → ${r.version}; a session started under ${held} keeps its hooks until it restarts` : `registered ${id}` };
 }
 

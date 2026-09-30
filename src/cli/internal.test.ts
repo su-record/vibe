@@ -49,18 +49,20 @@ it('keeps extension research, installation and creation reachable through intern
   expect(help.text).toContain('skill create');
 });
 
-it('keeps operating context and corrections visible beyond the ordinary note limit without loading bodies', () => {
+it('keeps operating context and corrections in a bounded excerpt shortlist without rewriting notes', () => {
   const directory = path.join(root, '.vibe', 'knowledge');
   fs.mkdirSync(directory, { recursive: true });
   for (let i = 0; i < 25; i++) fs.writeFileSync(path.join(directory, `a-${i}.md`), 'ordinary');
-  for (const name of ['work-context.md', 'corrections.md', 'reuse.md']) fs.writeFileSync(path.join(directory, name), 'PRIVATE_BODY_NOT_FOR_AUTOMATIC_LOADING');
+  for (const name of ['work-context.md', 'corrections.md', 'reuse.md']) fs.writeFileSync(path.join(directory, name), 'Saved decision and its evidence path');
   fs.mkdirSync(path.join(directory, 'a-directory.md'));
   const before = fs.readdirSync(directory).sort();
   const result = cmdInternal(root, 'brief', []);
   const notes = (result.json as { notes: string[] }).notes.filter(file => file.startsWith(directory));
-  expect(notes).toHaveLength(20);
+  expect(notes).toHaveLength(8);
   expect(notes.slice(0, 3).map(file => path.basename(file))).toEqual(['corrections.md', 'work-context.md', 'reuse.md']);
   expect(notes).not.toContain(path.join(directory, 'a-directory.md'));
-  expect(JSON.stringify(result)).not.toContain('PRIVATE_BODY_NOT_FOR_AUTOMATIC_LOADING');
+  expect(result.text).toContain('Saved decision and its evidence path');
+  expect(result.json).toMatchObject({ memory: { partial: true } });
+  expect(Buffer.byteLength(JSON.stringify(result.json))).toBeLessThanOrEqual(24000);
   expect(fs.readdirSync(directory).sort()).toEqual(before);
 });

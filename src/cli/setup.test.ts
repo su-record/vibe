@@ -22,10 +22,10 @@ it('reports a failed repair as stale, preserves its cause, and never says set up
 });
 it('synchronizes the new binary after npm update and reports synchronization failure', () => {
   vi.mocked(runUpdate).mockReturnValue({ installed: '4.2.7', latest: '4.2.8', available: true, updated: true, detail: '4.2.7 → 4.2.8' });
-  vi.mocked(syncUpdatedIntegrations).mockReturnValue({ ok: true, detail: 'synchronized' });
+  vi.mocked(syncUpdatedIntegrations).mockReturnValue({ ok: true, phase: 'complete', detail: 'synchronized' });
   expect(cmdUpdate({ home: '/tmp/test home' }).code).toBe(0);
   expect(syncUpdatedIntegrations).toHaveBeenCalledWith('4.2.8', '/tmp/test home');
-  vi.mocked(syncUpdatedIntegrations).mockReturnValue({ ok: false, detail: 'incomplete' });
+  vi.mocked(syncUpdatedIntegrations).mockReturnValue({ ok: false, phase: 'verify', detail: 'incomplete' });
   expect(cmdUpdate({}).code).toBe(2);
 });
 it('repairs stale integrations even when the npm version is already current', () => {

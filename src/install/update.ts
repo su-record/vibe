@@ -52,7 +52,7 @@ export interface UpdateResult extends UpdateCheck {
   detail: string;
 }
 
-/** Install the latest version globally when one exists. The caller re-runs `vibe status` on the new binary. */
+/** Install the latest version globally when one exists. The caller verifies the new binary's setup. */
 export function runUpdate(): UpdateResult {
   const check = checkUpdate();
   if (check.latest === null) return { ...check, updated: false, detail: 'the npm registry could not be reached — try again with a network' };
@@ -63,22 +63,25 @@ export function runUpdate(): UpdateResult {
 }
 
 /** Resolve npm's installed copy, not an older executable earlier on PATH. */
-export function syncUpdatedIntegrations(version: string, home?: string): { ok: boolean; detail: string; setup?: unknown } {
+export function syncUpdatedIntegrations(version: string, home?: string): { ok: boolean; detail: string; setup?: unknown; phase: 'locate' | 'execute' | 'verify' | 'complete' } {
   const root = npm(['root', '-g'], VIEW_TIMEOUT_MS);
   const dir = root.out.split('\n').at(-1)?.trim();
-  if (!root.ok || !dir || !path.isAbsolute(dir)) return { ok: false, detail: 'could not locate the updated package; run `vibe setup`' };
+  if (!root.ok || !dir || !path.isAbsolute(dir)) return { ok: false, phase: 'locate', detail: 'could not locate the updated package; run `vibe setup`' };
   const cli = path.join(dir, '@su-record', 'vibe', 'dist', 'cli.js');
   const args = [cli, 'setup', '--json', ...(home ? ['--home', home] : [])];
   const after = spawnSync(process.execPath, args, { encoding: 'utf-8', timeout: INSTALL_TIMEOUT_MS });
+  if (after.error || after.signal) return { ok: false, phase: 'execute', detail: `setup interrupted (${(after.error as NodeJS.ErrnoException | undefined)?.code ?? after.signal}); installation may have changed — inspect \`vibe status\` before retrying \`vibe setup\`` };
   try {
-    const setup = JSON.parse(after.stdout ?? '') as { version?: string; clients?: Record<string, { current?: boolean }>; details?: Record<string, string> };
-    const stale = Object.entries(setup.clients ?? {}).filter(([, c]) => !c.current).map(([name]) => name);
+    const setup = JSON.parse(after.stdout ?? '') as { version?: string; clients?: Record<string, { current?: boolean; mode?: string; pluginVersion?: string }>; details?: Record<string, string> };
+    if (!setup || !setup.clients || typeof setup.clients !== 'object' || Array.isArray(setup.clients)) throw new Error('invalid setup response');
+    const stale = Object.entries(setup.clients).filter(([, c]) => !c || c.current !== true ||
+      (c.mode === 'plugin' && (typeof c.pluginVersion !== 'string' || !/^\d+\.\d+\.\d+$/.test(c.pluginVersion) || (c.pluginVersion !== version && !newer(c.pluginVersion, version))))).map(([name]) => name);
     if (after.status !== 0 || setup.version !== version || !setup.clients || stale.length) {
       const reasons = Object.entries(setup.details ?? {}).filter(([client]) => client === 'setup' || stale.includes(client)).map(([client, detail]) => `${client}: ${detail}`).join('\n');
-      return { ok: false, setup, detail: `plugin synchronization incomplete${stale.length ? `: ${stale.join(', ')}` : ''}; run \`vibe setup\`${reasons ? `\n${reasons}` : ''}` };
+      return { ok: false, phase: 'verify', setup, detail: `plugin synchronization incomplete${stale.length ? `: ${stale.join(', ')}` : ''}; retry \`vibe setup\`, not the npm install${reasons ? `\n${reasons}` : ''}` };
     }
-    return { ok: true, setup, detail: 'client integrations synchronized; restart existing sessions to load the updated plugin' };
+    return { ok: true, phase: 'complete', setup, detail: Object.keys(setup.clients).length ? 'client integrations synchronized; restart existing sessions to load the updated plugin' : 'package verified; no client integrations detected' };
   } catch {
-    return { ok: false, detail: 'could not verify plugin synchronization; run `vibe setup`' };
+    return { ok: false, phase: 'verify', detail: `could not verify plugin synchronization (setup exit ${after.status}); run \`vibe setup\`` };
   }
 }

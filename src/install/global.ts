@@ -206,9 +206,11 @@ function installClient(home: string, client: Client): SurfaceReport {
   }
   if (client === 'codex' && cliAvailable('codex')) {
     const r = registerCodex(home);
-    if (r.ok) {
-      removeSkills(path.join(home, layout.skills));
-      if (layout.hook) removeHookFile(path.join(home, layout.hook));
+    if (r.ok || r.mode === 'plugin') {
+      if (r.ok) {
+        removeSkills(path.join(home, layout.skills));
+        if (layout.hook) removeHookFile(path.join(home, layout.hook));
+      }
       return { card: upsertCard(path.join(home, layout.card)), skills: [], hook: 'plugin', mode: 'plugin', detail: r.detail };
     }
     return { ...installSurfaces(home, layout), detail: r.detail };
@@ -261,7 +263,7 @@ export function clientStatus(home: string, client: Client): SurfaceStatus {
     const registered = codexRegistered(home);
     const card = hasCurrentCard(path.join(home, layout.card));
     const held = codexPluginVersion(home); // what Codex runs, not what the package says
-    return { card, skills: registered ? SKILL_NAMES.length : 0, hook: registered, current: registered && card, mode: 'plugin', pluginVersion: held ?? (registered ? packageVersion() : null), hooksTrusted: codexHooksTrusted(home) };
+    return { card, skills: registered ? SKILL_NAMES.length : 0, hook: registered, current: registered && card, mode: 'plugin', pluginVersion: held, hooksTrusted: codexHooksTrusted(home) };
   }
   return surfaceStatus(home, layout);
 }
@@ -303,8 +305,9 @@ export function ensureGlobal(home: string = os.homedir(), details?: Record<strin
   try {
     sweepDeadHooks(home);
     sweepLegacyPluginStore(home);
-    for (const client of detectClients(home)) removeLegacySkills(path.join(home, globalLayout(client).skills));
-    const stale = detectClients(home).filter((c) => !clientStatus(home, c).current);
+    const clients = detectClients(home);
+    for (const client of clients) removeLegacySkills(path.join(home, globalLayout(client).skills));
+    const stale = clients.filter((c) => !clientStatus(home, c).current);
     if (stale.length > 0) {
       const report = setupGlobal(home, stale);
       if (details) for (const [client, surface] of Object.entries(report.surfaces)) {

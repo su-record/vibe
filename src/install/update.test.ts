@@ -41,6 +41,14 @@ describe('vibe update — an npm install the user does not have to know about', 
     expect(syncUpdatedIntegrations('99.0.0').ok).toBe(false);
     fs.writeFileSync(cli, 'console.log("not json")');
     expect(syncUpdatedIntegrations('99.0.0').ok).toBe(false);
+    for (const clients of [[], 'invalid', { claude: null }, { claude: { current: 'true' } },
+      { claude: { current: true, mode: 'plugin', pluginVersion: '4.2.4' } },
+      { claude: { current: true, mode: 'plugin', pluginVersion: 'invalid' } }]) {
+      fs.writeFileSync(cli, `console.log(${JSON.stringify(JSON.stringify({ version: '99.0.0', clients }))})`);
+      expect(syncUpdatedIntegrations('99.0.0')).toMatchObject({ ok: false, phase: 'verify' });
+    }
+    fs.writeFileSync(cli, `console.log(${JSON.stringify(JSON.stringify({ version: '99.0.0', clients: {} }))})`);
+    expect(syncUpdatedIntegrations('99.0.0')).toMatchObject({ ok: true, detail: 'package verified; no client integrations detected' });
   });
 
   it('update: compares versions, installs only when the registry is newer, and reports a failed install with the manual command', () => {
