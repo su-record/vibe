@@ -2,6 +2,8 @@
 
 Use this guide when the user reports latency/cost, recorded work repeats, or a measured budget is exceeded. Do not run an optimization pass after every task.
 
+Do not add a decision-model call in front of routine work. Prefer code for exact comparisons and the current agent for contextual judgment. Consider an optional classifier only for a measured, repeated classification bottleneck; compare end-to-end latency, cost and correction effort on representative cases before enabling it. Missing credentials or uncertain output must preserve the existing workflow, and classifier output must not override execution permissions or required checks.
+
 Start with `vibe internal performance report --json`. It reads at most twenty recent check evidence files, each at most 1 MiB, without executing checks or writing records. The largest summed durations identify candidates, not proven waste. A repeated test may be necessary after a changed input or failure.
 
 For CLI startup specifically, run `vibe internal performance startup --json` before and after a change under the same Node version, machine, project and load. It runs only fixed read-only CLI commands, two warmups and ten measurements each, with a timeout and output bound. It never benchmarks an arbitrary command, starts a model or creates a verdict. Store a baseline only when comparison is needed; avoid a background profiler or another persistent store.

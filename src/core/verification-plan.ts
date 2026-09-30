@@ -26,16 +26,18 @@ export function verificationPlan(root: string, options: CheckOptions = {}) {
   const checks = universe.map(s => {
     const result = previous[s.id];
     const last = result?.last ?? 'never';
-    const decision = selected.has(s.id) ? 'selected' : last === 'pass' ? 'reuse' : 'outside-selection';
+    const decision = blockers.length ? 'blocked' : selected.has(s.id) ? 'selected' : last === 'pass' ? 'reuse' : 'outside-selection';
     const reason = decision === 'reuse' ? 'recorded pass is fresh under existing tree, artifact and handoff rules'
+      : decision === 'blocked' ? 'resolve blockers before executing or treating recorded evidence as reusable'
       : decision === 'outside-selection' ? 'not requested; still required before completion'
       : options.all ? 'explicit full run' : options.ids?.includes(s.id) ? 'explicitly requested'
       : isHuman(s) ? 'human judgment; no automatic verdict' : `no reusable pass (${last})`;
-    return { id: s.id, type: s.check.type, last, decision, reason,
+    return { id: s.id, type: s.check.type, last, decision, selected: selected.has(s.id), reason,
       evidence: result?.run ? `${result.run}#${s.id}` : null,
       prerequisites: ancestorsOf(universe, [s.id]).filter(id => previous[id]?.last !== 'pass') };
   });
   return { root, recordedState: state.state, blockers, checks,
+    nextAction: blockers.length ? 'resolve-blockers' : checks.some(c => c.decision === 'selected') ? 'run-selected-checks' : 'inspect-completion-requirements',
     remaining: universe.filter(s => !isHuman(s) && previous[s.id]?.last !== 'pass').map(s => s.id),
     retry: state.repair ? { failures: state.failStreak, waiting,
       next: 'Inspect the existing failure evidence and identify changed input or a new hypothesis before retrying.' } : null,

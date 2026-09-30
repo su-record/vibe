@@ -72,6 +72,8 @@ it('keeps explicit reruns available, and reports edited contracts without granti
   fs.appendFileSync(path.join(root, '.vibe/intent.md'), '\nChanged objective\n');
   const before = snapshot();
   expect(verificationPlan(root).blockers.some(b => b.includes('approval void'))).toBe(true);
+  expect(verificationPlan(root).checks.every(c => c.decision === 'blocked')).toBe(true);
+  expect(verificationPlan(root).nextAction).toBe('resolve-blockers');
   expect(snapshot()).toEqual(before);
   await expect(runChecks(root)).rejects.toThrow('approval void');
 });
