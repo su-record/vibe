@@ -2,6 +2,8 @@
 
 Use for UI creation, visual changes, complaints about design or a supplied reference. Start from the user's task, audience and real content.
 
+Apply antislop while designing, without a separate request: each section, card, decoration and motion should serve real content or an interaction. Avoid fabricated metrics, interchangeable marketing copy and repeated card grids that hide the information hierarchy. Preserve an established visual language; gradients, rounded cards and other common patterns are not defects by themselves. Fix specific hierarchy, readability or interaction problems rather than adding novelty or a mandatory design-review pass.
+
 ## Preserve a coherent direction
 
 Read the relevant existing design documentation, `DESIGN.md`, theme values and reusable components first. Existing project conventions take priority unless the user requests a redesign. A new page within an established design needs no new reference search. Small fixes need no new design document.

@@ -65,6 +65,15 @@ it('includes stale prerequisites and agrees with actual execution after an input
   expect(report.done).toBe(false);
 });
 
+it('does not certify authored quality from passing machine checks or mutate evidence', async () => {
+  fixture(); await runChecks(root);
+  const before = snapshot();
+  const plan = verificationPlan(root);
+  expect(plan.checks.every(c => c.last === 'pass')).toBe(true);
+  expect(plan.qualityReview).toMatchObject({ status: 'not-assessed', assessedBy: null });
+  expect(snapshot()).toEqual(before);
+});
+
 it('keeps explicit reruns available, and reports edited contracts without granting reuse authority', async () => {
   fixture(); await runChecks(root);
   expect(verificationPlan(root).checks.every(c => c.decision === 'reuse')).toBe(true);

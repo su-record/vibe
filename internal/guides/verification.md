@@ -1,5 +1,23 @@
 # Required verification for consequential work
 
+## Quality verification for authored output
+
+Include antislop in completion verification for code, prose and UI artifacts, even when the task has no consequential risk. This section alone does not require a tracked intent for a small edit. Ordinary chat applies the entry's baseline while composing, without recording a check per reply. The risk procedures below apply to consequential changes.
+
+Use the applicable `code`, `ko`, `en` or `design` guide already loaded. Inspect the actual affected output before delivery, not just the existence of a guide or a passing build:
+
+- Code: look for unnecessary layers, duplicate logic, placeholders and swallowed errors; preserve legitimate boundaries and required behavior.
+- Prose: check evidence, meaning and uncertainty, then remove filler, repetition and forced contrasts without deleting useful explanation.
+- UI: inspect rendered hierarchy, content and interaction states; distinguish actual visual evidence from source-only inspection.
+
+Reuse existing lint, behavior, content or accessibility checks for mechanically testable criteria. In a tracked task, bind relevant checks to the existing scenarios; use `needs` for actual prerequisites and existing evidence/invalidation rules. Do not add a regex blacklist, a second verdict engine or a model-review chain to judge all writing.
+
+The current agent assesses contextual quality. Fix specific defects and inspect the changed portion again. Record scope, source revision or artifact identity, criteria, findings/fixes and unverified aspects in the existing task note or delivery summary. Identify this as agent assessment, not independent review or human acceptance. A self-reported PASS file is not machine evidence of quality; do not use one as a file-check substitute. Reuse the assessment only while the inspected output and criteria remain unchanged.
+
+Do not claim quality verification complete while a known defect or required inspection is unresolved. Report the gap or fix it. The check engine's DONE verdict covers its recorded scenarios; it does not certify semantic quality. The verification preview therefore keeps quality assessment explicitly unverified rather than inferring it from passing checks. An independent review is for an explicit request or a concrete unresolved consequential uncertainty, not every delivery.
+
+## Consequential risk coverage
+
 Before implementation, identify data loss/migration, authentication or permission changes, public-interface compatibility, deployment and multi-system failure risks from the request and actual code. These require a tracked intent and risk-bearing scenario. Do not treat an unlabeled scenario as evidence of low risk. Run `vibe internal risks --json` to see deterministic signals, uncovered paths/actions and existing checks to reuse. The check engine enforces coverage even when a risk declaration is omitted. Rules cover known sensitive paths and mutating commands; they cannot infer every domain risk or judge arbitrary test quality.
 
 For each affected outcome, add a `risk` object to its scenario. `kind` is data, access, interface, deployment or integration. Describe who/what is affected in `impact`, and the concrete recovery or containment procedure in `recovery`. Bind `failureChecks` and `recoveryChecks` to scenario ids. Use a representative local fixture, denied request, compatibility test, interrupted operation or recovery drill. For an action with no undo, verify prevention and containment and say that rollback is unavailable.
