@@ -37,6 +37,10 @@ export function verificationPlan(root: string, options: CheckOptions = {}) {
       prerequisites: ancestorsOf(universe, [s.id]).filter(id => previous[id]?.last !== 'pass') };
   });
   return { root, recordedState: state.state, blockers, checks,
+    qualityReview: { status: 'not-assessed' as const, assessedBy: null,
+      guide: 'vibe internal guide verification',
+      next: 'For authored output, inspect affected code, prose or rendered UI against its guide before delivery. Record scope, findings and limits in the existing task note or summary.',
+      limits: 'Machine passes and DONE do not establish antislop quality. This preview neither performs nor reads an agent assessment; reuse requires unchanged output and criteria.' },
     nextAction: blockers.length ? 'resolve-blockers' : checks.some(c => c.decision === 'selected') ? 'run-selected-checks' : 'inspect-completion-requirements',
     remaining: universe.filter(s => !isHuman(s) && previous[s.id]?.last !== 'pass').map(s => s.id),
     retry: state.repair ? { failures: state.failStreak, waiting,
