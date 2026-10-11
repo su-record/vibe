@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 2,
+  "run": "r-14",
+  "at": "2026-09-11T08:01:32.309Z",
+  "intentHash": "85c7e7c70cbd9fa0",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "1f269db9c263",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 69533,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 219,
+          "sha256": "ca27dd2c20f4022d1065f5251f0b58f46e73ddb081144453694f8555070e916e",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 255,
+          "sha256": "2afb4d6f30e583dad68c7a65c4aad40ca767a5b8ae6640452c9f14c08ef761dd",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/verification.test.ts",
+        "src/core/performance.test.ts"
+      ],
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#compatibility"
+    },
+    {
+      "id": "personal-fde-surface",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1438,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 576,
+          "sha256": "e14561d35ef1c56ad3a312d330804081dd7c4b6a35f640a116bf2290923b6a7d",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#personal-fde-surface"
+    },
+    {
+      "id": "performance-startup",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2586,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 5320,
+          "sha256": "614bbd9579f851b2426035f33138507638c6e120141c0415cca5a912e2f3d19d",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#performance-startup"
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 350,
+      "tail": "",
+      "failureCode": "exit-mismatch",
+      "reason": "exit-mismatch",
+      "failure": {
+        "id": "r-1-vibe-size-misreads-template-literal",
+        "target": "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50",
+        "exit": 1,
+        "cause": "exit-mismatch",
+        "message": null,
+        "diagnosticCode": null,
+        "causeHash": null,
+        "locations": [],
+        "logs": []
+      },
+      "capture": {
+        "stdout": {
+          "bytes": 182,
+          "sha256": "9696e424ac5fe06b5d6ee2e2172a751c98f5c2d56472c6010ea95f426a57c66a",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#r-1-vibe-size-misreads-template-literal"
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 68,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#r-2-ci-counted-the-language-packs"
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2683,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 221,
+          "sha256": "6ba5a7c13ef6fe8bbc2015da5e253cd555daddc52927b98d08dd7fff0e62c466",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 114,
+          "sha256": "225c2542d90d171355692e23edbd85b12afe1a548be85e832258883144af732d",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#r-3-codex-plugin-never-followed-update"
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2686,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 222,
+          "sha256": "1798c40ab16e1941ec6d2f3de1a30ceae610fd6a6b0cb7dc573790f26e3c361b",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 124,
+          "sha256": "761643bfe78cb81506b519fe7923b0d9beba5236d55e49ad7c7bdc6d530dd8d5",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#r-4-installhookfile-kept-only-last-entry"
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2347,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 221,
+          "sha256": "86637729a316cdc5a950762e887f0686aa97c131cef1547c0bca2e433acb0f43",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 100,
+          "sha256": "53e16921e15adfbaedc1ed0fe48dcfa4094177db56187fdfd0fa5fb6cf0242e5",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#r-5-vibe-size-read-a-quote-or-a-backtick"
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2643,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 223,
+          "sha256": "77273e17b934772acf2be6e01fc4c48ef12f6b7ee423ff117e9f9ad5e5a4ba4f",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 102,
+          "sha256": "2c45863c97bb1dedfe89438c4ddd763c7431042a660b2eb208b0830279a94f4b",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "16cd99e1c7f49c938400a5bdaaa027fb6a2a13b9af058155cce9c9e7c26051de",
+      "evidenceId": "r-14#r-6-the-entry-guard-read-its-own-path-fr"
+    }
+  ]
+}

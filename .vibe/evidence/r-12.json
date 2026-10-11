@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 2,
+  "run": "r-12",
+  "at": "2026-09-11T06:57:00.390Z",
+  "intentHash": "3dcaa0d271298cb2",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "7356c678ea66",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 76180,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 219,
+          "sha256": "9afd863ef6f789c599f9de1e5c198519fa6d19313edfc54ee5a2f3ddd63413f2",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 276,
+          "sha256": "e05e6d55d28329c2cf2b262d0068f05e9911e72d0939e11183ad99498414a307",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-12#compatibility"
+    },
+    {
+      "id": "personal-fde-surface",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1265,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 576,
+          "sha256": "6bb151cbd9b76348291cd4615c4bb63ccb72428f380074b9dc370f82e37ae562",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-12#personal-fde-surface"
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 771,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 133,
+          "sha256": "83ad0c27f68d2a65de588ef011e28b90d267605962c20cab526b020b68baad3b",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-12#r-1-vibe-size-misreads-template-literal"
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 55,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-12#r-2-ci-counted-the-language-packs"
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2595,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 221,
+          "sha256": "a3be6cec0a9b05dcf270ade258417862aaf1ac6361aad76c604f6cbdb91acddd",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 121,
+          "sha256": "d851f8910a081f7ea827ad701e319ad3e1e69aee9744c647f27ce4079d059c0a",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-12#r-3-codex-plugin-never-followed-update"
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1961,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 222,
+          "sha256": "7b329dd6b371d5089791ccf55f63e03a5aadcd604edca164e1e9eaa71ab2a327",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 131,
+          "sha256": "4fccad45d86b81f74a013587b1c5ffb9fd7f9f962e09667d3babb304649d040a",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-12#r-4-installhookfile-kept-only-last-entry"
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1565,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 220,
+          "sha256": "05f99f77bba46d161becc8e4b24231843154a69ff57cd37047e631514c362fa6",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 107,
+          "sha256": "ef5b65708659d8bd89c4f92485af9ccd3c8a24d545a0594871b4c9d8b7b56a3a",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-12#r-5-vibe-size-read-a-quote-or-a-backtick"
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2780,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 223,
+          "sha256": "efe0ae41e6f8168d33fa38c7d5e033529671768e15f3623d6ceb22d01afa7a20",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 109,
+          "sha256": "40eba37734592625181e975e96e2c0019f807f7b547c22b62082627c8db37386",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-12#r-6-the-entry-guard-read-its-own-path-fr"
+    }
+  ]
+}

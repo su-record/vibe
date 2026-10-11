@@ -139,12 +139,12 @@ function message(view, status) {
 // The line a person sees at session start: recorded facts only, since judging staleness takes the CLI.
 function overview(root) {
   try {
-    const state = json(path.join(root, '.vibe/state.json'), null);
-    if (!state || typeof state.state !== 'string' || !/^[A-Z]{1,20}$/.test(state.state)) return null;
+    const { state } = json(path.join(root, '.vibe/state.json'));
+    if (typeof state !== 'string' || !/^[A-Z]{1,20}$/.test(state)) return null;
     const results = Object.values(json(path.join(root, '.vibe/results.json')));
     const count = last => results.filter(result => result && result.last === last).length;
     const recorded = results.length ? `last recorded ${count('pass')}/${results.length} pass, ${count('fail')} fail` : 'no check recorded';
-    return `[vibe] ${state.state} · ${recorded} · ${workflow(root).waiting.length} open questions — run vibe state for the current verdict`;
+    return `[vibe] ${state} · ${recorded} · ${workflow(root).waiting.length} open questions — run vibe state for the current verdict`;
   } catch { return null; }
 }
 function allHanded(view) {

@@ -8,10 +8,20 @@ const MAX_READ_BYTES = 32_768;
 const PREFIX_BYTES = 2048;
 const MAX_NOTES = 8;
 
-/** Bounded local excerpts, not generated summaries or evidence of current external state. */
-export function contextNotes(directories: string[], query = '') {
+/** Handoff notes first, then scope order, then path. */
+function ordering(directories: string[]): (a: string, b: string) => number {
+  const priority = (file: string): number => {
+    const i = PRIORITY.indexOf(path.basename(file));
+    return i < 0 ? PRIORITY.length : i;
+  };
+  const scope = (file: string): number => directories.findIndex(d => file.startsWith(`${d}${path.sep}`));
+  return (a, b) => priority(a) - priority(b) || scope(a) - scope(b) || a.localeCompare(b);
+}
+
+/** The note files to read, within the entry and file budgets. */
+function noteFiles(directories: string[]): { files: string[]; partial: boolean; warnings: string[] } {
   const files: string[] = [];
-  let entries = 0, bytesRead = 0, filesRead = 0, partial = false;
+  let entries = 0, partial = false;
   const warnings: string[] = [];
   // Keep handoff notes discoverable even when a research directory fills the scan budget.
   for (const directory of directories) {
@@ -40,13 +50,14 @@ export function contextNotes(directories: string[], query = '') {
     } catch { if (warnings.length < 4) warnings.push(`Could not inspect ${directory}`); partial = true; }
   }
   for (const directory of directories) collect(directory, 0);
-  const priority = (file: string): number => {
-    const i = PRIORITY.indexOf(path.basename(file));
-    return i < 0 ? PRIORITY.length : i;
-  };
-  const scope = (file: string): number => directories.findIndex(d => file.startsWith(`${d}${path.sep}`));
-  const order = (a: string, b: string): number => priority(a) - priority(b) || scope(a) - scope(b) || a.localeCompare(b);
-  files.sort(order);
+  return { files: files.sort(ordering(directories)), partial, warnings };
+}
+
+/** Bounded local excerpts, not generated summaries or evidence of current external state. */
+export function contextNotes(directories: string[], query = '') {
+  const { files, warnings, ...scan } = noteFiles(directories);
+  const order = ordering(directories);
+  let bytesRead = 0, filesRead = 0, partial = scan.partial;
   const words = [...new Set(query.toLocaleLowerCase().match(/[\p{L}\p{N}_-]{2,}/gu) ?? [])].slice(0, 12);
   const excerpts: Array<{ file: string; excerpt: string; truncated: boolean; score: number }> = [];
   for (const file of files) {

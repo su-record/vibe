@@ -259,6 +259,33 @@ function writeNote(root: string, queries: string[], candidates: Candidate[], day
   return file;
 }
 
+/** GitHub and the optional marketplace searched together and interleaved; a GitHub failure throws unless the marketplace found something. */
+async function searchSources(github: GithubClient, provider: SkillSearchClient | null, queries: string[], sources: Source[], catalogs: string[], days: number, now: number, warnings: string[]): Promise<Candidate[]> {
+  // Start independent sources together; the marketplace timeout must not delay GitHub.
+  const githubSearch = (async (): Promise<{ candidates: Candidate[]; error?: unknown }> => {
+    try { return { candidates: await applyWindow(github, await search(github, queries, sources, catalogs), days, now) }; }
+    catch (error) { return { candidates: [], error }; }
+  })();
+  let discovered: Candidate[] = [];
+  if (provider && sources.includes('skills')) {
+    try { discovered = await provider.search(queries[0]!); }
+    catch { warnings.push('SkillsMP unavailable, limited or invalid; using existing GitHub search'); }
+  }
+  const outcome = await githubSearch;
+  const existing = outcome.candidates;
+  if (outcome.error) {
+    if (discovered.length === 0) throw outcome.error;
+    warnings.push('GitHub search unavailable; SkillsMP candidates still require source inspection');
+  }
+  const unique = new Map<string, Candidate>();
+  const canonical = (c: Candidate): string => c.ref.replace('@skills/', '@').toLowerCase();
+  const originals = new Map(existing.map(c => [canonical(c), c]));
+  const mixed = existing.flatMap((c, i) => discovered[i] ? [c, discovered[i]!] : [c]);
+  mixed.push(...discovered.slice(existing.length));
+  for (const c of mixed) if (!unique.has(canonical(c))) unique.set(canonical(c), originals.get(canonical(c)) ?? c);
+  return [...unique.values()];
+}
+
 export async function research(root: string, options: ResearchOptions, client?: GithubClient, marketplace?: SkillSearchClient | null): Promise<ResearchResult> {
   const github = client ?? githubClient();
   const provider = marketplace !== undefined ? marketplace : client || process.env['VIBE_GITHUB_FIXTURE'] || process.env['VIBE_SKILLSMP'] === 'off' ? null : skillsmpClient();
@@ -281,34 +308,8 @@ export async function research(root: string, options: ResearchOptions, client?: 
     warnings = cached.warnings ?? [];
     fromCache = true;
   } else {
-    // Start independent sources together; the marketplace timeout must not delay GitHub.
-    const githubSearch = applyWindowAfterSearch();
-    async function applyWindowAfterSearch(): Promise<{ candidates: Candidate[]; error?: unknown }> {
-      try { return { candidates: await applyWindow(github, await search(github, queries, sources, catalogs), days, now) }; }
-      catch (error) { return { candidates: [], error }; }
-    }
-    let discovered: Candidate[] = [];
-    if (provider && sources.includes('skills')) {
-      try { discovered = await provider.search(queries[0]!); }
-      catch { warnings.push('SkillsMP unavailable, limited or invalid; using existing GitHub search'); }
-    }
     try {
-      const outcome = await githubSearch;
-      const existing = outcome.candidates;
-      if (outcome.error) {
-        if (discovered.length === 0) throw outcome.error;
-        warnings.push('GitHub search unavailable; SkillsMP candidates still require source inspection');
-      }
-      const unique = new Map<string, Candidate>();
-      const canonical = (c: Candidate): string => c.ref.replace('@skills/', '@').toLowerCase();
-      const originals = new Map(existing.map(c => [canonical(c), c]));
-      const mixed = existing.flatMap((c, i) => discovered[i] ? [c, discovered[i]!] : [c]);
-      mixed.push(...discovered.slice(existing.length));
-      for (const c of mixed) {
-        const ref = c.ref.replace('@skills/', '@').toLowerCase();
-        if (!unique.has(ref)) unique.set(ref, originals.get(ref) ?? c);
-      }
-      candidates = [...unique.values()];
+      candidates = await searchSources(github, provider, queries, sources, catalogs, days, now, warnings);
       writeJson(cacheFile, { at: nowIso(), queries, days, candidates, warnings });
     } catch (error) {
       if (!cached) throw error;
