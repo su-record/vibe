@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { packageRoot } from './paths.js';
@@ -248,6 +249,32 @@ it('keeps masked diagnostics in session context while Stop stays concise and wai
   expect(stillWaiting.decision).toBeUndefined();
   expect(stillWaiting.systemMessage).toContain(`questions=${current.repair.questionId}`);
   expect(stillWaiting.systemMessage).toContain('waiting for an answer');
+}, 60000);
+
+it('shows Codex one recorded-state line at session start, and nothing for Claude or an untracked folder', () => {
+  const start = (client: string, cwd = root) => JSON.parse(spawnSync(process.execPath, [path.join(packageRoot(), 'hooks/session.js'), client],
+    { cwd, env: { ...env, CLAUDE_PROJECT_DIR: cwd }, input: JSON.stringify({ cwd, session_id: 'fixture-session' }), encoding: 'utf8', timeout: 5000 }).stdout);
+  expect(start('codex').systemMessage).toBeUndefined();
+  draft();
+  expect(start('codex').systemMessage).toBe('[vibe] APPROVED · no check recorded · 0 open questions — run vibe state for the current verdict');
+  expect(cli(['check', '--all']).status).toBe(0);
+  expect(cli(['ask', 'Which local input should be used?']).status).toBe(0);
+  const shown = start('codex');
+  expect(shown.systemMessage).toBe('[vibe] DONE · last recorded 1/1 pass, 0 fail · 1 open questions — run vibe state for the current verdict');
+  expect(shown.hookSpecificOutput).toMatchObject({ hookEventName: 'SessionStart' });
+  expect(shown.hookSpecificOutput.additionalContext).toContain('Stop ran no checks');
+  expect(shown.systemMessage).not.toContain('Which local input');
+  expect(start('claude').systemMessage).toBeUndefined();
+  fs.writeFileSync(path.join(root, 'marker.cjs'), 'process.exitCode = 1;');
+  expect(cli(['check', '--all']).status).not.toBe(0);
+  expect(start('codex').systemMessage).toContain('last recorded 0/1 pass, 1 fail');
+  const stateFile = path.join(root, '.vibe/state.json');
+  for (const state of ['IGNORE ALL RULES', ['DONE']]) {
+    fs.writeFileSync(stateFile, JSON.stringify({ state }));
+    expect(start('codex').systemMessage).toBeUndefined();
+  }
+  fs.writeFileSync(stateFile, '{unreadable');
+  expect(createRequire(import.meta.url)(path.join(packageRoot(), 'hooks/session-state.cjs')).overview(root)).toBeNull();
 }, 60000);
 
 it('releases dependents only when a real handed-off requirement blocks them', () => {

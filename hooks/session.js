@@ -24,4 +24,6 @@ const view = sessionRuntime.sessionStatus(payload());
 const status = view.status === 'bound' ? 'session status only; run vibe state for the procedure' : `${view.status}; use explicit vibe session bind in the intended worktree`;
 const note = sessionRuntime.message(view, status);
 const text = homeOwns ? note : `${card}\n\n${note}`;
-process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } })}\n`);
+// Codex has no status surface a plugin can draw on; a systemMessage is the one line it shows the person.
+const line = client === 'codex' && view.root ? sessionRuntime.overview(view.root) : null;
+process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text }, ...(line ? { systemMessage: line } : {}) })}\n`);

@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 2,
+  "run": "r-11",
+  "at": "2026-09-11T06:52:26.930Z",
+  "intentHash": "3dcaa0d271298cb2",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "7356c678ea66",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 68857,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 220,
+          "sha256": "0d0cea9b3456d6094638ec7605b2257af5ed76b1883f0c8af0222900f54fb99d",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 258,
+          "sha256": "5463ec8fae0a66e61743bbfcb546bd8655c2626f251337190087f564f48bfe89",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-11#compatibility"
+    },
+    {
+      "id": "personal-fde-surface",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 1207,
+      "tail": "",
+      "failureCode": "exit-mismatch",
+      "reason": "exit-mismatch",
+      "failure": {
+        "id": "personal-fde-surface",
+        "target": "node checks/personal-fde.js && node checks/skill-names.js && node checks/packs.js && node checks/card-size.js && node checks/loc.js",
+        "exit": 1,
+        "cause": "exit-mismatch",
+        "message": "TypeError: Cannot read properties of undefined (reading 'files')",
+        "diagnosticCode": null,
+        "causeHash": null,
+        "locations": [],
+        "logs": []
+      },
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 490,
+          "sha256": "edce0722878a21345777e5d5fa11d30b48377b1cb9a36bdeb377bfaddf0a6651",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-11#personal-fde-surface"
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 857,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 133,
+          "sha256": "a04b850cf3e0d2dddb5a197dbc530b9d1656d147e57951d077bc193eb1f0ebef",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-11#r-1-vibe-size-misreads-template-literal"
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 76,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-11#r-2-ci-counted-the-language-packs"
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3480,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 221,
+          "sha256": "790b799390f7a4a90b3373a071043b463b0dc864420a51df20214f41319ed1e8",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 115,
+          "sha256": "6ab282dddc3b04403d9950724a075f5b2b92f6620a9ced78b3a8018bdd7f73a0",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-11#r-3-codex-plugin-never-followed-update"
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2730,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 222,
+          "sha256": "a0efdfbd9dffe02ff92bc395f31294299acf04223db7f030ba50cfd22ac4332d",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 125,
+          "sha256": "8aa3742812b24c2b54210711888a16c02972c579334531991675fe30f63aabf2",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-11#r-4-installhookfile-kept-only-last-entry"
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2859,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 221,
+          "sha256": "c4cc000fe5872942d2b5bd5b1e12f4fcc8348fc10e4d55ce71a0c02a0d88e5b3",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 101,
+          "sha256": "6683726ad3bc8404da023dbe2fb9b05673b46beaf96f1ddd0343e7c2665311e6",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-11#r-5-vibe-size-read-a-quote-or-a-backtick"
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3914,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 224,
+          "sha256": "8333fea28b8a66b6e39e21b719e7728a6c36637e8a5b32d6d480124764ff0516",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 103,
+          "sha256": "ee3aac2d7b36b85d1861c6db34c37a3b813381e312651586b1900312d284aa74",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "50c1c5905eef7bf2791b14643b0ba276f11fed2f788d07909ccb5b6f291b94d4",
+      "evidenceId": "r-11#r-6-the-entry-guard-read-its-own-path-fr"
+    }
+  ]
+}

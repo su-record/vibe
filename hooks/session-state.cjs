@@ -136,6 +136,17 @@ function message(view, status) {
   const questions = (view.waiting ?? []).filter(id => /^[a-zA-Z0-9-]{1,80}$/.test(id)).slice(0, 12);
   return `[vibe] ${status}; root=${root}; revision=${view.revision}; scenarios=${ids}${questions.length ? `; questions=${questions.join(',')}` : ''}. Stop ran no checks.${repairMessage(view)}`;
 }
+// The line a person sees at session start: recorded facts only, since judging staleness takes the CLI.
+function overview(root) {
+  try {
+    const { state } = json(path.join(root, '.vibe/state.json'));
+    if (typeof state !== 'string' || !/^[A-Z]{1,20}$/.test(state)) return null;
+    const results = Object.values(json(path.join(root, '.vibe/results.json')));
+    const count = last => results.filter(result => result && result.last === last).length;
+    const recorded = results.length ? `last recorded ${count('pass')}/${results.length} pass, ${count('fail')} fail` : 'no check recorded';
+    return `[vibe] ${state} · ${recorded} · ${workflow(root).waiting.length} open questions — run vibe state for the current verdict`;
+  } catch { return null; }
+}
 function allHanded(view) {
   if (!view.handed.length || !view.remaining.length) return false;
   const covered = new Set(view.handed);
@@ -174,4 +185,4 @@ function stopDecision(payload = {}, env = process.env, cwd = process.cwd()) {
     return count > 2 ? { systemMessage: reason } : { decision: 'block', reason };
   } catch { return { systemMessage: message(view, 'session guard unavailable; unmet') }; }
 }
-module.exports = { identity, hostRoot, bindSession, recordStopEvidence, sessionStatus, stopDecision, message };
+module.exports = { identity, hostRoot, bindSession, recordStopEvidence, sessionStatus, stopDecision, message, overview };

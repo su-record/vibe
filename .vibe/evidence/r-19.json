@@ -1,0 +1,354 @@
+{
+  "schemaVersion": 2,
+  "run": "r-19",
+  "at": "2026-10-11T08:43:55.489Z",
+  "intentHash": "df6d6bdc7feb5e82",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "240024667302",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 62728,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 219,
+          "sha256": "d2b429485398b0313d89883bbb45a4ef20694fcaceddd31c888d545333b2389a",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 258,
+          "sha256": "d815e3a942f018a0cea24f7fc66b31f8c5f894ad2c62b54b66b8771f62f4fac4",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/verification.test.ts",
+        "src/core/performance.test.ts",
+        "src/core/risk-signals.test.ts"
+      ],
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#compatibility"
+    },
+    {
+      "id": "personal-fde-surface",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1400,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 578,
+          "sha256": "9c4ed2dcda279c7efb590448ad500f8d79bf4b592069eb9ab7f3f6d25aa24d4e",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#personal-fde-surface"
+    },
+    {
+      "id": "performance-startup",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2601,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 5861,
+          "sha256": "6364b775ae9f1f5180d6e4fca4db2a9a49cc0c6586540fc2b2a017ef5bb2f4bf",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#performance-startup"
+    },
+    {
+      "id": "automatic-access",
+      "type": "file",
+      "status": "fail",
+      "exit": 1,
+      "ms": 0,
+      "tail": "",
+      "failureCode": "file-rule-failed",
+      "reason": "file-rule-failed",
+      "failure": {
+        "id": "automatic-access",
+        "target": "package.json",
+        "exit": 1,
+        "cause": "file-rule-failed",
+        "message": null,
+        "diagnosticCode": null,
+        "causeHash": null,
+        "locations": [],
+        "logs": []
+      },
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "sources": [
+        "package.json"
+      ],
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#automatic-access"
+    },
+    {
+      "id": "automatic-deployment",
+      "type": "file",
+      "status": "fail",
+      "exit": 1,
+      "ms": 0,
+      "tail": "",
+      "failureCode": "file-rule-failed",
+      "reason": "file-rule-failed",
+      "failure": {
+        "id": "automatic-deployment",
+        "target": "package.json",
+        "exit": 1,
+        "cause": "file-rule-failed",
+        "message": null,
+        "diagnosticCode": null,
+        "causeHash": null,
+        "locations": [],
+        "logs": []
+      },
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "sources": [
+        "package.json"
+      ],
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#automatic-deployment"
+    },
+    {
+      "id": "mutation",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 109003,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 80,
+          "sha256": "d40f00c14ae3c5cf4d0889de19b01314ed21b3b23aa0d7bb10b54dd5253ae20c",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "checks/mutation.js",
+        "src/cli/internal.test.ts",
+        "src/core/session.test.ts"
+      ],
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#mutation"
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "fail",
+      "exit": 1,
+      "ms": 433,
+      "tail": "",
+      "failureCode": "exit-mismatch",
+      "reason": "exit-mismatch",
+      "failure": {
+        "id": "r-1-vibe-size-misreads-template-literal",
+        "target": "node dist/cli.js size src hooks mcpb/server --max-file 400 --max-function 50",
+        "exit": 1,
+        "cause": "exit-mismatch",
+        "message": null,
+        "diagnosticCode": null,
+        "causeHash": null,
+        "locations": [],
+        "logs": []
+      },
+      "capture": {
+        "stdout": {
+          "bytes": 306,
+          "sha256": "cafd6e29f6ee6230cad108d1555a4c92ea781cd5562aae566378a39a20a3974b",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#r-1-vibe-size-misreads-template-literal"
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 93,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#r-2-ci-counted-the-language-packs"
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1999,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 223,
+          "sha256": "4067fdfddffe6ddb945360ff4c0ec6123a92f9e3093a3f11c1f7502920a2512b",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 115,
+          "sha256": "ef7e594de172409cefde4b31ba5e5d0b5354ec99b753f800fff00ed9956d2c4b",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#r-3-codex-plugin-never-followed-update"
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2083,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 222,
+          "sha256": "891e1f8d0ebe46ee0de3cf3abd4db5a66930877a5517fa70ef2a08ef69442144",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 125,
+          "sha256": "a560ad41fcf145f20cd25d7057a1d11d866d25d9daf9230bf6520877c05e2bd6",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#r-4-installhookfile-kept-only-last-entry"
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1674,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 220,
+          "sha256": "a4f46171f8d9be456870f8bee7179bbbdbd619a8fa6ab828837fec09d8111659",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 101,
+          "sha256": "59fcdafded9bf49a4909ef025996378e3464a775137925edb151f2d349efe34a",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#r-5-vibe-size-read-a-quote-or-a-backtick"
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2126,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 223,
+          "sha256": "102071427ed5af9f0ab1309f77236718e95c6dd659b2c35702f0b0e638b6258c",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 103,
+          "sha256": "80b56bbe086593b01e2463df7d41bf1183f9b81933a808f35d411b2044e335b5",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "085e9998c159d3fdbd3da2896d1ab30706f7ac07409e424c0cd9f9d93e3369b3",
+      "evidenceId": "r-19#r-6-the-entry-guard-read-its-own-path-fr"
+    }
+  ]
+}

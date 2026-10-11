@@ -297,6 +297,25 @@ export function validateApproval(root: string, state: StateFile): void {
   if (sources && !sources.valid) throw invalidTransition(`approval void — source changed or missing: ${[...sources.changed, ...sources.missing, ...sources.unreadable].join(', ')}; re-evaluate affected findings, run vibe intent draft and approve again`);
 }
 
+/** Results after a run: its outcomes over the earlier ones; a pass whose artifact or prerequisite changed turns stale. */
+function foldOutcomes(root: string, previous: ResultsFile, outcomes: ScenarioOutcome[], universe: Selectable[], at: string, run: string): ResultsFile {
+  const results: ResultsFile = { ...previous };
+  const tree = treeHash(root); // after the checks ran: a check that writes build output is part of the tree it passed on
+  for (const o of outcomes) results[o.id] = { last: o.status, at, run, tree, ...(o.failure ? { failure: o.failure } : {}), ...(o.artifacts ? { artifacts: o.artifacts } : {}) };
+  for (const [id, r] of Object.entries(results)) {
+    if (r.last !== 'pass' || artifactsFresh(root, r.artifacts)) continue;
+    r.last = 'stale';
+    const outcome = outcomes.find(o => o.id === id);
+    if (outcome) { outcome.status = 'stale'; outcome.reason = 'artifact-changed'; }
+  }
+  const executed = new Set(outcomes.map(o => o.id));
+  const changedOutputs = new Set(Object.entries(previous).filter(([, r]) => r.artifacts && !artifactsFresh(root, r.artifacts)).map(([id]) => id));
+  for (const s of universe) if (!executed.has(s.id) && results[s.id]?.last === 'pass' && ancestorsOf(universe, [s.id]).some(id => changedOutputs.has(id))) results[s.id]!.last = 'stale';
+  invalidateDependents(results, universe);
+  for (const o of outcomes) if (o.status === 'pass' && results[o.id]?.last === 'stale') { o.status = 'stale'; o.reason = 'prerequisite-stale'; }
+  return results;
+}
+
 /**
  * The only verdict path. The harness runs the checks and writes the evidence.
  * First call moves APPROVED→RUNNING; all gates passing → DONE; the same failure hash
@@ -324,20 +343,7 @@ export async function runChecks(root: string, options: CheckOptions = {}): Promi
   for (const outcome of outcomes) { outcome.executionContext = executionContext; outcome.evidenceId = `${run}#${outcome.id}`; }
 
   requireRiskCoverage(root, universe);
-  const results: ResultsFile = { ...previous };
-  const tree = treeHash(root); // after the checks ran: a check that writes build output is part of the tree it passed on
-  for (const o of outcomes) results[o.id] = { last: o.status, at, run, tree, ...(o.failure ? { failure: o.failure } : {}), ...(o.artifacts ? { artifacts: o.artifacts } : {}) };
-  for (const [id, r] of Object.entries(results)) {
-    if (r.last !== 'pass' || artifactsFresh(root, r.artifacts)) continue;
-    r.last = 'stale';
-    const outcome = outcomes.find(o => o.id === id);
-    if (outcome) { outcome.status = 'stale'; outcome.reason = 'artifact-changed'; }
-  }
-  const executed = new Set(outcomes.map(o => o.id));
-  const changedOutputs = new Set(Object.entries(previous).filter(([, r]) => r.artifacts && !artifactsFresh(root, r.artifacts)).map(([id]) => id));
-  for (const s of universe) if (!executed.has(s.id) && results[s.id]?.last === 'pass' && ancestorsOf(universe, [s.id]).some(id => changedOutputs.has(id))) results[s.id]!.last = 'stale';
-  invalidateDependents(results, universe);
-  for (const o of outcomes) if (o.status === 'pass' && results[o.id]?.last === 'stale') { o.status = 'stale'; o.reason = 'prerequisite-stale'; }
+  const results = foldOutcomes(root, previous, outcomes, universe, at, run);
   writeJson(resultsPath(root), results);
   const implemented = outcomes.filter((o) => o.status === 'pass' && previous[o.id]?.last !== 'pass').map((o) => o.id);
   const edges = implementsEdges(root, implemented);

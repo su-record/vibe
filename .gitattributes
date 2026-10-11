@@ -4,3 +4,7 @@
 /.codex-plugin/plugin.json text eol=lf
 /hooks/hooks.json text eol=lf
 /hooks/codex-hooks.json text eol=lf
+# Skills and guides are read with byte limits; a CRLF checkout must not push them past a limit npm's LF bytes meet.
+/skills/** text eol=lf
+/internal/** text eol=lf
+/card.md text eol=lf

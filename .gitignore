@@ -6,3 +6,4 @@ dist/
 .claude/settings.local.json
 .vibe/cache/
 bench/ledger.jsonl
+.stryker-tmp/
