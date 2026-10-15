@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { usage } from './errors.js';
 import { intentPath, loadScenarios } from './intent.js';
-import { globalKnowledgeDir, knowledgeDir } from './knowledge.js';
+import { globalKnowledgeDir, knowledgeDir, projectPageFile } from './knowledge.js';
 import { readLedger, type LedgerEvent } from './ledger.js';
 import { vibePath, relPosix } from './paths.js';
 import { resolveImports } from './map/imports.js';
@@ -192,6 +192,13 @@ function readNotesDir(dir: string): RawNote[] {
   return out;
 }
 
+/** The project's own page in the personal wiki, whatever the scenario's words: it holds the project's goal and decisions. */
+function projectPage(root: string, home: string): ContextNote[] {
+  const file = projectPageFile(root, home);
+  const text = readText(file);
+  return text === null ? [] : [{ title: `project page ${path.basename(file, '.md')}`, source: `~/${relPosix(home, file)}`, excerpt: text.trim().slice(0, 500) }];
+}
+
 function matchingNotes(notes: RawNote[], terms: Set<string>, sourceOf: (file: string) => string): ContextNote[] {
   return notes
     .filter((n) => [...tokenize(n.matchText)].some((t) => terms.has(t)))
@@ -241,7 +248,7 @@ export function buildContext(root: string, scenarioId: string, options: ContextO
   const fileTerms = touched.map((f) => path.basename(f, path.extname(f)).toLowerCase());
   const terms = tokenize(`${scenario.then} ${scenario.id} ${fileTerms.join(' ')}`);
   const notes = matchingNotes(readNotesDir(knowledgeDir(root)), terms, (file) => relPosix(root, file));
-  const globalNotes = matchingNotes(readNotesDir(globalKnowledgeDir(home)), terms, (file) => `~/${relPosix(home, file)}`);
+  const globalNotes = [...projectPage(root, home), ...matchingNotes(readNotesDir(globalKnowledgeDir(home)), terms, (file) => `~/${relPosix(home, file)}`)];
   const conventionsFile = vibePath(root, 'knowledge', 'conventions.md');
   const conventionsText = readText(conventionsFile);
   const conventions = conventionsText === null ? null : { source: relPosix(root, conventionsFile), text: conventionsText };

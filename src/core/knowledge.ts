@@ -1,8 +1,10 @@
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { detectClient, detectModel } from './client.js';
 import { usage } from './errors.js';
 import { record } from './ledger.js';
+import { projectName } from './knowledge-projects.js';
 import { realFolder } from './obsidian.js';
 import { vibePath } from './paths.js';
 import { readJson, writeAtomic, writeJson } from './store.js';
@@ -82,6 +84,11 @@ export function setKnowledgeSettings(change: KnowledgeChange, home: string = def
 /** Cross-project knowledge, outside any `.vibe/` — the same plain-file format, read after a project's own. */
 export function globalKnowledgeDir(home: string = defaultHome()): string {
   return knowledgeSettings(home).dir ?? path.join(home, '.config', 'vibe', 'knowledge');
+}
+
+/** The project's own page in the personal wiki, named the way the session hook names it. */
+export function projectPageFile(root: string, home: string = defaultHome()): string {
+  return path.join(globalKnowledgeDir(home), 'projects', `${projectName(fs.realpathSync(root), home, false)}.md`);
 }
 
 export interface AddKnowledgeOptions {

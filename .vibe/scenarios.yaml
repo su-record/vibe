@@ -100,19 +100,27 @@
     skills are offered unless creation is allowed, and the wiki lint reports
     broken links, orphans and long pages. Turning on places the wiki in the
     Obsidian vault in use, or readies it as a vault that the first session
-    after Obsidian has run lists, without overwriting or deleting pages.
+    after Obsidian has run lists, without overwriting or deleting pages. Two
+    project folders with the same name get separate pages; a vibe project's
+    shared knowledge is linked into the wiki except a synced one or one inside
+    the project; the lint follows those links without calling their pages
+    orphans; and the brief and context read the project's own page.
   needs:
     - compatibility
   check:
     type: run
     cmd: npx vitest run src/core/knowledge-auto.test.ts src/core/knowledge.test.ts
       src/core/knowledge-lint.test.ts src/core/obsidian.test.ts
+      src/core/knowledge-projects.test.ts src/core/context.test.ts
+      src/cli/internal.test.ts
     timeoutMs: 180000
   verifiers:
     - src/core/knowledge-auto.test.ts
     - src/core/knowledge.test.ts
     - src/core/knowledge-lint.test.ts
     - src/core/obsidian.test.ts
+    - src/core/knowledge-projects.test.ts
+    - src/core/context.test.ts
 - id: mutation
   then: Every change Stryker makes to the guide dispatch and to the Codex
     session line makes a test fail, so no mutant survives or goes untested.

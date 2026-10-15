@@ -35,3 +35,21 @@ it('resolves links by path or file name, case-insensitively, and reports broken 
 it('reports an empty result for a wiki that does not exist yet', () => {
   expect(lintWiki(path.join(dir, 'none'))).toMatchObject({ pages: 0, broken: [], orphans: [], long: [] });
 });
+
+it('follows a linked project folder once: its pages resolve links and are checked, but are never orphans', () => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-wiki-project-'));
+  try {
+    fs.writeFileSync(path.join(project, 'customer.md'), 'see [[conventions]] and [[nowhere]]');
+    fs.writeFileSync(path.join(project, 'conventions.md'), `${'rule\n'.repeat(200)}`);
+    fs.writeFileSync(path.join(project, 'unlinked.md'), 'no page links here');
+    fs.symlinkSync(project, path.join(project, 'loop'), 'junction');
+    page('index.md', '- [[projects/app/customer]]');
+    fs.mkdirSync(path.join(dir, 'projects'));
+    fs.symlinkSync(project, path.join(dir, 'projects', 'app'), 'junction');
+    const r = lintWiki(dir);
+    expect(r.pages).toBe(4);
+    expect(r.broken).toEqual([{ page: 'projects/app/customer', target: 'nowhere' }]);
+    expect(r.orphans).toEqual([]);
+    expect(r.long).toEqual([{ page: 'projects/app/conventions', lines: 201 }]);
+  } finally { fs.rmSync(project, { recursive: true, force: true }); }
+});

@@ -148,3 +148,20 @@ it('does not count its own log line as work when the wiki sits inside the projec
   expect(run('stop').decision).toBe('block');
   expect(run('stop')).toEqual({});
 });
+
+it('shows a vibe project\'s shared knowledge in the wiki and gives two projects of the same name their own pages', () => {
+  expect(cli(['knowledge', 'auto', 'on', '--turns', '1']).status).toBe(0);
+  fs.mkdirSync(path.join(root, '.vibe'));
+  run('session');
+  expect(fs.realpathSync(path.join(wiki(), 'projects', 'worktree'))).toBe(path.join(root, '.vibe', 'knowledge'));
+  const shared = run('stop').reason;
+  expect(shared).toContain(`in the wiki at ${wiki()} (this project's page is projects/worktree.md); what the project's team needs`);
+  expect(shared).toContain(`goes into ${path.join(root, '.vibe', 'knowledge')}, which the wiki shows as projects/worktree/`);
+  const other = path.join(fixture, 'elsewhere', 'worktree');
+  fs.mkdirSync(other, { recursive: true });
+  run('session', {}, other);
+  const own = run('stop', {}, other).reason;
+  expect(own).toMatch(/\(this project's page is projects\/worktree-[a-f0-9]{6}\.md\), record/);
+  expect(fs.readFileSync(path.join(wiki(), 'log.md'), 'utf8')).toMatch(/\[\[projects\/worktree\]\][^\n]*\n[^\n]*\[\[projects\/worktree-[a-f0-9]{6}\]\]/);
+  expect(fs.readdirSync(path.join(wiki(), 'projects'))).toEqual(['worktree']);
+});

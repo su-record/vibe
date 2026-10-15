@@ -9,6 +9,7 @@ const { inside, readPrivate, writePrivate } = require('./private-store.cjs');
 const { optional, digest, revision, projectFingerprint } = require('./session-files.cjs');
 const { identity, hostRoot } = require('./session-state.cjs');
 const { connectVault } = require('./obsidian.cjs');
+const { projectName, linkProject } = require('./knowledge-projects.cjs');
 
 const defaultHome = () => process.env.VIBE_HOME_DIR || os.homedir();
 const entry = (root, id) => `knowledge-${digest(`${root}\0${id}`)}.json`;
@@ -42,8 +43,7 @@ function client(env = process.env) {
   return env.CODEX_THREAD_ID && !env.CLAUDE_SESSION_ID ? 'codex' : 'claude';
 }
 
-function logLine(root, what, now = new Date()) {
-  const project = path.basename(root).replace(/[[\]|#^\r\n]/g, '-');
+function logLine(root, what, project, now = new Date()) {
   let at = 'unversioned';
   try { at = revision(root).slice(0, 12); } catch { /* the line still records the turn */ }
   return `- ${now.toISOString().slice(0, 16).replace('T', ' ')} UTC · [[projects/${project}]] · ${client()} · ${at} · ${what}\n`;
@@ -64,6 +64,7 @@ function start(payload, home = defaultHome()) {
   try {
     const now = snapshot(payload, home, exclude);
     writePrivate(now.root, entry(now.root, now.id), JSON.stringify({ files: now.files, turns: 0 }), home);
+    linkProject(now.root, dir, projectName(now.root, home));
   } catch { /* no record this session */ }
 }
 
@@ -71,7 +72,13 @@ const SKILLS = {
   propose: 'draft a skill for a repeated procedure and offer it in one line without installing it',
   create: 'create a skill for a repeated procedure (the user allowed it) and report it',
 };
-const REASON = (dir, skills) => `[vibe] Knowledge turn: the user turned on session knowledge; this is not a user message. Follow \`vibe internal guide wiki\` (load it if absent): keep what is durable from the turns since the last knowledge turn in the wiki at ${dir}, record a better method when one showed, ${SKILLS[skills]}, and tell the user in one line what you recorded, added or propose. If nothing qualifies, end the turn with no output.`;
+// Knowledge the project's team needs goes into the project, which travels with it; the rest stays personal.
+const PLACES = (dir, root, name) => {
+  const shared = fs.statSync(path.join(root, '.vibe'), { throwIfNoEntry: false })?.isDirectory()
+    ? `; what the project's team needs (its code, conventions, domain facts) goes into ${path.join(root, '.vibe', 'knowledge')}, which the wiki shows as projects/${name}/` : '';
+  return `in the wiki at ${dir} (this project's page is projects/${name}.md)${shared}`;
+};
+const REASON = (places, skills) => `[vibe] Knowledge turn: the user turned on session knowledge; this is not a user message. Follow \`vibe internal guide wiki\` (load it if absent): keep what is durable from the turns since the last knowledge turn ${places}, record a better method when one showed, ${SKILLS[skills]}, and tell the user in one line what you recorded, added or propose. If nothing qualifies, end the turn with no output.`;
 
 /** Stop: after a changed turn, or `turns` conversation turns, log the fact and give the model one knowledge turn. */
 function stop(payload, home = defaultHome()) {
@@ -87,11 +94,12 @@ function stop(payload, home = defaultHome()) {
       return {};
     }
     fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(path.join(dir, 'log.md'), logLine(now.root, changed ? 'files changed' : 'conversation'));
+    const name = projectName(now.root, home);
+    fs.appendFileSync(path.join(dir, 'log.md'), logLine(now.root, changed ? 'files changed' : 'conversation', name));
     // A wiki inside the project changes the files it was just compared with; look again so that is not seen as work.
     const files = inside(now.root, dir) ? projectFingerprint(now.root) : now.files;
     writePrivate(now.root, entry(now.root, now.id), JSON.stringify({ files, turns: 0 }), home);
-    return { decision: 'block', reason: REASON(dir, skills) };
+    return { decision: 'block', reason: REASON(PLACES(dir, now.root, name), skills) };
   } catch { return {}; }
 }
 
