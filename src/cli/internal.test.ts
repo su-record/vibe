@@ -9,7 +9,7 @@ let root: string;
 beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-internal-')); });
 afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
 
-it.each(['explanation', 'feasibility', 'reading', 'extensions', 'fieldwork', 'system'])('loads %s guidance only on demand while the entry stays compact', name => {
+it.each(['explanation', 'feasibility', 'reading', 'extensions', 'fieldwork', 'system', 'ambition'])('loads %s guidance only on demand while the entry stays compact', name => {
   const entry = fs.readFileSync(path.join(packageRoot(), 'skills/vibe/SKILL.md'), 'utf8');
   const guide = fs.readFileSync(path.join(packageRoot(), `internal/guides/${name}.md`), 'utf8');
   expect(cmdInternal(root, 'guide', [name]).json).toEqual({ name, text: guide });
@@ -39,6 +39,18 @@ it('designs the user\'s system only for connected recurring work, lightest mecha
   expect(fs.readdirSync(root)).toEqual([]);
 });
 
+it('offers the larger problem once on evidence, checkable before large, without acting on its own', () => {
+  const guide = cmdInternal(root, 'guide', ['ambition']).text;
+  expect(guide).toContain('A request that stands alone is done as asked');
+  expect(guide).toContain('Offer it; do not start it');
+  expect(guide).toContain('Never invent a problem to look ambitious');
+  expect(guide).toContain('`problems.md`');
+  expect(guide).toContain('Make the work checkable before making it large');
+  expect(guide).toContain('never switch models, buy access or raise a spending setting on your own');
+  expect(fs.readFileSync(path.join(packageRoot(), 'skills/vibe/SKILL.md'), 'utf8')).toContain('`ambition` for a slice of a larger problem');
+  expect(fs.readdirSync(root)).toEqual([]);
+});
+
 it('returns the saved outcome and knowledge without indexing or rewriting records', () => {
   fs.mkdirSync(path.join(root, '.vibe', 'knowledge'), { recursive: true });
   fs.writeFileSync(path.join(root, '.vibe', 'intent.md'), '# Existing pilot\nUse the customer workflow.\n');
@@ -64,13 +76,13 @@ it('keeps operating context and corrections in a bounded excerpt shortlist witho
   const directory = path.join(root, '.vibe', 'knowledge');
   fs.mkdirSync(directory, { recursive: true });
   for (let i = 0; i < 25; i++) fs.writeFileSync(path.join(directory, `a-${i}.md`), 'ordinary');
-  for (const name of ['work-context.md', 'corrections.md', 'reuse.md']) fs.writeFileSync(path.join(directory, name), 'Saved decision and its evidence path');
+  for (const name of ['problems.md', 'work-context.md', 'corrections.md', 'reuse.md']) fs.writeFileSync(path.join(directory, name), 'Saved decision and its evidence path');
   fs.mkdirSync(path.join(directory, 'a-directory.md'));
   const before = fs.readdirSync(directory).sort();
   const result = cmdInternal(root, 'brief', []);
   const notes = (result.json as { notes: string[] }).notes.filter(file => file.startsWith(directory));
   expect(notes).toHaveLength(8);
-  expect(notes.slice(0, 3).map(file => path.basename(file))).toEqual(['corrections.md', 'work-context.md', 'reuse.md']);
+  expect(notes.slice(0, 4).map(file => path.basename(file))).toEqual(['corrections.md', 'work-context.md', 'reuse.md', 'problems.md']);
   expect(notes).not.toContain(path.join(directory, 'a-directory.md'));
   expect(result.text).toContain('Saved decision and its evidence path');
   expect(result.json).toMatchObject({ memory: { partial: true } });
