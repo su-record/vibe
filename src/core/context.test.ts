@@ -101,6 +101,19 @@ describe('buildContext — everything a scenario needs, most relevant first, wit
     expect(rendered.startsWith('## check build-foo')).toBe(true);
   });
 
+  it('puts the project\'s own wiki page first among the personal notes, whatever the scenario\'s words', () => {
+    draftWithScenario();
+    expect(buildContext(root, 'build-foo').globalNotes).toEqual([]);
+    const page = path.join(globalKnowledgeDir(home), 'projects', `${path.basename(fs.realpathSync(root))}.md`);
+    fs.mkdirSync(path.dirname(page), { recursive: true });
+    fs.writeFileSync(page, `# Pilot\nGoal: ship it.\n${'y'.repeat(600)}`);
+    addKnowledge(root, 'global foo note', 'a cross-project note about build-foo.', { global: true });
+    const notes = buildContext(root, 'build-foo').globalNotes;
+    expect(notes.map((n) => n.title)).toEqual([`project page ${path.basename(page, '.md')}`, 'global foo note']);
+    expect(notes[0]?.source).toBe(`~/${path.relative(home, page).split(path.sep).join('/')}`);
+    expect(notes[0]?.excerpt).toBe(`# Pilot\nGoal: ship it.\n${'y'.repeat(600)}`.slice(0, 500));
+  });
+
   it('throws for an unknown scenario', () => {
     draftWithScenario();
     expect(() => buildContext(root, 'no-such-scenario')).toThrow(/unknown scenario/);

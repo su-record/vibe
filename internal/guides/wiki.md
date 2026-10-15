@@ -1,16 +1,24 @@
 # Keep and improve the knowledge wiki
 
-Use on a knowledge turn (the user turned on `vibe knowledge auto`), when the user asks to record or organise what has been learned, or when saved notes have grown into overlapping files. The wiki is the personal knowledge folder (`vibe knowledge auto` prints where); project knowledge in `.vibe/knowledge/` follows the same rules. It is plain Markdown, so the user can open it in Obsidian or any editor. With session knowledge on, keeping it is your job: the user should never have to say "save this".
+Use on a knowledge turn (the user turned on `vibe knowledge auto`), when the user asks to record or organise what has been learned, or when saved notes have grown into overlapping files. The wiki is the personal knowledge folder (`vibe knowledge auto` prints where); project knowledge in `.vibe/knowledge/` follows the same rules, and the wiki shows each vibe project's as `projects/<project>/`. It is plain Markdown, so the user can open it in Obsidian or any editor. With session knowledge on, keeping it is your job: the user should never have to say "save this".
 
 ## Decide what is durable
 
 On a knowledge turn, look at the turns since the last one. Durable: a decision and its reason, a user preference or correction, a method that worked better than another, a lesson from a failure, a fact about a system or person's role that will be needed again, a problem worth tracking, a procedure the user repeats. Not durable: routine edits, passing checks, progress already visible in git. Never write a summary of the conversation. If nothing qualifies, end the turn with no output and no explanation.
 
+## Choose the place
+
+The knowledge turn names this project's page and, in a vibe project, its shared folder.
+
+- Shared: what anyone working on the project needs (how its code is built, its conventions, domain facts, a decision about the product) goes into the project's `.vibe/knowledge/`. It travels with the project, so it shows in the user's git changes and reaches the team once they commit it; say which file you changed. Conventions belong in `conventions.md` there.
+- Personal: how the user works, their methods across projects, skills, and their own notes on the project (`projects/<project>.md`) stay in the wiki.
+- Never put a preference, a person's private data or anything from an excluded folder into the shared folder. When unsure, keep it personal.
+
 ## Write into existing pages
 
 - `index.md`: one line per page, `[[page]]` and what it holds. Update it when a page is added, renamed or removed. The brief reads it first.
 - `log.md`: the hook's fact lines. Do not rewrite it; add a short clause after a line only when the turn's purpose is not obvious from the page it links.
-- `projects/<project>.md`: the current goal, decisions with reasons, open issues and how to verify the project. Replace superseded statements instead of appending a history.
+- `projects/<project>.md`: the user's own view of the project: the current goal, decisions with reasons, open issues and how to verify it. Use the page name the knowledge turn gives; two folders with the same name get different pages. Replace superseded statements instead of appending a history.
 - `me.md`: how the user works and what they prefer, as they stated it or as repeated evidence shows; mark an inference as an inference.
 - `practices.md` or a subject page: methods that worked, with the comparison that showed it ("for X, doing A instead of B removed the retry; seen 2026-10-15 in project P").
 - `skills.md`: skills you created from the user's work, what each does and the evidence that led to it.

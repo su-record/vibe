@@ -199,3 +199,33 @@ it('refuses a listed guide whose file is missing instead of returning nothing', 
     expect(() => cmdInternal(root, 'guide', ['code'])).toThrow('guide unavailable: code');
   } finally { spy.mockRestore(); }
 });
+
+it('reads the project\'s own wiki page first, whatever the task\'s words, and lists it once', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-internal-home-'));
+  process.env['VIBE_HOME_DIR'] = home;
+  try {
+    const page = path.join(home, '.config', 'vibe', 'knowledge', 'projects', `${path.basename(fs.realpathSync(root))}.md`);
+    expect(cmdInternal(root, 'brief', []).json).toMatchObject({ projectPage: null });
+    fs.mkdirSync(path.dirname(page), { recursive: true });
+    const full = `# Goal\nShip the pilot.\n${'x'.repeat(3000)}`;
+    fs.writeFileSync(page, full);
+    const brief = cmdInternal(root, 'brief', ['unrelated']);
+    const text = full.slice(0, 2000);
+    expect(brief.json).toMatchObject({ projectPage: { file: page, text } });
+    expect(brief.text.split('\n').slice(1, 5)).toEqual(['No compact saved intent; inspect relevant project evidence.', `Project page ${page}:`, '# Goal', 'Ship the pilot.']);
+    expect((cmdInternal(root, 'brief', []).json as { notes: string[] }).notes).not.toContain(page);
+    fs.writeFileSync(page, 'x'.repeat(8001));
+    expect(cmdInternal(root, 'brief', []).json).toMatchObject({ projectPage: null });
+  } finally {
+    delete process.env['VIBE_HOME_DIR'];
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+it('puts what the team needs into the project and keeps the rest personal', () => {
+  const guide = cmdInternal(root, 'guide', ['wiki']).text;
+  expect(guide).toContain('goes into the project\'s `.vibe/knowledge/`');
+  expect(guide).toContain('reaches the team once they commit it');
+  expect(guide).toContain('When unsure, keep it personal');
+  expect(guide).toContain('Use the page name the knowledge turn gives');
+});

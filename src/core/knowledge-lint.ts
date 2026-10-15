@@ -15,20 +15,29 @@ export interface WikiLint {
   partial: boolean;
 }
 
-function pages(dir: string): { files: string[]; partial: boolean } {
+/**
+ * The wiki's pages, and the pages of each project's shared knowledge it shows through a folder link
+ * (`projects/<name>/`). Those are kept in the project, so they resolve links but are never called orphans.
+ */
+function pages(dir: string): { files: string[]; shared: Set<string>; partial: boolean } {
   const files: string[] = [];
+  const shared = new Set<string>();
+  const seen = new Set<string>();
   let partial = false;
-  const walk = (current: string): void => {
+  const walk = (current: string, linked: boolean): void => {
+    if (seen.has(fs.realpathSync(current))) return;
+    seen.add(fs.realpathSync(current));
     for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
       if (entry.name.startsWith('.')) continue;
       if (files.length >= MAX_PAGES) { partial = true; return; }
       const file = path.join(current, entry.name);
-      if (entry.isDirectory()) walk(file);
-      else if (entry.isFile() && entry.name.endsWith('.md')) files.push(file);
+      if (entry.isDirectory()) walk(file, linked);
+      else if (entry.isSymbolicLink() && fs.statSync(file, { throwIfNoEntry: false })?.isDirectory()) walk(file, true);
+      else if (entry.isFile() && entry.name.endsWith('.md')) { files.push(file); if (linked) shared.add(file); }
     }
   };
-  if (fs.existsSync(dir)) walk(dir);
-  return { files: files.sort(), partial };
+  if (fs.existsSync(dir)) walk(dir, false);
+  return { files: files.sort(), shared, partial };
 }
 
 /** `[[target]]`, `[[target|label]]` and `[[target#heading]]` give `target`; links inside code are still counted. */
@@ -41,7 +50,7 @@ export function wikiLinks(text: string): string[] {
  * Obsidian resolves it: by the path from the wiki root or by the page's file name alone.
  */
 export function lintWiki(dir: string): WikiLint {
-  const { files, partial } = pages(dir);
+  const { files, shared, partial } = pages(dir);
   const name = (file: string): string => path.relative(dir, file).split(path.sep).join('/').replace(/\.md$/, '');
   const known = new Map<string, string>();
   for (const file of files) {
@@ -61,6 +70,6 @@ export function lintWiki(dir: string): WikiLint {
       else if (page !== name(file)) linked.add(page);
     }
   }
-  const orphans = files.map(name).filter(page => !linked.has(page) && !ROOTS.has(page));
+  const orphans = files.filter(file => !shared.has(file)).map(name).filter(page => !linked.has(page) && !ROOTS.has(page));
   return { dir, pages: files.length, broken, orphans, long, partial };
 }

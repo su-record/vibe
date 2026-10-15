@@ -155,7 +155,7 @@ function knowledgeAuto(value: string | undefined, flags: Flags): Output {
   ...(place ? [place.note] : []),
   ...(vault ? [`  ${VAULT_NOTE[vault]}`] : []),
   ...(copied ? [`  copied ${copied} files from ${previous}; that folder is kept`] : []),
-  ...(synced ? [`  this folder is synced by ${synced}: what the wiki records leaves this computer; exclude client work with --exclude`] : []),
+  ...(synced ? [`  this folder is synced by ${synced}: what the wiki records leaves this computer, so projects' shared knowledge is not linked into it; exclude client work with --exclude`] : []),
   ...s.exclude.map(e => `  never recorded: ${e}`)].join('\n');
   return { json: { ...s, folder, vault, copied, synced }, text, code: 0 };
 }

@@ -13,6 +13,7 @@ The user approved rebuilding vibe as their personal FDE in the existing npm-dist
 - Optimization guidance and bounded performance tools are internal; measurements do not execute arbitrary commands or models.
 - Declared consequential outcomes require machine-checked failure and recovery prerequisites; omissions, failed checks and stale verifier evidence cannot yield DONE.
 - Session knowledge is the person's opt-in: off by default; when on, a turn that changed project files or the configured number of conversation turns gives the working model one knowledge turn, without reading transcripts or starting a model; excluded folders are never recorded; repeated procedures become offered skill drafts unless the person allows creation. Turning it on connects the wiki to Obsidian without a path: the vault in use when there is one, otherwise a ready vault that is listed once Obsidian has run.
+- Each project keeps its own page even when folder names repeat; a vibe project's shared knowledge appears in the same vault through a link (never into a synced wiki), knowledge the team needs is written into the project and the rest stays personal, and the brief and context read the project's own page.
 
 ## Constraints
 - Preserve existing desktop transports and registration, historical records and user-modified skills.
