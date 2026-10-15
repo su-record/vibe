@@ -64,7 +64,8 @@ export const INTERNAL_HELP = `vibe — an AX/FDE harness. The harness judges; a 
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
             authorize [token] --action <action> [--target "…"] (push · deploy · publish · send · delete · restore · reset · seed · migrate · drop · truncate · apply · spend — the same words the hook and the check gate use) · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
-            knowledge add <file|--stdin> --title "…"
+            knowledge add <file|--stdin> --title "…" · knowledge auto [on|off] [--dir <folder>] [--turns 5] [--skills propose|create] [--exclude|--include <folder>] (personal; off by default)
+            knowledge lint [--dir <folder>]
   research  research --from-intent | "query" [--sources repos,code,skills] [--max 5] [--days 30]   (GitHub · skill catalogs · what moved inside the window first · 24h cache)
   skills    skill suggest [--all] · skill create <name> --check run|file|http|eval [--from-scenario <id>]
             skill add owner/repo[@name] [--pin <sha>] [--yes] · skill search <keyword> · skill list
@@ -84,6 +85,7 @@ Start with /vibe in your connected app and describe the work.
   status    show the installed version and client connection status
   update    update the package and integrations
   plugin mcpb --out vibe.mcpb    build the Claude Desktop extension
+  knowledge auto on|off [--dir <folder>]    let the model keep and improve your knowledge wiki from every session (off by default)
 
 Workflow, authoring guidance and skill extensions operate internally.
 For operator diagnostics use --help-internal or internal tools.

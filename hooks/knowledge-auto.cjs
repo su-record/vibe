@@ -1,0 +1,96 @@
+// Session knowledge, off unless the person runs `vibe knowledge auto on`. When on, the hook gives the
+// working model a knowledge turn after a turn that changed project files, or after a few conversation turns
+// without one, and appends a fact line to the wiki's log.md. The model, which already holds the
+// conversation, decides what to keep. The hook reads no transcript, starts no model and resolves no PATH command.
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { inside, readPrivate, writePrivate } = require('./private-store.cjs');
+const { optional, digest, revision, projectFingerprint } = require('./session-files.cjs');
+const { identity, hostRoot } = require('./session-state.cjs');
+
+const defaultHome = () => process.env.VIBE_HOME_DIR || os.homedir();
+const entry = (root, id) => `knowledge-${digest(`${root}\0${id}`)}.json`;
+
+/** The same file and defaults `vibe knowledge auto` writes (src/core/knowledge.ts). */
+function settings(home) {
+  try {
+    const raw = JSON.parse(optional(path.join(home, '.config', 'vibe', 'knowledge.json'), 65536) ?? '{}');
+    return {
+      auto: raw.auto === true,
+      dir: typeof raw.dir === 'string' && path.isAbsolute(raw.dir) ? raw.dir : path.join(home, '.config', 'vibe', 'knowledge'),
+      turns: Number.isInteger(raw.turns) && raw.turns >= 0 ? raw.turns : 5,
+      skills: raw.skills === 'create' ? 'create' : 'propose',
+      exclude: Array.isArray(raw.exclude) ? raw.exclude.filter(e => typeof e === 'string' && path.isAbsolute(e)) : [],
+    };
+  } catch { return { auto: false }; }
+}
+
+// The home directory is not a project: hashing it would cost every turn and say nothing about one piece of work.
+// An excluded folder is never fingerprinted, logged or handed a knowledge turn.
+function snapshot(payload, home, exclude) {
+  const root = hostRoot(payload);
+  if (root === fs.realpathSync(home)) throw new Error('home is not a project');
+  const real = folder => (fs.existsSync(folder) ? fs.realpathSync(folder) : path.resolve(folder));
+  if (exclude.some(folder => inside(real(folder), root))) throw new Error('excluded by the person');
+  return { root, id: identity(payload), files: projectFingerprint(root) };
+}
+
+function client(env = process.env) {
+  if (env.VIBE_CLIENT) return ['codex', 'chatgpt'].includes(env.VIBE_CLIENT) ? 'codex' : 'claude';
+  return env.CODEX_THREAD_ID && !env.CLAUDE_SESSION_ID ? 'codex' : 'claude';
+}
+
+function logLine(root, what, now = new Date()) {
+  const project = path.basename(root).replace(/[[\]|#^\r\n]/g, '-');
+  let at = 'unversioned';
+  try { at = revision(root).slice(0, 12); } catch { /* the line still records the turn */ }
+  return `- ${now.toISOString().slice(0, 16).replace('T', ' ')} UTC · [[projects/${project}]] · ${client()} · ${at} · ${what}\n`;
+}
+
+function remembered(root, id, home) {
+  try {
+    const raw = JSON.parse(readPrivate(root, entry(root, id), 4096, home) ?? 'null');
+    return raw && typeof raw.files === 'string' && Number.isInteger(raw.turns) ? raw : null;
+  } catch { return null; }
+}
+
+/** SessionStart: remember the project's files so the first turn's changes are seen. */
+function start(payload, home = defaultHome()) {
+  const { auto, exclude } = settings(home);
+  if (!auto) return;
+  try {
+    const now = snapshot(payload, home, exclude);
+    writePrivate(now.root, entry(now.root, now.id), JSON.stringify({ files: now.files, turns: 0 }), home);
+  } catch { /* no record this session */ }
+}
+
+const SKILLS = {
+  propose: 'draft a skill for a repeated procedure and offer it in one line without installing it',
+  create: 'create a skill for a repeated procedure (the user allowed it) and report it',
+};
+const REASON = (dir, skills) => `[vibe] Knowledge turn: the user turned on session knowledge; this is not a user message. Follow \`vibe internal guide wiki\` (load it if absent): keep what is durable from the turns since the last knowledge turn in the wiki at ${dir}, record a better method when one showed, ${SKILLS[skills]}, and tell the user in one line what you recorded, added or propose. If nothing qualifies, end the turn with no output.`;
+
+/** Stop: after a changed turn, or `turns` conversation turns, log the fact and give the model one knowledge turn. */
+function stop(payload, home = defaultHome()) {
+  const { auto, dir, turns: every, skills, exclude } = settings(home);
+  if (!auto || payload.stop_hook_active === true) return {};
+  try {
+    const now = snapshot(payload, home, exclude);
+    const before = remembered(now.root, now.id, home);
+    const changed = before !== null && before.files !== now.files;
+    const turns = (before?.turns ?? 0) + 1;
+    if (before === null || (!changed && (every === 0 || turns < every))) {
+      writePrivate(now.root, entry(now.root, now.id), JSON.stringify({ files: now.files, turns: before === null ? 0 : turns }), home);
+      return {};
+    }
+    fs.mkdirSync(dir, { recursive: true });
+    fs.appendFileSync(path.join(dir, 'log.md'), logLine(now.root, changed ? 'files changed' : 'conversation'));
+    // A wiki inside the project changes the files it was just compared with; look again so that is not seen as work.
+    const files = inside(now.root, dir) ? projectFingerprint(now.root) : now.files;
+    writePrivate(now.root, entry(now.root, now.id), JSON.stringify({ files, turns: 0 }), home);
+    return { decision: 'block', reason: REASON(dir, skills) };
+  } catch { return {}; }
+}
+
+module.exports = { settings, logLine, start, stop };

@@ -3,6 +3,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import knowledgeAuto from './knowledge-auto.cjs';
 import sessionRuntime from './session-state.cjs';
 import sessionFiles from './session-files.cjs';
 
@@ -20,7 +21,9 @@ function payload() {
 const card = read(path.join(root, 'card.md'), 4096).trim();
 const homeCard = client === 'claude' ? path.join(home, '.claude', 'CLAUDE.md') : path.join(home, '.codex', 'AGENTS.md');
 const homeOwns = read(homeCard).includes('<!-- vibe:start -->');
-const view = sessionRuntime.sessionStatus(payload());
+const input = payload();
+knowledgeAuto.start(input);
+const view = sessionRuntime.sessionStatus(input);
 const status = view.status === 'bound' ? 'session status only; run vibe state for the procedure' : `${view.status}; use explicit vibe session bind in the intended worktree`;
 const note = sessionRuntime.message(view, status);
 const text = homeOwns ? note : `${card}\n\n${note}`;

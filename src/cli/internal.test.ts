@@ -9,7 +9,7 @@ let root: string;
 beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-internal-')); });
 afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
 
-it.each(['explanation', 'feasibility', 'reading', 'extensions', 'fieldwork', 'system', 'ambition'])('loads %s guidance only on demand while the entry stays compact', name => {
+it.each(['explanation', 'feasibility', 'reading', 'extensions', 'fieldwork', 'system', 'ambition', 'wiki'])('loads %s guidance only on demand while the entry stays compact', name => {
   const entry = fs.readFileSync(path.join(packageRoot(), 'skills/vibe/SKILL.md'), 'utf8');
   const guide = fs.readFileSync(path.join(packageRoot(), `internal/guides/${name}.md`), 'utf8');
   expect(cmdInternal(root, 'guide', [name]).json).toEqual({ name, text: guide });
@@ -51,6 +51,20 @@ it('offers the larger problem once on evidence, checkable before large, without 
   expect(fs.readdirSync(root)).toEqual([]);
 });
 
+it('keeps the wiki without being told, improves the user\'s methods and proposes what needs authority', () => {
+  const guide = cmdInternal(root, 'guide', ['wiki']).text;
+  expect(guide).toContain('the user should never have to say "save this"');
+  expect(guide).toContain('If nothing qualifies, end the turn with no output');
+  expect(guide).toContain('Never write a summary of the conversation');
+  expect(guide).toContain('write a personal skill');
+  expect(guide).toContain('Install it only after the user says yes');
+  expect(guide).toContain('`skills: create`: install it');
+  expect(guide).toContain('propose it with the evidence; never do it on this basis');
+  expect(guide).toContain('run `vibe knowledge lint`');
+  expect(guide).toContain('Never record credentials');
+  expect(fs.readdirSync(root)).toEqual([]);
+});
+
 it('returns the saved outcome and knowledge without indexing or rewriting records', () => {
   fs.mkdirSync(path.join(root, '.vibe', 'knowledge'), { recursive: true });
   fs.writeFileSync(path.join(root, '.vibe', 'intent.md'), '# Existing pilot\nUse the customer workflow.\n');
@@ -76,13 +90,13 @@ it('keeps operating context and corrections in a bounded excerpt shortlist witho
   const directory = path.join(root, '.vibe', 'knowledge');
   fs.mkdirSync(directory, { recursive: true });
   for (let i = 0; i < 25; i++) fs.writeFileSync(path.join(directory, `a-${i}.md`), 'ordinary');
-  for (const name of ['problems.md', 'work-context.md', 'corrections.md', 'reuse.md']) fs.writeFileSync(path.join(directory, name), 'Saved decision and its evidence path');
+  for (const name of ['index.md', 'problems.md', 'work-context.md', 'corrections.md', 'reuse.md']) fs.writeFileSync(path.join(directory, name), 'Saved decision and its evidence path');
   fs.mkdirSync(path.join(directory, 'a-directory.md'));
   const before = fs.readdirSync(directory).sort();
   const result = cmdInternal(root, 'brief', []);
   const notes = (result.json as { notes: string[] }).notes.filter(file => file.startsWith(directory));
   expect(notes).toHaveLength(8);
-  expect(notes.slice(0, 4).map(file => path.basename(file))).toEqual(['corrections.md', 'work-context.md', 'reuse.md', 'problems.md']);
+  expect(notes.slice(0, 5).map(file => path.basename(file))).toEqual(['corrections.md', 'work-context.md', 'reuse.md', 'problems.md', 'index.md']);
   expect(notes).not.toContain(path.join(directory, 'a-directory.md'));
   expect(result.text).toContain('Saved decision and its evidence path');
   expect(result.json).toMatchObject({ memory: { partial: true } });
@@ -128,6 +142,7 @@ it('lists each internal operation once and returns the same text as data', () =>
   expect(lines.slice(1, -1).map(line => line.split(':')[0])).toEqual([
     'internal brief [task keywords]', 'internal verification [ids] [--all]', 'internal risks', 'internal performance report | startup',
     'read <file> / profile <file>', 'read <files> --ask <question>', 'knowledge add <file> --title <title> [--global]',
+    'knowledge auto [on|off] [--dir <folder>]', 'knowledge lint [--dir <folder>]',
     'skill list / skill search <query> / skill add owner/repo[@name] / skill create <name> --check run|file|http|eval',
     'research <query>', 'state / intent show / context <scenario> / evidence [run]', 'intent draft / approve / check',
   ]);
