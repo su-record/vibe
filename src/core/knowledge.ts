@@ -3,6 +3,7 @@ import path from 'node:path';
 import { detectClient, detectModel } from './client.js';
 import { usage } from './errors.js';
 import { record } from './ledger.js';
+import { realFolder } from './obsidian.js';
 import { vibePath } from './paths.js';
 import { readJson, writeAtomic, writeJson } from './store.js';
 
@@ -57,7 +58,7 @@ export function knowledgeSettings(home: string = defaultHome()): KnowledgeSettin
 
 function absolute(flag: string, value: string | undefined): string | undefined {
   if (value !== undefined && !path.isAbsolute(value)) throw usage(`--${flag} takes an absolute folder path`);
-  return value === undefined ? undefined : path.resolve(value);
+  return value === undefined ? undefined : realFolder(value);
 }
 
 /** Apply the person's change; a folder must be absolute, and what the change leaves out is kept. */
