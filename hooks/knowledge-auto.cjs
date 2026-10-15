@@ -8,6 +8,7 @@ const path = require('node:path');
 const { inside, readPrivate, writePrivate } = require('./private-store.cjs');
 const { optional, digest, revision, projectFingerprint } = require('./session-files.cjs');
 const { identity, hostRoot } = require('./session-state.cjs');
+const { connectVault } = require('./obsidian.cjs');
 
 const defaultHome = () => process.env.VIBE_HOME_DIR || os.homedir();
 const entry = (root, id) => `knowledge-${digest(`${root}\0${id}`)}.json`;
@@ -57,8 +58,9 @@ function remembered(root, id, home) {
 
 /** SessionStart: remember the project's files so the first turn's changes are seen. */
 function start(payload, home = defaultHome()) {
-  const { auto, exclude } = settings(home);
+  const { auto, dir, exclude } = settings(home);
   if (!auto) return;
+  try { connectVault(dir, home); } catch { /* Obsidian's list stays as it was; the wiki still works */ }
   try {
     const now = snapshot(payload, home, exclude);
     writePrivate(now.root, entry(now.root, now.id), JSON.stringify({ files: now.files, turns: 0 }), home);

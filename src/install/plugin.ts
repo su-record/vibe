@@ -13,7 +13,7 @@ import { pluginTree } from './tree.js';
  * manifest, the single entry skill and the notification hooks.
  */
 const SKILL_NAMES = ['vibe'] as const;
-const HOOK_FILES = ['notify.js', 'session.js', 'private-store.cjs', 'session-files.cjs', 'session-state.cjs', 'session-context.cjs', 'session-repair.cjs', 'knowledge-auto.cjs', 'slice-command.cjs', 'slice-store.cjs', 'slice-guard.cjs'];
+const HOOK_FILES = ['notify.js', 'session.js', 'private-store.cjs', 'session-files.cjs', 'session-state.cjs', 'session-context.cjs', 'session-repair.cjs', 'knowledge-auto.cjs', 'obsidian.cjs', 'slice-command.cjs', 'slice-store.cjs', 'slice-guard.cjs'];
 export const MARKETPLACE_NAME = 'vibe-local';
 
 export interface PluginPaths {

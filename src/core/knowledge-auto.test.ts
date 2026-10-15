@@ -14,7 +14,8 @@ beforeEach(() => {
   root = path.join(fixture, 'worktree'); home = path.join(fixture, 'home');
   fs.mkdirSync(root); fs.mkdirSync(home);
   env = { ...process.env, HOME: home, USERPROFILE: home, VIBE_HOME_DIR: home, CODEX_HOME: path.join(home, '.codex'),
-    CODEX_THREAD_ID: '', CLAUDE_SESSION_ID: '', VIBE_CLIENT: 'codex', CLAUDE_PROJECT_DIR: root, VIBE_SKIP_SETUP: '1' };
+    CODEX_THREAD_ID: '', CLAUDE_SESSION_ID: '', VIBE_CLIENT: 'codex', CLAUDE_PROJECT_DIR: root, VIBE_SKIP_SETUP: '1',
+    XDG_CONFIG_HOME: path.join(home, '.config'), APPDATA: path.join(home, 'AppData', 'Roaming') };
 });
 afterEach(() => fs.rmSync(fixture, { recursive: true, force: true }));
 
@@ -80,7 +81,7 @@ it('never fingerprints, logs or interrupts work inside an excluded folder until 
   fs.writeFileSync(path.join(project, 'work.txt'), 'changed');
   for (let turn = 0; turn < 3; turn++) expect(run('stop', {}, project)).toEqual({});
   expect(fs.existsSync(path.join(home, '.vibe-runtime'))).toBe(false);
-  expect(fs.existsSync(wiki())).toBe(false);
+  expect(fs.existsSync(path.join(wiki(), 'log.md'))).toBe(false);
   expect(run('stop').decision).toBeUndefined();
   expect(run('stop').decision).toBe('block');
   expect(JSON.parse(cli(['knowledge', 'auto', '--include', client]).stdout).exclude).toEqual([]);
@@ -108,6 +109,36 @@ it('moves the wiki to an absolute folder, keeps it when turned off and rejects a
   expect(JSON.parse(cli(['knowledge', 'auto', 'off']).stdout)).toMatchObject({ auto: false, dir: vault, folder: vault });
   fs.writeFileSync(path.join(root, 'work.txt'), 'changed once more');
   expect(run('stop')).toEqual({});
+});
+
+it('readies the wiki as a vault without Obsidian and lists it at the first session after Obsidian has run', () => {
+  const on = JSON.parse(cli(['knowledge', 'auto', 'on']).stdout);
+  expect(on).toMatchObject({ folder: wiki(), vault: 'waiting', copied: 0, synced: null });
+  expect(fs.statSync(path.join(wiki(), '.obsidian')).isDirectory()).toBe(true);
+  const registry = process.platform === 'darwin' ? path.join(home, 'Library', 'Application Support', 'obsidian', 'obsidian.json')
+    : process.platform === 'win32' ? path.join(home, 'AppData', 'Roaming', 'obsidian', 'obsidian.json') : path.join(home, '.config', 'obsidian', 'obsidian.json');
+  fs.mkdirSync(path.dirname(registry), { recursive: true });
+  fs.writeFileSync(registry, '{"vaults":{}}');
+  run('session');
+  expect(Object.values(JSON.parse(fs.readFileSync(registry, 'utf8')).vaults)).toMatchObject([{ path: wiki() }]);
+  expect(JSON.parse(cli(['knowledge', 'auto']).stdout).vault).toBe('in-vault');
+  expect(JSON.parse(cli(['knowledge', 'auto', 'off']).stdout).vault).toBeNull();
+});
+
+it('puts the wiki in the vault in use when turned on, carrying the earlier pages across', () => {
+  fs.mkdirSync(wiki(), { recursive: true });
+  fs.writeFileSync(path.join(wiki(), 'index.md'), '- [[reuse]]');
+  const vault = path.join(fixture, 'Notes');
+  fs.mkdirSync(vault);
+  const registry = process.platform === 'darwin' ? path.join(home, 'Library', 'Application Support', 'obsidian', 'obsidian.json')
+    : process.platform === 'win32' ? path.join(home, 'AppData', 'Roaming', 'obsidian', 'obsidian.json') : path.join(home, '.config', 'obsidian', 'obsidian.json');
+  fs.mkdirSync(path.dirname(registry), { recursive: true });
+  fs.writeFileSync(registry, JSON.stringify({ vaults: { v: { path: vault, ts: 1, open: true } } }));
+  const on = JSON.parse(cli(['knowledge', 'auto', 'on']).stdout);
+  expect(on).toMatchObject({ dir: path.join(vault, 'vibe'), folder: path.join(vault, 'vibe'), vault: 'in-vault', copied: 1 });
+  expect(fs.readFileSync(path.join(vault, 'vibe', 'index.md'), 'utf8')).toBe('- [[reuse]]');
+  expect(fs.existsSync(path.join(wiki(), 'index.md'))).toBe(true);
+  expect(JSON.parse(cli(['knowledge', 'auto', 'on']).stdout)).toMatchObject({ folder: path.join(vault, 'vibe'), copied: 0 });
 });
 
 it('does not count its own log line as work when the wiki sits inside the project', () => {

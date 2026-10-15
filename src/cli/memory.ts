@@ -1,7 +1,9 @@
+import os from 'node:os';
 import path from 'node:path';
 import { usage } from '../core/errors.js';
 import { addKnowledge, globalKnowledgeDir, knowledgeSettings, setKnowledgeSettings, type KnowledgeChange } from '../core/knowledge.js';
 import { lintWiki } from '../core/knowledge-lint.js';
+import { carryWiki, connectVault, obsidianVaults, syncedBy } from '../core/obsidian.js';
 import { compare, EDGE_TYPES, readEdges, readLedger, why, type CompareBy, type CompareMetric, type EdgeType } from '../core/ledger.js';
 import { listRegressions, recordRegression } from '../core/regress.js';
 import { research, SOURCES, type Source } from '../core/research.js';
@@ -138,14 +140,38 @@ function knowledgeAuto(value: string | undefined, flags: Flags): Output {
     const given = flagString(flags, key);
     if (given !== undefined) change[key] = given;
   }
+  const previous = globalKnowledgeDir();
+  const place = value === 'on' && change.dir === undefined && knowledgeSettings().dir === undefined ? vaultFolder() : null;
+  if (place) change.dir = place.dir;
   const s = Object.keys(change).length ? setKnowledgeSettings(change) : knowledgeSettings();
   const folder = globalKnowledgeDir();
+  const copied = carryWiki(previous, folder);
+  const vault = s.auto ? connectVault(folder, home()) : null;
+  const synced = s.auto ? syncedBy(folder) : null;
   const every = s.turns ? `, and every ${s.turns} conversation turns,` : '';
   const text = [s.auto
     ? `session knowledge on → ${folder}\n  after a turn that changes project files${every} the working model gets one turn to keep the wiki and improve on it · skills: ${s.skills === 'create' ? 'created and reported' : 'drafted and offered'}`
     : `session knowledge off · wiki folder ${folder}`,
+  ...(place ? [place.note] : []),
+  ...(vault ? [`  ${VAULT_NOTE[vault]}`] : []),
+  ...(copied ? [`  copied ${copied} files from ${previous}; that folder is kept`] : []),
+  ...(synced ? [`  this folder is synced by ${synced}: what the wiki records leaves this computer; exclude client work with --exclude`] : []),
   ...s.exclude.map(e => `  never recorded: ${e}`)].join('\n');
-  return { json: { ...s, folder }, text, code: 0 };
+  return { json: { ...s, folder, vault, copied, synced }, text, code: 0 };
+}
+
+const home = (): string => process.env['VIBE_HOME_DIR'] ?? os.homedir();
+const VAULT_NOTE = {
+  'connected': 'Obsidian: the wiki is now listed as a vault',
+  'in-vault': 'Obsidian: the wiki is inside a vault you use',
+  'waiting': 'Obsidian not found yet: the wiki is ready as a vault, and the first session after Obsidian has run lists it there',
+};
+
+/** Turning on without a folder: a `vibe` folder inside the Obsidian vault in use, when there is one. */
+function vaultFolder(): { dir: string; note: string } | null {
+  const [vault, ...others] = obsidianVaults(home());
+  if (!vault) return null;
+  return { dir: path.join(vault.path, 'vibe'), note: `  Obsidian vault ${vault.path}: the wiki is its vibe folder${others.length ? `; other vaults: ${others.map(v => v.path).join(', ')} (--dir to choose)` : ''}` };
 }
 
 /** `knowledge lint [--dir <folder>]`: the personal wiki's links, orphans and long pages; exit 1 on a broken link. */
