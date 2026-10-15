@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 2,
+  "run": "r-22",
+  "at": "2026-10-15T01:36:39.042Z",
+  "intentHash": "71aa9004158bdd48",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "ed0dce7070e8",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 60717,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 219,
+          "sha256": "5b45d246a383e03074ce1bd0297f132b2fc69e825f577befd43d4339713b026c",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 258,
+          "sha256": "e6b4d69e60765cc3a72474596cb0ed2ffc5fad685243460415606ae21d86482b",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/verification.test.ts",
+        "src/core/performance.test.ts",
+        "src/core/risk-signals.test.ts"
+      ],
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#compatibility"
+    },
+    {
+      "id": "personal-fde-surface",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1968,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 578,
+          "sha256": "09906f3ab806900aa46da2800cc251c938fd05a16e130e47d2763ee1e786b77f",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#personal-fde-surface"
+    },
+    {
+      "id": "performance-startup",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3238,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 5993,
+          "sha256": "895e6e39ea419a1f364f621e3dea8a45e260dd79dcaa4d52de95c7b064cda95d",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#performance-startup"
+    },
+    {
+      "id": "automatic-access",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2934,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 209,
+          "sha256": "e74e9ef704a8d00544931ac6cdfe7ae0cc67cb042794b79e0048779d8604ca43",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 95,
+          "sha256": "b50dc1ed0f27fea11a6c5054907d495d6dae332736b38fc5e88bf115382f9217",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/consent.test.ts"
+      ],
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#automatic-access"
+    },
+    {
+      "id": "automatic-deployment",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 7154,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 33,
+          "sha256": "ce5690d60ce07c3a3171b8d05950af725558c05828b2626f25d0962848df8260",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 60,
+          "sha256": "4a1c681b0d2fdabba6e476a95063bce86295952439d489b695573018b865dc4d",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "package.json",
+        ".claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        ".codex-plugin/plugin.json"
+      ],
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#automatic-deployment"
+    },
+    {
+      "id": "session-knowledge",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 7626,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 212,
+          "sha256": "b2c1850ab7799562392c1e2ae6779cb94c4a6bbcbc2a08bab56409bd74a3f356",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 161,
+          "sha256": "f005c29971fb2632a5e3506c4d5975151e793616a41ee4c2094b227ea6caeb9a",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/knowledge-auto.test.ts",
+        "src/core/knowledge.test.ts",
+        "src/core/knowledge-lint.test.ts"
+      ],
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#session-knowledge"
+    },
+    {
+      "id": "mutation",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 119694,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 98,
+          "sha256": "569a33e26b4ed5421c4e2b17bdb396b22859ee511c3eac2310c7e88dc7390c4a",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "checks/mutation.js",
+        "src/cli/internal.test.ts",
+        "src/core/session.test.ts"
+      ],
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#mutation"
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 273,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 134,
+          "sha256": "dc2bdd2ba20ca62f296ee4d4919963a39756da68c442e8b21296bc029a9384e0",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#r-1-vibe-size-misreads-template-literal"
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 57,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#r-2-ci-counted-the-language-packs"
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1761,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 223,
+          "sha256": "b9fec3c60b9e462e705126db82cd41d9057f99773e0f8f86f47e900d76c2781e",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 115,
+          "sha256": "d06c7192804078de267f05a87397b7f4bed664552d866d5798b89b4150249ca3",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#r-3-codex-plugin-never-followed-update"
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1738,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 222,
+          "sha256": "da32333dfe3f210e5620e6e9387b2cb6a5eb72ec2bd6b8a51505fcaf3cdb93d4",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 125,
+          "sha256": "8ce72262cb2fc74000d5034e1d12da1c78822f448ebf46a1136f7453d3f913b5",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#r-4-installhookfile-kept-only-last-entry"
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1550,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 220,
+          "sha256": "ccd829c259d357981010eb5d70641611b9d73357cd2f12ad4d4df684fd7987c6",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 101,
+          "sha256": "8ad78f5a22c434b5f39a6c79a4414994ac4cc41523d210ef43663d9f69702290",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#r-5-vibe-size-read-a-quote-or-a-backtick"
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1730,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 223,
+          "sha256": "7301d2a71971bf73db26a371930925a7a7f8d3fb5288a10c958500fdaa86205b",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 103,
+          "sha256": "8948948e25dea1f2b90c4a0b3df83b3d35ebe8edc74a393046dae0d82e319dea",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "06c1d1745eb509d96db3180ca658f3641d3338414c2a96f78c3977e8e71e499e",
+      "evidenceId": "r-22#r-6-the-entry-guard-read-its-own-path-fr"
+    }
+  ]
+}

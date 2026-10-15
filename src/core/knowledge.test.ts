@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { addKnowledge, globalKnowledgeDir, knowledgeDir } from './knowledge.js';
+import { addKnowledge, globalKnowledgeDir, knowledgeDir, knowledgeSettings, knowledgeSettingsFile, setKnowledgeSettings } from './knowledge.js';
 
 let root: string;
 let home: string;
@@ -32,6 +32,31 @@ describe('addKnowledge', () => {
     expect(r.file).toBe(path.join(globalKnowledgeDir(home), 'a-global-note.md'));
     expect(r.file.startsWith(root)).toBe(false);
     expect(fs.readFileSync(r.file, 'utf-8')).toContain('shared body');
+  });
+
+  it('keeps session recording off until the person turns it on, and moves the wiki only to an absolute folder', () => {
+    const defaults = { auto: false, turns: 5, skills: 'propose', exclude: [] };
+    expect(knowledgeSettings(home)).toEqual(defaults);
+    expect(globalKnowledgeDir(home)).toBe(path.join(home, '.config', 'vibe', 'knowledge'));
+    const vault = path.join(home, 'Obsidian', 'vibe');
+    expect(setKnowledgeSettings({ auto: true, dir: vault }, home)).toEqual({ ...defaults, auto: true, dir: vault });
+    expect(setKnowledgeSettings({ auto: false }, home)).toEqual({ ...defaults, dir: vault });
+    expect(globalKnowledgeDir(home)).toBe(vault);
+    expect(addKnowledge(root, 'vault note', 'body', { global: true }).file).toBe(path.join(vault, 'vault-note.md'));
+    expect(() => setKnowledgeSettings({ dir: 'relative' }, home)).toThrow('absolute');
+    expect(() => setKnowledgeSettings({ exclude: 'relative' }, home)).toThrow('absolute');
+    expect(() => setKnowledgeSettings({ turns: 1.5 }, home)).toThrow('whole number');
+    expect(() => setKnowledgeSettings({ skills: 'always' }, home)).toThrow('propose | create');
+    fs.writeFileSync(knowledgeSettingsFile(home), JSON.stringify({ auto: 'yes', dir: 'relative', turns: -1, skills: 'always', exclude: ['relative', 7] }));
+    expect(knowledgeSettings(home)).toEqual(defaults);
+  });
+
+  it('adds and removes excluded folders once each and keeps the other settings', () => {
+    const client = path.join(home, 'client');
+    setKnowledgeSettings({ auto: true, turns: 0, skills: 'create' }, home);
+    expect(setKnowledgeSettings({ exclude: client }, home).exclude).toEqual([client]);
+    expect(setKnowledgeSettings({ exclude: `${client}/` }, home)).toEqual({ auto: true, turns: 0, skills: 'create', exclude: [client] });
+    expect(setKnowledgeSettings({ include: client }, home).exclude).toEqual([]);
   });
 
   it('rejects an empty title or body regardless of the global option', () => {

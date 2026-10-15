@@ -6,7 +6,7 @@ import { contextNotes } from '../core/context-notes.js';
 import { usage } from '../core/errors.js';
 import type { Output } from './common.js';
 
-const GUIDES = ['discover', 'fieldwork', 'reading', 'delivery', 'extensions', 'optimization', 'feasibility', 'verification', 'explanation', 'system', 'ambition', 'code', 'design', 'ko', 'en'];
+const GUIDES = ['discover', 'fieldwork', 'reading', 'delivery', 'extensions', 'optimization', 'feasibility', 'verification', 'explanation', 'system', 'ambition', 'wiki', 'code', 'design', 'ko', 'en'];
 
 function boundedText(file: string, limit: number): string | null {
   const stat = fs.lstatSync(file, { throwIfNoEntry: false });
@@ -48,6 +48,8 @@ export function cmdInternal(root: string, operation: string | undefined, args: s
       + 'read <file> / profile <file>: extract or inspect data without a model\n'
       + 'read <files> --ask <question>: optional configured reader model; adds a model call, use the reading guide to choose\n'
       + 'knowledge add <file> --title <title> [--global]: retain project or personal context\n'
+      + 'knowledge auto [on|off] [--dir <folder>]: the user\'s choice to keep the personal wiki from every session; off by default, never turned on for them; --turns <n>, --skills propose|create, --exclude/--include <folder> are theirs too\n'
+      + 'knowledge lint [--dir <folder>]: broken [[links]], orphan pages and long pages in the personal wiki\n'
       + 'skill list / skill search <query> / skill add owner/repo[@name] / skill create <name> --check run|file|http|eval: reuse, install or create a capability for a task gap or concrete improvement\n'
       + 'research <query>: investigate a task capability or a concrete improvement opportunity\n'
       + 'state / intent show / context <scenario> / evidence [run]: inspect a tracked task\n'

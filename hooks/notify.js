@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import knowledgeAuto from './knowledge-auto.cjs';
 import sessionRuntime from './session-state.cjs';
 import sessionFiles from './session-files.cjs';
 import sliceRuntime from './slice-guard.cjs';
@@ -131,9 +132,10 @@ function adviseRead(payload) {
 
 const cli = path.join(here, '..', 'dist', 'cli.js');
 
-// Stop never resolves a PATH command or reads a transcript as instructions.
+// Stop never resolves a PATH command or reads a transcript as instructions. Personal Stop only runs
+// session knowledge, which is off unless the person turned it on.
 if (mode === 'stop' && personal) {
-  process.stdout.write('{}\n');
+  process.stdout.write(`${JSON.stringify(knowledgeAuto.stop(readPayload()))}\n`);
   process.exit(0);
 }
 if (mode === 'stop') {
@@ -146,7 +148,9 @@ if (mode === 'stop') {
   process.exit(0);
 }
 if (mode === 'session') {
-  process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: structuralSession(readPayload()) } })}\n`);
+  const payload = readPayload();
+  knowledgeAuto.start(payload);
+  process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: structuralSession(payload) } })}\n`);
   process.exit(0);
 }
 

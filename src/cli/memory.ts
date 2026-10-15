@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { usage } from '../core/errors.js';
-import { addKnowledge } from '../core/knowledge.js';
+import { addKnowledge, globalKnowledgeDir, knowledgeSettings, setKnowledgeSettings, type KnowledgeChange } from '../core/knowledge.js';
+import { lintWiki } from '../core/knowledge-lint.js';
 import { compare, EDGE_TYPES, readEdges, readLedger, why, type CompareBy, type CompareMetric, type EdgeType } from '../core/ledger.js';
 import { listRegressions, recordRegression } from '../core/regress.js';
 import { research, SOURCES, type Source } from '../core/research.js';
@@ -125,9 +126,45 @@ export function cmdRegress(root: string, sub: string | undefined, flags: Flags):
   return { json: result, text: `regression ${result.id} → ${path.relative(root, result.file)}`, code: 0 };
 }
 
+const AUTO_USAGE = 'knowledge auto [on|off] [--dir <folder>] [--turns <n>] [--skills propose|create] [--exclude <folder>] [--include <folder>]';
+
+/** `knowledge auto`: personal, so it needs no project. Without on/off or an option it only reports. */
+function knowledgeAuto(value: string | undefined, flags: Flags): Output {
+  if (value !== undefined && !['on', 'off'].includes(value)) throw usage(AUTO_USAGE);
+  const turns = flagString(flags, 'turns');
+  const change: KnowledgeChange = { ...(value ? { auto: value === 'on' } : {}), ...(turns !== undefined ? { turns: /^\d+$/.test(turns) ? Number(turns) : -1 } : {}) };
+  for (const key of ['dir', 'skills', 'exclude', 'include'] as const) {
+    if (flags[key] === true) throw usage(AUTO_USAGE);
+    const given = flagString(flags, key);
+    if (given !== undefined) change[key] = given;
+  }
+  const s = Object.keys(change).length ? setKnowledgeSettings(change) : knowledgeSettings();
+  const folder = globalKnowledgeDir();
+  const every = s.turns ? `, and every ${s.turns} conversation turns,` : '';
+  const text = [s.auto
+    ? `session knowledge on → ${folder}\n  after a turn that changes project files${every} the working model gets one turn to keep the wiki and improve on it · skills: ${s.skills === 'create' ? 'created and reported' : 'drafted and offered'}`
+    : `session knowledge off · wiki folder ${folder}`,
+  ...s.exclude.map(e => `  never recorded: ${e}`)].join('\n');
+  return { json: { ...s, folder }, text, code: 0 };
+}
+
+/** `knowledge lint [--dir <folder>]`: the personal wiki's links, orphans and long pages; exit 1 on a broken link. */
+function knowledgeLint(flags: Flags): Output {
+  const r = lintWiki(path.resolve(flagString(flags, 'dir') ?? globalKnowledgeDir()));
+  const text = [
+    `wiki ${r.dir} · ${r.pages} pages · ${r.broken.length} broken links · ${r.orphans.length} orphans · ${r.long.length} long${r.partial ? ' · partial' : ''}`,
+    ...r.broken.map(b => `  broken  ${b.page} → [[${b.target}]]`),
+    ...r.orphans.map(page => `  orphan  ${page} (no page links to it)`),
+    ...r.long.map(l => `  long    ${l.page} (${l.lines} lines; split by subject)`),
+  ].join('\n');
+  return { json: r, text, code: r.broken.length ? 1 : 0 };
+}
+
 export function cmdKnowledge(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
+  if (sub === 'auto') return knowledgeAuto(args[0], flags);
+  if (sub === 'lint') return knowledgeLint(flags);
   ensureProject(root);
-  if (sub !== 'add') throw usage('knowledge add <file|--stdin> --title "…" [--global]');
+  if (sub !== 'add') throw usage(`knowledge add <file|--stdin> --title "…" [--global] | ${AUTO_USAGE} | knowledge lint [--dir <folder>]`);
   const title = flagString(flags, 'title') ?? '';
   const body = flags['stdin'] === true ? readStdin() : args[0] ? readText(path.resolve(root, args[0])) ?? '' : '';
   const global = flags['global'] === true;

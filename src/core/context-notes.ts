@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const PRIORITY = ['corrections.md', 'work-context.md', 'reuse.md', 'problems.md'];
+const PRIORITY = ['corrections.md', 'work-context.md', 'reuse.md', 'problems.md', 'index.md'];
 const MAX_ENTRIES = 256;
 const MAX_FILES = 64;
 const MAX_READ_BYTES = 32_768;

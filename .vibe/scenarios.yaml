@@ -93,6 +93,23 @@
     - .claude-plugin/plugin.json
     - .claude-plugin/marketplace.json
     - .codex-plugin/plugin.json
+- id: session-knowledge
+  then: Session knowledge stays off until the person turns it on; when on, a
+    changed turn or the configured number of conversation turns gives the model
+    one knowledge turn and one log line, excluded folders are never recorded,
+    skills are offered unless creation is allowed, and the wiki lint reports
+    broken links, orphans and long pages.
+  needs:
+    - compatibility
+  check:
+    type: run
+    cmd: npx vitest run src/core/knowledge-auto.test.ts src/core/knowledge.test.ts
+      src/core/knowledge-lint.test.ts
+    timeoutMs: 180000
+  verifiers:
+    - src/core/knowledge-auto.test.ts
+    - src/core/knowledge.test.ts
+    - src/core/knowledge-lint.test.ts
 - id: mutation
   then: Every change Stryker makes to the guide dispatch and to the Codex
     session line makes a test fail, so no mutant survives or goes untested.
