@@ -6,7 +6,7 @@ import { contextNotes } from '../core/context-notes.js';
 import { usage } from '../core/errors.js';
 import type { Output } from './common.js';
 
-const GUIDES = ['discover', 'fieldwork', 'reading', 'delivery', 'extensions', 'optimization', 'feasibility', 'verification', 'explanation', 'system', 'code', 'design', 'ko', 'en'];
+const GUIDES = ['discover', 'fieldwork', 'reading', 'delivery', 'extensions', 'optimization', 'feasibility', 'verification', 'explanation', 'system', 'ambition', 'code', 'design', 'ko', 'en'];
 
 function boundedText(file: string, limit: number): string | null {
   const stat = fs.lstatSync(file, { throwIfNoEntry: false });

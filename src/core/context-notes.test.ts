@@ -54,3 +54,11 @@ it('marks prefix-only searches as partial rather than claiming no relevant mater
   expect(result.notes).toEqual([]);
   expect(result.partial).toBe(true);
 });
+it('orders notes by priority name, then by directory order, then by path', () => {
+  const project = path.join(root, 'project'), personal = path.join(root, 'personal');
+  for (const file of ['project/reuse.md', 'project/b.md', 'project/a.md', 'personal/corrections.md', 'personal/problems.md', 'personal/a.md']) write(file, `# ${file}`);
+  expect(contextNotes([personal, project]).notes.map(n => path.relative(root, n.file).split(path.sep).join('/')))
+    .toEqual(['personal/corrections.md', 'project/reuse.md', 'personal/problems.md', 'personal/a.md', 'project/a.md', 'project/b.md']);
+  expect(contextNotes([project, personal]).notes.map(n => path.relative(root, n.file).split(path.sep).join('/')))
+    .toEqual(['personal/corrections.md', 'project/reuse.md', 'personal/problems.md', 'project/a.md', 'project/b.md', 'personal/a.md']);
+});

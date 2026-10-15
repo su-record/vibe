@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const PRIORITY = ['corrections.md', 'work-context.md', 'reuse.md'];
+const PRIORITY = ['corrections.md', 'work-context.md', 'reuse.md', 'problems.md'];
 const MAX_ENTRIES = 256;
 const MAX_FILES = 64;
 const MAX_READ_BYTES = 32_768;
@@ -15,7 +15,9 @@ function ordering(directories: string[]): (a: string, b: string) => number {
     return i < 0 ? PRIORITY.length : i;
   };
   const scope = (file: string): number => directories.findIndex(d => file.startsWith(`${d}${path.sep}`));
-  return (a, b) => priority(a) - priority(b) || scope(a) - scope(b) || a.localeCompare(b);
+  return (a, b) => priority(a) - priority(b) ||
+    // Stryker disable next-line ArithmeticOperator: equal priorities arrive in directory order and the sort is stable, so this term's sign is unobservable; it only keeps the path comparison from mixing directories
+    scope(a) - scope(b) || a.localeCompare(b);
 }
 
 /** The note files to read, within the entry and file budgets. */

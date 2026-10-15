@@ -21,7 +21,15 @@ function span(file, from, to) {
 // The hooks run as separate processes, where the vitest runner cannot switch a mutant on. The command
 // runner passes the active mutant through the environment, which the spawned hook inherits.
 const TARGETS = [
-  { name: 'guide dispatch', mutate: ['src/cli/internal.ts'], testRunner: 'vitest', coverageAnalysis: 'perTest' },
+  {
+    name: 'guide dispatch and note priority',
+    mutate: [
+      'src/cli/internal.ts',
+      span('src/core/context-notes.ts', 'const PRIORITY =', 'const PRIORITY ='),
+      span('src/core/context-notes.ts', 'function ordering(', 'a.localeCompare(b)'),
+    ],
+    testRunner: 'vitest', coverageAnalysis: 'perTest',
+  },
   {
     name: 'Codex session line',
     mutate: [
