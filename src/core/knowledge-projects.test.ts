@@ -15,7 +15,7 @@ function folder(...parts: string[]): string {
 const names = () => JSON.parse(fs.readFileSync(path.join(home, '.config', 'vibe', 'knowledge-projects.json'), 'utf8')).names;
 
 it('names a project by its folder, marks a second folder of the same name and keeps each choice', () => {
-  const first = folder('work', 'app'), second = folder('client', 'app'), odd = folder('a[b]|c');
+  const first = folder('work', 'app'), second = folder('client', 'app'), odd = folder('a[b]#c');
   expect(projectName(second, home, false)).toBe('app');
   expect(fs.existsSync(path.join(home, '.config'))).toBe(false);
   expect(projectName(first, home)).toBe('app');

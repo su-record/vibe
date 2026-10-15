@@ -1,23 +1,3 @@
 {
-  ".claude-plugin/marketplace.json": "b97539e3f733ca711072f1116ff24a06f0ae1d7e",
-  ".claude-plugin/plugin.json": "d541d59f921ed50c378dd586d57d6d1318b42dfc",
-  ".codex-plugin/plugin.json": "1d4cdd5cfc5ab797562a0d85a6687e26ce44f0c2",
-  "docs/session-knowledge.md": "f48d924a77de09e471fd270467a4c0b60ed2eb04",
-  "hooks/knowledge-auto.cjs": "ce92df561e6df19bd6d628ea2cc2bed54a1c4cf0",
-  "internal/guides/wiki.md": "b38022f5805dd3120e235c024881df37653a3fd1",
-  "package-lock.json": "13cc1f3bb0e537f586e4406a681847b939bd1207",
-  "package.json": "a715a24ae9c76d68fc8f23319efc03b10e6fc242",
-  "src/cli/internal.test.ts": "a08333ceef823f2d7c2fbfb6b2e1d892b781607d",
-  "src/cli/internal.ts": "255f1e2970bd89a2f566b56ef1d976651fb2d3ac",
-  "src/cli/memory.ts": "858cec533c00b31455e273f50d65b659da0d5033",
-  "src/core/context.test.ts": "e36e42cfabd69745a9d44966d819375d5fd7700f",
-  "src/core/context.ts": "48c7cc8f3dad94a8f3d43a210de3c42b56251e19",
-  "src/core/knowledge-auto.test.ts": "7338de7b6a14f36f49a8190efdf2c20e2ffbc0bc",
-  "src/core/knowledge-lint.test.ts": "6cd6388b7a36e6b692dacd386e350f29b43062bb",
-  "src/core/knowledge-lint.ts": "a26dea1fd395837cdeeca1044c0918d0ff1d2fdf",
-  "src/core/knowledge.ts": "5d1d030b60dcfe2ab83a7b1aab982015ac32ddc9",
-  "src/install/plugin.ts": "cf6093e2db9ccb074780ac3e31290e7b7916b686",
-  "hooks/knowledge-projects.cjs": "520ff0f0887136bccef7e84a0d4d8ea80aa2bd78",
-  "src/core/knowledge-projects.test.ts": "99c296ea8536fd807561a4ad65712a3871a7a2cc",
-  "src/core/knowledge-projects.ts": "54bdfd5f018ff8ddc5a17ecb677cae650b8a3206"
+  "src/core/knowledge-projects.test.ts": "5aeb44c163b03f8c6a447b65b6ca5a06f5745f15"
 }
