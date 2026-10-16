@@ -178,9 +178,10 @@ function vaultFolder(): { dir: string; note: string } | null {
 function knowledgeLint(flags: Flags): Output {
   const r = lintWiki(path.resolve(flagString(flags, 'dir') ?? globalKnowledgeDir()));
   const text = [
-    `wiki ${r.dir} · ${r.pages} pages · ${r.broken.length} broken links · ${r.orphans.length} orphans · ${r.long.length} long${r.partial ? ' · partial' : ''}`,
+    `wiki ${r.dir} · ${r.pages} pages · ${r.broken.length} broken links · ${r.orphans.length} orphans · ${r.unlinked.length} unlinked shared · ${r.long.length} long${r.partial ? ' · partial' : ''}`,
     ...r.broken.map(b => `  broken  ${b.page} → [[${b.target}]]`),
     ...r.orphans.map(page => `  orphan  ${page} (no page links to it)`),
+    ...r.unlinked.map(page => `  unlinked ${page} (shared; the next session start lists it on the project page)`),
     ...r.long.map(l => `  long    ${l.page} (${l.lines} lines; split by subject)`),
   ].join('\n');
   return { json: r, text, code: r.broken.length ? 1 : 0 };

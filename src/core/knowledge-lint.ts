@@ -11,13 +11,15 @@ export interface WikiLint {
   pages: number;
   broken: Array<{ page: string; target: string }>;
   orphans: string[];
+  /** Shared project pages no page links to; the next session start lists them on the project page. */
+  unlinked: string[];
   long: Array<{ page: string; lines: number }>;
   partial: boolean;
 }
 
 /**
  * The wiki's pages, and the pages of each project's shared knowledge it shows through a folder link
- * (`projects/<name>/`). Those are kept in the project, so they resolve links but are never called orphans.
+ * (`projects/<name>/`). Those are kept in the project, so they resolve links and are reported as unlinked, not orphans.
  */
 function pages(dir: string): { files: string[]; shared: Set<string>; partial: boolean } {
   const files: string[] = [];
@@ -71,5 +73,6 @@ export function lintWiki(dir: string): WikiLint {
     }
   }
   const orphans = files.filter(file => !shared.has(file)).map(name).filter(page => !linked.has(page) && !ROOTS.has(page));
-  return { dir, pages: files.length, broken, orphans, long, partial };
+  const unlinked = files.filter(file => shared.has(file)).map(name).filter(page => !linked.has(page));
+  return { dir, pages: files.length, broken, orphans, unlinked, long, partial };
 }

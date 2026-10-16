@@ -9,7 +9,7 @@ const { inside, readPrivate, writePrivate } = require('./private-store.cjs');
 const { optional, digest, revision, projectFingerprint } = require('./session-files.cjs');
 const { identity, hostRoot } = require('./session-state.cjs');
 const { connectVault } = require('./obsidian.cjs');
-const { projectName, linkProject } = require('./knowledge-projects.cjs');
+const { projectName, linkProject, indexProject } = require('./knowledge-projects.cjs');
 
 const defaultHome = () => process.env.VIBE_HOME_DIR || os.homedir();
 const entry = (root, id) => `knowledge-${digest(`${root}\0${id}`)}.json`;
@@ -64,7 +64,8 @@ function start(payload, home = defaultHome()) {
   try {
     const now = snapshot(payload, home, exclude);
     writePrivate(now.root, entry(now.root, now.id), JSON.stringify({ files: now.files, turns: 0 }), home);
-    linkProject(now.root, dir, projectName(now.root, home));
+    const name = projectName(now.root, home);
+    if (linkProject(now.root, dir, name) === 'linked') indexProject(now.root, dir, name);
   } catch { /* no record this session */ }
 }
 

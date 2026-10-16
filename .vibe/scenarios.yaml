@@ -104,7 +104,10 @@
     project folders with the same name get separate pages; a vibe project's
     shared knowledge is linked into the wiki except a synced one or one inside
     the project; the lint follows those links without calling their pages
-    orphans; and the brief and context read the project's own page.
+    orphans but reports unlinked ones; each session start lists every shared
+    page in a marked block of the project page and adds the page to the index,
+    leaving other text alone; and the brief and context read the project's
+    own page.
   needs:
     - compatibility
   check:

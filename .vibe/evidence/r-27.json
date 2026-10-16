@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "run": "r-27",
+  "at": "2026-10-16T00:26:39.916Z",
+  "intentHash": "cfcd2d3cf1bf98a2",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "7183d59a58cf",
+  "results": [
+    {
+      "id": "session-knowledge",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 8158,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 212,
+          "sha256": "247305f007601a6d556784f9f012abe2b52b0e15849b5a85e821eede5d6f8571",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 273,
+          "sha256": "bb7af9475e5ad263c95cc4805dcd542aea33609bd0a330815d7f4c2a71b30ee3",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/knowledge-auto.test.ts",
+        "src/core/knowledge.test.ts",
+        "src/core/knowledge-lint.test.ts",
+        "src/core/obsidian.test.ts",
+        "src/core/knowledge-projects.test.ts",
+        "src/core/context.test.ts"
+      ],
+      "executionContext": "6910b8047cd62cd94e617eb491bf6d46cafb6a66a69087e1c0b814c021f0b591",
+      "evidenceId": "r-27#session-knowledge"
+    }
+  ]
+}
