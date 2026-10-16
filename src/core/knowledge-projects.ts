@@ -6,6 +6,7 @@ export type ProjectLink = 'linked' | 'none' | 'synced' | 'inside' | 'taken';
 const projects = createRequire(import.meta.url)('../../hooks/knowledge-projects.cjs') as {
   projectName(root: string, home: string, record?: boolean): string;
   linkProject(root: string, wiki: string, name: string): ProjectLink;
+  indexProject(root: string, wiki: string, name: string): void;
 };
 
-export const { projectName, linkProject } = projects;
+export const { projectName, linkProject, indexProject } = projects;

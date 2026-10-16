@@ -229,3 +229,9 @@ it('puts what the team needs into the project and keeps the rest personal', () =
   expect(guide).toContain('When unsure, keep it personal');
   expect(guide).toContain('Use the page name the knowledge turn gives');
 });
+
+it('leaves the shared-knowledge block to vibe and lets the next session list an unlinked shared page', () => {
+  const guide = cmdInternal(root, 'guide', ['wiki']).text;
+  expect(guide).toContain('`<!-- vibe:shared-knowledge -->` markers that links every shared page; never edit inside it');
+  expect(guide).toContain('An unlinked shared page needs nothing: the next session start lists it');
+});

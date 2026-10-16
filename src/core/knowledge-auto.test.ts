@@ -154,6 +154,8 @@ it('shows a vibe project\'s shared knowledge in the wiki and gives two projects 
   fs.mkdirSync(path.join(root, '.vibe'));
   run('session');
   expect(fs.realpathSync(path.join(wiki(), 'projects', 'worktree'))).toBe(path.join(root, '.vibe', 'knowledge'));
+  expect(fs.readFileSync(path.join(wiki(), 'projects', 'worktree.md'), 'utf8')).toContain('<!-- vibe:shared-knowledge -->');
+  expect(fs.readFileSync(path.join(wiki(), 'index.md'), 'utf8')).toContain('- [[projects/worktree]] —');
   const shared = run('stop').reason;
   expect(shared).toContain(`in the wiki at ${wiki()} (this project's page is projects/worktree.md); what the project's team needs`);
   expect(shared).toContain(`goes into ${path.join(root, '.vibe', 'knowledge')}, which the wiki shows as projects/worktree/`);
@@ -163,5 +165,5 @@ it('shows a vibe project\'s shared knowledge in the wiki and gives two projects 
   const own = run('stop', {}, other).reason;
   expect(own).toMatch(/\(this project's page is projects\/worktree-[a-f0-9]{6}\.md\), record/);
   expect(fs.readFileSync(path.join(wiki(), 'log.md'), 'utf8')).toMatch(/\[\[projects\/worktree\]\][^\n]*\n[^\n]*\[\[projects\/worktree-[a-f0-9]{6}\]\]/);
-  expect(fs.readdirSync(path.join(wiki(), 'projects'))).toEqual(['worktree']);
+  expect(fs.readdirSync(path.join(wiki(), 'projects')).sort()).toEqual(['worktree', 'worktree.md']);
 });

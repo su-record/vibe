@@ -28,6 +28,7 @@ it('resolves links by path or file name, case-insensitively, and reports broken 
   expect(r.pages).toBe(5);
   expect(r.broken).toEqual([{ page: 'index', target: 'missing page' }, { page: 'log', target: 'projects/gone' }]);
   expect(r.orphans).toEqual(['lonely']);
+  expect(r.unlinked).toEqual([]);
   expect(r.long).toEqual([{ page: 'practices', lines: 201 }]);
   expect(r.partial).toBe(false);
 });
@@ -36,7 +37,7 @@ it('reports an empty result for a wiki that does not exist yet', () => {
   expect(lintWiki(path.join(dir, 'none'))).toMatchObject({ pages: 0, broken: [], orphans: [], long: [] });
 });
 
-it('follows a linked project folder once: its pages resolve links and are checked, but are never orphans', () => {
+it('follows a linked project folder once: its pages resolve links and are checked, and are unlinked rather than orphans', () => {
   const project = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-wiki-project-'));
   try {
     fs.writeFileSync(path.join(project, 'customer.md'), 'see [[conventions]] and [[nowhere]]');
@@ -50,6 +51,7 @@ it('follows a linked project folder once: its pages resolve links and are checke
     expect(r.pages).toBe(4);
     expect(r.broken).toEqual([{ page: 'projects/app/customer', target: 'nowhere' }]);
     expect(r.orphans).toEqual([]);
+    expect(r.unlinked).toEqual(['projects/app/unlinked']);
     expect(r.long).toEqual([{ page: 'projects/app/conventions', lines: 201 }]);
   } finally { fs.rmSync(project, { recursive: true, force: true }); }
 });

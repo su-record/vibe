@@ -18,7 +18,7 @@ The knowledge turn names this project's page and, in a vibe project, its shared 
 
 - `index.md`: one line per page, `[[page]]` and what it holds. Update it when a page is added, renamed or removed. The brief reads it first.
 - `log.md`: the hook's fact lines. Do not rewrite it; add a short clause after a line only when the turn's purpose is not obvious from the page it links.
-- `projects/<project>.md`: the user's own view of the project: the current goal, decisions with reasons, open issues and how to verify it. Use the page name the knowledge turn gives; two folders with the same name get different pages. Replace superseded statements instead of appending a history.
+- `projects/<project>.md`: the user's own view of the project: the current goal, decisions with reasons, open issues and how to verify it. Use the page name the knowledge turn gives; two folders with the same name get different pages. In a vibe project, vibe keeps a block between `<!-- vibe:shared-knowledge -->` markers that links every shared page; never edit inside it. Replace superseded statements instead of appending a history.
 - `me.md`: how the user works and what they prefer, as they stated it or as repeated evidence shows; mark an inference as an inference.
 - `practices.md` or a subject page: methods that worked, with the comparison that showed it ("for X, doing A instead of B removed the retry; seen 2026-10-15 in project P").
 - `skills.md`: skills you created from the user's work, what each does and the evidence that led to it.
@@ -38,7 +38,7 @@ Give each claim its date and source (a file path with revision, a command and it
 
 ## Keep the connections
 
-Link related pages with `[[page]]` where a reader would follow the connection; do not link every noun. When the wiki has grown or links were edited, run `vibe knowledge lint` and fix what it reports: create or redirect a broken link's target, link an orphan from `index.md` or a related page, merge duplicate pages, split long ones.
+Link related pages with `[[page]]` where a reader would follow the connection; do not link every noun. When the wiki has grown or links were edited, run `vibe knowledge lint` and fix what it reports: create or redirect a broken link's target, link an orphan from `index.md` or a related page, merge duplicate pages, split long ones. An unlinked shared page needs nothing: the next session start lists it; link it from a related page where the connection means something.
 
 ## Tell the user
 
