@@ -22,11 +22,11 @@ const card = read(path.join(root, 'card.md'), 4096).trim();
 const homeCard = client === 'claude' ? path.join(home, '.claude', 'CLAUDE.md') : path.join(home, '.codex', 'AGENTS.md');
 const homeOwns = read(homeCard).includes('<!-- vibe:start -->');
 const input = payload();
-knowledgeAuto.start(input);
+const recall = knowledgeAuto.start(input);
 const view = sessionRuntime.sessionStatus(input);
 const status = view.status === 'bound' ? 'session status only; run vibe state for the procedure' : `${view.status}; use explicit vibe session bind in the intended worktree`;
 const note = sessionRuntime.message(view, status);
-const text = homeOwns ? note : `${card}\n\n${note}`;
+const text = [homeOwns ? note : `${card}\n\n${note}`, recall].filter(Boolean).join('\n');
 // Codex has no status surface a plugin can draw on; a systemMessage is the one line it shows the person.
 const line = client === 'codex' && view.root ? sessionRuntime.overview(view.root) : null;
 process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text }, ...(line ? { systemMessage: line } : {}) })}\n`);

@@ -1,4 +1,11 @@
-# Bench — settlement task, 2026-09-03
+---
+summary: "Settlement bench 2026-09-03: every arm passed every check; the harness added turns and about 0.22 USD per Claude run, so easy tasks show no benefit."
+type: research
+tags: [bench, cost, evidence]
+aliases: [harness bench, 벤치마크, 비용 비교]
+updated: 2026-10-16
+---
+# Bench: settlement task, harness on vs off (2026-09-03)
 
 Task: `bench/tasks/settlement` (order CSV → settlement sheet, 5 file-check judge scenarios). Arms: Claude Code (claude -p, default model) and Codex CLI (codex exec, default model), harness on (vibe card, skills, approved intent in the workspace) and off (bare workspace). 5 runs per arm, 20 judged runs, all in `bench/ledger.jsonl` (git-ignored; this note is the record).
 

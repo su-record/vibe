@@ -33,6 +33,14 @@ it('resolves links by path or file name, case-insensitively, and reports broken 
   expect(r.partial).toBe(false);
 });
 
+it('reports a page whose type is not one the guide names', () => {
+  page('index.md', '- [[a]] [[b]] [[c]]');
+  page('a.md', '---\ntype: decision\n---\n# A');
+  page('b.md', '---\nsummary: x\ntype: "Note"\n---\n# B');
+  page('c.md', '# C\n\ntype: whatever, not a property');
+  expect(lintWiki(dir).badType).toEqual([{ page: 'b', type: 'Note' }]);
+});
+
 it('reports an empty result for a wiki that does not exist yet', () => {
   expect(lintWiki(path.join(dir, 'none'))).toMatchObject({ pages: 0, broken: [], orphans: [], long: [] });
 });

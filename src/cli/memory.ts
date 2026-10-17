@@ -1,7 +1,9 @@
 import os from 'node:os';
 import path from 'node:path';
 import { usage } from '../core/errors.js';
-import { addKnowledge, globalKnowledgeDir, knowledgeSettings, setKnowledgeSettings, type KnowledgeChange } from '../core/knowledge.js';
+import { addKnowledge, globalKnowledgeDir, knowledgeDir, knowledgeSettings, setKnowledgeSettings, type KnowledgeChange } from '../core/knowledge.js';
+import { findKnowledge, PAGE_TYPES } from '../core/knowledge-find.js';
+import { journalSummary } from '../core/knowledge-journal.js';
 import { lintWiki } from '../core/knowledge-lint.js';
 import { carryWiki, connectVault, obsidianVaults, syncedBy } from '../core/obsidian.js';
 import { compare, EDGE_TYPES, readEdges, readLedger, why, type CompareBy, type CompareMetric, type EdgeType } from '../core/ledger.js';
@@ -128,14 +130,14 @@ export function cmdRegress(root: string, sub: string | undefined, flags: Flags):
   return { json: result, text: `regression ${result.id} → ${path.relative(root, result.file)}`, code: 0 };
 }
 
-const AUTO_USAGE = 'knowledge auto [on|off] [--dir <folder>] [--turns <n>] [--skills propose|create] [--exclude <folder>] [--include <folder>]';
+const AUTO_USAGE = 'knowledge auto [on|off] [--dir <folder>] [--turns <n>] [--skills propose|create] [--journal on|off] [--exclude <folder>] [--include <folder>]';
 
 /** `knowledge auto`: personal, so it needs no project. Without on/off or an option it only reports. */
 function knowledgeAuto(value: string | undefined, flags: Flags): Output {
   if (value !== undefined && !['on', 'off'].includes(value)) throw usage(AUTO_USAGE);
   const turns = flagString(flags, 'turns');
   const change: KnowledgeChange = { ...(value ? { auto: value === 'on' } : {}), ...(turns !== undefined ? { turns: /^\d+$/.test(turns) ? Number(turns) : -1 } : {}) };
-  for (const key of ['dir', 'skills', 'exclude', 'include'] as const) {
+  for (const key of ['dir', 'skills', 'exclude', 'include', 'journal'] as const) {
     if (flags[key] === true) throw usage(AUTO_USAGE);
     const given = flagString(flags, key);
     if (given !== undefined) change[key] = given;
@@ -150,7 +152,7 @@ function knowledgeAuto(value: string | undefined, flags: Flags): Output {
   const synced = s.auto ? syncedBy(folder) : null;
   const every = s.turns ? `, and every ${s.turns} conversation turns,` : '';
   const text = [s.auto
-    ? `session knowledge on → ${folder}\n  after a turn that changes project files${every} the working model gets one turn to keep the wiki and improve on it · skills: ${s.skills === 'create' ? 'created and reported' : 'drafted and offered'}`
+    ? `session knowledge on → ${folder}\n  after a turn that changes project files${every} the working model gets one turn to keep the wiki and improve on it · skills: ${s.skills === 'create' ? 'created and reported' : 'drafted and offered'}\n  ${s.journal ? `journal on: your prompts (first ${600} characters, secrets and e-mail addresses masked) and shell command names with their outcome stay on this computer for 30 days, so repeats can be found and improvements proposed; --journal off stops it` : 'journal off: the knowledge turn works from the model\'s memory only'}`
     : `session knowledge off · wiki folder ${folder}`,
   ...(place ? [place.note] : []),
   ...(vault ? [`  ${VAULT_NOTE[vault]}`] : []),
@@ -178,20 +180,53 @@ function vaultFolder(): { dir: string; note: string } | null {
 function knowledgeLint(flags: Flags): Output {
   const r = lintWiki(path.resolve(flagString(flags, 'dir') ?? globalKnowledgeDir()));
   const text = [
-    `wiki ${r.dir} · ${r.pages} pages · ${r.broken.length} broken links · ${r.orphans.length} orphans · ${r.unlinked.length} unlinked shared · ${r.long.length} long${r.partial ? ' · partial' : ''}`,
+    `wiki ${r.dir} · ${r.pages} pages · ${r.broken.length} broken links · ${r.orphans.length} orphans · ${r.unlinked.length} unlinked shared · ${r.long.length} long · ${r.badType.length} unknown types${r.partial ? ' · partial' : ''}`,
     ...r.broken.map(b => `  broken  ${b.page} → [[${b.target}]]`),
     ...r.orphans.map(page => `  orphan  ${page} (no page links to it)`),
     ...r.unlinked.map(page => `  unlinked ${page} (shared; the next session start lists it on the project page)`),
     ...r.long.map(l => `  long    ${l.page} (${l.lines} lines; split by subject)`),
+    ...r.badType.map(b => `  type    ${b.page} has type "${b.type}" (use ${PAGE_TYPES.join(', ')})`),
   ].join('\n');
   return { json: r, text, code: r.broken.length ? 1 : 0 };
+}
+
+/** `knowledge journal`: what the session-knowledge journal holds for this folder, in the person's words and in repeats. */
+function knowledgeJournal(root: string): Output {
+  const folders = [...new Set([process.cwd(), root])];
+  const r = folders.map(folder => journalSummary(folder)).find(s => s.entries > 0) ?? journalSummary(folders[0]!);
+  const list = (title: string, items: string[]): string[] => (items.length ? [`  ${title}:`, ...items.map(i => `    - ${i}`)] : []);
+  const text = [`journal · ${r.entries} lines over the last ${r.days} days${r.entries ? '' : ' (empty: session knowledge or its journal is off, or nothing ran here yet)'}`,
+    ...list('since the last knowledge turn, prompts', r.recent.prompts),
+    ...list('corrections (the user pushed back)', r.recent.corrections),
+    ...list('failed commands', r.recent.failed),
+    ...list('repeated instructions (a rule, prompt or default may fit)', r.repeats.instructions.map(i => `${i.count}× in ${i.sessions} sessions: ${i.text}`)),
+    ...list('repeated command sequences (a script, tool or skill may fit)', r.repeats.sequences.map(s => `${s.count}× in ${s.sessions} sessions: ${s.sequence}`)),
+    ...list('repeated failures (a check, hook or note may fit)', r.repeats.failures.map(f => `${f.count}×: ${f.command}`))].join('\n');
+  return { json: r, text, code: 0 };
+}
+
+const FIND_USAGE = `knowledge find <words…> [--type ${PAGE_TYPES.join('|')}] [--limit <n>] [--dir <folder>]`;
+
+/** `knowledge find`: the pages about some words, in the wiki and this project's shared knowledge, best first. */
+function knowledgeFind(root: string, words: string[], flags: Flags): Output {
+  const limit = flagString(flags, 'limit') ?? '8';
+  const type = flagString(flags, 'type');
+  if (!words.join('').trim() || !/^[1-9]\d*$/.test(limit) || flags['dir'] === true || flags['type'] === true || (type !== undefined && !(PAGE_TYPES as readonly string[]).includes(type))) throw usage(FIND_USAGE);
+  const wiki = path.resolve(flagString(flags, 'dir') ?? globalKnowledgeDir());
+  const r = findKnowledge(wiki, words.join(' '), [knowledgeDir(root)], Number(limit), type);
+  const text = [`found ${r.found.length} for ${JSON.stringify(r.query)} · wiki ${wiki}${r.partial ? ' · partial' : ''}`,
+    ...r.found.map(f => `  ${f.page === null ? path.relative(root, f.file) : `[[${f.page}]]`}${f.type ? ` [${f.type}]` : ''}${f.state === 'archived' ? ' (archived)' : f.supersededBy ? ` (superseded by ${f.supersededBy})` : ''} · ${f.title}${f.summary ? ` — ${f.summary}` : ''}${f.tags.length ? ` #${f.tags.join(' #')}` : ''}`),
+    ...(r.found.length ? [] : ['  nothing matches: a new page is right, or try other words'])].join('\n');
+  return { json: { wiki, ...r }, text, code: 0 };
 }
 
 export function cmdKnowledge(root: string, sub: string | undefined, args: string[], flags: Flags): Output {
   if (sub === 'auto') return knowledgeAuto(args[0], flags);
   if (sub === 'lint') return knowledgeLint(flags);
+  if (sub === 'find') return knowledgeFind(root, args, flags);
+  if (sub === 'journal') return knowledgeJournal(root);
   ensureProject(root);
-  if (sub !== 'add') throw usage(`knowledge add <file|--stdin> --title "…" [--global] | ${AUTO_USAGE} | knowledge lint [--dir <folder>]`);
+  if (sub !== 'add') throw usage(`knowledge add <file|--stdin> --title "…" [--global] | ${AUTO_USAGE} | knowledge lint [--dir <folder>] | ${FIND_USAGE} | knowledge journal`);
   const title = flagString(flags, 'title') ?? '';
   const body = flags['stdin'] === true ? readStdin() : args[0] ? readText(path.resolve(root, args[0])) ?? '' : '';
   const global = flags['global'] === true;

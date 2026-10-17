@@ -149,8 +149,8 @@ if (mode === 'stop') {
 }
 if (mode === 'session') {
   const payload = readPayload();
-  knowledgeAuto.start(payload);
-  process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: structuralSession(payload) } })}\n`);
+  const recall = knowledgeAuto.start(payload);
+  process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: [structuralSession(payload), recall].filter(Boolean).join('\n') } })}\n`);
   process.exit(0);
 }
 

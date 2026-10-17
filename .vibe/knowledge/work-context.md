@@ -1,25 +1,36 @@
-# Vibe 업무 맥락
+---
+summary: "What the user wants from vibe (one public entry, a personal FDE, beginner-level explanations) and the open Windows Codex hook report after 4.2.2."
+type: decision
+tags: [goals, decisions, windows, codex]
+aliases: [work context, project goals, 업무 맥락, 목적과 결정]
+updated: 2026-10-16
+---
+# Vibe work context
 
-출처: 이 프로젝트의 사용자 대화와 4.2.2 배포 기록. 정리일: 2026-09-14. 범위: Vibe 프로젝트. 일반 사용자 선호로 자동 확대하지 않는다.
+Source: the user's conversations in this project and the 4.2.2 release record. Written 2026-09-14, translated to English 2026-10-16. Scope: the vibe project; do not widen it into general user preferences.
 
-## 확인된 목적과 결정
+## Confirmed goals and decisions
 
-- 사용자는 Claude·Codex 데스크톱에서 자신의 업무를 이해하고 해결하는 개인 FDE를 원한다. npm 배포와 공개 진입점 `vibe` 하나를 유지한다.
-- 기능 부족뿐 아니라 정확도·속도·반복 작업 개선이 예상될 때 기존 스킬을 탐색한다. 설치된 능력과 이전 조사부터 확인하고 필요한 지침만 읽는다.
-- 불필요한 브랜치, 토큰 교환, 기본 모델 리뷰와 반복 검증을 줄이되 복잡한 작업의 필수 위험·복구 검증은 보존한다.
-- 사용자는 개발 초보자가 이해할 수 있게 결과·이유·작동 방식·한계를 충분히 설명하기를 요청했다. 이후 설명에서 전문 용어만 나열하거나 무조건 짧게 답하지 않는다.
-- 읽기 기능은 유지한다. 짧은 파일과 수정할 코드는 직접 읽고, 긴 자료의 좁은 질문에만 추가 비용이 타당할 때 읽기 모델을 고려한다.
+- The user wants a personal FDE in the Claude and Codex desktop apps that understands and solves their work. Keep npm distribution and the single public entry `vibe`.
+- Look for existing skills not only when a capability is missing but when better accuracy, speed or less repeated work is expected. Check installed capabilities and earlier research first and read only the guidance needed.
+- Cut needless branches, token exchanges, default model reviews and repeated verification, but keep the risk and recovery checks complex work requires.
+- The user asked for outcomes, reasons, how things work and limits explained so a beginner understands. Do not answer with a list of jargon or shorten an explanation by default.
+- Keep the read feature. Read short files and code to be edited directly; consider the reading model only for a narrow question about long material when the extra cost is justified.
 
-## 사용 환경과 남은 관찰
+## Environment and open observations
 
-- 사용자가 Windows PC에서 Codex 훅 오류가 발생하는 것 같다고 알렸다. 정확한 훅 명령이나 PC 로그는 확보하지 못했다.
-- 4.2.2는 Windows 경로의 훅 교체·중복 방지 결함을 수정했다. 로컬 396개 테스트와 Linux·Windows CI를 통과했고 npm latest로 배포했다. 릴리스: https://github.com/su-record/vibe/releases/tag/v4.2.2
-- 아직 확인하지 못한 것은 해당 PC에서 업데이트 후 실제 채팅의 오류가 사라졌는지다. CI 통과를 이 관찰의 대체 증거로 사용하지 않는다. 관련 사용자 보고나 접근 가능한 새 증거가 생기면 이어서 판단한다.
+- The user reported what looked like Codex hook errors on a Windows PC. The exact hook command and the PC's logs were not obtained.
+- 4.2.2 fixed hook replacement and duplication on Windows paths. It passed 396 local tests and Linux and Windows CI and was published as npm latest: https://github.com/su-record/vibe/releases/tag/v4.2.2
+- Not yet confirmed: whether the error disappeared in real chats on that PC after updating. CI passing is not evidence for this observation. Continue when the user reports again or new evidence is available.
 
-## 현재 작업에서 달라질 행동
+## How this changes current work
 
-- 테스트 성공, 대상 환경에서의 동작, 사용자 수용을 구분한다.
-- 정정은 현재 작업에 먼저 적용하고, 여전히 유효한 기존 결정을 보존하면서 이 기록을 갱신한다.
-- 반복되는 우회 해결은 공통 원인을 확인해 기존 스킬·도구를 먼저 재사용한다. 재사용 가능성만으로 요청하지 않은 플랫폼 재작성을 시작하지 않는다.
+- Keep apart tests passing, behaviour in the target environment and the user's acceptance.
+- Apply a correction to the current work first, then update this record while keeping earlier decisions that still hold.
+- For a repeated workaround, find the common cause and reuse existing skills and tools first. Do not start an unrequested platform rewrite just because something could be reused.
 
-이 기록은 맥락이며 추가 외부 작업 권한이나 새로운 완료 판정을 부여하지 않는다.
+This record is context; it grants no extra permission for external actions and no new completion verdict.
+
+## Related
+
+- [[projects/vibe/development]] — how to develop and verify vibe in this repository

@@ -1,4 +1,11 @@
-# Research — skill names agent skills · ajv yaml skill
+---
+summary: "Repositories about agent skill naming found 2026-09-04 (commonly, Mnemosyne and others); none adopted."
+type: research
+tags: [research, skills]
+aliases: [skill naming, 스킬 이름]
+updated: 2026-10-16
+---
+# Research: agent skill naming
 
 Date: 2026-09-04 · Source: GitHub search and skill catalogs · Ranked by keyword match, recency, stars, license. Nothing here was executed or installed.
 

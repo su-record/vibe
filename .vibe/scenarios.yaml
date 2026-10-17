@@ -106,8 +106,16 @@
     the project; the lint follows those links without calling their pages
     orphans but reports unlinked ones; each session start lists every shared
     page in a marked block of the project page and adds the page to the index,
-    leaving other text alone; and the brief and context read the project's
-    own page.
+    leaving other text alone; the brief and context read the project's own
+    page; and vibe knowledge find ranks the wiki's and the project's pages by
+    title, aliases, tags, summary and text, ranking superseded and archived
+    pages lower and narrowing by type, while the wiki guide asks to find
+    before writing and before choosing and to give each page a summary, type,
+    tags and aliases; with the journal on, prompt and shell hooks keep a
+    private masked 30-day journal (never in an excluded folder, nothing when
+    off), the knowledge turn names it and vibe knowledge journal shows recent
+    prompts, corrections and repeats, and the guide asks for at most one
+    evidence-based improvement tracked in proposals.md.
   needs:
     - compatibility
   check:
@@ -115,7 +123,8 @@
     cmd: npx vitest run src/core/knowledge-auto.test.ts src/core/knowledge.test.ts
       src/core/knowledge-lint.test.ts src/core/obsidian.test.ts
       src/core/knowledge-projects.test.ts src/core/context.test.ts
-      src/cli/internal.test.ts
+      src/cli/internal.test.ts src/core/knowledge-find.test.ts
+      src/core/knowledge-journal.test.ts
     timeoutMs: 180000
   verifiers:
     - src/core/knowledge-auto.test.ts
@@ -124,6 +133,8 @@
     - src/core/obsidian.test.ts
     - src/core/knowledge-projects.test.ts
     - src/core/context.test.ts
+    - src/core/knowledge-find.test.ts
+    - src/core/knowledge-journal.test.ts
 - id: mutation
   then: Every change Stryker makes to the guide dispatch and to the Codex
     session line makes a test fail, so no mutant survives or goes untested.

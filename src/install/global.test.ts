@@ -44,7 +44,7 @@ describe('global surfaces — one copy per client home', () => {
     expect(fs.readFileSync(path.join(home, '.codex', 'AGENTS.md'), 'utf-8')).toContain(CARD_START);
     expect(fs.existsSync(path.join(home, '.codex', 'skills', 'vibe', 'SKILL.md'))).toBe(true);
     const hooks = JSON.parse(fs.readFileSync(path.join(home, '.codex', 'hooks.json'), 'utf-8')) as { hooks: Record<string, unknown[]> };
-    expect(Object.keys(hooks.hooks).sort()).toEqual(['PreToolUse', 'SessionStart', 'Stop']);
+    expect(Object.keys(hooks.hooks).sort()).toEqual(['PostToolUse', 'PreToolUse', 'SessionStart', 'Stop', 'UserPromptSubmit']);
     expect(hasNotifyHook(path.join(home, '.codex', 'hooks.json'))).toBe(true);
     // the hook points at a script that exists in this package
     const command = (hooks.hooks['PreToolUse']?.[0] as { hooks: Array<{ command: string }> }).hooks[0]?.command ?? '';
@@ -63,7 +63,10 @@ describe('global surfaces — one copy per client home', () => {
     const settings = JSON.parse(fs.readFileSync(path.join(home, '.claude', 'settings.json'), 'utf-8')) as { model: string; hooks: Record<string, Array<{ hooks: Array<{ command: string }> }>> };
     expect(settings.model).toBe('x');
     expect(settings.hooks['Stop']?.[0]?.hooks[0]?.command).toBe('echo bye');
-    expect(settings.hooks['PostToolUse']).toBeUndefined();
+    // the journal hooks: shell calls only, and both personal, so they return at once while session knowledge is off
+    expect(settings.hooks['PostToolUse']?.map(e => (e as { matcher?: string }).matcher)).toEqual(['Bash']);
+    expect(settings.hooks['PostToolUse']?.[0]?.hooks[0]?.command).toMatch(/journal\.cjs" tool$/);
+    expect(settings.hooks['UserPromptSubmit']?.[0]?.hooks[0]?.command).toMatch(/journal\.cjs" prompt$/);
     expect(fs.readFileSync(path.join(home, '.claude', 'CLAUDE.md'), 'utf-8')).toMatch(/^# Mine\n\nkeep this\n\n<!-- vibe:start -->/);
 
     const second = setupGlobal(home);

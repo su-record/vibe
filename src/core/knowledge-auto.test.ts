@@ -69,7 +69,7 @@ it('waits five conversation turns by default, only for file changes at 0, and cr
   fs.writeFileSync(path.join(root, 'work.txt'), 'changed');
   expect(run('stop').reason).toContain('create a skill for a repeated procedure (the user allowed it)');
   for (const bad of [['--turns', '-1'], ['--turns', 'many'], ['--skills', 'always'], ['--exclude']]) expect(cli(['knowledge', 'auto', ...bad]).status).toBe(2);
-});
+}, 30000); // twenty processes; 5 s was too little while mutation testing shared the machine
 
 it('never fingerprints, logs or interrupts work inside an excluded folder until it is included again', () => {
   const client = path.join(fixture, 'client-work');

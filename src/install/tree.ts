@@ -30,6 +30,9 @@ function hookSet(root: string, sessionArg: string): Record<string, unknown> {
       PreToolUse: [
         { matcher: 'Bash', hooks: [{ ...cmd('notify.js', 'pre --plugin --personal'), timeout: 20 }] },
       ],
+      // Session-knowledge journal: return at once when the person has not turned it on.
+      UserPromptSubmit: [{ hooks: [cmd('journal.cjs', 'prompt --plugin')] }],
+      PostToolUse: [{ matcher: 'Bash', hooks: [cmd('journal.cjs', 'tool --plugin')] }],
     },
   };
 }

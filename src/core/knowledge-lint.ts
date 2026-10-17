@@ -14,14 +14,19 @@ export interface WikiLint {
   /** Shared project pages no page links to; the next session start lists them on the project page. */
   unlinked: string[];
   long: Array<{ page: string; lines: number }>;
+  /** Pages whose `type` property is not one of TYPES, so `find --type` would never return them. */
+  badType: Array<{ page: string; type: string }>;
   partial: boolean;
 }
+
+/** What a page is, so the model knows whether to follow it, reuse it, avoid it or just know it; the wiki guide names them. */
+export const TYPES = ['decision', 'method', 'problem', 'fact', 'project', 'research', 'skill', 'proposal'] as const;
 
 /**
  * The wiki's pages, and the pages of each project's shared knowledge it shows through a folder link
  * (`projects/<name>/`). Those are kept in the project, so they resolve links and are reported as unlinked, not orphans.
  */
-function pages(dir: string): { files: string[]; shared: Set<string>; partial: boolean } {
+export function wikiPages(dir: string): { files: string[]; shared: Set<string>; partial: boolean } {
   const files: string[] = [];
   const shared = new Set<string>();
   const seen = new Set<string>();
@@ -52,7 +57,7 @@ export function wikiLinks(text: string): string[] {
  * Obsidian resolves it: by the path from the wiki root or by the page's file name alone.
  */
 export function lintWiki(dir: string): WikiLint {
-  const { files, shared, partial } = pages(dir);
+  const { files, shared, partial } = wikiPages(dir);
   const name = (file: string): string => path.relative(dir, file).split(path.sep).join('/').replace(/\.md$/, '');
   const known = new Map<string, string>();
   for (const file of files) {
@@ -61,11 +66,14 @@ export function lintWiki(dir: string): WikiLint {
   }
   const broken: WikiLint['broken'] = [];
   const long: WikiLint['long'] = [];
+  const badType: WikiLint['badType'] = [];
   const linked = new Set<string>();
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     const lines = text.split('\n').length;
     if (lines > LONG_LINES) long.push({ page: name(file), lines });
+    const type = /^---\r?\n(?:[^\n]*\n)*?type:\s*["']?([^"'\n]+?)["']?\s*\n(?:[^\n]*\n)*?---/.exec(text)?.[1];
+    if (type !== undefined && !(TYPES as readonly string[]).includes(type.toLowerCase())) badType.push({ page: name(file), type });
     for (const target of wikiLinks(text)) {
       const page = known.get(target.replace(/\.md$/, '').toLowerCase());
       if (page === undefined) broken.push({ page: name(file), target });
@@ -74,5 +82,5 @@ export function lintWiki(dir: string): WikiLint {
   }
   const orphans = files.filter(file => !shared.has(file)).map(name).filter(page => !linked.has(page) && !ROOTS.has(page));
   const unlinked = files.filter(file => shared.has(file)).map(name).filter(page => !linked.has(page));
-  return { dir, pages: files.length, broken, orphans, unlinked, long, partial };
+  return { dir, pages: files.length, broken, orphans, unlinked, long, badType, partial };
 }

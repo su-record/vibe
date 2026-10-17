@@ -64,8 +64,9 @@ export const INTERNAL_HELP = `vibe — an AX/FDE harness. The harness judges; a 
   human     ask "question" [--options "a|b"] [--default a] [--needs approve|authorize:<action>] [--target "…"]
             authorize [token] --action <action> [--target "…"] (push · deploy · publish · send · delete · restore · reset · seed · migrate · drop · truncate · apply · spend — the same words the hook and the check gate use) · inbox [list|answer <id> "text"|resolve <id>]
   memory    regress record --scenario <id> --title "…" [--check-from-evidence <run>] · regress list
-            knowledge add <file|--stdin> --title "…" · knowledge auto [on|off] [--dir <folder>] [--turns 5] [--skills propose|create] [--exclude|--include <folder>] (personal; off by default)
-            knowledge lint [--dir <folder>]
+            knowledge add <file|--stdin> --title "…" · knowledge auto [on|off] [--dir <folder>] [--turns 5] [--skills propose|create] [--journal on|off] [--exclude|--include <folder>] (personal; off by default)
+            knowledge lint [--dir <folder>] · knowledge find <words…> [--limit 8] [--dir <folder>] (wiki and this project's shared pages about the words, best first)
+            knowledge journal (this folder's private 30-day journal: recent prompts, corrections, failures and repeats)
   research  research --from-intent | "query" [--sources repos,code,skills] [--max 5] [--days 30]   (GitHub · skill catalogs · what moved inside the window first · 24h cache)
   skills    skill suggest [--all] · skill create <name> --check run|file|http|eval [--from-scenario <id>]
             skill add owner/repo[@name] [--pin <sha>] [--yes] · skill search <keyword> · skill list
