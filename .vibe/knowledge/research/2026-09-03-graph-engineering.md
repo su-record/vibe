@@ -1,3 +1,10 @@
+---
+summary: "Graph engineering means multi-agent graphs or knowledge graphs; vibe takes scenario needs, typed ledger edges and deterministic routing, not an orchestration runtime."
+type: research
+tags: [research, architecture, knowledge, agents]
+aliases: [knowledge graph, multi-agent, 그래프 엔지니어링, 지식 그래프]
+updated: 2026-10-16
+---
 # Graph engineering — what it means in 2026 and what vibe 4 should take from it
 
 Date: 2026-09-03 · Sources: web (listed at the end). Claims marked *cited* come from the sources; the vibe mapping at the end is my judgement.

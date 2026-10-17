@@ -35,7 +35,7 @@ describe('addKnowledge', () => {
   });
 
   it('keeps session recording off until the person turns it on, and moves the wiki only to an absolute folder', () => {
-    const defaults = { auto: false, turns: 5, skills: 'propose', exclude: [] };
+    const defaults = { auto: false, turns: 5, skills: 'propose', exclude: [], journal: true };
     expect(knowledgeSettings(home)).toEqual(defaults);
     expect(globalKnowledgeDir(home)).toBe(path.join(home, '.config', 'vibe', 'knowledge'));
     const vault = path.join(home, 'Obsidian', 'vibe');
@@ -47,7 +47,11 @@ describe('addKnowledge', () => {
     expect(() => setKnowledgeSettings({ exclude: 'relative' }, home)).toThrow('absolute');
     expect(() => setKnowledgeSettings({ turns: 1.5 }, home)).toThrow('whole number');
     expect(() => setKnowledgeSettings({ skills: 'always' }, home)).toThrow('propose | create');
-    fs.writeFileSync(knowledgeSettingsFile(home), JSON.stringify({ auto: 'yes', dir: 'relative', turns: -1, skills: 'always', exclude: ['relative', 7] }));
+    expect(() => setKnowledgeSettings({ journal: 'maybe' }, home)).toThrow('on | off');
+    expect(setKnowledgeSettings({ journal: 'off' }, home)).toEqual({ ...defaults, dir: vault, journal: false });
+    expect(setKnowledgeSettings({ auto: true }, home).journal).toBe(false);
+    expect(setKnowledgeSettings({ journal: 'on' }, home).journal).toBe(true);
+    fs.writeFileSync(knowledgeSettingsFile(home), JSON.stringify({ auto: 'yes', dir: 'relative', turns: -1, skills: 'always', exclude: ['relative', 7], journal: 'no' }));
     expect(knowledgeSettings(home)).toEqual(defaults);
   });
 
@@ -55,7 +59,7 @@ describe('addKnowledge', () => {
     const client = path.join(home, 'client');
     setKnowledgeSettings({ auto: true, turns: 0, skills: 'create' }, home);
     expect(setKnowledgeSettings({ exclude: client }, home).exclude).toEqual([client]);
-    expect(setKnowledgeSettings({ exclude: `${client}/` }, home)).toEqual({ auto: true, turns: 0, skills: 'create', exclude: [client] });
+    expect(setKnowledgeSettings({ exclude: `${client}/` }, home)).toEqual({ auto: true, turns: 0, skills: 'create', exclude: [client], journal: true });
     expect(setKnowledgeSettings({ include: client }, home).exclude).toEqual([]);
   });
 

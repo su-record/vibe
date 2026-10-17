@@ -1,4 +1,11 @@
-# Research — one spec slim review · ajv yaml one
+---
+summary: "Search for a one-spec slim review and ajv/yaml tools (2026-09-07): only weak matches such as mcp-json-tools; nothing installed."
+type: research
+tags: [research, review, skills]
+aliases: [slim review, 슬림 심사]
+updated: 2026-10-16
+---
+# Research: one-spec slim review and ajv/yaml tools
 
 Date: 2026-09-07 · Source: GitHub search and skill catalogs · Ranked by keyword match, recency, stars, license. Nothing here was executed or installed.
 

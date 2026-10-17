@@ -1,3 +1,12 @@
+---
+summary: "Conventions vibe read from the repository files and learned from its ledger: strict TypeScript, test and build scripts, regressions, approvals."
+type: fact
+tags: [conventions, typescript, regressions]
+aliases: [repository conventions, 컨벤션, 규칙]
+updated: 2026-10-16
+---
+# Conventions vibe learned from this repository
+
 - tsconfig strict flags: strict, noUncheckedIndexedAccess, noImplicitReturns, noFallthroughCasesInSwitch, exactOptionalPropertyTypes — source: tsconfig.json
 - package.json script test: "vitest run" — source: package.json
 - package.json script build: "tsc -p tsconfig.json && chmod +x dist/cli.js" — source: package.json

@@ -23,7 +23,8 @@ export const DEFAULT_KNOWLEDGE_TURNS = 5;
 /**
  * The person's own knowledge settings, kept beside the wiki rather than in any project. `auto` is off unless
  * they turn it on; `dir` moves the wiki, for example into a folder of an Obsidian vault; `skills` says whether
- * a repeated procedure becomes an offered draft or a created skill; `exclude` lists folders never recorded.
+ * a repeated procedure becomes an offered draft or a created skill; `exclude` lists folders never recorded;
+ * `journal` keeps the private 30-day journal of prompts and shell commands while `auto` is on.
  */
 export interface KnowledgeSettings {
   auto: boolean;
@@ -31,6 +32,7 @@ export interface KnowledgeSettings {
   turns: number;
   skills: SkillMode;
   exclude: string[];
+  journal: boolean;
 }
 
 export interface KnowledgeChange {
@@ -40,6 +42,7 @@ export interface KnowledgeChange {
   skills?: string;
   exclude?: string;
   include?: string;
+  journal?: string;
 }
 
 export function knowledgeSettingsFile(home: string = defaultHome()): string {
@@ -55,6 +58,7 @@ export function knowledgeSettings(home: string = defaultHome()): KnowledgeSettin
     turns: Number.isInteger(turns) && (turns as number) >= 0 ? turns as number : DEFAULT_KNOWLEDGE_TURNS,
     skills: raw['skills'] === 'create' ? 'create' : 'propose',
     exclude: Array.isArray(exclude) ? exclude.filter((e): e is string => typeof e === 'string' && path.isAbsolute(e)) : [],
+    journal: raw['journal'] !== false,
   };
 }
 
@@ -68,6 +72,7 @@ export function setKnowledgeSettings(change: KnowledgeChange, home: string = def
   const current = knowledgeSettings(home);
   if (change.turns !== undefined && !(Number.isInteger(change.turns) && change.turns >= 0)) throw usage('--turns takes a whole number, 0 or more');
   if (change.skills !== undefined && !['propose', 'create'].includes(change.skills)) throw usage('--skills takes propose | create');
+  if (change.journal !== undefined && !['on', 'off'].includes(change.journal)) throw usage('--journal takes on | off');
   const dir = absolute('dir', change.dir) ?? current.dir;
   const exclude = absolute('exclude', change.exclude), include = absolute('include', change.include);
   const next: KnowledgeSettings = {
@@ -76,6 +81,7 @@ export function setKnowledgeSettings(change: KnowledgeChange, home: string = def
     turns: change.turns ?? current.turns,
     skills: (change.skills as SkillMode | undefined) ?? current.skills,
     exclude: [...new Set([...current.exclude, ...(exclude ? [exclude] : [])])].filter(folder => folder !== include),
+    journal: change.journal === undefined ? current.journal : change.journal === 'on',
   };
   writeJson(knowledgeSettingsFile(home), next);
   return next;

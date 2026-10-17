@@ -14,22 +14,27 @@ interface Settings {
 }
 
 const NOTIFY_MARK = 'hooks/notify.js';
+const JOURNAL_MARK = 'hooks/journal.cjs';
 
-function notifyCommand(mode: 'post' | 'pre' | 'stop' | 'session'): string {
-  return `node "${path.join(packageRoot(), NOTIFY_MARK).split(path.sep).join('/')}" ${mode}`;
+function hookCommand(mark: string, mode: string): string {
+  return `node "${path.join(packageRoot(), mark).split(path.sep).join('/')}" ${mode}`;
 }
+const notifyCommand = (mode: 'post' | 'pre' | 'stop' | 'session'): string => hookCommand(NOTIFY_MARK, mode);
 
-/** Claude Code and Codex run the same five: the tool hooks, Stop and SessionStart (bounded status only). Codex runs them once their trust is granted. */
+/** Claude Code and Codex run the same five: the Bash gate, Stop, SessionStart (bounded status only) and the two session-knowledge journal hooks, which return at once unless the person turned it on. Codex runs them once their trust is granted. */
 function wantedHooks(): Array<[string, string, string]> {
   return [
     ['PreToolUse', 'Bash', `${notifyCommand('pre')} --personal`],
     ['Stop', '', `${notifyCommand('stop')} --personal`],
     ['SessionStart', '', notifyCommand('session')],
+    ['UserPromptSubmit', '', hookCommand(JOURNAL_MARK, 'prompt')],
+    ['PostToolUse', 'Bash', hookCommand(JOURNAL_MARK, 'tool')],
   ];
 }
 
 function isNotifyCommand(command: string): boolean {
-  return command.replaceAll('\\', '/').includes(NOTIFY_MARK);
+  const normal = command.replaceAll('\\', '/');
+  return normal.includes(NOTIFY_MARK) || normal.includes(JOURNAL_MARK);
 }
 function isNotify(entry: HookEntry): boolean {
   return entry.hooks.some(h => isNotifyCommand(h.command));
@@ -44,7 +49,7 @@ export function installHookFile(file: string): 'added' | 'unchanged' {
   const settings = readJson<Settings>(file) ?? {};
   const hooks: Record<string, HookEntry[]> = {};
   for (const [event, list] of Object.entries(settings.hooks ?? {})) hooks[event] = withoutNotify(list);
-  for (const [event, matcher, command] of wantedHooks()) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'Stop' || event === 'SessionStart' ? 5 : 20 }] }];
+  for (const [event, matcher, command] of wantedHooks()) hooks[event] = [...(hooks[event] ?? []), { ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: event === 'PreToolUse' ? 20 : 5 }] }];
   const next = { ...settings, hooks };
   if (JSON.stringify(next) === JSON.stringify(settings)) return 'unchanged';
   writeJson(file, next);

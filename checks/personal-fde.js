@@ -18,7 +18,10 @@ for (const file of fs.readdirSync('internal/guides')) {
 }
 for (const file of ['hooks/hooks.json', 'hooks/codex-hooks.json']) {
   const hooks = JSON.parse(pluginTree()[file]).hooks;
-  assert.equal(hooks.PostToolUse, undefined);
+  // PostToolUse only journals shell calls, and only for a person who turned session knowledge on.
+  assert.deepEqual(hooks.PostToolUse.map(entry => entry.matcher), ['Bash']);
+  assert.match(hooks.PostToolUse[0].hooks[0].command, /journal\.cjs" tool --plugin/);
+  assert.match(hooks.UserPromptSubmit[0].hooks[0].command, /journal\.cjs" prompt --plugin/);
   assert.deepEqual(hooks.PreToolUse.map(entry => entry.matcher), ['Bash']);
   assert.match(hooks.PreToolUse[0].hooks[0].command, /--personal/);
   assert.match(hooks.Stop[0].hooks[0].command, /--personal/);

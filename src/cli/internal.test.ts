@@ -235,3 +235,25 @@ it('leaves the shared-knowledge block to vibe and lets the next session list an 
   expect(guide).toContain('`<!-- vibe:shared-knowledge -->` markers that links every shared page; never edit inside it');
   expect(guide).toContain('An unlinked shared page needs nothing: the next session start lists it');
 });
+
+it('finds before writing and shapes each page so its title, summary, tags and aliases connect it', () => {
+  const guide = cmdInternal(root, 'guide', ['wiki']).text;
+  expect(guide).toContain('run `vibe knowledge find <those words>`');
+  expect(guide).toContain('create a page only when nothing fits and the subject will recur');
+  expect(guide).toContain('each link with its reason');
+  expect(guide).toContain('summary: One sentence of what the page settles');
+  expect(guide).toContain('the only place a record holds words outside English');
+  expect(guide).toContain('no date in the title or file name');
+});
+
+it('uses the knowledge before choosing, works from the journal and proposes improvements fitted to the user', () => {
+  const guide = cmdInternal(root, 'guide', ['wiki']).text;
+  expect(guide).toContain('its reader is you: it is the knowledge base of the user\'s personal FDE');
+  expect(guide).toContain('Before choosing an approach, a tool or a design, run `vibe knowledge find <subject>`');
+  expect(guide).toContain('apply the default instead of asking');
+  expect(guide).toContain('run `vibe knowledge journal` first and work from it rather than from memory');
+  expect(guide).toContain('`supersedes: "[[old-page]]"`');
+  expect(guide).toContain('Propose at most one per knowledge turn, only from evidence');
+  expect(guide).toContain('Keep `proposals.md` in the wiki');
+  expect(guide).toContain('Never offer a declined proposal again unless new evidence changes it');
+});
