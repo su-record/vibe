@@ -46,6 +46,20 @@ function assertPrivateAbsent(ws) {
   assert.equal(env.VIBE_JUDGE_SECRET, undefined);
 }
 
+// The report keeps only hashes of a check's output; the diagnostic files hold the bytes, so a failure on CI shows its cause.
+function failedOutput(result) {
+  try {
+    const failed = JSON.parse(result.stdout).outcomes.filter((outcome) => outcome.status !== 'pass');
+    return failed.map(({ id, exit, diagnostic }) => {
+      const saved = diagnostic ? JSON.parse(fs.readFileSync(diagnostic, 'utf8')) : {};
+      const text = ['stdout', 'stderr'].map((stream) => Buffer.from(saved[stream] ?? '', 'base64').toString('utf8').trim()).filter(Boolean).join('\n');
+      return `${id} exit ${exit}: ${text || '(no output)'}`;
+    }).join('; ') || result.stdout;
+  } catch {
+    return result.stderr || result.stdout;
+  }
+}
+
 function validateTask(task, harness) {
   const taskDir = path.join(temporary, task);
   const ws = prepareWorkspace(taskDir, { ...context, harness, clients: ['claude', 'codex'] });
@@ -57,8 +71,8 @@ function validateTask(task, harness) {
   const snapshot = freezeScope(ws);
   cleanup.push(snapshot.path);
   referenceOutput(ws, taskDir, task);
-  const publicResult = vibeSync(ws, ['check', '--all'], context);
-  assert.equal(publicResult.status, 0, `${task}/${harness} public checks: ${publicResult.stderr || publicResult.stdout}`);
+  const publicResult = vibeSync(ws, ['check', '--all', '--diagnostics'], context);
+  assert.equal(publicResult.status, 0, `${task}/${harness} public checks: ${failedOutput(publicResult)}`);
   assertPrivateAbsent(ws);
   const before = treeManifest(ws);
   const verification = agentEvidence(ws).verification;

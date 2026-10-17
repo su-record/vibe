@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 2,
+  "run": "r-30",
+  "at": "2026-10-17T05:00:37.298Z",
+  "intentHash": "5428c6302fbdba80",
+  "client": "claude-code",
+  "model": null,
+  "scenarioSet": "44e6fc95d604",
+  "results": [
+    {
+      "id": "compatibility",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 79326,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 220,
+          "sha256": "ff40ded2595f5fec44e44d24878bea61686ca97edfb7ba2a68c2a22e4ca69ee1",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 258,
+          "sha256": "7a4edc6998b042f6b60131e097a4eb81bebe76317c6f61b80d8c4f39060cfbd8",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/verification.test.ts",
+        "src/core/performance.test.ts",
+        "src/core/risk-signals.test.ts"
+      ],
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#compatibility"
+    },
+    {
+      "id": "personal-fde-surface",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2166,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 578,
+          "sha256": "0e3141cb67cc6c8221da2a59806077050b18e84167702fcd7373f86c353b8925",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#personal-fde-surface"
+    },
+    {
+      "id": "performance-startup",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3312,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 4134,
+          "sha256": "a627c8025b07fd87294251b0d445f86b775f1944049eba13e4a6cc40b60ff3f7",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#performance-startup"
+    },
+    {
+      "id": "automatic-access",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2929,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 209,
+          "sha256": "80ba7fba551b3fddcfb04350169139a30ef5af035b32f425c42dc25b364fb3a2",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 95,
+          "sha256": "e993b9f7f61fc03753d3b8c76a181bea2d767bdca46ea8b24e6e900132c097e8",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/consent.test.ts"
+      ],
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#automatic-access"
+    },
+    {
+      "id": "automatic-deployment",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 220,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 33,
+          "sha256": "ce5690d60ce07c3a3171b8d05950af725558c05828b2626f25d0962848df8260",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "package.json",
+        ".claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        ".codex-plugin/plugin.json"
+      ],
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#automatic-deployment"
+    },
+    {
+      "id": "session-knowledge",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 11341,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 214,
+          "sha256": "f3e6f0de88cd5863ecc06a996d14d3f3ad50a61f406fbeaa7da897374831c4b9",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 340,
+          "sha256": "a131a54ee87eca747eb5e4636b8775f01a0f884a83ff8326933b20734ab3e700",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "src/core/knowledge-auto.test.ts",
+        "src/core/knowledge.test.ts",
+        "src/core/knowledge-lint.test.ts",
+        "src/core/obsidian.test.ts",
+        "src/core/knowledge-projects.test.ts",
+        "src/core/context.test.ts",
+        "src/core/knowledge-find.test.ts",
+        "src/core/knowledge-journal.test.ts"
+      ],
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#session-knowledge"
+    },
+    {
+      "id": "mutation",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 153332,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 98,
+          "sha256": "38f9301b1998eb00a49c5d0cfe40be6ff3e5d80e1d0e5c13416fe131a1d990aa",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [
+        "checks/mutation.js",
+        "src/cli/internal.test.ts",
+        "src/core/session.test.ts"
+      ],
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#mutation"
+    },
+    {
+      "id": "r-1-vibe-size-misreads-template-literal",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 644,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 134,
+          "sha256": "28f2eec74af058dc972295078aeb2a5c684bd54b910cdd0f51df52c0424c64a2",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#r-1-vibe-size-misreads-template-literal"
+    },
+    {
+      "id": "r-2-ci-counted-the-language-packs",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 135,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#r-2-ci-counted-the-language-packs"
+    },
+    {
+      "id": "r-3-codex-plugin-never-followed-update",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 3397,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 223,
+          "sha256": "f136224e1dd69e3cb4e85b56bc4497e48fb1839c6340e020fe8c172031d56e61",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 115,
+          "sha256": "ac32f6fcb09c1faca68497a9b6a69261752af52eefc207f51e24595af7738525",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#r-3-codex-plugin-never-followed-update"
+    },
+    {
+      "id": "r-4-installhookfile-kept-only-last-entry",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2174,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 222,
+          "sha256": "3235bc8f454582c51bfb6dc54e035e1c9a6ed769f4f3048377c1a473e2a73d62",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 125,
+          "sha256": "7682f5606303cf4f5df849830d396ff668716681b2d51b8ef94f309ed7bee678",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#r-4-installhookfile-kept-only-last-entry"
+    },
+    {
+      "id": "r-5-vibe-size-read-a-quote-or-a-backtick",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 1729,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 220,
+          "sha256": "4a8a6bc71607b0deb9162550b6c3873a58dd35b7cc982a23beb7a54c3805f99f",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 101,
+          "sha256": "7a8c2ce74ec92e79102c71af46ae1edbaa8e1d83d4e432d43b25e4a28216fa60",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#r-5-vibe-size-read-a-quote-or-a-backtick"
+    },
+    {
+      "id": "r-6-the-entry-guard-read-its-own-path-fr",
+      "type": "run",
+      "status": "pass",
+      "exit": 0,
+      "ms": 2043,
+      "tail": "",
+      "capture": {
+        "stdout": {
+          "bytes": 223,
+          "sha256": "08dcceff47d15ec129341221eb00442075912168447e3a6831c50416d135e7c0",
+          "complete": true
+        },
+        "stderr": {
+          "bytes": 103,
+          "sha256": "b17565dac937a80ac2f3ff13170ff82d8485ba5a848002af865e39a4184f8d7e",
+          "complete": true
+        }
+      },
+      "signal": null,
+      "sources": [],
+      "regression": true,
+      "executionContext": "964ef03c128832a18a6050c5af3b8f736eb7883fb0816f1c4546578fc0e09f25",
+      "evidenceId": "r-30#r-6-the-entry-guard-read-its-own-path-fr"
+    }
+  ]
+}
